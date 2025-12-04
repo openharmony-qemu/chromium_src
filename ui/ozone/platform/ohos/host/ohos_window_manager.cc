@@ -37,6 +37,7 @@
 #include "ohos/adapter/window/app_window_adapter.h"
 #include "ohos/adapter/xcomponent/adapter/window_adapter.h"
 #include "ui/display/screen.h"
+#include "ui/display/screen_ohos.h"
 #include "ui/gfx/geometry/transform.h"
 #include "ui/ozone/platform/ohos/common/ohos_util.h"
 #include "ui/ozone/platform/ohos/host/ohos_window.h"
@@ -159,16 +160,13 @@ gfx::AcceleratedWidget OhosWindowManager::GetWidgetAtScreenPointWithIgnore(
     const int32_t display_id) {
   if (ohos::adapter::device_info::DeviceInfo::SdkApi() >=
       ohos::adapter::device_info::SDK_VERSION_14) {
-    float device_scale_factor =
-        display::Screen::GetScreen()->GetPrimaryDisplay().device_scale_factor();
     gfx::PointF point_f(point);
-    gfx::Transform trans;
-    trans.PostScale(device_scale_factor, device_scale_factor);
-    gfx::PointF transformed_point = trans.MapPoint(point_f);
+    gfx::PointF point_pixel =
+        display::ohos::ScreenOhos::ConvertDipToPixel(display_id, point_f);
 
     PointCoordinate coordinate;
-    coordinate.x = transformed_point.x();
-    coordinate.y = transformed_point.y();
+    coordinate.x = point_pixel.x();
+    coordinate.y = point_pixel.y();
     coordinate.displayId = display_id;
 
     std::vector<std::string> window_ids =

@@ -36,8 +36,8 @@ function implDragDropAdapter(): DragDropAdapter {
   return Inject.getOrCreate(DragDropAdapter);
 }
 
-function startDrag(dragParams: OhosDragParamToJs) {
-  implDragDropAdapter().startDrag(dragParams);
+function startDrag(dragParams: OhosDragParamToJs, callback: (result: boolean) => void) {
+  implDragDropAdapter().startDrag(dragParams, callback);
 }
 
 export class DragDropAdapterBind {

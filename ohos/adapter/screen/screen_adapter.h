@@ -36,6 +36,7 @@
 #include "aki/jsbind.h"
 #include "ohos/adapter/aki_hook/aki_hook.h"
 #include "ohos/adapter/export.h"
+#include "ohos/adapter/window/window_common.h"
 
 namespace ohos {
 namespace adapter {
@@ -95,14 +96,27 @@ class ADAPTER_EXPORT_API ScreenAdapter {
  public:
   using DisplayChangeCallback =
       std::function<void(const std::string&, int32_t)>;
+  
+  using AvailableAreaChangeCallback =
+      std::function<void(window::WindowRect, int32_t)>;
 
-  void GetDefaultDisplay(OhosDisplay& ohos_display);
+  using AvoidAreaChangeCallback =
+      std::function<void(int32_t)>;
+
+  void GetPrimaryDisplay(OhosDisplay& ohos_display);
   void GetAllDisplays(std::vector<OhosDisplay>& ohos_displays);
+  int32_t GetStatusBarHeight();
   void RegisterDisplayMonitor();
+  void RegisterAvailableAreaMonitor();
   void initFontSizeScale();
   void RegisterCallback(DisplayChangeCallback callback);
+  void RegisterAvailableAreaCallback(AvailableAreaChangeCallback callback);
+  void RegisterAvoidAreaCallback(AvoidAreaChangeCallback callback);
   void SetFontSizeZoom(float zoom);
+  void OnAvoidAreaChangeCallback(int32_t status_bar_height);
   DisplayChangeCallback GetCallback();
+  AvailableAreaChangeCallback GetAvailableAreaCallback();
+  AvoidAreaChangeCallback GetAvoidAreaCallback();
   static ScreenAdapter& GetInstance();
 
  private:
@@ -110,7 +124,10 @@ class ADAPTER_EXPORT_API ScreenAdapter {
   void ConvertDisplay(aki::Value complete_display, OhosDisplay& ohos_display);
 
   DisplayChangeCallback callback_;
+  AvailableAreaChangeCallback available_area_callback_;
+  AvoidAreaChangeCallback avoid_area_callback_;
   float font_size_zoom_ = 1.0f;
+  int32_t status_bar_height_ = 0;
 };
 
 }  // namespace adapter

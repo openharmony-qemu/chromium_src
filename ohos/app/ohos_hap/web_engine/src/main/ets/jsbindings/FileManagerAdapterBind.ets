@@ -43,9 +43,19 @@ function openVerifiedItem(filePath: string) {
   implFileManagerAdapter().openVerifiedItem(filePath);
 }
 
+function getFileTypeIdByFileExtension(filenameExtension: string): string {
+  return implFileManagerAdapter().getFileTypeIdByFileExtension(filenameExtension);
+}
+
+function getFileIconByFileTypeId(fileTypeId: string, callback: (icon: ArrayBuffer) => void): void {
+  implFileManagerAdapter().getFileIconByFileTypeId(fileTypeId, callback);
+}
+
 export class FileManagerAdapterBind {
   static bind() {
     JsBindingUtils.bindFunction("FileManagerAdapter.OpenItemInFolder", openItemInFolder);
     JsBindingUtils.bindFunction("FileManagerAdapter.OpenVerifiedItem", openVerifiedItem);
+    JsBindingUtils.bindFunction("FileManagerAdapter.GetFileTypeIdByFileExtension", getFileTypeIdByFileExtension);
+    JsBindingUtils.bindFunction("FileManagerAdapter.GetFileIconByFileTypeId", getFileIconByFileTypeId);
   }
 }

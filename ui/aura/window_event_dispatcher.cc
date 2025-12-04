@@ -602,7 +602,6 @@ ui::EventDispatchDetails WindowEventDispatcher::PostDispatchEvent(
             Env::GetInstance()->gesture_recognizer()->AckTouchEvent(
                 touchevent.unique_event_id(), event_result,
                 false /* is_source_touch_event_set_blocking */, window);
-
         details = ProcessGestures(window, std::move(gestures));
       }
     }

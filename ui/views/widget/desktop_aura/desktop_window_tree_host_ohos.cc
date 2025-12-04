@@ -64,11 +64,9 @@ void DesktopWindowTreeHostOhos::OnClosed() {
 void DesktopWindowTreeHostOhos::Show(ui::mojom::WindowShowState show_state,
                                      const gfx::Rect& restore_bounds) {
   if (show_state == ui::mojom::WindowShowState::kMaximized) {
-    auto window_rect = WindowAdapter::GetInstance().GetInitialBounds();
-    gfx::Rect rect_in_pixels = {window_rect.left, window_rect.top,
-                                window_rect.width, window_rect.height};
-    platform_window()->SetBoundsInDIP(
-        display::ohos::ScreenOhos::ConvertPixelToDIP(rect_in_pixels));
+    display::Display display = AccessDisplayNearestRootWindow();
+    gfx::Rect work_area = display.work_area();
+    platform_window()->SetBoundsInDIP(work_area);
   }
   DesktopWindowTreeHostPlatform::Show(show_state, restore_bounds);
 }

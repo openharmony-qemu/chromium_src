@@ -849,6 +849,10 @@ bool MediaSessionImpl::IsActive() const {
 bool MediaSessionImpl::IsActiveSession() {
   return IsActive();
 }
+
+bool MediaSessionImpl::HasOnlyOneShotPlayersPublic() {
+  return HasOnlyOneShotPlayers();
+}
 #endif
 
 bool MediaSessionImpl::IsSuspended() const {

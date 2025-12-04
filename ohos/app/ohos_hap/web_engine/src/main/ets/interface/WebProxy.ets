@@ -4,6 +4,7 @@
 
 import { common } from '@kit.AbilityKit';
 import { window } from '@kit.ArkUI';
+import { ChangeEventType } from '../interface/CommonInterface';
 
 export interface WebProxy {
   getWindowStage: () => window.WindowStage | undefined;
@@ -15,7 +16,8 @@ export interface WebProxy {
   createSubWindow: (name: string) => Promise<window.Window>;
   getOriginWindowId: () => number;
   updateAvoidAreaStatus: (isFullScreen: boolean) => void;
-  isUIAbility: () => boolean;  
+  isUIAbility: () => boolean;
+  setDeviceModeChangeEvent: (deviceModeChangeEvent: ChangeEventType | undefined) => void;
 };
 
 export class FakeWebProxy implements WebProxy {
@@ -53,5 +55,7 @@ export class FakeWebProxy implements WebProxy {
 
   isUIAbility(): boolean {
     return true;
-  }  
+  }
+
+  setDeviceModeChangeEvent(deviceModeChangeEvent: ChangeEventType | undefined) {}
 }

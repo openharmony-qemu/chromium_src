@@ -30,6 +30,22 @@ struct GESTURE_DETECTION_EXPORT GestureEventData {
                    const gfx::RectF& bounding_box,
                    int flags,
                    uint32_t unique_touch_event_id);
+
+#if BUILDFLAG(IS_OHOS)
+  GestureEventData(const GestureEventDetails&,
+                   int motion_event_id,
+                   MotionEvent::ToolType primary_tool_type,
+                   base::TimeTicks time,
+                   float x,
+                   float y,
+                   float raw_x,
+                   float raw_y,
+                   size_t touch_point_count,
+                   const gfx::RectF& bounding_box,
+                   int flags,
+                   uint32_t unique_touch_event_id,
+                   int display_id);
+#endif
   GestureEventData(EventType type, const GestureEventData&);
   GestureEventData(const GestureEventData& other);
   GestureEventData& operator=(const GestureEventData& other);
@@ -51,6 +67,10 @@ struct GESTURE_DETECTION_EXPORT GestureEventData {
   // field gets a non-zero from the corresponding field in
   // GestureEventDataPacket at the moment the gesture is pushed into the packet.
   uint32_t unique_touch_event_id;
+
+#if BUILDFLAG(IS_OHOS)
+  int32_t display_id;
+#endif
 
  private:
   friend class GestureEventDataPacket;

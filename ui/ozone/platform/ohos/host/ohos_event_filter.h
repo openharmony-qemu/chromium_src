@@ -35,6 +35,10 @@
 
 namespace ui {
 
+using EventAction = int32_t;
+using EventTimeStamp = int64_t;
+using TouchEventFinger = int32_t;
+
 class OhosEventFilter {
  public:
   static OhosEventFilter& GetInstance();
@@ -43,22 +47,38 @@ class OhosEventFilter {
   OhosEventFilter operator=(const OhosEventFilter&) = delete;
 
   bool CheckFilterMouseEvent(const gfx::AcceleratedWidget widget_id,
-                             const OH_NativeXComponent_MouseEvent& mouse_event);
+                             EventTimeStamp timestamp,
+                             EventAction mouse_action);
   void RefreshMouseEvent(const gfx::AcceleratedWidget widget_id,
-                         const OH_NativeXComponent_MouseEvent& mouse_event);
+                         EventTimeStamp timestamp,
+                         EventAction mouse_action);
+  bool CheckFilterTouchEvent(const gfx::AcceleratedWidget widget_id,
+                             EventTimeStamp timestamp,
+                             EventAction touch_action,
+                             TouchEventFinger finger_id);
+  void RefreshTouchEvent(const gfx::AcceleratedWidget widget_id,
+                         EventTimeStamp timestamp,
+                         EventAction touch_action,
+                         TouchEventFinger finger_id);
 
  private:
-  OhosEventFilter() = default;
+  OhosEventFilter();
   ~OhosEventFilter() = default;
 
   gfx::AcceleratedWidget pre_widget_id_ = -1;
-  int64_t pre_timestamp_ = 0;
-  OH_NativeXComponent_MouseEventAction pre_event_action_ =
-      OH_NATIVEXCOMPONENT_MOUSE_NONE;
+  EventTimeStamp pre_timestamp_ = 0;
+  EventAction pre_mouse_event_action_ = OH_NATIVEXCOMPONENT_MOUSE_NONE;
 
-  bool CheckMouseEventInfoForFilter(
-      const gfx::AcceleratedWidget widget_id,
-      const OH_NativeXComponent_MouseEvent& mouse_event);
+  EventAction pre_touch_event_action_ = OH_NATIVEXCOMPONENT_UNKNOWN;
+  EventAction mouse_move_action_ = OH_NATIVEXCOMPONENT_MOUSE_NONE;
+  EventAction touch_move_action_ = OH_NATIVEXCOMPONENT_UNKNOWN;
+  TouchEventFinger pre_touch_finger_id_ = -1;
+
+  bool CheckMouseEventInfoForFilter(gfx::AcceleratedWidget widget_id,
+                                    EventAction mouse_action);
+  bool CheckTouchEventInfoForFilter(gfx::AcceleratedWidget widget_id,
+                                    EventAction touch_action,
+                                    TouchEventFinger finger_id);
 };
 
 }  // namespace ui

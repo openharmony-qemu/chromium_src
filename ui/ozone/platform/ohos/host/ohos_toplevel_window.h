@@ -31,6 +31,7 @@
 #define UI_OZONE_PLATFORM_OHOS_HOST_OHOS_TOPLEVEL_WINDOW_H_
 
 #include "base/memory/raw_ptr.h"
+#include "ui/display/display.h"
 #include "ui/ozone/platform/ohos/host/ohos_window.h"
 #include "ui/platform_window/wm/wm_move_loop_handler.h"
 #include "ui/platform_window/wm/wm_move_resize_handler.h"
@@ -82,11 +83,19 @@ class OhosToplevelWindow : public OhosWindow,
   WindowInitParameter BuildWindowInitParameter() override;
 
   void StartWindowMovingWithOffset(const float offset_x, const float offset_y);
+  bool IsFloatingWindow() {
+    return use_floating_window_;
+  }
+  int32_t GetOriginWindowId() override;
+  display::Display GetCurrentDisplay() override;
+  gfx::Rect GetCaptionButtonRect() {
+    return caption_button_rect_in_pixel_;
+  }
 
  protected:
-  virtual void OnWindowEvent(std::shared_ptr<XCEvent> event);
   virtual void SetWindowState(PlatformWindowState new_state, bool isTrigger = true);
-  
+  void SetLastActiveWidgetId(gfx::AcceleratedWidget widget_id);
+
   // Contains the previous state of the window.
   PlatformWindowState previous_state_ = PlatformWindowState::kUnknown;
  
@@ -99,9 +108,11 @@ class OhosToplevelWindow : public OhosWindow,
  private:
   void OnFocusEvent();
   void OnBlurEvent();
+  void OnWindowEvent(std::shared_ptr<XCEvent> event);
   void OnWindowStatusChangeEvent(std::shared_ptr<XCEvent> event);
   void OnWindowRectChangeEvent(std::shared_ptr<XCEvent> event);
   void OnWindowCaptionButtonRectChangeEvent(std::shared_ptr<XCEvent> event);
+  void OnWindowDisplayIdChangeEvent(std::shared_ptr<XCEvent> event);
 
   void UpdateMinAndMaxSize();
   absl::optional<gfx::Size> GetMinimumSizeForOhosWindow();

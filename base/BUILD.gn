@@ -85,7 +85,7 @@ declare_args() {
   # Enabling freeze detection mode will help identify if the system is frozen,
   # but some functions may be affected, such as when loading large files or
   # performing resource-intensive operations.
-  freeze_detection_mode = false
+  ohos_freeze_detection_mode = true
 }
 
 # Mutex priority inheritance is disabled by default due to security
@@ -1025,7 +1025,7 @@ component("base") {
   frameworks = []
 
   if (is_ohos) {
-    if (freeze_detection_mode) {
+    if (ohos_freeze_detection_mode) {
       defines += [ "FREEZE_DETECTION_MODE" ]
     }
   }

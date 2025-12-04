@@ -40,6 +40,12 @@ class EyeDropperChooserImpl final
 
   ~EyeDropperChooserImpl() override;
 
+#if BUILDFLAG(IS_OHOS)
+  static void CreateEyeDropperCallback(content::GlobalRenderFrameHostId rfh_id,
+      mojo::PendingReceiver<blink::mojom::EyeDropperChooser> receiver, bool permission_result);
+  static void OpenConfirmDialogCallback(bool replySuccess);
+#endif
+
   ChooseCallback callback_;
   std::unique_ptr<EyeDropper> eye_dropper_;
 };

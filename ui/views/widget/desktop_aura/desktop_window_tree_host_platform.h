@@ -218,6 +218,10 @@ class VIEWS_EXPORT DesktopWindowTreeHostPlatform
 
   void ScheduleRelayout();
 
+#if BUILDFLAG(IS_OHOS)
+  display::Display AccessDisplayNearestRootWindow() const;
+#endif
+
  private:
   FRIEND_TEST_ALL_PREFIXES(DesktopWindowTreeHostPlatformTest,
                            UpdateWindowShapeFromWindowMask);

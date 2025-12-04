@@ -35,6 +35,8 @@ import LogUtil from '../utils/LogUtil';
 import LogMethod from '../common/LogDecorator';
 import { ContextAdapter } from './ContextAdapter';
 import { common } from '@kit.AbilityKit';
+import { WindowBound } from '../interface/CommonInterface';
+import { DeviceInfoAdapter } from '../adapter/DeviceInfoAdapter';
 
 export interface CompleteDisplay {
   id: number;
@@ -49,15 +51,20 @@ export class DisplayAdapter extends BaseAdapter {
   private fontSizeScale: number = 1.0;
   private ctxAdapter: ContextAdapter;
   private hasInit: boolean = false;
+  private statusBarHeight: number = 0;
+  private isAvailableAreaMonitor: boolean = false;
+  private deviceInfoAdapter: DeviceInfoAdapter;
   private static invalidDisplay: CompleteDisplay = {
     id: -1,
     baseDisplay: undefined,
     availArea: undefined,
   };
 
-  constructor(@inject(ContextAdapter) ctxAdapter: ContextAdapter) {
+  constructor(@inject(ContextAdapter) ctxAdapter: ContextAdapter,
+    @inject(DeviceInfoAdapter) deviceInfoAdapter: DeviceInfoAdapter) {
     super();
     this.ctxAdapter = ctxAdapter;
+    this.deviceInfoAdapter = deviceInfoAdapter;
   }
 
   override init() {
@@ -72,9 +79,9 @@ export class DisplayAdapter extends BaseAdapter {
   }
 
   @LogMethod
-  getDefaultDisplay(callback: (completeDisplay: CompleteDisplay) => void) { 
+  getPrimaryDisplay(callback: (completeDisplay: CompleteDisplay) => void) { 
     try {
-      let displayClass: display.Display = display.getDefaultDisplaySync();
+      let displayClass: display.Display = display.getPrimaryDisplaySync();
       displayClass.getAvailableArea().then((availArea) => {
         let completeDisplay: CompleteDisplay = {
           id: displayClass.id,
@@ -82,7 +89,7 @@ export class DisplayAdapter extends BaseAdapter {
           availArea: availArea,
         }
         LogUtil.info(DisplayAdapter.TAG,
-          'getDefaultDisplay, displayId: ' + displayClass.id +
+          'getPrimaryDisplay, displayId: ' + displayClass.id +
           ', AvailArea.width: ' + availArea.width + ', height: '+ availArea.height);
         callback(completeDisplay);
       }).catch((err: BusinessError) => {
@@ -112,6 +119,15 @@ export class DisplayAdapter extends BaseAdapter {
  
         Promise.all(baseDisplays.map(baseDisplay => baseDisplay.getAvailableArea()))
           .then(availAreas => {
+            if (this.deviceInfoAdapter.isNormalWindowMode()) {
+              let primaryDisplayId = display.getPrimaryDisplaySync().id;
+              let primaryIndex = baseDisplays.findIndex(baseDisplay => baseDisplay.id === primaryDisplayId);
+              if (primaryIndex !== -1) {
+                availAreas[primaryIndex].top += this.statusBarHeight;
+                availAreas[primaryIndex].height -= this.statusBarHeight;
+              }
+            }
+
             let completeDisplays: Array<CompleteDisplay> =
               baseDisplays.map((baseDisplay, index) => ({
                 id: baseDisplay.id,
@@ -164,6 +180,15 @@ export class DisplayAdapter extends BaseAdapter {
         return;
       }
       this.nativeContext.OnDisplayChangeCallback("add", data);
+
+      // After API 20, the available area is monitored via NDK, eliminating the need
+      // to register and unregister monitoring as the screens increase or decrease.
+      if (this.isAvailableAreaMonitor) {
+        let addDisplay = display.getDisplayByIdSync(data);
+        addDisplay.on('availableAreaChange', (rect: display.Rect) => {
+          this.onAvailableAreaChangeCallback(rect, addDisplay.id);
+        });
+      }
     } catch (exception) {
       LogUtil.error(DisplayAdapter.TAG, 'Add event callback fail. Code: ' + JSON.stringify(exception));
     }
@@ -176,6 +201,13 @@ export class DisplayAdapter extends BaseAdapter {
         return;
       }
       this.nativeContext.OnDisplayChangeCallback("remove", data);
+
+      if (this.isAvailableAreaMonitor) {
+        let removeDisplay = display.getDisplayByIdSync(data);
+        removeDisplay.off('availableAreaChange', (rect: display.Rect) => {
+          this.onAvailableAreaChangeCallback(rect, removeDisplay.id);
+        });
+      }
     } catch (exception) {
       LogUtil.error(DisplayAdapter.TAG, 'remove event callback fail. Code: ' + JSON.stringify(exception));
     }
@@ -205,5 +237,77 @@ export class DisplayAdapter extends BaseAdapter {
   onSystemFontSizeChange(fontSizeZoom: number = 1.0) {
     this.fontSizeScale = fontSizeZoom;
     this.nativeContext.OnFontSizeChangeCallback(fontSizeZoom);
+  }
+
+  @LogMethod
+  registerAvailableAreaMonitor() {
+    try {
+      display.getAllDisplays((err: BusinessError, baseDisplays: Array<display.Display>) => {
+        const errCode: number = err.code;
+        if (errCode) {
+          LogUtil.error(DisplayAdapter.TAG,
+            'Failed to obtain all the display objects. Code: ' + JSON.stringify(err));
+          return;
+        }
+ 
+        baseDisplays.forEach((baseDisplay) => {
+          if (this.checkVirtualId(baseDisplay.id)) {
+            return;
+          }
+ 
+          baseDisplay.on('availableAreaChange', (rect: display.Rect) => {
+            this.onAvailableAreaChangeCallback(rect, baseDisplay.id);
+          });
+        });
+      });
+
+      // Indicates that the available area are monitored on the ETS side through
+      // system interfaces. After API 20, this monitoring will be implemented via
+      // NDK.
+      this.isAvailableAreaMonitor = true;
+    } catch (exception) {
+      LogUtil.error(DisplayAdapter.TAG,
+        'Failed to register available area change callback of all the display object. Code: ' + JSON.stringify(exception));
+    }
+  }
+ 
+  private onAvailableAreaChangeCallback(rect: display.Rect, displayId: number) {
+    try {
+      let statusBarHeight = 0;
+      if (this.deviceInfoAdapter.isNormalWindowMode() && displayId === display.getPrimaryDisplaySync().id) {
+        statusBarHeight = this.statusBarHeight;
+      }
+      
+      let availableArea: WindowBound = {
+        left: rect.left,
+        top: rect.top + statusBarHeight,
+        width: rect.width,
+        height: rect.height - statusBarHeight
+      }
+      this.nativeContext.OnAvailableAreaChangeCallback(availableArea, displayId);
+    } catch (exception) {
+      LogUtil.error(DisplayAdapter.TAG, 'AvailableAreaChange event callback fail. Code: ' + JSON.stringify(exception));
+    }
+  }
+ 
+  public setStatusBarHeight(statusBarHeight: number) {
+    this.statusBarHeight = statusBarHeight;
+  }
+ 
+  public availableAreaUpdateByStatusBar() {
+    try {
+      if (!this.isAvailableAreaMonitor) {
+        return;
+      }
+      let displayClass: display.Display = display.getPrimaryDisplaySync();
+      displayClass.getAvailableArea().then((availableArea) => {
+        this.onAvailableAreaChangeCallback(availableArea, displayClass.id);
+      }).catch((err: BusinessError) => {
+        LogUtil.error(DisplayAdapter.TAG, `Failed to get the available area in this display. 
+          Code: ${err.code}, message: ${err.message}`);
+      });
+    } catch (exception) {
+      LogUtil.error(DisplayAdapter.TAG, 'Failed to update available area by status bar. Code: ' + JSON.stringify(exception));
+    }
   }
 }

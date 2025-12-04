@@ -68,6 +68,8 @@ class OHOSAudioOutputStream : public AudioOutputStream {
 
   void FlushData();
 
+  OH_AudioStream_State GetRenderState();
+
   // It is recommended to avoid calling OH_AudioRenderer_GetTimestamp too frequently.
   // Once per minute is acceptable, and ideally no more than once every 200ms.
   // Frequent calls may cause power issues, so it's not necessary to query the timestamp
@@ -104,6 +106,10 @@ class OHOSAudioOutputStream : public AudioOutputStream {
   base::WeakPtr<content::MediaSession> weak_media_session_ = nullptr;
 
   base::TimeDelta time_per_buffer_ = base::Microseconds(0);
+
+  // The audio stream can be controlled when it has a media session and is not a
+  // short audio. This is set to false by default.
+  bool is_session_controllable_ = false;
 
   bool is_suspended_ = false;
 

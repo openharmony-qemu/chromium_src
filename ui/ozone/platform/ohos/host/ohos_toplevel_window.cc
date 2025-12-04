@@ -29,6 +29,8 @@
 
 #include "ui/ozone/platform/ohos/host/ohos_toplevel_window.h"
 
+#include <window_manager/oh_window.h>
+
 #include <string>
 
 #include "base/strings/utf_string_conversions.h"
@@ -39,6 +41,7 @@
 #include "ohos/adapter/xcomponent/xcomponent_manager.h"
 #include "ui/base/hit_test.h"
 #include "ui/base/ui_base_features.h"
+#include "ui/display/screen.h"
 #include "ui/display/types/display_constants.h"
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/native_widget_types.h"
@@ -227,7 +230,7 @@ bool OhosToplevelWindow::OnCreateWindow(WindowInitParameter param) {
                                 gfx::AcceleratedWidget widget) {
         if (window && window->AsOhosToplevelWindow()) {
           window->AsOhosToplevelWindow()->OnFocusEvent();
-  }
+        }
       },
       AsWeakPtr(), GetWidget());
   ui_task_runner()->PostTask(FROM_HERE, std::move(task));
@@ -396,6 +399,10 @@ void OhosToplevelWindow::HandleEvent(std::shared_ptr<XCEvent> event) {
       OnWindowCaptionButtonRectChangeEvent(event);
       break;
     }
+    case XCEventType::ET_WINDOW_DISPLAY_ID_CHANGE: {
+      OnWindowDisplayIdChangeEvent(event);
+      break;
+    }
     default:
       LOG(ERROR) << "EventType::ET_UNKNOWN not handle:" << int(event->type());
       break;
@@ -416,7 +423,7 @@ void OhosToplevelWindow::OnFocusEvent() {
   if (!activatable_) {
     return;
   }
-
+  SetLastActiveWidgetId(GetWidget());
   SetFocus(true);
   OnActivateEvent();
 }
@@ -607,4 +614,48 @@ void OhosToplevelWindow::StartWindowMovingWithOffset(const float offset_x,
   AppWindowAdapter::GetInstance().StartWindowMovingWithOffset(
       GetWidget(), offset_x, offset_y);
 }
+
+void OhosToplevelWindow::OnWindowDisplayIdChangeEvent(std::shared_ptr<XCEvent> event) {
+  auto window_display_id_change_event =
+      static_pointer_cast<WindowDisplayIdChangeEvent>(event);
+  SetCurrentDisplayId(window_display_id_change_event->display_id);
+}
+
+void OhosToplevelWindow::SetLastActiveWidgetId(
+    gfx::AcceleratedWidget widget_id) {
+  window_manager()->SetLastActiveWidgetId(widget_id);
+}
+
+int32_t OhosToplevelWindow::GetOriginWindowId() {
+  if (use_floating_window_) {
+    return SystemFloatingWindowAdapter::GetInstance().GetOriginWindowId(GetWidget());
+  } else {
+    return OhosWindow::GetOriginWindowId();
+  }
+}
+
+display::Display OhosToplevelWindow::GetCurrentDisplay() {
+  int64_t display_id = GetCurrentDisplayId();
+  if (display_id == display::kInvalidDisplayId) {
+    auto oh_window_id = GetOriginWindowId();
+    if (oh_window_id > 0) {
+      WindowManager_WindowProperties oh_window_prop;
+      auto result =
+          OH_WindowManager_GetWindowProperties(oh_window_id, &oh_window_prop);
+      if (result == WindowManager_ErrorCode::OK) {
+        display_id = oh_window_prop.displayId;
+        SetCurrentDisplayId(display_id);
+      }
+    } else {
+      LOG(WARNING) << __FUNCTION__ << ", get origin window id fail,"
+                   << "widget id:" << GetWidget()
+                   << ", oh_window_id:" << oh_window_id;
+    }
+  }
+  display::Display current_display;
+  display::Screen* screen = display::Screen::GetScreen();
+  screen->GetDisplayWithDisplayId(display_id, &current_display);
+  return current_display;
+}
+
 }  // namespace ui

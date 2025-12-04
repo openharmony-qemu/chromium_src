@@ -88,6 +88,7 @@ source_set("ohos") {
   libs = [
     "ace_napi.z",
     "ace_ndk.z",
+    "native_display_manager",
     "native_window",
     "native_window_manager",
     "native_buffer",
@@ -145,6 +146,7 @@ source_set("ohos_window_unittests") {
     "ace_ndk.z",
     "native_window",
     "native_buffer",
+    "native_window_manager",
     "ohinput",
   ]
 }

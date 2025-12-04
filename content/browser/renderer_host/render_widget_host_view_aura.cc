@@ -1613,10 +1613,12 @@ ui::TextInputClient::FocusReason RenderWidgetHostViewAura::GetFocusReason()
 #if BUILDFLAG(IS_OHOS)
 ui::RequestKeyboardReason RenderWidgetHostViewAura::GetRequestKeyboardReason()
     const {
-  switch (last_pointer_type_) {
-    case ui::EventPointerType::kMouse:
+  ui::mojom::RequestKeyboardReason reason =
+      text_input_manager_->ConsumeRequestKeyboardReason();
+  switch (reason) {
+    case ui::mojom::RequestKeyboardReason::MOUSE:
       return ui::RequestKeyboardReason::REQUEST_KEYBOARD_REASON_MOUSE;
-    case ui::EventPointerType::kTouch:
+    case ui::mojom::RequestKeyboardReason::TOUCH:
       return ui::RequestKeyboardReason::REQUEST_KEYBOARD_REASON_TOUCH;
     default:
       return ui::RequestKeyboardReason::REQUEST_KEYBOARD_REASON_OTHER;
@@ -3046,6 +3048,14 @@ void RenderWidgetHostViewAura::DelayedTextInputTypeChanged() {
     GetInputMethod()->OnTextInputTypeChanged(this);
   }
 }
+
+display::Display RenderWidgetHostViewAura::GetDisplayForClient() {
+  display::Screen* screen = display::Screen::GetScreen();
+  if (window()) {
+    return screen->GetDisplayNearestWindow(window());
+  }
+  return screen->GetPrimaryDisplay();
+}
 #endif
 
 void RenderWidgetHostViewAura::OnUpdateTextInputStateCalled(
@@ -3058,19 +3068,7 @@ void RenderWidgetHostViewAura::OnUpdateTextInputStateCalled(
     return;
 
   if (did_update_state) {
-#if BUILDFLAG(IS_OHOS)
-    // ​​Cancel the pending DelayedTextInputTypeChanged task.​
-    update_text_input_type_timer_.Stop();
-
-    // Delay notifying the input_method_ohos module about inputTextType
-    // changes.Ignore weird type changes to prevent input method flickering.
-    update_text_input_type_timer_.Start(
-        FROM_HERE, base::Milliseconds(100),
-        base::BindOnce(&RenderWidgetHostViewAura::DelayedTextInputTypeChanged,
-                       base::Unretained(this)));
-#elif
     GetInputMethod()->OnTextInputTypeChanged(this);
-#endif
   }
 
   const ui::mojom::TextInputState* state =

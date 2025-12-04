@@ -110,6 +110,15 @@ export class WebAbility extends WebBaseAbility {
       try {
         data.on('windowStatusChange', (status) => {
           this.nativeContext.OnWindowStatusChange(this.xcomponentId, status);
+
+          if (status === window.WindowStatusType.MINIMIZE || this.deviceModeChangeEvent === undefined) {
+            return;
+          }
+          LogUtil.info(TAG, 'Send device mode change event, xcomponentId: ' +
+                            this.xcomponentId + ', deviceModeChangeEvent: ' +
+                            this.deviceModeChangeEvent + ', status: ' + status);
+          this.nativeContext.OnDeviceModeChange(this.xcomponentId, this.deviceModeChangeEvent, status);
+          this.setDeviceModeChangeEvent(undefined);          
         })
       } catch (exception) {
         LogUtil.error(TAG,'Failed to listener for window status changes: ' + JSON.stringify(exception));
@@ -180,6 +189,15 @@ export class WebAbility extends WebBaseAbility {
       } catch (exception) {
         LogUtil.error(TAG, 'Failed to listener for keyboard height changes: ' + JSON.stringify(exception));
       }
+
+      try {
+        data.on('displayIdChange', (displayId) => {
+          this.nativeContext.OnWindowDisplayIdChange(this.xcomponentId, displayId);
+        });
+      } catch (exception) {
+        LogUtil.error(TAG, `register displayIdChange listener fail, xcomponentId:${this.xcomponentId},
+                      exception: ${JSON.stringify(exception)}`);
+      }
       
     });
 
@@ -219,23 +237,21 @@ export class WebAbility extends WebBaseAbility {
       let window: window.Window = windowStage.getMainWindowSync();
       // hide title bar
       window.setWindowDecorVisible(!this.hideTitleBar);
-      if (!this.titleButtonVisible) {
+      if (!this.titleButtonVisible && !this.deviceInfoAdapter?.isNormalWindowMode()) {
         window.setWindowTitleButtonVisible(false, false, false);
-      } else if (this.useDarkMode && deviceInfo.deviceType === '2in1') {
-        let buttonStyle: window.DecorButtonStyle = {
-          colorMode: ConfigurationConstant.ColorMode.COLOR_MODE_DARK
-        };
-        window.setDecorButtonStyle(buttonStyle);
+      } else if (this.useDarkMode) {
+        this.setDarkModeButton(window);
       }
 
       // window title button rect change callback must registered after loadContent/setUIContent
       try {
         window.on("windowTitleButtonRectChange", (titleButtonRect) => {
+          let uiContext = window.getUIContext();
           let rect: CaptionButtonRect = {
-            right: vp2px(titleButtonRect.right),
-            top: vp2px(titleButtonRect.top),
-            width: vp2px(titleButtonRect.width),
-            height: vp2px(titleButtonRect.height)
+          right: uiContext.vp2px(titleButtonRect.right),
+          top: uiContext.vp2px(titleButtonRect.top),
+          width: uiContext.vp2px(titleButtonRect.width),
+          height: uiContext.vp2px(titleButtonRect.height)
           };
           this.nativeContext.OnCaptionButtonRectChange(this.xcomponentId, rect);
         });
@@ -401,6 +417,7 @@ export class WebAbility extends WebBaseAbility {
     let avoidArea = windowClass.getWindowAvoidArea(window.AvoidAreaType.TYPE_SYSTEM);
     let statusBarHeight = avoidArea.topRect.height;
     storage.setOrCreate('statusBarHeight', statusBarHeight);
+    this.displayAdapter?.setStatusBarHeight(statusBarHeight);
 
     const context: Context = getContext(this);
     this.deviceInfoAdapter?.registerDeviceModeChange(context);
@@ -413,10 +430,16 @@ export class WebAbility extends WebBaseAbility {
       let statusBarHeight = data.area.topRect.height;
       storage.setOrCreate('statusBarHeight', statusBarHeight);
       LogUtil.info(TAG, 'Avoidarea changes,statusBarHeight:' + statusBarHeight);
+      this.displayAdapter?.setStatusBarHeight(statusBarHeight);
+      if (deviceInfo.sdkApiVersion >= 20) {
+        this.nativeContext.OnAvoidAreaChangeCallback(statusBarHeight);
+      }
 
       if(!this.deviceInfoAdapter?.isNormalWindowMode()) {
         return;
       }
+
+      this.displayAdapter?.availableAreaUpdateByStatusBar();
 
       let prop = windowClass.getWindowProperties();
       //The current system has a timing issue where the drawableRect lags in updating during mode switching.
@@ -446,5 +469,20 @@ export class WebAbility extends WebBaseAbility {
       LogUtil.warn(TAG, 'Can not get current color mode from window: ' + this.xcomponentId);
     }
     return this.useDarkMode || currentColorMode === ConfigurationConstant.ColorMode.COLOR_MODE_DARK;
+  }
+
+  private setDarkModeButton(window: window.Window) {
+    let isPadDarkButtonSupported = deviceInfo.deviceType === 'tablet' && deviceInfo.sdkApiVersion >= 18;
+    if (deviceInfo.deviceType !== '2in1' && !isPadDarkButtonSupported) {
+      return;
+    }
+    try {
+      let buttonStyle: window.DecorButtonStyle = {
+        colorMode: ConfigurationConstant.ColorMode.COLOR_MODE_DARK
+      };
+      window.setDecorButtonStyle(buttonStyle);
+    } catch (exception) {
+      LogUtil.error(TAG, 'Failed to set the style of button: ' + JSON.stringify(exception));
+    }
   }
 };

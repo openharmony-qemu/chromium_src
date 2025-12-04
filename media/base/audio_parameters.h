@@ -365,6 +365,13 @@ class MEDIA_SHMEM_EXPORT AudioParameters {
     render_frame_id_ = render_frame_id;
   }
   int render_frame_id() const { return render_frame_id_; }
+
+  void SetStreamPrivacy(bool is_stream_privacy) {
+    is_stream_privacy_ = is_stream_privacy;
+  }
+  bool GetStreamPrivacy() const {
+    return is_stream_privacy_;
+  }
 #endif
 
   void set_mic_positions(const std::vector<Point>& mic_positions) {
@@ -394,6 +401,7 @@ class MEDIA_SHMEM_EXPORT AudioParameters {
 #if BUILDFLAG(IS_OHOS)
   int render_process_id_;
   int render_frame_id_;
+  bool is_stream_privacy_ = false;
 #endif
 
   // Microphone positions using Cartesian coordinates:

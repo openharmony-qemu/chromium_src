@@ -31,7 +31,6 @@
 
 #include "base/logging.h"
 #include "ohos/adapter/context/context_adapter.h"
-#include "ohos/adapter/device_info/device_info.h"
 #include "ohos/adapter/window/app_window_adapter.h"
 #include "ohos/adapter/xcomponent/event/window_event_filter_adapter.h"
 
@@ -46,16 +45,30 @@ void OhosWindowDragManager::StartTabDragging(int32_t window_id) {
   WindowEventFilterAdapter::GetInstance().SetDraggingTabWidgetId(window_id);
 }
 
+void OhosWindowDragManager::StartTabDraggingByTouch(int32_t window_id,
+                                                    const int32_t finger_id) {
+  LOG(INFO) << "[OhosTabDrag]" << __FUNCTION__ << ",finger_id:" << finger_id;
+  touch_drag_tab_finger_id_ = finger_id;
+  StartTabDragging(window_id);
+}
+
 void OhosWindowDragManager::ShiftWindowEvent(const int32_t source_id,
                                              const int32_t target_id) {
   shift_event_source_window_id_ = source_id;
   shift_event_target_window_id_ = target_id;
   WindowEventFilterAdapter::GetInstance().SetDraggingTabWidgetId(target_id);
   WindowEventFilterAdapter::GetInstance().CacheShiftEventWindowIds(source_id, target_id);
-  bool result =
-      AppWindowAdapter::GetInstance().ShiftWindowEvent(source_id, target_id);
+  bool result = false;
+  if (IsTouchingDragTab()) {
+    result = AppWindowAdapter::GetInstance().ShiftWindowTouchEvent(
+        source_id, target_id, touch_drag_tab_finger_id_);
+  } else {
+    result = AppWindowAdapter::GetInstance().ShiftWindowMouseEvent(source_id,
+                                                                   target_id);
+  }
   if (!result) {
-    LOG(ERROR) << "[OhosTabDrag] ShiftWindowEvent fail ClearDraggingTabParams";
+    LOG(ERROR) << "[OhosTabDrag] " << __FUNCTION__
+               << ", " << GetTabDragMethod() << " fail, clear tab dragging params";
     ClearDraggingTabParams();
   }
 }
@@ -63,6 +76,7 @@ void OhosWindowDragManager::ShiftWindowEvent(const int32_t source_id,
 void OhosWindowDragManager::ClearDraggingTabParams() {
   shift_event_source_window_id_ = -1;
   shift_event_target_window_id_ = -1;
+  touch_drag_tab_finger_id_ = -1;
   WindowEventFilterAdapter::GetInstance().SetDraggingTabWidgetId(-1);
 }
 
@@ -72,51 +86,78 @@ bool OhosWindowDragManager::IsSimulateEventWhenEventShift(
   if (shift_event_source_window_id_ < 0 || shift_event_target_window_id_ < 0) {
     return false;
   }
+
+  // window event type enum:
+  // OH_NATIVEXCOMPONENT_MOUSE_PRESS: 1
+  // OH_NATIVEXCOMPONENT_MOUSE_RELEASE: 2
+  // OH_NATIVEXCOMPONENT_DOWN: 0
+  // OH_NATIVEXCOMPONENT_UP: 1
+  int32_t press_action = OH_NATIVEXCOMPONENT_MOUSE_PRESS;
+  int32_t release_action = OH_NATIVEXCOMPONENT_MOUSE_RELEASE;
+  if (IsTouchingDragTab()) {
+    release_action = OH_NATIVEXCOMPONENT_UP;
+    press_action = OH_NATIVEXCOMPONENT_DOWN;
+  }
   if (shift_event_source_window_id_ == origin_window_id &&
-      event_action == OH_NATIVEXCOMPONENT_MOUSE_RELEASE) {
-    LOG(WARNING) << "[OhosTabDrag] IsSimulateEventWhenEventShift source window "
-                    "mouse-up is filtered, shift_event_source_window_id_:"
+      event_action == release_action) {
+    LOG(WARNING) << "[OhosTabDrag] " << __FUNCTION__ << " source window "
+                 << GetTabDragMethod()
+                 << " up is filtered, shift_event_source_window_id_:"
                  << shift_event_source_window_id_;
     return true;
   }
   if (shift_event_target_window_id_ == origin_window_id &&
-      event_action == OH_NATIVEXCOMPONENT_MOUSE_PRESS) {
-    LOG(WARNING) << "[OhosTabDrag] IsSimulateEventWhenEventShift target window "
-                    "mouse-down is filtered, shift_event_target_window_id_:"
+      event_action == press_action) {
+    LOG(WARNING) << "[OhosTabDrag] " << __FUNCTION__ << " target window "
+                 << GetTabDragMethod()
+                 << " down is filtered, shift_event_target_window_id_:"
                  << shift_event_target_window_id_;
     return true;
   }
   return false;
 }
 
-bool OhosWindowDragManager::NeedSendWindowMouseEventToUi(
-    const int32_t widget_id,
-    const std::shared_ptr<OH_NativeXComponent_MouseEvent>
-        xcomponent_mouse_event) {
+bool OhosWindowDragManager::NeedSendWindowEventToUi(const int32_t widget_id,
+                                                    const int32_t action,
+                                                    int32_t event_id) {
   // When the event transfer fails, the previous event is not intercepted
   if (!WindowEventFilterAdapter::GetInstance().IsTabDragging()) {
     return true;
   }
-  int32_t action = xcomponent_mouse_event->action;
-  // When tab is dragging, after the mouse event is transferred,
+  // When tab is dragging, after the touch event is transferred,
   // the events in the source window need to be intercepted,
   // and the target window cannot be affected
   if (widget_id != WindowEventFilterAdapter::GetInstance().GetDraggingTabWidgetId()) {
-    LOG(WARNING) << "[OhosTabDrag] NeedSendWindowMouseEventToUi mouse event is "
+    LOG(WARNING) << "[OhosTabDrag] " << __FUNCTION__ << GetTabDragMethod() << " event is "
                     "filtered when tab is dragging, widget_id:"
                  << widget_id << ", action:" << action;
     return false;
   }
-  // When tab is dragging, the mouse up and mouse down events are simulated
-  // after the window event is transferred. The events cannot be sent to the Chromium
+  if (IsTouchingDragTab() && event_id != touch_drag_tab_finger_id_) {
+    LOG(WARNING) << "[OhosTabDrag] " << __FUNCTION__
+                 << " touch event is filtered when current fingerId is not shift fingerId, "
+                    "current finger id:"
+                 << event_id
+                 << ", touch_drag_tab_finger_id_:" << touch_drag_tab_finger_id_;
+    return false;
+  }
+
+  // When tab is dragging, the up event of source window and down event of
+  // target window are simulated after the window event is transferred. The two
+  // events cannot be sent to the Chromium
   if (IsSimulateEventWhenEventShift(widget_id, action)) {
-    LOG(WARNING) << "[OhosTabDrag] NeedSendWindowMouseEventToUi, intercept "
-                    "simulated mouse "
-                    "events, widget_id:"
-                 << widget_id;
+    LOG(WARNING) << "[OhosTabDrag] " << __FUNCTION__ << " intercept simulated "
+                 << GetTabDragMethod() << " events, widget_id:" << widget_id;
     return false;
   }
   return true;
+}
+
+std::string OhosWindowDragManager::GetTabDragMethod() {
+  if (IsTouchingDragTab()) {
+    return kTouchDragTab;
+  }
+  return kMouseDragTab;
 }
 
 }  // namespace ui

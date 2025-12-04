@@ -95,7 +95,9 @@ class GLOzoneEGLOhos : public GLOzoneEGL {
       if (!temp) {
         LOG(ERROR) << "CreateViewGLSurface window is not exists, window:"
                    << window;
-        return nullptr;
+        return gl::InitializeGLSurface(
+            base::MakeRefCounted<GLSurfaceEglReadbackOhos>(
+                display->GetAs<gl::GLDisplayEGL>(), window));
       }
       return gl::InitializeGLSurface(
           base::MakeRefCounted<gl::NativeViewGLSurfaceEGLOhos>(

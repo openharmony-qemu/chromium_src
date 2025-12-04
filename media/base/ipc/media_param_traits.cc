@@ -32,6 +32,7 @@ void ParamTraits<AudioParameters>::Write(base::Pickle* m,
 #if BUILDFLAG(IS_OHOS)
   WriteParam(m, p.render_process_id());
   WriteParam(m, p.render_frame_id());
+  WriteParam(m, p.GetStreamPrivacy());
 #endif
   WriteParam(m, p.mic_positions());
   WriteParam(m, p.latency_tag());
@@ -46,6 +47,7 @@ bool ParamTraits<AudioParameters>::Read(const base::Pickle* m,
 #if BUILDFLAG(IS_OHOS)
   int render_process_id;
   int render_frame_id;
+  bool is_stream_privacy;
 #endif
   int sample_rate, frames_per_buffer, channels, effects;
   std::vector<media::Point> mic_positions;
@@ -60,6 +62,7 @@ bool ParamTraits<AudioParameters>::Read(const base::Pickle* m,
 #if BUILDFLAG(IS_OHOS)
       !ReadParam(m, iter, &render_process_id) ||
       !ReadParam(m, iter, &render_frame_id) ||
+      !ReadParam(m, iter, &is_stream_privacy) ||
 #endif
       !ReadParam(m, iter, &mic_positions) ||
       !ReadParam(m, iter, &latency_tag) ||
@@ -79,6 +82,7 @@ bool ParamTraits<AudioParameters>::Read(const base::Pickle* m,
 #if BUILDFLAG(IS_OHOS)
   r->set_render_process_id(render_process_id);
   r->set_render_frame_id(render_frame_id);
+  r->SetStreamPrivacy(is_stream_privacy);
 #endif
   r->set_mic_positions(mic_positions);
   r->set_latency_tag(latency_tag);

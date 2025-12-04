@@ -62,6 +62,10 @@ class EyeDropperView : public content::EyeDropper,
   void OnWindowDestroying(aura::Window* window) override;
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+  int64_t GetDisplayId() { return display_id_; }
+#endif
+
  private:
   class ViewPositionHandler;
   class ScreenCapturer;
@@ -121,6 +125,10 @@ class EyeDropperView : public content::EyeDropper,
 #if BUILDFLAG(IS_CHROMEOS_ASH)
   base::ScopedObservation<aura::Window, aura::WindowObserver>
       window_observation_{this};
+#endif
+
+#if BUILDFLAG(IS_OHOS)
+  int64_t display_id_ = display::kInvalidDisplayId;
 #endif
 };
 

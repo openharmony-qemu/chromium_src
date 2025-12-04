@@ -1810,6 +1810,14 @@ void Textfield::SetRequestKeyboardReasonWithPointer(
       break;
   }
 }
+
+display::Display Textfield::GetDisplayForClient() {
+  display::Screen* screen = display::Screen::GetScreen();
+  if (GetNativeView()) {
+    return screen->GetDisplayNearestWindow(GetNativeView());
+  }
+  return screen->GetPrimaryDisplay();
+}
 #endif
 
 bool Textfield::GetTextRange(gfx::Range* range) const {

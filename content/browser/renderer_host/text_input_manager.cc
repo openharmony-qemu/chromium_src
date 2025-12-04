@@ -248,6 +248,10 @@ void TextInputManager::UpdateTextInputState(
   if (active_view_ == view && text_input_state.type == ui::TEXT_INPUT_TYPE_NONE)
     active_view_ = nullptr;
 
+#if BUILDFLAG(IS_OHOS)
+  request_keyboard_reason_ = text_input_state.request_keyboard_reason;
+#endif
+
   NotifyObserversAboutInputStateUpdate(view, changed);
 }
 

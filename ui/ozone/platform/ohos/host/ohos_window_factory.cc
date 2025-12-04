@@ -33,6 +33,7 @@
 #include "ohos/adapter/context/context_adapter.h"
 #include "ui/gfx/native_widget_types.h"
 #include "ui/ozone/platform/ohos/host/ohos_fake_window.h"
+#include "ui/ozone/platform/ohos/host/ohos_pip_window.h"
 #include "ui/ozone/platform/ohos/host/ohos_popup.h"
 #include "ui/ozone/platform/ohos/host/ohos_toplevel_window.h"
 #include "ui/ozone/platform/ohos/host/ohos_toplevel_pad_window.h"
@@ -61,7 +62,10 @@ std::unique_ptr<OhosWindow> OhosWindow::Create(
       }
       break;
     case PlatformWindowType::kWindow:
-      if (ohos::adapter::ContextAdapter::GetInstance().IsPcMode()) {
+      if (properties.using_system_floating_window &&
+          PipWindowAdapter::GetInstance().IsSupportNativePipWindow()) {
+        window = std::make_unique<OhosPipWindow>(delegate, manager);
+      } else if (ohos::adapter::ContextAdapter::GetInstance().IsPcMode()) {
         window = std::make_unique<OhosToplevelWindow>(delegate, manager);
       } else {
         window = std::make_unique<OhosToplevelPadWindow>(delegate, manager);

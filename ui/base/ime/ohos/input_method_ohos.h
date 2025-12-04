@@ -31,6 +31,7 @@
 #define UI_BASE_IME_INPUT_METHOD_OHOS_H_
 
 #include "base/memory/weak_ptr.h"
+#include "base/timer/timer.h"
 #include "ohos/adapter/ime_adapter/input_method_ohos_adapter.h"
 #include "ui/base/ime/input_method_base.h"
 #include "ui/base/ime/text_input_client.h"
@@ -70,16 +71,17 @@ class COMPONENT_EXPORT(UI_BASE_IME_OHOS) InputMethodOHOS
   void DetachTextInputTask();
   void AttachTextInputTask(ui::RequestKeyboardReason reason);
   void UpdateAttributeTask();
-  void SetVirtualKeyboardVisibilityTask(bool should_show);
+  void SetVirtualKeyboardVisibilityTask(bool should_show, ui::RequestKeyboardReason reason);
   void UpdateCursorTask(const gfx::Rect& rect);
   gfx::AcceleratedWidget GetWidgetId() const;
 
  private:
-  float GetPixelRatio(const gfx::Rect& rect);
-  gfx::PointF GetLogicalPointF(const gfx::Point& point);
   void RegistKeyboardHeightEvent();
   void UnRegistKeyboardHeightEvent();
   void SetVirtualKeyboardBoundsTask(int32_t keyboard_height);
+  bool IsDispatchedPressAndReleaseKeyEvents(int32_t length,
+                                            KeyboardCode key_code,
+                                            DomCode dom_Code);
 
  private:
   TextInputType text_input_type_ = ui::TEXT_INPUT_TYPE_NONE;
@@ -87,6 +89,7 @@ class COMPONENT_EXPORT(UI_BASE_IME_OHOS) InputMethodOHOS
   bool is_attach_ = false;
   gfx::AcceleratedWidget widget_id_;
 
+  base::OneShotTimer delayed_attach_timer_;
   base::WeakPtrFactory<InputMethodOHOS> weak_ptr_factory_{this};
 };
 }  // namespace ui

@@ -11,6 +11,10 @@
     {
       "name": "EntryAbility_label",
       "value": "Chromium"
+    },
+    {
+      "name": "OpenNewWindow_label",
+      "value": "打开新的窗口"
     }
   ]
 }

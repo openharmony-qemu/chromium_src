@@ -454,6 +454,7 @@ class VIEWS_EXPORT Textfield : public View,
 #if BUILDFLAG(IS_OHOS)
   ui::RequestKeyboardReason GetRequestKeyboardReason() const override;
   void SetRequestKeyboardReasonWithPointer(ui::EventPointerType pointer_type);
+  display::Display GetDisplayForClient() override;
 #endif
   bool GetTextRange(gfx::Range* range) const override;
   bool GetCompositionTextRange(gfx::Range* range) const override;

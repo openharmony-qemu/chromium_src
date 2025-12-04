@@ -35,6 +35,10 @@
     {
       "name": "TaskManagerAbility_label",
       "value": "TaskManagerAbility"
+    },
+    {
+      "name": "OpenNewWindow_label",
+      "value": "OpenNewWindow"      
     }
   ]
 }

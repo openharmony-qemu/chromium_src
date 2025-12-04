@@ -43,6 +43,7 @@
 #include "ui/aura/window_tree_host.h"
 #include "ui/base/hit_test.h"
 #include "ui/base/ui_base_features.h"
+#include "ui/display/screen.h"
 #include "ui/display/types/display_constants.h"
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/native_widget_types.h"
@@ -387,6 +388,10 @@ void OhosPipWindow::SetBoundsInPixels(const gfx::Rect& bounds) {
 void OhosPipWindow::OnInitialize(PlatformWindowInitProperties properties) {
   pip_controller_ = properties.pip_controller;
   parent_widget_ = properties.pip_parent_widget;
+  OhosWindow* parent_window = window_manager()->GetWindow(parent_widget_);
+  if (parent_window) {
+    SetCurrentDisplayId(parent_window->GetCurrentDisplayId());
+  }
 }
 
 void OhosPipWindow::NotifyPipWindowCreated() {
@@ -436,6 +441,14 @@ void OhosPipWindow::OnPipControlClose() {
 
 base::WeakPtr<OhosPipWindow> OhosPipWindow::GetWeakPtr() {
   return weak_ohos_pip_window_factory_.GetWeakPtr();
+}
+
+display::Display OhosPipWindow::GetCurrentDisplay() {
+  int64_t display_id = GetCurrentDisplayId();
+  display::Display current_display;
+  display::Screen* screen = display::Screen::GetScreen();
+  screen->GetDisplayWithDisplayId(display_id, &current_display);
+  return current_display;
 }
 
 }  // namespace ui

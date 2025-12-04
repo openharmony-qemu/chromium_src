@@ -62,6 +62,35 @@ GestureEventData::GestureEventData(const GestureEventDetails& details,
   this->details.set_touch_points(static_cast<int>(touch_point_count));
   this->details.set_bounding_box(bounding_box);
 }
+#if BUILDFLAG(IS_OHOS)
+GestureEventData::GestureEventData(const GestureEventDetails& details,
+                                   int motion_event_id,
+                                   MotionEvent::ToolType primary_tool_type,
+                                   base::TimeTicks time,
+                                   float x,
+                                   float y,
+                                   float raw_x,
+                                   float raw_y,
+                                   size_t touch_point_count,
+                                   const gfx::RectF& bounding_box,
+                                   int flags,
+                                   uint32_t unique_touch_event_id,
+                                   int display_id)
+    : GestureEventData(details,
+                       motion_event_id,
+                       primary_tool_type,
+                       time,
+                       x,
+                       y,
+                       raw_x,
+                       raw_y,
+                       touch_point_count,
+                       bounding_box,
+                       flags,
+                       unique_touch_event_id) {
+  this->display_id = display_id;
+}
+#endif
 
 GestureEventData::GestureEventData(EventType type,
                                    const GestureEventData& other)

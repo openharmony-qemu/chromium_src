@@ -58,6 +58,9 @@ std::string ConvertTypeEnumToTypeString(
     case OHOSPermissionType::PASTEBOARD:
       type = "pasteboard";
       break;
+    case OHOSPermissionType::SCREENSHOT:
+      type = "screenshot";
+      break;
     default:
       break;
   }
@@ -167,6 +170,15 @@ PermissionActivationResult PermissionManagerAdapter::ActivateFileAccessPersist(
       return PermissionActivationResult::JS_BINDING_ERROR;
   }
   return GetPermissionActivationResult(promise.get_future().get());
+}
+
+void PermissionManagerAdapter::SaveUris(const std::vector<std::string>& urls) {
+  if (auto jsFunc =
+          ohos::adapter::GetJSFunction("PermissionManagerAdapter.SaveUris")) {
+      jsFunc->Invoke<void>(std::move(urls));
+  } else {
+      LOGE("SaveUris js binding error: function undefined");
+  }
 }
 
 int PermissionManagerAdapter::OpenPermissionConfirm(const OHOSPermissionType& type) {

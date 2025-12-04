@@ -31,7 +31,7 @@ import LogUtil from '../utils/LogUtil';
 import window from '@ohos.window';
 import Want from '@ohos.app.ability.Want';
 import JsBindingUtils from '../utils/JsBindingUtils';
-import { NativeContext } from '../interface/CommonInterface';
+import { ChangeEventType, NativeContext } from '../interface/CommonInterface';
 import { CommandType, ConfigData, ContextType } from '../common/Constants';
 import CheckEmptyUtils from '../utils/CheckEmptyUtils';
 import { WebProxy } from '../interface/WebProxy';
@@ -144,4 +144,6 @@ export class WebBaseExtensionAbility extends EmbeddedUIExtensionAbility implemen
   isUIAbility(): boolean {
     return false;
   }
+
+  setDeviceModeChangeEvent(deviceModeChangeEvent: ChangeEventType | undefined) {}
 };

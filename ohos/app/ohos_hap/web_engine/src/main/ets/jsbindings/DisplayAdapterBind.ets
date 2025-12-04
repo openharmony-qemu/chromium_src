@@ -35,8 +35,8 @@ function implDisplayAdapter(): DisplayAdapter {
   return Inject.getOrCreate(DisplayAdapter);
 }
 
-function getDefaultDisplay(callback: (completeDisplay: CompleteDisplay) => void) {
-  implDisplayAdapter().getDefaultDisplay(callback);
+function getPrimaryDisplay(callback: (completeDisplay: CompleteDisplay) => void) {
+  implDisplayAdapter().getPrimaryDisplay(callback);
 }
 
 function getALLDisplays(callback: (completeDisplays: Array<CompleteDisplay>,
@@ -48,15 +48,20 @@ function registerDisplayMonitor() {
   implDisplayAdapter().registerDisplayMonitor();
 }
 
+function registerAvailableAreaMonitor() {
+  implDisplayAdapter().registerAvailableAreaMonitor();
+}
+
 function getFontSizeScale(): number {
   return implDisplayAdapter().getFontSizeScale();
 }
 
 export class DisplayAdapterBind {
   static bind() {
-    JsBindingUtils.bindFunction('OhosDisplayAdapter.GetDefaultDisplay', getDefaultDisplay);
+    JsBindingUtils.bindFunction('OhosDisplayAdapter.GetPrimaryDisplay', getPrimaryDisplay);
     JsBindingUtils.bindFunction('OhosDisplayAdapter.GetALLDisplays', getALLDisplays);
     JsBindingUtils.bindFunction('OhosDisplayAdapter.registerDisplayMonitor', registerDisplayMonitor);
+    JsBindingUtils.bindFunction('OhosDisplayAdapter.registerAvailableAreaMonitor', registerAvailableAreaMonitor);
     JsBindingUtils.bindFunction('OhosDisplayAdapter.getFontSizeScale', getFontSizeScale);
   }
 }

@@ -35,6 +35,7 @@
 #include "base/memory/raw_ptr.h"
 #include "content/public/browser/video_picture_in_picture_window_controller.h"
 #include "ohos/adapter/window/pip_window_adapter.h"
+#include "ui/display/display.h"
 #include "ui/ozone/platform/ohos/host/ohos_window.h"
 
 namespace ui {
@@ -73,6 +74,7 @@ class OhosPipWindow : public OhosWindow {
   void OnPipControlClose();
   void NotifyPipWindowCreated();
   base::WeakPtr<OhosPipWindow> GetWeakPtr();
+  display::Display GetCurrentDisplay() override;
 
  private:
   PictureInPicture_PipConfig ConfigurePipWindow();

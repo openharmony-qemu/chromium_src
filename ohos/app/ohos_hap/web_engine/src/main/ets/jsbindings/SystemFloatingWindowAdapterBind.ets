@@ -58,6 +58,10 @@ function startWindowMoving(id: number) {
   implSystemFloatingWindowAdapter().startWindowMoving(id);
 }
 
+function getOriginWindowId(id: number): number {
+  return implSystemFloatingWindowAdapter().getOriginWindowId(id);
+}
+
 export class SystemFloatingWindowAdapterBind {
   static bind() {
     JsBindingUtils.bindFunction("SystemFloatingWindow.CreateWindow", createWindow);
@@ -65,5 +69,6 @@ export class SystemFloatingWindowAdapterBind {
     JsBindingUtils.bindFunction("SystemFloatingWindow.SetBounds", setBounds);
     JsBindingUtils.bindFunction("SystemFloatingWindow.SetWindowLimits", setWindowLimits);
     JsBindingUtils.bindFunction("SystemFloatingWindow.StartWindowMoving", startWindowMoving);
+    JsBindingUtils.bindFunction("SystemFloatingWindow.GetOriginWindowId", getOriginWindowId);
   }
 }

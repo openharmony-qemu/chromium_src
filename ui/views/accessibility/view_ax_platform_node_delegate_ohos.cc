@@ -146,17 +146,31 @@ void RegisterAccessibilityBridge(Widget* widget) {
 
 // static
 std::unique_ptr<ViewAccessibility> ViewAccessibility::Create(View* view) {
-  RegisterAccessibilityBridge(view->GetWidget());
-
   auto result = std::make_unique<ViewAXPlatformNodeDelegateOhos>(view);
   result->Init();
   return result;
 }
 
 ViewAXPlatformNodeDelegateOhos::ViewAXPlatformNodeDelegateOhos(View* view)
-    : ViewAXPlatformNodeDelegate(view) {}
+    : ViewAXPlatformNodeDelegate(view) {
+  if (view) {
+    view->AddObserver(this);
+  }
+}
 
-ViewAXPlatformNodeDelegateOhos::~ViewAXPlatformNodeDelegateOhos() = default;
+ViewAXPlatformNodeDelegateOhos::~ViewAXPlatformNodeDelegateOhos() {
+  if (view()) {
+    view()->RemoveObserver(this);
+  }
+}
+
+void ViewAXPlatformNodeDelegateOhos::OnViewAddedToWidget(View* observed_view) {
+  if (registered_) {
+    return;
+  }
+  RegisterAccessibilityBridge(observed_view->GetWidget());
+  registered_ = true;
+}
 
 gfx::NativeViewAccessible ViewAXPlatformNodeDelegateOhos::GetParent() const {
   if (gfx::NativeViewAccessible parent =

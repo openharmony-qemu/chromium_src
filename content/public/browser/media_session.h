@@ -157,6 +157,8 @@ class MediaSession : public media_session::mojom::MediaSession {
                                                   int render_frame_id);
 
   virtual bool IsActiveSession() = 0;
+
+  virtual bool HasOnlyOneShotPlayersPublic() = 0;
 #endif
  protected:
   MediaSession() = default;

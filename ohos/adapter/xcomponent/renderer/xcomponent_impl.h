@@ -85,6 +85,7 @@ class XComponentImpl {
   void OnSurfaceDestroyed();
 
   void SendWindowMouseEventForTabDrag(Input_MouseEvent* window_mouse_event);
+  void SendWindowTouchEventForTabDrag(Input_TouchEvent* window_touch_event);
  private:
   OH_NativeXComponent* instance_ = nullptr;
   XComponentDelegate* delegate_ = nullptr;

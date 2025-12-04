@@ -55,6 +55,7 @@ void SetCursor(int32_t id, const OhosCursorType cursor_type) {
 
 void SetCustomCursor(CustomCusorInfo& cursor_info) {
   if (auto func = ohos::adapter::GetJSFunction("CursorAdapter.SetCustomCursor")) {
+    SetCursorVisible(true);
     aki::ArrayBuffer arrayBuffer(
         reinterpret_cast<uint8_t*>(cursor_info.buff.get()),
         cursor_info.width * cursor_info.height * IMAGE_PIXEL_MAP);

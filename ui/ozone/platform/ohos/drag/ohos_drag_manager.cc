@@ -45,6 +45,7 @@
 #include "ui/events/ozone/events_ozone.h"
 #include "ui/events/platform/platform_event_source.h"
 #include "ui/gfx/native_widget_types.h"
+#include "ui/ozone/platform/ohos/common/ohos_util.h"
 #include "ui/ozone/platform/ohos/host/ohos_toplevel_window.h"
 #include "ui/platform_window/platform_window_delegate.h"
 #include "ui/platform_window/wm/wm_drop_handler.h"
@@ -114,6 +115,17 @@ void OhosDragManager::StartWindowMovingWithOffset(
                                                offset_point.y());
 }
 
+display::Display OhosDragManager::GetCurrentDisplay() {
+  display::Display current_display;
+  if (platform_window_ == nullptr) {
+    LOG(ERROR) << "[OhosDragTab]" << __FUNCTION__ << ", platform_window_ is null";
+    return current_display;
+  }
+  OhosWindow* ohos_window = static_cast<OhosWindow*>(platform_window_);
+  current_display = ohos_window->GetCurrentDisplay();
+  return current_display;
+}
+
 bool OhosDragManager::StartDrag(
     const OSExchangeData& data,
     int operations,
@@ -138,8 +150,12 @@ bool OhosDragManager::StartDrag(
   drag_delegate_->SetDragSourceWidget();
   auto drag_param = std::make_shared<OhosStartDragParam>();
   PrepareDragParamForStartDrag(data, drag_param);
-  ohos::adapter::DragDropOhosAdapter::GetInstance().ExecuteDrag(
+  bool result = ohos::adapter::DragDropOhosAdapter::GetInstance().ExecuteDrag(
       drag_param, platform_window_->GetWindowUniqueId());
+  if (!result) {
+    LOG(ERROR) << "[OhosDrag]" << __FUNCTION__ << ", ExecuteDrag fail";
+    return false;
+  }
 
   base::RunLoop run_loop(base::RunLoop::Type::kNestableTasksAllowed);
   quit_closure_ = run_loop.QuitClosure();

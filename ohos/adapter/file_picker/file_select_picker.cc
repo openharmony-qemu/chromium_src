@@ -68,11 +68,13 @@ void FileSelectPicker::ShowSaveAsDialog(const SaveAsDialogParams& params,
 }
 
 void FileSelectPicker::ShowInstallationPackageDialog(
+    const std::string& file_name_,
+    const std::string& file_size_,
     ContinueDwonloadConfirmCallback callback) {
   auto func = ohos::adapter::GetJSFunction(
       "FilePickerAdapter.ShowInstallationPackageDialog");
   if (func) {
-    func->Invoke<void>(callback);
+    func->Invoke<void>(file_name_, file_size_, callback);
   }
 }
 

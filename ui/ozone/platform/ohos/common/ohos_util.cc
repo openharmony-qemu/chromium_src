@@ -32,6 +32,8 @@
 #include "base/check.h"
 #include "base/logging.h"
 #include "ohos/adapter/xcomponent/adapter/window_adapter.h"
+#include "ui/aura/window_tree_host.h"
+#include "ui/display/screen.h"
 
 using WindowAdapter = ohos::adapter::xcomponent::WindowAdapter;
 

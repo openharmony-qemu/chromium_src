@@ -49,7 +49,8 @@ enum EventType : int32_t {
   ET_WINDOW_RECT_CHANGE = 5,
   ET_WINDOW_STATUS_CHANGE = 6,
   ET_WINDOW_CAPTION_BUTTON_RECT_CHANGE = 7,
-  ET_DEVICE_MODE_CHANGED = 8
+  ET_DEVICE_MODE_CHANGED = 8,
+  ET_WINDOW_DISPLAY_ID_CHANGE = 9
 };
 
 enum class WindowEventType {
@@ -93,6 +94,7 @@ class ADAPTER_EXPORT_API Event {
   virtual ~Event() {}
   virtual EventType type() { return type_; }
   virtual std::string ToString();
+  std::string GetName() const;
 
  private:
   EventType type_;
@@ -163,11 +165,23 @@ class ADAPTER_EXPORT_API DeviceInfoChangeEvent : public Event {
     : Event(EventType::ET_DEVICE_MODE_CHANGED) {}
   std::string ToString() override;
   ChangeEventType change_event_type_;
+  WindowStatusType status_;
 };
+
+class ADAPTER_EXPORT_API WindowDisplayIdChangeEvent : public Event {
+ public:
+  explicit WindowDisplayIdChangeEvent()
+    : Event(EventType::ET_WINDOW_DISPLAY_ID_CHANGE) {}
+  std::string ToString() override;
+  int64_t display_id = 0;
+};
+
+std::string EventTypeName(EventType type);
 
 std::string WindowEventToString(WindowEventType eventType);
 std::string WindowStatusToString(WindowStatusType status);
 std::string RectChangeReasonToString(RectChangeReason reason);
+std::string ChangeEventToString(ChangeEventType changeType);
 }  // namespace ohos::adapter::xcomponent
 
 using WindowEventCallBack =

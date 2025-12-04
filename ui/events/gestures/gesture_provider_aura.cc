@@ -100,10 +100,17 @@ void GestureProviderAura::SendSynthesizedEndEvents() {
 }
 
 void GestureProviderAura::OnGestureEvent(const GestureEventData& gesture) {
+#if BUILDFLAG(IS_OHOS)
+  std::unique_ptr<ui::GestureEvent> event = std::make_unique<ui::GestureEvent>(
+      gesture.x, gesture.y, gesture.flags, gesture.time, gesture.details,
+      gesture.display_id, gesture.motion_event_id,
+      gesture.unique_touch_event_id);
+#else
   std::unique_ptr<ui::GestureEvent> event(
       new ui::GestureEvent(gesture.x, gesture.y, gesture.flags,
                            gesture.time, gesture.details,
                            gesture.unique_touch_event_id));
+#endif
 
   if (!handling_event_) {
     // Dispatching event caused by timer.

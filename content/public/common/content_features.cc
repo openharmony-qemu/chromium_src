@@ -26,6 +26,14 @@ BASE_FEATURE(kAdditionalOpaqueOriginEnforcements,
              "AdditionalOpaqueOriginEnforcements",
              base::FEATURE_ENABLED_BY_DEFAULT);
 
+#if BUILDFLAG(IS_OHOS)
+// Controls whether to enable parallel processing of the beforeunload event during rendering.
+// Enabled by default.
+BASE_FEATURE(kParallelBeforeUnload,
+             "ParallelBeforeUnload",
+             base::FEATURE_ENABLED_BY_DEFAULT);
+#endif
+
 // Warm up a spare renderer after each navigation on Android.
 BASE_FEATURE(kAndroidWarmUpSpareRendererWithTimeout,
              "AndroidWarmUpSpareRendererWithTimeout",

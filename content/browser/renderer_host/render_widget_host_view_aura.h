@@ -257,6 +257,7 @@ class CONTENT_EXPORT RenderWidgetHostViewAura
 #if BUILDFLAG(IS_OHOS)
   ui::RequestKeyboardReason GetRequestKeyboardReason() const override;
   gfx::Rect GetToplevelWindowBounds() const override;
+  display::Display GetDisplayForClient() override;
 #endif
   bool GetTextRange(gfx::Range* range) const override;
   bool GetCompositionTextRange(gfx::Range* range) const override;
@@ -875,9 +876,6 @@ class CONTENT_EXPORT RenderWidgetHostViewAura
 
   base::WeakPtrFactory<RenderWidgetHostViewAura> weak_ptr_factory_{this};
 
-#if BUILDFLAG(IS_OHOS)
-  base::OneShotTimer update_text_input_type_timer_;
-#endif
 };
 
 }  // namespace content

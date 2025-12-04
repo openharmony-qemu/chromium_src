@@ -49,35 +49,59 @@ DragDropOhosAdapter& DragDropOhosAdapter::GetInstance() {
   return adapter;
 }
 
-void DragDropOhosAdapter::ExecuteDrag(std::shared_ptr<OhosStartDragParam> drag_param,
-                                      const std::string& window_id) {
-  if (auto func = ohos::adapter::GetJSFunction("DragDropAdapter.StartDrag")) {
-    int pixelMapWidth = drag_param->pixelMapWidth;
-    int pixelMapHeight = drag_param->pixelMapHeight;
-    aki::ArrayBuffer pixel_buffer(
-        (uint8_t*)drag_param->pixelMapBuffer.get(),
-        pixelMapWidth * pixelMapHeight *
-            IMAGE_PIXEL_MAP);
-    aki::ArrayBuffer bookmark_buffer(drag_param->basicData.bookmarkData.data(),
-                                     drag_param->basicData.bookmarkData.size());
-    aki::ArrayBuffer web_custom_buffer(drag_param->basicData.webCustomData.data(),
-                                       drag_param->basicData.webCustomData.size());
-    OhosDragParamToJs drag_param_to_js;
-    drag_param_to_js.text = drag_param->basicData.text;
-    drag_param_to_js.url = drag_param->basicData.url;
-    drag_param_to_js.urlTitle = drag_param->basicData.urlTitle;
-    drag_param_to_js.html = drag_param->basicData.html;
-    drag_param_to_js.webImageFilePath = drag_param->webImageFilePath;
-    drag_param_to_js.bookmarkBuffer = std::move(bookmark_buffer);
-    drag_param_to_js.webCustomBuffer = std::move(web_custom_buffer);
-    drag_param_to_js.pixelMapBuffer = std::move(pixel_buffer);
-    drag_param_to_js.pixelMapWidth = pixelMapWidth;
-    drag_param_to_js.pixelMapHeight = pixelMapHeight;
-    drag_param_to_js.pixelMapTouchX = drag_param->pixelMapTouchX;
-    drag_param_to_js.pixelMapTouchY = drag_param->pixelMapTouchY;
-    drag_param_to_js.windowId = window_id;
-    func->Invoke<void>(drag_param_to_js);
+bool DragDropOhosAdapter::ExecuteDrag(
+    std::shared_ptr<OhosStartDragParam> drag_param,
+    const std::string& window_id) {
+  auto func = ohos::adapter::GetJSFunction("DragDropAdapter.StartDrag");
+  if (func == nullptr) {
+    LOGE("[OhosDrag]ExecuteDrag fail, func is null");
+    return false;
   }
+  OhosDragParamToJs drag_param_to_js;
+  ConvertDragParamForJs(drag_param, window_id, drag_param_to_js);
+
+  auto promise = std::make_shared<std::promise<bool>>();
+  auto future = promise->get_future();
+  std::function<void(bool)> callback = [promise](bool result) -> void {
+    promise->set_value(result);
+  };
+  func->Invoke<void>(drag_param_to_js, callback);
+  auto status = future.wait_for(std::chrono::seconds(1));
+  if (status == std::future_status::timeout) {
+    LOGE("[OhosDrag]ExecuteDrag Wait timeout");
+    return false;
+  }
+  bool result = future.get();
+  return result;
+}
+
+void DragDropOhosAdapter::ConvertDragParamForJs(
+    std::shared_ptr<OhosStartDragParam> drag_param,
+    const std::string& window_id,
+    OhosDragParamToJs& drag_param_to_js) {
+  int pixelMapWidth = drag_param->pixelMapWidth;
+  int pixelMapHeight = drag_param->pixelMapHeight;
+  aki::ArrayBuffer pixel_buffer(
+      (uint8_t*)drag_param->pixelMapBuffer.get(),
+      pixelMapWidth * pixelMapHeight * IMAGE_PIXEL_MAP);
+  aki::ArrayBuffer bookmark_buffer(drag_param->basicData.bookmarkData.data(),
+                                   drag_param->basicData.bookmarkData.size());
+  aki::ArrayBuffer web_custom_buffer(
+      drag_param->basicData.webCustomData.data(),
+      drag_param->basicData.webCustomData.size());
+  drag_param_to_js.text = drag_param->basicData.text;
+  drag_param_to_js.url = drag_param->basicData.url;
+  drag_param_to_js.urlTitle = drag_param->basicData.urlTitle;
+  drag_param_to_js.html = drag_param->basicData.html;
+  drag_param_to_js.webImageFilePath = drag_param->webImageFilePath;
+  drag_param_to_js.bookmarkBuffer = std::move(bookmark_buffer);
+  drag_param_to_js.webCustomBuffer = std::move(web_custom_buffer);
+  drag_param_to_js.pixelMapBuffer = std::move(pixel_buffer);
+  drag_param_to_js.pixelMapWidth = pixelMapWidth;
+  drag_param_to_js.pixelMapHeight = pixelMapHeight;
+  drag_param_to_js.pixelMapTouchX = drag_param->pixelMapTouchX;
+  drag_param_to_js.pixelMapTouchY = drag_param->pixelMapTouchY;
+  drag_param_to_js.windowId = window_id;
 }
 
 void HandleDropData(const aki::Value drag_info_value,

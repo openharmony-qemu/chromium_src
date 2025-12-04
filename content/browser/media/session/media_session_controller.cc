@@ -241,6 +241,11 @@ void MediaSessionController::OnAudioOutputSinkChangingDisabled() {
 
 void MediaSessionController::OnRemotePlaybackMetadataChanged(
     media_session::mojom::RemotePlaybackMetadataPtr metadata) {
+#if BUILDFLAG(IS_OHOS)
+  // set web_contents_ as have encrypted media when media element metadata changed
+  web_contents_->SetHaveEncryptedMedia(metadata->is_encrypted_media);
+#endif
+
   media_session_->SetRemotePlaybackMetadata(std::move(metadata));
   AddOrRemovePlayer();
 }

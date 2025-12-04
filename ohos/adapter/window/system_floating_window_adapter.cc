@@ -99,4 +99,12 @@ void SystemFloatingWindowAdapter::StartWindowMoving(int32_t id) {
   }
 }
 
+int32_t SystemFloatingWindowAdapter::GetOriginWindowId(int32_t id) {
+  auto jsFunc = ohos::adapter::GetJSFunction("SystemFloatingWindow.GetOriginWindowId");
+  if (jsFunc) {
+    return jsFunc->Invoke<int32_t>(id);
+  }
+  return -1;
+}
+
 }  // namespace ohos::adapter::window

@@ -42,7 +42,8 @@
 #include "third_party/crashpad/crashpad/snapshot/minidump/process_snapshot_minidump.h"
 #include "third_party/crashpad/crashpad/tools/tool_support.h"
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
+    BUILDFLAG(IS_OHOS)
 #include "third_party/crashpad/crashpad/snapshot/sanitized/sanitization_information.h"
 #endif
 
@@ -142,7 +143,8 @@ MULTIPROCESS_TEST_MAIN(CrashingProcess) {
   std::map<std::string, std::string> annotations;
   std::vector<std::string> arguments;
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
+    BUILDFLAG(IS_OHOS)
   static crashpad::SanitizationInformation sanitization_info = {};
   static crashpad::SanitizationAllowedMemoryRanges allowed_memory_ranges;
   if (cmd_line->HasSwitch("sanitize")) {
@@ -470,7 +472,8 @@ class BaseCrashHandlerTest : public base::MultiProcessTest,
 
 class CrashHandlerTest : public BaseCrashHandlerTest {};
 
-#if defined(ADDRESS_SANITIZER) && (BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ANDROID))
+#if defined(ADDRESS_SANITIZER) && (BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ANDROID) || \
+    BUILDFLAG(IS_OHOS))
 // ASan intercepts crashes and crashpad doesn't have a chance to see them.
 #define MAYBE_DISABLED(name) DISABLED_ ##name
 #else

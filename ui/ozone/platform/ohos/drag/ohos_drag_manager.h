@@ -40,6 +40,7 @@
 #include "ui/base/dragdrop/os_exchange_data_provider.h"
 #include "ui/base/dragdrop/os_exchange_data_provider_factory.h"
 #include "ui/base/dragdrop/os_exchange_data_provider_non_backed.h"
+#include "ui/display/display.h"
 #include "ui/events/event_target.h"
 #include "ui/events/platform/platform_event_dispatcher.h"
 #include "ui/gfx/geometry/size.h"
@@ -100,6 +101,7 @@ class OhosDragManager : public WmDragHandler,
   gfx::Size GetSize() override;
   void SetBoundsOnMove(const gfx::Rect& requested_bounds) override;
   void StartWindowMovingWithOffset(const gfx::PointF& offset_point) override;
+  display::Display GetCurrentDisplay() override;
 
   bool notified_enter_ = false;
   raw_ptr<const OSExchangeDataProviderNonBacked> source_provider_ = nullptr;

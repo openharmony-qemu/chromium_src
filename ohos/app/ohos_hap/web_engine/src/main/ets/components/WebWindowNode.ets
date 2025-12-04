@@ -120,7 +120,8 @@ class WindowNodeController extends NodeController {
         height: prop.drawableRect.height
       }
 
-      this.config.nativeContext.OnWindowInitSize(windowRect, drawableRect);
+      let displayId = prop.displayId ?? ConfigData.INVALID_DISPLAY_ID;
+      this.config.nativeContext.OnWindowInitSize(windowRect, drawableRect, displayId);      
     }
   }
 

@@ -41,6 +41,32 @@ std::string WithEnumValue(int value) {
   return tmp;
 }
 
+std::string Event::GetName() const {
+  return EventTypeName(type_);
+}
+
+std::string EventTypeName(EventType type) {
+  switch (type) {
+#define CASE_TYPE(t) \
+    case t:            \
+      return #t
+
+      CASE_TYPE(ET_UNKNOWN);
+      CASE_TYPE(ET_SURFACE_CHANGE);
+      CASE_TYPE(ET_SURFACE_FOCUS);
+      CASE_TYPE(ET_SURFACE_BLUR);
+      CASE_TYPE(ET_WINDOW_SIZE_CHANGE);
+      CASE_TYPE(ET_WINDOW_CHANGE);
+      CASE_TYPE(ET_WINDOW_RECT_CHANGE);
+      CASE_TYPE(ET_WINDOW_STATUS_CHANGE);
+      CASE_TYPE(ET_WINDOW_CAPTION_BUTTON_RECT_CHANGE);
+
+#undef CASE_TYPE
+      default:
+        return "";
+  }
+}
+
 std::string WindowEventToString(WindowEventType eventType) {
   std::string name;
   switch (eventType) {
@@ -148,19 +174,19 @@ std::string ChangeEventToString(ChangeEventType changeType) {
 
 std::string Event::ToString() {
   std::ostringstream oss;
-  oss << "Event(type: " << static_cast<int>(type_) << ")";
+  oss << "Event(type: " << GetName() << ")";
   return oss.str();
 }
 
 std::string SurfaceEvent::ToString() {
   std::ostringstream oss;
-  oss << "SurfaceEvent(size: (" << width << "X" << height << "))";
+  oss << GetName() << "(size: (" << width << "X" << height << "))";
   return oss.str();
 }
 
 std::string WindowRectChangeEvent::ToString() {
   std::ostringstream oss;
-  oss << "WindowRectChangeEvent(reason: " << static_cast<int>(reason) <<
+  oss << GetName() << "(reason: " << RectChangeReasonToString(reason) <<
       ", pos: (" << left << ", " << top << "), size: (" <<
       width << "X" << height << "))";
   return oss.str();
@@ -168,33 +194,41 @@ std::string WindowRectChangeEvent::ToString() {
 
 std::string WindowStatusChangeEvent::ToString() {
   std::ostringstream oss;
-  oss << "WindowStatusChangeEvent(status: " << static_cast<int>(status) << ")";
+  oss << GetName() << "(status: " << WindowStatusToString(status) << ")";
   return oss.str();
 }
 
 std::string WindowSizeChangeEvent::ToString() {
   std::ostringstream oss;
-  oss << "WindowSizeChangeEvent(pos: (" << left << ", " << top <<
+  oss << GetName() << "(pos: (" << left << ", " << top <<
       "), size: (" << width << "X" << height << "))";
   return oss.str();
 }
 
 std::string WindowEvent::ToString() {
   std::ostringstream oss;
-  oss << "WindowEvent(type: " << static_cast<int>(window_event_type_) << ")";
+  oss << GetName() << "(type: " << WindowEventToString(window_event_type_) << ")";
   return oss.str();
 }
 
 std::string WindowCaptionButtonRectChangeEvent::ToString() {
   std::ostringstream oss;
-  oss << "WindowCaptionButtonRectChangeEvent(pos: (" << right << ", " << top <<
+  oss << GetName() <<"(pos: (" << right << ", " << top <<
       "), size: (" << width << "X" << height << "))";
   return oss.str();
 }
 
 std::string DeviceInfoChangeEvent::ToString() {
   std::ostringstream oss;
-  oss << "DeviceInfoChangeEvent(mode: " << ChangeEventToString(change_event_type_) << ")";
+  oss << "DeviceInfoChangeEvent(type: "
+      << ChangeEventToString(change_event_type_)
+      << ", status: " << WindowStatusToString(status_) << ")";
+  return oss.str();
+}
+
+std::string WindowDisplayIdChangeEvent::ToString() {
+  std::ostringstream oss;
+  oss << GetName() << "(display_id: " << display_id << ")";
   return oss.str();
 }
 }  // namespace ohos::adapter::xcomponent

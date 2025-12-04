@@ -224,6 +224,12 @@ std::string AudioParameters::AsHumanReadableString() const {
       << ", require_audio_offload:"
       << hardware_capabilities_->require_audio_offload;
   }
+
+#if BUILDFLAG(IS_OHOS)
+  s << ",  render_process_id_: " << render_process_id_ << ", render_frame_id_: " << render_frame_id_
+    << ", is_stream_privacy_: " << is_stream_privacy_;
+#endif
+
   return s.str();
 }
 

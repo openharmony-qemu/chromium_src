@@ -19,6 +19,7 @@
 
 #include "base/format_macros.h"
 #include "base/strings/stringprintf.h"
+#include "base/strings/string_number_conversions.h"
 #include "components/download/public/common/download_item.h"
 #include "include/capi/cef_base_capi.h"
 

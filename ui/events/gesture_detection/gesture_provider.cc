@@ -428,11 +428,19 @@ class GestureProvider::GestureListenerImpl : public ScaleGestureListener,
 
       // Use the co-ordinates from the touch down, as these co-ordinates are
       // used to determine which layer the scroll should affect.
+#if BUILDFLAG(IS_OHOS)
+      Send(CreateGesture(scroll_details, e2.GetPointerId(), e2.GetToolType(),
+                         e2.GetEventTime(), e1.GetX(), e1.GetY(), e1.GetRawX(),
+                         e1.GetRawY(), e2.GetPointerCount(),
+                         GetBoundingBox(e2, scroll_details.type()),
+                         e2.GetFlags(), e2.GetDisplayId()));
+#else
       Send(CreateGesture(scroll_details, e2.GetPointerId(), e2.GetToolType(),
                          e2.GetEventTime(), e1.GetX(), e1.GetY(), e1.GetRawX(),
                          e1.GetRawY(), e2.GetPointerCount(),
                          GetBoundingBox(e2, scroll_details.type()),
                          e2.GetFlags()));
+#endif
       DCHECK(scroll_event_sent_);
     }
     scroll_focus_point_.SetPoint(scroll_focus_point_.x() - raw_distance_x,
@@ -444,11 +452,18 @@ class GestureProvider::GestureListenerImpl : public ScaleGestureListener,
     const gfx::PointF raw_center =
         scroll_focus_point_ +
         gfx::Vector2dF(e2.GetRawOffsetX(), e2.GetRawOffsetY());
+#if BUILDFLAG(IS_OHOS)
+    Send(CreateGesture(scroll_details, e2.GetPointerId(), e2.GetToolType(),
+                       e2.GetEventTime(), scroll_focus_point_.x(),
+                       scroll_focus_point_.y(), raw_center.x(), raw_center.y(),
+                       e2.GetPointerCount(), bounding_box, e2.GetFlags(),
+                       e2.GetDisplayId()));
+#else
     Send(CreateGesture(scroll_details, e2.GetPointerId(), e2.GetToolType(),
                        e2.GetEventTime(), scroll_focus_point_.x(),
                        scroll_focus_point_.y(), raw_center.x(), raw_center.y(),
                        e2.GetPointerCount(), bounding_box, e2.GetFlags()));
-
+#endif
     return true;
   }
 
@@ -646,14 +661,43 @@ class GestureProvider::GestureListenerImpl : public ScaleGestureListener,
                             0U);
   }
 
+#if BUILDFLAG(IS_OHOS)
+  GestureEventData CreateGesture(const GestureEventDetails& details,
+                                 int motion_event_id,
+                                 MotionEvent::ToolType primary_tool_type,
+                                 base::TimeTicks time,
+                                 float x,
+                                 float y,
+                                 float raw_x,
+                                 float raw_y,
+                                 size_t touch_point_count,
+                                 const gfx::RectF& bounding_box,
+                                 int flags,
+                                 int32_t display_id) const {
+    return GestureEventData(details, motion_event_id, primary_tool_type, time,
+                            x, y, raw_x, raw_y, touch_point_count, bounding_box,
+                            flags, 0U, display_id);
+  }
+#endif
+
   GestureEventData CreateGesture(const GestureEventDetails& details,
                                  const MotionEvent& event) const {
+#if BUILDFLAG(IS_OHOS)
+    return GestureEventData(details, event.GetPointerId(), event.GetToolType(),
+                            event.GetEventTime(), event.GetX(), event.GetY(),
+                            event.GetRawX(), event.GetRawY(),
+                            event.GetPointerCount(),
+                            GetBoundingBox(event, details.type()),
+                            event.GetFlags(), event.GetUniqueEventId(),
+                            event.GetDisplayId());
+#else
     return GestureEventData(details, event.GetPointerId(), event.GetToolType(),
                             event.GetEventTime(), event.GetX(), event.GetY(),
                             event.GetRawX(), event.GetRawY(),
                             event.GetPointerCount(),
                             GetBoundingBox(event, details.type()),
                             event.GetFlags(), event.GetUniqueEventId());
+#endif
   }
 
   GestureEventData CreateTapGesture(EventType type,

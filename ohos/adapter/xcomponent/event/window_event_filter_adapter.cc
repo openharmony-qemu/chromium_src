@@ -12,6 +12,7 @@
 #include "ohos/adapter/xcomponent/xcomponent_manager.h"
 
 namespace ohos::adapter::window {
+using ohos::adapter::device_info::DeviceInfo;
 
 WindowEventFilterAdapter& WindowEventFilterAdapter::GetInstance() {
   static WindowEventFilterAdapter instance;
@@ -20,21 +21,25 @@ WindowEventFilterAdapter& WindowEventFilterAdapter::GetInstance() {
 WindowEventFilterAdapter::WindowEventFilterAdapter()
     : tab_dragging_widget_id_(-1),
       window_manager_lib_("native_window_manager") {
-  if (!can_filter_window_mouse_event_ &&
-      device_info::DeviceInfo::SdkApi() >= device_info::SDK_VERSION_15) {
-    if (!window_manager_lib_.IsLoaded()) {
-      LOGE("[OhosTabDrag] native_window_manager library load fail");
-      return;
+  if (!window_manager_lib_.IsLoaded()) {
+    LOGE("[OhosTabDrag] native_window_manager library load fail");
+    return;
+  }
+  if (DeviceInfo::SdkApi() >= device_info::SDK_VERSION_15) {
+    if (LoadMouseEventFunctions()) {
+      can_filter_window_mouse_event_ = true;
+    } else {
+      LOGE("[OhosTabDrag] LoadMouseEventFunctions fail!");
     }
-    if (!LoadAllEventFunctions()) {
-      LOGE("[OhosTabDrag] LoadAllEventFunctions fail!");
-      return;
+    if (LoadTouchEventFunctions()) {
+      can_filter_window_touch_event_ = true;
+    } else {
+      LOGE("[OhosTabDrag] LoadTouchEventFunctions fail!");
     }
-    can_filter_window_mouse_event_ = true;
   }
 }
 
-bool WindowEventFilterAdapter::LoadAllEventFunctions() {
+bool WindowEventFilterAdapter::LoadMouseEventFunctions() {
   return window_manager_lib_.LoadFunction(&get_mouse_event_action_func_,
                                           "OH_Input_GetMouseEventAction") &&
          window_manager_lib_.LoadFunction(&get_mouse_event_display_x_func_,
@@ -57,6 +62,29 @@ bool WindowEventFilterAdapter::LoadAllEventFunctions() {
              "OH_NativeWindowManager_UnregisterMouseEventFilter");
 }
 
+bool WindowEventFilterAdapter::LoadTouchEventFunctions() {
+  return window_manager_lib_.LoadFunction(&get_touch_event_action_func_,
+                                          "OH_Input_GetTouchEventAction") &&
+         window_manager_lib_.LoadFunction(&get_touch_event_display_x_func_,
+                                          "OH_Input_GetTouchEventDisplayX") &&
+         window_manager_lib_.LoadFunction(&get_touch_event_display_y_func_,
+                                          "OH_Input_GetTouchEventDisplayY") &&
+         window_manager_lib_.LoadFunction(&get_touch_event_action_time_func_,
+                                          "OH_Input_GetTouchEventActionTime") &&
+         window_manager_lib_.LoadFunction(&get_touch_event_window_id_func_,
+                                          "OH_Input_GetTouchEventWindowId") &&
+         window_manager_lib_.LoadFunction(&get_touch_event_display_id_func_,
+                                          "OH_Input_GetTouchEventDisplayId") &&
+         window_manager_lib_.LoadFunction(&get_touch_event_finger_id_func_,
+                                          "OH_Input_GetTouchEventFingerId") &&
+         window_manager_lib_.LoadFunction(
+             &register_touch_event_filter_func_,
+             "OH_NativeWindowManager_RegisterTouchEventFilter") &&
+         window_manager_lib_.LoadFunction(
+             &un_register_touch_event_filter_func_,
+             "OH_NativeWindowManager_UnregisterTouchEventFilter");
+}
+
 WindowEventFilterAdapter::~WindowEventFilterAdapter() {
   get_mouse_event_action_func_ = nullptr;
   get_mouse_event_display_x_func_ = nullptr;
@@ -66,6 +94,15 @@ WindowEventFilterAdapter::~WindowEventFilterAdapter() {
   get_mouse_event_window_id_func_ = nullptr;
   register_mouse_event_filter_func_ = nullptr;
   un_register_mouse_event_filter_func_ = nullptr;
+
+  get_touch_event_action_func_ = nullptr;
+  get_touch_event_display_x_func_ = nullptr;
+  get_touch_event_display_y_func_ = nullptr;
+  get_touch_event_action_time_func_ = nullptr;
+  get_touch_event_window_id_func_ = nullptr;
+  get_touch_event_display_id_func_ = nullptr;
+  register_touch_event_filter_func_ = nullptr;
+  un_register_touch_event_filter_func_ = nullptr;
 }
 
 void WindowEventFilterAdapter::SendMouseEventForTabDrag(
@@ -76,10 +113,26 @@ void WindowEventFilterAdapter::SendMouseEventForTabDrag(
   auto render = xcomponent::XComponentManager::GetInstance()->GetXComponentBase(
       xcomponent_id);
   if (render == nullptr) {
-    LOGE("[OhosTabDrag]can not get render: %{public}s", xcomponent_id.c_str());
+    LOGE("[OhosTabDrag] %{public}s can not get render: %{public}s",
+         __FUNCTION__, xcomponent_id.c_str());
     return;
   }
   render->SendWindowMouseEventForTabDrag(window_mouse_event);
+}
+
+void WindowEventFilterAdapter::SendTouchEventForTabDrag(
+    const int32_t widget_id,
+    Input_TouchEvent* window_touch_event) {
+  std::string xcomponent_id =
+      xcomponent::WindowAdapter::GetInstance().GetWindowId(widget_id);
+  auto render = xcomponent::XComponentManager::GetInstance()->GetXComponentBase(
+      xcomponent_id);
+  if (render == nullptr) {
+    LOGE("[OhosTabDrag] %{public}s can not get render: %{public}s",
+         __FUNCTION__, xcomponent_id.c_str());
+    return;
+  }
+  render->SendWindowTouchEventForTabDrag(window_touch_event);
 }
 
 void WindowEventFilterAdapter::SetDraggingTabWidgetId(int32_t widget_id) {
@@ -139,6 +192,11 @@ void WindowEventFilterAdapter::CacheShiftEventWindowIds(const int32_t source_id,
   }
 }
 
+bool WindowEventFilterAdapter::CanShiftTouchEvent() {
+  return CanFilterWindowTouchEvent() &&
+         DeviceInfo::SdkApi() >= device_info::SDK_VERSION_20;
+}
+
 __attribute__((no_sanitize("cfi", "cfi-icall")))
 static bool FilterMouseEvent(Input_MouseEvent* mouse_event) {
   WindowEventFilterAdapter& window_event_filter = WindowEventFilterAdapter::GetInstance();
@@ -164,37 +222,76 @@ static bool FilterMouseEvent(Input_MouseEvent* mouse_event) {
 }
 
 __attribute__((no_sanitize("cfi", "cfi-icall")))
+static bool FilterTouchEvent(Input_TouchEvent* touch_event) {
+  WindowEventFilterAdapter& window_event_filter = WindowEventFilterAdapter::GetInstance();
+  if (!window_event_filter.CanFilterWindowTouchEvent() ||
+      touch_event == nullptr) {
+    return false;
+  }
+  // When tab dragging, the window touch event is directly
+  // sent to the UI thread of Chromium.
+  if (window_event_filter.IsTabDragging()) {
+    int32_t origin_window_id =
+        window_event_filter.GetWindowTouchEventWindowId(touch_event);
+    int32_t widget_id =
+        window_event_filter.GetTargetWindowIdAfterShiftEvent(
+            origin_window_id);
+    if (widget_id <= 0) {
+      widget_id = window_event_filter.GetDraggingTabWidgetId();
+    }
+    window_event_filter.SendTouchEventForTabDrag(widget_id, touch_event);
+    return true;
+  }
+  return false;
+}
+
+__attribute__((no_sanitize("cfi", "cfi-icall")))
 void RegisterWindowEventFilter(int32_t origin_window_id) {
   WindowEventFilterAdapter& window_event_filter =
       WindowEventFilterAdapter::GetInstance();
-  if (!window_event_filter.CanFilterWindowMouseEvent()) {
-    LOGE(
-        "[OhosTabDrag]WindowEventFilterAdapter::RegisterWindowEventFilter"
-        " window_manager_lib is not loaded.");
-    return;
+  if (window_event_filter.CanFilterWindowMouseEvent()) {
+    window_event_filter.RegisterWindowMouseEventFilterForWindow(
+        origin_window_id);
+  } else {
+    LOGE("[OhosTabDrag] %{public}s, CanFilterWindowMouseEvent false",
+         __FUNCTION__);
   }
-  window_event_filter.RegisterWindowEventFilterForWindow(origin_window_id);
+
+  if (window_event_filter.CanFilterWindowTouchEvent()) {
+    window_event_filter.RegisterWindowTouchEventFilterForWindow(
+        origin_window_id);
+  } else {
+    LOGE("[OhosTabDrag] %{public}s, CanFilterWindowTouchEvent false",
+         __FUNCTION__);
+  }
 }
 
 __attribute__((no_sanitize("cfi", "cfi-icall")))
 void ClearWindowEventFilter(int32_t origin_window_id) {
   WindowEventFilterAdapter& window_event_filter =
       WindowEventFilterAdapter::GetInstance();
-  if (!window_event_filter.CanFilterWindowMouseEvent()) {
-    LOGE(
-        "[OhosTabDrag]WindowEventFilterAdapter::ClearWindowEventFilter "
-        " window_manager_lib is not loaded.");
-    return;
+  if (window_event_filter.CanFilterWindowMouseEvent()) {
+    window_event_filter.UnRegisterWindowMouseEventFilterForWindow(
+        origin_window_id);
+  } else {
+    LOGE("[OhosTabDrag] %{public}s, CanFilterWindowMouseEvent false",
+         __FUNCTION__);
   }
-  window_event_filter.UnRegisterWindowEventFilterForWindow(origin_window_id);
+  if (window_event_filter.CanFilterWindowTouchEvent()) {
+    window_event_filter.UnRegisterWindowTouchEventFilterForWindow(
+        origin_window_id);
+  } else {
+    LOGE("[OhosTabDrag] %{public}s, CanFilterWindowTouchEvent false",
+         __FUNCTION__);
+  }
 }
 
 __attribute__((no_sanitize("cfi", "cfi-icall")))
 int32_t WindowEventFilterAdapter::GetWindowMouseEventAction(
     Input_MouseEvent* window_mouse_event) {
   if (get_mouse_event_action_func_ == nullptr) {
-    LOGE(
-        "[OhosTabDrag]WindowEventFilterAdapter::GetWindowMouseEventAction fail");
+    LOGE("[OhosTabDrag] %{public}s fail, get_mouse_event_action_func_ is null",
+         __FUNCTION__);
     return 0;
   }
   return get_mouse_event_action_func_(window_mouse_event);
@@ -205,8 +302,8 @@ int32_t WindowEventFilterAdapter::GetWindowMouseEventDisplayX(
     Input_MouseEvent* window_mouse_event) {
   if (get_mouse_event_display_x_func_ == nullptr) {
     LOGE(
-        "[OhosTabDrag]WindowEventFilterAdapter::GetWindowMouseEventDisplayX "
-        "fail");
+        "[OhosTabDrag] %{public}s fail, get_mouse_event_display_x_func_ is "
+        "null", __FUNCTION__);
     return 0;
   }
   return get_mouse_event_display_x_func_(window_mouse_event);
@@ -217,7 +314,8 @@ int32_t WindowEventFilterAdapter::GetWindowMouseEventDisplayY(
     Input_MouseEvent* window_mouse_event) {
   if (get_mouse_event_display_y_func_ == nullptr) {
     LOGE(
-        "[OhosTabDrag]WindowEventFilterAdapter::GetWindowMouseEventDisplayY fail");
+        "[OhosTabDrag] %{public}s fail, get_mouse_event_display_y_func_ is "
+        "null", __FUNCTION__);
     return 0;
   }
   return get_mouse_event_display_y_func_(window_mouse_event);
@@ -227,8 +325,8 @@ __attribute__((no_sanitize("cfi", "cfi-icall")))
 int32_t WindowEventFilterAdapter::GetWindowMouseEventButton(
     Input_MouseEvent* window_mouse_event) {
   if (get_mouse_event_button_func_ == nullptr) {
-    LOGE(
-        "[OhosTabDrag]WindowEventFilterAdapter::GetWindowMouseEventButton fail");
+    LOGE("[OhosTabDrag] %{public}s fail, get_mouse_event_button_func_ is null",
+         __FUNCTION__);
     return 0;
   }
   return get_mouse_event_button_func_(window_mouse_event);
@@ -239,7 +337,8 @@ int64_t WindowEventFilterAdapter::GetWindowMouseEventActionTime(
     Input_MouseEvent* window_mouse_event) {
   if (get_mouse_event_action_time_func_ == nullptr) {
     LOGE(
-        "[OhosTabDrag]WindowEventFilterAdapter::GetWindowMouseEventActionTime fail");
+        "[OhosTabDrag] %{public}s fail, get_mouse_event_action_time_func_ is "
+        "null", __FUNCTION__);
     return 0;
   }
   return get_mouse_event_action_time_func_(window_mouse_event);
@@ -250,7 +349,8 @@ int32_t WindowEventFilterAdapter::GetWindowMouseEventWindowId(
     Input_MouseEvent* window_mouse_event) {
   if (get_mouse_event_window_id_func_ == nullptr) {
     LOGE(
-        "[OhosTabDrag]WindowEventFilterAdapter::GetWindowMouseEventWindowId fail");
+        "[OhosTabDrag] %{public}s fail, get_mouse_event_window_id_func_ is "
+        "null", __FUNCTION__);
     return 0;
   }
   return get_mouse_event_window_id_func_(window_mouse_event);
@@ -261,43 +361,164 @@ int32_t WindowEventFilterAdapter::GetWindowMouseEventDisplayId(
     Input_MouseEvent* window_mouse_event) {
   if (get_mouse_event_display_id_func_ == nullptr) {
     LOGE(
-        "[OhosTabDrag]WindowEventFilterAdapter::GetWindowMouseEventDisplayId fail");
+        "[OhosTabDrag] %{public}s fail, get_mouse_event_display_id_func_ is "
+        "null", __FUNCTION__);
     return -1;
   }
   return get_mouse_event_display_id_func_(window_mouse_event);
 }
 
 __attribute__((no_sanitize("cfi", "cfi-icall")))
-void WindowEventFilterAdapter::RegisterWindowEventFilterForWindow(
+void WindowEventFilterAdapter::RegisterWindowMouseEventFilterForWindow(
     int32_t origin_window_id) {
   if (!register_mouse_event_filter_func_) {
-    LOGW(
-        "[OhosTabDrag]WindowEventFilterAdapter::RegisterWindowEventFilterForWindow "
-        "register_mouse_event_filter_func_ is null");
+    LOGE(
+        "[OhosTabDrag] %{public}s fail, "
+        "register_mouse_event_filter_func_ is null",
+        __FUNCTION__);
     return;
   }
   auto result =
       register_mouse_event_filter_func_(origin_window_id, FilterMouseEvent);
   LOGI(
-      "[OhosTabDrag]WindowEventFilterAdapter::RegisterWindowEventFilterForWindow, "
+      "[OhosTabDrag] %{public}s fail, "
       "window_id:%{public}d, result:%{public}d",
-      origin_window_id, result);
+      __FUNCTION__, origin_window_id, result);
 }
 
 __attribute__((no_sanitize("cfi", "cfi-icall")))
-void WindowEventFilterAdapter::UnRegisterWindowEventFilterForWindow(
+void WindowEventFilterAdapter::UnRegisterWindowMouseEventFilterForWindow(
     int32_t origin_window_id) {
   if (!un_register_mouse_event_filter_func_) {
-    LOGW(
-        "[OhosTabDrag]WindowEventFilterAdapter::UnRegisterWindowEventFilterForWindow "
-        "un_register_mouse_event_filter_func_ is null");
+    LOGE(
+        "[OhosTabDrag] %{public}s"
+        "un_register_mouse_event_filter_func_ is null",
+        __FUNCTION__);
     return;
   }
   auto result = un_register_mouse_event_filter_func_(origin_window_id);
   LOGI(
-      "[OhosTabDrag]WindowEventFilterAdapter::UnRegisterWindowEventFilterForWindow, "
+      "[OhosTabDrag] %{public}s fail, "
       "window_id:%{public}d, result:%{public}d",
-      origin_window_id, result);
+      __FUNCTION__, origin_window_id, result);
+}
+
+__attribute__((no_sanitize("cfi", "cfi-icall")))
+void WindowEventFilterAdapter::RegisterWindowTouchEventFilterForWindow(
+    int32_t origin_window_id) {
+  if (!register_touch_event_filter_func_) {
+    LOGE(
+        "[OhosTabDrag] %{public}s fail, "
+        "register_touch_event_filter_func_ is null",
+        __FUNCTION__);
+    return;
+  }
+  auto result =
+      register_touch_event_filter_func_(origin_window_id, FilterTouchEvent);
+  LOGI(
+      "[OhosTabDrag] %{public}s fail, "
+      "window_id:%{public}d, result:%{public}d",
+      __FUNCTION__, origin_window_id, result);
+}
+
+__attribute__((no_sanitize("cfi", "cfi-icall")))
+void WindowEventFilterAdapter::UnRegisterWindowTouchEventFilterForWindow(
+    int32_t origin_window_id) {
+  if (!un_register_touch_event_filter_func_) {
+    LOGE(
+        "[OhosTabDrag] %{public}s fail, "
+        "un_register_touch_event_filter_func_ is null",
+        __FUNCTION__);
+    return;
+  }
+  auto result = un_register_touch_event_filter_func_(origin_window_id);
+  LOGI(
+      "[OhosTabDrag] %{public}s, "
+      "window_id:%{public}d, result:%{public}d",
+      __FUNCTION__, origin_window_id, result);
+}
+
+__attribute__((no_sanitize("cfi", "cfi-icall")))
+int32_t WindowEventFilterAdapter::GetWindowTouchEventAction(
+    Input_TouchEvent* window_touch_event) {
+  if (get_touch_event_action_func_ == nullptr) {
+    LOGE("[OhosTabDrag] %{public}s fail, get_touch_event_action_func_ is null",
+         __FUNCTION__);
+    return 0;
+  }
+  return get_touch_event_action_func_(window_touch_event);
+}
+
+__attribute__((no_sanitize("cfi", "cfi-icall")))
+int32_t WindowEventFilterAdapter::GetWindowTouchEventDisplayX(
+    Input_TouchEvent* window_touch_event) {
+  if (get_touch_event_display_x_func_ == nullptr) {
+    LOGE(
+        "[OhosTabDrag] %{public}s fail, get_touch_event_display_x_func_ is "
+        "null", __FUNCTION__);
+    return 0;
+  }
+  return get_touch_event_display_x_func_(window_touch_event);
+}
+
+__attribute__((no_sanitize("cfi", "cfi-icall")))
+int32_t WindowEventFilterAdapter::GetWindowTouchEventDisplayY(
+    Input_TouchEvent* window_touch_event) {
+  if (get_touch_event_display_y_func_ == nullptr) {
+    LOGE(
+        "[OhosTabDrag] %{public}s fail, get_touch_event_display_y_func_ is "
+        "null", __FUNCTION__);
+    return 0;
+  }
+  return get_touch_event_display_y_func_(window_touch_event);
+}
+
+__attribute__((no_sanitize("cfi", "cfi-icall")))
+int64_t WindowEventFilterAdapter::GetWindowTouchEventActionTime(
+    Input_TouchEvent* window_touch_event) {
+  if (get_touch_event_action_time_func_ == nullptr) {
+    LOGE(
+        "[OhosTabDrag] %{public}s fail, get_touch_event_action_time_func_ is "
+        "null", __FUNCTION__);
+    return 0;
+  }
+  return get_touch_event_action_time_func_(window_touch_event);
+}
+
+__attribute__((no_sanitize("cfi", "cfi-icall")))
+int32_t WindowEventFilterAdapter::GetWindowTouchEventWindowId(
+    Input_TouchEvent* window_touch_event) {
+  if (get_touch_event_window_id_func_ == nullptr) {
+    LOGE(
+        "[OhosTabDrag] %{public}s fail, get_touch_event_window_id_func_ is "
+        "null", __FUNCTION__);
+    return 0;
+  }
+  return get_touch_event_window_id_func_(window_touch_event);
+}
+
+__attribute__((no_sanitize("cfi", "cfi-icall")))
+int32_t WindowEventFilterAdapter::GetWindowTouchEventDisplayId(
+    Input_TouchEvent* window_touch_event) {
+  if (get_touch_event_display_id_func_ == nullptr) {
+    LOGE(
+        "[OhosTabDrag] %{public}s fail, get_touch_event_display_id_func_ is "
+        "null", __FUNCTION__);
+    return 0;
+  }
+  return get_touch_event_display_id_func_(window_touch_event);
+}
+
+__attribute__((no_sanitize("cfi", "cfi-icall")))
+int32_t WindowEventFilterAdapter::GetWindowTouchEventFingerId(
+    Input_TouchEvent* window_touch_event) {
+  if (get_touch_event_finger_id_func_ == nullptr) {
+    LOGE(
+        "[OhosTabDrag] %{public}s fail, get_touch_event_finger_id_func_ is "
+        "null", __FUNCTION__);
+    return 0;
+  }
+  return get_touch_event_finger_id_func_(window_touch_event);
 }
 
 JSBIND_GLOBAL() {

@@ -162,9 +162,9 @@ std::vector<int32_t> AppWindowAdapter::GetOriginWindowIds(
   return std::vector<int32_t>();
 }
 
-bool AppWindowAdapter::ShiftWindowEvent(const int32_t source_id,
-                                        const int32_t target_id) {
-  auto jsFunc = ohos::adapter::GetJSFunction("AppWindow.ShiftWindowEvent");
+bool AppWindowAdapter::ShiftWindowMouseEvent(const int32_t source_id,
+                                             const int32_t target_id) {
+  auto jsFunc = ohos::adapter::GetJSFunction("AppWindow.ShiftWindowMouseEvent");
   if (jsFunc) {
     auto promise = std::make_shared<std::promise<bool>>();
     auto future = promise->get_future();
@@ -174,11 +174,40 @@ bool AppWindowAdapter::ShiftWindowEvent(const int32_t source_id,
     jsFunc->Invoke<void>(source_id, target_id, callback);
     auto status = future.wait_for(std::chrono::seconds(3));
     if (status == std::future_status::timeout) {
-      LOGE("AppWindowAdapter::ShiftWindowEvent Wait timeout");
+      LOGE("[OhosTabDrag] %{public}s Wait timeout", __FUNCTION__);
       return false;
     }
     bool result = future.get();
-    LOGI("[OhosTabDrag] AppWindowAdapter::ShiftWindowEvent future result:%{public}d", result);
+    LOGI(
+        "[OhosTabDrag] %{public}s future "
+        "result:%{public}d",
+        __FUNCTION__, result);
+    return result;
+  }
+  return false;
+}
+
+bool AppWindowAdapter::ShiftWindowTouchEvent(const int32_t source_id,
+                                             const int32_t target_id,
+                                             const int32_t finger_id) {
+  auto jsFunc = ohos::adapter::GetJSFunction("AppWindow.ShiftWindowTouchEvent");
+  if (jsFunc) {
+    auto promise = std::make_shared<std::promise<bool>>();
+    auto future = promise->get_future();
+    std::function<void(bool)> callback = [promise](bool result) -> void {
+      promise->set_value(result);
+    };
+    jsFunc->Invoke<void>(source_id, target_id, finger_id, callback);
+    auto status = future.wait_for(std::chrono::seconds(3));
+    if (status == std::future_status::timeout) {
+      LOGE("[OhosTabDrag] %{public}s Wait timeout", __FUNCTION__);
+      return false;
+    }
+    bool result = future.get();
+    LOGI(
+        "[OhosTabDrag] %{public}s future "
+        "result:%{public}d",
+        __FUNCTION__, result);
     return result;
   }
   return false;

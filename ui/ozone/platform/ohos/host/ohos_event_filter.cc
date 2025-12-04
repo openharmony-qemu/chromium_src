@@ -14,6 +14,7 @@ namespace ui {
 // Interval: microseconds
 constexpr int64_t kDragTabMouseFilterTime = 15 * 1000 * 1000;
 constexpr int64_t kMouseEventFilterTime = 5 * 1000 * 1000;
+constexpr int64_t kDragTabTouchFilterTime = 15 * 1000 * 1000;
 
 OhosEventFilter& OhosEventFilter::GetInstance() {
   static OhosEventFilter event_filter;
@@ -24,10 +25,14 @@ OhosEventFilter::OhosEventFilter() {
   if (ohos::adapter::nodeHandle::NodeHandleImpl::GetInstance()
           .IsSupportNodeHandle()) {
     mouse_move_action_ = UI_MOUSE_EVENT_ACTION_MOVE;
-    pre_event_action_ = UI_MOUSE_EVENT_ACTION_UNKNOWN;
+    pre_mouse_event_action_ = UI_MOUSE_EVENT_ACTION_UNKNOWN;
+    touch_move_action_ = UI_TOUCH_EVENT_ACTION_MOVE;
+    pre_touch_event_action_ = UI_TOUCH_EVENT_ACTION_CANCEL;
   } else {
     mouse_move_action_ = OH_NATIVEXCOMPONENT_MOUSE_MOVE;
-    pre_event_action_ = OH_NATIVEXCOMPONENT_MOUSE_NONE;
+    pre_mouse_event_action_ = OH_NATIVEXCOMPONENT_MOUSE_NONE;
+    touch_move_action_ = OH_NATIVEXCOMPONENT_MOVE;
+    pre_touch_event_action_ = OH_NATIVEXCOMPONENT_UNKNOWN;
   }
 }
 
@@ -57,18 +62,58 @@ void OhosEventFilter::RefreshMouseEvent(
     MouseEventAction action) {
   pre_widget_id_ = widget_id;
   pre_timestamp_ = timestamp;
-  pre_event_action_ = action;
+  pre_mouse_event_action_ = action;
 }
 
 bool OhosEventFilter::CheckMouseEventInfoForFilter(
     const gfx::AcceleratedWidget widget_id,
-    MouseEventAction action) {
+    MouseEventAction mouse_action) {
   // intercept mouse event only when mouse event type is move
-  if (widget_id == pre_widget_id_ && action == pre_event_action_ &&
-      action == mouse_move_action_) {
+  if (widget_id == pre_widget_id_ && mouse_action == pre_mouse_event_action_ &&
+      mouse_action == mouse_move_action_) {
     return true;
   }
   return false;
 }
 
-} // namespace ui
+bool OhosEventFilter::CheckFilterTouchEvent(
+    const gfx::AcceleratedWidget widget_id,
+    EventTimeStamp timestamp,
+    EventAction touch_action,
+    TouchEventFinger finger_id) {
+  if (CheckTouchEventInfoForFilter(widget_id, touch_action, finger_id)) {
+    // When dragging tab,  the touch event
+    // filtering condition is within kDragTabTouchFilterTime ms
+    if (ohos::adapter::window::WindowEventFilterAdapter::GetInstance()
+            .IsTabDragging()) {
+      if ((timestamp - pre_timestamp_ < kDragTabTouchFilterTime)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+void OhosEventFilter::RefreshTouchEvent(const gfx::AcceleratedWidget widget_id,
+                                        EventTimeStamp timestamp,
+                                        EventAction touch_action,
+                                        TouchEventFinger finger_id) {
+  pre_widget_id_ = widget_id;
+  pre_timestamp_ = timestamp;
+  pre_touch_event_action_ = touch_action;
+  pre_touch_finger_id_ = finger_id;
+}
+
+bool OhosEventFilter::CheckTouchEventInfoForFilter(
+    const gfx::AcceleratedWidget widget_id,
+    EventAction touch_action,
+    TouchEventFinger finger_id) {
+  // intercept touch event only when touch event type is move
+  if (widget_id == pre_widget_id_ && touch_action == pre_touch_event_action_ &&
+      touch_action == touch_move_action_ && finger_id == pre_touch_finger_id_) {
+    return true;
+  }
+  return false;
+}
+
+}  // namespace ui

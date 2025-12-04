@@ -43,6 +43,9 @@ struct ADAPTER_EXPORT_API NodeHandleInputEventCallBack {
   void (*sendWindowMouseEventForTabDragCallback)(
                             const int32_t widget_id,
                             Input_MouseEvent* window_mouse_event);
+  void (*sendWindowTouchEventForTabDragCallback)(
+        const int32_t widget_id,
+        Input_TouchEvent* window_touch_event);
 };
 
 }  // namespace ohos::adapter::xcomponent

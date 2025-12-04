@@ -431,7 +431,7 @@ export class AppWindowAdapter extends BaseAdapter {
   }
 
   @LogMethod
-  shiftWindowEvent(sourceId: number, targetId: number,
+  shiftWindowMouseEvent(sourceId: number, targetId: number,
     callback: (result: boolean) => void): void {
     if (deviceInfo.sdkApiVersion >= 15) {
       try {
@@ -464,5 +464,30 @@ export class AppWindowAdapter extends BaseAdapter {
       return;
     }
     callback(nodeContent);
+  }
+
+  @LogMethod
+  shiftWindowTouchEvent(sourceId: number, targetId: number,
+    fingerId: number, callback: (result: boolean) => void): void {
+    if (deviceInfo.sdkApiVersion >= 20) {
+      try {
+        let sourceOriginWindowId = this.abilityManager.getProxy(sourceId)?.getOriginWindowId();
+        let targetOriginWindowId = this.abilityManager.getProxy(targetId)?.getOriginWindowId();
+        window.shiftAppWindowTouchEvent(sourceOriginWindowId, targetOriginWindowId, fingerId).then(() => {
+          LogUtil.info(TAG, 'shiftWindowTouchEvent success.');
+          callback(true);
+        }).catch((err: BusinessError) => {
+          LogUtil.error(TAG, 'Failed to shiftWindowTouchEvent. Cause: ' + JSON.stringify(err));
+          callback(false);
+        })
+      } catch (err) {
+        let message = (err as BusinessError).message;
+        LogUtil.error(TAG, `shiftWindowTouchEvent failed.: ${message}`);
+        callback(false);
+      }
+    } else {
+      LogUtil.error(TAG, 'shiftWindowTouchEvent fail, sdkApiVersion is less than 20');
+      callback(false);
+    }
   }
 };

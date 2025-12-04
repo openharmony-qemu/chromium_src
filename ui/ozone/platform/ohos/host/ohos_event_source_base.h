@@ -90,6 +90,8 @@ class OhosEventSourceBase : public PlatformEventSource,
                         const gfx::AcceleratedWidget target_widget_id);
   void StartTabDragging(const gfx::AcceleratedWidget widget_id);
   void EndTabDragging();
+  void StartTabDraggingByTouch(const gfx::AcceleratedWidget widget_id,
+                               const int32_t finger_id);
 
  protected:
   void SetTargetAndDispatchEvent(const gfx::AcceleratedWidget widget_id, Event& event);

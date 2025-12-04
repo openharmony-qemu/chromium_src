@@ -13,6 +13,10 @@ namespace ui {
 using MouseEventAction = int32_t;
 using MouseEventTimeStamp = int64_t;
 
+using EventAction = int32_t;
+using EventTimeStamp = int64_t;
+using TouchEventFinger = int32_t;
+
 class OhosEventFilter {
  public:
   static OhosEventFilter& GetInstance();
@@ -22,23 +26,37 @@ class OhosEventFilter {
 
   bool CheckFilterMouseEvent(const gfx::AcceleratedWidget widget_id,
                              MouseEventTimeStamp timestamp,
-                             MouseEventAction action);
+                             MouseEventAction mouse_action);
   void RefreshMouseEvent(const gfx::AcceleratedWidget widget_id,
                          MouseEventTimeStamp timestamp,
-                         MouseEventAction action);
+                         MouseEventAction mouse_action);
+  bool CheckFilterTouchEvent(const gfx::AcceleratedWidget widget_id,
+                             EventTimeStamp timestamp,
+                             EventAction touch_action,
+                             TouchEventFinger finger_id);
+  void
+  RefreshTouchEvent(const gfx::AcceleratedWidget widget_id,
+                    EventTimeStamp timestamp,
+                    EventAction touch_action,
+                    TouchEventFinger finger_id);
 
  private:
   OhosEventFilter();
   ~OhosEventFilter() = default;
 
   gfx::AcceleratedWidget pre_widget_id_ = -1;
-  MouseEventTimeStamp pre_timestamp_ = 0;
-  MouseEventAction pre_event_action_;
-  MouseEventAction mouse_move_action_;
+  EventTimeStamp pre_timestamp_ = 0;
+  EventAction pre_mouse_event_action_;
+  EventAction pre_touch_event_action_;
+  EventAction mouse_move_action_;
+  EventAction touch_move_action_;
+  TouchEventFinger pre_touch_finger_id_ = -1;
 
-  bool CheckMouseEventInfoForFilter(
-      const gfx::AcceleratedWidget widget_id,
-      MouseEventAction action);
+  bool CheckMouseEventInfoForFilter(gfx::AcceleratedWidget widget_id,
+                                    EventAction mouse_action);
+  bool CheckTouchEventInfoForFilter(gfx::AcceleratedWidget widget_id,
+                                    EventAction touch_action,
+                                    TouchEventFinger finger_id);
 };
 
 }  // namespace ui

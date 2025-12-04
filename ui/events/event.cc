@@ -1281,6 +1281,21 @@ GestureEvent::GestureEvent(float x,
       unique_touch_event_id_(unique_touch_event_id) {
 }
 
+#if BUILDFLAG(IS_OHOS)
+GestureEvent::GestureEvent(float x,
+                           float y,
+                           int flags,
+                           base::TimeTicks time_stamp,
+                           const GestureEventDetails& details,
+                           int32_t display_id,
+                           int pointer_id,
+                           uint32_t unique_touch_event_id)
+    : GestureEvent(x, y, flags, time_stamp, details, unique_touch_event_id) {
+  set_display_id(display_id);
+  set_pointer_id(pointer_id);
+}
+#endif
+
 GestureEvent::GestureEvent(const GestureEvent& other) = default;
 
 GestureEvent::~GestureEvent() = default;

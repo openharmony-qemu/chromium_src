@@ -250,4 +250,14 @@ void OhosEventSourceBase::EndTabDragging() {
   window_drag_manager_->ClearDraggingTabParams();
 }
 
+void OhosEventSourceBase::StartTabDraggingByTouch(
+    const gfx::AcceleratedWidget widget_id,
+    const int32_t finger_id) {
+  if (widget_id <= 0) {
+    LOG(ERROR) << "[OhosTabDrag] " << __FUNCTION__ << ", widget_id is invalid";
+    return;
+  }
+  window_drag_manager_->StartTabDraggingByTouch(widget_id, finger_id);
+}
+
 }  // namespace ui

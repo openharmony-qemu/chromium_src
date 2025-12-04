@@ -895,4 +895,13 @@ void NodeHandleXComponentImpl::SendWindowMouseEventForTabDrag(
   }
 }
 
+__attribute__((no_sanitize("cfi", "cfi-icall")))
+void NodeHandleXComponentImpl::SendWindowTouchEventForTabDrag(
+    Input_TouchEvent* window_touch_event) {
+  if (event_callback_ != nullptr && window_touch_event != nullptr) {
+    event_callback_->sendWindowTouchEventForTabDragCallback(GetWidget(),
+                                                            window_touch_event);
+  }
+}
+
 }  // namespace ohos::adapter::xcomponent

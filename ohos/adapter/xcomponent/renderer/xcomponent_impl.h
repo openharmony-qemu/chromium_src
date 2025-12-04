@@ -57,6 +57,9 @@ class XComponentImpl : public XComponentBase {
   void OnSurfaceDestroyed();
 
   void SendWindowMouseEventForTabDrag(Input_MouseEvent* window_mouse_event) override;
+  void SendWindowTouchEventForTabDrag(
+      Input_TouchEvent* window_touch_event) override;
+
  private:
   OH_NativeXComponent* instance_ = nullptr;
   std::shared_ptr<InputEventCallBack> event_callback_ = nullptr;

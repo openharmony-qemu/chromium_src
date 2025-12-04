@@ -97,6 +97,8 @@ class ADAPTER_EXPORT_API NodeHandleXComponentImpl : public XComponentBase {
 
   void SendWindowMouseEventForTabDrag(
       Input_MouseEvent* window_mouse_event) override;
+  void SendWindowTouchEventForTabDrag(
+      Input_TouchEvent* window_touch_event) override;
 
  private:
   ArkUI_NodeHandle node_handle_ = nullptr;

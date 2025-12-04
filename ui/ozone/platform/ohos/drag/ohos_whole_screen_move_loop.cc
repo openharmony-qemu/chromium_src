@@ -13,6 +13,7 @@
 #include "base/run_loop.h"
 #include "base/task/current_thread.h"
 #include "base/task/single_thread_task_runner.h"
+#include "ohos/adapter/xcomponent/event/window_event_filter_adapter.h"
 #include "ui/events/event.h"
 #include "ui/events/event_utils.h"
 #include "ui/events/platform/platform_event_source.h"
@@ -64,12 +65,19 @@ uint32_t OhosWholeScreenMoveLoop::DispatchEvent(
   switch (event->type()) {
     case ui::EventType::kMouseMoved:
     case ui::EventType::kMouseDragged: {
-      delegate_->OnMouseMove();
+      delegate_->OnTabMoveForStartMoving();
       // Do not intercepted. The mouse event needs to be transparently
       // transmitted to the TabDragController.
       return ui::POST_DISPATCH_PERFORM_DEFAULT;
     }
     case ui::EventType::kTouchMoved: {
+      if (ohos::adapter::window::WindowEventFilterAdapter::GetInstance()
+              .CanShiftTouchEvent()) {
+        delegate_->OnTabMoveForStartMoving();
+        // The touch event needs to be transparently transmitted to the
+        // TabDragController.
+        return ui::POST_DISPATCH_PERFORM_DEFAULT;
+      }
       delegate_->OnTouchMove();
       return ui::POST_DISPATCH_NONE;
     }

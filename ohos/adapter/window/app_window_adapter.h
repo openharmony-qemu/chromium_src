@@ -42,11 +42,14 @@ class ADAPTER_EXPORT_API AppWindowAdapter {
       const PointCoordinate& coordinate);
   void Restore(int32_t id);
   std::vector<int32_t> GetOriginWindowIds(std::vector<int32_t> window_ids);
-  bool ShiftWindowEvent(const int32_t source_window_id,
-                        const int32_t target_window_id);
+  bool ShiftWindowMouseEvent(const int32_t source_window_id,
+                             const int32_t target_window_id);
   void StartWindowMovingWithOffset(const int32_t id,
                                    const float offset_x,
                                    const float offset_y);
+  bool ShiftWindowTouchEvent(const int32_t source_id,
+                             const int32_t target_id,
+                             const int32_t finger_id);
   bool Bind(const std::string& id);
 
  private:

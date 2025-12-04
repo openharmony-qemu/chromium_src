@@ -108,6 +108,10 @@ class COMPONENT_EXPORT(VELOCITY_TRACKER) MotionEvent {
 
   virtual bool IsLatestEventTimeResampled() const;
 
+#if BUILDFLAG(IS_OHOS)
+  virtual int GetDisplayId(size_t pointer_index) const;
+#endif
+
   // Utility accessor methods for convenience.
   int GetPointerId() const { return GetPointerId(0); }
   float GetX() const { return GetX(0); }
@@ -152,6 +156,10 @@ class COMPONENT_EXPORT(VELOCITY_TRACKER) MotionEvent {
   // underlying implementation is identical to the source implementation.
   std::unique_ptr<MotionEvent> Clone() const;
   std::unique_ptr<MotionEvent> Cancel() const;
+
+#if BUILDFLAG(IS_OHOS)
+  int32_t GetDisplayId() const { return GetDisplayId(0); }
+#endif
 };
 
 COMPONENT_EXPORT(VELOCITY_TRACKER) std::ostream& operator<<(

@@ -29,9 +29,10 @@ AlloyPageLoadMetricsMemoryTrackerFactory::
           "PageLoadMetricsMemoryTracker",
           BrowserContextDependencyManager::GetInstance()) {}
 
-KeyedService* AlloyPageLoadMetricsMemoryTrackerFactory::BuildServiceInstanceFor(
+std::unique_ptr<KeyedService>
+AlloyPageLoadMetricsMemoryTrackerFactory::BuildServiceInstanceForBrowserContext(
     content::BrowserContext* context) const {
-  return new page_load_metrics::PageLoadMetricsMemoryTracker();
+  return std::make_unique<page_load_metrics::PageLoadMetricsMemoryTracker>();
 }
 
 content::BrowserContext*

@@ -582,7 +582,7 @@ class MockPreferenceCefBrowserHost : public ArkWebBrowserHostExt {
   void SetAutofillCallback(CefRefPtr<CefWebMessageReceiver> callback) override {
   }
 
-  void FillAutofillData(CefRefPtr<CefValue> message) override {}
+  void FillAutofillData(CefRefPtr<CefValue> message, int32_t trigger_type) override {}
 
   void ScrollFocusedEditableNodeIntoView() override {}
 

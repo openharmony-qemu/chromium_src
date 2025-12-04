@@ -35,11 +35,13 @@ bool MatchUrlRegex(const std::string& url, const std::string& regex) {
   }
   if (regex[0] == '*' || regex[0] == '+' || regex[0] == '?' ||
       regex[0] == '{') {
+    LOG(ERROR) << "Invalid regex: starts with an unsupported character:'*','+','?','{'.";
     return false;
   }
 
   const RE2 pattern(regex);
   if (!pattern.ok()) {
+    LOG(ERROR) << "MatchUrlRegex: Failed to convert regex to RE2.";
     return false;
   }
 

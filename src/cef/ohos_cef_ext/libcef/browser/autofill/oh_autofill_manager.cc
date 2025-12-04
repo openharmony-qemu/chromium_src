@@ -649,4 +649,9 @@ void OhAutofillManager::OnAskForValuesToFillImplForDatalist(
 }
 #endif  // BUILDFLAG(ARKWEB_DATALIST)
 
+void OhAutofillManager::OnLoadedServerPredictionsImpl(
+    base::span<const raw_ptr<FormStructure, VectorExperimental>> forms) {
+  LOG(INFO) << "OnLoadedServerPredictionsImpl";
+}
+
 }  // namespace autofill

@@ -18,9 +18,10 @@
 #include <utility>
 
 #include "base/check_op.h"
+#include "base/notimplemented.h"
 #include "base/notreached.h"
 #include "components/autofill/core/browser/payments/legal_message_line.h"
-#include "components/autofill/core/browser/ui/suggestion.h"
+#include "components/autofill/core/browser/suggestions/suggestion.h"
 #include "components/autofill/core/browser/webdata/autofill_webdata_service.h"
 #include "chrome/browser/autofill/personal_data_manager_factory.h"
 #include "components/prefs/pref_registry_simple.h"
@@ -28,6 +29,7 @@
 #include "components/prefs/pref_service_factory.h"
 #include "components/user_prefs/user_prefs.h"
 #include "content/public/browser/browser_context.h"
+#include "content/public/browser/navigation_controller.h"
 #include "content/public/browser/navigation_entry.h"
 #include "content/public/browser/ssl_status.h"
 #include "content/public/browser/storage_partition.h"
@@ -310,6 +312,67 @@ content::WebContents& OhAutofillClient::GetWebContents() const {
   // cast is the lesser of two evils.
   return const_cast<content::WebContents&>(
       ContentAutofillClient::GetWebContents());
+}
+
+const std::string& OhAutofillClient::GetAppLocale() const {
+  const static std::string locale = "en-US";
+  return locale;
+}
+
+autofill::VotesUploader& OhAutofillClient::GetVotesUploader() {
+  NOTIMPLEMENTED();
+  LOG(FATAL) << "GetVotesUploader not implemented - cannot construct without proper parameters";
+  // VotesUploader requires complex initialization, so this method needs proper implementation
+  __builtin_unreachable();
+}
+
+autofill::AutofillCrowdsourcingManager& OhAutofillClient::GetCrowdsourcingManager() {
+  NOTIMPLEMENTED();
+  LOG(FATAL) << "GetCrowdsourcingManager not implemented - requires AutofillClient and Channel parameters";
+  // AutofillCrowdsourcingManager requires AutofillClient* and version_info::Channel parameters
+  __builtin_unreachable();
+}
+
+autofill::ValuablesDataManager* OhAutofillClient::GetValuablesDataManager() {
+  NOTIMPLEMENTED();
+  return nullptr;
+}
+
+autofill::EntityDataManager* OhAutofillClient::GetEntityDataManager() {
+  NOTIMPLEMENTED();
+  return nullptr;
+}
+
+autofill::SingleFieldFillRouter& OhAutofillClient::GetSingleFieldFillRouter() {
+  NOTIMPLEMENTED();
+  LOG(FATAL) << "GetSingleFieldFillRouter not implemented - requires multiple manager parameters";
+  // SingleFieldFillRouter requires AutocompleteHistoryManager*, IbanManager*, and MerchantPromoCodeManager*
+  __builtin_unreachable();
+}
+
+credential_management::ContentCredentialManager* OhAutofillClient::GetContentCredentialManager() {
+  NOTIMPLEMENTED();
+  LOG(WARNING) << "GetContentCredentialManager not implemented";
+  return nullptr;
+}
+
+bool OhAutofillClient::IsAutofillEnabled() const {
+  return true;
+}
+
+bool OhAutofillClient::IsAutofillProfileEnabled() const {
+  return true;
+}
+
+bool OhAutofillClient::IsAutofillPaymentMethodsEnabled() const {
+  return false;
+}
+
+autofill_metrics::FormInteractionsUkmLogger& OhAutofillClient::GetFormInteractionsUkmLogger() {
+  NOTIMPLEMENTED();
+  LOG(FATAL) << "GetFormInteractionsUkmLogger not implemented - requires proper initialization";
+  // FormInteractionsUkmLogger requires complex initialization with proper UKM service
+  __builtin_unreachable();
 }
 
 }  // namespace autofill

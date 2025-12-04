@@ -135,6 +135,8 @@ class OhAutofillManager : public AutofillManager,
   void OnJavaScriptChangedAutofilledValueImpl(const FormData& form,
                                               const FieldGlobalId& field_id,
                                               const std::u16string& old_value) override {}
+  void OnLoadedServerPredictionsImpl(
+      base::span<const raw_ptr<FormStructure, VectorExperimental>> forms) override;
   bool ShouldParseForms() override;
 
   void OnBeforeProcessParsedForms() override {}

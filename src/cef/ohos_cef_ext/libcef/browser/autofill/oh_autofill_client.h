@@ -109,6 +109,17 @@ class OhAutofillClient : public autofill::ContentAutofillClient {
   security_state::SecurityLevel GetSecurityLevelForUmaHistograms() override;
   const translate::LanguageState* GetLanguageState() override;
   translate::TranslateDriver* GetTranslateDriver() override;
+  const std::string& GetAppLocale() const override;
+  autofill::VotesUploader& GetVotesUploader() override;
+  autofill::AutofillCrowdsourcingManager& GetCrowdsourcingManager() override;
+  autofill::ValuablesDataManager* GetValuablesDataManager() override;
+  autofill::EntityDataManager* GetEntityDataManager() override;
+  autofill::SingleFieldFillRouter& GetSingleFieldFillRouter() override;
+  credential_management::ContentCredentialManager* GetContentCredentialManager() override;
+  bool IsAutofillEnabled() const override;
+  bool IsAutofillProfileEnabled() const override;
+  bool IsAutofillPaymentMethodsEnabled() const override;
+  autofill_metrics::FormInteractionsUkmLogger& GetFormInteractionsUkmLogger() override;
   void ShowAutofillSettings(autofill::SuggestionType suggestion_type) override;
   void ConfirmSaveAddressProfile(
       const autofill::AutofillProfile& profile,

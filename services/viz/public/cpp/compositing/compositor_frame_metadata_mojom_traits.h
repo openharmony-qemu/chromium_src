@@ -62,6 +62,16 @@ struct StructTraits<viz::mojom::CompositorFrameMetadataDataView,
   }
 #endif
 
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+  static int64_t dropped_frame_count(const viz::CompositorFrameMetadata& metadata) {
+    return metadata.dropped_frame_count;
+  }
+
+  static int64_t dropped_frame_duration(const viz::CompositorFrameMetadata& metadata) {
+    return metadata.dropped_frame_duration;
+  }
+#endif
+
   static bool may_contain_video(const viz::CompositorFrameMetadata& metadata) {
     return metadata.may_contain_video;
   }

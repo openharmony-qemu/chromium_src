@@ -69,4 +69,30 @@ void VideoFrameSubmitter::StopRenderingForSameLayerImpl()
     vsync_period_cnt_without_submit_ = 0;
   }
 }
+
+void VideoFrameSubmitter::UpdateDroppedFrameMetrics(const viz::BeginFrameArgs& args) {
+  if (args.interval <= base::TimeDelta::Min() || args.interval.is_zero()) {
+    return;
+  }
+
+  if (!is_first_frame_) {
+    base::TimeTicks cur_frame_time = args.frame_time + args.interval;
+    dropped_frame_count_ = (cur_frame_time - last_frame_time_).IntDiv(args.interval);
+    dropped_frame_duration_ = (cur_frame_time - last_frame_time_).InMilliseconds();
+    if (!!dropped_frame_count_)
+      should_report_frame_dropped_ = true;
+  } else {
+    is_first_frame_ = false;
+  }
+  last_frame_time_ = args.frame_time + 2 * args.interval;
+}
+
+void VideoFrameSubmitter::SubmitDroppedFrameMetricsToMetadata(viz::CompositorFrame& compositor_frame) {
+  if (should_report_frame_dropped_) {
+    compositor_frame.metadata.dropped_frame_count = dropped_frame_count_;
+    compositor_frame.metadata.dropped_frame_duration = dropped_frame_duration_;
+    should_report_frame_dropped_ = false;
+  }
+}
+
 }  // namespace blink

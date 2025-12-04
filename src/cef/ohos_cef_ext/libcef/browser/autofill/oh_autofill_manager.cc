@@ -630,7 +630,7 @@ void OhAutofillManager::OnAskForValuesToFillImplForDatalist(
   std::vector<autofill::Suggestion> suggestions;
   const FormFieldData* field = form.FindFieldByGlobalId(field_id);
   for (SelectOption option : field->datalist_options()) {
-    suggestions.push_back(autofill::Suggestion(option.value));
+    suggestions.push_back(autofill::Suggestion(option.value, autofill::SuggestionType::kDatalistEntry));
   }
   if (suggestions.size() == 0) {
     autofill_client->HideAutofillPopup();

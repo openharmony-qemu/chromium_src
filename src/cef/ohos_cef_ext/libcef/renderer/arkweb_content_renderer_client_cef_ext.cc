@@ -119,10 +119,8 @@ bool ArkWebContentRendererClientCefExt::HandleNavigation(
   blink::WebView* web_view = render_frame->GetWebView();
 
   bool browser_created;
-  std::optional<bool> is_windowless;
-  std::optional<bool> print_preview_enabled;
-  render_manager_->WebViewCreated(web_view, browser_created, is_windowless,
-                                  print_preview_enabled);
+  std::optional<cef::BrowserConfig> config = cef::BrowserConfig{};
+  render_manager_->WebViewCreated(web_view, browser_created, config);
   if (!browser_created) {
     return false;
   }

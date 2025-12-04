@@ -18,6 +18,7 @@
 
 #include <string>
 #include <vector>
+#include <map>
 
 #include "base/memory/raw_ptr.h"
 #include "third_party/blink/public/common/loader/url_loader_throttle.h"

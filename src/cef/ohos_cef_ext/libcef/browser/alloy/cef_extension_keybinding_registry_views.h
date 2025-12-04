@@ -42,12 +42,7 @@ class CefExtensionKeybindingRegistryViews
 
  private:
   // Overridden from ExtensionKeybindingRegistry:
-  void AddExtensionKeybindings(const extensions::Extension* extension,
-                               const std::string& command_name) override;
 
-  void RemoveExtensionKeybindingImpl(const ui::Accelerator& accelerator,
-                                     const std::string& command_name) override {
-  }
   void OnShortcutHandlingSuspended(bool suspended) override {}
 
   raw_ptr<content::BrowserContext> browser_context_profile;

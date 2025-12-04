@@ -15,6 +15,8 @@
 
 #include "cef/ohos_cef_ext/libcef/browser/arkweb_browser_info_manager_utils.h"
 
+#include "content/public/browser/navigation_controller.h"
+#include "content/public/browser/web_contents.h"
 #include "cef/libcef/browser/browser_host_base.h"
 #include "cef/libcef/browser/browser_info_manager.h"
 

@@ -140,44 +140,19 @@ llvm_upgrade() {
 
 rust_upgrade() {
 
-  if [ ! -d "rust-toolchain" ]; then
+    if [ ! -d "rust-toolchain" ]; then
 
-    tar zxf "rust-toolchain.tar.gz"
-
-    rc=$?
-
-    if [ ${rc} -ne 0 ]; then
-
-      echo "ERROR: Failed to extract rust toolchain tarball: ${base_dir}/rust-toolchain.tar.gz, result: ${rc}"
-
-      return ${rc}
+        tar zxf "rust-toolchain.tar.gz" || return 1
 
     fi
 
-    cd "${base_dir}/../third_party"
-
-    rm -rf rust-toolchain -r
-
-    cp "${base_dir}/rust-toolchain.tar.gz" .
-
-    tar zxf "rust-toolchain.tar.gz"
-
-    rc=$?
-
-    if [ ${rc} -ne 0 ]; then
-
-      echo "ERROR1: Failed to extract rust toolchain tarball: ${base_dir}/rust-toolchain.tar.gz, result: ${rc}"
-
-      return ${rc}
+    if [ ! -L "${base_dir}/../third_party/rust-toolchain" ]; then
+        
+        ln -sf "${base_dir}/rust-toolchain" "${base_dir}/../third_party/rust-toolchain"
 
     fi
-
-    return ${rc}
-
-  fi
 
 }
-
 
 
 sdk_upgrade

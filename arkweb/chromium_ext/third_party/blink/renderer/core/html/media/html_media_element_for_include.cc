@@ -44,6 +44,9 @@
 namespace blink {
 namespace {
 extern std::string GetFormatFromType(std::string type);
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+extern String BuildElementErrorMessage(const String& error);
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
 float PageConstraintInitalScale(const Document& document) {
@@ -599,5 +602,118 @@ bool HTMLMediaElement::IsUseVideoLoadOptimization() const {
   return GetDocument().IsUseVideoLoadOptimization();
 }
 #endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+// Please make incremental modifications based on the native implementation during each upgrade.
+void HTMLMediaElement::MediaLoadingFailed(WebMediaPlayer::NetworkState error,
+                                          const String& input_message) {
+  DVLOG(3) << "MediaLoadingFailed(" << *this << ", " << int{error}
+           << ", message='" << input_message << "')";
+ 
+#if BUILDFLAG(ARKWEB_MEDIA)
+  LOG(INFO) << "OhMedia::MediaLoadingFailed error = " << (int)error
+            << ", input_message = " << input_message << ")";
+#endif // ARKWEB_MEDIA
+  bool should_be_opaque = MediaShouldBeOpaque();
+  if (should_be_opaque)
+    error = WebMediaPlayer::kNetworkStateNetworkError;
+  String empty_string;
+  const String& message = should_be_opaque ? empty_string : input_message;
+ 
+  StopPeriodicTimers();
+ 
+  // If we failed while trying to load a <source> element, the movie was never
+  // parsed, and there are more <source> children, schedule the next one
+  if (ready_state_ < kHaveMetadata &&
+      load_state_ == kLoadingFromSourceElement) {
+    // resource selection algorithm
+    // Step 9.Otherwise.9 - Failed with elements: Queue a task, using the DOM
+    // manipulation task source, to fire a simple event named error at the
+    // candidate element.
+    if (current_source_node_) {
+      current_source_node_->ScheduleErrorEvent();
+    } else {
+      DVLOG(3) << "mediaLoadingFailed(" << *this
+               << ") - error event not sent, <source> was removed";
+    }
+ 
+    // 9.Otherwise.10 - Asynchronously await a stable state. The synchronous
+    // section consists of all the remaining steps of this algorithm until the
+    // algorithm says the synchronous section has ended.
+ 
+    // 9.Otherwise.11 - Forget the media element's media-resource-specific
+    // tracks.
+    ForgetResourceSpecificTracks();
+ 
+    if (HavePotentialSourceChild()) {
+      DVLOG(3) << "mediaLoadingFailed(" << *this
+               << ") - scheduling next <source>";
+      ScheduleNextSourceChild();
+    } else {
+      DVLOG(3) << "mediaLoadingFailed(" << *this
+               << ") - no more <source> elements, waiting";
+      WaitForSourceChange();
+    }
+ 
+    return;
+  }
+ 
+  std::string error_type;
+  bool is_message_not_clear = false;
+  if (error == WebMediaPlayer::kNetworkStateNetworkError &&
+      ready_state_ >= kHaveMetadata) {
+    if (html_media_element_utils_.IsFeedsPage()) {
+      MediaEngineError(MakeGarbageCollected<MediaError>(
+          MediaError::kMediaErrNetwork, AddErrorCodeToMessage(error, message).c_str()));
+    } else {
+      MediaEngineError(MakeGarbageCollected<MediaError>(
+          MediaError::kMediaErrNetwork, message));
+    }
+    error_type = "Network Error";
+  } else if (error == WebMediaPlayer::kNetworkStateDecodeError) {
+    if (html_media_element_utils_.IsFeedsPage()) {
+      MediaEngineError(MakeGarbageCollected<MediaError>(
+          MediaError::kMediaErrDecode, AddErrorCodeToMessage(error, message).c_str()));
+    } else {
+      MediaEngineError(MakeGarbageCollected<MediaError>(
+          MediaError::kMediaErrDecode, message));
+    }
+    error_type = "Decode Error";
+  } else if ((error == WebMediaPlayer::kNetworkStateFormatError ||
+              error == WebMediaPlayer::kNetworkStateNetworkError) &&
+             (load_state_ == kLoadingFromSrcAttr ||
+              (load_state_ == kLoadingFromSrcObject &&
+               src_object_media_source_handle_))) {
+    if (message.empty()) {
+      // Generate a more meaningful error message to differentiate the two types
+      // of MEDIA_SRC_ERR_NOT_SUPPORTED.
+      if (html_media_element_utils_.IsFeedsPage()) {
+        NoneSupported(BuildElementErrorMessage(AddErrorCodeToMessage(error,
+            (error == WebMediaPlayer::kNetworkStateFormatError ? "Format error"
+                                                               : "Network error")).c_str()));
+      } else {
+        NoneSupported(BuildElementErrorMessage(
+            error == WebMediaPlayer::kNetworkStateFormatError ? "Format error"
+                                                              : "Network error"));
+      }
+      is_message_not_clear = true;
+      error_type =
+          (error == WebMediaPlayer::kNetworkStateFormatError ? "Format Error"
+                                                             : "Network Error");
+    } else {
+      if (html_media_element_utils_.IsFeedsPage()) {
+        NoneSupported(BuildElementErrorMessage(AddErrorCodeToMessage(error,message).c_str()));
+      } else {
+        NoneSupported(message);
+      }
+      error_type = "Others";
+    }
+  }
+ 
+  ReportMediaLoadingErrorMessage(error_type, error, message, is_message_not_clear);
+ 
+  UpdateLayoutObject();
+}
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
 }  // namespace blink

@@ -36,33 +36,3 @@ bool CefExtensionKeybindingRegistryViews::AcceleratorPressed(
   return ExtensionKeybindingRegistry::NotifyEventTargets(accelerator);
 }
 
-// Overridden from ExtensionKeybindingRegistry:
-void CefExtensionKeybindingRegistryViews::AddExtensionKeybindings(
-    const extensions::Extension* extension,
-    const std::string& command_name) {
-  // This object only handles named commands, not browser/page actions.
-  if (ShouldIgnoreCommand(command_name)) {
-    return;
-  }
-  extensions::CommandService* command_service =
-      extensions::CommandService::Get(browser_context_profile);
-
-  // Add all the active keybindings (except page actions and browser actions,
-  // which are handled elsewhere).
-  extensions::CommandMap commands;
-  if (!command_service->GetNamedCommands(
-          extension->id(), extensions::CommandService::ACTIVE,
-          extensions::CommandService::REGULAR, &commands)) {
-    return;
-  }
-  extensions::CommandMap::const_iterator iter = commands.begin();
-  for (; iter != commands.end(); ++iter) {
-    if (!command_name.empty() &&
-        (iter->second.command_name() != command_name)) {
-      continue;
-    }
-    const ui::Accelerator& accelerator = iter->second.accelerator();
-
-    AddEventTarget(accelerator, extension->id(), iter->second.command_name());
-  }
-}

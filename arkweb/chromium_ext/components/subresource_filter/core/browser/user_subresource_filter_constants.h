@@ -61,9 +61,6 @@ extern const base::FilePath::CharType kUserUnindexedRulesetDataFileName[];
 // The name of the file that stores meta data
 extern const base::FilePath::CharType kUserDataBaseFileName[];
 
-// The name of the file that stores easylist
-extern const base::FilePath::CharType kUserEasylistFileName[];
-
 }  // namespace subresource_filter
 
 #endif  // COMPONENTS_SUBRESOURCE_FILTER_CORE_BROWSER_USER_SUBRESOURCE_FILTER_CONSTANTS_H_

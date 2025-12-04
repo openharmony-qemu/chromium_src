@@ -18,6 +18,8 @@
 #include <span>
 
 #include "base/logging.h"
+#include "content/public/browser/navigation_controller.h"
+#include "content/public/browser/restore_type.h"
 #include "third_party/blink/public/common/page_state/page_state.h"
 
 namespace {

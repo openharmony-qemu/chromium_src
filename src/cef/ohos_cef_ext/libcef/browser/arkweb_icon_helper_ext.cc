@@ -10,6 +10,7 @@
 #include "ohos_cef_ext/include/arkweb_display_handler_ext.h"
 #if BUILDFLAG(ARKWEB_NAVIGATION)
 #include "content/public/browser/favicon_status.h"
+#include "content/public/browser/navigation_controller.h"
 #include "content/public/browser/navigation_entry.h"
 #endif  // BUILDFLAG(ARKWEB_NAVIGATION)
 #include "content/public/browser/web_contents.h"

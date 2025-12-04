@@ -23,12 +23,6 @@
 #undef TRACE_EVENT0
 #endif
 #define TRACE_EVENT0(category_group, name)  \
-  BYTRACE_SCOPED_INIT(category_group);      \
-  do {                                      \
-    if (IsCategoryEnable(category_group)) { \
-      BYTRACE_SCOPED_TRACE_EVENT(name);     \
-    }                                       \
-  } while (0);                              \
   INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name)
 
 #ifdef TRACE_EVENT1

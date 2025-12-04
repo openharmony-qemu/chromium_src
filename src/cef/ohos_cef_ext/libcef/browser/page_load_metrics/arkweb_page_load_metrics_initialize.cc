@@ -4,10 +4,12 @@
 
 #include "ohos_cef_ext/libcef/browser/page_load_metrics/arkweb_page_load_metrics_initialize.h"
 
+#include "components/page_load_metrics/browser/features.h"
 #include "components/page_load_metrics/browser/metrics_web_contents_observer.h"
 #include "components/page_load_metrics/browser/page_load_metrics_embedder_base.h"
 #include "components/page_load_metrics/browser/page_load_metrics_memory_tracker.h"
 #include "components/page_load_metrics/browser/page_load_tracker.h"
+#include "content/public/browser/browser_context.h"
 #include "ohos_cef_ext/libcef/browser/page_load_metrics/arkweb_alloy_page_load_metrics_memory_tracker_factory.h"
 #include "ohos_cef_ext/libcef/browser/page_load_metrics/arkweb_page_load_metrics_observer.h"
 
@@ -40,6 +42,7 @@ class PageLoadMetricsEmbedder
   page_load_metrics::PageLoadMetricsMemoryTracker*
   GetMemoryTrackerForBrowserContext(
       content::BrowserContext* browser_context) override;
+  bool IsIncognito(content::WebContents* web_contents) override;
 
  protected:
   // page_load_metrics::PageLoadMetricsEmbedderBase:
@@ -80,7 +83,7 @@ bool PageLoadMetricsEmbedder::IsNonTabWebUI(const GURL& url) {
 page_load_metrics::PageLoadMetricsMemoryTracker*
 PageLoadMetricsEmbedder::GetMemoryTrackerForBrowserContext(
     content::BrowserContext* browser_context) {
-  if (!base::FeatureList::IsEnabled(features::kV8PerFrameMemoryMonitoring)) {
+  if (!base::FeatureList::IsEnabled(page_load_metrics::features::kV8PerFrameMemoryMonitoring)) {
     return nullptr;
   }
 
@@ -88,6 +91,9 @@ PageLoadMetricsEmbedder::GetMemoryTrackerForBrowserContext(
       browser_context);
 }
 
+bool PageLoadMetricsEmbedder::IsIncognito(content::WebContents* web_contents) {
+  return web_contents->GetBrowserContext()->IsOffTheRecord();
+}
 }  // namespace
 
 void InitializePageLoadMetricsForWebContents(

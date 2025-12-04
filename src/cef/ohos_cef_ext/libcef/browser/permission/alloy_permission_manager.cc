@@ -29,9 +29,10 @@
 
 using blink::PermissionType;
 using blink::mojom::PermissionStatus;
+using content::PermissionResult;
 
 using RequestPermissionsCallback =
-    base::OnceCallback<void(const std::vector<PermissionStatus>&)>;
+    base::OnceCallback<void(const std::vector<content::PermissionResult>&)>;
 
 namespace {
 constexpr int32_t APPLICATION_API_10 = 40000010;
@@ -70,7 +71,7 @@ class AlloyPermissionManager::UnhandledRequest {
         render_frame_host_(render_frame_host),
         requesting_origin_(requesting_origin),
         callback_(std::move(callback)),
-        results_(permissions.size(), PermissionStatus::DENIED),
+        results_(permissions.size(), content::PermissionResult(blink::mojom::PermissionStatus::DENIED, content::PermissionStatusSource::UNSPECIFIED)),
         cancelled_(false) {
     for (size_t i = 0; i < permissions.size(); ++i) {
       permission_index_map_.insert(std::make_pair(permissions[i], i));
@@ -97,7 +98,7 @@ class AlloyPermissionManager::UnhandledRequest {
       NOTREACHED();
     }
     DCHECK(!IsCompleted());
-    results_[result->second] = status;
+    results_[result->second] = content::PermissionResult(status, content::PermissionStatusSource::UNSPECIFIED);
     resolved_permissions_.insert(type);
   }
 
@@ -106,7 +107,7 @@ class AlloyPermissionManager::UnhandledRequest {
     if (result == permission_index_map_.end()) {
       NOTREACHED();
     }
-    return results_[result->second];
+    return results_[result->second].status;
   }
 
   void Cancel() { cancelled_ = true; }
@@ -117,7 +118,7 @@ class AlloyPermissionManager::UnhandledRequest {
   raw_ptr<content::RenderFrameHost> render_frame_host_;
   GURL requesting_origin_;
   RequestPermissionsCallback callback_;
-  std::vector<PermissionStatus> results_;
+  std::vector<content::PermissionResult> results_;
 
  private:
   std::map<PermissionType, size_t> permission_index_map_;
@@ -158,13 +159,13 @@ AlloyPermissionManager::~AlloyPermissionManager() {
 void AlloyPermissionManager::RequestPermissions(
     content::RenderFrameHost* render_frame_host,
     const content::PermissionRequestDescription& request_description,
-    base::OnceCallback<void(const std::vector<blink::mojom::PermissionStatus>&)>
+    base::OnceCallback<void(const std::vector<content::PermissionResult>)>
         callback) {
   const std::vector<blink::PermissionType>& permissions =
       request_description.permissions;
   const GURL& requesting_origin = request_description.requesting_origin;
   if (permissions.empty()) {
-    std::move(callback).Run(std::vector<PermissionStatus>());
+    std::move(callback).Run(std::vector<content::PermissionResult>());
     return;
   }
 
@@ -216,7 +217,7 @@ void AlloyPermissionManager::RequestPermissions(
   // requests could be already resolved, but still in the |unhandled_requests_|
   // without invoking the callback.
   if (pending_request_raw->IsCompleted()) {
-    std::vector<PermissionStatus> results = pending_request_raw->results_;
+    std::vector<content::PermissionResult> results = pending_request_raw->results_;
     RequestPermissionsCallback completed_callback =
         std::move(pending_request_raw->callback_);
     unhandled_requests_.Remove(request_id);
@@ -381,7 +382,7 @@ void AlloyPermissionManager::OnRequestResponseCallBack(
       manager->unhandled_requests_.Lookup(request_id);
   std::vector<int> complete_request_ids;
   std::vector<
-      std::pair<RequestPermissionsCallback, std::vector<PermissionStatus>>>
+      std::pair<RequestPermissionsCallback, std::vector<content::PermissionResult>>>
       complete_request_pairs;
   for (UnhandledRequestsMap::Iterator<UnhandledRequest> it(
            &manager->unhandled_requests_);
@@ -418,18 +419,19 @@ void AlloyPermissionManager::OnRequestResponseCallBack(
 }
 
 PermissionStatus AlloyPermissionManager::GetPermissionStatus(
-    PermissionType permission,
+    blink::mojom::PermissionDescriptorPtr permission,
     const GURL& requesting_origin,
     const GURL& embedding_origin) {
-  if (permission == PermissionType::CLIPBOARD_READ_WRITE ||
-      permission == PermissionType::CLIPBOARD_SANITIZED_WRITE) {
+  blink::PermissionType permission_type = permission->name;
+  if (permission_type == PermissionType::CLIPBOARD_READ_WRITE ||
+      permission_type == PermissionType::CLIPBOARD_SANITIZED_WRITE) {
     return PermissionStatus::GRANTED;
 #if BUILDFLAG(ARKWEB_SENSOR)
-  } else if (permission == PermissionType::SENSORS) {
+  } else if (permission_type == PermissionType::SENSORS) {
     return PermissionStatus::ASK;
 #endif  //BUILDFLAG(ARKWEB_SENSOR)
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  } else if (permission == PermissionType::NOTIFICATIONS) {
+  } else if (permission_type == PermissionType::NOTIFICATIONS) {
     if ((*base::CommandLine::ForCurrentProcess()).HasSwitch(
         switches::kEnableNwebExPermission)) {
       if (notification_permission_.count(requesting_origin)) {
@@ -438,7 +440,7 @@ PermissionStatus AlloyPermissionManager::GetPermissionStatus(
         return PermissionStatus::DENIED;
       }
     }
-  } else if (permission == PermissionType::GEOLOCATION) {
+  } else if (permission_type == PermissionType::GEOLOCATION) {
     if ((*base::CommandLine::ForCurrentProcess()).HasSwitch(
         switches::kEnableNwebExPermission)) {
       if (geolocation_permission_.count(requesting_origin)) {
@@ -449,7 +451,7 @@ PermissionStatus AlloyPermissionManager::GetPermissionStatus(
     }
 #endif // #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 #if BUILDFLAG(ARKWEB_WEBRTC)
-  } else if (permission == PermissionType::AUDIO_CAPTURE) {
+  } else if (permission_type == PermissionType::AUDIO_CAPTURE) {
     if ((*base::CommandLine::ForCurrentProcess()).HasSwitch(
         switches::kEnableNwebExPermission)) {
       if (AlloyMediaAccessRequest::microphone_permission_.count(requesting_origin)) {
@@ -459,7 +461,7 @@ PermissionStatus AlloyPermissionManager::GetPermissionStatus(
         return PermissionStatus::ASK;
       }
     }
-  } else if (permission == PermissionType::VIDEO_CAPTURE) {
+  } else if (permission_type == PermissionType::VIDEO_CAPTURE) {
     if ((*base::CommandLine::ForCurrentProcess()).HasSwitch(
         switches::kEnableNwebExPermission)) {
       if (AlloyMediaAccessRequest::camera_permission_.count(requesting_origin)) {
@@ -474,47 +476,47 @@ PermissionStatus AlloyPermissionManager::GetPermissionStatus(
   return PermissionStatus::DENIED;
 }
 PermissionStatus AlloyPermissionManager::GetPermissionStatusForWorker(
-    PermissionType permission,
+    blink::mojom::PermissionDescriptorPtr permission,
     content::RenderProcessHost* render_process_host,
     const GURL& worker_origin) {
-  return GetPermissionStatus(permission, worker_origin, worker_origin);
+  return GetPermissionStatus(std::move(permission), worker_origin, worker_origin);
 }
 PermissionStatus
 AlloyPermissionManager::GetPermissionStatusForEmbeddedRequester(
-    blink::PermissionType permission,
+    blink::mojom::PermissionDescriptorPtr permission,
     content::RenderFrameHost* render_frame_host,
     const url::Origin& requesting_origin) {
   return GetPermissionStatus(
-      permission, requesting_origin.GetURL(),
+      std::move(permission), requesting_origin.GetURL(),
       permissions::PermissionUtil::GetLastCommittedOriginAsURL(
           render_frame_host->GetMainFrame()));
 }
 
 content::PermissionResult
 AlloyPermissionManager::GetPermissionResultForOriginWithoutContext(
-    blink::PermissionType permission,
+    blink::mojom::PermissionDescriptorPtr permission,
     const url::Origin& requesting_origin,
     const url::Origin& embedding_origin) {
   blink::mojom::PermissionStatus status = GetPermissionStatus(
-      permission, requesting_origin.GetURL(), requesting_origin.GetURL());
+      std::move(permission), requesting_origin.GetURL(), requesting_origin.GetURL());
 
   return content::PermissionResult(
       status, content::PermissionStatusSource::UNSPECIFIED);
 }
 
 PermissionStatus AlloyPermissionManager::GetPermissionStatusForCurrentDocument(
-    PermissionType permission,
+    blink::mojom::PermissionDescriptorPtr permission,
     content::RenderFrameHost* render_frame_host,
     bool should_include_device_status) {
   return GetPermissionStatus(
-      permission,
+      std::move(permission),
       permissions::PermissionUtil::GetLastCommittedOriginAsURL(
           render_frame_host),
       permissions::PermissionUtil::GetLastCommittedOriginAsURL(
           render_frame_host->GetMainFrame()));
 }
 
-void AlloyPermissionManager::ResetPermission(PermissionType permission,
+void AlloyPermissionManager::ResetPermission(blink::mojom::PermissionDescriptorPtr permission,
                                              const GURL& requesting_origin,
                                              const GURL& embedding_origin) {}
 
@@ -581,7 +583,7 @@ void AlloyPermissionManager::AbortPermissionRequest(int request_id) {
 void AlloyPermissionManager::RequestPermissionsFromCurrentDocument(
     content::RenderFrameHost* render_frame_host,
     const content::PermissionRequestDescription& request_description,
-    base::OnceCallback<void(const std::vector<blink::mojom::PermissionStatus>&)>
+    base::OnceCallback<void(const std::vector<content::PermissionResult>)>
         callback) {
   RequestPermissions(render_frame_host, request_description,
                      std::move(callback));

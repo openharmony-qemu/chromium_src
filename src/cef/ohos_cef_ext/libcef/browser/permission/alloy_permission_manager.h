@@ -37,10 +37,10 @@ class AlloyPermissionManager : public content::PermissionControllerDelegate {
       content::RenderFrameHost* render_frame_host,
       const content::PermissionRequestDescription& request_description,
       base::OnceCallback<
-          void(const std::vector<blink::mojom::PermissionStatus>&)> callback)
+          void(const std::vector<content::PermissionResult>&)> callback)
       override;
-  blink::mojom::PermissionStatus GetPermissionStatus(
-      blink::PermissionType permission,
+  content::PermissionStatus GetPermissionStatus(
+      const blink::mojom::PermissionDescriptorPtr& permission,
       const GURL& requesting_origin,
       const GURL& embedding_origin) override;
   void ResetPermission(blink::PermissionType permission,
@@ -49,23 +49,26 @@ class AlloyPermissionManager : public content::PermissionControllerDelegate {
   void RequestPermissionsFromCurrentDocument(
       content::RenderFrameHost* render_frame_host,
       const content::PermissionRequestDescription& request_description,
-      base::OnceCallback<
-          void(const std::vector<blink::mojom::PermissionStatus>&)> callback)
+      base::OnceCallback<void(const std::vector<content::PermissionResult>&)> callback)
       override;
   content::PermissionResult GetPermissionResultForOriginWithoutContext(
-      blink::PermissionType permission,
+      const blink::mojom::PermissionDescriptorPtr& permission_descriptor,
       const url::Origin& requesting_origin,
       const url::Origin& embedding_origin) override;
-  blink::mojom::PermissionStatus GetPermissionStatusForCurrentDocument(
-      blink::PermissionType permission,
+  content::PermissionStatus GetPermissionStatusForCurrentDocument(
+      const blink::mojom::PermissionDescriptorPtr& permission_descriptor,
       content::RenderFrameHost* render_frame_host,
       bool should_include_device_status) override;
-  blink::mojom::PermissionStatus GetPermissionStatusForWorker(
-      blink::PermissionType permission,
+  content::PermissionResult GetPermissionResultForCurrentDocument(
+      const blink::mojom::PermissionDescriptorPtr& permission_descriptor,
+      content::RenderFrameHost* render_frame_host,
+      bool should_include_device_status) override;
+  content::PermissionStatus GetPermissionStatusForWorker(
+      const blink::mojom::PermissionDescriptorPtr& permission_descriptor,
       content::RenderProcessHost* render_process_host,
       const GURL& worker_origin) override;
-  blink::mojom::PermissionStatus GetPermissionStatusForEmbeddedRequester(
-      blink::PermissionType permission,
+  content::PermissionStatus GetPermissionStatusForEmbeddedRequester(
+      const blink::mojom::PermissionDescriptorPtr& permission_descriptor,
       content::RenderFrameHost* render_frame_host,
       const url::Origin& requesting_origin) override;
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)

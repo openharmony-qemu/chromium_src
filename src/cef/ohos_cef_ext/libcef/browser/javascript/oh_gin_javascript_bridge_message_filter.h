@@ -9,7 +9,6 @@
 #include "base/types/pass_key.h"
 #include "base/values.h"
 #include "base/memory/raw_ref.h"
-#include "content/public/browser/browser_message_filter.h"
 #include "content/public/browser/render_process_host_observer.h"
 #include "content/public/renderer/render_frame_observer.h"
 #include "libcef/common/javascript/oh_gin_javascript_bridge_errors.h"

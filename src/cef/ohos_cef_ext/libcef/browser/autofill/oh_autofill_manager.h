@@ -24,8 +24,9 @@
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
 #include "chrome/browser/ui/autofill/autofill_popup_hide_helper.h"
-#include "components/autofill/core/browser/autofill_manager.h"
+#include "components/autofill/core/browser/foundations/autofill_manager.h"
 #include "components/autofill/core/common/dense_set.h"
+#include "components/autofill/core/common/password_form_fill_data.h"
 #include "ohos_cef_ext/libcef/browser/autofill/oh_autofill_provider.h"
 #include "third_party/abseil-cpp/absl/types/optional.h"
 
@@ -111,9 +112,9 @@ class OhAutofillManager : public AutofillManager,
   void OnFormSubmittedImpl(const FormData& form,
                            mojom::SubmissionSource source) override;
 
-  void OnTextFieldDidChangeImpl(const FormData& form,
-                                const FieldGlobalId& field_id,
-                                const base::TimeTicks timestamp) override;
+  void OnTextFieldValueChangedImpl(const FormData& form,
+                                   const FieldGlobalId& field_id,
+                                   const base::TimeTicks timestamp) override;
 
   void OnTextFieldDidScrollImpl(const FormData& form,
                                 const FieldGlobalId& field_id) override;
@@ -121,19 +122,21 @@ class OhAutofillManager : public AutofillManager,
   void OnAskForValuesToFillImpl(
       const FormData& form,
       const FieldGlobalId& field_id,
-      const gfx::Rect& bounding_box,
-      AutofillSuggestionTriggerSource trigger_source) override;
+      const gfx::Rect& caret_bounds,
+      AutofillSuggestionTriggerSource trigger_source,
+      std::optional<PasswordSuggestionRequest> password_request) override;
 
   void OnFocusOnFormFieldImpl(const FormData& form,
                               const FieldGlobalId& field_id) override;
 
-  void OnSelectControlDidChangeImpl(const FormData& form,
-                                    const FieldGlobalId& field_id) override;
+  void OnSelectControlSelectionChangedImpl(const FormData& form,
+                                           const FieldGlobalId& field_id) override;
 
   void OnJavaScriptChangedAutofilledValueImpl(const FormData& form,
                                               const FieldGlobalId& field_id,
-                                              const std::u16string& old_value,
-                                              bool formatting_only) override {}
+                                              const std::u16string& old_value) override {}
+  void OnLoadedServerPredictionsImpl(
+      base::span<const raw_ptr<FormStructure, VectorExperimental>> forms) override;
   bool ShouldParseForms() override;
 
   void OnBeforeProcessParsedForms() override {}
@@ -174,7 +177,7 @@ class OhAutofillManager : public AutofillManager,
   void SuggestionSelected(const FieldGlobalId& field_id, std::u16string text);
   void OnAskForValuesToFillImplForDatalist(const FormData& form,
                                            const FieldGlobalId& field_id,
-                                           const gfx::Rect& bounding_box);
+                                           const gfx::Rect& caret_bounds);
 #endif
 
   bool has_server_prediction_ = false;

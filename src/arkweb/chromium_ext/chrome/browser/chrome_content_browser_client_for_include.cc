@@ -292,7 +292,7 @@ class ChromeContentBrowserClientUtils {
           net_service::NetHelpers::DnsOverHttpServerConfig());
       if (config.has_value()) {
         network_service->ConfigureStubHostResolver(
-            true, net_service::NetHelpers::DnsOverHttpMode(),
+            true, true, net_service::NetHelpers::DnsOverHttpMode(),
             net::DnsOverHttpsConfig({{std::move(*config)}}), true);
       } else {
         LOG(INFO) << "doh server invalid";

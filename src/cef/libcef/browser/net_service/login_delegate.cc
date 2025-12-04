@@ -133,12 +133,23 @@ void RunCallbackOnIOThread(
 }
 }  // namespace
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+LoginDelegate::LoginDelegate(
+    const net::AuthChallengeInfo& auth_info,
+    content::WebContents* web_contents,
+    const content::GlobalRequestID& request_id,
+    bool is_request_for_main_frame,
+    const GURL& origin_url,
+    scoped_refptr<net::HttpResponseHeaders> response_headers,
+    content::LoginDelegate::LoginAuthRequiredCallback callback)
+#else
 LoginDelegate::LoginDelegate(
     const net::AuthChallengeInfo& auth_info,
     content::WebContents* web_contents,
     const content::GlobalRequestID& request_id,
     const GURL& origin_url,
     content::LoginDelegate::LoginAuthRequiredCallback callback)
+#endif
     : callback_(std::move(callback)), weak_ptr_factory_(this) {
   CEF_REQUIRE_UIT();
 

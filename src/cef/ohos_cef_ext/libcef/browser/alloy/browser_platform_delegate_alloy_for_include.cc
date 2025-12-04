@@ -26,7 +26,7 @@
 #include "base/command_line.h"
 #include "chrome/browser/browser_process.h"
 #include "components/autofill/content/browser/content_autofill_driver_factory.h"
-#include "components/autofill/core/browser/browser_autofill_manager.h"
+#include "components/autofill/core/browser/foundations/browser_autofill_manager.h"
 #include "content/browser/web_contents/web_contents_impl.h"
 #include "content/public/common/content_switches.h"
 #include "ohos_cef_ext/libcef/browser/autofill/oh_autofill_client.h"

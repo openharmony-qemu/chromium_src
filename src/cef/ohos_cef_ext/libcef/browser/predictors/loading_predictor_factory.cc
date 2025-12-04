@@ -31,15 +31,13 @@ LoadingPredictorFactory::LoadingPredictorFactory()
 
 LoadingPredictorFactory::~LoadingPredictorFactory() {}
 
-std::unique_ptr<KeyedService> LoadingPredictorFactory::BuildServiceInstanceFor(
-    void* context) const {
-  content::BrowserContext* browser_context =
-      static_cast<content::BrowserContext*>(context);
-  if (!IsLoadingPredictorEnabled(browser_context)) {
+std::unique_ptr<KeyedService> LoadingPredictorFactory::BuildServiceInstanceForBrowserContext(
+    content::BrowserContext* context) const {
+  if (!IsLoadingPredictorEnabled(context)) {
     return nullptr;
   }
 
-  return std::make_unique<LoadingPredictor>(LoadingPredictorConfig(), browser_context);
+  return std::make_unique<LoadingPredictor>(LoadingPredictorConfig(), context);
 }
 
 }  // namespace ohos_predictors

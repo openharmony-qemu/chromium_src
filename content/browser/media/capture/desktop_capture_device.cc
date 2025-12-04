@@ -900,6 +900,11 @@ std::unique_ptr<media::VideoCaptureDevice> DesktopCaptureDevice::Create(
   std::unique_ptr<webrtc::DesktopCapturer> capturer;
   std::unique_ptr<media::VideoCaptureDevice> result;
 
+#if BUILDFLAG(IS_OHOS)
+  options.set_use_system_picker(true);
+  options.set_prefer_cursor_embedded(true);
+#endif
+
 #if BUILDFLAG(IS_WIN)
   options.set_allow_cropping_window_capturer(true);
 

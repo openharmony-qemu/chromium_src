@@ -26,6 +26,7 @@
 #include "media/media_buildflags.h"
 #include "services/audio/device_listener_output_stream.h"
 #include "services/audio/stream_monitor.h"
+#include "base/hash/hash.h"
 
 namespace audio {
 
@@ -463,9 +464,15 @@ void OutputController::SendLogMessage(const char* format, ...) {
     return;
   va_list args;
   va_start(args, format);
+#if BUILDFLAG(ARKWEB_MEDIA)
+  handler_->OnLog("AOC::" + base::StringPrintV(format, args) +
+                  base::StringPrintf(" [this_hash=%016x]", 
+                                     base::FastHash(base::byte_span_from_ref(this))));  
+#else  
   handler_->OnLog("AOC::" + base::StringPrintV(format, args) +
                   base::StringPrintf(" [this=0x%" PRIXPTR "]",
                                      reinterpret_cast<uintptr_t>(this)));
+#endif  // ARKWEB_MEDIA                                                                        
   va_end(args);
 }
 

@@ -9,6 +9,7 @@
 #include <vector>
 #include <cstring>
 #include <mutex>
+#include <atomic>
 #include "base/containers/circular_deque.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
@@ -309,12 +310,14 @@ class OHOSAudioDecoder : public AudioDecoder,
 
   void WaitingForLicence();
 
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
   void ReportDrmAudioPlayErrorInfo(const std::string& errorDesc);
+#endif
 
  private:
   std::string mime_type_;
 
-  State state_ = State::UNINITIALIZED;
+  std::atomic<State> state_ = State::UNINITIALIZED;
 
   std::unique_ptr<AudioCodecDecoderAdapter> audio_decoder_ = nullptr;
 

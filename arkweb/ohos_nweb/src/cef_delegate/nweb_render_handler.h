@@ -203,8 +203,6 @@ class NWebRenderHandler : public ArkWebRenderHandlerExt {
                                     const CefNativeEmbedData& info) override;
   void OnNativeEmbedVisibilityChange(const CefString& embed_id,
                                      bool visibility) override;
-  void OnNativeEmbedObjectParamChange(CefRefPtr<CefBrowser> browser,
-                                      const CefNativeParamData& paramData) override;
   void OnScrollStart(CefRefPtr<CefBrowser> browser,
                      const float x,
                      const float y) override;
@@ -221,8 +219,6 @@ class NWebRenderHandler : public ArkWebRenderHandlerExt {
                          bool& isAvailable) override;
   std::shared_ptr<NWebNativeEmbedDataInfo> CefEmbedDataToWeb(
       const CefNativeEmbedData& embedData);
-  std::shared_ptr<NWebNativeEmbedParamDataInfo> CefEmbedParamDataToWeb(
-      const CefNativeParamData& paramData);
   void SetContentSize(int width, int height);
   void SetGestureEventResult(bool result) override;
   bool GetGestureEventResult();
@@ -279,6 +275,7 @@ class NWebRenderHandler : public ArkWebRenderHandlerExt {
 #if BUILDFLAG(ARKWEB_MENU)
   std::shared_ptr<NWebTouchHandleState> GetDefalutTouchHandleState(
       NWebTouchHandleState::TouchHandleType type);
+  void OnSelectAreaChanged(CefRect& select_area) override; 
 #endif
   CefRefPtr<CefDragData> GetDragData();
 
@@ -311,6 +308,9 @@ class NWebRenderHandler : public ArkWebRenderHandlerExt {
  private:
   CefTouchHandleState ConvertTouchHandleDisplayRatio(
       const CefTouchHandleState& touch_handle);
+#if BUILDFLAG(ARKWEB_MENU)
+  CefRect ConvertSelectAreaDisplayRatio(const CefRect& rect);
+#endif
 
   std::function<void(const char*)> render_update_cb_ = nullptr;
   CefRefPtr<NWebInputMethodClient> inputmethod_client_ = nullptr;

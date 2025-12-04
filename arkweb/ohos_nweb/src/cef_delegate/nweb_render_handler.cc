@@ -346,61 +346,6 @@ class NWebNativeEmbedMouseEventImpl : public NWebNativeEmbedMouseEvent {
   std::shared_ptr<NWebMouseEventResult> result_;
 };
 
-class NWebNativeEmbedParamItemImpl : public NWebNativeEmbedParamItem {
- public:
-  NWebNativeEmbedParamItemImpl() = default;
-  ~NWebNativeEmbedParamItemImpl() = default;
-
-  NativeEmbedParamStatus GetStatus() override { return status_; }
-
-  void SetStatus(NativeEmbedParamStatus status) { status_ = status; }
-
-  std::string GetId() override { return id_; }
-
-  void SetId(const std::string& id) { id_ = id; }
-
-  std::string GetName() override { return name_; }
-
-  void SetName(const std::string& name) { name_ = name; }
-
-  std::string GetValue() override { return value_; }
-
-  void SetValue(const std::string& value) { value_ = value; }
-
- private:
-  NativeEmbedParamStatus status_ = NativeEmbedParamStatus::ADD;
-  std::string id_;
-  std::string name_;
-  std::string value_;
-};
-
-class NWebNativeEmbedParamDataInfoImpl : public NWebNativeEmbedParamDataInfo {
- public:
-  NWebNativeEmbedParamDataInfoImpl() = default;
-  ~NWebNativeEmbedParamDataInfoImpl() = default;
-
-  std::string GetEmbedId() override { return embedId_; }
-
-  void SetEmbedId(const std::string& embedId) { embedId_ = embedId; }
-
-  std::string GetObjectAttributeId() override { return objectAttributeId_; }
-
-  void SetObjectAttributeId(const std::string& objectAttributeId) {
-    objectAttributeId_ = objectAttributeId;
-  }
-
-  std::vector<std::shared_ptr<NWebNativeEmbedParamItem>> GetParamItems() override { return paramItems_; }
-
-  void SetParamItems(const std::vector<std::shared_ptr<NWebNativeEmbedParamItem>>& paramItems) {
-    paramItems_ = paramItems;
-  }
-
- private:
-  std::string embedId_;
-  std::string objectAttributeId_;
-  std::vector<std::shared_ptr<NWebNativeEmbedParamItem>> paramItems_;
-};
-
 // static
 CefRefPtr<NWebRenderHandler> NWebRenderHandler::Create() {
   CefRefPtr<NWebRenderHandler> renderHandler(new NWebRenderHandler());
@@ -1009,6 +954,24 @@ NWebRenderHandler::GetDefalutTouchHandleState(
 
   return std::make_shared<NWebTouchHandleStateImpl>(state);
 }
+
+CefRect NWebRenderHandler::ConvertSelectAreaDisplayRatio(const CefRect& rect)
+{
+  CefRect result_select_area = rect;
+  if (screen_info_.display_ratio <= 0) {
+    LOG(WARNING) << "virtual display ratio is invalid";
+    return result_select_area;
+  }
+  result_select_area.x *= screen_info_.display_ratio;
+  result_select_area.y *= screen_info_.display_ratio;
+  result_select_area.width *= screen_info_.display_ratio;
+  result_select_area.height *= screen_info_.display_ratio;
+  return result_select_area;
+}
+
+void NWebRenderHandler::OnSelectAreaChanged(CefRect& select_area) {
+  select_area = ConvertSelectAreaDisplayRatio(select_area);
+}
 #endif
 CefTouchHandleState NWebRenderHandler::ConvertTouchHandleDisplayRatio(
     const CefTouchHandleState& touch_handle) {
@@ -1407,35 +1370,6 @@ void NWebRenderHandler::OnNativeEmbedVisibilityChange(const CefString& embed_id,
                                                       bool visibility) {
   if (auto handler = handler_.lock()) {
     handler->OnNativeEmbedVisibilityChange(embed_id, visibility);
-  }
-}
-
-std::shared_ptr<NWebNativeEmbedParamDataInfo> NWebRenderHandler::CefEmbedParamDataToWeb(
-    const ArkWebRenderHandlerExt::CefNativeParamData& paramData) {
-  std::shared_ptr<NWebNativeEmbedParamDataInfoImpl> paramDataInfo =
-      std::make_shared<NWebNativeEmbedParamDataInfoImpl>();
-  std::vector<std::shared_ptr<NWebNativeEmbedParamItem>> paramItems;
-  for (const auto& param_item : paramData.paramItems) {
-    std::shared_ptr<NWebNativeEmbedParamItemImpl> paramItem =
-      std::make_shared<NWebNativeEmbedParamItemImpl>();
-    paramItem->SetId(param_item.id);
-    paramItem->SetName(param_item.name);
-    paramItem->SetValue(param_item.value);
-    paramItem->SetStatus(static_cast<OHOS::NWeb::NativeEmbedParamStatus>(param_item.status));
-    paramItems.push_back(paramItem);
-  }
-  paramDataInfo->SetEmbedId(paramData.embedId);
-  paramDataInfo->SetObjectAttributeId(paramData.objectAttributeId);
-  paramDataInfo->SetParamItems(paramItems);
-  return paramDataInfo;
-}
-
-void NWebRenderHandler::OnNativeEmbedObjectParamChange(
-    CefRefPtr<CefBrowser> browser,
-    const CefNativeParamData& paramData) {
-  auto nativeEmbedParamDataInfo = CefEmbedParamDataToWeb(paramData);
-  if (auto handler = handler_.lock()) {
-    handler->OnNativeEmbedObjectParamChange(nativeEmbedParamDataInfo);
   }
 }
 

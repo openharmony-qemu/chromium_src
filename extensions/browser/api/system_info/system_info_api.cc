@@ -179,6 +179,11 @@ void SystemInfoEventRouter::StartOrStopStorageEventDispatcherIfNecessary() {
   if (should_dispatch == is_dispatching_storage_events_)
     return;
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (!StorageMonitor::GetInstance())
+    return;
+#endif
+
   DCHECK(StorageMonitor::GetInstance())
       << "Missing storage monitor. Cannot start/stop storage event "
       << "dispatchers.";
@@ -214,6 +219,10 @@ void SystemInfoEventRouter::OnRemovableStorageAttached(
 void SystemInfoEventRouter::OnRemovableStorageDetached(
     const storage_monitor::StorageInfo& info) {
   base::Value::List args;
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (!StorageMonitor::GetInstance())
+    return;
+#endif
   std::string transient_id =
       StorageMonitor::GetInstance()->GetTransientIdForDeviceId(
           info.device_id());

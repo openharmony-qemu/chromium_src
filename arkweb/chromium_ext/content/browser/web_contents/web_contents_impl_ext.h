@@ -155,8 +155,6 @@ class WebContentsImplExt : public WebContentsImpl {
       const GlobalRenderFrameHostId& id) override;
   void OnRenderFrameHostLeaveBackForwardCache(
       const GlobalRenderFrameHostId& id) override;
-  void OnNativeEmbedObjectParamChange(
-      const NativeEmbedParamDataInfo& native_param_info) override;
 #endif
 
 #if BUILDFLAG(ARKWEB_SCREEN_LOCK)

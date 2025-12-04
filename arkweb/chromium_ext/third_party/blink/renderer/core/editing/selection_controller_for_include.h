@@ -52,6 +52,13 @@ class SelectionControllerUtils {
                                      int& temp_offset,
                                      WTF::String& str,
                                      bool permission);
+
+  static Node* SameEditablePreviousSibling(Node* inner_node);
+
+  static Node* SameEditableParent(Node* inner_node);
+
+  static Node* UpdateAnchorIfWhiteSpace(Node* inner_node,
+                                 const PositionInFlatTree& pos);
 };
 
 }  // namespace blink

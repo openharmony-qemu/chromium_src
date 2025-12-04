@@ -196,7 +196,7 @@ void BaseWindowCapturer::HandleBuffer() {
   }
 
   std::unique_ptr<DesktopFrame> current_frame;
-  uint32_t frameStride = width * DesktopFrame::kBytesPerPixel;
+  uint32_t frameStride = static_cast<uint32_t>(width * DesktopFrame::kBytesPerPixel);
   if (factory_) {
     uint32_t frame_size =
         static_cast<uint32_t>(width * height * DesktopFrame::kBytesPerPixel);

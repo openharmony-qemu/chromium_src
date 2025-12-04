@@ -4,7 +4,7 @@
 
 #include "arkweb/build/features/features.h"
 #if BUILDFLAG(ARKWEB_CRASHPAD)
-#include "third_party/crashpad/crashpad/util/posix/signals.h"
+#include <stdlib.h>
 #include "unistd.h"
 #endif
 #include "partition_alloc/oom.h"
@@ -23,6 +23,10 @@
 #include <limits>
 #endif  // PA_BUILDFLAG(IS_WIN)
 
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+extern "C" __attribute__((weak))void set_fatal_message(const char *msg);
+#endif
+
 namespace partition_alloc {
 
 size_t g_oom_size = 0U;
@@ -38,7 +42,8 @@ namespace internal {
   size_t tmp_size = size;
   internal::base::debug::Alias(&tmp_size);
 #if BUILDFLAG(ARKWEB_CRASHPAD)
-  kill(getpid(), SIGOOM);
+  set_fatal_message("OutOfMemoryError");
+  abort();
 #endif
 #if PA_BUILDFLAG(IS_WIN)
   // Create an exception vector with:

@@ -409,11 +409,11 @@ class NWebHandlerDelegate : public ArkWebClientExt,
                       CefRefPtr<CefRequest> request,
                       bool user_gesture,
                       bool is_redirect) override;
-  bool OnCertificateError(CefRefPtr<CefBrowser> browser,
-                          cef_errorcode_t cert_error,
-                          const CefString& request_url,
-                          CefRefPtr<CefSSLInfo> ssl_info,
-                          CefRefPtr<CefCallback> callback) override;
+  bool OnCertificateErrorExt(CefRefPtr<CefBrowser> browser,
+                             cef_errorcode_t cert_error,
+                             const CefString& request_url,
+                             CefRefPtr<CefSSLInfo> ssl_info,
+                             CefRefPtr<ArkWebCefSslCallback> callback) override;
 
   bool OnSelectClientCertificate(
       CefRefPtr<CefBrowser> browser,
@@ -754,6 +754,9 @@ class NWebHandlerDelegate : public ArkWebClientExt,
 #if BUILDFLAG(ARKWEB_NWEB_EX)
   void OnFrameCreated(CefRefPtr<CefBrowser> browser,
                       CefRefPtr<CefFrame> frame) override;
+
+  void OnFrameDetached(CefRefPtr<CefBrowser> browser,
+                       CefRefPtr<CefFrame> frame) override;
 #endif
   /* CefFrameHandler methods end */
 
@@ -831,6 +834,11 @@ class NWebHandlerDelegate : public ArkWebClientExt,
       const std::vector<std::string>& async_method_list,
       const int32_t object_id,
       const std::string& permission);
+
+#if BUILDFLAG(IS_ARKWEB)
+  void SaveEnableAppLinking(bool enable);
+#endif
+
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
   bool IsDragEnter() const { return is_drag_enter_; }
   void SetDragEnter(bool enter) { is_drag_enter_ = enter; }
@@ -1035,6 +1043,10 @@ class NWebHandlerDelegate : public ArkWebClientExt,
 
   CefRefPtr<CefBrowser> main_browser_ = nullptr;
   bool is_closing_ = false;
+
+#if BUILDFLAG(IS_ARKWEB)
+  bool is_arkweb_applinking_enabled_ = true;
+#endif
 
   std::shared_ptr<NWebPreferenceDelegate> preference_delegate_ = nullptr;
   CefRefPtr<NWebRenderHandler> render_handler_ = nullptr;

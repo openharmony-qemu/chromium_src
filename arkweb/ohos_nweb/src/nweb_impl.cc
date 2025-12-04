@@ -276,6 +276,7 @@ extern bool g_siteIsolationMode;
 #include "chrome/browser/browser_process.h"
 #include "cef/libcef/browser/prefs/browser_prefs.h"
 #include "components/prefs/pref_service.h"
+#include "components/os_crypt/sync/os_crypt.h"
 #endif
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
@@ -324,24 +325,23 @@ std::optional<std::string> g_extension_name;
 
 static void HandleExtensionInstallResult(
     OnExtensionInstallCallback callback,
-    const std::optional<extensions::CrxInstallError>& error) {
+    const std::optional<extensions::CrxInstallError>& error,
+    const std::string& extension_id) {
   if (!callback) {
     return;
   }
 
   if (error.has_value()) {
     std::string error_message = base::UTF16ToUTF8(error->message());
-    callback(static_cast<int>(error->type()), error_message.c_str());
+    callback(static_cast<int>(error->type()), error_message.c_str(), nullptr);
   } else {
-    callback(0, "Success");
+    callback(0, "Success", extension_id.c_str());
   }
 }
 
 static void ConfigureCrxInstaller(
     scoped_refptr<extensions::CrxInstaller> installer) {
-  installer->set_off_store_install_allow_reason(
-      extensions::CrxInstaller::OffStoreInstallAllowedFromSettingsPage);
-  installer->set_install_cause(extension_misc::INSTALL_CAUSE_USER_DOWNLOAD);
+  installer->set_install_immediately(true);
 }
 
 static void PerformCrxInstallation(const std::string& file_path,
@@ -351,7 +351,7 @@ static void PerformCrxInstallation(const std::string& file_path,
   if (!file_exists) {
     if (callback) {
       callback(static_cast<int>(extensions::CrxInstallErrorType::OTHER),
-               "File not found");
+               "File not found", nullptr);
     }
     return;
   }
@@ -361,7 +361,7 @@ static void PerformCrxInstallation(const std::string& file_path,
   if (!service) {
     if (callback) {
       callback(static_cast<int>(extensions::CrxInstallErrorType::OTHER),
-               "Extension service not available");
+               "Extension service not available", nullptr);
     }
     return;
   }
@@ -375,7 +375,15 @@ static void PerformCrxInstallation(const std::string& file_path,
   ConfigureCrxInstaller(installer);
 
   installer->AddInstallerCallback(
-      base::BindOnce(&HandleExtensionInstallResult, callback));
+      base::BindOnce([](OnExtensionInstallCallback callback,
+                       scoped_refptr<extensions::CrxInstaller> installer,
+                       const std::optional<extensions::CrxInstallError>& error) {
+        std::string extension_id;
+        if (!error.has_value() && installer->extension()) {
+          extension_id = installer->extension()->id();
+        }
+        HandleExtensionInstallResult(callback, error, extension_id);
+      }, callback, installer));
   installer->InstallCrx(base::FilePath(file_path));
 }
 #endif
@@ -736,10 +744,12 @@ void MigratePasswordsToPasswordVault() {
   if (migrateReady == true && migrateVault == false && IsFlagFileExist == true) {
     int count = g_browser_process->local_state()->GetInteger(browser_prefs::kMigrationCount);
     LOG(INFO) << "[Autofill] migration count:" << count;
+    OSCryptImpl::GetInstance()->SetMigrationCountCurrent(count + 1);
     g_browser_process->local_state()->SetInteger(browser_prefs::kMigrationCount, count + 1);
     g_browser_process->local_state()->CommitPendingWrite();
     if (count <= kMigrationBase || (count % kMigrationBase == 0 && count <= kMigrationMaxCount)) {
-      OHOS::NWeb::NWebWebStorageImpl* nweb_web_storage = new OHOS::NWeb::NWebWebStorageImpl();
+      std::shared_ptr<OHOS::NWeb::NWebWebStorageImpl> nweb_web_storage = 
+          std::make_shared<OHOS::NWeb::NWebWebStorageImpl>();
       nweb_web_storage->MigratePasswords();
     } else if (count > kMigrationMaxCount) {
       LOG(ERROR) << "[Autofill] Migrate passwords over max counts, stop migrate.";
@@ -2167,6 +2177,23 @@ int NWebImpl::LoadWithData(const std::string& data,
   }
   return nweb_delegate_->LoadWithData(data, mimeType, encoding);
 }
+
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+int NWebImpl::LoadUrlWithParams(const std::string& url,
+                                const LoadUrlType load_type,
+                                const std::string& refer,
+                                const std::string& headers,
+                                const std::string& post_data,
+                                const bool allow_https_upgrade,
+                                int32_t transition_type) {
+  if (nweb_delegate_ == nullptr) {
+    return NWEB_ERR;
+  }
+  return nweb_delegate_->LoadUrlWithParams(url, load_type, refer, headers,
+                                           post_data, allow_https_upgrade,
+                                           transition_type);
+}
+#endif
 
 void NWebImpl::RegisterNativeArkJSFunction(
     const char* objName,
@@ -3620,11 +3647,12 @@ void NWebImpl::UnLoadWebExtension(const std::string& eid) {
     if (current_extension->was_installed_by_default()) {
       WVLOG_I("NWebImpl::UnLoadWebExtension RemovedDefaultInstalledExtension");
     }
-
-    bool result = extensions::ExtensionSystem::Get(browser_context)
-        ->extension_service()
-        ->UninstallExtension(eid, extensions::UNINSTALL_REASON_USER_INITIATED, error);
-    WVLOG_I("NWebImpl::UnLoadWebExtension result:%{public}d, error:%{public}s", result, error);
+    if (extensions::ExtensionSystem::Get(browser_context)->extension_service()) {
+      bool result = extensions::ExtensionSystem::Get(browser_context)
+          ->extension_service()
+          ->UninstallExtension(eid, extensions::UNINSTALL_REASON_USER_INITIATED, error);
+      WVLOG_I("NWebImpl::UnLoadWebExtension result:%{public}d, error:%{public}s", result, error);
+    }
     return;
   }
   WVLOG_I("NWebImpl::UnLoadWebExtension extension not exist!");
@@ -3646,10 +3674,12 @@ void NWebImpl::DisableWebExtension(const std::string& eid) {
       WVLOG_I("NWebImpl::DisableWebExtension DisableDefaultInstalledExtension");
     }
 
-    extensions::ExtensionSystem::Get(browser_context)
-        ->extension_service()
-        ->DisableExtension(eid, extensions::disable_reason::DISABLE_USER_ACTION);
-    WVLOG_I("NWebImpl::DisableWebExtension id:%{public}s", eid.c_str());
+    if (extensions::ExtensionSystem::Get(browser_context)->extension_service()) {
+      extensions::ExtensionSystem::Get(browser_context)
+          ->extension_service()
+          ->DisableExtension(eid, extensions::disable_reason::DISABLE_USER_ACTION);
+      WVLOG_I("NWebImpl::DisableWebExtension id:%{public}s", eid.c_str());
+    }
     return;
   }
   WVLOG_I("NWebImpl::DisableWebExtension extension not exist: id:%{public}s", eid.c_str());
@@ -3738,7 +3768,7 @@ void NWebImpl::InstallExtensionFile(const std::string& file_path,
   if (file_path.empty()) {
     if (callback) {
       callback(static_cast<int>(extensions::CrxInstallErrorType::OTHER),
-               "Invalid file path");
+               "Invalid file path", nullptr);
     }
     return;
   }
@@ -3748,7 +3778,7 @@ void NWebImpl::InstallExtensionFile(const std::string& file_path,
     WVLOG_E("Failed to get global browser context");
     if (callback) {
       callback(static_cast<int>(extensions::CrxInstallErrorType::OTHER),
-               "Browser context not available");
+               "Browser context not available", nullptr);
     }
   }
 
@@ -6347,3 +6377,15 @@ void NWebImpl::OnBrowserBackground() {
   nweb_delegate_->OnBrowserBackground();
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+void NWebImpl::EnableHttpsUpgrades(bool enable) {
+  LOG(INFO) << "NWebImpl::EnableHttpsUpgrades.";
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("EnableHttpsUpgrades nweb_delegate_ is null");
+    return;
+  }
+  nweb_delegate_->EnableHttpsUpgrades(enable);
+}
+#endif
+

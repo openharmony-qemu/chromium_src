@@ -121,15 +121,15 @@ gfx::Rect PaintLayerScrollableAreaExt::RectForHorizontalScrollbar() const {
 #if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_CORNER)
   ChromeClient* client = GetLayoutBox()->GetFrameView()->GetChromeClient();
   if (!client) {
-    return gfx::Rect();
+    return PaintLayerScrollableArea::RectForHorizontalScrollbar();
   }
   auto webview = client->GetWebView();
   if (!webview) {
-    return gfx::Rect();
+    return PaintLayerScrollableArea::RectForHorizontalScrollbar();
   }
   auto setting = webview->GetSettings();
   if (!setting) {
-    return gfx::Rect();
+    return PaintLayerScrollableArea::RectForHorizontalScrollbar();
   }
 
   auto borderRadiusBottomLeft =
@@ -230,15 +230,15 @@ gfx::Rect PaintLayerScrollableAreaExt::RectForVerticalScrollbar() const {
 #if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_CORNER)
   ChromeClient* client = GetLayoutBox()->GetFrameView()->GetChromeClient();
   if (!client) {
-    return gfx::Rect();
+    return PaintLayerScrollableArea::RectForVerticalScrollbar();
   }
   auto webview = client->GetWebView();
   if (!webview) {
-    return gfx::Rect();
+    return PaintLayerScrollableArea::RectForVerticalScrollbar();
   }
   auto setting = webview->GetSettings();
   if (!setting) {
-    return gfx::Rect();
+    return PaintLayerScrollableArea::RectForVerticalScrollbar();
   }
 
   auto borderRadiusTopRight =

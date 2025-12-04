@@ -267,7 +267,7 @@ void AddAppCert(const std::string_view& hostname, X509_STORE* ca_store) {
     return;
   }
 
-  int32_t userId = getuid() / UID_TRANSFORM_DIVISOR;
+  uint32_t userId = getuid() / UID_TRANSFORM_DIVISOR;
   std::string cueerntUserCaPath = std::string(kUserCaBasePath) + std::to_string(userId);
 
   X509_LOOKUP_add_dir(ca_look_up, kGlobalCaPath, X509_FILETYPE_PEM);
@@ -418,7 +418,7 @@ bool PerformAIAFetchAndAddResultToVector(
     bssl::ParsedCertificateList* cert_list) {
   GURL url(uri);
   if (!url.is_valid()) {
-    LOG(ERROR) << "PerformAIAFetchAndAddResultToVector: URL is invalied";
+    LOG(ERROR) << "PerformAIAFetchAndAddResultToVector: URL is invalid";
     return false;
   }
 
@@ -509,7 +509,9 @@ int TryVerifyWithAIAFetching(const std::vector<std::string>& cert_bytes,
   // AIA URLs.
   bssl::CertErrors errors;
   bssl::ParsedCertificateList certs;
-  ConvertToParsedCertificates(cert_bytes, errors, certs);
+  if (ConvertToParsedCertificates(cert_bytes, errors, certs) != X509_V_OK) {
+    return X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY;
+  }
 
   // Build a chain as far as possible from the target certificate at index 0,
   // using the initially provided certificates.
@@ -597,7 +599,8 @@ void SetCertStatus(int status, CertVerifyResult* verify_result) {
         verify_result->cert_status |= CERT_STATUS_DEPTH_ZERO_SELF_SIGNED_CERT;
         break;
       default:
-        NOTREACHED();
+        verify_result->cert_status |= CERT_STATUS_INVALID;
+        break;
   }
 }
 
@@ -675,10 +678,7 @@ bool VerifyFromOhosTrustManager(const std::vector<std::string>& cert_bytes,
 CertVerifyProcOHOS::CertVerifyProcOHOS(
     scoped_refptr<CertNetFetcher> cert_net_fetcher)
     : CertVerifyProc(CRLSet::BuiltinCRLSet()),
-      cert_net_fetcher_(std::move(cert_net_fetcher)) {
-  if (!std::move(cert_net_fetcher)) {
-  }
-}
+      cert_net_fetcher_(std::move(cert_net_fetcher)) {}
 
 CertVerifyProcOHOS::~CertVerifyProcOHOS() {}
 

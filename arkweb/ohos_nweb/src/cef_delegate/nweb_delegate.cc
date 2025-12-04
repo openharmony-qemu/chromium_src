@@ -613,7 +613,12 @@ class JavaScriptInFramesResultCallbackImpl : public CefJavaScriptResultCallback 
   void OnJavaScriptExeResult(CefRefPtr<CefValue> result) override {
     if (callback_ != nullptr) {
       JavaScriptValue value;
-      ConvertCefValueToJavaScriptValue(result, &value);
+      if (error_description_.empty()) {
+        ConvertCefValueToJavaScriptValue(result, &value);
+      } else {
+        value.type = JavaScriptDataType::STRING;
+        value.stringValue = error_description_;
+      }
 
       nweb_ex::proto::JavaScriptValue pb_value;
       NwebExtensionJavaScriptTypesUtils::ExtensionWebValueClassToPb(value, pb_value);
@@ -630,7 +635,12 @@ class JavaScriptInFramesResultCallbackImpl : public CefJavaScriptResultCallback 
     }
   }
 
+  void SetErrorDescription(const std::string& description) override {
+    error_description_ = description;
+  } 
+
  private:
+  std::string error_description_;
   OnReceiveValueCallback callback_ = nullptr;
   int32_t callback_id_ = 0;
   uint32_t nweb_id_ = 0;
@@ -2525,6 +2535,27 @@ int NWebDelegate::LoadWithData(const std::string& data,
   RequestVisitedHistory();
   return NWEB_OK;
 }
+
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+int NWebDelegate::LoadUrlWithParams(const std::string& url,
+                                    const LoadUrlType load_type,
+                                    const std::string& refer,
+                                    const std::string& headers,
+                                    const std::string& post_data,
+                                    const bool allow_https_upgrade,
+                                    int32_t transition_type) {
+  LOG(DEBUG) << "NWebDelegate::LoadUrlWithParams";
+  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
+    return NWEB_ERR;
+  }
+  GetBrowser()->GetHost()->LoadUrlWithParams(url, load_type, refer, headers,
+                                             post_data, allow_https_upgrade,
+                                             transition_type);
+  RequestVisitedHistory();
+  return NWEB_OK;
+}
+#endif
+ 
 
 const CefRefPtr<ArkWebBrowserExt> NWebDelegate::GetBrowser() const {
   if (handler_delegate_) {
@@ -5701,6 +5732,11 @@ bool NWebDelegate::IsMixedContentAutoUpgradesEnabled() {
 #if BUILDFLAG(IS_ARKWEB)
 void NWebDelegate::EnableAppLinking(bool enable) {
   LOG(DEBUG) << "NWebDelegate::EnableAppLinking, enable: " << enable;
+  if (handler_delegate_) {
+    LOG(DEBUG) << "NWebDelegate::EnableAppLinking popup case, enable: " << enable;
+    handler_delegate_->SaveEnableAppLinking(enable);
+  }
+
   if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
     LOG(ERROR) << "can not get browser ,can not set applinking";
     return;
@@ -6104,6 +6140,17 @@ bool NWebDelegate::GetErrorPageEnabled() {
     return false;
   }
   return preference_delegate_->ErrorPageEnabled();
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+void NWebDelegate::EnableHttpsUpgrades(bool enable) {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "EnableHttpsUpgrades can not get browser";
+    return;
+  }
+  LOG(INFO) << "NWebDelegate::EnableHttpsUpgrades";
+  GetBrowser()->GetHost()->EnableHttpsUpgrades(enable);
 }
 #endif
 

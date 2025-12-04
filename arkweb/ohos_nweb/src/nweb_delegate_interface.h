@@ -274,6 +274,15 @@ class NWebDelegateInterface
   virtual int LoadWithData(const std::string& data,
                            const std::string& mimeType,
                            const std::string& encoding) = 0;
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  virtual int LoadUrlWithParams(const std::string& url,
+                                const LoadUrlType load_type,
+                                const std::string& refer,
+                                const std::string& headers,
+                                const std::string& post_data,
+                                const bool allow_https_upgrade,
+                                int32_t transition_type) = 0;
+#endif
   virtual int ContentHeight() = 0;
 
   virtual void RegisterNativeArkJSFunction(
@@ -908,6 +917,11 @@ class NWebDelegateInterface
   virtual void SetErrorPageEnabled(bool enable) = 0;
   virtual bool GetErrorPageEnabled() = 0;
 #endif
+
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  virtual void EnableHttpsUpgrades(bool enable) = 0;
+#endif
+
 #if BUILDFLAG(ARKWEB_BGTASK)
   virtual void OnBrowserForeground() = 0;
   virtual void OnBrowserBackground() = 0;

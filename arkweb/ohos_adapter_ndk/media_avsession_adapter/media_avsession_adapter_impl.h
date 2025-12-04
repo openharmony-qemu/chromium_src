@@ -105,7 +105,7 @@ private:
     OH_AVMetadataBuilder *builder_ = nullptr;
     OH_AVMetadata *avMetadata_ = nullptr;
     OH_AVSession *avSession_ = nullptr;
-    bool isActived_;
+    bool isActived_ = false;
 
     static std::unordered_map<std::string, MediaAVSessionAdapterImpl *> avSessionMap;
     size_t callback_index_ = 0;

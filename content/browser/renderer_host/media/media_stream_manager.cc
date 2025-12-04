@@ -1550,7 +1550,12 @@ MediaStreamManager* MediaStreamManager::GetInstance() {
 
 MediaStreamManager::MediaStreamManager(media::AudioSystem* audio_system)
     : MediaStreamManager(audio_system, nullptr) {
+#if BUILDFLAG(ARKWEB_MEDIA)
+  auto hash_value = base::FastHash(base::byte_span_from_ref(this));
+  SendLogMessage(base::StringPrintf("MediaStreamManager([hash=%016x])", hash_value));
+#else      
   SendLogMessage(base::StringPrintf("MediaStreamManager([this=%p]))", this));
+#endif  // ARKWEB_MEDIA  
 }
 
 MediaStreamManager::MediaStreamManager(
@@ -3269,7 +3274,12 @@ void MediaStreamManager::InitializeMaybeAsync(
                                   std::move(video_capture_provider)));
     return;
   }
+#if BUILDFLAG(ARKWEB_MEDIA)
+  auto hash_value = base::FastHash(base::byte_span_from_ref(this));
+  SendLogMessage(base::StringPrintf("InitializeMaybeAsync([hash=%016x])", hash_value));
+#else
   SendLogMessage(base::StringPrintf("InitializeMaybeAsync([this=%p])", this));
+#endif  // ARKWEB_MEDIA  
 
   // Store a pointer to |this| on the IO thread to avoid having to jump to
   // the UI thread to fetch a pointer to the MSM. In particular on Android,

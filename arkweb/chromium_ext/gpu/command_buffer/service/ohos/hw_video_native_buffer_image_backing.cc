@@ -409,6 +409,7 @@ class HwVideoNativeBufferImageBacking::SkiaVkNBRepresentation
           scoped_hardware_buffer_->TakeBuffer(), context_state(), real_size_,
           format(), VK_QUEUE_FAMILY_FOREIGN_EXT);
       if (!vulkan_image_) {
+        LOG(ERROR) << "Failed to create VkImage from NativeBufferHandle";
         return {};
       }
 

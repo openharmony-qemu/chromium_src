@@ -19,6 +19,7 @@
 #include <string>
 
 #include "chrome/browser/extensions/extension_keybinding_registry.h"
+#include "ui/base/accelerators/command.h"
 
 // CefExtensionKeybindingRegistryViews is a class that handles specific
 // implementation of the Extension Keybinding shortcuts (keyboard accelerators).
@@ -42,7 +43,11 @@ class CefExtensionKeybindingRegistryViews
 
  private:
   // Overridden from ExtensionKeybindingRegistry:
-
+  bool PopulateCommands(const extensions::Extension* extension,
+                        ui::CommandMap* commands) override;
+  bool RegisterAccelerator(const ui::Accelerator& accelerator,
+                           const extensions::ExtensionId& extension_id,
+                           const std::string& command_name) override;
   void OnShortcutHandlingSuspended(bool suspended) override {}
 
   raw_ptr<content::BrowserContext> browser_context_profile;

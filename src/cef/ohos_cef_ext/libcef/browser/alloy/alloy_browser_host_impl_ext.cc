@@ -12,6 +12,7 @@
 #include "base/command_line.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"
+#include <algorithm>
 #include "base/trace_event/trace_event.h"
 #include "cef/libcef/browser/alloy/browser_platform_delegate_alloy.h"
 #include "cef/libcef/browser/audio_capturer.h"
@@ -56,6 +57,8 @@
 #include "content/public/browser/render_widget_host.h"
 #include "content/public/browser/web_contents.h"
 #include "content/public/common/url_constants.h"
+#include "content/public/browser/browser_context.h"
+#include "extensions/common/extension.h"
 #include "extensions/common/constants.h"
 #include "extensions/browser/extension_prefs.h"
 #include "libcef/browser/alloy/render_process_state_handler.h"
@@ -1109,7 +1112,7 @@ void AlloyBrowserHostImplExt::UpdatePinnedExtensionIds(
       storedPinnedIds.push_back(extensionId);
     }
   } else {
-    auto iter = base::ranges::find(storedPinnedIds, extensionId);
+    auto iter = std::find(storedPinnedIds.begin(), storedPinnedIds.end(), extensionId);
     if (iter != storedPinnedIds.end()) {
       storedPinnedIds.erase(iter);
     }
@@ -1470,10 +1473,11 @@ void AlloyBrowserHostImplExt::ShowPopupMenu(
     bool right_aligned,
     bool allow_multiple_selection) {
   if (platform_delegate_) {
-    platform_delegate_->AsArkWebCefBrowserPlatformDelegateExt()->ShowPopupMenu(std::move(popup_client), bounds,
-                                      item_font_size,
-                                      selected_item, std::move(menu_items),
-                                      right_aligned, allow_multiple_selection);
+    platform_delegate_->AsArkWebCefBrowserPlatformDelegateExt()->ShowPopupMenu(
+        std::move(popup_client), bounds,
+        item_font_size,
+        selected_item, std::move(menu_items),
+        right_aligned, allow_multiple_selection);
   }
 }
 #endif  // #if BUILDFLAG(ARKWEB_HTML_SELECT)

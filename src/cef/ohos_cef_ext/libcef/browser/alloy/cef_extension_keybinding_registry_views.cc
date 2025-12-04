@@ -16,6 +16,10 @@
 #include "libcef/browser/alloy/cef_extension_keybinding_registry_views.h"
 
 #include "chrome/browser/extensions/extension_commands_global_registry.h"
+#include "extensions/browser/extension_registry.h"
+#include "extensions/browser/extension_system.h"
+#include "extensions/common/extension.h"
+#include "extensions/common/extension_id.h"
 #include "ui/base/accelerators/accelerator.h"
 #include "ui/content_accelerators/accelerator_util.h"
 
@@ -34,5 +38,48 @@ CefExtensionKeybindingRegistryViews::CefExtensionKeybindingRegistryViews(
 bool CefExtensionKeybindingRegistryViews::AcceleratorPressed(
     const ui::Accelerator& accelerator) {
   return ExtensionKeybindingRegistry::NotifyEventTargets(accelerator);
+}
+
+bool CefExtensionKeybindingRegistryViews::PopulateCommands(
+    const extensions::Extension* extension,
+    ui::CommandMap* commands) {
+  if (!extension || !commands) {
+    return false;
+  }
+
+  // Get all named commands for the extension from the CommandService
+  extensions::CommandService* command_service =
+      extensions::CommandService::Get(browser_context_profile);
+  if (!command_service) {
+    return false;
+  }
+
+  // Get extension keybinding commands
+  extensions::CommandMap extension_commands;
+  command_service->GetAllNamedCommands(extension->id(), &extension_commands);
+
+  // Convert to ui::CommandMap
+  for (const auto& command_pair : extension_commands) {
+    const std::string& command_name = command_pair.first;
+    const extensions::Command& command = *command_pair.second;
+
+    ui::Command ui_command(
+        command_name,
+        command.description(),
+        false); // Not global by default
+
+    (*commands)[command_name] = ui_command;
+  }
+
+  return !commands->empty();
+}
+
+bool CefExtensionKeybindingRegistryViews::RegisterAccelerator(
+    const ui::Accelerator& accelerator,
+    const extensions::ExtensionId& extension_id,
+    const std::string& command_name) {
+  // For now, always allow registration for basic keyboard accelerators
+  // In the future, this could be enhanced with delegate validation
+  return true;
 }
 

@@ -36,6 +36,7 @@
 #include "base/logging.h"
 #include "base/command_line.h"
 #include <fstream>
+#include "arkweb/chromium_ext/gpu/ipc/service/gpu_hang_adapter.h"
 #endif
 
 #if BUILDFLAG(ARKWEB_CRASHPAD)
@@ -62,6 +63,10 @@ std::atomic<HangWatcher::ProcessType> g_hang_watcher_process_type{
 std::atomic<LoggingLevel> g_threadpool_log_level{LoggingLevel::kNone};
 std::atomic<LoggingLevel> g_io_thread_log_level{LoggingLevel::kNone};
 std::atomic<LoggingLevel> g_main_thread_log_level{LoggingLevel::kNone};
+#if BUILDFLAG(IS_ARKWEB)
+std::atomic<LoggingLevel> g_compositor_gpu_thread_log_level{LoggingLevel::kNone};
+std::atomic<LoggingLevel> g_in_process_gpu_thread_log_level{LoggingLevel::kNone};
+#endif
 
 // Indicates whether HangWatcher::Run() should return after the next monitoring.
 std::atomic<bool> g_keep_monitoring{true};
@@ -158,6 +163,16 @@ void LogStatusHistogram(HangWatcher::ThreadType thread_type,
         case HangWatcher::ThreadType::kThreadPoolThread:
           // Not recorded for now.
           break;
+#if BUILDFLAG(IS_ARKWEB)
+        case HangWatcher::ThreadType::kCompositorGpuThread:
+        case HangWatcher::ThreadType::kInProcessGpuThread:
+          if (any_thread_hung) {
+#if BUILDFLAG(ARKWEB_CRASHPAD) && !defined(COMPONENT_BUILD) && !BUILDFLAG(ARKWEB_ASAN) // FIXME
+            gpu::LogGpuHungEvent(static_cast<int32_t>(thread_type), count);
+#endif
+          }
+        break;
+#endif
       }
       break;
 
@@ -189,6 +204,12 @@ void LogStatusHistogram(HangWatcher::ThreadType thread_type,
         case HangWatcher::ThreadType::kThreadPoolThread:
           // Not recorded for now.
           break;
+#if BUILDFLAG(IS_ARKWEB)
+        case HangWatcher::ThreadType::kCompositorGpuThread:
+        case HangWatcher::ThreadType::kInProcessGpuThread:
+          // Not recorded for now.
+          break;
+#endif
       }
       break;
 
@@ -208,6 +229,12 @@ void LogStatusHistogram(HangWatcher::ThreadType thread_type,
         case HangWatcher::ThreadType::kThreadPoolThread:
           // Not recorded for now.
           break;
+#if BUILDFLAG(IS_ARKWEB)
+        case HangWatcher::ThreadType::kCompositorGpuThread:
+        case HangWatcher::ThreadType::kInProcessGpuThread:
+          // Not recorded for now.
+          break;
+#endif
       }
       break;
   }
@@ -227,6 +254,14 @@ bool ThreadTypeLoggingLevelGreaterOrEqual(HangWatcher::ThreadType thread_type,
     case HangWatcher::ThreadType::kThreadPoolThread:
       return g_threadpool_log_level.load(std::memory_order_relaxed) >=
              logging_level;
+#if BUILDFLAG(IS_ARKWEB)
+    case HangWatcher::ThreadType::kCompositorGpuThread:
+      return g_compositor_gpu_thread_log_level.load(std::memory_order_relaxed) >=
+             logging_level;
+    case HangWatcher::ThreadType::kInProcessGpuThread:
+      return g_in_process_gpu_thread_log_level.load(std::memory_order_relaxed) >=
+             logging_level;
+#endif            
   }
 }
 
@@ -248,7 +283,14 @@ constexpr base::FeatureParam<int> kUIThreadLogLevel{
 constexpr base::FeatureParam<int> kThreadPoolLogLevel{
     &kEnableHangWatcher, "threadpool_log_level",
     static_cast<int>(LoggingLevel::kUmaOnly)};
-
+#if BUILDFLAG(IS_ARKWEB)
+constexpr base::FeatureParam<int> kCompositorGpuThreadLogLevel{
+    &kEnableHangWatcher, "compositor_gpu_thread_log_level",
+    static_cast<int>(LoggingLevel::kUmaOnly)};
+constexpr base::FeatureParam<int> kInProcessGpuThreadLogLevel{
+    &kEnableHangWatcher, "in_process_gpu_thread_log_level",
+    static_cast<int>(LoggingLevel::kUmaOnly)};
+#endif
 // GPU process.
 constexpr base::FeatureParam<int> kGPUProcessIOThreadLogLevel{
     &kEnableHangWatcher, "gpu_process_io_thread_log_level",
@@ -435,7 +477,14 @@ void HangWatcher::InitializeOnMainThread(ProcessType process_type,
           static_cast<LoggingLevel>(kUIThreadLogLevel.Get()),
           std::memory_order_relaxed);
     }
-
+#if BUILDFLAG(IS_ARKWEB)
+    g_compositor_gpu_thread_log_level.store(
+        static_cast<LoggingLevel>(kCompositorGpuThreadLogLevel.Get()),
+        std::memory_order_relaxed);
+    g_in_process_gpu_thread_log_level.store(
+        static_cast<LoggingLevel>(kInProcessGpuThreadLogLevel.Get()),
+        std::memory_order_relaxed);
+#endif
     g_threadpool_log_level.store(
         static_cast<LoggingLevel>(kThreadPoolLogLevel.Get()),
         std::memory_order_relaxed);
@@ -477,6 +526,10 @@ void HangWatcher::UnitializeOnMainThreadForTesting() {
   g_threadpool_log_level.store(LoggingLevel::kNone, std::memory_order_relaxed);
   g_io_thread_log_level.store(LoggingLevel::kNone, std::memory_order_relaxed);
   g_main_thread_log_level.store(LoggingLevel::kNone, std::memory_order_relaxed);
+#if BUILDFLAG(IS_ARKWEB)
+  g_in_process_gpu_thread_log_level.store(LoggingLevel::kNone, std::memory_order_relaxed);
+  g_compositor_gpu_thread_log_level.store(LoggingLevel::kNone, std::memory_order_relaxed);
+#endif
   g_shutting_down.store(false, std::memory_order_relaxed);
 }
 
@@ -496,6 +549,20 @@ bool HangWatcher::IsIOThreadHangWatchingEnabled() {
   return g_io_thread_log_level.load(std::memory_order_relaxed) !=
          LoggingLevel::kNone;
 }
+
+#if BUILDFLAG(IS_ARKWEB)
+// static
+bool HangWatcher::IsCompositorGpuThreadHangWatchingEnabled() {
+  return g_compositor_gpu_thread_log_level.load(std::memory_order_relaxed) !=
+         LoggingLevel::kNone;
+}
+
+// static
+bool HangWatcher::IsInProcessGpuThreadHangWatchingEnabled() {
+  return g_in_process_gpu_thread_log_level.load(std::memory_order_relaxed) !=
+         LoggingLevel::kNone;
+}
+#endif
 
 // static
 bool HangWatcher::IsCrashReportingEnabled() {

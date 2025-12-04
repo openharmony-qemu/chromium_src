@@ -99,6 +99,10 @@ void InProcessGpuThread::Init() {
 #if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
   ResetTryForReportThread();
 #endif
+
+#if BUILDFLAG(IS_ARKWEB) && !defined(COMPONENT_BUILD)
+  gpu_hang_ = gpu::GpuHangAdapter::CreateGpuHangAdapterForGpuMain();
+#endif
 }
 
 void InProcessGpuThread::CleanUp() {

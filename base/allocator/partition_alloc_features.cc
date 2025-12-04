@@ -150,6 +150,10 @@ BASE_FEATURE(kPartitionAllocZappingByFreeFlags,
 BASE_FEATURE(kPartitionAllocEventuallyZeroFreedMemory,
              "PartitionAllocEventuallyZeroFreedMemory",
              FEATURE_DISABLED_BY_DEFAULT);
+
+BASE_FEATURE(kPartitionAllocFewerMemoryRegions,
+            "PartitionAllocFewerMemoryRegions",
+            FEATURE_ENABLED_BY_DEFAULT);
 #endif  // PA_BUILDFLAG(USE_PARTITION_ALLOC_AS_MALLOC)
 
 BASE_FEATURE(kPartitionAllocBackupRefPtr,

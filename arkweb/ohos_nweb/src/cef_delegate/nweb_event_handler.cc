@@ -537,8 +537,8 @@ void NWebEventHandler::WebSendMouseEvent(
 
 // For PointerLock.
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-  mouseInfo.raw_x = mouseEvent->GetRawX() / ratio;
-  mouseInfo.raw_y = mouseEvent->GetRawY() / ratio;
+  mouseInfo.raw_x = mouseEvent->GetRawX();
+  mouseInfo.raw_y = mouseEvent->GetRawY();
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 #if BUILDFLAG(ARKWEB_EX_TOPCONTROLS)
   if (browser_ && browser_->GetHost()) {

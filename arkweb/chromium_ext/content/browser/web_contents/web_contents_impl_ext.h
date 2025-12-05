@@ -358,9 +358,6 @@ private:
   std::unique_ptr<VideoAssistant> video_assistant_;
   bool custom_media_player_enabled_ = false;
   std::map<MediaPlayerId, int32_t> surface_widget_map_;
-#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
-  std::shared_ptr<OHOS::NWeb::NWebVaultPlainTextCallback> vault_plain_text_callback_ = nullptr;
-#endif
 #if BUILDFLAG(ARKWEB_TEST)
   friend class WebContentsImplExtTest;
 #endif  // ARKWEB_TEST
@@ -421,6 +418,9 @@ private:
   friend class WebContentsImplUtilsTest;
 #endif
   std::string custom_user_agent_;
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  std::shared_ptr<OHOS::NWeb::NWebVaultPlainTextCallback> vault_plain_text_callback_ = nullptr;
+#endif
 #if BUILDFLAG(ARKWEB_SAFEBROWSING)
   bool safe_browsing_strict_mode_ = false;
 #endif  // BUILDFLAG(ARKWEB_SAFEBROWSING)

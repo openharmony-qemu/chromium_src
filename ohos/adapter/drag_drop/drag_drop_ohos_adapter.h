@@ -91,8 +91,11 @@ class ADAPTER_EXPORT_API DragDropOhosAdapter {
   DragDropOhosAdapter& operator=(const DragDropOhosAdapter&) = delete;
   virtual ~DragDropOhosAdapter() = default;
 
-  void ExecuteDrag(std::shared_ptr<OhosStartDragParam> drag_param,
+  bool ExecuteDrag(std::shared_ptr<OhosStartDragParam> drag_param,
                    const std::string& window_id);
+  void ConvertDragParamForJs(std::shared_ptr<OhosStartDragParam> drag_param,
+                            const std::string& window_id,
+                            OhosDragParamToJs& drag_param_to_js);
 
   std::string GetDraggedExtensionFileName();
   void SetDraggedExtensionFileName(const std::string& file_name);

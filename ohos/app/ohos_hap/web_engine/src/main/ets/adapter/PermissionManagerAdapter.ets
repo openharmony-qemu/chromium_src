@@ -79,6 +79,9 @@ export class PermissionManagerAdapter extends BaseAdapter {
     ]],
     ['bluetooth', [
       'ohos.permission.ACCESS_BLUETOOTH',
+    ]],
+    ['screenshot', [
+      'ohos.permission.CUSTOM_SCREEN_CAPTURE',
     ]]
   ]);
   private atManager: abilityAccessCtrl.AtManager;
@@ -295,6 +298,9 @@ export class PermissionManagerAdapter extends BaseAdapter {
       case "pasteboard":
         this.openPasteboardPermissionConfirm(activeContext, confirmParams);
         break;
+      case "screenshot":
+        this.openScreenshotPermissionConfirm(activeContext, confirmParams);
+        break;
       default:
         break;
     }
@@ -308,6 +314,15 @@ export class PermissionManagerAdapter extends BaseAdapter {
   private openPasteboardPermissionConfirm(activeContext: Context, pasteboardConfirmParams: ConfirmParams) {
     pasteboardConfirmParams.title = activeContext.resourceManager.getStringSync($r("app.string.pasteBoard_dialog_title").id);
     pasteboardConfirmParams.content = activeContext.resourceManager.getStringSync($r("app.string.pasteBoard_dialog_content").id);
+    pasteboardConfirmParams.label = activeContext.resourceManager.getStringSync(this.appLabelId);
+    pasteboardConfirmParams.content = pasteboardConfirmParams.content.replace("label", pasteboardConfirmParams.label);
+    pasteboardConfirmParams.confirm = activeContext.resourceManager.getStringSync($r("app.string.dialog_confirm_button").id);
+    pasteboardConfirmParams.cancel = activeContext.resourceManager.getStringSync($r("app.string.dialog_cancel_button").id);
+  }
+
+  private openScreenshotPermissionConfirm(activeContext: Context, pasteboardConfirmParams: ConfirmParams) {
+    pasteboardConfirmParams.title = activeContext.resourceManager.getStringSync($r("app.string.screenshot_dialog_title").id);
+    pasteboardConfirmParams.content = activeContext.resourceManager.getStringSync($r("app.string.screenshot_dialog_content").id);
     pasteboardConfirmParams.label = activeContext.resourceManager.getStringSync(this.appLabelId);
     pasteboardConfirmParams.content = pasteboardConfirmParams.content.replace("label", pasteboardConfirmParams.label);
     pasteboardConfirmParams.confirm = activeContext.resourceManager.getStringSync($r("app.string.dialog_confirm_button").id);

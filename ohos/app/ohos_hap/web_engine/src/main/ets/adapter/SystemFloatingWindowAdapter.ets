@@ -134,6 +134,15 @@ export class SystemFloatingWindowAdapter extends BaseAdapter {
         LogUtil.error(TAG, 'Failed to register callback. Cause: ' + JSON.stringify(exception));
       }
 
+      try {
+        data.on('displayIdChange', (displayId) => {
+          this.nativeContext.OnWindowDisplayIdChange(param.window_id, displayId);
+        });
+      } catch (exception) {
+        LogUtil.error(TAG, `register displayIdChange listener fail, xcomponentId:${param.window_id},
+                      exception: ${JSON.stringify(exception)}`);
+      }
+
       let windowClass = data;
       this.cacheWindow(param.window_id, windowClass);
 
@@ -239,6 +248,20 @@ export class SystemFloatingWindowAdapter extends BaseAdapter {
     }).catch((err: BusinessError) => {
       LogUtil.error(TAG, `startWindowMoving fail, error info: ${JSON.stringify(err)}`);
     });
+  }
+
+  @LogMethod
+  getOriginWindowId(windowId: number): number {
+    try {
+      let window = this.systemFloatingWindowManager.getWindow(windowId);
+      if (window) {
+        return window.getWindowProperties().id;
+      }
+    } catch (err) {
+      let message = (err as BusinessError).message;
+      LogUtil.error(TAG, `getOriginWindowId failed, windowId:${windowId}, message:: ${message}`);
+    }
+    return -1;
   }
 
   private adjustBounds(bounds: WindowBound): WindowBound {

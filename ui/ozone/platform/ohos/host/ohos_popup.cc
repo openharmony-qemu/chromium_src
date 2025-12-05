@@ -220,4 +220,9 @@ void OhosPopup::OnWindowSizeChangeEvent(std::shared_ptr<XCEvent> event) {
   Applied(previous_bounds_in_pixels_, bounds_in_pixels_);
 }
 
+display::Display OhosPopup::GetCurrentDisplay() {
+  OhosWindow* parent_window = GetRootParentWindow();
+  return parent_window->GetCurrentDisplay();
+}
+
 }  // namespace ui

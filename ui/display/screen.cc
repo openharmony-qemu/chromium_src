@@ -181,6 +181,11 @@ gfx::NativeWindow Screen::GetLocalProcessWindowAtPoint(
   NOTIMPLEMENTED_LOG_ONCE();
   return gfx::NativeWindow();
 }
+
+gfx::Point Screen::GetCursorScreenPoint(const int32_t display_id) {
+  NOTIMPLEMENTED_LOG_ONCE();
+  return gfx::Point();
+}
 #endif
 
 void Screen::SetScopedDisplayForNewWindows(int64_t display_id) {

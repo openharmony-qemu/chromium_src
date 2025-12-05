@@ -33,10 +33,11 @@
 #include <memory>
 #include <string>
 #include "ohos/adapter/common/logging.h"
+#include "ohos/adapter/export.h"
 
 namespace ohos::adapter::common {
 
-class SharedLibrary {
+class ADAPTER_EXPORT_API SharedLibrary {
  public:
   struct LibSuffix {
     static constexpr const char* prefix = "lib";

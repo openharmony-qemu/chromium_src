@@ -35,8 +35,8 @@ function implExternalProtocolAdapter(): ExternalProtocolAdapter {
   return Inject.getOrCreate(ExternalProtocolAdapter);
 }
 
-function openExternal(urlStr: string) {
-  implExternalProtocolAdapter().openExternal(urlStr);
+async function openExternal(urlStr: string) {
+  await implExternalProtocolAdapter().openExternal(urlStr);
 }
 
 export class ExternalProtocolAdapterBind {

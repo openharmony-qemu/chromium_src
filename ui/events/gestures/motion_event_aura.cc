@@ -68,6 +68,9 @@ PointerProperties GetPointerPropertiesFromTouchEvent(const TouchEvent& touch) {
   pointer_properties.tool_type = EventPointerTypeToMotionEventToolType(
       touch.pointer_details().pointer_type);
 
+#if BUILDFLAG(IS_OHOS)
+  pointer_properties.display_id = touch.display_id();
+#endif
   return pointer_properties;
 }
 

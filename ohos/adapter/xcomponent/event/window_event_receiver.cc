@@ -32,6 +32,7 @@
 #include <string>
 
 #include "ohos/adapter/aki_hook/aki_hook.h"
+#include "ohos/adapter/common/logging.h"
 #include "ohos/adapter/common/trace.h"
 #include "ohos/adapter/window/window_common.h"
 #include "ohos/adapter/xcomponent/adapter/window_adapter.h"
@@ -39,7 +40,8 @@
 namespace ohos::adapter::xcomponent {
 
 void OnWindowInitSize(const aki::Value window_rect,
-                      const aki::Value drawable_rect) {
+                      const aki::Value drawable_rect,
+                      const int64_t display_id) {
   WindowRect rect;
   rect.top = window_rect["top"].As<int>();
   rect.left = window_rect["left"].As<int>();
@@ -53,6 +55,7 @@ void OnWindowInitSize(const aki::Value window_rect,
   content_rect.height = drawable_rect["height"].As<int64_t>();
 
   WindowAdapter::GetInstance().SetInitialBounds(rect, content_rect);
+  WindowAdapter::GetInstance().SetInitialDisplayId(display_id);
 }
 
 void OnWindowStatusChange(const std::string xcomponent_id,
@@ -61,6 +64,7 @@ void OnWindowStatusChange(const std::string xcomponent_id,
  
   auto event = std::make_shared<WindowStatusChangeEvent>();
   event->status = status;
+  LOGI("[window_event_receiver.cc] OnWindowStatusChange: %{public}s", event->ToString().c_str());
   WindowAdapter::GetInstance().NotifyWindowEvent(xcomponent_id, event);
 }
 
@@ -101,6 +105,10 @@ void OnWindowRectChange(const std::string& xcomponent_id,
   event->left = window_size["left"].As<int>();
   event->width = window_size["width"].As<int64_t>();
   event->height = window_size["height"].As<int64_t>();
+  if (reason != RectChangeReason::DRAG && reason != RectChangeReason::MOVE) {
+      LOGI("[window_event_receiver.cc] OnWindowRectChange: %{public}s", event->ToString().c_str());
+  }
+  
   WindowAdapter::GetInstance().NotifyWindowEvent(xcomponent_id, event);
 }
 
@@ -112,6 +120,7 @@ void OnWindowSizeChange(const std::string& xcomponent_id,
   event->left = window_size["left"].As<int>();
   event->width = window_size["width"].As<int64_t>();
   event->height = window_size["height"].As<int64_t>();
+  LOGI("[window_event_receiver.cc] OnWindowSizeChange: %{public}s", event->ToString().c_str());
   WindowAdapter::GetInstance().NotifyWindowEvent(xcomponent_id, event);
 }
 
@@ -134,6 +143,7 @@ void OnWindowEvent(const std::string& xcomponent_id,
     return;
   }
   auto event = std::make_shared<WindowEvent>(type);
+  LOGI("[window_event_receiver.cc] OnWindowEvent: %{public}s", event->ToString().c_str());
   WindowAdapter::GetInstance().NotifyWindowEvent(xcomponent_id, event);
 }
 
@@ -146,6 +156,7 @@ void OnWindowVisibilityChange(const std::string& xcomponent_id,
   WindowEventType type = window_visible ? WindowEventType::WINDOW_VISIBLE
                                         : WindowEventType::WINDOW_OCCLUDED;
   auto event = std::make_shared<WindowEvent>(type);
+  LOGI("[window_event_receiver.cc] OnWindowVisibilityChange: %{public}s", event->ToString().c_str());
   WindowAdapter::GetInstance().NotifyWindowEvent(xcomponent_id, event);
 }
 
@@ -162,6 +173,7 @@ void OnCaptionButtonRectChange(const std::string& xcomponent_id,
   event->right = caption_button_rect["right"].As<int>();
   event->width = caption_button_rect["width"].As<int64_t>();
   event->height = caption_button_rect["height"].As<int64_t>();
+  LOGI("[window_event_receiver.cc] OnCaptionButtonRectChange: %{public}s", event->ToString().c_str());
   WindowAdapter::GetInstance().NotifyWindowEvent(xcomponent_id, event);
 }
 
@@ -175,11 +187,21 @@ void SetSystemWindowLimits(const aki::Value window_limits) {
 }
 
 void OnDeviceModeChange(const std::string& xcomponent_id,
-                        ChangeEventType type) {
+                        ChangeEventType type,
+                        WindowStatusType status) {
   TRACE_EVENT_1("OnDeviceInfoChange", "widget_id", xcomponent_id);
 
   auto event = std::make_shared<DeviceInfoChangeEvent>();
   event->change_event_type_ = type;
+  event->status_ = status;
+  WindowAdapter::GetInstance().NotifyWindowEvent(xcomponent_id, event);
+}
+
+void OnWindowDisplayIdChange(const std::string& xcomponent_id,
+                             const int64_t display_id) {
+  TRACE_EVENT_1("OnWindowDisplayIdChange", "widget_id", xcomponent_id);
+  auto event = std::make_shared<WindowDisplayIdChangeEvent>();
+  event->display_id = display_id;
   WindowAdapter::GetInstance().NotifyWindowEvent(xcomponent_id, event);
 }
 
@@ -195,6 +217,7 @@ JSBIND_GLOBAL() {
   JSBIND_FUNCTION(OnCaptionButtonRectChange);
   JSBIND_FUNCTION(SetSystemWindowLimits);
   JSBIND_FUNCTION(OnDeviceModeChange);
+  JSBIND_FUNCTION(OnWindowDisplayIdChange);
 }
 
 }  // namespace ohos::adapter::xcomponent

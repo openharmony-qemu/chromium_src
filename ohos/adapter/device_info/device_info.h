@@ -45,6 +45,8 @@ enum SdkVersion {
   SDK_VERSION_13 = 13,
   SDK_VERSION_14 = 14,
   SDK_VERSION_15 = 15,
+  SDK_VERSION_19 = 19,
+  SDK_VERSION_20 = 20,  
 };
 enum class DeviceType { _2IN1, _TABLET };
 

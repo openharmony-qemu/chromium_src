@@ -36,6 +36,7 @@ import JsBindingUtils from '../utils/JsBindingUtils';
 import { MultiInputAdapter } from '../adapter/MultiInputAdapter';
 import { DragParamManager } from '../common/DragParamManager';
 import { UIExtensionContentSession } from '@kit.AbilityKit';
+import { window } from '@kit.ArkUI';
 
 @Component
 export struct WebEmbeddedWindow {
@@ -43,7 +44,8 @@ export struct WebEmbeddedWindow {
   @LocalStorageLink('xcomponentId') xComponentId: string = '';
   @LocalStorageLink('startUri') startUri: string = '';
   @LocalStorageLink('session') session: UIExtensionContentSession | undefined = undefined;
-  @LocalStorageLink('userData') userData: string = '';  
+  @LocalStorageLink('userData') userData: string = '';
+  @LocalStorageLink('window') embeddedWindow: window.Window | undefined = undefined;
   private LIBRARY_NAME: string = 'adapter';
   private XCOMPONENT_NAME: string = 'xcomponent';
   private MODULE_NAME: string = this.xComponentId + ':' + this.XCOMPONENT_NAME;
@@ -161,7 +163,16 @@ export struct WebEmbeddedWindow {
         height: prop.uiExtensionHostWindowProxyRect.height
       }
 
-      this.nativeContext.OnWindowInitSize(windowRect, drawableRect);
+      let displayId = ConfigData.INVALID_DISPLAY_ID;
+      try {
+        let windowProp = this.embeddedWindow?.getWindowProperties();
+        if (windowProp && windowProp.displayId) {
+          displayId = windowProp.displayId;
+        }
+        this.nativeContext.OnWindowInitSize(windowRect, drawableRect, displayId);
+      } catch (error) {
+        LogUtil.error(WebEmbeddedWindow.TAG, 'get display fail, error:' + JSON.stringify(error));
+      }
     }
   }
 

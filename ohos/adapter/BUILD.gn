@@ -79,6 +79,7 @@ if (is_ohos) {
       "//ohos/adapter/res_sched:res_sched",
       "//ohos/adapter/runninglock:runninglock",
       "//ohos/adapter/screen:screen",
+      "//ohos/adapter/screen_capture:screen_capture",
       "//ohos/adapter/screenlock_monitor:screenlock_monitor",
       "//ohos/adapter/shape_detection:shape_detection_adapter",
       "//ohos/adapter/speech:speech_adapter",

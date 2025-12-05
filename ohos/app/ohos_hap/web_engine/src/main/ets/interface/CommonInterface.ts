@@ -74,7 +74,7 @@ export interface NativeContext {
   OnDragMoveCB: (id: string, windowX: number, windowY: number) => void;
   OnDropCB: (id: string, dragInfo: OhosDropData, fileUris: Array<string>) => void;
   OnFontSizeChangeCallback:(fontSizeZoom :number) => void;
-  OnWindowInitSize: (windowRect: WindowBound, drawableRect: WindowBound) => void;
+  OnWindowInitSize: (windowRect: WindowBound, drawableRect: WindowBound, displayId: number) => void;
   OnWindowStatusChange: (id: string, status: window.WindowStatusType) => void;
   OnWindowVisibleChange: (windowId: String, visible: boolean) => void;
   OnWindowInitState: (state: window.WindowStatusType) => void;
@@ -86,6 +86,7 @@ export interface NativeContext {
   OnNotificationClickCallback: (id: number) => void;
   OnNotificationCloseCallback: (id: number) => void;
   OnNotificationButtonClickCallback: (id: number, buttonIndex) => void;
+  OnAvailableAreaChangeCallback: (availableArea: WindowBound, displayId: number) => void;  
   OnDisplayChangeCallback: (even: string, id: number) => void;
   PowerMonitor: PowerMonitor;
   ExecuteCommand: (id: number, param: CommandParameter) => CommandResult;  
@@ -96,7 +97,9 @@ export interface NativeContext {
   OnCaptionButtonRectChange: (id: string, event: CaptionButtonRect) => void;
   UpdateWindowDeviceModeSwitchCB: (mode: DeviceMode) => void;
   SetSystemWindowLimits: (windowLimits: WindowLimits) => void;
-  OnDeviceModeChange: (id: string, event: ChangeEventType) => void;
+  OnDeviceModeChange: (id: string, event: ChangeEventType, status: window.WindowStatusType) => void;
+  OnWindowDisplayIdChange: (id: string, displayId: number) => void;
+  OnAvoidAreaChangeCallback: (statusBarHeight: number) => void;
 }
 
 export interface IParams {

@@ -98,6 +98,10 @@ gfx::NativeWindow TestScreen::GetLocalProcessWindowAtPoint(
   NOTIMPLEMENTED_LOG_ONCE();
   return gfx::NativeWindow();
 }
+
+gfx::Point TestScreen::GetCursorScreenPoint(const int32_t display_id) {
+  return GetCursorScreenPoint();
+}
 #endif
 
 }  // namespace display::test

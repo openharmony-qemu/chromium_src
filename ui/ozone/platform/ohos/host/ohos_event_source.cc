@@ -68,7 +68,7 @@ const static std::unordered_map<OH_NativeXComponent_KeyCode,
         {KEY_NUMPAD_0, KEY_INSERT},       {KEY_NUMPAD_1, KEY_MOVE_END},
         {KEY_NUMPAD_2, KEY_DPAD_DOWN},    {KEY_NUMPAD_3, KEY_PAGE_DOWN},
         {KEY_NUMPAD_4, KEY_DPAD_LEFT},    {KEY_NUMPAD_5, KEY_UNKNOWN},
-        {KEY_NUMPAD_6, KEY_DPAD_RIGHT},   {KEY_NUMPAD_7, KEY_HOME},
+        {KEY_NUMPAD_6, KEY_DPAD_RIGHT},   {KEY_NUMPAD_7, KEY_MOVE_HOME},
         {KEY_NUMPAD_8, KEY_DPAD_UP},      {KEY_NUMPAD_9, KEY_PAGE_UP},
         {KEY_NUMPAD_DOT, KEY_FORWARD_DEL}};
 
@@ -112,6 +112,9 @@ void DragMoveEventCallback(const int32_t widget_id,
 void SendWindowMouseEventForTabDragCallback(
     const int32_t widget_id,
     Input_MouseEvent* window_mouse_event);
+void SendWindowTouchEventForTabDragCallback(
+    const int32_t widget_id,
+    Input_TouchEvent* window_touch_event);
 
 void UpdateKeyFlagsByOhKeyState(EventFlags& key_flags);
 void UpdateKeyPressedState(EventFlags& key_flags,
@@ -141,6 +144,8 @@ OhosEventSource::OhosEventSource(OhosWindowManager* window_manager,
   event_callback_->mouse_hover_event_callback = &MouseHoverEventCallback;
   event_callback_->sendWindowMouseEventForTabDragCallback =
       &SendWindowMouseEventForTabDragCallback;
+  event_callback_->sendWindowTouchEventForTabDragCallback =
+      &SendWindowTouchEventForTabDragCallback;
 
   // Observes remove changes to know when touch points can be removed.
   window_manager_->AddObserver(this);
@@ -212,7 +217,8 @@ void OhosEventSource::OnMouseEvent(
   pointer_location_.SetPoint(mouse_event.x, mouse_event.y);
   if (mouse_event.action == OH_NATIVEXCOMPONENT_MOUSE_PRESS) {
     type = EventType::kMousePressed;
-  } else if (mouse_event.action == OH_NATIVEXCOMPONENT_MOUSE_RELEASE) {
+  } else if (mouse_event.action == OH_NATIVEXCOMPONENT_MOUSE_RELEASE ||
+             mouse_event.action == OH_NATIVEXCOMPONENT_MOUSE_CANCEL) {
     type = EventType::kMouseReleased;
   } else if (mouse_event.action == OH_NATIVEXCOMPONENT_MOUSE_MOVE) {
     OnMouseMoveEvent(widget_id, mouse_event, original_pointer_location, display_id);
@@ -249,6 +255,9 @@ void OhosEventSource::OnMouseEvent(
   EventFlags flags = pointer_flags_ | changed_button | key_flags_;
   MouseEvent event(type, pointer_location_, original_pointer_location,
                    EventTimeForNow(), flags, changed_button);
+  LOG(INFO) << "[multiinput] OnMouseEvent event: " << event.ToString()
+            << ", widget_id: " << widget_id
+            << ", display_id: " << display_id;
   event.set_display_id(display_id);
   SetTargetAndDispatchEvent(widget_id, event);
 }
@@ -283,7 +292,8 @@ void OhosEventSource::OnTouchEvent(
     const gfx::AcceleratedWidget widget_id,
     const OH_NativeXComponent_TouchEvent& ohos_touch_event,
     const OH_NativeXComponent_TouchPointToolType ohos_touch_point_tool_type,
-    const TouchPointCoordinate& coordinate) {
+    const TouchPointCoordinate& coordinate,
+    const int32_t display_id) {
   EventType type = EventType::kUnknown;
   switch (ohos_touch_event.type) {
     case OH_NATIVEXCOMPONENT_DOWN:
@@ -305,6 +315,25 @@ void OhosEventSource::OnTouchEvent(
   gfx::Point touch_location(ohos_touch_event.x, ohos_touch_event.y);
   cursor_screen_point_.SetPoint(coordinate.display_x, coordinate.display_y);
 
+  EventPointerType pointer_type =
+      ConvertOHToolTypeToEventPointerType(ohos_touch_point_tool_type);
+
+  PointerDetails pointer_details(pointer_type, ohos_touch_event.id, 0.0, 0.0,
+                                 ohos_touch_event.force, 0.0, coordinate.tilt_x,
+                                 coordinate.tilt_y);
+
+  TouchEvent event(type, touch_location, EventTimeForNow(), pointer_details);
+  if (ohos_touch_event.type != OH_NATIVEXCOMPONENT_MOVE) {
+    LOG(INFO) << "[multiinput] OnTouchEvent event: " << event.ToString()
+              << ", widget_id: " << widget_id << std::endl
+              << "pointer_details: " << pointer_details.ToString();
+  }
+  event.set_display_id(display_id);
+  SetTargetAndDispatchEvent(widget_id, event);
+}
+
+EventPointerType OhosEventSource::ConvertOHToolTypeToEventPointerType(
+    OH_NativeXComponent_TouchPointToolType ohos_touch_point_tool_type) {
   EventPointerType pointer_type = EventPointerType::kUnknown;
   switch (ohos_touch_point_tool_type) {
     case OH_NATIVEXCOMPONENT_TOOL_TYPE_FINGER:
@@ -327,12 +356,7 @@ void OhosEventSource::OnTouchEvent(
       pointer_type = EventPointerType::kTouch;
       break;
   }
-  PointerDetails pointer_details(pointer_type, ohos_touch_event.id, 0.0, 0.0,
-                                 ohos_touch_event.force, 0.0, coordinate.tilt_x,
-                                 coordinate.tilt_y);
-
-  TouchEvent event(type, touch_location, EventTimeForNow(), pointer_details);
-  SetTargetAndDispatchEvent(widget_id, event);
+  return pointer_type;
 }
 
 void OhosEventSource::CreateAndDispatchFlingEvent(
@@ -418,7 +442,7 @@ void OhosEventSource::OnPinchEvent(
         NearZero(last_scale_) ? 1.0f : gesture_event.scale / last_scale_);
     last_scale_ = gesture_event.scale;
 
-    ui::GestureEvent pinch_event(gesture_event.offset_x, gesture_event.offset_y, 0,
+    ui::GestureEvent pinch_event(pointer_location_.x(), pointer_location_.y(), 0,
                                  ui::EventTimeForNow(), event_details);
     SetTargetAndDispatchEvent(widget_id, pinch_event);
 }
@@ -547,7 +571,10 @@ void OhosEventSource::SimulateTouchUp(const gfx::AcceleratedWidget widget_id) {
   TouchPointCoordinate coordinate;
   coordinate.display_x = cursor_screen_point_.x();
   coordinate.display_y = cursor_screen_point_.y();
-  OnTouchEvent(widget_id, touch_event, ohos_touch_point_tool_type, coordinate);
+  int64_t default_display_id =
+      display::Screen::GetScreen()->GetPrimaryDisplay().id();
+  OnTouchEvent(widget_id, touch_event, ohos_touch_point_tool_type, coordinate,
+               default_display_id);
 }
 
 void OhosEventSource::ShiftWindowEvent(
@@ -566,17 +593,15 @@ void OhosEventSource::SendWindowMouseEventForTabDrag(
                << ", xcomponent_mouse_event is null";
     return;
   }
-  if (window_drag_manager_->NeedSendWindowMouseEventToUi(
-      widget_id, xcomponent_mouse_event)) {
-    OhosWindow* ohos_window = window_manager_->GetWindow(widget_id);
-    if (ohos_window) {
-      gfx::Rect window_bounds = ohos_window->GetBoundsInPixels();
-      xcomponent_mouse_event->x =
-          xcomponent_mouse_event->screenX - window_bounds.x();
-      xcomponent_mouse_event->y =
-          xcomponent_mouse_event->screenY - window_bounds.y();
-    }
-    // When the tab page drag is complete, the tab page drag parameter is cleared
+  if (window_drag_manager_->NeedSendWindowEventToUi(
+      widget_id, xcomponent_mouse_event->action)) {
+    // Initialize internal coordinates of the component
+    PrepareXcomponentPointForMouseEvent(widget_id, xcomponent_mouse_event,
+                                        xcomponent_mouse_event->screenX,
+                                        xcomponent_mouse_event->screenY);
+
+    // When the tab page drag is complete, the tab page drag parameter is
+    // cleared
     if (xcomponent_mouse_event->action == OH_NATIVEXCOMPONENT_MOUSE_RELEASE) {
       LOG(WARNING)
           << "[OhosTabDrag] SendWindowMouseEventForTabDrag tab dragging is ended"
@@ -585,6 +610,39 @@ void OhosEventSource::SendWindowMouseEventForTabDrag(
       EndTabDragging();
     }
     OnMouseEvent(widget_id, *xcomponent_mouse_event, display_id, key_flags);
+  }
+}
+
+void OhosEventSource::SendWindowTouchEventForTabDrag(
+    const gfx::AcceleratedWidget widget_id,
+    std::shared_ptr<OH_NativeXComponent_TouchEvent> xcomponent_touch_event,
+    const TouchPointCoordinate& coordinate,
+    const int32_t display_id) {
+  if (xcomponent_touch_event == nullptr) {
+    LOG(ERROR) << "[OhosTabDrag] " << __FUNCTION__
+               << ", xcomponent_touch_event is null";
+    return;
+  }
+  if (window_drag_manager_->NeedSendWindowEventToUi(
+      widget_id, xcomponent_touch_event->type,
+      xcomponent_touch_event->id)) {
+    // Initialize internal coordinates of the component
+    PrepareXcomponentPointForTouchEvent(widget_id, xcomponent_touch_event,
+                                        coordinate.display_x, coordinate.display_y);
+
+    // When the tab page drag is complete, the tab page drag parameter is
+    // cleared
+    if (xcomponent_touch_event->type == OH_NATIVEXCOMPONENT_UP) {
+      LOG(WARNING) << "[OhosTabDrag] " << __FUNCTION__
+                   << " tab dragging is ended"
+                      ", widget_id:"
+                   << widget_id;
+      EndTabDragging();
+    }
+    OH_NativeXComponent_TouchPointToolType touch_point_tool_type =
+        OH_NATIVEXCOMPONENT_TOOL_TYPE_FINGER;
+    OnTouchEvent(widget_id, *xcomponent_touch_event, touch_point_tool_type,
+                 coordinate, display_id);
   }
 }
 
@@ -597,15 +655,51 @@ void OhosEventSource::StartTabDragging(const gfx::AcceleratedWidget widget_id) {
   window_drag_manager_->StartTabDragging(widget_id);
 }
 
+void OhosEventSource::StartTabDraggingByTouch(
+    const gfx::AcceleratedWidget widget_id,
+    const int32_t finger_id) {
+  if (widget_id <= 0) {
+    LOG(ERROR) << "[OhosTabDrag] " << __FUNCTION__ << ", widget_id is invalid";
+    return;
+  }
+  window_drag_manager_->StartTabDraggingByTouch(widget_id, finger_id);
+}
+
 void OhosEventSource::EndTabDragging() {
   LOG(INFO) << "[OhosTabDrag] " << __FUNCTION__;
   window_drag_manager_->ClearDraggingTabParams();
 }
 
+void OhosEventSource::PrepareXcomponentPointForTouchEvent(
+    const gfx::AcceleratedWidget widget_id,
+    std::shared_ptr<OH_NativeXComponent_TouchEvent> xcomponent_touch_event,
+    const float display_x,
+    const float display_y) {
+  OhosWindow* ohos_window = window_manager_->GetWindow(widget_id);
+  if (ohos_window) {
+    gfx::Rect window_bounds = ohos_window->GetBoundsInPixels();
+    xcomponent_touch_event->x = display_x - window_bounds.x();
+    xcomponent_touch_event->y = display_y - window_bounds.y();
+  }
+}
+
+void OhosEventSource::PrepareXcomponentPointForMouseEvent(
+    const gfx::AcceleratedWidget widget_id,
+    std::shared_ptr<OH_NativeXComponent_MouseEvent> xcomponent_mouse_event,
+    const float display_x,
+    const float display_y) {
+  OhosWindow* ohos_window = window_manager_->GetWindow(widget_id);
+  if (ohos_window) {
+    gfx::Rect window_bounds = ohos_window->GetBoundsInPixels();
+    xcomponent_mouse_event->x = display_x - window_bounds.x();
+    xcomponent_mouse_event->y = display_y - window_bounds.y();
+  }
+}
+
 void MouseEventCallback(const int32_t widget_id,
                         const OH_NativeXComponent_MouseEvent& mouse_event) {
-  if (OhosEventFilter::GetInstance().CheckFilterMouseEvent(widget_id,
-                                                           mouse_event)) {
+  if (OhosEventFilter::GetInstance().CheckFilterMouseEvent(
+      widget_id, mouse_event.timestamp, mouse_event.action)) {
     DLOG(ERROR) << "mouse event is filtered,widget_id:" << widget_id
                 << ",action:" << static_cast<int>(mouse_event.action);
     return;
@@ -635,7 +729,8 @@ void MouseEventCallback(const int32_t widget_id,
       widget_id, mouse_event, key_flags);
   base::TaskRunnerOHOS::GetUIThreadTaskRunner()->PostTask(FROM_HERE,
                                                           std::move(task));
-  OhosEventFilter::GetInstance().RefreshMouseEvent(widget_id, mouse_event);
+  OhosEventFilter::GetInstance().RefreshMouseEvent(
+      widget_id, mouse_event.timestamp, mouse_event.action);
 }
 
 OH_NativeXComponent_KeyCode GetKeyWithNumLockOFF(
@@ -720,9 +815,10 @@ void TouchEventCallback(
                           "even source created";
           return;
         }
+        int64_t default_display_id = display::Screen::GetScreen()->GetPrimaryDisplay().id();
         reinterpret_cast<OhosEventSource*>(event_source)
             ->OnTouchEvent(widget_id, ohos_touch_event,
-                           ohos_touch_point_tool_type, coordinate);
+                           ohos_touch_point_tool_type, coordinate, default_display_id);
       },
       widget_id, ohos_touch_event, ohos_touch_point_tool_type, coordinate);
   base::TaskRunnerOHOS::GetUIThreadTaskRunner()->PostTask(FROM_HERE, std::move(task));
@@ -962,14 +1058,16 @@ void SendWindowMouseEventForTabDragCallback(
   ConvertWindowMouseEventToXcomponentEvent(window_mouse_event,
                                            xcomponent_mouse_event);
   if (OhosEventFilter::GetInstance().CheckFilterMouseEvent(
-      widget_id, *xcomponent_mouse_event)) {
+      widget_id, xcomponent_mouse_event->timestamp,
+      xcomponent_mouse_event->action)) {
     DLOG(ERROR) << "SendWindowMouseEventForTabDragCallback mouse event is "
                    "filtered,widget_id:"
                 << widget_id << ", action:" << xcomponent_mouse_event->action;
     return;
   }
-  OhosEventFilter::GetInstance().RefreshMouseEvent(widget_id,
-                                                   *xcomponent_mouse_event);
+  OhosEventFilter::GetInstance().RefreshMouseEvent(
+      widget_id, xcomponent_mouse_event->timestamp,
+      xcomponent_mouse_event->action);
   int32_t display_id =
       WindowEventFilterAdapter::GetInstance().GetWindowMouseEventDisplayId(
           window_mouse_event);
@@ -995,6 +1093,111 @@ void SendWindowMouseEventForTabDragCallback(
                                              display_id, key_flags);
       },
       widget_id, std::move(xcomponent_mouse_event), display_id, key_flags);
+  base::TaskRunnerOHOS::GetUIThreadTaskRunner()->PostTask(FROM_HERE,
+                                                          std::move(task));
+}
+
+OH_NativeXComponent_TouchEventType ConvertTouchEventTypeFromWindowTouchEvent(
+    int32_t window_touch_action) {
+  OH_NativeXComponent_TouchEventType touch_event_action =
+      OH_NATIVEXCOMPONENT_UNKNOWN;
+  switch (window_touch_action) {
+    case TOUCH_ACTION_MOVE:
+      touch_event_action = OH_NATIVEXCOMPONENT_MOVE;
+      break;
+    case TOUCH_ACTION_DOWN:
+      touch_event_action = OH_NATIVEXCOMPONENT_DOWN;
+      break;
+    case TOUCH_ACTION_UP:
+      touch_event_action = OH_NATIVEXCOMPONENT_UP;
+      break;
+    case TOUCH_ACTION_CANCEL:
+      touch_event_action = OH_NATIVEXCOMPONENT_CANCEL;
+      break;
+    default:
+      DLOG(INFO) << "ConvertTouchEventTypeFromWindowTouchEvent "
+                    "touch_event_action is not useful:"
+                 << window_touch_action;
+      break;
+  }
+  return touch_event_action;
+}
+
+void ConvertWindowTouchEventToXcomponentEvent(
+    Input_TouchEvent* window_touch_event,
+    std::shared_ptr<OH_NativeXComponent_TouchEvent> xcomponent_touch_event,
+    TouchPointCoordinate& coordinate) {
+  WindowEventFilterAdapter& window_event_filter_adapter =
+      WindowEventFilterAdapter::GetInstance();
+  int32_t window_touch_action =
+      window_event_filter_adapter.GetWindowTouchEventAction(window_touch_event);
+  int32_t display_x = window_event_filter_adapter.GetWindowTouchEventDisplayX(
+      window_touch_event);
+  int32_t display_y =
+      window_event_filter_adapter.GetWindowTouchEventDisplayY(window_touch_event);
+  int32_t window_touch_finger_id =
+      window_event_filter_adapter.GetWindowTouchEventFingerId(
+          window_touch_event);
+  int64_t action_time =
+      window_event_filter_adapter.GetWindowTouchEventActionTime(
+          window_touch_event);
+  xcomponent_touch_event->id = window_touch_finger_id;
+  xcomponent_touch_event->type =
+      ConvertTouchEventTypeFromWindowTouchEvent(window_touch_action);
+  coordinate.display_x = display_x;
+  coordinate.display_y = display_y;
+  // The unit of the touch event timestamp from the window is millisecond.
+  // The unit of the touch event in the xcomponent is microsecond.
+  xcomponent_touch_event->timeStamp = action_time * kMicrosecondsUnit;
+}
+
+void SendWindowTouchEventForTabDragCallback(
+    const int32_t widget_id,
+    Input_TouchEvent* window_touch_event) {
+  if (window_touch_event == nullptr) {
+    LOG(ERROR) << "SendWindowTouchEventForTabDragCallback touch event is "
+              "null,widget_id:"
+            << widget_id;
+    return;
+  }
+  std::shared_ptr<OH_NativeXComponent_TouchEvent> xcomponent_touch_event =
+      std::make_shared<OH_NativeXComponent_TouchEvent>();
+  TouchPointCoordinate coordinate;
+  ConvertWindowTouchEventToXcomponentEvent(window_touch_event,
+                                           xcomponent_touch_event,
+                                           coordinate);
+  if (OhosEventFilter::GetInstance().CheckFilterTouchEvent(
+      widget_id, xcomponent_touch_event->timeStamp,
+      xcomponent_touch_event->type, xcomponent_touch_event->id)) {
+    DLOG(ERROR) << "SendWindowTouchEventForTabDragCallback mouse event is "
+                   "filtered,widget_id:"
+                << widget_id << ", action:" << xcomponent_touch_event->type;
+    return;
+  }
+  OhosEventFilter::GetInstance().RefreshTouchEvent(
+      widget_id, xcomponent_touch_event->timeStamp,
+      xcomponent_touch_event->type, xcomponent_touch_event->id);
+  int32_t display_id =
+      WindowEventFilterAdapter::GetInstance().GetWindowTouchEventDisplayId(
+          window_touch_event);
+  auto task = base::BindOnce(
+      [](const int32_t widget_id,
+         const std::shared_ptr<OH_NativeXComponent_TouchEvent>
+             xcomponent_touch_event,
+         TouchPointCoordinate coordinate, int32_t display_id) {
+        auto* event_source = PlatformEventSource::GetInstance();
+        if (event_source == nullptr) {
+          LOG(WARNING) << "[OhosTabDrag]register "
+                          "SendWindowTouchEventForTabDragCallback before event "
+                          "source created";
+          return;
+        }
+        reinterpret_cast<OhosEventSource*>(event_source)
+            ->SendWindowTouchEventForTabDrag(widget_id, xcomponent_touch_event,
+                                             coordinate, display_id);
+      },
+      widget_id, std::move(xcomponent_touch_event), std::move(coordinate),
+      display_id);
   base::TaskRunnerOHOS::GetUIThreadTaskRunner()->PostTask(FROM_HERE,
                                                           std::move(task));
 }

@@ -67,7 +67,7 @@ void ScreenAdapter::ConvertDisplay(aki::Value complete_display,
   ohos_display.avail_area.height = avail_area["height"].As<int32_t>();
 }
 
-void ScreenAdapter::GetDefaultDisplay(OhosDisplay& ohos_display) {
+void ScreenAdapter::GetPrimaryDisplay(OhosDisplay& ohos_display) {
   std::promise<bool> promise;
   std::function<void(aki::Value)> callback =
     [&](aki::Value complete_display) {
@@ -80,7 +80,7 @@ void ScreenAdapter::GetDefaultDisplay(OhosDisplay& ohos_display) {
   };
 
   if (auto func =
-          ohos::adapter::GetJSFunction("OhosDisplayAdapter.GetDefaultDisplay")) {
+          ohos::adapter::GetJSFunction("OhosDisplayAdapter.GetPrimaryDisplay")) {
     func->Invoke<void>(callback);
     promise.get_future().get();
   }
@@ -142,6 +142,31 @@ ScreenAdapter::DisplayChangeCallback ScreenAdapter::GetCallback() {
   return callback_;
 }
 
+void ScreenAdapter::RegisterAvailableAreaMonitor() {
+  if (auto func =
+        ohos::adapter::GetJSFunction("OhosDisplayAdapter.registerAvailableAreaMonitor")) {
+    func->Invoke<void>();
+  }
+}
+ 
+void ScreenAdapter::RegisterAvailableAreaCallback(
+    ScreenAdapter::AvailableAreaChangeCallback callback) {
+  available_area_callback_ = callback;
+}
+ 
+ScreenAdapter::AvailableAreaChangeCallback ScreenAdapter::GetAvailableAreaCallback() {
+  return available_area_callback_;
+}
+
+void ScreenAdapter::RegisterAvoidAreaCallback(
+    ScreenAdapter::AvoidAreaChangeCallback callback) {
+  avoid_area_callback_ = callback;
+}
+ 
+ScreenAdapter::AvoidAreaChangeCallback ScreenAdapter::GetAvoidAreaCallback() {
+  return avoid_area_callback_;
+}
+
 void OnDisplayChangeCallback(const std::string& event, int32_t id) {
   if (ScreenAdapter::GetInstance().GetCallback() != nullptr) {
     ScreenAdapter::GetInstance().GetCallback()(event, id);
@@ -155,13 +180,44 @@ void OnFontSizeChangeCallback(float zoom) {
   }
 }
 
+void OnAvailableAreaChangeCallback(const aki::Value available_area, int32_t display_id) {
+  window::WindowRect work_area;
+  work_area.left = available_area["left"].As<int32_t>();
+  work_area.top = available_area["top"].As<int32_t>();
+  work_area.width = available_area["width"].As<int32_t>();
+  work_area.height = available_area["height"].As<int32_t>();
+  if (ScreenAdapter::GetInstance().GetAvailableAreaCallback() != nullptr) {
+    ScreenAdapter::GetInstance().GetAvailableAreaCallback()(work_area, display_id);
+  }
+}
+
 void ScreenAdapter::SetFontSizeZoom(float zoom) {
   font_size_zoom_ = zoom;
 }
 
+void ScreenAdapter::OnAvoidAreaChangeCallback(int32_t status_bar_height) {
+  if (status_bar_height_ == status_bar_height) {
+    return;
+  }
+  status_bar_height_ = status_bar_height;
+  if (GetAvoidAreaCallback() != nullptr) {
+    GetAvoidAreaCallback()(status_bar_height_);
+  }
+}
+
+int32_t ScreenAdapter::GetStatusBarHeight() {
+  return status_bar_height_;
+}
+
+void OnAvoidAreaChangeCallback(int32_t status_bar_height) {
+  ScreenAdapter::GetInstance().OnAvoidAreaChangeCallback(status_bar_height);
+}
+
 JSBIND_GLOBAL() {
+  JSBIND_FUNCTION(OnAvailableAreaChangeCallback);
   JSBIND_FUNCTION(OnDisplayChangeCallback);
   JSBIND_FUNCTION(OnFontSizeChangeCallback);
+  JSBIND_FUNCTION(OnAvoidAreaChangeCallback);
 }
 
 }  // namespace adapter

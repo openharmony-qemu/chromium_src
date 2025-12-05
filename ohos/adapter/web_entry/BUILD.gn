@@ -32,6 +32,7 @@ component("web_entry") {
     sources = [
       "chrome/chrome_loader.cc",
       "chrome/chrome_loader.h",
+      "permission_constants.h",
       "shell/content_shell_loader.cc",
       "shell/content_shell_loader.h",
       "web_entry_init.cc",
@@ -62,5 +63,8 @@ component("web_entry") {
       "//ohos/adapter/dev_config:dev_config",
     ]
 
-    libs = [ "hilog_ndk.z" ]
+    libs = [
+      "ability_access_control",
+      "hilog_ndk.z",
+    ]
 }

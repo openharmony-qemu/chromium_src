@@ -65,7 +65,9 @@ class ADAPTER_EXPORT_API FileSelectPicker {
                             FileSelectedCallback);
   void ShowFilePickerDirDialog(bool file_access_persist, FileSelectedCallback);
   void ShowSaveAsDialog(const SaveAsDialogParams& params, FileSelectedCallback);
-  void ShowInstallationPackageDialog(ContinueDwonloadConfirmCallback);
+  void ShowInstallationPackageDialog(const std::string& file_name_,
+                                     const std::string& file_size_,
+                                     ContinueDwonloadConfirmCallback);
 
  private:
 };

@@ -45,13 +45,11 @@ class OhosToplevelPadWindow : public OhosToplevelWindow {
  private:
   void HandleEvent(std::shared_ptr<XCEvent> event) override;
   void SetWindowState(PlatformWindowState new_state, bool isTrigger) override;
-  void OnWindowEvent(std::shared_ptr<XCEvent> event) override;
   
   void OnDeviceModeChanged(std::shared_ptr<XCEvent> event);
   void RecoverStateWhenDeviceModeChanged(PlatformWindowState recover_state);
 
   bool is_trigger_state_change_required_ = true;
-  bool is_exit_fullscreen_required_ = false;
 };
  
 }  // namespace ui

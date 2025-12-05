@@ -30,7 +30,10 @@
 #ifndef OHOS_ADAPTER_FILE_MANAGER_FILE_MANAGER_ADAPTER_H_
 #define OHOS_ADAPTER_FILE_MANAGER_FILE_MANAGER_ADAPTER_H_
 
+#include <functional>
+#include <optional>
 #include <string>
+#include <vector>
 
 #include "ohos/adapter/export.h"
 
@@ -48,6 +51,11 @@ class ADAPTER_EXPORT_API FileManagerAdapter {
   void OpenItemInFolder(const std::string& full_path);
   void OpenVerifiedItem(const std::string& full_path);
   void GetPathForUri(const char* uri, std::string& path);
+  using FileIconCallback =
+    std::function<void(std::optional<std::vector<uint8_t>>)>;
+  std::string GetFileTypeIdByFileExtension(const std::string& file_extension_);
+  void GetFileIconByFileTypeId(const std::string& file_type_id_,
+                               FileIconCallback callback);
 
  private:
   FileManagerAdapter() = default;

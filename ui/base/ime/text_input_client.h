@@ -27,6 +27,11 @@
 #include "ui/gfx/range/range.h"
 #include "url/gurl.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "ui/display/display.h"
+#include "ui/display/screen.h"
+#endif
+
 namespace gfx {
 class Point;
 class Rect;
@@ -256,6 +261,7 @@ class COMPONENT_EXPORT(UI_BASE_IME) TextInputClient {
   }
 
   virtual gfx::Rect GetToplevelWindowBounds() const;
+  virtual display::Display GetDisplayForClient();
 #endif
 
   // Document content operations ----------------------------------------------

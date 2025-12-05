@@ -33,7 +33,10 @@
 #include "base/memory/weak_ptr.h"
 #include "base/ohos/task_scheduler/task_runner_ohos.h"
 #include "ohos/adapter/window/window_common.h"
+#include "ohos/adapter/xcomponent/adapter/window_adapter.h"
 #include "ohos/adapter/xcomponent/event/window_event_common.h"
+#include "ui/display/display.h"
+#include "ui/display/types/display_constants.h"
 #include "ui/events/event_target.h"
 #include "ui/events/platform/platform_event_dispatcher.h"
 #include "ui/gfx/geometry/rect.h"
@@ -186,6 +189,18 @@ class OhosWindow : public PlatformWindow,
   void SetFocus(bool focus) { has_focus_ = focus; }
   bool HasFocus() const { return has_focus_; }
 
+  void SetCurrentDisplayId(int64_t display_id) {
+    current_display_id_ = display_id;
+    ohos::adapter::xcomponent::WindowAdapter::GetInstance().SetCurrentDisplayId(display_id);
+  }
+  int64_t GetCurrentDisplayId() {
+    return current_display_id_;
+  }
+  display::Display PrepareDisplayForNewWindow();
+
+  virtual int32_t GetOriginWindowId();
+  virtual display::Display GetCurrentDisplay();
+
   bool is_visible_{true};
 
   // The bounds of our window before the window was maximized.
@@ -245,6 +260,7 @@ class OhosWindow : public PlatformWindow,
 
   bool has_focus_ = false;
   bool has_pointer_focus_ = false;
+  int64_t current_display_id_ = display::kInvalidDisplayId;
 
   base::WeakPtrFactory<OhosWindow> weak_ptr_factory_{this};
 };

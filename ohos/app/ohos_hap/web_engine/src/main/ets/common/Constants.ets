@@ -7,6 +7,7 @@ export class ConfigData {
   static TAG: string = '[WebEngine]';
   static WINDOW_PREFIX: string = 'browser';
   static DEFAULT_WINDOW_ID: string = 'browser1';
+  static INVALID_DISPLAY_ID: number = -1;
 }
 let configData = new ConfigData();
 export default configData as ConfigData;

@@ -492,6 +492,7 @@ class MediaSessionImpl : public MediaSession,
 
 #if BUILDFLAG(IS_OHOS)
   bool IsActiveSession() override;
+  bool HasOnlyOneShotPlayersPublic() override;
 #endif
   // Returns the device ID for the audio output device being used by all of the
   // normal players. If the players are not all using the same audio output

@@ -30,6 +30,7 @@
 #ifndef UI_OZONE_PLATFORM_OHOS_HOST_OHOS_POPUP_H_
 #define UI_OZONE_PLATFORM_OHOS_HOST_OHOS_POPUP_H_
 
+#include "ui/display/display.h"
 #include "ui/ozone/platform/ohos/host/ohos_window.h"
 
 namespace ui {
@@ -62,6 +63,7 @@ class OhosPopup : public OhosWindow {
 
   OhosPopup* AsOhosPopup() override;
   WindowInitParameter BuildWindowInitParameter() override;
+  display::Display GetCurrentDisplay() override;
 
  private:
   void OnFocusEvent();

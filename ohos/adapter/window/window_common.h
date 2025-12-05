@@ -37,7 +37,7 @@
 
 namespace ohos::adapter::window {
 
-struct WindowRect {
+struct ADAPTER_EXPORT_API WindowRect {
  public:
   int32_t left;
   int32_t top;

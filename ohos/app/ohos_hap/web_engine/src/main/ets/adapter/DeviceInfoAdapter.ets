@@ -34,7 +34,13 @@ export class DeviceInfoAdapter {
       LogUtil.error(TAG, 'Failed to register window_pcmode_switch_status.');
       return;
     }
-    this.updateWindowDeviceModeSwitch(context);
+
+    this.updateDeviceMode(this.getDeviceModeFromSystem(context));
+    let proxyList = this.abilityManager.getProxyList();
+    for (let i = 0; i < proxyList.length; i++) {
+      this.abilityManager.getProxy(proxyList[i].getWindowId())?.updateAvoidAreaStatus(false);
+    }
+
     this.isRegisterDeviceModeChange = true;
   }
 
@@ -46,9 +52,9 @@ export class DeviceInfoAdapter {
       for (let i = 0; i < proxyList.length; i++) {
         this.abilityManager.getProxy(proxyList[i].getWindowId())?.updateAvoidAreaStatus(false);
         if (this.deviceMode === DeviceMode.kNormalWindowMode) {
-          this.nativeContext.OnDeviceModeChange(proxyList[i].getWindowId(), ChangeEventType.CHANGE_TO_NORMAL_MODE);
+          this.abilityManager.getProxy(proxyList[i].getWindowId())?.setDeviceModeChangeEvent(ChangeEventType.CHANGE_TO_NORMAL_MODE);
         } else if (this.deviceMode === DeviceMode.kFreeWindowsMode) {
-          this.nativeContext.OnDeviceModeChange(proxyList[i].getWindowId(), ChangeEventType.CHANGE_TO_FREE_MODE);
+          this.abilityManager.getProxy(proxyList[i].getWindowId())?.setDeviceModeChangeEvent(ChangeEventType.CHANGE_TO_FREE_MODE);
         }
       }
     } catch (err) {

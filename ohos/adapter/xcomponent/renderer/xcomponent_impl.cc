@@ -237,6 +237,17 @@ void OnMouseEventCB(OH_NativeXComponent* component, void* window) {
     return;
   }
 
+  if (mouse_event.action != OH_NATIVEXCOMPONENT_MOUSE_MOVE) {
+    LOGI(
+        "%{public}s: xcomponent mouse event x:%{public}f y:%{public}f "
+        "screenX:%{public}f screenY:%{public}f timestamp:%{public}ld "
+        ",action: %{public}d, "
+        "button: %{public}d",
+        __FUNCTION__, mouse_event.x, mouse_event.y, mouse_event.screenX,
+        mouse_event.screenY, mouse_event.timestamp, mouse_event.action,
+        mouse_event.button);
+  }
+
   impl->OnMouseEvent(mouse_event);
 }
 
@@ -518,6 +529,15 @@ void XComponentImpl::SendWindowMouseEventForTabDrag(
   if (event_callback_ != nullptr && window_mouse_event != nullptr) {
     event_callback_->sendWindowMouseEventForTabDragCallback(GetWidget(),
                                                             window_mouse_event);
+  }
+}
+
+__attribute__((no_sanitize("cfi", "cfi-icall")))
+void XComponentImpl::SendWindowTouchEventForTabDrag(
+    Input_TouchEvent* window_touch_event) {
+  if (event_callback_ != nullptr && window_touch_event != nullptr) {
+    event_callback_->sendWindowTouchEventForTabDragCallback(GetWidget(),
+                                                            window_touch_event);
   }
 }
 

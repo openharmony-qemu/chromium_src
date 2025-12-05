@@ -20,7 +20,7 @@ buildtools/reclient/reproxystatus filter=lfs diff=lfs merge=lfs -text
 buildtools/reclient/remotetool filter=lfs diff=lfs merge=lfs -text
 buildtools/reclient/rpl2trace filter=lfs diff=lfs merge=lfs -text
 ohos_sdk/llvm.tar.gz.00 filter=lfs diff=lfs merge=lfs -text
-ohos_sdk/ohos-sdk-linux-5.0.5.165.tar.gz filter=lfs diff=lfs merge=lfs -text
+ohos_sdk/ohos-sdk-linux-6.0.1.112.tar.gz filter=lfs diff=lfs merge=lfs -text
 ohos_sdk/llvm.tar.gz filter=lfs diff=lfs merge=lfs -text
 ohos_sdk/llvm.tar.gz.01 filter=lfs diff=lfs merge=lfs -text
 ohos_sdk/rust-toolchain.tar.gz filter=lfs diff=lfs merge=lfs -text

@@ -47,6 +47,7 @@ export class WebAbilityStage extends AbilityStage {
   private nativeThemeAdapter: NativeThemeAdapter | undefined;
   private static SLEEP_INTERVAL_MS = 10;
   private static MAXIMUM_NUM_OF_SLEEP_CYCLES = 250;
+  static X_COMPONENT_ID: string = '';
 
   onCreate(): void {
     this.runTaskAsync();
@@ -65,6 +66,7 @@ export class WebAbilityStage extends AbilityStage {
       let result = this.nativeContext?.ExecuteCommand(
         CommandType.kGetNextWidgetId, { url: want.uri });
       let widgetId = result?.widget_Id;
+      WebAbilityStage.X_COMPONENT_ID = ConfigData.WINDOW_PREFIX + widgetId;
       return ConfigData.WINDOW_PREFIX + widgetId;
     }
 

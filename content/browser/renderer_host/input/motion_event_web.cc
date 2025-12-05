@@ -225,4 +225,10 @@ int MotionEventWeb::GetFlags() const {
   return ui::WebEventModifiersToEventFlags(event_.GetModifiers());
 }
 
+#if BUILDFLAG(IS_OHOS)
+int MotionEventWeb::GetDisplayId(size_t pointer_index) const {
+  return 0;
+}
+#endif
+
 }  // namespace content

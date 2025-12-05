@@ -118,6 +118,14 @@ class OhosWindowManager : public WindowStatusListener,
 
   bool IsWindowAtLast();
 
+  void SetLastActiveWidgetId(gfx::AcceleratedWidget widget_id) {
+    last_active_widget_id_ = widget_id;
+  }
+
+  gfx::AcceleratedWidget GetLastActiveWidgetId() {
+    return last_active_widget_id_;
+  }
+
  private:
   base::IDMap<OhosWindow*> windows_;
   base::ThreadChecker thread_checker_;
@@ -126,6 +134,7 @@ class OhosWindowManager : public WindowStatusListener,
   raw_ptr<OhosWindow> located_events_grabber_ = nullptr;
   base::WeakPtr<OhosWindow> pointer_focused_window_{nullptr};
   base::WeakPtr<OhosWindow> drag_source_window_{nullptr};
+  gfx::AcceleratedWidget last_active_widget_id_;
 
   bool HitWindowAtPoint(const OhosWindow* window, const gfx::Point& point,
                         const std::set<gfx::AcceleratedWidget>& ignore);

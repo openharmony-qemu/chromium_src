@@ -637,6 +637,13 @@ void AudioRendererImpl::OnDeviceInfoReceived(
       stream->audio_decoder_config().channel_layout();
 
   is_encrypted_ = stream->audio_decoder_config().is_encrypted();
+#if BUILDFLAG(IS_OHOS)
+  if (is_encrypted_) {
+    LOG(INFO) << __func__
+              << " [WiseplayDRM] audio_parameters_ set to privacy due to audio decoder config is encrypted ";
+    audio_parameters_.SetStreamPrivacy(true);
+  }
+#endif
 
   last_decoded_channels_ = stream->audio_decoder_config().channels();
 

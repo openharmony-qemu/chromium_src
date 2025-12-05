@@ -8910,6 +8910,14 @@ void WebContentsImpl::DidStopLoading() {
     return;
   }
 
+#if BUILDFLAG(IS_OHOS)
+  if (delegate_ && have_encrypted_media_) {
+    LOG(INFO) << __func__ << " [WiseplayDRM] reset current browser privacy mode to false due to refresh.";
+    have_encrypted_media_ = false;
+    delegate_->SetPrivacyMode(have_encrypted_media_);
+  }
+#endif
+
   // Use the last committed entry rather than the active one, in case a
   // pending entry has been created.
   // An entry may not exist for a stop when loading an initial blank page or
@@ -10783,6 +10791,16 @@ FrameTree* WebContentsImpl::LoadingTree() {
 void WebContentsImpl::DidChangeScreenOrientation() {
   last_screen_orientation_change_time_ = ui::EventTimeForNow();
 }
+
+#if BUILDFLAG(IS_OHOS)
+void WebContentsImpl::SetHaveEncryptedMedia(bool have_encrypted_media) {
+  if (!have_encrypted_media_ && have_encrypted_media) {
+    have_encrypted_media_ = have_encrypted_media;
+    LOG(INFO) << __func__ << " [WiseplayDRM] browser window enter privacy mode due to load encrypted media.";
+    delegate_->SetPrivacyMode(have_encrypted_media);
+  }
+}
+#endif
 
 void WebContentsImpl::UpdateWebContentsVisibility(Visibility visibility) {
   OPTIONAL_TRACE_EVENT1("content",

@@ -29,6 +29,7 @@
 
 #include "media/audio/ohos/ohos_audio_output_stream.h"
 
+#include "base/logging.h"
 #include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
 #include "media/base/audio_timestamp_helper.h"
@@ -101,6 +102,9 @@ OHOSAudioOutputStream::OHOSAudioOutputStream(OHOSAudioManager* manager,
       parameters_.render_process_id(), parameters_.render_frame_id());
   if (!weak_media_session_) {
     LOG(ERROR) << "OHOSAudioOutputStream weak_media_session_ get failed";
+  } else {
+    is_session_controllable_ =
+        !weak_media_session_->HasOnlyOneShotPlayersPublic();
   }
 
   OH_AudioStream_Result ret = OH_AudioStreamBuilder_Create(
@@ -144,6 +148,11 @@ void OHOSAudioOutputStream::Start(AudioSourceCallback* callback) {
   DCHECK(!callback_);
   DCHECK(reference_time_.is_null());
   callback_ = callback;
+
+  if (GetRenderState() == AUDIOSTREAM_STATE_STOPPED) {
+    FlushData();
+  }
+
   if (!StartRender()) {
     LOG(ERROR) << "OHOSAudioOutputStream::StartRender failed";
   }
@@ -211,24 +220,83 @@ void OHOSAudioOutputStream::GetVolume(double* volume) {
 }
 
 bool OHOSAudioOutputStream::InitRender() {
+  if (audio_stream_builder_ == nullptr) {
+    LOG(ERROR) << __func__ << " [AudioStream] audio_stream_builder_ is not initialized";
+    return false;
+  }
+  if (!parameters_.IsValid()) {
+    LOG(ERROR) << __func__ << " [AudioStream] parameters_ is not initialized";
+    return false;
+  }
+
   // set params
-  OH_AudioStreamBuilder_SetSamplingRate(audio_stream_builder_,
-                                        parameters_.sample_rate());
-  OH_AudioStreamBuilder_SetChannelCount(audio_stream_builder_,
-                                        parameters_.channels());
-  OH_AudioStreamBuilder_SetLatencyMode(audio_stream_builder_,
-                                       AUDIOSTREAM_LATENCY_MODE_NORMAL);
-  OH_AudioStreamBuilder_SetFrameSizeInCallback(audio_stream_builder_,
-                                               parameters_.frames_per_buffer());
+  OH_AudioStream_Result audio_stream_result =
+      OH_AudioStreamBuilder_SetSamplingRate(audio_stream_builder_, parameters_.sample_rate());
+  if (audio_stream_result != AUDIOSTREAM_SUCCESS) {
+    LOG(WARNING) << __func__ << " [AudioStream] failed to OH_AudioStreamBuilder_SetSamplingRate, result: "
+                 << static_cast<int>(audio_stream_result);
+  }
+  audio_stream_result = OH_AudioStreamBuilder_SetChannelCount(audio_stream_builder_, parameters_.channels());
+  if (audio_stream_result != AUDIOSTREAM_SUCCESS) {
+    LOG(WARNING) << __func__ << " [AudioStream] failed to OH_AudioStreamBuilder_SetChannelCount, result: "
+                 << static_cast<int>(audio_stream_result);
+  }
+  audio_stream_result = OH_AudioStreamBuilder_SetLatencyMode(audio_stream_builder_, AUDIOSTREAM_LATENCY_MODE_NORMAL);
+  if (audio_stream_result != AUDIOSTREAM_SUCCESS) {
+    LOG(WARNING) << __func__ << " [AudioStream] failed to OH_AudioStreamBuilder_SetLatencyMode, result: "
+                 << static_cast<int>(audio_stream_result);
+  }
+  audio_stream_result =
+      OH_AudioStreamBuilder_SetFrameSizeInCallback(audio_stream_builder_, parameters_.frames_per_buffer());
+  if (audio_stream_result != AUDIOSTREAM_SUCCESS) {
+    LOG(WARNING) << __func__ << " [AudioStream] failed to OH_AudioStreamBuilder_SetFrameSizeInCallback, result: "
+                 << static_cast<int>(audio_stream_result);
+  }
+
+  // set audio stream to private to prevent recording encrypted audio stream
+  if (parameters_.GetStreamPrivacy()) {
+    LOG(INFO) << __func__
+              << " [WiseplayDRM] OH_AudioStreamBuilder_SetRendererPrivacy to AUDIO_STREAM_PRIVACY_TYPE_PRIVATE due to "
+                 "play encrypted audio. ";
+    audio_stream_result =
+        OH_AudioStreamBuilder_SetRendererPrivacy(audio_stream_builder_, AUDIO_STREAM_PRIVACY_TYPE_PRIVATE);
+    if (audio_stream_result != AUDIOSTREAM_SUCCESS) {
+        LOG(ERROR) << __func__ << " [WiseplayDRM] failed to OH_AudioStreamBuilder_SetRendererPrivacy, result: "
+                   << static_cast<int>(audio_stream_result);
+        return false;
+    }
+  }
+
+  // The default usage is set to music, and the playback status can be
+  // controlled via mediaSession. If it cannot be controlled by mediaSession,
+  // the audio stream's usage should be set to notification to ensure it is not
+  // interrupted.
+  if (!is_session_controllable_) {
+    audio_stream_result = audio_stream_result =
+        OH_AudioStreamBuilder_SetRendererInfo(audio_stream_builder_, AUDIOSTREAM_USAGE_NOTIFICATION);
+    if (audio_stream_result != AUDIOSTREAM_SUCCESS) {
+        LOG(WARNING) << __func__ << " [AudioStream] failed to OH_AudioStreamBuilder_SetRendererInfo, result: "
+                     << static_cast<int>(audio_stream_result);
+    }
+  }
+
   // set callback
   OH_AudioRenderer_Callbacks callbacks = {};
   callbacks.OH_AudioRenderer_OnWriteData = AudioRendererOnWriteData;
   callbacks.OH_AudioRenderer_OnError = AudioRendererOnError;
   callbacks.OH_AudioRenderer_OnInterruptEvent = AudioRendererOnInterruptEvent;
-  OH_AudioStreamBuilder_SetRendererCallback(audio_stream_builder_, callbacks,
-                                            this);
-  OH_AudioStreamBuilder_SetRendererOutputDeviceChangeCallback(
+  audio_stream_result = OH_AudioStreamBuilder_SetRendererCallback(audio_stream_builder_, callbacks, this);
+  if (audio_stream_result != AUDIOSTREAM_SUCCESS) {
+    LOG(WARNING) << __func__ << " [AudioStream] failed to OH_AudioStreamBuilder_SetRendererCallback, result: "
+                 << static_cast<int>(audio_stream_result);
+  }
+  audio_stream_result = OH_AudioStreamBuilder_SetRendererOutputDeviceChangeCallback(
       audio_stream_builder_, AudioRendererOnOutputDeviceChange, this);
+  if (audio_stream_result != AUDIOSTREAM_SUCCESS) {
+    LOG(WARNING) << __func__
+                 << " [AudioStream] failed to OH_AudioStreamBuilder_SetRendererOutputDeviceChangeCallback, result: "
+                 << static_cast<int>(audio_stream_result);
+  }
   OH_AudioStream_Result ret;
   // create audio render
   ret = OH_AudioStreamBuilder_GenerateRenderer(audio_stream_builder_,
@@ -376,6 +444,11 @@ void OHOSAudioOutputStream::ScheduleIdlePumpSamples() {
 }
 
 void OHOSAudioOutputStream::OnSuspend() {
+  if (!is_session_controllable_) {
+    LOG(WARNING) << "Stream is not controlled by the mediaSession. ";
+    return;
+  }
+
   SuspendPlayer();
   is_suspended_ = true;
   // After stopping playback, it is necessary to continue obtaining audio data,
@@ -422,9 +495,24 @@ void OHOSAudioOutputStream::FlushData() {
 
   // After flushing the audio data, reset the player delay to ensure the
   // playback progress bar functions correctly.
-  base::TimeTicks now = base::TimeTicks::Now();
-  base::TimeDelta delay = GetDelay(now);
-  callback_->OnMoreData(delay, now, {}, audio_bus_.get());
+  callback_->OnMoreData(base::TimeDelta(), base::TimeTicks::Now(), {},
+                        audio_bus_.get());
+}
+
+OH_AudioStream_State OHOSAudioOutputStream::GetRenderState() {
+  OH_AudioStream_State state = AUDIOSTREAM_STATE_INVALID;
+  if (!audio_renderer_) {
+    return state;
+  }
+  OH_AudioStream_Result ret =
+      OH_AudioRenderer_GetCurrentState(audio_renderer_, &state);
+  if (ret != AUDIOSTREAM_SUCCESS) {
+    LOG(WARNING)
+        << __func__
+        << " [AudioStream] failed to OH_AudioRenderer_GetCurrentState, result:"
+        << ret;
+  }
+  return state;
 }
 
 }  // namespace media

@@ -33,12 +33,13 @@ import window from '@ohos.window';
 import Want from '@ohos.app.ability.Want';
 import AbilityConstant from '@ohos.app.ability.AbilityConstant';
 import JsBindingUtils from '../utils/JsBindingUtils';
-import { NativeContext } from '../interface/CommonInterface';
+import { ChangeEventType, NativeContext } from '../interface/CommonInterface';
 import { CommandType, ConfigData, ContextType } from '../common/Constants';
 import CheckEmptyUtils from '../utils/CheckEmptyUtils';
 import { WebProxy } from '../interface/WebProxy';
 import { common } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
+import { WebAbilityStage } from '../application/WebAbilityStage';
 
 const TAG: string = 'WebBaseAbility';
 
@@ -54,6 +55,7 @@ export class WebBaseAbility extends UIAbility implements WebProxy {
   protected isStateless: boolean = false;
   protected titleButtonVisible: boolean = true;
   protected appId: string = '';
+  protected deviceModeChangeEvent: ChangeEventType | undefined = undefined;
 
   private initParameters(want: Want) {
     if (want && want.parameters) {
@@ -93,6 +95,10 @@ export class WebBaseAbility extends UIAbility implements WebProxy {
 
     if (CheckEmptyUtils.isEmpty(this.xcomponentId)) {
       LogUtil.info(TAG, 'onCreate, Allocate xcomponent id');
+      if (want.parameters?.openInNewWindow) {
+        this.xcomponentId = WebAbilityStage.X_COMPONENT_ID;
+        return;
+      }
       let widgetId = this.nativeContext.ExecuteCommand(CommandType.kGetWidget, {}).widget_Id;
       this.xcomponentId = ConfigData.WINDOW_PREFIX + widgetId;
     }
@@ -183,5 +189,9 @@ export class WebBaseAbility extends UIAbility implements WebProxy {
 
   isUIAbility(): boolean {
     return true;
+  }
+
+  public setDeviceModeChangeEvent(deviceModeChangeEvent: ChangeEventType | undefined) {
+    this.deviceModeChangeEvent = deviceModeChangeEvent;
   }
 };

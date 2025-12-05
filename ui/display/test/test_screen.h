@@ -54,6 +54,7 @@ class TestScreen : public ScreenBase {
       const gfx::Point& point,
       const std::set<gfx::NativeWindow>& ignore,
       const int32_t display_id) override;
+  gfx::Point GetCursorScreenPoint(const int32_t display_id) override;
 #endif
 
  private:

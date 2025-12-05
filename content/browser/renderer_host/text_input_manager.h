@@ -299,6 +299,12 @@ class CONTENT_EXPORT TextInputManager {
       RenderWidgetHostViewBase* view);
   const gfx::Range* GetCompositionRangeForTesting() const;
 
+  ui::mojom::RequestKeyboardReason ConsumeRequestKeyboardReason() {
+    ui::mojom::RequestKeyboardReason reason = request_keyboard_reason_;
+    request_keyboard_reason_ = ui::mojom::RequestKeyboardReason::NONE;
+    return reason;
+  }
+ 
  private:
   // This class is used to create maps which hold specific IME state for a
   // view.
@@ -321,6 +327,9 @@ class CONTENT_EXPORT TextInputManager {
   ViewMap<SelectionRegion> selection_region_map_;
   ViewMap<CompositionRangeInfo> composition_range_info_map_;
   ViewMap<TextSelection> text_selection_map_;
+#if BUILDFLAG(IS_OHOS)
+  ui::mojom::RequestKeyboardReason request_keyboard_reason_;
+#endif
 #if BUILDFLAG(IS_WIN)
   ViewMap<blink::mojom::ProximateCharacterRangeBoundsPtr>
       proximate_character_bounds_map_;

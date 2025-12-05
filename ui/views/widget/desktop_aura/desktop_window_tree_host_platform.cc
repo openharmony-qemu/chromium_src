@@ -1010,6 +1010,11 @@ void DesktopWindowTreeHostPlatform::OnFullscreenSwitched(bool is_enter_fullscree
   GetWidget()->ExecuteCommand(IDC_FULLSCREEN);
   OnFullscreenStateChanged();
 }
+
+display::Display DesktopWindowTreeHostPlatform::AccessDisplayNearestRootWindow()
+    const {
+  return GetDisplayNearestRootWindow();
+}
 #endif
 
 std::optional<gfx::Size>

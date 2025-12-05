@@ -185,6 +185,14 @@ gfx::NativeWindow ScreenOzone::GetLocalProcessWindowAtPoint(
   return GetNativeWindowFromAcceleratedWidget(
       platform_screen_->GetLocalProcessWidgetAtPoint(point, ignore_top_level, display_id));
 }
+
+gfx::Point ScreenOzone::GetCursorScreenPoint(const int32_t display_id) {
+  return platform_screen_->GetCursorScreenPoint(display_id);
+}
+
+void ScreenOzone::OnDisplayAvailableAreaChange(uint64_t display_id) {
+  platform_screen_->OnAvailableAreaChange(display_id);
+}
 #endif
 
 }  // namespace aura

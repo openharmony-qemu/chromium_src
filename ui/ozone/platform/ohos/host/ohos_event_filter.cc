@@ -38,45 +38,93 @@ namespace ui {
 // Interval: microseconds
 constexpr int64_t kDragTabMouseFilterTime = 15 * 1000 * 1000;
 constexpr int64_t kMouseEventFilterTime = 5 * 1000 * 1000;
+constexpr int64_t kDragTabTouchFilterTime = 15 * 1000 * 1000;
 
 OhosEventFilter& OhosEventFilter::GetInstance() {
   static OhosEventFilter event_filter;
   return event_filter;
 }
 
+OhosEventFilter::OhosEventFilter() {
+  mouse_move_action_ = OH_NATIVEXCOMPONENT_MOUSE_MOVE;
+  touch_move_action_ = OH_NATIVEXCOMPONENT_MOVE;
+}
+
 bool OhosEventFilter::CheckFilterMouseEvent(
     const gfx::AcceleratedWidget widget_id,
-    const OH_NativeXComponent_MouseEvent& mouse_event) {
-  if (CheckMouseEventInfoForFilter(widget_id, mouse_event)) {
+    EventTimeStamp timestamp,
+    EventAction mouse_action) {
+  if (CheckMouseEventInfoForFilter(widget_id, mouse_action)) {
     // When dragging tab,  the mouse event
      // filtering condition is within kDragTabMouseFilterTime ms
      // In other cases, the mouse event filtering condition is within kMouseEventFilterTime ms
     if (ohos::adapter::window::WindowEventFilterAdapter::GetInstance()
             .IsTabDragging()) {
-      if ((mouse_event.timestamp - pre_timestamp_ < kDragTabMouseFilterTime)) {
+      if ((timestamp - pre_timestamp_ < kDragTabMouseFilterTime)) {
         return true;
       }
-    } else if (mouse_event.timestamp - pre_timestamp_ < kMouseEventFilterTime) {
+    } else if (timestamp - pre_timestamp_ < kMouseEventFilterTime) {
       return true;
     }
   }
   return false;
 }
 
-void OhosEventFilter::RefreshMouseEvent(
-    const gfx::AcceleratedWidget widget_id,
-    const OH_NativeXComponent_MouseEvent& mouse_event) {
+void OhosEventFilter::RefreshMouseEvent(const gfx::AcceleratedWidget widget_id,
+                                        EventTimeStamp timestamp,
+                                        EventAction mouse_action) {
   pre_widget_id_ = widget_id;
-  pre_timestamp_ = mouse_event.timestamp;
-  pre_event_action_ = mouse_event.action;
+  pre_timestamp_ = timestamp;
+  pre_mouse_event_action_ = mouse_action;
 }
 
 bool OhosEventFilter::CheckMouseEventInfoForFilter(
     const gfx::AcceleratedWidget widget_id,
-    const OH_NativeXComponent_MouseEvent& mouse_event) {
+    EventAction mouse_action) {
   // intercept mouse event only when mouse event type is move
-  if (widget_id == pre_widget_id_ && mouse_event.action == pre_event_action_ &&
-      mouse_event.action == OH_NATIVEXCOMPONENT_MOUSE_MOVE) {
+  if (widget_id == pre_widget_id_ && mouse_action == pre_mouse_event_action_ &&
+      mouse_action == mouse_move_action_) {
+    return true;
+  }
+  return false;
+}
+
+bool OhosEventFilter::CheckFilterTouchEvent(
+    const gfx::AcceleratedWidget widget_id,
+    EventTimeStamp timestamp,
+    EventAction touch_action,
+    TouchEventFinger finger_id) {
+  if (CheckTouchEventInfoForFilter(widget_id, touch_action, finger_id)) {
+    // When dragging tab,  the touch event
+     // filtering condition is within kDragTabMouseFilterTime ms
+     // In other cases, the touch event filtering condition is within kTouchEventFilterTime ms
+    if (ohos::adapter::window::WindowEventFilterAdapter::GetInstance()
+            .IsTabDragging()) {
+      if ((timestamp - pre_timestamp_ < kDragTabTouchFilterTime)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+void OhosEventFilter::RefreshTouchEvent(const gfx::AcceleratedWidget widget_id,
+                                        EventTimeStamp timestamp,
+                                        EventAction touch_action,
+                                        TouchEventFinger finger_id) {
+  pre_widget_id_ = widget_id;
+  pre_timestamp_ = timestamp;
+  pre_touch_event_action_ = touch_action;
+  pre_touch_finger_id_ = finger_id;
+}
+
+bool OhosEventFilter::CheckTouchEventInfoForFilter(
+    const gfx::AcceleratedWidget widget_id,
+    EventAction touch_action,
+    TouchEventFinger finger_id) {
+  // intercept touch event only when touch event type is move
+  if (widget_id == pre_widget_id_ && touch_action == pre_touch_event_action_ &&
+      touch_action == touch_move_action_ && finger_id == pre_touch_finger_id_) {
     return true;
   }
   return false;

@@ -1107,12 +1107,27 @@ class EVENTS_EXPORT GestureEvent : public LocatedEvent {
                const GestureEventDetails& details,
                uint32_t unique_touch_event_id = 0);
 
+#if BUILDFLAG(IS_OHOS)
+  GestureEvent(float x,
+               float y,
+               int flags,
+               base::TimeTicks time_stamp,
+               const GestureEventDetails& details,
+               int32_t display_id,
+               int pointer_id,
+               uint32_t unique_touch_event_id = 0);
+#endif
+
   // Create a new GestureEvent which is identical to the provided model.
   // If source / target windows are provided, the model location will be
   // converted from |source| coordinate system to |target| coordinate system.
   template <typename T>
   GestureEvent(const GestureEvent& model, T* source, T* target)
-      : LocatedEvent(model, source, target), details_(model.details_) {}
+      : LocatedEvent(model, source, target), details_(model.details_) {
+#if BUILDFLAG(IS_OHOS)
+    set_pointer_id(model.pointer_id());
+#endif
+  }
   GestureEvent(const GestureEvent& copy);
   ~GestureEvent() override;
 
@@ -1124,6 +1139,16 @@ class EVENTS_EXPORT GestureEvent : public LocatedEvent {
   std::string ToString() const override;
   std::unique_ptr<Event> Clone() const override;
 
+#if BUILDFLAG(IS_OHOS)
+  void set_pointer_id(int32_t pointer_id) {
+    pointer_id_ = pointer_id;
+  }
+
+  int32_t pointer_id() const{
+    return pointer_id_;
+  }
+#endif
+
  private:
   GestureEventDetails details_;
 
@@ -1133,6 +1158,10 @@ class EVENTS_EXPORT GestureEvent : public LocatedEvent {
   // events that aren't fired directly in response to processing a touch-event
   // (e.g. timer fired ones), this id is zero. See crbug.com/618738.
   uint32_t unique_touch_event_id_;
+
+#if BUILDFLAG(IS_OHOS)
+  int32_t pointer_id_;
+#endif
 };
 
 }  // namespace ui

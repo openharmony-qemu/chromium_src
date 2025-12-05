@@ -56,6 +56,10 @@ ui::TextInputClient::EditingContext TextInputClient::GetTextEditingContext() {
 gfx::Rect TextInputClient::GetToplevelWindowBounds() const {
   return gfx::Rect();
 }
+
+display::Display TextInputClient::GetDisplayForClient() {
+  return display::Screen::GetScreen()->GetPrimaryDisplay();
+}
 #endif  // BUILDFLAG(IS_OHOS)
 
 }  // namespace ui

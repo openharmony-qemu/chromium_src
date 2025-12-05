@@ -41,6 +41,7 @@ using ohos::adapter::accessibility::NativeElementWrapper;
 class View;
 
 class ViewAXPlatformNodeDelegateOhos : public ViewAXPlatformNodeDelegate,
+                                       public ViewObserver,
                                        public NativeElementWrapper {
  public:
   explicit ViewAXPlatformNodeDelegateOhos(View* view);
@@ -56,6 +57,12 @@ class ViewAXPlatformNodeDelegateOhos : public ViewAXPlatformNodeDelegate,
       const ui::AXCoordinateSystem coordinate_system,
       const ui::AXClippingBehavior clipping_behavior,
       ui::AXOffscreenResult* offscreen_result) const override;
+
+  // ViewObserver overrides.
+  void OnViewAddedToWidget(View* observed_view) override;
+
+ private:
+  bool registered_ = false;
 };
 
 }  // namespace views

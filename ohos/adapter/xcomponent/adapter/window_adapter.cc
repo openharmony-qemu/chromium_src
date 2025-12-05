@@ -33,10 +33,12 @@
 #include <cstddef>
 #include <string>
 #include <unordered_map>
+#include <window_manager/oh_window.h>
 
 #include "ohos/adapter/common/constants.h"
 #include "ohos/adapter/common/logging.h"
 #include "ohos/adapter/multiprocess/gpu/gpu_native_process_host.h"
+#include "ohos/adapter/window/app_window_adapter.h"
 
 namespace ohos::adapter::xcomponent {
 
@@ -280,6 +282,22 @@ bool WindowAdapter::WindowHasInit(WindowWidgetType widget_id) {
   }
 
   return false;
+}
+
+void WindowAdapter::SetWindowPrivacyMode(WindowWidgetType widget_id, bool is_privacy_mode) {
+  // get ohos window id form widget_id
+  std::vector<int32_t> ids = AppWindowAdapter::GetInstance().GetOriginWindowIds({widget_id});
+  if (!ids.empty()) {
+    LOGI(" [WiseplayDRM] OH_WindowManager_SetWindowPrivacyMode window_id: %{public}d,  privacy_mode: %{public}d",
+        widget_id,
+        is_privacy_mode);
+    int32_t result = OH_WindowManager_SetWindowPrivacyMode(ids[0], is_privacy_mode);
+    if (result != 0) {
+      LOGE(" [WiseplayDRM] OH_WindowManager_SetWindowPrivacyMode result: %{public}d, widget_id:%{public}d ",
+          result,
+          widget_id);
+    }
+  }
 }
 
 void WindowAdapter::SetSystemWindowLimits(WindowLimits window_limits) {

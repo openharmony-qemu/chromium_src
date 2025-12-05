@@ -32,6 +32,7 @@
 #include <filemanagement/file_uri/error_code.h>
 #include <filemanagement/file_uri/oh_file_uri.h>
 
+#include "aki/value/array_buffer.h"
 #include "ohos/adapter/aki_hook/aki_hook.h"
 
 namespace ohos::adapter {
@@ -75,4 +76,40 @@ void FileManagerAdapter::GetPathForUri(const char* uri, std::string& path)
     temp = nullptr;
   }
 }
+
+std::string FileManagerAdapter::GetFileTypeIdByFileExtension(
+    const std::string& file_extension_) {
+  auto func = ohos::adapter::GetJSFunction(
+      "FileManagerAdapter.GetFileTypeIdByFileExtension");
+  if (func) {
+    return func->Invoke<std::string>(file_extension_);
+  }
+  return "";
+}
+
+void FileManagerAdapter::GetFileIconByFileTypeId(
+    const std::string& file_type_id_,
+    FileIconCallback callback) {
+  auto func = ohos::adapter::GetJSFunction(
+      "FileManagerAdapter.GetFileIconByFileTypeId");
+  if (func) {
+    std::function<void(aki::ArrayBuffer)> jsCallback =
+        [callback](aki::ArrayBuffer buffer) {
+          const uint8_t* data = static_cast<const uint8_t*>(buffer.GetData());
+          const int size = buffer.GetLength();
+          if (size == 0) {
+            callback(std::nullopt);
+          } else {
+            callback(std::vector<uint8_t>(data, data + size));
+          }
+        };
+    func->Invoke<void>(file_type_id_, jsCallback);
+  } else {
+    LOGE(
+        "[FileManagerAdapter] get FileManagerAdapter.GetFileIconByFileTypeId "
+        "js function failed.");
+    callback(std::nullopt);
+  }
+}
+
 }  // namespace ohos

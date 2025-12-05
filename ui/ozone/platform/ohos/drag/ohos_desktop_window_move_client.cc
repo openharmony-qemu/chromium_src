@@ -32,6 +32,7 @@
 #include "ui/display/screen.h"
 #include "ui/events/event.h"
 #include "ui/gfx/geometry/rect.h"
+#include "ui/ozone/platform/ohos/common/ohos_util.h"
 #include "ui/ozone/platform/ohos/host/ohos_event_source.h"
 
 namespace ui {
@@ -47,7 +48,7 @@ void OhosDesktopWindowMoveClient::OnMoveEnd() {
   EndMoveLoop();
 }
 
-void OhosDesktopWindowMoveClient::OnMouseMove() {
+void OhosDesktopWindowMoveClient::OnTabMoveForStartMoving() {
   if (!tab_start_moving_) {
     LOG(INFO) << "[OhosTabDrag] " << __FUNCTION__
               << ", tab startMoving, offset_x:" << window_offset_.x()
@@ -81,8 +82,8 @@ void OhosDesktopWindowMoveClient::OnMoveLoopEnded() {
 bool OhosDesktopWindowMoveClient::RunMoveLoop(
     bool can_grab_pointer,
     const gfx::Vector2d& drag_offset) {
-  float device_scale_factor =
-      display::Screen::GetScreen()->GetPrimaryDisplay().device_scale_factor();
+  display::Display current_display = window_delegate_->GetCurrentDisplay();
+  float device_scale_factor = current_display.device_scale_factor();
   window_offset_.set_x(drag_offset.x() * device_scale_factor);
   window_offset_.set_y(drag_offset.y() * device_scale_factor);
   return move_loop_.RunMoveLoop(can_grab_pointer,

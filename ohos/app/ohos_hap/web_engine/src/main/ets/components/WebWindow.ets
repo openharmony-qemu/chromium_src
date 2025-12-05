@@ -171,7 +171,8 @@ export struct WebWindow {
         height: prop.drawableRect.height - this.statusBarHeight
       }
 
-      this.nativeContext.OnWindowInitSize(windowRect, drawableRect);
+      let displayId = prop.displayId ?? ConfigData.INVALID_DISPLAY_ID;
+      this.nativeContext.OnWindowInitSize(windowRect, drawableRect, displayId);
     }
 
     let state = this.window?.getWindowStatus();

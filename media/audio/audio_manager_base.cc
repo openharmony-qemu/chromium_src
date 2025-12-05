@@ -34,11 +34,7 @@ namespace media {
 
 namespace {
 
-#if BUILDFLAG(IS_OHOS)
-const int kStreamCloseDelaySeconds = 100000;
-#else
 const int kStreamCloseDelaySeconds = 5;
-#endif
 
 // Default maximum number of output streams that can be open simultaneously
 // for all platforms.
@@ -438,6 +434,9 @@ AudioOutputStream* AudioManagerBase::MakeAudioOutputStreamProxy(
       }
       if (params.render_frame_id() != output_params.render_frame_id()) {
         output_params.set_render_frame_id(params.render_frame_id());
+      }
+      if (params.GetStreamPrivacy() != output_params.GetStreamPrivacy()) {
+        output_params.SetStreamPrivacy(params.GetStreamPrivacy());
       }
 #endif
 

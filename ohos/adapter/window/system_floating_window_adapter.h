@@ -56,6 +56,7 @@ class ADAPTER_EXPORT_API SystemFloatingWindowAdapter {
                        int32_t max_height,
                        int32_t id);
   void StartWindowMoving(int32_t id);
+  int32_t GetOriginWindowId(int32_t id);
 };
 
 }  // namespace ohos::adapter::window

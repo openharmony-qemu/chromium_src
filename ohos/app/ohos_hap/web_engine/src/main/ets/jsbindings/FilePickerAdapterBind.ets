@@ -48,8 +48,9 @@ function showSaveAsDocumentViewPicker(params: SaveAsDialogParams, callback: (pat
   implFilePickerAdapter().showSaveAsDocumentViewPicker(params, callback);
 }
 
-function showInstallationPackageDialog(callback: (continue_download: boolean) => void) {
-  implFilePickerAdapter().showInstallationPackageDialog(callback);
+function showInstallationPackageDialog(fileName: string, fileSize: string,
+  callback: (continue_download: boolean) => void) {
+  implFilePickerAdapter().showInstallationPackageDialog(fileName, fileSize, callback);
 }
  
 export class FilePickerAdapterBind {

@@ -1294,6 +1294,13 @@ class CONTENT_EXPORT WebContentsImpl
     return media_web_contents_observer_.get();
   }
 
+#if BUILDFLAG(IS_OHOS)
+  void SetHaveEncryptedMedia(bool have_encrypted_media) override;
+  bool HaveEncryptedMedia() override {
+    return have_encrypted_media_;
+  }
+#endif
+
   // Update the web contents visibility.
   void UpdateWebContentsVisibility(Visibility visibility) override;
 
@@ -2659,6 +2666,10 @@ class CONTENT_EXPORT WebContentsImpl
   // no popin can open a popin.
   // See https://explainers-by-googlers.github.io/partitioned-popins/
   base::WeakPtr<WebContents> opened_partitioned_popin_;
+
+#if BUILDFLAG(IS_OHOS)
+  bool have_encrypted_media_ = false;
+#endif
 
   base::WeakPtrFactory<WebContentsImpl> loading_weak_factory_{this};
   base::WeakPtrFactory<WebContentsImpl> weak_factory_{this};

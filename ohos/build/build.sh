@@ -79,6 +79,7 @@ build_target="${BUILD_TARGET_CHROME}"
 build_output=""
 build_asan=0
 build_isolated_level=0
+build_gwp_asan=0
 
 usage() {
   echo -ne "USAGE: $0 [OPTIONS] [PRODUCT]
@@ -94,7 +95,7 @@ ${TEXT_BOLD}OPTIONS${TEXT_NORMAL}:
   -asan             Enable AddressSanitizer (ASan).
   -d                Build with Debug mode.
   -isl              Support the render process to enable sandbox isolation.
-
+  -gwp_asan         Enable GWP-ASan
 "
 }
 
@@ -132,6 +133,9 @@ while [ "$1" != "" ]; do
       ;;
     "-isl")
       build_isolated_level=1
+      ;;
+    "-gwp_asan")
+      build_gwp_asan=1
       ;;
     *)
       echo " -> $1 <- is not a valid option, please follow the usage below: "
@@ -192,6 +196,12 @@ fi
 if [ ${build_isolated_level} -eq 1 ]; then
   isolated_level=1
   buildargs="${buildargs} isolated_level=$isolated_level"
+fi
+
+if [ ${build_gwp_asan} -eq 1 ]; then
+  GN_ARGS="${GN_ARGS} gwp_asan_enabled=true"
+else
+  GN_ARGS="${GN_ARGS} gwp_asan_enabled=false"
 fi
 
 # Extract ohos-sdk.

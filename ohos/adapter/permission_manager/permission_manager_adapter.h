@@ -31,6 +31,7 @@
 #define OHOS_ADAPTER_PERMISSION_MANAGER_PERMISSION_MANAGER_ADAPTER_H
 
 #include <string>
+#include <vector>
 #include "ohos/adapter/export.h"
 
 namespace ohos::adapter {
@@ -43,7 +44,8 @@ enum class OHOSPermissionType : int32_t {
   MICROPHONE,
   DESKTOP_CAPTURE,
   BLUETOOTH,
-  PASTEBOARD
+  PASTEBOARD,
+  SCREENSHOT
 };
 
 enum class PermissionActivationResult : int32_t {
@@ -87,6 +89,7 @@ class ADAPTER_EXPORT_API PermissionManagerAdapter {
   static bool CheckAndRequestPermission(const OHOSPermissionType& type_);
   static void FileAccessPersist(const std::string &url);
   static PermissionActivationResult ActivateFileAccessPersist(const std::string &url);
+  static void SaveUris(const std::vector<std::string> &urls);
   static int OpenPermissionConfirm(const OHOSPermissionType& type);
   static int RequestPermissionCode(const OHOSPermissionType& type);
 };

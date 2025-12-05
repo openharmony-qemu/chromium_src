@@ -29,10 +29,13 @@
 
 #include "ohos/adapter/web_entry/chrome/chrome_loader.h"
 
+#include <accesstoken/ability_access_control.h>
+
 #include "ohos/adapter/common/logging.h"
 #include "ohos/adapter/common/shared_library.h"
 #include "ohos/adapter/dev_config/dev_config.h"
 #include "ohos/adapter/device_info/device_info.h"
+#include "ohos/adapter/web_entry/permission_constants.h"
 
 namespace ohos::adapter::web_entry {
 namespace {
@@ -53,6 +56,20 @@ bool CheckAdvSecMode() {
   }
   return false;
 }
+
+bool ShouldDisableJit() {
+  if (CheckAdvSecMode()) {
+    return true;
+  }
+  
+  if (!OH_AT_CheckSelfPermission(
+      PermissionConstants::ALLOW_WRITABLE_CODE_MEMORY)) {
+    return true;
+  }
+  
+  return false;
+}
+
 }  // namespace
 
 std::string ChromeMainLoader::GetEntryPoint(int process_type) {
@@ -85,15 +102,19 @@ const std::vector<std::string> ChromeMainLoader::GetEntryArgs() {
       "--no-zygote",
       "--user-data-dir=/data/storage/el2/base/files/",
       "--force-renderer-accessibility=basic",
+      "--disable-gpu-watchdog",
   };
   ohos::adapter::device_info::DeviceType device_type =
     ohos::adapter::device_info::DeviceInfo::GetInstance().GetDeviceType();
   // pad not support gpu process
   if (device_type == ohos::adapter::device_info::DeviceType::_TABLET) {
+    if (ohos::adapter::device_info::DeviceInfo::SdkApi() <
+        ohos::adapter::device_info::SDK_VERSION_19) {
+          args.emplace_back("--js-flags=--jitless");
+    }    
     args.push_back("--in-process-gpu");
-    args.push_back("--js-flags=--jitless");
   }
-  if (CheckAdvSecMode()) {
+  if (ShouldDisableJit()) {
     args.emplace_back("--js-flags=--jitless");
   }
   for (const auto& command : GetDevCommandLines()) {

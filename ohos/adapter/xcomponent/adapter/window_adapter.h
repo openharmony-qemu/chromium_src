@@ -133,6 +133,17 @@ class ADAPTER_EXPORT_API WindowAdapter {
   void DisableOcclusionFeature() { disable_occlusion_feature_ = true; }
   bool IsDisableOcclusionFeature() { return disable_occlusion_feature_; }
 
+  void SetWindowPrivacyMode(WindowWidgetType widget_id, bool is_privacy_mode);
+  void SetInitialDisplayId(int64_t initial_display_id) {
+    initial_display_id_ = initial_display_id;
+  }
+  int64_t GetInitialDisplayId() { return initial_display_id_; }
+
+  void SetCurrentDisplayId(int64_t display_id) {
+    current_display_id_ = display_id;
+  }
+  int64_t GetCurrentDisplayId() { return current_display_id_; }
+
  private:
   WindowAdapter() = default;
   ~WindowAdapter() = default;
@@ -154,6 +165,8 @@ class ADAPTER_EXPORT_API WindowAdapter {
   WindowRect window_bounds_;
   WindowRect content_bounds_;
   WindowRect initial_bounds_;
+  int64_t initial_display_id_ = -1;
+  int64_t current_display_id_ = -1;
   WindowStatusType initial_state_;
   WindowLimits system_window_limits_;  // in vp
 

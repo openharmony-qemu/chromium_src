@@ -299,6 +299,13 @@ void MotionEventGeneric::PushHistoricalEvent(
   historical_events_.push_back(std::move(event));
 }
 
+#if BUILDFLAG(IS_OHOS)
+int MotionEventGeneric::GetDisplayId(size_t pointer_index) const {
+  DCHECK_LT(pointer_index, pointers_.size());
+  return pointers_[pointer_index].display_id;
+}
+#endif
+
 MotionEventGeneric::MotionEventGeneric()
     : action_(Action::NONE),
       unique_event_id_(ui::GetNextTouchEventId()),

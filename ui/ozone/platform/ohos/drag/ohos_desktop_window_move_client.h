@@ -33,9 +33,11 @@
 #include "base/component_export.h"
 #include "base/functional/callback.h"
 #include "base/memory/raw_ptr.h"
+#include "ui/display/display.h"
 #include "ui/gfx/geometry/point.h"
 #include "ui/gfx/geometry/point_f.h"
 #include "ui/gfx/geometry/size.h"
+#include "ui/gfx/native_widget_types.h"
 #include "ui/ozone/platform/ohos/drag/ohos_move_loop_delegate.h"
 #include "ui/ozone/platform/ohos/drag/ohos_whole_screen_move_loop.h"
 
@@ -57,6 +59,7 @@ class OhosDesktopWindowMoveClient
     virtual gfx::Size GetSize() = 0;
     virtual void SetBoundsOnMove(const gfx::Rect& requested_bounds) = 0;
     virtual void StartWindowMovingWithOffset(const gfx::PointF& offset_point) = 0;
+    virtual display::Display GetCurrentDisplay() = 0;
 
    protected:
     virtual ~Delegate();
@@ -67,9 +70,9 @@ class OhosDesktopWindowMoveClient
 
   // Overridden from OhosMoveLoopDelegate:
   void OnMoveLoopEnded() override;
-  void OnMouseMove() override;
   void OnTouchMove() override;
   void OnMoveEnd() override;
+  void OnTabMoveForStartMoving() override;
 
   bool RunMoveLoop(bool can_grab_pointer, const gfx::Vector2d& drag_offset);
   void EndMoveLoop();

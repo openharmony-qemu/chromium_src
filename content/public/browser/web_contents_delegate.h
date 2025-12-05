@@ -165,6 +165,12 @@ class CONTENT_EXPORT WebContentsDelegate {
   // security state changed and that security UI should be updated.
   virtual void VisibleSecurityStateChanged(WebContents* source) {}
 
+#if BUILDFLAG(IS_OHOS)
+  // Tells the delegate to enter or exit privacy mode.
+  // Privacy mode means prevent screenshot and screen capture.
+  virtual void SetPrivacyMode(bool use_privacy_mode) {}
+#endif
+
   // Creates a new tab with the already-created WebContents `new_contents`.
   // The window for the added contents should be reparented correctly when this
   // method returns. `target_url` is set to the value provided when

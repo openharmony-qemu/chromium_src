@@ -1637,6 +1637,11 @@ class WebContents : public PageNavigator, public base::SupportsUserData {
   // be bound.
   virtual net::handles::NetworkHandle GetTargetNetwork() = 0;
 
+#if BUILDFLAG(IS_OHOS)
+  virtual void SetHaveEncryptedMedia(bool have_encrypted_media) = 0;
+  virtual bool HaveEncryptedMedia() = 0;
+#endif
+
  private:
   // This interface should only be implemented inside content.
   friend class WebContentsImpl;

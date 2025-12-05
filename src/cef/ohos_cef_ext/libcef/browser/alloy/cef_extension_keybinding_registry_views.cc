@@ -54,21 +54,13 @@ bool CefExtensionKeybindingRegistryViews::PopulateCommands(
     return false;
   }
 
-  // Get extension keybinding commands
-  extensions::CommandMap extension_commands;
-  command_service->GetAllNamedCommands(extension->id(), &extension_commands);
-
-  // Convert to ui::CommandMap
-  for (const auto& command_pair : extension_commands) {
-    const std::string& command_name = command_pair.first;
-    const extensions::Command& command = *command_pair.second;
-
-    ui::Command ui_command(
-        command_name,
-        command.description(),
-        false); // Not global by default
-
-    (*commands)[command_name] = ui_command;
+  // Get named commands only (Action commands are handled elsewhere)
+  if (!command_service->GetNamedCommands(
+          extension->id(),
+          extensions::CommandService::ACTIVE,
+          extensions::CommandService::REGULAR,
+          commands)) {
+    return false;
   }
 
   return !commands->empty();

@@ -1,34 +1,40 @@
 {
     "groups": {
-        "https://gitcode.com/ArkWeb_Build": [
-            "https://gitcode.com/doublelucky"
+        "Build": [
+            "ringking0"
         ],
-        "https://gitcode.com/ringking0": [
-            "https://gitcode.com/ringking0"
+        "DFX": [
+            "StringChen"
         ],
-        "https://gitcode.com/StringChen": [
-            "https://gitcode.com/StringChen"
+        "Framework": [
+            "cloud_nine999",
+            "zhanghaozhi1"
         ],
-        "https://gitcode.com/cloud_nine999": [
-            "https://gitcode.com/cloud_nine999"
+        "EventHandler": [
+            "jerrywangxmu"
+        ],
+        "Compositor": [
+            "LXinJie1"
         ]
     },
     "userInfos": {
-        "https://gitcode.com/doublelucky": {
-            "info": "[部署测试 cmx]",
-            "group": "https://gitcode.com/ArkWeb_Build"
+        "ringking0": {
+            "info": "[构建工程]"
         },
-        "https://gitcode.com/ringking0": {
-            "info": "[构建工程]",
-            "group": "https://gitcode.com/ringking0"
+        "StringChen": {
+            "info": "[DFX]"
         },
-        "https://gitcode.com/StringChen": {
-            "info": "[DFX]",
-            "group": "https://gitcode.com/StringChen"
+        "cloud_nine999": {
+            "info": "[基础框架]"
         },
-        "https://gitcode.com/cloud_nine999": {
-            "info": "[基础框架]",
-            "group": "https://gitcode.com/cloud_nine999"
+        "zhanghaozhi1": {
+            "info": "[基础框架]"
+        },
+        "jerrywangxmu": {
+            "info": "[交互动效]"
+        },
+        "LXinJie1": {
+            "info": "[渲染合成]"
         }
     }
 }

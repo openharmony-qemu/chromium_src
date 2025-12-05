@@ -314,31 +314,31 @@
 /services/accessibility/ @cloud_nine999 @zhanghaozhi1
 
 # Compositor
-/ui/display/win/ @defeng20201 @LXinJie1
-/ui/display/util/ @defeng20201 @LXinJie1
-/ui/compositor/ @defeng20201 @LXinJie1
-/ui/color/ @defeng20201 @LXinJie1
-/skia/ @defeng20201 @LXinJie1
-/gpu/webgpu/ @defeng20201 @LXinJie1
-/gpu/vulkan/ @defeng20201 @LXinJie1
-/gpu/perftests/ @defeng20201 @LXinJie1
-/gpu/GRAPHICS_TEAM_OWNERS @defeng20201 @LXinJie1
-/gpu/ipc/common/gpu_watchdog_timeout.h @defeng20201 @LXinJie1
-/gpu/ipc/common/generate_vulkan_types.py @defeng20201 @LXinJie1
-/gpu/GLES2/ @defeng20201 @LXinJie1
-/gpu/config/webgpu* @defeng20201 @LXinJie1
-/gpu/command_buffer/ @defeng20201 @LXinJie1
-/content/gpu/ @defeng20201 @LXinJie1
-/content/browser/screen_details/ @defeng20201 @LXinJie1
-/content/browser/gpu/ @defeng20201 @LXinJie1
-/content/browser/resources/gpu/ @defeng20201 @LXinJie1
-/content/browser/compositor/*viz* @defeng20201 @LXinJie1
-/components/viz/service/layers/ @defeng20201 @LXinJie1
-/components/viz/service/input/ @defeng20201 @LXinJie1
-/components/viz/service/gl/ @defeng20201 @LXinJie1
-/components/viz/service/frame_sinks/video_capture/ @defeng20201 @LXinJie1
-/components/viz/host/client_frame_sink_video_capturer* @defeng20201 @LXinJie1
-/components/viz/common/hit_test/ @defeng20201 @LXinJie1
+/ui/display/win/ @LXinJie1
+/ui/display/util/ @LXinJie1
+/ui/compositor/ @LXinJie1
+/ui/color/ @LXinJie1
+/skia/ @LXinJie1
+/gpu/webgpu/ @LXinJie1
+/gpu/vulkan/ @LXinJie1
+/gpu/perftests/ @LXinJie1
+/gpu/GRAPHICS_TEAM_OWNERS @LXinJie1
+/gpu/ipc/common/gpu_watchdog_timeout.h @LXinJie1
+/gpu/ipc/common/generate_vulkan_types.py @LXinJie1
+/gpu/GLES2/ @LXinJie1
+/gpu/config/webgpu* @LXinJie1
+/gpu/command_buffer/ @LXinJie1
+/content/gpu/ @LXinJie1
+/content/browser/screen_details/ @LXinJie1
+/content/browser/gpu/ @LXinJie1
+/content/browser/resources/gpu/ @LXinJie1
+/content/browser/compositor/*viz* @LXinJie1
+/components/viz/service/layers/ @LXinJie1
+/components/viz/service/input/ @LXinJie1
+/components/viz/service/gl/ @LXinJie1
+/components/viz/service/frame_sinks/video_capture/ @LXinJie1
+/components/viz/host/client_frame_sink_video_capturer* @LXinJie1
+/components/viz/common/hit_test/ @LXinJie1
 
 #交互安全
 /arkweb/ohos_adapter_ndk/access_token_adapter/ @zhu-sheng-le

@@ -3514,7 +3514,6 @@ bool NWebHandlerDelegate::OnFileDialog(
 void NWebHandlerDelegate::OnSelectPopupMenu(
     CefRefPtr<CefBrowser> browser,
     const CefRect& bounds,
-    int item_height,
     double item_font_size,
     int selected_item,
     const std::vector<CefSelectPopupItem>& menu_items,
@@ -3535,7 +3534,7 @@ void NWebHandlerDelegate::OnSelectPopupMenu(
           bounds.x * ratio, bounds.y * ratio, bounds.width * ratio,
           bounds.height * ratio);
   param->SetSelectMenuBound(bound);
-  param->SetItemHeight(item_height);
+// item_height parameter removed to align with Chromium 141 API
   param->SetSelectedItem(selected_item);
   param->SetIsRightAligned(right_aligned);
   param->SetItemFontSize(item_font_size * GetScale() / 100.0);

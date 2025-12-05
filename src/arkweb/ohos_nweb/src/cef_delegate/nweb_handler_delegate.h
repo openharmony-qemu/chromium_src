@@ -637,7 +637,6 @@ class NWebHandlerDelegate : public ArkWebClientExt,
 #if BUILDFLAG(ARKWEB_HTML_SELECT)
   void OnSelectPopupMenu(CefRefPtr<CefBrowser> browser,
                          const CefRect& bounds,
-                         int item_height,
                          double item_font_size,
                          int selected_item,
                          const std::vector<CefSelectPopupItem>& menu_items,

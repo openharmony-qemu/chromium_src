@@ -4,6 +4,7 @@
 
 #include "libcef/browser/permission/alloy_access_request.h"
 #include "libcef/browser/permission/alloy_permission_request_handler.h"
+#include "content/browser/web_contents/web_contents_impl.h"
 
 #if BUILDFLAG(ARKWEB_WEBRTC)
 #include "base/logging.h"

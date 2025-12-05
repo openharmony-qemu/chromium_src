@@ -243,6 +243,10 @@ class MockRenderFrame : public content::RenderFrame {
    bool OnMessageReceived(const IPC::Message& message) override {}
    bool Send(IPC::Message* msg) override {}
    gfx::Vector2dF GetOverScrollOffset() override {}
+
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+  void OnDocumentEndReady() override {}
+#endif
  private:
   TestRenderFrameCondition condition_;
   MockWebLocalFrame* web_local_frame_;

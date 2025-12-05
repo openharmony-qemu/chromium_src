@@ -611,7 +611,11 @@ mojom("mojo_bindings") {
   }
   if (is_arkweb) {
     enabled_features += [ "arkweb_dfx_tracing" ]
-  }  
+  }
+
+  if (is_arkweb) {
+    enabled_features += [ "arkweb_js_on_document_end" ]
+  }
 
   cpp_typemaps = [
     {

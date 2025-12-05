@@ -1348,6 +1348,10 @@ class CONTENT_EXPORT RenderFrameImpl
   bool GetGlobalAdblockEnabled() override;
 #endif
 
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+  void OnDocumentEndReady() override;
+#endif
+
   // Stores the WebLocalFrame we are associated with.  This is null from the
   // constructor until BindToFrame() is called, and it is null after
   // FrameDetached() is called until destruction (which is asynchronous in the

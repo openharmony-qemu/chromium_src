@@ -117,6 +117,9 @@ class MockFrameHostForArkWeb : public mojom::FrameHost {
   MOCK_METHOD(int, GetVideoBitrateDefault, (), (const));
   MOCK_METHOD(bool, SetNewsFeedPageFitted, ());
 #endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+  MOCK_METHOD(void, OnDocumentEndReady, ());
+#endif
 };
 
 class MockWebDocumentSubresourceFilter : public blink::WebDocumentSubresourceFilter {
@@ -627,5 +630,15 @@ TEST_F(ArkWebRenderFrameImplTest, VideoLoadOpt_SetNewsFeedPageFittedTest) {
   GetMainRenderFrame()->SetNewsFeedPageFitted();
 }
 #endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+TEST_F(ArkWebRenderFrameImplTest, OnDocumentEndReady) {
+  auto* frame_host = TestGetFrameHost();
+  SetFrameHostForTest(nullptr);
+  GetMainRenderFrame()->OnDocumentEndReady();
+  SetFrameHostForTest(frame_host);
+  GetMainRenderFrame()->OnDocumentEndReady();
+}
+#endif
 
 }  // namespace content

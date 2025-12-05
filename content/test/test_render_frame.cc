@@ -236,6 +236,9 @@ class MockFrameHost : public mojom::FrameHost {
   void OnPdfScrollAtBottom(const std::string& url) override {}
   void OnPdfLoadEvent(int32_t result, const std::string& url) override {}
 #endif
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+  void OnDocumentEndReady() override {}
+#endif
  private:
   mojom::DidCommitProvisionalLoadParamsPtr last_commit_params_;
   mojo::PendingReceiver<blink::mojom::BrowserInterfaceBroker>

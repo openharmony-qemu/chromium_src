@@ -1392,4 +1392,12 @@ std::string WebContentsImplExt::NotifyNavigationRewriteUrl(const std::string& or
   return OnRewriteUrlForNavigation(original_url, referrer, transition_type, is_key_request);
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+void WebContentsImplExt::OnDocumentEndReady(const FrameInfos& frameInfo) {
+  if (delegate_) {
+    delegate_->OnDocumentEndReady(frameInfo);
+  }
+}
+#endif
 }  // namespace content

@@ -918,4 +918,9 @@ interface FrameHost {
   OnPdfLoadEvent(int32 result, string url);
   // #endif
 
+  // #if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+  [EnableIf=arkweb_js_on_document_end]
+  OnDocumentEndReady();
+  // #endif
+
 };

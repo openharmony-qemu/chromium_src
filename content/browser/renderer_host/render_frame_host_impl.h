@@ -2651,6 +2651,10 @@ class CONTENT_EXPORT RenderFrameHostImpl
   void NotifyDocumentInteractive() override;
   void OnFirstContentfulPaint() override;
 
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+  void OnDocumentEndReady() override;
+#endif
+
   void ReportNoBinderForInterface(const std::string& error);
 
   // Returns true if this object has any NavigationRequests matching |origin|.

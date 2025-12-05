@@ -274,6 +274,10 @@ class CONTENT_EXPORT RenderFrame :
   virtual bool GetGlobalAdblockEnabled() = 0;
 #endif
 
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+  virtual void OnDocumentEndReady() = 0;
+#endif
+
  protected:
   ~RenderFrame() override {}
 

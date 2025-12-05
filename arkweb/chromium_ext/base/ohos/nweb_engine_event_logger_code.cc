@@ -21,6 +21,7 @@ namespace ohos {
 const char kDefaultUrl[] = "***";
 
 // Module Name Value.
+const char kModuleComponent[] = "component";
 const char kModuleContentBrowser[] = "conent_browser";
 const char kModuleContentRender[] = "conent_render";
 const char kModuleNet[] = "net";

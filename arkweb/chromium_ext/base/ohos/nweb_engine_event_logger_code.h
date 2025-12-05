@@ -47,6 +47,7 @@ namespace ohos {
 BASE_EXPORT extern const char kDefaultUrl[];
 
 // Module Name Value
+BASE_EXPORT extern const char kModuleComponent[];
 BASE_EXPORT extern const char kModuleContentBrowser[];
 BASE_EXPORT extern const char kModuleContentRender[];
 BASE_EXPORT extern const char kModuleNet[];

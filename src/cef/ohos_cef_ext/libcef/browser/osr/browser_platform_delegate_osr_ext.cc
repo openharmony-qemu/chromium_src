@@ -117,7 +117,6 @@ CefBrowserPlatformDelegateOsrExt::CefBrowserPlatformDelegateOsrExt(
 void CefBrowserPlatformDelegateOsrExt::ShowPopupMenu(
     mojo::PendingRemote<blink::mojom::PopupMenuClient> popup_client,
     const gfx::Rect& bounds,
-    int item_height,
     double item_font_size,
     int selected_item,
     std::vector<blink::mojom::MenuItemPtr> menu_items,
@@ -138,7 +137,7 @@ void CefBrowserPlatformDelegateOsrExt::ShowPopupMenu(
     handler->AsArkDialogHandler()->OnSelectPopupMenu(
         browser_->GetBrowser(),
         CefRect(bounds.x(), bounds.y(), bounds.width(), bounds.height()),
-        item_height, item_font_size, selected_item, item_list, right_aligned,
+        item_font_size, selected_item, item_list, right_aligned,
         allow_multiple_selection, callback);
   }
 }

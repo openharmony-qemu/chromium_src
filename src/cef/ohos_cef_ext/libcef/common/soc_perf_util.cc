@@ -39,7 +39,7 @@ const int REST_TIME_IN_SECOND = 2;
 }  // namespace
 
 void SocPerUtil::EnableFlingBoost() {
-  TRACE_EVENT0("power", "SocPerUtil::EnableFlingBoost");
+  TRACE_EVENT0("base.power", "SocPerUtil::EnableFlingBoost");
   int socPerfId = SOC_PERF_WEB_GESTURE_ID;
 #if BUILDFLAG(IS_ARKWEB)
   if (base::ohos::IsPcDevice() || base::ohos::IsTabletDevice()) {
@@ -93,12 +93,12 @@ void SocPerUtil::TryRunSocPerf() {
   if ((base::Time().Now() - first_time_boost_timestamp).InSeconds() >=
       MAX_BOOST_RUN_TIME_IN_SECOND) {
     boost_finished = true;
-    TRACE_EVENT0("power", "SocPerUtil::JsSocPerfFinished");
+    TRACE_EVENT0("base.power", "SocPerUtil::JsSocPerfFinished");
     return;
   }
   if ((base::Time().Now() - last_time_boost_timestamp).InSeconds() >=
       REST_TIME_IN_SECOND) {
-    TRACE_EVENT0("power", "SocPerUtil::JsSocPerfThreadBoost");
+    TRACE_EVENT0("base.power", "SocPerUtil::JsSocPerfThreadBoost");
     last_time_boost_timestamp = base::Time().Now();
 #if BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
     auto type = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(

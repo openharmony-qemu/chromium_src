@@ -2048,7 +2048,7 @@ void NWebDelegate::FillAutofillDataFromTriggerType(
   }
 
   CefRefPtr<CefValue> message = ConvertRomValueToCefValue(data);
-  GetBrowser()->GetHost()->FillAutofillData(message, type);
+  GetBrowser()->GetHost()->FillAutofillDataFromTriggerType(message, type);
 }
 
 void NWebDelegate::PutVaultPlainTextCallback(

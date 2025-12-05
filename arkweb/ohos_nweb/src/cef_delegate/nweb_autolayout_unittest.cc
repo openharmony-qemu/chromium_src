@@ -298,7 +298,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void NotifyForNextTouchEvent() override {}
   void SetGrantFileAccessDirs(const std::vector<CefString>&, const std::vector<CefString>&) override {}
   void SetAutofillCallback(CefRefPtr<CefWebMessageReceiver>) override {}
-  void FillAutofillData(CefRefPtr<CefValue>, int32_t) override {}
+  void FillAutofillData(CefRefPtr<CefValue>) override {}
   void ScrollFocusedEditableNodeIntoView() override {}
   void ProcessAutofillCancel(const CefString&) override {}
   void AutoFillWithIMFEvent(bool, bool, bool, const CefString&) override {}

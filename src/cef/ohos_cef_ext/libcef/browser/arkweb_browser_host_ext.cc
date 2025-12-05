@@ -619,7 +619,9 @@ void ArkWebBrowserHostExtImpl::UpdateBrowserSettings(
   settings_.javascript = browser_settings.javascript;
   settings_.image_loading = browser_settings.image_loading;
   settings_.local_storage = browser_settings.local_storage;
+#if !CEF_API_ADDED(13800)
   settings_.databases = browser_settings.databases;
+#endif
 
   /* ohos webview add*/
   settings_.force_dark_mode_enabled = browser_settings.force_dark_mode_enabled;
@@ -1035,7 +1037,7 @@ void ArkWebDealWithPostData(const std::string& post_data,
       params->post_data = new network::ResourceRequestBody();
   } else {
       params->post_data = network::ResourceRequestBody::CreateFromBytes(
-          post_data.data(), post_data.size());
+          std::vector<uint8_t>(post_data.begin(), post_data.end()));
   }
 }
 
@@ -1697,12 +1699,19 @@ int ArkWebBrowserHostExtImpl::PrerenderPage(const CefString& url,
   std::unique_ptr<content::PrerenderHandle> prerender_handle =
       web_contents->StartPrerendering(
           gurl, content::PreloadingTriggerType::kEmbedder,
-          "ArkWeb", page_transition,
+          "ArkWeb",
+          net::HttpRequestHeaders(),
+          std::nullopt,
+          page_transition,
           /*should_warm_up_compositor*/true, /*should_prepare_paint_tree*/true,
           content::PreloadingHoldbackStatus::kAllowed,
-          /*preloading_attempt=*/nullptr, /*url_match_predicate=*/{},
+          /*preload_pipeline_info=*/nullptr,
+          /*preloading_attempt=*/nullptr,
+          /*url_match_predicate=*/{},
           /*prerender_navigation_handle_callback*/{},
-          /*extra_headers=*/new_additional_headers.c_str());
+          /*allow_reuse=*/false,
+          /*extra_headers=*/new_additional_headers.c_str()
+          );
 
   if (prerender_handle) {
     prerender_handles_.push_back(std::move(prerender_handle));
@@ -1735,13 +1744,13 @@ void ArkWebBrowserHostExtImpl::UpdateLocale(const CefString& locale) {
   }
 
   if (!ui::ResourceBundle::HasSharedInstance() ||
-      !ui::ResourceBundle::LocaleDataPakExists(update_locale)) {
+      !ui::ResourceBundle::LocaleDataPakExists(update_locale, ui::ResourceBundle::Gender::kDefault)) {
     LOG(ERROR) << "CefBrowserHostBase::UpdateLocale !HasSharedInstance";
     return;
   }
 
   std::string origin_locale =
-      ui::ResourceBundle::GetSharedInstance().GetLoadedLocaleForTesting();
+      ui::ResourceBundle::GetSharedInstance().GetLoadedLocale();
   LOG(DEBUG) << "UpdateLocale origin locale:" << origin_locale
              << ", update locale:" << update_locale;
   if (origin_locale == update_locale) {
@@ -3351,7 +3360,7 @@ int ArkWebBrowserHostExtImpl::GetSecurityLevel() {
   DCHECK(state);
 
   security_state::SecurityLevel securityValue =
-      security_state::GetSecurityLevel(*state, false);
+      security_state::GetSecurityLevel(*state);
   return static_cast<int>(securityValue);
 }
 

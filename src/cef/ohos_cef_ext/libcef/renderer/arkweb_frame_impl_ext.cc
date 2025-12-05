@@ -17,6 +17,7 @@
 
 #include "arkweb/build/features/features.h"
 #include "build/build_config.h"
+#define INSIDE_BLINK 1
 #include "cef/libcef/renderer/frame_impl.h"
 
 // Enable deprecation warnings on Windows. See http://crbug.com/585142.
@@ -78,6 +79,7 @@
 #include "third_party/skia/include/core/SkBitmap.h"
 #endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
 #include "cef/ohos_cef_ext/libcef/renderer/arkweb_frame_impl_ext.h"
+#include "third_party/blink/renderer/core/testing/web_view_test_helper.h"
 #include "third_party/blink/renderer/platform/runtime_enabled_features.h"
 
 #if BUILDFLAG(ARKWEB_NETWORK_CONNINFO)
@@ -205,9 +207,9 @@ const int kMaxContextImageNodeSizeIfDownScale = 1024;
 const int kNeedImageDownScaleSysMemKB = 2097152;
 
 int GetSystemTotalMem() {
-  base::SystemMemoryInfoKB meminfo;
+  base::SystemMemoryInfo meminfo;
   if (base::GetSystemMemoryInfo(&meminfo)) {
-    return meminfo.total;
+    return static_cast<int>(meminfo.total.InBytes());
   }
   LOG(WARNING) << "Get sys meminfo failed";
   return -1;
@@ -603,7 +605,7 @@ void ArkwebFrameExtImpl::PopulateHitTestData(
 GURL ArkwebFrameExtImpl::GetAbsoluteUrl(const blink::WebNode& node,
                                         const std::u16string& url_fragment) {
   return GURL(node.GetDocument().CompleteURL(
-      blink::WebString::FromUTF16(url_fragment)));
+      blink::WebString::FromUTF16(url_fragment)).GetString().Utf8());
 }
  
 GURL ArkwebFrameExtImpl::GetAbsoluteSrcUrl(const blink::WebElement& element) {
@@ -636,10 +638,11 @@ void ArkwebFrameExtImpl::SendHitEvent(cef::mojom::HitEventParamsPtr params) {
     return;
   }
   const blink::WebHitTestResult result =
-      webview->HitTestResultForTap(gfx::Point(params->x, params->y),
-                                   gfx::Size(params->width, params->height));
+      HitTestResultForTap(webview,
+                          gfx::Point(params->x, params->y),
+                          gfx::Size(params->width, params->height));
   cef::mojom::HitDataParamsPtr data = cef::mojom::HitDataParams::New();
-  GURL absolute_image_url = result.AbsoluteImageURL();
+  GURL absolute_image_url = GURL(result.AbsoluteImageURL().GetString().Utf8());
   if (!result.UrlElement().IsNull()) {
     data->anchor_text = result.UrlElement().TextContent().Utf16();
     data->href = result.UrlElement().GetAttribute("href").Utf16();
@@ -648,7 +651,7 @@ void ArkwebFrameExtImpl::SendHitEvent(cef::mojom::HitEventParamsPtr params) {
     }
   }
  
-  PopulateHitTestData(result.AbsoluteLinkURL(), absolute_image_url,
+  PopulateHitTestData(GURL(result.AbsoluteLinkURL().GetString().Utf8()), absolute_image_url,
                       result.IsContentEditable(), data);
  
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
@@ -746,7 +749,7 @@ void ArkwebFrameExtImpl::SetFocusByPosition(
     return;
   }
   const blink::WebHitTestResult result =
-      webview->HitTestResultForTap(gfx::Point(x, y), gfx::Size(1, 1));
+      HitTestResultForTap(webview, gfx::Point(x, y), gfx::Size(1, 1));
   if (result.IsContentEditable() && result.GetNode().IsElementNode()) {
     isEditable = true;
     const blink::WebElement webElement =

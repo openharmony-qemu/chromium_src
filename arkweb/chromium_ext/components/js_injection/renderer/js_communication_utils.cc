@@ -54,8 +54,6 @@ bool JsCommunicationUtils::MatchUrlRegexRules(blink::WebString& script,
   std::vector<std::unique_ptr<DocumentJavaScriptRegexRules>>& scripts_regex_rules) {
   std::string url_text =
       jsCommunication_->render_frame()->GetWebFrame()->GetDocument().Url().GetString().Utf8();
-
-  LOG(DEBUG) << "JsCommunicationUtils::MatchUrlRegexRules url_text:" << url_text.c_str();
   
   GURL url = url_formatter::FixupURL(url_text, "");
   if (!url.is_valid() || scripts_regex_rules.empty()) {
@@ -65,8 +63,6 @@ bool JsCommunicationUtils::MatchUrlRegexRules(blink::WebString& script,
 
   std::string frame_origin =  net::registry_controlled_domains::GetDomainAndRegistry(
       url, net::registry_controlled_domains::PrivateRegistryFilter::INCLUDE_PRIVATE_REGISTRIES);
-  LOG(DEBUG) << "JsCommunicationUtils::MatchUrlRegexRules secondLevelDomain:" << frame_origin.c_str();
-
   for (const auto& rule : scripts_regex_rules) {
     if (rule->script != script) {
       continue;

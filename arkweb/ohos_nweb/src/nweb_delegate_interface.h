@@ -132,6 +132,10 @@ class NWebDelegateInterface
       std::shared_ptr<NWebMessageValueCallback> callback) = 0;
   virtual void FillAutofillData(std::shared_ptr<NWebMessage> data) = 0;
   virtual void FillAutofillDataV2(std::shared_ptr<NWebRomValue> data) = 0;
+  virtual void FillAutofillDataFromTriggerType(
+      std::shared_ptr<NWebRomValue> data, int32_t type) = 0;
+  virtual void PutVaultPlainTextCallback(
+      std::shared_ptr<OHOS::NWeb::NWebVaultPlainTextCallback> callback) = 0;
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   virtual void SetNWebDelegateInterface(

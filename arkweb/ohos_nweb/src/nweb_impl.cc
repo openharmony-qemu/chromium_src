@@ -2502,6 +2502,25 @@ void NWebImpl::FillAutofillDataV2(std::shared_ptr<NWebRomValue> data) {
   nweb_delegate_->FillAutofillDataV2(data);
 }
 
+void NWebImpl::FillAutofillDataFromTriggerType(
+    std::shared_ptr<NWebRomValue> data, const NWebAutoFillTriggerType& type) {
+  LOG(INFO) << "NWebImpl::FillAutofillDataFromTriggerType";
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("JSAPI nweb_delegate_ its null");
+    return;
+  }
+  nweb_delegate_->FillAutofillDataFromTriggerType(data, static_cast<int32_t>(type));
+}
+
+void NWebImpl::PutVaultPlainTextCallback(
+    std::shared_ptr<NWebVaultPlainTextCallback> callback) {
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("JSAPI nweb_delegate_ its null");
+    return;
+  }
+  nweb_delegate_->PutVaultPlainTextCallback(callback);
+}
+
 void NWebImpl::OnAutofillCancel(const std::string& fillContent) {
   LOG(INFO) << "NWebImpl::OnAutofillCancel";
   if (nweb_delegate_ == nullptr) {

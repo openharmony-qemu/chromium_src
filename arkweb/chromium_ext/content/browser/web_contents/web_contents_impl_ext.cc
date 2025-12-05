@@ -959,6 +959,17 @@ void WebContentsImplExt::HideAutofillPopup() {
   }
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+std::shared_ptr<OHOS::NWeb::NWebVaultPlainTextCallback> WebContentsImplExt::GetVaultPlainTextCallback() {
+  return vault_plain_text_callback_;
+}
+void WebContentsImplExt::SetVaultPlainTextCallback(
+    std::shared_ptr<OHOS::NWeb::NWebVaultPlainTextCallback> callback) {
+  vault_plain_text_callback_ = callback;
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
 void WebContentsImplExt::OnShareFile(const std::string& filePath,
                                      const std::string& utdTypeId) {

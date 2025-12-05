@@ -94,6 +94,14 @@ class MockNWebDelegate : public NWebDelegateInterface {
               (std::shared_ptr<NWebRomValue> data),
               (override));
   MOCK_METHOD(void,
+              FillAutofillDataFromTriggerType,
+              (std::shared_ptr<NWebRomValue> data, int32_t type),
+              (override));
+  MOCK_METHOD(void,
+              PutVaultPlainTextCallback,
+              (std::shared_ptr<OHOS::NWeb::NWebVaultPlainTextCallback> callback),
+              (override));
+  MOCK_METHOD(void,
               ExecuteCreatePDFExt,
               (std::shared_ptr<NWebPDFConfigArgs> pdfConfig,
                std::shared_ptr<NWebArrayBufferValueCallback> callback),

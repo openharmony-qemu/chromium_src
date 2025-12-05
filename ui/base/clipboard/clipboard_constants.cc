@@ -48,5 +48,12 @@ const char kWebClipboardFormatPrefix[] = "web ";
 
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
 const char kMimeTypeOHOSCustomData[] = "ohos/custom-data";
+
+const char kMiscServicesMimeTypePixelmap[] = "pixelMap";
+const char kMiscServicesMimeTypeTextHtml[] = "text/html";
+const char kMiscServicesMimeTypeTextPlain[] = "text/plain";
+const char kMiscServicesMimeTypeTextUri[] = "text/uri";
+const char kMiscServicesMimeTypeTextWant[] = "text/want";
+const char kMiscServicesMimeTypeAutoFillSecure[] = "autofill/secure";
 #endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
 }  // namespace ui

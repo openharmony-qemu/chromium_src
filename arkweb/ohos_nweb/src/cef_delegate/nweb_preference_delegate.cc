@@ -1271,6 +1271,16 @@ void NWebPreferenceDelegate::SetAutofillCallback(
     CefRefPtr<CefWebMessageReceiver> callback) {
   autofill_callback_ = callback;
 }
+
+std::shared_ptr<NWebVaultPlainTextCallback> NWebPreferenceDelegate::GetVaultPlainTextCallback() {
+  return vault_plain_text_callback_;
+}
+
+void NWebPreferenceDelegate::PutVaultPlainTextCallback(
+    std::shared_ptr<NWebVaultPlainTextCallback> callback) {
+  vault_plain_text_callback_ = callback;
+}
+
 #endif  // BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
 
 #if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)

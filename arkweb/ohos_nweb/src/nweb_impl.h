@@ -152,6 +152,10 @@ class NWebImpl : public NWeb {
   void SendMouseEvent(int x, int y, int button, int action, int count) override;
   void FillAutofillData(std::shared_ptr<NWebMessage> data) override;
   void FillAutofillDataV2(std::shared_ptr<NWebRomValue> data) override;
+  void FillAutofillDataFromTriggerType(
+      std::shared_ptr<NWebRomValue> data, const NWebAutoFillTriggerType& type) override;
+  void PutVaultPlainTextCallback(
+      std::shared_ptr<NWebVaultPlainTextCallback> callback) override;
   void OnAutofillCancel(const std::string& fillContent) override;
   void SetNwebDelegateForTest(std::shared_ptr<NWebEngineInitArgs> init_args);
 

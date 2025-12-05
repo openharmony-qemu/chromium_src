@@ -109,6 +109,7 @@ public:
     uint32_t GetTokenId() override;
     int32_t AddPasteboardChangedObserver(std::shared_ptr<PasteboardObserverAdapter> callback) override;
     void RemovePasteboardChangedObserver(int32_t callbackId) override;
+    bool HasType(const char* type) override;
     static CallbackSharedWrapper<PasteBoardCallback> callbackWrapper_;
 private:
     uint32_t tokenId_ = 0;

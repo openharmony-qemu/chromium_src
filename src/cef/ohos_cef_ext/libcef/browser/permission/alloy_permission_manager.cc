@@ -35,6 +35,23 @@ using RequestPermissionsCallback =
     base::OnceCallback<void(const std::vector<content::PermissionResult>&)>;
 
 namespace {
+
+// Helper function to convert PermissionDescriptorPtr to PermissionType
+std::vector<blink::PermissionType> ConvertPermissionDescriptors(
+    const std::vector<blink::mojom::PermissionDescriptorPtr>& descriptors) {
+  std::vector<blink::PermissionType> permissions;
+  permissions.reserve(descriptors.size());
+  for (const auto& descriptor : descriptors) {
+    permissions.push_back(static_cast<blink::PermissionType>(descriptor->name));
+  }
+  return permissions;
+}
+
+// Helper function to convert PermissionName to PermissionType
+blink::PermissionType ConvertPermissionNameToType(
+    blink::mojom::PermissionName name) {
+  return static_cast<blink::PermissionType>(name);
+}
 constexpr int32_t APPLICATION_API_10 = 40000010;
 
 int32_t GetApplicationApiVersion() {
@@ -159,10 +176,10 @@ AlloyPermissionManager::~AlloyPermissionManager() {
 void AlloyPermissionManager::RequestPermissions(
     content::RenderFrameHost* render_frame_host,
     const content::PermissionRequestDescription& request_description,
-    base::OnceCallback<void(const std::vector<content::PermissionResult>)>
+    base::OnceCallback<void(const std::vector<content::PermissionResult>&)>
         callback) {
-  const std::vector<blink::PermissionType>& permissions =
-      request_description.permissions;
+  const std::vector<blink::PermissionType> permissions =
+      ConvertPermissionDescriptors(request_description.permissions);
   const GURL& requesting_origin = request_description.requesting_origin;
   if (permissions.empty()) {
     std::move(callback).Run(std::vector<content::PermissionResult>());
@@ -419,10 +436,10 @@ void AlloyPermissionManager::OnRequestResponseCallBack(
 }
 
 PermissionStatus AlloyPermissionManager::GetPermissionStatus(
-    blink::mojom::PermissionDescriptorPtr permission,
+    const blink::mojom::PermissionDescriptorPtr& permission,
     const GURL& requesting_origin,
     const GURL& embedding_origin) {
-  blink::PermissionType permission_type = permission->name;
+  blink::PermissionType permission_type = ConvertPermissionNameToType(permission->name);
   if (permission_type == PermissionType::CLIPBOARD_READ_WRITE ||
       permission_type == PermissionType::CLIPBOARD_SANITIZED_WRITE) {
     return PermissionStatus::GRANTED;
@@ -476,14 +493,14 @@ PermissionStatus AlloyPermissionManager::GetPermissionStatus(
   return PermissionStatus::DENIED;
 }
 PermissionStatus AlloyPermissionManager::GetPermissionStatusForWorker(
-    blink::mojom::PermissionDescriptorPtr permission,
+    const blink::mojom::PermissionDescriptorPtr& permission,
     content::RenderProcessHost* render_process_host,
     const GURL& worker_origin) {
   return GetPermissionStatus(std::move(permission), worker_origin, worker_origin);
 }
 PermissionStatus
 AlloyPermissionManager::GetPermissionStatusForEmbeddedRequester(
-    blink::mojom::PermissionDescriptorPtr permission,
+    const blink::mojom::PermissionDescriptorPtr& permission,
     content::RenderFrameHost* render_frame_host,
     const url::Origin& requesting_origin) {
   return GetPermissionStatus(
@@ -494,7 +511,7 @@ AlloyPermissionManager::GetPermissionStatusForEmbeddedRequester(
 
 content::PermissionResult
 AlloyPermissionManager::GetPermissionResultForOriginWithoutContext(
-    blink::mojom::PermissionDescriptorPtr permission,
+    const blink::mojom::PermissionDescriptorPtr& permission,
     const url::Origin& requesting_origin,
     const url::Origin& embedding_origin) {
   blink::mojom::PermissionStatus status = GetPermissionStatus(
@@ -505,7 +522,7 @@ AlloyPermissionManager::GetPermissionResultForOriginWithoutContext(
 }
 
 PermissionStatus AlloyPermissionManager::GetPermissionStatusForCurrentDocument(
-    blink::mojom::PermissionDescriptorPtr permission,
+    const blink::mojom::PermissionDescriptorPtr& permission,
     content::RenderFrameHost* render_frame_host,
     bool should_include_device_status) {
   return GetPermissionStatus(
@@ -516,7 +533,7 @@ PermissionStatus AlloyPermissionManager::GetPermissionStatusForCurrentDocument(
           render_frame_host->GetMainFrame()));
 }
 
-void AlloyPermissionManager::ResetPermission(blink::mojom::PermissionDescriptorPtr permission,
+void AlloyPermissionManager::ResetPermission(blink::PermissionType permission,
                                              const GURL& requesting_origin,
                                              const GURL& embedding_origin) {}
 
@@ -583,7 +600,7 @@ void AlloyPermissionManager::AbortPermissionRequest(int request_id) {
 void AlloyPermissionManager::RequestPermissionsFromCurrentDocument(
     content::RenderFrameHost* render_frame_host,
     const content::PermissionRequestDescription& request_description,
-    base::OnceCallback<void(const std::vector<content::PermissionResult>)>
+    base::OnceCallback<void(const std::vector<content::PermissionResult>&)>
         callback) {
   RequestPermissions(render_frame_host, request_description,
                      std::move(callback));

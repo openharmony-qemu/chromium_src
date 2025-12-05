@@ -494,6 +494,10 @@ class CONTENT_EXPORT RenderFrameImpl
   bool SetNewsFeedPageFitted() override;
 #endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+  void OnDocumentEndReady() override;
+#endif
+
   // blink::mojom::AutoplayConfigurationClient implementation:
   void AddAutoplayFlags(const url::Origin& origin,
                         const int32_t flags) override;
@@ -1346,10 +1350,6 @@ class CONTENT_EXPORT RenderFrameImpl
   void DidSubresourceFiltered() override;
   void OnUpdateAdBlockEnabledToRender(bool site_adblock_enabled) override;
   bool GetGlobalAdblockEnabled() override;
-#endif
-
-#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
-  void OnDocumentEndReady() override;
 #endif
 
   // Stores the WebLocalFrame we are associated with.  This is null from the

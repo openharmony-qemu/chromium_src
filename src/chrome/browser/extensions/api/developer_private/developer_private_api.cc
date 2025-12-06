@@ -26,7 +26,6 @@
 #endif  // BUILDFLAG(ENABLE_EXTENSIONS)
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-#include "arkweb/chromium_ext/chrome/browser/extensions/api/developer_private_api_ext.cc"
 #include "arkweb/chromium_ext/chrome/browser/extensions/extension_multiple_uninstall_dialog_ohos.h"
 #endif // ARKWEB_ARKWEB_EXTENSIONS
 

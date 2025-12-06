@@ -13,9 +13,6 @@
  * limitations under the License.
  */
 
-#include "chrome/browser/extensions/api/developer_private/developer_private_functions_shared.h"
-#include "extensions/browser/extension_function.h"
-
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 #include "base/datashare_uri_utils.h"
 #include "extensions/browser/extension_registry_info_manager.h"

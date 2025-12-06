@@ -54,8 +54,8 @@ std::unique_ptr<AudioManager> CreateAudioManager(
 OHOSAudioManager::OHOSAudioManager(std::unique_ptr<AudioThread> audio_thread,
                                    AudioLogFactory* audio_log_factory)
     : AudioManagerBase(std::move(audio_thread), audio_log_factory) {
-      if (base::ohos::IsPcMode()) {
-        LOG(INFO) << "OHOSAudioManager Pc Mode";
+      if (base::ohos::IsPcDevice() || base::ohos::IsPcMode()) {
+        LOG(INFO) << "OHOSAudioManager Pc";
         SetMaxOutputStreamsAllowed(kPcModeMaxOutputStreams);
       } else {
         SetMaxOutputStreamsAllowed(kDefaultMaxOutputStreams);

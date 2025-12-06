@@ -53,6 +53,11 @@ bool StructTraits<viz::mojom::CompositorFrameMetadataDataView,
   out->is_scrolling = data.is_scrolling();
 #endif
 
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+  out->dropped_frame_count = data.dropped_frame_count();
+  out->dropped_frame_duration = data.dropped_frame_duration();
+#endif
+
   out->may_contain_video = data.may_contain_video();
   out->may_throttle_if_undrawn_frames = data.may_throttle_if_undrawn_frames();
   out->has_shared_element_resources = data.has_shared_element_resources();

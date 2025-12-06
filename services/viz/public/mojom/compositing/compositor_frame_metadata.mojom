@@ -80,6 +80,12 @@ struct CompositorFrameMetadata {
   [EnableIf=arkweb_slide]
   bool is_scrolling;
 
+  [EnableIf=arkweb_report_sys_event]
+  int64 dropped_frame_count;
+
+  [EnableIf=arkweb_report_sys_event]
+  int64 dropped_frame_duration;
+
   // When set, the compositor frame submission also informs viz to issue a
   // screenshot against the previous surface.
   blink.mojom.SameDocNavigationScreenshotDestinationToken?

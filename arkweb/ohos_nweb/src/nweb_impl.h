@@ -1175,7 +1175,7 @@ class NWebImpl : public NWeb {
   bool SetFocusByPosition(float x, float y) override;
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 #if BUILDFLAG(ARKWEB_SOFTKEYBOARD_AVOID)
-  static void SetSoftKeyboardBehaviorMode(WebSoftKeyboardBehaviorMode mode);
+  static void SetSoftKeyboardBehaviorModeV2(WebSoftKeyboardBehaviorMode mode);
 #endif
 #if BUILDFLAG(ARKWEB_PIP)
   void SetPipNativeWindow(int delegate_id,

@@ -499,6 +499,11 @@ int SystemPropertiesAdapterImpl::GetIntParameter(const char *key, int defaultVal
     return value;
 }
 
+std::string SystemPropertiesAdapterImpl::GetStringParameter(const std::string& key, const std::string& defaultValue)
+{
+  return GetStringParameter(key.c_str(), defaultValue);
+}
+
 std::string SystemPropertiesAdapterImpl::GetStringParameter(const char *key, std::string defaultValue)
 {
     if (preferences_ == nullptr) {

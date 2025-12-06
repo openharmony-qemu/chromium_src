@@ -27,7 +27,9 @@ if (!is_android) {
       "//content/public/common",
       "//content/public/common:result_codes",
       "//third_party/icu:icui18n",
-      "//third_party/icu:icui18n_hidden_visibility",
+      # TODO(arkweb): Temporarily commented out to avoid ICU duplicate symbol conflicts
+      # in shared library builds. Re-enable if Chrome OS specific functionality is needed.
+      # "//third_party/icu:icui18n_hidden_visibility",
       "//third_party/icu:icuuc_public",
     ]
   }

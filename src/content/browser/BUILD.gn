@@ -2777,6 +2777,9 @@ source_set("browser") {
   }
 
   if (is_ohos) {
+    sources -= [
+      "file_system_access/file_path_watcher/file_path_watcher_stub.cc"
+    ]
     sources += [
       "file_system_access/file_path_watcher/file_path_watcher_inotify.cc",
       "file_system_access/file_path_watcher/file_path_watcher_inotify.h",

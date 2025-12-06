@@ -1084,7 +1084,7 @@ ExtensionFunction::ResponseAction DeveloperPrivateShowOptionsFunction::Run() {
   ExtensionTabUtil::OpenOptionsPageFromWebContents(extension, web_contents);
   return RespondNow(NoArguments());
 }
-#endif // ARKWEB_ARKWEB_EXTENSIONS
+#endif // !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 
 DeveloperPrivateShowPathFunction::~DeveloperPrivateShowPathFunction() = default;
 

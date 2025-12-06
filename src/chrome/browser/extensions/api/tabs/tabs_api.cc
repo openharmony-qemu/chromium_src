@@ -255,6 +255,7 @@ void ZoomModeToZoomSettings(zoom::ZoomController::ZoomMode zoom_mode,
   }
 }
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 ExtensionFunction::ResponseAction WindowsGetFunction::Run() {
   std::optional<windows::Get::Params> params =
       windows::Get::Params::Create(args());
@@ -635,6 +636,7 @@ ExtensionFunction::ResponseAction TabsGetSelectedFunction::Run() {
           tab->GetContents(), extension(), source_context_type(), browser,
           tab_list->GetActiveIndex()))));
 }
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 
 ExtensionFunction::ResponseAction TabsGetAllInWindowFunction::Run() {
   std::optional<tabs::GetAllInWindow::Params> params =
@@ -921,7 +923,9 @@ ExtensionFunction::ResponseAction TabsQueryFunction::Run() {
 
   return RespondNow(WithArguments(std::move(result)));
 }
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 ExtensionFunction::ResponseAction TabsDuplicateFunction::Run() {
   std::optional<tabs::Duplicate::Params> params =
       tabs::Duplicate::Params::Create(args());
@@ -1106,6 +1110,7 @@ class TabsRemoveFunction::WebContentsDestroyedObserver
   raw_ptr<TabsRemoveFunction> owner_;
 };
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 ExtensionFunction::ResponseAction TabsDetectLanguageFunction::Run() {
   std::optional<tabs::DetectLanguage::Params> params =
       tabs::DetectLanguage::Params::Create(args());
@@ -1174,6 +1179,7 @@ ExtensionFunction::ResponseAction TabsDetectLanguageFunction::Run() {
 
   return RespondLater();
 }
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 
 void TabsDetectLanguageFunction::NavigationEntryCommitted(
     const content::LoadCommittedDetails& load_details) {
@@ -1465,7 +1471,7 @@ ExecuteCodeFunction::InitResult ExecuteCodeInTabFunction::Init() {
       mojom::HostID(mojom::HostID::HostType::kExtensions, extension()->id()));
   return set_init_result(SUCCESS);
 }
-#endif
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 
 bool ExecuteCodeInTabFunction::ShouldInsertCSS() const {
   return false;
@@ -1544,7 +1550,11 @@ ScriptExecutor* ExecuteCodeInTabFunction::GetScriptExecutor(
       tabs_internal::GetTabById(execute_tab_id_, browser_context(),
                                 include_incognito_information(), &window,
                                 &contents, nullptr, error) &&
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      contents;
+#else
       contents && window;
+#endif
 
   if (!success) {
     return nullptr;
@@ -1706,7 +1716,9 @@ ExtensionFunction::ResponseAction TabsGetZoomSettingsFunction::Run() {
   return RespondNow(
       ArgumentList(api::tabs::GetZoomSettings::Results::Create(zoom_settings)));
 }
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 ExtensionFunction::ResponseAction TabsGoForwardFunction::Run() {
   std::optional<tabs::GoForward::Params> params =
       tabs::GoForward::Params::Create(args());

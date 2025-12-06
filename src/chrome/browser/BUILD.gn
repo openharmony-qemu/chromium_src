@@ -6749,10 +6749,6 @@ static_library("browser") {
   }
 
   if (enterprise_watermark) {
-    sources += [
-      "enterprise/watermark/settings.cc",
-      "enterprise/watermark/settings.h",
-    ]
     deps += [
       "//chrome/browser/enterprise/watermark:watermark_view_lib",
       "//components/enterprise/watermarking",

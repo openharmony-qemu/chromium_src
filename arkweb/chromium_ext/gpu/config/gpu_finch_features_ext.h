@@ -37,6 +37,10 @@ GPU_EXPORT BASE_DECLARE_FEATURE(kInsertVKEndSemaphore);
 #if BUILDFLAG(ARKWEB_DRDC)
 bool IsDrDcForVulkan();
 #endif
+
+#if BUILDFLAG(ARKWEB_WEBGL)
+GPU_EXPORT BASE_DECLARE_FEATURE(kPreferDrawToCopy);
+#endif
 }
 
 #endif

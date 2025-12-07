@@ -44,7 +44,7 @@ bool IsEnableVulkan()
 #if BUILDFLAG(ARKWEB_VULKAN)
 BASE_FEATURE(kInsertVKEndSemaphore,
              "InsertVKEndSemaphore",
-             base::FEATURE_DISABLED_BY_DEFAULT);
+             base::FEATURE_ENABLED_BY_DEFAULT);
 #endif
 
 #if BUILDFLAG(ARKWEB_DRDC)
@@ -65,4 +65,9 @@ bool IsDrDcForVulkan()
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_WEBGL)
+BASE_FEATURE(kPreferDrawToCopy,
+             "PreferDrawToCopy",
+             base::FEATURE_ENABLED_BY_DEFAULT);
+#endif
 }

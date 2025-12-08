@@ -283,7 +283,12 @@ void OhosWindow::UpdateCursorShape(
     return;
   }
   if (platform_cursor->type() == mojom::CursorType::kCustom) {
-    auto bitmap = platform_cursor->bitmap();
+    auto bitmaps = platform_cursor->bitmaps();
+    if (bitmaps.empty()) {
+      LOG(ERROR) << "bitmaps is empty";
+      return;
+    }
+    const SkBitmap& bitmap = bitmaps[0];
     auto pixmap = bitmap.pixmap();
     size_t buff_size = bitmap.computeByteSize();
     std::shared_ptr<char[]> buff = std::make_shared<char[]>(buff_size);

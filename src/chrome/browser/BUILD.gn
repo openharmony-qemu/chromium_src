@@ -6808,7 +6808,7 @@ static_library("browser") {
     deps += [ "//chrome/browser/enterprise/connectors/device_trust/common" ]
   }
 
-  if (is_linux || is_win || is_mac || is_chromeos || arkweb_asan) {
+  if (is_linux || is_win || is_mac || is_chromeos || arkweb_asan || is_ohos) {
     sources += [
       "enterprise/connectors/device_trust/device_trust_connector_service.cc",
       "enterprise/connectors/device_trust/device_trust_connector_service.h",

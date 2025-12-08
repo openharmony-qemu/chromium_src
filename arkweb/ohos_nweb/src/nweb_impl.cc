@@ -7022,8 +7022,11 @@ void NWebImpl::RegisterNativeJavaScriptProxy(const std::string& objName,
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
 #if BUILDFLAG(ARKWEB_SOFTKEYBOARD_AVOID)
-void NWebImpl::SetSoftKeyboardBehaviorMode(WebSoftKeyboardBehaviorMode mode) {
+void NWebImpl::SetSoftKeyboardBehaviorModeV2(WebSoftKeyboardBehaviorMode mode) {
   keyboardBehaviorMode_ = mode;
+  LOG(DEBUG)
+      << "NWebImpl::SetSoftKeyboardBehaviorModeV2 keyboardBehaviorMode_: "
+      << static_cast<int>(keyboardBehaviorMode_);
 }
 #endif
 

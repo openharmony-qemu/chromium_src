@@ -245,7 +245,7 @@ void NWebEngineImpl::SetScrollbarMode(ScrollbarMode mode) {
 
 #if BUILDFLAG(ARKWEB_SOFTKEYBOARD_AVOID)
 void NWebEngineImpl::SetSoftKeyboardBehaviorMode(WebSoftKeyboardBehaviorMode mode) {
-    NWebImpl::SetSoftKeyboardBehaviorMode(mode);
+    NWebImpl::SetSoftKeyboardBehaviorModeV2(mode);
 }
 #endif
 

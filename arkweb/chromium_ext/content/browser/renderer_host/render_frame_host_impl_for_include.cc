@@ -80,11 +80,37 @@ void RenderFrameHostImpl::OnOverScrollOffsetChanged(float offset_x,
 void RenderFrameHostImpl::SendAccessibilityEvent(int64_t accessibilityId,
                                                  int32_t eventType,
                                                  const std::string& argument) {
-  RenderWidgetHostViewBase* view = static_cast<RenderWidgetHostViewBase*>(
-      render_view_host_->GetWidget()->GetView());
+  if (!render_view_host_ || !render_view_host_->GetWidget()) {
+    LOG(ERROR) << "RenderFrameHostImpl::SendAccessibilityEvent accessibilityId " << accessibilityId
+               << ", cannot get view from current.";
+    return;
+  }
+  RenderWidgetHostViewBase* view = static_cast<RenderWidgetHostViewBase*>(render_view_host_->GetWidget()->GetView());
   if (view) {
     view->SendAccessibilityEvent(accessibilityId, eventType, argument);
+    return;
   }
+  // on tablet-type devices, view in current frame may be null
+  RenderFrameHostImpl* parent = GetParent();
+  uint8_t depth = 0;
+  constexpr uint8_t kMaxIframeDepth = 5;
+  while (parent && depth < kMaxIframeDepth) {
+    depth++;
+    if (!parent->render_view_host_ || !parent->render_view_host_->GetWidget()) {
+      parent = parent->GetParent();
+      continue;
+    }
+    view = static_cast<RenderWidgetHostViewBase*>(parent->render_view_host_->GetWidget()->GetView());
+    if (view) {
+      LOG(DEBUG) << "RenderFrameHostImpl::SendAccessibilityEvent accessibilityId " << accessibilityId
+                 << ", successfully get view from parent, recursive count " << static_cast<int32_t>(depth);
+      view->SendAccessibilityEvent(accessibilityId, eventType, argument);
+      return;
+    }
+    parent = parent->GetParent();
+  }
+  LOG(ERROR) << "RenderFrameHostImpl::SendAccessibilityEvent accessibilityId " << accessibilityId
+             << ", cannot get view from current or parent.";
 }
 #endif
 

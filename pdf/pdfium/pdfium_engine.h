@@ -493,10 +493,13 @@ class PDFiumEngine : public DocumentLoader::Client, public IFSDK_PAUSE {
 
  private:
 #if BUILDFLAG(ARKWEB_PDF)
-  void OnSelectionPositionChangedForPDF(gfx::Rect& left,
-                                        gfx::Rect& right,
-                                        gfx::Rect& clipped_selection_bounds,
-                                        const std::vector<PDFiumRange>& selections);
+  void UpdateSelectionBoundsAndPositions(gfx::Rect& left,
+                                         gfx::Rect& right,
+                                         gfx::Rect& clipped_selection_bounds,
+                                         const std::vector<PDFiumRange>& selections);
+  void CheckSelectionVisibility(gfx::Rect& top,
+                                gfx::Rect& bottom,
+                                gfx::Rect& clipped_selection_bounds);
 #endif  // BUILDFLAG(ARKWEB_PDF)
 
   // This helper class is used to detect the difference in selection between

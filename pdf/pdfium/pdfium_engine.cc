@@ -3884,7 +3884,7 @@ void PDFiumEngine::OnSelectionPositionChanged() {
   // When searching for results, do not calculate the selection position to
   // hide the menu and handles.
   if (!is_finding_result_) {
-    OnSelectionPositionChangedForPDF(left, right, clipped_selection_bounds, selection_);
+    UpdateSelectionBoundsAndPositions(left, right, clipped_selection_bounds, selection_);
   }
 #else
   for (const auto& sel : selection_) {
@@ -3905,10 +3905,11 @@ void PDFiumEngine::OnSelectionPositionChanged() {
     left.set_x(0);
     left.set_y(0);
   }
-  client_->SelectionChanged(left, right);
 #if BUILDFLAG(ARKWEB_PDF)
-  client_->UpdateClientClippedSelectionBoundsForPDF(clipped_selection_bounds);
+  CheckSelectionVisibility(left, right, clipped_selection_bounds);
+  client_->ConvertAndUpdateSelectionBounds(clipped_selection_bounds);
 #endif  // BUILDFLAG(ARKWEB_PDF)
+  client_->SelectionChanged(left, right);
 }
 
 gfx::Size PDFiumEngine::ApplyDocumentLayout(

@@ -97,10 +97,11 @@ class PDFDocumentHelper
   void GetPageText(int32_t page_index,
                    pdf::mojom::PdfListener::GetPageTextCallback callback);
 #if BUILDFLAG(ARKWEB_PDF)
-  void UpdateClientClippedSelectionBoundsForPDF(const gfx::Rect& clipped_selection_bounds) override;
-  void HideHandleAndQuickMenuForPDF(bool hide_handles) override;
+  void ConvertAndUpdateSelectionBounds(const gfx::Rect& clipped_selection_bounds) override;
+  void HideHandleAndQuickMenu(bool hide) override;
   void ResetResponsePendingInputEvent() override;
   void ClearTextSelection() override;
+  void OnScaleChanged(float new_page_scale_factor) override;
 #endif  // BUILDFLAG(ARKWEB_PDF)
 
  private:
@@ -117,12 +118,9 @@ class PDFDocumentHelper
 
 #if BUILDFLAG(ARKWEB_PDF)
   void UpdateQuickMenu();
-  void ScaleSelection(gfx::PointF& left,
-                      int32_t& left_height,
-                      gfx::PointF& right,
-                      int32_t& right_height);
   int32_t SafeScale(int32_t value, float scale_factor);
   void SetIsPdfDocument(bool is_pdf_document);
+  void UpdateScaleFactor();
 #endif  // BUILDFLAG(ARKWEB_PDF)
 
   content::RenderFrameHostReceiverSet<mojom::PdfHost> pdf_host_receivers_;
@@ -141,6 +139,11 @@ class PDFDocumentHelper
   gfx::PointF selection_right_;
   int32_t selection_right_height_ = 0;
   bool has_selection_ = false;
+
+#if BUILDFLAG(ARKWEB_PDF)
+  // Latest page scale factor received from TouchSelectionControllerClient.
+  float page_scale_factor_ = 1.0f;
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   mojo::Remote<mojom::PdfListener> remote_pdf_client_;
 

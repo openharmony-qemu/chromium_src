@@ -658,6 +658,9 @@ void PdfViewWebPlugin::UpdateGeometry(const gfx::Rect& window_rect,
     // Convert back to CSS pixels.
     scroll_position.Scale(1.0f / device_scale_);
     UpdateScroll(scroll_position);
+  } else {
+    SetIsScrolling(true);
+    DoPaintAfterDelay();
   }
 #else
   gfx::PointF scroll_position = client_->GetScrollPosition();
@@ -670,6 +673,10 @@ void PdfViewWebPlugin::UpdateGeometry(const gfx::Rect& window_rect,
 void PdfViewWebPlugin::UpdateScroll(const gfx::PointF& scroll_position) {
   if (stop_scrolling_)
     return;
+
+#if BUILDFLAG(ARKWEB_PDF)
+  SetIsScrolling(true);
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   float max_x = std::max(document_size_.width() * static_cast<float>(zoom_) -
                              plugin_dip_size_.width(),
@@ -691,10 +698,8 @@ void PdfViewWebPlugin::UpdateScroll(const gfx::PointF& scroll_position) {
   engine_->ScrolledToYPosition(scaled_scroll_position.y());
   
 #if BUILDFLAG(ARKWEB_PDF)
-  SetIsScrolling(true);
   DoPaintAfterDelay();
 #endif  // BUILDFLAG(ARKWEB_PDF)
-  
 }
 
 void PdfViewWebPlugin::UpdateFocus(bool focused,

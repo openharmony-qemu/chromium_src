@@ -32,15 +32,15 @@ constexpr float kPointRatio = 72.0f;
 #if BUILDFLAG(ARKWEB_PDF)
 std::atomic<uint64_t> g_bookmark_id_{0};
 
-void PDFiumEngine::OnSelectionPositionChangedForPDF(gfx::Rect& left,
-                                                    gfx::Rect& right,
-                                                    gfx::Rect& clipped_selection_bounds,
-                                                    const std::vector<PDFiumRange>& selections) {
+void PDFiumEngine::UpdateSelectionBoundsAndPositions(gfx::Rect& left,
+                                                     gfx::Rect& right,
+                                                     gfx::Rect& clipped_selection_bounds,
+                                                     const std::vector<PDFiumRange>& selections) {
   if (!selections.empty()) {
-    int rect_left = std::numeric_limits<int32_t>::max();
-    int rect_top = std::numeric_limits<int32_t>::max();
-    int rect_right = 0;
-    int rect_bottom = 0;
+    int32_t rect_left = std::numeric_limits<int32_t>::max();
+    int32_t rect_top = std::numeric_limits<int32_t>::max();
+    int32_t rect_right = std::numeric_limits<int32_t>::min();
+    int32_t rect_bottom = std::numeric_limits<int32_t>::min();
     PDFiumRange fitst_selection = selections[0];
     PDFiumRange last_selection = selections.back();
 
@@ -184,6 +184,33 @@ gfx::PointF PDFiumEngine::ConverPageToScreen(int page_index, gfx::PointF point) 
 
   gfx::PointF transformed_point(rotated_x, rotated_y);
   return transformed_point;
+}
+
+void PDFiumEngine::CheckSelectionVisibility(gfx::Rect& top,
+                                            gfx::Rect& bottom,
+                                            gfx::Rect& clipped_selection_bounds) {
+  // Check if selections are unvisible.
+  if (clipped_selection_bounds.x() > plugin_size().width() ||
+      clipped_selection_bounds.x() + clipped_selection_bounds.width() < 0 ||
+      clipped_selection_bounds.y() > plugin_size().height() ||
+      clipped_selection_bounds.y() + clipped_selection_bounds.height() < 0) {
+    client_->SetIsSelectionVisible(false);
+    return;
+  }
+
+  client_->SetIsSelectionVisible(true);
+  if (top.x() < 0) {
+    top.set_x(top.x() - plugin_size().width());
+  }
+  if (top.y() < 0) {
+    top.set_y(top.y() - plugin_size().height());
+  }
+  if (bottom.x() + bottom.width() < 0) {
+    bottom.set_x(bottom.x() - plugin_size().width());
+  }
+  if (bottom.y() < 0) {
+    bottom.set_y(bottom.y() - plugin_size().height());
+  }
 }
 #endif  // BUILDFLAG(ARKWEB_PDF)
 

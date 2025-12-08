@@ -177,11 +177,6 @@
 #include "content/public/browser/cdm_storage_data_model.h"
 #endif  // BUILDFLAG(ENABLE_LIBRARY_CDMS)
 
-#if BUILDFLAG(ARKWEB_CACHE)
-#include "base/path_service.h"
-#include "base/files/file_path.h"
-#endif
-
 using CookieDeletionFilter = network::mojom::CookieDeletionFilter;
 using CookieDeletionFilterPtr = network::mojom::CookieDeletionFilterPtr;
 
@@ -1284,10 +1279,6 @@ std::unique_ptr<StoragePartitionImpl> StoragePartitionImpl::Create(
 
   base::FilePath partition_path =
       context->GetPath().Append(relative_partition_path);
-
-#if BUILDFLAG(ARKWEB_CACHE)
-  base::PathService::Get(base::DIR_CACHE, &partition_path);
-#endif
 
   return base::WrapUnique(new StoragePartitionImpl(
       context, config, partition_path, relative_partition_path,

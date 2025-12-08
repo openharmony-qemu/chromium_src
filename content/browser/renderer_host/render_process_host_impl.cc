@@ -297,6 +297,11 @@
 #include "content/public/common/content_switches.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_CACHE)
+#include "base/path_service.h"
+#include "base/files/file_path.h"
+#endif
+
 // VLOG additional statements in Fuchsia release builds.
 #if BUILDFLAG(IS_FUCHSIA)
 #define MAYBEVLOG VLOG
@@ -1714,9 +1719,15 @@ bool RenderProcessHostImpl::Init() {
       !base::CommandLine::ForCurrentProcess()->HasSwitch(
           switches::kDisableGpuShaderDiskCache)) {
     if (auto* cache_factory = GetGpuDiskCacheFactorySingleton()) {
+#if BUILDFLAG(ARKWEB_CACHE)
+      base::FilePath path;
+      base::PathService::Get(base::DIR_CACHE, &path);
+#else
+      base::FilePath path = storage_partition_impl_->GetPath();
+#endif
       for (const gpu::GpuDiskCacheType type : gpu::kGpuDiskCacheTypes) {
         auto handle = cache_factory->GetCacheHandle(
-            type, storage_partition_impl_->GetPath().Append(
+            type, path.Append(
                       gpu::GetGpuDiskCacheSubdir(type)));
         gpu_client_->SetDiskCacheHandle(handle);
       }

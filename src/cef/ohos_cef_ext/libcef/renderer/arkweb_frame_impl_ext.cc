@@ -79,7 +79,6 @@
 #include "third_party/skia/include/core/SkBitmap.h"
 #endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
 #include "cef/ohos_cef_ext/libcef/renderer/arkweb_frame_impl_ext.h"
-#include "third_party/blink/renderer/core/testing/web_view_test_helper.h"
 #include "third_party/blink/renderer/platform/runtime_enabled_features.h"
 
 #if BUILDFLAG(ARKWEB_NETWORK_CONNINFO)
@@ -637,10 +636,13 @@ void ArkwebFrameExtImpl::SendHitEvent(cef::mojom::HitEventParamsPtr params) {
     LOG(INFO) << "SendHitEvent webview is NULL";
     return;
   }
+  // TODO(arkweb): Temporary fix to resolve compilation errors.
+  // Use the new HitTestResultAt API in Chromium 141
+  // Note: This is not 100% equivalent to HitTestResultForTap as it lacks
+  // gesture context and tap area, but is the closest available replacement
+  blink::WebFrameWidget* frame_widget = render_frame->GetWebFrame()->FrameWidget();
   const blink::WebHitTestResult result =
-      HitTestResultForTap(webview,
-                          gfx::Point(params->x, params->y),
-                          gfx::Size(params->width, params->height));
+      frame_widget->HitTestResultAt(gfx::PointF(params->x, params->y));
   cef::mojom::HitDataParamsPtr data = cef::mojom::HitDataParams::New();
   GURL absolute_image_url = GURL(result.AbsoluteImageURL().GetString().Utf8());
   if (!result.UrlElement().IsNull()) {
@@ -748,8 +750,13 @@ void ArkwebFrameExtImpl::SetFocusByPosition(
     std::move(callback).Run(isEditable);
     return;
   }
+  // TODO(arkweb): Temporary fix to resolve compilation errors.
+  // Use the new HitTestResultAt API in Chromium 141
+  // Note: This is not 100% equivalent to HitTestResultForTap as it lacks
+  // gesture context and tap area, but is the closest available replacement
+  blink::WebFrameWidget* frame_widget = render_frame->GetWebFrame()->FrameWidget();
   const blink::WebHitTestResult result =
-      HitTestResultForTap(webview, gfx::Point(x, y), gfx::Size(1, 1));
+      frame_widget->HitTestResultAt(gfx::PointF(x, y));
   if (result.IsContentEditable() && result.GetNode().IsElementNode()) {
     isEditable = true;
     const blink::WebElement webElement =

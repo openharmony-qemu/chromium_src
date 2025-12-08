@@ -103,7 +103,7 @@ class JSArray : public TorqueGeneratedJSArray<JSArray, JSObject> {
   // - Returns a tagged String pointer.
   static Address ArrayJoinConcatToSequentialString(Isolate* isolate,
                                                    Address raw_fixed_array,
-                                                   intptr_t length,
+                                                   uintptr_t length,
                                                    Address raw_separator,
                                                    Address raw_dest);
 

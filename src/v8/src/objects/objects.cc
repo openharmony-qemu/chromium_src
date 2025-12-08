@@ -4011,12 +4011,14 @@ void Relocatable::Iterate(RootVisitor* v, Relocatable* top) {
   }
 }
 
+START_PROHIBIT_SIGN_CONVERSION()
+
 namespace {
 
 template <typename sinkchar>
-void WriteFixedArrayToFlat(Tagged<FixedArray> fixed_array, int length,
+void WriteFixedArrayToFlat(Tagged<FixedArray> fixed_array, uint32_t length,
                            Tagged<String> separator, sinkchar* sink,
-                           int sink_length) {
+                           uint32_t sink_length) {
   DisallowGarbageCollection no_gc;
   CHECK_GT(length, 0);
   CHECK_LE(length, fixed_array->length());
@@ -4024,7 +4026,7 @@ void WriteFixedArrayToFlat(Tagged<FixedArray> fixed_array, int length,
   sinkchar* sink_end = sink + sink_length;
 #endif
 
-  const int separator_length = separator->length();
+  const uint32_t separator_length = separator->length();
   const bool use_one_byte_separator_fast_path =
       separator_length == 1 && sizeof(sinkchar) == 1 &&
       StringShape(separator).IsSequentialOneByte();
@@ -4037,7 +4039,7 @@ void WriteFixedArrayToFlat(Tagged<FixedArray> fixed_array, int length,
 
   uint32_t num_separators = 0;
   uint32_t repeat_last = 0;
-  for (int i = 0; i < length; i++) {
+  for (uint32_t i = 0; i < length; i++) {
     Tagged<Object> element = fixed_array->get(i);
     const bool element_is_special = IsSmi(element);
 
@@ -4048,7 +4050,7 @@ void WriteFixedArrayToFlat(Tagged<FixedArray> fixed_array, int length,
       int count;
       CHECK(Object::ToInt32(element, &count));
       if (count > 0) {
-        num_separators = count;
+        num_separators = static_cast<uint32_t>(count);
         //  Verify that Smis (number of separators) only occur when necessary:
         //    1) at the beginning
         //    2) at the end
@@ -4058,7 +4060,7 @@ void WriteFixedArrayToFlat(Tagged<FixedArray> fixed_array, int length,
         //        so there is no need for a Smi.
         DCHECK(i == 0 || i == length - 1 || num_separators > 1);
       } else {
-        repeat_last = -count;
+        repeat_last = static_cast<uint32_t>(-count);
         // Repeat is only possible when the previous element is not special.
         DCHECK_GT(i, 0);
         DCHECK(IsString(fixed_array->get(i - 1)));
@@ -4089,23 +4091,23 @@ void WriteFixedArrayToFlat(Tagged<FixedArray> fixed_array, int length,
     // separators).
     if (V8_UNLIKELY(repeat_last > 0)) {
       Tagged<Object> last_element = fixed_array->get(i - 1);
-      int string_length = Cast<String>(last_element)->length();
+      uint32_t string_length = Cast<String>(last_element)->length();
       // The implemented logic requires that string length is > 0. Empty strings
       // are handled by repeating the separator (positive smi in the fixed
       // array) already.
       DCHECK_GT(string_length, 0);
-      int length_with_sep = string_length + separator_length;
+      uint32_t length_with_sep = string_length + separator_length;
       // Only copy separators between elements, not at the start or beginning.
       sinkchar* copy_end =
           sink + (length_with_sep * repeat_last) - separator_length;
-      int copy_length = length_with_sep;
+      uint32_t copy_length = length_with_sep;
       while (sink < copy_end - copy_length) {
         DCHECK_LE(sink + copy_length, sink_end);
         memcpy(sink, sink - copy_length, copy_length * sizeof(sinkchar));
         sink += copy_length;
         copy_length *= 2;
       }
-      int remaining = static_cast<int>(copy_end - sink);
+      uint32_t remaining = static_cast<uint32_t>(copy_end - sink);
       if (remaining > 0) {
         DCHECK_LE(sink + remaining, sink_end);
         memcpy(sink, sink - remaining - separator_length,
@@ -4119,7 +4121,7 @@ void WriteFixedArrayToFlat(Tagged<FixedArray> fixed_array, int length,
     if (V8_LIKELY(!element_is_special)) {
       DCHECK(IsString(element));
       Tagged<String> string = Cast<String>(element);
-      const int string_length = string->length();
+      const uint32_t string_length = string->length();
 
       DCHECK(string_length == 0 || sink < sink_end);
       String::WriteToFlat(string, sink, 0, string_length);
@@ -4139,7 +4141,7 @@ void WriteFixedArrayToFlat(Tagged<FixedArray> fixed_array, int length,
 // static
 Address JSArray::ArrayJoinConcatToSequentialString(Isolate* isolate,
                                                    Address raw_fixed_array,
-                                                   intptr_t length,
+                                                   uintptr_t length,
                                                    Address raw_separator,
                                                    Address raw_dest) {
   DisallowGarbageCollection no_gc;
@@ -4153,17 +4155,19 @@ Address JSArray::ArrayJoinConcatToSequentialString(Isolate* isolate,
          StringShape(dest).IsSequentialTwoByte());
 
   if (StringShape(dest).IsSequentialOneByte()) {
-    WriteFixedArrayToFlat(fixed_array, static_cast<int>(length), separator,
+    WriteFixedArrayToFlat(fixed_array, static_cast<uint32_t>(length), separator,
                           Cast<SeqOneByteString>(dest)->GetChars(no_gc),
                           dest->length());
   } else {
     DCHECK(StringShape(dest).IsSequentialTwoByte());
-    WriteFixedArrayToFlat(fixed_array, static_cast<int>(length), separator,
+    WriteFixedArrayToFlat(fixed_array, static_cast<uint32_t>(length), separator,
                           Cast<SeqTwoByteString>(dest)->GetChars(no_gc),
                           dest->length());
   }
   return dest.ptr();
 }
+
+END_PROHIBIT_SIGN_CONVERSION()
 
 uint32_t StringHasher::MakeArrayIndexHash(uint32_t value, uint32_t length) {
   // For array indexes mix the length into the hash as an array index could

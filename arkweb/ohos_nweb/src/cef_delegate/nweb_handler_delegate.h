@@ -1061,6 +1061,10 @@ class NWebHandlerDelegate : public ArkWebClientExt,
   void OnMicrophoneCaptureStateChanged(int original_state, int new_state) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+  void OnDocumentEndReady(const CefString& id, const CefString& parent_id) override;
+#endif
+
  private:
 #if BUILDFLAG(ARKWEB_JSPROXY)
   enum class JsRunTime{Start = 0, End = 1, HEAD_READY};

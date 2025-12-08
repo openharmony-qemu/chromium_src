@@ -529,4 +529,30 @@ void RenderFrameHostImpl::DidAddMessageToConsoleV2(
                     is_off_the_record, updated_source_id);
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+void RenderFrameHostImpl::OnDocumentEndReady() {
+  WebContentsImplExt* web_contents =
+      static_cast<WebContentsImplExt*>(WebContents::FromRenderFrameHost(this));
+
+  auto globalId = GetGlobalId();
+
+  FrameInfos frameInfo;
+  frameInfo.id = std::to_string(globalId.child_id) + "_" + std::to_string(globalId.frame_routing_id);
+  if (content::RenderFrameHostImpl* parent = GetParent()) {
+    auto parentGlobalId = parent->GetGlobalId();
+    frameInfo.parentId = std::to_string(parentGlobalId.child_id) + "_" +
+                         std::to_string(parentGlobalId.frame_routing_id);
+  } else {
+    frameInfo.parentId.clear();
+  }
+
+  LOG(DEBUG) << "RenderFrameHostImpl::OnDocumentEndReady frameInfo id:" << frameInfo.id
+            << " ,parentId:" << frameInfo.parentId;
+
+  if (web_contents) {
+    web_contents->OnDocumentEndReady(frameInfo);
+  }
+}
+#endif
 }  // namespace content

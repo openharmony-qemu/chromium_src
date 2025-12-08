@@ -1022,7 +1022,9 @@ void NWebHandlerDelegate::OnFrameCreated(CefRefPtr<CefBrowser> browser,
   LOG(DEBUG) << "NWebHandlerDelegate::OnFrameCreated childId:" << frameInfo.id
              << ", parentId:" << frameInfo.parentId;
 
-  dispatcher_.OnFrameCreated(frameInfo);
+  if (IsNativeApiEnable()) {
+    dispatcher_.OnFrameCreated(frameInfo);
+  }
 }
 
 void NWebHandlerDelegate::OnFrameDetached(CefRefPtr<CefBrowser> browser,
@@ -1049,7 +1051,9 @@ void NWebHandlerDelegate::OnFrameDetached(CefRefPtr<CefBrowser> browser,
   LOG(DEBUG) << "NWebHandlerDelegate::OnFrameDetached childId:" << frameInfo.id
              << ", parentId:" << frameInfo.parentId;
 
-  dispatcher_.OnFrameDetached(frameInfo);
+  if (IsNativeApiEnable()) {
+    dispatcher_.OnFrameDetached(frameInfo);
+  }
 }
 #endif
 /* CefFrameHandler methods end */
@@ -5595,6 +5599,22 @@ void NWebHandlerDelegate::OnMicrophoneCaptureStateChanged(int original_state, in
   if (nweb_handler_) {
     nweb_handler_->OnMicrophoneCaptureStateChanged(original_state, new_state);
   }
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+void NWebHandlerDelegate::OnDocumentEndReady(const CefString& id, const CefString& parent_id) {
+  FrameInfos frameInfo;
+  frameInfo.id = id;
+  frameInfo.parentId = parent_id;
+
+  LOG(DEBUG) << "NWebHandlerDelegate::OnDocumentEndReady id:" << frameInfo.id
+            << " ,parentId:" << frameInfo.parentId;
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  if (IsNativeApiEnable()) {
+    dispatcher_.OnDocumentEndReady(frameInfo);
+  }
+#endif
 }
 #endif
 }  // namespace OHOS::NWeb

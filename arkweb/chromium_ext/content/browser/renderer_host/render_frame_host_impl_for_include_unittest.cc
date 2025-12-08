@@ -400,4 +400,9 @@ TEST_F(RenderFrameHostImplForIncludeTest, OnPdfLoadEvent_NoDelegate) {
   ASSERT_TRUE(rfh->delegate());
 }
 
+TEST_F(RenderFrameHostImplForIncludeTest, OnDocumentEndReady) {
+  RenderFrameHostImpl* rfh = main_test_rfh();
+  ASSERT_NO_FATAL_FAILURE(rfh->OnDocumentEndReady());
+}
+
 }  // namespace content

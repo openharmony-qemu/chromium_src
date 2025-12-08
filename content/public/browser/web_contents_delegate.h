@@ -59,6 +59,10 @@
 #include "components/dom_distiller/content/common/mojom/distillability_service.mojom.h"
 #endif  // ARKWEB_READER_MODE
 
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+#include "arkweb/ohos_nweb/src/capi/nweb_extension_javascript_item.h"
+#endif
+
 class GURL;
 
 namespace base {

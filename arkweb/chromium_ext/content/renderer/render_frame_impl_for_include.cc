@@ -197,4 +197,12 @@ bool RenderFrameImpl::SetNewsFeedPageFitted() {
 }
 #endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+void RenderFrameImpl::OnDocumentEndReady() {
+  if (GetFrameHost()) {
+    GetFrameHost()->OnDocumentEndReady();
+  }
+}
+#endif
+
 // LCOV_EXCL_STOP

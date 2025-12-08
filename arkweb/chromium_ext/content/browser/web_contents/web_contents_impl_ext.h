@@ -413,6 +413,10 @@ private:
   void OnBrowserBackground() override;
 #endif
 
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+  void OnDocumentEndReady(const FrameInfos& frameInfo) override;
+#endif
+
 private:
 #if BUILDFLAG(ARKWEB_TEST)
   friend class WebContentsImplUtilsTest;

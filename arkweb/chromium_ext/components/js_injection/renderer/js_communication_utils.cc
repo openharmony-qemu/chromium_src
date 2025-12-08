@@ -147,6 +147,8 @@ void JsCommunicationUtils::RunScriptsAtDocumentEnd()
     jsCommunication_->render_frame()->GetWebFrame()->ExecuteScript(
         blink::WebScriptSource(script->script));
   }
+
+  jsCommunication_->render_frame()->OnDocumentEndReady();
 }
 
 void JsCommunicationUtils::AddHeadReadyScript(

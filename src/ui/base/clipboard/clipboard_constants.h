@@ -161,8 +161,7 @@ inline constexpr char kWebClipboardFormatPrefix[] = "web ";
 inline constexpr char16_t kWebClipboardFormatPrefix16[] = u"web ";
 
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
-COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES)
-extern const char kMimeTypeOHOSCustomData[];
+inline constexpr char kMimeTypeOHOSCustomData[] = "ohos/custom-data";
 #endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
 
 }  // namespace ui

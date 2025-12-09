@@ -753,3 +753,19 @@ void AlloyPermissionManager::GetPermissionStatusAsync(
          query_id, permission));
 }
 #endif // #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+
+content::PermissionResult AlloyPermissionManager::GetPermissionResultForCurrentDocument(
+    const blink::mojom::PermissionDescriptorPtr& permission_descriptor,
+    content::RenderFrameHost* render_frame_host,
+    bool should_include_device_status) {
+  // TODO(arkweb): Chromium 141 compatibility - implement proper permission checking
+  // This function needs to be implemented based on ArkWeb's permission system
+  LOG(INFO) << "GetPermissionResultForCurrentDocument called with default implementation";
+
+  // Return default permission result - ASK is safe default that prompts user interaction
+  using PermissionStatus = blink::mojom::PermissionStatus;
+  PermissionStatus status = PermissionStatus::ASK;
+  content::PermissionStatusSource source = content::PermissionStatusSource::UNSPECIFIED;
+
+  return content::PermissionResult(status, source);
+}

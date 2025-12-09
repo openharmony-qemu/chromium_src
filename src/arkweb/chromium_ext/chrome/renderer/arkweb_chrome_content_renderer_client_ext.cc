@@ -508,3 +508,22 @@ void ArkWebChromeContentRendererClientExt::TriggerUserElementHidingInFrame(
 }
 #endif
 */
+
+
+// TODO(arkweb): New implementations for Chromium 141 compatibility
+// These functions are added to resolve vtable linkage errors
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+void ArkWebChromeContentRendererClientExt::TriggerElementHidingInFrame(int routing_id) {
+  // TODO(arkweb): Chromium 141 removed content::RenderFrame::FromRoutingID().
+  // Need to implement alternative approach for frame lookup.
+  LOG(WARNING) << "[AdBlock] TriggerElementHidingInFrame temporarily disabled due to FromRoutingID() removal";
+  return;
+}
+
+void ArkWebChromeContentRendererClientExt::TriggerUserElementHidingInFrame(int routing_id) {
+  // TODO(arkweb): Chromium 141 removed content::RenderFrame::FromRoutingID().
+  // Need to implement alternative approach for frame lookup.
+  LOG(WARNING) << "[AdBlock] TriggerUserElementHidingInFrame temporarily disabled due to FromRoutingID() removal";
+  return;
+}
+#endif  // BUILDFLAG(ARKWEB_ADBLOCK)

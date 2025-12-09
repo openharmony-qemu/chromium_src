@@ -559,6 +559,12 @@ bool ScreenCaptureAdapterImplNullFuzzTest(FuzzedDataProvider* fdp)
     }
     int32_t videoFrameWidth = display->GetWidth();
     int32_t videoFrameHeight = display->GetHeight();
+    if (videoFrameWidth > MIN_SET_WIDTH) {
+        videoFrameWidth = MIN_SET_WIDTH;
+    }
+    if (videoFrameHeight > MIN_SET_HEIGHT) {
+        videoFrameHeight = MIN_SET_HEIGHT;
+    }
     
     //setting the microphone information
     std::shared_ptr<AudioCaptureInfoAdapterMock> micCapInfo =

@@ -311,7 +311,7 @@ void CrashpadDfx::ProcessCrashReport(const std::string process_type,
       });
 }
 
-int32_t CrashpadDfx::GetProcessTypeByPid(pid_t pid) {
+int32_t CrashpadDfx::GetProcessType() {
   const base::CommandLine* command_line =
     base::CommandLine::ForCurrentProcess();
   // Check if command_line is nullptr befor using it

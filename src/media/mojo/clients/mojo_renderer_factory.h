@@ -75,6 +75,20 @@ class MojoRendererFactory final : public RendererFactory {
       VideoRendererSink* video_renderer_sink);
 #endif  // defined (OS_ANDROID)
 
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA)
+  std::unique_ptr<MojoRenderer> CreateMediaPlayerRenderer(
+      const scoped_refptr<base::SequencedTaskRunner>& media_task_runner,
+      VideoRendererSink* video_renderer_sink);
+#endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA)
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  std::unique_ptr<MojoRenderer> CreateCustomMediaPlayerRenderer(
+      mojo::PendingRemote<mojom::CustomMediaPlayerRendererClientExtension>
+          client_extension_remote,
+      const scoped_refptr<base::SequencedTaskRunner>& media_task_runner,
+      VideoRendererSink* video_renderer_sink,
+      int player_id);
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 
  private:
   // InterfaceFactory or InterfaceProvider used to create or connect to remote

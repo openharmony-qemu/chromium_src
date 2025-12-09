@@ -363,6 +363,7 @@ void OhosHttpsUpgradesInterceptor::MaybeCreateLoaderOnHstsQueryCompleted(
     tab_helper->set_is_navigation_upgraded(false);
     tab_helper->set_is_navigation_fallback(true);
     tab_helper->add_failed_upgrade(tab_helper->fallback_url());
+    tab_helper->set_is_ssl_error(false);
 
     // Note: If `fallback_url` is the same as the request URL, this
     // could skip doing an additional redirect, but then the NavigationThrottle
@@ -400,14 +401,6 @@ bool OhosHttpsUpgradesInterceptor::MaybeCreateLoaderForResponse(
 
   // When an upgraded navigation fails, this method creates a loader to trigger
   // the fallback to HTTP.
-  //
-  // Note: MaybeCreateLoaderForResponse() is called for all navigation
-  // responses and failures, but not for things like a NavigationThrottle
-  // cancelling or blocking the navigation.
-  // Only intercept if the navigation failed.
-  if (status.error_code == net::OK) {
-    return false;
-  }
 
   auto* web_contents =
       content::WebContents::FromFrameTreeNodeId(frame_tree_node_id_);
@@ -419,6 +412,16 @@ bool OhosHttpsUpgradesInterceptor::MaybeCreateLoaderForResponse(
 
   auto* tab_helper = HttpsOnlyModeTabHelper::FromWebContents(web_contents);
   if (!tab_helper || !tab_helper->is_navigation_upgraded()) {
+    return false;
+  }
+
+  // Note: MaybeCreateLoaderForResponse() is called for all navigation
+  // responses and failures, but not for things like a NavigationThrottle
+  // cancelling or blocking the navigation.
+  // Only intercept if the navigation failed.
+  if (!tab_helper->is_ssl_error() && status.error_code == net::OK) {
+    LOG(INFO) << "httpsUpgrades: this navigation status_code is OK and has no ssl error, "
+              << "which will not fall back to http";
     return false;
   }
 
@@ -443,11 +446,12 @@ bool OhosHttpsUpgradesInterceptor::MaybeCreateLoaderForResponse(
         tab_helper->fallback_url().host(),
         rfh->GetStoragePartition());
   }
-
+  LOG(INFO) << "httpsUpgrades: the url has been fallback to http, status_code is " << status.error_code
+            << ", and is_ssl_error is " << tab_helper->is_ssl_error();
   tab_helper->set_is_navigation_upgraded(false);
   tab_helper->set_is_navigation_fallback(true);
   tab_helper->add_failed_upgrade(tab_helper->fallback_url());
-
+  tab_helper->set_is_ssl_error(false);
   // `client_` may have been previously bound from handling the initial upgrade
   // in MaybeCreateLoader(), so reset it before re-binding it to handle this
   // response.
@@ -459,7 +463,6 @@ bool OhosHttpsUpgradesInterceptor::MaybeCreateLoaderForResponse(
   net::RedirectInfo redirect_info = SetupRedirect(
       request, tab_helper->fallback_url(), new_response_head.get());
   client_->OnReceiveRedirect(redirect_info, std::move(new_response_head));
-  LOG(INFO) << "httpsUpgrades: the url has been fallback to http";
   return true;
 }
 

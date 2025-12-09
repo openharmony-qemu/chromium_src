@@ -267,9 +267,7 @@ class CONTENT_EXPORT NavigationURLLoaderImpl
       const net::HttpRequestHeaders& modified_cors_exempt_headers) override;
   bool SetNavigationTimeout(base::TimeDelta timeout) override;
   void CancelNavigationTimeout() override;
-#if BUILDFLAG(ARKWEB_USERAGENT)
-  void EnableRedirectAbortCancel() override;
-#endif
+
   // Records UKM for the navigation load.
   void RecordReceivedResponseUkmForOutermostMainFrame();
 

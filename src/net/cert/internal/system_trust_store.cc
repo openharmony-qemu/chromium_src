@@ -374,13 +374,6 @@ void InitializeTrustStoreAndroid() {
       base::BindOnce(&InitializeTrustStoreForCRSOnWorkerThread));
 }
 
-#elif BUILDFLAG(IS_OHOS)
-
-std::unique_ptr<SystemTrustStore> CreateSslSystemTrustStoreChromeRoot(
-    std::unique_ptr<TrustStoreChrome> chrome_root) {
-  return std::make_unique<SystemTrustStoreChrome>(std::move(chrome_root));
-}
-
 #else
 
 void InitializeTrustStoreAndroid() {}

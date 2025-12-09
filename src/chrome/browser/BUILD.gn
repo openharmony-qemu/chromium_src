@@ -7238,6 +7238,10 @@ static_library("browser") {
     ]
   }
 
+  if (is_arkweb) {
+    sources += [ "fullscreen_linux.cc" ]
+  }
+
   if (is_posix) {
     sources += [
       "download/trusted_sources_manager_posix.cc",

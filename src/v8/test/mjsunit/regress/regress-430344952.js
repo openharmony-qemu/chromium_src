@@ -7,4 +7,4 @@ function fun() {
   return z;
 }
 
-assertEqual(3, func());
+assertEquals(3, fun());

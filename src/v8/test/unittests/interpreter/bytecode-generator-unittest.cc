@@ -3319,7 +3319,7 @@ TEST_F(BytecodeGeneratorTest, ElideRedundantHoleChecks) {
 
     // switch
     "switch (a) {\n"
-    "  case x: y; break;\n"
+    "  case x: if (a) break; y; break;\n"
     "  case 42: y; z;\n"
     "  default: y; w;\n"
     "}\n"

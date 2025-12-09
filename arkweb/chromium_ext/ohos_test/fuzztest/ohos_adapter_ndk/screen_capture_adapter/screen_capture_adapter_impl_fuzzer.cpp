@@ -597,8 +597,8 @@ bool ScreenCaptureAdapterImplNullFuzzTest(FuzzedDataProvider* fdp)
     //setting video information
     std::shared_ptr<VideoCaptureInfoAdapterMock> videoCapInfo =
         std::make_shared<VideoCaptureInfoAdapterMock>();
-    videoCapInfo->SetVideoFrameWidth(MIN_SET_WIDTH);
-    videoCapInfo->SetVideoFrameHeight(MIN_SET_HEIGHT);
+    videoCapInfo->SetVideoFrameWidth(videoFrameWidth);
+    videoCapInfo->SetVideoFrameHeight(videoFrameHeight);
     videoCapInfo->SetVideoSourceType(
           OHOS::NWeb::VideoSourceTypeAdapter::VIDEO_SOURCE_SURFACE_RGBA);
 

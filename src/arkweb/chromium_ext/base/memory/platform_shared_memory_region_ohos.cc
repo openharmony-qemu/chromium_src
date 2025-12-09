@@ -161,5 +161,36 @@ PlatformSharedMemoryRegion::PlatformSharedMemoryRegion(
     const UnguessableToken& guid)
     : handle_(std::move(fd)), mode_(mode), size_(size), guid_(guid) {}
 
+// static
+expected<PlatformSharedMemoryRegion, PlatformSharedMemoryRegion::TakeError>
+PlatformSharedMemoryRegion::TakeOrFail(ScopedFD handle,
+                                       Mode mode,
+                                       size_t size,
+                                       const UnguessableToken& guid) {
+  // TODO(arkweb): Chromium 141 compatibility - implement proper TakeOrFail for OHOS
+  // For now, provide basic validation and create region
+  if (!handle.is_valid()) {
+    return {};
+  }
+
+  if (size == 0) {
+    return {};
+  }
+
+  if (size > static_cast<size_t>(std::numeric_limits<int>::max())) {
+    return {};
+  }
+
+  // Check ashmem permissions match expected mode
+  expected<void, TakeError> result =
+      CheckPlatformHandlePermissionsCorrespondToMode(handle.get(), mode, size);
+  if (!result.has_value()) {
+    return unexpected(result.error());
+  }
+
+  // Create and return the shared memory region
+  return PlatformSharedMemoryRegion(std::move(handle), mode, size, guid);
+}
+
 }  // namespace subtle
 }  // namespace base

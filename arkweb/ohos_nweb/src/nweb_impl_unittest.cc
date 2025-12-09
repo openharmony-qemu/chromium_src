@@ -7870,6 +7870,15 @@ TEST_F(NWebImplTest, OnContinue007) {
   EXPECT_NE(nweb_impl_->inputmethod_handler_, nullptr);
 }
 
+TEST_F(NWebImplTest, NotifyPopupWindowDisposition001) {
+  ASSERT_NE(nweb_impl_, nullptr);
+  nweb_impl_->is_pause_ = false;
+  nweb_impl_->NotifyPopupWindowDisposition(CEF_WOD_NEW_WINDOW);
+  EXPECT_FALSE(nweb_impl_->is_pause_);
+  nweb_impl_->NotifyPopupWindowDisposition(CEF_WOD_NEW_BACKGROUND_TAB);
+  EXPECT_TRUE(nweb_impl_->is_pause_);
+}
+
 TEST_F(NWebImplTest, OnBlur003) {
   nweb_impl_->nweb_delegate_ = mock_delegate_;
   nweb_impl_->inputmethod_handler_ = nullptr;

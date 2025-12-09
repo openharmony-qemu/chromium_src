@@ -70,6 +70,7 @@ const std::unordered_map<int, int> kQmEditStateFlagsMap = {
     {QM_EDITFLAG_CAN_COPY, QmEf::QM_EF_CAN_COPY},
     {QM_EDITFLAG_CAN_PASTE, QmEf::QM_EF_CAN_PASTE},
     {QM_EDITFLAG_CAN_SELECT_ALL, QmEf::QM_EF_CAN_SELECT_ALL},
+    {QM_EDITFLAG_CAN_AUTOFILL, QmEf::QM_EF_CAN_AUTOFILL},
 };
 
 const std::unordered_map<int, int> KMenuEventFlagsMap = {

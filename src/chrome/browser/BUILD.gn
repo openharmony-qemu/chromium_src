@@ -7022,10 +7022,6 @@ static_library("browser") {
       "enterprise/signin/oidc_managed_profile_creation_delegate.h",
       "enterprise/signin/oidc_metrics_utils.cc",
       "enterprise/signin/oidc_metrics_utils.h",
-      "enterprise/signin/profile_management_disclaimer_service.cc",
-      "enterprise/signin/profile_management_disclaimer_service.h",
-      "enterprise/signin/profile_management_disclaimer_service_factory.cc",
-      "enterprise/signin/profile_management_disclaimer_service_factory.h",
       "enterprise/signin/profile_token_web_signin_interceptor.cc",
       "enterprise/signin/profile_token_web_signin_interceptor.h",
       "enterprise/signin/profile_token_web_signin_interceptor_factory.cc",
@@ -7094,10 +7090,6 @@ static_library("browser") {
     sources += [
       "first_run/first_run_internal_linux.cc",
       "memory_details_linux.cc",
-      "enterprise/signin/profile_management_disclaimer_service.cc",
-      "enterprise/signin/profile_management_disclaimer_service.h",
-      "enterprise/signin/profile_management_disclaimer_service_factory.cc",
-      "enterprise/signin/profile_management_disclaimer_service_factory.h",
       "enterprise/signals/signals_aggregator_factory.cc",
       "enterprise/signals/signals_aggregator_factory.h",
       "obsolete_system/obsolete_system_stub.cc",
@@ -7628,6 +7620,10 @@ static_library("browser") {
       "signin/process_dice_header_delegate_impl.h",
       "signin/signin_ui_delegate_impl_dice.cc",
       "signin/signin_ui_delegate_impl_dice.h",
+      "enterprise/signin/profile_management_disclaimer_service.cc",
+      "enterprise/signin/profile_management_disclaimer_service.h",
+      "enterprise/signin/profile_management_disclaimer_service_factory.cc",
+      "enterprise/signin/profile_management_disclaimer_service_factory.h",
     ]
     if (is_win) {
       sources += [

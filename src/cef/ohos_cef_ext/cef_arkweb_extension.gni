@@ -96,8 +96,8 @@ libcef_arkweb_sources = [
   #"//cef/ohos_cef_ext/libcef/browser/javascript/oh_gin_javascript_bridge_message_filter.h",
   #"//cef/ohos_cef_ext/libcef/browser/javascript/oh_gin_javascript_bridge_object_deletion_message_filter.cc",
   #"//cef/ohos_cef_ext/libcef/browser/javascript/oh_gin_javascript_bridge_object_deletion_message_filter.h",
-  "//cef/ohos_cef_ext/libcef/browser/javascript/oh_javascript_injector.cc",
-  "//cef/ohos_cef_ext/libcef/browser/javascript/oh_javascript_injector.h",
+  #"//cef/ohos_cef_ext/libcef/browser/javascript/oh_javascript_injector.cc",
+  #"//cef/ohos_cef_ext/libcef/browser/javascript/oh_javascript_injector.h",
   "//cef/ohos_cef_ext/libcef/browser/load_committed_details_impl.cc",
   "//cef/ohos_cef_ext/libcef/browser/load_committed_details_impl.h",
 

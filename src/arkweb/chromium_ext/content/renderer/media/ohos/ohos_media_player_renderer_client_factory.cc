@@ -25,4 +25,31 @@ OHOSMediaPlayerRendererClientFactory::~OHOSMediaPlayerRendererClientFactory() {}
 // Note: GetRequiredMediaResourceType() method removed in Chromium 141
 // MediaResource::Type enumeration no longer exists in the new architecture
 
+
+// TODO(arkweb): Temporary fix to resolve compilation errors.
+std::unique_ptr<media::Renderer>
+OHOSMediaPlayerRendererClientFactory::CreateRenderer(
+    const scoped_refptr<base::SequencedTaskRunner>& media_task_runner,
+    const scoped_refptr<base::TaskRunner>& worker_task_runner,
+    media::AudioRendererSink* audio_renderer_sink,
+    media::VideoRendererSink* video_renderer_sink,
+    media::RequestOverlayInfoCB request_surface_cb,
+    const gfx::ColorSpace& target_color_space) {
+  // TODO: OHOSMediaPlayerRendererClient implementation needs to be restored
+  // For now, fallback to mojo_renderer_factory to maintain functionality
+  if (!mojo_renderer_factory_) {
+    return nullptr;
+  }
+
+  // Create a basic renderer using mojo factory as fallback
+  // This maintains compatibility while OHOS-specific implementation is restored
+  return mojo_renderer_factory_->CreateRenderer(
+      media_task_runner,
+      worker_task_runner,
+      audio_renderer_sink,
+      video_renderer_sink,
+      std::move(request_surface_cb),
+      target_color_space);
+}
+
 }  // namespace content

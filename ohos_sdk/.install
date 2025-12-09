@@ -146,6 +146,12 @@ rust_upgrade() {
 
     fi
 
+    if [ -d "${base_dir}/../third_party/rust-toolchain" ]; then
+
+        rm -rf "${base_dir}/../third_party/rust-toolchain"
+
+    fi
+
     if [ ! -L "${base_dir}/../third_party/rust-toolchain" ]; then
         
         ln -sf "${base_dir}/rust-toolchain" "${base_dir}/../third_party/rust-toolchain"

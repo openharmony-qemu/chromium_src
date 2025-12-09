@@ -29,7 +29,7 @@
 namespace content {
 
 class OHOSMediaPlayerRendererClient
-      public media::MojoRendererWrapper {
+      : public media::MojoRendererWrapper {
  public:
   OHOSMediaPlayerRendererClient(
       scoped_refptr<base::SequencedTaskRunner> media_task_runner,

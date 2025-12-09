@@ -7092,6 +7092,10 @@ static_library("browser") {
       "memory_details_linux.cc",
       "enterprise/signals/signals_aggregator_factory.cc",
       "enterprise/signals/signals_aggregator_factory.h",
+      "enterprise/signals/system_signals_service_host_factory.cc",
+      "enterprise/signals/system_signals_service_host_factory.h",
+      "enterprise/signals/user_permission_service_factory.cc",
+      "enterprise/signals/user_permission_service_factory.h",
       "obsolete_system/obsolete_system_stub.cc",
       "policy/browser_dm_token_storage_linux.cc",
       "policy/browser_dm_token_storage_linux.h",
@@ -7228,6 +7232,10 @@ static_library("browser") {
     deps += [
       "//ohos/adapter:adapter",
     ]
+  }
+
+  if (is_arkweb) {
+    sources += [ "fullscreen_linux.cc" ]
   }
 
   if (is_posix) {

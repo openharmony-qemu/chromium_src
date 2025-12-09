@@ -5981,6 +5981,14 @@ TEST_F(NWebImplTest, GetSelectInfo002) {
   auto result = nweb_impl_->GetSelectInfo();
   EXPECT_EQ(result, select_info);
 }
+
+TEST_F(NWebImplTest, IsClipboardSitePermissionEnabled001) {
+  bool result = nweb_impl_->IsClipboardSitePermissionEnabled();
+  EXPECT_EQ(result, false);
+  nweb_impl_->SetClipboardSitePermissionEnabled(true);
+  result = nweb_impl_->IsClipboardSitePermissionEnabled();
+  EXPECT_EQ(result, true);
+}
 #endif // BUILDFLAG(ARKWEB_CLIPBOARD)
 
 TEST_F(NWebImplTest, OnCreateNativeMediaPlayer001) {

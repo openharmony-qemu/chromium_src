@@ -113,30 +113,7 @@ TEST_F(JsCommunicationHostUtilsTest, AddHeadReadyPendingJavaScript001)
   EXPECT_FALSE(result.error_message->empty());
 }
 
-TEST_F(JsCommunicationHostUtilsTest, AddHeadReadyPendingJavaScript002)
-{
-  JsCommunicationHost* host = nullptr;
-  JsCommunicationHostUtils utils(host);
-  std::u16string script = u"123";
-  std::vector<std::string> rules = {};
-  std::vector<std::pair<std::string, std::string>> script_regex_rules;
-  JsCommunicationHost::AddScriptResult result = utils.AddHeadReadyPendingJavaScript(
-    script, rules, script_regex_rules);
-  EXPECT_TRUE(result.error_message->empty());
-}
-
-TEST_F(JsCommunicationHostUtilsTest, AddHeadReadyPendingJavaScript003) {
-  JsCommunicationHost* host = nullptr;
-  JsCommunicationHostUtils utils(host);
-  std::u16string script = u"123";
-  std::vector<std::string> rules = {""};
-  std::vector<std::pair<std::string, std::string>> script_regex_rules;
-  JsCommunicationHost::AddScriptResult result = utils.AddHeadReadyPendingJavaScript(
-    script, rules, script_regex_rules);
-  EXPECT_TRUE(result.error_message->empty());
-}
-
-TEST_F(JsCommunicationHostUtilsTest, AddHeadReadyPendingJavaScript004) {
+TEST_F(JsCommunicationHostUtilsTest, AddHeadReadyPendingJavaScript002) {
   JsCommunicationHost* host = nullptr;
   JsCommunicationHostUtils utils(host);
   std::u16string script = u"123";
@@ -159,30 +136,7 @@ TEST_F(JsCommunicationHostUtilsTest, AddDocumentEndPendingJavaScript001)
   EXPECT_FALSE(result.error_message->empty());
 }
 
-TEST_F(JsCommunicationHostUtilsTest, AddDocumentEndPendingJavaScript002)
-{
-  JsCommunicationHost* host = nullptr;
-  JsCommunicationHostUtils utils(host);
-  std::u16string script = u"123";
-  std::vector<std::string> rules = {};
-  std::vector<std::pair<std::string, std::string>> script_regex_rules;
-  JsCommunicationHost::AddScriptResult result = utils.AddDocumentEndPendingJavaScript(
-    script, rules, script_regex_rules);
-  EXPECT_TRUE(result.error_message->empty());
-}
-
-TEST_F(JsCommunicationHostUtilsTest, AddDocumentEndPendingJavaScript003) {
-  JsCommunicationHost* host = nullptr;
-  JsCommunicationHostUtils utils(host);
-  std::u16string script = u"123";
-  std::vector<std::string> rules = {""};
-  std::vector<std::pair<std::string, std::string>> script_regex_rules;
-  JsCommunicationHost::AddScriptResult result = utils.AddDocumentEndPendingJavaScript(
-    script, rules, script_regex_rules);
-  EXPECT_TRUE(result.error_message->empty());
-}
-
-TEST_F(JsCommunicationHostUtilsTest, AddDocumentEndPendingJavaScript004) {
+TEST_F(JsCommunicationHostUtilsTest, AddDocumentEndPendingJavaScript002) {
   JsCommunicationHost* host = nullptr;
   JsCommunicationHostUtils utils(host);
   std::u16string script = u"123";
@@ -205,30 +159,7 @@ TEST_F(JsCommunicationHostUtilsTest, AddDocumentStartPendingJavaScript001)
   EXPECT_FALSE(result.error_message->empty());
 }
 
-TEST_F(JsCommunicationHostUtilsTest, AddDocumentStartPendingJavaScript002)
-{
-  JsCommunicationHost* host = nullptr;
-  JsCommunicationHostUtils utils(host);
-  std::u16string script = u"123";
-  std::vector<std::string> rules = {};
-  std::vector<std::pair<std::string, std::string>> script_regex_rules;
-  JsCommunicationHost::AddScriptResult result = utils.AddDocumentStartPendingJavaScript(
-    script, rules, script_regex_rules);
-  EXPECT_TRUE(result.error_message->empty());
-}
-
-TEST_F(JsCommunicationHostUtilsTest, AddDocumentStartPendingJavaScript003) {
-  JsCommunicationHost* host = nullptr;
-  JsCommunicationHostUtils utils(host);
-  std::u16string script = u"123";
-  std::vector<std::string> rules = {""};
-  std::vector<std::pair<std::string, std::string>> script_regex_rules;
-  JsCommunicationHost::AddScriptResult result = utils.AddDocumentStartPendingJavaScript(
-    script, rules, script_regex_rules);
-  EXPECT_TRUE(result.error_message->empty());
-}
-
-TEST_F(JsCommunicationHostUtilsTest, AddDocumentStartPendingJavaScript004) {
+TEST_F(JsCommunicationHostUtilsTest, AddDocumentStartPendingJavaScript002) {
   JsCommunicationHost* host = nullptr;
   JsCommunicationHostUtils utils(host);
   std::u16string script = u"123";

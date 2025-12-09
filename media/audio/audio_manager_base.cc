@@ -43,12 +43,7 @@ const int kStreamCloseDelaySeconds = 5;
 
 // Default maximum number of output streams that can be open simultaneously
 // for all platforms.
-#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
-// We dont limit the max output streams in ohos
-const int kDefaultMaxOutputStreams = 65536;
-#else
 const int kDefaultMaxOutputStreams = 16;
-#endif
 
 // Default maximum number of input streams that can be open simultaneously
 // for all platforms.

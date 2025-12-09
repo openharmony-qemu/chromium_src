@@ -2479,6 +2479,10 @@ component("base") {
     ]
   }
 
+  if (is_arkweb) {
+    sources += [ "profiler/core_unwinders_posix.cc" ]
+  }
+
   if ((is_posix && !is_apple && !is_android && !is_chromeos) || is_fuchsia) {
     sources += [ "power_monitor/power_monitor_device_source_stub.cc" ]
   }

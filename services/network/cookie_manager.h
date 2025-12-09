@@ -99,6 +99,8 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) CookieManager
   void GetAllCookiesSync(GetAllCookiesCallback callback) override;
   void DeleteCookiesSync(mojom::CookieDeletionFilterPtr filter,
                          DeleteCookiesCallback callback) override;
+  void SetAllCookies(const net::CookieList& list,
+                     SetAllCookiesCallback callback) override;
 #endif
   void DeleteCanonicalCookie(const net::CanonicalCookie& cookie,
                              DeleteCanonicalCookieCallback callback) override;

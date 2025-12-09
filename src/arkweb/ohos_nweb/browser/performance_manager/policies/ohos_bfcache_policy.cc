@@ -127,8 +127,8 @@ void OHOSBFCachePolicy::OnMemoryPressure(MemoryPressureLevel new_level) {
 }
 
 OHOSBFCachePolicy::OHOSBFCachePolicy()
-    : memory_pressure_listener_(
-          FROM_HERE,
+    : memory_pressure_listener_(FROM_HERE,
+          base::MemoryPressureListenerTag::kBFCachePolicy,
           base::BindRepeating(&OHOSBFCachePolicy::OnMemoryPressure,
                               base::Unretained(this))) {}
 

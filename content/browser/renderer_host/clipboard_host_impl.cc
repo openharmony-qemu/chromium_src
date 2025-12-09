@@ -57,9 +57,9 @@
 #include "content/public/common/url_constants.h"
 #endif  // BUILDFLAG(IS_CHROMEOS_ASH)
 
-#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
-#include "content/public/browser/web_contents.h"
-#endif
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/content/browser/renderer_host/clipboard_host_impl_for_include.cc"
+#endif  // BUILDFLAG(IS_ARKWEB)
 
 namespace content {
 
@@ -845,36 +845,4 @@ ClipboardEndpoint ClipboardHostImpl::CreateClipboardEndpoint() {
           render_frame_host().GetGlobalId()),
       render_frame_host());
 }
-
-#if BUILDFLAG(ARKWEB_CLIPBOARD)
-void ClipboardHostImpl::OnClipboardDataGuard(
-    bool status,
-    OnClipboardDataGuardCallback callback) {
-  ui::Clipboard* clipboard = ui::Clipboard::GetForCurrentThread();
-  if (clipboard) {
-    clipboard->OnClipboardDataGuard(status);
-  }
-  std::move(callback).Run();
-}
-
-void ClipboardHostImpl::UpdateClipboardData(
-    UpdateClipboardDataCallback callback) {
-  ui::Clipboard::GetForCurrentThread()->UpdateClipboardData(
-      std::move(callback));
-}
-#endif
-
-#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
-void ClipboardHostImpl::HandlePasswordVault(HandlePasswordVaultCallback callback) {
-  auto* contents = WebContents::FromRenderFrameHost(&render_frame_host());
-  if (!contents) {
-    std::move(callback).Run(false);
-    return;
-  }
-
-  bool result = ui::Clipboard::GetForCurrentThread()->HandlePasswordVault(
-      contents->GetVaultPlainTextCallback());
-  std::move(callback).Run(result);
-}
-#endif
 }  // namespace content

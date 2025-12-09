@@ -21,7 +21,7 @@ source_set("profiles") {
     ]
   }
 
-  if (is_win || is_mac || is_linux) {
+  if (is_win || is_mac || is_linux || is_ohos) {
     sources += [
       "profile_customization_bubble_sync_controller.h",
       "profile_customization_synced_theme_waiter.h",
@@ -89,7 +89,7 @@ source_set("impl") {
     ]
   }
 
-  if (is_win || is_mac || is_linux) {
+  if (is_win || is_mac || is_linux || is_ohos) {
     sources += [
       "profile_customization_synced_theme_waiter.cc",
       "profile_customization_util.cc",

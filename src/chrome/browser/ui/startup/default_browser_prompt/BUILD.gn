@@ -28,7 +28,7 @@ source_set("default_browser_prompt") {
       "//content/public/browser",
     ]
   }
-  if (is_win || is_mac || is_linux) {
+  if (is_win || is_mac || is_linux || is_ohos) {
     sources += [ "default_browser_prompt.h" ]
   }
 }
@@ -65,7 +65,7 @@ source_set("impl") {
       deps += [ "//chrome/installer/util:with_no_strings" ]
     }
   }
-  if (is_win || is_mac || is_linux) {
+  if (is_win || is_mac || is_linux || is_ohos) {
     sources += [ "default_browser_prompt.cc" ]
 
     deps += [

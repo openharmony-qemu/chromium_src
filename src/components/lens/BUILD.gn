@@ -79,7 +79,7 @@ static_library("lens") {
     deps += [ "//skia" ]
   }
 
-  if (is_win || is_mac || is_linux || is_chromeos || is_android) {
+  if (is_win || is_mac || is_linux || is_chromeos || is_android || is_ohos) {
     sources += [
       "tab_contextualization_controller.cc",
       "tab_contextualization_controller.h",

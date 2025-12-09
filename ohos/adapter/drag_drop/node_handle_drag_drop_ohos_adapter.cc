@@ -1005,6 +1005,8 @@ bool NodeHandleDragDropOhosAdapter::ExecuteDrag(
           "%{public}s %{public}s, start drag fail, code:%{public}d, "
           "window_id:%{public}s",
           kNodeHandleDragTag, __FUNCTION__, err_code, window_id_.c_str());
+    } else {
+      SetDraggingStarted(true);
     }
   }
   ClearDragActionResource();
@@ -1113,9 +1115,10 @@ void NodeHandleDragDropOhosAdapter::OnDropCB(const std::string xcomponent_id,
 
 void NodeHandleDragDropOhosAdapter::OnDragEndCB(
     const std::string xcomponent_id) {
-  ClearDragRecords();
   LOGI("%{public}s %{public}s, xcomponent_id:%{public}s",
        kNodeHandleDragTag, __FUNCTION__, xcomponent_id.c_str());
+  ClearDragRecords();
+  SetDraggingStarted(false);
   auto render =
       XComponentManager::GetInstance()->GetNodeHandleXComponent(xcomponent_id);
   if (render == nullptr) {

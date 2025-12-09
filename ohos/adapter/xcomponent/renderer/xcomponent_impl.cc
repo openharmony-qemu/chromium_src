@@ -8,6 +8,7 @@
 #include "ohos/adapter/common/trace.h"
 #include "ohos/adapter/xcomponent/adapter/window_adapter.h"
 #include "ohos/adapter/xcomponent/xcomponent_manager.h"
+#include "ohos/adapter/drag_drop/drag_drop_ohos_adapter.h"
 
 namespace ohos::adapter::xcomponent {
 
@@ -210,6 +211,27 @@ void OnMouseEventCB(OH_NativeXComponent* component, void* window) {
   if (ret != OH_NATIVEXCOMPONENT_RESULT_SUCCESS) {
     LOGE("Get xcomponent mouse event fail. render_id:%{public}s", render_id.c_str());
     return;
+  }
+
+  if (DragDropOhosAdapter::GetInstance().IsDraggingStarted()) {
+    // When Chromium is dragging, intercept the mouse release event send to Chromium.
+    if (mouse_event.action == OH_NATIVEXCOMPONENT_MOUSE_RELEASE) {
+      LOGW(
+          "[OhosDrag]receive mouse release event, drag is ended, "
+          "SetDraggingStarted false, "
+          "render_id:%{public}s",
+          render_id.c_str());
+      DragDropOhosAdapter::GetInstance().SetDraggingStarted(false);
+      return;
+    }
+    if (mouse_event.action == OH_NATIVEXCOMPONENT_MOUSE_PRESS) {
+      LOGW(
+          "[OhosDrag]Receive mouse press event, "
+          "IsDraggingStarted value is invalid, SetDraggingStarted false, "
+          "render_id:%{public}s",
+          render_id.c_str());
+      DragDropOhosAdapter::GetInstance().SetDraggingStarted(false);
+    }
   }
 
   if (mouse_event.action != OH_NATIVEXCOMPONENT_MOUSE_MOVE) {

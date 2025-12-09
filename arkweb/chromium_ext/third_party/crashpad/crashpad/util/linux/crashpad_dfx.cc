@@ -314,7 +314,7 @@ void CrashpadDfx::ProcessCrashReport(const std::string process_type,
 int32_t CrashpadDfx::GetProcessType() {
   const base::CommandLine* command_line =
     base::CommandLine::ForCurrentProcess();
-  // Check if command_line is nullptr befor using it
+  // Check if command_line is nullptr before using it
   if (!command_line) {
     LOG(ERROR) << "CommandLine object is null. Cannot retrieve bundle name.";
     return static_cast<int32_t>(ProcessType::kUnknown);

@@ -12,3 +12,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
 */
+
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA)
+std::unique_ptr<MojoRenderer> MojoRendererFactory::CreateMediaPlayerRenderer(
+    const scoped_refptr<base::SequencedTaskRunner>& media_task_runner,
+    VideoRendererSink* video_renderer_sink) {
+  DCHECK(interface_factory_);
+  mojo::PendingRemote<mojom::Renderer> renderer_remote;
+
+  return std::make_unique<MojoRenderer>(media_task_runner, nullptr,
+                                        video_renderer_sink,
+                                        std::move(renderer_remote));
+}
+#endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA)
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+std::unique_ptr<MojoRenderer> MojoRendererFactory::CreateCustomMediaPlayerRenderer(
+    mojo::PendingRemote<mojom::CustomMediaPlayerRendererClientExtension>
+        client_extension_remote,
+    const scoped_refptr<base::SequencedTaskRunner>& media_task_runner,
+    VideoRendererSink* video_renderer_sink,
+    int player_id) {
+  DCHECK(interface_factory_);
+  mojo::PendingRemote<mojom::Renderer> renderer_remote;
+
+  return std::make_unique<MojoRenderer>(media_task_runner, nullptr,
+                                        video_renderer_sink,
+                                        std::move(renderer_remote));
+}
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER

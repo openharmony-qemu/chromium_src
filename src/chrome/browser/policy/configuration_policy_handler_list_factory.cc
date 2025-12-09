@@ -2775,13 +2775,13 @@ std::unique_ptr<ConfigurationPolicyHandlerList> BuildHandlerList(
       SimpleSchemaValidatingPolicyHandler::MANDATORY_ALLOWED));
 #endif  // !BUILDFLAG(IS_ANDROID)
 
-#if !BUILDFLAG(IS_CHROMEOS)
+#if !BUILDFLAG(IS_CHROMEOS) && !BUILDFLAG(IS_ARKWEB)
   handlers->AddHandler(
       std::make_unique<enterprise_idle::IdleTimeoutPolicyHandler>());
   handlers->AddHandler(
       std::make_unique<enterprise_idle::IdleTimeoutActionsPolicyHandler>(
           chrome_schema));
-#endif  // !BUILDFLAG(IS_CHROMEOS)
+#endif  // !BUILDFLAG(IS_CHROMEOS) && !BUILDFLAG(IS_ARKWEB)
 
   handlers->AddHandler(
       std::make_unique<content_settings::CookieSettingsPolicyHandler>());
@@ -3350,9 +3350,9 @@ std::unique_ptr<ConfigurationPolicyHandlerList> BuildHandlerList(
           prefs::kPrivacySandboxRelatedWebsiteSetsEnabled,
           base::Value::Type::BOOLEAN)));
 
-#if !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_ARKWEB)
   handlers->AddHandler(std::make_unique<BatterySaverPolicyHandler>());
-#endif  // !BUILDFLAG(IS_ANDROID)
+#endif  // !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_ARKWEB)
 
 #if BUILDFLAG(IS_CHROMEOS)
   handlers->AddHandler(

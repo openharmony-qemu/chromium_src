@@ -28,6 +28,82 @@
 
 namespace content {
 
+class OHOSMediaPlayerRendererClient
+      public media::MojoRendererWrapper {
+ public:
+  OHOSMediaPlayerRendererClient(
+      scoped_refptr<base::SequencedTaskRunner> media_task_runner,
+      scoped_refptr<base::SingleThreadTaskRunner> compositor_task_runner,
+      std::unique_ptr<media::MojoRenderer> mojo_renderer,
+      media::ScopedNativeTextureWrapper native_texture_wrapper,
+      media::VideoRendererSink* sink);
+  ~OHOSMediaPlayerRendererClient() override;
+
+  OHOSMediaPlayerRendererClient(const OHOSMediaPlayerRendererClient&) = delete;
+  OHOSMediaPlayerRendererClient& operator=(
+      const OHOSMediaPlayerRendererClient&) = delete;
+
+  // Renderer implementation.
+  void Initialize(media::MediaResource* media_resource,
+                  media::RendererClient* client,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                  media::RequestSurfaceCB request_surface_cb,
+                  media::VideoDecoderChangedCB decoder_changed_cb,
+#endif // ARKWEB_VIDEO_ASSISTANT
+                  media::PipelineStatusCallback init_cb) override;
+  media::RendererType GetRendererType() override;
+
+  // media::mojom::MediaPlayerRendererClientExtension implementation
+//   void OnDurationChange(base::TimeDelta duration) override;
+//   void OnVideoSizeChange(const gfx::Size& size) override;
+//   void OnFrameUpdate(media::mojom::OhosSurfaceBufferHandlePtr
+//                          ohos_surface_buffer_handle) override;
+  void OnFrameAvailable();
+
+ private:
+  void OnStreamTextureWrapperInitialized(media::MediaResource* media_resource,
+                                         bool success);
+  void OnSurfaceCreated(int native_window_id);
+  void OnSurfaceDestroyed();
+
+  void OnRemoteRendererInitialized(media::PipelineStatus status);
+  void OnFinishPaintCallback();
+
+  void PaintNV12VideoFrame(const gfx::Size& coded_size,
+                           const gfx::Rect& visible_rect,
+                           const gfx::Size& natural_size,
+                           uint8_t* mapped,
+                           const uint32_t& buffer_size,
+                           const int& fd,
+                           const int& fd_browser);
+
+  raw_ptr<media::MediaResource> media_resource_ = nullptr;
+
+  // Add native texture impl
+  media::ScopedNativeTextureWrapper native_texture_wrapper_;
+
+  raw_ptr<media::RendererClient> client_ = nullptr;
+
+  raw_ptr<media::VideoRendererSink> sink_ = nullptr;
+
+  scoped_refptr<base::SequencedTaskRunner> media_task_runner_;
+
+  scoped_refptr<base::SingleThreadTaskRunner> compositor_task_runner_;
+
+  media::PipelineStatusCallback init_cb_;
+
+  std::vector<uint8_t> resize_buf_;
+
+  int native_window_id_ = -1;
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  media::RequestSurfaceCB request_surface_cb_;
+  media::VideoDecoderChangedCB decoder_changed_cb_;
+#endif // ARKWEB_VIDEO_ASSISTANT
+
+  // NOTE: Weak pointers must be invalidated before all other member variables.
+  base::WeakPtrFactory<OHOSMediaPlayerRendererClient> weak_factory_{this};
+};
 
 }  // namespace content
 

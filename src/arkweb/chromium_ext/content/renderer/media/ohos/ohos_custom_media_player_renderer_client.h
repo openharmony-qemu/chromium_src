@@ -37,6 +37,101 @@
 
 namespace content {
 
+class CONTENT_EXPORT OHOSCustomMediaPlayerRendererClient
+    : public media::mojom::CustomMediaPlayerRendererClientExtension,
+      public media::MojoRendererWrapper {
+ public:
+  using ClientExtension =
+      media::mojom::CustomMediaPlayerRendererClientExtension;
+
+  OHOSCustomMediaPlayerRendererClient(
+      mojo::PendingReceiver<ClientExtension> client_extension_receiver,
+      scoped_refptr<base::SequencedTaskRunner> media_taks_runner,
+      scoped_refptr<base::SingleThreadTaskRunner> compositor_task_runner,
+      std::unique_ptr<media::MojoRenderer> mojo_renderer,
+      media::ScopedNativeTextureWrapper native_texture_wrapper,
+      media::VideoRendererSink* sink);
+
+  OHOSCustomMediaPlayerRendererClient(
+      const OHOSCustomMediaPlayerRendererClient&) = delete;
+  OHOSCustomMediaPlayerRendererClient& operator=(
+      const OHOSCustomMediaPlayerRendererClient&) = delete;
+
+  ~OHOSCustomMediaPlayerRendererClient() override;
+
+  // media::Renderer implementation
+  void Initialize(media::MediaResource* media_resource,
+                  media::RendererClient* client,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                  media::RequestSurfaceCB request_surface_cb,
+                  media::VideoDecoderChangedCB decoder_changed_cb,
+#endif // ARKWEB_VIDEO_ASSISTANT
+                  media::PipelineStatusCallback init_cb) override;
+
+  media::RendererType GetRendererType() override;
+
+  void SetSurfaceCreatedCallback(
+      media::Renderer::SurfaceCreatedCallback cb) override;
+  void SetUpdatePlaybackStatusCallback(
+      media::Renderer::UpdatePlaybackStatusCallback cb) override;
+  void SetUpdateVolumeCallback(
+      media::Renderer::UpdateVolumeCallback cb) override;
+  void SetUpdateMutedCallback(media::Renderer::UpdateMutedCallback cb) override;
+  void SetUpdatePlaybackRateCallback(
+      media::Renderer::UpdatePlaybackRateCallback cb) override;
+
+  // media::mojom::CustomMediaPlayerRendererClientExtension implementation
+  void OnVideoSizeChange(const gfx::Size& size) override;
+  void OnDurationChange(base::TimeDelta duration) override;
+  void UpdatePlaybackStatus(uint32_t status) override;
+  void UpdateVolume(double volume) override;
+  void UpdateMuted(bool muted) override;
+  void UpdatePlaybackRate(double playback_rate) override;
+  void UpdateBufferedEndTime(double buffered_time) override;
+
+  void OnFrameAvailable();
+
+ private:
+  void OnStreamTextureWrapperInitialized(media::MediaResource* media_resource,
+                                         bool success);
+  void OnRemoteRendererInitialized(media::PipelineStatus status);
+  void OnGetVideoRect(const gfx::Rect& rect);
+  void OnSurfaceCreated(int surface_id);
+  void OnSurfaceDestroyed();
+
+  raw_ptr<media::MediaResource> media_resource_ = nullptr;
+
+  media::ScopedNativeTextureWrapper native_texture_wrapper_;
+
+  raw_ptr<media::RendererClient> client_ = nullptr;
+
+  raw_ptr<media::VideoRendererSink> sink_ = nullptr;
+
+  scoped_refptr<base::SequencedTaskRunner> media_task_runner_;
+
+  scoped_refptr<base::SingleThreadTaskRunner> compositor_task_runner_;
+
+  media::PipelineStatusCallback init_cb_;
+
+  mojo::PendingReceiver<ClientExtension>
+      delayed_bind_client_extension_receiver_;
+
+  // Used to receive events from MediaPlayerRenderer in the browser process.
+  mojo::Receiver<CustomMediaPlayerRendererClientExtension>
+      client_extension_receiver_{this};
+
+  int surface_id_ = -1;
+  bool has_sent_surface_id_to_remote_ = false;
+  media::Renderer::SurfaceCreatedCallback surface_created_cb_;
+
+  media::Renderer::UpdatePlaybackStatusCallback update_playback_status_cb_;
+  media::Renderer::UpdateVolumeCallback update_volume_cb_;
+  media::Renderer::UpdateMutedCallback update_muted_cb_;
+  media::Renderer::UpdatePlaybackRateCallback update_playback_rate_cb_;
+
+  // NOTE: Weak pointers must be invalidated before all other member variables.
+  base::WeakPtrFactory<OHOSCustomMediaPlayerRendererClient> weak_factory_{this};
+};
 
 }  // namespace content
 

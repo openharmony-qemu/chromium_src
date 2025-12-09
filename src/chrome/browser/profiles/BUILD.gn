@@ -349,6 +349,7 @@ source_set("profiles_extra_parts_impl") {
       "//chrome/browser/ui/webui/signin",
       "//chrome/browser/ui/webui/signin:login",
       "//chrome/browser/user_education",
+      "//chrome/browser/enterprise/signin",
     ]
   }
 

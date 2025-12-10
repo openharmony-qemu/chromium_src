@@ -42,6 +42,7 @@
 #include "crashpad_dfx_elf_define.h"
 #include "third_party/bounds_checking_function/include/securec.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#include "content/public/common/content_switches.h"
 
 // For process crash constants
 constexpr char BUNDLE_NAME[] = "BUNDLE_NAME";
@@ -310,29 +311,17 @@ void CrashpadDfx::ProcessCrashReport(const std::string process_type,
       });
 }
 
-int32_t CrashpadDfx::GetProcessTypeByPid(pid_t pid) {
-  std::string path("/proc/");
-  path.append(std::to_string(pid));
-  DIR* dir = opendir(path.c_str());
-  if (!dir) {
-    LOG(ERROR) << "opendir: " << path << " failed, errno: " << errno;
+int32_t CrashpadDfx::GetProcessType() {
+  const base::CommandLine* command_line =
+    base::CommandLine::ForCurrentProcess();
+  // Check if command_line is nullptr before using it
+  if (!command_line) {
     return static_cast<int32_t>(ProcessType::kUnknown);
   }
-  std::string file_name = path.append("/stat");
-  std::ifstream file(file_name.c_str());
-  if (!file.is_open()) {
-    LOG(ERROR) << "open file failed, file path: " << file_name;
-    closedir(dir);
-    return static_cast<int32_t>(ProcessType::kUnknown);
-  }
-  file.seekg(0, std::ios::beg);
-  std::string content;
-  std::copy(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>(), std::back_inserter(content));
-  file.close();
-  closedir(dir);
-  if (content.find(":gpu") != std::string::npos) {
+  auto type = command_line->GetSwitchValueASCII(switches::kProcessType);
+  if (type == switches::kGpuProcess) {
     return static_cast<int32_t>(ProcessType::kGpu);
-  } else if (content.find(":render") != std::string::npos) {
+  } else if (type == switches::kRendererProcess) {
     return static_cast<int32_t>(ProcessType::kRender);
   }
   return static_cast<int32_t>(ProcessType::kUnknown);

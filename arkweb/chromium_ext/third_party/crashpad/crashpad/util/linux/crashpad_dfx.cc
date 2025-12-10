@@ -316,7 +316,6 @@ int32_t CrashpadDfx::GetProcessType() {
     base::CommandLine::ForCurrentProcess();
   // Check if command_line is nullptr before using it
   if (!command_line) {
-    LOG(ERROR) << "CommandLine object is null. Cannot retrieve bundle name.";
     return static_cast<int32_t>(ProcessType::kUnknown);
   }
   auto type = command_line->GetSwitchValueASCII(switches::kProcessType);

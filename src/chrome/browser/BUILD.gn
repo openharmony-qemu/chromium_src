@@ -7096,6 +7096,8 @@ static_library("browser") {
       "enterprise/signals/system_signals_service_host_factory.h",
       "enterprise/signals/user_permission_service_factory.cc",
       "enterprise/signals/user_permission_service_factory.h",
+      "enterprise/signals/user_delegate_impl.cc",
+      "enterprise/signals/user_delegate_impl.h",
       "enterprise/signin/managed_profile_creation_controller.cc",
       "enterprise/signin/managed_profile_creation_controller.h",
       "obsolete_system/obsolete_system_stub.cc",

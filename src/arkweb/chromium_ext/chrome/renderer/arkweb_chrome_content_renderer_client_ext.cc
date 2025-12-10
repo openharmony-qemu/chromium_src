@@ -513,6 +513,22 @@ void ArkWebChromeContentRendererClientExt::TriggerUserElementHidingInFrame(
 // TODO(arkweb): New implementations for Chromium 141 compatibility
 // These functions are added to resolve vtable linkage errors
 #if BUILDFLAG(ARKWEB_ADBLOCK)
+void ArkWebChromeContentRendererClientExt::RenderFrameCreateSubresourceFilterAgent(
+    content::RenderFrame* render_frame,
+    raw_ptr<ChromeContentRendererClient> obj) {
+  // TODO(arkweb): Chromium 141 removed subresource_filter_user_ruleset_dealer_
+  // and related APIs. Need to implement new approach for ad blocking.
+  // This is a temporary implementation to resolve linkage errors.
+  LOG(WARNING) << "[AdBlock] RenderFrameCreateSubresourceFilterAgent temporarily disabled due to API changes in Chromium 141";
+}
+
+void ArkWebChromeContentRendererClientExt::RenderFrameCreateSubresourceFilterAgentTriggerHide(
+    content::RenderFrame* render_frame) {
+  // TODO(arkweb): Chromium 141 removed content::RenderFrame::FromRoutingID().
+  // Need to implement alternative approach for frame lookup and element hiding.
+  LOG(WARNING) << "[AdBlock] RenderFrameCreateSubresourceFilterAgentTriggerHide temporarily disabled due to API changes in Chromium 141";
+}
+
 void ArkWebChromeContentRendererClientExt::TriggerElementHidingInFrame(int routing_id) {
   // TODO(arkweb): Chromium 141 removed content::RenderFrame::FromRoutingID().
   // Need to implement alternative approach for frame lookup.
@@ -525,5 +541,14 @@ void ArkWebChromeContentRendererClientExt::TriggerUserElementHidingInFrame(int r
   // Need to implement alternative approach for frame lookup.
   LOG(WARNING) << "[AdBlock] TriggerUserElementHidingInFrame temporarily disabled due to FromRoutingID() removal";
   return;
+}
+
+bool ArkWebChromeContentRendererClientExt::GetAdBlockEnabledByFrame(
+    content::RenderFrame* render_frame) {
+  // TODO(arkweb): Chromium 141 removed GetGlobalAdblockEnabled(), GetAdBlockEnabled()
+  // and related APIs. Need to implement new approach for ad block status checking.
+  // This is a temporary implementation to resolve linkage errors.
+  LOG(WARNING) << "[AdBlock] GetAdBlockEnabledByFrame temporarily disabled due to API changes in Chromium 141";
+  return false;
 }
 #endif  // BUILDFLAG(ARKWEB_ADBLOCK)

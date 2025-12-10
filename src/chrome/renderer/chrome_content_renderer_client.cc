@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "arkweb/build/features/features.h"
+#include "arkweb/chromium_ext/chrome/renderer/arkweb_chrome_content_renderer_client_ext.h"
 #include "base/check_op.h"
 #include "base/command_line.h"
 #include "base/debug/crash_logging.h"
@@ -645,11 +646,10 @@ void ChromeContentRendererClient::RenderFrameCreated(
     }
   }
 
-// ArkWeb extension functions temporarily disabled due to compilation issues
-// #if BUILDFLAG(ARKWEB_NETWORK_BASE) && BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
-//   AsArkWebChromeContentRendererClientExt()->RenderFrameCreatedContentSettings(
-//       content_settings, this);
-// #endif
+#if BUILDFLAG(ARKWEB_NETWORK_BASE) && BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
+  AsArkWebChromeContentRendererClientExt()->RenderFrameCreatedContentSettings(
+      content_settings, this);
+#endif
 
 #if BUILDFLAG(ENABLE_EXTENSIONS_CORE)
   extensions::ExtensionsRendererClient::Get()->RenderFrameCreated(render_frame,
@@ -794,11 +794,10 @@ void ChromeContentRendererClient::RenderFrameCreated(
     fingerprinting_protection_renderer_agent->Initialize();
   }
 
-// ArkWeb extension functions temporarily disabled due to compilation issues
-// #if BUILDFLAG(ARKWEB_ADBLOCK)
-//   AsArkWebChromeContentRendererClientExt()
-//       ->RenderFrameCreateSubresourceFilterAgent(render_frame, this);
-// #endif
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  AsArkWebChromeContentRendererClientExt()
+      ->RenderFrameCreateSubresourceFilterAgent(render_frame, this);
+#endif
 
 #if !BUILDFLAG(IS_ANDROID)
   if (process_state::IsInstantProcess() && render_frame->IsMainFrame()) {
@@ -1502,11 +1501,10 @@ ChromeContentRendererClient::CreateSpeechRecognitionClient(
 
 void ChromeContentRendererClient::RunScriptsAtDocumentStart(
     content::RenderFrame* render_frame) {
-// ArkWeb extension functions temporarily disabled due to compilation issues
-// #if BUILDFLAG(ARKWEB_ADBLOCK)
-//   AsArkWebChromeContentRendererClientExt()
-//       ->RenderFrameCreateSubresourceFilterAgentTriggerHide(render_frame);
-// #endif
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  AsArkWebChromeContentRendererClientExt()
+      ->RenderFrameCreateSubresourceFilterAgentTriggerHide(render_frame);
+#endif
 #if BUILDFLAG(ENABLE_EXTENSIONS_CORE)
   extensions::ExtensionsRendererClient::Get()->RunScriptsAtDocumentStart(
       render_frame);

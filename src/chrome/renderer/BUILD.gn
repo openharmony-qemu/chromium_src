@@ -127,9 +127,8 @@ static_library("renderer") {
     "worker_content_settings_client.cc",
     "worker_content_settings_client.h",
   ]
-  if (is_arkweb) {
-    sources += arkweb_chrome_renderer_sources
-  }
+  # Force include ArkWeb chrome renderer sources to avoid linking errors
+  sources += arkweb_chrome_renderer_sources
 
   defines = []
 
@@ -137,6 +136,7 @@ static_library("renderer") {
     "//components/contextual_search:buildflags",
     "//components/fingerprinting_protection_filter/renderer",
     "//components/signin/public/base:signin_buildflags",
+    "//arkweb/build/features:features",
   ]
 
   deps = [

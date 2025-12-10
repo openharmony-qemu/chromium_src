@@ -994,10 +994,12 @@ ExtensionFunction::ResponseAction TabsDuplicateFunction::Run() {
           new_contents, scrub_tab_behavior, extension(), new_tab_list,
           new_tab_index))));
 }
+#endif // !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 
 TabsRemoveFunction::TabsRemoveFunction() = default;
 TabsRemoveFunction::~TabsRemoveFunction() = default;
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 ExtensionFunction::ResponseAction TabsRemoveFunction::Run() {
   std::optional<tabs::Remove::Params> params =
       tabs::Remove::Params::Create(args());

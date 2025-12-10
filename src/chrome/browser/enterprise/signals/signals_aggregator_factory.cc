@@ -144,15 +144,16 @@ SignalsAggregatorFactory::BuildServiceInstanceForBrowserContext(
     }
   }
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_ANDROID)
   collectors.push_back(
       std::make_unique<device_signals::AndroidOsSignalsCollector>(
           browser_policy_manager));
+#elif BUILDFLAG(IS_ARKWEB)
 #else
   collectors.push_back(
       std::make_unique<device_signals::DesktopOsSignalsCollector>(
           browser_policy_manager));
-#endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+#endif  // BUILDFLAG(IS_ANDROID)
   collectors.push_back(
       std::make_unique<device_signals::ProfileSignalsCollector>(profile));
 

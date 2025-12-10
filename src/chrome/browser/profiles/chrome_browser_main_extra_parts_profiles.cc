@@ -947,7 +947,7 @@ void ChromeBrowserMainExtraPartsProfiles::
   FileSystemAccessPermissionContextFactory::GetInstance();
   FindBarStateFactory::GetInstance();
   first_party_sets::FirstPartySetsPolicyServiceFactory::GetInstance();
-#if !BUILDFLAG(IS_CHROMEOS) && !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_CHROMEOS) && !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
   FirstRunServiceFactory::GetInstance();
 #endif
 #if BUILDFLAG(IS_CHROMEOS)

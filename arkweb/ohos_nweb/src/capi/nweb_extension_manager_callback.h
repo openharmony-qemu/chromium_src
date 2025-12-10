@@ -152,6 +152,13 @@ struct WebExtensionForbidDisplayParams {
   std::set<std::string> extension_ids;
 };
 
+struct NWebExtensionLoadError {
+  static constexpr int NUM_PROPERTIES = 3;
+  std::optional<std::string> contextType;
+  std::string errorMsg;
+  bool beNoisy;
+};
+
 typedef void (*OnWebExtensionLoadedFun)(const WebExtensionInfo& load_info);
 typedef void (*OnWebExtensionUnLoadedFun)(std::string extension_id);
 typedef void (*OnWebExtensionOpenUrlFun)(std::string url);

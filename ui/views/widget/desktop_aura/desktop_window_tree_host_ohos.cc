@@ -115,6 +115,15 @@ void DesktopWindowTreeHostOhos::AddAdditionalInitProperties(
   }
 }
 
+void DesktopWindowTreeHostOhos::OnCloseRequest() {
+  auto widget = GetWidget();
+  if (!widget) {
+    LOG(ERROR) << "DesktopWindowTreeHostOhos::OnCloseRequest, widget is already closed";
+    return;
+  }
+  widget->Close();
+}
+
 void DesktopWindowTreeHostOhos::DispatchEvent(ui::Event* event) {
   if (!event) {
     LOG(ERROR) << "DispatchEvent called with null event";

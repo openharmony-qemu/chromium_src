@@ -66,6 +66,7 @@ class VIEWS_EXPORT DesktopWindowTreeHostOhos
   // PlatformWindowDelegate:
   void DispatchEvent(ui::Event* event) override;
   void OnClosed() override;
+  void OnCloseRequest() override;
 
   // DesktopWindowTreeHostPlatform:
   void AddAdditionalInitProperties(

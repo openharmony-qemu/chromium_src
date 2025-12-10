@@ -645,12 +645,11 @@ void ChromeContentRendererClient::RenderFrameCreated(
     }
   }
 
-#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_NETWORK_BASE) && BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
-  auto* arkweb_client_ext = AsArkWebChromeContentRendererClientExt();
-  if (arkweb_client_ext) {
-    arkweb_client_ext->RenderFrameCreatedContentSettings(content_settings, this);
-  }
-#endif
+// ArkWeb extension functions temporarily disabled due to compilation issues
+// #if BUILDFLAG(ARKWEB_NETWORK_BASE) && BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
+//   AsArkWebChromeContentRendererClientExt()->RenderFrameCreatedContentSettings(
+//       content_settings, this);
+// #endif
 
 #if BUILDFLAG(ENABLE_EXTENSIONS_CORE)
   extensions::ExtensionsRendererClient::Get()->RenderFrameCreated(render_frame,
@@ -795,12 +794,11 @@ void ChromeContentRendererClient::RenderFrameCreated(
     fingerprinting_protection_renderer_agent->Initialize();
   }
 
-#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ADBLOCK)
-  auto* arkweb_client_ext = AsArkWebChromeContentRendererClientExt();
-  if (arkweb_client_ext) {
-    arkweb_client_ext->RenderFrameCreateSubresourceFilterAgent(render_frame, this);
-  }
-#endif
+// ArkWeb extension functions temporarily disabled due to compilation issues
+// #if BUILDFLAG(ARKWEB_ADBLOCK)
+//   AsArkWebChromeContentRendererClientExt()
+//       ->RenderFrameCreateSubresourceFilterAgent(render_frame, this);
+// #endif
 
 #if !BUILDFLAG(IS_ANDROID)
   if (process_state::IsInstantProcess() && render_frame->IsMainFrame()) {
@@ -1504,12 +1502,11 @@ ChromeContentRendererClient::CreateSpeechRecognitionClient(
 
 void ChromeContentRendererClient::RunScriptsAtDocumentStart(
     content::RenderFrame* render_frame) {
-#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ADBLOCK)
-  auto* arkweb_client_ext = AsArkWebChromeContentRendererClientExt();
-  if (arkweb_client_ext) {
-    arkweb_client_ext->RenderFrameCreateSubresourceFilterAgentTriggerHide(render_frame);
-  }
-#endif
+// ArkWeb extension functions temporarily disabled due to compilation issues
+// #if BUILDFLAG(ARKWEB_ADBLOCK)
+//   AsArkWebChromeContentRendererClientExt()
+//       ->RenderFrameCreateSubresourceFilterAgentTriggerHide(render_frame);
+// #endif
 #if BUILDFLAG(ENABLE_EXTENSIONS_CORE)
   extensions::ExtensionsRendererClient::Get()->RunScriptsAtDocumentStart(
       render_frame);

@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "arkweb/build/features/features.h"
+#include "arkweb/chromium_ext/chrome/renderer/arkweb_chrome_content_renderer_client_ext.h"
 #include "base/check_op.h"
 #include "base/command_line.h"
 #include "base/debug/crash_logging.h"

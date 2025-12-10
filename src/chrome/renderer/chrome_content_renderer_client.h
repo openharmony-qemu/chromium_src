@@ -102,11 +102,15 @@ class ChromeContentRendererClient
       delete;
 
   ~ChromeContentRendererClient() override;
-  friend class ArkWebChromeContentRendererClientExt;
-  virtual ArkWebChromeContentRendererClientExt*
-  AsArkWebChromeContentRendererClientExt() {
-    return nullptr;
-  }
+
+// ArkWeb extension functions temporarily disabled due to compilation issues
+// #if BUILDFLAG(IS_ARKWEB)
+//  friend class ArkWebChromeContentRendererClientExt;
+//  virtual ArkWebChromeContentRendererClientExt*
+//  AsArkWebChromeContentRendererClientExt() {
+//    return nullptr;
+//  }
+// #endif
 
   void RenderThreadStarted() override;
   void ExposeInterfacesToBrowser(mojo::BinderMap* binders) override;

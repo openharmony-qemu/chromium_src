@@ -107,7 +107,7 @@ ConnectorsInternalsPageHandler::~ConnectorsInternalsPageHandler() = default;
 
 void ConnectorsInternalsPageHandler::GetDeviceTrustState(
     GetDeviceTrustStateCallback callback) {
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
   NOTIMPLEMENTED();
 #else
   auto* device_trust_service =
@@ -135,7 +135,7 @@ void ConnectorsInternalsPageHandler::GetDeviceTrustState(
       base::BindOnce(&ConnectorsInternalsPageHandler::OnSignalsCollected,
                      weak_ptr_factory_.GetWeakPtr(), std::move(callback),
                      device_trust_service->IsEnabled()));
-#endif  // BUILDFLAG(IS_ANDROID)
+#endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
 }
 
 void ConnectorsInternalsPageHandler::DeleteDeviceTrustKey(
@@ -274,7 +274,7 @@ void ConnectorsInternalsPageHandler::GetSignalsReportingState(
         // BUILDFLAG(IS_ANDROID)
 }
 
-#if !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_ARKWEB)
 void ConnectorsInternalsPageHandler::OnSignalsCollected(
     GetDeviceTrustStateCallback callback,
     bool is_device_trust_enabled,
@@ -308,6 +308,6 @@ void ConnectorsInternalsPageHandler::OnSignalsCollected(
       signals_json, std::move(consent_metadata));
   std::move(callback).Run(std::move(state));
 }
-#endif  // !BUILDFLAG(IS_ANDROID)
+#endif  // !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_ARKWEB)
 
 }  // namespace enterprise_connectors

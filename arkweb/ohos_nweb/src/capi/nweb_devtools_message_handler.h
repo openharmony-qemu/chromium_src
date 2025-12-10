@@ -195,7 +195,6 @@ struct OpenDevToolsParam final {
   std::unique_ptr<NWebDevtoolsMessageHandler> handler;
   InspectPoint point;
   NWebDevtoolsMessageHandler* handlerNativeApi = nullptr;
-  bool canDock = true;
 };
 
 struct OpenDevToolsExtOpt final {

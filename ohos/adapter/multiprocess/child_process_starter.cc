@@ -77,6 +77,7 @@ int ChildProcessStarter::StartChildProcess(
 
   // Must establish socket listen before start child process
   // if not, child process request will be "Connection failed"
+  std::lock_guard<std::mutex> lock(mutex_);
   AppSpawnCommunication appspawn_server;
   if (appspawn_server.PrepareHandleRequest(commands, fds)) {
     start_func(set_child_pid);

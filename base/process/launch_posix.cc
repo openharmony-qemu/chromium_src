@@ -210,7 +210,7 @@ void ResetChildSignalHandlersToDefaults(void) {
 #if BUILDFLAG(IS_OHOS)
 Process LaunchProcessWithNativeSpawn(const CommandLine& cmdline,
                                      const LaunchOptions& options) {
-  ohos::adapter::multiprocess::ChildProcessStarter child_process_starter =
+  ohos::adapter::multiprocess::ChildProcessStarter &child_process_starter =
       ohos::adapter::multiprocess::ChildProcessStarter::GetInstance();
 
   std::vector<std::string> argv = cmdline.argv();

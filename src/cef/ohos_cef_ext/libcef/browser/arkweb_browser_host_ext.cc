@@ -2626,7 +2626,8 @@ CefString ArkWebBrowserHostExtImpl::GetLastJavascriptProxyCallingFrameUrl() {
   if (!javascriptInjector) {
     return base::EmptyString();
   }
-  return javascriptInjector->GetLastCallingFrameUrl();
+  // return javascriptInjector->GetLastCallingFrameUrl();
+  return "";
 }
 #endif
 
@@ -3095,8 +3096,8 @@ void ArkWebBrowserHostExtImpl::RegisterNativeJSProxy(
   for (CefString method : method_list) {
     method_vector.push_back(method.ToString());
   }
-  javascriptInjector->AddNativeInterface(object_name.ToString(), method_vector,
-                                         object_id, is_async, permission);
+  // javascriptInjector->AddNativeInterface(object_name.ToString(), method_vector,
+  //                                        object_id, is_async, permission);
 }
 
 void ArkWebBrowserHostExtImpl::RegisterArkJSfunction(
@@ -3120,8 +3121,8 @@ void ArkWebBrowserHostExtImpl::RegisterArkJSfunction(
   for (CefString async_method : async_method_list) {
     async_method_vector.push_back(async_method.ToString());
   }
-  javascriptInjector->AddInterface(object_name.ToString(), method_vector,
-                                   async_method_vector, object_id, permission);
+  // javascriptInjector->AddInterface(object_name.ToString(), method_vector,
+  //                                  async_method_vector, object_id, permission);
 }
 
 void ArkWebBrowserHostExtImpl::UnregisterArkJSfunction(
@@ -3136,7 +3137,7 @@ void ArkWebBrowserHostExtImpl::UnregisterArkJSfunction(
   }
   if (auto* javascriptInjector =
           NWEB::OhJavascriptInjector::FromWebContents(GetWebContents())) {
-    javascriptInjector->RemoveInterface(object_name.ToString(), method_vector);
+    // javascriptInjector->RemoveInterface(object_name.ToString(), method_vector);
   }
 }
 
@@ -3155,7 +3156,7 @@ void ArkWebBrowserHostExtImpl::CallH5Function(
   }
 
   std::string name = h5_method_name.ToString();
-  javascriptInjector->DoCallH5Function(routing_id, h5_object_id, name, args);
+  // javascriptInjector->DoCallH5Function(routing_id, h5_object_id, name, args);
 }
 #endif  // BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)
 

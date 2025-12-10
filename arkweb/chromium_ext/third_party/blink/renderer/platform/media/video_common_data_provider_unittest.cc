@@ -408,7 +408,7 @@ TEST_F(VideoCommonDataProviderTest, VideoOpt_StartRequestTest) {
 }
 
 TEST_F(VideoCommonDataProviderTest, VideoOpt_StartRequest002Test) {
-  Initialize(kHttpUrl, 0);
+  Initialize(kHttpUrl, 0, UrlData::CORS_UNSPECIFIED);
 
   WebString rangeStr = WebString::FromUTF8(net::HttpRequestHeaders::kRange);
   WebURLRequest blockRequest = GetRequest(0, 10); // block
@@ -555,6 +555,24 @@ TEST_F(VideoRangeURLLoaderClientTest, VideoOpt_ReceiveData001) {
   StopWhenLoad();
 }
 
+TEST_F(VideoRangeURLLoaderClientTest, VideoOpt_ReceiveData002) {
+  int64_t kDataSize_test = 3276800;
+  Initialize(kHttpUrl, 0, 0, kDataSize_test -1);
+  url_data_->set_length(kDataSize_test);
+
+  std::list<scoped_refptr<media::DataBuffer>> request_buffers;
+  loader_client_->SetFifo(&request_buffers);
+  loader_client_->Start();
+
+  std::vector<char> buffer(0, 0);
+  base::span<const char> data_span(buffer.data(), buffer.size());
+
+  loader_client_->bytes_to_discard_ = 10;
+  loader_client_->DidReceiveData(data_span);
+  EXPECT_EQ(loader_client_->bytes_to_discard_, 10);
+  StopWhenLoad();
+}
+
 TEST_F(VideoRangeURLLoaderClientTest, VideoOpt_Terminate001) {
   Initialize(kHttpUrl, 0, 0, 100);
 
@@ -563,6 +581,47 @@ TEST_F(VideoRangeURLLoaderClientTest, VideoOpt_Terminate001) {
   loader_client_->Start();
 
   loader_client_->Terminate();
+  StopWhenLoad();
+}
+
+TEST_F(VideoRangeURLLoaderClientTest, VideoOpt_DidFinishLoading001) {
+  Initialize(kHttpUrl, 10, 0, 100);
+
+  std::list<scoped_refptr<media::DataBuffer>> request_buffers;
+  loader_client_->SetFifo(&request_buffers);
+  loader_client_->Start();
+
+  loader_client_->DidFinishLoading();
+  EXPECT_EQ(request_buffers.size(), 1);
+  StopWhenLoad();
+}
+
+TEST_F(VideoRangeURLLoaderClientTest, VideoOpt_DidFinishLoading002) {
+  int64_t kDataSize_test = 3276800;
+  Initialize(kHttpUrl, 0, 0, kDataSize_test -1);
+  url_data_->set_length(kDataSize_test);
+
+  std::list<scoped_refptr<media::DataBuffer>> request_buffers;
+  loader_client_->SetFifo(&request_buffers);
+  loader_client_->Start();
+
+  loader_client_->DidFinishLoading();
+  EXPECT_GT(loader_client_->retries_, 0);
+  StopWhenLoad();
+}
+
+TEST_F(VideoRangeURLLoaderClientTest, VideoOpt_DidFinishLoading003) {
+  int64_t kDataSize_test = 3276800;
+  Initialize(kHttpUrl, 0, 0, kDataSize_test -1);
+  url_data_->set_length(kDataSize_test);
+
+  std::list<scoped_refptr<media::DataBuffer>> request_buffers;
+  loader_client_->SetFifo(&request_buffers);
+  loader_client_->Start();
+
+  loader_client_->retries_ = 50;
+  loader_client_->DidFinishLoading();
+  EXPECT_EQ(request_buffers.size(), 0);
   StopWhenLoad();
 }
 

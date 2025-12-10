@@ -552,3 +552,19 @@ bool ArkWebChromeContentRendererClientExt::GetAdBlockEnabledByFrame(
   return false;
 }
 #endif  // BUILDFLAG(ARKWEB_ADBLOCK)
+
+// Force symbol exports to ensure linking works
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+namespace {
+  struct ForceSymbolExport {
+    ForceSymbolExport() {
+      // These references force the symbols to be exported
+      (void)&ArkWebChromeContentRendererClientExt::RenderFrameCreateSubresourceFilterAgent;
+      (void)&ArkWebChromeContentRendererClientExt::RenderFrameCreateSubresourceFilterAgentTriggerHide;
+      (void)&ArkWebChromeContentRendererClientExt::TriggerElementHidingInFrame;
+      (void)&ArkWebChromeContentRendererClientExt::TriggerUserElementHidingInFrame;
+      (void)&ArkWebChromeContentRendererClientExt::GetAdBlockEnabledByFrame;
+    }
+  } force_symbol_export;
+}
+#endif

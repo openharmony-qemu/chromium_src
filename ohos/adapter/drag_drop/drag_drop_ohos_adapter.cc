@@ -73,6 +73,9 @@ bool DragDropOhosAdapter::ExecuteDrag(
     return false;
   }
   bool result = future.get();
+  if (result) {
+    SetDraggingStarted(true);
+  }
   return result;
 }
 
@@ -189,6 +192,7 @@ void OnDragLeaveCB(const std::string& xcomponent_id) {
 }
 
 void OnDragEndCB(const std::string& xcomponent_id) {
+  DragDropOhosAdapter::GetInstance().SetDraggingStarted(false);
   auto render = xcomponent::XComponentManager::GetInstance()->GetXComponent(
       xcomponent_id);
   if (render == nullptr) {

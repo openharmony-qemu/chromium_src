@@ -5972,7 +5972,36 @@ void NWebDelegate::OpenDevtoolsWith(
   CefPoint inspect_element_at(param->point.x, param->point.y);
   GetBrowser()->GetHost()->ShowDevToolsWith(
       devtools_delegate->GetBrowser()->GetHost(),
-      devtools_message_handler, inspect_element_at, param->canDock);
+      devtools_message_handler, inspect_element_at);
+#endif // #if BUILDFLAG(ARKWEB_DEVTOOLS)
+}
+
+void NWebDelegate::OpenDevtoolsWithByPb(
+      std::shared_ptr<NWebDelegateInterface> nweb_delegate,
+      std::unique_ptr<OpenDevToolsParam> param,
+      OpenDevToolsExtOpt& ext_opt) {
+  LOG(INFO) << "NWebDelegate::OpenDevtoolsWithByPb";
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  if (!GetBrowser() || !GetBrowser()->GetHost()) {
+    LOG(INFO) << "OpenDevtoolsWithByPb failed, no browser host";
+    return;
+  }
+  NWebDelegate* devtools_delegate =
+      static_cast<NWebDelegate*>(nweb_delegate.get());
+ 
+  CefRefPtr<NWebDevToolsMessageHandlerImpl> devtools_message_handler;
+  if (IsNativeApiEnable()) {
+    devtools_message_handler = CefRefPtr<NWebDevToolsMessageHandlerImpl>(
+        new NWebDevToolsMessageHandlerImpl(std::move(param->handlerNativeApi)));
+  } else {
+    devtools_message_handler = CefRefPtr<NWebDevToolsMessageHandlerImpl>(
+        new NWebDevToolsMessageHandlerImpl(std::move(param->handler)));
+  }
+ 
+  CefPoint inspect_element_at(param->point.x, param->point.y);
+  GetBrowser()->GetHost()->ShowDevToolsWithByPb(
+      devtools_delegate->GetBrowser()->GetHost(),
+      devtools_message_handler, inspect_element_at, ext_opt);
 #endif // #if BUILDFLAG(ARKWEB_DEVTOOLS)
 }
 

@@ -412,7 +412,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
 #endif
 #if BUILDFLAG(ARKWEB_DEVTOOLS)
   void ShowDevToolsWith(CefRefPtr<ArkWebBrowserHostExt>,
-    CefRefPtr<CefDevToolsMessageHandlerDelegate>, const CefPoint&, bool) override {}
+    CefRefPtr<CefDevToolsMessageHandlerDelegate>, const CefPoint&) override {}
 #endif
 #if BUILDFLAG(ARKWEB_UNITTESTS)
   void SetMediaResumeFromBFCachePage(bool) override {}

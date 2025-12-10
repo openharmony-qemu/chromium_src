@@ -48,7 +48,7 @@ class NWebDevToolsMessageHandlerImpl
                               int top,
                               int width,
                               int height) override;
-  bool SetDockMode(int mode)  override;
+  bool SetDockMode(int mode) override;
 
  private:
   void GetFileSelectorTitle(std::string& title, uint32_t mode);

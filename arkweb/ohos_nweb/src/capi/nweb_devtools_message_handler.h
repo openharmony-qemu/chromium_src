@@ -198,4 +198,8 @@ struct OpenDevToolsParam final {
   bool canDock = true;
 };
 
+struct OpenDevToolsExtOpt final {
+    bool canDock = false;
+}
+
 #endif  // OHOS_NWEB_SRC_CAPI_NWEB_DEVTOOLS_MESSAGE_HANDLER_H_

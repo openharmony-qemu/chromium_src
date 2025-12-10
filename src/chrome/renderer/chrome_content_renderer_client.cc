@@ -645,7 +645,7 @@ void ChromeContentRendererClient::RenderFrameCreated(
     }
   }
 
-#if BUILDFLAG(ARKWEB_NETWORK_BASE) && BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
+#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_NETWORK_BASE) && BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
   auto* arkweb_client_ext = AsArkWebChromeContentRendererClientExt();
   if (arkweb_client_ext) {
     arkweb_client_ext->RenderFrameCreatedContentSettings(content_settings, this);
@@ -795,7 +795,7 @@ void ChromeContentRendererClient::RenderFrameCreated(
     fingerprinting_protection_renderer_agent->Initialize();
   }
 
-#if BUILDFLAG(ARKWEB_ADBLOCK)
+#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ADBLOCK)
   auto* arkweb_client_ext = AsArkWebChromeContentRendererClientExt();
   if (arkweb_client_ext) {
     arkweb_client_ext->RenderFrameCreateSubresourceFilterAgent(render_frame, this);
@@ -1504,7 +1504,7 @@ ChromeContentRendererClient::CreateSpeechRecognitionClient(
 
 void ChromeContentRendererClient::RunScriptsAtDocumentStart(
     content::RenderFrame* render_frame) {
-#if BUILDFLAG(ARKWEB_ADBLOCK)
+#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ADBLOCK)
   auto* arkweb_client_ext = AsArkWebChromeContentRendererClientExt();
   if (arkweb_client_ext) {
     arkweb_client_ext->RenderFrameCreateSubresourceFilterAgentTriggerHide(render_frame);

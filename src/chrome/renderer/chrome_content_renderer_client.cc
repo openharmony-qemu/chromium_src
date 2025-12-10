@@ -646,8 +646,10 @@ void ChromeContentRendererClient::RenderFrameCreated(
   }
 
 #if BUILDFLAG(ARKWEB_NETWORK_BASE) && BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
-  AsArkWebChromeContentRendererClientExt()->RenderFrameCreatedContentSettings(
-      content_settings, this);
+  auto* arkweb_client_ext = AsArkWebChromeContentRendererClientExt();
+  if (arkweb_client_ext) {
+    arkweb_client_ext->RenderFrameCreatedContentSettings(content_settings, this);
+  }
 #endif
 
 #if BUILDFLAG(ENABLE_EXTENSIONS_CORE)
@@ -794,8 +796,10 @@ void ChromeContentRendererClient::RenderFrameCreated(
   }
 
 #if BUILDFLAG(ARKWEB_ADBLOCK)
-  AsArkWebChromeContentRendererClientExt()
-      ->RenderFrameCreateSubresourceFilterAgent(render_frame, this);
+  auto* arkweb_client_ext = AsArkWebChromeContentRendererClientExt();
+  if (arkweb_client_ext) {
+    arkweb_client_ext->RenderFrameCreateSubresourceFilterAgent(render_frame, this);
+  }
 #endif
 
 #if !BUILDFLAG(IS_ANDROID)
@@ -1501,8 +1505,10 @@ ChromeContentRendererClient::CreateSpeechRecognitionClient(
 void ChromeContentRendererClient::RunScriptsAtDocumentStart(
     content::RenderFrame* render_frame) {
 #if BUILDFLAG(ARKWEB_ADBLOCK)
-  AsArkWebChromeContentRendererClientExt()
-      ->RenderFrameCreateSubresourceFilterAgentTriggerHide(render_frame);
+  auto* arkweb_client_ext = AsArkWebChromeContentRendererClientExt();
+  if (arkweb_client_ext) {
+    arkweb_client_ext->RenderFrameCreateSubresourceFilterAgentTriggerHide(render_frame);
+  }
 #endif
 #if BUILDFLAG(ENABLE_EXTENSIONS_CORE)
   extensions::ExtensionsRendererClient::Get()->RunScriptsAtDocumentStart(

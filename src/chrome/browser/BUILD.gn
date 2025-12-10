@@ -8537,7 +8537,7 @@ static_library("browser") {
     configs += [ "//build/config/linux/nss" ]
   }
 
-  if (chrome_root_store_cert_management_ui) {
+  if (chrome_root_store_cert_management_ui || is_ohos) {
     sources += [
       "net/server_certificate_database_service_factory.cc",
       "net/server_certificate_database_service_factory.h",

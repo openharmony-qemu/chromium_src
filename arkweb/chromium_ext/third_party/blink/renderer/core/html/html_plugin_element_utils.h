@@ -51,6 +51,7 @@ class HTMLPlugInElementUtils {
   void ProcessBufferedParamChanges();
   void SetStretchContentToFillBounds(bool stretch_content_to_fill_bounds);
   void ProcessStretchContentToFillBounds();
+  void AnalysisStretchContentToFillBounds(const Element::AttributeModificationParams& params);
   bool IsOverlay() const {
     return native_embed_overlay_;
   }

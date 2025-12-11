@@ -312,4 +312,10 @@ TEST_F(NativeLoaderTest, ProcessPendingParamChanges002) {
   loader_->ProcessPendingParamChanges();
 }
 
+TEST_F(NativeLoaderTest, SetStretchContentToFillBounds) {
+  loader_->SetStretchContentToFillBounds(false);
+  bool result = loader_->GetStretchContentToFillBounds();
+  EXPECT_FALSE(result);
+}
+
 }  // namespace blink

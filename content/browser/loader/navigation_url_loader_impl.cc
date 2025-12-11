@@ -373,6 +373,14 @@ std::unique_ptr<network::ResourceRequest> CreateResourceRequest(
       request_info.shared_storage_writable_eligible;
   new_request->is_ad_tagged = request_info.is_ad_tagged;
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          ::switches::kEnableNwebEx)) {
+    new_request->retry_with_fallback_proxy =
+        request_info.retry_with_fallback_proxy;
+    new_request->original_error_code = request_info.original_error_code;
+  }
+#endif
   return new_request;
 }
 
@@ -1802,6 +1810,14 @@ void NavigationURLLoaderImpl::FollowRedirect(
     resource_request_->headers.SetHeader(net::HttpRequestHeaders::kAccept,
                                          header_value);
   }
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          ::switches::kEnableNwebEx)) {
+    resource_request_->retry_with_fallback_proxy = false;
+    resource_request_->original_error_code = net::OK;
+  }
+#endif
 
   Restart();
 }

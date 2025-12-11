@@ -7,9 +7,17 @@ if (arkweb_prp_preload) {
   arkweb_net_base_ext_sources += [
     "//arkweb/chromium_ext/net/base/page_res_request_info.cc",
     "//arkweb/chromium_ext/net/base/page_res_request_info.h",
+    "//arkweb/chromium_ext/net/base/page_res_request_info.cc",
+    "//arkweb/chromium_ext/net/base/page_res_request_info.h",
   ]
 
   arkweb_net_base_ext_unittest_sources += [
     "//arkweb/chromium_ext/net/base/page_res_request_info_unittest.cc",
   ]
+  if (arkweb_ex_fallback_proxy) {
+    arkweb_net_base_ext_sources += [
+      "//arkweb/chromium_ext/net/base/fallback_proxy_constants.cc",
+      "//arkweb/chromium_ext/net/base/fallback_proxy_constants.h",
+    ]
+  }
 }

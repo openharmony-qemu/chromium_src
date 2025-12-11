@@ -39,6 +39,8 @@
 #include "net/shared_dictionary/shared_dictionary_isolation_key.h"
 #include "net/ssl/ssl_private_key.h"
 
+#include "arkweb/chromium_ext/net/shared_dictionary/shared_dictionary_network_transaction_for_include.cc"
+
 namespace net {
 
 namespace {

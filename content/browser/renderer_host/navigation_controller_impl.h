@@ -1022,6 +1022,10 @@ class CONTENT_EXPORT NavigationControllerImpl : public NavigationController {
   // go back into place after any subsequent commit.
   std::unique_ptr<NavigationEntryImpl> entry_replaced_by_post_commit_error_;
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  ErrorPageReloadReason  reload_reason_ = ErrorPageReloadReason ::INVALID;
+#endif
+
   // NOTE: This must be the last member.
   base::WeakPtrFactory<NavigationControllerImpl> weak_factory_{this};
 };

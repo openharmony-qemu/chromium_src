@@ -20,6 +20,7 @@ import("//url/features.gni")
 if (is_arkweb) {
   import("//arkweb/build/features/features.gni")
   import("//arkweb/chromium_ext/chromium_ext.gni")
+  import("//arkweb/ohos_nweb_ex/overrides/net/chromium_net_ext.gni")
 }
 
 if (defined(is_arkweb_ext) && is_arkweb_ext) {
@@ -1119,6 +1120,10 @@ component("net") {
     deps += [
       "//base:base_static",
     ]
+  }
+
+  if (defined(arkweb_nweb_ex) && arkweb_nweb_ex) {
+    sources += chromium_net_ext_gn_sources
   }
 
   public_deps = [

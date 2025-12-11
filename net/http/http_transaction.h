@@ -19,6 +19,10 @@
 #include "net/socket/connection_attempts.h"
 #include "net/websockets/websocket_handshake_stream_base.h"
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#include "arkweb/chromium_ext/net/base/fallback_proxy_constants.h"
+#endif
+
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
 namespace ohos_prp_preload {
 class PRRequestInfo;
@@ -100,6 +104,10 @@ class NET_EXPORT_PRIVATE HttpTransaction {
 
 #if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   virtual int RestartWithSecureDnsOnly(CompletionOnceCallback callback) = 0;
+#endif
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  virtual int RestartWithFallbackProxy(CompletionOnceCallback callback) = 0;
+  virtual int RestartWithDirect(CompletionOnceCallback callback) = 0;
 #endif
 
   // Restarts the HTTP transaction, ignoring the last error.  This call can

@@ -112,10 +112,12 @@
 #include "net/android/network_library.h"
 #endif
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK) || (ARKWEB_EX_FALLBACK_PROXY)
 #include "base/command_line.h"
 #include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
 #endif
+
+#include "arkweb/chromium_ext/net/url_request/net/url_request/url_request_http_job_for_include.cc"
 
 #if BUILDFLAG(ENABLE_DEVICE_BOUND_SESSIONS)
 #include "net/device_bound_sessions/registration_fetcher_param.h"
@@ -347,7 +349,6 @@ void RecordSTSHistograms(net::SSLUpgradeDecision upgrade_decision,
       "Net.HttpRequestSSLUpgradeDecision",
       GetMetricForSSLUpgradeDecision(upgrade_decision, is_secure));
 }
-
 }  // namespace
 
 namespace net {
@@ -472,6 +473,18 @@ void URLRequestHttpJob::Start() {
 #if BUILDFLAG(ENABLE_REPORTING)
   request_info_.reporting_upload_depth = request_->reporting_upload_depth();
 #endif
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          ::switches::kEnableNwebEx) &&
+      request_->RetryWithFallbackProxy()) {
+    request_info_.retry_with_fallback_proxy = true;
+    did_use_fallback_proxy_ = true;
+    LOG(DEBUG) << "This request will use fallback proxy, url "
+               << url::LogUtils::ConvertUrlWithMask(request_->url().spec());
+  }
+#endif
+
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
           switches::kEnableLoggerReport)) {
@@ -1375,25 +1388,36 @@ void URLRequestHttpJob::MaybeRetryWithSecureDnsOnly(int result) {
 void URLRequestHttpJob::OnStartCompleted(int result) {
   TRACE_EVENT0(NetTracingCategory(), "URLRequestHttpJob::OnStartCompleted");
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (!request_->RetryWithFallbackProxy() && !wait_for_sb_threat_type_) {
 #if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-  switch (state_) {
-    case RetryState::INIT:
-      MaybeRetryWithSecureDnsOnly(result);
-      return;
+    switch (state_) {
+      case RetryState::INIT:
+        MaybeRetryWithSecureDnsOnly(result);
+        return;
 
-    case RetryState::DOH_FALLBACK:
-      if (result == net::ERR_NAME_NOT_RESOLVED && original_net_error_) {
-        if (transaction_ && transaction_->GetResponseInfo() &&
-            transaction_->GetResponseInfo()->resolve_error_info.error !=
-                net::ERR_NAME_NOT_RESOLVED) {
-          result = original_net_error_;
+      case RetryState::DOH_FALLBACK:
+        if (result == net::ERR_NAME_NOT_RESOLVED && original_net_error_) {
+          if (transaction_ && transaction_->GetResponseInfo() &&
+              transaction_->GetResponseInfo()->resolve_error_info.error !=
+                  net::ERR_NAME_NOT_RESOLVED) {
+            result = original_net_error_;
+          }
         }
-      }
-      break;
+        break;
 
-    case RetryState::MAX:
-      // do nothing
-      break;
+      case RetryState::MAX:
+        // do nothing
+        break;
+    }
+#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  }
+#endif  // BUILDFLAG(ARKWEB_NETWORK_LOAD)
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  if (MaybeRetryWithFallbackProxy(result)) {
+    // re-execute OnStartCompleted later
+    return;
   }
 #endif
 
@@ -2328,4 +2352,5 @@ void URLRequestHttpJob::InitPreloadInfoAndSetToTransaction()
   }
 }
 #endif
+
 }  // namespace net

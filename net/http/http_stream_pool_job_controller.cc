@@ -34,6 +34,11 @@
 #include "url/scheme_host_port.h"
 #include "url/url_constants.h"
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#include "base/command_line.h"
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#endif
+
 namespace net {
 
 HttpStreamPool::JobController::JobController(HttpStreamPool* pool)
@@ -231,7 +236,18 @@ void HttpStreamPool::JobController::OnCertificateError(
     const SSLInfo& ssl_info) {
   request_->AddConnectionAttempts(job->connection_attempts());
   CancelOtherJob(job);
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  bool used_fallback_proxy = false;
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          ::switches::kEnableNwebEx) &&
+      job) {
+    used_fallback_proxy = job->proxy_info().used_fallback_proxy();
+  }
+  delegate_->OnCertificateError(status, ssl_info, used_fallback_proxy);
+#else
   delegate_->OnCertificateError(status, ssl_info);
+#endif  // BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
 }
 
 void HttpStreamPool::JobController::OnNeedsClientAuth(

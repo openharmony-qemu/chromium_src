@@ -41,6 +41,8 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "url/gurl.h"
 
+#include "arkweb/chromium_ext/net/http/http_transaction_test_util_for_include.cc"
+
 namespace net {
 
 namespace {

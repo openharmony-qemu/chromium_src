@@ -29,3 +29,26 @@ void NavigationRequest::StartNavigationExt() {
   }
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+bool NavigationRequest::NeedsReloadWithFallbackProxy() {
+  return needs_reload_with_fallback_proxy_;
+}
+
+ErrorPageReloadReason  NavigationRequest::GetCurrentReloadReason() {
+  return current_reload_reason_;
+}
+
+int NavigationRequest::GetOriginalNetErrorCode() {
+  return original_error_code_;
+}
+
+bool NavigationRequest::HasBeenReloadedForThisReason(
+    ErrorPageReloadReason  reason) {
+  if (reload_reason_list_.find(reason) == reload_reason_list_.end()) {
+    return false;
+  }
+
+  return true;
+}
+#endif  // BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)

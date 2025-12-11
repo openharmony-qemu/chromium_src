@@ -31,6 +31,11 @@
 #include "net/socket/connection_attempts.h"
 #include "net/url_request/url_request_job.h"
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#include "arkweb/ohos_nweb_ex/overrides/net/proxy_resolution/fallback_proxy_utils.h"
+#include "net/base/proxy_delegate.h"
+#endif
+
 namespace net {
 
 class HttpRequestHeaders;
@@ -93,6 +98,13 @@ class NET_EXPORT_PRIVATE URLRequestHttpJob : public URLRequestJob {
   RequestPriority priority() const {
     return priority_;
   }
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  // If it returns true, the execution of the current function
+  // URLRequestHttpJob::OnStartCompleted will be terminated
+  // and will be re-executed later.
+  bool MaybeRetryWithFallbackProxy(int result);
+#endif
 
  private:
   // For CookieRequestScheme histogram enum.
@@ -212,6 +224,16 @@ class NET_EXPORT_PRIVATE URLRequestHttpJob : public URLRequestJob {
   bool CanRetryWithSecureDnsOnly(int net_error);
   void RetryWithSecureDnsOnly();
   void MaybeRetryWithSecureDnsOnly(int result);
+#endif
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  bool SupportedHostAndNotUsedSystemProxy(ProxyDelegate* proxy_delegate,
+                                          ProxyUnusedReason* unused_reason);
+  bool CanRetryWithFallbackProxy(int result, ProxyUnusedReason* unused_reason);
+  void RetryWithFallbackProxy();
+  SBThreatURLPolicy GetSafeBrowsingThreatUrlPolicy(int result,
+                                                   int* malicious_type,
+                                                   int* hw_code);
+  void RetryWithDirect();
 #endif
 
   void RecordTimer();
@@ -354,9 +376,14 @@ class NET_EXPORT_PRIVATE URLRequestHttpJob : public URLRequestJob {
   // started.
   FirstPartySetMetadata first_party_set_metadata_;
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK) || BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
   int original_net_error_ = 0;
   RetryState state_ = RetryState::INIT;
+#endif
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  bool wait_for_sb_threat_type_ = false;
+  bool did_use_fallback_proxy_ = false;
 #endif
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)

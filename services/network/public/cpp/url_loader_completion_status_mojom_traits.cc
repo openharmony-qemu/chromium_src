@@ -45,6 +45,11 @@ bool StructTraits<network::mojom::URLLoaderCompletionStatusDataView,
 #if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
   out->abort_due_to_cef_browser_destroyed = data.abort_due_to_cef_browser_destroyed();
 #endif  //  ARKWEB_EX_DOWNLOAD
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  out->used_fallback_proxy = data.used_fallback_proxy();
+  out->needs_reload_with_fallback_proxy =
+      data.needs_reload_with_fallback_proxy();
+#endif
   return true;
 }
 

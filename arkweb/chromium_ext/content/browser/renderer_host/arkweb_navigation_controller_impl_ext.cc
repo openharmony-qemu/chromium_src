@@ -255,4 +255,14 @@ ArkWebNavigationControllerImplExt::UpdateNavigationEntryUrl(int index, const GUR
 }
 #endif  // BUILDFLAG(ARKWEB_EXT_NAVIGATION)
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+void ArkWebNavigationControllerImplExt::ReloadWithNetError(
+    ReloadType reload_type,
+    bool check_for_repost,
+    ErrorPageReloadReason  reason) {
+  reload_reason_ = reason;
+  Reload(reload_type, check_for_repost);
+}
+#endif
+
 }  // namespace content

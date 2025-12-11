@@ -44,6 +44,11 @@
 #include "url/scheme_host_port.h"
 #include "url/url_constants.h"
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#include "base/command_line.h"
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#endif
+
 namespace net {
 
 namespace {
@@ -507,7 +512,15 @@ void HttpStreamFactory::JobController::OnCertificateError(
     BindJob(job);
   }
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  bool used_fallback_proxy = false;
+  if (job) {
+    used_fallback_proxy = job->proxy_info().used_fallback_proxy();
+  }
+  delegate_->OnCertificateError(status, ssl_info, used_fallback_proxy);
+#else
   delegate_->OnCertificateError(status, ssl_info);
+#endif  // BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
 }
 
 void HttpStreamFactory::JobController::OnNeedsClientAuth(
@@ -796,6 +809,13 @@ int HttpStreamFactory::JobController::DoResolveProxy() {
 
   CompletionOnceCallback io_callback =
       base::BindOnce(&JobController::OnIOComplete, base::Unretained(this));
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          ::switches::kEnableNwebEx) &&
+      request_info_.retry_with_fallback_proxy) {
+    proxy_info_.set_use_fallback_proxy_direct(true);
+  }
+#endif
   return session_->proxy_resolution_service()->ResolveProxy(
       origin_url_, request_info_.method,
       request_info_.network_anonymization_key, &proxy_info_,

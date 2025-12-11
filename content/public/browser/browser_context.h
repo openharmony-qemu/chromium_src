@@ -35,6 +35,10 @@
 #include "third_party/perfetto/include/perfetto/tracing/traced_value_forward.h"
 #include "url/origin.h"
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#include "arkweb/ohos_nweb_ex/overrides/cef/libcef/browser/browser_config/browser_cloud_control_global_config.h"
+#endif
+
 class GURL;
 
 namespace base {
@@ -467,6 +471,11 @@ class CONTENT_EXPORT BrowserContext : public base::SupportsUserData {
   // any, nullptr otherwise.
   virtual OriginTrialsControllerDelegate* GetOriginTrialsControllerDelegate();
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  virtual void SetFallbackProxyConfigData(
+      const ohos_cloud_control::FallbackProxyConfigData& config_data){};
+#endif
+
  private:
   // Please don't add more fields to BrowserContext.
   //
@@ -482,6 +491,7 @@ class CONTENT_EXPORT BrowserContext : public base::SupportsUserData {
   std::unique_ptr<BrowserContextImpl> impl_;
   BrowserContextImpl* impl() { return impl_.get(); }
   const BrowserContextImpl* impl() const { return impl_.get(); }
+
   base::WeakPtrFactory<BrowserContext> weak_factory_{this};
 };
 

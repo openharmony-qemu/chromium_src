@@ -44,6 +44,20 @@ class TestCustomProxyConfigClient
     std::move(callback).Run();
   }
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  void SaveURLMaliciousTypeAndHwCode(const std::string& url,
+                                     int type,
+                                     int hw_code) override {}
+  void OnFallbackProxyInfoConfigUpdated(
+      network::mojom::FallbackProxyInfoConfigPtr fallback_proxy_info_config)
+      override {}
+  void UpdateFallbackProxyAuthHeaders(
+      const net::HttpRequestHeaders& tunnel_headers) override {}
+  void UpdateFallbackProxyStatus(int status) override {}
+  void OnHostBlockListUpdated(
+      const std::vector<std::string>& block_list) override {}
+#endif
+
   network::mojom::CustomProxyConfigPtr config_;
 
  private:

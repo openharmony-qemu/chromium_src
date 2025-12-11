@@ -702,6 +702,11 @@ void OhosVideoDecoder::EnterTerminalState(State state, const char* reason) {
   target_surface_bundle_ = nullptr;
   texture_owner_bundle_ = nullptr;
   if (state == State::kError) {
+    if (reason != nullptr) {
+      LOG(ERROR) << __func__ << "[OHOSVideoDecoder] reason: " << reason;
+    } else {
+      LOG(ERROR) << __func__ << "[OHOSVideoDecoder] unknown reason.";
+    }
     CancelPendingDecodes(DecoderStatus::Codes::kFailed);
   }
   if (drain_type_) {

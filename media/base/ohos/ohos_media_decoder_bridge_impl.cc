@@ -444,8 +444,14 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::PushInbufferDec(
                     "DECODER_DECRYPT_FAILED_NO_KEY";
     return DecoderAdapterCode::DECODER_DECRYPT_FAILED_NO_KEY;
   }
-  return ret == AV_ERR_OK ? DecoderAdapterCode::DECODER_OK
-                          : DecoderAdapterCode::DECODER_ERROR;
+  if (ret != AV_ERR_OK) {
+    LOG(WARNING)
+        << __FUNCTION__
+        << " [OHOSVideoDecoder] OH_VideoDecoder_PushInputBuffer failed. error code: "
+        << ret;
+    return DecoderAdapterCode::DECODER_ERROR;
+  }
+  return DecoderAdapterCode::DECODER_OK;
 }
 
 DecoderAdapterCode MediaCodecDecoderBridgeImpl::PushInbufferDecEos(

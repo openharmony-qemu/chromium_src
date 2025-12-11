@@ -102,6 +102,16 @@ void OHOSAudioCapturerSource::InitializeOnCapturerThread() {
   callbacks.OH_AudioCapturer_OnReadData = AudioCapturerOnReadData;
   OH_AudioStreamBuilder_SetCapturerCallback(audio_stream_builder_, callbacks,
                                             this);
+  if ((params_.effects() &
+       AudioParameters::PlatformEffectsMask::ECHO_CANCELLER) &&
+      (params_.effects() &
+       AudioParameters::PlatformEffectsMask::NOISE_SUPPRESSION) &&
+      (params_.effects() &
+       AudioParameters::PlatformEffectsMask::AUTOMATIC_GAIN_CONTROL)) {
+    // AUDIOSTREAM_SOURCE_TYPE_VOICE_COMMUNICATION Offers AEC, ANS, AGC
+    OH_AudioStreamBuilder_SetCapturerInfo(
+        audio_stream_builder_, AUDIOSTREAM_SOURCE_TYPE_VOICE_COMMUNICATION);
+  }
   // create audio capturer
   OH_AudioStream_Result ret =
       OH_AudioStreamBuilder_GenerateCapturer(

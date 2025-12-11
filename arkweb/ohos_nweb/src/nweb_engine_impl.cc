@@ -243,12 +243,6 @@ void NWebEngineImpl::SetScrollbarMode(ScrollbarMode mode) {
     NWebImpl::SetScrollbarMode(mode);
 }
 
-#if BUILDFLAG(ARKWEB_SOFTKEYBOARD_AVOID)
-void NWebEngineImpl::SetSoftKeyboardBehaviorMode(WebSoftKeyboardBehaviorMode mode) {
-    NWebImpl::SetSoftKeyboardBehaviorModeV2(mode);
-}
-#endif
-
 void NWebEngineImpl::ClearPrefetchedResource(
     const std::vector<std::string>& cache_key_list) {
 #if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)

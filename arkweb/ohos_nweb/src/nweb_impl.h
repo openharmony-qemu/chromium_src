@@ -1175,7 +1175,7 @@ class NWebImpl : public NWeb {
   bool SetFocusByPosition(float x, float y) override;
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 #if BUILDFLAG(ARKWEB_SOFTKEYBOARD_AVOID)
-  static void SetSoftKeyboardBehaviorModeV2(WebSoftKeyboardBehaviorMode mode);
+  void SetSoftKeyboardBehaviorMode(WebSoftKeyboardBehaviorMode mode) override;
 #endif
 #if BUILDFLAG(ARKWEB_PIP)
   void SetPipNativeWindow(int delegate_id,
@@ -1286,7 +1286,7 @@ class NWebImpl : public NWeb {
   std::string web_tag_{""};
 #endif
 #if BUILDFLAG(ARKWEB_SOFTKEYBOARD_AVOID)
-  static WebSoftKeyboardBehaviorMode keyboardBehaviorMode_;
+  WebSoftKeyboardBehaviorMode keyboardBehaviorMode_ = WebSoftKeyboardBehaviorMode::DEFAULT;
 #endif
   bool is_pause_ = false;
   struct ReSizeType {

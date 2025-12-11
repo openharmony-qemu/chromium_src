@@ -1381,18 +1381,18 @@ class CONTENT_EXPORT NavigationRequest
   void set_force_no_https_upgrade() { force_no_https_upgrade_ = true; }
 
 #if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
-  void ohos_set_https_upgrade(bool is_force_no_https_upgrade) { 
-    force_no_https_upgrade_ = is_force_no_https_upgrade; 
+  void ohos_set_https_upgrade(bool is_force_no_https_upgrade) {
+    force_no_https_upgrade_ = is_force_no_https_upgrade;
   }
 
   void ohos_set_url_typed_with_http_scheme(bool url_typed_with_http_scheme) {
     url_typed_with_http_scheme_ = url_typed_with_http_scheme;
   }
- 
+
   bool is_url_typed_with_http_scheme() const {
     return url_typed_with_http_scheme_;
   }
- 
+
   bool is_force_no_https_upgrade() const {
     return force_no_https_upgrade_;
   }
@@ -1401,9 +1401,7 @@ class CONTENT_EXPORT NavigationRequest
   bool was_reset_for_cross_document_restart() const {
     return was_reset_for_cross_document_restart_;
   }
-#if BUILDFLAG(ARKWEB_USERAGENT)
-  void EnableRedirectAbortCancel();
-#endif
+
  private:
   friend class NavigationRequestTest;
 

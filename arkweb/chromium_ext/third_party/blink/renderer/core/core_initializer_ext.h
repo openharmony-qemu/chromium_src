@@ -39,6 +39,8 @@ public:
       WebLocalFrameClient* web_frame_client,
       NativeLoader& html_native_element,
       WebNativeClient*) const = 0;
+
+  virtual float GetDeviceScaleFactor(WebLocalFrameClient* web_frame_client) = 0;
 #endif
 };
 }

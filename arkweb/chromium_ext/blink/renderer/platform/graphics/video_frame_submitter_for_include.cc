@@ -27,6 +27,15 @@ void VideoFrameSubmitter::SetHasNativeLayer(bool has_native_layer) {
   has_native_layer_ = has_native_layer;
 }
 
+void VideoFrameSubmitter::SetDeviceScaleFactor(float device_scale_factor) {
+  LOG(DEBUG) << "[NativeEmbed] VideoFrameSubmitter::SetDeviceScaleFactor"
+             << device_scale_factor;
+  if (!resource_provider_) {
+    return;
+  }
+  device_scale_factor_ = device_scale_factor;
+}
+
 void VideoFrameSubmitter::StartRenderingForSameLayer()
 {
   if (!has_native_layer_ ) {

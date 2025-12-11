@@ -271,6 +271,15 @@ void NativeLoader::OnLayerRectChange(const gfx::Rect& rect) {
   for (auto& observer : native_bridge_observer_remote_set_->Value()) {
     observer->OnEmbedRectChange(TransformRect(bounds_to_viewport));
   }
+  auto* frame = CurrentFrame();
+  if (!frame) {
+    return;
+  }
+  float factor = frame->Client()->GetDeviceScaleFactor(*this);
+  LOG(INFO) << "NativeEmbed NativeLoader::GetDeviceScaleFactor:" << factor;
+  if (web_native_bridge_) {
+    web_native_bridge_->UpdateDeviceScaleFactor(factor);
+  }
 }
 
 // LCOV_EXCL_START

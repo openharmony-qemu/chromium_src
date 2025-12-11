@@ -873,15 +873,8 @@ void SurfaceAggregator::EmitSurfaceContent(
         surface_quad_rect.height() /
         static_cast<float>(resolved_frame.size_in_pixels().height());
   } else {
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-    auto density = base::ohos::GetDevicePixelRatio();
-    if (resolved_frame.device_scale_factor() == 1 && density != 0) {
-      extra_content_scale_x = extra_content_scale_y = 1;
-    } else {
-      extra_content_scale_x = extra_content_scale_y =
-          parent_device_scale_factor / resolved_frame.device_scale_factor();
-    }
-#endif
+    extra_content_scale_x = extra_content_scale_y =
+        parent_device_scale_factor / resolved_frame.device_scale_factor();
   }
   float inverse_extra_content_scale_x = SK_Scalar1 / extra_content_scale_x;
   float inverse_extra_content_scale_y = SK_Scalar1 / extra_content_scale_y;

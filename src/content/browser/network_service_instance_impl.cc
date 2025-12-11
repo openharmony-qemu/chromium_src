@@ -319,6 +319,7 @@ void CreateInProcessNetworkService(
       network::ConfigureSequenceManager(options);
     }
     GetNetworkServiceDedicatedThread().StartWithOptions(std::move(options));
+    task_runner = GetNetworkServiceDedicatedThread().task_runner();
 #if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
     using namespace OHOS::NWeb;
     ResSchedClientAdapter::ReportKeyThread(
@@ -326,10 +327,15 @@ void CreateInProcessNetworkService(
         GetNetworkServiceDedicatedThread().GetThreadId().raw(),
         ResSchedRoleAdapter::USER_INTERACT);
 #endif
+    task_runner->PostTask(
+        FROM_HERE, base::BindOnce([]() {
+          mojo::InterfaceEndpointClient::SetThreadNameSuffixForMetrics(
+              "NetworkService");
 #if BUILDFLAG(IS_ANDROID)
           base::PlatformThreadPriorityMonitor::Get().RegisterCurrentThread(
               "NetworkService");
 #endif  // BUILDFLAG(IS_ANDROID)
+        }));
   } else {
     task_runner = GetIOThreadTaskRunner({});
   }

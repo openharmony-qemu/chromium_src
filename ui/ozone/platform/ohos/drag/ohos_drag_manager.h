@@ -7,6 +7,7 @@
 
 #include "base/component_export.h"
 #include "base/functional/callback.h"
+#include "base/timer/timer.h"
 #include "ohos/adapter/drag_drop/drag_drop_ohos_adapter.h"
 #include "third_party/abseil-cpp/absl/types/optional.h"
 #include "ui/base/dragdrop/drag_drop_types.h"
@@ -106,6 +107,9 @@ class OhosDragManager : public WmDragHandler,
   gfx::PointF last_point_;
   int current_modifier_;
   bool is_drag_end_ = true;
+  std::unique_ptr<base::RepeatingTimer> drag_over_timer_;
+  gfx::PointF drag_move_point_;
+  int drag_move_operations_;
 
   std::vector<FileInfo> DecodeFileName(const std::vector<std::string>& file_paths);
   void HandleDropData(const OhosDropData& drop_data,
@@ -120,6 +124,8 @@ class OhosDragManager : public WmDragHandler,
                            std::shared_ptr<OhosStartDragParam> drag_param);
   void HandlePixelMapData(const OSExchangeData& data,
                           std::shared_ptr<OhosStartDragParam> drag_param);
+  void SendDragOverEvent();
+  void StopDragOverTimer();
 
   base::WeakPtrFactory<OhosDragManager> weak_factory_{this};
 };

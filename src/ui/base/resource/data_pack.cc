@@ -234,17 +234,21 @@ DataPack::LoadFromPathInternal(const base::FilePath& path) {
 }
 
 bool DataPack::LoadFromPath(const base::FilePath& path) {
-#if BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)
-  // If the hap package is not decompressed, the directory does not exist.
-  if (path.empty() || !base::PathExists(path)) {
-    return DataPackUtil::LoadFromPathExt(this, path);
-  }
-#endif
   return LoadFromPathWithError(path).has_value();
 }
 
 base::expected<void, DataPack::ErrorState> DataPack::LoadFromPathWithError(
     const base::FilePath& path) {
+#if BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)
+  // If the hap package is not decompressed, the directory does not exist.
+  if (path.empty() || !base::PathExists(path)) {
+    auto result = DataPackUtil::LoadFromPathExt(this, path);
+    if (result) {
+      return base::ok();
+    }
+    return base::unexpected(ErrorState{FailureReason::kOpenFile});
+  }
+#endif
   std::unique_ptr<DataPack::DataSource> data_source;
   ASSIGN_OR_RETURN(data_source, LoadFromPathInternal(path));
   RETURN_IF_ERROR(LoadImpl(std::move(data_source)),

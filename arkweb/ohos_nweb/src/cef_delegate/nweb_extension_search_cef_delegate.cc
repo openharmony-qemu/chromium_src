@@ -30,9 +30,11 @@ namespace {
 static std::map<int32_t, SearchCallback> g_search_callback_map_;
 } // namespace
 
-void NWebExtensionSearchCefDelegate::Query(SearchCallback callback,
+bool NWebExtensionSearchCefDelegate::Query(SearchCallback callback,
                                            const NWebExtensionSearchQueryInfo& query_info) {
-#if BUILDFLAG(ARKWEB_NWEB_EX)
+#if !BUILDFLAG(ARKWEB_NWEB_EX)
+  return false;
+#else
   static int32_t request_id = 0;
   request_id++;
   g_search_callback_map_[request_id] = std::move(callback);
@@ -40,6 +42,7 @@ void NWebExtensionSearchCefDelegate::Query(SearchCallback callback,
   if (!result) {
     g_search_callback_map_.erase(request_id);
   }
+  return result;
 #endif
 }
 

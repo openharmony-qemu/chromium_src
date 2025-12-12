@@ -138,10 +138,6 @@ class NWebEngineImpl : public NWebEngine {
   void SetSocketIdleTimeout(int32_t timeout) override;
 #endif
 
-#if BUILDFLAG(ARKWEB_SOFTKEYBOARD_AVOID)
-  void SetSoftKeyboardBehaviorMode(WebSoftKeyboardBehaviorMode mode) override;
-#endif
-
 #if BUILDFLAG(ARKWEB_COOKIE)
   void LibraryLoaded(std::shared_ptr<NWebEngineInitArgs> init_args,
                      bool lazy) override;

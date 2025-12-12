@@ -1124,10 +1124,6 @@ WebDestroyMode NWebImpl::webDestroyMode_ = WebDestroyMode::NORMAL_MODE;
 ScrollbarMode NWebImpl::scrollbarMode_ = ScrollbarMode::OVERLAY_LAYOUT_SCROLLBAR;
 bool NWebImpl::scrollbarModeChanged_ = false;
 
-#if BUILDFLAG(ARKWEB_SOFTKEYBOARD_AVOID)
- WebSoftKeyboardBehaviorMode NWebImpl::keyboardBehaviorMode_ = WebSoftKeyboardBehaviorMode::DEFAULT;
-#endif
- 
 // static
 std::shared_ptr<NWeb> NWebImpl::CreateNWeb(
     std::shared_ptr<NWebCreateInfo> create_info) {
@@ -7022,10 +7018,10 @@ void NWebImpl::RegisterNativeJavaScriptProxy(const std::string& objName,
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
 #if BUILDFLAG(ARKWEB_SOFTKEYBOARD_AVOID)
-void NWebImpl::SetSoftKeyboardBehaviorModeV2(WebSoftKeyboardBehaviorMode mode) {
+void NWebImpl::SetSoftKeyboardBehaviorMode(WebSoftKeyboardBehaviorMode mode) {
   keyboardBehaviorMode_ = mode;
   LOG(DEBUG)
-      << "NWebImpl::SetSoftKeyboardBehaviorModeV2 keyboardBehaviorMode_: "
+      << "NWebImpl::SetSoftKeyboardBehaviorMode keyboardBehaviorMode_: "
       << static_cast<int>(keyboardBehaviorMode_);
 }
 #endif

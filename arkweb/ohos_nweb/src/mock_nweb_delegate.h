@@ -1147,6 +1147,12 @@ class MockNWebDelegate : public NWebDelegateInterface {
               (std::shared_ptr<NWebDelegateInterface> nweb_delegate,
                std::unique_ptr<OpenDevToolsParam> param),
               (override));
+  MOCK_METHOD(void,
+              OpenDevtoolsWithByPb,
+              (std::shared_ptr<NWebDelegateInterface> nweb_delegate,
+               std::unique_ptr<OpenDevToolsParam> param,
+               OpenDevToolsExtOpt* ext_opt),
+              (override));
   MOCK_METHOD(void, CloseDevtools, (), (override));
 
 #if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)

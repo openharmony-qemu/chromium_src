@@ -1186,7 +1186,13 @@ void AutofillAgent::ApplyFieldAction(
             break;
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
           case mojom::FieldActionType::kNotSmartReplaceSelection:
-            [[fallthrough]];
+            content_editable.PasteText(
+                WebString::FromUTF16(value),
+                /*replace_all=*/
+                (action_type == mojom::FieldActionType::kReplaceAll),
+                /*should_smart_replace=*/
+                false);
+            break;
 #endif
           case mojom::FieldActionType::kReplaceAll:
             [[fallthrough]];

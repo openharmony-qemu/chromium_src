@@ -6443,18 +6443,11 @@ void NavigationRequest::CommitNavigation() {
   // consistently upheld condition.
   DUMP_WILL_BE_CHECK(commit_params->redirect_response.size() ==
                      commit_params->redirect_infos.size());
-  if (base::FeatureList::IsEnabled(kSanitizeRedirectUrlsDuringNavigation)) {
-    // Before sending the commit parameters to the renderer process, sanitize
-    // the redirect URLs to avoid leaking pontentially sensitive data into
-    // processes which are cross-site. There is no dependency on the
-    // cross-site-ness, therefore just sanitize unilaterally.
-    for (auto redirect : commit_params->redirect_infos) {
-      redirect.new_url = redirect.new_url.DeprecatedGetOriginAsURL();
-    }
-    for (auto redirect : commit_params->redirects) {
-      redirect = redirect.DeprecatedGetOriginAsURL();
-    }
-  }
+  // Before sending the commit parameters to the renderer process, sanitize
+  // the redirect URLs to avoid leaking potentially sensitive data into
+  // processes which are cross-site. There is no dependency on the
+  // cross-site-ness, therefore just sanitize unilaterally.
+  SanitizeRedirectsForCommit(commit_params);
 
   GetRenderFrameHost()->CommitNavigation(
       this, std::move(common_params), std::move(commit_params),

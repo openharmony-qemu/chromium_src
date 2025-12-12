@@ -97,6 +97,7 @@
 #include "ohos_nweb/src/cef_delegate/nweb_devtools_message_handler_impl.h"
 #if BUILDFLAG(ARKWEB_DEVTOOLS)
 #include "cef/include/cef_devtools_message_handler_delegate.h"
+#include "ohos_cef_ext/libcef/common/cef_open_devtools_ext_opt.h"
 #include "ohos_nweb/src/nweb_common.h"
 #endif // BUILDFLAG(ARKWEB_DEVTOOLS)
 
@@ -5999,9 +6000,10 @@ void NWebDelegate::OpenDevtoolsWithByPb(
   }
  
   CefPoint inspect_element_at(param->point.x, param->point.y);
+  CefOpenDevToolsExtOpt cef_ext_opt(ext_opt.canDock);
   GetBrowser()->GetHost()->ShowDevToolsWithByPb(
       devtools_delegate->GetBrowser()->GetHost(),
-      devtools_message_handler, inspect_element_at, ext_opt);
+      devtools_message_handler, inspect_element_at, cef_ext_opt);
 #endif // #if BUILDFLAG(ARKWEB_DEVTOOLS)
 }
 

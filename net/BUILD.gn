@@ -1124,6 +1124,9 @@ component("net") {
 
   if (defined(arkweb_nweb_ex) && arkweb_nweb_ex) {
     sources += chromium_net_ext_gn_sources
+    deps += [
+      "//base",
+    ]
   }
 
   public_deps = [

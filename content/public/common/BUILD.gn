@@ -95,14 +95,9 @@ source_set("static_switches") {
     "content_switches.cc",
   ]
 
-  if (is_arkweb) {
+  if (is_arkweb || (defined(arkweb_ex_fallback_proxy) && arkweb_ex_fallback_proxy)) {
     sources += arkweb_content_public_common_sources
   }
-
-  if (defined(arkweb_ex_fallback_proxy) && arkweb_ex_fallback_proxy) {
-    sources += arkweb_content_public_common_sources
-  }
-
 
   public_configs = [ ":static_switches_defines" ]
 

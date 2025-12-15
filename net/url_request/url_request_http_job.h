@@ -32,7 +32,6 @@
 #include "net/url_request/url_request_job.h"
 
 #if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
-#include "arkweb/ohos_nweb_ex/overrides/net/proxy_resolution/fallback_proxy_utils.h"
 #include "net/base/proxy_delegate.h"
 #endif
 

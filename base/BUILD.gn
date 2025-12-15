@@ -1124,7 +1124,7 @@ component("base") {
   if (is_ohos && enable_arkweb) {
     sources += arkweb_base_ext_sources
     deps += [ "//arkweb//build/features", "//base/third_party/xdg_user_dirs",]
-    if (is_component_build) {
+    if (is_component_build || (defined(arkweb_ex_fallback_proxy) && arkweb_ex_fallback_proxy)) {
       deps += [ "//content/public/common:switches" ]
     }
     public_deps += [ "//arkweb//build/features" ]

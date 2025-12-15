@@ -15,6 +15,8 @@
 
 #include "log_utils.h"
 
+#include "stdlib.h"
+
 #include <algorithm>
 #include <memory>
 #include <sstream>
@@ -22,7 +24,112 @@
 
 #include "base/strings/string_util.h"
 #include "build/build_config.h"
+#include "net/base/ip_address.h"
+#include "net/base/ip_endpoint.h"
 #include "url/url_constants.h"
+#include "url/url_canon.h"
+#include "url/url_canon_internal.h"
+#include "url/url_canon_stdstring.h"
+#include "url/third_party/mozilla/url_parse.h"
+
+namespace {
+void AppendIPv4Address(const unsigned char address[4], url::CanonOutput* output) {
+  // Noise the ip addressed.
+  for (int i = 0; i < 4; i++) {
+    if (i % 2 == 0) {
+      output->push_back('*');
+      output->push_back('.');
+      continue;
+    }
+    char str[16];
+    url::_itoa_s(address[i], str, 10);
+
+    for (int ch = 0; str[ch] != 0; ch++)
+      output->push_back(str[ch]);
+
+    if (i != 3)
+      output->push_back('.');
+  }    
+}
+
+// Searches for the longest sequence of zeros in |address|, and writes the
+// range into |contraction_range|. The run of zeros must be at least 16 bits,
+// and if there is a tie the first is chosen.
+void ChooseIPv6ContractionRange(const unsigned char address[16],
+                                url::Component* contraction_range) {
+  // The longest run of zeros in |address| seen so far.
+  url::Component max_range;
+
+  // The current run of zeros in |address| being iterated over.
+  url::Component cur_range;
+
+  for (int i = 0; i < 16; i += 2) {
+    // Test for 16 bits worth of zero.
+    bool is_zero = (address[i] == 0 && address[i + 1] == 0);
+
+    if (is_zero) {
+      // Add the zero to the current range (or start a new one).
+      if (!cur_range.is_valid())
+        cur_range = Component(i, 0);
+      cur_range.len += 2;
+    }
+
+    if (!is_zero || i == 14) {
+      // Just completed a run of zeros. If the run is greater than 16 bits,
+      // it is a candidate for the contraction.
+      if (cur_range.len > 2 && cur_range.len > max_range.len) {
+        max_range = cur_range;
+      }
+      cur_range.reset();
+    }
+  }
+  *contraction_range = max_range;
+}
+
+void AppendIPv6Address(const unsigned char address[16], url::CanonOutput* output) {
+  // We will output the address according to the rules in:
+  // http://tools.ietf.org/html/draft-kawamura-ipv6-text-representation-01#section-4
+
+  // Start by finding where to place the "::" contraction (if any).
+  url::Component contraction_range;
+  ChooseIPv6ContractionRange(address, &contraction_range);
+
+  for (int i = 0; i <= 14;) {
+    // We check 2 bytes at a time, from bytes (0, 1) to (14, 15), inclusive.
+    DCHECK(i % 2 == 0);
+    if (i == contraction_range.begin && contraction_range.len > 0) {
+      // Jump over the contraction.
+      if (i == 0)
+        output->push_back(':');
+      output->push_back(':');
+      i = contraction_range.end();
+    } else {
+      // Consume the next 16 bits from |address|.
+      int x = address[i] << 8 | address[i + 1];
+
+      // Noise the ip addressed.
+      if (i % 4 == 0) {
+        i += 2;
+        output->push_back('*');
+        output->push_back(':');
+        continue;
+      }
+
+      i += 2;
+
+      // Stringify the 16 bit number (at most requires 4 hex digits).
+      char str[5];
+      _itoa_s(x, str, 16);
+      for (int ch = 0; str[ch] != 0; ++ch)
+        output->push_back(str[ch]);
+
+      // Put a colon after each number, except the last.
+      if (i < 16)
+        output->push_back(':');
+    }
+  }
+}
+}  // namespace
 
 namespace url {
 const char kReplaceStr[] = "***";
@@ -327,6 +434,20 @@ std::string LogUtils::ConvertPathWithMask(const std::string& file_path) {
         }
     }
     return result;
+}
+
+std::string LogUtils::AnonymizeIpAddress(const net::IPEndPoint& ip_endpoint) {
+  std::string str;
+  url::StdStringCanonOutput output(&str);
+
+  if (ip_endpoint.address().IsIPv4()) {
+    AppendIPv4Address(ip_endpoint.address().bytes().data(), &output);
+  } else if (ip_endpoint.address().IsIPv6()) {
+    AppendIPv6Address(ip_endpoint.address().bytes().data(), &output);
+  }
+
+  output.Complete();
+  return str;
 }
 
 }  // namespace url

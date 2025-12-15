@@ -57,6 +57,9 @@ class COMPONENT_EXPORT(URL) LogUtils {
   static std::string ConvertUrlWithMask(const std::string& url);
   static std::string ConvertPathWithMask(const std::string& file_path);
 
+  // Anonymize the ip address.
+  static std::string AnonymizeIpAddress(const net::IPEndPoint& ip_endpoint);
+
  private:
   FRIEND_TEST_ALL_PREFIXES(LogUtilsTest, IsSupportScheme);
   FRIEND_TEST_ALL_PREFIXES(LogUtilsTest, ConvertUrl);

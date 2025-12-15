@@ -390,8 +390,11 @@ class NET_EXPORT_PRIVATE URLRequestHttpJob : public URLRequestJob {
   // started.
   FirstPartySetMetadata first_party_set_metadata_;
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK) || BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK) \
+  || BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
   int original_net_error_ = 0;
+#endif
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   RetryState state_ = RetryState::INIT;
 #endif
 

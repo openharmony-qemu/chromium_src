@@ -52,8 +52,6 @@ bool URLRequestHttpJob::MaybeRetryWithFallbackProxy(int result) {
       }
 
       if (is_main_frame) {
-        ReportUseFallbackProxyResult(request_->url(), original_net_error_,
-                                     result);
         request_->set_used_fallback_proxy(true);
       }
     }
@@ -94,9 +92,6 @@ bool URLRequestHttpJob::MaybeRetryWithFallbackProxy(int result) {
           reason =
               ProxyUnusedReason::MALICIOUS_TYPE_OR_HW_CODE_NOT_IN_CLOUD_LIST;
         }
-        ReportFallbackProxyUsage(
-            request_->url(), reason == ProxyUnusedReason::MAX_VALUE,
-            static_cast<int>(reason), result, malicious_type, hw_code);
       }
       if (sb_policy_proceed) {
         if (reason != ProxyUnusedReason::NOT_CONNECTION_ERROR) {
@@ -116,8 +111,6 @@ bool URLRequestHttpJob::MaybeRetryWithFallbackProxy(int result) {
       if (base::CommandLine::ForCurrentProcess()->HasSwitch(
               ::switches::kEnableNwebEx) &&
           result && !is_using_fallback_proxy && is_main_frame) {
-        ReportFallbackProxyUsage(request_->url(), 0, static_cast<int>(reason),
-                                 result);
       }
     }
 

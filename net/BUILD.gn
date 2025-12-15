@@ -1127,7 +1127,7 @@ component("net") {
   }
   if (defined(arkweb_ex_fallback_proxy) && arkweb_ex_fallback_proxy ) {
     deps += [
-      "//content/public/common:switches",
+      "//content/public/common:static_switches",
     ]
     deps += [
       "//base",

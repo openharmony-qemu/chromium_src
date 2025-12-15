@@ -32,6 +32,7 @@
 #include "net/url_request/url_request_job.h"
 
 #if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#include "arkweb/chromium_ext/net/proxy_resolution/fallback_proxy_utils.h"
 #include "net/base/proxy_delegate.h"
 #endif
 
@@ -45,21 +46,6 @@ class HttpUserAgentSettings;
 class SSLPrivateKey;
 struct TransportInfo;
 class UploadDataStream;
-
-enum SBThreatURLPolicy { PROCEED, WAIT, DENY };
- 
-enum class ProxyUnusedReason {
-  CLOUD_CONTROL_SWITCH_DISABLED = 0,
-  ERROR_CODE_NOT_IN_CLOUD_LIST,
-  TOP_SITE_IN_BLOCK_LIST,
-  HOST_IN_USING_PROXY_FAILED_LIST,
-  MALICIOUS_TYPE_OR_HW_CODE_NOT_IN_CLOUD_LIST,
-  PROXY_SERVER_UNAVAILABLE,
-  HAS_USED_SYSTEM_PROXY,
-  NOT_CONNECTION_ERROR,
-  AUTH_FAILED,
-  MAX_VALUE = 0xFF,
-};
 
 // A URLRequestJob subclass that is built on top of HttpTransaction. It
 // provides an implementation for both HTTP and HTTPS.

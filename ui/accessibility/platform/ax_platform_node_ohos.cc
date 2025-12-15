@@ -33,6 +33,7 @@
 #include <string>
 
 #include "ohos/adapter/accessibility/accessibility_adapter.h"
+#include "third_party/skia/include/core/SkColor.h"
 
 namespace ui {
 
@@ -80,6 +81,10 @@ bool AXPlatformNodeOHOS::IsClickable() const {
   return GetData().IsClickable();
 }
 
+bool AXPlatformNodeOHOS::IsLongClickable() const {
+  return HasAction(ax::mojom::Action::kLongClick);
+}
+
 bool AXPlatformNodeOHOS::ISelectionItemProviderIsSelected() const {
   // https://www.w3.org/TR/core-aam-1.1/#mapping_state-property_table
   // SelectionItem.IsSelected is set according to the True or False value of
@@ -109,6 +114,37 @@ bool AXPlatformNodeOHOS::IsEnabled() const {
   return true;
 }
 
+std::string AXPlatformNodeOHOS::GetHint() const {
+  std::vector<std::string> strings;
+
+  if (ShouldExposeValueAsName()) {
+    std::string name = GetName();
+    if (!name.empty()) {
+      strings.emplace_back(name);
+    }
+  }
+
+  if (GetData().GetNameFrom() != ax::mojom::NameFrom::kPlaceholder) {
+    std::string placeholder =
+        GetStringAttribute(ax::mojom::StringAttribute::kPlaceholder);
+    if (!placeholder.empty()) {
+      strings.emplace_back(placeholder);
+    }
+  }
+
+  std::string description =
+      GetStringAttribute(ax::mojom::StringAttribute::kDescription);
+  if (!description.empty()) {
+    strings.emplace_back(description);
+  }
+
+  return base::JoinString(strings, " ");
+}
+
+bool AXPlatformNodeOHOS::IsHint() const {
+  return !GetHint().empty();
+}
+
 std::string AXPlatformNodeOHOS::GetText() const {
   if (IsTextField()) {
     return GetStringAttribute(ax::mojom::StringAttribute::kValue);
@@ -118,6 +154,69 @@ std::string AXPlatformNodeOHOS::GetText() const {
 
 std::string AXPlatformNodeOHOS::GetComponentType() const {
   return GetStringAttribute(ax::mojom::StringAttribute::kClassName);
+}
+
+std::string AXPlatformNodeOHOS::GetRoleString() const {
+  return ui::ToString(GetRole());
+}
+
+std::string AXPlatformNodeOHOS::GetDescription() const {
+  return GetStringAttribute(ax::mojom::StringAttribute::kDescription);
+}
+
+std::string AXPlatformNodeOHOS::GetBackgroundColor() const {
+  if (HasIntAttribute(ax::mojom::IntAttribute::kBackgroundColor)) {
+    return base::StringPrintf(
+        "#%X", GetIntAttribute(ax::mojom::IntAttribute::kBackgroundColor));
+  }
+  return "";
+}
+
+std::string AXPlatformNodeOHOS::GetBackgroundImage() const {
+  if (GetRole() == ax::mojom::Role::kImage &&
+      HasStringAttribute(ax::mojom::StringAttribute::kUrl)) {
+    return GetStringAttribute(ax::mojom::StringAttribute::kUrl);
+  }
+  return "";
+}
+
+float AXPlatformNodeOHOS::GetOpacity() const {
+  //If the color cannot be obtained, it will be opaque.
+  if (!HasIntAttribute(ax::mojom::IntAttribute::kColor)) {
+    return 1.0f;
+  }
+
+  // Extract alpha channel and convert to float
+  int color = GetIntAttribute(ax::mojom::IntAttribute::kColor);
+  return SkColor4f::FromColor(color).fA;
+}
+
+bool AXPlatformNodeOHOS::ShouldExposeValueAsName() const {
+  switch (GetRole()) {
+    case ax::mojom::Role::kDate:
+    case ax::mojom::Role::kDateTime:
+    case ax::mojom::Role::kInputTime:
+      return true;
+    case ax::mojom::Role::kColorWell:
+      return false;
+    default:
+      break;
+  }
+
+  if (GetData().IsRangeValueSupported()) {
+    return false;
+  }
+
+  if (IsTextField()) {
+    return true;
+  }
+
+  if (GetRole() == ax::mojom::Role::kPopUpButton &&
+      !GetValueForControl().empty()) {
+    return true;
+  }
+
+  return false;
 }
 
 gfx::NativeViewAccessible AXPlatformNodeOHOS::GetNativeViewAccessible() {

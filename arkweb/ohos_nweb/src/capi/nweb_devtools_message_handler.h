@@ -81,11 +81,11 @@ struct NWebDevtoolsMessageHandlerBase {
       const char* message,
       const char* path,
       NWebBoolValueCallbackNativeApi* callback) = nullptr;
-  bool (T::*set_inspected_page_bounds)(int left,
+  void (T::*set_inspected_page_bounds)(int left,
                                        int top,
                                        int width,
                                        int height) = nullptr;
-  bool (T::*set_dock_mode)(int mode) = nullptr;
+  void (T::*set_dock_mode)(int mode) = nullptr;
 
   NWebDevtoolsMessageHandlerBase() = default;
   NWebDevtoolsMessageHandlerBase(const NWebDevtoolsMessageHandlerBase& other) =
@@ -141,11 +141,11 @@ struct NWebDevtoolsMessageHandler
   virtual void ShowInfoBar(const char* message,
                            const char* path,
                            NWebBoolValueCallbackNativeApi* callback) {}
-  virtual bool SetInspectedPageBounds(int left,
+  virtual void SetInspectedPageBounds(int left,
                                       int top,
                                       int width,
                                       int height) {}
-  virtual bool SetDockMode(int mode) {}
+  virtual void SetDockMode(int mode) {}
 
  private:
   static_assert(offsetof(Base, struct_size) == 0,

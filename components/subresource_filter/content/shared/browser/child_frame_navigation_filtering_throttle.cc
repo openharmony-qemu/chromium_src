@@ -114,7 +114,7 @@ ChildFrameNavigationFilteringThrottle::WillProcessResponse() {
           navigation_handle()->GetDnsAliases().size(),
           static_cast<int>(load_policy_));
 #endif
-}
+    }
 #endif
     DeferStart(DeferStage::kWillProcessResponse);
     return DEFER;

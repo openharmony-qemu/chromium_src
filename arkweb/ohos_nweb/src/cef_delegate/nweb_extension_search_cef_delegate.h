@@ -26,7 +26,7 @@ namespace OHOS::NWeb {
 
 class NWebExtensionSearchCefDelegate {
  public:
-  static void Query(SearchCallback callback,
+  static bool Query(SearchCallback callback,
                     const NWebExtensionSearchQueryInfo& query_info);
 
   static void QueryCallback(int32_t request_id,

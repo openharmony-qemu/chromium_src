@@ -96,6 +96,10 @@
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#endif
+
 namespace net {
 
 namespace {
@@ -756,7 +760,10 @@ void HttpNetworkTransaction::OnCertificateError(int result,
   }
 
 #if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
-  response_.used_fallback_proxy = used_fallback_proxy;
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableNwebEx)) {
+    response_.used_fallback_proxy = used_fallback_proxy;
+  }
 #endif
 
   // TODO(mbelshe):  For now, we're going to pass the error through, and that

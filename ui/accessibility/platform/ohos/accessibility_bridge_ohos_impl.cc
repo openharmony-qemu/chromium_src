@@ -34,9 +34,16 @@ const int32_t kNativeUIRootParentId = -2100000;
 
 AccessibilityBridgeOhosImpl::AccessibilityBridgeOhosImpl(
     aura::Window* root_window)
-    : root_window_(root_window) {}
+    : root_window_(root_window) {
+  root_window_->AddObserver(this);
+}
 
-AccessibilityBridgeOhosImpl::~AccessibilityBridgeOhosImpl() {}
+AccessibilityBridgeOhosImpl::~AccessibilityBridgeOhosImpl() {
+  if (root_window_) {
+    root_window_->RemoveObserver(this);
+    root_window_ = nullptr;
+  }
+}
 
 void AccessibilityBridgeOhosImpl::GetRootWindowPosition() {
   if (root_window_) {
@@ -52,7 +59,7 @@ void AccessibilityBridgeOhosImpl::GetRootWindowPosition() {
       }
     }
   } else {
-    LOG(ERROR) << "AccessibilityBridgeOhosImpl::GetRootWindowPosition fail";
+    LOG(ERROR) << __func__ << " [Accessibility] root_window_ not exist";
     return;
   }
 }
@@ -211,6 +218,10 @@ void AccessibilityBridgeOhosImpl::SetParentNativeUIElement(
   if (element_id == kSearchFromRootMode) {
     AddNativeUIRootElement(element_list, ax_platform_node);
   } else {
+    if (root_window_ == nullptr) {
+      LOG(ERROR) << __func__ << " [Accessibility] root_window_ not exist";
+      return;
+    }
     ui::AXPlatformNodeOHOS* parent = static_cast<ui::AXPlatformNodeOHOS*>(
         ax_platform_node->GetPlatformParent());
     if (!parent) {
@@ -251,6 +262,10 @@ void AccessibilityBridgeOhosImpl::SetSiblingsNativeUIElements(
   if (element_id == kSearchFromRootMode) {
     AddNativeUIRootElement(element_list, ax_platform_node);
   } else {
+    if (root_window_ == nullptr) {
+      LOG(ERROR) << __func__ << " [Accessibility] root_window_ not exist";
+      return;
+    }
     ui::AXPlatformNodeOHOS* parent = static_cast<ui::AXPlatformNodeOHOS*>(
         ax_platform_node->GetPlatformParent());
     if (!parent) {

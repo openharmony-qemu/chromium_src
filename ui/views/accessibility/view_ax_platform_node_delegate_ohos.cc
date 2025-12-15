@@ -107,16 +107,21 @@ void RegisterAccessibilityBridge(Widget* widget) {
     return;
   }
 
-  auto accessibility_bridge =
-      std::make_shared<ui::AccessibilityBridgeOhosImpl>(window);
-
   std::string window_id = GetWindowId(window);
   if (window_id == kInvalidWindowId) {
     return;
   }
 
-  ohos::adapter::accessibility::AccessibilityDelegateOhosRegistry::GetInstance()
-      .RegisterAccessibilityDelegate(window_id, accessibility_bridge);
+  auto existing_delegate = ohos::adapter::accessibility::
+                               AccessibilityDelegateOhosRegistry::GetInstance()
+                                   .GetAccessibilityDelegate(window_id);
+  if (existing_delegate == nullptr) {
+    auto accessibility_bridge =
+        std::make_shared<ui::AccessibilityBridgeOhosImpl>(window);
+    ohos::adapter::accessibility::AccessibilityDelegateOhosRegistry::
+        GetInstance()
+            .RegisterAccessibilityDelegate(window_id, accessibility_bridge);
+  }
 }
 
 // static

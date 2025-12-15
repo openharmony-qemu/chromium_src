@@ -16,7 +16,8 @@ using ohos::adapter::accessibility::NativeElement;
 using ohos::adapter::accessibility::NativeElementList;
 
 class COMPONENT_EXPORT(AX_PLATFORM) AccessibilityBridgeOhosImpl final
-    : public ohos::adapter::accessibility::AccessibilityAdapter::Delegate {
+    : public ohos::adapter::accessibility::AccessibilityAdapter::Delegate,
+      public aura::WindowObserver {
  public:
   AccessibilityBridgeOhosImpl(aura::Window* root_window);
   ~AccessibilityBridgeOhosImpl();
@@ -90,6 +91,13 @@ class COMPONENT_EXPORT(AX_PLATFORM) AccessibilityBridgeOhosImpl final
       ArkUI_AccessibilitySearchMode mode,
       NativeElementList element_list,
       std::shared_ptr<std::promise<bool>> promise);
+
+  void OnWindowDestroying(aura::Window* window) override {
+    if (window != nullptr && window == root_window_) {
+      window->RemoveObserver(this);
+      root_window_ = nullptr;
+    }
+  }
 
   // Root window for the ohos view for which this accessibility bridge
   // instance is responsible.

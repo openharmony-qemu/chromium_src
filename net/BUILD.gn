@@ -1124,11 +1124,12 @@ component("net") {
 
   if (defined(arkweb_nweb_ex) && arkweb_nweb_ex) {
     sources += chromium_net_ext_gn_sources
+  }
+  if (defined(arkweb_ex_fallback_proxy) && arkweb_ex_fallback_proxy ) {
     deps += [
       "//base",
     ]
   }
-
   public_deps = [
     ":net_export_header",
     ":net_public_deps",

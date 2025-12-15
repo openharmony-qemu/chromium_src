@@ -20,11 +20,11 @@ import("//url/features.gni")
 if (is_arkweb) {
   import("//arkweb/build/features/features.gni")
   import("//arkweb/chromium_ext/chromium_ext.gni")
-  import("//arkweb/ohos_nweb_ex/overrides/net/chromium_net_ext.gni")
 }
 
 if (defined(is_arkweb_ext) && is_arkweb_ext) {
   import("//arkweb/ohos_nweb_ex/build/features/features.gni")
+  import("//arkweb/ohos_nweb_ex/overrides/net/chromium_net_ext.gni")
 }
 
 if (is_android) {

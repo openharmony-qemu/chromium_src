@@ -120,7 +120,7 @@ source_set("switches") {
     "content_switches.cc",
   ]
 
-  if (is_arkweb) {
+  if (is_arkweb || (defined(arkweb_ex_fallback_proxy) && arkweb_ex_fallback_proxy)) {
     sources += arkweb_content_public_common_sources
     visibility += [ "//storage:storage_unittests",
       "//components/gwp_asan:gwp_asan_unittests"

@@ -66,6 +66,7 @@
 #endif // ARKWEB_READER_MODE
 
 struct OpenDevToolsParam;
+struct OpenDevToolsExtOpt;
 struct RunJavaScriptParam;
 
 namespace OHOS::NWeb {
@@ -829,6 +830,10 @@ class NWebDelegateInterface
   virtual void OpenDevtoolsWith(
       std::shared_ptr<NWebDelegateInterface> nweb_delegate,
       std::unique_ptr<OpenDevToolsParam> param) = 0;
+  virtual void OpenDevtoolsWithByPb(
+      std::shared_ptr<NWebDelegateInterface> nweb_delegate,
+      std::unique_ptr<OpenDevToolsParam> param,
+      OpenDevToolsExtOpt& ext_opt) = 0;
   virtual void CloseDevtools() = 0;
 
 #if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)

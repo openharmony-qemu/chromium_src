@@ -316,4 +316,59 @@ bool NWebDevToolsMessageHandlerImpl::ActiveDevToolsWindow() {
   return false;
 }
 
+bool NWebDevToolsMessageHandlerImpl::SetInspectedPageBounds(int left,
+                                                            int top,
+                                                            int width,
+                                                            int height) {
+  LOG(DEBUG) << "NWebDevToolsMessageHandlerImpl::SetInspectedPageBounds"
+            << ", left: " << left
+            << ", top: " << top
+            << ", width: " << width
+            << ", height: " << height;
+  if (handler_) {
+    if (!CheckValid(handler_.get(), &handler_->set_inspected_page_bounds)) {
+      LOG(ERROR) << "SetInspectedPageBounds failed, method is invalid";
+      return false;
+    }
+    return (handler_.get()->*(handler_->set_inspected_page_bounds))(left, top, width, height);
+  }
+ 
+  if (handlerNativeApi_) {
+    if (!CheckValid(handlerNativeApi_.get(),
+                    &handlerNativeApi_->set_inspected_page_bounds)) {
+      LOG(ERROR) << "SetInspectedPageBounds failed, method is invalid";
+      return false;
+    }
+    return (handlerNativeApi_.get()
+                ->*(handlerNativeApi_->set_inspected_page_bounds))(left, top, width, height);
+  }
+ 
+  LOG(INFO) << "SetInspectedPageBounds failed, handler is null";
+  return false;
+}
+ 
+bool NWebDevToolsMessageHandlerImpl::SetDockMode(int mode) {
+  LOG(DEBUG) << "NWebDevToolsMessageHandlerImpl::SetDockMode mode: " << mode;
+  if (handler_) {
+    if (!CheckValid(handler_.get(), &handler_->set_dock_mode)) {
+      LOG(ERROR) << "SetDockMode failed, method is invalid";
+      return false;
+    }
+    return (handler_.get()->*(handler_->set_dock_mode))(mode);
+  }
+ 
+  if (handlerNativeApi_) {
+    if (!CheckValid(handlerNativeApi_.get(),
+                    &handlerNativeApi_->set_dock_mode)) {
+      LOG(ERROR) << "SetDockMode failed, method is invalid";
+      return false;
+    }
+    return (handlerNativeApi_.get()
+                ->*(handlerNativeApi_->set_dock_mode))(mode);
+  }
+ 
+  LOG(INFO) << "SetDockMode failed, handler is null";
+  return false;
+}
+
 }  // namespace OHOS::NWeb

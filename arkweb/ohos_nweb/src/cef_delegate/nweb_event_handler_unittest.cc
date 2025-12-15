@@ -22,6 +22,7 @@
 #include "include/cef_client.h"
 #include "include/cef_devtools_message_handler_delegate.h"
 #include "nweb_input_delegate.h"
+#include "ohos_cef_ext/libcef/common/cef_open_devtools_ext_opt.h"
 #include "ui/events/keycodes/keyboard_code_conversion_x.h"
 #include "ui/events/keycodes/keysym_to_unicode.h"
 
@@ -636,6 +637,12 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
       CefRefPtr<ArkWebBrowserHostExt> frontend_browser,
       CefRefPtr<CefDevToolsMessageHandlerDelegate> delegate,
       const CefPoint& inspect_element_at) override {}
+
+  void ShowDevToolsWithByPb(
+      CefRefPtr<ArkWebBrowserHostExt> frontend_browser,
+      CefRefPtr<CefDevToolsMessageHandlerDelegate> delegate,
+      const CefPoint& inspect_element_at,
+      const CefOpenDevToolsExtOpt& ext_opt) override {}
 
   bool IsFullscreen() override { return false; }
 

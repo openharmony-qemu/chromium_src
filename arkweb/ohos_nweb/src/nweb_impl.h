@@ -62,6 +62,7 @@
 #endif
 
 struct OpenDevToolsParam;
+struct OpenDevToolsExtOpt;
 struct RunJavaScriptParam;
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
@@ -677,6 +678,8 @@ class NWebImpl : public NWeb {
   void ReloadOriginalUrl() const;
   void SetBrowserUserAgentString(const std::string& user_agent);
   void OpenDevtools(std::unique_ptr<OpenDevToolsParam> param);
+  void OpenDevtoolsByPb(std::unique_ptr<OpenDevToolsParam> param,
+                        OpenDevToolsExtOpt& ext_opt);
   void CloseDevtools();
   void EnableAutoResize(
       int32_t min_width, int32_t min_height, int32_t max_width, int32_t max_height);

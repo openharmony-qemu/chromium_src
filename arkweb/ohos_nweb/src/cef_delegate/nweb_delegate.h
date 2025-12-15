@@ -60,6 +60,7 @@ struct FrameInfos;
 struct IsolatedWorld;
 struct RunJavaScriptParam;
 struct OpenDevToolsParam;
+struct OpenDevToolsExtOpt;
 
 namespace OHOS::NWeb {
 using namespace ui;
@@ -849,6 +850,10 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void OpenDevtoolsWith(
       std::shared_ptr<NWebDelegateInterface> nweb_delegate,
       std::unique_ptr<OpenDevToolsParam> param) override;
+  void OpenDevtoolsWithByPb(
+      std::shared_ptr<NWebDelegateInterface> nweb_delegate,
+      std::unique_ptr<OpenDevToolsParam> param,
+      OpenDevToolsExtOpt& ext_opt) override;
   void CloseDevtools() override;
 
   int32_t GetArgumentByKey(

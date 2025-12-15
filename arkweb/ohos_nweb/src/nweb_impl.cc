@@ -4071,6 +4071,21 @@ void NWebImpl::OpenDevtools(std::unique_ptr<OpenDevToolsParam> param) {
   nweb_delegate_->OpenDevtoolsWith(nweb->nweb_delegate_, std::move(param));
 }
 
+void NWebImpl::OpenDevtoolsByPb(std::unique_ptr<OpenDevToolsParam> param,
+                      OpenDevToolsExtOpt& ext_opt) {
+  if (nweb_delegate_ == nullptr) {
+    LOG(WARNING) << "OpenDevtoolsV2 failed, no nweb_delegate";
+    return;
+  }
+  int32_t devtools_nweb_id = param->nweb_id;
+  NWebImpl* nweb = NWebImpl::FromID(devtools_nweb_id);
+  if (!nweb) {
+    LOG(WARNING) << "OpenDevtoolsV2 failed, no nweb";
+    return;
+  }
+  nweb_delegate_->OpenDevtoolsWithByPb(nweb->nweb_delegate_, std::move(param), ext_opt);
+}
+
 void NWebImpl::CloseDevtools() {
   if (nweb_delegate_ == nullptr) {
     LOG(WARNING) << "CloseDevtools failed, no nweb_delegate";

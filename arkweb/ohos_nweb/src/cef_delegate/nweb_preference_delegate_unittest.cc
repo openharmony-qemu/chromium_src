@@ -608,6 +608,12 @@ class MockPreferenceCefBrowserHost : public ArkWebBrowserHostExt {
   void ShowDevToolsWith(CefRefPtr<ArkWebBrowserHostExt> frontend_browser,
                         CefRefPtr<CefDevToolsMessageHandlerDelegate> delegate,
                         const CefPoint& inspect_element_at) override {}
+  
+  void ShowDevToolsWithByPb(
+      CefRefPtr<ArkWebBrowserHostExt> frontend_browser,
+      CefRefPtr<CefDevToolsMessageHandlerDelegate> delegate,
+      const CefPoint& inspect_element_at,
+      const CefOpenDevToolsExtOpt& ext_opt) override {}
 
   bool IsFullscreen() override { return false; }
 

@@ -55,7 +55,6 @@
 
 #if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
 #include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
-#include "arkweb/ohos_nweb_ex/overrides/net/proxy_resolution/fallback_proxy_utils.h"
 #include "base/base_switches.h"
 #include "base/command_line.h"
 #include "net/base/proxy_delegate.h"
@@ -537,13 +536,6 @@ int HttpProxyConnectJob::DoTransportConnectComplete(int result) {
   resolve_error_info_ = nested_connect_job_->GetResolveErrorInfo();
   ProxyServer::Scheme scheme = GetProxyServerScheme();
   if (result != OK) {
-#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
-    if (base::CommandLine::ForCurrentProcess()->HasSwitch(
-            ::switches::kEnableNwebEx) &&
-        is_fallback_proxy_server_) {
-      ReportProxyTransportConnectResult(params_->endpoint().host(), result);
-    }
-#endif
 
     // Only record latency for connections to the first proxy in a chain.
     if (params_->proxy_chain_index() == 0) {
@@ -674,8 +666,6 @@ int HttpProxyConnectJob::DoHttpProxyConnectComplete(int result) {
       transport_socket_->GetConnectResponseInfo()->headers) {
     fallback_proxy_response_code_ =
         transport_socket_->GetConnectResponseInfo()->headers->response_code();
-    ReportProxyTunnelConnectResult(params_->endpoint().host(),
-                                   fallback_proxy_response_code_, result);
   }
 #endif
 

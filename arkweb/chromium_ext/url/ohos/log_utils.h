@@ -58,7 +58,7 @@ class COMPONENT_EXPORT(URL) LogUtils {
   static std::string ConvertPathWithMask(const std::string& file_path);
 
   // Anonymize the ip address.
-  // for example: *.0.*.10  *:8777:*:8::d1
+  // for example: 1.0.0.*  *:*:4:8:4:4:4:d1
   static std::string AnonymizeIpAddress(const net::IPEndPoint& ip_endpoint);
 
  private:

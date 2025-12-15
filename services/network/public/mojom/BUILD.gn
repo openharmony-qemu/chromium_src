@@ -1531,6 +1531,8 @@ mojom("mojom") {
     "//url/mojom:url_mojom_scheme_host_port",
   ]
 
+  enabled_features = []
+
   if (arkweb_ex_fallback_proxy) {
     public_deps += [ "//arkweb/chromium_ext/servieces/network/public/mojom" ]
     enabled_features += [ "arkweb_ex_fallback_proxy" ]
@@ -1543,8 +1545,6 @@ mojom("mojom") {
   if (is_win) {
     public_deps += [ "//services/proxy_resolver_win/public/mojom" ]
   }
-
-  enabled_features = []
 
   # TODO(crbug.com/40083944): When moving the service implementation to
   # //services/network, add the correct values for export_class_attribute /

@@ -20,6 +20,10 @@
 #include "base/memory/raw_ptr_exclusion.h"
 #include "base/time/time.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include <sys/prctl.h>
+#endif
+
 namespace named_system_lock {
 
 // A global preferences lock for Linux implemented with pthread mutexes in
@@ -82,6 +86,10 @@ std::unique_ptr<ScopedLockImpl> ScopedLockImpl::TryCreate(
   if (addr == MAP_FAILED) {
     return nullptr;
   }
+#if BUILDFLAG(IS_ARKWEB)
+  prctl(PR_SET_VMA, PR_SET_VMA_ANON_NAME, addr, sizeof(pthread_mutex_t),
+        "lock_linux-mmap-TryCreate");
+#endif
   pthread_mutex_t* mutex = static_cast<pthread_mutex_t*>(addr);
 
   // Note that the mutex is configured with the "robust" attribute. This ensures

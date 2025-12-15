@@ -260,6 +260,10 @@ inline constexpr char kCannotAccessAboutUrl[] =
     "access the frame's origin, and matchAboutBlank must be true.";
 inline constexpr char kCannotAccessChromeUrl[] =
     "Cannot access a chrome:// URL";
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+inline constexpr char kCannotAccessArkWebUrl[] =
+    "Cannot access a arkweb:// URL";
+#endif
 inline constexpr char kCannotAccessExtensionUrl[] =
     "Cannot access a chrome-extension:// URL of different extension";
 // This deliberately does not contain a URL. Otherwise an extension can parse

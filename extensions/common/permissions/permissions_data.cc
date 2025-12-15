@@ -152,7 +152,7 @@ bool PermissionsData::IsRestrictedUrl(const GURL& document_url,
     return true;
 
   bool allow_on_chrome_urls = base::CommandLine::ForCurrentProcess()->HasSwitch(
-                                  switches::kExtensionsOnChromeURLs);                              
+                                  switches::kExtensionsOnChromeURLs);
   if (document_url.SchemeIs(content::kChromeUIScheme) &&
       !allow_on_chrome_urls) {
     if (error)

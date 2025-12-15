@@ -188,11 +188,17 @@ class NWebImpl : public NWeb {
   void SetEnableLowerFrameRate(bool enabled) override;
   void SetEnableHalfFrameRate(bool enabled) override;
   std::shared_ptr<NWebPreference> GetPreference() override;
+#if BUILDFLAG(ARKWEB_AI)
+  std::shared_ptr<NWebAgentManager> GetAgentManager() override;
+#endif  // BUILDFLAG(ARKWEB_AI)
   void PutDownloadCallback(
       std::shared_ptr<NWebDownloadCallback> downloadListener) override;
   void PutReleaseSurfaceCallback(std::shared_ptr<NWebReleaseSurfaceCallback>
                                      releaseSurfaceListener) override;
   void SetNWebHandler(std::shared_ptr<NWebHandler> handler) override;
+#if BUILDFLAG(ARKWEB_AI)
+  void SetNWebAgentHandler(std::shared_ptr<NWebAgentHandler> handler) override;
+#endif
   std::string Title() override;
   uint32_t GetWebId() override;
   std::shared_ptr<HitTestResult> GetHitTestResult() override;

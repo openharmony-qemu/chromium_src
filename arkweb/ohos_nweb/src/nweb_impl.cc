@@ -1735,6 +1735,21 @@ void NWebImpl::SetNWebHandler(std::shared_ptr<NWebHandler> client) {
   client->SetNWeb(shared_from_this());
 }
 
+#if BUILDFLAG(ARKWEB_AI)
+void NWebImpl::SetNWebAgentHandler(
+    std::shared_ptr<NWebAgentHandler> agent_handler) {
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E(
+        "set nweb agent handler failed, nweb delegate is nullptr, nweb_id = "
+        "%{public}u",
+        nweb_id_);
+    return;
+  }
+
+  nweb_delegate_->RegisterNWebAgentHandler(agent_handler);
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
 void NWebImpl::DisableBoost(uint32_t nweb_id) {
   std::shared_ptr<NWebImpl> newb_impl = GetNWebSharedPtr(nweb_id);
@@ -2422,6 +2437,15 @@ std::shared_ptr<NWebPreference> NWebImpl::GetPreference() {
   }
   return nweb_delegate_->GetPreference();
 }
+
+#if BUILDFLAG(ARKWEB_AI)
+std::shared_ptr<NWebAgentManager> NWebImpl::GetAgentManager() {
+  if (nweb_delegate_ == nullptr) {
+    return nullptr;
+  }
+  return nweb_delegate_->GetAgentManager();
+}
+#endif  // BUILDFLAG(ARKWEB_AI)
 
 std::string NWebImpl::Title() {
   if (nweb_delegate_ == nullptr) {

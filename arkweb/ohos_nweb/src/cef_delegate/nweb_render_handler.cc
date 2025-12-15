@@ -47,6 +47,7 @@
 #endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
 #if BUILDFLAG(ARKWEB_AI)
 #include "cef/libcef/browser/image_impl.h"
+#include "nweb_agent_handler.h"
 #include "ui/gfx/image/image_skia.h"
 #endif  // #if BUILDFLAG(ARKWEB_AI)
 
@@ -425,6 +426,13 @@ void NWebRenderHandler::RegisterNWebHandler(
     std::shared_ptr<NWebHandler> handler) {
   handler_ = std::weak_ptr<NWebHandler>(handler);
 }
+
+#if BUILDFLAG(ARKWEB_AI)
+void NWebRenderHandler::RegisterNWebAgentHandler(
+    std::shared_ptr<NWebAgentHandler> handler) {
+  nweb_agent_handler_ = handler;
+}
+#endif  // #if BUILDFLAG(ARKWEB_AI)
 
 void NWebRenderHandler::SetInputMethodClient(
     CefRefPtr<NWebInputMethodClient> client) {

@@ -192,6 +192,8 @@ component("cef_nweb") {
     "src/cef_delegate/nweb_web_storage_delegate.h",
     "src/cef_delegate/nweb_web_storage_origin_impl.cc",
     "src/cef_delegate/nweb_web_storage_origin_impl.h",
+    "src/cef_delegate/nweb_agent_manager_impl.cc",
+    "src/cef_delegate/nweb_agent_manager_impl.h",
     "src/cef_delegate/nweb_custom_keyboard_handler_impl.cc",
     "src/cef_delegate/nweb_custom_keyboard_handler_impl.h",
     "src/sysevent/event_reporter.cc",

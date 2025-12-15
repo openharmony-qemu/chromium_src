@@ -41,6 +41,10 @@ void WebSettingsImplExt::SetScrollBarColor(uint32_t value) {
 void WebSettingsImplExt::SetImageAnalyzerEnabled(bool enabled) {
   settings_->SetImageAnalyzerEnabled(enabled);
 }
+
+void WebSettingsImplExt::SetArkwebAgentEnabled(bool enabled) {
+  settings_->SetArkwebAgentEnabled(enabled);
+}
 #endif
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)

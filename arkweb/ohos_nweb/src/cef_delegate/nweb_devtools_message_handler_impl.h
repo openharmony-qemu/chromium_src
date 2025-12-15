@@ -44,11 +44,11 @@ class NWebDevToolsMessageHandlerImpl
   bool BringToFront() override;
   bool CloseWindow() override;
   bool ActiveDevToolsWindow() override;
-  void SetInspectedPageBounds(int left,
+  bool SetInspectedPageBounds(int left,
                               int top,
                               int width,
                               int height) override;
-  void SetDockMode(int mode) override;
+  bool SetDockMode(int mode) override;
 
  private:
   void GetFileSelectorTitle(std::string& title, uint32_t mode);

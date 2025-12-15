@@ -1151,7 +1151,7 @@ class MockNWebDelegate : public NWebDelegateInterface {
               OpenDevtoolsWithByPb,
               (std::shared_ptr<NWebDelegateInterface> nweb_delegate,
                std::unique_ptr<OpenDevToolsParam> param,
-               OpenDevToolsExtOpt& ext_opt),
+               OpenDevToolsExtOpt ext_opt),
               (override));
   MOCK_METHOD(void, CloseDevtools, (), (override));
 

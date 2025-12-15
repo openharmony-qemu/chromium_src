@@ -1126,6 +1126,7 @@ component("net") {
     sources += chromium_net_ext_gn_sources
   }
   if (defined(arkweb_ex_fallback_proxy) && arkweb_ex_fallback_proxy) {
+    import("//arkweb/ohos_nweb_ex/overrides/net/chromium_net_ext.gni")
     deps += [
       "//base",
       "//base:base_static",

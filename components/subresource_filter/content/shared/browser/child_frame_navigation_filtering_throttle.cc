@@ -26,6 +26,9 @@
 #include "content/public/browser/render_frame_host.h"
 #include "content/public/browser/web_contents.h"
 #include "third_party/blink/public/mojom/devtools/console_message.mojom.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/core/subresource_filter/subresource_filter_utils.h"
+#endif
 
 namespace subresource_filter {
 
@@ -93,10 +96,26 @@ ChildFrameNavigationFilteringThrottle::WillProcessResponse() {
   // and there are outstanding load policy calculations, we are either in dry
   // run mode or checking aliases.
   if (pending_load_policy_calculations_ > 0) {
+#if !BUILDFLAG(IS_ARKWEB_EXT)
     CHECK(parent_frame_filter_->activation_state().activation_level ==
                   mojom::ActivationLevel::kDryRun ||
               navigation_handle()->GetDnsAliases().size() > 0,
           base::NotFatalUntil::M129);
+#else
+    if (!(parent_frame_filter_->activation_state().activation_level ==
+              mojom::ActivationLevel::kDryRun ||
+          navigation_handle()->GetDnsAliases().size() > 0)) {
+#if !defined(COMPONENT_BUILD)
+      ReportSubresourceCheckResult(
+          navigation_handle()->GetURL().host(),
+          static_cast<int>(
+              parent_frame_filter_->activation_state().activation_level),
+          alias_check_enabled_, pending_load_policy_calculations_,
+          navigation_handle()->GetDnsAliases().size(),
+          static_cast<int>(load_policy_));
+#endif
+}
+#endif
     DeferStart(DeferStage::kWillProcessResponse);
     return DEFER;
   }

@@ -224,7 +224,7 @@ void ArkWebHttpNetworkTransactionExt::ReportTimeout() {
                      << " " << record;
   if (!session_->is_strict_log_mode()) {
     LOG(URL) << "request had no reponse within 5 seconds. url: " << url_.spec()
-             << " " << record();
+             << " " << record;
   }
 #endif
 }

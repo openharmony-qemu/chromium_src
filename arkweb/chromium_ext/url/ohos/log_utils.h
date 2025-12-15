@@ -20,6 +20,7 @@
 
 #include "base/component_export.h"
 #include "base/gtest_prod_util.h"
+#include "net/base/ip_endpoint.h"
 #include "url/third_party/mozilla/url_parse.h"
 
 namespace url {

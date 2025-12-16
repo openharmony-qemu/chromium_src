@@ -223,6 +223,7 @@ class PDFiumEngine : public DocumentLoader::Client, public IFSDK_PAUSE {
   void DisplayAnnotations(bool display);
 #if BUILDFLAG(ARKWEB_PDF)
   void OnClickBookmark(const std::string& bookmarkId);
+  void SelectionChangedAtScrollStopped();
 #endif  // BUILDFLAG(ARKWEB_PDF)
 
   // Returns the text contained on the given page. The caller is responsible for
@@ -497,9 +498,9 @@ class PDFiumEngine : public DocumentLoader::Client, public IFSDK_PAUSE {
                                          gfx::Rect& right,
                                          gfx::Rect& clipped_selection_bounds,
                                          const std::vector<PDFiumRange>& selections);
-  void CheckSelectionVisibility(gfx::Rect& top,
-                                gfx::Rect& bottom,
-                                gfx::Rect& clipped_selection_bounds);
+  void CheckSelectionVisibility(const gfx::Rect& left,
+                                const gfx::Rect& right,
+                                const gfx::Rect& clipped_selection_bounds);
 #endif  // BUILDFLAG(ARKWEB_PDF)
 
   // This helper class is used to detect the difference in selection between
@@ -1213,19 +1214,19 @@ class PDFiumEngine : public DocumentLoader::Client, public IFSDK_PAUSE {
   std::map<InkModeledShapeId, FPDF_PAGEOBJECT> ink_modeled_shape_map_;
 #endif  // BUILDFLAG(ENABLE_PDF_INK2)
 
-  base::WeakPtrFactory<PDFiumEngine> weak_factory_{this};
-
-  // Weak pointers from this factory are used to bind the ContinueFind()
-  // function. This allows those weak pointers to be invalidated during
-  // StopFind(), and keeps the invalidation separated from `weak_factory_`.
-  base::WeakPtrFactory<PDFiumEngine> find_weak_factory_{this};
-
 #if BUILDFLAG(ARKWEB_PDF)
   std::map<std::string, FPDF_BOOKMARK> bookmark_store_;
 
   // Used for generating the bookmark ID.
   static std::atomic<uint64_t> g_bookmark_id_;
 #endif  // BUILDFLAG(ARKWEB_PDF)
+
+base::WeakPtrFactory<PDFiumEngine> weak_factory_{this};
+
+//Weak pointers from this factory are used to bind the ContinueFind()
+//function. This allows those weak pointers to be invalidated during
+//StopFind(),and keeps the invalidation separated from 'weak_factory_'.
+base::WeakPtrFactory<PDFiumEngine> find_weak_factory_{this};
 };
 
 }  // namespace chrome_pdf

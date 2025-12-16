@@ -272,6 +272,22 @@ public:
   MOCK_METHOD(void, UnRegisterVpnListener, (), (override));
 };
 
+#if BUILDFLAG(ARKWEB_COOKIE)
+class MockNWebEngineInitArgs : public NWebEngineInitArgs {
+ public:
+  ~MockNWebEngineInitArgs() = default;
+  MOCK_METHOD(std::string, GetDumpPath, (), (override));
+  MOCK_METHOD(bool, GetIsFrameInfoDump, (), (override));
+  MOCK_METHOD(std::list<std::string>, GetArgsToAdd, (), (override));
+  MOCK_METHOD(std::list<std::string>, GetArgsToDelete, (), (override));
+  MOCK_METHOD(bool, GetIsMultiRendererProcess, (), (override));
+  MOCK_METHOD(bool, GetIsEnhanceSurface, (), (override));
+  MOCK_METHOD(bool, GetIsPopup, (), (override));
+  MOCK_METHOD(std::string, GetSharedRenderProcessToken, (), (override));
+  MOCK_METHOD(bool, GetEmulateTouchFromMouseEvent, (), (override));
+};
+#endif
+
 class NWebImplTest : public ::testing::Test {
  public:
   static void SetUpTestCase(void);
@@ -8225,5 +8241,27 @@ TEST_F(NWebImplTest, OffscreenDocumentWindowNewEvent001) {
   EXPECT_EQ(nweb_impl_->off_screen_nweb_id_, 0);
 }
 #endif  // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+
+#if BUILDFLAG(ARKWEB_COOKIE)
+TEST_F(NWebImplTest, LibraryLoaded001) {
+  std::shared_ptr<MockNWebEngineInitArgs> initargs =
+      std::make_shared<MockNWebEngineInitArgs>();
+  NWebImpl::LibraryLoaded(initargs, true);
+  EXPECT_NE(nweb_impl_->save_initargs_, nullptr);
+  EXPECT_EQ(nweb_impl_->should_lazy_init_web_engine_, true);
+}
+
+TEST_F(NWebImplTest, ShouldLazyInitWebEngine001) {
+  nweb_impl_->should_lazy_init_web_engine_ = false;
+  EXPECT_EQ(nweb_impl_->should_lazy_init_web_engine_, false);
+  EXPECT_EQ(NWebImpl::ShouldLazyInitWebEngine(), false);
+}
+
+TEST_F(NWebImplTest, GetSaveInitargs001) {
+  nweb_impl_->save_initargs_ = nullptr;
+  EXPECT_EQ(nweb_impl_->save_initargs_, nullptr);
+  EXPECT_EQ(NWebImpl::GetSaveInitargs(), nullptr);
+}
+#endif
 }  // namespace OHOS::NWeb
                           

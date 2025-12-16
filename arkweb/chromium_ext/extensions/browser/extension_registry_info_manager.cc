@@ -667,6 +667,7 @@ void ExtensionRegistryInfoManager::GetExtensionManifestInfo(
       std::make_optional<ExtensionIncognitoMode>(GetExtensionIncognitoMode(&extension));
 #endif
   manifest.omnibox = GetManifestOmnibox(&extension);
+  manifest.short_name = extension.short_name();
 }
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)

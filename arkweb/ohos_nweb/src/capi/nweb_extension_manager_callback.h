@@ -124,6 +124,7 @@ struct WebExtensionManifestInfo {
   std::optional<NWebExtensionActionIconV2> icons;
   std::optional<WebExtensionManifestUrlOverride> url_override;
   std::optional<WebExtensionManifestOmnibox> omnibox;
+  std::optional<std::string> short_name;
 };
  
 struct WebExtensionInfoV2 {

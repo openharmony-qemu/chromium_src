@@ -603,9 +603,13 @@ int HttpProxyConnectJob::DoTransportConnectComplete(int result) {
 
 #if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
   bool proxy_force_tunnel = false;
+#if BUILDFLAG(IS_ARKWEB)
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
           switches::kEnableNwebEx) &&
       is_fallback_proxy_server_ && next_proto != kProtoHTTP2) {
+#else
+  if (is_fallback_proxy_server_ && next_proto != kProtoHTTP2) {
+#endif
     proxy_force_tunnel = true;
   }
 
@@ -659,11 +663,17 @@ int HttpProxyConnectJob::DoHttpProxyConnect() {
 
 int HttpProxyConnectJob::DoHttpProxyConnectComplete(int result) {
 #if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#if BUILDFLAG(IS_ARKWEB)
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
           ::switches::kEnableNwebEx) &&
       is_fallback_proxy_server_ && transport_socket_ &&
       transport_socket_->GetConnectResponseInfo() &&
       transport_socket_->GetConnectResponseInfo()->headers) {
+#else
+if (is_fallback_proxy_server_ && transport_socket_ &&
+      transport_socket_->GetConnectResponseInfo() &&
+      transport_socket_->GetConnectResponseInfo()->headers) {
+#endif
     fallback_proxy_response_code_ =
         transport_socket_->GetConnectResponseInfo()->headers->response_code();
   }

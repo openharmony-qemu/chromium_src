@@ -759,10 +759,12 @@ void HttpNetworkTransaction::OnCertificateError(int result,
     observed_bad_certs_.emplace_back(ssl_info.cert, ssl_info.cert_status);
   }
 
-#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#if BUILDFLAG(IS_ARKWEB)
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
           switches::kEnableNwebEx)) {
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
     response_.used_fallback_proxy = used_fallback_proxy;
+#endif
   }
 #endif
 

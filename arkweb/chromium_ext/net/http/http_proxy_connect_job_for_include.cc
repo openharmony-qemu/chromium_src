@@ -27,6 +27,7 @@ namespace net {
 
 #if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
 void HttpProxyConnectJob::ResetTimerExInBeginConnect() {
+#if BUILDFLAG(IS_ARKWEB)
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
           ::switches::kEnableNwebEx)) {
     base::TimeDelta timeout;
@@ -46,9 +47,11 @@ void HttpProxyConnectJob::ResetTimerExInBeginConnect() {
     ResetTimer(AlternateNestedConnectionTimeout(*params_,
                                                 network_quality_estimator()));
   }
+#endif
 }
 
 void HttpProxyConnectJob::ResetTimerExInHttpProxyConnect() {
+#if BUILDFLAG(IS_ARKWEB)
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
           ::switches::kEnableNwebEx)) {
     base::TimeDelta timeout;
@@ -72,6 +75,7 @@ void HttpProxyConnectJob::ResetTimerExInHttpProxyConnect() {
   } else {
     ResetTimer(kHttpProxyConnectJobTunnelTimeout);
   }
+#endif
 }
 #endif  // BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
 

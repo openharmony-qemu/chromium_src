@@ -809,12 +809,16 @@ int HttpStreamFactory::JobController::DoResolveProxy() {
 
   CompletionOnceCallback io_callback =
       base::BindOnce(&JobController::OnIOComplete, base::Unretained(this));
-#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#if BUILDFLAG(IS_ARKWEB)
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
-          ::switches::kEnableNwebEx) &&
-      request_info_.retry_with_fallback_proxy) {
+          ::switches::kEnableNwebEx)
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+      && request_info_.retry_with_fallback_proxy) {
     proxy_info_.set_use_fallback_proxy_direct(true);
   }
+#else
+  ){}
+#endif //ARKWEB_EX_FALLBACK_PROXY
 #endif
   return session_->proxy_resolution_service()->ResolveProxy(
       origin_url_, request_info_.method,

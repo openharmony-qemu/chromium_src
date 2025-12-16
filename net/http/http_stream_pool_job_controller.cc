@@ -239,9 +239,12 @@ void HttpStreamPool::JobController::OnCertificateError(
 
 #if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
   bool used_fallback_proxy = false;
+#if BUILDFLAG(IS_ARKWEB)
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
-          ::switches::kEnableNwebEx) &&
-      job) {
+          ::switches::kEnableNwebEx) && job) {
+#else
+  if (job) {
+#endif
     used_fallback_proxy = job->proxy_info().used_fallback_proxy();
   }
   delegate_->OnCertificateError(status, ssl_info, used_fallback_proxy);

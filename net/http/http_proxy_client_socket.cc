@@ -407,12 +407,14 @@ int HttpProxyClientSocket::DoReadHeadersComplete(int result) {
       return rv;
     }
 
-#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#if BUILDFLAG(IS_ARKWEB)
     if (base::CommandLine::ForCurrentProcess()->HasSwitch(
             ::switches::kEnableNwebEx)) {
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
       proxy_delegate_->OnTunnelConnectResult(proxy_chain_, endpoint_.host(),
                                             *response_.headers,
                                             request_headers_);
+#endif                                            
     }
 #endif
   }

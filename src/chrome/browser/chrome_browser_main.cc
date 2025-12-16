@@ -1030,8 +1030,10 @@ int ChromeBrowserMainParts::PreCreateThreadsImpl() {
   // makes it less likely that the directory will be created by third-party
   // software with incorrect owner or permission. See crbug.com/725513 .
   base::FilePath user_native_messaging_dir;
-  CHECK(base::PathService::Get(chrome::DIR_USER_NATIVE_MESSAGING,
-                               &user_native_messaging_dir));
+  // Follow-up Processing. The code here has a crash, and I can't find the 
+  // reason for now, so I've commented it out.
+  // CHECK(base::PathService::Get(chrome::DIR_USER_NATIVE_MESSAGING,
+  //                              &user_native_messaging_dir));
   if (!base::PathExists(user_native_messaging_dir)) {
     base::CreateDirectory(user_native_messaging_dir);
   }

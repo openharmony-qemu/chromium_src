@@ -68,16 +68,19 @@ const char* SharedImageUsageToString(SharedImageUsage usage)
 void PrintSharedImageUsageInfo(SharedImageUsageSet valid_usages)
 {
     uint32_t usage = 1;
-    while (usage <= LAST_SHARED_IMAGE_USAGE) {
-        if (valid_usages & usage) {
-            LOG(DEBUG)
-                << __FUNCTION__
-                << " HWIMGDEC - Supported SharedImageBackingFactory with usage: "
-                << SharedImageUsageToString(static_cast<SharedImageUsage>(usage))
-                << " (" << usage << ")";
-        }
-        usage <<= 1;  // Shift to the next enum value
-    }
+    // Follow-up Processing. In build 141, LAST_SHARED_IMAGE_USAGE was 
+    // changed to 1 << 31, causing an infinite loop. The relevant code 
+    // has been temporarily commented out.
+    // while (usage <= LAST_SHARED_IMAGE_USAGE) {
+    //     if (valid_usages & usage) {
+    //         LOG(DEBUG)
+    //             << __FUNCTION__
+    //             << " HWIMGDEC - Supported SharedImageBackingFactory with usage: "
+    //             << SharedImageUsageToString(static_cast<SharedImageUsage>(usage))
+    //             << " (" << usage << ")";
+    //     }
+    //     usage <<= 1;  // Shift to the next enum value
+    // }
 }
 } // namespace ohos
 } // namespace gpu

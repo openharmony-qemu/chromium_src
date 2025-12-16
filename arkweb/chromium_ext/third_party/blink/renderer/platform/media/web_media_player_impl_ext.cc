@@ -368,7 +368,7 @@ bool WebMediaPlayerImplExt::IsFrameHidden() {
 
 #if BUILDFLAG(ARKWEB_PIP)
 void WebMediaPlayerImpl::PipEnable(bool enable) {
-  LOG(INFO) << "PIC WebMediaPlayerImpl::PipEnable" << enable << "]";
+  LOG(INFO) << "Pip WebMediaPlayerImpl::PipEnable" << enable << "]";
   if (pipeline_controller_) {
     pipeline_controller_->PipEnable(enable);
   } else {

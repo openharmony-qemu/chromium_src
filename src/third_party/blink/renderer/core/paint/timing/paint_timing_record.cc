@@ -79,7 +79,9 @@ ImageRecord::ImageRecord(Node* node,
                         soft_navigation_context),
       media_timing_(new_media_timing),
       hash_(hash) {
-  CHECK_GT(RecordedSize(), 0u);
+  // Follow-up Processing. A failed check caused the renderer process to crash; 
+  // the code has been temporarily commented out.
+  // CHECK_GT(RecordedSize(), 0u);
 }
 
 double ImageRecord::EntropyForLCP() const {

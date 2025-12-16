@@ -144,7 +144,9 @@ PaintTimingDetector::PaintTimingDetector(LocalFrameView* frame_view)
     visualizer_.emplace();
   }
 #if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
-  first_screen_calculator_ = std::make_shared<FirstScreenCalculator>(frame_view);
+  // Follow-up Processing. The White Screen Detection feature caused a crash 
+  // in the renderer process and has been temporarily commented out.
+  // first_screen_calculator_ = std::make_shared<FirstScreenCalculator>(frame_view);
 #endif
 }
 
@@ -318,7 +320,9 @@ void PaintTimingDetector::OnInputOrScroll() {
   image_paint_timing_detector_->StopRecordEntries();
   image_paint_timing_detector_->StopRecordingLargestImagePaint();
 #if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
-  first_screen_calculator_->OnUserScroll();
+  // Follow-up Processing. The White Screen Detection feature caused a crash 
+  // in the renderer process and has been temporarily commented out.
+  // first_screen_calculator_->OnUserScroll();
 #endif
   largest_contentful_paint_calculator_ = nullptr;
 
@@ -474,7 +478,9 @@ void PaintTimingDetector::UpdateLcpCandidate() {
   }
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   else {
-    paint_timing_detector_utils_.CheckNotifyLcpForBlankless();
+    // Follow-up Processing. The White Screen Detection feature caused a crash 
+    // in the renderer process and has been temporarily commented out.
+    // paint_timing_detector_utils_.CheckNotifyLcpForBlankless();
   }
 #endif
 

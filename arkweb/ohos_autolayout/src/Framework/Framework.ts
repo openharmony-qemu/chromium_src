@@ -66,7 +66,7 @@ export default class Framework {
             PageContentObserver.startObserving();
 
             const metrics: LayoutConstraintMetrics = {
-                resultCode: -1,
+                resultCode: Constant.RESULT_CODE_PAGE_CONTENT_NOT_READY,
                 errorMsg: '页面内容未就绪，等待内容加载',
                 duration: 0,
                 report: '启动内容观察器，响应式等待',

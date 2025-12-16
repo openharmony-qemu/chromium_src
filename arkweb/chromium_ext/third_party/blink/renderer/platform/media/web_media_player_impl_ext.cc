@@ -377,7 +377,6 @@ void WebMediaPlayerImpl::PipEnable(bool enable) {
   if (!enable) {
     video_surface_id_ = -1;
   }
-  
 }
 #endif
 

@@ -27,38 +27,37 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ohos/adapter/multiprocess/isolate_process/isolate_process_main.h"
+#include "native_child_process_main.h"
 
 #include <thread>
 
+#include "native_child_process_args_wrapper.h"
 #include "ohos/adapter/common/constants.h"
 #include "ohos/adapter/common/logging.h"
 #include "ohos/adapter/common/trace.h"
 #include "ohos/adapter/multiprocess/app_spawn_communication.h"
 #include "ohos/adapter/multiprocess/command_line/command_line_helper.h"
-#include "ohos/adapter/multiprocess/isolate_process/isolate_process_helper.h"
-#include "ohos/adapter/multiprocess/isolate_process/native_childprocess_args_wrapper.h"
 #include "ohos/adapter/web_entry/web_entry.h"
 
 using namespace std::chrono_literals;
 using namespace ohos::adapter;
 using namespace ohos::adapter::multiprocess;
 
-void IsolateMain(NativeChildProcess_Args args) {
+void ChildMain(NativeChildProcess_Args args) {
   if (args.entryParams == nullptr) {
     return;
   }
   {
-    TRACE_EVENT_0("IsolateMain");
+    TRACE_EVENT_0("ChildMain");
   }
-  LOGD("IsolateMain %{public}s", args.entryParams);
+  LOGD("[ChildProcess] ChildMain %{public}s", args.entryParams);
   std::vector<std::string> commandlines =
       CommandLineHelper::Split(args.entryParams);
   if (commandlines.size() == 0) {
     return;
   }
   for (const auto& commandline : commandlines) {
-    LOGD("IsolateMain %{public}s", commandline.c_str());
+    LOGD("[ChildProcess] ChildMain %{public}s", commandline.c_str());
   }
   std::vector<std::string> commands;
   std::vector<std::pair<int32_t, int32_t>> fds;
@@ -66,5 +65,5 @@ void IsolateMain(NativeChildProcess_Args args) {
   AppSpawnCommunication::SetFdIdsRemap(fds);
   int ret = web_entry::RunIsolateProcessType(ProcessType::kRenderProcess,
                                              commandlines);
-  LOGI("IsolateMain exited with return: %{public}d", ret);
+  LOGI("[ChildProcess] ChildMain exited with return: %{public}d", ret);
 }

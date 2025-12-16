@@ -33,36 +33,35 @@ component("multiprocess") {
   sources = [
     "app_spawn_communication.cc",
     "app_spawn_communication.h",
-    "child_process_starter.cc",
-    "child_process_starter.h",
+    "child_process_manager.cc",
+    "child_process_manager.h",
     "scoped_socket.cc",
     "scoped_socket.h",
     "unix_domain_socket_helper.cc",
-    "unix_domain_socket_helper.h"
+    "unix_domain_socket_helper.h",
   ]
 
   deps = [
     "//ohos/adapter/multiprocess/gpu:gpu",
-
+    "//ohos/adapter/multiprocess/native_child_process:native_child_process"
   ]
 
-  if (enable_isolate_process) {
-    deps += [
-      "//ohos/adapter/multiprocess/isolate_process:isolate_process",
+  defines = []
+
+  if (enable_native_child_process) {
+    defines += [
+      "ENABLE_NATIVE_CHILD_PROCESS"
     ]
-    defines = [
-      "ENABLE_START_ISOLATE_PROCESS"
+  }
+
+  if (enable_isolated_child_process) {
+    defines += [
+      "ENABLE_ISOLATED_CHILD_PROCESS"
     ]
   }
 
   public_deps = [
     "//third_party/aki:aki_jsbind",
-  ]
-
-  cflags = [
-    "-Wno-error=delete-incomplete",
-    "-Wno-error=writable-strings",
-    "-Wno-error=parentheses-equality"
   ]
 }
 

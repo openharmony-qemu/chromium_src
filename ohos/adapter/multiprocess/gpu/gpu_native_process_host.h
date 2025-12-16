@@ -42,47 +42,28 @@ namespace ohos::adapter::multiprocess {
 class GpuNativeProcessHost {
  public:
   int32_t GetPid();
-
   int InitializeWindowAdapter(
       const std::vector<std::pair<std::string, void*>>& windows);
-
   void AddWindow(const std::string& window_id, void* window);
-
   void RemoveWindow(const std::string& window_id);
-
   void SetWindowWidget(const std::string& window_id, int32_t widget_id);
-
-  void SetChildPid(int32_t child_pid);
-
   void NotifyWindowChanged(const std::string& window_id, void* window);
-
   void Initialize(OHIPCRemoteProxy* remote_proxy);
-
   void Initialize(std::shared_ptr<GpuNativeIpcProxy> ipc_proxy);
-
   void Reset();
-
   bool IsInitialized();
-
-  int StartGpuProcess(std::function<void(int32_t)> callback);
+  bool NeedSendRequest();
 
   static GpuNativeProcessHost& GetInstance();
 
-  bool NeedSendRequest();
  private:
   GpuNativeProcessHost() = default;
-
   ~GpuNativeProcessHost() = default;
-
   GpuNativeProcessHost(const GpuNativeProcessHost&);
-
   GpuNativeProcessHost& operator=(const GpuNativeProcessHost&);
 
   std::shared_ptr<GpuNativeIpcProxy> ipc_proxy_{nullptr};
-
-  std::function<void(int32_t)> callback_;
-
-  int start_times_ = 0;
+  // Protect ipc_proxy_
   std::mutex ipc_proxy_mutex_;
 };
 

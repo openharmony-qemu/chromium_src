@@ -51,7 +51,7 @@
 #include "build/build_config.h"
 
 #if BUILDFLAG(IS_OHOS)
-#include "ohos/adapter/multiprocess/child_process_starter.h"
+#include "ohos/adapter/multiprocess/child_process_manager.h"
 #include "ohos/adapter/native_messaging/native_messaging_adapter.h"
 #endif
 
@@ -211,8 +211,8 @@ void ResetChildSignalHandlersToDefaults(void) {
 #if BUILDFLAG(IS_OHOS)
 Process LaunchProcessWithNativeSpawn(const CommandLine& cmdline,
                                      const LaunchOptions& options) {
-  ohos::adapter::multiprocess::ChildProcessStarter &child_process_starter =
-      ohos::adapter::multiprocess::ChildProcessStarter::GetInstance();
+  ohos::adapter::multiprocess::ChildProcessManager& manager =
+      ohos::adapter::multiprocess::ChildProcessManager::GetInstance();
 
   std::vector<std::string> argv = cmdline.argv();
   std::vector<std::pair<int, int>> fd_id_remap;
@@ -228,15 +228,12 @@ Process LaunchProcessWithNativeSpawn(const CommandLine& cmdline,
 
   int pid = -1;
   if (options.is_gpu_process) {
-    pid = child_process_starter.StartGpuProcess(argv, fd_id_remap);
-  } else if (options.is_isolated_process) {
-    pid = child_process_starter.StartIsolateChildProcess(argv,
-                                                         fd_id_remap,
-                                                         options.process_entry_point);
+    pid = manager.StartGpuProcess(argv, fd_id_remap);
   } else {
-    pid = child_process_starter.StartNormalChildProcess(argv,
-                                                        fd_id_remap,
-                                                        options.process_entry_point);
+    pid = manager.StartChildProcess(argv,
+                                    fd_id_remap,
+                                    options.process_entry_point,
+                                    options.is_isolated_process);
   }
   
   if (pid < 0) {

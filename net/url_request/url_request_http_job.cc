@@ -475,9 +475,13 @@ void URLRequestHttpJob::Start() {
 #endif
 
 #if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#if BUILDFLAG(IS_ARKWEB)
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
           ::switches::kEnableNwebEx) &&
       request_->RetryWithFallbackProxy()) {
+#else
+  if (request_->RetryWithFallbackProxy()) {
+#endif
     request_info_.retry_with_fallback_proxy = true;
     did_use_fallback_proxy_ = true;
     LOG(DEBUG) << "This request will use fallback proxy, url "

@@ -33,9 +33,13 @@ bool IsFallbackProxyIgnoreErrorCode(int result) {
 namespace net {
 #if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
 bool URLRequestHttpJob::MaybeRetryWithFallbackProxy(int result) {
+#if BUILDFLAG(IS_ARKWEB)
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
           ::switches::kEnableNwebEx) &&
       !request_->RetryWithFallbackProxy()) {
+#else
+  if (!request_->RetryWithFallbackProxy()) {
+#endif
     bool is_using_fallback_proxy = false;
     if (transaction_ && transaction_->GetResponseInfo() &&
         transaction_->GetResponseInfo()->used_fallback_proxy) {
@@ -106,12 +110,6 @@ bool URLRequestHttpJob::MaybeRetryWithFallbackProxy(int result) {
               << url::LogUtils::ConvertUrlWithMask(request_->url().spec());
         }
       }
-    } else {
-      // the request can't retry with fallback proxy
-      if (base::CommandLine::ForCurrentProcess()->HasSwitch(
-              ::switches::kEnableNwebEx) &&
-          result && !is_using_fallback_proxy && is_main_frame) {
-      }
     }
 
     // 如果直接使用代理失败的话，需要使用非代理再重试一遍
@@ -162,10 +160,12 @@ bool URLRequestHttpJob::CanRetryWithFallbackProxy(
     int result,
     ProxyUnusedReason* unused_reason) {
   DCHECK(unused_reason);
+#if BUILDFLAG(IS_ARKWEB)
   if (!base::CommandLine::ForCurrentProcess()->HasSwitch(
           switches::kEnableNwebEx)) {
     return false;
   }
+#endif
 
   if (result == net::OK) {
     return false;

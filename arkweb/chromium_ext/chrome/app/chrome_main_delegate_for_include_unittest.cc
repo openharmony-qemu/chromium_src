@@ -38,7 +38,11 @@ protected:
   // Reset user data directory
   base::PathService::Override(chrome::DIR_USER_DATA, base::FilePath());
 }
-  void TearDown() override {}
+  void TearDown() override {
+    if (base::PathExists(base::FilePath("/data/storage/el2"))) {
+      base::DeletePathRecursively(base::FilePath("/data/storage/el2"));
+    }
+  }
 };
 
 TEST_F(SetUserDataDirForArkwebTest, TestCase001) {

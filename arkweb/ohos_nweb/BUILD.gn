@@ -244,6 +244,8 @@ component("cef_nweb") {
       "src/cef_delegate/nweb_extension_permissions_handler.h",
       "src/cef_delegate/nweb_extension_tab_cef_delegate.cc",
       "src/cef_delegate/nweb_extension_tab_cef_delegate.h",
+      "src/cef_delegate/nweb_extension_tab_groups_cef_delegate.cc",
+      "src/cef_delegate/nweb_extension_tab_groups_cef_delegate.h",
       "src/cef_delegate/nweb_extension_sessions_handler_delegate.cc",
       "src/cef_delegate/nweb_extension_sessions_handler_delegate.h",
       "src/cef_delegate/nweb_extension_utils.cc",

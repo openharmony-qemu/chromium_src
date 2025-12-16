@@ -1127,9 +1127,6 @@ component("base") {
     if (is_component_build) {
       deps += [ "//content/public/common:switches" ]
     }
-    if (defined(arkweb_ex_fallback_proxy) && arkweb_ex_fallback_proxy){
-      deps += [ "//content/public/common:static_switches" ]
-    }
     public_deps += [ "//arkweb//build/features" ]
     public_deps += [ ":ohos_package_info" ]
     if (is_ohos) {

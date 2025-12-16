@@ -35,7 +35,7 @@
 #include "third_party/perfetto/include/perfetto/tracing/traced_value_forward.h"
 #include "url/origin.h"
 
-#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY) && BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/overrides/cef/libcef/browser/browser_config/browser_cloud_control_global_config.h"
 #endif
 
@@ -471,7 +471,7 @@ class CONTENT_EXPORT BrowserContext : public base::SupportsUserData {
   // any, nullptr otherwise.
   virtual OriginTrialsControllerDelegate* GetOriginTrialsControllerDelegate();
 
-#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY) && BUILDFLAG(IS_ARKWEB_EXT)
   virtual void SetFallbackProxyConfigData(
       const ohos_cloud_control::FallbackProxyConfigData& config_data){};
 #endif

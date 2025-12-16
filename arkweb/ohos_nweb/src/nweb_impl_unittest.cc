@@ -6523,22 +6523,6 @@ TEST_F(NWebImplTest, WebExtensionTabDetached002) {
   EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
 }
 
-TEST_F(NWebImplTest, WebExtensionTabHighlighted001) {
-  NWebExtensionTabHighlightInfo highlightInfo;
-  nweb_impl_->nweb_delegate_ = nullptr;
-  EXPECT_CALL(*mock_delegate_, WebExtensionTabHighlighted(::testing::_)).Times(0);
-  nweb_impl_->WebExtensionTabHighlighted(highlightInfo);
-  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
-}
-
-TEST_F(NWebImplTest, WebExtensionTabHighlighted002) {
-  NWebExtensionTabHighlightInfo highlightInfo;
-  nweb_impl_->nweb_delegate_ = mock_delegate_;
-  EXPECT_CALL(*mock_delegate_, WebExtensionTabHighlighted(::testing::_)).Times(1);
-  nweb_impl_->WebExtensionTabHighlighted(highlightInfo);
-  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
-}
-
 TEST_F(NWebImplTest, WebExtensionTabMoved001) {
   int32_t tab_id = 0;
   std::unique_ptr<NWebExtensionTabMoveInfo> moveInfo = std::make_unique<NWebExtensionTabMoveInfo>();

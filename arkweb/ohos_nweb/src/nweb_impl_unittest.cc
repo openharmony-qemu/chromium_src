@@ -4079,6 +4079,31 @@ TEST_F(NWebImplTest, OnOnlineRenderToForeground002) {
   EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
 }
 
+TEST_F(NWebImplTest, SetScrollbarMode) {
+  NWebImpl::SetScrollbarMode(OHOS::NWeb::ScrollbarMode::FORCE_DISPLAY_SCROLLBAR);
+  nweb_impl_->scrollbarModeChanged_ = false;
+  std::shared_ptr<NWebEngineInitArgs> init_args;
+  nweb_impl_->InitWebEngineArgs(init_args);
+  init_args.reset();
+  nweb_impl_->scrollbarModeChanged_ = true;
+  nweb_impl_->InitWebEngineArgs(init_args);
+  init_args.reset();
+  NWebImpl::SetScrollbarMode(OHOS::NWeb::ScrollbarMode::OVERLAY_LAYOUT_SCROLLBAR);
+  nweb_impl_->scrollbarModeChanged_ = false;
+  nweb_impl_->InitWebEngineArgs(init_args);
+  init_args.reset();
+  nweb_impl_->scrollbarModeChanged_ = true;
+  nweb_impl_->InitWebEngineArgs(init_args);
+  NWebImpl::SetScrollbarMode(OHOS::NWeb::ScrollbarMode::OVERLAY_LAYOUT_SCROLLBAR);
+  NWebImpl::SetScrollbarMode(OHOS::NWeb::ScrollbarMode::FORCE_DISPLAY_SCROLLBAR);
+  nweb_impl_->scrollbarModeChanged_ = false;
+  nweb_impl_->InitWebEngineArgs(init_args);
+  init_args.reset();
+  nweb_impl_->scrollbarModeChanged_ = true;
+  nweb_impl_->InitWebEngineArgs(init_args);
+  EXPECT_GT(nweb_impl_->web_engine_args_.size(), 0);
+}
+
 #if BUILDFLAG(ARKWEB_ACTIVE_POLICY)
 TEST_F(NWebImplTest, SetDelayDurationForBackgroundTabFreezing001) {
   int64_t delay = 1;

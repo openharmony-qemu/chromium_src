@@ -6635,13 +6635,6 @@ void NWebImpl::WebExtensionTabDetached(
   nweb_delegate_->WebExtensionTabDetached(tab_id, std::move(detachInfo));
 }
 
-void NWebImpl::WebExtensionTabHighlighted(NWebExtensionTabHighlightInfo& highlightInfo) {
-  if (nweb_delegate_ == nullptr) {
-    return;
-  }
-  nweb_delegate_->WebExtensionTabHighlighted(highlightInfo);
-}
-
 void NWebImpl::WebExtensionTabMoved(
     int32_t tab_id,
     std::unique_ptr<NWebExtensionTabMoveInfo> moveInfo) {

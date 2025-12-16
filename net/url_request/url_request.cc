@@ -1277,10 +1277,12 @@ void URLRequest::NotifyRequestCompleted() {
   if (has_notified_completion_)
     return;
 
-#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#if BUILDFLAG(IS_ARKWEB)
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
           ::switches::kEnableNwebEx)) {
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
     HandleFallbackProxyResult();
+#endif
   }
 #endif
 

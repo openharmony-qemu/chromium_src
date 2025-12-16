@@ -1128,9 +1128,8 @@ void DiskCacheInfoParser::SetStorageAccessStatusToJson(
     const std::string& param_name,
     base::Value::Dict& dict)
 {
-  if (info->storage_access_status().IsSet()) {
-    auto status = info->storage_access_status().GetStatusForThirdPartyContext();
-    dict.Set(param_name, static_cast<int>(status.value()));
+  if (info->storage_access_status().has_value()) {
+    dict.Set(param_name, static_cast<int>(info->storage_access_status().value()));
   }
 }
 
@@ -1153,8 +1152,7 @@ bool DiskCacheInfoParser::GetStorageAccessStatusFromJson(
     return false;
   }
   info->set_storage_access_status(
-      net::StorageAccessStatusCache(
-        static_cast<net::cookie_util::StorageAccessStatus>(storage_access_status.value())));
+      static_cast<net::cookie_util::StorageAccessStatus>(storage_access_status.value()));
   return true;
 }
 

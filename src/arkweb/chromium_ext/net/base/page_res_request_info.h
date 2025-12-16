@@ -106,8 +106,10 @@ class PRRequestInfo {
   void set_referrer(const std::string& referrer) { referrer_ = referrer; }
   const std::string& method() const { return method_; }
   void set_method(const std::string& method) { method_ = method; }
-  net::StorageAccessStatusCache storage_access_status() const { return storage_access_status_; }
-  void set_storage_access_status(net::StorageAccessStatusCache storage_access_status) {
+  std::optional<net::cookie_util::StorageAccessStatus> storage_access_status() const {
+    return storage_access_status_.IsSet() ? storage_access_status_.GetStatusForThirdPartyContext() : std::nullopt;
+  }
+  void set_storage_access_status(std::optional<net::cookie_util::StorageAccessStatus> storage_access_status) {
     storage_access_status_ = net::StorageAccessStatusCache(storage_access_status);
   }
   net::HttpRequestHeaders extra_request_headers();

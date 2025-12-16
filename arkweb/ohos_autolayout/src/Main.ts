@@ -7,7 +7,7 @@ import Log from './Debug/Log';
 import { CCMConfig } from './Framework/Common/CCMConfig';
 import Framework from './Framework/Framework';
 import WaitSystemReady from './Framework/Utils/WaitSystemReady';
-
+import Alphabet from './Alphabet/Main';
 
 export class Main {
     static initFlag = false;
@@ -33,5 +33,9 @@ export class Main {
         Framework.stopFlag = false;
         Log.d('Autolayout reInit');
         Main.start_()
+    }
+
+    static alphabetStart(config: string): void {
+        Alphabet.start(config);
     }
 }

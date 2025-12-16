@@ -14,8 +14,7 @@
 #include "media/media_buildflags.h"
 #include "tools/v8_context_snapshot/buildflags.h"
 
-#if BUILDFLAG(IS_ARKWEB) \
-|| BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#if BUILDFLAG(IS_ARKWEB) 
 #include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
 #endif
 

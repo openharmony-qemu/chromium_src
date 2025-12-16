@@ -209,10 +209,14 @@ bool EnableInProcessStackDumping() {
 }
 
 size_t CollectStackTrace(span<const void*> trace) {
-  StackCrawlState state(reinterpret_cast<uintptr_t*>(trace.data()),
-                        trace.size());
-  _Unwind_Backtrace(&TraceStackFrame, &state);
-  return state.frame_count;
+  // Follow-up Processing. This section of code caused a crash in the 
+  // renderer process when clicking on a web page, 
+  // and has been temporarily commented out.
+  // StackCrawlState state(reinterpret_cast<uintptr_t*>(trace.data()),
+  //                       trace.size());
+  // _Unwind_Backtrace(&TraceStackFrame, &state);
+  // return state.frame_count;
+  return 0;
 }
 
 // static

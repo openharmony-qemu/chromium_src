@@ -21,6 +21,7 @@
 #include "third_party/icu/source/common/unicode/unistr.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/res_sched_client_adapter.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/security_adapter.h"
 
 using namespace OHOS::NWeb;
 
@@ -59,6 +60,7 @@ class ResSchedReportImpl
     void ReportGestureId(uint32_t id);
     void ReportGestureEx(uint32_t id, bool tag);
     void StartPerformanceBoost();
+    void ReportMemoryUsage(const std::string& msg);
 
     explicit ResSchedReportImpl(ResSchedReport* owner) {
         task_runner_ = base::SingleThreadTaskRunner::GetCurrentDefault();
@@ -103,6 +105,10 @@ void ResSchedReportImpl::StartPerformanceBoost() {
     ->StartPerformanceBoost();
 }
 
+void ResSchedReportImpl::ReportMemoryUsage(const std::string& msg) {
+   
+}
+
 ResSchedReport::ResSchedReport() : impl_() {
   impl_ = ResSchedReportImpl::Create(this);
 }
@@ -128,6 +134,12 @@ void ResSchedReport::ReportGestureEx(uint32_t id, bool tag) {
 void ResSchedReport::StartPerformanceBoost() {
   if (impl_.get()) {
     impl_->StartPerformanceBoost();
+  }
+}
+
+void ResSchedReport::ReportMemoryUsage(const std::string& msg) {
+  if (impl_.get()) {
+    impl_->ReportMemoryUsage(msg);
   }
 }
 }  // namespace device

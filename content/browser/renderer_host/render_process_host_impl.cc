@@ -3286,6 +3286,15 @@ void RenderProcessHostImpl::AppendRendererCommandLine(
       *base::CommandLine::ForCurrentProcess();
   PropagateBrowserCommandLineToRenderer(browser_command_line, command_line);
 
+#if defined(OHOS_MEM_USAGE_REPORT)
+    if(base::CommandLine::ForCurrentProcess()->HasSwitch(switch::kEnableNwebEx)){
+      int count = blink::features::kMemUsageReportCount.Get();
+      if (count > 0){
+        command_line->AppendSwitchASCII("mur", std::to_string(count));
+      }
+    }
+#endif  // BUILDFLAG(OHOS_MEM_USAGE_REPORT)
+
   // Pass on the browser locale.
   const std::string locale =
       GetContentClient()->browser()->GetApplicationLocale();

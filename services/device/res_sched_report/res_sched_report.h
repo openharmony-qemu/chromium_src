@@ -74,6 +74,8 @@ class ResSchedReport : public device::mojom::ResSchedReport {
 
   void StartPerformanceBoost() override;
 
+  void ReportMemoryUsage(const std::string& msg) override;
+
   mojo::ReceiverSet<device::mojom::ResSchedReport> receivers_;
 
   scoped_refptr<ResSchedReportImpl> impl_;

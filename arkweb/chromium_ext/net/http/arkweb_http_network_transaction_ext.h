@@ -74,7 +74,7 @@ class NET_EXPORT_PRIVATE ArkWebHttpNetworkTransactionExt : public HttpNetworkTra
   void StopRecording();
   void ReportTimeout();
 
-  base::RepeatingTimer timer_;
+  base::OneShotTimer timer_;
   bool is_recording_;
 #endif
 };

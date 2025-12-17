@@ -1588,11 +1588,6 @@ int HttpNetworkTransaction::DoReadBody() {
   DCHECK_GT(read_buf_len_, 0);
   DCHECK(stream_ != nullptr);
 
-#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
-  // This only cost several ns.
-  AsArkWebHttpNetworkTransactionExt()->StartRecording();
-#endif
-
   next_state_ = STATE_READ_BODY_COMPLETE;
   return stream_->ReadResponseBody(
       read_buf_.get(), read_buf_len_, io_callback_);
@@ -1602,10 +1597,6 @@ int HttpNetworkTransaction::DoReadBodyComplete(int result) {
   // We are done with the Read call.
 #if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
   TRACE_EVENT1("net", "HttpNetworkTransaction::DoReadBodyComplete", "url", url_.spec());
-#endif
-#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
-  // This only cost several ns.
-  AsArkWebHttpNetworkTransactionExt()->StopRecording();
 #endif
   bool done = false;
   if (result <= 0) {

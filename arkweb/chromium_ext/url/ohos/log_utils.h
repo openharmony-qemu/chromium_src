@@ -20,7 +20,6 @@
 
 #include "base/component_export.h"
 #include "base/gtest_prod_util.h"
-#include "net/base/ip_endpoint.h"
 #include "url/third_party/mozilla/url_parse.h"
 
 namespace url {
@@ -57,10 +56,6 @@ class COMPONENT_EXPORT(URL) LogUtils {
                                 bool should_noise_url = true);
   static std::string ConvertUrlWithMask(const std::string& url);
   static std::string ConvertPathWithMask(const std::string& file_path);
-
-  // Anonymize the ip address.
-  // for example: 1.0.0.*  *:*:4:8:4:4:4:d1
-  static std::string AnonymizeIpAddress(const net::IPEndPoint& ip_endpoint);
 
  private:
   FRIEND_TEST_ALL_PREFIXES(LogUtilsTest, IsSupportScheme);

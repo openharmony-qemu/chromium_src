@@ -209,22 +209,12 @@ void ArkWebHttpNetworkTransactionExt::StopRecording() {
 }
 
 void ArkWebHttpNetworkTransactionExt::ReportTimeout() {
-  const HttpResponseInfo* response_info = GetResponseInfo();
-  base::Value::Dict record;
-
-  if (response_info) {
-    record.Set("ip", url::LogUtils::AnonymizeIpAddress(response_info->remote_endpoint));
-    record.Set("connection_info", net::HttpConnectionInfoToString(response_info->connection_info));
-    record.Set("received_body_bytes", base::NumberToString(received_body_bytes_));
-  }
-  LOG(INFO) << "INFO: request had no reponse within 5 seconds. url: *** " << record;
+  LOG(INFO) << "INFO: request had no reponse within 5 seconds. url: ***";
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
   LOG_FEEDBACK(INFO) << "INFO: request had no reponse within 5 seconds. url: "
-                     << url::LogUtils::ConvertUrlWithMask(url_.spec())
-                     << " " << record;
+                     << url::LogUtils::ConvertUrlWithMask(url_.spec());
   if (!session_->is_strict_log_mode()) {
-    LOG(URL) << "request had no reponse within 5 seconds. url: " << url_.spec()
-             << " " << record;
+    LOG(URL) << "request had no reponse within 5 seconds. url: " << url_.spec();
   }
 #endif
 }

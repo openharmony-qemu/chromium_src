@@ -251,7 +251,7 @@ bool DecommitAndZeroSystemPagesInternal(uintptr_t address,
   }
   PA_CHECK(ret == ptr);
   // Since we just remapped the region, need to set is name again.
-#if defined(LINUX_NAME_REGION)
+#if defined(LINUX_NAME_REGION) || BUILDFLAG(ARKWEB_PER_DFX)
   NameRegion(ret, length, page_tag);
 #endif
   return true;

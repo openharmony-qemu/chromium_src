@@ -11,6 +11,9 @@
 #include "base/logging.h"
 #include "base/memory/page_size.h"
 #include "partition_alloc/thread_cache.h"
+if BUILDFLAG(IS_ARKWEB)
+#include <sys/prctl.h>
+#endif
 
 namespace partition_alloc::tools {
 
@@ -34,6 +37,9 @@ char* CreateMappingAtAddress(uintptr_t address, size_t size) {
     munmap(local_memory, size);
     return nullptr;
   }
+if BUILDFLAG(IS_ARKWEB)
+    prctl(PR_SET_VMA, PR_SET_VMA_ANON_NAME, local_memory, size, "web_pa_1");
+#endif
 
   return reinterpret_cast<char*>(local_memory);
 }

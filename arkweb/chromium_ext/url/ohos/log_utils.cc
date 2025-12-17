@@ -15,8 +15,6 @@
 
 #include "log_utils.h"
 
-#include "stdlib.h"
-
 #include <algorithm>
 #include <memory>
 #include <sstream>
@@ -24,57 +22,7 @@
 
 #include "base/strings/string_util.h"
 #include "build/build_config.h"
-#include "net/base/ip_address.h"
-#include "net/base/ip_endpoint.h"
 #include "url/url_constants.h"
-#include "url/url_canon.h"
-#include "url/url_canon_internal.h"
-#include "url/url_canon_stdstring.h"
-#include "url/third_party/mozilla/url_parse.h"
-
-namespace {
-void AppendIPv4Address(const unsigned char address[4], url::CanonOutput* output) {
-  // Noise the ip addressed.
-  for (int i = 0; i < 4; i++) {
-    if (i == 3) {
-      output->push_back('*');
-      continue;
-    }
-    char str[16];
-    url::_itoa_s(address[i], str, 10);
-
-    for (int ch = 0; str[ch] != 0; ch++)
-      output->push_back(str[ch]);
-
-    if (i != 3)
-      output->push_back('.');
-  }    
-}
-
-void AppendIPv6Address(const unsigned char address[16], url::CanonOutput* output) {
-  for (int i = 0; i <= 14;) {
-    // Consume the next 16 bits from |address|.
-    int x = address[i] << 8 | address[i + 1];
-    i += 2;
-
-    // Stringify the 16 bit number (at most requires 4 hex digits).
-    char str[5];
-    url::_itoa_s(x, str, 16);
-    for (int ch = 0; str[ch] != 0; ++ch) {
-      // Noise the ip addressed.
-      if (i >= 6) {
-        output->push_back('*');
-      } else {
-        output->push_back(str[ch]);
-      }
-    }
-
-    // Put a colon after each number, except the last.
-    if (i < 16)
-      output->push_back(':');
-  }
-}
-}  // namespace
 
 namespace url {
 const char kReplaceStr[] = "***";
@@ -379,20 +327,6 @@ std::string LogUtils::ConvertPathWithMask(const std::string& file_path) {
         }
     }
     return result;
-}
-
-std::string LogUtils::AnonymizeIpAddress(const net::IPEndPoint& ip_endpoint) {
-  std::string str;
-  url::StdStringCanonOutput output(&str);
-
-  if (ip_endpoint.address().IsIPv4()) {
-    AppendIPv4Address(ip_endpoint.address().bytes().data(), &output);
-  } else if (ip_endpoint.address().IsIPv6()) {
-    AppendIPv6Address(ip_endpoint.address().bytes().data(), &output);
-  }
-
-  output.Complete();
-  return str;
 }
 
 }  // namespace url

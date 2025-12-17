@@ -356,12 +356,6 @@ export class PopupWindowRelayout extends AComponent {
     private resetForTypeC(): void {
         Log.d('C型弹窗: 缩放根节点的顶层子节点', Tag.popupRelayout);
         for (let child of this.contentNodes) {
-            const scaleTarget = this.getScaleTargetNode(child);
-            if (scaleTarget !== child) {
-                Log.d(`C型弹窗: 使用子节点进行缩放 ${scaleTarget.className}`, Tag.popupRelayout);
-                this.scaleByTransform(scaleTarget as HTMLElement, this.scale, false, [scaleTarget as HTMLElement], false, []);
-                continue;
-            }
             const childStyle = child.children.length > 0 ? getComputedStyle(child.children[0]) : null;
             const childRect = child.getBoundingClientRect();
             const isFixedOrAbsolute = childStyle ? childStyle.position === 'fixed' || childStyle.position === 'absolute' : false;
@@ -377,17 +371,6 @@ export class PopupWindowRelayout extends AComponent {
     private resetForTypeB(): void {
         Log.d('B型弹窗: 缩放Mask的兄弟节点', Tag.popupRelayout);
         for (let child of this.contentNodes) {
-            const scaleTarget = this.getScaleTargetNode(child);
-            if (scaleTarget !== child) {
-                Log.d(`B型弹窗: 使用子节点进行缩放 ${scaleTarget.className}`, Tag.popupRelayout);
-                if (this.popupDecisionTreeType === PopupDecisionTreeType.Bottom) {
-                    this.scaleByTransform(scaleTarget as HTMLElement, this.scale, false, [scaleTarget as HTMLElement], false, []);
-                }
-                else {
-                    this.scaleByTransform(scaleTarget as HTMLElement, this.scale, this.contentNodes.length > 1, this.contentNodes, false, []);
-                }
-                continue;
-            }
             const childStyle = child.children.length > 0 ? getComputedStyle(child.children[0]) : null;
             const childRect = child.getBoundingClientRect();
             const isFixedOrAbsolute = childStyle ? childStyle.position === 'fixed' || childStyle.position === 'absolute' : false;
@@ -409,39 +392,9 @@ export class PopupWindowRelayout extends AComponent {
         Log.d('A型弹窗: 缩放Mask的子节点', Tag.popupRelayout);
         // 如果mask是rootNode的子节点，content是mask的子节点，则对mask的所有子节点以及它的兄弟节点做缩放
         for (let child of this.contentNodes) {
-            const scaleTarget = this.getScaleTargetNode(child);
-            if (scaleTarget !== child) {
-                Log.d(`A型弹窗: 使用子节点进行缩放 ${scaleTarget.className}`, Tag.popupRelayout);
-                this.scaleByTransform(scaleTarget as HTMLElement, this.scale, false, [scaleTarget as HTMLElement], false, []);
-                continue;
-            }
             this.scaleByTransform(child as HTMLElement, this.scale, false, this.contentNodes, false, []);
             Log.d(`A型弹窗缩放完成: ${child.className}`, Tag.popupRelayout);
         }
-    }
-
-    /**
-     * 当只有一个content节点需要整体缩放时，如果该节点只有一个子节点且高度更高，
-     * 并且自身的overflow会导致截断，优先缩放子节点而非父节点。
-     * @param {HTMLElement} contentNode - 需要检查的content节点
-     * @returns {HTMLElement} - 实际需要缩放的节点
-     */
-    private getScaleTargetNode(contentNode: HTMLElement): HTMLElement {
-        if (this.contentNodes.length !== 1 || contentNode.children.length !== 1) {
-            return contentNode;
-        }
-    
-        const onlyChild = contentNode.children[0] as HTMLElement;
-        const contentRect = contentNode.getBoundingClientRect();
-        const childRect = onlyChild.getBoundingClientRect();
-        const overflow = window.getComputedStyle(contentNode).overflow;
-        const willClip = overflow === 'hidden';
-    
-        if (willClip && childRect.height > contentRect.height) {
-            return onlyChild;
-        }
-    
-        return contentNode;
     }
          
     private scaleChildForTypeB(child: HTMLElement, topNodes: HTMLElement[]): void {

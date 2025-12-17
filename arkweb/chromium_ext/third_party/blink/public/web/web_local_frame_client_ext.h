@@ -21,6 +21,10 @@
 #include "arkweb/chromium_ext/third_party/blink/renderer/platform/web_native_bridge.h"
 #endif
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif // IS_ARKWEB_EXT
+
 namespace blink {
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
 class WebLocalFrameClient;
@@ -42,6 +46,7 @@ class BLINK_EXPORT WebLocalFrameClientExt : public WebLocalFrameClient {
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
   virtual void MouseSelectMenuShow(bool show) {}
   virtual void ChangeVisibilityOfQuickMenu() {}
+  virtual void HideQuickMenu() {}
 #endif
 
 #if BUILDFLAG(ARKWEB_AI)
@@ -69,6 +74,20 @@ class BLINK_EXPORT WebLocalFrameClientExt : public WebLocalFrameClient {
                                              uint64_t frame_sink_id,
                                              int64_t pref_hash) {}
 #endif
+
+#if BUILDFLAG(ARKWEB_PDF)
+  virtual bool IsPDF() override { return false; }
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  virtual bool IsVideoLoadOptimizationEnabled(const std::string& url) { return false; }
+  virtual int GetVideoPreloadTimeDefault() const { return INT_MAX; }
+  virtual int GetVideoMinCacheTimeDefault() const { return INT_MAX; }
+  virtual int GetVideoMaxCacheTimeDefault() const { return INT_MAX; }
+  virtual int GetVideoMoovSizeDefault() const { return INT_MAX; }
+  virtual int GetVideoBitrateDefault() const { return INT_MAX; }
+  virtual bool SetNewsFeedPageFitted() { return false; }
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 };
 
 }

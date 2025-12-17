@@ -187,7 +187,7 @@ struct ThemeFont {
   base::FilePath flag_path;
   base::FilePath manifest_path;
   base::FilePath font_path;
-  base::File font_file;
+  std::vector<base::File> font_files;
 };
 #endif
 
@@ -931,6 +931,9 @@ class CONTENT_EXPORT RenderProcessHostImpl
   friend class VisitRelayingRenderProcessHost;
   friend class StoragePartitonInterceptor;
   friend class RenderProcessHostTestBase;
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class ArkWebRenderProcessHostImplExtTest;
+#endif
 #if BUILDFLAG(IS_ARKWEB)
   std::unique_ptr<ArkwebRenderProcessHostImplUtils> arkweb_render_process_host_impl_utils_;
 #endif

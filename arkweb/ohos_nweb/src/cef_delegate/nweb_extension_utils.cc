@@ -15,12 +15,15 @@
 
 #include "nweb_extension_utils.h"
 
+#include <optional>
+
 #include "base/logging.h"
 #include "cef/libcef/browser/request_context_impl.h"
 #include "chrome/browser/profiles/profile.h"
 #include "extensions/browser/extension_registry.h"
 #include "extensions/browser/extensions_browser_client.h"
 #include "extensions/common/extension.h"
+#include "ohos_nweb/src/capi/browser_service/nweb_extension_common_types.h"
 
 namespace OHOS::NWeb {
 
@@ -43,6 +46,29 @@ content::BrowserContext* GetBrowserContext() {
   content::BrowserContext* browser_context =
       cef_browser_context->AsBrowserContext();
   return browser_context;
+}
+
+const extensions::Extension* FindExtensionById(
+    content::BrowserContext* browser_context,
+    const std::string& extension_id) {
+  if (!browser_context) {
+    LOG(ERROR) << "null browser_context passed in";
+    return nullptr;
+  }
+
+  extensions::ExtensionRegistry* registry =
+      extensions::ExtensionRegistry::Get(browser_context);
+  if (!registry) {
+    LOG(ERROR) << "failed to get extension registry";
+    return nullptr;
+  }
+
+  const extensions::Extension* extension = registry->GetExtensionById(
+      extension_id, extensions::ExtensionRegistry::EVERYTHING);
+  if (!extension) {
+    LOG(ERROR) << "failed to find extension " << extension_id;
+  }
+  return extension;
 }
 
 std::optional<std::string> GetExtensionContextType(
@@ -100,6 +126,21 @@ content::BrowserContext* GetIncognitoContext(
   }
 
   return browser_client->GetOffTheRecordContext(browser_context);
+}
+
+std::optional<NWebExtensionFunctionContext> GetExtensionFunctionContext(
+    const std::string& extension_id,
+    content::BrowserContext* browser_context,
+    std::optional<bool> include_incognito_info) {
+  NWebExtensionFunctionContext context;
+  context.extension_id = extension_id;
+  context.context_type = GetExtensionContextType(browser_context);
+  context.include_incognito_info =
+      include_incognito_info
+          ? include_incognito_info
+          : GetIncludeIncognitoInformation(extension_id, browser_context);
+
+  return context;
 }
 
 }  // namespace OHOS::NWeb

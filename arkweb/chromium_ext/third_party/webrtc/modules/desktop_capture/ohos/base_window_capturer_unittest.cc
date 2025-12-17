@@ -204,7 +204,7 @@ class MockOhosAdapterHelper : public OHOS::NWeb::OhosAdapterHelper {
               CreateFlowbufferAdapter,
               (),
               (override));
-  MOCK_METHOD(std::unique_ptr<MediaAVSessionAdapter>,
+  MOCK_METHOD(std::shared_ptr<MediaAVSessionAdapter>,
               CreateMediaAVSessionAdapter,
               (),
               (override));
@@ -254,6 +254,18 @@ class MockOhosAdapterHelper : public OHOS::NWeb::OhosAdapterHelper {
               (override));
   MOCK_METHOD(std::unique_ptr<NetConfigAdapter>,
               GetNetConfigAdapter,
+              (),
+              (override));
+  MOCK_METHOD(std::unique_ptr<NetEventAdapter>,
+              CreateNetEventAdapter,
+              (),
+              (override));
+  MOCK_METHOD(ColorPickerAdapter&,
+              GetColorPickerAdapter,
+              (),
+              (override));
+  MOCK_METHOD(HiAppeventAdapter&,
+              GetHiAppeventAdapterInstance,
               (),
               (override));
   static MockOhosAdapterHelper& GetInstance() {

@@ -17,6 +17,8 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/blink/renderer/core/frame/frame_test_helpers.h"
 #include "third_party/blink/renderer/platform/testing/task_environment.h"
+#include "third_party/blink/renderer/core/input/event_handler.h"
+#include "third_party/blink/renderer/core/editing/selection_controller.h"
 
 namespace blink {
 
@@ -31,12 +33,26 @@ class WebLocalFrameImplTest : public testing::Test {
     helper_.Reset();
   }
 
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
   void SelectClosetWordAndShowSelectionMenu() {
     frame_impl_->SelectClosetWordAndShowSelectionMenu();
   }
+#endif
 
   void OnDataDetectorSelectText() {
     frame_impl_->OnDataDetectorSelectText();
+  }
+
+  void ResetPage() {
+    frame_impl_->ViewImpl()->page_.Clear();
+  }
+
+  void SetPage(Persistent<Page> page) {
+    frame_impl_->ViewImpl()->page_ = page;
+  }
+
+  Persistent<Page> GetPage() {
+    return frame_impl_->ViewImpl()->page_;
   }
 
   test::TaskEnvironment task_environment_;
@@ -48,10 +64,25 @@ TEST_F(WebLocalFrameImplTest, DidSubresourceFiltered) {
   frame_impl_->DidSubresourceFiltered();
 }
 
+TEST_F(WebLocalFrameImplTest, DidSubresourceFiltered_NoClient) {
+  auto origin_frame_impl = frame_impl_->Client();
+  frame_impl_->SetClient(nullptr);
+  ASSERT_NO_FATAL_FAILURE(frame_impl_->DidSubresourceFiltered());
+  frame_impl_->SetClient(origin_frame_impl);
+}
+
 TEST_F(WebLocalFrameImplTest, GetGlobalAdblockEnabled) {
   frame_impl_->GetGlobalAdblockEnabled();
 }
 
+TEST_F(WebLocalFrameImplTest, GetGlobalAdblockEnabled_NoClient) {
+  auto origin_frame_impl = frame_impl_->Client();
+  frame_impl_->SetClient(nullptr);
+  EXPECT_FALSE(frame_impl_->GetGlobalAdblockEnabled());
+  frame_impl_->SetClient(origin_frame_impl);
+}
+
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
 TEST_F(WebLocalFrameImplTest, SelectClosetWordAndShowSelectionMenu) {
   helper_.Reset();
   SelectClosetWordAndShowSelectionMenu();
@@ -61,6 +92,14 @@ TEST_F(WebLocalFrameImplTest, SelectClosetWordAndShowSelectionMenuWithValidView)
   SelectClosetWordAndShowSelectionMenu();
 }
 
+TEST_F(WebLocalFrameImplTest, SelectClosetWordAndShowSelectionMenu_NoPage) {
+  auto origin_page = GetPage();
+  ResetPage();
+  ASSERT_NO_FATAL_FAILURE(SelectClosetWordAndShowSelectionMenu());
+  SetPage(origin_page);
+}
+#endif
+
 TEST_F(WebLocalFrameImplTest, OnDataDetectorSelectText) {
   helper_.Reset();
   OnDataDetectorSelectText();
@@ -68,6 +107,13 @@ TEST_F(WebLocalFrameImplTest, OnDataDetectorSelectText) {
 
 TEST_F(WebLocalFrameImplTest, OnDataDetectorSelectTextWithValidView) {
   OnDataDetectorSelectText();
+}
+
+TEST_F(WebLocalFrameImplTest, OnDataDetectorSelectText_NoPage) {
+  auto origin_page = GetPage();
+  ResetPage();
+  ASSERT_NO_FATAL_FAILURE(OnDataDetectorSelectText());
+  SetPage(origin_page);
 }
 
 TEST_F(WebLocalFrameImplTest, SelectRangeV2WithValidView) {

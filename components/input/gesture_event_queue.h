@@ -129,6 +129,10 @@ class COMPONENT_EXPORT(INPUT) GestureEventQueue {
 
   gfx::Vector2dF CurrentFlingVelocity() const;
 
+  #if BUILDFLAG(ARKWEB_FLING)
+  void UpdateFlingVelocityLimit(const gfx::Vector2dF& velocity);
+  #endif
+
   void set_debounce_interval_time_ms_for_testing(int interval_ms) {
     debounce_interval_ = base::Milliseconds(interval_ms);
   }
@@ -142,6 +146,10 @@ class COMPONENT_EXPORT(INPUT) GestureEventQueue {
                        blink::mojom::InputEventResultState ack_result);
 
   bool IsFlingActiveForTest() { return FlingInProgressForTest(); }
+
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+  void SetFocusWebId(int32_t nweb_id);
+#endif
 
  private:
   friend class GestureEventQueueTest;

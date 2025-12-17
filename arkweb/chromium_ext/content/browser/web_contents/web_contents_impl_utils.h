@@ -58,7 +58,10 @@ class WebContentsImplUtils {
 #if BUILDFLAG(ARKWEB_PDF)
   void JudgeIsPdfPageVisibilityChanged(Visibility visibility);
 #endif
-};
 
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+  void EvictFrameBackBuffersWhenNWebWasHidden();
+#endif
+};
 }  // namespace content
 #endif

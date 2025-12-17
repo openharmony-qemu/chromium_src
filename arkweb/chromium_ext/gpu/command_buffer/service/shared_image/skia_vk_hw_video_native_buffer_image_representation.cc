@@ -31,6 +31,10 @@
 #include "third_party/skia/include/private/chromium/GrPromiseImageTexture.h"
 #include "ui/gl/gl_utils.h"
 
+#if BUILDFLAG(ARKWEB_VULKAN)
+#include "arkweb/chromium_ext/gpu/config/gpu_finch_features_ext.h"
+#endif
+
 namespace gpu {
 namespace {
 const uint32_t kSemaphoresVectorSize = 2;
@@ -240,6 +244,22 @@ bool SkiaVkHWVideoNBImageRepresentation::BeginAccess(
       return false;
     }
   }
+
+#if BUILDFLAG(ARKWEB_VULKAN)
+  if (base::FeatureList::IsEnabled(features::kInsertVKEndSemaphore) && end_semaphores) {
+    end_access_semaphore_ =
+        vk_implementation()->CreateExternalSemaphore(vk_device());
+    if (end_access_semaphore_ == VK_NULL_HANDLE) {
+      DLOG(ERROR) << "Failed to create the external semaphore.";
+      if (begin_access_semaphore_ != VK_NULL_HANDLE) {
+        vkDestroySemaphore(vk_device(), begin_access_semaphore_,
+                          nullptr /*pAllocator=*/);
+        begin_access_semaphore_ = VK_NULL_HANDLE;
+      }
+      return false;
+    }
+  }
+#endif
 
   if (begin_access_semaphore_ != VK_NULL_HANDLE) {
     begin_semaphores->emplace_back(

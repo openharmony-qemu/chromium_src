@@ -696,4 +696,61 @@ TEST_P(HTMLMediaElementTest, IncludeTestIsMediaResumeFromBFCachePage) {
   EXPECT_EQ(Media()->IsMediaResumeFromBFCachePage(), true);
 }
 #endif  // BUILDFLAG(ARKWEB_BFCACHE)
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+TEST_P(HTMLMediaElementTest, IncludeTestVideoId) {
+  if (GetParam() != MediaTestParam::kVideo) {
+    return;
+  }
+  auto* video = To<HTMLVideoElement>(Media());
+  video->GetDocument().body()->AppendChild(video);
+  ASSERT_NO_FATAL_FAILURE(Media()->videoId());
+}
+
+TEST_P(HTMLMediaElementTest, VideoLoadOpt_IncludeTestHbsMediaPreloadTime) {
+  if (GetParam() != MediaTestParam::kVideo) {
+    return;
+  }
+  auto* video = To<HTMLVideoElement>(Media());
+  video->GetDocument().body()->AppendChild(video);
+  EXPECT_EQ(Media()->hbsMediaPreloadTime(), 4);
+}
+
+TEST_P(HTMLMediaElementTest, VideoLoadOpt_IncludeTestHbsMediaMinCacheTime) {
+  if (GetParam() != MediaTestParam::kVideo) {
+    return;
+  }
+  auto* video = To<HTMLVideoElement>(Media());
+  video->GetDocument().body()->AppendChild(video);
+  EXPECT_EQ(Media()->hbsMediaMinCacheTime(), 2);
+}
+
+TEST_P(HTMLMediaElementTest, VideoLoadOpt_IncludeTestHbsMediaMaxCacheTime) {
+  if (GetParam() != MediaTestParam::kVideo) {
+    return;
+  }
+  auto* video = To<HTMLVideoElement>(Media());
+  video->GetDocument().body()->AppendChild(video);
+  EXPECT_EQ(Media()->hbsMediaMaxCacheTime(), 6);
+}
+
+TEST_P(HTMLMediaElementTest, VideoLoadOpt_IncludeTestHbsMediaBitrate) {
+  if (GetParam() != MediaTestParam::kVideo) {
+    return;
+  }
+  auto* video = To<HTMLVideoElement>(Media());
+  video->GetDocument().body()->AppendChild(video);
+  EXPECT_EQ(Media()->hbsMediaBitrate(), 2000);
+}
+
+TEST_P(HTMLMediaElementTest, VideoLoadOpt_IncludeTestHbsMediaMoovSize) {
+  if (GetParam() != MediaTestParam::kVideo) {
+    return;
+  }
+  auto* video = To<HTMLVideoElement>(Media());
+  video->GetDocument().body()->AppendChild(video);
+  EXPECT_EQ(Media()->hbsMediaMoovSize(), 512);
+}
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
 }  // namespace blink

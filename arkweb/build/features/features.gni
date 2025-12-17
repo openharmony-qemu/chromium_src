@@ -136,6 +136,7 @@ declare_args() {
   arkweb_scrollbar = true
   arkweb_scrollbar_avoid_area = true
   arkweb_scrollbar_avoid_corner = true
+  arkweb_softkeyboard_avoid = true
   arkweb_scroll_performance = true
   arkweb_secure_javascript_proxy = true
   arkweb_security_state = true
@@ -241,14 +242,20 @@ declare_args() {
   arkweb_ext_password=false
   arkweb_ex_free_copy=false
   arkweb_blank_optimize = true
+  arkweb_first_screen_paint = true
   arkweb_viewport_avoid = true
   arkweb_error_page = true
   arkweb_gwp_asan = true
   arkweb_bgtask = false
   arkweb_privacy_compliance = true
   arkweb_reader_mode=false
-  arkweb_ex_enable_applinking = false
+  arkweb_blank_screen_detection = true
   arkweb_blank_prop_config = true
+  arkweb_autolayout = true
+  arkweb_enable_prebuild = false
+  arkweb_ext_https_upgrades=false
+  arkweb_console_logging=true
+  arkweb_offline_web_evict_back_buffers = true
 }
 
 # Features enabled in mojom bindings.
@@ -309,6 +316,7 @@ if (defined(enable_arkweb_ext) && enable_arkweb_ext) {
   arkweb_mojo_features += [
     "arkweb_ext_network_connection",
     "arkweb_ext_http_dns_fallback",
+    "arkweb_ext_video_load_optimization",
   ]
 }  #endif  // BUILDFLAG(ARKWEB_EXT)
 

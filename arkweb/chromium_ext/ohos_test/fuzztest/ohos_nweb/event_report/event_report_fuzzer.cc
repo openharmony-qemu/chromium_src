@@ -43,6 +43,19 @@ void ReportPageLoadStatsFuzzTest(const uint8_t* data, size_t size) {
   ReportPageLoadStats(instanceId, accessSumCount, accessSuccCount, accessFailCount);
 }
 
+void ReportRenderJsFreezeFuzzTest(const uint8_t* data, size_t size) {
+  if ((data == nullptr) || (size == 0)) {
+    return;
+  }
+  FuzzedDataProvider dataProvider(data, size);
+  int32_t pid = dataProvider.ConsumeIntegralInRange<int>(0, MAX_INT_SIZE);
+  std::string packageName = dataProvider.ConsumeRandomLengthString(MAX_STRING_LENGTH);
+  std::string processName = dataProvider.ConsumeRandomLengthString(MAX_STRING_LENGTH);
+  std::string freezeMsg = dataProvider.ConsumeRandomLengthString(MAX_STRING_LENGTH);
+  int32_t uid = dataProvider.ConsumeIntegralInRange<int>(0, MAX_INT_SIZE);
+  ReportRenderJsFreeze(pid, packageName, processName, freezeMsg, uid);
+}
+
 void ReportMultiInstanceStatsFuzzTest(const uint8_t* data, size_t size) {
   if ((data == nullptr) || (size == 0)) {
     return;
@@ -380,6 +393,19 @@ void ReportGpuProcessEventFuzzTest(const uint8_t* data, size_t size) {
   ReportGpuProcessEvent(CrashType::MAILBOX_NONEXISTENT, eventContent);
 }
 
+void ReportAppfreezeFuzzTest(const uint8_t* data, size_t size) {
+  if ((data == nullptr) || (size == 0)) {
+    return;
+  }
+  FuzzedDataProvider dataProvider(data, size);
+  int32_t pid = dataProvider.ConsumeIntegralInRange<int>(0, MAX_INT_SIZE);
+  std::string packageName = dataProvider.ConsumeRandomLengthString(MAX_STRING_LENGTH);
+  std::string processName = dataProvider.ConsumeRandomLengthString(MAX_STRING_LENGTH);
+  std::string freezeMsg = dataProvider.ConsumeRandomLengthString(MAX_STRING_LENGTH);
+  int32_t uid = dataProvider.ConsumeIntegralInRange<int>(0, MAX_INT_SIZE);
+  ReportAppfreeze(pid, packageName, processName, freezeMsg, uid);
+}
+
 }  // namespace OHOS
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
@@ -413,5 +439,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
 
   OHOS::ReportFirstMeaningfulPaintDoneFuzzTest(data, size);
   OHOS::ReportGpuProcessEventFuzzTest(data, size);
+
+  OHOS::ReportRenderJsFreezeFuzzTest(data, size);
+  OHOS::ReportAppfreezeFuzzTest(data, size);
   return 0;
 }

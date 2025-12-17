@@ -21,8 +21,11 @@
 #define private public
 #include "arkweb/ohos_adapter_ndk/graphic_adapter/vsync_adapter_impl.h"
 #undef private
+#include "arkweb/ohos_adapter_ndk/mock_ndk_api/include/mock_ndk_api.h"
+#include <thread>
 
 using namespace testing;
+using namespace MockNdkApi;
 
 namespace OHOS::NWeb {
 
@@ -47,13 +50,38 @@ void VSyncAdapterImplTest::TearDown() {}
 TEST_F(VSyncAdapterImplTest, VSyncAdapterImplTest_001)
 {
     VSyncAdapterNdkImpl &adapter = VSyncAdapterNdkImpl::GetInstance();
-    adapter.Init();
+
+    g_mock_OH_NativeVSync_Create = [](const char* name, unsigned int length) {
+        return nullptr;
+    };
+    VSyncErrorCode ret = adapter.Init();
+    EXPECT_EQ(ret, VSyncErrorCode::ERROR);
+    ret = adapter.RequestVsync(nullptr, nullptr);
+    EXPECT_EQ(ret, VSyncErrorCode::ERROR);
+    int64_t period = adapter.GetVSyncPeriod();
+    EXPECT_EQ(period, 0);
+
+    g_mock_OH_NativeVSync_Create = nullptr;
+    ret = adapter.Init();
+    EXPECT_EQ(ret, VSyncErrorCode::SUCCESS);
+    EXPECT_NE(adapter.vsyncReceiver_, nullptr);
+    ret = adapter.Init();
+    EXPECT_EQ(ret, VSyncErrorCode::SUCCESS);
+
     VSyncAdapterNdkImpl vsyncAdapter;
     void* client = nullptr;
     adapter.OnVsync(1, client);
     adapter.VsyncCallbackInner(0);
     adapter.VsyncCallbackInner(1);
-    int64_t period = adapter.GetVSyncPeriod();
+
+    g_mock_OH_NativeVSync_GetPeriod = [](OH_NativeVSync* nativeVSync, long long* period) {
+        *period = -1;
+        return 0;
+    };
+    period = adapter.GetVSyncPeriod();
+    EXPECT_EQ(period, -1);
+    g_mock_OH_NativeVSync_GetPeriod = nullptr;
+    period = adapter.GetVSyncPeriod();
     EXPECT_EQ(period, 0);
     adapter.SetFrameRateLinkerEnable(false);
     adapter.SetFramePreferredRate(1);
@@ -61,6 +89,8 @@ TEST_F(VSyncAdapterImplTest, VSyncAdapterImplTest_001)
     adapter.SetOnVsyncEndCallback(OnVsyncCallback);
     adapter.SetIsGPUProcess(false);
     adapter.SetDVSyncSwitch(false);
+    g_mock_OH_NativeVSync_Create = nullptr;
+    g_mock_OH_NativeVSync_GetPeriod = nullptr;
 }
 
 TEST_F(VSyncAdapterImplTest, VSyncAdapterImplTest_002)
@@ -70,6 +100,13 @@ TEST_F(VSyncAdapterImplTest, VSyncAdapterImplTest_002)
     adapter.hasRequestedVsync_ = true;
     EXPECT_EQ(VSyncErrorCode::SUCCESS, adapter.RequestVsync(nullptr, nullptr));
     adapter.hasRequestedVsync_ = false;
+    g_mock_OH_NativeVSync_RequestFrame = [](OH_NativeVSync* nativeVSync,
+        OH_NativeVSync_FrameCallback callback, void* data) {
+        return -1;
+    };
+    EXPECT_EQ(VSyncErrorCode::ERROR, adapter.RequestVsync(nullptr, nullptr));
+    g_mock_OH_NativeVSync_RequestFrame = nullptr;
     EXPECT_EQ(VSyncErrorCode::SUCCESS, adapter.RequestVsync(nullptr, nullptr));
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 }
 } // namespace OHOS::NWeb

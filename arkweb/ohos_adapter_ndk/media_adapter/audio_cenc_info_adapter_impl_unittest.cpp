@@ -35,7 +35,7 @@ class AudioCencInfoAdapterImplTest : public ::testing::Test {
 TEST_F(AudioCencInfoAdapterImplTest, GetKeyID_ShouldReturnKeyId_WhenCalled)
 {
     AudioCencInfoAdapterImpl audioCencInfoAdapterImpl;
-    uint8_t* keyId = (uint8_t*)"keyId";
+    uint8_t keyId[] = {'0', '1'};
     audioCencInfoAdapterImpl.SetKeyId(keyId);
     EXPECT_EQ(audioCencInfoAdapterImpl.GetKeyId(), keyId);
 }
@@ -61,7 +61,7 @@ TEST_F(AudioCencInfoAdapterImplTest, GetKeyIDLen_ShouldReturnKeyIdLen_WhenCalled
 TEST_F(AudioCencInfoAdapterImplTest, GetIv_ShouldReturnIv_WhenCalled)
 {
     AudioCencInfoAdapterImpl audioCencInfoAdapterImpl;
-    uint8_t* iv = (uint8_t*)"iv";
+    uint8_t iv[] = {'i', 'v'};
     audioCencInfoAdapterImpl.SetIv(iv);
     EXPECT_EQ(audioCencInfoAdapterImpl.GetIv(), iv);
 }

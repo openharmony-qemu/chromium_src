@@ -64,10 +64,8 @@ TEST_F(MemoryMappedFileExtTest, DeleteMemoryMappedFile_001)
 {
   std::shared_ptr<MemoryMappedFile> memory_mapped_file_test =
       std::make_shared<MemoryMappedFile>();
-  memory_mapped_file_test->mapper_file_ext_.data_ = nullptr;
   memory_mapped_file_test->mapper_file_ext_.customizeData_ = true;
-  EXPECT_FALSE((memory_mapped_file_test->mapper_file_ext_.data_ != nullptr) &&
-               (memory_mapped_file_test->mapper_file_ext_.mapper_ == nullptr));
+  EXPECT_FALSE(memory_mapped_file_test->mapper_file_ext_.mapper_ == nullptr);
   memory_mapped_file_test.reset();
 }
 
@@ -76,11 +74,9 @@ TEST_F(MemoryMappedFileExtTest, DeleteMemoryMappedFile_002)
   std::shared_ptr<MemoryMappedFile> memory_mapped_file_test =
       std::make_shared<MemoryMappedFile>();
   uint8_t* raw_ptr_to_array = new uint8_t[2]{0x01, 0x02};
-  memory_mapped_file_test->mapper_file_ext_.data_ = raw_ptr_to_array;
   memory_mapped_file_test->mapper_file_ext_.customizeData_ = true;
   memory_mapped_file_test->mapper_file_ext_.mapper_ = nullptr;
-  EXPECT_TRUE((memory_mapped_file_test->mapper_file_ext_.data_ != nullptr) &&
-              (memory_mapped_file_test->mapper_file_ext_.mapper_ == nullptr));
+  EXPECT_TRUE(memory_mapped_file_test->mapper_file_ext_.mapper_ == nullptr);
   memory_mapped_file_test.reset();
 }
 

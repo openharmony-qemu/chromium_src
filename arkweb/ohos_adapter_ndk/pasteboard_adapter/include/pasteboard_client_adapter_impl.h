@@ -26,7 +26,7 @@ namespace OHOS::NWeb {
 class PasteDataRecordAdapterImpl : public PasteDataRecordAdapter {
 public:
     PasteDataRecordAdapterImpl(OH_UdmfRecord* record,
-                               bool need_destory_record);
+                               std::shared_ptr<OH_UdmfData> owner_data);
     PasteDataRecordAdapterImpl(const std::string& mimeType,
                                std::shared_ptr<std::string> htmlText,
                                std::shared_ptr<std::string> plainText);
@@ -65,7 +65,7 @@ private:
                        const std::string& optionType = "",
                        int result = 0);
     std::string HtmlToPlainText(const std::string& html);
-    bool need_destory_record_ = true;
+    std::shared_ptr<OH_UdmfData> owner_data_ = nullptr; // Record shares lifetime with data owner to avoid premature destruction
 };
 
 class PasteDataAdapterImpl : public PasteDataAdapter {
@@ -83,7 +83,7 @@ public:
     std::size_t GetRecordCount() override;
     PasteRecordVector AllRecords() override;
 private:
-    OH_UdmfData* data_ = nullptr;
+    std::shared_ptr<OH_UdmfData> data_ = nullptr;
 };
 
 typedef struct {
@@ -109,6 +109,7 @@ public:
     uint32_t GetTokenId() override;
     int32_t AddPasteboardChangedObserver(std::shared_ptr<PasteboardObserverAdapter> callback) override;
     void RemovePasteboardChangedObserver(int32_t callbackId) override;
+    bool HasType(const char* type) override;
     static CallbackSharedWrapper<PasteBoardCallback> callbackWrapper_;
 private:
     uint32_t tokenId_ = 0;

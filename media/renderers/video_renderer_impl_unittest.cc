@@ -8,6 +8,16 @@
 #include <string_view>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_TEST)
+#include "ohos_sdk/openharmony/native/llvm/bin/../include/libcxx-ohos/include/c++/v1/__ranges/lazy_split_view.h"
+#define private public
+#include "media/renderers/video_renderer_impl.h"
+#undef private
+#else
+#include "media/renderers/video_renderer_impl.h"
+#endif // ARKWEB_TEST
+
 #include "base/containers/circular_deque.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback.h"
@@ -33,7 +43,6 @@
 #include "media/base/test_helpers.h"
 #include "media/base/video_frame.h"
 #include "media/base/wall_clock_time_source.h"
-#include "media/renderers/video_renderer_impl.h"
 #include "media/video/mock_gpu_memory_buffer_video_frame_pool.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
@@ -1830,5 +1839,9 @@ TEST_F(VideoRendererLatencyHintTest,
 
   Destroy();
 }
+
+#if BUILDFLAG(ARKWEB_TEST)
+#include "arkweb/chromium_ext/media/renderers/video_renderer_impl_for_include_unittest.cc"
+#endif // ARKWEB_TEST
 
 }  // namespace media

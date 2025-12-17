@@ -226,6 +226,10 @@ void OHOSAudioDecoder::Initialize(const AudioDecoderConfig& config,
       .Run(DecoderStatus::Codes::kUnsupportedCodec);
     return;
   }
+
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+  ReportAudioHardwareDecode(mime_type_);
+#endif
   LOG(INFO) << "OHOSAudioDecoder::Initialize mime type: " << mime_type_;
 
   PrepareParameters(config);
@@ -345,6 +349,11 @@ void OHOSAudioDecoder::SetCdm(CdmContext* cdm_context, InitCB init_cb) {
 
 void OHOSAudioDecoder::OnCdmContextEvent(CdmContext::Event event) {
   LOG(INFO) << "OHOSAudioDecoder::OnCdmContextEvent enter";
+  if (!task_runner_->RunsTasksInCurrentSequence()) {
+    task_runner_->PostTask(
+        FROM_HERE, base::BindOnce(&OHOSAudioDecoder::OnCdmContextEvent, weak_factory_.GetSafeRef(), event));
+    return;
+  }
   if (event != CdmContext::Event::kHasAdditionalUsableKey) {
     return;
   }
@@ -360,6 +369,12 @@ void OHOSAudioDecoder::OnCdmContextEvent(CdmContext::Event event) {
 void OHOSAudioDecoder::OnMediaCryptoReady(InitCB init_cb, void* session, bool requires_secure_video_codec) {
   TRACE_EVENT0("media", "OHOSAudioDecoder::OnMediaCryptoReady");
   LOG(INFO) << "OHOSAudioDecoder::OnMediaCryptoReady enter";
+  if (!task_runner_->RunsTasksInCurrentSequence()) {
+    task_runner_->PostTask(
+        FROM_HERE, base::BindOnce(&OHOSAudioDecoder::OnMediaCryptoReady, weak_factory_.GetSafeRef(),
+                                  std::move(init_cb), session, requires_secure_video_codec));
+    return;
+  }
   if (session == nullptr) {
     LOG(ERROR) << "OHOSAudioDecoder::OnMediaCryptoReady can't play encrypted stream";
     SetState(UNINITIALIZED);
@@ -454,6 +469,11 @@ bool OHOSAudioDecoder::CreateOhosDecoderLoop() {
 // LCOV_EXCL_STOP
 
 void OHOSAudioDecoder::SetState(State new_state) {
+  if (!task_runner_->RunsTasksInCurrentSequence()) {
+    task_runner_->PostTask(
+        FROM_HERE, base::BindOnce(&OHOSAudioDecoder::SetState, weak_factory_.GetSafeRef(), new_state));
+    return;
+  }
   LOG(INFO)<< "OHOSAudioDecoder::SetState state_: " << static_cast<int32_t>(state_)
     << " new_state: " << static_cast<int32_t>(new_state);
   state_ = new_state;
@@ -468,6 +488,11 @@ void OHOSAudioDecoder::ClearInputQueue(DecoderStatus decode_status) {
 }
 
 void OHOSAudioDecoder::OnError(int32_t errorCode) {
+  if (!task_runner_->RunsTasksInCurrentSequence()) {
+    task_runner_->PostTask(
+        FROM_HERE, base::BindOnce(&OHOSAudioDecoder::OnError, weak_factory_.GetSafeRef(), errorCode));
+    return;
+  }
   if (state_ != WAITING_FOR_MEDIA_CRYPTO && waiting_for_key_) {
     SetState(WAITING_FOR_MEDIA_CRYPTO);
   }
@@ -519,13 +544,43 @@ void OHOSAudioDecoder::Decode(scoped_refptr<DecoderBuffer> buffer, DecodeCB deco
   LOG(DEBUG) << "OHOSAudioDecoder::Decode loop start success";
 }
 
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
 void OHOSAudioDecoder::ReportDrmAudioPlayErrorInfo(const std::string& errorDesc) {
-  if (!ohos_crypto_context_) {
-      std::string errorType = "drm audio play error";
-      int errorCode = DEFAULT_DRM_AUDIO_ERROR_CODE;
-      ReportWebMediaPlayErrorInfo(errorType, errorCode, errorDesc);
+  if (ohos_crypto_context_) {
+    std::string errorType = "drm audio play error";
+    int errorCode = DEFAULT_DRM_AUDIO_ERROR_CODE;
+    ReportWebMediaPlayErrorInfo(errorType, errorCode, errorDesc);
   }
 }
+
+void OHOSAudioDecoder::ReportDrmEncryptedPlaybackInfo(const DecryptConfig* decrypt_config) {
+  if (is_reported) {
+    return;
+  }
+  std::string encryptedAlgo = "";
+  std::string drmSystem = "";
+  switch (decrypt_config->encryption_scheme()) {
+    case EncryptionScheme::kCenc:
+      encryptedAlgo = "DRM_ALG_CENC_AES_CTR";
+      break;
+    case EncryptionScheme::kCbcs:
+      encryptedAlgo = "DRM_ALG_CENC_AES_CBC";
+      break;
+    default:
+      encryptedAlgo = "DRM_ALG_CENC_UNENCRYPTED";
+  }
+  if (ohos_crypto_context_) {
+    std::vector<uint8_t> schemeUUID = ohos_crypto_context_->GetUUID();
+    static const char hex_chars[] = "0123456789abcdef";
+    for (uint8_t byte : schemeUUID) {
+      drmSystem += hex_chars[byte >> 4];    // 高4位
+      drmSystem += hex_chars[byte & 0x0F];  // 低4位
+    }
+  }
+  ReportDrmEncryptedPlayback("audio", drmSystem, encryptedAlgo);
+  is_reported = true;
+}
+#endif
 
 void OHOSAudioDecoder::Reset(base::OnceClosure closure) {
   LOG(INFO) << "OHOSAudioDecoder::Reset";
@@ -550,7 +605,7 @@ void OHOSAudioDecoder::Reset(base::OnceClosure closure) {
   }
 
   audio_decoder_->StartDecoder();
-  timestamp_helper_->SetBaseTimestamp(kNoTimestamp);
+  timestamp_helper_->Reset();
   SetState(success ? READY : ERROR);
   task_runner_->PostTask(FROM_HERE, std::move(closure));
 }
@@ -660,6 +715,9 @@ OHOSAudioDecoderLoop::InputData OHOSAudioDecoder::ProvideInputData() {
 
     const DecryptConfig* decrypt_config = decoder_buffer->decrypt_config();
     if (decrypt_config) {
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+      ReportDrmEncryptedPlaybackInfo(decrypt_config);
+#endif
       SetCencInfoToInputData(data, decrypt_config);
     }
 
@@ -687,7 +745,7 @@ bool OHOSAudioDecoder::OnDecodedEos(const OutputBufferData& out) {
 }
 
 bool OHOSAudioDecoder::OnDecodedFrame(const OutputBufferData& out) {
-  if (out.size_ == 0U || out.index_ == OHOSAudioDecoderLoop::kInvalidBufferIndex
+  if (out.size_ == 0U || out.index_ == static_cast<uint32_t>(OHOSAudioDecoderLoop::kInvalidBufferIndex)
     || decoder_loop_ == nullptr || channel_count_ == 0) {
       LOG(ERROR) << "OHOSAudioDecoder::OnDecodedFrame buffer data is invalid";
       return false;
@@ -748,6 +806,11 @@ bool OHOSAudioDecoder::OnDecodedFrame(const OutputBufferData& out) {
 // LCOV_EXCL_START
 void OHOSAudioDecoder::OnCodecLoopError() {
   LOG(ERROR) << "OHOSAudioDecoder::OnCodecLoopError";
+  if (!task_runner_->RunsTasksInCurrentSequence()) {
+    task_runner_->PostTask(
+        FROM_HERE, base::BindOnce(&OHOSAudioDecoder::OnCodecLoopError, weak_factory_.GetSafeRef()));
+    return;
+  }
   SetState(ERROR);
   ClearInputQueue(DecoderStatus::Codes::kFailed);
 }

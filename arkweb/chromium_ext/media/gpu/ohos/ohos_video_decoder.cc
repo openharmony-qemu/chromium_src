@@ -42,7 +42,8 @@
 
 namespace media {
 namespace {
-constexpr int DEFAULT_DRM_VIDEO_ERROR_CODE = 0;
+const int kDrmVideoErrorCode = 0;
+const int kVideoDecoderErrorCode = 1;
 
 void OutputBufferReleased(base::RepeatingClosure pump_cb, bool has_work) {
   if (!has_work) {
@@ -322,7 +323,10 @@ bool OhosVideoDecoder::SurfaceTransitionPending() {
 void OhosVideoDecoder::TransitionToTargetSurface() {
   LOG(INFO) << "OhosVideoDecoder::TransitionToTargetSurface";
   DCHECK(SurfaceTransitionPending());
-
+  if (!codec_) {
+    LOG(ERROR) << "OhosVideoDecoder::TransitionToTargetSurface, codec is nullptr";
+    return;
+  }
   if (!codec_->SetSurface(target_surface_bundle_)) {
     video_frame_factory_->SetSurfaceBundle(nullptr);
     EnterTerminalState(State::kError, "Could not switch codec output surface");
@@ -439,29 +443,29 @@ void OhosVideoDecoder::OnCodecConfigured(
 
 void OhosVideoDecoder::Decode(scoped_refptr<DecoderBuffer> buffer,
                               DecodeCB decode_cb) {
-  LOG(DEBUG) << "OhosVideoDecoder::Decode: " << buffer->AsHumanReadableString();
   if (!buffer) {
     LOG(ERROR) << "OhosVideoDecoder::Decode buffer is null";
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
-    if (!ohos_crypto_context_) {
+    if (ohos_crypto_context_) {
       std::string errorType = "drm video play error";
-      int errorCode = DEFAULT_DRM_VIDEO_ERROR_CODE;
+      int errorCode = kDrmVideoErrorCode;
       std::string errorDesc = "OhosVideoDecoder::Decode buffer is null";
       ReportWebMediaPlayErrorInfo(errorType, errorCode, errorDesc);
     }
-#endif
+#endif // ARKWEB_REPORT_SYS_EVENT
     std::move(decode_cb).Run(DecoderStatus::Codes::kFailed);
     return;
   }
+  LOG(DEBUG) << "OhosVideoDecoder::Decode: " << buffer->AsHumanReadableString();
   if (state_ == State::kError) {
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
-    if (!ohos_crypto_context_) {
+    if (ohos_crypto_context_) {
       std::string errorType = "drm video play error";
-      int errorCode = DEFAULT_DRM_VIDEO_ERROR_CODE;
+      int errorCode = kDrmVideoErrorCode;
       std::string errorDesc = "OhosVideoDecoder::Decode state_ is error";
       ReportWebMediaPlayErrorInfo(errorType, errorCode, errorDesc);
     }
-#endif
+#endif // ARKWEB_REPORT_SYS_EVENT
     std::move(decode_cb).Run(DecoderStatus::Codes::kFailed);
     return;
   }
@@ -493,13 +497,13 @@ void OhosVideoDecoder::FlushCodec() {
 
   if (!codec_->Flush()) {
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
-    if (!ohos_crypto_context_) {
+  if (ohos_crypto_context_) {
       std::string errorType = "drm video play error";
-      int errorCode = DEFAULT_DRM_VIDEO_ERROR_CODE;
+      int errorCode = kDrmVideoErrorCode;
       std::string errorDesc = "Codec flush failed";
       ReportWebMediaPlayErrorInfo(errorType, errorCode, errorDesc);
     }
-#endif
+#endif // ARKWEB_REPORT_SYS_EVENT
     EnterTerminalState(State::kError, "Codec flush failed");
   }
 }
@@ -537,6 +541,10 @@ bool OhosVideoDecoder::QueueInput() {
   PendingDecode& pending_decode = pending_decodes_.front();
 
   auto status = codec_->QueueInputBuffer(*pending_decode.buffer);
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+  ReportDrmVideoBehavior(*pending_decode.buffer);
+#endif
+
   // fix
   switch (status) {
     case CodecWrapper::QueueStatus::kOk:
@@ -712,6 +720,14 @@ void OhosVideoDecoder::EnterTerminalState(State state, const char* reason) {
   state_ = state;
   DCHECK(InTerminalState());
 
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+  ReportWebMediaPlayErrorInfo("Video Decoder Error", kVideoDecoderErrorCode, reason);
+#endif // ARKWEB_REPORT_SYS_EVENT
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(ERROR) << "Video decoding failed message: " << reason;
+#endif // ARKWEB_LOGGER_REPORT
+
   // Cancel pending codec creation.
   codec_allocator_weak_factory_.InvalidateWeakPtrs();
   pump_codec_timer_.Stop();
@@ -811,4 +827,41 @@ void OhosVideoDecoder::ResumeDmaBuffer() {
   }
 }
 #endif  // ARKWEB_MEDIA_DMABUF
+
+#if BUILDFLAG(ARKWEB_TEST)
+void OhosVideoDecoder::TestOutputBufferReleased(base::RepeatingClosure pump_cb, bool has_work) {
+  OutputBufferReleased(pump_cb, has_work);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+void OhosVideoDecoder::ReportDrmVideoBehavior(const DecoderBuffer& buffer) {
+  const DecryptConfig* decrypt_config = buffer.decrypt_config();
+  if (is_reported || !decrypt_config) {
+    return;
+  }
+  std::string encryptedAlgo = "";
+  std::string drmSystem = "";
+  switch (decrypt_config->encryption_scheme()) {
+    case EncryptionScheme::kCenc:
+      encryptedAlgo = "DRM_ALG_CENC_AES_CTR";
+      break;
+    case EncryptionScheme::kCbcs:
+      encryptedAlgo = "DRM_ALG_CENC_AES_CBC";
+      break;
+    default:
+      encryptedAlgo = "DRM_ALG_CENC_UNENCRYPTED";
+  }
+  if (ohos_crypto_context_) {
+    std::vector<uint8_t> schemeUUID = ohos_crypto_context_->GetUUID();
+    static const char hex_chars[] = "0123456789abcdef";
+    for (uint8_t byte : schemeUUID) {
+      drmSystem += hex_chars[byte >> 4];    // 高4位
+      drmSystem += hex_chars[byte & 0x0F];  // 低4位
+    }
+  }
+  ReportDrmEncryptedPlayback("video", drmSystem, encryptedAlgo);
+  is_reported = true;
+}
+#endif
 }  // namespace media

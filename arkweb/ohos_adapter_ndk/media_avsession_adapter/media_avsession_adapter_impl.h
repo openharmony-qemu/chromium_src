@@ -16,6 +16,14 @@
 #ifndef MEDIA_AVSESSION_ADAPTER_IMPL_H
 #define MEDIA_AVSESSION_ADAPTER_IMPL_H
 
+#include <algorithm>
+#include <deque>
+#include <future>
+#include <thread>
+#include <mutex>
+#include <memory>
+#include <vector>
+
 #include <unordered_map>
 #include <multimedia/av_session/native_avmetadata.h>
 #include <multimedia/av_session/native_avsession.h>
@@ -46,7 +54,7 @@ private:
     MediaAVSessionType type_;
 };
 
-class MediaAVSessionAdapterImpl : public MediaAVSessionAdapter {
+class MediaAVSessionAdapterImpl : public MediaAVSessionAdapter, public std::enable_shared_from_this<MediaAVSessionAdapterImpl> {
 public:
     MediaAVSessionAdapterImpl();
     ~MediaAVSessionAdapterImpl() override;
@@ -79,11 +87,15 @@ private:
     static AVSessionCallback_Result AVSessionOnPlayFromAssertIdCallback(OH_AVSession *session,
         const char *assertId, void *userData);
 
-    AVMetadata_Result UpdateAVMetadata(void);
-    bool UpdateMetaDataCache(const std::shared_ptr<MediaAVSessionMetadataAdapter> metadata);
-    bool UpdateMetaDataCache(const std::shared_ptr<MediaAVSessionPositionAdapter> position);
-    bool UpdatePlaybackStateCache(MediaAVSessionPlayState state);
-    bool UpdatePlaybackStateCache(const std::shared_ptr<MediaAVSessionPositionAdapter> position);
+    AVMetadata_Result UpdateAVMetadata();
+    bool UpdateMetaData(const std::shared_ptr<MediaAVSessionMetadataAdapter> metadata);
+    bool UpdateDuration(const std::shared_ptr<MediaAVSessionPositionAdapter> position);
+    bool UpdatePlaybackState(MediaAVSessionPlayState state);
+    bool UpdatePlaybackPosition(const std::shared_ptr<MediaAVSessionPositionAdapter> position);
+    bool IsUrlInQueue(const std::string& url);
+    void AddUrl(const std::string& url);
+    void ProcessPosterQueue();
+    bool StartAsyncPosterUpdate();
     void DestroyAndEraseSession();
     bool CreateNewSession(const MediaAVSessionType& type);
     void InitMediaAVSessionAdapterImpl();
@@ -93,11 +105,22 @@ private:
     OH_AVMetadataBuilder *builder_ = nullptr;
     OH_AVMetadata *avMetadata_ = nullptr;
     OH_AVSession *avSession_ = nullptr;
-    bool isActived_;
+    bool isActived_ = false;
 
     static std::unordered_map<std::string, MediaAVSessionAdapterImpl *> avSessionMap;
     size_t callback_index_ = 0;
     static CallbackSharedWrapper<MediaAVSessionCallbackAdapter> callback_wrapper_;
+
+    std::future<void> media_futures_;
+    std::string poster_url_ = "";
+    std::string poster_new_ = "";
+    std::string title_ = "";
+    std::string artist_ = "";
+    std::string album_ = "";
+    int duration_ = 0;
+    std::deque<std::string> url_queue_;
+    std::mutex url_mutex_;
+    std::mutex avsession_mutex_;
 };
 } // namespace OHOS::NWeb
 

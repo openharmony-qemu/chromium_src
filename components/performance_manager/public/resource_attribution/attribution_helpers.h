@@ -15,6 +15,10 @@
 #include "content/public/common/process_type.h"
 #include "third_party/abseil-cpp/absl/types/variant.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "base/logging.h"
+#endif
+
 namespace performance_manager {
 class FrameNode;
 class WorkerNode;
@@ -93,6 +97,12 @@ void SplitResourceAmongFramesAndWorkers(
 
   std::set<const FrameNode*> frame_nodes;
   for (const FrameNode* f : process_node->GetFrameNodes()) {
+#if BUILDFLAG(IS_ARKWEB)
+    if (!f) {
+      LOG(ERROR) << "SplitResourceAmongFramesAndWorkers::FrameNode is nullptr";
+      continue;
+    }
+#endif
     if (!base::Contains(nodes_to_skip, f)) {
       frame_nodes.insert(f);
     }

@@ -71,7 +71,7 @@ void DestructionHelper(
 WebNativeBridgeImpl::WebNativeBridgeImpl(
     WebLocalFrame* frame,
     WebNativeClient* client,
-    WebNativeDelegate* delegate,
+    base::WeakPtr<blink::WebNativeDelegate> delegate,
     std::unique_ptr<media::RendererFactorySelector> renderer_factory_selector,
     std::unique_ptr<VideoFrameCompositor> compositor,
     scoped_refptr<base::SequencedTaskRunner> media_task_runner,
@@ -115,8 +115,9 @@ WebNativeBridgeImpl::~WebNativeBridgeImpl() {
   LOG(DEBUG) << "[NativeEmbed] ~WebNativeBridgeImpl.";
 
   // delegate_->PlayerGone(delegate_id_);
-  delegate_->RemoveObserver(delegate_id_);
-  delegate_ = nullptr;
+  if (delegate_) {
+    delegate_->RemoveObserver(delegate_id_);
+  }
 
   // The underlying Pipeline must be stopped before it is destroyed.
   //
@@ -259,7 +260,9 @@ void WebNativeBridgeImpl::ActivateSurfaceLayerForSameLayer() {
   media::LayerRemovedVisibilityChangedCB layer_removed_visibility_change_cb =
       base::BindRepeating(&WebNativeBridgeImpl::CleanupVisibilityForRemovedLayer,
                           weak_this_);
-
+  if (client_) {
+    bridge_->SetStretchContentToFillBounds(client_->GetStretchContentToFillBounds());
+  }
   surface_layer_ = bridge_->CreateSurfaceLayer(std::move(rect_change_cb), std::move(rect_visibility_change_cb),
       std::move(layer_removed_visibility_change_cb));
   client_->SetCcLayer(surface_layer_.get());
@@ -289,6 +292,12 @@ void WebNativeBridgeImpl::UnregisterContentsLayer(cc::Layer* layer)
 }
 
 void WebNativeBridgeImpl::OnSurfaceIdUpdated(viz::SurfaceId surface_id) {
+}
+
+void WebNativeBridgeImpl::SetStretchContentToFillBounds(bool stretch_content_to_fill_bounds) {
+  if (bridge_) {
+    bridge_->SetStretchContentToFillBounds(stretch_content_to_fill_bounds);
+  }
 }
 // LCOV_EXCL_STOP
 }  // namespace blink

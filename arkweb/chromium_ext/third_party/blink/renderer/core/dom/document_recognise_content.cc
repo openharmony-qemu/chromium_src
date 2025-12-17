@@ -212,8 +212,8 @@ bool DocumentRecogniseContent::IsMatchContentTemplates(
     return false;
   }
 
-  unsigned int minimum_content_length =
-      NovelTemplateFeatures::GetInstance().GetMinimumContentLength();
+  unsigned int minimum_content_length = static_cast<unsigned int>(
+      NovelTemplateFeatures::GetInstance().GetMinimumContentLength());
   if (content_element->innerText().length() < minimum_content_length) {
     LOG(INFO) << __func__ << " [Distiller] content too less for "
               << content_template

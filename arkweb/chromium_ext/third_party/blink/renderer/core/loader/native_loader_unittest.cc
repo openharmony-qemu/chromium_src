@@ -119,6 +119,14 @@ class NativeLoaderTest : public PageTestBase {
     loader_->ReportFirstPaintTime(frame_timing_details);
   }
 
+  void SetParamUpdateTaskPending(bool flag) {
+    loader_->param_update_task_pending_ = flag;
+  }
+
+  void SetNativeEmbedId(int id) {
+    loader_->native_embed_id_ = id;
+  }
+
   HTMLPlugInElement* plugin_element;
   Persistent<HTMLNativeLoader> loader_;
   MockCcLayer mock_cc_layer_;
@@ -257,6 +265,57 @@ TEST_F(NativeLoaderTest, GetNativeBridgeHostRemote) {
 TEST_F(NativeLoaderTest, ReportFirstPaintTime) {
   viz::FrameTimingDetails frame_timing_details;
   ReportFirstPaintTime(frame_timing_details);
+}
+
+TEST_F(NativeLoaderTest, ProcessParamChanges001) {
+  Vector<ParamChangeInfo> param_changes;
+  param_changes.push_back(ParamChangeInfo(ParamChangeInfo::Status::kAdd,
+                                          AtomicString("test"),
+                                          AtomicString("test"),
+                                          AtomicString("test")));
+  param_changes.push_back(ParamChangeInfo(ParamChangeInfo::Status::kUpdate,
+                                          AtomicString("test"),
+                                          AtomicString("test"),
+                                          AtomicString("test")));
+  param_changes.push_back(ParamChangeInfo(ParamChangeInfo::Status::kDelete,
+                                          AtomicString("test"),
+                                          AtomicString("test"),
+                                          AtomicString("test")));
+  loader_->ProcessParamChanges(param_changes);
+}
+
+TEST_F(NativeLoaderTest, ProcessParamChanges002) {
+  Vector<ParamChangeInfo> param_changes;
+  param_changes.push_back(ParamChangeInfo(ParamChangeInfo::Status::kAdd,
+                                          AtomicString("test"),
+                                          AtomicString("test"),
+                                          AtomicString("test")));
+  param_changes.push_back(ParamChangeInfo(ParamChangeInfo::Status::kUpdate,
+                                          AtomicString("test"),
+                                          AtomicString("test"),
+                                          AtomicString("test")));
+  param_changes.push_back(ParamChangeInfo(ParamChangeInfo::Status::kDelete,
+                                          AtomicString("test"),
+                                          AtomicString("test"),
+                                          AtomicString("test")));
+  SetParamUpdateTaskPending(true);
+  loader_->ProcessParamChanges(param_changes);
+}
+
+TEST_F(NativeLoaderTest, ProcessPendingParamChanges001) {
+  SetNativeEmbedId(-1);
+  loader_->ProcessPendingParamChanges();
+}
+
+TEST_F(NativeLoaderTest, ProcessPendingParamChanges002) {
+  SetNativeEmbedId(1);
+  loader_->ProcessPendingParamChanges();
+}
+
+TEST_F(NativeLoaderTest, SetStretchContentToFillBounds) {
+  loader_->SetStretchContentToFillBounds(false);
+  bool result = loader_->GetStretchContentToFillBounds();
+  EXPECT_FALSE(result);
 }
 
 }  // namespace blink

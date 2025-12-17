@@ -50,14 +50,22 @@ void KeystoreAdapterImplTest::TearDown(void)
 TEST_F(KeystoreAdapterImplTest, KeystoreAdapterImplTest_InitParamSet_001)
 {
     struct OH_Huks_ParamSet *paramSet;
+    struct OH_Huks_Param decryptParams[] = { { .tag = OH_HUKS_TAG_ALGORITHM, .uint32Param = OH_HUKS_ALG_AES },
+        { .tag = OH_HUKS_TAG_PURPOSE, .uint32Param = OH_HUKS_KEY_PURPOSE_DECRYPT },
+        { .tag = OH_HUKS_TAG_KEY_SIZE, .uint32Param = OH_HUKS_AES_KEY_SIZE_256 },
+        { .tag = OH_HUKS_TAG_PADDING, .uint32Param = OH_HUKS_PADDING_NONE },
+        { .tag = OH_HUKS_TAG_BLOCK_MODE, .uint32Param = OH_HUKS_MODE_CBC } };
     int32_t result = KeystoreAdapterImpl::GetInstance().InitParamSet(
-        nullptr, g_genEncDecParams, sizeof(g_genEncDecParams) / sizeof(OH_Huks_Param));
-    EXPECT_EQ(result, 401);
+        nullptr, decryptParams, sizeof(decryptParams) / sizeof(OH_Huks_Param));
+    EXPECT_NE(result, 0);
     result = KeystoreAdapterImpl::GetInstance().InitParamSet(
-        &paramSet, nullptr, sizeof(g_genEncDecParams) / sizeof(OH_Huks_Param));
-    EXPECT_EQ(result, 401);
+        nullptr, nullptr, sizeof(decryptParams) / sizeof(OH_Huks_Param));
+    EXPECT_NE(result, 0);
     result = KeystoreAdapterImpl::GetInstance().InitParamSet(
-        &paramSet, g_genEncDecParams, sizeof(g_genEncDecParams) / sizeof(OH_Huks_Param));
+        &paramSet, nullptr, sizeof(decryptParams) / sizeof(OH_Huks_Param));
+    EXPECT_NE(result, 0);
+    result = KeystoreAdapterImpl::GetInstance().InitParamSet(
+        &paramSet, decryptParams, sizeof(decryptParams) / sizeof(OH_Huks_Param));
     EXPECT_EQ(result, 0);
 }
 
@@ -86,6 +94,61 @@ TEST_F(KeystoreAdapterImplTest, KeystoreAdapterImplTest_EncryptKey_002)
     EXPECT_TRUE(nullEncrypt.empty());
     nullDecrypt = KeystoreAdapterImpl::GetInstance().DecryptKey(long_str_alias, "test");
     EXPECT_TRUE(DecryptString.empty());
+
+    std::string keyAlias(16, 'a');
+    std::string keyPlain(32, 0x1c);
+    const int prefixSize = 3 + 16;
+    std::string result = KeystoreAdapterImpl::GetInstance().EncryptKey(keyAlias, keyPlain);
+    EXPECT_FALSE(result.empty());
+    EXPECT_EQ(result.length(), keyPlain.length() + prefixSize);
+    std::string plainText = KeystoreAdapterImpl::GetInstance().DecryptKey(keyAlias, result);
+    EXPECT_EQ(keyPlain, plainText);
+}
+
+TEST_F(KeystoreAdapterImplTest, KeystoreAdapterImplTest_DecryptKey_001)
+{
+    const int prefixSize = 3 + 16;
+    std::string absentKeyAlias = "absent_alias_test";
+    std::string legacyAlias = "legacy_alias";
+    std::string plainData = "legacy_key_test_16_bytes_aligned";
+    std::string encryptString = KeystoreAdapterImpl::GetInstance().EncryptKey(legacyAlias, plainData);
+    EXPECT_FALSE(encryptString.empty());
+    EXPECT_EQ(encryptString.length(), plainData.length() + prefixSize);
+    std::string plainString = KeystoreAdapterImpl::GetInstance().DecryptKey(legacyAlias, encryptString);
+    EXPECT_FALSE(plainString.empty());
+    EXPECT_EQ(plainString, plainData);
+    encryptString = "ABCDEFGHIJKLMNOPQRSTUVWXYZ123456";
+    plainString = KeystoreAdapterImpl::GetInstance().DecryptKey(legacyAlias, encryptString);
+    EXPECT_FALSE(plainString.empty());
+    EXPECT_EQ(plainString.length(), encryptString.length());
+    encryptString = "V10abcdefghijklmnopABCDEFGHIJKLMNOPQRSTUVWXYZ123456";
+    plainString = KeystoreAdapterImpl::GetInstance().DecryptKey(legacyAlias, encryptString);
+    EXPECT_FALSE(plainString.empty());
+    EXPECT_EQ(plainString.length(), encryptString.length() - prefixSize);
+
+    encryptString = "fake_web_test";
+    plainString = KeystoreAdapterImpl::GetInstance().DecryptKey(absentKeyAlias, encryptString);
+    EXPECT_TRUE(plainString.empty());
+    encryptString = "V10abcdefghijklmnopABCDEFGHIJKLMNOPQRSTUVWXYZ123456";
+    plainString = KeystoreAdapterImpl::GetInstance().DecryptKey(absentKeyAlias, encryptString);
+    EXPECT_TRUE(plainString.empty());
+
+    std::string nullAlias = "";
+    encryptString = "";
+    plainString = KeystoreAdapterImpl::GetInstance().DecryptKey(nullAlias, encryptString);
+    EXPECT_TRUE(plainString.empty());
+
+    std::string long_str_alias(2048, 'a');
+    plainString = KeystoreAdapterImpl::GetInstance().DecryptKey(long_str_alias, "test");
+    EXPECT_TRUE(plainString.empty());
+
+    std::string keyAlias(16, 'a');
+    std::string keyPlain(32, 'x');
+    std::string result = KeystoreAdapterImpl::GetInstance().EncryptKey(keyAlias, keyPlain);
+    EXPECT_FALSE(result.empty());
+    EXPECT_EQ(result.length(), keyPlain.length() + prefixSize);
+    plainString = KeystoreAdapterImpl::GetInstance().DecryptKey(keyAlias, result);
+    EXPECT_EQ(keyPlain, plainString);
 }
 
 TEST_F(KeystoreAdapterImplTest, KeystoreAdapterImplTest_AssetQuery_003)

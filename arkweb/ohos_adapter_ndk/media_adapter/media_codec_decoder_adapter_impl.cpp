@@ -321,11 +321,11 @@ DecoderAdapterCode MediaCodecDecoderAdapterImpl::ReleaseDecoder()
     }
     VideoDecoderCallbackManager::DeleteVideoDecoder(decoder_);
     OH_AVErrCode ret = OH_VideoDecoder_Destroy(decoder_);
+    decoder_ = nullptr;
     if (ret != OH_AVErrCode::AV_ERR_OK) {
         WVLOG_E("MediaCodecDecoder OH_VideoDecoder_Destroy fail, ret=%{public}u.", static_cast<uint32_t>(ret));
         return DecoderAdapterCode::DECODER_ERROR;
     }
-    decoder_ = nullptr;
     std::unique_lock<std::mutex> lock(bufferMutex_);
     bufferMap_.clear();
     return DecoderAdapterCode::DECODER_OK;
@@ -505,8 +505,18 @@ void MediaCodecDecoderAdapterImpl::OnInputBufferAvailable(uint32_t index, OH_AVB
         WVLOG_E("callback is NULL.");
         return;
     }
-
-    if (buffer == nullptr || OH_AVBuffer_GetAddr(buffer) == nullptr) {
+    if (buffer == nullptr) {
+        WVLOG_E("buffer is NULL.");
+        return;
+    }
+    uint8_t *addr = OH_AVBuffer_GetAddr(buffer);
+    int32_t bufferSize = OH_AVBuffer_GetCapacity(buffer);
+    if (addr == nullptr) {
+        WVLOG_E("addr is NULL.");
+        return;
+    }
+    if (bufferSize <= 0) {
+        WVLOG_E("bufferSize[%{public}d] error.", bufferSize);
         return;
     }
 
@@ -521,8 +531,8 @@ void MediaCodecDecoderAdapterImpl::OnInputBufferAvailable(uint32_t index, OH_AVB
         bufferMap_[index] = buffer;
     }
 
-    ohosBuffer->SetAddr(OH_AVBuffer_GetAddr(buffer));
-    ohosBuffer->SetBufferSize(OH_AVBuffer_GetCapacity(buffer));
+    ohosBuffer->SetAddr(addr);
+    ohosBuffer->SetBufferSize(bufferSize);
     callback_->OnNeedInputData(index, ohosBuffer);
 }
 
@@ -582,14 +592,14 @@ DecoderAdapterCode MediaCodecDecoderAdapterImpl::SetAVCencInfoStruct(
         return DecoderAdapterCode::DECODER_ERROR;
     }
 
-    DrmSubsample subSamples[cencInfo->GetClearHeaderLens().size()];
+    std::vector<DrmSubsample> subSamples(cencInfo->GetClearHeaderLens().size());
     for (uint32_t i = 0; i < cencInfo->GetClearHeaderLens().size(); i++) {
         subSamples[i].clearHeaderLen = cencInfo->GetClearHeaderLens()[i];
         subSamples[i].payLoadLen = cencInfo->GetPayLoadLens()[i];
     }
     errNo = OH_AVCencInfo_SetSubsampleInfo(
         avCencInfo, cencInfo->GetEncryptedBlockCount(), cencInfo->GetSkippedBlockCount(),
-        cencInfo->GetFirstEncryptedOffset(), cencInfo->GetClearHeaderLens().size(), subSamples);
+        cencInfo->GetFirstEncryptedOffset(), cencInfo->GetClearHeaderLens().size(), subSamples.data());
     if (errNo != AV_ERR_OK) {
         WVLOG_E("MediaCodecDecoder set AVCencInfo subsampleInfo fail, errNo = %{public}u",
             static_cast<uint32_t>(errNo));

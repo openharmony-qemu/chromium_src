@@ -20,6 +20,8 @@
 #include "arkweb/chromium_ext/media/gpu/ohos/codec_surface_bundle.h"
 #define protected public
 #include "arkweb/chromium_ext/media/gpu/ohos/ohos_video_decoder.h"
+#define ARKWEB_TEST_INCLUDE
+#include "arkweb/chromium_ext/media/gpu/ohos/codec_wrapper.cc"
 #undef private
 #undef protected
 #include <cstring>
@@ -40,6 +42,7 @@
 #include "base/task/task_features.h"
 #include "base/task/thread_pool.h"
 #include "base/test/task_environment.h"
+#include "base/test/bind.h"
 #include "media/base/async_destroy_video_decoder.h"
 #include "media/base/decoder_buffer.h"
 #include "media/base/decoder_status.h"
@@ -216,6 +219,23 @@ class MockSequencedTaskRunner : public base::SequencedTaskRunner {
                base::TimeDelta delay),
               (override));
 };
+class MockOHOSMediaCryptoContext : public OHOSMediaCryptoContext {
+ public:
+  MOCK_METHOD(void,
+              SetOHOSMediaCryptoReadyCB,
+              (OHOSMediaCryptoReadyCB media_crypto_ready_cb),
+              (override));
+#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
+  MOCK_METHOD(void,
+              ReleaseInnerResource,
+              (),
+              (override));
+#endif
+  MOCK_METHOD(std::vector<uint8_t>,
+              GetUUID,
+              (),
+              (override));
+};
 
 class OhosVideoDecoderTest : public ::testing::Test {
  public:
@@ -227,7 +247,6 @@ class OhosVideoDecoderTest : public ::testing::Test {
     gpu::GpuFeatureInfo gpu_feature_info;
     std::unique_ptr<MediaLog> media_log = std::make_unique<MockMediaLog>();
     media_log_ = (MockMediaLog*)(media_log.get());
-    CodecAllocator* codec_allocator = nullptr;
     std::unique_ptr<VideoFrameFactory> video_frame_factory =
         std::make_unique<MockVideoFrameFactory>();
     video_frame_factory_ = (MockVideoFrameFactory*)(video_frame_factory.get());
@@ -236,28 +255,23 @@ class OhosVideoDecoderTest : public ::testing::Test {
     ref_counted_lock_ = (MockRefCountedLock*)(drdc_lock.get());
     surface_bundle_ = base::MakeRefCounted<CodecSurfaceBundle>();
     task_runner = base::MakeRefCounted<MockSequencedTaskRunner>();
+    CodecAllocator* codec_allocator = CodecAllocator::GetInstance(task_runner);
     ohos_video_decoder_ = std::make_unique<OhosVideoDecoder>(
         gpu_preferences, gpu_feature_info, std::move(media_log),
         codec_allocator, std::move(video_frame_factory), std::move(drdc_lock));
-    codec_allocator = CodecAllocator::GetInstance(task_runner);
-    ohos_video_decoder_->codec_allocator_ = std::move(codec_allocator);
-    task_runner = static_cast<MockSequencedTaskRunner*>(
-        ohos_video_decoder_->codec_allocator_->task_runner_.get());
   }
 
-  void TearDown() override { task_runner->Release(); }
-
- private:
-  base::test::TaskEnvironment task_environment_;
+  void TearDown() override {}
 
  public:
+  base::test::SingleThreadTaskEnvironment task_environment_;
+  scoped_refptr<MockSequencedTaskRunner> task_runner;
   std::unique_ptr<OhosVideoDecoder> ohos_video_decoder_;
   // mock pointers should only be used for EXPECT_CALL
   MockMediaLog* media_log_ = nullptr;
   MockVideoFrameFactory* video_frame_factory_ = nullptr;
   MockRefCountedLock* ref_counted_lock_ = nullptr;
   scoped_refptr<CodecSurfaceBundle> surface_bundle_;
-  scoped_refptr<MockSequencedTaskRunner> task_runner;
 };
 }  // namespace
 
@@ -372,6 +386,34 @@ TEST_F(OhosVideoDecoderTest, OnCodecConfiguredInternal) {
       weak, codec_allocator, surface_bundle, std::move(codec));
 }
 
+TEST_F(OhosVideoDecoderTest, OnCodecConfiguredInternal_001) {
+  base::WeakPtr<OhosVideoDecoder> weak;
+  scoped_refptr<MockSequencedTaskRunner> task_runner = base::MakeRefCounted<MockSequencedTaskRunner>();
+  raw_ptr<CodecAllocator> codec_allocator = CodecAllocator::GetInstance(task_runner);
+  scoped_refptr<CodecSurfaceBundle> surface_bundle;
+  VideoBridgeCodecConfig codec_config;
+  codec_config.codec = media::VideoCodec::kH264;
+  std::unique_ptr<MediaCodecDecoderBridgeImpl> codec =
+      MediaCodecDecoderBridgeImpl::CreateVideoDecoder(codec_config);
+  testing::internal::CaptureStderr();
+  OhosVideoDecoder::OnCodecConfiguredInternal(
+      weak, codec_allocator.get(), surface_bundle, std::move(codec));
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_EQ(log_output.find("OnCodecConfigured codec is null"), std::string::npos);
+}
+
+TEST_F(OhosVideoDecoderTest, OnCodecConfiguredInternal_002) {
+  base::WeakPtr<OhosVideoDecoder> weak = ohos_video_decoder_->codec_allocator_weak_factory_.GetWeakPtr();
+  CodecAllocator* codec_allocator = nullptr;
+  scoped_refptr<CodecSurfaceBundle> surface_bundle;
+  std::unique_ptr<MediaCodecDecoderBridgeImpl> codec;
+  testing::internal::CaptureStderr();
+  OhosVideoDecoder::OnCodecConfiguredInternal(
+      weak, codec_allocator, surface_bundle, std::move(codec));
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_NE(log_output.find("OnCodecConfigured codec is null"), std::string::npos);
+}
+
 TEST_F(OhosVideoDecoderTest, OnCodecConfigured) {
   ASSERT_NE(ohos_video_decoder_, nullptr);
 
@@ -397,7 +439,26 @@ TEST_F(OhosVideoDecoderTest, Decode) {
 TEST_F(OhosVideoDecoderTest, FlushCodec) {
   ASSERT_NE(ohos_video_decoder_, nullptr);
 
+  ohos_video_decoder_->deferred_reallocation_pending_ = true;
   ohos_video_decoder_->FlushCodec();
+  EXPECT_FALSE(ohos_video_decoder_->deferred_reallocation_pending_);
+}
+
+TEST_F(OhosVideoDecoderTest, FlushCodec_001) {
+  ASSERT_NE(ohos_video_decoder_, nullptr);
+
+  VideoBridgeCodecConfig codec_config;
+  codec_config.codec = media::VideoCodec::kH264;
+  std::unique_ptr<MediaCodecDecoderBridgeImpl> codec_impl =
+      MediaCodecDecoderBridgeImpl::CreateVideoDecoder(codec_config);
+  ASSERT_NE(codec_impl, nullptr);
+  scoped_refptr<CodecSurfaceBundle> surface_bundle;
+  ohos_video_decoder_->codec_ = std::make_unique<CodecWrapper>(
+      CodecSurfacePair(std::move(codec_impl), std::move(surface_bundle)),
+      base::DoNothing(), base::SequencedTaskRunner::GetCurrentDefault());
+  ohos_video_decoder_->codec_->impl_->state_ = CodecWrapperImpl::State::kRunning;
+  ohos_video_decoder_->FlushCodec();
+  EXPECT_EQ(ohos_video_decoder_->state_, OhosVideoDecoder::State::kError);
 }
 
 TEST_F(OhosVideoDecoderTest, PumpCodec) {
@@ -413,6 +474,61 @@ TEST_F(OhosVideoDecoderTest, QueueInput) {
   EXPECT_FALSE(result);
 }
 
+TEST_F(OhosVideoDecoderTest, QueueInput_001) {
+  ASSERT_NE(ohos_video_decoder_, nullptr);
+
+  VideoBridgeCodecConfig codec_config;
+  codec_config.codec = media::VideoCodec::kH264;
+  std::unique_ptr<MediaCodecDecoderBridgeImpl> codec_impl =
+      MediaCodecDecoderBridgeImpl::CreateVideoDecoder(codec_config);
+  ASSERT_NE(codec_impl, nullptr);
+  scoped_refptr<CodecSurfaceBundle> surface_bundle;
+  ohos_video_decoder_->codec_ = std::make_unique<CodecWrapper>(
+      CodecSurfacePair(std::move(codec_impl), std::move(surface_bundle)),
+      base::DoNothing(), base::SequencedTaskRunner::GetCurrentDefault());
+
+  ohos_video_decoder_->waiting_for_key_ = true;
+  bool result = ohos_video_decoder_->QueueInput();
+  EXPECT_FALSE(result);
+
+  ohos_video_decoder_->waiting_for_key_ = false;
+  ohos_video_decoder_->deferred_flush_pending_ = true;
+  result = ohos_video_decoder_->QueueInput();
+  EXPECT_FALSE(result);
+
+  ohos_video_decoder_->pending_decodes_.emplace_back(
+      PendingDecode::CreateEos());
+  result = ohos_video_decoder_->QueueInput();
+  EXPECT_TRUE(result);
+
+  ohos_video_decoder_->deferred_flush_pending_ = false;
+  ohos_video_decoder_->pending_decodes_.emplace_back(
+      PendingDecode::CreateEos());
+  result = ohos_video_decoder_->QueueInput();
+  EXPECT_TRUE(result);
+}
+
+TEST_F(OhosVideoDecoderTest, QueueInput_002) {
+  ASSERT_NE(ohos_video_decoder_, nullptr);
+
+  VideoBridgeCodecConfig codec_config;
+  codec_config.codec = media::VideoCodec::kH264;
+  std::unique_ptr<MediaCodecDecoderBridgeImpl> codec_impl =
+      MediaCodecDecoderBridgeImpl::CreateVideoDecoder(codec_config);
+  ASSERT_NE(codec_impl, nullptr);
+  scoped_refptr<CodecSurfaceBundle> surface_bundle;
+  ohos_video_decoder_->codec_ = std::make_unique<CodecWrapper>(
+      CodecSurfacePair(std::move(codec_impl), std::move(surface_bundle)),
+      base::DoNothing(), base::SequencedTaskRunner::GetCurrentDefault());
+
+  ohos_video_decoder_->codec_->impl_->state_ = CodecWrapperImpl::State::kRunning;
+  ohos_video_decoder_->deferred_flush_pending_ = false;
+  ohos_video_decoder_->pending_decodes_.emplace_back(
+      PendingDecode::CreateEos());
+  bool result = ohos_video_decoder_->QueueInput();
+  EXPECT_TRUE(result);
+}
+
 TEST_F(OhosVideoDecoderTest, DequeueOutput) {
   ASSERT_NE(ohos_video_decoder_, nullptr);
 
@@ -426,6 +542,17 @@ TEST_F(OhosVideoDecoderTest, RunEosDecodeCb) {
   ohos_video_decoder_->reset_generation_ = 1;
   int reset_generation = 0;
   ohos_video_decoder_->RunEosDecodeCb(reset_generation);
+}
+
+TEST_F(OhosVideoDecoderTest, RunEosDecodeCb_001) {
+  ASSERT_NE(ohos_video_decoder_, nullptr);
+
+  int reset_generation = ohos_video_decoder_->reset_generation_ = 1;
+  DecoderStatus status = DecoderStatus::Codes::kFailed;
+  ohos_video_decoder_->eos_decode_cb_ = base::BindLambdaForTesting(
+      [&status](DecoderStatus status_value) { status = status_value; });
+  ohos_video_decoder_->RunEosDecodeCb(reset_generation);
+  EXPECT_EQ(status, DecoderStatus::Codes::kOk);
 }
 
 TEST_F(OhosVideoDecoderTest, ForwardVideoFrame) {
@@ -455,6 +582,38 @@ TEST_F(OhosVideoDecoderTest, StartDrainingCodec) {
       OhosVideoDecoder::DrainType::kForDestroy);
 }
 
+TEST_F(OhosVideoDecoderTest, StartDrainingCodec_001) {
+  ASSERT_NE(ohos_video_decoder_, nullptr);
+  VideoBridgeCodecConfig codec_config;
+  codec_config.codec = media::VideoCodec::kH264;
+  std::unique_ptr<MediaCodecDecoderBridgeImpl> codec_impl =
+      MediaCodecDecoderBridgeImpl::CreateVideoDecoder(codec_config);
+  ohos_video_decoder_->codec_ = std::make_unique<CodecWrapper>(
+      CodecSurfacePair(std::move(codec_impl), std::move(surface_bundle_)),
+      base::DoNothing(), base::SequencedTaskRunner::GetCurrentDefault());
+  ohos_video_decoder_->decoder_config_.codec_ = VideoCodec::kVP8;
+  ohos_video_decoder_->codec_->impl_->state_ = CodecWrapperImpl::State::kDraining;
+  ohos_video_decoder_->StartDrainingCodec(OhosVideoDecoder::DrainType::kForDestroy);
+  EXPECT_EQ(ohos_video_decoder_->drain_type_, absl::nullopt);
+  EXPECT_TRUE(ohos_video_decoder_->pending_decodes_.empty());
+}
+
+TEST_F(OhosVideoDecoderTest, StartDrainingCodec_002) {
+  ASSERT_NE(ohos_video_decoder_, nullptr);
+  VideoBridgeCodecConfig codec_config;
+  codec_config.codec = media::VideoCodec::kH264;
+  std::unique_ptr<MediaCodecDecoderBridgeImpl> codec_impl =
+      MediaCodecDecoderBridgeImpl::CreateVideoDecoder(codec_config);
+  ohos_video_decoder_->codec_ = std::make_unique<CodecWrapper>(
+      CodecSurfacePair(std::move(codec_impl), std::move(surface_bundle_)),
+      base::DoNothing(), base::SequencedTaskRunner::GetCurrentDefault());
+  ohos_video_decoder_->decoder_config_.codec_ = VideoCodec::kVP8;
+  ohos_video_decoder_->codec_->impl_->state_ = CodecWrapperImpl::State::kRunning;
+  ohos_video_decoder_->StartDrainingCodec(OhosVideoDecoder::DrainType::kForDestroy);
+  EXPECT_EQ(ohos_video_decoder_->drain_type_, absl::nullopt);
+  EXPECT_TRUE(ohos_video_decoder_->pending_decodes_.empty());
+}
+
 TEST_F(OhosVideoDecoderTest, EnterTerminalState_001) {
   ASSERT_NE(ohos_video_decoder_, nullptr);
   OhosVideoDecoder::State state = OhosVideoDecoder::State::kError;
@@ -478,6 +637,25 @@ TEST_F(OhosVideoDecoderTest, OnCodecDrained) {
   ohos_video_decoder_->drain_type_ = OhosVideoDecoder::DrainType::kForReset;
   ohos_video_decoder_->reset_cb_ = base::DoNothing();
   ohos_video_decoder_->OnCodecDrained();
+}
+
+TEST_F(OhosVideoDecoderTest, OnCodecDrained_001) {
+  ASSERT_NE(ohos_video_decoder_, nullptr);
+  VideoBridgeCodecConfig codec_config;
+  codec_config.codec = media::VideoCodec::kH264;
+  std::unique_ptr<MediaCodecDecoderBridgeImpl> codec_impl =
+      MediaCodecDecoderBridgeImpl::CreateVideoDecoder(codec_config);
+  ohos_video_decoder_->codec_ = std::make_unique<CodecWrapper>(
+      CodecSurfacePair(std::move(codec_impl), std::move(surface_bundle_)),
+      base::DoNothing(), base::SequencedTaskRunner::GetCurrentDefault());
+  ohos_video_decoder_->codec_->impl_->state_ = CodecWrapperImpl::State::kDraining;
+  ohos_video_decoder_->deferred_flush_pending_ = false;
+  ohos_video_decoder_->drain_type_ = OhosVideoDecoder::DrainType::kForReset;
+  ohos_video_decoder_->reset_cb_ = base::DoNothing();
+  testing::internal::CaptureStderr();
+  ohos_video_decoder_->OnCodecDrained();
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_NE(log_output.find("OhosVideoDecoder::FlushCodec"), std::string::npos);
 }
 
 TEST_F(OhosVideoDecoderTest, EnterTerminalState) {
@@ -527,6 +705,26 @@ TEST_F(OhosVideoDecoderTest, DestroyAsync_002) {
   ohos_video_decoder_->reset_cb_ = std::move(reset_cb);
   ASSERT_TRUE(ohos_video_decoder_->reset_cb_);
   OhosVideoDecoder::DestroyAsync(std::move(ohos_video_decoder_));
+}
+
+TEST_F(OhosVideoDecoderTest, DestroyAsync_003) {
+  testing::internal::CaptureStderr();
+  OhosVideoDecoder::DestroyAsync(nullptr);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_NE(log_output.find("OhosVideoDecoder::DestroyAsync decoder is nullptr"), std::string::npos);
+}
+
+TEST_F(OhosVideoDecoderTest, DestroyAsync_004) {
+  CdmContext* cdm_context = new CdmContext();
+  ohos_video_decoder_->ohos_crypto_context_ = cdm_context->GetOHOSMediaCryptoContext();
+  ohos_video_decoder_->event_cb_registration_ = cdm_context->RegisterEventCB(base::BindRepeating(
+      &OhosVideoDecoder::OnCdmContextEvent, ohos_video_decoder_->weak_factory_.GetWeakPtr()));
+  ohos_video_decoder_->reset_cb_.Reset();
+  ASSERT_FALSE(ohos_video_decoder_->reset_cb_);
+  OhosVideoDecoder* decoder = ohos_video_decoder_.get();
+  OhosVideoDecoder::DestroyAsync(std::move(ohos_video_decoder_));
+  EXPECT_EQ(decoder->ohos_crypto_context_, nullptr);
+  delete cdm_context;
 }
 
 TEST_F(OhosVideoDecoderTest, Initialize_001) {
@@ -1000,6 +1198,21 @@ TEST_F(OhosVideoDecoderTest, OnCodecConfigured_002) {
                                          std::move(codec));
 }
 
+TEST_F(OhosVideoDecoderTest, OnCodecConfigured_003) {
+  ASSERT_NE(ohos_video_decoder_, nullptr);
+  std::unique_ptr<VideoBridgeCodecConfig> config = std::make_unique<VideoBridgeCodecConfig>();
+  config->codec = VideoCodec::kH264;
+  std::unique_ptr<MediaCodecDecoderBridgeImpl> codec =
+      MediaCodecDecoderBridgeImpl::CreateVideoDecoder(std::move(*config));
+  ASSERT_TRUE(codec);
+  std::shared_ptr<DecoderBridgeSignal> signal = std::make_shared<DecoderBridgeSignal>();
+  auto cb = std::make_shared<CodecBridgeCallback>(signal);
+  codec->cb_ = std::move(cb);
+  codec->videoDecoder_ = nullptr;
+  ohos_video_decoder_->OnCodecConfigured(std::move(surface_bundle_), std::move(codec));
+  EXPECT_EQ(ohos_video_decoder_->state_, OhosVideoDecoder::State::kError);
+}
+
 TEST_F(OhosVideoDecoderTest, OnCodecConfigured_004) {
   ASSERT_NE(ohos_video_decoder_, nullptr);
   ASSERT_TRUE(surface_bundle_);
@@ -1029,11 +1242,67 @@ TEST_F(OhosVideoDecoderTest, OnCodecConfigured_004) {
   EXPECT_CALL(*videoDecoder, StartDecoder)
       .WillOnce(testing::Return(OHOS::NWeb::DecoderAdapterCode::DECODER_OK));
   codec->videoDecoder_ = std::move(videoDecoder);
-  EXPECT_CALL(*task_runner, RunsTasksInCurrentSequence).WillOnce(Return(false));
-  EXPECT_CALL(*task_runner, PostDelayedTask).WillOnce(Return(false));
   ohos_video_decoder_->codec_ = nullptr;
   ohos_video_decoder_->OnCodecConfigured(std::move(surface_bundle_),
                                          std::move(codec));
+}
+
+TEST_F(OhosVideoDecoderTest, OnCodecConfigured_005) {
+  ASSERT_NE(ohos_video_decoder_, nullptr);
+  std::unique_ptr<VideoBridgeCodecConfig> config =
+      std::make_unique<VideoBridgeCodecConfig>();
+  ASSERT_TRUE(config);
+  config->codec = VideoCodec::kH264;
+  std::unique_ptr<MediaCodecDecoderBridgeImpl> codec =
+      MediaCodecDecoderBridgeImpl::CreateVideoDecoder(std::move(*config));
+  ASSERT_TRUE(codec);
+  std::shared_ptr<DecoderBridgeSignal> signal =
+      std::make_shared<DecoderBridgeSignal>();
+  auto cb = std::make_shared<CodecBridgeCallback>(signal);
+  codec->cb_ = std::move(cb);
+  codec->videoDecoder_ = std::make_unique<MockMediaCodecDecoderAdapter>();
+  auto videoDecoder =
+      static_cast<MockMediaCodecDecoderAdapter*>(codec->videoDecoder_.get());
+  EXPECT_CALL(*videoDecoder, ConfigureDecoder)
+      .WillOnce(testing::Return(OHOS::NWeb::DecoderAdapterCode::DECODER_OK));
+  EXPECT_CALL(*videoDecoder, ReleaseDecoder)
+      .WillOnce(testing::Return(OHOS::NWeb::DecoderAdapterCode::DECODER_OK));
+  EXPECT_CALL(*videoDecoder, SetDecryptionConfig)
+      .WillOnce(testing::Return(OHOS::NWeb::DecoderAdapterCode::DECODER_ERROR));
+  int32_t session = 0;
+  ohos_video_decoder_->mediaKeySession_ = &session;
+  ohos_video_decoder_->OnCodecConfigured(std::move(surface_bundle_), std::move(codec));
+}
+
+TEST_F(OhosVideoDecoderTest, OnCodecConfigured_006) {
+  ASSERT_NE(ohos_video_decoder_, nullptr);
+  ASSERT_TRUE(surface_bundle_);
+  uint32_t ohos_native_window = 10;
+  surface_bundle_->ohos_native_window_ = &ohos_native_window;
+  auto config = std::make_unique<VideoBridgeCodecConfig>();
+  ASSERT_TRUE(config);
+  config->codec = VideoCodec::kH264;
+  std::unique_ptr<MediaCodecDecoderBridgeImpl> codec =
+      MediaCodecDecoderBridgeImpl::CreateVideoDecoder(std::move(*config));
+  ASSERT_TRUE(codec);
+  std::shared_ptr<DecoderBridgeSignal> signal = std::make_shared<DecoderBridgeSignal>();
+  auto cb = std::make_shared<CodecBridgeCallback>(signal);
+  codec->cb_ = std::move(cb);
+  std::unique_ptr<MockMediaCodecDecoderAdapter> videoDecoder = std::make_unique<MockMediaCodecDecoderAdapter>();
+  EXPECT_CALL(*videoDecoder, ConfigureDecoder)
+      .WillOnce(testing::Return(OHOS::NWeb::DecoderAdapterCode::DECODER_OK));
+  EXPECT_CALL(*videoDecoder, ReleaseDecoder)
+      .WillRepeatedly(testing::Return(OHOS::NWeb::DecoderAdapterCode::DECODER_OK));
+  EXPECT_CALL(*videoDecoder, SetOutputSurface)
+      .WillRepeatedly(testing::Return(OHOS::NWeb::DecoderAdapterCode::DECODER_OK));
+  EXPECT_CALL(*videoDecoder, PrepareDecoder)
+      .WillOnce(testing::Return(OHOS::NWeb::DecoderAdapterCode::DECODER_OK));
+  EXPECT_CALL(*videoDecoder, StartDecoder)
+      .WillOnce(testing::Return(OHOS::NWeb::DecoderAdapterCode::DECODER_OK));
+  codec->videoDecoder_ = std::move(videoDecoder);
+  ohos_video_decoder_->codec_ = nullptr;
+  ohos_video_decoder_->pending_surface_id_ = 1;
+  ohos_video_decoder_->OnCodecConfigured(std::move(surface_bundle_), std::move(codec));
 }
 
 TEST_F(OhosVideoDecoderTest, Decode_002) {
@@ -1103,6 +1372,36 @@ TEST_F(OhosVideoDecoderTest, Decode_006) {
   EXPECT_NE(ohos_video_decoder_->state_, OhosVideoDecoder::State::kInitializing);
 }
 
+TEST_F(OhosVideoDecoderTest, Decode_007) {
+  ASSERT_NE(ohos_video_decoder_, nullptr);
+  ohos_video_decoder_->state_ = OhosVideoDecoder::State::kError;
+  auto context = new MockOHOSMediaCryptoContext();
+  ohos_video_decoder_->ohos_crypto_context_ = context;
+  scoped_refptr<DecoderBuffer> buffer = base::MakeRefCounted<DecoderBuffer>(1);
+  DecoderStatus status = DecoderStatus::Codes::kOk;
+  VideoDecoder::DecodeCB cb = base::BindLambdaForTesting(
+      [&status](DecoderStatus status_value) { status = status_value; });
+  ohos_video_decoder_->Decode(std::move(buffer), std::move(cb));
+  EXPECT_EQ(status, DecoderStatus::Codes::kFailed);
+  delete context;
+}
+
+TEST_F(OhosVideoDecoderTest, Decode_008) {
+  ASSERT_NE(ohos_video_decoder_, nullptr);
+  DecoderStatus status = DecoderStatus::Codes::kOk;
+  VideoDecoder::DecodeCB cb = base::BindLambdaForTesting(
+      [&status](DecoderStatus status_value) { status = status_value; });
+  ohos_video_decoder_->Decode(nullptr, std::move(cb));
+  EXPECT_EQ(status, DecoderStatus::Codes::kFailed);
+  auto context = new MockOHOSMediaCryptoContext();
+  ohos_video_decoder_->ohos_crypto_context_ = context;
+  VideoDecoder::DecodeCB cb1 = base::BindLambdaForTesting(
+      [&status](DecoderStatus status_value) { status = status_value; });
+  ohos_video_decoder_->Decode(nullptr, std::move(cb1));
+  EXPECT_EQ(status, DecoderStatus::Codes::kFailed);
+  delete context;
+}
+
 TEST_F(OhosVideoDecoderTest, ForwardVideoFrame_001) {
   ASSERT_NE(ohos_video_decoder_, nullptr);
   int reset_generation = 0;
@@ -1114,6 +1413,23 @@ TEST_F(OhosVideoDecoderTest, ForwardVideoFrame_001) {
   ASSERT_FALSE(frame);
 }
 
+TEST_F(OhosVideoDecoderTest, ForwardVideoFrame_002) {
+  ASSERT_NE(ohos_video_decoder_, nullptr);
+  ohos_video_decoder_->reset_generation_ = 1;
+  int32_t frame_count = 0;
+  ohos_video_decoder_->output_cb_ = base::BindLambdaForTesting(
+      [&frame_count](scoped_refptr<VideoFrame> frame) { frame_count++; });
+
+  base::TimeTicks now = base::TimeTicks::Now();
+  scoped_refptr<VideoFrame> frame = VideoFrame::CreateBlackFrame(gfx::Size(10, 5));
+  ohos_video_decoder_->ForwardVideoFrame(1, nullptr, now, std::move(frame));
+  EXPECT_EQ(frame_count, 1);
+
+  scoped_refptr<VideoFrame> frame1 = VideoFrame::CreateBlackFrame(gfx::Size(10, 5));
+  ohos_video_decoder_->ForwardVideoFrame(0, nullptr, now, std::move(frame1));
+  EXPECT_EQ(frame_count, 1);
+}
+
 TEST_F(OhosVideoDecoderTest, DequeueOutput_001) {
   ohos_video_decoder_->codec_ = nullptr;
   testing::internal::CaptureStderr();
@@ -1121,5 +1437,251 @@ TEST_F(OhosVideoDecoderTest, DequeueOutput_001) {
   std::string log_output = testing::internal::GetCapturedStderr();
   EXPECT_NE(log_output.find("OhosVideoDecoder::DequeueOutput failed"), std::string::npos);
 }
+
+TEST_F(OhosVideoDecoderTest, DequeueOutput_002) {
+  VideoBridgeCodecConfig codec_config;
+  codec_config.codec = media::VideoCodec::kH264;
+  std::unique_ptr<MediaCodecDecoderBridgeImpl> codec_impl =
+      MediaCodecDecoderBridgeImpl::CreateVideoDecoder(codec_config);
+  ASSERT_NE(codec_impl, nullptr);
+  scoped_refptr<CodecSurfaceBundle> surface_bundle;
+  ohos_video_decoder_->codec_ = std::make_unique<CodecWrapper>(
+      CodecSurfacePair(std::move(codec_impl), std::move(surface_bundle)),
+      base::DoNothing(), base::SequencedTaskRunner::GetCurrentDefault());
+
+  ohos_video_decoder_->codec_->impl_->codec_->signal_ = std::make_shared<DecoderBridgeSignal>();
+  ohos_video_decoder_->codec_->impl_->state_ = CodecWrapperImpl::State::kRunning;
+  bool ret = ohos_video_decoder_->DequeueOutput();
+  EXPECT_FALSE(ret);
+
+  ohos_video_decoder_->codec_->impl_->elided_eos_pending_ = true;
+  ret = ohos_video_decoder_->DequeueOutput();
+  EXPECT_FALSE(ret);
+
+  ohos_video_decoder_->eos_decode_cb_ = base::DoNothing();
+  ohos_video_decoder_->codec_->impl_->state_ = CodecWrapperImpl::State::kRunning;
+  ohos_video_decoder_->drain_type_ = OhosVideoDecoder::DrainType::kForReset;
+  ohos_video_decoder_->reset_cb_ = base::DoNothing();
+  ohos_video_decoder_->codec_->impl_->elided_eos_pending_ = true;
+  ret = ohos_video_decoder_->DequeueOutput();
+  EXPECT_FALSE(ret);
+}
+
+TEST_F(OhosVideoDecoderTest, DequeueOutput_003) {
+  VideoBridgeCodecConfig codec_config;
+  codec_config.codec = media::VideoCodec::kH264;
+  std::unique_ptr<MediaCodecDecoderBridgeImpl> codec_impl =
+      MediaCodecDecoderBridgeImpl::CreateVideoDecoder(codec_config);
+  ASSERT_NE(codec_impl, nullptr);
+  scoped_refptr<CodecSurfaceBundle> surface_bundle;
+  ohos_video_decoder_->codec_ = std::make_unique<CodecWrapper>(
+      CodecSurfacePair(std::move(codec_impl), std::move(surface_bundle)),
+      base::DoNothing(), base::SequencedTaskRunner::GetCurrentDefault());
+
+  ohos_video_decoder_->codec_->impl_->codec_->signal_ = std::make_shared<DecoderBridgeSignal>();
+  BufferInfo outputBufferInfo = {0, 0, 0};
+  VideoBridgeDecoderOutputBuffer buffer = {10, BufferFlag::CODEC_BUFFER_FLAG_CODEC_DATA, outputBufferInfo};
+  ohos_video_decoder_->codec_->impl_->codec_->signal_->outputQueue_.push(buffer);
+  
+  ohos_video_decoder_->codec_->impl_->codec_->videoDecoder_ =
+      OhosAdapterHelper::GetInstance().CreateMediaCodecDecoderAdapter();
+  ohos_video_decoder_->codec_->impl_->codec_->width_ = 128;
+  ohos_video_decoder_->codec_->impl_->codec_->height_ = 128;
+  ohos_video_decoder_->drain_type_ = OhosVideoDecoder::DrainType::kForReset;
+  bool ret = ohos_video_decoder_->DequeueOutput();
+  EXPECT_TRUE(ret);
+
+  ohos_video_decoder_->codec_->impl_->codec_->signal_->outputQueue_.push(buffer);
+  ohos_video_decoder_->drain_type_ = absl::nullopt;
+  ret = ohos_video_decoder_->DequeueOutput();
+  EXPECT_TRUE(ret);
+
+  ohos_video_decoder_->codec_->impl_->codec_->signal_->outputQueue_.push(buffer);
+  ohos_video_decoder_->drain_type_ = absl::nullopt;
+  ret = ohos_video_decoder_->DequeueOutput();
+  EXPECT_TRUE(ret);
+}
+
+TEST_F(OhosVideoDecoderTest, SetCdm_001) {
+  CdmContext* cdm_context = nullptr;
+  VideoDecoder::InitCB init_cb = base::DoNothing();
+  testing::internal::CaptureStderr();
+  ohos_video_decoder_->SetCdm(cdm_context, std::move(init_cb));
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_NE(log_output.find("SetCdm No CDM provided"), std::string::npos);
+}
+
+TEST_F(OhosVideoDecoderTest, OutputBufferReleased_001) {
+  bool res = false;
+  base::RepeatingClosure pump_cb = base::BindRepeating(
+      [](bool* flag) {
+        *flag = true;
+      },
+      &res);
+
+  ohos_video_decoder_->TestOutputBufferReleased(pump_cb, false);
+  EXPECT_EQ(res,false);
+}
+
+TEST_F(OhosVideoDecoderTest, OutputBufferReleased_002) {
+  bool res = false;
+  base::RepeatingClosure pump_cb = base::BindRepeating(
+      [](bool* flag) {
+        *flag = true;
+      },
+      &res);
+
+  ohos_video_decoder_->TestOutputBufferReleased(pump_cb, true);
+  EXPECT_EQ(res,true);
+}
+
+TEST_F(OhosVideoDecoderTest, OnMediaCryptoReady_001) {
+  DecoderStatus res = DecoderStatus::Codes::kOk;
+  VideoDecoder::InitCB init_cb = base::BindOnce(
+    [](DecoderStatus* flag, DecoderStatus status) {
+        *flag = status;
+    }, &res);
+  auto context = new MockOHOSMediaCryptoContext();
+  ohos_video_decoder_->ohos_crypto_context_ = context;
+  EXPECT_CALL((*context), SetOHOSMediaCryptoReadyCB);
+
+  ohos_video_decoder_->codec_ = nullptr;
+  ohos_video_decoder_->OnMediaCryptoReady(std::move(init_cb), nullptr, false);
+  EXPECT_EQ(res, DecoderStatus::Codes::kOk);
+  delete context;
+}
+
+TEST_F(OhosVideoDecoderTest, OnMediaCryptoReady_002) {
+  DecoderStatus res = DecoderStatus::Codes::kOk;
+  VideoDecoder::InitCB init_cb = base::BindOnce(
+    [](DecoderStatus* flag, DecoderStatus status) {
+        *flag = status;
+    }, &res);
+  auto context = new MockOHOSMediaCryptoContext();
+  ohos_video_decoder_->ohos_crypto_context_ = context;
+  EXPECT_CALL((*context), SetOHOSMediaCryptoReadyCB);
+
+  VideoBridgeCodecConfig codec_config;
+  codec_config.codec = media::VideoCodec::kH264;
+  std::unique_ptr<MediaCodecDecoderBridgeImpl> codec_impl =
+      MediaCodecDecoderBridgeImpl::CreateVideoDecoder(codec_config);
+  ASSERT_NE(codec_impl, nullptr);
+  scoped_refptr<CodecSurfaceBundle> surface_bundle;
+  ohos_video_decoder_->codec_ = std::make_unique<CodecWrapper>(
+      CodecSurfacePair(std::move(codec_impl), std::move(surface_bundle)),
+      base::DoNothing(), base::SequencedTaskRunner::GetCurrentDefault());
+  ohos_video_decoder_->codec_->impl_->codec_->videoDecoder_ = nullptr;
+  ohos_video_decoder_->decoder_config_.encryption_scheme_ = EncryptionScheme::kCenc;
+  ohos_video_decoder_->OnMediaCryptoReady(std::move(init_cb), nullptr, false);
+  EXPECT_EQ(res, DecoderStatus::Codes::kUnsupportedEncryptionMode);
+  delete context;
+}
+
+TEST_F(OhosVideoDecoderTest, OnMediaCryptoReady_003) {
+  DecoderStatus res = DecoderStatus::Codes::kOk;
+  VideoDecoder::InitCB init_cb = base::BindOnce(
+    [](DecoderStatus* flag, DecoderStatus status) {
+        *flag = status;
+    }, &res);
+
+  int32_t session = 0;
+  ohos_video_decoder_->OnMediaCryptoReady(std::move(init_cb), &session, false);
+  EXPECT_EQ(res, DecoderStatus::Codes::kOk);
+
+  VideoDecoder::InitCB cb;
+  ohos_video_decoder_->OnMediaCryptoReady(std::move(cb), &session, false);
+  EXPECT_EQ(ohos_video_decoder_->mediaKeySession_, &session);
+}
+
+TEST_F(OhosVideoDecoderTest, OnCdmContextEvent) {
+  ohos_video_decoder_->waiting_for_key_ = true;
+  ohos_video_decoder_->OnCdmContextEvent(CdmContext::Event::kHardwareContextReset);
+  EXPECT_TRUE(ohos_video_decoder_->waiting_for_key_);
+
+  ohos_video_decoder_->OnCdmContextEvent(CdmContext::Event::kHasAdditionalUsableKey);
+  EXPECT_FALSE(ohos_video_decoder_->waiting_for_key_);
+}
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+TEST_F(OhosVideoDecoderTest, SetVideoSurface) {
+  ASSERT_NE(ohos_video_decoder_, nullptr);
+
+  int32_t widget_id = 1;
+  ohos_video_decoder_->SetVideoSurface(widget_id);
+  EXPECT_EQ(ohos_video_decoder_->pending_surface_id_, widget_id);
+
+  VideoBridgeCodecConfig codec_config;
+  codec_config.codec = media::VideoCodec::kH264;
+  std::unique_ptr<MediaCodecDecoderBridgeImpl> codec_impl =
+      MediaCodecDecoderBridgeImpl::CreateVideoDecoder(codec_config);
+  ohos_video_decoder_->codec_ = std::make_unique<CodecWrapper>(
+      CodecSurfacePair(std::move(codec_impl), std::move(surface_bundle_)),
+      base::DoNothing(), base::SequencedTaskRunner::GetCurrentDefault());
+  ohos_video_decoder_->SetVideoSurface(widget_id);
+  EXPECT_TRUE(ohos_video_decoder_->codec_->impl_->render_video_view_);
+}
+#endif // ARKWEB_VIDEO_ASSISTANT
+
+#if BUILDFLAG(ARKWEB_PIP)
+TEST_F(OhosVideoDecoderTest, PipEnable) {
+  VideoBridgeCodecConfig codec_config;
+  codec_config.codec = media::VideoCodec::kH264;
+  std::unique_ptr<MediaCodecDecoderBridgeImpl> codec_impl =
+      MediaCodecDecoderBridgeImpl::CreateVideoDecoder(codec_config);
+  ohos_video_decoder_->codec_ = std::make_unique<CodecWrapper>(
+      CodecSurfacePair(std::move(codec_impl), std::move(surface_bundle_)),
+      base::DoNothing(), base::SequencedTaskRunner::GetCurrentDefault());
+
+  EXPECT_CALL((*video_frame_factory_), PipEnable);
+  ohos_video_decoder_->PipEnable(true);
+
+  EXPECT_CALL((*video_frame_factory_), PipEnable);
+  EXPECT_CALL((*video_frame_factory_), SetSurfaceBundle);
+  ohos_video_decoder_->PipEnable(false);
+  EXPECT_EQ(ohos_video_decoder_->state_, OhosVideoDecoder::State::kError);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+TEST_F(OhosVideoDecoderTest, RecycleDmaBuffer) {
+  ohos_video_decoder_->codec_ = nullptr;
+  testing::internal::CaptureStderr();
+  ohos_video_decoder_->RecycleDmaBuffer();
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_EQ(log_output.find("DMABUF::OhosVideoDecoder, RecycleDmaBuffer"), std::string::npos);
+
+  VideoBridgeCodecConfig codec_config;
+  codec_config.codec = media::VideoCodec::kH264;
+  std::unique_ptr<MediaCodecDecoderBridgeImpl> codec_impl =
+      MediaCodecDecoderBridgeImpl::CreateVideoDecoder(codec_config);
+  ohos_video_decoder_->codec_ = std::make_unique<CodecWrapper>(
+      CodecSurfacePair(std::move(codec_impl), std::move(surface_bundle_)),
+      base::DoNothing(), base::SequencedTaskRunner::GetCurrentDefault());
+  testing::internal::CaptureStderr();
+  ohos_video_decoder_->RecycleDmaBuffer();
+  log_output = testing::internal::GetCapturedStderr();
+  EXPECT_NE(log_output.find("DMABUF::OhosVideoDecoder, RecycleDmaBuffer"), std::string::npos);
+}
+
+TEST_F(OhosVideoDecoderTest, ResumeDmaBuffer) {
+  ohos_video_decoder_->codec_ = nullptr;
+  testing::internal::CaptureStderr();
+  ohos_video_decoder_->ResumeDmaBuffer();
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_EQ(log_output.find("DMABUF::OhosVideoDecoder, ResumeDmaBuffer"), std::string::npos);
+
+  VideoBridgeCodecConfig codec_config;
+  codec_config.codec = media::VideoCodec::kH264;
+  std::unique_ptr<MediaCodecDecoderBridgeImpl> codec_impl =
+      MediaCodecDecoderBridgeImpl::CreateVideoDecoder(codec_config);
+  ohos_video_decoder_->codec_ = std::make_unique<CodecWrapper>(
+      CodecSurfacePair(std::move(codec_impl), std::move(surface_bundle_)),
+      base::DoNothing(), base::SequencedTaskRunner::GetCurrentDefault());
+  testing::internal::CaptureStderr();
+  ohos_video_decoder_->ResumeDmaBuffer();
+  log_output = testing::internal::GetCapturedStderr();
+  EXPECT_NE(log_output.find("DMABUF::OhosVideoDecoder, ResumeDmaBuffer"), std::string::npos);
+}
+#endif
 
 }  // namespace media

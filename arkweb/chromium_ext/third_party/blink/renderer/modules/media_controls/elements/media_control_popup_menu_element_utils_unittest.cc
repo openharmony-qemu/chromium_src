@@ -313,10 +313,9 @@ class MediaControlPopupMenuElementUtilsTest : public testing::Test {
         media_player_host_receiver_.BindNewEndpointAndPassDedicatedRemote());
     controls_ = MakeGarbageCollected<MediaControlsImpl>(*media_);
     elem_ = MakeGarbageCollected<MediaControlPopupMenuElement>(*controls_);
-    elem_utils_ = std::make_unique<MediaControlPopupMenuElementUtils>(elem_);
     UpdateLifecyclePhases();
   }
-  void TearDown() override { elem_utils_.reset(); }
+
   void UpdateLifecyclePhases() {
     dummy_page_holder_->GetFrameView().UpdateAllLifecyclePhasesForTest();
   }
@@ -330,20 +329,21 @@ class MediaControlPopupMenuElementUtilsTest : public testing::Test {
       media_player_host_receiver_{&media_player_host_};
   Persistent<MediaControlsImpl> controls_;
   Persistent<MediaControlPopupMenuElement> elem_;
-  std::unique_ptr<MediaControlPopupMenuElementUtils> elem_utils_;
 };
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 TEST_F(MediaControlPopupMenuElementUtilsTest, ShouldSetPopupAnchorHM) {
+  MediaControlPopupMenuElementUtils elem_utils_(elem_);
   media_->GetDocument().GetSettings()->SetCustomMediaPlayerEnabled(true);
   auto* rect = MakeGarbageCollected<DOMRect>(0, 0, 100, 100);
   auto* win = media_->GetDocument().domWindow();
-  ASSERT_NO_FATAL_FAILURE(elem_utils_->ShouldSetPopupAnchorHM(rect, win));
+  ASSERT_NO_FATAL_FAILURE(elem_utils_.ShouldSetPopupAnchorHM(rect, win));
   media_->GetDocument().GetSettings()->SetCustomMediaPlayerEnabled(false);
-  ASSERT_NO_FATAL_FAILURE(elem_utils_->ShouldSetPopupAnchorHM(rect, win));
+  ASSERT_NO_FATAL_FAILURE(elem_utils_.ShouldSetPopupAnchorHM(rect, win));
 }
 
 TEST_F(MediaControlPopupMenuElementUtilsTest, SetPopupAnchorHM1) {
+  MediaControlPopupMenuElementUtils elem_utils_(elem_);
   auto* doc = &media_->GetDocument();
   auto* internals = MakeGarbageCollected<Internals>(doc->GetExecutionContext());
   ShadowRoot* ua_root = internals->createUserAgentShadowRoot(elem_);
@@ -353,11 +353,12 @@ TEST_F(MediaControlPopupMenuElementUtilsTest, SetPopupAnchorHM1) {
   UpdateLifecyclePhases();
   auto* rect = DOMRect::Create(0, 0, 100, 100);
   auto* win = media_->GetDocument().domWindow();
-  ASSERT_NO_FATAL_FAILURE(elem_utils_->SetPopupAnchorHM(rect, win));
+  ASSERT_NO_FATAL_FAILURE(elem_utils_.SetPopupAnchorHM(rect, win));
   EXPECT_TRUE(elem_->style()->getPropertyValue("top").Contains("px"));
 }
 
 TEST_F(MediaControlPopupMenuElementUtilsTest, SetPopupAnchorHM2) {
+  MediaControlPopupMenuElementUtils elem_utils_(elem_);
   auto* doc = &media_->GetDocument();
   auto* internals = MakeGarbageCollected<Internals>(doc->GetExecutionContext());
   ShadowRoot* ua_root = internals->createUserAgentShadowRoot(elem_);
@@ -367,11 +368,12 @@ TEST_F(MediaControlPopupMenuElementUtilsTest, SetPopupAnchorHM2) {
   UpdateLifecyclePhases();
   auto* rect = DOMRect::Create(0, -400, 100, 50);
   auto* win = media_->GetDocument().domWindow();
-  ASSERT_NO_FATAL_FAILURE(elem_utils_->SetPopupAnchorHM(rect, win));
+  ASSERT_NO_FATAL_FAILURE(elem_utils_.SetPopupAnchorHM(rect, win));
   EXPECT_TRUE(elem_->style()->getPropertyValue("top").Contains("px"));
 }
 
 TEST_F(MediaControlPopupMenuElementUtilsTest, SetPopupAnchorHM3) {
+  MediaControlPopupMenuElementUtils elem_utils_(elem_);
   auto* doc = &media_->GetDocument();
   auto* internals = MakeGarbageCollected<Internals>(doc->GetExecutionContext());
   ShadowRoot* ua_root = internals->createUserAgentShadowRoot(elem_);
@@ -381,12 +383,13 @@ TEST_F(MediaControlPopupMenuElementUtilsTest, SetPopupAnchorHM3) {
   UpdateLifecyclePhases();
   auto* rect = DOMRect::Create(0, 0, 100, 50);
   auto* win = media_->GetDocument().domWindow();
-  ASSERT_NO_FATAL_FAILURE(elem_utils_->SetPopupAnchorHM(rect, win));
+  ASSERT_NO_FATAL_FAILURE(elem_utils_.SetPopupAnchorHM(rect, win));
   EXPECT_TRUE(elem_->style()->getPropertyValue("max-height").Contains("px"));
   EXPECT_TRUE(elem_->style()->getPropertyValue("top").Contains("px"));
 }
 
 TEST_F(MediaControlPopupMenuElementUtilsTest, SetPopupAnchorHM4) {
+  MediaControlPopupMenuElementUtils elem_utils_(elem_);
   auto* doc = &media_->GetDocument();
   auto* internals = MakeGarbageCollected<Internals>(doc->GetExecutionContext());
   ShadowRoot* ua_root = internals->createUserAgentShadowRoot(elem_);
@@ -396,11 +399,12 @@ TEST_F(MediaControlPopupMenuElementUtilsTest, SetPopupAnchorHM4) {
   UpdateLifecyclePhases();
   auto* rect = DOMRect::Create(0, 400, 100, 50);
   auto* win = media_->GetDocument().domWindow();
-  ASSERT_NO_FATAL_FAILURE(elem_utils_->SetPopupAnchorHM(rect, win));
+  ASSERT_NO_FATAL_FAILURE(elem_utils_.SetPopupAnchorHM(rect, win));
   EXPECT_TRUE(elem_->style()->getPropertyValue("top").Contains("px"));
 }
 
 TEST_F(MediaControlPopupMenuElementUtilsTest, SetPopupAnchorHM5) {
+  MediaControlPopupMenuElementUtils elem_utils_(elem_);
   auto* doc = &media_->GetDocument();
   auto* internals = MakeGarbageCollected<Internals>(doc->GetExecutionContext());
   ShadowRoot* ua_root = internals->createUserAgentShadowRoot(elem_);
@@ -410,11 +414,12 @@ TEST_F(MediaControlPopupMenuElementUtilsTest, SetPopupAnchorHM5) {
   UpdateLifecyclePhases();
   auto* rect = DOMRect::Create(0, 0, 300, 100);
   auto* win = media_->GetDocument().domWindow();
-  ASSERT_NO_FATAL_FAILURE(elem_utils_->SetPopupAnchorHM(rect, win));
+  ASSERT_NO_FATAL_FAILURE(elem_utils_.SetPopupAnchorHM(rect, win));
   EXPECT_TRUE(elem_->style()->getPropertyValue("left").Contains("px"));
 }
 
 TEST_F(MediaControlPopupMenuElementUtilsTest, SetPopupAnchorHM6) {
+  MediaControlPopupMenuElementUtils elem_utils_(elem_);
   auto* doc = &media_->GetDocument();
   auto* internals = MakeGarbageCollected<Internals>(doc->GetExecutionContext());
   ShadowRoot* ua_root = internals->createUserAgentShadowRoot(elem_);
@@ -424,11 +429,12 @@ TEST_F(MediaControlPopupMenuElementUtilsTest, SetPopupAnchorHM6) {
   UpdateLifecyclePhases();
   auto* rect = DOMRect::Create(-300, 0, 400, 100);
   auto* win = media_->GetDocument().domWindow();
-  ASSERT_NO_FATAL_FAILURE(elem_utils_->SetPopupAnchorHM(rect, win));
+  ASSERT_NO_FATAL_FAILURE(elem_utils_.SetPopupAnchorHM(rect, win));
   EXPECT_TRUE(elem_->style()->getPropertyValue("left").Contains("px"));
 }
 
 TEST_F(MediaControlPopupMenuElementUtilsTest, SetPopupAnchorHM7) {
+  MediaControlPopupMenuElementUtils elem_utils_(elem_);
   auto* doc = &media_->GetDocument();
   auto* internals = MakeGarbageCollected<Internals>(doc->GetExecutionContext());
   ShadowRoot* ua_root = internals->createUserAgentShadowRoot(elem_);
@@ -438,12 +444,13 @@ TEST_F(MediaControlPopupMenuElementUtilsTest, SetPopupAnchorHM7) {
   UpdateLifecyclePhases();
   auto* rect = DOMRect::Create(0, 100, 100, 50);
   auto* win = media_->GetDocument().domWindow();
-  ASSERT_NO_FATAL_FAILURE(elem_utils_->SetPopupAnchorHM(rect, win));
+  ASSERT_NO_FATAL_FAILURE(elem_utils_.SetPopupAnchorHM(rect, win));
   EXPECT_TRUE(elem_->style()->getPropertyValue("max-height").Contains("px"));
   EXPECT_TRUE(elem_->style()->getPropertyValue("top").Contains("px"));
 }
 
 TEST_F(MediaControlPopupMenuElementUtilsTest, SetPopupAnchorHM8) {
+  MediaControlPopupMenuElementUtils elem_utils_(elem_);
   auto* doc = &media_->GetDocument();
   auto* internals = MakeGarbageCollected<Internals>(doc->GetExecutionContext());
   ShadowRoot* ua_root = internals->createUserAgentShadowRoot(elem_);
@@ -453,11 +460,12 @@ TEST_F(MediaControlPopupMenuElementUtilsTest, SetPopupAnchorHM8) {
   UpdateLifecyclePhases();
   auto* rect = DOMRect::Create(-300, 0, 100, 100);
   auto* win = media_->GetDocument().domWindow();
-  ASSERT_NO_FATAL_FAILURE(elem_utils_->SetPopupAnchorHM(rect, win));
+  ASSERT_NO_FATAL_FAILURE(elem_utils_.SetPopupAnchorHM(rect, win));
   EXPECT_TRUE(elem_->style()->getPropertyValue("left").Contains("px"));
 }
 
 TEST_F(MediaControlPopupMenuElementUtilsTest, SetPopupAnchorHM9) {
+  MediaControlPopupMenuElementUtils elem_utils_(elem_);
   auto* doc = &media_->GetDocument();
   auto* internals = MakeGarbageCollected<Internals>(doc->GetExecutionContext());
   ShadowRoot* ua_root = internals->createUserAgentShadowRoot(elem_);
@@ -467,11 +475,12 @@ TEST_F(MediaControlPopupMenuElementUtilsTest, SetPopupAnchorHM9) {
   UpdateLifecyclePhases();
   auto* rect = DOMRect::Create(-100, 0, 100, 100);
   auto* win = media_->GetDocument().domWindow();
-  ASSERT_NO_FATAL_FAILURE(elem_utils_->SetPopupAnchorHM(rect, win));
+  ASSERT_NO_FATAL_FAILURE(elem_utils_.SetPopupAnchorHM(rect, win));
   EXPECT_TRUE(elem_->style()->getPropertyValue("left").Contains("px"));
 }
 
 TEST_F(MediaControlPopupMenuElementUtilsTest, SetPopupAnchorHM10) {
+  MediaControlPopupMenuElementUtils elem_utils_(elem_);
   auto* doc = &media_->GetDocument();
   auto* internals = MakeGarbageCollected<Internals>(doc->GetExecutionContext());
   ShadowRoot* ua_root = internals->createUserAgentShadowRoot(elem_);
@@ -481,11 +490,12 @@ TEST_F(MediaControlPopupMenuElementUtilsTest, SetPopupAnchorHM10) {
   UpdateLifecyclePhases();
   auto* rect = DOMRect::Create(-300, 0, 600, 100);
   auto* win = media_->GetDocument().domWindow();
-  ASSERT_NO_FATAL_FAILURE(elem_utils_->SetPopupAnchorHM(rect, win));
+  ASSERT_NO_FATAL_FAILURE(elem_utils_.SetPopupAnchorHM(rect, win));
   EXPECT_TRUE(elem_->style()->getPropertyValue("left").Contains("px"));
 }
 
 TEST_F(MediaControlPopupMenuElementUtilsTest, SetPopupAnchorHM11) {
+  MediaControlPopupMenuElementUtils elem_utils_(elem_);
   auto* doc = &media_->GetDocument();
   auto* internals = MakeGarbageCollected<Internals>(doc->GetExecutionContext());
   ShadowRoot* ua_root = internals->createUserAgentShadowRoot(elem_);
@@ -495,11 +505,12 @@ TEST_F(MediaControlPopupMenuElementUtilsTest, SetPopupAnchorHM11) {
   UpdateLifecyclePhases();
   auto* rect = DOMRect::Create(0, 0, 100, 100);
   auto* win = media_->GetDocument().domWindow();
-  ASSERT_NO_FATAL_FAILURE(elem_utils_->SetPopupAnchorHM(rect, win));
+  ASSERT_NO_FATAL_FAILURE(elem_utils_.SetPopupAnchorHM(rect, win));
   EXPECT_TRUE(elem_->style()->getPropertyValue("left").Contains("px"));
 }
 
 TEST_F(MediaControlPopupMenuElementUtilsTest, SetPopupAnchorHM12) {
+  MediaControlPopupMenuElementUtils elem_utils_(elem_);
   auto* doc = &media_->GetDocument();
   auto* internals = MakeGarbageCollected<Internals>(doc->GetExecutionContext());
   ShadowRoot* ua_root = internals->createUserAgentShadowRoot(elem_);
@@ -510,43 +521,46 @@ TEST_F(MediaControlPopupMenuElementUtilsTest, SetPopupAnchorHM12) {
   UpdateLifecyclePhases();
   auto* rect = DOMRect::Create(-232, 0, 500, 100);
   auto* win = media_->GetDocument().domWindow();
-  ASSERT_NO_FATAL_FAILURE(elem_utils_->SetPopupAnchorHM(rect, win));
+  ASSERT_NO_FATAL_FAILURE(elem_utils_.SetPopupAnchorHM(rect, win));
   EXPECT_TRUE(elem_->style()->getPropertyValue("left").Contains("px"));
   base::i18n::SetRTLForTesting(false);
 }
 
 TEST_F(MediaControlPopupMenuElementUtilsTest, SetOverflowPopupAnchorHM1) {
+  MediaControlPopupMenuElementUtils elem_utils_(elem_);
   auto* win = media_->GetDocument().domWindow();
-  ASSERT_NO_FATAL_FAILURE(elem_utils_->SetOverflowPopupAnchorHM(nullptr, win));
+  ASSERT_NO_FATAL_FAILURE(elem_utils_.SetOverflowPopupAnchorHM(nullptr, win));
   auto* rect = DOMRect::Create(0, 0, 100, 100);
-  ASSERT_NO_FATAL_FAILURE(elem_utils_->SetOverflowPopupAnchorHM(rect, nullptr));
-  auto utils = std::make_unique<MediaControlPopupMenuElementUtils>(nullptr);
-  ASSERT_NO_FATAL_FAILURE(utils->SetOverflowPopupAnchorHM(rect, win));
+  ASSERT_NO_FATAL_FAILURE(elem_utils_.SetOverflowPopupAnchorHM(rect, nullptr));
+  auto utils = MediaControlPopupMenuElementUtils(nullptr);
+  ASSERT_NO_FATAL_FAILURE(utils.SetOverflowPopupAnchorHM(rect, win));
   ASSERT_NO_FATAL_FAILURE(
-      elem_utils_->SetOverflowPopupAnchorHM(nullptr, nullptr));
-  ASSERT_NO_FATAL_FAILURE(elem_utils_->SetOverflowPopupAnchorHM(rect, win));
+      elem_utils_.SetOverflowPopupAnchorHM(nullptr, nullptr));
+  ASSERT_NO_FATAL_FAILURE(elem_utils_.SetOverflowPopupAnchorHM(rect, win));
   EXPECT_FALSE(elem_->style()->getPropertyValue("top").IsNull());
 }
 
 TEST_F(MediaControlPopupMenuElementUtilsTest, SetOverflowPopupAnchorHM2) {
+  MediaControlPopupMenuElementUtils elem_utils_(elem_);
   auto* doc = &media_->GetDocument();
   auto* win = doc->domWindow();
   auto* rect = DOMRect::Create(10, 0, 100, 100);
   base::i18n::SetRTLForTesting(true);
   UpdateLifecyclePhases();
   elem_->style()->removeProperty("left", ASSERT_NO_EXCEPTION);
-  ASSERT_NO_FATAL_FAILURE(elem_utils_->SetOverflowPopupAnchorHM(rect, win));
+  ASSERT_NO_FATAL_FAILURE(elem_utils_.SetOverflowPopupAnchorHM(rect, win));
   WTF::String expected_left = WTF::String::Number(rect->left()) + "px";
   EXPECT_EQ(elem_->style()->getPropertyValue("left"), expected_left);
   base::i18n::SetRTLForTesting(false);
 }
 
 TEST_F(MediaControlPopupMenuElementUtilsTest, ShouldPlaybackSpeedButton1) {
+  MediaControlPopupMenuElementUtils elem_utils_(elem_);
   media_->GetDocument().GetSettings()->SetCustomMediaPlayerEnabled(true);
   media_->SetBooleanAttribute(html_names::kControlsAttr, true);
   media_->GetDocument().body()->AppendChild(media_);
   controls_->InitializeControls();
-  ASSERT_NO_FATAL_FAILURE(elem_utils_->ShouldPlaybackSpeedButton());
+  ASSERT_NO_FATAL_FAILURE(elem_utils_.ShouldPlaybackSpeedButton());
 }
 #endif  // ARKWEB_VIDEO_ASSISTANT
 

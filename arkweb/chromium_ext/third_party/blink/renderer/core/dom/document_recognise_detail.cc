@@ -115,11 +115,15 @@ void DocumentRecogniseDetail::ChildDocDistillabilityMatch(
       NovelTemplateFeatures::GetInstance().GetDetailsPageTemplates();
   if (novel_details_page_templates) {
     bool applicable_templates_configured = !applicable_templates_set.empty();
+    size_t valid_size = static_cast<int32_t>(blink::mojom::DetailTemplateIndex::CHAPTERS) + 1;
     for (const auto& details_template : *novel_details_page_templates) {
       // 若配置了applicable templates，过滤不在其中的
       if (applicable_templates_configured &&
           applicable_templates_set.find(details_template.first) ==
               applicable_templates_set.end()) {
+        continue;
+      }
+      if (details_template.second.size() != valid_size) {
         continue;
       }
       if (IsMatchDetailsTemplates(document, details_template.second)) {

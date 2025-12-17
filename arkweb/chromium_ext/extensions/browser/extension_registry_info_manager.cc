@@ -18,6 +18,8 @@
 #include "base/logging.h"
 #include "base/no_destructor.h"
 #include "chrome/browser/extensions/menu_manager.h"
+#include "chrome/common/extensions/api/omnibox/omnibox_handler.h"
+#include "chrome/common/extensions/chrome_manifest_url_handlers.h"
 #include "chrome/common/extensions/manifest_handlers/settings_overrides_handler.h"
 #include "content/public/common/url_constants.h"
 #include "extensions/browser/extension_system.h"
@@ -30,13 +32,19 @@
 #include "extensions/browser/extension_icon_placeholder.h"
 #include "extensions/browser/extension_registry.h"
 #include "extensions/browser/extension_system.h"
+#include "extensions/browser/install_prefs_helper.h"
 #include "extensions/browser/ui_util.h"
 #include "extensions/browser/management_policy.h"
 #include "extensions/browser/unloaded_extension_reason.h"
+#include "extensions/browser/extension_prefs.h"
 #include "ohos_nweb/src/cef_delegate/nweb_extension_action_cef_delegate.h"
 #include "ohos_nweb/src/capi/nweb_context_menus_item.h"
 #include "ohos_nweb/src/nweb_common.h"
 #include "ui/gfx/image/image_skia_operations.h"
+
+#if BUILDFLAG(ARKWEB_TEST)
+#include "extension_registry_info_manager_test.h"
+#endif
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
 #include "extensions/browser/extension_util.h"
@@ -46,9 +54,9 @@
 #endif
 
 namespace extensions {
-
+#ifndef BUILDFLAG(ARKWEB_TEST)
 namespace {
-
+#endif
 enum LoadPhase {
   kStartInitialLoad,
   kEndInitialLoad,
@@ -56,15 +64,21 @@ enum LoadPhase {
 };
  
 LoadPhase g_load_phase = kNormalLoad;
-std::set<std::string> g_initial_loaded_extensions;
+std::set<std::string>& g_initial_loaded_extensions() {
+  static base::NoDestructor<std::set<std::string>> initial_loaded_extensions;
+  return *initial_loaded_extensions;
+}
 
 constexpr char kExtensionsHost[] = "extensions";
 constexpr char kUrlSeparator[] = "://";
 constexpr int kTabIdNone = -1;
 constexpr float kBrowserIconScale = 2.0f;
 
-base::NoDestructor<std::shared_ptr<NWebExtensionManagerCallBack>>
-    g_extension_manager_listener(nullptr);
+std::shared_ptr<NWebExtensionManagerCallBack>& g_extension_manager_listener() {
+  static base::NoDestructor<std::shared_ptr<NWebExtensionManagerCallBack>>
+      extension_manager_listener(nullptr);
+  return *extension_manager_listener;
+}
 
 std::string GetTypeStr(extensions::MenuItem::Type type) {
   switch (type) {
@@ -111,13 +125,13 @@ NWebContextMenusItem GetNWebContextMenusItem(extensions::MenuItem* menu_item) {
   NWebContextMenusItem item;
   item.checked = menu_item->checked();
   item.contexts = ContextListToStrVector(menu_item->contexts());
-  item.documentUrlPatterns = menu_item->document_url_str_patterns();
+  item.documentUrlPatterns = menu_item->document_url_patterns().ToStringVector();
   item.enabled = menu_item->enabled();
   item.id = menu_item->id().string_uid;
   if (menu_item->parent_id()) {
     item.parentId = menu_item->parent_id()->string_uid;
   }
-  item.targetUrlPatterns = menu_item->target_url_str_patterns();
+  item.targetUrlPatterns = menu_item->target_url_patterns().ToStringVector();
   item.title = menu_item->title();
   item.type = GetTypeStr(menu_item->type());
   item.visible = menu_item->visible();
@@ -129,6 +143,7 @@ NWebContextMenusItemV2 GetNWebContextMenusItemV2(extensions::MenuItem* menu_item
   NWebContextMenusItemV2 item;
   item.item = GetNWebContextMenusItem(menu_item);
   item.isOffTheRecord = menu_item->incognito();
+  item.intId = menu_item->id().uid;
   return item;
 }
 
@@ -178,6 +193,18 @@ std::optional<std::array<int32_t, EXT_COLOR_MAX>> GetBadgeTextColor(
   color[EXT_COLOR_ALPHA] = static_cast<int32_t>(SkColorGetA(textColor));
 
   return color;
+}
+
+std::optional<WebExtensionManifestOmnibox> GetManifestOmnibox(
+    const Extension* extension) {
+  const std::string& keyword = OmniboxInfo::GetKeyword(extension);
+  if (keyword.empty()) {
+    return std::nullopt;
+  }
+
+  WebExtensionManifestOmnibox omnibox;
+  omnibox.keyword = keyword;
+  return std::make_optional<WebExtensionManifestOmnibox>(keyword);
 }
 
 std::optional<WebExtensionManifestOptionsPageInfo> GetManifestOptionsPageInfo(
@@ -230,7 +257,107 @@ int UnloadedExtensionReasonEnumToInt(UnloadedExtensionReason reason) {
       return 0;
   }
 }
+
+void GetManifestUrlOverrideInfo(const Extension& extension,
+                                WebExtensionManifestInfo& manifest) {
+  const URLOverrides::URLOverrideMap& overrides =
+      URLOverrides::GetChromeURLOverrides(&extension);
+  if (!overrides.empty()) {
+    manifest.url_override.emplace(
+        WebExtensionManifestUrlOverride());
+    if (overrides.count("newtab")) {
+      manifest.url_override->newtab = overrides.find("newtab")->second.spec();
+    }
+    if (overrides.count("bookmarks")) {
+      manifest.url_override->bookmarks = overrides.find("bookmarks")->second.spec();
+    }
+    if (overrides.count("history")) {
+      manifest.url_override->history = overrides.find("history")->second.spec();
+    }
+  }
 }
+
+// Same process as in SubstituteInstallParam() in settings_overrides_api.cc.
+std::string SubstituteInstallParam(Profile* profile,
+                                   const Extension& extension,
+                                   std::string str) {
+  std::string install_parameter;
+  auto prefs = ExtensionPrefs::Get(profile);
+  if (prefs) {
+    install_parameter = GetInstallParam(prefs, extension.id());
+  }
+  base::ReplaceSubstringsAfterOffset(&str, 0, "__PARAM__", install_parameter);
+  return str;
+}
+
+WebExtensionManifestSearchProvider GetSearchProvider(
+    Profile* profile,
+    const Extension& extension,
+    const SettingsOverrides* settings) {
+  WebExtensionManifestSearchProvider searcher;
+
+  searcher.name = settings->search_engine->name;
+  searcher.keyword = settings->search_engine->keyword;
+  if (settings->search_engine->favicon_url) {
+    searcher.favicon_url = SubstituteInstallParam(
+        profile, extension, settings->search_engine->favicon_url.value());
+  }
+  searcher.search_url = SubstituteInstallParam(
+      profile, extension, settings->search_engine->search_url);
+  searcher.encoding = settings->search_engine->encoding;
+  if (settings->search_engine->suggest_url) {
+    searcher.suggest_url = SubstituteInstallParam(
+        profile, extension, settings->search_engine->suggest_url.value());
+  }
+  if (settings->search_engine->image_url) {
+    searcher.image_url = SubstituteInstallParam(
+        profile, extension, settings->search_engine->image_url.value());
+  }
+  searcher.search_url_post_params =
+      settings->search_engine->search_url_post_params;
+  searcher.suggest_url_post_params =
+      settings->search_engine->suggest_url_post_params;
+  searcher.image_url_post_params =
+      settings->search_engine->image_url_post_params;
+  if (settings->search_engine->alternate_urls) {
+    for (const auto& url : *settings->search_engine->alternate_urls) {
+      if (!url.empty()) {
+        searcher.alternate_urls.push_back(
+            SubstituteInstallParam(profile, extension, url));
+      }
+    }
+  }
+  searcher.prepopulated_id = settings->search_engine->prepopulated_id;
+  searcher.is_default = settings->search_engine->is_default;
+  return searcher;
+}
+
+void GetManifestSettingsOverridesInfo(Profile* profile,
+                                      const Extension& extension,
+                                      WebExtensionManifestInfo& manifest) {
+  const SettingsOverrides* settings = SettingsOverrides::Get(&extension);
+  if (!settings)
+    return;
+
+  manifest.settings_overrides.emplace();
+  if (settings->homepage) {
+    manifest.settings_overrides->homepage =
+        SubstituteInstallParam(profile, extension, settings->homepage->spec());
+  }
+  if (!settings->startup_pages.empty()) {
+    for (const auto& page : settings->startup_pages) {
+      manifest.settings_overrides->startup_pages.emplace_back(
+          SubstituteInstallParam(profile, extension, page.spec()));
+    }
+  }
+  if (settings->search_engine) {
+    manifest.settings_overrides->search_provider.emplace(
+        GetSearchProvider(profile, extension, settings));
+  }
+}
+#ifndef BUILDFLAG(ARKWEB_TEST)
+}
+#endif
 
 ExtensionRegistryInfoManager::BrowserNotifier::BrowserNotifier(
     const Extension& extension,
@@ -294,8 +421,8 @@ void ExtensionRegistryInfoManager::BrowserNotifier::NotifyIfReady() {
   NotifyManagerExtensionLoaded();
 
   if (g_load_phase != kNormalLoad) {
-    g_initial_loaded_extensions.erase(extension_.id());
-    if (g_load_phase == kEndInitialLoad && g_initial_loaded_extensions.empty()) {
+    g_initial_loaded_extensions().erase(extension_.id());
+    if (g_load_phase == kEndInitialLoad && g_initial_loaded_extensions().empty()) {
 #if BUILDFLAG(ARKWEB_NWEB_EX)
       NWebExtensionManagerDispatcher::OnExtensionInitLoadEndCallBack();
 #endif
@@ -340,6 +467,9 @@ void ExtensionRegistryInfoManager::BrowserNotifier::PopulateAllSyncInfo() {
 #if BUILDFLAG(ARKWEB_NWEB_EX)
   ManagementPolicy* management_policy =
       extensions::ExtensionSystem::Get(browser_context_)->management_policy();
+  if (!management_policy) {
+    return;
+  }
   loaded_info_.info.extensionId = extension_.id();
   loaded_info_.info.mustRemainInstalled =
       management_policy->MustRemainInstalled(&extension_, nullptr);
@@ -358,6 +488,8 @@ void ExtensionRegistryInfoManager::BrowserNotifier::PopulateAllSyncInfo() {
       info_manager_->GetAllExtensionContextMenusV2(extension_.id());
   loaded_info_.action_v2 =
       info_manager_->GetExtensionActionInfoV2(extension_, kTabIdNone);
+  loaded_info_.install_time =
+      ExtensionPrefs::Get(browser_context_)->GetFirstInstallTime(extension_.id()).InMillisecondsFSinceUnixEpoch();
 #endif
 }
 
@@ -526,45 +658,16 @@ void ExtensionRegistryInfoManager::GetExtensionManifestInfo(
   if (homepage_url.is_valid()) {
     manifest.homepage_url = homepage_url.spec();
   }
-  const SettingsOverrides* settings = SettingsOverrides::Get(&extension);
-  if (settings) {
-    manifest.settings_overrides.emplace(
-        WebExtensionManifestSettingsOverrides());
-    if (settings->homepage) {
-      manifest.settings_overrides->homepage = settings->homepage->spec();
-    }
-    if (!settings->startup_pages.empty()) {
-      for (const auto& page : settings->startup_pages) {
-        manifest.settings_overrides->startup_pages.emplace_back(page.spec());
-      }
-    }
-    if (settings->search_engine) {
-      WebExtensionManifestSearchProvider searcher;
-      searcher.name = settings->search_engine->name;
-      searcher.keyword = settings->search_engine->keyword;
-      searcher.favicon_url = settings->search_engine->favicon_url;
-      searcher.search_url = settings->search_engine->search_url;
-      searcher.encoding = settings->search_engine->encoding;
-      searcher.suggest_url = settings->search_engine->suggest_url;
-      searcher.image_url = settings->search_engine->image_url;
-      searcher.search_url_post_params =
-          settings->search_engine->search_url_post_params;
-      searcher.suggest_url_post_params =
-          settings->search_engine->suggest_url_post_params;
-      searcher.image_url_post_params =
-          settings->search_engine->image_url_post_params;
-      if (settings->search_engine->alternate_urls)
-        searcher.alternate_urls = *settings->search_engine->alternate_urls;
-      searcher.prepopulated_id = settings->search_engine->prepopulated_id;
-      searcher.is_default = settings->search_engine->is_default;
-      manifest.settings_overrides->search_provider.emplace(std::move(searcher));
-    }
-  }
+  GetManifestSettingsOverridesInfo(
+      Profile::FromBrowserContext(browser_context_), extension, manifest);
+  GetManifestUrlOverrideInfo(extension, manifest);
   manifest.options_page = GetManifestOptionsPageInfo(extension);
 #if BUILDFLAG(ARKWEB_NWEB_EX)
   manifest.incognito_mode =
       std::make_optional<ExtensionIncognitoMode>(GetExtensionIncognitoMode(&extension));
 #endif
+  manifest.omnibox = GetManifestOmnibox(&extension);
+  manifest.short_name = extension.short_name();
 }
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
@@ -601,7 +704,7 @@ void ExtensionRegistryInfoManager::Loaded(const std::string& extension_id) {
   }
 
   if (g_load_phase == kStartInitialLoad) {
-    g_initial_loaded_extensions.insert(extension_id);
+    g_initial_loaded_extensions().insert(extension_id);
   }
 
   StartNotifyingExtensionLoaded(*extension);
@@ -643,64 +746,64 @@ void ExtensionRegistryInfoManager::OnExtensionUninstalled(content::BrowserContex
 void ExtensionRegistryInfoManager::RegisterWebExtensionManagerListener(
     std::shared_ptr<NWebExtensionManagerCallBack> web_extension_manager_listener) {
   LOG(INFO) << "ExtensionRegistryInfoManager::RegisterWebExtensionManagerListener";
-  *g_extension_manager_listener = web_extension_manager_listener;
+  g_extension_manager_listener() = web_extension_manager_listener;
 }
 
 // static
 void ExtensionRegistryInfoManager::UnRegisterWebExtensionManagerListener() {
-  LOG(INFO) << "ExtensionRegistryInfoManager::RegisterWebExtensionManagerListener";
-  *g_extension_manager_listener = nullptr;
+  LOG(INFO) << "ExtensionRegistryInfoManager::UnRegisterWebExtensionManagerListener";
+  g_extension_manager_listener() = nullptr;
 }
 
 //static
 NO_SANITIZE("cfi-icall")
 void ExtensionRegistryInfoManager::OnExtensionLoadedCallBack(const WebExtensionInfo& loadedInfo) {
   LOG(INFO) << "ExtensionRegistryInfoManager::OnExtensionLoadedCallBack";
-  if (!(*g_extension_manager_listener)) {
+  if (!g_extension_manager_listener()) {
     LOG(ERROR) << "No web extension manager listener";
     return;
   }
 
-  if (!(*g_extension_manager_listener)->OnWebExtensionLoaded) {
+  if (!g_extension_manager_listener()->OnWebExtensionLoaded) {
     LOG(ERROR) << "No OnWebExtensionLoaded listener";
     return;
   }
 
-  (*g_extension_manager_listener)->OnWebExtensionLoaded(loadedInfo);
+  g_extension_manager_listener()->OnWebExtensionLoaded(loadedInfo);
 }
 
 //static
 NO_SANITIZE("cfi-icall")
 void ExtensionRegistryInfoManager::OnExtensionUnLoadedCallBack(const std::string& eid) {
   LOG(INFO) << "ExtensionRegistryInfoManager::OnExtensionUnLoadedCallBack";
-  if (!(*g_extension_manager_listener)) {
+  if (!g_extension_manager_listener()) {
     LOG(ERROR) << "No web extension manager listener";
     return;
   }
 
-  if (!(*g_extension_manager_listener)->OnWebExtensionUnLoaded) {
+  if (!g_extension_manager_listener()->OnWebExtensionUnLoaded) {
     LOG(ERROR) << "No OnWebExtensionUnLoaded listener";
     return;
   }
 
-  (*g_extension_manager_listener)->OnWebExtensionUnLoaded(eid);
+  g_extension_manager_listener()->OnWebExtensionUnLoaded(eid);
 }
 
 //static
 NO_SANITIZE("cfi-icall")
 void ExtensionRegistryInfoManager::OnExtensionOpenUrlCallBack(const std::string& url) {
   LOG(INFO) << "ExtensionRegistryInfoManager::OnExtensionOpenUrlCallBack";
-  if (!(*g_extension_manager_listener)) {
+  if (!g_extension_manager_listener()) {
     LOG(ERROR) << "No web extension manager listener";
     return;
   }
 
-  if (!(*g_extension_manager_listener)->OnWebExtensionOpenUrlFun) {
+  if (!g_extension_manager_listener()->OnWebExtensionOpenUrlFun) {
     LOG(ERROR) << "No OnWebExtensionOpenUrlFun listener";
     return;
   }
 
-  (*g_extension_manager_listener)->OnWebExtensionOpenUrlFun(url);
+  g_extension_manager_listener()->OnWebExtensionOpenUrlFun(url);
 }
 
 void ExtensionRegistryInfoManager::OnExtensionIconImageChanged(
@@ -768,7 +871,7 @@ void ExtensionRegistryInfoManager::StartInitialLoad() {
  
 void ExtensionRegistryInfoManager::StopInitialLoad() {
   g_load_phase = kEndInitialLoad;
-  if (g_initial_loaded_extensions.empty()) {
+  if (g_initial_loaded_extensions().empty()) {
 #if BUILDFLAG(ARKWEB_NWEB_EX)
     NWebExtensionManagerDispatcher::OnExtensionInitLoadEndCallBack();
 #endif

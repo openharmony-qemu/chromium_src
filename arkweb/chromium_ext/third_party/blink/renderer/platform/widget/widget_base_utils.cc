@@ -35,6 +35,8 @@
 #include "cc/trees/layer_tree_settings.h"
 #if BUILDFLAG(IS_ARKWEB)
 #include "arkweb/chromium_ext/base/process/process_handle_posix_ex.h"
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#include "base/command_line.h"
 #include "base/process/process_handle.h"
 #include "base/task/post_job.h"
 #include "base/task/thread_pool/job_task_source.h"
@@ -49,20 +51,38 @@
 namespace blink {
 
 // LCOV_EXCL_START
-WidgetBaseUtils::WidgetBaseUtils(WidgetBase* widget_base) : widget_base_(widget_base) {}
+WidgetBaseUtils::WidgetBaseUtils(WidgetBase* widget_base) : widget_base_(widget_base) {
+#if BUILDFLAG(IS_ARKWEB)
+  base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+  if (command_line) {
+    cmd_value_ = command_line->HasSwitch(switches::kEnableReportThreadPoolForeg);
+  }
+#endif
+}
 // LCOV_EXCL_STOP
 
 #if BUILDFLAG(IS_ARKWEB)
-static void ReportThreadIds(std::vector<int32_t> thread_ids, bool is_created) {
+static void ReportThreadIds(std::vector<int32_t> thread_ids, bool is_created, bool cmd_value) {
   auto* thread = content::ChildThreadImpl::current();
   if (thread) {
     auto host = thread->child_process_host();
     auto status = is_created ? OHOS::NWeb::ResSchedStatusAdapter::THREAD_CREATED :
                                OHOS::NWeb::ResSchedStatusAdapter::THREAD_DESTROYED;
-    host->ReportKeyThreadIds(static_cast<int32_t>(status),
-        base::GetCurrentRealPid(), thread_ids,
-        static_cast<int32_t>(OHOS::NWeb::ResSchedRoleAdapter::IMAGE_DECODE));
+    if (cmd_value) {
+      host->ReportKeyThreadIds(static_cast<int32_t>(status),
+          base::GetCurrentRealPid(), thread_ids,
+          static_cast<int32_t>(OHOS::NWeb::ResSchedRoleAdapter::USER_INTERACT));
+    }
+    else {
+      host->ReportKeyThreadIds(static_cast<int32_t>(status),
+          base::GetCurrentRealPid(), thread_ids,
+          static_cast<int32_t>(OHOS::NWeb::ResSchedRoleAdapter::IMAGE_DECODE));    
+    }
   }
+}
+
+bool WidgetBaseUtils::GetCmdValue() {
+  return cmd_value_;
 }
 
 // LCOV_EXCL_START
@@ -94,10 +114,10 @@ void WidgetBaseUtils::ReportForegroundThreadPool() {
   if (foreground_thread_group) {
     std::vector<int32_t> create_workers_thread_ids_ =
       foreground_thread_group->ReportCreateWorkers();
-    ReportThreadIds(create_workers_thread_ids_, true);
+    ReportThreadIds(create_workers_thread_ids_, true, cmd_value_);
     std::vector<int32_t> destroy_workers_thread_ids_ =
       foreground_thread_group->ReportDestroyWorkers();
-    ReportThreadIds(destroy_workers_thread_ids_, false);
+    ReportThreadIds(destroy_workers_thread_ids_, false, cmd_value_);
   }
 }
 // LCOV_EXCL_STOP
@@ -131,6 +151,13 @@ gfx::Vector2dF WidgetBaseUtils::GetOverScrollOffset() {
     return overscroll_offset;
   }
   return widget_base_->widget_input_handler_manager_->manager_utils()->GetOverScrollOffset();
+}
+
+void WidgetBaseUtils::OnOverScrollOffsetChanged(float offset_x,
+                                                float offset_y) {
+  if (widget_base_ && widget_base_->client_) {
+    widget_base_->client_->OnOverScrollOffsetChanged(offset_x, offset_y);
+  }
 }
 #endif
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)

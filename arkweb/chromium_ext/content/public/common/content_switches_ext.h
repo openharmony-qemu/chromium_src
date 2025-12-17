@@ -44,6 +44,11 @@ CONTENT_EXPORT extern const char kOhosHttpCacheSimple[];
 CONTENT_EXPORT extern const char kCalcTabletMode[];
 CONTENT_EXPORT extern const char kDisableMobileStyleSheet[];
 CONTENT_EXPORT extern const char kDisableNonAdvancedSecurityMode[];
+CONTENT_EXPORT extern const char kDisableNextPreviousFlag[];
+CONTENT_EXPORT extern const char kUserCacheDir[];
+CONTENT_EXPORT extern const char kArkwebAppDataDir[];
+CONTENT_EXPORT extern const char kCacheDirExists[];
+CONTENT_EXPORT extern const char kUserDataDirExists[];
 #endif
 
 #if BUILDFLAG(ARKWEB_SCHEME_HANDLER)
@@ -112,6 +117,14 @@ CONTENT_EXPORT extern const char  kOhosEnableGwpAsanType[];
 #endif
 #if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
 CONTENT_EXPORT extern const char  kEnableWebAudioBackgroundTask[];
+#endif
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+CONTENT_EXPORT extern const char  kEnableReportCookieMonsterClient[];
+#endif // BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+
+#if BUILDFLAG(IS_ARKWEB)
+CONTENT_EXPORT extern const char  kEnableReportThreadPoolForeg[];
 #endif
 }  // namespace switches
 

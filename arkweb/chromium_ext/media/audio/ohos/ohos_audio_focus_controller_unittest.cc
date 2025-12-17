@@ -21,6 +21,9 @@
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "arkweb/chromium_ext/media/base/ohos/ohos_media_player_bridge.h"
+#include "content/public/test/browser_task_environment.h"
+#include "content/public/test/test_renderer_host.h"
+#include "content/test/test_web_contents.h"
 
 using namespace media;
 using namespace testing;
@@ -71,74 +74,120 @@ class MockPlayerAdapter : public PlayerAdapter {
               (override));
 };
 
-class OHOSAudioFocusControllerTest : public ::testing::Test {
+class OHOSAudioFocusControllerTest : public content::RenderViewHostTestHarness {
  public:
-  void SetUp() override {}
+  OHOSAudioFocusControllerTest() : content::RenderViewHostTestHarness() {}
 
-  void TearDown() override {}
+  OHOSAudioFocusControllerTest(const OHOSAudioFocusControllerTest&) = delete;
+  OHOSAudioFocusControllerTest& operator=(const OHOSAudioFocusControllerTest&) =
+      delete;
+
+  void SetUp() override {
+    content::RenderViewHostTestHarness::SetUp();
+  }
+
+  void TearDown() override {
+    content::RenderViewHostTestHarness::TearDown();
+  }
+
+  void SetAudioParametersId(AudioParameters &params) {
+    auto frameHost = main_rfh();
+    if (!frameHost) {
+      return nullptr;
+    }
+    params.set_render_process_id(
+        frameHost->GetProcess()->GetID());
+    params.set_render_frame_id(frameHost->GetRoutingID());
+  }
 };
 
-TEST(OHOSAudioFocusControllerTest, OnResume01) {
+TEST_F(OHOSAudioFocusControllerTest, OnResume01) {
   auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
   EXPECT_CALL(*mock_player_adapter, Play()).Times(0);
   AudioParameters params(
       AudioParameters::AUDIO_PCM_LOW_LATENCY,
       ChannelLayoutConfig::Guess(kDefaultChannelCount), kDefaultSampleRate,
       kMinimumInputBufferSize);
+  testing::internal::CaptureStderr();
   OHOSAudioFocusController::OnResume(params);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_NE(log_output.find("OnResume RenderFrameHost not found for PID"), std::string::npos);
 }
 
-TEST(OHOSAudioFocusControllerTest, OnResume02) {
+TEST_F(OHOSAudioFocusControllerTest, OnResume02) {
   auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
   EXPECT_CALL(*mock_player_adapter, Play()).Times(0);
   AudioParameters params(
       AudioParameters::AUDIO_FAKE,
       ChannelLayoutConfig::Guess(kDefaultChannelCount), kDefaultSampleRate,
       kMinimumInputBufferSize);
+  SetAudioParametersId(params);
+  testing::internal::CaptureStderr();
   OHOSAudioFocusController::OnResume(params);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_EQ(log_output.find("OHOSAudioFocusController OnResume get webContent failed"), std::string::npos);
+  EXPECT_EQ(log_output.find("OHOSAudioFocusController OnResume get mediaSession failed"), std::string::npos);
 }
 
-TEST(OHOSAudioFocusControllerTest, OnSuspend01) {
+TEST_F(OHOSAudioFocusControllerTest, OnSuspend01) {
   auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
   EXPECT_CALL(*mock_player_adapter, Play()).Times(0);
   AudioParameters params(
       AudioParameters::AUDIO_PCM_LOW_LATENCY,
       ChannelLayoutConfig::Guess(kDefaultChannelCount), kDefaultSampleRate,
       kMinimumInputBufferSize);
+  testing::internal::CaptureStderr();
   OHOSAudioFocusController::OnSuspend(params);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_NE(log_output.find("OnSuspend RenderFrameHost not found for PID"), std::string::npos);
 }
 
-TEST(OHOSAudioFocusControllerTest, OnSuspend02) {
+TEST_F(OHOSAudioFocusControllerTest, OnSuspend02) {
   auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
   EXPECT_CALL(*mock_player_adapter, Play()).Times(0);
   AudioParameters params(
       AudioParameters::AUDIO_FAKE,
       ChannelLayoutConfig::Guess(kDefaultChannelCount), kDefaultSampleRate,
       kMinimumInputBufferSize);
+  SetAudioParametersId(params);
+  testing::internal::CaptureStderr();
   OHOSAudioFocusController::OnSuspend(params);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_EQ(log_output.find("OHOSAudioFocusController OnSuspend get webContent failed"), std::string::npos);
+  EXPECT_EQ(log_output.find("OHOSAudioFocusController OnSuspend get mediaSession failed"), std::string::npos);
 }
 
-TEST(OHOSAudioFocusControllerTest, GetContentTypeOnUIThread01) {
+TEST_F(OHOSAudioFocusControllerTest, GetContentTypeOnUIThread01) {
   auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
   EXPECT_CALL(*mock_player_adapter, Play()).Times(0);
   AudioParameters params(
       AudioParameters::AUDIO_PCM_LOW_LATENCY,
       ChannelLayoutConfig::Guess(kDefaultChannelCount), kDefaultSampleRate,
       kMinimumInputBufferSize);
+  testing::internal::CaptureStderr();
   OHOSAudioFocusController::GetContentTypeOnUIThread(params);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_NE(log_output.find("GetContentTypeOnUIThread RenderFrameHost not found for PID"), std::string::npos);
 }
 
-TEST(OHOSAudioFocusControllerTest, GetContentTypeOnUIThread02) {
+TEST_F(OHOSAudioFocusControllerTest, GetContentTypeOnUIThread02) {
   auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
   EXPECT_CALL(*mock_player_adapter, Play()).Times(0);
   AudioParameters params(
       AudioParameters::AUDIO_FAKE,
       ChannelLayoutConfig::Guess(kDefaultChannelCount), kDefaultSampleRate,
       kMinimumInputBufferSize);
+  SetAudioParametersId(params);
+  testing::internal::CaptureStderr();
   OHOSAudioFocusController::GetContentTypeOnUIThread(params);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_EQ(log_output.find("GetContentTypeOnUIThread WebContents not "
+                            "associated with RenderFrameHost"), std::string::npos);
+  EXPECT_EQ(log_output.find("GetContentTypeOnUIThread MediaSession not "
+                            "initialized for WebContents"), std::string::npos);
 }
 
-TEST(OHOSAudioFocusControllerTest, CheckActiveOnUIThread01) {
+TEST_F(OHOSAudioFocusControllerTest, CheckActiveOnUIThread01) {
   auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
   EXPECT_CALL(*mock_player_adapter, Play()).Times(0);
   AudioParameters params(
@@ -149,18 +198,19 @@ TEST(OHOSAudioFocusControllerTest, CheckActiveOnUIThread01) {
   EXPECT_EQ(res, false);
 }
 
-TEST(OHOSAudioFocusControllerTest, CheckActiveOnUIThread02) {
+TEST_F(OHOSAudioFocusControllerTest, CheckActiveOnUIThread02) {
   auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
   EXPECT_CALL(*mock_player_adapter, Play()).Times(0);
   AudioParameters params(
       AudioParameters::AUDIO_FAKE,
       ChannelLayoutConfig::Guess(kDefaultChannelCount), kDefaultSampleRate,
       kMinimumInputBufferSize);
+  SetAudioParametersId(params);
   bool res = OHOSAudioFocusController::CheckActiveOnUIThread(params);
   EXPECT_EQ(res, false);
 }
 
-TEST(OHOSAudioFocusControllerTest, CheckOneShotPlayersOnUIThread01) {
+TEST_F(OHOSAudioFocusControllerTest, CheckOneShotPlayersOnUIThread01) {
   auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
   EXPECT_CALL(*mock_player_adapter, Play()).Times(0);
   AudioParameters params(
@@ -171,18 +221,42 @@ TEST(OHOSAudioFocusControllerTest, CheckOneShotPlayersOnUIThread01) {
   EXPECT_EQ(res, false);
 }
 
-TEST(OHOSAudioFocusControllerTest, CheckOneShotPlayersOnUIThread02) {
+TEST_F(OHOSAudioFocusControllerTest, CheckOneShotPlayersOnUIThread02) {
   auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
   EXPECT_CALL(*mock_player_adapter, Play()).Times(0);
   AudioParameters params(
       AudioParameters::AUDIO_FAKE,
       ChannelLayoutConfig::Guess(kDefaultChannelCount), kDefaultSampleRate,
       kMinimumInputBufferSize);
+  SetAudioParametersId(params);
   bool res = OHOSAudioFocusController::CheckOneShotPlayersOnUIThread(params);
   EXPECT_EQ(res, false);
 }
 
-TEST(OHOSAudioFocusControllerTest, CheckGetSessionStateOnUIThread01) {
+TEST_F(OHOSAudioFocusControllerTest, CheckOneShotPlayersWhenSetMetadataOnUIThread01) {
+  auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
+  EXPECT_CALL(*mock_player_adapter, Play()).Times(0);
+  AudioParameters params(
+      AudioParameters::AUDIO_PCM_LOW_LATENCY,
+      ChannelLayoutConfig::Guess(kDefaultChannelCount), kDefaultSampleRate,
+      kMinimumInputBufferSize);
+  bool res = OHOSAudioFocusController::CheckOneShotPlayersWhenSetMetadataOnUIThread(params);
+  EXPECT_EQ(res, false);
+}
+
+TEST_F(OHOSAudioFocusControllerTest, CheckOneShotPlayersWhenSetMetadataOnUIThread02) {
+  auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
+  EXPECT_CALL(*mock_player_adapter, Play()).Times(0);
+  AudioParameters params(
+      AudioParameters::AUDIO_FAKE,
+      ChannelLayoutConfig::Guess(kDefaultChannelCount), kDefaultSampleRate,
+      kMinimumInputBufferSize);
+  SetAudioParametersId(params);
+  bool res = OHOSAudioFocusController::CheckOneShotPlayersWhenSetMetadataOnUIThread(params);
+  EXPECT_EQ(res, false);
+}
+
+TEST_F(OHOSAudioFocusControllerTest, CheckGetSessionStateOnUIThread01) {
   auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
   EXPECT_CALL(*mock_player_adapter, Play()).Times(0);
   AudioParameters params(
@@ -193,18 +267,19 @@ TEST(OHOSAudioFocusControllerTest, CheckGetSessionStateOnUIThread01) {
   EXPECT_EQ(res, content::MediaSessionImpl::NWebMediaSessionState::NOINITIAL);
 }
 
-TEST(OHOSAudioFocusControllerTest, CheckGetSessionStateOnUIThread02) {
+TEST_F(OHOSAudioFocusControllerTest, CheckGetSessionStateOnUIThread02) {
   auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
   EXPECT_CALL(*mock_player_adapter, Play()).Times(0);
   AudioParameters params(
       AudioParameters::AUDIO_FAKE,
       ChannelLayoutConfig::Guess(kDefaultChannelCount), kDefaultSampleRate,
       kMinimumInputBufferSize);
+  SetAudioParametersId(params);
   auto res = OHOSAudioFocusController::CheckGetSessionStateOnUIThread(params);
   EXPECT_EQ(res, content::MediaSessionImpl::NWebMediaSessionState::NOINITIAL);
 }
 
-TEST(OHOSAudioFocusControllerTest, CheckGetPlayingStateOnUIThread01) {
+TEST_F(OHOSAudioFocusControllerTest, CheckGetPlayingStateOnUIThread01) {
   auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
   EXPECT_CALL(*mock_player_adapter, Play()).Times(0);
   AudioParameters params(
@@ -215,18 +290,19 @@ TEST(OHOSAudioFocusControllerTest, CheckGetPlayingStateOnUIThread01) {
   EXPECT_EQ(res, false);
 }
 
-TEST(OHOSAudioFocusControllerTest, CheckGetPlayingStateOnUIThread02) {
+TEST_F(OHOSAudioFocusControllerTest, CheckGetPlayingStateOnUIThread02) {
   auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
   EXPECT_CALL(*mock_player_adapter, Play()).Times(0);
   AudioParameters params(
       AudioParameters::AUDIO_FAKE,
       ChannelLayoutConfig::Guess(kDefaultChannelCount), kDefaultSampleRate,
       kMinimumInputBufferSize);
+  SetAudioParametersId(params);
   bool res = OHOSAudioFocusController::CheckGetPlayingStateOnUIThread(params);
   EXPECT_EQ(res, false);
 }
 
-TEST(OHOSAudioFocusControllerTest, CheckGetMuteStateOnUIThread01) {
+TEST_F(OHOSAudioFocusControllerTest, CheckGetMuteStateOnUIThread01) {
   auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
   EXPECT_CALL(*mock_player_adapter, Play()).Times(0);
   AudioParameters params(
@@ -237,38 +313,47 @@ TEST(OHOSAudioFocusControllerTest, CheckGetMuteStateOnUIThread01) {
   EXPECT_EQ(res, false);
 }
 
-TEST(OHOSAudioFocusControllerTest, CheckGetMuteStateOnUIThread02) {
+TEST_F(OHOSAudioFocusControllerTest, CheckGetMuteStateOnUIThread02) {
   auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
   EXPECT_CALL(*mock_player_adapter, Play()).Times(0);
   AudioParameters params(
       AudioParameters::AUDIO_FAKE,
       ChannelLayoutConfig::Guess(kDefaultChannelCount), kDefaultSampleRate,
       kMinimumInputBufferSize);
+  SetAudioParametersId(params);
   bool res = OHOSAudioFocusController::CheckGetMuteStateOnUIThread(params);
   EXPECT_EQ(res, false);
 }
 
-TEST(OHOSAudioFocusControllerTest, OneShotMediaPlayerStopped01) {
+TEST_F(OHOSAudioFocusControllerTest, OneShotMediaPlayerStopped01) {
   auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
   EXPECT_CALL(*mock_player_adapter, Play()).Times(0);
   AudioParameters params(
       AudioParameters::AUDIO_PCM_LOW_LATENCY,
       ChannelLayoutConfig::Guess(kDefaultChannelCount), kDefaultSampleRate,
       kMinimumInputBufferSize);
+  testing::internal::CaptureStderr();
   OHOSAudioFocusController::OneShotMediaPlayerStopped(params);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_NE(log_output.find("OneShotMediaPlayerStopped OnSuspend get RenderFrameHost failed"), std::string::npos);
 }
 
-TEST(OHOSAudioFocusControllerTest, OneShotMediaPlayerStopped02) {
+TEST_F(OHOSAudioFocusControllerTest, OneShotMediaPlayerStopped02) {
   auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
   EXPECT_CALL(*mock_player_adapter, Play()).Times(0);
   AudioParameters params(
       AudioParameters::AUDIO_FAKE,
       ChannelLayoutConfig::Guess(kDefaultChannelCount), kDefaultSampleRate,
       kMinimumInputBufferSize);
+  SetAudioParametersId(params);
+  testing::internal::CaptureStderr();
   OHOSAudioFocusController::OneShotMediaPlayerStopped(params);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_EQ(log_output.find("OneShotMediaPlayerStopped OnSuspend get RenderFrameHost failed"), std::string::npos);
+  EXPECT_EQ(log_output.find("OneShotMediaPlayerStopped OnSuspend get webContent failed"), std::string::npos);
 }
 
-TEST(OHOSAudioFocusControllerTest, CheckGetAudioExclusiveUIThread01) {
+TEST_F(OHOSAudioFocusControllerTest, CheckGetAudioExclusiveUIThread01) {
   auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
   EXPECT_CALL(*mock_player_adapter, Play()).Times(0);
   AudioParameters params(
@@ -279,18 +364,19 @@ TEST(OHOSAudioFocusControllerTest, CheckGetAudioExclusiveUIThread01) {
   EXPECT_EQ(res, false);
 }
 
-TEST(OHOSAudioFocusControllerTest, CheckGetAudioExclusiveUIThread02) {
+TEST_F(OHOSAudioFocusControllerTest, CheckGetAudioExclusiveUIThread02) {
   auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
   EXPECT_CALL(*mock_player_adapter, Play()).Times(0);
   AudioParameters params(
       AudioParameters::AUDIO_FAKE,
       ChannelLayoutConfig::Guess(kDefaultChannelCount), kDefaultSampleRate,
       kMinimumInputBufferSize);
+  SetAudioParametersId(params);
   bool res = OHOSAudioFocusController::CheckGetAudioExclusiveUIThread(params);
-  EXPECT_EQ(res, false);
+  EXPECT_EQ(res, true);
 }
 
-TEST(OHOSAudioFocusControllerTest, CheckGetAudioResumeIntervalUIThread01) {
+TEST_F(OHOSAudioFocusControllerTest, CheckGetAudioResumeIntervalUIThread01) {
   auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
   EXPECT_CALL(*mock_player_adapter, Play()).Times(0);
   AudioParameters params(
@@ -301,18 +387,19 @@ TEST(OHOSAudioFocusControllerTest, CheckGetAudioResumeIntervalUIThread01) {
   EXPECT_EQ(res, 0);
 }
 
-TEST(OHOSAudioFocusControllerTest, CheckGetAudioResumeIntervalUIThread02) {
+TEST_F(OHOSAudioFocusControllerTest, CheckGetAudioResumeIntervalUIThread02) {
   auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
   EXPECT_CALL(*mock_player_adapter, Play()).Times(0);
   AudioParameters params(
       AudioParameters::AUDIO_FAKE,
       ChannelLayoutConfig::Guess(kDefaultChannelCount), kDefaultSampleRate,
       kMinimumInputBufferSize);
+  SetAudioParametersId(params);
   int res = OHOSAudioFocusController::CheckGetAudioResumeIntervalUIThread(params);
   EXPECT_EQ(res, 0);
 }
 
-TEST(OHOSAudioFocusControllerTest, CheckGetAudioSessionTypeUIThread01) {
+TEST_F(OHOSAudioFocusControllerTest, CheckGetAudioSessionTypeUIThread01) {
   auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
   EXPECT_CALL(*mock_player_adapter, Play()).Times(0);
   AudioParameters params(
@@ -323,18 +410,19 @@ TEST(OHOSAudioFocusControllerTest, CheckGetAudioSessionTypeUIThread01) {
   EXPECT_EQ(res, 0);
 }
 
-TEST(OHOSAudioFocusControllerTest, CheckGetAudioSessionTypeUIThread02) {
+TEST_F(OHOSAudioFocusControllerTest, CheckGetAudioSessionTypeUIThread02) {
   auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
   EXPECT_CALL(*mock_player_adapter, Play()).Times(0);
   AudioParameters params(
       AudioParameters::AUDIO_FAKE,
       ChannelLayoutConfig::Guess(kDefaultChannelCount), kDefaultSampleRate,
       kMinimumInputBufferSize);
+  SetAudioParametersId(params);
   int res = OHOSAudioFocusController::CheckGetAudioSessionTypeUIThread(params);
   EXPECT_EQ(res, 0);
 }
 
-TEST(OHOSAudioFocusControllerTest, CheckIsSuspendedUIThread01) {
+TEST_F(OHOSAudioFocusControllerTest, CheckIsSuspendedUIThread01) {
   auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
   EXPECT_CALL(*mock_player_adapter, Play()).Times(0);
   AudioParameters params(
@@ -345,18 +433,19 @@ TEST(OHOSAudioFocusControllerTest, CheckIsSuspendedUIThread01) {
   EXPECT_EQ(res, false);
 }
 
-TEST(OHOSAudioFocusControllerTest, CheckIsSuspendedUIThread02) {
+TEST_F(OHOSAudioFocusControllerTest, CheckIsSuspendedUIThread02) {
   auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
   EXPECT_CALL(*mock_player_adapter, Play()).Times(0);
   AudioParameters params(
       AudioParameters::AUDIO_FAKE,
       ChannelLayoutConfig::Guess(kDefaultChannelCount), kDefaultSampleRate,
       kMinimumInputBufferSize);
+  SetAudioParametersId(params);
   bool res = OHOSAudioFocusController::CheckIsSuspendedUIThread(params);
   EXPECT_EQ(res, false);
 }
 
-TEST(OHOSAudioFocusControllerTest, CheckGetMediaPlayerMuteStateOnUIThread01) {
+TEST_F(OHOSAudioFocusControllerTest, CheckGetMediaPlayerMuteStateOnUIThread01) {
   auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
   EXPECT_CALL(*mock_player_adapter, Play()).Times(0);
   AudioParameters params(
@@ -367,14 +456,16 @@ TEST(OHOSAudioFocusControllerTest, CheckGetMediaPlayerMuteStateOnUIThread01) {
   EXPECT_EQ(res, false);
 }
 
-TEST(OHOSAudioFocusControllerTest, CheckGetMediaPlayerMuteStateOnUIThread02) {
+TEST_F(OHOSAudioFocusControllerTest, CheckGetMediaPlayerMuteStateOnUIThread02) {
   auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
   EXPECT_CALL(*mock_player_adapter, Play()).Times(0);
   AudioParameters params(
       AudioParameters::AUDIO_FAKE,
       ChannelLayoutConfig::Guess(kDefaultChannelCount), kDefaultSampleRate,
       kMinimumInputBufferSize);
+  SetAudioParametersId(params);
   bool res = OHOSAudioFocusController::CheckGetMediaPlayerMuteStateOnUIThread(params);
   EXPECT_EQ(res, false);
 }
+
 } // namespace media

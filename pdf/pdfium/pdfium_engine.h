@@ -221,6 +221,9 @@ class PDFiumEngine : public DocumentLoader::Client, public IFSDK_PAUSE {
   void SetReadOnly(bool read_only);
   void SetDocumentLayout(DocumentLayout::PageSpread page_spread);
   void DisplayAnnotations(bool display);
+#if BUILDFLAG(ARKWEB_PDF)
+  void OnClickBookmark(const std::string& bookmarkId);
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   // Returns the text contained on the given page. The caller is responsible for
   // passing a valid `page_index`.
@@ -490,10 +493,13 @@ class PDFiumEngine : public DocumentLoader::Client, public IFSDK_PAUSE {
 
  private:
 #if BUILDFLAG(ARKWEB_PDF)
-  void OnSelectionPositionChangedForPDF(gfx::Rect& left,
-                                        gfx::Rect& right,
-                                        gfx::Rect& clipped_selection_bounds,
-                                        const std::vector<PDFiumRange>& selections);
+  void UpdateSelectionBoundsAndPositions(gfx::Rect& left,
+                                         gfx::Rect& right,
+                                         gfx::Rect& clipped_selection_bounds,
+                                         const std::vector<PDFiumRange>& selections);
+  void CheckSelectionVisibility(gfx::Rect& top,
+                                gfx::Rect& bottom,
+                                gfx::Rect& clipped_selection_bounds);
 #endif  // BUILDFLAG(ARKWEB_PDF)
 
   // This helper class is used to detect the difference in selection between
@@ -918,6 +924,11 @@ class PDFiumEngine : public DocumentLoader::Client, public IFSDK_PAUSE {
   void OnOcrDisconnected();
 #endif
 
+#if BUILDFLAG(ARKWEB_PDF)
+  // Converts a page position (e.g. the location of a bookmark) to a screen position.
+  gfx::PointF ConverPageToScreen(int page_index, gfx::PointF point);
+#endif  // BUILDFLAG(ARKWEB_PDF)
+
   const raw_ptr<PDFiumEngineClient> client_;
 
   // The current document layout.
@@ -1076,6 +1087,14 @@ class PDFiumEngine : public DocumentLoader::Client, public IFSDK_PAUSE {
   // Whether to render PDF annotations.
   bool render_annots_ = true;
 
+#if BUILDFLAG(ARKWEB_PDF)
+  // Whether PDF is searching for results.
+  bool is_finding_result_ = false;
+
+  // Whether PDF selection range is moved.
+  bool range_moved_ = false;
+#endif  // BUILDFLAG(ARKWEB_PDF)
+
   // Pending progressive paints.
   class ProgressivePaint {
    public:
@@ -1200,6 +1219,13 @@ class PDFiumEngine : public DocumentLoader::Client, public IFSDK_PAUSE {
   // function. This allows those weak pointers to be invalidated during
   // StopFind(), and keeps the invalidation separated from `weak_factory_`.
   base::WeakPtrFactory<PDFiumEngine> find_weak_factory_{this};
+
+#if BUILDFLAG(ARKWEB_PDF)
+  std::map<std::string, FPDF_BOOKMARK> bookmark_store_;
+
+  // Used for generating the bookmark ID.
+  static std::atomic<uint64_t> g_bookmark_id_;
+#endif  // BUILDFLAG(ARKWEB_PDF)
 };
 
 }  // namespace chrome_pdf

@@ -571,7 +571,7 @@ TEST_F(ArkWebElideUrlExtTest, ParseInput_ContentScheme) {
   GURL canonicalized_url;
   
   UrlType result = ParseInput(input, &parts, &scheme, &canonicalized_url);
-  EXPECT_EQ(result, UrlType::URL);
+  EXPECT_EQ(result, UrlType::UNKNOWN);
   EXPECT_EQ(scheme, u"content");
 }
 
@@ -771,6 +771,83 @@ TEST_F(ArkWebElideUrlExtTest, ParseInput_MemoryManagement) {
     // Force cleanup between iterations
     scheme.clear();
   }
+}
+
+TEST_F(ArkWebElideUrlExtTest, NumNonHostComponents_SchemeNonEmpty) {
+  url::Parsed parts;
+  parts.scheme = url::Component(0, 4);
+  parts.username = url::Component();
+  parts.password = url::Component();
+  parts.port = url::Component();
+  parts.path = url::Component();
+  parts.query = url::Component();
+  parts.ref = url::Component();
+
+  int result = TestNumNonHostComponents(parts);
+  EXPECT_EQ(result, 1);
+}
+
+TEST_F(ArkWebElideUrlExtTest, NumNonHostComponents_PasswordNonEmpty) {
+  url::Parsed parts;
+  parts.scheme = url::Component();
+  parts.username = url::Component();
+  parts.password = url::Component(0, 6);
+  parts.port = url::Component();
+  parts.path = url::Component();
+  parts.query = url::Component();
+  parts.ref = url::Component();
+
+  int result = TestNumNonHostComponents(parts);
+  EXPECT_EQ(result, 1);
+}
+
+TEST_F(ArkWebElideUrlExtTest, GetInputTypeForScheme_EmptyScheme) {
+  std::string scheme = "";
+
+  UrlType result = TestGetInputTypeForScheme(scheme);
+  EXPECT_EQ(result, UrlType::INVALID);
+}
+
+TEST_F(ArkWebElideUrlExtTest, GetInputTypeForScheme_NonASCIIScheme) {
+  std::string scheme = "htt\x80p";
+  UrlType result = TestGetInputTypeForScheme(scheme);
+  EXPECT_NE(result, UrlType::URL);
+}
+
+TEST_F(ArkWebElideUrlExtTest, GetInputTypeForScheme_ResourceScheme) {
+  std::string scheme = "resource";
+  UrlType result = TestGetInputTypeForScheme(scheme);
+  EXPECT_EQ(result, UrlType::URL);
+}
+
+TEST_F(ArkWebElideUrlExtTest, GetInputTypeForScheme_DataabilityScheme) {
+  std::string scheme = "dataability";
+  UrlType result = TestGetInputTypeForScheme(scheme);
+  EXPECT_EQ(result, UrlType::URL);
+}
+
+TEST_F(ArkWebElideUrlExtTest, ParseInput_UsernameHasSpace) {
+  std::u16string input = u"user name@example.com/path";
+  url::Parsed parts;
+  std::u16string scheme;
+  GURL canonicalized_url;
+
+  UrlType result = ParseInput(input, &parts, &scheme, &canonicalized_url);
+  EXPECT_EQ(result, UrlType::UNKNOWN);
+  EXPECT_TRUE(parts.path.is_nonempty());
+  EXPECT_TRUE(parts.username.is_nonempty());
+}
+
+TEST_F(ArkWebElideUrlExtTest, ParseInput_Has_Port) {
+  std::u16string input = u"unknown-domain:8080";
+  url::Parsed parts;
+  std::u16string scheme;
+  GURL canonicalized_url;
+
+  UrlType result = ParseInput(input, &parts, &scheme, &canonicalized_url);
+  EXPECT_EQ(result, UrlType::URL);
+  EXPECT_TRUE(canonicalized_url.has_port());
+  EXPECT_EQ(canonicalized_url.port(), "8080");
 }
 
 #endif  // BUILDFLAG(IS_ARKWEB_EXT)

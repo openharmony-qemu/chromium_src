@@ -3,17 +3,18 @@
 // found in the LICENSE file.
 
 #include <cstdint>
+#include <vector>
 #include "ohos_sdk/openharmony/native/llvm/bin/../include/libcxx-ohos/include/c++/v1/__ranges/lazy_split_view.h"
 #include "base/features.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/display_manager_adapter.h"
+#include "arkweb/ohos_adapter_ndk/ohos_adapter_helper_ext.h"
 #define private public
+#include "base/ohos/ltpo/include/sliding_observer.h"
+#undef private
 #include "build/build_config.h"
 #if BUILDFLAG(ARKWEB_SLIDE_LTPO)
 
-#include <stdint.h>
-#include <vector>
 #include "adapter_base.h"
-#include "base/logging.h"
-#include "base/ohos/ltpo/include/sliding_observer.h"
 #include "base/trace_event/trace_event.h"
 #include "ohos_nweb/src/sysevent/event_reporter.h"
 #include "testing/gtest/include/gtest/gtest.h"
@@ -22,32 +23,16 @@
 #include "arkweb/ohos_adapter_ndk/interfaces/ohos_adapter_helper.h"
 #include "arkweb/ohos_adapter_ndk/interfaces/mock/mock_ohos_adapter_helper.h"
 #include "arkweb/ohos_adapter_ndk/interfaces/mock/mock_system_properties_adapter.h"
+#include "arkweb/ohos_adapter_ndk/mock_ndk_api/include/mock_sys_info_util_ext.h"
+
 using namespace OHOS::NWeb;
+
 namespace {
 const float kMicroSecondPerSecond = 1000000.0;
 }
 
 namespace base {
 namespace ohos {
-
-class IsPcDeviceMock {
-public:
-  static IsPcDeviceMock& getInstance() {
-    static IsPcDeviceMock instance;
-    return instance;
-  };
-  MOCK_METHOD(bool, IsPcDevice, (), ());
-};
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-  bool __wrap_IsPcDevice() {
-    return IsPcDeviceMock::getInstance().IsPcDevice();
-  }
-#ifdef __cplusplus
-}
-#endif
 
 using OHOS::NWeb::FrameRateSetting;
 class SlidingObserverTest : public SlidingObserver {
@@ -76,8 +61,8 @@ TEST(SlidingObserverTest, SlidingObserver002) {
   MockSystemPropertiesAdapter adapter;
 
   EXPECT_CALL(*instance, GetSystemPropertiesInstance()).WillOnce(testing::ReturnRef(adapter))
-    .WillRepeatedly(testing::Invoke(&original_instance, 
-    &OhosAdapterHelper::GetSystemPropertiesInstance));
+      .WillRepeatedly(testing::Invoke(&original_instance,
+      &OhosAdapterHelper::GetSystemPropertiesInstance));
   EXPECT_CALL(adapter, GetLTPOStrategy()).WillOnce(testing::Return(2));
   SlidingObserver observer;
   EXPECT_EQ(observer.strategy_, LTPOStrategy::HGM_FLING);
@@ -757,6 +742,39 @@ TEST(SlidingObserverTest, GetPreferedFrameRateTest010) {
   EXPECT_EQ(observer.GetPreferedFrameRate(25.0f, settings), 30);
 }
 
+TEST(SlidingObserverTest, GetPreferedFrameRateTest011) {
+  SlidingObserver observer;
+  std::vector<OHOS::NWeb::FrameRateSetting> settings;
+  observer.use_pdf_rate_ = true;
+  EXPECT_EQ(observer.GetPreferedFrameRate(25.0f, settings), 90);
+}
+
+TEST(SlidingObserverTest, GetPreferedFrameRateTest012) {
+  SlidingObserver observer;
+  std::vector<OHOS::NWeb::FrameRateSetting> settings = {{20.0f, 40.0f, 100}};
+  observer.use_pdf_rate_ = true;
+  EXPECT_EQ(observer.GetPreferedFrameRate(25.0f, settings), 90);
+}
+
+TEST(SlidingObserverTest, GetPreferedFrameRateTest013) {
+  SlidingObserver observer;
+  std::vector<OHOS::NWeb::FrameRateSetting> settings = {{-40.0f, -20.0f, -50}};
+  EXPECT_EQ(observer.GetPreferedFrameRate(5.0f, settings), -50);
+}
+
+TEST(SlidingObserverTest, GetPreferedFrameRateTest014) {
+  SlidingObserver observer;
+  std::vector<OHOS::NWeb::FrameRateSetting> settings = {{20.0f, 40.0f, 50}};
+  EXPECT_EQ(observer.GetPreferedFrameRate(5.0f, settings), 120);
+}
+
+TEST(SlidingObserverTest, GetPreferedFrameRateTest016) {
+  SlidingObserver observer;
+  std::vector<OHOS::NWeb::FrameRateSetting> settings = {{20.0f, 22.0f, 50}};
+  observer.use_pdf_rate_ = true;
+  EXPECT_EQ(observer.GetPreferedFrameRate(25.0f, settings), 90);
+}
+
 TEST(SlidingObserverTest, OnDisplayInfoChange001) {
   SlidingObserver observer;
   observer.is_inited_ = false;
@@ -784,12 +802,14 @@ TEST(SlidingObserverTest, SetIsPdf002) {
 }
 
 TEST(SlidingObserverTest, SetIsPdf003) {
-  auto& mock = IsPcDeviceMock::getInstance();
+  SysInfoUtilsMock::mockIsPcDevice = true;
+  auto& mock = SysInfoUtilsMock::GetInstance();
   EXPECT_CALL(mock, IsPcDevice()).WillOnce(testing::Return(true));
   SlidingObserver observer;
   observer.use_pdf_rate_ = true;
   observer.SetIsPdf(true);
   EXPECT_FALSE(observer.use_pdf_rate_);
+  SysInfoUtilsMock::mockIsPcDevice = false;
 }
 
 TEST(SlidingObserverTest, StopFling001) {

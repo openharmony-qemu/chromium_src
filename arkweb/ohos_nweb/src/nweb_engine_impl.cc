@@ -239,6 +239,10 @@ void NWebEngineImpl::SetWebDestroyMode(WebDestroyMode mode) {
     NWebImpl::SetWebDestroyMode(mode);
 }
 
+void NWebEngineImpl::SetScrollbarMode(ScrollbarMode mode) {
+    NWebImpl::SetScrollbarMode(mode);
+}
+
 void NWebEngineImpl::ClearPrefetchedResource(
     const std::vector<std::string>& cache_key_list) {
 #if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
@@ -355,6 +359,14 @@ bool NWebEngineImpl::IsPrivateNetworkAccessEnabled() {
 #if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
 void NWebEngineImpl::SetSocketIdleTimeout(int32_t timeout) {
   NWebImpl::SetSocketIdleTimeout(timeout);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_COOKIE)
+void NWebEngineImpl::LibraryLoaded(
+    std::shared_ptr<NWebEngineInitArgs> init_args,
+    bool lazy) {
+  NWebImpl::LibraryLoaded(init_args, lazy);
 }
 #endif
 

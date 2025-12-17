@@ -23,8 +23,13 @@
 
 namespace OHOS::NWeb {
 namespace {
-constexpr uint32_t LOG_APP_DOMAIN = 0x004510;
-constexpr uint32_t LOG_RENDER_DOMAIN = 0x004511;
+#if defined(X86_64_ENABLE)
+constexpr uint32_t LOG_APP_DOMAIN = 0x004500;
+constexpr uint32_t LOG_RENDER_DOMAIN = 0x004501;
+#else
+constexpr uint32_t LOG_APP_DOMAIN = 0xD004510;
+constexpr uint32_t LOG_RENDER_DOMAIN = 0xD004511;
+#endif
 constexpr uint32_t LOG_CONSOLE_DOMAIN = 0x001194;
 constexpr uint32_t MAX_LENGTH = 1024;
 const std::string PUBLIC_STR = "{public}";
@@ -73,7 +78,10 @@ int HiLogAdapterPrintLog(uint32_t level, const char* tag, const char* fmt, va_li
     std::string fmtStr(fmt);
     Format(fmtStr);
     char buffer[MAX_LENGTH];
-    vsnprintf_s(buffer, MAX_LENGTH, MAX_LENGTH - 1, fmtStr.c_str(), ap);
+    int ret = vsnprintf_s(buffer, MAX_LENGTH, MAX_LENGTH - 1, fmtStr.c_str(), ap);
+    if (ret < 0) {
+        return -1;
+    }
     return OH_LOG_Print(LOG_APP, LOG_LEVELS[level], domain, tag, STD_FORMAT.c_str(), buffer);
 }
 
@@ -82,7 +90,10 @@ int HiLogAdapterConsoleLog(uint32_t level, const char* tag, const char* fmt, va_
     std::string fmtStr(fmt);
     Format(fmtStr);
     char buffer[MAX_LENGTH];
-    vsnprintf_s(buffer, MAX_LENGTH, MAX_LENGTH - 1, fmtStr.c_str(), ap);
+    int ret = vsnprintf_s(buffer, MAX_LENGTH, MAX_LENGTH - 1, fmtStr.c_str(), ap);
+    if (ret < 0) {
+        return -1;
+    }
     return OH_LOG_Print(LOG_APP, LOG_LEVELS[level], LOG_CONSOLE_DOMAIN, tag, STD_FORMAT.c_str(), buffer);
 }
 }

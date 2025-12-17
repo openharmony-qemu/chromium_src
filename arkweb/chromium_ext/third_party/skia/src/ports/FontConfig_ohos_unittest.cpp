@@ -13,6 +13,8 @@
  * limitations under the License.	
  */
 
+#include "arkweb/ohos_adapter_ndk/interfaces/mock/mock_ohos_adapter_helper.h"
+#include "arkweb/ohos_adapter_ndk/interfaces/mock/mock_ohos_drawing_text_adapter.h"
 #define private public
 #include "third_party/skia/src/ports/FontConfig_ohos.h"
 #include "src/ports/SkFontScanner_FreeType_priv.h"
@@ -28,9 +30,15 @@
 #include <cstdio>
 #include <fstream>
 #include "base/logging.h"
+#include "base/files/file_util.h"
+#include "base/files/file_path.h"
 
 #define NOTFOUND 404
 #define SERVERERROR 500
+
+using ::testing::_;
+using ::testing::Return;
+using ::testing::NotNull;
 
 namespace skia {
 
@@ -2292,7 +2300,7 @@ TEST_F(FontConfig_OHOSTest, logErrInfo002) {
 }
 
 TEST_F(FontConfig_OHOSTest, InvalidateThemeFont001) {
-    fontConfig->InvalidateThemeFont(mockScanner, -1);
+    fontConfig->InvalidateThemeFont(mockScanner, std::vector<int>{-1});
 }
 
 TEST_F(FontConfig_OHOSTest, InvalidateThemeFont002) {
@@ -2300,6 +2308,690 @@ TEST_F(FontConfig_OHOSTest, InvalidateThemeFont002) {
     sk_sp<SkData> data(SkData::MakeFromFD(123));
     std::unique_ptr<SkStreamAsset> stream = std::make_unique<SkMemoryStream>(std::move(data));
     
-    fontConfig->InvalidateThemeFont(mockScanner, 123);
+    fontConfig->InvalidateThemeFont(mockScanner, std::vector<int>{123});
 }
+
+TEST_F(FontConfig_OHOSTest, checkNewFontengineISOKMock) {
+  OHOS::NWeb::MockOhosAdapterHelper* instance =
+      new OHOS::NWeb::MockOhosAdapterHelper();
+  OHOS::NWeb::OhosAdapterHelper::SetInstance(instance);
+  OHOS::NWeb::MockOhosDrawingTextTypographyAdapter adapter;
+
+  EXPECT_CALL(*instance, GetOhosDrawingTextTypographyAdapter())
+      .WillRepeatedly(testing::ReturnRef(adapter));
+  EXPECT_CALL(adapter, GetSystemFontConfigInfo(_, _)).WillRepeatedly(Return(0));
+
+  auto result = fontConfig->checkNewFontengineISOK();
+  EXPECT_EQ(result, 0);
+  OHOS::NWeb::OhosAdapterHelper::SetInstance(nullptr);
+  delete instance;
+}
+
+TEST_F(FontConfig_OHOSTest, buildNameToFamilyMapMock) {
+  OHOS::NWeb::MockOhosAdapterHelper* instance =
+      new OHOS::NWeb::MockOhosAdapterHelper();
+  OHOS::NWeb::OhosAdapterHelper::SetInstance(instance);
+  OHOS::NWeb::MockOhosDrawingTextTypographyAdapter adapter;
+
+  EXPECT_CALL(*instance, GetOhosDrawingTextTypographyAdapter())
+      .WillRepeatedly(testing::ReturnRef(adapter));
+  EXPECT_CALL(adapter, GetSystemFontConfigInfo(_, _)).WillRepeatedly(Return(0));
+
+  ASSERT_NO_FATAL_FAILURE(fontConfig->buildNameToFamilyMap());
+  OHOS::NWeb::OhosAdapterHelper::SetInstance(nullptr);
+  delete instance;
+}
+
+TEST_F(FontConfig_OHOSTest, getTypeface_EmptyTypefaceSet) {
+  const SkFontStyle style(SkFontStyle::kNormal_Weight,
+                          SkFontStyle::kNormal_Width,
+                          SkFontStyle::kUpright_Slant);
+
+  fontConfig->genericFamilySet.clear();
+  fontConfig->fallbackSet.clear();
+
+  auto genericFamily = std::make_unique<GenericFamily>();
+  genericFamily->familyName = "EmptyFamily";
+  genericFamily->typefaceSet = std::make_shared<TypefaceSet>();
+  fontConfig->genericFamilySet.push_back(std::move(genericFamily));
+
+  auto ret = fontConfig->getTypeface(0, style, false);
+  EXPECT_EQ(ret, nullptr);
+}
+
+TEST_F(FontConfig_OHOSTest, getTypeface_MultipleFonts_EmptyAxisRange) {
+  FontInfo fontInfo1;
+  fontInfo1.familyName = "TestFont1";
+  fontInfo1.fname = "test1.ttf";
+  fontInfo1.style = SkFontStyle::Normal();
+
+  FontInfo fontInfo2;
+  fontInfo2.familyName = "TestFont2";
+  fontInfo2.fname = "test2.ttf";
+  fontInfo2.style = SkFontStyle::Bold();
+
+  auto typeface1 = sk_make_sp<SkTypeface_OHOS>(fontInfo1);
+  auto typeface2 = sk_make_sp<SkTypeface_OHOS>(fontInfo2);
+  auto genericFamily = std::make_unique<GenericFamily>();
+  genericFamily->familyName = "TestFamily";
+  genericFamily->typefaceSet = std::make_shared<TypefaceSet>();
+  genericFamily->typefaceSet->push_back(typeface1);
+  genericFamily->typefaceSet->push_back(typeface2);
+
+  fontConfig->genericFamilySet.clear();
+  fontConfig->genericFamilySet.push_back(std::move(genericFamily));
+
+  const SkFontStyle style(SkFontStyle::kNormal_Weight,
+                          SkFontStyle::kNormal_Width,
+                          SkFontStyle::kUpright_Slant);
+  auto ret = fontConfig->getTypeface(0, style, false);
+
+  EXPECT_NE(ret, nullptr);
+}
+
+TEST_F(FontConfig_OHOSTest, parseConfig_FileNotFound) {
+  const char* nonExistentFile = "/data/font_invalid_config.json";
+  int result = fontConfig->parseConfig(nonExistentFile);
+  EXPECT_EQ(result, ErrorCode::ERROR_CONFIG_NOT_FOUND);
+}
+
+TEST_F(FontConfig_OHOSTest, parseConfig_NoFontDir) {
+  const char* configFile = "/data/config_no_fontdir.json";
+  const std::string validJson = R"({
+    "generic": [
+    {
+        "family": "Arial"
+    }
+    ],
+    "fallback": [
+    {
+        "family": "Sans"
+    }
+    ]
+  })";
+
+  ASSERT_TRUE(
+      base::WriteFile(base::FilePath::FromUTF8Unsafe(configFile), validJson));
+
+  int result = fontConfig->parseConfig(configFile);
+  EXPECT_EQ(result, ErrorCode::NO_ERROR);
+  base::DeleteFile(base::FilePath::FromUTF8Unsafe(configFile));
+}
+
+TEST_F(FontConfig_OHOSTest, parseConfig_FontDirNotArray) {
+  const char* configFile = "/data/config_fontdir_not_array.json";
+  const std::string invalidJson = R"({
+    "fontdir": "/system/fonts",
+    "generic": [
+        {
+        "family": "Arial"
+        }
+    ],
+    "fallback": [
+        {
+        "family": "Sans"
+        }
+    ]
+  })";
+
+  ASSERT_TRUE(
+      base::WriteFile(base::FilePath::FromUTF8Unsafe(configFile), invalidJson));
+
+  int result = fontConfig->parseConfig(configFile);
+  EXPECT_EQ(result, ErrorCode::ERROR_CONFIG_INVALID_VALUE_TYPE);
+  base::DeleteFile(base::FilePath::FromUTF8Unsafe(configFile));
+}
+
+TEST_F(FontConfig_OHOSTest, parseConfig_MissingGeneric) {
+  const char* configFile = "/data/config_missing_generic.json";
+  const std::string invalidJson = R"({
+    "fallback": [
+        {
+        "family": "Sans"
+        }
+    ]
+  })";
+
+  ASSERT_TRUE(
+      base::WriteFile(base::FilePath::FromUTF8Unsafe(configFile), invalidJson));
+
+  int result = fontConfig->parseConfig(configFile);
+  EXPECT_EQ(result, ErrorCode::ERROR_CONFIG_MISSING_TAG);
+  base::DeleteFile(base::FilePath::FromUTF8Unsafe(configFile));
+}
+
+TEST_F(FontConfig_OHOSTest, parseConfig_GenericNotArray) {
+  const char* configFile = "/data/config_generic_not_array.json";
+  const std::string invalidJson = R"({
+    "generic": "not_an_array",
+    "fallback": [
+        {
+        "family": "Sans"
+        }
+    ]
+  })";
+
+  ASSERT_TRUE(
+      base::WriteFile(base::FilePath::FromUTF8Unsafe(configFile), invalidJson));
+
+  int result = fontConfig->parseConfig(configFile);
+  EXPECT_EQ(result, ErrorCode::ERROR_CONFIG_INVALID_VALUE_TYPE);
+  base::DeleteFile(base::FilePath::FromUTF8Unsafe(configFile));
+}
+
+TEST_F(FontConfig_OHOSTest, parseConfig_GenericElementNotObject) {
+  const char* configFile = "/data/config_generic_element_not_object.json";
+  const std::string invalidJson = R"({
+    "generic": [
+        {
+        "family": "Arial"
+        },
+        "not_an_object",
+        {
+        "family": "Times"
+        }
+    ],
+    "fallback": [
+        {
+        "family": "Sans"
+        }
+    ]
+  })";
+
+  ASSERT_TRUE(
+      base::WriteFile(base::FilePath::FromUTF8Unsafe(configFile), invalidJson));
+
+  int result = fontConfig->parseConfig(configFile);
+  EXPECT_EQ(result, ErrorCode::NO_ERROR);
+  base::DeleteFile(base::FilePath::FromUTF8Unsafe(configFile));
+}
+
+TEST_F(FontConfig_OHOSTest, parseConfig_JsonParseWithWarnings_Unicode) {
+  const char* configFile = "/data/config_json_parse_warnings_unicode.json";
+  const std::string jsonWithWarnings = R"({
+    "generic": [
+        {
+        "family": "Arial",
+        "alias": {
+            "Arial-Regular": 400
+        }
+        }
+    ],
+    "fallback": [
+        {
+        "family": "Sans"
+        }
+    ],
+    "unicode_test": "测试中文字符\u4e2d\u6587",
+    "special_chars": "特殊字符: \n\t\r\b\f\\\"/"
+  })";
+
+  ASSERT_TRUE(base::WriteFile(base::FilePath::FromUTF8Unsafe(configFile),
+                              jsonWithWarnings));
+  int result = fontConfig->parseConfig(configFile);
+  EXPECT_EQ(result, ErrorCode::NO_ERROR);
+  base::DeleteFile(base::FilePath::FromUTF8Unsafe(configFile));
+}
+
+TEST_F(FontConfig_OHOSTest, parseConfig_GenericWithAliasArrayAndZeroWeight) {
+  const char* configFile =
+      "/data/config_generic_with_alias_array_and_zero_weight.json";
+  const std::string jsonWithAliasArrayAndZeroWeight = R"({
+    "generic": [
+        {
+        "family": "Arial",
+        "alias": [
+            {
+            "Arial-Regular": 400
+            },
+            {
+            "Arial-Zero": 0
+            }
+        ]
+        }
+    ],
+    "fallback": [
+        {
+        "family": "Sans"
+        }
+    ]
+  })";
+
+  ASSERT_TRUE(base::WriteFile(base::FilePath::FromUTF8Unsafe(configFile),
+                              jsonWithAliasArrayAndZeroWeight));
+  int result = fontConfig->parseConfig(configFile);
+  EXPECT_EQ(result, ErrorCode::NO_ERROR);
+  base::DeleteFile(base::FilePath::FromUTF8Unsafe(configFile));
+}
+
+TEST_F(FontConfig_OHOSTest, parseFallbackItem_WithEmptyVariationsArray) {
+  Json::Value root;
+  root["en"] = "Sans";
+  root["variations"] = Json::Value(Json::arrayValue);
+  int result = fontConfig->parseFallbackItem(root);
+  EXPECT_EQ(result, ErrorCode::NO_ERROR);
+}
+
+TEST_F(FontConfig_OHOSTest, parseFallbackItem_WithValidVariations) {
+  Json::Value root;
+  root["en"] = "Sans";
+
+  Json::Value variations(Json::arrayValue);
+  Json::Value var1;
+  var1["weight"] = 100;
+  variations.append(var1);
+
+  Json::Value var2;
+  var2["weight"] = 400;
+  variations.append(var2);
+
+  root["variations"] = variations;
+  int result = fontConfig->parseFallbackItem(root);
+  EXPECT_EQ(result, ErrorCode::NO_ERROR);
+}
+
+TEST_F(FontConfig_OHOSTest, parseFallbackItem_WithInvalidVariations) {
+  Json::Value root;
+  root["en"] = "Sans";
+
+  Json::Value variations(Json::arrayValue);
+  variations.append("not_an_object");
+  root["variations"] = variations;
+  int result = fontConfig->parseFallbackItem(root);
+  EXPECT_EQ(result, ErrorCode::NO_ERROR);
+}
+
+TEST_F(FontConfig_OHOSTest, parseFallbackItem_WithNonArrayVariations) {
+  Json::Value root;
+  root["en"] = "Sans";
+  root["variations"] = "not_an_array";
+  int result = fontConfig->parseFallbackItem(root);
+  EXPECT_EQ(result, ErrorCode::NO_ERROR);
+}
+
+TEST_F(FontConfig_OHOSTest, parseFallbackItem_WithValidIndex) {
+  Json::Value root;
+  root["en"] = "Sans";
+
+  Json::Value index(Json::arrayValue);
+  Json::Value indexItem;
+  indexItem["font_file.ttf"] = 0;
+  index.append(indexItem);
+
+  root["index"] = index;
+  int result = fontConfig->parseFallbackItem(root);
+  EXPECT_EQ(result, ErrorCode::NO_ERROR);
+}
+
+TEST_F(FontConfig_OHOSTest, parseFallbackItem_WithNonArrayIndex) {
+  Json::Value root;
+  root["en"] = "Sans";
+  root["index"] = "not_an_array";
+
+  int result = fontConfig->parseFallbackItem(root);
+  EXPECT_EQ(result, ErrorCode::NO_ERROR);
+}
+
+TEST_F(FontConfig_OHOSTest, insertTtcFont_TpSetNotNull) {
+  FontInfo font;
+  font.familyName = "Arial";
+  font.index = 0;
+
+  FontConfig_OHOS::TtcIndexInfo ttcInfo;
+  ttcInfo.familyName = "Arial";
+  ttcInfo.ttcIndex = 1;
+  fontConfig->ttcIndexMap.set(SkString("Arial"), ttcInfo);
+
+  fontConfig->fallbackNames.set(SkString("Arial"), 0);
+
+  std::unique_ptr<FallbackInfo> fallback = std::make_unique<FallbackInfo>();
+  fallback->familyName = "Arial";
+  fallback->typefaceSet = std::make_shared<TypefaceSet>();
+  fontConfig->fallbackSet.emplace_back(std::move(fallback));
+
+  bool result = fontConfig->insertTtcFont(2, font);
+  EXPECT_TRUE(result);
+}
+
+TEST_F(FontConfig_OHOSTest, insertVariableFont_TpSetNotNull) {
+  FontInfo font;
+  font.familyName = "Arial";
+  font.index = 0;
+
+  std::vector<FontConfig_OHOS::VariationInfo> variationSet;
+  FontConfig_OHOS::VariationInfo variation;
+  variation.weight = 400;
+  variation.width = 100;
+  variation.slant = 0;
+  variationSet.push_back(variation);
+  fontConfig->variationMap.set(SkString("Arial"), variationSet);
+  fontConfig->fallbackNames.set(SkString("Arial"), 0);
+
+  std::unique_ptr<FallbackInfo> fallback = std::make_unique<FallbackInfo>();
+  fallback->familyName = "Arial";
+  fallback->typefaceSet = std::make_shared<TypefaceSet>();
+  fontConfig->fallbackSet.emplace_back(std::move(fallback));
+
+  AxisDefinitions axisDefs;
+  SkFontScanner::AxisDefinition axisDef;
+  axisDef.fTag = SkSetFourByteTag('w', 'g', 'h', 't');
+  axisDef.fMinimum = 100.0f;
+  axisDef.fMaximum = 900.0f;
+  axisDef.fDefault = 400.0f;
+  axisDefs.push_back(axisDef);
+
+  bool result = fontConfig->insertVariableFont(axisDefs, font);
+  EXPECT_TRUE(result);
+}
+
+TEST_F(FontConfig_OHOSTest, insertVariableFont_EmptyVariationSet) {
+  FontInfo font;
+  font.familyName = "Arial";
+  font.index = 0;
+
+  std::vector<FontConfig_OHOS::VariationInfo> variationSet;
+  fontConfig->variationMap.set(SkString("Arial"), variationSet);
+  fontConfig->fallbackNames.set(SkString("Arial"), 0);
+
+  std::unique_ptr<FallbackInfo> fallback = std::make_unique<FallbackInfo>();
+  fallback->familyName = "Arial";
+  fallback->typefaceSet = std::make_shared<TypefaceSet>();
+  fontConfig->fallbackSet.emplace_back(std::move(fallback));
+
+  AxisDefinitions axisDefs;
+  SkFontScanner::AxisDefinition axisDef;
+  axisDef.fTag = SkSetFourByteTag('w', 'g', 'h', 't');
+  axisDef.fMinimum = 100.0f;
+  axisDef.fMaximum = 900.0f;
+  axisDef.fDefault = 400.0f;
+  axisDefs.push_back(axisDef);
+
+  bool result = fontConfig->insertVariableFont(axisDefs, font);
+  EXPECT_TRUE(result);
+}
+
+TEST_F(FontConfig_OHOSTest, insertVariableFont_WidthIsMinusOne) {
+  FontInfo font;
+  font.familyName = "Arial";
+  font.index = 0;
+
+  std::vector<FontConfig_OHOS::VariationInfo> variationSet;
+  FontConfig_OHOS::VariationInfo variation;
+  variation.weight = 400;
+  variation.width = -1;
+  variation.slant = 0;
+  variationSet.push_back(variation);
+  fontConfig->variationMap.set(SkString("Arial"), variationSet);
+  fontConfig->fallbackNames.set(SkString("Arial"), 0);
+
+  std::unique_ptr<FallbackInfo> fallback = std::make_unique<FallbackInfo>();
+  fallback->familyName = "Arial";
+  fallback->typefaceSet = std::make_shared<TypefaceSet>();
+  fontConfig->fallbackSet.emplace_back(std::move(fallback));
+
+  AxisDefinitions axisDefs;
+  SkFontScanner::AxisDefinition axisDef;
+  axisDef.fTag = SkSetFourByteTag('w', 'g', 'h', 't');
+  axisDef.fMinimum = 100.0f;
+  axisDef.fMaximum = 900.0f;
+  axisDef.fDefault = 400.0f;
+  axisDefs.push_back(axisDef);
+
+  bool result = fontConfig->insertVariableFont(axisDefs, font);
+  EXPECT_TRUE(result);
+}
+
+TEST_F(FontConfig_OHOSTest, insertVariableFont_SlantIsMinusOne) {
+  FontInfo font;
+  font.familyName = "Arial";
+  font.index = 0;
+
+  std::vector<FontConfig_OHOS::VariationInfo> variationSet;
+  FontConfig_OHOS::VariationInfo variation;
+  variation.weight = 400;
+  variation.width = 100;
+  variation.slant = -1;
+  variationSet.push_back(variation);
+  fontConfig->variationMap.set(SkString("Arial"), variationSet);
+  fontConfig->fallbackNames.set(SkString("Arial"), 0);
+
+  std::unique_ptr<FallbackInfo> fallback = std::make_unique<FallbackInfo>();
+  fallback->familyName = "Arial";
+  fallback->typefaceSet = std::make_shared<TypefaceSet>();
+  fontConfig->fallbackSet.emplace_back(std::move(fallback));
+
+  AxisDefinitions axisDefs;
+  SkFontScanner::AxisDefinition axisDef;
+  axisDef.fTag = SkSetFourByteTag('w', 'g', 'h', 't');
+  axisDef.fMinimum = 100.0f;
+  axisDef.fMaximum = 900.0f;
+  axisDef.fDefault = 400.0f;
+  axisDefs.push_back(axisDef);
+
+  bool result = fontConfig->insertVariableFont(axisDefs, font);
+  EXPECT_TRUE(result);
+}
+
+TEST_F(FontConfig_OHOSTest, scanFonts_ShortFileName) {
+  SkFontScanner_FreeType scanner;
+  const char* testDir = "/data/test_fonts";
+  base::FilePath dirPath = base::FilePath::FromUTF8Unsafe(testDir);
+
+  base::CreateDirectory(dirPath);
+
+  const char* shortFile = "/data/test_fonts/a";
+  base::FilePath filePath = base::FilePath::FromUTF8Unsafe(shortFile);
+  std::string content = "not a valid font file";
+  base::WriteFile(filePath, content);
+
+  int result = fontConfig->scanFonts(scanner, SkString(testDir), false);
+
+  EXPECT_EQ(result, ErrorCode::NO_ERROR);
+
+  base::DeleteFile(filePath);
+  base::DeleteFile(dirPath);
+}
+
+TEST_F(FontConfig_OHOSTest, scanFonts_OtfFile) {
+  SkFontScanner_FreeType scanner;
+
+  const char* testDir = "/data/test_fonts";
+  base::FilePath dirPath = base::FilePath::FromUTF8Unsafe(testDir);
+  base::CreateDirectory(dirPath);
+
+  const char* otfFile = "/data/test_fonts/test.otf";
+  base::FilePath filePath = base::FilePath::FromUTF8Unsafe(otfFile);
+  std::string content = "not a valid font file";
+  base::WriteFile(filePath, content);
+
+  int result = fontConfig->scanFonts(scanner, SkString(testDir), false);
+  EXPECT_EQ(result, ErrorCode::NO_ERROR);
+  base::DeleteFile(filePath);
+  base::DeleteFile(dirPath);
+}
+
+TEST_F(FontConfig_OHOSTest, scanFonts_OtcFile) {
+  SkFontScanner_FreeType scanner;
+
+  const char* testDir = "/data/test_fonts";
+  base::FilePath dirPath = base::FilePath::FromUTF8Unsafe(testDir);
+  base::CreateDirectory(dirPath);
+  const char* otcFile = "/data/test_fonts/test.otc";
+  base::FilePath filePath = base::FilePath::FromUTF8Unsafe(otcFile);
+  std::string content = "not a valid font file";
+  base::WriteFile(filePath, content);
+
+  int result = fontConfig->scanFonts(scanner, SkString(testDir), false);
+  EXPECT_EQ(result, ErrorCode::NO_ERROR);
+
+  base::DeleteFile(filePath);
+  base::DeleteFile(dirPath);
+}
+
+TEST_F(FontConfig_OHOSTest, scanFonts_DirectoryWithoutSlash) {
+  SkFontScanner_FreeType scanner;
+  const char* testDir = "/data/test_fonts";
+  base::FilePath dirPath = base::FilePath::FromUTF8Unsafe(testDir);
+  base::CreateDirectory(dirPath);
+
+  const char* ttfFile = "/data/test_fonts/test.ttf";
+  base::FilePath filePath = base::FilePath::FromUTF8Unsafe(ttfFile);
+  std::string content = "not a valid font file";
+  base::WriteFile(filePath, content);
+
+  int result = fontConfig->scanFonts(scanner, SkString(testDir), false);
+  EXPECT_EQ(result, ErrorCode::NO_ERROR);
+  base::DeleteFile(filePath);
+  base::DeleteFile(dirPath);
+}
+
+TEST_F(FontConfig_OHOSTest, scanFontsBackup_ShortFileName) {
+  SkFontScanner_FreeType scanner;
+  const char* testDir = "/data/test_fonts";
+  base::FilePath dirPath = base::FilePath::FromUTF8Unsafe(testDir);
+  base::CreateDirectory(dirPath);
+  const char* shortFile = "/data/test_fonts/a";
+  base::FilePath filePath = base::FilePath::FromUTF8Unsafe(shortFile);
+  std::string content = "not a valid font file";
+  base::WriteFile(filePath, content);
+
+  fontConfig->fontDirSet.clear();
+  fontConfig->fontDirSet.emplace_back(SkString(testDir));
+
+  int result = fontConfig->scanFontsBackup(scanner);
+
+  EXPECT_EQ(result, ErrorCode::NO_ERROR);
+  base::DeleteFile(filePath);
+  base::DeleteFile(dirPath);
+}
+
+TEST_F(FontConfig_OHOSTest, scanFontsBackup_OtfFile) {
+  SkFontScanner_FreeType scanner;
+  const char* testDir = "/data/test_fonts";
+  base::FilePath dirPath = base::FilePath::FromUTF8Unsafe(testDir);
+
+  base::CreateDirectory(dirPath);
+
+  const char* otfFile = "/data/test_fonts/test.otf";
+  base::FilePath filePath = base::FilePath::FromUTF8Unsafe(otfFile);
+  std::string content = "not a valid font file";
+  base::WriteFile(filePath, content);
+
+  fontConfig->fontDirSet.clear();
+  fontConfig->fontDirSet.emplace_back(SkString(testDir));
+
+  int result = fontConfig->scanFontsBackup(scanner);
+  EXPECT_EQ(result, ErrorCode::NO_ERROR);
+  base::DeleteFile(filePath);
+  base::DeleteFile(dirPath);
+}
+
+TEST_F(FontConfig_OHOSTest, scanFontsBackup_OtcFile) {
+  SkFontScanner_FreeType scanner;
+
+  const char* testDir = "/data/test_fonts";
+  base::FilePath dirPath = base::FilePath::FromUTF8Unsafe(testDir);
+  base::CreateDirectory(dirPath);
+  const char* otcFile = "/data/test_fonts/test.otc";
+  base::FilePath filePath = base::FilePath::FromUTF8Unsafe(otcFile);
+  std::string content = "not a valid font file";
+  base::WriteFile(filePath, content);
+
+  fontConfig->fontDirSet.clear();
+  fontConfig->fontDirSet.emplace_back(SkString(testDir));
+
+  int result = fontConfig->scanFontsBackup(scanner);
+  EXPECT_EQ(result, ErrorCode::NO_ERROR);
+  base::DeleteFile(filePath);
+  base::DeleteFile(dirPath);
+}
+
+TEST_F(FontConfig_OHOSTest, hasError_ErrMatchTextNotMatch) {
+  FontConfig_OHOS::ErrorInfo errorInfo(ErrorCode::ERROR_FONT_NOT_EXIST,
+                                       "test.ttf");
+  fontConfig->errSet.push_back(errorInfo);
+  bool result = fontConfig->hasError(ErrorCode::ERROR_FONT_NOT_EXIST,
+                                     SkString("different.ttf"));
+  EXPECT_FALSE(result);
+}
+
+TEST_F(FontConfig_OHOSTest, hasError_ErrMatchTextMatch) {
+  FontConfig_OHOS::ErrorInfo errorInfo(ErrorCode::ERROR_FONT_NOT_EXIST,
+                                       "test.ttf");
+  fontConfig->errSet.push_back(errorInfo);
+  bool result = fontConfig->hasError(ErrorCode::ERROR_FONT_NOT_EXIST,
+                                     SkString("test.ttf"));
+  EXPECT_TRUE(result);
+}
+
+TEST_F(FontConfig_OHOSTest, sortTypefaceSet_WeightGreater) {
+  auto typefaceSet = std::make_shared<TypefaceSet>();
+  FontInfo fontInfo1;
+  fontInfo1.familyName = "Font1";
+  fontInfo1.style =
+      SkFontStyle(700, SkFontStyle::kNormal_Width, SkFontStyle::kUpright_Slant);
+  auto typeface1 = sk_make_sp<SkTypeface_OHOS>(fontInfo1);
+  typefaceSet->push_back(typeface1);
+
+  FontInfo fontInfo2;
+  fontInfo2.familyName = "Font2";
+  fontInfo2.style =
+      SkFontStyle(300, SkFontStyle::kNormal_Width, SkFontStyle::kUpright_Slant);
+  auto typeface2 = sk_make_sp<SkTypeface_OHOS>(fontInfo2);
+  typefaceSet->push_back(typeface2);
+
+  fontConfig->sortTypefaceSet(typefaceSet);
+  EXPECT_EQ((*typefaceSet)[0]->fontStyle().weight(), 300);
+  EXPECT_EQ((*typefaceSet)[1]->fontStyle().weight(), 700);
+}
+
+TEST_F(FontConfig_OHOSTest, logErrInfo_ExpectedNegative) {
+  int result = fontConfig->logErrInfo(
+      ErrorCode::ERROR_CONFIG_INVALID_VALUE_TYPE, "test",
+      static_cast<Json::ValueType>(-1), Json::stringValue);
+
+  EXPECT_EQ(result, ErrorCode::ERROR_CONFIG_INVALID_VALUE_TYPE);
+}
+
+TEST_F(FontConfig_OHOSTest, logErrInfo_ExpectedTooLarge) {
+  int result = fontConfig->logErrInfo(
+      ErrorCode::ERROR_CONFIG_INVALID_VALUE_TYPE, "test",
+      static_cast<Json::ValueType>(10), Json::stringValue);
+
+  EXPECT_EQ(result, ErrorCode::ERROR_CONFIG_INVALID_VALUE_TYPE);
+}
+
+TEST_F(FontConfig_OHOSTest, logErrInfo_ActualNegative) {
+  int result = fontConfig->logErrInfo(
+      ErrorCode::ERROR_CONFIG_INVALID_VALUE_TYPE, "test", Json::stringValue,
+      static_cast<Json::ValueType>(-1));
+
+  EXPECT_EQ(result, ErrorCode::ERROR_CONFIG_INVALID_VALUE_TYPE);
+}
+
+TEST_F(FontConfig_OHOSTest, logErrInfo_ActualTooLarge) {
+  int result = fontConfig->logErrInfo(
+      ErrorCode::ERROR_CONFIG_INVALID_VALUE_TYPE, "test", Json::stringValue,
+      static_cast<Json::ValueType>(10));
+
+  EXPECT_EQ(result, ErrorCode::ERROR_CONFIG_INVALID_VALUE_TYPE);
+}
+
+TEST_F(FontConfig_OHOSTest, InvalidateThemeFont_ScanFileAndScanInstanceFalse) {
+  SkFontScanner_FreeType scanner;
+
+  const char* testFile = "/data/test_theme_font.ttf";
+  base::FilePath filePath = base::FilePath::FromUTF8Unsafe(testFile);
+  std::string content = "not a valid font file";
+  base::WriteFile(filePath, content);
+
+  base::File file(filePath, base::File::FLAG_OPEN | base::File::FLAG_READ);
+  ASSERT_TRUE(file.IsValid());
+
+  fontConfig->InvalidateThemeFont(scanner, std::vector<int>{file.GetPlatformFile()});
+
+  EXPECT_EQ(fontConfig->getThemeFontTypefaceSet().size(), 0);
+  base::DeleteFile(filePath);
+}
+
 } // namespace skia

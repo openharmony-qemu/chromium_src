@@ -71,13 +71,14 @@ ArkWebHostResolverManagerJobExt::ArkWebHostResolverManagerJobExt(
 ArkWebHostResolverManagerJobExt::~ArkWebHostResolverManagerJobExt() = default;
 
 #if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
-void ArkWebHostResolverManagerJobExt::CheckDnsFallBackTask(int net_error) {
+bool ArkWebHostResolverManagerJobExt::CheckDnsFallBackTask(int net_error) {
   if (dns_task_error_ != OK && net_error != OK && !tasks_.empty() &&
       tasks_.back() == HostResolverManager::TaskType::SECURE_DNS_FALLBACK) {
     KillDnsTask();
     RunNextTask();
-    return;
+    return true;
   }
+  return false;
 }
 
 void ArkWebHostResolverManagerJobExt::ReportDnsFallBackTaskResult(

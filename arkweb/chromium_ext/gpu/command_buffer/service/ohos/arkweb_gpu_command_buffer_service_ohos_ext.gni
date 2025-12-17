@@ -37,7 +37,11 @@ arkweb_gpu_command_buffer_service_ohos_unittest = [
     # "//arkweb/chromium_ext/gpu/command_buffer/service/ohos/shared_image_video_ohos_native_image_unittest.cc",
     "//arkweb/chromium_ext/gpu/command_buffer/service/ohos/native_image_texture_gl_owner_unittest.cc",
     "//arkweb/chromium_ext/gpu/command_buffer/service/ohos/native_image_texture_owner_unittest.cc",
+    "//arkweb/chromium_ext/gpu/command_buffer/service/ohos/hw_video_native_buffer_gl_owner_unittest.cc",
+    "//arkweb/chromium_ext/gpu/command_buffer/service/ohos/hw_video_native_buffer_image_backing_unittest.cc",
+    "//arkweb/chromium_ext/gpu/command_buffer/service/ohos/native_image_image_backing_unittests.cc",
     "//arkweb/chromium_ext/gpu/command_buffer/service/ohos/same_layer_native_buffer_gl_owner_unittests.cc",
     "//arkweb/chromium_ext/gpu/command_buffer/service/ohos/ohos_image_backing_unittests.cc",
     "//arkweb/chromium_ext/gpu/command_buffer/service/ohos/ohos_video_image_backing_unittests.cc",
+    "//arkweb/chromium_ext/gpu/command_buffer/service/ohos/same_layer_native_buffer_image_backing_unittests.cc",
 ]

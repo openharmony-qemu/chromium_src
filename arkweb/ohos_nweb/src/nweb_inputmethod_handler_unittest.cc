@@ -19,13 +19,17 @@
 #include "cef_delegate/nweb_inputmethod_client.h"
 #include "condition_variable"
 #define private public
+#include "arkweb/ohos_adapter_ndk/mock_ndk_api/include/mock_base_ohos_api.h"
 #include "base/ohos/sys_info_utils_ext.h"
 #include "cef_devtools_message_handler_delegate.h"
 #include "cef_client.h"
 #include "imf_adapter.h"
 #include "nweb_inputmethod_handler.h"
 #include "nweb_inputmethod_handler.cc"
+#include "ohos_cef_ext/libcef/common/cef_open_devtools_ext_opt.h"
 #include "ohos_nweb/include/nweb_errors.h"
+
+using namespace base::ohos;
 
 namespace OHOS::NWeb {
 
@@ -55,6 +59,16 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   MOCK_METHOD(void, SetFocus, (bool), (override));
   CefWindowHandle GetWindowHandle() { return 0; }
   CefWindowHandle GetOpenerWindowHandle() { return 0; }
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  void SetBlankScreenDetectionConfig(
+      bool enable,
+      const std::vector<double>& detectionTiming,
+      const std::vector<int32_t>& detectionMethods,
+      int32_t contentfulNodesCountThreshold) override {}
+#endif
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+  void GetOverScrollOffsetValue(float* offset_x, float* offset_y) override {}
+#endif
   bool HasView() override { return false; }
   CefRefPtr<CefClient> GetClient() override { return nullptr; }
   CefRefPtr<CefRequestContext> GetRequestContext() override { return nullptr; }
@@ -130,19 +144,18 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
               (const CefMouseEvent&, int, int),
               (override));
   MOCK_METHOD(void, SendTouchEvent, (const CefTouchEvent&), (override));
+  MOCK_METHOD(void, ImeFinishComposingText, (bool), (override));
+  MOCK_METHOD(void, ImeCancelComposition, (), (override));
+  MOCK_METHOD(void, ImeSetComposition, (
+    const CefString&, const std::vector<CefCompositionUnderline>&,
+    const CefRange&,const CefRange&), (override));
   void SendCaptureLostEvent() override {}
   void NotifyMoveOrResizeStarted() override {}
   int GetWindowlessFrameRate() override { return 0; }
   void SetWindowlessFrameRate(int frame_rate) override {}
-  void ImeSetComposition(const CefString& text,
-                         const std::vector<CefCompositionUnderline>& underlines,
-                         const CefRange& replacement_range,
-                         const CefRange& selection_range) override {}
   void ImeCommitText(const CefString& text,
                      const CefRange& replacement_range,
                      int relative_cursor_pos) override {}
-  void ImeFinishComposingText(bool keep_selection) override {}
-  void ImeCancelComposition() override {}
   void DragTargetDragEnter(CefRefPtr<CefDragData> drag_data,
                            const CefMouseEvent& event,
                            DragOperationsMask allowed_ops) override {}
@@ -190,7 +203,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void CancelAllPrerendering() {};
 #endif
   void RemoveCache(bool include_disk_files) override {}
-  void PostTaskToUIThread(CefRefPtr<CefTask> task) override {}
+  MOCK_METHOD(void, PostTaskToUIThread, (CefRefPtr<CefTask>), (override));
   void SetVirtualPixelRatio(float ratio) override {}
   float GetVirtualPixelRatio() override { return 0.0f; }
   void SetWebPreferences(const CefBrowserSettings& browser_settings) override {}
@@ -278,11 +291,13 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void JavaScriptOnDocumentStart(
       const CefString& script,
       const std::vector<CefString>& script_rules,
+      const std::vector<std::pair<CefString, CefString>>& script_regex_rules,
       bool is_transfer_finished) override {}
   void RemoveJavaScriptOnDocumentStart() override {}
   void JavaScriptOnDocumentEnd(
       const CefString& script,
       const std::vector<CefString>& script_rules,
+      const std::vector<std::pair<CefString, CefString>>& script_regex_rules,
       bool is_transfer_finished) override {}
   void RemoveJavaScriptOnDocumentEnd() override {}
 #if BUILDFLAG(ARKWEB_UNITTESTS)
@@ -293,6 +308,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void JavaScriptOnHeadReady(
       const CefString& script,
       const std::vector<CefString>& script_rules,
+      const std::vector<std::pair<CefString, CefString>>& script_regex_rules,
       bool is_transfer_finished) override {}
   void RemoveJavaScriptOnHeadReady() override {}
 #endif
@@ -308,9 +324,13 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void SetBrowserZoomLevel(double zoomFactor) override {}
   int GetTopControlsOffset() override { return 0; }
   MOCK_METHOD0(GetShrinkViewportHeight, int());
+  void OnEyeDropperResult(bool success, uint32_t color) override {}
   void SetPrintBackground(bool enable) override {}
   bool GetPrintBackground() override { return false; }
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   void SetScrollable(bool enable, int scrollType) override {}
+  void SetImeShow(bool visible) override {}
+#endif
   void StartCamera() override {}
   void StopCamera() override {}
   void CloseCamera() override {}
@@ -348,7 +368,6 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
                        cef_web_snapshot_callback_t callback) override {
     return false;
   }
-  void AdvanceFocusForIME(int focusType) override {}
   void ScrollToWithAnime(float x, float y, int32_t duration) override {}
   void ScrollByWithAnime(float delta_x,
                          float delta_y,
@@ -366,10 +385,6 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void FillAutofillData(CefRefPtr<CefValue> message) override {}
   void ScrollFocusedEditableNodeIntoView() override {}
   void ProcessAutofillCancel(const CefString& fillContent) override {}
-  void AutoFillWithIMFEvent(bool is_username,
-                            bool is_other_account,
-                            bool is_new_password,
-                            const CefString& content) override {}
   void CreateToPDF(const CefPdfPrintSettings& settings,
                    CefRefPtr<CefPdfValueCallback> callback) override {}
   void SetPopupWindow(cef_native_window_t window) override {}
@@ -382,6 +397,11 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
       CefRefPtr<ArkWebBrowserHostExt> frontend_browser,
       CefRefPtr<CefDevToolsMessageHandlerDelegate> delegate,
       const CefPoint& inspect_element_at) override {}
+  void ShowDevToolsWithByPb(
+      CefRefPtr<ArkWebBrowserHostExt> frontend_browser,
+      CefRefPtr<CefDevToolsMessageHandlerDelegate> delegate,
+      const CefPoint& inspect_element_at,
+      const CefOpenDevToolsExtOpt& ext_opt) override {}
   bool IsFullscreen() override { return false; }
   void ExitFullscreen(bool will_cause_resize) override {}
   bool CanExecuteChromeCommand(int command_id) override { return false; }
@@ -401,7 +421,6 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
       CefRefPtr<CefScreenCaptureCallback> listener) override {}
   void CustomWebMediaPlayer(bool enable) override {}
   bool IsValid() override { return false; }
-  MOCK_METHOD(CefRefPtr<ArkWebBrowserHostExt>, GetHost, (), (override));
   bool CanGoBack() override { return false; }
   void GoBack() override {}
   bool CanGoForward() override { return false; }
@@ -432,8 +451,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
                                   int current,
                                   bool animate) override {}
   void UpdateBrowserControlsHeight(int height, bool animate) override {}
-  void PrefetchPage(CefString& url, CefString& additionalHttpHeaders) override {
-  }
+  void PrefetchPage(const OHOS::NWeb::PrefetchOptions& prefetch_options) override {}
   void ReloadOriginalUrl() override {}
   bool CanStoreWebArchive() override { return false; }
   void SetBrowserUserAgentString(const CefString& user_agent) override {}
@@ -465,18 +483,25 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void ShowFreeCopyMenu() override {}
   bool ShouldShowFreeCopyMenu() override { return false; }
   void EnableSafeBrowsingDetection(bool enable, bool strictMode) override {}
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   int InsertBackForwardEntry(int index, const CefString& url) override { return 0; }
   int UpdateNavigationEntryUrl(int index, const CefString& url) override { return 0; }
   void ClearForwardList() override {}
+#endif
   void ExtensionSetTabId(int tab_id) override {}
   uint32_t GetAcceleratedWidget(bool isPopup) { return 0; }
   void SetAdBlockEnabledForSite(bool is_adblock_enabled, int main_frame_tree_node_id) override {}
   void FindEx(const CefString &searchText, bool forward, bool matchCase, bool findNext, bool newSession) override {}
-  void SetFocusOnWeb() override {}
-  void UpdateSecurityLayer(bool isNeedSecurityLayer) override {}
+  MOCK_METHOD(void, SetFocusOnWeb, (), (override));
+  MOCK_METHOD(void, UpdateSecurityLayer, (bool), (override));
+  void UpdateTextFieldStatus(bool isShowKeyboard, bool isAttachIME) override {}
+  MOCK_METHOD(void, SetHasComposition, (bool), (override));
+  MOCK_METHOD(void, AdvanceFocusForIME, (int), (override));
+  MOCK_METHOD(void, AutoFillWithIMFEvent, (bool, bool, bool, const CefString&), (override));
   CefString GetCustomUserAgent() override { return CefString(); }
   void GetLastHitData(int& type, CefString& extra_data) override {}
   std::string GetSelectedTextFromContextParam() override { return ""; }
+  bool JudgeTextInputState() override { return true; }
   void SetNeedsReload(bool needs_reload) override {}
   void SetOptimizeParserBudgetEnabled(bool enable) override {}
   void OnDestroyImageAnalyzerOverlay() override {}
@@ -492,12 +517,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void PutWebMediaAVSessionEnabled(bool enable) override {}
   void SetEnableHalfFrameRate(bool enabled) override {}
   bool SetFocusByPosition(float x, float y) override { return false; }
-  void OnSafeBrowsingDetectionResult(int code,
-                                     int policy,
-                                     const std::string& mappingType,
-                                     const std::string& url) override {}
   int ExtensionGetTabId() override {}
-  void SetHasComposition(bool has_composition) override {}
   bool GetHasComposition() override {}
   void SetMediaResumeFromBFCachePage(bool resume) override {}
 #if BUILDFLAG(ARKWEB_SCREEN_OFFSET)
@@ -522,6 +542,10 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void OnBrowserForeground() override {}
   void OnBrowserBackground() override {}
 #endif
+#if BUILDFLAG(IS_ARKWEB)
+  void EnableAppLinking(bool enable) override {}
+  bool IsAppLinkingEnabled() const override { return false; }
+#endif
   void RunJavaScriptInFrames(const std::string& jsString, FrameInfos rootFrame,
                              bool recursive, IsolatedWorld world,
                              CefRefPtr<CefJavaScriptResultCallback> callback) override {}
@@ -530,19 +554,22 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
     CefRefPtr<CefDistillCallback> callback) override {}
   void AbortDistill() override {}
 #endif // ARKWEB_READER_MODE
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  void GetFocusedFrameInfo(int32_t& frame_id, CefString& frame_url) override {}
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
+
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  void LoadUrlWithParams(const std::string& url,
+                         const LoadUrlType& load_type,
+                         const std::string& refer,
+                         const std::string& headers,
+                         const std::string& post_data,
+                         const bool& allow_https_upgrade,
+                         int32_t transition_type) override {}
+
+  void EnableHttpsUpgrades(bool enable) override {}
+#endif
 #endif  // BUILDFLAG(IS_OHOS)
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-   void SetMediaResumeFromBFCachePage(bool resume) override {}
-   void PrefetchPage(const OHOS::NWeb::PrefetchOptions& prefetch_options) override {}
-   void GetImageForContextNode(CefRefPtr<CefFrame> frame, int command_id) override {}
-   void SetHasComposition(bool has_composition) override {}
-   bool GetHasComposition() override { return false; }
-   void PutUserAgent(const CefString& ua, bool from_app) override {}
-   void SetImeShow(bool visible) override {}
-   void SetEnableCustomVideoPlayer(bool flag) override {}
-   void EnableAppLinking(bool enable) override {}
-   bool IsAppLinkingEnabled() const override { return false; }
-#endif // ARKWEB_UNITTESTS
 };
 
 class MockIMFAdapterFunctionKeyAdapter : public IMFAdapterFunctionKeyAdapter {
@@ -565,23 +592,14 @@ class MockNWebInputMethodHandler : public NWebInputMethodHandler {
   MOCK_METHOD(void, DeleteBackward, (int32_t), ());
   MOCK_METHOD(void, DeleteForward, (int32_t), ());
   MOCK_METHOD(void, InsertText, (const std::u16string&), ());
-};
-
-class NWebInputMethodHandlerTest : public testing::Test {
- public:
-  static void SetUpTestCase(void);
-  static void TearDownTestCase(void);
-  void SetUp();
-  void TearDown();
-
- private:
-  CefRefPtr<NWebInputMethodHandler> inputmethod_handler_ = nullptr;
-  MockNWebInputMethodHandler* handler_ = nullptr;
-  std::unique_ptr<OnTextChangedListenerImpl> listener_ = nullptr;
+  MOCK_METHOD(bool, AttachToSystemIME, (bool, int32_t), ());
+  MOCK_METHOD(int32_t, UpdateCompositionInfo, (const std::u16string&, int32_t, int32_t), ());
 };
 
 class MockCefBrowser : public CefBrowser {
  public:
+  MockCefBrowser(CefRefPtr<CefBrowserHost> host) : host_(host) {}
+  MOCK_METHOD(CefRefPtr<ArkWebBrowserHostExt>, GetHost, (), (override));
   void AddRef() const override {}
   bool Release() const override { return false; }
   bool HasOneRef() const override { return false; }
@@ -615,13 +633,7 @@ class MockCefBrowser : public CefBrowser {
                     const CefString& additional_headers) override { return OHOS::NWeb::NWEB_OK; };
   void CancelAllPrerendering() override {};
 #endif
-  CefRefPtr<ArkWebBrowserHostExt> GetHost() override {
-    if (!host_) {
-      host_ = new MockCefBrowserHost();
-    }
-    return host_;
-  }
-  CefRefPtr<ArkWebBrowserHostExt> host_ = nullptr;
+  CefRefPtr<CefBrowserHost> host_;
 };
 
 class MockCefBrowserExt : public ArkWebBrowserExt {
@@ -644,8 +656,7 @@ class MockCefBrowserExt : public ArkWebBrowserExt {
                                   int current,
                                   bool animate) override {}
   void UpdateBrowserControlsHeight(int height, bool animate) override {}
-  void PrefetchPage(CefString& url, CefString& additionalHttpHeaders) override {
-  }
+  void PrefetchPage(const OHOS::NWeb::PrefetchOptions& prefetch_options) override {}
   void ReloadOriginalUrl() override {}
   bool CanStoreWebArchive() override { return false; }
   void SetBrowserUserAgentString(const CefString& user_agent) override {}
@@ -759,6 +770,19 @@ class MockIMFAdapterImpl : public IMFAdapter {
               (override));
 };
 
+class NWebInputMethodHandlerTest : public testing::Test {
+ public:
+  static void SetUpTestCase(void);
+  static void TearDownTestCase(void);
+  void SetUp();
+  void TearDown();
+
+ private:
+  CefRefPtr<NWebInputMethodHandler> inputmethod_handler_ = nullptr;
+  MockNWebInputMethodHandler* handler_ = nullptr;
+  std::unique_ptr<OnTextChangedListenerImpl> listener_ = nullptr;
+};
+
 void NWebInputMethodHandlerTest::SetUpTestCase(void) {}
 
 void NWebInputMethodHandlerTest::TearDownTestCase(void) {}
@@ -771,6 +795,8 @@ void NWebInputMethodHandlerTest::SetUp(void) {
   handler_ = new MockNWebInputMethodHandler();
   listener_ = std::make_unique<OnTextChangedListenerImpl>(handler_);
   ASSERT_NE(listener_, nullptr);
+  testing::Mock::AllowLeak(handler_);
+  testing::Mock::AllowLeak(listener_.get());
 }
 
 void NWebInputMethodHandlerTest::TearDown(void) {
@@ -806,11 +832,16 @@ TEST_F(NWebInputMethodHandlerTest, GetCursorInfo) {
 }
 
 TEST_F(NWebInputMethodHandlerTest, Attach_inputmethod_adapter__Null) {
-  CefRefPtr<CefBrowser> browser = new MockCefBrowser();
   NWebInputMethodClient::InputInfo inputInfo;
   bool is_need_reset_listener = false;
   int32_t enterKeyType = 1;
   inputmethod_handler_->inputmethod_adapter_ = nullptr;
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  std::unique_ptr<MockCefBrowser> mock_browser = std::make_unique<MockCefBrowser>(mockHost);
+  testing::Mock::AllowLeak(mock_browser.get());
+  ASSERT_NE(mock_browser, nullptr);
+  auto browser = CefRefPtr<MockCefBrowser>(mock_browser.release());
   inputmethod_handler_->Attach(browser, inputInfo, is_need_reset_listener,
                                enterKeyType);
   EXPECT_EQ(inputmethod_handler_->composing_text_.size(), 0);
@@ -1199,24 +1230,33 @@ TEST_F(NWebInputMethodHandlerTest, Attach_InputInfo_20) {
 }
 
 TEST_F(NWebInputMethodHandlerTest, Attach_inputmethod_listener__Null) {
-  CefRefPtr<CefBrowser> browser = new MockCefBrowser();
   NWebInputMethodClient::InputInfo inputInfo;
   bool is_need_reset_listener = false;
   int32_t enterKeyType = 1;
-
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  std::unique_ptr<MockCefBrowser> mock_browser = std::make_unique<MockCefBrowser>(mockHost);
+  testing::Mock::AllowLeak(mock_browser.get());
+  ASSERT_NE(mock_browser, nullptr);
+  auto browser = CefRefPtr<MockCefBrowser>(mock_browser.release());
   inputmethod_handler_->inputmethod_listener_ = nullptr;
   inputmethod_handler_->Attach(browser, inputInfo, is_need_reset_listener,
                                enterKeyType);
 }
 
 TEST_F(NWebInputMethodHandlerTest, Attach_Normal_01) {
-  CefRefPtr<CefBrowser> browser = new MockCefBrowser();
   NWebInputMethodClient::InputInfo inputInfo;
   bool is_need_reset_listener = false;
   int32_t enterKeyType = 1;
   inputmethod_handler_->inputmethod_listener_ =
       std::make_shared<MockOnTextChangedListenerImpl>();
   inputmethod_handler_->isAttached_ = false;
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  std::unique_ptr<MockCefBrowser> mock_browser = std::make_unique<MockCefBrowser>(mockHost);
+  testing::Mock::AllowLeak(mock_browser.get());
+  ASSERT_NE(mock_browser, nullptr);
+  auto browser = CefRefPtr<MockCefBrowser>(mock_browser.release());
   inputmethod_handler_->Attach(browser, inputInfo, is_need_reset_listener,
                                enterKeyType);
   EXPECT_EQ(inputmethod_handler_->isAttached_, false);
@@ -1238,7 +1278,6 @@ TEST_F(NWebInputMethodHandlerTest, Attach_InputInfo_29) {
 }
 
 TEST_F(NWebInputMethodHandlerTest, Attach_Normal_02) {
-  CefRefPtr<CefBrowser> browser = new MockCefBrowser();
   NWebInputMethodClient::InputInfo inputInfo;
   bool is_need_reset_listener = false;
   int32_t enterKeyType = 1;
@@ -1246,13 +1285,18 @@ TEST_F(NWebInputMethodHandlerTest, Attach_Normal_02) {
       std::make_shared<MockOnTextChangedListenerImpl>();
   inputmethod_handler_->focus_status_ = false;
   inputmethod_handler_->focus_rect_status_ = false;
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  std::unique_ptr<MockCefBrowser> mock_browser = std::make_unique<MockCefBrowser>(mockHost);
+  testing::Mock::AllowLeak(mock_browser.get());
+  ASSERT_NE(mock_browser, nullptr);
+  auto browser = CefRefPtr<MockCefBrowser>(mock_browser.release());
   inputmethod_handler_->Attach(browser, inputInfo, is_need_reset_listener,
                                enterKeyType);
   EXPECT_EQ(inputmethod_handler_->isAttached_, false);
 }
 
 TEST_F(NWebInputMethodHandlerTest, Attach_Normal_03) {
-  CefRefPtr<CefBrowser> browser = new MockCefBrowser();
   NWebInputMethodClient::InputInfo inputInfo;
   bool is_need_reset_listener = false;
   int32_t enterKeyType = 1;
@@ -1260,6 +1304,12 @@ TEST_F(NWebInputMethodHandlerTest, Attach_Normal_03) {
       std::make_shared<MockOnTextChangedListenerImpl>();
   inputmethod_handler_->focus_status_ = true;
   inputmethod_handler_->focus_rect_status_ = false;
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  std::unique_ptr<MockCefBrowser> mock_browser = std::make_unique<MockCefBrowser>(mockHost);
+  testing::Mock::AllowLeak(mock_browser.get());
+  ASSERT_NE(mock_browser, nullptr);
+  auto browser = CefRefPtr<MockCefBrowser>(mock_browser.release());
   inputmethod_handler_->Attach(browser, inputInfo, is_need_reset_listener,
                                enterKeyType);
   EXPECT_EQ(inputmethod_handler_->isAttached_, false);
@@ -1281,7 +1331,6 @@ TEST_F(NWebInputMethodHandlerTest, Attach_InputInfo_28) {
 }
 
 TEST_F(NWebInputMethodHandlerTest, Attach_Normal_04) {
-  CefRefPtr<CefBrowser> browser = new MockCefBrowser();
   NWebInputMethodClient::InputInfo inputInfo;
   bool is_need_reset_listener = false;
   int32_t enterKeyType = 1;
@@ -1289,6 +1338,12 @@ TEST_F(NWebInputMethodHandlerTest, Attach_Normal_04) {
       std::make_shared<MockOnTextChangedListenerImpl>();
   inputmethod_handler_->focus_status_ = false;
   inputmethod_handler_->focus_rect_status_ = true;
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  std::unique_ptr<MockCefBrowser> mock_browser = std::make_unique<MockCefBrowser>(mockHost);
+  testing::Mock::AllowLeak(mock_browser.get());
+  ASSERT_NE(mock_browser, nullptr);
+  auto browser = CefRefPtr<MockCefBrowser>(mock_browser.release());
   inputmethod_handler_->Attach(browser, inputInfo, is_need_reset_listener,
                                enterKeyType);
   EXPECT_EQ(inputmethod_handler_->isAttached_, false);
@@ -1311,7 +1366,6 @@ TEST_F(NWebInputMethodHandlerTest, Attach_InputInfo_27) {
 }
 
 TEST_F(NWebInputMethodHandlerTest, Attach_Normal_05) {
-  CefRefPtr<CefBrowser> browser = new MockCefBrowser();
   NWebInputMethodClient::InputInfo inputInfo;
   bool is_need_reset_listener = false;
   int32_t enterKeyType = 1;
@@ -1320,6 +1374,12 @@ TEST_F(NWebInputMethodHandlerTest, Attach_Normal_05) {
 
   inputmethod_handler_->focus_status_ = true;
   inputmethod_handler_->focus_rect_status_ = true;
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  std::unique_ptr<MockCefBrowser> mock_browser = std::make_unique<MockCefBrowser>(mockHost);
+  testing::Mock::AllowLeak(mock_browser.get());
+  ASSERT_NE(mock_browser, nullptr);
+  auto browser = CefRefPtr<MockCefBrowser>(mock_browser.release());
   inputmethod_handler_->Attach(browser, inputInfo, is_need_reset_listener,
                                enterKeyType);
   EXPECT_EQ(inputmethod_handler_->isAttached_, false);
@@ -1349,7 +1409,7 @@ TEST_F(NWebInputMethodHandlerTest, Reattach_ReattachType_FROM_CONTINUE_False) {
   EXPECT_EQ(result, false);
 }
 
-TEST_F(NWebInputMethodHandlerTest, Reattach_ReattachType_FROM_CONTINUE_False3) {
+TEST_F(NWebInputMethodHandlerTest, Reattach_ReattachType_FROM_CONTINUE_False2) {
   uint32_t nwebId = 0;
   bool result = false;
   NWebInputMethodHandler::ReattachType type =
@@ -1370,7 +1430,7 @@ TEST_F(NWebInputMethodHandlerTest, Reattach_ReattachType_FROM_CONTINUE_False3) {
   EXPECT_EQ(result, false);
 }
 
-TEST_F(NWebInputMethodHandlerTest, Reattach_ReattachType_FROM_CONTINUE_False2) {
+TEST_F(NWebInputMethodHandlerTest, Reattach_ReattachType_FROM_CONTINUE_False3) {
   uint32_t nwebId = 0;
   bool result = false;
   NWebInputMethodHandler::ReattachType type =
@@ -1474,18 +1534,28 @@ TEST_F(NWebInputMethodHandlerTest, Reattach_ReattachType_FROM_ONFOCUS_False3) {
   EXPECT_EQ(result, false);
 }
 
-TEST_F(NWebInputMethodHandlerTest, ShowTextInput) {
-  inputmethod_handler_->ShowTextInput();
+TEST_F(NWebInputMethodHandlerTest, Reattach_ReattachType_FROM_ONDRAG) {
+  uint32_t nwebId = 0;
+  bool result = false;
+  NWebInputMethodHandler::ReattachType type =
+      NWebInputMethodHandler::ReattachType::FROM_ONDRAG;
+  inputmethod_handler_->isNeedReattachOnfocus_ = true;
+  inputmethod_handler_->is_editable_node_ = false;
+  inputmethod_handler_->inputmethod_listener_ = nullptr;
+  inputmethod_handler_->show_keyboard_ = false;
+  inputmethod_handler_->isAttached_ = true;
+  inputmethod_handler_->lastInputMode_ = IMFAdapterTextInputType::TEXT;
+  inputmethod_handler_->imf_input_mode_ = IMFAdapterTextInputType::NUMBER;
+  result = inputmethod_handler_->Reattach(nwebId, type);
+  inputmethod_handler_->is_editable_node_ = true;
+  result = inputmethod_handler_->Reattach(nwebId, type);
+  EXPECT_EQ(inputmethod_handler_->nweb_id_, nwebId);
+  EXPECT_EQ(inputmethod_handler_->isNeedReattachOnfocus_, true);
+  EXPECT_EQ(result, false);
 }
 
-TEST_F(NWebInputMethodHandlerTest, HideTextInput_inputmethod_adapter__Null) {
-  inputmethod_handler_->isAttached_ = true;
-  inputmethod_handler_->inputmethod_adapter_ = nullptr;
-  uint32_t nwebId = 0;
-  NWebInputMethodClient::HideTextinputType hideType =
-      NWebInputMethodClient::HideTextinputType::FROM_KERNEL;
-  inputmethod_handler_->HideTextInput(nwebId, hideType);
-  EXPECT_EQ(inputmethod_handler_->isAttached_, true);
+TEST_F(NWebInputMethodHandlerTest, ShowTextInput) {
+  inputmethod_handler_->ShowTextInput();
 }
 
 TEST_F(NWebInputMethodHandlerTest, Reattach_ReattachType_FROM_ONFOCUS_True) {
@@ -1543,16 +1613,6 @@ TEST_F(NWebInputMethodHandlerTest, Attach_InputInfo_22) {
             IMFAdapterEnterKeyType::GO);
 }
 
-TEST_F(NWebInputMethodHandlerTest, HideTextInput_isAttached_False) {
-  inputmethod_handler_->isAttached_ = false;
-  inputmethod_handler_->inputmethod_adapter_ = std::make_unique<MockIMFAdapterImpl>();
-  uint32_t nwebId = 0;
-  NWebInputMethodClient::HideTextinputType hideType =
-      NWebInputMethodClient::HideTextinputType::FROM_KERNEL;
-  inputmethod_handler_->HideTextInput(nwebId, hideType);
-  EXPECT_EQ(inputmethod_handler_->isAttached_, false);
-}
-
 TEST_F(NWebInputMethodHandlerTest, Attach_InputInfo_23) {
   NWebInputMethodClient::InputInfo inputInfo;
   bool is_need_reset_listener = false;
@@ -1568,15 +1628,6 @@ TEST_F(NWebInputMethodHandlerTest, Attach_InputInfo_23) {
             IMFAdapterEnterKeyType::GO);
 }
 
-TEST_F(NWebInputMethodHandlerTest, HideTextInput_isAttached_False2) {
-  inputmethod_handler_->isAttached_ = false;
-  inputmethod_handler_->inputmethod_adapter_ = std::make_unique<MockIMFAdapterImpl>();
-  uint32_t nwebId = 0;
-  NWebInputMethodClient::HideTextinputType hideType =
-      NWebInputMethodClient::HideTextinputType::FROM_ONPAUSE;
-  inputmethod_handler_->HideTextInput(nwebId, hideType);
-  EXPECT_EQ(inputmethod_handler_->isAttached_, false);
-}
 TEST_F(NWebInputMethodHandlerTest, Attach_InputInfo_24) {
   NWebInputMethodClient::InputInfo inputInfo;
   bool is_need_reset_listener = false;
@@ -1592,17 +1643,6 @@ TEST_F(NWebInputMethodHandlerTest, Attach_InputInfo_24) {
             IMFAdapterEnterKeyType::GO);
 }
 
-TEST_F(NWebInputMethodHandlerTest, HideTextInput_isAttached_False3) {
-  inputmethod_handler_->isAttached_ = false;
-  uint32_t nwebId = 0;
-  NWebInputMethodClient::HideTextinputType hideType =
-      NWebInputMethodClient::HideTextinputType::FROM_ONPAUSE;
-  inputmethod_handler_->lastCloseInputMethodTime_ =
-      std::chrono::high_resolution_clock::now();
-  inputmethod_handler_->inputmethod_adapter_ = std::make_unique<MockIMFAdapterImpl>();
-  inputmethod_handler_->HideTextInput(nwebId, hideType);
-  EXPECT_EQ(inputmethod_handler_->isAttached_, false);
-}
 TEST_F(NWebInputMethodHandlerTest, Attach_InputInfo_25) {
   NWebInputMethodClient::InputInfo inputInfo;
   bool is_need_reset_listener = false;
@@ -1618,6 +1658,52 @@ TEST_F(NWebInputMethodHandlerTest, Attach_InputInfo_25) {
             IMFAdapterEnterKeyType::GO);
 }
 
+TEST_F(NWebInputMethodHandlerTest, HideTextInput_isAttached_False) {
+  inputmethod_handler_->isAttached_ = false;
+  inputmethod_handler_->inputmethod_adapter_ = std::make_unique<MockIMFAdapterImpl>();
+  uint32_t nwebId = 1;
+  inputmethod_handler_->lastAttachNWebId_ = 2;
+  NWebInputMethodClient::HideTextinputType hideType =
+      NWebInputMethodClient::HideTextinputType::FROM_KERNEL;
+  inputmethod_handler_->HideTextInput(nwebId, hideType);
+  EXPECT_EQ(inputmethod_handler_->isAttached_, false);
+}
+
+TEST_F(NWebInputMethodHandlerTest, HideTextInput_isAttached_False2) {
+  inputmethod_handler_->isAttached_ = false;
+  inputmethod_handler_->inputmethod_adapter_ = std::make_unique<MockIMFAdapterImpl>();
+  uint32_t nwebId = 0;
+  inputmethod_handler_->lastAttachNWebId_ = nwebId;
+  NWebInputMethodClient::HideTextinputType hideType =
+      NWebInputMethodClient::HideTextinputType::FROM_ONPAUSE;
+  inputmethod_handler_->HideTextInput(nwebId, hideType);
+  EXPECT_EQ(inputmethod_handler_->isAttached_, false);
+}
+
+TEST_F(NWebInputMethodHandlerTest, HideTextInput_isAttached_False3) {
+  inputmethod_handler_->isAttached_ = false;
+  uint32_t nwebId = 1;
+  inputmethod_handler_->lastAttachNWebId_ = 2;
+  NWebInputMethodClient::HideTextinputType hideType =
+      NWebInputMethodClient::HideTextinputType::FROM_ONPAUSE;
+  inputmethod_handler_->lastCloseInputMethodTime_ =
+      std::chrono::high_resolution_clock::now();
+  inputmethod_handler_->inputmethod_adapter_ = std::make_unique<MockIMFAdapterImpl>();
+  inputmethod_handler_->HideTextInput(nwebId, hideType);
+  EXPECT_EQ(inputmethod_handler_->isAttached_, false);
+}
+
+TEST_F(NWebInputMethodHandlerTest, HideTextInput_inputmethod_adapter__Null) {
+  inputmethod_handler_->isAttached_ = true;
+  inputmethod_handler_->inputmethod_adapter_ = nullptr;
+  uint32_t nwebId = 1;
+  inputmethod_handler_->lastAttachNWebId_ = nwebId;
+  NWebInputMethodClient::HideTextinputType hideType =
+      NWebInputMethodClient::HideTextinputType::FROM_KERNEL;
+  inputmethod_handler_->HideTextInput(nwebId, hideType);
+  EXPECT_EQ(inputmethod_handler_->isAttached_, true);
+}
+
 TEST_F(NWebInputMethodHandlerTest, HideTextInput_Normal) {
   inputmethod_handler_->isAttached_ = true;
   uint32_t nwebId = 0;
@@ -1630,6 +1716,46 @@ TEST_F(NWebInputMethodHandlerTest, HideTextInput_Normal) {
   inputmethod_handler_->HideTextInput(nwebId, hideType);
   EXPECT_EQ(inputmethod_handler_->isAttached_, false);
 }
+
+TEST_F(NWebInputMethodHandlerTest, HideTextInput_Normal02) {
+  inputmethod_handler_->isAttached_ = true;
+  uint32_t nwebId = 1;
+  NWebInputMethodClient::HideTextinputType hideType =
+      NWebInputMethodClient::HideTextinputType::FROM_ONPAUSE;
+  inputmethod_handler_->lastCloseInputMethodTime_ =
+      std::chrono::high_resolution_clock::now();
+  inputmethod_handler_->lastAttachNWebId_ = nwebId;
+  inputmethod_handler_->inputmethod_adapter_ = std::make_unique<MockIMFAdapterImpl>();
+  inputmethod_handler_->HideTextInput(nwebId, hideType);
+  EXPECT_EQ(inputmethod_handler_->isAttached_, false);
+}
+
+TEST_F(NWebInputMethodHandlerTest, HideTextInput_Normal03) {
+  inputmethod_handler_->isAttached_ = true;
+  uint32_t nwebId = 2;
+  NWebInputMethodClient::HideTextinputType hideType =
+      NWebInputMethodClient::HideTextinputType::FROM_KERNEL;
+  inputmethod_handler_->lastCloseInputMethodTime_ =
+      std::chrono::high_resolution_clock::now();
+  inputmethod_handler_->lastAttachNWebId_ = 1;
+  inputmethod_handler_->inputmethod_adapter_ = std::make_unique<MockIMFAdapterImpl>();
+  inputmethod_handler_->HideTextInput(nwebId, hideType);
+  EXPECT_EQ(inputmethod_handler_->isAttached_, false);
+}
+
+TEST_F(NWebInputMethodHandlerTest, HideTextInput_Normal04) {
+  inputmethod_handler_->isAttached_ = true;
+  uint32_t nwebId = 2;
+  NWebInputMethodClient::HideTextinputType hideType =
+      NWebInputMethodClient::HideTextinputType::FROM_ONPAUSE;
+  inputmethod_handler_->lastCloseInputMethodTime_ =
+      std::chrono::high_resolution_clock::now();
+  inputmethod_handler_->lastAttachNWebId_ = 1;
+  inputmethod_handler_->inputmethod_adapter_ = std::make_unique<MockIMFAdapterImpl>();
+  inputmethod_handler_->HideTextInput(nwebId, hideType);
+  EXPECT_EQ(inputmethod_handler_->isAttached_, false);
+}
+
 TEST_F(NWebInputMethodHandlerTest, Attach_InputInfo_26) {
   NWebInputMethodClient::InputInfo inputInfo;
   bool is_need_reset_listener = false;
@@ -1645,22 +1771,7 @@ TEST_F(NWebInputMethodHandlerTest, Attach_InputInfo_26) {
             IMFAdapterEnterKeyType::GO);
 }
 
-TEST_F(NWebInputMethodHandlerTest, HideTextInput_Normal02) {
-  inputmethod_handler_->isAttached_ = true;
-
-  uint32_t nwebId = 0;
-  NWebInputMethodClient::HideTextinputType hideType =
-      NWebInputMethodClient::HideTextinputType::FROM_ONBLUR;
-  inputmethod_handler_->lastCloseInputMethodTime_ =
-      std::chrono::high_resolution_clock::now();
-  inputmethod_handler_->lastAttachNWebId_ = 0;
-  inputmethod_handler_->inputmethod_adapter_ = std::make_unique<MockIMFAdapterImpl>();
-  inputmethod_handler_->HideTextInput(nwebId, hideType);
-  EXPECT_EQ(inputmethod_handler_->isAttached_, false);
-}
-
-TEST_F(NWebInputMethodHandlerTest,
-       HideTextInputForce_inputmethod_adapter_Null) {
+TEST_F(NWebInputMethodHandlerTest, HideTextInputForce_inputmethod_adapter_Null) {
   inputmethod_handler_->inputmethod_adapter_ = nullptr;
   inputmethod_handler_->HideTextInputForce();
 }
@@ -1689,29 +1800,74 @@ TEST_F(NWebInputMethodHandlerTest, OnSelectionChanged) {
 }
 
 TEST_F(NWebInputMethodHandlerTest, SendEnterKeyEvent) {
-  CefRefPtr<CefBrowser> browser = new MockCefBrowser();
-  inputmethod_handler_->browser_ = browser;
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  std::unique_ptr<MockCefBrowser> mock_browser = std::make_unique<MockCefBrowser>(mockHost);
+  testing::Mock::AllowLeak(mock_browser.get());
+  EXPECT_CALL(*mock_browser, GetHost()).Times(
+	::testing::AtLeast(1)).WillRepeatedly(testing::Return(mockHost));
+  EXPECT_CALL(*mockHost, PostTaskToUIThread(testing::_)).Times(1);
+  inputmethod_handler_->browser_ = mock_browser.release();
   inputmethod_handler_->SendEnterKeyEvent(1);
 
   inputmethod_handler_->browser_ = nullptr;
   inputmethod_handler_->SendEnterKeyEvent(1);
 }
 
-TEST_F(NWebInputMethodHandlerTest, SendEnterKeyEventOnUI) {
+TEST_F(NWebInputMethodHandlerTest, SendEnterKeyEventOnUI_001) {
   inputmethod_handler_->browser_ = nullptr;
-  inputmethod_handler_->SendEnterKeyEventOnUI(static_cast<int32_t>(IMFAdapterEnterKeyType::UNSPECIFIED));
+  inputmethod_handler_->SendEnterKeyEventOnUI(static_cast<int32_t>(IMFAdapterEnterKeyType::NEW_LINE));
+  EXPECT_FALSE(inputmethod_handler_->input_flags_);
+}
 
-  CefRefPtr<CefBrowser> browser = new MockCefBrowser();
-  inputmethod_handler_->browser_ = browser;
-  EXPECT_FALSE(base::ohos::IsPcDevice());
+TEST_F(NWebInputMethodHandlerTest, SendEnterKeyEventOnUI_002) {
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  std::unique_ptr<MockCefBrowser> mock_browser = std::make_unique<MockCefBrowser>(mockHost);
+  testing::Mock::AllowLeak(mock_browser.get());
+  EXPECT_CALL(*mock_browser, GetHost()).WillOnce(testing::Return(nullptr));
+  EXPECT_CALL(*mockHost, AdvanceFocusForIME(testing::_)).Times(1);
+  inputmethod_handler_->browser_ = mock_browser.release();
+  inputmethod_handler_->input_flags_ |= CEF_TEXT_INPUT_FLAG_HAVE_NEXT_FOCUSABLE_ELEMENT;
+  int32_t enterKeyType = static_cast<int32_t>(IMFAdapterEnterKeyType::NEXT);
+  inputmethod_handler_->SendEnterKeyEventOnUI(enterKeyType);
+}
+
+TEST_F(NWebInputMethodHandlerTest, SendEnterKeyEventOnUI_003) {
+  base::ohos::SysInfoUtilsMock::mockIsPcDevice = true;
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  std::unique_ptr<MockCefBrowser> mock_browser = std::make_unique<MockCefBrowser>(mockHost);
+  testing::Mock::AllowLeak(mock_browser.get());
+  EXPECT_CALL(*mock_browser, GetHost()).Times(
+	::testing::AtLeast(1)).WillRepeatedly(testing::Return(mockHost));
+  EXPECT_CALL(*mockHost, AdvanceFocusForIME(testing::_)).Times(1);
+  inputmethod_handler_->browser_ = mock_browser.release();
   inputmethod_handler_->input_flags_ |= CEF_TEXT_INPUT_FLAG_HAVE_NEXT_FOCUSABLE_ELEMENT;
   int32_t enterKeyType = static_cast<int32_t>(IMFAdapterEnterKeyType::NEXT);
   inputmethod_handler_->SendEnterKeyEventOnUI(enterKeyType);
 
+  auto& sys_info_utils_mock = base::ohos::SysInfoUtilsMock::GetInstance();
+  EXPECT_CALL(sys_info_utils_mock, IsPcDevice()).Times(
+	::testing::AtLeast(1)).WillRepeatedly(testing::Return(false));
   enterKeyType = static_cast<int32_t>(IMFAdapterEnterKeyType::UNSPECIFIED);
   inputmethod_handler_->SendEnterKeyEventOnUI(enterKeyType);
+  base::ohos::SysInfoUtilsMock::mockIsPcDevice = false;
+}
 
-  enterKeyType = static_cast<int32_t>(IMFAdapterEnterKeyType::NEXT);
+TEST_F(NWebInputMethodHandlerTest, SendEnterKeyEventOnUI_004) {
+  base::ohos::SysInfoUtilsMock::mockIsPcDevice = true;
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  std::unique_ptr<MockCefBrowser> mock_browser = std::make_unique<MockCefBrowser>(mockHost);
+  testing::Mock::AllowLeak(mock_browser.get());
+  EXPECT_CALL(*mock_browser, GetHost()).Times(
+	::testing::AtLeast(1)).WillRepeatedly(testing::Return(mockHost));
+  inputmethod_handler_->browser_ = mock_browser.release();
+  auto& sys_info_utils_mock = base::ohos::SysInfoUtilsMock::GetInstance();
+  EXPECT_CALL(sys_info_utils_mock, IsPcDevice()).Times(
+	::testing::AtLeast(1)).WillRepeatedly(testing::Return(true));
+  int32_t enterKeyType = static_cast<int32_t>(IMFAdapterEnterKeyType::NEXT);
   inputmethod_handler_->input_flags_ |= CEF_TEXT_INPUT_FLAG_HAS_BEEN_PASSWORD;
   inputmethod_handler_->SendEnterKeyEventOnUI(enterKeyType);
 
@@ -1728,6 +1884,7 @@ TEST_F(NWebInputMethodHandlerTest, SendEnterKeyEventOnUI) {
   inputmethod_handler_->input_flags_ |= CEF_TEXT_INPUT_FLAG_HAS_BEEN_PASSWORD;
   enterKeyType = static_cast<int32_t>(IMFAdapterEnterKeyType::PREVIOUS);
   inputmethod_handler_->SendEnterKeyEventOnUI(enterKeyType);
+  base::ohos::SysInfoUtilsMock::mockIsPcDevice = false;
 }
 
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
@@ -1790,9 +1947,16 @@ TEST_F(NWebInputMethodHandlerTest, GetSelectStartIndex) {
   EXPECT_EQ(result, 5);
 }
 
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
 TEST_F(NWebInputMethodHandlerTest, AutoFillWithIMFEventOnUI) {
-  CefRefPtr<CefBrowser> browser = new MockCefBrowser();
-  inputmethod_handler_->browser_ = browser;
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  std::unique_ptr<MockCefBrowser> mock_browser = std::make_unique<MockCefBrowser>(mockHost);
+  testing::Mock::AllowLeak(mock_browser.get());
+  EXPECT_CALL(*mock_browser, GetHost()).Times(
+	::testing::AtLeast(1)).WillRepeatedly(testing::Return(mockHost));
+  EXPECT_CALL(*mockHost, AutoFillWithIMFEvent(testing::_, testing::_, testing::_, testing::_)).Times(1);
+  inputmethod_handler_->browser_ = mock_browser.release();
   EXPECT_TRUE(inputmethod_handler_->browser_);
   bool is_username = true;
   bool is_other_account = false;
@@ -1805,101 +1969,37 @@ TEST_F(NWebInputMethodHandlerTest, AutoFillWithIMFEventOnUI) {
 }
 
 TEST_F(NWebInputMethodHandlerTest, AutoFillWithIMFEvent) {
-  CefRefPtr<CefBrowser> browser = new MockCefBrowser();
-  inputmethod_handler_->browser_ = browser;
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  std::unique_ptr<MockCefBrowser> mock_browser = std::make_unique<MockCefBrowser>(mockHost);
+  testing::Mock::AllowLeak(mock_browser.get());
+  EXPECT_CALL(*mock_browser, GetHost()).Times(
+	::testing::AtLeast(1)).WillRepeatedly(testing::Return(mockHost));
+  EXPECT_CALL(*mockHost, PostTaskToUIThread(testing::_)).Times(1);
+  inputmethod_handler_->browser_ = mock_browser.release();
   EXPECT_TRUE(inputmethod_handler_->browser_);
   inputmethod_handler_->AutoFillWithIMFEvent(true, true, true, "test_content");
-  EXPECT_NE(inputmethod_handler_->browser_->GetHost(), nullptr);
-
   inputmethod_handler_->browser_ = nullptr;
   inputmethod_handler_->AutoFillWithIMFEvent(true, true, true, "test_content");
   EXPECT_TRUE(inputmethod_handler_->browser_ == nullptr);
 }
+#endif
 
 TEST_F(NWebInputMethodHandlerTest, FinishTextPreview) {
   inputmethod_handler_->browser_ = nullptr;
   inputmethod_handler_->FinishTextPreview();
-
-  CefRefPtr<CefBrowser> browser = new MockCefBrowser();
-  inputmethod_handler_->browser_ = browser;
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  std::unique_ptr<MockCefBrowser> mock_browser = std::make_unique<MockCefBrowser>(mockHost);
+  testing::Mock::AllowLeak(mock_browser.get());
+  EXPECT_CALL(*mock_browser, GetHost()).Times(
+	::testing::AtLeast(1)).WillRepeatedly(testing::Return(mockHost));
+  EXPECT_CALL(*mockHost, PostTaskToUIThread(testing::_)).Times(1);
+  inputmethod_handler_->browser_ = mock_browser.release();
   EXPECT_TRUE(inputmethod_handler_->browser_);
+
   inputmethod_handler_->FinishTextPreview();
   inputmethod_handler_->SetNeedUnderLine(true);
-}
-
-TEST_F(NWebInputMethodHandlerTest, SetPreviewText) {
-  std::u16string text = u"";
-  inputmethod_handler_->has_composition_ = false;
-  int32_t start = 0;
-  int32_t end = 4;
-  EXPECT_EQ(inputmethod_handler_->SetPreviewText(text, start, end), inputmethod_handler_->ERROR);
-
-  text = u"";
-  start = -1;
-  end = -1;
-  inputmethod_handler_->preview_text_cache_ = u"t";
-  inputmethod_handler_->has_composition_ = true;
-  CefRefPtr<CefBrowser> browser = new MockCefBrowser();
-  inputmethod_handler_->browser_ = browser;
-  inputmethod_handler_->composition_type_ = COMPOSITION_CANCEL;
-  EXPECT_EQ(inputmethod_handler_->SetPreviewText(text, start, end), inputmethod_handler_->OK);
-
-  text = u"";
-  start = -1;
-  end = -1;
-  inputmethod_handler_->preview_text_cache_ = u"t";
-  inputmethod_handler_->has_composition_ = true;
-  inputmethod_handler_->browser_ = nullptr;
-  inputmethod_handler_->composition_type_ = COMPOSITION_CANCEL;
-  EXPECT_EQ(inputmethod_handler_->SetPreviewText(text, start, end), inputmethod_handler_->OK);
-
-  text = u"";
-  start = 1;
-  end = 2;
-  inputmethod_handler_->preview_text_cache_ = u"t";
-  inputmethod_handler_->whole_text_ = u"testtest";
-  inputmethod_handler_->has_composition_ = true;
-  inputmethod_handler_->composition_range_start_ = 1;
-  inputmethod_handler_->composition_range_end_ = 3;
-  inputmethod_handler_->selected_from_ = 1;
-  inputmethod_handler_->composition_type_ = COMPOSITION_DELETE;
-  EXPECT_EQ(inputmethod_handler_->SetPreviewText(text, start, end), inputmethod_handler_->OK);
-
-  text = u"";
-  start = 1;
-  end = 2;
-  inputmethod_handler_->preview_text_cache_ = u"t";
-  inputmethod_handler_->whole_text_ = u"testtest";
-  inputmethod_handler_->has_composition_ = true;
-  inputmethod_handler_->composition_range_start_ = 1;
-  inputmethod_handler_->composition_range_end_ = 3;
-  inputmethod_handler_->selected_from_ = 2;
-  inputmethod_handler_->composition_type_ = COMPOSITION_DELETE;
-  EXPECT_EQ(inputmethod_handler_->SetPreviewText(text, start, end), inputmethod_handler_->OK);
-
-  text = u"test";
-  start = 1;
-  end = 2;
-  inputmethod_handler_->preview_text_cache_ = u"t";
-  inputmethod_handler_->whole_text_ = u"testtest";
-  inputmethod_handler_->has_composition_ = false;
-  inputmethod_handler_->composition_range_start_ = 2;
-  inputmethod_handler_->composition_range_end_ = 3;
-  inputmethod_handler_->browser_ = browser;
-  inputmethod_handler_->composition_type_ = COMPOSITION_REPLACE;
-  EXPECT_EQ(inputmethod_handler_->SetPreviewText(text, start, end), inputmethod_handler_->OK);
-
-  text = u"test";
-  start = 1;
-  end = 2;
-  inputmethod_handler_->preview_text_cache_ = u"t";
-  inputmethod_handler_->whole_text_ = u"testtest";
-  inputmethod_handler_->has_composition_ = false;
-  inputmethod_handler_->composition_range_start_ = 2;
-  inputmethod_handler_->composition_range_end_ = 3;
-  inputmethod_handler_->browser_ = nullptr;
-  inputmethod_handler_->composition_type_ = COMPOSITION_REPLACE;
-  EXPECT_EQ(inputmethod_handler_->SetPreviewText(text, start, end), inputmethod_handler_->OK);
 }
 
 TEST_F(NWebInputMethodHandlerTest, UpdateCompositionInfo) {
@@ -2108,7 +2208,11 @@ TEST_F(NWebInputMethodHandlerTest, GetIsEditableNode) {
 }
 
 TEST_F(NWebInputMethodHandlerTest, OnEditableChanged) {
-  CefRefPtr<CefBrowser> browser = new MockCefBrowser();
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  std::unique_ptr<MockCefBrowser> mock_browser = std::make_unique<MockCefBrowser>(mockHost);
+  testing::Mock::AllowLeak(mock_browser.get());
+  auto browser = mock_browser.release();
   inputmethod_handler_->OnEditableChanged(browser, true);
   EXPECT_TRUE(inputmethod_handler_->is_editable_node_);
 }
@@ -2174,8 +2278,13 @@ TEST_F(NWebInputMethodHandlerTest, SetScreenOffSet) {
 }
 
 TEST_F(NWebInputMethodHandlerTest, MoveCursor) {
-  CefRefPtr<CefBrowser> browser = new MockCefBrowser();
-  inputmethod_handler_->browser_ = browser;
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  std::unique_ptr<MockCefBrowser> mock_browser = std::make_unique<MockCefBrowser>(mockHost);
+  testing::Mock::AllowLeak(mock_browser.get());
+  EXPECT_CALL(*mock_browser, GetHost()).Times(::testing::AtLeast(1)).WillRepeatedly(testing::Return(mockHost));
+  EXPECT_CALL(*mockHost, SendKeyEvent(testing::_)).Times(testing::AtLeast(1));
+  inputmethod_handler_->browser_ = mock_browser.release();
   IMFAdapterDirection direction = IMFAdapterDirection::UP;
   inputmethod_handler_->MoveCursor(direction);
   EXPECT_EQ(inputmethod_handler_->textCursorReady_, 1);
@@ -2198,14 +2307,22 @@ TEST_F(NWebInputMethodHandlerTest, MoveCursor) {
 }
 
 TEST_F(NWebInputMethodHandlerTest, DeleteBackwardHandlerOnUI) {
+  std::unique_ptr mock_host = std::make_unique<MockCefBrowserHost>();
+  auto mock_host_raw = mock_host.get();
+  std::unique_ptr browser = std::make_unique<MockCefBrowser>(mock_host_raw);
   inputmethod_handler_->selected_from_ = 0;
   inputmethod_handler_->text_cursor_length_ = 0;
   inputmethod_handler_->preview_text_cache_ = u"";
   inputmethod_handler_->browser_ = nullptr;
   inputmethod_handler_->DeleteBackwardHandlerOnUI(1);
 
-  CefRefPtr<CefBrowser> browser = new MockCefBrowser();
-  inputmethod_handler_->browser_ = browser;
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  std::unique_ptr<MockCefBrowser> mock_browser = std::make_unique<MockCefBrowser>(mockHost);
+  testing::Mock::AllowLeak(mock_browser.get());
+  EXPECT_CALL(*mock_browser, GetHost()).Times(::testing::AtLeast(1)).WillRepeatedly(testing::Return(mockHost));
+  EXPECT_CALL(*mockHost, SendKeyEvent(testing::_)).Times(testing::AtLeast(1));
+  inputmethod_handler_->browser_ = mock_browser.release();
   inputmethod_handler_->selected_from_ = 2;
   int32_t length = 3;
   inputmethod_handler_->DeleteBackwardHandlerOnUI(length);
@@ -2227,8 +2344,13 @@ TEST_F(NWebInputMethodHandlerTest, DeleteForwardHandlerOnUI) {
   inputmethod_handler_->DeleteForwardHandlerOnUI(1);
   EXPECT_EQ(inputmethod_handler_->text_cursor_length_, 0);
 
-  CefRefPtr<CefBrowser> browser = new MockCefBrowser();
-  inputmethod_handler_->browser_ = browser;
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  std::unique_ptr<MockCefBrowser> mock_browser = std::make_unique<MockCefBrowser>(mockHost);
+  testing::Mock::AllowLeak(mock_browser.get());
+  EXPECT_CALL(*mock_browser, GetHost()).Times(::testing::AtLeast(1)).WillRepeatedly(testing::Return(mockHost));
+  EXPECT_CALL(*mockHost, SendKeyEvent(testing::_)).Times(testing::AtLeast(1));
+  inputmethod_handler_->browser_ = mock_browser.release();
   inputmethod_handler_->whole_text_ = u"test";
   inputmethod_handler_->selected_from_ = 2;
   inputmethod_handler_->DeleteForwardHandlerOnUI(3);
@@ -2264,8 +2386,13 @@ TEST_F(NWebInputMethodHandlerTest, FinishPreviewTextOnUI) {
   inputmethod_handler_->FinishPreviewTextOnUI();
   EXPECT_FALSE(inputmethod_handler_->preview_text_cache_.empty());
 
-  CefRefPtr<CefBrowser> browser = new MockCefBrowser();
-  inputmethod_handler_->browser_ = browser;
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  std::unique_ptr<MockCefBrowser> mock_browser = std::make_unique<MockCefBrowser>(mockHost);
+  testing::Mock::AllowLeak(mock_browser.get());
+  EXPECT_CALL(*mock_browser, GetHost()).Times(::testing::AtLeast(1)).WillRepeatedly(testing::Return(mockHost));
+  EXPECT_CALL(*mockHost, ImeFinishComposingText(testing::_)).Times(1);
+  inputmethod_handler_->browser_ = mock_browser.release();
   inputmethod_handler_->FinishPreviewTextOnUI();
   EXPECT_TRUE(inputmethod_handler_->preview_text_cache_.empty());
 }
@@ -2275,15 +2402,25 @@ TEST_F(NWebInputMethodHandlerTest, CancelPreviewHandlerOnUI) {
   inputmethod_handler_->CancelPreviewHandlerOnUI();
   EXPECT_TRUE(inputmethod_handler_->preview_text_cache_.empty());
 
-  CefRefPtr<CefBrowser> browser = new MockCefBrowser();
-  inputmethod_handler_->browser_ = browser;
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  std::unique_ptr<MockCefBrowser> mock_browser = std::make_unique<MockCefBrowser>(mockHost);
+  testing::Mock::AllowLeak(mock_browser.get());
+  EXPECT_CALL(*mock_browser, GetHost()).Times(::testing::AtLeast(1)).WillRepeatedly(testing::Return(mockHost));
+  EXPECT_CALL(*mockHost, ImeCancelComposition()).Times(1);
+  inputmethod_handler_->browser_ = mock_browser.release();
   inputmethod_handler_->CancelPreviewHandlerOnUI();
   EXPECT_TRUE(inputmethod_handler_->preview_text_cache_.empty());
 }
 
 TEST_F(NWebInputMethodHandlerTest, PreviewTextHandlerOnUI) {
-  CefRefPtr<CefBrowser> browser = new MockCefBrowser();
-  inputmethod_handler_->browser_ = browser;
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  std::unique_ptr<MockCefBrowser> mock_browser = std::make_unique<MockCefBrowser>(mockHost);
+  testing::Mock::AllowLeak(mock_browser.get());
+  EXPECT_CALL(*mock_browser, GetHost()).Times(::testing::AtLeast(1)).WillRepeatedly(testing::Return(mockHost));
+  EXPECT_CALL(*mockHost, ImeSetComposition(testing::_, testing::_, testing::_, testing::_)).Times(1);
+  inputmethod_handler_->browser_ = mock_browser.release();
   inputmethod_handler_->is_need_underline_ = true;
   inputmethod_handler_->composition_type_ = COMPOSITION_REPLACE;
   std::u16string text = u"test";
@@ -2305,6 +2442,24 @@ TEST_F(NWebInputMethodHandlerTest, PreviewTextHandlerOnUI) {
 }
 
 TEST_F(NWebInputMethodHandlerTest, ClearComposingStatus) {
+  inputmethod_handler_->browser_ = nullptr;
+  inputmethod_handler_->has_composition_ = true;
+  inputmethod_handler_->preview_text_cache_ = u"test";
+  inputmethod_handler_->composition_range_start_ = 1;
+  inputmethod_handler_->composition_range_end_ = 4;
+  inputmethod_handler_->ClearComposingStatus();
+  EXPECT_FALSE(inputmethod_handler_->has_composition_);
+  EXPECT_EQ(inputmethod_handler_->preview_text_cache_, std::u16string());
+  EXPECT_EQ(inputmethod_handler_->composition_range_start_, 0);
+  EXPECT_EQ(inputmethod_handler_->composition_range_end_, 0);
+
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  std::unique_ptr<MockCefBrowser> mock_browser = std::make_unique<MockCefBrowser>(mockHost);
+  testing::Mock::AllowLeak(mock_browser.get());
+  EXPECT_CALL(*mock_browser, GetHost()).Times(::testing::AtLeast(1)).WillRepeatedly(testing::Return(mockHost));
+  EXPECT_CALL(*mockHost, SetHasComposition(testing::_)).Times(1);
+  inputmethod_handler_->browser_ = mock_browser.release();
   inputmethod_handler_->has_composition_ = true;
   inputmethod_handler_->preview_text_cache_ = u"test";
   inputmethod_handler_->composition_range_start_ = 1;
@@ -2317,16 +2472,17 @@ TEST_F(NWebInputMethodHandlerTest, ClearComposingStatus) {
 }
 
 TEST_F(NWebInputMethodHandlerTest, InsertTextHandlerOnUI) {
-  CefRefPtr<CefBrowser> browser = new MockCefBrowser();
-  inputmethod_handler_->browser_ = browser;
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  std::unique_ptr<MockCefBrowser> mock_browser = std::make_unique<MockCefBrowser>(mockHost);
+  testing::Mock::AllowLeak(mock_browser.get());
+  EXPECT_CALL(*mock_browser, GetHost()).Times(::testing::AtLeast(1)).WillRepeatedly(testing::Return(mockHost));
+  EXPECT_CALL(*mockHost, SendKeyEvent(testing::_)).Times(testing::AtLeast(1));
+  inputmethod_handler_->browser_ = mock_browser.release();
   inputmethod_handler_->ime_text_composing_ = false;
   inputmethod_handler_->composing_text_.clear();
   inputmethod_handler_->textCursorReady_ = 0;
   inputmethod_handler_->selected_from_ = 0;
-  inputmethod_handler_->keycode_map = {
-      {'A', 1},
-      {'B', 2},
-  };
   const std::u16string empty_text = u"";
   inputmethod_handler_->InsertTextHandlerOnUI(empty_text);
 
@@ -2340,16 +2496,26 @@ TEST_F(NWebInputMethodHandlerTest, InsertTextHandlerOnUI) {
 }
 
 TEST_F(NWebInputMethodHandlerTest, WebBlurKeyboardHideOnUI) {
-  CefRefPtr<CefBrowser> browser = new MockCefBrowser();
-  inputmethod_handler_->browser_ = browser;
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  std::unique_ptr<MockCefBrowser> mock_browser = std::make_unique<MockCefBrowser>(mockHost);
+  testing::Mock::AllowLeak(mock_browser.get());
+  EXPECT_CALL(*mock_browser, GetHost()).Times(::testing::AtLeast(1)).WillRepeatedly(testing::Return(mockHost));
+  EXPECT_CALL(*mockHost, SetFocusOnWeb()).Times(1);
+  inputmethod_handler_->browser_ = mock_browser.release();
   inputmethod_handler_->WebBlurKeyboardHideOnUI();
   EXPECT_TRUE(inputmethod_handler_->isManualCloseKeyboard_);
 }
 
 TEST_F(NWebInputMethodHandlerTest, SetIMEStatusOnUI) {
   bool enable_ime = true;
-  CefRefPtr<CefBrowser> browser = new MockCefBrowser();
-  inputmethod_handler_->browser_ = browser;
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  std::unique_ptr<MockCefBrowser> mock_browser = std::make_unique<MockCefBrowser>(mockHost);
+  testing::Mock::AllowLeak(mock_browser.get());
+  EXPECT_CALL(*mock_browser, GetHost()).Times(::testing::AtLeast(1)).WillRepeatedly(testing::Return(mockHost));
+  EXPECT_CALL(*mockHost, ImeFinishComposingText(testing::_)).Times(1);
+  inputmethod_handler_->browser_ = mock_browser.release();
   inputmethod_handler_->isManualCloseKeyboard_ = true;
   inputmethod_handler_->ime_text_composing_ = false;
   inputmethod_handler_->SetIMEStatusOnUI(enable_ime);
@@ -2377,8 +2543,13 @@ TEST_F(NWebInputMethodHandlerTest, DeleteForward) {
   inputmethod_handler_->browser_ = nullptr;
   inputmethod_handler_->DeleteForward(test_length);
 
-  CefRefPtr<CefBrowser> browser = new MockCefBrowser();
-  inputmethod_handler_->browser_ = browser;
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  std::unique_ptr<MockCefBrowser> mock_browser = std::make_unique<MockCefBrowser>(mockHost);
+  testing::Mock::AllowLeak(mock_browser.get());
+  EXPECT_CALL(*mock_browser, GetHost()).Times(::testing::AtLeast(1)).WillRepeatedly(testing::Return(mockHost));
+  EXPECT_CALL(*mockHost, PostTaskToUIThread(testing::_)).Times(1);
+  inputmethod_handler_->browser_ = mock_browser.release();
   inputmethod_handler_->DeleteForward(test_length);
 }
 
@@ -2386,8 +2557,13 @@ TEST_F(NWebInputMethodHandlerTest, DeleteBackward) {
   inputmethod_handler_->browser_ = nullptr;
   inputmethod_handler_->DeleteBackward(10);
 
-  CefRefPtr<CefBrowser> browser = new MockCefBrowser();
-  inputmethod_handler_->browser_ = browser;
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  std::unique_ptr<MockCefBrowser> mock_browser = std::make_unique<MockCefBrowser>(mockHost);
+  testing::Mock::AllowLeak(mock_browser.get());
+  EXPECT_CALL(*mock_browser, GetHost()).Times(::testing::AtLeast(1)).WillRepeatedly(testing::Return(mockHost));
+  EXPECT_CALL(*mockHost, PostTaskToUIThread(testing::_)).Times(1);
+  inputmethod_handler_->browser_ = mock_browser.release();
   inputmethod_handler_->DeleteBackward(10);
 }
 
@@ -2402,8 +2578,13 @@ TEST_F(NWebInputMethodHandlerTest, InsertText) {
   std::u16string text = u"test";
   inputmethod_handler_->InsertText(text);
 
-  CefRefPtr<CefBrowser> browser = new MockCefBrowser();
-  inputmethod_handler_->browser_ = browser;
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  std::unique_ptr<MockCefBrowser> mock_browser = std::make_unique<MockCefBrowser>(mockHost);
+  testing::Mock::AllowLeak(mock_browser.get());
+  EXPECT_CALL(*mock_browser, GetHost()).Times(::testing::AtLeast(1)).WillRepeatedly(testing::Return(mockHost));
+  EXPECT_CALL(*mockHost, PostTaskToUIThread(testing::_)).Times(1);
+  inputmethod_handler_->browser_ = mock_browser.release();
   text = u"test";
   inputmethod_handler_->InsertText(text);
 }
@@ -2413,8 +2594,13 @@ TEST_F(NWebInputMethodHandlerTest, WebBlurKeyboardHide) {
   inputmethod_handler_->WebBlurKeyboardHide();
   EXPECT_EQ(inputmethod_handler_->browser_, nullptr);
 
-  CefRefPtr<CefBrowser> browser = new MockCefBrowser();
-  inputmethod_handler_->browser_ = browser;
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  std::unique_ptr<MockCefBrowser> mock_browser = std::make_unique<MockCefBrowser>(mockHost);
+  testing::Mock::AllowLeak(mock_browser.get());
+  EXPECT_CALL(*mock_browser, GetHost()).Times(::testing::AtLeast(1)).WillRepeatedly(testing::Return(mockHost));
+  EXPECT_CALL(*mockHost, PostTaskToUIThread(testing::_)).Times(1);
+  inputmethod_handler_->browser_ = mock_browser.release();
   inputmethod_handler_->WebBlurKeyboardHide();
   EXPECT_NE(inputmethod_handler_->browser_->GetHost(), nullptr);
 }
@@ -2426,16 +2612,60 @@ TEST_F(NWebInputMethodHandlerTest, SetIMEStatus) {
   inputmethod_handler_->SetIMEStatus(status);
   EXPECT_EQ(inputmethod_handler_->browser_, nullptr);
 
-  CefRefPtr<CefBrowser> browser = new MockCefBrowser();
-  inputmethod_handler_->browser_ = browser;
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  std::unique_ptr<MockCefBrowser> mock_browser = std::make_unique<MockCefBrowser>(mockHost);
+  testing::Mock::AllowLeak(mock_browser.get());
+  EXPECT_CALL(*mock_browser, GetHost()).Times(::testing::AtLeast(1)).WillRepeatedly(testing::Return(mockHost));
+  EXPECT_CALL(*mockHost, PostTaskToUIThread(testing::_)).Times(1);
+  inputmethod_handler_->browser_ = mock_browser.release();
   inputmethod_handler_->SetIMEStatus(status);
   EXPECT_NE(inputmethod_handler_->browser_->GetHost(), nullptr);
 }
 
 TEST_F(NWebInputMethodHandlerTest, OnUpdateTextInputStateCalled) {
-  CefRefPtr<CefBrowser> browser = new MockCefBrowser();
-  CefString text = u"test";
-  inputmethod_handler_->whole_text_ = u"test";
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  std::unique_ptr<MockCefBrowser> mock_browser = std::make_unique<MockCefBrowser>(mockHost);
+  testing::Mock::AllowLeak(mock_browser.get());
+  auto browser = mock_browser.release();
+  CefString text = u"";
+  inputmethod_handler_->whole_text_ = u"";
+  inputmethod_handler_->OnUpdateTextInputStateCalled(browser, text, CefRange(0, 0), CefRange(0, 0));
+
+  inputmethod_handler_->whole_text_ = u"text";
+  text = u"text";
+  inputmethod_handler_->browser_ = nullptr;
+  inputmethod_handler_->OnUpdateTextInputStateCalled(browser, text, CefRange(1, 3), CefRange(0, 0));
+  inputmethod_handler_->browser_ = browser;
+  inputmethod_handler_->OnUpdateTextInputStateCalled(browser, text, CefRange(1, 3), CefRange(0, 0));
+
+  CefRange compositon_range = CefRange::InvalidRange();
+  inputmethod_handler_->composition_range_start_ = compositon_range.from;
+  inputmethod_handler_->composition_range_end_ = compositon_range.to;
+  inputmethod_handler_->OnUpdateTextInputStateCalled(browser, text, CefRange(0, 4), compositon_range);
+  EXPECT_FALSE(inputmethod_handler_->has_composition_);
+  EXPECT_EQ(inputmethod_handler_->composition_range_start_, 0);
+  EXPECT_EQ(inputmethod_handler_->composition_range_end_, 0);
+  EXPECT_EQ(inputmethod_handler_->preview_text_cache_, u"");
+
+  inputmethod_handler_->composition_range_start_ = 1;
+  inputmethod_handler_->composition_range_end_ = 3;
+  inputmethod_handler_->OnUpdateTextInputStateCalled(browser, text, CefRange(0, 4), CefRange(1, 3));
+  EXPECT_FALSE(inputmethod_handler_->has_composition_);
+  EXPECT_EQ(inputmethod_handler_->composition_range_start_, 1);
+  EXPECT_EQ(inputmethod_handler_->composition_range_end_, 3);
+  EXPECT_EQ(inputmethod_handler_->preview_text_cache_, u"");
+
+  inputmethod_handler_->inputmethod_adapter_ = nullptr;
+  inputmethod_handler_->OnUpdateTextInputStateCalled(browser, text, CefRange(0, 4), CefRange(1, 3));
+  EXPECT_EQ(inputmethod_handler_->whole_text_, u"text");
+
+  std::unique_lock<std::mutex> lock(inputmethod_handler_->textCursorMutex_);
+  inputmethod_handler_->textCursorReady_ = 1;
+  inputmethod_handler_->OnUpdateTextInputStateCalled(browser, text, CefRange(0, 4), CefRange(1, 3));
+  EXPECT_EQ(inputmethod_handler_->textCursorReady_, 1);
+
   inputmethod_handler_->selected_from_ = 0;
   inputmethod_handler_->selected_to_ = 4;
   inputmethod_handler_->composition_range_start_ = 0;
@@ -2455,32 +2685,6 @@ TEST_F(NWebInputMethodHandlerTest, OnUpdateTextInputStateCalled) {
   inputmethod_handler_->composition_range_start_ = 0;
   inputmethod_handler_->composition_range_end_ = 0;
   inputmethod_handler_->OnUpdateTextInputStateCalled(browser, text, CefRange(0, 4), CefRange(0, 0));
-
-  CefRange compositon_range = CefRange::InvalidRange();
-  inputmethod_handler_->composition_range_start_ = compositon_range.from;
-  inputmethod_handler_->composition_range_end_ = compositon_range.to;
-  inputmethod_handler_->OnUpdateTextInputStateCalled(browser, text, CefRange(0, 4), compositon_range);
-  EXPECT_FALSE(inputmethod_handler_->has_composition_);
-  EXPECT_EQ(inputmethod_handler_->composition_range_start_, -1);
-  EXPECT_EQ(inputmethod_handler_->composition_range_end_, -1);
-  EXPECT_EQ(inputmethod_handler_->preview_text_cache_, u"");
-
-  inputmethod_handler_->composition_range_start_ = 1;
-  inputmethod_handler_->composition_range_end_ = 3;
-  inputmethod_handler_->OnUpdateTextInputStateCalled(browser, text, CefRange(0, 4), CefRange(1, 3));
-  EXPECT_FALSE(inputmethod_handler_->has_composition_);
-  EXPECT_EQ(inputmethod_handler_->composition_range_start_, 1);
-  EXPECT_EQ(inputmethod_handler_->composition_range_end_, 3);
-  EXPECT_EQ(inputmethod_handler_->preview_text_cache_, u"");
-
-  inputmethod_handler_->inputmethod_adapter_ = nullptr;
-  inputmethod_handler_->OnUpdateTextInputStateCalled(browser, text, CefRange(0, 4), CefRange(1, 3));
-  EXPECT_EQ(inputmethod_handler_->whole_text_, u"");
-
-  std::unique_lock<std::mutex> lock(inputmethod_handler_->textCursorMutex_);
-  inputmethod_handler_->textCursorReady_ = 1;
-  inputmethod_handler_->OnUpdateTextInputStateCalled(browser, text, CefRange(0, 4), CefRange(1, 3));
-  EXPECT_EQ(inputmethod_handler_->textCursorReady_, 1);
 }
 
 TEST_F(NWebInputMethodHandlerTest, IsTextInputStateChange) {
@@ -2528,7 +2732,11 @@ TEST_F(NWebInputMethodHandlerTest, OnImeCompositionRangeChanged) {
   selected_range.from = std::numeric_limits<uint32_t>::max();
   selected_range.to = std::numeric_limits<uint32_t>::max();
   testing::internal::CaptureStderr();
-  CefRefPtr<CefBrowser> browser = new MockCefBrowser();
+    CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  std::unique_ptr<MockCefBrowser> mock_browser = std::make_unique<MockCefBrowser>(mockHost);
+  testing::Mock::AllowLeak(mock_browser.get());
+  auto browser = mock_browser.release();
   inputmethod_handler_->OnImeCompositionRangeChanged(browser, selected_range);
   std::string output = testing::internal::GetCapturedStderr();
   EXPECT_NE(output.find("NWebInputMethodHandler::OnImeCompositionRangeChanged"), std::string::npos);
@@ -2569,19 +2777,23 @@ TEST_F(NWebInputMethodHandlerTest, SetNeedReattach) {
 }
 
 TEST_F(NWebInputMethodHandlerTest, AttachTest) {
-  CefRefPtr<CefBrowser> browser = new MockCefBrowser();
   inputmethod_handler_->inputmethod_adapter_ = nullptr;
-  inputmethod_handler_->focus_status_ = true;
   inputmethod_handler_->focus_rect_status_ = true;
   inputmethod_handler_->nweb_id_ = 123;
   NWebInputMethodClient::InputInfo inputInfo;
   inputInfo.input_mode = CEF_TEXT_INPUT_MODE_DEFAULT;
   inputInfo.input_type = CEF_TEXT_INPUT_TYPE_NONE;
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  std::unique_ptr<MockCefBrowser> mock_browser = std::make_unique<MockCefBrowser>(mockHost);
+  testing::Mock::AllowLeak(mock_browser.get());
+  auto browser = mock_browser.release();
   inputmethod_handler_->Attach(browser, inputInfo, true, 0, 0);
-  EXPECT_EQ(inputmethod_handler_->browser_, browser);
   EXPECT_FALSE(inputmethod_handler_->isAttached_);
   EXPECT_EQ(inputmethod_handler_->lastAttachNWebId_, 0);
 
+  inputmethod_handler_->inputmethod_adapter_ = std::make_unique<MockIMFAdapterImpl>();
+  inputmethod_handler_->focus_status_ = false;
   inputmethod_handler_->Attach(browser, inputInfo, true, 0, 0);
   EXPECT_FALSE(inputmethod_handler_->isAttached_);
 
@@ -2590,12 +2802,82 @@ TEST_F(NWebInputMethodHandlerTest, AttachTest) {
   inputmethod_handler_->Attach(browser, inputInfo, true, 0, 0);
 }
 
-TEST_F(NWebInputMethodHandlerTest, IsKeyboardShow) {
-  inputmethod_handler_->isAttachSuccess_ = true;
-  inputmethod_handler_->show_keyboard_ = true;
-  inputmethod_handler_->isManualCloseKeyboard_ = true;
-  inputmethod_handler_->cef_text_input_mode_ = CEF_TEXT_INPUT_MODE_DEFAULT;
-  EXPECT_FALSE(inputmethod_handler_->IsKeyboardShow());
+TEST_F(NWebInputMethodHandlerTest, TestAttach_001) {
+  auto handler = new MockNWebInputMethodHandler();
+  testing::Mock::AllowLeak(handler);
+  CefRefPtr<CefBrowser> browser;
+  NWebInputMethodClient::InputInfo inputInfo;
+  bool is_need_reset_listener = true;
+  int32_t enterKeyType = 0;
+  int32_t requestKeyboardReason = 0;
+  handler->focus_status_ = true;
+  handler->focus_rect_status_ = true;
+  handler->inputmethod_adapter_ = std::make_unique<MockIMFAdapterImpl>();
+  handler->Attach(browser, inputInfo, is_need_reset_listener, enterKeyType, requestKeyboardReason);
+  EXPECT_FALSE(handler->isAttached_);
+}
+
+TEST_F(NWebInputMethodHandlerTest, TestAttach_002) {
+  auto handler = new MockNWebInputMethodHandler();
+  testing::Mock::AllowLeak(handler);
+  CefRefPtr<CefBrowser> browser;
+  NWebInputMethodClient::InputInfo inputInfo;
+  bool is_need_reset_listener = true;
+  int32_t enterKeyType = 0;
+  int32_t requestKeyboardReason = 0;
+  handler->Attach(browser, inputInfo, is_need_reset_listener, enterKeyType, requestKeyboardReason);
+  EXPECT_FALSE(handler->isAttached_);
+}
+
+TEST_F(NWebInputMethodHandlerTest, TestAttach_003) {
+  auto handler = new MockNWebInputMethodHandler();
+  testing::Mock::AllowLeak(handler);
+  handler->focus_status_ = true;
+  handler->focus_rect_status_ = true;
+  CefRefPtr<CefBrowser> browser;
+  NWebInputMethodClient::InputInfo inputInfo;
+  bool is_need_reset_listener = true;
+  int32_t enterKeyType = 0;
+  int32_t requestKeyboardReason = 0;
+  EXPECT_CALL(*handler, AttachToSystemIME(is_need_reset_listener, requestKeyboardReason))
+      .WillOnce(testing::Return(true));
+  handler->inputmethod_adapter_ = nullptr;
+  handler->Attach(browser, inputInfo, is_need_reset_listener, enterKeyType, requestKeyboardReason);
+  EXPECT_FALSE(handler->isAttached_);
+}
+
+TEST_F(NWebInputMethodHandlerTest, TestAttach_004) {
+  auto handler = new MockNWebInputMethodHandler();
+  testing::Mock::AllowLeak(handler);
+  CefRefPtr<CefBrowser> browser;
+  NWebInputMethodClient::InputInfo inputInfo;
+  bool is_need_reset_listener = true;
+  int32_t enterKeyType = 0;
+  int32_t requestKeyboardReason = 0;
+  EXPECT_CALL(*handler, AttachToSystemIME(is_need_reset_listener, requestKeyboardReason))
+      .WillOnce(testing::Return(true));
+  handler->focus_status_ = false;
+  handler->focus_rect_status_ = true;
+  handler->inputmethod_adapter_ = std::make_unique<MockIMFAdapterImpl>();
+  handler->Attach(browser, inputInfo, is_need_reset_listener, enterKeyType, requestKeyboardReason);
+  EXPECT_FALSE(handler->isAttached_);
+}
+
+TEST_F(NWebInputMethodHandlerTest, TestAttach_005) {
+  auto handler = new MockNWebInputMethodHandler();
+  testing::Mock::AllowLeak(handler);
+  CefRefPtr<CefBrowser> browser;
+  NWebInputMethodClient::InputInfo inputInfo;
+  bool is_need_reset_listener = true;
+  int32_t enterKeyType = 0;
+  int32_t requestKeyboardReason = 0;
+  EXPECT_CALL(*handler, AttachToSystemIME(is_need_reset_listener, requestKeyboardReason))
+      .WillOnce(testing::Return(true));
+  handler->focus_status_ = true;
+  handler->focus_rect_status_ = false;
+  handler->inputmethod_adapter_ = std::make_unique<MockIMFAdapterImpl>();
+  handler->Attach(browser, inputInfo, is_need_reset_listener, enterKeyType, requestKeyboardReason);
+  EXPECT_FALSE(handler->isAttached_);
 }
 
 TEST_F(NWebInputMethodHandlerTest, AttachToSystemIME) {
@@ -2623,8 +2905,10 @@ TEST_F(NWebInputMethodHandlerTest, AttachToSystemIME) {
 
   result = inputmethod_handler_->AttachToSystemIME(true, 0);
   EXPECT_FALSE(result);
-  EXPECT_TRUE(inputmethod_handler_->isAttachSuccess_);
   EXPECT_TRUE(inputmethod_handler_->fill_content_.empty());
+
+  inputmethod_handler_->isAttachSuccess_ = false;
+  result = inputmethod_handler_->AttachToSystemIME(true, 0);
 }
 
 TEST_F(NWebInputMethodHandlerTest, ComputeEditorInfo) {
@@ -2649,26 +2933,134 @@ TEST_F(NWebInputMethodHandlerTest, ComputeEditorInfo) {
   inputmethod_handler_->ComputeEditorInfo(inputInfo, customEnterKeyType);
   EXPECT_TRUE(inputmethod_handler_->input_is_password_);
 
+  inputInfo.input_type = CEF_TEXT_INPUT_TYPE_TEXT;
+  inputmethod_handler_->ComputeEditorInfo(inputInfo, customEnterKeyType);
+  EXPECT_FALSE(inputmethod_handler_->input_is_password_);
+
   customEnterKeyType = 9;
   inputmethod_handler_->ComputeEditorInfo(inputInfo, customEnterKeyType);
 }
 
-TEST_F(NWebInputMethodHandlerTest, HandleSecurityLayerHandlerOnUI) {
+TEST_F(NWebInputMethodHandlerTest, UpdateTextFieldStatus_001) {
   inputmethod_handler_->browser_ = nullptr;
-  inputmethod_handler_->HandleSecurityLayerHandlerOnUI();
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  EXPECT_CALL(*mockHost, PostTaskToUIThread(testing::_)).Times(0);
+  inputmethod_handler_->UpdateTextFieldStatus(true, true);
+}
 
-  CefRefPtr<CefBrowser> browser = new MockCefBrowser();
-  inputmethod_handler_->browser_ = browser;
+TEST_F(NWebInputMethodHandlerTest, UpdateTextFieldStatus_002) {
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  std::unique_ptr<MockCefBrowser> mock_browser = std::make_unique<MockCefBrowser>(mockHost);
+  testing::Mock::AllowLeak(mock_browser.get());
+  EXPECT_CALL(*mock_browser, GetHost()).WillOnce(testing::Return(mockHost));
+  EXPECT_CALL(*mockHost, PostTaskToUIThread(testing::_)).Times(1);
+  inputmethod_handler_->browser_ = mock_browser.release();
+  inputmethod_handler_->UpdateTextFieldStatus(true, true);
+  EXPECT_NE(inputmethod_handler_->browser_, nullptr);
+}
+
+TEST_F(NWebInputMethodHandlerTest, UpdateTextFieldStatus_003) {
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  std::unique_ptr<MockCefBrowser> mock_browser = std::make_unique<MockCefBrowser>(mockHost);
+  testing::Mock::AllowLeak(mock_browser.get());
+  EXPECT_CALL(*mock_browser, GetHost()).WillOnce(testing::Return(nullptr));
+  inputmethod_handler_->browser_ = mock_browser.release();
+  inputmethod_handler_->UpdateTextFieldStatus(true, true);
+  EXPECT_NE(inputmethod_handler_->browser_, nullptr);
+}
+
+TEST_F(NWebInputMethodHandlerTest, UpdateTextFieldStatusHandlerOnUI_001) {
+  inputmethod_handler_->browser_ = nullptr;
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  EXPECT_CALL(*mockHost, PostTaskToUIThread(testing::_)).Times(0);
+  inputmethod_handler_->UpdateTextFieldStatusHandlerOnUI(true, true);
+}
+
+TEST_F(NWebInputMethodHandlerTest, UpdateTextFieldStatusHandlerOnUI_002) {
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  std::unique_ptr<MockCefBrowser> mock_browser = std::make_unique<MockCefBrowser>(mockHost);
+  testing::Mock::AllowLeak(mock_browser.get());
+  EXPECT_CALL(*mock_browser, GetHost()).WillOnce(testing::Return(mockHost));
+  EXPECT_CALL(*mockHost, PostTaskToUIThread(testing::_)).Times(1);
+  inputmethod_handler_->browser_ = mock_browser.release();
+  inputmethod_handler_->UpdateTextFieldStatusHandlerOnUI(true, true);
+  EXPECT_NE(inputmethod_handler_->browser_, nullptr);
+}
+
+TEST_F(NWebInputMethodHandlerTest, UpdateTextFieldStatusHandlerOnUI_003) {
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  std::unique_ptr<MockCefBrowser> mock_browser = std::make_unique<MockCefBrowser>(mockHost);
+  testing::Mock::AllowLeak(mock_browser.get());
+  EXPECT_CALL(*mock_browser, GetHost()).WillOnce(testing::Return(nullptr));
+  inputmethod_handler_->browser_ = mock_browser.release();
+  inputmethod_handler_->UpdateTextFieldStatusHandlerOnUI(true, true);
+  EXPECT_NE(inputmethod_handler_->browser_, nullptr);
+}
+
+TEST_F(NWebInputMethodHandlerTest, HandleSecurityLayerHandlerOnUI_001) {
+  inputmethod_handler_->browser_ = nullptr;
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  EXPECT_CALL(*mockHost, PostTaskToUIThread(testing::_)).Times(0);
+  inputmethod_handler_->HandleSecurityLayerHandlerOnUI();
+}
+
+TEST_F(NWebInputMethodHandlerTest, HandleSecurityLayerHandlerOnUI_002) {
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  std::unique_ptr<MockCefBrowser> mock_browser = std::make_unique<MockCefBrowser>(mockHost);
+  testing::Mock::AllowLeak(mock_browser.get());
+  EXPECT_CALL(*mock_browser, GetHost()).WillOnce(testing::Return(mockHost));
+  EXPECT_CALL(*mockHost, PostTaskToUIThread(testing::_)).Times(1);
+  inputmethod_handler_->browser_ = mock_browser.release();
   inputmethod_handler_->HandleSecurityLayerHandlerOnUI();
   EXPECT_NE(inputmethod_handler_->browser_, nullptr);
 }
 
-TEST_F(NWebInputMethodHandlerTest, HandleSecurityLayer) {
-  inputmethod_handler_->browser_ = nullptr;
-  inputmethod_handler_->HandleSecurityLayer();
+TEST_F(NWebInputMethodHandlerTest, HandleSecurityLayerHandlerOnUI_003) {
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  std::unique_ptr<MockCefBrowser> mock_browser = std::make_unique<MockCefBrowser>(mockHost);
+  testing::Mock::AllowLeak(mock_browser.get());
+  EXPECT_CALL(*mock_browser, GetHost()).WillOnce(testing::Return(nullptr));
+  inputmethod_handler_->browser_ = mock_browser.release();
+  inputmethod_handler_->HandleSecurityLayerHandlerOnUI();
+  EXPECT_NE(inputmethod_handler_->browser_, nullptr);
+}
 
-  CefRefPtr<CefBrowser> browser = new MockCefBrowser();
-  inputmethod_handler_->browser_ = browser;
+TEST_F(NWebInputMethodHandlerTest, HandleSecurityLayer_001) {
+  inputmethod_handler_->browser_ = nullptr;
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  EXPECT_CALL(*mockHost, PostTaskToUIThread(testing::_)).Times(0);
+  inputmethod_handler_->HandleSecurityLayer();
+}
+
+TEST_F(NWebInputMethodHandlerTest, HandleSecurityLayer_002) {
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  std::unique_ptr<MockCefBrowser> mock_browser = std::make_unique<MockCefBrowser>(mockHost);
+  testing::Mock::AllowLeak(mock_browser.get());
+  EXPECT_CALL(*mock_browser, GetHost()).WillOnce(testing::Return(mockHost));
+  EXPECT_CALL(*mockHost, PostTaskToUIThread(testing::_)).Times(1);
+  inputmethod_handler_->browser_ = mock_browser.release();
+  inputmethod_handler_->HandleSecurityLayer();
+  EXPECT_NE(inputmethod_handler_->browser_, nullptr);
+}
+
+TEST_F(NWebInputMethodHandlerTest, HandleSecurityLayer_003) {
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  std::unique_ptr<MockCefBrowser> mock_browser = std::make_unique<MockCefBrowser>(mockHost);
+  testing::Mock::AllowLeak(mock_browser.get());
+  EXPECT_CALL(*mock_browser, GetHost()).WillOnce(testing::Return(nullptr));
+  inputmethod_handler_->browser_ = mock_browser.release();
   inputmethod_handler_->HandleSecurityLayer();
   EXPECT_NE(inputmethod_handler_->browser_, nullptr);
 }
@@ -2688,8 +3080,12 @@ TEST_F(NWebInputMethodHandlerTest, TextInputActionToIMFAdapter) {
 
   inputmethod_handler_->type_text_flag_multi_line_ = false;
   inputInfo.input_flags = CEF_TEXT_INPUT_FLAG_HAVE_NEXT_FOCUSABLE_ELEMENT;
+  auto& sys_info_utils_mock = base::ohos::SysInfoUtilsMock::GetInstance();
+  EXPECT_CALL(sys_info_utils_mock, IsPcDevice()).WillOnce(testing::Return(false));
   result = inputmethod_handler_->TextInputActionToIMFAdapter(inputInfo);
-  EXPECT_EQ(result, IMFAdapterEnterKeyType::NEXT);
+  EXPECT_CALL(sys_info_utils_mock, IsPcDevice()).WillOnce(testing::Return(true));
+  result = inputmethod_handler_->TextInputActionToIMFAdapter(inputInfo);
+  EXPECT_EQ(result, IMFAdapterEnterKeyType::GO);
 
   inputInfo.input_flags = CEF_TEXT_INPUT_FLAG_VERTICAL;
   result = inputmethod_handler_->TextInputActionToIMFAdapter(inputInfo);
@@ -2722,6 +3118,7 @@ TEST_F(NWebInputMethodHandlerTest, TextInputActionToIMFAdapter) {
   inputInfo.input_action = CEF_TEXT_INPUT_ACTION_SEND;
   result = inputmethod_handler_->TextInputActionToIMFAdapter(inputInfo);
   EXPECT_EQ(result, IMFAdapterEnterKeyType::SEND);
+  base::ohos::SysInfoUtilsMock::mockIsPcDevice = false;
 }
 
 TEST_F(NWebInputMethodHandlerTest, TextInputTypeToIMFAdapter) {
@@ -2849,15 +3246,25 @@ TEST_F(NWebInputMethodHandlerTest, TestSendKeyboardStatusHide) {
   listener_->SendKeyboardStatus(status);
 }
 
+TEST_F(NWebInputMethodHandlerTest, TestSendKeyboardStatusNone) {
+  const IMFAdapterKeyboardStatus status = IMFAdapterKeyboardStatus::NONE;
+  EXPECT_CALL(*handler_, SetIMEStatus(false));
+  listener_->SendKeyboardStatus(status);
+}
+
 TEST_F(NWebInputMethodHandlerTest, TestSendFunctionKeyEnter) {
   std::shared_ptr<MockIMFAdapterFunctionKeyAdapter>
-	functionKey = std::make_shared<MockIMFAdapterFunctionKeyAdapter>();
+	  functionKey = std::make_shared<MockIMFAdapterFunctionKeyAdapter>();
+  handler_ = nullptr;
+  listener_ = std::make_unique<OnTextChangedListenerImpl>(handler_);
   const IMFAdapterEnterKeyType enterKeyType = IMFAdapterEnterKeyType::NONE;
-  EXPECT_CALL(*handler_, SendEnterKeyEvent(static_cast<int32_t>(enterKeyType)));
   listener_->SendFunctionKey(functionKey);
   functionKey  = nullptr;
   listener_->SendFunctionKey(functionKey);
-  handler_ = nullptr;
+  handler_ = new MockNWebInputMethodHandler();
+  testing::Mock::AllowLeak(handler_);
+  listener_ = std::make_unique<OnTextChangedListenerImpl>(handler_);
+  EXPECT_CALL(*handler_, SendEnterKeyEvent(static_cast<int32_t>(enterKeyType)));
   listener_->SendFunctionKey(functionKey);
   functionKey = std::make_shared<MockIMFAdapterFunctionKeyAdapter>();
   listener_->SendFunctionKey(functionKey);
@@ -2888,4 +3295,130 @@ TEST_F(NWebInputMethodHandlerTest, TestMoveCursorNone) {
   std::string content = "test";
   listener_->AutoFillWithIMFEvent(true, true, true, content);
 }
+
+TEST_F(NWebInputMethodHandlerTest, NeedKeyboardShow) {
+  inputmethod_handler_->show_keyboard_ = false;
+  inputmethod_handler_->isManualCloseKeyboard_ = false;
+  inputmethod_handler_->cef_text_input_mode_ = CEF_TEXT_INPUT_MODE_NONE;
+  auto result = inputmethod_handler_->NeedKeyboardShow();
+  EXPECT_FALSE(result);
+
+  inputmethod_handler_->show_keyboard_ = true;
+  inputmethod_handler_->isManualCloseKeyboard_ = false;
+  inputmethod_handler_->cef_text_input_mode_ = CEF_TEXT_INPUT_MODE_DEFAULT;
+  result = inputmethod_handler_->NeedKeyboardShow();
+  EXPECT_TRUE(result);
+
+  inputmethod_handler_->show_keyboard_ = true;
+  inputmethod_handler_->isManualCloseKeyboard_ = true;
+  inputmethod_handler_->cef_text_input_mode_ = CEF_TEXT_INPUT_MODE_NONE;
+  result = inputmethod_handler_->NeedKeyboardShow();
+  EXPECT_FALSE(result);
+
+  inputmethod_handler_->show_keyboard_ = true;
+  inputmethod_handler_->isManualCloseKeyboard_ = false;
+  inputmethod_handler_->cef_text_input_mode_ = CEF_TEXT_INPUT_MODE_NONE;
+  result = inputmethod_handler_->NeedKeyboardShow();
+  EXPECT_FALSE(result);
+}
+
+TEST_F(NWebInputMethodHandlerTest, IsKeyboardShow) {
+  inputmethod_handler_->show_keyboard_ = true;
+  inputmethod_handler_->isManualCloseKeyboard_ = false;
+  inputmethod_handler_->cef_text_input_mode_ = CEF_TEXT_INPUT_MODE_DEFAULT;
+  inputmethod_handler_->isAttachSuccess_ = false;
+  auto result = inputmethod_handler_->IsKeyboardShow();
+  EXPECT_FALSE(result);
+
+  inputmethod_handler_->show_keyboard_ = true;
+  inputmethod_handler_->isManualCloseKeyboard_ = false;
+  inputmethod_handler_->cef_text_input_mode_ = CEF_TEXT_INPUT_MODE_DEFAULT;
+  inputmethod_handler_->isAttachSuccess_ = true;
+  result = inputmethod_handler_->IsKeyboardShow();
+  EXPECT_TRUE(result);
+
+  inputmethod_handler_->show_keyboard_ = false;
+  inputmethod_handler_->isManualCloseKeyboard_ = true;
+  inputmethod_handler_->cef_text_input_mode_ = CEF_TEXT_INPUT_MODE_NONE;
+  inputmethod_handler_->isAttachSuccess_ = false;
+  result = inputmethod_handler_->IsKeyboardShow();
+  EXPECT_FALSE(result);
+
+  inputmethod_handler_->show_keyboard_ = false;
+  inputmethod_handler_->isManualCloseKeyboard_ = false;
+  inputmethod_handler_->cef_text_input_mode_ = CEF_TEXT_INPUT_MODE_NONE;
+  inputmethod_handler_->isAttachSuccess_ = true;
+  result = inputmethod_handler_->IsKeyboardShow();
+  EXPECT_FALSE(result);
+}
+
+TEST_F(NWebInputMethodHandlerTest, HandleExtendAction) {
+  int32_t action = 0;
+  inputmethod_handler_->browser_ = nullptr;
+  listener_->HandleExtendAction(action);
+  inputmethod_handler_->HandleExtendAction(action);
+  inputmethod_handler_->HandleExtendActionOnUI(action);
+  EXPECT_EQ(inputmethod_handler_->browser_, nullptr);
+
+  auto mock_host = std::make_shared<MockCefBrowserHost>();
+  auto mock_browser = std::make_shared<MockCefBrowser>(mock_host.get());
+  ASSERT_NE(mock_host, nullptr);
+  ASSERT_NE(mock_browser, nullptr);
+  inputmethod_handler_->browser_ =
+      CefRefPtr<MockCefBrowser>(mock_browser.get());
+
+  EXPECT_CALL(*mock_browser, GetHost).WillOnce(testing::Return(nullptr));
+  inputmethod_handler_->HandleExtendAction(action);
+  EXPECT_CALL(*mock_browser, GetHost).WillOnce(testing::Return(nullptr));
+  inputmethod_handler_->HandleExtendActionOnUI(action);
+
+  CefRefPtr<ArkWebBrowserHostExt> arkweb_host(mock_host.get());
+  EXPECT_CALL(*mock_browser, GetHost).WillRepeatedly(testing::Invoke([&]() {
+    return arkweb_host;
+  }));
+  inputmethod_handler_->HandleExtendAction(action);
+  inputmethod_handler_->HandleExtendActionOnUI(action);
+  EXPECT_NE(inputmethod_handler_->browser_, nullptr);
+}
+
+TEST_F(NWebInputMethodHandlerTest, TestSetPreviewText_001) {
+  auto handler = new MockNWebInputMethodHandler();
+  testing::Mock::AllowLeak(handler);
+  std::u16string text = u"test";
+  int32_t start = 0;
+  int32_t end = 4;
+  handler->composition_type_ = COMPOSITION_CANCEL;
+  EXPECT_CALL(*handler, UpdateCompositionInfo(
+	testing::_, testing::_, testing::_)).WillOnce(testing::Return(inputmethod_handler_->OK));
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  std::unique_ptr<MockCefBrowser> mock_browser = std::make_unique<MockCefBrowser>(mockHost);
+  testing::Mock::AllowLeak(mock_browser.get());
+  EXPECT_CALL(*mock_browser, GetHost()).WillOnce(testing::Return(mockHost));
+  EXPECT_CALL(*mockHost, PostTaskToUIThread(testing::_)).Times(1);
+  handler->browser_ = mock_browser.release();
+  int32_t result = handler->SetPreviewText(text, start, end);
+  EXPECT_EQ(result, inputmethod_handler_->ERROR);
+}
+
+TEST_F(NWebInputMethodHandlerTest, TestSetPreviewText_002) {
+  auto handler = new MockNWebInputMethodHandler();
+  testing::Mock::AllowLeak(handler);
+  std::u16string text = u"test";
+  int32_t start = 0;
+  int32_t end = 4;
+  handler->composition_type_ = COMPOSITION_CANCEL;
+  EXPECT_CALL(*handler, UpdateCompositionInfo(
+	testing::_, testing::_, testing::_)).WillOnce(testing::Return(inputmethod_handler_->ERROR));
+  CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
+  testing::Mock::AllowLeak(mockHost.get());
+  std::unique_ptr<MockCefBrowser> mock_browser = std::make_unique<MockCefBrowser>(mockHost);
+  testing::Mock::AllowLeak(mock_browser.get());
+  EXPECT_CALL(*mock_browser, GetHost()).WillOnce(testing::Return(mockHost));
+  EXPECT_CALL(*mockHost, PostTaskToUIThread(testing::_)).Times(1);
+  handler->browser_ = mock_browser.release();
+  int32_t result = handler->SetPreviewText(text, start, end);
+  EXPECT_EQ(result, inputmethod_handler_->ERROR);
+}
+
 }  // namespace OHOS::NWeb

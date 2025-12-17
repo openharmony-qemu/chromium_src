@@ -135,6 +135,8 @@
 
 namespace {
 
+const size_t kDelayRetryThreshold = 10;
+
 // These values are persisted to logs. Entries should not be renumbered and
 // numeric values should never be reused.
 enum class TpcdHeaderStatus {
@@ -1902,6 +1904,21 @@ void URLRequestHttpJob::ContinueDespiteLastError() {
 
   DCHECK(!response_info_) << "should not have a response yet";
   DCHECK(!override_response_headers_);
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  restarted_++;
+  if (restarted_ > kDelayRetryThreshold && ssl_error_) {
+    base::SingleThreadTaskRunner::GetCurrentDefault()->PostDelayedTask(
+      FROM_HERE, base::BindOnce(&URLRequestHttpJob::ContinueDespiteLastErrorInternal,
+                                weak_factory_.GetWeakPtr()), base::Milliseconds(100));
+    ssl_error_ = false;
+    return;
+  }
+  ContinueDespiteLastErrorInternal();
+}
+
+void URLRequestHttpJob::ContinueDespiteLastErrorInternal() {
+#endif
   receive_headers_end_ = base::TimeTicks();
 
   ResetTimer();
@@ -2050,7 +2067,12 @@ void URLRequestHttpJob::RecordTimer() {
 }
 
 void URLRequestHttpJob::ResetTimer() {
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  if (state_ != RetryState::DOH_FALLBACK &&
+    !request_creation_time_.is_null()) {
+#else
   if (!request_creation_time_.is_null()) {
+#endif
     NOTREACHED() << "The timer was reset before it was recorded.";
   }
   request_creation_time_ = base::Time::Now();

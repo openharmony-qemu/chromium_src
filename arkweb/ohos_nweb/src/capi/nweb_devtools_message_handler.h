@@ -81,6 +81,11 @@ struct NWebDevtoolsMessageHandlerBase {
       const char* message,
       const char* path,
       NWebBoolValueCallbackNativeApi* callback) = nullptr;
+  bool (T::*set_inspected_page_bounds)(int left,
+                                       int top,
+                                       int width,
+                                       int height) = nullptr;
+  bool (T::*set_dock_mode)(int mode) = nullptr;
 
   NWebDevtoolsMessageHandlerBase() = default;
   NWebDevtoolsMessageHandlerBase(const NWebDevtoolsMessageHandlerBase& other) =
@@ -108,6 +113,9 @@ struct NWebDevtoolsMessageHandler
     this->show_file_chooser_native_api =
         &NWebDevtoolsMessageHandler::ShowFileChooser;
     this->show_info_bar_native_api = &NWebDevtoolsMessageHandler::ShowInfoBar;
+    this->set_inspected_page_bounds =
+        &NWebDevtoolsMessageHandler::SetInspectedPageBounds;
+    this->set_dock_mode = &NWebDevtoolsMessageHandler::SetDockMode;
   }
   virtual ~NWebDevtoolsMessageHandler() = default;
 
@@ -133,6 +141,11 @@ struct NWebDevtoolsMessageHandler
   virtual void ShowInfoBar(const char* message,
                            const char* path,
                            NWebBoolValueCallbackNativeApi* callback) {}
+  virtual bool SetInspectedPageBounds(int left,
+                                      int top,
+                                      int width,
+                                      int height) { return false; }
+  virtual bool SetDockMode(int mode) { return false; }
 
  private:
   static_assert(offsetof(Base, struct_size) == 0,
@@ -162,6 +175,14 @@ struct NWebDevtoolsMessageHandler
                  offsetof(Base, show_file_chooser_native_api)) ==
                     sizeof(Base::show_file_chooser_native_api),
                 "Must NOT break the order of Base members.");
+  static_assert((offsetof(Base, set_inspected_page_bounds) -
+                 offsetof(Base, show_info_bar_native_api)) ==
+                    sizeof(Base::show_info_bar_native_api),
+                "Must NOT break the order of Base members.");
+  static_assert((offsetof(Base, set_dock_mode) -
+                 offsetof(Base, set_inspected_page_bounds)) ==
+                    sizeof(Base::set_inspected_page_bounds),
+                "Must NOT break the order of Base members.");
 };
 
 struct InspectPoint {
@@ -174,6 +195,10 @@ struct OpenDevToolsParam final {
   std::unique_ptr<NWebDevtoolsMessageHandler> handler;
   InspectPoint point;
   NWebDevtoolsMessageHandler* handlerNativeApi = nullptr;
+};
+
+struct OpenDevToolsExtOpt final {
+    bool canDock = false;
 };
 
 #endif  // OHOS_NWEB_SRC_CAPI_NWEB_DEVTOOLS_MESSAGE_HANDLER_H_

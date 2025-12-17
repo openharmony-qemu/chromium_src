@@ -29,6 +29,7 @@
 #include <multimedia/player_framework/native_avcapability.h>
 #include <native_buffer/native_buffer.h>
 #include <multimedia/player_framework/native_cencinfo.h>
+#include "arkweb/ohos_adapter_ndk/mock_ndk_api/include/mock_codec_decoder_adapter.h"
 
 using namespace testing;
 using namespace std;
@@ -170,7 +171,6 @@ void MediaCodecDecoderAdapterImplTest::SetCencInfoAboutClearHeaderAndPayLoadLens
  * @tc.name: MediaCodecDecoderAdapterImpl_CreateVideoDecoderByName_001.
  * @tc.desc: test of MediaCodecDecoderAdapterImpl::CreateVideoDecoderByName() CreateVideoDecoderByName()
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_CreateVideoDecoderByName_001)
 {
@@ -193,7 +193,6 @@ TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_CreateVide
  * @tc.name: MediaCodecDecoderAdapterImpl_InvalidValueTest_002.
  * @tc.desc: test of InvalidValueScene in MediaCodecDecoderAdapterImpl
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_InvalidValueTest_002)
 {
@@ -214,7 +213,7 @@ TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_InvalidVal
     EXPECT_EQ(mediaCodecDecoderAdapterImpl_->ReleaseDecoder(), DecoderAdapterCode::DECODER_ERROR);
     std::shared_ptr<DecoderCallbackAdapter> callback = std::make_shared<DecoderCallbackAdapterMock>();
     EXPECT_EQ(mediaCodecDecoderAdapterImpl_->SetCallbackDec(callback), DecoderAdapterCode::DECODER_ERROR);
-    EXPECT_EQ(mediaCodecDecoderAdapterImpl_->SetDecryptionConfig(nullptr, false), DecoderAdapterCode::DECODER_OK);
+    EXPECT_EQ(mediaCodecDecoderAdapterImpl_->SetDecryptionConfig(nullptr, false), DecoderAdapterCode::DECODER_ERROR);
     EXPECT_EQ(mediaCodecDecoderAdapterImpl_->SetAVCencInfo(0, nullptr), DecoderAdapterCode::DECODER_ERROR);
 
     // create decoder and test function in error case
@@ -237,7 +236,6 @@ TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_InvalidVal
  * @tc.name: MediaCodecDecoderAdapterImpl_NormalTest_003.
  * @tc.desc: test of NormalScene in MediaCodecDecoderAdapterImpl
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_NormalTest_003)
 {
@@ -274,7 +272,6 @@ TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_NormalTest
  * @tc.name: MediaCodecDecoderAdapterImpl_SetCallbackDec_004.
  * @tc.desc: test of MediaCodecDecoderAdapterImpl::SetCallbackDec
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_SetCallbackDec_004)
 {
@@ -293,7 +290,6 @@ TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_SetCallbac
  * @tc.name: MediaCodecDecoderAdapterImpl_GetTypeOrFlag_005.
  * @tc.desc: test of MediaCodecDecoderAdapterImpl::GetBufferFlag() GetAVBufferFlag()
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_GetTypeOrFlag_005)
 {
@@ -318,7 +314,6 @@ TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_GetTypeOrF
  * @tc.desc: test of MediaCodecDecoderAdapterImpl::OnError() OnOutputFormatChanged() OnInputBufferAvailable()
  * OnOutputBufferAvailable()
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_OnError_006)
 {
@@ -359,7 +354,6 @@ TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_OnError_00
  * @tc.desc: test of MediaCodecDecoderAdapterImpl::SetAVCencInfo()
  * OnOutputBufferAvailable()
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_SetAVCencInfo_007)
 {
@@ -393,6 +387,372 @@ TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_SetAVCencI
     EXPECT_EQ(mediaCodecDecoderAdapterImpl_->SetAVCencInfo(0, cencInfo), DecoderAdapterCode::DECODER_ERROR);
     OH_AVBuffer_Destroy(buffer);
     buffer = nullptr;
+}
+
+TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_CreateVideoDecoderByMime_008)
+{
+    OhosInterfaceMock::createByMime = true;
+    const std::string validMimetype = "video/avc";
+    EXPECT_CALL(OhosInterfaceMock::GetInstance(), OH_VideoDecoder_CreateByMime(testing::_))
+        .WillOnce(testing::Return(nullptr));
+    DecoderAdapterCode ret = mediaCodecDecoderAdapterImpl_->CreateVideoDecoderByMime(validMimetype);
+    OhosInterfaceMock::createByMime = false;
+    EXPECT_EQ(ret, DecoderAdapterCode::DECODER_ERROR);
+}
+
+TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_CreateVideoDecoderByMime_009)
+{
+    const std::string validMimetype = "video/avc";
+    mediaCodecDecoderAdapterImpl_->isSecure_ = true;
+    DecoderAdapterCode ret = mediaCodecDecoderAdapterImpl_->CreateVideoDecoderByMime(validMimetype);
+    EXPECT_EQ(ret, DecoderAdapterCode::DECODER_ERROR);
+}
+
+TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_CreateVideoDecoderByName_010)
+{
+    const std::string validMimetype = "video/avc";
+    mediaCodecDecoderAdapterImpl_->isSecure_ = true;
+    OhosInterfaceMock::createByName = true;
+    OhosInterfaceMock::category = true;
+    OhosInterfaceMock::getName = true;
+    const char *name = "video/avc";
+    OH_AVCapability *getCategory = reinterpret_cast<OH_AVCapability *>(0x12345678);
+    EXPECT_CALL(OhosInterfaceMock::GetInstance(), OH_AVCodec_GetCapabilityByCategory(testing::_, testing::_,
+        testing::_)).WillRepeatedly(testing::Return(getCategory));
+    EXPECT_CALL(OhosInterfaceMock::GetInstance(), OH_AVCapability_GetName(testing::_))
+        .WillRepeatedly(testing::Return(name));
+    EXPECT_CALL(OhosInterfaceMock::GetInstance(), OH_VideoDecoder_CreateByName(testing::_))
+        .WillRepeatedly(testing::Return(nullptr));
+
+    DecoderAdapterCode ret = mediaCodecDecoderAdapterImpl_->CreateVideoDecoderByName(validMimetype);
+    EXPECT_EQ(mediaCodecDecoderAdapterImpl_->ReleaseDecoder(), DecoderAdapterCode::DECODER_ERROR);
+    EXPECT_EQ(ret, DecoderAdapterCode::DECODER_ERROR);
+    OhosInterfaceMock::createByName = false;
+    OhosInterfaceMock::category = false;
+    OhosInterfaceMock::getName = false;
+}
+
+TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_CreateVideoDecoderByMime_011)
+{
+    const std::string validMimetype = "video/avc";
+    OhosInterfaceMock::destroy = true;
+    EXPECT_CALL(OhosInterfaceMock::GetInstance(), OH_VideoDecoder_Destroy(testing::_))
+        .WillOnce(testing::Return(OH_AVErrCode::AV_ERR_NO_MEMORY));
+    DecoderAdapterCode ret = mediaCodecDecoderAdapterImpl_->CreateVideoDecoderByMime(validMimetype);
+    EXPECT_EQ(ret, DecoderAdapterCode::DECODER_OK);
+}
+
+TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_CreateVideoDecoderByName_012)
+{
+    OhosInterfaceMock::createByName = true;
+    const std::string validMimetype = "video/avc";
+    OH_AVCodec *mockCreateByName = reinterpret_cast<OH_AVCodec *>(0x12345678);
+    EXPECT_CALL(OhosInterfaceMock::GetInstance(), OH_VideoDecoder_CreateByName(testing::_))
+        .WillOnce(testing::Return(nullptr))
+        .WillOnce(testing::Return(mockCreateByName));
+    EXPECT_CALL(OhosInterfaceMock::GetInstance(), OH_VideoDecoder_Destroy(testing::_))
+        .WillOnce(testing::Return(OH_AVErrCode::AV_ERR_NO_MEMORY));
+
+    DecoderAdapterCode ret = mediaCodecDecoderAdapterImpl_->CreateVideoDecoderByName(validMimetype);
+    OhosInterfaceMock::createByName = false;
+    EXPECT_EQ(ret, DecoderAdapterCode::DECODER_OK);
+}
+
+TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_ConfigureDecoder_013)
+{
+    OhosInterfaceMock::destroy = false;
+    OhosInterfaceMock::formatCreate = true;
+    const std::string validMimetype = "video/avc";
+    EXPECT_CALL(OhosInterfaceMock::GetInstance(), OH_AVFormat_Create())
+        .WillOnce(testing::Return(nullptr))
+        .WillOnce(testing::Return(nullptr));
+    DecoderAdapterCode ret = mediaCodecDecoderAdapterImpl_->CreateVideoDecoderByMime(validMimetype);
+    EXPECT_EQ(ret, DecoderAdapterCode::DECODER_OK);
+    EXPECT_EQ(mediaCodecDecoderAdapterImpl_->ConfigureDecoder(format_), DecoderAdapterCode::DECODER_ERROR);
+    EXPECT_EQ(mediaCodecDecoderAdapterImpl_->SetParameterDecoder(format_), DecoderAdapterCode::DECODER_ERROR);
+    OhosInterfaceMock::formatCreate = false;
+}
+
+TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_ConfigureDecoder_014)
+{
+    OhosInterfaceMock::configure = true;
+    const std::string validMimetype = "video/avc";
+    EXPECT_CALL(OhosInterfaceMock::GetInstance(), OH_VideoDecoder_Configure(testing::_, testing::_))
+        .WillOnce(testing::Return(OH_AVErrCode::AV_ERR_NO_MEMORY));
+    DecoderAdapterCode ret = mediaCodecDecoderAdapterImpl_->CreateVideoDecoderByMime(validMimetype);
+    EXPECT_EQ(ret, DecoderAdapterCode::DECODER_OK);
+    EXPECT_EQ(mediaCodecDecoderAdapterImpl_->ConfigureDecoder(format_), DecoderAdapterCode::DECODER_ERROR);
+    OhosInterfaceMock::configure = false;
+}
+
+TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_SetOutputSurface_015)
+{
+    OhosInterfaceMock::setSurface = true;
+    OhosInterfaceMock::nativeWindowHandleOpt = true;
+    const std::string validMimetype = "video/avc";
+    void *invalidWindow = reinterpret_cast<void *>(0x12345678);
+    DecoderAdapterCode ret = mediaCodecDecoderAdapterImpl_->CreateVideoDecoderByMime(validMimetype);
+    EXPECT_EQ(ret, DecoderAdapterCode::DECODER_OK);
+
+    mediaCodecDecoderAdapterImpl_->isHardwareDecode_ = true;
+    EXPECT_CALL(OhosInterfaceMock::GetInstance(), OH_VideoDecoder_SetSurface(testing::_, testing::_))
+        .WillOnce(testing::Return(OH_AVErrCode::AV_ERR_NO_MEMORY));
+    EXPECT_CALL(OhosInterfaceMock::GetInstance(), OH_NativeWindow_NativeWindowHandleOpt(testing::_, testing::_,
+        testing::_)).WillOnce(testing::Return(0));
+    EXPECT_EQ(mediaCodecDecoderAdapterImpl_->SetOutputSurface(invalidWindow), DecoderAdapterCode::DECODER_ERROR);
+    OhosInterfaceMock::nativeWindowHandleOpt = false;
+    OhosInterfaceMock::setSurface = false;
+}
+
+TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_SetOutputSurface_016)
+{
+    OhosInterfaceMock::setSurface = true;
+    OhosInterfaceMock::nativeWindowHandleOpt = true;
+    OhosInterfaceMock::prepare = true;
+    const std::string validMimetype = "video/avc";
+    void *invalidWindow = reinterpret_cast<void *>(0x12345678);
+    DecoderAdapterCode ret = mediaCodecDecoderAdapterImpl_->CreateVideoDecoderByMime(validMimetype);
+    EXPECT_EQ(ret, DecoderAdapterCode::DECODER_OK);
+
+    mediaCodecDecoderAdapterImpl_->isHardwareDecode_ = true;
+    EXPECT_CALL(OhosInterfaceMock::GetInstance(), OH_VideoDecoder_SetSurface(testing::_, testing::_))
+        .WillOnce(testing::Return(OH_AVErrCode::AV_ERR_OK));
+    EXPECT_CALL(OhosInterfaceMock::GetInstance(), OH_NativeWindow_NativeWindowHandleOpt(testing::_, testing::_,
+        testing::_)).WillOnce(testing::Return(0));
+    EXPECT_CALL(OhosInterfaceMock::GetInstance(), OH_VideoDecoder_Prepare(testing::_))
+        .WillOnce(testing::Return(OH_AVErrCode::AV_ERR_NO_MEMORY));
+    EXPECT_EQ(mediaCodecDecoderAdapterImpl_->SetOutputSurface(invalidWindow), DecoderAdapterCode::DECODER_OK);
+    EXPECT_EQ(mediaCodecDecoderAdapterImpl_->PrepareDecoder(), DecoderAdapterCode::DECODER_ERROR);
+    OhosInterfaceMock::setSurface = false;
+    OhosInterfaceMock::nativeWindowHandleOpt = false;
+    OhosInterfaceMock::prepare = false;
+}
+
+TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_StartDecoder_017)
+{
+    OhosInterfaceMock::start = true;
+    OhosInterfaceMock::stop = true;
+    OhosInterfaceMock::flush = true;
+    OhosInterfaceMock::reset = true;
+    const std::string validMimetype = "video/avc";
+    DecoderAdapterCode ret = mediaCodecDecoderAdapterImpl_->CreateVideoDecoderByMime(validMimetype);
+    EXPECT_EQ(ret, DecoderAdapterCode::DECODER_OK);
+
+    EXPECT_CALL(OhosInterfaceMock::GetInstance(), OH_VideoDecoder_Start(testing::_))
+        .WillOnce(testing::Return(OH_AVErrCode::AV_ERR_NO_MEMORY));
+    EXPECT_CALL(OhosInterfaceMock::GetInstance(), OH_VideoDecoder_Stop(testing::_))
+        .WillOnce(testing::Return(OH_AVErrCode::AV_ERR_NO_MEMORY));
+    EXPECT_CALL(OhosInterfaceMock::GetInstance(), OH_VideoDecoder_Flush(testing::_))
+        .WillOnce(testing::Return(OH_AVErrCode::AV_ERR_NO_MEMORY));
+    EXPECT_CALL(OhosInterfaceMock::GetInstance(), OH_VideoDecoder_Reset(testing::_))
+        .WillOnce(testing::Return(OH_AVErrCode::AV_ERR_NO_MEMORY));
+    EXPECT_EQ(mediaCodecDecoderAdapterImpl_->StartDecoder(), DecoderAdapterCode::DECODER_ERROR);
+    EXPECT_EQ(mediaCodecDecoderAdapterImpl_->StopDecoder(), DecoderAdapterCode::DECODER_ERROR);
+    EXPECT_EQ(mediaCodecDecoderAdapterImpl_->FlushDecoder(), DecoderAdapterCode::DECODER_ERROR);
+    EXPECT_EQ(mediaCodecDecoderAdapterImpl_->ResetDecoder(), DecoderAdapterCode::DECODER_ERROR);
+    OhosInterfaceMock::start = false;
+    OhosInterfaceMock::stop = false;
+    OhosInterfaceMock::flush = false;
+    OhosInterfaceMock::reset = false;
+}
+
+TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_QueueInputBufferDec_018)
+{
+    OhosInterfaceMock::setBufferAttr = true;
+    uint32_t index_ = 0;
+    const std::string validMimetype = "video/avc";
+    DecoderAdapterCode ret = mediaCodecDecoderAdapterImpl_->CreateVideoDecoderByMime(validMimetype);
+    EXPECT_EQ(ret, DecoderAdapterCode::DECODER_OK);
+
+    std::shared_ptr<DecoderCallbackAdapter> callback = std::make_shared<DecoderCallbackAdapterMock>();
+    EXPECT_EQ(mediaCodecDecoderAdapterImpl_->SetCallbackDec(callback), DecoderAdapterCode::DECODER_OK);
+    EXPECT_CALL(OhosInterfaceMock::GetInstance(), OH_AVBuffer_SetBufferAttr(testing::_, testing::_))
+        .WillOnce(testing::Return(OH_AVErrCode::AV_ERR_NO_MEMORY));
+    constexpr int32_t MEMSIZE = 1024 * 1024;
+    OH_AVBuffer *buffer = OH_AVBuffer_Create(MEMSIZE);
+    mediaCodecDecoderAdapterImpl_->OnInputBufferAvailable(index_, buffer);
+    EXPECT_EQ(mediaCodecDecoderAdapterImpl_->QueueInputBufferDec(index_, 0, 0, 0, BufferFlag::CODEC_BUFFER_FLAG_NONE),
+        DecoderAdapterCode::DECODER_ERROR);
+    OH_AVBuffer_Destroy(buffer);
+    buffer = nullptr;
+    OhosInterfaceMock::setBufferAttr = false;
+}
+
+TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_QueueInputBufferDec_019)
+{
+    OhosInterfaceMock::getOutputDescription = true;
+    OhosInterfaceMock::renderOutputBuffer = true;
+    OhosInterfaceMock::inputBuffer = true;
+    OhosInterfaceMock::getBufferAttr = true;
+    uint32_t index_ = 0;
+    const std::string validMimetype = "video/avc";
+    DecoderAdapterCode ret = mediaCodecDecoderAdapterImpl_->CreateVideoDecoderByMime(validMimetype);
+    EXPECT_EQ(ret, DecoderAdapterCode::DECODER_OK);
+
+    std::shared_ptr<DecoderCallbackAdapter> callback = std::make_shared<DecoderCallbackAdapterMock>();
+    constexpr int32_t MEMSIZE = 1024 * 1024;
+    EXPECT_EQ(mediaCodecDecoderAdapterImpl_->SetCallbackDec(callback), DecoderAdapterCode::DECODER_OK);
+    EXPECT_CALL(OhosInterfaceMock::GetInstance(), OH_VideoDecoder_PushInputBuffer(testing::_, testing::_))
+        .WillOnce(testing::Return(OH_AVErrCode::AV_ERR_OK));
+    EXPECT_CALL(OhosInterfaceMock::GetInstance(), OH_AVBuffer_GetBufferAttr(testing::_, testing::_))
+        .WillOnce(testing::Return(OH_AVErrCode::AV_ERR_NO_MEMORY));
+    OH_AVBuffer* buffer = OH_AVBuffer_Create(MEMSIZE);
+    mediaCodecDecoderAdapterImpl_->OnInputBufferAvailable(index_, buffer);
+    EXPECT_EQ(mediaCodecDecoderAdapterImpl_->QueueInputBufferDec(index_, 0, 0, 0, BufferFlag::CODEC_BUFFER_FLAG_NONE),
+        DecoderAdapterCode::DECODER_OK);
+    ASSERT_NO_FATAL_FAILURE(mediaCodecDecoderAdapterImpl_->OnOutputBufferAvailable(index_, buffer));
+    OH_AVBuffer_Destroy(buffer);
+    buffer = nullptr;
+
+    EXPECT_CALL(OhosInterfaceMock::GetInstance(), OH_VideoDecoder_GetOutputDescription(testing::_))
+        .WillOnce(testing::Return(nullptr));
+    EXPECT_CALL(OhosInterfaceMock::GetInstance(), OH_VideoDecoder_RenderOutputBuffer(testing::_, testing::_))
+        .WillOnce(testing::Return(OH_AVErrCode::AV_ERR_OK));
+    EXPECT_EQ(mediaCodecDecoderAdapterImpl_->GetOutputFormatDec(format_), DecoderAdapterCode::DECODER_ERROR);
+    EXPECT_EQ(mediaCodecDecoderAdapterImpl_->ReleaseOutputBufferDec(index_, true), DecoderAdapterCode::DECODER_OK);
+
+    OhosInterfaceMock::inputBuffer = false;
+    OhosInterfaceMock::getOutputDescription = false;
+    OhosInterfaceMock::renderOutputBuffer = false;
+    OhosInterfaceMock::getBufferAttr = false;
+}
+
+TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_SetCallbackDec_020)
+{
+    OhosInterfaceMock::registerCallback = true;
+    const std::string validMimetype = "video/avc";
+    DecoderAdapterCode ret = mediaCodecDecoderAdapterImpl_->CreateVideoDecoderByMime(validMimetype);
+    EXPECT_EQ(ret, DecoderAdapterCode::DECODER_OK);
+
+    EXPECT_CALL(OhosInterfaceMock::GetInstance(), OH_VideoDecoder_RegisterCallback(testing::_, testing::_,
+        testing::_)).WillOnce(testing::Return(OH_AVErrCode::AV_ERR_NO_MEMORY));
+    std::shared_ptr<DecoderCallbackAdapter> callback = std::make_shared<DecoderCallbackAdapterMock>();
+    EXPECT_EQ(mediaCodecDecoderAdapterImpl_->SetCallbackDec(callback), DecoderAdapterCode::DECODER_ERROR);
+    OhosInterfaceMock::registerCallback = false;
+}
+
+TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_SetAVCencInfoStruct_021)
+{
+    const std::string validMimetype = "video/avc";
+    DecoderAdapterCode ret = mediaCodecDecoderAdapterImpl_->CreateVideoDecoderByMime(validMimetype);
+    EXPECT_EQ(ret, DecoderAdapterCode::DECODER_OK);
+
+    std::shared_ptr<AudioCencInfoAdapter> cencInfo = std::make_shared<AudioCencInfoAdapterImpl>();
+    OH_AVCencInfo *avCencInfo = OH_AVCencInfo_Create();
+    std::vector<uint32_t> clearHeaderLens = {0, 1};
+    cencInfo->SetClearHeaderLens(clearHeaderLens);
+    EXPECT_EQ(mediaCodecDecoderAdapterImpl_->SetAVCencInfoStruct(avCencInfo, cencInfo),
+        DecoderAdapterCode::DECODER_ERROR);
+
+    clearHeaderLens.clear();
+    cencInfo->SetClearHeaderLens(clearHeaderLens);
+    OhosInterfaceMock::setAlgorithm = true;
+    EXPECT_CALL(OhosInterfaceMock::GetInstance(), OH_AVCencInfo_SetAlgorithm(testing::_, testing::_))
+        .WillOnce(testing::Return(OH_AVErrCode::AV_ERR_NO_MEMORY));
+    EXPECT_EQ(mediaCodecDecoderAdapterImpl_->SetAVCencInfoStruct(avCencInfo, cencInfo),
+        DecoderAdapterCode::DECODER_ERROR);
+    OhosInterfaceMock::setAlgorithm = false;
+
+    cencInfo->SetAlgo(0);
+    SetCencInfoAboutKeyIdIvAlgo(cencInfo);
+    OhosInterfaceMock::setSubsampleInfo = true;
+    EXPECT_CALL(OhosInterfaceMock::GetInstance(), OH_AVCencInfo_SetSubsampleInfo(testing::_, testing::_, testing::_,
+                testing::_, testing::_, testing::_)).WillOnce(testing::Return(OH_AVErrCode::AV_ERR_NO_MEMORY));
+    EXPECT_EQ(mediaCodecDecoderAdapterImpl_->SetAVCencInfoStruct(avCencInfo, cencInfo),
+            DecoderAdapterCode::DECODER_ERROR);
+    OhosInterfaceMock::setSubsampleInfo = false;
+
+    OhosInterfaceMock::setMode = true;
+    EXPECT_CALL(OhosInterfaceMock::GetInstance(), OH_AVCencInfo_SetMode(testing::_, testing::_))
+        .WillOnce(testing::Return(OH_AVErrCode::AV_ERR_NO_MEMORY));
+    EXPECT_EQ(mediaCodecDecoderAdapterImpl_->SetAVCencInfoStruct(avCencInfo, cencInfo),
+            DecoderAdapterCode::DECODER_ERROR);
+    OhosInterfaceMock::setMode = false;
+}
+
+TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_SetDecryptionConfig_022)
+{
+    const std::string validMimetype = "video/avc";
+    DecoderAdapterCode ret = mediaCodecDecoderAdapterImpl_->CreateVideoDecoderByMime(validMimetype);
+    EXPECT_EQ(ret, DecoderAdapterCode::DECODER_OK);
+    EXPECT_EQ(mediaCodecDecoderAdapterImpl_->SetDecryptionConfig(nullptr, true), DecoderAdapterCode::DECODER_OK);
+
+    OhosInterfaceMock::setDecryptionConfig = true;
+    void *session = reinterpret_cast<void *>(0x12345678);
+    EXPECT_CALL(OhosInterfaceMock::GetInstance(), OH_VideoDecoder_SetDecryptionConfig(testing::_, testing::_,
+        testing::_)).WillOnce(testing::Return(OH_AVErrCode::AV_ERR_NO_MEMORY))
+        .WillOnce(testing::Return(OH_AVErrCode::AV_ERR_OK));
+    EXPECT_EQ(mediaCodecDecoderAdapterImpl_->SetDecryptionConfig(session, true), DecoderAdapterCode::DECODER_ERROR);
+    EXPECT_EQ(mediaCodecDecoderAdapterImpl_->SetDecryptionConfig(session, true), DecoderAdapterCode::DECODER_OK);
+    OhosInterfaceMock::setDecryptionConfig = false;
+}
+
+TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_SetAVCencInfo_023)
+{
+    const std::string validMimetype = "video/avc";
+    DecoderAdapterCode ret = mediaCodecDecoderAdapterImpl_->CreateVideoDecoderByMime(validMimetype);
+    EXPECT_EQ(ret, DecoderAdapterCode::DECODER_OK);
+    std::shared_ptr<DecoderCallbackAdapter> callback = std::make_shared<DecoderCallbackAdapterMock>();
+    EXPECT_EQ(mediaCodecDecoderAdapterImpl_->SetCallbackDec(callback), DecoderAdapterCode::DECODER_OK);
+
+    std::shared_ptr<AudioCencInfoAdapter> cencInfo = std::make_shared<AudioCencInfoAdapterImpl>();
+    cencInfo->SetAlgo(0);
+    SetCencInfoAboutKeyIdIvAlgo(cencInfo);
+    uint32_t index_ = 0;
+    OhosInterfaceMock::infoCreate = true;
+    EXPECT_CALL(OhosInterfaceMock::GetInstance(), OH_AVCencInfo_Create())
+        .WillOnce(testing::Return(nullptr));
+    EXPECT_EQ(mediaCodecDecoderAdapterImpl_->SetAVCencInfo(index_, cencInfo), DecoderAdapterCode::DECODER_ERROR);
+    OhosInterfaceMock::infoCreate = false;
+
+    constexpr int32_t MEMSIZE = 1024 * 1024;
+    OH_AVBuffer* buffer = OH_AVBuffer_Create(MEMSIZE);
+    mediaCodecDecoderAdapterImpl_->OnInputBufferAvailable(index_, buffer);
+    OhosInterfaceMock::setAVBuffer = true;
+    EXPECT_CALL(OhosInterfaceMock::GetInstance(), OH_AVCencInfo_SetAVBuffer(testing::_, testing::_))
+        .WillOnce(testing::Return(OH_AVErrCode::AV_ERR_NO_MEMORY));
+    EXPECT_EQ(mediaCodecDecoderAdapterImpl_->SetAVCencInfo(index_, cencInfo), DecoderAdapterCode::DECODER_ERROR);
+    OhosInterfaceMock::setAVBuffer = false;
+
+    OhosInterfaceMock::infoDestroy = true;
+    EXPECT_CALL(OhosInterfaceMock::GetInstance(), OH_AVCencInfo_Destroy(testing::_))
+        .WillOnce(testing::Return(OH_AVErrCode::AV_ERR_NO_MEMORY));
+    EXPECT_EQ(mediaCodecDecoderAdapterImpl_->SetAVCencInfo(index_, cencInfo), DecoderAdapterCode::DECODER_ERROR);
+    OhosInterfaceMock::infoDestroy = false;
+    EXPECT_EQ(mediaCodecDecoderAdapterImpl_->SetAVCencInfo(index_, cencInfo), DecoderAdapterCode::DECODER_OK);
+    OH_AVBuffer_Destroy(buffer);
+    buffer = nullptr;
+}
+
+TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_OnError_024)
+{
+    const std::string validMimetype = "video/avc";
+    DecoderAdapterCode ret = mediaCodecDecoderAdapterImpl_->CreateVideoDecoderByMime(validMimetype);
+    EXPECT_EQ(ret, DecoderAdapterCode::DECODER_OK);
+    std::shared_ptr<DecoderCallbackAdapter> callback = std::make_shared<DecoderCallbackAdapterMock>();
+    EXPECT_EQ(mediaCodecDecoderAdapterImpl_->SetCallbackDec(callback), DecoderAdapterCode::DECODER_OK);
+
+    OH_AVCodec *codec = reinterpret_cast<OH_AVCodec *>(0x12345678);
+    OH_AVFormat *codecFormat = OH_AVFormat_Create();
+    constexpr int32_t MEMSIZE = 1024 * 1024;
+    OH_AVBuffer *buffer = OH_AVBuffer_Create(MEMSIZE);
+    std::shared_ptr<VideoDecoderCallbackManager> Impl_ = std::make_unique<VideoDecoderCallbackManager>();
+    Impl_->decoders_[mediaCodecDecoderAdapterImpl_->GetAVDecoder()] = mediaCodecDecoderAdapterImpl_.get();
+    Impl_->OnError(nullptr, 0, 0);
+    Impl_->OnStreamChanged(nullptr, codecFormat, 0);
+    Impl_->OnNeedInputBuffer(nullptr, 0, buffer, 0);
+    Impl_->OnNewOutputBuffer(nullptr, 0, buffer, 0);
+    Impl_->OnError(codec, 0, 0);
+    Impl_->OnStreamChanged(codec, codecFormat, 0);
+    Impl_->OnNeedInputBuffer(codec, 0, buffer, 0);
+    Impl_->OnNewOutputBuffer(codec, 0, buffer, 0);
+    Impl_->OnError(mediaCodecDecoderAdapterImpl_->GetAVDecoder(), 0, 0);
+    Impl_->OnStreamChanged(mediaCodecDecoderAdapterImpl_->GetAVDecoder(), codecFormat, 0);
+    Impl_->OnNewOutputBuffer(mediaCodecDecoderAdapterImpl_->GetAVDecoder(), 0, buffer, 0);
+    Impl_->DeleteVideoDecoder(nullptr);
+    Impl_->AddVideoDecoder(nullptr);
+    Impl_->AddVideoDecoder(mediaCodecDecoderAdapterImpl_.get());
+    EXPECT_TRUE(Impl_->decoders_.size() == 1);
 }
 }
 } // namespace OHOS::NWeb

@@ -21,6 +21,10 @@ if (defined(arkweb_nweb_ex) && arkweb_nweb_ex) {
   import("//arkweb/ohos_nweb_ex/build/features/features.gni")
 }
 
+if (defined(is_arkweb_ext) && is_arkweb_ext) {
+  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
+}
+
 # For feature flags internal to content. See content/public/common:features
 # for feature flags that clients of contents need to know about.
 buildflag_header("buildflags") {
@@ -552,6 +556,10 @@ mojom("mojo_bindings") {
     enabled_features += [ "arkweb_pdf" ]
   }
 
+  if (arkweb_arkweb_extensions) {
+    enabled_features += [ "arkweb_arkweb_extensions" ]
+  }
+
   if (arkweb_renderer_anr_dump) {
     enabled_features += ["arkweb_renderer_anr_dump"]
   }
@@ -569,6 +577,10 @@ mojom("mojo_bindings") {
 
   if (arkweb_multi_window) {
     enabled_features +=[ "arkweb_multi_window" ]
+  }
+
+  if (arkweb_blank_screen_detection) {
+    enabled_features += [ "arkweb_blank_screen_detection" ]
   }
 
   if (arkweb_network_base) {
@@ -589,12 +601,21 @@ mojom("mojo_bindings") {
   if (defined(arkweb_javascript_bridge) && arkweb_javascript_bridge) {
     enabled_features += [ "arkweb_javascript_bridge" ]
   }
+
+  if (defined(arkweb_ext_video_load_optimization) && arkweb_ext_video_load_optimization) {
+    enabled_features += [ "arkweb_ext_video_load_optimization" ]
+  }
+
   if (arkweb_blank_optimize) {
     enabled_features += [ "arkweb_blank_optimize" ]
   }
   if (is_arkweb) {
     enabled_features += [ "arkweb_dfx_tracing" ]
-  }  
+  }
+
+  if (is_arkweb) {
+    enabled_features += [ "arkweb_js_on_document_end" ]
+  }
 
   cpp_typemaps = [
     {

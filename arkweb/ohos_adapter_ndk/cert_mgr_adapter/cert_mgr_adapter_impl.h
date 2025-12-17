@@ -22,7 +22,7 @@
 namespace OHOS::NWeb {
 class CertManagerAdapterImpl final : public CertManagerAdapter {
 public:
-    CertManagerAdapterImpl() = default;
+    CertManagerAdapterImpl();
     ~CertManagerAdapterImpl() override = default;
 
     uint32_t GetCertMaxSize() override;
@@ -47,6 +47,17 @@ public:
     bool GetTrustAnchorsForHostName(const std::string& hostname, std::vector<std::string>& certs) override;
 
     bool GetPinSetForHostName(const std::string& hostname, std::vector<std::string>& pins) override;
+
+    int32_t GetUkeyCert(const std::string& identity, uint8_t* certData, uint32_t* certDataLen) override;
+ 
+    int32_t OpenUKeyRemoteHandle(const std::string& identity) override;
+ 
+    int32_t CloseUKeyRemoteHandle(const std::string& identity) override;
+ 
+    int32_t GetUkeyPinAuthState(const std::string& uri, bool* state) override;
+ 
+    int32_t SignUsingHuks(const std::string& identity, const uint8_t* certData, uint32_t certDataLen,
+        uint8_t* signData, uint32_t* signDataLen, uint16_t algorithm, uint32_t keySize) override;
 };
 
 } // namespace OHOS::NWeb

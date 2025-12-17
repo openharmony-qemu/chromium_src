@@ -129,7 +129,6 @@
 
 #if BUILDFLAG(ARKWEB_READER_MODE)
 #include "ohos_nweb_ex/overrides/cef/libcef/browser/alloy/alloy_browser_reader_mode_config.h"
-#include "base/strings/safe_sprintf.h"
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_GET_ZOOM_LEVEL)
@@ -206,6 +205,7 @@ extern bool g_siteIsolationMode;
 #include "base/files/file_path.h"
 #include "base/files/file_util.h"
 #include "cef/ohos_cef_ext/libcef/browser/net/extra_headers_throttle.h"
+#include "cef/ohos_cef_ext/libcef/browser/net/ohos_url_rewrite_controller.h"
 #endif
 
 #ifdef OHOS_WEB_LTPO
@@ -228,6 +228,7 @@ extern bool g_siteIsolationMode;
 #include "chrome/browser/profiles/profile.h"
 #include "cef/include/cef_request_context.h"
 #include "cef/libcef/browser/request_context_impl.h"
+#include "ohos_cef_ext/libcef/browser/offscreen_document_dialog_manager.h"
 #include "ohos_cef_ext/libcef/browser/extensions/web_extension_menu_manager.h"
 #include "ohos_cef_ext/libcef/browser/extensions/tab_extensions_util.h"
 #include "chrome/browser/extensions/extension_service.h"
@@ -238,7 +239,10 @@ extern bool g_siteIsolationMode;
 #include "extensions/browser/extension_registry_info_manager.h"
 #include "extensions/browser/extension_system.h"
 #include "nweb_extension_action_cef_delegate.h"
+#include "nweb_js_dialog_result_impl.h"
 #include "chrome/browser/extensions/api/debugger/extension_dev_tools_infobar_delegate.h"
+#include "arkweb/chromium_ext/components/crx_file/crx_key_service.h"
+#include "cef/ohos_cef_ext/libcef/browser/permission/offscreen_permission_request_handler.h"
 #endif // ARKWEB_ARKWEB_EXTENSIONS
 
 #if BUILDFLAG(ARKWEB_USERAGENT)
@@ -282,12 +286,37 @@ extern bool g_siteIsolationMode;
 #include "chrome/browser/browser_process.h"
 #include "cef/libcef/browser/prefs/browser_prefs.h"
 #include "components/prefs/pref_service.h"
+#include "components/os_crypt/sync/os_crypt.h"
 #endif
+
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+#include "ohos_nweb_ex/core/static/nweb_static_dispatcher.h"
+#endif
+
+#include "arkweb/chromium_ext/base/arkweb_report_statistics.h"
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 OnReportStatisticLogFunc
     OHOS::NWeb::NWebImpl::on_report_statistic_log_callback_ = nullptr;
 #endif  // ARKWEB_VIDEO_ASSISTANT
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+OnArkWebStaticOffscreenDocumentAlertFunc   OHOS::NWeb::NWebImpl::on_off_screen_alert_callback_ = nullptr;
+OnArkWebStaticOffscreenDocumentConfirmFunc OHOS::NWeb::NWebImpl::on_off_screen_confirm_callback_ = nullptr;
+OnArkWebStaticOffscreenDocumentPromptFunc  OHOS::NWeb::NWebImpl::on_off_screen_prompt_callback_ = nullptr;
+
+OnArkWebStaticOffscreenDocumentPermissionRequestFunc
+    OHOS::NWeb::NWebImpl::on_offscreen_document_permission_request_callback_ = nullptr;
+OnArkWebStaticOffscreenDocumentWindowNewFunc
+    OHOS::NWeb::NWebImpl::on_off_screen_window_new_callback_ = nullptr;
+uint32_t OHOS::NWeb::NWebImpl::off_screen_nweb_id_ = 0;
+#endif // ARKWEB_ARKWEB_EXTENSIONS
+
+#if BUILDFLAG(ARKWEB_COOKIE)
+std::shared_ptr<OHOS::NWeb::NWebEngineInitArgs>
+    OHOS::NWeb::NWebImpl::save_initargs_ = nullptr;
+bool OHOS::NWeb::NWebImpl::should_lazy_init_web_engine_ = false;
+#endif
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
 #include "arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h"
@@ -304,10 +333,8 @@ OnReportStatisticLogFunc
 
 #include "cef/include/cef_app.h"
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#if BUILDFLAG(ARKWEB_SAFEBROWSING)
-#include "cef/ohos_cef_ext/libcef/browser/global_config/global_config_prefs.h"
-#endif
+#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
+#include "base/ohos/sys_info_utils_ext.h"
 #endif
 namespace {
 uint32_t g_nweb_count = 0;
@@ -320,6 +347,10 @@ bool g_browser_service_api_enabled = false;
 std::vector<std::string> g_browser_args = {};
 int32_t g_browser_service_sdk_api_level = 0;
 #endif  // BUILDFLAG(ARKWEB_NWEB_EX)
+
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+bool g_clipboard_site_permission_enabled = false;
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
 
 #if BUILDFLAG(ARKWEB_SITE_ISOLATION)
 enum class SiteIsolationInitMode{
@@ -341,24 +372,23 @@ std::optional<std::string> g_extension_name;
 
 static void HandleExtensionInstallResult(
     OnExtensionInstallCallback callback,
-    const std::optional<extensions::CrxInstallError>& error) {
+    const std::optional<extensions::CrxInstallError>& error,
+    const std::string& extension_id) {
   if (!callback) {
     return;
   }
 
   if (error.has_value()) {
     std::string error_message = base::UTF16ToUTF8(error->message());
-    callback(static_cast<int>(error->type()), error_message.c_str());
+    callback(static_cast<int>(error->type()), error_message.c_str(), nullptr);
   } else {
-    callback(0, "Success");
+    callback(0, "Success", extension_id.c_str());
   }
 }
 
 static void ConfigureCrxInstaller(
     scoped_refptr<extensions::CrxInstaller> installer) {
-  installer->set_off_store_install_allow_reason(
-      extensions::CrxInstaller::OffStoreInstallAllowedFromSettingsPage);
-  installer->set_install_cause(extension_misc::INSTALL_CAUSE_USER_DOWNLOAD);
+  installer->set_install_immediately(true);
 }
 
 static void PerformCrxInstallation(const std::string& file_path,
@@ -368,7 +398,7 @@ static void PerformCrxInstallation(const std::string& file_path,
   if (!file_exists) {
     if (callback) {
       callback(static_cast<int>(extensions::CrxInstallErrorType::OTHER),
-               "File not found");
+               "File not found", nullptr);
     }
     return;
   }
@@ -378,7 +408,7 @@ static void PerformCrxInstallation(const std::string& file_path,
   if (!service) {
     if (callback) {
       callback(static_cast<int>(extensions::CrxInstallErrorType::OTHER),
-               "Extension service not available");
+               "Extension service not available", nullptr);
     }
     return;
   }
@@ -392,9 +422,89 @@ static void PerformCrxInstallation(const std::string& file_path,
   ConfigureCrxInstaller(installer);
 
   installer->AddInstallerCallback(
-      base::BindOnce(&HandleExtensionInstallResult, callback));
+      base::BindOnce([](OnExtensionInstallCallback callback,
+                       scoped_refptr<extensions::CrxInstaller> installer,
+                       const std::optional<extensions::CrxInstallError>& error) {
+        std::string extension_id;
+        if (!error.has_value() && installer->extension()) {
+          extension_id = installer->extension()->id();
+        }
+        HandleExtensionInstallResult(callback, error, extension_id);
+        crx_file::CrxKeyService::GetInstance()->SetPublisherKeys({});
+      }, callback, installer));
   installer->InstallCrx(base::FilePath(file_path));
 }
+
+static void ConfigureCrxInstallerV2(
+    scoped_refptr<extensions::CrxInstaller> installer,
+    const NWebExtensionInstallProperties& options) {
+  installer->set_install_immediately(true);
+
+  if (options.silent.has_value() && *options.silent) {
+    installer->set_allow_silent_install(true);
+    installer->set_grant_permissions(true);
+  }
+}
+
+static void PerformCrxInstallationV2(const std::string& file_path,
+                                     const NWebExtensionInstallProperties& options,
+                                     OnExtensionInstallCallback callback,
+                                     content::BrowserContext* context,
+                                     bool file_exists) {
+  if (!file_exists) {
+    if (callback) {
+      callback(static_cast<int>(extensions::CrxInstallErrorType::OTHER),
+               "File not found", nullptr);
+    }
+    return;
+  }
+
+  extensions::ExtensionService* service =
+      extensions::ExtensionSystem::Get(context)->extension_service();
+  if (!service) {
+    if (callback) {
+      callback(static_cast<int>(extensions::CrxInstallErrorType::OTHER),
+               "Extension service not available", nullptr);
+    }
+    return;
+  }
+
+  if (options.publisherKeys.has_value() && !options.publisherKeys->empty()) {
+    OHOS::NWeb::NWebImpl::SetPublisherKeys(*options.publisherKeys);
+  }
+
+  Profile* profile = Profile::FromBrowserContext(context);
+  auto prompt = std::make_unique<ExtensionInstallPrompt>(profile, nullptr);
+
+  scoped_refptr<extensions::CrxInstaller> installer =
+      extensions::CrxInstaller::Create(service, std::move(prompt));
+
+  ConfigureCrxInstallerV2(installer, options);
+
+  installer->AddInstallerCallback(
+      base::BindOnce([](OnExtensionInstallCallback callback,
+                       scoped_refptr<extensions::CrxInstaller> installer,
+                       const std::optional<extensions::CrxInstallError>& error) {
+        std::string extension_id;
+        if (!error.has_value() && installer->extension()) {
+          extension_id = installer->extension()->id();
+        }
+        HandleExtensionInstallResult(callback, error, extension_id);
+        crx_file::CrxKeyService::GetInstance()->SetPublisherKeys({});
+      }, callback, installer));
+  installer->InstallCrx(base::FilePath(file_path));
+}
+
+static void HandleExtensionUninstallResult(
+    OnExtensionUninstallCallback callback,
+    bool success,
+    const std::string& message) {
+  if (!callback) {
+    return;
+  }
+  callback(success, message.c_str());
+}
+
 #endif
 
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
@@ -478,7 +588,7 @@ static bool set_whole_page_drawing = false;
 #endif
 
 #if BUILDFLAG(ARKWEB_DRAG_RESIZE)
-const int32_t SOC_PERF_WEB_DRAG_RESIZE_ID = 10073;
+const int32_t SOC_PERF_WEB_DRAG_RESIZE_ID = 10012;
 #endif
 #if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
 const int32_t WEB_RESIZE_CLOSE_DELAY_TIME = 500;
@@ -672,6 +782,51 @@ float GetVirtualPixelRatioForScrollbar() {
 }
 #endif
 
+/**
+ * Parse command line flags from a flat buffer, supporting double-quote enclosed strings
+ * containing whitespace. argv elements are derived by splitting the buffer on whitepace; double
+ * quote characters may enclose tokens containing whitespace; a double-quote literal may be
+ * escaped with back-slash. (Otherwise backslash is taken as a literal).
+ */
+std::vector<std::string> tokenizeQuotedArguments(const std::string& buffer) {
+    int max_file_size = 96 * 1024;
+    if (buffer.size() > max_file_size) {
+        return {};  // Return an empty vector on error
+    }
+    std::vector<std::string> args;
+    std::string arg;
+    char currentQuote = '\0';
+    const char singleQuote = '\'';
+    const char doubleQuote = '"';
+    for (char c : buffer) {
+        // Detect start or end of quote block.
+        if ((currentQuote == '\0' && (c == singleQuote || c == doubleQuote)) || c == currentQuote) {
+            if (!arg.empty() && arg.back() == '\\') {
+                // Last char was a backslash; treat c as a literal.
+                arg.back() = c;
+            } else {
+                currentQuote = (currentQuote == '\0') ? c : '\0';
+            }
+        } else if (currentQuote == '\0' && std::isspace(c)) {
+            if (!arg.empty()) {
+                args.push_back(arg);
+                arg.clear();
+            }
+        } else {
+            arg.push_back(c);
+        }
+    }
+    if (!arg.empty()) {
+        if (currentQuote != '\0') {
+            // If quotes are unbalanced, return empty vector
+            return {};
+        }
+        args.push_back(arg);
+    }
+    LOG(INFO) << "tokenizeQuotedArguments:: tokenize from ohos-command-line succ.";
+    return args;
+}
+
 #if BUILDFLAG(ARKWEB_GWP_ASAN)
 std::string GetGwpAsanEnable()
 {
@@ -694,12 +849,25 @@ void InitialWebEngineArgs(
   web_engine_args.emplace_back("--off-screen-frame-rate=60");
   web_engine_args.emplace_back("--no-unsandboxed-zygote");
   web_engine_args.emplace_back("--no-zygote");
-  web_engine_args.emplace_back("--enable-features=UseOzonePlatform");
+  if (OHOS::NWeb::NWebImpl::GetScrollbarMode() ==
+      OHOS::NWeb::ScrollbarMode::FORCE_DISPLAY_SCROLLBAR &&
+      OHOS::NWeb::NWebImpl::IsScrollbarModeChanged()) {
+    web_engine_args.emplace_back("--disable-features=OverlayScrollbar");
+  }
+  if (OHOS::NWeb::NWebImpl::GetScrollbarMode() ==
+      OHOS::NWeb::ScrollbarMode::OVERLAY_LAYOUT_SCROLLBAR &&
+      OHOS::NWeb::NWebImpl::IsScrollbarModeChanged()) {
+    web_engine_args.emplace_back("--enable-features=UseOzonePlatform,OverlayScrollbar");
+  } else {
+    web_engine_args.emplace_back("--enable-features=UseOzonePlatform");
+  }
   web_engine_args.emplace_back("-ozone-platform=headless");
   web_engine_args.emplace_back("--no-sandbox");
   web_engine_args.emplace_back("--use-mobile-user-agent");
   web_engine_args.emplace_back("--enable-gpu-rasterization");
-  if (!base::ohos::IsPcDevice() || base::ohos::IsCompatibleMode()) {
+  web_engine_args.emplace_back("--disable-features=FencedFrames");
+  if ((!base::ohos::IsPcDevice() && !base::ohos::IsPcMode()) ||
+      base::ohos::IsCompatibleMode()) {
     web_engine_args.emplace_back("--enable-viewport");
   }
   web_engine_args.emplace_back(
@@ -785,8 +953,45 @@ void InitialWebEngineArgs(
   }
 
   auto args_to_add = GetArgsToAdd(init_args);
+
+  args_to_add.push_back("--user-data-dir=files/__arkweb");
+  args_to_add.push_back("--arkweb-app-data-dir=/data/storage/el2/base");
+
+  base::FilePath user_data_dir = base::FilePath();
+  base::FilePath app_data_dir = base::FilePath("/data/storage/el2/base");
   for (auto arg : args_to_add) {
+    if (arg.find("--user-data-dir") != std::string::npos) {
+      size_t eq_pos = arg.find("=");
+      if (eq_pos != std::string::npos) {
+        std::string path_str = arg.substr(eq_pos + 1);
+        user_data_dir = base::FilePath(path_str);
+      }
+    }
+    if (arg.find("--arkweb-app-data-dir") != std::string::npos) {
+      size_t eq_pos = arg.find("=");
+      if (eq_pos != std::string::npos) {
+        std::string path_str = arg.substr(eq_pos + 1);
+        app_data_dir = base::FilePath(path_str);
+      }
+    }
     web_engine_args.emplace_back(arg);
+  }
+
+  base::FilePath cache_web_dir = base::FilePath("/data/storage/el2/base/cache/web");
+  if (base::PathExists(cache_web_dir)) {
+    web_engine_args.emplace_back("--ohos-cache-dir-exists");
+  }
+
+  base::FilePath absolute_user_data_dir = user_data_dir;
+  if (!app_data_dir.IsParent(user_data_dir) &&
+      app_data_dir != user_data_dir) {
+    absolute_user_data_dir = user_data_dir.empty() ?
+                    app_data_dir.Append("files/__arkweb") :
+                    app_data_dir.Append(user_data_dir);
+  }
+
+  if (base::PathExists(absolute_user_data_dir)) {
+    web_engine_args.emplace_back("--ohos-user-data-dir-exists");
   }
 
 #if BUILDFLAG(ARKWEB_GWP_ASAN)
@@ -813,6 +1018,24 @@ void InitialWebEngineArgs(
     web_engine_args.emplace_back(arg);
   }
 #endif  // BUILDFLAG(IS_ARKWEB_EXT)
+  
+  std::string oemmode = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                            .GetSystemPropertiesInstance().GetStringParameter("const.boot.oemmode", "");
+  LOG(INFO) << "const.boot.oemmode: " << oemmode;
+  base::FilePath ohos_command_line_file(
+    FILE_PATH_LITERAL("/data/storage/el1/bundle/arkwebcore/libs/ohos-command-line"));
+  if (oemmode == "rd" && base::PathExists(ohos_command_line_file)) {
+    std::string ohos_command_line_content;
+      if (base::ReadFileToString(ohos_command_line_file, &ohos_command_line_content)) {
+        std::vector<std::string> args = tokenizeQuotedArguments(ohos_command_line_content);
+          for (auto& arg : args) {
+            web_engine_args.emplace_back(arg);
+          }
+          LOG(INFO) << "ohos connamd line args analysis from ohos-command-line file succ.";
+      }  
+  } else {
+    LOG(INFO) << "oemmode is not rd or ohos-command-line does not exist.";
+  }
 }
 #endif  // BUILDFLAG(ARKWEB_API_INIT_WEB_ENGINE)
 
@@ -822,6 +1045,10 @@ void MigratePasswordsToPasswordVault() {
   base::PathService::Get(base::DIR_CACHE, &cache_path);
   if (cache_path.empty()) {
     LOG(INFO) << "[Autofill] cache_path is empty.";
+    return;
+  }
+  if (!g_browser_process->local_state()) {
+    LOG(INFO) << "[Autofill] g_browser_process->local_state() is null.";
     return;
   }
   base::FilePath flagFile = cache_path.Append(FILE_PATH_LITERAL(kMigrateKeyFlagFile));
@@ -834,6 +1061,7 @@ void MigratePasswordsToPasswordVault() {
   if (migrateReady == true && migrateVault == false && IsFlagFileExist == true) {
     int count = g_browser_process->local_state()->GetInteger(browser_prefs::kMigrationCount);
     LOG(INFO) << "[Autofill] migration count:" << count;
+    OSCryptImpl::GetInstance()->SetMigrationCountCurrent(count + 1);
     g_browser_process->local_state()->SetInteger(browser_prefs::kMigrationCount, count + 1);
     g_browser_process->local_state()->CommitPendingWrite();
     if (count <= kMigrationBase || (count % kMigrationBase == 0 && count <= kMigrationMaxCount)) {
@@ -892,6 +1120,9 @@ bool NWebImpl::disableWebActivePolicy_ = false;
 void* NWebImpl::logger_report_event_callback_ = nullptr;
 
 WebDestroyMode NWebImpl::webDestroyMode_ = WebDestroyMode::NORMAL_MODE;
+
+ScrollbarMode NWebImpl::scrollbarMode_ = ScrollbarMode::OVERLAY_LAYOUT_SCROLLBAR;
+bool NWebImpl::scrollbarModeChanged_ = false;
 
 // static
 std::shared_ptr<NWeb> NWebImpl::CreateNWeb(
@@ -1025,6 +1256,10 @@ void NWebImpl::InitializeWebEngine(
 #endif
   NWebApplication::GetDefault()->InitializeCef(mainargs, settings);
   content::GetNetworkService();
+
+#if BUILDFLAG(ARKWEB_COOKIE)
+  should_lazy_init_web_engine_ = false;
+#endif
 
 #if BUILDFLAG(ARKWEB_EXT_PASSWORD)
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(::switches::kEnableNwebExPassword)) {
@@ -1161,6 +1396,7 @@ bool NWebImpl::Init(std::shared_ptr<NWebCreateInfo> create_info) {
   if (!g_logger_callback_initialized) {
     g_logger_callback_initialized = true;
     base::ohos::SetUploadCallback(UploadCallback);
+    base::ohos::SetReportStatisticTaskRunner();
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
     NWebHandlerDelegate::RegisterLoggerCallback(g_logger_callback);
 #endif
@@ -1186,6 +1422,10 @@ NO_SANITIZE("cfi") void NWebImpl::UploadCallback(const std::string& module,
                                                  const std::string& resource,
                                                  const std::string& errorCode,
                                                  const std::string& errorMsg) {
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  NWebStaticDispatcher::OnLoggerReportEvent(module, resource, errorCode, errorMsg);
+#endif
+
   if (logger_report_event_callback_ == nullptr) {
     return;
   }
@@ -1404,6 +1644,10 @@ bool NWebImpl::InitWebEngine(std::shared_ptr<NWebCreateInfo> create_info) {
     return false;
   }
 
+#if BUILDFLAG(ARKWEB_COOKIE)
+  should_lazy_init_web_engine_ = false;
+#endif
+
 #if BUILDFLAG(ARKWEB_MENU)
   nweb_delegate_->SetIsRichText(is_richtext_value_);
 #endif
@@ -1535,25 +1779,18 @@ void NWebImpl::Resize(uint32_t width, uint32_t height, bool isKeyboard) {
     return;
   }
 #if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
-  OHOS::NWeb::OhosAdapterHelper::GetInstance()
-    .CreateSocPerfClientAdapter()
-    ->ApplySocPerfConfigByIdEx(OHOS::NWeb::SocPerfClientAdapter::SOC_PERF_WEB_GESTURE_ID, true);
-  ResizeTime_++;
-  content::GetUIThreadTaskRunner({})->PostDelayedTask(
-    FROM_HERE, base::BindOnce(&NWebImpl::DisableBoost, nweb_id_),
-    base::Milliseconds(WEB_RESIZE_CLOSE_DELAY_TIME));
+  if (base::ohos::IsPcDevice() || base::ohos::IsTabletDevice()) {
+    OHOS::NWeb::OhosAdapterHelper::GetInstance()
+      .CreateSocPerfClientAdapter()
+      ->ApplySocPerfConfigByIdEx(OHOS::NWeb::SocPerfClientAdapter::SOC_PERF_WEB_GESTURE_ID, true);
+    ResizeTime_++;
+    content::GetUIThreadTaskRunner({})->PostDelayedTask(
+      FROM_HERE, base::BindOnce(&NWebImpl::DisableBoost, nweb_id_),
+      base::Milliseconds(WEB_RESIZE_CLOSE_DELAY_TIME));
+  }
 #endif
   nweb_delegate_->Resize(width, height, isKeyboard);
   output_handler_->Resize(width, height);
-
-#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  if ((cur_blankless_frame_width_ != 0) && (cur_blankless_frame_height_ != 0) &&
-     (cur_blankless_frame_width_ != width) && (cur_blankless_frame_height_ != height) &&
-     base::ohos::BlanklessController::CheckGlobalProperty() && (nweb_handle_ != nullptr)) {
-    LOG(DEBUG) << "RemoveBlanklessFrame due to resolution inconsistency between webPattern and snapshot";
-    nweb_handle_->OnRemoveBlanklessFrame(0);
-  }
-#endif
 }
 
 void NWebImpl::ResizeVisibleViewport(uint32_t width,
@@ -2015,6 +2252,13 @@ void NWebImpl::PutOptimizeParserBudgetEnabled(bool enable) {
   nweb_delegate_->PutOptimizeParserBudgetEnabled(enable);
 }
 
+void NWebImpl::NotifyPopupWindowDisposition(
+      CefLifeSpanHandler::WindowOpenDisposition disposition) {
+  if (disposition == CEF_WOD_NEW_BACKGROUND_TAB) {
+    is_pause_ = true;
+  }
+}
+
 void NWebImpl::OnPause() {
   if (!GetWebOptimizationValue()) {
     LOG(DEBUG) << "WebOptimization disabled.";
@@ -2028,6 +2272,11 @@ void NWebImpl::OnPause() {
   is_pause_ = true;
   nweb_delegate_->OnPause();
 
+#if BUILDFLAG(ARKWEB_SOFTKEYBOARD_AVOID)
+  if (keyboardBehaviorMode_ == WebSoftKeyboardBehaviorMode::DISABLE_AUTO_KEYBOARD_ON_ACTIVE) {
+    return;
+  }
+#endif
   if (nweb_delegate_->IsCustomKeyboard()) {
     LOG(INFO) << "WebCustomKeyboard NWebImpl::OnPause";
     nweb_delegate_->GetCustomKeyboardHandler()->CloseFromWebStateChange(
@@ -2058,7 +2307,22 @@ void NWebImpl::OnContinue() {
       pending_size_.reset();
     }
   }
-
+#if BUILDFLAG(ARKWEB_SOFTKEYBOARD_AVOID)
+  if (keyboardBehaviorMode_ == WebSoftKeyboardBehaviorMode::DISABLE_AUTO_KEYBOARD_ON_ACTIVE) {
+    if (nweb_delegate_->IsCustomKeyboard()) {
+      auto handler = nweb_delegate_->GetCustomKeyboardHandler();
+      if (handler && handler->IsAttached()) {
+        nweb_delegate_->OnFocus();
+      }
+    }
+    if (inputmethod_handler_) {
+      if (inputmethod_handler_->IsAttached() && !inputmethod_handler_->IsFocusSwitch()) {
+        nweb_delegate_->OnFocus();
+      }
+    }
+    return;
+  }
+#endif
   if (nweb_delegate_->IsCustomKeyboard()) {
     LOG(INFO) << "WebCustomKeyboard NWebImpl::OnContinue and focus";
     auto handler = nweb_delegate_->GetCustomKeyboardHandler();
@@ -2271,6 +2535,25 @@ void NWebImpl::FillAutofillDataV2(std::shared_ptr<NWebRomValue> data) {
   nweb_delegate_->FillAutofillDataV2(data);
 }
 
+void NWebImpl::FillAutofillDataFromTriggerType(
+    std::shared_ptr<NWebRomValue> data, const NWebAutoFillTriggerType& type) {
+  LOG(INFO) << "NWebImpl::FillAutofillDataFromTriggerType";
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("JSAPI nweb_delegate_ its null");
+    return;
+  }
+  nweb_delegate_->FillAutofillDataFromTriggerType(data, static_cast<int32_t>(type));
+}
+
+void NWebImpl::PutVaultPlainTextCallback(
+    std::shared_ptr<NWebVaultPlainTextCallback> callback) {
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("JSAPI nweb_delegate_ its null");
+    return;
+  }
+  nweb_delegate_->PutVaultPlainTextCallback(callback);
+}
+
 void NWebImpl::OnAutofillCancel(const std::string& fillContent) {
   LOG(INFO) << "NWebImpl::OnAutofillCancel";
   if (nweb_delegate_ == nullptr) {
@@ -2365,6 +2648,23 @@ int NWebImpl::LoadWithData(const std::string& data,
   }
   return nweb_delegate_->LoadWithData(data, mimeType, encoding);
 }
+
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+int NWebImpl::LoadUrlWithParams(const std::string& url,
+                                const LoadUrlType load_type,
+                                const std::string& refer,
+                                const std::string& headers,
+                                const std::string& post_data,
+                                const bool allow_https_upgrade,
+                                int32_t transition_type) {
+  if (nweb_delegate_ == nullptr) {
+    return NWEB_ERR;
+  }
+  return nweb_delegate_->LoadUrlWithParams(url, load_type, refer, headers,
+                                           post_data, allow_https_upgrade,
+                                           transition_type);
+}
+#endif
 
 void NWebImpl::RegisterNativeArkJSFunction(
     const char* objName,
@@ -2526,14 +2826,28 @@ void NWebImpl::JavaScriptOnDocumentStart(const ScriptItems& scriptItems) {
   if (nweb_delegate_ == nullptr) {
     return;
   }
-  return nweb_delegate_->JavaScriptOnDocumentStart(scriptItems);
+  nweb_delegate_->JavaScriptOnDocumentStart(scriptItems);
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+      ::switches::kEnableNwebEx)) {
+    nweb_delegate_->CancelAllPrerendering();
+  }
+#endif
 }
 
 void NWebImpl::JavaScriptOnDocumentEnd(const ScriptItems& scriptItems) {
   if (nweb_delegate_ == nullptr) {
     return;
   }
-  return nweb_delegate_->JavaScriptOnDocumentEnd(scriptItems);
+  nweb_delegate_->JavaScriptOnDocumentEnd(scriptItems);
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+      ::switches::kEnableNwebEx)) {
+    nweb_delegate_->CancelAllPrerendering();
+  }
+#endif
 }
 
 void NWebImpl::JavaScriptOnDocumentStartByOrder(
@@ -2543,6 +2857,7 @@ void NWebImpl::JavaScriptOnDocumentStartByOrder(
     return;
   }
   return nweb_delegate_->JavaScriptOnDocumentStartByOrder(scriptItems,
+                                                          ScriptRegexItems(),
                                                           scriptItemsByOrder);
 }
 
@@ -2553,6 +2868,7 @@ void NWebImpl::JavaScriptOnDocumentEndByOrder(
     return;
   }
   return nweb_delegate_->JavaScriptOnDocumentEndByOrder(scriptItems,
+                                                        ScriptRegexItems(),
                                                         scriptItemsByOrder);
 }
 
@@ -2563,6 +2879,43 @@ void NWebImpl::JavaScriptOnHeadReadyByOrder(
     return;
   }
   return nweb_delegate_->JavaScriptOnHeadReadyByOrder(scriptItems,
+                                                      ScriptRegexItems(),
+                                                      scriptItemsByOrder);
+}
+
+void NWebImpl::JavaScriptOnDocumentStartByOrderV2(
+    const ScriptItems& scriptItems,
+    const ScriptRegexItems& scriptRegexItems,
+    const ScriptItemsByOrder& scriptItemsByOrder) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  return nweb_delegate_->JavaScriptOnDocumentStartByOrder(scriptItems,
+                                                          scriptRegexItems,
+                                                          scriptItemsByOrder);
+}
+
+void NWebImpl::JavaScriptOnDocumentEndByOrderV2(
+    const ScriptItems& scriptItems,
+    const ScriptRegexItems& scriptRegexItems,
+    const ScriptItemsByOrder& scriptItemsByOrder) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  return nweb_delegate_->JavaScriptOnDocumentEndByOrder(scriptItems,
+                                                        scriptRegexItems,
+                                                        scriptItemsByOrder);
+}
+
+void NWebImpl::JavaScriptOnHeadReadyByOrderV2(
+    const ScriptItems& scriptItems,
+    const ScriptRegexItems& scriptRegexItems,
+    const ScriptItemsByOrder& scriptItemsByOrder) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  return nweb_delegate_->JavaScriptOnHeadReadyByOrder(scriptItems,
+                                                      scriptRegexItems,
                                                       scriptItemsByOrder);
 }
 #endif
@@ -2606,7 +2959,9 @@ void NWebImpl::OnFocus(const FocusReason& focusReason) {
     LOG(ERROR) << "nweb_delegate_ is nullptr.";
     return;
   }
-
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+  nweb_delegate_->SetFocusWebId(nweb_id_);
+#endif
   if (nweb_delegate_->IsCustomKeyboard()) {
     LOG(INFO) << "WebCustomKeyboard NWebImpl::OnFocus";
     nweb_delegate_->GetCustomKeyboardHandler()->AttachFromWebStateChange(
@@ -2706,16 +3061,29 @@ void NWebImpl::SendDragEvent(std::shared_ptr<NWebDragEvent> dragEvent) {
     event.action = static_cast<DelegateDragAction>(dragEvent->GetAction());
     event.x = dragEvent->GetX();
     event.y = dragEvent->GetY();
-
+    auto drag_op = OHOS::NWeb::NWebDragData::DragOperation::DRAG_OPERATION_COPY;
+    auto allowed_drag_op =
+        OHOS::NWeb::NWebDragData::DragOperationsMask::DRAG_ALLOW_EVERY;
+    if (dragEvent->IsDragOpValid()) {
+      drag_op = dragEvent->GetDragOperation();
+      allowed_drag_op = dragEvent->GetAllowedDragOperation();
+    }
     if (event.action == DelegateDragAction::DRAG_OVER ||
         event.action == DelegateDragAction::DRAG_START ||
         event.action == DelegateDragAction::DRAG_ENTER) {
       drag_over_event_.x = dragEvent->GetX();
       drag_over_event_.y = dragEvent->GetY();
+      drag_over_event_.allowed_op = static_cast<CefBrowserHost::DragOperationsMask>(allowed_drag_op);
       drag_over_timer_->Reset();
     } else {
       drag_over_timer_->Stop();
     }
+
+    LOG(DEBUG) << "DragDrop, get event from arkweb, op = "
+              << (int)drag_op
+              << " , allow_op = " << (int)allowed_drag_op;
+    event.op = static_cast<CefBrowserHost::DragOperationsMask>(drag_op);
+    event.allowed_op = static_cast<CefBrowserHost::DragOperationsMask>(allowed_drag_op);
   }
   nweb_delegate_->SendDragEvent(event);
 }
@@ -3342,6 +3710,41 @@ void NWebImpl::SetWebDestroyMode(WebDestroyMode mode) {
   webDestroyMode_ = mode;
 }
 
+bool NWebImpl::IsScrollbarModeChanged() {
+  return scrollbarModeChanged_;
+}
+
+ScrollbarMode NWebImpl::GetScrollbarMode() {
+  return scrollbarMode_;
+}
+
+void NWebImpl::SetScrollbarMode(ScrollbarMode mode) {
+  WVLOG_I("NWebImpl set web scrollbar mode %{public}d", static_cast<int32_t>(mode));
+  if (!base::FeatureList::GetInstance() && !scrollbarModeChanged_) {
+    scrollbarModeChanged_ = true;
+    scrollbarMode_ = mode;
+    LOG(ERROR) << "FeatureList is null and save mode";
+    return;
+  }
+  const base::CommandLine& command_line =
+      *base::CommandLine::ForCurrentProcess();
+  std::string enableFeatures;
+  std::string disableFeatures;
+  base::FeatureList::GetInstance()->GetCommandLineFeatureOverrides(&enableFeatures, &disableFeatures);
+  LOG(INFO) << "enable:" << enableFeatures << " disable:" << disableFeatures;
+  std::string allFeatures = enableFeatures + disableFeatures;
+  if ((allFeatures.find("OverlayScrollbar") == std::string::npos)) {
+    if (mode == ScrollbarMode::OVERLAY_LAYOUT_SCROLLBAR) {
+      enableFeatures = "OverlayScrollbar";
+    } else {
+      disableFeatures = "OverlayScrollbar";
+    }
+    base::FeatureList::GetInstance()->InitFromCommandLine(enableFeatures, disableFeatures);
+    base::FeatureList::GetInstance()->GetCommandLineFeatureOverrides(&enableFeatures, &disableFeatures);
+    LOG(INFO) << "update enable:" << enableFeatures << " disable:" << disableFeatures;
+  }
+}
+
 void NWebImpl::SetDelayDurationForBackgroundTabFreezing(int64_t delay) {
 #if BUILDFLAG(ARKWEB_ACTIVE_POLICY)
   if (nweb_delegate_ == nullptr) {
@@ -3668,6 +4071,21 @@ void NWebImpl::OpenDevtools(std::unique_ptr<OpenDevToolsParam> param) {
   nweb_delegate_->OpenDevtoolsWith(nweb->nweb_delegate_, std::move(param));
 }
 
+void NWebImpl::OpenDevtoolsByPb(std::unique_ptr<OpenDevToolsParam> param,
+                      OpenDevToolsExtOpt& ext_opt) {
+  if (nweb_delegate_ == nullptr) {
+    LOG(WARNING) << "OpenDevtoolsV2 failed, no nweb_delegate";
+    return;
+  }
+  int32_t devtools_nweb_id = param->nweb_id;
+  NWebImpl* nweb = NWebImpl::FromID(devtools_nweb_id);
+  if (!nweb) {
+    LOG(WARNING) << "OpenDevtoolsV2 failed, no nweb";
+    return;
+  }
+  nweb_delegate_->OpenDevtoolsWithByPb(nweb->nweb_delegate_, std::move(param), ext_opt);
+}
+
 void NWebImpl::CloseDevtools() {
   if (nweb_delegate_ == nullptr) {
     LOG(WARNING) << "CloseDevtools failed, no nweb_delegate";
@@ -3725,6 +4143,7 @@ void NWebImpl::OnReportStatisticLog(const std::string& content) {
 
 void NWebImpl::SetOnReportStatisticLogCallback(OnReportStatisticLogFunc func) {
   on_report_statistic_log_callback_ = func;
+  base::ohos::SetOnReportStatisticLogCallback(on_report_statistic_log_callback_);
 }
 
 void NWebImpl::CustomWebMediaPlayer(bool enable) {
@@ -3989,7 +4408,7 @@ void NWebImpl::InstallExtensionFile(const std::string& file_path,
   if (file_path.empty()) {
     if (callback) {
       callback(static_cast<int>(extensions::CrxInstallErrorType::OTHER),
-               "Invalid file path");
+               "Invalid file path", nullptr);
     }
     return;
   }
@@ -3999,7 +4418,7 @@ void NWebImpl::InstallExtensionFile(const std::string& file_path,
     WVLOG_E("Failed to get global browser context");
     if (callback) {
       callback(static_cast<int>(extensions::CrxInstallErrorType::OTHER),
-               "Browser context not available");
+               "Browser context not available", nullptr);
     }
   }
 
@@ -4008,6 +4427,302 @@ void NWebImpl::InstallExtensionFile(const std::string& file_path,
       FROM_HERE, {base::MayBlock()},
       base::BindOnce(&base::PathExists, crx_path),
       base::BindOnce(&PerformCrxInstallation, file_path, callback, browser_context));
+}
+
+void NWebImpl::InstallExtensionFileV2(const std::string& file_path,
+                                        const NWebExtensionInstallProperties& options,
+                                        OnExtensionInstallCallback callback) {
+  WVLOG_I("NWebImpl::InstallExtensionFileV2: %s", file_path.c_str());
+
+  if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
+    content::GetUIThreadTaskRunner({})->PostTask(
+        FROM_HERE,
+        base::BindOnce(&NWebImpl::InstallExtensionFileV2, file_path, options, callback));
+    return;
+  }
+
+  if (file_path.empty()) {
+    if (callback) {
+      callback(static_cast<int>(extensions::CrxInstallErrorType::OTHER),
+               "Invalid file path", nullptr);
+    }
+    return;
+  }
+
+  content::BrowserContext* browser_context = NWebImplGetGlobalBrowserContext();
+  if (!browser_context) {
+    WVLOG_E("Failed to get global browser context");
+    if (callback) {
+      callback(static_cast<int>(extensions::CrxInstallErrorType::OTHER),
+               "Browser context not available", nullptr);
+    }
+    return;
+  }
+
+  base::FilePath crx_path(file_path);
+  base::ThreadPool::PostTaskAndReplyWithResult(
+      FROM_HERE, {base::MayBlock()},
+      base::BindOnce(&base::PathExists, crx_path),
+      base::BindOnce(&PerformCrxInstallationV2, file_path, options, callback, browser_context));
+}
+
+void NWebImpl::SetPublisherKeys(const std::vector<std::vector<uint8_t>>& keys) {
+  if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
+    content::GetUIThreadTaskRunner({})->PostTask(
+        FROM_HERE, base::BindOnce(&NWebImpl::SetPublisherKeys, keys));
+    return;
+  }
+  LOG(INFO) << "NWebImpl::SetPublisherKeys";
+  crx_file::CrxKeyService::GetInstance()->SetPublisherKeys(keys);
+}
+
+void NWebImpl::UninstallExtension(const std::string& eid,
+                                  OnExtensionUninstallCallback callback) {
+  WVLOG_I("NWebImpl::UninstallExtension %{public}s", eid.c_str());
+
+  if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
+    content::GetUIThreadTaskRunner({})->PostTask(
+        FROM_HERE,
+        base::BindOnce(&NWebImpl::UninstallExtension, eid, callback));
+    return;
+  }
+
+  if (eid.empty()) {
+    HandleExtensionUninstallResult(callback, false, "Invalid extension id");
+    return;
+  }
+
+  content::BrowserContext* browser_context = NWebImplGetGlobalBrowserContext();
+  if (!browser_context) {
+    HandleExtensionUninstallResult(callback, false, "Browser context not available");
+    return;
+  }
+
+  const extensions::Extension* current_extension =
+      extensions::ExtensionRegistry::Get(browser_context)
+          ->GetExtensionById(eid, extensions::ExtensionRegistry::EVERYTHING);
+
+  if (!current_extension) {
+    std::string msg = std::string("Failed to find extension with id: ") + eid;
+    HandleExtensionUninstallResult(callback, false, msg);
+    return;
+  }
+
+  auto* service =
+      extensions::ExtensionSystem::Get(browser_context)->extension_service();
+
+  if (!service) {
+    HandleExtensionUninstallResult(callback, false, "Extension service not available");
+    return;
+  }
+
+  service->RemoveForbidDisplayInSettings(eid);
+
+  std::u16string error;
+  const bool ok = service->UninstallExtension(
+      eid, extensions::UNINSTALL_REASON_INTERNAL_MANAGEMENT, &error);
+
+  if (!ok) {
+    const std::string err =
+        error.empty() ? "Uninstall failed" : base::UTF16ToUTF8(error);
+    HandleExtensionUninstallResult(callback, false, err);
+    return;
+  }
+
+  HandleExtensionUninstallResult(callback, true, "");
+}
+
+// static
+void NWebImpl::WebExtensionSetForbidDisplayInSettings(
+    const std::set<std::string>& extension_ids) {
+  WVLOG_I("NWebImpl::WebExtensionSetForbidDisplayInSettings");
+  content::BrowserContext* browser_context = NWebImplGetGlobalBrowserContext();
+  if (!browser_context) {
+    WVLOG_E(
+        "NWebImpl::WebExtensionSetForbidDisplayInSettings browser_context is "
+        "null");
+    return;
+  }
+  extensions::ExtensionService* extension_service =
+      extensions::ExtensionSystem::Get(browser_context)->extension_service();
+  if (!extension_service) {
+    WVLOG_E(
+        "NWebImpl::WebExtensionSetForbidDisplayInSettings extension_service is "
+        "null");
+    return;
+  }
+  extension_service->SetForbidDisplayInSettings(extension_ids);
+}
+
+NO_SANITIZE("cfi")
+void NWebImpl::OnAlertDialogByJS(const std::string& extensionId,
+                                 const std::string& url,
+                                 const std::string& message,
+                                 CefRefPtr<CefJSDialogCallback> callback,
+                                 bool& suppress_message) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  std::shared_ptr<NWebJSDialogResult> js_alert_callback =
+      std::make_shared<NWebJSDialogResultImpl>(callback);
+  CefOffScreenDocumentDialogManager* dialog_manager =
+      CefOffScreenDocumentDialogManager::GetInstance();
+  if (dialog_manager) {
+    int requestId = dialog_manager->AddAlertRequest(js_alert_callback);
+    if (on_off_screen_alert_callback_) {
+      on_off_screen_alert_callback_(extensionId.c_str(), url.c_str(),
+                                    message.c_str(), requestId);
+    }
+  }
+  suppress_message = false;
+}
+
+NO_SANITIZE("cfi")
+void NWebImpl::OnConfirmDialogByJS(const std::string& extensionId,
+                                   const std::string& url,
+                                   const std::string& message,
+                                   CefRefPtr<CefJSDialogCallback> callback,
+                                   bool& suppress_message) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  std::shared_ptr<NWebJSDialogResult> js_confirm_callback =
+      std::make_shared<NWebJSDialogResultImpl>(callback);
+  CefOffScreenDocumentDialogManager* dialog_manager =
+      CefOffScreenDocumentDialogManager::GetInstance();
+  if (dialog_manager) {
+    int requestId = dialog_manager->AddConfirmRequest(js_confirm_callback);
+    if (on_off_screen_confirm_callback_) {
+      on_off_screen_confirm_callback_(extensionId.c_str(), url.c_str(),
+                                      message.c_str(), requestId);
+    }
+  }
+  suppress_message = false;
+}
+
+NO_SANITIZE("cfi")
+void NWebImpl::OnPromptDialogByJS(const std::string& extensionId,
+                                  const std::string& url,
+                                  const std::string& message,
+                                  const std::string& value,
+                                  CefRefPtr<CefJSDialogCallback> callback,
+                                  bool& suppress_message) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  std::shared_ptr<NWebJSDialogResult> js_prompt_callback =
+      std::make_shared<NWebJSDialogResultImpl>(callback);
+  CefOffScreenDocumentDialogManager* dialog_manager =
+      CefOffScreenDocumentDialogManager::GetInstance();
+  if (dialog_manager) {
+    int requestId = dialog_manager->AddPromptRequest(js_prompt_callback);
+    if (on_off_screen_prompt_callback_) {
+      on_off_screen_prompt_callback_(extensionId.c_str(), url.c_str(),
+                                     message.c_str(), value.c_str(), requestId);
+    }
+  }
+}
+
+void NWebImpl::SetOnOffscreenDocumentAlertCallback(
+    OnArkWebStaticOffscreenDocumentAlertFunc func) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  on_off_screen_alert_callback_ = func;
+}
+
+void NWebImpl::SetOnOffscreenDocumentConfirmCallback(
+    OnArkWebStaticOffscreenDocumentConfirmFunc func) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  on_off_screen_confirm_callback_ = func;
+}
+
+void NWebImpl::SetOnOffscreenDocumentPromptCallback(
+    OnArkWebStaticOffscreenDocumentPromptFunc func) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  on_off_screen_prompt_callback_ = func;
+}
+
+void NWebImpl::AlertHandle(const int requestId) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  CefOffScreenDocumentDialogManager* dialog_manager =
+      CefOffScreenDocumentDialogManager::GetInstance();
+  if (dialog_manager) {
+    dialog_manager->Alert(requestId);
+  }
+}
+
+void NWebImpl::ConfirmHandle(const bool type, const int requestId) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  CefOffScreenDocumentDialogManager* dialog_manager =
+      CefOffScreenDocumentDialogManager::GetInstance();
+  if (dialog_manager) {
+    dialog_manager->Confirm(type, requestId);
+  }
+}
+
+void NWebImpl::PromptHandle(const bool type,
+                            const std::string& value,
+                            const int requestId) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  CefOffScreenDocumentDialogManager* dialog_manager =
+      CefOffScreenDocumentDialogManager::GetInstance();
+  if (dialog_manager) {
+    dialog_manager->Prompt(type, value, requestId);
+  }
+}
+
+void NWebImpl::SetOnOffscreenDocumentPermissionRequestCallback(
+    OnArkWebStaticOffscreenDocumentPermissionRequestFunc func) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  on_offscreen_document_permission_request_callback_ = func;
+}
+
+NO_SANITIZE("cfi")
+void NWebImpl::OnOffscreenDocumentPermissionRequest(
+    const std::string& extension_id,
+    const std::string& origin_url,
+    int resources,
+    int request_key) {
+  if (on_offscreen_document_permission_request_callback_) {
+    LOG(INFO) << " func:" << __FUNCTION__;
+    on_offscreen_document_permission_request_callback_(
+        extension_id.c_str(), origin_url.c_str(), resources, request_key);
+  } else {
+    LOG(ERROR) << __FUNCTION__ << " callback is null";
+    DenyOffscreenDocumentPermission(resources, request_key);
+  }
+}
+
+void NWebImpl::GrantOffscreenDocumentPermission(int resources,
+                                                int request_key) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  OffscreenPermissionRequestHandler::GetInstance()->Grant(resources,
+                                                          request_key);
+}
+
+void NWebImpl::DenyOffscreenDocumentPermission(int resources, int request_key) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  OffscreenPermissionRequestHandler::GetInstance()->Deny(resources,
+                                                         request_key);
+}
+
+NO_SANITIZE("cfi")
+void NWebImpl::OnOffscreenDocumentWindowNewEvent(
+    const std::string& extensionId,
+    const std::string& originUrl,
+    bool isAlert,
+    bool isUserTrigger,
+    const std::string& targetUrl) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  if (on_off_screen_window_new_callback_) {
+    on_off_screen_window_new_callback_(
+        extensionId.c_str(), originUrl.c_str(),
+        isAlert, isUserTrigger, targetUrl.c_str());
+  }
+}
+
+void NWebImpl::SetOnOffscreenDocumentWindowNewCallback(
+    OnArkWebStaticOffscreenDocumentWindowNewFunc func) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  on_off_screen_window_new_callback_ = func;
+}
+
+void NWebImpl::SetOffscreenNWebId(uint32_t nweb_id) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  off_screen_nweb_id_ = nweb_id;
 }
 #endif // ARKWEB_ARKWEB_EXTENSIONS
 
@@ -4116,7 +4831,6 @@ void NWebImpl::UpdateBrowserEngineGlobalConfig(const std::string& file_path,
 // static
 void NWebImpl::UpdateReaderModeConfig(const std::string& file_path,
                                   const std::string& version) {
-  LOG(INFO) << "NWebImpl::UpdateReaderModeConfig file_path:" << file_path << " version:" << version;
   nweb_ex::AlloyBrowserReaderModeConfig::GetInstance()->UpdateBrowserReaderModeConfig(file_path, version);
 }
 
@@ -4351,14 +5065,16 @@ void NWebImpl::PasswordSuggestionSelected(int list_index) const {
 }
 #endif
 
-#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM) || BUILDFLAG(ARKWEB_ZOOM)
 void NWebImpl::SetForceEnableZoom(bool forceEnableZoom) const {
   if (nweb_delegate_ == nullptr) {
     return;
   }
   nweb_delegate_->SetForceEnableZoom(forceEnableZoom);
 }
+#endif
 
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
 bool NWebImpl::GetForceEnableZoom() const {
   if (nweb_delegate_ == nullptr) {
     return false;
@@ -4996,13 +5712,6 @@ void NWebImpl::OnSafeBrowsingDetectionResult(int code,
   nweb_delegate_->OnSafeBrowsingDetectionResult(code, policy, mappingType,
                                                 url);
 }
-
-#if BUILDFLAG(IS_ARKWEB_EXT)
-// static
-void NWebImpl::OnGlobalConfigResult(const std::string& path, PrefService* localState) {
-  global_config::OnGlobalConfigResult(path, localState);
-}
-#endif  // BUILDFLAG(IS_ARKWEB_EXT)
 #endif  // BUILDFLAG(ARKWEB_SAFEBROWSING)
 
 void NWebImpl::StartCamera() {
@@ -5692,6 +6401,24 @@ bool NWebImpl::WebPageSnapshot(const char* id,
   }
   return nweb_delegate_->WebPageSnapshot(id, type, width, height, callback);
 }
+
+bool NWebImpl::WebPageSnapshotV2(const char* id,
+                                 PixelUnit type,
+                                 int width,
+                                 int height,
+                                 std::shared_ptr<NWebSnapshotCallback> callback) {
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("WebPageSnapshotV2 failed, nweb delegate is nullptr");
+    return false;
+  }
+  return nweb_delegate_->WebPageSnapshot(
+    id, type, width, height,
+    [callback](const char* id, bool state, float radio, void* data, int width,
+               int height) {
+      WVLOG_I("WebPageSnapshotV2 result return to OH");
+      callback->OnSnapshotResult(id, state, radio, data, width, height);
+    });
+}
 #endif
 
 #ifdef BUILDFLAG(IS_OHOS)
@@ -5888,33 +6615,6 @@ int32_t NWebImpl::GetUsageScenario() {
 #endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-void NWebImpl::WebExtensionTabCreated(int tab_id) {
-  if (nweb_delegate_ == nullptr) {
-    return;
-  }
-  nweb_delegate_->WebExtensionTabCreated(tab_id);
-}
-
-void NWebImpl::WebExtensionTabUpdated(
-    int tab_id,
-    const std::vector<std::string>& changed_property_names,
-    const std::string& url) {
-  if (nweb_delegate_ == nullptr) {
-    return;
-  }
-  nweb_delegate_->WebExtensionTabUpdated(tab_id, changed_property_names, url);
-}
-
-void NWebImpl::WebExtensionTabUpdated(
-    int tab_id,
-    const std::vector<std::string>& changed_property_names,
-    std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo) {
-  if (nweb_delegate_ == nullptr) {
-    return;
-  }
-  nweb_delegate_->WebExtensionTabUpdated(tab_id, changed_property_names, std::move(changeInfo));
-}
-
 void NWebImpl::WebExtensionTabRemoved(int tab_id, bool isWindowClosing, int windowId) {
   if (nweb_delegate_ == nullptr) {
     return;
@@ -6005,7 +6705,7 @@ void NWebImpl::SetMediaResumeFromBFCachePage(bool resume) {
 #endif // BUILDFLAG(ARKWEB_BFCACHE)
 }
 
-#if BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
+#if BUILDFLAG(IS_ARKWEB)
 void NWebImpl::EnableAppLinking(bool enable) {
   if (nweb_delegate_ == nullptr) {
     LOG(ERROR) << "EnableAppLinking failed"
@@ -6014,7 +6714,7 @@ void NWebImpl::EnableAppLinking(bool enable) {
   }
   nweb_delegate_->EnableAppLinking(enable);
 }
-#endif // BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
+#endif // BUILDFLAG(IS_ARKWEB)
 
 void NWebImpl::TrimMemoryByPressureLevel(int32_t memoryLevel) {
 #if BUILDFLAG(ARKWEB_PERFORMANCE_MEMORY_THRESHOLD)
@@ -6332,6 +7032,15 @@ void NWebImpl::RegisterNativeJavaScriptProxy(const std::string& objName,
 }
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
+#if BUILDFLAG(ARKWEB_SOFTKEYBOARD_AVOID)
+void NWebImpl::SetSoftKeyboardBehaviorMode(WebSoftKeyboardBehaviorMode mode) {
+  keyboardBehaviorMode_ = mode;
+  LOG(DEBUG)
+      << "NWebImpl::SetSoftKeyboardBehaviorMode keyboardBehaviorMode_: "
+      << static_cast<int>(keyboardBehaviorMode_);
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_AI_WRITE)
 int NWebImpl::GetSelectStartIndex()
 {
@@ -6553,12 +7262,6 @@ void NWebImpl::SetVisibility(bool isVisible) {
   }
 }
 
-void NWebImpl::RecordBlanklessFrameSize(uint32_t width, uint32_t height)
-{
-  cur_blankless_frame_width_ = width;
-  cur_blankless_frame_height_ = height;
-}
-
 void NWebImpl::ClearBlanklessKey() {
   if (nweb_delegate_ == nullptr || blankless_key_ == base::ohos::BlanklessController::INVALID_BLANKLESS_KEY) {
     return;
@@ -6730,6 +7433,33 @@ void NWebImpl::OnBrowserBackground() {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+void NWebImpl::EnableHttpsUpgrades(bool enable) {
+  LOG(INFO) << "NWebImpl::EnableHttpsUpgrades.";
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("EnableHttpsUpgrades nweb_delegate_ is null");
+    return;
+  }
+  nweb_delegate_->EnableHttpsUpgrades(enable);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+void NWebImpl::SetBlankScreenDetectionConfig(
+    bool enable,
+    const std::vector<double>& detectionTiming,
+    const std::vector<int32_t>& detectionMethods,
+    int32_t contentfulNodesCountThreshold) {
+  LOG(INFO) << "NWebImpl::SetBlankScreenDetectionConfig.";
+  if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "SetBlankScreenDetectionConfig nweb_delegate_ is null";
+    return;
+  }
+  nweb_delegate_->SetBlankScreenDetectionConfig(
+      enable, detectionTiming, detectionMethods, contentfulNodesCountThreshold);
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
 void NWebImpl::SetSocketIdleTimeout(int32_t timeout) {
   if (!NWebApplication::GetDefault()->HasInitializedCef()) {
@@ -6750,5 +7480,67 @@ void NWebImpl::SetSocketIdleTimeout(int32_t timeout) {
   }
 
   content::GetNetworkService()->SetSocketIdleTimeout(timeout);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+void NWebImpl::SetClipboardSitePermissionEnabled(bool enable) {
+  g_clipboard_site_permission_enabled = enable;
+}
+
+bool NWebImpl::IsClipboardSitePermissionEnabled() {
+  return g_clipboard_site_permission_enabled;
+}
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
+
+#if BUILDFLAG(ARKWEB_WEBRTC)
+void NWebImpl::ResumeMicrophone() {
+  if (nweb_delegate_) {
+    nweb_delegate_->ResumeMicrophone();
+  }
+}
+
+void NWebImpl::StopMicrophone() {
+  if (nweb_delegate_) {
+    nweb_delegate_->StopMicrophone();
+  }
+}
+
+void NWebImpl::PauseMicrophone() {
+  if (nweb_delegate_) {
+    nweb_delegate_->PauseMicrophone();
+  }
+}
+#endif
+
+void NWebImpl::StopFling() {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->StopFling();
+}
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+void NWebImpl::EnableRewriteUrlForNavigation(bool enable) {
+  OhosUrlRewriteController::EnableRewriteUrl(enable);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_COOKIE)
+void NWebImpl::LibraryLoaded(std::shared_ptr<NWebEngineInitArgs> init_args,
+                             bool lazy) {
+  if (NWebApplication::GetDefault()->HasInitializedCef()) {
+    return;
+  }
+  save_initargs_ = init_args;
+  should_lazy_init_web_engine_ = lazy;
+}
+
+bool NWebImpl::ShouldLazyInitWebEngine() {
+  return should_lazy_init_web_engine_;
+}
+
+std::shared_ptr<NWebEngineInitArgs> NWebImpl::GetSaveInitargs() {
+  return save_initargs_;
 }
 #endif

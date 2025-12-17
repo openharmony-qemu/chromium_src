@@ -20,6 +20,7 @@
 #include "arkweb/chromium_ext/third_party/blink/renderer/platform/widget/widget_base_utils.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "third_party/blink/renderer/core/dom/document.h"
 #include "third_party/blink/renderer/core/frame/frame_test_helpers.h"
 #include "third_party/blink/renderer/core/frame/web_frame_widget_impl.h"
 #include "third_party/blink/renderer/core/testing/sim/sim_request.h"
@@ -50,8 +51,6 @@ class MockWebFrameWidgetImplExt : public frame_test_helpers::TestWebFrameWidget 
                     const gfx::Vector2dF& unused_delta,
                     const cc::OverscrollBehavior& overscroll_behavior,
                     bool event_processed));
-  MOCK_METHOD0(ShowFreeCopyMenu, void());
-  MOCK_METHOD0(ParseLanguage, void());
 };
 
 class WebFrameWidgetImplExtSimTest : public SimTest {
@@ -95,6 +94,10 @@ class WebFrameWidgetImplExtSimTest : public SimTest {
         std::move(callback));
   }
 
+  void SetWidgetBaseForTesting(std::unique_ptr<WidgetBase> widget_base) {
+    MockMainFrameWidget()->widget_base_ = std::move(widget_base);
+  }
+
   void SetUp() override {
     SimTest::SetUp();
     WebView().MainFrameViewWidget()->Resize(gfx::Size(800, 600));
@@ -106,6 +109,8 @@ class WebFrameWidgetImplExtSimTest : public SimTest {
       <head></head>
       <body>
         <div>Test content</div>
+        <input type="text" id="input1" value="First input">
+        <input type="text" id="input2" value="Second input">
       </body>
       </html>
     )HTML");
@@ -173,7 +178,7 @@ TEST_F(WebFrameWidgetImplExtSimTest, ArkWebHandleTouchEvent_OtherEvent) {
 }
 
 TEST_F(WebFrameWidgetImplExtSimTest, SelectRangeV2_WithoutFocusedFrame) {
-  MockMainFrameWidget()->SelectRangeV2(gfx::Point(1, 1), false);
+  MockMainFrameWidget()->SelectRangeV2ForTest(gfx::Point(1, 1), false);
 }
 
 TEST_F(WebFrameWidgetImplExtSimTest, GetVisibleRectToWeb) {
@@ -207,11 +212,13 @@ TEST_F(WebFrameWidgetImplExtSimTest, OnTextRecognized) {
   WTF::Vector<mojom::blink::TextRecognizeResultPtr> results;
   auto result = mojom::blink::TextRecognizeResult::New();
   result->raw_value = "Test";
+  result->bounding_box = gfx::RectF(10, 10, 100, 100);
+  result->corner_points = {gfx::PointF(10, 10), gfx::PointF(10, 10), gfx::PointF(10, 10), gfx::PointF(10, 10)};
   results.push_back(std::move(result));
 
   MockMainFrameWidget()->on_text_recognize_callback_ = 
       base::BindRepeating([](std::vector<String>, std::vector<gfx::PointF>, float) {});
-  MockMainFrameWidget()->OnTextRecognized(std::move(results), 1.0f);
+  MockMainFrameWidget()->OnTextRecognizedForTest(std::move(results), 1.0f);
 }
 
 TEST_F(WebFrameWidgetImplExtSimTest, GetWordSelection_Valid) {
@@ -229,16 +236,16 @@ TEST_F(WebFrameWidgetImplExtSimTest, GetWordSelection_FailCase) {
 
 TEST_F(WebFrameWidgetImplExtSimTest, OnTextSelected) {
   MockMainFrameWidget()->on_text_selected_callback_ = base::BindRepeating([](bool) {});
-  MockMainFrameWidget()->OnTextSelected(true);
+  MockMainFrameWidget()->OnTextSelectedForTest(true);
 }
 
 TEST_F(WebFrameWidgetImplExtSimTest, OnDestroyImageAnalyzerOverlay) {
   MockMainFrameWidget()->on_destroy_image_overlay_callback_ = base::BindRepeating([]() {});
-  MockMainFrameWidget()->OnDestroyImageAnalyzerOverlay();
+  MockMainFrameWidget()->OnDestroyImageAnalyzerOverlayForTest();
 }
 
 TEST_F(WebFrameWidgetImplExtSimTest, OnDataDetectorSelectText) {
-  MockMainFrameWidget()->OnDataDetectorSelectText();
+  MockMainFrameWidget()->OnDataDetectorSelectTextForTest();
 }
 
 TEST_F(WebFrameWidgetImplExtSimTest, GetImageRectInner_Valid) {
@@ -266,7 +273,7 @@ TEST_F(WebFrameWidgetImplExtSimTest, CleanFocusCache) {
 }
 
 TEST_F(WebFrameWidgetImplExtSimTest, ShowFreeCopyMenu) {
-  MockMainFrameWidget()->ShowFreeCopyMenu();
+  MockMainFrameWidget()->ShowFreeCopyMenuForTest();
 }
 
 TEST_F(WebFrameWidgetImplExtSimTest, DisableBoost) {
@@ -303,7 +310,7 @@ TEST_F(WebFrameWidgetImplExtSimTest, MouseHitTest) {
                       WebInputEvent::kNoModifiers,
                       WebInputEvent::GetStaticTimeStampForTests());
   
-  MockMainFrameWidget()->MouseHitTest(event);
+  MockMainFrameWidget()->MouseHitTest(event, 1);
 }
 
 TEST_F(WebFrameWidgetImplExtSimTest, GetInputElementAttributes) {
@@ -317,10 +324,6 @@ TEST_F(WebFrameWidgetImplExtSimTest, SetOverscrollMode) {
 
 TEST_F(WebFrameWidgetImplExtSimTest, SelectRangeV2) {
   MockMainFrameWidget()->SelectRangeV2(gfx::Point(10, 10), false);
-}
-
-TEST_F(WebFrameWidgetImplExtSimTest, ParseLanguage) {
-  MockMainFrameWidget()->ParseLanguage();
 }
 
 TEST_F(WebFrameWidgetImplExtSimTest, ReportBlank) {
@@ -338,5 +341,69 @@ TEST_F(WebFrameWidgetImplExtSimTest, ReportBlank_Branches) {
   EXPECT_FALSE(duration > kDragBlankTime);
   MockMainFrameWidget()->ReportBlank(start, end);
 }
+
+TEST_F(WebFrameWidgetImplExtSimTest, GetOverScrollOffset_ForTest) {
+  auto offset = MockMainFrameWidget()->GetOverScrollOffsetForTest();
+  EXPECT_EQ(offset.x(), 0);
+  EXPECT_EQ(offset.y(), 0);
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, OnTextSelected_False) {
+  MockMainFrameWidget()->OnTextSelectedForTest(true);
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, OnDestroyImageAnalyzerOverlay_False) {
+  MockMainFrameWidget()->OnDestroyImageAnalyzerOverlayForTest();
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, ShowFreeCopyMenu_Focused) {
+  auto* input_element = GetDocument().getElementById(AtomicString("input1"));
+  ASSERT_TRUE(input_element);
+  input_element->Focus();
+  ASSERT_TRUE(GetDocument().FocusedElement());
+  MockMainFrameWidget()->ShowFreeCopyMenuForTest();
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, SelectRangeV2_Focused) {
+  auto* input_element = GetDocument().getElementById(AtomicString("input1"));
+  ASSERT_TRUE(input_element);
+  input_element->Focus();
+  ASSERT_TRUE(GetDocument().FocusedElement());
+  MockMainFrameWidget()->SelectRangeV2ForTest(gfx::Point(1, 1), false);
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, OnDataDetectorSelectText_Focused) {
+  auto* input_element = GetDocument().getElementById(AtomicString("input1"));
+  ASSERT_TRUE(input_element);
+  input_element->Focus();
+  ASSERT_TRUE(GetDocument().FocusedElement());
+  MockMainFrameWidget()->OnDataDetectorSelectTextForTest();
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, SetZoomLevel_WithoutWidgetBase) {
+  auto widget_base = std::move(MockMainFrameWidget()->widget_base_);
+  SetWidgetBaseForTesting(nullptr);
+  MockMainFrameWidget()->SetZoomLevel(1.5, gfx::Point(10, 20));
+  SetWidgetBaseForTesting(std::move(widget_base));
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, SetOverscrollMode_WithoutWidgetBase) {
+  auto widget_base = std::move(MockMainFrameWidget()->widget_base_);
+  SetWidgetBaseForTesting(nullptr);
+  int mode = 42;
+  EXPECT_TRUE(MockMainFrameWidget()->widget_base_);
+  MockMainFrameWidget()->SetOverscrollMode(mode);
+  SetWidgetBaseForTesting(std::move(widget_base));
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, GetOverScrollOffset_WithoutWidgetBase) {
+  auto widget_base = std::move(MockMainFrameWidget()->widget_base_);
+  SetWidgetBaseForTesting(nullptr);
+  auto offset = MockMainFrameWidget()->GetOverScrollOffsetForTest();
+  EXPECT_EQ(offset.x(), 0);
+  EXPECT_EQ(offset.y(), 0);
+  SetWidgetBaseForTesting(std::move(widget_base));
+}
+
 }  // namespace
 }  // namespace blink

@@ -13,8 +13,10 @@
  * limitations under the License.	
  */
 
-#include <gtest/gtest.h>
+#define private public
 #include "SkFontStyleSet_ohos.h"
+#undef private
+#include <gtest/gtest.h>
 #include "FontConfig_ohos.h"
 #include <gmock/gmock.h>
 
@@ -162,4 +164,39 @@ TEST_F(SkFontStyleSet_OHOSTest, MatchStyle_WithVariousPatterns) {
     }
 }
 
+TEST_F(SkFontStyleSet_OHOSTest, getStyle_NullFontConfig) {
+  auto styleSet = std::make_unique<SkFontStyleSet_OHOS>(fontConfig, 0, false);
+  styleSet->fontConfig_ = nullptr;
+  SkFontStyle style;
+  SkString styleName;
+  styleSet->getStyle(0, &style, &styleName);
+  EXPECT_EQ(style, SkFontStyle());
+  EXPECT_TRUE(styleName.isEmpty());
+}
+
+TEST_F(SkFontStyleSet_OHOSTest, getStyle_NullTypeface) {
+  auto styleSet = std::make_unique<SkFontStyleSet_OHOS>(fontConfig, 0, false);
+  styleSet->styleIndex = -1;
+  SkFontStyle style;
+  SkString styleName;
+  styleSet->getStyle(0, &style, &styleName);
+  EXPECT_EQ(style, SkFontStyle());
+  EXPECT_TRUE(styleName.isEmpty());
+}
+
+TEST_F(SkFontStyleSet_OHOSTest, createTypeface_NullFontConfig) {
+  auto styleSet = std::make_unique<SkFontStyleSet_OHOS>(fontConfig, 0, false);
+  styleSet->fontConfig_ = nullptr;
+  auto result = styleSet->createTypeface(0);
+  EXPECT_EQ(result, nullptr);
+}
+
+TEST_F(SkFontStyleSet_OHOSTest, matchStyle_NullFontConfig) {
+  auto styleSet = std::make_unique<SkFontStyleSet_OHOS>(fontConfig, 0, false);
+  styleSet->fontConfig_ = nullptr;
+  SkFontStyle pattern(SkFontStyle::kNormal_Weight, SkFontStyle::kNormal_Width,
+                      SkFontStyle::kUpright_Slant);
+  auto result = styleSet->matchStyle(pattern);
+  EXPECT_EQ(result, nullptr);
+}
 } // namespace skia

@@ -23,6 +23,8 @@
 
 namespace subresource_filter {
 
+const size_t DISALLOWED_URL_MAP_SIZE_MAX = 4096;
+
 #if BUILDFLAG(ARKWEB_ADBLOCK)
 PageLoadStatisticsExt::PageLoadStatisticsExt(
     const mojom::ActivationState& state,
@@ -50,10 +52,10 @@ void PageLoadStatisticsExt::NotifyAndResetStatistics() {
   if (web_contents_ &&
       content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
     std::map<std::string, int32_t> subresource_map;
-    for (auto& pair :
-         aggregated_document_after_load_statistics_.loads_disallowed_url_map) {
-      subresource_map.insert(pair);
-    }
+    int length = std::min(DISALLOWED_URL_MAP_SIZE_MAX,
+        aggregated_document_after_load_statistics_.loads_disallowed_url_map.size());
+    std::copy_n(aggregated_document_after_load_statistics_.loads_disallowed_url_map.begin(),
+        length, std::inserter(subresource_map, subresource_map.begin()));
     if (subresource_map.size() > 0) {
       LOG(INFO)
           << "[AdBlock] On url blocked reported after loaded finish, size:"
@@ -128,10 +130,10 @@ void PageLoadStatisticsExt::UserNotifyAndResetStatistics() {
   if (web_contents_ &&
       content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
     std::map<std::string, int32_t> subresource_map;
-    for (auto& pair : user_aggregated_document_after_load_statistics_
-                          .loads_disallowed_url_map) {
-      subresource_map.insert(pair);
-    }
+    int length = std::min(DISALLOWED_URL_MAP_SIZE_MAX,
+        user_aggregated_document_after_load_statistics_.loads_disallowed_url_map.size());
+    std::copy_n(user_aggregated_document_after_load_statistics_.loads_disallowed_url_map.begin(),
+        length, std::inserter(subresource_map, subresource_map.begin()));
     if (subresource_map.size() > 0) {
       LOG(INFO) << "[User AdBlock] On url blocked reported after loaded "
                    "finish, size:"

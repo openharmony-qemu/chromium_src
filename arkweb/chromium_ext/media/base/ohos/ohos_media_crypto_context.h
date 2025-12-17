@@ -30,6 +30,8 @@ class MEDIA_EXPORT OHOSMediaCryptoContext {
 #if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
   virtual void ReleaseInnerResource() = 0;
 #endif
+
+  virtual std::vector<uint8_t> GetUUID() = 0;
 };
 
 }  // namespace media

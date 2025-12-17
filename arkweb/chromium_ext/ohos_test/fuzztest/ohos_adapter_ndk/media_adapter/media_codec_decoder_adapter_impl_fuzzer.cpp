@@ -131,19 +131,18 @@ public:
 bool MediaCodecDecoderAdapterImplFuzzTest(const uint8_t* data, size_t size)
 {
     NWeb::MediaCodecDecoderAdapterImpl mediaCodecDecoderAdapterImpl;
-    NWeb::DecoderAdapterCode code = mediaCodecDecoderAdapterImpl.CreateVideoDecoderByMime("video/avc");
     std::shared_ptr<NWeb::DecoderFormatAdapter> format = std::make_unique<DecoderFormatAdapterMock>();
     FuzzedDataProvider dataProvider(data, size);
     std::string stringParam = dataProvider.ConsumeRandomLengthString(MAX_STRING_LENGTH);
+    mediaCodecDecoderAdapterImpl.CreateVideoDecoderByName(stringParam);
+    NWeb::DecoderAdapterCode code = mediaCodecDecoderAdapterImpl.CreateVideoDecoderByMime("video/avc");
+
     int32_t intParam = dataProvider.ConsumeIntegralInRange<int32_t>(0, 10000);
     uint32_t uintParam = dataProvider.ConsumeIntegralInRange<uint32_t>(0, 10000);
     auto callback = std::make_shared<DecoderCallbackAdapterMock>();
     mediaCodecDecoderAdapterImpl.SetCallbackDec(nullptr);
     mediaCodecDecoderAdapterImpl.SetCallbackDec(callback);
-    std::shared_ptr<AudioCencInfoAdapterMock> cencInfo = std::make_unique<AudioCencInfoAdapterMock>();
-    code = mediaCodecDecoderAdapterImpl.SetAVCencInfo(uintParam, cencInfo);
-
-    code = mediaCodecDecoderAdapterImpl.CreateVideoDecoderByName(stringParam);
+    code = mediaCodecDecoderAdapterImpl.SetAVCencInfo(uintParam, nullptr);
     code = mediaCodecDecoderAdapterImpl.ConfigureDecoder(format);
     code = mediaCodecDecoderAdapterImpl.SetParameterDecoder(format);
 

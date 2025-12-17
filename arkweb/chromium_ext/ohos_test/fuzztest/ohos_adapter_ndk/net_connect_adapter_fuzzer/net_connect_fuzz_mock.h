@@ -17,7 +17,7 @@
 
 #include <cstdint>
 #include <string>
-
+#include <vulkan/vulkan.h>
 #include <BasicServicesKit/oh_commonevent.h>
 #include <network/netmanager/net_connection_type.h>
 #include <telephony/core_service/telephony_radio.h>
@@ -80,6 +80,17 @@ OH_Telephony_GetNetworkStateForSlot(int32_t slotId,
 
 FUZZ_MOCK_EXPORT int32_t
 OH_NetConn_GetAllNets(NetConn_NetHandleList* netHandleList);
+
+FUZZ_MOCK_EXPORT VKAPI_ATTR VkResult VKAPI_CALL
+vkGetNativeBufferPropertiesOHOS(VkDevice device,
+                                const struct OH_NativeBuffer* buffer,
+                                VkNativeBufferPropertiesOHOS* pProperties);
+
+FUZZ_MOCK_EXPORT VKAPI_ATTR VkResult VKAPI_CALL
+vkCreateSurfaceOHOS(VkInstance instance,
+                    const VkSurfaceCreateInfoOHOS* pCreateInfo,
+                    const VkAllocationCallbacks* pAllocator,
+                    VkSurfaceKHR* pSurface);
 
 #ifdef __cplusplus
 }

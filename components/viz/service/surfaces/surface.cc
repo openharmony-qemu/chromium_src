@@ -36,6 +36,9 @@
 #endif
 #include "ui/gfx/presentation_feedback.h"
 #include "ui/gfx/swap_result.h"
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#endif
 
 namespace viz {
 
@@ -58,6 +61,10 @@ void RequestCopyOfOutputOnRenderPass(std::unique_ptr<CopyOutputRequest> request,
 }
 
 bool ShouldBlockActivationOnDependenciesWhenInteractive() {
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+  if (!base::ohos::IsPcDevice() && !base::ohos::IsTabletDevice())
+    return true;
+#endif
   return !features::ShouldDrawImmediatelyWhenInteractive();
 }
 

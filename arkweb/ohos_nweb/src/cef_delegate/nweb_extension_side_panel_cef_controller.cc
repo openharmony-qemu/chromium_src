@@ -38,19 +38,24 @@ NWebExtensionSidePanelCefController::GetOptions(std::string extension_id,
   NWebExtensionSidePanelOptions result;
   auto browser_context = GetActiveBrowserContext();
   auto registry = extensions::ExtensionRegistry::Get(browser_context);
-  scoped_refptr<const extensions::Extension> extension(
-      registry->GetExtensionById(extension_id,
-                                 extensions::ExtensionRegistry::EVERYTHING));
-  DCHECK(extension.get());
+  auto extension = registry->GetExtensionById(
+      extension_id, extensions::ExtensionRegistry::EVERYTHING);
+  if (!extension) {
+    LOG(INFO) << "failed to find extension,id is " << extension_id;
+    return result;
+  }
 
   auto service = extensions::SidePanelService::Get(browser_context);
-  LOG(INFO) << "GetSidePanelService service pointer:" << service;
+  if (!service) {
+    LOG(INFO) << "failed to get side panel service,id is " << extension_id;
+    return result;
+  }
 
   auto options = service->GetOptions(*extension, tab_id);
-  result.enabled = *options.enabled;
-  result.tab_id = *options.tab_id;
+  result.enabled = options.enabled;
+  result.tab_id = options.tab_id;
   if (options.path.has_value()) {
-    result.path = extension->GetResourceURL(*options.path).spec();
+    result.path = extension->GetResourceURL(options.path.value()).spec();
   }
 
   return result;

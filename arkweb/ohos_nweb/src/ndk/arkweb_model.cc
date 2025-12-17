@@ -773,14 +773,14 @@ ARKWEB_NDK_EXPORT void OH_WebMessage_SetData(ArkWeb_WebMessagePtr message,
     return;
   }
 
-  char* destination = new (std::nothrow) char[dataLength];
+  char* destination = new (std::nothrow) char[dataLength + 1];
 
   if (!destination) {
     LOG(ERROR) << "NativeArkWeb SetData malloc failed";
     return;
   }
 
-  if (memcpy_s(destination, dataLength, (char*)data, dataLength) != EOK) {
+  if (memcpy_s(destination, dataLength + 1, (char*)data, dataLength + 1) != EOK) {
     LOG(ERROR) << "NativeArkWeb SetData memcpy failed";
     delete[] destination;
     return;
@@ -1079,12 +1079,6 @@ OH_JavaScript_CreateJavaScriptValue(ArkWeb_JavaScriptValueType type,
 
   if (!destination) {
     LOG(ERROR) << "NativeArkWeb CreateJavaScriptValue malloc failed";
-    return nullptr;
-  }
-
-  if (memcpy_s(destination, dataLength, (char*)data, dataLength) != EOK) {
-    LOG(ERROR) << "NativeArkWeb CreateJavaScriptValue memcpy failed";
-    delete[] destination;
     return nullptr;
   }
 

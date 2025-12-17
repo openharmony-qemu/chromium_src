@@ -20,7 +20,7 @@ if (is_android) {
   import("//build/config/android/rules.gni")
 }
 
-if (defined(arkweb_nweb_ex) && arkweb_nweb_ex) {
+if (defined(is_arkweb_ext) && is_arkweb_ext) {
   import("//arkweb/ohos_nweb_ex/build/features/features.gni")
 }
 
@@ -122,7 +122,9 @@ source_set("switches") {
 
   if (is_arkweb) {
     sources += arkweb_content_public_common_sources
-    visibility += [ "//storage:storage_unittests" ]
+    visibility += [ "//storage:storage_unittests",
+      "//components/gwp_asan:gwp_asan_unittests"
+    ]
   }
 
   # Deps required by the above header.

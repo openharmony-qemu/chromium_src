@@ -18,6 +18,7 @@
 #include <thread>
 #if BUILDFLAG(ARKWEB_ACCESSIBILITY)
 #include "nweb_accessibility_utils.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 #endif
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
 #include "arkweb/chromium_ext/url/ohos/log_utils.h"
@@ -96,6 +97,7 @@
 #include "ohos_nweb/src/cef_delegate/nweb_devtools_message_handler_impl.h"
 #if BUILDFLAG(ARKWEB_DEVTOOLS)
 #include "cef/include/cef_devtools_message_handler_delegate.h"
+#include "ohos_cef_ext/libcef/common/cef_open_devtools_ext_opt.h"
 #include "ohos_nweb/src/nweb_common.h"
 #endif // BUILDFLAG(ARKWEB_DEVTOOLS)
 
@@ -118,6 +120,9 @@
 #include "nweb_core_value.h"
 #include "ohos_glue/base/include/ark_web_errno.h"
 
+#if BUILDFLAG(ARKWEB_AUTOLAYOUT)
+#include "nweb_autolayout.h"
+#endif
 namespace {
 static const float richtextDisplayRatio = 1.0;
 }
@@ -131,10 +136,15 @@ static const double kZoomLevelToFactorRatio = 1.2;
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)
 const int NWebPlaybackState_NONE = 0;
 #endif
+const int kErrorDescriptionMaxLen = 2048;
 
 static const int kDefaultWebNativeProxy = -2;
 #if BUILDFLAG(ARKWEB_ACCESSIBILITY)
 static const int64_t kRootAccessibilityId = 1;
+constexpr char WEB_A11Y_ENABLED_STATISTICS[] = "WEB_A11Y_ENABLED_STATISTICS";
+constexpr char WEB_A11Y_ENABLED[] = "WEB_A11Y_ENABLED";
+constexpr char WEB_A11Y_EXECUTE_ACTION_TYPE[] = "WEB_A11Y_EXECUTE_ACTION_TYPE";
+constexpr char WEB_A11Y_ACTION_TYPE[] = "WEB_A11Y_ACTION_TYPE";
 #endif
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
@@ -317,12 +327,14 @@ class JavaScriptResultCallbackImpl : public CefJavaScriptResultCallback {
     auto data =
         std::make_shared<OHOS::NWeb::NWebCoreValue>(NWebHapValue::Type::NONE);
     AddNWebValueCefV2(result, data);
+    data->SetErrorDescription(error_description_);
     if (callback_) {
       callback_->OnReceiveValueV2(data);
       if (ArkWebGetErrno() != RESULT_OK) {
         auto data2 =
             std::make_shared<OHOS::NWeb::NWebMessage>(NWebValue::Type::NONE);
         ConvertCefValueToNWebMessage(result, data2);
+        data2->SetErrorDescription(error_description_);
         callback_->OnReceiveValue(data2);
       }
     }
@@ -346,7 +358,13 @@ class JavaScriptResultCallbackImpl : public CefJavaScriptResultCallback {
     }
   }
 
+  void SetErrorDescription(const std::string& description) override {
+    error_description_ = "Not support type: <" +
+        description.substr(0, kErrorDescriptionMaxLen) + ">";
+  }
+
  private:
+  std::string error_description_;
   std::shared_ptr<NWebMessageValueCallback> callback_;
   uint32_t callbackId_;
   std::shared_ptr<NWebDelegateInterface> nwebDelegate_;
@@ -523,15 +541,15 @@ class CefPdfValueCallbackImpl : public CefPdfValueCallback {
       base::ThreadPool::PostTask(
           FROM_HERE, {base::MayBlock(), base::TaskPriority::HIGHEST},
           base::BindOnce(
-              [](CefPdfValueCallbackImpl* self,
-                 std::shared_ptr<std::string> data) {
-                self->CallbackOnReceiveThread(std::move(data));
+              [](base::WeakPtr<CefPdfValueCallbackImpl> self, std::shared_ptr<std::string> data) {
+                  self->CallbackOnReceiveThread(std::move(data));
               },
-              base::Unretained(this), std::move(pdf_data)));
+              weak_factory_.GetWeakPtr(), std::move(pdf_data)));
     }
   }
 
  private:
+  base::WeakPtrFactory<CefPdfValueCallbackImpl> weak_factory_{this};
   std::shared_ptr<NWebArrayBufferValueCallback> callback_;
   uint32_t callback_id_;
   std::weak_ptr<NWebDelegateInterface> weak_nweb_delegate_;
@@ -609,7 +627,12 @@ class JavaScriptInFramesResultCallbackImpl : public CefJavaScriptResultCallback 
   void OnJavaScriptExeResult(CefRefPtr<CefValue> result) override {
     if (callback_ != nullptr) {
       JavaScriptValue value;
-      ConvertCefValueToJavaScriptValue(result, &value);
+      if (error_description_.empty()) {
+        ConvertCefValueToJavaScriptValue(result, &value);
+      } else {
+        value.type = JavaScriptDataType::STRING;
+        value.stringValue = error_description_;
+      }
 
       nweb_ex::proto::JavaScriptValue pb_value;
       NwebExtensionJavaScriptTypesUtils::ExtensionWebValueClassToPb(value, pb_value);
@@ -626,7 +649,12 @@ class JavaScriptInFramesResultCallbackImpl : public CefJavaScriptResultCallback 
     }
   }
 
+  void SetErrorDescription(const std::string& description) override {
+    error_description_ = description;
+  } 
+
  private:
+  std::string error_description_;
   OnReceiveValueCallback callback_ = nullptr;
   int32_t callback_id_ = 0;
   uint32_t nweb_id_ = 0;
@@ -830,11 +858,20 @@ bool NWebDelegate::Init(bool is_enhance_surface,
   }
 #if BUILDFLAG(ARKWEB_WEBRTC)
   if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
-    LOG(ERROR) << "can not get browser ,can not set NWeb id";
+    LOG(INFO) << "can not get browser ,can not set NWeb id";
     return true;
   }
   GetBrowser()->GetHost()->SetNWebId(GetBrowser()->GetNWebId());
 #endif  // BUILDFLAG(ARKWEB_WEBRTC)
+#if BUILDFLAG(ARKWEB_AUTOLAYOUT)
+  base::ThreadPool::PostTask(
+      FROM_HERE,
+      base::BindOnce([]() {
+            LOG(DEBUG) << "Init NwebAutolayout::GetInstance()";
+            NwebAutolayout::GetInstance();
+      })
+  );
+#endif
   return true;
 }
 
@@ -1181,6 +1218,7 @@ void NWebDelegate::OnTouchPress(int32_t id,
                                 double x,
                                 double y,
                                 bool from_overlay) {
+  last_touch_mouse_position_ = std::make_pair(x, y);
   if (event_handler_ != nullptr) {
     if (pressing_num_ < 0) {
       pressing_num_ = 0;
@@ -1190,6 +1228,11 @@ void NWebDelegate::OnTouchPress(int32_t id,
                                  y / default_virtual_pixel_ratio_,
                                  from_overlay);
   }
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  if (render_handler_ != nullptr) {
+    render_handler_->SetIrregularDragBackground(true);
+  }
+#endif  // #if BUILDFLAG(ARKWEB_DRAG_DROP)
 }
 
 void NWebDelegate::OnTouchRelease(int32_t id,
@@ -1240,6 +1283,11 @@ void NWebDelegate::OnStylusTouchPress(
   event_handler_->OnStylusTouchPress(stylus_touch_point_info, from_overlay,
                                      default_virtual_pixel_ratio_);
 
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  if (render_handler_ != nullptr) {
+    render_handler_->SetIrregularDragBackground(true);
+  }
+#endif  // #if BUILDFLAG(ARKWEB_DRAG_DROP)
 }
 
 void NWebDelegate::OnStylusTouchRelease(
@@ -1332,6 +1380,11 @@ void NWebDelegate::SendMouseEvent(int x,
                                    y / default_virtual_pixel_ratio_, button,
                                    action, count);
   }
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  if (render_handler_ != nullptr) {
+    render_handler_->SetIrregularDragBackground(false);
+  }
+#endif  // #if BUILDFLAG(ARKWEB_DRAG_DROP)
 }
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
@@ -1905,7 +1958,14 @@ void NWebDelegate::OnPause() {
     LOG(DEBUG) << "NWebDelegate::OnPause set hidden, nweb_id = " << nweb_id_;
     GetBrowser()->GetHost()->WasHidden(true);
     hidden_ = true;
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+  } else {
+    LOG(INFO) << "NWebDelegate::OnPause evict frame back buffers when nweb was hidden";
+    GetBrowser()->GetHost()->EvictFrameBackBuffersWhenNWebWasHidden();
   }
+#else
+  }
+#endif
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   is_onPause_ = true;
@@ -1987,6 +2047,30 @@ void NWebDelegate::FillAutofillDataV2(std::shared_ptr<NWebRomValue> data) {
 
   CefRefPtr<CefValue> message = ConvertRomValueToCefValue(data);
   GetBrowser()->GetHost()->FillAutofillData(message);
+}
+
+void NWebDelegate::FillAutofillDataFromTriggerType(
+    std::shared_ptr<NWebRomValue> data, int32_t type) {
+  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
+    return;
+  }
+
+  CefRefPtr<CefValue> message = ConvertRomValueToCefValue(data);
+  GetBrowser()->GetHost()->FillAutofillDataFromTriggerType(message, type);
+}
+
+void NWebDelegate::PutVaultPlainTextCallback(
+    std::shared_ptr<OHOS::NWeb::NWebVaultPlainTextCallback> callback) {
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
+    if (preference_delegate_) {
+      preference_delegate_->PutVaultPlainTextCallback(callback);
+    }
+    return;
+  }
+
+  GetBrowser()->GetHost()->SetVaultPlainTextCallback(callback);
+#endif
 }
 
 void NWebDelegate::OnContinue() {
@@ -2586,6 +2670,27 @@ int NWebDelegate::LoadWithData(const std::string& data,
   return NWEB_OK;
 }
 
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+int NWebDelegate::LoadUrlWithParams(const std::string& url,
+                                    const LoadUrlType load_type,
+                                    const std::string& refer,
+                                    const std::string& headers,
+                                    const std::string& post_data,
+                                    const bool allow_https_upgrade,
+                                    int32_t transition_type) {
+  LOG(DEBUG) << "NWebDelegate::LoadUrlWithParams";
+  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
+    return NWEB_ERR;
+  }
+  GetBrowser()->GetHost()->LoadUrlWithParams(url, load_type, refer, headers,
+                                             post_data, allow_https_upgrade,
+                                             transition_type);
+  RequestVisitedHistory();
+  return NWEB_OK;
+}
+#endif
+ 
+
 const CefRefPtr<ArkWebBrowserExt> NWebDelegate::GetBrowser() const {
   if (handler_delegate_) {
     return handler_delegate_->GetBrowser();
@@ -2867,7 +2972,7 @@ void NWebDelegate::JavaScriptOnDocumentStart(const ScriptItems& scriptItems) {
     size_t count = 0;
     if (scriptItems.size() == 0) {
       GetBrowser()->GetHost()->JavaScriptOnDocumentStart("", std::vector<CefString>(),
-                                                         true);
+        std::vector<std::pair<CefString, CefString>>(), true);
     }
     for (auto item : scriptItems) {
       count++;
@@ -2879,7 +2984,7 @@ void NWebDelegate::JavaScriptOnDocumentStart(const ScriptItems& scriptItems) {
         scriptRules.push_back(cefRule);
       }
       GetBrowser()->GetHost()->JavaScriptOnDocumentStart(script, scriptRules,
-                                                         count == scriptItems.size());
+        std::vector<std::pair<CefString, CefString>>(), count == scriptItems.size());
     }
   } else if (preference_delegate_) {
     preference_delegate_->PutJavaScriptOnDocumentStart(scriptItems);
@@ -2890,11 +2995,12 @@ void NWebDelegate::JavaScriptOnDocumentStart(const ScriptItems& scriptItems) {
 
 void NWebDelegate::JavaScriptOnDocumentStartByOrder(
     const ScriptItems& scriptItems,
+    const ScriptRegexItems& scriptRegexItems,
     const ScriptItemsByOrder& scriptItemsByOrder) {
   if (GetBrowser() != nullptr && GetBrowser()->GetHost() != nullptr) {
     if (scriptItems.size() == 0) {
       GetBrowser()->GetHost()->JavaScriptOnDocumentStart("", std::vector<CefString>(),
-                                                         true);
+        std::vector<std::pair<CefString, CefString>>(), true);
     }
     size_t count = 0;
     for (const auto& item : scriptItemsByOrder) {
@@ -2909,12 +3015,22 @@ void NWebDelegate::JavaScriptOnDocumentStartByOrder(
         cefRule.FromString(rule);
         scriptRules.push_back(cefRule);
       }
-      GetBrowser()->GetHost()->JavaScriptOnDocumentStart(script, scriptRules,
+      std::vector<std::pair<CefString, CefString>> scriptRegexRules;
+      if (scriptRegexItems.find(item) != scriptRegexItems.end()) {
+        for (const std::pair<std::string, std::string>& regexRule : scriptRegexItems.at(item)) {
+          CefString cefDomainRule;
+          CefString cefRegexRule;
+          cefDomainRule.FromString(regexRule.first);
+          cefRegexRule.FromString(regexRule.second);
+          scriptRegexRules.push_back(std::make_pair(cefDomainRule, cefRegexRule));
+        }
+      }
+      GetBrowser()->GetHost()->JavaScriptOnDocumentStart(script, scriptRules, scriptRegexRules,
                                                          count == scriptItems.size());
     }
   } else if (preference_delegate_) {
     preference_delegate_->PutJavaScriptOnDocumentStartByOrder(
-        scriptItems, scriptItemsByOrder);
+        scriptItems, scriptRegexItems, scriptItemsByOrder);
   } else {
     LOG(ERROR) << "JavaScriptOnDocumentStartByOrder has failed";
   }
@@ -2922,11 +3038,12 @@ void NWebDelegate::JavaScriptOnDocumentStartByOrder(
 
 void NWebDelegate::JavaScriptOnDocumentEndByOrder(
     const ScriptItems& scriptItems,
+    const ScriptRegexItems& scriptRegexItems,
     const ScriptItemsByOrder& scriptItemsByOrder) {
   if (GetBrowser() != nullptr && GetBrowser()->GetHost() != nullptr) {
     if (scriptItems.size() == 0) {
       GetBrowser()->GetHost()->JavaScriptOnDocumentEnd("", std::vector<CefString>(),
-                                                       true);
+        std::vector<std::pair<CefString, CefString>>(), true);
     }
     size_t count = 0;
     for (const auto& item : scriptItemsByOrder) {
@@ -2941,11 +3058,21 @@ void NWebDelegate::JavaScriptOnDocumentEndByOrder(
         cefRule.FromString(rule);
         scriptRules.push_back(cefRule);
       }
-      GetBrowser()->GetHost()->JavaScriptOnDocumentEnd(script, scriptRules,
+      std::vector<std::pair<CefString, CefString>> scriptRegexRules;
+      if (scriptRegexItems.find(item) != scriptRegexItems.end()) {
+        for (const std::pair<std::string, std::string>& regexRule : scriptRegexItems.at(item)) {
+          CefString cefDomainRule;
+          CefString cefRegexRule;
+          cefDomainRule.FromString(regexRule.first);
+          cefRegexRule.FromString(regexRule.second);
+          scriptRegexRules.push_back(std::make_pair(cefDomainRule, cefRegexRule));
+        }
+      }
+      GetBrowser()->GetHost()->JavaScriptOnDocumentEnd(script, scriptRules, scriptRegexRules,
                                                        count == scriptItems.size());
     }
   } else if (preference_delegate_) {
-    preference_delegate_->PutJavaScriptOnDocumentEndByOrder(scriptItems,
+    preference_delegate_->PutJavaScriptOnDocumentEndByOrder(scriptItems, scriptRegexItems,
                                                             scriptItemsByOrder);
   } else {
     LOG(ERROR) << "JavaScriptOnDocumentEndByOrder has failed";
@@ -2954,11 +3081,12 @@ void NWebDelegate::JavaScriptOnDocumentEndByOrder(
 
 void NWebDelegate::JavaScriptOnHeadReadyByOrder(
     const ScriptItems& scriptItems,
+    const ScriptRegexItems& scriptRegexItems,
     const ScriptItemsByOrder& scriptItemsByOrder) {
   if (GetBrowser() != nullptr && GetBrowser()->GetHost() != nullptr) {
     if (scriptItems.size() == 0) {
       GetBrowser()->GetHost()->JavaScriptOnHeadReady("", std::vector<CefString>(),
-                                                     true);
+        std::vector<std::pair<CefString, CefString>>(), true);
     }
     size_t count = 0;
     for (const auto& item : scriptItemsByOrder) {
@@ -2974,11 +3102,21 @@ void NWebDelegate::JavaScriptOnHeadReadyByOrder(
         cefRule.FromString(rule);
         scriptRules.push_back(cefRule);
       }
-      GetBrowser()->GetHost()->JavaScriptOnHeadReady(script, scriptRules,
+      std::vector<std::pair<CefString, CefString>> scriptRegexRules;
+      if (scriptRegexItems.find(item) != scriptRegexItems.end()) {
+        for (const std::pair<std::string, std::string>& regexRule : scriptRegexItems.at(item)) {
+          CefString cefDomainRule;
+          CefString cefRegexRule;
+          cefDomainRule.FromString(regexRule.first);
+          cefRegexRule.FromString(regexRule.second);
+          scriptRegexRules.push_back(std::make_pair(cefDomainRule, cefRegexRule));
+        }
+      }
+      GetBrowser()->GetHost()->JavaScriptOnHeadReady(script, scriptRules, scriptRegexRules,
                                                      count == scriptItems.size());
     }
   } else if (preference_delegate_) {
-    preference_delegate_->PutJavaScriptOnHeadReadyByOrder(scriptItems,
+    preference_delegate_->PutJavaScriptOnHeadReadyByOrder(scriptItems, scriptRegexItems,
                                                           scriptItemsByOrder);
   } else {
     LOG(ERROR) << "JavaScriptOnHeadReadyByOrder has failed";
@@ -3036,7 +3174,7 @@ void NWebDelegate::JavaScriptOnDocumentEnd(const ScriptItems& scriptItems) {
   if (GetBrowser() != nullptr && GetBrowser()->GetHost() != nullptr) {
     if (scriptItems.size() == 0) {
       GetBrowser()->GetHost()->JavaScriptOnDocumentEnd("", std::vector<CefString>(),
-                                                       true);
+        std::vector<std::pair<CefString, CefString>>(), true);
     }
     size_t count = 0;
     for (auto item : scriptItems) {
@@ -3049,7 +3187,7 @@ void NWebDelegate::JavaScriptOnDocumentEnd(const ScriptItems& scriptItems) {
         scriptRules.push_back(cefRule);
       }
       GetBrowser()->GetHost()->JavaScriptOnDocumentEnd(script, scriptRules,
-                                                       count == scriptItems.size());
+        std::vector<std::pair<CefString, CefString>>(), count == scriptItems.size());
     }
   } else if (preference_delegate_) {
     preference_delegate_->PutJavaScriptOnDocumentEnd(scriptItems);
@@ -3222,7 +3360,7 @@ void NWebDelegate::SendDragEvent(const DelegateDragEvent& dragEvent) const {
         handler_delegate_->SetDragEnter(true);
         auto drag_data = render_handler_->GetDragData();
         GetBrowser()->GetHost()->DragTargetDragEnter(drag_data, event,
-                                                     DRAG_OPERATION_EVERY);
+                                                     dragEvent.allowed_op);
       } else {
         LOG(ERROR) << "DragDrop drag data render_handler_ nullptr";
       }
@@ -3239,7 +3377,7 @@ void NWebDelegate::SendDragEvent(const DelegateDragEvent& dragEvent) const {
     case DelegateDragAction::DRAG_OVER:
       LOG(DEBUG) << "DragDrop event SendDragEvent over webId:"
                  << GetBrowser()->GetNWebId();
-      GetBrowser()->GetHost()->DragTargetDragOver(event, DRAG_OPERATION_EVERY);
+      GetBrowser()->GetHost()->DragTargetDragOver(event, dragEvent.allowed_op);
       break;
     case DelegateDragAction::DRAG_DROP:
       event.modifiers = EVENTFLAG_NONE;
@@ -3274,8 +3412,7 @@ void NWebDelegate::SendDragEvent(const DelegateDragEvent& dragEvent) const {
       ClearDragData();
       LOG(INFO) << "DragDrop event SendDragEvent end webId:"
                 << GetBrowser()->GetNWebId();
-      GetBrowser()->GetHost()->DragSourceEndedAt(event.x, event.y,
-                                                 DRAG_OPERATION_COPY);
+      GetBrowser()->GetHost()->DragSourceEndedAt(event.x, event.y, dragEvent.op);
       GetBrowser()->GetHost()->DragSourceSystemDragEnded();
       break;
     case DelegateDragAction::DRAG_CANCEL:
@@ -3576,6 +3713,7 @@ bool NWebDelegate::ScrollByWithResult(float delta_x, float delta_y) {
 
 void NWebDelegate::WebSendMouseEvent(
     const std::shared_ptr<OHOS::NWeb::NWebMouseEvent>& mouseEvent) {
+  last_touch_mouse_position_ = std::make_pair(mouseEvent->GetX(), mouseEvent->GetY());
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
   if (event_handler_ != nullptr &&
       (!handler_delegate_ || !handler_delegate_->IsDragEnter())) {
@@ -3591,6 +3729,11 @@ void NWebDelegate::WebSendMouseEvent(
     LOG(INFO) << "Mouse Event dropped! event_handler is " << !!event_handler_;
 #endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
   }
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  if (render_handler_ != nullptr) {
+    render_handler_->SetIrregularDragBackground(false);
+  }
+#endif  // #if BUILDFLAG(ARKWEB_DRAG_DROP)
 }
 
 void NWebDelegate::ScrollToWithAnime(float x, float y, int32_t duration) {
@@ -3646,7 +3789,7 @@ void NWebDelegate::GetOverScrollOffset(float* offset_x, float* offset_y) {
     return;
   }
   if (render_handler_->HasOverscroll()) {
-    GetBrowser()->GetHost()->GetOverScrollOffset(offset_x, offset_y);
+    GetBrowser()->GetHost()->GetOverScrollOffsetValue(offset_x, offset_y);
   } else {
     *offset_x = 0.0f;
     *offset_y = 0.0f;
@@ -3722,6 +3865,33 @@ void NWebDelegate::CloseCamera() {
   }
 
   GetBrowser()->GetHost()->CloseCamera();
+}
+
+void NWebDelegate::ResumeMicrophone() {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "ResumeMicrophone can not get browser";
+    return;
+  }
+
+  GetBrowser()->GetHost()->ResumeMicrophone();
+}
+
+void NWebDelegate::StopMicrophone() {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "StopMicrophone can not get browser";
+    return;
+  }
+
+  GetBrowser()->GetHost()->StopMicrophone();
+}
+
+void NWebDelegate::PauseMicrophone() {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "PauseMicrophone can not get browser";
+    return;
+  }
+
+  GetBrowser()->GetHost()->PauseMicrophone();
 }
 #endif  // BUILDFLAG(ARKWEB_WEBRTC)
 
@@ -3844,7 +4014,7 @@ bool NWebDelegate::IsEnableCustomVideoPlayer() {
 }
 #endif
 
-#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM) || BUILDFLAG(ARKWEB_ZOOM)
 void NWebDelegate::SetForceEnableZoom(bool forceEnableZoom) {
   LOG(INFO) << "NWebDelegate::SetForceEnableZoom " << forceEnableZoom;
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
@@ -3854,7 +4024,9 @@ void NWebDelegate::SetForceEnableZoom(bool forceEnableZoom) {
     GetBrowser()->SetForceEnableZoom(forceEnableZoom);
   }
 }
+#endif
 
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
 bool NWebDelegate::GetForceEnableZoom() {
   if (GetBrowser().get()) {
     return GetBrowser()->GetForceEnableZoom();
@@ -4411,6 +4583,11 @@ void NWebDelegate::SetAccessibilityState(cef_state_t accessibilityState) {
   if (accessibility_state_ != (accessibilityState == STATE_ENABLED)) {
     accessibility_state_ = (accessibilityState == STATE_ENABLED);
     GetBrowser()->GetHost()->SetAccessibilityState(accessibilityState);
+    OHOS::NWeb::OhosAdapterHelper::GetInstance()
+        .GetHiSysEventAdapterInstance()
+        .Write(WEB_A11Y_ENABLED_STATISTICS,
+               OHOS::NWeb::HiSysEventAdapter::EventType::BEHAVIOR,
+               {WEB_A11Y_ENABLED, (accessibility_state_ ? "true" : "false")});
   }
 }
 
@@ -4432,6 +4609,12 @@ bool NWebDelegate::ExecuteAction(
   AceAction aceAction = static_cast<AceAction>(action);
   LOG(INFO) << "ExecuteAction accessibilityId is " << accessibilityId
             << ", action is " << action;
+  // The range of AceAction is 0-30, and it can be converted.
+  OHOS::NWeb::OhosAdapterHelper::GetInstance()
+      .GetHiSysEventAdapterInstance()
+      .Write(WEB_A11Y_EXECUTE_ACTION_TYPE,
+          OHOS::NWeb::HiSysEventAdapter::EventType::BEHAVIOR,
+          {WEB_A11Y_ACTION_TYPE, std::to_string(static_cast<int8_t>(action))});
 
   switch (aceAction) {
     case AceAction::ACTION_CLICK:
@@ -5515,56 +5698,6 @@ void NWebDelegate::DisallowSandboxFileAccessFromFileUrl(bool disallow) {
 #endif  // BUILDFLAG(ARKWEB_EXT_FILE_ACCESS)
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-void NWebDelegate::WebExtensionTabCreated(int tab_id) {
-  LOG(INFO) << "WebExtensionTabCreated:" << tab_id;
-  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
-    LOG(ERROR) << "WebExtensionTabCreated failed, get browser failed";
-    return;
-  }
-
-  return GetBrowser()->ExtensionSetTabId(tab_id);
-}
-
-void NWebDelegate::WebExtensionTabUpdated(
-    int tab_id,
-    const std::vector<std::string>& changed_property_names,
-    const std::string& url) {
-  LOG(INFO) << "WebExtensionTabUpdated:" << tab_id;
-  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
-    LOG(ERROR) << "WebExtensionTabUpdated failed, get browser failed";
-    return;
-  }
-
-  GetBrowser()->ExtensionSetTabId(tab_id);
-
-  std::vector<CefString> changed_properties;
-  std::for_each(changed_property_names.begin(), changed_property_names.end(),
-                [&changed_properties](const std::string& name) {
-                  changed_properties.emplace_back(CefString(name));
-                });
-  return GetBrowser()->GetHost()->WebExtensionTabUpdated(
-      tab_id, changed_properties, url);
-}
-
-void NWebDelegate::WebExtensionTabUpdated(int tab_id,
-    const std::vector<std::string>& changed_property_names,
-    std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo) {
-  LOG(INFO) << "WebExtensionTabUpdated:" << tab_id;
-  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
-    LOG(ERROR) << "WebExtensionTabUpdated failed, get browser failed";
-    return;
-  }
-  GetBrowser()->ExtensionSetTabId(tab_id);
- 
-  std::vector<CefString> changed_properties;
-  std::for_each(changed_property_names.begin(), changed_property_names.end(),
-      [&changed_properties] (const std::string& name) {
-    changed_properties.emplace_back(CefString(name));
-  });
-  return GetBrowser()->GetHost()->WebExtensionTabUpdated(
-      tab_id, changed_properties, std::move(changeInfo));
-}
-
 void NWebDelegate::WebExtensionTabRemoved(int tab_id,
   bool isWindowClosing, int windowId) {
   LOG(INFO) << "WebExtensionTabRemoved:" << tab_id;
@@ -5769,9 +5902,14 @@ bool NWebDelegate::IsMixedContentAutoUpgradesEnabled() {
 }
 #endif
 
-#if BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
+#if BUILDFLAG(IS_ARKWEB)
 void NWebDelegate::EnableAppLinking(bool enable) {
   LOG(DEBUG) << "NWebDelegate::EnableAppLinking, enable: " << enable;
+  if (handler_delegate_) {
+    LOG(DEBUG) << "NWebDelegate::EnableAppLinking popup case, enable: " << enable;
+    handler_delegate_->SaveEnableAppLinking(enable);
+  }
+
   if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
     LOG(ERROR) << "can not get browser ,can not set applinking";
     return;
@@ -5780,7 +5918,7 @@ void NWebDelegate::EnableAppLinking(bool enable) {
   GetBrowser()->GetHost()->EnableAppLinking(enable);
   return;
 }
-#endif // BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
+#endif // BUILDFLAG(IS_ARKWEB)
 
 #if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
 void NWebDelegate::SetUsageScenario(int32_t usage_scenario) {
@@ -5829,6 +5967,9 @@ void NWebDelegate::EnableMediaNetworkTrafficPrompt(bool enable) {
 void NWebDelegate::SetSurfaceDensity(const double& density) {
   display_ratio_ = density;
   SetVirtualPixelRatio(density);
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  base::ohos::SetDevicePixelRatio(display_ratio_);
+#endif
   std::shared_ptr<DisplayAdapter> display =
       display_manager_adapter_->GetDefaultDisplay();
   LOG(INFO) << "SetSurfaceDensity: " << density;
@@ -5900,6 +6041,36 @@ void NWebDelegate::OpenDevtoolsWith(
   GetBrowser()->GetHost()->ShowDevToolsWith(
       devtools_delegate->GetBrowser()->GetHost(),
       devtools_message_handler, inspect_element_at);
+#endif // #if BUILDFLAG(ARKWEB_DEVTOOLS)
+}
+
+void NWebDelegate::OpenDevtoolsWithByPb(
+      std::shared_ptr<NWebDelegateInterface> nweb_delegate,
+      std::unique_ptr<OpenDevToolsParam> param,
+      OpenDevToolsExtOpt& ext_opt) {
+  LOG(INFO) << "NWebDelegate::OpenDevtoolsWithByPb";
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  if (!GetBrowser() || !GetBrowser()->GetHost()) {
+    LOG(INFO) << "OpenDevtoolsWithByPb failed, no browser host";
+    return;
+  }
+  NWebDelegate* devtools_delegate =
+      static_cast<NWebDelegate*>(nweb_delegate.get());
+ 
+  CefRefPtr<NWebDevToolsMessageHandlerImpl> devtools_message_handler;
+  if (IsNativeApiEnable()) {
+    devtools_message_handler = CefRefPtr<NWebDevToolsMessageHandlerImpl>(
+        new NWebDevToolsMessageHandlerImpl(std::move(param->handlerNativeApi)));
+  } else {
+    devtools_message_handler = CefRefPtr<NWebDevToolsMessageHandlerImpl>(
+        new NWebDevToolsMessageHandlerImpl(std::move(param->handler)));
+  }
+ 
+  CefPoint inspect_element_at(param->point.x, param->point.y);
+  CefOpenDevToolsExtOpt cef_ext_opt(ext_opt.canDock);
+  GetBrowser()->GetHost()->ShowDevToolsWithByPb(
+      devtools_delegate->GetBrowser()->GetHost(),
+      devtools_message_handler, inspect_element_at, cef_ext_opt);
 #endif // #if BUILDFLAG(ARKWEB_DEVTOOLS)
 }
 
@@ -6217,6 +6388,32 @@ bool NWebDelegate::GetErrorPageEnabled() {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+void NWebDelegate::EnableHttpsUpgrades(bool enable) {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "EnableHttpsUpgrades can not get browser";
+    return;
+  }
+  LOG(INFO) << "NWebDelegate::EnableHttpsUpgrades";
+  GetBrowser()->GetHost()->EnableHttpsUpgrades(enable);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+void NWebDelegate::SetBlankScreenDetectionConfig(
+    bool enable,
+    const std::vector<double>& detectionTiming,
+    const std::vector<int32_t>& detectionMethods,
+    int32_t contentfulNodesCountThreshold) {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "SetBlankScreenDetectionConfig can not get browser";
+    return;
+  }
+  GetBrowser()->GetHost()->SetBlankScreenDetectionConfig(
+      enable, detectionTiming, detectionMethods, contentfulNodesCountThreshold);
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_BGTASK)
 void NWebDelegate::OnBrowserForeground() {
   if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
@@ -6234,6 +6431,25 @@ void NWebDelegate::OnBrowserBackground() {
   }
   LOG(INFO) << "NWebDelegate::OnBrowserBackground";
   GetBrowser()->GetHost()->OnBrowserBackground();
+}
+#endif
+
+void NWebDelegate::StopFling() {
+  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
+    LOG(DEBUG) << "NWebDelegate::WebStopFling";
+    return;
+  }
+
+  GetBrowser()->GetHost()->StopFling();
+}
+
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+void NWebDelegate::SetFocusWebId(int32_t nweb_id) {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "SetFocusWebId can not get browser";
+    return;
+  }
+  GetBrowser()->GetHost()->SetFocusWebId(nweb_id);
 }
 #endif
 }  // namespace OHOS::NWeb

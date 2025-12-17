@@ -82,6 +82,8 @@ private:
   void MemoryAllocReport();
   void ReportToBrowser(const bool reportSysEvent, const std::string& type);
   bool DfxMemSysParamObserve();
+  void UpdateProcessBasicMemoryInfo(DfxMemInfo &mem_info);
+  void UpdateProcessMemoryInfo(DfxMemInfo &mem_info);
 
   mojo::Remote<dfx::mojom::DfxReporter> remote_;
   mojo::PendingReceiver<dfx::mojom::DfxReporter> receiver_ =

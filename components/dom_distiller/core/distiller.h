@@ -26,6 +26,10 @@
 
 #include "arkweb/chromium_ext/components/dom_distiller/core/distiller_ohos.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 namespace dom_distiller {
 
 class DistillerOhos;

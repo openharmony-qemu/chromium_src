@@ -43,3 +43,10 @@ void NWebJSSslSelectCertResultImpl::Ignore() {
     return callback_->AsCefSelectClientCertificateCallbackExt()->Ignore();
   }
 }
+
+void NWebJSSslSelectCertResultImpl::Confirm(const std::string& identity, int32_t type) {
+  if (callback_ != nullptr) {
+    return callback_->AsCefSelectClientCertificateCallbackExt()->Select(
+        CefString(identity), type);
+  }
+}

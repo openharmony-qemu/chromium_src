@@ -209,14 +209,10 @@ void ArkWebDownloadFileImplExt::StopDownloadJobTimer() {
 }
 
 void ArkWebDownloadFileImplExt::ResetDownloadJobTimer() {
-  if (download_job_timer_ && download_job_timer_->IsRunning()) {
+  if (download_job_timer_) {
     download_job_timer_.reset();
   }
 }
 #endif
 
-void ArkWebDownloadItemImplExt::Cancel(bool user_cancel) {
-	DownloadItemImpl::Cancel(user_cancel);
-  ReadDataFromDownloadFileDone(std::vector<uint8_t>());
-}
 }  // namespace download

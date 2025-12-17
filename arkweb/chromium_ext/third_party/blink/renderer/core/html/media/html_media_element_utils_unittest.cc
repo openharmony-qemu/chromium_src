@@ -418,45 +418,53 @@ class MockWebMediaPlayerClient : public MediaPlayerClient {
   MOCK_METHOD0(OnRequestVideoFrameCallback, void());
   MOCK_METHOD0(GetElementId, int());
   MOCK_METHOD0(ScheduleVideoFreezeEvent, void());
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  MOCK_METHOD0(videoId, std::string());
+  MOCK_METHOD0(hbsMediaPreloadTime, uint16_t());
+  MOCK_METHOD0(hbsMediaMaxCacheTime, uint16_t());
+  MOCK_METHOD0(hbsMediaMinCacheTime, uint16_t());
+  MOCK_METHOD0(hbsMediaBitrate, uint16_t());
+  MOCK_METHOD0(hbsMediaMoovSize, uint16_t());
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 };
 
 TEST_F(HTMLMediaElementUtilsTest, TestDidPlayerMutedStatusChangeExt) {
   media_ =
       MakeGarbageCollected<HTMLVideoElement>(dummy_page_holder_->GetDocument());
-  HTMLMediaElementUtils* element_utils_ = new HTMLMediaElementUtils(Media());
+  HTMLMediaElementUtils element_utils_(Media());
   Media()->ResetMojoState();
   Media()->StartPlayerLoad();
   Media()->media_title_ = "1234";
-  ASSERT_NO_FATAL_FAILURE(element_utils_->DidPlayerMutedStatusChangeExt(true));
+  ASSERT_NO_FATAL_FAILURE(element_utils_.DidPlayerMutedStatusChangeExt(true));
   Media()->video_poster_ = "1234";
-  ASSERT_NO_FATAL_FAILURE(element_utils_->DidPlayerMutedStatusChangeExt(true));
+  ASSERT_NO_FATAL_FAILURE(element_utils_.DidPlayerMutedStatusChangeExt(true));
 }
 
 TEST_F(HTMLMediaElementUtilsTest, TestScheduleNamedEventUtils) {
   media_ =
       MakeGarbageCollected<HTMLVideoElement>(dummy_page_holder_->GetDocument());
-  HTMLMediaElementUtils* element_utils_ = new HTMLMediaElementUtils(Media());
+  HTMLMediaElementUtils element_utils_(Media());
   Media()->GetDocument().GetSettings()->SetCustomMediaPlayerEnabled(true);
   EXPECT_EQ(Media()->IsCustomMediaPlayerEnabled(), true);
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   ASSERT_NO_FATAL_FAILURE(
-      element_utils_->ScheduleNamedEventUtils(event_type_names::kTimeupdate));
-  ASSERT_NO_FATAL_FAILURE(element_utils_->ScheduleNamedEventUtils(
+      element_utils_.ScheduleNamedEventUtils(event_type_names::kTimeupdate));
+  ASSERT_NO_FATAL_FAILURE(element_utils_.ScheduleNamedEventUtils(
       event_type_names::kDurationchange));
   ASSERT_NO_FATAL_FAILURE(
-      element_utils_->ScheduleNamedEventUtils(event_type_names::kEnded));
+      element_utils_.ScheduleNamedEventUtils(event_type_names::kEnded));
   ASSERT_NO_FATAL_FAILURE(
-      element_utils_->ScheduleNamedEventUtils(event_type_names::kSeeking));
+      element_utils_.ScheduleNamedEventUtils(event_type_names::kSeeking));
   ASSERT_NO_FATAL_FAILURE(
-      element_utils_->ScheduleNamedEventUtils(event_type_names::kSeeked));
+      element_utils_.ScheduleNamedEventUtils(event_type_names::kSeeked));
   ASSERT_NO_FATAL_FAILURE(
-      element_utils_->ScheduleNamedEventUtils(event_type_names::kPlaying));
+      element_utils_.ScheduleNamedEventUtils(event_type_names::kPlaying));
   ASSERT_NO_FATAL_FAILURE(
-      element_utils_->ScheduleNamedEventUtils(event_type_names::kWaiting));
+      element_utils_.ScheduleNamedEventUtils(event_type_names::kWaiting));
   ASSERT_NO_FATAL_FAILURE(
-      element_utils_->ScheduleNamedEventUtils(event_type_names::kError));
+      element_utils_.ScheduleNamedEventUtils(event_type_names::kError));
   ASSERT_NO_FATAL_FAILURE(
-      element_utils_->ScheduleNamedEventUtils(event_type_names::kVolumechange));
+      element_utils_.ScheduleNamedEventUtils(event_type_names::kVolumechange));
 #endif  // ARKWEB_VIDEO_ASSISTANT
 }
 
@@ -464,9 +472,9 @@ TEST_F(HTMLMediaElementUtilsTest, TestScheduleNamedEventUtils) {
 TEST_F(HTMLMediaElementUtilsTest, TestResetMediaPlayerAndMediaSourceUtils) {
   media_ =
       MakeGarbageCollected<HTMLVideoElement>(dummy_page_holder_->GetDocument());
-  HTMLMediaElementUtils* element_utils_ = new HTMLMediaElementUtils(Media());
+  HTMLMediaElementUtils element_utils_(Media());
   Media()->load_state_ = HTMLMediaElement::kLoadingFromSourceElement;
-  ASSERT_NO_FATAL_FAILURE(element_utils_->ResetMediaPlayerAndMediaSourceUtils());
+  ASSERT_NO_FATAL_FAILURE(element_utils_.ResetMediaPlayerAndMediaSourceUtils());
 }
 #endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
@@ -474,9 +482,9 @@ TEST_F(HTMLMediaElementUtilsTest, TestResetMediaPlayerAndMediaSourceUtils) {
 TEST_F(HTMLMediaElementUtilsTest, TestfreeezTime) {
   media_ =
       MakeGarbageCollected<HTMLVideoElement>(dummy_page_holder_->GetDocument());
-  HTMLMediaElementUtils* element_utils_ = new HTMLMediaElementUtils(Media());
+  HTMLMediaElementUtils element_utils_(Media());
   Media()->web_media_player_ = nullptr;
-  double result = element_utils_->freezeTime();
+  double result = element_utils_.freezeTime();
   ASSERT_EQ(result, 0);
 }
 #endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
@@ -500,9 +508,9 @@ TEST_F(HTMLMediaElementUtilsTest, TestStopRecord) {
 TEST_F(HTMLMediaElementUtilsTest, TestIsMediaPlayerShown) {
   media_ =
       MakeGarbageCollected<HTMLVideoElement>(dummy_page_holder_->GetDocument());
-  HTMLMediaElementUtils* element_utils_ = new HTMLMediaElementUtils(Media());
+  HTMLMediaElementUtils element_utils_(Media());
   Media()->web_media_player_ = nullptr;
-  bool result = element_utils_->IsMediaPlayerShown();
+  bool result = element_utils_.IsMediaPlayerShown();
   ASSERT_EQ(result, false);
   Media()->web_media_player_ = std::make_unique<MockWebMediaPlayer>();
   auto* mock_wmpi =
@@ -510,7 +518,7 @@ TEST_F(HTMLMediaElementUtilsTest, TestIsMediaPlayerShown) {
   ASSERT_NE(mock_wmpi, nullptr);
   EXPECT_CALL(*mock_wmpi, IsMediaPlayerShown())
       .WillRepeatedly(testing::Return(true));
-  result = element_utils_->IsMediaPlayerShown();
+  result = element_utils_.IsMediaPlayerShown();
   ASSERT_EQ(result, true);
 }
 
@@ -518,7 +526,7 @@ TEST_F(HTMLMediaElementUtilsTest, TestIsMediaPlayerShown) {
 TEST_F(HTMLMediaElementUtilsTest, TestCollectVideoAttributesForVAST) {
   media_ =
       MakeGarbageCollected<HTMLVideoElement>(dummy_page_holder_->GetDocument());
-  HTMLMediaElementUtils* element_utils_ = new HTMLMediaElementUtils(Media());
+  HTMLMediaElementUtils element_utils_(Media());
   Media()->video_visible_ = true;
   Media()->web_media_player_ = std::make_unique<MockWebMediaPlayer>();
   Media()->video_rect_ = gfx::RectF(10.0, 20.0, 300.0, 200.0);
@@ -528,7 +536,7 @@ TEST_F(HTMLMediaElementUtilsTest, TestCollectVideoAttributesForVAST) {
   EXPECT_CALL(*mock_wmpi, IsMediaPlayerShown())
       .WillRepeatedly(testing::Return(true));
   media::mojom::blink::VideoAttributesForVASTPtr result =
-      element_utils_->CollectVideoAttributesForVAST();
+      element_utils_.CollectVideoAttributesForVAST();
   ASSERT_FALSE(result.is_null());
   ASSERT_EQ(result->visible, true);
 
@@ -536,49 +544,49 @@ TEST_F(HTMLMediaElementUtilsTest, TestCollectVideoAttributesForVAST) {
   Media()->web_media_player_ = std::make_unique<MockWebMediaPlayer>();
   gfx::RectF rect_;
   Media()->video_rect_ = rect_;
-  result = element_utils_->CollectVideoAttributesForVAST();
+  result = element_utils_.CollectVideoAttributesForVAST();
   ASSERT_FALSE(result.is_null());
   ASSERT_EQ(result->visible, false);
 
   Media()->video_visible_ = true;
   Media()->web_media_player_ = nullptr;
   Media()->video_rect_ = gfx::RectF(10.0, 20.0, 300.0, 200.0);
-  result = element_utils_->CollectVideoAttributesForVAST();
+  result = element_utils_.CollectVideoAttributesForVAST();
   ASSERT_FALSE(result.is_null());
   ASSERT_EQ(result->visible, false);
 
   Media()->video_visible_ = true;
   Media()->web_media_player_ = nullptr;
   Media()->video_rect_ = rect_;
-  result = element_utils_->CollectVideoAttributesForVAST();
+  result = element_utils_.CollectVideoAttributesForVAST();
   ASSERT_FALSE(result.is_null());
   ASSERT_EQ(result->visible, false);
 
   Media()->video_visible_ = false;
   Media()->web_media_player_ = std::make_unique<MockWebMediaPlayer>();
   Media()->video_rect_ = gfx::RectF(10.0, 20.0, 300.0, 200.0);
-  result = element_utils_->CollectVideoAttributesForVAST();
+  result = element_utils_.CollectVideoAttributesForVAST();
   ASSERT_FALSE(result.is_null());
   ASSERT_EQ(result->visible, false);
 
   Media()->video_visible_ = false;
   Media()->web_media_player_ = std::make_unique<MockWebMediaPlayer>();
   Media()->video_rect_ = rect_;
-  result = element_utils_->CollectVideoAttributesForVAST();
+  result = element_utils_.CollectVideoAttributesForVAST();
   ASSERT_FALSE(result.is_null());
   ASSERT_EQ(result->visible, false);
 
   Media()->video_visible_ = false;
   Media()->web_media_player_ = nullptr;
   Media()->video_rect_ = gfx::RectF(10.0, 20.0, 300.0, 200.0);
-  result = element_utils_->CollectVideoAttributesForVAST();
+  result = element_utils_.CollectVideoAttributesForVAST();
   ASSERT_FALSE(result.is_null());
   ASSERT_EQ(result->visible, false);
 
   Media()->video_visible_ = false;
   Media()->web_media_player_ = nullptr;
   Media()->video_rect_ = rect_;
-  result = element_utils_->CollectVideoAttributesForVAST();
+  result = element_utils_.CollectVideoAttributesForVAST();
   ASSERT_FALSE(result.is_null());
   ASSERT_EQ(result->visible, false);
 }
@@ -586,346 +594,362 @@ TEST_F(HTMLMediaElementUtilsTest, TestCollectVideoAttributesForVAST) {
 TEST_F(HTMLMediaElementUtilsTest, TestTryNotifyVideoPlaying) {
   media_ =
       MakeGarbageCollected<HTMLVideoElement>(dummy_page_holder_->GetDocument());
-  HTMLMediaElementUtils* element_utils_ = new HTMLMediaElementUtils(Media());
+  HTMLMediaElementUtils element_utils_(Media());
   Media()->video_assistant_enabled_ = true;
-  ASSERT_NO_FATAL_FAILURE(element_utils_->TryNotifyVideoPlaying());
+  ASSERT_NO_FATAL_FAILURE(element_utils_.TryNotifyVideoPlaying());
   Media()->video_assistant_ = true;
-  ASSERT_NO_FATAL_FAILURE(element_utils_->TryNotifyVideoPlaying());
+  ASSERT_NO_FATAL_FAILURE(element_utils_.TryNotifyVideoPlaying());
   Media()->video_assistant_ = false;
-  ASSERT_NO_FATAL_FAILURE(element_utils_->TryNotifyVideoPlaying());
+  ASSERT_NO_FATAL_FAILURE(element_utils_.TryNotifyVideoPlaying());
 }
 
 TEST_F(HTMLMediaElementUtilsTest, TestUpdateVideoAssistantAttributes) {
   media_ =
       MakeGarbageCollected<HTMLVideoElement>(dummy_page_holder_->GetDocument());
-  HTMLMediaElementUtils* element_utils_ = new HTMLMediaElementUtils(Media());
+  HTMLMediaElementUtils element_utils_(Media());
   Media()->video_assistant_enabled_ = true;
-  ASSERT_NO_FATAL_FAILURE(element_utils_->UpdateVideoAssistantAttributes());
+  ASSERT_NO_FATAL_FAILURE(element_utils_.UpdateVideoAssistantAttributes());
   Media()->ResetMojoState();
   Media()->StartPlayerLoad();
-  ASSERT_NO_FATAL_FAILURE(element_utils_->UpdateVideoAssistantAttributes());
+  ASSERT_NO_FATAL_FAILURE(element_utils_.UpdateVideoAssistantAttributes());
   media_ =
       MakeGarbageCollected<HTMLAudioElement>(dummy_page_holder_->GetDocument());
   Media()->video_assistant_enabled_ = true;
-  element_utils_ = new HTMLMediaElementUtils(Media());
-  ASSERT_NO_FATAL_FAILURE(element_utils_->UpdateVideoAssistantAttributes());
+  HTMLMediaElementUtils element_utils_one_(Media());
+  ASSERT_NO_FATAL_FAILURE(element_utils_one_.UpdateVideoAssistantAttributes());
 }
 
 TEST_F(HTMLMediaElementUtilsTest, TestNotifyVideoVisible) {
   media_ =
       MakeGarbageCollected<HTMLVideoElement>(dummy_page_holder_->GetDocument());
-  HTMLMediaElementUtils* element_utils_ = new HTMLMediaElementUtils(Media());
+  HTMLMediaElementUtils element_utils_(Media());
   Media()->video_assistant_enabled_ = true;
   Media()->video_visible_ = true;
-  ASSERT_NO_FATAL_FAILURE(element_utils_->NotifyVideoVisible(true));
-  ASSERT_NO_FATAL_FAILURE(element_utils_->NotifyVideoVisible(false));
+  ASSERT_NO_FATAL_FAILURE(element_utils_.NotifyVideoVisible(true));
+  ASSERT_NO_FATAL_FAILURE(element_utils_.NotifyVideoVisible(false));
 }
 
 TEST_F(HTMLMediaElementUtilsTest, TestEnterFullScreenOverlay) {
   media_ =
       MakeGarbageCollected<HTMLVideoElement>(dummy_page_holder_->GetDocument());
-  HTMLMediaElementUtils* element_utils_ = new HTMLMediaElementUtils(Media());
+  HTMLMediaElementUtils element_utils_(Media());
   Media()->GetDocument().GetSettings()->SetCustomMediaPlayerEnabled(true);
   EXPECT_EQ(Media()->IsCustomMediaPlayerEnabled(), true);
-  ASSERT_NO_FATAL_FAILURE(element_utils_->EnterFullScreenOverlay());
+  ASSERT_NO_FATAL_FAILURE(element_utils_.EnterFullScreenOverlay());
   Media()->ResetMojoState();
   Media()->StartPlayerLoad();
-  ASSERT_NO_FATAL_FAILURE(element_utils_->EnterFullScreenOverlay());
+  ASSERT_NO_FATAL_FAILURE(element_utils_.EnterFullScreenOverlay());
 
   media_ =
       MakeGarbageCollected<HTMLAudioElement>(dummy_page_holder_->GetDocument());
-  element_utils_ = new HTMLMediaElementUtils(Media());
-  ASSERT_NO_FATAL_FAILURE(element_utils_->EnterFullScreenOverlay());
+  HTMLMediaElementUtils element_utils_one_(Media());
+  ASSERT_NO_FATAL_FAILURE(element_utils_one_.EnterFullScreenOverlay());
 }
 
 TEST_F(HTMLMediaElementUtilsTest, TestUpdatePlayStateOverlay) {
   media_ =
       MakeGarbageCollected<HTMLVideoElement>(dummy_page_holder_->GetDocument());
-  HTMLMediaElementUtils* element_utils_ = new HTMLMediaElementUtils(Media());
+  HTMLMediaElementUtils element_utils_(Media());
   Media()->GetDocument().GetSettings()->SetCustomMediaPlayerEnabled(true);
   EXPECT_EQ(Media()->IsCustomMediaPlayerEnabled(), true);
   HTMLMediaElementUtils::PlayState state_ =
       HTMLMediaElementUtils::PlayState::kPause;
-  ASSERT_NO_FATAL_FAILURE(element_utils_->UpdatePlayStateOverlay(state_));
+  ASSERT_NO_FATAL_FAILURE(element_utils_.UpdatePlayStateOverlay(state_));
   Media()->ResetMojoState();
   Media()->StartPlayerLoad();
-  ASSERT_NO_FATAL_FAILURE(element_utils_->UpdatePlayStateOverlay(state_));
+  ASSERT_NO_FATAL_FAILURE(element_utils_.UpdatePlayStateOverlay(state_));
 
   media_ =
       MakeGarbageCollected<HTMLAudioElement>(dummy_page_holder_->GetDocument());
-  element_utils_ = new HTMLMediaElementUtils(Media());
-  ASSERT_NO_FATAL_FAILURE(element_utils_->UpdatePlayStateOverlay(state_));
+  HTMLMediaElementUtils element_utils_one_(Media());
+  ASSERT_NO_FATAL_FAILURE(element_utils_one_.UpdatePlayStateOverlay(state_));
 }
 
 TEST_F(HTMLMediaElementUtilsTest, TestMutedChangedOverlay) {
   media_ =
       MakeGarbageCollected<HTMLVideoElement>(dummy_page_holder_->GetDocument());
-  HTMLMediaElementUtils* element_utils_ = new HTMLMediaElementUtils(Media());
+  HTMLMediaElementUtils element_utils_(Media());
   Media()->GetDocument().GetSettings()->SetCustomMediaPlayerEnabled(true);
   EXPECT_EQ(Media()->IsCustomMediaPlayerEnabled(), true);
-  ASSERT_NO_FATAL_FAILURE(element_utils_->MutedChangedOverlay(true));
+  ASSERT_NO_FATAL_FAILURE(element_utils_.MutedChangedOverlay(true));
   Media()->ResetMojoState();
   Media()->StartPlayerLoad();
-  ASSERT_NO_FATAL_FAILURE(element_utils_->MutedChangedOverlay(true));
+  ASSERT_NO_FATAL_FAILURE(element_utils_.MutedChangedOverlay(true));
 
   media_ =
       MakeGarbageCollected<HTMLAudioElement>(dummy_page_holder_->GetDocument());
-  element_utils_ = new HTMLMediaElementUtils(Media());
-  ASSERT_NO_FATAL_FAILURE(element_utils_->MutedChangedOverlay(true));
+  HTMLMediaElementUtils element_utils_one_(Media());
+  ASSERT_NO_FATAL_FAILURE(element_utils_one_.MutedChangedOverlay(true));
 }
 
 TEST_F(HTMLMediaElementUtilsTest, TestPlaybackRateChangedOverlay) {
   media_ =
       MakeGarbageCollected<HTMLVideoElement>(dummy_page_holder_->GetDocument());
-  HTMLMediaElementUtils* element_utils_ = new HTMLMediaElementUtils(Media());
+  HTMLMediaElementUtils element_utils_(Media());
   Media()->GetDocument().GetSettings()->SetCustomMediaPlayerEnabled(true);
   EXPECT_EQ(Media()->IsCustomMediaPlayerEnabled(), true);
-  ASSERT_NO_FATAL_FAILURE(element_utils_->PlaybackRateChangedOverlay(1.0));
+  ASSERT_NO_FATAL_FAILURE(element_utils_.PlaybackRateChangedOverlay(1.0));
   Media()->ResetMojoState();
   Media()->StartPlayerLoad();
-  ASSERT_NO_FATAL_FAILURE(element_utils_->PlaybackRateChangedOverlay(1.0));
+  ASSERT_NO_FATAL_FAILURE(element_utils_.PlaybackRateChangedOverlay(1.0));
 
   media_ =
       MakeGarbageCollected<HTMLAudioElement>(dummy_page_holder_->GetDocument());
-  element_utils_ = new HTMLMediaElementUtils(Media());
-  ASSERT_NO_FATAL_FAILURE(element_utils_->PlaybackRateChangedOverlay(1.0));
+  HTMLMediaElementUtils element_utils_one_(Media());
+  ASSERT_NO_FATAL_FAILURE(element_utils_one_.PlaybackRateChangedOverlay(1.0));
 }
 
 TEST_F(HTMLMediaElementUtilsTest, TestDurationChangedOverlay) {
   media_ =
       MakeGarbageCollected<HTMLVideoElement>(dummy_page_holder_->GetDocument());
-  HTMLMediaElementUtils* element_utils_ = new HTMLMediaElementUtils(Media());
+  HTMLMediaElementUtils element_utils_(Media());
   Media()->GetDocument().GetSettings()->SetCustomMediaPlayerEnabled(false);
   EXPECT_EQ(Media()->IsCustomMediaPlayerEnabled(), false);
-  ASSERT_NO_FATAL_FAILURE(element_utils_->DurationChangedOverlay(1.0));
+  ASSERT_NO_FATAL_FAILURE(element_utils_.DurationChangedOverlay(1.0));
   Media()->GetDocument().GetSettings()->SetCustomMediaPlayerEnabled(true);
   EXPECT_EQ(Media()->IsCustomMediaPlayerEnabled(), true);
-  ASSERT_NO_FATAL_FAILURE(element_utils_->DurationChangedOverlay(1.0));
+  ASSERT_NO_FATAL_FAILURE(element_utils_.DurationChangedOverlay(1.0));
   Media()->ResetMojoState();
   Media()->StartPlayerLoad();
-  ASSERT_NO_FATAL_FAILURE(element_utils_->DurationChangedOverlay(1.0));
+  ASSERT_NO_FATAL_FAILURE(element_utils_.DurationChangedOverlay(1.0));
 
   media_ =
       MakeGarbageCollected<HTMLAudioElement>(dummy_page_holder_->GetDocument());
-  element_utils_ = new HTMLMediaElementUtils(Media());
-  ASSERT_NO_FATAL_FAILURE(element_utils_->DurationChangedOverlay(1.0));
+  HTMLMediaElementUtils element_utils_one_(Media());
+  ASSERT_NO_FATAL_FAILURE(element_utils_one_.DurationChangedOverlay(1.0));
 }
 
 TEST_F(HTMLMediaElementUtilsTest, TestTimeUpdateOverlay) {
   media_ =
       MakeGarbageCollected<HTMLVideoElement>(dummy_page_holder_->GetDocument());
-  HTMLMediaElementUtils* element_utils_ = new HTMLMediaElementUtils(Media());
+  HTMLMediaElementUtils element_utils_(Media());
   Media()->GetDocument().GetSettings()->SetCustomMediaPlayerEnabled(false);
   EXPECT_EQ(Media()->IsCustomMediaPlayerEnabled(), false);
-  ASSERT_NO_FATAL_FAILURE(element_utils_->TimeUpdateOverlay(1.0));
+  ASSERT_NO_FATAL_FAILURE(element_utils_.TimeUpdateOverlay(1.0));
   Media()->GetDocument().GetSettings()->SetCustomMediaPlayerEnabled(true);
   EXPECT_EQ(Media()->IsCustomMediaPlayerEnabled(), true);
-  ASSERT_NO_FATAL_FAILURE(element_utils_->TimeUpdateOverlay(1.0));
+  ASSERT_NO_FATAL_FAILURE(element_utils_.TimeUpdateOverlay(1.0));
   Media()->ResetMojoState();
   Media()->StartPlayerLoad();
-  ASSERT_NO_FATAL_FAILURE(element_utils_->TimeUpdateOverlay(1.0));
+  ASSERT_NO_FATAL_FAILURE(element_utils_.TimeUpdateOverlay(1.0));
 
   media_ =
       MakeGarbageCollected<HTMLAudioElement>(dummy_page_holder_->GetDocument());
-  element_utils_ = new HTMLMediaElementUtils(Media());
-  ASSERT_NO_FATAL_FAILURE(element_utils_->TimeUpdateOverlay(1.0));
+  HTMLMediaElementUtils element_utils_one_(Media());
+  ASSERT_NO_FATAL_FAILURE(element_utils_one_.TimeUpdateOverlay(1.0));
 }
 
 TEST_F(HTMLMediaElementUtilsTest, TestBufferedEndTimeChangedOverlay) {
   media_ =
       MakeGarbageCollected<HTMLVideoElement>(dummy_page_holder_->GetDocument());
-  HTMLMediaElementUtils* element_utils_ = new HTMLMediaElementUtils(Media());
+  HTMLMediaElementUtils element_utils_(Media());
   Media()->GetDocument().GetSettings()->SetCustomMediaPlayerEnabled(false);
   EXPECT_EQ(Media()->IsCustomMediaPlayerEnabled(), false);
-  ASSERT_NO_FATAL_FAILURE(element_utils_->BufferedEndTimeChangedOverlay(1.0));
+  ASSERT_NO_FATAL_FAILURE(element_utils_.BufferedEndTimeChangedOverlay(1.0));
   Media()->GetDocument().GetSettings()->SetCustomMediaPlayerEnabled(true);
   EXPECT_EQ(Media()->IsCustomMediaPlayerEnabled(), true);
-  ASSERT_NO_FATAL_FAILURE(element_utils_->BufferedEndTimeChangedOverlay(1.0));
+  ASSERT_NO_FATAL_FAILURE(element_utils_.BufferedEndTimeChangedOverlay(1.0));
   Media()->ResetMojoState();
   Media()->StartPlayerLoad();
-  ASSERT_NO_FATAL_FAILURE(element_utils_->BufferedEndTimeChangedOverlay(1.0));
+  ASSERT_NO_FATAL_FAILURE(element_utils_.BufferedEndTimeChangedOverlay(1.0));
 
   media_ =
       MakeGarbageCollected<HTMLAudioElement>(dummy_page_holder_->GetDocument());
-  element_utils_ = new HTMLMediaElementUtils(Media());
-  ASSERT_NO_FATAL_FAILURE(element_utils_->BufferedEndTimeChangedOverlay(1.0));
+  HTMLMediaElementUtils element_utils_one_(Media());
+  ASSERT_NO_FATAL_FAILURE(element_utils_one_.BufferedEndTimeChangedOverlay(1.0));
 }
 
 TEST_F(HTMLMediaElementUtilsTest, TestCalculateBufferedEndTime) {
   media_ =
       MakeGarbageCollected<HTMLVideoElement>(dummy_page_holder_->GetDocument());
-  HTMLMediaElementUtils* element_utils_ = new HTMLMediaElementUtils(Media());
+  HTMLMediaElementUtils element_utils_(Media());
   Media()->duration_ = 0.00 / 0.00;
-  double result = element_utils_->CalculateBufferedEndTime();
+  double result = element_utils_.CalculateBufferedEndTime();
   ASSERT_EQ(result, 0);
   Media()->duration_ = 3.00 / 0;
-  result = element_utils_->CalculateBufferedEndTime();
+  result = element_utils_.CalculateBufferedEndTime();
   ASSERT_EQ(result, 0);
   Media()->duration_ = 0.00;
-  result = element_utils_->CalculateBufferedEndTime();
+  result = element_utils_.CalculateBufferedEndTime();
   ASSERT_EQ(result, 0);
   Media()->setCurrentTime(3.00 / 0);
-  result = element_utils_->CalculateBufferedEndTime();
+  result = element_utils_.CalculateBufferedEndTime();
   ASSERT_EQ(result, 0);
   Media()->duration_ = 1.00;
   Media()->setCurrentTime(2.00);
   Media()->web_media_player_ = nullptr;
-  result = element_utils_->CalculateBufferedEndTime();
+  result = element_utils_.CalculateBufferedEndTime();
   ASSERT_EQ(result, 0);
 }
 
 TEST_F(HTMLMediaElementUtilsTest, TestEndedOverlay) {
   media_ =
       MakeGarbageCollected<HTMLVideoElement>(dummy_page_holder_->GetDocument());
-  HTMLMediaElementUtils* element_utils_ = new HTMLMediaElementUtils(Media());
+  HTMLMediaElementUtils element_utils_(Media());
   Media()->GetDocument().GetSettings()->SetCustomMediaPlayerEnabled(false);
   EXPECT_EQ(Media()->IsCustomMediaPlayerEnabled(), false);
-  ASSERT_NO_FATAL_FAILURE(element_utils_->EndedOverlay());
+  ASSERT_NO_FATAL_FAILURE(element_utils_.EndedOverlay());
   Media()->GetDocument().GetSettings()->SetCustomMediaPlayerEnabled(true);
   EXPECT_EQ(Media()->IsCustomMediaPlayerEnabled(), true);
-  ASSERT_NO_FATAL_FAILURE(element_utils_->EndedOverlay());
+  ASSERT_NO_FATAL_FAILURE(element_utils_.EndedOverlay());
   Media()->ResetMojoState();
   Media()->StartPlayerLoad();
-  ASSERT_NO_FATAL_FAILURE(element_utils_->EndedOverlay());
+  ASSERT_NO_FATAL_FAILURE(element_utils_.EndedOverlay());
 
   media_ =
       MakeGarbageCollected<HTMLAudioElement>(dummy_page_holder_->GetDocument());
-  element_utils_ = new HTMLMediaElementUtils(Media());
-  ASSERT_NO_FATAL_FAILURE(element_utils_->EndedOverlay());
+  HTMLMediaElementUtils element_utils_one_(Media());
+  ASSERT_NO_FATAL_FAILURE(element_utils_one_.EndedOverlay());
 }
 
 TEST_F(HTMLMediaElementUtilsTest, TestFullscreenChangedOverlay) {
   media_ =
       MakeGarbageCollected<HTMLVideoElement>(dummy_page_holder_->GetDocument());
-  HTMLMediaElementUtils* element_utils_ = new HTMLMediaElementUtils(Media());
+  HTMLMediaElementUtils element_utils_(Media());
   Media()->GetDocument().GetSettings()->SetCustomMediaPlayerEnabled(false);
   EXPECT_EQ(Media()->IsCustomMediaPlayerEnabled(), false);
-  ASSERT_NO_FATAL_FAILURE(element_utils_->FullscreenChangedOverlay(true));
+  ASSERT_NO_FATAL_FAILURE(element_utils_.FullscreenChangedOverlay(true));
   Media()->GetDocument().GetSettings()->SetCustomMediaPlayerEnabled(true);
   EXPECT_EQ(Media()->IsCustomMediaPlayerEnabled(), true);
-  ASSERT_NO_FATAL_FAILURE(element_utils_->FullscreenChangedOverlay(true));
-  ASSERT_NO_FATAL_FAILURE(element_utils_->FullscreenChangedOverlay(false));
+  ASSERT_NO_FATAL_FAILURE(element_utils_.FullscreenChangedOverlay(true));
+  ASSERT_NO_FATAL_FAILURE(element_utils_.FullscreenChangedOverlay(false));
   Media()->ResetMojoState();
   Media()->StartPlayerLoad();
-  ASSERT_NO_FATAL_FAILURE(element_utils_->FullscreenChangedOverlay(true));
+  ASSERT_NO_FATAL_FAILURE(element_utils_.FullscreenChangedOverlay(true));
 
   media_ =
       MakeGarbageCollected<HTMLAudioElement>(dummy_page_holder_->GetDocument());
-  element_utils_ = new HTMLMediaElementUtils(Media());
-  ASSERT_NO_FATAL_FAILURE(element_utils_->FullscreenChangedOverlay(true));
+  HTMLMediaElementUtils element_utils_one_(Media());
+  ASSERT_NO_FATAL_FAILURE(element_utils_one_.FullscreenChangedOverlay(true));
 }
 
 TEST_F(HTMLMediaElementUtilsTest, TestSeekingOverlay) {
   media_ =
       MakeGarbageCollected<HTMLVideoElement>(dummy_page_holder_->GetDocument());
-  HTMLMediaElementUtils* element_utils_ = new HTMLMediaElementUtils(Media());
+  HTMLMediaElementUtils element_utils_(Media());
   Media()->GetDocument().GetSettings()->SetCustomMediaPlayerEnabled(false);
   EXPECT_EQ(Media()->IsCustomMediaPlayerEnabled(), false);
-  ASSERT_NO_FATAL_FAILURE(element_utils_->SeekingOverlay());
+  ASSERT_NO_FATAL_FAILURE(element_utils_.SeekingOverlay());
   Media()->GetDocument().GetSettings()->SetCustomMediaPlayerEnabled(true);
   EXPECT_EQ(Media()->IsCustomMediaPlayerEnabled(), true);
-  ASSERT_NO_FATAL_FAILURE(element_utils_->SeekingOverlay());
+  ASSERT_NO_FATAL_FAILURE(element_utils_.SeekingOverlay());
   Media()->ResetMojoState();
   Media()->StartPlayerLoad();
-  ASSERT_NO_FATAL_FAILURE(element_utils_->SeekingOverlay());
+  ASSERT_NO_FATAL_FAILURE(element_utils_.SeekingOverlay());
 
   media_ =
       MakeGarbageCollected<HTMLAudioElement>(dummy_page_holder_->GetDocument());
-  element_utils_ = new HTMLMediaElementUtils(Media());
-  ASSERT_NO_FATAL_FAILURE(element_utils_->SeekingOverlay());
+  HTMLMediaElementUtils element_utils_one_(Media());
+  ASSERT_NO_FATAL_FAILURE(element_utils_one_.SeekingOverlay());
 }
 
 TEST_F(HTMLMediaElementUtilsTest, TestSeekingFinishedOverlay) {
   media_ =
       MakeGarbageCollected<HTMLVideoElement>(dummy_page_holder_->GetDocument());
-  HTMLMediaElementUtils* element_utils_ = new HTMLMediaElementUtils(Media());
+  HTMLMediaElementUtils element_utils_(Media());
   Media()->GetDocument().GetSettings()->SetCustomMediaPlayerEnabled(false);
   EXPECT_EQ(Media()->IsCustomMediaPlayerEnabled(), false);
-  ASSERT_NO_FATAL_FAILURE(element_utils_->SeekingFinishedOverlay());
+  ASSERT_NO_FATAL_FAILURE(element_utils_.SeekingFinishedOverlay());
   Media()->GetDocument().GetSettings()->SetCustomMediaPlayerEnabled(true);
   EXPECT_EQ(Media()->IsCustomMediaPlayerEnabled(), true);
-  ASSERT_NO_FATAL_FAILURE(element_utils_->SeekingFinishedOverlay());
+  ASSERT_NO_FATAL_FAILURE(element_utils_.SeekingFinishedOverlay());
   Media()->ResetMojoState();
   Media()->StartPlayerLoad();
-  ASSERT_NO_FATAL_FAILURE(element_utils_->SeekingFinishedOverlay());
+  ASSERT_NO_FATAL_FAILURE(element_utils_.SeekingFinishedOverlay());
 
   media_ =
       MakeGarbageCollected<HTMLAudioElement>(dummy_page_holder_->GetDocument());
-  element_utils_ = new HTMLMediaElementUtils(Media());
-  ASSERT_NO_FATAL_FAILURE(element_utils_->SeekingFinishedOverlay());
+  HTMLMediaElementUtils element_utils_one_(Media());
+  ASSERT_NO_FATAL_FAILURE(element_utils_one_.SeekingFinishedOverlay());
 }
 
 TEST_F(HTMLMediaElementUtilsTest, TestErrorOverlay) {
   media_ =
       MakeGarbageCollected<HTMLVideoElement>(dummy_page_holder_->GetDocument());
-  HTMLMediaElementUtils* element_utils_ = new HTMLMediaElementUtils(Media());
+  HTMLMediaElementUtils element_utils_(Media());
   Media()->GetDocument().GetSettings()->SetCustomMediaPlayerEnabled(false);
   EXPECT_EQ(Media()->IsCustomMediaPlayerEnabled(), false);
-  ASSERT_NO_FATAL_FAILURE(element_utils_->ErrorOverlay(3, "test errorcode"));
+  ASSERT_NO_FATAL_FAILURE(element_utils_.ErrorOverlay(3, "test errorcode"));
   Media()->GetDocument().GetSettings()->SetCustomMediaPlayerEnabled(true);
   EXPECT_EQ(Media()->IsCustomMediaPlayerEnabled(), true);
-  ASSERT_NO_FATAL_FAILURE(element_utils_->ErrorOverlay(3, "test errorcode"));
+  ASSERT_NO_FATAL_FAILURE(element_utils_.ErrorOverlay(3, "test errorcode"));
   Media()->ResetMojoState();
   Media()->StartPlayerLoad();
-  ASSERT_NO_FATAL_FAILURE(element_utils_->ErrorOverlay(3, String()));
-  ASSERT_NO_FATAL_FAILURE(element_utils_->ErrorOverlay(3, "test errorcode"));
+  ASSERT_NO_FATAL_FAILURE(element_utils_.ErrorOverlay(3, String()));
+  ASSERT_NO_FATAL_FAILURE(element_utils_.ErrorOverlay(3, "test errorcode"));
 
   media_ =
       MakeGarbageCollected<HTMLAudioElement>(dummy_page_holder_->GetDocument());
-  element_utils_ = new HTMLMediaElementUtils(Media());
-  ASSERT_NO_FATAL_FAILURE(element_utils_->ErrorOverlay(3, "test errorcode"));
+  HTMLMediaElementUtils element_utils_one_(Media());
+  ASSERT_NO_FATAL_FAILURE(element_utils_one_.ErrorOverlay(3, "test errorcode"));
 }
 
 TEST_F(HTMLMediaElementUtilsTest, TestVideoSizeChangedOverlay) {
   media_ =
       MakeGarbageCollected<HTMLVideoElement>(dummy_page_holder_->GetDocument());
-  HTMLMediaElementUtils* element_utils_ = new HTMLMediaElementUtils(Media());
+  HTMLMediaElementUtils element_utils_(Media());
   Media()->GetDocument().GetSettings()->SetCustomMediaPlayerEnabled(false);
   EXPECT_EQ(Media()->IsCustomMediaPlayerEnabled(), false);
-  ASSERT_NO_FATAL_FAILURE(element_utils_->VideoSizeChangedOverlay(1, 2));
+  ASSERT_NO_FATAL_FAILURE(element_utils_.VideoSizeChangedOverlay(1, 2));
   Media()->GetDocument().GetSettings()->SetCustomMediaPlayerEnabled(true);
   EXPECT_EQ(Media()->IsCustomMediaPlayerEnabled(), true);
-  ASSERT_NO_FATAL_FAILURE(element_utils_->VideoSizeChangedOverlay(1, 2));
+  ASSERT_NO_FATAL_FAILURE(element_utils_.VideoSizeChangedOverlay(1, 2));
   Media()->ResetMojoState();
   Media()->StartPlayerLoad();
-  ASSERT_NO_FATAL_FAILURE(element_utils_->VideoSizeChangedOverlay(1, 2));
+  ASSERT_NO_FATAL_FAILURE(element_utils_.VideoSizeChangedOverlay(1, 2));
 
   media_ =
       MakeGarbageCollected<HTMLAudioElement>(dummy_page_holder_->GetDocument());
-  element_utils_ = new HTMLMediaElementUtils(Media());
-  ASSERT_NO_FATAL_FAILURE(element_utils_->VideoSizeChangedOverlay(1, 2));
+  HTMLMediaElementUtils element_utils_one_(Media());
+  ASSERT_NO_FATAL_FAILURE(element_utils_one_.VideoSizeChangedOverlay(1, 2));
 }
 
 TEST_F(HTMLMediaElementUtilsTest, TestOnVolumeChanged) {
   media_ =
       MakeGarbageCollected<HTMLVideoElement>(dummy_page_holder_->GetDocument());
-  HTMLMediaElementUtils* element_utils_ = new HTMLMediaElementUtils(Media());
+  HTMLMediaElementUtils element_utils_(Media());
   Media()->GetDocument().GetSettings()->SetCustomMediaPlayerEnabled(false);
   EXPECT_EQ(Media()->IsCustomMediaPlayerEnabled(), false);
-  ASSERT_NO_FATAL_FAILURE(element_utils_->OnVolumeChanged(1.01));
+  ASSERT_NO_FATAL_FAILURE(element_utils_.OnVolumeChanged(1.01));
   Media()->GetDocument().GetSettings()->SetCustomMediaPlayerEnabled(true);
   EXPECT_EQ(Media()->IsCustomMediaPlayerEnabled(), true);
-  ASSERT_NO_FATAL_FAILURE(element_utils_->OnVolumeChanged(1.01));
+  ASSERT_NO_FATAL_FAILURE(element_utils_.OnVolumeChanged(1.01));
   Media()->ResetMojoState();
   Media()->StartPlayerLoad();
-  ASSERT_NO_FATAL_FAILURE(element_utils_->OnVolumeChanged(1.01));
+  ASSERT_NO_FATAL_FAILURE(element_utils_.OnVolumeChanged(1.01));
 
   media_ =
       MakeGarbageCollected<HTMLAudioElement>(dummy_page_holder_->GetDocument());
-  element_utils_ = new HTMLMediaElementUtils(Media());
-  ASSERT_NO_FATAL_FAILURE(element_utils_->OnVolumeChanged(1.01));
+  HTMLMediaElementUtils element_utils_one_(Media());
+  ASSERT_NO_FATAL_FAILURE(element_utils_one_.OnVolumeChanged(1.01));
 
   media_ =
       MakeGarbageCollected<HTMLVideoElement>(dummy_page_holder_->GetDocument());
-  element_utils_ = new HTMLMediaElementUtils(Media());
-  element_utils_->htmlMediaElement_ = nullptr;
+  HTMLMediaElementUtils element_utils_two_(Media());
+  element_utils_two_.htmlMediaElement_ = nullptr;
   Media()->GetDocument().GetSettings()->SetCustomMediaPlayerEnabled(false);
   EXPECT_EQ(Media()->IsCustomMediaPlayerEnabled(), false);
-  ASSERT_NO_FATAL_FAILURE(element_utils_->OnVolumeChanged(1.01));
+  ASSERT_NO_FATAL_FAILURE(element_utils_two_.OnVolumeChanged(1.01));
   Media()->GetDocument().GetSettings()->SetCustomMediaPlayerEnabled(true);
   EXPECT_EQ(Media()->IsCustomMediaPlayerEnabled(), true);
-  ASSERT_NO_FATAL_FAILURE(element_utils_->OnVolumeChanged(1.01));
+  ASSERT_NO_FATAL_FAILURE(element_utils_two_.OnVolumeChanged(1.01));
+}
+#endif  // ARKWEB_VIDEO_ASSISTANT
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+TEST_F(HTMLMediaElementUtilsTest, VideoLoadOpt_IsUseVideoLoadOptimizationTest) {
+  media_ =
+      MakeGarbageCollected<HTMLVideoElement>(dummy_page_holder_->GetDocument());
+  HTMLMediaElementUtils element_utils_(Media());
+  EXPECT_EQ(element_utils_.IsUseVideoLoadOptimization(), false);
 }
 
-#endif  // ARKWEB_VIDEO_ASSISTANT
+TEST_F(HTMLMediaElementUtilsTest, VideoLoadOpt_SetVideoIsPlayingTest) {
+  media_ =
+      MakeGarbageCollected<HTMLVideoElement>(dummy_page_holder_->GetDocument());
+  HTMLMediaElementUtils element_utils_(Media());
+  ASSERT_NO_FATAL_FAILURE(element_utils_.SetVideoIsPlaying(true));
+}
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
 }  // namespace blink

@@ -67,6 +67,12 @@ class WebContentsImplExt : public WebContentsImpl {
   void CloseCamera(int nWebID) override;
   int GetNWebId() override;
   void SetNWebId(int nWebID) override;
+  void OnCameraCaptureStateChanged(int original_state, int new_state) override;
+  void ResumeMicrophone(int nWebID) override;
+  void StopMicrophone(int nWebID) override;
+  void PauseMicrophone(int nWebID) override;
+  void OnMicrophoneCaptureStateChanged(int original_state,
+                                       int new_state) override;
   int nWebID_ = 0;
 #endif  // defined(ARKWEB_WEBRTC)
 
@@ -91,7 +97,7 @@ class WebContentsImplExt : public WebContentsImpl {
 
 #endif
 
-#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM) || BUILDFLAG(ARKWEB_ZOOM)
   bool force_enable_zoom_ = false;
   void SetForceEnableZoom(bool forceEnableZoom) override;
   bool GetForceEnableZoom() override { return force_enable_zoom_; }
@@ -132,6 +138,10 @@ class WebContentsImplExt : public WebContentsImpl {
   void ShowFreeCopyMenu() override;
 #endif
 
+#if BUILDFLAG(ARKWEB_AI)
+  void OnDataDetectorSelectText() override;
+#endif  // BUILDFLAG(ARKWEB_AI)
+
   RenderFrameHost* GetTargetFramesIncludingPending(int routing_id);
 
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)
@@ -167,6 +177,7 @@ class WebContentsImplExt : public WebContentsImpl {
 #if BUILDFLAG(ARKWEB_MENU)
   void MouseSelectMenuShow(bool show) override;
   void ChangeVisibilityOfQuickMenu() override;
+  bool IsQuickMenuShow() override;
 #endif
 
 #if BUILDFLAG(ARKWEB_AI)
@@ -233,6 +244,13 @@ class WebContentsImplExt : public WebContentsImpl {
                          bool is_password_popup_type) override;
   void HideAutofillPopup() override;
 #endif // BUILDFLAG(ARKWEB_DATALIST)
+
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  std::shared_ptr<OHOS::NWeb::NWebVaultPlainTextCallback> GetVaultPlainTextCallback() override;
+  void SetVaultPlainTextCallback(
+      std::shared_ptr<OHOS::NWeb::NWebVaultPlainTextCallback> callback) override;
+#endif
+
 #if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
   bool is_selectable_ = false;
   void SetShouldShowFreeCopyMenu(bool is_selectable) {
@@ -253,6 +271,7 @@ class WebContentsImplExt : public WebContentsImpl {
 #if BUILDFLAG(ARKWEB_USERAGENT)
   void SetCustomUA(std::string custom_user_agent) override;
   std::string GetCustomUA() override;
+  bool isSameUserAgent(const blink::UserAgentOverride& ua_override);
 #endif
 #if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
   void OneShotMediaPlayerStopped() override;
@@ -304,11 +323,33 @@ class WebContentsImplExt : public WebContentsImpl {
   bool OnStartBackgroundTask(int32_t type, const std::string& message) override;
 #endif  // ARKWEB_PERFORMANCE_PERSISTENT_TASK
 
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  void SetBlankScreenDetectionConfig(
+      bool enable,
+      const std::vector<double>& detectionTiming,
+      const std::vector<int32_t>& detectionMethods,
+      int32_t contentfulNodesCountThreshold) override;
+  void DetectBlankScreen(const std::string& url);
+#endif
+
 #if BUILDFLAG(ARKWEB_READER_MODE)
   void OnIsPageDistillable(int page_type,
                            const std::string& distillable_page_url,
                            const std::string& title) override;
+  bool IsDistillerPageWebContents();
 #endif // ARKWEB_READER_MODE
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  std::string OnRewriteUrlForNavigation(const std::string& original_url,
+                                        const std::string& referrer,
+                                        int transition_type,
+                                        bool is_key_request) override;
+
+  std::string NotifyNavigationRewriteUrl(const std::string& original_url,
+                                         const std::string& referrer,
+                                         int transition_type,
+                                         bool is_key_request) override;
+#endif
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 friend class WebContentsImpl;
@@ -317,7 +358,10 @@ private:
   std::unique_ptr<VideoAssistant> video_assistant_;
   bool custom_media_player_enabled_ = false;
   std::map<MediaPlayerId, int32_t> surface_widget_map_;
-public:
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class WebContentsImplExtTest;
+#endif  // ARKWEB_TEST
+ public:
   void EnableVideoAssistant(bool enable) override;
   void ExecuteVideoAssistantFunction(const std::string& cmdId) override;
   void OnShowToast(double duration, const std::string& toast);
@@ -351,9 +395,14 @@ public:
   }
 #endif  // BUILDFLAG(ARKWEB_FILE_UPLOAD)
 
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+  void OnOverScrollOffsetChanged(float offset_x, float offset_y);
+  void GetOverScrollOffset(float* offset_x, float* offset_y) override;
+#endif
 #if BUILDFLAG(ARKWEB_PDF)
   void OnPdfScrollAtBottom(const std::string& url) override;
   void OnPdfLoadEvent(int32_t result, const std::string& url) override;
+  void ProcessForPdfType(NavigationHandle* navigation_handle);
 #endif  // BUILDFLAG(ARKWEB_PDF)
 #if BUILDFLAG(ARKWEB_BFCACHE)
   void SetMediaResumeFromBFCachePage(bool resume) override;
@@ -364,11 +413,25 @@ public:
   void OnBrowserBackground() override;
 #endif
 
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+  void OnDocumentEndReady(const FrameInfos& frameInfo) override;
+#endif
+
 private:
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class WebContentsImplUtilsTest;
+#endif
   std::string custom_user_agent_;
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  std::shared_ptr<OHOS::NWeb::NWebVaultPlainTextCallback> vault_plain_text_callback_ = nullptr;
+#endif
 #if BUILDFLAG(ARKWEB_SAFEBROWSING)
   bool safe_browsing_strict_mode_ = false;
 #endif  // BUILDFLAG(ARKWEB_SAFEBROWSING)
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+  float over_scroll_offset_x_ = 0.0f;
+  float over_scroll_offset_y_ = 0.0f;
+#endif
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
   std::unique_ptr<NativeWebContentsObserver> native_web_contents_observer_;
   std::map<std::string,gfx::Rect> native_embed_rect_info_map_;
@@ -394,6 +457,40 @@ private:
   bool pip_update_surface_ = false;
   bool pip_status_ = false;
 #endif
+
+#if BUILDFLAG(ARKWEB_TEST)
+ public:
+  void SetPrimaryMainFrame(RenderFrameHostImpl* impl) { test_impl_ = impl; }
+  RenderFrameHostImpl* GetPrimaryMainFrame() override {
+    if (test_impl_) {
+      return test_impl_;
+    }
+    return WebContentsImpl::GetPrimaryMainFrame();
+  }
+
+  void SetTestFlag(bool flag) { flag_ = flag; }
+  blink::RendererPreferences* GetMutableRendererPrefs() override {
+    if (flag_) {
+      return nullptr;
+    }
+    return WebContentsImpl::GetMutableRendererPrefs();
+  }
+
+  void SetRenderManagerForTesting(RenderFrameHostManager* manager) {
+    test_manager_ = manager;
+  }
+  RenderFrameHostManager* GetRenderManager() override {
+    if (test_manager_) {
+      return test_manager_;
+    }
+    return WebContentsImpl::GetRenderManager();
+  }
+
+ private:
+  RenderFrameHostImpl* test_impl_ = nullptr;
+  RenderFrameHostManager* test_manager_ = nullptr;
+  bool flag_ = false;
+#endif  // ARKWEB_TEST
 };
 }  // namespace content
 

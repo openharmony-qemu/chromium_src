@@ -80,6 +80,9 @@ class MockWidgetBase : public WidgetBase {
   
   MOCK_METHOD(void, SelectRangeV2, (const gfx::Point&, bool));
   MOCK_METHOD(void, ShowFreeCopyMenu, ());
+#if BUILDFLAG(ARKWEB_AI)
+  MOCK_METHOD(void, OnDataDetectorSelectText, ());
+#endif  // BUILDFLAG(ARKWEB_AI)
 
  private:
   CrossVariantMojoAssociatedRemote<mojom::WidgetHostInterfaceBase> CreateWidgetHostRemote() {
@@ -107,8 +110,12 @@ class MockFrameWidgetInputHandler : public mojom::blink::FrameWidgetInputHandler
   }
   
   MOCK_METHOD(void, SelectRangeV2, (const gfx::Point&, bool), (override));
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
   MOCK_METHOD(void, ShowFreeCopyMenu, (), (override));
-  
+#endif
+#if BUILDFLAG(ARKWEB_AI)
+  MOCK_METHOD(void, OnDataDetectorSelectText, (), (override));
+#endif  // BUILDFLAG(ARKWEB_AI)
   void AddImeTextSpansToExistingText(uint32_t, uint32_t, const Vector<ui::ImeTextSpan>&) override {}
   void ClearImeTextSpansByType(uint32_t, uint32_t, ui::ImeTextSpan::Type) override {}
   void SetCompositionFromExistingText(int32_t, int32_t, const Vector<ui::ImeTextSpan>&) override {}

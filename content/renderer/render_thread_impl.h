@@ -407,12 +407,32 @@ class CONTENT_EXPORT RenderThreadImpl
       blink::mojom::ReaderModeConfigPtr config) override;
   const blink::mojom::ReaderModeConfig* GetReaderModeConfig() override;
 #endif
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  void UpdateVideoLoadOptimizationConfigData(const bool enable,
+                                             const int preload_video_time,
+                                             const int min_cache_time,
+                                             const int max_cache_time,
+                                             const int moov_size,
+                                             const int bit_rate,
+                                             const std::vector<std::string>& support_domains) override;
+  bool IsVideoLoadOptimizationEnabled(const std::string& url) const;
+  bool IsVideoLoadOptSupportDomainMatch(const std::string& url) const;
+  int GetVideoPreloadTimeDefault() const;
+  int GetVideoMinCacheTimeDefault() const;
+  int GetVideoMaxCacheTimeDefault() const;
+  int GetVideoMoovSizeDefault() const;
+  int GetVideoBitrateDefault() const;
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 
  private:
   FRIEND_TEST_ALL_PREFIXES(RenderThreadImplBrowserTest,
                            TransferSharedLastForegroundTime);
+
   friend class RenderThreadImplBrowserTest;
   friend class AgentSchedulingGroup;
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class RenderThreadImplExtUnittest;
+#endif
 
   void OnProcessFinalRelease() override;
   // IPC::Listener
@@ -490,7 +510,7 @@ class CONTENT_EXPORT RenderThreadImpl
 #endif
 
 #if BUILDFLAG(ARKWEB_THEME_FONT)
-  void UpdateThemeFontFile(base::File theme_font) override;
+  void UpdateThemeFontFile(const std::vector<base::File> theme_fonts) override;
 #endif
 
   void OnMemoryPressure(
@@ -595,6 +615,17 @@ class CONTENT_EXPORT RenderThreadImpl
 #if BUILDFLAG(ARKWEB_READER_MODE)
   blink::mojom::ReaderModeConfigPtr reader_mode_config_;
 #endif  // ARKWEB_READER_MODE
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  std::atomic<bool> video_load_opt_enable_{false};
+  std::atomic<int> preload_video_time_{4};
+  std::atomic<int> min_cache_time_{2};
+  std::atomic<int> max_cache_time_{6};
+  std::atomic<int> moov_size_{512};
+  std::atomic<int> bit_rate_{2000};
+  std::vector<std::string> support_domains_;
+  mutable std::mutex cloud_control_config_mutex;
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 
   scoped_refptr<viz::ContextProviderCommandBuffer> shared_main_thread_contexts_;
 

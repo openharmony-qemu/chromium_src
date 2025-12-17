@@ -17,6 +17,12 @@
 
 #include "arkweb/build/features/features.h"
 #include "third_party/blink/renderer/core/page/page_utils.h"
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/blank_screen_detector.h"
+#endif
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+#include "base/memory/safe_ref.h"
+#endif
 #if BUILDFLAG(IS_ARKWEB)
 #include "arkweb/chromium_ext/third_party/blink/renderer/core/editing/frame_selection_ext.h"
 #include "base/ohos/sys_info_utils_ext.h"
@@ -55,7 +61,7 @@ void LocalFrameUtil::SetLayoutAndTextZoomFactorsExt(
     float& text_zoom_factor,
     bool& layout_zoom_changed,
     Page* page) {
-  if (base::ohos::IsTabletDevice()) {
+  if (base::ohos::IsTabletDevice() && !base::ohos::IsPcMode()) {
     float zoom_factor_for_device_scale =
         page->GetChromeClient().ZoomFactorForViewportLayout();
     zoom_factor_for_device_scale =
@@ -76,6 +82,77 @@ void LocalFrameUtil::SetLayoutAndTextZoomFactorsExt(
     }
   }
 }
+
+void LocalFrameUtil::SetTextZoomFactorsExt(LocalFrame* LocalFrameObj) {
+  for (Frame* child = LocalFrameObj->Tree().FirstChild(); child;
+      child = child->Tree().NextSibling()) {
+    if (auto* child_local_frame = DynamicTo<LocalFrame>(child)) {
+        child_local_frame->SetTextZoomFactor(LocalFrameObj->text_zoom_factor_);
+    }
+  }
+}
+
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+void LocalFrame::OnOverScrollOffsetChanged(float offset_x, float offset_y) {
+  if (!IsMainThread()) {
+    GetTaskRunner(TaskType::kInternalDefault)
+        ->PostTask(FROM_HERE,
+                   WTF::BindOnce(&LocalFrame::OnOverScrollOffsetChanged,
+                                 weak_local_frame_.GetSafeRef(), offset_x, offset_y));
+  } else {
+    GetLocalFrameHostRemote().OnOverScrollOffsetChanged(offset_x, offset_y);
+  }
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+void LocalFrame::OnDetectedBlankScreen(const WTF::String& url,
+                                       int32_t blankScreenReason,
+                                       int32_t detectedContentfulNodesCount) {
+  GetLocalFrameHostRemote().OnDetectedBlankScreen(url, blankScreenReason,
+                                                  detectedContentfulNodesCount);
+}
+
+std::shared_ptr<BlankScreenDetector> LocalFrame::GetBlankScreenDetector(
+    bool force) {
+  if (!blank_screen_detector_ && force) {
+    blank_screen_detector_ = std::make_shared<BlankScreenDetector>(this);
+  }
+  return blank_screen_detector_;
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT)
+void LocalFrame::OnFirstScreenPaint(
+    const WTF::String& url,
+    const base::TimeTicks& navigation_start,
+    const base::TimeTicks& first_screen_paint) {
+  base::Time reference_wall_time = base::Time::Now();
+  base::TimeTicks reference_monotonic_time = base::TimeTicks().Now();
+
+  base::TimeDelta navigation_start_elapsed_time =
+      navigation_start - reference_monotonic_time;
+  base::Time navigation_start_wall_time =
+      reference_wall_time + navigation_start_elapsed_time;
+  double navigation_start_wall_time_double_t =
+      navigation_start_wall_time.InSecondsFSinceUnixEpoch();
+  int64_t navigation_start_time =
+      static_cast<int64_t>(navigation_start_wall_time_double_t *
+                           base::Time::kMicrosecondsPerMillisecond);
+
+  base::TimeDelta first_screen_paint_elapsed_time =
+      first_screen_paint - reference_monotonic_time;
+  base::Time first_screen_paint_wall_time =
+      reference_wall_time + first_screen_paint_elapsed_time;
+  double first_screen_paint_time_t =
+      first_screen_paint_wall_time.InSecondsFSinceUnixEpoch();
+  int64_t first_screen_paint_time = static_cast<int64_t>(
+      first_screen_paint_time_t * base::Time::kMicrosecondsPerMillisecond);
+  GetLocalFrameHostRemote().OnFirstScreenPaint(url,
+                                               navigation_start_time,
+                                               first_screen_paint_time);
+}
+#endif
 
 // LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_ADBLOCK)
@@ -105,6 +182,78 @@ void LocalFrame::SetHasGenericHideTypeOption(bool has_generichide_type_option) {
   has_generichide_type_option_ = has_generichide_type_option;
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_PDF)
+bool LocalFrame::IsPDF() {
+  if (!Client()) {
+    LOG(ERROR) << "Client() null";
+    return false;
+  }
+  WebLocalFrame* web_frame = Client()->GetWebFrame();
+  if (web_frame) {
+    WebLocalFrameClient* client = web_frame->Client();
+    if (client) {
+      bool is_pdf = client->IsPDF();
+      LOG_IF(INFO, is_pdf) << "current frame is pdf.";
+      return is_pdf;      
+    }
+  }
+  return false;
+}
+#endif
+
 // LCOV_EXCL_STOP
 
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+bool LocalFrame::IsVideoPrioritySupported() {
+  KURL url;
+  if (GetDocument()) {
+    url = GetDocument()->Url();
+  }
+
+  GURL main_url;
+  if (!url.IsEmpty() && url.IsValid()) {
+    main_url = GURL(url.GetString().Utf8().data());
+  }
+  std::string surl = main_url.DeprecatedGetOriginAsURL().spec();
+
+  if (Client() && Client()->GetWebFrame() &&
+      Client()->GetWebFrame()->Client()) {
+    WebLocalFrameClient* client = Client()->GetWebFrame()->Client();
+    return client->AsWebLocalFrameClientExt()->IsVideoLoadOptimizationEnabled(surl);
+  }
+  return false;
+}
+
+bool LocalFrame::SetNewsFeedPageFitted() {
+  if (Client() && Client()->GetWebFrame() &&
+      Client()->GetWebFrame()->Client()) {
+    WebLocalFrameClient* client = Client()->GetWebFrame()->Client();
+    return client->AsWebLocalFrameClientExt()->SetNewsFeedPageFitted();
+  }
+  return false;
+}
+
+void LocalFrame::SetVideoIsPlaying(std::string id, bool playing) {
+  loader_manager_.SetVideoIsPlaying(id, playing);
+}
+
+void LocalFrame::SetVideoPriority(const HeapVector<Member<VideoPriority>>& vec) {
+  loader_manager_.SetVideoPriority(vec);
+}
+
+void LocalFrame::RegisterUrlLoader(base::WeakPtr<VideoURLLoaderImpl> loader,
+                                   std::string id,
+                                   int64_t start,
+                                   WebURLRequest request,
+                                   base::WeakPtr<WebAssociatedURLLoaderClient> client) {
+  PriorityLoader load =
+      PriorityLoader(loader, id, start, std::move(request), client);
+  loader_manager_.AddUrlLoader(std::move(load));
+}
+
+void LocalFrame::NotifyFinished(base::WeakPtr<VideoURLLoaderImpl> loader) {
+  loader_manager_.RemoveUrlLoader(loader);
+}
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 }  // namespace blink

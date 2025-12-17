@@ -20,8 +20,9 @@ if (is_arkweb) {
   import("//arkweb/chromium_ext/chromium_ext.gni")
 }
 
-if (defined(arkweb_nweb_ex) && arkweb_nweb_ex) {
+if (defined(is_arkweb_ext) && is_arkweb_ext) {
   import("//arkweb/ohos_nweb_ex/build/features/features.gni")
+  import("//arkweb/ohos_nweb_ex/overrides/content/chromium_content_ext.gni")
 }
 
 # See //content/BUILD.gn for how this works.
@@ -648,6 +649,10 @@ source_set("browser_sources") {
       "plugin_service.h",
       "plugin_service_filter.h",
     ]
+  }
+
+  if (defined(is_arkweb_ext) && is_arkweb_ext) {
+    sources += chromium_content_public_browser_ext_gn_sources
   }
 
   if (enable_ppapi) {

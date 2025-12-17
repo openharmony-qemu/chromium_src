@@ -19,6 +19,7 @@
 #include <memory>
 
 #include "arkweb/build/features/features.h"
+#include "arkweb/ohos_nweb/src/capi/nweb_prefetch_options.h"
 #include "cef/include/cef_base.h"
 #include "cef/include/cef_browser.h"
 #include "cef/ohos_cef_ext/include/arkweb_browser_ext.h"
@@ -31,6 +32,7 @@
 #include "nweb_errors.h"
 #include "nweb_find_callback.h"
 #include "nweb_input_delegate.h"
+#include "ohos_cef_ext/libcef/common/cef_open_devtools_ext_opt.h"
 #include "ui/events/keycodes/keyboard_code_conversion_x.h"
 #include "ui/events/keycodes/keysym_to_unicode.h"
 
@@ -75,6 +77,18 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   CefWindowHandle GetOpenerWindowHandle() { return 0; }
 
   bool HasView() override { return false; }
+
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  void SetBlankScreenDetectionConfig( 
+      bool enable,
+      const std::vector<double>& detectionTiming,
+      const std::vector<int32_t>& detectionMethods,
+      int32_t contentfulNodesCountThreshold) override {}
+#endif
+
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+  void GetOverScrollOffsetValue(float* offset_x, float* offset_y) override {}
+#endif
 
   CefRefPtr<CefClient> GetClient() override { return nullptr; }
 
@@ -287,7 +301,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
 
   void SetWebPreferences(const CefBrowserSettings& browser_settings) override {}
 
-  void PutUserAgent(const CefString& ua) override {}
+  void PutUserAgent(const CefString& ua, bool from_app) override {}
 
   CefString DefaultUserAgent() override { return CefString(); }
 
@@ -419,12 +433,14 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
 
   void JavaScriptOnDocumentStart(const CefString& script,
                                  const std::vector<CefString>& script_rules,
+                                 const std::vector<std::pair<CefString, CefString>>& script_regex_rules,
                                  bool is_transfer_finished) override {}
 
   void RemoveJavaScriptOnDocumentStart() override {}
 
   void JavaScriptOnDocumentEnd(const CefString& script,
                                const std::vector<CefString>& script_rules,
+                               const std::vector<std::pair<CefString, CefString>>& script_regex_rules,
                                bool is_transfer_finished) override {}
 
   void RemoveJavaScriptOnDocumentEnd() override {}
@@ -435,6 +451,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
 
   void JavaScriptOnHeadReady(const CefString& script,
                              const std::vector<CefString>& script_rules,
+                             const std::vector<std::pair<CefString, CefString>>& script_regex_rules,
                              bool is_transfer_finished) override {}
 
   void RemoveJavaScriptOnHeadReady() override {}
@@ -461,12 +478,17 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
 
   MOCK_METHOD0(GetShrinkViewportHeight, int());
 
+  void OnEyeDropperResult(bool success, uint32_t color) override {}
+
   void SetPrintBackground(bool enable) override {}
 
   bool GetPrintBackground() override { return false; }
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   void SetScrollable(bool enable, int scrollType) override {}
 
+  void SetImeShow(bool visible) override {}
+#endif
   void StartCamera() override {}
 
   void StopCamera() override {}
@@ -576,6 +598,11 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
                         CefRefPtr<CefDevToolsMessageHandlerDelegate> delegate,
                         const CefPoint& inspect_element_at) override {}
 
+  void ShowDevToolsWithByPb(CefRefPtr<ArkWebBrowserHostExt> frontend_browser,
+                            CefRefPtr<CefDevToolsMessageHandlerDelegate> delegate,
+                            const CefPoint& inspect_element_at,
+                            const CefOpenDevToolsExtOpt& ext_opt) override {}
+
   bool IsFullscreen() override { return false; }
 
   void ExitFullscreen(bool will_cause_resize) override {}
@@ -648,7 +675,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
                                   int current,
                                   bool animate) override {}
   void UpdateBrowserControlsHeight(int height, bool animate) override {}
-  void PrefetchPage(CefString& url, CefString& additionalHttpHeaders) override {
+  void PrefetchPage(const OHOS::NWeb::PrefetchOptions& prefetch_options) override {
   }
   void ReloadOriginalUrl() override {}
   bool CanStoreWebArchive() override { return false; }
@@ -684,6 +711,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void ShowFreeCopyMenu() override {}
   bool ShouldShowFreeCopyMenu() override { return false; }
   void EnableSafeBrowsingDetection(bool enable, bool strictMode) override {}
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   int InsertBackForwardEntry(int index, const CefString& url) override {
     return 0;
   }
@@ -691,6 +719,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
     return 0;
   }
   void ClearForwardList() override {}
+#endif
   void ExtensionSetTabId(int tab_id) override {}
   int ExtensionGetTabId() override { return 0; }
   uint32_t GetAcceleratedWidget(bool isPopup) { return 0; }
@@ -702,9 +731,11 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
               (override));
   void SetFocusOnWeb() override {}
   void UpdateSecurityLayer(bool isNeedSecurityLayer) override {}
+  void UpdateTextFieldStatus(bool isShowKeyboard, bool isAttachIME) override {}
   CefString GetCustomUserAgent() override { return CefString(); }
   void GetLastHitData(int& type, CefString& extra_data) override {}
   std::string GetSelectedTextFromContextParam() override { return ""; }
+  bool JudgeTextInputState() override { return true; }
   void SetNeedsReload(bool needs_reload) override {}
   void SetOptimizeParserBudgetEnabled(bool enable) override {}
   void OnDestroyImageAnalyzerOverlay() override {}
@@ -736,8 +767,10 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
     return nullptr;
   }
 
+#if BUILDFLAG(ARKWEB_BGTASK)
   void OnBrowserForeground() override {}
   void OnBrowserBackground() override {}
+#endif
 
   void RunJavaScriptInFrames(
       const std::string& jsString,
@@ -746,23 +779,30 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
       IsolatedWorld world,
       CefRefPtr<CefJavaScriptResultCallback> callback) override {}
 
-#if BUILDFLAG(ARKWEB_READER_MODE)
-  void Distill(const std::string& guid, const DistillOptions& distill_options,
-    CefRefPtr<CefDistillCallback> callback) override {}
-  void AbortDistill() override {}
-#endif // ARKWEB_READER_MODE
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   void GetFocusedFrameInfo(int32_t& frame_id, CefString& frame_url) override {}
 #endif  // ARKWEB_ARKWEB_EXTENSIONS
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  void LoadUrlWithParams(const std::string& url,
+                         const LoadUrlType& load_type,
+                         const std::string& refer,
+                         const std::string& headers,
+                         const std::string& post_data,
+                         const bool& allow_https_upgrade,
+                         int32_t transition_type) override {}
+  
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  void Distill(uint64_t request_id, const DistillOptions& distill_options,
+    CefRefPtr<CefDistillCallback> callback) override {}
+  void AbortDistill() override {}
+#endif
+  void EnableHttpsUpgrades(bool enable) override {}
+#endif
 
 #if BUILDFLAG(ARKWEB_UNITTESTS)
   void SetMediaResumeFromBFCachePage(bool resume) override {}
-  void PrefetchPage(const OHOS::NWeb::PrefetchOptions& prefetch_options) override {}
-  void GetImageForContextNode(CefRefPtr<CefFrame> frame, int command_id) override {}
   void SetHasComposition(bool has_composition) override {}
   bool GetHasComposition() override { return false; }
-  void PutUserAgent(const CefString& ua, bool from_app) override {}
-  void SetImeShow(bool visible) override {}
   void SetEnableCustomVideoPlayer(bool flag) override {}
   void EnableAppLinking(bool enable) override {}
   bool IsAppLinkingEnabled() const override { return false; }

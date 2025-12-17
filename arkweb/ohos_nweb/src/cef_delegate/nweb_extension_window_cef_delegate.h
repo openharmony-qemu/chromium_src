@@ -48,7 +48,8 @@ class NweExtensionWindowCefDelegate {
                         WindowUpdatedCallback callback);
     bool OnRemoveWindow(int windowId, WindowRemovedCallback callback);
  
-    bool OnCreateWindowV2(const WebExtensionWindowCreateDataV2& create_date,
+    bool OnCreateWindowV2(const WebExtensionWindowCreateData& create_date,
+                          const WebExtensionWindowCreateDataV2& create_date_V2,
                           WindowCreatedCallback callback);
     bool OnUpdateWindowV2(int windowId,
                           const WebExtensionWindowUpdateInfoV2& update_info,

@@ -958,6 +958,9 @@ class CONTENT_EXPORT WebContentsImpl
   bool DidAddMessageToConsole(
       RenderFrameHostImpl* source_frame,
       blink::mojom::ConsoleMessageLevel log_level,
+#if BUILDFLAG(ARKWEB_CONSOLE_LOGGING)
+      blink::mojom::ConsoleMessageSource log_source,
+#endif
       const std::u16string& message,
       int32_t line_no,
       const std::u16string& source_id,
@@ -1497,7 +1500,11 @@ class CONTENT_EXPORT WebContentsImpl
   bool has_persistent_video() { return has_persistent_video_; }
 
   // Returns the focused frame's input handler.
+#if BUILDFLAG(ARKWEB_TEST)
+  virtual blink::mojom::FrameWidgetInputHandler* GetFocusedFrameWidgetInputHandler();
+#else
   blink::mojom::FrameWidgetInputHandler* GetFocusedFrameWidgetInputHandler();
+#endif  // BUILDFLAG(ARKWEB_TEST)
 
   // A render view-originated drag has ended. Informs the render view host and
   // WebContentsDelegate.
@@ -1592,7 +1599,16 @@ class CONTENT_EXPORT WebContentsImpl
 
   WebContents* GetOpenedPartitionedPopin() const override;
 
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+  void EvictFrameBackBuffersWhenNWebWasHidden();
+#endif
+
+#if BUILDFLAG(ARKWEB_TEST)
+ public:
+#else
  private:
+#endif  // ARKWEB_TEST
+
   using FrameTreeIterationCallback = base::FunctionRef<void(FrameTree&)>;
   using RenderViewHostIterationCallback =
       base::RepeatingCallback<void(RenderViewHostImpl*)>;
@@ -1605,6 +1621,9 @@ class CONTENT_EXPORT WebContentsImpl
   friend class TestWebContentsDestructionObserver;
   friend class BeforeUnloadBlockingDelegate;
   friend class TestWCDelegateForDialogsAndFullscreen;
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class WebContentsImplUtilsTest;
+#endif
 
   FRIEND_TEST_ALL_PREFIXES(WebContentsImplTest, CaptureHoldsWakeLock);
   FRIEND_TEST_ALL_PREFIXES(WebContentsImplTest, NoJSMessageOnInterstitials);
@@ -1703,6 +1722,10 @@ class CONTENT_EXPORT WebContentsImpl
 
   // TODO(brettw) TestWebContents shouldn't exist!
   friend class TestWebContents;
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class TestWebContentsImplExt;
+  friend class WebContentsImplExtTest;
+#endif
 
   class RenderWidgetHostDestructionObserver;
   class WebContentsDestructionObserver;
@@ -1981,7 +2004,11 @@ class CONTENT_EXPORT WebContentsImpl
 
   // TODO(creis): This should take in a FrameTreeNode to know which node's
   // render manager to return.  For now, we just return the root's.
+#if BUILDFLAG(ARKWEB_TEST)
+  virtual RenderFrameHostManager* GetRenderManager();
+#else
   RenderFrameHostManager* GetRenderManager();
+#endif  // BUILDFLAG(ARKWEB_TEST)
 
   // Removes browser plugin embedder if there is one.
   void RemoveBrowserPluginEmbedder();

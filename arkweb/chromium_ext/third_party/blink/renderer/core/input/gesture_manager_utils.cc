@@ -77,13 +77,6 @@ WebInputEventResult GestureManagerUtils::HandleGestureDragLongPress(
       hit_test_result.AbsoluteLinkURL().IsEmpty()) {
     return WebInputEventResult::kNotHandled;
   }
-#if BUILDFLAG(ARKWEB_AI)
-  if (gesture_manager_->mouse_event_manager_->AsMouseEventManagerExt()
-          ->GetHitOverlayStatus(hit_test_result) ==
-      HitOverlayStatus::kCreating) {
-    return WebInputEventResult::kNotHandled;
-  }
-#endif
   if (gesture_manager_->mouse_event_manager_->HandleDragDropIfPossible(
           targeted_event)) {
     return WebInputEventResult::kHandledSystem;

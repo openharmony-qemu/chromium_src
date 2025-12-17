@@ -32,7 +32,9 @@ constexpr int MAX_SET_CHANNELS = 12;
 constexpr int MAX_SET_BITRATE = 2000000;
 constexpr int MAX_SET_FRAME = 120;
 constexpr int MAX_SET_WIDTH = 1920;
+constexpr int MIN_SET_WIDTH = 192;
 constexpr int MAX_SET_HEIGHT = 1080;
+constexpr int MIN_SET_HEIGHT = 144;
 constexpr int MAX_SET_TIMESTAMP = 10000000;
 constexpr int32_t kFuzzAudioSampleRate = 48000;
 constexpr int32_t kFuzzAudioChannels = 2;
@@ -40,6 +42,8 @@ constexpr int32_t kFuzzInnerAudioSampleRate = 48000;
 constexpr int32_t kFuzzInnerAudioBitrate = 48000;
 constexpr int32_t kFuzzVideoBitrate = 2000000;
 constexpr int32_t kFuzzVideoFrameRate = 30;
+constexpr int32_t kFuzzMaxOriginalStreamNums = 64;
+static int64_t kFuzzMaxOriginalStream = 0;
 
 class AudioCaptureInfoAdapterMock : public AudioCaptureInfoAdapter {
 public:
@@ -555,6 +559,12 @@ bool ScreenCaptureAdapterImplNullFuzzTest(FuzzedDataProvider* fdp)
     }
     int32_t videoFrameWidth = display->GetWidth();
     int32_t videoFrameHeight = display->GetHeight();
+    if (videoFrameWidth > MIN_SET_WIDTH) {
+        videoFrameWidth = MIN_SET_WIDTH;
+    }
+    if (videoFrameHeight > MIN_SET_HEIGHT) {
+        videoFrameHeight = MIN_SET_HEIGHT;
+    }
     
     //setting the microphone information
     std::shared_ptr<AudioCaptureInfoAdapterMock> micCapInfo =
@@ -608,15 +618,17 @@ bool ScreenCaptureAdapterImplNullFuzzTest(FuzzedDataProvider* fdp)
     std::shared_ptr<ScreenCaptureConfigAdapterMock> config =
         std::make_shared<ScreenCaptureConfigAdapterMock>();
     config->SetCaptureMode(OHOS::NWeb::CaptureModeAdapter::CAPTURE_HOME_SCREEN);
-    config->SetDataType(OHOS::NWeb::DataTypeAdapter::ORIGINAL_STREAM_DATA_TYPE);
+    if (kFuzzMaxOriginalStream <= kFuzzMaxOriginalStreamNums) {
+        config->SetDataType(OHOS::NWeb::DataTypeAdapter::ORIGINAL_STREAM_DATA_TYPE);
+        kFuzzMaxOriginalStream++;
+    } else {
+        config->SetDataType(OHOS::NWeb::DataTypeAdapter::CAPTURE_FILE_DATA_TYPE);
+    }
     config->SetAudioInfo(audioInfo);
     config->SetVideoInfo(videoInfo);
 
     int32_t nweb_id = fdp->ConsumeIntegralInRange<int32_t>(0, 100);
     screenCaptureAdapter->InitV2(config, nweb_id);
-    // if (!screenCaptureAdapter->screenCapture_) {
-    //     screenCaptureAdapter->screenCapture_ = OH_AVScreenCapture_Create();
-    // }
     screenCaptureAdapter->SetMicrophoneEnable(false);
 
     auto callback = std::make_shared<OHOSScreenCaptureCallbackMock>();

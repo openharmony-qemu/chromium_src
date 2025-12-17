@@ -192,7 +192,7 @@ declare_args() {
 }
 
 assert(!is_hwasan || (target_os == "android" && target_cpu == "arm64") || (target_os == "ohos" && target_cpu == "arm64"),
-       "HWASan only supported on Android and OHOS ARM64 builds.")
+       "HWASan only supported on Android and ohos ARM64 builds.")
 
 assert(
     !(enable_fuzztest_fuzz && use_libfuzzer),

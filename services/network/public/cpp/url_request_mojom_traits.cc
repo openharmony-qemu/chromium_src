@@ -249,6 +249,9 @@ bool StructTraits<
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
   out->usage_scenario_ = data.usage_scenario_();
 #endif
+#if BUILDFLAG(ARKWEB_COOKIE)
+  out->disable_web_security = data.disable_web_security_();
+#endif
   return true;
 }
 

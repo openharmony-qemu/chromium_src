@@ -472,8 +472,8 @@ source_set("tests") {
     sources += [ "dns_config_service_android_unittest.cc" ]
   } else if (is_linux) {
     sources += [ "dns_config_service_linux_unittest.cc" ]
-  } else if (is_ohos) {
-    sources += [ "//arkweb/chromium_ext/net/dns/dns_config_service_ohos_unittest.cc" ]
+  } else if (arkweb_ext_http_dns_fallback || is_ohos) {
+    sources += arkweb_net_dns_unittest_sources
   } else if (is_posix) {
     sources += [ "dns_config_service_posix_unittest.cc" ]
   }

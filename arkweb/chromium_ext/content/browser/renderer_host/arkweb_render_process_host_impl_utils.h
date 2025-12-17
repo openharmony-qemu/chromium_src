@@ -119,7 +119,7 @@ class ArkwebRenderProcessHostImplUtils {
   static ThemeFont* EnsureThemeFont();
   static bool IsThemeFontValid();
   static void UpdateThemeFontFile(RenderProcessHostImpl* host,
-                                  base::File font_file);
+                                  std::vector<base::File> font_files);
 #endif
 
 #if BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
@@ -128,7 +128,11 @@ class ArkwebRenderProcessHostImplUtils {
 #if BUILDFLAG(ARKWEB_CRASHPAD)
   void AddDFXToUIThreadInterface(service_manager::BinderRegistry* registry);
 #endif
+#if BUILDFLAG(ARKWEB_TEST)
+ public:
+#else
  private:
+#endif
   const raw_ptr<RenderProcessHostImpl> render_process_host_impl_;
 #if BUILDFLAG(ARKWEB_THEME_FONT)
   static std::unique_ptr<ThemeFont> g_theme_font_;
@@ -146,6 +150,35 @@ class ArkwebRenderProcessHostImplUtils {
   static void ReportHisyevent(int64_t block_time, const std::string& mode);
 #endif
 };
+
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+class DelayedRenderKiller {
+  public:
+    static DelayedRenderKiller* GetInstance() {
+      static DelayedRenderKiller* inst_ = new DelayedRenderKiller();
+      return inst_;
+    }
+    ~DelayedRenderKiller() = delete;
+    void StartTimer();
+    bool NeedDebug();
+ 
+#if BUILDFLAG(ARKWEB_TEST)
+  public:
+#else
+  private:
+#endif
+    DelayedRenderKiller() = default;
+    DelayedRenderKiller(const DelayedRenderKiller& i) = delete;
+    DelayedRenderKiller& operator= (const DelayedRenderKiller& i) = delete;
+ 
+    void TryKillRender();
+ 
+    std::unique_ptr<base::RepeatingTimer> timer_;
+    int32_t rep_ = 0;
+    const int32_t MAX_REP = 15;
+    const int32_t SLEEP_TIME = 3;
+};
+#endif
 }  // namespace content
 
 #endif  // ARKWEB_RENDER_PROCESS_HOST_IMPL_UTILS_H_

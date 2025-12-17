@@ -59,6 +59,14 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
 
   void SetFocus(bool) override {}
 
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  void SetBlankScreenDetectionConfig( 
+      bool enable,
+      const std::vector<double>& detectionTiming,
+      const std::vector<int32_t>& detectionMethods,
+      int32_t contentfulNodesCountThreshold) override {}
+#endif
+
   CefWindowHandle GetWindowHandle() override { return 0; }
   CefWindowHandle GetOpenerWindowHandle() override { return 0; }
 
@@ -680,6 +688,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   CefString GetCustomUserAgent() override { return CefString(); }
   void GetLastHitData(int& type, CefString& extra_data) override {}
   std::string GetSelectedTextFromContextParam() override { return ""; }
+  bool JudgeTextInputState() override { return true; }
   void SetNeedsReload(bool needs_reload) override {}
   void SetOptimizeParserBudgetEnabled(bool enable) override {}
   void OnDestroyImageAnalyzerOverlay() override {}
@@ -738,6 +747,18 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   void GetFocusedFrameInfo(int32_t& frame_id, CefString& frame_url) override {}
 #endif  // ARKWEB_ARKWEB_EXTENSIONS
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  int LoadUrlWithParams(const std::string& url,
+                        const LoadUrlType load_type,
+                        const std::string& refer,
+                        const std::string& headers,
+                        const std::string& post_data,
+                        const bool allow_https_upgrade,
+                        int32_t transition_type) override {
+    return 0;
+  }
+  void EnableHttpsUpgrades(bool enable) override {}
+#endif
 };
 
 class MockCefBrowser : public CefBrowser {

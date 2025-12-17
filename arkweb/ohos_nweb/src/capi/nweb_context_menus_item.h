@@ -13,11 +13,11 @@
  * limitations under the License.
  */
  
-#include <vector>
- 
 #ifndef OHOS_NWEB_SRC_NWEB_CONTEXT_MENUS_ITEM_H_
 #define OHOS_NWEB_SRC_NWEB_CONTEXT_MENUS_ITEM_H_
  
+#include <vector>
+
 // This is an exported struct. Do not modify it or its nested structs.
 struct NWebContextMenusItem {
   bool checked;
@@ -36,6 +36,7 @@ struct NWebContextMenusItem {
 struct NWebContextMenusItemV2 {
   NWebContextMenusItem item;
   std::optional<bool> isOffTheRecord;
+  std::optional<int32_t> intId;
 };
  
 #endif  //  OHOS_NWEB_SRC_NWEB_CONTEXT_MENUS_ITEM_H_

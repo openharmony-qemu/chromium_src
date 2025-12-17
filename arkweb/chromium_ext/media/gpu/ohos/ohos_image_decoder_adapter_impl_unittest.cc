@@ -215,6 +215,17 @@ TEST_F(ImageDecoderAdapterImplTest, ImageDecoderAdapterImplTest_GetOffset) {
   EXPECT_EQ(result, 0);
 }
 
+TEST_F(ImageDecoderAdapterImplTest, ImageDecoderAdapterImplTest_GetSize) {
+  EXPECT_NE(adapter_, nullptr);
+  std::shared_ptr<BufferHandle> bufferHandle = std::make_shared<BufferHandle>();
+  adapter_->bufferHandle_ = bufferHandle.get();
+  uint64_t result = adapter_->GetSize();
+  EXPECT_FALSE(result != 0);
+  adapter_->bufferHandle_ = nullptr;
+  result = adapter_->GetSize();
+  EXPECT_EQ(result, 0);
+}
+
 TEST_F(ImageDecoderAdapterImplTest, ImageDecoderAdapterImplTest_GetNativeWindowBuffer) {
   EXPECT_NE(adapter_, nullptr);
   auto res = adapter_->GetNativeWindowBuffer();
@@ -270,6 +281,21 @@ TEST_F(ImageDecoderAdapterImplTest, ImageDecoderAdapterImplTest_ReleasePixelMap)
   EXPECT_EQ(adapter_->bufferHandle_, nullptr);
 }
 
+TEST_F(ImageDecoderAdapterImplTest, ImageDecoderAdapterImplTest_GetBufferHandle) {
+  EXPECT_NE(adapter_, nullptr);
+  std::shared_ptr<BufferHandle> bufferHandle = std::make_shared<BufferHandle>();
+  adapter_->bufferHandle_ = bufferHandle.get();
+  size_t bufferSize = 0;
+  uint8_t* buffer = GetPngBuffer(bufferSize);
+  bool result = adapter_->DecodeToPixelMap(buffer, bufferSize);
+  EXPECT_EQ(result, true);
+  adapter_->bufferHandle_ = nullptr;
+  adapter_->NativeBufferFromPixelMap();
+  adapter_->CreateNativeWindowBuffer();
+  result = adapter_->GetBufferHandle();
+  EXPECT_EQ(result, true);
+}
+
 TEST_F(ImageDecoderAdapterImplTest, ImageDecoderAdapterImplTest_GetDecodeData) {
   EXPECT_NE(adapter_, nullptr);
   auto res = adapter_->GetDecodeData();
@@ -279,6 +305,16 @@ TEST_F(ImageDecoderAdapterImplTest, ImageDecoderAdapterImplTest_GetDecodeData) {
   adapter_->DecodeToPixelMap(buffer, bufferSize);
   res = adapter_->GetDecodeData();
   EXPECT_NE(res, nullptr);
+}
+
+TEST_F(ImageDecoderAdapterImplTest, ImageDecoderAdapterImplTest_DecodeByPath) {
+  EXPECT_NE(adapter_, nullptr);
+  bool result = adapter_->DecodeByPath("", AllocatorType::kDefault);
+  EXPECT_EQ(result, false);
+  result = adapter_->DecodeByPath("111", AllocatorType::kDefault);
+  EXPECT_EQ(result, false);
+  adapter_->ReleasePixelMap();
+  EXPECT_EQ(adapter_->pixelMap_, nullptr);
 }
 
 } // namespace OHOS::NWeb

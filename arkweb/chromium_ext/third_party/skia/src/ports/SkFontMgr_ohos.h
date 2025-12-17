@@ -59,7 +59,7 @@ class SkFontMgr_OHOS : public SkFontMgr {
       SkFontStyle style) const override;
 
 #if BUILDFLAG(ARKWEB_THEME_FONT)
-  virtual void onInvalidateThemeFont(int fd) override;
+  virtual void onInvalidateThemeFont(const std::vector<int>& fds) override;
 #endif
 
  private:
@@ -76,7 +76,7 @@ class SkFontMgr_OHOS : public SkFontMgr {
                                  const SkFontArguments& args,
                                  const char path[]) const;
   sk_sp<SkTypeface> makeTypeface(SkFontData* fontData) const;
-  SkTypeface* findTypeface(const FallbackSetPos& fallbackItem,
+  sk_sp<SkTypeface> findTypeface(const FallbackSetPos& fallbackItem,
                            const SkFontStyle& style,
                            const char* bcp47[],
                            int bcp47Count,

@@ -42,8 +42,8 @@
 #define WARNING_MEMORY_LEAK_THRESHOLD 800
 #define ERROR_MEMORY_LEAK_THRESHOLD 1500
 #define COUNTER_INITIAL 0
-#define COUNTER_THRESHOLD 60
-#define INTERVAL 10000
+#define COUNTER_THRESHOLD 10
+#define INTERVAL 60000
 
 namespace content {
 
@@ -76,7 +76,7 @@ void ReadProcFile(const std::string& filePath, const std::string& token, T& valu
   LOG(ERROR) << "Failed to find token: " << token << " in file: " << filePath;
 }
 
-static void UpdateProcessBasicMemoryInfo(DfxMemInfo &mem_info)
+void MemoryMonitorImpl::UpdateProcessBasicMemoryInfo(DfxMemInfo &mem_info)
 {
   if (mem_info.pid == 0) {
     ReadProcFile("/proc/self/status", "NSpid:", mem_info.pid);
@@ -89,7 +89,7 @@ static void UpdateProcessBasicMemoryInfo(DfxMemInfo &mem_info)
   ReadProcFile("/proc/self/smaps_rollup", "Pss:", mem_info.pss);
 }
 
-static void UpdateProcessMemoryInfo(DfxMemInfo &mem_info)
+void MemoryMonitorImpl::UpdateProcessMemoryInfo(DfxMemInfo &mem_info)
 {
   UpdateProcessBasicMemoryInfo(mem_info);
 

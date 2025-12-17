@@ -20,6 +20,9 @@
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 #include "third_party/blink/renderer/modules/media_controls/elements/media_control_playback_speed_button_element.h"
 #endif
+#include "third_party/blink/renderer/platform/heap/garbage_collected.h"
+#include "third_party/blink/renderer/platform/heap/member.h"
+
 namespace blink {
 class MediaControlPopupMenuElement;
 class MediaControlsImpl;
@@ -27,15 +30,17 @@ class MediaControlPlaybackSpeedButtonElement;
 
 class MediaControlPopupMenuElementUtils {
 public:
-    raw_ptr<MediaControlPopupMenuElement> element = nullptr;
-    MediaControlPopupMenuElementUtils(MediaControlPopupMenuElement* element);
+    DISALLOW_NEW();
+    void Trace(Visitor* visitor) const;
+    Member<MediaControlPopupMenuElement> element = nullptr;
+    explicit MediaControlPopupMenuElementUtils(MediaControlPopupMenuElement* element);
 
     void ShouldSetPopupAnchorHM(DOMRect* bounding_client_rect, LocalDOMWindow* dom_window);
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
     void SetPopupAnchorHM(DOMRect* bounding_client_rect, LocalDOMWindow* dom_window);
     void SetOverflowPopupAnchorHM(DOMRect* bounding_client_rect, LocalDOMWindow* dom_window);
-    bool IsOverflowMenuPopup();
+    bool IsOverflowMenuPopup() const;
 #endif
 
     Element* ShouldPlaybackSpeedButton();

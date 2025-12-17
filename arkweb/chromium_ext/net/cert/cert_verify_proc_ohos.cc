@@ -418,7 +418,7 @@ bool PerformAIAFetchAndAddResultToVector(
     bssl::ParsedCertificateList* cert_list) {
   GURL url(uri);
   if (!url.is_valid()) {
-    LOG(ERROR) << "PerformAIAFetchAndAddResultToVector: URL is invalied";
+    LOG(ERROR) << "PerformAIAFetchAndAddResultToVector: URL is invalid";
     return false;
   }
 
@@ -509,7 +509,9 @@ int TryVerifyWithAIAFetching(const std::vector<std::string>& cert_bytes,
   // AIA URLs.
   bssl::CertErrors errors;
   bssl::ParsedCertificateList certs;
-  ConvertToParsedCertificates(cert_bytes, errors, certs);
+  if (ConvertToParsedCertificates(cert_bytes, errors, certs) != X509_V_OK) {
+    return X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY;
+  }
 
   // Build a chain as far as possible from the target certificate at index 0,
   // using the initially provided certificates.
@@ -597,7 +599,8 @@ void SetCertStatus(int status, CertVerifyResult* verify_result) {
         verify_result->cert_status |= CERT_STATUS_DEPTH_ZERO_SELF_SIGNED_CERT;
         break;
       default:
-        NOTREACHED();
+        verify_result->cert_status |= CERT_STATUS_INVALID;
+        break;
   }
 }
 

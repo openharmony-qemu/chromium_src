@@ -723,9 +723,11 @@ if (use_blink) {
       import("//arkweb/chromium_ext/ui/events/build.gni")
       sources += events_unittests_sources
       sources += arkweb_native_scroller_test_source
-      configs += ["//arkweb/chromium_ext:arkweb_system_properties_config"]
     }
 
+    if (arkweb_test) {
+      deps += [ "//arkweb/ohos_adapter_ndk/mock_ndk_api:mock_base_ohos" ]
+    }
     if (is_android) {
       sources += [ "android/motion_event_android_unittest.cc" ]
       deps += [

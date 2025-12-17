@@ -90,6 +90,10 @@
 #endif  // BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
 #include "arkweb/chromium_ext/content/browser/renderer_host/arkweb_render_process_host_impl_utils.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "services/device/business_risk_intelligent_detection/business_risk_intelligent_detection_host_impl.h"
+#endif
+
 namespace content {
 
 namespace {
@@ -141,6 +145,12 @@ void RenderProcessHostImpl::RegisterMojoInterfaces() {
 #if BUILDFLAG(ARKWEB_CRASHPAD)
   arkweb_render_process_host_impl_utils_->AddDFXToUIThreadInterface(registry.get());
 #endif
+
+#if BUILDFLAG(IS_ARKWEB)
+  registry->AddInterface(
+      base::BindRepeating(&device::BusinessRiskIntelligentDetectionHostImpl::Create));
+#endif
+
   AddUIThreadInterface(
       registry.get(),
       base::BindRepeating(

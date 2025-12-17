@@ -370,11 +370,11 @@ void MediaCodecDecoderBridgeImpl::PopInqueueDec() {
 DecoderAdapterCode MediaCodecDecoderBridgeImpl::PushInbufferDec(
     const uint32_t index,
     const uint32_t& bufferSize,
-    const int64_t& time) {
+    const int64_t& time,
+    bool is_key_frame) {
   BufferFlag bufferFlag;
-  if (isFirstDecFrame_) {
-    bufferFlag = BufferFlag::CODEC_BUFFER_FLAG_CODEC_DATA;
-    isFirstDecFrame_ = false;
+  if (is_key_frame) {
+    bufferFlag = BufferFlag::CODEC_BUFFER_FLAG_SYNC_FRAME;
   } else {
     bufferFlag = BufferFlag::CODEC_BUFFER_FLAG_NONE;
   }
@@ -453,7 +453,8 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::QueueInputBuffer(
     const uint8_t* data,
     size_t data_size,
     int64_t presentation_time,
-    const DecryptConfig* decrypt_config) {
+    const DecryptConfig* decrypt_config,
+    bool is_key_frame) {
   LOG(DEBUG) << "MediaCodecDecoderBridgeImpl::QueueInputBuffer";
   std::lock_guard<std::recursive_mutex> lock(decoderMutex_);
   if (data == nullptr || data_size == 0) {
@@ -496,7 +497,7 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::QueueInputBuffer(
     DecoderAdapterCode::DECODER_ERROR) {
     return DecoderAdapterCode::DECODER_ERROR;
   }
-  DecoderAdapterCode ret = PushInbufferDec(index, inputSize, presentation_time);
+  DecoderAdapterCode ret = PushInbufferDec(index, inputSize, presentation_time, is_key_frame);
 
   TRACE_EVENT0("media", "PushInbufferDec End");
   PopInqueueDec();
@@ -582,6 +583,14 @@ void MediaCodecDecoderBridgeImpl::DestoryNativeWindow(void* window) {
 
 void CodecBridgeCallback::OnError(ErrorType errorType, int32_t errorCode) {
   LOG(ERROR) << "CodecBridgeCallback::OnError Error errorCode=" << errorCode;
+
+  if (!decoder_callback_task_runner_->RunsTasksInCurrentSequence()) {
+    decoder_callback_task_runner_->PostTask(
+        FROM_HERE, base::BindOnce(&CodecBridgeCallback::OnError,
+                                  shared_from_this(), errorType,
+                                  errorCode));
+    return;
+  }
 
   if (signal_ == nullptr) {
     return;
@@ -699,8 +708,15 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::SetVideoSurface(
         return DecoderAdapterCode::DECODER_ERROR;
     }
     video_surface_id_ = widget_id;
-    return videoDecoder_->SetOutputSurface(
-        NWebNativeWindowTracker::Get()->GetNativeWindow(video_surface_id_));
+
+    void* native_window = NWebNativeWindowTracker::Get()->GetNativeWindow(video_surface_id_, true);
+    if (!native_window) {
+        LOG(ERROR) << "MediaCodecDecoderBridgeImpl::SetVideoSurface native_window is NULL";
+        return DecoderAdapterCode::DECODER_ERROR;
+    }
+    DecoderAdapterCode status = videoDecoder_->SetOutputSurface(native_window);
+    OHOS::NWeb::OhosAdapterHelper::GetInstance().GetWindowAdapterInstance().NativeWindowUnRef(native_window);
+    return status;
 }
 #endif // ARKWEB_VIDEO_ASSISTANT
 

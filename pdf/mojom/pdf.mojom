@@ -38,6 +38,14 @@ interface PdfListener {
   // Get the text contained on the given page of the PDF. `page_index` should be
   // the range [0, # of pages).
   GetPageText(int32 page_index) => (mojo_base.mojom.String16 text);
+
+  // #if BUILDFLAG(ARKWEB_PDF)
+  [EnableIf=arkweb_pdf]
+  ClearTextSelection();
+
+  [EnableIf=arkweb_pdf]
+  OnScaleChanged();
+  // #endif
 };
 
 // Browser-side interface used by PDF renderers.
@@ -72,9 +80,12 @@ interface PdfHost {
 
   // #if BUILDFLAG(ARKWEB_PDF)
   [EnableIf=arkweb_pdf]
-  UpdateClientClippedSelectionBoundsForPDF(gfx.mojom.Rect clipped_selection_bounds);
+  ConvertAndUpdateSelectionBounds(gfx.mojom.Rect clipped_selection_bounds);
 
   [EnableIf=arkweb_pdf]
-  HideHandleAndQuickMenuForPDF(bool hide_handles);
+  HideHandleAndQuickMenu(bool hide);
+
+  [EnableIf=arkweb_pdf]
+  ResetResponsePendingInputEvent();
   // #endif
 };

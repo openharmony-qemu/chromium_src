@@ -163,7 +163,7 @@ bool SelectionController::HandleGestureTapIfSelectionExist(
   bool ret = false;
   if (!Selection().Contains(v_point, false)) {
     LOG(INFO) << "Tap outside the selected range to clear selection";
-    if (web_local_frame) {
+    if (web_local_frame && event.GetHitTestResult().GetImage()) {
       const blink::WebRange& range =
           web_local_frame->GetInputMethodController()->GetSelectionOffsets();
       if (!range.IsNull()) {
@@ -177,7 +177,7 @@ bool SelectionController::HandleGestureTapIfSelectionExist(
   } else if (web_local_frame && web_local_frame->Client()) {
     LOG(INFO)
         << "Tap within the selected range to change visibility of quick menu";
-    web_local_frame->Client()->AsWebLocalFrameClientExt()->ChangeVisibilityOfQuickMenu();
+    web_local_frame->Client()->AsWebLocalFrameClientExt()->HideQuickMenu();
     ret = true;
   }
   if (mouse_menu_show_) {

@@ -28,6 +28,7 @@
 #include "cef/include/cef_devtools_message_handler_delegate.h"
 #include "cef/ohos_cef_ext/libcef/browser/net_service/net_helpers.h"
 #include "gtest/gtest.h"
+#include "ohos_cef_ext/libcef/common/cef_open_devtools_ext_opt.h"
 #include "nweb.h"
 
 #if BUILDFLAG(IS_ARKWEB_EXT)
@@ -83,6 +84,18 @@ class MockPreferenceCefBrowserHost : public ArkWebBrowserHostExt {
   void SetDisallowSandboxFileAccessFromFileUrl(bool disallow) override {}
 
   bool TryCloseBrowser() override { return false; }
+
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  void SetBlankScreenDetectionConfig( 
+      bool enable,
+      const std::vector<double>& detectionTiming,
+      const std::vector<int32_t>& detectionMethods,
+      int32_t contentfulNodesCountThreshold) override {}
+#endif
+
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+  void GetOverScrollOffsetValue(float* offset_x, float* offset_y) override {}
+#endif
 
   void SetFocus(bool) override {}
 
@@ -418,12 +431,14 @@ class MockPreferenceCefBrowserHost : public ArkWebBrowserHostExt {
 
   void JavaScriptOnDocumentStart(const CefString& script,
                                  const std::vector<CefString>& script_rules,
+                                 const std::vector<std::pair<CefString, CefString>>& script_regex_rules,
                                  bool is_transfer_finished) override {}
 
   void RemoveJavaScriptOnDocumentStart() override {}
 
   void JavaScriptOnDocumentEnd(const CefString& script,
                                const std::vector<CefString>& script_rules,
+                               const std::vector<std::pair<CefString, CefString>>& script_regex_rules,
                                bool is_transfer_finished) override {}
 
   void RemoveJavaScriptOnDocumentEnd() override {}
@@ -437,6 +452,7 @@ class MockPreferenceCefBrowserHost : public ArkWebBrowserHostExt {
 #if BUILDFLAG(ARKWEB_JSPROXY)
   void JavaScriptOnHeadReady(const CefString& script,
                              const std::vector<CefString>& script_rules,
+                             const std::vector<std::pair<CefString, CefString>>& script_regex_rules,
                              bool is_transfer_finished) override {}
 
   void RemoveJavaScriptOnHeadReady() override {}
@@ -461,11 +477,31 @@ class MockPreferenceCefBrowserHost : public ArkWebBrowserHostExt {
 
   int GetShrinkViewportHeight() override { return 0; }
 
+  void OnEyeDropperResult(bool success, uint32_t color) override {}
+
   void SetPrintBackground(bool enable) override {}
 
   bool GetPrintBackground() override { return false; }
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   void SetScrollable(bool enable, int scrollType) override {}
+
+  void SetImeShow(bool visible) override {}
+#endif
+
+#if BUILDFLAG(IS_ARKWEB)
+  void EnableAppLinking(bool enable) override {}
+
+  bool IsAppLinkingEnabled() const override {}
+#endif
+
+  void RunJavaScriptInFrames(const std::string& jsString, FrameInfos rootFrame,
+                                     bool recursive, IsolatedWorld world,
+                                     CefRefPtr<CefJavaScriptResultCallback> callback) override {}
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  void GetFocusedFrameInfo(int32_t& frame_id, CefString& frame_url) override {}
+#endif
 
   void StartCamera() override {}
 
@@ -575,6 +611,12 @@ class MockPreferenceCefBrowserHost : public ArkWebBrowserHostExt {
   void ShowDevToolsWith(CefRefPtr<ArkWebBrowserHostExt> frontend_browser,
                         CefRefPtr<CefDevToolsMessageHandlerDelegate> delegate,
                         const CefPoint& inspect_element_at) override {}
+  
+  void ShowDevToolsWithByPb(
+      CefRefPtr<ArkWebBrowserHostExt> frontend_browser,
+      CefRefPtr<CefDevToolsMessageHandlerDelegate> delegate,
+      const CefPoint& inspect_element_at,
+      const CefOpenDevToolsExtOpt& ext_opt) override {}
 
   bool IsFullscreen() override { return false; }
 
@@ -648,7 +690,7 @@ class MockPreferenceCefBrowserHost : public ArkWebBrowserHostExt {
                                   int current,
                                   bool animate) override {}
   void UpdateBrowserControlsHeight(int height, bool animate) override {}
-  void PrefetchPage(CefString& url, CefString& additionalHttpHeaders) override {
+  void PrefetchPage(const OHOS::NWeb::PrefetchOptions& prefetch_options) override {
   }
   void ReloadOriginalUrl() override {}
   bool CanStoreWebArchive() override { return false; }
@@ -683,6 +725,7 @@ class MockPreferenceCefBrowserHost : public ArkWebBrowserHostExt {
   void ShowFreeCopyMenu() override {}
   bool ShouldShowFreeCopyMenu() override { return false; }
   void EnableSafeBrowsingDetection(bool enable, bool strictMode) override {}
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   int InsertBackForwardEntry(int index, const CefString& url) override {
     return 0;
   }
@@ -690,6 +733,7 @@ class MockPreferenceCefBrowserHost : public ArkWebBrowserHostExt {
     return 0;
   }
   void ClearForwardList() override {}
+#endif
   void ExtensionSetTabId(int tab_id) override {}
   int ExtensionGetTabId() override { return 0; }
   uint32_t GetAcceleratedWidget(bool isPopup) override { return 0; }
@@ -702,9 +746,11 @@ class MockPreferenceCefBrowserHost : public ArkWebBrowserHostExt {
               bool newSession) override {}
   void SetFocusOnWeb() override {}
   void UpdateSecurityLayer(bool isNeedSecurityLayer) override {}
+  void UpdateTextFieldStatus(bool isShowKeyboard, bool isAttachIME) override {}
   CefString GetCustomUserAgent() override { return CefString(); }
   void GetLastHitData(int& type, CefString& extra_data) override {}
   std::string GetSelectedTextFromContextParam() override { return ""; }
+  bool JudgeTextInputState() override { return true; }
   void SetNeedsReload(bool needs_reload) override {}
   void SetOptimizeParserBudgetEnabled(bool enable) override {}
   void OnDestroyImageAnalyzerOverlay() override {}
@@ -754,8 +800,10 @@ class MockPreferenceCefBrowserHost : public ArkWebBrowserHostExt {
   void CancelAllPrerendering() override {}
   void CreateWebPrintDocumentAdapterV2(const CefString& jobName,
                                        void** adapter) override {}
+#if BUILDFLAG(ARKWEB_BGTASK)                                       
   void OnBrowserForeground() override {}
   void OnBrowserBackground() override {}
+#endif
 
 #if BUILDFLAG(ARKWEB_READER_MODE)
   void Distill(const std::string& guid, const DistillOptions& distill_options,
@@ -795,6 +843,9 @@ class MockPreferenceCefBrowser : public CefBrowser, public CefBrowserHost {
   CefRefPtr<ArkWebBrowserHostExt> GetHost() {
     return host_;
   }
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+  void GetOverScrollOffsetValue(float* offset_x, float* offset_y) override {}
+#endif
   bool CanGoBack() override {return false;}
   void GoBack() override {}
   bool CanGoForward() override {return false;}
@@ -861,6 +912,11 @@ class MockPreferenceCefBrowser : public CefBrowser, public CefBrowserHost {
   CefRefPtr<ArkWebBrowserHostExt> frontend_browser,
   CefRefPtr<CefDevToolsMessageHandlerDelegate> delegate,
   const CefPoint& inspect_element_at) override {}
+  void ShowDevToolsWithByPb(
+  CefRefPtr<ArkWebBrowserHostExt> frontend_browser,
+  CefRefPtr<CefDevToolsMessageHandlerDelegate> delegate,
+  const CefPoint& inspect_element_at,
+  const CefOpenDevToolsExtOpt& ext_opt) override {}
   #endif // BUILDFLAG(ARKWEB_DEVTOOLS)
   void CloseDevTools() override {}
   bool HasDevTools() override {return false;}
@@ -963,6 +1019,13 @@ class MockPreferenceCefBrowser : public CefBrowser, public CefBrowserHost {
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   int PrerenderPage(const CefString& url, const CefString& additional_headers) override { return 0; };
   void CancelAllPrerendering() override { };
+#endif
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  void SetBlankScreenDetectionConfig(
+      bool enable,
+      const std::vector<double>& detectionTiming,
+      const std::vector<int32_t>& detectionMethods,
+      int32_t contentfulNodesCountThreshold) override {}
 #endif
   CefBrowserSettings settings_;
   std::unique_ptr<CefBrowserContentsDelegate> contents_delegate_;
@@ -1074,6 +1137,7 @@ void MockPreferenceCefBrowser::UpdateBrowserSettings(
   settings_.universal_access_from_file_urls =
       browser_settings.universal_access_from_file_urls;
 #endif
+  settings_.zoom_control_access = browser_settings.zoom_control_access;
 }
 
 std::string GetSharedRenderProcessToken(
@@ -1188,6 +1252,7 @@ void NWebTestSetBrowserSettings(CefBrowserSettings& browser_settings) {
 #if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
   browser_settings.record_whole_document = false;
 #endif  // ARKWEB_SOFTWARE_COMPOSITOR
+  browser_settings.zoom_control_access = true;
 }
 
 bool NWebTestVarifyBrowserSettings(CefBrowserSettings& browser_settings,
@@ -1683,12 +1748,17 @@ TEST(NWebPreferenceDelegateTest, PutJavaScriptOnDocumentStartByOrder) {
     auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
     CefRefPtr<CefBrowser> browser = nullptr;
     preference_delegate->SetBrowser(browser);
-        ScriptItems script_items = {
+    ScriptItems script_items = {
       {"testKey", {"testVal1", "testVal2"}}
     };
+    ScriptRegexItems script_regex_items = {
+        {"testKey", {{"key1", "value1"}, {"key2", "value2"}}}
+    };
     ScriptItemsByOrder script_items_start_by_order_ = {"testVal1", "testVal2"};
-    preference_delegate->PutJavaScriptOnDocumentStartByOrder(script_items, script_items_start_by_order_);
+    preference_delegate->PutJavaScriptOnDocumentStartByOrder(
+        script_items, script_regex_items, script_items_start_by_order_);
     EXPECT_EQ(preference_delegate->GetJavaScriptOnDocumentStart(), script_items);
+    EXPECT_EQ(preference_delegate->GetJavaScriptRegexItemsOnDocumentStart(), script_regex_items);
     EXPECT_EQ(preference_delegate->GetJavaScriptOnDocumentStartByOrder(), script_items_start_by_order_);
 }
 
@@ -1711,9 +1781,14 @@ TEST(NWebPreferenceDelegateTest, PutJavaScriptOnDocumentEndByOrder) {
     ScriptItems script_items = {
       {"testKey", {"testVal1", "testVal2"}}
     };
+    ScriptRegexItems script_regex_items = {
+        {"testKey", {{"key1", "value1"}, {"key2", "value2"}}}
+    };
     ScriptItemsByOrder script_items_start_by_order_ = {"testVal1", "testVal2"};
-    preference_delegate->PutJavaScriptOnDocumentEndByOrder(script_items, script_items_start_by_order_);
+    preference_delegate->PutJavaScriptOnDocumentEndByOrder(
+        script_items, script_regex_items, script_items_start_by_order_);
     EXPECT_EQ(preference_delegate->GetJavaScriptOnDocumentEnd(), script_items);
+    EXPECT_EQ(preference_delegate->GetJavaScriptRegexItemsOnDocumentEnd(), script_regex_items);
     EXPECT_EQ(preference_delegate->GetJavaScriptOnDocumentEndByOrder(), script_items_start_by_order_);
 }
 
@@ -1735,9 +1810,14 @@ TEST(NWebPreferenceDelegateTest, PutJavaScriptOnHeadReadyByOrder) {
     ScriptItems script_items = {
       {"testKey", {"testVal1", "testVal2"}}
     };
+    ScriptRegexItems script_regex_items = {
+        {"testKey", {{"key1", "value1"}, {"key2", "value2"}}}
+    };
     ScriptItemsByOrder script_items_start_by_order_ = {"testVal1", "testVal2"};
-    preference_delegate->PutJavaScriptOnHeadReadyByOrder(script_items, script_items_start_by_order_);
+    preference_delegate->PutJavaScriptOnHeadReadyByOrder(
+        script_items, script_regex_items, script_items_start_by_order_);
     EXPECT_EQ(preference_delegate->GetJavaScriptOnHeadReady(), script_items);
+    EXPECT_EQ(preference_delegate->GetJavaScriptRegexItemsOnHeadReady(), script_regex_items);
     EXPECT_EQ(preference_delegate->GetJavaScriptOnHeadReadyByOrder(), script_items_start_by_order_);
 }
 
@@ -1980,4 +2060,10 @@ TEST(NWebPreferenceDelegateTest, PutWebMediaAVSessionEnabled_BrowserNotNull) {
   browser->SetHost(new MockPreferenceCefBrowserHost());
   preference_delegate->SetBrowser(browser);
   preference_delegate->PutWebMediaAVSessionEnabled(true);
+}
+
+TEST(NWebPreferenceDelegateTest, PutZoomControlAccess) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    preference_delegate->PutZoomControlAccess(false);
+    EXPECT_FALSE(preference_delegate->IsZoomControlAccess());
 }

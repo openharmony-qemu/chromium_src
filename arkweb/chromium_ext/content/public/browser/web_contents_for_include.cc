@@ -44,7 +44,7 @@ virtual void CloseDateTimeChooser() = 0;
 virtual void CollapseAllFramesSelection() = 0;
 #endif
 
-#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM) || BUILDFLAG(ARKWEB_ZOOM)
 virtual void SetForceEnableZoom(bool forceEnableZoom) = 0;
 virtual bool GetForceEnableZoom() = 0;
 #endif  // ARKWEB_EXT_FORCE_ZOOM
@@ -85,18 +85,33 @@ virtual void ShowAutofillPopup(
 virtual void HideAutofillPopup() = 0;
 #endif
 
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  virtual std::shared_ptr<OHOS::NWeb::NWebVaultPlainTextCallback> GetVaultPlainTextCallback() { return nullptr; }
+  virtual void SetVaultPlainTextCallback(
+      std::shared_ptr<OHOS::NWeb::NWebVaultPlainTextCallback> callback) {}
+#endif
+
 #if BUILDFLAG(ARKWEB_WEBRTC)
 virtual void StartCamera(int nWebID) = 0;
 virtual void StopCamera(int nWebID) = 0;
 virtual void CloseCamera(int nWebID) = 0;
 virtual int GetNWebId() = 0;
 virtual void SetNWebId(int nWebID) = 0;
+virtual void OnCameraCaptureStateChanged(int original_state, int new_state) = 0;
+virtual void ResumeMicrophone(int nWebID) = 0;
+virtual void StopMicrophone(int nWebID) = 0;
+virtual void PauseMicrophone(int nWebID) = 0;
+virtual void OnMicrophoneCaptureStateChanged(int original_state, int new_state) = 0;
 #endif  // BUILDFLAG(ARKWEB_WEBRTC)
 
 #if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
 virtual void ShowFreeCopyMenu() = 0;
 virtual bool ShouldShowFreeCopyMenu() = 0;
 #endif
+
+#if BUILDFLAG(ARKWEB_AI)
+virtual void OnDataDetectorSelectText() {}
+#endif  // BUILDFLAG(ARKWEB_AI)
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
 virtual void OnShareFile(const std::string& filePath,
@@ -118,6 +133,10 @@ virtual bool IsHtmlPlayEnabled() = 0;
 #if BUILDFLAG(ARKWEB_BFCACHE)
 virtual void SetMediaResumeFromBFCachePage(bool resume) = 0;
 #endif // BUILDFLAG(ARKWEB_BFCACHE)
+
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+virtual void GetOverScrollOffset(float* offset_x, float* offset_y) = 0;
+#endif
 
 #if BUILDFLAG(ARKWEB_SCREEN_LOCK)
 virtual void SetWakeLockHandler(int32_t windowId,
@@ -189,13 +208,33 @@ virtual void DisableSessionReuse() = 0;
 virtual bool OnStartBackgroundTask(int32_t type, const std::string& message) = 0;
 #endif  // ARKWEB_PERFORMANCE_PERSISTENT_TASK
 
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+virtual void SetBlankScreenDetectionConfig(
+    bool enable,
+    const std::vector<double>& detectionTiming,
+    const std::vector<int32_t>& detectionMethods,
+    int32_t contentfulNodesCountThreshold) = 0;
+#endif
+
 #if BUILDFLAG(ARKWEB_READER_MODE)
   virtual void OnIsPageDistillable(int page_type,
                                    const std::string& distillable_page_url,
                                    const std::string& title) = 0;
 #endif
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  virtual std::string OnRewriteUrlForNavigation(const std::string& original_url,
+                                                const std::string& referrer,
+                                                int transition_type,
+                                                bool is_key_request) = 0;
+#endif
+
+#if BUILDFLAG(ARKWEB_TEST)
+public:
+#else
 private:
+#endif  // ARKWEB_TEST
+
 #if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
 std::string media_title_;
 std::string video_poster_;

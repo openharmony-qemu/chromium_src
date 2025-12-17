@@ -34,6 +34,8 @@ static constexpr int DEFAULT_VALUE_TWO = 2;
 class MockGURL : public GURL {
  public:
   MOCK_METHOD(bool, SchemeIsBlob, (), (const override));
+  MOCK_METHOD(bool, SchemeIsFile, (), (const override));
+  MOCK_METHOD(std::string, GetContent, (), (const override));
 };
 
 class MockClient : public OHOSMediaPlayerBridge::Client {
@@ -118,6 +120,22 @@ class MockIConsumerSurfaceAdapter : public IConsumerSurfaceAdapter {
   MOCK_METHOD(int32_t, SetQueueSize, (uint32_t queueSize), (override));
 };
 
+class MockMediaResourceGetter : public OHOSMediaResourceGetter {
+ public:
+  MOCK_METHOD(void,
+              GetAuthCredentials,
+              (const GURL& url, GetAuthCredentialsCB callback),
+              (override));
+  MOCK_METHOD(void,
+              GetCookies,
+              (const GURL& url,
+               const net::SiteForCookies& site_for_cookies,
+               const url::Origin& top_frame_origin,
+               net::StorageAccessApiStatus storage_access_api_status,
+               GetCookieCB callback),
+              (override));
+};
+
 constexpr int player_init_ok = 0;
 constexpr int milliseconds = 1000;
 constexpr base::TimeDelta time_delta = base::Milliseconds(milliseconds);
@@ -156,6 +174,17 @@ class OHOSMediaPlayerBridgeTests : public ::testing::Test {
       base::test::TaskEnvironment::TimeSource::MOCK_TIME};
 };
 
+TEST_F(OHOSMediaPlayerBridgeTests, Create) {
+  std::vector<std::string> newDirs = {"test"};
+  auto bridge_ = new OHOSMediaPlayerBridge(
+      *gurl_.get(), site_for_cookies, top_frame_origin, user_agent,
+      storage_access_api_status_, hide_url_log, mock_client_.get(),
+      allow_credentials, is_hls, headers, newDirs);
+  EXPECT_NE(bridge_, nullptr);
+  delete bridge_;
+  bridge_ = nullptr;
+}
+
 TEST_F(OHOSMediaPlayerBridgeTests, Initialize_001) {
   MockGURL url;
   bridge->url_ = url;
@@ -165,6 +194,156 @@ TEST_F(OHOSMediaPlayerBridgeTests, Initialize_001) {
   int32_t result = bridge->Initialize();
   task_environment_.RunUntilIdle();
   EXPECT_EQ(result, player_init_ok);
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, Initialize_002) {
+  MockGURL url;
+  bridge->url_ = url;
+  EXPECT_CALL(url, SchemeIsBlob()).WillRepeatedly(Return(false));
+  bridge->allow_credentials_ = false;
+  int32_t result = bridge->Initialize();
+  task_environment_.RunUntilIdle();
+  EXPECT_EQ(result, player_init_ok);
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, Initialize_003) {
+  MockGURL url;
+  bridge->url_ = url;
+  EXPECT_CALL(url, SchemeIsBlob()).WillRepeatedly(Return(false));
+  bridge->client_ = nullptr;
+  int32_t result = bridge->Initialize();
+  task_environment_.RunUntilIdle();
+  EXPECT_EQ(result, player_init_ok);
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, Initialize_004) {
+  MockGURL url;
+  bridge->url_ = url;
+  EXPECT_CALL(url, SchemeIsBlob()).WillRepeatedly(Return(false));
+  auto mock_resource_getter_ = new MockMediaResourceGetter();
+  EXPECT_CALL(*mock_resource_getter_, GetCookies(_, _, _, _, _)).Times(1);
+  EXPECT_CALL(*mock_client_, GetMediaResourceGetter())
+      .WillOnce(Return(mock_resource_getter_));
+  int32_t result = bridge->Initialize();
+  task_environment_.RunUntilIdle();
+  EXPECT_EQ(result, player_init_ok);
+  EXPECT_TRUE(bridge->pending_retrieve_cookies_);
+  delete mock_resource_getter_;
+  mock_resource_getter_ = nullptr;
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, OnCookiesRetrieved_001) {
+  std::string cookies = "test";
+  bridge->client_ = nullptr;
+  bridge->OnCookiesRetrieved(cookies);
+  EXPECT_EQ(bridge->cookies_, cookies);
+  EXPECT_FALSE(bridge->pending_retrieve_cookies_);
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, OnCookiesRetrieved_002) {
+  std::string cookies = "test";
+  EXPECT_CALL(*mock_client_, GetMediaResourceGetter())
+      .WillOnce(Return(nullptr));
+  bridge->OnCookiesRetrieved(cookies);
+  EXPECT_EQ(bridge->cookies_, cookies);
+  EXPECT_FALSE(bridge->pending_retrieve_cookies_);
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, OnCookiesRetrieved_003) {
+  std::string cookies = "test";
+  auto mock_resource_getter_ = new MockMediaResourceGetter();
+  EXPECT_CALL(*mock_resource_getter_, GetAuthCredentials(_, _)).Times(1);
+  EXPECT_CALL(*mock_client_, GetMediaResourceGetter())
+      .WillRepeatedly(Return(mock_resource_getter_));
+  bridge->OnCookiesRetrieved(cookies);
+  delete mock_resource_getter_;
+  mock_resource_getter_ = nullptr;
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, OnCookiesRetrieved_004) {
+  std::string cookies = "test";
+  auto mock_resource_getter_ = new MockMediaResourceGetter();
+  EXPECT_CALL(*mock_resource_getter_, GetAuthCredentials(_, _)).Times(1);
+  EXPECT_CALL(*mock_client_, GetMediaResourceGetter())
+      .WillRepeatedly(Return(mock_resource_getter_));
+  bridge->should_prepare_on_retrieved_cookies_ = true;
+  bridge->OnCookiesRetrieved(cookies);
+  EXPECT_FALSE(bridge->should_prepare_on_retrieved_cookies_);
+  delete mock_resource_getter_;
+  mock_resource_getter_ = nullptr;
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, OnCookiesRetrieved_005) {
+  std::string cookies = "test";
+  auto mock_resource_getter_ = new MockMediaResourceGetter();
+  EXPECT_CALL(*mock_resource_getter_, GetAuthCredentials(_, _)).Times(1);
+  EXPECT_CALL(*mock_client_, GetMediaResourceGetter())
+      .WillRepeatedly(Return(mock_resource_getter_));
+  bridge->should_prepare_on_retrieved_cookies_ = true;
+  auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
+  EXPECT_CALL(*mock_player_adapter, SetMediaSourceHeader(_, _))
+      .WillOnce(Return(1));
+  EXPECT_CALL(*mock_player_adapter, SetSource(_)).WillOnce(Return(1));
+  bridge->player_ = std::move(mock_player_adapter);
+  testing::internal::CaptureStderr();
+  bridge->OnCookiesRetrieved(cookies);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  ASSERT_NE(log_output.find("SetPlayerSourceHeader error:ret="),
+            std::string::npos);
+  delete mock_resource_getter_;
+  mock_resource_getter_ = nullptr;
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, OnCookiesRetrieved_006) {
+  std::string cookies = "test";
+  auto mock_resource_getter_ = new MockMediaResourceGetter();
+  EXPECT_CALL(*mock_resource_getter_, GetAuthCredentials(_, _)).Times(1);
+  EXPECT_CALL(*mock_client_, GetMediaResourceGetter())
+      .WillRepeatedly(Return(mock_resource_getter_));
+  bridge->should_prepare_on_retrieved_cookies_ = true;
+  auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
+  EXPECT_CALL(*mock_player_adapter, SetMediaSourceHeader(_, _))
+      .WillOnce(Return(0));
+  EXPECT_CALL(*mock_player_adapter, SetSource(_)).Times(0);
+  bridge->player_ = std::move(mock_player_adapter);
+  bridge->OnCookiesRetrieved(cookies);
+  delete mock_resource_getter_;
+  mock_resource_getter_ = nullptr;
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, OnAuthCredentialsRetrieved_001) {
+  std::u16string username = u"test";
+  std::u16string password = u"test";
+  bridge->OnAuthCredentialsRetrieved(username, password);
+  EXPECT_NE(bridge->url_, *gurl_.get());
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, OnAuthCredentialsRetrieved_002) {
+  std::u16string username = u"test";
+  std::u16string password;
+  bridge->OnAuthCredentialsRetrieved(username, password);
+  EXPECT_NE(bridge->url_, *gurl_.get());
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, OnAuthCredentialsRetrieved_003) {
+  std::u16string username;
+  std::u16string password;
+  bridge->OnAuthCredentialsRetrieved(username, password);
+  EXPECT_EQ(bridge->url_, *gurl_.get());
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, GetPlayerHeadersInternal_001) {
+  std::string cookies = "test";
+  std::string user_agent_;
+  auto bridge_ = new OHOSMediaPlayerBridge(
+      *gurl_.get(), site_for_cookies, top_frame_origin, user_agent_,
+      storage_access_api_status_, hide_url_log, mock_client_.get(),
+      allow_credentials, is_hls, headers, grantMediaFileAccessDirs);
+  bridge_->cookies_ = cookies;
+  bridge_->headers_.emplace("test", "test");
+  bridge_->GetPlayerHeadersInternal();
+  delete bridge_;
+  bridge_ = nullptr;
 }
 
 TEST_F(OHOSMediaPlayerBridgeTests, Start_001) {
@@ -217,6 +396,49 @@ TEST_F(OHOSMediaPlayerBridgeTests, Prepare_003) {
   bridge->Prepare();
 }
 
+TEST_F(OHOSMediaPlayerBridgeTests, SetPlayerSurface_001) {
+  bridge->player_ = nullptr;
+  testing::internal::CaptureStderr();
+  bridge->SetPlayerSurface();
+  std::string log_output = testing::internal::GetCapturedStderr();
+  ASSERT_NE(
+      log_output.find("OHOSMediaPlayerBridge SetPlayerSurface player is null"),
+      std::string::npos);
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, SetPlayerSurface_002) {
+  bridge->native_window_origin_ = reinterpret_cast<void*>(0x1234);
+  testing::internal::CaptureStderr();
+  bridge->SetPlayerSurface();
+  std::string log_output = testing::internal::GetCapturedStderr();
+  ASSERT_EQ(log_output.find("OHOSMediaPlayerBridge GetNativeWindow is null"),
+            std::string::npos);
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, SetPlayerSurface_003) {
+  bridge->native_window_origin_ = reinterpret_cast<void*>(0x1234);
+  auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
+  EXPECT_CALL(*mock_player_adapter, PrepareAsync()).WillOnce(Return(1));
+  EXPECT_CALL(*mock_player_adapter, SetVideoSurfaceNew(_)).WillOnce(Return(1));
+  bridge->player_ = std::move(mock_player_adapter);
+  testing::internal::CaptureStderr();
+  bridge->SetPlayerSurface();
+  std::string log_output = testing::internal::GetCapturedStderr();
+  ASSERT_NE(log_output.find("Prepare error::ret="), std::string::npos);
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, SetPlayerSurface_004) {
+  bridge->native_window_origin_ = reinterpret_cast<void*>(0x1234);
+  auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
+  EXPECT_CALL(*mock_player_adapter, PrepareAsync()).WillOnce(Return(0));
+  EXPECT_CALL(*mock_player_adapter, SetVideoSurfaceNew(_)).WillOnce(Return(0));
+  bridge->player_ = std::move(mock_player_adapter);
+  testing::internal::CaptureStderr();
+  bridge->SetPlayerSurface();
+  std::string log_output = testing::internal::GetCapturedStderr();
+  ASSERT_EQ(log_output.find("Prepare error::ret="), std::string::npos);
+}
+
 TEST_F(OHOSMediaPlayerBridgeTests, StartInternal_001) {
   bridge->prepared_ = true;
   auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
@@ -239,6 +461,14 @@ TEST_F(OHOSMediaPlayerBridgeTests, StartInternal_003) {
   bridge->player_ = std::make_unique<MockPlayerAdapter>();
   bridge->StartInternal();
   EXPECT_FALSE(bridge->prepared_);
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, StartInternal_004) {
+  bridge->prepared_ = true;
+  bridge->player_ = std::make_unique<MockPlayerAdapter>();
+  bridge->pause_when_prepared_ = true;
+  bridge->StartInternal();
+  EXPECT_FALSE(bridge->pause_when_prepared_);
 }
 
 TEST_F(OHOSMediaPlayerBridgeTests, Pause_001) {
@@ -289,16 +519,69 @@ TEST_F(OHOSMediaPlayerBridgeTests, Pause__005) {
   EXPECT_TRUE(ret);
 }
 
-TEST_F(OHOSMediaPlayerBridgeTests, SeekTo_001) {
+TEST_F(OHOSMediaPlayerBridgeTests, Pause_006) {
+  auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
+  bridge->player_ = std::move(mock_player_adapter);
+  bridge->player_state_ = OHOS::NWeb::PlayerAdapter::PLAYER_PAUSED;
+  testing::internal::CaptureStderr();
+  bridge->Pause();
+  std::string log_output = testing::internal::GetCapturedStderr();
+  ASSERT_EQ(log_output.find(
+                "OHOSMediaPlayerBridge Pause when perpared, player_state_ is:"),
+            std::string::npos);
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, Pause_007) {
+  auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
+  bridge->player_ = std::move(mock_player_adapter);
+  bridge->player_state_ = OHOS::NWeb::PlayerAdapter::PLAYER_STOPPED;
+  testing::internal::CaptureStderr();
+  bridge->Pause();
+  std::string log_output = testing::internal::GetCapturedStderr();
+  ASSERT_EQ(log_output.find(
+                "OHOSMediaPlayerBridge Pause when perpared, player_state_ is:"),
+            std::string::npos);
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, Pause_008) {
+  auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
+  bridge->player_ = std::move(mock_player_adapter);
+  bridge->player_state_ = OHOS::NWeb::PlayerAdapter::PLAYER_PREPARED;
+  testing::internal::CaptureStderr();
+  bridge->Pause();
+  std::string log_output = testing::internal::GetCapturedStderr();
+  ASSERT_EQ(log_output.find(
+                "OHOSMediaPlayerBridge Pause when perpared, player_state_ is:"),
+            std::string::npos);
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, Pause_009) {
+  auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
+  bridge->player_ = std::move(mock_player_adapter);
   bridge->player_state_ = OHOS::NWeb::PlayerAdapter::PLAYER_PLAYBACK_COMPLETE;
-  bridge->seeking_on_playback_complete_ = false;
-  bridge->SeekTo(time_delta);
-  EXPECT_TRUE(bridge->seeking_on_playback_complete_);
+  testing::internal::CaptureStderr();
+  bridge->Pause();
+  std::string log_output = testing::internal::GetCapturedStderr();
+  ASSERT_EQ(log_output.find(
+                "OHOSMediaPlayerBridge Pause when perpared, player_state_ is:"),
+            std::string::npos);
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, Pause_010) {
+  auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
+  bridge->player_ = std::move(mock_player_adapter);
+  bridge->player_state_ = OHOS::NWeb::PlayerAdapter::PLAYER_PLAYBACK_COMPLETE;
+  bridge->pending_play_ = true;
+  testing::internal::CaptureStderr();
+  bridge->Pause();
+  std::string log_output = testing::internal::GetCapturedStderr();
+  ASSERT_NE(log_output.find(
+                "OHOSMediaPlayerBridge Pause when perpared, player_state_ is:"),
+            std::string::npos);
 }
 
 TEST_F(OHOSMediaPlayerBridgeTests, SeekTo_002) {
   bridge->player_state_ = OHOS::NWeb::PlayerAdapter::PLAYER_STOPPED;
-  bridge->seeking_on_playback_complete_ = false;
   bridge->prepared_ = true;
   auto mock_player_adapter_ = std::make_unique<MockPlayerAdapter>();
   EXPECT_CALL(*mock_player_adapter_,
@@ -340,6 +623,23 @@ TEST_F(OHOSMediaPlayerBridgeTests, SeekInternal_002) {
   bridge->seek_complete_ = true;
   bridge->SeekInternal(time_delta);
   EXPECT_FALSE(bridge->seek_complete_);
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, SeekInternal_003) {
+  auto mock_player_adapter_ = std::make_unique<MockPlayerAdapter>();
+  EXPECT_CALL(*mock_player_adapter_,
+              Seek(time_delta.InMilliseconds(),
+                   OHOS::NWeb::PlayerSeekMode::SEEK_PREVIOUS_SYNC))
+      .WillRepeatedly(Return(0));
+  bridge->player_ = std::move(mock_player_adapter_);
+  bridge->seeking_back_complete_ = true;
+  testing::internal::CaptureStderr();
+  bridge->SeekInternal(time_delta);
+  EXPECT_FALSE(bridge->seek_complete_);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  ASSERT_NE(
+      log_output.find("OHOSMediaPlayerBridge::SeekTo mode=FAKE_SEEK"),
+      std::string::npos);
 }
 
 TEST_F(OHOSMediaPlayerBridgeTests, SetVolume_001) {
@@ -410,6 +710,73 @@ TEST_F(OHOSMediaPlayerBridgeTests, SetVolume_005) {
   EXPECT_FALSE(ret);
 }
 
+TEST_F(OHOSMediaPlayerBridgeTests, SetVolume_006) {
+  float volume_ = 1;
+  bool is_muted = true;
+  bridge->prepared_ = true;
+  bridge->current_volume_ = -1;
+  bridge->player_state_ =
+      OHOS::NWeb::PlayerAdapter::PlayerStates::PLAYER_STARTED;
+  auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
+  EXPECT_CALL(*mock_player_adapter, SetVolume(0, 0)).WillRepeatedly(Return(0));
+  auto mock_client = std::make_unique<MockClient>();
+  EXPECT_CALL(*mock_client, OnAudioStateChanged(true)).Times(1);
+  bridge->client_ = mock_client.get();
+  bridge->player_ = std::move(mock_player_adapter);
+  bridge->SetVolume(volume_, is_muted);
+  EXPECT_EQ(bridge->current_volume_, volume_);
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, SetVolume_007) {
+  float volume_ = 1;
+  bool is_muted = true;
+  bridge->prepared_ = true;
+  bridge->current_volume_ = -1;
+  bridge->player_state_ = OHOS::NWeb::PlayerAdapter::PlayerStates::PLAYER_IDLE;
+  auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
+  EXPECT_CALL(*mock_player_adapter, SetVolume(0, 0)).WillRepeatedly(Return(0));
+  auto mock_client = std::make_unique<MockClient>();
+  EXPECT_CALL(*mock_client, OnAudioStateChanged(true)).Times(0);
+  EXPECT_CALL(*mock_client, OnAudioStateChanged(false)).Times(0);
+  bridge->client_ = mock_client.get();
+  bridge->player_ = std::move(mock_player_adapter);
+  bridge->SetVolume(volume_, is_muted);
+  EXPECT_EQ(bridge->current_volume_, volume_);
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, SetVolume_008) {
+  float volume_ = 1;
+  bool is_muted = true;
+  bridge->prepared_ = true;
+  bridge->current_volume_ = 1;
+  bridge->player_state_ =
+      OHOS::NWeb::PlayerAdapter::PlayerStates::PLAYER_STARTED;
+  auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
+  EXPECT_CALL(*mock_player_adapter, SetVolume(0, 0)).WillRepeatedly(Return(0));
+  auto mock_client = std::make_unique<MockClient>();
+  EXPECT_CALL(*mock_client, OnAudioStateChanged(false)).Times(0);
+  bridge->client_ = mock_client.get();
+  bridge->player_ = std::move(mock_player_adapter);
+  bridge->SetVolume(volume_, is_muted);
+  EXPECT_EQ(bridge->current_volume_, volume_);
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, SetVolume_009) {
+  float volume_ = -1;
+  bool is_muted = true;
+  bridge->prepared_ = true;
+  bridge->current_volume_ = 1;
+  bridge->player_state_ = OHOS::NWeb::PlayerAdapter::PlayerStates::PLAYER_IDLE;
+  auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
+  EXPECT_CALL(*mock_player_adapter, SetVolume(0, 0)).WillRepeatedly(Return(0));
+  auto mock_client = std::make_unique<MockClient>();
+  EXPECT_CALL(*mock_client, OnAudioStateChanged(false)).Times(0);
+  bridge->client_ = mock_client.get();
+  bridge->player_ = std::move(mock_player_adapter);
+  bridge->SetVolume(volume_, is_muted);
+  EXPECT_EQ(bridge->current_volume_, volume_);
+}
+
 TEST_F(OHOSMediaPlayerBridgeTests, PropagateDuration) {
   auto mock_client = std::make_shared<MockClient>();
   EXPECT_CALL(*mock_client, OnMediaDurationChanged(time_delta)).Times(1);
@@ -448,8 +815,9 @@ TEST_F(OHOSMediaPlayerBridgeTests, GetDuration_003) {
 TEST_F(OHOSMediaPlayerBridgeTests, GetMediaTime_002) {
   bridge->pending_seek_ = time_delta;
   bridge->prepared_ = true;
-  bridge->seeking_on_playback_complete_ = true;
   bridge->player_ = std::make_unique<MockPlayerAdapter>();
+  bridge->seek_complete_ = false;
+  bridge->fake_seek_complete_ = false;
   base::TimeDelta time = bridge->GetMediaTime();
   EXPECT_EQ(time, time_delta);
 }
@@ -476,12 +844,23 @@ TEST_F(OHOSMediaPlayerBridgeTests, GetMediaTime_005) {
   EXPECT_CALL(*mock_player_adapter_, GetCurrentTime(value)).Times(1);
   bridge->player_ = std::move(mock_player_adapter_);
   bridge->prepared_ = true;
-  bridge->seeking_on_playback_complete_ = false;
   bridge->seek_complete_ = true;
   bridge->GetMediaTime();
   EXPECT_TRUE(bridge->prepared_);
-  EXPECT_FALSE(bridge->seeking_on_playback_complete_);
   EXPECT_TRUE(bridge->seek_complete_);
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, GetMediaTime_006) {
+  int32_t value = -1;
+  std::unique_ptr<MockPlayerAdapter> mock_player_adapter_ =
+      std::make_unique<MockPlayerAdapter>();
+  EXPECT_CALL(*mock_player_adapter_, GetCurrentTime(value)).WillOnce(Return(1));
+  bridge->player_ = std::move(mock_player_adapter_);
+  bridge->prepared_ = true;
+  bridge->fake_seek_complete_ = false;
+  bridge->seek_complete_ = true;
+  base::TimeDelta time = bridge->GetMediaTime();
+  EXPECT_EQ(time, base::Milliseconds(value));
 }
 
 TEST_F(OHOSMediaPlayerBridgeTests, SeekDone) {
@@ -734,6 +1113,78 @@ TEST_F(OHOSMediaPlayerBridgeTests, OnPlayerStateUpdate_014) {
   ASSERT_FALSE(bridge->pending_play_);
 }
 
+TEST_F(OHOSMediaPlayerBridgeTests, OnPlayerStateUpdate_015) {
+  auto mock_player_adapter_ = std::make_unique<MockPlayerAdapter>();
+  bridge->player_ = std::move(mock_player_adapter_);
+  MockPlayerAdapter::PlayerStates PlayerStates =
+      PlayerAdapter::PLAYER_PREPARING;
+  bridge->player_state_ =
+      OHOS::NWeb::PlayerAdapter::PlayerStates::PLAYER_STARTED;
+  bridge->OnPlayerStateUpdate(PlayerStates);
+  EXPECT_EQ(bridge->player_state_,
+            OHOS::NWeb::PlayerAdapter::PlayerStates::PLAYER_PREPARING);
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, OnPlayerStateUpdate_016) {
+  auto mock_player_adapter_ = std::make_unique<MockPlayerAdapter>();
+  bridge->player_ = std::move(mock_player_adapter_);
+  MockPlayerAdapter::PlayerStates PlayerStates = PlayerAdapter::PLAYER_PREPARED;
+  bridge->player_state_ =
+      OHOS::NWeb::PlayerAdapter::PlayerStates::PLAYER_PREPARED;
+  EXPECT_CALL(*static_cast<MockPlayerAdapter*>(bridge->player_.get()),
+              GetDuration(testing::_))
+      .Times(1)
+      .WillOnce(Return(5));
+  EXPECT_CALL(*mock_client_, OnMediaDurationChanged(testing::_)).Times(1);
+  bridge->should_seek_on_prepare_ = false;
+  bridge->should_set_volume_on_prepare_ = false;
+  bridge->pending_play_ = false;
+  bridge->pause_when_prepared_ = true;
+  ASSERT_TRUE(bridge->player_);
+  EXPECT_EQ(bridge->player_state_,
+            OHOS::NWeb::PlayerAdapter::PlayerStates::PLAYER_PREPARED);
+  ASSERT_FALSE(bridge->should_seek_on_prepare_);
+  ASSERT_FALSE(bridge->should_set_volume_on_prepare_);
+  bridge->OnPlayerStateUpdate(PlayerStates);
+  EXPECT_EQ(PlayerStates, bridge->player_state_);
+  ASSERT_FALSE(bridge->pause_when_prepared_);
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, OnPlayerStateUpdate_017) {
+  auto mock_player_adapter_ = std::make_unique<MockPlayerAdapter>();
+  bridge->player_ = std::move(mock_player_adapter_);
+  MockPlayerAdapter::PlayerStates PlayerStates = PlayerAdapter::PLAYER_STARTED;
+  bridge->player_state_ =
+      OHOS::NWeb::PlayerAdapter::PlayerStates::PLAYER_RELEASED;
+  bridge->current_volume_ = 0;
+  bridge->OnPlayerStateUpdate(PlayerStates);
+  EXPECT_EQ(bridge->current_volume_, 0);
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, CheckIsPathValid_001) {
+  std::vector<std::string> newDirs = {"test"};
+  auto bridge_ = new OHOSMediaPlayerBridge(
+      *gurl_.get(), site_for_cookies, top_frame_origin, user_agent,
+      storage_access_api_status_, hide_url_log, mock_client_.get(),
+      allow_credentials, is_hls, headers, newDirs);
+  EXPECT_NE(bridge_, nullptr);
+  EXPECT_FALSE(bridge_->CheckIsPathValid("test"));
+  delete bridge_;
+  bridge_ = nullptr;
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, SetFdSource_001) {
+  std::vector<std::string> newDirs = {"test"};
+  auto bridge_ = new OHOSMediaPlayerBridge(
+      *gurl_.get(), site_for_cookies, top_frame_origin, user_agent,
+      storage_access_api_status_, hide_url_log, mock_client_.get(),
+      allow_credentials, is_hls, headers, newDirs);
+  EXPECT_NE(bridge_, nullptr);
+  EXPECT_EQ(bridge_->SetFdSource("test"), -1);
+  delete bridge_;
+  bridge_ = nullptr;
+}
+
 TEST_F(OHOSMediaPlayerBridgeTests, OnVideoSizeChanged_001) {
   int32_t width = 1;
   int32_t height = 1;
@@ -865,6 +1316,15 @@ TEST_F(OHOSMediaPlayerBridgeTests, SetVideoSurfaceOld04) {
   EXPECT_EQ(bridge->new_surface_id_, DEFAULT_VALUE);
 }
 
+TEST_F(OHOSMediaPlayerBridgeTests, SetVideoSurfaceOld05) {
+  auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
+  EXPECT_CALL(*mock_player_adapter, SetVideoSurfaceNew(_))
+      .WillRepeatedly(Return(-1));
+  bridge->player_ = std::move(mock_player_adapter);
+  bridge->SetVideoSurfaceOld();
+  EXPECT_EQ(bridge->new_surface_id_, DEFAULT_VALUE);
+}
+
 TEST_F(OHOSMediaPlayerBridgeTests, SetVideoSurface01) {
   int32_t surface_id = DEFAULT_VALUE_ONE;
   bridge->SetVideoSurface(surface_id);
@@ -956,4 +1416,16 @@ TEST_F(OHOSMediaPlayerBridgeTests, OnSeekBack06) {
 
   bridge->OnSeekBack(base::Milliseconds(0));
   EXPECT_EQ(bridge->seeking_back_complete_, true);
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, OnSeekBack07) {
+  auto mock_player_adapter_ = std::make_unique<MockPlayerAdapter>();
+  bridge->player_ = std::move(mock_player_adapter_);
+  bridge->pending_seek_ = base::Milliseconds(1);
+  bridge->recording_seek_ = base::Milliseconds(400);
+  bridge->seek_complete_ = true;
+  bridge->seeking_back_complete_ = false;
+  bridge->client_ = nullptr;
+  bridge->OnSeekBack(base::Milliseconds(0));
+  EXPECT_FALSE(bridge->seeking_back_complete_);
 }

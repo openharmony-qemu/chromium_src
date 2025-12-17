@@ -65,11 +65,27 @@ float PaintLayerScrollableAreaExt::ComputeVisibleAreaScale() const {
 // LCOV_EXCL_START
 void PaintLayerScrollableAreaExt::UpdateScrollbarLengthOrCreateWidthScale() {
   is_pinch_gesture_active_ = true;
-  bool will_be_overlay = GetPageScrollbarTheme().UsesOverlayScrollbars();
-  if (will_be_overlay && HorizontalScrollbar() && VerticalScrollbar()) {
+  if (HorizontalScrollbar() && VerticalScrollbar()) {
     UpdateScrollbarProportions();
   } else {
-    UpdateScrollbarByScale(will_be_overlay);
+    bool needs_horizontal_scrollbar;
+    bool needs_vertical_scrollbar;
+    bool needs_notify_location = false;
+    ComputeScrollbarExistence(needs_horizontal_scrollbar,
+                              needs_vertical_scrollbar);
+    if (needs_horizontal_scrollbar && !HasHorizontalScrollbar()) {
+      SetHasHorizontalScrollbar(true);
+      needs_notify_location = true;
+    }
+    if (needs_vertical_scrollbar && !HasVerticalScrollbar()) {
+      SetHasVerticalScrollbar(true);
+      needs_notify_location = true;
+    }
+    if (needs_notify_location) {
+      UpdateScrollbarProportions();
+      ClampScrollOffsetAfterOverflowChange();
+      PositionOverflowControls();
+    }
   }
 }
 // LCOV_EXCL_STOP
@@ -81,35 +97,6 @@ void PaintLayerScrollableAreaExt::UpdateScrollbar() {
   PositionOverflowControls();
 }
 // LCOV_EXCL_STOP
-
-void PaintLayerScrollableAreaExt::UpdateScrollbarByScale(bool will_be_overlay) {
-  bool needs_horizontal_scrollbar;
-  bool needs_vertical_scrollbar;
-  bool needs_notify_location = false;
-  ComputeScrollbarExistence(needs_horizontal_scrollbar,
-                            needs_vertical_scrollbar);
-  if (needs_horizontal_scrollbar && !HasHorizontalScrollbar()) {
-    SetHasHorizontalScrollbar(true);
-    needs_notify_location = true;
-  }
-  if (needs_vertical_scrollbar && !HasVerticalScrollbar()) {
-    SetHasVerticalScrollbar(true);
-    needs_notify_location = true;
-  }
-  if (!will_be_overlay) {
-    if (!needs_horizontal_scrollbar && HasHorizontalScrollbar()) {
-      SetHasHorizontalScrollbar(false);
-      needs_notify_location = false;
-    }
-    if (!needs_vertical_scrollbar && HasVerticalScrollbar()) {
-      SetHasVerticalScrollbar(false);
-      needs_notify_location = false;
-    }
-  }
-  if (needs_notify_location) {
-    UpdateScrollbar();
-  }
-}
 
 // LCOV_EXCL_START
 void PaintLayerScrollableAreaExt::UpdateScrollbarProportions() {
@@ -134,15 +121,15 @@ gfx::Rect PaintLayerScrollableAreaExt::RectForHorizontalScrollbar() const {
 #if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_CORNER)
   ChromeClient* client = GetLayoutBox()->GetFrameView()->GetChromeClient();
   if (!client) {
-    return gfx::Rect();
+    return PaintLayerScrollableArea::RectForHorizontalScrollbar();
   }
   auto webview = client->GetWebView();
   if (!webview) {
-    return gfx::Rect();
+    return PaintLayerScrollableArea::RectForHorizontalScrollbar();
   }
   auto setting = webview->GetSettings();
   if (!setting) {
-    return gfx::Rect();
+    return PaintLayerScrollableArea::RectForHorizontalScrollbar();
   }
 
   auto borderRadiusBottomLeft =
@@ -177,6 +164,10 @@ gfx::Rect PaintLayerScrollableAreaExt::RectForHorizontalScrollbar() const {
   borderRadiusBottomRight = borderRadiusBottomRight > scroll_corner.width()
                                 ? borderRadiusBottomRight
                                 : 0.0f;
+  if (layer_ && !layer_->IsRootLayer()) {
+    borderRadiusBottomLeft = 0.0f;
+    borderRadiusBottomRight = 0.0f;
+  }
   if (rectWidth > rectHeight) {
     // Horizontal scrollbar rect
     return gfx::Rect(
@@ -243,15 +234,15 @@ gfx::Rect PaintLayerScrollableAreaExt::RectForVerticalScrollbar() const {
 #if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_CORNER)
   ChromeClient* client = GetLayoutBox()->GetFrameView()->GetChromeClient();
   if (!client) {
-    return gfx::Rect();
+    return PaintLayerScrollableArea::RectForVerticalScrollbar();
   }
   auto webview = client->GetWebView();
   if (!webview) {
-    return gfx::Rect();
+    return PaintLayerScrollableArea::RectForVerticalScrollbar();
   }
   auto setting = webview->GetSettings();
   if (!setting) {
-    return gfx::Rect();
+    return PaintLayerScrollableArea::RectForVerticalScrollbar();
   }
 
   auto borderRadiusTopRight =
@@ -271,6 +262,10 @@ gfx::Rect PaintLayerScrollableAreaExt::RectForVerticalScrollbar() const {
   borderRadiusBottomRight = borderRadiusBottomRight > scroll_corner.height()
                                 ? borderRadiusBottomRight
                                 : 0.0f;
+  if (layer_ && !layer_->IsRootLayer()) {
+    borderRadiusTopRight = 0.0f;
+    borderRadiusBottomRight = 0.0f;
+  }
   if (rectWidth > rectHeight) {
     // Horizontal scrollbar rect
     return gfx::Rect(

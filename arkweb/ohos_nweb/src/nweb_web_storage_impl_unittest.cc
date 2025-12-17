@@ -14,8 +14,11 @@
  */
 
 #include <gmock/gmock.h>
-
+#include "arkweb/build/features/features.h"	
+#include "build/build_config.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "nweb_hilog.h"
 #include "nweb_web_storage_delegate.h"
 #include "gtest/gtest.h"
@@ -111,6 +114,12 @@ TEST(NWebWebStorageImplTEST, GetOriginUsage003) {
   auto web_storage = std::make_shared<NWebWebStorageImpl>();
   web_storage->delegate_ = nullptr;
   EXPECT_EQ(web_storage->GetOriginUsage(""), -1);
+}
+
+TEST(NWebWebStorageImplTEST, GetOriginUsage004) {
+  auto web_storage = std::make_shared<NWebWebStorageImpl>();
+  web_storage->delegate_ = nullptr;
+  ASSERT_NO_FATAL_FAILURE(web_storage->GetOriginUsage("", nullptr));
 }
 
 TEST(NWebWebStorageImplTEST, PutWebStorageCallback) {

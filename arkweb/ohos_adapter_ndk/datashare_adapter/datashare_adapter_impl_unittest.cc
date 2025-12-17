@@ -17,73 +17,37 @@
 #include <gtest/gtest.h>
 #include <fcntl.h>
 #include <filemanagement/file_uri/oh_file_uri.h>
+#include "arkweb/ohos_adapter_ndk/mock_ndk_api/include/mock_ndk_api.h"
 #define private public
 #include "datashare_adapter_impl.h"
 #undef private
 
+using namespace MockNdkApi;
 using namespace OHOS::NWeb;
-class PathFromUriMock {
-  public:
-    static PathFromUriMock& getInstance() {
-      static PathFromUriMock instance;
-      return instance;
-    }
-
-    MOCK_METHOD(FileManagement_ErrCode, GetPathFromUriMock, 
-                (const char* uri, unsigned int length, char** uriResult), ());
-};
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-FileManagement_ErrCode __wrap_OH_FileUri_GetPathFromUri(const char* uri, 
-                                                       unsigned int length, 
-                                                       char** uriResult) {
-  return PathFromUriMock::getInstance().GetPathFromUriMock(uri, length, uriResult);
-}
-#ifdef __cplusplus
-}
-#endif
-
-class FileNameMock {
-  public:
-    static FileNameMock& getInstance() {
-      static FileNameMock instance;
-      return instance;
-    }
-
-    MOCK_METHOD(FileManagement_ErrCode, GetFileNameMock,
-                (const char* uri, unsigned int length, char** fileName), ());
-};
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-FileManagement_ErrCode __wrap_OH_FileUri_GetFileName(const char* uri,
-                                                    unsigned int length,
-                                                    char** fileName) {
-  return FileNameMock::getInstance().GetFileNameMock(uri, length, fileName);
-}
-#ifdef __cplusplus
-}
-#endif
 
 class DatashareAdapterImplTest : public ::testing::Test {
   protected:
+   void SetAllMockType(bool type) {
+      MockDatashareCommonEventSupport::bGetPath = type;
+      MockDatashareCommonEventSupport::bGetFileNameMock = type;
+   }
     void SetUp() override {
       adapter_ = std::make_unique<DatashareAdapterImpl>();
+      SetAllMockType(true);
     }
 
     void TearDown() override {
       adapter_.reset();
+      SetAllMockType(false);
     }
 
     std::unique_ptr<DatashareAdapterImpl> adapter_;
     const std::string validUri_ = "content://valid/uri";
 };
 
+
 TEST_F(DatashareAdapterImplTest, GetRealPath_Fail) {
-  EXPECT_CALL(PathFromUriMock::getInstance(),
+  EXPECT_CALL(MockDatashareCommonEventSupport::GetInstance(),
               GetPathFromUriMock(testing::StrEq(validUri_.c_str()),
                                 validUri_.length(), testing::_))
     .WillOnce(testing::Return(ERR_ENOMEM));
@@ -95,7 +59,7 @@ TEST_F(DatashareAdapterImplTest, GetRealPath_Fail) {
 TEST_F(DatashareAdapterImplTest, GetRealPath_Success) {
   const std::string expectedPath = "/data/valid/path";
 
-  EXPECT_CALL(PathFromUriMock::getInstance(),
+  EXPECT_CALL(MockDatashareCommonEventSupport::GetInstance(),
               GetPathFromUriMock(testing::StrEq(validUri_.c_str()),
                                 validUri_.length(), testing::_))
     .WillOnce(testing::Invoke([&](const char*, unsigned int, char** out) {
@@ -110,7 +74,7 @@ TEST_F(DatashareAdapterImplTest, GetRealPath_Success) {
 TEST_F(DatashareAdapterImplTest, GetFileDisplayName_Success) {
   const std::string expectedFileName = "valid_file.txt";
 
-  EXPECT_CALL(FileNameMock::getInstance(),
+  EXPECT_CALL(MockDatashareCommonEventSupport::GetInstance(),
               GetFileNameMock(testing::StrEq(validUri_.c_str()),
                              testing::Eq(validUri_.length()), testing::_))
     .WillOnce(testing::Invoke([&](const char*, unsigned int, char** out) {
@@ -123,7 +87,7 @@ TEST_F(DatashareAdapterImplTest, GetFileDisplayName_Success) {
 }
 
 TEST_F(DatashareAdapterImplTest, GetFileDisplayName_Failure) {
-  EXPECT_CALL(FileNameMock::getInstance(),
+  EXPECT_CALL(MockDatashareCommonEventSupport::GetInstance(),
               GetFileNameMock(testing::StrEq(validUri_.c_str()),
                              testing::Eq(validUri_.length()), testing::_))
     .WillOnce(testing::Return(ERR_ENOMEM));
@@ -133,7 +97,7 @@ TEST_F(DatashareAdapterImplTest, GetFileDisplayName_Failure) {
 }
 
 TEST_F(DatashareAdapterImplTest, OpenDataShareUriForRead_Failure_GetPath) {
-  EXPECT_CALL(PathFromUriMock::getInstance(),
+  EXPECT_CALL(MockDatashareCommonEventSupport::GetInstance(),
               GetPathFromUriMock(testing::StrEq(validUri_.c_str()),
                                 validUri_.length(), testing::_))
     .WillOnce(testing::Return(ERR_ENOMEM));

@@ -20,6 +20,9 @@
 #include <chrono>
 
 #include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_TEST)
+#include "base/gtest_prod_util.h"
+#endif
 #include "base/memory/raw_ptr.h"
 #include "content/common/content_export.h"
 #include "content/public/renderer/render_frame.h"
@@ -43,6 +46,9 @@ void ReportRenderInitBlock();
 static constexpr int64_t kMicrosecondsPerMillisecond = 1000;
 void ChangeCommitNavigationTime(int64_t time);
 void ChangeCompleteInitialize(bool complete);
+#endif
+#if BUILDFLAG(ARKWEB_TEST)
+bool IsCompleteInitialize() { return is_complete_initialize; }
 #endif
 
 private:

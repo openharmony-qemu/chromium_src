@@ -129,9 +129,17 @@ class COMPONENT_EXPORT(INPUT) InputRouterImpl
     return host_receiver_;
   }
 
+#if BUILDFLAG(ARKWEB_FLING)
+  void UpdateFlingVelocityLimit(const gfx::Vector2dF& velocity) override;
+#endif
+
   void ForceResetTouchActionForTest();
 
   bool IsFlingActiveForTest();
+
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+  void SetFocusWebId(int32_t nweb_id) override {}
+#endif
 
  private:
   friend class content::InputRouterImplTest;

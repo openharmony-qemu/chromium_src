@@ -492,4 +492,26 @@ TEST_F(MouseEventManagerExtTest, CloseImageOverlayWhenMousePress) {
   EXPECT_FALSE(manager.GetOverlayInProgress());
 }
 
+TEST_F(MouseEventManagerExtTest, OverLayerMouseLeaveEventListener001) {
+  SetUpHtmlDefault();
+  auto& manager = GetMouseEventManagerExt();
+  Element* element = GetDocument().getElementById(AtomicString("scroller"));
+  MouseEventManagerExt::OverLayerMouseLeaveEventListener listener(element);
+  Event *event = Event::Create();
+  event->SetType(AtomicString("foo"));
+  ASSERT_NO_FATAL_FAILURE(listener.Invoke(nullptr, event));
+
+  event->SetType(event_type_names::kMouseleave);
+  ASSERT_NO_FATAL_FAILURE(listener.Invoke(nullptr, event));
+}
+
+TEST_F(MouseEventManagerExtTest, OverLayerMouseLeaveEventListener002) {
+  SetUpHtmlDefault();
+  auto& manager = GetMouseEventManagerExt();
+  Element* element = GetDocument().getElementById(AtomicString("scroller"));
+  MouseEventManagerExt::OverLayerMouseLeaveEventListener listener(nullptr);
+  Event *event = Event::Create();
+  ASSERT_NO_FATAL_FAILURE(listener.Invoke(nullptr, event));
+}
+
 }  // namespace blink

@@ -29,9 +29,6 @@ void TaskTrackerUtils::AddViewer(ViewRequestDelegate* delegate) {
 }
 
 void TaskTrackerUtils::AbortDistill() {
-  if (tracker_ && tracker_->distiller_) {
-    tracker_->distiller_->AbortDistill();
-  }
   for (auto& viewer : tracker_->viewers_) {
     viewer.OnArticleAborted();
   }

@@ -36,22 +36,22 @@ TEST_F(InputHandlerUtilsTest, PdfOverSpeed001) {
 }
 
 TEST_F(InputHandlerUtilsTest, PdfOverSpeed002) {
-  InputHandlerUtils::pdf_delta_x_ = 151;
+  InputHandlerUtils::pdf_delta_x_ = 500;
   EXPECT_TRUE(InputHandlerUtils::PdfOverSpeed());
 }
 
 TEST_F(InputHandlerUtilsTest, PdfOverSpeed003) {
-  InputHandlerUtils::pdf_delta_x_ = -151;
+  InputHandlerUtils::pdf_delta_x_ = -500;
   EXPECT_TRUE(InputHandlerUtils::PdfOverSpeed());
 }
 
 TEST_F(InputHandlerUtilsTest, PdfOverSpeed004) {
-  InputHandlerUtils::pdf_delta_y_ = 151;
+  InputHandlerUtils::pdf_delta_y_ = 500;
   EXPECT_TRUE(InputHandlerUtils::PdfOverSpeed());
 }
 
 TEST_F(InputHandlerUtilsTest, PdfOverSpeed005) {
-  InputHandlerUtils::pdf_delta_y_ = -151;
+  InputHandlerUtils::pdf_delta_y_ = -500;
   EXPECT_TRUE(InputHandlerUtils::PdfOverSpeed());
 }
 

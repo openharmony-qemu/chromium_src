@@ -25,20 +25,43 @@ class JsCommunication;
 
 class JsCommunicationUtils {
  public:
+  struct ScriptRegexRule {
+    std::string second_level_domain;
+    std::string rule;
+  };
+  struct DocumentJavaScriptRegexRules {
+    int32_t script_id;
+    blink::WebString script;
+    std::vector<ScriptRegexRule> script_regex_rules;
+  };
   JsCommunicationUtils(JsCommunication* impl);
   void AddDocumentEndScript(mojom::DocumentEndJavaScriptPtr& script_ptr);
   void RemoveDocumentEndScript(int32_t script_id);
+  void AddDocumentEndScriptRegexRules(mojom::DocumentJavaScriptRegexRulesPtr& script_regex_rules_ptr);
   void RunScriptsAtDocumentEnd();
   void AddHeadReadyScript(mojom::DocumentStartJavaScriptPtr& script_ptr);
   void RemoveHeadReadyScript(int32_t script_id);
   void RunScriptsAtHeadReady();
+  void AddHeadReadyScriptRegexRules(mojom::DocumentJavaScriptRegexRulesPtr& script_regex_rules_ptr);
+  void AddDocumentStartScriptRegexRules(mojom::DocumentJavaScriptRegexRulesPtr& script_regex_rules_ptr);
 
   void AddPendingJavascriptAtDocumentEnd(
-      mojom::DocumentEndJavaScriptPtr& script_ptr);
+      mojom::DocumentEndJavaScriptPtr& script_ptr,
+      mojom::DocumentJavaScriptRegexRulesPtr& script_regex_rules_ptr);
   void AddPendingJavascriptAtHeadReady(
-      mojom::DocumentStartJavaScriptPtr& script_ptr);
+      mojom::DocumentStartJavaScriptPtr& script_ptr,
+      mojom::DocumentJavaScriptRegexRulesPtr& script_regex_rules_ptr);
   void CommitPendingJavascriptsAtDocumentEnd();
   void CommitPendingJavascriptsAtHeadReady();
+  void AddPendingJavascriptAtDocumentStartRegexRules(
+    mojom::DocumentJavaScriptRegexRulesPtr& script_regex_rules_ptr);
+  void CommitPendingJavascriptsAtDocumentStartRegexRules();
+  bool RunScriptsAtDocumentStartRegexRules(blink::WebString& script);
+
+  bool MatchUrlRegexRules(blink::WebString& script,
+    std::vector<std::unique_ptr<DocumentJavaScriptRegexRules>>& scripts_regex_rules);
+  std::unique_ptr<JsCommunicationUtils::DocumentJavaScriptRegexRules> CreateDocumentJavaScriptRegexRules(
+    const mojom::DocumentJavaScriptRegexRulesPtr& script_regex_rules_ptr);
  private:
   struct DocumentStartJavaScript {
     OriginMatcher origin_matcher;
@@ -55,6 +78,12 @@ class JsCommunicationUtils {
   std::vector<std::unique_ptr<DocumentStartJavaScript>> head_ready_scripts_;
   std::vector<std::unique_ptr<DocumentEndJavaScript>> swap_document_end_scripts_;
   std::vector<std::unique_ptr<DocumentStartJavaScript>> swap_head_ready_scripts_;
+  std::vector<std::unique_ptr<DocumentJavaScriptRegexRules>> swap_end_scripts_regex_rules_;
+  std::vector<std::unique_ptr<DocumentJavaScriptRegexRules>> end_scripts_regex_rules_;
+  std::vector<std::unique_ptr<DocumentJavaScriptRegexRules>> swap_head_ready_regex_rules_;
+  std::vector<std::unique_ptr<DocumentJavaScriptRegexRules>> head_ready_regex_rules_;
+  std::vector<std::unique_ptr<DocumentJavaScriptRegexRules>> swap_start_scripts_regex_rules_;
+  std::vector<std::unique_ptr<DocumentJavaScriptRegexRules>> start_scripts_regex_rules_;
 };
 
 }  // namespace js_injection

@@ -68,6 +68,7 @@ class OhosImageDecodeAcceleratorWorker
   explicit OhosImageDecodeAcceleratorWorker(OhosImageDecoderVector decoders);
 
   OhosImageDecoder* GetDecoderForImage();
+  bool CheckImageFormatSupport(std::vector<uint8_t> encoded_data);
 
   // We delegate the decoding to the appropriate decoder in |decoders_| which
   // are used and destroyed on |decoder_task_runner_|.

@@ -88,11 +88,54 @@ class SubresourceFilterIndexedRulesetTest : public ::testing::Test {
     rule.set_activation_types(activation_types);
     return AddUrlRule(rule);
   }
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  proto::CssRule MakeCssRule(const std::string& selector,
+                            proto::RuleSemantics semantics) {
+    proto::CssRule rule;
+    rule.set_css_selector(selector);
+    rule.set_semantics(semantics); // proto::RULE_SEMANTICS_BLOCKLIST);
+    return rule;
+  }
 
+  bool AddCssRule(const proto::CssRule& rule) {
+    return indexer_->AddCssRule(rule);
+  }
+
+  bool AddSimpleCssRule(
+      std::string_view selector,
+      proto::RuleSemantics semantics = proto::RULE_SEMANTICS_BLOCKLIST) {
+    return AddCssRule(MakeCssRule(std::string(selector), semantics));
+  }
+
+  bool AddSimpleAllowlistCssRuleWithDomain(
+      const std::string& selector,
+      const std::string& domain,
+      bool exclude = false,
+      proto::RuleSemantics semantics = proto::RULE_SEMANTICS_BLOCKLIST) {
+    auto rule = MakeCssRule(std::string(selector), semantics);
+    auto* domain_item = rule.add_domains();
+    domain_item->set_domain(domain);
+    domain_item->set_exclude(exclude);
+    return AddCssRule(rule);
+  }
+
+  LoadPolicy GetLoadCssPolicy(const std::string_view url,
+                              bool disable_generic_rules = false) const {
+    CHECK(matcher_);
+    std::unique_ptr<const std::vector<const url_pattern_index::flat::CssRule*>>
+        rules = matcher_->MatchedCssRule(GURL(url), disable_generic_rules);
+    if (!rules || rules->empty()) {
+      return LoadPolicy::ALLOW;
+    }
+    // blocklist exists return disallow
+    return LoadPolicy::DISALLOW;
+  }
+#endif
   void Finish() {
     indexer_->Finish();
 #if BUILDFLAG(ARKWEB_ADBLOCK)
-    matcher_ = std::make_unique<ArkWebIndexedRulesetMatcherExt>(indexer_->data());
+    matcher_ =
+        std::make_unique<ArkWebIndexedRulesetMatcherExt>(indexer_->data());
 #else
     matcher_ = std::make_unique<IndexedRulesetMatcher>(indexer_->data());
 #endif
@@ -357,4 +400,147 @@ TEST_F(SubresourceFilterIndexedRulesetTest,
   EXPECT_FALSE(MatchingRule("https://xample.com"));
 }
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+TEST_F(SubresourceFilterIndexedRulesetTest, EmptyCssRuleset) {
+  // fail add
+  ASSERT_FALSE(AddSimpleAllowlistCssRuleWithDomain("&filter_out=", "测试.中国"));
+
+  Finish();
+  EXPECT_EQ(LoadPolicy::ALLOW, GetLoadCssPolicy(""));
+  EXPECT_EQ(LoadPolicy::ALLOW, GetLoadCssPolicy("example.com"));
+  EXPECT_EQ(LoadPolicy::ALLOW,
+            GetLoadCssPolicy("http://another.example.com?param=val"));
+}
+
+TEST_F(SubresourceFilterIndexedRulesetTest, CssRuleApplies) {
+  // success add
+  ASSERT_TRUE(AddSimpleCssRule(""));
+  ASSERT_TRUE(AddSimpleCssRule("?filter_out="));
+  ASSERT_TRUE(AddSimpleCssRule("&filter_out="));
+  ASSERT_TRUE(AddSimpleCssRule("&filter_in=", proto::RULE_SEMANTICS_ALLOWLIST));
+  ASSERT_TRUE(AddSimpleCssRule("&filter_out=", proto::RULE_SEMANTICS_ALLOWLIST));
+  Finish();
+
+  // no doamin match
+  EXPECT_EQ(LoadPolicy::DISALLOW, GetLoadCssPolicy("http://example.com"));
+  EXPECT_EQ(LoadPolicy::DISALLOW,
+            GetLoadCssPolicy("http://example.com?filter_not"));
+  EXPECT_EQ(LoadPolicy::DISALLOW,
+            GetLoadCssPolicy("http://example.com&filter_in="));
+  EXPECT_EQ(LoadPolicy::DISALLOW, GetLoadCssPolicy("&filter_in="));
+}
+
+TEST_F(SubresourceFilterIndexedRulesetTest, CssRuleWithDomainApplies) {
+  // generic rule applies to all urls
+  ASSERT_TRUE(AddSimpleAllowlistCssRuleWithDomain("?param_blocked=", "example.com", false,
+                                                  proto::RULE_SEMANTICS_BLOCKLIST));
+  ASSERT_TRUE(AddSimpleAllowlistCssRuleWithDomain("?param_blocked2=", "example.com", false,
+                                                  proto::RULE_SEMANTICS_BLOCKLIST));
+  ASSERT_TRUE(AddSimpleCssRule("?param_blocked=", proto::RULE_SEMANTICS_ALLOWLIST));
+  ASSERT_TRUE(AddSimpleAllowlistCssRuleWithDomain("?param_blocked=", "example.com", false,
+                                                  proto::RULE_SEMANTICS_ALLOWLIST));
+  Finish();
+
+  EXPECT_EQ(LoadPolicy::DISALLOW, GetLoadCssPolicy("https://example.com"));
+  EXPECT_EQ(LoadPolicy::DISALLOW,
+            GetLoadCssPolicy("http://example.com?param_blocked=")); 
+  EXPECT_EQ(LoadPolicy::DISALLOW,
+            GetLoadCssPolicy("http://example.com?param_blocked2=image1"));
+}
+
+TEST_F(SubresourceFilterIndexedRulesetTest, CssRuleWithDomainWithGenericRule) {
+  // generic rule applies to all urls
+  ASSERT_TRUE(AddSimpleCssRule("?param_blocked="));
+  ASSERT_TRUE(AddSimpleCssRule("?param_blocked2="));
+  ASSERT_TRUE(AddSimpleAllowlistCssRuleWithDomain("?param_blocked2=", "example.com", false,
+                                                  proto::RULE_SEMANTICS_BLOCKLIST));
+  ASSERT_TRUE(AddSimpleCssRule("?param_blocked=", proto::RULE_SEMANTICS_ALLOWLIST));
+  ASSERT_TRUE(AddSimpleAllowlistCssRuleWithDomain("?param_blocked2=", "example.com", false,
+                                                  proto::RULE_SEMANTICS_ALLOWLIST));
+  Finish();
+
+  EXPECT_EQ(LoadPolicy::DISALLOW, GetLoadCssPolicy("https://example.com"));
+  EXPECT_EQ(LoadPolicy::DISALLOW,
+            GetLoadCssPolicy("http://example.com?param_blocked=")); 
+  EXPECT_EQ(LoadPolicy::DISALLOW,
+            GetLoadCssPolicy("http://example.com?param_blocked2=image1"));
+}
+
+TEST_F(SubresourceFilterIndexedRulesetTest, CssRuleWithDomainWithoutGenericRule) {
+  ASSERT_TRUE(AddSimpleCssRule("?param_allow=", proto::RULE_SEMANTICS_ALLOWLIST));
+  ASSERT_TRUE(AddSimpleAllowlistCssRuleWithDomain("?param_blocked=", "example.com", false,
+                                                  proto::RULE_SEMANTICS_ALLOWLIST));
+  Finish();
+
+  EXPECT_EQ(LoadPolicy::ALLOW, GetLoadCssPolicy("https://example.com"));
+  EXPECT_EQ(LoadPolicy::ALLOW,
+            GetLoadCssPolicy("http://example.com?param_blocked="));
+}
+
+TEST_F(SubresourceFilterIndexedRulesetTest, CssRuleWithDomainDisableGenericRule) {
+  // generic rule applies to all urls
+  ASSERT_TRUE(AddSimpleCssRule("?param_blocked="));
+  ASSERT_TRUE(AddSimpleCssRule("?param_allow=", proto::RULE_SEMANTICS_ALLOWLIST));
+  ASSERT_TRUE(AddSimpleAllowlistCssRuleWithDomain("?param_blocked=", "example.com", false,
+                                                  proto::RULE_SEMANTICS_ALLOWLIST));
+  Finish();
+
+  EXPECT_EQ(LoadPolicy::ALLOW, GetLoadCssPolicy("https://example.com", true));
+  EXPECT_EQ(LoadPolicy::ALLOW,
+            GetLoadCssPolicy("http://example.com?param_blocked=", true));
+  EXPECT_EQ(LoadPolicy::ALLOW,
+            GetLoadCssPolicy("http://example.com?param_allow=image1", true));
+}
+
+TEST_F(SubresourceFilterIndexedRulesetTest, CssRuleWithDomainDisallocWithoutGenericRlue) {
+  ASSERT_TRUE(AddSimpleAllowlistCssRuleWithDomain("?param_blocked=", "example.com", false));
+  Finish();
+
+  EXPECT_EQ(LoadPolicy::DISALLOW, GetLoadCssPolicy("https://example.com", true));
+  EXPECT_EQ(LoadPolicy::DISALLOW,
+            GetLoadCssPolicy("http://example.com?param_blocked=", true));
+  EXPECT_EQ(LoadPolicy::DISALLOW,
+            GetLoadCssPolicy("http://example.com?param_allow=image1", true));
+}
+
+// only url rules
+TEST_F(SubresourceFilterIndexedRulesetTest, HasGenericHideOption) {
+  ASSERT_TRUE(AddSimpleRule("example.com"));
+  ASSERT_TRUE(AddSimpleAllowlistRule("example.com", url_pattern_index::proto::ACTIVATION_TYPE_GENERICHIDE));
+  Finish();
+
+  GURL url("https://example.com");
+  url::Origin origin = url::Origin::Create(GURL(""));
+  bool hide_option = matcher_->HasGenericHideOption(url, origin);
+  EXPECT_TRUE(hide_option);
+  EXPECT_EQ(LoadPolicy::DISALLOW, GetLoadPolicy("https://example.com"));
+  EXPECT_EQ(LoadPolicy::ALLOW, GetLoadPolicy("https://xample.com"));
+}
+
+TEST_F(SubresourceFilterIndexedRulesetTest, HasDocumentOption) {
+  ASSERT_TRUE(AddSimpleRule("example.com"));
+  ASSERT_TRUE(AddSimpleAllowlistRule("example.com", testing::kDocument));
+  Finish();
+
+  GURL url("https://example.com");
+  url::Origin origin = url::Origin::Create(GURL(""));
+  bool hide_option = matcher_->HasDocumentOption(url, origin);
+  EXPECT_TRUE(hide_option);
+  EXPECT_EQ(LoadPolicy::DISALLOW, GetLoadPolicy("https://example.com"));
+  EXPECT_EQ(LoadPolicy::ALLOW, GetLoadPolicy("https://xample.com"));
+}
+
+TEST_F(SubresourceFilterIndexedRulesetTest, HasElemHideOption) {
+  ASSERT_TRUE(AddSimpleRule("example.com"));
+  ASSERT_TRUE(AddSimpleAllowlistRule("example.com", url_pattern_index::proto::ACTIVATION_TYPE_ELEMHIDE));
+  Finish();
+
+  GURL url("https://example.com");
+  url::Origin origin = url::Origin::Create(GURL(""));
+  bool hide_option = matcher_->HasElemHideOption(url, origin);
+  EXPECT_TRUE(hide_option);
+  EXPECT_EQ(LoadPolicy::DISALLOW, GetLoadPolicy("https://example.com"));
+  EXPECT_EQ(LoadPolicy::ALLOW, GetLoadPolicy("https://xample.com"));
+}
+#endif
 }  // namespace subresource_filter

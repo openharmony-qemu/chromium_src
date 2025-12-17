@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include "third_party/blink/renderer/modules/media_controls/elements/media_control_popup_menu_element.h"
 #include "arkweb/chromium_ext/third_party/blink/renderer/modules/media_controls/elements/media_control_popup_menu_element_utils.h"
 
 #include "third_party/blink/renderer/modules/media_controls/elements/media_control_playback_speed_button_element.h"
@@ -105,7 +106,7 @@ void MediaControlPopupMenuElementUtils::SetPopupAnchorHM(
     WTF::String left_str_value = WTF::String::Number(bounding_client_rect->left()) + kPx;
     element->style()->setProperty(dom_window, "left", left_str_value, kImportant, ASSERT_NO_EXCEPTION);
   } else {
-    if (!element->MediaElement().html_media_element_utils_->IsRTL()) {
+    if (!element->MediaElement().html_media_element_utils_.IsRTL()) {
       WTF::String left_str_value = WTF::String::Number(bounding_client_rect->right() - kPopupMenuLeftSpaceLeft) + kPx;
       element->style()->setProperty(dom_window, "left", left_str_value, kImportant, ASSERT_NO_EXCEPTION);
     } else {
@@ -126,8 +127,7 @@ void  MediaControlPopupMenuElementUtils::SetOverflowPopupAnchorHM(
   element->style()->setProperty(dom_window, "top", top_str_value, kImportant,
                                 ASSERT_NO_EXCEPTION);
 
-  if (element->MediaElement().html_media_element_utils_ &&
-      element->MediaElement().html_media_element_utils_->IsRTL()) {
+  if (element->MediaElement().html_media_element_utils_.IsRTL()) {
     WTF::String left_str_value = WTF::String::Number(bounding_client_rect->left()) + kPx;
     element->style()->setProperty(dom_window, "left", left_str_value, kImportant,
                                   ASSERT_NO_EXCEPTION);
@@ -154,7 +154,7 @@ void  MediaControlPopupMenuElementUtils::SetOverflowPopupAnchorHM(
   }
 }
 
-bool MediaControlPopupMenuElementUtils::IsOverflowMenuPopup() {
+bool MediaControlPopupMenuElementUtils::IsOverflowMenuPopup() const {
   if (element) {
     return (element->ShadowPseudoId() ==
         AtomicString("-internal-media-controls-overflow-menu-list"));
@@ -165,8 +165,12 @@ bool MediaControlPopupMenuElementUtils::IsOverflowMenuPopup() {
 
 Element* MediaControlPopupMenuElementUtils::ShouldPlaybackSpeedButton() {
   if (element->GetMediaControls().ShouldShowVideoControlsHM()) {
-    return &element->GetMediaControls().mediaControlsImplUtils_->Playback_Speed_Button();
+    return &element->GetMediaControls().mediaControlsImplUtils_.Playback_Speed_Button();
   }
+}
+
+void MediaControlPopupMenuElementUtils::Trace(Visitor* visitor) const {
+  visitor->Trace(element);
 }
 
 }  // namespace blink

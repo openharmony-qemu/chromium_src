@@ -2972,7 +2972,24 @@ target(_test_target_type, "net_unittests") {
     "url_request/url_request_quic_unittest.cc",
     "url_request/url_request_unittest.cc",
     "url_request/view_cache_helper_unittest.cc",
+    "//arkweb/chromium_ext/net/socket/arkweb_transport_connect_job_ext_unittest.cc",
+    "//arkweb/chromium_ext/net/url_request/url_requesrt_context_ext_unittest.cc"
   ]
+  ldflags = []
+  if (is_arkweb) {
+    sources += arkweb_net_cert_unittest_sources
+    ldflags += [
+      "-Wl,--wrap=BIO_new_mem_buf",
+      "-Wl,--wrap=X509_STORE_CTX_new",
+    ]
+    include_dirs = [
+      "//third_party/ohos_ndk/includes/ohos_adapter",
+    ]
+  }
+  if (arkweb_prp_preload) {
+    import("//arkweb/chromium_ext/net/base/arkweb_net_base_ext.gni")
+    sources += arkweb_net_base_ext_unittest_sources
+  }
 
   if (is_android) {
     sources += [
@@ -3046,12 +3063,19 @@ target(_test_target_type, "net_unittests") {
   if (disable_zstd_filter) {
     defines += [ "NET_DISABLE_ZSTD" ]
   }
-
   if (is_ohos) {
-    sources += [ "//arkweb/chromium_ext/net/cert/test_root_certs_ohos.cc" ]
+    sources += [
+      "//arkweb/chromium_ext/net/cert/test_root_certs_ohos.cc",
+      "//net/tools/transport_security_state_generator/cert_util.cc",
+    ]
     defines += [ "NET_UNITTESTS_OHOS_ENABLE" ]
   }
-
+  if (defined(arkweb_ext_http_dns_fallback) && arkweb_ext_http_dns_fallback || is_ohos) {
+    ldflags += [
+      "-Wl,--wrap=OH_NetConn_GetDefaultNet",
+      "-Wl,--wrap=OH_NetConn_GetConnectionProperties",
+    ]
+  }
   deps = [
     ":cronet_buildflags",
     ":net",
@@ -3115,6 +3139,11 @@ target(_test_target_type, "net_unittests") {
 
   if (is_android || is_chromeos_ash) {
     sources += [ "base/network_change_notifier_passive_unittest.cc" ]
+  }
+  if (is_arkweb) {
+    sources += [
+      "//arkweb/chromium_ext/net/base/network_change_notifier_passive_for_include_unittest.cc",
+    ]
   }
 
   if (enable_reporting) {
@@ -3434,6 +3463,12 @@ target(_test_target_type, "net_unittests") {
   if (is_ohos) {
     deps += [
       "//content/public/common:static_switches",
+    ]
+  }
+
+  if (arkweb_test) {
+    sources += [
+      "//arkweb/chromium_ext/net/http/http_cache_transaction_utils_unittest.cc",
     ]
   }
 }

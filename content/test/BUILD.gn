@@ -1782,6 +1782,9 @@ test("content_browsertests") {
     "../test/url_loader_interceptor_browsertest.cc",
   ]
   if (arkweb_unittests) {
+    sources += [
+      "//arkweb/chromium_ext/media/audio/ohos/ohos_audio_input_stream_unittest.cc",
+    ]
     sources += arkweb_content_renderer_test_sources
   }
   if (is_linux) {
@@ -2972,8 +2975,21 @@ test("content_unittests") {
     "test_aggregation_service_impl_unittest.cc",
     "test_page_unittest.cc",
     "test_render_frame_host_unittest.cc",
+    "//arkweb/chromium_ext/media/audio/ohos/ohos_audio_focus_controller_unittest.cc",
+    "../../arkweb/chromium_ext/ohos_test/unittest/dfx/dfx_reporter_browser_impl_unittest.cc",
   ]
 
+  if (arkweb_unittests) {
+    sources += [ 
+      "../../arkweb/chromium_ext/content/browser/accessibility/browser_accessibility_manager_ohos_unittest.cc",
+    ]
+    sources += [ "../../arkweb/chromium_ext/content/browser/renderer_host/arkweb_render_process_host_impl_utils_unittest.cc" ]
+    sources += arkweb_content_browser_test_sources
+  }
+
+  if (arkweb_test) {
+    sources += arkweb_content_browser_unittests_sources
+  }
   if (is_mac) {
     sources += [
       "../browser/child_process_task_port_provider_mac_unittest.cc",
@@ -3574,6 +3590,22 @@ test("content_unittests") {
   # TODO(crbug.com/1293538): Update to check is_cast_audio_only
   if (is_castos || is_cast_android) {
     deps += [ "//chromecast:chromecast_buildflags" ]
+  }
+
+  if (arkweb_test) {
+    sources += arbweb_content_media_test_sources
+    sources += [
+      "//arkweb/chromium_ext/media/audio/ohos/ohos_audio_output_stream_unittest.cc",
+    ]
+    include_dirs = [
+      "//arkweb/ohos_adapter_ndk/interfaces",
+      "//third_party/ohos_ndk/includes/ohos_adapter",
+    ]
+    deps += [
+      "//arkweb/ohos_adapter_ndk:adapter_ndk",
+    ]
+    deps += ["//arkweb/ohos_adapter_ndk/mock_ndk_api:mock_base_ohos"]
+    deps += ["//arkweb/ohos_adapter_ndk/mock_ndk_api:mock_ndk"]
   }
 }
 

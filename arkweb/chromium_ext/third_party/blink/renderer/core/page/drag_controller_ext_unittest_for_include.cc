@@ -254,6 +254,7 @@ TEST_F(DragControllerTest, StartDragTextEffects001) {
 
   drag_state.drag_src_ = nullptr;
   GetFrame().GetPage()->GetDragController().StartDragTextEffects();
+  EXPECT_FALSE(GetFrame().GetPage()->GetDragController().IsInTextDraging());
 }
 
 TEST_F(DragControllerTest, RestoreDragTextEffects001) {
@@ -280,6 +281,7 @@ TEST_F(DragControllerTest, RestoreDragTextEffects001) {
   GetFrame().GetPage()->GetDragController().DragEnded();
   drag_state.drag_type_ = kDragSourceActionLink;
   GetFrame().GetPage()->GetDragController().RestoreDragTextEffects();
+  EXPECT_FALSE(GetFrame().GetPage()->GetDragController().IsInTextDraging());
 }
 
 TEST_F(DragControllerTest, StartDragImageEffects001) {
@@ -304,6 +306,7 @@ TEST_F(DragControllerTest, StartDragImageEffects001) {
   auto& drag_state = GetFrame().GetPage()->GetDragController().GetDragState();
   drag_state.drag_src_ = nullptr;
   GetFrame().GetPage()->GetDragController().StartDragImageEffects();
+  EXPECT_FALSE(GetFrame().GetPage()->GetDragController().IsInImageDraging());
 }
 
 TEST_F(DragControllerTest, RestoreDragImageEffects001) {
@@ -328,6 +331,7 @@ TEST_F(DragControllerTest, RestoreDragImageEffects001) {
   GetFrame().GetPage()->GetDragController().ContextDestroyed();
   GetFrame().GetPage()->GetDragController().StartDragTextEffects();
   GetFrame().GetPage()->GetDragController().RestoreDragImageEffects();
+  EXPECT_FALSE(GetFrame().GetPage()->GetDragController().IsInImageDraging());
 }
 
 TEST_F(DragControllerTest, StartDragLinkEffects001) {
@@ -371,6 +375,43 @@ TEST_F(DragControllerTest, StartDragLinkEffects001) {
   node->SetLayoutObject(nullptr);
   GetFrame().GetPage()->GetDragController().StartDragLinkEffects();
   GetFrame().GetPage()->GetDragController().RestoreDragLinkEffects();
+  EXPECT_FALSE(GetFrame().GetPage()->GetDragController().IsHyperLinkDragging());
+}
+
+TEST_F(DragControllerTest, DragLinkCheckSrcAndType) {
+  SetBodyInnerHTML(R"HTML(
+    <style>
+      * { margin: 0; }
+      a {
+        width: 50px;
+        height: 40px;
+        font-size: 30px;
+        margin-top: 2px;
+        display: block;
+      }
+    </style>
+    <a id='drag' href='https://foobarbaz.com'>foobarbaz</a>
+  )HTML");
+  const int page_scale_factor = 2;
+  ASSERT_TRUE(GetFrame().GetPage());
+  GetFrame().GetPage()->SetPageScaleFactor(page_scale_factor);
+  GetFrame().Selection().SelectAll();
+
+  // set drag_state to null
+  GetFrame().GetPage()->GetDragController().ContextDestroyed();
+  EXPECT_FALSE(GetFrame().GetPage()->GetDragController().IsHyperLinkDragging());
+  GetFrame().GetPage()->GetDragController().StartDragTextEffects();
+  EXPECT_FALSE(GetFrame().GetPage()->GetDragController().IsInTextDraging());
+  EXPECT_FALSE(GetFrame().GetPage()->GetDragController().IsInImageDraging());
+
+  auto& drag_state = GetFrame().GetPage()->GetDragController().GetDragState();
+  drag_state.drag_type_ = kDragSourceActionLink;
+  drag_state.drag_src_ = nullptr;
+
+  GetFrame().GetPage()->GetDragController().SetDragInitState(true);
+  GetFrame().GetPage()->GetDragController().StartDragTextEffects();
+  GetFrame().GetPage()->GetDragController().StartDragImageEffects();
+  EXPECT_FALSE(GetFrame().GetPage()->GetDragController().DragLinkCheckSrcAndType());
 }
 
 }

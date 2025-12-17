@@ -177,7 +177,7 @@ interface Renderer {
   // Notify renderer that theme font has been changed.
   // ARKWEB_THEME_FONT
   [EnableIf=arkweb_theme_font]
-  UpdateThemeFontFile(mojo_base.mojom.File? theme_font);
+  UpdateThemeFontFile(array<mojo_base.mojom.File?> theme_fonts);
 
   //#ifdef ARKWEB_I18N
   [EnableIf=arkweb_i18n]
@@ -188,4 +188,10 @@ interface Renderer {
   [EnableIf=arkweb_reader_mode]
   UpdateReaderModeConfig(blink.mojom.ReaderModeConfig config);
   // #endif
+
+  [EnableIf=arkweb_ext_video_load_optimization]
+  UpdateVideoLoadOptimizationConfigData(bool enable, int32 preload_video_time,
+                                        int32 min_cache_time, int32 max_cache_time,
+                                        int32 moov_size, int32 bit_rate,
+                                        array<string> support_domains);
 };

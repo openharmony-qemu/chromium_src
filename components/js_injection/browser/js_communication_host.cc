@@ -287,8 +287,16 @@ void JsCommunicationHost::NotifyFrameForAllDocumentStartJavaScripts(
     NotifyFrameForAddDocumentStartJavaScript(&script, render_frame_host);
   }
 #if BUILDFLAG(ARKWEB_JSPROXY)
+  for (const auto& regex_rules : js_communication_host_utils_->start_scripts_regex_rules_) {
+    js_communication_host_utils_->NotifyFrameForAddDocumentStartJavaScriptRegexRules(
+      &regex_rules, render_frame_host);
+  }
   for (const auto& script : js_communication_host_utils_->head_ready_scripts_) {
     js_communication_host_utils_->NotifyFrameForAddHeadReadyJavaScript(&script, render_frame_host);
+  }
+  for (const auto& regex_rules : js_communication_host_utils_->head_ready_regex_rules_) {
+    js_communication_host_utils_->NotifyFrameForAddHeadReadyJavaScriptRegexRules(
+      &regex_rules, render_frame_host);
   }
 #endif
 }

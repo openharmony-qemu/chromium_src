@@ -47,15 +47,21 @@ std::string ComputeLanguageByRegion(const std::string& region) {
     locale = (region == "HK" || region == "MO") ? "zh-HK" : "zh-TW";
     return locale;
   }
-  // Current system only support zh, bo, ug, en.
+
   if (systemLanguage.find("en") != std::string::npos) {
-    locale = "en-US";
+    locale = systemLanguage == "en-GB" ? systemLanguage : "en-US";
   } else if (systemLanguage.find("zh") != std::string::npos) {
     locale = "zh-CN";
   } else if (systemLanguage.find("bo") != std::string::npos) {
     locale = "bo-CN";
   } else if (systemLanguage.find("ug") != std::string::npos) {
     locale = "ug";
+  } else if (systemLanguage.find("my") != std::string::npos) {
+    locale = "my";
+  } else if (systemLanguage.find("ms") != std::string::npos) {
+    locale = "ms";
+  } else if (systemLanguage.find("lo") != std::string::npos) {
+    locale = "lo";
   }
   return locale;
 }

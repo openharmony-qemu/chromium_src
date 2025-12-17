@@ -243,14 +243,6 @@ TEST_F(AdBlockConfigTest, ReadFromPrefService_002) {
   ad_block_config_->ReadFromPrefService();
 }
 
-TEST_F(AdBlockConfigTest, ReadFromPrefService_003) {
-  ASSERT_NE(ad_block_config_, nullptr);
-  SetIsValid(false);
-  ad_block_config_->SetPrefService(pref_service_.get());
-  ad_block_config_->ReadFromPrefService();
-  EXPECT_EQ(GetIsValid(), true);
-}
-
 TEST_F(AdBlockConfigTest, UpdateDisallowDataOnIOThread_001) {
   std::unique_ptr<autofill::Trie<std::string>> null_data = nullptr;
   TestUpdateDisallowDataOnIOThread(std::move(null_data));

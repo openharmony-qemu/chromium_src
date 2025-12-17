@@ -164,6 +164,8 @@ component("cef_nweb") {
     "src/cef_delegate/nweb_js_ssl_error_result_impl.h",
     "src/cef_delegate/nweb_js_ssl_select_cert_result_impl.cc",
     "src/cef_delegate/nweb_js_ssl_select_cert_result_impl.h",
+    "src/cef_delegate/nweb_js_verify_pin_result_impl.cc",
+    "src/cef_delegate/nweb_js_verify_pin_result_impl.h",
     "src/cef_delegate/nweb_gesture_event_result_impl.cc",
     "src/cef_delegate/nweb_gesture_event_result_impl.h",
     "src/cef_delegate/nweb_mouse_event_result_impl.cc",
@@ -198,6 +200,8 @@ component("cef_nweb") {
     "src/sysevent/oh_web_performance_timing.h",
     "src/cef_delegate/nweb_extension_connect_native.cc",
     "src/cef_delegate/nweb_extension_connect_native.h",
+    "src/cef_delegate/nweb_cookie_impl.cc",
+    "src/cef_delegate/nweb_cookie_impl.h",
   ]
   if (defined(arkweb_logger_report) && arkweb_logger_report) {
     sources += [
@@ -222,18 +226,26 @@ component("cef_nweb") {
       "src/cef_delegate/nweb_extension_content_settings_cef_delegate.h",
       "src/cef_delegate/nweb_extension_downloads_cef_delegate.cc",
       "src/cef_delegate/nweb_extension_downloads_cef_delegate.h",
+      "src/cef_delegate/nweb_extension_omnibox_cef_delegate.cc",
+      "src/cef_delegate/nweb_extension_omnibox_cef_delegate.h",
       "src/cef_delegate/nweb_extension_prompt_cef_delegate.cc",
       "src/cef_delegate/nweb_extension_prompt_cef_delegate.h",
       "src/cef_delegate/nweb_extension_proxy_cef_delegate.cc",
-      "src/cef_delegate/nweb_extension_proxy_cef_delegate.h",      
+      "src/cef_delegate/nweb_extension_proxy_cef_delegate.h",
+      "src/cef_delegate/nweb_extension_search_cef_delegate.cc",
+      "src/cef_delegate/nweb_extension_search_cef_delegate.h",
       "src/cef_delegate/nweb_extension_side_panel_cef_controller.cc",
       "src/cef_delegate/nweb_extension_side_panel_cef_controller.h",
       "src/cef_delegate/nweb_extension_side_panel_cef_delegate.cc",
       "src/cef_delegate/nweb_extension_side_panel_cef_delegate.h",
       "src/cef_delegate/nweb_extension_history_cef_delegate.cc",
       "src/cef_delegate/nweb_extension_history_cef_delegate.h",
+      "src/cef_delegate/nweb_extension_permissions_handler.cc",
+      "src/cef_delegate/nweb_extension_permissions_handler.h",
       "src/cef_delegate/nweb_extension_tab_cef_delegate.cc",
       "src/cef_delegate/nweb_extension_tab_cef_delegate.h",
+      "src/cef_delegate/nweb_extension_sessions_handler_delegate.cc",
+      "src/cef_delegate/nweb_extension_sessions_handler_delegate.h",
       "src/cef_delegate/nweb_extension_utils.cc",
       "src/cef_delegate/nweb_extension_utils.h",
       "src/cef_delegate/nweb_extension_browsing_data_cef_delegate.cc",
@@ -246,6 +258,16 @@ component("cef_nweb") {
       "src/cef_delegate/nweb_extension_top_sites_cef_delegate.h",
     ]
 
+    deps += [
+      "//components/crx_file",
+    ]
+
+    if (defined(arkweb_autolayout) && arkweb_autolayout) {
+      sources += [
+        "src/cef_delegate/nweb_autolayout.cc",
+        "src/cef_delegate/nweb_autolayout.h",
+      ]
+    }
     if (defined(arkweb_nweb_ex) && arkweb_nweb_ex) {
       deps += [
         "//ohos_nweb_ex:dispatcher",
@@ -427,6 +449,7 @@ component("nweb_sources") {
     "src/capi/nweb_app_client_extension_callback.h",
     "src/capi/nweb_devtools_message_handler.h",
     "src/capi/nweb_extension_javascript_item.h",
+    "src/capi/nweb_extension_load_url_params.h",
     "src/capi/nweb_native_embed_first_frame_paint_event.h",
     "src/capi/nweb_storage_extension_callback.h",
     "src/capi/nweb_statistic_callback.h",
@@ -518,6 +541,13 @@ component("nweb_sources") {
     ]
   }
 
+  if (defined(arkweb_multi_window) && arkweb_multi_window) {
+    sources += [
+      "src/nweb_window_new_event_info_impl.cc",
+      "src/nweb_window_new_event_info_impl.h",
+    ]
+  }
+
   deps = [
     ":cef_nweb",
     ":nweb_hilog",
@@ -553,6 +583,10 @@ component("nweb_sources") {
 
   if (defined(arkweb_ai) && arkweb_ai) {
     deps += [ "//ohos_resources/data_detector:data_detector_resources" ]
+  }
+
+  if (defined(arkweb_autolayout) && arkweb_autolayout) {
+    deps += [ "//arkweb/ohos_autolayout:autolayout_resources" ]
   }
 
   #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
@@ -655,13 +689,22 @@ source_set("unittests") {
     "src/cef_delegate/nweb_data_base_delegate_unittes.cc",
     "src/cef_delegate/nweb_render_handler_unittest.cc",
     "src/cef_delegate/nweb_scheme_handler_factory_unittest.cc",
+    "src/cef_delegate/nweb_autolayout_unittest.cc",
     "src/ndk/arkweb_model_unittest.cc",
     "src/ndk/arkweb_native_object_unittest.cc",
     "src/native_media_player/nweb_native_media_player_handler_impl_unittests.cc",
+    "src/ndk/scheme_handler/arkweb_scheme_handler_unittest.cc",
     "src/ndk/scheme_handler/http_body_stream_unittest.cc",
     "src/ndk/scheme_handler/resource_handler_unittest.cc",
     "src/ndk/scheme_handler/resource_request_unittest.cc",
+    "src/ndk/scheme_handler/mock_object.cc",
     "src/ndk/scheme_handler/response_unittest.cc",
+    "src/ndk/arkweb_native_javascript_execute_callback_unittest.cc",
+    "src/ndk/arkweb_native_web_message_callback_unittest.cc",
+    "src/nweb_adsblock_manager_impl_unittest.cc",
+    "src/nweb_cookie_manager_impl_unittest.cc",
+    "src/nweb_download_manager_impl_unittest.cc",
+    "src/nweb_permission_status_query_manager_unittest.cc",
     "src/nweb_impl_unittest.cc",
     "src/nweb_input_handler_unittest.cc",
     "src/nweb_inputmethod_handler_unittest.cc",
@@ -677,6 +720,7 @@ source_set("unittests") {
     "src/video_assistant/nweb_media_player_controller_impl_unittest.cc",
     "src/nweb_engine_impl_unittest.cc",
     "src/native_media_player/nweb_media_info_impl_unittest.cc",
+    "browser/performance_manager/mechanisms/background_task_holder_unittest.cc",
   ]
 
   deps = [
@@ -694,6 +738,10 @@ source_set("unittests") {
     deps += [ "//arkweb/build/features" ]
   }
 
+  if (arkweb_test) {
+    deps += [ "//arkweb/ohos_adapter_ndk/mock_ndk_api:mock_base_ohos" ]
+  }
+  
   if (enable_arkweb_ext) {
     deps += [ "//arkweb/ohos_nweb_ex/build/features" ]
     sources += [ "//arkweb/ohos_nweb_ex/core/web_screencapturer_unittest.cc" ]

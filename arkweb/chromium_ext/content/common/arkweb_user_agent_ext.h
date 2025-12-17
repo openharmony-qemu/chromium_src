@@ -47,7 +47,7 @@
 
 namespace content {
 #if BUILDFLAG(ARKWEB_TEST)
-extern bool is_compatible_type_setted;
+extern std::atomic<bool> is_compatible_type_setted;
 extern void SetArkwebUserAgentExtStateForTest(bool);
 extern void ResetArkwebUserAgentExtStateForTest();
 #endif

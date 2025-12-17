@@ -102,9 +102,10 @@ class CONTENT_EXPORT ChildProcessHostImpl : public ChildProcessHost,
   void ReportKeyThread(int32_t status, int32_t process_id, int32_t thread_id, int32_t role) override;
   void ReportKeyThreadIds(int32_t status, int32_t process_id,
        const std::vector<int32_t>& thread_ids, int32_t role) override {}
-#endif
+
 #if BUILDFLAG(ARKWEB_DFX_TRACING)
   void ReportHisyevent(int64_t block_time, const std::string& mode) override;
+#endif
 #endif
 
   // IPC::Listener methods:

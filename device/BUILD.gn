@@ -3,7 +3,6 @@
 # found in the LICENSE file.
 
 import("//arkweb/build/features/features.gni")
-import("//arkweb/chromium_ext/chromium_ext.gni")
 import("//build/config/chromeos/ui_mode.gni")
 import("//build/config/features.gni")
 import("//device/vr/buildflags/buildflags.gni")
@@ -494,10 +493,6 @@ test("device_unittests") {
     ]
   }
 
-  if (arkweb_unittests) {
-    sources += arkweb_device_sources
-  }
-
   # Some gamepad tests require the HID service. Only build these tests on
   # platforms where the HID service is enabled.
   if (!is_android && !is_fuchsia && !is_ios && !is_ohos) {
@@ -512,6 +507,12 @@ test("device_unittests") {
 
   if (is_chromeos) {
     deps += [ "//chromeos/dbus/u2f" ]
+  }
+
+  if (arkweb_test) {
+    import("//arkweb/chromium_ext/device/device_ext.gni")
+    sources += device_unittests_ext.sources
+    configs += [ "//arkweb/chromium_ext:arkweb_device_unittest_config" ]
   }
 }
 

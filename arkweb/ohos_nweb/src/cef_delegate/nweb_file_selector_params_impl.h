@@ -38,12 +38,26 @@ class FileSelectorParamsImpl : public NWebFileSelectorParams {
                          const std::vector<CefString>& accept_type,
                          const std::string& default_filename,
                          bool is_capture);
+  FileSelectorParamsImpl(FileSelectorMode mode,
+                         const std::string& title,
+                         const std::vector<CefString>& accept_type,
+                         const std::string& default_filename,
+                         bool is_capture,
+                         const std::vector<CefString>& mime_type,
+                         const std::string& accepts,
+                         const std::string& default_path,
+                         const std::vector<CefString>& descriptions,
+                         bool is_exclude_accept_all_options);
   const std::string Title() override;
   NWebFileSelectorParams::FileSelectorMode Mode() override;
   const std::string DefaultFilename() override;
   const AcceptTypeList AcceptType() override;
   bool IsCapture() override;
   const MimeTypeList MimeType() override;
+  const std::string DefaultPath() override;
+  const DescriptionsList Descriptions() override;
+  bool IsAcceptAllOptionExcluded() override;
+  const std::string Accepts() override;
 
  private:
   NWebFileSelectorParams::FileSelectorMode mode_;
@@ -52,6 +66,10 @@ class FileSelectorParamsImpl : public NWebFileSelectorParams {
   AcceptTypeList accept_type_;
   bool is_capture_;
   MimeTypeList mime_type_;
+  std::string accepts_ = "";
+  std::string default_path_ = "";
+  DescriptionsList descriptions_ = DescriptionsList();
+  bool is_exclude_accept_all_options_ = false;
 };
 
 class FileSelectorCallbackImpl : public NWebStringVectorValueCallback {

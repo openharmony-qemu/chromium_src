@@ -46,7 +46,7 @@ class AsyncLayerTreeFrameSink;
 
 class AsyncLayerTreeFrameSinkUtils {
  public:
-  AsyncLayerTreeFrameSink* asyncLayerTreeFrameSink;
+  raw_ptr<AsyncLayerTreeFrameSink> asyncLayerTreeFrameSink;
   AsyncLayerTreeFrameSinkUtils(AsyncLayerTreeFrameSink* sink);
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)

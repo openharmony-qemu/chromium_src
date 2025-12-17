@@ -139,6 +139,17 @@ class SHELL_DIALOGS_EXPORT SelectFileDialog
     // Specifies whether there will be a filter added for all files (i.e. *.*).
     bool include_all_files = false;
 
+#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
+    std::u16string start_in = u"";
+
+    struct AcceptFileType {
+      std::string mime_type;
+      std::vector<std::string> accept_type;
+    };
+
+    std::vector<std::vector<AcceptFileType>> accepts;
+#endif
+
     // Some implementations by default hide the extension of a file, in
     // particular in a save file dialog. If this is set to true, where
     // supported, the save file dialog will instead keep the file extension

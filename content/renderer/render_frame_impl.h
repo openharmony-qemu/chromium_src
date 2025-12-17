@@ -221,6 +221,9 @@ class CONTENT_EXPORT RenderFrameImpl
       blink::mojom::FrameReplicationStatePtr replication_state,
       const base::UnguessableToken& devtools_frame_token,
       mojom::CreateLocalMainFrameParamsPtr params,
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      bool is_offscreen,
+#endif
       const blink::WebURL& base_url);
 
   // Creates a new RenderFrame with |routing_id|. If |previous_frame_token| is
@@ -461,6 +464,8 @@ class CONTENT_EXPORT RenderFrameImpl
 #if BUILDFLAG(ARKWEB_PDF)
   void OnPdfScrollAtBottom(const std::string& url) override;
   void OnPdfLoadEvent(int32_t result, const std::string& url) override;
+  void SetIsPDF(bool is_pdf) override;
+  bool IsPDF() override;
 #endif  // BUILDFLAG(ARKWEB_PDF)
 
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
@@ -477,6 +482,20 @@ class CONTENT_EXPORT RenderFrameImpl
 #if BUILDFLAG(ARKWEB_MENU)
   void MouseSelectMenuShow(bool show) override;
   void ChangeVisibilityOfQuickMenu() override;
+  void HideQuickMenu() override;
+#endif
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  bool IsVideoLoadOptimizationEnabled(const std::string& url) override;
+  int GetVideoPreloadTimeDefault() const override;
+  int GetVideoMinCacheTimeDefault() const override;
+  int GetVideoMaxCacheTimeDefault() const override;
+  int GetVideoMoovSizeDefault() const override;
+  int GetVideoBitrateDefault() const override;
+  bool SetNewsFeedPageFitted() override;
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+  void OnDocumentEndReady() override;
 #endif
 
   // blink::mojom::AutoplayConfigurationClient implementation:
@@ -917,6 +936,17 @@ class CONTENT_EXPORT RenderFrameImpl
   void ContentLoadFailedLoggerReport();
   void PageLoadFinishedLoggerReport();
 #endif
+#if BUILDFLAG(ARKWEB_TEST)
+  bool web_frame_widget_test_mode = false;
+  blink::WebFrameWidget* web_frame_widget_test = nullptr;
+  void SetLocalRootWebFrameWidgetForTest(blink::WebFrameWidget* widget);
+  bool web_view_test_mode = false;
+  blink::WebView* web_view_test = nullptr;
+  void SetWebViewForTest(blink::WebView* web_view);
+#endif
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  bool IsOffscreen();
+#endif
 
  protected:
   explicit RenderFrameImpl(CreateParams params);
@@ -930,6 +960,9 @@ class CONTENT_EXPORT RenderFrameImpl
   friend class RenderFrameImplTest;
   friend class RenderFrameObserver;
   friend class TestRenderFrame;
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class ArkWebRenderFrameImplTest;
+#endif
 
   FRIEND_TEST_ALL_PREFIXES(RenderAccessibilityImplTest,
                            AccessibilityMessagesQueueWhileSwappedOut);
@@ -1309,7 +1342,8 @@ class CONTENT_EXPORT RenderFrameImpl
 #if BUILDFLAG(ARKWEB_MULTI_WINDOW)
   bool GetNewWindowWebView(const GURL& target_url,
                            blink::WebNavigationPolicy policy,
-                           bool allow_popup);
+                           bool allow_popup,
+                           const blink::WebWindowFeatures& features);
 #endif
 
 #if BUILDFLAG(ARKWEB_ADBLOCK)
@@ -1334,6 +1368,10 @@ class CONTENT_EXPORT RenderFrameImpl
   // main frame or not. It remains accurate during destruction, even when
   // |frame_| has been invalidated.
   bool is_main_frame_;
+
+#if BUILDFLAG(ARKWEB_PDF)
+  bool is_pdf_ = false;
+#endif
 
   class UniqueNameFrameAdapter : public blink::UniqueNameHelper::FrameAdapter {
    public:
@@ -1756,6 +1794,9 @@ class CONTENT_EXPORT RenderFrameImpl
 
 #if BUILDFLAG(ARKWEB_USERAGENT)
   bool viewport_meta_enabled_{false};
+#endif
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  bool is_offscreen_{false};
 #endif
   raw_ptr<RenderFrameImplUtils> implUtils;
   

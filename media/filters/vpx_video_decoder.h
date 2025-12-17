@@ -73,6 +73,10 @@ class MEDIA_EXPORT VpxVideoDecoder : public OffloadableVideoDecoder {
 
   void CloseDecoder();
 
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+  std::string VideoCodecToString(VideoCodec videoCodec);
+#endif
+
   // Try to decode |buffer| into |video_frame|. Return true if all decoding
   // succeeded. Note that decoding can succeed and still |video_frame| be
   // nullptr if there has been a partial decoding.

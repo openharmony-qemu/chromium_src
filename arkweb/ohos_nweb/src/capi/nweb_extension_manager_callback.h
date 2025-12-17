@@ -16,6 +16,7 @@
 #ifndef OHOS_NWEB_SRC_NWEB_EXTENSION_MANAGER_CALLBACK_H_
 #define OHOS_NWEB_SRC_NWEB_EXTENSION_MANAGER_CALLBACK_H_
 
+#include <set>
 #include <stddef.h>
 #include <string>
 #include <map>
@@ -91,7 +92,17 @@ struct WebExtensionManifestSettingsOverrides {
   std::vector<std::string> startup_pages;
   std::optional<WebExtensionManifestSearchProvider> search_provider;
 };
- 
+
+struct WebExtensionManifestUrlOverride {
+  std::optional<std::string> newtab;
+  std::optional<std::string> bookmarks;
+  std::optional<std::string> history;
+};
+
+struct WebExtensionManifestOmnibox {
+  std::string keyword;
+};
+
 struct WebExtensionManifestOptionsPageInfo {
   std::string options_page;
   bool open_in_tab;
@@ -111,6 +122,9 @@ struct WebExtensionManifestInfo {
   std::optional<WebExtensionManifestOptionsPageInfo> options_page;
   std::optional<ExtensionIncognitoMode> incognito_mode;
   std::optional<NWebExtensionActionIconV2> icons;
+  std::optional<WebExtensionManifestUrlOverride> url_override;
+  std::optional<WebExtensionManifestOmnibox> omnibox;
+  std::optional<std::string> short_name;
 };
  
 struct WebExtensionInfoV2 {
@@ -132,6 +146,18 @@ struct WebExtensionInfoV2 {
   bool is_incognito_enabled = false;
   std::vector<NWebContextMenusItemV2> contextMenusV2;
   WebExtensionActionInfoV2 action_v2;
+  std::optional<double> install_time;
+};
+
+struct WebExtensionForbidDisplayParams {
+  std::set<std::string> extension_ids;
+};
+
+struct NWebExtensionLoadError {
+  static constexpr int NUM_PROPERTIES = 3;
+  std::optional<std::string> contextType;
+  std::string errorMsg;
+  bool beNoisy;
 };
 
 typedef void (*OnWebExtensionLoadedFun)(const WebExtensionInfo& load_info);
@@ -145,6 +171,10 @@ struct NWebExtensionManagerCallBack {
   void (*OnWebExtensionOpenUrlFun)(std::string url);
 };
 
-typedef void (*OnExtensionInstallCallback)(int code, const char* message);
+typedef void (*OnExtensionInstallCallback)(int code,
+                                           const char* message,
+                                           const char* extension_id);
+
+typedef void (*OnExtensionUninstallCallback)(bool success, const char* message);
 
 #endif  // OHOS_NWEB_SRC_NWEB_EXTENSION_MANAGER_CALLBACK_H_

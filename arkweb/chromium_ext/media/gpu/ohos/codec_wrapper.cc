@@ -104,6 +104,7 @@ class CodecWrapperImpl : public base::RefCountedThreadSafe<CodecWrapperImpl> {
 #endif // ARKWEB_VIDEO_ASSISTANT
 };
 
+#ifndef ARKWEB_TEST_INCLUDE
 CodecOutputBuffer::CodecOutputBuffer(scoped_refptr<CodecWrapperImpl> codec,
                                      int64_t id,
                                      const gfx::Size& size,
@@ -235,7 +236,8 @@ CodecWrapperImpl::QueueStatus CodecWrapperImpl::QueueInputBuffer(
   DecoderAdapterCode status;
   status = codec_->QueueInputBuffer(buffer.data(), buffer.size(),
                                     buffer.timestamp().ToInternalValue(),
-                                    buffer.decrypt_config());
+                                    buffer.decrypt_config(),
+                                    buffer.is_key_frame());
   TRACE_EVENT1("media", "CodecWrapperImpl::QueueInputBuffer End", "result",
                status);
   switch (status) {
@@ -290,7 +292,7 @@ CodecWrapperImpl::DequeueStatus CodecWrapperImpl::DequeueOutputBuffer(
         }
 
         int64_t buffer_id = next_buffer_id_++;
-        buffer_ids_[buffer_id] = index;
+        buffer_ids_[buffer_id] = static_cast<int>(index);
 
         OHOS::NWeb::DecoderFormat format;
         auto result = codec_->GetOutputFormatBridgeDecoder(format);
@@ -474,6 +476,10 @@ CodecWrapper::DequeueStatus CodecWrapper::DequeueOutputBuffer(
 
 bool CodecWrapper::SetSurface(
     scoped_refptr<CodecSurfaceBundle> surface_bundle) {
+  if (!impl_) {
+    LOG(ERROR) << "CodecWrapper::SetSurface, impl_ is nullptr";
+    return false;
+  }
   return impl_->SetSurface(std::move(surface_bundle));
 }
 
@@ -506,5 +512,6 @@ bool CodecWrapper::SetDecryptionConfig(void *session, bool isSecure)
   LOG(INFO) << __func__;
   return impl_->SetDecryptionConfig(session, isSecure);
 }
+#endif // ARKWEB_TEST_INCLUDE
 
 }  // namespace media

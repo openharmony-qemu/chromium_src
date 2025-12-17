@@ -168,7 +168,7 @@ class DnsConfigServiceOhos::ConfigReader : public SerialWorker {
     void DoWork() override {
       dns_config_.emplace();
       dns_config_->unhandled_options = false;
-#if !defined(COMPONENT_BUILD) && defined(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if !defined(COMPONENT_BUILD) && BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
       std::vector<std::string> servers = NetworkChangeNotifier::GetDnsServers();
 #else
       std::vector<std::string> servers;
@@ -239,9 +239,9 @@ absl::optional<IPEndPoint> GetIpv4EndPoint(NetConn_NetAddr& net_addr) {
   sa_ip4.sin_family = AF_INET;
   sa_ip4.sin_port =
       base::HostToNet16(net_addr.port == 0 ? NS_DEFAULTPORT : net_addr.port);
-  inet_pton(AF_INET, net_addr.address, &sa_ip4.sin_addr);
+  int ret = inet_pton(AF_INET, net_addr.address, &sa_ip4.sin_addr);
 
-  if (!ipe.FromSockAddr(reinterpret_cast<const struct sockaddr*>(&sa_ip4),
+  if ((ret != 1) || !ipe.FromSockAddr(reinterpret_cast<const struct sockaddr*>(&sa_ip4),
                         sizeof sa_ip4)) {
     LOG(INFO) << "GetIpv4EndPoint: sin_addr and sin_port fetch failed";
     return absl::nullopt;
@@ -255,8 +255,8 @@ absl::optional<IPEndPoint> GetIpv6EndPoint(NetConn_NetAddr& net_addr) {
   sa_ip6.sin6_family = AF_INET6;
   sa_ip6.sin6_port =
       base::HostToNet16(net_addr.port == 0 ? NS_DEFAULTPORT : net_addr.port);
-  inet_pton(AF_INET6, net_addr.address, &sa_ip6.sin6_addr);
-  if (!ipe.FromSockAddr(reinterpret_cast<const struct sockaddr*>(&sa_ip6),
+  int ret = inet_pton(AF_INET6, net_addr.address, &sa_ip6.sin6_addr);
+  if ((ret != 1) || !ipe.FromSockAddr(reinterpret_cast<const struct sockaddr*>(&sa_ip6),
                         sizeof sa_ip6)) {
     LOG(INFO) << "GetIpv6EndPoint: sin6_addr and sin6_port fetch failed";
     return absl::nullopt;

@@ -850,6 +850,8 @@ void Navigator::Navigate(std::unique_ptr<NavigationRequest> request,
   //  the appropriate long-term solution. Please remove this condition once the
   //  final fix is implemented.
   if (controller_.GetBrowserContext()->ShutdownStarted()) {
+    request->set_navigation_discard_reason(
+        NavigationDiscardReason::kNeverStarted);
     return;
   }
 
@@ -1533,7 +1535,11 @@ void Navigator::RecordNavigationMetrics(
 
 NavigationEntryImpl*
 Navigator::GetNavigationEntryForRendererInitiatedNavigation(
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    blink::mojom::CommonNavigationParams& common_params,
+#else
     const blink::mojom::CommonNavigationParams& common_params,
+#endif
     FrameTreeNode* frame_tree_node,
     bool override_user_agent) {
   // With MPArch, there may be multiple main frames, but each one has its own
@@ -1578,16 +1584,33 @@ Navigator::GetNavigationEntryForRendererInitiatedNavigation(
   // such as fenced frames or subframes, they don't rewrite urls as the urls
   // are not input urls by users.
   bool rewrite_virtual_urls = frame_tree_node->IsOutermostMainFrame();
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  content::Referrer referrer;
+  referrer.url = common_params.referrer.get() ? common_params.referrer.get()->url : GURL();
+  GURL url_to_rewrite = common_params.url;
+#endif  // ARKWEB_NETWORK_LOAD
   std::unique_ptr<NavigationEntryImpl> entry =
       NavigationEntryImpl::FromNavigationEntry(
           NavigationControllerImpl::CreateNavigationEntry(
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+              common_params.url, referrer,
+#else
               common_params.url, content::Referrer(),
+#endif
               common_params.initiator_origin, common_params.initiator_base_url,
               source_process_site_url, ui::PAGE_TRANSITION_LINK,
               true /* is_renderer_initiated */,
               std::string() /* extra_headers */,
               controller_.GetBrowserContext(),
-              nullptr /* blob_url_loader_factory */, rewrite_virtual_urls));
+              nullptr /* blob_url_loader_factory */, rewrite_virtual_urls
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+              , &url_to_rewrite, controller_.delegate()
+#endif
+              ));
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  common_params.url = url_to_rewrite;
+#endif
 
   entry->set_reload_type(NavigationRequest::NavigationTypeToReloadType(
       common_params.navigation_type));

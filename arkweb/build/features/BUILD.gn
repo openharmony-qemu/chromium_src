@@ -217,6 +217,7 @@ if (!enable_arkweb) {
   arkweb_scrollbar = true
   arkweb_scrollbar_avoid_area = true
   arkweb_scrollbar_avoid_corner = true
+  arkweb_softkeyboard_avoid = true
   arkweb_scroll_performance = false
   arkweb_secure_javascript_proxy = false
   arkweb_security_state = false
@@ -315,8 +316,13 @@ if (!enable_arkweb) {
   arkweb_gwp_asan = false
   arkweb_bgtask = false
   arkweb_privacy_compliance = true
-  arkweb_ex_enable_applinking = false
+  arkweb_blank_screen_detection = false
+  arkweb_first_screen_paint = false
   arkweb_blank_prop_config = true
+  arkweb_autolayout = false
+  arkweb_ext_video_load_optimization = false
+  arkweb_console_logging=false
+  arkweb_offline_web_evict_back_buffers = false
 }
 
 buildflag_header("features") {
@@ -444,6 +450,7 @@ buildflag_header("features") {
     "ARKWEB_SCROLLBAR=$arkweb_scrollbar",
     "ARKWEB_SCROLLBAR_AVOID_AREA=$arkweb_scrollbar_avoid_area",
     "ARKWEB_SCROLLBAR_AVOID_CORNER=$arkweb_scrollbar_avoid_corner",
+    "ARKWEB_SOFTKEYBOARD_AVOID=$arkweb_softkeyboard_avoid",
     "ARKWEB_SCROLL_PERFORMANCE=$arkweb_scroll_performance",
     "ARKWEB_SECURE_JAVASCRIPT_PROXY=$arkweb_secure_javascript_proxy",
     "ARKWEB_SECURITY_STATE=$arkweb_security_state",
@@ -554,7 +561,12 @@ buildflag_header("features") {
     "ARKWEB_HWASAN=$is_hwasan",
     "ARKWEB_PRIVACY_COMPLIANCE=$arkweb_privacy_compliance",
     "ARKWEB_BGTASK=$arkweb_bgtask",
+    "ARKWEB_BLANK_SCREEN_DETECTION=$arkweb_blank_screen_detection",
+    "ARKWEB_FIRST_SCREEN_PAINT=$arkweb_first_screen_paint",
     "ARKWEB_BLANK_PROP_CONFIG=$arkweb_blank_prop_config",
+    "ARKWEB_AUTOLAYOUT=$arkweb_autolayout",
+    "ARKWEB_CONSOLE_LOGGING=$arkweb_console_logging",
+    "ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS=$arkweb_offline_web_evict_back_buffers",
 
     # ARKWEB_EXT dafault value
     "ARKWEB_EXT_BLANK_TARGET_POPUP_INTERCEPT=false",
@@ -574,7 +586,8 @@ buildflag_header("features") {
     "ARKWEB_EXT_SECURITY_STATE=false",
     "ARKWEB_EXT_PULL_TO_REFRESH=false",
     "ARKWEB_READER_MODE=false",
-    "ARKWEB_EX_ENABLE_APPLINKING=arkweb_ex_enable_applinking",
+    "ARKWEB_EXT_HTTPS_UPGRADES=$arkweb_ext_https_upgrades",
+    "ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION=false",
   ]
 
   public_configs = [ ":arkweb_global_config" ]

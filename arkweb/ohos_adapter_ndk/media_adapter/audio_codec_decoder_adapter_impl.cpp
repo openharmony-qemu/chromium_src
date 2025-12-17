@@ -476,11 +476,11 @@ AudioDecoderAdapterCode AudioCodecDecoderAdapterImpl::ReleaseDecoder()
 
     AudioDecoderCallbackManager::DeleteAudioDecoder(decoder_);
     OH_AVErrCode errCode = OH_AudioCodec_Destroy(decoder_);
+    decoder_ = nullptr;
     if (errCode != AV_ERR_OK) {
         WVLOG_E("destroy decoder_ fail, errCode = %{public}u.", uint32_t(errCode));
         return AudioDecoderAdapterCode::DECODER_ERROR;
     }
-    decoder_ = nullptr;
     // clear input and output buffers
     {
         std::unique_lock<std::mutex> lock(inMutex_);
@@ -511,14 +511,14 @@ AudioDecoderAdapterCode AudioCodecDecoderAdapterImpl::SetAVCencInfo(
         return AudioDecoderAdapterCode::DECODER_ERROR;
     }
 
-    DrmSubsample subSamples[cencInfo->GetClearHeaderLens().size()];
+    std::vector<DrmSubsample> subSamples(cencInfo->GetClearHeaderLens().size());
     for (uint32_t i = 0; i < cencInfo->GetClearHeaderLens().size(); i++) {
         subSamples[i].clearHeaderLen = cencInfo->GetClearHeaderLens()[i];
         subSamples[i].payLoadLen = cencInfo->GetPayLoadLens()[i];
     }
     errNo = OH_AVCencInfo_SetSubsampleInfo(
         avCencInfo, cencInfo->GetEncryptedBlockCount(), cencInfo->GetSkippedBlockCount(),
-        cencInfo->GetFirstEncryptedOffset(), cencInfo->GetClearHeaderLens().size(), subSamples);
+        cencInfo->GetFirstEncryptedOffset(), cencInfo->GetClearHeaderLens().size(), subSamples.data());
     if (errNo != AV_ERR_OK) {
         WVLOG_E("set AVCencInfo subsampleInfo fail, errNo = %{public}u",
             static_cast<uint32_t>(errNo));
@@ -962,15 +962,15 @@ void AudioDecoderCallbackManager::OnOutputBufferAvailable(
         return;  
     }
 
-    uint8_t bufferData[attr.size];
-    if (memcpy_s(bufferData, sizeof(bufferData), reinterpret_cast<uint8_t *>(OH_AVBuffer_GetAddr(data)),
+    std::vector<uint8_t> bufferData(attr.size);
+    if (memcpy_s(bufferData.data(), bufferData.size(), reinterpret_cast<uint8_t *>(OH_AVBuffer_GetAddr(data)),
         attr.size) != EOK) {
         WVLOG_E(" memcpy_s buffer fail.");
         return;
     }
     // Copy the buffer data from the data.
     impl->GetAudioDecoderCallBack()->OnOutputBufferAvailable(
-        index, bufferData, attr.size, attr.pts, attr.offset, attr.flags);
+        index, bufferData.data(), attr.size, attr.pts, attr.offset, attr.flags);
 }
 
 } // namespace OHOS::NWeb

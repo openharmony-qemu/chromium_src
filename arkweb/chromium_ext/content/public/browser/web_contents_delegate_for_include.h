@@ -136,4 +136,20 @@ virtual void OnIsPageDistillable(int page_type, const std::string& distillable_p
 virtual bool IsForDistillerPage();
 #endif
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+virtual std::string OnRewriteUrlForNavigation(const std::string& original_url,
+                                              const std::string& referrer,
+                                              int transition_type,
+                                              bool is_key_request) { return ""; }
+#endif
+
+#if BUILDFLAG(ARKWEB_WEBRTC)
+virtual void OnCameraCaptureStateChanged(int original_state, int new_state) {}
+#endif
+#if BUILDFLAG(ARKWEB_WEBRTC)
+virtual void OnMicrophoneCaptureStateChanged(int original_state, int new_state) {}
+#endif
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+virtual void OnDocumentEndReady(const FrameInfos& frameInfo) {}
+#endif
 #endif  // ARKWEB_CHROMIUM_EXT_CONTENT_PUBLIC_BROWSER_WEB_CONTENTS_DELEGATE_FOR_INCLUDE_H_

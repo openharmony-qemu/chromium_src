@@ -11,6 +11,10 @@
 #include "content/common/in_process_child_thread_params.h"
 #include "gpu/config/gpu_preferences.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/gpu/ipc/service/gpu_hang_adapter.h"
+#endif
+
 namespace content {
 
 class ChildProcess;
@@ -37,6 +41,9 @@ class InProcessGpuThread : public base::Thread {
   // Deleted in CleanUp() on the gpu thread, so don't use smart pointers.
   std::unique_ptr<ChildProcess> gpu_process_;
   gpu::GpuPreferences gpu_preferences_;
+#if BUILDFLAG(IS_ARKWEB)
+  std::unique_ptr<gpu::GpuHangAdapter> gpu_hang_;
+#endif
 };
 
 CONTENT_EXPORT base::Thread* CreateInProcessGpuThread(

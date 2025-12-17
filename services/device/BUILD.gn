@@ -92,6 +92,12 @@ source_set("lib") {
     ]
   }
 
+  if (is_arkweb) {
+    deps += [
+      "//arkweb/chromium_ext/services/device/business_risk_intelligent_detection",
+    ]
+  }
+
   if (is_serial_enabled_platform) {
     defines = [ "IS_SERIAL_ENABLED_PLATFORM" ]
   }

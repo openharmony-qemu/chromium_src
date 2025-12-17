@@ -19,7 +19,21 @@
 #if BUILDFLAG(ARKWEB_PIP)
 #include "third_party/blink/renderer/core/dom/events/event.h"
 #endif
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+#include "third_party/blink/public/web/web_local_frame_client.h"
+#include "third_party/blink/renderer/core/frame/web_local_frame_impl.h"
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
 namespace blink {
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+const uint16_t kVideoPreloadTimeDefault = 4;   // preloadTime default 4s
+const uint16_t kVideoMinCacheTimeDefault = 2;  // minCacheTime default 2s
+const uint16_t kVideoMaxCacheTimeDefault = 6;  // maxCacheTime default 6s
+const uint16_t kVideoMoovSizeDefault = 512;    // moovSize default 512kB
+const uint16_t kVideoBitrateDefault = 2000;    // bitRate default 2000kb/s
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 
 // LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
@@ -106,4 +120,128 @@ void HTMLVideoElement::PipRequestPlay() {
   }
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+uint16_t HTMLVideoElement::GetVideoPreloadTimeDefault() {
+  int result = INT_MAX;
+  if (WebLocalFrameImpl* web_frame =
+          WebLocalFrameImpl::FromFrame(GetDocument().GetFrame())) {
+    result = web_frame->Client()->AsWebLocalFrameClientExt()->GetVideoPreloadTimeDefault();
+  }
+  if (result == INT_MAX) {
+    return kVideoPreloadTimeDefault;
+  }
+  return result;
+}
+
+uint16_t HTMLVideoElement::GetVideoMinCacheTimeDefault() {
+  int result = INT_MAX;
+  if (WebLocalFrameImpl* web_frame =
+          WebLocalFrameImpl::FromFrame(GetDocument().GetFrame())) {
+    result = web_frame->Client()->AsWebLocalFrameClientExt()->GetVideoMinCacheTimeDefault();
+  }
+  if (result == INT_MAX) {
+    return kVideoMinCacheTimeDefault;
+  }
+  return result;
+}
+
+uint16_t HTMLVideoElement::GetVideoMaxCacheTimeDefault() {
+  int result = INT_MAX;
+  if (WebLocalFrameImpl* web_frame =
+          WebLocalFrameImpl::FromFrame(GetDocument().GetFrame())) {
+    result = web_frame->Client()->AsWebLocalFrameClientExt()->GetVideoMaxCacheTimeDefault();
+  }
+  if (result == INT_MAX) {
+    return kVideoMaxCacheTimeDefault;
+  }
+  return result;
+}
+
+uint16_t HTMLVideoElement::GetVideoMoovSizeDefault() {
+  int result = INT_MAX;
+  if (WebLocalFrameImpl* web_frame =
+          WebLocalFrameImpl::FromFrame(GetDocument().GetFrame())) {
+    result = web_frame->Client()->AsWebLocalFrameClientExt()->GetVideoMoovSizeDefault();
+  }
+  if (result == INT_MAX) {
+    return kVideoMoovSizeDefault;
+  }
+  return result;
+}
+
+uint16_t HTMLVideoElement::GetVideoBitrateDefault() {
+  int result = INT_MAX;
+  if (WebLocalFrameImpl* web_frame =
+          WebLocalFrameImpl::FromFrame(GetDocument().GetFrame())) {
+    result = web_frame->Client()->AsWebLocalFrameClientExt()->GetVideoBitrateDefault();
+  }
+  if (result == INT_MAX) {
+    return kVideoBitrateDefault;
+  }
+  return result;
+}
+
+void HTMLVideoElement::CheckAndSetValue(const QualifiedName& name,
+                                        uint16_t* out) {
+  const AtomicString& value = FastGetAttribute(name);
+  bool ok = true;
+  int result = value.ToInt(&ok);
+  if (!ok) {
+    return;
+  }
+
+  if (result <= 0 || result > UINT16_MAX) {
+    return;
+  }
+
+  *out = result;
+}
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
+// ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+uint16_t HTMLVideoElement::hbsPreloadTime() {
+  return hbs_preload_time_;
+}
+
+uint16_t HTMLVideoElement::hbsMaxCacheTime() {
+  return hbs_max_cache_time_;
+}
+
+uint16_t HTMLVideoElement::hbsMinCacheTime() {
+  return hbs_min_cache_time_;
+}
+
+uint16_t HTMLVideoElement::hbsBitrate() {
+  return hbs_bitrate_;
+}
+
+uint16_t HTMLVideoElement::hbsMoovSize() {
+  return hbs_moov_size_;
+}
+
+void HTMLVideoElement::setHbsPreloadTime(uint16_t time) {
+  setAttribute(html_names::kHbspreloadtimeAttr,
+               AtomicString::Number<short>(time));
+}
+
+void HTMLVideoElement::setHbsMaxCacheTime(uint16_t time) {
+  setAttribute(html_names::kHbsmaxcachetimeAttr,
+               AtomicString::Number<short>(time));
+}
+
+void HTMLVideoElement::setHbsMinCacheTime(uint16_t time) {
+  setAttribute(html_names::kHbsmincachetimeAttr,
+               AtomicString::Number<short>(time));
+}
+
+void HTMLVideoElement::setHbsBitrate(uint16_t bt) {
+  setAttribute(html_names::kHbsbitrateAttr, AtomicString::Number<short>(bt));
+}
+
+void HTMLVideoElement::setHbsMoovSize(uint16_t ms) {
+  setAttribute(html_names::kHbsmoovsizeAttr, AtomicString::Number<short>(ms));
+}
+// ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
 }  // namespace blink

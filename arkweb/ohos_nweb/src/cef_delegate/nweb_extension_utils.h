@@ -16,11 +16,19 @@
 #ifndef NWEB_EXTENSION_UTILS_H_
 #define NWEB_EXTENSION_UTILS_H_
 
-#include "content/public/browser/browser_context.h"
+#include <optional>
 
+#include "content/public/browser/browser_context.h"
+#include "extensions/common/extension.h"
+
+struct NWebExtensionFunctionContext;
 namespace OHOS::NWeb {
 
 content::BrowserContext* GetBrowserContext();
+
+const extensions::Extension* FindExtensionById(
+    content::BrowserContext* browser_context,
+    const std::string& extension_id);
 
 std::optional<std::string> GetExtensionContextType(
     content::BrowserContext* browser_context);
@@ -31,6 +39,11 @@ std::optional<bool> GetIncludeIncognitoInformation(
 
 content::BrowserContext* GetIncognitoContext(
     content::BrowserContext* browser_context);
+
+std::optional<NWebExtensionFunctionContext> GetExtensionFunctionContext(
+    const std::string& extension_id,
+    content::BrowserContext* browser_context,
+    std::optional<bool> include_incognito_info = std::nullopt);
 
 }  // namespace OHOS::NWeb
 

@@ -19,6 +19,7 @@ test("gwp_asan_unittests") {
     deps += [
       "//components/gwp_asan/client:unit_tests",
       "//components/gwp_asan/crash_handler:unit_tests",
+      "//content/public/common:switches",
     ]
   }
   data_deps = [ "//testing/buildbot/filters:gwp_asan_unittests_filters" ]

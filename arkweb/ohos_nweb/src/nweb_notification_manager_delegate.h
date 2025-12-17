@@ -15,7 +15,7 @@
 
 #ifndef NWEB_NOTIFICATION_MANAGER_DELEGATE_H
 #define NWEB_NOTIFICATION_MANAGER_DELEGATE_H
-#include <string>
+#include <cstring>
 #include "capi/nweb_notification_options_item.h"
 
 namespace OHOS::NWeb {
@@ -28,9 +28,9 @@ class NWebNotificationManagerDelegate {
   ~NWebNotificationManagerDelegate() = default;
   static void OnShowNotification(std::shared_ptr<NWebNotificationOptionsItem> options_item);
   static void OnCloseNotification(std::string id);
-  static void OnShowed(std::string id);
-  static void OnClosed(std::string id);
-  static void OnClicked(std::string id, int buttonIndex);
+  static void OnShowed(const std::string id);
+  static void OnClosed(const std::string id);
+  static void OnClicked(const std::string id, int buttonIndex);
 
  private:
   static std::shared_ptr<NWebNotificationDelegateCallback>

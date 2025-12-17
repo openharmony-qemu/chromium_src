@@ -20,6 +20,10 @@
 #error "must be in include form THIRD_PARTY_BLINK_RENDERER_CORE_FRAME_SETTINGS_H_"
 #endif
 
+#if BUILDFLAG(ARKWEB_AI)
+  bool image_analyzer_enabled_ = true;
+#endif  // BUILDFLAG(ARKWEB_AI)
+
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   bool hide_vertical_scrollbars_ = true;
   bool hide_horizontal_scrollbars_ = true;
@@ -63,6 +67,14 @@
 #if BUILDFLAG(ARKWEB_BFCACHE)
   bool media_resume_from_bfcache_page_ = true;
 #endif  // BUILDFLAG(ARKWEB_BFCACHE)
+
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  bool is_autofill_enabled_ = true;
+#endif  // BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  bool clipboard_site_permission_enabled_ = false;
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
 
 #if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_CORNER)
   double border_radius_top_left_ = 0.0;

@@ -13,12 +13,12 @@
  * limitations under the License.
  */
 
+#ifndef OHOS_NWEB_SRC_NWEB_PERMISSION_REQUEST_H_
+#define OHOS_NWEB_SRC_NWEB_PERMISSION_REQUEST_H_
+
 #include "ohos_nweb/include/nweb_access_request.h"
 #include "ohos_nweb/src/capi/nweb_c_api.h"
 #include "ohos_nweb/src/nweb_hilog.h"
-
-#ifndef OHOS_NWEB_SRC_NWEB_PERMISSION_REQUEST_H_
-#define OHOS_NWEB_SRC_NWEB_PERMISSION_REQUEST_H_
 
 struct NWebPermissionRequest {
   int nweb_id;
@@ -26,7 +26,7 @@ struct NWebPermissionRequest {
   std::string origin_url;
   std::shared_ptr<OHOS::NWeb::NWebAccessRequest> access_request;
 
-  NWebPermissionRequest() : nweb_id(-1), resource_id(-1),access_request(nullptr) {
+  NWebPermissionRequest() : nweb_id(-1), access_request(nullptr) {
     WVLOG_I("NWebPermissionRequest() is called");
   }
 

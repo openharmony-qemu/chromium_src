@@ -22,6 +22,7 @@
 #include "include/cef_client.h"
 #include "include/cef_devtools_message_handler_delegate.h"
 #include "nweb_input_delegate.h"
+#include "ohos_cef_ext/libcef/common/cef_open_devtools_ext_opt.h"
 #include "ui/events/keycodes/keyboard_code_conversion_x.h"
 #include "ui/events/keycodes/keysym_to_unicode.h"
 
@@ -55,7 +56,10 @@ class MockMMIAdapter : public MMIAdapter {
               GetDeviceInfo,
               (int32_t, std::shared_ptr<MMIDeviceInfoAdapter>),
               (override));
-  MOCK_METHOD(int32_t, GetMaxTouchPoints, (), (override));
+  MOCK_METHOD(int32_t,
+              GetMaxTouchPoints,
+              (),
+              (override));
 };
 
 class MockNWebTouchPointInfo : public NWebTouchPointInfo {
@@ -100,6 +104,18 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void SetDisallowSandboxFileAccessFromFileUrl(bool disallow) override {}
 
   bool TryCloseBrowser() override { return false; }
+
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  void SetBlankScreenDetectionConfig( 
+      bool enable,
+      const std::vector<double>& detectionTiming,
+      const std::vector<int32_t>& detectionMethods,
+      int32_t contentfulNodesCountThreshold) override {}
+#endif
+
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+  void GetOverScrollOffsetValue(float* offset_x, float* offset_y) override {}
+#endif
 
   MOCK_METHOD(void, SetFocus, (bool), (override));
 
@@ -289,7 +305,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
 
   bool GetWebDebuggingAccess() override { return false; }
 
-  void GetImageForContextNode(CefRefPtr<CefFrame> frame, int command_id) override {}
+  void GetImageForContextNode(int command_id) override {}
 
   void GetImageFromCache(const CefString& url, int command_id) override {}
 
@@ -452,6 +468,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void JavaScriptOnDocumentStart(
       const CefString& script,
       const std::vector<CefString>& script_rules,
+      const std::vector<std::pair<CefString, CefString>>& script_regex_rules,
       bool is_transfer_finished) override {}
 
   void RemoveJavaScriptOnDocumentStart() override {}
@@ -459,6 +476,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void JavaScriptOnDocumentEnd(
       const CefString& script,
       const std::vector<CefString>& script_rules,
+      const std::vector<std::pair<CefString, CefString>>& script_regex_rules,
       bool is_transfer_finished) override {}
 
   void RemoveJavaScriptOnDocumentEnd() override {}
@@ -473,6 +491,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void JavaScriptOnHeadReady(
       const CefString& script,
       const std::vector<CefString>& script_rules,
+      const std::vector<std::pair<CefString, CefString>>& script_regex_rules,
       bool is_transfer_finished) override {}
 
   void RemoveJavaScriptOnHeadReady() override {}
@@ -499,6 +518,8 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   int GetTopControlsOffset() override { return 0; }
 
   MOCK_METHOD0(GetShrinkViewportHeight, int());
+
+  void OnEyeDropperResult(bool success, uint32_t color) override {}
 
   void SetPrintBackground(bool enable) override {}
 
@@ -617,6 +638,12 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
       CefRefPtr<CefDevToolsMessageHandlerDelegate> delegate,
       const CefPoint& inspect_element_at) override {}
 
+  void ShowDevToolsWithByPb(
+      CefRefPtr<ArkWebBrowserHostExt> frontend_browser,
+      CefRefPtr<CefDevToolsMessageHandlerDelegate> delegate,
+      const CefPoint& inspect_element_at,
+      const CefOpenDevToolsExtOpt& ext_opt) override {}
+
   bool IsFullscreen() override { return false; }
 
   void ExitFullscreen(bool will_cause_resize) override {}
@@ -685,7 +712,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
                                   int current,
                                   bool animate) override {}
   void UpdateBrowserControlsHeight(int height, bool animate) override {}
-  void PrefetchPage(CefString& url, CefString& additionalHttpHeaders) override {
+  void PrefetchPage(const OHOS::NWeb::PrefetchOptions& prefetch_options) override {
   }
   void ReloadOriginalUrl() override {}
   bool CanStoreWebArchive() override { return false; }
@@ -725,11 +752,13 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void FindEx(const CefString &searchText, bool forward, bool matchCase, bool findNext, bool newSession) override {}
   void SetFocusOnWeb() override {}
   void UpdateSecurityLayer(bool isNeedSecurityLayer) override {}
+  void UpdateTextFieldStatus(bool isShowKeyboard, bool isAttachIME) override {}
   void SetHasComposition(bool has_composition) override {}
   bool GetHasComposition() override {}
   CefString GetCustomUserAgent() override { return CefString(); }
   void GetLastHitData(int& type, CefString& extra_data) override {}
   std::string GetSelectedTextFromContextParam() override { return ""; }
+  bool JudgeTextInputState() override { return true; }
   void SetNeedsReload(bool needs_reload) override {}
   void SetOptimizeParserBudgetEnabled(bool enable) override {}
   void OnDestroyImageAnalyzerOverlay() override {}
@@ -757,39 +786,38 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
 #endif
   CefRefPtr<CefFrame> GetFrameByIdentifier(
       const CefString& identifier) override {  return nullptr; }
-#if BUILDFLAG(ARKWEB_NWEB_EX)
-  void RunJavaScriptInFrames(const std::string& jsString, FrameInfos rootFrame,
-                             bool recursive, IsolatedWorld world,
-                             CefRefPtr<CefJavaScriptResultCallback> callback) override {}
-#endif
 #if BUILDFLAG(ARKWEB_BGTASK)
   void OnBrowserForeground() override {}
   void OnBrowserBackground() override {}
 #endif
-#if BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
+  void RunJavaScriptInFrames(const std::string& jsString, FrameInfos rootFrame,
+                             bool recursive, IsolatedWorld world,
+                             CefRefPtr<CefJavaScriptResultCallback> callback) override {}
+#if BUILDFLAG(IS_ARKWEB)
   void EnableAppLinking(bool enable) override {}
   bool IsAppLinkingEnabled() const override { return false; }
-#endif // BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
-#if BUILDFLAG(ARKWEB_READER_MODE)
-  void Distill(const std::string& guid, const DistillOptions& distill_options,
-    CefRefPtr<CefDistillCallback> callback) override {}
-  void AbortDistill() override {}
-#endif  // BUILDFLAG(ARKWEB_READER_MODE)
+#endif
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   void GetFocusedFrameInfo(int32_t& frame_id, CefString& frame_url) override {}
 #endif  // ARKWEB_ARKWEB_EXTENSIONS
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  void Distill(uint64_t request_id, const DistillOptions& distill_options,
+    CefRefPtr<CefDistillCallback> callback) override {}
+  void AbortDistill() override {}
+#endif  // BUILDFLAG(ARKWEB_READER_MODE)
 #endif  // BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  void LoadUrlWithParams(const std::string& url,
+                         const LoadUrlType& load_type,
+                         const std::string& refer,
+                         const std::string& headers,
+                         const std::string& post_data,
+                         const bool& allow_https_upgrade,
+                         int32_t transition_type) override {}
+  void EnableHttpsUpgrades(bool enable) override {}
+#endif
 #if BUILDFLAG(ARKWEB_UNITTESTS)
-  void SetMediaResumeFromBFCachePage(bool resume) override {}
-  void PrefetchPage(const OHOS::NWeb::PrefetchOptions& prefetch_options) override {}
-  void GetImageForContextNode(CefRefPtr<CefFrame> frame, int command_id) override {}
-  void SetHasComposition(bool has_composition) override {}
-  bool GetHasComposition() override { return false; }
-  void PutUserAgent(const CefString& ua, bool from_app) override {}
   void SetImeShow(bool visible) override {}
-  void SetEnableCustomVideoPlayer(bool flag) override {}
-  void EnableAppLinking(bool enable) override {}
-  bool IsAppLinkingEnabled() const override { return false; }
 #endif // ARKWEB_UNITTESTS
 };
 
@@ -836,7 +864,7 @@ class MockCefBrowser : public ArkWebBrowserExt {
                                   int current,
                                   bool animate) override {}
   void UpdateBrowserControlsHeight(int height, bool animate) override {}
-  void PrefetchPage(CefString& url, CefString& additionalHttpHeaders) override {
+  void PrefetchPage(const OHOS::NWeb::PrefetchOptions& prefetch_options) override {
   }
   void ReloadOriginalUrl() override {}
   bool CanStoreWebArchive() override { return false; }

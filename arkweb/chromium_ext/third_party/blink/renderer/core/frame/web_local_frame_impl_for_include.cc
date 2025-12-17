@@ -20,6 +20,9 @@
 #if BUILDFLAG(ARKWEB_AI)
 #include "third_party/blink/renderer/core/editing/selection_controller.h"
 #endif
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/media/video_url_loader_impl.h"
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 
 namespace blink {
 
@@ -101,4 +104,13 @@ void WebLocalFrameImpl::OnDataDetectorSelectText() {
 }
 #endif
 // LCOV_EXCL_STOP
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+std::unique_ptr<WebAssociatedURLLoader> WebLocalFrameImpl::CreateVideoURLLoader(
+    const WebAssociatedURLLoaderOptions& options) {
+  return std::make_unique<VideoURLLoaderImpl>(GetFrame()->DomWindow(), options,
+                                           GetFrame());
+}
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
 }  // namespace blink

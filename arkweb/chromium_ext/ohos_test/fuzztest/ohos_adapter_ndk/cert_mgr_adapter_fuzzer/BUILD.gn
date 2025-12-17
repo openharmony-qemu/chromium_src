@@ -33,6 +33,7 @@ fuzzer_test("cert_mgr_adapter_fuzzer") {
     "//arkweb/ohos_adapter_ndk",
     "//third_party/ohos_ndk/includes/ohos_adapter",
   ]
+  defines = [ "ARKWEB_UNITTESTS = true" ]
   deps = [
     "//base",
     "//net",

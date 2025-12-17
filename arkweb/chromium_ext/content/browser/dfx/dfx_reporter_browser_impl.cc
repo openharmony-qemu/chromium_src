@@ -24,6 +24,7 @@
 #include "base/values.h"
 #include "base/json/json_reader.h"
 #include "base/trace_event/trace_event.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 
 void DfxReporterImpl::ProcessPendingReceiver(mojo::PendingReceiver<dfx::mojom::DfxReporter>& receiver)
 {
@@ -62,10 +63,12 @@ void OnVideoMemoryUsageStatsUpdate(pid_t pid, const std::map<std::string, std::s
   }
 
   ReportMemTraceNLog(reportMap);
+#if !defined(COMPONENT_BUILD)
   if (isSysEvent) {
     ReportRendererMem(reportMap["type"], reportMap["pid"], reportMap["rss"], reportMap["pss"],
                       reportMap["js_heap_total"], reportMap["js_heap_used"], reportMap["gpu_mem"], reportMap["url"]);
   }
+#endif
 }
 
 void GetGpuUsage(pid_t pid, const std::map<std::string, std::string>& memMap, bool isSysEvent)
@@ -124,9 +127,13 @@ void DfxReporterImpl::ReportHiSysEvent(const std::string& eventName, const std::
 }
 
 // the param `eventInfo` may be used in the future
-void FreezeReporterImpl::ReportRenderFreeze(const std::string& eventInfo)
+void FreezeReporterImpl::ReportRenderFreeze(int32_t pid, const std::string& processName, const std::string& freezeMsg,
+                                            int32_t uid)
 {
-  ReportAppfreeze();
+#if !defined(COMPONENT_BUILD)
+  auto packageName = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance().GetBundleName();
+  ReportAppfreeze(pid, packageName, processName, freezeMsg, uid);
+#endif
 }
 
 // static

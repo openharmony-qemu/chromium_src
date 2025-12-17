@@ -74,7 +74,7 @@ component("ui_data_pack") {
 
   defines = [ "IS_UI_DATA_PACK_IMPL" ]
   if (is_ohos && build_watch) {
-    defines += [ "SUPPORT_MULTI_LANGUAGE" ]
+    defines += [ "WEARABLE_SUPPORT_MULTI_LANGUAGE" ]
   }
 
   configs += [ "//build/config/compiler:wexit_time_destructors" ]
@@ -474,7 +474,7 @@ component("base") {
 
   defines = [ "IS_UI_BASE_IMPL" ]
   if (is_ohos && build_watch) {
-    defines += [ "SUPPORT_MULTI_LANGUAGE" ]
+    defines += [ "WEARABLE_SUPPORT_MULTI_LANGUAGE" ]
   }
 
   public_deps = [

@@ -244,7 +244,11 @@ class CONTENT_EXPORT Navigator {
   // pending NavigationEntry to be used. Either null or a new one owned
   // NavigationController.
   NavigationEntryImpl* GetNavigationEntryForRendererInitiatedNavigation(
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+      blink::mojom::CommonNavigationParams& common_params,
+#else
       const blink::mojom::CommonNavigationParams& common_params,
+#endif
       FrameTreeNode* frame_tree_node,
       bool override_user_agent);
 

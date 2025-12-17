@@ -875,6 +875,9 @@ void TraceLog::InitializePerfettoIfNeeded() {
   init_args.shmem_size_hint_kb = 4 * 1024;
   init_args.shmem_direct_patching_enabled = true;
   init_args.disallow_merging_with_system_tracks = true;
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  init_args.use_monotonic_clock = true;
+#endif
   perfetto::Tracing::Initialize(init_args);
   TrackEvent::Register();
 }

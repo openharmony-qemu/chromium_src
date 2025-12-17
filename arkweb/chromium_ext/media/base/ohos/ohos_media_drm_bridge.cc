@@ -563,8 +563,8 @@ void OHOSMediaDrmBridge::SetServerCertificate(
 
 std::string GenerateSessionId() {
   uint8_t random_bytes[SESSION_ID_LENGTH];
-  base::RandBytes(random_bytes);
-  return base::HexEncode(random_bytes);
+  base::RandBytes(base::span<uint8_t>(random_bytes, static_cast<size_t>(SESSION_ID_LENGTH)));
+  return base::HexEncode(random_bytes, SESSION_ID_LENGTH);
 }
 
 void OHOSMediaDrmBridge::CreateSessionAndGenerateRequest(

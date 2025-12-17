@@ -127,6 +127,13 @@
 #include "cef/ohos_cef_ext/libcef/browser/page_load_metrics/arkweb_page_load_metrics_observer.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+#include "content/public/browser/web_contents.h"
+#include "cef/ohos_cef_ext/libcef/browser/net/ohos_url_rewrite_controller.h"
+#include "base/command_line.h"
+#include "content/public/common/content_switches.h"
+#endif
+
 namespace content {
 namespace {
 
@@ -437,7 +444,15 @@ void RewriteUrlForNavigation(const GURL& original_url,
                              BrowserContext* browser_context,
                              GURL* url_to_load,
                              GURL* virtual_url,
-                             bool* reverse_on_redirect) {
+                             bool* reverse_on_redirect
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+                             , const GURL& referrer
+                             , ui::PageTransition transition_type
+                             , bool is_key_request
+                             , GURL* url_to_rewrite
+                             , NavigationControllerDelegate* delegate
+#endif
+) {
   // Allow the browser URL handler to rewrite the URL. This will, for example,
   // remove "view-source:" from the beginning of the URL to get the URL that
   // will actually be loaded. This real URL won't be shown to the user, just
@@ -445,6 +460,22 @@ void RewriteUrlForNavigation(const GURL& original_url,
   *url_to_load = *virtual_url = original_url;
   BrowserURLHandlerImpl::GetInstance()->RewriteURLIfNecessary(
       url_to_load, browser_context, reverse_on_redirect);
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD) && !defined(COMPONENT_BUILD)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kEnableNwebEx) &&
+      OhosUrlRewriteController::IsRewriteUrlEnabled()) {
+    if (delegate) {
+      std::string result = delegate->NotifyNavigationRewriteUrl(
+          original_url.spec(), referrer.spec(), transition_type, is_key_request);
+      if (!result.empty() &&
+          GURL(result).DeprecatedGetOriginAsURL() == original_url.DeprecatedGetOriginAsURL()) {
+        if (url_to_rewrite != nullptr) {
+          *url_to_rewrite = GURL(result);
+        }
+        *url_to_load = *virtual_url = GURL(result);
+      }
+    }
+  }
+#endif
 }
 
 #if DCHECK_IS_ON()
@@ -612,12 +643,21 @@ std::unique_ptr<NavigationEntry> NavigationController::CreateNavigationEntry(
     bool is_renderer_initiated,
     const std::string& extra_headers,
     BrowserContext* browser_context,
-    scoped_refptr<network::SharedURLLoaderFactory> blob_url_loader_factory) {
+    scoped_refptr<network::SharedURLLoaderFactory> blob_url_loader_factory
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    , GURL*url_to_rewrite
+    , NavigationControllerDelegate* delegate
+#endif
+) {
   return NavigationControllerImpl::CreateNavigationEntry(
       url, referrer, std::move(initiator_origin), std::move(initiator_base_url),
       std::nullopt /* source_process_site_url */, transition,
       is_renderer_initiated, extra_headers, browser_context,
-      std::move(blob_url_loader_factory), true /* rewrite_virtual_urls */);
+      std::move(blob_url_loader_factory), true /* rewrite_virtual_urls */
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+      , url_to_rewrite, delegate
+#endif
+      );
 }
 
 // static
@@ -633,13 +673,23 @@ NavigationControllerImpl::CreateNavigationEntry(
     const std::string& extra_headers,
     BrowserContext* browser_context,
     scoped_refptr<network::SharedURLLoaderFactory> blob_url_loader_factory,
-    bool rewrite_virtual_urls) {
+    bool rewrite_virtual_urls
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    , GURL* url_to_rewrite
+    , NavigationControllerDelegate* delegate
+#endif
+) {
   GURL url_to_load = url;
   GURL virtual_url = url;
   bool reverse_on_redirect = false;
   if (rewrite_virtual_urls) {
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    RewriteUrlForNavigation(url, browser_context, &url_to_load, &virtual_url,
+                            &reverse_on_redirect, referrer.url, transition, true, url_to_rewrite, delegate);
+#else
     RewriteUrlForNavigation(url, browser_context, &url_to_load, &virtual_url,
                             &reverse_on_redirect);
+#endif
   }
   // Let the NTP override the navigation params and pretend that this is a
   // browser-initiated, bookmark-like navigation.
@@ -2856,7 +2906,11 @@ void NavigationControllerImpl::NavigateFromFrameProxy(
         url, referrer, initiator_origin, initiator_base_url,
         source_process_site_url, page_transition, is_renderer_initiated,
         extra_headers, browser_context_, blob_url_loader_factory,
-        rewrite_virtual_urls));
+        rewrite_virtual_urls
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+        , nullptr, delegate_
+#endif
+        ));
     entry->root_node()->frame_entry->set_source_site_instance(
         static_cast<SiteInstanceImpl*>(source_site_instance));
     entry->root_node()->frame_entry->set_method(method);
@@ -3782,15 +3836,16 @@ base::WeakPtr<NavigationHandle> NavigationControllerImpl::NavigateWithoutEntry(
           reload_type, pending_entry_, pending_entry_->GetFrameEntry(node),
           navigation_start_time);
   
-#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
-  request->load_ignore_cache_params = params.load_ignore_cache_params;
-#endif
   // If the navigation couldn't start, return immediately and discard the
   // pending NavigationEntry.
   if (!request) {
     DiscardPendingEntry(false);
     return nullptr;
   }
+
+#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+  request->load_ignore_cache_params = params.load_ignore_cache_params;
+#endif
 
 #if DCHECK_IS_ON()
   // Safety check that NavigationRequest and NavigationEntry match.
@@ -3899,7 +3954,11 @@ NavigationControllerImpl::CreateNavigationEntryFromLoadParams(
         params.initiator_base_url, source_process_site_url,
         params.transition_type, params.is_renderer_initiated,
         extra_headers_crlf, browser_context_, blob_url_loader_factory,
-        rewrite_virtual_urls));
+        rewrite_virtual_urls
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+        , nullptr, delegate_
+#endif
+        ));
     entry->set_source_site_instance(
         static_cast<SiteInstanceImpl*>(params.source_site_instance.get()));
     entry->SetRedirectChain(params.redirect_chain);
@@ -3982,8 +4041,14 @@ NavigationControllerImpl::CreateNavigationRequestFromLoadParams(
   // that should be shown in the address bar.
   if (node->IsOutermostMainFrame()) {
     bool ignored_reverse_on_redirect = false;
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    RewriteUrlForNavigation(params.url, browser_context_, &url_to_load,
+                            &virtual_url, &ignored_reverse_on_redirect,
+                            params.referrer.url, params.transition_type, false, nullptr, delegate_);
+#else
     RewriteUrlForNavigation(params.url, browser_context_, &url_to_load,
                             &virtual_url, &ignored_reverse_on_redirect);
+#endif
 
     // Both LoadDataWithBaseURL and Android PDF navigations are special cases
     // that need to define a virtual URL to display, which differs from the
@@ -3999,6 +4064,15 @@ NavigationControllerImpl::CreateNavigationRequestFromLoadParams(
 
     if (virtual_url.is_empty())
       virtual_url = url_to_load;
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD) && !defined(COMPONENT_BUILD)
+    if (base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kEnableNwebEx) &&
+        OhosUrlRewriteController::IsRewriteUrlEnabled()) {
+      if (virtual_url != entry->GetVirtualURL()) {
+        return nullptr;
+      }
+    }
+#endif
 
     CHECK(virtual_url == entry->GetVirtualURL());
 
@@ -4179,9 +4253,14 @@ NavigationControllerImpl::CreateNavigationRequestFromLoadParams(
       params.from_download_cross_origin_redirect);
   navigation_request->set_force_new_browsing_instance(
       params.force_new_browsing_instance);
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+    navigation_request->ohos_set_https_upgrade(params.force_no_https_upgrade);
+    navigation_request->ohos_set_url_typed_with_http_scheme(params.url_typed_with_http_scheme);
+#else
   if (params.force_no_https_upgrade) {
     navigation_request->set_force_no_https_upgrade();
   }
+#endif
   return navigation_request;
 }
 

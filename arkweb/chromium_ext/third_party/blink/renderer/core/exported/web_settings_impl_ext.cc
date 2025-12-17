@@ -37,6 +37,12 @@ void WebSettingsImplExt::SetScrollBarColor(uint32_t value) {
 }
 #endif  // ARKWEB_SCROLLBAR
 
+#if BUILDFLAG(ARKWEB_AI)
+void WebSettingsImplExt::SetImageAnalyzerEnabled(bool enabled) {
+  settings_->SetImageAnalyzerEnabled(enabled);
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
 void WebSettingsImplExt::SetVerticalHideScrollbars(bool enabled) {
   settings_->SetVerticalHideScrollbars(enabled);
@@ -182,6 +188,25 @@ double WebSettingsImplExt::GetBorderRadiusBottomRight()
   return settings_->GetBorderRadiusBottomRight();
 }
 #endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
+
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+void WebSettingsImplExt::SetEnableAutoFill(bool enable)
+{
+  settings_->SetEnableAutoFill(enable);
+}
+
+bool  WebSettingsImplExt::GetEnableAutoFill()
+{
+  return settings_->GetEnableAutoFill();
+}
+#endif  // BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+void WebSettingsImplExt::SetClipboardSitePermissionEnabled(bool enable)
+{
+  settings_->SetClipboardSitePermissionEnabled(enable);
+}
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
 
 #if BUILDFLAG(ARKWEB_MENU)
 void WebSettingsImplExt::SetTouchHandleExistState(bool touchHandleExist)

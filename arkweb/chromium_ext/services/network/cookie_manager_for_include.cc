@@ -43,6 +43,11 @@ void CookieManager::DeleteCookiesSync(mojom::CookieDeletionFilterPtr filter,
                                       DeleteCookiesCallback callback) {
   DeleteCookies(std::move(filter), std::move(callback));
 }
+
+void CookieManager::SetAllCookies(const net::CookieList& list,
+                                  SetAllCookiesCallback callback) {
+  cookie_store_->SetAllCookiesAsync(list, std::move(callback));
+}
 #endif
 
 }  // namespace network

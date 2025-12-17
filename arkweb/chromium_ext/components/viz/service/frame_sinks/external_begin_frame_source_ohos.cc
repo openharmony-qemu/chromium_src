@@ -171,11 +171,11 @@ ReportLossFrame::GetInstance()->SetVsyncPeriod(vsync_period_);
 #endif
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_JITTER)
+  static bool isAlreadyThrottle = false;
+  static bool isHalfAlreadyThrottle = false;
 #if BUILDFLAG(ARKWEB_PIP)
   if (!pip_active_) {
 #endif
-    static bool isAlreadyThrottle = false;
-    static bool isHalfAlreadyThrottle = false;
     if (lower_frame_rate_enabled_) {
       if (!isAlreadyThrottle) {
         frame_sink_manager_->StartThrottlingAllFrameSinks(base::Hertz(0.01));
@@ -204,6 +204,14 @@ ReportLossFrame::GetInstance()->SetVsyncPeriod(vsync_period_);
 #if BUILDFLAG(ARKWEB_PIP)
   }
 #endif
+#if BUILDFLAG(ARKWEB_PIP)
+  if (pip_active_ && isAlreadyThrottle) {
+    if (frame_sink_manager_) {
+      frame_sink_manager_->StopThrottlingAllFrameSinks();
+      isAlreadyThrottle = false;
+    }
+  }
+#endif  // ARKWEB_PIP
 #endif
 
 #if BUILDFLAG(ARKWEB_D_VSYNC)

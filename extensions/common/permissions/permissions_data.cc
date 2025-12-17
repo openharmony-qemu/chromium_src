@@ -153,16 +153,21 @@ bool PermissionsData::IsRestrictedUrl(const GURL& document_url,
 
   bool allow_on_chrome_urls = base::CommandLine::ForCurrentProcess()->HasSwitch(
                                   switches::kExtensionsOnChromeURLs);
-#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)                                
   if (document_url.SchemeIs(content::kChromeUIScheme) &&
-#else
-  if ((document_url.SchemeIs(content::kChromeUIScheme) || document_url.SchemeIs(content::kArkWebUIScheme)) &&
-#endif
       !allow_on_chrome_urls) {
     if (error)
       *error = manifest_errors::kCannotAccessChromeUrl;
     return true;
   }
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)                                
+  if (document_url.SchemeIs(content::kArkWebUIScheme)
+      && !allow_on_chrome_urls) {
+    if (error)
+      *error = manifest_errors::kCannotAccessArkWebUrl;
+    return true;
+  }
+#endif
 
   if ((document_url.SchemeIs(kExtensionScheme)
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)

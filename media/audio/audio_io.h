@@ -11,6 +11,9 @@
 #include "media/base/audio_bus.h"
 #include "media/base/audio_glitch_info.h"
 #include "media/base/media_export.h"
+#if BUILDFLAG(ARKWEB_WEBRTC)
+#include "media/base/audio_parameters.h"
+#endif
 
 // Low-level audio output support. To make sound there are 3 objects involved:
 // - AudioSource : produces audio samples on a pull model. Implements
@@ -178,6 +181,14 @@ class MEDIA_EXPORT AudioInputStream {
     kFailedInUse,
   };
 
+#if BUILDFLAG(ARKWEB_WEBRTC)
+  enum class AudioCaptureState {
+    NONE,
+    PAUSE,
+    ACTIVE,
+  };
+#endif
+
   // Open the stream and prepares it for recording. Call Start() to actually
   // begin recording.
   virtual OpenOutcome Open() = 0;
@@ -218,6 +229,14 @@ class MEDIA_EXPORT AudioInputStream {
   // supported by this stream. E.g. called by WebRTC when it changes playback
   // devices.
   virtual void SetOutputDeviceForAec(const std::string& output_device_id) = 0;
+
+#if BUILDFLAG(ARKWEB_WEBRTC)
+  virtual AudioParameters GetAudioParameters() { return AudioParameters(); }
+  virtual void OnMicrophoneCaptureStateChanged(AudioCaptureState new_state) {}
+  virtual void ResumeMicrophone() {}
+  virtual void PauseMicrophone() {}
+#endif
+
 };
 
 }  // namespace media

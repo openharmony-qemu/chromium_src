@@ -60,7 +60,7 @@ std::unordered_map<ui::ResourceScaleFactor, std::string> kPakFileNameHapMap = {
      "resources/rawfile/chrome_200_percent.pak"}};
 
 static std::unordered_set<std::string> supportLocaleList = {
-#ifdef SUPPORT_MULTI_LANGUAGE
+#ifdef WEARABLE_SUPPORT_MULTI_LANGUAGE
   "ar.pak",
   "be.pak",
   "bg.pak",
@@ -115,7 +115,18 @@ static std::unordered_set<std::string> supportLocaleList = {
   "zh-HK.pak",
 #else
   "bo-CN.pak",
+  "de.pak",
+  "en-GB.pak",
   "en-US.pak",
+  "id.pak",
+  "it.pak",
+  "lo.pak",
+  "ms.pak",
+  "my.pak",
+  "pl.pak",
+  "pt-PT.pak",
+  "th.pak",
+  "tr.pak",
   "ug.pak",
   "zh-CN.pak",
   "zh-TW.pak",
@@ -155,20 +166,21 @@ namespace ui {
 
 bool DataPackUtil::LoadFromPathExt(raw_ptr<DataPack> dataPackObj, const base::FilePath& path) {
   std::string pathHap;
+  std::string pathPrint;
   if (GetPathFromHap(dataPackObj->resource_scale_factor_, path, pathHap)) {
     auto resourceInstance =
         OHOS::NWeb::OhosAdapterHelper::GetInstance().GetResourceAdapter();
 
     std::shared_ptr<OHOS::NWeb::OhosFileMapper> fileMapper =
       resourceInstance->GetRawFileMapper(pathHap, true);
-
+    SwapPathName(pathHap, pathPrint, "chrome", "arkweb");
     if (!fileMapper) {
       LOG(ERROR) << "DataPack::LoadFromPath couldn't data file: "
-                  << pathHap.c_str();
+                 << pathPrint.c_str();
       return false;
     }
 
-    LOG(INFO) << "DataPack::LoadFromPath " << pathHap.c_str()
+    LOG(INFO) << "DataPack::LoadFromPath " << pathPrint.c_str()
               << ", data file length: " << fileMapper->GetDataLen();
 
     std::unique_ptr<base::MemoryMappedFile> mmap =
@@ -180,7 +192,7 @@ bool DataPackUtil::LoadFromPathExt(raw_ptr<DataPack> dataPackObj, const base::Fi
       std::string data;
       if (!compression::GzipUncompress(compressed, &data)) {
         LOG(ERROR) << "Failed to unzip compressed datapack: "
-                    << pathHap.c_str();
+                   << pathPrint.c_str();
 
         return false;
       }
@@ -193,4 +205,13 @@ bool DataPackUtil::LoadFromPathExt(raw_ptr<DataPack> dataPackObj, const base::Fi
   }
 }
 
+void DataPackUtil::SwapPathName(const std::string& origin, std::string& copy,
+                                const std::string& from, const std::string& to) {
+  copy = origin;
+  size_t start_pos = 0;
+  while ((start_pos = copy.find(from, start_pos)) != std::string::npos) {
+    copy.replace(start_pos, from.length(), to);
+    start_pos += to.length();
+  }
+}
 }  // namespace ui

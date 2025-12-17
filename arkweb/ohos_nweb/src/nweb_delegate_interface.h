@@ -66,6 +66,7 @@
 #endif // ARKWEB_READER_MODE
 
 struct OpenDevToolsParam;
+struct OpenDevToolsExtOpt;
 struct RunJavaScriptParam;
 
 namespace OHOS::NWeb {
@@ -85,6 +86,8 @@ struct DelegateDragEvent {
   double x = 0.0;
   double y = 0.0;
   DelegateDragAction action = DelegateDragAction::DRAG_START;
+  CefBrowserHost::DragOperationsMask op = CefBrowserHost::DragOperationsMask::DRAG_OPERATION_COPY;
+  CefBrowserHost::DragOperationsMask allowed_op = CefBrowserHost::DragOperationsMask::DRAG_OPERATION_EVERY;
 };
 
 #if BUILDFLAG(ARKWEB_NAVIGATION)
@@ -130,6 +133,10 @@ class NWebDelegateInterface
       std::shared_ptr<NWebMessageValueCallback> callback) = 0;
   virtual void FillAutofillData(std::shared_ptr<NWebMessage> data) = 0;
   virtual void FillAutofillDataV2(std::shared_ptr<NWebRomValue> data) = 0;
+  virtual void FillAutofillDataFromTriggerType(
+      std::shared_ptr<NWebRomValue> data, int32_t type) = 0;
+  virtual void PutVaultPlainTextCallback(
+      std::shared_ptr<OHOS::NWeb::NWebVaultPlainTextCallback> callback) = 0;
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   virtual void SetNWebDelegateInterface(
@@ -288,6 +295,15 @@ class NWebDelegateInterface
   virtual int LoadWithData(const std::string& data,
                            const std::string& mimeType,
                            const std::string& encoding) = 0;
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  virtual int LoadUrlWithParams(const std::string& url,
+                                const LoadUrlType load_type,
+                                const std::string& refer,
+                                const std::string& headers,
+                                const std::string& post_data,
+                                const bool allow_https_upgrade,
+                                int32_t transition_type) = 0;
+#endif
   virtual int ContentHeight() = 0;
 
   virtual void RegisterNativeArkJSFunction(
@@ -425,6 +441,7 @@ class NWebDelegateInterface
 
   virtual void GetImages(std::shared_ptr<NWebBoolValueCallback> callback) = 0;
   virtual void RemoveCache(bool include_disk_files) = 0;
+  virtual void StopFling() = 0;
 
 #if BUILDFLAG(ARKWEB_NAVIGATION)
   virtual std::shared_ptr<NWebHistoryList> GetHistoryList() = 0;
@@ -440,6 +457,9 @@ class NWebDelegateInterface
   virtual void StartCamera() = 0;
   virtual void StopCamera() = 0;
   virtual void CloseCamera() = 0;
+  virtual void ResumeMicrophone() = 0;
+  virtual void StopMicrophone() = 0;
+  virtual void PauseMicrophone() = 0;
 #endif  // BUILDFLAG(ARKWEB_WEBRTC)
 
 #if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
@@ -484,8 +504,10 @@ class NWebDelegateInterface
 #endif
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
-#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM) || BUILDFLAG(ARKWEB_ZOOM)
   virtual void SetForceEnableZoom(bool forceEnableZoom) = 0;
+#endif
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
   virtual bool GetForceEnableZoom() = 0;
 #endif
 
@@ -740,15 +762,6 @@ class NWebDelegateInterface
 #endif  // BUILDFLAG(ARKWEB_EXT_FILE_ACCESS)
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  virtual void WebExtensionTabCreated(int tab_id) = 0;
-  virtual void WebExtensionTabUpdated(
-      int tab_id,
-      const std::vector<std::string>& changed_property_names,
-      const std::string& url) = 0;
-  virtual void WebExtensionTabUpdated(
-      int tab_id,
-      const std::vector<std::string>& changed_property_names,
-      std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo) = 0;
   virtual void WebExtensionTabRemoved(
       int tab_id,
       bool isWindowClosing,
@@ -805,9 +818,9 @@ class NWebDelegateInterface
   virtual bool IsMixedContentAutoUpgradesEnabled() = 0;
 #endif
 
-#if BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
+#if BUILDFLAG(IS_ARKWEB)
   virtual void EnableAppLinking(bool enable) = 0;
-#endif // BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
+#endif // BUILDFLAG(IS_ARKWEB)
 
 #if BUILDFLAG(ARKWEB_MEDIA_NETWORK_TRAFFIC_PROMPT)
   virtual void EnableMediaNetworkTrafficPrompt(bool enable) = 0;
@@ -817,6 +830,10 @@ class NWebDelegateInterface
   virtual void OpenDevtoolsWith(
       std::shared_ptr<NWebDelegateInterface> nweb_delegate,
       std::unique_ptr<OpenDevToolsParam> param) = 0;
+  virtual void OpenDevtoolsWithByPb(
+      std::shared_ptr<NWebDelegateInterface> nweb_delegate,
+      std::unique_ptr<OpenDevToolsParam> param,
+      OpenDevToolsExtOpt& ext_opt) = 0;
   virtual void CloseDevtools() = 0;
 
 #if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
@@ -861,15 +878,19 @@ class NWebDelegateInterface
 #if BUILDFLAG(ARKWEB_JSPROXY)
   virtual void JavaScriptOnDocumentStartByOrder(
       const ScriptItems& ScriptItems,
+      const ScriptRegexItems& scriptRegexItems,
       const ScriptItemsByOrder& ScriptItemsByOrder) = 0;
   virtual void JavaScriptOnDocumentEndByOrder(
       const ScriptItems& ScriptItems,
+      const ScriptRegexItems& scriptRegexItems,
       const ScriptItemsByOrder& ScriptItemsByOrder) = 0;
   virtual void JavaScriptOnHeadReadyByOrder(
       const ScriptItems& ScriptItems,
+      const ScriptRegexItems& scriptRegexItems,
       const ScriptItemsByOrder& ScriptItemsByOrder) = 0;
 #endif
   virtual bool SetFocusByPosition(float x, float y) = 0;
+  virtual std::pair<double, double> GetLastTouchMousePosition() = 0;
 
 #if BUILDFLAG(ARKWEB_SAFEBROWSING)
   virtual void OnSafeBrowsingDetectionResult(int code,
@@ -923,13 +944,30 @@ class NWebDelegateInterface
   virtual void AbortDistill() = 0;
 #endif // ARKWEB_READER_MODE
 
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  virtual void SetBlankScreenDetectionConfig(
+      bool enable,
+      const std::vector<double>& detectionTiming,
+      const std::vector<int32_t>& detectionMethods,
+      int32_t contentfulNodesCountThreshold) = 0;
+#endif
+
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)
   virtual void SetErrorPageEnabled(bool enable) = 0;
   virtual bool GetErrorPageEnabled() = 0;
 #endif
+
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  virtual void EnableHttpsUpgrades(bool enable) = 0;
+#endif
+
 #if BUILDFLAG(ARKWEB_BGTASK)
   virtual void OnBrowserForeground() = 0;
   virtual void OnBrowserBackground() = 0;
+#endif
+
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+virtual void SetFocusWebId(int32_t nweb_id) = 0;
 #endif
 };
 }  // namespace OHOS::NWeb

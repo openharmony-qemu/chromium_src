@@ -1,0 +1,504 @@
+# build
+/ui/...scenic* @ringking0
+/ui/...fuchsia* @ringking0
+/tools/web_dev_style/ @ringking0
+/tools/warning_analysis/ @ringking0
+/tools/vscode/ @ringking0
+/tools/vim/ @ringking0
+/tools/utr/ @ringking0
+/tools/symsrc/ @ringking0
+/tools/sublime/ @ringking0
+/tools/python/ @ringking0
+/tools/origin_trials/third_party/ed25519/ @ringking0
+/tools/memory/ @ringking0
+/tools/md_browser/ @ringking0
+/tools/mb/ @ringking0
+/tools/mac/ @ringking0
+/tools/linux/ @ringking0
+/tools/licenses/ @ringking0
+/tools/l10n/ @ringking0
+/tools/json_schema_compiler/ @ringking0
+/tools/json_data_generator/ @ringking0
+/tools/ipc_fuzzer/ @ringking0
+/tools/idl_parser/ @ringking0
+/tools/gritsettings/ @ringking0
+/tools/grit/ @ringking0
+/tools/gn/bootstrap/ @ringking0
+/tools/get_swarming_logs/ @ringking0
+/tools/get_asan_chrome/ @ringking0
+/tools/generate_library_loader/ @ringking0
+/tools/gdb/ @ringking0
+/tools/fuchsia/ @ringking0
+/tools/flags/ @ringking0
+/tools/find_runtime_symbols/ @ringking0
+/tools/dump_process_memory/ @ringking0
+/tools/disable_tests/ @ringking0
+/tools/determinism/ @ringking0
+/tools/cygprofile/ @ringking0
+/tools/cros/ @ringking0
+/tools/crbug/ @ringking0
+/tools/cr/ @ringking0
+/tools/codeql/ @ringking0
+/tools/code_coverage/ @ringking0
+/tools/code_coverage/js_source_maps/create_js_source_maps/ @ringking0
+/tools/clang/stack_maps/ @ringking0
+/tools/clang/spanify/ @ringking0
+/tools/clang/scripts/ @ringking0
+/tools/clang/rewrite_to_chrome_style/ @ringking0
+/tools/clang/rewrite_templated_container_fields/ @ringking0
+/tools/clang/rewrite_autofill_personal_data_manager/ @ringking0
+/tools/clang/rewrite_autofill_form_data/ @ringking0
+/tools/clang/raw_ptr_plugin/ @ringking0
+/tools/clang/iterator_checker @ringking0
+/tools/clang/blink_gc_plugin/ @ringking0
+/tools/chrome_extensions/open_my_editor/ @ringking0
+/tools/checkperms/ @ringking0
+/tools/checklicenses/ @ringking0
+/tools/cfi/ @ringking0
+/tools/cast3p/ @ringking0
+/tools/captured_sites/ @ringking0
+/tools/bisect/ @ringking0
+/tools/binary_size/ @ringking0
+/tools/android/modularization/owners/ @ringking0
+/tools/android/modularization/convenience/ @ringking0
+/tools/android/errorprone_plugin/ @ringking0
+/tools/android/elf_compression/ @ringking0
+/tools/android/dependency_analysis/js @ringking0
+/tools/android/customtabs_benchmark/ @ringking0
+/tools/android/build_speed/ @ringking0
+/testing/BUILD.gn @ringking0
+/testing/*.gni @ringking0
+/testing/buildbot/tryserver.webrtc.json @ringking0
+/testing/buildbot/chromium.webrtc.json @ringking0
+/testing/buildbot/chromium.webrtc.fyi.json @ringking0
+/testing/buildbot/chromium.rust.json @ringking0
+/testing/buildbot/chromium.perf.fyi.json @ringking0
+/testing/buildbot/chromium.mac.json @ringking0
+/testing/buildbot/chromium.fyi.json @ringking0
+/testing/buildbot/chromium.fuchsia.json @ringking0
+/testing/buildbot/chromium.fuchsia.fyi.json @ringking0
+/testing/buildbot/chromium.clang.json @ringking0
+/testing/buildbot/filters/fuchsia* @ringking0
+/skia/*_fuchsia* @ringking0
+/BUILD.gn @ringking0
+/.rustfmt.toml @ringking0
+/.gn @ringking0
+/net/base/*_fuchsia* @ringking0
+/native_client_sdk/src/doc/ @ringking0
+/mojo/public/tools/bindings/generators/mojom_rust_generator.py @ringking0
+/mojo/..._fuchsia* @ringking0
+/media/..._fuchsia* @ringking0
+/infra/scripts/ @ringking0
+/infra/orchestrator/ @ringking0
+/infra/config/targets/ @ringking0
+/infra/config/subprojects/webrtc/ @ringking0
+/infra/config/subprojects/findit/ @ringking0
+/infra/config/subprojects/chromium/try/tryserver.chromium.mac.star @ringking0
+/infra/config/subprojects/chromium/try/tryserver.chromium.fuchsia.star @ringking0
+/infra/config/subprojects/chromium/try/tryserver.chromium.dawn.star @ringking0
+/infra/config/subprojects/chromium/ci/chromium.mac.star @ringking0
+/infra/config/subprojects/chromium/ci/chromium.fyi.star @ringking0
+/infra/config/subprojects/chromium/ci/chromium.fuchsia.star @ringking0
+/infra/config/subprojects/chromium/ci/chromium.fuchsia.fyi.star @ringking0
+/infra/config/subprojects/chromium/ci/chromium.dawn.star @ringking0
+/infra/config/lib/xcode.star @ringking0
+/infra/config/lib/targets-internal/ @ringking0
+/infra/config/groups/sheriff-rotations/FUCHSIA_OWNERS @ringking0
+/infra/config/groups/sheriff-rotations/DAWIN_OWNERS @ringking0
+/infra/config/groups/sheriff-rotations/CHROMIUMOS_OWNERS @ringking0
+/infra/config/groups/sheriff-rotations/CHROMIUM_OWNERS @ringking0
+/infra/config/groups/sheriff-rotations/CHROMIUM_FUZZ_OWNERS @ringking0
+/infra/config/groups/sheriff-rotations/CHROMIUM_CLANG_OWNERS @ringking0
+/infra/config/groups/sheriff-rotations/CFT_OWNERS @ringking0
+/infra/config/groups/sheriff-rotations/ANGLE_OWNERS @ringking0
+/infra/config/groups/sheriff-rotations/ANDROID_OWNERS @ringking0
+/infra/config/groups/perf/ @ringking0
+/infra/config/groups/ios/ @ringking0
+/infra/config/groups/gpu/ @ringking0
+/infra/config/groups/foundry-x/ @ringking0
+/infra/config/groups/cq-usage/CQ_USAGE_SECONDARY_OWNERS @ringking0
+/infra/config/groups/cq-usage/CQ_USAGE_OWNERS @ringking0
+/infra/config/groups/chrome-build/ @ringking0
+/infra/config/generated/sheriff-rotations/fuchsia.txt @ringking0
+/infra/config/generated/sheriff-rotations/dawn.txt @ringking0
+/infra/config/generated/sheriff-rotations/chromiumos.txt @ringking0
+/infra/config/generated/sheriff-rotations/chromium.txt @ringking0
+/infra/config/generated/sheriff-rotations/chromium.gpu.txt @ringking0
+/infra/config/generated/sheriff-rotations/chromium.clang.txt @ringking0
+/infra/config/generated/sheriff-rotations/cft.txt @ringking0
+/infra/config/generated/sheriff-rotations/angle.txt @ringking0
+/infra/config/generated/sheriff-rotations/android.txt @ringking0
+/infra/config/generated/builders/*/*/targets/chromium.webrtc.json @ringking0
+/infra/config/generated/builders/*/*/targets/chromium.webrtc.fyi.json @ringking0
+/infra/config/generated/builders/*/*/targets/chromium.rust.json @ringking0
+/infra/config/generated/builders/*/*/targets/chromium.mac.json @ringking0
+/infra/config/generated/builders/*/*/targets/chromium.fyi.json @ringking0
+/infra/config/generated/builders/*/*/targets/chromium.fuchsia.json @ringking0
+/infra/config/generated/builders/*/*/targets/chromium.fuchsia.fyi.json @ringking0
+/infra/config/generated/builders/*/*/targets/chromium.clang.json @ringking0
+/infra/config/generated/builders/*/*/targets/chromium.build.json @ringking0
+/infra/config/generated/builders/*/*/targets/chromium.build.fyi.json @ringking0
+/infra/config/generated/cq-usage/full.config @ringking0
+/headless/*.cmx @ringking0
+/fuchsia_web/webinstance_host/*.cml @ringking0
+/fuchsia_web/webengine/test/*.cmx @ringking0
+/fuchsia_web/webengine/*.cmx @ringking0
+/fuchsia_web/webengine/*.cml @ringking0
+/fuchsia_web/shell/*.cmx @ringking0
+/fuchsia_web/shell/*.cml @ringking0
+/fuchsia_web/runners/cast/*.cmx @ringking0
+/fuchsia_web/runners/cast/*.cml @ringking0
+/fuchsia_web/runners/cast/fidl/*.fidl @ringking0
+/content/web_test/ @ringking0
+/content/test/...fuchsia* @ringking0
+/content/test/gpu/gpu_tests/test_expectations/ @ringking0
+/content/test/data/ @ringking0
+/content/test/shell/fuchsia/*.cml @ringking0
+/content/test/shell/android/ @ringking0
+/content/...fuchsia* @ringking0
+/chromecast/...fuchsia* @ringking0
+/buildtools/third_party/libunwind/ @ringking0
+/buildtools/third_party/libc++abi/ @ringking0
+/buildtools/third_party/libc++/ @ringking0
+/buildtools/third_party/eu-strip/ @ringking0
+/buildtools/clang_format/ @ringking0
+/build_overrides/ @ringking0
+/build/util/lib/results/ @ringking0
+/build/util/lib/proto/ @ringking0
+/build/skia_gold_common/ @ringking0
+/build/sanitizers/ @ringking0
+/build/rust/ @ringking0
+/build/xcode_binaries.yaml @ringking0
+/build/mac_toolchain.py @ringking0
+/build/linux/ @ringking0
+/build/lacros/ @ringking0
+/build/fuchsia/SECURITY_OWNERS @ringking0
+/build/config/siso/ @ringking0
+/build/config/profiling/ @ringking0
+/build/config/rust.gni @ringking0
+/build/config/cast.gni @ringking0
+/build/config/linux/ @ringking0
+/build/config/fuchsia/test/*.test-cml @ringking0
+/build/config/freetype/ @ringking0
+/build/config/coverage/ @ringking0
+/build/config/chromecast/ @ringking0
+/build/chromeos/ @ringking0
+/build/args/headless.gn @ringking0
+/build/apple/ @ringking0
+/build/android/pylib/local/emulator/ @ringking0
+/build/android/pylib/gtest/filter/ @ringking0
+/build/android/gyp/ @ringking0
+/build/android/gradle/ @ringking0
+/base/process/launch_fuchsia.* @ringking0
+/base/...fuchsia* @ringking0
+/base/fuchsia/filtered_service_directory.* @ringking0
+/apps/ @ringking0
+
+# EventHandler
+/arkweb/ohos_adapter_ndk/color_picker_adapter/ @jerrywangxmu
+/arkweb/ohos_adapter_ndk/pasteboard_adapter/ @jerrywangxmu
+/arkweb/ohos_nweb/src/capi/nweb_context_menus_item.h @jerrywangxmu
+/arkweb/ohos_nweb/src/capi/nweb_context_menus_on_clicked_data.h @jerrywangxmu
+/arkweb/ohos_nweb/src/cef_delegate/nweb_context_menu_params_impl.h @jerrywangxmu
+/arkweb/ohos_nweb/src/cef_delegate/nweb_context_menu_params_impl.cc @jerrywangxmu
+/arkweb/ohos_nweb/src/cef_delegate/nweb_cursor_info_impl.h @jerrywangxmu
+/arkweb/ohos_nweb/src/cef_delegate/nweb_cursor_info_impl.cc @jerrywangxmu
+/arkweb/ohos_nweb/src/cef_delegate/nweb_date_time_chooser_impl.h @jerrywangxmu
+/arkweb/ohos_nweb/src/cef_delegate/nweb_date_time_chooser_impl.cc @jerrywangxmu
+/arkweb/ohos_nweb/src/cef_delegate/nweb_drag_data_impl.h @jerrywangxmu
+/arkweb/ohos_nweb/src/cef_delegate/nweb_drag_data_impl.cc @jerrywangxmu
+/arkweb/ohos_nweb/src/cef_delegate/nweb_file_selector_params_impl.h @jerrywangxmu
+/arkweb/ohos_nweb/src/cef_delegate/nweb_file_selector_params_impl.cc @jerrywangxmu
+/arkweb/ohos_nweb/src/cef_delegate/nweb_select_menu_bound_impl.h @jerrywangxmu
+/arkweb/ohos_nweb/src/cef_delegate/nweb_select_menu_bound_impl.cc @jerrywangxmu
+/arkweb/ohos_nweb/src/cef_delegate/nweb_select_popup_menu_impl.h @jerrywangxmu
+/arkweb/ohos_nweb/src/cef_delegate/nweb_select_popup_menu_impl.cc @jerrywangxmu
+/arkweb/ohos_nweb/src/cef_delegate/nweb_touch_handle_hot_zone_impl.h @jerrywangxmu
+/arkweb/ohos_nweb/src/cef_delegate/nweb_touch_handle_hot_zone_impl.cc @jerrywangxmu
+/arkweb/ohos_nweb/src/cef_delegate/nweb_touch_handle_state_impl.h @jerrywangxmu
+/arkweb/ohos_nweb/src/cef_delegate/nweb_touch_handle_state_impl.cc @jerrywangxmu
+
+/components/zoom/ @jerrywangxmu
+/components/password_manager/ @jerrywangxmu
+/components/autofill/ @jerrywangxmu
+/components/autofill_ai/ @jerrywangxmu
+/components/autofill_payments_strings_grdp/ @jerrywangxmu
+/components/autofill_prediction_improvements_strings_grdp/ @jerrywangxmu
+/components/autofill_strings_grdp/ @jerrywangxmu
+/components/eye_dropper/ @jerrywangxmu
+
+/ui/aura/gestures/ @jerrywangxmu
+/ui/events/gestures/ @jerrywangxmu
+/ui/events/gestures_detection/ @jerrywangxmu
+/ui/base/dragdrop/ @jerrywangxmu
+/ui/base/clipboard/ @jerrywangxmu
+
+# MultiMedia
+/arkweb/ohos_adapter_ndk/audio_adapter/ @d0ub1eh @whuqincheng
+/arkweb/ohos_adapter_ndk/camera_adapter/ @d0ub1eh @whuqincheng
+/arkweb/ohos_adapter_ndk/media_adapter/ @d0ub1eh @whuqincheng
+/arkweb/ohos_adapter_ndk/ohos_image_adapter/ @d0ub1eh @whuqincheng
+/arkweb/ohos_adapter_ndk/screen_capture_adapter/ @d0ub1eh @whuqincheng
+/arkweb/ohos_nweb/src/napi/nweb_screencapture_delegate_callback.h @d0ub1eh @whuqincheng
+/arkweb/ohos_nweb/src/native_media_player/ @d0ub1eh @whuqincheng
+/arkweb/ohos_nweb/src/cef_delegate/custom_media_player_impl.cc @d0ub1eh @whuqincheng
+/arkweb/ohos_nweb/src/cef_delegate/nweb_full_screen_exit_handler_impl.cc @d0ub1eh @whuqincheng
+/arkweb/ohos_nweb/src/cef_delegate/nweb_image_options_impl.cc @d0ub1eh @whuqincheng
+/arkweb/chromium_ext/media @d0ub1eh @whuqinchen
+
+
+/ui/ozone/platform/drm/ @d0ub1eh @whuqincheng
+/tools/perf/page_sets/media_cases/ @d0ub1eh @whuqincheng
+/tools/metrics/histograms/metadata/media/ @d0ub1eh @whuqincheng
+/tools/media_engagement_preload/ @d0ub1eh @whuqincheng
+/services/video_effects/ @d0ub1eh @whuqincheng
+/services/video_capture/ @d0ub1eh @whuqincheng
+/services/media_session/ @d0ub1eh @whuqincheng
+/services/image_annotation/ @d0ub1eh @whuqincheng
+/services/audio/ @d0ub1eh @whuqincheng
+/remoting/ @d0ub1eh @whuqincheng
+/media/ @d0ub1eh @whuqincheng
+/extensions/browser/api/media_perception_private/ @d0ub1eh @whuqincheng
+/content/renderer/media/ @d0ub1eh @whuqincheng
+/content/common/media/ @d0ub1eh @whuqincheng
+/content/browser/webrtc/ @d0ub1eh @whuqincheng
+/content/browser/resources/media/ @d0ub1eh @whuqincheng
+/content/browser/renderer_host/media/ @d0ub1eh @whuqincheng
+/content/browser/media/webaudio/ @d0ub1eh @whuqincheng
+/content/browser/media/ @d0ub1eh @whuqincheng
+/components/translate/ @d0ub1eh @whuqincheng
+/components/test/data/webp_transcode/ @d0ub1eh @whuqincheng
+/components/system_media_controls/ @d0ub1eh @whuqincheng
+/components/resources/translate_resources.grdp @d0ub1eh @whuqincheng
+/components/page_image_service/ @d0ub1eh @whuqincheng
+/components/translate_strings.grdp @d0ub1eh @whuqincheng
+/components/media_message_center_strings.grdp @d0ub1eh @whuqincheng
+/components/global_media_controls_strings.grdp @d0ub1eh @whuqincheng
+/components/media_router/common/providers/cast/certificate/
+/components/media_message_center/ @d0ub1eh @whuqincheng
+/components/media_effects/ @d0ub1eh @whuqincheng
+/components/media_device_salt/ @d0ub1eh @whuqincheng
+/components/media_control/ @d0ub1eh @whuqincheng
+/components/global_media_controls/ @d0ub1eh @whuqincheng
+/components/chromeos_camera/ @d0ub1eh @whuqincheng
+/components/cdm/ @d0ub1eh @whuqincheng
+/components/cast_streaming/ @d0ub1eh @whuqincheng
+/chromecast/media/ @d0ub1eh @whuqincheng
+
+# DFX
+/arkweb/ohos_nweb/src/capi/nweb_logger_callback.h @StringChen
+/arkweb/ohos_nweb/src/capi/nweb_logger_report_event_callback.h @StringChen
+/arkweb/ohos_nweb/src/capi/nweb_statistic_callback.h @StringChen
+/arkweb/ohos_nweb/src/cef_delegate/nweb_console_log_impl.cc @StringChen
+/arkweb/ohos_nweb/src/nweb_hilog.h @StringChen
+/arkweb/ohos_nweb/src/nweb_sysevent.gni @StringChen
+/arkweb/ohos_nweb/src/sysevent/ @StringChen
+
+# Framework
+/arkweb/ut_tools/ @cloud_nine999 @zhanghaozhi1
+/arkweb/ohos_nweb/src/capi/arkweb_error_code.h @cloud_nine999 @zhanghaozhi1
+/arkweb/ohos_nweb/src/capi/arkweb_type.h @cloud_nine999 @zhanghaozhi1
+/arkweb/ohos_nweb/src/capi/nweb_capi_export.h @cloud_nine999 @zhanghaozhi1
+/arkweb/ohos_nweb/src/cef_delegate/nweb_accessibility_node_info_impl.cc @cloud_nine999 @zhanghaozhi1
+/arkweb/ohos_nweb/src/cef_delegate/nweb_controller_handler_impl.cc @cloud_nine999 @zhanghaozhi1
+/arkweb/ohos_nweb/src/cef_delegate/nweb_default_engine_init_args_impl.cc @cloud_nine999 @zhanghaozhi1
+/arkweb/ohos_nweb/src/nweb_delegate_adapter.cc @cloud_nine999 @zhanghaozhi1
+/arkweb/ohos_nweb/src/nweb_delegate_adapter.h @cloud_nine999 @zhanghaozhi1
+/ui/views/accessibility/ @cloud_nine999 @zhanghaozhi1
+/ui/accessibility/ @cloud_nine999 @zhanghaozhi1
+/styleguide/c++/ @cloud_nine999 @zhanghaozhi1
+/services/test/echo/ @cloud_nine999 @zhanghaozhi1
+/services/test/data/ @cloud_nine999 @zhanghaozhi1
+/services/service_manager/ @cloud_nine999 @zhanghaozhi1
+/services/data_decoder/ @cloud_nine999 @zhanghaozhi1
+/services/accessibility/ @cloud_nine999 @zhanghaozhi1
+
+# Compositor
+/ui/display/win/ @LXinJie1
+/ui/display/util/ @LXinJie1
+/ui/compositor/ @LXinJie1
+/ui/color/ @LXinJie1
+/skia/ @LXinJie1
+/gpu/webgpu/ @LXinJie1
+/gpu/vulkan/ @LXinJie1
+/gpu/perftests/ @LXinJie1
+/gpu/GRAPHICS_TEAM_OWNERS @LXinJie1
+/gpu/ipc/common/gpu_watchdog_timeout.h @LXinJie1
+/gpu/ipc/common/generate_vulkan_types.py @LXinJie1
+/gpu/GLES2/ @LXinJie1
+/gpu/config/webgpu* @LXinJie1
+/gpu/command_buffer/ @LXinJie1
+/content/gpu/ @LXinJie1
+/content/browser/screen_details/ @LXinJie1
+/content/browser/gpu/ @LXinJie1
+/content/browser/resources/gpu/ @LXinJie1
+/content/browser/compositor/*viz* @LXinJie1
+/components/viz/service/layers/ @LXinJie1
+/components/viz/service/input/ @LXinJie1
+/components/viz/service/gl/ @LXinJie1
+/components/viz/service/frame_sinks/video_capture/ @LXinJie1
+/components/viz/host/client_frame_sink_video_capturer* @LXinJie1
+/components/viz/common/hit_test/ @LXinJie1
+
+#交互安全
+/arkweb/ohos_adapter_ndk/access_token_adapter/ @zhu-sheng-le
+/arkweb/ohos_adapter_ndk/inputmethodframework_adapter/ @zhu-sheng-le
+/arkweb/ohos_adapter_ndk/keystore_adapter/ @zhu-sheng-le
+
+# Storage
+/arkweb/ohos_nweb/src/capi/nweb_app_client_extension_callback.h @yuzhouhang1
+/arkweb/ohos_nweb/src/cef_delegate/nweb_access_query_delegate.cc @yuzhouhang1
+/arkweb/ohos_nweb/src/cef_delegate/nweb_access_query_delegate.cc @yuzhouhang1
+/arkweb/ohos_nweb/src/cef_delegate/nweb_data_resubmission_callback_impl.cc @yuzhouhang1
+/arkweb/ohos_nweb/src/cef_delegate/nweb_preference_delegate.cc @yuzhouhang1
+/arkweb/ohos_nweb/src/cef_delegate/nweb_preference_delegate_unittest.cc @yuzhouhang1
+/arkweb/ohos_nweb/src/cef_delegate/nweb_web_storage_delegate.cc @yuzhouhang1
+/arkweb/ohos_nweb/src/cef_delegate/nweb_web_storage_origin_impl.cc @yuzhouhang1
+/arkweb/ohos_nweb/src/nweb_access_query.h @yuzhouhang1
+/arkweb/ohos_nweb/src/nweb_data_base_impl.cc @yuzhouhang1
+/arkweb/ohos_nweb/src/nweb_data_base_impl.h @yuzhouhang1
+/arkweb/ohos_nweb/src/nweb_file_writer_cleaner.cc @yuzhouhang1
+/arkweb/ohos_nweb/src/nweb_file_writer_cleaner.h @yuzhouhang1
+/arkweb/ohos_nweb/src/nweb_web_storage_delegate_interface.h @yuzhouhang1
+/arkweb/ohos_nweb/src/nweb_web_storage_impl.cc @yuzhouhang1
+/arkweb/ohos_nweb/src/nweb_web_storage_impl.h @yuzhouhang1
+
+/ui/base/data_transfer_policy/ @yuzhouhang1
+/storage/ @yuzhouhang1
+/storage/browser/quota/ @yuzhouhang1
+/storage/browser/file_system/ @yuzhouhang1
+/storage/browser/database/ @yuzhouhang1
+/storage/browser/blob/ @yuzhouhang1
+/sql/ @yuzhouhang1
+/services/preferences/tracked/ @yuzhouhang1
+/services/preferences/ @yuzhouhang1
+/content/public/test/*file_system* @yuzhouhang1
+/content/browser/storage_service* @yuzhouhang1
+/content/browser/storage_partition* @yuzhouhang1
+/content/browser/indexed_db/ @yuzhouhang1
+/content/browser/file_system_access/ @yuzhouhang1
+/content/browser/dom_storage/ @yuzhouhang1
+/content/browser/content_index/ @yuzhouhang1
+/content/browser/cache_storage/ @yuzhouhang1
+/content/browser/buckets/ @yuzhouhang1
+/components/webdata/ @yuzhouhang1
+/components/web_cache/ @yuzhouhang1
+/components/value_store/ @yuzhouhang1
+/components/storage_monitor/ @yuzhouhang1
+/components/sqlite_proto/ @yuzhouhang1
+/components/services/unzip/ @yuzhouhang1
+/components/services/storage/shared_storage/ @yuzhouhang1
+/components/prefs/ @yuzhouhang1
+/components/prefs/android/ @yuzhouhang1
+/components/leveldb_proto/ @yuzhouhang1
+/components/desks_storage/ @yuzhouhang1
+/components/data_sharing/ @yuzhouhang1
+/components/content_settings/ @yuzhouhang1
+/components/affiliations/ @yuzhouhang1
+
+# performance
+/services/resource_coordinator/memory_instrumentation/ @zhouge941
+/content/browser/memory/ @zhouge941
+/components/memory_system/ @zhouge941
+/components/discardable_memory/ @zhouge941
+/build_overrides/partition_alloc.* @zhouge941
+/base/memory/ @zhouge941
+/base/allocator/ @zhouge941
+
+/components/system_cpu/ @hwt00888022
+/components/background_task_scheduler/ @hwt00888022
+/base/task/thread_pool/ @hwt00888022
+/base/task/sequence_manager/ @hwt00888022
+/base/task/ @hwt00888022
+/base/sampling_heap_profiler/ @hwt00888022
+/arkweb/ohos_adapter_ndk/res_sched_adapter/ @hwt00888022
+/arkweb/ohos_adapter_ndk/soc_perf_adapter/ @hwt00888022
+
+/third_party/blink/renderer/platform/wtf/allocator/* @yjone
+/testing/buildbot/internal.optimization_guide.json @yjone
+/services/resource_coordinator/ @yjone
+/gin/array_buffer.cc @yjone
+/content/browser/field_trial_synchronizer.* @yjone
+/components/unexportable_keys/ @yjone
+/components/power/metrics/ @yjone
+/components/browsing_topics/annotator* @yjone
+/components/breadcrumbs/ @yjone
+/build/android/gyp/create_unwind_table*.py @yjone
+/base/test/*scope_feature_list* @yjone
+/base/profiler/ @yjone
+/base/debug/asan_service* @yjone
+
+/tools/pgo/ @dzichou
+/components/startup_metric_utils/ @dzichou
+/components/performance_manager/ @dzichou
+/components/page_load_metrics/ @dzichou
+/components/page_load_metrics/google/ @dzichou
+/components/page_load_metrics/browser/observers/core/ @dzichou
+/components/optimization_guide/proto/model_quality_service.proto @dzichou
+/components/optimization_guide/proto/BUILD.gn @dzichou
+/components/optimization_guide/proto/features/ @dzichou
+/components/optimization_guide/ @dzichou
+/components/optimization_guide/core/model_quality/ @dzichou
+/components/metric/DEPS/ @dzichou
+/components/metrics/BUILD.gn @dzichou
+/arkweb/ohos_adapter_ndk/flowbuffer_adapter/ @dzichou
+/arkweb/ohos_nweb/browser/performance_manager/ @dzichou
+/arkweb/ohos_nweb_turbo/ @dzichou
+
+/tools/perfbot-analysis/ @sinat_22543221
+/tools/perf/ @sinat_22543221
+/tools/android/wpr/ @sinat_22543221
+/tools/android/touch_replay_benchmark/ @sinat_22543221
+/tools/android/touch_replay/ @sinat_22543221
+/tools/android/test_health/ @sinat_22543221
+/tools/android/native_lib_memory/ @sinat_22543221
+/tools/android/mte/ @sinat_22543221
+/tools/android/forwarder2/ @sinat_22543221
+/tools/android/io_benchmark/ @sinat_22543221
+/base/metrics/METRICS_OWNERS @sinat_22543221
+/arkweb/ohos_adapter_ndk/background_task_adapter/ @sinat_22543221
+
+# peripherals
+/arkweb/ohos_nweb/src/cef_delegate/nweb_display_listener.cc @zhang-yinglie
+/arkweb/ohos_nweb/src/cef_delegate/nweb_geolocation_callback.cc @zhang-yinglie
+/services/device/wake_lock/power_save_blocker/ @zhang-yinglie
+/services/device/wake_lock/ @zhang-yinglie
+/services/device/time_zone_monitor/ @zhang-yinglie
+/services/device/public/java/src/org/chromium/device/DeviceFeatureList.java @zhang-yinglie
+/services/device/public/cpp/power_monitor/ @zhang-yinglie
+/services/device/public/cpp/device_feature_map.cc @zhang-yinglie
+/services/device/power_monitor/ @zhang-yinglie
+/services/device/ @zhang-yinglie
+/services/device/nfc/ @zhang-yinglie
+/services/device/compute_pressure/ @zhang-yinglie
+/printing/ @zhang-yinglie
+/device/ @zhang-yinglie
+/device/gamepad/ @zhang-yinglie
+/device/fido/ @zhang-yinglie
+/device/bluetooth/ @zhang-yinglie
+/device/bluetooth/floss/ @zhang-yinglie
+/device/bluetooth/dbus/ @zhang-yinglie
+/device/bluetooth/chromeos/ @zhang-yinglie
+/device/bluetooth/cast/ @zhang-yinglie
+/device/bluetooth/bluez/ @zhang-yinglie
+/content/web_test/browser/*bluetooth* @zhang-yinglie
+/content/browser/usb/ @zhang-yinglie
+/content/browser/sms/ @zhang-yinglie
+/content/browser/service_worker/service_worker_usb_* @zhang-yinglie
+/content/browser/service_worker/service_worker_device_* @zhang-yinglie
+/content/browser/serial/ @zhang-yinglie
+/content/browser/geolocation/ @zhang-yinglie
+/content/browser/bluetooth/ @zhang-yinglie
+/components/resources/printing_resources.grdp @zhang-yinglie
+/components/power_monitor/ @zhang-yinglie
+/components/peripherals/ @zhang-yinglie
+/components/sms_strings.grdp @zhang-yinglie
+/components/printing_component_strings.grdp @zhang-yinglie
+/components/print_media_strings.grdp @zhang-yinglie
+/components/cross_device/ @zhang-yinglie
+/components/cloud_devices/ @zhang-yinglie
+/chromeos/ash/components/multidevice/ @zhang-yinglie
+/ash/public/cpp/*accelerator* @zhang-yinglie
+/ash/game_dashboard/ @zhang-yinglie
+/ash/accelerometer/ @zhang-yinglie
+/ash/accelerators/ @zhang-yinglie

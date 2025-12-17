@@ -30,7 +30,7 @@
 #include "nweb_mouse_event_result_impl.h"
 #include "nweb_touch_handle_hot_zone_impl.h"
 #include "nweb_touch_handle_state_impl.h"
-#include "ohos_adapter_helper.h"
+#include "arkweb/ohos_adapter_ndk/interfaces/ohos_adapter_helper.h"
 #include "res_sched_client_adapter.h"
 #include "third_party/bounds_checking_function/include/securec.h"
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
@@ -667,6 +667,13 @@ void NWebRenderHandler::UpdateSecurityLayer(bool isNeedSecurityLayer) {
     handler->EnableSecurityLayer(isNeedSecurityLayer);
   }
 }
+
+void NWebRenderHandler::UpdateTextFieldStatus(bool isShowKeyboard, bool isAttachIME) {
+  auto handler = handler_.lock();
+  if (handler) {
+    handler->UpdateTextFieldStatus(isShowKeyboard, isAttachIME);
+  }
+}
 #endif
 
 #if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
@@ -805,6 +812,9 @@ void NWebRenderHandler::OnTextSelectionChanged(CefRefPtr<CefBrowser> browser,
   if (inputmethod_client_) {
     inputmethod_client_->OnTextSelectionChanged(browser, selected_text,
                                                 selected_range);
+  }
+  if (auto handler = handler_.lock()) {
+    handler->OnTextSelectionChange(selected_text);
   }
 }
 
@@ -964,6 +974,34 @@ void NWebRenderHandler::GetTouchHandleSize(
   LOG(INFO) << "GetTouchHandleSize " << size.width << " " << size.height;
 }
 
+void NWebRenderHandler::OpenEyeDropper(CefRefPtr<CefBrowser> browser) {
+  if (!browser || !browser->GetHost()) {
+    return;
+  }
+  std::pair<double, double> position;
+  auto delegate = delegate_interface_.lock();
+  if (delegate) {
+    position = delegate->GetLastTouchMousePosition();
+  }
+  auto view_port_height = browser->GetHost()->GetShrinkViewportHeight();
+  view_port_height +=
+      view_port_height > 0 ? browser->GetHost()->GetTopControlsOffset() : 0;
+
+  OhosAdapterHelper::GetInstance()
+      .GetColorPickerAdapter()
+      .StartColorPickerWithColorValue(
+          position.first + screen_x_ * screen_info_.display_ratio,
+          position.second +
+              (view_port_height + screen_y_) * screen_info_.display_ratio,
+          [browser](bool success, uint32_t color) {
+            if (browser && browser->GetHost()) {
+              LOG(INFO) << "OnEyeDropperResult, success == " << success
+                        << ", color == " << color;
+              browser->GetHost()->OnEyeDropperResult(success, color);
+            }
+          });
+}
+
 std::shared_ptr<NWebTouchHandleState> NWebRenderHandler::GetTouchHandleState(
     NWebTouchHandleState::TouchHandleType type) {
   switch (type) {
@@ -1027,6 +1065,16 @@ CefRect NWebRenderHandler::ConvertSelectAreaDisplayRatio(const CefRect& rect)
 void NWebRenderHandler::OnSelectAreaChanged(CefRect& select_area) {
   select_area = ConvertSelectAreaDisplayRatio(select_area);
 }
+
+void NWebRenderHandler::OnClippedSelectionBoundsChanged(const CefRect& rect, bool need_report) {
+    clipped_selection_bounds_ = rect;
+    if (!need_report) {
+        return;
+    }
+    if (auto handler = handler_.lock()) {
+        handler->OnClippedSelectionBoundsChanged(rect.x, rect.y, rect.width, rect.height);
+    }
+}
 #endif
 CefTouchHandleState NWebRenderHandler::ConvertTouchHandleDisplayRatio(
     const CefTouchHandleState& touch_handle) {
@@ -1064,36 +1112,6 @@ void NWebRenderHandler::OnTouchSelectionChanged(
 }
 
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
-void NWebRenderHandler::SelectionBoundsChanged(const CefRect& anchor_rect,
-                                               const CefRect& focus_rect,
-                                               bool is_anchor_first) {
-  CefRect start_rect = focus_rect;
-  CefRect end_rect = anchor_rect;
-
-  if (!is_anchor_first) {
-    start_rect = anchor_rect;
-    end_rect = focus_rect;
-  }
-
-  start_rect.x *= screen_info_.display_ratio;
-  start_rect.y *= screen_info_.display_ratio;
-  start_rect.width *= screen_info_.display_ratio;
-  start_rect.height *= screen_info_.display_ratio;
-
-  end_rect.x *= screen_info_.display_ratio;
-  end_rect.y *= screen_info_.display_ratio;
-  end_rect.width *= screen_info_.display_ratio;
-  end_rect.height *= screen_info_.display_ratio;
-
-  start_edge_top_.Set(start_rect.x, start_rect.y);
-  start_edge_bottom_.Set(start_rect.x + start_rect.width,
-                         start_rect.y + start_rect.height);
-
-  end_edge_top_.Set(end_rect.x, end_rect.y);
-  end_edge_bottom_.Set(end_rect.x + end_rect.width,
-                       end_rect.y + end_rect.height);
-}
-
 void NWebRenderHandler::NotifySelectAllClicked(bool select_all) {
   select_all_ = select_all;
 }
@@ -1177,14 +1195,25 @@ bool NWebRenderHandler::StartDragging(CefRefPtr<CefBrowser> browser,
   ImageDragForFileUri(drag_data);
   CefPoint drag_touch_point(x, y);
 
-  std::vector<CefPoint> start_edge{start_edge_top_, start_edge_bottom_};
-  std::vector<CefPoint> end_edge{end_edge_top_, end_edge_bottom_};
+  std::vector<CefPoint> start_edge{
+      CefPoint(start_selection_handle_.origin.x,
+               start_selection_handle_.origin.y -
+                   start_selection_handle_.edge_height),
+      CefPoint(start_selection_handle_.origin.x,
+               start_selection_handle_.origin.y)};
+  std::vector<CefPoint> end_edge{
+      CefPoint(
+          end_selection_handle_.origin.x,
+          end_selection_handle_.origin.y - end_selection_handle_.edge_height),
+      CefPoint(end_selection_handle_.origin.x, end_selection_handle_.origin.y)};
 
-  bool usefull_selection = true;
+  bool usefull_selection = false;
   if (!link_url.empty() && !drag_data->IsImageFileContents()) {
     usefull_selection = false;
   } else if (select_all_) {
     usefull_selection = false;
+  } else {
+    usefull_selection = is_irregular_drag_background_;
   }
 
   // default value false
@@ -1204,7 +1233,7 @@ bool NWebRenderHandler::StartDragging(CefRefPtr<CefBrowser> browser,
       drag_data, drag_touch_point, start_edge, end_edge,
       screen_info_.display_ratio, usefull_selection, dark_mode_enable,
       is_drag_new_style);
-
+  nweb_drag_data_->SetAllowedDragOperation(static_cast<NWebDragData::DragOperationsMask>(allowed_ops));
   auto handler = handler_.lock();
   if (handler == nullptr) {
     LOG(ERROR) << "can't get strong ptr with handler";
@@ -1259,6 +1288,12 @@ void NWebRenderHandler::FreePixlMapData() {
         ->FreePixlMapData();
   }
 }
+
+void NWebRenderHandler::SetIrregularDragBackground(
+    bool is_irregular_background) {
+  is_irregular_drag_background_ = is_irregular_background;
+}
+
 #endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
 
 #if BUILDFLAG(IS_OHOS)
@@ -1572,6 +1607,29 @@ void NWebRenderHandler::RestoreRenderFit() {
   handler->RestoreRenderFit();
 }
 #endif  // ARKWEB_MAXIMIZE_RESIZE
+
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+void NWebRenderHandler::OnDetectedBlankScreen(
+    const std::string& url,
+    int32_t blankScreenReason,
+    int32_t detectedContentfulNodesCount) {
+  LOG(INFO) << "NWebRenderHandler::OnDetectedBlankScreen";
+  if (auto handler = handler_.lock()) {
+    handler->OnDetectedBlankScreen(url, blankScreenReason,
+                                   detectedContentfulNodesCount);
+  }
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT)
+void NWebRenderHandler::OnFirstScreenPaint(const std::string& url,
+                                           int64_t navigationStartTime,
+                                           int64_t firstScreenPaintTime) {
+  if (auto handler = handler_.lock()) {
+    handler->OnFirstScreenPaint(url, navigationStartTime, firstScreenPaintTime);
+  }
+}
+#endif
 
 #if BUILDFLAG(ARKWEB_ACCESSIBILITY)
 void NWebRenderHandler::OnAccessibilityEvent(int64_t accessibilityId,

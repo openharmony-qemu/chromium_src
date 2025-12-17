@@ -652,15 +652,31 @@ void PdfViewWebPlugin::UpdateGeometry(const gfx::Rect& window_rect,
 
   OnViewportChanged(window_rect, client_->DeviceScaleFactor());
 
+#if BUILDFLAG(ARKWEB_PDF)
+  if (!is_pinching_) {
+    gfx::PointF scroll_position = client_->GetScrollPosition();
+    // Convert back to CSS pixels.
+    scroll_position.Scale(1.0f / device_scale_);
+    UpdateScroll(scroll_position);
+  } else {
+    SetIsScrolling(true);
+    DoPaintAfterDelay();
+  }
+#else
   gfx::PointF scroll_position = client_->GetScrollPosition();
   // Convert back to CSS pixels.
   scroll_position.Scale(1.0f / device_scale_);
   UpdateScroll(scroll_position);
+#endif  // BUILDFLAG(ARKWEB_PDF)
 }
 
 void PdfViewWebPlugin::UpdateScroll(const gfx::PointF& scroll_position) {
   if (stop_scrolling_)
     return;
+
+#if BUILDFLAG(ARKWEB_PDF)
+  SetIsScrolling(true);
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   float max_x = std::max(document_size_.width() * static_cast<float>(zoom_) -
                              plugin_dip_size_.width(),
@@ -680,6 +696,10 @@ void PdfViewWebPlugin::UpdateScroll(const gfx::PointF& scroll_position) {
 
   engine_->ScrolledToXPosition(scaled_scroll_position.x());
   engine_->ScrolledToYPosition(scaled_scroll_position.y());
+  
+#if BUILDFLAG(ARKWEB_PDF)
+  DoPaintAfterDelay();
+#endif  // BUILDFLAG(ARKWEB_PDF)
 }
 
 void PdfViewWebPlugin::UpdateFocus(bool focused,
@@ -1641,6 +1661,9 @@ void PdfViewWebPlugin::OnMessage(const base::Value::Dict& message) {
           {"setTwoUpView", &PdfViewWebPlugin::HandleSetTwoUpViewMessage},
           {"stopScrolling", &PdfViewWebPlugin::HandleStopScrollingMessage},
           {"viewport", &PdfViewWebPlugin::HandleViewportMessage},
+#if BUILDFLAG(ARKWEB_PDF)
+          {"clickBookmark", &PdfViewWebPlugin::HandleClickBookmarkMessage},
+#endif  // BUILDFLAG(ARKWEB_PDF)
       });
 
   MessageHandler handler = kMessageHandlers.at(*message.FindString("type"));
@@ -1855,6 +1878,14 @@ void PdfViewWebPlugin::HandleViewportMessage(const base::Value::Dict& message) {
   stop_scrolling_ = false;
   const double zoom_ratio = new_zoom / zoom_;
 
+#if BUILDFLAG(ARKWEB_PDF)
+  if (pinch_phase == PinchPhase::kNone || pinch_phase == PinchPhase::kEnd) {
+    SetIsPinching(false);
+  } else {
+    SetIsPinching(true);
+  }
+#endif  // BUILDFLAG(ARKWEB_PDF)
+
   if (pinch_phase == PinchPhase::kStart) {
     scroll_offset_at_last_raster_ = scroll_offset;
     last_bitmap_smaller_ = false;
@@ -2026,7 +2057,8 @@ void PdfViewWebPlugin::OnPaint(const std::vector<gfx::Rect>& paint_rects,
   base::AutoReset<bool> auto_reset_in_paint(&in_paint_, true);
   DoPaint(paint_rects, ready, pending);
 #if BUILDFLAG(ARKWEB_PDF)
-  ForceSelectionChanged();
+  SelectionChangedAfterDelay();
+  SetScrollStoppedAfterDelay();
 #endif
 }
 

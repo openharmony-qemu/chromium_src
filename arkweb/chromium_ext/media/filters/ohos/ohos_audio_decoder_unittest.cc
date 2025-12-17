@@ -17,6 +17,7 @@
 #include "base/test/test_future.h"
 #include "base/test/task_environment.h"
 #include "base/test/bind.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 
 #include "arkweb/chromium_ext/media/cdm/wiseplay_cdm_common.h"
 #define private public
@@ -37,7 +38,7 @@ class OHOSAudioCencInfoTest : public testing::Test {
 TEST_F(OHOSAudioCencInfoTest, GetKeyID_ShouldReturnKeyId_WhenCalled)
 {
   OHOSAudioCencInfo cenc;
-  uint8_t keyId[] = "keyId";
+  uint8_t keyId[10] = {0};
   cenc.SetKeyId(keyId);
   EXPECT_EQ(cenc.GetKeyId(), keyId);
 }
@@ -53,7 +54,7 @@ TEST_F(OHOSAudioCencInfoTest, GetKeyIDLen_ShouldReturnKeyIdLen_WhenCalled)
 TEST_F(OHOSAudioCencInfoTest, GetIv_ShouldReturnIv_WhenCalled)
 {
   OHOSAudioCencInfo cenc;
-  uint8_t iv[] = "iv";
+  uint8_t iv[10] = {0};
   cenc.SetIv(iv);
   EXPECT_EQ(cenc.GetIv(), iv);
 }
@@ -179,7 +180,8 @@ class AudioDecoderCallbackClientMock : public AudioDecoderCallback::Client {
 public:
   MOCK_METHOD(void, AddInputBuffer, (uint32_t index), (override));
 
-  MOCK_METHOD(void, AddOutputBuffer, (uint32_t index, uint8_t* bufferData, uint32_t size, int64_t pts, BufferFlag flag), (override));
+  MOCK_METHOD(void, AddOutputBuffer,
+      (uint32_t index, uint8_t* bufferData, uint32_t size, int64_t pts, BufferFlag flag), (override));
 
   MOCK_METHOD(void, UpdateOutputFormat, (), (override));
 
@@ -457,6 +459,13 @@ TEST_F(OhosAudioDecoderTest, OnMediaCryptoReady)
   AudioDecoder::InitCB init_cb = future.GetCallback();
   decoder_->OnMediaCryptoReady(std::move(init_cb), nullptr, false);
   EXPECT_EQ(future.Get(), media::DecoderStatus::Codes::kUnsupportedEncryptionMode);
+
+  decoder_->mime_type_ = "test";
+  decoder_->ohos_crypto_context_ = cdm_context_->GetOHOSMediaCryptoContext();
+  AudioDecoder::InitCB init_cb1 = future.GetCallback();
+  int32_t test_session;
+  decoder_->OnMediaCryptoReady(std::move(init_cb1), &test_session, false);
+  EXPECT_EQ(decoder_->mediaKeySession_, &test_session);
 }
 
 TEST_F(OhosAudioDecoderTest, ClearInputQueue)
@@ -762,4 +771,112 @@ TEST_F(OhosAudioDecoderTest, DequeueOutputBuffer)
   EXPECT_EQ(decoder_->DequeueOutputBuffer(out), 0);
 }
 
+TEST_F(OhosAudioDecoderTest, QueueInputBufferDec)
+{
+  int32_t index = 1;
+  decoder_->SetState(OHOSAudioDecoder::WAITING_FOR_MEDIA_CRYPTO);
+  auto code = decoder_->QueueInputBufferDec(index, 0, nullptr, 0, nullptr, true, BufferFlag::CODEC_BUFFER_FLAG_EOS);
+  EXPECT_EQ(code, AudioDecoderAdapterCode::DECODER_RETRY);
+
+  decoder_->SetState(OHOSAudioDecoder::READY);
+  code = decoder_->QueueInputBufferDec(index, 0, nullptr, 0, nullptr, true, BufferFlag::CODEC_BUFFER_FLAG_EOS);
+  EXPECT_EQ(code, AudioDecoderAdapterCode::DECODER_ERROR);
+
+  decoder_->audio_decoder_ = OhosAdapterHelper::GetInstance().CreateAudioCodecDecoderAdapter();
+  code = decoder_->QueueInputBufferDec(index, 0, nullptr, 0, nullptr, true, BufferFlag::CODEC_BUFFER_FLAG_EOS);
+  EXPECT_EQ(code, AudioDecoderAdapterCode::DECODER_RETRY);
+
+  decoder_->SetState(OHOSAudioDecoder::READY);
+  decoder_->audio_decoder_ = OhosAdapterHelper::GetInstance().CreateAudioCodecDecoderAdapter();
+  code = decoder_->QueueInputBufferDec(index, 0, nullptr, 0, nullptr, true, BufferFlag::CODEC_BUFFER_FLAG_EOS);
+  EXPECT_EQ(code, AudioDecoderAdapterCode::DECODER_RETRY);
+
+  decoder_->SetState(OHOSAudioDecoder::READY);
+  decoder_->waiting_for_key_ = false;
+  code = decoder_->QueueInputBufferDec(index, 0, nullptr, 0, nullptr, true, BufferFlag::CODEC_BUFFER_FLAG_EOS);
+  EXPECT_EQ(code, AudioDecoderAdapterCode::DECODER_ERROR);
+}
+
+TEST_F(OhosAudioDecoderTest, WaitingForLicence)
+{
+  decoder_->waiting_for_key_ = false;
+  decoder_->WaitingForLicence();
+  EXPECT_EQ(decoder_->time_out_count_, 0);
+
+  decoder_->waiting_for_key_ = true;
+  decoder_->time_out_count_ = 5;
+  decoder_->WaitingForLicence();
+  EXPECT_EQ(decoder_->time_out_count_, 0);
+
+  decoder_->time_out_count_ = 0;
+  decoder_->WaitingForLicence();
+  EXPECT_EQ(decoder_->time_out_count_, 1);
+
+  decoder_->WaitingForLicence();
+  EXPECT_EQ(decoder_->time_out_count_, 2);
+}
+
+TEST_F(OhosAudioDecoderTest, InitAudioDecoder)
+{
+  bool ret = decoder_->InitAudioDecoder("test");
+  EXPECT_EQ(ret, false);
+}
+
+TEST_F(OhosAudioDecoderTest, Decode)
+{
+  const uint8_t kData[] = "hello";
+  scoped_refptr<DecoderBuffer> buffer1(DecoderBuffer::CopyFrom(kData));
+  const char kKeyId[] = "key id";
+  const char kIv[] = "0123456789abcdef";
+  std::vector<SubsampleEntry> subsamples;
+  subsamples.emplace_back(10, 5);
+  subsamples.emplace_back(15, 7);
+  buffer1->set_decrypt_config(
+      DecryptConfig::CreateCencConfig(kKeyId, kIv, subsamples));
+  auto cb1 = base::BindOnce([](DecoderStatus status) {
+    EXPECT_EQ(status, DecoderStatus::Codes::kFailed);
+  });
+  decoder_->Decode(std::move(buffer1), std::move(cb1));
+
+  auto buffer2 = DecoderBuffer::CreateEOSBuffer();
+  auto cb2 = base::BindOnce([](DecoderStatus status) {
+    EXPECT_EQ(status, DecoderStatus::Codes::kFailed);
+  });
+  decoder_->Decode(std::move(buffer2), std::move(cb2));
+
+  scoped_refptr<DecoderBuffer> buffer3(new DecoderBuffer(0));
+  buffer3->set_timestamp(kNoTimestamp);
+  auto cb3 = base::BindOnce([](DecoderStatus status) {
+    EXPECT_EQ(status, DecoderStatus::Codes::kFailed);
+  });
+  decoder_->Decode(std::move(buffer3), std::move(cb3));
+
+  auto buffer4 = DecoderBuffer::CreateEOSBuffer();
+  auto cb4 = base::BindOnce([](DecoderStatus status) {});
+  decoder_->SetState(OHOSAudioDecoder::WAITING_FOR_MEDIA_CRYPTO);
+  decoder_->CreateOhosDecoderLoop();
+  auto input_queue_size = decoder_->input_queue_.size();
+  decoder_->Decode(std::move(buffer4), std::move(cb4));
+  EXPECT_EQ(decoder_->input_queue_.size(), input_queue_size + 1);
+
+  auto buffer5 = DecoderBuffer::CreateEOSBuffer();
+  auto cb5 = base::BindOnce([](DecoderStatus status) {});
+  decoder_->SetState(OHOSAudioDecoder::READY);
+  input_queue_size = decoder_->input_queue_.size();
+  decoder_->Decode(std::move(buffer5), std::move(cb5));
+  EXPECT_EQ(decoder_->input_queue_.size(), input_queue_size + 1);
+}
+
+TEST_F(OhosAudioDecoderTest, Reset)
+{
+  decoder_->SetState(OHOSAudioDecoder::WAITING_FOR_MEDIA_CRYPTO);
+  decoder_->Reset(base::BindLambdaForTesting([]() {}));
+  EXPECT_EQ(decoder_->state_, OHOSAudioDecoder::WAITING_FOR_MEDIA_CRYPTO);
+
+  decoder_->audio_decoder_ = OhosAdapterHelper::GetInstance().CreateAudioCodecDecoderAdapter();
+  decoder_->CreateOhosDecoderLoop();
+  decoder_->PrepareParameters(NewAudioConfig(AudioCodec::kFLAC));
+  decoder_->Reset(base::BindOnce([]() {}));
+  EXPECT_EQ(decoder_->state_, OHOSAudioDecoder::ERROR);
+}
 }

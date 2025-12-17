@@ -16,13 +16,21 @@
 #ifndef CONTENT_PUBLIC_BROWSER_RENDER_PROCESS_HOST_OHOS_H_
 #define CONTENT_PUBLIC_BROWSER_RENDER_PROCESS_HOST_OHOS_H_
 
-#include "arkweb/build/features/features.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 #if BUILDFLAG(ARKWEB_READER_MODE)
 namespace nweb_ex {
 struct BrowserReaderModeConfigData;
 }
 #endif  // ARKWEB_READER_MODE
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+namespace nweb_ex {
+struct AlloyVideoLoadOptimizationData;
+}
+#endif  // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 
 namespace content {
 class RenderProcessHostOhos {
@@ -31,6 +39,11 @@ class RenderProcessHostOhos {
   virtual void UpdateReaderModeConfig(
       const nweb_ex::BrowserReaderModeConfigData* data) = 0;
 #endif
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  virtual void UpdateVideoLoadOptimizationConfig(
+    nweb_ex::AlloyVideoLoadOptimizationData& data) = 0;
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 };
 }  // namespace content
 #endif  // CONTENT_PUBLIC_BROWSER_RENDER_PROCESS_HOST_OHOS_H_

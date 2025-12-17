@@ -60,14 +60,17 @@ bool SelectionControllerForIncludeTest::GetMenuShow() {
   return Controller().mouse_menu_show_;
 }
 
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
 void SelectionControllerForIncludeTest::SetLongPress(HitTestResult& result) {
   Controller().last_long_press_hit_test_result_ = result;
 }
+#endif
 
 void SelectionControllerForIncludeTest::SetLinkPress(HitTestResult& result) {
   Controller().last_link_hit_test_result_ = result;
 }
 
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
 TEST_F(SelectionControllerForIncludeTest, NotifyContextMenuWillShowTest_1stIf) {
   HitTestResult result;
   GetFrame()
@@ -393,6 +396,7 @@ TEST_F(SelectionControllerForIncludeTest, SelectClosestWordFromLiveLinkTest_6thI
                     .SelectClosestWordFromLiveLink(hit_test_result_);
   EXPECT_TRUE(result);
 }
+#endif
 
 TEST_F(SelectionControllerForIncludeTest, MouseSelectMenuShowTest_1stIf) {
   SetHtmlInnerHTML(R"HTML(
@@ -1090,6 +1094,48 @@ TEST_F(SelectionControllerForIncludeTest, HandleGestureTapIfSelectionExistTest_1
   const char* body_content =
       "<div id='sample' contenteditable>"
       "<span id = top>this is a sample test</span>"
+      "</div>";
+  SetBodyContent(body_content);
+
+  Node* top = GetDocument().getElementById(AtomicString("top"))->firstChild();
+  ASSERT_TRUE(top != nullptr);
+
+  SetNonDirectionalSelectionIfNeeded(SelectionInFlatTree::Builder()
+                                         .Collapse(PositionInFlatTree(top, 0))
+                                         .Extend(PositionInFlatTree(top, 20))
+                                         .Build(),
+                                     TextGranularity::kCharacter);
+
+  blink::WebMouseEvent single_click(
+      blink::WebMouseEvent::Type::kMouseDown, 0,
+      blink::WebInputEvent::GetStaticTimeStampForTests());
+
+  single_click.SetFrameScale(1);
+  HitTestLocation location((gfx::Point(20, 5)));
+  single_click.button = blink::WebMouseEvent::Button::kLeft;
+  single_click.click_count = 1;
+  single_click.SetModifiers(
+      blink::WebInputEvent::Modifiers::kIsCompatibilityEventForTouch);
+
+  HitTestResult result;
+
+  SetMenuShow(true);
+
+  const MouseEventWithHitTestResults event_(single_click, location, result);
+
+  bool result_ = GetFrame()
+                     .GetEventHandler()
+                     .GetSelectionController()
+                     .HandleGestureTapIfSelectionExist(event_);
+
+  EXPECT_FALSE(result_);
+}
+
+TEST_F(SelectionControllerForIncludeTest, HandleGestureTapIfSelectionExistTest_16thIf) {
+  const char* body_content =
+      "<div id='sample' contenteditable>"
+      "<span id = top>this is a sample test</span>"
+      "<img src='test.img' style='width:100px;height:100px'>"
       "</div>";
   SetBodyContent(body_content);
 

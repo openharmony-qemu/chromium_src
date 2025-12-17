@@ -49,6 +49,7 @@ const std::string KEY_RECT_W = "width";
 const std::string KEY_RECT_H = "height";
 const std::string KEY_PLACEHOLDER = "placeholder";
 const std::string KEY_VALUE = "value";
+const std::string KEY_SELECTABLE_USER_NAMES = "selectableUsernames";
 
 const std::string KEY_PAGE_URL = "pageUrl";
 const std::string KEY_IS_USER_SELECTED = "isUserSelected";
@@ -158,15 +159,27 @@ std::optional<std::string> ChromePasswordManagerClientExt::PasswordFormToJsonFor
   view_data_list.Append(base::Value::Dict().Set(
       KEY_PAGE_URL, url::Origin::Create(form.url).GetURL().spec()));
 
-  std::unordered_map<std::string, std::u16string> saveItem = {
-      {KEY_USERNAME, form.username_value}, {KEY_PASSWORD, form.password_value}};
-  for (auto item : saveItem) {
-    base::Value::List list;
-    list.Append(
-        base::Value::Dict().Set(KEY_VALUE, base::UTF16ToUTF8(item.second)));
-    auto dict = base::Value::Dict().Set(item.first, std::move(list));
-    view_data_list.Append(std::move(dict));
+  base::Value::List list_username;
+  list_username.Append(
+    base::Value::Dict().Set(KEY_VALUE, base::UTF16ToUTF8(form.username_value)));
+
+  base::Value::List list_metadata;
+  for (const auto& alt_username : form.all_alternative_usernames) {
+    list_metadata.Append(base::UTF16ToUTF8(alt_username.value));
   }
+  list_username.Append(
+      base::Value::Dict().Set(KEY_SELECTABLE_USER_NAMES, std::move(list_metadata)));
+
+  view_data_list.Append(
+      base::Value::Dict().Set(KEY_USERNAME, std::move(list_username)));
+
+  view_data_list.Append(
+      base::Value::Dict().Set(KEY_PASSWORD, 
+          base::Value::List().Append(
+              base::Value::Dict().Set(KEY_VALUE, base::UTF16ToUTF8(form.password_value))
+          )
+      )
+  );
 
   return base::WriteJson(view_data_list);
 }
@@ -368,9 +381,18 @@ void ChromePasswordManagerClientExt::FillAccountSuggestion(
     const GURL& page_url,
     const std::u16string& username,
     const std::u16string& password) {
+  if (!web_contents()) {
+    LOG(ERROR) << "[Autofill] web_contents is nullptr";
+    return;
+  }
+  content::RenderFrameHost* rfh = web_contents()->GetFocusedFrame();
+  if (!rfh || !rfh->IsActive()) {
+    LOG(ERROR) << "[Autofill] rfh is nullptr or not active";
+    return;
+  }
   password_manager::ContentPasswordManagerDriver* driver =
       password_manager::ContentPasswordManagerDriver::GetForRenderFrameHost(
-          web_contents()->GetFocusedFrame());
+          rfh);
   if (!driver) {
     return;
   }
@@ -456,6 +478,17 @@ void ChromePasswordManagerClientExt::OnRequestAutofill(
 
 bool ChromePasswordManagerClientExt::ArkPromptUserToSaveOrUpdatePassword(
     std::unique_ptr<password_manager::PasswordFormManagerForUI> form_to_save) {
+  
+  if (!web_contents()) {
+    LOG(ERROR) << "web contents is nullptr, can't get autofill enable state.";
+  } else {
+    auto web_preference = web_contents()->GetOrCreateWebPreferences();
+    if (!web_preference.is_autofill_enabled) {
+      LOG(INFO) << "[PassWord Autofill] autofill interception successful.";
+      return false;
+    }
+  }
+ 
   if (!form_to_save) {
     LOG(ERROR) << "form_to_save is nullptr";
     return false;

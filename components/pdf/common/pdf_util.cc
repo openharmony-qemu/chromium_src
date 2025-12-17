@@ -9,7 +9,9 @@
 #include "extensions/buildflags/buildflags.h"
 #include "pdf/buildflags.h"
 #include "url/origin.h"
-
+#if BUILDFLAG(ARKWEB_PDF)
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#endif
 #if BUILDFLAG(ENABLE_PDF)
 #include "base/feature_list.h"
 #include "pdf/pdf_features.h"
@@ -27,12 +29,23 @@ constexpr SkColor kPdfExtensionBackgroundColor = SkColorSetRGB(82, 86, 89);
 constexpr SkColor kPdfExtensionBackgroundColorCr23 = SkColorSetRGB(40, 40, 40);
 #endif  // BUILDFLAG(ENABLE_PDF)
 // LINT.ThenChange(//chrome/browser/resources/pdf/pdf_viewer.ts:PdfBackgroundColor)
-
+#if BUILDFLAG(ARKWEB_PDF)
+constexpr char PDF_LOAD_STATUS[] = "PDF_LOAD_STATUS";
+constexpr char LOAD_STATUS[] = "LOAD_STATUS";
+#endif
 }  // namespace
 
 void ReportPDFLoadStatus(PDFLoadStatus status) {
   UMA_HISTOGRAM_ENUMERATION("PDF.LoadStatus2", status,
                             PDFLoadStatus::kPdfLoadStatusCount);
+#if BUILDFLAG(ARKWEB_PDF)
+  // The range of PDFLoadStatus is 0-6, and it can be converted.
+  OHOS::NWeb::OhosAdapterHelper::GetInstance()
+      .GetHiSysEventAdapterInstance()
+      .Write(PDF_LOAD_STATUS,
+             OHOS::NWeb::HiSysEventAdapter::EventType::BEHAVIOR,
+             {LOAD_STATUS, std::to_string(static_cast<int8_t>(status))});
+#endif
 }
 
 bool IsPdfExtensionOrigin(const url::Origin& origin) {

@@ -31,6 +31,11 @@ using blink::mojom::DetailTemplateIndex;
 using blink::mojom::ReaderModeConfig;
 #endif
 
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+#include "arkweb/ohos_nweb/src/sysevent/event_reporter.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#endif
+
 namespace content {
 
 #if BUILDFLAG(ARKWEB_READER_MODE)
@@ -64,10 +69,13 @@ const base::TimeTicks& ArkwebRenderProcessHostImplExt::ProcessBackgroundTime() {
 #if BUILDFLAG(ARKWEB_THEME_FONT)
 void ArkwebRenderProcessHostImplExt::OnThemeFontChange() {
   if (auto* theme_font = ArkwebRenderProcessHostImplUtils::EnsureThemeFont()) {
+    std::vector<base::File> font_files(theme_font->font_files.size());
+    std::transform(theme_font->font_files.begin(), theme_font->font_files.end(), font_files.begin(),
+          [] (const base::File& f) { return f.Duplicate(); });
     ArkwebRenderProcessHostImplUtils::UpdateThemeFontFile(
-        this, theme_font->font_file.Duplicate());
+        this, std::move(font_files));
   } else {
-    ArkwebRenderProcessHostImplUtils::UpdateThemeFontFile(this, base::File());
+    ArkwebRenderProcessHostImplUtils::UpdateThemeFontFile(this, std::vector<base::File>());
   }
 }
 #endif
@@ -83,6 +91,36 @@ void ArkwebRenderProcessHostImplExt::dumpCurrentJavaScriptStackInMainThread(
 
 void ArkwebRenderProcessHostImplExt::InvokeRenderCrashDump() {
   child_process_->InvokeRenderCrashDump();
+}
+
+std::string GetProcessName() {
+  std::ifstream input_file("/proc/self/cmdline");
+  if (!input_file.is_open()) {
+    LOG(ERROR) << "Error: Could not open /proc/self/cmdline";
+    return "";
+  }
+
+  std::string processName = "";
+  if (!std::getline(input_file, processName)) {
+    LOG(ERROR) << "Error: Failed to read process name from /proc/self/cmdline";
+  }
+  return processName;
+}
+
+void OnUidRetrieved(int32_t pid, int32_t uid) {
+#if !defined(COMPONENT_BUILD)
+  ReportRenderJsFreeze(
+    pid,
+    OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance().GetBundleName(),
+    GetProcessName() + ":render",
+    "render unresponsive",
+    uid
+  );
+#endif
+}
+
+void ArkwebRenderProcessHostImplExt::ReportRenderUnresponsive(int32_t pid) {
+  child_process_->GetUid(base::BindOnce(&OnUidRetrieved, pid));
 }
 
 #if BUILDFLAG(IS_ARKWEB)
@@ -157,7 +195,7 @@ void ArkwebRenderProcessHostImplExt::UpdateReaderModeConfig(
   const nweb_ex::BrowserReaderModeContentMetaDataConfig& metaData = reader_mode_config_data->content_config.meta_data;
   config->must_have_catalog = metaData.must_have_catalog;
   config->must_have_prev_and_next = metaData.must_have_prev_and_next;
-  config->minimum_content_length = metaData.minimum_content_length;
+  config->minimum_content_length = metaData.minimum_content_length < 0 ? 0 : metaData.minimum_content_length;
 
   LOG(INFO) << "RenderProcessHostImpl::UpdateReaderModeConfig config enable " << config->reader_mode_enabled
             << " must_have_catalog:" << config->must_have_catalog
@@ -170,4 +208,33 @@ void ArkwebRenderProcessHostImplExt::UpdateReaderModeConfig(
   renderer_interface->UpdateReaderModeConfig(std::move(config));
 }
 #endif  // ARKWEB_READER_MODE
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+void ArkwebRenderProcessHostImplExt::UpdateVideoLoadOptimizationConfigData(
+    nweb_ex::AlloyVideoLoadOptimizationData& data) {
+  content::RenderProcessHost::iterator it =
+      content::RenderProcessHost::AllHostsIterator();
+  while (!it.IsAtEnd()) {
+    content::RenderProcessHost* host = it.GetCurrentValue();
+    if (host && host->IsInitializedAndNotDead()) {
+      host->UpdateVideoLoadOptimizationConfig(data);
+    }
+    it.Advance();
+  }
+}
+
+void ArkwebRenderProcessHostImplExt::UpdateVideoLoadOptimizationConfig(
+    nweb_ex::AlloyVideoLoadOptimizationData& data) {
+  auto* renderer_interface = GetRendererInterface();
+  if (!renderer_interface) {
+    LOG(WARNING) << "UpdateVideoLoadOptimizationConfig interface is null";
+    return;
+  }
+  LOG(INFO) << "VideoOpt: UpdateVideoLoadOptimizationConfig";
+  renderer_interface->UpdateVideoLoadOptimizationConfigData(data.use_video_load_optimization_,
+      data.preload_video_time_, data.min_cache_time_,
+      data.max_cache_time_, data.moov_size_, data.bit_rate_, data.support_domains_);
+}
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
 }  // namespace content

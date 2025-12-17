@@ -15,11 +15,66 @@
 
 #include "log_utils.h"
 
+#include "stdlib.h"
+
+#include <algorithm>
 #include <memory>
+#include <sstream>
+#include <vector>
 
 #include "base/strings/string_util.h"
 #include "build/build_config.h"
+#include "net/base/ip_address.h"
+#include "net/base/ip_endpoint.h"
 #include "url/url_constants.h"
+#include "url/url_canon.h"
+#include "url/url_canon_internal.h"
+#include "url/url_canon_stdstring.h"
+#include "url/third_party/mozilla/url_parse.h"
+
+namespace {
+void AppendIPv4Address(const unsigned char address[4], url::CanonOutput* output) {
+  // Noise the ip addressed.
+  for (int i = 0; i < 4; i++) {
+    if (i == 3) {
+      output->push_back('*');
+      continue;
+    }
+    char str[16];
+    url::_itoa_s(address[i], str, 10);
+
+    for (int ch = 0; str[ch] != 0; ch++)
+      output->push_back(str[ch]);
+
+    if (i != 3)
+      output->push_back('.');
+  }    
+}
+
+void AppendIPv6Address(const unsigned char address[16], url::CanonOutput* output) {
+  for (int i = 0; i <= 14;) {
+    // Consume the next 16 bits from |address|.
+    int x = address[i] << 8 | address[i + 1];
+    i += 2;
+
+    // Stringify the 16 bit number (at most requires 4 hex digits).
+    char str[5];
+    url::_itoa_s(x, str, 16);
+    for (int ch = 0; str[ch] != 0; ++ch) {
+      // Noise the ip addressed.
+      if (i >= 6) {
+        output->push_back('*');
+      } else {
+        output->push_back(str[ch]);
+      }
+    }
+
+    // Put a colon after each number, except the last.
+    if (i < 16)
+      output->push_back(':');
+  }
+}
+}  // namespace
 
 namespace url {
 const char kReplaceStr[] = "***";
@@ -48,7 +103,12 @@ bool LogUtils::IsSupportScheme(const std::string& url,
 // static
 bool LogUtils::IsSupportScheme(const std::string& scheme) {
   if (base::EqualsCaseInsensitiveASCII(scheme, url::kHttpScheme) ||
-      base::EqualsCaseInsensitiveASCII(scheme, url::kHttpsScheme)) {
+      base::EqualsCaseInsensitiveASCII(scheme, url::kHttpsScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+       ||
+      base::EqualsCaseInsensitiveASCII(scheme, url::kChromeExtensionScheme)
+#endif
+      ) {
     return true;
   }
   return false;
@@ -265,6 +325,74 @@ std::string LogUtils::ConvertUrlWithMask(const std::string& url) {
   converted.append(url.substr(0, endPos));
   converted.append("***");
   return converted;
+}
+
+// static
+std::string LogUtils::ConvertPathWithMask(const std::string& file_path) {
+    if (file_path.empty()) {
+        return "";
+    }
+    std::string normalized_path = file_path;
+    std::string::size_type pos = 0;
+    // Replace '\\' "//"" with '/' 
+    while ((pos = normalized_path.find('\\', pos)) != std::string::npos) {
+        normalized_path[pos] = '/';
+        pos++;
+    }
+    pos = 0;
+    while ((pos = normalized_path.find("//", pos)) != std::string::npos) {
+        normalized_path.replace(pos, 2, "/");
+    }
+    std::vector<std::string> parts;
+    std::stringstream ss(normalized_path);
+    std::string part;
+    while (std::getline(ss, part, '/')) {
+        if (!part.empty()) {
+            parts.push_back(part);
+        }
+    }
+    if (parts.empty()) {
+        return "";
+    }
+    std::string result = "";
+    // Skip the drive letter(e.g "D:")
+    size_t start_index = 0;
+    if (parts.size() > 0 && parts[0].length() == 2 && parts[0][1] == ':') {
+      start_index = 1;
+    }
+    for (size_t i = start_index; i < parts.size(); ++i) {
+        std::string current_part = parts[i];
+        if (i == parts.size() - 1) {
+            // Remove file extension
+            size_t dot_pos = current_part.find_last_of('.');
+            if (dot_pos != std::string::npos) {
+                current_part = current_part.substr(0, dot_pos);
+            }
+        }
+        if (!current_part.empty()) {
+            std::string masked_part;
+            // Replace all characters except the first one with "***"
+            masked_part += current_part[0];
+            masked_part += "***";
+
+            result += "/" + masked_part;
+        }
+    }
+    return result;
+}
+
+std::string LogUtils::AnonymizeIpAddress(const net::IPEndPoint& ip_endpoint) {
+  std::string str;
+  url::StdStringCanonOutput output(&str);
+
+  if (ip_endpoint.address().IsIPv4()) {
+    AppendIPv4Address(ip_endpoint.address().bytes().data(), &output);
+  } else if (ip_endpoint.address().IsIPv6()) {
+    AppendIPv6Address(ip_endpoint.address().bytes().data(), &output);
+  }
+
+  output.Complete();
+  return str;
 }
 
 }  // namespace url

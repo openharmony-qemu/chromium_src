@@ -83,6 +83,7 @@ public:
     WebInputEventAttribution attribution);
 #if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
   gfx::Vector2dF GetOverScrollOffset();
+  void SetClientForElasticOverScrollController();
 #endif
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
@@ -112,6 +113,7 @@ public:
   void SendToBlink(std::unique_ptr<EventWithCallback> event_with_callback,
                    bool isDrop = false, bool result = false);
   void FlushNativeTouchQueue(size_t fingerId);
+  void PopNativeTouchQueue(size_t fingerId);
   void NativeEventProcess(
       std::unique_ptr<EventWithCallback> event_with_callback);
   bool NativeTouchEventProcess(
@@ -148,6 +150,7 @@ public:
   bool HandleTouchStartInitInQueue(
       std::unique_ptr<EventWithCallback> event_with_callback,
       int32_t finger_id);
+  void SendNativeInQueueFrontSeq(size_t finger_id);
 #endif
  private:
  raw_ptr<InputHandlerProxy> proxy_;

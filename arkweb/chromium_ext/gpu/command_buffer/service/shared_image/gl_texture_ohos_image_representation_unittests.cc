@@ -39,7 +39,6 @@
 #include "gtest/gtest.h"
 #include "third_party/dawn/include/dawn/dawn_proc.h"
 #include "third_party/skia/include/gpu/ganesh/GrBackendSurface.h"
-#include "ui/gl/android/egl_fence_utils.h"
 #include "ui/gl/gl_bindings.h"
 #include "ui/gl/gl_context.h"
 #include "ui/gl/gl_surface.h"

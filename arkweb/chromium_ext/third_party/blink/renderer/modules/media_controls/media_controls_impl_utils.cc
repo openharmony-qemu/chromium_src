@@ -168,7 +168,7 @@ bool MediaControlsImplUtils::ShouldShowPlaybackSpeedButtonExt(HTMLMediaElement& 
 }
 
 void MediaControlsImplUtils::UpdateOverflowMenuWantedExt(
-    std::pair<MediaControlElementBase*, bool>(&row_elements)[kRowElementsCount]) {
+    std::pair<MediaControlElementBase*, bool>(&row_elements)[kRowElementsCount]) const {
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   if (ShouldShowVideoControlsHM()) {
     row_elements[kPlaybackSpeedIndexToRowColumns].second = true;
@@ -414,7 +414,10 @@ void MediaControlsImplUtils::BeginScrubbingStopTimer() {
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 MediaControlsSizingClass MediaControlsImplUtils::GetSizingClassHM() {
-  if (media_controls_impl_ && media_controls_impl_->size_.width() < kMediaControlsSizingMediumThresholdVideoAssitant) {
+  if (!media_controls_impl_) {
+    return MediaControlsSizingClass::kLarge;
+  }
+  if (media_controls_impl_->size_.width() < kMediaControlsSizingMediumThresholdVideoAssitant) {
     return MediaControlsSizingClass::kSmall;
   }
   if (media_controls_impl_->size_.width() < kMediaControlsSizingLargeThresholdVideoAssitant) {
@@ -434,11 +437,11 @@ void MediaControlsImplUtils::MakeTransparentImmediately() {
 #endif
 
 void MediaControlsImplUtils::UpdateSizingCSSClassExt() {
-  MediaControlsSizingClass sizing_class_hm = GetSizingClassHM();
   if (!media_controls_impl_) {
     LOG(ERROR) << "UpdateSizingCSSClassExt media_controls_impl_ is nullptr";
     return;
   }
+  MediaControlsSizingClass sizing_class_hm = GetSizingClassHM();
   media_controls_impl_->SetClass(kMediaControlsSizingSmallCSSClass,
     media_controls_impl_->ShouldShowVideoControls() && sizing_class_hm == MediaControlsSizingClass::kSmall);
   media_controls_impl_->SetClass(kMediaControlsSizingMediumCSSClass,
@@ -556,7 +559,7 @@ void MediaControlsImplUtils::VideoAssistantTrace(Visitor* visitor) const {
 }
 #endif // ARKWEB_VIDEO_ASSISTANT
 
-void MediaControlsImplUtils::TraceExt(Visitor* visitor) {
+void MediaControlsImplUtils::TraceExt(Visitor* visitor) const {
 #if BUILDFLAG(ARKWEB_MEDIA)
   visitor->Trace(media_controls_impl_->entered_fullscreen_panel_);
   visitor->Trace(media_controls_impl_->entered_fullscreen_title_display_);
@@ -572,7 +575,7 @@ void MediaControlsImplUtils::CreateExt(
     MediaControlsImpl* controls, HTMLMediaElement& media_element) {
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   if (controls) {
-    controls->SetClass("rtl", media_element.html_media_element_utils_->IsRTL());
+    controls->SetClass("rtl", media_element.html_media_element_utils_.IsRTL());
   }
 #endif
 }
@@ -580,9 +583,9 @@ void MediaControlsImplUtils::CreateExt(
 // LCOV_EXCL_START
 bool MediaControlsImplUtils::PopulatePanelExtVideoAssistant() {
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-  if (media_controls_impl_ && media_controls_impl_->mediaControlsImplUtils_ &&
-      media_controls_impl_->mediaControlsImplUtils_->ShouldShowVideoControlsHM()) {
-    media_controls_impl_->mediaControlsImplUtils_->PopulatePanelHM();
+  if (media_controls_impl_ &&
+      media_controls_impl_->mediaControlsImplUtils_.ShouldShowVideoControlsHM()) {
+    media_controls_impl_->mediaControlsImplUtils_.PopulatePanelHM();
     return true;
   }
 #endif
@@ -613,5 +616,9 @@ void MediaControlsImplUtils::ScrubbingTimerFiredExt() {
   }
 }
 // LCOV_EXCL_STOP
+
+void MediaControlsImplUtils::Trace(Visitor* visitor) const {
+  visitor->Trace(media_controls_impl_);
+}
 
 } // namespace blink

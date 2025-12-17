@@ -164,7 +164,7 @@ class RealTimeUrlLookupServiceTest : public PlatformTest {
             &RealTimeUrlLookupServiceTest::AreTokenFetchesConfiguredInClient,
             base::Unretained(this)),
         /*is_off_the_record=*/false,
-        /*variations_service_gatter=*/
+        /*variations_service_getter=*/
         base::BindRepeating(
             []() -> variations::VariationsService* { return nullptr; }),
         referrer_chain_provider_.get(),

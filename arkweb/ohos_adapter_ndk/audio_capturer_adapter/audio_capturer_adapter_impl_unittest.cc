@@ -15,107 +15,18 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "arkweb/ohos_adapter_ndk/mock_ndk_api/include/mock_ndk_api.h"
 #define private public
 #include "audio_capturer_adapter_impl.h"
 #undef private
 
 using namespace testing;
+using namespace MockNdkApi;
 using namespace OHOS::NWeb;
 class MockAudioCapturerReadCallbackAdapter : public AudioCapturerReadCallbackAdapter {
   public:
     MOCK_METHOD(void, OnReadData, (size_t length), (override));
 };
-
-class MockAudioCommonEventSupport {
-  public:
-    static MockAudioCommonEventSupport& getInstance() {
-      static MockAudioCommonEventSupport instance;
-      return instance;
-  }
-  MOCK_METHOD(OH_AudioStream_Result, OH_AudioCapturer_Start, (OH_AudioCapturer *capturer));
-  MOCK_METHOD(OH_AudioStream_Result, OH_AudioCapturer_Stop, (OH_AudioCapturer *capturer));
-  MOCK_METHOD(OH_AudioStream_Result, OH_AudioCapturer_Release, (OH_AudioCapturer *capturer));
-  MOCK_METHOD(OH_AudioStream_Result, OH_AudioCapturer_GetFrameSizeInCallback, (OH_AudioCapturer *capturer, int32_t *frameSize));
-  MOCK_METHOD(OH_AudioStream_Result, OH_AudioCapturer_GetTimestamp, (OH_AudioCapturer *capturer, clockid_t clockId, int64_t *framePosition, int64_t *timestamp));
-  MOCK_METHOD(OH_AudioStream_Result, OH_AudioStreamBuilder_Create, (OH_AudioStreamBuilder **builder, OH_AudioStream_Type type));
-  MOCK_METHOD(OH_AudioStream_Result, OH_AudioStreamBuilder_SetSamplingRate, (OH_AudioStreamBuilder *builder, int32_t rate));
-  MOCK_METHOD(OH_AudioStream_Result, OH_AudioStreamBuilder_Destroy, (OH_AudioStreamBuilder *builder));
-  MOCK_METHOD(OH_AudioStream_Result, OH_AudioStreamBuilder_SetEncodingType, (OH_AudioStreamBuilder *builder, OH_AudioStream_EncodingType encodingType));
-  MOCK_METHOD(OH_AudioStream_Result, OH_AudioStreamBuilder_SetSampleFormat, (OH_AudioStreamBuilder *builder, OH_AudioStream_SampleFormat format));
-  MOCK_METHOD(OH_AudioStream_Result, OH_AudioStreamBuilder_SetChannelCount, (OH_AudioStreamBuilder *builder, int32_t channelCount));
-  MOCK_METHOD(OH_AudioStream_Result, OH_AudioStreamBuilder_SetCapturerInfo, (OH_AudioStreamBuilder *builder, OH_AudioStream_SourceType sourceType));
-  MOCK_METHOD(OH_AudioStream_Result, OH_AudioStreamBuilder_SetLatencyMode, (OH_AudioStreamBuilder *builder, OH_AudioStream_LatencyMode latencyMode));
-  MOCK_METHOD(OH_AudioStream_Result, OH_AudioStreamBuilder_SetCapturerCallback, (OH_AudioStreamBuilder *builder, OH_AudioCapturer_Callbacks callbacks, void *userData));
-  MOCK_METHOD(OH_AudioStream_Result, OH_AudioStreamBuilder_GenerateCapturer, (OH_AudioStreamBuilder *builder, OH_AudioCapturer **audioCapturer));
-};
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-OH_AudioStream_Result __wrap_OH_AudioCapturer_Start(OH_AudioCapturer *capturer) {
-  return MockAudioCommonEventSupport::getInstance().OH_AudioCapturer_Start(capturer);
-}
-
-OH_AudioStream_Result __wrap_OH_AudioCapturer_Stop(OH_AudioCapturer *capturer) {
-  return MockAudioCommonEventSupport::getInstance().OH_AudioCapturer_Stop(capturer);
-}
-
-OH_AudioStream_Result __wrap_OH_AudioCapturer_Release(OH_AudioCapturer *capturer) {
-  return MockAudioCommonEventSupport::getInstance().OH_AudioCapturer_Release(capturer);
-}
-
-
-OH_AudioStream_Result __wrap_OH_AudioCapturer_GetFrameSizeInCallback(OH_AudioCapturer *capturer, int32_t *frameSize) {
-  return MockAudioCommonEventSupport::getInstance().OH_AudioCapturer_GetFrameSizeInCallback(capturer, frameSize);
-}
-
-OH_AudioStream_Result __wrap_OH_AudioCapturer_GetTimestamp(OH_AudioCapturer *capturer, clockid_t clockId, int64_t *framePosition, int64_t *timestamp) {
-  return MockAudioCommonEventSupport::getInstance().OH_AudioCapturer_GetTimestamp(capturer, clockId, framePosition, timestamp);
-}
-
-OH_AudioStream_Result __wrap_OH_AudioStreamBuilder_Create(OH_AudioStreamBuilder **builder, OH_AudioStream_Type type) {
-  return MockAudioCommonEventSupport::getInstance().OH_AudioStreamBuilder_Create(builder, type);
-}
-
-OH_AudioStream_Result __wrap_OH_AudioStreamBuilder_SetSamplingRate(OH_AudioStreamBuilder *builder, int32_t rate) {
-  return MockAudioCommonEventSupport::getInstance().OH_AudioStreamBuilder_SetSamplingRate(builder, rate);
-}
-
-OH_AudioStream_Result __wrap_OH_AudioStreamBuilder_Destroy(OH_AudioStreamBuilder *builder) {
-  return MockAudioCommonEventSupport::getInstance().OH_AudioStreamBuilder_Destroy(builder);
-}
-
-OH_AudioStream_Result __wrap_OH_AudioStreamBuilder_SetEncodingType(OH_AudioStreamBuilder *builder, OH_AudioStream_EncodingType encodingType) {
-  return MockAudioCommonEventSupport::getInstance().OH_AudioStreamBuilder_SetEncodingType(builder, encodingType);
-}
-
-OH_AudioStream_Result __wrap_OH_AudioStreamBuilder_SetSampleFormat(OH_AudioStreamBuilder *builder, OH_AudioStream_SampleFormat format) {
-  return MockAudioCommonEventSupport::getInstance().OH_AudioStreamBuilder_SetSampleFormat(builder, format);
-}
-
-OH_AudioStream_Result __wrap_OH_AudioStreamBuilder_SetChannelCount(OH_AudioStreamBuilder *builder, int32_t channelCount) {
-  return MockAudioCommonEventSupport::getInstance().OH_AudioStreamBuilder_SetChannelCount(builder, channelCount);
-}
-
-OH_AudioStream_Result __wrap_OH_AudioStreamBuilder_SetCapturerInfo(OH_AudioStreamBuilder *builder, OH_AudioStream_SourceType sourceType) {
-  return MockAudioCommonEventSupport::getInstance().OH_AudioStreamBuilder_SetCapturerInfo(builder, sourceType);
-}
-
-OH_AudioStream_Result __wrap_OH_AudioStreamBuilder_SetLatencyMode(OH_AudioStreamBuilder *builder, OH_AudioStream_LatencyMode latencyMode) {
-  return MockAudioCommonEventSupport::getInstance().OH_AudioStreamBuilder_SetLatencyMode(builder, latencyMode);
-}
-
-OH_AudioStream_Result __wrap_OH_AudioStreamBuilder_SetCapturerCallback(OH_AudioStreamBuilder *builder, OH_AudioCapturer_Callbacks callbacks, void *userData) {
-  return MockAudioCommonEventSupport::getInstance().OH_AudioStreamBuilder_SetCapturerCallback(builder, callbacks, userData);
-}
-
-OH_AudioStream_Result __wrap_OH_AudioStreamBuilder_GenerateCapturer(OH_AudioStreamBuilder *builder, OH_AudioCapturer **audioCapturer) {
-  return MockAudioCommonEventSupport::getInstance().OH_AudioStreamBuilder_GenerateCapturer(builder, audioCapturer);
-}
-
-#ifdef __cplusplus
-}
-#endif
 
 class MockBufferDescAdapter : public BufferDescAdapter {
   public:
@@ -139,12 +50,36 @@ class MockAudioCapturerOptions : public OHOS::NWeb::AudioCapturerOptionsAdapter 
 
 class AudioCapturerAdapterImplTest : public testing::Test {
   protected:
+   void SetAllMockType(bool type) {
+     MockAudioCommonEventSupport::start = type;
+     MockAudioCommonEventSupport::stop = type;
+     MockAudioCommonEventSupport::release = type;
+     MockAudioCommonEventSupport::getFrameSizeInCallback = type;
+     MockAudioCommonEventSupport::getTimestamp = type;
+     MockAudioCommonEventSupport::create = type;
+     MockAudioCommonEventSupport::setSamplingRate = type;
+     MockAudioCommonEventSupport::destroy = type;
+     MockAudioCommonEventSupport::setEncodingType = type;
+     MockAudioCommonEventSupport::setSampleFormat = type;
+     MockAudioCommonEventSupport::setChannelCount = type;
+     MockAudioCommonEventSupport::setCapturerInfo = type;
+     MockAudioCommonEventSupport::setBufferAttr = type;
+     MockAudioCommonEventSupport::setLatencyMode = type;
+     MockAudioCommonEventSupport::setCapturerCallback = type;
+     MockAudioCommonEventSupport::generateCapturer = type;
+   }
+
     void SetUp() override {
       adapter_ = std::make_shared<AudioCapturerAdapterImpl>();
       mockCallback_ = std::make_shared<MockAudioCapturerReadCallbackAdapter>();
       bufferDesc_ = std::make_shared<MockBufferDescAdapter>();
       options_ = std::make_shared<MockAudioCapturerOptions>();
       adapter_->callback_index_ = 0;
+      SetAllMockType(true);
+    }
+    void TearDown() override {
+      SetAllMockType(false);
+      adapter_->audio_capturer_ = nullptr;
     }
 
     std::shared_ptr<AudioCapturerAdapterImpl> adapter_;
@@ -223,7 +158,7 @@ TEST_F(AudioCapturerAdapterImplTest, GetFrameCount_WhenCapturerIsNull_ReturnsErr
 
 
 TEST_F(AudioCapturerAdapterImplTest, SetCapturerReadCallback_Success) {
-  adapter_->audio_capturer_ = reinterpret_cast<OH_AudioCapturer*>(0x1);
+  adapter_->audio_capturer_ = reinterpret_cast<OH_AudioCapturer*>(0x2345);
   auto userCallBack = std::make_shared<UserDataCallBack>();
   const size_t testLength = 256;
   uint8_t testBuffer[testLength]{};
@@ -246,7 +181,7 @@ TEST_F(AudioCapturerAdapterImplTest, SetCapturerReadCallback_NullAudioCapturer) 
 }
 
 TEST_F(AudioCapturerAdapterImplTest, SetCapturerReadCallback_NullUserDataCallback) {
-  adapter_->audio_capturer_ = reinterpret_cast<OH_AudioCapturer*>(0x1);
+  adapter_->audio_capturer_ = reinterpret_cast<OH_AudioCapturer*>(2345);
   adapter_->callback_index_= adapter_->callback_wrapper_.AddCallback(nullptr);
   int32_t ret = adapter_->SetCapturerReadCallback(mockCallback_);
   EXPECT_EQ(ret, AUDIO_NULL_ERROR);
@@ -314,12 +249,12 @@ TEST_F(AudioCapturerAdapterImplTest, GetAudioChannel_InvalidInput_ReturnsDefault
 
 TEST_F(AudioCapturerAdapterImplTest, StartStop) {
   adapter_->audio_capturer_ = reinterpret_cast<OH_AudioCapturer*>(0x2345);
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioCapturer_Start(adapter_->audio_capturer_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioCapturer_Start(adapter_->audio_capturer_))
     .WillOnce(Return(AUDIOSTREAM_SUCCESS));
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioCapturer_Stop(adapter_->audio_capturer_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioCapturer_Stop(adapter_->audio_capturer_))
     .WillOnce(Return(AUDIOSTREAM_SUCCESS));
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioCapturer_Release(adapter_->audio_capturer_))
-    .WillOnce(Return(AUDIOSTREAM_SUCCESS));
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioCapturer_Release(adapter_->audio_capturer_))
+    .WillRepeatedly(Return(AUDIOSTREAM_SUCCESS));
   EXPECT_TRUE(adapter_->Start());
   EXPECT_TRUE(adapter_->Stop());
   EXPECT_TRUE(adapter_->Release());
@@ -335,8 +270,9 @@ TEST_F(AudioCapturerAdapterImplTest, GetFrameCount_Success) {
   uint32_t frameCount = 0;
   adapter_->audio_capturer_ = reinterpret_cast<OH_AudioCapturer*>(0x2345);
   int32_t frameCountValue = 10;
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioCapturer_GetFrameSizeInCallback(adapter_->audio_capturer_,_))
-    .WillOnce(DoAll(SetArgPointee<1>(frameCountValue), Return(AUDIOSTREAM_SUCCESS)));
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(),
+      OH_AudioCapturer_GetFrameSizeInCallback(adapter_->audio_capturer_,_))
+        .WillOnce(DoAll(SetArgPointee<1>(frameCountValue), Return(AUDIOSTREAM_SUCCESS)));
   EXPECT_EQ(adapter_->GetFrameCount(frameCount), AUDIO_OK);
   EXPECT_EQ(frameCount, 10U);
 }
@@ -345,27 +281,30 @@ TEST_F(AudioCapturerAdapterImplTest, GetFrameCount_NotSuccess) {
   uint32_t frameCount = 0;
   adapter_->audio_capturer_ = reinterpret_cast<OH_AudioCapturer*>(0x2345);
   int32_t frameCountValue = 10;
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioCapturer_GetFrameSizeInCallback(adapter_->audio_capturer_,_))
-    .WillOnce(DoAll(SetArgPointee<1>(frameCountValue), Return(AUDIOSTREAM_ERROR_SYSTEM)));
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(),
+      OH_AudioCapturer_GetFrameSizeInCallback(adapter_->audio_capturer_, _))
+        .WillOnce(DoAll(SetArgPointee<1>(frameCountValue), Return(AUDIOSTREAM_ERROR_SYSTEM)));
   EXPECT_EQ(adapter_->GetFrameCount(frameCount), AUDIO_ERROR);
   EXPECT_EQ(frameCount, 0U);
 }
 
 TEST_F(AudioCapturerAdapterImplTest, GetAudioTime_ReturnsError2) {
   adapter_->audio_capturer_ = reinterpret_cast<OH_AudioCapturer*>(0x2345);
-  
-  int64_t timestamp = 10 ;
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioCapturer_GetTimestamp(adapter_->audio_capturer_,_,_,_))
-    .WillOnce(DoAll(SetArgPointee<3>(timestamp), Return(AUDIOSTREAM_ERROR_SYSTEM)));
+
+  int64_t timestamp = 10;
+  EXPECT_CALL(
+      MockAudioCommonEventSupport::GetInstance(), OH_AudioCapturer_GetTimestamp(adapter_->audio_capturer_, _, _, _))
+      .WillOnce(DoAll(SetArgPointee<3>(timestamp), Return(AUDIOSTREAM_ERROR_SYSTEM)));
   EXPECT_EQ(adapter_->GetAudioTime(), AUDIO_ERROR);
 }
 
 
 TEST_F(AudioCapturerAdapterImplTest, GetAudioTime_Success) {
   adapter_->audio_capturer_ = reinterpret_cast<OH_AudioCapturer*>(0x2345);
-  int64_t timestamp = 10 ;
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioCapturer_GetTimestamp(adapter_->audio_capturer_,_,_,_))
-    .WillOnce(DoAll(SetArgPointee<3>(timestamp), Return(AUDIOSTREAM_SUCCESS)));
+  int64_t timestamp = 10;
+  EXPECT_CALL(
+      MockAudioCommonEventSupport::GetInstance(), OH_AudioCapturer_GetTimestamp(adapter_->audio_capturer_, _, _, _))
+      .WillOnce(DoAll(SetArgPointee<3>(timestamp), Return(AUDIOSTREAM_SUCCESS)));
   EXPECT_EQ(adapter_->GetAudioTime(), timestamp);
 }
 
@@ -375,145 +314,224 @@ TEST_F(AudioCapturerAdapterImplTest, Create_ReturnsErrorWhenOptionsNull) {
 }
 
 TEST_F(AudioCapturerAdapterImplTest, Create_ReturnsErrorWhenCreate) {
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_Create(_,_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_Create(_,_))
     .WillOnce(Return(AUDIOSTREAM_ERROR_INVALID_PARAM));
   int32_t result = adapter_->Create(options_, "");
   EXPECT_EQ(result, AUDIO_NULL_ERROR);
 }
 
 TEST_F(AudioCapturerAdapterImplTest, Create_ReturnsErrorWhenSetSamplingRate) {
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_Create(_,_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_Create(_,_))
     .WillOnce(Return(AUDIOSTREAM_SUCCESS));
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_SetSamplingRate(_,_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_SetSamplingRate(_,_))
     .WillOnce(Return(AUDIOSTREAM_ERROR_INVALID_PARAM));
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_Destroy(_));
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_Destroy(_));
   int32_t result = adapter_->Create(options_, "");
   EXPECT_EQ(result, AUDIO_ERROR);
 }
 
 TEST_F(AudioCapturerAdapterImplTest, Create_ReturnsErrorWhenSetEncodingType) {
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_Create(_,_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_Create(_,_))
     .WillOnce(Return(AUDIOSTREAM_SUCCESS));
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_SetSamplingRate(_,_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_SetSamplingRate(_,_))
     .WillOnce(Return(AUDIOSTREAM_SUCCESS));
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_SetEncodingType(_,_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_SetEncodingType(_,_))
     .WillOnce(Return(AUDIOSTREAM_ERROR_INVALID_PARAM));
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_Destroy(_));
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_Destroy(_));
   int32_t result = adapter_->Create(options_, "");
   EXPECT_EQ(result, AUDIO_ERROR);
 }
 
 TEST_F(AudioCapturerAdapterImplTest, Create_ReturnsErrorWhenSetSampleFormat) {
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_Create(_,_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_Create(_,_))
     .WillOnce(Return(AUDIOSTREAM_SUCCESS));
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_SetSamplingRate(_,_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_SetSamplingRate(_,_))
     .WillOnce(Return(AUDIOSTREAM_SUCCESS));
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_SetEncodingType(_,_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_SetEncodingType(_,_))
     .WillOnce(Return(AUDIOSTREAM_SUCCESS));
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_SetSampleFormat(_,_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_SetSampleFormat(_,_))
     .WillOnce(Return(AUDIOSTREAM_ERROR_INVALID_PARAM));
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_Destroy(_));
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_Destroy(_));
   int32_t result = adapter_->Create(options_, "");
   EXPECT_EQ(result, AUDIO_ERROR);
 }
 
 TEST_F(AudioCapturerAdapterImplTest, Create_ReturnsErrorWhenSetChannelCount) {
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_Create(_,_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_Create(_,_))
     .WillOnce(Return(AUDIOSTREAM_SUCCESS));
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_SetSamplingRate(_,_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_SetSamplingRate(_,_))
     .WillOnce(Return(AUDIOSTREAM_SUCCESS));
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_SetEncodingType(_,_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_SetEncodingType(_,_))
     .WillOnce(Return(AUDIOSTREAM_SUCCESS));
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_SetSampleFormat(_,_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_SetSampleFormat(_,_))
     .WillOnce(Return(AUDIOSTREAM_SUCCESS));
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_SetChannelCount(_,_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_SetChannelCount(_,_))
     .WillOnce(Return(AUDIOSTREAM_ERROR_INVALID_PARAM));
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_Destroy(_));
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_Destroy(_));
   int32_t result = adapter_->Create(options_, "");
   EXPECT_EQ(result, AUDIO_ERROR);
 }
 
 TEST_F(AudioCapturerAdapterImplTest, Create_ReturnsErrorWhenSetCapturerInfo) {
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_Create(_,_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_Create(_,_))
     .WillOnce(Return(AUDIOSTREAM_SUCCESS));
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_SetSamplingRate(_,_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_SetSamplingRate(_,_))
     .WillOnce(Return(AUDIOSTREAM_SUCCESS));
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_SetEncodingType(_,_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_SetEncodingType(_,_))
     .WillOnce(Return(AUDIOSTREAM_SUCCESS));
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_SetSampleFormat(_,_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_SetSampleFormat(_,_))
     .WillOnce(Return(AUDIOSTREAM_SUCCESS));
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_SetChannelCount(_,_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_SetChannelCount(_,_))
     .WillOnce(Return(AUDIOSTREAM_SUCCESS));
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_SetCapturerInfo(_,_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_SetCapturerInfo(_,_))
     .WillOnce(Return(AUDIOSTREAM_ERROR_INVALID_PARAM));
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_Destroy(_));
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_Destroy(_));
   int32_t result = adapter_->Create(options_, "");
   EXPECT_EQ(result, AUDIO_ERROR);
 }
 
 TEST_F(AudioCapturerAdapterImplTest, Create_ReturnsErrorWhenGenerateCapturer) {
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_Create(_,_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_Create(_,_))
     .WillOnce(Return(AUDIOSTREAM_SUCCESS));
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_SetSamplingRate(_,_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_SetSamplingRate(_,_))
     .WillOnce(Return(AUDIOSTREAM_SUCCESS));
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_SetEncodingType(_,_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_SetEncodingType(_,_))
     .WillOnce(Return(AUDIOSTREAM_SUCCESS));
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_SetSampleFormat(_,_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_SetSampleFormat(_,_))
     .WillOnce(Return(AUDIOSTREAM_SUCCESS));
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_SetChannelCount(_,_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_SetChannelCount(_,_))
     .WillOnce(Return(AUDIOSTREAM_SUCCESS));
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_SetCapturerInfo(_,_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_SetCapturerInfo(_,_))
     .WillOnce(Return(AUDIOSTREAM_SUCCESS));
   EXPECT_CALL(*options_, GetCapturerFlags()).WillOnce(Return(1));
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_SetLatencyMode(_,_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_SetLatencyMode(_,_))
     .WillOnce(Return(AUDIOSTREAM_ERROR_INVALID_PARAM));
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_GenerateCapturer(_,_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_GenerateCapturer(_,_))
     .WillOnce(Return(AUDIOSTREAM_ERROR_INVALID_PARAM));
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_Destroy(_));
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_Destroy(_));
   int32_t result = adapter_->Create(options_, "");
   EXPECT_EQ(result, AUDIO_ERROR);
 }
 
 TEST_F(AudioCapturerAdapterImplTest, Create_Success) {
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_Create(_,_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_Create(_,_))
     .WillOnce(Return(AUDIOSTREAM_SUCCESS));
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_SetSamplingRate(_,_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_SetSamplingRate(_,_))
     .WillOnce(Return(AUDIOSTREAM_SUCCESS));
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_SetEncodingType(_,_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_SetEncodingType(_,_))
     .WillOnce(Return(AUDIOSTREAM_SUCCESS));
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_SetSampleFormat(_,_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_SetSampleFormat(_,_))
     .WillOnce(Return(AUDIOSTREAM_SUCCESS));
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_SetChannelCount(_,_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_SetChannelCount(_,_))
     .WillOnce(Return(AUDIOSTREAM_SUCCESS));
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_SetCapturerInfo(_,_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_SetCapturerInfo(_,_))
     .WillOnce(Return(AUDIOSTREAM_SUCCESS));
   EXPECT_CALL(*options_, GetCapturerFlags()).WillOnce(Return(1));
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_SetLatencyMode(_,_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_SetLatencyMode(_,_))
     .WillOnce(Return(AUDIOSTREAM_SUCCESS));
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_GenerateCapturer(_,_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_GenerateCapturer(_,_))
     .WillOnce(Return(AUDIOSTREAM_SUCCESS));
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_Destroy(_));
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_Destroy(_));
   int32_t result = adapter_->Create(options_, "");
   EXPECT_EQ(result, AUDIO_OK);
 }
 
 TEST_F(AudioCapturerAdapterImplTest, Create_Success2) {
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_Create(_,_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_Create(_,_))
     .WillOnce(Return(AUDIOSTREAM_SUCCESS));
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_SetSamplingRate(_,_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_SetSamplingRate(_,_))
     .WillOnce(Return(AUDIOSTREAM_SUCCESS));
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_SetEncodingType(_,_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_SetEncodingType(_,_))
     .WillOnce(Return(AUDIOSTREAM_SUCCESS));
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_SetSampleFormat(_,_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_SetSampleFormat(_,_))
     .WillOnce(Return(AUDIOSTREAM_SUCCESS));
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_SetChannelCount(_,_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_SetChannelCount(_,_))
     .WillOnce(Return(AUDIOSTREAM_SUCCESS));
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_SetCapturerInfo(_,_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_SetCapturerInfo(_,_))
     .WillOnce(Return(AUDIOSTREAM_SUCCESS));
   EXPECT_CALL(*options_, GetCapturerFlags()).WillOnce(Return(0));
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_GenerateCapturer(_,_))
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_GenerateCapturer(_,_))
     .WillOnce(Return(AUDIOSTREAM_SUCCESS));
-  EXPECT_CALL(MockAudioCommonEventSupport::getInstance(), OH_AudioStreamBuilder_Destroy(_));
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioStreamBuilder_Destroy(_));
   int32_t result = adapter_->Create(options_, "");
   EXPECT_EQ(result, AUDIO_OK);
+}
+
+TEST_F(AudioCapturerAdapterImplTest, OnReadData_Capturer) {
+  OH_AudioCapturer* invalidCapturer = reinterpret_cast<OH_AudioCapturer*>(0x5678);
+  int result = adapter_->OnReadData(invalidCapturer, nullptr, nullptr, 0);
+  EXPECT_EQ(result, -1);
+}
+
+TEST_F(AudioCapturerAdapterImplTest, OnReadData_UserData) {
+  OH_AudioCapturer* invalidCapturer = reinterpret_cast<OH_AudioCapturer*>(0x5678);
+  adapter_->audio_capturer_ = invalidCapturer;
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioCapturer_Start(adapter_->audio_capturer_))
+    .WillOnce(Return(AUDIOSTREAM_SUCCESS));
+  EXPECT_TRUE(adapter_->Start());
+  int result = adapter_->OnReadData(adapter_->audio_capturer_, nullptr, nullptr, 0);
+  EXPECT_EQ(result, -1);
+}
+
+TEST_F(AudioCapturerAdapterImplTest, OnReadData_UserDataCallback) {
+  OH_AudioCapturer* invalidCapturer = reinterpret_cast<OH_AudioCapturer*>(0x5678);
+  void* user_data = reinterpret_cast<void*>(0x1234);
+  adapter_->audio_capturer_ = invalidCapturer;
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioCapturer_Start(adapter_->audio_capturer_))
+    .WillOnce(Return(AUDIOSTREAM_SUCCESS));
+  EXPECT_TRUE(adapter_->Start());
+  int result = adapter_->OnReadData(adapter_->audio_capturer_, user_data, nullptr, 0);
+  EXPECT_EQ(result, -1);
+}
+
+TEST_F(AudioCapturerAdapterImplTest, OnReadData_UserDataCallback_Callback) {
+  OH_AudioCapturer* invalidCapturer = reinterpret_cast<OH_AudioCapturer*>(0x5678);
+
+  adapter_->audio_capturer_ = invalidCapturer;
+   auto userCallBack = std::make_shared<UserDataCallBack>();
+  const size_t testLength = 256;
+  uint8_t testBuffer[testLength]{};
+  userCallBack->buffer = testBuffer;
+  userCallBack->length = testLength;
+  userCallBack->callback = nullptr;
+  adapter_->callback_index_= adapter_->callback_wrapper_.AddCallback(userCallBack);  
+  void* user_data = reinterpret_cast<void*>(adapter_->callback_index_);
+
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioCapturer_Start(adapter_->audio_capturer_))
+    .WillOnce(Return(AUDIOSTREAM_SUCCESS));
+  EXPECT_TRUE(adapter_->Start());
+  int result = adapter_->OnReadData(adapter_->audio_capturer_, user_data, testBuffer, 0);
+  EXPECT_EQ(result, -1);
+}
+
+TEST_F(AudioCapturerAdapterImplTest, OnReadData_Success) {
+  OH_AudioCapturer* invalidCapturer = reinterpret_cast<OH_AudioCapturer*>(0x5678);
+
+  adapter_->audio_capturer_ = invalidCapturer;
+   auto userCallBack = std::make_shared<UserDataCallBack>();
+  const size_t testLength = 256;
+  uint8_t testBuffer[testLength]{};
+  userCallBack->buffer = testBuffer;
+  userCallBack->length = testLength;
+  userCallBack->callback = mockCallback_;
+  adapter_->callback_index_= adapter_->callback_wrapper_.AddCallback(userCallBack);  
+  void* user_data = reinterpret_cast<void*>(adapter_->callback_index_);
+
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioCapturer_Start(adapter_->audio_capturer_))
+    .WillOnce(Return(AUDIOSTREAM_SUCCESS));
+  EXPECT_CALL(*mockCallback_, OnReadData(_));
+  EXPECT_TRUE(adapter_->Start());
+  int result = adapter_->OnReadData(adapter_->audio_capturer_, user_data, testBuffer, testLength);
+  EXPECT_EQ(result, 0);
+}
+
+TEST_F(AudioCapturerAdapterImplTest, Start_Insert) {
+  adapter_->audio_capturer_ = reinterpret_cast<OH_AudioCapturer*>(0x2345);
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioCapturer_Start(adapter_->audio_capturer_))
+    .WillOnce(Return(AUDIOSTREAM_ERROR_SYSTEM));
+  EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(), OH_AudioCapturer_Release(adapter_->audio_capturer_))
+    .WillOnce(Return(AUDIOSTREAM_ERROR_SYSTEM));
+
+  EXPECT_FALSE(adapter_->Start());
+  EXPECT_FALSE(adapter_->Release());
 }

@@ -26,6 +26,8 @@ public:
     ~WindowManagerAdapterImpl() = default;
     static WindowManagerAdapterImpl& GetInstance();
     static bool GetWindowPrivacyMode(uint32_t windowId);
+    static int32_t LockPointer(int32_t windowId);
+    static int32_t UnlockPointer(int32_t windowId);
 private:
     WindowManagerAdapterImpl() = default;
 };

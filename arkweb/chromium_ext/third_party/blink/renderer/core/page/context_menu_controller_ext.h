@@ -57,6 +57,9 @@ class ContextMenuControllerExt : public ContextMenuController {
                  WebMenuSourceType source_type);
   void SetArkWebMenuData(ContextMenuData& data, HitTestResult& result);
   void IsAILink(ContextMenuData& data, HitTestResult& result);
+  void SetImageRectFromPotentialImageNode(
+      ContextMenuData& data,
+      const blink::Node* potential_image_node);
 #endif  // ARKWEB_MENU
 
 #if BUILDFLAG(ARKWEB_EXT_FREE_COPY)

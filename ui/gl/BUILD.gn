@@ -547,6 +547,7 @@ test("gl_unittests") {
   ]
 
   if (arkweb_unittests) {
+    include_dirs = ohos_src_includes
     import("//arkweb/chromium_ext/ui/gl/arkweb_ui_gl_unittests_ext.gni")
     deps += arkweb_unittests_deps
     sources += arkweb_unittests_sources

@@ -95,6 +95,10 @@ class CONTENT_EXPORT ClipboardHostImpl
   void UpdateClipboardData(UpdateClipboardDataCallback callback) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  void HandlePasswordVault(HandlePasswordVaultCallback callback) override;
+#endif
+
  private:
   friend class ClipboardHostImplTest;
   friend class ClipboardHostImplWriteTest;

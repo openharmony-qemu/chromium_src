@@ -3232,6 +3232,14 @@ void RenderFrameHostImpl::ExecuteJavaScript(const std::u16string& javascript,
                                                       std::move(callback));
 }
 
+#if BUILDFLAG(ARKWEB_FLING)
+void RenderFrameHostImpl::UpdateFlingVelocityLimit(const gfx::Vector2dF& velocity) {
+  if (GetLocalRenderWidgetHost()) {
+    GetLocalRenderWidgetHost()->UpdateFlingVelocityLimit(velocity);
+  }
+}
+#endif
+
 void RenderFrameHostImpl::ExecuteJavaScriptInIsolatedWorld(
     const std::u16string& javascript,
     JavaScriptResultCallback callback,
@@ -4173,7 +4181,7 @@ void RenderFrameHostImpl::RenderFrameCreated() {
 
 void RenderFrameHostImpl::RendererWidgetCreated() {
   if (GetLocalRenderWidgetHost()) {
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM) || BUILDFLAG(ARKWEB_ZOOM)
     GetLocalRenderWidgetHost()->SetForceEnableZoom(
         delegate_->GetOrCreateWebPreferences().force_enable_zoom);
 #endif  // BUILDFLAG(IS_ANDROID)
@@ -4382,7 +4390,11 @@ void RenderFrameHostImpl::DidAddMessageToConsole(
   std::u16string updated_source_id;
   if (source_id.has_value())
     updated_source_id = *source_id;
+#if BUILDFLAG(ARKWEB_CONSOLE_LOGGING)
+  if (delegate_->DidAddMessageToConsole(this, log_level, blink::mojom::ConsoleMessageSource::kOther, message, line_no,
+#else
   if (delegate_->DidAddMessageToConsole(this, log_level, message, line_no,
+#endif
                                         updated_source_id,
                                         untrusted_stack_trace)) {
     return;
@@ -11617,10 +11629,7 @@ void RenderFrameHostImpl::CommitNavigation(
                                    ->GetOrCreateWebPreferences()
                                    .usage_scenario;
       LOG(URL) << "event_message: commit navigation in main frame, routing_id: "
-               << routing_id_ << ", url: "
-               << url::LogUtils::ConvertUrl(
-                      common_params->url.possibly_invalid_spec(),
-                      usage_scenario);
+               << routing_id_ << ", url: " << common_params->url.possibly_invalid_spec();
     }
 #endif
   }

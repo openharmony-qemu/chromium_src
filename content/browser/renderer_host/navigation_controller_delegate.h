@@ -10,11 +10,16 @@
 #include "content/public/browser/invalidate_type.h"
 #include "content/public/browser/navigation_controller.h"
 #include "content/public/browser/navigation_details.h"
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+#include "content/public/browser/web_contents.h"
+#endif
 
 namespace content {
 
 struct LoadCommittedDetails;
-
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+class WebContents;
+#endif
 // Interface for objects embedding a NavigationController to provide the
 // functionality NavigationController needs.
 class NavigationControllerDelegate {
@@ -42,6 +47,13 @@ class NavigationControllerDelegate {
   virtual bool ShouldPreserveAbortedURLs() = 0;
 
   virtual void UpdateOverridingUserAgent() = 0;
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  virtual std::string NotifyNavigationRewriteUrl(const std::string& original_url,
+                                                 const std::string& referrer,
+                                                 int transition_type,
+                                                 bool is_key_request) = 0;
+#endif
 };
 
 }  // namespace content

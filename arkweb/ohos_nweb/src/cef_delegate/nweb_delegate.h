@@ -60,6 +60,7 @@ struct FrameInfos;
 struct IsolatedWorld;
 struct RunJavaScriptParam;
 struct OpenDevToolsParam;
+struct OpenDevToolsExtOpt;
 
 namespace OHOS::NWeb {
 using namespace ui;
@@ -220,6 +221,15 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   int LoadWithData(const std::string& data,
                    const std::string& mimeType,
                    const std::string& encoding) override;
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  int LoadUrlWithParams(const std::string& url,
+                        const LoadUrlType load_type,
+                        const std::string& refer,
+                        const std::string& headers,
+                        const std::string& post_data,
+                        const bool allow_https_upgrade,
+                        int32_t transition_type) override;
+#endif
   int ContentHeight() override;
 
   void RegisterNativeArkJSFunction(
@@ -276,13 +286,16 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 
   void JavaScriptOnDocumentStartByOrder(
       const ScriptItems& scriptItems,
+      const ScriptRegexItems& scriptRegexItems,
       const ScriptItemsByOrder& scriptItemsByOrder) override;
   void JavaScriptOnDocumentEndByOrder(
       const ScriptItems& scriptItems,
+      const ScriptRegexItems& scriptRegexItems,
       const ScriptItemsByOrder& scriptItemsByOrder) override;
 
   void JavaScriptOnHeadReadyByOrder(
       const ScriptItems& scriptItems,
+      const ScriptRegexItems& scriptRegexItems,
       const ScriptItemsByOrder& scriptItemsByOrder) override;
 #endif
 
@@ -377,9 +390,9 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 
   void SetNWebId(uint32_t nwebId) override;
 
-#if BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
+#if BUILDFLAG(IS_ARKWEB)
   void EnableAppLinking(bool enable) override;
-#endif // BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
+#endif // BUILDFLAG(IS_ARKWEB)
 
   void StoreWebArchive(
       const std::string& base_name,
@@ -552,8 +565,10 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #if BUILDFLAG(ARKWEB_EXT_PASSWORD) || BUILDFLAG(ARKWEB_DATALIST)
   void PasswordSuggestionSelected(int list_index) const override;
 #endif
-#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM) || BUILDFLAG(ARKWEB_ZOOM)
   void SetForceEnableZoom(bool forceEnableZoom) override;
+#endif
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
   bool GetForceEnableZoom() override;
 #endif
 #if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
@@ -650,11 +665,19 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
       std::shared_ptr<NWebMessageValueCallback> callback) override;
   void FillAutofillData(std::shared_ptr<NWebMessage> data) override;
   void FillAutofillDataV2(std::shared_ptr<NWebRomValue> data) override;
+  void FillAutofillDataFromTriggerType(
+      std::shared_ptr<NWebRomValue> data, int32_t type) override;
+  void PutVaultPlainTextCallback(
+      std::shared_ptr<OHOS::NWeb::NWebVaultPlainTextCallback> callback) override;
+  void StopFling() override;
 
 #if BUILDFLAG(ARKWEB_WEBRTC)
   void StartCamera() override;
   void StopCamera() override;
   void CloseCamera() override;
+  void ResumeMicrophone() override;
+  void StopMicrophone() override;
+  void PauseMicrophone() override;
 #endif  // BUILDFLAG(ARKWEB_WEBRTC)
 
 #if BUILDFLAG(ARKWEB_DISCARD)
@@ -754,15 +777,6 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #endif
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  void WebExtensionTabCreated(int tab_id) override;
-  void WebExtensionTabUpdated(
-      int tab_id,
-      const std::vector<std::string>& changed_property_names,
-      const std::string& url) override;
-  void WebExtensionTabUpdated(
-      int tab_id,
-      const std::vector<std::string>& changed_property_names,
-      std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo) override;
   void WebExtensionTabRemoved(
       int tab_id,
       bool isWindowClosing,
@@ -836,6 +850,10 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void OpenDevtoolsWith(
       std::shared_ptr<NWebDelegateInterface> nweb_delegate,
       std::unique_ptr<OpenDevToolsParam> param) override;
+  void OpenDevtoolsWithByPb(
+      std::shared_ptr<NWebDelegateInterface> nweb_delegate,
+      std::unique_ptr<OpenDevToolsParam> param,
+      OpenDevToolsExtOpt& ext_opt) override;
   void CloseDevtools() override;
 
   int32_t GetArgumentByKey(
@@ -848,6 +866,9 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   bool SetFocusByPosition(float x, float y) override;
+  std::pair<double, double> GetLastTouchMousePosition() override {
+    return last_touch_mouse_position_;
+  }
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 #if BUILDFLAG(ARKWEB_PIP)
   void SetPipNativeWindow(int delegate_id,
@@ -886,10 +907,26 @@ void AbortDistill() override;
   int32_t GetHeight() override;
   void SetRotationType(RotationType rotation);
 #endif
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  void SetBlankScreenDetectionConfig(
+      bool enable,
+      const std::vector<double>& detectionTiming,
+      const std::vector<int32_t>& detectionMethods,
+      int32_t contentfulNodesCountThreshold) override;
+#endif
 #if BUILDFLAG(ARKWEB_BGTASK)
   void OnBrowserForeground() override;
   void OnBrowserBackground() override;
 #endif
+
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  void EnableHttpsUpgrades(bool enable) override;
+#endif
+
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+void SetFocusWebId(int32_t nweb_id) override;
+#endif
+
  public:
   int argc_;
   RAW_PTR_EXCLUSION const char** argv_;
@@ -1052,6 +1089,7 @@ void AbortDistill() override;
   bool is_enhance_surface_ = false;
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   bool is_onPause_ = false;
+  std::pair<double, double> last_touch_mouse_position_;
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 #if BUILDFLAG(ARKWEB_ACCESSIBILITY)
   bool accessibility_state_ = false;

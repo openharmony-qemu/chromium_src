@@ -31,6 +31,7 @@
 #include "capi/nweb_download_delegate_callback.h"
 #include "capi/nweb_extension_api_callback.h"
 #include "capi/nweb_extension_javascript_item.h"
+#include "capi/nweb_extension_load_url_params.h"
 #include "nweb.h"
 #include "nweb_download_callback.h"
 #include "nweb_errors.h"
@@ -61,21 +62,21 @@
 #endif
 
 struct OpenDevToolsParam;
+struct OpenDevToolsExtOpt;
 struct RunJavaScriptParam;
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 #include "capi/nweb_extension_manager_callback.h"
 #include "capi/nweb_extension_context_menus_callback.h"
+#include "capi/nweb_offscreen_document_callback.h"
+#include "capi/nweb_offscreen_document_permission_request_callback.h"
 #include "capi/web_extension_tab_items.h"
 #include "ohos_nweb/src/capi/nweb_context_menus_on_clicked_data.h"
+#include "ohos_nweb/src/capi/web_extension_install_crx_items.h"
 #endif // ARKWEB_ARKWEB_EXTENSIONS
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
 #include "ohos_nweb_ex/core/extension/nweb_app_client_extension_dispatcher.h"
-#endif
-
-#if BUILDFLAG(ARKWEB_SAFEBROWSING)
-#include "components/prefs/pref_service.h"
 #endif
 
 #if BUILDFLAG(ARKWEB_READER_MODE)
@@ -152,6 +153,10 @@ class NWebImpl : public NWeb {
   void SendMouseEvent(int x, int y, int button, int action, int count) override;
   void FillAutofillData(std::shared_ptr<NWebMessage> data) override;
   void FillAutofillDataV2(std::shared_ptr<NWebRomValue> data) override;
+  void FillAutofillDataFromTriggerType(
+      std::shared_ptr<NWebRomValue> data, const NWebAutoFillTriggerType& type) override;
+  void PutVaultPlainTextCallback(
+      std::shared_ptr<NWebVaultPlainTextCallback> callback) override;
   void OnAutofillCancel(const std::string& fillContent) override;
   void SetNwebDelegateForTest(std::shared_ptr<NWebEngineInitArgs> init_args);
 
@@ -207,6 +212,15 @@ class NWebImpl : public NWeb {
   int LoadWithData(const std::string& data,
                    const std::string& mimeType,
                    const std::string& encoding) override;
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  int LoadUrlWithParams(const std::string& url,
+                        const LoadUrlType load_type,
+                        const std::string& refer,
+                        const std::string& headers,
+                        const std::string& post_data,
+                        const bool allow_https_upgrade,
+                        int32_t transition_type);
+#endif
 
   void RegisterNativeArkJSFunction(
       const char* objName,
@@ -534,6 +548,10 @@ class NWebImpl : public NWeb {
 
   static void SetWebDestroyMode(WebDestroyMode mode);
 
+  static ScrollbarMode GetScrollbarMode();
+  static void SetScrollbarMode(ScrollbarMode mode);
+  static bool IsScrollbarModeChanged();
+
   void SetDelayDurationForBackgroundTabFreezing(int64_t delay);
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
   std::shared_ptr<NWebDragData> GetOrCreateDragData() override;
@@ -551,7 +569,6 @@ class NWebImpl : public NWeb {
                                      int policy,
                                      const std::string& mappingType,
                                      const std::string& url);
-  static void OnGlobalConfigResult(const std::string& path, PrefService* localState);
 #endif  // BUILDFLAG(ARKWEB_SAFEBROWSING)
 
 #if BUILDFLAG(IS_OHOS)
@@ -613,6 +630,18 @@ class NWebImpl : public NWeb {
   void JavaScriptOnHeadReadyByOrder(
       const ScriptItems& scriptItems,
       const ScriptItemsByOrder& scriptItemsByOrder) override;
+  void JavaScriptOnDocumentStartByOrderV2(
+      const ScriptItems& scriptItems,
+      const ScriptRegexItems& scriptRegexItems,
+      const ScriptItemsByOrder& scriptItemsByOrder) override;
+  void JavaScriptOnDocumentEndByOrderV2(
+      const ScriptItems& scriptItems,
+      const ScriptRegexItems& scriptRegexItems,
+      const ScriptItemsByOrder& scriptItemsByOrder) override;
+  void JavaScriptOnHeadReadyByOrderV2(
+      const ScriptItems& scriptItems,
+      const ScriptRegexItems& scriptRegexItems,
+      const ScriptItemsByOrder& scriptItemsByOrder) override;
 #endif
 
   // For NWebEx
@@ -649,6 +678,8 @@ class NWebImpl : public NWeb {
   void ReloadOriginalUrl() const;
   void SetBrowserUserAgentString(const std::string& user_agent);
   void OpenDevtools(std::unique_ptr<OpenDevToolsParam> param);
+  void OpenDevtoolsByPb(std::unique_ptr<OpenDevToolsParam> param,
+                        OpenDevToolsExtOpt& ext_opt);
   void CloseDevtools();
   void EnableAutoResize(
       int32_t min_width, int32_t min_height, int32_t max_width, int32_t max_height);
@@ -710,15 +741,18 @@ class NWebImpl : public NWeb {
   void AbortDistill();
 #endif
 
-#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM) || BUILDFLAG(ARKWEB_ZOOM)
   void SetForceEnableZoom(bool forceEnableZoom) const override;
+#endif
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
   bool GetForceEnableZoom() const;
 #endif  // ARKWEB_EXT_FORCE_ZOOM
 
   void PutWebDownloadDelegateCallback(
       std::shared_ptr<NWebDownloadDelegateCallback>);
   void StartDownload(const char* url);
-  void ResumeDownload(std::shared_ptr<NWebDownloadItem>);
+  void ResumeDownload(std::shared_ptr<NWebDownloadItem> web_download);
+  void StopFling() override;
   static void ResumeDownloadStatic(
       std::shared_ptr<NWebDownloadItem> download_item);
 
@@ -774,6 +808,8 @@ class NWebImpl : public NWeb {
   void NotifyPopupWindowResult(bool result) override {
     nweb_delegate_->NotifyPopupWindowResult(result);
   }
+  void NotifyPopupWindowDisposition(
+      CefLifeSpanHandler::WindowOpenDisposition disposition);
 #endif  // BUILDFLAG(ARKWEB_MULTI_WINDOW)
 
 #if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
@@ -926,17 +962,15 @@ class NWebImpl : public NWeb {
   static std::string GetExtensionVersion(const std::string& extension_id);
   static void InstallExtensionFile(const std::string& file_path,
                                    OnExtensionInstallCallback callback);
-  //old version
-  void WebExtensionTabCreated(int tab_id);
-  void WebExtensionTabUpdated(
-      int tab_id,
-      const std::vector<std::string>& changed_property_names,
-      const std::string& url);
-  void WebExtensionTabUpdated(
-      int tab_id,
-      const std::vector<std::string>& changed_property_names,
-      std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo);
-  // new version
+  static void InstallExtensionFileV2(
+      const std::string& file_path,
+      const NWebExtensionInstallProperties& options,
+      OnExtensionInstallCallback callback);
+  static void UninstallExtension(const std::string& extension_id,
+                                 OnExtensionUninstallCallback callback);
+  static void SetPublisherKeys(const std::vector<std::vector<uint8_t>>& keys);
+  static void WebExtensionSetForbidDisplayInSettings(
+    const std::set<std::string>& extension_ids);
   void WebExtensionTabRemoved(int tab_id, bool isWindowClosing, int windowId);
   void WebExtensionTabUpdated(
       int tab_id,
@@ -951,6 +985,50 @@ class NWebImpl : public NWeb {
                             std::unique_ptr<NWebExtensionTabMoveInfo> moveInfo);
   void WebExtensionTabReplaced(int32_t addedTabId, int32_t removedTabId);
   void WebExtensionSetViewType(int32_t type);
+
+  static void OnAlertDialogByJS(const std::string& extensionId,
+                                const std::string& url,
+                                const std::string& message,
+                                CefRefPtr<CefJSDialogCallback> callback,
+                                bool& suppress_message);
+  static void OnConfirmDialogByJS(const std::string& extensionId,
+                                  const std::string& url,
+                                  const std::string& message,
+                                  CefRefPtr<CefJSDialogCallback> callback,
+                                  bool& suppress_message);
+  static void OnPromptDialogByJS(const std::string& extensionId,
+                                 const std::string& url,
+                                 const std::string& message,
+                                 const std::string& value,
+                                 CefRefPtr<CefJSDialogCallback> callback,
+                                 bool& suppress_message);
+  static void SetOnOffscreenDocumentAlertCallback(OnArkWebStaticOffscreenDocumentAlertFunc func);
+  static void SetOnOffscreenDocumentConfirmCallback(OnArkWebStaticOffscreenDocumentConfirmFunc func);
+  static void SetOnOffscreenDocumentPromptCallback(OnArkWebStaticOffscreenDocumentPromptFunc func);
+
+  static void AlertHandle(const int requestId);
+  static void ConfirmHandle(const bool type, const int requestId);
+  static void PromptHandle(const bool type, const std::string& value, const int requestId);
+
+  static void SetOnOffscreenDocumentPermissionRequestCallback(
+      OnArkWebStaticOffscreenDocumentPermissionRequestFunc func);
+  static void OnOffscreenDocumentPermissionRequest(
+      const std::string& extension_id,
+      const std::string& origin_url,
+      int resources,
+      int request_key);
+  static void GrantOffscreenDocumentPermission(int resources, int request_key);
+  static void DenyOffscreenDocumentPermission(int resources, int request_key);
+  static void OnOffscreenDocumentWindowNewEvent(
+      const std::string& extensionId,
+      const std::string& originUrl,
+      bool isAlert,
+      bool isUserTrigger,
+      const std::string& targetUrl);
+  static void SetOnOffscreenDocumentWindowNewCallback(
+      OnArkWebStaticOffscreenDocumentWindowNewFunc func);
+  static void SetOffscreenNWebId(uint32_t nweb_id);
+  static void ResetOffscreenNWebId();
 #endif  // ARKWEB_ARKWEB_EXTENSIONS
 
 #if BUILDFLAG(ARKWEB_AI)
@@ -985,6 +1063,12 @@ class NWebImpl : public NWeb {
                        int width,
                        int height,
                        const WebSnapshotCallback callback) override;
+
+  bool WebPageSnapshotV2(const char* id,
+                         PixelUnit type,
+                         int width,
+                         int height,
+                         std::shared_ptr<NWebSnapshotCallback> callback) override;
 #endif
 
 #ifdef BUILDFLAG(IS_OHOS)
@@ -1034,10 +1118,8 @@ class NWebImpl : public NWeb {
   static void TrimMemoryByPressureLevel(int32_t memoryLevel);
 #if BUILDFLAG(IS_ARKWEB)
   void SetSurfaceDensity(const double& density) override;
-#endif
-#if BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
   void EnableAppLinking(bool enable);
-#endif // BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
+#endif
 
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
   void getTotalSize(float size);
@@ -1085,9 +1167,19 @@ class NWebImpl : public NWeb {
 #if BUILDFLAG(ARKWEB_EDM_POLICY)
   static void SetEnterprisePolicy(const std::string& policy, int version);
 #endif
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  void SetBlankScreenDetectionConfig(
+      bool enable,
+      const std::vector<double>& detectionTiming,
+      const std::vector<int32_t>& detectionMethods,
+      int32_t contentfulNodesCountThreshold) override;
+#endif
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   bool SetFocusByPosition(float x, float y) override;
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#if BUILDFLAG(ARKWEB_SOFTKEYBOARD_AVOID)
+  void SetSoftKeyboardBehaviorMode(WebSoftKeyboardBehaviorMode mode) override;
+#endif
 #if BUILDFLAG(ARKWEB_PIP)
   void SetPipNativeWindow(int delegate_id,
                           int child_id,
@@ -1105,7 +1197,6 @@ class NWebImpl : public NWeb {
   int32_t SetBlanklessLoadingWithKey(const std::string& key, bool isStart) override;
   int64_t GetPreferenceHash();
   static int64_t GetPreferenceHashByNwebId(int32_t nweb_id);
-  void RecordBlanklessFrameSize(uint32_t width, uint32_t height) override;
   bool TriggerBlanklessForUrl(const std::string& url) override;
   void SetVisibility(bool isVisible) override;
 #endif
@@ -1118,14 +1209,36 @@ class NWebImpl : public NWeb {
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   static void EnablePrivateNetworkAccess(bool enable);
   static bool IsPrivateNetworkAccessEnabled();
+  static void EnableRewriteUrlForNavigation(bool enable);
 #endif
 #if BUILDFLAG(ARKWEB_BGTASK)
   void OnBrowserForeground() override;
   void OnBrowserBackground() override;
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  void EnableHttpsUpgrades(bool enable);
+#endif
+
 #if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
   static void SetSocketIdleTimeout(int32_t timeout);
+#endif
+
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  static void SetClipboardSitePermissionEnabled(bool enable);
+  static bool IsClipboardSitePermissionEnabled();
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
+
+#if BUILDFLAG(ARKWEB_WEBRTC)
+  void ResumeMicrophone() override;
+  void StopMicrophone() override;
+  void PauseMicrophone() override;
+#endif
+#if BUILDFLAG(ARKWEB_COOKIE)
+  static void LibraryLoaded(std::shared_ptr<NWebEngineInitArgs> init_args,
+                            bool lazy);
+  static bool ShouldLazyInitWebEngine();
+  static std::shared_ptr<NWebEngineInitArgs> GetSaveInitargs();
 #endif
 
  private:
@@ -1164,6 +1277,8 @@ class NWebImpl : public NWeb {
   bool is_richtext_value_ = false;
   static bool disableWebActivePolicy_;
   static WebDestroyMode webDestroyMode_;
+  static ScrollbarMode scrollbarMode_;
+  static bool scrollbarModeChanged_;
 
   bool incognito_mode_ = false;
   raw_ptr<void> window_;
@@ -1173,7 +1288,9 @@ class NWebImpl : public NWeb {
 #if BUILDFLAG(ARKWEB_SCHEME_HANDLER)
   std::string web_tag_{""};
 #endif
-
+#if BUILDFLAG(ARKWEB_SOFTKEYBOARD_AVOID)
+  WebSoftKeyboardBehaviorMode keyboardBehaviorMode_ = WebSoftKeyboardBehaviorMode::DEFAULT;
+#endif
   bool is_pause_ = false;
   struct ReSizeType {
     uint32_t width_ = 0;
@@ -1185,6 +1302,17 @@ class NWebImpl : public NWeb {
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   static OnReportStatisticLogFunc on_report_statistic_log_callback_;
 #endif  // ARKWEB_VIDEO_ASSISTANT
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  static OnArkWebStaticOffscreenDocumentAlertFunc on_off_screen_alert_callback_;
+  static OnArkWebStaticOffscreenDocumentConfirmFunc on_off_screen_confirm_callback_;
+  static OnArkWebStaticOffscreenDocumentPromptFunc on_off_screen_prompt_callback_;
+
+  static OnArkWebStaticOffscreenDocumentPermissionRequestFunc
+      on_offscreen_document_permission_request_callback_;
+  static OnArkWebStaticOffscreenDocumentWindowNewFunc on_off_screen_window_new_callback_;
+  static uint32_t off_screen_nweb_id_;
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 
 #if BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)
   void RegisterNativeJavaScriptProxy(const std::string& objName,
@@ -1198,7 +1326,6 @@ class NWebImpl : public NWeb {
 
   std::unique_ptr<base::RetainingOneShotTimer> drag_over_timer_;
   DelegateDragEvent drag_over_event_;
-  base::WeakPtrFactory<NWebImpl> weak_factory_{this};
 
 #if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
   void AvoidVisibleViewportBottom(int32_t avoidHeight) override;
@@ -1227,9 +1354,14 @@ class NWebImpl : public NWeb {
   std::atomic<bool> is_private_ = false;
   std::atomic<bool> is_visible_ = false;
   std::atomic<bool> is_user_enable_ = false;
-  uint32_t cur_blankless_frame_width_ = 0;
-  uint32_t cur_blankless_frame_height_ = 0;
 #endif
+
+#if BUILDFLAG(ARKWEB_COOKIE)
+  static std::shared_ptr<NWebEngineInitArgs> save_initargs_;
+  static bool should_lazy_init_web_engine_;
+#endif
+
+  base::WeakPtrFactory<NWebImpl> weak_factory_{this};
 };
 }  // namespace OHOS::NWeb
 

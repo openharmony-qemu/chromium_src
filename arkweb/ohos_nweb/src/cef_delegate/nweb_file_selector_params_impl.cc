@@ -53,6 +53,35 @@ FileSelectorParamsImpl::FileSelectorParamsImpl(
   }
 }
 
+FileSelectorParamsImpl::FileSelectorParamsImpl(
+    FileSelectorMode mode,
+    const std::string& title,
+    const std::vector<CefString>& accept_type,
+    const std::string& default_filename,
+    bool is_capture,
+    const std::vector<CefString>& mime_type,
+    const std::string& accepts,
+    const std::string& default_path,
+    const std::vector<CefString>& descriptions,
+    bool is_exclude_accept_all_options)
+    : mode_(mode),
+      title_(title),
+      default_filename_(default_filename),
+      is_capture_(is_capture),
+      accepts_(accepts),
+      default_path_(default_path),
+      is_exclude_accept_all_options_(is_exclude_accept_all_options) {
+  for (auto& c : accept_type) {
+    accept_type_.push_back(c.ToString());
+  }
+  for (auto& c : mime_type) {
+    mime_type_.push_back(c.ToString());
+  }
+  for (auto& c : descriptions) {
+    descriptions_.push_back(c.ToString());
+  }
+}
+
 const std::string FileSelectorParamsImpl::Title() {
   return title_;
 }
@@ -75,6 +104,22 @@ bool FileSelectorParamsImpl::IsCapture() {
 
 const AcceptTypeList FileSelectorParamsImpl::MimeType() {
   return mime_type_;
+}
+
+const std::string FileSelectorParamsImpl::DefaultPath() {
+  return default_path_;
+}
+ 
+const DescriptionsList FileSelectorParamsImpl::Descriptions() {
+  return descriptions_;
+}
+ 
+bool FileSelectorParamsImpl::IsAcceptAllOptionExcluded() {
+  return is_exclude_accept_all_options_;
+}
+
+const std::string FileSelectorParamsImpl::Accepts() {
+  return accepts_;
 }
 
 void FileSelectorCallbackImpl::OnReceiveValue(

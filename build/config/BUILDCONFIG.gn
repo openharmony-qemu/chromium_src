@@ -405,6 +405,11 @@ default_compiler_configs = [
   "//build/config/sanitizers:default_sanitizer_flags",
 ]
 
+if (is_arkweb) {
+  import("//arkweb/build/config/configs.gni")
+  default_compiler_configs += arkweb_configs
+}
+
 if (is_win) {
   default_compiler_configs += [
     "//build/config/win:default_cfg_compiler",

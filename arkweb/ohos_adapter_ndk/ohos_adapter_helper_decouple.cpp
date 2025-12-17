@@ -13,18 +13,44 @@
  * limitations under the License.
  */
 
-#include "arkweb/ohos_adapter_ndk/interfaces/ark_ohos_adapter_helper_wrapper.h"
-
+#include "arkweb/ohos_adapter_ndk/access_token_adapter/access_token_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/audio_capturer_adapter/audio_capturer_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/battery_mgr_adapter/battery_mgr_client_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/cert_mgr_adapter/cert_mgr_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/date_time_format_adapter/date_time_format_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/display_manager_adapter/native_display_manager_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/drawing_text_adapter/ohos_drawing_text_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/graphic_adapter/native_image_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/graphic_adapter/native_window_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/inputmethodframework_adapter/imf_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/interfaces/ark_ohos_adapter_helper_wrapper.h"
+#include "arkweb/ohos_adapter_ndk/keystore_adapter/keystore_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/media_adapter/audio_codec_decoder_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/media_adapter/drm_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/media_adapter/include/media_codec_list_adapter_impl.h"
-
+#include "arkweb/ohos_adapter_ndk/media_adapter/include/video_encoder_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/media_adapter/media_codec_decoder_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/media_avsession_adapter/media_avsession_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/multimodalinputnew_adapter/mmi_new_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/net_config_adapter/net_config_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/net_connect_adapter/net_connect_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/net_event_adapter/net_event_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/net_proxy_adapter_impl/net_proxy_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/ohos_image_adapter/ohos_image_decoder_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/ohos_native_buffer_adapter/ohos_native_buffer_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/screen_capture_adapter/screen_capture_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/sensor_adapter/sensor_adapter_impl.h"
 #include "base/bridge/ark_web_bridge_macros.h"
+#include "datashare_adapter/datashare_adapter_impl.h"
+#include "distributeddatamgr_adapter/ohos_web_data_base_adapter_impl.h"
+#include "hiviewdfx_adapter/hitrace_adapter_impl.h"
 #include "ohos_adapter/bridge/ark_aafwk_app_mgr_client_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_access_token_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_audio_capturer_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_audio_codec_decoder_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_audio_renderer_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_audio_system_manager_adapter_wrapper.h"
+#include "ohos_adapter/bridge/ark_background_task_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_battery_info_wrapper.h"
 #include "ohos_adapter/bridge/ark_battery_mgr_client_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_camera_manager_adapter_wrapper.h"
@@ -71,38 +97,9 @@
 #include "ohos_adapter/bridge/ark_vsync_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_web_timezone_info_wrapper.h"
 #include "ohos_adapter/bridge/ark_window_adapter_wrapper.h"
-#include "datashare_adapter/datashare_adapter_impl.h"
-#include "distributeddatamgr_adapter/ohos_web_data_base_adapter_impl.h"
-
-#include "arkweb/ohos_adapter_ndk/graphic_adapter/native_image_adapter_impl.h"
-#include "arkweb/ohos_adapter_ndk/ohos_native_buffer_adapter/ohos_native_buffer_adapter_impl.h"
-#include "arkweb/ohos_adapter_ndk/cert_mgr_adapter/cert_mgr_adapter_impl.h"
-#include "arkweb/ohos_adapter_ndk/media_avsession_adapter/media_avsession_adapter_impl.h"
-#include "arkweb/ohos_adapter_ndk/audio_capturer_adapter/audio_capturer_adapter_impl.h"
-#include "arkweb/ohos_adapter_ndk/screen_capture_adapter/screen_capture_adapter_impl.h"
-#include "arkweb/ohos_adapter_ndk/access_token_adapter/access_token_adapter_impl.h"
-#include "arkweb/ohos_adapter_ndk/graphic_adapter/native_window_adapter_impl.h"
-#include "arkweb/ohos_adapter_ndk/multimodalinputnew_adapter/mmi_new_adapter_impl.h"
+#include "color_picker_adapter/color_picker_adapter_impl.h"
 #include "pasteboard_adapter/include/pasteboard_client_adapter_impl.h"
-
-#include "arkweb/ohos_adapter_ndk/display_manager_adapter/native_display_manager_adapter_impl.h"
-#include "arkweb/ohos_adapter_ndk/sensor_adapter/sensor_adapter_impl.h"
-#include "arkweb/ohos_adapter_ndk/battery_mgr_adapter/battery_mgr_client_adapter_impl.h"
-#include "arkweb/ohos_adapter_ndk/media_adapter/drm_adapter_impl.h"
-#include "arkweb/ohos_adapter_ndk/media_adapter/audio_codec_decoder_adapter_impl.h"
-#include "arkweb/ohos_adapter_ndk/media_adapter/media_codec_decoder_adapter_impl.h"
-#include "arkweb/ohos_adapter_ndk/ohos_image_adapter/ohos_image_decoder_adapter_impl.h"
-#include "arkweb/ohos_adapter_ndk/keystore_adapter/keystore_adapter_impl.h"
-#include "arkweb/ohos_adapter_ndk/date_time_format_adapter/date_time_format_adapter_impl.h"
-
-#include "arkweb/ohos_adapter_ndk/net_connect_adapter/net_connect_adapter_impl.h"
-#include "arkweb/ohos_adapter_ndk/net_proxy_adapter_impl/net_proxy_adapter_impl.h"
-
-#include "arkweb/ohos_adapter_ndk/media_adapter/include/video_encoder_adapter_impl.h"
-#include "hiviewdfx_adapter/hitrace_adapter_impl.h"
-
-#include "arkweb/ohos_adapter_ndk/drawing_text_adapter/ohos_drawing_text_adapter_impl.h"
-#include "arkweb/ohos_adapter_ndk/net_config_adapter/net_config_adapter_impl.h"
+#include "hiviewdfx_adapter/hiappevent_adapter_impl.h"
 
 namespace OHOS::NWeb {
 #if BUILDFLAG(ARKWEB_TEST)
@@ -199,6 +196,11 @@ ArkOhosAdapterHelperWrapper::GetOhosWebDataBaseAdapterInstance() {
 
 NWeb::PasteBoardClientAdapter& ArkOhosAdapterHelperWrapper::GetPasteBoard() {
   static PasteBoardClientAdapterImpl instance;
+  return instance;
+}
+
+NWeb::ColorPickerAdapter& ArkOhosAdapterHelperWrapper::GetColorPickerAdapter() {
+  static ColorPickerAdapterImpl instance;
   return instance;
 }
 
@@ -513,9 +515,9 @@ ArkOhosAdapterHelperWrapper::CreateFlowbufferAdapter() {
   return std::make_unique<ArkFlowbufferAdapterWrapper>(adapter);
 }
 
-std::unique_ptr<NWeb::MediaAVSessionAdapter>
+std::shared_ptr<NWeb::MediaAVSessionAdapter>
 ArkOhosAdapterHelperWrapper::CreateMediaAVSessionAdapter() {
-  return std::make_unique<NWeb::MediaAVSessionAdapterImpl>();
+  return std::make_shared<NWeb::MediaAVSessionAdapterImpl>();
 }
 
 std::unique_ptr<NWeb::OhosImageDecoderAdapter>
@@ -600,5 +602,26 @@ ArkOhosAdapterHelperWrapper::CreateScreenlockManagerAdapter() {
 std::unique_ptr<NWeb::NetConfigAdapter>
 ArkOhosAdapterHelperWrapper::GetNetConfigAdapter() {
   return std::make_unique<NetConfigAdapterImpl>();
+}
+
+std::unique_ptr<NWeb::BackgroundTaskAdapter>
+ArkOhosAdapterHelperWrapper::CreateBackgroundTaskAdapter() {
+  ArkWebRefPtr<ArkBackgroundTaskAdapter> adapter =
+      ctocpp_->CreateBackgroundTaskAdapter();
+
+  if (CHECK_REF_PTR_IS_NULL(adapter)) {
+    return nullptr;
+  }
+
+  return std::make_unique<ArkBackgroundTaskAdapterWrapper>(adapter);
+}
+
+std::unique_ptr<NWeb::NetEventAdapter>
+ArkOhosAdapterHelperWrapper::CreateNetEventAdapter() {
+  return std::make_unique<NetEventAdapterImpl>();
+}
+
+NWeb::HiAppeventAdapter& ArkOhosAdapterHelperWrapper::GetHiAppeventAdapterInstance() {
+  return HiAppeventAdapterImpl::GetInstance();
 }
 }  // namespace OHOS::ArkWeb

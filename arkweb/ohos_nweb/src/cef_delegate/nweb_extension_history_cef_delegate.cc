@@ -22,6 +22,7 @@
 #include "cef/libcef/browser/request_context_impl.h"
 #include "cef/ohos_cef_ext/libcef/browser/extensions/api/history/cef_history_event_router.h"
 #include "content/public/browser/browser_context.h"
+#include "nweb_extension_utils.h"
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
@@ -41,27 +42,6 @@ namespace {
 
   static std::map<int, HistoryDeleteAllCallback> g_history_delete_all_map_;
   std::mutex g_history_delete_all_map_mutex_;
-
-  content::BrowserContext* GetBrowserContext() {
-    CefRefPtr<CefRequestContext> request_context =
-        CefRequestContext::GetGlobalContext();
-    if (!request_context) {
-      LOG(ERROR) << "request context is null";
-      return nullptr;
-    }
-
-    CefRequestContextImpl* request_context_impl =
-        static_cast<CefRequestContextImpl*>(request_context.get());
-    CefBrowserContext* cef_browser_context =
-        request_context_impl->GetBrowserContext();
-    if (!cef_browser_context) {
-      LOG(ERROR) << "cef browser context is null";
-      return nullptr;
-    }
-    content::BrowserContext* browser_context =
-        cef_browser_context->AsBrowserContext();
-    return browser_context;
-}
 }
 
 // static

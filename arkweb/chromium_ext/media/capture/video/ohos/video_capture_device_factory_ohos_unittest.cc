@@ -237,7 +237,7 @@ class OhosAdapterHelperMock : public OhosAdapterHelper {
               CreateFlowbufferAdapter,
               (),
               (override));
-  MOCK_METHOD(std::unique_ptr<MediaAVSessionAdapter>,
+  MOCK_METHOD(std::shared_ptr<MediaAVSessionAdapter>,
               CreateMediaAVSessionAdapter,
               (),
               (override));
@@ -281,7 +281,18 @@ class OhosAdapterHelperMock : public OhosAdapterHelper {
               CreateScreenlockManagerAdapter,
               (),
               (override));
-    
+    MOCK_METHOD(std::unique_ptr<NetEventAdapter>,
+              CreateNetEventAdapter,
+              (),
+              (override));
+    MOCK_METHOD(ColorPickerAdapter&,
+              GetColorPickerAdapter,
+              (),
+              (override));
+    MOCK_METHOD(HiAppeventAdapter&,
+              GetHiAppeventAdapterInstance,
+              (),
+              (override));
 };
 
 class VideoControlSupportAdapterMock : public VideoControlSupportAdapter {

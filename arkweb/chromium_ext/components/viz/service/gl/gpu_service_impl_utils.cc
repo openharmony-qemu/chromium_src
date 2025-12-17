@@ -98,8 +98,8 @@ void GpuServiceImpl::Discard(uint32_t native_window_id)
 
 //LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
-void GpuServiceImpl::StartMonitor() {
-  base::ohos::DynamicFrameLossMonitor::GetInstance().StartMonitor();
+void GpuServiceImpl::StartMonitor(int32_t nweb_id) {
+  base::ohos::DynamicFrameLossMonitor::GetInstance().StartMonitor(nweb_id);
 }
 
 void GpuServiceImpl::StopMonitor() {

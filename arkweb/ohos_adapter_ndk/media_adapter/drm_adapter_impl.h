@@ -89,7 +89,8 @@ public:
     }
 
     SessionId(std::string emeId, const uint8_t* keySetId, int32_t keySetIdLen)
-        : emeId_(emeId)
+        : emeId_(emeId),
+          keySetIdLen_(0)
     {
         (void)memset_s(keySetId_, sizeof(keySetId_), 0, sizeof(keySetId_));
         if (keySetId != nullptr && keySetIdLen > 0 && keySetIdLen <= MAX_KEY_SET_ID_LEN) {

@@ -20,8 +20,34 @@
 #include "nweb_hilog.h"
 
 #if BUILDFLAG(ARKWEB_COOKIE)
+#include "base/path_service.h"
+#include "chrome/common/chrome_paths.h"
+#include "chrome/grit/branded_strings.h"
+#include "components/os_crypt/sync/os_crypt.h"
+#include "components/password_manager/core/browser/password_manager_switches.h"
 #include "nweb_impl.h"
 #endif  // BUILDFLAG(ARKWEB_COOKIE)
+
+#if BUILDFLAG(ARKWEB_COOKIE)
+namespace {
+void PostCreateMainMessageLoop() {
+  const base::CommandLine* command_line =
+      base::CommandLine::ForCurrentProcess();
+
+  std::unique_ptr<os_crypt::Config> config =
+      std::make_unique<os_crypt::Config>();
+  config->store =
+      command_line->GetSwitchValueASCII(password_manager::kPasswordStore);
+  // Forward the product name (defaults to "Chromium").
+  config->product_name = std::string("Chromium");
+  config->should_use_preference =
+      command_line->HasSwitch(password_manager::kEnableEncryptionSelection);
+  base::PathService::Get(chrome::DIR_USER_DATA, &config->user_data_path);
+  DCHECK(!config->user_data_path.empty());
+  OSCrypt::SetConfig(std::move(config));
+}
+}  // namespace
+#endif
 
 namespace OHOS::NWeb {
 
@@ -39,7 +65,13 @@ NWebCookieManagerImpl::NWebCookieManagerImpl() {
 #if BUILDFLAG(ARKWEB_COOKIE)
   std::shared_ptr<NWebEngineInitArgs> init_args =
       std::make_shared<NWebDefaultEngineInitArgsImpl>();
-  (void)NWebImpl::InitializeICUStatic(init_args);
+  if (NWebImpl::ShouldLazyInitWebEngine()) {
+    init_args = NWebImpl::GetSaveInitargs();
+    (void)NWebImpl::InitializeICUStatic(init_args);
+    PostCreateMainMessageLoop();
+  } else {
+    (void)NWebImpl::InitializeICUStatic(init_args);
+  }
 #endif  // BUILDFLAG(ARKWEB_COOKIE)
 }
 
@@ -229,4 +261,14 @@ void NWebCookieManagerImpl::SetCookieAsync(
                             callback);
   }
 }
+
+std::vector<std::shared_ptr<NWebCookie>>
+    NWebCookieManagerImpl::GetAllCookies(bool incognitoMode) {
+  std::vector<std::shared_ptr<NWebCookie>> cookies;
+  if (delegate_ != nullptr) {
+    delegate_->GetAllCookies(incognitoMode, cookies);
+  }
+  return cookies;
+}
+
 }  // namespace OHOS::NWeb

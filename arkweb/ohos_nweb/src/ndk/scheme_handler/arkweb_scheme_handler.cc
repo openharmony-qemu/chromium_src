@@ -405,14 +405,14 @@ ARKWEB_EXPORT bool OH_ArkWebResourceRequest_HasGesture(
 ARKWEB_EXPORT int32_t OH_ArkWeb_RegisterCustomSchemes(const char* scheme,
                                                       int32_t option) {
   if (!scheme) {
-    LOG(ERROR) << "scheme_handler scheme is nulltpr.";
+    LOG(ERROR) << "scheme_handler scheme is nullptr.";
     return ARKWEB_INVALID_PARAM;
   }
 
   CefRefPtr<OHOS::NWeb::NWebApplication> application =
       OHOS::NWeb::NWebApplication::GetDefault();
   if (!application) {
-    LOG(ERROR) << "scheme_handler application is nulltpr.";
+    LOG(ERROR) << "scheme_handler application is nullptr.";
     return ARKWEB_ERROR_UNKNOWN;
   }
 
@@ -487,7 +487,7 @@ ARKWEB_EXPORT int32_t OH_ArkWebServiceWorker_ClearSchemeHandlers() {
 
 ARKWEB_EXPORT int32_t OH_ArkWeb_ClearSchemeHandlers(const char* web_tag) {
   if (!web_tag) {
-    LOG(ERROR) << "scheme_handler web tag is nulltpr.";
+    LOG(ERROR) << "scheme_handler web tag is nullptr.";
     return ARKWEB_INVALID_PARAM;
   }
 
@@ -511,7 +511,7 @@ ARKWEB_EXPORT void OH_ArkWeb_DestroySchemeHandler(
     LOG(ERROR) << "scheme_handler scheme handler is nullptr.";
     return;
   }
-
+  OHOS::NWeb::NWebSchemeHandlerFactory::ClearAllSchemeHandlers(scheme_handler);
   delete scheme_handler;
 }
 

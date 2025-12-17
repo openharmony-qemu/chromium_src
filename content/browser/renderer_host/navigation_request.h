@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 
+
 #include "base/debug/crash_logging.h"
 #include "base/functional/callback.h"
 #include "base/functional/callback_forward.h"
@@ -1378,6 +1379,24 @@ class CONTENT_EXPORT NavigationRequest
   NavigationDiscardReason GetTypeForNavigationDiscardReason();
 
   void set_force_no_https_upgrade() { force_no_https_upgrade_ = true; }
+
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  void ohos_set_https_upgrade(bool is_force_no_https_upgrade) {
+    force_no_https_upgrade_ = is_force_no_https_upgrade;
+  }
+
+  void ohos_set_url_typed_with_http_scheme(bool url_typed_with_http_scheme) {
+    url_typed_with_http_scheme_ = url_typed_with_http_scheme;
+  }
+
+  bool is_url_typed_with_http_scheme() const {
+    return url_typed_with_http_scheme_;
+  }
+
+  bool is_force_no_https_upgrade() const {
+    return force_no_https_upgrade_;
+  }
+#endif
 
   bool was_reset_for_cross_document_restart() const {
     return was_reset_for_cross_document_restart_;
@@ -2934,6 +2953,11 @@ class CONTENT_EXPORT NavigationRequest
 
   // If true, HTTPS Upgrades will be disabled on this navigation request.
   bool force_no_https_upgrade_ = false;
+
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  // If true, HTTPS Upgrades will be disabled on this navigation request.
+  bool url_typed_with_http_scheme_ = true;
+#endif
 
   // The initial request method of the request, before any redirects.
   std::string request_method_;

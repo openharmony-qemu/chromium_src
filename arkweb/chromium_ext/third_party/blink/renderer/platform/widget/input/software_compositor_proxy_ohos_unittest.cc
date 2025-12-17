@@ -102,9 +102,10 @@ class WritableSharedMemoryRegionMock : public base::WritableSharedMemoryRegion {
 
 class MockSoftwareCompositorRendererOhos
     : public cc::mojo_embedder::SoftwareCompositorRendererOhos {
- public:
-  MockSoftwareCompositorRendererOhos(cc::mojo_embedder::AsyncLayerTreeFrameSink* sink,
-                                     cc::mojo_embedder::SoftwareCompositorRegistryOhos* registry)
+public:
+  MockSoftwareCompositorRendererOhos(
+    cc::mojo_embedder::AsyncLayerTreeFrameSink* sink,
+    cc::mojo_embedder::SoftwareCompositorRegistryOhos* registry)
       : cc::mojo_embedder::SoftwareCompositorRendererOhos(sink, registry) {}
   MockSoftwareCompositorRendererOhos(
       const MockSoftwareCompositorRendererOhos&) = delete;
@@ -214,7 +215,7 @@ TEST_F(SoftwareCompositorProxyOhosTest, DemandDrawSwAsync_InstallPixelsFail) {
   auto params = mojom::blink::SoftwareCompositorDemandDrawSwParams::New();
   params->size = gfx::SizeF(100.0f, 100.0f);
   params->offset = gfx::PointF(0.0f, 0.0f);
-  
+
   bool callback_result = true;
   g_softwareCompositor->DemandDrawSwAsync(
       std::move(params),

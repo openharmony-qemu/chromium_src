@@ -19,6 +19,7 @@
 #include <BasicServicesKit/oh_commonevent_support.h>
 #include <BasicServicesKit/ohbattery_info.h>
 #include "base/logging.h"
+#include "arkweb/ohos_adapter_ndk/mock_ndk_api/include/mock_ndk_api.h"
 #include "arkweb/chromium_ext/ohos_test/fuzztest/ohos_adapter_ndk/net_connect_adapter_fuzzer/net_connect_fuzz_mock.h"
 #define private public
 #include "battery_mgr_client_adapter_impl.h"
@@ -26,92 +27,33 @@
 
 using namespace testing;
 using namespace OHOS::NWeb;
+using namespace MockNdkApi;
 
 class MockWebBatteryEventCallback : public WebBatteryEventCallback {
   public:
     MOCK_METHOD(void, BatteryInfoChanged, (std::shared_ptr<WebBatteryInfo>), (override));
 };
 
-class MockCommonEventSupport {
-  public:
-    static MockCommonEventSupport& getInstance() {
-      static MockCommonEventSupport instance;
-      return instance;
-    }
-    
-    MOCK_METHOD(CommonEvent_SubscribeInfo*, OH_CommonEvent_CreateSubscribeInfo, (const char* events[], int count));
-    MOCK_METHOD(CommonEvent_Subscriber*, OH_CommonEvent_CreateSubscriber, (CommonEvent_SubscribeInfo* info, CommonEvent_ReceiveCallback callback));
-    MOCK_METHOD(CommonEvent_ErrCode, OH_CommonEvent_Subscribe, (CommonEvent_Subscriber* subscriber));
-    MOCK_METHOD(void, OH_CommonEvent_DestroySubscribeInfo, (CommonEvent_SubscribeInfo* info));
-    MOCK_METHOD(void, OH_CommonEvent_DestroySubscriber, (CommonEvent_Subscriber* subscriber));
-    MOCK_METHOD(int32_t, OH_BatteryInfo_GetCapacity, ());
-    MOCK_METHOD(BatteryInfo_BatteryPluggedType, OH_BatteryInfo_GetPluggedType, ());
-    MOCK_METHOD(CommonEvent_ErrCode, OH_CommonEvent_UnSubscribe, (const CommonEvent_Subscriber *subscriber));
-    MOCK_METHOD(const char *, OH_CommonEvent_GetEventFromRcvData, (const CommonEvent_RcvData *rcvData));
-    MOCK_METHOD(const CommonEvent_Parameters *, OH_CommonEvent_GetParametersFromRcvData, (const CommonEvent_RcvData *rcvData));
-    MOCK_METHOD(bool, OH_CommonEvent_HasKeyInParameters, (const CommonEvent_Parameters *para, const char *key));
-    MOCK_METHOD(int, OH_CommonEvent_GetIntFromParameters, (const CommonEvent_Parameters *para, const char *key, int defaultValue));
-};
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-CommonEvent_SubscribeInfo* __wrap_OH_CommonEvent_CreateSubscribeInfo(const char* events[], int count) {
-  return MockCommonEventSupport::getInstance().OH_CommonEvent_CreateSubscribeInfo(events, count);
-}
-
-CommonEvent_Subscriber* __wrap_OH_CommonEvent_CreateSubscriber(CommonEvent_SubscribeInfo* info, CommonEvent_ReceiveCallback callback) {
-  return MockCommonEventSupport::getInstance().OH_CommonEvent_CreateSubscriber(info, callback);
-}
-
-CommonEvent_ErrCode __wrap_OH_CommonEvent_Subscribe(CommonEvent_Subscriber* subscriber) {
-  return MockCommonEventSupport::getInstance().OH_CommonEvent_Subscribe(subscriber);
-}
-
-void __wrap_OH_CommonEvent_DestroySubscribeInfo(CommonEvent_SubscribeInfo* info) {
-  return MockCommonEventSupport::getInstance().OH_CommonEvent_DestroySubscribeInfo(info);
-}
-
-void __wrap_OH_CommonEvent_DestroySubscriber(CommonEvent_Subscriber* subscriber) {
-  return MockCommonEventSupport::getInstance().OH_CommonEvent_DestroySubscriber(subscriber);
-}
-
-int32_t __wrap_OH_BatteryInfo_GetCapacity() {
-  return MockCommonEventSupport::getInstance().OH_BatteryInfo_GetCapacity();
-}
-
-BatteryInfo_BatteryPluggedType __wrap_OH_BatteryInfo_GetPluggedType() {
-  return MockCommonEventSupport::getInstance().OH_BatteryInfo_GetPluggedType();
-}
-
-CommonEvent_ErrCode __wrap_OH_CommonEvent_UnSubscribe(const CommonEvent_Subscriber *subscriber) {
-  return MockCommonEventSupport::getInstance().OH_CommonEvent_UnSubscribe(subscriber);
-}
-
-const char * __wrap_OH_CommonEvent_GetEventFromRcvData(const CommonEvent_RcvData *rcvData) {
-  return MockCommonEventSupport::getInstance().OH_CommonEvent_GetEventFromRcvData(rcvData);
-}
-
-const CommonEvent_Parameters * __wrap_OH_CommonEvent_GetParametersFromRcvData(const CommonEvent_RcvData *rcvData) {
-  return MockCommonEventSupport::getInstance().OH_CommonEvent_GetParametersFromRcvData(rcvData);
-}
-
-bool __wrap_OH_CommonEvent_HasKeyInParameters(const CommonEvent_Parameters *para, const char *key) {
-  return MockCommonEventSupport::getInstance().OH_CommonEvent_HasKeyInParameters(para, key);
-}
-
-int __wrap_OH_CommonEvent_GetIntFromParameters(const CommonEvent_Parameters *para, const char *key, int defaultValue) {
-  return MockCommonEventSupport::getInstance().OH_CommonEvent_GetIntFromParameters(para, key, defaultValue);
-}
-#ifdef __cplusplus
-}
-#endif
-
 class BatteryMgrClientAdapterImplTest : public ::testing::Test {
   protected:
+    void SetType(bool type) {
+      MockNetCommonEventSupport::bGetCapacity = type;
+      MockNetCommonEventSupport::bGetPluggedType = type;
+    }
     void SetUp() override {
       adapter_ = std::make_shared<BatteryMgrClientAdapterImpl>();
       batteryInfo_ = std::make_shared<WebBatteryInfoImpl>(50.0, true, 60, 30);
+    }
+
+    void TearDown() override {
+      g_mock_OH_CommonEvent_CreateSubscribeInfo = nullptr;
+      g_mock_OH_CommonEvent_CreateSubscriber = nullptr;
+      g_mock_OH_CommonEvent_Subscribe = nullptr;
+      g_mock_OH_CommonEvent_UnSubscribe = nullptr;
+      g_mock_OH_CommonEvent_GetEventFromRcvData = nullptr;
+      g_mock_OH_CommonEvent_DestroySubscribeInfo = nullptr;
+      g_mock_OH_CommonEvent_DestroySubscriber = nullptr;
+      SetType(false);
     }
 
     std::shared_ptr<BatteryMgrClientAdapterImpl> adapter_;
@@ -137,59 +79,72 @@ TEST_F(BatteryMgrClientAdapterImplTest, RegBatteryEvent_NullCallback) {
   EXPECT_EQ(actualCallback, adapter_->cb_);
 }
 
-
 TEST_F(BatteryMgrClientAdapterImplTest, StartListen_Fail_CreateSubscribeInfoFails) {
-  EXPECT_CALL(MockCommonEventSupport::getInstance(), OH_CommonEvent_CreateSubscribeInfo(_, _))
-    .WillOnce(Return(nullptr));
+  g_mock_OH_CommonEvent_CreateSubscribeInfo = [](const char* [], int32_t) {
+    return nullptr;
+  };
 
   auto callback = std::make_shared<MockWebBatteryEventCallback>();
   adapter_->RegBatteryEvent(callback);
 
   bool result = adapter_->StartListen();
   EXPECT_FALSE(result);
+  g_mock_OH_CommonEvent_CreateSubscribeInfo = nullptr;
 }
 
 TEST_F(BatteryMgrClientAdapterImplTest, StartListen_Fail_OH_CommonEvent_CreateSubscriber) {
   adapter_->commonEventSubscriber_ = nullptr;
   auto* mockInfo = reinterpret_cast<CommonEvent_SubscribeInfo*>(0x1234);
   auto* mockSubscriber = reinterpret_cast<CommonEvent_Subscriber*>(0x5678);
-  
-  EXPECT_CALL(MockCommonEventSupport::getInstance(), OH_CommonEvent_CreateSubscribeInfo(_, _))
-    .WillOnce(Return(mockInfo));
-  EXPECT_CALL(MockCommonEventSupport::getInstance(), OH_CommonEvent_CreateSubscriber(mockInfo, _))
-    .WillOnce(Return(nullptr));
-  EXPECT_CALL(MockCommonEventSupport::getInstance(), OH_CommonEvent_DestroySubscribeInfo(mockInfo));
+
+  g_mock_OH_CommonEvent_CreateSubscribeInfo = [&mockInfo](const char* [], int32_t) {
+    return mockInfo;
+  };
+  g_mock_OH_CommonEvent_CreateSubscriber = [](const CommonEvent_SubscribeInfo* info,
+      CommonEvent_ReceiveCallback callback) {
+    return nullptr;
+  };
+
+  g_mock_OH_CommonEvent_DestroySubscribeInfo = [](CommonEvent_SubscribeInfo* info) {};
 
   auto callback = std::make_shared<MockWebBatteryEventCallback>();
   adapter_->RegBatteryEvent(callback);
   bool result = adapter_->StartListen();
   EXPECT_FALSE(result);
+  g_mock_OH_CommonEvent_DestroySubscribeInfo = nullptr;
 }
 
 TEST_F(BatteryMgrClientAdapterImplTest, StartListen_Fail_OH_CommonEvent_Subscribe) {
   adapter_->commonEventSubscriber_ = nullptr;
   auto* mockInfo = reinterpret_cast<CommonEvent_SubscribeInfo*>(0x1234);
   auto* mockSubscriber = reinterpret_cast<CommonEvent_Subscriber*>(0x5678);
+  g_mock_OH_CommonEvent_CreateSubscribeInfo = [&mockInfo](const char* [], int32_t) {
+    return mockInfo;
+  };
+  g_mock_OH_CommonEvent_CreateSubscriber = [&mockSubscriber](const CommonEvent_SubscribeInfo* info,
+      CommonEvent_ReceiveCallback callback) {
+    return mockSubscriber;
+  };
+  g_mock_OH_CommonEvent_Subscribe = [](const CommonEvent_Subscriber* subscriber) {
+    return COMMONEVENT_ERR_INVALID_PARAMETER;
+  };
 
-  EXPECT_CALL(MockCommonEventSupport::getInstance(), OH_CommonEvent_CreateSubscribeInfo(_, _))
-    .WillOnce(Return(mockInfo));
-  EXPECT_CALL(MockCommonEventSupport::getInstance(), OH_CommonEvent_CreateSubscriber(mockInfo, _))
-    .WillOnce(Return(mockSubscriber));
-  EXPECT_CALL(MockCommonEventSupport::getInstance(), OH_CommonEvent_Subscribe(mockSubscriber))
-    .WillOnce(Return(COMMONEVENT_ERR_INVALID_PARAMETER));
-
-  EXPECT_CALL(MockCommonEventSupport::getInstance(), OH_CommonEvent_DestroySubscribeInfo(mockInfo));
-  EXPECT_CALL(MockCommonEventSupport::getInstance(), OH_CommonEvent_DestroySubscriber(mockSubscriber));
+  g_mock_OH_CommonEvent_DestroySubscribeInfo = [](CommonEvent_SubscribeInfo* info) {};
+  g_mock_OH_CommonEvent_DestroySubscriber = [](CommonEvent_Subscriber* subscriber) {};
   auto callback = std::make_shared<MockWebBatteryEventCallback>();
   adapter_->RegBatteryEvent(callback);
   bool result = adapter_->StartListen();
   EXPECT_FALSE(result);
+
+  g_mock_OH_CommonEvent_DestroySubscribeInfo = nullptr;
+  g_mock_OH_CommonEvent_DestroySubscriber = nullptr;
 }
 
 TEST_F(BatteryMgrClientAdapterImplTest, RequestBatteryInfo_ChargingScenario) {
-  EXPECT_CALL(MockCommonEventSupport::getInstance(), OH_BatteryInfo_GetCapacity())
+  SetType(true);
+  EXPECT_CALL(MockNetCommonEventSupport::GetInstance(), OH_BatteryInfo_GetCapacity())
     .WillOnce(Return(85));
-  EXPECT_CALL(MockCommonEventSupport::getInstance(), OH_BatteryInfo_GetPluggedType())
+  EXPECT_CALL(MockNetCommonEventSupport::GetInstance(), OH_BatteryInfo_GetPluggedType())
     .WillOnce(Return(PLUGGED_TYPE_AC));
   
   auto batteryInfo = adapter_->RequestBatteryInfo();
@@ -199,9 +154,10 @@ TEST_F(BatteryMgrClientAdapterImplTest, RequestBatteryInfo_ChargingScenario) {
 }
 
 TEST_F(BatteryMgrClientAdapterImplTest, RequestBatteryInfo_ChargingScenario2) {
-  EXPECT_CALL(MockCommonEventSupport::getInstance(), OH_BatteryInfo_GetCapacity())
+  SetType(true);
+  EXPECT_CALL(MockNetCommonEventSupport::GetInstance(), OH_BatteryInfo_GetCapacity())
     .WillOnce(Return(85));
-  EXPECT_CALL(MockCommonEventSupport::getInstance(), OH_BatteryInfo_GetPluggedType())
+  EXPECT_CALL(MockNetCommonEventSupport::GetInstance(), OH_BatteryInfo_GetPluggedType())
     .WillOnce(Return(PLUGGED_TYPE_NONE));
   
   auto batteryInfo = adapter_->RequestBatteryInfo();
@@ -211,9 +167,10 @@ TEST_F(BatteryMgrClientAdapterImplTest, RequestBatteryInfo_ChargingScenario2) {
 }
 
 TEST_F(BatteryMgrClientAdapterImplTest, RequestBatteryInfo_ChargingScenario3) {
-  EXPECT_CALL(MockCommonEventSupport::getInstance(), OH_BatteryInfo_GetCapacity())
+  SetType(true);
+  EXPECT_CALL(MockNetCommonEventSupport::GetInstance(), OH_BatteryInfo_GetCapacity())
     .WillOnce(Return(85));
-  EXPECT_CALL(MockCommonEventSupport::getInstance(), OH_BatteryInfo_GetPluggedType())
+  EXPECT_CALL(MockNetCommonEventSupport::GetInstance(), OH_BatteryInfo_GetPluggedType())
     .WillOnce(Return(PLUGGED_TYPE_BUTT));
   
   auto batteryInfo = adapter_->RequestBatteryInfo();
@@ -233,6 +190,7 @@ TEST_F(BatteryMgrClientAdapterImplTest, StopListen_NoActionTaken) {
 
 TEST_F(BatteryMgrClientAdapterImplTest, StopListen_WithCallbackButNotStarted) {
   auto anotherCb = std::make_shared<MockWebBatteryEventCallback>();
+  adapter_->callbackSet_.clear();
   adapter_->callbackSet_.insert(adapter_->cb_);
   adapter_->callbackSet_.insert(anotherCb);
   adapter_->commonEventSubscriber_ = reinterpret_cast<void*>(0x1234);
@@ -243,42 +201,52 @@ TEST_F(BatteryMgrClientAdapterImplTest, StopListen_WithCallbackButNotStarted) {
 
 
 TEST_F(BatteryMgrClientAdapterImplTest, StopListen_CommonEventSubscriber_IsNull) {
+  adapter_->callbackSet_.clear();
   adapter_->callbackSet_.insert(adapter_->cb_);
   adapter_->commonEventSubscriber_ = nullptr;
   ASSERT_NO_FATAL_FAILURE(adapter_->StopListen());
 }
 
 TEST_F(BatteryMgrClientAdapterImplTest, StopListen_UnSubscribe_Success) {
+  adapter_->callbackSet_.clear();
   adapter_->callbackSet_.insert(adapter_->cb_);
   adapter_->commonEventSubscriber_ = reinterpret_cast<CommonEvent_Subscriber*>(0x1234);
   adapter_->commonEventSubscriberInfo_ = reinterpret_cast<CommonEvent_SubscribeInfo*>(0x5678);
 
-  EXPECT_CALL(MockCommonEventSupport::getInstance(), OH_CommonEvent_UnSubscribe(_))
-    .WillOnce(Return(COMMONEVENT_ERR_PERMISSION_ERROR));
-  EXPECT_CALL(MockCommonEventSupport::getInstance(), OH_CommonEvent_DestroySubscriber(_));
-  EXPECT_CALL(MockCommonEventSupport::getInstance(), OH_CommonEvent_DestroySubscribeInfo(_));
-  
+  g_mock_OH_CommonEvent_UnSubscribe = [](const CommonEvent_Subscriber*) {
+    return COMMONEVENT_ERR_PERMISSION_ERROR;
+  };
+
+  g_mock_OH_CommonEvent_DestroySubscribeInfo = [](CommonEvent_SubscribeInfo* info) {};
+  g_mock_OH_CommonEvent_DestroySubscriber = [](CommonEvent_Subscriber* subscriber) {};
+
   adapter_->StopListen();
   
   ASSERT_EQ(adapter_->commonEventSubscriber_, nullptr);
   ASSERT_EQ(adapter_->commonEventSubscriberInfo_, nullptr);
+  g_mock_OH_CommonEvent_DestroySubscriber = nullptr;
+  g_mock_OH_CommonEvent_DestroySubscribeInfo = nullptr;
 }
 
-
-TEST_F(BatteryMgrClientAdapterImplTest, StopListen_Success) {  
+TEST_F(BatteryMgrClientAdapterImplTest, StopListen_Success) {
+  adapter_->callbackSet_.clear();
   adapter_->callbackSet_.insert(adapter_->cb_);
   adapter_->commonEventSubscriber_ = reinterpret_cast<CommonEvent_Subscriber*>(0x1234);
   adapter_->commonEventSubscriberInfo_ = reinterpret_cast<CommonEvent_SubscribeInfo*>(0x5678);
+  g_mock_OH_CommonEvent_UnSubscribe = [](const CommonEvent_Subscriber*) {
+    return COMMONEVENT_ERR_OK;
+  };
 
-  EXPECT_CALL(MockCommonEventSupport::getInstance(), OH_CommonEvent_UnSubscribe(_))
-    .WillOnce(Return(COMMONEVENT_ERR_OK));
-  EXPECT_CALL(MockCommonEventSupport::getInstance(), OH_CommonEvent_DestroySubscriber(_));
-  EXPECT_CALL(MockCommonEventSupport::getInstance(), OH_CommonEvent_DestroySubscribeInfo(_));
-  
+  g_mock_OH_CommonEvent_DestroySubscribeInfo = [](CommonEvent_SubscribeInfo* info) {};
+  g_mock_OH_CommonEvent_DestroySubscriber = [](CommonEvent_Subscriber* subscriber) {};
+
   adapter_->StopListen();
   
   ASSERT_EQ(adapter_->commonEventSubscriber_, nullptr);
   ASSERT_EQ(adapter_->commonEventSubscriberInfo_, nullptr);
+
+  g_mock_OH_CommonEvent_DestroySubscribeInfo = nullptr;
+  g_mock_OH_CommonEvent_DestroySubscriber = nullptr;
 }
 
 TEST_F(BatteryMgrClientAdapterImplTest, OnBatteryEvent_Datanullptr) {

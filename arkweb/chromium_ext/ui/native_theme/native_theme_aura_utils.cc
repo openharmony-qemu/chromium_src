@@ -120,9 +120,8 @@ void NativeThemeAuraUtils::PaintScrollbarThumbWithColor(
   if (color_scheme == NativeTheme::ColorScheme::kDark) {
     overflags.setColor(SkColorSetA(SK_ColorWHITE, 102));
   } else {
-    overflags.setColor(SkColorSetA(scrollbar_color, 102));
+    overflags.setColor(SkColorSetA(SK_ColorBLACK, 102));
   }
-  bool isPcDevice = base::ohos::IsPcDevice();
   float ratio = base::ohos::GetPixelRatio();
   if (extra_params.thumb_color.has_value()) {
     overflags.setColor(SkColor4f::FromColor(extra_params.thumb_color.value()));

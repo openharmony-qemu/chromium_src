@@ -55,6 +55,9 @@ class BrowserContext;
 class NavigationEntry;
 class RenderFrameHost;
 class NavigationHandle;
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+class NavigationControllerDelegate;
+#endif
 struct OpenURLParams;
 
 // A NavigationController manages session history, i.e., a back-forward list
@@ -149,7 +152,12 @@ class NavigationController {
       bool is_renderer_initiated,
       const std::string& extra_headers,
       BrowserContext* browser_context,
-      scoped_refptr<network::SharedURLLoaderFactory> blob_url_loader_factory);
+      scoped_refptr<network::SharedURLLoaderFactory> blob_url_loader_factory
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+      , GURL* url_to_rewrite = nullptr
+      , NavigationControllerDelegate* delegate = nullptr
+#endif
+      );
 
   // Extra optional parameters for LoadURLWithParams.
   struct CONTENT_EXPORT LoadURLParams {
@@ -253,7 +261,7 @@ class NavigationController {
     scoped_refptr<base::RefCountedString> data_url_as_string;
      
 #if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
-    // true if ignoring Cache-Control: no-store.load_ignore_cache_params 
+    // true if ignoring Cache-Control: no-store. 
     bool load_ignore_cache_params = false;
 #endif
 #endif
@@ -359,6 +367,12 @@ class NavigationController {
     // login URLs which may be broken by HTTPS Upgrades due to the portal's
     // unconventional handling of HTTPS URLs.
     bool force_no_https_upgrade = false;
+
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+    // With Arkweb Https Upgrade function, if user Type http as scheme, we will not
+    // upgrade to https. Otherwise, this param will set to FLASE;
+    bool url_typed_with_http_scheme = true;
+#endif
   };
 
   // Disables checking for a repost and prompting the user. This is used during

@@ -70,7 +70,6 @@ BASE_FEATURE(kHidePastePopupOnGSB,
 BASE_FEATURE(kHistoryInterventionSameDocumentFix,
              "HistoryInterventionSameDocumentFix",
              base::FEATURE_ENABLED_BY_DEFAULT);
-
 // When enabled, keyboard user activation will be verified by the browser side.
 BASE_FEATURE(kBrowserVerifiedUserActivationKeyboard,
              "BrowserVerifiedUserActivationKeyboard",

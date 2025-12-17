@@ -13,6 +13,9 @@
  * limitations under the License.
  */
 
+#include <thread>
+#include <chrono>
+
 #include "components/viz/common/frame_sinks/begin_frame_source.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
@@ -23,6 +26,10 @@
 #undef private
 
 namespace viz {
+namespace {
+    constexpr int64_t TIMEOUT = 200;
+}
+
 class ExternalBeginFrameSourceOhosSecondTest : public testing::Test {
 public:
     ExternalBeginFrameSourceOhosSecondTest() = default;
@@ -102,6 +109,7 @@ TEST_F(ExternalBeginFrameSourceOhosSecondTest, OnVSyncImpl){
     externalBeginFramesourceOHOS_->reset_vsync_frequency_ = true;
     externalBeginFramesourceOHOS_->OnVSyncImpl(VSYNC_PERIOD_90120HZ_MID + 1, userData.get());
     EXPECT_FALSE(externalBeginFramesourceOHOS_->reset_vsync_frequency_);
+    std::this_thread::sleep_for(std::chrono::milliseconds(TIMEOUT));
 }
 
 TEST_F(ExternalBeginFrameSourceOhosSecondTest, UpdateVSyncFrequency) {

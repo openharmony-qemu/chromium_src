@@ -21,6 +21,9 @@
 #include "third_party/blink/renderer/platform/widget/input/elastic_overscroll_controller.h"
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/geometry/vector2d_conversions.h"
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+#include "third_party/blink/renderer/platform/widget/input/widget_input_handler_manager.h"
+#endif
 
 namespace blink {
 class ElasticOverscrollController;
@@ -33,6 +36,16 @@ class PLATFORM_EXPORT ElasticOverscrollControllerUtils {
   gfx::Vector2dF GetOverScrollOffset() {
     return elastic_overscroll_controller_->stretch_scroll_force_;
   }
+  void SetInputHandlerProxyClient(InputHandlerProxyClient* client) {
+    client_ = client;
+  }
+  void OnOverScrollOffsetChanged() {
+    if (client_) {
+      client_->OnOverScrollOffsetChanged(
+          elastic_overscroll_controller_->stretch_scroll_force_.x(),
+          elastic_overscroll_controller_->stretch_scroll_force_.y());
+    }
+  }
 #endif
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   void SetOverscrollMode(int mode) { overscroll_mode_ = mode; }
@@ -43,6 +56,9 @@ class PLATFORM_EXPORT ElasticOverscrollControllerUtils {
   int overscroll_mode_ = 0;
 #endif
   raw_ptr<ElasticOverscrollController> elastic_overscroll_controller_;
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+  raw_ptr<InputHandlerProxyClient> client_;
+#endif 
 };
 }  // namespace blink
 #endif  // ARKWEB_CHROMIUM_EXT_THIRD_PARTY_BLINK_RENDERER_PLATFORM_WIDGET_INPUT_ELASTIC_OVERSCROLL_CONTROLLER_UTILS_H

@@ -310,7 +310,12 @@ class NET_EXPORT HttpCache : public HttpTransactionFactory {
   // Resets g_init_cache and g_enable_split_cache for tests.
   static void ClearGlobalsForTesting();
 
+#if BUILDFLAG(ARKWEB_TEST)
+ public:
+#else
  private:
+#endif  // ARKWEB_TEST
+
   // Types --------------------------------------------------------------------
 
   // The type of operation represented by a work item.

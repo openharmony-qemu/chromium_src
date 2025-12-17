@@ -21,6 +21,8 @@ arkweb_gpu_ipc_service_sources += [
   "//arkweb/chromium_ext/gpu/ipc/service/stream_texture_ohos.h",
   "//arkweb/chromium_ext/gpu/ipc/service/gpu_channel_ext.h",
   "//arkweb/chromium_ext/gpu/ipc/service/gpu_channel_ext.cc",
+  "//arkweb/chromium_ext/gpu/ipc/service/gpu_hang_adapter.h",
+  "//arkweb/chromium_ext/gpu/ipc/service/gpu_hang_adapter.cc",
 ]
 
 arkweb_gpu_ipc_service_unittest = [

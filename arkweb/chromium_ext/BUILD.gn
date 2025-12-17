@@ -11,50 +11,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-config("arkweb_system_properties_config") {
-  ldflags = [ "-Wl,--wrap=IsPcDevice" ]
+config("net_dns_config") {
+  ldflags = [
+    "-Wl,--wrap=GetOHFreeDnsResult",
+    "-Wl,--wrap=GetOHGetAddrInfoForNetwork"
+  ]
 }
 
-config("blink_renderer_config") {
-  ldflags = [ "-Wl,--wrap=IsTabletDevice" ]
+config("arkweb_device_unittest_config") {
+  ldflags = [ "-Wl,--wrap=LoadNativeLibrary" ]
 }
 
-config("arkweb_base_unittest_config") {
-  ldflags = ["-Wl,--wrap=OH_FileUri_GetPathFromUri", 
-  "-Wl,--wrap=OH_FileUri_GetFileName",
-  "-Wl,--wrap=OH_CommonEvent_CreateSubscribeInfo",
-  "-Wl,--wrap=OH_CommonEvent_CreateSubscriber",
-  "-Wl,--wrap=OH_CommonEvent_Subscribe",
-  "-Wl,--wrap=OH_CommonEvent_DestroySubscribeInfo",
-  "-Wl,--wrap=OH_CommonEvent_DestroySubscriber",
-  "-Wl,--wrap=OH_BatteryInfo_GetCapacity",
-  "-Wl,--wrap=OH_BatteryInfo_GetPluggedType",
-  "-Wl,--wrap=OH_AudioCapturer_Start",
-  "-Wl,--wrap=OH_AudioCapturer_Stop",
-  "-Wl,--wrap=OH_AudioCapturer_Release",
-  "-Wl,--wrap=OH_AudioCapturer_GetFrameSizeInCallback",
-  "-Wl,--wrap=OH_AudioCapturer_GetTimestamp",
-  "-Wl,--wrap=OH_AudioStreamBuilder_Create",
-  "-Wl,--wrap=OH_AudioStreamBuilder_SetSamplingRate",
-  "-Wl,--wrap=OH_AudioStreamBuilder_Destroy",
-  "-Wl,--wrap=OH_AudioStreamBuilder_SetSampleFormat",
-  "-Wl,--wrap=OH_AudioStreamBuilder_SetEncodingType",
-  "-Wl,--wrap=OH_AudioStreamBuilder_SetChannelCount",
-  "-Wl,--wrap=OH_AudioStreamBuilder_SetCapturerInfo",
-  "-Wl,--wrap=OH_AudioStreamBuilder_SetLatencyMode",
-  "-Wl,--wrap=OH_AudioStreamBuilder_SetCapturerCallback",
-  "-Wl,--wrap=OH_AudioStreamBuilder_GenerateCapturer",
-  "-Wl,--wrap=OH_CommonEvent_UnSubscribe",
-  ]
-
-  ldflags += [ 
-    "-Wl,--wrap=OsVersion",
-    "-Wl,--wrap=CompatibleDeviceType",
-    "-Wl,--wrap=IsMobileDevice",
-    "-Wl,--wrap=IsTabletDevice",
-    "-Wl,--wrap=IsPcDevice",
-    "-Wl,--wrap=BaseOsName",
-    "-Wl,--wrap=MajorVersion",
-    "-Wl,--wrap=SeniorVersion",
-  ]
+config("ohos_nweb_unittests_config") {
+  ldflags = [ "-Wl,--wrap=strcpy_s" ]
 }

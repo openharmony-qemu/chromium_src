@@ -30,21 +30,32 @@
 #include "ui/gfx/geometry/rect_f.h"
 #include "third_party/blink/renderer/core/loader/resource/image_resource_content.h"
 #endif
-
+#if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT) || BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/first_screen_calculator.h"
+#endif
 namespace blink {
 
 class PaintTimingDetector;
 class PTDSupplementForBL;
+#if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT) || BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+class FirstScreenCalculator;
+#endif
 
 class PaintTimingDetectorUtils {
  public:
-  Persistent<PaintTimingDetector> paint_timing_detector_;
+  DISALLOW_NEW();
+  Member<PaintTimingDetector> paint_timing_detector_;
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  PaintTimingDetectorUtils() = default;
   PaintTimingDetectorUtils(PaintTimingDetector* paint_timing_detector, bool need_supplement_for_bl = true);
 #else
   explicit PaintTimingDetectorUtils(PaintTimingDetector* paint_timing_detector);
 #endif
-
+#if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT) || BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  std::shared_ptr<FirstScreenCalculator> GetFirstScreenCalculator();
+  void RestartRecordingFirstScreenPaint();
+  void OnUserScroll();
+#endif
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   bool ForwardNotifyPaintFinished();
   void ForwardNotifyBackgroundImagePaint(const Node& node, const Image& image, const StyleImage& style_image,
@@ -66,13 +77,19 @@ class PaintTimingDetectorUtils {
   void NotifyLcpForBlankless();
   void CheckNotifyLcpForBlankless();
   void RestartRecordingForBlankless();
-  bool HaveSupplementForBL() const { return ptd_supplement_for_bl_ != nullptr; }
+  bool HaveSupplementForBL() const { return need_supplement_for_bl_; }
   void SyncIPTDFrameIdxToBLIPTD(unsigned frame_index);
   void SyncTPTDFrameIdxToBLTPTD(unsigned frame_index);
-
+  void Trace(Visitor* visitor) const;
+#endif
 private:
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   void SyncBLPTDFrameIdxToPTD();
-  std::unique_ptr<PTDSupplementForBL> ptd_supplement_for_bl_ = nullptr;
+  bool need_supplement_for_bl_ = false;
+  PTDSupplementForBL ptd_supplement_for_bl_;
+#endif
+#if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT) || BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  std::shared_ptr<FirstScreenCalculator> first_screen_calculator_;
 #endif
 };
 

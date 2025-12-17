@@ -50,6 +50,12 @@
 #include "content/browser/web_contents/web_contents_view.h"
 #include "content/public/browser/web_contents_delegate.h"
 
+#if BUILDFLAG(ARKWEB_WEBRTC)
+#include "arkweb/chromium_ext/media/audio/ohos/ohos_audio_input_stream.h"
+#include "content/browser/renderer_host/media/audio_input_device_manager.h"
+#include "media/audio/audio_manager.h"
+#endif
+
 namespace content {
 
 // LCOV_EXCL_START
@@ -141,6 +147,87 @@ void WebContentsImplExt::CloseCamera(int nWebID) {
   videoCaptureManager->AsVideoCaptureManagerExt()->CloseCamera(nWebID);
 }
 
+#if BUILDFLAG(ARKWEB_WEBRTC)
+void WebContentsImplExt::OnCameraCaptureStateChanged(int original_state,
+                                              int new_state) {
+  if (delegate_) {
+    delegate_->OnCameraCaptureStateChanged(original_state, new_state);
+  }
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_WEBRTC)
+void WebContentsImplExt::ResumeMicrophone(int nWebID) {
+  if (nWebID < 0) {
+    LOG(ERROR) << "nWebID < 0.";
+    return;
+  }
+  auto audio_manager = BrowserMainLoop::GetInstance()->audio_manager();
+  if (!audio_manager) {
+    LOG(ERROR) << "audio_manager null";
+    return;
+  }
+  auto input_stream = audio_manager->GetInputStream();
+  if (!input_stream.size()) {
+    return;
+  }
+  for (auto it = input_stream.begin(); it != input_stream.end(); it++) {
+    if (media::OHOSAudioInputStream::GetNWebId((*it)->GetAudioParameters()) ==
+        nWebID) {
+      (*it)->ResumeMicrophone();
+    }
+  }
+}
+
+void WebContentsImplExt::StopMicrophone(int nWebID) {
+  if (nWebID < 0) {
+    LOG(ERROR) << "nWebID < 0.";
+    return;
+  }
+
+  auto media_stream_manager = 
+      BrowserMainLoop::GetInstance()->media_stream_manager();
+  if (!media_stream_manager) {
+    LOG(ERROR) << "media_stream_manager null";
+    return;
+  }
+
+  if (media_stream_manager->AsMediaStreamManagerExt()) {
+    media_stream_manager->AsMediaStreamManagerExt()->CloseAudioCapture(nWebID);
+  }
+}
+
+void WebContentsImplExt::PauseMicrophone(int nWebID) {
+  if (nWebID < 0) {
+    LOG(ERROR) << "nWebID < 0.";
+    return;
+  }
+  auto audio_manager = BrowserMainLoop::GetInstance()->audio_manager();
+  if (!audio_manager) {
+    LOG(ERROR) << "audio_manager null.";
+    return;
+  }
+  auto input_stream = audio_manager->GetInputStream();
+  if (!input_stream.size()) {
+    LOG(ERROR) << "input_stream is empty.";
+    return;
+  }
+  for (auto it = input_stream.begin(); it != input_stream.end(); it++) {
+    if (media::OHOSAudioInputStream::GetNWebId((*it)->GetAudioParameters()) ==
+        nWebID) {
+      (*it)->PauseMicrophone();
+    }
+  }
+}
+
+void WebContentsImplExt::OnMicrophoneCaptureStateChanged(int original_state,
+                                                         int new_state) {
+  if (delegate_) {
+    delegate_->OnMicrophoneCaptureStateChanged(original_state, new_state);
+  }
+}
+#endif
+
 // LCOV_EXCL_START
 int WebContentsImplExt::GetNWebId() {
   return nWebID_;
@@ -206,7 +293,7 @@ void WebContentsImplExt::CloseDateTimeChooser() {
 }
 #endif  // ARKWEB_CSS_INPUT_TIME
 
-#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM) || BUILDFLAG(ARKWEB_ZOOM)
 void WebContentsImplExt::SetForceEnableZoom(bool forceEnableZoom) {
   if (force_enable_zoom_ != forceEnableZoom) {
     force_enable_zoom_ = forceEnableZoom;
@@ -357,6 +444,16 @@ void WebContentsImplExt::ShowFreeCopyMenu() {
 }
 
 #endif  // BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+
+#if BUILDFLAG(ARKWEB_AI)
+void WebContentsImplExt::OnDataDetectorSelectText() {
+  auto* input_handler = GetFocusedFrameWidgetInputHandler();
+  if (!input_handler) {
+    return;
+  }
+  input_handler->OnDataDetectorSelectText();
+}
+#endif  // BUILDFLAG(ARKWEB_AI)
 // LCOV_EXCL_STOP
 
 RenderFrameHost* WebContentsImplExt::GetTargetFramesIncludingPending(
@@ -509,6 +606,13 @@ void WebContentsImplExt::ChangeVisibilityOfQuickMenu() {
   if (render_view_host_delegate_view_) {
     render_view_host_delegate_view_->ChangeVisibilityOfQuickMenu();
   }
+}
+
+bool WebContentsImplExt::IsQuickMenuShow() {
+  if (render_view_host_delegate_view_) {
+    render_view_host_delegate_view_->IsQuickMenuShow();
+  }
+  return false;
 }
 #endif
 
@@ -855,6 +959,17 @@ void WebContentsImplExt::HideAutofillPopup() {
   }
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+std::shared_ptr<OHOS::NWeb::NWebVaultPlainTextCallback> WebContentsImplExt::GetVaultPlainTextCallback() {
+  return vault_plain_text_callback_;
+}
+void WebContentsImplExt::SetVaultPlainTextCallback(
+    std::shared_ptr<OHOS::NWeb::NWebVaultPlainTextCallback> callback) {
+  vault_plain_text_callback_ = callback;
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
 void WebContentsImplExt::OnShareFile(const std::string& filePath,
                                      const std::string& utdTypeId) {
@@ -905,6 +1020,24 @@ void WebContentsImplExt::SetCustomUA(std::string custom_user_agent) {
 std::string WebContentsImplExt::GetCustomUA() {
   return custom_user_agent_;
 }
+
+bool WebContentsImplExt::isSameUserAgent(
+    const blink::UserAgentOverride& ua_override) {
+  if (GetUserAgentOverride() == ua_override) {
+    return true;
+  }
+
+  if (!ua_override.ua_string_override.empty() &&
+      !net::HttpUtil::IsValidHeaderValue(ua_override.ua_string_override)) {
+    return true;
+  }
+  if (GetUserAgentOverride().ua_string_override.empty()) {
+    return true;
+  }
+
+  return false;
+}
+
 #endif
 #if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
 void WebContentsImplExt::OneShotMediaPlayerStopped() {
@@ -1128,6 +1261,23 @@ void WebContentsImplExt::OnPdfLoadEvent(int32_t result,
     delegate_->OnPdfLoadEvent(result, url);
   }
 }
+
+void WebContentsImplExt::ProcessForPdfType(NavigationHandle* navigation_handle) {
+  if (!navigation_handle) {
+    LOG(ERROR) << "navigation_handle is null";
+    return;
+  }
+
+  std::string mime_type = GetContentsMimeType();
+  RenderFrameHostImpl* rfh = GetPrimaryMainFrame();
+  if (!rfh) {
+    LOG(ERROR) << "rfh is null";
+    return;
+  }
+  bool is_pdf = base::EqualsCaseInsensitiveASCII(mime_type, "application/pdf");
+  LOG_IF(INFO, is_pdf) << "content is pdf.";
+  rfh->SetIsPDF(is_pdf);
+}
 #endif  // BUILDFLAG(ARKWEB_PDF)
 // LCOV_EXCL_STOP
 
@@ -1153,6 +1303,10 @@ void WebContentsImplExt::OnIsPageDistillable(int page_type,
     delegate_->OnIsPageDistillable(page_type, distillable_page_url, title);
   }
 }
+
+bool WebContentsImplExt::IsDistillerPageWebContents() {
+  return SharedRenderProcessToken() == "0xAAAAAA";
+}
 #endif // ARKWEB_READER_MODE
 
 #if BUILDFLAG(ARKWEB_BGTASK)
@@ -1164,6 +1318,29 @@ void WebContentsImplExt::OnBrowserForeground() {
 void WebContentsImplExt::OnBrowserBackground() {
   LOG(INFO) << "WebContentsImplExt::OnBrowserBackground";
   observers_.NotifyObservers(&WebContentsObserver::OnBrowserBackground);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+void WebContentsImplExt::DetectBlankScreen(const std::string& url) {
+  RenderFrameHostImpl* render_frame_host = GetPrimaryMainFrame();
+  if (!render_frame_host) {
+    return;
+  }
+  render_frame_host->DetectBlankScreen(url);
+}
+
+void WebContentsImplExt::SetBlankScreenDetectionConfig(
+    bool enable,
+    const std::vector<double>& detectionTiming,
+    const std::vector<int32_t>& detectionMethods,
+    int32_t contentfulNodesCountThreshold) {
+  RenderFrameHostImpl* render_frame_host = GetPrimaryMainFrame();
+  if (!render_frame_host) {
+    return;
+  }
+  render_frame_host->SetBlankScreenDetectionConfig(
+      enable, detectionTiming, detectionMethods, contentfulNodesCountThreshold);
 }
 #endif
 
@@ -1179,4 +1356,48 @@ bool WebContentsImplExt::OnStartBackgroundTask(int32_t type,
 }
 #endif  // ARKWEB_PERFORMANCE_PERSISTENT_TASK
 
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+void WebContentsImplExt::GetOverScrollOffset(float* offset_x, float* offset_y) {
+  if (offset_x && offset_y) {
+    *offset_x = over_scroll_offset_x_;
+    *offset_y = over_scroll_offset_y_;
+  }
+}
+
+void WebContentsImplExt::OnOverScrollOffsetChanged(float offset_x,
+                                                   float offset_y) {
+  over_scroll_offset_x_ = offset_x;
+  over_scroll_offset_y_ = offset_y;
+}
+#endif
+
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+std::string WebContentsImplExt::OnRewriteUrlForNavigation(const std::string& original_url,
+                                                          const std::string& referrer,
+                                                          int transition_type,
+                                                          bool is_key_request) {
+  if (delegate_) {
+    return delegate_->OnRewriteUrlForNavigation(original_url, referrer, transition_type, is_key_request);
+  } else {
+    LOG(ERROR) << "WebContentsImplExt::OnRewriteUrlForNavigation delegate_ is nullptr";
+    return "";
+  }
+}
+
+std::string WebContentsImplExt::NotifyNavigationRewriteUrl(const std::string& original_url,
+                                                           const std::string& referrer,
+                                                           int transition_type,
+                                                           bool is_key_request) {
+  return OnRewriteUrlForNavigation(original_url, referrer, transition_type, is_key_request);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+void WebContentsImplExt::OnDocumentEndReady(const FrameInfos& frameInfo) {
+  if (delegate_) {
+    delegate_->OnDocumentEndReady(frameInfo);
+  }
+}
+#endif
 }  // namespace content

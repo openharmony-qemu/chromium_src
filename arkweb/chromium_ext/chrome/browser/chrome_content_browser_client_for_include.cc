@@ -65,11 +65,8 @@
 
 #if BUILDFLAG(IS_ARKWEB)
 #include "cef/ohos_cef_ext/libcef/browser/net/ohos_applink_throttle.h"
-#endif  // BUILDFLAG(IS_ARKWEB)
-
-#if BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
 #include "cef/ohos_cef_ext/libcef/browser/arkweb_browser_host_ext.h"
-#endif // BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
+#endif  // BUILDFLAG(IS_ARKWEB)
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
 #include "cef/libcef/browser/browser_host_base.h"
@@ -147,14 +144,15 @@ class ChromeContentBrowserClientUtils {
       WebContents* web_contents,
       raw_ptr<ChromeContentBrowserClient> obj) {
     auto rvh = web_contents->GetRenderViewHost();
-    CefRenderWidgetHostViewOSR* rwhvb =
-        static_cast<CefRenderWidgetHostViewOSR*>(rvh->GetWidget()->GetView());
+    auto rwhv_base =
+        static_cast<content::RenderWidgetHostViewBase*>(rvh->GetWidget()->GetView());
     CefRefPtr<CefBrowserHostBase> browser_host =
         CefBrowserHostBase::GetBrowserForHost(rvh);
-    if (rwhvb && rwhvb->GetViewType().empty()) {
+    if (rwhv_base && rwhv_base->GetViewType().empty()) {
       LOG(ERROR) << "GetViewType is empty, access wrong RenderWidgetHostView";
       return browser_host;
     }
+    auto rwhvb = static_cast<CefRenderWidgetHostViewOSR*>(rwhv_base);
     if (rwhvb && rwhvb->IsRenderWidgetHostViewChildFrame() && browser_host) {
       return browser_host;
     }
@@ -227,8 +225,13 @@ class ChromeContentBrowserClientUtils {
   static void AppLinkThrottleExt(
       const network::ResourceRequest& request,
       std::vector<std::unique_ptr<blink::URLLoaderThrottle>>& result,
-      content::FrameTreeNodeId frame_tree_node_id) {
-#if BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
+      content::FrameTreeNodeId frame_tree_node_id,
+      bool is_prerendering) {
+    if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+            ::switches::kEnableNwebEx) && is_prerendering) {
+      return;
+    }
+
     content::WebContents* web_contents =
         content::WebContents::FromFrameTreeNodeId(frame_tree_node_id);
     if (web_contents == nullptr) {
@@ -245,7 +248,7 @@ class ChromeContentBrowserClientUtils {
       LOG(DEBUG) << "AppLinkThrottleExt, applink disabled";
       return;
     }
-#endif // BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
+    
     if (request.destination == network::mojom::RequestDestination::kDocument &&
         request.url.SchemeIs(url::kHttpsScheme) &&
         request.transition_type !=
@@ -419,10 +422,19 @@ bool ChromeContentBrowserClient::ShouldOverrideUrlLoading(
 
   if (auto client = browser_host->GetClient()) {
     if (auto handler = client->GetRequestHandler()) {
+      CefString extra_request_headers;
+      if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+            switches::kEnableNwebEx) && is_prerendering) {
+        // We pass the `Sec-Purpose` header to tell the embedder that the navigation
+        // is for prerendering, within the existing API surface.
+        extra_request_headers = "Sec-Purpose: prefetch;prerender";
+      }
+
       *ignore_navigation =
           handler->AsCefRequestHandlerExt()->ShouldOverrideUrlLoading(
               browser_host.get(), gurl.possibly_invalid_spec(), request_method,
-              has_user_gesture, is_redirect, is_outermost_main_frame, "");
+              has_user_gesture, is_redirect, is_outermost_main_frame,
+              extra_request_headers);
       return true;
     }
   }

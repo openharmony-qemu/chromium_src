@@ -27,7 +27,12 @@
 #include "cef/libcef/common/net_service/net_service_util.h"
 #include "cef/libcef/common/time_util.h"
 #include "net/cookies/canonical_cookie.h"
+#include "nweb_cookie_impl.h"
 #include "url/gurl.h"
+
+#if BUILDFLAG(ARKWEB_COOKIE)
+#include "nweb_impl.h"
+#endif
 
 using namespace OHOS::NWeb;
 using base::WaitableEvent;
@@ -251,6 +256,14 @@ CefRefPtr<CefCookieManager>
 NWebCookieManagerDelegate::GetGlobalCookieManager() {
   if (!cookie_manager_) {
     cookie_manager_ = CefCookieManager::GetGlobalManager(nullptr);
+#if BUILDFLAG(ARKWEB_COOKIE)
+    if (!cookie_manager_ && NWebImpl::ShouldLazyInitWebEngine()) {
+      if (!uninitialized_cookie_manager_) {
+        uninitialized_cookie_manager_ = GetUninitializedCookieManagerExt(false);
+      }
+      return uninitialized_cookie_manager_;
+    }
+#endif
   }
   return cookie_manager_;
 }
@@ -261,6 +274,15 @@ NWebCookieManagerDelegate::GetGlobalIncognitoCookieManager() {
   if (!incognito_cookie_manager_) {
     incognito_cookie_manager_ =
         CefCookieManager::GetGlobalIncognitoManager(nullptr);
+#if BUILDFLAG(ARKWEB_COOKIE)
+    if (!incognito_cookie_manager_ && NWebImpl::ShouldLazyInitWebEngine()) {
+      if (!uninitialized_incognito_cookie_manager_) {
+        uninitialized_incognito_cookie_manager_ =
+            GetUninitializedCookieManagerExt(true);
+      }
+      return uninitialized_incognito_cookie_manager_;
+    }
+#endif
   }
   return incognito_cookie_manager_;
 #else
@@ -679,4 +701,38 @@ void NWebCookieManagerDelegate::DeleteCookieEntirely(
     }
   }
 }
+
+void NWebCookieManagerDelegate::GetAllCookies(
+    bool incognito_mode,
+    std::vector<std::shared_ptr<NWebCookie>>& cookies) {
+  CefRefPtr<CefCookieManager> cookie_manager =
+      incognito_mode ? GetGlobalIncognitoCookieManager()
+                     : GetGlobalCookieManager();
+  if (cookie_manager == nullptr) {
+    LOG(ERROR) << "GetGlobalCookieManager failed";
+    return;
+  }
+  CefRefPtr<ReturnCookieVisitor> visitor = new ReturnCookieVisitor(nullptr, nullptr);
+  if (!cookie_manager->VisitAllCookies(visitor, true)) {
+    LOG(ERROR) << "VisitAllCookies failed";
+    return;
+  }
+  std::vector<CefCookie> cef_cookies = visitor->GetVisitorCookies();
+  for (auto cef_cookie : cef_cookies) {
+    std::shared_ptr<NWebCookieImpl> cookie = std::make_shared<NWebCookieImpl>();
+    cookie->SetCookieAttribute(cef_cookie);
+    cookies.push_back(cookie);
+  }
+}
+
+#if BUILDFLAG(ARKWEB_COOKIE)
+CefRefPtr<CefCookieManagerExt>
+NWebCookieManagerDelegate::GetUninitializedCookieManagerExt(
+    bool support_incognito) {
+  CefRefPtr cookie_manager =
+      CefCookieManagerImplExt::GetInstance(support_incognito);
+  return cookie_manager.get();
+}
+#endif
+
 }  // namespace OHOS::NWeb

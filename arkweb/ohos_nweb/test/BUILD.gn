@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import("//testing/test.gni")
+import("//arkweb/build/features/features.gni")
 
 test("ohos_nweb_unittests") {
   configs += []
@@ -42,5 +43,11 @@ test("ohos_nweb_unittests") {
 
   if (enable_arkweb_ext) {
     deps += [ "//ohos_nweb_ex/test:ohos_nweb_ex_unittests", ]
+  }
+
+  if (arkweb_unittests) {
+    configs += [
+      "//arkweb/chromium_ext:ohos_nweb_unittests_config",
+    ]
   }
 }

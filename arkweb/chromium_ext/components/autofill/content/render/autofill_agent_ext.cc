@@ -26,6 +26,9 @@
 #include "third_party/blink/public/web/web_form_element.h"
 #include "third_party/blink/public/web/web_input_element.h"
 #include "third_party/blink/public/web/web_node.h"
+#include "third_party/blink/public/web/web_view.h"
+#include "third_party/blink/public/web/web_settings.h"
+#include "third_party/blink/renderer/core/frame/settings.h"
 
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
@@ -80,6 +83,10 @@ void AutofillAgentExt::ArkFillAccountSuggestion(
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
 // LCOV_EXCL_START
 void AutofillAgentExt::OhFormControlElementClicked() {
+  if (!isAutofillEnabled()) {
+    LOG(INFO) << "[PassWord Autofill] autofill interception successful.";
+    return;
+  }
   WebElement focused_element =
       unsafe_render_frame()->GetWebFrame()->GetDocument().FocusedElement();
   if (!focused_element.IsNull() && focused_element.IsFormControlElement()) {
@@ -197,5 +204,17 @@ bool AutofillAgentExt::FillFieldWithValue(FieldRendererId field_id,
     return true;
   }
   return false;
+}
+
+bool AutofillAgentExt::isAutofillEnabled() const {
+  if (GetDocument() && GetDocument().GetFrame()) {
+    auto webview = GetDocument().GetFrame()->View();
+    if (webview && webview->GetSettings()) {
+      bool autofill_enabled = webview->GetSettings()->GetEnableAutoFill();
+      return autofill_enabled;
+    }
+  }
+  LOG(INFO) << "[PassWord Autofill] Failed to get the autofill interception state.";
+  return true;
 }
 }  // namespace autofill

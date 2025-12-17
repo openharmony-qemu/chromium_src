@@ -25,7 +25,7 @@
 
 #define ARKWEB_UNITTESTS_TEST_GPU_SERVICE_PART2() \
   void DestroyNativeWindow(uint32_t native_window_id) override {} \
-  void StartMonitor() override {} \
+  void StartMonitor(int32_t nweb_id) override {} \
   void StopMonitor() override {} \
   void SetHasTouchPoint(bool has_touch_point) override {} \
   void ReportSlidingFrameRate(int32_t frame_rate) override {} \

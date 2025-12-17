@@ -16,7 +16,7 @@
 #include "content/browser/media/session/media_session_ohos.h"
 
 #include <chrono>
-
+#include "arkweb/ohos_adapter_ndk/interfaces/ohos_adapter_helper.h"
 #include "base/ohos/sys_info_utils_ext.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/time/time.h"
@@ -24,7 +24,6 @@
 #include "content/public/browser/media_session.h"
 #include "services/media_session/public/cpp/media_image.h"
 #include "services/media_session/public/cpp/media_position.h"
-#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 
 namespace content {
 
@@ -152,10 +151,10 @@ void MediaSessionOHOS::MediaSessionInfoChanged(
 
 void MediaSessionOHOS::MediaSessionMetadataChanged(
     const absl::optional<media_session::MediaMetadata>& metadata) {
-  if (!avsession_adapter_ || !metadata) {
+  if (!av_metadata_ || !avsession_adapter_ || !metadata) {
     LOG(ERROR)
         << __FUNCTION__
-        << " media avsession avsession_adapter_ or metadata is null return";
+        << " media avsession av_metadata_ or avsession_adapter_ or metadata is null return";
     return;
   }
   std::string title, artist, album;
@@ -168,7 +167,7 @@ void MediaSessionOHOS::MediaSessionMetadataChanged(
   base::UTF16ToUTF8(metadata.value().album.c_str(),
                     metadata.value().album.length(), &album);
   av_metadata_->SetAlbum(album);
-  if (av_metadata_ && avsession_adapter_ && !av_metadata_->GetTitle().empty()) {
+  if (!av_metadata_->GetTitle().empty()) {
     avsession_adapter_->SetMetadata(av_metadata_);
   }
 }
@@ -179,10 +178,10 @@ void MediaSessionOHOS::MediaSessionActionsChanged(
 void MediaSessionOHOS::MediaSessionImagesChanged(
     const base::flat_map<media_session::mojom::MediaSessionImageType,
                          std::vector<media_session::MediaImage>>& images) {
-  if (!avsession_adapter_ || images.empty()) {
+  if (!av_metadata_ || !avsession_adapter_ || images.empty()) {
     LOG(ERROR)
         << __FUNCTION__
-        << "media avsession avsession_adapter_ or metadata is null return";
+        << "media avsession av_metadata_ or avsession_adapter_ or metadata is null return";
     return;
   }
   auto it = images.find(media_session::mojom::MediaSessionImageType::kArtwork);
@@ -191,7 +190,7 @@ void MediaSessionOHOS::MediaSessionImagesChanged(
       av_metadata_->SetImageUrl(it_img.src.spec());
     }
   }
-  if (av_metadata_ && avsession_adapter_ && !av_metadata_->GetTitle().empty()) {
+  if (!av_metadata_->GetTitle().empty()) {
     avsession_adapter_->SetMetadata(av_metadata_);
   }
 }

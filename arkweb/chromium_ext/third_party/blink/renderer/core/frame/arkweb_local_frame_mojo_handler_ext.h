@@ -29,6 +29,7 @@
 #include "third_party/blink/renderer/platform/mojo/heap_mojo_receiver.h"
 #include "third_party/blink/renderer/platform/mojo/heap_mojo_remote.h"
 #include "third_party/blink/renderer/platform/weborigin/kurl.h"
+#include "third_party/blink/renderer/core/frame/local_frame_mojo_handler.h"
 
 #if BUILDFLAG(IS_MAC)
 #include "third_party/blink/public/mojom/input/text_input_host.mojom-blink.h"
@@ -43,6 +44,7 @@ class ArkWebLocalFrameMojoHandlerExt : public LocalFrameMojoHandler {
   explicit ArkWebLocalFrameMojoHandlerExt(blink::LocalFrame& frame);
 
  private:
+  friend class ArkWebLocalFrameMojoHandlerExtTest;
 #if BUILDFLAG(IS_ARKWEB)
   void JavaScriptExecuteRequestExt(
       mojo::ScopedHandle handle_fd,
@@ -54,6 +56,13 @@ class ArkWebLocalFrameMojoHandlerExt : public LocalFrameMojoHandler {
 #if BUILDFLAG(ARKWEB_MENU) || BUILDFLAG(IS_ARKWEB_EXT)
   void GetImageFromCache(const WTF::String& url,
                          GetImageFromCacheCallback callback) final;
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  void DetectBlankScreen(const WTF::String& url,
+                         const WTF::Vector<double>& detectionTiming,
+                         const WTF::Vector<int32_t>& detectionMethods,
+                         int32_t contentfulNodesCountThreshold) final;
 #endif
 
 #if BUILDFLAG(ARKWEB_PRECOMPILE)

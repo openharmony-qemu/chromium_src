@@ -26,6 +26,7 @@
 #include "third_party/ohos_ndk/includes/ohos_adapter/battery_mgr_client_adapter.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/camera_manager_adapter.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/cert_mgr_adapter.h"
+#include "color_picker_adapter.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/datashare_adapter.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/date_time_format_adapter.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/display_manager_adapter.h"
@@ -62,6 +63,9 @@
 #include "third_party/ohos_ndk/includes/ohos_adapter/system_properties_adapter.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/sensor_adapter.h"
 #include "arkweb/ohos_adapter_ndk/interfaces/net_config_adapter.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/background_task_adapter.h"
+#include "arkweb/ohos_adapter_ndk/interfaces/net_event_adapter.h"
+#include "arkweb/ohos_adapter_ndk/interfaces/hiappevent_adapter.h"
 
 namespace OHOS::NWeb {
 
@@ -151,7 +155,7 @@ public:
 
     virtual std::unique_ptr<FlowbufferAdapter> CreateFlowbufferAdapter() = 0;
 
-    virtual std::unique_ptr<MediaAVSessionAdapter> CreateMediaAVSessionAdapter() = 0;
+    virtual std::shared_ptr<MediaAVSessionAdapter> CreateMediaAVSessionAdapter() = 0;
 
     virtual std::unique_ptr<OhosImageDecoderAdapter> CreateOhosImageDecoderAdapter() = 0;
 
@@ -174,7 +178,15 @@ public:
 
     virtual std::unique_ptr<CertManagerAdapter> GetCertManagerAdapter() = 0;
 
+    virtual std::unique_ptr<BackgroundTaskAdapter> CreateBackgroundTaskAdapter() {return nullptr;}
+
     virtual std::unique_ptr<NetConfigAdapter> GetNetConfigAdapter() = 0;
+
+    virtual std::unique_ptr<NetEventAdapter> CreateNetEventAdapter() = 0;
+
+    virtual ColorPickerAdapter& GetColorPickerAdapter() = 0;
+
+    virtual HiAppeventAdapter& GetHiAppeventAdapterInstance() = 0;
 };
 
 } // namespace OHOS::NWeb

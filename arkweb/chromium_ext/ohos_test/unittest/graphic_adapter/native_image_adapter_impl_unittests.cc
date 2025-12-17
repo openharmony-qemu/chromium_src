@@ -23,8 +23,10 @@
 #define private public
 #include "arkweb/ohos_adapter_ndk/graphic_adapter/native_image_adapter_impl.h"
 #undef private
+#include "arkweb/ohos_adapter_ndk/mock_ndk_api/include/mock_ndk_api.h"
  
 using namespace testing;
+using namespace MockNdkApi;
  
 namespace OHOS::NWeb {
 constexpr int BUFFER_SIZE = 10;
@@ -196,6 +198,14 @@ TEST_F(NativeImageAdapterImplTest, NativeImageAdapterImplTest_008)
     EXPECT_NE(adapter->ohNativeImage_, nullptr);
     ret = adapter->AcquireNativeWindowBuffer(&windowBuffer, &fenceId);
     EXPECT_NE(ret, 0);
+
+    g_mock_OH_NativeImage_AcquireNativeWindowBuffer = [](OH_NativeImage* image,
+        OHNativeWindowBuffer** nativeWindowBuffer, int* fenceFd) {
+        return NATIVE_ERROR_OK;
+    };
+    ret = adapter->AcquireNativeWindowBuffer(&windowBuffer, &fenceId);
+    EXPECT_EQ(ret, NATIVE_ERROR_OK);
+    g_mock_OH_NativeImage_AcquireNativeWindowBuffer = nullptr;
 }
 
 TEST_F(NativeImageAdapterImplTest, NativeImageAdapterImplTest_009)
@@ -214,8 +224,16 @@ TEST_F(NativeImageAdapterImplTest, NativeImageAdapterImplTest_009)
     EXPECT_EQ(ret, NATIVE_ERROR_UNKNOWN);
     ret = adapter->GetNativeBuffer(windowBuffer, &nativeBuffer);
     EXPECT_EQ(ret, NATIVE_ERROR_OK);
+
+    g_mock_OH_NativeBuffer_FromNativeWindowBuffer = [](OHNativeWindowBuffer* nativeWindowBuffer,
+        OH_NativeBuffer** nativeBuffer) {
+        return NATIVE_ERROR_INVALID_ARGUMENTS;
+    };
+    ret = adapter->GetNativeBuffer(windowBuffer, &nativeBuffer);
+    EXPECT_EQ(ret, NATIVE_ERROR_INVALID_ARGUMENTS);
     OH_NativeWindow_DestroyNativeWindowBuffer(windowBuffer);
     windowBuffer = nullptr;
+    g_mock_OH_NativeBuffer_FromNativeWindowBuffer = nullptr;
 }
 
 TEST_F(NativeImageAdapterImplTest, NativeImageAdapterImplTest_010)
@@ -254,9 +272,24 @@ TEST_F(NativeImageAdapterImplTest, NativeImageAdapterImplTest_011)
     adapter->GetNativeWindowBufferSize(windowBuffer, nullptr, nullptr);
     adapter->GetNativeWindowBufferSize(windowBuffer, &width, nullptr);
     adapter->GetNativeWindowBufferSize(windowBuffer, nullptr, &height);
+    g_mock_OH_NativeWindow_GetBufferHandleFromNative = [](OHNativeWindowBuffer* nativeWindowBuffer) {
+        return nullptr;
+    };
     adapter->GetNativeWindowBufferSize(windowBuffer, &width, &height);
-    delete[] reinterpret_cast<uint8_t*>(windowBuffer);
     EXPECT_EQ(width, static_cast<uint32_t>(0));
     EXPECT_EQ(height, static_cast<uint32_t>(0));
+    BufferHandle handle;
+    handle.width = 1;
+    handle.height = 1;
+
+    g_mock_OH_NativeWindow_GetBufferHandleFromNative = [&handle](OHNativeWindowBuffer* nativeWindowBuffer) {
+        return &handle;
+    };
+    adapter->GetNativeWindowBufferSize(windowBuffer, &width, &height);
+
+    EXPECT_EQ(width, handle.width);
+    EXPECT_EQ(height, handle.height);
+    g_mock_OH_NativeWindow_GetBufferHandleFromNative = nullptr;
+    delete[] reinterpret_cast<uint8_t*>(windowBuffer);
 }
 } // namespace OHOS::NWeb

@@ -29,6 +29,10 @@ if (arkweb_clipboard) {
   mojom_platform_enabled_features += [ "arkweb_clipboard" ]
 }
 
+if (arkweb_password_autofill) {
+  mojom_platform_enabled_features += [ "arkweb_password_autofill" ]
+}
+
 if (arkweb_copy_option) {
   mojom_platform_enabled_features += [ "arkweb_copy_option" ]
 }
@@ -141,6 +145,26 @@ if (arkweb_error_page) {
   mojom_core_enabled_features += [ "arkweb_error_page" ]
 }
 
+if (arkweb_blank_screen_detection) {
+  mojom_core_enabled_features += [ "arkweb_blank_screen_detection" ]
+}
+
+if (arkweb_first_screen_paint) {
+  mojom_core_enabled_features += [ "arkweb_first_screen_paint" ]
+}
+
+if (arkweb_fling) {
+  mojom_core_enabled_features += [ "arkweb_fling" ]
+}
+
+if (arkweb_get_scroll_offset) {
+  mojom_core_enabled_features += [ "arkweb_get_scroll_offset" ]
+}
+
 if (arkweb_bfcache) {
   mojom_core_enabled_features += [ "arkweb_bfcache" ]
+}
+
+if (arkweb_console_logging) {
+  mojom_core_enabled_features += [ "arkweb_console_logging" ]
 }

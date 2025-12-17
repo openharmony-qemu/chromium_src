@@ -23,6 +23,7 @@
 #undef private
 
 namespace viz{
+namespace {
 class DelegateMock : public GpuHostImpl::Delegate {
  public:
    DelegateMock() = default;
@@ -142,7 +143,7 @@ class GpuServiceMock : public mojom::GpuService {
    MOCK_METHOD0(Hang, void());
    MOCK_METHOD0(ThrowJavaException, void());
    MOCK_METHOD2(SetVisible, void(int32_t nweb_id, bool visible));
-   MOCK_METHOD0(StartMonitor, void());
+   MOCK_METHOD1(StartMonitor, void(int32_t nweb_id));
    MOCK_METHOD0(StopMonitor, void());
    MOCK_METHOD1(SetHasTouchPoint, void(bool has_touch_point));
    MOCK_METHOD1(ReportSlidingFrameRate, void(int32_t frame_rate));
@@ -150,8 +151,13 @@ class GpuServiceMock : public mojom::GpuService {
    MOCK_METHOD1(DumpGpuInfo, void(DumpGpuInfoCallback callback));
    MOCK_METHOD1(SetIsFling, void(bool is_fling_enabled));
    MOCK_METHOD1(SetIsScroll, void(bool is_scroll_enabled));
+#if BUILDFLAG(USE_CLANG_COVERAGE)
+#if BUILDFLAG(CLANG_PROFILING_INSIDE_SANDBOX)
    MOCK_METHOD1(WriteClangProfilingProfile, void(WriteClangProfilingProfileCallback callback));
+#endif
+#endif
 };
+}
 
 class GpuHostImplTest : public testing::Test {
  public:

@@ -37,21 +37,15 @@
 #include "ui/gfx/geometry/vector2d_f.h"
 #if BUILDFLAG(ARKWEB_PDF)
 #include "arkweb/chromium_ext/cc/input/input_handler_utils.h"
+#include "arkweb/chromium_ext/pdf/paint_manager_for_include.cc"
+#include "base/trace_event/trace_event.h"
 #endif
+
 
 namespace chrome_pdf {
 
 PaintManager::PaintManager(Client* client) : client_(client) {
   DCHECK(client_);
-#if BUILDFLAG(ARKWEB_PDF)
-  if (!base::ohos::IsPcDevice()) {
-    main_thread_task_runner_ = base::SingleThreadTaskRunner::GetCurrentDefault();
-    cc::InputHandlerUtils::SetScrollEndEventListener([this](){
-        main_thread_task_runner_->PostTask(
-            FROM_HERE, base::BindOnce(&PaintManager::DoPaint, weak_factory_.GetWeakPtr(), true));
-    });
-  }
-#endif
 }
 
 PaintManager::~PaintManager() = default;
@@ -200,6 +194,7 @@ void PaintManager::EnsureCallbackPending() {
 
 #if BUILDFLAG(ARKWEB_PDF)
 void PaintManager::DoPaint(bool is_repainting) {
+  TRACE_EVENT0("media", "PaintManager::DoPaint");
 #else
 void PaintManager::DoPaint() {
 #endif

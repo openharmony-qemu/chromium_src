@@ -69,7 +69,7 @@ class StubWidgetBaseClient : public WidgetBaseClient {
 };
 
 class WidgetBaseUtilsTest : public testing::Test {
- protected:
+protected:
   base::test::TaskEnvironment task_environment_;
 
   void SetUp() override {
@@ -104,16 +104,6 @@ class WidgetBaseUtilsTest : public testing::Test {
   StubWidgetBaseClient client_;
   std::unique_ptr<WidgetBase> widget_base_;
 };
-
-TEST_F(WidgetBaseUtilsTest, ReportForegroundThreadPool_WorkerPoolNotInitialized) {
-  SetWokerPoolInitial(false);
-  utils_->ReportForegroundThreadPool();
-}
-
-TEST_F(WidgetBaseUtilsTest, ReportForegroundThreadPool_NoForegroundJobHandle) {
-  SetWokerPoolInitial(true);
-  utils_->ReportForegroundThreadPool();
-}
 
 TEST_F(WidgetBaseUtilsTest, SetZoomLevel_NullInputHandlerManager) {
   SetWidgetInputHandlerManager(nullptr);
@@ -173,7 +163,7 @@ TEST_F(WidgetBaseUtilsTest, DidNativeEmbedEvent_AllTypes) {
       WebInputEvent::Type::kTouchEnd,
       WebInputEvent::Type::kTouchCancel
   };
-  
+
   for (auto type : types) {
     utils_->DidNativeEmbedEvent(type, "embed1", 1, 10.0f, 20.0f);
   }
@@ -210,7 +200,7 @@ TEST_F(WidgetBaseUtilsTest, DidNativeEmbedMouseEvent_AllTypesAndButtons) {
       WebInputEvent::Modifiers::kMiddleButtonDown,
       WebInputEvent::Modifiers::kNoModifiers
   };
-  
+
   for (auto type : types) {
     for (auto button : buttons) {
       utils_->DidNativeEmbedMouseEvent(

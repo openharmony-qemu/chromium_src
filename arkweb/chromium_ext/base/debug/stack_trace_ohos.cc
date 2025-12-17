@@ -46,8 +46,11 @@ struct StackCrawlState {
 
 _Unwind_Reason_Code TraceStackFrame(_Unwind_Context* context, void* arg) {
   StackCrawlState* state = static_cast<StackCrawlState*>(arg);
-  uintptr_t ip = _Unwind_GetIP(context);
+  if (state == nullptr) {
+    return _URC_NO_REASON;
+  }
 
+  uintptr_t ip = _Unwind_GetIP(context);
   // The first stack frame is this function itself.  Skip it.
   if (ip != 0 && !state->have_skipped_self) {
     state->have_skipped_self = true;
@@ -112,8 +115,8 @@ char* itoa_r(intptr_t i, char* buf, size_t sz, int base, size_t padding) {
     }
 
     // Output the next digit.
-    *ptr++ = "0123456789abcdef"[j % base];
-    j /= base;
+    *ptr++ = "0123456789abcdef"[j % static_cast<uintptr_t>(base)];
+    j /= static_cast<uintptr_t>(base);
 
     if (padding > 0) {
       padding--;

@@ -261,7 +261,9 @@ test("media_unittests") {
   }
 
   # The test needs OPUS_FIXED_POINT conditional define.
-  configs += [ "//third_party/opus:opus_config" ]
+  configs += [
+    "//third_party/opus:opus_config",
+  ]
 
   if (is_ios) {
     deps += [ ":unit_tests_bundle_data" ]
@@ -274,6 +276,9 @@ test("media_unittests") {
       "//components/subresource_filter/content/browser:browser",
       "//cef:libcef_static",
     ]
+  }
+  if (arkweb_test) {
+    deps += [ "//arkweb/ohos_adapter_ndk/mock_ndk_api:mock_ndk" ]
   }
 }
 

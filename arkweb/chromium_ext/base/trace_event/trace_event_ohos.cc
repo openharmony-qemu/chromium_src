@@ -20,6 +20,7 @@
 #include <chrono>
 
 #include "base/logging.h"
+
 #include "ohos_adapter_helper.h"
 
 using OHOS::NWeb::OhosAdapterHelper;
@@ -45,10 +46,7 @@ class TraceObserver : public OHOS::NWeb::SystemPropertiesObserver {
   TraceObserver& operator=(const TraceObserver&) = delete;
 };
 
-// LOVC_EXCL_START
 void StartObserveTraceEnable() {
-// todo: check webview
-#if BUILDFLAG(IS_ARKWEB_EXT)
   auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
                                         .GetSystemPropertiesInstance();
   system_properties_adapter.AttachSysPropObserver(
@@ -59,7 +57,6 @@ void StartObserveTraceEnable() {
     isHiTraceEnable = true;
     isACETraceEnable = true;
   }
-#endif
 }
 
 bool IsBytraceEnable() {
@@ -85,7 +82,7 @@ bool IsOHOSBytraceEnable() {
              .IsACETraceEnable();
 }
 #endif
-// LOVC_EXCL_STOP
+
 bool IsCategoryEnable(const char* category_group) {
   if (!OhosAdapterHelper::GetInstance()
            .GetHiTraceAdapterInstance()
@@ -104,24 +101,24 @@ void StartBytrace(const std::string& value) {
   OhosAdapterHelper::GetInstance().GetHiTraceAdapterInstance().StartTrace(
       value);
 }
-// LOVC_EXCL_START
+
 void FinishBytrace() {
   OhosAdapterHelper::GetInstance().GetHiTraceAdapterInstance().FinishTrace();
 }
-// LOVC_EXCL_STOP
+
 #if BUILDFLAG(ARKWEB_DFX_TRACING)
 void StartOHOSBytrace(const std::string& value) {
   OhosAdapterHelper::GetInstance().GetHiTraceAdapterInstance().StartOHOSTrace(
       value);
 }
-// LOVC_EXCL_START
+
 void FinishOHOSBytrace() {
   OhosAdapterHelper::GetInstance()
       .GetHiTraceAdapterInstance()
       .FinishOHOSTrace();
 }
 #endif
-// LOVC_EXCL_STOP
+
 void StartAsyncBytrace(const std::string& value, int32_t taskId) {
   OhosAdapterHelper::GetInstance().GetHiTraceAdapterInstance().StartAsyncTrace(
       value, taskId);
@@ -149,7 +146,7 @@ ScopedBytrace::ScopedBytrace(const std::string& proc) : proc_(proc) {}
 void ScopedBytrace::SendTraceEvent(const std::string& data) {
   OhosAdapterHelper::GetInstance().GetHiTraceAdapterInstance().StartTrace(data);
 }
-// LOVC_EXCL_START
+
 ScopedBytrace::ScopedBytrace() {}
 
 ScopedBytrace::~ScopedBytrace() {
@@ -157,7 +154,7 @@ ScopedBytrace::~ScopedBytrace() {
     OhosAdapterHelper::GetInstance().GetHiTraceAdapterInstance().FinishTrace();
   }
 }
-// LOVC_EXCL_STOP
+
 #if BUILDFLAG(ARKWEB_DFX_TRACING)
 ScopedOHOSBytrace::ScopedOHOSBytrace(const std::string& proc) : proc_(proc) {}
 
@@ -165,7 +162,7 @@ void ScopedOHOSBytrace::SendOHOSTraceEvent(const std::string& data) {
   OhosAdapterHelper::GetInstance().GetHiTraceAdapterInstance().StartOHOSTrace(
       data);
 }
-// LOVC_EXCL_START
+
 ScopedOHOSBytrace::ScopedOHOSBytrace() {}
 
 ScopedOHOSBytrace::~ScopedOHOSBytrace() {
@@ -175,5 +172,4 @@ ScopedOHOSBytrace::~ScopedOHOSBytrace() {
         .FinishOHOSTrace();
   }
 }
-// LOVC_EXCL_STOP
 #endif

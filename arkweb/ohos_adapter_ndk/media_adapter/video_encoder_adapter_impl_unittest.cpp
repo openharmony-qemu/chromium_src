@@ -294,61 +294,60 @@ TEST_F(VideoEncoderAdapterImplTest, TestGetBufferFlag002) {
 TEST_F(VideoEncoderAdapterImplTest,
        TestOnError_ShouldReturn_WhenUserDataIsNull) {
   void* userData = nullptr;
-  codec_adapter_->OnError(nullptr, 0, userData);
-  EXPECT_FALSE(userData);
+  ASSERT_NO_FATAL_FAILURE(
+    codec_adapter_->OnError(nullptr, 0, userData));
 }
 
 TEST_F(VideoEncoderAdapterImplTest,
        TestOnError_ShouldReturn_WhenCallbackIsNull) {
   size_t index = 1;
   void* userData = reinterpret_cast<void*>(index);
-  codec_adapter_->OnError(nullptr, 0, userData);
-  EXPECT_TRUE(userData);
+  ASSERT_NO_FATAL_FAILURE(
+    codec_adapter_->OnError(nullptr, 0, userData));
 }
 
 TEST_F(VideoEncoderAdapterImplTest,
        TestOnStreamChanged_ShouldReturn_WhenUserDataIsNull) {
   void* userData = nullptr;
-  codec_adapter_->OnStreamChanged(nullptr, nullptr, userData);
-  EXPECT_FALSE(userData);
+  ASSERT_NO_FATAL_FAILURE(
+    codec_adapter_->OnStreamChanged(nullptr, nullptr, userData));
 }
 
 TEST_F(VideoEncoderAdapterImplTest,
        TestOnStreamChanged_ShouldReturn_WhenCallbackIsNull) {
   size_t index = 1;
   void* userData = reinterpret_cast<void*>(index);
-  codec_adapter_->OnStreamChanged(nullptr, nullptr, userData);
-  EXPECT_TRUE(userData);
+  ASSERT_NO_FATAL_FAILURE(
+    codec_adapter_->OnStreamChanged(nullptr, nullptr, userData));
 }
 
 TEST_F(VideoEncoderAdapterImplTest,
        TestOnNeedInputBuffer_ShouldReturn_WhenUserDataIsNull) {
   void* userData = nullptr;
-  codec_adapter_->OnNeedInputBuffer(nullptr, 0, nullptr, userData);
-  EXPECT_FALSE(userData);
+  ASSERT_NO_FATAL_FAILURE(
+    codec_adapter_->OnNeedInputBuffer(nullptr, 0, nullptr, userData));
 }
 
 TEST_F(VideoEncoderAdapterImplTest,
        TestOnNeedInputBuffer_ShouldReturn_WhenCallbackIsNull) {
   size_t index = 1;
   void* userData = reinterpret_cast<void*>(index);
-  codec_adapter_->OnNeedInputBuffer(nullptr, 0, nullptr, userData);
-  EXPECT_TRUE(userData);
+  ASSERT_NO_FATAL_FAILURE(
+    codec_adapter_->OnNeedInputBuffer(nullptr, 0, nullptr, userData));
 }
 
 TEST_F(VideoEncoderAdapterImplTest,
        TestOnNewOutputBuffer_ShouldReturn_WhenUserDataIsNull) {
   void* userData = nullptr;
-  codec_adapter_->OnError(nullptr, 0, userData);
-  EXPECT_FALSE(userData);
+  ASSERT_NO_FATAL_FAILURE(
+    codec_adapter_->OnError(nullptr, 0, userData));
 }
 
 TEST_F(VideoEncoderAdapterImplTest,
        TestOnNewOutputBuffer_ShouldReturn_WhenCallbackIsNull) {
   size_t index = 1;
   void* userData = reinterpret_cast<void*>(index);
-  codec_adapter_->OnError(nullptr, 0, userData);
-  EXPECT_TRUE(userData);
+  ASSERT_NO_FATAL_FAILURE(codec_adapter_->OnError(nullptr, 0, userData));
 }
 
 TEST_F(EncoderCallbackImplTest, TestOnError001) {

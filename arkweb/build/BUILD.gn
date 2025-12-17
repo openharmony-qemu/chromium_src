@@ -1,0 +1,48 @@
+# Copyright (c) 2025 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//arkweb/build/features/features.gni")
+
+group("arkweb_test_targets") {
+    testonly = true
+
+    deps = [
+      "//arkweb/build/unittests:oh_base_unittests",
+      "//arkweb/build/unittests:oh_core_unittests",
+      "//arkweb/build/unittests:oh_smoke_unittests",
+    ]
+}
+
+group("arkweb_prebuild_buildflags") {
+  deps = []
+  
+  if (arkweb_enable_prebuild) {
+    import("$root_build_dir/arkweb_prebuild.gni")
+    if (defined(buildflag_header_targets) && buildflag_header_targets != []) {
+      deps += buildflag_header_targets
+    }
+  }
+}
+
+group("arkweb_prebuild_mojom") {
+  testonly = true
+  deps = []
+  
+  if (arkweb_enable_prebuild) {
+    import("$root_build_dir/arkweb_prebuild.gni")
+    deps += [ ":arkweb_prebuild_buildflags" ]
+    if (defined(mojom_targets) && mojom_targets != []) {
+      deps += mojom_targets
+    }
+  }
+}

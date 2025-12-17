@@ -147,7 +147,7 @@ public:
     MOCK_METHOD(std::unique_ptr<MediaCodecAdapter>, CreateMediaCodecEncoderAdapter, (), (override));
     MOCK_METHOD(MediaCodecListAdapter &, GetMediaCodecListAdapter, (), (override));
     MOCK_METHOD(std::unique_ptr<FlowbufferAdapter>, CreateFlowbufferAdapter, (), (override));
-    MOCK_METHOD(std::unique_ptr<MediaAVSessionAdapter>, CreateMediaAVSessionAdapter, (), (override));
+    MOCK_METHOD(std::shared_ptr<MediaAVSessionAdapter>, CreateMediaAVSessionAdapter, (), (override));
     MOCK_METHOD(std::unique_ptr<OhosImageDecoderAdapter>, CreateOhosImageDecoderAdapter, (), (override));
     MOCK_METHOD(std::unique_ptr<SensorAdapter>, CreateSensorAdapter, (), (override));
     MOCK_METHOD(void, SetArkWebCoreHapPathOverride, (const std::string &hapPath), (override));
@@ -160,6 +160,9 @@ public:
     MOCK_METHOD(std::unique_ptr<ScreenlockManagerAdapter>, CreateScreenlockManagerAdapter, (), (override));
     MOCK_METHOD(std::unique_ptr<CertManagerAdapter>, GetCertManagerAdapter, (), (override));
     MOCK_METHOD(std::unique_ptr<NetConfigAdapter>, GetNetConfigAdapter, (), (override));
+    MOCK_METHOD(std::unique_ptr<NetEventAdapter>, CreateNetEventAdapter, (), (override));
+    MOCK_METHOD(ColorPickerAdapter &, GetColorPickerAdapter, (), (override));
+    MOCK_METHOD(HiAppeventAdapter &, GetHiAppeventAdapterInstance, (), (override));
 };
 
 class CameraSurfaceBufferAdapterMock : public CameraSurfaceBufferAdapter {

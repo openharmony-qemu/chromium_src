@@ -17,6 +17,10 @@
 #include "arkweb/chromium_ext/components/os_crypt/sync/os_crypt_linux_for_include.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+#include "content/public/browser/browser_thread.h"
+#endif
+
 namespace {
 
 // LCOV_EXCL_START
@@ -27,6 +31,20 @@ constexpr char kNewbAssetHandleAlias[] = "asset_data_key";
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+void SetMigratePasswordsFlagToFile() {
+  if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
+    content::GetUIThreadTaskRunner({})->PostTask(
+        FROM_HERE,
+        base::BindOnce(&SetMigratePasswordsFlagToFile));
+    return;
+  }
+
+  if (g_browser_process && g_browser_process->local_state()) {
+    g_browser_process->local_state()->SetBoolean(browser_prefs::kMigratePasswordsToPasswordVault, true);
+    g_browser_process->local_state()->CommitPendingWrite();
+  }
+}
+
 static std::string AssetQuery(base::FilePath key_file) {
   std::string assetHandle;
   bool res = base::ReadFileToString(key_file, &assetHandle);
@@ -36,8 +54,7 @@ static std::string AssetQuery(base::FilePath key_file) {
                           std::to_string(ASSET_QUERY_FAILED);
     base::ohos::ReportEngineEvent(base::ohos::kModuleContentBrowser, base::ohos::kDefaultUrl,
                                   base::ohos::kPasswordManagerError, err_msg);
-    g_browser_process->local_state()->SetBoolean(browser_prefs::kMigratePasswordsToPasswordVault, true);
-    g_browser_process->local_state()->CommitPendingWrite();
+    SetMigratePasswordsFlagToFile();
     return std::string();
   }
 
@@ -47,8 +64,7 @@ static std::string AssetQuery(base::FilePath key_file) {
                           std::to_string(MIGRATE_SUCCESS);
     base::ohos::ReportEngineEvent(base::ohos::kModuleContentBrowser, base::ohos::kDefaultUrl,
                                   base::ohos::kPasswordManagerError, err_msg);
-    g_browser_process->local_state()->SetBoolean(browser_prefs::kMigratePasswordsToPasswordVault, true);
-    g_browser_process->local_state()->CommitPendingWrite();
+    SetMigratePasswordsFlagToFile();
     return std::string();
   }
 
@@ -60,8 +76,7 @@ static std::string AssetQuery(base::FilePath key_file) {
                           std::to_string(ASSET_QUERY_FAILED);
     base::ohos::ReportEngineEvent(base::ohos::kModuleContentBrowser, base::ohos::kDefaultUrl,
                                   base::ohos::kPasswordManagerError, err_msg);
-    g_browser_process->local_state()->SetBoolean(browser_prefs::kMigratePasswordsToPasswordVault, true);
-    g_browser_process->local_state()->CommitPendingWrite();
+    SetMigratePasswordsFlagToFile();
     return std::string();
   }
   LOG(INFO) << "[Autofill] get key from asset success.";
@@ -83,8 +98,7 @@ static std::string GetKeyFromAsset() {
                           std::to_string(DIRECTORY_OR_FILE_NOT_EXIST);
     base::ohos::ReportEngineEvent(base::ohos::kModuleContentBrowser, base::ohos::kDefaultUrl,
                                   base::ohos::kPasswordManagerError, err_msg);
-    g_browser_process->local_state()->SetBoolean(browser_prefs::kMigratePasswordsToPasswordVault, true);
-    g_browser_process->local_state()->CommitPendingWrite();
+    SetMigratePasswordsFlagToFile();
     return std::string();
   }
 
@@ -96,8 +110,7 @@ static std::string GetKeyFromAsset() {
                           std::to_string(DIRECTORY_OR_FILE_NOT_EXIST);
     base::ohos::ReportEngineEvent(base::ohos::kModuleContentBrowser, base::ohos::kDefaultUrl,
                                   base::ohos::kPasswordManagerError, err_msg);
-    g_browser_process->local_state()->SetBoolean(browser_prefs::kMigratePasswordsToPasswordVault, true);
-    g_browser_process->local_state()->CommitPendingWrite();
+    SetMigratePasswordsFlagToFile();
     return std::string();
   }
 
@@ -222,6 +235,10 @@ bool OSCryptImpl::DecryptStringForMigrate(const std::string& ciphertext,
   base::UmaHistogramBoolean(kMetricDecryptedWithEmptyKey, false);
   return false;
 }
+
+void OSCryptImpl::SetMigrationCountCurrent(const int& count) {
+  migration_count_current_ = count;
+}
 #endif
 
 // LCOV_EXCL_START
@@ -239,7 +256,11 @@ crypto::SymmetricKey* OSCryptImpl::GetPasswordForOtaFail() {
 #if BUILDFLAG(ARKWEB_EXT_PASSWORD)
 crypto::SymmetricKey* OSCryptImpl::GetPasswordV10ForMigrate() {
   base::AutoLock auto_lock(OSCryptImpl::GetLock());
-  int count = g_browser_process->local_state()->GetInteger(browser_prefs::kMigrationCount);
+#if BUILDFLAG(ARKWEB_TEST)
+  int count = 1;
+#else
+  int count = migration_count_current_;
+#endif
   if (!is_password_migrate_cached_ || migration_count_ < count) {
     migration_count_ = count;
     password_migrate_cache_ = GenerateEncryptionKeyForMigrate();

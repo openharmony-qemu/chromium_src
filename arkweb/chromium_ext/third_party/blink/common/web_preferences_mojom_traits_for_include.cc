@@ -30,6 +30,9 @@ static bool WebPreferenceMojomBoolExt(blink::mojom::WebPreferencesDataView data,
 
 static void WebPreferenceMojomExt(blink::mojom::WebPreferencesDataView data,
                                   blink::web_pref::WebPreferences* out) {
+#if BUILDFLAG(ARKWEB_AI)
+  out->image_analyzer_enabled = data.image_analyzer_enabled();
+#endif
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   out->hide_vertical_scrollbars = data.hide_vertical_scrollbars();
   out->hide_horizontal_scrollbars = data.hide_horizontal_scrollbars();
@@ -101,7 +104,7 @@ static void WebPreferenceMojomExt(blink::mojom::WebPreferencesDataView data,
 #if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
   out->usage_scenario = data.usage_scenario();
 #endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
-#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM) || BUILDFLAG(ARKWEB_ZOOM)
   out->force_enable_zoom = data.force_enable_zoom();
 #endif
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
@@ -114,6 +117,12 @@ static void WebPreferenceMojomExt(blink::mojom::WebPreferencesDataView data,
 #if BUILDFLAG(ARKWEB_BFCACHE)
   out->media_resume_from_bfcache_page = data.media_resume_from_bfcache_page();
 #endif // BUILDFLAG(ARKWEB_BFCACHE)
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  out->clipboard_site_permission_enabled = data.clipboard_site_permission_enabled();
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  out->is_autofill_enabled = data.is_autofill_enabled();
+#endif  // BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
 }
 
 } // namespace mojo

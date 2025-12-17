@@ -48,6 +48,7 @@ class FrameSelectionExt final : public FrameSelection {
   void SetIsSelectAll(bool is_select_all) { is_select_all_ = is_select_all; }
   void NeedUpdateCursorLocation();
   gfx::Rect ClippedSelectionBoundsInRootFrame() const;
+  bool IsPointInSelection(const PhysicalOffset& point);
 #endif  // ARKWEB_MENU
 #ifdef BUILDFLAG(ARKWEB_DRAG_DROP)
   void InvalidateSelectionForDrag();

@@ -313,7 +313,11 @@ class CONTENT_EXPORT RenderFrameHostManager {
   // except for rare cases reachable during shutdown.  For example, observer
   // methods like RenderProcessExited could be dispatched after this has
   // already been cleared.
+#if BUILDFLAG(ARKWEB_TEST)
+  virtual RenderFrameHostImpl* current_frame_host() const {
+#else
   RenderFrameHostImpl* current_frame_host() const {
+#endif // BUILDFLAG(ARKWEB_TEST)
     return render_frame_host_.get();
   }
 
@@ -353,7 +357,11 @@ class CONTENT_EXPORT RenderFrameHostManager {
 
   // Returns the speculative RenderFrameHost, or null if there is no speculative
   // one.
+#if BUILDFLAG(ARKWEB_TEST)
+  virtual RenderFrameHostImpl* speculative_frame_host() const {
+#else
   RenderFrameHostImpl* speculative_frame_host() const {
+#endif  // BUILDFLAG(ARKWEB_TEST)
     return speculative_render_frame_host_.get();
   }
 

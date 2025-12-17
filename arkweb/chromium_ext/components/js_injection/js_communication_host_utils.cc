@@ -47,6 +47,31 @@ DocumentEndJavaScript::DocumentEndJavaScript(std::u16string script,
       script_id_(script_id) {}
 #endif
 
+#if BUILDFLAG(ARKWEB_JSPROXY)
+DocumentJavaScriptRegexRules::DocumentJavaScriptRegexRules(const std::u16string& script,
+    const std::vector<std::pair<std::string, std::string>>& script_regex_rules,
+    int32_t script_id)
+    : script_(script),
+      script_regex_rules_(script_regex_rules),
+      script_id_(script_id) {}
+
+mojom::DocumentJavaScriptRegexRulesPtr JsCommunicationHostUtils::ConvertToMojomScriptRegexRules(
+    const DocumentJavaScriptRegexRules* script_regex_rules) {
+  auto mojom_script_regex_rules = mojom::DocumentJavaScriptRegexRules::New();
+  mojom_script_regex_rules->script_id = script_regex_rules->script_id_;
+  mojom_script_regex_rules->script = script_regex_rules->script_;
+
+  for (const auto& rule : script_regex_rules->script_regex_rules_) {
+    auto mojom_rule = mojom::ScriptRegexRule::New();
+    mojom_rule->second_level_domain = base::UTF8ToUTF16(rule.first);
+    mojom_rule->rule = base::UTF8ToUTF16(rule.second);
+    mojom_script_regex_rules->script_regex_rules.push_back(std::move(mojom_rule));
+  }
+
+  return mojom_script_regex_rules;
+}
+#endif
+
 JsCommunicationHostUtils::JsCommunicationHostUtils(JsCommunicationHost* js_communication_host)
 {
   this->js_communication_host_ = js_communication_host;
@@ -102,6 +127,9 @@ void JsCommunicationHostUtils::NotifyFrameForAllDocumentEndsJavaScripts(
   for (const auto& script : document_end_scripts_) {
     NotifyFrameForAddDocumentEndJavaScript(&script, render_frame_host);
   }
+  for (const auto& regex_item : end_scripts_regex_rules_) {
+    NotifyFrameForAddDocumentEndJavaScriptRegexRules(&regex_item, render_frame_host);
+  }
 }
 
 void JsCommunicationHostUtils::NotifyFrameForAddDocumentEndJavaScript(
@@ -114,6 +142,19 @@ void JsCommunicationHostUtils::NotifyFrameForAddDocumentEndJavaScript(
       &configurator_remote);
   configurator_remote->AddDocumentEndScript(mojom::DocumentEndJavaScript::New(
       script->script_id_, script->script_, script->allowed_origin_rules_));
+}
+
+void JsCommunicationHostUtils::NotifyFrameForAddDocumentEndJavaScriptRegexRules(
+    const DocumentJavaScriptRegexRules* script_regex_rules,
+    content::RenderFrameHost* render_frame_host)
+{
+  DCHECK(script_regex_rules);
+  auto mojom_script_regex_rules = ConvertToMojomScriptRegexRules(script_regex_rules);
+
+  mojo::AssociatedRemote<mojom::JsCommunication> configurator_remote;
+  render_frame_host->GetRemoteAssociatedInterfaces()->GetInterface(
+      &configurator_remote);
+  configurator_remote->AddDocumentEndScriptRegexRules(std::move(mojom_script_regex_rules));
 }
 
 void JsCommunicationHostUtils::NotifyFrameForRemoveDocumentEndJavaScript(
@@ -193,25 +234,43 @@ void JsCommunicationHostUtils::NotifyFrameForRemoveHeadReadyJavaScript(
   configurator_remote->RemoveHeadReadyScript(script_id);
 }
 
+void JsCommunicationHostUtils::NotifyFrameForAddHeadReadyJavaScriptRegexRules(
+    const DocumentJavaScriptRegexRules* script_regex_rules,
+    content::RenderFrameHost* render_frame_host)
+{
+  DCHECK(script_regex_rules);
+  auto mojom_script_regex_rules = ConvertToMojomScriptRegexRules(script_regex_rules);
+
+  mojo::AssociatedRemote<mojom::JsCommunication> configurator_remote;
+  render_frame_host->GetRemoteAssociatedInterfaces()->GetInterface(
+      &configurator_remote);
+  configurator_remote->AddHeadReadyScriptRegexRules(std::move(mojom_script_regex_rules));
+}
+
 JsCommunicationHost::AddScriptResult JsCommunicationHostUtils::AddHeadReadyPendingJavaScript(
     const std::u16string& script,
-    const std::vector<std::string>& allowed_origin_rules)
+    const std::vector<std::string>& allowed_origin_rules,
+    const std::vector<std::pair<std::string, std::string>>& script_regex_rules)
 {
   OriginMatcher origin_matcher;
-  std::string error_message = ConvertToNativeAllowedOriginRulesWithSanityCheck(
-      allowed_origin_rules, origin_matcher);
   JsCommunicationHost::AddScriptResult result;
-  if (!error_message.empty()) {
-    result.error_message = std::move(error_message);
-    return result;
+  if (!allowed_origin_rules.empty() && (allowed_origin_rules.size() > 1 || !allowed_origin_rules[0].empty())) {
+    std::string error_message = ConvertToNativeAllowedOriginRulesWithSanityCheck(
+        allowed_origin_rules, origin_matcher);
+    if (!error_message.empty()) {
+      result.error_message = std::move(error_message);
+      return result;
+    }
   }
 
+  swap_head_ready_regex_rules_.emplace_back(script, script_regex_rules, js_communication_host_->next_script_id_);
   swap_head_ready_scripts_.emplace_back(script, origin_matcher, js_communication_host_->next_script_id_++);
 
   ForEachRenderFrameHostWithinSameWebContents(
       js_communication_host_->web_contents()->GetPrimaryMainFrame(),
       [this](content::RenderFrameHost* render_frame_host) {
         NotifyFrameForAddHeadReadyPendingJavaScript(&*swap_head_ready_scripts_.rbegin(),
+                                                    &*swap_head_ready_regex_rules_.rbegin(),
                                                     render_frame_host);
       });
   result.script_id = swap_head_ready_scripts_.rbegin()->script_id_;
@@ -220,14 +279,17 @@ JsCommunicationHost::AddScriptResult JsCommunicationHostUtils::AddHeadReadyPendi
 
 void JsCommunicationHostUtils::NotifyFrameForAddHeadReadyPendingJavaScript(
     const DocumentStartJavaScript* script,
+    const DocumentJavaScriptRegexRules* script_regex_rules,
     content::RenderFrameHost* render_frame_host)
 {
   DCHECK(script);
+  auto mojom_script_regex_rules = ConvertToMojomScriptRegexRules(script_regex_rules);
+
   mojo::AssociatedRemote<mojom::JsCommunication> configurator_remote;
   render_frame_host->GetRemoteAssociatedInterfaces()->GetInterface(
       &configurator_remote);
   configurator_remote->AddPendingJavascriptAtHeadReady(mojom::DocumentStartJavaScript::New(
-      script->script_id_, script->script_, script->allowed_origin_rules_));
+      script->script_id_, script->script_, script->allowed_origin_rules_), std::move(mojom_script_regex_rules));
 }
 
 void JsCommunicationHostUtils::CommitPendingJavascriptsAtHeadReady()
@@ -237,6 +299,13 @@ void JsCommunicationHostUtils::CommitPendingJavascriptsAtHeadReady()
     head_ready_scripts_.emplace_back(item.script_, item.allowed_origin_rules_, item.script_id_);
   }
   swap_head_ready_scripts_.clear();
+
+  head_ready_regex_rules_.clear();
+  for (auto& regex_item : swap_head_ready_regex_rules_) {
+    head_ready_regex_rules_.emplace_back(
+      regex_item.script_, regex_item.script_regex_rules_, regex_item.script_id_);
+  }
+  swap_head_ready_regex_rules_.clear();
 
   ForEachRenderFrameHostWithinSameWebContents(
       js_communication_host_->web_contents()->GetPrimaryMainFrame(),
@@ -255,23 +324,27 @@ void JsCommunicationHostUtils::NotifyFrameForCommitForHeadReady(content::RenderF
 
 JsCommunicationHost::AddScriptResult JsCommunicationHostUtils::AddDocumentEndPendingJavaScript(
     const std::u16string& script,
-    const std::vector<std::string>& allowed_origin_rules)
+    const std::vector<std::string>& allowed_origin_rules,
+    const std::vector<std::pair<std::string, std::string>>& script_regex_rules)
 {
   OriginMatcher origin_matcher;
-  std::string error_message = ConvertToNativeAllowedOriginRulesWithSanityCheck(
-      allowed_origin_rules, origin_matcher);
   JsCommunicationHost::AddScriptResult result;
-  if (!error_message.empty()) {
-    result.error_message = std::move(error_message);
-    return result;
+  if (!allowed_origin_rules.empty() && (allowed_origin_rules.size() > 1 || !allowed_origin_rules[0].empty())) {
+    std::string error_message = ConvertToNativeAllowedOriginRulesWithSanityCheck(
+        allowed_origin_rules, origin_matcher);
+    if (!error_message.empty()) {
+      result.error_message = std::move(error_message);
+      return result;
+    }
   }
-
+  swap_end_scripts_regex_rules_.emplace_back(script, script_regex_rules, js_communication_host_->next_script_id_);
   swap_document_end_scripts_.emplace_back(script, origin_matcher, js_communication_host_->next_script_id_++);
 
   ForEachRenderFrameHostWithinSameWebContents(
       js_communication_host_->web_contents()->GetPrimaryMainFrame(),
       [this](content::RenderFrameHost* render_frame_host) {
         NotifyFrameForAddDocumentEndPendingJavaScript(&*swap_document_end_scripts_.rbegin(),
+                                                      &*swap_end_scripts_regex_rules_.rbegin(),
                                                       render_frame_host);
       });
   result.script_id = swap_document_end_scripts_.rbegin()->script_id_;
@@ -280,14 +353,17 @@ JsCommunicationHost::AddScriptResult JsCommunicationHostUtils::AddDocumentEndPen
 
 void JsCommunicationHostUtils::NotifyFrameForAddDocumentEndPendingJavaScript(
     const DocumentEndJavaScript* script,
+    const DocumentJavaScriptRegexRules* script_regex_rules,
     content::RenderFrameHost* render_frame_host)
 {
   DCHECK(script);
+  auto mojom_script_regex_rules = ConvertToMojomScriptRegexRules(script_regex_rules);
+
   mojo::AssociatedRemote<mojom::JsCommunication> configurator_remote;
   render_frame_host->GetRemoteAssociatedInterfaces()->GetInterface(
       &configurator_remote);
   configurator_remote->AddPendingJavascriptAtDocumentEnd(mojom::DocumentEndJavaScript::New(
-      script->script_id_, script->script_, script->allowed_origin_rules_));
+      script->script_id_, script->script_, script->allowed_origin_rules_), std::move(mojom_script_regex_rules));
 }
 
 void JsCommunicationHostUtils::CommitPendingJavascriptsAtDocumentEnd()
@@ -297,6 +373,13 @@ void JsCommunicationHostUtils::CommitPendingJavascriptsAtDocumentEnd()
     document_end_scripts_.emplace_back(item.script_, item.allowed_origin_rules_, item.script_id_);
   }
   swap_document_end_scripts_.clear();
+
+  end_scripts_regex_rules_.clear();
+  for (auto& regex_item : swap_end_scripts_regex_rules_) {
+    end_scripts_regex_rules_.emplace_back(
+      regex_item.script_, regex_item.script_regex_rules_, regex_item.script_id_);
+  }
+  swap_end_scripts_regex_rules_.clear();
 
   ForEachRenderFrameHostWithinSameWebContents(
       js_communication_host_->web_contents()->GetPrimaryMainFrame(),
@@ -313,25 +396,42 @@ void JsCommunicationHostUtils::NotifyFrameForCommitForDocumentEnd(content::Rende
   configurator_remote->CommitPendingJavascriptsAtDocumentEnd();
 }
 
+void JsCommunicationHostUtils::NotifyFrameForAddDocumentStartJavaScriptRegexRules(
+    const DocumentJavaScriptRegexRules* script_regex_rules,
+    content::RenderFrameHost* render_frame_host)
+{
+  DCHECK(script_regex_rules);
+  auto mojom_script_regex_rules = ConvertToMojomScriptRegexRules(script_regex_rules);
+
+  mojo::AssociatedRemote<mojom::JsCommunication> configurator_remote;
+  render_frame_host->GetRemoteAssociatedInterfaces()->GetInterface(
+      &configurator_remote);
+  configurator_remote->AddDocumentStartScriptRegexRules(std::move(mojom_script_regex_rules));
+}
+
 JsCommunicationHost::AddScriptResult JsCommunicationHostUtils::AddDocumentStartPendingJavaScript(
     const std::u16string& script,
-    const std::vector<std::string>& allowed_origin_rules)
+    const std::vector<std::string>& allowed_origin_rules,
+    const std::vector<std::pair<std::string, std::string>>& script_regex_rules)
 {
   OriginMatcher origin_matcher;
-  std::string error_message = ConvertToNativeAllowedOriginRulesWithSanityCheck(
-      allowed_origin_rules, origin_matcher);
   JsCommunicationHost::AddScriptResult result;
-  if (!error_message.empty()) {
-    result.error_message = std::move(error_message);
-    return result;
+  if (!allowed_origin_rules.empty() && (allowed_origin_rules.size() > 1 || !allowed_origin_rules[0].empty())) {
+    std::string error_message = ConvertToNativeAllowedOriginRulesWithSanityCheck(
+        allowed_origin_rules, origin_matcher);
+    if (!error_message.empty()) {
+      result.error_message = std::move(error_message);
+      return result;
+    }
   }
-
+  swap_start_scripts_regex_rules_.emplace_back(script, script_regex_rules, js_communication_host_->next_script_id_);
   swap_document_start_scripts_.emplace_back(script, origin_matcher, js_communication_host_->next_script_id_++);
 
   ForEachRenderFrameHostWithinSameWebContents(
       js_communication_host_->web_contents()->GetPrimaryMainFrame(),
       [this](content::RenderFrameHost* render_frame_host) {
         NotifyFrameForAddDocumentStartPendingJavaScript(&*swap_document_start_scripts_.rbegin(),
+                                                        &*swap_start_scripts_regex_rules_.rbegin(),
                                                         render_frame_host);
       });
   result.script_id = swap_document_start_scripts_.rbegin()->script_id_;
@@ -340,14 +440,17 @@ JsCommunicationHost::AddScriptResult JsCommunicationHostUtils::AddDocumentStartP
 
 void JsCommunicationHostUtils::NotifyFrameForAddDocumentStartPendingJavaScript(
     const DocumentStartJavaScript* script,
+    const DocumentJavaScriptRegexRules* script_regex_rules,
     content::RenderFrameHost* render_frame_host)
 {
   DCHECK(script);
+  auto mojom_script_regex_rules = ConvertToMojomScriptRegexRules(script_regex_rules);
+
   mojo::AssociatedRemote<mojom::JsCommunication> configurator_remote;
   render_frame_host->GetRemoteAssociatedInterfaces()->GetInterface(
       &configurator_remote);
   configurator_remote->AddPendingJavascriptAtDocumentStart(mojom::DocumentStartJavaScript::New(
-      script->script_id_, script->script_, script->allowed_origin_rules_));
+      script->script_id_, script->script_, script->allowed_origin_rules_), std::move(mojom_script_regex_rules));
 }
 
 void JsCommunicationHostUtils::CommitPendingJavascriptsAtDocumentStart()
@@ -357,6 +460,13 @@ void JsCommunicationHostUtils::CommitPendingJavascriptsAtDocumentStart()
     js_communication_host_->scripts_.emplace_back(item.script_, item.allowed_origin_rules_, item.script_id_);
   }
   swap_document_start_scripts_.clear();
+
+  start_scripts_regex_rules_.clear();
+  for (auto& regex_item : swap_start_scripts_regex_rules_) {
+    start_scripts_regex_rules_.emplace_back(
+      regex_item.script_, regex_item.script_regex_rules_, regex_item.script_id_);
+  }
+  swap_start_scripts_regex_rules_.clear();
 
   ForEachRenderFrameHostWithinSameWebContents(
       js_communication_host_->web_contents()->GetPrimaryMainFrame(),

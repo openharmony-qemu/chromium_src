@@ -89,26 +89,6 @@ if (is_official_build) {
 # `all`, and no tooling should depend directly on this target. Tools should
 # should depend on either an explicit list of targets, or `all`.
 
-group("mojo_pre") {
-  testonly = true
-  deps = []
-  if (defined(enable_mojom_gni)) {
-    print(enable_mojom_gni)
-  } else {
-    print("enable_mojom_gni is not defined")
-  }
-  if (!defined(enable_mojom_gni)) {
-    enable_mojom_gni = false
-  }
-  if (enable_mojom_gni) {
-    import("//mojom_targets.gni")
-    print("enable_mojom_gni is ok")
-    if (defined(mojom_targets) && mojom_targets != []) {
-      deps += mojom_targets
-    }
-  }
-}
-
 group("gn_all") {
   testonly = true
 
@@ -120,9 +100,7 @@ group("gn_all") {
     }
   } else {
     deps = [
-      "//arkweb/build/unittests:oh_base_unittests",
-      "//arkweb/build/unittests:oh_core_unittests",
-      "//arkweb/build/unittests:oh_smoke_unittests",
+      "//arkweb/build:arkweb_test_targets",
       "//base:base_perftests",
       "//base:base_unittests",
       "//codelabs",

@@ -19,7 +19,7 @@ TEST_P(HTMLVideoElementTest, TestRequestEnterFullscreen) {
   test::RunPendingTasks();
   UpdateAllLifecyclePhasesForTest();
   EXPECT_FALSE(video()->IsFullscreen());
-  ASSERT_NO_FATAL_FAILURE(video()->RequestFullscreen());
+  ASSERT_NO_FATAL_FAILURE(video()->RequestEnterFullscreen());
 }
 
 TEST_P(HTMLVideoElementTest, TestRequestExitFullscreen) {
@@ -91,3 +91,52 @@ TEST_P(HTMLVideoElementTest, TestPipRequestPlay) {
   ASSERT_NO_FATAL_FAILURE(video()->PipRequestPlay());
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+TEST_P(HTMLVideoElementTest, VideoLoadOpt_ConfigDataTest) {
+  video()->SetSrc(AtomicString("http://example.com/foo.mp4"));
+  test::RunPendingTasks();
+  UpdateAllLifecyclePhasesForTest();
+  EXPECT_EQ(video()->hbsPreloadTime(), 4);
+  EXPECT_EQ(video()->hbsMinCacheTime(), 2);
+  EXPECT_EQ(video()->hbsMaxCacheTime(), 6);
+  EXPECT_EQ(video()->hbsBitrate(), 2000);
+  EXPECT_EQ(video()->hbsMoovSize(), 512);
+
+  video()->setHbsPreloadTime(6);
+  video()->setHbsMinCacheTime(3);
+  video()->setHbsMaxCacheTime(9);
+  video()->setHbsBitrate(3000);
+  video()->setHbsMoovSize(1024);
+
+  EXPECT_EQ(video()->hbsPreloadTime(), 6);
+  EXPECT_EQ(video()->hbsMinCacheTime(), 3);
+  EXPECT_EQ(video()->hbsMaxCacheTime(), 9);
+  EXPECT_EQ(video()->hbsBitrate(), 3000);
+  EXPECT_EQ(video()->hbsMoovSize(), 1024);
+}
+
+TEST_P(HTMLVideoElementTest, VideoLoadOpt_GetFrameConfigDataTest) {
+  video()->SetSrc(AtomicString("http://example.com/foo.mp4"));
+  test::RunPendingTasks();
+  UpdateAllLifecyclePhasesForTest();
+
+  ASSERT_NO_FATAL_FAILURE(video()->GetVideoPreloadTimeDefault());
+  ASSERT_NO_FATAL_FAILURE(video()->GetVideoMinCacheTimeDefault());
+  ASSERT_NO_FATAL_FAILURE(video()->GetVideoMaxCacheTimeDefault());
+  ASSERT_NO_FATAL_FAILURE(video()->GetVideoMoovSizeDefault());
+  ASSERT_NO_FATAL_FAILURE(video()->GetVideoBitrateDefault());
+}
+
+TEST_P(HTMLVideoElementTest, VideoLoadOpt_CheckAndSetValueTest) {
+  video()->SetSrc(AtomicString("http://example.com/foo.mp4"));
+  video()->setHbsPreloadTime(6);
+  test::RunPendingTasks();
+  UpdateAllLifecyclePhasesForTest();
+
+  uint16_t preloadTime_attr = 0;
+  video()->CheckAndSetValue(html_names::kHbspreloadtimeAttr, &preloadTime_attr);
+  EXPECT_EQ(video()->hbsPreloadTime(), 6);
+}
+
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION

@@ -21,9 +21,13 @@
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
+#if BUILDFLAG(ARKWEB_TEST)
 #define private public
 #include "arkweb/chromium_ext/media/gpu/ohos/codec_wrapper.h"
 #undef private
+#else
+#include "arkweb/chromium_ext/media/gpu/ohos/codec_wrapper.h"
+#endif //ARKWEB_TEST
 
 using testing::_;
 using testing::DoAll;

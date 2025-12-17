@@ -114,17 +114,15 @@ void RenderWidgetHostImplExt::OnOverlayStateChanged(const gfx::Rect& image_rect)
   }
   view->OnOverlayStateChanged(image_rect);
 }
-
-// LCOV_EXCL_START
-void RenderWidgetHostImplExt::OnDataDetectorSelectText() {
-  blink_frame_widget_->OnDataDetectorSelectText();
-}
-// LCOV_EXCL_STOP
 #endif
 
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
 void RenderWidgetHostImplExt::GetVisibleRectToWeb(
     GetVisibleRectToWebCallback callback) {
+  if (!delegate_) {
+    std::move(callback).Run(gfx::Rect());
+    return;
+  }
   RenderViewHostDelegateView* view = delegate_->GetDelegateView();
   if (!view || !GetView()) {
     std::move(callback).Run(gfx::Rect());
@@ -202,5 +200,15 @@ void RenderWidgetHostImplExt::SendCurrentLanguage(const std::string& ans) {
 }
 #endif
 // LCOV_EXCL_STOP
+
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+void RenderWidgetHostImplExt::SetFocusWebId(int32_t nweb_id) {
+  if (GetRenderInputRouter() == nullptr) {
+    LOG(ERROR) << "SetFocusWebId can not get RenderInputRouter";
+    return;
+  }
+  GetRenderInputRouter()->SetFocusWebId(nweb_id);
+}
+#endif
 
 }  // namespace content

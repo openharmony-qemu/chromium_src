@@ -54,6 +54,11 @@
 #include "services/screen_ai/public/mojom/screen_ai_service.mojom-forward.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_PDF)
+#include "base/task/delayed_task_handle.h"
+#include "base/task/sequenced_task_runner.h"
+#endif
+
 namespace blink {
 class WebAssociatedURLLoader;
 class WebInputEvent;
@@ -407,6 +412,10 @@ class PdfViewWebPlugin final : public PDFiumEngineClient,
                           const gfx::PointF& extent) override;
   void GetPdfBytes(uint32_t size_limit, GetPdfBytesCallback callback) override;
   void GetPageText(int32_t page_index, GetPageTextCallback callback) override;
+#if BUILDFLAG(ARKWEB_PDF)
+  void ClearTextSelection() override;
+  void OnScaleChanged() override;
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   // UrlLoader::Client:
   bool IsValid() const override;
@@ -432,9 +441,12 @@ class PdfViewWebPlugin final : public PDFiumEngineClient,
 
 #if BUILDFLAG(ARKWEB_PDF)
   gfx::Rect GetAvailableArea() override;
-  void UpdateClientClippedSelectionBoundsForPDF(gfx::Rect& clipped_selection_bounds) override;
-  void HideHandleAndQuickMenuForPDF(bool hide_handles) override;
+  void ConvertAndUpdateSelectionBounds(gfx::Rect& clipped_selection_bounds) override;
+  void SetIsTouching(bool is_touching) override;
+  void ResetResponsePendingInputEvent() override;
+  void SetIsSelectionVisible(bool is_selection_visible) override;
 #endif
+
   // PdfAccessibilityActionHandler:
   void EnableAccessibility() override;
   void HandleAccessibilityAction(
@@ -570,6 +582,9 @@ class PdfViewWebPlugin final : public PDFiumEngineClient,
   void HandleSetTwoUpViewMessage(const base::Value::Dict& message);
   void HandleStopScrollingMessage(const base::Value::Dict& message);
   void HandleViewportMessage(const base::Value::Dict& message);
+#if BUILDFLAG(ARKWEB_PDF)
+  void HandleClickBookmarkMessage(const base::Value::Dict& message);
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   void SaveToBuffer(SaveRequestType request_type, const std::string& token);
   void SaveToFile(const std::string& token);
@@ -724,7 +739,21 @@ class PdfViewWebPlugin final : public PDFiumEngineClient,
 #endif
 
 #if BUILDFLAG(ARKWEB_PDF)
-  void ForceSelectionChanged();
+  void SetIsScrolling(bool is_scrolling);
+  void SetIsPinching(bool is_pinching);
+  bool ShouldHideMenu();
+
+  void SelectionChangedAtScrollStopped();
+  void DoPaintAtScrollStopped();
+  void HideHandleAndQuickMenu(bool hide);
+
+  void SetScrollStoppedAfterDelay();
+  void SelectionChangedAfterDelay();
+  void DoPaintAfterDelay();
+  void HideOrShowMenuAfterDelay();
+
+  // Used for cancelable delayed task in `UpdateScroll()`.
+  scoped_refptr<base::SequencedTaskRunner> GetTaskRunner();
 #endif
 
   bool initialized_ = false;
@@ -954,9 +983,30 @@ class PdfViewWebPlugin final : public PDFiumEngineClient,
 #endif
 
 #if BUILDFLAG(ARKWEB_PDF)
-  bool scroll_at_bottom_status_ = false;
   gfx::Rect current_left_;
   gfx::Rect current_right_;
+  gfx::Rect clipped_selection_bounds_;
+
+  bool scroll_at_bottom_status_ = false;
+  bool is_touching_ = false;
+  bool is_scrolling_ = false;
+  bool is_pinching_ = false;
+  bool is_selection_visible_ = true;
+  std::atomic<bool> is_menu_hidden_{false};
+
+  // Used for cancelable delayed task.
+  const scoped_refptr<base::SequencedTaskRunner> task_runner_;
+  SEQUENCE_CHECKER(sequence_checker_);
+
+  // Cancelable delayed task for scroll stopped.
+  base::DelayedTaskHandle cancelable_scroll_delayed_task_ GUARDED_BY_CONTEXT(sequence_checker_);
+  // Cancelable delayed task for selection changed.
+  base::DelayedTaskHandle cancelable_selection_delayed_task_ GUARDED_BY_CONTEXT(sequence_checker_);
+  // Cancelable delayed task for paint after scroll.
+  base::DelayedTaskHandle cancelable_paint_delayed_task_ GUARDED_BY_CONTEXT(sequence_checker_);
+  //  Cancelable delayed task for hiding and showing menu.
+  base::DelayedTaskHandle cancelable_menu_delayed_task_ GUARDED_BY_CONTEXT(sequence_checker_);
+
 #endif  // BUILDFLAG(ARKWEB_PDF)
 
   base::WeakPtrFactory<PdfViewWebPlugin> weak_factory_{this};

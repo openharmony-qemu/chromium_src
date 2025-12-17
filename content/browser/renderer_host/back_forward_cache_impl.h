@@ -467,7 +467,11 @@ class CONTENT_EXPORT BackForwardCacheImpl
   base::TimeDelta ArkWebGetTimeToLiveInBackForwardCache() override;
 #endif
 
+#if BUILDFLAG(ARKWEB_TEST)
+ public:
+#else
  private:
+#endif //ARKWEB_TEST
   // Destroys all evicted frames in the BackForwardCache.
   void DestroyEvictedFrames();
 

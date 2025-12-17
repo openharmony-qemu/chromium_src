@@ -17,6 +17,7 @@
 
 #include "oh_web_performance_timing.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#include "base/logging.h"
 
 using OHOS::NWeb::HiSysEventAdapter;
 using OHOS::NWeb::OhosAdapterHelper;
@@ -62,6 +63,25 @@ constexpr char OPEN_PRIVATE_STATUS[] = "OPEN_PRIVATE_STATUS";
 constexpr char PAGE_DOWNLOAD_ERROR[] = "PAGE_DOWNLOAD_ERROR";
 constexpr char DOWNLOAD_ID[] = "DOWNLOAD_ID";
 
+// For media behavior info
+constexpr char DRM_ENCRYPTED_PLAYBACK[] = "DRM_ENCRYPTED_PLAYBACK";
+constexpr char MEDIA_TYPE[] = "MEDIA_TYPE";
+constexpr char DRM_SYSTEM[] = "DRM_SYSTEM";
+constexpr char ENCRYPTION_ALGORITHM[] = "ENCRYPTION_ALGORITHM";
+
+constexpr char VIDEO_ENCODE_FORMAT[] = "VIDEO_ENCODE_FORMAT";
+constexpr char ENCODE_FORMAT[] = "ENCODE_FORMAT";
+
+constexpr char FFMPEG_CODEC_OPERATION[] = "FFMPEG_CODEC_OPERATION";
+constexpr char CODEC_TYPE[] = "CODEC_TYPE";
+constexpr char FORMAT[] = "FORMAT";
+
+constexpr char AUDIO_HARDWARE_DECODE[] = "AUDIO_HARDWARE_DECODE";
+constexpr char CODEC_FORMAT[] = "CODEC_FORMAT";
+
+constexpr char PICTURE_DECODE[] = "PICTURE_DECODE";
+constexpr char PICTURE_TYPE[] = "PICTURE_TYPE";
+
 // For audio/video error info
 constexpr char AUDIO_PLAY_ERROR[] = "AUDIO_PLAY_ERROR";
 constexpr char VIDEO_PLAY_ERROR[] = "VIDEO_PLAY_ERROR";
@@ -103,6 +123,8 @@ constexpr char URL[] = "URL";
 constexpr char PAGE_DRAG_BLANK[] = "PAGE_DRAG_BLANK";
 constexpr char PAGE_BLANK_TIME[] = "PAGE_BLANK_TIME";
 
+constexpr char RENDER_JS_FREEZE[] = "RENDER_JS_FREEZE";
+
 // For web play error info,such as pip/drm
 constexpr char WEB_MEDIA_PLAY_ERROR[] = "WEB_MEDIA_PLAY_ERROR";
  
@@ -124,6 +146,19 @@ constexpr char MAILBOX_NONEXISTENT[] = "MAILBOX_NONEXISTENT";
 constexpr char PROCESS_FREEZE_WARNING[] = "PROCESS_FREEZE_WARNING";
 
 }  // namespace
+
+void ReportRenderJsFreeze(int32_t pid, const std::string& packageName, const std::string& processName,
+                          const std::string& freezeMsg, int32_t uid) {
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      RENDER_JS_FREEZE, HiSysEventAdapter::EventType::FAULT,
+      {
+        "PID", pid,
+        "PACKAGE_NAME", packageName,
+        "PROCESS_NAME", processName,
+        "MSG", freezeMsg,
+        "UID", uid
+      });
+}                         
 
 void ReportPageLoadStats(int instanceId,
                          int accessSumCount,
@@ -320,6 +355,41 @@ void ReportSiteIsolationMode(const std::string site_isolation_status) {
       {SITE_ISOLATION_STATUS, site_isolation_status});
 }
 
+void ReportDrmEncryptedPlayback(const std::string& mediaType,
+                                const std::string& drmSystem,
+                                const std::string& encryptedAlgo) {
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      DRM_ENCRYPTED_PLAYBACK, HiSysEventAdapter::EventType::BEHAVIOR,
+      {MEDIA_TYPE, mediaType,
+       DRM_SYSTEM, drmSystem,
+       ENCRYPTION_ALGORITHM, encryptedAlgo});
+}
+
+void ReportVideoEncodeFormat(const std::string& encodeFormat) {
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      VIDEO_ENCODE_FORMAT, HiSysEventAdapter::EventType::BEHAVIOR,
+      {ENCODE_FORMAT, encodeFormat});
+}
+
+void ReportFfmpegCodecOperation(const std::string& codecType, const std::string& format) {
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      FFMPEG_CODEC_OPERATION, HiSysEventAdapter::EventType::BEHAVIOR,
+      {CODEC_TYPE, codecType,
+       FORMAT, format});
+}
+
+void ReportAudioHardwareDecode(const std::string& codecFormat) {
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      AUDIO_HARDWARE_DECODE, HiSysEventAdapter::EventType::BEHAVIOR,
+      {CODEC_FORMAT, codecFormat});
+}
+
+void ReportPictureDecode(const std::string& pictureType) {
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      PICTURE_DECODE, HiSysEventAdapter::EventType::BEHAVIOR,
+      {PICTURE_TYPE, pictureType});
+}
+
 void ReportRendererMem(const std::string& type,
                        const std::string& pid,
                        const std::string& rss,
@@ -394,9 +464,16 @@ void ReportGpuProcessEvent(CrashType type, std::string eventcontent) {
   }
 }
 // LOVC_EXCL_START
-void ReportAppfreeze() {
+void ReportAppfreeze(int32_t pid, const std::string& packageName, const std::string& processName,
+                     const std::string& freezeMsg, int32_t uid) {
   OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
       PROCESS_FREEZE_WARNING, HiSysEventAdapter::EventType::FAULT,
-      {"", std::string()});
+      {
+        "PID", pid,
+        "PACKAGE_NAME", packageName,
+        "PROCESS_NAME", processName,
+        "MSG", freezeMsg,
+        "UID", uid
+      });
 }
 // LOVC_EXCL_STOP

@@ -1918,8 +1918,7 @@ bool ChildProcessSecurityPolicyImpl::CanAccessOrigin(int child_id,
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
       if (!security_state) {
         LOG(URL) << "percursor_tuple is invalid and donn't found a valid "
-                 << "security state"
-                 << url::LogUtils::ConvertUrl(origin.GetDebugString());
+                 << "security state" << origin.GetDebugString();
       }
 #endif
       return !!security_state;
@@ -1939,8 +1938,7 @@ bool ChildProcessSecurityPolicyImpl::CanAccessOrigin(int child_id,
   // crash key set in that call with data from |origin| because it provides
   // more accurate information than the origin derived from |url_to_check|.
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-  LOG(URL) << "Can not access data for origin "
-           << url::LogUtils::ConvertUrl(origin.GetDebugString());
+  LOG(URL) << "Can not access data for origin " << origin.GetDebugString();
 #endif
   auto* requested_origin_key = GetRequestedOriginCrashKey();
   base::debug::SetCrashKeyString(requested_origin_key, origin.GetDebugString());

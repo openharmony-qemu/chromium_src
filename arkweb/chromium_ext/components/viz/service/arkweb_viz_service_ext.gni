@@ -20,11 +20,11 @@ components_viz_service_unittests_ext = {
     "//arkweb/chromium_ext/components/viz/service/display/arkweb_display_utils_unittest.cc",
     "//arkweb/chromium_ext/components/viz/service/display/display_scheduler_utils_unittest.cc",
     "//arkweb/chromium_ext/components/viz/service/display/frame_dump_copy_output_request_unittests.cc",
-    "//arkweb/chromium_ext/components/viz/service/display_embedder/skia_output_surface_dependency_impl_utils_unittests.cc",
     "//arkweb/chromium_ext/components/viz/service/gl/gpu_service_impl_utils_unittests.cc",
     "//arkweb/chromium_ext/components/viz/service/frame_sinks/frame_sink_manager_impl_utils_unittests.cc",
     "//arkweb/chromium_ext/components/viz/service/frame_sinks/external_begin_frame_source_ohos_second_unittests.cc",
-    "//arkweb/chromium_ext/components/viz/service/frame_sinks/compositor_frame_sink_impl_utils_unittests.cc"
+    "//arkweb/chromium_ext/components/viz/service/frame_sinks/compositor_frame_sink_impl_utils_unittests.cc",
+    "//arkweb/chromium_ext/components/viz/service/frame_sinks/root_compositor_frame_sink_impl_ext_unittests.cc",
   ]
   sources_del = [
     "display/display_resource_provider_software_unittest.cc",

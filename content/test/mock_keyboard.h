@@ -67,7 +67,7 @@ class MockKeyboard {
   // should emulate AltGr (right-alt) key, used by many European keyboards to
   // input alternate graph characters.
   enum Modifiers {
-    INVALID = -1,
+    KEYBOARD_INVALID = -1,
     NONE = 0,
     LEFT_SHIFT = 1 << 0,
     LEFT_CONTROL = 1 << 1,
@@ -101,7 +101,7 @@ class MockKeyboard {
  private:
 #if BUILDFLAG(IS_WIN)
   Layout keyboard_layout_ = LAYOUT_NULL;
-  Modifiers keyboard_modifiers_ = INVALID;
+  Modifiers keyboard_modifiers_ = KEYBOARD_INVALID;
   MockKeyboardDriverWin driver_;
 #endif
 };

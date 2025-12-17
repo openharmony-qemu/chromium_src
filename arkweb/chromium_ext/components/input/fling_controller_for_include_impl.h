@@ -28,7 +28,7 @@
 #include "arkweb/chromium_ext/base/report_loss_frame_ext.h"
 #endif
 #if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
-#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#include "arkweb/ohos_adapter_ndk/interfaces/ohos_adapter_helper.h"
 #endif
 #if BUILDFLAG(ARKWEB_SLIDE_LTPO)
 #include "base/ohos/ltpo/include/sliding_observer.h"
@@ -46,6 +46,9 @@ const int SOC_PERF_WEB_SLIDE_SCROLL = 10097;
 namespace input {
 #if BUILDFLAG(ARKWEB_D_VSYNC)
 std::atomic<int> FlingController::instance_count_ = 0;
+#endif
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+int32_t focus_nweb_id_ = 0;
 #endif
 
 #if BUILDFLAG(ARKWEB_FLING)
@@ -123,15 +126,6 @@ void FlingController::StartWebPageFling() {
 #if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
   std::string fling_string = "WEB_LIST_FLING";
 #endif
-#if BUILDFLAG(ARKWEB_D_VSYNC)
-  instance_count_++;
-#endif
-#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
-  ReportLossFrame::GetInstance()->SetScrollState(ScrollMode::START);
-  OHOS::NWeb::OhosAdapterHelper::GetInstance()
-      .GetHiTraceAdapterInstance()
-      .StartAsyncTrace(fling_string, 0);
-#endif
 // https://open.codehub.huawei.com/OpenSourceCenter_CR/openharmony-tpc/oh-chromium/-/change_requests/1309
 #if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
   int socPerfId = OHOS::NWeb::SocPerfClientAdapter::SOC_PERF_WEB_GESTURE_ID;
@@ -147,7 +141,7 @@ void FlingController::StartWebPageFling() {
   LOG(DEBUG) << "start web page fling";
   if (auto* host = content::GpuProcessHost::Get()) {
     if (auto* host_impl = host->gpu_host()) {
-      host_impl->StartMonitor();
+      host_impl->StartMonitor(focus_nweb_id_);
       TRACE_EVENT0("input", "DynamicFrameLossEvent Start");
       content::GetUIThreadTaskRunner({})->PostTask(
           FROM_HERE, base::BindOnce(&FlingController::DynamicFrameLossEvent,
@@ -158,11 +152,25 @@ void FlingController::StartWebPageFling() {
 #endif
 
 #if BUILDFLAG(ARKWEB_D_VSYNC)
+  instance_count_++;
+  if (instance_count_ < 1) {
+    TRACE_EVENT0("input", "FlingController::StartWebPageFling trace not start");
+    LOG(ERROR) << "AsyncTrace not start, instance_count_=" << instance_count_;
+    return;
+  }
+#endif
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+  ReportLossFrame::GetInstance()->SetScrollState(ScrollMode::START);
+  OHOS::NWeb::OhosAdapterHelper::GetInstance()
+      .GetHiTraceAdapterInstance()
+      .StartAsyncTrace(fling_string, 0);
+#endif
+#if BUILDFLAG(ARKWEB_D_VSYNC)
   if (base::ohos::IsMobileDevice() && instance_count_ == 1) {
       LOG(DEBUG) << "FlingController::ProgressFling::dvsyncSwitch=true";
       if (auto* host = content::GpuProcessHost::Get()) {
           if (auto* host_impl = host->gpu_host()) {
-          host_impl->SetIsFling(true);
+            host_impl->SetIsFling(true);
           }
       }
   }
@@ -212,7 +220,6 @@ void FlingController::StopWebPageFling() {
 #endif
 
 #if BUILDFLAG(ARKWEB_SLIDE_LTPO)
-  LOG(DEBUG) << "stop web page fling";
   auto frame_rate = base::ohos::SlidingObserver::GetInstance().StopFling();
   if (auto* host = content::GpuProcessHost::Get()) {
     if (auto* host_impl = host->gpu_host()) {
@@ -238,6 +245,18 @@ void FlingController::StopWebPageFling() {
   }
   TRACE_EVENT0("input", "EndCurrentFling::SetNeedDVsync=false, reason=EndCurrentFling");
 #endif
+}
+
+#if BUILDFLAG(ARKWEB_FLING)
+void FlingController::UpdateFlingVelocityLimit(const gfx::Vector2dF& velocity) {
+  fling_booster_.UpdateFlingVelocityLimit(velocity);
+}
+#endif
+#endif
+
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+void FlingController::SetFocusWebId(int32_t nweb_id) {
+  focus_nweb_id_ = nweb_id;
 }
 #endif
 }

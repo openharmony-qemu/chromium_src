@@ -168,13 +168,6 @@ test("native_theme_unittests") {
     ]
   }
 
-  if (arkweb_unittests) {
-    sources += [
-      "//arkweb/chromium_ext/ui/native_theme/native_theme_aura_utils_unittest.cc",
-    ]
-    configs += ["//arkweb/chromium_ext:arkweb_system_properties_config"]
-  }
-
   deps = [
     ":native_theme",
     ":native_theme_browser",
@@ -190,6 +183,10 @@ test("native_theme_unittests") {
     "//ui/gfx/geometry:geometry",
   ]
 
+  if (arkweb_test) {
+    sources += [ "//arkweb/chromium_ext/ui/native_theme/native_theme_aura_utils_unittest.cc" ]
+    deps += [ "//arkweb/ohos_adapter_ndk/mock_ndk_api:mock_base_ohos" ]
+  }
   if (is_mac) {
     sources += [
       "native_theme_mac_unittest.mm",

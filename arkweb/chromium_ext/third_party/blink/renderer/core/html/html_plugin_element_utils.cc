@@ -14,6 +14,8 @@
  */
 
 #include "arkweb/chromium_ext/third_party/blink/renderer/core/html/html_plugin_element_utils.h"
+#include "base/strings/string_split.h"
+#include "base/strings/string_util.h"
 #include "third_party/blink/renderer/core/dom/document.h"
 #include "third_party/blink/renderer/core/html/html_plugin_element.h"
 #include "third_party/blink/renderer/core/html/html_native_loader.h"
@@ -95,6 +97,44 @@ void HTMLPlugInElementUtils::SetNativeEmbedOverlayInfinity(bool native_embed_ove
   native_embed_overlay_infinity_ = native_embed_overlay_infinity;
   if (auto* native_loader = plugin_->NativeLoader()) {
     native_loader->SetNativeEmbedOverlayInfinity(native_embed_overlay_infinity_);
+  }
+}
+
+void HTMLPlugInElementUtils::AnalysisStretchContentToFillBounds(
+    const Element::AttributeModificationParams& params) {
+  bool stretch_content_to_fill_bounds = true;
+  if (!params.new_value.empty()) {
+    base::StringPairs pairs;
+    base::SplitStringIntoKeyValuePairs(params.new_value.Utf8(), ':', ';', &pairs);
+    for (const auto& pair : pairs) {
+      std::string key = base::ToLowerASCII(
+          base::TrimWhitespaceASCII(pair.first, base::TRIM_ALL));
+      if (key == "object-fit") {
+        std::string value = base::ToLowerASCII(
+            base::TrimWhitespaceASCII(pair.second, base::TRIM_ALL));
+        if (value == "none") {
+          stretch_content_to_fill_bounds = false;
+        } else if (value == "stretch") {
+          stretch_content_to_fill_bounds = true;
+        }
+        break;
+      }
+    }
+  }
+  SetStretchContentToFillBounds(stretch_content_to_fill_bounds);
+}
+
+void HTMLPlugInElementUtils::SetStretchContentToFillBounds(bool stretch_content_to_fill_bounds) {
+  if (auto* native_loader = plugin_->NativeLoader()) {
+    native_loader->SetStretchContentToFillBounds(stretch_content_to_fill_bounds);
+  } else {
+    stretch_content_to_fill_bounds_ = stretch_content_to_fill_bounds;
+  }
+}
+
+void HTMLPlugInElementUtils::ProcessStretchContentToFillBounds() {
+  if (auto* native_loader = plugin_->NativeLoader()) {
+    native_loader->SetStretchContentToFillBounds(stretch_content_to_fill_bounds_);
   }
 }
 

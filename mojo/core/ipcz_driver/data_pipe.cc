@@ -28,7 +28,15 @@
 
 namespace mojo::core::ipcz_driver {
 
+#if BUILDFLAG(IS_OHOS)
+  std::atomic<size_t> DataPipe::instance_count_ = 0;
+#endif
+
 namespace {
+
+#if BUILDFLAG(IS_OHOS)
+  const size_t kDataPipeInstanceCountWarningThreshold = 30000;
+#endif
 
 // The wire representation of a serialized DataPipe endpoint.
 struct IPCZ_ALIGN(8) DataPipeHeader {
@@ -138,10 +146,18 @@ DataPipe::DataPipe(EndpointType endpoint_type,
   DCHECK_LE(config.byte_capacity, std::numeric_limits<uint32_t>::max());
   DCHECK_EQ(config.byte_capacity, buffer_->region().GetSize());
   DCHECK_EQ(config.byte_capacity, data_.capacity());
+#if BUILDFLAG(IS_OHOS)
+  instance_count_.fetch_add(1, std::memory_order_relaxed);
+#endif
 }
 
 DataPipe::~DataPipe() {
   Close();
+#if BUILDFLAG(IS_OHOS)
+  if (auto c = instance_count_.fetch_sub(1, std::memory_order_relaxed); c > kDataPipeInstanceCountWarningThreshold) {
+    LOG(WARNING) << "DataPipe::instance_count_: " << c;
+  }
+#endif
 }
 
 // static

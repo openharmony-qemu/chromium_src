@@ -29,6 +29,16 @@ void ResParallelPreloadCtrler::InitDiskCacheBackendFactory()
   }
 }
 
+void ResParallelPreloadCtrler::InitDiskCacheBackendFactoryForTest()
+{
+  g_disk_cache_backend_factory = base::WrapRefCounted(new (std::nothrow) DiskCacheBackendFactory());
+}
+
+void ResParallelPreloadCtrler::ResetDiskCacheBackendFactoryForTest()
+{
+  g_disk_cache_backend_factory = nullptr;
+}
+
 void ResParallelPreloadCtrler::RemoveCache(base::Time start_time, base::Time end_time)
 {
   if (g_disk_cache_backend_factory != nullptr) {

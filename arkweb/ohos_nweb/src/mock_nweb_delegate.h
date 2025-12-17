@@ -22,7 +22,6 @@
 #include <vector>
 
 #include "capi/nweb_devtools_message_handler.h"
-#define private public
 #include "nweb_delegate_interface.h"
 
 namespace OHOS::NWeb {
@@ -56,10 +55,12 @@ class MockNWebDelegate : public NWebDelegateInterface {
               RegisterRenderCb,
               (std::function<void(const char*)> render_update_cb),
               (override));
+#if BUILDFLAG(ARKWEB_NWEB_EX)
   MOCK_METHOD(void,
               RegisterArkWebAppClientExtensionListener,
               (std::shared_ptr<ArkWebAppClientExtensionCallback> callback),
               (override));
+#endif
   MOCK_METHOD(void,
               RegisterWebAppClientExtensionListener,
               (std::shared_ptr<NWebAppClientExtensionCallback>
@@ -91,6 +92,14 @@ class MockNWebDelegate : public NWebDelegateInterface {
   MOCK_METHOD(void,
               FillAutofillDataV2,
               (std::shared_ptr<NWebRomValue> data),
+              (override));
+  MOCK_METHOD(void,
+              FillAutofillDataFromTriggerType,
+              (std::shared_ptr<NWebRomValue> data, int32_t type),
+              (override));
+  MOCK_METHOD(void,
+              PutVaultPlainTextCallback,
+              (std::shared_ptr<OHOS::NWeb::NWebVaultPlainTextCallback> callback),
               (override));
   MOCK_METHOD(void,
               ExecuteCreatePDFExt,
@@ -239,6 +248,18 @@ class MockNWebDelegate : public NWebDelegateInterface {
   MOCK_METHOD(void,
               OnTouchMove,
               (const std::vector<std::shared_ptr<NWebTouchPointInfo>>&, bool),
+              (override));
+  MOCK_METHOD(void,
+              OnStylusTouchPress,
+              (std::shared_ptr<NWebStylusTouchPointInfo> stylus_touch_point_info, bool from_overlay),
+              (override));
+  MOCK_METHOD(void,
+              OnStylusTouchRelease,
+              (std::shared_ptr<NWebStylusTouchPointInfo> stylus_touch_point_info, bool from_overlay),
+              (override));
+  MOCK_METHOD(void,
+              OnStylusTouchMove,
+              (const std::vector<std::shared_ptr<NWebStylusTouchPointInfo>>& stylus_touch_point_infos, bool from_overlay),
               (override));
   MOCK_METHOD(void, OnTouchCancel, (), (override));
   MOCK_METHOD(void,
@@ -545,6 +566,9 @@ class MockNWebDelegate : public NWebDelegateInterface {
   MOCK_METHOD(void, StartCamera, (), (override));
   MOCK_METHOD(void, StopCamera, (), (override));
   MOCK_METHOD(void, CloseCamera, (), (override));
+  MOCK_METHOD(void, ResumeMicrophone, (), (override));
+  MOCK_METHOD(void, StopMicrophone, (), (override));
+  MOCK_METHOD(void, PauseMicrophone, (), (override));
 #endif  // BUILDFLAG(ARKWEB_WEBRTC)
 
 #if BUILDFLAG(ARKWEB_PAGE_UP_DOWN)
@@ -574,6 +598,10 @@ class MockNWebDelegate : public NWebDelegateInterface {
               (float x, float y, int32_t duration),
               (override));
   MOCK_METHOD(void,
+              StopFling,
+              (),
+              (override));
+  MOCK_METHOD(void,
               ScrollByWithAnime,
               (float delta_x, float delta_y, int32_t duration),
               (override));
@@ -600,8 +628,10 @@ class MockNWebDelegate : public NWebDelegateInterface {
 #endif
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
-#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM) || BUILDFLAG(ARKWEB_ZOOM)
   MOCK_METHOD(void, SetForceEnableZoom, (bool forceEnableZoom), (override));
+#endif
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
   MOCK_METHOD(bool, GetForceEnableZoom, (), (override));
 #endif
 
@@ -621,6 +651,8 @@ class MockNWebDelegate : public NWebDelegateInterface {
 
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
   MOCK_METHOD(void, SetNativeInnerWeb, (bool isInnerWeb), (override));
+  MOCK_METHOD(bool, GetNativeEmbedMode, (), (override));
+  MOCK_METHOD(bool, IsEnableCustomVideoPlayer, (), (override));
 #endif
 
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)
@@ -643,7 +675,7 @@ class MockNWebDelegate : public NWebDelegateInterface {
 #if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
   MOCK_METHOD(void,
               PrefetchPage,
-              (const std::string&, (const std::map<std::string, std::string>&)),
+              (const PrefetchOptions& prefetch_options),
               (override));
 #endif  // BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
 
@@ -749,7 +781,7 @@ class MockNWebDelegate : public NWebDelegateInterface {
   MOCK_METHOD(void, CancelAllPrerendering, (), (override));
 #endif
 
-#if BUILDFLAG(ARKWEB_EXT_SECURITY_STATE)
+#if BUILDFLAG(ARKWEB_SECURITY_STATE)
   MOCK_METHOD(int, GetSecurityLevel, (), (override));
 #endif
 
@@ -851,8 +883,8 @@ class MockNWebDelegate : public NWebDelegateInterface {
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   MOCK_METHOD(void,
               SetPathAllowingUniversalAccess,
-+              (const std::vector<std::string>& path_list,
-+               const std::vector<std::string>& excluded_path_list),
+              (const std::vector<std::string>& path_list,
+               const std::vector<std::string>& excluded_path_list),
               (override));
 #endif
 
@@ -908,26 +940,33 @@ class MockNWebDelegate : public NWebDelegateInterface {
 #endif
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   MOCK_METHOD(bool, SetFocusByPosition, (float x, float y), (override));
+  MOCK_METHOD((std::pair<double, double>), GetLastTouchMousePosition, (), (override));
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
 #if BUILDFLAG(ARKWEB_ACTIVE_POLICY)
-  void SetDelayDurationForBackgroundTabFreezing(int64_t delay) override {}
+  MOCK_METHOD(void,
+              SetDelayDurationForBackgroundTabFreezing,
+              (int64_t delay),
+              (override));
 #endif
 
 #if BUILDFLAG(ARKWEB_JSPROXY)
   MOCK_METHOD(void,
               JavaScriptOnDocumentStartByOrder,
               (const ScriptItems& ScriptItems,
+               const ScriptRegexItems& scriptRegexItems,
                const ScriptItemsByOrder& ScriptItemsByOrder),
               (override));
   MOCK_METHOD(void,
               JavaScriptOnDocumentEndByOrder,
               (const ScriptItems& ScriptItems,
+               const ScriptRegexItems& scriptRegexItems,
                const ScriptItemsByOrder& ScriptItemsByOrder),
               (override));
   MOCK_METHOD(void,
               JavaScriptOnHeadReadyByOrder,
               (const ScriptItems& ScriptItems,
+               const ScriptRegexItems& scriptRegexItems,
                const ScriptItemsByOrder& ScriptItemsByOrder),
               (override));
 #endif
@@ -1054,23 +1093,6 @@ class MockNWebDelegate : public NWebDelegateInterface {
   MOCK_METHOD(void, OnFoldStatusChanged, (FoldStatus foldstatus), (override));
 #endif
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  MOCK_METHOD(void, WebExtensionTabCreated, (int tab_id), (override));
-  MOCK_METHOD(void,
-              WebExtensionTabUpdated,
-              (int tab_id,
-               const std::vector<std::string>& changed_property_names,
-               const std::string& url),
-              (override));
-  MOCK_METHOD(void,
-              WebExtensionTabUpdated,
-              (int tab_id,
-               const std::vector<std::string>& changed_property_names,
-               std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo),
-              (override));
-  MOCK_METHOD(void,
-              WebExtensionTabCreated,
-              (std::unique_ptr<NWebExtensionTab> tab),
-              (override));
   MOCK_METHOD(void,
               WebExtensionTabUpdated,
               (int tab_id,
@@ -1104,6 +1126,7 @@ class MockNWebDelegate : public NWebDelegateInterface {
               WebExtensionTabRemoved,
               (int32_t tab_id, bool isWindowClosing, int32_t windowId),
               (override));
+  MOCK_METHOD(void, WebExtensionSetViewType, (int32_t type), (override));
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_PERMISSION)
@@ -1134,6 +1157,12 @@ class MockNWebDelegate : public NWebDelegateInterface {
               OpenDevtoolsWith,
               (std::shared_ptr<NWebDelegateInterface> nweb_delegate,
                std::unique_ptr<OpenDevToolsParam> param),
+              (override));
+  MOCK_METHOD(void,
+              OpenDevtoolsWithByPb,
+              (std::shared_ptr<NWebDelegateInterface> nweb_delegate,
+               std::unique_ptr<OpenDevToolsParam> param,
+               OpenDevToolsExtOpt& ext_opt),
               (override));
   MOCK_METHOD(void, CloseDevtools, (), (override));
 
@@ -1168,7 +1197,7 @@ class MockNWebDelegate : public NWebDelegateInterface {
 #endif  // ARKWEB_EXT_FREE_COPY
 
 #if BUILDFLAG(ARKWEB_SCREEN_OFFSET)
-  void SetScreenOffset(double x, double y) override {}
+  MOCK_METHOD(void, SetScreenOffset, (double x, double y), (override));
 #endif  // BUILDFLAG(ARKWEB_SCREEN_OFFSET)
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
@@ -1205,6 +1234,16 @@ class MockNWebDelegate : public NWebDelegateInterface {
   MOCK_METHOD(int32_t, GetHeight, (), (override));
 #endif
 
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  MOCK_METHOD(void,
+              SetBlankScreenDetectionConfig,
+              (bool enable,
+               const std::vector<double>& detectionTiming,
+               const std::vector<int32_t>& detectionMethods,
+               int32_t contentfulNodesCountThreshold),
+              (override));
+#endif
+
 #if BUILDFLAG(ARKWEB_MENU)
   MOCK_METHOD(void, UpdateSingleHandleVisible, (bool isVisible), (override));
   MOCK_METHOD(void,
@@ -1222,17 +1261,37 @@ class MockNWebDelegate : public NWebDelegateInterface {
   MOCK_METHOD(int32_t, GetVisibleViewportAvoidHeight, (), (override));
 #endif
 
+#if BUILDFLAG(ARKWEB_NWEB_EX)
   MOCK_METHOD(void,
               RunJavaScriptInFrames,
               (RunJavaScriptParam,
                OnReceiveValueCallback callback),
               (override));
+#endif
 
 #if BUILDFLAG(ARKWEB_READER_MODE)
   MOCK_METHOD(void, Distill, (const std::string& guid, const DistillOptions& distill_options,
     DistillCallback callback), (override));
   MOCK_METHOD(void, AbortDistill, (), (override));
 #endif // ARKWEB_READER_MODE
+
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  MOCK_METHOD(int,
+              LoadUrlWithParams,
+              (const std::string& url,
+               const LoadUrlType load_type,
+               const std::string& refer,
+               const std::string& headers,
+               const std::string& post_data,
+               const bool allow_https_upgrade,
+               int32_t transition_type),
+              (override));
+  MOCK_METHOD(void, EnableHttpsUpgrades, (bool enable), (override));                               
+#endif
+
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+  MOCK_METHOD(void, SetFocusWebId, (int32_t nweb_id), (override));
+#endif 
 };
 }  // namespace OHOS::NWeb
 

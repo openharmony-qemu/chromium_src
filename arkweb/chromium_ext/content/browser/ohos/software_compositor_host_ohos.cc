@@ -31,9 +31,9 @@
 namespace content {
 
 const float MAX_DRAW_SW_SIZE = 16000.0;
-const std::string DUMP_FILE_PATH = "/data/storage/el2/base/haps/entry/files/";
-const std::string DUMP_FILE_PRE = "web_frame_sceenshot_";
-const std::string DUMP_FILE_TYPE = ".png";
+const char DUMP_FILE_PATH[] = "/data/storage/el2/base/haps/entry/files/";
+const char DUMP_FILE_PRE[] = "web_frame_sceenshot_";
+const char DUMP_FILE_TYPE[] = ".png";
 
 struct SoftwareCompositorHostOhos::SharedMemoryWithSize {
   base::WritableSharedMemoryMapping shared_memory;
@@ -94,6 +94,13 @@ void SoftwareCompositorHostOhos::OnDrawSwCallback(WebSnapchatCallback callback,
     std::move(callback).Run(id.c_str(), result, nullptr, 0, 0);
     return;
   }
+#if BUILDFLAG(ARKWEB_TEST)
+  if (!software_draw_shm_ || !software_draw_shm_->shared_memory.IsValid()) {
+    LOG(ERROR) << "OnDrawSwCallback: shared memory is invalid!";
+    std::move(callback).Run(id.c_str(), false, nullptr, 0, 0);
+    return;
+  }
+#endif
   std::move(callback).Run(id.c_str(), result,
                           software_draw_shm_->shared_memory.memory(),
                           current_.width(), current_.height());

@@ -290,6 +290,9 @@ class CONTENT_EXPORT NavigationURLLoaderImpl
   const GlobalRequestID global_request_id_;
   net::RedirectInfo redirect_info_;
   int redirect_limit_ = net::URLRequest::kMaxRedirects;
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  bool redirect_abort_cancel_ = false;
+#endif
   int accept_ch_restart_limit_ = net::URLRequest::kMaxRedirects;
   base::RepeatingCallback<WebContents*()> web_contents_getter_;
   std::unique_ptr<NavigationUIData> navigation_ui_data_;

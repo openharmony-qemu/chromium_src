@@ -16,8 +16,8 @@
 #include "ohos_nweb/src/cef_delegate/nweb_devtools_message_handler_impl.h"
 
 #include "cef/include/base/cef_logging.h"
-#include "ohos_nweb/src/capi/common/common.h"
 #include "ohos_nweb/include/nweb_file_selector_params.h"
+#include "ohos_nweb/src/capi/common/common.h"
 #include "ohos_nweb/src/capi/nweb_devtools_message_handler.h"
 #include "ohos_nweb/src/cef_delegate/nweb_file_selector_params_impl.h"
 #include "securec.h"
@@ -127,22 +127,22 @@ void NWebDevToolsMessageHandlerImpl::GetFileSelectorTitle(std::string& title,
                                                           uint32_t mode) {
   if (title.empty()) {
     switch (mode) {
-       case NWebFileSelectorParams::FileSelectorMode::FILE_OPEN_MODE:
+      case NWebFileSelectorParams::FileSelectorMode::FILE_OPEN_MODE:
         title = "open file";
-         break;
-       case NWebFileSelectorParams::FileSelectorMode::FILE_OPEN_MULTIPLE_MODE:
+        break;
+      case NWebFileSelectorParams::FileSelectorMode::FILE_OPEN_MULTIPLE_MODE:
         title = "open files";
-         break;
-       case NWebFileSelectorParams::FileSelectorMode::FILE_OPEN_FOLDER_MODE:
+        break;
+      case NWebFileSelectorParams::FileSelectorMode::FILE_OPEN_FOLDER_MODE:
         title = "open file folder";
-         break;
-       case NWebFileSelectorParams::FileSelectorMode::FILE_SAVE_MODE:
+        break;
+      case NWebFileSelectorParams::FileSelectorMode::FILE_SAVE_MODE:
         title = "save as";
-         break;
-       default:
-         break;
-     }
-   }
+        break;
+      default:
+        break;
+    }
+  }
 }
 
 bool NWebDevToolsMessageHandlerImpl::ShowFileChooser(
@@ -207,6 +207,7 @@ bool NWebDevToolsMessageHandlerImpl::ShowFileChooser(
     delete[] accept_filters_array;
     return result;
   }
+
   LOG(INFO) << "ShowFileChooser failed, handler is null";
   return false;
 }
@@ -228,6 +229,7 @@ void NWebDevToolsMessageHandlerImpl::ShowInfoBar(
     return (handler_.get()->*(handler_->show_info_bar))(message, path,
                                                         callback);
   }
+
   if (handlerNativeApi_) {
     std::unique_ptr<NWebBoolValueCallbackNativeApi> callback =
         std::make_unique<InfoBarCallbackImplNativeApi>(cef_callback);
@@ -243,6 +245,7 @@ void NWebDevToolsMessageHandlerImpl::ShowInfoBar(
         message.c_str(), path.c_str(), callback.release());
     return;
   }
+
   LOG(INFO) << "ShowInfoBar failed, handler is null";
   return;
 }
@@ -263,6 +266,7 @@ bool NWebDevToolsMessageHandlerImpl::BringToFront() {
     }
     return (handlerNativeApi_.get()->*(handlerNativeApi_->bring_to_front))();
   }
+
   LOG(INFO) << "BringToFront failed, handler is null";
   return false;
 }
@@ -275,6 +279,7 @@ bool NWebDevToolsMessageHandlerImpl::CloseWindow() {
     }
     return (handler_.get()->*(handler_->close_window))();
   }
+
   if (handlerNativeApi_) {
     if (!CheckValid(handlerNativeApi_.get(),
                     &handlerNativeApi_->close_window)) {
@@ -283,6 +288,7 @@ bool NWebDevToolsMessageHandlerImpl::CloseWindow() {
     }
     return (handlerNativeApi_.get()->*(handlerNativeApi_->close_window))();
   }
+
   LOG(INFO) << "CloseWindow failed, handler is null";
   return false;
 }
@@ -305,7 +311,63 @@ bool NWebDevToolsMessageHandlerImpl::ActiveDevToolsWindow() {
     return (handlerNativeApi_.get()
                 ->*(handlerNativeApi_->active_devtools_window))();
   }
+
   LOG(INFO) << "ActiveDevToolsWindow failed, handler is null";
+  return false;
+}
+
+bool NWebDevToolsMessageHandlerImpl::SetInspectedPageBounds(int left,
+                                                            int top,
+                                                            int width,
+                                                            int height) {
+  LOG(DEBUG) << "NWebDevToolsMessageHandlerImpl::SetInspectedPageBounds"
+            << ", left: " << left
+            << ", top: " << top
+            << ", width: " << width
+            << ", height: " << height;
+  if (handler_) {
+    if (!CheckValid(handler_.get(), &handler_->set_inspected_page_bounds)) {
+      LOG(ERROR) << "SetInspectedPageBounds failed, method is invalid";
+      return false;
+    }
+    return (handler_.get()->*(handler_->set_inspected_page_bounds))(left, top, width, height);
+  }
+ 
+  if (handlerNativeApi_) {
+    if (!CheckValid(handlerNativeApi_.get(),
+                    &handlerNativeApi_->set_inspected_page_bounds)) {
+      LOG(ERROR) << "SetInspectedPageBounds failed, method is invalid";
+      return false;
+    }
+    return (handlerNativeApi_.get()
+                ->*(handlerNativeApi_->set_inspected_page_bounds))(left, top, width, height);
+  }
+ 
+  LOG(INFO) << "SetInspectedPageBounds failed, handler is null";
+  return false;
+}
+ 
+bool NWebDevToolsMessageHandlerImpl::SetDockMode(int mode) {
+  LOG(DEBUG) << "NWebDevToolsMessageHandlerImpl::SetDockMode mode: " << mode;
+  if (handler_) {
+    if (!CheckValid(handler_.get(), &handler_->set_dock_mode)) {
+      LOG(ERROR) << "SetDockMode failed, method is invalid";
+      return false;
+    }
+    return (handler_.get()->*(handler_->set_dock_mode))(mode);
+  }
+ 
+  if (handlerNativeApi_) {
+    if (!CheckValid(handlerNativeApi_.get(),
+                    &handlerNativeApi_->set_dock_mode)) {
+      LOG(ERROR) << "SetDockMode failed, method is invalid";
+      return false;
+    }
+    return (handlerNativeApi_.get()
+                ->*(handlerNativeApi_->set_dock_mode))(mode);
+  }
+ 
+  LOG(INFO) << "SetDockMode failed, handler is null";
   return false;
 }
 

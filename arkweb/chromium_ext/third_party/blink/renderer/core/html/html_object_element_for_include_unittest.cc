@@ -18,6 +18,9 @@
 #include "third_party/blink/renderer/core/dom/element.h"
 #include "third_party/blink/renderer/core/html/html_object_element.h"
 #include "third_party/blink/renderer/core/testing/core_unit_test_helper.h"
+#include "third_party/bounds_checking_function/include/securec.h"
+#include "third_party/blink/renderer/core/html/html_param_element.h"
+#include "third_party/blink/renderer/core/dom/container_node.h"
 
 namespace blink {
 
@@ -52,10 +55,22 @@ class HTMLObjectElementForIncludeTest : public RenderingTest {
     uintptr_t raw_addr = reinterpret_cast<uintptr_t>(raw_mem);
     uintptr_t aligned_addr = (raw_addr + alignment - 1) & ~(alignment - 1);
     char* aligned_ptr = reinterpret_cast<char*>(aligned_addr);
-    std::memcpy(aligned_ptr, str, len + 1);
+    size_t safe_copy_size = buffer_size - (aligned_addr - raw_addr);
+    memcpy_s(aligned_ptr, safe_copy_size, str, len + 1);
     AtomicString result(aligned_ptr);
     std::free(raw_mem);
     return result;
+  }
+
+  Persistent<HTMLParamElement> CreateParamElement(const String& id, const String& name, const String& value) {
+    auto* param = MakeGarbageCollected<HTMLParamElement>(*document_);
+    if (!id.empty()) {
+      param->setAttribute(html_names::kIdAttr, AtomicString(id));
+    }
+    if (!name.empty()) {
+      param->setAttribute(html_names::kNameAttr, AtomicString(name));
+    }
+    return param;
   }
 
   Persistent<Document> document_;
@@ -94,6 +109,45 @@ TEST_F(HTMLObjectElementForIncludeTest, HandlesInvalidValue) {
   AtomicString aligned_str = CreateAlignedAtomicString("invalid_value");
   auto params = CreateParams(aligned_str);
   element_->NativeEmbedOverlay(params);
+}
+
+TEST_F(HTMLObjectElementForIncludeTest, AddParamChange) {
+  Vector<ParamChangeInfo> param_changes;
+  param_changes.push_back(ParamChangeInfo(ParamChangeInfo::Status::kAdd,
+                                          AtomicString("test"),
+                                          AtomicString("test"),
+                                          AtomicString("test")));
+  Persistent<HTMLParamElement> param = CreateParamElement("p1", "key", "val");
+  element_->AddParamChange(param_changes, param.Get(), ParamChangeInfo::Status::kAdd);
+}
+
+TEST_F(HTMLObjectElementForIncludeTest, HandleParamAlterations001) {
+  Persistent<HTMLParamElement> param = CreateParamElement("p_add", "k_add", "v_add");
+  ContainerNode::ChildrenChange change =
+      ContainerNode::ChildrenChange::ForInsertion(*param, nullptr, nullptr, ContainerNode::ChildrenChangeSource::kAPI);
+  element_->HandleParamAlterations(change);
+}
+
+TEST_F(HTMLObjectElementForIncludeTest, HandleParamAlterations002) {
+  Persistent<HTMLParamElement> param = CreateParamElement("p_add", "k_add", "v_add");
+  ContainerNode::ChildrenChange change =
+      ContainerNode::ChildrenChange::ForRemoval(*param, nullptr, nullptr, ContainerNode::ChildrenChangeSource::kAPI);
+  element_->HandleParamAlterations(change);
+}
+
+TEST_F(HTMLObjectElementForIncludeTest, HandleParamAlterations003) {
+  Persistent<HTMLParamElement> param1 = CreateParamElement("p1", "key1", "val1");
+  Persistent<HTMLParamElement> param2 = CreateParamElement("p2", "key2", "val2");
+  HeapVector<Member<Node>> removed_nodes;
+  removed_nodes.push_back(param1.Get());
+  removed_nodes.push_back(param2.Get());
+  ContainerNode::ChildrenChange change = {
+      .type = ContainerNode::ChildrenChangeType::kAllChildrenRemoved,
+      .by_parser = ContainerNode::ChildrenChangeSource::kAPI,
+      .affects_elements = ContainerNode::ChildrenChangeAffectsElements::kYes,
+      .removed_nodes = removed_nodes,
+  };
+  element_->HandleParamAlterations(change);
 }
 
 }  // namespace blink

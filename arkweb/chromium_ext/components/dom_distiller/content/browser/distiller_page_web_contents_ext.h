@@ -54,6 +54,12 @@ class DistillerPageWebContentsExt : public DistillerPageWebContents {
   void DidFinishNavigation(
       content::NavigationHandle* navigation_handle) override;
   void OnWebContentsDistillationFailed(const std::string& error_message);
+  void UpdateWebContentCreateParam(content::WebContents::CreateParams& param);
+
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  void DidStartNavigation(content::NavigationHandle* navigation_handle) override;
+  void DidRedirectNavigation(content::NavigationHandle* navigation_handle) override;
+#endif // ARKWEB_USERAGENT
 
   static std::unique_ptr<content::WebContents> resident_web_contents_;
 #endif  // ARKWEB_READER_MODE
@@ -63,7 +69,7 @@ class DistillerPageWebContentsExt : public DistillerPageWebContents {
   bool IsForDistillerPage() override;
   void DistillTimeout();
 
-  DistillOptions distill_options_;
+  DistillOptions distill_options_{};
   std::unique_ptr<base::OneShotTimer> distiller_timer_;
   bool distill_finished_{false};
   base::TimeDelta distiller_timeout_;

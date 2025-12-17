@@ -76,6 +76,9 @@
 #include "third_party/blink/renderer/core/view_transition/view_transition_supplement.h"
 #include "third_party/blink/renderer/platform/loader/fetch/resource_timing_utils.h"
 #include "third_party/blink/renderer/platform/widget/frame_widget.h"
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/blank_screen_detector.h"
+#endif
 #if BUILDFLAG(ARKWEB_PRECOMPILE)
 #include "arkweb/chromium_ext/third_party/blink/renderer/core/v8/v8_code_cache_utils.h"
 #endif
@@ -144,6 +147,34 @@ void ArkWebLocalFrameMojoHandlerExt::GenerateCodeCache(
   V8CodeCacheUtils::CacheError err =
       V8CodeCacheUtils::GenerateCodeCache(script_state, url, script, options);
   std::move(callback).Run(static_cast<int32_t>(err));
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+void ArkWebLocalFrameMojoHandlerExt::DetectBlankScreen(
+    const WTF::String& url,
+    const WTF::Vector<double>& detectionTiming,
+    const WTF::Vector<int32_t>& detectionMethods,
+    int32_t contentfulNodesCountThreshold) {
+  if (!frame_) {
+    return;
+  }
+
+  auto blank_screen_detector = frame_->GetBlankScreenDetector(true);
+  if (!blank_screen_detector) {
+    return;
+  }
+  std::vector<double> detectionTimingVector;
+  std::vector<int32_t> detectionMethodsVector;
+  for (uint32_t i = 0; i < detectionTiming.size(); i++) {
+    detectionTimingVector.emplace_back(detectionTiming[i]);
+  }
+  for (uint32_t i = 0; i < detectionMethods.size(); i++) {
+    detectionMethodsVector.emplace_back(detectionMethods[i]);
+  }
+  blank_screen_detector->DetectBlankScreen(url, detectionTimingVector,
+                                           detectionMethodsVector,
+                                           contentfulNodesCountThreshold);
 }
 #endif
 

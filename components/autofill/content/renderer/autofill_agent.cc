@@ -1103,6 +1103,10 @@ void AutofillAgent::ApplyFieldAction(
     switch (action_persistence) {
       case mojom::ActionPersistence::kPreview:
         switch (action_type) {
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+          case mojom::FieldActionType::kNotSmartReplaceSelection:
+            [[fallthrough]];
+#endif
           case mojom::FieldActionType::kReplaceSelection:
             NOTIMPLEMENTED()
                 << "Previewing replacement of selection is not implemented";
@@ -1119,6 +1123,13 @@ void AutofillAgent::ApplyFieldAction(
         break;
       case mojom::ActionPersistence::kFill:
         switch (action_type) {
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+          case mojom::FieldActionType::kNotSmartReplaceSelection: {
+            form_control.PasteText(WebString::FromUTF16(value),
+                                   /*replace_all=*/false, false);
+            break;
+          }
+#endif
           case mojom::FieldActionType::kReplaceSelection: {
             form_control.PasteText(WebString::FromUTF16(value),
                                    /*replace_all=*/false);
@@ -1173,6 +1184,16 @@ void AutofillAgent::ApplyFieldAction(
             DCHECK(value.empty());
             content_editable.SelectText(/*select_all=*/true);
             break;
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+          case mojom::FieldActionType::kNotSmartReplaceSelection:
+            content_editable.PasteText(
+                WebString::FromUTF16(value),
+                /*replace_all=*/
+                (action_type == mojom::FieldActionType::kReplaceAll),
+                /*should_smart_replace=*/
+                false);
+            break;
+#endif
           case mojom::FieldActionType::kReplaceAll:
             [[fallthrough]];
           case mojom::FieldActionType::kReplaceSelection:

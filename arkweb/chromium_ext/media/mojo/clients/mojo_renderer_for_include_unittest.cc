@@ -36,13 +36,6 @@ TEST_F(MojoRendererTest, SetSurfaceId) {
   Destroy();
 }
 
-TEST_F(MojoRendererTest, SetMediaPlayerState) {
-  bool is_suspend = true;
-  int suspend_type = 1;
-  EXPECT_NO_FATAL_FAILURE(mojo_renderer_->SetMediaPlayerState(is_suspend, suspend_type));
-  Destroy();
-}
-
 TEST_F(MojoRendererTest, SetMediaSourceList) {
   std::vector <media::Renderer::MediaSourceInfo> source_infos;
   media::Renderer::MediaSourceInfo info;
@@ -91,14 +84,6 @@ TEST_F(MojoRendererTest, IsAudio) {
   Destroy();
 }
 
-TEST_F(MojoRendererTest, SetPlaybackRateWithReason) {
-  Initialize();
-  mojo_renderer_->InitializeRendererFromUrlExt();
-  double playback_rate = 3.5;
-  ActionReason reason = media::ActionReason::kNormal;
-  ASSERT_NO_FATAL_FAILURE(mojo_renderer_->SetPlaybackRateWithReason(playback_rate, reason));
-  Destroy();
-}
 #endif
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)

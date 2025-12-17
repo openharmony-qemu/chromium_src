@@ -274,6 +274,10 @@ class NET_EXPORT_PRIVATE URLRequestHttpJob : public URLRequestJob {
   void InitPreloadInfoAndSetToTransaction();
 #endif
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  void ContinueDespiteLastErrorInternal();
+#endif
+
   RequestPriority priority_ = DEFAULT_PRIORITY;
 
   HttpRequestInfo request_info_;
@@ -353,6 +357,10 @@ class NET_EXPORT_PRIVATE URLRequestHttpJob : public URLRequestJob {
 #if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   int original_net_error_ = 0;
   RetryState state_ = RetryState::INIT;
+#endif
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  size_t restarted_ = 0;
 #endif
 
   base::WeakPtrFactory<URLRequestHttpJob> weak_factory_{this};

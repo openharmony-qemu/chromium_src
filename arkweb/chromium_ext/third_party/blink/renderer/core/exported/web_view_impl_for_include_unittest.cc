@@ -41,6 +41,12 @@ class WebViewImplTest : public testing::Test {
   void TearDown() override {
     helper_.Reset();
   }
+  void TestSetPinchSmoothMode(bool isEnable) {
+    web_view_impl_->SetPinchSmoothMode(isEnable);
+  }
+  bool TestGetPinchSmoothMode(){
+    return web_view_impl_->pinch_smooth_mode;
+  }
   test::TaskEnvironment task_environment_;
   WebViewImpl* web_view_impl_;
   frame_test_helpers::WebViewHelper helper_;
@@ -90,28 +96,28 @@ TEST_F(WebViewImplTest, GetScrollBottom) {
 }
 
 TEST_F(WebViewImplTest, SetPinchSmoothMode_False) {
-  web_view_impl_->SetPinchSmoothMode(false);
-  EXPECT_EQ(web_view_impl_->pinch_smooth_mode, false);
+  TestSetPinchSmoothMode(false);
+  EXPECT_EQ(TestGetPinchSmoothMode(), false);
 }
 
 TEST_F(WebViewImplTest, SetPinchSmoothMode_SameModeReturnsEarly) {
-  web_view_impl_->SetPinchSmoothMode(false);
-  EXPECT_EQ(web_view_impl_->pinch_smooth_mode, false);
-  web_view_impl_->SetPinchSmoothMode(false);
-  EXPECT_EQ(web_view_impl_->pinch_smooth_mode, false);
-  web_view_impl_->SetPinchSmoothMode(true);
-  EXPECT_EQ(web_view_impl_->pinch_smooth_mode, true);
-  web_view_impl_->SetPinchSmoothMode(true);
-  EXPECT_EQ(web_view_impl_->pinch_smooth_mode, true);
+  TestSetPinchSmoothMode(false);
+  EXPECT_EQ(TestGetPinchSmoothMode(), false);
+  TestSetPinchSmoothMode(false);
+  EXPECT_EQ(TestGetPinchSmoothMode(), false);
+  TestSetPinchSmoothMode(true);
+  EXPECT_EQ(TestGetPinchSmoothMode(), true);
+  TestSetPinchSmoothMode(true);
+  EXPECT_EQ(TestGetPinchSmoothMode(), true);
 }
 
 TEST_F(WebViewImplTest, SetPinchSmoothMode_ChangeMode) {
-  web_view_impl_->SetPinchSmoothMode(false);
-  EXPECT_EQ(web_view_impl_->pinch_smooth_mode, false);
-  web_view_impl_->SetPinchSmoothMode(true);
-  EXPECT_EQ(web_view_impl_->pinch_smooth_mode, true);
-  web_view_impl_->SetPinchSmoothMode(false);
-  EXPECT_EQ(web_view_impl_->pinch_smooth_mode, false);
+  TestSetPinchSmoothMode(false);
+  EXPECT_EQ(TestGetPinchSmoothMode(), false);
+  TestSetPinchSmoothMode(true);
+  EXPECT_EQ(TestGetPinchSmoothMode(), true);
+  TestSetPinchSmoothMode(false);
+  EXPECT_EQ(TestGetPinchSmoothMode(), false);
 }
 
 TEST_F(WebViewImplTest, OnSetAdBlockEnable) {
@@ -135,6 +141,41 @@ TEST_F(WebViewImplTest, SetDelayDurationForBackgroundTabFreezing_InvalidDuration
   int64_t duration = -1;
   web_view_impl_->SetDelayDurationForBackgroundTabFreezing(duration);
   EXPECT_NE(scheduler->is_tab_freezing_enable_force, true);
+}
+
+TEST_F(WebViewImplTest, SetPinchSmoothMode_NullPageMainFrame) {
+  auto* main_frame = web_view_impl_->GetPage()->MainFrame();
+  web_view_impl_->GetPage()->SetMainFrame(nullptr);
+  TestSetPinchSmoothMode(true);
+  EXPECT_EQ(TestGetPinchSmoothMode(), false);
+  web_view_impl_->GetPage()->SetMainFrame(main_frame);
+}
+
+TEST_F(WebViewImplTest, OnSetAdBlockEnable_NullPageMainFrame) {
+  auto* main_frame = web_view_impl_->GetPage()->MainFrame();
+  web_view_impl_->OnSetAdBlockEnable(true);
+  EXPECT_EQ(web_view_impl_->GetAdBlockEnableForSite(), true);
+  web_view_impl_->GetPage()->SetMainFrame(nullptr);
+  web_view_impl_->OnSetAdBlockEnable(true);
+  EXPECT_EQ(web_view_impl_->GetAdBlockEnableForSite(), false);
+  web_view_impl_->GetPage()->SetMainFrame(main_frame);
+}
+
+TEST_F(WebViewImplTest, UpdateFlingVelocityLimitEq) {
+  gfx::Vector2dF velocity1{std::numeric_limits<float>::max(),
+                           std::numeric_limits<float>::max()};
+  gfx::Vector2dF velocity2{std::numeric_limits<float>::max(),
+                           std::numeric_limits<float>::max()};
+  web_view_impl_->UpdateFlingVelocityLimit(velocity1);
+  EXPECT_EQ(velocity1, velocity2);
+}
+
+TEST_F(WebViewImplTest, UpdateFlingVelocityLimitNEq) {
+  gfx::Vector2dF velocity1{5000, 5000};
+  gfx::Vector2dF velocity2{std::numeric_limits<float>::max(),
+                           std::numeric_limits<float>::max()};
+  web_view_impl_->UpdateFlingVelocityLimit(velocity1);
+  EXPECT_NE(velocity1, velocity2);
 }
 
 }  // namespace blink

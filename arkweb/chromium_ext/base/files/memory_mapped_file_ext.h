@@ -52,7 +52,6 @@ public:
 private:
   bool customizeData_ = false;
   std::shared_ptr<OHOS::NWeb::OhosFileMapper> mapper_;
-  raw_ptr<uint8_t, DanglingUntriaged | AllowPtrArithmetic> data_ = nullptr;
   size_t length_ = 0;
 };
 

@@ -84,6 +84,8 @@ class CORE_EXPORT NativeLoader : public GarbageCollected<NativeLoader>,
   void SetNativeEmbedOverlay(bool native_embed_overlay);
   void ProcessParamChanges(const Vector<ParamChangeInfo>& changes);
   void ProcessPendingParamChanges();
+  void SetStretchContentToFillBounds(bool stretch_content_to_fill_bounds) override;
+  bool GetStretchContentToFillBounds() override;
 
   virtual String DebugName() const = 0;
 
@@ -152,6 +154,7 @@ class CORE_EXPORT NativeLoader : public GarbageCollected<NativeLoader>,
   bool visibility_ = false;
   bool first_update_visibility_ = false;
   bool cc_layer_update_ = false;
+  bool stretch_content_to_fill_bounds_ = true;
 
   Member<DisallowNewWrapper<
       HeapMojoAssociatedRemote<media::mojom::blink::NativeBridgeHost>>>

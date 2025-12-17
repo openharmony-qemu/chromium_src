@@ -17,6 +17,7 @@
 #include <memory>
 #include <utility>
 #include <vector>
+#include <native_buffer/native_buffer.h>
 
 #include "base/containers/flat_set.h"
 #include "base/logging.h"
@@ -71,6 +72,24 @@ bool NativeBufferSupportedFormat(viz::SharedImageFormat format) {
   return base::Contains(kSupportedFormats, format);
 }
 //LCOV_EXCL_STOP
+
+int ConvertToNativeBufferFormat(viz::SharedImageFormat format) {
+  if (format == viz::SinglePlaneFormat::kRGBA_8888) {
+    return NATIVEBUFFER_PIXEL_FMT_RGBA_8888;
+  } else if (format == viz::SinglePlaneFormat::kRGB_565) {
+    return NATIVEBUFFER_PIXEL_FMT_RGB_565;
+  } else if (format == viz::SinglePlaneFormat::kBGR_565) {
+    return NATIVEBUFFER_PIXEL_FMT_BGR_565;
+  } else if (format == viz::SinglePlaneFormat::kRGBA_F16) {
+    return NATIVEBUFFER_PIXEL_FMT_RGBA16_FLOAT;
+  } else if (format == viz::SinglePlaneFormat::kRGBX_8888) {
+    return NATIVEBUFFER_PIXEL_FMT_RGBX_8888;
+  } else if (format == viz::SinglePlaneFormat::kRGBA_1010102) {
+    return NATIVEBUFFER_PIXEL_FMT_RGBA_1010102;
+  }
+
+  return NATIVEBUFFER_PIXEL_FMT_RGBA_8888;
+}
 
 constexpr SharedImageUsageSet kSupportedUsage =
     SHARED_IMAGE_USAGE_GLES2_READ | SHARED_IMAGE_USAGE_GLES2_WRITE |
@@ -268,6 +287,7 @@ OHOSNativeBufferImageBackingFactory::MakeBackingWithValidateConfig(
       std::make_shared<OHOS::NWeb::NativeBufferConfigAdapterImpl>();
   configAdapter->SetBufferWidth(size.width());
   configAdapter->SetBufferHeight(size.height());
+  configAdapter->SetBufferFormat(ConvertToNativeBufferFormat(format));
   configAdapter->SetBufferUsage(
       gpu::OH_NativeBuffer_Usage::NATIVEBUFFER_USAGE_HW_RENDER |
       gpu::OH_NativeBuffer_Usage::NATIVEBUFFER_USAGE_HW_TEXTURE |
@@ -314,6 +334,12 @@ OHOSNativeBufferImageBackingFactory::MakeBackingWithValidateConfig(
     // NOTE: hwb_info.stride is in pixels
     int dst_stride = configAdapterTmp->GetBufferStride();
     int src_stride = bytes_per_pixel * size.width();
+
+    if (pixel_data.size() != src_stride * size.height()) {
+        LOG(ERROR) << "Invalid initial pixel data size: expected " 
+                   << src_stride * size.height() << ", got " << pixel_data.size();
+        return nullptr;
+    }
 
     for (int y = 0; y < size.height(); y++) {
       void* dst = reinterpret_cast<uint8_t*>(address) + dst_stride * y;

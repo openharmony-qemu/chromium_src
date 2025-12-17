@@ -443,7 +443,12 @@ class CONTENT_EXPORT NavigationControllerImpl : public NavigationController {
       const std::string& extra_headers,
       BrowserContext* browser_context,
       scoped_refptr<network::SharedURLLoaderFactory> blob_url_loader_factory,
-      bool rewrite_virtual_urls);
+      bool rewrite_virtual_urls
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+      , GURL* url_to_rewrite = nullptr
+      , NavigationControllerDelegate* delegate = nullptr
+#endif
+      );
 
   // Called just before sending the commit to the renderer, or when restoring
   // from back/forward cache. Walks the session history entries for the relevant

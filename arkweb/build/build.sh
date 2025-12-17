@@ -226,6 +226,15 @@ if [ "-${build_output}" != "-" ]; then
   build_dir="out/${build_output}/"
 fi
 
+if ! [ -d "${ROOT_DIR}"/"${build_dir}" ]; then
+  mkdir -p "${ROOT_DIR}"/"${build_dir}"
+fi
+log_file="${ROOT_DIR}/${build_dir}build.log"
+if [ -f "$log_file" ]; then
+  mv "$log_file" "${log_file%.*}_$(date -r "$log_file" +%Y%m%d%H%M%S).log"
+fi  
+exec > >(tee "$log_file") 2>&1
+
 case "${build_target}" in
   "w"|"${BUILD_TARGET_WEBVIEW}")
     build_target="${BUILD_TARGET_WEBVIEW}"
@@ -341,7 +350,7 @@ if [ ${build_fuzz} -eq 1 ]; then
 fi
 
 if [ ${build_v8} -eq 1 ]; then
-  GN_ARGS="${GN_ARGS} v8_component_build = true v8_enable_pointer_compression = false v8_enable_pointer_compression_shared_cage = false v8_use_external_startup_data = false v8_deprecation_warnings = false v8_use_libm_trig_functions = false v8_enable_i18n_support = false cppgc_enable_slim_write_barrier = false v8_enable_pointer_compression_8gb = false"
+  GN_ARGS="${GN_ARGS} v8_component_build = true use_custom_libcxx = false use_custom_libcxx_for_host = false v8_enable_pointer_compression = false v8_enable_pointer_compression_shared_cage = false v8_use_external_startup_data = false v8_deprecation_warnings = false v8_use_libm_trig_functions = false v8_enable_i18n_support = false cppgc_enable_slim_write_barrier = false v8_enable_pointer_compression_8gb = false"
 fi
 
 if [ ${use_thin_lto} -eq 1 ]; then
@@ -433,6 +442,9 @@ else
   fi
 fi
 
+echo "Copying NDK stub files..."
+python3 "${ROOT_DIR}/arkweb/build/copy_ndk_files.py" "${ROOT_DIR}"
+
 if ! [ -d "${CUR_DIR}/deps_code" ]; then
   mkdir -p ${CUR_DIR}/deps_code
   echo "create new deps_code dir"
@@ -452,28 +464,21 @@ cd -
 time_start_for_build=$(date +%s)
 time_start_for_gn=$time_start_for_build
 
-cp "./arkweb/ohos_adapter_ndk/stub/network/netstack/net_ssl/include/net_ssl_c.h" "./ohos_sdk/openharmony/native/sysroot/usr/include/network/netstack/net_ssl/net_ssl_c.h"
-cp "./arkweb/ohos_adapter_ndk/stub/network/netstack/net_ssl/lib/aarch64-linux-ohos/libnet_ssl.so" "./ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libnet_ssl.so"
-cp "./arkweb/ohos_adapter_ndk/stub/network/netstack/net_ssl/lib/x86_64-linux-ohos/libnet_ssl.so" "./ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libnet_ssl.so"
-cp "./arkweb/ohos_adapter_ndk/stub/network/netstack/net_ssl/lib/arm-linux-ohos/libnet_ssl.so" "./ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libnet_ssl.so"
 
 if [ $buildgn = 1 ]; then
   echo "generating args list:"
   echo "$buildargs $buildarg_cpu $buildarg_musl $build_sysroot $build_product_name $GN_ARGS symbol_level=$SYMBOL_LEVEL $additional_gn_args"
 
   third_party/depot_tools/gn gen $build_dir --export-compile-commands --args="$buildargs $buildarg_cpu $buildarg_musl $build_sysroot $build_product_name $GN_ARGS symbol_level=$SYMBOL_LEVEL $additional_gn_args"
-
-  echo "extract build_metadata file and generate mojom_targets.gni"
-  python3 collect_mojom_targets.py --search-root out/ --output ${ROOT_DIR}/mojom_targets.gni --threads 10
-  buildargs="${buildargs}
-    enable_mojom_gni=true"
-  aa=1
-fi
-
-if [ $aa = 1 ]; then
-  echo "generating args list:"
-  echo "$buildargs $buildarg_cpu $buildarg_musl $build_sysroot $build_product_name $GN_ARGS symbol_level=$SYMBOL_LEVEL $additional_gn_args"
-  third_party/depot_tools/gn gen $build_dir --export-compile-commands --args="$buildargs $buildarg_cpu $buildarg_musl $build_sysroot $build_product_name $GN_ARGS symbol_level=$SYMBOL_LEVEL $additional_gn_args"
+  if [ "${build_target}" = "ohos_nweb_hap" ]; then
+    echo "extract build_metadata file and generate arkweb_prebuild.gni"
+    python3 ${ROOT_DIR}/arkweb/build/collect_prebuild_targets.py --search-root out/ --output ${ROOT_DIR}/${build_dir}arkweb_prebuild.gni --threads 10
+    buildargs="${buildargs}
+      arkweb_enable_prebuild=true"
+    echo "generating args list:"
+    echo "$buildargs $buildarg_cpu $buildarg_musl $build_sysroot $build_product_name $GN_ARGS symbol_level=$SYMBOL_LEVEL $additional_gn_args"
+    third_party/depot_tools/gn gen $build_dir --export-compile-commands --args="$buildargs $buildarg_cpu $buildarg_musl $build_sysroot $build_product_name $GN_ARGS symbol_level=$SYMBOL_LEVEL $additional_gn_args"
+  fi
 fi
 time_end_for_gn=$(date +%s)
 
@@ -489,13 +494,18 @@ if [ ${build_fuzz} -eq 1 ]; then
   exit 0
 fi
 export OHOS_BASE_SDK_HOME="${ROOT_DIR}/ohos_sdk"
-echo "third_party/depot_tools/ninja -C $build_dir -j$buildcount mojo_pre"
-ninja_mojo_pre_start=$(date +%s)
-third_party/depot_tools/ninja -C $build_dir -j$buildcount mojo_pre
-ninja_mojo_pre_end=$(date +%s)
-echo "##############################################"
-echo "ninja mojo_pre time cost: $(($ninja_mojo_pre_end - $ninja_mojo_pre_start))"
-echo "##############################################"
+
+if [ "${build_target}" = "ohos_nweb_hap" ]; then
+  echo "third_party/depot_tools/ninja -C $build_dir -j$buildcount arkweb_prebuild"
+  ninja_prebuild_start=$(date +%s)
+  third_party/depot_tools/ninja -C $build_dir -j$buildcount arkweb_prebuild_buildflags
+  third_party/depot_tools/ninja -C $build_dir -j$buildcount arkweb_prebuild_mojom
+  ninja_prebuild_end=$(date +%s)
+  echo "##############################################"
+  echo "ninja arkweb_prebuild time cost: $(($ninja_prebuild_end - $ninja_prebuild_start))"
+  echo "##############################################"
+fi
+
 echo "third_party/depot_tools/ninja -C $build_dir -j$buildcount ${build_target}"
 ninja_start=$(date +%s)
 third_party/depot_tools/ninja -C $build_dir -j$buildcount ${build_target}
@@ -548,4 +558,4 @@ done < <(jq -c '. | to_entries[]' "$json_file")
 
 python3 $ROOT_DIR/arkweb/build/ninja2trace.py --ninja-log $ROOT_DIR/$build_dir/.ninja_log --trace-file $ROOT_DIR/$build_dir/build.trace --ninja-start-time "0" --duration-file $ROOT_DIR/$build_dir/sorted_action_duration.txt
 
-echo "build done"
+echo "Build completed. For more build information, see: $log_file"

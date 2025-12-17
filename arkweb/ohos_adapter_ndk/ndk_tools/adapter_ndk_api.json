@@ -197,7 +197,8 @@
                 "int OH_Pasteboard_SetData(OH_Pasteboard* pasteboard, OH_UdmfData* data)",
                 "OH_UdmfData* OH_Pasteboard_GetData(OH_Pasteboard* pasteboard, int* status)",
                 "int OH_Pasteboard_ClearData(OH_Pasteboard* pasteboard)",
-                "bool OH_Pasteboard_HasData(OH_Pasteboard* pasteboard)"
+                "bool OH_Pasteboard_HasData(OH_Pasteboard* pasteboard)",
+                "bool OH_Pasteboard_HasType(OH_Pasteboard* pasteboard, const char* type)"
             ],
             "15": [
                 "Pasteboard_GetDataParams *OH_Pasteboard_GetDataParams_Create()",
@@ -1018,7 +1019,8 @@
                 "AVSession_ErrCode OH_AVSession_SetPlaybackState(OH_AVSession* avsession, AVSession_PlaybackState playbackState)",
                 "AVSession_ErrCode OH_AVSession_SetAVMetadata(OH_AVSession* avsession, OH_AVMetadata* avmetadata)",
                 "AVSession_ErrCode OH_AVSession_SetPlaybackPosition(OH_AVSession* avsession, AVSession_PlaybackPosition* playbackPosition)",
-                "AVSession_ErrCode OH_AVSession_Create(AVSession_Type sessionType, const char* sessionTag, const char* bundleName, const char* abilityName, OH_AVSession** avsession)"
+                "AVSession_ErrCode OH_AVSession_Create(AVSession_Type sessionType, const char* sessionTag, const char* bundleName, const char* abilityName, OH_AVSession** avsession)",
+                "AVMetadata_Result OH_AVMetadataBuilder_SetMediaImageUri(OH_AVMetadataBuilder* builder, const char* mediaImageUri)"
             ]
         },
         "includes": []
@@ -1120,7 +1122,34 @@
             ]
         },
         "includes": []
+    },
+    "qos": {
+        "apiList": {
+            "12": [
+                "int OH_QoS_SetThreadQoS(QoS_Level level);",
+                "int OH_QoS_ResetThreadQoS();"
+            ]
+        },
+        "includes": []
+    },
+    "file_uri": {
+        "apiList": {
+            "12": [
+                "FileManagement_ErrCode OH_FileUri_GetUriFromPath(const char *path, unsigned int length, char **result)"
+            ]
+        },
+        "includes":[]
+    },
+    "hiappevent_ndk": {
+        "apiList": {
+            "14": [
+                "ParamList OH_HiAppEvent_CreateParamList()",
+                "ParamList OH_HiAppEvent_AddInt64Param(ParamList list, const char* name, int64_t num)",
+                "ParamList OH_HiAppEvent_AddInt32Param(ParamList list, const char* name, int32_t num)",
+                "int OH_HiAppEvent_Write(const char* domain, const char* name, enum EventType type, const ParamList list)",
+                "void OH_HiAppEvent_DestroyParamList(ParamList list)"
+            ]
+        },
+        "includes": []
     }
-
-
 }

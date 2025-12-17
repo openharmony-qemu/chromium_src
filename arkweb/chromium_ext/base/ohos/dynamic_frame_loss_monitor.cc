@@ -22,21 +22,36 @@
 #include "base/no_destructor.h"
 #include "base/task/thread_pool.h"
 #include "base/trace_event/trace_event.h"
+#include "arkweb/ohos_adapter_ndk/interfaces/ohos_adapter_helper.h"
+#include "arkweb/ohos_adapter_ndk/interfaces/hiappevent_adapter.h"
 
+using OHOS::NWeb::OhosAdapterHelper;
+using OHOS::NWeb::HiAppeventAdapter;
 namespace {
 const int kSuccessiveFrameLossThreshold = 1;
 const int kMicrosecondsPerMillisecond = 1000;
+const int jankReportThreshold = 50;
+constexpr char DOMAIN[] = "OS";
+constexpr char EVENT_NAME[] = "SCROLL_ARKWEB_FLING_JANK";
 }  // namespace
 
 namespace base {
 namespace ohos {
+enum EventType {
+    FAULT = 1,
+    STATISTIC,
+    SECURITY,
+    BEHAVIOR
+};
+
 DynamicFrameLossMonitor& DynamicFrameLossMonitor::GetInstance() {
   static base::NoDestructor<DynamicFrameLossMonitor> instance;
   return *instance.get();
 }
 
-void DynamicFrameLossMonitor::StartMonitor() {
+void DynamicFrameLossMonitor::StartMonitor(int32_t nweb_id) {
   std::unique_lock<std::mutex> lock(monitor_mutex_);
+  current_nweb_id_ = nweb_id;
   if (is_monitoring_) {
     return;
   }
@@ -50,7 +65,8 @@ void DynamicFrameLossMonitor::StopMonitor() {
     return;
   }
   stop_time_ = GetCurrentTimestampMS();
-  Report();
+  ReportToHiAppEvent();
+  ReportToHiSysEvent();
   ResetStatus();
 }
 
@@ -110,7 +126,33 @@ int64_t DynamicFrameLossMonitor::GetCurrentTimestampMS() {
          kMicrosecondsPerMillisecond;
 }
 
-void DynamicFrameLossMonitor::Report() {
+void ReportDynamicStasticToHiAppevent(const std::string& domain, const std::string& eventName,
+    int32_t eventType, const HiAppeventAdapter::DynamicFrameDropInfo& dynamicFrameDropInfo) {
+  OhosAdapterHelper::GetInstance().GetHiAppeventAdapterInstance().
+        ReportDynamicStastic(domain, eventName, eventType, dynamicFrameDropInfo);
+}
+
+void DynamicFrameLossMonitor::ReportToHiAppEvent() {
+  if (max_app_frametime_ < jankReportThreshold) {
+    return;
+  }
+  HiAppeventAdapter::DynamicFrameDropInfo dynamicFrameDropInfo;
+  dynamicFrameDropInfo.start_time = start_time_;
+  dynamicFrameDropInfo.duration = stop_time_ - start_time_;
+  dynamicFrameDropInfo.max_app_frame_time = max_app_frametime_;
+  dynamicFrameDropInfo.web_id = current_nweb_id_;
+  base::ThreadPool::PostTask(
+      FROM_HERE, {base::TaskPriority::LOWEST},
+      base::BindOnce(&ReportDynamicStasticToHiAppevent,
+          DOMAIN, EVENT_NAME, EventType::STATISTIC, dynamicFrameDropInfo));
+  std::ostringstream log_stream;
+  log_stream << "StartTime: " << start_time_
+            <<", Duration: " << (stop_time_ - start_time_)
+            << ", MaxAppFrametime: " << max_app_frametime_;
+  LOG(DEBUG) << log_stream.str();
+}
+
+void DynamicFrameLossMonitor::ReportToHiSysEvent() {
   if (total_app_missed_frames_ == 0) {
     return;
   }

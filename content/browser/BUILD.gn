@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("//arkweb/build/features/features.gni")
+import("//arkweb/chromium_ext/chromium_ext.gni")
 import("//arkweb/ohos_nweb/src/nweb_sysevent.gni")
 import("//base/allocator/partition_allocator/partition_alloc.gni")
 import("//build/buildflag_header.gni")
@@ -2432,17 +2433,23 @@ source_set("browser") {
     ]
   }
 
+  if (arkweb_arkweb_extensions && !is_component_build) {
+    deps += [
+      "//extensions/common:mojom",
+    ]
+  }
+
   if (arkweb_webrtc) {
     import("//arkweb/chromium_ext/content/browser/renderer_host/media/arkweb_content_browser_renderer_host_media.gni")
     sources += arkweb_content_browser_renderer_host_media_sources
   }
 
-  if (defined(arkweb_reader_mode) && arkweb_reader_mode) {
-    deps += [ "//components/dom_distiller/content/common/mojom" ]
-  }
-
   if (defined(report_sys_event) && report_sys_event) {
     defines += [ "REPORT_SYS_EVENT" ]
+  }
+
+  if (defined(arkweb_reader_mode) && arkweb_reader_mode) {
+    deps += [ "//components/dom_distiller/content/common/mojom" ]
   }
 
   if (arkweb_software_compositor) {

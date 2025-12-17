@@ -18,6 +18,8 @@
 
 namespace media {
 
+std::shared_mutex OHOSAudioOutputCallback::audio_callback_mutex_;
+
 OHOSAudioOutputCallback::OHOSAudioOutputCallback(
     base::WeakPtr<OHOSAudioOutputStream> audio_output_stream)
     : audio_output_stream_(audio_output_stream) {
@@ -25,6 +27,7 @@ OHOSAudioOutputCallback::OHOSAudioOutputCallback(
 }
 
 void OHOSAudioOutputCallback::AudioRendererOnWriteData(void* buffer, int32_t length) {
+    std::shared_lock<std::shared_mutex> lock(audio_callback_mutex_);
     if (buffer && audio_output_stream_) {
         audio_output_stream_->OnWriteData(buffer, length);
         audio_output_stream_->SetUpAudioSilentState();
@@ -32,12 +35,14 @@ void OHOSAudioOutputCallback::AudioRendererOnWriteData(void* buffer, int32_t len
 }
 
 void OHOSAudioOutputCallback::AudioRendererOnError(OH_AudioStream_Result error) {
+    std::shared_lock<std::shared_mutex> lock(audio_callback_mutex_);
     if (audio_output_stream_) {
         audio_output_stream_->ReportError();
     }
 }
 
 void OHOSAudioOutputCallback::AudioRendererOnInterruptEvent(OH_AudioInterrupt_Hint hint) {
+    std::shared_lock<std::shared_mutex> lock(audio_callback_mutex_);
     if (audio_output_stream_) {
         switch (hint) {
             case OH_AudioInterrupt_Hint::AUDIOSTREAM_INTERRUPT_HINT_PAUSE:
@@ -52,11 +57,12 @@ void OHOSAudioOutputCallback::AudioRendererOnInterruptEvent(OH_AudioInterrupt_Hi
             default:
                 LOG(ERROR) << "audio renderer interrupt hint not foud, code:" << hint;
                 break;
-        }        
+        }
     }
 }
 
 void OHOSAudioOutputCallback::AudioRendererOutputDeviceChangeCallback(OH_AudioStream_DeviceChangeReason reason) {
+    std::shared_lock<std::shared_mutex> lock(audio_callback_mutex_);
     if (audio_output_stream_) {
         switch (reason) {
         case OH_AudioStream_DeviceChangeReason::REASON_OLD_DEVICE_UNAVAILABLE:
@@ -67,6 +73,10 @@ void OHOSAudioOutputCallback::AudioRendererOutputDeviceChangeCallback(OH_AudioSt
             break;
         }
     }
+}
+
+std::shared_mutex& OHOSAudioOutputCallback::GetAudioCallbackMutex() {
+    return audio_callback_mutex_;
 }
 
 } // namespace media

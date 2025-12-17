@@ -448,7 +448,6 @@ void ScreenCaptureAdapterImpl::Release()
     int32_t ret = OH_AVScreenCapture_Release(screenCapture_);
     if (ret != OH_AVSCREEN_CAPTURE_ErrCode::AV_SCREEN_CAPTURE_ERR_OK) {
         WVLOG_E("OH_AVScreenCapture release failed, ret = %{public}d", ret);
-        return;
     }
     screenCapture_ = nullptr;
 }
@@ -711,7 +710,7 @@ void OH_AudioBufferAdapterImpl::InitAudioBufferAdapterImpl(OH_AVBuffer* avBuffer
     }
     OH_AVBuffer_GetBufferAttr(avBuffer, &info);
     // avBuffer will be released soon, we must copy in local
-    length_ = static_cast<uint32_t>(OH_AVBuffer_GetCapacity(avBuffer));
+    length_ = static_cast<int32_t>(OH_AVBuffer_GetCapacity(avBuffer));
     if (length_ <= 0) {
         WVLOG_E("audio buffer size = %{public}d is illegal", length_);
         return;

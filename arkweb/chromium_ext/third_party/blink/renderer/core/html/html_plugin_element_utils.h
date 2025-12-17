@@ -18,7 +18,6 @@
 #include "arkweb/build/features/features.h"
 #include "base/logging.h"
 #include "third_party/blink/renderer/core/frame/settings.h"
-#include "third_party/blink/renderer/platform/heap/persistent.h"
 #include "third_party/blink/renderer/core/html/html_plugin_element.h"
 
 namespace blink {
@@ -50,17 +49,24 @@ class HTMLPlugInElementUtils {
   void SetNativeEmbedOverlayInfinity(bool native_embed_overlay_infinity);
   void ProcessParamChanges(const Vector<ParamChangeInfo>& changes);
   void ProcessBufferedParamChanges();
-  bool IsOverlay() {
+  void SetStretchContentToFillBounds(bool stretch_content_to_fill_bounds);
+  void ProcessStretchContentToFillBounds();
+  void AnalysisStretchContentToFillBounds(const Element::AttributeModificationParams& params);
+  bool IsOverlay() const {
     return native_embed_overlay_;
   }
-  bool IsOverlayInfinity() {
+  bool IsOverlayInfinity() const {
     return native_embed_overlay_infinity_;
   }
 #endif
  private:
-  Persistent<HTMLPlugInElement> plugin_;
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class HTMLPlugInElementUtilsTest;
+#endif
+  raw_ptr<HTMLPlugInElement> plugin_;
   bool native_embed_overlay_{false};
   bool native_embed_overlay_infinity_{false};
+  bool stretch_content_to_fill_bounds_{true};
   Vector<ParamChangeInfo> buffered_param_changes_;
 };
 

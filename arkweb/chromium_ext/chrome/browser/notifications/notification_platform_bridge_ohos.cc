@@ -81,12 +81,12 @@ void* __real_malloc(size_t);
 
 namespace {
 
-base::NoDestructor<std::map<std::string, std::unique_ptr<ProfileNotification>>> g_profile_notifications_;
+base::NoDestructor<std::map<std::string, std::unique_ptr<ProfileNotification>>> g_profile_notifications;
 
 ProfileNotification* FindProfileNotification(
     const std::string& id) {
-  auto iter = (*g_profile_notifications_).find(id);
-  if (iter == (*g_profile_notifications_).end()) {
+  auto iter = (*g_profile_notifications).find(id);
+  if (iter == (*g_profile_notifications).end()) {
     return nullptr;
   }
 
@@ -95,8 +95,8 @@ ProfileNotification* FindProfileNotification(
 
 void AddProfileNotification(const std::string& id,
     std::unique_ptr<ProfileNotification> profile_notification) {
-  DCHECK((*g_profile_notifications_).find(id) == (*g_profile_notifications_).end());
-  (*g_profile_notifications_)[id] = std::move(profile_notification);
+  DCHECK((*g_profile_notifications).find(id) == (*g_profile_notifications).end());
+  (*g_profile_notifications)[id] = std::move(profile_notification);
 }
 
 void Add(const std::string& id, const message_center::Notification& notification,
@@ -109,11 +109,11 @@ void Add(const std::string& id, const message_center::Notification& notification
 
 void RemoveProfileNotification(
     const std::string& notification_id) {
-  auto it = (*g_profile_notifications_).find(notification_id);
-  if (it == (*g_profile_notifications_).end()) {
+  auto it = (*g_profile_notifications).find(notification_id);
+  if (it == (*g_profile_notifications).end()) {
     return;
   }
-  (*g_profile_notifications_).erase(it);
+  (*g_profile_notifications).erase(it);
 }
 
 bool CancelById(
@@ -122,8 +122,8 @@ bool CancelById(
   std::string profile_notification_id =
       ProfileNotification::GetProfileNotificationId(id, profile_id);
 
-  auto iter = (*g_profile_notifications_).find(profile_notification_id);
-  if (iter == (*g_profile_notifications_).end()) {
+  auto iter = (*g_profile_notifications).find(profile_notification_id);
+  if (iter == (*g_profile_notifications).end()) {
     return false;
   }
 
@@ -183,10 +183,6 @@ class PassThroughDelegate : public message_center::NotificationDelegate {
         notification_.origin_url(), notification_.id(), button_index, reply,
         std::nullopt /* by_user */, base::DoNothing());
   }
-
-  raw_ptr<Profile> GetProfile() const { return profile_; }
-  message_center::Notification GetNotification() const { return notification_; }
-  NotificationHandler::Type GetNotificationType() const { return notification_type_; }
 
  protected:
   ~PassThroughDelegate() override = default;
@@ -270,7 +266,7 @@ NWebNotificationOptionsItemIcon CreateFromImageSkiaReps(
       actionIcon.bitmaps[scale] =
           new (addr) NWebNotificationOptionsItemIconBitmap(
               CreateIconBitmapFromImage(rep.GetBitmap()));
-    }
+      }
 #endif
   }
   return actionIcon;
@@ -313,16 +309,20 @@ void NotificationPlatformBridgeOhos::Display(
     const message_center::Notification& notification,
     std::unique_ptr<NotificationCommon::Metadata> metadata) {
   LOG(INFO) << "NotificationPlatformBridgeOhos::Display: "
-            << "id=" << notification.id()
-            << "; title=" << notification.title()
+            << "id=" << notification.id() << "; title=" << notification.title()
             << "; message=" << notification.message()
             << "; type=" << (int)notification_type
             << "; profileId=" << GetProfileId(profile);
 
-  message_center::Notification notification_with_delegate(notification);
-  notification_with_delegate.set_delegate(base::WrapRefCounted(
-      new PassThroughDelegate(profile, notification, notification_type)));
-  Add(notification.id(), notification_with_delegate, profile);
+  if (notification.delegate() ||
+      notification_type == NotificationHandler::Type::TRANSIENT) {
+    Add(notification.id(), notification, profile);
+  } else {
+    message_center::Notification notification_with_delegate(notification);
+    notification_with_delegate.set_delegate(base::WrapRefCounted(
+        new PassThroughDelegate(profile, notification, notification_type)));
+    Add(notification.id(), notification_with_delegate, profile);
+  }
 
 #if BUILDFLAG(ARKWEB_NOTIFICATION)
   std::shared_ptr<NWebNotificationOptionsItem> options =
@@ -338,6 +338,7 @@ void NotificationPlatformBridgeOhos::Display(
   }
 
   options->requireInteraction = notification.never_timeout();
+
 #if defined(ADDRESS_SANITIZER) || defined(HWADDRESS_SANITIZER)
   NWebNotificationOptionsItemIcon icon = CreateFromImageSkiaReps(
       notification.icon().GetImage().AsImageSkia().image_reps());
@@ -360,7 +361,7 @@ void NotificationPlatformBridgeOhos::Display(
     DeleteNWebNotificationOptionsItemIcon(options->icon);
   } else {
     options->icon->bitmaps =
-       std::map<double, NWebNotificationOptionsItemIconBitmap*>();
+      std::map<double, NWebNotificationOptionsItemIconBitmap*>();
   }
 #endif // ARKWEB_NOTIFICATION
 }
@@ -413,12 +414,15 @@ void NotificationPlatformBridgeOhos::OnShowed(const std::string id) {
     return;
   }
 
-  const message_center::Notification& notification = FindProfileNotification(id)->notification();
-  PassThroughDelegate* delegate = static_cast<PassThroughDelegate*>(notification.delegate());
-  NotificationHandler* handler = NotificationDisplayServiceImpl::GetForProfile(delegate->GetProfile())
-      ->GetNotificationHandler(delegate->GetNotificationType());
+  const message_center::Notification& notification = profile_notification->notification();
+  scoped_refptr<message_center::NotificationDelegate> delegate = notification.delegate();
+  if (!delegate) {
+    return;
+  }
+  NotificationHandler* handler = NotificationDisplayServiceImpl::GetForProfile(profile_notification->profile())
+      ->GetNotificationHandler(profile_notification->type());
   if (handler) {
-    handler->OnShow(delegate->GetProfile(), delegate->GetNotification().id());
+    handler->OnShow(profile_notification->profile(), profile_notification->notification().id());
   }
 }
 
@@ -430,11 +434,12 @@ void NotificationPlatformBridgeOhos::OnClosed(const std::string id) {
     return;
   }
 
-  const message_center::Notification& notification = FindProfileNotification(id)->notification();
-  PassThroughDelegate* delegate = static_cast<PassThroughDelegate*>(notification.delegate());
-  delegate->Close(true);
-
-  CancelById(id, ProfileNotification::GetProfileID(delegate->GetProfile()));
+  const message_center::Notification& notification = profile_notification->notification();
+  scoped_refptr<message_center::NotificationDelegate> delegate = notification.delegate();
+  if (delegate) {
+    delegate->Close(true);
+    CancelById(id, ProfileNotification::GetProfileID(profile_notification->profile()));
+  }
 }
 
 void NotificationPlatformBridgeOhos::OnClicked(const std::string id, int buttonIndex) {
@@ -446,11 +451,13 @@ void NotificationPlatformBridgeOhos::OnClicked(const std::string id, int buttonI
     return;
   }
 
-  const message_center::Notification& notification = FindProfileNotification(id)->notification();
-  PassThroughDelegate* delegate = static_cast<PassThroughDelegate*>(notification.delegate());
-  if (buttonIndex >= 0) {
-    delegate->Click(buttonIndex, std::nullopt);
-  } else {
-    delegate->Click(std::nullopt, std::nullopt);
+  const message_center::Notification& notification = profile_notification->notification();
+  scoped_refptr<message_center::NotificationDelegate> delegate = notification.delegate();
+  if (delegate) {
+    if (buttonIndex >= 0) {
+      delegate->Click(buttonIndex, std::nullopt);
+    } else {
+      delegate->Click(std::nullopt, std::nullopt);
+    }
   }
 }

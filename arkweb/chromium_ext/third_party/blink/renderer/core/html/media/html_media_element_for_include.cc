@@ -33,9 +33,20 @@
 #include "third_party/blink/renderer/core/frame/visual_viewport.h"
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+#include "arkweb/ohos_nweb/src/sysevent/event_reporter.h"
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+#include "third_party/blink/renderer/core/html/media/html_video_element.h"
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
 namespace blink {
 namespace {
 extern std::string GetFormatFromType(std::string type);
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+extern String BuildElementErrorMessage(const String& error);
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
 float PageConstraintInitalScale(const Document& document) {
@@ -292,11 +303,11 @@ void HTMLMediaElement::OnLayerBoundsChange(const gfx::Rect& bounds) {
   if (has_notified_playing_) {
     has_been_seen_playing_once_ = !video_rect_.IsEmpty();
   }
-  html_media_element_utils_->UpdateVideoAssistantAttributes();
+  html_media_element_utils_.UpdateVideoAssistantAttributes();
 }
 
 void HTMLMediaElement::OnPageVisibilityChanged() {
-  html_media_element_utils_->UpdateVideoAssistantAttributes();
+  html_media_element_utils_.UpdateVideoAssistantAttributes();
 }
 
 void HTMLMediaElement::NotifyVideoPlayingInternal() {
@@ -322,7 +333,47 @@ void HTMLMediaElement::NotifyVideoDestroyed() {
   }
 }
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+std::string HTMLMediaElement::AddErrorCodeToMessage(
+    WebMediaPlayer::NetworkState state,
+    const String& error) {
+  StringBuilder builder;
+  int net_error_code = 0;
+  media::PipelineStatus pipeline_status = media::PIPELINE_OK;
+  if (GetWebMediaPlayer()) {
+    pipeline_status = GetWebMediaPlayer()->GetPipelineStatus();
+    net_error_code = GetWebMediaPlayer()->GetWebURLErrorReason();
+  }
 
+  builder.AppendFormat(
+      "[internal_error:pipeline:%d,blink:%d,net_error_code:%d]",
+      pipeline_status.code(), state, net_error_code);
+  builder.Append(error);
+  return builder.ToString().Utf8();
+}
+
+void HTMLMediaElement::ReportMediaLoadingErrorMessage(
+    const std::string& error_type,
+    WebMediaPlayer::NetworkState error,
+    const String& message,
+    bool is_message_not_clear) {
+  StringBuilder builder;
+  if (!is_message_not_clear) {
+    builder.Append(message);
+  } else {
+    builder.Append((error == WebMediaPlayer::kNetworkStateFormatError
+                       ? "Format error"
+                       : "Network error"));
+  }
+
+  ReportWebMediaPlayErrorInfo(
+      error_type, error, AddErrorCodeToMessage(error, builder.ToString()));
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(ERROR) << "Media loadding failed message: "
+                      << AddErrorCodeToMessage(error, builder.ToString());
+#endif // ARKWEB_LOGGER_REPORT
+}
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
 media::mojom::blink::MediaInfoForVASTPtr
 HTMLMediaElement::CollectMediaInfoAttributesForVAST() {
@@ -332,7 +383,7 @@ HTMLMediaElement::CollectMediaInfoAttributesForVAST() {
   }
   auto mediaInfoAttr = media::mojom::blink::MediaInfoForVAST::New();
   mediaInfoAttr->id = WTF::String::FromUTF8(GetIdAttribute().Utf8());
-  mediaInfoAttr->title = WTF::String::FromUTF8(html_media_element_utils_->GetTitle().Utf8());
+  mediaInfoAttr->title = WTF::String::FromUTF8(html_media_element_utils_.GetTitle().Utf8());
   mediaInfoAttr->duration = duration();
   mediaInfoAttr->volume = volume();
   mediaInfoAttr->current_time = media_player->CurrentTime();
@@ -367,7 +418,7 @@ void HTMLMediaElement::OnNotifyVideoPlayingTimerFired(TimerBase*) {
   LOG(INFO) << "OnNotifyVideoPlayingTimerFired";
   has_notified_playing_ = true;
   if (IsHTMLVideoElement()) {
-    auto attributes = html_media_element_utils_->CollectVideoAttributesForVAST();
+    auto attributes = html_media_element_utils_.CollectVideoAttributesForVAST();
     if (!has_been_seen_playing_once_) {
       has_been_seen_playing_once_ = !video_rect_.IsEmpty();
     }
@@ -506,4 +557,163 @@ void HTMLMediaElement::NotifyMemoryLevel(int32_t level) {
   }
 }
 #endif  // ARKWEB_MEDIA_MEMORY_PRESSURE
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+std::string HTMLMediaElement::videoId() {
+  return GetIdAttribute().Utf8();
+}
+
+uint16_t HTMLMediaElement::hbsMediaPreloadTime() {
+  if (auto* video_element = DynamicTo<HTMLVideoElement>(this)) {
+    return video_element->hbsPreloadTime();
+  }
+  return UINT16_MAX;
+}
+
+uint16_t HTMLMediaElement::hbsMediaMaxCacheTime() {
+  if (auto* video_element = DynamicTo<HTMLVideoElement>(this)) {
+    return video_element->hbsMaxCacheTime();
+  }
+  return UINT16_MAX;
+}
+
+uint16_t HTMLMediaElement::hbsMediaMinCacheTime() {
+  if (auto* video_element = DynamicTo<HTMLVideoElement>(this)) {
+    return video_element->hbsMinCacheTime();
+  }
+  return UINT16_MAX;
+}
+
+uint16_t HTMLMediaElement::hbsMediaBitrate() {
+  if (auto* video_element = DynamicTo<HTMLVideoElement>(this)) {
+    return video_element->hbsBitrate();
+  }
+  return UINT16_MAX;
+}
+
+uint16_t HTMLMediaElement::hbsMediaMoovSize() {
+  if (auto* video_element = DynamicTo<HTMLVideoElement>(this)) {
+    return video_element->hbsMoovSize();
+  }
+  return UINT16_MAX;
+}
+
+bool HTMLMediaElement::IsUseVideoLoadOptimization() const {
+  return GetDocument().IsUseVideoLoadOptimization();
+}
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+// Please make incremental modifications based on the native implementation during each upgrade.
+void HTMLMediaElement::MediaLoadingFailed(WebMediaPlayer::NetworkState error,
+                                          const String& input_message) {
+  DVLOG(3) << "MediaLoadingFailed(" << *this << ", " << int{error}
+           << ", message='" << input_message << "')";
+ 
+#if BUILDFLAG(ARKWEB_MEDIA)
+  LOG(INFO) << "OhMedia::MediaLoadingFailed error = " << (int)error
+            << ", input_message = " << input_message << ")";
+#endif // ARKWEB_MEDIA
+  bool should_be_opaque = MediaShouldBeOpaque();
+  if (should_be_opaque)
+    error = WebMediaPlayer::kNetworkStateNetworkError;
+  String empty_string;
+  const String& message = should_be_opaque ? empty_string : input_message;
+ 
+  StopPeriodicTimers();
+ 
+  // If we failed while trying to load a <source> element, the movie was never
+  // parsed, and there are more <source> children, schedule the next one
+  if (ready_state_ < kHaveMetadata &&
+      load_state_ == kLoadingFromSourceElement) {
+    // resource selection algorithm
+    // Step 9.Otherwise.9 - Failed with elements: Queue a task, using the DOM
+    // manipulation task source, to fire a simple event named error at the
+    // candidate element.
+    if (current_source_node_) {
+      current_source_node_->ScheduleErrorEvent();
+    } else {
+      DVLOG(3) << "mediaLoadingFailed(" << *this
+               << ") - error event not sent, <source> was removed";
+    }
+ 
+    // 9.Otherwise.10 - Asynchronously await a stable state. The synchronous
+    // section consists of all the remaining steps of this algorithm until the
+    // algorithm says the synchronous section has ended.
+ 
+    // 9.Otherwise.11 - Forget the media element's media-resource-specific
+    // tracks.
+    ForgetResourceSpecificTracks();
+ 
+    if (HavePotentialSourceChild()) {
+      DVLOG(3) << "mediaLoadingFailed(" << *this
+               << ") - scheduling next <source>";
+      ScheduleNextSourceChild();
+    } else {
+      DVLOG(3) << "mediaLoadingFailed(" << *this
+               << ") - no more <source> elements, waiting";
+      WaitForSourceChange();
+    }
+ 
+    return;
+  }
+ 
+  std::string error_type;
+  bool is_message_not_clear = false;
+  if (error == WebMediaPlayer::kNetworkStateNetworkError &&
+      ready_state_ >= kHaveMetadata) {
+    if (html_media_element_utils_.IsFeedsPage()) {
+      MediaEngineError(MakeGarbageCollected<MediaError>(
+          MediaError::kMediaErrNetwork, AddErrorCodeToMessage(error, message).c_str()));
+    } else {
+      MediaEngineError(MakeGarbageCollected<MediaError>(
+          MediaError::kMediaErrNetwork, message));
+    }
+    error_type = "Network Error";
+  } else if (error == WebMediaPlayer::kNetworkStateDecodeError) {
+    if (html_media_element_utils_.IsFeedsPage()) {
+      MediaEngineError(MakeGarbageCollected<MediaError>(
+          MediaError::kMediaErrDecode, AddErrorCodeToMessage(error, message).c_str()));
+    } else {
+      MediaEngineError(MakeGarbageCollected<MediaError>(
+          MediaError::kMediaErrDecode, message));
+    }
+    error_type = "Decode Error";
+  } else if ((error == WebMediaPlayer::kNetworkStateFormatError ||
+              error == WebMediaPlayer::kNetworkStateNetworkError) &&
+             (load_state_ == kLoadingFromSrcAttr ||
+              (load_state_ == kLoadingFromSrcObject &&
+               src_object_media_source_handle_))) {
+    if (message.empty()) {
+      // Generate a more meaningful error message to differentiate the two types
+      // of MEDIA_SRC_ERR_NOT_SUPPORTED.
+      if (html_media_element_utils_.IsFeedsPage()) {
+        NoneSupported(BuildElementErrorMessage(AddErrorCodeToMessage(error,
+            (error == WebMediaPlayer::kNetworkStateFormatError ? "Format error"
+                                                               : "Network error")).c_str()));
+      } else {
+        NoneSupported(BuildElementErrorMessage(
+            error == WebMediaPlayer::kNetworkStateFormatError ? "Format error"
+                                                              : "Network error"));
+      }
+      is_message_not_clear = true;
+      error_type =
+          (error == WebMediaPlayer::kNetworkStateFormatError ? "Format Error"
+                                                             : "Network Error");
+    } else {
+      if (html_media_element_utils_.IsFeedsPage()) {
+        NoneSupported(BuildElementErrorMessage(AddErrorCodeToMessage(error,message).c_str()));
+      } else {
+        NoneSupported(message);
+      }
+      error_type = "Others";
+    }
+  }
+ 
+  ReportMediaLoadingErrorMessage(error_type, error, message, is_message_not_clear);
+ 
+  UpdateLayoutObject();
+}
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+
 }  // namespace blink

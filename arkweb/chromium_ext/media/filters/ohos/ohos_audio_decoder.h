@@ -9,9 +9,11 @@
 #include <vector>
 #include <cstring>
 #include <mutex>
+#include <atomic>
 #include "base/containers/circular_deque.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
+#include "base/memory/safe_ref.h"
 #include "base/time/time.h"
 #include "base/timer/timer.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/audio_codec_decoder_adapter.h"
@@ -309,12 +311,16 @@ class OHOSAudioDecoder : public AudioDecoder,
 
   void WaitingForLicence();
 
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
   void ReportDrmAudioPlayErrorInfo(const std::string& errorDesc);
+
+  void ReportDrmEncryptedPlaybackInfo(const DecryptConfig* decrypt_config);
+#endif
 
  private:
   std::string mime_type_;
 
-  State state_ = State::UNINITIALIZED;
+  std::atomic<State> state_ = State::UNINITIALIZED;
 
   std::unique_ptr<AudioCodecDecoderAdapter> audio_decoder_ = nullptr;
 
@@ -375,6 +381,8 @@ class OHOSAudioDecoder : public AudioDecoder,
   base::RepeatingTimer io_timer_;
 
   bool audio_decoder_created_ = false;
+
+  bool is_reported = false;
 
   base::WeakPtrFactory<OHOSAudioDecoder> weak_factory_{this};
 };

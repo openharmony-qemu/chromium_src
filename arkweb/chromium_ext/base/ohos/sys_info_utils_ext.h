@@ -34,6 +34,11 @@ BASE_EXPORT float GetPixelRatio();
 
 BASE_EXPORT void SetPixelRatio(float ratio);
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+BASE_EXPORT float GetDevicePixelRatio();
+BASE_EXPORT void SetDevicePixelRatio(float ratio);
+#endif
+
 #if BUILDFLAG(ARKWEB_TEST)
 #ifdef __cplusplus
 extern "C" {
@@ -103,6 +108,8 @@ BASE_EXPORT void SetPageScale(bool status);
 BASE_EXPORT bool IsPageScale();
 
 BASE_EXPORT std::string ComponentName();
+
+BASE_EXPORT bool IsPcMode();
 }  // namespace ohos
 }  // namespace base
 

@@ -36,6 +36,7 @@
 
 namespace blink {
 
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
 TEST_F(ContextMenuControllerTest, ShouldShowFreeCopyMenuTest_1stIf) {
   RegisterMockedImageURLLoad("http://test.png");
   ContextMenuAllowedScope context_menu_allowed_scope;
@@ -389,6 +390,7 @@ TEST_F(ContextMenuControllerTest, ShouldShowFreeCopyMenuTest_6thIf) {
   EXPECT_FALSE(result);
   EXPECT_TRUE(ShowContextMenu(location_with_image, kMenuSourceLongPress));
 }
+#endif
 
 TEST_F(ContextMenuControllerTest, GetChildImageUrlFromElementTest_1stIf) {
   const WebElement null_element;
@@ -2135,6 +2137,7 @@ TEST_F(ContextMenuControllerTest, SetImageRectFromPotentialImageNodeTest_3rdIf) 
   EXPECT_TRUE(data_.image_rect.IsEmpty());
 }
 
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
 TEST_F(ContextMenuControllerTest, HandleArkWebContextMenuTest_2ndIf) {
   RegisterMockedImageURLLoad("http://test.png");
   ContextMenuAllowedScope context_menu_allowed_scope;
@@ -2322,4 +2325,54 @@ TEST_F(ContextMenuControllerTest, HandleArkWebContextMenuTest_5thIf) {
 
   EXPECT_TRUE(!data_.is_selectable);
 }
+#endif
+
+TEST_F(ContextMenuControllerTest, GetImgUrlTest_001) {
+  ContextMenuAllowedScope context_menu_allowed_scope;
+
+  GetDocument()->documentElement()->setInnerHTML(R"HTML(
+    <body>
+     <style>
+        #target {
+          top: 0;
+          left: 0;
+          position: absolute;
+          width: 100px;
+          height: 100px;
+          z-index: 1;
+          background-image: url("http://test.png");
+        }
+      </style>
+     <div id="target">
+      <img id="img" src="http://test.png" alt="Test Image">
+     </div>
+    </body>
+  )HTML");
+  GetDocument()->UpdateStyleAndLayout(DocumentUpdateReason::kTest);
+
+  Node* node = GetDocument()->getElementById(AtomicString("target"));
+  ASSERT_TRUE(node != nullptr);
+
+  Node* img_node = GetDocument()->getElementById(AtomicString("img"));
+  ASSERT_TRUE(node != nullptr);
+
+  ContextMenuData data_;
+  HitTestResult hit_test_result_;
+  PhysicalOffset offset_(LayoutUnit(50), LayoutUnit(50));
+  HitTestLocation location(offset_);
+  PhysicalRect rect(PhysicalOffset(0, 0), PhysicalSize(100, 100));
+  WebMenuSourceType source_type_ = kMenuSourceLongPress;
+  EXPECT_TRUE(ShowContextMenu(offset_, kMenuSourceKeyboard));
+
+  hit_test_result_.SetInnerNode(node);
+  hit_test_result_.AddNodeToListBasedTestResult(img_node, location, rect);
+
+  auto& helper =
+      web_view_helper_.GetWebView()->GetPage()->GetContextMenuController();
+  auto ext = helper.AsContextMenuControllerExt();
+  EXPECT_TRUE(ext != nullptr);
+  ext->GetImgUrl(hit_test_result_, data_, source_type_);
+  EXPECT_TRUE(data_.src_url.is_empty());
+}
+
 }  // namespace blink

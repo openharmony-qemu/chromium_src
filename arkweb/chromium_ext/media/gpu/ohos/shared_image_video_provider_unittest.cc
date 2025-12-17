@@ -91,7 +91,7 @@ TEST_F(SharedImageVideoProviderTest, Testoperator06) {
   share_spec_.generation_id = 1;
   image_spec_.generation_id = 0;
   share_spec_.color_space = gfx::ColorSpace::CreateSRGB();
-  image_spec_.color_space = gfx::ColorSpace::CreateSRGB();;
+  image_spec_.color_space = gfx::ColorSpace::CreateSRGB();
   ASSERT_FALSE(share_spec_ == image_spec_);
 }
 

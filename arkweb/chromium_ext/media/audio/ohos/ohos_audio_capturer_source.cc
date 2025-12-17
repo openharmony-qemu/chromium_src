@@ -172,10 +172,16 @@ void OHOSAudioCapturerSource::ReadData() {
 // LCOV_EXCL_STOP
 
 void OHOSAudioCapturerSource::SetVolume(double volume) {
+#if BUILDFLAG(ARKWEB_TEST)
+  return;
+#endif  
   NOTREACHED();
 }
 
 void OHOSAudioCapturerSource::SetAutomaticGainControl(bool enable) {
+#if BUILDFLAG(ARKWEB_TEST)
+  return;
+#endif
   NOTREACHED();
 }
 

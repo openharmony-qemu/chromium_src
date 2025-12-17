@@ -19,6 +19,7 @@
 #include "base/files/file_util.h"
 #include "base/logging.h"
 #include "base/path_service.h"
+#include "chrome/common/chrome_paths.h"
 #include "components/subresource_filter/content/browser/safe_browsing_user_ruleset_publisher.h"
 #include "components/subresource_filter/content/shared/browser/user_ruleset_service.h"
 #include "components/subresource_filter/core/browser/subresource_filter_constants.h"
@@ -53,7 +54,9 @@ void BrowserProcessImplExt::CreateSubresourceFilterUserRulesetService() {
 
   base::FilePath user_data_dir;
 
-  base::PathService::Get(base::DIR_CACHE, &user_data_dir);
+  if (!base::PathService::Get(chrome::DIR_USER_DATA, &user_data_dir)) {
+    base::PathService::Get(base::DIR_CACHE, &user_data_dir);
+  }
   LOG(INFO) << "adblock path: " << user_data_dir.value();
   subresource_filter_user_ruleset_service_ =
       subresource_filter::UserRulesetService::Create(

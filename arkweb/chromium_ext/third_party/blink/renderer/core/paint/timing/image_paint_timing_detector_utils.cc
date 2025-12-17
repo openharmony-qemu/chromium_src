@@ -258,4 +258,246 @@ void ImagePaintTimingDetector::SetFrameIndex(unsigned frame_index) {
 }
 #endif // ARKWEB_BLANK_OPTIMIZE
 
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION) || BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT)
+void ImageRecordsManagerUtils::AssignImagePaintTimeFromRecord(
+    ImageRecord* record,
+    const base::TimeTicks& timestamp) {
+    auto first_screen_calculator =
+        image_records_manager_.frame_view_->GetPaintTimingDetector()
+            .GetFirstScreenCalculator();
+    if (first_screen_calculator) {
+        if (record->lcp_rect_info_) {
+            first_screen_calculator->AssignImagePaintTime(
+                record->hash, record->lcp_rect_info_->GetRootRectInfo(),
+                timestamp);
+        }
+    }
+}
+
+void ImageRecordsManagerUtils::AssignImagePaintTimeFromRejectedImages(
+    const base::TimeTicks& timestamp,
+    unsigned last_queued_frame_index) {
+    auto first_screen_calculator =
+        image_records_manager_.frame_view_->GetPaintTimingDetector()
+            .GetFirstScreenCalculator();
+    while (!rejected_images_queued_for_paint_time_.empty()) {
+        ImageRecord* record = rejected_images_queued_for_paint_time_.front();
+        if (!record) {
+            rejected_images_queued_for_paint_time_.pop_front();
+            continue;
+        }
+        if (record->frame_index > last_queued_frame_index) {
+            break;
+        }
+        if (record->queue_animated_paint) {
+            record->first_animated_frame_time = timestamp;
+            record->queue_animated_paint = false;
+        }
+
+        auto it = rejected_image_records_.find(record->hash);
+        rejected_images_queued_for_paint_time_.pop_front();
+
+        if (!record->loaded || !record->paint_time.is_null() ||
+            it == rejected_image_records_.end()) {
+            continue;
+        }
+
+        record->paint_time = timestamp;
+
+        if (first_screen_calculator) {
+            if (record->lcp_rect_info_) {
+               first_screen_calculator->AssignImagePaintTime(
+                    record->hash, record->lcp_rect_info_->GetRootRectInfo(),
+                    timestamp);
+            }
+        }
+
+        rejected_image_records_.erase(it);
+    }
+}
+
+void ImageRecordsManagerUtils::RemoveRecordFromFirstScreenCalculator(
+    MediaRecordIdHash record_id_hash) {
+    auto it = rejected_image_records_.find(record_id_hash);
+    if (it != rejected_image_records_.end()) {
+        rejected_image_records_.erase(it);
+    }
+
+    auto first_screen_calculator =
+        image_records_manager_.frame_view_->GetPaintTimingDetector()
+            .GetFirstScreenCalculator();
+    if (first_screen_calculator) {
+        first_screen_calculator->RemoveImageRecord(record_id_hash);
+    }
+}
+
+void ImageRecordsManagerUtils::QueueToMeasurePaintTimeForRejected(
+    ImageRecord* record,
+    unsigned current_frame_index) {
+    CHECK(record);
+    record->frame_index = current_frame_index;
+    rejected_images_queued_for_paint_time_.push_back(record);
+}
+
+ImageRecord* ImageRecordsManagerUtils::GetRejectedImage(
+    MediaRecordIdHash record_id_hash) {
+    auto it = rejected_image_records_.find(record_id_hash);
+    return it == rejected_image_records_.end() ? nullptr : it->value.Get();
+}
+
+bool ImageRecordsManagerUtils::IsRejectedDueToSize(
+    MediaRecordIdHash record_id_hash) {
+    return rejected_image_records_.Contains(record_id_hash);
+}
+
+bool ImageRecordsManagerUtils::OnFirstAnimatedFramePaintedForRejected(
+    MediaRecordIdHash record_id_hash,
+    unsigned current_frame_index) {
+    auto it = rejected_image_records_.find(record_id_hash);
+    if (it == rejected_image_records_.end()) {
+        return false;
+    }
+
+    ImageRecord* record = it->value;
+    DCHECK(record);
+
+    if (record->media_timing &&
+        !record->media_timing->GetFirstVideoFrameTime().is_null()) {
+        record->first_animated_frame_time =
+            record->media_timing->GetFirstVideoFrameTime();
+    } else if (record->first_animated_frame_time.is_null()) {
+        record->queue_animated_paint = true;
+        QueueToMeasurePaintTimeForRejected(record, current_frame_index);
+        return true;
+    }
+    return false;
+}
+
+void ImageRecordsManagerUtils::OnImageLoadedForRejected(
+    MediaRecordIdHash record_id_hash,
+    unsigned current_frame_index,
+    const StyleImage* style_image) {
+    auto it = rejected_image_records_.find(record_id_hash);
+    if (it == rejected_image_records_.end()) {
+        return;
+    }
+
+    ImageRecord* record = it->value;
+    DCHECK(record);
+
+    if (!style_image) {
+        auto finished_it =
+            image_records_manager_.image_finished_times_.find(record_id_hash);
+        if (finished_it != image_records_manager_.image_finished_times_.end()) {
+            record->load_time = finished_it->value;
+            DCHECK(!record->load_time.is_null());
+        }
+    } else {
+        Document* document =
+            image_records_manager_.frame_view_->GetFrame().GetDocument();
+        if (document && document->domWindow()) {
+            record->load_time = ImageElementTiming::From(*document->domWindow())
+                                    .GetBackgroundImageLoadTime(style_image);
+            record->origin_clean = style_image->IsOriginClean();
+        }
+    }
+
+    image_records_manager_.SetLoaded(record);
+    QueueToMeasurePaintTimeForRejected(record, current_frame_index);
+}
+
+void ImageRecordsManagerUtils::NotifyImagePaintForFirstScreenCalculator(
+    MediaRecordIdHash hash,
+    ImageRecord* record,
+    bool is_video) {
+    auto first_screen_calculator =
+        image_records_manager_.frame_view_->GetPaintTimingDetector()
+            .GetFirstScreenCalculator();
+    if (first_screen_calculator) {
+        first_screen_calculator->NotifyImagePaint(
+            hash, record,
+            image_records_manager_.frame_view_->GetPaintTimingDetector()
+                .GetImagePaintTimingDetector()
+                .GetViewportSize(),
+            is_video);
+    }
+}
+
+void ImageRecordsManagerUtils::InsertRejectedImageRecords(
+    MediaRecordIdHash hash,
+    ImageRecord* record) {
+    rejected_image_records_.insert(hash, record);
+}
+
+void ImageRecordsManagerUtils::ClearRejectedImagesQueuedForPaintTime() {
+    rejected_images_queued_for_paint_time_.clear();
+}
+
+void ImageRecordsManagerUtils::ClearRejectedImageRecords() {
+    rejected_image_records_.clear();
+}
+
+void ImageRecordsManagerUtils::TraceRejectedImages(Visitor* visitor) const {
+    visitor->Trace(rejected_image_records_);
+    visitor->Trace(rejected_images_queued_for_paint_time_);
+}
+
+void ImageRecordsManagerUtils::GetAddedEntryInLatestFrameByRejectedImage(
+    const MediaTiming& media_timing,
+    const LayoutObject& object,
+    MediaRecordIdHash record_id_hash,
+    unsigned frame_index,
+    bool& added_entry_in_latest_frame,
+    const StyleImage* style_image,
+    const gfx::Rect& image_border,
+    const PropertyTreeStateOrAlias& current_paint_chunk_properties) {
+    ImageRecord* rejected_record = GetRejectedImage(record_id_hash);
+    if (rejected_record) {
+        if (media_timing.IsPaintedFirstFrame() &&
+            RuntimeEnabledFeatures::LCPAnimatedImagesWebExposedEnabled()) {
+            added_entry_in_latest_frame |=
+                OnFirstAnimatedFramePaintedForRejected(record_id_hash,
+                                                       frame_index);
+        }
+        if (!rejected_record->loaded &&
+            media_timing.IsSufficientContentLoadedForPaint()) {
+            OnImageLoadedForRejected(record_id_hash, frame_index, style_image);
+            added_entry_in_latest_frame = true;
+            if (std::optional<PaintTimingVisualizer>& visualizer =
+                    image_records_manager_.frame_view_->GetPaintTimingDetector()
+                        .Visualizer()) {
+                gfx::RectF mapped_visual_rect =
+                    image_records_manager_.frame_view_->GetPaintTimingDetector()
+                        .CalculateVisualRect(image_border,
+                                             current_paint_chunk_properties);
+                visualizer->DumpImageDebuggingRect(
+                    object, mapped_visual_rect,
+                    media_timing.IsSufficientContentLoadedForPaint(),
+                    media_timing.Url());
+            }
+        }
+    }
+}
+
+void ImageRecordsManagerUtils::GetAddedEntryInLatestFrameByRejectedDueToSize(
+    const MediaTiming& media_timing,
+    MediaRecordIdHash record_id_hash,
+    unsigned frame_index,
+    bool& added_entry_in_latest_frame,
+    const StyleImage* style_image) {
+    if (IsRejectedDueToSize(record_id_hash)) {
+        if (media_timing.IsPaintedFirstFrame() &&
+            RuntimeEnabledFeatures::LCPAnimatedImagesWebExposedEnabled()) {
+            added_entry_in_latest_frame |=
+                OnFirstAnimatedFramePaintedForRejected(record_id_hash,
+                                                       frame_index);
+        }
+        if (media_timing.IsSufficientContentLoadedForPaint()) {
+            OnImageLoadedForRejected(record_id_hash, frame_index, style_image);
+            added_entry_in_latest_frame = true;
+        }
+    }
+}
+#endif
+
 }  // namespace blink

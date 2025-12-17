@@ -45,7 +45,6 @@ void DocDistillableStatistics(blink::WebDistillabilityMatchInfo& match_info,
                               blink::WebDocument& doc,
                               double cost_time_ms) {
   std::vector<std::string> ext_info;
-  AddBECEContent(ext_info, {kBECEHost, GURL(doc.Url()).host()});
   AddBECEContent(ext_info,
                  {kBECEMatchTime, base::StringPrintf("%.2f", cost_time_ms)});
   if (match_info.result ==

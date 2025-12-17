@@ -26,6 +26,12 @@ namespace OHOS {
 
 const char *OH_AVCODEC_MIMETYPE_AUDIO_MPEG = "audio/mpeg";
 const char *OH_AVCODEC_NAME_AUDIO_MPEG = "OH.Media.Codec.Decoder.Audio.Mpeg";
+uint8_t keyId[] = {
+    0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+    0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
+uint8_t iv[] = {
+    0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+    0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
 
 class AudioDecoderCallbackAdapterMock : public AudioDecoderCallbackAdapter {
  public:
@@ -80,19 +86,19 @@ void AudioCodecDecoderImpl__DecoderCencInfo(FuzzedDataProvider* fdp)
   std::shared_ptr<AudioCencInfoAdapterImpl> cencInfo = std::make_shared<AudioCencInfoAdapterImpl>();
   uint32_t uintTmp = fdp->ConsumeIntegral<int32_t>();
   uint32_t keyIdLen = fdp->ConsumeIntegralInRange<uint32_t>(1, 64);
-  std::vector<uint8_t> keyId(keyIdLen);
-  fdp->ConsumeData(keyId.data(), keyIdLen);
+  std::vector<uint8_t> vecKeyId(keyIdLen);
+  fdp->ConsumeData(vecKeyId.data(), keyIdLen);
   uint32_t ivLen = fdp->ConsumeIntegralInRange<uint32_t>(1, 64);
-  std::vector<uint8_t> iv(ivLen);
-  fdp->ConsumeData(iv.data(), ivLen);
+  std::vector<uint8_t> vecIv(ivLen);
+  fdp->ConsumeData(vecIv.data(), ivLen);
   uint32_t tmpLen = fdp->ConsumeIntegralInRange<uint32_t>(1, 64);
   std::vector<uint32_t> clearHeaderLens(tmpLen);
   std::vector<uint32_t> payLoadLens(tmpLen);
   fdp->ConsumeData(clearHeaderLens.data(), tmpLen);
   fdp->ConsumeData(payLoadLens.data(), tmpLen);
-  cencInfo->SetKeyId(keyId.data());
+  cencInfo->SetKeyId(vecKeyId.data());
   cencInfo->SetKeyIdLen(keyIdLen);
-  cencInfo->SetIv(iv.data());
+  cencInfo->SetIv(vecIv.data());
   cencInfo->SetIvLen(ivLen);
   cencInfo->SetAlgo(uintTmp);
   cencInfo->SetEncryptedBlockCount(uintTmp);
@@ -194,12 +200,6 @@ void SetCencInfoAboutClearHeaderAndPayLoadLens(std::shared_ptr<AudioCencInfoAdap
 
 void SetCencInfoAboutKeyIdIvAlgo(std::shared_ptr<AudioCencInfoAdapter> cencInfo)
 {
-    uint8_t keyId[] = {
-        0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-        0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
-    uint8_t iv[] = {
-        0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-        0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
     cencInfo->SetAlgo(0);
     cencInfo->SetKeyId(keyId);
     cencInfo->SetKeyIdLen(DRM_KEY_ID_SIZE);
@@ -269,19 +269,19 @@ void TestQueueInputBufferDec(FuzzedDataProvider* fdp,
   std::shared_ptr<AudioCencInfoAdapterImpl> cencInfo = std::make_shared<AudioCencInfoAdapterImpl>();
   uint32_t uintTmp = fdp->ConsumeIntegral<int32_t>();
   uint32_t keyIdLen = fdp->ConsumeIntegralInRange<uint32_t>(1, 64);
-  std::vector<uint8_t> keyId(keyIdLen);
-  fdp->ConsumeData(keyId.data(), keyIdLen);
+  std::vector<uint8_t> vecKeyId(keyIdLen);
+  fdp->ConsumeData(vecKeyId.data(), keyIdLen);
   uint32_t ivLen = fdp->ConsumeIntegralInRange<uint32_t>(1, 64);
-  std::vector<uint8_t> iv(ivLen);
-  fdp->ConsumeData(iv.data(), ivLen);
+  std::vector<uint8_t> vecIv(ivLen);
+  fdp->ConsumeData(vecIv.data(), ivLen);
   uint32_t tmpLen = fdp->ConsumeIntegralInRange<uint32_t>(1, 64);
   std::vector<uint32_t> clearHeaderLens(tmpLen);
   std::vector<uint32_t> payLoadLens(tmpLen);
   fdp->ConsumeData(clearHeaderLens.data(), tmpLen);
   fdp->ConsumeData(payLoadLens.data(), tmpLen);
-  cencInfo->SetKeyId(keyId.data());
+  cencInfo->SetKeyId(vecKeyId.data());
   cencInfo->SetKeyIdLen(keyIdLen);
-  cencInfo->SetIv(iv.data());
+  cencInfo->SetIv(vecIv.data());
   cencInfo->SetIvLen(ivLen);
   cencInfo->SetAlgo(uintTmp);
   cencInfo->SetEncryptedBlockCount(uintTmp);

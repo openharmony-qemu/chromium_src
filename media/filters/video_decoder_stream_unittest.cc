@@ -25,9 +25,13 @@
 #include "media/filters/fake_video_decoder.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
+#if BUILDFLAG(ARKWEB_TEST)
 #define private public
 #include "media/filters/decoder_stream.h"
 #undef private
+#else
+#include "media/filters/decoder_stream.h"
+#endif
 
 #if !BUILDFLAG(IS_ANDROID)
 #include "media/filters/decrypting_video_decoder.h"

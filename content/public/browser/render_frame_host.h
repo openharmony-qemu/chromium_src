@@ -583,6 +583,10 @@ class CONTENT_EXPORT RenderFrameHost : public RenderFrameHostOhos,
                                     JavaScriptResultCallback callback) = 0;
 #endif
 
+#if BUILDFLAG(ARKWEB_FLING)
+  virtual void UpdateFlingVelocityLimit(const gfx::Vector2dF& velocity) = 0;
+#endif
+
   // This runs the JavaScript in an isolated world of the top of this frame's
   // context. It is invalid to specify a `world_id` of
   // `ISOLATED_WORLD_ID_GLOBAL`.

@@ -43,7 +43,7 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
     FROM_ONDRAG,
   };
   NWebInputMethodHandler();
-  ~NWebInputMethodHandler();
+  ~NWebInputMethodHandler() override;
   NWebInputMethodHandler(const NWebInputMethodHandler&) = delete;
   NWebInputMethodHandler& operator=(const NWebInputMethodHandler&) = delete;
 
@@ -78,6 +78,7 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
   void WebBlurKeyboardHide();
   void WebSetImeShow(bool visible);
   void HandleSecurityLayer();
+  void UpdateTextFieldStatus(bool isImeShowKeyboard, bool isTextInputfocus);
   void InsertText(const std::u16string& text);
   void DeleteBackward(int32_t length);
   void DeleteForward(int32_t length);
@@ -123,6 +124,7 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
   std::string GetAllTextInfo();
 #endif // ARKWEB_AI_WRITE
   bool IsAttached() override { return isAttached_; }
+  bool IsFocusSwitch() override { return isFocusSwitchOnBlur_; }
   void SetNeedReattachOnfocus() {
     if (isAttached_) {
       isNeedReattachOnfocus_ = true;
@@ -130,10 +132,13 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
     }
   }
 
+  void HandleExtendAction(int32_t action);
+
  private:
   void SetIMEStatusOnUI(bool status);
   void WebBlurKeyboardHideOnUI();
   void HandleSecurityLayerHandlerOnUI();
+  void UpdateTextFieldStatusHandlerOnUI(bool isImeShowKeyboard, bool isTextInputfocus);
   void InsertTextHandlerOnUI(const std::u16string& text);
   void DeleteBackwardHandlerOnUI(int32_t length);
   void DeleteForwardHandlerOnUI(int32_t length);
@@ -173,6 +178,8 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
                                 bool is_new_password,
                                 const std::string& content);
 #endif
+
+  void HandleExtendActionOnUI(int32_t action);
 
   static uint32_t lastAttachNWebId_;
   static IMFAdapterTextInputType lastInputMode_;
@@ -225,27 +232,6 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
   bool isManualCloseKeyboard_ = false;
   bool isAttachSuccess_ = true;
   cef_text_input_mode_t cef_text_input_mode_ = CEF_TEXT_INPUT_MODE_DEFAULT;
-
-  std::unordered_map<char16_t, int> keycode_map = {
-      {'q', 0x51}, {'w', 0x57},  {'e', 0x45}, {'r', 0x52},  {'t', 0x54},
-      {'y', 0x59}, {'u', 0x55},  {'i', 0x49}, {'o', 0x4F},  {'p', 0x50},
-      {'a', 0x41}, {'s', 0x53},  {'d', 0x44}, {'f', 0x46},  {'g', 0x47},
-      {'h', 0x48}, {'j', 0x4A},  {'k', 0x4B}, {'l', 0x4C},  {'z', 0x5A},
-      {'x', 0x58}, {'c', 0x43},  {'v', 0x56}, {'b', 0x42},  {'n', 0x4E},
-      {'m', 0x4D}, {'1', 0x31},  {'2', 0x32}, {'3', 0x33},  {'4', 0x34},
-      {'5', 0x35}, {'6', 0x36},  {'7', 0x37}, {'8', 0x38},  {'9', 0x39},
-      {'0', 0x30}, {'`', 0xC0},  {'-', 0xBD}, {'=', 0xBB},  {'[', 0xDB},
-      {']', 0xDD}, {'\\', 0xDC}, {';', 0xBA}, {'\'', 0xDE}, {',', 0xBC},
-      {'.', 0xBE}, {'/', 0xBF},  {' ', 0x20}, {'Q', 0x51},  {'W', 0x57},
-      {'E', 0x45}, {'R', 0x52},  {'T', 0x54}, {'Y', 0x59},  {'U', 0x55},
-      {'I', 0x49}, {'O', 0x4F},  {'P', 0x50}, {'A', 0x41},  {'S', 0x53},
-      {'D', 0x44}, {'F', 0x46},  {'G', 0x47}, {'H', 0x48},  {'J', 0x4A},
-      {'K', 0x4B}, {'L', 0x4C},  {'Z', 0x5A}, {'X', 0x58},  {'C', 0x43},
-      {'V', 0x56}, {'B', 0x42},  {'N', 0x4E}, {'M', 0x4D},  {'!', 0x31},
-      {'@', 0x32}, {'#', 0x33},  {'$', 0x34}, {'%', 0x35},  {'^', 0x36},
-      {'&', 0x37}, {'*', 0x38},  {'(', 0x39}, {')', 0x30},  {'~', 0xC0},
-      {'_', 0xBD}, {'+', 0xBB},  {'{', 0xDB}, {'}', 0xDD},  {'|', 0xDC},
-      {':', 0xBA}, {'"', 0xDE},  {'<', 0xBC}, {'>', 0xBE},  {'?', 0xBF}};
 
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
   std::string fill_content_;

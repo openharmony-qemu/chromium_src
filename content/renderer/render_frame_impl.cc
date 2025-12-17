@@ -1620,6 +1620,9 @@ RenderFrameImpl* RenderFrameImpl::CreateMainFrame(
     blink::mojom::FrameReplicationStatePtr replication_state,
     const base::UnguessableToken& devtools_frame_token,
     mojom::CreateLocalMainFrameParamsPtr params,
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    bool is_offscreen,
+#endif
     const blink::WebURL& base_url) {
   // A main frame RenderFrame must have a RenderWidget.
   DCHECK_NE(MSG_ROUTING_NONE, params->widget_params->routing_id);
@@ -1629,6 +1632,11 @@ RenderFrameImpl* RenderFrameImpl::CreateMainFrame(
       std::move(params->frame),
       std::move(params->associated_interface_provider_remote),
       devtools_frame_token, is_for_nested_main_frame);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (render_frame) {
+    render_frame->is_offscreen_ = is_offscreen;
+  }
+#endif
 
   WebLocalFrame* web_frame = WebLocalFrame::CreateMainFrame(
       web_view, render_frame, render_frame->blink_interface_registry_.get(),
@@ -2094,6 +2102,12 @@ void RenderFrameImpl::GetInterface(
 }
 
 blink::WebFrameWidget* RenderFrameImpl::GetLocalRootWebFrameWidget() {
+#if BUILDFLAG(ARKWEB_TEST)
+  if (web_frame_widget_test_mode){
+    web_frame_widget_test_mode = false;
+    return web_frame_widget_test;
+  }
+#endif
   return frame_->LocalRoot()->FrameWidget();
 }
 
@@ -2465,6 +2479,12 @@ const blink::WebLocalFrame* RenderFrameImpl::GetWebFrame() const {
 }
 
 blink::WebView* RenderFrameImpl::GetWebView() {
+#if BUILDFLAG(ARKWEB_TEST)
+  if (web_view_test_mode) {
+    web_view_test_mode = false;
+    return web_view_test;
+  }
+#endif
   blink::WebView* web_view = GetWebFrame()->View();
   DCHECK(web_view);
   return web_view;
@@ -2819,10 +2839,11 @@ void RenderFrameImpl::CommitNavigation(
       was_initiated_in_this_frame);
 
 #if BUILDFLAG(ARKWEB_USERAGENT)
-  if ((common_params->navigation_type == blink::mojom::NavigationType::RELOAD ||
+  if (IsMainFrame() &&
+      viewport_meta_enabled_ != GetBlinkPreferences().viewport_meta_enabled &&
+      (common_params->navigation_type == blink::mojom::NavigationType::RELOAD ||
        common_params->navigation_type ==
-           blink::mojom::NavigationType::RELOAD_BYPASSING_CACHE) &&
-      viewport_meta_enabled_ != GetBlinkPreferences().viewport_meta_enabled) {
+           blink::mojom::NavigationType::RELOAD_BYPASSING_CACHE)) {
     document_state->set_must_reset_scroll_and_scale_state(true);
   }
   viewport_meta_enabled_ = GetBlinkPreferences().viewport_meta_enabled;
@@ -3312,7 +3333,20 @@ void RenderFrameImpl::CommitFailedNavigation(
       *common_params, *commit_params, std::move(callback),
       std::move(navigation_client_impl_), blink::GenerateRequestId(),
       false /* was_initiated_in_this_frame */);
-
+#if BUILDFLAG(ARKWEB_EXT_UA)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableNwebExUa)) {
+    if (IsMainFrame() &&
+        viewport_meta_enabled_ != GetBlinkPreferences().viewport_meta_enabled &&
+        (common_params->navigation_type ==
+             blink::mojom::NavigationType::RELOAD ||
+         common_params->navigation_type ==
+             blink::mojom::NavigationType::RELOAD_BYPASSING_CACHE)) {
+      document_state->set_must_reset_scroll_and_scale_state(true);
+    }
+    viewport_meta_enabled_ = GetBlinkPreferences().viewport_meta_enabled;
+  }
+#endif
   DCHECK(!pending_loader_factories_);
   pending_loader_factories_ = std::move(new_loader_factories);
 
@@ -6933,7 +6967,7 @@ WebView* RenderFrameImpl::CreateNewWindow(
     params->allow_popup = true;
 
 #if BUILDFLAG(ARKWEB_MULTI_WINDOW)
-  GetNewWindowWebView(request.Url(), policy, params->allow_popup);
+  GetNewWindowWebView(request.Url(), policy, params->allow_popup, features);
 #endif
 
   params->window_container_type = WindowFeaturesToContainerType(features);
@@ -7133,5 +7167,17 @@ void RenderFrameImpl::ResetMembersUsedForDurationOfCommit() {
   pending_storage_info_.reset();
   is_requesting_navigation_ = false;
 }
+
+#if BUILDFLAG(ARKWEB_TEST)
+void RenderFrameImpl::SetLocalRootWebFrameWidgetForTest(blink::WebFrameWidget* widget) {
+  web_frame_widget_test_mode = true;
+  web_frame_widget_test = widget;
+}
+
+void RenderFrameImpl::SetWebViewForTest(blink::WebView* web_view) {
+  web_view_test_mode = true;
+  web_view_test = web_view;
+}
+#endif
 
 }  // namespace content

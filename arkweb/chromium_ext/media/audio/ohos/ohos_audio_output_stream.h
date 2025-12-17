@@ -92,8 +92,11 @@ class OHOSAudioOutputStream : public AudioOutputStream {
   static void AudioRendererOutputDeviceChangeCallback(OH_AudioRenderer* renderer,
                                                       void* userData,
                                                       OH_AudioStream_DeviceChangeReason reason);
-
+#if BUILDFLAG(ARKWEB_TEST)
+ public:
+#else
  private:
+#endif
   ~OHOSAudioOutputStream() override;
 
   base::TimeDelta GetDelay(base::TimeTicks delay_timestamp);
@@ -111,7 +114,7 @@ class OHOSAudioOutputStream : public AudioOutputStream {
 
   void SetStreamUsage();
 
-  void OneShotMediaPlayerStopped();
+  void OneShotMediaPlayerStopped(AudioParameters parameters);
 
   void StopTimer();
 
@@ -157,6 +160,8 @@ class OHOSAudioOutputStream : public AudioOutputStream {
   base::TimeDelta time_per_buffer_ = base::Microseconds(0);
 
   scoped_refptr<base::SingleThreadTaskRunner> main_task_runner_;
+
+  scoped_refptr<base::SingleThreadTaskRunner> audio_task_runner_;
 
   bool audioExclusive_ = false;
 

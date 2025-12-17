@@ -845,7 +845,6 @@ TEST(StringMessageCodecExtTest, ReadArray_002) {
     buffer.clear();
 }
 
-
 TEST(StringMessageCodecExtTest, ReadArray_003) {
     std::vector<uint8_t> buffer;
     struct WebMessagePort::Message decoded_msg;

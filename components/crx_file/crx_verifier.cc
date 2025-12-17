@@ -33,6 +33,10 @@
 #include "crypto/sha2.h"
 #include "crypto/signature_verifier.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/components/crx_file/crx_key_service.h"
+#endif // ARKWEB_ARKWEB_EXTENSIONS
+
 namespace crx_file {
 
 namespace {
@@ -97,6 +101,30 @@ bool ReadHashAndVerifyArchive(base::File* file,
   }
   return len == 0;
 }
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+using ByteVec = std::vector<uint8_t>;
+
+struct VectorHash {
+  size_t operator()(const ByteVec& v) const noexcept {
+    uint64_t h = 1469598103934665603ull;
+    for (auto b : v) {
+      h ^= b;
+      h *= 1099511628211ull;
+    }
+    return h;
+  }
+};
+
+std::unordered_set<ByteVec, VectorHash> BuildAllowedPublisherSet() {
+  auto hashes = CrxKeyService::GetInstance()->GetCrx3PublicKeyHashes();
+  if (hashes.empty()) {
+    hashes.emplace_back(std::begin(kPublisherKeyHash),
+                        std::end(kPublisherKeyHash));
+  }
+  return std::unordered_set<ByteVec, VectorHash>(hashes.begin(), hashes.end());
+}
+#endif  // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 
 // The remaining contents of a Crx3 file are [header-size][header][archive].
 // [header] is an encoded protocol buffer and contains both a signed and
@@ -183,6 +211,9 @@ VerifierResult VerifyCrx3(
           std::make_pair(rsa, crypto::SignatureVerifier::RSA_PKCS1_SHA256),
           std::make_pair(ecdsa, crypto::SignatureVerifier::ECDSA_SHA256)};
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  const auto allowed_set = BuildAllowedPublisherSet();
+#else
   std::vector<uint8_t> publisher_key(std::begin(kPublisherKeyHash),
                                      std::end(kPublisherKeyHash));
   std::optional<std::vector<uint8_t>> publisher_test_key;
@@ -190,6 +221,7 @@ VerifierResult VerifyCrx3(
     publisher_test_key.emplace(std::begin(kPublisherTestKeyHash),
                                std::end(kPublisherTestKeyHash));
   }
+#endif
   bool found_publisher_key = false;
 
   // Initialize all verifiers and update them with
@@ -206,10 +238,15 @@ VerifierResult VerifyCrx3(
       std::vector<uint8_t> key_hash(crypto::kSHA256Length);
       crypto::SHA256HashString(key, key_hash.data(), key_hash.size());
       required_key_set.erase(key_hash);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      found_publisher_key = found_publisher_key ||
+                            (allowed_set.find(key_hash) != allowed_set.end());
+#else
       DCHECK_EQ(accept_publisher_test_key, publisher_test_key.has_value());
       found_publisher_key =
           found_publisher_key || key_hash == publisher_key ||
           (accept_publisher_test_key && key_hash == *publisher_test_key);
+#endif // ARKWEB_ARKWEB_EXTENSIONS
       auto v = std::make_unique<crypto::SignatureVerifier>();
       static_assert(sizeof(unsigned char) == sizeof(uint8_t),
                     "Unsupported char size.");

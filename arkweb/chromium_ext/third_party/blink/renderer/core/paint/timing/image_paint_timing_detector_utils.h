@@ -20,6 +20,9 @@
 #include "base/notreached.h"
 #include "third_party/blink/renderer/core/paint/timing/media_record_id.h"
 #include "third_party/blink/renderer/core/style/style_image.h"
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+#include "third_party/blink/renderer/platform/heap/collection_support/heap_deque.h"
+#endif
 #include "third_party/blink/renderer/platform/heap/collection_support/heap_hash_map.h"
 #include "third_party/blink/renderer/platform/heap/member.h"
 #include "third_party/blink/renderer/platform/heap/persistent.h"
@@ -32,6 +35,9 @@ namespace blink {
 
 class ImageRecordsManager;   // forward declaration
 class ImageRecord;           // forward declaration
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+class PropertyTreeStateOrAlias;
+#endif
 
 // |ImageRecordsManagerUtils| is the manager of all of the images that Accumulate visual size since LCP.
 class CORE_EXPORT ImageRecordsManagerUtils {
@@ -59,6 +65,38 @@ class CORE_EXPORT ImageRecordsManagerUtils {
     void SetForBlankless();
     bool IsForBlankless() const;
 #endif
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION) || BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT)
+    void AssignImagePaintTimeFromRejectedImages(
+        const base::TimeTicks& timestamp,
+        unsigned last_queued_frame_index);
+    void AssignImagePaintTimeFromRecord(ImageRecord* record,
+                                        const base::TimeTicks& timestamp);
+    void RemoveRecordFromFirstScreenCalculator(
+        MediaRecordIdHash record_id_hash);
+    void NotifyImagePaintForFirstScreenCalculator(MediaRecordIdHash hash,
+                                                  ImageRecord* record,
+                                                  bool is_video);
+    void InsertRejectedImageRecords(MediaRecordIdHash hash,
+                                    ImageRecord* record);
+    void ClearRejectedImagesQueuedForPaintTime();
+    void ClearRejectedImageRecords();
+    void TraceRejectedImages(Visitor* visitor) const;
+    void GetAddedEntryInLatestFrameByRejectedImage(
+        const MediaTiming& media_timing,
+        const LayoutObject& object,
+        MediaRecordIdHash record_id_hash,
+        unsigned frame_index,
+        bool& added_entry_in_latest_frame,
+        const StyleImage* style_image,
+        const gfx::Rect& image_border,
+        const PropertyTreeStateOrAlias& current_paint_chunk_properties);
+    void GetAddedEntryInLatestFrameByRejectedDueToSize(
+        const MediaTiming& media_timing,
+        MediaRecordIdHash record_id_hash,
+        unsigned frame_index,
+        bool& added_entry_in_latest_frame,
+        const StyleImage* style_image);
+#endif
  private:
     ImageRecordsManager& image_records_manager_;
     ImageRecordsManagerUtils(const ImageRecordsManagerUtils&) = delete;
@@ -72,6 +110,20 @@ class CORE_EXPORT ImageRecordsManagerUtils {
     bool alcp_pending_images_added_ = false;
     Member<ImageRecord> alcp_image_;
     bool is_for_blankless_only_ = false;
+#endif
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION) || BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT)
+    ImageRecord* GetRejectedImage(MediaRecordIdHash record_id_hash);
+    bool IsRejectedDueToSize(MediaRecordIdHash record_id_hash);
+    void QueueToMeasurePaintTimeForRejected(ImageRecord* record,
+                                            unsigned current_frame_index);
+    bool OnFirstAnimatedFramePaintedForRejected(
+        MediaRecordIdHash record_id_hash,
+        unsigned current_frame_index);
+    void OnImageLoadedForRejected(MediaRecordIdHash record_id_hash,
+                                  unsigned current_frame_index,
+                                  const StyleImage* style_image);
+    HeapDeque<Member<ImageRecord>> rejected_images_queued_for_paint_time_;
+    HeapHashMap<MediaRecordIdHash, Member<ImageRecord>> rejected_image_records_;
 #endif
 };
 

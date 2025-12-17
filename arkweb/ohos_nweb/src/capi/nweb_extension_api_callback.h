@@ -17,7 +17,7 @@
 #define OHOS_NWEB_SRC_NWEB_EXTENSION_API_CALLBACK_H_
 
 #include <map>
-#include <stddef.h>
+#include <cstddef>
 #include <string>
 #include "ohos_nweb/src/capi/web_extension_tab_items.h"
 #include "ohos_nweb/src/capi/nweb_extension_action_icon.h"

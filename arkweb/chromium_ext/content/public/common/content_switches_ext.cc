@@ -41,6 +41,11 @@ const char kCalcTabletMode[] = "ohos-enable-calc-tablet-mode";
 const char kDisableMobileStyleSheet[] = "ohos-disable-mobile-style-sheet";
 const char kDisableNonAdvancedSecurityMode[] =
     "disable-non-advanced-security-mode";
+const char kDisableNextPreviousFlag[] = "ohos-disable-next-previous-flag";
+const char kUserCacheDir[] = "user-cache-dir";
+const char kArkwebAppDataDir[] = "arkweb-app-data-dir";
+const char kCacheDirExists[] = "ohos-cache-dir-exists";
+const char kUserDataDirExists[] = "ohos-user-data-dir-exists";
 
 #endif
 
@@ -105,5 +110,13 @@ const char  kOhosEnableGwpAsanType[] = "ohos-enable-gwp-asan-type";
 #endif
 #if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
 const char  kEnableWebAudioBackgroundTask[] = "enable-web-audio-background-task";
+#endif
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+const char  kEnableReportCookieMonsterClient[] = "ohos-enable-report-cookie-monster-client";
+#endif // BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+
+#if BUILDFLAG(IS_ARKWEB)
+const char  kEnableReportThreadPoolForeg[] = "ohos-enable-report-thread-pool-foreg";
 #endif
 }  // namespace switches

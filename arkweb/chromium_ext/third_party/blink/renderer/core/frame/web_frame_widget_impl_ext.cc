@@ -170,6 +170,13 @@ gfx::Vector2dF WebFrameWidgetImplExt::GetOverScrollOffset() {
   }
   return widget_base_->utils()->GetOverScrollOffset();
 }
+
+void WebFrameWidgetImplExt::OnOverScrollOffsetChanged(float offset_x,
+                                                      float offset_y) {
+  if (local_root_ && local_root_->GetFrame()) {
+    local_root_->GetFrame()->OnOverScrollOffsetChanged(offset_x, offset_y);
+  }
+}
 #endif
 // LCOV_EXCL_STOP
 
@@ -181,6 +188,10 @@ void WebFrameWidgetImplExt::CreateOverlay(
     GetAbsImageRectCallback get_rect_callback,
     OnTextSelectedCallback callback,
     OnDestroyImageAnalyzerOverlayCallback destroy_callback) {
+  if (!ForTopMostMainFrame()) {
+    LOG(WARNING) << "CreateOverlay stopped: not top most main frame.";
+    return;
+  }
   get_rect_callback_ = std::move(get_rect_callback);
   on_text_selected_callback_ = std::move(callback);
   on_destroy_image_overlay_callback_ = std::move(destroy_callback);
@@ -485,6 +496,13 @@ void WebFrameWidgetImplExt::ReportBlank(int64_t startTime, int64_t endTime) {
   if (content::ChildProcess::current() && duration > kDragBlankTime) {
     content::ChildProcess::current()->ReportHisyevent(duration, mode);
   }
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_TEST)
+void WebFrameWidgetImplExt::OnTextRecognizedForTest(WTF::Vector<mojom::blink::TextRecognizeResultPtr> res,
+    float scale) {
+  WebFrameWidgetImplExt::OnTextRecognized(std::move(res), scale);
 }
 #endif
 

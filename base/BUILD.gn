@@ -1007,6 +1007,14 @@ component("base") {
       "threading/thread_type_delegate.h",
     ]
   }
+  if (defined(is_arkweb) && is_arkweb) {
+    sources -= [
+      "files/scoped_file_linux.cc",
+    ]
+    sources += [
+      "../arkweb/chromium_ext/base/files/scoped_file_ohos.cc",
+    ]
+  }
 
   if (enable_arkweb) {
     sources += arkweb_metrics_sources
@@ -3696,6 +3704,11 @@ test("base_unittests") {
     import("//arkweb/chromium_ext/chromium_ext.gni")
  
     sources += arkweb_base_unittest_sources
+    if (arkweb_unittests) {
+      configs += [
+        "//arkweb/chromium_ext:net_dns_config",
+      ]
+    }
     sources += arkweb_storage_browser_database_unittests_sources
     sources += arkweb_components_web_cache_browser_unittest_sources
     sources += arkweb_storage_monitor_unittest_source
@@ -3704,20 +3717,27 @@ test("base_unittests") {
     sources += arkweb_content_common_unittests_sources
     sources += arkweb_content_renderer_unittests_sources
     sources += arkweb_base_ohos_ltpo_unittests_sources
+    sources += arkweb_render_process_startup_unittest_sources
+    sources += arkweb_ptrace_unittest_sources
     sources += [
       "//arkweb/ohos_nweb/src/sysevent/event_reporter.cc",
+      "//arkweb/chromium_ext/ohos_test/unittest/event_reporter/event_reporter_unittest.cc",
     ]
+    sources += arkweb_content_browser_dfx_unittests_sources
     if (arkweb_test) {
-      configs += [
-        "//arkweb/chromium_ext:arkweb_base_unittest_config"
+      sources += [
+        "//arkweb/ohos_adapter_ndk/ndk_version.cc",
       ]
     }
     sources += arkweb_ohos_adapter_ndk_unittests_sources
     sources += arkweb_content_browser_accessibility_resources
+    sources += arkweb_media_codec_decoder_adapter_impl_unittest_sources
 
     public_deps = [
       "//ui/accessibility:test_support",
       "//content/public/browser",
+      "//components/subresource_filter/content/browser",
+      "//components/js_injection/browser",
     ]
   }
 
@@ -3771,15 +3791,6 @@ test("base_unittests") {
     "allocator/partition_allocator/src/partition_alloc:test_support",
   ]
 
-  if (arkweb_unittests) {
-    deps += [
-      "//third_party/crashpad/crashpad/client",
-      "//third_party/crashpad/crashpad/util",
-      "//third_party/crashpad/crashpad/minidump",
-      "//third_party/crashpad/crashpad/snapshot",
-    ]
-  }
-
   # TODO(crbug.com/40158212): Move partition_alloc tests into its repository.
   #
   # Note: This requires checking `build_with_chromium` because partition_alloc
@@ -3788,22 +3799,20 @@ test("base_unittests") {
   # TODO(42223878): Remove standalone WebRTC dependency on //base.
   if (arkweb_unittests) {
    deps += ["//storage/browser"]
+   deps += ["//chrome/common"]
    deps += ["//components/web_cache/browser"]
    deps += ["//components/storage_monitor"]
    deps += ["//components/performance_manager"]
-   deps += ["//third_party:huawei_securec"]
-
-    defines += [ "CRASHPAD_LSS_EXTERNAL" ]
+   deps += ["//arkweb/chromium_ext/content/browser/dfx:memory_monitor_render"]
+    defines += [ "CRASHPAD_LSS_SOURCE_EXTERNAL" ]
     deps +=[
       "//third_party/crashpad/crashpad/client",
       "//third_party/crashpad/crashpad/util",
       "//third_party/crashpad/crashpad/minidump",
       "//third_party/crashpad/crashpad/snapshot",
-      "//third_party:huawei_securec",
     ]
+   deps += ["//third_party:huawei_securec"]
    }
-
-
   if (build_with_chromium) {
     deps += [ "allocator/partition_allocator/src/partition_alloc:unittests" ]
   }
@@ -4372,6 +4381,11 @@ test("base_unittests") {
     include_dirs = [
       "//third_party/ohos_ndk/includes/ohos_adapter",
     ]
+  }
+
+  if (arkweb_test) {
+    deps += [ "//arkweb/ohos_adapter_ndk/mock_ndk_api:mock_base_ohos" ]
+    deps += [ "//arkweb/ohos_adapter_ndk/mock_ndk_api:mock_ndk" ]
   }
 }
 

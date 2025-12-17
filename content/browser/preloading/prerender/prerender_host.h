@@ -220,6 +220,12 @@ class CONTENT_EXPORT PrerenderHost : public FrameTree::Delegate,
   void ActivateAndShowRepostFormWarningDialog() override;
   bool ShouldPreserveAbortedURLs() override;
   void UpdateOverridingUserAgent() override {}
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  std::string NotifyNavigationRewriteUrl(const std::string& original_url,
+                                         const std::string& referrer,
+                                         int transition_type,
+                                         bool is_key_request) override { return ""; }
+#endif
 
   NavigationControllerImpl& GetNavigationController() {
     return frame_tree_->controller();

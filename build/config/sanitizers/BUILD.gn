@@ -476,8 +476,8 @@ config("coverage_flags") {
 config("hwasan_flags") {
   if (is_hwasan) {
     asmflags = [ "-fsanitize=hwaddress" ]
-    cflags = [ 
-      "-fsanitize=hwaddress",
+    cflags = [ "-fsanitize=hwaddress" ]
+    cflags += [
       "-fno-omit-frame-pointer",
       "-fno-lto",
       "-fno-whole-program-vtables",
@@ -488,7 +488,7 @@ config("hwasan_flags") {
       "-ftls-model=local-dynamic",
       "-shared-libasan",
     ]
-    ldflags = ["-l:libc++_static.a"]
+    ldflags = [ "-l:libc++_static.a" ]
   }
 }
 

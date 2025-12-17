@@ -31,30 +31,63 @@ namespace {
   static std::map<int, WindowCreatedCallback> g_window_created_map_;
   static std::map<int, WindowUpdatedCallback> g_window_updated_map_;
   static std::map<int, WindowRemovedCallback> g_window_removed_map_;
+
+  content::BrowserContext* GetBrowserContextInUse(const WebExtensionWindow& window) {
+    auto browser_context = GetBrowserContext();
+    if (window.incognito) {
+      browser_context = GetIncognitoContext(browser_context);
+    }
+
+    return browser_context;
+  }
 }
- 
+
 // static
 NweExtensionWindowCefDelegate* NweExtensionWindowCefDelegate::GetInstance() {
   static NweExtensionWindowCefDelegate instance;
   return &instance;
 }
- 
+
 NweExtensionWindowCefDelegate::NweExtensionWindowCefDelegate() {}
 
 void NweExtensionWindowCefDelegate::WindowCreated(const WebExtensionWindow& window) {
-  extensions::CefWindowsEventRouter::GetInstance()->DispatchWindowCreatedEvent(GetBrowserContext(), window);
+  auto browser_context = GetBrowserContextInUse(window);
+  if (!browser_context) {
+    LOG(ERROR) << "WindowCreated get browser context failed.";
+    return;
+  }
+
+  extensions::CefWindowsEventRouter::GetInstance()->DispatchWindowCreatedEvent(browser_context, window);
 }
  
 void NweExtensionWindowCefDelegate::WindowRemoved(const WebExtensionWindow& window) {
-  extensions::CefWindowsEventRouter::GetInstance()->DispatchWindowRemovedEvent(GetBrowserContext(), window);
+  auto browser_context = GetBrowserContextInUse(window);
+  if (!browser_context) {
+    LOG(ERROR) << "WindowRemoved get browser context failed.";
+    return;
+  }
+
+  extensions::CefWindowsEventRouter::GetInstance()->DispatchWindowRemovedEvent(browser_context, window);
 }
  
 void NweExtensionWindowCefDelegate::WindowBoundsChanged(const WebExtensionWindow& window) {
-  extensions::CefWindowsEventRouter::GetInstance()->DispatchWindowBoundsChangedEvent(GetBrowserContext(), window);
+  auto browser_context = GetBrowserContextInUse(window);
+  if (!browser_context) {
+    LOG(ERROR) << "WindowBoundsChanged get browser context failed.";
+    return;
+  }
+
+  extensions::CefWindowsEventRouter::GetInstance()->DispatchWindowBoundsChangedEvent(browser_context, window);
 }
  
 void NweExtensionWindowCefDelegate::WindowFocusChanged(const WebExtensionWindow& window) {
-  extensions::CefWindowsEventRouter::GetInstance()->DispatchWindowFocusChangedEvent(GetBrowserContext(), window);
+  auto browser_context = GetBrowserContextInUse(window);
+  if (!browser_context) {
+    LOG(ERROR) << "WindowFocusChanged get browser context failed.";
+    return;
+  }
+
+  extensions::CefWindowsEventRouter::GetInstance()->DispatchWindowFocusChangedEvent(browser_context, window);
 }
 
 NO_SANITIZE("cfi-icall")
@@ -67,7 +100,7 @@ bool NweExtensionWindowCefDelegate::OnCreateWindow(const WebExtensionWindowCreat
   request_id++;
 
   g_window_created_map_[request_id] = std::move(callback);
-  if (!NWebExtensionWindowsDispathcher::OnCreateWindow(request_id, create_date)) {
+  if (!NWebExtensionWindowsDispatcher::OnCreateWindow(request_id, create_date)) {
     g_window_created_map_.erase(request_id);
     return false;
   }
@@ -87,7 +120,7 @@ bool NweExtensionWindowCefDelegate::OnUpdateWindow(int windowId,
   request_id++;
 
   g_window_updated_map_[request_id] = std::move(callback);
-  if (!NWebExtensionWindowsDispathcher::OnUpdateWindow(request_id, windowId, update_info)) {
+  if (!NWebExtensionWindowsDispatcher::OnUpdateWindow(request_id, windowId, update_info)) {
     g_window_updated_map_.erase(request_id);
     return false;
   }
@@ -106,7 +139,7 @@ bool NweExtensionWindowCefDelegate::OnRemoveWindow(int windowId,
   request_id++;
 
   g_window_removed_map_[request_id] = std::move(callback);
-  if (!NWebExtensionWindowsDispathcher::OnRemoveWindow(request_id, windowId)) {
+  if (!NWebExtensionWindowsDispatcher::OnRemoveWindow(request_id, windowId)) {
     g_window_removed_map_.erase(request_id);
     return false;
   }
@@ -120,7 +153,7 @@ bool NweExtensionWindowCefDelegate::HasOnCreateWindowV2CallBack() {
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return false;
 #else
-  return NWebExtensionWindowsDispathcher::HasOnCreateWindowV2CallBack();
+  return NWebExtensionWindowsDispatcher::HasOnCreateWindowV2CallBack();
 #endif
 }
 
@@ -129,7 +162,7 @@ bool NweExtensionWindowCefDelegate::HasOnUpdateWindowV2CallBack() {
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return false;
 #else
-  return NWebExtensionWindowsDispathcher::HasOnUpdateWindowV2CallBack();
+  return NWebExtensionWindowsDispatcher::HasOnUpdateWindowV2CallBack();
 #endif
 }
 
@@ -138,22 +171,27 @@ bool NweExtensionWindowCefDelegate::HasOnRemoveWindowV2CallBack() {
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return false;
 #else
-  return NWebExtensionWindowsDispathcher::HasOnRemoveWindowV2CallBack();
+  return NWebExtensionWindowsDispatcher::HasOnRemoveWindowV2CallBack();
 #endif
 }
 
 NO_SANITIZE("cfi-icall")
 bool NweExtensionWindowCefDelegate::OnCreateWindowV2(
-    const WebExtensionWindowCreateDataV2& create_date,
+    const WebExtensionWindowCreateData& create_date,
+    const WebExtensionWindowCreateDataV2& create_date_V2,
     WindowCreatedCallback callback) {
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return false;
 #else
+  if (!NweExtensionWindowCefDelegate::HasOnCreateWindowV2CallBack()) {
+    return NweExtensionWindowCefDelegate::OnCreateWindow(create_date, callback);
+  }
+
   static int request_id = 0;
   request_id++;
 
   g_window_created_map_[request_id] = std::move(callback);
-  if (!NWebExtensionWindowsDispathcher::OnCreateWindowV2(request_id, create_date)) {
+  if (!NWebExtensionWindowsDispatcher::OnCreateWindowV2(request_id, create_date_V2)) {
     g_window_created_map_.erase(request_id);
     return false;
   }
@@ -174,7 +212,7 @@ bool NweExtensionWindowCefDelegate::OnUpdateWindowV2(
   request_id++;
 
   g_window_updated_map_[request_id] = std::move(callback);
-  if (!NWebExtensionWindowsDispathcher::OnUpdateWindowV2(request_id, windowId, update_info)) {
+  if (!NWebExtensionWindowsDispatcher::OnUpdateWindowV2(request_id, windowId, update_info)) {
     g_window_updated_map_.erase(request_id);
     return false;
   }
@@ -195,7 +233,7 @@ bool NweExtensionWindowCefDelegate::OnRemoveWindowV2(
   request_id++;
 
   g_window_removed_map_[request_id] = std::move(callback);
-  if (!NWebExtensionWindowsDispathcher::OnRemoveWindowV2(request_id, windowId, remove_info)) {
+  if (!NWebExtensionWindowsDispatcher::OnRemoveWindowV2(request_id, windowId, remove_info)) {
     g_window_removed_map_.erase(request_id);
     return false;
   }
@@ -212,7 +250,7 @@ std::optional<WebExtensionWindow> NweExtensionWindowCefDelegate::OnGetWindow(
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return std::nullopt;
 #else
-  return NWebExtensionWindowsDispathcher::OnGetWindow(windowId, queryOptions);
+  return NWebExtensionWindowsDispatcher::OnGetWindow(windowId, queryOptions);
 #endif
 }
 
@@ -223,7 +261,7 @@ NweExtensionWindowCefDelegate::OnGetAllWindows(
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return std::vector<WebExtensionWindow>();
 #else
-  return NWebExtensionWindowsDispathcher::OnGetAllWindows(queryOptions);
+  return NWebExtensionWindowsDispatcher::OnGetAllWindows(queryOptions);
 #endif
 }
 
@@ -234,7 +272,7 @@ std::optional<WebExtensionWindow> NweExtensionWindowCefDelegate::OnGetCurrentWin
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return std::nullopt;
 #else
-  return NWebExtensionWindowsDispathcher::OnGetCurrentWindow(currentWindowId, queryOptions);
+  return NWebExtensionWindowsDispatcher::OnGetCurrentWindow(currentWindowId, queryOptions);
 #endif
 }
 
@@ -244,7 +282,7 @@ std::optional<WebExtensionWindow> NweExtensionWindowCefDelegate::OnGetLastFocuse
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return std::nullopt;
 #else
-  return NWebExtensionWindowsDispathcher::OnGetLastFocusedWindow(queryOptions);
+  return NWebExtensionWindowsDispatcher::OnGetLastFocusedWindow(queryOptions);
 #endif
 }
 
@@ -253,7 +291,7 @@ bool NweExtensionWindowCefDelegate::HasOnGetWindowV2CallBack() {
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return false;
 #else
-  return NWebExtensionWindowsDispathcher::HasOnGetWindowV2CallBack();
+  return NWebExtensionWindowsDispatcher::HasOnGetWindowV2CallBack();
 #endif
 }
 
@@ -262,7 +300,7 @@ bool NweExtensionWindowCefDelegate::HasOnGetAllWindowsV2CallBack() {
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return false;
 #else
-  return NWebExtensionWindowsDispathcher::HasOnGetAllWindowsV2CallBack();
+  return NWebExtensionWindowsDispatcher::HasOnGetAllWindowsV2CallBack();
 #endif
 }
 
@@ -271,7 +309,7 @@ bool NweExtensionWindowCefDelegate::HasOnGetCurrentWindowV2CallBack() {
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return false;
 #else
-  return NWebExtensionWindowsDispathcher::HasOnGetCurrentWindowV2CallBack();
+  return NWebExtensionWindowsDispatcher::HasOnGetCurrentWindowV2CallBack();
 #endif
 }
 
@@ -280,7 +318,7 @@ bool NweExtensionWindowCefDelegate::HasOnGetLastFocusedWindowV2CallBack() {
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return false;
 #else
-  return NWebExtensionWindowsDispathcher::HasOnGetLastFocusedWindowV2CallBack();
+  return NWebExtensionWindowsDispatcher::HasOnGetLastFocusedWindowV2CallBack();
 #endif
 }
 
@@ -291,7 +329,7 @@ std::optional<WebExtensionWindow> NweExtensionWindowCefDelegate::OnGetWindowV2(
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return std::nullopt;
 #else
-  return NWebExtensionWindowsDispathcher::OnGetWindowV2(windowId, queryOptions);
+  return NWebExtensionWindowsDispatcher::OnGetWindowV2(windowId, queryOptions);
 #endif
 }
 
@@ -301,7 +339,7 @@ std::vector<WebExtensionWindow> NweExtensionWindowCefDelegate::OnGetAllWindowsV2
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return std::vector<WebExtensionWindow>();
 #else
-  return NWebExtensionWindowsDispathcher::OnGetAllWindowsV2(queryOptions);
+  return NWebExtensionWindowsDispatcher::OnGetAllWindowsV2(queryOptions);
 #endif
 }
 
@@ -312,7 +350,7 @@ std::optional<WebExtensionWindow> NweExtensionWindowCefDelegate::OnGetCurrentWin
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return std::nullopt;
 #else
-  return NWebExtensionWindowsDispathcher::OnGetCurrentWindowV2(currentWindowId, queryOptions);
+  return NWebExtensionWindowsDispatcher::OnGetCurrentWindowV2(currentWindowId, queryOptions);
 #endif
 }
 
@@ -322,7 +360,7 @@ std::optional<WebExtensionWindow> NweExtensionWindowCefDelegate::OnGetLastFocuse
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return std::nullopt;
 #else
-  return NWebExtensionWindowsDispathcher::OnGetLastFocusedWindowV2(queryOptions);
+  return NWebExtensionWindowsDispatcher::OnGetLastFocusedWindowV2(queryOptions);
 #endif
 }
 

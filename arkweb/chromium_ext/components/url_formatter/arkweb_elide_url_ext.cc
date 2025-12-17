@@ -84,18 +84,14 @@ UrlType GetInputTypeForScheme(const std::string& scheme) {
        base::EqualsCaseInsensitiveASCII(scheme, url::kFileSystemScheme) ||
        base::EqualsCaseInsensitiveASCII(scheme, url::kJavaScriptScheme) ||
        base::EqualsCaseInsensitiveASCII(scheme, url::kResourcesScheme) ||
-       base::EqualsCaseInsensitiveASCII(scheme, url::kArkwebScheme))) {
+       base::EqualsCaseInsensitiveASCII(scheme, url::kArkwebScheme) ||
+       base::EqualsCaseInsensitiveASCII(scheme, url::kDataabilityScheme))) {
     return UrlType::URL;
   }
 
   if (base::IsStringASCII(scheme) &&
       url::IsStandard(scheme.c_str(),
                       url::Component(0, static_cast<int>(scheme.length())))) {
-    return UrlType::URL;
-  }
-
-  if (base::IsStringASCII(scheme) &&
-      base::EqualsCaseInsensitiveASCII(scheme, url::kDataabilityScheme)) {
     return UrlType::URL;
   }
 
@@ -281,6 +277,17 @@ UrlType ParseInput(const std::u16string& input,
   }
   return UrlType::UNKNOWN;
 }
+
+#if BUILDFLAG(ARKWEB_TEST)
+int TestNumNonHostComponents(const url::Parsed& parts) {
+  return NumNonHostComponents(parts);
+}
+
+UrlType TestGetInputTypeForScheme(const std::string& scheme) {
+  return GetInputTypeForScheme(scheme);
+}
+#endif  // BUILDFLAG(ARKWEB_TEST)
+
 #endif  // BUILDFLAG(IS_ARKWEB_EXT)
 
 }  // namespace url_formatter

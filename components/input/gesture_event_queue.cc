@@ -233,6 +233,12 @@ void GestureEventQueue::SendScrollEndingEventsNow() {
   }
 }
 
+#if BUILDFLAG(ARKWEB_FLING)
+void GestureEventQueue::UpdateFlingVelocityLimit(const gfx::Vector2dF& velocity) {
+  fling_controller_.UpdateFlingVelocityLimit(velocity);
+}
+#endif
+
 void GestureEventQueue::OnWheelEventAck(
     const MouseWheelEventWithLatencyInfo& event,
     blink::mojom::InputEventResultSource ack_source,
@@ -240,4 +246,9 @@ void GestureEventQueue::OnWheelEventAck(
   fling_controller_.OnWheelEventAck(event, ack_source, ack_result);
 }
 
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+void GestureEventQueue::SetFocusWebId(int32_t nweb_id) {
+  fling_controller_.SetFocusWebId(nweb_id);
+}
+#endif
 }  // namespace input

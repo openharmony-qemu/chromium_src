@@ -46,7 +46,7 @@ const std::string AUTO_FILL_CANCEL_PRIVATE_COMMAND = "autofill.cancel";
 
 class OnTextChangedListenerImpl : public IMFTextListenerAdapter {
  public:
-  OnTextChangedListenerImpl(NWebInputMethodHandler* handler)
+  explicit OnTextChangedListenerImpl(NWebInputMethodHandler* handler)
       : handler_(handler) {}
   ~OnTextChangedListenerImpl() = default;
 
@@ -109,7 +109,11 @@ class OnTextChangedListenerImpl : public IMFTextListenerAdapter {
   }
 
   void HandleSetSelection(int32_t start, int32_t end) override {}
-  void HandleExtendAction(int32_t action) override {}
+
+  void HandleExtendAction(int32_t action) override {
+    handler_->HandleExtendAction(action);
+  }
+
   void HandleSelect(int32_t keyCode, int32_t cursorMoveSkip) override {}
 
   int32_t GetTextIndexAtCursor() override {
@@ -157,9 +161,8 @@ class InputMethodTask : public CefTask {
   InputMethodTask(const InputMethodTask&) = delete;
   InputMethodTask& operator=(const InputMethodTask&) = delete;
 
-  virtual void Execute() override {
+  void Execute() override {
     std::move(closure_).Run();
-    // closure_.Reset();
   }
 
  private:
@@ -343,6 +346,32 @@ void NWebInputMethodHandler::HandleSecurityLayerHandlerOnUI() {
 }
 // LCOV_EXCL_STOP
 
+void NWebInputMethodHandler::UpdateTextFieldStatus(bool isImeShowKeyboard, bool isTextInputfocus) {
+  if (browser_ == nullptr) {
+    return;
+  }
+
+  CefRefPtr<ArkWebBrowserHostExt> host = browser_->GetHost();
+  if (host == nullptr) {
+    return;
+  }
+
+  CefRefPtr<CefTask> task = new InputMethodTask(base::BindOnce(
+      &NWebInputMethodHandler::UpdateTextFieldStatusHandlerOnUI, this, isImeShowKeyboard, isTextInputfocus));
+  host->PostTaskToUIThread(task);
+}
+
+void NWebInputMethodHandler::UpdateTextFieldStatusHandlerOnUI(bool isImeShowKeyboard, bool isTextInputfocus) {
+  if (browser_ == nullptr) {
+    return;
+  }
+  CefRefPtr<ArkWebBrowserHostExt> host = browser_->GetHost();
+  if (host == nullptr) {
+    return;
+  }
+  host->UpdateTextFieldStatus(isImeShowKeyboard, isTextInputfocus);
+}
+
 void NWebInputMethodHandler::ComputeEditorInfo(InputInfo inputInfo,
                                                int32_t customEnterKeyType) {
   type_text_flag_multi_line_ = false;
@@ -472,10 +501,16 @@ void NWebInputMethodHandler::Attach(CefRefPtr<CefBrowser> browser,
 
 bool NWebInputMethodHandler::Reattach(uint32_t nwebId, ReattachType type) {
   nweb_id_ = nwebId;
+  bool textInputState = true;
+  if (browser_ && browser_->GetHost()) {
+    textInputState = browser_->GetHost()->JudgeTextInputState();
+  }
   if (type == ReattachType::FROM_CONTINUE) {
     if (!isNeedReattachOncontinue_ || !is_editable_node_) {
-      LOG(INFO) << "don't need reattach input method";
-      return false;
+      LOG(INFO) << "don't need reattach input method " << textInputState;
+      if (textInputState) {
+        return false;
+      }
     }
     isNeedReattachOncontinue_ = false;
   }
@@ -822,6 +857,7 @@ void NWebInputMethodHandler::SetIMEStatusOnUI(bool status) {
     isManualCloseKeyboard_ = false;
   }
   ime_shown_ = status;
+  UpdateTextFieldStatus(status, status);
 }
 
 // LCOV_EXCL_START
@@ -835,6 +871,7 @@ void NWebInputMethodHandler::WebBlurKeyboardHideOnUI() {
 // LCOV_EXCL_STOP
 
 void NWebInputMethodHandler::InsertTextHandlerOnUI(const std::u16string& text) {
+  LOG(INFO) << "NWebInputMethodHandler::InsertTextHandlerOnUI text length:" << text.length();
   if (text.empty()) {
     LOG(ERROR) << "insert text empty!";
     return;
@@ -855,13 +892,7 @@ void NWebInputMethodHandler::InsertTextHandlerOnUI(const std::u16string& text) {
   }
   CefKeyEvent keyEvent;
   keyEvent.windows_key_code = ui::VKEY_PROCESSKEY;
-  // keycode conversion for single char input on PC
-  if (base::ohos::IsPcDevice() && text.length() == 1) {
-    char16_t firstChar = text[0];
-    if (keycode_map.count(firstChar) > 0) {
-      keyEvent.windows_key_code = keycode_map[firstChar];
-    }
-  }
+
   keyEvent.modifiers = 0;
   keyEvent.is_system_key = false;
   keyEvent.type = KEYEVENT_RAWKEYDOWN;
@@ -1638,4 +1669,31 @@ bool NWebInputMethodHandler::ResetTextSelectiondata() {
   return false;
 }
 // LCOV_EXCL_STOP
+
+void NWebInputMethodHandler::HandleExtendAction(int32_t action) {
+  if (browser_ == nullptr) {
+    LOG(ERROR) << __FUNCTION__ << " browser is nullptr, " << action;
+    return;
+  }
+  CefRefPtr<ArkWebBrowserHostExt> host = browser_->GetHost();
+  if (host == nullptr) {
+    LOG(ERROR) << __FUNCTION__ << " browser host is nullptr, " << action;
+    return;
+  }
+  CefRefPtr<CefTask> extend_action_task = new InputMethodTask(base::BindOnce(
+        &NWebInputMethodHandler::HandleExtendActionOnUI, this, action));
+  host->PostTaskToUIThread(extend_action_task);
+}
+
+void NWebInputMethodHandler::HandleExtendActionOnUI(int32_t action) {
+  if (browser_ == nullptr) {
+    return;
+  }
+  CefRefPtr<ArkWebBrowserHostExt> host = browser_->GetHost();
+  if (host == nullptr) {
+    return;
+  }
+  LOG(DEBUG) << __FUNCTION__ << " action is " << action;
+  host->HandleInputMethodExtendAction(action);
+}
 }  // namespace OHOS::NWeb

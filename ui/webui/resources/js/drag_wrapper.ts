@@ -83,8 +83,15 @@ export class DragWrapper {
    */
   private onDragOver_(e: MouseEvent) {
     if (!this.target_.classList.contains('drag-target')) {
-      return;
+      if (!this.delegate_.shouldAcceptDrag(e)) {
+        return;
+      }
+      this.target_.classList.add('drag-target');
+      this.dragEnters_ = 1;
+      this.delegate_.doDragEnter(e);
     }
+
+    e.preventDefault?.();
     this.delegate_.doDragOver(e);
   }
 

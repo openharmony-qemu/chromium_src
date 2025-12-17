@@ -19,11 +19,12 @@
 #include <memory>
 #include <vector>
 
+#include "cef_browser.h"
 #include "capi/nweb_download_delegate_callback.h"
+#include "mock_nweb_delegate.h"
 #define private public
 #include "arkweb/build/features/features.h"
 #include "arkweb/ohos_nweb/src/capi/nweb_devtools_message_handler.h"
-#include "build/build_config.h"
 #include "nweb_delegate_interface.h"
 #include "nweb_input_handler.h"
 
@@ -72,6 +73,39 @@ class NWebInputHandlerTest : public ::testing::Test {
   void TearDown(void) override;
   std::shared_ptr<MockNWebDelegate> mock_delegate_;
   std::shared_ptr<NWebInputHandler> input_handler_;
+};
+
+class MockNWebStylusTouchPointInfo : public NWebStylusTouchPointInfo {
+ public:
+  ~MockNWebStylusTouchPointInfo() = default;
+  MOCK_METHOD(int, GetId, (), (override));
+  MOCK_METHOD(float, GetForce, (), (override));
+  MOCK_METHOD(float, GetTiltX, (), (override));
+  MOCK_METHOD(float, GetTiltY, (), (override));
+  MOCK_METHOD(float, GetRollAngle, (), (override));
+  MOCK_METHOD(int, GetWidth, (), (override));
+  MOCK_METHOD(int, GetHeight, (), (override));
+  MOCK_METHOD(SourceTool, GetSourceTool, (), (override));
+
+  double GetX() override {
+    return x_;
+  }
+
+  double GetY() override {
+    return y_;
+  }
+
+  void SetX(double a) {
+    x_ = a;
+  }
+
+  void SetY(double a) {
+    y_ = a;
+  }
+
+private:
+  double x_;
+  double y_;
 };
 
 void NWebInputHandlerTest::SetUpTestCase(void) {}
@@ -713,4 +747,51 @@ TEST_F(NWebInputHandlerTest, NWebInputHandlerTest_CheckSlideNavigation_011) {
   input_handler_->CheckSlideNavigation(start_x, end_x);
   EXPECT_NE(input_handler_->nweb_delegate_, nullptr);
 }
+
+TEST_F(NWebInputHandlerTest, OnStylusTouchPress001) {
+  input_handler_->OnStylusTouchPress(nullptr, true);
+
+  std::shared_ptr<MockNWebStylusTouchPointInfo> touch_point =
+      std::make_shared<MockNWebStylusTouchPointInfo>();
+  touch_point->SetX(1); // 1:value of x
+  input_handler_->OnStylusTouchPress(touch_point, true);
+
+  input_handler_->nweb_delegate_ = nullptr;
+  ASSERT_NO_FATAL_FAILURE(input_handler_->OnStylusTouchPress(nullptr, true));
+}
+
+TEST_F(NWebInputHandlerTest, OnStylusTouchRelease001) {
+  input_handler_->OnStylusTouchRelease(nullptr, true);
+  std::shared_ptr<MockNWebStylusTouchPointInfo> touch_point =
+      std::make_shared<MockNWebStylusTouchPointInfo>();
+  touch_point->SetX(0); // 0:value of x
+  touch_point->SetY(0); // 0:value of y
+  input_handler_->OnStylusTouchRelease(touch_point, true);
+
+  touch_point->SetX(1); // 1:value of x
+  touch_point->SetY(0); // 0:value of y
+  input_handler_->OnStylusTouchRelease(touch_point, true);
+
+  touch_point->SetX(0); // 0:value of x
+  touch_point->SetY(1); // 1:value of y
+  input_handler_->OnStylusTouchRelease(touch_point, true);
+
+  input_handler_->nweb_delegate_ = nullptr;
+  ASSERT_NO_FATAL_FAILURE(input_handler_->OnStylusTouchRelease(nullptr, true));
+}
+
+TEST_F(NWebInputHandlerTest, OnStylusTouchMove001) {
+  const std::vector<std::shared_ptr<NWebStylusTouchPointInfo>> touch_point_infos_one;
+  ASSERT_NO_FATAL_FAILURE(input_handler_->OnStylusTouchMove(touch_point_infos_one, true));
+
+  std::shared_ptr<MockNWebStylusTouchPointInfo> touch_point =
+      std::make_shared<MockNWebStylusTouchPointInfo>();
+  touch_point->SetX(1); // 1:value of x
+  const std::vector<std::shared_ptr<NWebStylusTouchPointInfo>> touch_point_infos_two{touch_point};
+  ASSERT_NO_FATAL_FAILURE(input_handler_->OnStylusTouchMove(touch_point_infos_two, true));
+
+  input_handler_->nweb_delegate_ = nullptr;
+  ASSERT_NO_FATAL_FAILURE(input_handler_->OnStylusTouchMove(touch_point_infos_two, true));
+}
+
 }  // namespace OHOS::NWeb

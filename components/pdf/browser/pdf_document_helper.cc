@@ -6,9 +6,6 @@
 
 #include <utility>
 
-#if BUILDFLAG(ARKWEB_PDF)
-#include "base/logging.h"
-#endif  // BUILDFLAG(ARKWEB_PDF)
 #include "base/memory/ptr_util.h"
 #include "base/notreached.h"
 #include "components/pdf/browser/pdf_document_helper_client.h"
@@ -25,6 +22,12 @@
 #include "ui/gfx/geometry/point_f.h"
 #include "ui/touch_selection/touch_editing_controller.h"
 
+#if BUILDFLAG(ARKWEB_PDF)
+#include "base/logging.h"
+#include "content/browser/renderer_host/render_frame_host_impl.h"
+#include "arkweb/chromium_ext/components/pdf/browser/pdf_document_helper_for_include.cc"
+#endif  // BUILDFLAG(ARKWEB_PDF)
+
 namespace pdf {
 
 // static
@@ -40,12 +43,24 @@ void PDFDocumentHelper::BindPdfHost(
   pdf_helper->pdf_host_receivers_.Bind(rfh, std::move(pdf_host));
 }
 
+#if !BUILDFLAG(ARKWEB_PDF)
 PDFDocumentHelper::PDFDocumentHelper(
     content::RenderFrameHost* rfh,
     std::unique_ptr<PDFDocumentHelperClient> client)
     : content::DocumentUserData<PDFDocumentHelper>(rfh),
       pdf_host_receivers_(content::WebContents::FromRenderFrameHost(rfh), this),
       client_(std::move(client)) {}
+#else
+PDFDocumentHelper::PDFDocumentHelper(
+    content::RenderFrameHost* rfh,
+    std::unique_ptr<PDFDocumentHelperClient> client)
+    : content::DocumentUserData<PDFDocumentHelper>(rfh),
+      pdf_host_receivers_(content::WebContents::FromRenderFrameHost(rfh), this),
+      client_(std::move(client)) {
+    SetIsPdfDocument(true);
+    UpdateScaleFactor();
+}
+#endif  // !BUILDFLAG(ARKWEB_PDF)
 
 PDFDocumentHelper::~PDFDocumentHelper() {
   if (pdf_rwh_) {
@@ -56,6 +71,9 @@ PDFDocumentHelper::~PDFDocumentHelper() {
     return;
   }
 
+#if BUILDFLAG(ARKWEB_PDF)
+  SetIsPdfDocument(false);
+#endif  // BUILDFLAG(ARKWEB_PDF)
   ui::TouchSelectionController* touch_selection_controller =
       touch_selection_controller_client_manager_->GetTouchSelectionController();
   touch_selection_controller->HideAndDisallowShowingAutomatically();
@@ -122,50 +140,16 @@ void PDFDocumentHelper::SelectionChanged(const gfx::PointF& left,
   selection_left_height_ = left_height;
   selection_right_ = right;
   selection_right_height_ = right_height;
+#if BUILDFLAG(ARKWEB_PDF)
+  UpdateScaleFactor();
+  selection_left_.Scale(page_scale_factor_);
+  selection_right_.Scale(page_scale_factor_);
+  selection_left_height_ = SafeScale(selection_left_height_, page_scale_factor_);
+  selection_right_height_ = SafeScale(selection_right_height_, page_scale_factor_);
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   DidScroll();
 }
-
-#if BUILDFLAG(ARKWEB_PDF)
-void PDFDocumentHelper::UpdateClientClippedSelectionBoundsForPDF(const gfx::Rect& clipped_selection_bounds) {
-  if (!touch_selection_controller_client_manager_) {
-    InitTouchSelectionClientManager();
-  }
-
-  if (!touch_selection_controller_client_manager_) {
-    LOG(ERROR) << __func__ << ", PDF touch_selection_controller_client_manager_ is null.";
-    return;
-  }
-
-  LOG(DEBUG) << "PDF clipped selection bounds: " << clipped_selection_bounds.ToString();
-  gfx::Point bounds_origin = clipped_selection_bounds.origin();
-  gfx::Size bounds_size = clipped_selection_bounds.size();
-  gfx::PointF bounds_origin_f =
-    ConvertToRoot(gfx::PointF(bounds_origin.x(), bounds_origin.y()));
-  bounds_origin.set_x(bounds_origin_f.x());
-  bounds_origin.set_y(bounds_origin_f.y());
-  gfx::Rect converted_bounds(bounds_origin, bounds_size);
-  touch_selection_controller_client_manager_->
-    ConvertClientClippedSelectionBounds(converted_bounds);
-  touch_selection_controller_client_manager_->
-    UpdateClientClippedSelectionBounds(converted_bounds);
-}
-
-void PDFDocumentHelper::HideHandleAndQuickMenuForPDF(bool hide_handles) {
-  if (!touch_selection_controller_client_manager_) {
-    InitTouchSelectionClientManager();
-  }
-
-  if (!touch_selection_controller_client_manager_) {
-    LOG(ERROR) << __func__ << ", PDF touch_selection_controller_client_manager_ is null.";
-    return;
-  }
-  
-  LOG(DEBUG) << "PDF hide handle and quick nenu: " << hide_handles;
-  touch_selection_controller_client_manager_->
-    HideHandleAndQuickMenuIfNecessary(hide_handles);
-}
-#endif  // BUILDFLAG(ARKWEB_PDF)
 
 void PDFDocumentHelper::SetPluginCanSave(bool can_save) {
   client_->SetPluginCanSave(pdf_host_receivers_.GetCurrentTargetFrame(),
@@ -233,14 +217,28 @@ void PDFDocumentHelper::MoveCaret(const gfx::PointF& position) {
   if (!remote_pdf_client_) {
     return;
   }
+#if BUILDFLAG(ARKWEB_PDF)
+  UpdateScaleFactor();
+  gfx::PointF convert_position = ConvertFromRoot(position);
+  convert_position.InvScale(page_scale_factor_);
+  remote_pdf_client_->SetCaretPosition(convert_position);
+#else
   remote_pdf_client_->SetCaretPosition(ConvertFromRoot(position));
+#endif  // BUILDFLAG(ARKWEB_PDF)
 }
 
 void PDFDocumentHelper::MoveRangeSelectionExtent(const gfx::PointF& extent) {
   if (!remote_pdf_client_) {
     return;
   }
+#if BUILDFLAG(ARKWEB_PDF)
+  UpdateScaleFactor();
+  gfx::PointF convert_extent = ConvertFromRoot(extent);
+  convert_extent.InvScale(page_scale_factor_);
+  remote_pdf_client_->MoveRangeSelectionExtent(convert_extent);
+#else
   remote_pdf_client_->MoveRangeSelectionExtent(ConvertFromRoot(extent));
+#endif  // BUILDFLAG(ARKWEB_PDF)
 }
 
 void PDFDocumentHelper::SelectBetweenCoordinates(const gfx::PointF& base,
@@ -248,8 +246,17 @@ void PDFDocumentHelper::SelectBetweenCoordinates(const gfx::PointF& base,
   if (!remote_pdf_client_) {
     return;
   }
+#if BUILDFLAG(ARKWEB_PDF)
+  UpdateScaleFactor();
+  gfx::PointF convert_base = ConvertFromRoot(base);
+  convert_base.InvScale(page_scale_factor_);
+  gfx::PointF convert_extent = ConvertFromRoot(extent);
+  convert_extent.InvScale(page_scale_factor_);
+  remote_pdf_client_->SetSelectionBounds(convert_base, convert_extent);
+#else
   remote_pdf_client_->SetSelectionBounds(ConvertFromRoot(base),
                                          ConvertFromRoot(extent));
+#endif  // BUILDFLAG(ARKWEB_PDF)
 }
 
 void PDFDocumentHelper::GetPdfBytes(

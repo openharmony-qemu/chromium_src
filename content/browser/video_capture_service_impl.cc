@@ -155,7 +155,11 @@ video_capture::mojom::VideoCaptureService& GetVideoCaptureService() {
     if (features::IsVideoCaptureServiceEnabledForBrowserProcess()) {
       auto dedicated_task_runner = CREATE_IN_PROCESS_TASK_RUNNER(
           {base::MayBlock(), base::WithBaseSyncPrimitives(),
+#if BUILDFLAG(ARKWEB_WEBRTC)
+           base::TaskPriority::USER_VISIBLE},
+#else
            base::TaskPriority::BEST_EFFORT},
+#endif
           base::SingleThreadTaskRunnerThreadMode::DEDICATED);
       dedicated_task_runner->PostTask(
           FROM_HERE,

@@ -62,6 +62,7 @@ public:
   void ScrollBy(float delta_x, float delta_y);
 #if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
   gfx::Vector2dF GetOverScrollOffset();
+  void OnOverScrollOffsetChanged(float offset_x, float offset_y);
 #endif
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 

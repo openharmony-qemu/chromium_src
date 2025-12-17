@@ -69,10 +69,14 @@ public:
 
     static int32_t OnReadData(OH_AudioCapturer* capturer, void* userData, void* buffer, int32_t length);
 
+    static int32_t OnInterruptEvent(OH_AudioCapturer* capturer, void* userData, OH_AudioInterrupt_ForceType type,
+                                    OH_AudioInterrupt_Hint hint);
+    static std::shared_mutex& GetAdapterMutex();
 private:
     OH_AudioCapturer* audio_capturer_ = nullptr;
     size_t callback_index_ = 0;
     static CallbackSharedWrapper<UserDataCallBack> callback_wrapper_;
+    static std::shared_mutex adapterMutex_;
 };
 }  // namespace OHOS::NWeb
 

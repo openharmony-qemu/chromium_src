@@ -176,7 +176,7 @@ void PasteDataRecordAdapterImplFuzzTest(FuzzedDataProvider* fdp) {
 
   impl->GetCustomData();
 
-  PasteDataRecordAdapterImpl impl2(nullptr);
+  PasteDataRecordAdapterImpl impl2(nullptr, std::shared_ptr<OH_UdmfData>());
 
   impl2.HtmlToPlainText(html);
 

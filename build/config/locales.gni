@@ -165,12 +165,13 @@ extended_locales = [
 
 if (is_ohos) {
   extended_locales -= [
-    "ka",
-    "mk",
-    "my",
     "be",
+    "ka",
     "kk",
     "km",
+    "lo",
+    "mk",
+    "my",
     "uz",
   ]
 }

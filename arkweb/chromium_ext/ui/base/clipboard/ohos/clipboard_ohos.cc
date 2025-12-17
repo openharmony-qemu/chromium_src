@@ -44,6 +44,10 @@
 #include "ui/gfx/color_space.h"
 #include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
 
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+#include "ohos_nweb/include/nweb_vault_plain_text_callback.h"
+#endif
+
 using namespace OHOS::NWeb;
 
 namespace ui {
@@ -153,7 +157,7 @@ class ClipboardOHOSInternal {
     void OnPasteboardChanged() override {
       if (clipboard_internal_) {
         LOG(INFO) << "Inform Clipboard Changed";
-        clipboard_internal_->SetClipboardState(ClipboardState::kOutOfDate);
+        clipboard_internal_->OnPasteboardChanged();
       }
     }
 
@@ -193,6 +197,11 @@ class ClipboardOHOSInternal {
 
   const ClipboardSequenceNumberToken& sequence_number() const {
     return sequence_number_;
+  }
+
+  void OnPasteboardChanged() {
+    SetClipboardState(ClipboardState::kOutOfDate);
+    sequence_number_ = ClipboardSequenceNumberToken();
   }
   // Returns the current clipboard data, which may be nullptr if nothing has
   // been written since the last Clear().
@@ -594,6 +603,21 @@ class ClipboardOHOSInternal {
         data->CalculateSize(format, custom_data_format));
   }
 
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  bool HandlePasswordVault(
+      const std::shared_ptr<OHOS::NWeb::NWebVaultPlainTextCallback>& callback) {
+    if (!callback) {
+      LOG(INFO) << "callback is nullptr.";
+      return false;
+    }
+    auto& pasteboard = OhosAdapterHelper::GetInstance().GetPasteBoard();
+    if (!pasteboard.HasType(kMiscServicesMimeTypeAutoFillSecure)) {
+      return false;
+    }
+    return callback->ProcessAutoFillOnPaste();
+  }
+#endif
+
   static void SetSpanstringConvertHtml(
       std::shared_ptr<OHOS::NWeb::NWebSpanstringConvertHtmlCallback> callback) {
     convert_html_callback_ = callback;
@@ -612,43 +636,27 @@ class ClipboardOHOSInternal {
 
   bool HasFormatInMisc(ClipboardInternalFormat format) {
     UpdateClipboardData();
-    int allFormat = 0;
     if (!read_data_) {
       return false;
     }
-    PasteRecordVector record_vector = read_data_->GetPasteRecordVector();
-    const std::string SPAN_STRING_TAG = "openharmony.styled-string";
-    for (auto& record : record_vector) {
-      std::shared_ptr<std::string> html = record->GetHtmlText();
-      std::shared_ptr<std::string> text = record->GetPlainText();
-      std::shared_ptr<ClipBoardImageDataAdapterImpl> imgData =
-          std::make_shared<ClipBoardImageDataAdapterImpl>();
 
-      bool imgFlag = record->GetImgData(imgData);
-      std::shared_ptr<PasteCustomData> pasteCustomData =
-          record->GetCustomData();
-      if (pasteCustomData &&
-          (pasteCustomData->find(SPAN_STRING_TAG) != pasteCustomData->end())) {
-        allFormat |= static_cast<int>(ClipboardInternalFormat::kHtml);
-      }
-      if (html) {
-        allFormat |= static_cast<int>(ClipboardInternalFormat::kHtml);
-      }
-      if (text) {
-        allFormat |= static_cast<int>(ClipboardInternalFormat::kText);
-      }
-      if (imgFlag) {
-        allFormat |= static_cast<int>(ClipboardInternalFormat::kPng);
-      }
+    auto& pasteboard = OhosAdapterHelper::GetInstance().GetPasteBoard();
+    switch (format) {
+      case ClipboardInternalFormat::kText:
+        return pasteboard.HasType(kMiscServicesMimeTypeTextHtml) ||
+               pasteboard.HasType(kMiscServicesMimeTypeTextPlain);
+      case ClipboardInternalFormat::kHtml:
+        return pasteboard.HasType(kMiscServicesMimeTypeTextHtml);
+      case ClipboardInternalFormat::kPng:
+        return pasteboard.HasType(kMiscServicesMimeTypePixelmap);
+      case ClipboardInternalFormat::kCustom:
+        return read_data_->HasCustomData();
+      case ClipboardInternalFormat::kFilenames:
+        return pasteboard.HasType(kMiscServicesMimeTypeTextUri) ||
+               read_data_->HasFileUri();
+      default:
+        return false;
     }
-
-    if (read_data_->HasFileUri()) {
-      allFormat |= static_cast<int>(ClipboardInternalFormat::kFilenames);
-    }
-    if (read_data_->HasCustomData()) {
-      allFormat |= static_cast<int>(ClipboardInternalFormat::kCustom);
-    }
-    return allFormat & static_cast<int>(format);
   }
 
   bool ReadBitmapInternal(const std::shared_ptr<PasteDataRecordAdapter>& record,
@@ -661,8 +669,10 @@ class ClipboardOHOSInternal {
 
     if (record->GetImgData(imgData)) {
       SkImageInfo skImageInfo = MakeSkImageInfoFromPixelMap(imgData);
-      SkPixmap pixmap(skImageInfo, imgData->GetData(), imgData->GetRowBytes());
-      if (!img.installPixels(pixmap)) {
+      void* pixels = reinterpret_cast<void*>(imgData->GetData());
+      size_t rowBytes = imgData->GetRowBytes();
+      if (!img.installPixels(skImageInfo, pixels, rowBytes,
+                             [](void* addr, void* ctx) { free(addr); }, nullptr)) {
         LOG(ERROR) << "installPixels failed";
         return false;
       }
@@ -1168,5 +1178,15 @@ void ClipboardOHOS::UpdateClipboardData(
     clipboard_internal_->UpdateClipboardData(std::move(callback));
   }
 }
+
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+bool ClipboardOHOS::HandlePasswordVault(
+    const std::shared_ptr<OHOS::NWeb::NWebVaultPlainTextCallback>& callback) {
+  if (clipboard_internal_) {
+    return clipboard_internal_->HandlePasswordVault(callback);
+  }
+  return false;
+}
+#endif
 
 }  // namespace ui

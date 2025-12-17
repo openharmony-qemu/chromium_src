@@ -233,7 +233,7 @@ void OverscrollRefresh::AnimateReset(float x_delta, float y_delta) {
     reset_timer_.Start(
         FROM_HERE, kResetDurationMs,
         base::BindRepeating(&OverscrollRefresh::StartResetAnimate,
-                            base::Unretained(this)));
+                            weak_factory_.GetWeakPtr()));
   } else {
     reset_timer_.Stop();
     Reset();
@@ -245,7 +245,7 @@ void OverscrollRefresh::DidStopRefresh() {
     reset_timer_.Start(
         FROM_HERE, kDidStopRefreshingDelayMs,
         base::BindRepeating(&OverscrollRefresh::StartResetAnimate,
-                            base::Unretained(this)));
+                            weak_factory_.GetWeakPtr()));
   }
   did_stop_refresh_ = true;
 }

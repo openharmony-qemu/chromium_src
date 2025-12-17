@@ -30,11 +30,12 @@ ArkwebInputRouterImplUtils::ArkwebInputRouterImplUtils(
 ArkwebInputRouterImplUtils::~ArkwebInputRouterImplUtils() = default;
 
 void ArkwebInputRouterImplUtils::SendGestureEventEx(
-    GestureEventWithLatencyInfo& gesture_event) {
+    const GestureEventWithLatencyInfo& gesture_event) {
+  const auto type = gesture_event.event.GetType();
   timeStamp_ = ::base::subtle::TimeTicksNowIgnoringOverride()
                    .since_origin()
                    .InNanoseconds();
-  if (gesture_event.event.GetType() ==
+  if (type ==
           WebInputEvent::Type::kGestureScrollUpdate &&
       timeStamp_ - prePerfTimeStamp_ > GESTURE_MOVE_PERIOD) {
 #if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
@@ -48,7 +49,7 @@ void ArkwebInputRouterImplUtils::SendGestureEventEx(
           ->ApplySocPerfConfigByIdEx(SOC_PERF_SLIDE_NORMAL_CONFIG_ID, true);
     }
 #endif
-  } else if (gesture_event.event.GetType() ==
+  } else if (type ==
              WebInputEvent::Type::kGestureScrollEnd) {
     LOG(INFO) << "InputRouterImpl::SendGestureEvent type=kGestureScrollEnd";
     input_router_impl_->client_->GetWidgetInputHandler()->TryFinishFling();
@@ -89,17 +90,19 @@ void ArkwebInputRouterImplUtils::TracingAndSceneReport(
 
 void ArkwebInputRouterImplUtils::ProcessFilteredEvent(
     const blink::WebInputEvent& input_event) {
-    if (!(input_event.GetType() == blink::WebInputEvent::Type::kGestureScrollUpdate ||
-          input_event.GetType() == blink::WebInputEvent::Type::kTouchMove ||
-          input_event.GetType() == blink::WebInputEvent::Type::kGesturePinchUpdate)) {
+    const auto type = input_event.GetType();
+    if (!(type == blink::WebInputEvent::Type::kGestureScrollUpdate ||
+          type == blink::WebInputEvent::Type::kTouchMove ||
+          type == blink::WebInputEvent::Type::kGesturePinchUpdate)) {
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
         LOG(INFO) << "InputRouterImpl::FilterAndSendWebInputEvent type="
                   << blink::InputEventOhos::GetWebEventName(input_event);
     }
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
-  if (input_event.GetType() == WebInputEvent::Type::kTouchStart) {
+  if (type == WebInputEvent::Type::kTouchStart) {
     input_router_impl_->native_result_ = false;
   }
-  if (input_event.GetType() == WebInputEvent::Type::kMouseDown) {
+  if (type == WebInputEvent::Type::kMouseDown) {
     input_router_impl_->mouse_native_result_ = false;
   }
 #endif

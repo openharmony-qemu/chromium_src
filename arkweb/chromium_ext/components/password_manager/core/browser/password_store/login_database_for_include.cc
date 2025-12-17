@@ -20,8 +20,6 @@ bool LoginDatabase::UpdateLoginDisplayName(const PasswordForm& form,
   if (changes) {
     changes->clear();
   }
-  const PrimaryKeyAndPassword old_primary_key_password =
-      GetPrimaryKeyAndPassword(form);
   DCHECK(!update_display_name_statement_.empty());
   sql::Statement s(
       db_.GetCachedStatement(SQL_FROM_HERE, update_display_name_statement_));
@@ -43,7 +41,7 @@ bool LoginDatabase::UpdateLoginDisplayName(const PasswordForm& form,
   }
 
   if (changes) {
-    changes->emplace_back(PasswordStoreChange::UPDATE, std::move(form),
+    changes->emplace_back(PasswordStoreChange::UPDATE, form,
                           /*password_changed=*/true);
   }
 

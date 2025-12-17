@@ -38,7 +38,7 @@
 
 #if PA_BUILDFLAG(IS_OHOS)
 #include "arkweb/chromium_ext/base/allocator/partition_allocator/src/partition_alloc/partition_address_space_for_include.cc"
-#include "<sys/prctl.h>"
+#include <sys/prctl.h>
 #endif
 
 namespace partition_alloc::internal {

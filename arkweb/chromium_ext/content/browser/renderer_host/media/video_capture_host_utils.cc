@@ -20,6 +20,7 @@
 #include "third_party/ohos_ndk/includes/ohos_adapter/res_sched_client_adapter.h"
 #endif
 #if BUILDFLAG(ARKWEB_WEBRTC)
+#include "base/synchronization/waitable_event.h"
 #include "content/public/browser/web_contents.h"
 #include "content/public/browser/render_frame_host.h"
 #endif
@@ -81,11 +82,36 @@ void VideoCaptureHostUtils::ReportStopScreenCapture() {
 #endif
 
 #if BUILDFLAG(ARKWEB_WEBRTC)
-void VideoCaptureHostUtils::OnCameraCaptureStateChanged(CameraCaptureState new_state) {
-    if (camera_state_ == new_state) {
+void VideoCaptureHostUtils::OnCameraCaptureStateChangedBind(CameraCaptureState camera_state,
+                                                            CameraCaptureState new_state,
+                                                            GlobalRenderFrameHostId render_frame_host_id) {
+    if (camera_state == new_state) {
         return;
     }
-    RenderFrameHost* host = RenderFrameHost::FromID(render_frame_host_id_);
+
+    if (!BrowserThread::CurrentlyOn(BrowserThread::UI)) {
+        base::WaitableEvent event(base::WaitableEvent::ResetPolicy::AUTOMATIC,
+                                  base::WaitableEvent::InitialState::NOT_SIGNALED);
+        auto ui_task_runner = GetUIThreadTaskRunner({});
+        if (!ui_task_runner) {
+            LOG(ERROR) << "VideoCaptureHostUtils::OnCameraCaptureStateChangedBind "
+                          "ui_task_runner is nullptr";
+            return;
+        }
+        ui_task_runner->PostTask(
+            FROM_HERE,
+            base::BindOnce([](CameraCaptureState camera_state,
+                              CameraCaptureState new_state,
+                              GlobalRenderFrameHostId render_frame_host_id,
+                              base::WaitableEvent* out_event) {
+                VideoCaptureHostUtils::OnCameraCaptureStateChangedBind(camera_state, new_state, render_frame_host_id);
+                out_event->Signal();
+            }, camera_state, new_state, render_frame_host_id, &event));
+        event.Wait();
+        return;
+    }
+
+    RenderFrameHost* host = RenderFrameHost::FromID(render_frame_host_id);
     if (!host) {
         LOG(ERROR) << "host is null.";
         return;
@@ -93,10 +119,16 @@ void VideoCaptureHostUtils::OnCameraCaptureStateChanged(CameraCaptureState new_s
     content::WebContents* webContent =
         content::WebContents::FromRenderFrameHost(host);
     if (webContent) {
-        webContent->OnCameraCaptureStateChanged(static_cast<int>(camera_state_),
+        webContent->OnCameraCaptureStateChanged(static_cast<int>(camera_state),
                                                 static_cast<int>(new_state));
-        camera_state_ = new_state;
+        LOG(INFO) << "VideoCaptureHostUtils::OnCameraCaptureStateChangedBind in "
+                     "BrowserThread::UI";
     }
+}
+
+void VideoCaptureHostUtils::OnCameraCaptureStateChanged(CameraCaptureState new_state) {
+    VideoCaptureHostUtils::OnCameraCaptureStateChangedBind(camera_state_, new_state, render_frame_host_id_);
+    camera_state_ = new_state;
 }
 
 void VideoCaptureHostUtils::OnCameraCaptureStarted(

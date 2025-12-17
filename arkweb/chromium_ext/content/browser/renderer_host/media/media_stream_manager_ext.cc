@@ -222,17 +222,22 @@ void MediaStreamManagerExt::CloseAudioCapture(int32_t nweb_id) {
     LOG(ERROR) << "audio_input_device_manager() is nullptr.";
     return;
   }
+  auto io_task_runner = GetIOThreadTaskRunner({});
   auto& audio_nweb_id_map = audio_input_device_manager()->GetNWebIdMap();
   for (auto& audio : audio_nweb_id_map) {
     if (audio.second == nweb_id) {
-      blink::mojom::MediaStreamType type = audio_input_device_manager()->GetDeviceType(audio.first);
-      GetIOThreadTaskRunner({})->PostTask(
-        FROM_HERE, base::BindOnce(&MediaStreamManager::StopDevice,
-                                   weak_factory_.GetSafeRef(), type, audio.first));
+      blink::mojom::MediaStreamType type =
+          audio_input_device_manager()->GetDeviceType(audio.first);
+      if (!BrowserThread::CurrentlyOn(BrowserThread::IO) && io_task_runner) {
+        io_task_runner->PostTask(
+            FROM_HERE,
+            base::BindOnce(&MediaStreamManager::StopDevice,
+                           weak_factory_.GetSafeRef(), type, audio.first));
+        continue;
+      }
+      StopDevice(type, audio.first);
     }
   }
 }
-
 #endif
-
 }

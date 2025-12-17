@@ -345,6 +345,8 @@ arkweb_media_mojo_mojom_sources = [
 ]
 
 arkweb_net_proxy_resolution_sources = [
+  "//arkweb/chromium_ext/net/proxy_resolution/fallback_proxy_config.cc",
+  "//arkweb/chromium_ext/net/proxy_resolution/fallback_proxy_config.h",
   "//arkweb/chromium_ext/net/proxy_resolution/proxy_config_service_ohos.cc",
   "//arkweb/chromium_ext/net/proxy_resolution/proxy_config_service_ohos.h",
 ]

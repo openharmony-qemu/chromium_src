@@ -954,6 +954,7 @@ class NWebHandlerDelegate : public ArkWebClientExt,
                    const CefString& message) override;
   void logUrl(const CefString& url) override;
 #endif
+
 #if BUILDFLAG(ARKWEB_DISATCH_BEFORE_UNLOAD)
   void OnBeforeUnloadFired(CefRefPtr<CefBrowser> browser,
                            bool proceed) override;

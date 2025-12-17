@@ -207,6 +207,17 @@ class MockNavigationHandle : public NavigationHandle {
         emptyvector_result;
     return *emptyvector_result;
   }
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  bool NeedsReloadWithFallbackProxy() override { return false; }
+  ErrorPageReloadReason  GetCurrentReloadReason() override {
+    return ErrorPageReloadReason ::INVALID;
+  }
+  int GetOriginalNetErrorCode() override { return 0; }
+  bool HasBeenReloadedForThisReason(ErrorPageReloadReason  reason) override {
+    return false;
+  }
+#endif
   MOCK_METHOD(void,
               RegisterThrottleForTesting,
               (std::unique_ptr<NavigationThrottle>));

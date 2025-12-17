@@ -252,6 +252,10 @@ bool StructTraits<
 #if BUILDFLAG(ARKWEB_COOKIE)
   out->disable_web_security = data.disable_web_security_();
 #endif
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  out->retry_with_fallback_proxy = data.retry_with_fallback_proxy();
+  out->original_error_code = data.original_error_code();
+#endif
   return true;
 }
 

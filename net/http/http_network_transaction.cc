@@ -96,6 +96,10 @@
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#endif
+
 namespace net {
 
 namespace {
@@ -739,7 +743,12 @@ void HttpNetworkTransaction::OnStreamFailed(
 }
 
 void HttpNetworkTransaction::OnCertificateError(int result,
-                                                const SSLInfo& ssl_info) {
+                                                const SSLInfo& ssl_info
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+                                                ,
+                                                bool used_fallback_proxy
+#endif
+) {
   DCHECK_EQ(STATE_CREATE_STREAM_COMPLETE, next_state_);
   DCHECK_NE(OK, result);
   DCHECK(stream_request_.get());
@@ -749,6 +758,15 @@ void HttpNetworkTransaction::OnCertificateError(int result,
   if (ssl_info.cert) {
     observed_bad_certs_.emplace_back(ssl_info.cert, ssl_info.cert_status);
   }
+
+#if BUILDFLAG(IS_ARKWEB)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableNwebEx)) {
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+    response_.used_fallback_proxy = used_fallback_proxy;
+#endif
+  }
+#endif
 
   // TODO(mbelshe):  For now, we're going to pass the error through, and that
   // will close the stream_request in all cases.  This means that we're always
@@ -869,6 +887,16 @@ int HttpNetworkTransaction::DoLoop(int result) {
         break;
       case STATE_CREATE_FALLBACK_STREAM_WITH_SECURE_DNS_ONLY_COMPLETE:
         rv = AsArkWebHttpNetworkTransactionExt()->DoCreateFallbackStreamWithSecureDnsOnlyComplete(rv);
+        break;
+#endif
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+      case STATE_CREATE_FALLBACK_STREAM_WITH_FALLBACK_PROXY:
+        rv = AsArkWebHttpNetworkTransactionExt()
+                 ->DoCreateStreamWithFallbackProxy();
+        break;
+      case STATE_CREATE_FALLBACK_STREAM_WITH_FALLBACK_PROXY_COMPLETE:
+        rv = AsArkWebHttpNetworkTransactionExt()
+                 ->DoCreateStreamWithFallbackProxyComplete(rv);
         break;
 #endif
       case STATE_INIT_STREAM:
@@ -2271,6 +2299,10 @@ void HttpNetworkTransaction::SetProxyInfoInResponse(
   } else {
     response_info->proxy_chain = proxy_info.proxy_chain();
   }
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  response_info->used_fallback_proxy = proxy_info.used_fallback_proxy();
+#endif
 }
 
 }  // namespace net

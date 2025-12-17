@@ -77,6 +77,15 @@ class TestCustomProxyConnectionObserver
         HeadersReceived{proxy_chain, chain_index, response_headers};
   }
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  void OnTunnelHeadersReceivedWithToken(
+      const net::ProxyChain& proxy_chain,
+      const scoped_refptr<net::HttpResponseHeaders>& response_headers,
+      const std::string& token) override {}
+  void OnProxyConnectResult(const net::ProxyChain& proxy_chain,
+                            int error_code) override {}
+#endif
+
  private:
   std::optional<std::pair<net::ProxyChain, int>> fallback_;
   std::optional<HeadersReceived> headers_received_;

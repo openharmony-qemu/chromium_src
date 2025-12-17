@@ -50,9 +50,18 @@
 #include <codecvt>
 #endif
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#include "base/command_line.h"
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#endif
+
 using base::UTF16ToUTF8;
 
 namespace content {
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#include "arkweb/chromium_ext/content/browser/renderer_host/navigation_entry_impl_for_include.cc"
+#endif
 
 namespace {
 
@@ -519,6 +528,13 @@ const Referrer& NavigationEntryImpl::GetReferrer() {
 void NavigationEntryImpl::SetVirtualURL(const GURL& url) {
   virtual_url_ = (url == GetURL()) ? GURL() : url;
   cached_display_title_.clear();
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          ::switches::kEnableNwebEx)) {
+    current_reload_reason_ = ErrorPageReloadReason ::INVALID;
+    reload_reason_list_.clear();
+  }
+#endif
 }
 
 const GURL& NavigationEntryImpl::GetVirtualURL() {

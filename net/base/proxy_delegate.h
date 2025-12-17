@@ -13,6 +13,10 @@
 #include "net/base/proxy_chain.h"
 #include "net/proxy_resolution/proxy_retry_info.h"
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#include "arkweb/chromium_ext/net/base/fallback_proxy_constants.h"
+#endif
+
 class GURL;
 
 namespace net {
@@ -74,7 +78,7 @@ class NET_EXPORT ProxyDelegate {
   // at position `chain_index` in `proxy_chain` before making decisions based on
   // `response_headers`.
   virtual Error OnTunnelHeadersReceived(
-      const ProxyChain& proxy_chain,
+      const net::ProxyChain& proxy_chain,
       size_t chain_index,
       const HttpResponseHeaders& response_headers) = 0;
 
@@ -82,6 +86,32 @@ class NET_EXPORT ProxyDelegate {
   // `proxy_resolution_service` must outlive `this`.
   virtual void SetProxyResolutionService(
       ProxyResolutionService* proxy_resolution_service) = 0;
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  virtual void OnTunnelConnectResult(
+      const net::ProxyChain& proxy_chain,
+      const std::string& host,
+      const net::HttpResponseHeaders& response_headers,
+      const net::HttpRequestHeaders& request_headers) = 0;
+  virtual void AddSuccessMainFrameHosts(const std::string& host) = 0;
+  virtual bool IsFallbackProxyFailedHost(const std::string& host) = 0;
+  virtual bool IsFallbackProxySuccessMainFrameHost(const std::string& host) = 0;
+  virtual void AddByPassRuleWithHost(const std::string& host) = 0;
+  virtual void OnProxyConnectResult(const net::ProxyChain& proxy_chain,
+                                    int net_error) = 0;
+  virtual bool GetUrlMaliciousTypeAndHwCode(const std::vector<GURL>& url_chain,
+                                            int* malicious_type,
+                                            int* hw_code) = 0;
+  virtual bool IsFallbackProxyMaliciousType(int malicious_type) = 0;
+  virtual bool IsFallbackProxyHwCode(int hw_code) = 0;
+  virtual bool IsFallbackProxyRetryErrorCode(int net_error) = 0;
+  virtual bool IsFallbackProxyBlockHost(const std::string& host) = 0;
+  virtual int GetMaliciousUrlCheckWaitTime() = 0;
+  virtual int GetProxyConnectTimeout() = 0;
+  virtual int GetProxyTunnelTimeout() = 0;
+  virtual net::FallbackProxyStatus GetFallbackProxyStatus() = 0;
+  virtual bool IsFallbackProxyServer(const net::ProxyChain& proxy_chain) = 0;
+#endif
 };
 
 }  // namespace net

@@ -80,7 +80,12 @@ class MockHttpStreamRequestDelegate : public HttpStreamRequest::Delegate {
                     const ProxyInfo& used_proxy_info,
                     ResolveErrorInfo resolve_error_info));
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  MOCK_METHOD3(OnCertificateError, void(int status, const SSLInfo& ssl_info,
+                                        bool used_fallback_proxy));
+#else
   MOCK_METHOD2(OnCertificateError, void(int status, const SSLInfo& ssl_info));
+#endif
 
   MOCK_METHOD3(OnNeedsProxyAuth,
                void(const HttpResponseInfo& proxy_response,

@@ -16,6 +16,7 @@
 #include "nweb_extension_omnibox_cef_delegate.h"
 
 #include "chrome/browser/extensions/api/omnibox/omnibox_api.h"
+#include "chrome/browser/profiles/profile.h"
 #include "nweb_extension_utils.h"
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
@@ -29,6 +30,17 @@ NWebExtensionOmniboxCefDelegate&
 NWebExtensionOmniboxCefDelegate::GetInstance() {
   static NWebExtensionOmniboxCefDelegate instance;
   return instance;
+}
+
+void NWebExtensionOmniboxCefDelegate::OnInputStarted(
+    const std::string& extension_id) {
+  auto profile = Profile::FromBrowserContext(GetBrowserContext());
+  if (!profile) {
+    return;
+  }
+
+  extensions::ExtensionOmniboxEventRouter::OnInputStarted(profile,
+                                                          extension_id);
 }
 
 void NWebExtensionOmniboxCefDelegate::OnInputChanged(
@@ -59,10 +71,42 @@ void NWebExtensionOmniboxCefDelegate::OnInputEntered(
       static_cast<WindowOpenDisposition>(disposition), browser_context);
 }
 
+void NWebExtensionOmniboxCefDelegate::OnInputCancelled(
+    const std::string& extension_id) {
+  auto profile = Profile::FromBrowserContext(GetBrowserContext());
+  if (!profile) {
+    return;
+  }
+
+  extensions::ExtensionOmniboxEventRouter::OnInputCancelled(profile,
+                                                            extension_id);
+}
+
+void NWebExtensionOmniboxCefDelegate::OnDeleteSuggestion(
+    const std::string& suggestion,
+    const std::string& extension_id) {
+  auto profile = Profile::FromBrowserContext(GetBrowserContext());
+  if (!profile) {
+    return;
+  }
+
+  extensions::ExtensionOmniboxEventRouter::OnDeleteSuggestion(
+      profile, extension_id, suggestion);
+}
+
 void NWebExtensionOmniboxCefDelegate::OnInputChangedCallback(
     const std::vector<OmniboxSuggestResult>& results) {
 #if BUILDFLAG(ARKWEB_NWEB_EX)
   NWebExtensionOmniboxDispatcher::GetInstance().OnInputChangedCallback(results);
+#endif
+}
+
+void NWebExtensionOmniboxCefDelegate::SetDefaultSuggestionCallback(
+    const std::string& extension_id,
+    const OmniboxSuggestResult& result) {
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  NWebExtensionOmniboxDispatcher::GetInstance().SetDefaultSuggestionCallback(
+      extension_id, result);
 #endif
 }
 

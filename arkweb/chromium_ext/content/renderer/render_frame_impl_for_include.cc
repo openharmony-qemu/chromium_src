@@ -29,6 +29,10 @@ blink::WebNativeBridge* RenderFrameImpl::CreateWebNativeBridge(
     return media_factory_.CreateWebNativeBridge(client, GetLocalRootWebFrameWidget()->GetFrameSinkId(),
         agent_scheduling_group_->agent_group_scheduler().CompositorTaskRunner());
 }
+
+float RenderFrameImpl::DeviceScaleFactor() {
+  return media_factory_.GetDeviceScaleFactor();
+}
 #endif
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)

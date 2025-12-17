@@ -86,11 +86,6 @@ class SystemProperties {
   float get_pixel_ratio() { return virtual_pixel_ratio_; }
   void set_pixel_ratio(float ratio) { virtual_pixel_ratio_ = ratio; }
 
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  float get_device_pixel_ratio() { return virtual_device_pixel_ratio_; }
-  void set_device_pixel_ratio(float ratio) { virtual_device_pixel_ratio_ = ratio; }
-#endif
-
  private:
   friend class NoDestructor<SystemProperties>;
 
@@ -108,7 +103,6 @@ class SystemProperties {
   std::string api_version_;
   std::string compatible_device_type_;
   float virtual_pixel_ratio_ = 2.0;
-  float virtual_device_pixel_ratio_ = 2.0;
   bool is_pc_mode_ = false;
 };
 
@@ -163,15 +157,6 @@ BASE_EXPORT float GetPixelRatio() {
 BASE_EXPORT void SetPixelRatio(float ratio) {
   SystemProperties::Instance()->set_pixel_ratio(ratio);
 }
-
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-BASE_EXPORT float GetDevicePixelRatio() {
-  return SystemProperties::Instance()->get_device_pixel_ratio();
-}
-BASE_EXPORT void SetDevicePixelRatio(float ratio) {
-  SystemProperties::Instance()->set_device_pixel_ratio(ratio);
-}
-#endif
 
 #if BUILDFLAG(ARKWEB_TEST)
 #ifdef __cplusplus

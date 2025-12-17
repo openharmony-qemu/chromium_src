@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
- #include "arkts_hilog_adapter.h"
+ #include "arkts_security_adapter_impl.h"
 
  #include <unistd.h>
  #include <sys/types.h>

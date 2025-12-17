@@ -954,7 +954,7 @@ void InitialWebEngineArgs(
 
   auto args_to_add = GetArgsToAdd(init_args);
 
-  args_to_add.push_back("--user-data-dir=files/__arkweb");
+  args_to_add.push_back("--user-data-dir=");
   args_to_add.push_back("--arkweb-app-data-dir=/data/storage/el2/base");
 
   base::FilePath user_data_dir = base::FilePath();

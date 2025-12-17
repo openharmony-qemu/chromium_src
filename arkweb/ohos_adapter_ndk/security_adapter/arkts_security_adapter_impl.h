@@ -23,8 +23,8 @@
 class ArktsHilogAdapter {
 public:
     static napi_env GetEnv();
-    static napi_value GetHilogModule();
-    static int LogInternal(LogLevel level, const char* fmt, ...);
+    static napi_value GetSecurityGuardModule();
+    static int RegisterEvent(const std::string& event)
 };
 
 #endif // ARKTS_SECURITY_ADAPTER_IMPL_H

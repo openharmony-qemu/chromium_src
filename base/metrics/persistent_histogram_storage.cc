@@ -25,7 +25,7 @@
 #elif BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
 #include <sys/mman.h>
 #endif
-if BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(IS_ARKWEB)
 #include <sys/prctl.h>
 #endif
 
@@ -47,7 +47,7 @@ void* AllocateLocalMemory(size_t size) {
   address = ::mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_ANON | MAP_SHARED,
                    -1, 0);
   if (address != MAP_FAILED) {
-if BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(IS_ARKWEB)
     prctl(PR_SET_VMA, PR_SET_VMA_ANON_NAME, address, size, "web_metrics_histogram");
 #endif
     return address;

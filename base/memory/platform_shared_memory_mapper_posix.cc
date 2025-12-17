@@ -13,7 +13,7 @@
 #include "base/numerics/safe_conversions.h"
 
 #include <sys/mman.h>
-if BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(IS_ARKWEB)
 #include <sys/prctl.h>
 #endif
 
@@ -32,7 +32,7 @@ std::optional<span<uint8_t>> PlatformSharedMemoryMapper::Map(
     DPLOG(ERROR) << "mmap " << handle.fd << " failed";
     return std::nullopt;
   }
-if BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(IS_ARKWEB)
   prctl(PR_SET_VMA, PR_SET_VMA_ANON_NAME, address, size, "web_shm2");
 #endif
 

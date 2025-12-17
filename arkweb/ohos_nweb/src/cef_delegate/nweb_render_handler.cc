@@ -1194,6 +1194,11 @@ bool NWebRenderHandler::StartDragging(CefRefPtr<CefBrowser> browser,
 
   ImageDragForFileUri(drag_data);
   CefPoint drag_touch_point(x, y);
+  if (browser && browser->GetHost()) {
+    int shrink_viewport_height = browser->GetHost()->GetShrinkViewportHeight();
+    drag_touch_point.Set(x, y + shrink_viewport_height);
+    LOG(INFO) << "DragDrop add offset to drag point y : " << shrink_viewport_height;
+  }
 
   std::vector<CefPoint> start_edge{
       CefPoint(start_selection_handle_.origin.x,

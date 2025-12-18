@@ -7,6 +7,9 @@ import CustomChildProcess from '../process/CustomChildProcess';
 import { KeyCode } from '@kit.InputKit';
 import LogUtil from 'web_engine/src/main/ets/utils/LogUtil';
 import { uiObserver } from '@kit.ArkUI';
+import { NativeContext } from 'web_engine/src/main/ets/interface/CommonInterface';
+import JsBindingUtils from 'web_engine/src/main/ets/utils/JsBindingUtils';
+import { ContextType } from 'web_engine/src/main/ets/common/Constants';
  
 const TAG: string = 'Index';
 
@@ -15,8 +18,11 @@ let storage = LocalStorage.getShared();
 @Entry(storage)
 @Component
 struct Index {
+  @LocalStorageLink('xcomponentId') xComponentId: string = '';
   @LocalStorageProp('statusBarHeight') statusBarHeight: number = 0;
   @State density: number = 0;
+  private nativeContext: NativeContext =
+    JsBindingUtils.getNativeContext(ContextType.kMainProcess);
  
   aboutToAppear(): void {
     uiObserver.on('densityUpdate', this.getUIContext(), (info: uiObserver.DensityInfo) => {
@@ -26,6 +32,11 @@ struct Index {
  
   aboutToDisappear(): void {
     uiObserver.off('densityUpdate', this.getUIContext());
+  }
+
+  onBackPress(): boolean {
+    this.nativeContext.OnBackToLastPage(this.xComponentId);
+    return true;
   }
   
   build() {

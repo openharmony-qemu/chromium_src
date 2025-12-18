@@ -181,6 +181,12 @@ void OnWindowDisplayIdChange(const std::string& xcomponent_id,
   WindowAdapter::GetInstance().NotifyWindowEvent(xcomponent_id, event);
 }
 
+void OnBackToLastPage(const std::string& xcomponent_id) {
+  TRACE_EVENT_1("OnBackToLastPage", "widget_id", xcomponent_id);
+  auto event = std::make_shared<BackToLastPageEvent>();
+  WindowAdapter::GetInstance().NotifyWindowEvent(xcomponent_id, event);
+}
+
 JSBIND_GLOBAL() {
   JSBIND_FUNCTION(OnWindowInitSize);
   JSBIND_FUNCTION(OnWindowStatusChange);
@@ -194,6 +200,7 @@ JSBIND_GLOBAL() {
   JSBIND_FUNCTION(SetSystemWindowLimits);
   JSBIND_FUNCTION(OnDeviceModeChange);
   JSBIND_FUNCTION(OnWindowDisplayIdChange);
+  JSBIND_FUNCTION(OnBackToLastPage);
 }
 
 }  // namespace ohos::adapter::xcomponent

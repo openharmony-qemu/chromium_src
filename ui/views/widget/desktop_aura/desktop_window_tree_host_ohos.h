@@ -52,7 +52,7 @@ class VIEWS_EXPORT DesktopWindowTreeHostOhos
             const gfx::Rect& restore_bounds) override;
 
   ~DesktopWindowTreeHostOhos() override;
-
+  bool SupportsMouseLock() override;
   void LockMouse(aura::Window* window) override;
   void UnlockMouse(aura::Window* window) override;
 

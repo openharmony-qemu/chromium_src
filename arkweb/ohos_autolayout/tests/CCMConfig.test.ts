@@ -165,6 +165,7 @@ describe('CCMConfig Module', () => {
         scaleAnimationDuration: 200,
         minScaleFactor: 60,
         appRuleInfos: [{ id: '123', pg: ['page1'] }],
+        needCheckIdAndPage: true,
       });
       
       const result = configInstance.fromJson(jsonConfig);
@@ -201,6 +202,7 @@ describe('CCMConfig Module', () => {
         scaleAnimationDuration: 150,
         minScaleFactor: 50,
         appRuleInfos: [],
+        needCheckIdAndPage: true,
       });
       
       const result = configInstance.fromJson(jsonConfig);
@@ -217,6 +219,7 @@ describe('CCMConfig Module', () => {
         scaleAnimationDuration: 100,
         minScaleFactor: 55,
         appRuleInfos: '[{"id":"123","pg":["home"]}]',
+        needCheckIdAndPage: true,
       });
       
       const result = configInstance.fromJson(jsonConfig);
@@ -300,6 +303,7 @@ describe('CCMConfig Module', () => {
         scaleAnimationDuration: 100,
         minScaleFactor: 55,
         appRuleInfos: [{ id: '*', pg: ['home'] }],
+        needCheckIdAndPage: true,
       });
       
       // Reset the singleton to get fresh state
@@ -326,6 +330,7 @@ describe('CCMConfig Module', () => {
         scaleAnimationDuration: 100,
         minScaleFactor: 55,
         appRuleInfos: [{ id: '123', pg: ['*'] }],
+        needCheckIdAndPage: true,
       });
       
       // Reset the singleton to get fresh state
@@ -388,6 +393,7 @@ describe('CCMConfig Module', () => {
         scaleAnimationDuration: 300,
         minScaleFactor: 70,
         appRuleInfos: [{ id: 'new', pg: ['newPage'] }],
+        needCheckIdAndPage: true,
       };
       
       configInstance.update(newConfig);
@@ -409,6 +415,7 @@ describe('CCMConfig Module', () => {
         scaleAnimationDuration: -100,
         minScaleFactor: -50,
         appRuleInfos: [],
+        needCheckIdAndPage: true,
       });
       
       const result = configInstance.fromJson(jsonConfig);
@@ -425,6 +432,7 @@ describe('CCMConfig Module', () => {
         scaleAnimationDuration: 100,
         minScaleFactor: 55,
         appRuleInfos: [],
+        needCheckIdAndPage: true,
       });
       
       const result = configInstance.fromJson(jsonConfig);
@@ -441,6 +449,7 @@ describe('CCMConfig Module', () => {
         scaleAnimationDuration: 100,
         minScaleFactor: 55,
         appRuleInfos: [],
+        needCheckIdAndPage: true,
       });
       
       const result = configInstance.fromJson(jsonConfig);

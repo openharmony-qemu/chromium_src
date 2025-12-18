@@ -15,16 +15,18 @@
 
 #include "nweb_autolayout.h"
 
-#include "hilog/log.h"
+#include <charconv>
+
 #include "base/files/file_util.h"
-#include "base/json/json_writer.h"
-#include "arkweb/ohos_adapter_ndk/interfaces/ohos_adapter_helper.h"
 #include "base/files/memory_mapped_file.h"
-#include "libcef/browser/thread_util.h"
+#include "base/json/json_writer.h"
 #include "base/trace_event/trace_event.h"
+#include "arkweb/ohos_adapter_ndk/interfaces/ohos_adapter_helper.h"
+#include "arkweb/chromium_ext/url/ohos/log_utils.h"
 #include "arkweb/ohos_autolayout/grit/autolayout_resources.h"
 #include "ui/base/resource/resource_bundle.h"
-#include <charconv>
+#include "libcef/browser/thread_util.h"
+#include "hilog/log.h"
 
 namespace OHOS::NWeb {
 using namespace ConfigConstants;
@@ -43,8 +45,7 @@ void NwebAutolayout::Initialize() {
   auto &adapter = OhosAdapterHelper::GetInstance();
 
   std::string ccmConfig = "";
-  auto configPath = adapter.GetSystemPropertiesInstance().GetStringParameter(std::string(kConfigPath),"");
-  base::FilePath ccmfile_path = base::FilePath(configPath);
+  base::FilePath ccmfile_path = base::FilePath(kCCMConfigPath);
   if (!base::ReadFileToString(ccmfile_path, &ccmConfig)) {
       LOG(WARNING) << "Failed to read Config.json from " << ccmfile_path.MaybeAsASCII();
       mEnable_ = false;
@@ -108,6 +109,7 @@ void NwebAutolayout::CheckCCMandApplyRule(CefRefPtr<CefFrame> frame) {
   root_dict.Set(kMinContentAreaRatioThresholdKey, mCCMConfig_.min_content_area_ratio_threshold);
   root_dict.Set(kScaleAnimationDurationKey, mCCMConfig_.scale_animation_duration);
   root_dict.Set(kMinDesScaleKey, mCCMConfig_.minScaleFactor);
+  root_dict.Set(kNeedCheckIdAndPageKey, base::Value(true));
   std::optional<base::Value::List> list = mWListEntry_->appRuleInfos->Clone();
   root_dict.Set(kAppRuleInfosKey, std::move(*list));
 
@@ -127,6 +129,32 @@ void NwebAutolayout::CheckCCMandApplyRule(CefRefPtr<CefFrame> frame) {
     LOG(DEBUG) << "start autolayout JavaScript:"<< script.str();
     frame->ExecuteJavaScript(script.str(), frame->GetURL(), 0);
   }
+}
+
+std::string NwebAutolayout::CreateH5AutoLayoutParam(const UrlRuleInfoEntry& url_rule_info) {
+  base::Value::Dict root_dict;
+  root_dict.Set(kMinMaskAreaRatioThresholdKey, mCCMConfig_.min_mask_area_ratio_threshold);
+  root_dict.Set(kMinContentAreaRatioThresholdKey, mCCMConfig_.min_content_area_ratio_threshold);
+  root_dict.Set(kScaleAnimationDurationKey, mCCMConfig_.scale_animation_duration);
+  root_dict.Set(kMinDesScaleKey, mCCMConfig_.minScaleFactor);
+  root_dict.Set(kStrategyKey, url_rule_info.strategy);
+  root_dict.Set(kAlphabetIdentificationMinSizeKey, url_rule_info.alphabetIdentificationMinSize);
+  root_dict.Set(kAlphabetHeightWidthMinRatioKey, url_rule_info.alphabetHeightWidthMinRatio);
+  root_dict.Set(kNeedCheckIdAndPageKey, base::Value(false));
+
+  base::Value::List opacity_list;
+  opacity_list.Append(mCCMConfig_.opacity_filter.first);
+  opacity_list.Append(mCCMConfig_.opacity_filter.second);
+  root_dict.Set(kOpacityFilterKey, base::Value(std::move(opacity_list)));
+
+  base::Value root_value(std::move(root_dict));
+
+  std::string json_string;
+  bool success = base::JSONWriter::Write(root_value, &json_string);
+  if(!success) {
+    LOG(ERROR) << "CreateH5AutoLayoutParam failed, json write error.";
+  }
+  return json_string;
 }
 
 bool NwebAutolayout::Parse(const base::Value& root) {
@@ -211,6 +239,10 @@ bool NwebAutolayout::ParseToplevelConfig(const base::Value::Dict& root_dict) {
     kMinScaleFactor, kMaxScaleFactor, true, true};
   constexpr RangeLimits kScaleAnimationDurationRange{
     kMinScaleAnimationDuration, kMaxScaleAnimationDuration, false, false};
+  constexpr RangeLimits kAlphabetIdentificationMinSizeRange{
+    kMinAlphabetIdentificationMinSize, kMaxAlphabetIdentificationMinSize, false, true};
+  constexpr RangeLimits kAlphabetHeightWidthMinRatioRange{
+    kMinAlphabetHeightWidthMinRatio, kMaxAlphabetHeightWidthMinRatio, false, true};
 
   int min_mask_area_ratio_threshold = 0;
   if (!ParseConfig(root_dict, kMinMaskAreaRatioThresholdKey, kMaskAreaThresholdRange,
@@ -239,11 +271,21 @@ bool NwebAutolayout::ParseToplevelConfig(const base::Value::Dict& root_dict) {
   }
   mCCMConfig_.scale_animation_duration = scale_animation_duration;
 
-  if (!ParseOpacityFilter(root_dict, mCCMConfig_.opacity_filter)) {
+  int alphabet_identification_min_size = 0;
+  if (!ParseConfig(root_dict, kAlphabetIdentificationMinSizeKey, kAlphabetIdentificationMinSizeRange,
+                         alphabet_identification_min_size)) {
     return false;
   }
+  mCCMConfig_.alphabet_identification_min_size = alphabet_identification_min_size;
+
+  int alphabet_height_width_min_ratio = 0;
+  if (!ParseConfig(root_dict, kAlphabetHeightWidthMinRatioKey, kAlphabetHeightWidthMinRatioRange,
+                         alphabet_height_width_min_ratio)) {
+    return false;
+  }
+  mCCMConfig_.alphabet_height_width_min_ratio = alphabet_height_width_min_ratio;
   
-  return true;
+  return ParseOpacityFilter(root_dict, mCCMConfig_.opacity_filter);
 }
 
 bool NwebAutolayout::ParseWhitelist(const base::Value::Dict& whitelist_dict) {
@@ -273,20 +315,32 @@ bool NwebAutolayout::ParseWhitelistEntry(std::string_view app_bundle_name_sv,
     LOG(ERROR) << "Failed to convert Dict to JSON string.";
   }
   WhitelistEntry& current_entry = mCCMConfig_.whitelist[app_bundle_name_sv];
+  current_entry.urlRuleInfos = ParseUrlRuleInfo(whitelist_dict);
+  current_entry.appRuleInfos = ParseAppRuleInfo(whitelist_dict, current_entry);
+  if (!current_entry.urlRuleInfos.has_value() && !current_entry.appRuleInfos.has_value()) {
+    LOG(ERROR) << "Parse Error: Missing, empty or invalid type for urlRuleInfos and appRuleInfos.";
+    return false;
+  }
+  mWListEntry_ = &current_entry;
+  return true;
+}
+
+std::optional<base::Value::List> NwebAutolayout::ParseAppRuleInfo(
+    const base::Value::Dict& whitelist_dict, WhitelistEntry& current_entry) {
   const std::string* pattern_ptr = whitelist_dict.FindString(kPatternKey);
   const std::string* get_id_ptr = whitelist_dict.FindString(kGetIDKey);
   const std::string* get_page_ptr = whitelist_dict.FindString(kGetPageKey);
   if (!pattern_ptr || pattern_ptr->empty()) {
     LOG(ERROR) << "Parse Error: Missing, empty or invalid type for pattern.";
-    return false;
+    return std::nullopt;
   }
   if (!get_id_ptr || get_id_ptr->empty() ) {
     LOG(ERROR) << "Parse Error: Missing, empty or invalid type for getID.";
-    return false;
+    return std::nullopt;
   }
   if (!get_page_ptr || get_page_ptr->empty() ) {
     LOG(ERROR) << "Parse Error: Missing, empty or invalid type for getPage.";
-    return false;
+    return std::nullopt;
   }
   current_entry.pattern = std::string_view(*pattern_ptr);
   current_entry.getID = std::string_view(*get_id_ptr);
@@ -297,10 +351,55 @@ bool NwebAutolayout::ParseWhitelistEntry(std::string_view app_bundle_name_sv,
   if (!app_rules_list) {
     LOG(ERROR) << "Parse Error: Missing, empty or invalid type for '"
                << kAppRuleInfosKey << "'.";
-    return false;
+    return std::nullopt;
   }
-  current_entry.appRuleInfos = app_rules_list->Clone();
-  return true;
+
+  return app_rules_list->Clone();
+}
+
+std::optional<std::vector<UrlRuleInfoEntry>> NwebAutolayout::ParseUrlRuleInfo(
+    const base::Value::Dict& whitelist_dict) {
+  const base::Value::List* url_rule_list = whitelist_dict.FindList(kUrlRuleInfosKey);
+  if (!url_rule_list) {
+    return std::nullopt;
+  }
+  std::vector<UrlRuleInfoEntry> url_rules;
+  for (const base::Value& url_rule : *url_rule_list) {
+    if (!url_rule.is_dict()) {
+      continue;
+    }
+
+    const base::Value::Dict& url_rule_dict = url_rule.GetDict();
+    const std::string* url_prefix = url_rule_dict.FindString(kUrlPrefixKey);
+    std::optional<int> strategy_opt = url_rule_dict.FindInt(kStrategyKey);
+    if (!url_prefix || url_prefix->empty() || !strategy_opt.has_value()) {
+      LOG(WARNING) << "Parse Error: Missing, empty or invalid type for url_prefix or strategy.";
+      continue;
+    }
+  
+    UrlRuleInfoEntry url_rule_info_entry;
+    url_rule_info_entry.urlPrefix = std::string(*url_prefix);
+    url_rule_info_entry.strategy = strategy_opt.value();
+
+    std::optional<int> min_size_opt = url_rule_dict.FindInt(kAlphabetIdentificationMinSizeKey);
+    if (min_size_opt.has_value() && min_size_opt.value() > kMinAlphabetIdentificationMinSize &&
+        min_size_opt.value() <= kMaxAlphabetIdentificationMinSize) {
+      url_rule_info_entry.alphabetIdentificationMinSize = min_size_opt.value();
+    } else {
+      url_rule_info_entry.alphabetIdentificationMinSize = mCCMConfig_.alphabet_identification_min_size;
+    }
+
+    std::optional<int> min_ratio_opt = url_rule_dict.FindInt(kAlphabetHeightWidthMinRatioKey);
+    if (min_ratio_opt.has_value() && min_ratio_opt.value() > kMinAlphabetHeightWidthMinRatio &&
+        min_ratio_opt.value() <= kMaxAlphabetHeightWidthMinRatio) {
+      url_rule_info_entry.alphabetHeightWidthMinRatio = min_ratio_opt.value();
+    } else {
+      url_rule_info_entry.alphabetHeightWidthMinRatio = mCCMConfig_.alphabet_height_width_min_ratio;
+    }
+
+    url_rules.push_back(std::move(url_rule_info_entry));
+  }
+  return url_rules;
 }
 
 class JSResultCallbackImpl : public CefJavaScriptResultCallback {
@@ -351,14 +450,43 @@ void NwebAutolayout::CheckWebContainer(CefRefPtr<CefBrowser> browser, CefRefPtr<
   ScopedTimeLogger timer("NwebAutolayout::CheckWebContainer");
   TRACE_EVENT("base", "NwebAutolayout::CheckWebContainer");
   if (!mEnable_) {
-    LOG(DEBUG) << " AutoLayout Feature disabled.";
+    LOG(DEBUG) << " AutoLayout Feature disabled. The app is not on the whitelist.";
     return;
   }
-  if (browser != nullptr && frame != nullptr && frame->IsMain()) {
+
+  if (browser == nullptr || frame == nullptr || !frame->IsMain()) {
+    LOG(ERROR) << "browser or frame invalid.";
+    return;
+  }
+
+  std::string current_url = frame->GetURL().ToString();
+  LOG(INFO) << "NwebAutolayout::CheckWebContainer current_url:"
+            << url::LogUtils::ConvertUrlWithMask(current_url);
+
+  if (auto url_rule_entry = FindBestMatchRule(current_url)) {
+    // H5匹配逻辑
+    ApplyH5AutoLayoutStrategy(*url_rule_entry, frame);
+  } else {
+    // 小程序逻辑
     LOG(DEBUG) << "start to check the web container.pattern:" << EscapeForJS_TemplateLiteral(mPatternJSSource_);
     CefRefPtr<JSResultCallbackImpl> JsResultCb = new JSResultCallbackImpl(frame);
     browser->GetHost()->ExecuteJavaScript(EscapeForJS_TemplateLiteral(mPatternJSSource_), JsResultCb, false);
   }
+}
+
+void NwebAutolayout::ApplyH5AutoLayoutStrategy(const UrlRuleInfoEntry& url_rule_entry,
+                                               CefRefPtr<CefFrame> frame) {
+  if (url_rule_entry.strategy == 0) {
+    LOG(WARNING) << "AutoLayout quit as strategy is 0.";
+    return;
+  }
+  LOG(DEBUG) << "Add autolayout JavaScript...";
+  frame->ExecuteJavaScript(mAutoLayoutJSSource_, frame->GetURL(), 0);
+  std::string param_str = CreateH5AutoLayoutParam(url_rule_entry);
+  std::stringstream script;
+  script << kAutoLayoutBegin << param_str << kAutoLayoutEnd;
+  LOG(INFO) << "start H5 autolayout JavaScript:"<< script.str();
+  frame->ExecuteJavaScript(script.str(), frame->GetURL(), 0);
 }
 
 void NwebAutolayout::LoadAutoLayoutFromHap() {
@@ -374,6 +502,26 @@ void NwebAutolayout::LoadAutoLayoutFromHap() {
     return;
   }
   mAutoLayoutJSSource_.assign(script_data.data(), script_data.size());
+}
+
+const UrlRuleInfoEntry* NwebAutolayout::FindBestMatchRule(const std::string& current_url) const {
+  if (!mWListEntry_ || !mWListEntry_->urlRuleInfos.has_value()) {
+    return nullptr;
+  }
+  ScopedTimeLogger timer("NwebAutolayout::FindBestMatchRule");
+  const UrlRuleInfoEntry* match_rule = nullptr;
+  size_t best_match_length = 0;
+  for (const UrlRuleInfoEntry& url_rule_entry : mWListEntry_->urlRuleInfos.value()) {
+    const std::string& prefix = url_rule_entry.urlPrefix;
+    // 检查URL是否以当前前缀开头
+    if (current_url.compare(0, prefix.length(), prefix) == 0) {
+      if (prefix.length() > best_match_length) {
+        best_match_length = prefix.length();
+        match_rule = &url_rule_entry;
+      }
+    }
+  }
+  return match_rule;
 }
 
 }  // namespace OHOS::NWeb

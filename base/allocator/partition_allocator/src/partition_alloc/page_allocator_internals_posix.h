@@ -25,7 +25,7 @@
 #include "arkweb/build/features/features.h"
 
 
-#if PA_BUILDFLAG(IS_ANDROID) || PA_BUILDFLAG(IS_LINUX) || BUILDFLAG(ARKWEB_PER_DFX)
+#if PA_BUILDFLAG(IS_ANDROID) || PA_BUILDFLAG(IS_LINUX) || PA_BUILDFLAG(IS_OHOS)
 #include <sys/prctl.h>
 #endif
 
@@ -95,7 +95,7 @@ uintptr_t SystemAllocPagesInternal(uintptr_t hint,
     ret = nullptr;
   }
 
-#if defined(LINUX_NAME_REGION) || BUILDFLAG(ARKWEB_PER_DFX)
+#if defined(LINUX_NAME_REGION) || PA_BUILDFLAG(IS_OHOS)
   if (ret) {
     NameRegion(ret, length, page_tag);
   }
@@ -251,7 +251,7 @@ bool DecommitAndZeroSystemPagesInternal(uintptr_t address,
   }
   PA_CHECK(ret == ptr);
   // Since we just remapped the region, need to set is name again.
-#if defined(LINUX_NAME_REGION)
+#if defined(LINUX_NAME_REGION) || PA_BUILDFLAG(IS_OHOS)
   NameRegion(ret, length, page_tag);
 #endif
   return true;

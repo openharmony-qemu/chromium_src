@@ -196,6 +196,10 @@ class BASE_EXPORT HangWatcher : public DelegateSimpleThread::Delegate {
   // emitted every interval for all threads.
   static void SetShuttingDown();
 
+#if BUILDFLAG(IS_OHOS)
+  static bool IsBrowserProcess();
+#endif
+
   // Sets up the calling thread to be monitored for threads. Returns a
   // ScopedClosureRunner that unregisters the thread. This closure has to be
   // called from the registered thread before it's joined. Returns a null

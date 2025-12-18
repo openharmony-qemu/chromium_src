@@ -50,6 +50,7 @@
 #include "base/strings/utf_string_conversions.h"
 #include "base/synchronization/lock.h"
 #include "base/task/thread_pool.h"
+#include "base/threading/hang_watcher.h"
 #include "base/types/optional_util.h"
 #include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
@@ -77,6 +78,7 @@ namespace ohos_permission = ohos::adapter::permission;
 namespace ui {
 namespace {
 
+constexpr base::TimeDelta kClipboardHangWatchTime = base::Seconds(30);
 constexpr int kMaxUriDecodeLen = 2048;
 const char* kImageBmp = "image/bmp";
 const std::string K_PASTEBOARD_LOG_TAG = "[OhosPasteboard] ";
@@ -154,6 +156,10 @@ class ClipboardOHOSInternal {
       DestroyUdmfData(&udmf_data);
       return;
     }
+
+    //The value must be the same as the timeout interval of the OH pasteboard interface.
+    base::WatchHangsInScope scope(kClipboardHangWatchTime);
+    
     result = OH_Pasteboard_SetData(pasteboard_, udmf_data);
     if (result != ERR_OK) {
       LOG(ERROR) << "[Pasteboard]WritePasteboard OH_Pasteboard_SetData failed,error code is :" 
@@ -287,6 +293,10 @@ class ClipboardOHOSInternal {
         << " ReadTextFromPasteBoard OH_Pasteboard_HasData fail.";
         return;
     }
+
+    //The value must be the same as the timeout interval of the OH pasteboard interface.
+    base::WatchHangsInScope scope(kClipboardHangWatchTime);
+    
     OH_UdmfData* udmf_data = OH_Pasteboard_GetData(pasteboard_, &status);
     if (status != ERR_OK) {
         LOG(ERROR) << K_PASTEBOARD_LOG_TAG

@@ -8286,5 +8286,31 @@ TEST_F(NWebImplTest, GetSaveInitargs001) {
   EXPECT_EQ(NWebImpl::GetSaveInitargs(), nullptr);
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_WEBRTC)
+TEST_F(NWebImplTest, ResumeMicrophone001) {
+  ASSERT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = nullptr;
+  ASSERT_NO_FATAL_FAILURE(nweb_impl_->ResumeMicrophone());
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  ASSERT_NO_FATAL_FAILURE(nweb_impl_->ResumeMicrophone());
+}
+
+TEST_F(NWebImplTest, PauseMicrophone001) {
+  ASSERT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = nullptr;
+  ASSERT_NO_FATAL_FAILURE(nweb_impl_->PauseMicrophone());
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  ASSERT_NO_FATAL_FAILURE(nweb_impl_->PauseMicrophone());
+}
+
+TEST_F(NWebImplTest, StopMicrophone001) {
+  ASSERT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = nullptr;
+  ASSERT_NO_FATAL_FAILURE(nweb_impl_->StopMicrophone());
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  ASSERT_NO_FATAL_FAILURE(nweb_impl_->StopMicrophone());
+}
+#endif
 }  // namespace OHOS::NWeb
                           

@@ -94,7 +94,6 @@ void ArkwebInputRouterImplUtils::ProcessFilteredEvent(
     if (!(type == blink::WebInputEvent::Type::kGestureScrollUpdate ||
           type == blink::WebInputEvent::Type::kTouchMove ||
           type == blink::WebInputEvent::Type::kGesturePinchUpdate)) {
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
         LOG(INFO) << "InputRouterImpl::FilterAndSendWebInputEvent type="
                   << blink::InputEventOhos::GetWebEventName(input_event);
     }

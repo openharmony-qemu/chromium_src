@@ -304,6 +304,7 @@ component("cef_nweb") {
 
   sources += [
     "src/ndk/arkweb_model.cc",
+    "src/ndk/arkweb_native_blankless_callback.h",
     "src/ndk/arkweb_native_javascript_execute_callback.cc",
     "src/ndk/arkweb_native_javascript_execute_callback.h",
     "src/ndk/arkweb_native_object.cc",

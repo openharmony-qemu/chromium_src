@@ -7262,6 +7262,60 @@ void NWebImpl::SetVisibility(bool isVisible) {
   }
 }
 
+int32_t NWebImpl::SetBlanklessLoadingParams(const std::string& key, bool enable, int32_t duration,
+  int64_t expirationTime, std::shared_ptr<NWebBlanklessCallback> callback) {
+  MarkUserEnableBlankless();
+  if (!base::ohos::BlanklessController::CheckGlobalProperty() || !CheckNetAvailable()) {
+    return -5;  // ERR_SIGNIFICANT_CHANGE
+  }
+  auto& instance = base::ohos::BlanklessController::GetInstance();
+  uint64_t blankless_key = base::ohos::BlanklessController::ConvertToBlanklessKey(key);
+  auto status_code = instance.MatchKey(nweb_id_, blankless_key);
+  LOG(DEBUG) << "blankless SetBlanklessLoadingParams nweb_id: " << nweb_id_
+             << ", blankless_key: " << blankless_key << ", status: " << static_cast<int>(status_code);
+  if (status_code == base::ohos::BlanklessController::StatusCode::KEY_NOT_MATCH) {
+    return -4;    // ERR_KEY_NOT_MATCH
+  }
+  if (callback) {
+    blankless_callback_ = callback;
+  }
+  string_key_ = key;
+  auto& databaseInstance = base::ohos::BlanklessDataController::GetInstance();
+  auto window_id = instance.GetWindowIdByNWebId(nweb_id_);
+  auto is_private = OHOS::NWeb::WindowManagerAdapterImpl::GetWindowPrivacyMode(window_id);
+  if (is_private) {
+    LOG(DEBUG) << "blankless this is a private window: "<< window_id;
+    databaseInstance.ClearSnapshot(blankless_key);
+    databaseInstance.ClearSnapshotDataItem({blankless_key});
+    ExecuteBlanklessCallback(key, 1, std::string("this is a private window")); // 1 LOADING_FAILED
+    return -5;
+  }
+  if (expirationTime != 0) {
+    databaseInstance.InsertExpirationInfo(static_cast<int64_t>(blankless_key), expirationTime * 1000); // ms->μs
+  }
+  if (status_code != base::ohos::BlanklessController::StatusCode::INSERTED ||
+      databaseInstance.GetBlanklessLoadingCacheCapacity() == 0) {
+    LOG(DEBUG) << "blankless SetBlanklessLoadingParams nweb_id: " << nweb_id_
+               << ", blankless_key: " << blankless_key << ", status: " << static_cast<int>(status_code)
+               << ", capacity: " << databaseInstance.GetBlanklessLoadingCacheCapacity()
+               << ", enable: " << enable;
+    return (enable ? -5 : 0);  // ERR_SIGNIFICANT_CHANGE(true) or SUCCESS(false)
+  }
+  if (enable) {
+    OHOS::NWeb::SnapshotDataItem dataItem = databaseInstance.GetSnapshotDataItem(blankless_key, GetPreferenceHash());
+    if (dataItem.historySimilarity < 0.33) {
+      LOG(DEBUG) << "blankless SetBlanklessLoadingParams similarity < 0.33";
+      return -5;    // ERR_SIGNIFICANT_CHANGE
+    }
+    CallBlanklessFrameFuncV2(blankless_key, dataItem, duration);
+  }
+  return 0;   // SUCCESS
+}
+
+void NWebImpl::CallExecuteBlanklessCallback(int32_t state, const std::string& reason) {
+  ExecuteBlanklessCallback(string_key_, state, reason);
+}
+
 void NWebImpl::ClearBlanklessKey() {
   if (nweb_delegate_ == nullptr || blankless_key_ == base::ohos::BlanklessController::INVALID_BLANKLESS_KEY) {
     return;
@@ -7318,6 +7372,51 @@ void NWebImpl::CallBlanklessFrameFunc(uint64_t blankless_key, SnapshotDataItem& 
         [handle = this->nweb_handle_, file, width = dataItem.width, height = dataItem.height](){
           handle->OnInsertBlanklessFrameWithSize(file, width, height);
         }, lcp_time);
+  }
+}
+
+void NWebImpl::CallBlanklessFrameFuncV2(uint64_t blankless_key, SnapshotDataItem& dataItem,
+                                        int32_t duration, bool isAnime) {
+  std::string file = isAnime ? dataItem.wholePath : dataItem.staticPath;
+  if (nweb_handle_ == nullptr || dataItem.lcpTime == INT32_MAX || dataItem.lcpTime <= 0 || file.empty()) {
+    ExecuteBlanklessCallback(string_key_, 1, std::string("invalid frame insertion file")); // 1 LOADING_FAILED
+    return;
+  }
+  auto& instance = base::ohos::BlanklessController::GetInstance();
+  auto system_time = base::Time::Now().ToInternalValue() / base::Time::kMicrosecondsPerMillisecond;
+  uint64_t recorded_time = instance.GetSystemTime(nweb_id_, blankless_key_);
+  int32_t corrected_time = static_cast<int32_t>(static_cast<uint64_t>(system_time) - recorded_time);
+  if (corrected_time < 0 || corrected_time >= dataItem.lcpTime ||
+      dataItem.lcpTime - corrected_time < base::ohos::BlanklessController::MINIMUM_FRAME_LIFETIME) { // 40 ms
+    LOG(DEBUG) << "blankless CallBlanklessFrameFuncV2 corrected time error " <<
+      corrected_time << " " << dataItem.lcpTime;
+    ExecuteBlanklessCallback(string_key_, 1, std::string("invalid frame insertion file")); // 1 LOADING_FAILED
+    return;
+  }
+  int32_t lcp_time = base::ohos::BlanklessController::MAXIMUM_FRAME_LIFETIME;
+  if (duration != 0) {
+    lcp_time = duration;
+  } else {
+    if (dataItem.lcpTime >= base::ohos::BlanklessController::A_STANDARD) {
+      lcp_time = std::min(dataItem.lcpTime, base::ohos::BlanklessController::MAXIMUM_FRAME_LIFETIME);  // 2000 ms
+    }
+  }
+  LOG(DEBUG) << "blankless CallBlanklessFrameFuncV2 OnRemoveBlanklessFrame Delay Time: " << lcp_time;
+  if (is_visible_) {
+    nweb_handle_->OnInsertBlanklessFrameWithSize(file, dataItem.width, dataItem.height);
+    RemoveBlanklessFrame(nweb_handle_, lcp_time, isAnime);
+  } else {
+    instance.RegisterFrameInsertCallback(nweb_id_, blankless_key_,
+        [handle = this->nweb_handle_, file, width = dataItem.width, height = dataItem.height](){
+          handle->OnInsertBlanklessFrameWithSize(file, width, height);
+        }, lcp_time);
+  }
+}
+
+void NWebImpl::ExecuteBlanklessCallback(const std::string& key, int32_t state, const std::string& reason) {
+  if (blankless_callback_) {
+    auto current_time = (base::Time::Now() - base::Time::UnixEpoch()).InMilliseconds();
+    blankless_callback_->OnReceiveValue(key, state, static_cast<int64_t>(current_time), reason);
   }
 }
 

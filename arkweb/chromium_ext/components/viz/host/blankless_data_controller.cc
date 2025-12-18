@@ -52,6 +52,10 @@ const double SSIM_THRESHOLD = 0.95;
 const int DUMP_TASK_DELAY_TIME = 1000; // Milliseconds
 const int SCREEN_MAX_RESOLUTION = 8000;
 
+// static
+std::unordered_map<int64_t, int64_t> BlanklessDataController::expiration_time_info_;
+std::mutex BlanklessDataController::expiration_time_info_mutex_;
+
 static double Mean(const std::vector<double>& data) {
   if (data.size() == 0) {
     LOG(DEBUG) << "blankless Mean data size 0";
@@ -537,7 +541,21 @@ void BlanklessDataController::DumpTask(viz::mojom::BlanklessSendInfoPtr infoPtr,
 
   snapshotDataItem.historySimilarity = similarity;
   snapshotDataItem.staticPath = newFile;
-  OhosWebSnapshotDataBase::GetInstance().InsertSnapshotDataItem(infoPtr->blankless_key, snapshotDataItem);
+  int64_t expirationTime = 0;
+  {
+    std::lock_guard<std::mutex> expiration_time_info_guard(expiration_time_info_mutex_);
+    auto iter = expiration_time_info_.find(infoPtr->blankless_key);
+    if (iter != expiration_time_info_.end()) {
+      expirationTime = iter->second;
+    }
+  }
+  
+  if (expirationTime != 0) {
+    OhosWebSnapshotDataBase::GetInstance().InsertSnapshotDataItem(
+      infoPtr->blankless_key, snapshotDataItem, expirationTime);
+  } else {
+    OhosWebSnapshotDataBase::GetInstance().InsertSnapshotDataItem(infoPtr->blankless_key, snapshotDataItem);
+  }
 }
 
 void BlanklessDataController::DumpBlanklessSnapshot(viz::mojom::BlanklessSendInfoPtr infoPtr,
@@ -595,6 +613,14 @@ void BlanklessDataController::ClearSnapshot(int64_t blankless_key)
 
 void BlanklessDataController::ClearSnapshotDataItem(const std::vector<int64_t>& blankless_keys)
 {
+  {
+    std::lock_guard<std::mutex> expiration_time_info_guard(expiration_time_info_mutex_);
+    for (int64_t blankless_key : blankless_keys) {
+      if (expiration_time_info_.find(blankless_key) != expiration_time_info_.end()) {
+        expiration_time_info_.erase(blankless_key);
+      }
+    }
+  }
   OhosWebSnapshotDataBase::GetInstance().ClearSnapshotDataItem(blankless_keys);
 }
 
@@ -647,6 +673,12 @@ void BlanklessDataController::CreateTaskManager()
   if (!task_manager_) {
     task_manager_ = std::make_unique<viz::CancelableDelayedTaskManager>();
   }
+}
+
+void BlanklessDataController::InsertExpirationInfo(int64_t blankless_key, int64_t expirationTime)
+{
+  std::lock_guard<std::mutex> expiration_time_info_guard(expiration_time_info_mutex_);
+  expiration_time_info_[blankless_key] = expirationTime;
 }
 }  // namespace ohos
 }  // namespace base

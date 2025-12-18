@@ -109,6 +109,10 @@ class NWebDelegateInterface
   virtual void RegisterReleaseSurfaceListener(
       std::shared_ptr<NWebReleaseSurfaceCallback> releaseSurfaceListener) = 0;
   virtual void RegisterNWebHandler(std::shared_ptr<NWebHandler> handler) = 0;
+#if BUILDFLAG(ARKWEB_AI)
+  virtual void RegisterNWebAgentHandler(
+      std::shared_ptr<NWebAgentHandler> handler) = 0;
+#endif
   virtual void RegisterRenderCb(
       std::function<void(const char*)> render_update_cb) = 0;
 #if BUILDFLAG(ARKWEB_NWEB_EX)
@@ -279,6 +283,9 @@ class NWebDelegateInterface
   virtual void SetEnableLowerFrameRate(bool enabled) = 0;
   virtual void SetEnableHalfFrameRate(bool enabled) = 0;
   virtual std::shared_ptr<NWebPreference> GetPreference() const = 0;
+#if BUILDFLAG(ARKWEB_AI)
+  virtual std::shared_ptr<NWebAgentManager> GetAgentManager() const = 0;
+#endif
   virtual std::string Title() = 0;
   virtual std::shared_ptr<HitTestResult> GetHitTestResult() const = 0;
   virtual std::shared_ptr<HitTestResult> GetLastHitTestResult() const = 0;

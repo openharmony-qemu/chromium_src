@@ -32,6 +32,7 @@ static void WebPreferenceMojomExt(blink::mojom::WebPreferencesDataView data,
                                   blink::web_pref::WebPreferences* out) {
 #if BUILDFLAG(ARKWEB_AI)
   out->image_analyzer_enabled = data.image_analyzer_enabled();
+  out->arkweb_agent_enabled = data.arkweb_agent_enabled();
 #endif
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   out->hide_vertical_scrollbars = data.hide_vertical_scrollbars();

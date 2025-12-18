@@ -783,7 +783,6 @@ class NWebDelegateInterface
   virtual void WebExtensionTabDetached(
       int tab_id,
       std::unique_ptr<NWebExtensionTabDetachInfo> detachInfo) = 0;
-  virtual void WebExtensionTabHighlighted(NWebExtensionTabHighlightInfo& highlightInfo) = 0;
   virtual void WebExtensionTabMoved(
       int32_t tab_id,
       std::unique_ptr<NWebExtensionTabMoveInfo> moveInfo) = 0;

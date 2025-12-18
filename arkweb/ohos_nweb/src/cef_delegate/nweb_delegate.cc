@@ -5786,15 +5786,6 @@ void NWebDelegate::WebExtensionTabDetached(
   GetBrowser()->GetHost()->WebExtensionTabDetached(tab_id, std::move(detachInfo));
 }
  
-void NWebDelegate::WebExtensionTabHighlighted(NWebExtensionTabHighlightInfo& highlightInfo) {
-  LOG(INFO) << "WebExtensionTabHighlighted, windowId: " << highlightInfo.windowId.value();
-  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
-    LOG(ERROR) << "WebExtensionTabHighlighted failed, get browser failed";
-    return;
-  }
-  GetBrowser()->GetHost()->WebExtensionTabHighlighted(highlightInfo);
-}
- 
 void NWebDelegate::WebExtensionTabMoved(
     int32_t tab_id,
     std::unique_ptr<NWebExtensionTabMoveInfo> moveInfo) {

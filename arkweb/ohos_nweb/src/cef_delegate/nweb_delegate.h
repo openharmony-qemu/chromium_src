@@ -804,7 +804,6 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void WebExtensionTabDetached(
       int tab_id,
       std::unique_ptr<NWebExtensionTabDetachInfo> detachInfo) override;
-  void WebExtensionTabHighlighted(NWebExtensionTabHighlightInfo& highlightInfo) override;
   void WebExtensionTabMoved(
       int32_t tab_id,
       std::unique_ptr<NWebExtensionTabMoveInfo> moveInfo) override;

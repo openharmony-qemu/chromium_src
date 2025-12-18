@@ -126,6 +126,10 @@ class NWebExtensionTabCefDelegate {
 
   // onCreated event
   static void OnTabCreated(std::unique_ptr<NWebExtensionTab> tab);
+
+  // OnTabHighlighted event
+  static void OnTabHighlighted(
+      const NWebExtensionTabHighlightInfo& highlightInfo);
 };
 
 }  // namespace OHOS::NWeb

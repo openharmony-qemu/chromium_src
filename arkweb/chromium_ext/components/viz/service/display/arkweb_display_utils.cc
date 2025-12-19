@@ -45,7 +45,6 @@ namespace viz {
 
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
 const int DUMP_FRAME_FREQ = 60;
-const int MAIN_PROCESS_ID_MIN = 20000000;
 
 //LCOV_EXCL_START
 class DumpFrameObserver : public OHOS::NWeb::SystemPropertiesObserver {
@@ -137,7 +136,12 @@ ArkwebDisplayUtils::ArkwebDisplayUtils(Display* display) : display_(display) {
   // by uid, uid for browser is bigger than MAIN_PROCESS_ID_MIN, and gpu will
   // not come here.
   uid_t uid = getuid();
-  if (uid < MAIN_PROCESS_ID_MIN) {
+  auto app_mgr_client_adapter =
+      OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateAafwkAdapter();
+  if (app_mgr_client_adapter == nullptr) {
+    return;
+  }
+  if (app_mgr_client_adapter->IsRenderProcessByUid(static_cast<int>(uid))) {
     blink::SysPropRenderObserverClientRep sysproprender_;
     sysproprender_.AttachSysPropObserver(1, dump_frame_observer_.get());
   } else {
@@ -164,7 +168,12 @@ ArkwebDisplayUtils::ArkwebDisplayUtils(Display* display) : display_(display) {
 ArkwebDisplayUtils::~ArkwebDisplayUtils() {
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
   uid_t uid = getuid();
-  if (uid < MAIN_PROCESS_ID_MIN) {
+  auto app_mgr_client_adapter =
+      OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateAafwkAdapter();
+  if (app_mgr_client_adapter == nullptr) {
+    return;
+  }
+  if (app_mgr_client_adapter->IsRenderProcessByUid(static_cast<int>(uid))) {
     blink::SysPropRenderObserverClientRep sysproprender_;
     sysproprender_.DetachSysPropObserver(1, dump_frame_observer_.get());
   } else {

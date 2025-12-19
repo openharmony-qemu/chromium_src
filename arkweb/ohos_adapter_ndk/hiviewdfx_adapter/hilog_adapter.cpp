@@ -15,6 +15,7 @@
 
 #include "hilog_adapter.h"
 #include "securec.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 #include <unistd.h>
 #include <sys/types.h>
 #include <hilog/log.h>
@@ -22,7 +23,6 @@
 
 namespace OHOS::NWeb {
 namespace {
-constexpr uint32_t BROWSER_UID_BASE = 20000000;
 #if defined(X86_64_ENABLE)
 constexpr uint32_t LOG_APP_DOMAIN = 0x004500;
 constexpr uint32_t LOG_RENDER_DOMAIN = 0x004501;
@@ -65,9 +65,15 @@ inline void Format(std::string& fmtStr)
 
 int HiLogAdapterPrintLog(uint32_t level, const char* tag, const char* fmt, va_list ap)
 {
-    uint32_t domain = LOG_RENDER_DOMAIN;
-    if ((getuid() / BROWSER_UID_BASE) != 0) {
-        domain = LOG_APP_DOMAIN;
+    uint32_t domain = LOG_APP_DOMAIN;
+    uid_t uid = getuid();
+    auto app_mgr_client_adapter =
+      OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateAafwkAdapter();
+    if (app_mgr_client_adapter == nullptr) {
+        return;
+    }
+    if (app_mgr_client_adapter->IsRenderProcessByUid(static_cast<int>(uid))) {
+        domain = LOG_RENDER_DOMAIN;
     }
     std::string fmtStr(fmt);
     Format(fmtStr);

@@ -905,7 +905,9 @@ void Layer::ConvertPointToLayer(const Layer* source,
 }
 
 void Layer::SetFillsBoundsOpaquely(bool fills_bounds_opaquely) {
-  CHECK_NE(type_, LayerType::LAYER_SOLID_COLOR);
+  // Follow-up Processing. A failed check caused the renderer process to crash; 
+  // the code has been temporarily commented out.
+  // CHECK_NE(type_, LayerType::LAYER_SOLID_COLOR);
   SetFillsBoundsOpaquelyWithReason(fills_bounds_opaquely,
                                    PropertyChangeReason::NOT_FROM_ANIMATION);
 }

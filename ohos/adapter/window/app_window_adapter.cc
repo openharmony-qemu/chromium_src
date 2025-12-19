@@ -275,4 +275,38 @@ bool AppWindowAdapter::Bind(const std::string& id) {
   return false;
 }
 
+bool AppWindowAdapter::UnBind(const std::string& id) {
+  auto promise = std::make_shared<std::promise<bool>>();
+  std::function<void(aki::Value)> callback = [promise,
+                                              id](aki::Value node_content) {
+    ArkUI_NodeContentHandle node_content_handle = nullptr;
+    OH_ArkUI_GetNodeContentFromNapiValue(aki::JSBind::GetScopedEnv(),
+                                         node_content.GetHandle(),
+                                         &node_content_handle);
+    if (node_content_handle == nullptr) {
+      LOGE("AppWindowAdapter::UnBind Get content node handle failed");
+      promise->set_value(false);
+      return;
+    }
+ 
+    promise->set_value(
+        xcomponent::XComponentManager::GetInstance()
+            ->UnBindNativeXComponentNode(id, node_content_handle));
+  };
+ 
+  auto js_func = ohos::adapter::GetJSFunction("AppWindow.UnBind");
+  if (js_func) {
+    js_func->Invoke<void>(id, callback);
+    auto future = promise->get_future();
+    auto status = future.wait_for(std::chrono::seconds(3));
+    if (status == std::future_status::timeout) {
+      LOGE("AppWindowAdapter::UnBind timeout for %{public}s", id.c_str());
+      return false;
+    }
+ 
+    return future.get();
+  }
+  return false;
+}
+
 }  // namespace ohos::adapter::window

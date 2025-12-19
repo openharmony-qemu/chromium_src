@@ -523,4 +523,13 @@ void OhosWindow::BindNodeHandle() {
   }
 }
 
+void OhosWindow::UnBindNodeHandle() {
+  if (ohos::adapter::nodeHandle::NodeHandleImpl::GetInstance()
+          .IsSupportNodeHandle() &&
+      is_ability_bound_) {
+    is_ability_bound_ =
+        !AppWindowAdapter::GetInstance().UnBind(GetWindowUniqueId());
+  }
+}
+
 }  // namespace ui

@@ -93,11 +93,6 @@ export class SubWindowAdapter extends BaseAdapter {
         paramsLink.set(lastParams);
         this.resizeSubWindow(reusableWindow.subWindow, fixedBounds.width, fixedBounds.height);
         this.moveSubWindow(reusableWindow.subWindow, fixedBounds.left, fixedBounds.top, parentId);
-        reusableWindow.subWindow.showWindow()
-          .catch((err: BusinessError) => {
-            reusableWindow.id = "";
-            LogUtil.error(TAG, 'Failed to reuseSubWindow: ' + reusableWindow.id + ',err:' + JSON.stringify(err));
-          });
         return reusableWindow.id;
       } catch (e) {
         LogUtil.error(TAG,'reuseSubWindow error' + reusableWindow.id);

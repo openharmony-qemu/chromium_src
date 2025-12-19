@@ -62,6 +62,7 @@ class ADAPTER_EXPORT_API NodeHandleXComponentImpl : public XComponentBase {
   void SetSurfaceHolder(OH_ArkUI_SurfaceHolder* surface_holder);
   void SetSurfaceCallback(OH_ArkUI_SurfaceCallback* surface_callback);
   bool BindNativeXComponentNode(ArkUI_NodeContentHandle node_content_handle);
+  bool UnBindNativeXComponentNode(ArkUI_NodeContentHandle node_content_handle);
   void RegisterCallBack();
   void UnRegisterCallBack();
   void RegisterPinchGestureEvent();

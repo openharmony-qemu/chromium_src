@@ -76,6 +76,7 @@ class ADAPTER_EXPORT_API AppWindowAdapter {
                              const int32_t target_id,
                              const int32_t finger_id);
   bool Bind(const std::string& id);
+  bool UnBind(const std::string& id);
 
  private:
   AppWindowAdapter() = default;

@@ -128,6 +128,10 @@ function bind(id: string, callback: (nodeContent: NodeContent | undefined) => vo
   implAppWindowAdapter().bind(id, callback);
 }
 
+function unbind(id: string, callback: (nodeContent: NodeContent | undefined) => void) {
+  implAppWindowAdapter().unbind(id, callback);
+}
+
 export class AppWindowAdapterBind {
   static bind() {
     JsBindingUtils.bindFunction("AppWindow.CreateWindow", createWindow);
@@ -151,5 +155,6 @@ export class AppWindowAdapterBind {
     JsBindingUtils.bindFunction("AppWindow.GetOriginWindowIds", getOriginWindowIds);
     JsBindingUtils.bindFunction("AppWindow.ShiftWindowTouchEvent", shiftWindowTouchEvent);
     JsBindingUtils.bindFunction("AppWindow.Bind", bind);
+    JsBindingUtils.bindFunction("AppWindow.UnBind", unbind);
   }
 }

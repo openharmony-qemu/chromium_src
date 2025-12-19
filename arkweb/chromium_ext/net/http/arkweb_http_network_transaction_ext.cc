@@ -320,11 +320,13 @@ void ArkWebHttpNetworkTransactionExt::StopRecording() {
 void ArkWebHttpNetworkTransactionExt::ReportTimeout() {
   const HttpResponseInfo* response_info = GetResponseInfo();
   base::Value::Dict record;
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
   if (response_info) {
     record.Set("ip", net::LogUtils::AnonymizeIpAddress(response_info->remote_endpoint));
     record.Set("connection_info", net::HttpConnectionInfoToString(response_info->connection_info));
     record.Set("received_body_bytes", base::NumberToString(received_body_bytes_));
   }
+#endif
 
   LOG(INFO) << "INFO: request had no reponse within 5 seconds. url: *** " << record;
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)

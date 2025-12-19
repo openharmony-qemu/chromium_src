@@ -502,3 +502,176 @@
 /ash/game_dashboard/ @zhang-yinglie
 /ash/accelerometer/ @zhang-yinglie
 /ash/accelerators/ @zhang-yinglie
+
+# CCS
+/arkweb/ohos_adapter_ndk/cert_mgr_adapter/ @chenjiadong @fredranking @aohui
+/arkweb/ohos_adapter_ndk/enterprise_device_management_adapter/ @zhangyanchuan
+/arkweb/ohos_adapter_ndk/net_connect_adapter/ @chenjiadong @fredranking @aohui
+/arkweb/ohos_adapter_ndk/net_proxy_adapter/ @chenjiadong @fredranking @aohui
+/arkweb/ohos_nweb/src/capi/arkweb_model.h @chenjiadong @fredranking @aohui
+/arkweb/ohos_nweb/src/capi/arkweb_net_error_list.h @chenjiadong @fredranking @aohui
+/arkweb/ohos_nweb/src/capi/arkweb_scheme_handler.h @chenjiadong @fredranking @aohui
+/arkweb/ohos_nweb/src/capi/nweb_app_client_extension_callback.h @zhangyanchuan
+/arkweb/ohos_nweb/src/capi/nweb_c_api.h @zhangyanchuan
+/arkweb/ohos_nweb/src/capi/nweb_devtools_message_handler.h @shawshank
+/arkweb/ohos_nweb/src/capi/nweb_download_delegate_callback.h @chenjiadong @fredranking @aohui
+/arkweb/ohos_nweb/src/capi/nweb_download_item_state.h @chenjiadong @fredranking @aohui
+/arkweb/ohos_nweb/src/capi/nweb_download_item.h @chenjiadong @fredranking @aohui
+/arkweb/ohos_nweb/src/capi/nweb_permission_request.h @zhangyanchuan
+/arkweb/ohos_nweb/src/capi/nweb_permission_status_query_delegate_callback.h @zhangyanchuan
+/arkweb/ohos_nweb/src/capi/nweb_permission_status_query.h @zhangyanchuan
+/arkweb/ohos_nweb/src/capi/web_extension_tab_items.h @zhangyanchuan
+/arkweb/ohos_nweb/src/cef_delegate/nweb_adsblock_manager_delegate.cc @shawshank
+/arkweb/ohos_nweb/src/cef_delegate/nweb_cookie_manager_delegate.cc @chenjiadong @fredranking @aohui
+/arkweb/ohos_nweb/src/cef_delegate/nweb_default_engine_prefetch_args_impl.cc @chenjiadong @fredranking @aohui
+/arkweb/ohos_nweb/src/cef_delegate/nweb_devtools_message_handler_impl.cc @shawshank
+/arkweb/ohos_nweb/src/cef_delegate/nweb_download_handler_delegate.cc @chenjiadong @fredranking @aohui
+/arkweb/ohos_nweb/src/cef_delegate/nweb_history_list_impl.cc @chenjiadong @fredranking @aohui
+/arkweb/ohos_nweb/src/cef_delegate/nweb_permission_query_impl.cc @zhangyanchuan
+/arkweb/ohos_nweb/src/cef_delegate/nweb_pipe_resource_handler_unittest.cc @chenjiadong @fredranking @aohui
+/arkweb/ohos_nweb/src/cef_delegate/nweb_pipe_resource_handler.cc @chenjiadong @fredranking @aohui
+/arkweb/ohos_nweb/src/cef_delegate/nweb_resource_handler.cc @chenjiadong @fredranking @aohui
+/arkweb/ohos_nweb/src/cef_delegate/nweb_scheme_handler_factory_unittest.cc @chenjiadong @fredranking @aohui
+/arkweb/ohos_nweb/src/cef_delegate/nweb_scheme_handler_factory.cc @chenjiadong @fredranking @aohui
+/arkweb/ohos_nweb/src/cef_delegate/nweb_url_resource_response_impl.cc @chenjiadong @fredranking @aohui
+/arkweb/ohos_nweb/src/download/ @chenjiadong @fredranking @aohui
+/arkweb/ohos_nweb/src/ndk/arkweb_model.cc @chenjiadong @fredranking @aohui
+/arkweb/ohos_nweb/src/ndk/arkweb_native_javascript_execute_callback.* @shawshank
+/arkweb/ohos_nweb/src/ndk/arkweb_native_object.* @chenjiadong @fredranking @aohui
+/arkweb/ohos_nweb/src/ndk/arkweb_native_web_message_callback.* @shawshank
+/arkweb/ohos_nweb/src/ndk/scheme_handler/ @chenjiadong @fredranking @aohui
+/arkweb/ohos_nweb/src/nweb_adsblock_manager_* @shawshank
+/arkweb/ohos_nweb/src/nweb_cookie_manager_delegate_interface.h @chenjiadong @fredranking @aohui
+/arkweb/ohos_nweb/src/nweb_cookie_manager_impl.cc @chenjiadong @fredranking @aohui
+/arkweb/ohos_nweb/src/nweb_cookie_manager_impl.h @chenjiadong @fredranking @aohui
+/arkweb/ohos_nweb/src/nweb_download_manager_impl.cc @chenjiadong @fredranking @aohui
+/arkweb/ohos_nweb/src/nweb_download_manager_impl.h @chenjiadong @fredranking @aohui
+/arkweb/ohos_nweb/src/nweb_load_committed_details_impl.cc @chenjiadong @fredranking @aohui
+/arkweb/ohos_nweb/src/nweb_load_committed_details_impl.h @chenjiadong @fredranking @aohui
+/arkweb/ohos_nweb/src/nweb_permission_status_query_manager.* @zhangyanchuan
+/arkweb/ohos_nweb/src/nweb_url_resource_error_impl.h @chenjiadong @fredranking @aohui
+/arkweb/ohos_nweb/src/nweb_url_resource_request_impl.cc @chenjiadong @fredranking @aohui
+/arkweb/ohos_nweb/src/nweb_url_resource_request_impl.h @chenjiadong @fredranking @aohui
+/components/app_launch_prefetch/ @chenjiadong @fredranking @aohui
+/components/back_forward_cache/ @chenjiadong @fredranking @aohui
+/components/background_sync/ @chenjiadong @fredranking @aohui
+/components/blocked_content/ @chenjiadong @fredranking @aohui
+/components/browsing_data_strings.grdp @chenjiadong @fredranking @aohui
+/components/client_hints/ @chenjiadong @fredranking @aohui
+/components/content_relationship_verification/ @chenjiadong @fredranking @aohui
+/components/cookie_config/ @chenjiadong @fredranking @aohui
+/components/cronet/ @chenjiadong @fredranking @aohui
+/components/crx_file/ @zhangyanchuan
+/components/custom_handlers/ @chenjiadong @fredranking @aohui
+/components/download/ @chenjiadong @fredranking @aohui
+/components/endpoint_fetcher/ @chenjiadong @fredranking @aohui
+/components/enterprise/ @zhangyanchuan
+/components/error_page_strings_grdp/ @chenjiadong @fredranking @aohui
+/components/error_page_strings.grdp @chenjiadong @fredranking @aohui
+/components/favicon/ @chenjiadong @fredranking @aohui
+/components/filename_generation/ @chenjiadong @fredranking @aohui
+/components/google/ @chenjiadong @fredranking @aohui
+/components/image_fetcher/ @chenjiadong @fredranking @aohui
+/components/link_header_util/ @chenjiadong @fredranking @aohui
+/components/management/ @zhangyanchuan
+/components/navigation_interception/ @chenjiadong @fredranking @aohui
+/components/navigation_metrics/ @chenjiadong @fredranking @aohui
+/components/neterror/ @chenjiadong @fredranking @aohui
+/components/network_session_configurator/ @chenjiadong @fredranking @aohui
+/components/network_time/ @chenjiadong @fredranking @aohui
+/components/no_state_prefetch/ @chenjiadong @fredranking @aohui
+/components/ntp_tiles/ @chenjiadong @fredranking @aohui
+/components/offline_items_collection/ @chenjiadong @fredranking @aohui
+/components/offline_pages/ @chenjiadong @fredranking @aohui
+/components/onc/ @chenjiadong @fredranking @aohui
+/components/page_load_metrics/browser/protocol_util.cc @chenjiadong @fredranking @aohui
+/components/plugins/ @zhangyanchuan
+/components/policy/ @zhangyanchuan
+/components/power_bookmarks/ @zhangyanchuan
+/components/previous_session_info/ @chenjiadong @fredranking @aohui
+/components/proxy_config/ @chenjiadong @fredranking @aohui
+/components/reduce_accept_language/ @chenjiadong @fredranking @aohui
+/components/reset_password_strings.grdp @chenjiadong @fredranking @aohui
+/components/resources/neterror* @chenjiadong @fredranking @aohui
+/components/resources/ntp_tiles_dev_ui_resources.grdp @chenjiadong @fredranking @aohui
+/components/resources/ntp_tiles_resources.grdp @chenjiadong @fredranking @aohui
+/components/resources/offline_pages_resources.grdp @chenjiadong @fredranking @aohui
+/components/safe_browsing/ @chenjiadong @fredranking @aohui
+/components/saved_tab_groups/public/android/ @chenjiadong @fredranking @aohui
+/components/services/app_service/ @zhangyanchuan
+/components/services/quarantine/ @chenjiadong @fredranking @aohui
+/components/session_manager/ @chenjiadong @fredranking @aohui
+/components/session_proto_db/ @chenjiadong @fredranking @aohui
+/components/sessions/ @chenjiadong @fredranking @aohui
+/components/site_isolation/ @chenjiadong @fredranking @aohui
+/components/subresource_filter/ @shawshank
+/components/tab_resume_strings.grdp @chenjiadong @fredranking @aohui
+/components/tpcd/enterprise_reporting/ @chenjiadong @fredranking @aohui
+/components/ui_devtools/ @shawshank
+/components/url_deduplication/ @chenjiadong @fredranking @aohui
+/components/url_formatter/ @chenjiadong @fredranking @aohui
+/components/url_matcher/ @chenjiadong @fredranking @aohui
+/components/url_pattern_index/ @chenjiadong @fredranking @aohui
+/components/url_rewrite/ @chenjiadong @fredranking @aohui
+/components/version_info/ @chenjiadong @fredranking @aohui
+/components/visited_url_ranking/ @chenjiadong @fredranking @aohui
+/components/visitedlink/ @chenjiadong @fredranking @aohui
+/components/web_package/ @zhangyanchuan
+/components/web_package/signed_web_bundles/ @zhangyanchuan
+/components/web_resource/ @chenjiadong @fredranking @aohui
+/components/webapps/ @zhangyanchuan
+/components/winhttp/ @chenjiadong @fredranking @aohui
+/content/browser/back_forward_cache* @chenjiadong @fredranking @aohui
+/content/browser/background_fetch/ @chenjiadong @fredranking @aohui
+/content/browser/browsing_data/ @chenjiadong @fredranking @aohui
+/content/browser/cookie_deprecation_label/ @chenjiadong @fredranking @aohui
+/content/browser/cookie_store/ @chenjiadong @fredranking @aohui
+/content/browser/devtools/ @shawshank
+/content/browser/direct_sockets/ @chenjiadong @fredranking @aohui
+/content/browser/download/ @chenjiadong @fredranking @aohui
+/content/browser/installedapp/ @zhangyanchuan
+/content/browser/loader/ @chenjiadong @fredranking @aohui
+/content/browser/navigation_transitions/ @chenjiadong @fredranking @aohui
+/content/browser/network_context_* @chenjiadong @fredranking @aohui
+/content/browser/network_sandbox* @chenjiadong @fredranking @aohui
+/content/browser/network_service_* @chenjiadong @fredranking @aohui
+/content/browser/network/ *trust_token* @chenjiadong @fredranking @aohui
+/content/browser/payments/ @zhangyanchuan
+/content/browser/preloading/ @chenjiadong @fredranking @aohui
+/content/browser/renderer_host/back_forward_cache* @chenjiadong @fredranking @aohui
+/content/browser/renderer_host/p2p/ @chenjiadong @fredranking @aohui
+/content/browser/service_worker/ @chenjiadong @fredranking @aohui
+/content/browser/ssl/ @chenjiadong @fredranking @aohui
+/content/browser/system_dns_resolution/ @chenjiadong @fredranking @aohui
+/content/browser/web_package/ @zhangyanchuan
+/content/browser/websockets/ @chenjiadong @fredranking @aohui
+/content/browser/webtransport/ @chenjiadong @fredranking @aohui
+/content/public/test/*devtools* @shawshank
+/content/public/test/*download* @chenjiadong @fredranking @aohui
+/content/public/test/*test_file_error_injector* @chenjiadong @fredranking @aohui
+/content/public/test/back_forward_cache* @chenjiadong @fredranking @aohui
+/content/public/test/browsing_data_remover_test_util.* @chenjiadong @fredranking @aohui
+/content/public/test/network_service_test_helper.* @chenjiadong @fredranking @aohui
+/content/public/test/prefetch* @chenjiadong @fredranking @aohui
+/content/public/test/preloading* @chenjiadong @fredranking @aohui
+/content/public/test/prerender* @chenjiadong @fredranking @aohui
+/content/test/*background_sync* @chenjiadong @fredranking @aohui
+/extensions/ @zhangyanchuan
+/extensions/browser/api/declarative_net_request/ @chenjiadong @fredranking @aohui
+/extensions/browser/api/networking_private/ @chenjiadong @fredranking @aohui
+/headless/lib/browser/policy/headless_browser_policy_connector.* @zhangyanchuan
+/net/ @chenjiadong @fredranking @aohui
+/ppapi/ @zhangyanchuan
+/services/network/ @chenjiadong @fredranking @aohui
+/services/proxy_resolver_win/ @chenjiadong @fredranking @aohui
+/tools/metrics/histograms/metadata/net/ @chenjiadong @fredranking @aohui
+/tools/metrics/histograms/metadata/network/ @chenjiadong @fredranking @aohui
+/tools/traffic_annotation/ @chenjiadong @fredranking @aohui
+/tools/typescript/ @shawshank
+/ui/webui/resources/cr_components/ @zhangyanchuan
+/ui/webui/resources/cr_components/app_management/ @zhangyanchuan
+/ui/webui/resources/cr_components/color_change_listener/ @zhangyanchuan
+/ui/webui/resources/cr_components/help_bubble/ @zhangyanchuan
+/ui/webui/resources/cr_components/history_clusters/ @zhangyanchuan
+/ui/webui/resources/cr_components/searchbox/ @zhangyanchuan
+/url/ @chenjiadong @fredranking @aohui

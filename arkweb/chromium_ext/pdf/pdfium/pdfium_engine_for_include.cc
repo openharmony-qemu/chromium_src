@@ -41,14 +41,14 @@ void PDFiumEngine::UpdateSelectionBoundsAndPositions(gfx::Rect& left,
     int32_t rect_top = std::numeric_limits<int32_t>::max();
     int32_t rect_right = std::numeric_limits<int32_t>::min();
     int32_t rect_bottom = std::numeric_limits<int32_t>::min();
-    PDFiumRange fitst_selection = selections[0];
+    PDFiumRange first_selection = selections[0];
     PDFiumRange last_selection = selections.back();
 
     for (const auto& sel : selections) {
-      if (fitst_selection.page_index() > sel.page_index() ||
-          (fitst_selection.page_index() == sel.page_index() &&
-          fitst_selection.char_index() > sel.char_index())) {
-        fitst_selection = sel;
+      if (first_selection.page_index() > sel.page_index() ||
+          (first_selection.page_index() == sel.page_index() &&
+          first_selection.char_index() > sel.char_index())) {
+        first_selection = sel;
       }
       if (last_selection.page_index() < sel.page_index() ||
           (last_selection.page_index() == sel.page_index() &&
@@ -69,7 +69,7 @@ void PDFiumEngine::UpdateSelectionBoundsAndPositions(gfx::Rect& left,
     clipped_selection_bounds = gfx::Rect(rect_left, rect_top,
                                          rect_right - rect_left, rect_bottom - rect_top);
     const std::vector<gfx::Rect>& left_screen_rects =
-        fitst_selection.GetScreenRects(GetVisibleRect().origin(), current_zoom_,
+        first_selection.GetScreenRects(GetVisibleRect().origin(), current_zoom_,
                            layout_.options().default_page_orientation());
     const std::vector<gfx::Rect>& right_screen_rects =
         last_selection.GetScreenRects(GetVisibleRect().origin(), current_zoom_,
@@ -186,31 +186,38 @@ gfx::PointF PDFiumEngine::ConverPageToScreen(int page_index, gfx::PointF point) 
   return transformed_point;
 }
 
-void PDFiumEngine::CheckSelectionVisibility(gfx::Rect& top,
-                                            gfx::Rect& bottom,
-                                            gfx::Rect& clipped_selection_bounds) {
+void PDFiumEngine::CheckSelectionVisibility(const gfx::Rect& left,
+                                            const gfx::Rect& right,
+                                            const gfx::Rect& clipped_selection_bounds) {
+  // Check if left handle is unvisible.
+  if (left.x() < 0 || left.x() > plugin_size().width() ||
+      left.y() < 0 || left.y() > plugin_size().height()) {
+        client_->SetIsLeftHandleVisible(false);
+  } else {
+    client_->SetIsLeftHandleVisible(true);
+  }
+
+  // Check if right handle is unvisible.
+  if (right.x() < 0 || right.x() > plugin_size().width() ||
+      right.y() < 0 || right.y() > plugin_size().height()) {
+        client_->SetIsRightHandleVisible(false);
+  } else {
+    client_->SetIsRightHandleVisible(true);
+  }
+
   // Check if selections are unvisible.
   if (clipped_selection_bounds.x() > plugin_size().width() ||
       clipped_selection_bounds.x() + clipped_selection_bounds.width() < 0 ||
       clipped_selection_bounds.y() > plugin_size().height() ||
       clipped_selection_bounds.y() + clipped_selection_bounds.height() < 0) {
     client_->SetIsSelectionVisible(false);
-    return;
+  } else {
+    client_->SetIsSelectionVisible(true);
   }
+}
 
-  client_->SetIsSelectionVisible(true);
-  if (top.x() < 0) {
-    top.set_x(top.x() - plugin_size().width());
-  }
-  if (top.y() < 0) {
-    top.set_y(top.y() - plugin_size().height());
-  }
-  if (bottom.x() + bottom.width() < 0) {
-    bottom.set_x(bottom.x() - plugin_size().width());
-  }
-  if (bottom.y() < 0) {
-    bottom.set_y(bottom.y() - plugin_size().height());
-  }
+void PDFiumEngine::SelectionChangedAtScrollStopped() {
+  OnSelectionPositionChanged();
 }
 #endif  // BUILDFLAG(ARKWEB_PDF)
 

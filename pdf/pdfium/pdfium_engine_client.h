@@ -216,7 +216,9 @@ class PDFiumEngineClient {
  virtual void ConvertAndUpdateSelectionBounds(gfx::Rect& clipped_selection_bounds) {}
  virtual void SetIsTouching(bool is_touching) {}
  virtual void ResetResponsePendingInputEvent() {}
- virtual void SetIsSelectionVisible(bool is_selection_visible) {}
+ virtual void SetIsSelectionVisible(bool visible) {}
+ virtual void SetIsLeftHandleVisible(bool visible) {}
+ virtual void SetIsRightHandleVisible(bool visible) {}
 #endif  // BUILDFLAG(ARKWEB_PDF)
 };
 

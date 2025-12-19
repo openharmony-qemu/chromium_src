@@ -190,8 +190,12 @@ void PDFDocumentHelper::DidScroll() {
   // TODO(wjmaclean): When PDFium supports editing, we'll need to detect
   // start == end as *either* no selection, or an insertion point.
   has_selection_ = start != end;
+#if !BUILDFLAG(ARKWEB_PDF)
   start.set_visible(has_selection_);
   end.set_visible(has_selection_);
+#else
+  SetSelectionBoundsVisibility(start, end);
+#endif  // !BUILDFLAG(ARKWEB_PDF)
   start.set_type(has_selection_ ? gfx::SelectionBound::LEFT
                                 : gfx::SelectionBound::EMPTY);
   end.set_type(has_selection_ ? gfx::SelectionBound::RIGHT

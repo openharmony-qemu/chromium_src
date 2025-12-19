@@ -444,7 +444,9 @@ class PdfViewWebPlugin final : public PDFiumEngineClient,
   void ConvertAndUpdateSelectionBounds(gfx::Rect& clipped_selection_bounds) override;
   void SetIsTouching(bool is_touching) override;
   void ResetResponsePendingInputEvent() override;
-  void SetIsSelectionVisible(bool is_selection_visible) override;
+  void SetIsSelectionVisible(bool visible) override;
+  void SetIsLeftHandleVisible(bool visible) override;
+  void SetIsRightHandleVisible(bool visible) override;
 #endif
 
   // PdfAccessibilityActionHandler:
@@ -983,15 +985,13 @@ class PdfViewWebPlugin final : public PDFiumEngineClient,
 #endif
 
 #if BUILDFLAG(ARKWEB_PDF)
-  gfx::Rect current_left_;
-  gfx::Rect current_right_;
-  gfx::Rect clipped_selection_bounds_;
-
   bool scroll_at_bottom_status_ = false;
-  bool is_touching_ = false;
-  bool is_scrolling_ = false;
-  bool is_pinching_ = false;
-  bool is_selection_visible_ = true;
+  std::atomic<bool> is_touching_{false};
+  std::atomic<bool> is_scrolling_{false};
+  std::atomic<bool> is_pinching_{false};
+  std::atomic<bool> is_selection_visible_{true};
+  std::atomic<bool> is_left_visible_{true};
+  std::atomic<bool> is_right_visible_{true};
   std::atomic<bool> is_menu_hidden_{false};
 
   // Used for cancelable delayed task.

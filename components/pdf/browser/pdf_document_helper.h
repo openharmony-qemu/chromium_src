@@ -64,6 +64,10 @@ class PDFDocumentHelper
                     const gfx::PointF& position) override;
   std::unique_ptr<ui::TouchHandleDrawable> CreateDrawable() override;
   void DidScroll() override;
+#if BUILDFLAG(ARKWEB_PDF)
+  void ClearTextSelection() override;
+  void OnScaleChanged(float new_page_scale_factor) override;
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   // ui::TouchSelectionMenuClient:
   bool IsCommandIdEnabled(int command_id) const override;
@@ -90,19 +94,19 @@ class PDFDocumentHelper
 #if BUILDFLAG(ENABLE_SCREEN_AI_SERVICE)
   void OnSearchifyStateChange(bool busy) override;
 #endif
+#if BUILDFLAG(ARKWEB_PDF)
+  void ConvertAndUpdateSelectionBounds(const gfx::Rect& clipped_selection_bounds) override;
+  void HideHandleAndQuickMenu(bool hide) override;
+  void ResetResponsePendingInputEvent() override;
+  void SetIsLeftHandleVisible(bool visible) override;
+  void SetIsRightHandleVisible(bool visible) override;
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   void GetPdfBytes(uint32_t size_limit,
                    pdf::mojom::PdfListener::GetPdfBytesCallback callback);
 
   void GetPageText(int32_t page_index,
                    pdf::mojom::PdfListener::GetPageTextCallback callback);
-#if BUILDFLAG(ARKWEB_PDF)
-  void ConvertAndUpdateSelectionBounds(const gfx::Rect& clipped_selection_bounds) override;
-  void HideHandleAndQuickMenu(bool hide) override;
-  void ResetResponsePendingInputEvent() override;
-  void ClearTextSelection() override;
-  void OnScaleChanged(float new_page_scale_factor) override;
-#endif  // BUILDFLAG(ARKWEB_PDF)
 
  private:
   friend class content::DocumentUserData<PDFDocumentHelper>;
@@ -121,6 +125,8 @@ class PDFDocumentHelper
   int32_t SafeScale(int32_t value, float scale_factor);
   void SetIsPdfDocument(bool is_pdf_document);
   void UpdateScaleFactor();
+  void SetSelectionBoundsVisibility(gfx::SelectionBound& start,
+                                    gfx::SelectionBound& end);
 #endif  // BUILDFLAG(ARKWEB_PDF)
 
   content::RenderFrameHostReceiverSet<mojom::PdfHost> pdf_host_receivers_;
@@ -143,6 +149,9 @@ class PDFDocumentHelper
 #if BUILDFLAG(ARKWEB_PDF)
   // Latest page scale factor received from TouchSelectionControllerClient.
   float page_scale_factor_ = 1.0f;
+
+  std::atomic<bool> is_left_visible_{true};
+  std::atomic<bool> is_right_visible_{true};
 #endif  // BUILDFLAG(ARKWEB_PDF)
 
   mojo::Remote<mojom::PdfListener> remote_pdf_client_;

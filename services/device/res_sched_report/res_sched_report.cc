@@ -21,9 +21,6 @@
 #include "third_party/icu/source/common/unicode/unistr.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/res_sched_client_adapter.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
-#if BUILDFLAG(ARKWEB_OHOS_MEM_USAGE_REPORT)
-#include "third_party/ohos_ndk/includes/ohos_adapter/security_adapter.h"
-#endif  // BUILDFLAG(ARKWEB_OHOS_MEM_USAGE_REPORT)
 
 using namespace OHOS::NWeb;
 

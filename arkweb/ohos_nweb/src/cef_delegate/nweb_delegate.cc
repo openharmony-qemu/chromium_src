@@ -59,6 +59,10 @@
 #include "nweb_preference_delegate.h"
 #include "url/gurl.h"
 
+#if BUILDFLAG(ARKWEB_AI)
+#include "nweb_agent_manager_impl.h"
+#endif
+
 #if BUILDFLAG(ARKWEB_NAVIGATION)
 #include "cef/ohos_cef_ext/libcef/browser/arkweb_navigation_state_serializer_ext.h"
 #include "nweb_history_list_impl.h"
@@ -773,6 +777,9 @@ bool NWebDelegate::Init(bool is_enhance_surface,
     // background color should set when init in case of first white screen flash
     preference_delegate_->SetBackgroundColor(backgroundColor);
   }
+#if BUILDFLAG(ARKWEB_AI)
+  agent_manager_ = std::make_shared<NWebAgentManagerImpl>(weak_factory_.GetWeakPtr());
+#endif
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
   InitAppTempDir();
 #endif
@@ -1112,6 +1119,18 @@ void NWebDelegate::RegisterNWebHandler(std::shared_ptr<NWebHandler> handler) {
   }
   handler_delegate_->RegisterNWebHandler(handler);
 }
+
+#if BUILDFLAG(ARKWEB_AI)
+void NWebDelegate::RegisterNWebAgentHandler(
+    std::shared_ptr<NWebAgentHandler> handler) {
+  if (handler_delegate_ == nullptr) {
+    LOG(ERROR) << "fail to register nweb agent handler, nweb handler delegate "
+                  "is nullptr";
+    return;
+  }
+  handler_delegate_->RegisterNWebAgentHandler(handler);
+}
+#endif
 
 void NWebDelegate::SetInputMethodClient(
     CefRefPtr<NWebInputMethodClient> client) {
@@ -1469,6 +1488,12 @@ void NWebDelegate::SetVirtualPixelRatio(float ratio) {
 std::shared_ptr<NWebPreference> NWebDelegate::GetPreference() const {
   return preference_delegate_;
 }
+
+#if BUILDFLAG(ARKWEB_AI)
+std::shared_ptr<NWebAgentManager> NWebDelegate::GetAgentManager() const {
+  return agent_manager_;
+}
+#endif
 
 bool NWebDelegate::IsFileProtocol(const GURL& gurl) {
   if (gurl.is_empty() || !gurl.is_valid()) {
@@ -1959,10 +1984,8 @@ void NWebDelegate::OnPause() {
     GetBrowser()->GetHost()->WasHidden(true);
     hidden_ = true;
 #if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
-    hasEvictedBufferWhenHidden_ = false;
-  } else if (!hasEvictedBufferWhenHidden_) {
-    hasEvictedBufferWhenHidden_ = true;
-    LOG(DEBUG) << "NWebDelegate::OnPause evict frame back buffers when nweb was hidden";
+  } else {
+    LOG(INFO) << "NWebDelegate::OnPause evict frame back buffers when nweb was hidden";
     GetBrowser()->GetHost()->EvictFrameBackBuffersWhenNWebWasHidden();
   }
 #else
@@ -5763,15 +5786,6 @@ void NWebDelegate::WebExtensionTabDetached(
   GetBrowser()->GetHost()->WebExtensionTabDetached(tab_id, std::move(detachInfo));
 }
  
-void NWebDelegate::WebExtensionTabHighlighted(NWebExtensionTabHighlightInfo& highlightInfo) {
-  LOG(INFO) << "WebExtensionTabHighlighted, windowId: " << highlightInfo.windowId.value();
-  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
-    LOG(ERROR) << "WebExtensionTabHighlighted failed, get browser failed";
-    return;
-  }
-  GetBrowser()->GetHost()->WebExtensionTabHighlighted(highlightInfo);
-}
- 
 void NWebDelegate::WebExtensionTabMoved(
     int32_t tab_id,
     std::unique_ptr<NWebExtensionTabMoveInfo> moveInfo) {
@@ -5969,9 +5983,6 @@ void NWebDelegate::EnableMediaNetworkTrafficPrompt(bool enable) {
 void NWebDelegate::SetSurfaceDensity(const double& density) {
   display_ratio_ = density;
   SetVirtualPixelRatio(density);
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  base::ohos::SetDevicePixelRatio(display_ratio_);
-#endif
   std::shared_ptr<DisplayAdapter> display =
       display_manager_adapter_->GetDefaultDisplay();
   LOG(INFO) << "SetSurfaceDensity: " << density;

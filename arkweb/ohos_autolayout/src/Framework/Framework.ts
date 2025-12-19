@@ -18,6 +18,7 @@ import { SpecificStyleCache } from './Common/Style/Common/CacheStyleGetter';
 import { CCMConfig, CheckRuleStateResult } from './Common/CCMConfig';
 import { Main } from '../Main';
 import Constant from './Common/Constant';
+import Alphabet from '../Alphabet/Main';
 
 export default class Framework {
     static TAG = Tag.framework;
@@ -99,18 +100,28 @@ export default class Framework {
             Log.info('初始状态, 不检查', Framework.TAG);
             return;
         }
-        
-        Log.info('开始执行智能布局...', Framework.TAG);
-        IntelliLayout.intelligentLayout(document.body);
 
-        Log.d('刷新样式并触发重绘', Framework.TAG);
-        // flush新计算的样式，触发回流重绘
-        StyleSetter.flushAllStyles();
-        Cached.clearStyleCache();
-        
-        const duration = (performance.now() - startTime).toFixed(2);
-        Log.info(`✅ 布局执行完成，耗时: ${duration}ms`, Framework.TAG);
-        Log.info('========== 离开主任务 mainTask ==========', Framework.TAG);
+        let strategy = CCMConfig.getInstance().getAutoLayoutStrategyType();
+        Log.info(`检查修复策略: ${strategy}`, Framework.TAG);
+
+        if (CCMConfig.getInstance().isPopupScaleEnable(strategy)) {
+            Log.info('开始执行智能布局...', Framework.TAG);
+            IntelliLayout.intelligentLayout(document.body);
+
+            Log.d('刷新样式并触发重绘', Framework.TAG);
+            // flush新计算的样式，触发回流重绘
+            StyleSetter.flushAllStyles();
+            Cached.clearStyleCache();
+            
+            const duration = (performance.now() - startTime).toFixed(2);
+            Log.info(`✅ 布局执行完成，耗时: ${duration}ms`, Framework.TAG);
+            Log.info('========== 离开主任务 mainTask ==========', Framework.TAG);
+        }
+
+        if (CCMConfig.getInstance().isAlphabetNavigatorEnable(strategy)) {
+            Log.info('开始执行索引条截断修复...', Framework.TAG);
+            Alphabet.start();
+        }
     }
 
     static reInit(): void {

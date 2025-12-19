@@ -43,6 +43,10 @@
 #include "third_party/blink/public/mojom/navigation/navigation_initiator_activation_and_ad_status.mojom.h"
 #include "third_party/blink/public/mojom/navigation/navigation_params.mojom-forward.h"
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#include "arkweb/chromium_ext/content/public/browser/error_page_reload_reason.h"
+#endif
+
 namespace content {
 class FrameTree;
 
@@ -78,6 +82,18 @@ void NewEntrySetExtraHeaders(
   NavigationEntryUpdateError UpdateNavigationEntryUrl(int index,
                                                       const GURL& url) override;
 #endif  // BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  void ReloadWithNetError(ReloadType reload_type,
+                          bool check_for_repost,
+                          ErrorPageReloadReason  reason) override;
+#endif
+
+ private:
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  ErrorPageReloadReason  reload_reason_ = ErrorPageReloadReason ::INVALID;
+#endif
 };
 
 }  // namespace content

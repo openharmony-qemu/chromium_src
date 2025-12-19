@@ -15,6 +15,16 @@
         ],
         "LXinJie1": [
             "LXinJie1"
+        ],
+        "zhang-yinglie": [
+            "zhang-yinglie"
+        ],
+        "zhouge941": [
+            "zhouge941",
+            "hwt00888022",
+            "yjone",
+            "dzichou",
+            "sinat_22543221"
         ]
     },
     "userInfos": {
@@ -35,6 +45,24 @@
         },
         "LXinJie1": {
             "info": "[渲染合成]"
+        },
+        "zhang-yinglie": {
+            "info": "[外设服务]"
+        },
+        "zhouge941": {
+            "info": "[性能]"
+        },
+        "hwt00888022": {
+            "info": "[性能]"
+        },
+        "yjone": {
+            "info": "[性能]"
+        },
+        "dzichou": {
+            "info": "[性能]"
+        },
+        "sinat_22543221": {
+            "info": "[性能]"
         }
     }
 }

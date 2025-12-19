@@ -66,6 +66,8 @@ public:
     viz::FrameSinkId parent_frame_sink_id, scoped_refptr<base::SingleThreadTaskRunner>
         main_thread_compositor_task_runner);
   base::WeakPtr<media::RendererWebNativeDelegate> GetWebNativeDelegate();
+
+  float GetDeviceScaleFactor();
 #endif
 
 private:

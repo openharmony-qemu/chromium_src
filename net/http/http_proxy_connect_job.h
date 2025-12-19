@@ -293,6 +293,11 @@ class NET_EXPORT_PRIVATE HttpProxyConnectJob : public ConnectJob,
 
   const HostPortPair& GetDestination() const;
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  void ResetTimerExInBeginConnect();
+  void ResetTimerExInHttpProxyConnect();
+#endif
+
   std::string GetUserAgent() const;
 
   SpdySessionKey CreateSpdySessionKey() const;
@@ -329,6 +334,11 @@ class NET_EXPORT_PRIVATE HttpProxyConnectJob : public ConnectJob,
 #if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
   // Only for transport_connect_job
   int timeout_override_for_nested_job_{0};
+#endif
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  bool is_fallback_proxy_server_{false};
+  int fallback_proxy_response_code_{0};
 #endif
 
   base::WeakPtrFactory<HttpProxyConnectJob> weak_ptr_factory_{this};

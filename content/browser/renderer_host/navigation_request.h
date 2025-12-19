@@ -78,6 +78,10 @@
 #include "content/browser/android/navigation_handle_proxy.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+#include "arkweb/chromium_ext/content/public/browser/error_page_reload_reason.h"
+#endif
+
 namespace network {
 struct URLLoaderCompletionStatus;
 }  // namespace network
@@ -471,6 +475,13 @@ class CONTENT_EXPORT NavigationRequest
 
   void RegisterCommitDeferringConditionForTesting(
       std::unique_ptr<CommitDeferringCondition> condition);
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  bool NeedsReloadWithFallbackProxy() override;
+  ErrorPageReloadReason  GetCurrentReloadReason() override;
+  int GetOriginalNetErrorCode() override;
+  bool HasBeenReloadedForThisReason(ErrorPageReloadReason  reason) override;
+#endif
 
   // Called on the UI thread by the Navigator to start the navigation.
   // The NavigationRequest can be deleted while BeginNavigation() is called.
@@ -920,6 +931,12 @@ class CONTENT_EXPORT NavigationRequest
   // Returns the current url from GetURL() packaged with other state required to
   // properly determine SiteInstances and process allocation.
   UrlInfo GetUrlInfo();
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  void SetWasAutoReloader(bool auto_reloader) {
+    did_auto_reloader_ = auto_reloader;
+  }
+#endif
 
   bool is_overriding_user_agent() const {
     return commit_params_->is_overriding_user_agent;
@@ -1404,6 +1421,7 @@ class CONTENT_EXPORT NavigationRequest
 
  private:
   friend class NavigationRequestTest;
+  FRIEND_TEST_ALL_PREFIXES(NavigationRequestTest, SanitizeRedirectsForCommit);
 
   struct ConsoleMessage {
     blink::mojom::ConsoleMessageLevel level;
@@ -1530,6 +1548,9 @@ class CONTENT_EXPORT NavigationRequest
   void SelectFrameHostForOnRequestFailedInternal(
       bool exists_in_cache,
       bool skip_throttles,
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+      bool needs_reload_with_fallback_proxy,
+#endif
       const std::optional<std::string>& error_page_content);
   void SelectFrameHostForCrossDocumentNavigationWithNoUrlLoader();
 
@@ -1690,6 +1711,11 @@ class CONTENT_EXPORT NavigationRequest
   // CommitNavigationParams. This is used to update this shared state with the
   // renderer process.
   void UpdateHistoryParamsInCommitNavigationParams();
+
+  // Helper method to sanitize URLs for redirects before the commit IPC is sent
+  // to the renderer process. Must be called right before sending the IPC.
+  void SanitizeRedirectsForCommit(
+      blink::mojom::CommitNavigationParamsPtr& commit_params);
 
   // The disconnect handler for the NavigationClient Mojo interface; used as a
   // signal to potentially cancel navigations, e.g. when the renderer replaces
@@ -2719,6 +2745,14 @@ class CONTENT_EXPORT NavigationRequest
   // Prevents the compositor from requesting main frame updates early in
   // navigation.
   std::unique_ptr<ui::CompositorLock> compositor_lock_;
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  bool did_auto_reloader_ = false;
+  bool needs_reload_with_fallback_proxy_ = false;
+  int original_error_code_ = net::OK;
+  ErrorPageReloadReason  current_reload_reason_ = ErrorPageReloadReason ::INVALID;
+  std::set<ErrorPageReloadReason > reload_reason_list_;
+#endif
 
   // This navigation request should swap browsing instances as part of a test
   // reset.

@@ -254,6 +254,11 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE) ResourceRequest {
 #if BUILDFLAG(ARKWEB_COOKIE)
   bool disable_web_security = false;
 #endif
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  bool retry_with_fallback_proxy = false;
+  int original_error_code = net::OK;
+#endif
 };
 // LINT.ThenChange(//services/network/prefetch_matches.cc)
 

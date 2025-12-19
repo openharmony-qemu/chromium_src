@@ -97,6 +97,9 @@ class NET_EXPORT HttpStreamFactory {
 #if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
     bool secure_dns_only = false;
 #endif
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+    bool retry_with_fallback_proxy = false;
+#endif
   };
 
   // Calculates an appropriate SPDY session key for the given parameters.

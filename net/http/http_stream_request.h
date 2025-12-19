@@ -82,7 +82,13 @@ class NET_EXPORT_PRIVATE HttpStreamRequest {
                                 ResolveErrorInfo resolve_error_info) = 0;
 
     // Called when we have a certificate error for the request.
-    virtual void OnCertificateError(int status, const SSLInfo& ssl_info) = 0;
+    virtual void OnCertificateError(int status,
+                                    const SSLInfo& ssl_info
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+                                    ,
+                                    bool used_fallback_proxy
+#endif
+                                    ) = 0;
 
     // This is the failure case where we need proxy authentication during
     // proxy tunnel establishment.  For the tunnel case, we were unable to

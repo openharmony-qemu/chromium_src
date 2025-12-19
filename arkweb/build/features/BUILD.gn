@@ -320,6 +320,7 @@ if (!enable_arkweb) {
   arkweb_first_screen_paint = false
   arkweb_blank_prop_config = true
   arkweb_autolayout = false
+  arkweb_ex_fallback_proxy = false
   arkweb_ext_video_load_optimization = false
   arkweb_console_logging=false
   arkweb_offline_web_evict_back_buffers = false
@@ -565,6 +566,7 @@ buildflag_header("features") {
     "ARKWEB_FIRST_SCREEN_PAINT=$arkweb_first_screen_paint",
     "ARKWEB_BLANK_PROP_CONFIG=$arkweb_blank_prop_config",
     "ARKWEB_AUTOLAYOUT=$arkweb_autolayout",
+    "ARKWEB_EX_FALLBACK_PROXY=$arkweb_ex_fallback_proxy",
     "ARKWEB_CONSOLE_LOGGING=$arkweb_console_logging",
     "ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS=$arkweb_offline_web_evict_back_buffers",
 

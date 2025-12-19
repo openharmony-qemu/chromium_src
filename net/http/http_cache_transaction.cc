@@ -75,6 +75,7 @@
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 #endif
 #include "arkweb/chromium_ext/net/http/http_cache_transaction_utils.h"
+#include "arkweb/chromium_ext/net/http/http_cache_transaction_for_include.cc"
 
 using base::Time;
 using base::TimeTicks;
@@ -443,7 +444,7 @@ int HttpCache::Transaction::TransitionToReadingState() {
     return OK;
   }
 
-  DCHECK(mode_ & WRITE || mode_ == NONE);
+  DCHECK((mode_ & WRITE) || mode_ == NONE);
 
   // If it's a writer and it is partial then it may need to read from the cache
   // or from the network based on whether network transaction is present or not.
@@ -1898,7 +1899,7 @@ int HttpCache::Transaction::DoCacheUpdateStaleWhileRevalidateTimeoutComplete(
 int HttpCache::Transaction::DoSendRequest() {
   TRACE_EVENT_INSTANT("net", "HttpCacheTransaction::DoSendRequest",
                       perfetto::Track(trace_id_));
-  DCHECK(mode_ & WRITE || mode_ == NONE);
+  DCHECK((mode_ & WRITE) || mode_ == NONE);
   DCHECK(!network_trans_.get());
 
   send_request_since_ = TimeTicks::Now();
@@ -1969,6 +1970,11 @@ int HttpCache::Transaction::DoSendRequestComplete(int result) {
   response_.proxy_chain = response->proxy_chain;
   response_.restricted_prefetch = response->restricted_prefetch;
   response_.resolve_error_info = response->resolve_error_info;
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  response_.used_fallback_proxy = response->used_fallback_proxy;
+  response_.fallback_proxy_response_code =
+      response->fallback_proxy_response_code;
+#endif
 
   // Do not record requests that have network errors or restarts.
   UpdateCacheEntryStatus(CacheEntryStatus::ENTRY_OTHER);
@@ -2968,7 +2974,7 @@ int HttpCache::Transaction::BeginExternallyConditionalizedRequest() {
 }
 
 int HttpCache::Transaction::RestartNetworkRequest() {
-  DCHECK(mode_ & WRITE || mode_ == NONE);
+  DCHECK((mode_ & WRITE) || mode_ == NONE);
   DCHECK(network_trans_.get());
   DCHECK_EQ(STATE_NONE, next_state_);
 
@@ -2983,7 +2989,7 @@ int HttpCache::Transaction::RestartNetworkRequest() {
 int HttpCache::Transaction::RestartNetworkRequestWithCertificate(
     scoped_refptr<X509Certificate> client_cert,
     scoped_refptr<SSLPrivateKey> client_private_key) {
-  DCHECK(mode_ & WRITE || mode_ == NONE);
+  DCHECK((mode_ & WRITE) || mode_ == NONE);
   DCHECK(network_trans_.get());
   DCHECK_EQ(STATE_NONE, next_state_);
 
@@ -2998,7 +3004,7 @@ int HttpCache::Transaction::RestartNetworkRequestWithCertificate(
 
 int HttpCache::Transaction::RestartNetworkRequestWithAuth(
     const AuthCredentials& credentials) {
-  DCHECK(mode_ & WRITE || mode_ == NONE);
+  DCHECK((mode_ & WRITE) || mode_ == NONE);
   DCHECK(network_trans_.get());
   DCHECK_EQ(STATE_NONE, next_state_);
 

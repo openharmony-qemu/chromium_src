@@ -32,4 +32,36 @@ int ThrottlingNetworkTransaction::RestartWithSecureDnsOnly(
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+int ThrottlingNetworkTransaction::RestartWithFallbackProxy(
+    net::CompletionOnceCallback callback) {
+  if (CheckFailed()) {
+    return net::ERR_INTERNET_DISCONNECTED;
+  }
+  if (!interceptor_) {
+    return network_transaction_->RestartWithFallbackProxy(std::move(callback));
+  }
+
+  callback_ = std::move(callback);
+  int result = network_transaction_->RestartWithFallbackProxy(base::BindOnce(
+      &ThrottlingNetworkTransaction::IOCallback, base::Unretained(this), true));
+  return Throttle(true, result);
+}
+
+int ThrottlingNetworkTransaction::RestartWithDirect(
+    net::CompletionOnceCallback callback) {
+  if (CheckFailed()) {
+    return net::ERR_INTERNET_DISCONNECTED;
+  }
+  if (!interceptor_) {
+    return network_transaction_->RestartWithDirect(std::move(callback));
+  }
+
+  callback_ = std::move(callback);
+  int result = network_transaction_->RestartWithDirect(base::BindOnce(
+      &ThrottlingNetworkTransaction::IOCallback, base::Unretained(this), true));
+  return Throttle(true, result);
+}
+#endif
+
 }  // namespace network

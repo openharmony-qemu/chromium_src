@@ -388,4 +388,16 @@ void NWebExtensionTabCefDelegate::OnTabCreated(std::unique_ptr<NWebExtensionTab>
       ->TabCreated(tabId, browserContextInUse, std::move(tab));
 }
 
+void NWebExtensionTabCefDelegate::OnTabHighlighted(
+    const NWebExtensionTabHighlightInfo& highlightInfo) {
+  LOG(INFO) << "OnTabHighlighted, windowId: " << highlightInfo.windowId.value();
+  auto browser_context = GetBrowserContext();
+  if (!browser_context) {
+    return;
+  }
+
+  extensions::TabsWindowsAPI::Get(browser_context)
+      ->TabHighlighted(browser_context, highlightInfo);
+}
+
 }  // namespace OHOS::NWeb

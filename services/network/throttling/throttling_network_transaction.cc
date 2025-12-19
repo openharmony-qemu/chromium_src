@@ -19,7 +19,7 @@
 #include "services/network/throttling/throttling_network_interceptor.h"
 #include "services/network/throttling/throttling_upload_data_stream.h"
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK) || BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
 #include "arkweb/chromium_ext/services/network/throttling/throttling_network_transaction_for_include.cc"
 #endif
 

@@ -8,6 +8,7 @@
 #include "base/numerics/safe_conversions.h"
 
 #include <sys/mman.h>
+#include <sys/prctl.h>
 
 namespace base {
 
@@ -24,6 +25,7 @@ std::optional<span<uint8_t>> PlatformSharedMemoryMapper::Map(
     DPLOG(ERROR) << "mmap " << handle << " failed";
     return std::nullopt;
   }
+  prctl(PR_SET_VMA, PR_SET_VMA_ANON_NAME, address, size, "web_shm1");
 
   return make_span(reinterpret_cast<uint8_t*>(address), size);
 }

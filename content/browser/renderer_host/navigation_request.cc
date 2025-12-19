@@ -1899,6 +1899,17 @@ NavigationRequest::NavigationRequest(
     // have |from_begin_navigation_| or |entry| set.
     DCHECK(!RequiresInitiatorBasedSourceSiteInstance() ||
            source_site_instance_);
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+    if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+            ::switches::kEnableNwebEx)) {
+      current_reload_reason_ = entry->GetCurrentReloadReason();
+      reload_reason_list_ = entry->GetReloadReasonList();
+      if (current_reload_reason_ >= ErrorPageReloadReason ::FALLBACK_PROXY) {
+        original_error_code_ = entry->GetErrorCode();
+      }
+    }
+#endif
   }
 
   // Let the NTP override the navigation params and pretend that this is a
@@ -3548,6 +3559,15 @@ void NavigationRequest::OnRequestRedirected(
   common_params_->referrer = Referrer::SanitizeForRequest(
       common_params_->url, *common_params_->referrer);
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          ::switches::kEnableNwebEx)) {
+    current_reload_reason_ = ErrorPageReloadReason ::INVALID;
+    reload_reason_list_.clear();
+    original_error_code_ = net::OK;
+  }
+#endif
+
   // On redirects, the initial referrer is no longer correct, so it must
   // be updated.  (A parallel process updates the outgoing referrer in the
   // network stack.)
@@ -5087,13 +5107,20 @@ void NavigationRequest::OnRequestFailedInternal(
       policy_container_builder_->FinalPolicies().cross_origin_opener_policy,
       origin, net::NetworkAnonymizationKey::CreateTransient());
 
-  SelectFrameHostForOnRequestFailedInternal(status.exists_in_cache,
-                                            skip_throttles, error_page_content);
+  SelectFrameHostForOnRequestFailedInternal(
+      status.exists_in_cache, skip_throttles,
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+      status.needs_reload_with_fallback_proxy,
+#endif
+      error_page_content);
 }
 
 void NavigationRequest::SelectFrameHostForOnRequestFailedInternal(
     bool exists_in_cache,
     bool skip_throttles,
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+    bool needs_reload_with_fallback_proxy,
+#endif
     const std::optional<std::string>& error_page_content) {
   CHECK(!HasRenderFrameHost())
       << "`render_frame_host_` should not be set before the "
@@ -5147,6 +5174,9 @@ void NavigationRequest::SelectFrameHostForOnRequestFailedInternal(
         resume_commit_closure_ = base::BindOnce(
             &NavigationRequest::SelectFrameHostForOnRequestFailedInternal,
             weak_factory_.GetWeakPtr(), exists_in_cache, skip_throttles,
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+            needs_reload_with_fallback_proxy,
+#endif
             error_page_content);
         frame_tree_node_->render_manager()
             ->speculative_frame_host()
@@ -5194,6 +5224,16 @@ void NavigationRequest::SelectFrameHostForOnRequestFailedInternal(
     // They will be handled by the renderer process.
     CommitErrorPage(error_page_content);
   } else {
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+    if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+            switches::kEnableNwebEx)) {
+      if (needs_reload_with_fallback_proxy &&
+          !HasBeenReloadedForThisReason(
+              ErrorPageReloadReason ::FALLBACK_PROXY)) {
+        needs_reload_with_fallback_proxy_ = true;
+      }
+    }
+#endif
     // Check if the navigation should be allowed to proceed.
     WillFailRequest();
   }
@@ -5433,7 +5473,13 @@ void NavigationRequest::OnStartChecksComplete(
           std::move(serving_page_metrics_container),
           allow_cookies_from_browser_, navigation_id_,
           shared_storage_writable_eligible_, is_ad_tagged_,
-          force_no_https_upgrade_),
+          force_no_https_upgrade_
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+          ,
+          current_reload_reason_ == ErrorPageReloadReason ::FALLBACK_PROXY,
+          original_error_code_
+#endif
+          ),
       std::move(navigation_ui_data), service_worker_handle_.get(),
       std::move(prefetched_signed_exchange_cache_), this, loader_type,
       CreateCookieAccessObserver(), CreateTrustTokenAccessObserver(),
@@ -6049,9 +6095,31 @@ void NavigationRequest::CommitErrorPage(
   PopulateDocumentTokenForCrossDocumentNavigation();
   // Use a separate cache shard, and no cookies, for error pages.
   isolation_info_for_subresources_ = net::IsolationInfo::CreateTransient();
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  int net_error = net_error_;
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableNwebEx) &&
+      current_reload_reason_ == ErrorPageReloadReason ::FALLBACK_PROXY) {
+    net_error = original_error_code_;
+    if (net_error == net::OK) {
+      LOG(ERROR) << "CommitErrorPage with fallback proxy, url "
+                 << url::LogUtils::ConvertUrl(
+                        common_params_->url.possibly_invalid_spec(), true)
+                 << ", net_error " << net_error_;
+      SCOPED_CRASH_KEY_STRING256("ErrorPageProxy", "url",
+                                 common_params_->url.possibly_invalid_spec());
+      SCOPED_CRASH_KEY_NUMBER("ErrorPageProxy", "error_code", net_error_);
+      base::debug::DumpWithoutCrashing();
+    }
+  }
+  GetRenderFrameHost()->FailedNavigation(
+      this, *common_params_, *commit_params_, has_stale_copy_in_cache_,
+      net_error, extended_error_code_, error_page_content, *document_token_);
+#else
   GetRenderFrameHost()->FailedNavigation(
       this, *common_params_, *commit_params_, has_stale_copy_in_cache_,
       net_error_, extended_error_code_, error_page_content, *document_token_);
+#endif
 
   SendDeferredConsoleMessages();
 }
@@ -6454,18 +6522,11 @@ void NavigationRequest::CommitNavigation() {
   // consistently upheld condition.
   DUMP_WILL_BE_CHECK(commit_params->redirect_response.size() ==
                      commit_params->redirect_infos.size());
-  if (base::FeatureList::IsEnabled(kSanitizeRedirectUrlsDuringNavigation)) {
-    // Before sending the commit parameters to the renderer process, sanitize
-    // the redirect URLs to avoid leaking pontentially sensitive data into
-    // processes which are cross-site. There is no dependency on the
-    // cross-site-ness, therefore just sanitize unilaterally.
-    for (auto redirect : commit_params->redirect_infos) {
-      redirect.new_url = redirect.new_url.DeprecatedGetOriginAsURL();
-    }
-    for (auto redirect : commit_params->redirects) {
-      redirect = redirect.DeprecatedGetOriginAsURL();
-    }
-  }
+  // Before sending the commit parameters to the renderer process, sanitize
+  // the redirect URLs to avoid leaking potentially sensitive data into
+  // processes which are cross-site. There is no dependency on the
+  // cross-site-ness, therefore just sanitize unilaterally.
+  SanitizeRedirectsForCommit(commit_params);
 
   GetRenderFrameHost()->CommitNavigation(
       this, std::move(common_params), std::move(commit_params),
@@ -7240,6 +7301,31 @@ void NavigationRequest::UpdateHistoryParamsInCommitNavigationParams() {
       navigation_controller.GetCurrentEntryIndex();
   commit_params_->current_history_list_length =
       navigation_controller.GetEntryCount();
+}
+
+void NavigationRequest::SanitizeRedirectsForCommit(
+    blink::mojom::CommitNavigationParamsPtr& commit_params) {
+  if (!base::FeatureList::IsEnabled(kSanitizeRedirectUrlsDuringNavigation)) {
+    return;
+  }
+  // It is safe to convert GURL to an Origin and back in the code below because
+  // we only want to discard the rest of the URL (e.g., path and params). The
+  // actual underlying Origin is not needed, which could be inherited or opaque
+  // in sandbox cases.
+  for (GURL& redirect : commit_params->redirects) {
+    redirect = redirect.DeprecatedGetOriginAsURL();
+  }
+
+  // In the redirect_infos vector, the last entry is the URL we are going to
+  // commit after following all redirects. We should not be sanitizing it, as
+  // we need to commit the real URL as part of the navigation.
+  if (!commit_params->redirect_infos.empty()) {
+    auto redirect_infos_span = base::span(commit_params->redirect_infos);
+    for (net::RedirectInfo& redirect :
+         redirect_infos_span.first(redirect_infos_span.size() - 1)) {
+      redirect.new_url = redirect.new_url.DeprecatedGetOriginAsURL();
+    }
+  }
 }
 
 void NavigationRequest::RendererRequestedNavigationCancellationForTesting() {

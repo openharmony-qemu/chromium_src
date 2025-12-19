@@ -88,7 +88,9 @@
   DO_FIELD(is_download_request) __VA_ARGS__                    \
   DO_FIELD(usage_scenario_) __VA_ARGS__                        \
   DO_FIELD(socket_tag)  __VA_ARGS__                            \
-  DO_FIELD(disable_web_security)
+  DO_FIELD(disable_web_security) __VA_ARGS__                   \
+  DO_FIELD(retry_with_fallback_proxy) __VA_ARGS__              \
+  DO_FIELD(original_error_code)
 #endif  // BUILDFLAG(IS_ARKWEB)
 
 #if BUILDFLAG(IS_ARKWEB)

@@ -435,6 +435,16 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE)
     return request.socket_tag;
   }
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  static bool retry_with_fallback_proxy(
+      const network::ResourceRequest& request) {
+    return request.retry_with_fallback_proxy;
+  }
+  static int original_error_code(const network::ResourceRequest& request) {
+    return request.original_error_code;
+  }
+#endif
+
   static bool Read(network::mojom::URLRequestDataView data,
                    network::ResourceRequest* out);
 

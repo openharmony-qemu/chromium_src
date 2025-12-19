@@ -26,6 +26,17 @@ const char kModuleContentBrowser[] = "conent_browser";
 const char kModuleContentRender[] = "conent_render";
 const char kModuleNet[] = "net";
 
+// Fallback proxy usage report.
+const char kFallbackProxyUsage[] = "101_181001";
+// Use fallback proxy result.
+const char kUseFallbackProxyResult[] = "101_181002";
+// Proxy exception report result.
+const char kProxyExceptionResult[] = "101_181003";
+// Proxy tunnel connect result.
+const char kProxyTunnelConnectResult[] = "101_181004";
+// Proxy transport connect result.
+const char kProxyTransportConnectResult[] = "101_181005";
+
 // 网络请求错误
 const char kNetworkSSLError[]                   = "102_011001"; // SSL错误
 const char kNetworkHTTPError[]                  = "102_012001"; // HTTP错误

@@ -6564,22 +6564,6 @@ TEST_F(NWebImplTest, WebExtensionTabDetached002) {
   EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
 }
 
-TEST_F(NWebImplTest, WebExtensionTabHighlighted001) {
-  NWebExtensionTabHighlightInfo highlightInfo;
-  nweb_impl_->nweb_delegate_ = nullptr;
-  EXPECT_CALL(*mock_delegate_, WebExtensionTabHighlighted(::testing::_)).Times(0);
-  nweb_impl_->WebExtensionTabHighlighted(highlightInfo);
-  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
-}
-
-TEST_F(NWebImplTest, WebExtensionTabHighlighted002) {
-  NWebExtensionTabHighlightInfo highlightInfo;
-  nweb_impl_->nweb_delegate_ = mock_delegate_;
-  EXPECT_CALL(*mock_delegate_, WebExtensionTabHighlighted(::testing::_)).Times(1);
-  nweb_impl_->WebExtensionTabHighlighted(highlightInfo);
-  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
-}
-
 TEST_F(NWebImplTest, WebExtensionTabMoved001) {
   int32_t tab_id = 0;
   std::unique_ptr<NWebExtensionTabMoveInfo> moveInfo = std::make_unique<NWebExtensionTabMoveInfo>();
@@ -8284,6 +8268,32 @@ TEST_F(NWebImplTest, ShouldLazyInitWebEngine001) {
 TEST_F(NWebImplTest, GetSaveInitargs001) {
   nweb_impl_->save_initargs_ = nullptr;
   EXPECT_EQ(NWebImpl::GetSaveInitargs(), nullptr);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_WEBRTC)
+TEST_F(NWebImplTest, ResumeMicrophone001) {
+  ASSERT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = nullptr;
+  ASSERT_NO_FATAL_FAILURE(nweb_impl_->ResumeMicrophone());
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  ASSERT_NO_FATAL_FAILURE(nweb_impl_->ResumeMicrophone());
+}
+
+TEST_F(NWebImplTest, PauseMicrophone001) {
+  ASSERT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = nullptr;
+  ASSERT_NO_FATAL_FAILURE(nweb_impl_->PauseMicrophone());
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  ASSERT_NO_FATAL_FAILURE(nweb_impl_->PauseMicrophone());
+}
+
+TEST_F(NWebImplTest, StopMicrophone001) {
+  ASSERT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = nullptr;
+  ASSERT_NO_FATAL_FAILURE(nweb_impl_->StopMicrophone());
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  ASSERT_NO_FATAL_FAILURE(nweb_impl_->StopMicrophone());
 }
 #endif
 }  // namespace OHOS::NWeb

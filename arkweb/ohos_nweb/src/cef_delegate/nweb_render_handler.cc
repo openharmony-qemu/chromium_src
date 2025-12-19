@@ -47,6 +47,7 @@
 #endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
 #if BUILDFLAG(ARKWEB_AI)
 #include "cef/libcef/browser/image_impl.h"
+#include "nweb_agent_handler.h"
 #include "ui/gfx/image/image_skia.h"
 #endif  // #if BUILDFLAG(ARKWEB_AI)
 
@@ -425,6 +426,13 @@ void NWebRenderHandler::RegisterNWebHandler(
     std::shared_ptr<NWebHandler> handler) {
   handler_ = std::weak_ptr<NWebHandler>(handler);
 }
+
+#if BUILDFLAG(ARKWEB_AI)
+void NWebRenderHandler::RegisterNWebAgentHandler(
+    std::shared_ptr<NWebAgentHandler> handler) {
+  nweb_agent_handler_ = handler;
+}
+#endif  // #if BUILDFLAG(ARKWEB_AI)
 
 void NWebRenderHandler::SetInputMethodClient(
     CefRefPtr<NWebInputMethodClient> client) {
@@ -1194,6 +1202,11 @@ bool NWebRenderHandler::StartDragging(CefRefPtr<CefBrowser> browser,
 
   ImageDragForFileUri(drag_data);
   CefPoint drag_touch_point(x, y);
+  if (browser && browser->GetHost()) {
+    int shrink_viewport_height = browser->GetHost()->GetShrinkViewportHeight();
+    drag_touch_point.Set(x, y + shrink_viewport_height);
+    LOG(INFO) << "DragDrop add offset to drag point y : " << shrink_viewport_height;
+  }
 
   std::vector<CefPoint> start_edge{
       CefPoint(start_selection_handle_.origin.x,
@@ -1625,6 +1638,12 @@ void NWebRenderHandler::OnDetectedBlankScreen(
 void NWebRenderHandler::OnFirstScreenPaint(const std::string& url,
                                            int64_t navigationStartTime,
                                            int64_t firstScreenPaintTime) {
+  LOG(INFO) << "NWebRenderHandler::OnFirstScreenPaint"
+      << " duration: " << (firstScreenPaintTime - navigationStartTime)
+      << "  url: " << url
+      << " navigationStartTime: " << navigationStartTime
+      << " firstScreenPaintTime: " << firstScreenPaintTime;
+  
   if (auto handler = handler_.lock()) {
     handler->OnFirstScreenPaint(url, navigationStartTime, firstScreenPaintTime);
   }

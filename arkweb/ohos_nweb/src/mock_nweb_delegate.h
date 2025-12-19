@@ -66,6 +66,12 @@ class MockNWebDelegate : public NWebDelegateInterface {
               (std::shared_ptr<NWebAppClientExtensionCallback>
                    web_app_client_extension_listener),
               (override));
+#if BUILDFLAG(ARKWEB_AI)
+  MOCK_METHOD(void,
+              RegisterNWebAgentHandler,
+              (std::shared_ptr<NWebAgentHandler> handler),
+              (override));
+#endif
   MOCK_METHOD(void,
               SetInputMethodClient,
               (CefRefPtr<NWebInputMethodClient> client),
@@ -321,6 +327,12 @@ class MockNWebDelegate : public NWebDelegateInterface {
               GetPreference,
               (),
               (const, override));
+#if BUILDFLAG(ARKWEB_AI)
+  MOCK_METHOD(std::shared_ptr<NWebAgentManager>,
+              GetAgentManager,
+              (),
+              (const, override));
+#endif
   MOCK_METHOD(std::string, Title, (), (override));
   MOCK_METHOD(std::shared_ptr<HitTestResult>,
               GetHitTestResult,
@@ -1108,10 +1120,6 @@ class MockNWebDelegate : public NWebDelegateInterface {
               WebExtensionTabDetached,
               (int tab_id,
                std::unique_ptr<NWebExtensionTabDetachInfo> detachInfo),
-              (override));
-  MOCK_METHOD(void,
-              WebExtensionTabHighlighted,
-              (NWebExtensionTabHighlightInfo & highlightInfo),
               (override));
   MOCK_METHOD(void,
               WebExtensionTabMoved,

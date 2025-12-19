@@ -189,11 +189,17 @@ class NWebImpl : public NWeb {
   void SetEnableLowerFrameRate(bool enabled) override;
   void SetEnableHalfFrameRate(bool enabled) override;
   std::shared_ptr<NWebPreference> GetPreference() override;
+#if BUILDFLAG(ARKWEB_AI)
+  std::shared_ptr<NWebAgentManager> GetAgentManager() override;
+#endif  // BUILDFLAG(ARKWEB_AI)
   void PutDownloadCallback(
       std::shared_ptr<NWebDownloadCallback> downloadListener) override;
   void PutReleaseSurfaceCallback(std::shared_ptr<NWebReleaseSurfaceCallback>
                                      releaseSurfaceListener) override;
   void SetNWebHandler(std::shared_ptr<NWebHandler> handler) override;
+#if BUILDFLAG(ARKWEB_AI)
+  void SetNWebAgentHandler(std::shared_ptr<NWebAgentHandler> handler) override;
+#endif
   std::string Title() override;
   uint32_t GetWebId() override;
   std::shared_ptr<HitTestResult> GetHitTestResult() override;
@@ -980,7 +986,6 @@ class NWebImpl : public NWeb {
       std::unique_ptr<NWebExtensionTabAttachInfo> attachInfo);
   void WebExtensionTabDetached(int tab_id,
       std::unique_ptr<NWebExtensionTabDetachInfo> detachInfo);
-  void WebExtensionTabHighlighted(NWebExtensionTabHighlightInfo& highlightInfo);
   void WebExtensionTabMoved(int32_t tab_id,
                             std::unique_ptr<NWebExtensionTabMoveInfo> moveInfo);
   void WebExtensionTabReplaced(int32_t addedTabId, int32_t removedTabId);
@@ -1044,6 +1049,16 @@ class NWebImpl : public NWeb {
   static void PutLoggerCallback(
       std::shared_ptr<NWebLoggerCallback> logger_callback);
   static void RemoveLoggerCallback();
+#endif
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  static void PutProxyClientCallback(
+      std::shared_ptr<NWebProxyClientCallback> proxy_callback);
+  static void RemoveProxyClientCallback();
+  static void OnUpdateProxyToken(const std::string& old_token);
+  static void UpdateProxyToken(const char* token, const char* token_info);
+  static void SetGlobalListConfigPath(const char* file_path,
+                                      const char* version);
 #endif
 
   int SetUrlTrustList(const std::string& urlTrustList) override;

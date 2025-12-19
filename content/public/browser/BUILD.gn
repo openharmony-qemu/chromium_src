@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD - style license that can be
 # found in the LICENSE file.
 
+import("//arkweb/build/features/features.gni")
 import("//build/config/chromeos/ui_mode.gni")
 import("//build/config/ui.gni")
 import("//content/common/features.gni")
@@ -10,7 +11,6 @@ import("//media/media_options.gni")
 import("//ppapi/buildflags/buildflags.gni")
 import("//third_party/protobuf/proto_library.gni")
 import("//third_party/webrtc/webrtc.gni")
-import("//arkweb/build/features/features.gni")
 
 if (is_android) {
   import("//build/config/android/rules.gni")
@@ -39,9 +39,7 @@ source_set("browser_sources") {
   visibility = [ "//content/*" ]
 
   if (arkweb_unittests) {
-    visibility += [
-      "//media:media_unittests",
-    ]
+    visibility += [ "//media:media_unittests" ]
   }
 
   sources = [
@@ -526,9 +524,11 @@ source_set("browser_sources") {
 
   #if defined(ARKWEB_CUSTOM_VIDEO_PLAYER)
   if (defined(arkweb_custom_video_player) && arkweb_custom_video_player) {
-    import("//arkweb/chromium_ext/content/public/browser/arkweb_content_public_browser.gni")
+    import(
+        "//arkweb/chromium_ext/content/public/browser/arkweb_content_public_browser.gni")
     sources += arkweb_content_public_browser_custom_media_sources
   }
+
   #endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 
   #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
@@ -538,6 +538,7 @@ source_set("browser_sources") {
       "//arkweb/chromium_ext/content/public/browser/media_player_listener.h",
     ]
   }
+
   #endif // ARKWEB_VIDEO_ASSISTANT
 
   configs += [
@@ -653,6 +654,12 @@ source_set("browser_sources") {
 
   if (defined(is_arkweb_ext) && is_arkweb_ext) {
     sources += chromium_content_public_browser_ext_gn_sources
+  }
+
+  if (defined(arkweb_network_load) && arkweb_network_load) {
+    sources += [
+      "//arkweb/chromium_ext/content/public/browser/error_page_reload_reason.h",
+    ]
   }
 
   if (enable_ppapi) {

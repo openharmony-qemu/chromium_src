@@ -167,6 +167,10 @@
 #include "arkweb/chromium_ext/components/viz/host/blankless_data_controller.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_AI)
+#include "nweb_agent_handler.h"
+#endif
+
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
 #include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
 #include "cef/libcef/browser/frame_host_impl.h"
@@ -717,6 +721,17 @@ void NWebHandlerDelegate::RegisterNWebHandler(
     render_handler_->RegisterNWebHandler(handler);
   }
 }
+
+#if BUILDFLAG(ARKWEB_AI)
+void NWebHandlerDelegate::RegisterNWebAgentHandler(
+    std::shared_ptr<NWebAgentHandler> handler) {
+  LOG(INFO) << "RegisterNWebAgentHandler";
+  nweb_agent_handler_ = handler;
+  if (render_handler_ != nullptr) {
+    render_handler_->RegisterNWebAgentHandler(handler);
+  }
+}
+#endif
 
 void NWebHandlerDelegate::RegisterNWebJavaScriptCallBack(
     std::shared_ptr<NWebJavaScriptResultCallBack> callback) {
@@ -4144,6 +4159,12 @@ bool NWebHandlerDelegate::CloseImageOverlaySelection() {
     return nweb_handler_->CloseImageOverlaySelection();
   }
   return false;
+}
+
+void NWebHandlerDelegate::OnAgentEventReport(const std::string& json) {
+  if (nweb_agent_handler_ != nullptr) {
+    nweb_agent_handler_->ReportEventJson(json);
+  }
 }
 #endif
 /* CefContextMenuHandler method end */

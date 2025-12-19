@@ -15,6 +15,10 @@
 #include "net/base/proxy_delegate.h"
 #include "net/base/proxy_server.h"
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#include "arkweb/chromium_ext/net/base/fallback_proxy_constants.h"
+#endif
+
 class GURL;
 
 namespace net {
@@ -86,6 +90,32 @@ class TestProxyDelegate : public ProxyDelegate {
       const HttpResponseHeaders& response_headers) override;
   void SetProxyResolutionService(
       ProxyResolutionService* proxy_resolution_service) override;
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  void OnTunnelConnectResult(
+      const net::ProxyChain& proxy_chain,
+      const std::string& host,
+      const net::HttpResponseHeaders& response_headers,
+      const net::HttpRequestHeaders& request_headers) override;
+  void AddSuccessMainFrameHosts(const std::string& host) override;
+  bool IsFallbackProxyFailedHost(const std::string& host) override;
+  bool IsFallbackProxySuccessMainFrameHost(const std::string& host) override;
+  void AddByPassRuleWithHost(const std::string& host) override;
+  void OnProxyConnectResult(const net::ProxyChain& proxy_chain,
+                            int net_error) override;
+  bool GetUrlMaliciousTypeAndHwCode(const std::vector<GURL>& url_chain,
+                                    int* malicious_type,
+                                    int* hw_code) override;
+  bool IsFallbackProxyMaliciousType(int malicious_type) override;
+  bool IsFallbackProxyHwCode(int hw_code) override;
+  bool IsFallbackProxyRetryErrorCode(int net_error) override;
+  bool IsFallbackProxyBlockHost(const std::string& host) override;
+  int GetMaliciousUrlCheckWaitTime() override;
+  int GetProxyConnectTimeout() override;
+  int GetProxyTunnelTimeout() override;
+  net::FallbackProxyStatus GetFallbackProxyStatus() override;
+  bool IsFallbackProxyServer(const net::ProxyChain& proxy_chain) override;
+#endif
 
  private:
   std::optional<ProxyChain> proxy_chain_;

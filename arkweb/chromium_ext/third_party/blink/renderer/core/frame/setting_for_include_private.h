@@ -22,6 +22,7 @@
 
 #if BUILDFLAG(ARKWEB_AI)
   bool image_analyzer_enabled_ = true;
+  bool arkweb_agent_enabled_ = false;
 #endif  // BUILDFLAG(ARKWEB_AI)
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)

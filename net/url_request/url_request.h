@@ -67,6 +67,11 @@
 #include "net/http/http_transaction.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#include "arkweb/chromium_ext/net/base/fallback_proxy_constants.h"
+#include "net/base/proxy_delegate.h"
+#endif
+
 namespace net {
 
 class CookieOptions;
@@ -737,6 +742,10 @@ class NET_EXPORT URLRequest : public base::SupportsUserData {
   // Returns context()->network_delegate().
   NetworkDelegate* network_delegate() const;
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  ProxyDelegate* proxy_delegate() const;
+#endif
+
   const NetLogWithSource& net_log() const { return net_log_; }
 
   // Returns the expected content size if available
@@ -928,6 +937,28 @@ class NET_EXPORT URLRequest : public base::SupportsUserData {
 
   static bool DefaultCanUseCookies();
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  void set_fallback_proxy_error_code(int error_code) {
+    fallback_proxy_error_code_ = error_code;
+  }
+  int fallback_proxy_error_code() const { return fallback_proxy_error_code_; }
+
+  void set_used_fallback_proxy(bool value) { used_fallback_proxy_ = value; }
+  bool used_fallback_proxy() { return used_fallback_proxy_; }
+
+  void set_needs_reload_with_fallback_proxy(bool value) {
+    needs_reload_with_fallback_proxy_ = value;
+  }
+  bool needs_reload_with_fallback_proxy() {
+    return needs_reload_with_fallback_proxy_;
+  }
+
+  void SetRetryWithFallbackProxy(bool value) {
+    retry_with_fallback_proxy_ = value;
+  }
+  bool RetryWithFallbackProxy() { return retry_with_fallback_proxy_; }
+#endif
+
   // Calculates the StorageAccessStatus for this request, according to the
   // NetworkDelegate. Also records metrics.
   // TODO(https://crbug.com/366284840): Move this to URLLoader once the
@@ -1045,6 +1076,10 @@ class NET_EXPORT URLRequest : public base::SupportsUserData {
   // NetworkAnonymiationKey.
   net::IsolationInfo CreateIsolationInfoFromNetworkAnonymizationKey(
       const NetworkAnonymizationKey& network_anonymization_key);
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  void HandleFallbackProxyResult();
+#endif
 
   // Contextual information used for this request. Cannot be NULL. This contains
   // most of the dependencies which are shared between requests (disk cache,
@@ -1212,6 +1247,15 @@ class NET_EXPORT URLRequest : public base::SupportsUserData {
 
   // Idempotency of the request.
   Idempotency idempotency_ = DEFAULT_IDEMPOTENCY;
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  int fallback_proxy_error_code_ = 0;
+  bool used_fallback_proxy_ = false;
+  // 通知navigation_request需要使用代理重试
+  bool needs_reload_with_fallback_proxy_ = false;
+  // navigation_request通知本次需要使用代理加载
+  bool retry_with_fallback_proxy_ = false;
+#endif
 
   SharedDictionaryGetter shared_dictionary_getter_;
 

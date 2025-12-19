@@ -50,6 +50,16 @@ class MockHttpTransaction : public HttpTransaction {
     return &response_info_;
   }
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  // todo: FallbackProxy add test case
+  int RestartWithFallbackProxy(CompletionOnceCallback callback) override {
+    return ERR_IO_PENDING;
+  }
+  int RestartWithDirect(CompletionOnceCallback callback) override {
+    return ERR_IO_PENDING;
+  }
+#endif
+
   MOCK_METHOD3(Start,
                int(const HttpRequestInfo* request_info,
                    CompletionOnceCallback callback,

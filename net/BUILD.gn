@@ -24,6 +24,7 @@ if (is_arkweb) {
 
 if (defined(is_arkweb_ext) && is_arkweb_ext) {
   import("//arkweb/ohos_nweb_ex/build/features/features.gni")
+  import("//arkweb/ohos_nweb_ex/overrides/net/chromium_net_ext.gni")
 }
 
 if (is_android) {
@@ -1121,6 +1122,9 @@ component("net") {
     ]
   }
 
+  if (defined(arkweb_nweb_ex) && arkweb_nweb_ex) {
+    sources += chromium_net_ext_gn_sources
+  }
   public_deps = [
     ":net_export_header",
     ":net_public_deps",

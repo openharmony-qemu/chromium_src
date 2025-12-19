@@ -57,6 +57,9 @@ class NWebRenderHandler : public ArkWebRenderHandlerExt {
       std::function<void(double, double)>&& callback);
   void RegisterRenderCb(std::function<void(const char*)> render_update_cb);
   void RegisterNWebHandler(std::shared_ptr<NWebHandler> handler);
+#if BUILDFLAG(ARKWEB_AI)
+  void RegisterNWebAgentHandler(std::shared_ptr<NWebAgentHandler> handler);
+#endif
   void Resize(uint32_t width, uint32_t height);
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   void ResizeVisibleViewport(uint32_t width, uint32_t height);
@@ -367,7 +370,9 @@ class NWebRenderHandler : public ArkWebRenderHandlerExt {
   bool is_irregular_drag_background_ = true;
   bool select_all_ = false;
 #endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
-
+#if BUILDFLAG(ARKWEB_AI)
+  std::weak_ptr<NWebAgentHandler> nweb_agent_handler_;
+#endif
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   std::weak_ptr<NWebDelegateInterface> delegate_interface_;
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)

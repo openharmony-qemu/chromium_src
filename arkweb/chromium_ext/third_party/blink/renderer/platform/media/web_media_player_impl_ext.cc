@@ -368,8 +368,15 @@ bool WebMediaPlayerImplExt::IsFrameHidden() {
 
 #if BUILDFLAG(ARKWEB_PIP)
 void WebMediaPlayerImpl::PipEnable(bool enable) {
-  LOG(INFO) << "PIC WebMediaPlayerImpl::PipEnable" << enable << "]";
-  pipeline_controller_->PipEnable(enable);
+  LOG(INFO) << "Pip WebMediaPlayerImpl::PipEnable" << enable << "]";
+  if (pipeline_controller_) {
+    pipeline_controller_->PipEnable(enable);
+  } else {
+    LOG(ERROR) << "Pip pipeline_controller_ is null.";
+  }
+  if (!enable) {
+    video_surface_id_ = -1;
+  }
 }
 #endif
 

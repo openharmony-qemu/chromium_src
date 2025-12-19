@@ -34,7 +34,9 @@ const int64_t ZOOM_FREQUENCY_LIMIT = 30;
     base::TimeDelta elapsed = last_modified - last_modified_;
     int64_t elapsed_ms = elapsed.InMilliseconds();
     if (elapsed_ms < ZOOM_FREQUENCY_LIMIT) {
-      LOG(INFO) << "Throw zoom event because frequency limit";
+      LOG(INFO) << "Throw zoom event because frequency limit, last_modified:"
+                << last_modified_ << ",last_modified:" << last_modified
+                << ",elapsed_ms:" << elapsed_ms;
       return true;
     }
     last_modified_ = last_modified;

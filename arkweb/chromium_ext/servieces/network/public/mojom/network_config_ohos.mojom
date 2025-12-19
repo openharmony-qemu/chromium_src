@@ -22,3 +22,12 @@ struct HttpsDnsFallbackConfig {
   array<string> source_host_list;
   array<string> suspect_ip_list;
 };
+
+struct FallbackProxyInfoConfig {
+  array<int32> using_proxy_error_codes;
+  array<int32> safe_browsing_hw_codes;
+  array<int32> safe_browsing_malicious_types;
+  int32 proxy_tunnel_timeout;
+  int32 proxy_connect_timeout;
+  int32 malicious_url_check_wait_time;
+};

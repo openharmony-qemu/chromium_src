@@ -24,6 +24,7 @@
 #include <vector>
 
 #include "nweb_logger_callback.h"
+#include "nweb_proxy_client_callback.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -67,6 +68,8 @@ typedef void (*OnSrceenCaptureOnStateChange)(int32_t nweb_id,
 
 typedef void (*LogFeedbackFun)(const char* tag, int level, const char* message);
 typedef void (*LogUrlFun)(const char* url);
+
+typedef void (*OnUpdateProxyTokenFun)(const char* old_token);
 
 // / WebDownloader functions.
 NWEB_EXPORT void WebDownloadManager_PutDownloadCallback(
@@ -242,6 +245,19 @@ NWEB_EXPORT void LoggerCallback_SetLogFeedback(NWebLoggerCallback* callback,
 
 NWEB_EXPORT void LoggerCallback_SetLogUrl(NWebLoggerCallback* callback,
                                           LogUrlFun fun);
+
+NWEB_EXPORT void ProxyManager_UpdateProxyToken(const char* token,
+                                               const char* token_info);
+
+NWEB_EXPORT void ProxyManager_CreateProxyClientCallback(
+    NWebProxyClientCallback** callback);
+
+NWEB_EXPORT void ProxyManager_SetOnUpdateProxyToken(
+    NWebProxyClientCallback* callback,
+    OnUpdateProxyTokenFun fun);
+
+NWEB_EXPORT void ProxyManager_PutProxyClientCallback(
+    NWebProxyClientCallback* callback);
 
 #ifdef __cplusplus
 }

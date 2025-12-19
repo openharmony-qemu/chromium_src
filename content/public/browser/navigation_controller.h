@@ -40,6 +40,10 @@
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#include "arkweb/chromium_ext/content/public/browser/error_page_reload_reason.h"
+#endif
+
 namespace base {
 class RefCountedString;
 }  // namespace base
@@ -541,6 +545,12 @@ class NavigationController {
   // in cases where no user interface is available for prompting.
   // NOTE: |reload_type| should never be NONE.
   virtual void Reload(ReloadType reload_type, bool check_for_repost) = 0;
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  virtual void ReloadWithNetError(ReloadType reload_type,
+                                  bool check_for_repost,
+                                  ErrorPageReloadReason  reason) = 0;
+#endif
 
   // Removing of entries -------------------------------------------------------
 

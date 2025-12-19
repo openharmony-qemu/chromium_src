@@ -85,6 +85,10 @@
 #include "url/origin.h"
 #include "url/url_constants.h"
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#include "arkweb/chromium_ext/net/base/fallback_proxy_constants.h"
+#endif
+
 namespace net {
 class HttpResponseHeaders;
 class ProxyServer;
@@ -358,6 +362,8 @@ class TestProxyDelegateWithProxyInfo : public ProxyDelegate {
 
   void SetProxyResolutionService(
       ProxyResolutionService* proxy_resolution_service) override {}
+
+#include "arkweb/chromium_ext/net/websockets/test_proxy_delegate_with_proxy_info_for_include.cc"
 
  private:
   ResolvedProxyInfo resolved_proxy_info_;

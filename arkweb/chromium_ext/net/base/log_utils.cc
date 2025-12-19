@@ -26,7 +26,7 @@ namespace {
 void AppendIPv4Address(const unsigned char address[4], url::CanonOutput* output) {
   // Noise the ip addressed.
   for (int i = 0; i < 4; i++) {
-    if (i == 3) {
+    if (i >= 2) {
       output->push_back('*');
       continue;
     }

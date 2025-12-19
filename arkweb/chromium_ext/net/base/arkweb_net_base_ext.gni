@@ -5,8 +5,6 @@ arkweb_net_base_ext_unittest_sources = []
 
 if (arkweb_prp_preload) {
   arkweb_net_base_ext_sources += [
-    "//arkweb/chromium_ext/net/base/log_utils.cc",
-    "//arkweb/chromium_ext/net/base/log_utils.h",
     "//arkweb/chromium_ext/net/base/page_res_request_info.cc",
     "//arkweb/chromium_ext/net/base/page_res_request_info.h",
   ]

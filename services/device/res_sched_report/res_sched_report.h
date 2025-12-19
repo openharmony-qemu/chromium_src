@@ -17,6 +17,7 @@
 #include <string>
 #include <string_view>
 
+#include "arkweb/build/features/features.h"
 #include "base/threading/thread_checker.h"
 #include "mojo/public/cpp/bindings/pending_receiver.h"
 #include "mojo/public/cpp/bindings/pending_remote.h"
@@ -74,7 +75,9 @@ class ResSchedReport : public device::mojom::ResSchedReport {
 
   void StartPerformanceBoost() override;
 
+#if BUILDFLAG(ARKWEB_OHOS_MEM_USAGE_REPORT)
   void ReportMemoryUsage(const std::string& msg) override;
+#endif  // BUILDFLAG(ARKWEB_OHOS_MEM_USAGE_REPORT)
 
   mojo::ReceiverSet<device::mojom::ResSchedReport> receivers_;
 

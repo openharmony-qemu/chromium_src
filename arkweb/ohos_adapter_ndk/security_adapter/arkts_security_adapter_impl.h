@@ -20,11 +20,11 @@
 #include "js_native_api.h"
 #include <string>
 
-class ArktsHilogAdapter {
+class ArktsSecurityAdapter {
 public:
     static napi_env GetEnv();
     static napi_value GetSecurityGuardModule();
-    static int RegisterEvent(const std::string& event)
+    static int RegisterEvent(const std::string& event);
 };
 
 #endif // ARKTS_SECURITY_ADAPTER_IMPL_H

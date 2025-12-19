@@ -296,11 +296,11 @@ void SetFlags(IsolateHolder::ScriptMode mode,
   V8FeatureVisitor feature_visitor;
   base::FeatureList::VisitFeaturesAndParams(feature_visitor,
                                             kV8FlagFeaturePrefix);
-#if defined(OHOS_MEM_USAGE_REPORT)
+#if BUILDFLAG(ARKWEB_OHOS_MEM_USAGE_REPORT)
     if(base::CommandLine::ForCurrentProcess()->HasSwitch("mur")) {
       SetV8Flags("--mur");
     }
-#endif  // BUILDFLAG(OHOS_MEM_USAGE_REPORT)
+#endif  // BUILDFLAG(ARKWEB_OHOS_MEM_USAGE_REPORT)
 
   // Otherwise, feature flags explicitly defined in Chromium are translated
   // to V8 flags as follows. We ignore feature flag default values, instead

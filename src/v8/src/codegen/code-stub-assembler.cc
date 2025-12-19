@@ -2025,13 +2025,12 @@ TNode<RawPtrT> CodeStubAssembler::LoadCodeEntryFromIndirectPointerHandle(
 
 void CodeStubAssembler::SetSupportsDynamicParameterCount(
     TNode<JSFunction> callee, TNode<JSDispatchHandleT> dispatch_handle) {
-  TNode<Uint16T> dynamic_parameter_count;
 #ifdef V8_ENABLE_LEAPTIERING
-  dynamic_parameter_count =
+  TNode<Uint16T> dynamic_parameter_count =
       LoadParameterCountFromJSDispatchTable(dispatch_handle);
 #else
   TNode<SharedFunctionInfo> shared = LoadJSFunctionSharedFunctionInfo(callee);
-  dynamic_parameter_count =
+  TNode<Uint16T> dynamic_parameter_count =
       LoadSharedFunctionInfoFormalParameterCountWithReceiver(shared);
 #endif
   SetDynamicJSParameterCount(dynamic_parameter_count);

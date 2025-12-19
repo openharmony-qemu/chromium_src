@@ -16,7 +16,7 @@ if (arkweb_prp_preload) {
   ]
 }
 
-if (arkweb_log_report) {
+if (arkweb_logger_report) {
   arkweb_net_base_ext_sources += [
     "//arkweb/chromium_ext/net/base/log_utils.cc",
     "//arkweb/chromium_ext/net/base/log_utils.h",

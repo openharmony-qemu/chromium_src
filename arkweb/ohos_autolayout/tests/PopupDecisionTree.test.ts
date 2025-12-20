@@ -638,7 +638,7 @@ describe('PopupDecisionTree', () => {
         popup_type: PopupType.B,
       });
       
-      expect(PopupDecisionTree.isModalWin([content], root, popupInfo)).toBe(true);
+      expect(PopupDecisionTree.isModalWin([content], popupInfo)).toBe(true);
       expect(popupInfo.content_node).toBe(content);
     });
   });
@@ -724,7 +724,6 @@ describe('PopupDecisionTree', () => {
       expect(
         // @ts-ignore
         PopupDecisionTree.hasOverlappingCloseButton(
-          overlapRoot,
           [overlapRoot, overlapContent, closeButton, contentSibling],
           overlapInfo
         )
@@ -948,7 +947,7 @@ describe('PopupDecisionTree', () => {
       root.appendChild(mask);
       
       const popupInfo = makePopupInfo({ root_node: root, mask_node: mask, popup_type: PopupType.B });
-      expect(PopupDecisionTree.isModalWin([], root, popupInfo)).toBe(false);
+      expect(PopupDecisionTree.isModalWin([], popupInfo)).toBe(false);
     });
 
     it('should return false when close button matches center pattern in isModalWin', () => {
@@ -965,7 +964,7 @@ describe('PopupDecisionTree', () => {
       setRect(close, { top: window.innerHeight - 40, left: 0, width: 20, height: 20 });
       
       const popupInfo = makePopupInfo({ root_node: root, mask_node: mask, popup_type: PopupType.B });
-      expect(PopupDecisionTree.isModalWin([close], root, popupInfo)).toBe(false);
+      expect(PopupDecisionTree.isModalWin([close], popupInfo)).toBe(false);
     });
 
     it('should route to type C handler in isModalWin', () => {
@@ -986,7 +985,7 @@ describe('PopupDecisionTree', () => {
         popup_type: PopupType.C,
       });
       
-      expect(PopupDecisionTree.isModalWin([content], root, popupInfo)).toBe(true);
+      expect(PopupDecisionTree.isModalWin([content], popupInfo)).toBe(true);
     });
   });
     it('should return false when close button criteria not met', () => {
@@ -1372,7 +1371,7 @@ describe('PopupDecisionTree', () => {
       
       setStyle(content, { zIndex: '5' });
       
-      expect(PopupDecisionTree.isModalWin([content], root, popupInfo)).toBe(false);
+      expect(PopupDecisionTree.isModalWin([content], popupInfo)).toBe(false);
     });
 
     it('should handle modal content with children', () => {
@@ -1878,7 +1877,6 @@ describe('PopupDecisionTree', () => {
       // Call the function - this should trigger line 41
       // @ts-ignore
       const result = PopupDecisionTree.hasOverlappingCloseButton(
-        root, 
         [root, closeButton, overlappingSibling], 
         popupInfo
       );
@@ -1921,7 +1919,6 @@ describe('PopupDecisionTree', () => {
       const popupInfoNoRoot: PopupInfo = { ...makePopupInfo({ root_node: root }), root_node: null };
       // @ts-ignore
       let result = PopupDecisionTree.hasOverlappingCloseButton(
-        root, 
         [root, closeButton, overlappingSibling], 
         popupInfoNoRoot
       );
@@ -1937,7 +1934,6 @@ describe('PopupDecisionTree', () => {
       const popupInfoNoClass = makePopupInfo({ root_node: rootNoClass });
       // @ts-ignore
       result = PopupDecisionTree.hasOverlappingCloseButton(
-        root, 
         [root, closeButton, overlappingSibling], 
         popupInfoNoClass
       );
@@ -1956,7 +1952,6 @@ describe('PopupDecisionTree', () => {
       const popupInfoUndefinedClass = makePopupInfo({ root_node: rootUndefinedClass });
       // @ts-ignore
       result = PopupDecisionTree.hasOverlappingCloseButton(
-        root, 
         [root, closeButton, overlappingSibling], 
         popupInfoUndefinedClass
       );

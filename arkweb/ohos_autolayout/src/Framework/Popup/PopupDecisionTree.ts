@@ -20,8 +20,8 @@ export class PopupDecisionTree {
      * 检查中心弹窗是否含有与兄弟节点重叠的“绝对定位”关闭按钮
      * @returns {boolean} true 如果存在重叠的按钮, 否则 false
      */
-    private static hasOverlappingCloseButton(rootNode: HTMLElement, allNodes: HTMLElement[], popupInfo: PopupInfo): boolean {
-        const closeElements: HTMLElement[] = PopupDecisionTree.getCloseButtons(rootNode, allNodes) as HTMLElement[];
+    private static hasOverlappingCloseButton(allContentNodes: HTMLElement[], popupInfo: PopupInfo): boolean {
+        const closeElements: HTMLElement[] = PopupDecisionTree.getCloseButtons(popupInfo.root_node, allContentNodes) as HTMLElement[];
 
         // 如果没有关闭按钮，直接返回 false
         if (closeElements.length === 0) {
@@ -29,7 +29,7 @@ export class PopupDecisionTree {
             return false;
         }
 
-        const isAbsoluteFlags: boolean[] = PopupDecisionTree.isCloseElementAbsolute(closeElements, rootNode, popupInfo);
+        const isAbsoluteFlags: boolean[] = PopupDecisionTree.isCloseElementAbsolute(closeElements, popupInfo.root_node, popupInfo);
 
         const isOverlay = closeElements.some((element, index) => {
             // 修正了原始代码中可能存在的bug（index不会在循环中重置）
@@ -49,20 +49,23 @@ export class PopupDecisionTree {
     /**
      * 根据弹窗的视觉和结构属性（如位置、关闭按钮状态等），判断并归类弹窗的具体类型。
      *
-     * @param allNodes - 页面上所有相关节点的集合数组，用于上下文分析。
+     * @param allContentNodes - 页面上弹窗相关节点的集合数组，用于上下文分析。
      * @param popupInfo - 包含弹窗核心信息的对象，其中最重要的属性是 `root_node` (弹窗的根节点)。
      * @returns {PopupDecisionTreeType} - 返回一个 PopupDecisionTreeType 枚举值，表示该弹窗的最终分类（例如 Center, Bottom, Center_Button_Overlap 等）。
      */
-    public static judgePopupDecisionTreeType(allNodes: HTMLElement[], popupInfo: PopupInfo): PopupDecisionTreeType {
-        const rootNode = popupInfo.root_node;
-        
-        const isPickerPopup = PopupDecisionTree.isTimePickerPopup(rootNode);
+    public static judgePopupDecisionTreeType(allContentNodes: HTMLElement[], popupInfo: PopupInfo): PopupDecisionTreeType {
+        const isInputPopup = PopupDecisionTree.isInputPopup(allContentNodes);
+        if (isInputPopup) {
+            Log.d('判定为可编辑弹窗', Tag.popupDecisionTree);
+            return PopupDecisionTreeType.Input;
+        }
+
+        const isPickerPopup = PopupDecisionTree.isTimePickerPopup(allContentNodes);
         if (isPickerPopup) {
             return PopupDecisionTreeType.Picker;
         }
         
-        const isBottomPopup = PopupDecisionTree.isModalWin(allNodes, rootNode, popupInfo);
-
+        const isBottomPopup = PopupDecisionTree.isModalWin(allContentNodes, popupInfo);
         if (isBottomPopup) {
             // @ts-ignore
             window.popWin = 'bottom';
@@ -74,7 +77,7 @@ export class PopupDecisionTree {
         window.popWin = 'center';
         Log.d('判定为中心弹窗', Tag.popupDecisionTree);
 
-        if (this.hasOverlappingCloseButton(rootNode, allNodes, popupInfo)) {
+        if (this.hasOverlappingCloseButton(allContentNodes, popupInfo)) {
             return PopupDecisionTreeType.Center_Button_Overlap;
         } else {
             return PopupDecisionTreeType.Center;
@@ -87,9 +90,9 @@ export class PopupDecisionTree {
      * @param {Element | null} el - 要搜索的根元素
      * @returns {Element | null} - 返回关闭按钮
      */
-    private static getCloseButtons(rootNode: HTMLElement, allNodes: HTMLElement[]): HTMLElement[] {
+    private static getCloseButtons(rootNode: HTMLElement, allContentNodes: HTMLElement[]): HTMLElement[] {
 
-        const tmpCloseButtons: HTMLElement[] = allNodes.filter(node => {
+        const tmpCloseButtons: HTMLElement[] = allContentNodes.filter(node => {
             if (!rootNode.contains(node)) {
                 return false;
             }
@@ -318,9 +321,8 @@ export class PopupDecisionTree {
         return elArea > 0 ? (overlapWidth * overlapHeight / elArea) : 0;
     }
 
-    
     /**
-     * 检查一个根节点 (rootNode) 是否包含一个“滚轮选择器”(Picker)。
+     * 检查一个弹窗是否包含一个“滚轮选择器”(Picker)。
      *
      * 检查三个核心特征：
      * 1. 存在 'picker' 类名。
@@ -328,20 +330,16 @@ export class PopupDecisionTree {
      * 3. 存在一个带有 'linear-gradient' 背景的元素。
      *
      *
-     * @param rootNode - 要检查的弹窗根元素 (如 .a-view.ant-popup)。
+     * @param rootNode - 要检查的弹窗元素集合 (如 .a-view.ant-popup)。
      * @returns {boolean} - 如果是，则返回 true。
      */
-    private static isTimePickerPopup(rootNode: HTMLElement): boolean {
-        // 1. 初始化三个特征的“信号旗”
+    private static isTimePickerPopup(rootNode: HTMLElement[]): boolean {
+        // 初始化三个特征的“信号旗”
         let hasPickerClass = false;
         let hasUniformInlineHeight = false;
         let hasLinearGradient = false;
 
-        // 2. 只遍历一次：获取所有子孙节点
-        const allDescendants = rootNode.querySelectorAll('*');
-
-        // 3. 开始单次遍历
-        for (const element of Array.from(allDescendants)) {
+        for (const element of Array.from(rootNode)) {
             if (!(element instanceof HTMLElement)) {
                 continue;
             }
@@ -375,6 +373,48 @@ export class PopupDecisionTree {
 
         // 4. 最终裁决
         return hasPickerClass && hasUniformInlineHeight && hasLinearGradient;
+    }
+
+    /**
+     * 判断弹窗内是否包含可编辑输入元素。
+     *
+     * @param contentNodes - 弹窗节点集合
+     * @returns {boolean} - 存在可见输入元素则返回 true
+     */
+    private static isInputPopup(rootNodes: HTMLElement[]): boolean {
+        return rootNodes.some(root => {
+            // 创建 TreeWalker
+            const walker = document.createTreeWalker(
+                root,
+                NodeFilter.SHOW_ELEMENT,
+                {
+                    acceptNode: (node: Node) => {
+                        const el = node as HTMLElement;
+                        
+                        // 1. 先判断是不是可能是输入框 (粗筛)
+                        const name = el.tagName.toLowerCase();
+                        const isCandidate = name === Constant.input || name === Constant.textarea;
+                        
+                        if (!isCandidate) {
+                            return NodeFilter.FILTER_SKIP;
+                        }
+    
+                        // 2. 精确判断是否为用户需要打字输入进行交互的编辑元素
+                        if (Utils.isUserTextEditable(el)) {
+                            return NodeFilter.FILTER_ACCEPT;
+                        }
+    
+                        return NodeFilter.FILTER_SKIP;
+                    }
+                }
+            );
+    
+            while (walker.nextNode()) {
+                return true;
+            }
+    
+            return false;
+        });
     }
 
     /**
@@ -472,14 +512,14 @@ export class PopupDecisionTree {
      * 3、boxSizing == 'border-box'
      * 4、top可能有radius，bottom没有radius
      */
-    static isModalWin(allNodes: HTMLElement[], rootNode: HTMLElement, popupInfo: PopupInfo): boolean {
+    static isModalWin(allContentNodes: HTMLElement[], popupInfo: PopupInfo): boolean {
         // 查找作为主要内容的节点（z-index 最高）。
-        const contentNode = this.findMainContentNode(rootNode, popupInfo);
+        const contentNode = this.findMainContentNode(popupInfo);
         if (!contentNode) {
             return false;
         }
 
-        if (this.CheckCenterCloseButton(contentNode, allNodes)) {
+        if (this.CheckCenterCloseButton(contentNode, allContentNodes)) {
             return false;
         }
  
@@ -505,8 +545,8 @@ export class PopupDecisionTree {
      * 特征3：该关闭按钮大小有限制。
      * @returns {boolean} 
      */
-    private static CheckCenterCloseButton(contentNode: HTMLElement, allNodes: HTMLElement[]): boolean {
-        const closeElements = PopupDecisionTree.getCloseButtons(contentNode, allNodes) as HTMLElement[];
+    private static CheckCenterCloseButton(contentNode: HTMLElement, allContentNodes: HTMLElement[]): boolean {
+        const closeElements = PopupDecisionTree.getCloseButtons(contentNode, allContentNodes) as HTMLElement[];
         if (closeElements.length < 1) {
             return false;
         }
@@ -555,11 +595,11 @@ export class PopupDecisionTree {
      * 在 B 类型弹窗的子节点中，根据 z-index 找到作为“前景内容”的节点。
      * @returns {HTMLElement | null} 返回找到的内容节点，如果找不到或存在多个 z-index 最高的节点，则返回 null。
      */
-    private static findMainContentNode(rootNode: HTMLElement, popupInfo: PopupInfo): HTMLElement | null {
+    private static findMainContentNode(popupInfo: PopupInfo): HTMLElement | null {
         // 找到作为直接子节点的 mask 元素
         let directMaskChild = popupInfo.mask_node;
         if (popupInfo.popup_type === PopupType.B) {
-            while (directMaskChild.parentElement !== rootNode) {
+            while (directMaskChild.parentElement !== popupInfo.root_node) {
                 directMaskChild = directMaskChild.parentElement!;
                 if (!directMaskChild) {
                     return null; // 如果找不到，则结构异常
@@ -568,7 +608,7 @@ export class PopupDecisionTree {
         }
 
         // 过滤掉 mask，剩下的就是内容节点
-        const contentNodes = Array.from(rootNode.children).filter(node => node !== directMaskChild) as HTMLElement[];
+        const contentNodes = Array.from(popupInfo.root_node.children).filter(node => node !== directMaskChild) as HTMLElement[];
 
         if (contentNodes.length === 0) {
             return null;

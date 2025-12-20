@@ -42,7 +42,7 @@ export class LayoutConstraintMetricsDetector {
         Log.d(`待检测根节点数量: ${rootNodes.size}`, Tag.layoutConstraintDetector);
         const reportLines: string[] = [];
         const startTime = performance.now();
-        let resultCode = 0;
+        let resultCode = Constant.RESULT_CODE_PASS;
         let errorMsg = '';
         let allGapsPassed = true;
         let allOverflowRatePassed = true;
@@ -69,7 +69,7 @@ export class LayoutConstraintMetricsDetector {
             const gapsPassed = Object.values(safeGaps).every(gap => gap >= DetectorInst.minGap);
             if (!gapsPassed)  {
                 Log.w(`安全间隙检测失败: 左${safeGaps.left.toFixed(1)} 上${safeGaps.top.toFixed(1)} 右${safeGaps.right.toFixed(1)} 下${safeGaps.bottom.toFixed(1)}`, Tag.layoutConstraintDetector);
-                resultCode = Math.max(resultCode, Constant.ERR_CODE_GAPS);
+                resultCode = Math.max(resultCode, Constant.RESULT_CODE_GAPS);
                 allGapsPassed = false;
             } else {
                 Log.d('安全间隙检测通过', Tag.layoutConstraintDetector);
@@ -80,7 +80,7 @@ export class LayoutConstraintMetricsDetector {
             const overflowRate = this.detectContainerOverflowRate(rootNode, layoutMap, reportLines);
             if (overflowRate > 0) {
                 Log.w(`元素溢出率检测失败: ${overflowRate.toFixed(1)}%`, Tag.layoutConstraintDetector);
-                resultCode = Math.max(resultCode, Constant.ERR_CODE_OVERFLOW);
+                resultCode = Math.max(resultCode, Constant.RESULT_CODE_OVERFLOW);
                 allOverflowRatePassed = false;
             } else {
                 Log.d('元素溢出率检测通过', Tag.layoutConstraintDetector);
@@ -98,7 +98,7 @@ export class LayoutConstraintMetricsDetector {
         Log.d('开始底部关闭按钮重叠检测', Tag.layoutConstraintDetector);
         if (LayoutUtils.isBottomCloseButtonOverlap(popupInfo)) {
             Log.w('关闭按钮重叠检测失败', Tag.layoutConstraintDetector);
-            resultCode = Math.max(resultCode, Constant.ERR_CODE_CLOSE_BTN_OVERLAP);
+            resultCode = Math.max(resultCode, Constant.RESULT_CODE_CLOSE_BTN_OVERLAP);
             errorMsg += '关闭按钮重叠检测 FAIL.';
         } else {
             Log.d('关闭按钮重叠检测通过', Tag.layoutConstraintDetector);

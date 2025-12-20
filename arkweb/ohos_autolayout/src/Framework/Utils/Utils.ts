@@ -5,6 +5,8 @@ import LayoutUtils from './LayoutUtils';
 import { CCMConfig } from '../Common/CCMConfig';
 import ModifyObserver from '../Observer/Observers/ModifyObserver';
 import ObserverHandler from '../Observer/ObserverHandler';
+import Constant from '../Common/Constant';
+
 export default class Utils {
     private static TAG = Tag.util;
 
@@ -484,10 +486,12 @@ export default class Utils {
      */
     static isBackgroundSemiTransparent(style:  CSSStyleDeclaration): boolean {
         if(!style) {
+            Log.d(`isBackgroundSemiTransparent: Style is null or undefined, returning false`, Tag.util);
             return false;
         }
         // 2. 检查背景颜色透明度,98%是这种情况,即使opacity是1，也不影响背景透明
         if (Utils.isColorSemiTransparent(style.backgroundColor)) {
+            Log.d(`isBackgroundSemiTransparent: Background color is semi-transparent, returning true`, Tag.util);
             return true;
         }
 
@@ -495,28 +499,69 @@ export default class Utils {
         const op = parseFloat(style.opacity);
         const opacityRange = CCMConfig.getInstance().getOpacityFilter();
         if ( op > opacityRange[0] / 100 && op < opacityRange[1] / 100) {
+            Log.d(`isBackgroundSemiTransparent: style.opacity: ${style.opacity}, Opacity is within range (${opacityRange[0]}%,${opacityRange[1]}%), returning true`, Tag.util);
             return true;
         }
         // 3. 检查背景图片中的渐变透明
         if (Utils.hasSemiTransparentGradient(style.backgroundImage)) {
+            Log.d(`isBackgroundSemiTransparent: Background image has semi-transparent gradient, returning true`, Tag.util);
             return true;
         }
         // 4. 检查滤镜透明度
         if (Utils.hasSemiTransparentFilter(style.filter)) {
+            Log.d(`isBackgroundSemiTransparent: Filter has semi-transparent effect, returning true`, Tag.util);
             return true;
         }
         // 5. 检查背景滤镜（毛玻璃效果）
         if (style.backdropFilter !== 'none') {
+            Log.d(`isBackgroundSemiTransparent: Backdrop filter is not none, returning true`, Tag.util);
             return true;
         }
         // 6. 检查混合模式（可能产生透明叠加效果）
         if (/overlay|multiply|screen|soft-light/.test(style.mixBlendMode)) {
+            Log.d(`isBackgroundSemiTransparent: Mix blend mode is semi-transparent, returning true`, Tag.util);
             return true;
         }
         // 7. 检查CSS遮罩
         if (style.mask !== 'none') {
+            Log.d(`isBackgroundSemiTransparent: Mask is not none, returning true`, Tag.util);
             return true;
         }
+        return false;
+    }
+
+    /**
+     * 判断一个元素是否为用户需要打字输入进行交互的编辑元素
+     */
+    static isUserTextEditable(element: HTMLElement): boolean {
+        // 1. 基础检查：禁用状态
+        if ('disabled' in element && (element as { disabled?: boolean }).disabled) {
+            return false;
+        }
+
+        const tagName = element.tagName.toLowerCase();
+
+        // 2. 处理 Input 元素
+        if (tagName === Constant.input) {
+            const inputEl = element as HTMLInputElement;
+            
+            // 排除只读
+            if (inputEl.readOnly) {
+                return false;
+            }
+
+            if (Constant.textTypes.has(inputEl.type)) {
+                return true;
+            }
+
+            return false;
+        }
+
+        // 3. 处理 Textarea
+        if (tagName === Constant.textarea) {
+            return !(element as HTMLTextAreaElement).readOnly;
+        }
+
         return false;
     }
 

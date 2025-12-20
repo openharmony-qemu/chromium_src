@@ -72,11 +72,11 @@ describe('Constant Module', () => {
     });
 
     test('should have error code constants', () => {
-      expect(Constant.ERR_CODE_GAPS).toBe(100);
-      expect(Constant.ERR_CODE_OVERFLOW).toBe(50);
-      expect(Constant.ERR_CODE_OFFSET).toBe(10);
-      expect(Constant.ERR_CODE_CLOSE_BTN_OVERLAP).toBe(2);
-      expect(Constant.ERR_CODE_INTERACTIVE).toBe(1);
+      expect(Constant.RESULT_CODE_GAPS).toBe(100);
+      expect(Constant.RESULT_CODE_OVERFLOW).toBe(50);
+      expect(Constant.RESULT_CODE_OFFSET).toBe(10);
+      expect(Constant.RESULT_CODE_CLOSE_BTN_OVERLAP).toBe(2);
+      expect(Constant.RESULT_CODE_INTERACTIVE).toBe(1);
     });
   });
 

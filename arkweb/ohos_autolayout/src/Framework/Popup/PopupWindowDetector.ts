@@ -149,6 +149,16 @@ export class PopupWindowDetector {
         const screenAreaRatio = Utils.getScreenAreaRatio(el);
         const minMaskAreaRatio = CCMConfig.getInstance().getMinMaskAreaRatioThreshold();
 
+        // 检查长宽比：真正的 mask 不应该是特别细长的
+        // 正常的浏览页面可能很长（滚动页面），但真正的弹窗 mask 的长宽比应该接近屏幕比例
+        const rect = el.getBoundingClientRect();
+        const maskAspectRatio = rect.height / rect.width;
+        
+        if (maskAspectRatio > Constant.maxMaskAspectRatio) {
+            Log.d(`跳过长宽比过大的元素: ${(el as HTMLElement).className}, 长宽比: ${maskAspectRatio.toFixed(2)} (宽=${rect.width.toFixed(0)}, 高=${rect.height.toFixed(0)})`, Tag.popupDetector);
+            return false;
+        }
+
         // Case 1: 屏占比足够大且背景半透明
         if (screenAreaRatio > minMaskAreaRatio && Utils.isBackgroundSemiTransparent(style)) {
             Log.d(`找到潜在Mask[Case1-半透明]: ${(el as HTMLElement).className}, 屏占比: ${screenAreaRatio.toFixed(2)}`, Tag.popupDetector);
@@ -344,13 +354,19 @@ export class PopupWindowDetector {
         let filteredCount = 0;
         
         for (const node of candidates) {
+            // 使用层叠上下文比较，避免子元素z-index为auto(默认0)时被误判。
+            // 例：.helpBg 高度为0，但子节点 <img> 具有实际尺寸且默认 z-index 为 auto。
+            // 通过 compareZIndex 能正确识别 <img> 相对蒙版处于上方，即使计算出来的数值 z-index 为0。
+            // 同时根据兄弟顺序决定是否允许与蒙版处于同一层级。
+            const compareResult = LayoutUtils.compareZIndex(node as HTMLElement, maskNode as HTMLElement);
+            const isAboveMask = isPreviousSibling ? compareResult > 0 : compareResult >= 0;
             const nodeZIndex = Utils.zIndexToNumber(window.getComputedStyle(node).zIndex);
-    
-            // 核心判断：节点的z-index必须高于（或等于，对于弟弟节点）蒙版的z-index
-            if (nodeZIndex >= maskZIndex + maskZIndexOffset) {
+
+            // 核心判断：候选节点必须在蒙版之上（长兄需要严格大于，弟弟允许同级）。
+            if (isAboveMask) {
                 qualifiedCount++;
                 const ratio = Utils.getScreenAreaRatio(node);
-                
+
                 if (ratio > maxRatio) {
                     const previousBest = bestCandidate ? `${(bestCandidate as HTMLElement).className || bestCandidate.tagName}(${maxRatio.toFixed(2)})` : '无';
                     maxRatio = ratio;
@@ -639,7 +655,7 @@ export class PopupWindowDetector {
             root_zindex: Utils.zIndexToNumber(rootStyle.zIndex),
             has_mask: true,
             root_screen_area_ratio: Utils.getScreenAreaRatio(rootNode),
-            root_is_visiable: Utils.isElementVisibleInViewPort(rootNode),
+            root_is_visiable: Utils.isElementVisibleInViewPort(rootNode as HTMLElement),
             has_close_button: Utils.hasCloseButton(contentNode || rootNode),
             mask_area_ratio: Utils.getScreenAreaRatio(maskNode),
             mask_position: maskStyle.position,

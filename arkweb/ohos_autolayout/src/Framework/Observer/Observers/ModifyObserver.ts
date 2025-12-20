@@ -380,15 +380,19 @@ export default class ModifyObserver {
             ModifyObserver.activeAnimationTimeouts.set(timeoutId, document.body);
         }
 
-        // STEP 3: 延迟处理节点添加，只在有添加记录时才设置定时器
+        // STEP 3: 通用处理属性变更
+        // 只要 class 或 style 发生变化，都视为可能的布局/显隐改变
+        const hasValidAttr = ModifyObserver.handleAttributeChanges(attrRecords);
+
+        // STEP 4: 延迟处理节点添加，只在有添加记录时才设置定时器
         Log.d('开始处理节点添加', ModifyObserver.TAG);
         const hasValidAdd = ModifyObserver.handleAddedNodes(addRecords);
         // 如果animationDuration不为0，前面就已经posttask，所以此处只需要处理为0，且存在validchange的情况
-        if(animationDuration === 0 && (hasValidRemove || hasValidAdd)) {
-            Log.d(`立即触发任务 (无动画): 移除变更=${hasValidRemove}, 添加变更=${hasValidAdd}`, ModifyObserver.TAG);
+        if(animationDuration === 0 && (hasValidRemove || hasValidAdd || hasValidAttr)) {
+            Log.d(`立即触发任务 (无动画): 移除变更=${hasValidRemove}, 添加变更=${hasValidAdd}, 属性变更=${hasValidAttr}`, ModifyObserver.TAG);
             ObserverHandler.postTask();
         } else {
-            Log.d(`跳过任务触发: 动画延迟=${animationDuration}ms, 移除变更=${hasValidRemove}, 添加变更=${hasValidAdd}`, ModifyObserver.TAG);
+            Log.d(`跳过任务触发: 动画延迟=${animationDuration}ms, 移除变更=${hasValidRemove}, 添加变更=${hasValidAdd}, 属性变更=${hasValidAttr}`, ModifyObserver.TAG);
         }
         
         Log.d('========== 批处理完成 ==========', ModifyObserver.TAG);
@@ -417,6 +421,35 @@ export default class ModifyObserver {
         }
         
         Log.d(`节点添加处理完成: 标记${dirtyCount}个dirty节点, 有效变更: ${hasValidChange}`, ModifyObserver.TAG);
+        return hasValidChange;
+    }
+
+    /**
+     * 通用属性变更处理
+     * 只要涉及到 class 或 style 的变化，都标记为有效变更，触发后续检查
+     */
+    private static handleAttributeChanges(attrRecords: MutationRecord[]): boolean {
+        let hasValidChange = false;
+        if (attrRecords.length === 0) {
+            return false;
+        }
+
+        let dirtyCount = 0;
+        for (const record of attrRecords) {
+            // 关注 style 的变化，其会影响显隐和布局
+            if (record.attributeName === 'style') {
+                const target = record.target as HTMLElement;
+                // 标记为脏节点，通知 IntelligentLayout 该节点可能需要重新评估
+                IntelligentLayout.markDirty(target);
+                hasValidChange = true;
+                dirtyCount++;
+            }
+        }
+        
+        if (hasValidChange) {
+             Log.d(`属性变更处理完成: 标记${dirtyCount}个涉及class/style变化的节点`, ModifyObserver.TAG);
+        }
+        
         return hasValidChange;
     }
 

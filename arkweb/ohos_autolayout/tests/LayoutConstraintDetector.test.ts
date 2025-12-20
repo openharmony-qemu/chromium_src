@@ -214,7 +214,7 @@ describe('LayoutConstraintMetricsDetector', () => {
                 rootNodes
             );
 
-            expect(result.resultCode).toBe(Constant.ERR_CODE_OVERFLOW);
+            expect(result.resultCode).toBe(Constant.RESULT_CODE_OVERFLOW);
             expect(result.errorMsg).toContain('元素溢出率检测 FAIL');
             expect(result.report).toContain('溢出元素');
             document.body.removeChild(root);
@@ -291,7 +291,7 @@ describe('LayoutConstraintMetricsDetector', () => {
                 rootNodes
             );
 
-            expect(result.resultCode).toBe(Constant.ERR_CODE_OVERFLOW);
+            expect(result.resultCode).toBe(Constant.RESULT_CODE_OVERFLOW);
             expect(result.report).toContain('溢出元素');
             expect(result.report).toContain('左');
             expect(result.report).toContain('右');
@@ -333,7 +333,7 @@ describe('LayoutConstraintMetricsDetector', () => {
             );
 
             // 由于按钮在滚动容器中，应该被排除，不会触发溢出错误
-            expect(result.resultCode).not.toBe(Constant.ERR_CODE_OVERFLOW);
+            expect(result.resultCode).not.toBe(Constant.RESULT_CODE_OVERFLOW);
         });
 
         it('应该排除Swiper组件中的溢出元素', () => {
@@ -368,7 +368,7 @@ describe('LayoutConstraintMetricsDetector', () => {
             );
 
             // 由于按钮在Swiper容器中，应该被排除，不会触发溢出错误
-            expect(result.resultCode).not.toBe(Constant.ERR_CODE_OVERFLOW);
+            expect(result.resultCode).not.toBe(Constant.RESULT_CODE_OVERFLOW);
         });
 
         it('应该处理零尺寸元素不触发溢出检测', () => {
@@ -398,7 +398,7 @@ describe('LayoutConstraintMetricsDetector', () => {
             );
 
             // 零尺寸元素应该被忽略，不会触发溢出错误
-            expect(result.resultCode).not.toBe(Constant.ERR_CODE_OVERFLOW);
+            expect(result.resultCode).not.toBe(Constant.RESULT_CODE_OVERFLOW);
         });
 
         it('应该处理根节点本身是交互元素的情况', () => {
@@ -494,7 +494,7 @@ describe('LayoutConstraintMetricsDetector', () => {
                 rootNodes
             );
 
-            expect(result.resultCode).toBe(Constant.ERR_CODE_CLOSE_BTN_OVERLAP);
+            expect(result.resultCode).toBe(Constant.RESULT_CODE_CLOSE_BTN_OVERLAP);
             expect(result.errorMsg).toContain('关闭按钮重叠检测 FAIL');
 
             // 恢复原始方法
@@ -1289,7 +1289,7 @@ describe('LayoutConstraintMetricsDetector', () => {
             );
 
             // 由于按钮在滚动容器中，应该被排除，不会触发溢出错误
-            expect(result.resultCode).not.toBe(Constant.ERR_CODE_OVERFLOW);
+            expect(result.resultCode).not.toBe(Constant.RESULT_CODE_OVERFLOW);
             // 但应该显示0个溢出元素，因为滚动容器中的被排除了
             expect(result.report).toContain('溢出元素数: 0');
 
@@ -1378,7 +1378,7 @@ describe('LayoutConstraintMetricsDetector', () => {
             );
 
             // 应该没有溢出错误
-            expect(result.resultCode).not.toBe(Constant.ERR_CODE_OVERFLOW);
+            expect(result.resultCode).not.toBe(Constant.RESULT_CODE_OVERFLOW);
             expect(result.report).toContain('溢出元素数: 0');
             expect(result.report).toContain('0.0%'); // 溢出率为0%
 

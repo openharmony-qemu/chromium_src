@@ -1059,7 +1059,7 @@ void PasteBoardClientAdapterImpl::SetPasteData(const PasteRecordVector& data, Co
 
     OH_UdmfData* uData = OH_UdmfData_Create();
     for (auto& record: data) {
-        auto* rawRecord = dynamic_cast<PasteDataRecordAdapterImpl*>(record.get());
+        auto* rawRecord = static_cast<PasteDataRecordAdapterImpl*>(record.get());
         if (rawRecord == nullptr) {
             continue;
         }
@@ -1094,7 +1094,7 @@ void PasteBoardClientAdapterImpl::Clear()
         return;
     }
     for (auto& record: recordVector) {
-        auto* rawRecord = dynamic_cast<PasteDataRecordAdapterImpl*>(record.get());
+        auto* rawRecord = static_cast<PasteDataRecordAdapterImpl*>(record.get());
         if (rawRecord == nullptr) {
             continue;
         }

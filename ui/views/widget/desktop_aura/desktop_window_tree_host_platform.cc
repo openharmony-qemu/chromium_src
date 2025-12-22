@@ -1021,6 +1021,10 @@ display::Display DesktopWindowTreeHostPlatform::AccessDisplayNearestRootWindow()
     const {
   return GetDisplayNearestRootWindow();
 }
+
+bool DesktopWindowTreeHostPlatform::OnBackToLastPage() {
+  return GetWidget()->ExecuteCommand(IDC_BACK);
+}
 #endif
 
 std::optional<gfx::Size>

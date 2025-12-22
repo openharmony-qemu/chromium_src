@@ -76,6 +76,8 @@ class VIEWS_EXPORT DesktopWindowTreeHostPlatform
   void SetSurfaceId(uint64_t surface_id) override;
 
   void OnFullscreenSwitched(bool is_enter_fullscreen) override;
+
+  bool OnBackToLastPage() override;
 #endif
 
   std::unique_ptr<corewm::Tooltip> CreateTooltip() override;

@@ -102,6 +102,7 @@ export interface NativeContext {
   OnAvoidAreaChangeCallback: (statusBarHeight: number) => void;
   OnAbilityStartedCB: (id: string) => void;
   IsSupportNodeHandleFeature: () => boolean;
+  OnBackToLastPage: (id: string) => void;
 }
 
 export interface IParams {

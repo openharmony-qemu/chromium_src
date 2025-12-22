@@ -408,6 +408,10 @@ void OhosToplevelWindow::HandleEvent(std::shared_ptr<XCEvent> event) {
       OnWindowDisplayIdChangeEvent(event);
       break;
     }
+    case XCEventType::ET_BACK_TO_LAST_PAGE: {
+      OnBackToLastPage();
+      break;
+    }
     default:
       LOG(ERROR) << "EventType::ET_UNKNOWN not handle:" << int(event->type());
       break;
@@ -661,6 +665,12 @@ display::Display OhosToplevelWindow::GetCurrentDisplay() {
   display::Screen* screen = display::Screen::GetScreen();
   screen->GetDisplayWithDisplayId(display_id, &current_display);
   return current_display;
+}
+
+void OhosToplevelWindow::OnBackToLastPage() {
+  if (!delegate()->OnBackToLastPage()) {
+    Minimize();
+  }
 }
 
 }  // namespace ui

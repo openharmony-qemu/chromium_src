@@ -114,6 +114,7 @@ class OhosToplevelWindow : public OhosWindow,
   void OnWindowRectChangeEvent(std::shared_ptr<XCEvent> event);
   void OnWindowCaptionButtonRectChangeEvent(std::shared_ptr<XCEvent> event);
   void OnWindowDisplayIdChangeEvent(std::shared_ptr<XCEvent> event);
+  void OnBackToLastPage();
 
   void UpdateMinAndMaxSize();
   absl::optional<gfx::Size> GetMinimumSizeForOhosWindow();

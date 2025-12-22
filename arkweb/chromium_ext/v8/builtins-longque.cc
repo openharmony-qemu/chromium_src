@@ -113,5 +113,35 @@ static inline void SetDelegateKey(Isolate* isolate, Handle<JSObject> object,
   DCHECK(result.ToChecked());
 }
 
+static void GetterFirDelegate(v8::Local<v8::Name> name, 
+                              const v8::PropertyCallbackInfo<v8::Value>& info) {
+  Isolate* isolate = reinterpret_cast<Isolate*>(info.GetIsolate());
+  HandleScope scope(isolate);
+  Tagged<JSObject> holder = 
+      Cast<JSObject>(*Utils::OpenDirectHandle(*info.holderV2()));
+  auto symbol_key = GetDelegateKey(isolate);
+  Handle<Object> target = 
+      JSReceiver::GetDataProperty(isolate, handle(holder, isolate), symbol_key);
+  //Maybe not data Property
+  Handle<Name> property _name = Util::OpenHandle(&name);
+  MaybeHandle<Object> maybe;
+  if (property_name->IsArrayIndex()) {
+    uint32_t index = 0;
+    property_name->AsArrayIndex(&index);
+    maybe = JSReceiver::GetElement(isolate, Cast<JSReceiver>(target), index);
+  } else {
+    maybe = JSReceiver::GetProperty(isolate, Cast<JSReceiver>(target), 
+                                    property_name);
+  }
+  //`maybe`may be null if the underlyingObject's getter throw exception
+  if(maybe.is_null()) {
+    info.GetReturnvalue().Set(
+        Utils::ToLocal(isolate->factory()->undefined_value()));
+    return;
+  }
+  Handle<Object> result = maybe.ToHandleChecked();
+  info.GetReturnValue().Set(Utils::ToLocal(result));
+}
+
 }
 }

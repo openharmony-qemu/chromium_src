@@ -152,6 +152,10 @@ Widget::MoveLoopResult DesktopWindowTreeHostOhos::RunMoveLoop(
   return result;
 }
 
+bool DesktopWindowTreeHostOhos::SupportsMouseLock() {
+  return ohos::adapter::Cursor::GetInstance().SupportsCursorLock();
+}
+
 void DesktopWindowTreeHostOhos::LockMouse(aura::Window* window) {
   if (window == nullptr || window->GetHost() == nullptr) {
     LOG(ERROR)
@@ -160,7 +164,7 @@ void DesktopWindowTreeHostOhos::LockMouse(aura::Window* window) {
     WindowTreeHost::LockMouse(window);
     return;
   }
-  if (ohos::adapter::Cursor::GetInstance().SupportsCursorLock()) {
+  if (SupportsMouseLock()) {
     auto widget = window->GetHost()->GetAcceleratedWidget();
     if (ohos::adapter::Cursor::GetInstance().LockCursor(widget)) {
       WindowTreeHost::LockMouse(window);
@@ -184,7 +188,7 @@ void DesktopWindowTreeHostOhos::UnlockMouse(aura::Window* window) {
     WindowTreeHost::UnlockMouse(window);
     return;
   }
-  if (ohos::adapter::Cursor::GetInstance().SupportsCursorLock()) {
+  if (SupportsMouseLock()) {
     auto widget = window->GetHost()->GetAcceleratedWidget();
     if (ohos::adapter::Cursor::GetInstance().UnlockCursor(widget)) {
       WindowTreeHost::UnlockMouse(window);

@@ -257,6 +257,7 @@ declare_args() {
   arkweb_ext_https_upgrades=false
   arkweb_console_logging=true
   arkweb_offline_web_evict_back_buffers = true
+  arkweb_ohos_mem_usage_report = true
 }
 
 # Features enabled in mojom bindings.

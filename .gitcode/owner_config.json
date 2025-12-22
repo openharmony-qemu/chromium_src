@@ -1,7 +1,8 @@
 {
     "groups": {
         "ArkWeb_Build": [
-            "ringking0"
+            "ringking0",
+            "doublelucky"
         ],
         "arkweb-DFX": [
             "StringChen"
@@ -101,6 +102,9 @@
         },
         "whuqincheng": {
             "info": "[多媒体]"
+        },
+        "doublelucky": {
+            "info": "[build test]"
         }
     }
 }

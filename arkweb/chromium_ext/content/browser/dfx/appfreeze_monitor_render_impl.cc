@@ -14,12 +14,13 @@
  */
 
 #include "appfreeze_monitor_render_impl.h"
+
+#include <fstream>
+
 #include "arkweb/chromium_ext/base/process/process_handle_posix_ex.h"
 #include "base/command_line.h"
 #include "third_party/blink/public/common/thread_safe_browser_interface_broker_proxy.h"
 #include "third_party/blink/public/platform/platform.h"
-
-#include <fstream>
 
 std::string GetProcessName() {
   std::ifstream input_file("/proc/self/cmdline");

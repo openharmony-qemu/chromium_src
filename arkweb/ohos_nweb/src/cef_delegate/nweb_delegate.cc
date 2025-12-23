@@ -4620,15 +4620,19 @@ bool NWebDelegate::ExecuteAction(
     int64_t accessibilityId,
     uint32_t action,
     const std::map<std::string, std::string>& actionArguments) {
-  auto* accessibilityManager = GetAccessibilityManager();
-  if (accessibilityManager == nullptr) {
-    return false;
-  }
   BrowserAccessibilityOHOS* node =
       BrowserAccessibilityOHOS::GetFromAccessibilityId(
           GetRealAccessibilityId(accessibilityId));
   if (node == nullptr) {
-    LOG(ERROR) << "ExecuteAction node is not found";
+    LOG(ERROR) << "ExecuteAction accessNode is not found";
+    return false;
+  }
+  auto* accessibilityManager = GetAccessibilityManager();
+  if (accessibilityManager == nullptr) {
+    accessibilityManager = static_cast<BrowserAccessibilityManagerOHOS*>(node->manager());
+  }
+  if (accessibilityManager == nullptr) {
+    LOG(ERROR) << "ExecuteAction accessibilityManager is not found";
     return false;
   }
   AceAction aceAction = static_cast<AceAction>(action);

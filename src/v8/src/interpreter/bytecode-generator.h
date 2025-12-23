@@ -325,6 +325,7 @@ class BytecodeGenerator final : public AstVisitor<BytecodeGenerator> {
 
   void BuildGeneratorPrologue();
   void BuildSuspendPoint(int position);
+  void BuildGeneratorEpilogue();
 
   void BuildAwait(int position = kNoSourcePosition);
   void BuildAwait(Expression* await_expr);

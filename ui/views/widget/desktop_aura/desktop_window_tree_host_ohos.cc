@@ -37,6 +37,7 @@
 #include "ui/platform_window/platform_window.h"
 #include "ui/platform_window/platform_window_init_properties.h"
 #include "ui/platform_window/wm/wm_move_resize_handler.h"
+#include "ui/views/scoped_enable_unadjusted_mouse_events_ohos.h"
 #include "ui/views/widget/desktop_aura/window_event_filter_ohos.h"
 
 using WindowAdapter = ohos::adapter::xcomponent::WindowAdapter;
@@ -194,6 +195,11 @@ Widget::MoveLoopResult DesktopWindowTreeHostOhos::RunMoveLoop(
     GetContentWindow()->ReleaseCapture();
   }
   return result;
+}
+
+std::unique_ptr<aura::ScopedEnableUnadjustedMouseEvents>
+DesktopWindowTreeHostOhos::RequestUnadjustedMovement() {
+  return ScopedEnableUnadjustedMouseEventsOhos::Create();
 }
 
 bool DesktopWindowTreeHostOhos::SupportsMouseLock() {

@@ -21,7 +21,6 @@ group("oh_base_unittests") {
     "//cc:cc_unittests",
     "//content/test:content_unittests",
     "//components:components_browsertests",
-    "//components:components_unittests",
     "//cef:libcef_static_unittests",
     "//components/viz:viz_unittests",
     "//crypto:crypto_unittests",

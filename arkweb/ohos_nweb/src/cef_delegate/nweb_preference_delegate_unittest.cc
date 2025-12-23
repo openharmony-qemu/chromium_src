@@ -84,6 +84,10 @@ class MockPreferenceCefBrowserHost : public ArkWebBrowserHostExt {
 
   bool TryCloseBrowser() override { return false; }
 
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+  void GetOverScrollOffsetValue(float* offset_x, float* offset_y) override {}
+#endif
+
   void SetFocus(bool) override {}
 
   CefWindowHandle GetWindowHandle() override { return 0; }
@@ -788,6 +792,9 @@ class MockPreferenceCefBrowser : public CefBrowser, public CefBrowserHost {
   CefRefPtr<ArkWebBrowserHostExt> GetHost() {
     return host_;
   }
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+  void GetOverScrollOffsetValue(float* offset_x, float* offset_y) override {}
+#endif
   bool CanGoBack() override {return false;}
   void GoBack() override {}
   bool CanGoForward() override {return false;}

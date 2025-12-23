@@ -333,6 +333,10 @@ public:
   void DelAllVideoSurfaces();
   void ReportVideoDecoderName(const std::string& decoder_name);
 #endif  // ARKWEB_VIDEO_ASSISTANT
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+  void OnOverScrollOffsetChanged(float offset_x, float offset_y);
+  void GetOverScrollOffset(float* offset_x, float* offset_y) override;
+#endif
 #if BUILDFLAG(ARKWEB_PDF)
   void OnPdfScrollAtBottom(const std::string& url) override;
   void OnPdfLoadEvent(int32_t result, const std::string& url) override;
@@ -351,6 +355,10 @@ private:
 #if BUILDFLAG(ARKWEB_SAFEBROWSING)
   bool safe_browsing_strict_mode_ = false;
 #endif  // BUILDFLAG(ARKWEB_SAFEBROWSING)
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+  float over_scroll_offset_x_ = 0.0f;
+  float over_scroll_offset_y_ = 0.0f;
+#endif
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
   std::unique_ptr<NativeWebContentsObserver> native_web_contents_observer_;
   std::map<std::string,gfx::Rect> native_embed_rect_info_map_;

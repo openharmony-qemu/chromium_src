@@ -17,6 +17,9 @@
 
 #include "arkweb/build/features/features.h"
 #include "third_party/blink/renderer/core/page/page_utils.h"
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+#include "base/memory/safe_ref.h"
+#endif
 #if BUILDFLAG(IS_ARKWEB)
 #include "arkweb/chromium_ext/third_party/blink/renderer/core/editing/frame_selection_ext.h"
 #include "base/ohos/sys_info_utils_ext.h"
@@ -107,4 +110,16 @@ void LocalFrame::SetHasGenericHideTypeOption(bool has_generichide_type_option) {
 #endif
 // LCOV_EXCL_STOP
 
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+void LocalFrame::OnOverScrollOffsetChanged(float offset_x, float offset_y) {
+  if (!IsMainThread()) {
+    GetTaskRunner(TaskType::kInternalDefault)
+        ->PostTask(FROM_HERE,
+                   WTF::BindOnce(&LocalFrame::OnOverScrollOffsetChanged,
+                                 weak_local_frame_.GetSafeRef(), offset_x, offset_y));
+  } else {
+    GetLocalFrameHostRemote().OnOverScrollOffsetChanged(offset_x, offset_y);
+  }
+}
+#endif
 }  // namespace blink

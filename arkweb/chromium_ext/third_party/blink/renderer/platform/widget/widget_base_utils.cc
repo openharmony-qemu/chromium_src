@@ -132,6 +132,13 @@ gfx::Vector2dF WidgetBaseUtils::GetOverScrollOffset() {
   }
   return widget_base_->widget_input_handler_manager_->manager_utils()->GetOverScrollOffset();
 }
+
+void WidgetBaseUtils::OnOverScrollOffsetChanged(float offset_x,
+                                                float offset_y) {
+  if (widget_base_ && widget_base_->client_) {
+    widget_base_->client_->OnOverScrollOffsetChanged(offset_x, offset_y);
+  }
+}
 #endif
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 

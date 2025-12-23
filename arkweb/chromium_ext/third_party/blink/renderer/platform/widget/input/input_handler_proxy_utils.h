@@ -83,6 +83,7 @@ public:
     WebInputEventAttribution attribution);
 #if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
   gfx::Vector2dF GetOverScrollOffset();
+  void SetClientForElasticOverScrollController();
 #endif
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 

@@ -81,6 +81,10 @@ if (arkweb_video_assistant) {
   mojom_platform_enabled_features += [ "arkweb_video_assistant" ]
 }
 
+if (arkweb_get_scroll_offset) {
+  mojom_core_enabled_features += [ "arkweb_get_scroll_offset" ]
+}
+
 if (arkweb_bfcache) {
   mojom_platform_enabled_features += [ "arkweb_bfcache" ]
 }

@@ -3510,7 +3510,7 @@ void NWebDelegate::GetOverScrollOffset(float* offset_x, float* offset_y) {
     return;
   }
   if (render_handler_->HasOverscroll()) {
-    GetBrowser()->GetHost()->GetOverScrollOffset(offset_x, offset_y);
+    GetBrowser()->GetHost()->GetOverScrollOffsetValue(offset_x, offset_y);
   } else {
     *offset_x = 0.0f;
     *offset_y = 0.0f;

@@ -34,6 +34,10 @@
 #include "net/http/http_status_code.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+#include "arkweb/chromium_ext/content/browser/web_contents/web_contents_impl_ext.h"
+#endif
+
 namespace content {
 
 // ExecuteJavascriptInFrames need create new worldId, this is the min value;
@@ -58,6 +62,17 @@ void RenderFrameHostImpl::ExecuteJavaScriptExt(
   GetAssociatedLocalFrame()->JavaScriptExecuteRequestExt(
       mojo::ScopedHandle(mojo::Handle(handle)), scriptLength, wants_result,
       std::move(callback));
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+void RenderFrameHostImpl::OnOverScrollOffsetChanged(float offset_x,
+                                                    float offset_y) {
+  WebContentsImplExt* web_contents =
+      static_cast<WebContentsImplExt*>(WebContents::FromRenderFrameHost(this));
+  if (web_contents) {
+    web_contents->OnOverScrollOffsetChanged(offset_x, offset_y);
+  }
 }
 #endif
 

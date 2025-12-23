@@ -10,7 +10,7 @@ struct FreezeInfo {
   string processName;
   string freezeMsg;
   int32 uid;
-}
+};
 
 interface FreezeReporter {
   ReportRenderFreeze(FreezeInfo freezeInfo);

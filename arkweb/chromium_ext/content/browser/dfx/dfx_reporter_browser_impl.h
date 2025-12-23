@@ -42,8 +42,7 @@ public:
   FreezeReporterImpl() {}
   ~FreezeReporterImpl() override {}
   static void ProcessPendingReceiver(mojo::PendingReceiver<dfx::mojom::FreezeReporter> receiver);
-  void ReportRenderFreeze(int32_t pid, const std::string& processName, const std::string& freezeMsg,
-                          int32_t uid) override;
+  void ReportRenderFreeze(dfx::mojom::FreezeInfoPtr freezeInfo) override;
 };
 
 void OnVideoMemoryUsageStatsUpdate(pid_t pid, const std::map<std::string, std::string>& memMap, bool isSysEvent,

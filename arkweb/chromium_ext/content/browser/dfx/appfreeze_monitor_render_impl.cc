@@ -66,7 +66,7 @@ std::shared_ptr<AppfreezeMonitorImpl> AppfreezeMonitorImpl::GetInstance() {
 
 void AppfreezeMonitorImpl::GetRemoteAndSend() {
   if (remote_.is_bound()) {
-    dfx::mojom::FreezeInfoPtr freezeInfoPtr = dfx::mojom::freezeInfo::New(base::GetCurrentRealPid(), GetProcessName(),
+    dfx::mojom::FreezeInfoPtr freezeInfoPtr = dfx::mojom::FreezeInfo::New(base::GetCurrentRealPid(), GetProcessName(),
       "render freeze", static_cast<int32_t>(getuid()));
     remote_->ReportRenderFreeze(std::move(freezeInfoPtr));
     reported_ = true;

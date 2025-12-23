@@ -269,6 +269,9 @@ class MockInputHandlerProxyClient : public InputHandlerProxyClient {
                     float));
   MOCK_METHOD2(MouseHitTest, void(const WebMouseEvent& event, int32_t button));
 #endif  // ARKWEB_UNITTESTS
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+  void OnOverScrollOffsetChanged(float offset_x, float offset_y) override {}
+#endif
   MOCK_METHOD5(DidOverscroll,
                void(const gfx::Vector2dF& accumulated_overscroll,
                     const gfx::Vector2dF& latest_overscroll_delta,

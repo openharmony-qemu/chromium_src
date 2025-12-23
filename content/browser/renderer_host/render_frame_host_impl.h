@@ -2394,6 +2394,9 @@ class CONTENT_EXPORT RenderFrameHostImpl
 #if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
   void NotifyContextMenuWillShow() override;
 #endif
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+  void OnOverScrollOffsetChanged(float offset_x, float offset_y) override;
+#endif
   void DidFailLoadWithError(const GURL& url, int32_t error_code) override;
   void DidFocusFrame() override;
   void DidCallFocus() override;

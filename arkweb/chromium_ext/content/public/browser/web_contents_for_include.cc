@@ -119,6 +119,10 @@ virtual bool IsHtmlPlayEnabled() = 0;
 virtual void SetMediaResumeFromBFCachePage(bool resume) = 0;
 #endif // BUILDFLAG(ARKWEB_BFCACHE)
 
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+virtual void GetOverScrollOffset(float* offset_x, float* offset_y) = 0;
+#endif
+
 #if BUILDFLAG(ARKWEB_SCREEN_LOCK)
 virtual void SetWakeLockHandler(int32_t windowId,
                                 const SetKeepScreenOn& handler) = 0;

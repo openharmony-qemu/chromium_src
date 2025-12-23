@@ -103,6 +103,10 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
 
   MOCK_METHOD(void, SetFocus, (bool), (override));
 
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+  void GetOverScrollOffsetValue(float* offset_x, float* offset_y) override {}
+#endif
+
   CefWindowHandle GetWindowHandle() { return 0; }
   CefWindowHandle GetOpenerWindowHandle() { return 0; }
 

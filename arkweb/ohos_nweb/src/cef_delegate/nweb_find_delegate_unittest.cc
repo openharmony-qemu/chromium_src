@@ -76,6 +76,10 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
 
   bool HasView() override { return false; }
 
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+  void GetOverScrollOffsetValue(float* offset_x, float* offset_y) override {}
+#endif
+
   CefRefPtr<CefClient> GetClient() override { return nullptr; }
 
   CefRefPtr<CefRequestContext> GetRequestContext() override { return nullptr; }

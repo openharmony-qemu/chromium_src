@@ -2473,7 +2473,9 @@ IGNITION_HANDLER(SwitchOnSmiNoFeedback, InterpreterAssembler) {
   GotoIf(IntPtrGreaterThanOrEqual(case_value, table_length), &fall_through);
 
   TNode<WordT> entry = IntPtrAdd(table_start, case_value);
-  TNode<IntPtrT> relative_jump = LoadAndUntagConstantPoolEntry(entry);
+  TNode<Object> constant_entry = LoadConstantPoolEntry(entry);
+  CSA_SBXCHECK(this, TaggedIsSmi(constant_entry));
+  TNode<IntPtrT> relative_jump = SmiUntag(CAST(constant_entry));
   Jump(relative_jump);
 
   BIND(&fall_through);
@@ -3320,7 +3322,9 @@ IGNITION_HANDLER(SwitchOnGeneratorState, InterpreterAssembler) {
   USE(table_length);  // SBXCHECK is a DCHECK when the sandbox is disabled.
 
   TNode<WordT> entry = IntPtrAdd(table_start, case_value);
-  TNode<IntPtrT> relative_jump = LoadAndUntagConstantPoolEntry(entry);
+  TNode<Object> constant_entry = LoadConstantPoolEntry(entry);
+  CSA_SBXCHECK(this, TaggedIsSmi(constant_entry));
+  TNode<IntPtrT> relative_jump = SmiUntag(CAST(constant_entry));
   Jump(relative_jump);
 
   BIND(&fallthrough);

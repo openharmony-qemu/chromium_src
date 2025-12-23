@@ -44,7 +44,7 @@ void ArkWebHostResolverDnsTaskExt::ArkWebSetNotNeedQueryType(int legacy_results_
   }
 }
 
-void ArkWebHostResolverDnsTaskExt::ArkWebFailedTransaction(
+bool ArkWebHostResolverDnsTaskExt::ArkWebFailedTransaction(
     int net_error, std::optional<DnsQueryType> failed_transaction_type) {
   if (failed_transaction_type.has_value() &&
       IsAddressType(failed_transaction_type.value())) {
@@ -58,9 +58,10 @@ void ArkWebHostResolverDnsTaskExt::ArkWebFailedTransaction(
       RecordFailedTransactionInfo(completed_transaction_index, net_error,
                                   dns_query_type);
       hostResolverDnsTask->OnTransactionsFinished(/*single_transaction_results=*/std::nullopt);
-      return;
+      return true;
     }
   }
+  return false;
 }
 
 bool ArkWebHostResolverDnsTaskExt::AnyAOrAAAATransactionRemain() {

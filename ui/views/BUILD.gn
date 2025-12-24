@@ -644,6 +644,8 @@ component("views") {
   if (is_ohos) {
     sources += [ 
       "controls/menu/menu_config_ohos.cc",
+      "scoped_enable_unadjusted_mouse_events_ohos.cc",
+      "scoped_enable_unadjusted_mouse_events_ohos.h",
       "widget_util_ohos.h",
       "widget_util_ohos.cc",
     ]

@@ -24,6 +24,8 @@ class VIEWS_EXPORT DesktopWindowTreeHostOhos
       delete;
 
   ~DesktopWindowTreeHostOhos() override;
+  std::unique_ptr<aura::ScopedEnableUnadjustedMouseEvents>
+  RequestUnadjustedMovement() override;
   bool SupportsMouseLock() override;
   void LockMouse(aura::Window* window) override;
   void UnlockMouse(aura::Window* window) override;

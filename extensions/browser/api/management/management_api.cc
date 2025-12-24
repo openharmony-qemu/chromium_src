@@ -351,7 +351,6 @@ ManagementGetPermissionWarningsByIdFunction::Run() {
 
 ExtensionFunction::ResponseAction
 ManagementGetPermissionWarningsByManifestFunction::Run() {
-#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   std::optional<management::GetPermissionWarningsByManifest::Params> params =
       management::GetPermissionWarningsByManifest::Params::Create(args());
   EXTENSION_FUNCTION_VALIDATE(params);
@@ -366,9 +365,6 @@ ManagementGetPermissionWarningsByManifestFunction::Run() {
 
   // Response is sent async in OnParse().
   return RespondLater();
-#else
-  return RespondNow(NoArguments());
-#endif  // ARKWEB_ARKWEB_EXTENSIONS
 }
 
 void ManagementGetPermissionWarningsByManifestFunction::OnParse(

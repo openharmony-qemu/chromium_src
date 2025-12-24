@@ -559,6 +559,11 @@ arkweb_third_patry_blink_renderer_core_html_sources = [
   "//arkweb/chromium_ext/third_party/blink/renderer/core/html/html_native_loader.h",
 ]
 
+arkweb_third_patry_blink_renderer_core_fragment_directive_sources = [
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/fragment_directive/text_fragment_anchor_utils.cc",
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/fragment_directive/text_fragment_anchor_utils.h",
+]
+
 arkweb_third_patry_blink_renderer_core_v8_sources = [
   "//arkweb/chromium_ext/third_party/blink/renderer/core/v8/v8_code_cache_utils.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/core/v8/v8_code_cache_utils.h",

@@ -6383,6 +6383,17 @@ void NWebDelegate::AbortDistill() {
 }
 #endif // ARKWEB_READER_MODE
 
+#if BUILDFLAG(ARKWEB_AI)
+void NWebDelegate::RegisterOnLoadStartedCbForHighlightContent(
+    std::function<void(void)>&& callback) {
+  if (handler_delegate_) {
+    handler_delegate_->RegisterOnLoadStartedCbForHighlightContent(std::move(callback));
+  } else {
+    LOG(ERROR) << "RegisterOnLoadStartedCbForHighlightContent, handler_delegate_ is nullptr"; 
+  }
+}
+#endif // ARKWEB_AI
+
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)
 void NWebDelegate::SetErrorPageEnabled(bool enable) {
   if (!preference_delegate_) {

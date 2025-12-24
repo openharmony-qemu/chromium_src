@@ -256,4 +256,31 @@ void LocalFrame::NotifyFinished(base::WeakPtr<VideoURLLoaderImpl> loader) {
   loader_manager_.RemoveUrlLoader(loader);
 }
 #endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
+#if BUILDFLAG(ARKWEB_AI)
+void LocalFrame::StartHighlightFadeTimer(base::TimeDelta delay) {
+  if (!(GetSettings() && GetSettings()->GetArkwebAgentEnabled())) {
+    return;
+  }
+  highlight_fade_timer_.Stop();
+  highlight_fade_timer_.SetTaskRunner(
+      GetTaskRunner(TaskType::kInternalFindInPage));
+
+  if (delay.is_zero()) {
+    ClearHighlight();
+  } else {
+    highlight_fade_timer_.Start(FROM_HERE, delay,
+                                WTF::BindOnce(&LocalFrame::ClearHighlight,
+                                              weak_local_frame_.GetWeakPtr()));
+  }
+}
+
+void LocalFrame::ClearHighlight() {
+  if (!GetTextFragmentHandler()) {
+    LOG(ERROR) << "LocalFrame::ClearHighlight failed, no handler.";
+    return;
+  }
+  GetTextFragmentHandler()->RemoveFragments();
+}
+#endif
 }  // namespace blink

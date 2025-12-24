@@ -194,6 +194,8 @@ component("cef_nweb") {
     "src/cef_delegate/nweb_web_storage_origin_impl.h",
     "src/cef_delegate/nweb_agent_manager_impl.cc",
     "src/cef_delegate/nweb_agent_manager_impl.h",
+    "src/cef_delegate/nweb_highlight_specified_content.cc",
+    "src/cef_delegate/nweb_highlight_specified_content.h",
     "src/cef_delegate/nweb_custom_keyboard_handler_impl.cc",
     "src/cef_delegate/nweb_custom_keyboard_handler_impl.h",
     "src/sysevent/event_reporter.cc",
@@ -586,7 +588,10 @@ component("nweb_sources") {
   ]
 
   if (defined(arkweb_ai) && arkweb_ai) {
-    deps += [ "//ohos_resources/data_detector:data_detector_resources" ]
+    deps += [
+      "//ohos_resources/data_detector:data_detector_resources",
+      "//ohos_resources/highlight_specified_content:highlight_specified_content_resources",
+    ]
   }
 
   if (defined(arkweb_autolayout) && arkweb_autolayout) {

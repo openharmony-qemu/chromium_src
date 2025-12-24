@@ -731,6 +731,11 @@ void NWebHandlerDelegate::RegisterNWebAgentHandler(
     render_handler_->RegisterNWebAgentHandler(handler);
   }
 }
+
+void NWebHandlerDelegate::RegisterOnLoadStartedCbForHighlightContent(
+    std::function<void(void)>&& callback) {
+  onLoadStartedCbForHighlightContent_ = std::move(callback);
+}
 #endif
 
 void NWebHandlerDelegate::RegisterNWebJavaScriptCallBack(
@@ -5055,7 +5060,13 @@ void NWebHandlerDelegate::OnLoadStarted(CefRefPtr<CefFrame> frame,
     return;
   }
 
-  if (nweb_handler_ != nullptr) {
+#if BUILDFLAG(ARKWEB_AI)
+  if (onLoadStartedCbForHighlightContent_) {
+    onLoadStartedCbForHighlightContent_();
+  }
+#endif
+
+if (nweb_handler_ != nullptr) {
     nweb_handler_->OnLoadStarted(url.ToString());
   }
 }

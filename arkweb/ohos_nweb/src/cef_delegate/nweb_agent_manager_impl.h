@@ -19,6 +19,7 @@
 #include "ohos_nweb/include/nweb_agent_manager.h"
 
 #include "nweb_delegate.h"
+#include "nweb_highlight_specified_content.h"
 
 namespace OHOS::NWeb {
 class NWebAgentManagerImpl : public NWebAgentManager {
@@ -30,8 +31,12 @@ public:
     void SetAgentEnabled(bool enabled) override;
 
     bool IsAgentEnabled() override;
+
+    void SetAgentNeedHighlight(bool enabled) override;
 private:
     base::WeakPtr<NWebDelegate> nweb_delegate_;
+
+    std::unique_ptr<NWebHighlightSpecifiedContent> highlight_specified_content_;
 };
 }  // namespace OHOS::NWeb
 

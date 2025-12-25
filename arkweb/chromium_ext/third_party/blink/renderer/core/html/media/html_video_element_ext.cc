@@ -244,4 +244,37 @@ void HTMLVideoElement::setHbsMoovSize(uint16_t ms) {
 }
 // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+void HTMLVideoElement::UpdateUiPlayState(bool is_playing) {
+  if (remoting_interstitial_) {
+    remoting_interstitial_->UpdateUiPlayState(is_playing);
+  }
+}
+
+void HTMLVideoElement::UpdateUiPlayPosition(int64_t position) {
+  if (remoting_interstitial_) {
+    remoting_interstitial_->UpdateUiPlayPosition(position);
+  }
+}
+
+void HTMLVideoElement::UpdateRemotePlayState(bool is_playing) {
+  if (!web_media_player_) {
+    return;
+  }
+  for (auto& observer : GetMediaPlayerObserverRemoteSet()) {
+    observer->UpdateRemotePlayState(is_playing);
+  }
+    
+}
+
+void HTMLVideoElement::UpdateRemotePlayPosition(int64_t position) {
+  if (!web_media_player_) {
+    return;
+  }
+  for (auto& observer : GetMediaPlayerObserverRemoteSet()) {
+    observer->UpdateRemotePlayPosition(position);
+  }
+}
+#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
+
 }  // namespace blink

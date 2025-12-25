@@ -60,6 +60,8 @@ component("adapter_ndk") {
     "inputmethodframework_adapter/third_party/cJSON/cJSON.h",
     "media_avsession_adapter/media_avsession_adapter_impl.cpp",
     "media_avsession_adapter/media_avsession_adapter_impl.h",
+    "media_avcast_adapter/media_avcast_adapter_impl.cpp",
+    "media_avcast_adapter/media_avcast_adapter_impl.h",
     #"hiviewdfx_adapter/hilog_adapter.cpp",
     "datashare_adapter/datashare_adapter_impl.cpp",
     "ohos_native_buffer_adapter/ohos_native_buffer_adapter_impl.h",
@@ -159,7 +161,8 @@ component("adapter_ndk") {
   ]
 
   if (target_cpu == "arm" || target_cpu == "arm64" || target_cpu == "x86_64") {
-    include_dirs += [ "//ohos_sdk/openharmony/native/sysroot/usr/include/bundle" ]
+    include_dirs += [ "//ohos_sdk/openharmony/native/sysroot/usr/include/bundle",
+                      "//ohos_sdk/openharmony/native/sysroot/usr/include/multimedia/image_framework/image" ]
   }
 
   if (target_cpu == "arm64") {

@@ -127,6 +127,10 @@ class HTMLMediaElement;
 #endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
  };
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+  void OnMediaCastEnter();
+  void OnNotifyMeidaCastUri();
+#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
 
  } // namespace blink
 

@@ -716,4 +716,58 @@ void HTMLMediaElement::MediaLoadingFailed(WebMediaPlayer::NetworkState error,
 }
 #endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+void HTMLMediaElement::OnMediaCastEnter() {
+  LOG(INFO) << "HTMLMediaElement::OnMediaCastEnter";
+  html_media_element_utils_.OnMediaCastEnter();
+}
+
+void HTMLMediaElement::PullUpCastBackGround(const String& device_name) {
+  LOG(INFO) << "HTMLMediaElement::PullUpCastBackGround";
+  if (auto* video_element = DynamicTo<HTMLVideoElement>(this)) {
+    video_element->MediaRemotingStarted(WebString(device_name));
+  }
+}
+
+void HTMLMediaElement::MediaCastStopped() {
+  LOG(INFO) << "HTMLMediaElement::MediaRemotingStopped";
+  if (auto* video_element = DynamicTo<HTMLVideoElement>(this)) {
+    video_element->MediaRemotingStopped(MediaPlayerClient::kMediaRemotingStopNoText);
+  }
+}
+
+void HTMLMediaElement::HandleStopMediaCast() {
+  LOG(INFO) << "HTMLMediaElement::HandleStopMediaCast";
+  for (auto& observer : media_player_observer_remote_set_->Value()) {
+    observer->HandleStopMediaCast();
+  }
+}
+
+void HTMLMediaElement::UpdateUiPlayState(bool is_playing) {
+  LOG(INFO) << "HTMLMediaElement::UpdateUiPlayState";
+  if (auto* video_element = DynamicTo<HTMLVideoElement>(this)) {
+    // TODO(xjz): Pass the remote device name.
+    video_element->UpdateUiPlayState(is_playing);
+  }
+}
+
+void HTMLMediaElement::UpdateUiPlayPosition(int64_t position) {
+  LOG(INFO) << "HTMLMediaElement::UpdateUiPlayPosition";
+  if (auto* video_element = DynamicTo<HTMLVideoElement>(this)) {
+    // TODO(xjz): Pass the remote device name.
+    video_element->UpdateUiPlayPosition(position);
+  }
+}
+
+bool HTMLMediaElement::EnableMediaCastByUrlProtocol() {
+  LOG(INFO) << "HTMLMediaElement::EnableMediaCastByUrlProtocol";
+  const KURL url = currentSrc();
+  if (url.ProtocolIs("http") || url.ProtocolIs("https")) {
+    LOG(INFO) << "HTMLMediaElement::EnableMediaCastByUrlProtocol, url is http or https";
+    return true;
+  }
+  return false;
+}
++#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
+
 }  // namespace blink

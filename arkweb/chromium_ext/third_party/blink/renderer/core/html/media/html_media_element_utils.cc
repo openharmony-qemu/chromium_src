@@ -521,4 +521,34 @@ void HTMLMediaElementUtils::SetVideoIsPlaying(bool playing) {
   htmlMediaElement_->GetDocument().SetVideoIsPlaying(videoStr, playing);
 }
 #endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+void HTMLMediaElementUtils::OnMediaCastEnter() {
+  LOG(INFO) << "HTMLMediaElementUtils::OnMediaCastEnter";
+  if (!htmlMediaElement_) {
+    LOG(ERROR) << "HTMLMediaElementUtils::OnMediaCastEnter, htmlMediaElement_ is nullptr";
+    return;
+  }
+  for (auto& observer : htmlMediaElement_->media_player_observer_remote_set_->Value()) {
+    LOG(INFO) << "HTMLMediaElementUtils::OnMediaCastEnter 1";
+    observer->OnMediaCastEnter();
+  }
+}
+
+void HTMLMediaElementUtils::OnNotifyMeidaCastUri() {
+  if (!htmlMediaElement_) {
+    LOG(ERROR) << "HTMLMediaElementUtils::OnNotifyMeidaCastUri, htmlMediaElement_ is nullptr";
+    return;
+  }
+
+  auto mediaUri = (htmlMediaElement_->currentSrc()).GetString();
+  if (htmlMediaElement_->IsHTMLVideoElement()) {
+    for (auto& observer : htmlMediaElement_->media_player_observer_remote_set_->Value()) {
+      LOG(INFO) << "HTMLMediaElementUtils::OnVolumeChanged for observer, mediaUri: " << mediaUri;
+      observer->OnNotifyMeidaCastUri(mediaUri);
+    }
+  }
+}
+#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
+
 }

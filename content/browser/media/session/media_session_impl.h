@@ -778,6 +778,19 @@ class MediaSessionImpl : public MediaSession,
   base::WeakPtrFactory<content::MediaSessionImpl> weakMediaSessionFactory_;
 #endif // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+  void OnNotifyMeidaCastUri(const std::string& media_uri);
+  void CreateAVCastAdapter();
+  void HandleStopMediaCast();
+  int32_t GetMediaCastCurrentTime();
+  void PullUpCastBackGround(const std::string& device_name);
+  void UpdateUiPlayState(bool is_playing);
+  void UpdateUiPlayPosition(int64_t position);
+  void UpdateRemotePlayState(bool is_playing);
+  void UpdateRemotePlayPosition(int64_t position);
+  void MediaCastStopped();
+#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
+
  private:
   base::WeakPtrFactory<MediaSessionImpl> weak_factory_{this};
 

@@ -155,6 +155,14 @@ interface MediaPlayer {
 
   [EnableIf=arkweb_media_memory_pressure]
   NotifyMemoryLevel(int32 level);
+
+  PullUpCastBackGround(string device_name);
+
+  UpdateUiPlayState(bool is_playing);
+
+  UpdateUiPlayPosition(int64 position);
+
+  MediaCastStopped();
 };
 
 // Implemented by the MediaWebContentsObserver. The remote lives in the renderer
@@ -301,6 +309,12 @@ interface MediaPlayerObserver {
 
   [EnableIf=arkweb_pip]
   OnPictureInPictureStateChanged(uint32 state, int32 width, int32 height);
+
+  OnMediaCastEnter();
+  OnNotifyMeidaCastUri(string media_uri);
+  HandleStopMediaCast();
+  UpdateRemotePlayState(bool is_playing);
+  UpdateRemotePlayPosition(int64 position);
 };
 
 // Implemented by MediaWebContentsObserver::MediaPlayerHostImpl in the browser

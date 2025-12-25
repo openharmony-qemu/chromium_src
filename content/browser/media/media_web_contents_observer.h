@@ -326,6 +326,14 @@ class CONTENT_EXPORT MediaWebContentsObserver
     void OnPictureInPictureStateChanged(
         uint32_t state, int32_t width, int32_t height) override;
 #endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+    void OnMediaCastEnter() override;
+    void OnNotifyMeidaCastUri(const std::string& media_uri) override;
+    void HandleStopMediaCast() override;
+    void UpdateRemotePlayState(bool is_playing) override;
+    void UpdateRemotePlayPosition(int64_t position) override;
+#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
    private:
     PlayerInfo* GetPlayerInfo();
     void NotifyAudioStreamMonitorIfNeeded();

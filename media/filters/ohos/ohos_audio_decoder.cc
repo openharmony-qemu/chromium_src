@@ -87,8 +87,8 @@ OhosAudioDecoder::~OhosAudioDecoder() {
     OH_AVErrCode err_code = OH_AudioCodec_Destroy(decoder_);
     if (err_code != AV_ERR_OK) {
       LOG(ERROR) << __func__
-                 << " [WiseplayDRM] destroy decoder_ fail, err_code = "
-                 << uint32_t(err_code);
+                 << " [AudioDecoder] destroy decoder_ fail, err_code = "
+                 << static_cast<int>(err_code);
     }
     decoder_ = nullptr;
   }
@@ -118,7 +118,7 @@ void OhosAudioDecoder::Initialize(const AudioDecoderConfig& config,
   ClearInputQueue(DecoderStatus::Codes::kAborted);
 
   if (state_ == kError) {
-    LOG(ERROR) << " [WiseplayDRM] OhosAudioDecoder::Initialize state error";
+    LOG(ERROR) << " [AudioDecoder] OhosAudioDecoder::Initialize state error";
     base::BindPostTaskToCurrentDefault(std::move(init_cb))
         .Run(DecoderStatus::Codes::kFailed);
     return;
@@ -129,7 +129,7 @@ void OhosAudioDecoder::Initialize(const AudioDecoderConfig& config,
   sample_format_ = kSampleFormatS16;
   if (mime_type_str_.empty()) {
     LOG(ERROR)
-        << "[WiseplayDRM] OhosAudioDecoder::Initialize, Unsupported codec";
+        << "[AudioDecoder] OhosAudioDecoder::Initialize, Unsupported codec";
     base::BindPostTaskToCurrentDefault(std::move(init_cb))
         .Run(DecoderStatus::Codes::kUnsupportedCodec);
     return;
@@ -213,7 +213,7 @@ void OhosAudioDecoder::PrepareParameters(AudioDecoderConfig config) {
 void OhosAudioDecoder::InitializeNotEncrypted(InitCB init_cb) {
   TRACE_EVENT0("media", "OhosAudioDecoder::InitializeNotEncrypted");
   if (!InitAudioDecoder(mime_type_str_)) {
-    LOG(ERROR) << "[WiseplayDRM] initAudioDecoder error";
+    LOG(ERROR) << "[AudioDecoder] initAudioDecoder error";
     base::BindPostTaskToCurrentDefault(std::move(init_cb))
         .Run(DecoderStatus::Codes::kFailed);
     return;
@@ -272,7 +272,7 @@ void OhosAudioDecoder::OnMediaCryptoReady(InitCB init_cb,
   media_key_session_ = std::move(session);
 
   if (!InitAudioDecoder(mime_type_str_)) {
-    LOG(ERROR) << "[WiseplayDRM] initAudioDecoder error";
+    LOG(ERROR) << "[AudioDecoder] initAudioDecoder error";
     base::BindPostTaskToCurrentDefault(std::move(init_cb))
         .Run(DecoderStatus::Codes::kFailed);
     return;
@@ -280,7 +280,7 @@ void OhosAudioDecoder::OnMediaCryptoReady(InitCB init_cb,
 
   // After receiving |media_key_session_| we can configure MediaCodec.
   if (!CreateOhosDecoderLoop()) {
-    LOG(WARNING) << __func__ << " [WiseplayDRM] CreateOhosDecoderLoop fail";
+    LOG(WARNING) << __func__ << " [AudioDecoder] CreateOhosDecoderLoop fail";
     SetState(kUninitialized);
     std::move(init_cb).Run(DecoderStatus::Codes::kFailed);
     return;
@@ -305,14 +305,14 @@ bool OhosAudioDecoder::InitAudioDecoder(std::string mime_type) {
     ret = CreateAudioDecoderByMime(mime_type);
     if (ret != OhosAudioDecoderCode::kDecoderOk) {
       LOG(ERROR) << __func__
-                 << " [WiseplayDRM] CreateAudioDecoderByMime Failed mime: "
+                 << " [AudioDecoder] CreateAudioDecoderByMime Failed, mime: "
                  << mime_type;
       return false;
     }
     audio_decoder_created_ = true;
   } else {
     LOG(INFO) << __func__
-              << " [WiseplayDRM] already had decoder, no need create again";
+              << " [AudioDecoder] already had decoder, no need create again";
   }
 
   SetCallbackDec();
@@ -324,15 +324,15 @@ bool OhosAudioDecoder::InitAudioDecoder(std::string mime_type) {
   PrepareDecoder();
   ret = StartDecoder();
   if (ret != OhosAudioDecoderCode::kDecoderOk) {
-    LOG(ERROR) << "[WiseplayDRM] StartDecoder err";
+    LOG(ERROR) << "[AudioDecoder] StartDecoder err, ret: " << static_cast<int>(ret);
     return false;
   }
   ret = GetOutputFormatDec(decoder_format_);
   if (ret != OhosAudioDecoderCode::kDecoderOk) {
-    LOG(ERROR) << "[WiseplayDRM] GetOutputFormatDec err";
+    LOG(ERROR) << "[AudioDecoder] GetOutputFormatDec err, ret: " << static_cast<int>(ret);
     return false;
   }
-  LOG(INFO) << "[WiseplayDRM] format: GetSampleRate: "
+  LOG(INFO) << "[AudioDecoder] format: GetSampleRate: "
             << decoder_format_->GetSampleRate()
             << " GetChannelCount: " << decoder_format_->GetChannelCount();
   return true;
@@ -366,13 +366,13 @@ void OhosAudioDecoder::Decode(scoped_refptr<DecoderBuffer> buffer,
                               DecodeCB decode_cb) {
   DecodeCB cb = base::BindPostTaskToCurrentDefault(std::move(decode_cb));
   if (!DecoderBuffer::DoSubsamplesMatch(*buffer)) {
-    LOG(ERROR) << "[WiseplayDRM] OhosAudioDecoder::DoSubsamplesMatch error";
+    LOG(ERROR) << "[AudioDecoder] OhosAudioDecoder::DoSubsamplesMatch error";
     std::move(cb).Run(DecoderStatus::Codes::kFailed);
     return;
   }
 
   if (!buffer->end_of_stream() && buffer->timestamp() == kNoTimestamp) {
-    LOG(ERROR) << "[WiseplayDRM] OhosAudioDecoder::Decode "
+    LOG(ERROR) << "[AudioDecoder] OhosAudioDecoder::Decode "
                << buffer->AsHumanReadableString()
                << ": no timestamp, skipping this buffer";
     std::move(cb).Run(DecoderStatus::Codes::kFailed);
@@ -380,7 +380,7 @@ void OhosAudioDecoder::Decode(scoped_refptr<DecoderBuffer> buffer,
   }
 
   if (state_ == kError) {
-    LOG(ERROR) << "[WiseplayDRM] OhosAudioDecoder::Decode "
+    LOG(ERROR) << "[AudioDecoder] OhosAudioDecoder::Decode "
                << buffer->AsHumanReadableString()
                << ": Error state, returning decode error for all buffers";
     ClearInputQueue(DecoderStatus::Codes::kFailed);
@@ -388,7 +388,7 @@ void OhosAudioDecoder::Decode(scoped_refptr<DecoderBuffer> buffer,
     return;
   }
   if (state_ != kReady) {
-    LOG(WARNING) << "[WiseplayDRM] OhosAudioDecoder::Decode unexpected state"
+    LOG(WARNING) << "[AudioDecoder] OhosAudioDecoder::Decode unexpected state"
                << state_;
   }
 
@@ -424,7 +424,7 @@ bool OhosAudioDecoder::NeedsBitstreamConversion() const {
 
 void OhosAudioDecoder::OnInputDataQueued(bool success) {
   if (input_queue_.front().first->end_of_stream() && success) {
-    LOG(WARNING) << "[WiseplayDRM] input queue has eos";
+    LOG(WARNING) << "[AudioDecoder] input queue has eos";
     return;
   }
   // Queuing is successful, set the callback to ok
@@ -505,13 +505,13 @@ OhosAudioDecoderLoop::InputData OhosAudioDecoder::ProvideInputData() {
   OhosAudioDecoderLoop::InputData data;
 
   if (decoder_buffer == nullptr) {
-    LOG(WARNING) << "[WiseplayDRM] decoder_buffer is null";
+    LOG(WARNING) << "[AudioDecoder] decoder_buffer is null";
     data.is_valid = false;
     return data;
   }
 
   if (decoder_buffer->end_of_stream()) {
-    LOG(WARNING) << "[WiseplayDRM] get eos";
+    LOG(WARNING) << "[AudioDecoder] get eos";
     data.memory = const_cast<uint8_t*>(decoder_buffer->data());
     data.is_eos = true;
     data.length = 0;
@@ -532,7 +532,7 @@ OhosAudioDecoderLoop::InputData OhosAudioDecoder::ProvideInputData() {
 
 bool OhosAudioDecoder::OnDecodedEos(const OutputBufferData& out) {
   if (!input_queue_.size() || !input_queue_.front().first->end_of_stream()) {
-    LOG(WARNING) << "[WiseplayDRM] received unexpected eos";
+    LOG(WARNING) << "[AudioDecoder] received unexpected eos";
     return false;
   }
   // EOS frame direct callback ok
@@ -546,7 +546,7 @@ bool OhosAudioDecoder::OnDecodedEos(const OutputBufferData& out) {
 bool OhosAudioDecoder::OnDecodedFrame(const OutputBufferData& out) {
   if (out.size_ == 0U || out.index_ == -1U || decoder_loop_ == nullptr ||
       channel_count_ == 0) {
-    LOG(ERROR) << "[WiseplayDRM] OhosAudioDecoder::OnDecodedFrame buffer data "
+    LOG(ERROR) << "[AudioDecoder] OhosAudioDecoder::OnDecodedFrame buffer data "
                   "is invalid";
     return false;
   }
@@ -654,7 +654,7 @@ OhosAudioDecoderCode OhosAudioDecoder::QueueInputBufferDec(
     BufferFlag flag) {
   if (state_ == kWaitingForMediaCrypto) {
     LOG(INFO) << __func__
-              << " [WiseplayDRM] error, state = kWaitingForMediaCrypto";
+              << " [AudioDecoder] error, state = kWaitingForMediaCrypto";
     return OhosAudioDecoderCode::kDecoderRetry;
   }
   OhosAudioDecoderCode ret =
@@ -690,7 +690,7 @@ void OhosAudioDecoder::AddOutputBuffer(uint32_t index,
 void OhosAudioDecoder::UpdateOutputFormat() {
   OhosAudioDecoderCode ret = GetOutputFormatDec(decoder_format_);
   if (ret != OhosAudioDecoderCode::kDecoderOk) {
-    LOG(ERROR) << "[WiseplayDRM] OhosAudioDecoder::UpdateOutputFormat err";
+    LOG(ERROR) << "[AudioDecoder] OhosAudioDecoder::UpdateOutputFormat err";
   }
 }
 
@@ -751,7 +751,7 @@ void OhosAudioDecoder::GetMimeType() {
   bool ret = OH_AVFormat_GetStringValue(av_format, OH_MD_KEY_CODEC_MIME, &mime);
   if (!ret) {
     LOG(ERROR) << __func__
-               << " [WiseplayDRM] AudioCodecDecoder Fail to get mime_type";
+               << " [AudioDecoder] AudioCodecDecoder Fail to get mime_type";
     return;
   }
   OH_AVFormat_Destroy(av_format);
@@ -771,7 +771,7 @@ OhosAudioDecoderCode OhosAudioDecoder::CreateAudioDecoderByMime(
   decoder_ = OH_AudioCodec_CreateByMime(mime_type.c_str(), false);
   if (decoder_ == nullptr) {
     LOG(ERROR) << __func__
-               << " [WiseplayDRM] create decoder by min failed.mime_type: "
+               << " [AudioDecoder] create decoder by min failed.mime_type: "
                << mime_type.c_str();
     return OhosAudioDecoderCode::kDecoderError;
   }
@@ -790,7 +790,7 @@ OhosAudioDecoderCode OhosAudioDecoder::CreateAudioDecoderByName(
     const std::string& name) {
   if (decoder_ != nullptr) {
     LOG(ERROR) << __func__
-               << " [WiseplayDRM] create decoder by name failed.name: "
+               << " [AudioDecoder] create decoder by name failed.name: "
                << name.c_str();
     ReleaseDecoder();
   }
@@ -798,7 +798,7 @@ OhosAudioDecoderCode OhosAudioDecoder::CreateAudioDecoderByName(
   decoder_ = OH_AudioCodec_CreateByName(name.c_str());
   if (decoder_ == nullptr) {
     LOG(ERROR) << __func__
-               << " [WiseplayDRM] AudioCodecDecoder create decoder failed.";
+               << " [AudioDecoder] AudioCodecDecoder create decoder failed.";
     return OhosAudioDecoderCode::kDecoderError;
   }
   GetMimeType();
@@ -809,20 +809,20 @@ OhosAudioDecoderCode OhosAudioDecoder::CreateAudioDecoderByName(
 OhosAudioDecoderCode OhosAudioDecoder::ConfigureDecoder(
     const std::shared_ptr<OhosAudioDecoderFormat> format) {
   if (decoder_ == nullptr) {
-    LOG(ERROR) << __func__ << " [WiseplayDRM] AudioCodecDecoder is nullptr.";
+    LOG(ERROR) << __func__ << " [AudioDecoder] AudioCodecDecoder is nullptr.";
     return OhosAudioDecoderCode::kDecoderError;
   }
 
   if (format == nullptr) {
     LOG(ERROR) << __func__
-               << " [WiseplayDRM] AudioCodecDecoder format is nullptr.";
+               << " [AudioDecoder] AudioCodecDecoder format is nullptr.";
     return OhosAudioDecoderCode::kDecoderError;
   }
 
   OH_AVFormat* av_format = OH_AVFormat_Create();
   if (av_format == nullptr) {
     LOG(ERROR) << __func__
-               << " [WiseplayDRM] AudioCodecDecoder create avformat fail.";
+               << " [AudioDecoder] AudioCodecDecoder create avformat fail.";
     return OhosAudioDecoderCode::kDecoderError;
   }
 
@@ -836,8 +836,8 @@ OhosAudioDecoderCode OhosAudioDecoder::ConfigureDecoder(
   if (err_code != AV_ERR_OK) {
     LOG(ERROR)
         << __func__
-        << " [WiseplayDRM] AudioCodecDecoder set config fail, err_code = "
-        << uint32_t(err_code);
+        << " [AudioDecoder] AudioCodecDecoder set config fail, err_code = "
+        << static_cast<int>(err_code);
     return OhosAudioDecoderCode::kDecoderError;
   }
   return OhosAudioDecoderCode::kDecoderOk;
@@ -846,18 +846,18 @@ OhosAudioDecoderCode OhosAudioDecoder::ConfigureDecoder(
 OhosAudioDecoderCode OhosAudioDecoder::SetParameterDecoder(
     const std::shared_ptr<OhosAudioDecoderFormat> format) {
   if (decoder_ == nullptr) {
-    LOG(ERROR) << __func__ << "[WiseplayDRM] AudioCodecDecoder is nullptr.";
+    LOG(ERROR) << __func__ << "[AudioDecoder] AudioCodecDecoder is nullptr.";
     return OhosAudioDecoderCode::kDecoderError;
   }
   if (format == nullptr) {
-    LOG(ERROR) << __func__ << "[WiseplayDRM] AudioCodecDecoder is nullptr.";
+    LOG(ERROR) << __func__ << "[AudioDecoder] format is nullptr.";
     return OhosAudioDecoderCode::kDecoderError;
   }
 
   OH_AVFormat* av_format = OH_AVFormat_Create();
   if (av_format == nullptr) {
     LOG(ERROR) << __func__
-               << "[WiseplayDRM] AudioCodecDecoder create avformat fail.";
+               << "[AudioDecoder] AudioCodecDecoder create avformat fail.";
     return OhosAudioDecoderCode::kDecoderError;
   }
 
@@ -870,8 +870,8 @@ OhosAudioDecoderCode OhosAudioDecoder::SetParameterDecoder(
   av_format = nullptr;
   if (err_code != AV_ERR_OK) {
     LOG(ERROR) << __func__
-               << "[WiseplayDRM] AudioCodecDecoder set config fail, err_code = "
-               << uint32_t(err_code);
+               << "[AudioDecoder] AudioCodecDecoder set config fail, err_code = "
+               << static_cast<int>(err_code);
     return OhosAudioDecoderCode::kDecoderError;
   }
   return OhosAudioDecoderCode::kDecoderOk;
@@ -879,14 +879,14 @@ OhosAudioDecoderCode OhosAudioDecoder::SetParameterDecoder(
 
 OhosAudioDecoderCode OhosAudioDecoder::PrepareDecoder() {
   if (decoder_ == nullptr) {
-    LOG(ERROR) << __func__ << "[WiseplayDRM] AudioCodecDecoder is nullptr.";
+    LOG(ERROR) << __func__ << "[AudioDecoder] AudioCodecDecoder is nullptr.";
     return OhosAudioDecoderCode::kDecoderError;
   }
 
   OH_AVErrCode err_code = OH_AudioCodec_Prepare(decoder_);
   if (err_code != AV_ERR_OK) {
-    LOG(ERROR) << __func__ << "[WiseplayDRM] prepare decoder fail, err_code = "
-               << uint32_t(err_code);
+    LOG(ERROR) << __func__ << "[AudioDecoder] prepare decoder fail, err_code = "
+               << static_cast<int>(err_code);
     return OhosAudioDecoderCode::kDecoderError;
   }
   return OhosAudioDecoderCode::kDecoderOk;
@@ -894,7 +894,7 @@ OhosAudioDecoderCode OhosAudioDecoder::PrepareDecoder() {
 
 OhosAudioDecoderCode OhosAudioDecoder::StartDecoder() {
   if (decoder_ == nullptr) {
-    LOG(ERROR) << __func__ << "[WiseplayDRM] AudioCodecDecoder is nullptr.";
+    LOG(ERROR) << __func__ << "[AudioDecoder] AudioCodecDecoder is nullptr.";
     return OhosAudioDecoderCode::kDecoderError;
   }
 
@@ -902,8 +902,8 @@ OhosAudioDecoderCode OhosAudioDecoder::StartDecoder() {
   if (err_code != AV_ERR_OK) {
     LOG(ERROR)
         << __func__
-        << "[WiseplayDRM] AudioCodecDecoder start decoder fail, err_code = "
-        << uint32_t(err_code);
+        << "[AudioDecoder] AudioCodecDecoder start decoder fail, err_code = "
+        << static_cast<int>(err_code);
     return OhosAudioDecoderCode::kDecoderError;
   }
   return OhosAudioDecoderCode::kDecoderOk;
@@ -911,7 +911,7 @@ OhosAudioDecoderCode OhosAudioDecoder::StartDecoder() {
 
 OhosAudioDecoderCode OhosAudioDecoder::StopDecoder() {
   if (decoder_ == nullptr) {
-    LOG(ERROR) << __func__ << "[WiseplayDRM] AudioCodecDecoder is nullptr.";
+    LOG(ERROR) << __func__ << "[AudioDecoder] AudioCodecDecoder is nullptr.";
     return OhosAudioDecoderCode::kDecoderError;
   }
 
@@ -919,8 +919,8 @@ OhosAudioDecoderCode OhosAudioDecoder::StopDecoder() {
   if (err_code != AV_ERR_OK) {
     LOG(ERROR)
         << __func__
-        << "[WiseplayDRM] AudioCodecDecoder stop decoder fail, err_code = "
-        << uint32_t(err_code);
+        << "[AudioDecoder] AudioCodecDecoder stop decoder fail, err_code = "
+        << static_cast<int>(err_code);
     return OhosAudioDecoderCode::kDecoderError;
   }
   return OhosAudioDecoderCode::kDecoderOk;
@@ -928,7 +928,7 @@ OhosAudioDecoderCode OhosAudioDecoder::StopDecoder() {
 
 OhosAudioDecoderCode OhosAudioDecoder::FlushDecoder() {
   if (decoder_ == nullptr) {
-    LOG(ERROR) << __func__ << "[WiseplayDRM] AudioCodecDecoder is nullptr.";
+    LOG(ERROR) << __func__ << "[AudioDecoder] AudioCodecDecoder is nullptr.";
     return OhosAudioDecoderCode::kDecoderError;
   }
 
@@ -936,8 +936,8 @@ OhosAudioDecoderCode OhosAudioDecoder::FlushDecoder() {
   if (err_code != AV_ERR_OK) {
     LOG(ERROR)
         << __func__
-        << "[WiseplayDRM] AudioCodecDecoder flush decoder fail, err_code = "
-        << uint32_t(err_code);
+        << "[AudioDecoder] AudioCodecDecoder flush decoder fail, err_code = "
+        << static_cast<int>(err_code);
     return OhosAudioDecoderCode::kDecoderError;
   }
 
@@ -955,7 +955,7 @@ OhosAudioDecoderCode OhosAudioDecoder::FlushDecoder() {
 
 OhosAudioDecoderCode OhosAudioDecoder::ResetDecoder() {
   if (decoder_ == nullptr) {
-    LOG(ERROR) << __func__ << "[WiseplayDRM] AudioCodecDecoder is nullptr.";
+    LOG(ERROR) << __func__ << "[AudioDecoder] AudioCodecDecoder is nullptr.";
     return OhosAudioDecoderCode::kDecoderError;
   }
 
@@ -963,8 +963,8 @@ OhosAudioDecoderCode OhosAudioDecoder::ResetDecoder() {
   if (err_code != AV_ERR_OK) {
     LOG(ERROR)
         << __func__
-        << "[WiseplayDRM] AudioCodecDecoder start reset fail, err_code = "
-        << uint32_t(err_code);
+        << "[AudioDecoder] AudioCodecDecoder start reset fail, err_code = "
+        << static_cast<int>(err_code);
     return OhosAudioDecoderCode::kDecoderError;
   }
 
@@ -988,8 +988,8 @@ OhosAudioDecoderCode OhosAudioDecoder::ReleaseDecoder() {
   AudioDecoderCallbackManager::DeleteAudioDecoder(decoder_);
   OH_AVErrCode err_code = OH_AudioCodec_Destroy(decoder_);
   if (err_code != AV_ERR_OK) {
-    LOG(ERROR) << __func__ << "[WiseplayDRM] destroy decoder_ fail, err_code = "
-               << uint32_t(err_code);
+    LOG(ERROR) << __func__ << "[AudioDecoder] destroy decoder_ fail, err_code = "
+               << static_cast<int>(err_code);
     return OhosAudioDecoderCode::kDecoderError;
   }
   decoder_ = nullptr;
@@ -1115,7 +1115,7 @@ OhosAudioDecoderCode OhosAudioDecoder::QueueInputBufferDecOhos(
     BufferFlag flag) {
   if (decoder_ == nullptr) {
     LOG(ERROR) << __func__
-               << "[WiseplayDRM] AudioCodecDecoder decoder_ is nullptr.";
+               << "[AudioDecoder] AudioCodecDecoder decoder_ is nullptr.";
     return OhosAudioDecoderCode::kDecoderError;
   }
 
@@ -1128,7 +1128,7 @@ OhosAudioDecoderCode OhosAudioDecoder::QueueInputBufferDecOhos(
 
   OH_AVBuffer* av_buffer = GetInputBuffer(index);
   if (av_buffer == nullptr) {
-    LOG(ERROR) << __func__ << " [WiseplayDRM]  inputbuffer not find." << index;
+    LOG(ERROR) << __func__ << " [AudioDecoder]  inputbuffer not find." << index;
     return OhosAudioDecoderCode::kDecoderError;
   }
   uint8_t* addr = OH_AVBuffer_GetAddr(av_buffer);
@@ -1136,7 +1136,7 @@ OhosAudioDecoderCode OhosAudioDecoder::QueueInputBufferDecOhos(
     if (buffer_data == nullptr) {
       LOG(ERROR)
           << __func__
-          << " [WiseplayDRM] AudioCodecDecoder index buffer_data is nullptr."
+          << " [AudioDecoder] AudioCodecDecoder index buffer_data is nullptr."
           << index;
       return OhosAudioDecoderCode::kDecoderError;
     }
@@ -1145,7 +1145,7 @@ OhosAudioDecoderCode OhosAudioDecoder::QueueInputBufferDecOhos(
     if (OH_AVBuffer_GetCapacity(av_buffer) >= buffer_size) {
       memcpy(addr, buffer_data, buffer_size);
     } else {
-      LOG(ERROR) << __func__ << "[WiseplayDRM] memcpy copy fail source size: "
+      LOG(ERROR) << __func__ << "[AudioDecoder] memcpy copy fail source size: "
                  << buffer_size
                  << " dest size: " << OH_AVBuffer_GetCapacity(av_buffer);
       return OhosAudioDecoderCode::kDecoderError;
@@ -1177,7 +1177,7 @@ OhosAudioDecoderCode OhosAudioDecoder::QueueInputBufferDecOhos(
   }
 
   if (err_code != AV_ERR_OK) {
-    LOG(ERROR) << __func__ << "[WiseplayDRM] err_code =" << uint32_t(err_code);
+    LOG(ERROR) << __func__ << "[AudioDecoder] err_code =" << static_cast<int>(err_code);
     return OhosAudioDecoderCode::kDecoderError;
   }
   std::unique_lock<std::mutex> lock(in_mutex_);
@@ -1188,7 +1188,7 @@ OhosAudioDecoderCode OhosAudioDecoder::QueueInputBufferDecOhos(
 OhosAudioDecoderCode OhosAudioDecoder::GetOutputFormatDec(
     std::shared_ptr<OhosAudioDecoderFormat> format) {
   if (decoder_ == nullptr) {
-    LOG(ERROR) << __func__ << "[WiseplayDRM] AudioCodecDecoder is nullptr.";
+    LOG(ERROR) << __func__ << "[AudioDecoder] AudioCodecDecoder is nullptr.";
     return OhosAudioDecoderCode::kDecoderError;
   }
 
@@ -1196,7 +1196,7 @@ OhosAudioDecoderCode OhosAudioDecoder::GetOutputFormatDec(
   if (av_format == nullptr) {
     LOG(ERROR)
         << __func__
-        << "[WiseplayDRM] AudioCodecDecoder get output description fail.";
+        << "[AudioDecoder] AudioCodecDecoder get output description fail.";
     return OhosAudioDecoderCode::kDecoderError;
   }
   GetParamFromAVFormat(av_format, format);
@@ -1208,7 +1208,7 @@ OhosAudioDecoderCode OhosAudioDecoder::GetOutputFormatDec(
 OhosAudioDecoderCode OhosAudioDecoder::ReleaseOutputBufferDec(uint32_t index) {
   if (decoder_ == nullptr) {
     LOG(ERROR) << __func__
-               << "[WiseplayDRM] AudioCodecDecoder index is nullptr. index:"
+               << "[AudioDecoder] AudioCodecDecoder index is nullptr. index:"
                << index;
     return OhosAudioDecoderCode::kDecoderError;
   }
@@ -1216,7 +1216,7 @@ OhosAudioDecoderCode OhosAudioDecoder::ReleaseOutputBufferDec(uint32_t index) {
   OH_AVBuffer* av_buffer = GetOutputBuffer(index);
   if (av_buffer == nullptr) {
     LOG(ERROR) << __func__
-               << "[WiseplayDRM] ReleaseOutputBufferDec fail, outputbuffer not "
+               << "[AudioDecoder] ReleaseOutputBufferDec fail, outputbuffer not "
                   "find. index:"
                << index;
     return OhosAudioDecoderCode::kDecoderError;
@@ -1226,18 +1226,18 @@ OhosAudioDecoderCode OhosAudioDecoder::ReleaseOutputBufferDec(uint32_t index) {
   OH_AVErrCode err_code = OH_AVBuffer_GetBufferAttr(av_buffer, &attr);
   if (err_code != AV_ERR_OK) {
     LOG(ERROR) << __func__
-               << "[WiseplayDRM] AudioCodecDecoder index get output buffer "
+               << "[AudioDecoder] AudioCodecDecoder index get output buffer "
                   "attr fail. index:"
-               << index << ",error_code: " << uint32_t(err_code);
+               << index << ",error_code: " << static_cast<int>(err_code);
     return OhosAudioDecoderCode::kDecoderError;
   }
 
   err_code = OH_AudioCodec_FreeOutputBuffer(decoder_, index);
   if (err_code != AV_ERR_OK) {
     LOG(ERROR) << __func__
-               << "[WiseplayDRM] AudioCodecDecoder index get output buffer "
+               << "[AudioDecoder] AudioCodecDecoder index get output buffer "
                   "attr fail. index:"
-               << index << ",error_code: " << uint32_t(err_code);
+               << index << ",error_code: " << static_cast<int>(err_code);
     return OhosAudioDecoderCode::kDecoderError;
   }
   {
@@ -1248,7 +1248,7 @@ OhosAudioDecoderCode OhosAudioDecoder::ReleaseOutputBufferDec(uint32_t index) {
   if (attr.flags == static_cast<uint32_t>(BufferFlag::kCodecBufferFlagEos)) {
     LOG(WARNING)
         << __func__
-        << "[WiseplayDRM] free output buffer, buffer flag is eos. index:"
+        << "[AudioDecoder] free output buffer, buffer flag is eos. index:"
         << index;
   }
   return OhosAudioDecoderCode::kDecoderOk;
@@ -1257,7 +1257,7 @@ OhosAudioDecoderCode OhosAudioDecoder::ReleaseOutputBufferDec(uint32_t index) {
 OhosAudioDecoderCode OhosAudioDecoder::SetCallbackDec() {
   if (decoder_ == nullptr) {
     LOG(ERROR) << __func__
-               << "[WiseplayDRM] AudioCodecDecoder decoder is nullptr.";
+               << "[AudioDecoder] AudioCodecDecoder decoder is nullptr.";
     return OhosAudioDecoderCode::kDecoderError;
   }
 
@@ -1273,8 +1273,8 @@ OhosAudioDecoderCode OhosAudioDecoder::SetCallbackDec() {
   OH_AVErrCode err_code = OH_AudioCodec_RegisterCallback(decoder_, cb, nullptr);
   if (err_code != AV_ERR_OK) {
     LOG(ERROR) << __func__
-               << "[WiseplayDRM] register callback fail, err_code = "
-               << uint32_t(err_code);
+               << "[AudioDecoder] register callback fail, err_code = "
+               << static_cast<int>(err_code);
     return OhosAudioDecoderCode::kDecoderError;
   }
 
@@ -1299,7 +1299,7 @@ OhosAudioDecoderCode OhosAudioDecoder::SetDecryptionConfig(void* session,
   if (err_code != AV_ERR_OK) {
     LOG(ERROR) << __func__
                << "[WiseplayDRM] set decryption config fail, err_code = "
-               << uint32_t(err_code);
+               << static_cast<int>(err_code);
     return OhosAudioDecoderCode::kDecoderOk;
   }
 
@@ -1311,7 +1311,7 @@ void OhosAudioDecoder::GetParamFromAVFormat(
     std::shared_ptr<OhosAudioDecoderFormat> format) {
   if (av_format == nullptr || format == nullptr) {
     LOG(ERROR) << __func__
-               << "[WiseplayDRM] AudioCodecDecoder av_format or format is "
+               << "[AudioDecoder] AudioCodecDecoder av_format or format is "
                   "nullptr, av_format is "
                << int32_t(av_format == nullptr) << ", format is."
                << int32_t(format == nullptr);
@@ -1403,14 +1403,14 @@ void AudioDecoderCallbackManager::OnError(OH_AVCodec* codec,
   if (codec == nullptr) {
     LOG(ERROR)
         << __func__
-        << "[WiseplayDRM] AudioDecoderCallbackManager avcodec is nullptr.";
+        << "[AudioDecoder] AudioDecoderCallbackManager avcodec is nullptr.";
     return;
   }
   std::unique_lock<std::mutex> lock(OhosAudioDecoder::GetDecoderMutex());
   media::OhosAudioDecoder* audio_decoder = FindAudioDecoder(codec);
   if (audio_decoder == nullptr) {
     LOG(ERROR) << __func__
-               << "[WiseplayDRM] AudioDecoderCallbackManager not find decoder.";
+               << "[AudioDecoder] AudioDecoderCallbackManager not find decoder.";
     return;
   }
 
@@ -1423,14 +1423,14 @@ void AudioDecoderCallbackManager::OnOutputFormatChanged(OH_AVCodec* codec,
   if (codec == nullptr) {
     LOG(ERROR)
         << __func__
-        << "[WiseplayDRM] AudioDecoderCallbackManager avcodec is nullptr.";
+        << "[AudioDecoder] AudioDecoderCallbackManager avcodec is nullptr.";
     return;
   }
   std::unique_lock<std::mutex> lock(OhosAudioDecoder::GetDecoderMutex());
   media::OhosAudioDecoder* audio_decoder = FindAudioDecoder(codec);
   if (audio_decoder == nullptr) {
     LOG(ERROR) << __func__
-               << "[WiseplayDRM] AudioDecoderCallbackManager not find decoder.";
+               << "[AudioDecoder] AudioDecoderCallbackManager not find decoder.";
     return;
   }
 
@@ -1442,18 +1442,18 @@ void AudioDecoderCallbackManager::OnInputBufferAvailable(OH_AVCodec* codec,
                                                          OH_AVBuffer* data,
                                                          void* user_data) {
   if (codec == nullptr) {
-    LOG(ERROR) << __func__ << "[WiseplayDRM] avcodec is nullptr.";
+    LOG(ERROR) << __func__ << "[AudioDecoder] avcodec is nullptr.";
     return;
   }
 
   if (data == nullptr) {
-    LOG(ERROR) << __func__ << "[WiseplayDRM] avbuffer is nullptr.";
+    LOG(ERROR) << __func__ << "[AudioDecoder] avbuffer is nullptr.";
     return;
   }
   std::unique_lock<std::mutex> lock(OhosAudioDecoder::GetDecoderMutex());
   media::OhosAudioDecoder* audio_decoder = FindAudioDecoder(codec);
   if (audio_decoder == nullptr) {
-    LOG(ERROR) << __func__ << " [WiseplayDRM] not find decoder.";
+    LOG(ERROR) << __func__ << " [AudioDecoder] not find decoder.";
     return;
   }
 
@@ -1469,7 +1469,7 @@ void AudioDecoderCallbackManager::OnOutputBufferAvailable(OH_AVCodec* codec,
   if (codec == nullptr) {
     LOG(ERROR)
         << __func__
-        << " [WiseplayDRM] AudioDecoderCallbackManager avcodec is nullptr.";
+        << " [AudioDecoder] AudioDecoderCallbackManager avcodec is nullptr.";
     return;
   }
   std::unique_lock<std::mutex> lock(OhosAudioDecoder::GetDecoderMutex());
@@ -1477,7 +1477,7 @@ void AudioDecoderCallbackManager::OnOutputBufferAvailable(OH_AVCodec* codec,
   if (audio_decoder == nullptr) {
     LOG(ERROR)
         << __func__
-        << " [WiseplayDRM] AudioDecoderCallbackManager not find decoder.";
+        << " [AudioDecoder] AudioDecoderCallbackManager not find decoder.";
     return;
   }
 
@@ -1486,8 +1486,10 @@ void AudioDecoderCallbackManager::OnOutputBufferAvailable(OH_AVCodec* codec,
   OH_AVCodecBufferAttr attr = {0};
   OH_AVErrCode err_code = OH_AVBuffer_GetBufferAttr(data, &attr);
   if (err_code != AV_ERR_OK || attr.size < 0) {
-    LOG(ERROR) << __func__
-               << " [WiseplayDRM] AudioCodecDecoder get buffer attr fail.";
+    LOG(ERROR)
+        << __func__
+        << " [AudioDecoder] AudioCodecDecoder get buffer attr fail. ret: "
+        << static_cast<int>(err_code);
     return;
   }
 
@@ -1497,7 +1499,7 @@ void AudioDecoderCallbackManager::OnOutputBufferAvailable(OH_AVCodec* codec,
     memcpy(buffer_data, reinterpret_cast<uint8_t*>(OH_AVBuffer_GetAddr(data)),
            attr.size);
   } else {
-    LOG(ERROR) << "[WiseplayDRM] memcpy copy fail" << __func__
+    LOG(ERROR) << "[AudioDecoder] memcpy copy fail" << __func__
                << " source size: " << static_cast<size_t>(attr.size)
                << " dest size: " << sizeof(buffer_data);
     return;

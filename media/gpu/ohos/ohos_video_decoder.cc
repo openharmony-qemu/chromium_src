@@ -158,7 +158,7 @@ void OhosVideoDecoder::DestroyAsync(std::unique_ptr<OhosVideoDecoder> decoder) {
   auto* self = decoder.release();
 
   if (self == nullptr) {
-    LOG(ERROR) << __func__ << " [WiseplayDrm] decoder is nullptr";
+    LOG(ERROR) << __func__ << " [VideoDecoder] decoder is nullptr";
     return;
   }
 
@@ -195,14 +195,14 @@ void OhosVideoDecoder::Initialize(const VideoDecoderConfig& config,
              << " config: " << config.AsHumanReadableString();
 
   if (!config.IsValidConfig()) {
-    LOG(WARNING) << __FUNCTION__ << " [WiseplayDRM] config invalid.";
+    LOG(WARNING) << __FUNCTION__ << " [VideoDecoder] config invalid.";
     base::BindPostTaskToCurrentDefault(std::move(init_cb))
         .Run(DecoderStatus::Codes::kUnsupportedConfig);
     return;
   }
 
   if (!first_init && decoder_config_.codec() != config.codec()) {
-    LOG(WARNING) << __FUNCTION__ << " [WiseplayDRM] duplicate init.";
+    LOG(WARNING) << __FUNCTION__ << " [VideoDecoder] duplicate init.";
     base::BindPostTaskToCurrentDefault(std::move(init_cb))
         .Run(DecoderStatus::Codes::kCantChangeCodec);
     return;
@@ -271,12 +271,10 @@ void OhosVideoDecoder::OnMediaCryptoReady(
     requires_secure_codec_ = requires_secure_video_codec;
     if (codec_ &&
         !codec_->SetDecryptionConfig(nullptr, requires_secure_video_codec)) {
-      LOG(ERROR)
-          << "OhosVideoDecoder::OnMediaCryptoReady set decryt nullptr fail";
+      LOG(ERROR) << __func__ << " [WiseplayDRM]  set decryt nullptr fail";
     }
     if (decoder_config_.is_encrypted()) {
-      LOG(ERROR)
-          << "OhosVideoDecoder::OnMediaCryptoReady can't play encrypted stream";
+      LOG(ERROR) << __func__ << " [WiseplayDRM]  can't play encrypted stream";
       EnterTerminalState(State::kError, "MediaCrypto is not available");
       std::move(init_cb).Run(DecoderStatus::Codes::kUnsupportedEncryptionMode);
       return;
@@ -299,7 +297,7 @@ void OhosVideoDecoder::OnMediaCryptoReady(
 }
 
 void OhosVideoDecoder::OnCdmContextEvent(CdmContext::Event event) {
-  LOG(INFO) << "OhosVideoDecoder::OnCdmContextEvent enter";
+  LOG(INFO) << __func__ << " [WiseplayDRM] enter";
   if (event != CdmContext::Event::kHasAdditionalUsableKey) {
     return;
   }
@@ -321,7 +319,7 @@ void OhosVideoDecoder::OnVideoFrameFactoryInitialized(
     scoped_refptr<gpu::NativeImageTextureOwner> texture_owner) {
   TRACE_EVENT0("media", "OhosVideoDecoder::OnVideoFrameFactoryInitialized");
   if (!texture_owner) {
-    LOG(WARNING) << __FUNCTION__ << " [WiseplayDRM] no texture owner: " << texture_owner;
+    LOG(WARNING) << __FUNCTION__ << " [VideoDecoder] no texture owner: " << texture_owner;
     EnterTerminalState(State::kError, "Could not allocated TextureOwner");
     return;
   }
@@ -347,7 +345,7 @@ bool OhosVideoDecoder::SurfaceTransitionPending() {
 }
 
 void OhosVideoDecoder::TransitionToTargetSurface() {
-  LOG(INFO) << "OhosVideoDecoder::TransitionToTargetSurface";
+  LOG(INFO) << __FUNCTION__ << " [VideoDecoder] ";
   DCHECK(SurfaceTransitionPending());
 
   if (!codec_->SetSurface(target_surface_bundle_)) {
@@ -366,7 +364,7 @@ void OhosVideoDecoder::CreateCodec() {
 
   auto config = std::make_unique<VideoBridgeCodecConfig>();
   if (!config) {
-    LOG(ERROR) << __FUNCTION__ << " [WiseplayDRM] config is null";
+    LOG(ERROR) << __FUNCTION__ << " [VideoDecoder] config is null";
     return;
   }
 
@@ -412,7 +410,7 @@ void OhosVideoDecoder::OnCodecConfigured(
   DCHECK_EQ(state_, State::kRunning);
 
   if (!codec) {
-    LOG(ERROR) << __FUNCTION__ << " [WiseplayDRM] codec is null";
+    LOG(ERROR) << __FUNCTION__ << " [VideoDecoder] codec is null";
     EnterTerminalState(State::kError, "Unable to allocate codec");
     return;
   }
@@ -424,7 +422,7 @@ void OhosVideoDecoder::OnCodecConfigured(
                                 base::SequencedTaskRunner::GetCurrentDefault());
   if (codec->SetBridgeOutputSurface(surface_bundle->GetOHOSNativeWindow()) ==
       DecoderAdapterCode::DECODER_ERROR) {
-    LOG(ERROR) << __FUNCTION__ << " [WiseplayDRM] SetBridgeOutputSurface failed:Unable to initialize codec.";
+    LOG(ERROR) << __FUNCTION__ << " [VideoDecoder] SetBridgeOutputSurface failed:Unable to initialize codec.";
     EnterTerminalState(State::kError, "Unable to initialize codec");
     return;
   }
@@ -444,7 +442,7 @@ void OhosVideoDecoder::OnCodecConfigured(
 void OhosVideoDecoder::Decode(scoped_refptr<DecoderBuffer> buffer,
                               DecodeCB decode_cb) {
   if (!buffer) {
-    LOG(ERROR) << "[WiseplayDRM] OhosVideoDecoder::Decode buffer is null";
+    LOG(ERROR) << "[VideoDecoder] OhosVideoDecoder::Decode buffer is null";
     std::move(decode_cb).Run(DecoderStatus::Codes::kFailed);
     return;
   }
@@ -493,7 +491,7 @@ void OhosVideoDecoder::PumpCodec() {
 
 bool OhosVideoDecoder::QueueInput() {
   if (!codec_) {
-    LOG(ERROR) << __func__ << "[WiseplayDRM] codec_ is null";
+    LOG(ERROR) << __func__ << "[VideoDecoder] codec_ is null";
     return false;
   }
 
@@ -550,7 +548,7 @@ bool OhosVideoDecoder::QueueInput() {
 
 bool OhosVideoDecoder::DequeueOutput() {
   if (!codec_ || codec_->IsDrained()) {
-    LOG(ERROR) << "[WiseplayDRM] OhosVideoDecoder::DequeueOutput failed";
+    LOG(ERROR) << "[VideoDecoder] OhosVideoDecoder::DequeueOutput failed";
     return false;
   }
 
@@ -587,7 +585,7 @@ bool OhosVideoDecoder::DequeueOutput() {
     if (drain_type_) {
       OnCodecDrained();
     }
-    LOG(ERROR) << " [WiseplayDRM] OhosVideoDecoder::DequeueOutput is drained";
+    LOG(ERROR) << " [VideoDecoder] OhosVideoDecoder::DequeueOutput is drained";
     return false;
   }
 
@@ -605,7 +603,7 @@ bool OhosVideoDecoder::DequeueOutput() {
       ScopedAsyncTrace::CreateIfEnabled("OhosVideoDecoder::CreateVideoFrame");
 
   if (!is_surface_control_enabled_) {
-    LOG(WARNING) << __FUNCTION__ << " [WiseplayDRM] is_surface_control_enabled_ not enabled."
+    LOG(WARNING) << __FUNCTION__ << " [VideoDecoder] is_surface_control_enabled_ not enabled."
                  << "Calling OhosVideoDecoder::PumpCodec() later.";
     output_buffer->set_render_cb(
         base::BindPostTaskToCurrentDefault(base::BindOnce(

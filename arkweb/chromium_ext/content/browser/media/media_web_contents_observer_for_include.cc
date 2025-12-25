@@ -450,4 +450,33 @@ void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
   }
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::OnMediaCastEnter() {
+  LOG(INFO) << "MediaPlayerObserverHostImpl::OnMediaCastEnter";
+  media_web_contents_observer_
+        ->web_contents_impl()->AsWebContentsImplExt()->OnMediaCastEnter();
+  media_web_contents_observer_->session_controllers_manager()->CreateAVCastAdapter(media_player_id_);
+}
+
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
+    OnNotifyMeidaCastUri(const std::string& media_uri) {
+    LOG(INFO) << "MediaPlayerObserverHostImpl::OnNotifyMeidaCastUri, mediaUri: " << media_uri;
+    media_web_contents_observer_->session_controllers_manager()->OnNotifyMeidaCastUri(media_player_id_, media_uri);
+}
+
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::HandleStopMediaCast() {
+    LOG(INFO) << "MediaPlayerObserverHostImpl::HandleStopMediaCast";
+    media_web_contents_observer_->session_controllers_manager()->HandleStopMediaCast(media_player_id_);
+}
+
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::UpdateRemotePlayState(bool is_playing) {
+  LOG(INFO) << "MediaPlayerObserverHostImpl::UpdateRemotePlayState";
+  media_web_contents_observer_->session_controllers_manager()->UpdateRemotePlayState(media_player_id_, is_playing);
+}
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::UpdateRemotePlayPosition(int64_t position) {
+  LOG(INFO) << "MediaPlayerObserverHostImpl::UpdateRemotePlayPosition";
+  media_web_contents_observer_->session_controllers_manager()->UpdateRemotePlayPosition(media_player_id_, position);
+}
+#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
 }

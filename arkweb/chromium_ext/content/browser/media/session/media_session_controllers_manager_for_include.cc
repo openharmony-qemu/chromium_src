@@ -32,4 +32,46 @@ void MediaSessionControllersManager::OnEndAVSession(const MediaPlayerId& id,
 }
 #endif // ARKWEB_MEDIA_AVSESSION
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+void MediaSessionControllersManager::OnNotifyMeidaCastUri(const MediaPlayerId& id, const std::string& media_uri) {
+  LOG(INFO) << "MediaSessionControllersManager::OnNotifyMeidaCastUri, mediaUri: " << media_uri;
+  auto controller = FindOrCreateController(id);
+  if (controller) {
+    controller->AsMediaSessionControllerExt()->OnNotifyMeidaCastUri(media_uri);
+  }
+}
+
+void MediaSessionControllersManager::CreateAVCastAdapter(const MediaPlayerId& id) {
+  LOG(INFO) << "MediaSessionControllersManager::CreateAVCastAdapter";
+  auto controller = FindOrCreateController(id);
+  if (controller) {
+    controller->AsMediaSessionControllerExt()->CreateAVCastAdapter();
+  }
+}
+
+void MediaSessionControllersManager::HandleStopMediaCast(const MediaPlayerId& id) {
+  LOG(INFO) << "MediaSessionControllersManager::HandleStopMediaCast";
+  auto controller = FindOrCreateController(id);
+  if (controller) {
+    controller->AsMediaSessionControllerExt()->HandleStopMediaCast();
+  }
+}
+
+void MediaSessionControllersManager::UpdateRemotePlayState(const MediaPlayerId& id, bool is_playing) {
+  LOG(INFO) << "MediaSessionControllersManager::UpdateRemotePlayState";
+  auto controller = FindOrCreateController(id);
+  if (controller) {
+    controller->AsMediaSessionControllerExt()->UpdateRemotePlayState(is_playing);
+  }
+}
+
+void MediaSessionControllersManager::UpdateRemotePlayPosition(const MediaPlayerId& id, int64_t position) {
+  LOG(INFO) << "MediaSessionControllersManager::UpdateRemotePlayPosition";
+  auto controller = FindOrCreateController(id);
+  if (controller) {
+    controller->AsMediaSessionControllerExt()->UpdateRemotePlayPosition(position);
+  }
+}
+#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
+
 }

@@ -28,43 +28,11 @@
 namespace base {
 namespace ohos {
 
-enum Region {
-  REGION_CHINA = 1,
-  REGION_OVERSEA = 2,
-};
+    BASE_EXPORT void SetOnReportStatisticLogCallback(OnReportStatisticLogFunc func);
 
-enum Platform {
-  PLATFORM_OPERATION_ANALYSIS = 1,
-  PLATFORM_BUSINESS_INTELLIGENCE = 2,
-};
-
-enum ReportFrequency {
-  REPORT_IMMEDIATELY,
-  REPORT_DAILY,
-};
-
-BASE_EXPORT void SetOnReportStatisticLogCallback(OnReportStatisticLogFunc func);
-
-BASE_EXPORT void SetReportStatisticTaskRunner();
-
-class BASE_EXPORT OperationStatistics {
- public:
-  static void Statistics(int region,
-                         int platform,
-                         std::string event_group,
-                         std::string event_id,
-                         int data_version,
-                         const std::string& content,
-                         bool report_under_incognito,
-                         bool report_immediately,
-                         bool report_anonymously,
-                         int report_frequency_is);
-
-  static const char* GROUP_BECE;
-  static const char* GROUP_BWCE;
-
-  static const int DEFAULT_DATA_VERSION;
-};                        
+    BASE_EXPORT void ReportStatisticLog(const std::string& content);
+    
+    BASE_EXPORT void SetReportStatisticTaskRunner();
 
 }  // namespace ohos
 }  // namespace base

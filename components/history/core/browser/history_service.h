@@ -110,7 +110,11 @@ class HistoryService : public KeyedService,
   // not call any other functions. The given directory will be used for storing
   // the history files.
   bool Init(const HistoryDatabaseParams& history_database_params) {
+#if BUILDFLAG(IS_ARKWEB)
+    return Init(true, history_database_params);
+#else
     return Init(false, history_database_params);
+#endif // IS_ARKWEB
   }
 
   // Returns the directory containing the History databases.

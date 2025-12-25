@@ -322,7 +322,7 @@ std::string OhosMediaCodecUtil::CodecToOHOSMimeType(
     case AudioCodec::kDTSXP2:
       return K_DTSX_P2_MIME_TYPE;
     default:
-      LOG(WARNING) << __func__ << " [VideoDecoder] not supported audio mime type: "
+      LOG(ERROR) << __func__ << " [AudioDecoder] not supported audio mime type: "
                  << static_cast<int>(codec);
       return std::string();
   }
@@ -344,7 +344,7 @@ std::string OhosMediaCodecUtil::CodecToOHOSMimeType(VideoCodec codec) {
     case VideoCodec::kAV1:
       return K_AV1_MIME_TYPE;
     default:
-      LOG(ERROR) << __func__ << " [WiseplayDRM] not supported video mime type: "
+      LOG(ERROR) << __func__ << " [VideoDecoder] not supported video mime type: "
                  << static_cast<int>(codec);
       return std::string();
   }
@@ -360,7 +360,7 @@ bool OhosMediaCodecUtil::IsPassthroughAudioFormat(AudioCodec codec) {
     case AudioCodec::kMpegHAudio:
       return true;
     default:
-      LOG(ERROR) << __func__ << " [WiseplayDRM] not supported audio format: "
+      LOG(ERROR) << __func__ << " [AudioDecoder] not supported audio format: "
                  << static_cast<int>(codec);
       return false;
   }

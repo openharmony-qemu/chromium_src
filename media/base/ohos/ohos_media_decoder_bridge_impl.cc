@@ -86,16 +86,16 @@ MediaCodecDecoderBridgeImpl::CreateVideoDecoder(
 
 DecoderAdapterCode MediaCodecDecoderBridgeImpl::CreateVideoBridgeDecoderByMime(
     std::string mime_type) {
-  LOG(INFO) << __FUNCTION__ << " [WiseplayDRM] mime_type: " << mime_type;
+  LOG(INFO) << __FUNCTION__ << " [VideoDecoder] mime_type: " << mime_type;
 
   if (video_decoder_ != nullptr) {
-    LOG(ERROR) << __FUNCTION__  << " [WiseplayDRM] decoder is not NULL.";
+    LOG(ERROR) << __FUNCTION__  << " [VideoDecoder] decoder is not NULL.";
     return DecoderAdapterCode::DECODER_ERROR;
   }
 
   video_decoder_ = OH_VideoDecoder_CreateByMime(mime_type.c_str());
   if (video_decoder_ == nullptr) {
-    LOG(ERROR) << __FUNCTION__ << " [WiseplayDRM] create decoder failed.";
+    LOG(ERROR) << __FUNCTION__ << " [VideoDecoder] create decoder failed.";
     return DecoderAdapterCode::DECODER_ERROR;
   }
   has_created_ = true;
@@ -110,7 +110,7 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::CreateVideoBridgeDecoderByMime(
 
   OH_AVCodecCallback codec_callback = {&OnError, &OnStreamChanged, &OnNeedInputBuffer, &OnNewOutputBuffer};
   int32_t ret = OH_VideoDecoder_RegisterCallback(video_decoder_, codec_callback, cb_.get());
-  LOG(INFO) << __FUNCTION__ << " [WiseplayDRM] OH_VideoDecoder_RegisterCallback: " << ret;
+  LOG(INFO) << __FUNCTION__ << " [VideoDecoder] OH_VideoDecoder_RegisterCallback: " << ret;
   if (media_key_session_) {
     OH_VideoDecoder_SetDecryptionConfig(video_decoder_, media_key_session_, false);
   }
@@ -120,16 +120,16 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::CreateVideoBridgeDecoderByMime(
 
 DecoderAdapterCode MediaCodecDecoderBridgeImpl::CreateVideoBridgeDecoderByName(
     std::string name) {
-  LOG(INFO) << __FUNCTION__ << " [WiseplayDRM] create video decoder by name, type : " << name.c_str();
+  LOG(INFO) << __FUNCTION__ << " [VideoDecoder] create video decoder by name, type : " << name.c_str();
 
   if (video_decoder_ != nullptr) {
-    LOG(ERROR) << __FUNCTION__ << "[WiseplayDRM] decoder is not NULL.";
+    LOG(ERROR) << __FUNCTION__ << "[VideoDecoder] decoder is not NULL.";
     return DecoderAdapterCode::DECODER_ERROR;
   }
 
   video_decoder_ = OH_VideoDecoder_CreateByName(name.c_str());
   if (video_decoder_ == nullptr) {
-    LOG(ERROR) << __FUNCTION__ << " [WiseplayDRM] create decoder failed.";
+    LOG(ERROR) << __FUNCTION__ << " [VideoDecoder] create decoder failed.";
     return DecoderAdapterCode::DECODER_ERROR;
   }
   has_created_ = true;
@@ -157,8 +157,8 @@ MediaCodecDecoderBridgeImpl::MediaCodecDecoderBridgeImpl(
     std::string codec_type,
     base::RepeatingClosure on_buffers_available_cb,
     void* media_key_session) {
-  LOG(INFO) << __FUNCTION__ << " [WiseplayDRM] codec_type: " << codec_type << ", media_key_session: "
-            << media_key_session;
+  LOG(INFO) << __FUNCTION__ << " [VideoDecoder] codec_type: " << codec_type
+            << ", media_key_session: " << media_key_session;
   if (!on_buffers_available_cb) {
     return;
   }
@@ -167,29 +167,27 @@ MediaCodecDecoderBridgeImpl::MediaCodecDecoderBridgeImpl(
   }
   DecoderAdapterCode ret = CreateVideoBridgeDecoderByMime(codec_type);
   if (ret == DecoderAdapterCode::DECODER_ERROR) {
-    LOG(ERROR) << __FUNCTION__ << "[WiseplayDRM] create decoder failed.";
+    LOG(ERROR) << __FUNCTION__ << "[VideoDecoder] create decoder failed.";
     return;
   }
   cb_->on_buffers_available_cb_ = on_buffers_available_cb;
 }
 
 MediaCodecDecoderBridgeImpl::~MediaCodecDecoderBridgeImpl() {
-  LOG(INFO) << "[WiseplayDRM] MediaCodecDecoderBridgeImpl::~MediaCodecDecoderBridgeImpl.";
+  LOG(INFO) << __FUNCTION__ << "[VideoDecoder] ";
   ReleaseBridgeDecoder();
 }
 
 DecoderAdapterCode MediaCodecDecoderBridgeImpl::ConfigureBridgeDecoder(
     const DecoderFormat& format,
     scoped_refptr<base::SequencedTaskRunner> decoder_task_runner) {
-  LOG(INFO) << " [WiseplayDRM] MediaCodecDecoderBridgeImpl::ConfigureBridgeDecoder configure "
-               "decoder.";
+  LOG(INFO) << __FUNCTION__ << " [VideoDecoder] ";
   width_ = format.width;
   height_ = format.height;
   decoder_task_runner_ = decoder_task_runner;
   cb_->decoder_callback_task_runner_ = decoder_task_runner;
   if (video_decoder_ == nullptr) {
-    LOG(ERROR) << " [WiseplayDRM] MediaCodecDecoderBridgeImpl::ConfigureBridgeDecoder decoder "
-                  "is NULL.";
+    LOG(ERROR) << __FUNCTION__ << " [VideoDecoder] decoder is NULL.";
     return DecoderAdapterCode::DECODER_ERROR;
   }
 
@@ -206,11 +204,9 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::ConfigureBridgeDecoder(
 
 DecoderAdapterCode MediaCodecDecoderBridgeImpl::SetBridgeParameterDecoder(
     const DecoderFormat& format) {
-  LOG(INFO) << "[WiseplayDRM] MediaCodecDecoderBridgeImpl::SetBridgeParameterDecoder set "
-               "decoder parameter.";
+  LOG(INFO) << __FUNCTION__ << "[VideoDecoder] ";
   if (video_decoder_ == nullptr) {
-    LOG(ERROR) << "[WiseplayDRM] MediaCodecDecoderBridgeImpl::SetBridgeParameterDecoder "
-                  "decoder is NULL.";
+    LOG(ERROR) << __FUNCTION__ << "[VideoDecoder] decoder is NULL.";
     return DecoderAdapterCode::DECODER_ERROR;
   }
 
@@ -226,16 +222,13 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::SetBridgeParameterDecoder(
 
 DecoderAdapterCode MediaCodecDecoderBridgeImpl::SetBridgeOutputSurface(
     void* window) {
-  LOG(INFO) << __FUNCTION__ << " [WiseplayDRM] MediaCodecDecoderBridgeImpl::SetBridgeOutputSurface set "
-               "decoder outputsurface.";
+  LOG(INFO) << __FUNCTION__ << " [VideoDecoder]  set decoder outputsurface.";
   if (video_decoder_ == nullptr) {
-    LOG(ERROR) << "[WiseplayDRM] MediaCodecDecoderBridgeImpl::SetBridgeOutputSurface decoder "
-                  "is NULL.";
+    LOG(ERROR) << __FUNCTION__ << "[VideoDecoder] decoder is NULL.";
     return DecoderAdapterCode::DECODER_ERROR;
   }
   if (window == nullptr) {
-    LOG(ERROR) << "[WiseplayDRM] MediaCodecDecoderBridgeImpl::SetBridgeOutputSurface window "
-                  "is NULL.";
+    LOG(ERROR) << __FUNCTION__ << "[VideoDecoder] window is NULL.";
     return DecoderAdapterCode::DECODER_ERROR;
   }
   OH_AVErrCode ret =
@@ -247,8 +240,7 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::SetBridgeOutputSurface(
 DecoderAdapterCode MediaCodecDecoderBridgeImpl::GetOutputFormatBridgeDecoder(
     DecoderFormat& format) {
   if (video_decoder_ == nullptr) {
-    LOG(ERROR) << "[WiseplayDRM] MediaCodecDecoderBridgeImpl::GetOutputFormatBridgeDecoder "
-                  "decoder is NULL.";
+    LOG(ERROR) << __FUNCTION__ << "[VideoDecoder] decoder is NULL.";
     return DecoderAdapterCode::DECODER_ERROR;
   }
   OH_AVFormat* av_format = OH_VideoDecoder_GetOutputDescription(video_decoder_);
@@ -263,8 +255,7 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::GetOutputFormatBridgeDecoder(
 
 DecoderAdapterCode MediaCodecDecoderBridgeImpl::PrepareBridgeDecoder() {
   if (video_decoder_ == nullptr) {
-    LOG(ERROR) << "[WiseplayDRM] MediaCodecDecoderBridgeImpl::PrepareBridgeDecoder decoder "
-                  "is NULL.";
+    LOG(ERROR) << __FUNCTION__ << "[VideoDecoder] decoder is NULL.";
     return DecoderAdapterCode::DECODER_ERROR;
   }
   OH_AVErrCode ret = OH_VideoDecoder_Prepare(video_decoder_);
@@ -273,12 +264,11 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::PrepareBridgeDecoder() {
 }
 
 DecoderAdapterCode MediaCodecDecoderBridgeImpl::StartBridgeDecoder() {
-  LOG(INFO) << "[WiseplayDRM] MediaCodecDecoderBridgeImpl::StartBridgeDecoder start decoder.";
+  LOG(INFO) << __FUNCTION__ << "[VideoDecoder] start decoder.";
   is_running_.store(true);
 
   if (video_decoder_ == nullptr) {
-    LOG(ERROR)
-        << "[WiseplayDRM] MediaCodecDecoderBridgeImpl::StartBridgeDecoder decoder is NULL.";
+    LOG(ERROR) << __FUNCTION__ << "[VideoDecoder] decoder is NULL.";
     return DecoderAdapterCode::DECODER_ERROR;
   }
 
@@ -288,10 +278,9 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::StartBridgeDecoder() {
 }
 
 DecoderAdapterCode MediaCodecDecoderBridgeImpl::StopBridgeDecoder() {
-  LOG(INFO) << "[WiseplayDRM] MediaCodecDecoderBridgeImpl::StopBridgeDecoder stop decoder.";
+  LOG(INFO) << __FUNCTION__ << "[VideoDecoder] stop decoder.";
   if (video_decoder_ == nullptr) {
-    LOG(ERROR)
-        << "[WiseplayDRM] MediaCodecDecoderBridgeImpl::StopBridgeDecoder decoder is NULL.";
+    LOG(ERROR) << __FUNCTION__ << "[VideoDecoder] decoder is NULL.";
     return DecoderAdapterCode::DECODER_ERROR;
   }
   OH_AVErrCode ret = OH_VideoDecoder_Stop(video_decoder_);
@@ -301,22 +290,20 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::StopBridgeDecoder() {
 
 DecoderAdapterCode MediaCodecDecoderBridgeImpl::FlushBridgeDecoder() {
   if (video_decoder_ == nullptr) {
-    LOG(ERROR)
-        << "[WiseplayDRM] MediaCodecDecoderBridgeImpl::FlushBridgeDecoder decoder is NULL.";
+    LOG(ERROR) << __FUNCTION__ << "[VideoDecoder] decoder is NULL.";
     return DecoderAdapterCode::DECODER_ERROR;
   }
 
   if (signal_ == nullptr) {
-    LOG(ERROR) << __func__ << "[WiseplayDRM] signal_ is NULL.";
+    LOG(ERROR) << __func__ << "[VideoDecoder] signal_ is NULL.";
     return DecoderAdapterCode::DECODER_ERROR;
   }
   signal_->is_decoder_flushing_.store(true);
 
   OH_AVErrCode ret = OH_VideoDecoder_Flush(video_decoder_);
   if (ret != AV_ERR_OK) {
-    LOG(ERROR) << "[WiseplayDRM] MediaCodecDecoderBridgeImpl::FlushBridgeDecoder flush "
-                  "decoder failed. errcode:"
-               << ret;
+    LOG(ERROR) << __FUNCTION__
+               << "[VideoDecoder] flush decoder failed. errcode:" << ret;
     return DecoderAdapterCode::DECODER_ERROR;
   }
 
@@ -332,21 +319,19 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::FlushBridgeDecoder() {
 
 DecoderAdapterCode MediaCodecDecoderBridgeImpl::ResetBridgeDecoder() {
   if (video_decoder_ == nullptr) {
-    LOG(ERROR)
-        << "[WiseplayDRM] MediaCodecDecoderBridgeImpl::ResetBridgeDecoder decoder is NULL.";
+    LOG(ERROR) << __FUNCTION__ << "[VideoDecoder] decoder is NULL.";
     return DecoderAdapterCode::DECODER_ERROR;
   }
 
   if (signal_ == nullptr) {
-    LOG(ERROR) << __func__ << "[WiseplayDRM] signal_ is NULL.";
+    LOG(ERROR) << __func__ << "[VideoDecoder] signal_ is NULL.";
     return DecoderAdapterCode::DECODER_ERROR;
   }
   signal_->is_decoder_flushing_.store(true);
   OH_AVErrCode ret = OH_VideoDecoder_Reset(video_decoder_);
   if (ret != AV_ERR_OK) {
-    LOG(ERROR) << "[WiseplayDRM] MediaCodecDecoderBridgeImpl::ResetBridgeDecoder reset "
-                  "decoder failed. errcode:"
-               << ret;
+    LOG(ERROR) << __FUNCTION__
+               << "[VideoDecoder] reset decoder failed. errcode:" << ret;
     return DecoderAdapterCode::DECODER_ERROR;
   }
 
@@ -361,11 +346,9 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::ResetBridgeDecoder() {
 }
 
 DecoderAdapterCode MediaCodecDecoderBridgeImpl::ReleaseBridgeDecoder() {
-  LOG(INFO)
-      << "[WiseplayDRM] MediaCodecDecoderBridgeImpl::ReleaseBridgeDecoder release decoder.";
+  LOG(INFO) << __FUNCTION__ << "[VideoDecoder]  release decoder.";
   if (video_decoder_ == nullptr) {
-    LOG(ERROR)
-        << "[WiseplayDRM] MediaCodecDecoderBridgeImpl::ReleaseBridgeDecoder decoder is NULL.";
+    LOG(ERROR) << __FUNCTION__ << "[VideoDecoder]  decoder is NULL.";
     return DecoderAdapterCode::DECODER_ERROR;
   }
   is_running_.store(false);
@@ -379,7 +362,7 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::ReleaseBridgeDecoder() {
 void MediaCodecDecoderBridgeImpl::PopInqueueDec() {
   if (signal_ == nullptr || signal_->is_on_error_ ||
       signal_->input_queue_.empty()) {
-    LOG(ERROR) << __func__ << "[WiseplayDRM] signal_ is not available.";
+    LOG(ERROR) << __func__ << "[VideoDecoder] signal_ is not available.";
     return;
   }
   signal_->input_queue_.pop();
@@ -407,7 +390,7 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::PushInbufferDec(
   attr.flags = buffer_flag;
   OH_AVErrCode ret = OH_AVBuffer_SetBufferAttr(av_buffer, &attr);
   if (ret != AV_ERR_OK) {
-    LOG(WARNING) << __FUNCTION__ << " [WiseplayDRM] OH_AVBuffer_SetBufferAttr index: " << index << ", err: " << ret;
+    LOG(WARNING) << __FUNCTION__ << " [VideoDecoder] OH_AVBuffer_SetBufferAttr index: " << index << ", err: " << ret;
   }
 
   ret = OH_VideoDecoder_PushInputBuffer(video_decoder_, index);
@@ -440,12 +423,17 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::PushInbufferDecEos(
 
   OH_AVErrCode ret = OH_AVBuffer_SetBufferAttr(av_buffer, &attr);
   if (ret != AV_ERR_OK) {
-    LOG(WARNING) << __FUNCTION__ << " [WiseplayDRM] OH_AVBuffer_SetBufferAttr index: " << index << ", err: " << ret;
+    LOG(WARNING) << __FUNCTION__ << " [VideoDecoder] OH_AVBuffer_SetBufferAttr index: " << index << ", err: " << ret;
   }
 
   ret = OH_VideoDecoder_PushInputBuffer(video_decoder_, index);
-  return ret == AV_ERR_OK ? DecoderAdapterCode::DECODER_OK
-                          : DecoderAdapterCode::DECODER_ERROR;
+  if (ret != AV_ERR_OK) {
+    LOG(ERROR) << __FUNCTION__
+               << " [VideoDecoder] OH_VideoDecoder_PushInputBuffer, ret: "
+               << ret;
+    return DecoderAdapterCode::DECODER_ERROR;
+  }
+  return DecoderAdapterCode::DECODER_OK;
 }
 
 #if BUILDFLAG(ENABLE_WISEPLAY)
@@ -564,7 +552,7 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::SetDecryptionConfig(
       LOG(ERROR) << __FUNCTION__
                  << " [WiseplayDRM]  OH_VideoDecoder_SetDecryptionConfig fail, "
                     "errCode = "
-                 << uint32_t(errCode);
+                 << static_cast<int>(errCode);
       return DecoderAdapterCode::DECODER_ERROR;
   }
   return DecoderAdapterCode::DECODER_OK;
@@ -577,11 +565,11 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::QueueInputBuffer(
     int64_t presentation_time,
     const DecryptConfig* decrypt_config) {
   if (signal_ == nullptr || signal_->is_on_error_) {
-    LOG(ERROR) << __func__ << "[WiseplayDRM] signal_ is not available.";
+    LOG(ERROR) << __func__ << "[VideoDecoder] signal_ is not available.";
     return DecoderAdapterCode::DECODER_ERROR;
   }
   if (signal_->is_decoder_flushing_.load() || signal_->input_queue_.empty()) {
-    LOG(WARNING) << __FUNCTION__ << "[WiseplayDRM] is_decoder_flushing_: "
+    LOG(WARNING) << __FUNCTION__ << "[VideoDecoder] is_decoder_flushing_: "
                  << signal_->is_decoder_flushing_.load()
                  << ", output_queue_.empty(): "
                  << signal_->output_queue_.empty()
@@ -589,7 +577,7 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::QueueInputBuffer(
     return DecoderAdapterCode::DECODER_RETRY;
   }
   if (video_decoder_ == nullptr) {
-    LOG(ERROR) << __FUNCTION__ << "[WiseplayDRM] decoder is NULL.";
+    LOG(ERROR) << __FUNCTION__ << "[VideoDecoder] decoder is NULL.";
     return DecoderAdapterCode::DECODER_ERROR;
   }
   VideoBridgeDecoderInputBuffer& input_buffer = signal_->input_queue_.front();
@@ -618,7 +606,7 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::QueueInputBuffer(
 
 DecoderAdapterCode MediaCodecDecoderBridgeImpl::QueueInputBufferEOS() {
   if (signal_ == nullptr || signal_->is_on_error_) {
-    LOG(ERROR) << __func__ << "[WiseplayDRM] signal_ is not available.";
+    LOG(ERROR) << __func__ << "[VideoDecoder] signal_ is not available.";
     return DecoderAdapterCode::DECODER_ERROR;
   }
   if (signal_->is_decoder_flushing_.load() || signal_->input_queue_.empty() ||
@@ -626,7 +614,7 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::QueueInputBufferEOS() {
     return DecoderAdapterCode::DECODER_RETRY;
   }
   if (video_decoder_ == nullptr) {
-    LOG(ERROR) << __func__ << "[WiseplayDRM] video_decoder_ is NULL.";
+    LOG(ERROR) << __func__ << "[VideoDecoder] video_decoder_ is NULL.";
     return DecoderAdapterCode::DECODER_ERROR;
   }
   VideoBridgeDecoderInputBuffer& input_buffer = signal_->input_queue_.front();
@@ -645,7 +633,7 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::ReleaseOutputBuffer(
     bool render) {
   if (video_decoder_ == nullptr) {
     LOG(ERROR)
-        << " [WiseplayDRM] MediaCodecDecoderBridgeImpl::ReleaseOutputBuffer decoder is NULL.";
+        << " [VideoDecoder] MediaCodecDecoderBridgeImpl::ReleaseOutputBuffer decoder is NULL.";
     return DecoderAdapterCode::DECODER_ERROR;
   }
   OH_AVErrCode ret = AV_ERR_OK;
@@ -662,7 +650,7 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::ReleaseOutputBuffer(
 void MediaCodecDecoderBridgeImpl::PopOutqueueDec() {
   if (signal_ == nullptr || signal_->is_on_error_ ||
       signal_->output_queue_.empty()) {
-    LOG(ERROR) << __func__ << "[WiseplayDRM] signal_ is not available.";
+    LOG(ERROR) << __func__ << "[VideoDecoder] signal_ is not available.";
     return;
   }
   signal_->output_queue_.pop();
@@ -673,14 +661,14 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::DequeueOutputBuffer(
     uint32_t& index,
     bool& eos) {
   if (signal_ == nullptr || signal_->is_on_error_) {
-    LOG(ERROR) << __FUNCTION__ << "[WiseplayDRM] signal_ is nullptr or is on error: " << signal_;
+    LOG(ERROR) << __FUNCTION__ << "[VideoDecoder] signal_ is nullptr or is on error: " << signal_;
     return DecoderAdapterCode::DECODER_ERROR;
   }
   if (signal_->is_decoder_flushing_.load() || signal_->output_queue_.empty()) {
     return DecoderAdapterCode::DECODER_RETRY;
   }
   if (video_decoder_ == nullptr) {
-    LOG(ERROR) << __FUNCTION__ << "[WiseplayDRM] decoder is NULL.";
+    LOG(ERROR) << __FUNCTION__ << "[VideoDecoder] decoder is NULL.";
     return DecoderAdapterCode::DECODER_ERROR;
   }
 
@@ -695,7 +683,7 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::DequeueOutputBuffer(
 }
 
 void MediaCodecDecoderBridgeImpl::DestroyNativeWindow(void* window) {
-  LOG(INFO) << "[WiseplayDRM] MediaCodecDecoderBridgeImpl::DestroyNativeWindow";
+  LOG(INFO) << "[VideoDecoder] MediaCodecDecoderBridgeImpl::DestroyNativeWindow";
   if (window) {
     OH_NativeWindow_DestroyNativeWindow((OHNativeWindow*)window);
   }
@@ -708,9 +696,9 @@ void CodecBridgeCallback::OnError(int32_t error_code) {
                                   shared_from_this(), error_code));
     return;
   }
-  LOG(ERROR) << __func__ << "[WiseplayDRM] error_code: " << error_code;
+  LOG(ERROR) << __func__ << "[VideoDecoder] error_code: " << error_code;
   if (signal_ == nullptr) {
-    LOG(ERROR) << __func__ << "[WiseplayDRM] signal_ is NULL.";
+    LOG(ERROR) << __func__ << "[VideoDecoder] signal_ is NULL.";
     return ;
   }
   signal_->is_on_error_ = true;
@@ -731,11 +719,11 @@ void CodecBridgeCallback::OnNeedInputBuffer(OH_AVCodec *codec, uint32_t index, O
     return;
   }
   if (signal_ == nullptr) {
-    LOG(ERROR) << __func__ << "[WiseplayDRM] signal_ is NULL.";
+    LOG(ERROR) << __func__ << "[VideoDecoder] signal_ is NULL.";
     return;
   }
   if (signal_->is_decoder_flushing_.load()) {
-    LOG(WARNING) << "[WiseplayDRM] | CodecBridgeCallback::" << __FUNCTION__ << " | Decoder is flushing.";
+    LOG(WARNING) << "[VideoDecoder] | CodecBridgeCallback::" << __FUNCTION__ << " | Decoder is flushing.";
     return;
   }
 
@@ -770,11 +758,11 @@ void CodecBridgeCallback::OnNewOutputBuffer(OH_AVCodec *codec, uint32_t index, O
   TRACE_EVENT0("media", "CodecBridgeCallback::OnNewOutputData");
 
   if (signal_ == nullptr) {
-    LOG(ERROR) << __func__ << "[WiseplayDRM] signal_ is NULL.";
+    LOG(ERROR) << __func__ << "[VideoDecoder] signal_ is NULL.";
     return;
   }
   if (signal_->is_decoder_flushing_.load()) {
-    LOG(WARNING) << "[WiseplayDRM] | CodecBridgeCallback::" << __FUNCTION__ << " | Decoder is flushing.";
+    LOG(WARNING) << "[VideoDecoder] | CodecBridgeCallback::" << __FUNCTION__ << " | Decoder is flushing.";
     return;
   }
 
@@ -785,7 +773,7 @@ void CodecBridgeCallback::OnNewOutputBuffer(OH_AVCodec *codec, uint32_t index, O
   OH_AVCodecBufferAttr attr;
   OH_AVErrCode ret = OH_AVBuffer_GetBufferAttr(av_buffer, &attr);
   if (ret != AV_ERR_OK) {
-    LOG(WARNING) << __FUNCTION__ << " [WiseplayDRM] OH_AVBuffer_GetBufferAttr: " << ret;
+    LOG(WARNING) << __FUNCTION__ << " [VideoDecoder] OH_AVBuffer_GetBufferAttr: " << ret;
   }
   BufferInfo info = {attr.pts, attr.size, attr.offset};
   

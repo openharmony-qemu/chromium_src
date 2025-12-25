@@ -37,7 +37,7 @@
 using testing::ElementsAre;
 using testing::IsEmpty;
 #if BUILDFLAG(ARKWEB_CRASHPAD)
-void ReportRenderFreeze(int32_t pid, const std::string& processName, const std::string& freezeMsg, int32_t uid) {}
+void ReportRenderFreeze() {}
 #endif
 namespace base {
 namespace {

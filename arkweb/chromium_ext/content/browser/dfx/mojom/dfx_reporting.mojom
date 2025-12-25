@@ -5,6 +5,13 @@ interface DfxReporter {
   ReportHiSysEvent(string eventName, string sysEventInfoJson);
 };
 
+struct FreezeInfo {
+  int32 pid;
+  string processName;
+  string freezeMsg;
+  int32 uid;
+};
+
 interface FreezeReporter {
-  ReportRenderFreeze(int32 pid, string processName, string freezeMsg, int32 uid);
+  ReportRenderFreeze(FreezeInfo freezeInfo);
 };

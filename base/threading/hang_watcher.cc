@@ -33,14 +33,11 @@
 #include "build/build_config.h"
 
 #if BUILDFLAG(ARKWEB_CRASHPAD)
-#include "base/logging.h"
-#include "base/command_line.h"
-#include <fstream>
 #include "arkweb/chromium_ext/gpu/ipc/service/gpu_hang_adapter.h"
 #endif
 
 #if BUILDFLAG(ARKWEB_CRASHPAD)
-extern void ReportRenderFreeze(int32_t pid, const std::string& processName, const std::string& freezeMsg, int32_t uid);
+extern void ReportRenderFreeze();
 #endif
 
 namespace base {
@@ -74,44 +71,6 @@ std::atomic<bool> g_keep_monitoring{true};
 // If true, indicates that this process's shutdown sequence has started. Once
 // flipped to true, cannot be un-flipped.
 std::atomic<bool> g_shutting_down{false};
-
-#if BUILDFLAG(ARKWEB_CRASHPAD)
-int32_t GetPid() {
-  std::ifstream input_file("/proc/self/status");
-  if (!input_file.is_open()) {
-    LOG(ERROR) << "Error: Could not open /proc/self/status";
-    return 0;
-  }
-
-  std::string line;
-  while (std::getline(input_file, line)) {
-    if (line.find("NSpid:") != 0) {
-      continue;
-    }
-    size_t pos = line.find(":");
-    if (pos != std::string::npos) {
-      std::string valueStr = line.substr(pos + 1);
-      return std::stoi(valueStr);
-    }
-  }
-  LOG(ERROR) << "Error: Failed to read process name from /proc/self/status";
-  return 0;
-}
-
-std::string GetProcessName() {
-  std::ifstream input_file("/proc/self/cmdline");
-  if (!input_file.is_open()) {
-    LOG(ERROR) << "Error: Could not open /proc/self/cmdline";
-    return "";
-  }
-
-  std::string processName = "";
-  if (!std::getline(input_file, processName)) {
-    LOG(ERROR) << "Error: Failed to read process name from /proc/self/cmdline";
-  }
-  return processName;
-}
-#endif
 
 // Emits the hung thread count histogram. |count| is the number of threads
 // of type |thread_type| that were hung or became hung during the last
@@ -193,7 +152,7 @@ void LogStatusHistogram(HangWatcher::ThreadType thread_type,
         case HangWatcher::ThreadType::kMainThread:
 #if BUILDFLAG(ARKWEB_CRASHPAD)
           if (any_thread_hung) {
-            ReportRenderFreeze(GetPid(), GetProcessName(), "render freeze", static_cast<int32_t>(getuid()));
+            ReportRenderFreeze();
           }
 #endif
           UMA_HISTOGRAM_SPLIT_BY_PROCESS_PRIORITY(

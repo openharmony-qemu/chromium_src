@@ -156,12 +156,16 @@ interface MediaPlayer {
   [EnableIf=arkweb_media_memory_pressure]
   NotifyMemoryLevel(int32 level);
 
+  [EnableIf=arkweb_media_cast]
   PullUpCastBackGround(string device_name);
 
+  [EnableIf=arkweb_media_cast]
   UpdateUiPlayState(bool is_playing);
 
+  [EnableIf=arkweb_media_cast]
   UpdateUiPlayPosition(int64 position);
 
+  [EnableIf=arkweb_media_cast]
   MediaCastStopped();
 };
 
@@ -310,10 +314,19 @@ interface MediaPlayerObserver {
   [EnableIf=arkweb_pip]
   OnPictureInPictureStateChanged(uint32 state, int32 width, int32 height);
 
+  [EnableIf=arkweb_media_cast]
   OnMediaCastEnter();
+
+  [EnableIf=arkweb_media_cast]
   OnNotifyMeidaCastUri(string media_uri);
+
+  [EnableIf=arkweb_media_cast]
   HandleStopMediaCast();
+
+  [EnableIf=arkweb_media_cast]
   UpdateRemotePlayState(bool is_playing);
+
+  [EnableIf=arkweb_media_cast]
   UpdateRemotePlayPosition(int64 position);
 };
 

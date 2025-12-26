@@ -1403,7 +1403,7 @@ void WebContentsImplExt::OnDocumentEndReady(const FrameInfos& frameInfo) {
 
 #if BUILDFLAG(ARKWEB_MEDIA_CAST)
 void WebContentsImplExt::OnMediaCastEnter() {
-  LOG(INFO) << "zwp: WebContentsImplExt::OnMediaCastEnter";
+  LOG(INFO) << "WebContentsImplExt::OnMediaCastEnter";
   if (delegate_) {
     delegate_->OnMediaCastEnter();
   }

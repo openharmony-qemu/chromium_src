@@ -370,4 +370,20 @@ void NWebEngineImpl::LibraryLoaded(
 }
 #endif
 
+#ifdef BUILDFLAG(ARKWEB_DFX_DUMP)
+std::string NWebEngineImpl::DumpArkWebInfo(const std::string& param) {
+  base::debug::ArkWebDumpInfo& arkwebDumpInfo = base::debug::ArkWebDumpInfo::GetInstance();
+  if (!arkwebDumpInfo.IsDumpEnabled()) {
+    return "web.debug.dump.on = false";
+  }
+
+  std::string result = "";
+  if (param == "") {
+    arkwebDumpInfo.DumpArkWebInfo(result);
+  } else {
+    result += "Parameter not supported. More features are under development.";
+  }
+  return result;
+}
+#endif
 }  // namespace OHOS::NWeb

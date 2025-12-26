@@ -83,6 +83,20 @@ typedef enum ArkWeb_JavaScriptValueType {
 } ArkWeb_JavaScriptValueType;
 
 /**
+ * @brief Defines enum type supplied to ArkWeb_BlanklessLoadingInfo for indicating the blankless loading state.
+ *
+ * @since 23
+ */
+typedef enum ArkWeb_BlanklessLoadingState {
+  /** The blankless load success. */
+  ARKWEB_LOADING_SUCCESS = 0,
+  /** The blankless load failed. */
+  ARKWEB_LOADING_FAIL = 1,
+  /** The blankless frame is removed. */
+  ARKWEB_LOADING_REMOVE = 2,
+} ArkWeb_BlanklessLoadingState;
+
+/**
  * @brief Defines the ArkWeb_WebMessage.
  *
  * @since 12

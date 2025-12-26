@@ -1959,3 +1959,84 @@ TEST_F(ArkWebModelTest, OH_NativeArkWeb_SetBlanklessLoadingWithKey_004) {
   web_obj->SetDestroyCallback([]() {});
   web_obj->FireDestroyCallback();
 }
+
+TEST_F(ArkWebModelTest, OH_NativeArkWeb_SetBlanklessLoadingParams_001) {
+  const char* webTag = "webTag";
+  const char* key = "webTag";
+  ArkWeb_BlanklessLoadingParam param;
+  param.enable = true;
+  auto web_obj = std::make_shared<OHOS::NWeb::ArkWebNativeObject>("webTag");
+  std::shared_ptr<OHOS::NWeb::NWebImpl> nweb_impl =
+    std::make_shared<OHOS::NWeb::NWebImpl>(1);
+  nweb_impl->AddNWebToMap(1, nweb_impl);
+  web_obj->BindWebTagToWebInstance(1, "webTag");
+  auto web_obj_ptr =
+    OHOS::NWeb::ArkWebNativeObject::GetWebInstanceByWebTag("webTag");
+  web_obj_ptr->SetWebWeakPtr(nweb_impl);
+  auto result =
+    OH_NativeArkWeb_SetBlanklessLoadingParams(webTag, key, param);
+  EXPECT_EQ(result,
+            ArkWeb_BlanklessErrorCode::ARKWEB_BLANKLESS_ERR_SIGNIFICANT_CHANGE);
+  web_obj->SetDestroyCallback([]() {});
+  web_obj->FireDestroyCallback();
+}
+
+TEST_F(ArkWebModelTest, OH_NativeArkWeb_SetBlanklessLoadingParams_002) {
+  const char* webTag = "webTag";
+  const char* key = "webTag";
+  ArkWeb_BlanklessLoadingParam param;
+  param.enable = false;
+  auto web_obj = std::make_shared<OHOS::NWeb::ArkWebNativeObject>("webTag");
+  std::shared_ptr<OHOS::NWeb::NWebImpl> nweb_impl =
+    std::make_shared<OHOS::NWeb::NWebImpl>(1);
+  nweb_impl->AddNWebToMap(1, nweb_impl);
+  web_obj->BindWebTagToWebInstance(1, "webTag");
+  auto web_obj_ptr =
+    OHOS::NWeb::ArkWebNativeObject::GetWebInstanceByWebTag("webTag");
+  web_obj_ptr->SetWebWeakPtr(nweb_impl);
+  auto result =
+    OH_NativeArkWeb_SetBlanklessLoadingParams(webTag, key, param);
+  EXPECT_EQ(result,
+            ArkWeb_BlanklessErrorCode::ARKWEB_BLANKLESS_ERR_SIGNIFICANT_CHANGE);
+  web_obj->SetDestroyCallback([]() {});
+  web_obj->FireDestroyCallback();
+}
+
+TEST_F(ArkWebModelTest, OH_NativeArkWeb_SetBlanklessLoadingParams_003) {
+  const char* webTag = nullptr;
+  const char* key = "webTag";
+  ArkWeb_BlanklessLoadingParam param;
+  param.enable = true;
+  auto web_obj = std::make_shared<OHOS::NWeb::ArkWebNativeObject>("webTag");
+  std::shared_ptr<OHOS::NWeb::NWebImpl> nweb_impl =
+    std::make_shared<OHOS::NWeb::NWebImpl>(1);
+  nweb_impl->AddNWebToMap(1, nweb_impl);
+  web_obj->BindWebTagToWebInstance(1, "webTag");
+  auto web_obj_ptr =
+    OHOS::NWeb::ArkWebNativeObject::GetWebInstanceByWebTag("webTag");
+  web_obj_ptr->SetWebWeakPtr(nweb_impl);
+  auto result =
+    OH_NativeArkWeb_SetBlanklessLoadingParams(webTag, key, param);
+  EXPECT_EQ(result,
+            ArkWeb_BlanklessErrorCode::ARKWEB_BLANKLESS_ERR_CONTROLLER_NOT_INITED);
+  web_obj->SetDestroyCallback([]() {});
+  web_obj->FireDestroyCallback();
+}
+
+TEST_F(ArkWebModelTest, OH_NativeArkWeb_SetBlanklessLoadingParams_004) {
+  const char* webTag = "webTag";
+  const char* key = "webTag";
+  ArkWeb_BlanklessLoadingParam param;
+  param.enable = true;
+  auto web_obj = std::make_shared<OHOS::NWeb::ArkWebNativeObject>("webTag");
+  std::shared_ptr<OHOS::NWeb::NWebImpl> nweb_impl =
+    std::make_shared<OHOS::NWeb::NWebImpl>(1);
+  nweb_impl->AddNWebToMap(1, nweb_impl);
+  web_obj->BindWebTagToWebInstance(1, "webTag");
+  auto result =
+    OH_NativeArkWeb_SetBlanklessLoadingParams(webTag, key, param);
+  EXPECT_EQ(result,
+            ArkWeb_BlanklessErrorCode::ARKWEB_BLANKLESS_ERR_CONTROLLER_NOT_INITED);
+  web_obj->SetDestroyCallback([]() {});
+  web_obj->FireDestroyCallback();
+}

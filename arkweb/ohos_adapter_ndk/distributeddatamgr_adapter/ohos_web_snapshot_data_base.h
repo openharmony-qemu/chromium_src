@@ -62,6 +62,7 @@ public:
      */
     void ClearSnapshotDataItem(const std::vector<int64_t>& blankless_keys);
     bool InsertSnapshotDataItem(int64_t blankless_key, const SnapshotDataItem& data);
+    bool InsertSnapshotDataItem(int64_t blankless_key, const SnapshotDataItem& data, int64_t expirationTime);
     SnapshotDataItem GetSnapshotDataItem(int64_t blankless_key);
     void RegisterDataBaseCallback(std::shared_ptr<OhosWebSnapshotDataBaseCallback> callback);
     int32_t SetBlanklessLoadingCacheCapacity(int32_t capacity);
@@ -74,7 +75,7 @@ private:
 
     struct DataBaseDataItem {
         SnapshotDataItem snapshotData;
-        int64_t time;
+        int64_t expirationTime = 0;
     };
 
     void GetAllInfo();

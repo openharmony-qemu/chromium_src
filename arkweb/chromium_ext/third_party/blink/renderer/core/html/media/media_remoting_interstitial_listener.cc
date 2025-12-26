@@ -23,6 +23,28 @@ constexpr double kLargestPercentage = 100.0;
 
 namespace blink {
 
+void RemotingButtonEventListener::HandleClick(Event* event) {
+  event->stopPropagation();
+  event->preventDefault();
+
+  switch (button_type_) {
+    case RemotingButtonType::kStopCasting:
+      media_remoting_interstitial_->OnStopCastingClicked();
+      break;
+    case RemotingButtonType::kSwitchDevice:
+      media_remoting_interstitial_->OnSwitchDeviceClicked();
+      break;
+    case RemotingButtonType::kPlayPause:
+      LOG(INFO) << "RemotingButtonEventListener : public NativeEventListener GetPlayingState: " << media_remoting_interstitial_->GetPlayingState();
+      media_remoting_interstitial_->UpdateRemotePlayState(!media_remoting_interstitial_->GetPlayingState());
+      media_remoting_interstitial_->OnPlayPauseClicked();
+      break;
+    case RemotingButtonType::kFullscreenToggle:
+      media_remoting_interstitial_->OnFullscreenClicked();
+      break;
+  }
+}
+
 void ProgressBarEventListener::Invoke(ExecutionContext* context, Event* event) {
   if (!weak_ptr_ || !progress_bar_) {
     LOG(WARNING) << "Progress bar event listener: weak_ptr_ or progress_bar_ is null.";

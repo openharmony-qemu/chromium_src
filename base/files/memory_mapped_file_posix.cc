@@ -17,10 +17,6 @@
 #include "base/threading/scoped_blocking_call.h"
 #include "build/build_config.h"
 
-#if BUILDFLAG(IS_ARKWEB)
-#include <sys/prctl.h>
-#endif
-
 namespace base {
 
 MemoryMappedFile::MemoryMappedFile() = default;
@@ -108,10 +104,6 @@ bool MemoryMappedFile::MapFileRegionToMemory(
     DPLOG(ERROR) << "mmap " << file_.GetPlatformFile();
     return false;
   }
-#if BUILDFLAG(IS_ARKWEB)
-  prctl(PR_SET_VMA, PR_SET_VMA_ANON_NAME, ptr, map_size,
-        "memory_mapped_file_posix-mmap-MapFileRegionToMemory");
-#endif
 
   // SAFETY: For the span construction to be valid, `ptr` needs to point to at
   // least `map_size` many bytes, which is the guarantee of mmap() when it

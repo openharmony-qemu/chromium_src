@@ -46,10 +46,6 @@
 #include "mojo/buildflags.h"
 #include "mojo/core/embedder/features.h"
 
-#if BUILDFLAG(IS_ARKWEB)
-#include <sys/prctl.h>
-#endif
-
 #if BUILDFLAG(IS_ANDROID)
 #include "base/android/build_info.h"
 #endif
@@ -370,10 +366,6 @@ class ChannelLinux::SharedBuffer {
       base::SharedMemorySecurityPolicy::ReleaseReservationForMapping(size);
       return nullptr;
     }
-#if BUILDFLAG(IS_ARKWEB)
-    prctl(PR_SET_VMA, PR_SET_VMA_ANON_NAME, ptr, size,
-          "channel_linux-mmap-Create");
-#endif
 
     return base::WrapUnique<SharedBuffer>(new SharedBuffer(ptr, size));
   }

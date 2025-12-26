@@ -28,7 +28,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <dlfcn.h>
-#include <sys/prctl.h>
 #include "third_party/bounds_checking_function/include/securec.h"
 #include "arkweb/ohos_nweb/src/nweb_hilog.h"
 
@@ -149,8 +148,6 @@ void *ShmemAdapterMap(int fd, int flag)
         WVLOG_E("Failed to exec mmap, errno = %{public}d", errno);
         return startAddr;
     }
-    prctl(PR_SET_VMA, PR_SET_VMA_ANON_NAME, startAddr, ShmemAdapterGetSize(fd),
-          "ashmem-mmap-ShmemAdapterMap");
 
     return startAddr;
 }

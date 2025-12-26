@@ -33,37 +33,33 @@ void ProgressBarEventListener::Invoke(ExecutionContext* context, Event* event) {
   // Dispatch and handle according to event type
   if (event_type == event_type_names::kClick) {
     auto* mouse_event = DynamicTo<MouseEvent>(event);
-    HandleMouseClick(mouse_event);
+    if (touch_event) HandleMouseClick(mouse_event);
   } else if (event_type == event_type_names::kMousedown) {
     auto* mouse_event = DynamicTo<MouseEvent>(event);
-    HandleMouseDown(mouse_event);
+    if (touch_event) HandleMouseDown(mouse_event);
   } else if (event_type == event_type_names::kMousemove) {
     auto* mouse_event = DynamicTo<MouseEvent>(event);
-    HandleMouseMove(mouse_event);
+    if (touch_event) HandleMouseMove(mouse_event);
   } else if (event_type == event_type_names::kMouseup) {
     auto* mouse_event = DynamicTo<MouseEvent>(event);
-    HandleMouseUp(mouse_event);
+    if (touch_event) HandleMouseUp(mouse_event);
   } else if (event_type == event_type_names::kMouseleave) {
     auto* mouse_event = DynamicTo<MouseEvent>(event);
-    HandleMouseLeave(mouse_event);
+    if (touch_event) HandleMouseLeave(mouse_event);
   }   // Handle touch events
   else if (event_type == event_type_names::kTouchstart) {
     auto* touch_event = DynamicTo<TouchEvent>(event);
     if (touch_event) HandleTouchStart(touch_event);
-  }
-  else if (event_type == event_type_names::kTouchmove) {
+  } else if (event_type == event_type_names::kTouchmove) {
     auto* touch_event = DynamicTo<TouchEvent>(event);
     if (touch_event) HandleTouchMove(touch_event);
-  }
-  else if (event_type == event_type_names::kTouchend) {
+  } else if (event_type == event_type_names::kTouchend) {
     auto* touch_event = DynamicTo<TouchEvent>(event);
     if (touch_event) HandleTouchEnd(touch_event);
-  }
-  else if (event_type == event_type_names::kTouchcancel) {
+  } else if (event_type == event_type_names::kTouchcancel) {
     auto* touch_event = DynamicTo<TouchEvent>(event);
     if (touch_event) HandleTouchCancel(touch_event);
-  }
-  else {
+  } else {
     LOG(INFO) << "Untreated progress bar event type: " << event_type.Utf8();
   }
 }

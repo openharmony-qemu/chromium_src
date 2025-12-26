@@ -80,6 +80,7 @@ class TestFrameSinkImpl::TestMojoCompositorFrameSink
     return rv;
   }
 
+  void UpdateThrottleMode(bool is_enable) {};
  private:
   viz::CompositorFrame last_frame_;
   std::optional<::viz::HitTestRegionList> hit_test_region_list_;

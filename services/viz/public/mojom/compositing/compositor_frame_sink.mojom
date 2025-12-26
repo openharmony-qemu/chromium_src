@@ -124,6 +124,9 @@ interface CompositorFrameSink {
 
   [EnableIf=arkweb_vsync_schedule]
   OnSetBypassVsyncCondition(int32 condition);
+
+  [EnableIf=arkweb_throttle_frame]
+  UpdateThrottleMode(bool is_enable);
 };
 
 interface CompositorFrameSinkClient {

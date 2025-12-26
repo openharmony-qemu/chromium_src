@@ -233,6 +233,7 @@ declare_args() {
   arkweb_screen_size = true
   arkweb_canvas_commit = true
   arkweb_vsync_schedule = true
+  arkweb_throttle_frame = true
   arkweb_pip = true
   arkweb_immediate_destory = false
   arkweb_cwnd = true

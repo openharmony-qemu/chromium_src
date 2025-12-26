@@ -466,5 +466,12 @@ void AsyncLayerTreeFrameSink::InitSoftwareCompositorRender(
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+void AsyncLayerTreeFrameSink::UpdateThrottleMode(bool is_enable) {
+  DCHECK(compositor_frame_sink_ptr_);
+  compositor_frame_sink_ptr_->UpdateThrottleMode(is_enable);
+}
+#endif
+
 }  // namespace mojo_embedder
 }  // namespace cc

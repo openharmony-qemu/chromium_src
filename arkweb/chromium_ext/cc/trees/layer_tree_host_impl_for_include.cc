@@ -84,6 +84,34 @@ void LayerTreeHostImpl::SetupScrollBy() {
   client_->RenewTreePriority();
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+base::TimeDelta LayerTreeHostImpl::ThrottleFrameEnd() {
+  if (throttleFrameStarted_) {
+    if (layer_tree_frame_sink_) {
+      layer_tree_frame_sink_->UpdateThrottleMode(false);
+    }
+    throttleFrameStarted_ = false;
+    return viz::BeginFrameArgs::MinInterval();
+  }
+  return frame_rate_estimator_.GetPreferredInterval();
+}
+
+void LayerTreeHostImpl::ThrottleFrameStart() {
+  if (!throttleFrameStarted_) {
+    layer_tree_frame_sink_->UpdateThrottleMode(true);
+    throttleFrameStarted_ = true;
+  }
+}
+
+bool LayerTreeHostImpl::IsThrottleEnable() {
+  bool isEnabled = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                  .GetSystemPropertiesInstance()
+                  .GetBoolParameter("web.throttle.enabled", false)
+                  && frame_rate_estimator_.GetBeginFrameThrottleMode();
+  return isEnabled;
+}
+#endif
 // LCOV_EXCL_STOP
 
 } // namespace cc

@@ -246,6 +246,7 @@ if (!enable_arkweb) {
   arkweb_ndk = false
   arkweb_cert_authentication = false
   arkweb_fling = false
+  arkweb_throttle_frame = false
   arkweb_occluded_opt = false
   arkweb_performance_trace = false
   arkweb_report_loss_frame = false
@@ -481,6 +482,7 @@ buildflag_header("features") {
     "ARKWEB_NDK=$arkweb_ndk",
     "ARKWEB_CERT_AUTHENTICATION=$arkweb_cert_authentication",
     "ARKWEB_FLING=$arkweb_fling",
+    "ARKWEB_THROTTLE_FRAME=$arkweb_throttle_frame",
     "ARKWEB_SKIA_CACHE=$arkweb_skia_cache",
     "ARKWEB_OCCLUDED_OPT=$arkweb_occluded_opt",
     "ARKWEB_OPTIMIZE_PARSER_BUDGET=$arkweb_optimize_parser_budget",

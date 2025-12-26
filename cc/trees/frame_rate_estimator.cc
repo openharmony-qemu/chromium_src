@@ -10,6 +10,8 @@
 #include "cc/base/features.h"
 #include "components/viz/common/frame_sinks/begin_frame_args.h"
 
+#include "arkweb/chromium_ext/cc/trees/frame_rate_estimator_for_include.cc"
+
 namespace cc {
 namespace {
 
@@ -44,6 +46,9 @@ void FrameRateEstimator::SetVideoConferenceMode(bool enabled) {
 
 void FrameRateEstimator::WillDraw(base::TimeTicks now) {
   num_did_not_produce_frame_since_last_draw_ = 0u;
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+  ClearBeginFrameThrottleSettings();
+#endif
   if (!in_video_conference_mode_ || input_priority_mode_) {
     return;
   }
@@ -79,7 +84,11 @@ base::TimeDelta FrameRateEstimator::GetPreferredInterval() const {
       num_of_consecutive_frames_with_min_delta_ < kMinNumOfFramesWithMinDelta) {
     return viz::BeginFrameArgs::DefaultInterval() * 2;
   }
-
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+  if (begin_frame_throttle_mode_ && num_no_damage_did_not_produce_frame_ > 4) {
+    return viz::BeginFrameArgs::DefaultInterval() * 2;
+  }
+#endif
   static const uint64_t num_did_not_produce_frame_before_throttle =
       static_cast<uint64_t>(
           features::kNumDidNotProduceFrameBeforeThrottle.Get());

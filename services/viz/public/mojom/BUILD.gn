@@ -66,6 +66,9 @@ mojom("mojom") {
   if (arkweb_vsync_schedule) {
     enabled_features += ["arkweb_vsync_schedule"]
   }
+  if (arkweb_throttle_frame) {
+    enabled_features += ["arkweb_throttle_frame"]
+  }
   if (arkweb_report_sys_event) {
     enabled_features += ["arkweb_report_sys_event"]
   }

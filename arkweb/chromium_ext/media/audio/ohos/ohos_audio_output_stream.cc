@@ -713,6 +713,11 @@ bool OHOSAudioOutputStream::IsPreloadOrMutedMediaMode() {
     return false;
   }
 
+  if (parameters_.latency_tag() == AudioLatency::Type::kInteractive) {
+    LOG(INFO) << "OHOSAudioOutputStream::IsPreloadOrMutedMediaMode AudioContext";
+    return false;
+  }
+  
   content::MediaSessionImpl::NWebMediaSessionState sessionState =
       OHOSAudioFocusController::GetSessionState(parameters_);
   bool is_active = OHOSAudioFocusController::IsActive(parameters_);

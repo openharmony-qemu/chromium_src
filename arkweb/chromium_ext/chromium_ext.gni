@@ -910,7 +910,7 @@ arkweb_third_party_blink_renderer_platform_media_unittest_sources = [
 ]
 
 arkweb_cc_trees_unittest_sources = [
-  "//arkweb/chromium_ext/cc/trees/frame_rate_estimator_for_include_unittest.cc"
+  "//arkweb/chromium_ext/cc/trees/frame_rate_estimator_for_include_unittest.cc",
   "//arkweb/chromium_ext/cc/trees/layer_tree_impl_utils_unittest.cc",
   "//arkweb/chromium_ext/cc/trees/layer_tree_host_ext_unittest.cc",
 ]

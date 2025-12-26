@@ -513,6 +513,13 @@ component("nweb_sources") {
     ]
   }
 
+  if (defined(arkweb_ex_fallback_proxy) && arkweb_ex_fallback_proxy) {
+    sources += [
+      "src/nweb_fallback_proxy.cc",
+      "src/nweb_fallback_proxy.h",
+    ]
+  }
+
   if (arkweb_navigation) {
     sources += [
       "src/nweb_load_committed_details_impl.cc",

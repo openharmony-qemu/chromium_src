@@ -337,10 +337,6 @@ bool OHOS::NWeb::NWebImpl::should_lazy_init_web_engine_ = false;
 #include "base/ohos/sys_info_utils_ext.h"
 #endif
 
-#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
-#include "cef/ohos_cef_ext/libcef/browser/fallback_proxy/fallback_proxy_service.h"
-#endif
-
 namespace {
 uint32_t g_nweb_count = 0;
 const uint32_t kSurfaceMaxWidth = 7680;
@@ -609,10 +605,6 @@ using ASHelper = OHOS::NWeb::NWebAdvancedSecurityHelper;
 std::shared_ptr<NWebLoggerCallback> g_logger_callback;
 #endif
 bool g_logger_callback_initialized = false;
-
-#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
-std::shared_ptr<NWebProxyClientCallback> g_proxy_client_callback = nullptr;
-#endif
 
 #if BUILDFLAG(ARKWEB_EXT_PASSWORD)
 static const int kMigrationBase = 10;
@@ -4772,49 +4764,6 @@ void NWebImpl::PutLoggerCallback(
 void NWebImpl::RemoveLoggerCallback() {
   WVLOG_D("remove logger callback");
   NWebHandlerDelegate::UnRegisterLoggerCallback();
-}
-#endif
-
-#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
-void NWebImpl::PutProxyClientCallback(
-    std::shared_ptr<NWebProxyClientCallback> proxy_callback) {
-  WVLOG_D("PutProxyClientCallback callback");
-  g_proxy_client_callback = proxy_callback;
-}
-
-void NWebImpl::RemoveProxyClientCallback() {
-  WVLOG_D("remove PutProxyClientCallback callback");
-  g_proxy_client_callback = nullptr;
-}
-
-void NWebImpl::OnUpdateProxyToken(const std::string& old_token) {
-  LOG(DEBUG) << "Fallback NWebHandlerDelegate::onUpdateProxyToken";
-  if (!g_proxy_client_callback) {
-    LOG(ERROR) << "g_proxy_client_callback is null";
-    return;
-  }
-  g_proxy_client_callback->onUpdateProxyToken(old_token.c_str());
-}
-
-void NWebImpl::UpdateProxyToken(const char* token, const char* token_info) {
-  WVLOG_I(
-      "fallback NWebImpl::UpdateProxyToken token:%{public}s, "
-      "token_info:%{public}s",
-      token, token_info);
-  fallback_proxy::FallbackProxyService::GetInstance()->UpdateProxyToken(
-      token, token_info);
-}
-
-void NWebImpl::SetGlobalListConfigPath(const char* file_path,
-                                       const char* version) {
-  WVLOG_I(
-      "fallback NWebImpl::SetGlobalListConfigPath file_path:%{public}s, "
-      "version:%{public}s",
-      file_path, version);
-  std::string file_path_str = file_path;
-  std::string version_str = version;
-  fallback_proxy::ArkwebGlobalListConfig::GetInstance()
-      ->SetGlobalListConfigPath(base::FilePath(file_path_str), version_str);
 }
 #endif
 

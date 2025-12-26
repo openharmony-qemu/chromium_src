@@ -40,34 +40,11 @@ class RemotingButtonEventListener : public NativeEventListener {
   }
 
  private:
-  void HandleClick(Event* event) {
-    event->stopPropagation();
-    event->preventDefault();
-
-    switch (button_type_) {
-      case RemotingButtonType::kStopCasting:
-        media_remoting_interstitial_->OnStopCastingClicked();
-        break;
-      case RemotingButtonType::kSwitchDevice:
-        media_remoting_interstitial_->OnSwitchDeviceClicked();
-        break;
-      case RemotingButtonType::kPlayPause:
-        // TODO 如果isplaying 是true，要通知远端播放；否则暂停
-        LOG(INFO) << "lmh2 RemotingButtonEventListener : public NativeEventListener GetPlayingState: " << media_remoting_interstitial_->GetPlayingState();
-        media_remoting_interstitial_->UpdateRemotePlayState(!media_remoting_interstitial_->GetPlayingState());
-        media_remoting_interstitial_->OnPlayPauseClicked();
-        break;
-      case RemotingButtonType::kFullscreenToggle:
-        media_remoting_interstitial_->OnFullscreenClicked();
-        break;
-    }
-  }
+  void HandleClick(Event* event);
 
   base::WeakPtr<MediaRemotingInterstitial> media_remoting_interstitial_;
   RemotingButtonType button_type_;
 };
-
-// media_remoting_interstitial.h 中添加
 
 class ProgressBarEventListener : public NativeEventListener {
  public:
@@ -89,25 +66,25 @@ class ProgressBarEventListener : public NativeEventListener {
   }
 
  private:
-  // 事件处理函数
+  // Mouse Event handler
   void HandleMouseClick(MouseEvent* event);
   void HandleMouseDown(MouseEvent* event);
   void HandleMouseMove(MouseEvent* event);
   void HandleMouseUp(MouseEvent* event);
   void HandleMouseLeave(MouseEvent* event);
 
-  // 触摸事件处理
+  // Touch Event Handling
   void HandleTouchStart(TouchEvent* event);
   void HandleTouchMove(TouchEvent* event);
   void HandleTouchEnd(TouchEvent* event);
   void HandleTouchCancel(TouchEvent* event);
   
-  // 通用处理函数
+  // General-purpose handler
   void StartDragging(float start_x, float client_x);
   void UpdateDragging(float client_x);
   void EndDragging(float client_x);
 
-  // 辅助函数
+  // Helper function
   float GetProgressBarLeft();
   float GetProgressBarWidth();
   double CalculatePercentage(float client_x);
@@ -120,8 +97,6 @@ class ProgressBarEventListener : public NativeEventListener {
   bool is_dragging_;
   float drag_start_x_;
   float drag_start_percentage_;
-
-  // 触摸拖动状态
   bool is_touch_dragging_;
   int active_touch_id_;
 };

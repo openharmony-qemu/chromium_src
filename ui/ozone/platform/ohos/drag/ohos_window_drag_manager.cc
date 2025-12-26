@@ -125,13 +125,6 @@ bool OhosWindowDragManager::NeedSendWindowEventToUi(const int32_t widget_id,
                  << widget_id << ", action:" << action;
     return false;
   }
-  if (IsTouchingDragTab() && event_id != touch_drag_tab_finger_id_) {
-    LOG(WARNING) << "[OhosTabDrag] " << __FUNCTION__
-                 << " touch event is filtered when current fingerId is not "
-                 << "shift fingerId, current finger id:" << event_id
-                 << ", touch_drag_tab_finger_id_:" << touch_drag_tab_finger_id_;
-    return false;
-  }
 
   // When tab is dragging, the up event of source window and down event of
   // target window are simulated after the window event is transferred. The two

@@ -276,7 +276,8 @@ void OhosEventSourceNodeHandle::OnMouseEvent(
   pointer_location_.SetPoint(mouse_event_data.x, mouse_event_data.y);
   if (mouse_event_data.action == UI_MOUSE_EVENT_ACTION_PRESS) {
     type = EventType::kMousePressed;
-  } else if (mouse_event_data.action == UI_MOUSE_EVENT_ACTION_RELEASE) {
+  } else if (mouse_event_data.action == UI_MOUSE_EVENT_ACTION_RELEASE ||
+             mouse_event_data.action == UI_MOUSE_EVENT_ACTION_CANCEL) {
     type = EventType::kMouseReleased;
   } else if (mouse_event_data.action == UI_MOUSE_EVENT_ACTION_MOVE) {
     OnMouseMoveEvent(widget_id, mouse_event_data, original_pointer_location,

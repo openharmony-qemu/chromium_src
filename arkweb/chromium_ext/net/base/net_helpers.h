@@ -5,6 +5,7 @@
 #ifndef CEF_LIBCEF_BROWSER_NET_SERVICE_NET_HELPERS_H_
 #define CEF_LIBCEF_BROWSER_NET_SERVICE_NET_HELPERS_H_
 
+#include "base/no_destructor.h"
 #include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(ARKWEB_CUSTOM_DNS)
@@ -90,7 +91,7 @@ class NETHELPERS_EXPORT NetHelpers {
   static std::vector<std::string> GetHostIP(const std::string host_name);
   static void ClearHostIP(const std::string host_name);
   static void ClearHostIP();
-  static std::map<std::string, struct CustomDnsEntry> custom_dns;
+  static base::NoDestructor<std::map<std::string, struct CustomDnsEntry>> custom_dns;
 #endif
 
 #if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
@@ -123,7 +124,7 @@ class NETHELPERS_EXPORT NetHelpers {
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   static std::optional<bool> enable_private_network_check;
-  static std::mutex enable_private_network_check_mutex;
+  static base::NoDestructor<std::mutex> enable_private_network_check_mutex;
   static bool ShouldAllowInsecurePrivateNetworkRequests();
   static void SetPrivateNetworkAccess(bool enable);
   static bool GetPrivateNetworkAccess();

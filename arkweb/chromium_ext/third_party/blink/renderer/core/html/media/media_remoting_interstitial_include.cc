@@ -23,14 +23,14 @@ void MediaRemotingInterstitial::AddMediaCastBackGround() {
   LOG(INFO) << "AddMediaCastBackGround, enter";
 
   auto* button_container = MakeGarbageCollected<HTMLDivElement>(GetDocument());
-  button_container->setAttribute(html_names::kClassAttr, 
-                                AtomicString("internal-media-remoting-container"));
+  button_container->setAttribute(html_names::kClassAttr,
+                                 AtomicString("internal-media-remoting-container"));
 
   // Create Left Button
   auto* left_button = MakeGarbageCollected<HTMLDivElement>(GetDocument());
-  left_button->setAttribute(html_names::kClassAttr, 
-                          AtomicString("internal-media-remoting-button"));
-  left_button->setInnerText(String::FromUTF8("\u7ed3\u675f\u6295\u5c4f")); // "结束投屏"
+  left_button->setAttribute(html_names::kClassAttr,
+                            AtomicString("internal-media-remoting-button"));
+  left_button->setInnerText(String::FromUTF8("\u7ed3\u675f\u6295\u5c4f")); // "stop cast"
 
   // Bind a click event to the left button
   left_button->addEventListener(
@@ -41,8 +41,8 @@ void MediaRemotingInterstitial::AddMediaCastBackGround() {
 
   // Create Right Button
   auto* right_button = MakeGarbageCollected<HTMLDivElement>(GetDocument());
-  right_button->setAttribute(html_names::kClassAttr, 
-                            AtomicString("internal-media-remoting-button"));
+  right_button->setAttribute(html_names::kClassAttr,
+                             AtomicString("internal-media-remoting-button"));
   right_button->setInnerText(String::FromUTF8("\u5207\u6362\u8bbe\u5907")); // "Switch Device"
 
   // Bind a click event to the right button
@@ -94,32 +94,32 @@ void MediaRemotingInterstitial::ParseMediaCastControl() {
   // Middle Group: Progress Bar
   auto* progress_group = MakeGarbageCollected<HTMLDivElement>(document);
   progress_group->setAttribute(
-      html_names::kClassAttr, 
+      html_names::kClassAttr,
       AtomicString("progress-container"));
   
   // Current time display
   current_time_display_ = MakeGarbageCollected<HTMLSpanElement>(document);
   current_time_display_->setAttribute(
-      html_names::kClassAttr, 
+      html_names::kClassAttr,
       AtomicString("time-display"));
   current_time_display_->setInnerText("0:00");
   
   // Progress Bar Container
   progress_bar_ = MakeGarbageCollected<HTMLDivElement>(document);
   progress_bar_->setAttribute(
-      html_names::kClassAttr, 
+      html_names::kClassAttr,
       AtomicString("progress-bar"));
   
   // Actual Progress
   progress_fill_ = MakeGarbageCollected<HTMLDivElement>(document);
   progress_fill_->setAttribute(
-      html_names::kClassAttr, 
+      html_names::kClassAttr,
       AtomicString("progress-fill"));
   
   // Progress bar slider
   auto* progress_thumb = MakeGarbageCollected<HTMLDivElement>(document);
   progress_thumb->setAttribute(
-      html_names::kClassAttr, 
+      html_names::kClassAttr,
       AtomicString("progress-thumb"));
   
   // Assembly Progress Bar
@@ -182,7 +182,7 @@ void MediaRemotingInterstitial::ParseMediaCastControl() {
   // Total Duration Display
   duration_display_ = MakeGarbageCollected<HTMLSpanElement>(document);
   duration_display_->setAttribute(
-      html_names::kClassAttr, 
+      html_names::kClassAttr,
       AtomicString("time-display"));
   duration_display_->setInnerText(FormatTime(duration_));
   
@@ -194,13 +194,13 @@ void MediaRemotingInterstitial::ParseMediaCastControl() {
   // Right button group: Full screen
   auto* right_group = MakeGarbageCollected<HTMLDivElement>(document);
   right_group->setAttribute(
-      html_names::kClassAttr, 
+      html_names::kClassAttr,
       AtomicString("video-controls-right"));
   
   // Create a full-screen button
   fullscreen_button_ = MakeGarbageCollected<HTMLDivElement>(document);
   fullscreen_button_->setAttribute(
-      html_names::kClassAttr, 
+      html_names::kClassAttr,
       AtomicString("fullscreen-button enter-fullscreen"));
   
   // Binding a Click Event

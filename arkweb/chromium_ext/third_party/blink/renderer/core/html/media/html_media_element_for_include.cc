@@ -746,7 +746,6 @@ void HTMLMediaElement::HandleStopMediaCast() {
 void HTMLMediaElement::UpdateUiPlayState(bool is_playing) {
   LOG(INFO) << "HTMLMediaElement::UpdateUiPlayState";
   if (auto* video_element = DynamicTo<HTMLVideoElement>(this)) {
-    // TODO(xjz): Pass the remote device name.
     video_element->UpdateUiPlayState(is_playing);
   }
 }
@@ -754,7 +753,6 @@ void HTMLMediaElement::UpdateUiPlayState(bool is_playing) {
 void HTMLMediaElement::UpdateUiPlayPosition(int64_t position) {
   LOG(INFO) << "HTMLMediaElement::UpdateUiPlayPosition";
   if (auto* video_element = DynamicTo<HTMLVideoElement>(this)) {
-    // TODO(xjz): Pass the remote device name.
     video_element->UpdateUiPlayPosition(position);
   }
 }

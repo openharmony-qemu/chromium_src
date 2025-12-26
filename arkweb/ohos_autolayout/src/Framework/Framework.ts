@@ -121,6 +121,7 @@ export default class Framework {
         if (CCMConfig.getInstance().isAlphabetNavigatorEnable(strategy)) {
             Log.info('开始执行索引条截断修复...', Framework.TAG);
             Alphabet.start();
+            CCMConfig.getInstance().setAlphabetNavigatorFixExecuted(true);
         }
     }
 

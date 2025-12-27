@@ -24,7 +24,6 @@ components_viz_service_unittests_ext = {
     "//arkweb/chromium_ext/components/viz/service/frame_sinks/frame_sink_manager_impl_utils_unittests.cc",
     "//arkweb/chromium_ext/components/viz/service/frame_sinks/external_begin_frame_source_ohos_second_unittests.cc",
     "//arkweb/chromium_ext/components/viz/service/frame_sinks/compositor_frame_sink_impl_utils_unittests.cc",
-    "//arkweb/chromium_ext/components/viz/service/frame_sinks/compositor_frame_sink_support_utils_unittest.cc",
     "//arkweb/chromium_ext/components/viz/service/frame_sinks/root_compositor_frame_sink_impl_ext_unittests.cc",
   ]
   sources_del = [

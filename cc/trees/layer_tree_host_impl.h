@@ -1433,7 +1433,9 @@ class CC_EXPORT LayerTreeHostImpl : public TileManagerClient,
 #if BUILDFLAG(ARKWEB_SYNC_RENDER)
   bool isNeedDrawRect_ = false;
 #endif
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
   bool throttleFrameStarted_ = false;
+#endif
   // Must be the last member to ensure this is destroyed first in the
   // destruction order and invalidates all weak pointers.
   base::WeakPtrFactory<LayerTreeHostImpl> weak_factory_{this};

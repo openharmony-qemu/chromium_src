@@ -5301,6 +5301,8 @@ void NWebHandlerDelegate::SetPopupSurface(void* popup_window) {
       if (popup_window_ != nullptr && popup_window_ != popup_window) {
         const auto old_popup_widget =
             main_browser_->GetHost()->GetAcceleratedWidget(true);
+        LOG(INFO) << "SetPopupSurface destroying old popup window, widget_id: "
+                  << old_popup_widget;
         NWebNativeWindowTracker::GetInstance()->DestroyNativeWindow(
             old_popup_widget);
         content::GpuProcessHost* host = content::GpuProcessHost::Get();
@@ -5313,8 +5315,13 @@ void NWebHandlerDelegate::SetPopupSurface(void* popup_window) {
       }
       popup_window_ = popup_window;
       main_browser_->GetHost()->SetPopupWindow(popup_window_);
+      const auto new_popup_widget =
+          main_browser_->GetHost()->GetAcceleratedWidget(true);
+      LOG(INFO) << "SetPopupSurface set new popup window done, new widget_id: "
+                << new_popup_widget;
     }
   } else {
+    LOG(INFO) << "SetPopupSurface main_browser or host is null";
     popup_window_ = popup_window;
   }
 }

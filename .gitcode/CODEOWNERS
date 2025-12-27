@@ -344,6 +344,8 @@
 /arkweb/ohos_adapter_ndk/access_token_adapter/ @zhu-sheng-le
 /arkweb/ohos_adapter_ndk/inputmethodframework_adapter/ @zhu-sheng-le
 /arkweb/ohos_adapter_ndk/keystore_adapter/ @zhu-sheng-le
+/arkweb/chromium_ext/sandbox/ @zhu-sheng-le
+/sandbox/ @zhu-sheng-le
 
 # Storage
 /arkweb/ohos_nweb/src/capi/nweb_app_client_extension_callback.h @yuzhouhang1

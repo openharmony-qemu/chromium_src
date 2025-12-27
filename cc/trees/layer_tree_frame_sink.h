@@ -148,6 +148,9 @@ class CC_EXPORT LayerTreeFrameSink : public viz::SharedBitmapReporter,
   // the client did not lead to a CompositorFrame submission.
   virtual void DidNotProduceFrame(const viz::BeginFrameAck& ack,
                                   FrameSkippedReason reason) = 0;
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+  virtual void UpdateThrottleMode(bool is_enable) {}
+#endif
 
   // Creates a new LayerContext through which the client can control layers in
   // a GPU-side display tree.

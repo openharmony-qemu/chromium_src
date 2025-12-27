@@ -3480,15 +3480,13 @@ void LayerTreeHostImpl::DidNotProduceFrame(const viz::BeginFrameAck& ack,
         features::kThrottleFrameRateOnManyDidNotProduceFrame);
 #if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
     if (feature_allowed || IsThrottleEnable()) {
+      ThrottleFrameStart();
 #else
     if (feature_allowed) {
 #endif
       viz::BeginFrameAck adjust_ack = ack;
       adjust_ack.preferred_frame_interval =
           frame_rate_estimator_.GetPreferredInterval();
-#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
-      ThrottleFrameStart();
-#endif
       layer_tree_frame_sink_->DidNotProduceFrame(adjust_ack, reason);
     } else {
       layer_tree_frame_sink_->DidNotProduceFrame(ack, reason);

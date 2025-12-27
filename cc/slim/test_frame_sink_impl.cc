@@ -33,6 +33,7 @@ class TestFrameSinkImpl::TestMojoCompositorFrameSink
                           int32_t process_id,
                           bool is_created) override {}
   void OnSetBypassVsyncCondition(int32_t condition) override {}
+  void UpdateThrottleMode(bool is_enable) {}
 #endif
   void SetAutoNeedsBeginFrame() override {}
   void SubmitCompositorFrame(
@@ -80,7 +81,6 @@ class TestFrameSinkImpl::TestMojoCompositorFrameSink
     return rv;
   }
 
-  void UpdateThrottleMode(bool is_enable) {};
  private:
   viz::CompositorFrame last_frame_;
   std::optional<::viz::HitTestRegionList> hit_test_region_list_;

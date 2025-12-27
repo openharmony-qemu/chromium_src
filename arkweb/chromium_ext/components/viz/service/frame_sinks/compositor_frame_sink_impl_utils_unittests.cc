@@ -92,7 +92,7 @@ TEST_F(CompositorFrameSinkImplUtilTest, OnSetBypassVsyncCondition) {
 
 #if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
 TEST_F(CompositorFrameSinkImplUtilTest, UpdateThrottleMode) {
-    util(nullptr);
+    CompositorFrameSinkImplUtil util(nullptr);
     ASSERT_NO_FATAL_FAILURE(util.UpdateThrottleMode(false));
 }
 #endif

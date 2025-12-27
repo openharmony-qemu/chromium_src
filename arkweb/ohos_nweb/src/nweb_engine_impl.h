@@ -144,7 +144,7 @@ class NWebEngineImpl : public NWebEngine {
 #endif
 
 #ifdef BUILDFLAG(ARKWEB_DFX_DUMP)
-  std::string DumpArkWebInfo(const std::string& param);
+  std::string DumpArkWebInfo(const std::string& param) override;
 #endif
  private:
   std::shared_ptr<NWebDataBase> nweb_data_base_ = nullptr;

@@ -151,7 +151,7 @@
 #include "arkweb/build/features/features.h"
 #include "cc/trees/layer_tree_impl_utils.h"
 
-#if BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SLIDE) && BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+#if BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SLIDE) || BUILDFLAG(ARKWEB_THROTTLE_FRAME)
 #include "cc/trees/layer_tree_host_impl_for_include.cc"
 #endif
 

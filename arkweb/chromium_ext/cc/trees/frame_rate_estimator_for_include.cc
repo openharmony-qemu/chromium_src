@@ -19,18 +19,18 @@
 
 namespace cc {
 
+constexpr size_t kThresholdOfNoFrameProducedToThrottle = 4u;
+
 #if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
 void FrameRateEstimator::DidNotProduceFrameWithReason(FrameSkippedReason reason) {
+    num_of_consecutive_frames_with_min_delta_ = 0u;
     if (reason == FrameSkippedReason::kNoDamage) {
-        num_of_consecutive_frames_with_min_delta_ = 0u;
         ++num_no_damage_did_not_produce_frame_;
-        if (num_no_damage_did_not_produce_frame_ > 4 && !begin_frame_throttle_mode_) {
+        if (num_no_damage_did_not_produce_frame_ > kThresholdOfNoFrameProducedToThrottle && !begin_frame_throttle_mode_) {
             begin_frame_throttle_mode_ = true;
         }
     } else {
-        begin_frame_throttle_mode_ = false;
-        num_of_consecutive_frames_with_min_delta_ = 0u;
-        num_no_damage_did_not_produce_frame_ = 0u;
+        ClearBeginFrameThrottleSettings();
     }
 }
 

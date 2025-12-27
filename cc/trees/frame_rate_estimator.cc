@@ -85,7 +85,7 @@ base::TimeDelta FrameRateEstimator::GetPreferredInterval() const {
     return viz::BeginFrameArgs::DefaultInterval() * 2;
   }
 #if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
-  if (begin_frame_throttle_mode_ && num_no_damage_did_not_produce_frame_ > 4) {
+  if (begin_frame_throttle_mode_ && num_no_damage_did_not_produce_frame_ > kThresholdOfNoFrameProducedToThrottle) {
     return viz::BeginFrameArgs::DefaultInterval() * 2;
   }
 #endif

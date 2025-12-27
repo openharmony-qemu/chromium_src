@@ -107,7 +107,7 @@ void LayerTreeHostImpl::ThrottleFrameStart() {
 bool LayerTreeHostImpl::IsThrottleEnable() {
   static const bool feature_allowed = OHOS::NWeb::OhosAdapterHelper::GetInstance()
                                       .GetSystemPropertiesInstance()
-                                      .GetBoolParameter("web.throttle.enabled", false)
+                                      .GetBoolParameter("web.throttle.enabled", false);
   return feature_allowed && frame_rate_estimator_.GetBeginFrameThrottleMode();
 }
 #endif

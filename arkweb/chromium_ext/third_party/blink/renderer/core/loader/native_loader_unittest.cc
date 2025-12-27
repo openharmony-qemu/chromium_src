@@ -318,4 +318,137 @@ TEST_F(NativeLoaderTest, SetStretchContentToFillBounds) {
   EXPECT_FALSE(result);
 }
 
+TEST_F(NativeLoaderTest, NativeLoaderTest_001) {
+  loader_->ScheduleLoadResource();
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_002) {
+  loader_->current_plugin_element()->remove();
+  gfx::Rect input_rect(10, 10, 100, 100);
+  gfx::Rect result = TransformRect(input_rect);
+  EXPECT_EQ(result, input_rect);
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_003) {
+  loader_->SetCcLayer(&mock_cc_layer_);
+  loader_->OnCreateNativeSurface(123, base::DoNothing());
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_004) {
+  loader_->SetCcLayer(&mock_cc_layer_);
+  SetFirstUpdateVisibility(true);
+  loader_->OnCreateNativeSurface(123, base::DoNothing());
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_005) {
+  loader_->OnCreateNativeSurface(123, base::DoNothing());
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_006) {
+  loader_->SetCcLayer(&mock_cc_layer_);
+  loader_->OnLayerRectChange(gfx::Rect(10, 10, 100, 100));
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_007) {
+  loader_->SetCcLayer(&mock_cc_layer_);
+  loader_->OnCreateNativeSurface(123, base::DoNothing());
+  loader_->OnLayerRectChange(gfx::Rect(10, 10, 100, 100));
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_008) {
+  loader_->SetCcLayer(&mock_cc_layer_);
+  loader_->OnCreateNativeSurface(123, base::DoNothing());
+  loader_->OnDestroyNativeSurface();
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_009) {
+  loader_->SetCcLayer(&mock_cc_layer_);
+  loader_->OnDestroyNativeSurface();
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_010) {
+  loader_->SetCcLayer(&mock_cc_layer_);
+  loader_->Repaint();
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_011) {
+  loader_->Repaint();
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_012) {
+  loader_->SetCcLayer(&mock_cc_layer_);
+  EXPECT_CALL(mock_cc_layer_, SetNeedsPushProperties()).Times(0);
+  loader_->SetCcLayer(&mock_cc_layer_);
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_013) {
+  auto* embed = To<HTMLEmbedElement>(GetDocument().getElementById(AtomicString("test-plugin")));
+  embed->setAttribute(html_names::kTypeAttr, AtomicString("native/overlay-infinity"));
+  loader_->SetCcLayer(&mock_cc_layer_);
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_014) {
+  auto* embed = To<HTMLEmbedElement>(GetDocument().getElementById(AtomicString("test-plugin")));
+  embed->setAttribute(html_names::kTypeAttr, AtomicString("native/overlay"));
+  loader_->SetCcLayer(&mock_cc_layer_);
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_015) {
+  auto* embed = To<HTMLEmbedElement>(GetDocument().getElementById(AtomicString("test-plugin")));
+  embed->setAttribute(html_names::kTypeAttr, AtomicString("native/normal"));
+  EXPECT_CALL(mock_cc_layer_, SetNativeEmbedOverlayInfinity(_)).Times(0);
+  EXPECT_CALL(mock_cc_layer_, SetNativeEmbedOverlay(_)).Times(0);
+  loader_->SetCcLayer(&mock_cc_layer_);
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_016) {
+  loader_->SetCcLayer(&mock_cc_layer_);
+  ClearNativeResource();
+  EXPECT_EQ(loader_->GetWebNativeBridge(), nullptr);
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_017) {
+  loader_->CleanupVisibilityForRemovedLayer(true);
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_018) {
+  loader_->NotifyVisibilityChange(true);
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_019) {
+  loader_->SetCcLayer(&mock_cc_layer_);
+  EXPECT_CALL(mock_cc_layer_, SetNativeEmbedOverlayInfinity(true));
+  loader_->SetNativeEmbedOverlayInfinity(true);
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_020) {
+  loader_->SetCcLayer(&mock_cc_layer_);
+  EXPECT_CALL(mock_cc_layer_, SetNativeEmbedOverlay(true));
+  loader_->SetNativeEmbedOverlay(true);
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_021) {
+  AddNativeBridgeObserverAndPassReceiver();
+  ResetMojoState();
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_022) {
+  ContextDestroyed();
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_023) {
+  GetNativeBridgeHostRemote();
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_024) {
+  viz::FrameTimingDetails frame_timing_details;
+  ReportFirstPaintTime(frame_timing_details);
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_025) {
+  GetDocument().UpdateStyleAndLayout(DocumentUpdateReason::kTest);
+  gfx::Rect input_rect(10, 10, 100, 100);
+  gfx::Rect result = TransformRect(input_rect);
+  EXPECT_FALSE(result.IsEmpty());
+}
 }  // namespace blink

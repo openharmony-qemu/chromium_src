@@ -209,5 +209,109 @@ TEST_F(WidgetBaseUtilsTest, DidNativeEmbedMouseEvent_AllTypesAndButtons) {
   }
 }
 
+TEST_F(WidgetBaseUtilsTest, WidgetBaseUtilsTest_001) {
+  SetWidgetInputHandlerManager(nullptr);
+  utils_->SetZoomLevel(1.0f, gfx::Point(10, 10));
+}
+
+TEST_F(WidgetBaseUtilsTest, WidgetBaseUtilsTest_002) {
+  utils_->SetZoomLevel(1.0f, gfx::Point(10, 10));
+}
+
+TEST_F(WidgetBaseUtilsTest, WidgetBaseUtilsTest_003) {
+  SetWidgetInputHandlerManager(nullptr);
+  utils_->SetOverscrollMode(1);
+}
+
+TEST_F(WidgetBaseUtilsTest, WidgetBaseUtilsTest_004) {
+  utils_->SetOverscrollMode(1);
+}
+
+TEST_F(WidgetBaseUtilsTest, WidgetBaseUtilsTest_005) {
+  SetWidgetInputHandlerManager(nullptr);
+  gfx::Vector2dF result = utils_->GetOverScrollOffset();
+  EXPECT_EQ(result.x(), 0.0f);
+  EXPECT_EQ(result.y(), 0.0f);
+}
+
+TEST_F(WidgetBaseUtilsTest, WidgetBaseUtilsTest_006) {
+  utils_->GetOverScrollOffset();
+}
+
+TEST_F(WidgetBaseUtilsTest, WidgetBaseUtilsTest_007) {
+  WebPointerProperties properties(0, WebPointerProperties::PointerType::kTouch,
+                                  WebPointerProperties::Button::kLeft,
+                                  gfx::PointF(10, 10), gfx::PointF(10, 10));
+
+  WebPointerEvent event(WebInputEvent::Type::kPointerDown,
+                        properties,
+                        5.0f,
+                        5.0f);
+
+  utils_->TouchHitTest(event, 0);
+}
+
+TEST_F(WidgetBaseUtilsTest, WidgetBaseUtilsTest_008) {
+  SetWidgetInputHandlerManager(nullptr);
+  utils_->NativeHitTestResult(true, 1, 100);
+}
+
+TEST_F(WidgetBaseUtilsTest, WidgetBaseUtilsTest_009) {
+  utils_->NativeHitTestResult(true, 1, 100);
+}
+
+TEST_F(WidgetBaseUtilsTest, WidgetBaseUtilsTest_010) {
+  std::vector<WebInputEvent::Type> types = {
+      WebInputEvent::Type::kTouchStart,
+      WebInputEvent::Type::kTouchMove,
+      WebInputEvent::Type::kTouchEnd,
+      WebInputEvent::Type::kTouchCancel
+  };
+
+  for (auto type : types) {
+    utils_->DidNativeEmbedEvent(type, "embed1", 1, 10.0f, 20.0f);
+  }
+}
+
+TEST_F(WidgetBaseUtilsTest, WidgetBaseUtilsTest_011) {
+  WebMouseEvent event(WebInputEvent::Type::kMouseDown,
+                      WebInputEvent::kNoModifiers,
+                      base::TimeTicks::Now());
+  event.SetPositionInWidget(10, 10);
+  utils_->MouseHitTest(event, 0);
+}
+
+TEST_F(WidgetBaseUtilsTest, WidgetBaseUtilsTest_012) {
+  SetWidgetInputHandlerManager(nullptr);
+  utils_->NativeMouseHitTestResult(true, 100, 0);
+}
+
+TEST_F(WidgetBaseUtilsTest, WidgetBaseUtilsTest_013) {
+  utils_->NativeMouseHitTestResult(true, 100, 0);
+}
+
+TEST_F(WidgetBaseUtilsTest, WidgetBaseUtilsTest_014) {
+  std::vector<WebInputEvent::Type> types = {
+      WebInputEvent::Type::kMouseDown,
+      WebInputEvent::Type::kMouseUp,
+      WebInputEvent::Type::kMouseMove,
+      WebInputEvent::Type::kMouseLeave
+  };
+
+  std::vector<WebInputEvent::Modifiers> buttons = {
+      WebInputEvent::Modifiers::kLeftButtonDown,
+      WebInputEvent::Modifiers::kRightButtonDown,
+      WebInputEvent::Modifiers::kMiddleButtonDown,
+      WebInputEvent::Modifiers::kNoModifiers
+  };
+
+  for (auto type : types) {
+    for (auto button : buttons) {
+      utils_->DidNativeEmbedMouseEvent(
+          type, button, "embed1", true, 10.0f, 20.0f);
+    }
+  }
+}
+
 } // namespace blink
 #pragma clang diagnostic pop

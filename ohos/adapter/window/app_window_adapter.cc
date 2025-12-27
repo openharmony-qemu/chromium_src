@@ -18,9 +18,11 @@ AppWindowAdapter& AppWindowAdapter::GetInstance() {
 
 void AppWindowAdapter::Create(const NewWindowParam& param) {
   auto jsFunc = ohos::adapter::GetJSFunction("AppWindow.CreateWindow");
-  if (jsFunc) {
-    jsFunc->Invoke<void>(param);
+  if (!jsFunc) {
+    LOGW("[ohoswindow] AppWindow.CreateWindow not found.");
+    return;
   }
+  jsFunc->Invoke<void>(param);
 }
 
 void AppWindowAdapter::Close(int32_t id) {
@@ -31,19 +33,27 @@ void AppWindowAdapter::Close(int32_t id) {
 }
 
 void AppWindowAdapter::Show(int32_t id) {
+  LOGI("[ohoswindow] AppWindowAdapter::Show, id:%{public}d.",
+       id);
   auto jsFunc = ohos::adapter::GetJSFunction("AppWindow.ShowWindow");
-  if (jsFunc) {
-    jsFunc->Invoke<void>(id);
+  if (!jsFunc) {
+    LOGW("[ohoswindow] AppWindow.ShowWindow not found.");
+    return;
   }
+  jsFunc->Invoke<void>(id);
 }
 
 void AppWindowAdapter::Hide(int32_t id) {}
 
 void AppWindowAdapter::Activate(int32_t id) {
+  LOGI("[ohoswindow] AppWindowAdapter::Activate, id:%{public}d.",
+       id);
   auto jsFunc = ohos::adapter::GetJSFunction("AppWindow.ActivateWindow");
-  if (jsFunc) {
-    jsFunc->Invoke<void>(id);
+  if (!jsFunc) {
+    LOGW("[ohoswindow] AppWindow.ActivateWindow not found.");
+    return;
   }
+  jsFunc->Invoke<void>(id);
 }
 
 void AppWindowAdapter::SetFullscreen(int32_t id) {

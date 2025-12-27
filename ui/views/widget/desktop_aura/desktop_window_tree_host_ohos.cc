@@ -29,6 +29,8 @@ DesktopWindowTreeHostOhos::~DesktopWindowTreeHostOhos() = default;
 
 void DesktopWindowTreeHostOhos::OnNativeWidgetCreated(
     const Widget::InitParams& params) {
+  LOG(INFO) << "[ohoswindow] in DesktopWindowTreeHostOhos OnNativeWidgetCreated, "
+            << "type is " << params.type;
   CreateNonClientEventFilter();
   DesktopWindowTreeHostPlatform::OnNativeWidgetCreated(params);
 }
@@ -214,6 +216,7 @@ void DesktopWindowTreeHostOhos::UnlockMouse(aura::Window* window) {
 DesktopWindowTreeHost* DesktopWindowTreeHost::Create(
     internal::NativeWidgetDelegate* native_widget_delegate,
     DesktopNativeWidgetAura* desktop_native_widget_aura) {
+  LOG(INFO) << "[ohoswindow] in DesktopWindowTreeHost Create.";
   return new DesktopWindowTreeHostOhos(native_widget_delegate,
                                        desktop_native_widget_aura);
 }

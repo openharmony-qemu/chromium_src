@@ -30,7 +30,9 @@ void SubWindowAdapter::Create(const NewWindowParam& param) {
   TRACE_EVENT_0("SubWindowAdapter::Create");
   if (auto func = ohos::adapter::GetJSFunction("SubWindow.Create")) {
     func->Invoke<void>(param);
+    return;
   }
+  LOGE("[ohoswindow] SubWindowAdapter::Create error.");
 }
 
 void SubWindowAdapter::Cancel(const std::string& id) {
@@ -42,7 +44,9 @@ void SubWindowAdapter::Cancel(const std::string& id) {
 void SubWindowAdapter::Show(const std::string& id) {
   if (auto func = ohos::adapter::GetJSFunction("SubWindow.Show")) {
     func->Invoke<void>(id);
+    return;
   }
+  LOGW("[ohoswindow] SubWindowAdapter::Show error.");
 }
 
 void SubWindowAdapter::Hide(const std::string& id) {

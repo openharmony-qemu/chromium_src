@@ -25,11 +25,12 @@ export class WebAbilityStage extends AbilityStage {
   static X_COMPONENT_ID: string = '';
 
   onCreate(): void {
+    LogUtil.info(TAG, '[ohoswindow] in WebAbilityStage onCreate.');
     this.runTaskAsync();
   }
 
   onAcceptWant(want: Want): string {
-    LogUtil.info(TAG, "ability stage on accept want :" + JSON.stringify(want));
+    LogUtil.info(TAG, '[ohoswindow] in WebAbilityStage onAcceptWant, want is ' + JSON.stringify(want));
     let instanceKey = want.parameters?.instanceKey;
     if (instanceKey) {
       return instanceKey.toString();

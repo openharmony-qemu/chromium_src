@@ -199,6 +199,8 @@ void OhosToplevelWindow::OnInitialize(
 
 bool OhosToplevelWindow::OnCreateWindow(WindowInitParameter param) {
   if (NodeHandleImpl::GetInstance().IsSupportNodeHandle()) {
+    LOG(INFO) << "[ohoswindow] OhosToplevelWindow::OnCreateWindow, "
+            << "type is " << static_cast<int>(param.type);
     std::string ability_id =
         XComponentManager::GetInstance()->GetCreatedAbility();
     if (ability_id.empty()) {
@@ -445,6 +447,8 @@ void OhosToplevelWindow::OnWindowEvent(std::shared_ptr<XCEvent> event) {
  
   switch (window_type) {
     case WindowEventType::WINDOW_SHOWN:
+      LOG(INFO) << "[ohoswindow] int OhosToplevelWindow::OnWindowEvent "
+                << "event WINDOW_SHOWN received.";
       if (state_ == PlatformWindowState::kMinimized) {
         SetWindowState(previous_enter_minimize_state_, false);
       }

@@ -76,6 +76,7 @@ export class AppWindowAdapter extends BaseAdapter {
 
   @LogMethod
   createWindow(param: NewWindowParam) {
+    LogUtil.info(TAG, `[ohoswindow] in AppWindowAdapter createWindow, param is ${JSON.stringify(param)}`);
     let abilityName: string = kAbilityMap.get(param.ability_type) ?? 'EntryAbility';
     const want: Want = {
       bundleName: this.bundleName,
@@ -136,20 +137,22 @@ export class AppWindowAdapter extends BaseAdapter {
 
   @LogMethod
   showWindow(id: number) {
+    LogUtil.info(TAG, `[ohoswindow] in AppWindowAdapter showWindow, id is ${id}`);
     let windowClass = this.getWindow(id);
     if (!windowClass) {
-      LogUtil.error(TAG, 'Failed to obtain the main window.');
+      LogUtil.error(TAG, '[ohoswindow] Failed to obtain the main window.');
       return;
     }
 
     windowClass.showWindow()
       .catch((err: BusinessError) => {
-        LogUtil.error(TAG, 'Failed to show the window. Cause:' + JSON.stringify(err));
+        LogUtil.error(TAG, '[ohoswindow] Failed to show the window. Cause:' + JSON.stringify(err));
       });
   }
 
   @LogMethod
   activateWindow(id: number) {
+    LogUtil.info(TAG, `[ohoswindow] in AppWindowAdapter activateWindow, id is ${id}`);
     this.showWindow(id);
   }
 

@@ -8,6 +8,7 @@
 #include "content/browser/web_contents/web_contents_impl.h"
 
 namespace content {
+  constexpr int kMilliseconds = 1000;
 
   MediaSessionControllerExt::MediaSessionControllerExt(const MediaPlayerId& id,
                                                        WebContentsImpl* web_contents)
@@ -135,16 +136,19 @@ int32_t MediaSessionControllerExt::GetMediaCastCurrentTime(int player_id) {
   DCHECK_EQ(player_id_, player_id);
   if (!web_contents_) {
     LOG(ERROR) << "GetMediaCastCurrentTime, web_contents is null";
-    return;
+    return 0;
   }
   auto web_contents_observer = web_contents_->media_web_contents_observer();
   if (!web_contents_observer) {
     LOG(ERROR) << "GetMediaCastCurrentTime, web_contents_observer is null";
-    return;
+    return 0;
   }
   if (web_contents_observer->IsPlayerIdInMediaPlayerRemotesMap(id_)) {
     LOG(INFO) << "MediaSessionControllerExt:GetMediaCastCurrentTime";
-    // web_contents_observer->GetMediaPlayerRemote(id_)->GetMediaCastCurrentTime();
+    double time = 0.0;
+    web_contents_observer->GetMediaPlayerRemote(id_)->GetMediaCastCurrentTime(&time);
+    LOG(INFO) << "Current media cast time: " << time;
+    return static_cast<int32_t>(time * kMilliseconds);
   }
 }
 

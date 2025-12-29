@@ -299,11 +299,11 @@ void MediaSessionOHOS::SetWebviewShow(bool show, bool is_special_for_audio) {
     }
   } else {
     if (avsession_adapter_) {
-      if (!is_avcast_) {
+      if (is_avcast_ && media_session_->IsPageBackground()) {
+        LOG(INFO) << "has avcast skip destroy avsession";
+      } else {
         avsession_adapter_->DestroyAVSession();
         media_type_ = OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_INVALID;
-      } else {
-        LOG(INFO) << "avcast skip destroy avsession";
       }
     }
   }
@@ -342,6 +342,7 @@ void MediaSessionOHOS::HandleStopMediaCast() {
 int32_t MediaSessionOHOS::GetMediaCastCurrentTime() {
   if (!media_session_) {
     LOG(ERROR) << "MediaSessionOHOS::GetMediaCastCurrentTime, media_session_ is nullptr";
+    return 0;
   }
   return media_session_->GetMediaCastCurrentTime();
 }
@@ -349,6 +350,7 @@ int32_t MediaSessionOHOS::GetMediaCastCurrentTime() {
 void MediaSessionOHOS::PullUpCastBackGround(const std::string& device_name) {
   if (!media_session_) {
     LOG(ERROR) << "MediaSessionOHOS::PullUpCastBackGround, media_session_ is nullptr";
+    return;
   }
   media_session_->PullUpCastBackGround(device_name);
 }
@@ -356,6 +358,7 @@ void MediaSessionOHOS::PullUpCastBackGround(const std::string& device_name) {
 void MediaSessionOHOS::MediaCastStopped() {
   if (!media_session_) {
     LOG(ERROR) << "MediaSessionOHOS::MediaCastStopped, media_session_ is nullptr";
+    return;
   }
   media_session_->MediaCastStopped();
 }
@@ -365,10 +368,18 @@ void MediaSessionOHOS::SetAvCast(bool is_avcast) {
 }
 
 void MediaSessionOHOS::UpdateUiPlayState(bool is_playing) {
+  if (!media_session_) {
+    LOG(ERROR) << "MediaSessionOHOS::UpdateUiPlayState, media_session_ is nullptr";
+    return;
+  }
   media_session_->UpdateUiPlayState(is_playing);
 }
 
 void MediaSessionOHOS::UpdateUiPlayPosition(int64_t position) {
+  if (!media_session_) {
+    LOG(ERROR) << "MediaSessionOHOS::UpdateUiPlayPosition, media_session_ is nullptr";
+    return;
+  }
   media_session_->UpdateUiPlayPosition(position);
 }
 
@@ -436,7 +447,24 @@ void OHOSMediaAVSessionCallback::SeekTo(int64_t millisTime) {
 }
 
 int32_t OHOSMediaAVSessionCallback::GetMediaCastCurrentTime() {
-  // To be implemented
+  if (!media_session_ohos_) {
+    return 0;
+  }
+
+  base::WaitableEvent event(base::WaitableEvent::ResetPolicy::AUTOMATIC,
+                            base::WaitableEvent::InitialState::NOT_SIGNALED);
+  int32_t result = 0;
+  task_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(
+          [](base::WeakPtr<MediaSessionOHOS> session, int32_t* result,
+             base::WaitableEvent* event) {
+            *result = session ? session->GetMediaCastCurrentTime() : 0;
+            event->Signal();
+          },
+          media_session_ohos_, &result, &event));
+  event.Wait();
+  return result;
 }
 
 void OHOSMediaAVSessionCallback::PullUpCastBackGround(const std::string& device_name) {

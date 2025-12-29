@@ -200,7 +200,7 @@ void MediaRemotingInterstitial::ParseMediaCastControl() {
   fullscreen_button_ = MakeGarbageCollected<HTMLDivElement>(document);
   fullscreen_button_->setAttribute(
       html_names::kClassAttr,
-      AtomicString("fullscreen-button enter-fullscreen"));
+      AtomicString("fullscreen-button-cast enter-fullscreen"));
   
   // Binding a Click Event
   fullscreen_button_->addEventListener(
@@ -276,7 +276,7 @@ void MediaRemotingInterstitial::EnterFullscreen() {
   if (fullscreen_button_) {
     fullscreen_button_->setAttribute(
         html_names::kClassAttr,
-        AtomicString("fullscreen-button exit-fullscreen"));
+        AtomicString("fullscreen-button-cast exit-fullscreen"));
     
     LOG(INFO) << "MediaRemotingInterstitial::EnterFullscreen, "
               << "switched to exit-fullscreen icon";
@@ -294,7 +294,7 @@ void MediaRemotingInterstitial::ExitFullscreen() {
   if (fullscreen_button_) {
     fullscreen_button_->setAttribute(
         html_names::kClassAttr,
-        AtomicString("fullscreen-button enter-fullscreen"));
+        AtomicString("fullscreen-button-cast enter-fullscreen"));
     
     LOG(INFO) << "MediaRemotingInterstitial::ExitFullscreen, "
               << "switched to enter-fullscreen icon";

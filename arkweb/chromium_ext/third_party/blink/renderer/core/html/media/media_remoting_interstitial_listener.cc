@@ -24,6 +24,10 @@ constexpr double kLargestPercentage = 100.0;
 namespace blink {
 
 void RemotingButtonEventListener::HandleClick(Event* event) {
+  if (!event || !media_remoting_interstitial_) {
+    LOG(ERROR) << "RemotingButtonEventListener HandleClick, event media_remoting_interstitial_ is nullptr";
+    return;
+  }
   event->stopPropagation();
   event->preventDefault();
 
@@ -41,6 +45,9 @@ void RemotingButtonEventListener::HandleClick(Event* event) {
       break;
     case RemotingButtonType::kFullscreenToggle:
       media_remoting_interstitial_->OnFullscreenClicked();
+      break;
+    default:
+      LOG(ERROR) << "RemotingButtonEventListener HandleClick, button_type_ is unknow";
       break;
   }
 }

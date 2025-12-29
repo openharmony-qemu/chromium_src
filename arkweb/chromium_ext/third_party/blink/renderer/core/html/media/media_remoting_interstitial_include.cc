@@ -22,42 +22,42 @@ namespace blink {
 void MediaRemotingInterstitial::AddMediaCastBackGround() {
   LOG(INFO) << "AddMediaCastBackGround, enter";
 
-  auto* button_container = MakeGarbageCollected<HTMLDivElement>(GetDocument());
-  button_container->setAttribute(html_names::kClassAttr,
+  button_container_ = MakeGarbageCollected<HTMLDivElement>(GetDocument());
+  button_container_->setAttribute(html_names::kClassAttr,
                                  AtomicString("internal-media-remoting-container"));
 
   // Create Left Button
-  auto* left_button = MakeGarbageCollected<HTMLDivElement>(GetDocument());
-  left_button->setAttribute(html_names::kClassAttr,
+  left_button_ = MakeGarbageCollected<HTMLDivElement>(GetDocument());
+  left_button_->setAttribute(html_names::kClassAttr,
                             AtomicString("internal-media-remoting-button"));
-  left_button->setInnerText(String::FromUTF8("\u7ed3\u675f\u6295\u5c4f")); // "stop cast"
+  left_button_->setInnerText(String::FromUTF8("\u7ed3\u675f\u6295\u5c4f")); // "stop cast"
 
   // Bind a click event to the left button
-  left_button->addEventListener(
+  left_button_->addEventListener(
       event_type_names::kClick,
       MakeGarbageCollected<RemotingButtonEventListener>(weak_factory_.GetWeakPtr(), RemotingButtonType::kStopCasting),
       false
   );
 
   // Create Right Button
-  auto* right_button = MakeGarbageCollected<HTMLDivElement>(GetDocument());
-  right_button->setAttribute(html_names::kClassAttr,
+  right_button_ = MakeGarbageCollected<HTMLDivElement>(GetDocument());
+  right_button_->setAttribute(html_names::kClassAttr,
                              AtomicString("internal-media-remoting-button"));
-  right_button->setInnerText(String::FromUTF8("\u5207\u6362\u8bbe\u5907")); // "Switch Device"
+  right_button_->setInnerText(String::FromUTF8("\u5207\u6362\u8bbe\u5907")); // "Switch Device"
 
   // Bind a click event to the right button
-  right_button->addEventListener(
+  right_button_->addEventListener(
       event_type_names::kClick,
       MakeGarbageCollected<RemotingButtonEventListener>(weak_factory_.GetWeakPtr(), RemotingButtonType::kSwitchDevice),
       false
   );
 
   // Add to container
-  button_container->AppendChild(left_button);
-  button_container->AppendChild(right_button);
+  button_container_->AppendChild(left_button_);
+  button_container_->AppendChild(right_button_);
 
   // Add the container to the parent element
-  AppendChild(button_container);
+  AppendChild(button_container_);
 
   ParseMediaCastControl();
 }
@@ -66,13 +66,13 @@ void MediaRemotingInterstitial::ParseMediaCastControl() {
   Document& document = GetDocument();
   
   // Creating a Control Container
-  auto* controls_container = MakeGarbageCollected<HTMLDivElement>(document);
-  controls_container->setAttribute(
+  controls_container_ = MakeGarbageCollected<HTMLDivElement>(document);
+  controls_container_->setAttribute(
       html_names::kClassAttr, AtomicString("video-controls-container"));
   
   // Left button group: Play/Pause
-  auto* left_group = MakeGarbageCollected<HTMLDivElement>(document);
-  left_group->setAttribute(
+  left_group_ = MakeGarbageCollected<HTMLDivElement>(document);
+  left_group_->setAttribute(
       html_names::kClassAttr, AtomicString("video-controls-left"));
   
   // Create Play/Pause Button
@@ -89,11 +89,11 @@ void MediaRemotingInterstitial::ParseMediaCastControl() {
   );
   
   // Add to left group
-  left_group->AppendChild(play_pause_button_);
+  left_group_->AppendChild(play_pause_button_);
   
   // Middle Group: Progress Bar
-  auto* progress_group = MakeGarbageCollected<HTMLDivElement>(document);
-  progress_group->setAttribute(
+  progress_group_ = MakeGarbageCollected<HTMLDivElement>(document);
+  progress_group_->setAttribute(
       html_names::kClassAttr,
       AtomicString("progress-container"));
   
@@ -102,7 +102,6 @@ void MediaRemotingInterstitial::ParseMediaCastControl() {
   current_time_display_->setAttribute(
       html_names::kClassAttr,
       AtomicString("time-display"));
-  current_time_display_->setInnerText("0:00");
   
   // Progress Bar Container
   progress_bar_ = MakeGarbageCollected<HTMLDivElement>(document);
@@ -117,14 +116,14 @@ void MediaRemotingInterstitial::ParseMediaCastControl() {
       AtomicString("progress-fill"));
   
   // Progress bar slider
-  auto* progress_thumb = MakeGarbageCollected<HTMLDivElement>(document);
-  progress_thumb->setAttribute(
+  progress_thumb_ = MakeGarbageCollected<HTMLDivElement>(document);
+  progress_thumb_->setAttribute(
       html_names::kClassAttr,
       AtomicString("progress-thumb"));
   
   // Assembly Progress Bar
   progress_bar_->AppendChild(progress_fill_);
-  progress_bar_->AppendChild(progress_thumb);
+  progress_bar_->AppendChild(progress_thumb_);
 
   // Using a dedicated ProgressBarEventListener
   auto* progress_event_listener = 
@@ -187,13 +186,13 @@ void MediaRemotingInterstitial::ParseMediaCastControl() {
   duration_display_->setInnerText(FormatTime(duration_));
   
   // Assemble progress bar group
-  progress_group->AppendChild(current_time_display_);
-  progress_group->AppendChild(progress_bar_);
-  progress_group->AppendChild(duration_display_);
+  progress_group_->AppendChild(current_time_display_);
+  progress_group_->AppendChild(progress_bar_);
+  progress_group_->AppendChild(duration_display_);
   
   // Right button group: Full screen
-  auto* right_group = MakeGarbageCollected<HTMLDivElement>(document);
-  right_group->setAttribute(
+  right_group_ = MakeGarbageCollected<HTMLDivElement>(document);
+  right_group_->setAttribute(
       html_names::kClassAttr,
       AtomicString("video-controls-right"));
   
@@ -211,15 +210,15 @@ void MediaRemotingInterstitial::ParseMediaCastControl() {
   );
   
   // Add to right group
-  right_group->AppendChild(fullscreen_button_);
+  right_group_->AppendChild(fullscreen_button_);
   
   // Assemble all controls
-  controls_container->AppendChild(left_group);
-  controls_container->AppendChild(progress_group);
-  controls_container->AppendChild(right_group);
+  controls_container_->AppendChild(left_group_);
+  controls_container_->AppendChild(progress_group_);
+  controls_container_->AppendChild(right_group_);
   
   // Add to current element
-  AppendChild(controls_container);
+  AppendChild(controls_container_);
 
   // Initial Update UI
   UpdateProgressUI();
@@ -236,7 +235,10 @@ void MediaRemotingInterstitial::OnPlayPauseClicked() {
 }
 
 void MediaRemotingInterstitial::UpdatePlayButtonUI() {
-  if (!play_pause_button_) return;
+  if (!play_pause_button_) {
+    LOG(ERROR) << "MediaRemotingInterstitial::OnPlayPauseClicked, play_pause_button_ is nullptr";
+    return;
+  }
   // This is the UI refresh area. Remote Play and Pause need to call back here to refresh the UI.
   if (is_playing_) {
     LOG(INFO) << "MediaRemotingInterstitial::OnPlayPauseClicked, playing";
@@ -308,7 +310,7 @@ void MediaRemotingInterstitial::UpdateProgressUI() {
   }
   
   // Update progress bar width
-  if (progress_fill_ && duration_ > 0) {
+  if (progress_fill_ && duration_ > kDurationEpsilon) {
     double percentage = (current_time_ / duration_) * kLargestPercentage;
     percentage = std::max(0.0, std::min(kLargestPercentage, percentage));
     
@@ -477,7 +479,7 @@ void MediaRemotingInterstitial::OnProgressBarClicked(double percentage) {
   // Verify input
   percentage = std::max(0.0, std::min(kLargestPercentage, percentage));
   
-  if (duration_ <= 0) {
+  if (duration_ <= kDurationEpsilon) {
     LOG(WARNING) << "Unable to jump: Video duration is 0";
     return;
   }

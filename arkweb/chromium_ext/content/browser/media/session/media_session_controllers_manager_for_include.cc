@@ -36,7 +36,7 @@ void MediaSessionControllersManager::OnEndAVSession(const MediaPlayerId& id,
 void MediaSessionControllersManager::OnNotifyMeidaCastUri(const MediaPlayerId& id, const std::string& media_uri) {
   LOG(INFO) << "MediaSessionControllersManager::OnNotifyMeidaCastUri, mediaUri: " << media_uri;
   auto controller = FindOrCreateController(id);
-  if (controller) {
+  if (controller && controller->AsMediaSessionControllerExt()) {
     controller->AsMediaSessionControllerExt()->OnNotifyMeidaCastUri(media_uri);
   }
 }
@@ -44,7 +44,7 @@ void MediaSessionControllersManager::OnNotifyMeidaCastUri(const MediaPlayerId& i
 void MediaSessionControllersManager::CreateAVCastAdapter(const MediaPlayerId& id) {
   LOG(INFO) << "MediaSessionControllersManager::CreateAVCastAdapter";
   auto controller = FindOrCreateController(id);
-  if (controller) {
+  if (controller && controller->AsMediaSessionControllerExt()) {
     controller->AsMediaSessionControllerExt()->CreateAVCastAdapter();
   }
 }
@@ -52,7 +52,7 @@ void MediaSessionControllersManager::CreateAVCastAdapter(const MediaPlayerId& id
 void MediaSessionControllersManager::HandleStopMediaCast(const MediaPlayerId& id) {
   LOG(INFO) << "MediaSessionControllersManager::HandleStopMediaCast";
   auto controller = FindOrCreateController(id);
-  if (controller) {
+  if (controller && controller->AsMediaSessionControllerExt()) {
     controller->AsMediaSessionControllerExt()->HandleStopMediaCast();
   }
 }
@@ -60,7 +60,7 @@ void MediaSessionControllersManager::HandleStopMediaCast(const MediaPlayerId& id
 void MediaSessionControllersManager::UpdateRemotePlayState(const MediaPlayerId& id, bool is_playing) {
   LOG(INFO) << "MediaSessionControllersManager::UpdateRemotePlayState";
   auto controller = FindOrCreateController(id);
-  if (controller) {
+  if (controller && controller->AsMediaSessionControllerExt()) {
     controller->AsMediaSessionControllerExt()->UpdateRemotePlayState(is_playing);
   }
 }
@@ -68,7 +68,7 @@ void MediaSessionControllersManager::UpdateRemotePlayState(const MediaPlayerId& 
 void MediaSessionControllersManager::UpdateRemotePlayPosition(const MediaPlayerId& id, int64_t position) {
   LOG(INFO) << "MediaSessionControllersManager::UpdateRemotePlayPosition";
   auto controller = FindOrCreateController(id);
-  if (controller) {
+  if (controller && controller->AsMediaSessionControllerExt()) {
     controller->AsMediaSessionControllerExt()->UpdateRemotePlayPosition(position);
   }
 }

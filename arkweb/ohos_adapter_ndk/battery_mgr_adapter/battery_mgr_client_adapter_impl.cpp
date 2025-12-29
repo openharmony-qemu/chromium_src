@@ -53,8 +53,8 @@ BatteryMgrClientAdapterImpl::~BatteryMgrClientAdapterImpl()
 void BatteryMgrClientAdapterImpl::OnBatteryEvent(const CommonEvent_RcvData *data)
 {
     if (data == nullptr ||
-        OH_CommonEvent_GetEventFromRcvData(data) ||
-        strcmp(OH_CommonEvent_GetEventFromRcvData(data), COMMON_EVENT_BATTERY_CHANGED)) {
+        OH_CommonEvent_GetEventFromRcvData(data) == nullptr ||
+        strcmp(OH_CommonEvent_GetEventFromRcvData(data), COMMON_EVENT_BATTERY_CHANGED) != 0) {
         WVLOG_E("not battery event");
         return;
     }

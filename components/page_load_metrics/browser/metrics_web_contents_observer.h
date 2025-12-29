@@ -344,6 +344,13 @@ class MetricsWebContentsObserver
   void OnCookiesAccessedImpl(PageLoadTracker& tracker,
                              const content::CookieAccessDetails& details);
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  void OnResourceLoadComplete(
+      content::RenderFrameHost* render_frame_host,
+      const content::GlobalRequestID& request_id,
+      const blink::mojom::ResourceLoadInfo& resource_load_info);
+#endif
+
   // True if the web contents is currently in the foreground.
   bool in_foreground_;
 

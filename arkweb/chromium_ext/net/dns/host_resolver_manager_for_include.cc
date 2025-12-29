@@ -87,12 +87,9 @@ class HostResolverManager::WarmUpHttpDnsFallbackImpl
 
     GURL url(doh_fallback_server_template_);
     if (!url.is_valid()) {
-      LOG(INFO) << "Pre-dns of doh-fallback server won't start, for the server "
-                   "template is invalid";
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-      LOG_FEEDBACK(INFO)
-          << "Pre-dns of doh-fallback server won't start, for the server "
-             "template is invalid";
+      LOG_FEEDBACK(INFO, kNetwork)
+          << "PreHttpDNSFailed message:dohFallbackServerTemplateInValid";
 #endif
       return;
     }
@@ -105,13 +102,10 @@ class HostResolverManager::WarmUpHttpDnsFallbackImpl
     auto result = request_->Start(base::BindOnce(
         &WarmUpHttpDnsFallbackImpl::PreDnsOfDohFallbackServerComplete,
         weak_ptr_factory_.GetWeakPtr()));
-    LOG(INFO) << "Pre-dns of doh-fallback server, server template "
-              << url::LogUtils::ConvertUrlWithMask(url.spec()) << ", result "
-              << result;
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-    LOG_FEEDBACK(INFO) << "Pre-dns of doh-fallback server, server template "
-                       << url::LogUtils::ConvertUrlWithMask(url.spec())
-                       << ", result " << result;
+    LOG_FEEDBACK(INFO, kNetwork)
+        << "HttpDNSWarmUp result:" << result
+        << " url:" << url::LogUtils::ConvertUrlWithMask(url.spec());
 #endif
     if (result != ERR_IO_PENDING) {
       request_.reset();
@@ -119,10 +113,8 @@ class HostResolverManager::WarmUpHttpDnsFallbackImpl
   }
 
   void PreDnsOfDohFallbackServerComplete(int result) {
-    LOG(INFO) << "Pre-dns of doh-fallback server complete, result " << result;
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-    LOG_FEEDBACK(INFO) << "Pre-dns of doh-fallback server complete, result "
-                       << result;
+    LOG_FEEDBACK(INFO, kNetwork) << "PreHttpDNS result " << result;
 #endif
     request_.reset();
   }
@@ -204,9 +196,8 @@ void HostResolverManager::ReportSecureFallbackDnsResult(
        << ", result=" << secure_fallback_results.error()
        << ", duration=" << duration.InMilliseconds();
 
-  LOG(INFO) << "event_message: " << ostr.str() << ", resource: ***";
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-  LOG_FEEDBACK(INFO) << "event_message: " << ostr.str() << ", resource: ***";
+  LOG_FEEDBACK(INFO, kNetwork) << "HttpDNSResult " << ostr.str();
 #endif
 }
 
@@ -218,9 +209,8 @@ void HostResolverManager::ReportDnsTransactionResult(int index,
   ostr << "dns_type=" << kDnsTransactionString[index]
        << ", v4result=" << result_for_ipv4 << ", v6result=" << result_for_ipv6;
 
-  LOG(INFO) << "event_message: " << ostr.str() << ", resource: ***";
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-  LOG_FEEDBACK(INFO) << "event_message: " << ostr.str() << ", resource: ***";
+  LOG_FEEDBACK(INFO, kNetwork) << "HttpDNSTransaction " << ostr.str();
 #endif
 }
 #endif

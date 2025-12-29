@@ -1019,7 +1019,7 @@ void InitialWebEngineArgs(
     web_engine_args.emplace_back(arg);
   }
 #endif  // BUILDFLAG(IS_ARKWEB_EXT)
-  
+
   std::string oemmode = OHOS::NWeb::OhosAdapterHelper::GetInstance()
                             .GetSystemPropertiesInstance().GetStringParameter("const.boot.oemmode", "");
   LOG(INFO) << "const.boot.oemmode: " << oemmode;
@@ -1033,7 +1033,7 @@ void InitialWebEngineArgs(
             web_engine_args.emplace_back(arg);
           }
           LOG(INFO) << "ohos connamd line args analysis from ohos-command-line file succ.";
-      }  
+      }
   } else {
     LOG(INFO) << "oemmode is not rd or ohos-command-line does not exist.";
   }
@@ -1066,7 +1066,7 @@ void MigratePasswordsToPasswordVault() {
     g_browser_process->local_state()->SetInteger(browser_prefs::kMigrationCount, count + 1);
     g_browser_process->local_state()->CommitPendingWrite();
     if (count <= kMigrationBase || (count % kMigrationBase == 0 && count <= kMigrationMaxCount)) {
-      std::shared_ptr<OHOS::NWeb::NWebWebStorageImpl> nweb_web_storage = 
+      std::shared_ptr<OHOS::NWeb::NWebWebStorageImpl> nweb_web_storage =
           std::make_shared<OHOS::NWeb::NWebWebStorageImpl>();
       nweb_web_storage->MigratePasswords();
     } else if (count > kMigrationMaxCount) {
@@ -3921,7 +3921,7 @@ void NWebImpl::PrefetchPage(
 void NWebImpl::PrefetchPageV2(
     const std::string& url,
     const std::map<std::string, std::string>& additional_http_headers,
-    int32_t min_time_between_prefetches, 
+    int32_t min_time_between_prefetches,
     bool ignore_cache_control_no_store) {
 #if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
   if (nweb_delegate_ == nullptr) {
@@ -3934,7 +3934,7 @@ void NWebImpl::PrefetchPageV2(
                         header.second.c_str());
   }
   output.append("\r\n");
-  nweb_delegate_->PrefetchPage(PrefetchOptions(url, output, 
+  nweb_delegate_->PrefetchPage(PrefetchOptions(url, output,
     min_time_between_prefetches, ignore_cache_control_no_store));
 #endif  // BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
 }
@@ -4086,8 +4086,8 @@ void NWebImpl::RunJavaScriptInFrames(RunJavaScriptParam param,
   if (callback == nullptr) {
     LOG(WARNING) << "NWebImpl::RunJavaScriptInFrames callback is nullptr";
     return;
-  } 
- 
+  }
+
   nweb_delegate_->RunJavaScriptInFrames(param, callback);
 }
 
@@ -6087,7 +6087,7 @@ static void ApplySiteIsolationMode(bool mode){
   OHOS::NWeb::ResSchedClientAdapter::ReportSiteIsolationMode(
       g_siteIsolationMode);
   ReportSiteIsolationMode(std::to_string(g_siteIsolationMode));
-  g_siteIsolationModeInitValue = 
+  g_siteIsolationModeInitValue =
     (g_siteIsolationMode == true) ? SiteIsolationInitMode::STRICT : SiteIsolationInitMode::PARTIAL;
   LOG(INFO) << "Final site isolation mode set to:" << g_siteIsolationMode;
 }
@@ -7213,7 +7213,7 @@ int32_t NWebImpl::SetBlanklessLoadingWithKey(const std::string& key, bool isStar
     databaseInstance.ClearSnapshot(blankless_key);
     databaseInstance.ClearSnapshotDataItem({blankless_key});
     return -5;
-  }  
+  }
   if (status_code != base::ohos::BlanklessController::StatusCode::INSERTED ||
       databaseInstance.GetBlanklessLoadingCacheCapacity() == 0) {
     LOG(DEBUG) << "blankless SetBlanklessLoadingWithKey nweb_id: " << nweb_id_
@@ -7501,7 +7501,7 @@ void NWebImpl::SetTouchHandleExistState(bool touchHandleExist) {
     nweb_delegate_->SetTouchHandleExistState(touchHandleExist);
   }
 }
-  
+
 void NWebImpl::SetViewportScaleState() {
   if (nweb_delegate_) {
     nweb_delegate_->SetViewportScaleState(true);
@@ -7561,9 +7561,9 @@ void NWebImpl::OnBrowserBackground() {
 
 #if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
 void NWebImpl::EnableHttpsUpgrades(bool enable) {
-  LOG(INFO) << "NWebImpl::EnableHttpsUpgrades.";
   if (nweb_delegate_ == nullptr) {
-    WVLOG_E("EnableHttpsUpgrades nweb_delegate_ is null");
+    LOG_FEEDBACK(WARNING, kHttpsUpgrades)
+        << "EnableHttpsUpgrades message:nwebDelegateIsNull";
     return;
   }
   nweb_delegate_->EnableHttpsUpgrades(enable);

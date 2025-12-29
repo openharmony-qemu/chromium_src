@@ -970,6 +970,11 @@ class NET_EXPORT URLRequest : public base::SupportsUserData {
 
   base::WeakPtr<URLRequest> GetWeakPtr();
 
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  void set_used_http_dns(bool value) { used_http_dns_ = value; }
+  bool used_http_dns() { return used_http_dns_; }
+#endif
+
  protected:
   // Allow the URLRequestJob class to control the is_pending() flag.
   void set_is_pending(bool value) { is_pending_ = value; }
@@ -1255,6 +1260,10 @@ class NET_EXPORT URLRequest : public base::SupportsUserData {
   bool needs_reload_with_fallback_proxy_ = false;
   // navigation_request通知本次需要使用代理加载
   bool retry_with_fallback_proxy_ = false;
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  bool used_http_dns_{false};
 #endif
 
   SharedDictionaryGetter shared_dictionary_getter_;

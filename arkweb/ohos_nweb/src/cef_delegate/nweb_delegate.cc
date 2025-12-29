@@ -626,7 +626,7 @@ class JavaScriptInFramesResultCallbackImpl : public CefJavaScriptResultCallback 
         callback_id_(callback_id),
         nweb_id_(nweb_id){}
   ~JavaScriptInFramesResultCallbackImpl() {}
- 
+
   NO_SANITIZE("cfi")
   void OnJavaScriptExeResult(CefRefPtr<CefValue> result) override {
     if (callback_ != nullptr) {
@@ -655,7 +655,7 @@ class JavaScriptInFramesResultCallbackImpl : public CefJavaScriptResultCallback 
 
   void SetErrorDescription(const std::string& description) override {
     error_description_ = description;
-  } 
+  }
 
  private:
   std::string error_description_;
@@ -1536,23 +1536,29 @@ bool NWebDelegate::IsUrlFileExist(const GURL& gurl, const std::string& url) {
 
 int NWebDelegate::Load(const std::string& url) {
   GURL gurl = GURL(url);
+  std::string mask_url = url::LogUtils::ConvertUrlWithMask(gurl.spec());
+
   if (gurl.is_empty() || !gurl.is_valid()) {
     GURL gurlWithHttp = GURL("https://" + url);
     if (!gurlWithHttp.is_valid()) {
+      LOG_FEEDBACK(ERROR, kNavigation) << "LoadUrl message:invalidUrl";
       return NWEB_INVALID_URL;
     }
   }
 
   GURL file_gurl = url_util::FixupGURL(url);
   if (IsFileProtocol(file_gurl) && !IsUrlFileExist(file_gurl, url)) {
+    LOG_FEEDBACK(ERROR, kNavigation) << "LoadUrl message:invalidFileUrl";
     return NWEB_INVALID_RESOURCE;
   }
-  LOG(DEBUG) << "NWebDelegate::Load url: ***";
+
   auto browser = GetBrowser();
   if (browser == nullptr) {
-    LOG(ERROR) << "NWebDelegate::Load browser is nullptr";
+    LOG_FEEDBACK(ERROR, kNavigation) << "LoadUrl message:browserIsNullptr";
     return NWEB_ERR;
   }
+  LOG_FEEDBACK(INFO, kNavigation) << "LoadUrl url:" << mask_url;
+
   browser->GetMainFrame()->LoadURL(CefString(url));
   RequestVisitedHistory();
   return NWEB_OK;
@@ -1604,22 +1610,22 @@ bool NWebDelegate::CanNavigateBackOrForward(int num_steps) const {
 }
 
 void NWebDelegate::NavigateBack() const {
-  LOG(DEBUG) << "NWebDelegate::NavigateBack";
   if (GetBrowser().get()) {
+    LOG_FEEDBACK(INFO, kNavigation) << "NavigateBack";
     GetBrowser()->GoBack();
   }
 }
 
 void NWebDelegate::NavigateForward() const {
-  LOG(DEBUG) << "NWebDelegate::NavigateForward";
   if (GetBrowser().get()) {
+    LOG_FEEDBACK(INFO, kNavigation) << "NavigateForward";
     GetBrowser()->GoForward();
   }
 }
 
 void NWebDelegate::NavigateBackOrForward(int step) const {
-  LOG(DEBUG) << "NWebDelegate::NavigateBackOrForward";
   if (GetBrowser().get()) {
+    LOG_FEEDBACK(INFO, kNavigation) << "NavigateBackOrForward step:" << step;
     GetBrowser()->GoBackOrForward(step);
   }
 }
@@ -1648,14 +1654,14 @@ void NWebDelegate::ClearClientAuthenticationCache() {
 }
 
 void NWebDelegate::Reload() const {
-  LOG(DEBUG) << "NWebDelegate::Reload";
+  LOG_FEEDBACK(INFO, kNavigation) << "Reload";
   if (GetBrowser().get()) {
     GetBrowser()->Reload();
   }
 }
 
 void NWebDelegate::ReloadOriginalUrl() const {
-  LOG(DEBUG) << "NWebDelegate::ReloadOriginalUrl";
+  LOG_FEEDBACK(INFO, kNavigation) << "ReloadOriginalUrl";
   if (GetBrowser().get()) {
     GetBrowser()->ReloadOriginalUrl();
   }
@@ -2639,16 +2645,21 @@ int NWebDelegate::Load(
     const std::string& url,
     const std::map<std::string, std::string>& additionalHttpHeaders) {
   GURL gurl = GURL(url);
+
   if (gurl.is_empty() || !gurl.is_valid()) {
     GURL gurlWithHttp = GURL("https://" + url);
     if (!gurlWithHttp.is_valid()) {
+      LOG_FEEDBACK(WARNING, kNavigation) << "LoadUrlWithHeaders message:invalidUrl";
       return NWEB_INVALID_URL;
     }
   }
   GURL file_gurl = url_util::FixupGURL(url);
   if (IsFileProtocol(file_gurl) && !IsUrlFileExist(file_gurl, url)) {
+    LOG_FEEDBACK(WARNING, kNavigation) << "LoadUrlWithHeaders message:invalidFileUrl";
     return NWEB_INVALID_RESOURCE;
   }
+
+  std::string headers_keys = "";
   std::string extra = "";
   for (auto iter = additionalHttpHeaders.begin();
        iter != additionalHttpHeaders.end(); iter++) {
@@ -2656,12 +2667,18 @@ int NWebDelegate::Load(
     const std::string& value = iter->second;
     if (!key.empty()) {
       extra += "\r\n" + std::string(key) + ": " + std::string(value);
+      headers_keys += key + ",";
     }
   }
   auto browser = GetBrowser();
   if (browser == nullptr) {
+    LOG_FEEDBACK(WARNING, kNavigation) << "LoadUrlWithHeaders message:browserIsNullptr";
     return NWEB_ERR;
   }
+  LOG_FEEDBACK(INFO, kNavigation)
+      << "LoadUrlWithHeaders httpHeaders:[" << headers_keys
+      << "] url:" << url::LogUtils::ConvertUrlWithMask(gurl.spec());
+
   browser->GetMainFrame()->AsArkWebFrame()->LoadHeaderUrl(CefString(url),
                                                           CefString(extra));
   RequestVisitedHistory();
@@ -2673,10 +2690,17 @@ int NWebDelegate::LoadWithDataAndBaseUrl(const std::string& baseUrl,
                                          const std::string& mimeType,
                                          const std::string& encoding,
                                          const std::string& historyUrl) {
-  LOG(DEBUG) << "NWebDelegate::LoadWithDataAndBaseUrl";
   if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
+    LOG_FEEDBACK(WARNING, kNavigation)
+        << "LoadWithDataAndBaseUrl message:browserOrHostIsNull";
     return NWEB_ERR;
   }
+  LOG_FEEDBACK(INFO, kNavigation)
+      << "LoadWithDataAndBaseUrl mimeType:" << mimeType
+      << " encoding:" << encoding
+      << " baseUrl:" << url::LogUtils::ConvertUrlWithMask(baseUrl)
+      << " historyUrl:" << url::LogUtils::ConvertUrlWithMask(historyUrl);
+
   GetBrowser()->GetHost()->LoadWithDataAndBaseUrl(baseUrl, data, mimeType,
                                                   encoding, historyUrl);
   RequestVisitedHistory();
@@ -2686,10 +2710,13 @@ int NWebDelegate::LoadWithDataAndBaseUrl(const std::string& baseUrl,
 int NWebDelegate::LoadWithData(const std::string& data,
                                const std::string& mimeType,
                                const std::string& encoding) {
-  LOG(DEBUG) << "NWebDelegate::LoadWithData";
   if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
+    LOG_FEEDBACK(WARNING, kNavigation) << "LoadWithData message:browserOrHostIsNull";
     return NWEB_ERR;
   }
+  LOG_FEEDBACK(INFO, kNavigation)
+      << "LoadWithData dataSize:" << data.size() << " mimeType:" << mimeType
+      << " encoding:" << encoding;
   GetBrowser()->GetHost()->LoadWithData(data, mimeType, encoding);
   RequestVisitedHistory();
   return NWEB_OK;
@@ -2703,10 +2730,20 @@ int NWebDelegate::LoadUrlWithParams(const std::string& url,
                                     const std::string& post_data,
                                     const bool allow_https_upgrade,
                                     int32_t transition_type) {
-  LOG(DEBUG) << "NWebDelegate::LoadUrlWithParams";
   if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
+    LOG_FEEDBACK(WARNING, kNavigation)
+        << "LoadUrlWithParams message:browserOrHostIsNull";
     return NWEB_ERR;
   }
+  LOG_FEEDBACK(WARNING, kNavigation)
+      << "LoadUrlWithParams loadType:" << load_type
+      << " transitionType:" << transition_type
+      << " allowHttpsUpgrades:" << allow_https_upgrade
+      << " hasHeaders:" << !headers.empty()
+      << " hasPostData:" << !post_data.empty()
+      << " url:" << url::LogUtils::ConvertUrlWithMask(url)
+      << " refer:" << url::LogUtils::ConvertUrlWithMask(refer);
+
   GetBrowser()->GetHost()->LoadUrlWithParams(url, load_type, refer, headers,
                                              post_data, allow_https_upgrade,
                                              transition_type);
@@ -2714,7 +2751,7 @@ int NWebDelegate::LoadUrlWithParams(const std::string& url,
   return NWEB_OK;
 }
 #endif
- 
+
 
 const CefRefPtr<ArkWebBrowserExt> NWebDelegate::GetBrowser() const {
   if (handler_delegate_) {
@@ -5701,7 +5738,7 @@ int NWebDelegate::PrerenderPage(const std::string& url,
   }
   return ARKWEB_INIT_ERROR;
 }
- 
+
 void NWebDelegate::CancelAllPrerendering() {
   if (!GetBrowser() || !GetBrowser()->GetHost()) {
     LOG(ERROR)
@@ -5772,7 +5809,7 @@ void NWebDelegate::WebExtensionTabAttached(
   GetBrowser()->GetHost()->WebExtensionTabAttached(
         tab_id, attachInfo->newPosition, attachInfo->newWindowId);
 }
- 
+
 void NWebDelegate::WebExtensionTabDetached(
     int tab_id,
     std::unique_ptr<NWebExtensionTabDetachInfo> detachInfo) {
@@ -5789,7 +5826,7 @@ void NWebDelegate::WebExtensionTabDetached(
   }
   GetBrowser()->GetHost()->WebExtensionTabDetached(tab_id, std::move(detachInfo));
 }
- 
+
 void NWebDelegate::WebExtensionTabMoved(
     int32_t tab_id,
     std::unique_ptr<NWebExtensionTabMoveInfo> moveInfo) {
@@ -5806,7 +5843,7 @@ void NWebDelegate::WebExtensionTabMoved(
   }
   GetBrowser()->GetHost()->WebExtensionTabMoved(tab_id, std::move(moveInfo));
 }
- 
+
 void NWebDelegate::WebExtensionTabReplaced(int32_t addedTabId,
                                            int32_t removedTabId) {
   LOG(INFO) << "WebExtensionTabReplaced, addedTabId: " << addedTabId
@@ -5834,7 +5871,7 @@ void NWebDelegate::PermissionRequestGrant(int32_t resourse_id,
     LOG(ERROR) << "failed to PermissionRequestGrant, handler delegate is null";
     return;
   }
- 
+
   handler_delegate_->PermissionRequestGrant(resourse_id, nweb_request_key);
 }
 
@@ -5934,7 +5971,7 @@ void NWebDelegate::EnableAppLinking(bool enable) {
     LOG(ERROR) << "can not get browser ,can not set applinking";
     return;
   }
- 
+
   GetBrowser()->GetHost()->EnableAppLinking(enable);
   return;
 }
@@ -6073,7 +6110,7 @@ void NWebDelegate::OpenDevtoolsWithByPb(
   }
   NWebDelegate* devtools_delegate =
       static_cast<NWebDelegate*>(nweb_delegate.get());
- 
+
   CefRefPtr<NWebDevToolsMessageHandlerImpl> devtools_message_handler;
   if (IsNativeApiEnable()) {
     devtools_message_handler = CefRefPtr<NWebDevToolsMessageHandlerImpl>(
@@ -6082,7 +6119,7 @@ void NWebDelegate::OpenDevtoolsWithByPb(
     devtools_message_handler = CefRefPtr<NWebDevToolsMessageHandlerImpl>(
         new NWebDevToolsMessageHandlerImpl(std::move(param->handler)));
   }
- 
+
   CefPoint inspect_element_at(param->point.x, param->point.y);
   CefOpenDevToolsExtOpt cef_ext_opt(ext_opt.canDock);
   GetBrowser()->GetHost()->ShowDevToolsWithByPb(
@@ -6330,7 +6367,7 @@ void NWebDelegate::RunJavaScriptInFrames(RunJavaScriptParam param,,
                        this, param, callback));
     return;
   }
- 
+
   if (GetBrowser().get()) {
     if (!param.rootFrame.has_value() || !param.world.has_value()) {
       LOG(ERROR) << "RunJavaScriptInFrames param invaild";
@@ -6389,7 +6426,7 @@ void NWebDelegate::RegisterOnLoadStartedCbForHighlightContent(
   if (handler_delegate_) {
     handler_delegate_->RegisterOnLoadStartedCbForHighlightContent(std::move(callback));
   } else {
-    LOG(ERROR) << "RegisterOnLoadStartedCbForHighlightContent, handler_delegate_ is nullptr"; 
+    LOG(ERROR) << "RegisterOnLoadStartedCbForHighlightContent, handler_delegate_ is nullptr";
   }
 }
 #endif // ARKWEB_AI
@@ -6419,10 +6456,10 @@ bool NWebDelegate::GetErrorPageEnabled() {
 #if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
 void NWebDelegate::EnableHttpsUpgrades(bool enable) {
   if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
-    LOG(ERROR) << "EnableHttpsUpgrades can not get browser";
+    LOG_FEEDBACK(WARNING, kHttpsUpgrades)
+        << "EnableHttpsUpgrades message:browserOrHostIsNull";
     return;
   }
-  LOG(INFO) << "NWebDelegate::EnableHttpsUpgrades";
   GetBrowser()->GetHost()->EnableHttpsUpgrades(enable);
 }
 #endif

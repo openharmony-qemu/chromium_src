@@ -1280,7 +1280,6 @@ bool URLRequestHttpJob::CanRetryWithSecureDnsOnly(int net_error) {
 
   if (request_->isolation_info().request_type() !=
       IsolationInfo::RequestType::kMainFrame) {
-    LOG(INFO) << "DOH-Fallback request is not mainframe";
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
     LOG_FEEDBACK(INFO) << "DOH-Fallback request is not mainframe";
 #endif
@@ -1290,8 +1289,6 @@ bool URLRequestHttpJob::CanRetryWithSecureDnsOnly(int net_error) {
   if (transaction_ && transaction_->GetResponseInfo() &&
       transaction_->GetResponseInfo()
           ->resolve_error_info.is_secure_network_error) {
-    LOG(INFO) << "DOH-Fallback won't retry for is_secure_network_error is "
-                 "true";
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
     LOG_FEEDBACK(INFO)
         << "DOH-Fallback won't retry for is_secure_network_error is "
@@ -1301,7 +1298,6 @@ bool URLRequestHttpJob::CanRetryWithSecureDnsOnly(int net_error) {
   }
 
   if (!const_cast<URLRequestContext*>(request_->context())->AsURLRequestContextExt()->CanUseSecureDnsFallback()) {
-    LOG(INFO) << "DOH-Fallback can't use secure dns fallback";
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
     LOG_FEEDBACK(INFO) << "DOH-Fallback can't use secure dns fallback";
 #endif
@@ -1332,8 +1328,6 @@ bool URLRequestHttpJob::CanRetryWithSecureDnsOnly(int net_error) {
     PopulateNetErrorDetails(&details);
     // 如果stream已经创建成功。证明dns阶段没有发生问题，所以我们不需要重试.
     if (details.stream_created) {
-      LOG(INFO) << "DOH-Fallback cann't retry with secure dns since the stream "
-                   "is created.";
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
       LOG_FEEDBACK(INFO)
           << "DOH-Fallback cann't retry with secure dns since the stream "
@@ -1357,8 +1351,6 @@ void URLRequestHttpJob::RetryWithSecureDnsOnly() {
   receive_headers_end_ = base::TimeTicks();
 
   ResetTimer();
-
-  LOG(INFO) << "DOH-Fallback will retry with secure dns only";
 
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
   LOG_FEEDBACK(INFO) << "DOH-Fallback will retry with secure dns only";
@@ -1422,6 +1414,12 @@ void URLRequestHttpJob::OnStartCompleted(int result) {
   if (MaybeRetryWithFallbackProxy(result)) {
     // re-execute OnStartCompleted later
     return;
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  if (transaction_ && transaction_->GetResponseInfo() && request_) {
+    request_->set_used_http_dns(request_info_.secure_dns_only);
   }
 #endif
 

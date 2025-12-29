@@ -266,6 +266,12 @@ if (is_arkweb) {
   ]
 }
 
+if (is_arkweb_ext) {
+  arkweb_content_render_sources += [
+    "//arkweb/ohos_nweb_ex/overrides/chromium/content/renderer/render_frame_impl_nweb_ex.cc"
+  ]
+}
+
 if (arkweb_same_layer) {
   arkweb_content_render_sources += arkweb_content_renderer_media_ohos_sources
 }
@@ -391,6 +397,18 @@ arkweb_net_http_sources = [
   "//arkweb/chromium_ext/net/http/arkweb_transport_security_state_ext.h",
 ]
 
+arkweb_net_nqe_sources = []
+arkweb_net_base_sources = []
+if (!defined(enable_arkweb_ext) || !enable_arkweb_ext) {
+  arkweb_net_nqe_sources += [
+    "//arkweb/chromium_ext/net/nqe/network_quality_estimator_ext.cc"
+  ]
+  arkweb_net_base_sources += [
+    "//arkweb/chromium_ext/net/base/load_timing_info_ext.cc",
+    "//arkweb/chromium_ext/net/base/net_errors_ext.cc"
+  ]
+}
+
 arkweb_net_http_cache_sources = [
   "//arkweb/chromium_ext/net/http/http_cache_transaction_utils.h",
   "//arkweb/chromium_ext/net/http/http_cache_transaction_utils.cc",
@@ -445,6 +463,14 @@ if (defined(enable_arkweb_ext) && enable_arkweb_ext) {
   arkweb_third_patry_blink_renderer_core_frame_resources += [
     "//arkweb/chromium_ext/third_party/blink/renderer/platform/media/video_url_loader_manager.cc",
     "//arkweb/chromium_ext/third_party/blink/renderer/platform/media/video_url_loader_manager.h",
+    "//arkweb/ohos_nweb_ex/overrides/chromium/third_party/blink/renderer/core/frame/local_frame_client_nweb_ex.cc",
+    "//arkweb/ohos_nweb_ex/overrides/chromium/third_party/blink/renderer/core/frame/location_nweb_ex.cc",
+    "//arkweb/ohos_nweb_ex/overrides/chromium/third_party/blink/renderer/core/frame/history_nweb_ex.cc"
+  ]
+} else {
+  arkweb_third_patry_blink_renderer_core_frame_resources += [
+    "//arkweb/chromium_ext/third_party/blink/renderer/core/frame/location_ext.cc",
+    "//arkweb/chromium_ext/third_party/blink/renderer/core/frame/history_ext.cc"
   ]
 }
 
@@ -752,6 +778,16 @@ arkweb_third_patry_blink_renderer_core_video_loader_sources = [
   "//arkweb/chromium_ext/third_party/blink/renderer/platform/media/video_url_loader_impl.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/platform/media/video_url_loader_impl.h",
 ]
+
+if (is_arkweb_ext) {
+  arkweb_third_party_blink_renderer_core_loader_sources = [
+    "//arkweb/ohos_nweb_ex/overrides/chromium/third_party/blink/renderer/core/loader/frame_loader_nweb_ex.cc"
+  ]
+} else {
+  arkweb_third_party_blink_renderer_core_loader_sources = [
+    "//arkweb/chromium_ext/third_party/blink/renderer/core/loader/frame_loader_ext.cc"
+  ]
+}
 
 arkweb_base_unittest_sources = [
   "//arkweb/chromium_ext/base/message_loop/message_pump_ohos_unittest.cc",
@@ -1221,8 +1257,14 @@ arkweb_third_party_blink_renderer_core_loader_resource_sources = [
 ]
 
 arkweb_content_browser_renderer_host_sources = [
-  "//arkweb/chromium_ext/content/browser/renderer_host/render_frame_host_delegate_ext.h",
+  "//arkweb/chromium_ext/content/browser/renderer_host/render_frame_host_delegate_ext.h"
 ]
+
+if (is_arkweb_ext) {
+  arkweb_content_browser_renderer_host_sources += [
+  "//arkweb/ohos_nweb_ex/overrides/chromium/content/browser/renderer_host/render_frame_host_impl_nweb_ex.cc"
+  ]
+}
 
 arkweb_content_browser_test_sources = [
   "//arkweb/chromium_ext/content/renderer/stream_texture_host_ohos_unittest.cc",
@@ -1305,7 +1347,7 @@ arkweb_net_gn_sources =
     arkweb_net_socket_sources + arkweb_net_url_request_sources +
     arkweb_net_http_sources + arkweb_net_base_ext_chanege_sources +
     arkweb_net_proxy_resolution_sources + arkweb_net_cert_sources +
-    arkweb_net_http_cache_sources
+    arkweb_net_http_cache_sources + arkweb_net_nqe_sources + arkweb_net_base_sources
 arkweb_net_gn_deps = [
   "//arkweb/build/features",
   "//ohos/adapter:adapter",
@@ -1435,3 +1477,17 @@ arkweb_components_captive_portal_content_sources = [
   "//arkweb/chromium_ext/components/captive_portal/content/captive_portal_tab_helper_ohos.cc",
   "//arkweb/chromium_ext/components/captive_portal/content/captive_portal_tab_helper_ohos.h",
 ]
+
+arkweb_components_page_load_metrics_browser_sources = [
+  "//arkweb/chromium_ext/components/page_load_metrics/browser/ark_web_page_load_metrics_forward_observer.cc"
+]
+
+if (is_arkweb_ext) {
+  arkweb_components_page_load_metrics_browser_sources += [
+    "//arkweb/ohos_nweb_ex/overrides/chromium/components/page_load_metrics/browser/metrics_web_contents_observer_nweb_ex.cc"
+  ]
+} else {
+  arkweb_components_page_load_metrics_browser_sources += [
+    "//arkweb/chromium_ext/components/page_load_metrics/browser/metrics_web_contents_observer_ext.cc"
+  ]
+}

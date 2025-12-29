@@ -127,8 +127,6 @@ static std::unique_ptr<DragImage> ClippedDragImageForImage(
 
   gfx::Size image_size = image->Size(respect_orientation);
   if (image_size.IsEmpty()) {
-    LOG(INFO)
-        << "DragDrop Try to get clipped drag image failed, the size is empty";
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
     LOG_FEEDBACK(INFO)
         << "DragDrop Try to get clipped drag image failed, the size is empty";

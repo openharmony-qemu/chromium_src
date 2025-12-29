@@ -70,6 +70,10 @@
 #include "third_party/boringssl/src/include/openssl/mem.h"
 #include "third_party/boringssl/src/include/openssl/ssl.h"
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "arkweb/chromium_ext/net/base/log_utils.h"
+#endif
+
 namespace net {
 
 namespace {
@@ -913,17 +917,17 @@ int SSLClientSocketImpl::DoHandshake() {
       return ERR_IO_PENDING;
     }
 
-    LOG(ERROR) << "handshake failed; returned " << rv << ", SSL error code "
-               << ssl_error << ", net_error " << net_error;
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-    LOG_FEEDBACK(ERROR) << "handshake failed; returned " << rv
-                        << ", SSL error code " << ssl_error << ", net_error "
-                        << net_error;
+    LOG_FEEDBACK(ERROR, kNetwork)
+        << "SSLSocketHandleshakeFailed result:" << rv
+        << " sslError:" << ssl_error
+        << " netError:" << net::ErrorToDebugString(net_error);
     if (stream_socket_) {
       IPEndPoint peer_address;
       if (stream_socket_->GetPeerAddress(&peer_address) == OK) {
-        LOG_FEEDBACK(INFO) << "handshake failed, peer_address "
-                           << peer_address.ToString();
+        LOG_FEEDBACK(INFO, kNetwork)
+            << "SSLSocketHandleshakeFailed peerAddress:"
+            << net::LogUtils::AnonymizeIpAddress(peer_address);
       }
     }
 #endif

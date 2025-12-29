@@ -500,7 +500,7 @@ class PDFiumEngine : public DocumentLoader::Client, public IFSDK_PAUSE {
                                          const std::vector<PDFiumRange>& selections);
   void CheckSelectionVisibility(const gfx::Rect& left,
                                 const gfx::Rect& right,
-                                const gfx::Rect& clipped_selection_bounds);
+                                gfx::Rect& clipped_selection_bounds);
 #endif  // BUILDFLAG(ARKWEB_PDF)
 
   // This helper class is used to detect the difference in selection between

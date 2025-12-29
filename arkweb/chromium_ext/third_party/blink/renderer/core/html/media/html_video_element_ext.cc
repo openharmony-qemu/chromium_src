@@ -258,9 +258,6 @@ void HTMLVideoElement::UpdateUiPlayPosition(int64_t position) {
 }
 
 void HTMLVideoElement::UpdateRemotePlayState(bool is_playing) {
-  if (!web_media_player_) {
-    return;
-  }
   for (auto& observer : GetMediaPlayerObserverRemoteSet()) {
     observer->UpdateRemotePlayState(is_playing);
   }
@@ -268,9 +265,6 @@ void HTMLVideoElement::UpdateRemotePlayState(bool is_playing) {
 }
 
 void HTMLVideoElement::UpdateRemotePlayPosition(int64_t position) {
-  if (!web_media_player_) {
-    return;
-  }
   for (auto& observer : GetMediaPlayerObserverRemoteSet()) {
     observer->UpdateRemotePlayPosition(position);
   }

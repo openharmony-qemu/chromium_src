@@ -31,9 +31,7 @@ class TextRecord;
 class FirstScreenCalculator {
  public:
   explicit FirstScreenCalculator(LocalFrameView* local_frame_view)
-      : frame_view_(local_frame_view) {
-        LOG(INFO) << "zhu explicit FirstScreenCalculator this " << this;
-      }
+      : frame_view_(local_frame_view) {}
   void NotifyImagePaint(MediaRecordIdHash record_id_hash,
                         const ImageRecord* record,
                         std::optional<uint64_t> viewport_size,
@@ -47,7 +45,6 @@ class FirstScreenCalculator {
   bool HasUserScrolled() const;
   void RestartRecordingFirstScreenPaint();
   void GetPaintRects(std::vector<gfx::Rect>& paint_rects);
- 
 
  private:
   struct PaintRectInfo {
@@ -75,7 +72,7 @@ class FirstScreenCalculator {
   base::TimeTicks navigation_start_time_;
   Member<LocalFrameView> frame_view_;
   bool user_scrolled_ = false;
-  base::TimeDelta max_delta_{base::TimeDelta()};
+  MediaRecordIdHash background_image_id_ = 0;
   uint64_t viewport_size_ = 0;
   gfx::Rect occupied_rect_{gfx::Rect()};
   bool nearly_finished_ = false;

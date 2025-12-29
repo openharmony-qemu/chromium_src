@@ -147,7 +147,11 @@ class VIZ_SERVICE_EXPORT Surface final {
   float device_scale_factor() const {
     return surface_info_.device_scale_factor();
   }
-
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  float stretch_content_none_device_scale_factor() const {
+    return surface_info_.stretch_content_none_device_scale_factor();
+  }
+#endif
   base::WeakPtr<SurfaceClient> client() { return surface_client_; }
 
   bool has_deadline() const { return deadline_ && deadline_->has_deadline(); }

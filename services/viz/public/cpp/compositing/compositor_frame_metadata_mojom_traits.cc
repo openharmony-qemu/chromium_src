@@ -31,6 +31,10 @@ bool StructTraits<viz::mojom::CompositorFrameMetadataDataView,
     return false;
   }
   out->device_scale_factor = data.device_scale_factor();
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  out->stretch_content_none_device_scale_factor =
+      data.stretch_content_none_device_scale_factor();
+#endif
   if (!data.ReadRootScrollOffset(&out->root_scroll_offset)) {
     return false;
   }

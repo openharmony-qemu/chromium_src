@@ -132,6 +132,12 @@ float ResolvedFrameData::device_scale_factor() const {
   return surface_->device_scale_factor();
 }
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+float ResolvedFrameData::stretch_content_none_device_scale_factor() const {
+  return surface_->stretch_content_none_device_scale_factor();
+}
+#endif
+
 uint32_t ResolvedFrameData::GetClientNamespaceId() const {
   return static_cast<uint32_t>(child_resource_id_);
 }

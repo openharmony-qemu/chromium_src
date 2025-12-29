@@ -61,7 +61,10 @@ private:
     MediaAVSessionType type_;
 };
 
-class MediaAVSessionAdapterImpl : public MediaAVSessionAdapter, public std::enable_shared_from_this<MediaAVSessionAdapterImpl> {
+class MediaAVSessionAdapterImpl
+    : public MediaAVSessionAdapter,
+      public MediaAVCastAdapterImpl::Client,
+      public std::enable_shared_from_this<MediaAVSessionAdapterImpl> {
 public:
     friend class MediaAVCastAdapterImpl;
     MediaAVSessionAdapterImpl();
@@ -76,7 +79,7 @@ public:
     void SetMetadata(const std::shared_ptr<MediaAVSessionMetadataAdapter> metadata) override;
     void SetPlaybackState(MediaAVSessionPlayState state) override;
     void SetPlaybackPosition(const std::shared_ptr<MediaAVSessionPositionAdapter> position) override;
-    OH_AVSession* GetAVSession() { return avSession_; }
+    OH_AVSession* GetAVSession() override;
     void SetMediaCastUri(const std::string& mediaUri) override;
     static std::shared_mutex& GetAVSessionAdapterMutex() { return avsession_adapter_mutex_; }
     void CreateAVCastAdapter() override;
@@ -121,12 +124,21 @@ private:
     bool CreateNewSession(const MediaAVSessionType& type);
     void InitMediaAVSessionAdapterImpl();
     void RegistAVSessionCallbackOutputDeviceChange();
-    void PrepareAndStartCast();
+    bool PrepareAndStartCast();
     int32_t GetMediaCastCurrentTime();
     void PullUpCastBackGround();
     void SetAvCast(bool is_avcast);
-    void UpdateUiPlayState(bool is_playing);
-    void UpdateUiPlayPosition(int64_t position);
+    void UpdateUiPlayState(bool is_playing) override;
+    void UpdateUiPlayPosition(int64_t position) override;
+    void UpdateUiPlayStateByClient(AVSession_PlaybackState& avSessionPlaybackState) override;
+    void SetUiPlayStateByClient(AVSession_PlaybackState& avSessionPlaybackState) override;
+    void SetUiPlayPositionByClient(AVSession_PlaybackPosition& playbackPosition) override;
+    void SetUilastUiTimeByClient(int64_t position) override;
+    void SetUiSeekingByClient(bool is_seeking) override;
+    AVSession_PlaybackState GetUiPlayStateByClient() override;
+    int64_t GetUilastUiTimeByClient() override;
+    bool GetUiSeekingByClient() override;
+
     void SetAVCastDevice(const char* deviceName) { deviceName_ = deviceName ? std::string(deviceName) : std::string(); }
     std::string GetAVCastDevice() { return deviceName_; }
     void UpdateAVCastDevice(AVSession_OutputDeviceInfo *outputDeviceInfo);

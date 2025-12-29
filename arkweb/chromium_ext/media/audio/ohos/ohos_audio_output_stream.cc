@@ -34,6 +34,9 @@ OHOSAudioOutputStream::OHOSAudioOutputStream(OHOSAudioManager* manager,
   if (ret != AUDIOSTREAM_SUCCESS) {
     LOG(ERROR) << "AudioStreamBuilder create failed.";
   }
+  if (parameters.latency_tag() == AudioLatency::Type::kRtc) {
+    isCommunication_ = true;
+  }
 
   sample_format_ = kSampleFormatS16;
   bytes_per_frame_ = parameters.GetBytesPerFrame(sample_format_);

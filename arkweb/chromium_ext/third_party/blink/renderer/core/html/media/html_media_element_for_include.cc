@@ -759,13 +759,17 @@ void HTMLMediaElement::UpdateUiPlayPosition(int64_t position) {
 
 bool HTMLMediaElement::EnableMediaCastByUrlProtocol() {
   LOG(INFO) << "HTMLMediaElement::EnableMediaCastByUrlProtocol";
-  const KURL url = currentSrc();
-  if (url.ProtocolIs("http") || url.ProtocolIs("https")) {
+  if (currentSrc().ProtocolIsInHTTPFamily()) {
     LOG(INFO) << "HTMLMediaElement::EnableMediaCastByUrlProtocol, url is http or https";
     return true;
   }
   return false;
 }
-+#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
+
+void HTMLMediaElement::GetMediaCastCurrentTime(GetMediaCastCurrentTimeCallback callback) {
+  LOG(INFO) << "HTMLMediaElement::GetMediaCastCurrentTime: " << currentTime();
+  std::move(callback).Run(currentTime());
+}
+#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
 
 }  // namespace blink

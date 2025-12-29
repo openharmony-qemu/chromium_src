@@ -157,6 +157,7 @@ class NWebHandlerDelegate : public ArkWebClientExt,
       const std::vector<std::shared_ptr<NWebJsProxyCallback>>& callbacks);
 #if BUILDFLAG(ARKWEB_AI)
   void RegisterNWebAgentHandler(std::shared_ptr<NWebAgentHandler> handler);
+  void RegisterOnLoadStartedCbForHighlightContent(std::function<void(void)>&& callback);
 #endif
 
   using NativeJSProxyCallbackFunc =
@@ -1105,6 +1106,7 @@ class NWebHandlerDelegate : public ArkWebClientExt,
   std::shared_ptr<NWebHandler> nweb_handler_ = nullptr;
 #if BUILDFLAG(ARKWEB_AI)
   std::shared_ptr<NWebAgentHandler> nweb_agent_handler_ = nullptr;
+  std::function<void(void)> onLoadStartedCbForHighlightContent_ = nullptr;
 #endif
   std::shared_ptr<NWebJavaScriptResultCallBack> nweb_javascript_callback_ =
       nullptr;

@@ -128,6 +128,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #if BUILDFLAG(ARKWEB_AI)
   void RegisterNWebAgentHandler(
       std::shared_ptr<NWebAgentHandler> handler) override;
+  void RegisterOnLoadStartedCbForHighlightContent(std::function<void(void)>&& callback);
 #endif
   void RegisterRenderCb(
       std::function<void(const char*)> render_update_cb) override;

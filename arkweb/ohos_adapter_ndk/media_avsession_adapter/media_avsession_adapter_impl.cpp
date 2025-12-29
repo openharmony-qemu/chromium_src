@@ -158,6 +158,8 @@ bool MediaAVSessionAdapterImpl::CreateAVSession(MediaAVSessionType type) {
 
 void MediaAVSessionAdapterImpl::DestroyAVSession() {
     WVLOG_I("DestroyAVSession in");
+    MediaCastStopped();
+    HandleStopMediaCast();
     {
         std::lock_guard<std::mutex> lock(avsession_mutex_);
         if (avSession_) {
@@ -493,12 +495,12 @@ bool MediaAVSessionAdapterImpl::UpdatePlaybackPosition(
     }
     bool updated = false;
 
-    avPlaybackPosition_ = {
+    AVSession_PlaybackPosition avPlaybackPosition = {
         .elapsedTime = position->GetElapsedTime(),
         .updateTime = position->GetUpdateTime(),
     };
 
-    AVSession_ErrCode err = OH_AVSession_SetPlaybackPosition(avSession_, &avPlaybackPosition_);
+    AVSession_ErrCode err = OH_AVSession_SetPlaybackPosition(avSession_, &avPlaybackPosition);
     if (err == AV_SESSION_ERR_SUCCESS) {
         updated = true;
     }
@@ -659,6 +661,7 @@ void MediaAVSessionAdapterImpl::ProcessPosterQueue() {
 void MediaAVSessionAdapterImpl::CreateAVCastAdapter() {
     WVLOG_I(" CreateAVCastAdapter enter");
     std::shared_lock<std::shared_mutex> lock_avcast_adapter(MediaAVCastAdapterImpl::GetAVCastAdapterMutex());
+    avCastAdapter_.reset();
     avCastAdapter_ = std::make_shared<MediaAVCastAdapterImpl>(shared_from_this());
 }
 
@@ -721,7 +724,9 @@ void MediaAVSessionAdapterImpl::AVCastStateConnect(OH_AVSession *session, AVSess
         adapter->UpdateAVCastDevice(outputDeviceInfo);
         if (adapter->GetAVCastDevice() != "LocalDevice") {
             WVLOG_I("MediaAVSessionAdapterImpl::OutputDeviceChange, not LocalDevice");
-            adapter->PrepareAndStartCast();
+            if (!adapter->PrepareAndStartCast()) {
+                WVLOG_E("MediaAVSessionAdapterImpl::OutputDeviceChange, PrepareAndStartCast failed");
+            }            
             adapter->PullUpCastBackGround();
             adapter->PauseNative();
             adapter->SetAvCast(true);
@@ -790,19 +795,27 @@ void MediaAVSessionAdapterImpl::PullUpCastBackGround() {
     media->PullUpCastBackGround(deviceName);
 }
 
-void MediaAVSessionAdapterImpl::PrepareAndStartCast() {
+bool MediaAVSessionAdapterImpl::PrepareAndStartCast() {
     WVLOG_I("OH_AVSession_GetAVCastController enter.");
     std::shared_lock<std::shared_mutex> lock_avcast_adapter(MediaAVCastAdapterImpl::GetAVCastAdapterMutex());
     if (!avCastAdapter_) {
         WVLOG_E("PrepareAndStartCast, avCastAdapter_ is nullptr");
-        return;
+        return false;
     }
-    avCastAdapter_->GetAVCastController();
-    avCastAdapter_->StartCast();
+    if (!avCastAdapter_->GetAVCastController()) {
+        WVLOG_E("MediaAVSessionAdapterImpl::PrepareAndStartCast, GetAVCastController failed");
+        return false;
+    }
+    if (!avCastAdapter_->StartCast()) {
+        WVLOG_E("MediaAVSessionAdapterImpl::PrepareAndStartCast, StartCast failed");
+        return false;
+    }
     // need to seek remotely here
-    WVLOG_I("PrepareAndStartCast, avCastAdapter_ begin time: %{public}d", avPlaybackPosition_.elapsedTime);
-    avCastAdapter_->UpdateRemotePlayPosition(avPlaybackPosition_.elapsedTime);
+    int32_t currentTime = GetMediaCastCurrentTime();
+    WVLOG_I ("zwp: MediaAVSessionAdapterImpl::PrepareAndStartCast, currentTime: %{public}d", currentTime);
+    avCastAdapter_->UpdateRemotePlayPosition(currentTime);
     avCastAdapter_->UpdateRemotePlayState(avPlaybackState_ == PLAYBACK_STATE_PLAYING);
+    return true;
 }
 
 void MediaAVSessionAdapterImpl::SetRemoteCastEnabled(bool enabled) {
@@ -834,10 +847,82 @@ void MediaAVSessionAdapterImpl::SetMediaCastUri(const std::string& mediaUri) {
 }
 
 void MediaAVSessionAdapterImpl::HandleStopMediaCast() {
+    WVLOG_I("HandleStopMediaCast enter");
     AVSession_ErrCode ret = OH_AVSession_StopCasting(avSession_);
     if (ret != AV_SESSION_ERR_SUCCESS) {
         WVLOG_E("HandleStopMediaCast OH_AVSession_StopCasting failed. ret: %{public}d", ret);
     }
+}
+
+void MediaAVSessionAdapterImpl::UpdateUiPlayStateByClient(AVSession_PlaybackState& avSessionPlaybackState) {
+    if (avSessionPlaybackState != avCastAdapter_->GetAVCastPlaybackState()) {
+        if (avSessionPlaybackState == AVSession_PlaybackState::PLAYBACK_STATE_PLAYING) {
+            UpdateUiPlayState(true);
+        } else if (avSessionPlaybackState == AVSession_PlaybackState::PLAYBACK_STATE_PAUSED ||
+                avSessionPlaybackState == AVSession_PlaybackState::PLAYBACK_STATE_STOPPED) {
+            UpdateUiPlayState(false);
+        }
+    }
+}
+
+void MediaAVSessionAdapterImpl::SetUiPlayStateByClient(AVSession_PlaybackState& avSessionPlaybackState) {
+    if (!avCastAdapter_) {
+        WVLOG_E("SetUiPlayStateByClient, avCastAdapter_ is nullptr");
+        return;
+    }
+    avCastAdapter_->SetAVCastUiPlayState(avSessionPlaybackState);
+}
+
+void MediaAVSessionAdapterImpl::SetUiPlayPositionByClient(AVSession_PlaybackPosition& playbackPosition) {
+    if (!avCastAdapter_) {
+        WVLOG_E("SetUiPlayPositionByClient, avCastAdapter_ is nullptr");
+        return;
+    }
+    avCastAdapter_->SetAVCastUiPlayPosition(playbackPosition);
+}
+
+void MediaAVSessionAdapterImpl::SetUilastUiTimeByClient(int64_t position) {
+    if (!avCastAdapter_) {
+        WVLOG_E("SetUilastUiTimeByClient, avCastAdapter_ is nullptr");
+        return;
+    }
+    avCastAdapter_->SetAVCastUilastUiTime(position);
+}
+
+void MediaAVSessionAdapterImpl::SetUiSeekingByClient(bool is_seeking) {
+    if (!avCastAdapter_) {
+        WVLOG_E("SetUiSeekingByClient, avCastAdapter_ is nullptr");
+        return;
+    }
+    avCastAdapter_->SetAVCastUiSeeking(is_seeking);
+}
+
+AVSession_PlaybackState MediaAVSessionAdapterImpl::GetUiPlayStateByClient() {
+    if (avCastAdapter_) {
+        WVLOG_E("MediaAVSessionAdapterImpl GetUiPlayStateByClient avCastAdapter_ is nullptr");
+        return PLAYBACK_STATE_ERROR;
+    }
+    return avCastAdapter_->GetAVCastUiPlayState();
+};
+
+int64_t MediaAVSessionAdapterImpl::GetUilastUiTimeByClient() {
+    if (!avCastAdapter_) {
+        WVLOG_E("MediaAVSessionAdapterImpl GetUilastUiTimeByClient avCastAdapter_ is nullptr");
+        return 0;
+    }
+    return avCastAdapter_->GetAVCastUilastUiTime();
+}
+
+bool MediaAVSessionAdapterImpl::GetUiSeekingByClient() {
+    if (!avCastAdapter_) {
+        WVLOG_E("MediaAVSessionAdapterImpl GetUiSeekingByClient avCastAdapter_ is nullptr");
+        return false;
+    }
+    return avCastAdapter_->GetAVCastUiSeeking();
+}
+
+OH_AVSession* MediaAVSessionAdapterImpl::GetAVSession() {
+    return avSession_;
 }
 
 void MediaAVSessionAdapterImpl::SetAvCast(bool is_avcast) {

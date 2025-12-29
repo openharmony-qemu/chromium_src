@@ -530,7 +530,6 @@ void HTMLMediaElementUtils::OnMediaCastEnter() {
     return;
   }
   for (auto& observer : htmlMediaElement_->media_player_observer_remote_set_->Value()) {
-    LOG(INFO) << "HTMLMediaElementUtils::OnMediaCastEnter 1";
     observer->OnMediaCastEnter();
   }
 }

@@ -167,6 +167,9 @@ interface MediaPlayer {
 
   [EnableIf=arkweb_media_cast]
   MediaCastStopped();
+
+  [Sync, EnableIf=arkweb_media_cast]
+  GetMediaCastCurrentTime() => (double time);
 };
 
 // Implemented by the MediaWebContentsObserver. The remote lives in the renderer

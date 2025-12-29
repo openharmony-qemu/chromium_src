@@ -56,19 +56,38 @@ struct MediaCastDescription {
 
 class MediaAVCastAdapterImpl {
 public:
-    explicit MediaAVCastAdapterImpl(std::shared_ptr<MediaAVSessionAdapterImpl> avsession_adapter);
+  class Client {
+   public:
+    virtual void UpdateUiPlayPosition(int64_t position) = 0;
+    virtual void UpdateUiPlayState(bool is_playing) = 0;
+    virtual OH_AVSession* GetAVSession() = 0;
+    virtual void UpdateUiPlayStateByClient(AVSession_PlaybackState& avSessionPlaybackState) = 0;
+    virtual void SetUiPlayStateByClient(AVSession_PlaybackState& avSessionPlaybackState) = 0;
+    virtual void SetUiPlayPositionByClient(AVSession_PlaybackPosition& playbackPosition) = 0;
+    virtual void SetUilastUiTimeByClient(int64_t position) = 0;
+    virtual void SetUiSeekingByClient(bool is_seeking) = 0;
+
+    virtual AVSession_PlaybackState GetUiPlayStateByClient() = 0;
+    virtual int64_t GetUilastUiTimeByClient() = 0;
+    virtual bool GetUiSeekingByClient() = 0;
+
+   protected:
+    virtual ~Client() {}
+  };
+
+    explicit MediaAVCastAdapterImpl(std::shared_ptr<Client> client);
 
     ~MediaAVCastAdapterImpl();
 
-    void GetAVCastController();
+    bool GetAVCastController();
 
     bool Prepare(const MediaCastDescription& mediaCastDescription);
 
-    void StartCast();
+    bool StartCast();
 
-    void RegisterCallback();
+    bool RegisterCallback();
 
-    void UnregisterCallback();
+    bool UnregisterCallback();
 
     void PlayRemote();
 
@@ -84,9 +103,41 @@ public:
     
     void UpdateRemotePlayPosition(int64_t position);
 
-    static void UpdateUiPlayState(std::shared_ptr<MediaAVSessionAdapterImpl> adapter, AVSession_PlaybackState playbackState);
+    AVSession_PlaybackState GetAVCastPlaybackState();
 
-    static void UpdateUiPlayPosition(std::shared_ptr<MediaAVSessionAdapterImpl> adapter, int64_t position, bool is_seek);
+    void SetAVCastUiPlayState(AVSession_PlaybackState& avSessionPlaybackState) {
+        playbackState_ = avSessionPlaybackState;
+    }
+
+    void SetAVCastUiPlayPosition(AVSession_PlaybackPosition& playbackPosition) {
+        playbackPosition_ = playbackPosition;
+    }
+
+    void SetAVCastUilastUiTime(int64_t position) {
+        lastUiTime_ = position;
+    }
+
+    void SetAVCastUiSeeking(bool is_seeking) {
+        is_seeking_ = is_seeking;
+    }
+
+    AVSession_PlaybackState GetAVCastUiPlayState() {
+        return playbackState_;
+    }
+
+    AVSession_PlaybackPosition GetAVCastUiPlayPosition() {
+        return playbackPosition_;
+    }
+
+    int64_t GetAVCastUilastUiTime() {
+        return lastUiTime_;
+    }
+
+    bool GetAVCastUiSeeking() {
+        return is_seeking_;
+    }
+
+    static void UpdateUiPlayPosition(std::shared_ptr<MediaAVCastAdapterImpl::Client> client, int64_t position, bool is_seek);
 
     static std::shared_mutex& GetAVCastAdapterMutex() { return avcast_adapter_mutex_; }
 
@@ -110,14 +161,15 @@ private:
     OH_AVSession_AVMediaDescriptionBuilder* avMediaDescriptionBuilder_ = nullptr;
     OH_AVSession_AVMediaDescription* avMediaDescription_ = nullptr;
     OH_AVSession_AVQueueItem avQueueItem_;
-    std::shared_ptr<MediaAVSessionAdapterImpl> avsession_adapter_;
+    std::shared_ptr<Client> client_;
     AVSession_PlaybackState playbackState_;
     AVSession_PlaybackPosition playbackPosition_;
     int64_t lastUiTime_ = 0;
     static std::shared_mutex avcast_adapter_mutex_;
     size_t callback_index_ = 0;
-    static CallbackSharedWrapper<MediaAVSessionAdapterImpl> callback_wrapper_;
+    static CallbackSharedWrapper<MediaAVCastAdapterImpl::Client> callback_wrapper_;
     bool avCastStarted_ = false;
+    bool is_seeking_ = false;
 };
 } // namespace OHOS::NWeb
 

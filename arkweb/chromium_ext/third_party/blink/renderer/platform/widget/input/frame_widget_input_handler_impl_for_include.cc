@@ -47,6 +47,7 @@ void FrameWidgetInputHandlerImpl::ShowFreeCopyMenu() {
           LOG(INFO) << "Widget is null, returning early";
           return;
         }
+        HandlingState handling_state(widget, UpdateState::kIsSelectingRange);
         handler->ShowFreeCopyMenu();
       },
       widget_, main_thread_frame_widget_input_handler_));

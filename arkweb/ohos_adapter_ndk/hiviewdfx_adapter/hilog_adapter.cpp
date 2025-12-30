@@ -31,7 +31,7 @@ constexpr uint32_t LOG_APP_DOMAIN = 0xD004510;
 constexpr uint32_t LOG_RENDER_DOMAIN = 0xD004511;
 #endif
 constexpr uint32_t LOG_CONSOLE_DOMAIN = 0x001194;
-constexpr uint32_t MAX_LENGTH = 1024;
+constexpr uint32_t MAX_LENGTH = 4096;
 const std::string PUBLIC_STR = "{public}";
 const std::string PRIVATE_STR = "{private}";
 const std::string STD_FORMAT = "%{public}s";
@@ -73,7 +73,7 @@ int HiLogAdapterPrintLog(uint32_t level, const char* tag, const char* fmt, va_li
     Format(fmtStr);
     char buffer[MAX_LENGTH];
     int ret = vsnprintf_s(buffer, MAX_LENGTH, MAX_LENGTH - 1, fmtStr.c_str(), ap);
-    if (ret < 0) {
+    if (ret < 0 && buffer[MAX_LENGTH - 1] != '\0') {
         return -1;
     }
     return OH_LOG_Print(LOG_APP, LOG_LEVELS[level], domain, tag, STD_FORMAT.c_str(), buffer);
@@ -85,7 +85,7 @@ int HiLogAdapterConsoleLog(uint32_t level, const char* tag, const char* fmt, va_
     Format(fmtStr);
     char buffer[MAX_LENGTH];
     int ret = vsnprintf_s(buffer, MAX_LENGTH, MAX_LENGTH - 1, fmtStr.c_str(), ap);
-    if (ret < 0) {
+    if (ret < 0 && buffer[MAX_LENGTH - 1] != '\0') {
         return -1;
     }
     return OH_LOG_Print(LOG_APP, LOG_LEVELS[level], LOG_CONSOLE_DOMAIN, tag, STD_FORMAT.c_str(), buffer);

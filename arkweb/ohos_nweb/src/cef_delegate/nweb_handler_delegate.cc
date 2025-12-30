@@ -655,6 +655,7 @@ NWebHandlerDelegate::NWebHandlerDelegate(
   if (!is_enhance_surface_) {
     window_ = window;
   }
+  weak_this_ = weak_factory_.GetWeakPtr();
 }
 
 void NWebHandlerDelegate::OnDestroy() {
@@ -2038,7 +2039,7 @@ void NWebHandlerDelegate::OnHttpError(CefRefPtr<CefRequest> request,
   if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
     content::GetUIThreadTaskRunner({})->PostTask(
         FROM_HERE, base::BindOnce(&NWebHandlerDelegate::OnHttpError,
-                                  weak_factory_.GetWeakPtr(), request, is_main_frame, 
+                                  weak_this_, request, is_main_frame, 
                                   has_user_gesture, response));
     return;
   }  

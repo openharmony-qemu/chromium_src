@@ -655,6 +655,7 @@ NWebHandlerDelegate::NWebHandlerDelegate(
   if (!is_enhance_surface_) {
     window_ = window;
   }
+  weak_this_ = weak_factory_.GetWeakPtr();
 }
 
 void NWebHandlerDelegate::OnDestroy() {
@@ -2035,6 +2036,13 @@ void NWebHandlerDelegate::OnHttpError(CefRefPtr<CefRequest> request,
                                       bool is_main_frame,
                                       bool has_user_gesture,
                                       CefRefPtr<CefResponse> response) {
+  if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
+    content::GetUIThreadTaskRunner({})->PostTask(
+        FROM_HERE, base::BindOnce(&NWebHandlerDelegate::OnHttpError,
+                                  weak_this_, request, is_main_frame, 
+                                  has_user_gesture, response));
+    return;
+  }  
   if (nweb_handler_ != nullptr) {
     CefRequest::HeaderMap cef_request_headers;
     request->GetHeaderMap(cef_request_headers);

@@ -1260,6 +1260,7 @@ class NWebHandlerDelegate : public ArkWebClientExt,
   CefRefPtr<CefScreenCaptureCallback> screen_capture_cb_ = nullptr;
 #endif // ARKWEB_EX_SCREEN_CAPTURE
 
+  base::WeakPtr<NWebHandlerDelegate> weak_this_;
   base::WeakPtrFactory<NWebHandlerDelegate> weak_factory_{this};
 
 #if BUILDFLAG(ARKWEB_MENU)

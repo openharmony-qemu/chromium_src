@@ -304,7 +304,7 @@ void WebMediaPlayerImplExt::SetVideoSurface(int32_t widget_id) {
 }
 
 void WebMediaPlayerImplExt::HandleSurfaceSwitchWhenPaused() {
-  if (has_page_hidden_when_paused_) {
+  if (has_page_hidden_when_paused_ && pipeline_controller_) {
     has_page_hidden_when_paused_ = false;
     pipeline_controller_->SetPreciseSeekTarget(last_frame_timestamp_);
   }

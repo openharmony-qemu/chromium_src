@@ -29,8 +29,10 @@ void DecoderStream<StreamType>::SetVideoSurface(int surface_id) {
 
 template <DemuxerStream::Type StreamType>
 void DecoderStream<StreamType>::SetPreciseSeekTarget(int64_t target_timestamp) {
-  LOG(INFO) << "DecoderStream::SetPreciseSeekTarget";
-  traits_->SetPreciseSeekTarget(decoder_.get(), target_timestamp);
+  if (traits) {
+    LOG(INFO) << "DecoderStream::SetPreciseSeekTarget";
+    traits_->SetPreciseSeekTarget(decoder_.get(), target_timestamp);
+  }
 }
 #endif // ARKWEB_VIDEO_ASSISTANT
 

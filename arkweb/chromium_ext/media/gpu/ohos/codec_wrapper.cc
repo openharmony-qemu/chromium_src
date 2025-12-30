@@ -493,6 +493,12 @@ bool CodecWrapperImpl::ReleaseCodecOutputBuffer(int64_t id, bool render) {
   did_last_outputbuffer_rendered_ = render;
   buffer_timestamp_map_.erase(id);
 #endif // ARKWEB_VIDEO_ASSISTANT
+
+  if (output_buffer_release_cb_) {
+    output_buffer_release_cb_.Run(state_ == State::kDrained ||
+                                  state_ == State::kDraining ||
+                                  buffer_ids_.empty());
+  }
   return true;
 }
 

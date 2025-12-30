@@ -73,8 +73,9 @@ int HiLogAdapterPrintLog(uint32_t level, const char* tag, const char* fmt, va_li
     Format(fmtStr);
     char buffer[MAX_LENGTH];
     int ret = vsnprintf_s(buffer, MAX_LENGTH, MAX_LENGTH - 1, fmtStr.c_str(), ap);
-    if (ret < 0 && buffer[MAX_LENGTH - 1] != '\0') {
-        return -1;
+    if (ret < 0) {
+        OH_LOG_Print(LOG_APP, LOG_LEVELS[2], domain, tag, STD_FORMAT.c_str(),
+            "vsnprintf_s failed maybe log msg is too long");
     }
     return OH_LOG_Print(LOG_APP, LOG_LEVELS[level], domain, tag, STD_FORMAT.c_str(), buffer);
 }
@@ -85,8 +86,9 @@ int HiLogAdapterConsoleLog(uint32_t level, const char* tag, const char* fmt, va_
     Format(fmtStr);
     char buffer[MAX_LENGTH];
     int ret = vsnprintf_s(buffer, MAX_LENGTH, MAX_LENGTH - 1, fmtStr.c_str(), ap);
-    if (ret < 0 && buffer[MAX_LENGTH - 1] != '\0') {
-        return -1;
+    if (ret < 0) {
+        OH_LOG_Print(LOG_APP, LOG_LEVELS[2], LOG_CONSOLE_DOMAIN, tag, STD_FORMAT.c_str(),
+            "vsnprintf_s failed maybe log msg is too long");
     }
     return OH_LOG_Print(LOG_APP, LOG_LEVELS[level], LOG_CONSOLE_DOMAIN, tag, STD_FORMAT.c_str(), buffer);
 }

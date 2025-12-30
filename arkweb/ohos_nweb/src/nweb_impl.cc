@@ -3624,10 +3624,16 @@ void NWebImpl::NotifyMemoryLevel(int32_t level) {
 #if BUILDFLAG(ARKWEB_PERFORMANCE_MEMORY_THRESHOLD)
   using MemoryPressureLevel = base::MemoryPressureListener::MemoryPressureLevel;
   static constexpr int32_t kMemoryLevelModerate = 0;
+  static constexpr int32_t kMemoryLevelMax = 3;
   static constexpr base::TimeDelta kNotifyGapTime = base::Seconds(3);
   static MemoryPressureLevel last_memory_level =
       MemoryPressureLevel::MEMORY_PRESSURE_LEVEL_NONE;
   static base::Time last_notify_time;
+
+  if (level >= kMemoryLevelMax) {
+    LOG(WARNING) << "The memory level >= kMemoryLevelMax(3), not supported";
+    return;
+  }
 
   base::Time now = base::Time::Now();
   MemoryPressureLevel memory_pressure_level;

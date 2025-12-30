@@ -101,17 +101,18 @@ class GpuMojoMediaClientOHOS final : public GpuMojoMediaClient {
   }
 
   // Not support platform audio decoder in ohos now.
-std::unique_ptr<AudioDecoder> CreatePlatformAudioDecoder(
-    scoped_refptr<base::SequencedTaskRunner> task_runner,
-    std::unique_ptr<MediaLog> media_log) final {
-  #if BUILDFLAG(ENABLE_WISEPLAY)
-    return std::make_unique<OhosAudioDecoder>(std::move(task_runner));
-  #else
+  std::unique_ptr<AudioDecoder> CreatePlatformAudioDecoder(
+      scoped_refptr<base::SequencedTaskRunner> task_runner,
+      std::unique_ptr<MediaLog> media_log) final {
+#if BUILDFLAG(ENABLE_WISEPLAY)
+    return std::make_unique<OhosAudioDecoder>(std::move(task_runner),
+                                              std::move(media_log));
+#else
     return nullptr;
-  #endif
-}
+#endif
+  }
 
-std::unique_ptr<AudioEncoder> CreatePlatformAudioEncoder(
+  std::unique_ptr<AudioEncoder> CreatePlatformAudioEncoder(
     scoped_refptr<base::SequencedTaskRunner> task_runner) final {
   return nullptr;
 }

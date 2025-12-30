@@ -50,8 +50,28 @@ static const std::unordered_map<const char*, AudioMimeType> kMimeTypeMap = {
     {OH_AVCODEC_MIMETYPE_AUDIO_G711MU, AudioMimeType::kMimeTypeAudioG711mu},
     {OH_AVCODEC_MIMETYPE_AUDIO_APE, AudioMimeType::kMimetypeAudioApe}};
 
+static const std::unordered_map<SampleFormat, OH_BitsPerSample>
+    kSampleFormatMap = {{kSampleFormatU8, SAMPLE_U8},
+                        {kSampleFormatS16, SAMPLE_S16LE},
+                        {kSampleFormatS32, SAMPLE_S32LE},
+                        {kSampleFormatF32, SAMPLE_F32LE},
+                        {kSampleFormatPlanarS16, SAMPLE_S16P},
+                        {kSampleFormatPlanarF32, SAMPLE_F32P},
+                        {kSampleFormatPlanarS32, SAMPLE_S32P},
+                        {kSampleFormatS24, SAMPLE_S24LE},
+                        {kSampleFormatPlanarU8, SAMPLE_U8P},
+                        {kSampleFormatAc3, INVALID_WIDTH},
+                        {kSampleFormatEac3, INVALID_WIDTH},
+                        {kSampleFormatMpegHAudio, INVALID_WIDTH},
+                        {kSampleFormatDts, INVALID_WIDTH},
+                        {kSampleFormatDtsxP2, INVALID_WIDTH},
+                        {kSampleFormatIECDts, INVALID_WIDTH},
+                        {kSampleFormatDtse, INVALID_WIDTH},
+                        {kUnknownSampleFormat, INVALID_WIDTH}};
+
 OhosAudioDecoder::OhosAudioDecoder(
-    scoped_refptr<base::SequencedTaskRunner> task_runner)
+    scoped_refptr<base::SequencedTaskRunner> task_runner,
+    std::unique_ptr<MediaLog> media_log)
     : state_(kUninitialized),
       sample_format_(kSampleFormatS16),
       channel_count_(0),
@@ -59,7 +79,8 @@ OhosAudioDecoder::OhosAudioDecoder(
       sample_rate_(0),
       decoder_format_(std::make_shared<OhosAudioDecoderFormat>()),
       task_runner_(task_runner),
-      pool_(base::MakeRefCounted<AudioBufferMemoryPool>()) {
+      pool_(base::MakeRefCounted<AudioBufferMemoryPool>()),
+      media_log_(std::move(media_log)) {
   TRACE_EVENT0("media", "OhosAudioDecoder::OhosAudioDecoder");
   io_timer_.SetTaskRunner(scoped_refptr<base::SingleThreadTaskRunner>());
 }
@@ -104,14 +125,6 @@ void OhosAudioDecoder::Initialize(const AudioDecoderConfig& config,
                                   const OutputCB& output_cb,
                                   const WaitingCB& waiting_cb) {
   TRACE_EVENT0("media", "OhosAudioDecoder::Initialize");
-  // Only the encrypted DRM audio stream goes through the openharmony system
-  // decoding path
-  if (!config.is_encrypted()) {
-    LOG(ERROR) << " [WiseplayDRM] AudioDecoderConfig is not encrypted";
-    base::BindPostTaskToCurrentDefault(std::move(init_cb))
-        .Run(DecoderStatus::Codes::kUnsupportedCodec);
-    return;
-  }
 
   // Clear the input buffer and set the callback result to
   // DecoderStatus::Codes::kAborted
@@ -687,11 +700,37 @@ void OhosAudioDecoder::AddOutputBuffer(uint32_t index,
   output_buffer_queue_.push_back(data);
 }
 
-void OhosAudioDecoder::UpdateOutputFormat() {
-  OhosAudioDecoderCode ret = GetOutputFormatDec(decoder_format_);
-  if (ret != OhosAudioDecoderCode::kDecoderOk) {
-    LOG(ERROR) << "[AudioDecoder] OhosAudioDecoder::UpdateOutputFormat err";
+void OhosAudioDecoder::UpdateOutputFormat(int32_t sample_format,
+                                          int32_t channel_count,
+                                          int32_t sample_rate) {
+  const bool is_config_change =
+      channel_count_ != channel_count || sample_rate_ != sample_rate;
+  if (!is_config_change) {
+    return;
   }
+
+  if (kSampleFormatMap.at(sample_format_) != sample_format) {
+    MEDIA_LOG(ERROR, media_log_)
+        << " Unsupported midstream configuration change!"
+        << " Sample format: " << kSampleFormatMap.at(sample_format_) << " -> "
+        << sample_format;
+    return;
+  }
+
+  ChannelLayout channel_layout = media::GuessChannelLayout(channel_count);
+  MEDIA_LOG(INFO, media_log_)
+      << " Detected midstream configuration change"
+      << " Sample Rate: " << sample_rate_ << " -> " << sample_rate
+      << ", ChannelLayout: " << channel_layout_ << " -> " << channel_layout
+      << ", Channels: " << channel_count_ << " -> " << channel_count;
+
+  channel_layout_ = channel_layout;
+  channel_count_ = channel_count;
+  sample_rate_ = sample_rate;
+  config_.Initialize(config_.codec(), config_.sample_format(), channel_layout,
+                     sample_rate, config_.extra_data(),
+                     config_.encryption_scheme(), config_.seek_preroll(),
+                     config_.codec_delay());
 }
 
 std::mutex OhosAudioDecoder::decoder_mutex_;
@@ -1429,12 +1468,34 @@ void AudioDecoderCallbackManager::OnOutputFormatChanged(OH_AVCodec* codec,
   std::unique_lock<std::mutex> lock(OhosAudioDecoder::GetDecoderMutex());
   media::OhosAudioDecoder* audio_decoder = FindAudioDecoder(codec);
   if (audio_decoder == nullptr) {
-    LOG(ERROR) << __func__
-               << "[AudioDecoder] AudioDecoderCallbackManager not find decoder.";
+    LOG(ERROR)
+        << __func__
+        << "[AudioDecoder] AudioDecoderCallbackManager not find decoder.";
     return;
   }
 
-  audio_decoder->UpdateOutputFormat();
+  int32_t sample_format;
+  int32_t channel_count;
+  int32_t sample_rate;
+
+  if (!OH_AVFormat_GetIntValue(format, OH_MD_KEY_AUDIO_SAMPLE_FORMAT,
+                               &sample_format)) {
+    LOG(ERROR) << __func__ << "[AudioDecoder]Unable to obtain sample format";
+    return;
+  }
+
+  if (!OH_AVFormat_GetIntValue(format, OH_MD_KEY_AUD_CHANNEL_COUNT,
+                               &channel_count)) {
+    LOG(ERROR) << __func__ << "[AudioDecoder]Unable to obtain channel count";
+    return;
+  }
+  if (!OH_AVFormat_GetIntValue(format, OH_MD_KEY_AUD_SAMPLE_RATE,
+                               &sample_rate)) {
+    LOG(ERROR) << __func__ << "[AudioDecoder]Unable to obtain sampling rate";
+    return;
+  }
+
+  audio_decoder->UpdateOutputFormat(sample_format, channel_count, sample_rate);
 }
 
 void AudioDecoderCallbackManager::OnInputBufferAvailable(OH_AVCodec* codec,

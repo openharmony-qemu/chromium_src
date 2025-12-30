@@ -173,6 +173,9 @@ class MEDIA_EXPORT PipelineController {
 #if BUILDFLAG(ARKWEB_PIP)
   void PipEnable(bool enable);
 #endif
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void SetPreciseSeekTarget(int64_t target_timestamp);
+#endif // ARKWEB_VIDEO_ASSISTANT
 #if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
   void RecycleDmaBuffer();
   void ResumeDmaBuffer();

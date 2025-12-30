@@ -154,6 +154,9 @@ interface VideoDecoder {
   [EnableIf=arkweb_video_assistant]
   SetVideoSurface(int32 widget_id);
 
+  [EnableIf=arkweb_video_assistant]
+  SetPreciseSeekTarget(int64 target_timestamp);
+
   [EnableIf=arkweb_pip]
   PipEnable(bool enable);
 

@@ -290,14 +290,34 @@ void WebMediaPlayerImplExt::OnLayerBoundsChange(const gfx::Rect& bounds) {
 }
 
 void WebMediaPlayerImplExt::SetVideoSurface(int32_t widget_id) {
-  LOG(INFO) << "SetVideoSurface(" << widget_id << ")";
+  LOG(INFO) << "SetVideoSurface(" << widget_id
+            << "), has_page_hidden_when_paused:"
+            << has_page_hidden_when_paused_;
   video_surface_id_ = widget_id;
   if (surface_created_cb_) {
     surface_created_cb_.Run(widget_id);
   }
 
   if (paused_ && !seeking_) {
-    Seek(CurrentTime());
+    HandleSurfaceSwitchWhenPaused();
+  }
+}
+
+void WebMediaPlayerImplExt::HandleSurfaceSwitchWhenPaused() {
+  if (has_page_hidden_when_paused_) {
+    has_page_hidden_when_paused_ = false;
+    pipeline_controller_->SetPreciseSeekTarget(last_frame_timestamp_);
+  }
+
+  Seek(CurrentTime());
+}
+
+void WebMediaPlayerImplExt::SaveLastFrameTimeStamp() {
+  auto frame = compositor_->GetCurrentFrameOnAnyThread();
+  if (frame) {
+    last_frame_timestamp_ = (frame->timestamp()).InMicroseconds();
+    LOG(DEBUG) << "WebMediaPlayerImplExt::SaveLastFrameTimeStamp:"
+               << last_frame_timestamp_;
   }
 }
 

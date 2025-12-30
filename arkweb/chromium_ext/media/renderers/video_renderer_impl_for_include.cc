@@ -12,6 +12,15 @@ void VideoRendererImpl::PipEnable(bool enable) {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+void VideoREndererImpl::SetPreciseSeekTarget(int64_t target_timestamp) {
+  if (video_decoder_stream_) {
+    LOG(INFO) << "VideoREndererImpl::SetPreciseSeekTarget";
+    video_decoder_stream_->SetPreciseSeekTarget(target_timestamp);
+  }
+}
+#endif // ARKWEB_VIDEO_ASSISTANT
+
 #if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
 void VideoRendererImpl::RecycleDmaBuffer() {
   if (video_decoder_stream_) {

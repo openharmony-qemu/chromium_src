@@ -89,6 +89,7 @@ class MEDIA_GPU_EXPORT OhosVideoDecoder final
   bool SupportsDecryption() const override { return true; }
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   void SetVideoSurface(int32_t widget_id) override;
+  void SetPreciseSeekTarget(int64_t target_timestamp) override;
 #endif // ARKWEB_VIDEO_ASSISTANT
 #if BUILDFLAG(ARKWEB_PIP)
   void PipEnable(bool enable) override;
@@ -215,6 +216,7 @@ class MEDIA_GPU_EXPORT OhosVideoDecoder final
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   int32_t pending_surface_id_ = -1;
+  int64_t target_timestamp_ = -1;
 #endif // ARKWEB_VIDEO_ASSISTANT
 
   // ohos cdm object

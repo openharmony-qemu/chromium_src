@@ -46,7 +46,11 @@ class CodecWrapperImpl : public base::RefCountedThreadSafe<CodecWrapperImpl> {
   bool Flush();
   bool SetSurface(scoped_refptr<CodecSurfaceBundle> surface_bundle);
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-  void SetVideoSurface(int32_t widget_id);
+  void SetVideoSurface(int32_t widget_id, bool is_surface_pending);
+  void SetPreciseSeekTarget(int64_t target_timestamp);
+  void PendingSetVideoSurface();
+  bool PreciseSeek(int64_t id);
+  void OnBufferRendered();
 #endif // ARKWEB_VIDEO_ASSISTANT
 #if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
   void RecycleDmaBuffer();
@@ -101,6 +105,11 @@ class CodecWrapperImpl : public base::RefCountedThreadSafe<CodecWrapperImpl> {
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   bool render_video_view_ = false;
+  std::unordered_map<int64_t, int64_t> buffer_timestamp_map_;
+  bool is_surface_pending_ = false;
+  bool did_last_outputbuffer_rendered_ = false;
+  int64_t target_timestamp_ = -1;
+  int32_t pending_surface_id_ = -1;
 #endif // ARKWEB_VIDEO_ASSISTANT
 };
 
@@ -131,6 +140,14 @@ bool CodecOutputBuffer::ReleaseToSurface() {
   auto result = codec_->ReleaseCodecOutputBuffer(id_, true);
   return result;
 }
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+void CodecOutputBuffer::OnBufferRendered() {
+  if (codec_) {
+    codec_->OnBufferRendered();
+  }
+}
+#endif // ARKWEB_VIDEO_ASSISTANT
 
 CodecWrapperImpl::CodecWrapperImpl(
     CodecSurfacePair codec_surface_pair,
@@ -189,6 +206,11 @@ void CodecWrapperImpl::DiscardOutputBuffers_Locked() {
     codec_->ReleaseOutputBuffer(kv.second, false);
   }
   buffer_ids_.clear();
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  target_timestamp_ = -1;
+  did_last_outputbuffer_rendered_ = false;
+  buffer_timestamp_map_.clear();
+#endif // ARKWEB_VIDEO_ASSISTANT
 }
 
 bool CodecWrapperImpl::Flush() {
@@ -198,6 +220,11 @@ bool CodecWrapperImpl::Flush() {
 
   // Dequeued buffers are invalidated by flushing.
   buffer_ids_.clear();
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  target_timestamp_ = -1;
+  did_last_outputbuffer_rendered_ = false;
+  buffer_timestamp_map_.clear();
+#endif // ARKWEB_VIDEO_ASSISTANT
   owned_input_buffer_.reset();
   auto status = codec_->FlushBridgeDecoder();
   if (status == DecoderAdapterCode::DECODER_ERROR) {
@@ -293,6 +320,9 @@ CodecWrapperImpl::DequeueStatus CodecWrapperImpl::DequeueOutputBuffer(
 
         int64_t buffer_id = next_buffer_id_++;
         buffer_ids_[buffer_id] = static_cast<int>(index);
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+        buffer_timestamp_map_[buffer_id] = (*presentation_time).InMicroseconds();
+#endif // ARKWEB_VIDEO_ASSISTANT
 
         OHOS::NWeb::DecoderFormat format;
         auto result = codec_->GetOutputFormatBridgeDecoder(format);
@@ -355,11 +385,52 @@ bool CodecWrapperImpl::SetSurface(
 }
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-void CodecWrapperImpl::SetVideoSurface(int32_t widget_id) {
+void CodecWrapperImpl::SetVideoSurface(int32_t widget_id, bool is_surface_pending) {
+  if (!is_surface_pending) {
     if (codec_) {
-        codec_->SetVideoSurface(widget_id);
-        render_video_view_ = widget_id > 0;
+      codec_->SetVideoSurface(widget_id);
+      render_video_view_ = widget_id > 0;
     }
+  } else {
+    pending_surface_id_ = widget_id;
+    is_surface_pending_ = true;
+  }
+}
+
+void CodecWrapperImpl::SetPreciseSeekTarget(int64_t target_timestamp) {
+  LOG(DEBUG) << "CodecWrapperImpl::SetPreciseSeekTarget(" << target_timestamp << ")";
+  target_timestamp_ = target_timestamp;
+}
+
+void CodecWrapperImpl::PendingSetVideoSurface() {
+  if (codec_) {
+    TRACE_EVENT0("media", "CodecWrapperImpl::PendingSetVideoSurface");
+    codec_->SetVideoSurface(pending_surface_id_);
+    render_video_view_ = pending_surface_id_ > 0;
+    pending_surface_id_ = -1;
+    is_surface_pending_ = false;
+  }
+}
+
+bool CodecWrapperImpl::PreciseSeek(int64_t id) {
+  auto it = buffer_timestamp_map_.find(id);
+  if (it == buffer_timestamp_map_.end()) {
+    LOG(WARNING) << "Buffer id not found in timestamp map.";
+    return false;
+  }
+
+  if (it->second < target_timestamp_)
+    return false;
+
+  target_timestamp_ = -1;
+  return true;
+}
+
+void CodecWrapperImpl::OnBufferRendered() {
+  base::AutoLock l(lock_);
+  if (is_surface_pending_ && did_last_outputbuffer_rendered_) {
+    PendingSetVideoSurface();
+  }
 }
 #endif // ARKWEB_VIDEO_ASSISTANT
 
@@ -410,8 +481,18 @@ bool CodecWrapperImpl::ReleaseCodecOutputBuffer(int64_t id, bool render) {
   }
 
   int index = buffer_it->second;
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  if (render && target_timestamp_ > -1) {
+    render = PreciseSeek(id);
+  }
+#endif // ARKWEB_VIDEO_ASSISTANT
   codec_->ReleaseOutputBuffer(index, render);
   buffer_ids_.erase(buffer_it);
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  did_last_outputbuffer_rendered_ = render;
+  buffer_timestamp_map_.erase(id);
+#endif // ARKWEB_VIDEO_ASSISTANT
   return true;
 }
 
@@ -484,8 +565,12 @@ bool CodecWrapper::SetSurface(
 }
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-void CodecWrapper::SetVideoSurface(int32_t widget_id) {
-    impl_->SetVideoSurface(widget_id);
+void CodecWrapper::SetVideoSurface(int32_t widget_id, bool is_surface_pending) {
+  impl_->SetVideoSurface(widget_id, is_surface_pending);
+}
+
+void CodecWrapper::SetPreciseSeekTarget(int64_t target_timestamp) {
+  impl_->SetPreciseSeekTarget(target_timestamp);
 }
 #endif // ARKWEB_VIDEO_ASSISTANT
 

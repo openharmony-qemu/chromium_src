@@ -66,6 +66,12 @@ void MojoRendererWrapper::PipEnable(bool enable) {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+void MojoRendererWrapper::SetPreciseSeekTarget(int64_t target_timestamp) {
+  mojo_renderer_->SetPreciseSeekTarget(target_timestamp);
+}
+#endif // ARKWEB_VIDEO_ASSISTANT
+
 #if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
 // LCOV_EXCL_START
 void MojoRendererWrapper::RecycleDmaBuffer() {

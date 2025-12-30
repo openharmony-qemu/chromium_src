@@ -37,6 +37,13 @@ void PipelineController::PipEnable(bool enable) {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+void PipelineController::SetPreciseSeekTarget(int64_t target_timestamp) {
+  DCHECK(thread_checker_.CalledOnValidThread());
+  pipeline_->SetPreciseSeekTarget(target_timestamp);
+}
+#endif // ARKWEB_VIDEO_ASSISTANT
+
 #if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
 // LCOV_EXCL_START
 void PipelineController::RecycleDmaBuffer() {

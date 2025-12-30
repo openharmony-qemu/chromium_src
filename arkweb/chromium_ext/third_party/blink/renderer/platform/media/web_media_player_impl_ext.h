@@ -185,7 +185,7 @@ public:
                           bool support_video_surface,
                           std::string decoder_name);
   void OnVideoDecoderChanaged(bool support_video_surface,
-                              std::string decoder_name);          
+                              std::string decoder_name);
 #endif // ARKWEB_VIDEO_ASSISTANT
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)

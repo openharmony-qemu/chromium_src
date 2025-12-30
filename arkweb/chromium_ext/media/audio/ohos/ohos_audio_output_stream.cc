@@ -34,8 +34,8 @@ OHOSAudioOutputStream::OHOSAudioOutputStream(OHOSAudioManager* manager,
   if (ret != AUDIOSTREAM_SUCCESS) {
     LOG(ERROR) << "AudioStreamBuilder create failed.";
   }
-  if (parameters.latency_tag() == AudioLatency::Type::kRtc) {
-    isCommunication_ = true;
+  if (base::ohos::IsPcDevice() && parameters.latency_tag() != AudioLatency::Type::kRtc) {
+    isCommunication_ = false;
   }
 
   sample_format_ = kSampleFormatS16;

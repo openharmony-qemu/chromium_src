@@ -215,6 +215,7 @@ AudioInputStream* OHOSAudioManager::MakeLowLatencyInputStream(
     const std::string& device_id,
     const LogCallback& log_callback) {
   LOG(INFO) << "OHOSAudioManager::MakeLowLatencyInputStream";
+  isCommunication_ = true;
   SelectAudioDevice(device_id, true);
   return new OHOSAudioInputStream(this, params);
 }

@@ -29,7 +29,7 @@ void DecoderStream<StreamType>::SetVideoSurface(int surface_id) {
 
 template <DemuxerStream::Type StreamType>
 void DecoderStream<StreamType>::SetPreciseSeekTarget(int64_t target_timestamp) {
-  if (traits) {
+  if (traits_) {
     LOG(INFO) << "DecoderStream::SetPreciseSeekTarget";
     traits_->SetPreciseSeekTarget(decoder_.get(), target_timestamp);
   }

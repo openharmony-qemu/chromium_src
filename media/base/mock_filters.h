@@ -307,6 +307,9 @@ class MockVideoDecoder : public VideoDecoder {
 #if BUILDFLAG(ARKWEB_PIP)
   MOCK_METHOD1(PipEnable, void(bool enable));
 #endif  // ARKWEB_PIP
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  MOCK_METHOD1(SetPreciseSeekTarget, void(in64_t target_timestamp));
+#endif // ARKWEB_VIDEO_ASSISTANT
 #if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
   MOCK_METHOD0(RecycleDmaBuffer, void());
   MOCK_METHOD0(ResumeDmaBuffer, void());

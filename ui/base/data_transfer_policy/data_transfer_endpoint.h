@@ -35,6 +35,9 @@ struct COMPONENT_EXPORT(UI_BASE_DATA_TRANSFER_POLICY)
     DataTransferEndpointOptions {
   bool notify_if_restricted = true;
   bool off_the_record = false;
+#if BUILDFLAG(IS_OHOS)
+  bool truely_transfer = true;
+#endif
 };
 
 // DataTransferEndpoint represents:
@@ -76,6 +79,10 @@ class COMPONENT_EXPORT(UI_BASE_DATA_TRANSFER_POLICY) DataTransferEndpoint {
 
   bool off_the_record() const { return off_the_record_; }
 
+#if BUILDFLAG(IS_OHOS)
+  bool truely_transfer() const { return truely_transfer_; }
+#endif
+
   bool notify_if_restricted() const { return notify_if_restricted_; }
 
   // Returns true if both of the endpoints have the same url_ and type_ ==
@@ -93,6 +100,11 @@ class COMPONENT_EXPORT(UI_BASE_DATA_TRANSFER_POLICY) DataTransferEndpoint {
   // Whether the endpoint corresponds to an OTR browser context. This should
   // only be set to true for `EndpointType::kUrl` endpoints.
   bool off_the_record_ = false;
+
+#if BUILDFLAG(IS_OHOS)
+  // Used to determine whether a pasting action actually occurred
+  bool truely_transfer_ = true;
+#endif
 
   // This variable should be set to true, if paste is initiated by the user.
   // Otherwise it should be set to false, so the user won't see a notification

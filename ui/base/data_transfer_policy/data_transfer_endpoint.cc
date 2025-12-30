@@ -17,6 +17,9 @@ DataTransferEndpoint::DataTransferEndpoint(const GURL& url,
     : type_(EndpointType::kUrl),
       url_(url),
       off_the_record_(options.off_the_record),
+#if BUILDFLAG(IS_OHOS)
+      truely_transfer_(options.truely_transfer),
+#endif
       notify_if_restricted_(options.notify_if_restricted) {
   DCHECK(url.is_valid());
 }
@@ -26,6 +29,9 @@ DataTransferEndpoint::DataTransferEndpoint(EndpointType type,
     : type_(type),
       url_(std::nullopt),
       off_the_record_(options.off_the_record),
+#if BUILDFLAG(IS_OHOS)
+      truely_transfer_(options.truely_transfer),
+#endif
       notify_if_restricted_(options.notify_if_restricted) {
   DCHECK_NE(type, EndpointType::kUrl);
 }

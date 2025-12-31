@@ -46,7 +46,6 @@
 #include "native_avmetadata.h"
 #include "native_avplaybackstate.h"
 #include "native_deviceinfo.h"
-// #include "native_avcastcontroller.h"
 
 #ifdef __cplusplus
 extern "C" {

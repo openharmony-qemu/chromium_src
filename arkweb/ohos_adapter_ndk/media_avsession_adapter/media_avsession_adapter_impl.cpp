@@ -358,7 +358,6 @@ void MediaAVSessionAdapterImpl::SetPlaybackPosition(const std::shared_ptr<MediaA
     if (position->GetDuration() < INT32_MAX && position->GetElapsedTime() < INT32_MAX) {
         MediaCastDescription_.duration = position->GetDuration();
         MediaCastDescription_.startPosition = position->GetElapsedTime();
-        WVLOG_I("Duration: %{public}d, %{public}d and CurrentTime: %{public}d, %{public}d", position->GetDuration(), MediaCastDescription_.duration, position->GetElapsedTime(), MediaCastDescription_.startPosition);
     } else {
         WVLOG_E("Duration and CurrentTime exceeds the maximum range of int32.");
     }
@@ -719,7 +718,8 @@ AVSessionCallback_Result MediaAVSessionAdapterImpl::OutputDeviceChangeCallback(O
     }
 }
 
-void MediaAVSessionAdapterImpl::AVCastStateConnect(OH_AVSession *session, AVSession_OutputDeviceInfo *outputDeviceInfo) {
+void MediaAVSessionAdapterImpl::AVCastStateConnect(OH_AVSession *session,
+    AVSession_OutputDeviceInfo *outputDeviceInfo) {
     WVLOG_I("MediaAVSessionAdapterImpl::AVCastStateConnect, enter");
     auto it = avSessionMapOther_.find(session);
     if (it != avSessionMapOther_.end()) {
@@ -748,7 +748,8 @@ void MediaAVSessionAdapterImpl::AVCastStateDisconnect(OH_AVSession *session) {
         adapter->MediaCastStopped();
         adapter->SetAvCast(false);
         if (adapter->avCastAdapter_) {
-            WVLOG_I("MediaAVSessionAdapterImpl::AVCastStateDisconnect SeekNative time: %{public}d", adapter->avCastAdapter_->GetPlaybackPosition());
+            WVLOG_I("MediaAVSessionAdapterImpl::AVCastStateDisconnect SeekNative time: %{public}d",
+                        adapter->avCastAdapter_->GetPlaybackPosition());
             adapter->SeekNative(adapter->avCastAdapter_->GetPlaybackPosition());
 
             if (adapter->avCastAdapter_->IsAvCastPlaying()) {
@@ -1005,9 +1006,11 @@ void MediaAVSessionAdapterImpl::PauseNative() {
 void MediaAVSessionAdapterImpl::UnregisterMediaCastOutputDeviceCallback() {
     WVLOG_I("MediaAVSessionAdapterImpl::UnregisterMediaCastOutputDeviceCallback, enter");
     if (avSession_) {
-        AVSession_ErrCode retReg = OH_AVSession_UnregisterOutputDeviceChangeCallback(avSession_, OutputDeviceChangeCallback);
+        AVSession_ErrCode retReg = OH_AVSession_UnregisterOutputDeviceChangeCallback(avSession_,
+                                       OutputDeviceChangeCallback);
         if (retReg != AV_SESSION_ERR_SUCCESS) {
-            WVLOG_E("DestroyAndEraseSession, OH_AVSession_UnregisterOutputDeviceChangeCallback failed. ret: %{public}d", retReg);
+            WVLOG_E("OH_AVSession_UnregisterOutputDeviceChangeCallback failed
+                         ret: %{public}d", retReg);
         }
     }
     MediaCastStopped();

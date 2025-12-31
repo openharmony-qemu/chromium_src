@@ -72,6 +72,22 @@ void MediaSessionControllersManager::UpdateRemotePlayPosition(const MediaPlayerI
     controller->AsMediaSessionControllerExt()->UpdateRemotePlayPosition(position);
   }
 }
+
+void MediaSessionControllersManager::MediaCastStopByNavigation() {
+  if (!IsMediaSessionEnabled())
+    return;
+  for (auto& entry : controllers_map_) {
+    entry.second->AsMediaSessionControllerExt()->MediaCastStopByNavigation();
+  }
+}
+
+void MediaSessionControllersManager::SetPauseByAvcast(const MediaPlayerId& id, bool pause_avcast) {
+  LOG(INFO) << "MediaSessionControllersManager::SetPauseByAvcast";
+  auto controller = FindOrCreateController(id);
+  if (controller && controller->AsMediaSessionControllerExt()) {
+    controller->AsMediaSessionControllerExt()->SetPauseByAvcast(pause_avcast);
+  }
+}
 #endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
 
 }

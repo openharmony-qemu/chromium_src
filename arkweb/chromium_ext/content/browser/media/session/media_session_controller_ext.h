@@ -51,6 +51,8 @@ public:
   void HandleStopMediaCast();
   void UpdateRemotePlayState(bool is_playing);
   void UpdateRemotePlayPosition(int64_t position);
+  void MediaCastStopByNavigation();
+  void SetPauseByAvcast(bool pause_avcast);
   int32_t GetMediaCastCurrentTime(int player_id) override;
   void PullUpCastBackGround(int player_id, const std::string& device_name) override;
   void UpdateUiPlayState(int player_id, bool is_playing) override;

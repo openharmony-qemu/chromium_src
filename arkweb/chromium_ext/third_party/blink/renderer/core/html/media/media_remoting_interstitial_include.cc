@@ -124,7 +124,65 @@ void MediaRemotingInterstitial::ParseMediaCastControl() {
   // Assembly Progress Bar
   progress_bar_->AppendChild(progress_fill_);
   progress_bar_->AppendChild(progress_thumb_);
+  ProgressBarAddEvent();
+  
+  DurationAndFullScreenAddEvent();
+  
+  // Add to right group
+  right_group_->AppendChild(fullscreen_button_);
+  
+  // Assemble all controls
+  controls_container_->AppendChild(left_group_);
+  controls_container_->AppendChild(progress_group_);
+  controls_container_->AppendChild(right_group_);
+  
+  // Add to current element
+  AppendChild(controls_container_);
 
+  // Initial Update UI
+  UpdateProgressUI();
+}
+
+void MediaRemotingInterstitial::DurationAndFullScreenAddEvent() {
+  
+  // Total Duration Display
+  duration_display_ = MakeGarbageCollected<HTMLSpanElement>(document);
+  duration_display_->setAttribute(
+      html_names::kClassAttr,
+      AtomicString("time-display"));
+  duration_display_->setInnerText(FormatTime(duration_));
+  
+  // Assemble progress bar group
+  progress_group_->AppendChild(current_time_display_);
+  progress_group_->AppendChild(progress_bar_);
+  progress_group_->AppendChild(duration_display_);
+  
+  // Right button group: Full screen
+  right_group_ = MakeGarbageCollected<HTMLDivElement>(document);
+  right_group_->setAttribute(
+      html_names::kClassAttr,
+      AtomicString("video-controls-right"));
+  
+  // Create a full-screen button
+  fullscreen_button_ = MakeGarbageCollected<HTMLDivElement>(document);
+  fullscreen_button_->setAttribute(
+      html_names::kClassAttr,
+      AtomicString("fullscreen-button-cast enter-fullscreen"));
+  
+  // Binding a Click Event
+  fullscreen_button_->addEventListener(
+      event_type_names::kClick,
+      MakeGarbageCollected<RemotingButtonEventListener>(weak_factory_.GetWeakPtr(),
+          RemotingButtonType::kFullscreenToggle),
+      false
+  );
+}
+
+void MediaRemotingInterstitial::ProgressBarAddEvent() {
+  if (!progress_bar_) {
+    return;
+  }
+  
   // Using a dedicated ProgressBarEventListener
   auto* progress_event_listener = 
       MakeGarbageCollected<ProgressBarEventListener>(
@@ -177,52 +235,6 @@ void MediaRemotingInterstitial::ParseMediaCastControl() {
       event_type_names::kTouchcancel,
       progress_event_listener,
       false);
-  
-  // Total Duration Display
-  duration_display_ = MakeGarbageCollected<HTMLSpanElement>(document);
-  duration_display_->setAttribute(
-      html_names::kClassAttr,
-      AtomicString("time-display"));
-  duration_display_->setInnerText(FormatTime(duration_));
-  
-  // Assemble progress bar group
-  progress_group_->AppendChild(current_time_display_);
-  progress_group_->AppendChild(progress_bar_);
-  progress_group_->AppendChild(duration_display_);
-  
-  // Right button group: Full screen
-  right_group_ = MakeGarbageCollected<HTMLDivElement>(document);
-  right_group_->setAttribute(
-      html_names::kClassAttr,
-      AtomicString("video-controls-right"));
-  
-  // Create a full-screen button
-  fullscreen_button_ = MakeGarbageCollected<HTMLDivElement>(document);
-  fullscreen_button_->setAttribute(
-      html_names::kClassAttr,
-      AtomicString("fullscreen-button-cast enter-fullscreen"));
-  
-  // Binding a Click Event
-  fullscreen_button_->addEventListener(
-      event_type_names::kClick,
-      MakeGarbageCollected<RemotingButtonEventListener>(weak_factory_.GetWeakPtr(),
-          RemotingButtonType::kFullscreenToggle),
-      false
-  );
-  
-  // Add to right group
-  right_group_->AppendChild(fullscreen_button_);
-  
-  // Assemble all controls
-  controls_container_->AppendChild(left_group_);
-  controls_container_->AppendChild(progress_group_);
-  controls_container_->AppendChild(right_group_);
-  
-  // Add to current element
-  AppendChild(controls_container_);
-
-  // Initial Update UI
-  UpdateProgressUI();
 }
 
 void MediaRemotingInterstitial::OnPlayPauseClicked() {

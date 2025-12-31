@@ -100,7 +100,8 @@ bool MediaAVCastAdapterImpl::Prepare(const MediaCastDescription& mediaCastDescri
         return false;
     }
 
-    ret = OH_AVSession_AVMediaDescriptionBuilder_GenerateAVMediaDescription(avMediaDescriptionBuilder_, &avMediaDescription_);
+    ret = OH_AVSession_AVMediaDescriptionBuilder_GenerateAVMediaDescription(avMediaDescriptionBuilder_,
+              &avMediaDescription_);
     if (ret != AVQUEUEITEM_SUCCESS) {
         WVLOG_E("OH_AVSession_AVMediaDescriptionBuilder_GenerateAVMediaDescription failed. ret: %{public}d", ret);
         return false;

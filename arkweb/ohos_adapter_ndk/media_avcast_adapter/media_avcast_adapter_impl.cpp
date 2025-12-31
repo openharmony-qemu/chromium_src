@@ -235,7 +235,6 @@ void MediaAVCastAdapterImpl::UpdateUiPlayPosition(std::shared_ptr<MediaAVCastAda
         return;
     }
     if (std::abs(position - client->GetUilastUiTimeByClient()) >= UiTIME_UPDATE_INTERVAL) {
-        WVLOG_I("MediaAVCastAdapterImpl UpdateUiPlayPosition lastUiTime_ %{public}d", client->GetUilastUiTimeByClient());
         client->UpdateUiPlayPosition(position);
         client->SetUilastUiTimeByClient(position);
     }
@@ -244,7 +243,6 @@ void MediaAVCastAdapterImpl::UpdateUiPlayPosition(std::shared_ptr<MediaAVCastAda
 AVSessionCallback_Result MediaAVCastAdapterImpl::PlaybackStateChangedCallback(OH_AVCastController* avcastcontroller,
     OH_AVSession_AVPlaybackState* playbackState, void* userData) {
     std::shared_lock<std::shared_mutex> lock_avcast_adapter(avcast_adapter_mutex_);
-    WVLOG_I("lmh MediaAVCastAdapterImpl::PlaybackStateChangedCallback");
     size_t callback_index = reinterpret_cast<size_t>(userData);
     std::shared_ptr<MediaAVCastAdapterImpl::Client> client = callback_wrapper_.GetCallback(callback_index);
     if (!client) {
@@ -255,17 +253,14 @@ AVSessionCallback_Result MediaAVCastAdapterImpl::PlaybackStateChangedCallback(OH
     // Store a status here; if it's the same as before, do nothing.
     if (OH_AVSession_GetPlaybackState(playbackState, &avSessionPlaybackState) == AV_SESSION_ERR_SUCCESS) {
         client->UpdateUiPlayStateByClient(avSessionPlaybackState);
-        WVLOG_I("MediaAVCastAdapterImpl::PlaybackStateChangedCallback avSessionPlaybackState %{public}d", avSessionPlaybackState);
         if (avSessionPlaybackState != PLAYBACK_STATE_INITIAL) {
             client->SetUiPlayStateByClient(avSessionPlaybackState);
-            WVLOG_I("MediaAVCastAdapterImpl::PlaybackStateChangedCallback playbackState_ %{public}d", client->GetUiPlayStateByClient());
         }
     }
 
     AVSession_PlaybackPosition playbackPosition;
     if (OH_AVSession_GetPlaybackPosition(playbackState, &playbackPosition) == AV_SESSION_ERR_SUCCESS) {
         // Synchronize playback position to the kernel here
-        WVLOG_I("MediaAVCastAdapterImpl::PlaybackStateChangedCallback playbackPosition %{public}d", playbackPosition);
         UpdateUiPlayPosition(client, playbackPosition.elapsedTime, false);
         if (playbackPosition.elapsedTime != 0) {
             client->SetUiPlayPositionByClient(playbackPosition);
@@ -275,13 +270,11 @@ AVSessionCallback_Result MediaAVCastAdapterImpl::PlaybackStateChangedCallback(OH
     int32_t speed;
     if (OH_AVSession_GetPlaybackSpeed(playbackState, &speed) == AV_SESSION_ERR_SUCCESS) {
         // Synchronize playback speed to the kernel here
-        WVLOG_I("MediaAVCastAdapterImpl::PlaybackStateChangedCallback speed %{public}d", speed);
     }
 
     int32_t volume;
     if (OH_AVSession_GetPlaybackVolume(playbackState, &volume) == AV_SESSION_ERR_SUCCESS) {
         // Synchronize playback volume to the kernel here
-        WVLOG_I("MediaAVCastAdapterImpl::PlaybackStateChangedCallback volume %{public}d", volume);
     }
     return AVSESSION_CALLBACK_RESULT_SUCCESS;
 }

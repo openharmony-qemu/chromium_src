@@ -53,49 +53,69 @@ void RemotingButtonEventListener::HandleClick(Event* event) {
 }
 
 void ProgressBarEventListener::Invoke(ExecutionContext* context, Event* event) {
-  if (!weak_ptr_ || !progress_bar_) {
-    LOG(WARNING) << "Progress bar event listener: weak_ptr_ or progress_bar_ is null.";
+  if (!weak_ptr_ || !progress_bar_ || !event) {
+    LOG(WARNING) << "Progress bar event listener: weak_ptr_ or progress_bar_ or event is null.";
     return;
   }
   const AtomicString& event_type = event->type();
   
   // Dispatch and handle according to event type
-  if (event_type == event_type_names::kClick) {
-    auto* mouse_event = DynamicTo<MouseEvent>(event);
-    if (touch_event) HandleMouseClick(mouse_event);
-  } else if (event_type == event_type_names::kMousedown) {
-    auto* mouse_event = DynamicTo<MouseEvent>(event);
-    if (touch_event) HandleMouseDown(mouse_event);
-  } else if (event_type == event_type_names::kMousemove) {
-    auto* mouse_event = DynamicTo<MouseEvent>(event);
-    if (touch_event) HandleMouseMove(mouse_event);
-  } else if (event_type == event_type_names::kMouseup) {
-    auto* mouse_event = DynamicTo<MouseEvent>(event);
-    if (touch_event) HandleMouseUp(mouse_event);
-  } else if (event_type == event_type_names::kMouseleave) {
-    auto* mouse_event = DynamicTo<MouseEvent>(event);
-    if (touch_event) HandleMouseLeave(mouse_event);
-  }   // Handle touch events
-  else if (event_type == event_type_names::kTouchstart) {
-    auto* touch_event = DynamicTo<TouchEvent>(event);
-    if (touch_event) HandleTouchStart(touch_event);
-  } else if (event_type == event_type_names::kTouchmove) {
-    auto* touch_event = DynamicTo<TouchEvent>(event);
-    if (touch_event) HandleTouchMove(touch_event);
-  } else if (event_type == event_type_names::kTouchend) {
-    auto* touch_event = DynamicTo<TouchEvent>(event);
-    if (touch_event) HandleTouchEnd(touch_event);
-  } else if (event_type == event_type_names::kTouchcancel) {
-    auto* touch_event = DynamicTo<TouchEvent>(event);
-    if (touch_event) HandleTouchCancel(touch_event);
+  const AtomicString& event_type = event->type();
+  const std::string type_str = event_type.Utf8();
+
+  static const std::unordered_map<std::string, 
+    std::function<void(ProgressBarEventListener*, Event*)>> handlers = {
+    {"click", [](ProgressBarEventListener* self, Event* e) {
+      auto* mouse_event = DynamicTo<MouseEvent>(e);
+      self->HandleMouseClick(mouse_event);
+    }},
+    {"mousedown", [](ProgressBarEventListener* self, Event* e) {
+      auto* mouse_event = DynamicTo<MouseEvent>(e);
+      self->HandleMouseDown(mouse_event);
+    }},
+    {"mousemove", [](ProgressBarEventListener* self, Event* e) {
+      auto* mouse_event = DynamicTo<MouseEvent>(e);
+      self->HandleMouseMove(mouse_event);
+    }},
+    {"mouseup", [](ProgressBarEventListener* self, Event* e) {
+      auto* mouse_event = DynamicTo<MouseEvent>(e);
+      self->HandleMouseUp(mouse_event);
+    }},
+    {"mouseleave", [](ProgressBarEventListener* self, Event* e) {
+      auto* mouse_event = DynamicTo<MouseEvent>(e);
+      self->HandleMouseLeave(mouse_event);
+    }},
+    {"touchstart", [](ProgressBarEventListener* self, Event* e) {
+      auto* touch_event = DynamicTo<TouchEvent>(e);
+      if (touch_event) self->HandleTouchStart(touch_event);
+    }},
+    {"touchmove", [](ProgressBarEventListener* self, Event* e) {
+      auto* touch_event = DynamicTo<TouchEvent>(e);
+      if (touch_event) self->HandleTouchMove(touch_event);
+    }},
+    {"touchend", [](ProgressBarEventListener* self, Event* e) {
+      auto* touch_event = DynamicTo<TouchEvent>(e);
+      if (touch_event) self->HandleTouchEnd(touch_event);
+    }},
+    {"touchcancel", [](ProgressBarEventListener* self, Event* e) {
+      auto* touch_event = DynamicTo<TouchEvent>(e);
+      if (touch_event) self->HandleTouchCancel(touch_event);
+    }}
+  };
+  
+  auto it = handlers.find(type_str);
+  if (it != handlers.end()) {
+    it->second(this, event);
   } else {
-    LOG(INFO) << "Untreated progress bar event type: " << event_type.Utf8();
+    LOG(INFO) << "Untreated progress bar event type: " << type_str;
   }
 }
 
 void ProgressBarEventListener::HandleTouchStart(TouchEvent* event) {
   LOG(INFO) << "Handling touch start events";
-  
+  if (!event) {
+    return;
+  }
   event->stopPropagation();
   event->preventDefault();
   
@@ -124,7 +144,7 @@ void ProgressBarEventListener::HandleTouchStart(TouchEvent* event) {
 }
 
 void ProgressBarEventListener::HandleTouchMove(TouchEvent* event) {
-  if (!is_touch_dragging_) {
+  if (!is_touch_dragging_ || !event) {
     return;
   }
   
@@ -168,7 +188,7 @@ void ProgressBarEventListener::UpdateDragging(float client_x) {
 }
 
 void ProgressBarEventListener::HandleTouchEnd(TouchEvent* event) {
-  if (!is_touch_dragging_) {
+  if (!is_touch_dragging_ || !event) {
     return;
   }
   
@@ -200,7 +220,10 @@ void ProgressBarEventListener::HandleTouchEnd(TouchEvent* event) {
 
 void ProgressBarEventListener::HandleTouchCancel(TouchEvent* event) {
   LOG(INFO) << "Handling touch cancellation events";
-  
+  if (!event) {
+    return;
+  }
+
   if (is_touch_dragging_) {
     is_touch_dragging_ = false;
     active_touch_id_ = -1;
@@ -332,7 +355,10 @@ float ProgressBarEventListener::GetProgressBarWidth() {
 
 void ProgressBarEventListener::HandleMouseClick(MouseEvent* event) {
   LOG(INFO) << "Handling progress bar click events";
-  
+  if (!event) {
+    return;
+  }
+
   event->stopPropagation();
   event->preventDefault();
   
@@ -348,7 +374,10 @@ void ProgressBarEventListener::HandleMouseClick(MouseEvent* event) {
 
 void ProgressBarEventListener::HandleMouseDown(MouseEvent* event) {
   LOG(INFO) << "Handling mouse press events";
-  
+  if (!event) {
+    return;
+  }
+
   event->stopPropagation();
   event->preventDefault();
   
@@ -366,7 +395,7 @@ void ProgressBarEventListener::HandleMouseDown(MouseEvent* event) {
 
 void ProgressBarEventListener::HandleMouseMove(MouseEvent* event) {
   // Process mouse movement only during drag state.
-  if (!is_dragging_ || is_touch_dragging_) {
+  if (!is_dragging_ || is_touch_dragging_ || !event) {
     return;
   }
   
@@ -376,7 +405,7 @@ void ProgressBarEventListener::HandleMouseMove(MouseEvent* event) {
 }
 
 void ProgressBarEventListener::HandleMouseUp(MouseEvent* event) {
-  if (!is_dragging_ || is_touch_dragging_) {
+  if (!is_dragging_ || is_touch_dragging_ || !event) {
     return;
   }
   
@@ -387,6 +416,9 @@ void ProgressBarEventListener::HandleMouseUp(MouseEvent* event) {
 }
 
 void ProgressBarEventListener::HandleMouseLeave(MouseEvent* event) {
+  if (!event) {
+    return;
+  }
   if (is_dragging_ && !is_touch_dragging_) {
     LOG(INFO) << "Mouse leaves the element, ending the drag.";
     float client_x = event->clientX();

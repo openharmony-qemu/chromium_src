@@ -338,5 +338,11 @@ bool MediaSessionImpl::IsPageBackground() {
   LOG(INFO) << "zwp: MediaSessionImpl::IsPageBackground " << is_background;
   return is_background;
 }
+
+void MediaSessionImpl::SetPauseByAvcast(bool pause_avcast) { 
+  LOG(INFO) << "SetPauseByAvcast, pause_avcast: " << pause_avcast;
+  pause_avcast_ = pause_avcast; 
+}
+
 #endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
 }

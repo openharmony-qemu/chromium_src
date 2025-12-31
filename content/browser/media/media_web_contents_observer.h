@@ -197,6 +197,10 @@ class CONTENT_EXPORT MediaWebContentsObserver
   MediaPlayerId GetMediaPlayerId(
     int delegate_id, int child_id, int frame_routing_id, bool& status);
 #endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+    void DidFinishNavigation(NavigationHandle* navigation_handle) override;
+#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
  protected:
   MediaSessionControllersManager* session_controllers_manager() {
     return session_controllers_manager_.get();
@@ -337,7 +341,6 @@ class CONTENT_EXPORT MediaWebContentsObserver
     void HandleStopMediaCast() override;
     void UpdateRemotePlayState(bool is_playing) override;
     void UpdateRemotePlayPosition(int64_t position) override;
-    void DidFinishNavigation(NavigationHandle* navigation_handle) override;
     void SetPauseByAvcast(bool pause_avcast) override;
 #endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
    private:

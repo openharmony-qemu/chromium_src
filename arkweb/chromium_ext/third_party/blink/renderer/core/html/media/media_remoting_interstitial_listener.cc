@@ -39,7 +39,6 @@ void RemotingButtonEventListener::HandleClick(Event* event) {
       media_remoting_interstitial_->OnSwitchDeviceClicked();
       break;
     case RemotingButtonType::kPlayPause:
-      LOG(INFO) << "RemotingButtonEventListener : public NativeEventListener GetPlayingState: " << media_remoting_interstitial_->GetPlayingState();
       media_remoting_interstitial_->UpdateRemotePlayState(!media_remoting_interstitial_->GetPlayingState());
       media_remoting_interstitial_->OnPlayPauseClicked();
       break;

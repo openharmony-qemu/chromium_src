@@ -158,6 +158,7 @@ bool MediaAVSessionAdapterImpl::CreateAVSession(MediaAVSessionType type) {
 
 void MediaAVSessionAdapterImpl::DestroyAVSession() {
     WVLOG_I("DestroyAVSession in");
+    SetAvCast(false);
     MediaCastStopped();
     HandleStopMediaCast();
     {
@@ -524,6 +525,9 @@ void MediaAVSessionAdapterImpl::DestroyAndEraseSession() {
         WVLOG_E("DestroyAndEraseSession avsession is null pointer return");
         return;
     }
+    iter->second->SetAvCast(false);
+    iter->second->MediaCastStopped();
+    iter->second->HandleStopMediaCast();
     AVSession_ErrCode ret = OH_AVSession_Destroy(iter->second->avSession_);
     if (ret != AV_SESSION_ERR_SUCCESS) {
         WVLOG_E("DestroyAndEraseSession Destroy failed, ret: %{public}d", ret);
@@ -922,6 +926,10 @@ bool MediaAVSessionAdapterImpl::GetUiSeekingByClient() {
 }
 
 OH_AVSession* MediaAVSessionAdapterImpl::GetAVSession() {
+    if (avSession_ == nullptr) {
+        WVLOG_E("MediaAVSessionAdapterImpl GetAVSession GetAVSession is null");
+        return nullptr;
+    }
     return avSession_;
 }
 

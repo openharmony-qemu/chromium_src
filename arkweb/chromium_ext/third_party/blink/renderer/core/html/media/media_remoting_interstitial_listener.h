@@ -30,7 +30,8 @@ enum class RemotingButtonType {
 
 class RemotingButtonEventListener : public NativeEventListener {
  public:
-  RemotingButtonEventListener(base::WeakPtr<MediaRemotingInterstitial> media_remoting_interstitial, RemotingButtonType type)
+  RemotingButtonEventListener(base::WeakPtr<MediaRemotingInterstitial> media_remoting_interstitial,
+      RemotingButtonType type)
       : media_remoting_interstitial_(media_remoting_interstitial), button_type_(type){}
 
   void Invoke(ExecutionContext* execution_context, Event* event) override {

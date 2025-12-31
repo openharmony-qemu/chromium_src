@@ -95,6 +95,9 @@ class MojoRenderer : public Renderer, public mojom::RendererClient {
 #if BUILDFLAG(ARKWEB_PIP)
   void PipEnable(bool enable) override;
 #endif
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void SetPreciseSeekTarget(int64_t target_timestamp) override;
+#endif // ARKWEB_VIDEO_ASSISTANT
 #if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
   void RecycleDmaBuffer() override;
   void ResumeDmaBuffer() override;

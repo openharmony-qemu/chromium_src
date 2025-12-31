@@ -50,6 +50,10 @@ class MEDIA_GPU_EXPORT CodecBufferWaitCoordinator
     return task_runner_;
   }
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void OnVideoSurfaceChanged();
+#endif // ARKWEB_VIDEO_ASSISTANT
+
  protected:
   virtual ~CodecBufferWaitCoordinator();
 

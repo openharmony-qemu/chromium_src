@@ -69,6 +69,7 @@ class MEDIA_GPU_EXPORT CodecOutputBufferRenderer
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   bool RenderVideoView();
+  void OnBufferRendered();
 #endif // ARKWEB_VIDEO_ASSISTANT
 
  private:

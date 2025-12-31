@@ -38,5 +38,15 @@ void* CodecSurfaceBundle::GetOHOSNativeWindow() const {
   return ohos_native_window_.get();
 }
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+void CodecSurfaceBundle::OnVideoSurfaceChanged() {
+  if (!codec_buffer_wait_coordinator_) {
+    return;
+  }
+
+  codec_buffer_wait_coordinator_->OnVideoSurfaceChanged();
+}
+#endif // ARKWEB_VIDEO_ASSISTANT
+
 }  // namespace media
                      

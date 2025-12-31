@@ -130,6 +130,12 @@ bool CodecOutputBufferRenderer::RenderVideoView() {
   }
   return false;
 }
+
+void CodecOutputBufferRenderer::OnBufferRendered() {
+  if (output_buffer_) {
+    output_buffer_->OnBufferRendered();
+  }
+}
 #endif // ARKWEB_VIDEO_ASSISTANT
 
 }  // namespace media

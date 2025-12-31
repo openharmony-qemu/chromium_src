@@ -90,6 +90,9 @@ class MEDIA_EXPORT RendererImpl final : public Renderer {
 #if BUILDFLAG(ARKWEB_PIP)
   void PipEnable(bool enable) final;
 #endif
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void SetPreciseSeekTarget(int64_t target_timestamp) final;
+#endif // ARKWEB_VIDEO_ASSISTANT
 #if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
   void RecycleDmaBuffer() final;
   void ResumeDmaBuffer() final;

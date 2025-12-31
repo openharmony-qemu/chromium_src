@@ -71,6 +71,7 @@ class MEDIA_MOJO_EXPORT MojoVideoDecoderService final
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   void SetVideoSurface(int32_t widget_id) final;
+  void SetPreciseSeekTarget(int64_t target_timestamp) final;
 #endif // ARKWEB_VIDEO_ASSISTANT
 #if BUILDFLAG(ARKWEB_PIP)
   void PipEnable(bool enable) final;

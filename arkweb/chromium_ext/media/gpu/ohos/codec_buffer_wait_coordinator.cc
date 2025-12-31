@@ -11,6 +11,7 @@
 
 #include "base/metrics/histogram_macros.h"
 #include "base/task/single_thread_task_runner.h"
+#include "base/trace_event/trace_event.h"
 
 namespace media {
 
@@ -82,5 +83,16 @@ void CodecBufferWaitCoordinator::WaitForFrameAvailable() {
   }
 }
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+void CodecBufferWaitCoordinator::OnVideoSurfaceChanged() {
+  AssertAcquiredDrDcLock();
+  if (frame_available_event_->event.TimedWait(max_wait_.value())) {
+    TRACE_EVENT0("media", "CodecBufferWaitCoordinator::OnVideoSurfaceChanged");
+    texture_owner_->UpdateNativeImage();
+  } else {
+    LOG(WARNING) << "Wait for available frame timeout.";
+  }
+}
+#endif // ARKWEB_VIDEO_ASSISTANT
 }  // namespace media
                      

@@ -91,6 +91,7 @@ class MEDIA_MOJO_EXPORT MojoRendererService final : public mojom::Renderer,
 #endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   void SetVideoSurface(int32_t surface_id) override;
+  void SetPreciseSeekTarget(int64_t target_timestamp) override;
 #endif  // ARKWEB_VIDEO_ASSISTANT
 #if BUILDFLAG(ARKWEB_MEDIA)
   void SetNativeWindowSurface(int32_t native_window_id) override;

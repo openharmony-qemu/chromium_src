@@ -129,6 +129,9 @@ class PipelineImpl::RendererWrapper final : public DemuxerHost,
 #if BUILDFLAG(ARKWEB_PIP)
   void PipEnable(bool enable);
 #endif
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void SetPreciseSeekTarget(int64_t target_timestamp);
+#endif // ARKWEB_VIDEO_ASSISTANT
 #if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
   void RecycleDmaBuffer();
   void ResumeDmaBuffer();
@@ -298,6 +301,8 @@ class PipelineImpl::RendererWrapper final : public DemuxerHost,
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   RequestSurfaceCB request_surface_cb_;
   VideoDecoderChangedCB decoder_changed_cb_;
+  int64_t target_timestamp_ = -1;
+  bool is_set_precise_seek_ = false;
 #endif // ARKWEB_VIDEO_ASSISTANT
 
   base::WeakPtrFactory<RendererWrapper> weak_factory_{this};
@@ -1127,6 +1132,14 @@ void PipelineImpl::RendererWrapper::CompleteSeek(base::TimeDelta seek_time,
     base::AutoLock auto_lock(shared_state_lock_);
     shared_state_.suspend_timestamp = kNoTimestamp;
   }
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  if (is_set_precise_seek_) {
+    is_set_precise_seek_ = false;
+    shared_state_.renderer->SetPreciseSeekTarget(target_timestamp_);
+    target_timestamp_ = -1;
+  }
+#endif // ARKWEB_VIDEO_ASSISTANT
 
   shared_state_.renderer->SetPlaybackRate(playback_rate_);
 

@@ -137,7 +137,8 @@ public:
         return is_seeking_;
     }
 
-    static void UpdateUiPlayPosition(std::shared_ptr<MediaAVCastAdapterImpl::Client> client, int64_t position, bool is_seek);
+    static void UpdateUiPlayPosition(std::shared_ptr<MediaAVCastAdapterImpl::Client> client,
+        int64_t position, bool is_seek);
 
     static std::shared_mutex& GetAVCastAdapterMutex() { return avcast_adapter_mutex_; }
 

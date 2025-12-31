@@ -37,9 +37,9 @@
 #include "arkweb/ohos_nweb/src/sysevent/event_reporter.h"
 #endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
-#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION) || BUILDFLAG(ARKWEB_MEDIA_CAST)
 #include "third_party/blink/renderer/core/html/media/html_video_element.h"
-#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION || ARKWEB_MEDIA_CAST
 
 namespace blink {
 namespace {

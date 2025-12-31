@@ -559,6 +559,11 @@ arkweb_third_patry_blink_renderer_core_html_sources = [
   "//arkweb/chromium_ext/third_party/blink/renderer/core/html/html_native_loader.h",
 ]
 
+arkweb_third_patry_blink_renderer_core_fragment_directive_sources = [
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/fragment_directive/text_fragment_anchor_utils.cc",
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/fragment_directive/text_fragment_anchor_utils.h",
+]
+
 arkweb_third_patry_blink_renderer_core_v8_sources = [
   "//arkweb/chromium_ext/third_party/blink/renderer/core/v8/v8_code_cache_utils.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/core/v8/v8_code_cache_utils.h",
@@ -1348,6 +1353,7 @@ arkweb_ohos_adapter_ndk_unittests_sources = [
   "//arkweb/chromium_ext/ohos_test/unittest/devices/arkweb_device_data_manager_utils_unittest.cc",
   "//arkweb/ohos_adapter_ndk/sensor_adapter/sensor_adapter_impl_unittest.cc",
   "//arkweb/ohos_adapter_ndk/ndk_version_unittest.cc",
+  "//arkweb/ohos_adapter_ndk/ohos_adapter_helper_decouple_unittest.cpp",
   "//arkweb/ohos_adapter_ndk/security_adapter/arkts_security_adapter_impl_unittest.cc",
 ]
 

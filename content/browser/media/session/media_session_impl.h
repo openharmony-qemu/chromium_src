@@ -794,6 +794,7 @@ class MediaSessionImpl : public MediaSession,
 #endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
 
  private:
+  bool pause_avcast_ = false;
   base::WeakPtrFactory<MediaSessionImpl> weak_factory_{this};
 
   WEB_CONTENTS_USER_DATA_KEY_DECL();

@@ -37,6 +37,16 @@ gfx::Rect ChromeClientImplExt::GetVisibleRectToWeb(LocalFrame* frame) {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
+// LCOV_EXCL_START
+void ChromeClientImplExt::DisconnectClient() {
+  if (file_chooser_queue_.size() != 1) {
+    file_chooser_queue_.front().get()->DisconnectClient();
+  }
+}
+// LCOV_EXCL_STOP
+#endif
+
 #if BUILDFLAG(ARKWEB_AI)
 void ChromeClientImplExt::CreateOverlay(
     LocalFrame* frame,

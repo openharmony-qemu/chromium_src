@@ -33,6 +33,10 @@ class ChromeClientImplExt : public ChromeClientImpl {
   gfx::Rect GetVisibleRectToWeb(LocalFrame*) override;
 #endif  // ARKWEB_DRAG_DROP
 
+#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
+  void DisconnectClient();
+#endif  // ARKWEB_FILE_UPLOAD
+
 #if BUILDFLAG(ARKWEB_AI)
   void CreateOverlay(
       LocalFrame* frame,

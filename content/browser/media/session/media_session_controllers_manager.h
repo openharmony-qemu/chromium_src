@@ -121,6 +121,8 @@ class CONTENT_EXPORT MediaSessionControllersManager {
   void HandleStopMediaCast(const MediaPlayerId& id);
   void UpdateRemotePlayState(const MediaPlayerId& id, bool is_playing);
   void UpdateRemotePlayPosition(const MediaPlayerId& id, int64_t position);
+  void SetPauseByAvcast(const MediaPlayerId& id, bool pause_avcast);
+  void MediaCastStopByNavigation();
 #endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
 
  private:

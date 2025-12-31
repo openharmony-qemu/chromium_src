@@ -1009,8 +1009,7 @@ void MediaAVSessionAdapterImpl::UnregisterMediaCastOutputDeviceCallback() {
         AVSession_ErrCode retReg = OH_AVSession_UnregisterOutputDeviceChangeCallback(avSession_,
                                        OutputDeviceChangeCallback);
         if (retReg != AV_SESSION_ERR_SUCCESS) {
-            WVLOG_E("OH_AVSession_UnregisterOutputDeviceChangeCallback failed
-                         ret: %{public}d", retReg);
+            WVLOG_E("UnregisterOutputDeviceChangeCallback failed ret: %{public}d", retReg);
         }
     }
     MediaCastStopped();

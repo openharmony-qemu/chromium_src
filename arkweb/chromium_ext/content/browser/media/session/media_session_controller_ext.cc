@@ -197,7 +197,6 @@ void MediaSessionControllerExt::UpdateUiPlayState(int player_id, bool is_playing
     LOG(ERROR) << "DMABUF::UpdateUiPlayState, web_contents_observer is null";
     return;
   }
-  LOG(INFO) << "MediaSessionControllerExt::UpdateUiPlayState, if: " << web_contents_observer->IsPlayerIdInMediaPlayerRemotesMap(id_);
   if (web_contents_observer->IsPlayerIdInMediaPlayerRemotesMap(id_)) {
     LOG(INFO) << "MediaSessionControllerExt:UpdateUiPlayState ";
     web_contents_observer->GetMediaPlayerRemote(id_)->UpdateUiPlayState(is_playing);

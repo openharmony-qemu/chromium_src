@@ -205,7 +205,8 @@ void MediaRemotingInterstitial::ParseMediaCastControl() {
   // Binding a Click Event
   fullscreen_button_->addEventListener(
       event_type_names::kClick,
-      MakeGarbageCollected<RemotingButtonEventListener>(weak_factory_.GetWeakPtr(), RemotingButtonType::kFullscreenToggle),
+      MakeGarbageCollected<RemotingButtonEventListener>(weak_factory_.GetWeakPtr(),
+          RemotingButtonType::kFullscreenToggle),
       false
   );
   

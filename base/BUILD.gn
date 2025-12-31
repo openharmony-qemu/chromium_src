@@ -4382,6 +4382,8 @@ test("base_unittests") {
       "//arkweb/ohos_adapter_ndk:adapter_ndk",
     ]
     include_dirs = [
+      "//arkweb/glue",
+      "//arkweb/ohos_adapter_ndk/interfaces",
       "//third_party/ohos_ndk/includes/ohos_adapter",
     ]
   }

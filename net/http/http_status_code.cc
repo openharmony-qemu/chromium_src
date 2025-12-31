@@ -16,7 +16,7 @@ const char* GetHttpReasonPhrase(HttpStatusCode code) {
   }
   DUMP_WILL_BE_NOTREACHED() << "unknown HTTP status code " << code;
 #if BUILDFLAG(IS_ARKWEB)
-  return "";
+  return "Unknown HTTP status code";
 #else
   return nullptr;
 #endif

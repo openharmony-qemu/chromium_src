@@ -16,6 +16,7 @@
 #include "nweb_autolayout.h"
 
 #include <charconv>
+#include <regex>
 
 #include "base/files/file_util.h"
 #include "base/files/memory_mapped_file.h"
@@ -321,7 +322,6 @@ bool NwebAutolayout::ParseWhitelistEntry(std::string_view app_bundle_name_sv,
     LOG(ERROR) << "Parse Error: Missing, empty or invalid type for urlRuleInfos and appRuleInfos.";
     return false;
   }
-  mWListEntry_ = &current_entry;
   return true;
 }
 
@@ -460,7 +460,7 @@ void NwebAutolayout::CheckWebContainer(CefRefPtr<CefBrowser> browser, CefRefPtr<
   }
 
   std::string current_url = frame->GetURL().ToString();
-  LOG(INFO) << "NwebAutolayout::CheckWebContainer current_url:"
+  LOG(DEBUG) << "NwebAutolayout::CheckWebContainer current_url:"
             << url::LogUtils::ConvertUrlWithMask(current_url);
 
   if (auto url_rule_entry = FindBestMatchRule(current_url)) {
@@ -512,13 +512,15 @@ const UrlRuleInfoEntry* NwebAutolayout::FindBestMatchRule(const std::string& cur
   const UrlRuleInfoEntry* match_rule = nullptr;
   size_t best_match_length = 0;
   for (const UrlRuleInfoEntry& url_rule_entry : mWListEntry_->urlRuleInfos.value()) {
-    const std::string& prefix = url_rule_entry.urlPrefix;
     // 检查URL是否以当前前缀开头
-    if (current_url.compare(0, prefix.length(), prefix) == 0) {
-      if (prefix.length() > best_match_length) {
-        best_match_length = prefix.length();
-        match_rule = &url_rule_entry;
-      }
+    std::regex pattern(url_rule_entry.urlPrefix);
+    std::smatch match_result;
+    if (std::regex_search(current_url, match_result, pattern)) {
+        size_t current_match_length = match_result[0].length();
+        if (current_match_length > best_match_length) {
+            best_match_length = current_match_length;
+            match_rule = &url_rule_entry;
+        }
     }
   }
   return match_rule;

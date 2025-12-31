@@ -22,14 +22,12 @@ class AlphabetAdapter {
     adaptType = CONF.BUTTON_GROUP.TYPE;
     heightWidthMinRatio = CONF.BASE.HEIGHT_WIDTH_MIN_RATIO_DEFAULT;
     identificationMinSize = CONF.BASE.IDENTIFICATION_MIN_SIZE;
-    microDots = null;
-    buttonBox = null;
     buttonGroup = null;
     scrollAdaptOriginHeight = '';
 
     likelyAnAlphabet(str) {
         const minEd = 26;
-        for (let i = 0; i < str.length - this.identificationMinSize; i++) {
+        for (let i = 0; i <= str.length - this.identificationMinSize; i++) {
             if (Utils.isIncreasingAlphabet(str.substr(i, minEd), this.identificationMinSize)) {
                 return true;
             }

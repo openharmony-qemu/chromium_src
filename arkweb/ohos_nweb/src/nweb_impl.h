@@ -1051,16 +1051,6 @@ class NWebImpl : public NWeb {
   static void RemoveLoggerCallback();
 #endif
 
-#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
-  static void PutProxyClientCallback(
-      std::shared_ptr<NWebProxyClientCallback> proxy_callback);
-  static void RemoveProxyClientCallback();
-  static void OnUpdateProxyToken(const std::string& old_token);
-  static void UpdateProxyToken(const char* token, const char* token_info);
-  static void SetGlobalListConfigPath(const char* file_path,
-                                      const char* version);
-#endif
-
   int SetUrlTrustList(const std::string& urlTrustList) override;
   int SetUrlTrustListWithErrMsg(const std::string& urlTrustList,
                                 std::string& detailErrMsg) override;
@@ -1214,6 +1204,10 @@ class NWebImpl : public NWeb {
   static int64_t GetPreferenceHashByNwebId(int32_t nweb_id);
   bool TriggerBlanklessForUrl(const std::string& url) override;
   void SetVisibility(bool isVisible) override;
+  int32_t SetBlanklessLoadingParams(const std::string& key, bool enable, int32_t duration,
+                                    int64_t expirationTime,
+                                    std::shared_ptr<NWebBlanklessCallback> callback) override;
+  void CallExecuteBlanklessCallback(int32_t state, const std::string& reason) override;
 #endif
 
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)
@@ -1364,11 +1358,16 @@ class NWebImpl : public NWeb {
   void ClearBlanklessKey();
   bool CheckNetAvailable();
   void CallBlanklessFrameFunc(uint64_t blankless_key, SnapshotDataItem& dataItem, bool isAnime = false);
+  void CallBlanklessFrameFuncV2(uint64_t blankless_key, SnapshotDataItem& dataItem,
+                                int32_t duration, bool isAnime = false);
+  void ExecuteBlanklessCallback(const std::string& key, int32_t state, const std::string& reason);
   // To avoid include blankless_controller.h in nweb_impl.h, we use UINT64_MAX instead of INVALID_BLANKLESS_KEY.
   std::atomic<uint64_t> blankless_key_ = UINT64_MAX;
   std::atomic<bool> is_private_ = false;
   std::atomic<bool> is_visible_ = false;
   std::atomic<bool> is_user_enable_ = false;
+  std::string string_key_;
+  std::shared_ptr<NWebBlanklessCallback> blankless_callback_ = nullptr;
 #endif
 
 #if BUILDFLAG(ARKWEB_COOKIE)

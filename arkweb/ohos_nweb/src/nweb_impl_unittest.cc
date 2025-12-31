@@ -8123,6 +8123,16 @@ TEST_F(NWebImplTest, GetBlanklessInfoWithKey004) {
   EXPECT_EQ(similarity, 0);
   EXPECT_EQ(result, 0);
 }
+
+TEST_F(NWebImplTest, SetBlanklessLoadingParams001) {
+  const std::string key = "test";
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  auto result1 = nweb_impl_->SetBlanklessLoadingParams(key, false, 0, 0, nullptr);
+  EXPECT_EQ(result1, -5);
+  auto result2 = nweb_impl_->SetBlanklessLoadingParams(key, true, 0, 0, nullptr);
+  EXPECT_EQ(result2, -5);
+}
 #endif  // BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
 
 #if BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)

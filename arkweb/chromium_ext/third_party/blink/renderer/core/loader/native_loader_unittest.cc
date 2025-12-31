@@ -318,4 +318,457 @@ TEST_F(NativeLoaderTest, SetStretchContentToFillBounds) {
   EXPECT_FALSE(result);
 }
 
+TEST_F(NativeLoaderTest, NativeLoaderTest_001) {
+  loader_->ScheduleLoadResource();
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_002) {
+  loader_->current_plugin_element()->remove();
+  gfx::Rect input_rect(10, 10, 100, 100);
+  gfx::Rect result = TransformRect(input_rect);
+  EXPECT_EQ(result, input_rect);
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_003) {
+  loader_->SetCcLayer(&mock_cc_layer_);
+  loader_->OnCreateNativeSurface(123, base::DoNothing());
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_004) {
+  loader_->SetCcLayer(&mock_cc_layer_);
+  SetFirstUpdateVisibility(true);
+  loader_->OnCreateNativeSurface(123, base::DoNothing());
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_005) {
+  loader_->OnCreateNativeSurface(123, base::DoNothing());
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_006) {
+  loader_->SetCcLayer(&mock_cc_layer_);
+  loader_->OnLayerRectChange(gfx::Rect(10, 10, 100, 100));
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_007) {
+  loader_->SetCcLayer(&mock_cc_layer_);
+  loader_->OnCreateNativeSurface(123, base::DoNothing());
+  loader_->OnLayerRectChange(gfx::Rect(10, 10, 100, 100));
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_008) {
+  loader_->SetCcLayer(&mock_cc_layer_);
+  loader_->OnCreateNativeSurface(123, base::DoNothing());
+  loader_->OnDestroyNativeSurface();
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_009) {
+  loader_->SetCcLayer(&mock_cc_layer_);
+  loader_->OnDestroyNativeSurface();
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_010) {
+  loader_->SetCcLayer(&mock_cc_layer_);
+  loader_->Repaint();
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_011) {
+  loader_->Repaint();
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_012) {
+  loader_->SetCcLayer(&mock_cc_layer_);
+  EXPECT_CALL(mock_cc_layer_, SetNeedsPushProperties()).Times(0);
+  loader_->SetCcLayer(&mock_cc_layer_);
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_013) {
+  auto* embed = To<HTMLEmbedElement>(GetDocument().getElementById(AtomicString("test-plugin")));
+  embed->setAttribute(html_names::kTypeAttr, AtomicString("native/overlay-infinity"));
+  loader_->SetCcLayer(&mock_cc_layer_);
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_014) {
+  auto* embed = To<HTMLEmbedElement>(GetDocument().getElementById(AtomicString("test-plugin")));
+  embed->setAttribute(html_names::kTypeAttr, AtomicString("native/overlay"));
+  loader_->SetCcLayer(&mock_cc_layer_);
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_015) {
+  auto* embed = To<HTMLEmbedElement>(GetDocument().getElementById(AtomicString("test-plugin")));
+  embed->setAttribute(html_names::kTypeAttr, AtomicString("native/normal"));
+  EXPECT_CALL(mock_cc_layer_, SetNativeEmbedOverlayInfinity(_)).Times(0);
+  EXPECT_CALL(mock_cc_layer_, SetNativeEmbedOverlay(_)).Times(0);
+  loader_->SetCcLayer(&mock_cc_layer_);
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_016) {
+  loader_->SetCcLayer(&mock_cc_layer_);
+  ClearNativeResource();
+  EXPECT_EQ(loader_->GetWebNativeBridge(), nullptr);
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_017) {
+  loader_->CleanupVisibilityForRemovedLayer(true);
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_018) {
+  loader_->NotifyVisibilityChange(true);
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_019) {
+  loader_->SetCcLayer(&mock_cc_layer_);
+  EXPECT_CALL(mock_cc_layer_, SetNativeEmbedOverlayInfinity(true));
+  loader_->SetNativeEmbedOverlayInfinity(true);
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_020) {
+  loader_->SetCcLayer(&mock_cc_layer_);
+  EXPECT_CALL(mock_cc_layer_, SetNativeEmbedOverlay(true));
+  loader_->SetNativeEmbedOverlay(true);
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_021) {
+  AddNativeBridgeObserverAndPassReceiver();
+  ResetMojoState();
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_022) {
+  ContextDestroyed();
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_023) {
+  GetNativeBridgeHostRemote();
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_024) {
+  viz::FrameTimingDetails frame_timing_details;
+  ReportFirstPaintTime(frame_timing_details);
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_025) {
+  GetDocument().UpdateStyleAndLayout(DocumentUpdateReason::kTest);
+  gfx::Rect input_rect(10, 10, 100, 100);
+  gfx::Rect result = TransformRect(input_rect);
+  EXPECT_FALSE(result.IsEmpty());
+}
+
+TEST_F(NativeLoaderTest, LoadResource_WithValidFrame1) {
+  loader_->ScheduleLoadResource();
+}
+
+TEST_F(NativeLoaderTest, TransformRect_WithLayoutObject1) {
+  GetDocument().UpdateStyleAndLayout(DocumentUpdateReason::kTest);
+  gfx::Rect input_rect(10, 10, 100, 100);
+  gfx::Rect result = TransformRect(input_rect);
+  EXPECT_FALSE(result.IsEmpty());
+}
+
+TEST_F(NativeLoaderTest, TransformRect_WithoutLayoutObject1) {
+  loader_->current_plugin_element()->remove();
+  gfx::Rect input_rect(10, 10, 100, 100);
+  gfx::Rect result = TransformRect(input_rect);
+  EXPECT_EQ(result, input_rect);
+}
+
+TEST_F(NativeLoaderTest, OnCreateNativeSurface_WithCcLayer1) {
+  loader_->SetCcLayer(&mock_cc_layer_);
+  loader_->OnCreateNativeSurface(123, base::DoNothing());
+}
+
+TEST_F(NativeLoaderTest, OnCreateNativeSurface_WithCcLayer002) {
+  loader_->SetCcLayer(&mock_cc_layer_);
+  SetFirstUpdateVisibility(true);
+  loader_->OnCreateNativeSurface(123, base::DoNothing());
+}
+
+TEST_F(NativeLoaderTest, OnCreateNativeSurface_NoCcLayer1) {
+  loader_->OnCreateNativeSurface(123, base::DoNothing());
+}
+
+TEST_F(NativeLoaderTest, OnLayerRectChange_NoObservers1) {
+  loader_->SetCcLayer(&mock_cc_layer_);
+  loader_->OnLayerRectChange(gfx::Rect(10, 10, 100, 100));
+}
+
+TEST_F(NativeLoaderTest, OnLayerRectChange_WithObservers1) {
+  loader_->SetCcLayer(&mock_cc_layer_);
+  loader_->OnCreateNativeSurface(123, base::DoNothing());
+  loader_->OnLayerRectChange(gfx::Rect(10, 10, 100, 100));
+}
+
+TEST_F(NativeLoaderTest, OnDestroyNativeSurface_WithObservers1) {
+  loader_->SetCcLayer(&mock_cc_layer_);
+  loader_->OnCreateNativeSurface(123, base::DoNothing());
+  loader_->OnDestroyNativeSurface();
+}
+
+TEST_F(NativeLoaderTest, OnDestroyNativeSurface_NoObservers1) {
+  loader_->SetCcLayer(&mock_cc_layer_);
+  loader_->OnDestroyNativeSurface();
+}
+
+TEST_F(NativeLoaderTest, Repaint_WithCcLayer1) {
+  loader_->SetCcLayer(&mock_cc_layer_);
+  loader_->Repaint();
+}
+
+TEST_F(NativeLoaderTest, Repaint_NoCcLayer1) {
+  loader_->Repaint();
+}
+
+TEST_F(NativeLoaderTest, SetCcLayer_SameLayer1) {
+  loader_->SetCcLayer(&mock_cc_layer_);
+  EXPECT_CALL(mock_cc_layer_, SetNeedsPushProperties()).Times(0);
+  loader_->SetCcLayer(&mock_cc_layer_);
+}
+
+TEST_F(NativeLoaderTest, SetCcLayer_OverlayInfinityType1) {
+  auto* embed = To<HTMLEmbedElement>(GetDocument().getElementById(AtomicString("test-plugin")));
+  embed->setAttribute(html_names::kTypeAttr, AtomicString("native/overlay-infinity"));
+  loader_->SetCcLayer(&mock_cc_layer_);
+}
+
+TEST_F(NativeLoaderTest, SetCcLayer_StandardOverlayType1) {
+  auto* embed = To<HTMLEmbedElement>(GetDocument().getElementById(AtomicString("test-plugin")));
+  embed->setAttribute(html_names::kTypeAttr, AtomicString("native/overlay"));
+  loader_->SetCcLayer(&mock_cc_layer_);
+}
+
+TEST_F(NativeLoaderTest, SetCcLayer_NonOverlayType1) {
+  auto* embed = To<HTMLEmbedElement>(GetDocument().getElementById(AtomicString("test-plugin")));
+  embed->setAttribute(html_names::kTypeAttr, AtomicString("native/normal"));
+  EXPECT_CALL(mock_cc_layer_, SetNativeEmbedOverlayInfinity(_)).Times(0);
+  EXPECT_CALL(mock_cc_layer_, SetNativeEmbedOverlay(_)).Times(0);
+  loader_->SetCcLayer(&mock_cc_layer_);
+}
+
+TEST_F(NativeLoaderTest, ClearNativeResource1) {
+  loader_->SetCcLayer(&mock_cc_layer_);
+  ClearNativeResource();
+  EXPECT_EQ(loader_->GetWebNativeBridge(), nullptr);
+}
+
+TEST_F(NativeLoaderTest, CleanupVisibilityForRemovedLayer_Enabled1) {
+  loader_->CleanupVisibilityForRemovedLayer(true);
+}
+
+TEST_F(NativeLoaderTest, NotifyVisibilityChange_NoEmbedId1) {
+  loader_->NotifyVisibilityChange(true);
+}
+
+TEST_F(NativeLoaderTest, SetNativeEmbedOverlayInfinity_WithCcLayer1) {
+  loader_->SetCcLayer(&mock_cc_layer_);
+  EXPECT_CALL(mock_cc_layer_, SetNativeEmbedOverlayInfinity(true));
+  loader_->SetNativeEmbedOverlayInfinity(true);
+}
+
+TEST_F(NativeLoaderTest, SetNativeEmbedOverlay_WithCcLayer1) {
+  loader_->SetCcLayer(&mock_cc_layer_);
+  EXPECT_CALL(mock_cc_layer_, SetNativeEmbedOverlay(true));
+  loader_->SetNativeEmbedOverlay(true);
+}
+
+TEST_F(NativeLoaderTest, ResetMojoState1) {
+  AddNativeBridgeObserverAndPassReceiver();
+  ResetMojoState();
+}
+
+TEST_F(NativeLoaderTest, ContextDestroyed1) {
+  ContextDestroyed();
+}
+
+TEST_F(NativeLoaderTest, GetNativeBridgeHostRemote1) {
+  GetNativeBridgeHostRemote();
+}
+
+TEST_F(NativeLoaderTest, ReportFirstPaintTime1) {
+  viz::FrameTimingDetails frame_timing_details;
+  ReportFirstPaintTime(frame_timing_details);
+}
+
+TEST_F(NativeLoaderTest, ProcessParamChanges0001) {
+  Vector<ParamChangeInfo> param_changes;
+  param_changes.push_back(ParamChangeInfo(ParamChangeInfo::Status::kAdd,
+                                          AtomicString("test"),
+                                          AtomicString("test"),
+                                          AtomicString("test")));
+  param_changes.push_back(ParamChangeInfo(ParamChangeInfo::Status::kUpdate,
+                                          AtomicString("test"),
+                                          AtomicString("test"),
+                                          AtomicString("test")));
+  param_changes.push_back(ParamChangeInfo(ParamChangeInfo::Status::kDelete,
+                                          AtomicString("test"),
+                                          AtomicString("test"),
+                                          AtomicString("test")));
+  loader_->ProcessParamChanges(param_changes);
+}
+
+TEST_F(NativeLoaderTest, ProcessParamChanges0002) {
+  Vector<ParamChangeInfo> param_changes;
+  param_changes.push_back(ParamChangeInfo(ParamChangeInfo::Status::kAdd,
+                                          AtomicString("test"),
+                                          AtomicString("test"),
+                                          AtomicString("test")));
+  param_changes.push_back(ParamChangeInfo(ParamChangeInfo::Status::kUpdate,
+                                          AtomicString("test"),
+                                          AtomicString("test"),
+                                          AtomicString("test")));
+  param_changes.push_back(ParamChangeInfo(ParamChangeInfo::Status::kDelete,
+                                          AtomicString("test"),
+                                          AtomicString("test"),
+                                          AtomicString("test")));
+  SetParamUpdateTaskPending(true);
+  loader_->ProcessParamChanges(param_changes);
+}
+
+TEST_F(NativeLoaderTest, ProcessPendingParamChanges0001) {
+  SetNativeEmbedId(-1);
+  loader_->ProcessPendingParamChanges();
+}
+
+TEST_F(NativeLoaderTest, ProcessPendingParamChanges0002) {
+  SetNativeEmbedId(1);
+  loader_->ProcessPendingParamChanges();
+}
+
+TEST_F(NativeLoaderTest, SetStretchContentToFillBounds1) {
+  loader_->SetStretchContentToFillBounds(false);
+  bool result = loader_->GetStretchContentToFillBounds();
+  EXPECT_FALSE(result);
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_0001) {
+  loader_->ScheduleLoadResource();
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_0002) {
+  loader_->current_plugin_element()->remove();
+  gfx::Rect input_rect(10, 10, 100, 100);
+  gfx::Rect result = TransformRect(input_rect);
+  EXPECT_EQ(result, input_rect);
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_0003) {
+  loader_->SetCcLayer(&mock_cc_layer_);
+  loader_->OnCreateNativeSurface(123, base::DoNothing());
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_0004) {
+  loader_->SetCcLayer(&mock_cc_layer_);
+  SetFirstUpdateVisibility(true);
+  loader_->OnCreateNativeSurface(123, base::DoNothing());
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_0005) {
+  loader_->OnCreateNativeSurface(123, base::DoNothing());
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_0006) {
+  loader_->SetCcLayer(&mock_cc_layer_);
+  loader_->OnLayerRectChange(gfx::Rect(10, 10, 100, 100));
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_0007) {
+  loader_->SetCcLayer(&mock_cc_layer_);
+  loader_->OnCreateNativeSurface(123, base::DoNothing());
+  loader_->OnLayerRectChange(gfx::Rect(10, 10, 100, 100));
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_0008) {
+  loader_->SetCcLayer(&mock_cc_layer_);
+  loader_->OnCreateNativeSurface(123, base::DoNothing());
+  loader_->OnDestroyNativeSurface();
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_0009) {
+  loader_->SetCcLayer(&mock_cc_layer_);
+  loader_->OnDestroyNativeSurface();
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_0010) {
+  loader_->SetCcLayer(&mock_cc_layer_);
+  loader_->Repaint();
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_0011) {
+  loader_->Repaint();
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_0012) {
+  loader_->SetCcLayer(&mock_cc_layer_);
+  EXPECT_CALL(mock_cc_layer_, SetNeedsPushProperties()).Times(0);
+  loader_->SetCcLayer(&mock_cc_layer_);
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_0013) {
+  auto* embed = To<HTMLEmbedElement>(GetDocument().getElementById(AtomicString("test-plugin")));
+  embed->setAttribute(html_names::kTypeAttr, AtomicString("native/overlay-infinity"));
+  loader_->SetCcLayer(&mock_cc_layer_);
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_0014) {
+  auto* embed = To<HTMLEmbedElement>(GetDocument().getElementById(AtomicString("test-plugin")));
+  embed->setAttribute(html_names::kTypeAttr, AtomicString("native/overlay"));
+  loader_->SetCcLayer(&mock_cc_layer_);
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_0015) {
+  auto* embed = To<HTMLEmbedElement>(GetDocument().getElementById(AtomicString("test-plugin")));
+  embed->setAttribute(html_names::kTypeAttr, AtomicString("native/normal"));
+  EXPECT_CALL(mock_cc_layer_, SetNativeEmbedOverlayInfinity(_)).Times(0);
+  EXPECT_CALL(mock_cc_layer_, SetNativeEmbedOverlay(_)).Times(0);
+  loader_->SetCcLayer(&mock_cc_layer_);
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_0016) {
+  loader_->SetCcLayer(&mock_cc_layer_);
+  ClearNativeResource();
+  EXPECT_EQ(loader_->GetWebNativeBridge(), nullptr);
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_0017) {
+  loader_->CleanupVisibilityForRemovedLayer(true);
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_0018) {
+  loader_->NotifyVisibilityChange(true);
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_0019) {
+  loader_->SetCcLayer(&mock_cc_layer_);
+  EXPECT_CALL(mock_cc_layer_, SetNativeEmbedOverlayInfinity(true));
+  loader_->SetNativeEmbedOverlayInfinity(true);
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_0020) {
+  loader_->SetCcLayer(&mock_cc_layer_);
+  EXPECT_CALL(mock_cc_layer_, SetNativeEmbedOverlay(true));
+  loader_->SetNativeEmbedOverlay(true);
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_0021) {
+  AddNativeBridgeObserverAndPassReceiver();
+  ResetMojoState();
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_0022) {
+  ContextDestroyed();
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_0023) {
+  GetNativeBridgeHostRemote();
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_0024) {
+  viz::FrameTimingDetails frame_timing_details;
+  ReportFirstPaintTime(frame_timing_details);
+}
+
+TEST_F(NativeLoaderTest, NativeLoaderTest_0025) {
+  GetDocument().UpdateStyleAndLayout(DocumentUpdateReason::kTest);
+  gfx::Rect input_rect(10, 10, 100, 100);
+  gfx::Rect result = TransformRect(input_rect);
+  EXPECT_FALSE(result.IsEmpty());
+}
+
 }  // namespace blink

@@ -21,7 +21,9 @@
 namespace OHOS::NWeb {
 NWebAgentManagerImpl::NWebAgentManagerImpl(
     base::WeakPtr<NWebDelegate> nweb_delegate)
-    : nweb_delegate_(nweb_delegate) {}
+    : nweb_delegate_(nweb_delegate) {
+    highlight_specified_content_ = std::make_unique<NWebHighlightSpecifiedContent>(nweb_delegate);
+}
 
 void NWebAgentManagerImpl::SetAgentEnabled(bool enabled) {
     std::shared_ptr<NWebPreferenceDelegate> pref = 
@@ -29,11 +31,22 @@ void NWebAgentManagerImpl::SetAgentEnabled(bool enabled) {
     if (pref) {
         pref->PutArkwebAgentEnabled(enabled);
     }
+    if (highlight_specified_content_) {
+      highlight_specified_content_->SetHighlightSpecifiedContentEnable(enabled);
+    }
 }
 
 bool NWebAgentManagerImpl::IsAgentEnabled() {
     std::shared_ptr<NWebPreferenceDelegate> pref = 
         nweb_delegate_ ? nweb_delegate_->preference_delegate_ : nullptr;
     return pref ? pref->GetArkwebAgentEnabled() : false;
+}
+
+void NWebAgentManagerImpl::SetAgentNeedHighlight(bool enabled) {
+    std::shared_ptr<NWebPreferenceDelegate> pref = 
+        nweb_delegate_ ? nweb_delegate_->preference_delegate_ : nullptr;
+    if (pref) {
+        pref->PutAgentNeedHighlight(enabled);
+    }
 }
 }  // namespace OHOS::NWeb

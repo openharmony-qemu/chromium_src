@@ -163,6 +163,7 @@ class MEDIA_EXPORT DecoderStream {
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   void SetVideoSurface(int surface_id);
+  void SetPreciseSeekTarget(int64_t target_timestamp);
 #endif // ARKWEB_VIDEO_ASSISTANT
 #if BUILDFLAG(ARKWEB_PIP)
   void PipEnable(bool enable);

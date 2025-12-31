@@ -24,6 +24,15 @@ void RendererImpl::PipEnable(bool enable) {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+void RendererImpl::SetPreciseSeekTarget(int64_t target_timestamp) {
+  DCHECK(task_runner_->RunsTasksInCurrentSequence());
+
+  if (video_renderer_)
+    video_renderer_->SetPreciseSeekTarget(target_timestamp);
+}
+#endif // ARKWEB_VIDEO_ASSISTANT
+
 #if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
 void RendererImpl::RecycleDmaBuffer() {
   DCHECK(task_runner_->RunsTasksInCurrentSequence());

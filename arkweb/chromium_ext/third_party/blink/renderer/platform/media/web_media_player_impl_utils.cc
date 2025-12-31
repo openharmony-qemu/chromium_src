@@ -147,9 +147,6 @@ void WebMediaPlayerImplUtils::ExitedFullscreenExt() {
   impl->video_surface_id_ = -1;
   if (surface_changed && impl->surface_created_cb_) {
     impl->surface_created_cb_.Run(impl->video_surface_id_);
-    if (impl->Paused() && !impl->ended_) {
-      impl->Seek(impl->CurrentTime());
-    }
   }
 #endif // ARKWEB_VIDEO_ASSISTANT
 }
@@ -177,6 +174,10 @@ return false;
 
 // LCOV_EXCL_START
 void WebMediaPlayerImplUtils::PlayExt() {
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  impl->has_page_hidden_when_paused_ = false;
+#endif // ARKWEB_VIDEO_ASSISTANT
+
   impl->pipeline_controller_->SetMediaPlayerState(false);
   if (impl->action_reason_ != media::ActionReason::kNormal) {
     impl->pipeline_controller_->SetPlaybackRateWithReason(impl->playback_rate_,
@@ -354,6 +355,10 @@ void WebMediaPlayerImplUtils::DoSeekExt(base::TimeDelta time) {
   LOG_FEEDBACK(WARNING) << "OhMedia::DoSeek(" << (void*)this
                         << "), seconds = " << time.InSecondsF() << "s)";
 #endif
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  impl->has_page_hidden_when_paused_ = false;
+#endif // ARKWEB_VIDEO_ASSISTANT
 }
 
 void WebMediaPlayerImplUtils::SetVolumeExt(double volume) {

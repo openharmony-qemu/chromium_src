@@ -59,6 +59,9 @@ public:
     void OnSetBypassVsyncCondition(int32_t condition);
 #endif
 
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+void UpdateThrottleMode(bool is_enable);
+#endif
 private:
 #if BUILDFLAG(ARKWEB_VIDEO_LTPO)
   base::queue<int64_t> frames_time_stamps_;

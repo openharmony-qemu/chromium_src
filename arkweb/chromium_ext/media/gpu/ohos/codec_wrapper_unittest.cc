@@ -244,7 +244,7 @@ TEST_F(CodecWrapperTest, SetSurfaceInvalidatesCodecOutputBuffers) {
 
 TEST_F(CodecWrapperTest, SetVideoSurface) {
   int32_t widget_id = -1;
-  ASSERT_NO_FATAL_FAILURE(wrapper_->SetVideoSurface(widget_id));
+  ASSERT_NO_FATAL_FAILURE(wrapper_->SetVideoSurface(widget_id, false));
 }
 #endif // ARKWEB_VIDEO_ASSISTANT
 

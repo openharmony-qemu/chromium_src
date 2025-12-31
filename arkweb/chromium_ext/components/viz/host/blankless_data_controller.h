@@ -57,6 +57,7 @@ public:
   int32_t SetBlanklessLoadingCacheCapacity(int capacity);
   int32_t GetBlanklessLoadingCacheCapacity() const;
   void CreateTaskManager();
+  void InsertExpirationInfo(int64_t blankless_key, int64_t expirationTime);
 
 private:
   BlanklessDataController();
@@ -72,6 +73,8 @@ private:
   std::mutex last_info_mutex_;
   std::unique_ptr<viz::CancelableDelayedTaskManager> task_manager_ = nullptr;
   std::mutex task_manager_mutex_;
+  static std::unordered_map<int64_t, int64_t> expiration_time_info_;
+  static std::mutex expiration_time_info_mutex_;
 };
 }  // namespace ohos
 }  // namespace base

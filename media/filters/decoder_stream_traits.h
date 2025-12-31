@@ -81,6 +81,7 @@ class MEDIA_EXPORT DecoderStreamTraits<DemuxerStream::AUDIO> {
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   void SetVideoSurface(DecoderType* decoder, int surface_id) {}
+  void SetPreciseSeekTarget(DecoderType* decoder, int64_t target_timestamp) {}
 #endif // ARKWEB_VIDEO_ASSISTANT
 #if BUILDFLAG(ARKWEB_PIP)
   void PipEnable(DecoderType* decoder, bool enable) {}
@@ -155,6 +156,7 @@ class MEDIA_EXPORT DecoderStreamTraits<DemuxerStream::VIDEO> {
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   void SetVideoSurface(DecoderType* decoder, int surface_id);
+  void SetPreciseSeekTarget(DecoderType* decoder, int64_t target_timestamp);
 #endif // ARKWEB_VIDEO_ASSISTANT
 #if BUILDFLAG(ARKWEB_PIP)
   void PipEnable(DecoderType* decoder, bool enable);

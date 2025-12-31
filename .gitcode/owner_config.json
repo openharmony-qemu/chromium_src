@@ -40,6 +40,9 @@
             "shawshank",
             "chenjiadong",
             "zhangyanchuan"
+        ],
+        "arkweb-security": [
+            "zhu-sheng-le"
         ]
     },
     "userInfos": {
@@ -105,6 +108,9 @@
         },
         "doublelucky": {
             "info": "[build test]"
+        },
+        "zhu-sheng-le": {
+            "info": "[交互安全]"
         }
     }
 }

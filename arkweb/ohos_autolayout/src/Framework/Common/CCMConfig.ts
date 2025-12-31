@@ -180,6 +180,8 @@ export class CCMConfig {
 
   // 默认是弹窗缩放
   private strategy: number = AutoLayoutStrategyType.popupScale;
+  // 记录是否已执行字母导航条修复
+  private isAlphabetNavigatorFixExecuted: boolean = false;
 
   /**
    * 构造函数，用于初始化 ProductConfig 实例
@@ -267,6 +269,10 @@ export class CCMConfig {
 
   public getAutoLayoutStrategyType(): number {
     return this.strategy;
+  }
+
+  public setAlphabetNavigatorFixExecuted(isExecuted: boolean): void {
+    this.isAlphabetNavigatorFixExecuted = isExecuted;
   }
 
   /**
@@ -396,6 +402,7 @@ export class CCMConfig {
    * @returns 是否应用字母导航条修复策略
    */
   public isAlphabetNavigatorEnable(strategy: number): boolean {
-    return (strategy & AutoLayoutStrategyType.alphabetNavigator) > 0;
+    let strategyEnable: boolean = (strategy & AutoLayoutStrategyType.alphabetNavigator) > 0;
+    return strategyEnable && !this.isAlphabetNavigatorFixExecuted;
   }
 }

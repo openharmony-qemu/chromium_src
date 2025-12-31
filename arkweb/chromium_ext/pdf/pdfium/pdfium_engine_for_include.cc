@@ -188,7 +188,7 @@ gfx::PointF PDFiumEngine::ConverPageToScreen(int page_index, gfx::PointF point) 
 
 void PDFiumEngine::CheckSelectionVisibility(const gfx::Rect& left,
                                             const gfx::Rect& right,
-                                            const gfx::Rect& clipped_selection_bounds) {
+                                            gfx::Rect& clipped_selection_bounds) {
   // Check if left handle is unvisible.
   if (left.x() < 0 || left.x() > plugin_size().width() ||
       left.y() < 0 || left.y() > plugin_size().height()) {
@@ -213,6 +213,11 @@ void PDFiumEngine::CheckSelectionVisibility(const gfx::Rect& left,
     client_->SetIsSelectionVisible(false);
   } else {
     client_->SetIsSelectionVisible(true);
+    if (clipped_selection_bounds.y() < 0) {
+      clipped_selection_bounds.set_height(
+          clipped_selection_bounds.height() + clipped_selection_bounds.y());
+      clipped_selection_bounds.set_y(0);
+    }
   }
 }
 

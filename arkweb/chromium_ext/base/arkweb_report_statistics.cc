@@ -33,6 +33,7 @@ class ReportStatistic {
     return instance.get();
   }
 
+  NO_SANITIZE("cfi-icall")
   void ReportStatisticLog(const std::string& content) {
     if (task_runner_ == nullptr) {
       return;

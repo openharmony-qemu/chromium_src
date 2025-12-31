@@ -119,6 +119,15 @@ void MojoRenderer::OnRequestVideoSurfaceDone(int32_t surface_id) {
   LOG(INFO) << "OnRequestVideoSurfaceDone(" << surface_id << ")";
   remote_renderer_->SetVideoSurface(surface_id);
 }
+
+void MojoRenderer::SetPreciseSeekTarget(int64_t target_timestamp) {
+  if (remote_renderer_.is_bound()) {
+    LOG(INFO) << "MojoRenderer::SetPreciseSeekTarget.";
+    remote_renderer_->SetPreciseSeekTarget(target_timestamp);
+  } else {
+    LOG(ERROR) << "MojoRenderer::SetPreciseSeekTarget failed.";
+  }
+}
 #endif // ARKWEB_VIDEO_ASSISTANT
 
 #if BUILDFLAG(ARKWEB_PIP)

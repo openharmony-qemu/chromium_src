@@ -144,6 +144,7 @@ class MEDIA_EXPORT VideoDecoder : public Decoder {
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   virtual void SetVideoSurface(int32_t widget_id) {}
   virtual void StartPlayingFrom(base::TimeDelta start_timestamp) {}
+  virtual void SetPreciseSeekTarget(int64_t target_timestamp) {}
 #endif // ARKWEB_VIDEO_ASSISTANT
 #if BUILDFLAG(ARKWEB_PIP)
   virtual void PipEnable(bool enable) {}

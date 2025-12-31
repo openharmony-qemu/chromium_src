@@ -146,5 +146,59 @@ TEST_F(NativePainterTest, AllowSelectionDragImagePhase) {
   NativePainter painter(*layout_native_);
   painter.PaintReplaced(paint_info, PhysicalOffset());
 }
+
+TEST_F(NativePainterTest, NativePainterTest_001) {
+  PaintController controller;
+  GraphicsContext context(controller);
+  PaintInfo paint_info(context, CullRect(), PaintPhase::kBlockBackground, false);
+
+  NativePainter painter(*layout_native_);
+  painter.PaintReplaced(paint_info, PhysicalOffset());
+}
+
+TEST_F(NativePainterTest, NativePainterTest_002) {
+  plugin_element_->SetNativeLoader(nullptr);
+
+  PaintController controller;
+  GraphicsContext context(controller);
+  PaintInfo paint_info(context, CullRect(), PaintPhase::kForeground, false);
+
+  NativePainter painter(*layout_native_);
+  painter.PaintReplaced(paint_info, PhysicalOffset());
+}
+
+TEST_F(NativePainterTest, NativePainterTest_003) {
+  auto layer = cc::Layer::Create();
+  native_loader_->cc_layer_ = layer.get();
+
+  PaintController controller;
+  GraphicsContext context(controller);
+  PaintInfo paint_info(context, CullRect(), PaintPhase::kForeground, false);
+
+  NativePainter painter(*layout_native_);
+  painter.PaintReplaced(paint_info, PhysicalOffset());
+}
+
+TEST_F(NativePainterTest, NativePainterTest_004) {
+  PaintController controller;
+  GraphicsContext context(controller);
+  PaintInfo paint_info(context,
+                       CullRect(),
+                       PaintPhase::kForeground,
+                       true,
+                       PaintFlag::kOmitCompositingInfo);
+
+  NativePainter painter(*layout_native_);
+  painter.PaintReplaced(paint_info, PhysicalOffset());
+}
+
+TEST_F(NativePainterTest, NativePainterTest_005) {
+  PaintController controller;
+  GraphicsContext context(controller);
+  PaintInfo paint_info(context, CullRect(), PaintPhase::kSelectionDragImage, false);
+
+  NativePainter painter(*layout_native_);
+  painter.PaintReplaced(paint_info, PhysicalOffset());
+}
 }  // namespace
 }  // namespace blink

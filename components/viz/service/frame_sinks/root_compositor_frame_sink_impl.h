@@ -145,6 +145,10 @@ class VIZ_SERVICE_EXPORT RootCompositorFrameSinkImpl
   void SetThreads(const std::vector<Thread>& threads) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+    void UpdateThrottleMode(bool is_enable) override {}
+#endif
+
 #if BUILDFLAG(IS_ANDROID)
   base::ScopedClosureRunner GetCacheBackBufferCb();
 #endif

@@ -45,6 +45,10 @@ void WebSettingsImplExt::SetImageAnalyzerEnabled(bool enabled) {
 void WebSettingsImplExt::SetArkwebAgentEnabled(bool enabled) {
   settings_->SetArkwebAgentEnabled(enabled);
 }
+
+void WebSettingsImplExt::SetAgentNeedHighlight(bool enabled) {
+  settings_->SetAgentNeedHighlight(enabled);
+}
 #endif
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)

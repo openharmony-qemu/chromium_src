@@ -495,5 +495,25 @@ void MediaWebContentsObserver::MediaPlayerObserverHostImpl::UpdateRemotePlayPosi
     media_web_contents_observer_->session_controllers_manager()->UpdateRemotePlayPosition(media_player_id_, position);
   }
 }
+
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::SetPauseByAvcast(bool pause_avcast) {
+    LOG(INFO) << "MediaPlayerObserverHostImpl::SetPauseByAvcast";
+    if (media_web_contents_observer_->session_controllers_manager()) {
+      media_web_contents_observer_->session_controllers_manager()->SetPauseByAvcast(media_player_id_, pause_avcast);
+    }
+}
+
+void MediaWebContentsObserver::DidFinishNavigation(NavigationHandle* navigation_handle) {
+  LOG(INFO) << "DidFinishNavigation, enter";
+  // History navigation has been submitted.
+  if (navigation_handle->HasCommitted() &&
+    (navigation_handle->GetPageTransition() & ui::PAGE_TRANSITION_FORWARD_BACK)) {
+      LOG(INFO) << "DidFinishNavigation MediaCastStopByNavigation, back or forward";
+      if (session_controllers_manager_) {
+        session_controllers_manager_->MediaCastStopByNavigation();
+      }
+  }
+}
+
 #endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
 }

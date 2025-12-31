@@ -53,7 +53,6 @@ void RemotingButtonEventListener::HandleClick(Event* event) {
 
 void ProgressBarEventListener::Invoke(ExecutionContext* context, Event* event) {
   if (!weak_ptr_ || !progress_bar_ || !event) {
-    LOG(WARNING) << "Progress bar event listener: weak_ptr_ or progress_bar_ or event is null.";
     return;
   }
   
@@ -104,8 +103,7 @@ void ProgressBarEventListener::Invoke(ExecutionContext* context, Event* event) {
   auto it = handlers.find(type_str);
   if (it != handlers.end()) {
     it->second(this, event);
-  } else {
-    LOG(INFO) << "Untreated progress bar event type: " << type_str;
+    LOG(INFO) << "progress bar event type: " << type_str;
   }
 }
 

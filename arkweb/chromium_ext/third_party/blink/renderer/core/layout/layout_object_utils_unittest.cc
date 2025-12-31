@@ -137,4 +137,68 @@ TEST_F(LayoutObjectUtilsTest, NonImageVisibleWithoutHitTesting) {
   EXPECT_FALSE(utils.ArkWebVisibleToHitTestRequest(request));
 }
 
+TEST_F(LayoutObjectUtilsTest, ImageVisibleWithHitTest1) {
+  Element* image = GetImageElement();
+  SetVisibility(image, EVisibility::kVisible);
+
+  LayoutObjectUtils utils = CreateUtils(GetImageLayoutObject());
+  HitTestRequest request = CreateHitTestRequest(HitTestRequest::kActive);
+
+  EXPECT_TRUE(utils.ArkWebVisibleToHitTestRequest(request));
+}
+
+TEST_F(LayoutObjectUtilsTest, ImageHiddenWithHitTest1) {
+  Element* image = GetImageElement();
+  SetVisibility(image, EVisibility::kHidden);
+
+  LayoutObjectUtils utils = CreateUtils(GetImageLayoutObject());
+  HitTestRequest request = CreateHitTestRequest(HitTestRequest::kActive);
+
+  EXPECT_FALSE(utils.ArkWebVisibleToHitTestRequest(request));
+}
+
+TEST_F(LayoutObjectUtilsTest, NonImageVisibleIgnorePointerEvents1) {
+  Element* target = GetTargetElement();
+  SetVisibility(target, EVisibility::kVisible);
+  SetPointerEvents(target, "none");
+
+  LayoutObjectUtils utils = CreateUtils(GetTargetLayoutObject());
+  HitTestRequest request = CreateIgnorePointerEventsRequest();
+
+  EXPECT_TRUE(utils.ArkWebVisibleToHitTestRequest(request));
+}
+
+TEST_F(LayoutObjectUtilsTest, NonImageVisibleWithHitTesting1) {
+  Element* target = GetTargetElement();
+  SetVisibility(target, EVisibility::kVisible);
+  SetPointerEvents(target, "auto");
+
+  LayoutObjectUtils utils = CreateUtils(GetTargetLayoutObject());
+  HitTestRequest request = CreateHitTestRequest(HitTestRequest::kReadOnly);
+
+  EXPECT_TRUE(utils.ArkWebVisibleToHitTestRequest(request));
+}
+
+TEST_F(LayoutObjectUtilsTest, NonImageHidden1) {
+  Element* target = GetTargetElement();
+  SetVisibility(target, EVisibility::kHidden);
+
+  LayoutObjectUtils utils = CreateUtils(GetTargetLayoutObject());
+  HitTestRequest request = CreateHitTestRequest(HitTestRequest::kActive);
+
+  EXPECT_FALSE(utils.ArkWebVisibleToHitTestRequest(request));
+}
+
+TEST_F(LayoutObjectUtilsTest, NonImageVisibleWithoutHitTesting1) {
+  Element* target = GetTargetElement();
+  SetVisibility(target, EVisibility::kVisible);
+  SetPointerEvents(target, "none");
+
+  LayoutObjectUtils utils = CreateUtils(GetTargetLayoutObject());
+  HitTestRequest request = CreateHitTestRequest(HitTestRequest::kReadOnly);
+
+  EXPECT_FALSE(utils.ArkWebVisibleToHitTestRequest(request));
+}
+
+
 }  // namespace blink

@@ -57,7 +57,6 @@ void ProgressBarEventListener::Invoke(ExecutionContext* context, Event* event) {
     LOG(WARNING) << "Progress bar event listener: weak_ptr_ or progress_bar_ or event is null.";
     return;
   }
-  const AtomicString& event_type = event->type();
   
   // Dispatch and handle according to event type
   const AtomicString& event_type = event->type();

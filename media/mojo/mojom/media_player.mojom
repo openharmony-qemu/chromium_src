@@ -168,6 +168,9 @@ interface MediaPlayer {
   [EnableIf=arkweb_media_cast]
   MediaCastStopped();
 
+  [EnableIf=arkweb_media_cast]
+  MediaCastStopByNavigation();
+
   [Sync, EnableIf=arkweb_media_cast]
   GetMediaCastCurrentTime() => (double time);
 };
@@ -331,6 +334,9 @@ interface MediaPlayerObserver {
 
   [EnableIf=arkweb_media_cast]
   UpdateRemotePlayPosition(int64 position);
+
+  [EnableIf=arkweb_media_cast]
+  SetPauseByAvcast(bool pause_avcast);
 };
 
 // Implemented by MediaWebContentsObserver::MediaPlayerHostImpl in the browser

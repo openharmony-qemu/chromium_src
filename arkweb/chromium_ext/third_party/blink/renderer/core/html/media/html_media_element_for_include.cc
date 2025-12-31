@@ -726,13 +726,23 @@ void HTMLMediaElement::PullUpCastBackGround(const String& device_name) {
   LOG(INFO) << "HTMLMediaElement::PullUpCastBackGround";
   if (auto* video_element = DynamicTo<HTMLVideoElement>(this)) {
     video_element->MediaRemotingStarted(WebString(device_name));
+    for (auto& observer : media_player_observer_remote_set_->Value()) {
+      observer->SetPauseByAvcast(true);
+    }
   }
+}
+
+void HTMLMediaElement::MediaCastStopByNavigation() {
+  MediaCastStopped();
 }
 
 void HTMLMediaElement::MediaCastStopped() {
   LOG(INFO) << "HTMLMediaElement::MediaRemotingStopped";
   if (auto* video_element = DynamicTo<HTMLVideoElement>(this)) {
     video_element->MediaRemotingStopped(MediaPlayerClient::kMediaRemotingStopNoText);
+    for (auto& observer : media_player_observer_remote_set_->Value()) {
+      observer->SetPauseByAvcast(false);
+    }
   }
 }
 

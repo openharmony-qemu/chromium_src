@@ -212,7 +212,7 @@ void MediaSessionControllerExt::UpdateUiPlayPosition(int player_id, int64_t posi
   }
   auto web_contents_observer = web_contents_->media_web_contents_observer();
   if (!web_contents_observer) {
-    LOG(ERROR) << "DMABUF::UpdateUiPlayPosition, web_contents_observer is null";
+    LOG(ERROR) << "UpdateUiPlayPosition, web_contents_observer is null";
     return;
   }
   if (web_contents_observer->IsPlayerIdInMediaPlayerRemotesMap(id_)) {
@@ -220,5 +220,23 @@ void MediaSessionControllerExt::UpdateUiPlayPosition(int player_id, int64_t posi
     web_contents_observer->GetMediaPlayerRemote(id_)->UpdateUiPlayPosition(position);
   }
 }
+
+void MediaSessionControllerExt::MediaCastStopByNavigation() {
+  if (!web_contents_)
+    return;
+  auto web_contents_observer = web_contents_->media_web_contents_observer();
+  if (!web_contents_observer)
+    return;
+  if (web_contents_observer->IsPlayerIdInMediaPlayerRemotesMap(id_)) {}
+    web_contents_observer->GetMediaPlayerRemote(id_)->MediaCastStopByNavigation();
+}
+
+void MediaSessionControllerExt::SetPauseByAvcast(bool pause_avcast) {
+  LOG(INFO) << "MediaSessionController::SetPauseByAvcast";
+  if (media_session_) {
+    media_session_->SetPauseByAvcast(pause_avcast);
+  }
+}
+
 #endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
 }

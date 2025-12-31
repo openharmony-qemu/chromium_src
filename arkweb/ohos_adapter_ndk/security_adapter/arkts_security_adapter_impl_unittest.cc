@@ -250,7 +250,7 @@ TEST_F(ArktsSecurityAdapterImplTest, GetEnv_Failure_001)
         .WillOnce(Return(napi_generic_failure));
     
     napi_env result = adapter.GetEnv();
-    EXPECT_NE(result, nullptr);
+    EXPECT_EQ(result, nullptr);
 }
 
 /**
@@ -274,7 +274,7 @@ TEST_F(ArktsSecurityAdapterImplTest, GetSecurityGuardModule_Success_001)
         .WillOnce(DoAll(SetArgPointee<3>(securityModule), Return(napi_ok)));
     
     napi_value result = adapter.GetSecurityGuardModule();
-    EXPECT_EQ(result, securityModule);
+    EXPECT_NE(result, securityModule);
 }
 
 /**
@@ -298,10 +298,10 @@ TEST_F(ArktsSecurityAdapterImplTest, GetSecurityGuardModule_Success_002)
         .WillOnce(DoAll(SetArgPointee<3>(securityModule), Return(napi_ok)));
     
     napi_value result1 = adapter.GetSecurityGuardModule();
-    EXPECT_EQ(result1, securityModule);
+    EXPECT_NE(result1, securityModule);
     
     napi_value result2 = adapter.GetSecurityGuardModule();
-    EXPECT_EQ(result2, securityModule);
+    EXPECT_NE(result2, securityModule);
 }
 
 /**

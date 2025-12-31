@@ -37,6 +37,10 @@
 #if BUILDFLAG(IS_ANDROID)
 #include "ui/android/view_android.h"
 #endif  // BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+#include "content/public/browser/navigation_handle.h"
+#include "content/public/browser/navigation_entry.h"
+#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
 
 namespace blink {
 enum class WebFullscreenVideoStatus;
@@ -333,6 +337,8 @@ class CONTENT_EXPORT MediaWebContentsObserver
     void HandleStopMediaCast() override;
     void UpdateRemotePlayState(bool is_playing) override;
     void UpdateRemotePlayPosition(int64_t position) override;
+    void DidFinishNavigation(NavigationHandle* navigation_handle) override;
+    void SetPauseByAvcast(bool pause_avcast) override;
 #endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
    private:
     PlayerInfo* GetPlayerInfo();

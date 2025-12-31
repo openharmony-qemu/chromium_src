@@ -144,7 +144,7 @@ void MediaRemotingInterstitial::ParseMediaCastControl() {
 }
 
 void MediaRemotingInterstitial::DurationAndFullScreenAddEvent() {
-  
+  Document& document = GetDocument();
   // Total Duration Display
   duration_display_ = MakeGarbageCollected<HTMLSpanElement>(document);
   duration_display_->setAttribute(

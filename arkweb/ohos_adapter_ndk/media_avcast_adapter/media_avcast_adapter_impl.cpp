@@ -75,7 +75,8 @@ bool MediaAVCastAdapterImpl::Prepare(const MediaCastDescription& mediaCastDescri
         return false;
     }
 
-    ret = OH_AVSession_AVMediaDescriptionBuilder_SetStartPosition(avMediaDescriptionBuilder_, mediaCastDescription.startPosition);
+    ret = OH_AVSession_AVMediaDescriptionBuilder_SetStartPosition(avMediaDescriptionBuilder_,
+              mediaCastDescription.startPosition);
     if (ret != AVQUEUEITEM_SUCCESS) {
         WVLOG_E("OH_AVSession_AVMediaDescriptionBuilder_SetStartPosition failed. ret: %{public}d", ret);
         return false;
@@ -98,9 +99,6 @@ bool MediaAVCastAdapterImpl::Prepare(const MediaCastDescription& mediaCastDescri
         WVLOG_E("OH_AVSession_AVMediaDescriptionBuilder_SetAssetId failed. ret: %{public}d", ret);
         return false;
     }
-
-    WVLOG_I("MediaAVCastAdapterImpl::Prepare mediaUri: %{public}s, startPosition: %{public}d, duration: %{public}d, title: %{public}s, assetId: %{public}s",
-                mediaCastDescription.mediaUri, mediaCastDescription.startPosition, mediaCastDescription.duration, mediaCastDescription.title, mediaCastDescription.assetId);
 
     ret = OH_AVSession_AVMediaDescriptionBuilder_GenerateAVMediaDescription(avMediaDescriptionBuilder_, &avMediaDescription_);
     if (ret != AVQUEUEITEM_SUCCESS) {

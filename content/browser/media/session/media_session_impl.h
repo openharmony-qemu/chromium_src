@@ -790,6 +790,7 @@ class MediaSessionImpl : public MediaSession,
   void UpdateRemotePlayPosition(int64_t position);
   void MediaCastStopped();
   bool IsPageBackground();
+  void SetPauseByAvcast(bool pause_avcast);
 #endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
 
  private:

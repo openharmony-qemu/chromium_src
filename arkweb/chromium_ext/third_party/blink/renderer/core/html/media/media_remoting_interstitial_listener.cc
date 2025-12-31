@@ -67,23 +67,23 @@ void ProgressBarEventListener::Invoke(ExecutionContext* context, Event* event) {
     std::function<void(ProgressBarEventListener*, Event*)>> handlers = {
     {"click", [](ProgressBarEventListener* self, Event* e) {
       auto* mouse_event = DynamicTo<MouseEvent>(e);
-      self->HandleMouseClick(mouse_event);
+      if (mouse_event) self->HandleMouseClick(mouse_event);
     }},
     {"mousedown", [](ProgressBarEventListener* self, Event* e) {
       auto* mouse_event = DynamicTo<MouseEvent>(e);
-      self->HandleMouseDown(mouse_event);
+      if (mouse_event) self->HandleMouseDown(mouse_event);
     }},
     {"mousemove", [](ProgressBarEventListener* self, Event* e) {
       auto* mouse_event = DynamicTo<MouseEvent>(e);
-      self->HandleMouseMove(mouse_event);
+      if (mouse_event) self->HandleMouseMove(mouse_event);
     }},
     {"mouseup", [](ProgressBarEventListener* self, Event* e) {
       auto* mouse_event = DynamicTo<MouseEvent>(e);
-      self->HandleMouseUp(mouse_event);
+      if (mouse_event) self->HandleMouseUp(mouse_event);
     }},
     {"mouseleave", [](ProgressBarEventListener* self, Event* e) {
       auto* mouse_event = DynamicTo<MouseEvent>(e);
-      self->HandleMouseLeave(mouse_event);
+      if (mouse_event) self->HandleMouseLeave(mouse_event);
     }},
     {"touchstart", [](ProgressBarEventListener* self, Event* e) {
       auto* touch_event = DynamicTo<TouchEvent>(e);

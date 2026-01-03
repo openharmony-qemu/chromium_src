@@ -77,7 +77,9 @@ void MediaSessionControllersManager::MediaCastStopByNavigation() {
   if (!IsMediaSessionEnabled())
     return;
   for (auto& entry : controllers_map_) {
-    entry.second->AsMediaSessionControllerExt()->MediaCastStopByNavigation();
+    if (entry.second->AsMediaSessionControllerExt()) {
+      entry.second->AsMediaSessionControllerExt()->MediaCastStopByNavigation();
+    }
   }
 }
 

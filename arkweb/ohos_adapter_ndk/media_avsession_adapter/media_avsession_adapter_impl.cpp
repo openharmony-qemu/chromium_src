@@ -172,7 +172,7 @@ void MediaAVSessionAdapterImpl::DestroyAVSession() {
         std::lock_guard<std::mutex> lock(avsession_mutex_);
         if (avSession_) {
             auto it_avsession = avSessionMapOther_.find(avSession_);
-            if (it_avsession ! avSessionMapOther_.end()) {
+            if (it_avsession != avSessionMapOther_.end()) {
                 avSessionMapOther_.erase(it_avsession);
             }
             AVSession_ErrCode ret = OH_AVSession_Destroy(avSession_);
@@ -540,7 +540,7 @@ void MediaAVSessionAdapterImpl::DestroyAndEraseSession() {
     iter->second->HandleStopMediaCast();
     if (iter->second->avSession_) {
         auto it_avsession = avSessionMapOther_.find(iter->second->avSession_);
-        if (it_avsession ! avSessionMapOther_.end()) {
+        if (it_avsession != avSessionMapOther_.end()) {
             avSessionMapOther_.erase(it_avsession);
         }
     }

@@ -93,10 +93,6 @@ void MediaAVSessionAdapterImpl::InitMediaAVSessionAdapterImpl() {
     }
 
     avPlaybackState_ = PLAYBACK_STATE_INITIAL;
-    avPlaybackPosition_ = {
-        .elapsedTime = 0,
-        .updateTime = 0,
-    };
 }
 
 MediaAVSessionAdapterImpl::~MediaAVSessionAdapterImpl() {
@@ -506,12 +502,12 @@ bool MediaAVSessionAdapterImpl::UpdatePlaybackPosition(
     }
     bool updated = false;
 
-    AVSession_PlaybackPosition avPlaybackPosition = {
+    AVSession_PlaybackPosition playbackPosition = {
         .elapsedTime = position->GetElapsedTime(),
         .updateTime = position->GetUpdateTime(),
     };
 
-    AVSession_ErrCode err = OH_AVSession_SetPlaybackPosition(avSession_, &avPlaybackPosition);
+    AVSession_ErrCode err = OH_AVSession_SetPlaybackPosition(avSession_, &playbackPosition);
     if (err == AV_SESSION_ERR_SUCCESS) {
         updated = true;
     }

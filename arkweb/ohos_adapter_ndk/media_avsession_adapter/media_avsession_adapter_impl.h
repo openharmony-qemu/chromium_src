@@ -31,7 +31,6 @@
 
 #include "media_avsession_adapter.h"
 #include "arkweb/ohos_adapter_ndk/ndk_callback_wrapper/callback_shared_wrapper.h"
-#include "arkweb/ohos_adapter_ndk/media_avcast_adapter/media_avcast_adapter_impl.h"
 #include <multimedia/av_session/native_avqueueitem.h>
 #include <multimedia/av_session/native_avcastcontroller.h>
 #include <multimedia/av_session/native_avplaybackstate.h>

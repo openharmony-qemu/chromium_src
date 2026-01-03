@@ -30,7 +30,7 @@ enum class RemotingButtonType {
 
 class RemotingButtonEventListener : public NativeEventListener {
  public:
-  RemotingButtonEventListener(base::WeakPtr<MediaRemotingInterstitial> media_remoting_interstitial,
+  RemotingButtonEventListener(WeakMember<MediaRemotingInterstitial> media_remoting_interstitial,
       RemotingButtonType type)
       : media_remoting_interstitial_(media_remoting_interstitial), button_type_(type){}
 
@@ -40,17 +40,22 @@ class RemotingButtonEventListener : public NativeEventListener {
     }
   }
 
+  void Trace(Visitor* visitor) const override {
+    visitor->Trace(media_remoting_interstitial_);
+    NativeEventListener::Trace(visitor);
+  }
+
  private:
   void HandleClick(Event* event);
 
-  base::WeakPtr<MediaRemotingInterstitial> media_remoting_interstitial_;
+  WeakMember<MediaRemotingInterstitial> media_remoting_interstitial_;
   RemotingButtonType button_type_;
 };
 
 class ProgressBarEventListener : public NativeEventListener {
  public:
   ProgressBarEventListener(
-      base::WeakPtr<MediaRemotingInterstitial> weak_ptr,
+      WeakMember<MediaRemotingInterstitial> weak_ptr,
       Element* progress_bar)
       : weak_ptr_(weak_ptr), 
         progress_bar_(progress_bar),
@@ -63,6 +68,7 @@ class ProgressBarEventListener : public NativeEventListener {
   
   void Trace(Visitor* visitor) const override {
     visitor->Trace(progress_bar_);
+    visitor->Trace(weak_ptr_);
     NativeEventListener::Trace(visitor);
   }
 
@@ -93,7 +99,7 @@ class ProgressBarEventListener : public NativeEventListener {
 
   double CalculatePercentageFromDrag(float client_x);
   
-  base::WeakPtr<MediaRemotingInterstitial> weak_ptr_;
+  WeakMember<MediaRemotingInterstitial> weak_ptr_;
   WeakMember<Element> progress_bar_;
   bool is_dragging_;
   float drag_start_x_;

@@ -325,9 +325,9 @@ void MediaSessionImpl::UpdateUiPlayState(bool is_playing) {
 }
  
 void MediaSessionImpl::UpdateUiPlayPosition(int64_t position) {
-  LOG(INFO) << "MediaSessionImpl::UpdateUiPlayPosition, enter";
+  LOG(DEBUG) << "MediaSessionImpl::UpdateUiPlayPosition, enter";
   for (const auto& it : normal_players_) {
-    LOG(INFO) << "MediaSessionImpl::UpdateUiPlayPosition";
+    LOG(DEBUG) << "MediaSessionImpl::UpdateUiPlayPosition";
     it.first.observer->UpdateUiPlayPosition(it.first.player_id, position);
   }
 }

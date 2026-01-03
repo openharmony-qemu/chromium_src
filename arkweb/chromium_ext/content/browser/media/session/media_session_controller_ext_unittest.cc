@@ -187,9 +187,9 @@ class TestMediaPlayer : public media::mojom::MediaPlayer {
   }
 
 #if BUILDFLAG(ARKWEB_UNITTESTS)
-  void PullUpCastBackGround(const WTF::String& device_name) override {}
+  void PullUpCastBackGround(const std::string& device_name) override {}
   void UpdateUiPlayState(bool is_playing) override {}
-  void UpdateUiPlayPosition(int64 position) override {}
+  void UpdateUiPlayPosition(int64_t position) override {}
   void MediaCastStopped() override {}
   void MediaCastStopByNavigation() override {}
   void GetMediaCastCurrentTime(GetMediaCastCurrentTimeCallback callback) override {}

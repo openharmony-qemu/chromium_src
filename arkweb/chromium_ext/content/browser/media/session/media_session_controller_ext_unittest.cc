@@ -186,6 +186,15 @@ class TestMediaPlayer : public media::mojom::MediaPlayer {
     return received_set_audio_sink_id_;
   }
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  void PullUpCastBackGround(const WTF::String& device_name) override {}
+  void UpdateUiPlayState(bool is_playing) override {}
+  void UpdateUiPlayPosition(int64 position) override {}
+  void MediaCastStopped() override {}
+  void MediaCastStopByNavigation() override {}
+  void GetMediaCastCurrentTime(GetMediaCastCurrentTimeCallback callback) override {}
+#endif // ARKWEB_UNITTESTS
+
  private:
   std::unique_ptr<base::RunLoop> run_loop_;
   std::unique_ptr<base::RunLoop> run_loop_for_volume_;

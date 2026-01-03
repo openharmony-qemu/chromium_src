@@ -124,7 +124,8 @@ public:
 
     bool GetAVCastUiSeeking();
 
-    static void UpdateUiPlayPosition(std::shared_ptr<MediaAVSessionAdapterImpl> adapter, int64_t position, bool is_seek);
+    static void UpdateUiPlayPosition(std::shared_ptr<MediaAVSessionAdapterImpl> adapter,
+        int64_t position, bool is_seek);
 
     static AVSessionCallback_Result PlaybackStateChangedCallback(OH_AVCastController* avcastcontroller,
         OH_AVSession_AVPlaybackState* playbackState, void* userData);

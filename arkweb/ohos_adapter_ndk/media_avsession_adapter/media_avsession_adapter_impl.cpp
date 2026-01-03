@@ -962,11 +962,11 @@ void MediaAVSessionAdapterImpl::PauseNative() {
 void MediaAVSessionAdapterImpl::UnregisterMediaCastOutputDeviceCallback() {
     WVLOG_I("MediaAVSessionAdapterImpl::UnregisterMediaCastOutputDeviceCallback, enter");
     if (avSession_) {
-        // AVSession_ErrCode retReg = OH_AVSession_UnregisterOutputDeviceChangeCallback(avSession_,
-        //                                OutputDeviceChangeCallback);
-        // if (retReg != AV_SESSION_ERR_SUCCESS) {
-        //     WVLOG_E("UnregisterOutputDeviceChangeCallback failed ret: %{public}d", retReg);
-        // }
+        AVSession_ErrCode retReg = OH_AVSession_UnregisterOutputDeviceChangeCallback(avSession_,
+                                       OutputDeviceChangeCallback);
+        if (retReg != AV_SESSION_ERR_SUCCESS) {
+            WVLOG_E("UnregisterOutputDeviceChangeCallback failed ret: %{public}d", retReg);
+        }
     }
     MediaCastStopped();
 }
@@ -986,54 +986,54 @@ bool MediaAVSessionAdapterImpl::GetAVCastController() {
 }
 
 bool MediaAVSessionAdapterImpl::Prepare(const MediaCastDescription& mediaCastDescription) {
-    WVLOG_I("zwp: MediaAVSessionAdapterImpl::Prepare enter.");
+    WVLOG_I("MediaAVSessionAdapterImpl::Prepare enter.");
     AVQueueItem_Result ret = OH_AVSession_AVMediaDescriptionBuilder_Create(&avMediaDescriptionBuilder_);
     if (ret != AVQUEUEITEM_SUCCESS) {
-        WVLOG_E("zwp: OH_AVSession_AVMediaDescriptionBuilder_Create failed. ret: %{public}d", ret);
+        WVLOG_E("OH_AVSession_AVMediaDescriptionBuilder_Create failed. ret: %{public}d", ret);
         return false;
     }
 
     ret = OH_AVSession_AVMediaDescriptionBuilder_SetDuration(avMediaDescriptionBuilder_, mediaCastDescription.duration);
     if (ret != AVQUEUEITEM_SUCCESS) {
-        WVLOG_E("zwp: OH_AVSession_AVMediaDescriptionBuilder_SetDuration failed. ret: %{public}d", ret);
+        WVLOG_E("OH_AVSession_AVMediaDescriptionBuilder_SetDuration failed. ret: %{public}d", ret);
         return false;
     }
 
     ret = OH_AVSession_AVMediaDescriptionBuilder_SetMediaUri(avMediaDescriptionBuilder_, mediaCastDescription.mediaUri);
-    WVLOG_E("zwp: OH_AVSession_AVMediaDescriptionBuilder_SetMediaUri url: ret: %{public}s", mediaCastDescription.mediaUri);
+    WVLOG_E("OH_AVSession_AVMediaDescriptionBuilder_SetMediaUri url: ret: %{public}s", mediaCastDescription.mediaUri);
     if (ret != AVQUEUEITEM_SUCCESS) {
-        WVLOG_E("zwp: OH_AVSession_AVMediaDescriptionBuilder_SetMediaUri failed. ret: %{public}d", ret);
+        WVLOG_E("OH_AVSession_AVMediaDescriptionBuilder_SetMediaUri failed. ret: %{public}d", ret);
         return false;
     }
 
-    ret = OH_AVSession_AVMediaDescriptionBuilder_SetStartPosition(avMediaDescriptionBuilder_, mediaCastDescription.startPosition);
+    ret = OH_AVSession_AVMediaDescriptionBuilder_SetStartPosition(avMediaDescriptionBuilder_,
+        mediaCastDescription.startPosition);
     if (ret != AVQUEUEITEM_SUCCESS) {
-        WVLOG_E("zwp: OH_AVSession_AVMediaDescriptionBuilder_SetStartPosition failed. ret: %{public}d", ret);
+        WVLOG_E("OH_AVSession_AVMediaDescriptionBuilder_SetStartPosition failed. ret: %{public}d", ret);
         return false;
     }
 
-    ret = OH_AVSession_AVMediaDescriptionBuilder_SetMediaType(avMediaDescriptionBuilder_, mediaCastDescription.mediaType);
+    ret = OH_AVSession_AVMediaDescriptionBuilder_SetMediaType(avMediaDescriptionBuilder_,
+        mediaCastDescription.mediaType);
     if (ret != AVQUEUEITEM_SUCCESS) {
-        WVLOG_E("zwp: OH_AVSession_AVMediaDescriptionBuilder_SetMediaType failed. ret: %{public}d", ret);
+        WVLOG_E("OH_AVSession_AVMediaDescriptionBuilder_SetMediaType failed. ret: %{public}d", ret);
         return false;
     }
 
     ret = OH_AVSession_AVMediaDescriptionBuilder_SetTitle(avMediaDescriptionBuilder_, mediaCastDescription.title);
     if (ret != AVQUEUEITEM_SUCCESS) {
-        WVLOG_E("zwp: OH_AVSession_AVMediaDescriptionBuilder_SetTitle failed. ret: %{public}d", ret);
+        WVLOG_E("OH_AVSession_AVMediaDescriptionBuilder_SetTitle failed. ret: %{public}d", ret);
         return false;
     }
 
     ret = OH_AVSession_AVMediaDescriptionBuilder_SetAssetId(avMediaDescriptionBuilder_, mediaCastDescription.assetId);
     if (ret != AVQUEUEITEM_SUCCESS) {
-        WVLOG_E("zwp: OH_AVSession_AVMediaDescriptionBuilder_SetAssetId failed. ret: %{public}d", ret);
+        WVLOG_E("OH_AVSession_AVMediaDescriptionBuilder_SetAssetId failed. ret: %{public}d", ret);
         return false;
     }
 
-    WVLOG_I("zwp: MediaAVSessionAdapterImpl::Prepare mediaUri: %{public}s, startPosition: %{public}d, duration: %{public}d, title: %{public}s, assetId: %{public}s",
-                mediaCastDescription.mediaUri, mediaCastDescription.startPosition, mediaCastDescription.duration, mediaCastDescription.title, mediaCastDescription.assetId);
-
-    ret = OH_AVSession_AVMediaDescriptionBuilder_GenerateAVMediaDescription(avMediaDescriptionBuilder_, &avMediaDescription_);
+    ret = OH_AVSession_AVMediaDescriptionBuilder_GenerateAVMediaDescription(avMediaDescriptionBuilder_,
+        &avMediaDescription_);
     if (ret != AVQUEUEITEM_SUCCESS) {
         WVLOG_E("zwp: OH_AVSession_AVMediaDescriptionBuilder_GenerateAVMediaDescription failed. ret: %{public}d", ret);
         return false;
@@ -1207,7 +1207,6 @@ void MediaAVSessionAdapterImpl::UpdateUiPlayPosition(std::shared_ptr<MediaAVSess
 
 AVSessionCallback_Result MediaAVSessionAdapterImpl::PlaybackStateChangedCallback(OH_AVCastController* avcastcontroller,
     OH_AVSession_AVPlaybackState* playbackState, void* userData) {
-    // WVLOG_I("MediaAVSessionAdapterImpl::PlaybackStateChangedCallback");
     size_t callback_index = reinterpret_cast<size_t>(userData);
     std::shared_ptr<MediaAVSessionAdapterImpl> adapter = avsession_callback_wrapper_.GetCallback(callback_index);
     if (!adapter) {

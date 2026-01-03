@@ -39,8 +39,6 @@
 
 namespace OHOS::NWeb {
 
-class MediaAVCastAdapterImpl;
-
 class MediaAVSessionKey {
 public:
     MediaAVSessionKey() = default;
@@ -65,7 +63,6 @@ class MediaAVSessionAdapterImpl
     : public MediaAVSessionAdapter,
       public std::enable_shared_from_this<MediaAVSessionAdapterImpl> {
 public:
-    friend class MediaAVCastAdapterImpl;
     MediaAVSessionAdapterImpl();
     ~MediaAVSessionAdapterImpl() override;
 
@@ -78,10 +75,8 @@ public:
     void SetMetadata(const std::shared_ptr<MediaAVSessionMetadataAdapter> metadata) override;
     void SetPlaybackState(MediaAVSessionPlayState state) override;
     void SetPlaybackPosition(const std::shared_ptr<MediaAVSessionPositionAdapter> position) override;
-    OH_AVSession* GetAVSession();
     void SetMediaCastUri(const std::string& mediaUri) override;
     static std::shared_mutex& GetAVSessionAdapterMutex() { return avsession_adapter_mutex_; }
-    void CreateAVCastAdapter() override;
     void SetRemoteCastEnabled(bool enabled) override;
     void PrepareMediaCastDescription() override;
     void HandleStopMediaCast() override;
@@ -113,37 +108,21 @@ public:
 
     AVSession_PlaybackState GetAVCastPlaybackState();
 
-    void SetAVCastUiPlayState(AVSession_PlaybackState& avSessionPlaybackState) {
-        playbackState_ = avSessionPlaybackState;
-    }
+    void SetAVCastUiPlayState(AVSession_PlaybackState& avSessionPlaybackState);
 
-    void SetAVCastUiPlayPosition(AVSession_PlaybackPosition& playbackPosition) {
-        playbackPosition_ = playbackPosition;
-    }
+    void SetAVCastUiPlayPosition(AVSession_PlaybackPosition& playbackPosition);
 
-    void SetAVCastUilastUiTime(int64_t position) {
-        lastUiTime_ = position;
-    }
+    void SetAVCastUilastUiTime(int64_t position);
 
-    void SetAVCastUiSeeking(bool is_seeking) {
-        is_seeking_ = is_seeking;
-    }
+    void SetAVCastUiSeeking(bool is_seeking);
 
-    AVSession_PlaybackState GetAVCastUiPlayState() {
-        return playbackState_;
-    }
+    AVSession_PlaybackState GetAVCastUiPlayState();
 
-    AVSession_PlaybackPosition GetAVCastUiPlayPosition() {
-        return playbackPosition_;
-    }
+    AVSession_PlaybackPosition GetAVCastUiPlayPosition();
 
-    int64_t GetAVCastUilastUiTime() {
-        return lastUiTime_;
-    }
+    int64_t GetAVCastUilastUiTime();
 
-    bool GetAVCastUiSeeking() {
-        return is_seeking_;
-    }
+    bool GetAVCastUiSeeking();
 
     static void UpdateUiPlayPosition(std::shared_ptr<MediaAVSessionAdapterImpl> adapter, int64_t position, bool is_seek);
 
@@ -213,8 +192,8 @@ private:
     int64_t GetUilastUiTimeByClient();
     bool GetUiSeekingByClient();
 
-    void SetAVCastDevice(const char* deviceName) { deviceName_ = deviceName ? std::string(deviceName) : std::string(); }
-    std::string GetAVCastDevice() { return deviceName_; }
+    void SetAVCastDevice(const char* deviceName);
+    std::string GetAVCastDevice();
     void UpdateAVCastDevice(AVSession_OutputDeviceInfo *outputDeviceInfo);
     void MediaCastStopped();
     void PlayNative();
@@ -230,7 +209,6 @@ private:
     OH_AVSession *avSession_ = nullptr;
     bool isActived_ = false;
     MediaCastDescription MediaCastDescription_;
-    std::shared_ptr<OHOS::NWeb::MediaAVCastAdapterImpl> avCastAdapter_;
 
     static std::unordered_map<std::string, MediaAVSessionAdapterImpl *> avSessionMap;
     static std::unordered_map<OH_AVSession*, MediaAVSessionAdapterImpl *> avSessionMapOther_;

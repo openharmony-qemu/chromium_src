@@ -103,6 +103,11 @@ MediaAVSessionAdapterImpl::~MediaAVSessionAdapterImpl() {
     WVLOG_I("ohmedia: ~MediaAVSessionAdapterImpl");
     std::unique_lock<std::shared_mutex> lock_avsession(avsession_adapter_mutex_);
 
+    avCastStarted_ = false;
+    if (!UnregisterCallback()) {
+        WVLOG_E("UnregisterCallback failed");
+    }
+
     if (avMetadata_) {
         AVMetadata_Result ret = OH_AVMetadata_Destroy(avMetadata_);
         if (ret != AVMETADATA_SUCCESS) {
@@ -166,6 +171,10 @@ void MediaAVSessionAdapterImpl::DestroyAVSession() {
     {
         std::lock_guard<std::mutex> lock(avsession_mutex_);
         if (avSession_) {
+            auto it_avsession = avSessionMapOther_.find(avSession_);
+            if (it_avsession ! avSessionMapOther_.end()) {
+                avSessionMapOther_.erase(it_avsession);
+            }
             AVSession_ErrCode ret = OH_AVSession_Destroy(avSession_);
             if (ret != AV_SESSION_ERR_SUCCESS) {
                 WVLOG_E("DestroyAVSession Destroy() failed, ret: %{public}d", ret);
@@ -529,6 +538,12 @@ void MediaAVSessionAdapterImpl::DestroyAndEraseSession() {
     iter->second->SetAvCast(false);
     iter->second->MediaCastStopped();
     iter->second->HandleStopMediaCast();
+    if (iter->second->avSession_) {
+        auto it_avsession = avSessionMapOther_.find(iter->second->avSession_);
+        if (it_avsession ! avSessionMapOther_.end()) {
+            avSessionMapOther_.erase(it_avsession);
+        }
+    }
     AVSession_ErrCode ret = OH_AVSession_Destroy(iter->second->avSession_);
     if (ret != AV_SESSION_ERR_SUCCESS) {
         WVLOG_E("DestroyAndEraseSession Destroy failed, ret: %{public}d", ret);
@@ -879,14 +894,6 @@ bool MediaAVSessionAdapterImpl::GetUiSeekingByClient() {
     return GetAVCastUiSeeking();
 }
 
-OH_AVSession* MediaAVSessionAdapterImpl::GetAVSession() {
-    if (avSession_ == nullptr) {
-        WVLOG_E("MediaAVSessionAdapterImpl GetAVSession GetAVSession is null");
-        return nullptr;
-    }
-    return avSession_;
-}
-
 void MediaAVSessionAdapterImpl::SetAvCast(bool is_avcast) {
     WVLOG_I("MediaAVSessionAdapterImpl SetAvCast: %{public}d", is_avcast);
     auto media = callback_wrapper_.GetCallback(callback_index_);
@@ -955,11 +962,11 @@ void MediaAVSessionAdapterImpl::PauseNative() {
 void MediaAVSessionAdapterImpl::UnregisterMediaCastOutputDeviceCallback() {
     WVLOG_I("MediaAVSessionAdapterImpl::UnregisterMediaCastOutputDeviceCallback, enter");
     if (avSession_) {
-        AVSession_ErrCode retReg = OH_AVSession_UnregisterOutputDeviceChangeCallback(avSession_,
-                                       OutputDeviceChangeCallback);
-        if (retReg != AV_SESSION_ERR_SUCCESS) {
-            WVLOG_E("UnregisterOutputDeviceChangeCallback failed ret: %{public}d", retReg);
-        }
+        // AVSession_ErrCode retReg = OH_AVSession_UnregisterOutputDeviceChangeCallback(avSession_,
+        //                                OutputDeviceChangeCallback);
+        // if (retReg != AV_SESSION_ERR_SUCCESS) {
+        //     WVLOG_E("UnregisterOutputDeviceChangeCallback failed ret: %{public}d", retReg);
+        // }
     }
     MediaCastStopped();
 }
@@ -1097,35 +1104,35 @@ bool MediaAVSessionAdapterImpl::StartCast() {
 
 bool MediaAVSessionAdapterImpl::RegisterCallback() {
     AVSession_ErrCode errCode = OH_AVCastController_RegisterPlaybackStateChangedCallback(avCastController_,
-        &MediaAVSessionAdapterImpl::PlaybackStateChangedCallback, reinterpret_cast<void *>(callback_index_));
+        &MediaAVSessionAdapterImpl::PlaybackStateChangedCallback, reinterpret_cast<void *>(avsession_callback_index_));
     if (errCode != AV_SESSION_ERR_SUCCESS) {
         WVLOG_E("MediaAVSessionAdapterImpl RegisterPlaybackStateChangedCallback err: %{public}d", errCode);
         return false;
     }
 
     errCode = OH_AVCastController_RegisterMediaItemChangedCallback(avCastController_,
-        &MediaAVSessionAdapterImpl::MediaItemChangeCallback, reinterpret_cast<void *>(callback_index_));
+        &MediaAVSessionAdapterImpl::MediaItemChangeCallback, reinterpret_cast<void *>(avsession_callback_index_));
     if (errCode != AV_SESSION_ERR_SUCCESS) {
         WVLOG_E("MediaAVSessionAdapterImpl RegisterMediaItemChangedCallback err: %{public}d", errCode);
         return false;
     }
 
     errCode = OH_AVCastController_RegisterSeekDoneCallback(avCastController_,
-        &MediaAVSessionAdapterImpl::SeekDoneCallback, reinterpret_cast<void *>(callback_index_));
+        &MediaAVSessionAdapterImpl::SeekDoneCallback, reinterpret_cast<void *>(avsession_callback_index_));
     if (errCode != AV_SESSION_ERR_SUCCESS) {
         WVLOG_E("MediaAVSessionAdapterImpl RegisterSeekDoneCallback err: %{public}d", errCode);
         return false;
     }
 
     errCode = OH_AVCastController_RegisterEndOfStreamCallback(avCastController_,
-        &MediaAVSessionAdapterImpl::EndOfStreamCallback, reinterpret_cast<void *>(callback_index_));
+        &MediaAVSessionAdapterImpl::EndOfStreamCallback, reinterpret_cast<void *>(avsession_callback_index_));
     if (errCode != AV_SESSION_ERR_SUCCESS) {
         WVLOG_E("MediaAVSessionAdapterImpl RegisterEndOfStreamCallback err: %{public}d", errCode);
         return false;
     }
 
     errCode = OH_AVCastController_RegisterErrorCallback(avCastController_,
-        &MediaAVSessionAdapterImpl::ErrorCallback, reinterpret_cast<void *>(callback_index_));
+        &MediaAVSessionAdapterImpl::ErrorCallback, reinterpret_cast<void *>(avsession_callback_index_));
     if (errCode != AV_SESSION_ERR_SUCCESS) {
         WVLOG_E("MediaAVSessionAdapterImpl RegisterErrorCallback err: %{public}d", errCode);
         return false;
@@ -1335,6 +1342,46 @@ bool MediaAVSessionAdapterImpl::IsAvCastPlaying() {
 
 int64_t MediaAVSessionAdapterImpl::GetPlaybackPosition() {
     return playbackPosition_.elapsedTime;
+}
+
+void MediaAVSessionAdapterImpl::SetAVCastUiPlayState(AVSession_PlaybackState& avSessionPlaybackState) {
+    playbackState_ = avSessionPlaybackState;
+}
+
+void MediaAVSessionAdapterImpl::SetAVCastUiPlayPosition(AVSession_PlaybackPosition& playbackPosition) {
+    playbackPosition_ = playbackPosition;
+}
+
+void MediaAVSessionAdapterImpl::SetAVCastUilastUiTime(int64_t position) {
+    lastUiTime_ = position;
+}
+
+void MediaAVSessionAdapterImpl::SetAVCastUiSeeking(bool is_seeking) {
+    is_seeking_ = is_seeking;
+}
+
+AVSession_PlaybackState MediaAVSessionAdapterImpl::GetAVCastUiPlayState() {
+    return playbackState_;
+}
+
+AVSession_PlaybackPosition MediaAVSessionAdapterImpl::GetAVCastUiPlayPosition() {
+    return playbackPosition_;
+}
+
+int64_t MediaAVSessionAdapterImpl::GetAVCastUilastUiTime() {
+    return lastUiTime_;
+}
+
+bool MediaAVSessionAdapterImpl::GetAVCastUiSeeking() {
+    return is_seeking_;
+}
+
+void MediaAVSessionAdapterImpl::SetAVCastDevice(const char* deviceName) {
+    deviceName_ = deviceName ? std::string(deviceName) : std::string();
+}
+
+std::string MediaAVSessionAdapterImpl::GetAVCastDevice() {
+    return deviceName_;
 }
 
 } // namespace OHOS::NWeb

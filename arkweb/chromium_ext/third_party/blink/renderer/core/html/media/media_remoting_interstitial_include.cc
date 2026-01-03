@@ -35,7 +35,7 @@ void MediaRemotingInterstitial::AddMediaCastBackGround() {
   // Bind a click event to the left button
   left_button_->addEventListener(
       event_type_names::kClick,
-      MakeGarbageCollected<RemotingButtonEventListener>(weak_factory_.GetWeakPtr(), RemotingButtonType::kStopCasting),
+      MakeGarbageCollected<RemotingButtonEventListener>(weak_this_.Get(), RemotingButtonType::kStopCasting),
       false
   );
 
@@ -48,7 +48,7 @@ void MediaRemotingInterstitial::AddMediaCastBackGround() {
   // Bind a click event to the right button
   right_button_->addEventListener(
       event_type_names::kClick,
-      MakeGarbageCollected<RemotingButtonEventListener>(weak_factory_.GetWeakPtr(), RemotingButtonType::kSwitchDevice),
+      MakeGarbageCollected<RemotingButtonEventListener>(weak_this_.Get(), RemotingButtonType::kSwitchDevice),
       false
   );
 
@@ -84,7 +84,7 @@ void MediaRemotingInterstitial::ParseMediaCastControl() {
   // Bind a click event to the left button
   play_pause_button_->addEventListener(
       event_type_names::kClick,
-      MakeGarbageCollected<RemotingButtonEventListener>(weak_factory_.GetWeakPtr(), RemotingButtonType::kPlayPause),
+      MakeGarbageCollected<RemotingButtonEventListener>(weak_this_.Get(), RemotingButtonType::kPlayPause),
       false
   );
   
@@ -172,7 +172,7 @@ void MediaRemotingInterstitial::DurationAndFullScreenAddEvent() {
   // Binding a Click Event
   fullscreen_button_->addEventListener(
       event_type_names::kClick,
-      MakeGarbageCollected<RemotingButtonEventListener>(weak_factory_.GetWeakPtr(),
+      MakeGarbageCollected<RemotingButtonEventListener>(weak_this_.Get(),
           RemotingButtonType::kFullscreenToggle),
       false
   );
@@ -186,7 +186,7 @@ void MediaRemotingInterstitial::ProgressBarAddEvent() {
   // Using a dedicated ProgressBarEventListener
   auto* progress_event_listener = 
       MakeGarbageCollected<ProgressBarEventListener>(
-          weak_factory_.GetWeakPtr(),
+          weak_this_.Get(),
           progress_bar_);
   
   // Binding multiple event types

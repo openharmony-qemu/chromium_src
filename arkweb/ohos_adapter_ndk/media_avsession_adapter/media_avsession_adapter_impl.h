@@ -85,60 +85,35 @@ public:
 
     bool GetAVCastController();
     bool Prepare(const MediaCastDescription& mediaCastDescription);
-
     bool StartCast();
-
     bool RegisterCallback();
-
     bool UnregisterCallback();
-
     void PlayRemote();
-
     void PauseRemote();
-
     bool IsAvCastPlaying();
-
     int64_t GetPlaybackPosition();
-
     void SetPlaybackPositionRemote(const int32_t millis);
-
-    void UpdateRemotePlayStateCast(bool is_playing);
-    
+    void UpdateRemotePlayStateCast(bool is_playing);    
     void UpdateRemotePlayPositionCast(int64_t position);
-
     AVSession_PlaybackState GetAVCastPlaybackState();
-
     void SetAVCastUiPlayState(AVSession_PlaybackState& avSessionPlaybackState);
-
     void SetAVCastUiPlayPosition(AVSession_PlaybackPosition& playbackPosition);
-
     void SetAVCastUilastUiTime(int64_t position);
-
     void SetAVCastUiSeeking(bool is_seeking);
-
     AVSession_PlaybackState GetAVCastUiPlayState();
-
     AVSession_PlaybackPosition GetAVCastUiPlayPosition();
-
     int64_t GetAVCastUilastUiTime();
-
     bool GetAVCastUiSeeking();
-
     static void UpdateUiPlayPosition(std::shared_ptr<MediaAVSessionAdapterImpl> adapter,
         int64_t position, bool is_seek);
-
     static AVSessionCallback_Result PlaybackStateChangedCallback(OH_AVCastController* avcastcontroller,
         OH_AVSession_AVPlaybackState* playbackState, void* userData);
-
     static AVSessionCallback_Result MediaItemChangeCallback(OH_AVCastController* avcastcontroller,
         OH_AVSession_AVQueueItem* avQueueItem, void* userData);
-
     static AVSessionCallback_Result SeekDoneCallback(OH_AVCastController* avcastcontroller,
         int32_t position, void* userData);
-
     static AVSessionCallback_Result EndOfStreamCallback(OH_AVCastController* avcastcontroller,
         void* userData);
-
     static AVSessionCallback_Result ErrorCallback(OH_AVCastController* avcastcontroller,
         void* userData, AVSession_ErrCode error);
 

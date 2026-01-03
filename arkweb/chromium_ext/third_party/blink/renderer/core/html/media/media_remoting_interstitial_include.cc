@@ -362,9 +362,9 @@ void MediaRemotingInterstitial::UpdateUiPlayState(bool is_playing) {
 }
 
 void MediaRemotingInterstitial::UpdateUiPlayPosition(int64_t position) {
-  LOG(INFO) << "MediaRemotingInterstitial::UpdateUiPlayPosition " << position;
+  LOG(DEBUG) << "MediaRemotingInterstitial::UpdateUiPlayPosition " << position;
   current_time_ = static_cast<double>(position) / kMillisecond;
-  LOG(INFO) << "MediaRemotingInterstitial::current_time_ " << current_time_;
+  LOG(DEBUG) << "MediaRemotingInterstitial::current_time_ " << current_time_;
   UpdateProgressUI();
 }
 

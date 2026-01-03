@@ -58,6 +58,21 @@ private:
     MediaAVSessionType type_;
 };
 
+struct MediaCastDescription {
+    const char* assetId;
+    const char* title;
+    const char* subtitle;
+    const char* artist;
+    const char* mediaType;
+    const char* lyricContent;
+    int32_t duration;
+    const char* mediaUri;
+    int32_t startPosition;
+    int32_t mediaSize;
+    const char* albumTitle;
+    const char* appName;
+}
+
 class MediaAVSessionAdapterImpl
     : public MediaAVSessionAdapter,
       public std::enable_shared_from_this<MediaAVSessionAdapterImpl> {

@@ -150,6 +150,7 @@ int32_t MediaSessionControllerExt::GetMediaCastCurrentTime(int player_id) {
     LOG(INFO) << "Current media cast time: " << time;
     return static_cast<int32_t>(time * kMilliseconds);
   }
+  return 0;
 }
 
 void MediaSessionControllerExt::PullUpCastBackGround(int player_id, const std::string& device_name) {
@@ -164,7 +165,7 @@ void MediaSessionControllerExt::PullUpCastBackGround(int player_id, const std::s
     return;
   }
   if (web_contents_observer->IsPlayerIdInMediaPlayerRemotesMap(id_)) {
-    LOG(INFO) << "MediaSessionControllerExt:PullUpCastBackGround ";
+    LOG(INFO) << "MediaSessionControllerExt:PullUpCastBackGround.";
     web_contents_observer->GetMediaPlayerRemote(id_)->PullUpCastBackGround(device_name);
   }
 }
@@ -181,7 +182,7 @@ void MediaSessionControllerExt::MediaCastStopped(int player_id) {
     return;
   }
   if (web_contents_observer->IsPlayerIdInMediaPlayerRemotesMap(id_)) {
-    LOG(INFO) << "MediaSessionControllerExt:MediaCastStopped ";
+    LOG(INFO) << "MediaSessionControllerExt:MediaCastStopped";
     web_contents_observer->GetMediaPlayerRemote(id_)->MediaCastStopped();
   }
 }
@@ -194,17 +195,16 @@ void MediaSessionControllerExt::UpdateUiPlayState(int player_id, bool is_playing
   }
   auto web_contents_observer = web_contents_->media_web_contents_observer();
   if (!web_contents_observer) {
-    LOG(ERROR) << "DMABUF::UpdateUiPlayState, web_contents_observer is null";
+    LOG(ERROR) << "UpdateUiPlayState, web_contents_observer is null";
     return;
   }
   if (web_contents_observer->IsPlayerIdInMediaPlayerRemotesMap(id_)) {
-    LOG(INFO) << "MediaSessionControllerExt:UpdateUiPlayState ";
+    LOG(INFO) << "MediaSessionControllerExt:UpdateUiPlayState";
     web_contents_observer->GetMediaPlayerRemote(id_)->UpdateUiPlayState(is_playing);
   }
 }
 
 void MediaSessionControllerExt::UpdateUiPlayPosition(int player_id, int64_t position) {
-  LOG(INFO) << "MediaSessionControllerExt::UpdateUiPlayPosition enter";
   if (!web_contents_) {
     LOG(ERROR) << "UpdateUiPlayPosition, web_contents is null";
     return;
@@ -215,7 +215,7 @@ void MediaSessionControllerExt::UpdateUiPlayPosition(int player_id, int64_t posi
     return;
   }
   if (web_contents_observer->IsPlayerIdInMediaPlayerRemotesMap(id_)) {
-    LOG(INFO) << "MediaSessionControllerExt:UpdateUiPlayPosition ";
+    LOG(DEBUG) << "MediaSessionControllerExt:UpdateUiPlayPosition ";
     web_contents_observer->GetMediaPlayerRemote(id_)->UpdateUiPlayPosition(position);
   }
 }
@@ -226,8 +226,9 @@ void MediaSessionControllerExt::MediaCastStopByNavigation() {
   auto web_contents_observer = web_contents_->media_web_contents_observer();
   if (!web_contents_observer)
     return;
-  if (web_contents_observer->IsPlayerIdInMediaPlayerRemotesMap(id_)) {}
+  if (web_contents_observer->IsPlayerIdInMediaPlayerRemotesMap(id_)) {
     web_contents_observer->GetMediaPlayerRemote(id_)->MediaCastStopByNavigation();
+  }
 }
 
 void MediaSessionControllerExt::SetPauseByAvcast(bool pause_avcast) {

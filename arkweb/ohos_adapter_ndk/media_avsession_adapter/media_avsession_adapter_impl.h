@@ -204,7 +204,6 @@ private:
 
     std::shared_ptr<MediaAVSessionKey> avSessionKey_ = nullptr;
     AVSession_PlaybackState avPlaybackState_;
-    AVSession_PlaybackPosition avPlaybackPosition_;
     OH_AVMetadataBuilder *builder_ = nullptr;
     OH_AVMetadata *avMetadata_ = nullptr;
     OH_AVSession *avSession_ = nullptr;

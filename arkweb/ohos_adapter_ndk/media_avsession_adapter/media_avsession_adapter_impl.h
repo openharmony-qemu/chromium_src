@@ -63,7 +63,6 @@ private:
 
 class MediaAVSessionAdapterImpl
     : public MediaAVSessionAdapter,
-      public MediaAVCastAdapterImpl::Client,
       public std::enable_shared_from_this<MediaAVSessionAdapterImpl> {
 public:
     friend class MediaAVCastAdapterImpl;
@@ -79,7 +78,7 @@ public:
     void SetMetadata(const std::shared_ptr<MediaAVSessionMetadataAdapter> metadata) override;
     void SetPlaybackState(MediaAVSessionPlayState state) override;
     void SetPlaybackPosition(const std::shared_ptr<MediaAVSessionPositionAdapter> position) override;
-    OH_AVSession* GetAVSession() override;
+    OH_AVSession* GetAVSession();
     void SetMediaCastUri(const std::string& mediaUri) override;
     static std::shared_mutex& GetAVSessionAdapterMutex() { return avsession_adapter_mutex_; }
     void CreateAVCastAdapter() override;
@@ -88,6 +87,80 @@ public:
     void HandleStopMediaCast() override;
     void UpdateRemotePlayState(bool is_playing) override;
     void UpdateRemotePlayPosition(int64_t position) override;
+
+    bool GetAVCastController();
+    bool Prepare(const MediaCastDescription& mediaCastDescription);
+
+    bool StartCast();
+
+    bool RegisterCallback();
+
+    bool UnregisterCallback();
+
+    void PlayRemote();
+
+    void PauseRemote();
+
+    bool IsAvCastPlaying();
+
+    int64_t GetPlaybackPosition();
+
+    void SetPlaybackPositionRemote(const int32_t millis);
+
+    void UpdateRemotePlayStateCast(bool is_playing);
+    
+    void UpdateRemotePlayPositionCast(int64_t position);
+
+    AVSession_PlaybackState GetAVCastPlaybackState();
+
+    void SetAVCastUiPlayState(AVSession_PlaybackState& avSessionPlaybackState) {
+        playbackState_ = avSessionPlaybackState;
+    }
+
+    void SetAVCastUiPlayPosition(AVSession_PlaybackPosition& playbackPosition) {
+        playbackPosition_ = playbackPosition;
+    }
+
+    void SetAVCastUilastUiTime(int64_t position) {
+        lastUiTime_ = position;
+    }
+
+    void SetAVCastUiSeeking(bool is_seeking) {
+        is_seeking_ = is_seeking;
+    }
+
+    AVSession_PlaybackState GetAVCastUiPlayState() {
+        return playbackState_;
+    }
+
+    AVSession_PlaybackPosition GetAVCastUiPlayPosition() {
+        return playbackPosition_;
+    }
+
+    int64_t GetAVCastUilastUiTime() {
+        return lastUiTime_;
+    }
+
+    bool GetAVCastUiSeeking() {
+        return is_seeking_;
+    }
+
+    static void UpdateUiPlayPosition(std::shared_ptr<MediaAVSessionAdapterImpl> adapter, int64_t position, bool is_seek);
+
+    static AVSessionCallback_Result PlaybackStateChangedCallback(OH_AVCastController* avcastcontroller,
+        OH_AVSession_AVPlaybackState* playbackState, void* userData);
+
+    static AVSessionCallback_Result MediaItemChangeCallback(OH_AVCastController* avcastcontroller,
+        OH_AVSession_AVQueueItem* avQueueItem, void* userData);
+
+    static AVSessionCallback_Result SeekDoneCallback(OH_AVCastController* avcastcontroller,
+        int32_t position, void* userData);
+
+    static AVSessionCallback_Result EndOfStreamCallback(OH_AVCastController* avcastcontroller,
+        void* userData);
+
+    static AVSessionCallback_Result ErrorCallback(OH_AVCastController* avcastcontroller,
+        void* userData, AVSession_ErrCode error);
 
 private:
     static AVSessionCallback_Result AVSessionOnCommandCallback(OH_AVSession *session,
@@ -128,16 +201,17 @@ private:
     int32_t GetMediaCastCurrentTime();
     void PullUpCastBackGround();
     void SetAvCast(bool is_avcast);
-    void UpdateUiPlayState(bool is_playing) override;
-    void UpdateUiPlayPosition(int64_t position) override;
-    void UpdateUiPlayStateByClient(AVSession_PlaybackState& avSessionPlaybackState) override;
-    void SetUiPlayStateByClient(AVSession_PlaybackState& avSessionPlaybackState) override;
-    void SetUiPlayPositionByClient(AVSession_PlaybackPosition& playbackPosition) override;
-    void SetUilastUiTimeByClient(int64_t position) override;
-    void SetUiSeekingByClient(bool is_seeking) override;
-    AVSession_PlaybackState GetUiPlayStateByClient() override;
-    int64_t GetUilastUiTimeByClient() override;
-    bool GetUiSeekingByClient() override;
+    void UpdateUiPlayState(bool is_playing);
+    void UpdateUiPlayPosition(int64_t position);
+    void UpdateUiPlayStateByClient(AVSession_PlaybackState& avSessionPlaybackState);
+    void SetUiPlayStateByClient(AVSession_PlaybackState& avSessionPlaybackState);
+    void SetUiPlayPositionByClient(AVSession_PlaybackPosition& playbackPosition);
+    void SetUilastUiTimeByClient(int64_t position);
+    void SetUiSeekingByClient(bool is_seeking);
+
+    AVSession_PlaybackState GetUiPlayStateByClient();
+    int64_t GetUilastUiTimeByClient();
+    bool GetUiSeekingByClient();
 
     void SetAVCastDevice(const char* deviceName) { deviceName_ = deviceName ? std::string(deviceName) : std::string(); }
     std::string GetAVCastDevice() { return deviceName_; }
@@ -162,6 +236,8 @@ private:
     static std::unordered_map<OH_AVSession*, MediaAVSessionAdapterImpl *> avSessionMapOther_;
     size_t callback_index_ = 0;
     static CallbackSharedWrapper<MediaAVSessionCallbackAdapter> callback_wrapper_;
+    size_t avsession_callback_index_ = 0;
+    static CallbackSharedWrapper<MediaAVSessionAdapterImpl> avsession_callback_wrapper_;
 
     std::future<void> media_futures_;
     std::string poster_url_ = "";
@@ -177,6 +253,15 @@ private:
     std::string media_uri_storage_;
     std::string pid_avsession_;
     std::string deviceName_;
+    OH_AVCastController* avCastController_ = nullptr;
+    OH_AVSession_AVMediaDescriptionBuilder* avMediaDescriptionBuilder_ = nullptr;
+    OH_AVSession_AVMediaDescription* avMediaDescription_ = nullptr;
+    OH_AVSession_AVQueueItem avQueueItem_;
+    AVSession_PlaybackState playbackState_;
+    AVSession_PlaybackPosition playbackPosition_;
+    int64_t lastUiTime_ = 0;
+    bool avCastStarted_ = false;
+    bool is_seeking_ = false;
 };
 } // namespace OHOS::NWeb
 

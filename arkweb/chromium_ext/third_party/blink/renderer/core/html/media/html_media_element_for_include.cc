@@ -761,7 +761,7 @@ void HTMLMediaElement::UpdateUiPlayState(bool is_playing) {
 }
 
 void HTMLMediaElement::UpdateUiPlayPosition(int64_t position) {
-  LOG(INFO) << "HTMLMediaElement::UpdateUiPlayPosition";
+  LOG(DEBUG) << "HTMLMediaElement::UpdateUiPlayPosition";
   if (auto* video_element = DynamicTo<HTMLVideoElement>(this)) {
     video_element->UpdateUiPlayPosition(position);
   }

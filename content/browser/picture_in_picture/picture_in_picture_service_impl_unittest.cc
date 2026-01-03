@@ -173,9 +173,9 @@ class PictureInPictureMediaPlayerReceiver : public media::mojom::MediaPlayer {
   void SetVideoSurface(int32_t widget_id) override {}
   void SetVolume(double volume) override {}
   void GetVolume(GetVolumeCallback callback) override {}
-  void PullUpCastBackGround(const WTF::String& device_name) override {}
+  void PullUpCastBackGround(const std::string& device_name) override {}
   void UpdateUiPlayState(bool is_playing) override {}
-  void UpdateUiPlayPosition(int64 position) override {}
+  void UpdateUiPlayPosition(int64_t position) override {}
   void MediaCastStopped() override {}
   void MediaCastStopByNavigation() override {}
   void GetMediaCastCurrentTime(GetMediaCastCurrentTimeCallback callback) override {}

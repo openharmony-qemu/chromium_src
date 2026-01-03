@@ -60,8 +60,6 @@ component("adapter_ndk") {
     "inputmethodframework_adapter/third_party/cJSON/cJSON.h",
     "media_avsession_adapter/media_avsession_adapter_impl.cpp",
     "media_avsession_adapter/media_avsession_adapter_impl.h",
-    "media_avcast_adapter/media_avcast_adapter_impl.cpp",
-    "media_avcast_adapter/media_avcast_adapter_impl.h",
     #"hiviewdfx_adapter/hilog_adapter.cpp",
     "datashare_adapter/datashare_adapter_impl.cpp",
     "ohos_native_buffer_adapter/ohos_native_buffer_adapter_impl.h",

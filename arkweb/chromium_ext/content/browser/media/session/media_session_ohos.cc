@@ -42,7 +42,6 @@ MediaSessionOHOS::MediaSessionOHOS(MediaSessionImpl* session)
     av_metadata_ = std::make_shared<OHOSMediaAVSessionMetadata>();
     av_position_ = std::make_shared<OHOSMediaAVSessionPosition>();
     session->AddObserver(observer_receiver_.BindNewPipeAndPassRemote());
-    avsession_adapter_->CreateAVCastAdapter();
   } else {
     LOG(ERROR) << __FUNCTION__ << " media avsession adapter create failed";
   }

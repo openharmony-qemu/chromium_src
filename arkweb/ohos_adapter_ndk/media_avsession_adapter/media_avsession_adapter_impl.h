@@ -71,7 +71,7 @@ struct MediaCastDescription {
     int32_t mediaSize;
     const char* albumTitle;
     const char* appName;
-}
+};
 
 class MediaAVSessionAdapterImpl
     : public MediaAVSessionAdapter,

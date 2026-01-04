@@ -21,6 +21,8 @@ export interface AppRuleInfo {
   'id': string;
   'pg': string[];
   'strategy' ?: number;
+  'alphabetIdentificationMinSize' ?: number;
+  'alphabetHeightWidthMinRatio' ?: number;
 }
 
 export enum AutoLayoutStrategyType {
@@ -166,6 +168,8 @@ export class CCMConfig {
   private _buttonPattern: string[];
   private _scaleAnimationDuration: number;
   private _minScaleFactor: number;
+  private _alphabetIdentificationMinSize: number;
+  private _alphabetHeightWidthMinRatio: number;
   private _breakpoints: Breakpoint[];
   private _appRuleInfos:AppRuleInfo[];
   private _needCheckIdAndPage:boolean;
@@ -196,6 +200,8 @@ export class CCMConfig {
     this._buttonPattern = data.buttonPattern;
     this._scaleAnimationDuration = data.scaleAnimationDuration;
     this._minScaleFactor = data.minScaleFactor;
+    this._alphabetIdentificationMinSize = data.alphabetIdentificationMinSize;
+    this._alphabetHeightWidthMinRatio = data.alphabetHeightWidthMinRatio;
     this._breakpoints = data.breakpoints;
     this._appRuleInfos = data.appRuleInfos;
     this._needCheckIdAndPage = data.needCheckIdAndPage;
@@ -204,10 +210,6 @@ export class CCMConfig {
       this.checkRuleStateResult = CheckRuleStateResult.initial;
     } else {
       this.checkRuleStateResult = CheckRuleStateResult.skipCheck;
-    }
-    if (data.strategy) {
-      // 小程序逻辑时，ICCMConfig.strategy可能为空，strategy在appRuleInfo中
-      this.strategy = data.strategy;
     }
     this.appId = '';
     this.page = '';
@@ -271,6 +273,14 @@ export class CCMConfig {
     return this.strategy;
   }
 
+  public getAlphabetIdentificationMinSize(): number {
+    return this._alphabetIdentificationMinSize;
+  }
+
+  public getAlphabetHeightWidthMinRatio(): number {
+    return this._alphabetHeightWidthMinRatio;
+  }
+
   public setAlphabetNavigatorFixExecuted(isExecuted: boolean): void {
     this.isAlphabetNavigatorFixExecuted = isExecuted;
   }
@@ -299,11 +309,10 @@ export class CCMConfig {
       this._minContentAreaRatioThreshold = data.minContentAreaRatioThreshold;
       this._scaleAnimationDuration = data.scaleAnimationDuration;
       this._minScaleFactor = data.minScaleFactor ;
+      this._alphabetIdentificationMinSize = data.alphabetIdentificationMinSize;
+      this._alphabetHeightWidthMinRatio = data.alphabetHeightWidthMinRatio;
       this._appRuleInfos = typeof data.appRuleInfos === 'string' ? JSON.parse(data.appRuleInfos) : data.appRuleInfos;
       this._needCheckIdAndPage = data.needCheckIdAndPage;
-      if (data.strategy) {
-        this.strategy = data.strategy;
-      }
   }
 
   /**
@@ -381,6 +390,12 @@ export class CCMConfig {
         if (rule.strategy) {
           this.strategy = rule.strategy;
           Log.info(`当前页面策略为：${this.strategy}`, Tag.ccmConfig);
+        }
+        if (rule.alphabetIdentificationMinSize) {
+          this._alphabetIdentificationMinSize = rule.alphabetIdentificationMinSize;
+        }
+        if (rule.alphabetHeightWidthMinRatio) {
+          this._alphabetHeightWidthMinRatio = rule.alphabetHeightWidthMinRatio;
         }
         return this.checkRuleStateResult;
       }

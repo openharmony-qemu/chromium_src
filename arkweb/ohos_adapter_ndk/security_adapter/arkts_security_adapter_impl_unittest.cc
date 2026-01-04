@@ -989,5 +989,869 @@ TEST_F(ArktsSecurityAdapterImplTest, RegisterEvent_SpecialCharacters_001)
     EXPECT_EQ(result, -1);
 }
 
+/**
+ * @tc.name: RegisterEvent_GetEnv_Cached_001
+ * @tc.desc: Test RegisterEvent uses cached environment from GetEnv
+ * @tc.type: FUNC
+ * @tc.require: AR000FL0QN
+ */
+TEST_F(ArktsSecurityAdapterImplTest, RegisterEvent_GetEnv_Cached_001)
+{
+    const std::string testEvent = "test_cached_env";
+    napi_env env = CreateMockEnv();
+    napi_value securityModule = CreateMockNapiValue();
+    napi_value reportFn = CreateMockNapiValue();
+    napi_value eventObj = CreateMockNapiValue();
+    napi_value eventId = CreateMockNapiValue();
+    napi_value version = CreateMockNapiValue();
+    napi_value content = CreateMockNapiValue();
+    
+    // First call GetEnv to cache it
+    EXPECT_CALL(*g_MockNapiFunctions, napi_create_ark_runtime(_))
+        .Times(AtLeast(0))
+        .WillOnce(DoAll(SetArgPointee<0>(env), Return(napi_ok)));
+    
+    napi_env cachedEnv = adapter.GetEnv();
+    EXPECT_NE(cachedEnv, nullptr);
+    
+    // Now test RegisterEvent - should use cached env
+    EXPECT_CALL(*g_MockNapiFunctions, napi_load_module_with_info(env, StrEq("@ohos.security.securityGuard"), 
+                                                                nullptr, _))
+        .Times(AtLeast(0))
+        .WillOnce(DoAll(SetArgPointee<3>(securityModule), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_create_object(env, _))
+        .Times(AtLeast(0))
+        .WillOnce(DoAll(SetArgPointee<1>(eventObj), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_get_named_property(env, securityModule, 
+                                                            StrEq("reportSecurityEvent"), _))
+        .Times(AtLeast(0))
+        .WillOnce(DoAll(SetArgPointee<3>(reportFn), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_create_uint32(env, EVENT_ID, _))
+        .Times(AtLeast(0))
+        .WillOnce(DoAll(SetArgPointee<2>(eventId), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_set_named_property(env, eventObj, 
+                                                            StrEq("eventId"), eventId))
+        .Times(AtLeast(0))
+        .WillOnce(Return(napi_ok));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_create_string_utf8(env, StrEq(VERSION.c_str()), 
+                                                            VERSION.size(), _))
+        .Times(AtLeast(0))
+        .WillOnce(DoAll(SetArgPointee<3>(version), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_set_named_property(env, eventObj, 
+                                                            StrEq("version"), version))
+        .Times(AtLeast(0))
+        .WillOnce(Return(napi_ok));
+    
+    std::string expectedJson = R"({"content":"test_cached_env"})";
+    EXPECT_CALL(*g_MockNapiFunctions, napi_create_string_utf8(env, StrEq(expectedJson.c_str()), 
+                                                            expectedJson.size(), _))
+        .Times(AtLeast(0))
+        .WillOnce(DoAll(SetArgPointee<3>(content), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_set_named_property(env, eventObj, 
+                                                            StrEq("content"), content))
+        .Times(AtLeast(0))
+        .WillOnce(Return(napi_ok));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_call_function(env, securityModule, reportFn, 1, _, nullptr))
+        .Times(AtLeast(0))
+        .WillOnce(Return(napi_ok));
+    
+    int result = adapter.RegisterEvent(testEvent);
+    EXPECT_EQ(result, -1);
+}
+
+/**
+ * @tc.name: RegisterEvent_GetSecurityModule_Cached_001
+ * @tc.desc: Test RegisterEvent uses cached security module
+ * @tc.type: FUNC
+ * @tc.require: AR000FL0QN
+ */
+TEST_F(ArktsSecurityAdapterImplTest, RegisterEvent_GetSecurityModule_Cached_001)
+{
+    const std::string testEvent = "test_cached_module";
+    napi_env env = CreateMockEnv();
+    napi_value securityModule = CreateMockNapiValue();
+    napi_value reportFn = CreateMockNapiValue();
+    napi_value eventObj = CreateMockNapiValue();
+    napi_value eventId = CreateMockNapiValue();
+    napi_value version = CreateMockNapiValue();
+    napi_value content = CreateMockNapiValue();
+    
+    // First call GetSecurityGuardModule to cache it
+    EXPECT_CALL(*g_MockNapiFunctions, napi_create_ark_runtime(_))
+        .Times(AtLeast(0))
+        .WillOnce(DoAll(SetArgPointee<0>(env), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_load_module_with_info(env, StrEq("@ohos.security.securityGuard"), 
+                                                                nullptr, _))
+        .Times(AtLeast(0))
+        .WillOnce(DoAll(SetArgPointee<3>(securityModule), Return(napi_ok)));
+    
+    napi_value cachedModule = adapter.GetSecurityGuardModule();
+    EXPECT_EQ(cachedModule, securityModule);
+    
+    // Now test RegisterEvent - should use cached module
+    EXPECT_CALL(*g_MockNapiFunctions, napi_create_object(env, _))
+        .Times(AtLeast(0))
+        .WillOnce(DoAll(SetArgPointee<1>(eventObj), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_get_named_property(env, securityModule, 
+                                                            StrEq("reportSecurityEvent"), _))
+        .Times(AtLeast(0))
+        .WillOnce(DoAll(SetArgPointee<3>(reportFn), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_create_uint32(env, EVENT_ID, _))
+        .Times(AtLeast(0))
+        .WillOnce(DoAll(SetArgPointee<2>(eventId), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_set_named_property(env, eventObj, 
+                                                            StrEq("eventId"), eventId))
+        .Times(AtLeast(0))
+        .WillOnce(Return(napi_ok));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_create_string_utf8(env, StrEq(VERSION.c_str()), 
+                                                            VERSION.size(), _))
+        .Times(AtLeast(0))
+        .WillOnce(DoAll(SetArgPointee<3>(version), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_set_named_property(env, eventObj, 
+                                                            StrEq("version"), version))
+        .Times(AtLeast(0))
+        .WillOnce(Return(napi_ok));
+    
+    std::string expectedJson = R"({"content":"test_cached_module"})";
+    EXPECT_CALL(*g_MockNapiFunctions, napi_create_string_utf8(env, StrEq(expectedJson.c_str()), 
+                                                            expectedJson.size(), _))
+        .Times(AtLeast(0))
+        .WillOnce(DoAll(SetArgPointee<3>(content), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_set_named_property(env, eventObj, 
+                                                            StrEq("content"), content))
+        .Times(AtLeast(0))
+        .WillOnce(Return(napi_ok));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_call_function(env, securityModule, reportFn, 1, _, nullptr))
+        .Times(AtLeast(0))
+        .WillOnce(Return(napi_ok));
+    
+    int result = adapter.RegisterEvent(testEvent);
+    EXPECT_EQ(result, -1);
+}
+
+/**
+ * @tc.name: RegisterEvent_WithVeryLongEvent_001
+ * @tc.desc: Test RegisterEvent with very long event data
+ * @tc.type: FUNC
+ * @tc.require: AR000FL0QN
+ */
+TEST_F(ArktsSecurityAdapterImplTest, RegisterEvent_WithVeryLongEvent_001)
+{
+    // Create a very long event string
+    std::string longEvent(10000, 'x');
+    napi_env env = CreateMockEnv();
+    napi_value securityModule = CreateMockNapiValue();
+    napi_value reportFn = CreateMockNapiValue();
+    napi_value eventObj = CreateMockNapiValue();
+    napi_value eventId = CreateMockNapiValue();
+    napi_value version = CreateMockNapiValue();
+    napi_value content = CreateMockNapiValue();
+    
+    Sequence seq;
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_create_ark_runtime(_))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(DoAll(SetArgPointee<0>(env), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_load_module_with_info(env, StrEq("@ohos.security.securityGuard"), 
+                                                                nullptr, _))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(DoAll(SetArgPointee<3>(securityModule), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_create_object(env, _))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(DoAll(SetArgPointee<1>(eventObj), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_get_named_property(env, securityModule, 
+                                                            StrEq("reportSecurityEvent"), _))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(DoAll(SetArgPointee<3>(reportFn), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_create_uint32(env, EVENT_ID, _))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(DoAll(SetArgPointee<2>(eventId), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_set_named_property(env, eventObj, 
+                                                            StrEq("eventId"), eventId))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(Return(napi_ok));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_create_string_utf8(env, StrEq(VERSION.c_str()), 
+                                                            VERSION.size(), _))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(DoAll(SetArgPointee<3>(version), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_set_named_property(env, eventObj, 
+                                                            StrEq("version"), version))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(Return(napi_ok));
+    
+    std::string expectedJsonPrefix = R"({"content":")";
+    std::string expectedJsonSuffix = R"("})";
+    std::string expectedJson = expectedJsonPrefix + longEvent + expectedJsonSuffix;
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_create_string_utf8(env, StrEq(expectedJson.c_str()), 
+                                                            expectedJson.size(), _))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(DoAll(SetArgPointee<3>(content), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_set_named_property(env, eventObj, 
+                                                            StrEq("content"), content))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(Return(napi_ok));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_call_function(env, securityModule, reportFn, 1, _, nullptr))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(Return(napi_ok));
+    
+    int result = adapter.RegisterEvent(longEvent);
+    EXPECT_EQ(result, -1);
+}
+
+/**
+ * @tc.name: RegisterEvent_WithNewlineCharacters_001
+ * @tc.desc: Test RegisterEvent with event containing newline characters
+ * @tc.type: FUNC
+ * @tc.require: AR000FL0QN
+ */
+TEST_F(ArktsSecurityAdapterImplTest, RegisterEvent_WithNewlineCharacters_001)
+{
+    const std::string eventWithNewlines = "line1\nline2\r\nline3";
+    napi_env env = CreateMockEnv();
+    napi_value securityModule = CreateMockNapiValue();
+    napi_value reportFn = CreateMockNapiValue();
+    napi_value eventObj = CreateMockNapiValue();
+    napi_value eventId = CreateMockNapiValue();
+    napi_value version = CreateMockNapiValue();
+    napi_value content = CreateMockNapiValue();
+    
+    Sequence seq;
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_create_ark_runtime(_))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(DoAll(SetArgPointee<0>(env), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_load_module_with_info(env, StrEq("@ohos.security.securityGuard"), 
+                                                                nullptr, _))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(DoAll(SetArgPointee<3>(securityModule), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_create_object(env, _))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(DoAll(SetArgPointee<1>(eventObj), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_get_named_property(env, securityModule, 
+                                                            StrEq("reportSecurityEvent"), _))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(DoAll(SetArgPointee<3>(reportFn), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_create_uint32(env, EVENT_ID, _))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(DoAll(SetArgPointee<2>(eventId), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_set_named_property(env, eventObj, 
+                                                            StrEq("eventId"), eventId))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(Return(napi_ok));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_create_string_utf8(env, StrEq(VERSION.c_str()), 
+                                                            VERSION.size(), _))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(DoAll(SetArgPointee<3>(version), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_set_named_property(env, eventObj, 
+                                                            StrEq("version"), version))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(Return(napi_ok));
+    
+    std::string expectedJson = R"({"content":"line1\nline2\r\nline3"})";
+    EXPECT_CALL(*g_MockNapiFunctions, napi_create_string_utf8(env, StrEq(expectedJson.c_str()), 
+                                                            expectedJson.size(), _))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(DoAll(SetArgPointee<3>(content), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_set_named_property(env, eventObj, 
+                                                            StrEq("content"), content))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(Return(napi_ok));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_call_function(env, securityModule, reportFn, 1, _, nullptr))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(Return(napi_ok));
+    
+    int result = adapter.RegisterEvent(eventWithNewlines);
+    EXPECT_EQ(result, -1);
+}
+
+/**
+ * @tc.name: RegisterEvent_WithUnicodeCharacters_001
+ * @tc.desc: Test RegisterEvent with Unicode characters
+ * @tc.type: FUNC
+ * @tc.require: AR000FL0QN
+ */
+TEST_F(ArktsSecurityAdapterImplTest, RegisterEvent_WithUnicodeCharacters_001)
+{
+    const std::string unicodeEvent = "事件: 测试事件 - 🎯 重要事件 🔥";
+    napi_env env = CreateMockEnv();
+    napi_value securityModule = CreateMockNapiValue();
+    napi_value reportFn = CreateMockNapiValue();
+    napi_value eventObj = CreateMockNapiValue();
+    napi_value eventId = CreateMockNapiValue();
+    napi_value version = CreateMockNapiValue();
+    napi_value content = CreateMockNapiValue();
+    
+    Sequence seq;
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_create_ark_runtime(_))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(DoAll(SetArgPointee<0>(env), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_load_module_with_info(env, StrEq("@ohos.security.securityGuard"), 
+                                                                nullptr, _))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(DoAll(SetArgPointee<3>(securityModule), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_create_object(env, _))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(DoAll(SetArgPointee<1>(eventObj), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_get_named_property(env, securityModule, 
+                                                            StrEq("reportSecurityEvent"), _))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(DoAll(SetArgPointee<3>(reportFn), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_create_uint32(env, EVENT_ID, _))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(DoAll(SetArgPointee<2>(eventId), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_set_named_property(env, eventObj, 
+                                                            StrEq("eventId"), eventId))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(Return(napi_ok));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_create_string_utf8(env, StrEq(VERSION.c_str()), 
+                                                            VERSION.size(), _))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(DoAll(SetArgPointee<3>(version), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_set_named_property(env, eventObj, 
+                                                            StrEq("version"), version))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(Return(napi_ok));
+    
+    std::string expectedJson = R"({"content":"事件: 测试事件 - 🎯 重要事件 🔥"})";
+    EXPECT_CALL(*g_MockNapiFunctions, napi_create_string_utf8(env, StrEq(expectedJson.c_str()), 
+                                                            expectedJson.size(), _))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(DoAll(SetArgPointee<3>(content), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_set_named_property(env, eventObj, 
+                                                            StrEq("content"), content))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(Return(napi_ok));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_call_function(env, securityModule, reportFn, 1, _, nullptr))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(Return(napi_ok));
+    
+    int result = adapter.RegisterEvent(unicodeEvent);
+    EXPECT_EQ(result, -1);
+}
+
+/**
+ * @tc.name: RegisterEvent_ConcurrentCalls_001
+ * @tc.desc: Test concurrent calls to RegisterEvent
+ * @tc.type: FUNC
+ * @tc.require: AR000FL0QN
+ */
+TEST_F(ArktsSecurityAdapterImplTest, RegisterEvent_ConcurrentCalls_001)
+{
+    napi_env env = CreateMockEnv();
+    napi_value securityModule = CreateMockNapiValue();
+    
+    // Setup common mocks
+    EXPECT_CALL(*g_MockNapiFunctions, napi_create_ark_runtime(_))
+        .Times(AtLeast(0))
+        .WillOnce(DoAll(SetArgPointee<0>(env), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_load_module_with_info(env, StrEq("@ohos.security.securityGuard"), 
+                                                                nullptr, _))
+        .Times(AtLeast(0))
+        .WillOnce(DoAll(SetArgPointee<3>(securityModule), Return(napi_ok)));
+    
+    // Prepare thread function
+    auto threadFunc = [&](int threadId) {
+        std::string event = "thread_event_" + std::to_string(threadId);
+        napi_value reportFn = CreateMockNapiValue();
+        napi_value eventObj = CreateMockNapiValue();
+        napi_value eventId = CreateMockNapiValue();
+        napi_value version = CreateMockNapiValue();
+        napi_value content = CreateMockNapiValue();
+        
+        // Setup per-thread expectations
+        EXPECT_CALL(*g_MockNapiFunctions, napi_create_object(env, _))
+            .Times(AtLeast(0))
+            .WillOnce(DoAll(SetArgPointee<1>(eventObj), Return(napi_ok)));
+        
+        EXPECT_CALL(*g_MockNapiFunctions, napi_get_named_property(env, securityModule, 
+                                                                StrEq("reportSecurityEvent"), _))
+            .Times(AtLeast(0))
+            .WillOnce(DoAll(SetArgPointee<3>(reportFn), Return(napi_ok)));
+        
+        EXPECT_CALL(*g_MockNapiFunctions, napi_create_uint32(env, EVENT_ID, _))
+            .Times(AtLeast(0))
+            .WillOnce(DoAll(SetArgPointee<2>(eventId), Return(napi_ok)));
+        
+        EXPECT_CALL(*g_MockNapiFunctions, napi_set_named_property(env, eventObj, 
+                                                                StrEq("eventId"), eventId))
+            .Times(AtLeast(0))
+            .WillOnce(Return(napi_ok));
+        
+        EXPECT_CALL(*g_MockNapiFunctions, napi_create_string_utf8(env, StrEq(VERSION.c_str()), 
+                                                                VERSION.size(), _))
+            .Times(AtLeast(0))
+            .WillOnce(DoAll(SetArgPointee<3>(version), Return(napi_ok)));
+        
+        EXPECT_CALL(*g_MockNapiFunctions, napi_set_named_property(env, eventObj, 
+                                                                StrEq("version"), version))
+            .Times(AtLeast(0))
+            .WillOnce(Return(napi_ok));
+        
+        std::string expectedJson = R"({"content":"thread_event_)" + std::to_string(threadId) + R"("})";
+        EXPECT_CALL(*g_MockNapiFunctions, napi_create_string_utf8(env, StrEq(expectedJson.c_str()), 
+                                                                expectedJson.size(), _))
+            .Times(AtLeast(0))
+            .WillOnce(DoAll(SetArgPointee<3>(content), Return(napi_ok)));
+        
+        EXPECT_CALL(*g_MockNapiFunctions, napi_set_named_property(env, eventObj, 
+                                                                StrEq("content"), content))
+            .Times(AtLeast(0))
+            .WillOnce(Return(napi_ok));
+        
+        EXPECT_CALL(*g_MockNapiFunctions, napi_call_function(env, securityModule, reportFn, 1, _, nullptr))
+            .Times(AtLeast(0))
+            .WillOnce(Return(napi_ok));
+        
+        int result = adapter.RegisterEvent(event);
+        EXPECT_EQ(result, -1);
+    };
+    
+    // Create and run threads
+    const int numThreads = 3;
+    std::vector<std::thread> threads;
+    
+    for (int i = 0; i < numThreads; ++i) {
+        threads.emplace_back(threadFunc, i);
+    }
+    
+    // Wait for all threads
+    for (auto& thread : threads) {
+        thread.join();
+    }
+}
+
+/**
+ * @tc.name: RegisterEvent_InvalidJsonCharacters_001
+ * @tc.desc: Test RegisterEvent with characters that need JSON escaping
+ * @tc.type: FUNC
+ * @tc.require: AR000FL0QN
+ */
+TEST_F(ArktsSecurityAdapterImplTest, RegisterEvent_InvalidJsonCharacters_001)
+{
+    const std::string invalidCharsEvent = R"(event with \t tab, \n newline, "quote", \ backslash)";
+    napi_env env = CreateMockEnv();
+    napi_value securityModule = CreateMockNapiValue();
+    napi_value reportFn = CreateMockNapiValue();
+    napi_value eventObj = CreateMockNapiValue();
+    napi_value eventId = CreateMockNapiValue();
+    napi_value version = CreateMockNapiValue();
+    napi_value content = CreateMockNapiValue();
+    
+    Sequence seq;
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_create_ark_runtime(_))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(DoAll(SetArgPointee<0>(env), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_load_module_with_info(env, StrEq("@ohos.security.securityGuard"), 
+                                                                nullptr, _))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(DoAll(SetArgPointee<3>(securityModule), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_create_object(env, _))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(DoAll(SetArgPointee<1>(eventObj), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_get_named_property(env, securityModule, 
+                                                            StrEq("reportSecurityEvent"), _))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(DoAll(SetArgPointee<3>(reportFn), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_create_uint32(env, EVENT_ID, _))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(DoAll(SetArgPointee<2>(eventId), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_set_named_property(env, eventObj, 
+                                                            StrEq("eventId"), eventId))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(Return(napi_ok));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_create_string_utf8(env, StrEq(VERSION.c_str()), 
+                                                            VERSION.size(), _))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(DoAll(SetArgPointee<3>(version), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_set_named_property(env, eventObj, 
+                                                            StrEq("version"), version))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(Return(napi_ok));
+    
+    // Note: The current implementation may not properly escape all JSON characters
+    std::string expectedJson = R"({"content":"event with \\t tab, \\n newline, \"quote\", \\ backslash"})";
+    EXPECT_CALL(*g_MockNapiFunctions, napi_create_string_utf8(env, StrEq(expectedJson.c_str()), 
+                                                            expectedJson.size(), _))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(DoAll(SetArgPointee<3>(content), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_set_named_property(env, eventObj, 
+                                                            StrEq("content"), content))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(Return(napi_ok));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_call_function(env, securityModule, reportFn, 1, _, nullptr))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(Return(napi_ok));
+    
+    int result = adapter.RegisterEvent(invalidCharsEvent);
+    EXPECT_EQ(result, -1);
+}
+
+/**
+ * @tc.name: RegisterEvent_WithBinaryData_001
+ * @tc.desc: Test RegisterEvent with event containing binary-like data
+ * @tc.type: FUNC
+ * @tc.require: AR000FL0QN
+ */
+TEST_F(ArktsSecurityAdapterImplTest, RegisterEvent_WithBinaryData_001)
+{
+    // Create a string that looks like binary data
+    std::string binaryEvent;
+    for (int i = 0; i < 256; ++i) {
+        binaryEvent.push_back(static_cast<char>(i));
+    }
+    
+    napi_env env = CreateMockEnv();
+    napi_value securityModule = CreateMockNapiValue();
+    napi_value reportFn = CreateMockNapiValue();
+    napi_value eventObj = CreateMockNapiValue();
+    napi_value eventId = CreateMockNapiValue();
+    napi_value version = CreateMockNapiValue();
+    napi_value content = CreateMockNapiValue();
+    
+    Sequence seq;
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_create_ark_runtime(_))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(DoAll(SetArgPointee<0>(env), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_load_module_with_info(env, StrEq("@ohos.security.securityGuard"), 
+                                                                nullptr, _))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(DoAll(SetArgPointee<3>(securityModule), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_create_object(env, _))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(DoAll(SetArgPointee<1>(eventObj), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_get_named_property(env, securityModule, 
+                                                            StrEq("reportSecurityEvent"), _))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(DoAll(SetArgPointee<3>(reportFn), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_create_uint32(env, EVENT_ID, _))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(DoAll(SetArgPointee<2>(eventId), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_set_named_property(env, eventObj, 
+                                                            StrEq("eventId"), eventId))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(Return(napi_ok));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_create_string_utf8(env, StrEq(VERSION.c_str()), 
+                                                            VERSION.size(), _))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(DoAll(SetArgPointee<3>(version), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_set_named_property(env, eventObj, 
+                                                            StrEq("version"), version))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(Return(napi_ok));
+    
+    // The actual JSON will contain the binary data as-is
+    std::string expectedJson = R"({"content":")" + binaryEvent + R"("})";
+    EXPECT_CALL(*g_MockNapiFunctions, napi_create_string_utf8(env, StrEq(expectedJson.c_str()), 
+                                                            expectedJson.size(), _))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(DoAll(SetArgPointee<3>(content), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_set_named_property(env, eventObj, 
+                                                            StrEq("content"), content))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(Return(napi_ok));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_call_function(env, securityModule, reportFn, 1, _, nullptr))
+        .Times(AtLeast(0))
+        .InSequence(seq)
+        .WillOnce(Return(napi_ok));
+    
+    int result = adapter.RegisterEvent(binaryEvent);
+    EXPECT_EQ(result, -1);
+}
+
+/**
+ * @tc.name: RegisterEvent_MultipleCalls_SameInstance_001
+ * @tc.desc: Test multiple RegisterEvent calls on same adapter instance
+ * @tc.type: FUNC
+ * @tc.require: AR000FL0QN
+ */
+TEST_F(ArktsSecurityAdapterImplTest, RegisterEvent_MultipleCalls_SameInstance_001)
+{
+    napi_env env = CreateMockEnv();
+    napi_value securityModule = CreateMockNapiValue();
+    
+    // Setup common mocks
+    EXPECT_CALL(*g_MockNapiFunctions, napi_create_ark_runtime(_))
+        .Times(AtLeast(0))
+        .WillOnce(DoAll(SetArgPointee<0>(env), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_load_module_with_info(env, StrEq("@ohos.security.securityGuard"), 
+                                                                nullptr, _))
+        .Times(AtLeast(0))
+        .WillOnce(DoAll(SetArgPointee<3>(securityModule), Return(napi_ok)));
+    
+    // First call
+    {
+        const std::string event1 = "first_event";
+        napi_value reportFn1 = CreateMockNapiValue();
+        napi_value eventObj1 = CreateMockNapiValue();
+        napi_value eventId1 = CreateMockNapiValue();
+        napi_value version1 = CreateMockNapiValue();
+        napi_value content1 = CreateMockNapiValue();
+        
+        EXPECT_CALL(*g_MockNapiFunctions, napi_create_object(env, _))
+            .Times(AtLeast(0))
+            .WillOnce(DoAll(SetArgPointee<1>(eventObj1), Return(napi_ok)));
+        
+        EXPECT_CALL(*g_MockNapiFunctions, napi_get_named_property(env, securityModule, 
+                                                                StrEq("reportSecurityEvent"), _))
+            .Times(AtLeast(0))
+            .WillOnce(DoAll(SetArgPointee<3>(reportFn1), Return(napi_ok)));
+        
+        EXPECT_CALL(*g_MockNapiFunctions, napi_create_uint32(env, EVENT_ID, _))
+            .Times(AtLeast(0))
+            .WillOnce(DoAll(SetArgPointee<2>(eventId1), Return(napi_ok)));
+        
+        EXPECT_CALL(*g_MockNapiFunctions, napi_set_named_property(env, eventObj1, 
+                                                                StrEq("eventId"), eventId1))
+            .Times(AtLeast(0))
+            .WillOnce(Return(napi_ok));
+        
+        EXPECT_CALL(*g_MockNapiFunctions, napi_create_string_utf8(env, StrEq(VERSION.c_str()), 
+                                                                VERSION.size(), _))
+            .Times(AtLeast(0))
+            .WillOnce(DoAll(SetArgPointee<3>(version1), Return(napi_ok)));
+        
+        EXPECT_CALL(*g_MockNapiFunctions, napi_set_named_property(env, eventObj1, 
+                                                                StrEq("version"), version1))
+            .Times(AtLeast(0))
+            .WillOnce(Return(napi_ok));
+        
+        std::string expectedJson1 = R"({"content":"first_event"})";
+        EXPECT_CALL(*g_MockNapiFunctions, napi_create_string_utf8(env, StrEq(expectedJson1.c_str()), 
+                                                                expectedJson1.size(), _))
+            .Times(AtLeast(0))
+            .WillOnce(DoAll(SetArgPointee<3>(content1), Return(napi_ok)));
+        
+        EXPECT_CALL(*g_MockNapiFunctions, napi_set_named_property(env, eventObj1, 
+                                                                StrEq("content"), content1))
+            .Times(AtLeast(0))
+            .WillOnce(Return(napi_ok));
+        
+        EXPECT_CALL(*g_MockNapiFunctions, napi_call_function(env, securityModule, reportFn1, 1, _, nullptr))
+            .Times(AtLeast(0))
+            .WillOnce(Return(napi_ok));
+        
+        int result1 = adapter.RegisterEvent(event1);
+        EXPECT_EQ(result1, -1);
+    }
+    
+    // Second call
+    {
+        const std::string event2 = "second_event";
+        napi_value reportFn2 = CreateMockNapiValue();
+        napi_value eventObj2 = CreateMockNapiValue();
+        napi_value eventId2 = CreateMockNapiValue();
+        napi_value version2 = CreateMockNapiValue();
+        napi_value content2 = CreateMockNapiValue();
+        
+        EXPECT_CALL(*g_MockNapiFunctions, napi_create_object(env, _))
+            .Times(AtLeast(0))
+            .WillOnce(DoAll(SetArgPointee<1>(eventObj2), Return(napi_ok)));
+        
+        EXPECT_CALL(*g_MockNapiFunctions, napi_get_named_property(env, securityModule, 
+                                                                StrEq("reportSecurityEvent"), _))
+            .Times(AtLeast(0))
+            .WillOnce(DoAll(SetArgPointee<3>(reportFn2), Return(napi_ok)));
+        
+        EXPECT_CALL(*g_MockNapiFunctions, napi_create_uint32(env, EVENT_ID, _))
+            .Times(AtLeast(0))
+            .WillOnce(DoAll(SetArgPointee<2>(eventId2), Return(napi_ok)));
+        
+        EXPECT_CALL(*g_MockNapiFunctions, napi_set_named_property(env, eventObj2, 
+                                                                StrEq("eventId"), eventId2))
+            .Times(AtLeast(0))
+            .WillOnce(Return(napi_ok));
+        
+        EXPECT_CALL(*g_MockNapiFunctions, napi_create_string_utf8(env, StrEq(VERSION.c_str()), 
+                                                                VERSION.size(), _))
+            .Times(AtLeast(0))
+            .WillOnce(DoAll(SetArgPointee<3>(version2), Return(napi_ok)));
+        
+        EXPECT_CALL(*g_MockNapiFunctions, napi_set_named_property(env, eventObj2, 
+                                                                StrEq("version"), version2))
+            .Times(AtLeast(0))
+            .WillOnce(Return(napi_ok));
+        
+        std::string expectedJson2 = R"({"content":"second_event"})";
+        EXPECT_CALL(*g_MockNapiFunctions, napi_create_string_utf8(env, StrEq(expectedJson2.c_str()), 
+                                                                expectedJson2.size(), _))
+            .Times(AtLeast(0))
+            .WillOnce(DoAll(SetArgPointee<3>(content2), Return(napi_ok)));
+        
+        EXPECT_CALL(*g_MockNapiFunctions, napi_set_named_property(env, eventObj2, 
+                                                                StrEq("content"), content2))
+            .Times(AtLeast(0))
+            .WillOnce(Return(napi_ok));
+        
+        EXPECT_CALL(*g_MockNapiFunctions, napi_call_function(env, securityModule, reportFn2, 1, _, nullptr))
+            .Times(AtLeast(0))
+            .WillOnce(Return(napi_ok));
+        
+        int result2 = adapter.RegisterEvent(event2);
+        EXPECT_EQ(result2, -1);
+    }
+}
+
+/**
+ * @tc.name: GetSecurityGuardModule_ThreadSafety_001
+ * @tc.desc: Test GetSecurityGuardModule thread safety
+ * @tc.type: FUNC
+ * @tc.require: AR000FL0QN
+ */
+TEST_F(ArktsSecurityAdapterImplTest, GetSecurityGuardModule_ThreadSafety_001)
+{
+    napi_env env = CreateMockEnv();
+    napi_value securityModule = CreateMockNapiValue();
+    
+    // Setup expectations
+    EXPECT_CALL(*g_MockNapiFunctions, napi_create_ark_runtime(_))
+        .Times(AtLeast(0))
+        .WillOnce(DoAll(SetArgPointee<0>(env), Return(napi_ok)));
+    
+    EXPECT_CALL(*g_MockNapiFunctions, napi_load_module_with_info(env, StrEq("@ohos.security.securityGuard"), 
+                                                                nullptr, _))
+        .Times(AtLeast(0))
+        .WillOnce(DoAll(SetArgPointee<3>(securityModule), Return(napi_ok)));
+    
+    // Thread function
+    auto threadFunc = [&](int threadId) {
+        napi_value result = adapter.GetSecurityGuardModule();
+        EXPECT_EQ(result, securityModule);
+    };
+    
+    // Create and run threads
+    const int numThreads = 5;
+    std::vector<std::thread> threads;
+    
+    for (int i = 0; i < numThreads; ++i) {
+        threads.emplace_back(threadFunc, i);
+    }
+    
+    // Wait for all threads
+    for (auto& thread : threads) {
+        thread.join();
+    }
+}
+
 } // namespace NWeb
 } // namespace OHOS

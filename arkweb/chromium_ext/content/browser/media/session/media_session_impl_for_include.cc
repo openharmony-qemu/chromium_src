@@ -250,7 +250,6 @@ bool MediaSessionImpl::GetMediaPlayerMuteState() {
 
 #if BUILDFLAG(ARKWEB_MEDIA_CAST)
 void MediaSessionImpl::OnNotifyMeidaCastUri(const std::string& media_uri) {
-  LOG(INFO) << "MediaSessionImpl::OnNotifyMeidaCastUri, mediaUri: " << media_uri;
   if (session_ohos_) {
     LOG(INFO) << "MediaSessionImpl: OnNotifyMeidaCastUri";
     session_ohos_->OnNotifyMeidaCastUri(media_uri);

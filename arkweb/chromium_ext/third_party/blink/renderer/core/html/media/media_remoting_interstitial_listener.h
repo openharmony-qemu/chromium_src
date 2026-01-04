@@ -87,7 +87,7 @@ class ProgressBarEventListener : public NativeEventListener {
   void HandleTouchCancel(TouchEvent* event);
   
   // General-purpose handler
-  void StartDragging(float start_x, float client_x);
+  void StartDragging(float client_x);
   void UpdateDragging(float client_x);
   void EndDragging(float client_x);
 

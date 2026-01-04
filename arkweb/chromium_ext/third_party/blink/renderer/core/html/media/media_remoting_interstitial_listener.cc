@@ -133,7 +133,7 @@ void ProgressBarEventListener::HandleTouchStart(TouchEvent* event) {
   active_touch_id_ = active_touch->identifier();
   
   float client_x = active_touch->clientX();
-  StartDragging(client_x, client_x);
+  StartDragging(client_x);
   
   LOG(INFO) << "Touch and drag to start, ID: " << active_touch_id_
             << ", X: " << client_x;
@@ -293,9 +293,9 @@ Touch* ProgressBarEventListener::GetActiveTouch(TouchEvent* event) {
   return nullptr;
 }
 
-void ProgressBarEventListener::StartDragging(float start_x, float client_x) {
+void ProgressBarEventListener::StartDragging(float client_x) {
   is_dragging_ = true;
-  drag_start_x_ = start_x;
+  drag_start_x_ = client_x;
   
   // Get the current progress percentage as the drag start point
   drag_start_percentage_ = CalculatePercentage(client_x);
@@ -384,7 +384,7 @@ void ProgressBarEventListener::HandleMouseDown(MouseEvent* event) {
   }
   
   float client_x = event->clientX();
-  StartDragging(client_x, client_x);
+  StartDragging(client_x);
   
   LOG(INFO) << "Mouse drag start - X: " << client_x;
 }

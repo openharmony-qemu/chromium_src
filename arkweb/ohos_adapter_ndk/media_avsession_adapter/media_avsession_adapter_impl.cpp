@@ -25,7 +25,6 @@ std::unordered_map<std::string, MediaAVSessionAdapterImpl *> MediaAVSessionAdapt
 CallbackSharedWrapper<MediaAVSessionCallbackAdapter> MediaAVSessionAdapterImpl::callback_wrapper_;
 std::unordered_map<OH_AVSession*, MediaAVSessionAdapterImpl *> MediaAVSessionAdapterImpl::avSessionMapOther_;
 CallbackSharedWrapper<MediaAVSessionAdapterImpl> MediaAVSessionAdapterImpl::avsession_callback_wrapper_;
-std::shared_mutex MediaAVSessionAdapterImpl::avsession_adapter_mutex_;
 constexpr int64_t TIME_OUT = 0;
 constexpr int64_t URL_NUM = 2;
 constexpr int64_t UiTIME_UPDATE_INTERVAL = 200;
@@ -97,7 +96,6 @@ void MediaAVSessionAdapterImpl::InitMediaAVSessionAdapterImpl() {
 
 MediaAVSessionAdapterImpl::~MediaAVSessionAdapterImpl() {
     WVLOG_I("ohmedia: ~MediaAVSessionAdapterImpl");
-    std::unique_lock<std::shared_mutex> lock_avsession(avsession_adapter_mutex_);
 
     avCastStarted_ = false;
     if (!UnregisterCallback()) {
@@ -586,7 +584,6 @@ bool MediaAVSessionAdapterImpl::CreateNewSession(const MediaAVSessionType& type)
     }
 
     avSessionKey_->SetType(type);
-    std::shared_lock<std::shared_mutex> lock_avsession_adapter(avsession_adapter_mutex_);
     avSessionMap.insert(std::pair<std::string, MediaAVSessionAdapterImpl *>((avSessionKey_->ToString()), this));
     avSessionMapOther_.insert(std::pair<OH_AVSession*, MediaAVSessionAdapterImpl *>(avSession_, this));
     return true;
@@ -702,7 +699,6 @@ void MediaAVSessionAdapterImpl::RegistAVSessionCallbackOutputDeviceChange() {
 
 AVSessionCallback_Result MediaAVSessionAdapterImpl::OutputDeviceChangeCallback(OH_AVSession* session,
     AVSession_ConnectionState state, AVSession_OutputDeviceInfo *outputDeviceInfo) {
-    std::shared_lock<std::shared_mutex> lock_avsession_adapter(avsession_adapter_mutex_);
     WVLOG_I("MediaAVSessionAdapterImpl::OutputDeviceChange enter");
     switch (state) {
         case STATE_CONNECTED: {
@@ -783,7 +779,6 @@ void MediaAVSessionAdapterImpl::UpdateAVCastDevice(AVSession_OutputDeviceInfo *o
     if (ret != AV_SESSION_ERR_SUCCESS) {
         WVLOG_E("OH_DeviceInfo_GetDeviceName failed. ret: %{public}d", ret);
     }
-    WVLOG_E("OH_DeviceInfo_GetDeviceName deviceName: %{public}s", deviceName);
     SetAVCastDevice(deviceName);
 }
 
@@ -1230,7 +1225,6 @@ AVSessionCallback_Result MediaAVSessionAdapterImpl::PlaybackStateChangedCallback
 AVSessionCallback_Result MediaAVSessionAdapterImpl::MediaItemChangeCallback(OH_AVCastController* avcastcontroller,
     OH_AVSession_AVQueueItem* avQueueItem, void* userData) {
     WVLOG_I("MediaAVSessionAdapterImpl::MediaItemChangeCallback itemId");
-    WVLOG_I("MediaAVSessionAdapterImpl::MediaItemChangeCallback itemId %{public}d", avQueueItem->itemId);
     return AVSESSION_CALLBACK_RESULT_SUCCESS;
 }
 

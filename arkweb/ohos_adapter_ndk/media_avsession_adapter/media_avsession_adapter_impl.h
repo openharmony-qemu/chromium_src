@@ -90,7 +90,6 @@ public:
     void SetPlaybackState(MediaAVSessionPlayState state) override;
     void SetPlaybackPosition(const std::shared_ptr<MediaAVSessionPositionAdapter> position) override;
     void SetMediaCastUri(const std::string& mediaUri) override;
-    static std::shared_mutex& GetAVSessionAdapterMutex() { return avsession_adapter_mutex_; }
     void SetRemoteCastEnabled(bool enabled) override;
     void PrepareMediaCastDescription() override;
     void HandleStopMediaCast() override;
@@ -216,7 +215,6 @@ private:
     std::deque<std::string> url_queue_;
     std::mutex url_mutex_;
     std::mutex avsession_mutex_;
-    static std::shared_mutex avsession_adapter_mutex_;
     std::string media_uri_storage_;
     std::string pid_avsession_;
     std::string deviceName_;

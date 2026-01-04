@@ -72,4 +72,8 @@ ScrollOffset PaintLayerScrollableAreaUtils::GetScrollOffset(
       *params->align_x.get(), *params->align_y.get(), scroll_offset_limit);
   return target_offset;
 }
+
+void PaintLayerScrollableAreaUtils::Trace(Visitor* visitor) const {
+  visitor->Trace(scrollable_area_);
+}
 }  // namespace blink

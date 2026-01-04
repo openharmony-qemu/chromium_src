@@ -271,7 +271,7 @@ void LocalFrame::StartHighlightFadeTimer(base::TimeDelta delay) {
   } else {
     highlight_fade_timer_.Start(FROM_HERE, delay,
                                 WTF::BindOnce(&LocalFrame::ClearHighlight,
-                                              weak_local_frame_.GetWeakPtr()));
+                                              weak_local_frame_.GetWeakCell()));
   }
 }
 

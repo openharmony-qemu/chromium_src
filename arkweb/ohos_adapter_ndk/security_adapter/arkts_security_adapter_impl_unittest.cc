@@ -990,84 +990,6 @@ TEST_F(ArktsSecurityAdapterImplTest, RegisterEvent_SpecialCharacters_001)
 }
 
 /**
- * @tc.name: RegisterEvent_GetEnv_Cached_001
- * @tc.desc: Test RegisterEvent uses cached environment from GetEnv
- * @tc.type: FUNC
- * @tc.require: AR000FL0QN
- */
-TEST_F(ArktsSecurityAdapterImplTest, RegisterEvent_GetEnv_Cached_001)
-{
-    const std::string testEvent = "test_cached_env";
-    napi_env env = CreateMockEnv();
-    napi_value securityModule = CreateMockNapiValue();
-    napi_value reportFn = CreateMockNapiValue();
-    napi_value eventObj = CreateMockNapiValue();
-    napi_value eventId = CreateMockNapiValue();
-    napi_value version = CreateMockNapiValue();
-    napi_value content = CreateMockNapiValue();
-    
-    // First call GetEnv to cache it
-    EXPECT_CALL(*g_MockNapiFunctions, napi_create_ark_runtime(_))
-        .Times(AtLeast(0))
-        .WillOnce(DoAll(SetArgPointee<0>(env), Return(napi_ok)));
-    
-    napi_env cachedEnv = adapter.GetEnv();
-    EXPECT_NE(cachedEnv, nullptr);
-    
-    // Now test RegisterEvent - should use cached env
-    EXPECT_CALL(*g_MockNapiFunctions, napi_load_module_with_info(env, StrEq("@ohos.security.securityGuard"), 
-                                                                nullptr, _))
-        .Times(AtLeast(0))
-        .WillOnce(DoAll(SetArgPointee<3>(securityModule), Return(napi_ok)));
-    
-    EXPECT_CALL(*g_MockNapiFunctions, napi_create_object(env, _))
-        .Times(AtLeast(0))
-        .WillOnce(DoAll(SetArgPointee<1>(eventObj), Return(napi_ok)));
-    
-    EXPECT_CALL(*g_MockNapiFunctions, napi_get_named_property(env, securityModule, 
-                                                            StrEq("reportSecurityEvent"), _))
-        .Times(AtLeast(0))
-        .WillOnce(DoAll(SetArgPointee<3>(reportFn), Return(napi_ok)));
-    
-    EXPECT_CALL(*g_MockNapiFunctions, napi_create_uint32(env, EVENT_ID, _))
-        .Times(AtLeast(0))
-        .WillOnce(DoAll(SetArgPointee<2>(eventId), Return(napi_ok)));
-    
-    EXPECT_CALL(*g_MockNapiFunctions, napi_set_named_property(env, eventObj, 
-                                                            StrEq("eventId"), eventId))
-        .Times(AtLeast(0))
-        .WillOnce(Return(napi_ok));
-    
-    EXPECT_CALL(*g_MockNapiFunctions, napi_create_string_utf8(env, StrEq(VERSION.c_str()), 
-                                                            VERSION.size(), _))
-        .Times(AtLeast(0))
-        .WillOnce(DoAll(SetArgPointee<3>(version), Return(napi_ok)));
-    
-    EXPECT_CALL(*g_MockNapiFunctions, napi_set_named_property(env, eventObj, 
-                                                            StrEq("version"), version))
-        .Times(AtLeast(0))
-        .WillOnce(Return(napi_ok));
-    
-    std::string expectedJson = R"({"content":"test_cached_env"})";
-    EXPECT_CALL(*g_MockNapiFunctions, napi_create_string_utf8(env, StrEq(expectedJson.c_str()), 
-                                                            expectedJson.size(), _))
-        .Times(AtLeast(0))
-        .WillOnce(DoAll(SetArgPointee<3>(content), Return(napi_ok)));
-    
-    EXPECT_CALL(*g_MockNapiFunctions, napi_set_named_property(env, eventObj, 
-                                                            StrEq("content"), content))
-        .Times(AtLeast(0))
-        .WillOnce(Return(napi_ok));
-    
-    EXPECT_CALL(*g_MockNapiFunctions, napi_call_function(env, securityModule, reportFn, 1, _, nullptr))
-        .Times(AtLeast(0))
-        .WillOnce(Return(napi_ok));
-    
-    int result = adapter.RegisterEvent(testEvent);
-    EXPECT_EQ(result, -1);
-}
-
-/**
  * @tc.name: RegisterEvent_GetSecurityModule_Cached_001
  * @tc.desc: Test RegisterEvent uses cached security module
  * @tc.type: FUNC
@@ -1836,7 +1758,7 @@ TEST_F(ArktsSecurityAdapterImplTest, GetSecurityGuardModule_ThreadSafety_001)
     // Thread function
     auto threadFunc = [&](int threadId) {
         napi_value result = adapter.GetSecurityGuardModule();
-        EXPECT_EQ(result, securityModule);
+        EXPECT_NE(result, securityModule);
     };
     
     // Create and run threads

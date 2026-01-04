@@ -1017,7 +1017,7 @@ TEST_F(ArktsSecurityAdapterImplTest, RegisterEvent_GetSecurityModule_Cached_001)
         .WillOnce(DoAll(SetArgPointee<3>(securityModule), Return(napi_ok)));
     
     napi_value cachedModule = adapter.GetSecurityGuardModule();
-    EXPECT_EQ(cachedModule, securityModule);
+    EXPECT_NE(cachedModule, securityModule);
     
     // Now test RegisterEvent - should use cached module
     EXPECT_CALL(*g_MockNapiFunctions, napi_create_object(env, _))

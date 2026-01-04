@@ -130,13 +130,9 @@ void ProgressBarEventListener::HandleTouchStart(TouchEvent* event) {
   
   // Start touch and drag
   is_touch_dragging_ = true;
-  active_touch_id_ = active_touch->identifier();
-  
+  active_touch_id_ = active_touch->identifier();  
   float client_x = active_touch->clientX();
   StartDragging(client_x);
-  
-  LOG(INFO) << "Touch and drag to start, ID: " << active_touch_id_
-            << ", X: " << client_x;
 }
 
 void ProgressBarEventListener::HandleTouchMove(TouchEvent* event) {
@@ -160,24 +156,17 @@ void ProgressBarEventListener::HandleTouchMove(TouchEvent* event) {
   }
   
   if (!active_touch) {
-    LOG(WARNING) << "Unable to find the touch point for the activity, ID: " << active_touch_id_;
+    LOG(WARNING) << "Unable to find the touch point for the activity ID";
     return;
   }
   
   // Update Drag Position
   float client_x = active_touch->clientX();
   UpdateDragging(client_x);
-  
-  LOG(INFO) << "Touch and drag in progress, ID: " << active_touch_id_
-            << ", X: " << client_x;
 }
 
 void ProgressBarEventListener::UpdateDragging(float client_x) {
   double percentage = CalculatePercentageFromDrag(client_x);
-  
-  LOG(INFO) << "Drag to update - CurrentX: " << client_x
-            << ", Percentage: " << percentage << "%";
-  
   if (weak_ptr_) {
     weak_ptr_->OnProgressDragging(percentage);
   }
@@ -188,8 +177,7 @@ void ProgressBarEventListener::HandleTouchEnd(TouchEvent* event) {
     return;
   }
   
-  LOG(INFO) << "Handling touch end events";
-  
+  LOG(INFO) << "Handling touch end events";  
   event->stopPropagation();
   event->preventDefault();
   
@@ -206,12 +194,9 @@ void ProgressBarEventListener::HandleTouchEnd(TouchEvent* event) {
       client_x = touch->clientX();
       break;
     }
-  }
-  
+  }  
   EndDragging(client_x);
   active_touch_id_ = -1;
-  
-  LOG(INFO) << "Touch and drag ended - Final X: " << client_x;
 }
 
 void ProgressBarEventListener::HandleTouchCancel(TouchEvent* event) {
@@ -227,20 +212,14 @@ void ProgressBarEventListener::HandleTouchCancel(TouchEvent* event) {
     // Cancel dragging, do not perform jump.
     if (weak_ptr_) {
       weak_ptr_->OnProgressDragCancel();
-    }
-    
+    }    
     LOG(INFO) << "Touch and drag canceled.";
   }
 }
 
 void ProgressBarEventListener::EndDragging(float client_x) {
-  is_dragging_ = false;
-  
-  double percentage = CalculatePercentageFromDrag(client_x);
-  
-  LOG(INFO) << "Dragging ended - Final X: " << client_x
-            << ", Percentage: " << percentage << "%";
-  
+  is_dragging_ = false;  
+  double percentage = CalculatePercentageFromDrag(client_x);  
   if (weak_ptr_) {
     weak_ptr_->OnProgressDragEnd(percentage);
   }
@@ -255,24 +234,13 @@ double ProgressBarEventListener::CalculatePercentageFromDrag(float client_x) {
   }
   
   // Calculate the offset relative to the drag start point
-  float delta_x = client_x - drag_start_x_;
-  
+  float delta_x = client_x - drag_start_x_;  
   // Calculate Offset Percentage
-  float delta_percentage = (delta_x / width) * kLargestPercentage;
-  
+  float delta_percentage = (delta_x / width) * kLargestPercentage;  
   // Calculate New Percentage
-  double new_percentage = drag_start_percentage_ + delta_percentage;
-  
+  double new_percentage = drag_start_percentage_ + delta_percentage;  
   // Limit between 0 and 100.
-  new_percentage = std::max(0.0, std::min(kLargestPercentage, new_percentage));
-  
-  LOG(INFO) << "Drag Calculation - Starting Point X: " << drag_start_x_
-            << ", Current X: " << client_x
-            << ", Offset X: " << delta_x
-            << ", Starting Point %: " << drag_start_percentage_
-            << ", Offset%: " << delta_percentage
-            << ", New%: " << new_percentage;
-  
+  new_percentage = std::max(0.0, std::min(kLargestPercentage, new_percentage));  
   return new_percentage;
 }
 
@@ -288,8 +256,7 @@ Touch* ProgressBarEventListener::GetActiveTouch(TouchEvent* event) {
   touches = event->changedTouches();
   if (touches->length() > 0) {
     return touches->item(0);
-  }
-  
+  }  
   return nullptr;
 }
 
@@ -298,11 +265,7 @@ void ProgressBarEventListener::StartDragging(float client_x) {
   drag_start_x_ = client_x;
   
   // Get the current progress percentage as the drag start point
-  drag_start_percentage_ = CalculatePercentage(client_x);
-  
-  LOG(INFO) << "Drag Start - Starting Point X: " << drag_start_x_
-            << ", Starting Point Percentage: " << drag_start_percentage_ << "%";
-  
+  drag_start_percentage_ = CalculatePercentage(client_x);  
   if (weak_ptr_) {
     weak_ptr_->OnProgressDragStart();
   }
@@ -354,15 +317,11 @@ void ProgressBarEventListener::HandleMouseClick(MouseEvent* event) {
   if (!event) {
     return;
   }
-
   event->stopPropagation();
   event->preventDefault();
   
   float client_x = event->clientX();
-  double percentage = CalculatePercentage(client_x);
-  
-  LOG(INFO) << "Percentage of mouse click position: " << percentage << "%";
-  
+  double percentage = CalculatePercentage(client_x);  
   if (weak_ptr_) {
     weak_ptr_->OnProgressBarClicked(percentage);
   }
@@ -373,7 +332,6 @@ void ProgressBarEventListener::HandleMouseDown(MouseEvent* event) {
   if (!event) {
     return;
   }
-
   event->stopPropagation();
   event->preventDefault();
   
@@ -381,12 +339,9 @@ void ProgressBarEventListener::HandleMouseDown(MouseEvent* event) {
   if (is_touch_dragging_) {
     LOG(INFO) << "Touch and drag in progress, ignoring mouse events.";
     return;
-  }
-  
+  }  
   float client_x = event->clientX();
   StartDragging(client_x);
-  
-  LOG(INFO) << "Mouse drag start - X: " << client_x;
 }
 
 void ProgressBarEventListener::HandleMouseMove(MouseEvent* event) {
@@ -396,8 +351,7 @@ void ProgressBarEventListener::HandleMouseMove(MouseEvent* event) {
   }
   
   float client_x = event->clientX();
-  UpdateDragging(client_x);  
-  LOG(INFO) << "Mouse dragging in progress - X: " << client_x;
+  UpdateDragging(client_x);
 }
 
 void ProgressBarEventListener::HandleMouseUp(MouseEvent* event) {
@@ -408,7 +362,6 @@ void ProgressBarEventListener::HandleMouseUp(MouseEvent* event) {
   LOG(INFO) << "Handling mouse release events";
   float client_x = event->clientX();
   EndDragging(client_x);
-  LOG(INFO) << "Mouse drag ended - Final X: " << client_x;
 }
 
 void ProgressBarEventListener::HandleMouseLeave(MouseEvent* event) {

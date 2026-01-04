@@ -34,7 +34,6 @@ void MediaSessionControllersManager::OnEndAVSession(const MediaPlayerId& id,
 
 #if BUILDFLAG(ARKWEB_MEDIA_CAST)
 void MediaSessionControllersManager::OnNotifyMeidaCastUri(const MediaPlayerId& id, const std::string& media_uri) {
-  LOG(INFO) << "MediaSessionControllersManager::OnNotifyMeidaCastUri, mediaUri: " << media_uri;
   auto controller = FindOrCreateController(id);
   if (controller && controller->AsMediaSessionControllerExt()) {
     controller->AsMediaSessionControllerExt()->OnNotifyMeidaCastUri(media_uri);

@@ -543,7 +543,6 @@ void HTMLMediaElementUtils::OnNotifyMeidaCastUri() {
   auto mediaUri = (htmlMediaElement_->currentSrc()).GetString();
   if (htmlMediaElement_->IsHTMLVideoElement()) {
     for (auto& observer : htmlMediaElement_->media_player_observer_remote_set_->Value()) {
-      LOG(INFO) << "HTMLMediaElementUtils::OnVolumeChanged for observer, mediaUri: " << mediaUri;
       observer->OnNotifyMeidaCastUri(mediaUri);
     }
   }

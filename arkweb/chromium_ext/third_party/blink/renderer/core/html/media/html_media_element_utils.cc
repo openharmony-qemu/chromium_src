@@ -72,7 +72,8 @@ void HTMLMediaElementUtils::ScheduleNamedEventUtils(const AtomicString& event_na
       event_name == event_type_names::kWaiting ||
       event_name == event_type_names::kSeeking ||
       event_name == event_type_names::kStalled) {
-    LOG(INFO) << "OhMedia::ScheduleEvent() " << event_name;
+    LOG(INFO) << "OhMedia::ScheduleEvent() " << event_name
+              << "(hash" << std::hex << base::FastHash(base::byte_span_from_ref(htmlMediaElement_)) << ")";
   }
 #endif // ARKWEB_MEDIA
 

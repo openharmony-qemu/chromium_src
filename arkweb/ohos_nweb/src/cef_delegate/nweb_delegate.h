@@ -1083,6 +1083,9 @@ void SetFocusWebId(int32_t nweb_id) override;
   bool hidden_ = false;
   bool occluded_ = false;
   bool is_popup_ready_ = false;
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+  bool hasEvictedBufferWhenHidden_ = false;
+#endif
 #if BUILDFLAG(ARKWEB_COMPOSITE_RENDER) || BUILDFLAG(ARKWEB_PAGE_UP_DOWN) || BUILDFLAG(ARKWEB_VIEWPORT_AVOID) || \
     BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   uint32_t width_ = 0;

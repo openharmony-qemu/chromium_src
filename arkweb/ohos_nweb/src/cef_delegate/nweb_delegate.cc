@@ -1984,7 +1984,9 @@ void NWebDelegate::OnPause() {
     GetBrowser()->GetHost()->WasHidden(true);
     hidden_ = true;
 #if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
-  } else {
+    hasEvictedBufferWhenHidden_ = false;
+  } else if (!hasEvictedBufferWhenHidden_) {
+    hasEvictedBufferWhenHidden_ = true;
     LOG(INFO) << "NWebDelegate::OnPause evict frame back buffers when nweb was hidden";
     GetBrowser()->GetHost()->EvictFrameBackBuffersWhenNWebWasHidden();
   }

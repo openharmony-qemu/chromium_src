@@ -1354,6 +1354,7 @@ arkweb_ohos_adapter_ndk_unittests_sources = [
   "//arkweb/ohos_adapter_ndk/sensor_adapter/sensor_adapter_impl_unittest.cc",
   "//arkweb/ohos_adapter_ndk/ndk_version_unittest.cc",
   "//arkweb/ohos_adapter_ndk/ohos_adapter_helper_decouple_unittest.cpp",
+  "//arkweb/ohos_adapter_ndk/security_adapter/arkts_security_adapter_impl_unittest.cc",
 ]
 
 arkweb_components_viz_common_frame_sinks_copy_output_result_sources = [

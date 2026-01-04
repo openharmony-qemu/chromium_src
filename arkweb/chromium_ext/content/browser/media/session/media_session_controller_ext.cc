@@ -98,7 +98,6 @@ void MediaSessionControllerExt::OnNotifyMemoryLevel(int player_id, int32_t level
 
 #if BUILDFLAG(ARKWEB_MEDIA_CAST)
 void MediaSessionControllerExt::OnNotifyMeidaCastUri(const std::string& media_uri) {
-  LOG(INFO) << "MediaSessionController::OnNotifyMeidaCastUri,  mediaUri: " << media_uri;
   if (media_session_) {
     media_session_->OnNotifyMeidaCastUri(media_uri);
   }

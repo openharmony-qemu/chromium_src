@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- Copyright (c) 2025 Huawei Device Co., Ltd.
+
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+
+    This is the configuration file template for OpenHarmony OSS Audit Tool, please copy it to your
+project root dir and modify it refer to OpenHarmony/tools_oat/README.
+    All configurations in this file will be merged to OAT-Default.xml, if you have any questions or
+concerns, please create issue in OpenHarmony/tools_oat and @jalenchen or chenyaxun.
+
+    licensefile:
+    1.If the project don't have "LICENSE" in root dir, please define all the license files in this
+project in , OAT will check license files according to this rule.
+
+    policylist:
+    1. policy: If the OAT-Default.xml policies do not meet your requirements, please add policies here.
+    2. policyitem: The fields type, name, path, desc is required, and the fields rule, group,
+filefilter is optional,the default value is:
+    <policyitem type="" name="" path="" desc="" rule="may" group="defaultGroup"
+filefilter="defaultPolicyFilter"/>
+    3. policyitem type:
+        "compatibility" is used to check license compatibility in the specified path;
+        "license" is used to check source license header in the specified path;
+        "copyright" is used to check source copyright header in the specified path;
+        "import" is used to check source dependency in the specified path, such as import ... ,include ...
+        "filetype" is used to check file type in the specified path, supported file types: archive, binary
+        "filename" is used to check whether the specified file exists in the specified path(projectroot
+means the root dir of the project), supported file names: LICENSE, README, README.OpenSource
+    4. policyitem name: This field is used for define the license, copyright, "*" means match all, the
+"!" prefix means could not match this value. For example, "!GPL" means can not use GPL license.
+    5. policyitem path: This field is used for define the source file scope to apply this policyitem,
+the "!" prefix means exclude the files. For example, "!.*/lib/.*" means files in lib dir will be
+exclude while process this policyitem.
+    6. policyitem rule and group: These two fields are used together to merge policy results. "may"
+policyitems in the same group means any one in this group passed, the result will be passed.
+    7. policyitem filefilter: Used to bind filefilter which define filter rules.
+    7. policyitem desc: Used to describe the reason of this policy item, committers will check this
+while merging the code.
+    8. filefilter: Filter rules, the type filename is used to filter file name, the type filepath is
+used to filter file path.
+
+    Note:If the text contains special characters, please escape them according to the following rules:
+    " == &quot;
+    & == &amp;
+    ' == &apos;
+    < == &lt;
+    > == &gt;
+-->
+
+<configuration>
+    <oatconfig>
+        <licensefile>LICENSE</licensefile>
+        <policylist>
+            <policy name="projectPolicy" desc="The LICENSE is not standardized">
+            </policy>
+        </policylist>
+        <filefilterlist>
+             <filefilter name="binaryFileTypePolicyFilter" >
+                <filteritem type="filepath" name="arkweb/ohos_adapter_ndk/stub/multimedia/av_session/lib/." desc="ohos自研二进制文件" />
+                </filefilter>
+        </filefilterlist>
+        <licensematcherlist>
+            <licensematcher name="Khronos License" desc="">
+                <licensetext name="
+              Permission is hereby granted, free of charge, to any person obtaining a
+                ** copy of this software and/or associated documentation files (the
+                ** &quot;Materials&quot;), to deal in the Materials without restriction, including
+                ** without limitation the rights to use, copy, modify, merge, publish,
+                ** distribute, sublicense, and/or sell copies of the Materials, and to
+                ** permit persons to whom the Materials are furnished to do so, subject to
+                ** the following conditions:
+                **
+                ** The above copyright notice and this permission notice shall be included
+                ** in all copies or substantial portions of the Materials.
+                **
+                ** THE MATERIALS ARE PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND,
+                ** EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+                ** MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+                ** IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+                ** CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+                ** TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+                ** MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
+            " desc="" />
+            </licensematcher>
+            <licensematcher name="LicenseRef-scancode-mit-synopsys" desc="">
+                <licensetext name="
+                    This package is a JavaScript porting of `wcwidth()` implementation
+                    [by Markus Kuhn](http://www.cl.cam.ac.uk/~mgk25/ucs/wcwidth.c).
+
+                    Permission is hereby granted, free of charge, to any person obtaining a copy of
+                    this software and associated documentation files (the &quot;Software&quot;), to deal in
+                    the Software without restriction, including without limitation the rights to
+                    use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+                    of the Software, and to permit persons to whom the Software is furnished to do
+                    so, subject to the following conditions:
+
+                    The above copyright notice and this permission notice shall be included in all
+                    copies or substantial portions of the Software.
+
+
+                    THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
+                    INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+                    FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR
+                    OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+                    EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+                    PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+                    BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+                    IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+                    ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+                    POSSIBILITY OF SUCH DAMAGE.
+            " desc="" />
+            </licensematcher>
+            <licensematcher name="ISC" desc="">
+                <licensetext name="
+                    Permission to use, copy, modify, and/or distribute this
+                    software for any purpose with or without fee is hereby
+                    granted, provided that the above copyright notice and this
+                    permission notice appear in all copies.
+
+                    THE SOFTWARE IS PROVIDED &quot;AS IS&quot; AND NPM DISCLAIMS ALL
+                    WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL
+                    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO
+                    EVENT SHALL NPM BE LIABLE FOR ANY SPECIAL, DIRECT,
+                    INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+                    WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
+                    WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+                    TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE
+                    USE OR PERFORMANCE OF THIS SOFTWARE.
+            " desc="" />
+                <licensetext name="
+                    Permission to use, copy, modify, and/or distribute this software for
+                    any purpose with or without fee is hereby granted, provided that the
+                    above copyright notice and this permission notice appear in all copies.
+
+                    THE SOFTWARE IS PROVIDED &quot;AS IS&quot; AND THE COPYRIGHT HOLDER DISCLAIMS
+                    ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
+                    WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+                    COPYRIGHT HOLDER BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR
+                    CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS
+                    OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE
+                    OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE
+                    USE OR PERFORMANCE OF THIS SOFTWARE.
+            " desc="" />
+            </licensematcher>
+            <licensematcher name="BSD-3-Clause" desc="">
+                <licensetext name="
+                * Redistribution and use in source and binary forms, with or without
+                * modification, are permitted provided that the following conditions
+                * are met:
+                * 1. Redistributions of source code must retain the above copyright
+                *    notice, and the entire permission notice in its entirety,
+                *    including the disclaimer of warranties.
+                * 2. Redistributions in binary form must reproduce the above copyright
+                *    notice, this list of conditions and the following disclaimer in the
+                *    documentation and/or other materials provided with the distribution.
+                * 3. The name of the author may not be used to endorse or promote
+                *    products derived from this software without specific prior
+                *    written permission.
+                *
+                * THIS SOFTWARE IS PROVIDED &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED
+                * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+                * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE, ALL OF
+                * WHICH ARE HEREBY DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR BE
+                * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+                * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+                * OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+                * BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+                * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+                * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+                * USE OF THIS SOFTWARE, EVEN IF NOT ADVISED OF THE POSSIBILITY OF SUCH
+                * DAMAGE.
+            " desc="" />
+            </licensematcher>
+            <licensematcher name="MIT" desc="">
+                <licensetext name="
+                * All Rights Reserved.
+                *
+                * Permission is hereby granted, free of charge, to any person obtaining
+                * a copy of this software and associated documentation files (the
+                * &quot;Software&quot;), to deal in the Software without restriction, including
+                * without limitation on the rights to use, copy, modify, merge,
+                * publish, distribute, sublicense, and/or sell copies of the Software,
+                * and to permit persons to whom the Software is furnished to do so,
+                * subject to the following conditions:
+                *
+                * The above copyright notice and this permission notice (including the
+                * next paragraph) shall be included in all copies or substantial
+                * portions of the Software.
+                *
+                * THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND,
+                * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+                * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+                * NON-INFRINGEMENT.  IN NO EVENT SHALL RED HAT AND/OR THEIR SUPPLIERS
+                * BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+                * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+                * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+                * SOFTWARE.
+            " desc="" />
+            <licensetext name="
+                * MIT LICENSE
+            " desc="" />
+            <licensetext name="
+                /* MIT license */
+            " desc="" />
+            <licensetext name="
+                // MIT License
+            " desc="" />
+            <licensetext name="
+                * MIT LICENSE
+            " desc="" />
+            </licensematcher>
+            <licensematcher name="NCSA" desc="">
+                <licensetext name="
+                #                     The LLVM Compiler Infrastructure
+                #
+                # This file is distributed under the University of Illinois Open Source
+                # License. See LICENSE.TXT for details.
+            " desc="" />
+            </licensematcher>
+            <licensematcher name="SGI-B-2.0" desc="">
+                <licensetext name="
+                * This document is licensed under the SGI Free Software B License Version
+                * 2.0. For details, see http://oss.sgi.com/projects/FreeB/ .
+            " desc="" />
+            </licensematcher>
+            <licensematcher name="CC-PDDC" desc="">
+                <licensetext name="
+                * This software is Public Domain. To view a copy of the public domain dedication,
+                * visit http://creativecommons.org/licenses/publicdomain/ or send a letter to
+                * Creative Commons, 559 Nathan Abbott Way, Stanford, California 94305, USA.
+                *
+                * I ask and expect, but do not require, that all derivative works contain an
+                * attribution similar to:
+                *  Parts developed by Adam Langley &lt;agl@imperialviolet.org&gt;
+                *
+                * You may wish to replace the word &quot;Parts&quot; with something else depending on
+                * the amount of original code.
+                *
+                * (Derivative works does not include programs which link against, run or include
+                * the source verbatim in their source distributions)
+                " desc="" />
+            </licensematcher>
+        </licensematcherlist>
+    </oatconfig>
+</configuration>

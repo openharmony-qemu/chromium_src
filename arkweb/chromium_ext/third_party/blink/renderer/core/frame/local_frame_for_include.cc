@@ -98,7 +98,7 @@ void LocalFrame::OnOverScrollOffsetChanged(float offset_x, float offset_y) {
     GetTaskRunner(TaskType::kInternalDefault)
         ->PostTask(FROM_HERE,
                    WTF::BindOnce(&LocalFrame::OnOverScrollOffsetChanged,
-                                 weak_local_frame_.GetSafeRef(), offset_x, offset_y));
+                                 weak_local_frame_.GetWeakCell(), offset_x, offset_y));
   } else {
     GetLocalFrameHostRemote().OnOverScrollOffsetChanged(offset_x, offset_y);
   }

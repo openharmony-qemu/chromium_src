@@ -416,6 +416,7 @@ const base::FilePath::CharType kAppThemeFontsManifest[] =
     FILE_PATH_LITERAL("manifest.json");
 static const std::string kSrc = "src";
 static const std::string kSrcExt = "srcExt";
+static const std::string kTtfFileSrc = "ttfFileSrc";
 
 std::unique_ptr<ThemeFont> ArkwebRenderProcessHostImplUtils::g_theme_font_ =
     nullptr;
@@ -480,12 +481,15 @@ ThemeFont* ArkwebRenderProcessHostImplUtils::EnsureThemeFont() {
   const base::Value::Dict& dict = parsed_json->GetDict();
   const std::string* absolte_font_path = dict.FindString(kSrc);
   if (!absolte_font_path || absolte_font_path->empty()) {
-    LOG(ERROR) << "[themefont] manifest file has no ttfFileSrc tag";
-    return nullptr;
+    absolte_font_path = dict.FindString(kTtfFileSrc);
+    if (!absolte_font_path || absolte_font_path->empty()) {
+      LOG(ERROR) << "[themefont] manifest file has no src or ttfFileSrc tag";
+      return nullptr;
+    }
   }
   base::FilePath theme_font_path_ext = theme_font_path;
   base::FilePath font_path =
-      theme_font_path.Append(*absolte_font_path);
+      theme_font_path.Append(base::FilePath(*absolte_font_path).BaseName());
   if (!base::PathExists(font_path)) {
     LOG(ERROR) << "[themefont] font file not exist:" << font_path.value();
     return nullptr;

@@ -32,7 +32,9 @@ const int32_t TASK_DELAY_MS_4G = 3000;
 const int32_t TASK_DELAY_MS_3G = 4000;
 const int32_t TASK_DELAY_MS_2G = 5000;
 const int32_t TASK_DELAY_MS_SLOW_2G = 6000;
-const float NINETY_PERCENT = 0.9f;
+const double BACKGROUND_IMAGE_THRESHOLD = 0.75;
+const double NEARLY_FINISHED_THRESHOLD = 0.8;
+const double SMALL_RECT_THRESHOLD = 0.01;
 
 void FirstScreenCalculator::OnFirstScreenInvoked() {
   const base::TimeDelta as_time_delta =
@@ -95,7 +97,7 @@ void FirstScreenCalculator::DumpImageRect() {
 }
 
 void FirstScreenCalculator::DumpTextRect() {
-  for (auto it = text_paint_rect_.begin(); it != text_paint_rect_.end(); ++it) {
+  for (auto it = text_paint_rects_.begin(); it != text_paint_rects_.end(); ++it) {
     LOG(INFO) << "DumpTextRect, rect = " << it->rect_.ToString()
               << ", paint time =  " << it->paint_time_;
   }
@@ -144,6 +146,81 @@ void FirstScreenCalculator::RestartTimerForFirstScreenDetection() {
                               weak_factory_.GetSafeRef()));
 }
 
+bool FirstScreenCalculator::IsRectContainedByExistingRects(
+    const gfx::Rect& rect) {
+  for (auto it = image_rects_map_.begin(); it != image_rects_map_.end(); ++it) {
+    if (it->second.rect_ == rect || it->second.rect_.Contains(rect)) {
+      return true;
+    }
+  }
+  for (auto it = text_paint_rects_.begin(); it != text_paint_rects_.end();
+       ++it) {
+    if (it->rect_ == rect || it->rect_.Contains(rect)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void FirstScreenCalculator::RemoveExistingRectsContainedByRect(
+    const gfx::Rect& rect) {
+  for (auto it = text_paint_rects_.begin(); it != text_paint_rects_.end();) {
+    if (rect.Contains(it->rect_)) {
+      it = text_paint_rects_.erase(it);
+    } else {
+      ++it;
+    }
+  }
+
+  for (auto it = image_rects_map_.begin(); it != image_rects_map_.end();) {
+    if (rect.Contains(it->second.rect_)) {
+      it = image_rects_map_.erase(it);
+    } else {
+      ++it;
+    }
+  }
+}
+
+bool FirstScreenCalculator::DoesRectIntersectExistingRects(
+    const gfx::Rect& rect) {
+  for (auto it = text_paint_rects_.begin(); it != text_paint_rects_.end();
+       ++it) {
+    if (it->rect_ != rect && it->rect_.Intersects(rect)) {
+      return true;
+    }
+  }
+
+  for (auto it = image_rects_map_.begin(); it != image_rects_map_.end(); ++it) {
+    if (it->second.rect_ != rect && it->second.rect_.Intersects(rect)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool FirstScreenCalculator::IsRectTooSmallWhenNearlyFinished(
+    const gfx::Rect& rect) {
+  if (!viewport_size_) {
+    return false;
+  }
+  if (!nearly_finished_) {
+    occupied_rect_.Union(rect);
+    double occupied_ratio =
+        occupied_rect_.size().GetArea() * 1.0 / viewport_size_;
+    if (occupied_ratio > NEARLY_FINISHED_THRESHOLD) {
+      nearly_finished_ = true;
+    } else {
+      return false;
+    }
+  }
+
+  double rect_ratio = rect.size().GetArea() * 1.0 / viewport_size_;
+  if (rect_ratio < SMALL_RECT_THRESHOLD) {
+    return true;
+  }
+  return false;
+}
+
 void FirstScreenCalculator::NotifyImagePaint(
     MediaRecordIdHash record_id_hash,
     const ImageRecord* record,
@@ -152,37 +229,40 @@ void FirstScreenCalculator::NotifyImagePaint(
   if (!record || user_scrolled_ || !record->lcp_rect_info_) {
     return;
   }
-  gfx::Rect root_rect_info = record->lcp_rect_info_->GetRootRectInfo();
-  if (is_video) {
-    root_rect_info.set_x(root_rect_info.x() / 2);
-    root_rect_info.set_y(root_rect_info.y() / 2);
+  viewport_size_ = *viewport_size;
+
+  gfx::Rect rect = record->lcp_rect_info_->GetRootRectInfo();
+  double image_ratio = rect.size().GetArea() * 1.0 / (*viewport_size);
+  if (image_ratio > BACKGROUND_IMAGE_THRESHOLD) {
+    LOG(INFO) << "FirstScreenCalculator::NotifyImagePaint image_ratio "
+              << image_ratio << " is too large.";
+    return;
   }
+  if (is_video) {
+    rect.set_x(rect.x() / 2);
+    rect.set_y(rect.y() / 2);
+  }
+
   if (image_rects_map_.empty()) {
-    image_rects_map_.insert(
-        {record_id_hash, {root_rect_info, record->paint_time}});
+    image_rects_map_.insert({record_id_hash, {rect, record->paint_time}});
     RestartTimerForFirstScreenDetection();
     return;
   }
-
   for (auto it = image_rects_map_.begin(); it != image_rects_map_.end(); ++it) {
-    uint64_t rect_size = static_cast<uint64_t>(it->second.rect_.width() *
-                                               it->second.rect_.height());
     if (it->first == record_id_hash) {
       return;
     }
-
-    if (it->second.rect_ == root_rect_info &&
-        rect_size < *viewport_size * NINETY_PERCENT) {
-      return;
-    }
-
-    if (it->second.rect_.Contains(root_rect_info) &&
-        rect_size < *viewport_size * NINETY_PERCENT) {
-      return;
-    }
   }
-  image_rects_map_.insert(
-      {record_id_hash, {root_rect_info, record->paint_time}});
+  if (IsRectContainedByExistingRects(rect) ||
+      IsRectTooSmallWhenNearlyFinished(rect)) {
+    return;
+  }
+  RemoveExistingRectsContainedByRect(rect);
+  image_rects_map_.insert({record_id_hash, {rect, record->paint_time}});
+  if (DoesRectIntersectExistingRects(rect)) {
+    intersected_image_ids_.emplace_back(record_id_hash);
+    return;
+  }
   RestartTimerForFirstScreenDetection();
 }
 
@@ -191,42 +271,34 @@ void FirstScreenCalculator::NotifyTextPaint(const TextRecord* record,
   if (!record || user_scrolled_ || !record->lcp_rect_info_) {
     return;
   }
-
-  if (text_paint_rect_.empty()) {
-    text_paint_rect_.emplace_back(PaintRectInfo(
-        record->lcp_rect_info_->GetRootRectInfo(), record->paint_time));
-    if (first_screen_paint_time_.is_null() || timestamp > first_screen_paint_time_) {
+  if (!viewport_size_ && frame_view_) {
+    viewport_size_ =
+        frame_view_->ViewportWidth() * frame_view_->ViewportHeight();
+  }
+  gfx::Rect rect = record->lcp_rect_info_->GetRootRectInfo();
+  if (text_paint_rects_.empty()) {
+    text_paint_rects_.emplace_back(PaintRectInfo(rect, record->paint_time));
+    if (first_screen_paint_time_.is_null() ||
+        timestamp > first_screen_paint_time_) {
       first_screen_paint_time_ = timestamp;
     }
     RestartTimerForFirstScreenDetection();
     return;
   }
-  for (auto it = text_paint_rect_.begin(); it != text_paint_rect_.end(); ++it) {
-    if (it->rect_ == record->lcp_rect_info_->GetRootRectInfo()) {
-      return;
-    }
 
-    if (it->rect_.Contains(record->lcp_rect_info_->GetRootRectInfo())) {
-      return;
-    }
+  if (IsRectContainedByExistingRects(rect) ||
+      IsRectTooSmallWhenNearlyFinished(rect)) {
+    return;
+  }
+  RemoveExistingRectsContainedByRect(rect);
+  text_paint_rects_.emplace_back(PaintRectInfo(rect, record->paint_time));
+  if (DoesRectIntersectExistingRects(rect)) {
+    return;
   }
 
-  text_paint_rect_.emplace_back(PaintRectInfo(
-      record->lcp_rect_info_->GetRootRectInfo(), record->paint_time));
-
-  for (auto it = text_paint_rect_.begin(); it != text_paint_rect_.end(); ++it) {
-    if (it->rect_ != record->lcp_rect_info_->GetRootRectInfo() &&
-        record->lcp_rect_info_->GetRootRectInfo().Contains(it->rect_)) {
-      return;
-    }
-
-    if (it->rect_ != record->lcp_rect_info_->GetRootRectInfo() &&
-        it->rect_.Intersects(record->lcp_rect_info_->GetRootRectInfo())) {
-      return;
-    }
-  }
-  if (first_screen_paint_time_.is_null() || timestamp > first_screen_paint_time_) {
-      first_screen_paint_time_ = timestamp;
+  if (first_screen_paint_time_.is_null() ||
+      timestamp > first_screen_paint_time_) {
+    first_screen_paint_time_ = timestamp;
   }
   RestartTimerForFirstScreenDetection();
 }
@@ -236,16 +308,20 @@ void FirstScreenCalculator::AssignImagePaintTime(
     const gfx::Rect& rect,
     base::TimeTicks timestamp) {
   const auto& it = image_rects_map_.find(record_id_hash);
-  if (it == image_rects_map_.end()) {
-    return;
-  }
-  if (!it->second.paint_time_.is_null()) {
+  if (it == image_rects_map_.end() || !it->second.paint_time_.is_null()) {
     return;
   }
 
   image_rects_map_[record_id_hash] = PaintRectInfo(rect, timestamp);
+  for (const auto& id : intersected_image_ids_) {
+    if (id == record_id_hash) {
+      return;
+    }
+  }
+
   if (!user_scrolled_ && !timestamp.is_null()) {
-    if (first_screen_paint_time_.is_null() || timestamp > first_screen_paint_time_) {
+    if (first_screen_paint_time_.is_null() ||
+        timestamp > first_screen_paint_time_) {
       first_screen_paint_time_ = timestamp;
     }
     RestartTimerForFirstScreenDetection();
@@ -289,9 +365,12 @@ bool FirstScreenCalculator::HasUserScrolled() const {
 
 void FirstScreenCalculator::RestartRecordingFirstScreenPaint() {
   user_scrolled_ = false;
+  nearly_finished_ = false;
   first_screen_paint_time_ = base::TimeTicks();
   image_rects_map_.clear();
-  text_paint_rect_.clear();
+  text_paint_rects_.clear();
+  intersected_image_ids_.clear();
+  occupied_rect_ = gfx::Rect();
 }
 
 void FirstScreenCalculator::GetPaintRects(std::vector<gfx::Rect>& paint_rects) {
@@ -301,7 +380,7 @@ void FirstScreenCalculator::GetPaintRects(std::vector<gfx::Rect>& paint_rects) {
     }
     paint_rects.emplace_back(it->second.rect_);
   }
-  for (auto it = text_paint_rect_.begin(); it != text_paint_rect_.end(); ++it) {
+  for (auto it = text_paint_rects_.begin(); it != text_paint_rects_.end(); ++it) {
     if (it->paint_time_.is_null()) {
       continue;
     }

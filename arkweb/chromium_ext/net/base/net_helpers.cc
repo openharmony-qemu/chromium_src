@@ -44,14 +44,16 @@ static const char APP_STORAGE_SANDBOX_PATH[] =
 #endif
 
 int UpdateCacheLoadFlags(int load_flags, int cache_control_flags) {
-  const int all_cache_control_flags =
+  const uint32_t all_cache_control_flags =
       net::LOAD_BYPASS_CACHE | net::LOAD_VALIDATE_CACHE |
       net::LOAD_SKIP_CACHE_VALIDATION | net::LOAD_ONLY_FROM_CACHE;
-  DCHECK_EQ((cache_control_flags & all_cache_control_flags),
-            cache_control_flags);
-  load_flags &= ~all_cache_control_flags;
-  load_flags |= cache_control_flags;
-  return load_flags;
+  DCHECK_EQ((static_cast<uint32_t>(cache_control_flags) & all_cache_control_flags),
+            static_cast<uint32_t>(cache_control_flags));
+  uint32_t unsigned_load_flags = static_cast<uint32_t>(load_flags);
+  uint32_t unsigned_cache_flags = static_cast<uint32_t>(cache_control_flags);
+  unsigned_load_flags &= ~all_cache_control_flags;
+  unsigned_load_flags |= unsigned_cache_flags;
+  return static_cast<int>(unsigned_load_flags);
 }
 }  // namespace
 
@@ -68,11 +70,11 @@ int32_t NetHelpers::socket_idle_timeout = kDefaultSocketIdleTimeout;
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
 std::optional<bool> NetHelpers::enable_private_network_check = std::nullopt;
-std::mutex NetHelpers::enable_private_network_check_mutex;
+base::NoDestructor<std::mutex> NetHelpers::enable_private_network_check_mutex;
 #endif
 
 #if BUILDFLAG(ARKWEB_CUSTOM_DNS)
-std::map<std::string, struct CustomDnsEntry> NetHelpers::custom_dns = {};
+base::NoDestructor<std::map<std::string, struct CustomDnsEntry>> NetHelpers::custom_dns{};
 #endif
 
 #if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
@@ -315,29 +317,29 @@ void NetHelpers::SetHostIP(const std::string host_name,
                            const std::string address,
                            int32_t ttl) {
   if (host_name != "" && address != "") {
-    auto it = NetHelpers::custom_dns.find(host_name);
-    if (it != NetHelpers::custom_dns.end()) {
+    auto it = (*NetHelpers::custom_dns).find(host_name);
+    if (it != (*NetHelpers::custom_dns).end()) {
       it->second.address.push_back(address);
       it->second.ttl = ttl;
     } else {
       CustomDnsEntry node;
       node.address.push_back(address);
       node.ttl = ttl;
-      NetHelpers::custom_dns.insert(
+      (*NetHelpers::custom_dns).insert(
           std::pair<std::string, CustomDnsEntry>(host_name, node));
     }
   }
 }
 
 std::map<std::string, struct CustomDnsEntry> NetHelpers::GetHostIP() {
-  return NetHelpers::custom_dns;
+  return *NetHelpers::custom_dns;
 }
 
 std::vector<std::string> NetHelpers::GetHostIP(const std::string host_name) {
   std::vector<std::string> dns = {};
   if (host_name != "") {
-    auto it = NetHelpers::custom_dns.find(host_name);
-    if (it != NetHelpers::custom_dns.end()) {
+    auto it = (*NetHelpers::custom_dns).find(host_name);
+    if (it != (*NetHelpers::custom_dns).end()) {
       return it->second.address;
     }
   }
@@ -346,19 +348,19 @@ std::vector<std::string> NetHelpers::GetHostIP(const std::string host_name) {
 
 void NetHelpers::ClearHostIP(const std::string host_name) {
   if (host_name != "") {
-    NetHelpers::custom_dns.erase(host_name);
+    (*NetHelpers::custom_dns).erase(host_name);
   }
 }
 
 void NetHelpers::ClearHostIP() {
-  NetHelpers::custom_dns.clear();
+  (*NetHelpers::custom_dns).clear();
 }
 #endif
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
 bool NetHelpers::ShouldAllowInsecurePrivateNetworkRequests() {
   bool allow = false;
-  std::lock_guard<std::mutex> lock(enable_private_network_check_mutex);
+  std::lock_guard<std::mutex> lock(*enable_private_network_check_mutex);
   if (enable_private_network_check.has_value()) {
     allow = !enable_private_network_check.value();
   }
@@ -366,12 +368,12 @@ bool NetHelpers::ShouldAllowInsecurePrivateNetworkRequests() {
 }
 
 void NetHelpers::SetPrivateNetworkAccess(bool enable) {
-  std::lock_guard<std::mutex> lock(enable_private_network_check_mutex);
+  std::lock_guard<std::mutex> lock(*enable_private_network_check_mutex);
   enable_private_network_check = enable;
 }
 
 bool NetHelpers::GetPrivateNetworkAccess() {
-  std::lock_guard<std::mutex> lock(enable_private_network_check_mutex);
+  std::lock_guard<std::mutex> lock(*enable_private_network_check_mutex);
   return enable_private_network_check.value_or(true);
 }
 #endif

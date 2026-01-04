@@ -127,12 +127,11 @@ void DfxReporterImpl::ReportHiSysEvent(const std::string& eventName, const std::
 }
 
 // the param `eventInfo` may be used in the future
-void FreezeReporterImpl::ReportRenderFreeze(int32_t pid, const std::string& processName, const std::string& freezeMsg,
-                                            int32_t uid)
+void FreezeReporterImpl::ReportRenderFreeze(dfx::mojom::FreezeInfoPtr freezeInfo)
 {
 #if !defined(COMPONENT_BUILD)
   auto packageName = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance().GetBundleName();
-  ReportAppfreeze(pid, packageName, processName, freezeMsg, uid);
+  ReportAppfreeze(freezeInfo->pid, packageName, freezeInfo->processName, freezeInfo->freezeMsg, freezeInfo->uid);
 #endif
 }
 

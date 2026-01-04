@@ -1020,6 +1020,11 @@ void NavigationControllerImpl::Reload(ReloadType reload_type,
   pending_entry_index_ = current_index;
   pending_entry_->SetTransitionType(ui::PAGE_TRANSITION_RELOAD);
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  pending_entry_->SetReloadReason(reload_reason_);
+  reload_reason_ = ErrorPageReloadReason ::INVALID;
+#endif
+
   // location.reload() goes through BeginNavigation, so all reloads triggered
   // via this codepath are browser initiated.
   NavigateToExistingPendingEntry(
@@ -1971,6 +1976,12 @@ void NavigationControllerImpl::UpdateNavigationEntryDetails(
   // Don't use the page type from the pending entry. Some interstitial page
   // may have set the type to interstitial. Once we commit, however, the page
   // type must always be normal or error.
+#if defined(ARKWEB_EX_FALLBACK_PROXY)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          ::switches::kEnableNwebEx)) {
+    entry->set_error_code(request ? request->GetNetErrorCode() : net::OK);
+  }
+#endif
   entry->set_page_type((request && request->DidEncounterError())
                            ? PAGE_TYPE_ERROR
                            : PAGE_TYPE_NORMAL);

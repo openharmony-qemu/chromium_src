@@ -31,6 +31,7 @@ constexpr int32_t MAX_LCP_TIME = 5000;
 constexpr int32_t MIN_CAPACITY = 0;
 constexpr int32_t MAX_CAPACITY = 200;
 constexpr int32_t MAX_FILE_SIZE = 30 * 1024 * 1024;
+constexpr int64_t MICRO_SECONDS_PER_DAY = 1000LL * 1000 * 3600 * 24;
 
 class OhosWebSnapshotDataBaseCallbackFuzz : public OhosWebSnapshotDataBaseCallback {
 public:
@@ -88,8 +89,12 @@ void OhosWebSnapshotDataBaseFuzzTest(const uint8_t* data, size_t size)
         dataItem.snapShotFileSize = 1;
     }
     dataBase.InsertSnapshotDataItem(dataProvider.ConsumeIntegralInRange<int64_t>(0, MAX_KEY), dataItem);
+    dataBase.InsertSnapshotDataItem(dataProvider.ConsumeIntegralInRange<int64_t>(0, MAX_KEY), dataItem,
+        dataProvider.ConsumeIntegralInRange<int64_t>(0, dataBase.GetCurrentTime() + 1 * MICRO_SECONDS_PER_DAY));
     if (!dataProvider.ConsumeBool()) {
         dataBase.InsertSnapshotDataItem(1, dataItem);
+        dataBase.InsertSnapshotDataItem(2, dataItem,
+            dataProvider.ConsumeIntegralInRange<int64_t>(0, dataBase.GetCurrentTime() + 1 * MICRO_SECONDS_PER_DAY));
     }
     dataBase.GetSnapshotDataItem(dataProvider.ConsumeIntegralInRange<int64_t>(0, MAX_KEY));
     int32_t capacity = MAX_CAPACITY;
@@ -110,7 +115,7 @@ void OhosWebSnapshotDataBaseFuzzTest(const uint8_t* data, size_t size)
     dataBase.ClearSnapshotDataItem({});
     dataBase.GetDatabaseInfo();
     dataBase.InsertInner(dataProvider.ConsumeIntegralInRange<int64_t>(0, MAX_KEY),
-        {dataItem, dataBase.GetCurrentTime()});
+        {dataItem, dataBase.GetCurrentTime() + 7 * MICRO_SECONDS_PER_DAY});
     dataBase.DeleteInner(dataBase.GetOldestKey());
     dataBase.ClearInner();
 }

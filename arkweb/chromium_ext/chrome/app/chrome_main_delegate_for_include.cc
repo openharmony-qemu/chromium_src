@@ -13,7 +13,7 @@
 * limitations under the License.
 */
 
-static bool SetUserDataDirForArkweb(const base::CommandLine* command_line) {
+static bool SetUserDataDirForArkweb(base::CommandLine* command_line) {
   bool cache_web_exists = base::CommandLine::ForCurrentProcess()->HasSwitch(
           switches::kCacheDirExists);
   bool arkweb_exists = base::CommandLine::ForCurrentProcess()->HasSwitch(
@@ -42,8 +42,10 @@ static bool SetUserDataDirForArkweb(const base::CommandLine* command_line) {
     target_user_data_dir = arkweb_user_data_dir;
   }
 
+  command_line->AppendSwitchPath(switches::kUserDataDir, target_user_data_dir);
+
   base::PathService::OverrideAndCreateIfNeeded(
-    base::DIR_USER_DATA, target_user_data_dir, false, false);
+    base::DIR_USER_DATA, target_user_data_dir, false, true);
 
   return !base::PathService::OverrideAndCreateIfNeeded(
             chrome::DIR_USER_DATA, target_user_data_dir, false, true);

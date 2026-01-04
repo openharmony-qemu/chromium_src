@@ -30,6 +30,18 @@
     image_analyzer_enabled_ = enabled;
   }
   bool GetImageAnalyzerEnabled() { return image_analyzer_enabled_; }
+
+  void SetArkwebAgentEnabled(bool enabled) {
+    arkweb_agent_enabled_ = enabled;
+  }
+  bool GetArkwebAgentEnabled() { return arkweb_agent_enabled_; }
+
+  void SetAgentNeedHighlight(bool enabled) {
+    agent_need_highlight_ = enabled;
+  }
+  bool GetAgentNeedHighlight() { 
+    return agent_need_highlight_; 
+  }
 #endif  // BUILDFLAG(ARKWEB_AI)
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)

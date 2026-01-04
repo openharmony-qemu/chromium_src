@@ -62,6 +62,7 @@
 #endif
 
 struct OpenDevToolsParam;
+struct OpenDevToolsExtOpt;
 struct RunJavaScriptParam;
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
@@ -188,11 +189,17 @@ class NWebImpl : public NWeb {
   void SetEnableLowerFrameRate(bool enabled) override;
   void SetEnableHalfFrameRate(bool enabled) override;
   std::shared_ptr<NWebPreference> GetPreference() override;
+#if BUILDFLAG(ARKWEB_AI)
+  std::shared_ptr<NWebAgentManager> GetAgentManager() override;
+#endif  // BUILDFLAG(ARKWEB_AI)
   void PutDownloadCallback(
       std::shared_ptr<NWebDownloadCallback> downloadListener) override;
   void PutReleaseSurfaceCallback(std::shared_ptr<NWebReleaseSurfaceCallback>
                                      releaseSurfaceListener) override;
   void SetNWebHandler(std::shared_ptr<NWebHandler> handler) override;
+#if BUILDFLAG(ARKWEB_AI)
+  void SetNWebAgentHandler(std::shared_ptr<NWebAgentHandler> handler) override;
+#endif
   std::string Title() override;
   uint32_t GetWebId() override;
   std::shared_ptr<HitTestResult> GetHitTestResult() override;
@@ -677,6 +684,8 @@ class NWebImpl : public NWeb {
   void ReloadOriginalUrl() const;
   void SetBrowserUserAgentString(const std::string& user_agent);
   void OpenDevtools(std::unique_ptr<OpenDevToolsParam> param);
+  void OpenDevtoolsByPb(std::unique_ptr<OpenDevToolsParam> param,
+                        OpenDevToolsExtOpt& ext_opt);
   void CloseDevtools();
   void EnableAutoResize(
       int32_t min_width, int32_t min_height, int32_t max_width, int32_t max_height);
@@ -977,7 +986,6 @@ class NWebImpl : public NWeb {
       std::unique_ptr<NWebExtensionTabAttachInfo> attachInfo);
   void WebExtensionTabDetached(int tab_id,
       std::unique_ptr<NWebExtensionTabDetachInfo> detachInfo);
-  void WebExtensionTabHighlighted(NWebExtensionTabHighlightInfo& highlightInfo);
   void WebExtensionTabMoved(int32_t tab_id,
                             std::unique_ptr<NWebExtensionTabMoveInfo> moveInfo);
   void WebExtensionTabReplaced(int32_t addedTabId, int32_t removedTabId);
@@ -1175,7 +1183,7 @@ class NWebImpl : public NWeb {
   bool SetFocusByPosition(float x, float y) override;
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 #if BUILDFLAG(ARKWEB_SOFTKEYBOARD_AVOID)
-  static void SetSoftKeyboardBehaviorModeV2(WebSoftKeyboardBehaviorMode mode);
+  void SetSoftKeyboardBehaviorMode(WebSoftKeyboardBehaviorMode mode) override;
 #endif
 #if BUILDFLAG(ARKWEB_PIP)
   void SetPipNativeWindow(int delegate_id,
@@ -1196,6 +1204,10 @@ class NWebImpl : public NWeb {
   static int64_t GetPreferenceHashByNwebId(int32_t nweb_id);
   bool TriggerBlanklessForUrl(const std::string& url) override;
   void SetVisibility(bool isVisible) override;
+  int32_t SetBlanklessLoadingParams(const std::string& key, bool enable, int32_t duration,
+                                    int64_t expirationTime,
+                                    std::shared_ptr<NWebBlanklessCallback> callback) override;
+  void CallExecuteBlanklessCallback(int32_t state, const std::string& reason) override;
 #endif
 
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)
@@ -1286,7 +1298,7 @@ class NWebImpl : public NWeb {
   std::string web_tag_{""};
 #endif
 #if BUILDFLAG(ARKWEB_SOFTKEYBOARD_AVOID)
-  static WebSoftKeyboardBehaviorMode keyboardBehaviorMode_;
+  WebSoftKeyboardBehaviorMode keyboardBehaviorMode_ = WebSoftKeyboardBehaviorMode::DEFAULT;
 #endif
   bool is_pause_ = false;
   struct ReSizeType {
@@ -1346,11 +1358,16 @@ class NWebImpl : public NWeb {
   void ClearBlanklessKey();
   bool CheckNetAvailable();
   void CallBlanklessFrameFunc(uint64_t blankless_key, SnapshotDataItem& dataItem, bool isAnime = false);
+  void CallBlanklessFrameFuncV2(uint64_t blankless_key, SnapshotDataItem& dataItem,
+                                int32_t duration, bool isAnime = false);
+  void ExecuteBlanklessCallback(const std::string& key, int32_t state, const std::string& reason);
   // To avoid include blankless_controller.h in nweb_impl.h, we use UINT64_MAX instead of INVALID_BLANKLESS_KEY.
   std::atomic<uint64_t> blankless_key_ = UINT64_MAX;
   std::atomic<bool> is_private_ = false;
   std::atomic<bool> is_visible_ = false;
   std::atomic<bool> is_user_enable_ = false;
+  std::string string_key_;
+  std::shared_ptr<NWebBlanklessCallback> blankless_callback_ = nullptr;
 #endif
 
 #if BUILDFLAG(ARKWEB_COOKIE)

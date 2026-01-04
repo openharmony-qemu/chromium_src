@@ -76,6 +76,16 @@ class NET_EXPORT_PRIVATE HttpNetworkTransaction
 #if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
   int RestartWithSecureDnsOnly(CompletionOnceCallback callback) override { return ERR_IO_PENDING; }
 #endif
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  int RestartWithFallbackProxy(CompletionOnceCallback callback) override {
+    return ERR_IO_PENDING;
+  }
+  int RestartWithDirect(CompletionOnceCallback callback) override {
+    return ERR_IO_PENDING;
+  }
+#endif
+
   int RestartIgnoringLastError(CompletionOnceCallback callback) override;
   int RestartWithCertificate(scoped_refptr<X509Certificate> client_cert,
                              scoped_refptr<SSLPrivateKey> client_private_key,
@@ -129,7 +139,13 @@ class NET_EXPORT_PRIVATE HttpNetworkTransaction
                       const NetErrorDetails& net_error_details,
                       const ProxyInfo& used_proxy_info,
                       ResolveErrorInfo resolve_error_info) override;
-  void OnCertificateError(int status, const SSLInfo& ssl_info) override;
+  void OnCertificateError(int status,
+                          const SSLInfo& ssl_info
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+                          ,
+                          bool used_fallback_proxy
+#endif
+                          ) override;
   void OnNeedsProxyAuth(const HttpResponseInfo& response_info,
                         const ProxyInfo& used_proxy_info,
                         HttpAuthController* auth_controller) override;
@@ -172,6 +188,10 @@ class NET_EXPORT_PRIVATE HttpNetworkTransaction
 #if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
     STATE_CREATE_FALLBACK_STREAM_WITH_SECURE_DNS_ONLY,
     STATE_CREATE_FALLBACK_STREAM_WITH_SECURE_DNS_ONLY_COMPLETE,
+#endif
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+    STATE_CREATE_FALLBACK_STREAM_WITH_FALLBACK_PROXY,
+    STATE_CREATE_FALLBACK_STREAM_WITH_FALLBACK_PROXY_COMPLETE,
 #endif
     STATE_INIT_STREAM,
     STATE_INIT_STREAM_COMPLETE,

@@ -43,6 +43,8 @@ public:
       WebNativeClient*) {
     return nullptr;
   }
+
+  virtual float GetDeviceScaleFactor(NativeLoader&) { return 0.f; }
 #endif
 #if BUILDFLAG(ARKWEB_JSPROXY)
   virtual void RunScriptsAtHeadElementAvailable() = 0;

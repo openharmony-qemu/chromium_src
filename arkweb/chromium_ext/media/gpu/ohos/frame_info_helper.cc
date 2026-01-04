@@ -100,6 +100,9 @@ class FrameInfoHelperImpl : public FrameInfoHelper,
 
       if (buffer_renderer->RenderToTextureOwnerFrontBuffer(
               CodecOutputBufferRenderer::BindingsMode::kDontBindImage, 0)) {
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+        buffer_renderer->OnBufferRendered();
+#endif // ARKWEB_VIDEO_ASSISTANT
         gfx::Size coded_size;
         gfx::Rect visible_rect;
         if (texture_owner->GetCodedSizeAndVisibleRect(

@@ -213,6 +213,10 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
 #if BUILDFLAG(ARKWEB_AI)
   browser_settings.image_analyzer_enabled =
       GetImageAnalyzerEnabled() ? STATE_ENABLED : STATE_DISABLED;
+  browser_settings.arkweb_agent_enabled =
+      GetArkwebAgentEnabled() ? STATE_ENABLED : STATE_DISABLED;
+  browser_settings.agent_need_highlight =
+      GetAgentNeedHighlight() ? STATE_ENABLED : STATE_DISABLED;
 #endif
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   browser_settings.hide_horizontal_scrollbars =
@@ -806,6 +810,24 @@ void NWebPreferenceDelegate::PutImageAnalyzerEnabled(bool enabled) {
 
 bool NWebPreferenceDelegate::GetImageAnalyzerEnabled() {
   return image_analyzer_enabled_;
+}
+
+void NWebPreferenceDelegate::PutArkwebAgentEnabled(bool enabled) {
+  arkweb_agent_enabled_ = enabled;
+  WebPreferencesChanged();
+}
+
+bool NWebPreferenceDelegate::GetArkwebAgentEnabled() {
+  return arkweb_agent_enabled_;
+}
+
+void NWebPreferenceDelegate::PutAgentNeedHighlight(bool enabled) {
+  agent_need_highlight_ = enabled;
+  WebPreferencesChanged();
+}
+
+bool NWebPreferenceDelegate::GetAgentNeedHighlight() {
+  return agent_need_highlight_;
 }
 #endif
 

@@ -59,6 +59,7 @@ class ResSchedReportImpl
     void ReportGestureId(uint32_t id);
     void ReportGestureEx(uint32_t id, bool tag);
     void StartPerformanceBoost();
+    void ReportMemoryUsage(const std::string& msg);
 
     explicit ResSchedReportImpl(ResSchedReport* owner) {
         task_runner_ = base::SingleThreadTaskRunner::GetCurrentDefault();
@@ -103,6 +104,11 @@ void ResSchedReportImpl::StartPerformanceBoost() {
     ->StartPerformanceBoost();
 }
 
+#if BUILDFLAG(ARKWEB_OHOS_MEM_USAGE_REPORT)
+void ResSchedReportImpl::ReportMemoryUsage(const std::string& msg) {
+}
+#endif  // BUILDFLAG(ARKWEB_OHOS_MEM_USAGE_REPORT)
+
 ResSchedReport::ResSchedReport() : impl_() {
   impl_ = ResSchedReportImpl::Create(this);
 }
@@ -130,4 +136,12 @@ void ResSchedReport::StartPerformanceBoost() {
     impl_->StartPerformanceBoost();
   }
 }
+
+#if BUILDFLAG(ARKWEB_OHOS_MEM_USAGE_REPORT)
+void ResSchedReport::ReportMemoryUsage(const std::string& msg) {
+  if (impl_.get()) {
+    impl_->ReportMemoryUsage(msg);
+  }
+}
+#endif  // BUILDFLAG(ARKWEB_OHOS_MEM_USAGE_REPORT)
 }  // namespace device

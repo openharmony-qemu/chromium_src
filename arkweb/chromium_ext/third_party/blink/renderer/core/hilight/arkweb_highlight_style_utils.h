@@ -19,6 +19,7 @@
 #include "arkweb/build/features/features.h"
 #include "third_party/blink/renderer/core/core_export.h"
 #include "third_party/blink/renderer/platform/graphics/color.h"
+#include "third_party/blink/renderer/core/style/computed_style.h"
 
 namespace blink {
 class Document;
@@ -33,6 +34,22 @@ class CORE_EXPORT ArkWebHighlightStyleUtils {
   // white, alpha channel set to zero
   static constexpr RGBA32 kBackgroundColorInDragging = 0x00FFFFFF;
 #endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
+
+#if BUILDFLAG(ARKWEB_AI)
+  static bool ShouldUseAIColors(PseudoId pseudo,
+                                const CSSProperty& property,
+                                const Document& document);
+
+  static Color GetTargetTextForegroundColor(
+      const Document& document,
+      mojom::blink::ColorScheme color_scheme);
+  static Color GetTargetTextBackgroundColor(
+      const Document& document,
+      mojom::blink::ColorScheme color_scheme);
+
+  static constexpr RGBA32 kTargetTextBackgroundColor = 0x1FA479FF;
+  static constexpr RGBA32 kTargetTextBackgroundColorDark = 0x33A479FF;
+#endif
 };
 }  // namespace blink
 

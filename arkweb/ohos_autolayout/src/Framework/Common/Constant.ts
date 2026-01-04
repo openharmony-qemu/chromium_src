@@ -113,6 +113,20 @@ export default class Constant {
 
     static readonly tag_truncate = 'truncate-tag';
 
+    static readonly input = 'input';
+    static readonly textarea = 'textarea';
+
+    // 定义文本输入的类型集合
+    static readonly textTypes = new Set([
+        'email',
+        'number',
+        'password',
+        'search',
+        'tel',
+        'text',
+        'url'
+    ]);
+
     static readonly discrepancy = 1;
     static readonly maxCloseButtonSizeRatio = 0.15;
     static readonly bottomCloseButtonRatio = 0.6;
@@ -120,12 +134,19 @@ export default class Constant {
     static readonly flexDelHeightThreshold = 2;
     static readonly truncateThreshold = 2;
     static readonly centerCloseButtonThreshold = 5;
-    
-    static readonly ERR_CODE_GAPS = 100;
-    static readonly ERR_CODE_OVERFLOW = 50;
-    static readonly ERR_CODE_OFFSET = 10;
-    static readonly ERR_CODE_CLOSE_BTN_OVERLAP = 2;
-    static readonly ERR_CODE_INTERACTIVE = 1;
+
+    static readonly RESULT_CODE_PASS = 0;
+    static readonly RESULT_CODE_GAPS = 100;
+    static readonly RESULT_CODE_OVERFLOW = 50;
+    static readonly RESULT_CODE_OFFSET = 10;
+    static readonly RESULT_CODE_CLOSE_BTN_OVERLAP = 2;
+    static readonly RESULT_CODE_INTERACTIVE = 1;
+    static readonly RESULT_CODE_PAGE_CONTENT_NOT_READY = -1;
+    static readonly RESULT_CODE_NO_POPUP = -2;
+    static readonly RESULT_CODE_NOT_TRUNCATED = -3;
+    static readonly RESULT_CODE_SKIP_SCALE = -4;
+
+    static readonly maxMaskAspectRatio = 3;
 
     static readonly paddingTop = 'padding-top';
     static readonly paddingBottom = 'padding-bottom';

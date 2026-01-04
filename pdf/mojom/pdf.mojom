@@ -87,5 +87,11 @@ interface PdfHost {
 
   [EnableIf=arkweb_pdf]
   ResetResponsePendingInputEvent();
+
+  [EnableIf=arkweb_pdf]
+  SetIsLeftHandleVisible(bool visible);
+
+  [EnableIf=arkweb_pdf]
+  SetIsRightHandleVisible(bool visible);
   // #endif
 };

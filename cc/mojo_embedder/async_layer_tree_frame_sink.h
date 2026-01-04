@@ -147,6 +147,11 @@ class CC_MOJO_EMBEDDER_EXPORT AsyncLayerTreeFrameSink
 #if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
   void OnSetBypassVsyncCondition(int32_t condition) override;
 #endif
+
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+  void UpdateThrottleMode(bool is_enable) override;
+#endif
+
   void DidNotProduceFrame(const viz::BeginFrameAck& ack,
                           FrameSkippedReason reason) override;
   std::unique_ptr<LayerContext> CreateLayerContext(

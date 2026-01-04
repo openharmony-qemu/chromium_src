@@ -45,6 +45,7 @@ class MockAafwkAppMgrClientAdapter
   MOCK_METHOD(void,AttachRenderProcess,(std::shared_ptr<OHOS::NWeb::AafwkRenderSchedulerHostAdapter>),(override));
   MOCK_METHOD(int,StartChildProcess,(const std::string&,int32_t,int32_t,int32_t,pid_t&,const std::string&),(override));
   MOCK_METHOD(void,SaveBrowserConnect,(std::shared_ptr<OHOS::NWeb::AafwkBrowserHostAdapter>),(override));
+  MOCK_METHOD(bool, IsRenderProcessByUid, (int), (override));
 };
 #endif
 
@@ -528,6 +529,10 @@ TEST_F(ArkwebChildProcessLauncherHelperUtilsTest, LaunchChildProcess_CommandLine
   }
 
   auto mock_adapter = std::make_unique<MockAafwkAppMgrClientAdapter>();
+  EXPECT_CALL(*mock_adapter, IsRenderProcessByUid(20300002))
+      .WillOnce(testing::Return(true));
+  EXPECT_CALL(*mock_adapter, IsRenderProcessByUid(100000))
+      .WillOnce(testing::Return(false));
   std::string captured_argv;
   EXPECT_CALL(*mock_adapter, StartChildProcess(testing::_, testing::_, testing::_, testing::_,
                                 testing::_, testing::_))

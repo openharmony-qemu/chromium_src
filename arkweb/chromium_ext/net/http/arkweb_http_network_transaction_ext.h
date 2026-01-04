@@ -63,10 +63,20 @@ class NET_EXPORT_PRIVATE ArkWebHttpNetworkTransactionExt : public HttpNetworkTra
   int RestartWithSecureDnsOnly(CompletionOnceCallback callback) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  int RestartWithFallbackProxy(CompletionOnceCallback callback) override;
+  int RestartWithDirect(CompletionOnceCallback callback) override;
+#endif
+
  private:
 #if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   int DoCreateFallbackStreamWithSecureDnsOnly();
   int DoCreateFallbackStreamWithSecureDnsOnlyComplete(int result);
+#endif
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  int DoCreateStreamWithFallbackProxy();
+  int DoCreateStreamWithFallbackProxyComplete(int result);
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
@@ -74,7 +84,7 @@ class NET_EXPORT_PRIVATE ArkWebHttpNetworkTransactionExt : public HttpNetworkTra
   void StopRecording();
   void ReportTimeout();
 
-  base::OneShotTimer timer_;
+  base::RepeatingTimer timer_;
   bool is_recording_;
 #endif
 };

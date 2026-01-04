@@ -13,10 +13,11 @@
  * limitations under the License.
 */
 
+#include <dlfcn.h>
+
 #include "arkweb/build/features/features.h"
 #include "base/check_op.h"
 #include "base/logging.h"
-#include <dlfcn.h>
 #include "multimodalinput/oh_input_manager.h"
 #include "ui/base/pointer/pointer_device.h"
 #include "ui/events/devices/device_data_manager.h"
@@ -139,10 +140,13 @@ NO_SANITIZE("cfi-icall") int MaxTouchPoints()
   if (get_max_touch_point == nullptr) {
     LOG(WARNING)
         << "cannot find the function called OH_Input_QueryMaxTouchPoints";
+    dlclose(dl);
     return DEFAULT_TOUCH_POINT_NUM;
   }
 
   Input_Result input_res = get_max_touch_point(&point_num);
+  dlclose(dl);
+
   if (input_res != INPUT_SUCCESS) {
     LOG(WARNING) << "Get max touch points failed.";
     return DEFAULT_TOUCH_POINT_NUM;

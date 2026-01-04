@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 
+#include "arkweb_native_blankless_callback.h"
 #include "arkweb_native_javascript_execute_callback.h"
 #include "arkweb_native_object.h"
 #include "arkweb_native_web_message_callback.h"
@@ -1185,6 +1186,34 @@ ARKWEB_NDK_EXPORT ArkWeb_BlanklessErrorCode OH_NativeArkWeb_SetBlanklessLoadingW
 
     int32_t errCode = nwebSharedPtr->SetBlanklessLoadingWithKey(key, isStarted);
     return static_cast<ArkWeb_BlanklessErrorCode>(errCode);
+}
+
+ARKWEB_NDK_EXPORT ArkWeb_BlanklessErrorCode
+OH_NativeArkWeb_SetBlanklessLoadingParams(const char* webTag,
+                                          const char* key,
+                                          const ArkWeb_BlanklessLoadingParam& param)
+{
+  auto webObjectPtr = OHOS::NWeb::ArkWebNativeObject::GetWebInstanceByWebTag(webTag);
+  if (webObjectPtr == nullptr) {
+    LOG(ERROR) << "blankless OH_NativeArkWeb_SetBlanklessLoadingParams web object pointer is nullptr";
+    return ArkWeb_BlanklessErrorCode::ARKWEB_BLANKLESS_ERR_CONTROLLER_NOT_INITED;
+  }
+
+  auto nwebSharedPtr = webObjectPtr->GetWebSharedPtr();
+  if (nwebSharedPtr == nullptr) {
+    LOG(ERROR) << "blankless OH_NativeArkWeb_SetBlanklessLoadingParams get nweb null for webTag: " << webTag;
+    return ArkWeb_BlanklessErrorCode::ARKWEB_BLANKLESS_ERR_CONTROLLER_NOT_INITED;
+  }
+
+  std::string stringKey(key);
+  std::shared_ptr<OHOS::NWeb::NWebBlanklessCallback> callbackImpl = nullptr;
+  if (param.callback != nullptr) {
+    callbackImpl = std::make_shared<OHOS::NWeb::ArkWebNativeBlanklessCallback>(param.callback);
+  }
+
+  int32_t errCode = nwebSharedPtr->SetBlanklessLoadingParams(
+    stringKey, param.enable, param.duration, param.expirationTime, callbackImpl);
+  return static_cast<ArkWeb_BlanklessErrorCode>(errCode);
 }
 #ifdef __cplusplus
 }

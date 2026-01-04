@@ -272,6 +272,22 @@ public:
   MOCK_METHOD(void, UnRegisterVpnListener, (), (override));
 };
 
+#if BUILDFLAG(ARKWEB_COOKIE)
+class MockNWebEngineInitArgs : public NWebEngineInitArgs {
+ public:
+  ~MockNWebEngineInitArgs() = default;
+  MOCK_METHOD(std::string, GetDumpPath, (), (override));
+  MOCK_METHOD(bool, GetIsFrameInfoDump, (), (override));
+  MOCK_METHOD(std::list<std::string>, GetArgsToAdd, (), (override));
+  MOCK_METHOD(std::list<std::string>, GetArgsToDelete, (), (override));
+  MOCK_METHOD(bool, GetIsMultiRendererProcess, (), (override));
+  MOCK_METHOD(bool, GetIsEnhanceSurface, (), (override));
+  MOCK_METHOD(bool, GetIsPopup, (), (override));
+  MOCK_METHOD(std::string, GetSharedRenderProcessToken, (), (override));
+  MOCK_METHOD(bool, GetEmulateTouchFromMouseEvent, (), (override));
+};
+#endif
+
 class NWebImplTest : public ::testing::Test {
  public:
   static void SetUpTestCase(void);
@@ -4079,6 +4095,31 @@ TEST_F(NWebImplTest, OnOnlineRenderToForeground002) {
   EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
 }
 
+TEST_F(NWebImplTest, SetScrollbarMode) {
+  NWebImpl::SetScrollbarMode(OHOS::NWeb::ScrollbarMode::FORCE_DISPLAY_SCROLLBAR);
+  nweb_impl_->scrollbarModeChanged_ = false;
+  std::shared_ptr<NWebEngineInitArgs> init_args;
+  nweb_impl_->InitWebEngineArgs(init_args);
+  init_args.reset();
+  nweb_impl_->scrollbarModeChanged_ = true;
+  nweb_impl_->InitWebEngineArgs(init_args);
+  init_args.reset();
+  NWebImpl::SetScrollbarMode(OHOS::NWeb::ScrollbarMode::OVERLAY_LAYOUT_SCROLLBAR);
+  nweb_impl_->scrollbarModeChanged_ = false;
+  nweb_impl_->InitWebEngineArgs(init_args);
+  init_args.reset();
+  nweb_impl_->scrollbarModeChanged_ = true;
+  nweb_impl_->InitWebEngineArgs(init_args);
+  NWebImpl::SetScrollbarMode(OHOS::NWeb::ScrollbarMode::OVERLAY_LAYOUT_SCROLLBAR);
+  NWebImpl::SetScrollbarMode(OHOS::NWeb::ScrollbarMode::FORCE_DISPLAY_SCROLLBAR);
+  nweb_impl_->scrollbarModeChanged_ = false;
+  nweb_impl_->InitWebEngineArgs(init_args);
+  init_args.reset();
+  nweb_impl_->scrollbarModeChanged_ = true;
+  nweb_impl_->InitWebEngineArgs(init_args);
+  EXPECT_GT(nweb_impl_->web_engine_args_.size(), 0);
+}
+
 #if BUILDFLAG(ARKWEB_ACTIVE_POLICY)
 TEST_F(NWebImplTest, SetDelayDurationForBackgroundTabFreezing001) {
   int64_t delay = 1;
@@ -6523,22 +6564,6 @@ TEST_F(NWebImplTest, WebExtensionTabDetached002) {
   EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
 }
 
-TEST_F(NWebImplTest, WebExtensionTabHighlighted001) {
-  NWebExtensionTabHighlightInfo highlightInfo;
-  nweb_impl_->nweb_delegate_ = nullptr;
-  EXPECT_CALL(*mock_delegate_, WebExtensionTabHighlighted(::testing::_)).Times(0);
-  nweb_impl_->WebExtensionTabHighlighted(highlightInfo);
-  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
-}
-
-TEST_F(NWebImplTest, WebExtensionTabHighlighted002) {
-  NWebExtensionTabHighlightInfo highlightInfo;
-  nweb_impl_->nweb_delegate_ = mock_delegate_;
-  EXPECT_CALL(*mock_delegate_, WebExtensionTabHighlighted(::testing::_)).Times(1);
-  nweb_impl_->WebExtensionTabHighlighted(highlightInfo);
-  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
-}
-
 TEST_F(NWebImplTest, WebExtensionTabMoved001) {
   int32_t tab_id = 0;
   std::unique_ptr<NWebExtensionTabMoveInfo> moveInfo = std::make_unique<NWebExtensionTabMoveInfo>();
@@ -8098,6 +8123,16 @@ TEST_F(NWebImplTest, GetBlanklessInfoWithKey004) {
   EXPECT_EQ(similarity, 0);
   EXPECT_EQ(result, 0);
 }
+
+TEST_F(NWebImplTest, SetBlanklessLoadingParams001) {
+  const std::string key = "test";
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  auto result1 = nweb_impl_->SetBlanklessLoadingParams(key, false, 0, 0, nullptr);
+  EXPECT_EQ(result1, -5);
+  auto result2 = nweb_impl_->SetBlanklessLoadingParams(key, true, 0, 0, nullptr);
+  EXPECT_EQ(result2, -5);
+}
 #endif  // BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
 
 #if BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)
@@ -8225,5 +8260,51 @@ TEST_F(NWebImplTest, OffscreenDocumentWindowNewEvent001) {
   EXPECT_EQ(nweb_impl_->off_screen_nweb_id_, 0);
 }
 #endif  // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+
+#if BUILDFLAG(ARKWEB_COOKIE)
+TEST_F(NWebImplTest, LibraryLoaded001) {
+  std::shared_ptr<MockNWebEngineInitArgs> initargs =
+      std::make_shared<MockNWebEngineInitArgs>();
+  NWebImpl::LibraryLoaded(initargs, true);
+  EXPECT_NE(nweb_impl_->save_initargs_, nullptr);
+  EXPECT_EQ(nweb_impl_->should_lazy_init_web_engine_, true);
+}
+
+TEST_F(NWebImplTest, ShouldLazyInitWebEngine001) {
+  nweb_impl_->should_lazy_init_web_engine_ = false;
+  EXPECT_EQ(NWebImpl::ShouldLazyInitWebEngine(), false);
+}
+
+TEST_F(NWebImplTest, GetSaveInitargs001) {
+  nweb_impl_->save_initargs_ = nullptr;
+  EXPECT_EQ(NWebImpl::GetSaveInitargs(), nullptr);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_WEBRTC)
+TEST_F(NWebImplTest, ResumeMicrophone001) {
+  ASSERT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = nullptr;
+  ASSERT_NO_FATAL_FAILURE(nweb_impl_->ResumeMicrophone());
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  ASSERT_NO_FATAL_FAILURE(nweb_impl_->ResumeMicrophone());
+}
+
+TEST_F(NWebImplTest, PauseMicrophone001) {
+  ASSERT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = nullptr;
+  ASSERT_NO_FATAL_FAILURE(nweb_impl_->PauseMicrophone());
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  ASSERT_NO_FATAL_FAILURE(nweb_impl_->PauseMicrophone());
+}
+
+TEST_F(NWebImplTest, StopMicrophone001) {
+  ASSERT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = nullptr;
+  ASSERT_NO_FATAL_FAILURE(nweb_impl_->StopMicrophone());
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  ASSERT_NO_FATAL_FAILURE(nweb_impl_->StopMicrophone());
+}
+#endif
 }  // namespace OHOS::NWeb
                           

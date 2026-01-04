@@ -31,7 +31,9 @@ class TextRecord;
 class FirstScreenCalculator {
  public:
   explicit FirstScreenCalculator(LocalFrameView* local_frame_view)
-      : frame_view_(local_frame_view) {}
+      : frame_view_(local_frame_view) {
+        LOG(INFO) << "zhu explicit FirstScreenCalculator this " << this;
+      }
   void NotifyImagePaint(MediaRecordIdHash record_id_hash,
                         const ImageRecord* record,
                         std::optional<uint64_t> viewport_size,
@@ -45,6 +47,7 @@ class FirstScreenCalculator {
   bool HasUserScrolled() const;
   void RestartRecordingFirstScreenPaint();
   void GetPaintRects(std::vector<gfx::Rect>& paint_rects);
+ 
 
  private:
   struct PaintRectInfo {
@@ -59,14 +62,23 @@ class FirstScreenCalculator {
   void DumpTextRect();
   void OnFirstScreenInvoked();
   void RestartTimerForFirstScreenDetection();
+  bool IsRectContainedByExistingRects(const gfx::Rect& rect);
+  bool DoesRectIntersectExistingRects(const gfx::Rect& rect);
+  void RemoveExistingRectsContainedByRect(const gfx::Rect& rect);
+  bool IsRectTooSmallWhenNearlyFinished(const gfx::Rect& rect);
 
   std::unordered_map<MediaRecordIdHash, PaintRectInfo> image_rects_map_;
-  std::vector<PaintRectInfo> text_paint_rect_;
+  std::vector<MediaRecordIdHash> intersected_image_ids_;
+  std::vector<PaintRectInfo> text_paint_rects_;
   base::OneShotTimer timer_;
   base::TimeTicks first_screen_paint_time_;
   base::TimeTicks navigation_start_time_;
   Member<LocalFrameView> frame_view_;
   bool user_scrolled_ = false;
+  base::TimeDelta max_delta_{base::TimeDelta()};
+  uint64_t viewport_size_ = 0;
+  gfx::Rect occupied_rect_{gfx::Rect()};
+  bool nearly_finished_ = false;
   base::WeakPtrFactory<FirstScreenCalculator> weak_factory_{this};
 };
 

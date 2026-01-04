@@ -28,6 +28,7 @@
 #include "cef/include/cef_devtools_message_handler_delegate.h"
 #include "cef/ohos_cef_ext/libcef/browser/net_service/net_helpers.h"
 #include "gtest/gtest.h"
+#include "ohos_cef_ext/libcef/common/cef_open_devtools_ext_opt.h"
 #include "nweb.h"
 
 #if BUILDFLAG(IS_ARKWEB_EXT)
@@ -610,6 +611,12 @@ class MockPreferenceCefBrowserHost : public ArkWebBrowserHostExt {
   void ShowDevToolsWith(CefRefPtr<ArkWebBrowserHostExt> frontend_browser,
                         CefRefPtr<CefDevToolsMessageHandlerDelegate> delegate,
                         const CefPoint& inspect_element_at) override {}
+  
+  void ShowDevToolsWithByPb(
+      CefRefPtr<ArkWebBrowserHostExt> frontend_browser,
+      CefRefPtr<CefDevToolsMessageHandlerDelegate> delegate,
+      const CefPoint& inspect_element_at,
+      const CefOpenDevToolsExtOpt& ext_opt) override {}
 
   bool IsFullscreen() override { return false; }
 
@@ -905,6 +912,11 @@ class MockPreferenceCefBrowser : public CefBrowser, public CefBrowserHost {
   CefRefPtr<ArkWebBrowserHostExt> frontend_browser,
   CefRefPtr<CefDevToolsMessageHandlerDelegate> delegate,
   const CefPoint& inspect_element_at) override {}
+  void ShowDevToolsWithByPb(
+  CefRefPtr<ArkWebBrowserHostExt> frontend_browser,
+  CefRefPtr<CefDevToolsMessageHandlerDelegate> delegate,
+  const CefPoint& inspect_element_at,
+  const CefOpenDevToolsExtOpt& ext_opt) override {}
   #endif // BUILDFLAG(ARKWEB_DEVTOOLS)
   void CloseDevTools() override {}
   bool HasDevTools() override {return false;}

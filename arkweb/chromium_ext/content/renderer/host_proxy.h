@@ -17,6 +17,7 @@ class HostProxy : public OHOS::NWeb::AafwkBrowserHostAdapter {
 
   virtual void* GetSurfaceFromKernel(int32_t surface_id) override;
   virtual void DestroySurfaceFromKernel(int32_t surface_id) override;
+  void* GetSurfaceFromKernelWithRef(int32_t surface_id) override;
 };
 }  // namespace content
 

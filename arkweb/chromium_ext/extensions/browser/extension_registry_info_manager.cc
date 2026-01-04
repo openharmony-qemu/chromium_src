@@ -403,6 +403,11 @@ ExtensionRegistryInfoManager::BrowserNotifier::~BrowserNotifier() {
 
 void ExtensionRegistryInfoManager::BrowserNotifier::HandleImageEvent(
     IconImage* icon_image) {
+  if (!icon_image->is_valid()) {
+    LOG(INFO) << "extension has been unloaded";
+    return;
+  }
+
   if (icon_image == action_icon_image()) {
     PopulateActionIcon(icon_image->image());
   } else if (icon_image == manifest_icon_image()) {
@@ -667,6 +672,7 @@ void ExtensionRegistryInfoManager::GetExtensionManifestInfo(
       std::make_optional<ExtensionIncognitoMode>(GetExtensionIncognitoMode(&extension));
 #endif
   manifest.omnibox = GetManifestOmnibox(&extension);
+  manifest.short_name = extension.short_name();
 }
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)

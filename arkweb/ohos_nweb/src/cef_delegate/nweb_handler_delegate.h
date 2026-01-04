@@ -155,6 +155,10 @@ class NWebHandlerDelegate : public ArkWebClientExt,
   void RegisterNativeJavaScriptCallBack(
       const char* objName,
       const std::vector<std::shared_ptr<NWebJsProxyCallback>>& callbacks);
+#if BUILDFLAG(ARKWEB_AI)
+  void RegisterNWebAgentHandler(std::shared_ptr<NWebAgentHandler> handler);
+  void RegisterOnLoadStartedCbForHighlightContent(std::function<void(void)>&& callback);
+#endif
 
   using NativeJSProxyCallbackFunc =
       std::function<char*(std::vector<std::vector<uint8_t>>&,
@@ -717,6 +721,7 @@ class NWebHandlerDelegate : public ArkWebClientExt,
 #endif
 #if BUILDFLAG(ARKWEB_AI)
   bool CloseImageOverlaySelection() override;
+  void OnAgentEventReport(const std::string& json) override;
 #endif
   /* CefContextMenuHandler method end */
 
@@ -954,6 +959,7 @@ class NWebHandlerDelegate : public ArkWebClientExt,
                    const CefString& message) override;
   void logUrl(const CefString& url) override;
 #endif
+
 #if BUILDFLAG(ARKWEB_DISATCH_BEFORE_UNLOAD)
   void OnBeforeUnloadFired(CefRefPtr<CefBrowser> browser,
                            bool proceed) override;
@@ -1098,6 +1104,10 @@ class NWebHandlerDelegate : public ArkWebClientExt,
   std::shared_ptr<NWebDownloadCallback> download_listener_ = nullptr;
   std::shared_ptr<NWebReleaseSurfaceCallback> releaseSurfaceListener_ = nullptr;
   std::shared_ptr<NWebHandler> nweb_handler_ = nullptr;
+#if BUILDFLAG(ARKWEB_AI)
+  std::shared_ptr<NWebAgentHandler> nweb_agent_handler_ = nullptr;
+  std::function<void(void)> onLoadStartedCbForHighlightContent_ = nullptr;
+#endif
   std::shared_ptr<NWebJavaScriptResultCallBack> nweb_javascript_callback_ =
       nullptr;
   std::shared_ptr<NWebFindDelegate> find_delegate_ = nullptr;
@@ -1250,6 +1260,7 @@ class NWebHandlerDelegate : public ArkWebClientExt,
   CefRefPtr<CefScreenCaptureCallback> screen_capture_cb_ = nullptr;
 #endif // ARKWEB_EX_SCREEN_CAPTURE
 
+  base::WeakPtr<NWebHandlerDelegate> weak_this_;
   base::WeakPtrFactory<NWebHandlerDelegate> weak_factory_{this};
 
 #if BUILDFLAG(ARKWEB_MENU)

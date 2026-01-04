@@ -167,6 +167,10 @@
 #include "arkweb/chromium_ext/components/viz/host/blankless_data_controller.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_AI)
+#include "nweb_agent_handler.h"
+#endif
+
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
 #include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
 #include "cef/libcef/browser/frame_host_impl.h"
@@ -651,6 +655,7 @@ NWebHandlerDelegate::NWebHandlerDelegate(
   if (!is_enhance_surface_) {
     window_ = window;
   }
+  weak_this_ = weak_factory_.GetWeakPtr();
 }
 
 void NWebHandlerDelegate::OnDestroy() {
@@ -717,6 +722,22 @@ void NWebHandlerDelegate::RegisterNWebHandler(
     render_handler_->RegisterNWebHandler(handler);
   }
 }
+
+#if BUILDFLAG(ARKWEB_AI)
+void NWebHandlerDelegate::RegisterNWebAgentHandler(
+    std::shared_ptr<NWebAgentHandler> handler) {
+  LOG(INFO) << "RegisterNWebAgentHandler";
+  nweb_agent_handler_ = handler;
+  if (render_handler_ != nullptr) {
+    render_handler_->RegisterNWebAgentHandler(handler);
+  }
+}
+
+void NWebHandlerDelegate::RegisterOnLoadStartedCbForHighlightContent(
+    std::function<void(void)>&& callback) {
+  onLoadStartedCbForHighlightContent_ = std::move(callback);
+}
+#endif
 
 void NWebHandlerDelegate::RegisterNWebJavaScriptCallBack(
     std::shared_ptr<NWebJavaScriptResultCallBack> callback) {
@@ -2015,6 +2036,13 @@ void NWebHandlerDelegate::OnHttpError(CefRefPtr<CefRequest> request,
                                       bool is_main_frame,
                                       bool has_user_gesture,
                                       CefRefPtr<CefResponse> response) {
+  if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
+    content::GetUIThreadTaskRunner({})->PostTask(
+        FROM_HERE, base::BindOnce(&NWebHandlerDelegate::OnHttpError,
+                                  weak_this_, request, is_main_frame, 
+                                  has_user_gesture, response));
+    return;
+  }  
   if (nweb_handler_ != nullptr) {
     CefRequest::HeaderMap cef_request_headers;
     request->GetHeaderMap(cef_request_headers);
@@ -4145,6 +4173,12 @@ bool NWebHandlerDelegate::CloseImageOverlaySelection() {
   }
   return false;
 }
+
+void NWebHandlerDelegate::OnAgentEventReport(const std::string& json) {
+  if (nweb_agent_handler_ != nullptr) {
+    nweb_agent_handler_->ReportEventJson(json);
+  }
+}
 #endif
 /* CefContextMenuHandler method end */
 
@@ -5034,7 +5068,13 @@ void NWebHandlerDelegate::OnLoadStarted(CefRefPtr<CefFrame> frame,
     return;
   }
 
-  if (nweb_handler_ != nullptr) {
+#if BUILDFLAG(ARKWEB_AI)
+  if (onLoadStartedCbForHighlightContent_) {
+    onLoadStartedCbForHighlightContent_();
+  }
+#endif
+
+if (nweb_handler_ != nullptr) {
     nweb_handler_->OnLoadStarted(url.ToString());
   }
 }

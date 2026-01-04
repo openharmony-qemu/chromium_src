@@ -600,6 +600,7 @@ class CONTENT_EXPORT RenderFrameImpl
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
   blink::WebNativeBridge* CreateWebNativeBridge(
       blink::WebNativeClient* client) override;
+  float DeviceScaleFactor() override;
 #endif
   std::unique_ptr<blink::WebContentSettingsClient>
   CreateWorkerContentSettingsClient() override;

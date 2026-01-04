@@ -432,6 +432,11 @@ class VIZ_SERVICE_EXPORT CompositorFrameSinkSupport
   bool wants_begin_frame_acks_ = false;
   bool auto_needs_begin_frame_ = false;
 
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+  bool throttle_mode_ = false;
+  bool throttle_started_ = false;
+#endif
+
   // Indicates the FrameSinkBundle to which this sink belongs, if any.
   std::optional<FrameSinkBundleId> bundle_id_;
 

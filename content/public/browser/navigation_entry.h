@@ -256,6 +256,10 @@ class NavigationEntry : public base::SupportsUserData {
   // This persists across same-document navigations and stays the same after
   // a history navigation to an already visited document.
   virtual int64_t GetMainFrameDocumentSequenceNumber() = 0;
+
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+  virtual int GetErrorCode() const = 0;
+#endif
 };
 
 }  // namespace content

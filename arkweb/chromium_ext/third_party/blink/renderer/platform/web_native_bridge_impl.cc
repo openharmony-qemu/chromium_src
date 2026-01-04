@@ -299,5 +299,10 @@ void WebNativeBridgeImpl::SetStretchContentToFillBounds(bool stretch_content_to_
     bridge_->SetStretchContentToFillBounds(stretch_content_to_fill_bounds);
   }
 }
+void WebNativeBridgeImpl::UpdateDeviceScaleFactor(float device_scale_factor) {
+  if (compositor_) {
+    compositor_->UpdateDeviceScaleFactor(device_scale_factor);
+  }
+}
 // LCOV_EXCL_STOP
 }  // namespace blink

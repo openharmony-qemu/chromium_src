@@ -12,6 +12,9 @@
 #include "base/time/time.h"
 #include "cc/base/delayed_unique_notifier.h"
 #include "cc/cc_export.h"
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+#include "cc/scheduler/scheduler.h"
+#endif
 
 namespace cc {
 
@@ -47,12 +50,27 @@ class CC_EXPORT FrameRateEstimator {
   base::TimeDelta GetPreferredInterval() const;
   bool input_priority_mode() const { return input_priority_mode_; }
   void DidNotProduceFrame();
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+  bool GetBeginFrameThrottleMode() const { return !input_priority_mode_ && begin_frame_throttle_mode_; }
+  void DidNotProduceFrameWithReason(FrameSkippedReason reason);
+#endif
 
  private:
   void OnExitInputPriorityMode();
 
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+  void ClearBeginFrameThrottleSettings();
+#endif
+
   // Number of "did not produce frame" since the last draw.
   uint64_t num_did_not_produce_frame_since_last_draw_ = 0;
+
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+  // Number of "did not produce frame" caused by no damage continuously.
+  uint64_t num_no_damage_did_not_produce_frame_ = 0;
+
+  bool begin_frame_throttle_mode_ = false;
+#endif
 
   // Whether videoconference mode is enabled. In this mode, frame rate is
   // reduced when there is no recent input and many frames with a small

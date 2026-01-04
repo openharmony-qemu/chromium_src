@@ -32,7 +32,7 @@ const int kSuccessiveFrameLossThreshold = 1;
 const int kMicrosecondsPerMillisecond = 1000;
 const int jankReportThreshold = 50;
 constexpr char DOMAIN[] = "OS";
-constexpr char EVENT_NAME[] = "web_fling_missed_frame";
+constexpr char EVENT_NAME[] = "SCROLL_ARKWEB_FLING_JANK";
 }  // namespace
 
 namespace base {

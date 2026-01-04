@@ -15,5 +15,6 @@
         "noImplicitReturns": true,
         "noImplicitAny": true,
         "experimentalDecorators": true,
+        "allowJs": true
     }
 }

@@ -28,12 +28,16 @@ void PDFDocumentHelper::ConvertAndUpdateSelectionBounds(
   }
 
   LOG(DEBUG) << "PDF clipped selection bounds: " << clipped_selection_bounds.ToString();
+  UpdateScaleFactor();
   gfx::Point bounds_origin = clipped_selection_bounds.origin();
   gfx::Size bounds_size = clipped_selection_bounds.size();
-  gfx::PointF bounds_origin_f =
-    ConvertToRoot(gfx::PointF(bounds_origin.x(), bounds_origin.y()));
+  gfx::PointF bounds_origin_f = gfx::PointF(bounds_origin.x(), bounds_origin.y());
+  bounds_origin_f.Scale(page_scale_factor_);
+  bounds_origin_f = ConvertToRoot(bounds_origin_f);
   bounds_origin.set_x(bounds_origin_f.x());
   bounds_origin.set_y(bounds_origin_f.y());
+  bounds_size.set_width(SafeScale(bounds_size.width(), page_scale_factor_));
+  bounds_size.set_height(SafeScale(bounds_size.height(), page_scale_factor_));
   gfx::Rect converted_bounds(bounds_origin, bounds_size);
 
   // Convert selection bounds. The converted_bounds value will change.
@@ -150,6 +154,31 @@ void PDFDocumentHelper::OnScaleChanged(float new_page_scale_factor) {
     return;
   }
   remote_pdf_client_->OnScaleChanged();
+}
+
+void PDFDocumentHelper::SetIsLeftHandleVisible(bool visible) {
+  bool expected_is_left_visible = is_left_visible_.load();
+  if (expected_is_left_visible == visible) {
+    return;
+  }
+  is_left_visible_.store(visible);
+}
+
+void PDFDocumentHelper::SetIsRightHandleVisible(bool visible) {
+  bool expected_is_right_visible = is_right_visible_.load();
+  if (expected_is_right_visible == visible) {
+    return;
+  }
+  is_right_visible_.store(visible);
+}
+
+void PDFDocumentHelper::SetSelectionBoundsVisibility(gfx::SelectionBound& start,
+                                                     gfx::SelectionBound& end) {
+  if (has_selection_) {
+    // Control the visibility of the left and right handles separately.
+    start.set_visible(is_left_visible_.load());
+    end.set_visible(is_right_visible_.load());
+  }                              
 }
 #endif  // BUILDFLAG(ARKWEB_PDF)
 

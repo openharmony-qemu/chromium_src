@@ -34,6 +34,10 @@ class MEDIA_GPU_EXPORT CodecSurfaceBundle
     return codec_buffer_wait_coordinator_;
   }
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void OnVideoSurfaceChanged();
+#endif // ARKWEB_VIDEO_ASSISTANT
+
  private:
   ~CodecSurfaceBundle();
   friend class base::RefCountedDeleteOnSequence<CodecSurfaceBundle>;

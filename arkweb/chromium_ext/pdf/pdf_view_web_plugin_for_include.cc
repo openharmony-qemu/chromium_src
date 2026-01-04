@@ -97,65 +97,58 @@ void PdfViewWebPlugin::ConvertAndUpdateSelectionBounds(gfx::Rect& clipped_select
                            clipped_selection_bounds.height() * inverse_scale);
   clipped_selection_bounds.set_origin(converted_origin);
   clipped_selection_bounds.set_size(converted_size);
-  clipped_selection_bounds_ = clipped_selection_bounds;
   pdf_host_->ConvertAndUpdateSelectionBounds(clipped_selection_bounds);
 }
 
 void PdfViewWebPlugin::SelectionChangedAtScrollStopped() {
-  auto left = current_left_;
-  auto right = current_right_;
-
-  gfx::PointF left_point(left.x() + available_area_.x(), left.y());
-  gfx::PointF right_point(right.x() + available_area_.x(), right.y());
-
-  const float inverse_scale = 1.0f / device_scale_;
-  left_point.Scale(inverse_scale);
-  right_point.Scale(inverse_scale);
-
-  pdf_host_->SelectionChanged(left_point, left.height() * inverse_scale,
-                              right_point, right.height() * inverse_scale);
-
-  if (accessibility_state_ == AccessibilityState::kLoaded)
-    PrepareAndSetAccessibilityViewportInfo();
-
-  // Clipped selection bounds also need to be updated at scroll stopped.
-  pdf_host_->ConvertAndUpdateSelectionBounds(clipped_selection_bounds_);
+  if (!engine_) {
+    LOG(ERROR) << __func__ << ", PDF engine_ is null.";
+  }
+  engine_->SelectionChangedAtScrollStopped();
 }
 
 void PdfViewWebPlugin::SetIsTouching(bool is_touching) {
-  if (is_touching_ == is_touching) {
+  bool expected_is_touching = is_touching_.load();
+  if (expected_is_touching == is_touching) {
     return;
   }
-  is_touching_ = is_touching;
+  is_touching_.store(is_touching);
   HideOrShowMenuAfterDelay();
 }
 
 void PdfViewWebPlugin::SetIsScrolling(bool is_scrolling) {
-  if (is_scrolling_ == is_scrolling) {
+  bool expected_is_scrolling = is_scrolling_.load();
+  if (expected_is_scrolling == is_scrolling) {
     return;
   }
-  is_scrolling_ = is_scrolling;
+  is_scrolling_.store(is_scrolling);
   HideOrShowMenuAfterDelay();
 }
 
 void PdfViewWebPlugin::SetIsPinching(bool is_pinching) {
-  if (is_pinching_ == is_pinching) {
+  bool expected_is_pinching = is_pinching_.load();
+  if (expected_is_pinching == is_pinching) {
     return;
   }
-  is_pinching_ = is_pinching;
+  is_pinching_.store(is_pinching);
   HideOrShowMenuAfterDelay();
 }
 
-void PdfViewWebPlugin::SetIsSelectionVisible(bool is_selection_visible) {
-  if (is_selection_visible_ == is_selection_visible) {
+void PdfViewWebPlugin::SetIsSelectionVisible(bool visible) {
+  bool expected_is_selection_visible = is_selection_visible_.load();
+  if (expected_is_selection_visible == visible) {
     return;
   }
-  is_selection_visible_ = is_selection_visible;
+  is_selection_visible_.store(visible);
   HideOrShowMenuAfterDelay();
 }
 
 bool PdfViewWebPlugin::ShouldHideMenu() {
-  return !is_selection_visible_ || is_touching_ || is_scrolling_ || is_pinching_;
+  bool is_selection_visible = is_selection_visible_.load();
+  bool is_touching = is_touching_.load();
+  bool is_scrolling = is_scrolling_.load();
+  bool is_pinching = is_pinching_.load();
+  return !is_selection_visible || is_touching || is_scrolling || is_pinching;
 }
 
 void PdfViewWebPlugin::HideOrShowMenuAfterDelay() {
@@ -221,6 +214,9 @@ void PdfViewWebPlugin::HandleClickBookmarkMessage(const base::Value::Dict& messa
     LOG(ERROR) << "Invalid bookmark ID received";
     return;
   }
+  if (!engine_) {
+    LOG(ERROR) << __func__ << ", PDF engine_ is null.";
+  }
   engine_->OnClickBookmark(*nullableId);
 }
 
@@ -242,6 +238,9 @@ void PdfViewWebPlugin::SelectionChangedAfterDelay() {
 }
 
 void PdfViewWebPlugin::ClearTextSelection() {
+  if (!engine_) {
+    LOG(ERROR) << __func__ << ", PDF engine_ is null.";
+  }
   engine_->ClearTextSelection();
 }
 
@@ -267,7 +266,28 @@ void PdfViewWebPlugin::DoPaintAfterDelay() {
 }
 
 void PdfViewWebPlugin::OnScaleChanged() {
+  if (!engine_) {
+    LOG(ERROR) << __func__ << ", PDF engine_ is null.";
+  }
   engine_->ClearTextSelection();
+}
+
+void PdfViewWebPlugin::SetIsLeftHandleVisible(bool visible) {
+  bool expected_is_left_visible = is_left_visible_.load();
+  if (expected_is_left_visible == visible) {
+    return;
+  }
+  is_left_visible_.store(visible);
+  pdf_host_->SetIsLeftHandleVisible(is_left_visible_.load());
+}
+
+void PdfViewWebPlugin::SetIsRightHandleVisible(bool visible) {
+  bool expected_is_right_visible = is_right_visible_.load();
+  if (expected_is_right_visible == visible) {
+    return;
+  }
+  is_right_visible_.store(visible);
+  pdf_host_->SetIsRightHandleVisible(is_right_visible_.load());
 }
 #endif  // BUILDFLAG(ARKWEB_PDF)
 

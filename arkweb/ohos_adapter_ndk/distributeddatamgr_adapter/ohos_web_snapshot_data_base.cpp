@@ -31,7 +31,7 @@ using namespace OHOS::NWeb;
 
 namespace OHOS::NWeb {
 namespace {
-const int32_t RDB_VERSION = 4;
+const int32_t RDB_VERSION = 5;
 const std::string WEB_SNAPSHOT_DATABASE_FILE = "web_snapshot.db";
 
 const int DEFAULT_CAPACITY = 30; // in MB
@@ -44,7 +44,7 @@ const std::string SNAPSHOT_TABLE_NAME = "snapshot";
 const std::string SNAPSHOT_KEY_COL = "key";
 const std::string WHOLE_SNAPSHOT_COL = "wholeSnapshotpath";
 const std::string STATIC_SNAPSHOT_COL = "staticSnapshotpath";
-const std::string SNAPSHOT_TIME_COL = "snapshotTime";
+const std::string EXPIRATION_TIME_COL = "expirationTime";
 const std::string SNAPSHOT_WIDTH = "width";
 const std::string SNAPSHOT_HEIGHT = "height";
 const std::string SIMILARITY_COL = "similarity";
@@ -63,7 +63,7 @@ const std::string CAPACITY_KEY_COL = "capacity";
 const std::string CREATE_TABLE = "CREATE TABLE " + SNAPSHOT_TABLE_NAME
     + " (" + ID_COL + " INTEGER PRIMARY KEY, "
     + SNAPSHOT_KEY_COL + " INTEGER, " + WHOLE_SNAPSHOT_COL + " TEXT, "
-    + STATIC_SNAPSHOT_COL + " TEXT, " + SNAPSHOT_TIME_COL + " INTEGER, "
+    + STATIC_SNAPSHOT_COL + " TEXT, " + EXPIRATION_TIME_COL + " INTEGER, "
     + SNAPSHOT_WIDTH + " INTEGER, " + SNAPSHOT_HEIGHT + " INTEGER, "
     + SIMILARITY_COL + " REAL, " + LCP_TIME_COL + " INTEGER, "
     + SNAPSHOT_FILE_SIZE_COL + " INTEGER, " + SNAPSHOT_FILE_TIME_COL + " INTEGER, "
@@ -270,6 +270,12 @@ void OhosWebSnapshotDataBase::ClearSnapshotDataItem(const std::vector<int64_t>& 
 
 bool OhosWebSnapshotDataBase::InsertSnapshotDataItem(int64_t blankless_key, const SnapshotDataItem& data)
 {
+    return InsertSnapshotDataItem(blankless_key, data, GetCurrentTime() + MAXIMUM_TIME_LIMIT_MICRO_SECONDS);
+}
+
+bool OhosWebSnapshotDataBase::InsertSnapshotDataItem(int64_t blankless_key, const SnapshotDataItem& data,
+    int64_t expirationTime)
+{
     if (rdbStore_ == nullptr) {
         WVLOG_E("blankless InsertSnapshotDataItem rdb is null");
         return false;
@@ -293,7 +299,7 @@ bool OhosWebSnapshotDataBase::InsertSnapshotDataItem(int64_t blankless_key, cons
         DeleteInner(GetOldestKey());
     }
 
-    InsertInner(blankless_key, {data, GetCurrentTime()});
+    InsertInner(blankless_key, {data, expirationTime});
     return true;
 }
 
@@ -311,7 +317,7 @@ SnapshotDataItem OhosWebSnapshotDataBase::GetSnapshotDataItem(int64_t blankless_
         return SnapshotDataItem{};
     }
 
-    if (GetCurrentTime() - MAXIMUM_TIME_LIMIT_MICRO_SECONDS >= it->second.time) {
+    if (GetCurrentTime() >= it->second.expirationTime) {
         WVLOG_E("blankless GetSnapshotDataItem the data has expired");
         return SnapshotDataItem{};
     }
@@ -408,8 +414,8 @@ __attribute__((no_sanitize("cfi", "cfi-icall"))) void OhosWebSnapshotDataBase::G
     cursor->getColumnIndex(cursor, WHOLE_SNAPSHOT_COL.c_str(), &wholePathColumnIndex);
     int32_t staticPathColumnIndex;
     cursor->getColumnIndex(cursor, STATIC_SNAPSHOT_COL.c_str(), &staticPathColumnIndex);
-    int32_t snapshotTimeColumnIndex;
-    cursor->getColumnIndex(cursor, SNAPSHOT_TIME_COL.c_str(), &snapshotTimeColumnIndex);
+    int32_t expirationTimeColumnIndex;
+    cursor->getColumnIndex(cursor, EXPIRATION_TIME_COL.c_str(), &expirationTimeColumnIndex);
     int32_t widthIndex;
     cursor->getColumnIndex(cursor, SNAPSHOT_WIDTH.c_str(), &widthIndex);
     int32_t heightIndex;
@@ -426,7 +432,6 @@ __attribute__((no_sanitize("cfi", "cfi-icall"))) void OhosWebSnapshotDataBase::G
     cursor->getColumnIndex(cursor, PREFERENCE_HASH_COL.c_str(), &preferenceHashColumnIndex);
     std::vector<int64_t> invalidKeys;
     int64_t currentTime = GetCurrentTime();
-    int64_t allowedSnapshotTime = currentTime - MAXIMUM_TIME_LIMIT_MICRO_SECONDS;
     size_t size = 0;
     do {
         if (dataBaseMap_.size() >= MAXIMUM_SNAPSHOT_NUMBER) {
@@ -436,20 +441,13 @@ __attribute__((no_sanitize("cfi", "cfi-icall"))) void OhosWebSnapshotDataBase::G
             WVLOG_E("blankless GetAllInfo too much data in the database");
             return;
         }
-        int64_t snapshotTime;
-        cursor->getInt64(cursor, snapshotTimeColumnIndex, &snapshotTime);
+        int64_t expirationTime;
+        cursor->getInt64(cursor, expirationTimeColumnIndex, &expirationTime);
         int64_t blankless_key = 0LL;
         cursor->getInt64(cursor, urlColumnIndex, &blankless_key);
-        if (allowedSnapshotTime >= snapshotTime) {
+        if (currentTime >= expirationTime) {
             invalidKeys.push_back(blankless_key);
             continue;
-        }
-        if (currentTime <= snapshotTime) {
-            cursor->destroy(cursor);
-            ClearData();
-            ClearMap();
-            WVLOG_E("blankless GetAllInfo the data time exceeds the current time");
-            return;
         }
         SnapshotDataItem dataItem;
         cursor->getInt64(cursor, snapShotFileSizeColumnIndex, &dataItem.snapShotFileSize);
@@ -483,7 +481,7 @@ __attribute__((no_sanitize("cfi", "cfi-icall"))) void OhosWebSnapshotDataBase::G
         dataItem.lcpTime = static_cast<int32_t>(lcpTime);
         cursor->getInt64(cursor, snapShotFileTimeColumnIndex, &dataItem.snapShotFileTime);
         cursor->getInt64(cursor, preferenceHashColumnIndex, &dataItem.preferenceHash);
-        InsertInner(blankless_key, {dataItem, snapshotTime});
+        InsertMap(blankless_key, {dataItem, expirationTime});
     } while (cursor->goToNextRow(cursor) == RDB_OK);
     cursor->destroy(cursor);
 
@@ -585,7 +583,7 @@ __attribute__((no_sanitize("cfi", "cfi-icall"))) void OhosWebSnapshotDataBase::I
     valueBucket->putInt64(valueBucket, SNAPSHOT_FILE_SIZE_COL.c_str(), data.snapshotData.snapShotFileSize);
     valueBucket->putInt64(valueBucket, SNAPSHOT_FILE_TIME_COL.c_str(), data.snapshotData.snapShotFileTime);
     valueBucket->putInt64(valueBucket, PREFERENCE_HASH_COL.c_str(), data.snapshotData.preferenceHash);
-    valueBucket->putInt64(valueBucket, SNAPSHOT_TIME_COL.c_str(), data.time);
+    valueBucket->putInt64(valueBucket, EXPIRATION_TIME_COL.c_str(), data.expirationTime);
     valueBucket->putInt64(valueBucket, SNAPSHOT_WIDTH.c_str(), data.snapshotData.width);
     valueBucket->putInt64(valueBucket, SNAPSHOT_HEIGHT.c_str(), data.snapshotData.height);
     int32_t errCode = OH_Rdb_Insert(rdbStore_, SNAPSHOT_TABLE_NAME.c_str(), valueBucket);
@@ -614,8 +612,8 @@ int64_t OhosWebSnapshotDataBase::GetOldestKey()
     int64_t oldestTime = INT64_MAX;
     int64_t oldestKey = INT64_MAX;
     for (const auto& pair : dataBaseMap_) {
-        if (oldestTime >= pair.second.time) {
-            oldestTime = pair.second.time;
+        if (oldestTime >= pair.second.expirationTime) {
+            oldestTime = pair.second.expirationTime;
             oldestKey = pair.first;
         }
     }

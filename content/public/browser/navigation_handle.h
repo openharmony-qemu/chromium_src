@@ -47,6 +47,10 @@
 #include "base/android/scoped_java_ref.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+#include "arkweb/chromium_ext/content/public/browser/error_page_reload_reason.h"
+#endif
+
 class GURL;
 
 namespace net {
@@ -713,6 +717,13 @@ class CONTENT_EXPORT NavigationHandle : public base::SupportsUserData {
   // Returns whether this navigation is currently deferred.
   virtual bool IsDeferredForTesting() = 0;
   virtual bool IsCommitDeferringConditionDeferredForTesting() = 0;
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  virtual bool NeedsReloadWithFallbackProxy() = 0;
+  virtual ErrorPageReloadReason  GetCurrentReloadReason() = 0;
+  virtual int GetOriginalNetErrorCode() = 0;
+  virtual bool HasBeenReloadedForThisReason(ErrorPageReloadReason  reason) = 0;
+#endif
 
 #if BUILDFLAG(IS_ANDROID)
   // Returns a reference to NavigationHandle Java counterpart.

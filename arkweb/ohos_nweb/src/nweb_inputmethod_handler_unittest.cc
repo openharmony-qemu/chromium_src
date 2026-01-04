@@ -26,6 +26,7 @@
 #include "imf_adapter.h"
 #include "nweb_inputmethod_handler.h"
 #include "nweb_inputmethod_handler.cc"
+#include "ohos_cef_ext/libcef/common/cef_open_devtools_ext_opt.h"
 #include "ohos_nweb/include/nweb_errors.h"
 
 using namespace base::ohos;
@@ -396,6 +397,11 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
       CefRefPtr<ArkWebBrowserHostExt> frontend_browser,
       CefRefPtr<CefDevToolsMessageHandlerDelegate> delegate,
       const CefPoint& inspect_element_at) override {}
+  void ShowDevToolsWithByPb(
+      CefRefPtr<ArkWebBrowserHostExt> frontend_browser,
+      CefRefPtr<CefDevToolsMessageHandlerDelegate> delegate,
+      const CefPoint& inspect_element_at,
+      const CefOpenDevToolsExtOpt& ext_opt) override {}
   bool IsFullscreen() override { return false; }
   void ExitFullscreen(bool will_cause_resize) override {}
   bool CanExecuteChromeCommand(int command_id) override { return false; }

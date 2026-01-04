@@ -150,6 +150,9 @@ class MEDIA_EXPORT Renderer : public RendererExt {
 #if BUILDFLAG(ARKWEB_PIP)
   virtual void PipEnable(bool enable) {}
 #endif
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  virtual void SetPreciseSeekTarget(int64_t target_timestamp) {}
+#endif // ARKWEB_VIDEO_ASSISTANT
 #if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
   virtual void RecycleDmaBuffer() {}
   virtual void ResumeDmaBuffer() {}

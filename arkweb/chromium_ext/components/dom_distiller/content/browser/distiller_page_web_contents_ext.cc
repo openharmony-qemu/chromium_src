@@ -114,10 +114,12 @@ bool DistillerPageWebContentsExt::ExecuteJavaScriptExt() {
     content::WebContentsObserver::Observe(nullptr);
     // Stop any pending navigation since the intent is to distill the current
     // page.
-    source_page_handle_->web_contents()->Stop();
+    if (source_page_handle_ && source_page_handle_->web_contents()) {
+      source_page_handle_->web_contents()->Stop();
+    }
   }
   LOG(INFO) << __func__ << " [Distiller]";
-  CHECK_EQ(LOADING_PAGE, state_);
+  DCHECK_EQ(LOADING_PAGE, state_);
   state_ = EXECUTING_JAVASCRIPT;
   return false;
 }

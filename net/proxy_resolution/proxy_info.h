@@ -172,6 +172,20 @@ class NET_EXPORT ProxyInfo {
     return proxy_retry_info_;
   }
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  void set_used_fallback_proxy(const bool used_fallback_proxy) {
+    used_fallback_proxy_ = used_fallback_proxy;
+  }
+
+  bool used_fallback_proxy() const { return used_fallback_proxy_; }
+
+  void set_use_fallback_proxy_direct(bool use_proxy_direct) {
+    use_fallback_proxy_direct_ = use_proxy_direct;
+  }
+
+  bool use_fallback_proxy_direct() { return use_fallback_proxy_direct_; }
+#endif
+
  private:
   // Reset proxy and config settings.
   void Reset();
@@ -193,6 +207,11 @@ class NET_EXPORT ProxyInfo {
 
   // Whether the proxy result represent a proxy bypass.
   bool did_bypass_proxy_ = false;
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  bool used_fallback_proxy_ = false;
+  bool use_fallback_proxy_direct_ = false;
+#endif
 
   // Whether the request that uses this proxy config caused a match with the
   // masked domain list.

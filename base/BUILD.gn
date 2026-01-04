@@ -1124,6 +1124,9 @@ component("base") {
   if (is_ohos && enable_arkweb) {
     sources += arkweb_base_ext_sources
     deps += [ "//arkweb//build/features", "//base/third_party/xdg_user_dirs",]
+    if (is_component_build) {
+      deps += [ "//content/public/common:switches" ]
+    }
     public_deps += [ "//arkweb//build/features" ]
     public_deps += [ ":ohos_package_info" ]
     if (is_ohos) {
@@ -3485,6 +3488,7 @@ test("base_unittests") {
     "no_destructor_unittest.cc",
     "observer_list_threadsafe_unittest.cc",
     "observer_list_unittest.cc",
+    "ohos/task_scheduler/task_runner_ohos_unittest.cc",
     "one_shot_event_unittest.cc",
     "parameter_pack_unittest.cc",
     "pickle_unittest.cc",
@@ -4379,6 +4383,8 @@ test("base_unittests") {
       "//arkweb/ohos_adapter_ndk:adapter_ndk",
     ]
     include_dirs = [
+      "//arkweb/glue",
+      "//arkweb/ohos_adapter_ndk/interfaces",
       "//third_party/ohos_ndk/includes/ohos_adapter",
     ]
   }

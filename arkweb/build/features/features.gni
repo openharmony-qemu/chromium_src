@@ -233,6 +233,7 @@ declare_args() {
   arkweb_screen_size = true
   arkweb_canvas_commit = true
   arkweb_vsync_schedule = true
+  arkweb_throttle_frame = true
   arkweb_pip = true
   arkweb_immediate_destory = false
   arkweb_cwnd = true
@@ -253,9 +254,11 @@ declare_args() {
   arkweb_blank_prop_config = true
   arkweb_autolayout = true
   arkweb_enable_prebuild = false
+  arkweb_ex_fallback_proxy = true
   arkweb_ext_https_upgrades=false
   arkweb_console_logging=true
   arkweb_offline_web_evict_back_buffers = true
+  arkweb_ohos_mem_usage_report = true
 }
 
 # Features enabled in mojom bindings.
@@ -305,6 +308,10 @@ if (defined(arkweb_network_load) && arkweb_network_load) {
 if (is_android || (defined(arkweb_cookie) && arkweb_cookie)) {
   arkweb_mojo_features += [ "is_android_or_arkweb_cookie" ]
 }  #endif  // BUILDFLAG(ARKWEB_COOKIE)
+
+if (defined(arkweb_ex_fallback_proxy) && arkweb_ex_fallback_proxy) {
+  arkweb_mojo_features += [ "arkweb_ex_fallback_proxy" ]
+}
 
 #if BUILDFLAG(ARKWEB_CUSTOM_DNS)
 if (defined(arkweb_custom_dns) && arkweb_custom_dns) {

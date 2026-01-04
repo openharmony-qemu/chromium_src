@@ -94,7 +94,7 @@ source_set("lib") {
 
   if (is_arkweb) {
     deps += [
-      "//services/device/business_risk_intelligent_detection",
+      "//arkweb/chromium_ext/services/device/business_risk_intelligent_detection",
     ]
   }
 

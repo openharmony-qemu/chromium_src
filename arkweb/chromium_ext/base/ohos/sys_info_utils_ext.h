@@ -34,11 +34,6 @@ BASE_EXPORT float GetPixelRatio();
 
 BASE_EXPORT void SetPixelRatio(float ratio);
 
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-BASE_EXPORT float GetDevicePixelRatio();
-BASE_EXPORT void SetDevicePixelRatio(float ratio);
-#endif
-
 #if BUILDFLAG(ARKWEB_TEST)
 #ifdef __cplusplus
 extern "C" {

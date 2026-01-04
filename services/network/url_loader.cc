@@ -132,6 +132,11 @@
 #include "url/ohos/log_utils.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#include "base/command_line.h"
+#endif
+
 namespace network {
 
 namespace {
@@ -824,6 +829,14 @@ URLLoader::URLLoader(
         request.net_log_reference_info.value());
   }
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          ::switches::kEnableNwebEx) &&
+      request.retry_with_fallback_proxy) {
+    url_request_->SetRetryWithFallbackProxy(true);
+  }
+#endif
+
   // Resolve elements from request_body and prepare upload data.
   if (request.request_body.get()) {
     OpenFilesForUpload(request);
@@ -1370,6 +1383,13 @@ void URLLoader::FollowRedirect(
 
   deferred_redirect_url_.reset();
   new_redirect_url_ = new_url;
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          ::switches::kEnableNwebEx)) {
+    url_request_->SetRetryWithFallbackProxy(false);
+  }
+#endif
 
   net::HttpRequestHeaders merged_modified_headers = modified_headers;
   merged_modified_headers.MergeFrom(modified_cors_exempt_headers);
@@ -2690,6 +2710,14 @@ void URLLoader::NotifyCompleted(int error_code) {
     status.decoded_body_length = total_written_bytes_;
     status.resolve_error_info =
         url_request_->response_info().resolve_error_info;
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+    if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+            ::switches::kEnableNwebEx)) {
+      status.used_fallback_proxy = url_request_->used_fallback_proxy();
+      status.needs_reload_with_fallback_proxy =
+          url_request_->needs_reload_with_fallback_proxy();
+    }
+#endif
     if (trust_token_status_)
       status.trust_token_operation_status = *trust_token_status_;
     status.cors_error_status = cors_error_status_;

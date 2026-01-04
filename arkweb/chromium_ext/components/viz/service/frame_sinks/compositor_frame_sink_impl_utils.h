@@ -47,6 +47,10 @@ class CompositorFrameSinkImplUtil {
 #if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
   void OnSetBypassVsyncCondition(int32_t condition);
 #endif
+
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+void UpdateThrottleMode(bool is_enable);
+#endif
 };
 
 } // namespace viz

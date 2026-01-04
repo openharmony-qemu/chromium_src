@@ -83,6 +83,9 @@ import "services/network/public/mojom/p2p_trusted.mojom";
 [EnableIf=is_win]
 import "services/proxy_resolver_win/public/mojom/proxy_resolver_win.mojom";
 
+[EnableIf=arkweb_ex_fallback_proxy]
+import "arkweb/chromium_ext/servieces/network/public/mojom/network_config_ohos.mojom";
+
 const uint32 kWebSocketOptionNone = 0;
 // Disallow the request from sending cookies. Disallow the response from writing
 // cookies.
@@ -130,6 +133,14 @@ interface CustomProxyConnectionObserver {
       ProxyChain proxy_chain,
       uint64 chain_index,
       HttpResponseHeaders response_headers);
+
+  [EnableIf=arkweb_ex_fallback_proxy]
+  OnProxyConnectResult(ProxyChain proxy_chain, int32 net_error);
+ 
+  [EnableIf=arkweb_ex_fallback_proxy]
+  OnTunnelHeadersReceivedWithToken(
+    ProxyChain proxy_chain,
+    HttpResponseHeaders response_headers, string token);
 };
 
 // Includes a pipe to a CertVerifierService for usage by the
@@ -147,6 +158,21 @@ struct CertVerifierServiceRemoteParams {
 // Client to update the custom proxy config.
 interface CustomProxyConfigClient {
   OnCustomProxyConfigUpdated(CustomProxyConfig proxy_config) => ();
+
+  [EnableIf=arkweb_ex_fallback_proxy]
+  SaveURLMaliciousTypeAndHwCode(string url, int32 type, int32 hw_code);
+ 
+  [EnableIf=arkweb_ex_fallback_proxy]
+  OnFallbackProxyInfoConfigUpdated(FallbackProxyInfoConfig fallback_proxy_info_config);
+ 
+  [EnableIf=arkweb_ex_fallback_proxy]
+  UpdateFallbackProxyAuthHeaders(HttpRequestHeaders tunnel_headers);
+ 
+  [EnableIf=arkweb_ex_fallback_proxy]
+  UpdateFallbackProxyStatus(int32 status);
+ 
+  [EnableIf=arkweb_ex_fallback_proxy]
+  OnHostBlockListUpdated(array<string> block_list);
 };
 
 // Sent by TrustedURLLoaderHeaderClient to perform modifications for a request.

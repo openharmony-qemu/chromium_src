@@ -51,6 +51,8 @@ void ApplyOhosWebPreferences(const web_pref::WebPreferences& prefs,
                              WebViewImpl* web_view_impl) {
 #if BUILDFLAG(ARKWEB_AI)
   settings->SetImageAnalyzerEnabled(prefs.image_analyzer_enabled);
+  settings->SetArkwebAgentEnabled(prefs.arkweb_agent_enabled);
+  settings->SetAgentNeedHighlight(prefs.agent_need_highlight);
 #endif  // BUILDFLAG(ARKWEB_AI)
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   settings->SetVerticalHideScrollbars(prefs.hide_vertical_scrollbars);

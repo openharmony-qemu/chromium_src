@@ -442,6 +442,9 @@ else
   fi
 fi
 
+echo "Copying NDK stub files..."
+python3 "${ROOT_DIR}/arkweb/build/copy_ndk_files.py" "${ROOT_DIR}"
+
 if ! [ -d "${CUR_DIR}/deps_code" ]; then
   mkdir -p ${CUR_DIR}/deps_code
   echo "create new deps_code dir"
@@ -461,18 +464,6 @@ cd -
 time_start_for_build=$(date +%s)
 time_start_for_gn=$time_start_for_build
 
-cp "./arkweb/ohos_adapter_ndk/stub/network/netstack/net_ssl/include/net_ssl_c.h" "./ohos_sdk/openharmony/native/sysroot/usr/include/network/netstack/net_ssl/net_ssl_c.h"
-cp "./arkweb/ohos_adapter_ndk/stub/network/netstack/net_ssl/lib/aarch64-linux-ohos/libnet_ssl.so" "./ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libnet_ssl.so"
-cp "./arkweb/ohos_adapter_ndk/stub/network/netstack/net_ssl/lib/x86_64-linux-ohos/libnet_ssl.so" "./ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libnet_ssl.so"
-cp "./arkweb/ohos_adapter_ndk/stub/network/netstack/net_ssl/lib/arm-linux-ohos/libnet_ssl.so" "./ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libnet_ssl.so"
-
-cp "./arkweb/ohos_adapter_ndk/stub/huks/include/native_huks_external_crypto_api.h" "./ohos_sdk/openharmony/native/sysroot/usr/include/huks/native_huks_external_crypto_api.h"
-cp "./arkweb/ohos_adapter_ndk/stub/huks/include/native_huks_external_crypto_type.h" "./ohos_sdk/openharmony/native/sysroot/usr/include/huks/native_huks_external_crypto_type.h"
-cp "./arkweb/ohos_adapter_ndk/stub/huks/include/native_huks_type.h" "./ohos_sdk/openharmony/native/sysroot/usr/include/huks/native_huks_type.h"
- 
-mkdir -p "./ohos_sdk/openharmony/native/sysroot/usr/include/certificate_manager"
-cp "./arkweb/ohos_adapter_ndk/stub/certificate_manager/include/cm_native_api.h" "./ohos_sdk/openharmony/native/sysroot/usr/include/certificate_manager/cm_native_api.h"
-cp "./arkweb/ohos_adapter_ndk/stub/certificate_manager/include/cm_native_type.h" "./ohos_sdk/openharmony/native/sysroot/usr/include/certificate_manager/cm_native_type.h"
 
 if [ $buildgn = 1 ]; then
   echo "generating args list:"

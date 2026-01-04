@@ -60,10 +60,14 @@ struct FrameInfos;
 struct IsolatedWorld;
 struct RunJavaScriptParam;
 struct OpenDevToolsParam;
+struct OpenDevToolsExtOpt;
 
 namespace OHOS::NWeb {
 using namespace ui;
 class JavaScriptResultCallbackImpl;
+#if BUILDFLAG(ARKWEB_AI)
+class NWebAgentManagerImpl;
+#endif
 #if BUILDFLAG(ARKWEB_PDF)
 class CefPdfValueCallbackImpl;
 #endif  // BUILDFLAG(ARKWEB_PDF)
@@ -89,6 +93,9 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #endif
 
   );
+#if BUILDFLAG(ARKWEB_AI)
+  friend class NWebAgentManagerImpl;
+#endif
   void OnWindowShow() override;
   void OnWindowHide() override;
   void OnOnlineRenderToForeground() override;
@@ -118,6 +125,11 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #endif
 
   void RegisterNWebHandler(std::shared_ptr<NWebHandler> handler) override;
+#if BUILDFLAG(ARKWEB_AI)
+  void RegisterNWebAgentHandler(
+      std::shared_ptr<NWebAgentHandler> handler) override;
+  void RegisterOnLoadStartedCbForHighlightContent(std::function<void(void)>&& callback);
+#endif
   void RegisterRenderCb(
       std::function<void(const char*)> render_update_cb) override;
 
@@ -204,6 +216,9 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void SetEnableLowerFrameRate(bool enabled) override;
   void SetEnableHalfFrameRate(bool enabled) override;
   std::shared_ptr<NWebPreference> GetPreference() const override;
+#if BUILDFLAG(ARKWEB_AI)
+  std::shared_ptr<NWebAgentManager> GetAgentManager() const override;
+#endif
   std::string Title() override;
   std::shared_ptr<HitTestResult> GetHitTestResult() const override;
   std::shared_ptr<HitTestResult> GetLastHitTestResult() const override;
@@ -790,7 +805,6 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void WebExtensionTabDetached(
       int tab_id,
       std::unique_ptr<NWebExtensionTabDetachInfo> detachInfo) override;
-  void WebExtensionTabHighlighted(NWebExtensionTabHighlightInfo& highlightInfo) override;
   void WebExtensionTabMoved(
       int32_t tab_id,
       std::unique_ptr<NWebExtensionTabMoveInfo> moveInfo) override;
@@ -849,6 +863,10 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void OpenDevtoolsWith(
       std::shared_ptr<NWebDelegateInterface> nweb_delegate,
       std::unique_ptr<OpenDevToolsParam> param) override;
+  void OpenDevtoolsWithByPb(
+      std::shared_ptr<NWebDelegateInterface> nweb_delegate,
+      std::unique_ptr<OpenDevToolsParam> param,
+      OpenDevToolsExtOpt& ext_opt) override;
   void CloseDevtools() override;
 
   int32_t GetArgumentByKey(
@@ -1059,6 +1077,7 @@ void SetFocusWebId(int32_t nweb_id) override;
   std::shared_ptr<OHOS::NWeb::FoldStatusScreenListener> foldstatus_listener_ =
       nullptr;
   int32_t foldstatus_listener_id_ = 0;
+  std::shared_ptr<NWebAgentManagerImpl> agent_manager_ = nullptr;
 #endif
   // Members only accessed on the main thread.
   bool hidden_ = false;

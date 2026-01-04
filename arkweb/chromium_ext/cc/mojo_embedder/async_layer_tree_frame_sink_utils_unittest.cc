@@ -152,6 +152,68 @@ TEST_F(AsyncLayerTreeFrameSinkUtilsTest, SubmitCompositorFrameDfxDumpTrace) {
   utils_->SubmitCompositorFrameDfxDumpTrace(id);
 }
 
+TEST_F(AsyncLayerTreeFrameSinkUtilsTest, BindToClientWithAndWithoutRenderer1) {
+  utils_->BindToClientArkWebSoftCom(nullptr, nullptr);
+  auto mock_renderer = new NiceMock<MockSoftwareCompositorRendererOhos>(
+      utils_->asyncLayerTreeFrameSink, mock_registry_.get());
+  utils_->InitSoftComRenderArkWebSoftCom(mock_registry_.get());
+  EXPECT_CALL(*mock_renderer, BindToClient(_, _)).Times(1);
+  utils_->BindToClientArkWebSoftCom(nullptr, nullptr);
+}
+
+TEST_F(AsyncLayerTreeFrameSinkUtilsTest, DetachFromClientWithAndWithoutRenderer1) {
+  utils_->DetachFromClientArkWebSoftCom();
+
+  auto mock_renderer = new NiceMock<MockSoftwareCompositorRendererOhos>(
+      utils_->asyncLayerTreeFrameSink, mock_registry_.get());
+  utils_->InitSoftComRenderArkWebSoftCom(mock_registry_.get());
+  
+  EXPECT_CALL(*mock_renderer, DetachFromClient()).Times(1);
+  utils_->DetachFromClientArkWebSoftCom();
+}
+
+TEST_F(AsyncLayerTreeFrameSinkUtilsTest, SubmitCompositorFrameConditions1) {
+  viz::CompositorFrame frame;
+
+  EXPECT_FALSE(utils_->SubmitCompositorFrameArkWebSoftCom(frame));
+
+  auto mock_renderer = new NiceMock<MockSoftwareCompositorRendererOhos>(
+      utils_->asyncLayerTreeFrameSink, mock_registry_.get());
+  utils_->InitSoftComRenderArkWebSoftCom(mock_registry_.get());
+
+  ON_CALL(*mock_renderer, InSoftwareDraw()).WillByDefault(testing::Return(false));
+  EXPECT_FALSE(utils_->SubmitCompositorFrameArkWebSoftCom(frame));
+
+  ON_CALL(*mock_renderer, InSoftwareDraw()).WillByDefault(testing::Return(true));
+  utils_->SubmitCompositorFrameArkWebSoftCom(frame);
+}
+
+TEST_F(AsyncLayerTreeFrameSinkUtilsTest, DfxDumpLogFirstAndSubsequentCalls1) {
+  viz::LocalSurfaceId id;
+  utils_->SubmitCompositorFrameDfxDumpLog(id);
+  utils_->SubmitCompositorFrameDfxDumpLog(id);
+}
+
+TEST_F(AsyncLayerTreeFrameSinkUtilsTest, OnBeginFrameArkWebDfxTrace1) {
+  int64_t id = 1;
+  utils_->OnBeginFrameArkWebDfxTrace(id);
+}
+
+TEST_F(AsyncLayerTreeFrameSinkUtilsTest, OnBeginFrameArkWebSwBuTr1) {
+  int64_t id = 1;
+  utils_->OnBeginFrameArkWebSwBuTr(id);
+}
+
+TEST_F(AsyncLayerTreeFrameSinkUtilsTest, SubmitCompositorFrameArkWebSwapBuTr1) {
+  int64_t id = 1;
+  utils_->SubmitCompositorFrameArkWebSwapBuTr(id, FrameSkippedReason::kRecoverLatency);
+}
+
+TEST_F(AsyncLayerTreeFrameSinkUtilsTest, SubmitCompositorFrameDfxDumpTrace1) {
+  int64_t id = 1;
+  utils_->SubmitCompositorFrameDfxDumpTrace(id);
+}
+
 }  // namespace
 }  // namespace mojo_embedder
 }  // namespace cc

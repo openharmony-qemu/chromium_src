@@ -1,20 +1,48 @@
 {
     "groups": {
-        "ringking0": [
-            "ringking0"
+        "ArkWeb_Build": [
+            "ringking0",
+            "doublelucky"
         ],
-        "StringChen": [
+        "arkweb-DFX": [
             "StringChen"
         ],
-        "cloud_nine999": [
+        "arkweb-framework": [
             "cloud_nine999",
             "zhanghaozhi1"
         ],
-        "jerrywangxmu": [
+        "arkweb-eventhandler": [
             "jerrywangxmu"
         ],
-        "LXinJie1": [
+        "arkweb-compositor": [
             "LXinJie1"
+        ],
+        "arkweb-peripherals": [
+            "zhang-yinglie"
+        ],
+        "arkweb-multimedia": [
+            "d0ub1eh",
+            "whuqincheng"
+        ],
+        "arkweb-storage": [
+            "yuzhouhang1"
+        ],
+        "arkweb-performance": [
+            "zhouge941",
+            "hwt00888022",
+            "yjone",
+            "dzichou",
+            "sinat_22543221"
+        ],
+        "arkweb-CCS": [
+            "fredranking",
+            "aohui",
+            "shawshank",
+            "chenjiadong",
+            "zhangyanchuan"
+        ],
+        "arkweb-security": [
+            "zhu-sheng-le"
         ]
     },
     "userInfos": {
@@ -35,6 +63,54 @@
         },
         "LXinJie1": {
             "info": "[渲染合成]"
+        },
+        "zhang-yinglie": {
+            "info": "[外设服务]"
+        },
+        "zhouge941": {
+            "info": "[性能]"
+        },
+        "hwt00888022": {
+            "info": "[性能]"
+        },
+        "yjone": {
+            "info": "[性能]"
+        },
+        "dzichou": {
+            "info": "[性能]"
+        },
+        "sinat_22543221": {
+            "info": "[性能]"
+        },
+        "fredranking": {
+            "info": "[云服务]"
+        },
+        "aohui": {
+            "info": "[云服务]"
+        },
+        "shawshank": {
+            "info": "[云服务]"
+        },
+        "chenjiadong": {
+            "info": "[云服务]"
+        },
+        "zhangyanchuan": {
+            "info": "[云服务]"
+        },
+        "yuzhouhang1": {
+            "info": "[存储]"
+        },
+        "d0ub1eh": {
+            "info": "[多媒体]"
+        },
+        "whuqincheng": {
+            "info": "[多媒体]"
+        },
+        "doublelucky": {
+            "info": "[build test]"
+        },
+        "zhu-sheng-le": {
+            "info": "[交互安全]"
         }
     }
 }

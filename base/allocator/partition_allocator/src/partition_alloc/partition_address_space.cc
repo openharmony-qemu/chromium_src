@@ -38,6 +38,7 @@
 
 #if PA_BUILDFLAG(IS_OHOS)
 #include "arkweb/chromium_ext/base/allocator/partition_allocator/src/partition_alloc/partition_address_space_for_include.cc"
+#include <sys/prctl.h>
 #endif
 
 namespace partition_alloc::internal {
@@ -471,7 +472,9 @@ void PartitionAddressSpace::MapMetadata(uintptr_t super_page,
                    file_offset);
   PA_CHECK(ptr != MAP_FAILED);
   PA_CHECK(ptr == reinterpret_cast<void*>(writable_metadata));
-
+#if PA_BUILDFLAG(IS_OHOS)
+  prctl(PR_SET_VMA, PR_SET_VMA_ANON_NAME, ptr, SystemPageSize(), "web_pa_meta");
+#endif
   if (copy_metadata) [[unlikely]] {
     // Copy the metadata from the private and copy-on-write page to
     // the shared page. (=update the memory file)
@@ -483,6 +486,9 @@ void PartitionAddressSpace::MapMetadata(uintptr_t super_page,
              MAP_FIXED | MAP_SHARED, pool_fd, file_offset);
   PA_CHECK(ptr != MAP_FAILED);
   PA_CHECK(ptr == reinterpret_cast<void*>(metadata));
+#if PA_BUILDFLAG(IS_OHOS)
+  prctl(PR_SET_VMA, PR_SET_VMA_ANON_NAME, ptr, SystemPageSize(), "web_pa_meta");
+#endif
 #else
   // Not implemneted yet.
   PA_NOTREACHED();
@@ -537,6 +543,9 @@ void PartitionAddressSpace::UnmapShadowMetadata(uintptr_t super_page,
                    MAP_FIXED | MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
   PA_CHECK(ret != MAP_FAILED);
   PA_CHECK(ret == ptr);
+#if PA_BUILDFLAG(IS_OHOS)
+  prctl(PR_SET_VMA, PR_SET_VMA_ANON_NAME, ret, SystemPageSize(), "web_pa_meta_fix");
+#endif
 #else
   // Not implemented yet.
   PA_NOTREACHED();

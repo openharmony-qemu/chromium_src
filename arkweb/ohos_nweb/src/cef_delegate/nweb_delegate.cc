@@ -59,6 +59,10 @@
 #include "nweb_preference_delegate.h"
 #include "url/gurl.h"
 
+#if BUILDFLAG(ARKWEB_AI)
+#include "nweb_agent_manager_impl.h"
+#endif
+
 #if BUILDFLAG(ARKWEB_NAVIGATION)
 #include "cef/ohos_cef_ext/libcef/browser/arkweb_navigation_state_serializer_ext.h"
 #include "nweb_history_list_impl.h"
@@ -97,6 +101,7 @@
 #include "ohos_nweb/src/cef_delegate/nweb_devtools_message_handler_impl.h"
 #if BUILDFLAG(ARKWEB_DEVTOOLS)
 #include "cef/include/cef_devtools_message_handler_delegate.h"
+#include "ohos_cef_ext/libcef/common/cef_open_devtools_ext_opt.h"
 #include "ohos_nweb/src/nweb_common.h"
 #endif // BUILDFLAG(ARKWEB_DEVTOOLS)
 
@@ -772,6 +777,9 @@ bool NWebDelegate::Init(bool is_enhance_surface,
     // background color should set when init in case of first white screen flash
     preference_delegate_->SetBackgroundColor(backgroundColor);
   }
+#if BUILDFLAG(ARKWEB_AI)
+  agent_manager_ = std::make_shared<NWebAgentManagerImpl>(weak_factory_.GetWeakPtr());
+#endif
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
   InitAppTempDir();
 #endif
@@ -1111,6 +1119,18 @@ void NWebDelegate::RegisterNWebHandler(std::shared_ptr<NWebHandler> handler) {
   }
   handler_delegate_->RegisterNWebHandler(handler);
 }
+
+#if BUILDFLAG(ARKWEB_AI)
+void NWebDelegate::RegisterNWebAgentHandler(
+    std::shared_ptr<NWebAgentHandler> handler) {
+  if (handler_delegate_ == nullptr) {
+    LOG(ERROR) << "fail to register nweb agent handler, nweb handler delegate "
+                  "is nullptr";
+    return;
+  }
+  handler_delegate_->RegisterNWebAgentHandler(handler);
+}
+#endif
 
 void NWebDelegate::SetInputMethodClient(
     CefRefPtr<NWebInputMethodClient> client) {
@@ -1468,6 +1488,12 @@ void NWebDelegate::SetVirtualPixelRatio(float ratio) {
 std::shared_ptr<NWebPreference> NWebDelegate::GetPreference() const {
   return preference_delegate_;
 }
+
+#if BUILDFLAG(ARKWEB_AI)
+std::shared_ptr<NWebAgentManager> NWebDelegate::GetAgentManager() const {
+  return agent_manager_;
+}
+#endif
 
 bool NWebDelegate::IsFileProtocol(const GURL& gurl) {
   if (gurl.is_empty() || !gurl.is_valid()) {
@@ -1961,7 +1987,7 @@ void NWebDelegate::OnPause() {
     hasEvictedBufferWhenHidden_ = false;
   } else if (!hasEvictedBufferWhenHidden_) {
     hasEvictedBufferWhenHidden_ = true;
-    LOG(DEBUG) << "NWebDelegate::OnPause evict frame back buffers when nweb was hidden";
+    LOG(INFO) << "NWebDelegate::OnPause evict frame back buffers when nweb was hidden";
     GetBrowser()->GetHost()->EvictFrameBackBuffersWhenNWebWasHidden();
   }
 #else
@@ -4596,15 +4622,19 @@ bool NWebDelegate::ExecuteAction(
     int64_t accessibilityId,
     uint32_t action,
     const std::map<std::string, std::string>& actionArguments) {
-  auto* accessibilityManager = GetAccessibilityManager();
-  if (accessibilityManager == nullptr) {
-    return false;
-  }
   BrowserAccessibilityOHOS* node =
       BrowserAccessibilityOHOS::GetFromAccessibilityId(
           GetRealAccessibilityId(accessibilityId));
   if (node == nullptr) {
-    LOG(ERROR) << "ExecuteAction node is not found";
+    LOG(ERROR) << "ExecuteAction accessNode is not found";
+    return false;
+  }
+  auto* accessibilityManager = GetAccessibilityManager();
+  if (accessibilityManager == nullptr) {
+    accessibilityManager = static_cast<BrowserAccessibilityManagerOHOS*>(node->manager());
+  }
+  if (accessibilityManager == nullptr) {
+    LOG(ERROR) << "ExecuteAction accessibilityManager is not found";
     return false;
   }
   AceAction aceAction = static_cast<AceAction>(action);
@@ -5762,15 +5792,6 @@ void NWebDelegate::WebExtensionTabDetached(
   GetBrowser()->GetHost()->WebExtensionTabDetached(tab_id, std::move(detachInfo));
 }
  
-void NWebDelegate::WebExtensionTabHighlighted(NWebExtensionTabHighlightInfo& highlightInfo) {
-  LOG(INFO) << "WebExtensionTabHighlighted, windowId: " << highlightInfo.windowId.value();
-  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
-    LOG(ERROR) << "WebExtensionTabHighlighted failed, get browser failed";
-    return;
-  }
-  GetBrowser()->GetHost()->WebExtensionTabHighlighted(highlightInfo);
-}
- 
 void NWebDelegate::WebExtensionTabMoved(
     int32_t tab_id,
     std::unique_ptr<NWebExtensionTabMoveInfo> moveInfo) {
@@ -5968,9 +5989,6 @@ void NWebDelegate::EnableMediaNetworkTrafficPrompt(bool enable) {
 void NWebDelegate::SetSurfaceDensity(const double& density) {
   display_ratio_ = density;
   SetVirtualPixelRatio(density);
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  base::ohos::SetDevicePixelRatio(display_ratio_);
-#endif
   std::shared_ptr<DisplayAdapter> display =
       display_manager_adapter_->GetDefaultDisplay();
   LOG(INFO) << "SetSurfaceDensity: " << density;
@@ -6042,6 +6060,36 @@ void NWebDelegate::OpenDevtoolsWith(
   GetBrowser()->GetHost()->ShowDevToolsWith(
       devtools_delegate->GetBrowser()->GetHost(),
       devtools_message_handler, inspect_element_at);
+#endif // #if BUILDFLAG(ARKWEB_DEVTOOLS)
+}
+
+void NWebDelegate::OpenDevtoolsWithByPb(
+      std::shared_ptr<NWebDelegateInterface> nweb_delegate,
+      std::unique_ptr<OpenDevToolsParam> param,
+      OpenDevToolsExtOpt& ext_opt) {
+  LOG(INFO) << "NWebDelegate::OpenDevtoolsWithByPb";
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  if (!GetBrowser() || !GetBrowser()->GetHost()) {
+    LOG(INFO) << "OpenDevtoolsWithByPb failed, no browser host";
+    return;
+  }
+  NWebDelegate* devtools_delegate =
+      static_cast<NWebDelegate*>(nweb_delegate.get());
+ 
+  CefRefPtr<NWebDevToolsMessageHandlerImpl> devtools_message_handler;
+  if (IsNativeApiEnable()) {
+    devtools_message_handler = CefRefPtr<NWebDevToolsMessageHandlerImpl>(
+        new NWebDevToolsMessageHandlerImpl(std::move(param->handlerNativeApi)));
+  } else {
+    devtools_message_handler = CefRefPtr<NWebDevToolsMessageHandlerImpl>(
+        new NWebDevToolsMessageHandlerImpl(std::move(param->handler)));
+  }
+ 
+  CefPoint inspect_element_at(param->point.x, param->point.y);
+  CefOpenDevToolsExtOpt cef_ext_opt(ext_opt.canDock);
+  GetBrowser()->GetHost()->ShowDevToolsWithByPb(
+      devtools_delegate->GetBrowser()->GetHost(),
+      devtools_message_handler, inspect_element_at, cef_ext_opt);
 #endif // #if BUILDFLAG(ARKWEB_DEVTOOLS)
 }
 
@@ -6336,6 +6384,17 @@ void NWebDelegate::AbortDistill() {
   GetBrowser()->GetHost()->AbortDistill();
 }
 #endif // ARKWEB_READER_MODE
+
+#if BUILDFLAG(ARKWEB_AI)
+void NWebDelegate::RegisterOnLoadStartedCbForHighlightContent(
+    std::function<void(void)>&& callback) {
+  if (handler_delegate_) {
+    handler_delegate_->RegisterOnLoadStartedCbForHighlightContent(std::move(callback));
+  } else {
+    LOG(ERROR) << "RegisterOnLoadStartedCbForHighlightContent, handler_delegate_ is nullptr"; 
+  }
+}
+#endif // ARKWEB_AI
 
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)
 void NWebDelegate::SetErrorPageEnabled(bool enable) {

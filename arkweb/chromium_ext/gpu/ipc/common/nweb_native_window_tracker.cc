@@ -48,6 +48,9 @@ void* NWebNativeWindowTracker::GetNativeWindow(int32_t native_window_id, bool is
       if (window) {
         native_window_map_.emplace(native_window_id, std::move((void *)window));
         LOG(DEBUG) << "Add native window id = " << native_window_id;
+        if (is_ref) {
+          OHOS::NWeb::OhosAdapterHelper::GetInstance().GetWindowAdapterInstance().AddNativeWindowRef(window);
+        }
         return window;
       }
     }

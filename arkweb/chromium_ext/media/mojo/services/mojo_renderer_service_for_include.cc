@@ -63,7 +63,11 @@ void MojoRendererService::SetPlaybackRateWithReason(
 void MojoRendererService::SetVideoSurface(int32_t surface_id) {
   renderer_->SetVideoSurface(surface_id);
 }
-#endif  // OHOS_VIDEO_ASSISTANT
+
+void MojoRendererService::SetPreciseSeekTarget(int64_t target_timestamp) {
+  renderer_->SetPreciseSeekTarget(target_timestamp);
+}
+#endif  // ARKWEB_VIDEO_ASSISTANT
 
 #if BUILDFLAG(ARKWEB_PIP)
 void MojoRendererService::PipEnable(bool enable) {

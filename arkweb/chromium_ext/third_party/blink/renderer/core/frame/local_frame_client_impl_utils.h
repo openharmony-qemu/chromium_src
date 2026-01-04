@@ -35,6 +35,7 @@ class LocalFrameClientImplUtils {
 
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
   std::unique_ptr<WebNativeBridge> CreateWebNativeBridge(NativeLoader&, WebNativeClient*);
+  float GetDeviceScaleFactor(NativeLoader&);
 #endif
 
 #if BUILDFLAG(ARKWEB_ADBLOCK)

@@ -66,6 +66,7 @@
 #endif // ARKWEB_READER_MODE
 
 struct OpenDevToolsParam;
+struct OpenDevToolsExtOpt;
 struct RunJavaScriptParam;
 
 namespace OHOS::NWeb {
@@ -108,6 +109,10 @@ class NWebDelegateInterface
   virtual void RegisterReleaseSurfaceListener(
       std::shared_ptr<NWebReleaseSurfaceCallback> releaseSurfaceListener) = 0;
   virtual void RegisterNWebHandler(std::shared_ptr<NWebHandler> handler) = 0;
+#if BUILDFLAG(ARKWEB_AI)
+  virtual void RegisterNWebAgentHandler(
+      std::shared_ptr<NWebAgentHandler> handler) = 0;
+#endif
   virtual void RegisterRenderCb(
       std::function<void(const char*)> render_update_cb) = 0;
 #if BUILDFLAG(ARKWEB_NWEB_EX)
@@ -278,6 +283,9 @@ class NWebDelegateInterface
   virtual void SetEnableLowerFrameRate(bool enabled) = 0;
   virtual void SetEnableHalfFrameRate(bool enabled) = 0;
   virtual std::shared_ptr<NWebPreference> GetPreference() const = 0;
+#if BUILDFLAG(ARKWEB_AI)
+  virtual std::shared_ptr<NWebAgentManager> GetAgentManager() const = 0;
+#endif
   virtual std::string Title() = 0;
   virtual std::shared_ptr<HitTestResult> GetHitTestResult() const = 0;
   virtual std::shared_ptr<HitTestResult> GetLastHitTestResult() const = 0;
@@ -775,7 +783,6 @@ class NWebDelegateInterface
   virtual void WebExtensionTabDetached(
       int tab_id,
       std::unique_ptr<NWebExtensionTabDetachInfo> detachInfo) = 0;
-  virtual void WebExtensionTabHighlighted(NWebExtensionTabHighlightInfo& highlightInfo) = 0;
   virtual void WebExtensionTabMoved(
       int32_t tab_id,
       std::unique_ptr<NWebExtensionTabMoveInfo> moveInfo) = 0;
@@ -829,6 +836,10 @@ class NWebDelegateInterface
   virtual void OpenDevtoolsWith(
       std::shared_ptr<NWebDelegateInterface> nweb_delegate,
       std::unique_ptr<OpenDevToolsParam> param) = 0;
+  virtual void OpenDevtoolsWithByPb(
+      std::shared_ptr<NWebDelegateInterface> nweb_delegate,
+      std::unique_ptr<OpenDevToolsParam> param,
+      OpenDevToolsExtOpt& ext_opt) = 0;
   virtual void CloseDevtools() = 0;
 
 #if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)

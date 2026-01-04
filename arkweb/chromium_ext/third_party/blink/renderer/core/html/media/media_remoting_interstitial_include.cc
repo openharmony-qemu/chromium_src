@@ -249,17 +249,17 @@ void MediaRemotingInterstitial::OnPlayPauseClicked() {
 
 void MediaRemotingInterstitial::UpdatePlayButtonUI() {
   if (!play_pause_button_) {
-    LOG(ERROR) << "MediaRemotingInterstitial::OnPlayPauseClicked, play_pause_button_ is nullptr";
+    LOG(ERROR) << "MediaRemotingInterstitial::UpdatePlayButtonUI, play_pause_button_ is nullptr";
     return;
   }
   // This is the UI refresh area. Remote Play and Pause need to call back here to refresh the UI.
   if (is_playing_) {
-    LOG(INFO) << "MediaRemotingInterstitial::OnPlayPauseClicked, playing";
+    LOG(INFO) << "MediaRemotingInterstitial::UpdatePlayButtonUI, playing";
     play_pause_button_->setAttribute(
         html_names::kClassAttr,
         AtomicString("play-pause-button playing"));
   } else {
-    LOG(INFO) << "MediaRemotingInterstitial::OnPlayPauseClicked, pause";
+    LOG(INFO) << "MediaRemotingInterstitial::UpdatePlayButtonUI, pause";
     play_pause_button_->setAttribute(
         html_names::kClassAttr,
         AtomicString("play-pause-button"));

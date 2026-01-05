@@ -28,7 +28,6 @@ CallbackSharedWrapper<MediaAVSessionAdapterImpl> MediaAVSessionAdapterImpl::avse
 constexpr int64_t TIME_OUT = 0;
 constexpr int64_t URL_NUM = 2;
 constexpr int64_t UiTIME_UPDATE_INTERVAL = 200;
-constexpr std::string LOCAL_DEVICE = "LocalDevice";
 
 void MediaAVSessionKey::Init() {
     pid_ = getpid();
@@ -726,6 +725,7 @@ void MediaAVSessionAdapterImpl::AVCastStateConnect(OH_AVSession *session,
         WVLOG_I("MediaAVSessionAdapterImpl::OutputDeviceChange");
         MediaAVSessionAdapterImpl* adapter = it->second;
         adapter->UpdateAVCastDevice(outputDeviceInfo);
+        std::string LOCAL_DEVICE = "LocalDevice";
         if (adapter->GetAVCastDevice() != LOCAL_DEVICE) {
             WVLOG_I("MediaAVSessionAdapterImpl::OutputDeviceChange, not LocalDevice");
             if (!adapter->PrepareAndStartCast()) {

@@ -25,6 +25,16 @@
 #endif
 
 namespace features {
+#if BUILDFLAG(IS_ARKWEB)
+BASE_FEATURE(kExtremeThrottle,
+            "kExtremeThrottle",
+            base::FEATURE_DISABLED_BY_DEFAULT);
+BASE_FEATURE_PARAM(double,
+                   kExtremeThrottleFrameRate,
+                   &kExtremeThrottle,
+                   "kExtremeThrottleFrameRate",
+                   2);
+#endif
 
 #if BUILDFLAG(IS_ANDROID)
 // During a scroll, enable viz to move browser controls according to the

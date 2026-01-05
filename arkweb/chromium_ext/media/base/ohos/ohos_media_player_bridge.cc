@@ -19,6 +19,7 @@
 #include "ohos_glue/base/include/ark_web_errno.h"
 
 #include "gpu/ipc/common/nweb_native_window_tracker.h"
+#include "gpu/ipc/common/nweb_video_native_window.h"
 #include "content/browser/gpu/gpu_process_host.h"
 
 extern "C" {
@@ -235,7 +236,7 @@ void OHOSMediaPlayerBridge::SetPlayerSurface() {
   if (pending_new_surface_id_ > 0) {
     LOG(INFO) << "SetPlayerSurface enter component pending_new_surface_id_:" << pending_new_surface_id_;
     pending_new_surface_id_ = -1;
-    void* native_window = NWebNativeWindowTracker::Get()->GetNativeWindow(new_surface_id_);
+    void* native_window = NWebVideoNativeWindow::Get()->GetNativeWindow(new_surface_id_);
     if (native_window) {
        ret = player_->SetVideoSurfaceNew(native_window);
       if (ret != 0) {

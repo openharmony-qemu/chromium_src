@@ -3,4 +3,6 @@ arkweb_gpu_ipc_common_sources = [
   "//arkweb/chromium_ext/gpu/ipc/common/nweb_native_window_tracker.cc",
   "//arkweb/chromium_ext/gpu/ipc/common/gpu_surface_id_tracker.cc",
   "//arkweb/chromium_ext/gpu/ipc/common/gpu_surface_id_tracker.h",
+  "//arkweb/chromium_ext/gpu/ipc/common/nweb_video_native_window.h",
+  "//arkweb/chromium_ext/gpu/ipc/common/nweb_video_native_window.cc",
 ]

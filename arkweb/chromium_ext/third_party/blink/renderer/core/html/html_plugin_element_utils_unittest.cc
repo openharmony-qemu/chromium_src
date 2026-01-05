@@ -49,7 +49,7 @@ class HTMLPlugInElementUtilsTest : public PageTestBase {
 
     GetDocument().body()->setInnerHTML("<embed id='test-plugin' type='test/native'>");
     plugin_ = To<HTMLEmbedElement>(GetDocument().getElementById(AtomicString("test-plugin")));
-    utils_ = std::make_unique<HTMLPlugInElementUtils>(plugin_.Get());
+    utils_ = MakeGarbageCollected<HTMLPlugInElementUtils>(plugin_.Get());
 
     Settings* settings = GetFrame().GetSettings();
     settings->RegisterNativeEmbedRule("valid_key", "service_prefix");
@@ -102,7 +102,7 @@ class HTMLPlugInElementUtilsTest : public PageTestBase {
   }
 
   Persistent<HTMLEmbedElement> plugin_;
-  std::unique_ptr<HTMLPlugInElementUtils> utils_;
+  Persistent<HTMLPlugInElementUtils> utils_;
   Persistent<HTMLNativeLoader> loader_;
   MockCcLayer mock_cc_layer_;
 };

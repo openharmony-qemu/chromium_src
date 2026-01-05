@@ -23,6 +23,10 @@ FontPlatformDataUtils::FontPlatformDataUtils(FontPlatformData* data) : font_data
 FontPlatformDataUtils::~FontPlatformDataUtils() {}
 // LCOV_EXCL_STOP
 
+void FontPlatformDataUtils::Trace(Visitor* visitor) const {
+  visitor->Trace(font_data_);
+}
+
 #if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
 const ScaleParam& FontPlatformDataUtils::FindCompressionConfigWithFont(
     const std::string& familyName) const {

@@ -16,11 +16,11 @@
 #include "base/gtest_prod_util.h"
 #include "net/base/ip_endpoint.h"
 #include "net/base/net_export.h"
+#include "net/base/network_change_notifier.h"
 #include "net/dns/dns_config_service.h"
 #include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace net {
-struct DnsConfig;
 
 // Use DnsConfigService::CreateSystemService to use it outside of tests.
 namespace internal {
@@ -31,7 +31,9 @@ namespace internal {
 // methods must be called on a sequence that allows blocking (i.e.
 // base::MayBlock). It may be constructed on a different sequence than which
 // it's later called on. WatchConfig() must be called prior to ReadConfig().
-class NET_EXPORT_PRIVATE DnsConfigServiceOhos : public DnsConfigService {
+class NET_EXPORT_PRIVATE DnsConfigServiceOhos
+    : public DnsConfigService,
+      public NetworkChangeNotifier::NetworkChangeObserver {
  public:
   DnsConfigServiceOhos();
 
@@ -55,6 +57,10 @@ class NET_EXPORT_PRIVATE DnsConfigServiceOhos : public DnsConfigService {
   class Watcher;
   class ConfigReader;
 
+  // NetworkChangeNotifier::NetworkChangeObserver:
+  void OnNetworkChanged(NetworkChangeNotifier::ConnectionType type) override;
+
+  bool is_watching_network_change_{false};
   std::unique_ptr<Watcher> watcher_;
   std::unique_ptr<ConfigReader> config_reader_;
 };

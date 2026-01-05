@@ -202,11 +202,11 @@ class ArkWebSubresourceFilterExtTest : public SimTest {
     subresource_filter_ = MakeGarbageCollected<SubresourceFilter>(
         MainFrame().GetFrame()->DomWindow(), std::move(web_filter));
     EXPECT_NE(subresource_filter_, nullptr);
-    subresource_filter_ext_ = std::make_unique<ArkWebSubresourceFilterExt>(subresource_filter_);
+    subresource_filter_ext_ = MakeGarbageCollected<ArkWebSubresourceFilterExt>(subresource_filter_);
   }
 
   SubresourceFilter* subresource_filter_;
-  std::unique_ptr<ArkWebSubresourceFilterExt> subresource_filter_ext_;
+  Member<ArkWebSubresourceFilterExt> subresource_filter_ext_;
 };
 
 TEST_F(ArkWebSubresourceFilterExtTest, RequestSendStatistics) {

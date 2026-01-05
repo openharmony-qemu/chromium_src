@@ -89,4 +89,8 @@ bool ArkWebSubresourceFilterExt::GetAdBlockEnabledByPage() const {
 }
 #endif
 
+void ArkWebSubresourceFilterExt::Trace(Visitor* visitor) const {
+  visitor->Trace(subresourceFilter);
+}
+
 }  // namespace blink

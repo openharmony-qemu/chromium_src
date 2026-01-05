@@ -205,6 +205,10 @@ DnsConfigServiceOhos::DnsConfigServiceOhos()
 }
 
 DnsConfigServiceOhos::~DnsConfigServiceOhos() {
+  if (is_watching_network_change_) {
+    NetworkChangeNotifier::RemoveNetworkChangeObserver(this);
+  }
+
   if (config_reader_) {
     config_reader_->Cancel();
   }
@@ -223,6 +227,13 @@ void DnsConfigServiceOhos::ReadConfigNow() {
 
 bool DnsConfigServiceOhos::StartWatching() {
   CreateReader();
+
+  CHECK(!is_watching_network_change_);
+  is_watching_network_change_ = true;
+
+  // On OpenHarmony, assume DNS config may have changed on every network change.
+  NetworkChangeNotifier::AddNetworkChangeObserver(this);
+
   watcher_ = std::make_unique<Watcher>(*this);
   return watcher_->Watch();
 }
@@ -231,6 +242,14 @@ void DnsConfigServiceOhos::CreateReader() {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   DCHECK(!config_reader_);
   config_reader_ = std::make_unique<ConfigReader>(*this);
+}
+
+void DnsConfigServiceOhos::OnNetworkChanged(
+    NetworkChangeNotifier::ConnectionType type) {
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  if (type != NetworkChangeNotifier::CONNECTION_NONE) {
+    OnConfigChanged(/*succeeded=*/true);
+  }
 }
 
 absl::optional<IPEndPoint> GetIpv4EndPoint(NetConn_NetAddr& net_addr) {

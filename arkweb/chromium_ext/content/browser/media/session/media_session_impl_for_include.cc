@@ -334,7 +334,7 @@ void MediaSessionImpl::UpdateUiPlayPosition(int64_t position) {
 bool MediaSessionImpl::IsPageBackground() {
   content::Visibility visibility = web_contents()->GetVisibility();
   bool is_background = (visibility != content::Visibility::VISIBLE);
-  LOG(INFO) << "zwp: MediaSessionImpl::IsPageBackground " << is_background;
+  LOG(INFO) << "MediaSessionImpl::IsPageBackground " << is_background;
   return is_background;
 }
 

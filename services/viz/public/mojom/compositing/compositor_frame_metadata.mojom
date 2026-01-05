@@ -27,6 +27,7 @@ import "ui/latency/mojom/latency_info.mojom";
 // compositor in the GPU process.
 struct CompositorFrameMetadata {
   float device_scale_factor;
+  float stretch_content_none_device_scale_factor;
   gfx.mojom.PointF root_scroll_offset;
   float page_scale_factor;
   gfx.mojom.SizeF scrollable_viewport_size;

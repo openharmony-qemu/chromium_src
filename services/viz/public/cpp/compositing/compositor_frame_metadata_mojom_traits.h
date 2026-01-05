@@ -37,6 +37,14 @@ struct StructTraits<viz::mojom::CompositorFrameMetadataDataView,
     return metadata.device_scale_factor;
   }
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  static float stretch_content_none_device_scale_factor(
+      const viz::CompositorFrameMetadata& metadata) {
+    DCHECK_GT(metadata.stretch_content_none_device_scale_factor, 0);
+    return metadata.stretch_content_none_device_scale_factor;
+  }
+#endif
+
   static gfx::PointF root_scroll_offset(
       const viz::CompositorFrameMetadata& metadata) {
     return metadata.root_scroll_offset;

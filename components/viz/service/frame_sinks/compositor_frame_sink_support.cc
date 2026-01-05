@@ -920,7 +920,10 @@ SubmitResult CompositorFrameSinkSupport::MaybeSubmitCompositorFrame(
     SurfaceId surface_id(frame_sink_id_, local_surface_id);
     SurfaceInfo surface_info(surface_id, frame.device_scale_factor(),
                              frame.size_in_pixels());
-
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+    surface_info.set_stretch_content_none_device_scale_factor(
+        frame.stretch_content_none_device_scale_factor());
+#endif
     // LocalSurfaceIds should be monotonically increasing. This ID is used
     // to determine the freshness of a surface at aggregation time.
     const LocalSurfaceId& last_created_local_surface_id =

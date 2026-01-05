@@ -113,10 +113,10 @@ void LocalFrame::OnDetectedBlankScreen(const WTF::String& url,
                                                   detectedContentfulNodesCount);
 }
 
-std::shared_ptr<BlankScreenDetector> LocalFrame::GetBlankScreenDetector(
+BlankScreenDetector* LocalFrame::GetBlankScreenDetector(
     bool force) {
   if (!blank_screen_detector_ && force) {
-    blank_screen_detector_ = std::make_shared<BlankScreenDetector>(this);
+    blank_screen_detector_ = MakeGarbageCollected<BlankScreenDetector>(this);
   }
   return blank_screen_detector_;
 }

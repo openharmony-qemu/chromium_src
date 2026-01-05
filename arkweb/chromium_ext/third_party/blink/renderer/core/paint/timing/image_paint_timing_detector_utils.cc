@@ -113,11 +113,6 @@ void ImageRecordsManagerUtils::ClearForALCP() {
     alcp_image_ = nullptr;
 }
 
-void ImageRecordsManagerUtils::Trace(Visitor* visitor) const {
-    visitor->Trace(alcp_image_);
-    visitor->Trace(alcp_pending_images_);
-}
-
 void ImageRecordsManagerUtils::AssignPaintTimeToRegisteredQueuedRecordsForALCP(
     const MediaRecordIdHash& record_id_hash, const base::TimeTicks& timestamp) {
     auto it = alcp_pending_images_.find(record_id_hash);
@@ -219,25 +214,25 @@ bool ImageRecordsManagerUtils::IsForBlankless() const {
 }
 
 void ImageRecordsManager::UpdateViewportSize(const std::optional<uint64_t>& size) {
-    image_record_manager_utils_.UpdateViewportSize(size);
+    image_record_manager_utils_->UpdateViewportSize(size);
 }
 
 bool ImageRecordsManager::TakeIfHasALCP() {
-    return image_record_manager_utils_.TakeIfHasALCP();
+    return image_record_manager_utils_->TakeIfHasALCP();
 }
 
 void ImageRecordsManager::ALCPProcessBeforeLcpRecord() {
-    image_record_manager_utils_.ALCPProcessBeforeLcpRecord();
+    image_record_manager_utils_->ALCPProcessBeforeLcpRecord();
 }
 
 bool ImageRecordsManager::CheckALCPRecord(const MediaRecordIdHash& record_id_hash, const MediaTiming& media_timing,
     const StyleImage* style_image, unsigned frame_index, bool new_lcp_record) {
-    return image_record_manager_utils_.CheckALCPRecord(record_id_hash, media_timing, style_image, frame_index,
+    return image_record_manager_utils_->CheckALCPRecord(record_id_hash, media_timing, style_image, frame_index,
         new_lcp_record);
 }
 
 void ImageRecordsManager::SetForBlankless() {
-    image_record_manager_utils_.SetForBlankless();
+    image_record_manager_utils_->SetForBlankless();
 }
 
 bool ImagePaintTimingDetector::TakeIfHasALCP() {
@@ -500,4 +495,14 @@ void ImageRecordsManagerUtils::GetAddedEntryInLatestFrameByRejectedDueToSize(
 }
 #endif
 
+void ImageRecordsManagerUtils::Trace(Visitor* visitor) const {
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+    visitor->Trace(alcp_image_);
+    visitor->Trace(alcp_pending_images_);
+#endif
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION) || BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT)
+    visitor->Trace(rejected_images_queued_for_paint_time_);
+    visitor->Trace(rejected_image_records_);
+#endif
+}
 }  // namespace blink

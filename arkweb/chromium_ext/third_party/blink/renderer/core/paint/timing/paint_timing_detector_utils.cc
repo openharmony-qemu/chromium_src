@@ -47,7 +47,7 @@ PaintTimingDetectorUtils::PaintTimingDetectorUtils(PaintTimingDetector* paint_ti
 #if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT) || BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
   if (paint_timing_detector_ && paint_timing_detector_->frame_view_ &&
       !paint_timing_detector_->frame_view_->GetFrame().Parent()) {
-    first_screen_calculator_ = std::make_shared<FirstScreenCalculator>(
+    first_screen_calculator_ = MakeGarbageCollected<FirstScreenCalculator>(
         paint_timing_detector->frame_view_);
   }
 #endif
@@ -271,6 +271,9 @@ void PaintTimingDetectorUtils::Trace(Visitor* visitor) const {
   if (need_supplement_for_bl_) {
     visitor->Trace(ptd_supplement_for_bl_);
   }
+#if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT) || BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  visitor->Trace(first_screen_calculator_);
+#endif
 }
 
 void PaintTimingDetector::RestartRecordingForBlankless() {
@@ -303,7 +306,7 @@ void LargestContentfulPaintCalculator::SetForBlankless() {
 #endif
 
 #if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT) || BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
-std::shared_ptr<FirstScreenCalculator>
+FirstScreenCalculator*
 PaintTimingDetectorUtils::GetFirstScreenCalculator() {
   if (!paint_timing_detector_ || !paint_timing_detector_->frame_view_) {
     return nullptr;

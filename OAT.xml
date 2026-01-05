@@ -67,8 +67,10 @@ used to filter file path.
         </policylist>
         <filefilterlist>
              <filefilter name="binaryFileTypePolicyFilter" >
-                <filteritem type="filepath" name="arkweb/ohos_adapter_ndk/stub/multimedia/av_session/lib/." desc="ohos自研二进制文件" />
-                </filefilter>
+                <filteritem type="filepath" name="arkweb/ohos_adapter_ndk/stub/multimedia/av_session/lib/aarch64-linux-ohos/libohavsession.so" desc="ohos投屏自研二进制文件aarch64" />
+                <filteritem type="filepath" name="arkweb/ohos_adapter_ndk/stub/multimedia/av_session/lib/arm-linux-ohos/libohavsession.so" desc="ohost投屏自研二进制文件arm" />
+                <filteritem type="filepath" name="arkweb/ohos_adapter_ndk/stub/multimedia/av_session/lib/x86_64-linux-ohos/libohavsession.so" desc="ohos投屏自研二进制文件x86" />
+             </filefilter>
         </filefilterlist>
         <licensematcherlist>
             <licensematcher name="Khronos License" desc="">

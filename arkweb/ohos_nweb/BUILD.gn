@@ -89,6 +89,7 @@ component("cef_nweb") {
   deps = [
     "//ohos_glue:ohos_adapter_glue_source",
     "//third_party:huawei_securec",
+    "//third_party/re2",
     "//cef/libcef/features",
     "//cef/libcef/common/mojom",
     "//components/js_injection/common",

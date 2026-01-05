@@ -30,7 +30,7 @@ namespace blink {
 
 class PaintLayerScrollableArea;
 
-class PaintLayerScrollableAreaUtils {
+class PaintLayerScrollableAreaUtils : public GarbageCollected<PaintLayerScrollableAreaUtils> {
  public:
   explicit PaintLayerScrollableAreaUtils(PaintLayerScrollableArea*);
 
@@ -41,9 +41,10 @@ class PaintLayerScrollableAreaUtils {
       const mojom::blink::ScrollIntoViewParamsPtr& params,
       const PhysicalRect& local_expose_rect,
       const PhysicalBoxStrut& scroll_margin);
+  void Trace(Visitor*) const;
 
  private:
-  PaintLayerScrollableArea* scrollable_area_;
+  Member<PaintLayerScrollableArea> scrollable_area_;
 };
 
 }  // namespace blink

@@ -31,6 +31,10 @@ namespace blink {
 LocalFrameViewUtils::LocalFrameViewUtils(LocalFrameView* local_frame_view)
     : local_frame_view_(local_frame_view) {}
 
+void LocalFrameViewUtils::Trace(Visitor* visitor) const {
+  visitor->Trace(local_frame_view_);
+}
+
 #if BUILDFLAG(ARKWEB_MENU)
 void LocalFrameViewUtils::UpdateCompositedSelectionIfNeed() {
   Page* page = local_frame_view_->GetFrame().GetPage();

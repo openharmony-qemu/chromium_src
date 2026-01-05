@@ -18,6 +18,10 @@ LayoutObjectUtils::LayoutObjectUtils(LayoutObject* impl) {
   layout_object_ = impl;
 }
 
+void LayoutObjectUtils::Trace(Visitor* visitor) const {
+  visitor->Trace(layout_object_);
+}
+
 #if BUILDFLAG(ARKWEB_MENU)
 bool LayoutObjectUtils::ArkWebVisibleToHitTestRequest(
     const HitTestRequest& request) const {

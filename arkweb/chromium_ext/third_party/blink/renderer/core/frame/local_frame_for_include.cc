@@ -98,7 +98,7 @@ void LocalFrame::OnOverScrollOffsetChanged(float offset_x, float offset_y) {
     GetTaskRunner(TaskType::kInternalDefault)
         ->PostTask(FROM_HERE,
                    WTF::BindOnce(&LocalFrame::OnOverScrollOffsetChanged,
-                                 weak_local_frame_.GetSafeRef(), offset_x, offset_y));
+                                 WrapWeakPersistent(this), offset_x, offset_y));
   } else {
     GetLocalFrameHostRemote().OnOverScrollOffsetChanged(offset_x, offset_y);
   }
@@ -271,7 +271,7 @@ void LocalFrame::StartHighlightFadeTimer(base::TimeDelta delay) {
   } else {
     highlight_fade_timer_.Start(FROM_HERE, delay,
                                 WTF::BindOnce(&LocalFrame::ClearHighlight,
-                                              weak_local_frame_.GetWeakPtr()));
+                                              WrapWeakPersistent(this)));
   }
 }
 

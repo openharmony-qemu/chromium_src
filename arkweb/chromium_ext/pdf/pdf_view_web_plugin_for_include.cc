@@ -152,6 +152,7 @@ bool PdfViewWebPlugin::ShouldHideMenu() {
 }
 
 void PdfViewWebPlugin::HideOrShowMenuAfterDelay() {
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   bool hide_menu = ShouldHideMenu();
   if (cancelable_menu_delayed_task_.IsValid()) {
     cancelable_menu_delayed_task_.CancelTask();

@@ -111,6 +111,8 @@ class WebFrameWidgetImplExtSimTest : public SimTest {
         <div>Test content</div>
         <input type="text" id="input1" value="First input">
         <input type="text" id="input2" value="Second input">
+        <div id="content">Text</div>
+        <iframe id="child"></iframe>
       </body>
       </html>
     )HTML");
@@ -682,5 +684,49 @@ TEST_F(WebFrameWidgetImplExtSimTest, GetOverScrollOffset_WithoutWidgetBase1) {
   SetWidgetBaseForTesting(std::move(widget_base));
 }
 
+TEST_F(WebFrameWidgetImplExtSimTest, IsSelectionRangeEmptyCoverage) {
+  WebLocalFrameImpl* main_frame = MainFrame();
+  // 场景 1: Range 不为空 (覆盖 return false 分支)
+  {
+    WebRange valid_range(0, 1);
+    bool result = MockMainFrameWidget()->IsSelectionRangeEmpty(valid_range, main_frame);
+    EXPECT_FALSE(result); 
+  }
+
+  // 场景 2: Range 为空，且 Focused Frame 为 nullptr (覆盖 if (!focused_frame) 分支)
+  {
+    WebRange null_range; // 默认构造通常是 Null
+    EXPECT_TRUE(null_range.IsNull());
+    // 传入 nullptr 作为 frame
+    bool result = MockMainFrameWidget()->IsSelectionRangeEmpty(null_range, nullptr);
+    EXPECT_TRUE(result);
+  }
+
+  // 场景 3: Range 为空，Frame 存在，但 Client 为空 (覆盖 if (!Client()) 分支)
+  {
+    WebRange null_range;
+    // 获取 iframe 并将其 Detach，构造 Client 为空的场景
+    auto* iframe_element = To<HTMLIFrameElement>(
+        GetDocument().getElementById(AtomicString("child")));
+    LocalFrame* child_local_frame = To<LocalFrame>(iframe_element->ContentFrame());
+    WebLocalFrameImpl* child_web_frame = 
+        WebLocalFrameImpl::FromFrame(child_local_frame);
+    // 关键：移除 iframe，导致 Frame Detach，Client 被置空，但对象尚未销毁
+    iframe_element->remove();
+    EXPECT_TRUE(child_web_frame->Client() == nullptr);
+    bool result = MockMainFrameWidget()->IsSelectionRangeEmpty(null_range, child_web_frame);
+    EXPECT_TRUE(result);
+    // 预期：代码运行至 if (Client()) 处判断失败，安全返回 true
+  }
+
+  // 场景 4: Range 为空，Frame 和 Client 都正常 (覆盖核心调用分支)
+  {
+    WebRange null_range;
+    // 使用正常的主 Frame
+    EXPECT_TRUE(main_frame->Client() != nullptr);
+    bool result = MockMainFrameWidget()->IsSelectionRangeEmpty(null_range, main_frame);
+    EXPECT_TRUE(result);
+  }
+}
 }  // namespace
 }  // namespace blink

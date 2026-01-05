@@ -17,14 +17,17 @@
 #define THIRD_PARTY_BLINK_RENDERER_CORE_LOADER_RESOURCE_IMAGE_RESOURCE_UTILS_H_
 
 #include "arkweb/build/features/features.h"
+#include "third_party/blink/renderer/platform/heap/garbage_collected.h"
+#include "third_party/blink/renderer/platform/heap/member.h"
 #include "third_party/blink/renderer/platform/weborigin/kurl.h"
 
 namespace blink {
 class ImageResource;
 
-class ImageResourceUtils {
+class ImageResourceUtils : public GarbageCollected<ImageResourceUtils> {
  public:
-  ImageResource* imageResource;
+  void Trace(Visitor* visitor) const;
+  Member<ImageResource> imageResource;
   ImageResourceUtils(ImageResource* impl);
 
 #if BUILDFLAG(ARKWEB_INJECT_OFFLINE_RESOURCE)

@@ -78,4 +78,8 @@ void LocalFrameClientImplUtils::NotifyLcpForBlankless() {
 }
 #endif
 // LCOV_EXCL_STOP
+
+void LocalFrameClientImplUtils::Trace(Visitor* visitor) const {
+  visitor->Trace(frame_client_impl_);
+}
 } // namespace blink

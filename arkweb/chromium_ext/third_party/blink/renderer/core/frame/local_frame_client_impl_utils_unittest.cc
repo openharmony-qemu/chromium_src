@@ -70,7 +70,7 @@ TEST_F(LocalFrameClientImplUtilsTest, NotifyLcpForBlankless_AllSixConditions) {
   WebViewImpl* web_view_ = helper_.Initialize();
   WebLocalFrameImpl* main_frame_ = To<WebLocalFrameImpl>(web_view_->MainFrame());
   Persistent<LocalFrameClientImpl> frame_client_impl_ = MakeGarbageCollected<LocalFrameClientImpl>(main_frame_);
-  std::unique_ptr<LocalFrameClientImplUtils> utils_ = std::make_unique<LocalFrameClientImplUtils>(frame_client_impl_);
+  Member<LocalFrameClientImplUtils> utils_ = MakeGarbageCollected<LocalFrameClientImplUtils>(frame_client_impl_);
 
 
   frame_client_impl_->web_frame_ = nullptr;
@@ -99,7 +99,7 @@ TEST_F(LocalFrameClientImplUtilsTest, RunScriptsAtHeadElementAvailable_NullFrame
   WebViewImpl* web_view_ = helper_.Initialize();
   WebLocalFrameImpl* main_frame_ = To<WebLocalFrameImpl>(web_view_->MainFrame());
   Persistent<LocalFrameClientImpl> frame_client_impl_ = MakeGarbageCollected<LocalFrameClientImpl>(main_frame_);
-  std::unique_ptr<LocalFrameClientImplUtils> utils_ = std::make_unique<LocalFrameClientImplUtils>(frame_client_impl_);
+  Member<LocalFrameClientImplUtils> utils_ = MakeGarbageCollected<LocalFrameClientImplUtils>(frame_client_impl_);
 
 
   frame_client_impl_->web_frame_ = nullptr;

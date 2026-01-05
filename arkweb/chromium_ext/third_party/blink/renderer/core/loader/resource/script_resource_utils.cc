@@ -63,4 +63,8 @@ ScriptResource* ScriptResourceUtils::CreateForOfflineResource(
       v8_compile_hints::MagicCommentMode::kNever, script_type);
 }
 #endif
+
+void ScriptResourceUtils::Trace(Visitor* visitor) const {
+  visitor->Trace(scriptResource);
+}
 }

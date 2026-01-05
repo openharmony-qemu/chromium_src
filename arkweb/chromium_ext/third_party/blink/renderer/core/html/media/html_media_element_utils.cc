@@ -541,6 +541,10 @@ void HTMLMediaElementUtils::OnNotifyMeidaCastUri() {
   }
 
   auto mediaUri = (htmlMediaElement_->currentSrc()).GetString();
+  if (mediaUri.IsNull() || mediaUri.empty()) {
+    LOG(ERROR) << "OnNotifyMeidaCastUri, mediaUri IsNull";
+    return;
+  }
   if (htmlMediaElement_->IsHTMLVideoElement()) {
     for (auto& observer : htmlMediaElement_->media_player_observer_remote_set_->Value()) {
       observer->OnNotifyMeidaCastUri(mediaUri);

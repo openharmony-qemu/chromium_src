@@ -4384,9 +4384,7 @@ test("base_unittests") {
     include_dirs = [
       "//third_party/ohos_ndk/includes/ohos_adapter",
     ]
-    if (target_cpu == "arm" || target_cpu == "arm64" || target_cpu == "x86_64") {
-      include_dirs += [ "//ohos_sdk/openharmony/native/sysroot/usr/include/multimedia/image_framework/image" ]
-    }
+    include_dirs += [ "//ohos_sdk/openharmony/native/sysroot/usr/include/multimedia/image_framework/image" ]
   }
 
   if (arkweb_test) {

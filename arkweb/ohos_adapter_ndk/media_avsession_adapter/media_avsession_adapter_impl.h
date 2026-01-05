@@ -59,18 +59,18 @@ private:
 };
 
 struct MediaCastDescription {
-    const char* assetId;
-    const char* title;
-    const char* subtitle;
-    const char* artist;
+    std::string assetId;
+    std::string title;
+    std::string subtitle;
+    std::string artist;
     const char* mediaType;
-    const char* lyricContent;
+    std::string lyricContent;
     int32_t duration;
-    const char* mediaUri;
+    std::string mediaUri;
     int32_t startPosition;
     int32_t mediaSize;
-    const char* albumTitle;
-    const char* appName;
+    std::string albumTitle;
+    std::string appName;
 };
 
 class MediaAVSessionAdapterImpl

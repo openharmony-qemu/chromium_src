@@ -259,45 +259,9 @@ class ClipboardOHOSInternal {
     }
   }
 
-  void UpdateClipboardDataRun() {
-    LOG(INFO) << "update clipboard data async";
-    UpdateClipboardData();
-  }
-
-  void OnUpdateClipboardData(Clipboard::UpdateClipboardDataCallback callback) {
-    if (!callback) {
-      LOG(ERROR) << "UpdateClipboardDataAsync Failed";
-      return;
-    }
-    std::move(callback).Run();
-  }
-
-  void UpdateClipboardData(Clipboard::UpdateClipboardDataCallback callback) {
-    LOG(INFO) << "Update clipboard data start";
-    base::ThreadPool::PostTaskAndReply(
-        FROM_HERE, {base::MayBlock(), base::TaskPriority::USER_VISIBLE},
-        base::BindOnce(&ClipboardOHOSInternal::UpdateClipboardDataRun,
-                       weak_ptr_factory_.GetWeakPtr()),
-        base::BindOnce(&ClipboardOHOSInternal::OnUpdateClipboardData,
-                       weak_ptr_factory_.GetWeakPtr(), std::move(callback)));
-  }
-
-  PasteRecordVector GetPasteDataFromSystem() {
-    auto records = std::make_shared<PasteRecordVector>();
-
-    OhosAdapterHelper::GetInstance().GetPasteBoard().GetPasteData(*records);
-    return (records ? *records : PasteRecordVector());
-  }
-
-  void UpdateClipboardData() {
-    if (state_ != ClipboardState::kOutOfDate) {
-      LOG(DEBUG) << "No need to update Clipboard";
-      return;
-    }
-    LOG(INFO) << "Update clipboard data, state=" << static_cast<int>(state_);
-
+  void UpdateClipboardDataFromRecords(PasteRecordVector record_vector) {
+    DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
     read_data_ = nullptr;
-    PasteRecordVector record_vector = GetPasteDataFromSystem();
     if (!record_vector.empty()) {
       // Notice: Because pasteboard observer dont notify cross device.
       // So now we always get data from system clipboard instead of cache data.
@@ -305,13 +269,64 @@ class ClipboardOHOSInternal {
       ClipboardOhosReadData::SetConvertHtmlCallback(convert_html_callback_);
       read_data_ = std::make_shared<ClipboardOhosReadData>(record_vector);
       return;
-    } else {
-      state_ = ClipboardState::kUpToDate;
     }
+
+    state_ = ClipboardState::kUpToDate;
     LOG(ERROR) << "UpdateClipboardData Failed";
     if (is_data_guard_enabled_) {
       state_ = ClipboardState::kInvalidDate;
     }
+  }
+
+  void UpdateClipboardData(Clipboard::UpdateClipboardDataCallback callback) {
+    DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
+    LOG(INFO) << "Update clipboard data start";
+    bool should_update = (state_ == ClipboardState::kOutOfDate);
+    base::ThreadPool::PostTaskAndReplyWithResult(
+        FROM_HERE, {base::MayBlock(), base::TaskPriority::USER_VISIBLE},
+        base::BindOnce(&ClipboardOHOSInternal::GetPasteDataFromSystemIfNeeded,
+                       should_update),
+        base::BindOnce(&ClipboardOHOSInternal::OnUpdateClipboardData,
+                       weak_ptr_factory_.GetWeakPtr(), should_update,
+                       std::move(callback)));
+  }
+
+  static PasteRecordVector GetPasteDataFromSystemIfNeeded(bool should_update) {
+    if (!should_update) {
+      return PasteRecordVector();
+    }
+    return GetPasteDataFromSystem();
+  }
+
+  static PasteRecordVector GetPasteDataFromSystem() {
+    PasteRecordVector records;
+    OhosAdapterHelper::GetInstance().GetPasteBoard().GetPasteData(records);
+    return records;
+  }
+
+  void OnUpdateClipboardData(bool should_update,
+                            Clipboard::UpdateClipboardDataCallback callback,
+                            PasteRecordVector record_vector) {
+    DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
+    if (should_update && state_ == ClipboardState::kOutOfDate) {
+      UpdateClipboardDataFromRecords(std::move(record_vector));
+    }
+    if (!callback) {
+      LOG(ERROR) << "UpdateClipboardDataAsync Failed";
+      return;
+    }
+    std::move(callback).Run();
+  }
+
+  void UpdateClipboardData() {
+    DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
+    if (state_ != ClipboardState::kOutOfDate) {
+      LOG(DEBUG) << "No need to update Clipboard";
+      return;
+    }
+    LOG(INFO) << "Update clipboard data, state=" << static_cast<int>(state_);
+
+    UpdateClipboardDataFromRecords(GetPasteDataFromSystem());
   }
 
   // Reads text from the ClipboardData.

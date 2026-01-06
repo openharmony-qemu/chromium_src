@@ -28,6 +28,10 @@ HTMLPlugInElementUtils::HTMLPlugInElementUtils(HTMLPlugInElement* pluginElement)
     : plugin_(pluginElement) {}
 // LCOV_EXCL_STOP
 
+void HTMLPlugInElementUtils::Trace(Visitor* visitor) const {
+  visitor->Trace(plugin_);
+}
+
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
 bool HTMLPlugInElementUtils::CheckNativeType(const char* key) const {
   if (!plugin_->GetDocument().IsActive() || !plugin_->GetDocument().GetFrame()) {

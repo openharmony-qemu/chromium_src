@@ -40,9 +40,10 @@ class PropertyTreeStateOrAlias;
 #endif
 
 // |ImageRecordsManagerUtils| is the manager of all of the images that Accumulate visual size since LCP.
-class CORE_EXPORT ImageRecordsManagerUtils {
-    DISALLOW_NEW();
+class CORE_EXPORT ImageRecordsManagerUtils : public GarbageCollected<ImageRecordsManagerUtils> {
+ public:
     explicit ImageRecordsManagerUtils(ImageRecordsManager& image_records_manager);
+    void Trace(Visitor* visitor) const;
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
     void UpdateViewportSize(const std::optional<uint64_t>& size);
     bool CheckALCPRecord(const MediaRecordIdHash& record_id_hash, const MediaTiming& media_timing,
@@ -61,7 +62,6 @@ class CORE_EXPORT ImageRecordsManagerUtils {
     void AssignPaintTimeToRegisteredQueuedRecordsForALCP(const MediaRecordIdHash& record_id_hash,
         const base::TimeTicks& timestamp);
     void ClearForALCP();
-    void Trace(Visitor* visitor) const;
     void SetForBlankless();
     bool IsForBlankless() const;
 #endif

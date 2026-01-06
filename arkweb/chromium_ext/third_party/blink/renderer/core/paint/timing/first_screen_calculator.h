@@ -28,7 +28,7 @@ namespace blink {
 class ImageRecord;
 class TextRecord;
 
-class FirstScreenCalculator {
+class FirstScreenCalculator : public GarbageCollected<FirstScreenCalculator> {
  public:
   explicit FirstScreenCalculator(LocalFrameView* local_frame_view)
       : frame_view_(local_frame_view) {}
@@ -41,6 +41,7 @@ class FirstScreenCalculator {
                             const gfx::Rect& rect,
                             base::TimeTicks timestamp);
   bool RemoveImageRecord(MediaRecordIdHash record_id_hash);
+  void Trace(Visitor* visitor) const;
   void OnUserScroll();
   bool HasUserScrolled() const;
   void RestartRecordingFirstScreenPaint();
@@ -76,7 +77,6 @@ class FirstScreenCalculator {
   uint64_t viewport_size_ = 0;
   gfx::Rect occupied_rect_{gfx::Rect()};
   bool nearly_finished_ = false;
-  base::WeakPtrFactory<FirstScreenCalculator> weak_factory_{this};
 };
 
 }  // namespace blink

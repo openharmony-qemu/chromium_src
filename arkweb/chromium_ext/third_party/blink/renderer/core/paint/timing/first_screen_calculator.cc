@@ -142,8 +142,8 @@ void FirstScreenCalculator::RestartTimerForFirstScreenDetection() {
 
 #endif
   timer_.Start(FROM_HERE, base::Milliseconds(task_delay_ms),
-               base::BindOnce(&FirstScreenCalculator::OnFirstScreenInvoked,
-                              weak_factory_.GetSafeRef()));
+               WTF::BindOnce(&FirstScreenCalculator::OnFirstScreenInvoked,
+                             WrapWeakPersistent(this)));
 }
 
 bool FirstScreenCalculator::IsRectContainedByExistingRects(
@@ -392,5 +392,9 @@ void FirstScreenCalculator::GetPaintRects(std::vector<gfx::Rect>& paint_rects) {
     }
     paint_rects.emplace_back(it->rect_);
   }
+}
+
+void FirstScreenCalculator::Trace(Visitor* visitor) const {
+  visitor->Trace(frame_view_);
 }
 }  // namespace blink

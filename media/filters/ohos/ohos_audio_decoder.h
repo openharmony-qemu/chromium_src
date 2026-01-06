@@ -30,6 +30,7 @@
 #include "media/base/callback_registry.h"
 #include "media/base/cdm_context.h"
 #include "media/base/media_export.h"
+#include "media/base/media_log.h"
 #include "media/base/ohos/ohos_media_crypto_context.h"
 #include "ohos_audio_decoder_loop.h"
 #include "third_party/abseil-cpp/absl/types/optional.h"
@@ -54,7 +55,8 @@ class OhosAudioDecoder : public AudioDecoder,
                          public OhosAudioDecoderLoop::Client {
  public:
   explicit OhosAudioDecoder(
-      scoped_refptr<base::SequencedTaskRunner> task_runner);
+      scoped_refptr<base::SequencedTaskRunner> task_runner,
+      std::unique_ptr<MediaLog> media_log);
 
   OhosAudioDecoder(const OhosAudioDecoder&) = delete;
 
@@ -128,7 +130,9 @@ class OhosAudioDecoder : public AudioDecoder,
 
   void OnError(int32_t error_code);
 
-  void UpdateOutputFormat();
+  void UpdateOutputFormat(int32_t sample_format,
+                          int32_t channel_count,
+                          int32_t sample_rate);
 
   void OnMediaCryptoReady(InitCB init_cb,
                           void* session,
@@ -291,6 +295,8 @@ class OhosAudioDecoder : public AudioDecoder,
   base::RepeatingTimer io_timer_;
 
   bool audio_decoder_created_ = false;
+
+  std::unique_ptr<MediaLog> media_log_;
 
   base::WeakPtrFactory<OhosAudioDecoder> weak_factory_{this};
 };

@@ -60,6 +60,9 @@ mojom("mojom") {
   if (arkweb_slide) {
     enabled_features += [ "arkweb_slide" ]
   }
+  if (arkweb_same_layer) {
+    enabled_features += ["arkweb_same_layer"]
+  }
   if (arkweb_performance_scheduling) {
     enabled_features += ["arkweb_performance_scheduling"]
   }

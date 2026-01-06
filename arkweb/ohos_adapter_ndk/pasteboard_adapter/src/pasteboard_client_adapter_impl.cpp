@@ -991,6 +991,7 @@ bool PasteBoardClientAdapterImpl::GetPasteData(PasteRecordVector& data)
     code = OH_AbilityRuntime_ApplicationContextGetCacheDir(cacheDir, NATIVE_BUFFER_SIZE, &cacheDirLength);
     if (code != ABILITY_RUNTIME_ERROR_CODE_NO_ERROR) {
         WVLOG_E("GetDistributedFilesDirOfApplicationContext failed:err=%{public}d", code);
+        OH_Pasteboard_GetDataParams_Destroy(params);
         return false;
     }
 
@@ -999,6 +1000,7 @@ bool PasteBoardClientAdapterImpl::GetPasteData(PasteRecordVector& data)
     int uriRes = PasteboardClientAdapterUtils::GetUriFromPath(cacheDir, cacheDirLength, &pcacheUri);
     if (uriRes != 0) {
         WVLOG_E("GetPasteData failed at GetUri. error code is: %{public}d.", uriRes);
+        OH_Pasteboard_GetDataParams_Destroy(params);
         return false;
     }
 
@@ -1057,8 +1059,7 @@ void PasteBoardClientAdapterImpl::SetPasteData(const PasteRecordVector& data, Co
 
     OH_UdmfData* uData = OH_UdmfData_Create();
     for (auto& record: data) {
-        PasteDataRecordAdapterImpl* rawRecord =
-            reinterpret_cast<PasteDataRecordAdapterImpl*>(record.get());
+        auto* rawRecord = static_cast<PasteDataRecordAdapterImpl*>(record.get());
         if (rawRecord == nullptr) {
             continue;
         }
@@ -1093,8 +1094,7 @@ void PasteBoardClientAdapterImpl::Clear()
         return;
     }
     for (auto& record: recordVector) {
-        PasteDataRecordAdapterImpl* rawRecord =
-            reinterpret_cast<PasteDataRecordAdapterImpl*>(record.get());
+        auto* rawRecord = static_cast<PasteDataRecordAdapterImpl*>(record.get());
         if (rawRecord == nullptr) {
             continue;
         }
@@ -1183,10 +1183,20 @@ int32_t PasteBoardClientAdapterImpl::AddPasteboardChangedObserver(
         //if subscribe failed, should remove and destroy observer
         if (ret != ERR_OK) {
             WVLOG_E("Subscribe pasteboard failed. error code is : %{public}d", ret);
-            ObserverMap::iterator iter = reg_.find(id);
-            if (iter != reg_.end()) {
-                (void)OH_PasteboardObserver_Destroy(iter->second);
-                reg_.erase(iter);
+            OH_PasteboardObserver* observerToDestroy = nullptr;
+            {
+                std::lock_guard<std::mutex> lock(mutex_);
+                ObserverMap::iterator iter = reg_.find(id);
+                if (iter != reg_.end()) {
+                    observerToDestroy = iter->second;
+                    reg_.erase(iter);
+                }
+            }
+            if (observerToDestroy != nullptr) {
+                int des_ret = OH_PasteboardObserver_Destroy(observerToDestroy);
+                if (des_ret != ERR_OK) {
+                    WVLOG_E("PasteboardObserver destroy failed. error code is : %{public}d", des_ret);
+                }
             }
         }
     }

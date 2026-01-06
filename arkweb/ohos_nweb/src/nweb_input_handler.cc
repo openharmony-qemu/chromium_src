@@ -24,7 +24,7 @@ std::shared_ptr<NWebInputHandler> NWebInputHandler::Create(
     std::shared_ptr<NWebDelegateInterface> nweb_delegate) {
   auto input_handler = std::make_shared<NWebInputHandler>(nweb_delegate);
   if (input_handler == nullptr) {
-    WVLOG_E("fail to create NWebOutputHandler instance");
+    WVLOG_E("fail to create NWebInputHandler instance");
     return nullptr;
   }
   input_handler->Init();

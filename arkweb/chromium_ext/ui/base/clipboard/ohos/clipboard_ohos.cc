@@ -442,7 +442,8 @@ class ClipboardOHOSInternal {
             FROM_HERE, {base::MayBlock(), base::TaskPriority::USER_BLOCKING},
             base::BindOnce(&clipboard_util::EncodeBitmapToPng, std::move(img)),
             base::BindOnce(&ClipboardOHOSInternal::DidGetPng,
-                           base::Unretained(this), std::move(callback)));
+                           weak_ptr_factory_.GetWeakPtr(), 
+                           std::move(callback)));
         SetOutOfDateAfterRead();
         return;
       }

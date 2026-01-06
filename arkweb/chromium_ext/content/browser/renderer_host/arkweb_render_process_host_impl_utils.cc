@@ -417,6 +417,7 @@ const base::FilePath::CharType kAppThemeFontsManifest[] =
 static const std::string kSrc = "src";
 static const std::string kSrcExt = "srcExt";
 static const std::string kTtfFileSrc = "ttfFileSrc";
+static const std::string kTtfFileSrcExt = "ttfFileSrcExt";
 
 std::unique_ptr<ThemeFont> ArkwebRenderProcessHostImplUtils::g_theme_font_ =
     nullptr;
@@ -503,13 +504,16 @@ ThemeFont* ArkwebRenderProcessHostImplUtils::EnsureThemeFont() {
   }
 
   const base::Value::List* font_ext_list = dict.FindList(kSrcExt);
+  if (!font_ext_list) {
+    font_ext_list = dict.FindList(kTtfFileSrcExt);
+  }
   std::vector<base::File> font_files;
   font_files.push_back(std::move(font_file));
   if (font_ext_list) {
     for (const auto& key : *font_ext_list) {
       const std::string font_ext = key.GetString();
       base::FilePath tmp_path = theme_font_path_ext;
-      base::FilePath font_path_ext = tmp_path.Append(font_ext);
+      base::FilePath font_path_ext = tmp_path.Append(base::FilePath(font_ext).BaseName());
       if (!base::PathExists(font_path_ext)) {
         LOG(ERROR) << "[themefont] font file not exist:" << font_path_ext.value();
         continue;

@@ -22,9 +22,10 @@
 
 namespace blink {
 class LocalFrameView;
-class LocalFrameViewUtils {
+class LocalFrameViewUtils : public GarbageCollected<LocalFrameViewUtils> {
  public:
   LocalFrameViewUtils(LocalFrameView* local_frame_view);
+  void Trace(Visitor*) const;
 
 #if BUILDFLAG(ARKWEB_MENU)
   void UpdateCompositedSelectionIfNeed();
@@ -33,7 +34,7 @@ class LocalFrameViewUtils {
   void PerformLayoutOnPreload(Document* document);
 #endif
 
-  raw_ptr<LocalFrameView> local_frame_view_;
+  Member<LocalFrameView> local_frame_view_;
 };
 }  // namespace blink
 

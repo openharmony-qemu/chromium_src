@@ -62,7 +62,7 @@ class LocalFrameViewUtilsTest : public RenderingTest {
     EnableCompositing();
     RenderingTest::SetUp();
     web_view_helper_.Initialize();
-    utils_ = std::make_unique<LocalFrameViewUtils>(GetDocument().View());
+    utils_ = MakeGarbageCollected<LocalFrameViewUtils>(GetDocument().View());
   }
 
   void TearDown() override {
@@ -97,7 +97,7 @@ class LocalFrameViewUtilsTest : public RenderingTest {
     GetDocument().View()->UpdateAllLifecyclePhasesForTest();
   }
 
-  std::unique_ptr<LocalFrameViewUtils> utils_;
+  Member<LocalFrameViewUtils> utils_;
 
  private:
   Persistent<AnimationMockChromeClient> chrome_client_;

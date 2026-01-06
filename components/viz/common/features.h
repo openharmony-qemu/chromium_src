@@ -17,7 +17,10 @@
 // https://cs.chromium.org/chromium/src/components/viz/README.md#runtime-features
 
 namespace features {
-
+#if BUILDFLAG(IS_ARKWEB)
+VIZ_COMMON_EXPORT BASE_DECLARE_FEATURE(kExtremeThrottle);
+VIZ_COMMON_EXPORT BASE_DECLARE_FEATURE_PARAM(double, kExtremeThrottleFrameRate);
+#endif
 #if BUILDFLAG(IS_ANDROID)
 VIZ_COMMON_EXPORT BASE_DECLARE_FEATURE(kAndroidBcivWithSimpleScheduler);
 VIZ_COMMON_EXPORT BASE_DECLARE_FEATURE(kAndroidBcivWithSuppression);

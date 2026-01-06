@@ -2804,6 +2804,11 @@ bool NWebHandlerDelegate::OnOpenURLFromTab(
     bool user_gesture) {
 #if BUILDFLAG(ARKWEB_NWEB_EX)
   if (IsNativeApiEnable()) {
+    if (dispatcher_.HasOnOpenURLFromTabV2()) {
+      return dispatcher_.OnOpenURLFromTabV2(target_url.ToString(),
+                                        static_cast<int>(target_disposition),
+                                        user_gesture);
+    }
     return dispatcher_.OnOpenURLFromTab(target_url.ToString(),
                                         static_cast<int>(target_disposition),
                                         user_gesture);

@@ -16,7 +16,6 @@
 #include "nweb_autolayout.h"
 
 #include <charconv>
-#include <regex>
 
 #include "base/files/file_util.h"
 #include "base/files/memory_mapped_file.h"
@@ -44,6 +43,7 @@ void NwebAutolayout::Initialize() {
   ScopedTimeLogger timer("Initialize");
   TRACE_EVENT("base", "NwebAutolayout::Initialize");
   auto &adapter = OhosAdapterHelper::GetInstance();
+  mAppBundleName_ = adapter.GetSystemPropertiesInstance().GetBundleName();
 
   std::string ccmConfig = "";
   base::FilePath ccmfile_path = base::FilePath(kCCMConfigPath);
@@ -55,26 +55,12 @@ void NwebAutolayout::Initialize() {
 
   LOG(DEBUG) << "get ccmConfig:" << (ccmConfig == "" ? "failed":"successful");
   mJsonRoot = base::JSONReader::Read(ccmConfig);
-  if (!mJsonRoot.has_value() || !Parse(mJsonRoot.value()) || mCCMConfig_.whitelist.empty()) {
-    LOG(ERROR) << "Failed to parse CCM config. Disabling feature.";
+  if (!mJsonRoot.has_value() || !Parse(mJsonRoot.value())) {
+    LOG(INFO) << "Failed to get app config. Disabling feature.";
     mEnable_ = false;
     return;
   }
 
-  mAppBundleName_ = adapter.GetSystemPropertiesInstance().GetBundleName();
-  auto app_it = mCCMConfig_.whitelist.find(mAppBundleName_);
-  if (app_it == mCCMConfig_.whitelist.end()) {
-    LOG(ERROR) << "checkCCM Error:app not in config. Disabling feature.";
-    mEnable_ = false;
-    return;
-  }
-
-  mWListEntry_ = &app_it->second;
-  if (mWListEntry_ == nullptr) {
-    LOG(ERROR) << "checkCCM Error:config info is null. Disabling feature.";
-    mEnable_ = false;
-    return;
-  }
   mPatternJSSource_ = std::string(mWListEntry_->pattern);
   LoadAutoLayoutFromHap();
   LOG(DEBUG) << "Initialize successfull";
@@ -272,53 +258,46 @@ bool NwebAutolayout::ParseToplevelConfig(const base::Value::Dict& root_dict) {
   }
   mCCMConfig_.scale_animation_duration = scale_animation_duration;
 
-  int alphabet_identification_min_size = 0;
-  if (!ParseConfig(root_dict, kAlphabetIdentificationMinSizeKey, kAlphabetIdentificationMinSizeRange,
-                         alphabet_identification_min_size)) {
-    return false;
-  }
+  // alphabet_identification_min_size 和 alphabet_height_width_min_ratio 设置为非必填，兼容旧json格式
+  int alphabet_identification_min_size = kInvalidValue;
+  ParseConfig(root_dict, kAlphabetIdentificationMinSizeKey, kAlphabetIdentificationMinSizeRange,
+                         alphabet_identification_min_size);
   mCCMConfig_.alphabet_identification_min_size = alphabet_identification_min_size;
 
-  int alphabet_height_width_min_ratio = 0;
-  if (!ParseConfig(root_dict, kAlphabetHeightWidthMinRatioKey, kAlphabetHeightWidthMinRatioRange,
-                         alphabet_height_width_min_ratio)) {
-    return false;
-  }
+  int alphabet_height_width_min_ratio = kInvalidValue;
+  ParseConfig(root_dict, kAlphabetHeightWidthMinRatioKey, kAlphabetHeightWidthMinRatioRange,
+                         alphabet_height_width_min_ratio);
   mCCMConfig_.alphabet_height_width_min_ratio = alphabet_height_width_min_ratio;
-  
+
   return ParseOpacityFilter(root_dict, mCCMConfig_.opacity_filter);
 }
 
 bool NwebAutolayout::ParseWhitelist(const base::Value::Dict& whitelist_dict) {
-  mCCMConfig_.whitelist.clear();
-  for (auto it = whitelist_dict.begin(); it != whitelist_dict.end(); ++it) {
-    const std::string& appName =it->first;
-    const base::Value& entry_value = it->second;
-    if (!entry_value.is_dict()) {
-      LOG(ERROR) << "Parse Error: Item in 'whitelist' is not a dictionary.";
-      return false;
-    }
-    if (!ParseWhitelistEntry(appName, entry_value.GetDict())) {
-      LOG(ERROR) << "ParseWhitelistEntry error, BundleName:"<< appName;
-      return false;
-    }
+  const base::Value::Dict* whitelist_rule = whitelist_dict.FindDict(mAppBundleName_);
+  if (!whitelist_rule) {
+    return false;
+  }
+  if (!ParseWhitelistEntry(*whitelist_rule)) {
+    LOG(ERROR) << "ParseWhitelistEntry error, invalid data.";
+    return false;
   }
   return true;
 }
 
-bool NwebAutolayout::ParseWhitelistEntry(std::string_view app_bundle_name_sv,
-    const base::Value::Dict& whitelist_dict) {
-  LOG(DEBUG) << "ParseWhitelistEntry for APP:" << app_bundle_name_sv;
+bool NwebAutolayout::ParseWhitelistEntry(const base::Value::Dict& whitelist_dict) {
   std::string json_str;
   if (base::JSONWriter::Write(whitelist_dict, &json_str)) {
     LOG(DEBUG) << "ParseWhitelistEntry whitelist Dict Content: " << json_str;
   } else {
     LOG(ERROR) << "Failed to convert Dict to JSON string.";
   }
-  WhitelistEntry& current_entry = mCCMConfig_.whitelist[app_bundle_name_sv];
-  current_entry.urlRuleInfos = ParseUrlRuleInfo(whitelist_dict);
-  current_entry.appRuleInfos = ParseAppRuleInfo(whitelist_dict, current_entry);
-  if (!current_entry.urlRuleInfos.has_value() && !current_entry.appRuleInfos.has_value()) {
+  mWListEntry_ = &mCCMConfig_.whitelist;
+  if (mCCMConfig_.alphabet_identification_min_size != kInvalidValue &&
+      mCCMConfig_.alphabet_height_width_min_ratio != kInvalidValue) {
+    mWListEntry_->urlRuleInfos = ParseUrlRuleInfo(whitelist_dict);
+  }
+  mWListEntry_->appRuleInfos = ParseAppRuleInfo(whitelist_dict, mCCMConfig_.whitelist);
+  if (!mWListEntry_->urlRuleInfos.has_value() && !mWListEntry_->appRuleInfos.has_value()) {
     LOG(ERROR) << "Parse Error: Missing, empty or invalid type for urlRuleInfos and appRuleInfos.";
     return false;
   }
@@ -350,7 +329,7 @@ std::optional<base::Value::List> NwebAutolayout::ParseAppRuleInfo(
       whitelist_dict.FindList(kAppRuleInfosKey);
   if (!app_rules_list) {
     LOG(ERROR) << "Parse Error: Missing, empty or invalid type for '"
-               << kAppRuleInfosKey << "'.";
+              << kAppRuleInfosKey << "'.";
     return std::nullopt;
   }
 
@@ -378,7 +357,12 @@ std::optional<std::vector<UrlRuleInfoEntry>> NwebAutolayout::ParseUrlRuleInfo(
     }
   
     UrlRuleInfoEntry url_rule_info_entry;
-    url_rule_info_entry.urlPrefix = std::string(*url_prefix);
+    std::unique_ptr<re2::RE2> pattern = std::make_unique<re2::RE2>(std::string(*url_prefix));
+    if (!pattern->ok()) {
+      LOG(WARNING) << "Skip url_rule_info_entry, invalid urlPrefix pattern.";
+      continue;
+    }
+    url_rule_info_entry.urlPrefixPattern = std::move(pattern);
     url_rule_info_entry.strategy = strategy_opt.value();
 
     std::optional<int> min_size_opt = url_rule_dict.FindInt(kAlphabetIdentificationMinSizeKey);
@@ -466,7 +450,7 @@ void NwebAutolayout::CheckWebContainer(CefRefPtr<CefBrowser> browser, CefRefPtr<
   if (auto url_rule_entry = FindBestMatchRule(current_url)) {
     // H5匹配逻辑
     ApplyH5AutoLayoutStrategy(*url_rule_entry, frame);
-  } else {
+  } else if (!mPatternJSSource_.empty()) {
     // 小程序逻辑
     LOG(DEBUG) << "start to check the web container.pattern:" << EscapeForJS_TemplateLiteral(mPatternJSSource_);
     CefRefPtr<JSResultCallbackImpl> JsResultCb = new JSResultCallbackImpl(frame);
@@ -483,10 +467,20 @@ void NwebAutolayout::ApplyH5AutoLayoutStrategy(const UrlRuleInfoEntry& url_rule_
   LOG(DEBUG) << "Add autolayout JavaScript...";
   frame->ExecuteJavaScript(mAutoLayoutJSSource_, frame->GetURL(), 0);
   std::string param_str = CreateH5AutoLayoutParam(url_rule_entry);
-  std::stringstream script;
-  script << kAutoLayoutBegin << param_str << kAutoLayoutEnd;
-  LOG(INFO) << "start H5 autolayout JavaScript:"<< script.str();
-  frame->ExecuteJavaScript(script.str(), frame->GetURL(), 0);
+  if (static_cast<uint32_t>(url_rule_entry.strategy) &
+      static_cast<uint32_t>(AutoLayoutStrategyType::kPopupScale)) {
+    std::stringstream script;
+    script << kAutoLayoutBegin << param_str << kAutoLayoutEnd;
+    LOG(INFO) << "start H5 PopupScale autolayout JavaScript: "<< script.str();
+    frame->ExecuteJavaScript(script.str(), frame->GetURL(), 0);
+  }
+  if (static_cast<uint32_t>(url_rule_entry.strategy) &
+      static_cast<uint32_t>(AutoLayoutStrategyType::kAlphabetNavigator)) {
+    std::stringstream script;
+    script << kAlphabetAutoLayoutBegin << param_str << kAutoLayoutEnd;
+    LOG(INFO) << "start H5 AlphabetNavigator autolayout JavaScript: "<< script.str();
+    frame->ExecuteJavaScript(script.str(), frame->GetURL(), 0);
+  }
 }
 
 void NwebAutolayout::LoadAutoLayoutFromHap() {
@@ -511,16 +505,20 @@ const UrlRuleInfoEntry* NwebAutolayout::FindBestMatchRule(const std::string& cur
   ScopedTimeLogger timer("NwebAutolayout::FindBestMatchRule");
   const UrlRuleInfoEntry* match_rule = nullptr;
   size_t best_match_length = 0;
+  re2::StringPiece input(current_url);
   for (const UrlRuleInfoEntry& url_rule_entry : mWListEntry_->urlRuleInfos.value()) {
     // 检查URL是否以当前前缀开头
-    std::regex pattern(url_rule_entry.urlPrefix);
-    std::smatch match_result;
-    if (std::regex_search(current_url, match_result, pattern)) {
-        size_t current_match_length = match_result[0].length();
-        if (current_match_length > best_match_length) {
-            best_match_length = current_match_length;
-            match_rule = &url_rule_entry;
-        }
+    auto pattern_ptr = url_rule_entry.urlPrefixPattern.get();
+    if (!pattern_ptr) {
+      continue;
+    }
+    re2::StringPiece groups[1];
+    if (pattern_ptr->Match(input, 0, input.size(), RE2::ANCHOR_START, groups, 1)) {
+      size_t current_match_length = groups[0].size();
+      if (current_match_length > best_match_length) {
+        best_match_length = current_match_length;
+        match_rule = &url_rule_entry;
+      }
     }
   }
   return match_rule;

@@ -26,10 +26,12 @@ namespace blink {
 
 class Page;
 
-class PageUtils {
+class PageUtils final
+  : public GarbageCollected<PageUtils> {
 public:
   PageUtils(Page* page);
   ~PageUtils();
+  void Trace(Visitor*) const;
 
 #if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_AREA)
   bool SetScrollbarAvoidAreaTop(double margin);
@@ -49,7 +51,7 @@ public:
   void SetSafeArea(gfx::Insets safe_area) { safe_area_ = safe_area; }
 #endif
 private:
-  raw_ptr<Page> page_;
+  Member<Page> page_;
 #if BUILDFLAG(ARKWEB_DISPLAY_CUTOUT)
   gfx::Insets safe_area_;
 #endif

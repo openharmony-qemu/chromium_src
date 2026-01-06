@@ -34,6 +34,7 @@ const std::string g_valid_config = R"({
     "opacityFilter": [10, 90],
     "minContentAreaRatioThreshold": 20,
     "scaleAnimationDuration": 100,
+    "minScaleFactor": 30,
     "whitelist": {
         "com.example.app": {
             "pattern": "some_pattern",
@@ -527,6 +528,7 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_Valid)
     
     EXPECT_TRUE(ParseToplevelConfig(root->GetDict()));
     
+    EXPECT_EQ(mCCMConfig_.minScaleFactor, 30);
     EXPECT_EQ(mCCMConfig_.min_mask_area_ratio_threshold, 60);
     EXPECT_EQ(mCCMConfig_.min_content_area_ratio_threshold, 20);
     EXPECT_EQ(mCCMConfig_.scale_animation_duration, 100);
@@ -549,24 +551,30 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_InvalidOpacityFilterFormat)
 {
     const std::vector<std::string> invalid_configs = {
         R"({
+            "minScaleFactor": 30,
             "minMaskAreaRatioThreshold": 60,
             "minContentAreaRatioThreshold": 20,
             "scaleAnimationDuration": 100})",
         R"({
+            "minScaleFactor": 30,
             "minMaskAreaRatioThreshold": 60,
             "opacityFilter": [10],
             "minContentAreaRatioThreshold": 20,
             "scaleAnimationDuration": 100})",
-        R"({"minMaskAreaRatioThreshold": 60,
+        R"({
+            "minScaleFactor": 30,
+            "minMaskAreaRatioThreshold": 60,
             "opacityFilter": [10, 90, 95],
             "minContentAreaRatioThreshold": 20,
             "scaleAnimationDuration": 100})",
         R"({
+            "minScaleFactor": 30,
             "minMaskAreaRatioThreshold": 60,
             "opacityFilter": ["10", 90],
             "minContentAreaRatioThreshold": 20,
             "scaleAnimationDuration": 100})",
         R"({
+            "minScaleFactor": 30,
             "minMaskAreaRatioThreshold": 60,
             "opacityFilter": [10, "90"],
             "minContentAreaRatioThreshold": 20,
@@ -603,16 +611,19 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_InvalidOpacityFilterValues)
 {
     const std::vector<std::string> invalid_configs = {
         R"({
+            "minScaleFactor": 30,
             "minMaskAreaRatioThreshold": 60,
             "opacityFilter": [-1, 90],
             "minContentAreaRatioThreshold": 20,
             "scaleAnimationDuration": 100})",
         R"({
+            "minScaleFactor": 30,
             "minMaskAreaRatioThreshold": 60,
             "opacityFilter": [10, 101],
             "minContentAreaRatioThreshold": 20,
             "scaleAnimationDuration": 100})",
         R"({
+            "minScaleFactor": 30,
             "minMaskAreaRatioThreshold": 60,
             "opacityFilter": [80, 40],
             "minContentAreaRatioThreshold": 20,
@@ -631,16 +642,19 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_InvalidMinMaskAreaRatioThreshold)
 {
     const std::vector<std::string> invalid_configs = {
         R"({
+            "minScaleFactor": 30,
             "minMaskAreaRatioThreshold": 49,
             "opacityFilter": [10, 90],
             "minContentAreaRatioThreshold": 20,
             "scaleAnimationDuration": 100})",
         R"({
+            "minScaleFactor": 30,
             "minMaskAreaRatioThreshold": 101,
             "opacityFilter": [10, 90],
             "minContentAreaRatioThreshold": 20,
             "scaleAnimationDuration": 100})",
         R"({
+            "minScaleFactor": 30,
             "minMaskAreaRatioThreshold": "60",
             "opacityFilter": [10, 90],
             "minContentAreaRatioThreshold": 20,
@@ -659,16 +673,19 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_InvalidMinContentAreaRatioThresho
 {
     const std::vector<std::string> invalid_configs = {
         R"({
+            "minScaleFactor": 30,
             "minMaskAreaRatioThreshold": 60,
             "opacityFilter": [10, 90],
             "minContentAreaRatioThreshold": 9,
             "scaleAnimationDuration": 100})",
         R"({
+            "minScaleFactor": 30,
             "minMaskAreaRatioThreshold": 60,
             "opacityFilter": [10, 90],
             "minContentAreaRatioThreshold": 101,
             "scaleAnimationDuration": 100})",
         R"({
+            "minScaleFactor": 30,
             "minMaskAreaRatioThreshold": 60,
             "opacityFilter": [10, 90],
             "minContentAreaRatioThreshold": "20",
@@ -687,16 +704,19 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_InvalidScaleAnimationDuration)
 {
     const std::vector<std::string> invalid_configs = {
         R"({
+            "minScaleFactor": 30,
             "minMaskAreaRatioThreshold": 60,
             "opacityFilter": [10, 90],
             "minContentAreaRatioThreshold": 20,
             "scaleAnimationDuration": 49})",
         R"({
+            "minScaleFactor": 30,
             "minMaskAreaRatioThreshold": 60,
             "opacityFilter": [10, 90],
             "minContentAreaRatioThreshold": 20,
             "scaleAnimationDuration": 401})",
         R"({
+            "minScaleFactor": 30,
             "minMaskAreaRatioThreshold": 60,
             "opacityFilter": [10, 90],
             "minContentAreaRatioThreshold": 20,
@@ -714,6 +734,7 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_InvalidScaleAnimationDuration)
 TEST_F(NwebAutolayoutTest, ParseToplevelConfig_MissingKey)
 {
     const std::string invalid_config = R"({
+        "minScaleFactor": 30,
         "minMaskAreaRatioThreshold": 60,
         "scaleAnimationDuration": 100,
         "opacityFilter": [10, 90]
@@ -736,15 +757,12 @@ TEST_F(NwebAutolayoutTest, ParseWhitelistEntry_Valid)
     ASSERT_TRUE(entry_val.has_value());
     ASSERT_TRUE(entry_val->is_dict());
  
-    mCCMConfig_.whitelist.clear();
-    EXPECT_TRUE(ParseWhitelistEntry("com.example.app", entry_val->GetDict()));
-    auto it = mCCMConfig_.whitelist.find("com.example.app");
-    EXPECT_NE(it, mCCMConfig_.whitelist.end());
-    EXPECT_EQ(it->second.pattern, "some_pattern");
-    EXPECT_EQ(it->second.getID, "get_id_func");
-    EXPECT_EQ(it->second.getPage, "get_page_func");
-    EXPECT_TRUE(it->second.appRuleInfos.has_value());
-    EXPECT_EQ(it->second.appRuleInfos->size(), 1u);
+    EXPECT_TRUE(ParseWhitelistEntry(entry_val->GetDict()));
+    EXPECT_EQ(mCCMConfig_.whitelist.pattern, "some_pattern");
+    EXPECT_EQ(mCCMConfig_.whitelist.getID, "get_id_func");
+    EXPECT_EQ(mCCMConfig_.whitelist.getPage, "get_page_func");
+    EXPECT_TRUE(mCCMConfig_.whitelist.appRuleInfos.has_value());
+    EXPECT_EQ(mCCMConfig_.whitelist.appRuleInfos->size(), 1u);
 }
  
 TEST_F(NwebAutolayoutTest, ParseWhitelistEntry_Invalid)
@@ -757,8 +775,7 @@ TEST_F(NwebAutolayoutTest, ParseWhitelistEntry_Invalid)
     std::optional<base::Value> entry_val = base::JSONReader::Read(invalid_entry_str);
     ASSERT_TRUE(entry_val.has_value());
     ASSERT_TRUE(entry_val->is_dict());
-    mCCMConfig_.whitelist.clear();
-    EXPECT_FALSE(ParseWhitelistEntry("com.example.app", entry_val->GetDict()));
+    EXPECT_FALSE(ParseWhitelistEntry(entry_val->GetDict()));
 }
  
 TEST_F(NwebAutolayoutTest, ParseWhitelistEntry_EmptyFields)
@@ -773,8 +790,7 @@ TEST_F(NwebAutolayoutTest, ParseWhitelistEntry_EmptyFields)
         std::optional<base::Value> entry_val = base::JSONReader::Read(entry_str);
         ASSERT_TRUE(entry_val.has_value());
         ASSERT_TRUE(entry_val->is_dict());
-        mCCMConfig_.whitelist.clear();
-        EXPECT_FALSE(ParseWhitelistEntry("com.example.app", entry_val->GetDict()));
+        EXPECT_FALSE(ParseWhitelistEntry(entry_val->GetDict()));
     }
 }
  
@@ -789,8 +805,7 @@ TEST_F(NwebAutolayoutTest, ParseWhitelistEntry_InvalidAppRuleInfos)
     std::optional<base::Value> entry_val = base::JSONReader::Read(invalid_entry_str);
     ASSERT_TRUE(entry_val.has_value());
     ASSERT_TRUE(entry_val->is_dict());
-    mCCMConfig_.whitelist.clear();
-    EXPECT_FALSE(ParseWhitelistEntry("com.example.app", entry_val->GetDict()));
+    EXPECT_FALSE(ParseWhitelistEntry(entry_val->GetDict()));
 }
  
  
@@ -806,8 +821,7 @@ TEST_F(NwebAutolayoutTest, ParseWhitelistEntry_MissingKeys)
         std::optional<base::Value> entry_val = base::JSONReader::Read(entry_str);
         ASSERT_TRUE(entry_val.has_value());
         ASSERT_TRUE(entry_val->is_dict());
-        mCCMConfig_.whitelist.clear();
-        EXPECT_FALSE(ParseWhitelistEntry("com.example.app", entry_val->GetDict()));
+        EXPECT_FALSE(ParseWhitelistEntry(entry_val->GetDict()));
     }
 }
  
@@ -817,9 +831,9 @@ TEST_F(NwebAutolayoutTest, ParseWhitelist_Valid)
     ASSERT_TRUE(root.has_value());
     const base::Value::Dict* whitelist_dict = root->GetDict().FindDict("whitelist");
     ASSERT_TRUE(whitelist_dict);
+    mAppBundleName_ = "com.example.app";
     EXPECT_TRUE(ParseWhitelist(*whitelist_dict));
-    EXPECT_EQ(mCCMConfig_.whitelist.size(), 1u);
-    EXPECT_NE(mCCMConfig_.whitelist.find("com.example.app"), mCCMConfig_.whitelist.end());
+    EXPECT_NE(mWListEntry_, nullptr);
 }
  
 TEST_F(NwebAutolayoutTest, ParseWhitelist_InvalidEntryType)
@@ -830,6 +844,7 @@ TEST_F(NwebAutolayoutTest, ParseWhitelist_InvalidEntryType)
     std::optional<base::Value> whitelist_val = base::JSONReader::Read(invalid_whitelist);
     ASSERT_TRUE(whitelist_val.has_value());
     ASSERT_TRUE(whitelist_val->is_dict());
+    mAppBundleName_ = "com.example.app";
     EXPECT_FALSE(ParseWhitelist(whitelist_val->GetDict()));
 }
  
@@ -847,6 +862,7 @@ TEST_F(NwebAutolayoutTest, ParseWhitelist_InvalidEntryContents)
     std::optional<base::Value> whitelist_val = base::JSONReader::Read(invalid_whitelist);
     ASSERT_TRUE(whitelist_val.has_value());
     ASSERT_TRUE(whitelist_val->is_dict());
+    mAppBundleName_ = "com.example.app";
     EXPECT_FALSE(ParseWhitelist(whitelist_val->GetDict()));
 }
 
@@ -854,6 +870,7 @@ TEST_F(NwebAutolayoutTest, Parse_Valid)
 {
     std::optional<base::Value> root = base::JSONReader::Read(g_valid_config);
     ASSERT_TRUE(root.has_value());
+    mAppBundleName_ = "com.example.app";
     EXPECT_TRUE(Parse(*root));
 }
  
@@ -1044,6 +1061,7 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_BoundaryValues)
 {
     // Test with boundary values for min_mask_area_ratio_threshold
     const std::string config_min = R"({
+        "minScaleFactor": 30,
         "minMaskAreaRatioThreshold": 50,
         "opacityFilter": [0, 100],
         "minContentAreaRatioThreshold": 11,
@@ -1061,6 +1079,7 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_MaxBoundaryValues)
 {
     // Test with max boundary values
     const std::string config_max = R"({
+        "minScaleFactor": 30,
         "minMaskAreaRatioThreshold": 100,
         "opacityFilter": [50, 100],
         "minContentAreaRatioThreshold": 99,
@@ -1089,16 +1108,14 @@ TEST_F(NwebAutolayoutTest, ParseWhitelistEntry_WithMultipleRules)
     ASSERT_TRUE(entry_val.has_value());
     ASSERT_TRUE(entry_val->is_dict());
 
-    mCCMConfig_.whitelist.clear();
-    EXPECT_TRUE(ParseWhitelistEntry("test.app", entry_val->GetDict()));
-    auto it = mCCMConfig_.whitelist.find("test.app");
-    EXPECT_NE(it, mCCMConfig_.whitelist.end());
-    EXPECT_EQ(it->second.appRuleInfos->size(), 3u);
+    EXPECT_TRUE(ParseWhitelistEntry(entry_val->GetDict()));
+    EXPECT_EQ(mCCMConfig_.whitelist.appRuleInfos->size(), 3u);
 }
 
 TEST_F(NwebAutolayoutTest, Parse_ValidComplexConfig)
 {
     const std::string complex_config = R"({
+        "minScaleFactor": 30,
         "minMaskAreaRatioThreshold": 55,
         "opacityFilter": [15, 85],
         "minContentAreaRatioThreshold": 25,
@@ -1121,14 +1138,16 @@ TEST_F(NwebAutolayoutTest, Parse_ValidComplexConfig)
     
     std::optional<base::Value> root = base::JSONReader::Read(complex_config);
     ASSERT_TRUE(root.has_value());
+    mAppBundleName_ = "com.app2";
     EXPECT_TRUE(Parse(*root));
-    EXPECT_EQ(mCCMConfig_.whitelist.size(), 2u);
+    EXPECT_NE(mWListEntry_, nullptr);
 }
 
 TEST_F(NwebAutolayoutTest, ParseToplevelConfig_OpacityFilterEdgeCases)
 {
     // Test opacity filter with equal values
     const std::string config_equal = R"({
+        "minScaleFactor": 30,
         "minMaskAreaRatioThreshold": 60,
         "opacityFilter": [50, 50],
         "minContentAreaRatioThreshold": 20,
@@ -1235,11 +1254,10 @@ TEST_F(NwebAutolayoutTest, ParseWhitelistEntry_JSONWriterFailure)
     std::optional<base::Value> entry_val = base::JSONReader::Read(entry_str);
     ASSERT_TRUE(entry_val.has_value());
     ASSERT_TRUE(entry_val->is_dict());
-    
-    mCCMConfig_.whitelist.clear();
+
     // This should succeed, but the else branch at line 239 is hard to trigger
     // We'll verify the function works correctly
-    EXPECT_TRUE(ParseWhitelistEntry("test.app", entry_val->GetDict()));
+    EXPECT_TRUE(ParseWhitelistEntry(entry_val->GetDict()));
 }
 
 TEST_F(NwebAutolayoutTest, ParseWhitelist_NonDictEntry)
@@ -1250,7 +1268,8 @@ TEST_F(NwebAutolayoutTest, ParseWhitelist_NonDictEntry)
     })";
     std::optional<base::Value> whitelist_val = base::JSONReader::Read(invalid_whitelist);
     ASSERT_TRUE(whitelist_val.has_value());
-    ASSERT_TRUE(whitelist_val->is_dict());
+    ASSERT_TRUE(whitelist_val->is_dict());    
+    mAppBundleName_ = "com.example.app";
     EXPECT_FALSE(ParseWhitelist(whitelist_val->GetDict()));
 }
 
@@ -1274,6 +1293,7 @@ TEST_F(NwebAutolayoutTest, Parse_WhitelistEmpty)
 {
     // Test line 67: mCCMConfig_.whitelist.empty() branch
     const std::string config_empty_whitelist = R"({
+        "minScaleFactor": 30,
         "minMaskAreaRatioThreshold": 60,
         "opacityFilter": [10, 90],
         "minContentAreaRatioThreshold": 20,
@@ -1282,9 +1302,8 @@ TEST_F(NwebAutolayoutTest, Parse_WhitelistEmpty)
     })";
     std::optional<base::Value> root = base::JSONReader::Read(config_empty_whitelist);
     ASSERT_TRUE(root.has_value());
-    // Parse should succeed but whitelist will be empty
-    EXPECT_TRUE(Parse(*root));
-    EXPECT_TRUE(mCCMConfig_.whitelist.empty());
+    EXPECT_FALSE(Parse(*root));
+    EXPECT_EQ(mWListEntry_, nullptr);
 }
 
 TEST_F(NwebAutolayoutTest, Parse_JsonRootInvalid)
@@ -1304,6 +1323,7 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_OpacityFilterFirstLessThanMin)
 {
     // Test line 206: first_opacity < kMinOpacityFilter
     const std::string config = R"({
+        "minScaleFactor": 30,
         "minMaskAreaRatioThreshold": 60,
         "opacityFilter": [-1, 90],
         "minContentAreaRatioThreshold": 20,
@@ -1318,6 +1338,7 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_OpacityFilterSecondGreaterThanMax
 {
     // Test line 208: second_opacity > kMaxOpacityFilter
     const std::string config = R"({
+        "minScaleFactor": 30,
         "minMaskAreaRatioThreshold": 60,
         "opacityFilter": [10, 101],
         "minContentAreaRatioThreshold": 20,
@@ -1332,6 +1353,7 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_OpacityFilterFirstGreaterThanSeco
 {
     // Test line 208: first_opacity > second_opacity
     const std::string config = R"({
+        "minScaleFactor": 30,
         "minMaskAreaRatioThreshold": 60,
         "opacityFilter": [90, 10],
         "minContentAreaRatioThreshold": 20,
@@ -1346,6 +1368,7 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_OpacityFilterSecondLessThanMin)
 {
     // Test line 207: second_opacity < kMinOpacityFilter
     const std::string config = R"({
+        "minScaleFactor": 30,
         "minMaskAreaRatioThreshold": 60,
         "opacityFilter": [10, -1],
         "minContentAreaRatioThreshold": 20,
@@ -1360,6 +1383,7 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_OpacityFilterFirstGreaterThanMax)
 {
     // Test line 206: first_opacity > kMaxOpacityFilter
     const std::string config = R"({
+        "minScaleFactor": 30,
         "minMaskAreaRatioThreshold": 60,
         "opacityFilter": [101, 90],
         "minContentAreaRatioThreshold": 20,
@@ -1374,6 +1398,7 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_MinContentAreaRatioThresholdBound
 {
     // Test line 177: *min_content_opt <= kMinContentAreaRatioThreshold (value 10 should fail)
     const std::string config = R"({
+        "minScaleFactor": 30,
         "minMaskAreaRatioThreshold": 60,
         "opacityFilter": [10, 90],
         "minContentAreaRatioThreshold": 10,
@@ -1388,6 +1413,7 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_MaxContentAreaRatioThresholdBound
 {
     // Test line 178: *min_content_opt >= kMaxContentAreaRatioThreshold (value 100 should fail)
     const std::string config = R"({
+        "minScaleFactor": 30,
         "minMaskAreaRatioThreshold": 60,
         "opacityFilter": [10, 90],
         "minContentAreaRatioThreshold": 100,
@@ -1402,6 +1428,7 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_MinScaleAnimationDurationBoundary
 {
     // Test line 187: *scale_anim_opt <= kMinScaleAnimationDuration (value 50 should fail)
     const std::string config = R"({
+        "minScaleFactor": 30,
         "minMaskAreaRatioThreshold": 60,
         "opacityFilter": [10, 90],
         "minContentAreaRatioThreshold": 20,
@@ -1416,6 +1443,7 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_MaxScaleAnimationDurationBoundary
 {
     // Test line 188: *scale_anim_opt >= kMaxScaleAnimationDuration (value 400 should fail)
     const std::string config = R"({
+        "minScaleFactor": 30,
         "minMaskAreaRatioThreshold": 60,
         "opacityFilter": [10, 90],
         "minContentAreaRatioThreshold": 20,
@@ -1471,6 +1499,7 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_OpacityFilterSizeNotTwo)
     // Test line 200: opacity_list->size() != 2
     // 测试size为1的情况
     const std::string config_size1 = R"({
+        "minScaleFactor": 30,
         "minMaskAreaRatioThreshold": 60,
         "opacityFilter": [10],
         "minContentAreaRatioThreshold": 20,
@@ -1482,6 +1511,7 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_OpacityFilterSizeNotTwo)
     
     // 测试size为3的情况
     const std::string config_size3 = R"({
+        "minScaleFactor": 30,
         "minMaskAreaRatioThreshold": 60,
         "opacityFilter": [10, 90, 95],
         "minContentAreaRatioThreshold": 20,
@@ -1496,6 +1526,7 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_OpacityFilterFirstNotInt)
 {
     // Test line 200: !(*opacity_list)[0].is_int()
     const std::string config = R"({
+        "minScaleFactor": 30,
         "minMaskAreaRatioThreshold": 60,
         "opacityFilter": ["10", 90],
         "minContentAreaRatioThreshold": 20,
@@ -1510,6 +1541,7 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_OpacityFilterSecondNotInt)
 {
     // Test line 201: !(*opacity_list)[1].is_int()
     const std::string config = R"({
+        "minScaleFactor": 30,
         "minMaskAreaRatioThreshold": 60,
         "opacityFilter": [10, "90"],
         "minContentAreaRatioThreshold": 20,
@@ -1524,6 +1556,7 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_OpacityFilterBothNotInt)
 {
     // Test line 200-201: both elements are not int
     const std::string config = R"({
+        "minScaleFactor": 30,
         "minMaskAreaRatioThreshold": 60,
         "opacityFilter": ["10", "90"],
         "minContentAreaRatioThreshold": 20,
@@ -1538,6 +1571,7 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_OpacityFilterFirstAtMaxBoundary)
 {
     // Test line 206: first_opacity == kMaxOpacityFilter (100) - should pass
     const std::string config = R"({
+        "minScaleFactor": 30,
         "minMaskAreaRatioThreshold": 60,
         "opacityFilter": [100, 100],
         "minContentAreaRatioThreshold": 20,
@@ -1554,6 +1588,7 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_OpacityFilterSecondAtMaxBoundary)
 {
     // Test line 208: second_opacity == kMaxOpacityFilter (100) - should pass
     const std::string config = R"({
+        "minScaleFactor": 30,
         "minMaskAreaRatioThreshold": 60,
         "opacityFilter": [50, 100],
         "minContentAreaRatioThreshold": 20,
@@ -1570,6 +1605,7 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_OpacityFilterFirstAtMinBoundary)
 {
     // Test line 206: first_opacity == kMinOpacityFilter (0) - should pass
     const std::string config = R"({
+        "minScaleFactor": 30,
         "minMaskAreaRatioThreshold": 60,
         "opacityFilter": [0, 50],
         "minContentAreaRatioThreshold": 20,
@@ -1586,6 +1622,7 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_OpacityFilterSecondAtMinBoundary)
 {
     // Test line 207: second_opacity == kMinOpacityFilter (0) - should pass
     const std::string config = R"({
+        "minScaleFactor": 30,
         "minMaskAreaRatioThreshold": 60,
         "opacityFilter": [0, 0],
         "minContentAreaRatioThreshold": 20,
@@ -1602,6 +1639,7 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_MinMaskAreaRatioThresholdAtBounda
 {
     // Test line 167-168: boundary values 50 and 100 should pass
     const std::string config_min = R"({
+        "minScaleFactor": 30,
         "minMaskAreaRatioThreshold": 50,
         "opacityFilter": [10, 90],
         "minContentAreaRatioThreshold": 20,
@@ -1613,6 +1651,7 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_MinMaskAreaRatioThresholdAtBounda
     EXPECT_EQ(mCCMConfig_.min_mask_area_ratio_threshold, 50);
     
     const std::string config_max = R"({
+        "minScaleFactor": 30,
         "minMaskAreaRatioThreshold": 100,
         "opacityFilter": [10, 90],
         "minContentAreaRatioThreshold": 20,
@@ -1628,6 +1667,7 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_MinContentAreaRatioThresholdAtVal
 {
     // Test line 177-178: valid boundary values 11 and 99 should pass
     const std::string config_min = R"({
+        "minScaleFactor": 30,
         "minMaskAreaRatioThreshold": 60,
         "opacityFilter": [10, 90],
         "minContentAreaRatioThreshold": 11,
@@ -1639,6 +1679,7 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_MinContentAreaRatioThresholdAtVal
     EXPECT_EQ(mCCMConfig_.min_content_area_ratio_threshold, 11);
     
     const std::string config_max = R"({
+        "minScaleFactor": 30,
         "minMaskAreaRatioThreshold": 60,
         "opacityFilter": [10, 90],
         "minContentAreaRatioThreshold": 99,
@@ -1654,6 +1695,7 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_ScaleAnimationDurationAtValidBoun
 {
     // Test line 187-188: valid boundary values 51 and 399 should pass
     const std::string config_min = R"({
+        "minScaleFactor": 30,
         "minMaskAreaRatioThreshold": 60,
         "opacityFilter": [10, 90],
         "minContentAreaRatioThreshold": 20,
@@ -1665,6 +1707,7 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_ScaleAnimationDurationAtValidBoun
     EXPECT_EQ(mCCMConfig_.scale_animation_duration, 51);
     
     const std::string config_max = R"({
+        "minScaleFactor": 30,
         "minMaskAreaRatioThreshold": 60,
         "opacityFilter": [10, 90],
         "minContentAreaRatioThreshold": 20,
@@ -1687,8 +1730,7 @@ TEST_F(NwebAutolayoutTest, ParseWhitelistEntry_PatternPtrNull)
     std::optional<base::Value> entry_val = base::JSONReader::Read(entry_str);
     ASSERT_TRUE(entry_val.has_value());
     ASSERT_TRUE(entry_val->is_dict());
-    mCCMConfig_.whitelist.clear();
-    EXPECT_FALSE(ParseWhitelistEntry("com.example.app", entry_val->GetDict()));
+    EXPECT_FALSE(ParseWhitelistEntry(entry_val->GetDict()));
 }
 
 TEST_F(NwebAutolayoutTest, ParseWhitelistEntry_GetIDPtrNull)
@@ -1702,8 +1744,7 @@ TEST_F(NwebAutolayoutTest, ParseWhitelistEntry_GetIDPtrNull)
     std::optional<base::Value> entry_val = base::JSONReader::Read(entry_str);
     ASSERT_TRUE(entry_val.has_value());
     ASSERT_TRUE(entry_val->is_dict());
-    mCCMConfig_.whitelist.clear();
-    EXPECT_FALSE(ParseWhitelistEntry("com.example.app", entry_val->GetDict()));
+    EXPECT_FALSE(ParseWhitelistEntry(entry_val->GetDict()));
 }
 
 TEST_F(NwebAutolayoutTest, ParseWhitelistEntry_GetPagePtrNull)
@@ -1717,8 +1758,7 @@ TEST_F(NwebAutolayoutTest, ParseWhitelistEntry_GetPagePtrNull)
     std::optional<base::Value> entry_val = base::JSONReader::Read(entry_str);
     ASSERT_TRUE(entry_val.has_value());
     ASSERT_TRUE(entry_val->is_dict());
-    mCCMConfig_.whitelist.clear();
-    EXPECT_FALSE(ParseWhitelistEntry("com.example.app", entry_val->GetDict()));
+    EXPECT_FALSE(ParseWhitelistEntry(entry_val->GetDict()));
 }
 
 TEST_F(NwebAutolayoutTest, ParseWhitelistEntry_AppRuleInfosNull)
@@ -1732,14 +1772,14 @@ TEST_F(NwebAutolayoutTest, ParseWhitelistEntry_AppRuleInfosNull)
     std::optional<base::Value> entry_val = base::JSONReader::Read(entry_str);
     ASSERT_TRUE(entry_val.has_value());
     ASSERT_TRUE(entry_val->is_dict());
-    mCCMConfig_.whitelist.clear();
-    EXPECT_FALSE(ParseWhitelistEntry("com.example.app", entry_val->GetDict()));
+    EXPECT_FALSE(ParseWhitelistEntry(entry_val->GetDict()));
 }
 
 TEST_F(NwebAutolayoutTest, ParseToplevelConfig_MinMaskAreaRatioThresholdNull)
 {
     // Test line 167: !min_mask_opt
     const std::string config = R"({
+        "minScaleFactor": 30,
         "opacityFilter": [10, 90],
         "minContentAreaRatioThreshold": 20,
         "scaleAnimationDuration": 100
@@ -1753,6 +1793,7 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_MinContentAreaRatioThresholdNull)
 {
     // Test line 177: !min_content_opt
     const std::string config = R"({
+        "minScaleFactor": 30,
         "minMaskAreaRatioThreshold": 60,
         "opacityFilter": [10, 90],
         "scaleAnimationDuration": 100
@@ -1766,6 +1807,7 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_ScaleAnimationDurationNull)
 {
     // Test line 187: !scale_anim_opt
     const std::string config = R"({
+        "minScaleFactor": 30,
         "minMaskAreaRatioThreshold": 60,
         "opacityFilter": [10, 90],
         "minContentAreaRatioThreshold": 20
@@ -1779,6 +1821,7 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_OpacityFilterNull)
 {
     // Test line 196: !opacity_list
     const std::string config = R"({
+        "minScaleFactor": 30,
         "minMaskAreaRatioThreshold": 60,
         "minContentAreaRatioThreshold": 20,
         "scaleAnimationDuration": 100
@@ -1801,6 +1844,7 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_InvalidRootDict)
 {
     // Test line 151: ParseToplevelConfig returns false
     const std::string invalid_config = R"({
+        "minScaleFactor": 30,
         "minMaskAreaRatioThreshold": 200,
         "opacityFilter": [10, 90],
         "minContentAreaRatioThreshold": 20,
@@ -1816,6 +1860,7 @@ TEST_F(NwebAutolayoutTest, ParseWhitelist_EmptyWhitelist)
 {
     // Test ParseWhitelist with empty whitelist
     const std::string config = R"({
+        "minScaleFactor": 30,
         "minMaskAreaRatioThreshold": 60,
         "opacityFilter": [10, 90],
         "minContentAreaRatioThreshold": 20,
@@ -1826,8 +1871,8 @@ TEST_F(NwebAutolayoutTest, ParseWhitelist_EmptyWhitelist)
     ASSERT_TRUE(root.has_value());
     const base::Value::Dict* whitelist_dict = root->GetDict().FindDict("whitelist");
     ASSERT_TRUE(whitelist_dict);
-    EXPECT_TRUE(ParseWhitelist(*whitelist_dict));
-    EXPECT_TRUE(mCCMConfig_.whitelist.empty());
+    EXPECT_FALSE(ParseWhitelist(*whitelist_dict));
+    EXPECT_EQ(mWListEntry_, nullptr);
 }
 
 TEST_F(NwebAutolayoutTest, ParseWhitelist_MultipleValidEntries)
@@ -1856,8 +1901,9 @@ TEST_F(NwebAutolayoutTest, ParseWhitelist_MultipleValidEntries)
     std::optional<base::Value> whitelist_val = base::JSONReader::Read(multi_entry);
     ASSERT_TRUE(whitelist_val.has_value());
     ASSERT_TRUE(whitelist_val->is_dict());
+    mAppBundleName_ = "app1";
     EXPECT_TRUE(ParseWhitelist(whitelist_val->GetDict()));
-    EXPECT_EQ(mCCMConfig_.whitelist.size(), 3u);
+    EXPECT_NE(mWListEntry_, nullptr);
 }
 
 TEST_F(NwebAutolayoutTest, ParseWhitelist_OneValidOneInvalidInLoop)
@@ -1876,6 +1922,7 @@ TEST_F(NwebAutolayoutTest, ParseWhitelist_OneValidOneInvalidInLoop)
     std::optional<base::Value> whitelist_val = base::JSONReader::Read(mixed);
     ASSERT_TRUE(whitelist_val.has_value());
     ASSERT_TRUE(whitelist_val->is_dict());
+    mAppBundleName_ = "app2";
     EXPECT_FALSE(ParseWhitelist(whitelist_val->GetDict()));
 }
 
@@ -1899,6 +1946,7 @@ TEST_F(NwebAutolayoutTest, ParseWhitelist_SecondEntryInvalid)
     std::optional<base::Value> whitelist_val = base::JSONReader::Read(mixed);
     ASSERT_TRUE(whitelist_val.has_value());
     ASSERT_TRUE(whitelist_val->is_dict());
+    mAppBundleName_ = "app2";
     EXPECT_FALSE(ParseWhitelist(whitelist_val->GetDict()));
 }
 
@@ -1906,6 +1954,7 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_OpacityFilterBoundaryValues)
 {
     // Test opacity filter boundary values (0 and 100)
     const std::string config_min = R"({
+        "minScaleFactor": 30,
         "minMaskAreaRatioThreshold": 60,
         "opacityFilter": [0, 100],
         "minContentAreaRatioThreshold": 20,
@@ -1922,6 +1971,7 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_OpacityFilterMaxValues)
 {
     // Test opacity filter with max values
     const std::string config_max = R"({
+        "minScaleFactor": 30,
         "minMaskAreaRatioThreshold": 60,
         "opacityFilter": [100, 100],
         "minContentAreaRatioThreshold": 20,
@@ -1939,6 +1989,7 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_MinMaskAreaRatioThresholdBoundary
     // Test line 167-168: boundary values for minMaskAreaRatioThreshold
     // Test with value 50 (minimum valid)
     const std::string config_min = R"({
+        "minScaleFactor": 30,
         "minMaskAreaRatioThreshold": 50,
         "opacityFilter": [10, 90],
         "minContentAreaRatioThreshold": 20,
@@ -1951,6 +2002,7 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_MinMaskAreaRatioThresholdBoundary
     
     // Test with value 100 (maximum valid)
     const std::string config_max = R"({
+        "minScaleFactor": 30,
         "minMaskAreaRatioThreshold": 100,
         "opacityFilter": [10, 90],
         "minContentAreaRatioThreshold": 20,
@@ -1966,6 +2018,7 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_MinContentAreaRatioThresholdValid
 {
     // Test line 177-178: valid boundary values (11 and 99)
     const std::string config_min = R"({
+        "minScaleFactor": 30,
         "minMaskAreaRatioThreshold": 60,
         "opacityFilter": [10, 90],
         "minContentAreaRatioThreshold": 11,
@@ -1977,6 +2030,7 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_MinContentAreaRatioThresholdValid
     EXPECT_EQ(mCCMConfig_.min_content_area_ratio_threshold, 11);
     
     const std::string config_max = R"({
+        "minScaleFactor": 30,
         "minMaskAreaRatioThreshold": 60,
         "opacityFilter": [10, 90],
         "minContentAreaRatioThreshold": 99,
@@ -1992,6 +2046,7 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_ScaleAnimationDurationValidBounda
 {
     // Test line 187-188: valid boundary values (51 and 399)
     const std::string config_min = R"({
+        "minScaleFactor": 30,
         "minMaskAreaRatioThreshold": 60,
         "opacityFilter": [10, 90],
         "minContentAreaRatioThreshold": 20,
@@ -2003,6 +2058,7 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_ScaleAnimationDurationValidBounda
     EXPECT_EQ(mCCMConfig_.scale_animation_duration, 51);
     
     const std::string config_max = R"({
+        "minScaleFactor": 30,
         "minMaskAreaRatioThreshold": 60,
         "opacityFilter": [10, 90],
         "minContentAreaRatioThreshold": 20,
@@ -2040,8 +2096,9 @@ TEST_F(NwebAutolayoutTest, ParseWhitelist_MultipleEntries)
     std::optional<base::Value> whitelist_val = base::JSONReader::Read(multi_entry_config);
     ASSERT_TRUE(whitelist_val.has_value());
     ASSERT_TRUE(whitelist_val->is_dict());
+    mAppBundleName_ = "com.app1";
     EXPECT_TRUE(ParseWhitelist(whitelist_val->GetDict()));
-    EXPECT_EQ(mCCMConfig_.whitelist.size(), 3u);
+    EXPECT_NE(mWListEntry_, nullptr);
 }
 
 TEST_F(NwebAutolayoutTest, ParseWhitelist_OneValidOneInvalid)
@@ -2060,6 +2117,7 @@ TEST_F(NwebAutolayoutTest, ParseWhitelist_OneValidOneInvalid)
     ASSERT_TRUE(whitelist_val.has_value());
     ASSERT_TRUE(whitelist_val->is_dict());
     // Should fail because one entry is not a dict
+    mAppBundleName_ = "com.invalid";
     EXPECT_FALSE(ParseWhitelist(whitelist_val->GetDict()));
 }
 

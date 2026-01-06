@@ -236,6 +236,9 @@ void FirstScreenCalculator::NotifyImagePaint(
   if (image_ratio > BACKGROUND_IMAGE_THRESHOLD) {
     LOG(INFO) << "FirstScreenCalculator::NotifyImagePaint image_ratio "
               << image_ratio << " is too large.";
+    if (!DoesRectIntersectExistingRects(rect)) {
+      background_image_id_ = record_id_hash;
+    }
     return;
   }
   if (is_video) {
@@ -307,15 +310,17 @@ void FirstScreenCalculator::AssignImagePaintTime(
     MediaRecordIdHash record_id_hash,
     const gfx::Rect& rect,
     base::TimeTicks timestamp) {
-  const auto& it = image_rects_map_.find(record_id_hash);
-  if (it == image_rects_map_.end() || !it->second.paint_time_.is_null()) {
-    return;
-  }
-
-  image_rects_map_[record_id_hash] = PaintRectInfo(rect, timestamp);
-  for (const auto& id : intersected_image_ids_) {
-    if (id == record_id_hash) {
+  if (record_id_hash != background_image_id_) {
+    const auto& it = image_rects_map_.find(record_id_hash);
+    if (it == image_rects_map_.end() || !it->second.paint_time_.is_null()) {
       return;
+    }
+
+    image_rects_map_[record_id_hash] = PaintRectInfo(rect, timestamp);
+    for (const auto& id : intersected_image_ids_) {
+      if (id == record_id_hash) {
+        return;
+      }
     }
   }
 
@@ -367,6 +372,7 @@ void FirstScreenCalculator::RestartRecordingFirstScreenPaint() {
   user_scrolled_ = false;
   nearly_finished_ = false;
   first_screen_paint_time_ = base::TimeTicks();
+  background_image_id_ = 0;
   image_rects_map_.clear();
   text_paint_rects_.clear();
   intersected_image_ids_.clear();

@@ -874,6 +874,8 @@ void WebContentsImplExt::PopluateVideoAssistantConfig(
 void WebContentsImplExt::OnVideoPlaying(
     media::mojom::VideoAttributesForVASTPtr video_attributes,
     const MediaPlayerId& id) {
+  LOG(INFO) << "OhMedia, OnVideoPlaying media_player_id:" << id.delegate_id;
+  media_player_id_ = id;
   video_assistant_->OnVideoPlaying(std::move(video_attributes), id);
 }
 
@@ -930,6 +932,14 @@ void WebContentsImplExt::DelAllVideoSurfaces() {
        iter != surface_widget_map_.end();) {
     DelVideoSurface(iter->second);
     surface_widget_map_.erase(iter++);
+  }
+}
+
+void WebContentsImplExt::DelVideoAssistant() {
+  if (media_player_id_.has_value()) {
+    LOG(INFO) << "OhMedia, DelVideoAssistant media_player_id:"
+              << media_player_id_.value().delegate_id;
+    video_assistant_->OnVideoDestroyed(media_player_id_.value());
   }
 }
 

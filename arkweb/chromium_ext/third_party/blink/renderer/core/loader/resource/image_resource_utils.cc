@@ -42,4 +42,8 @@ ImageResource* ImageResourceUtils::CreateForOfflineResource(const KURL& kurl,
   return image_resource;
 }
 #endif
+
+void ImageResourceUtils::Trace(Visitor* visitor) const {
+  visitor->Trace(imageResource);
+}
 }  // namespace blink

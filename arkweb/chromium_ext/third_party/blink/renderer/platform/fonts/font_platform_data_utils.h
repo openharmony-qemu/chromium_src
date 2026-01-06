@@ -33,11 +33,13 @@ struct ScaleParam {
 const ScaleParam DEFAULT_SCALE_PARAM = ScaleParam{.fontScale = 0};
 #endif
 
-class FontPlatformDataUtils {
+class FontPlatformDataUtils final
+  : public GarbageCollected<FontPlatformDataUtils> {
 public:
 
 FontPlatformDataUtils(FontPlatformData* data);
 ~FontPlatformDataUtils();
+void Trace(Visitor*) const;
 
 #if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
   const ScaleParam& FindCompressionConfigWithFont(
@@ -45,7 +47,7 @@ FontPlatformDataUtils(FontPlatformData* data);
 #endif
 
 private:
-raw_ptr<FontPlatformData> font_data_;
+Member<FontPlatformData> font_data_;
 #if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
 const std::unordered_map<std::string, ScaleParam>
     FONT_FAMILY_COMPRESSION_CONFIG = {

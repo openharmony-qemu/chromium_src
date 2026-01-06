@@ -755,7 +755,7 @@ class NWebDelegateInterface
 
 #if BUILDFLAG(ARKWEB_URL_TRUST_LIST)
   virtual int SetUrlTrustListWithErrMsg(const std::string& urlTrustList,
-                                        std::string& detailErrMsg) = 0;
+      bool allowOpaqueOrigin, bool supportWildcard, std::string& detailErrMsg) = 0;
 #endif
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)

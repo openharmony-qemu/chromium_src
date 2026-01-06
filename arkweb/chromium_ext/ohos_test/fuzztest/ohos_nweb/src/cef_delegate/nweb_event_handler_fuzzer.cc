@@ -654,7 +654,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   bool IsAdsBlockEnabledForCurPage() override { return false; }
   void EnableAdsBlock(bool enable) override {}
   int SetUrlTrustListWithErrMsg(const CefString& urlTrustList,
-                                CefString& detailErrMsg) override {
+      bool allowOpaqueOrigin, bool supportWildcard, CefString& detailErrMsg) override {
     return 0;
   }
   void SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) override {}

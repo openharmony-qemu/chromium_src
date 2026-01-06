@@ -79,6 +79,7 @@ class ADAPTER_EXPORT_API XComponentManager final : public XComponentDelegate {
   std::string GetCreatedAbility();
   void CreateAndShowAbility(const WindowInitParameter& param,
                             std::string create_id);
+  void AddCreatingAbility(const std::string& create_id);
 
  private:
   XComponentManager() = default;
@@ -92,9 +93,7 @@ class ADAPTER_EXPORT_API XComponentManager final : public XComponentDelegate {
   std::string CreateSubWindowViaNodeHandle(const NewWindowParam& param);
   void CreateXComponentViaNodeHandle(const std::string& create_id,
                                      XComponentType type);
-  void CreateAbilityViaNodeHandle(const NewWindowParam& param,
-                                  std::string& create_id);
-  void CreateWindowViaAdapter(const NewWindowParam& param);
+  void CreateAbility(const NewWindowParam& param);
   void WaitForXComponentCreated(std::string& create_id);
   void WaitForAbilityCreated(std::string& create_id);
 

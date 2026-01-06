@@ -437,14 +437,10 @@ void XComponentManager::CreateXComponentViaNodeHandle(
   taskRunner::MainThreadTaskRunner::GetInstance().PostTask(
       std::bind(FindOrCreateNodeHandleXComponent, std::move(attribute)));
 }
- 
-void XComponentManager::CreateAbilityViaNodeHandle(const NewWindowParam& param,
-                                                   std::string& create_id) {
-  {
-    std::lock_guard<std::mutex> lock_protect(ability_status_mutex_);
-    ability_status_.insert({create_id, std::promise<bool>()});
-  }
-  CreateWindowViaAdapter(param);
+
+void XComponentManager::AddCreatingAbility(const std::string& create_id) {
+  std::lock_guard<std::mutex> lock_protect(ability_status_mutex_);
+  ability_status_.insert({create_id, std::promise<bool>()});
 }
 
 std::string XComponentManager::GetCreatedAbility() {
@@ -459,8 +455,8 @@ std::string XComponentManager::GetCreatedAbility() {
 
 void XComponentManager::CreateAndShowAbility(const WindowInitParameter& param,
                                              std::string create_id) {
-  NewWindowParam newParam = ConvertWindowInitParamsToNewParams(param);
-  CreateAbilityViaNodeHandle(newParam, create_id);
+  NewWindowParam new_param = ConvertWindowInitParamsToNewParams(param);
+  CreateAbility(new_param);
   WaitForAbilityCreated(create_id);
 }
 
@@ -496,23 +492,24 @@ std::string XComponentManager::CreateWindowViaDeclarative(
     std::lock_guard<std::mutex> lock_protect(window_status_mutex_);
     window_status_.insert({create_id, std::promise<bool>()});
   }
-  CreateWindowViaAdapter(param);
+  CreateAbility(param);
   WaitForXComponentCreated(create_id);
   creating_window_.clear();
   return create_id;
 }
- 
+
 std::string XComponentManager::CreateSubWindowViaNodeHandle(
     const NewWindowParam& param) {
   std::string create_id = param.window_id;
   CreateXComponentViaNodeHandle(create_id, XComponentType::kSubWindow);
-  CreateAbilityViaNodeHandle(param, create_id);
+  AddCreatingAbility(create_id);
+  CreateAbility(param);
   WaitForAbilityCreated(create_id);
   WaitForXComponentCreated(create_id);
   return create_id;
 }
- 
-void XComponentManager::CreateWindowViaAdapter(const NewWindowParam& param) {
+
+void XComponentManager::CreateAbility(const NewWindowParam& param) {
   switch (param.adapter_type) {
     case AdapterType::kAppWindow:
       AppWindowAdapter::GetInstance().Create(param);

@@ -205,6 +205,7 @@ bool OhosToplevelWindow::OnCreateWindow(WindowInitParameter param) {
         XComponentManager::GetInstance()->GetCreatedAbility();
     if (ability_id.empty()) {
       need_create_ability_ = true;
+      XComponentManager::GetInstance()->AddCreatingAbility(param.window_id);
     } else {
       need_create_ability_ = false;
       param.window_id = ability_id;

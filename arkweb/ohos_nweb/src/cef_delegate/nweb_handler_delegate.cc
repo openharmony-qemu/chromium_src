@@ -5662,4 +5662,14 @@ void NWebHandlerDelegate::OnDocumentEndReady(const CefString& id, const CefStrin
 #endif
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+void NWebHandlerDelegate::OnMediaCastEnter() {
+  LOG(INFO) << "NWebHandlerDelegate::OnMediaCastEnter";
+  if (nweb_handler_) {
+    nweb_handler_->OnMediaCastEnter();
+  }
+}
+#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
+
 }  // namespace OHOS::NWeb

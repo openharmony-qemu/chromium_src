@@ -227,6 +227,14 @@ class TestMediaPlayerObserver final
                                       int32_t width,
                                       int32_t height) override {}
 #endif
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  void OnMediaCastEnter() override {}
+  void OnNotifyMeidaCastUri(const WTF::String& media_uri) override {}
+  void HandleStopMediaCast() override {}
+  void SetPauseByAvcast(bool pause_avcast) override {}
+  void UpdateRemotePlayState(bool is_playing) override {}
+  void UpdateRemotePlayPosition(int64_t position) override {}
+#endif // ARKWEB_UNITTESTS
  private:
   std::unique_ptr<base::RunLoop> run_loop_;
   bool received_media_playing_{false};

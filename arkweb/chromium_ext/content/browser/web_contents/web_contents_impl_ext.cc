@@ -1410,4 +1410,14 @@ void WebContentsImplExt::OnDocumentEndReady(const FrameInfos& frameInfo) {
   }
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+void WebContentsImplExt::OnMediaCastEnter() {
+  LOG(INFO) << "WebContentsImplExt::OnMediaCastEnter";
+  if (delegate_) {
+    delegate_->OnMediaCastEnter();
+  }
+}
+#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
+
 }  // namespace content

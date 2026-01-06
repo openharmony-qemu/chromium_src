@@ -66,6 +66,17 @@ class MediaSessionOHOS final
   bool IsPauseByAvsession();
   void SetPauseByAvsession(bool is_pause);
   void SetWebviewShow(bool show, bool is_special_for_audio);
+  void OnNotifyMeidaCastUri(const std::string& media_uri);
+  void CreateAVCastAdapter();
+  void HandleStopMediaCast();
+  int32_t GetMediaCastCurrentTime();
+  void PullUpCastBackGround(const std::string& device_name);
+  void MediaCastStopped();
+  void SetAvCast(bool is_avcast);
+  void UpdateUiPlayState(bool is_playing);
+  void UpdateUiPlayPosition(int64_t position);
+  void UpdateRemotePlayState(bool is_playing);
+  void UpdateRemotePlayPosition(int64_t position);
 
  private:
   void CheckMediaInfo();
@@ -87,6 +98,8 @@ class MediaSessionOHOS final
       this};
 
   static constexpr base::TimeDelta kReportMediaInfoInterval = base::Seconds(1);
+  std::string media_uri_;
+  bool is_avcast_ = false;
   base::WeakPtrFactory<MediaSessionOHOS> weak_factory_{this};
 };
 
@@ -105,6 +118,12 @@ class OHOSMediaAVSessionCallback
   void Pause() override;
   void Stop() override;
   void SeekTo(int64_t millisTime) override;
+  int32_t GetMediaCastCurrentTime() override;
+  void PullUpCastBackGround(const std::string& device_name) override;
+  void MediaCastStopped() override;
+  void SetAvCast(bool is_avcast) override;
+  void UpdateUiPlayState(bool is_playing) override;
+  void UpdateUiPlayPosition(int64_t position) override;
 
  private:
   scoped_refptr<base::SingleThreadTaskRunner> task_runner_;

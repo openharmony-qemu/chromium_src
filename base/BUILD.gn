@@ -4387,6 +4387,7 @@ test("base_unittests") {
       "//arkweb/ohos_adapter_ndk/interfaces",
       "//third_party/ohos_ndk/includes/ohos_adapter",
     ]
+    include_dirs += [ "//ohos_sdk/openharmony/native/sysroot/usr/include/multimedia/image_framework/image" ]
   }
 
   if (arkweb_test) {

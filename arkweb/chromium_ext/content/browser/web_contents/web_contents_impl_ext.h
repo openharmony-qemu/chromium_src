@@ -351,6 +351,10 @@ class WebContentsImplExt : public WebContentsImpl {
                                          bool is_key_request) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+void OnMediaCastEnter();
+#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
+
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 friend class WebContentsImpl;
 friend class WebContentsImplUtils;

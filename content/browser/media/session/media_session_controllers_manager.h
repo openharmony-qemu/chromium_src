@@ -115,6 +115,16 @@ class CONTENT_EXPORT MediaSessionControllersManager {
       const MediaPlayerId& id, uint32_t state, int32_t width, int32_t height);
 #endif
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+  void OnNotifyMeidaCastUri(const MediaPlayerId& id, const std::string& media_url);
+  void CreateAVCastAdapter(const MediaPlayerId& id);
+  void HandleStopMediaCast(const MediaPlayerId& id);
+  void UpdateRemotePlayState(const MediaPlayerId& id, bool is_playing);
+  void UpdateRemotePlayPosition(const MediaPlayerId& id, int64_t position);
+  void SetPauseByAvcast(const MediaPlayerId& id, bool pause_avcast);
+  void MediaCastStopByNavigation();
+#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
+
  private:
   using ControllersMap =
       std::map<MediaPlayerId, std::unique_ptr<MediaSessionController>>;

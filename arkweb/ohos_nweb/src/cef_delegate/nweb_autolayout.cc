@@ -166,7 +166,7 @@ bool NwebAutolayout::Parse(const base::Value& root) {
 }
 
 bool ParseConfig(const base::Value::Dict& root_dict, std::string_view key,
-                       const RangeLimits& limits, int& output) {
+                       const RangeLimits& limits, int& output, bool isRequired) {
   if (limits.min > limits.max) {
     LOG(ERROR) << "Parse Error: Invalid range for '" << key << "'.";
     return false;
@@ -174,7 +174,9 @@ bool ParseConfig(const base::Value::Dict& root_dict, std::string_view key,
 
   auto value_opt = root_dict.FindInt(std::string(key));
   if (!value_opt) {
-    LOG(ERROR) << "Parse Error: '" << key << "' value is missing.";
+    if (isRequired) {
+      LOG(ERROR) << "Parse Error: '" << key << "' value is missing.";
+    }
     return false;
   }
 
@@ -233,27 +235,27 @@ bool NwebAutolayout::ParseToplevelConfig(const base::Value::Dict& root_dict) {
 
   int min_mask_area_ratio_threshold = 0;
   if (!ParseConfig(root_dict, kMinMaskAreaRatioThresholdKey, kMaskAreaThresholdRange,
-                         min_mask_area_ratio_threshold)) {
+                         min_mask_area_ratio_threshold, true)) {
     return false;
   }
   mCCMConfig_.min_mask_area_ratio_threshold = min_mask_area_ratio_threshold;
 
   int min_content_area_ratio_threshold = 0;
   if (!ParseConfig(root_dict, kMinContentAreaRatioThresholdKey, kContentAreaThresholdRange,
-                         min_content_area_ratio_threshold)) {
+                         min_content_area_ratio_threshold, true)) {
     return false;
   }
   mCCMConfig_.min_content_area_ratio_threshold = min_content_area_ratio_threshold;
   
   int min_scale_factor = 0;
-  if (!ParseConfig(root_dict, kMinDesScaleKey, kScaleFactorRange, min_scale_factor)) {
+  if (!ParseConfig(root_dict, kMinDesScaleKey, kScaleFactorRange, min_scale_factor, true)) {
     return false;
   }
   mCCMConfig_.minScaleFactor = min_scale_factor;
 
   int scale_animation_duration = 0;
   if (!ParseConfig(root_dict, kScaleAnimationDurationKey, kScaleAnimationDurationRange,
-                         scale_animation_duration)) {
+                         scale_animation_duration, true)) {
     return false;
   }
   mCCMConfig_.scale_animation_duration = scale_animation_duration;
@@ -261,12 +263,12 @@ bool NwebAutolayout::ParseToplevelConfig(const base::Value::Dict& root_dict) {
   // alphabet_identification_min_size 和 alphabet_height_width_min_ratio 设置为非必填，兼容旧json格式
   int alphabet_identification_min_size = kInvalidValue;
   ParseConfig(root_dict, kAlphabetIdentificationMinSizeKey, kAlphabetIdentificationMinSizeRange,
-                         alphabet_identification_min_size);
+                         alphabet_identification_min_size, false);
   mCCMConfig_.alphabet_identification_min_size = alphabet_identification_min_size;
 
   int alphabet_height_width_min_ratio = kInvalidValue;
   ParseConfig(root_dict, kAlphabetHeightWidthMinRatioKey, kAlphabetHeightWidthMinRatioRange,
-                         alphabet_height_width_min_ratio);
+                         alphabet_height_width_min_ratio, false);
   mCCMConfig_.alphabet_height_width_min_ratio = alphabet_height_width_min_ratio;
 
   return ParseOpacityFilter(root_dict, mCCMConfig_.opacity_filter);

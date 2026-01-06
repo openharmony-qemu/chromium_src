@@ -46,6 +46,38 @@ const std::string g_valid_config = R"({
         }
     }
 })";
+
+const std::string g_valid_config_with_nwe_params = R"({
+    "minScaleFactor": 30,
+    "minMaskAreaRatioThreshold": 60,
+    "opacityFilter": [10, 90],
+    "minContentAreaRatioThreshold": 20,
+    "scaleAnimationDuration": 100,
+    "alphabetIdentificationMinSize": 12,
+    "alphabetHeightWidthMinRatio": 10,
+    "whitelist": {
+        "com.example.app": {
+            "pattern": "some_pattern",
+            "GetID": "get_id_func",
+            "GetPage": "get_page_func",
+            "appRuleInfos": [
+                { "id": "*", "pg": "*" }
+            ],
+            "urlRuleInfos": [
+                {
+                    "urlPrefix": "https://www.example.com/path",
+                    "strategy": 3,
+                    "alphabetIdentificationMinSize": 15,
+                    "alphabetHeightWidthMinRatio": 15
+                },
+                {
+                    "urlPrefix": "https://www.example.com/path/to/xxx.html",
+                    "strategy": 1
+                }
+            ]
+        }
+    }
+})";
  
 namespace OHOS::NWeb {
 // Mock classes based on nweb_find_delegate_unittest.cc and nweb_preference_delegate_unittest.cc
@@ -546,7 +578,55 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_Invalid)
     ASSERT_TRUE(root->is_dict());
     EXPECT_FALSE(ParseToplevelConfig(root->GetDict()));
 }
- 
+
+TEST_F(NwebAutolayoutTest, ParseToplevelConfig_InvalidMinScaleFactor)
+{
+    const std::vector<std::string> invalid_min_scale_factor_configs = {
+        R"({
+            "minScaleFactor": -30,
+            "minMaskAreaRatioThreshold": 60,
+            "opacityFilter": [10, 90],
+            "minContentAreaRatioThreshold": 20,
+            "scaleAnimationDuration": 100})",
+        R"({
+            "minScaleFactor": 20,
+            "minMaskAreaRatioThreshold": 60,
+            "opacityFilter": [10, 90],
+            "minContentAreaRatioThreshold": 20,
+            "scaleAnimationDuration": 100})",
+        R"({
+            "minScaleFactor": 500,
+            "minMaskAreaRatioThreshold": 60,
+            "opacityFilter": [10, 90],
+            "minContentAreaRatioThreshold": 20,
+            "scaleAnimationDuration": 100})",
+        R"({
+            "minScaleFactor": "20",
+            "minMaskAreaRatioThreshold": 60,
+            "opacityFilter": [10, 90],
+            "minContentAreaRatioThreshold": 20,
+            "scaleAnimationDuration": 100})",
+        R"({
+            "minScaleFactor": [],
+            "minMaskAreaRatioThreshold": 60,
+            "opacityFilter": [10, 90],
+            "minContentAreaRatioThreshold": 20,
+            "scaleAnimationDuration": 100})",
+        R"({
+            "minMaskAreaRatioThreshold": 60,
+            "opacityFilter": [10, 90],
+            "minContentAreaRatioThreshold": 20,
+            "scaleAnimationDuration": 100})"
+    };
+
+    for (const auto& config_str : invalid_min_scale_factor_configs) {
+        std::optional<base::Value> root = base::JSONReader::Read(config_str);
+        ASSERT_TRUE(root.has_value());
+        ASSERT_TRUE(root->is_dict());
+        EXPECT_FALSE(ParseToplevelConfig(root->GetDict()));
+    }
+}
+
 TEST_F(NwebAutolayoutTest, ParseToplevelConfig_InvalidOpacityFilterFormat)
 {
     const std::vector<std::string> invalid_configs = {
@@ -2159,5 +2239,602 @@ TEST_F(NwebAutolayoutTest, CheckCCMandApplyRule_WithMockFrame)
     
     // Call CheckCCMandApplyRule
     CheckCCMandApplyRule(mock_frame);
+}
+
+TEST_F(NwebAutolayoutTest, ParseToplevelConfig_ValidConfigWithNewParams)
+{
+    std::optional<base::Value> root = base::JSONReader::Read(g_valid_config_with_nwe_params);
+    ASSERT_TRUE(root.has_value());
+    ASSERT_TRUE(root->is_dict());
+
+    EXPECT_TRUE(ParseToplevelConfig(root->GetDict()));
+
+    EXPECT_EQ(mCCMConfig_.minScaleFactor, 30);
+    EXPECT_EQ(mCCMConfig_.min_mask_area_ratio_threshold, 60);
+    EXPECT_EQ(mCCMConfig_.min_content_area_ratio_threshold, 20);
+    EXPECT_EQ(mCCMConfig_.scale_animation_duration, 100);
+    EXPECT_EQ(mCCMConfig_.opacity_filter.first, 10);
+    EXPECT_EQ(mCCMConfig_.opacity_filter.second, 90);
+    EXPECT_EQ(mCCMConfig_.alphabet_identification_min_size, 12);
+    EXPECT_EQ(mCCMConfig_.alphabet_height_width_min_ratio, 10);
+}
+
+TEST_F(NwebAutolayoutTest, ParseToplevelConfig_CompatibleConfigFile)
+{
+    // previous JSON formats without alphabetIdentificationMinSize and alphabetHeightWidthMinRatio
+    std::optional<base::Value> previous_config = base::JSONReader::Read(g_valid_config);
+    ASSERT_TRUE(previous_config.has_value());
+    ASSERT_TRUE(previous_config->is_dict());
+    EXPECT_TRUE(ParseToplevelConfig(previous_config->GetDict()));
+    EXPECT_EQ(mCCMConfig_.alphabet_identification_min_size, ConfigConstants::kInvalidValue);
+    EXPECT_EQ(mCCMConfig_.alphabet_height_width_min_ratio, ConfigConstants::kInvalidValue);
+
+    // current JSON formats with alphabetIdentificationMinSize and alphabetHeightWidthMinRatio
+    std::optional<base::Value> config = base::JSONReader::Read(g_valid_config_with_nwe_params);
+    ASSERT_TRUE(config.has_value());
+    ASSERT_TRUE(config->is_dict());
+    EXPECT_TRUE(ParseToplevelConfig(config->GetDict()));
+    EXPECT_EQ(mCCMConfig_.alphabet_identification_min_size, 12);
+    EXPECT_EQ(mCCMConfig_.alphabet_height_width_min_ratio, 10);
+}
+
+TEST_F(NwebAutolayoutTest, ParseToplevelConfig_InvalidAlphabetIdentificationMinSize)
+{
+    const std::vector<std::string> invalid_alphabet_identification_min_size_configs = {
+        R"({
+            "minScaleFactor": 30,
+            "alphabetIdentificationMinSize": -12,
+            "alphabetHeightWidthMinRatio": 10,
+            "minMaskAreaRatioThreshold": 60,
+            "opacityFilter": [10, 90],
+            "minContentAreaRatioThreshold": 20,
+            "scaleAnimationDuration": 100})",
+        R"({
+            "minScaleFactor": 30,
+            "alphabetIdentificationMinSize": 0,
+            "alphabetHeightWidthMinRatio": 10,
+            "minMaskAreaRatioThreshold": 60,
+            "opacityFilter": [10, 90],
+            "minContentAreaRatioThreshold": 20,
+            "scaleAnimationDuration": 100})",
+        R"({
+            "minScaleFactor": 30,
+            "alphabetIdentificationMinSize": 50,
+            "alphabetHeightWidthMinRatio": 10,
+            "minMaskAreaRatioThreshold": 60,
+            "opacityFilter": [10, 90],
+            "minContentAreaRatioThreshold": 20,
+            "scaleAnimationDuration": 100})",
+        R"({
+            "minScaleFactor": 30,
+            "alphabetIdentificationMinSize": "12",
+            "alphabetHeightWidthMinRatio": 10,
+            "minMaskAreaRatioThreshold": 60,
+            "opacityFilter": [10, 90],
+            "minContentAreaRatioThreshold": 20,
+            "scaleAnimationDuration": 100})",
+        R"({
+            "minScaleFactor": 30,
+            "alphabetIdentificationMinSize": {},
+            "alphabetHeightWidthMinRatio": 10,
+            "minMaskAreaRatioThreshold": 60,
+            "opacityFilter": [10, 90],
+            "minContentAreaRatioThreshold": 20,
+            "scaleAnimationDuration": 100})"}; 
+    for (const auto& config_str : invalid_alphabet_identification_min_size_configs) {
+        std::optional<base::Value> root = base::JSONReader::Read(config_str);
+        ASSERT_TRUE(root.has_value());
+        ASSERT_TRUE(root->is_dict());
+        // To maintain compatibility with previous WebAutoLayout.json formats,
+        // invalid alphabet_identification_min_size values do not affect the result of ParseToplevelConfig().
+        EXPECT_TRUE(ParseToplevelConfig(root->GetDict()));
+        EXPECT_EQ(mCCMConfig_.alphabet_identification_min_size, ConfigConstants::kInvalidValue);
+    }
+}
+
+TEST_F(NwebAutolayoutTest, ParseToplevelConfig_InvalidAlphabetHeightWidthMinRatio)
+{
+    const std::vector<std::string> invalid_alphabet_height_width_min_ratio_configs = {
+        R"({
+            "minScaleFactor": 30,
+            "alphabetIdentificationMinSize": 12,
+            "alphabetHeightWidthMinRatio": -10,
+            "minMaskAreaRatioThreshold": 60,
+            "opacityFilter": [10, 90],
+            "minContentAreaRatioThreshold": 20,
+            "scaleAnimationDuration": 100})",
+        R"({
+            "minScaleFactor": 30,
+            "alphabetIdentificationMinSize": 12,
+            "alphabetHeightWidthMinRatio": 0,
+            "minMaskAreaRatioThreshold": 60,
+            "opacityFilter": [10, 90],
+            "minContentAreaRatioThreshold": 20,
+            "scaleAnimationDuration": 100})",
+        R"({
+            "minScaleFactor": 30,
+            "alphabetIdentificationMinSize": 12,
+            "alphabetHeightWidthMinRatio": 50,
+            "minMaskAreaRatioThreshold": 60,
+            "opacityFilter": [10, 90],
+            "minContentAreaRatioThreshold": 20,
+            "scaleAnimationDuration": 100})",
+        R"({
+            "minScaleFactor": 30,
+            "alphabetIdentificationMinSize": 12,
+            "alphabetHeightWidthMinRatio": "10",
+            "minMaskAreaRatioThreshold": 60,
+            "opacityFilter": [10, 90],
+            "minContentAreaRatioThreshold": 20,
+            "scaleAnimationDuration": 100})",
+        R"({
+            "minScaleFactor": 30,
+            "alphabetIdentificationMinSize": 12,
+            "alphabetHeightWidthMinRatio": {},
+            "minMaskAreaRatioThreshold": 60,
+            "opacityFilter": [10, 90],
+            "minContentAreaRatioThreshold": 20,
+            "scaleAnimationDuration": 100})"}; 
+    for (const auto& config_str : invalid_alphabet_height_width_min_ratio_configs) {
+        std::optional<base::Value> root = base::JSONReader::Read(config_str);
+        ASSERT_TRUE(root.has_value());
+        ASSERT_TRUE(root->is_dict());
+        // To maintain compatibility with previous WebAutoLayout.json formats,
+        // invalid alphabet_height_width_min_ratio do not affect the result of ParseToplevelConfig().
+        EXPECT_TRUE(ParseToplevelConfig(root->GetDict()));
+        EXPECT_EQ(mCCMConfig_.alphabet_height_width_min_ratio, ConfigConstants::kInvalidValue);
+    }
+}
+
+TEST_F(NwebAutolayoutTest, ParseUrlRuleInfo_ValidConfig)
+{
+    const std::string url_rule_info_str = R"({
+        "urlRuleInfos": [
+            {
+                "urlPrefix": "https://www.example.com/path",
+                "strategy": 3,
+                "alphabetIdentificationMinSize": 15,
+                "alphabetHeightWidthMinRatio": 15
+            }
+        ]})";
+    std::optional<base::Value> url_rule_infos = base::JSONReader::Read(url_rule_info_str);
+    ASSERT_TRUE(url_rule_infos.has_value());
+    ASSERT_TRUE(url_rule_infos->is_dict());
+    int globalAlphabetIdentificationMinSize = 20;
+    int globalAlphabetHeightWidthMinRatio = 20;
+    mCCMConfig_.alphabet_identification_min_size = globalAlphabetIdentificationMinSize;
+    mCCMConfig_.alphabet_height_width_min_ratio = globalAlphabetHeightWidthMinRatio;
+    std::optional<std::vector<UrlRuleInfoEntry>> urlRuleInfo = ParseUrlRuleInfo(url_rule_infos->GetDict());
+    EXPECT_TRUE(urlRuleInfo.has_value());
+    ASSERT_EQ(urlRuleInfo.value().size(), 1);
+    EXPECT_TRUE(urlRuleInfo.value()[0].urlPrefixPattern.get());
+    EXPECT_EQ(urlRuleInfo.value()[0].strategy, 3);
+    EXPECT_EQ(urlRuleInfo.value()[0].alphabetIdentificationMinSize, 15);
+    EXPECT_EQ(urlRuleInfo.value()[0].alphabetHeightWidthMinRatio, 15);
+}
+
+TEST_F(NwebAutolayoutTest, ParseUrlRuleInfo_MissKey)
+{
+    const std::string url_rule_info_str = R"({
+        "urlRuleInfos": [
+            {
+                "urlPrefix": "https://www.example.com/path"
+            },
+            {
+                "strategy": 3
+            },
+            {
+                "params": 3
+            }
+        ]})";
+    std::optional<base::Value> url_rule_infos = base::JSONReader::Read(url_rule_info_str);
+    ASSERT_TRUE(url_rule_infos.has_value());
+    ASSERT_TRUE(url_rule_infos->is_dict());
+    int globalAlphabetIdentificationMinSize = 20;
+    int globalAlphabetHeightWidthMinRatio = 20;
+    mCCMConfig_.alphabet_identification_min_size = globalAlphabetIdentificationMinSize;
+    mCCMConfig_.alphabet_height_width_min_ratio = globalAlphabetHeightWidthMinRatio;
+    std::optional<std::vector<UrlRuleInfoEntry>> urlRuleInfo = ParseUrlRuleInfo(url_rule_infos->GetDict());
+    EXPECT_TRUE(urlRuleInfo.has_value());
+    EXPECT_TRUE(urlRuleInfo.value().empty());
+}
+
+TEST_F(NwebAutolayoutTest, ParseUrlRuleInfo_OptionalParams)
+{
+    const std::string url_rule_info_str = R"({
+        "urlRuleInfos": [
+            {
+                "urlPrefix": "https://www.example.com/path",
+                "strategy": 3,
+                "alphabetIdentificationMinSize": 15,
+                "alphabetHeightWidthMinRatio": 15
+            },
+            {
+                "urlPrefix": "https://www.example.com/path",
+                "strategy": 3,
+                "alphabetIdentificationMinSize": 1
+            },
+            {
+                "urlPrefix": "https://www.example.com/path",
+                "strategy": 3,
+                "alphabetHeightWidthMinRatio": 2
+            },
+            {
+                "urlPrefix": "https://www.example.com/path",
+                "strategy": 3
+            }
+        ]})";
+    std::optional<base::Value> url_rule_infos = base::JSONReader::Read(url_rule_info_str);
+    ASSERT_TRUE(url_rule_infos.has_value());
+    ASSERT_TRUE(url_rule_infos->is_dict());
+    int globalAlphabetIdentificationMinSize = 20;
+    int globalAlphabetHeightWidthMinRatio = 20;
+    mCCMConfig_.alphabet_identification_min_size = globalAlphabetIdentificationMinSize;
+    mCCMConfig_.alphabet_height_width_min_ratio = globalAlphabetHeightWidthMinRatio;
+    std::optional<std::vector<UrlRuleInfoEntry>> urlRuleInfo = ParseUrlRuleInfo(url_rule_infos->GetDict());
+    EXPECT_TRUE(urlRuleInfo.has_value());
+    ASSERT_EQ(urlRuleInfo.value().size(), 4);
+    EXPECT_EQ(urlRuleInfo.value()[0].alphabetIdentificationMinSize, 15);
+    EXPECT_EQ(urlRuleInfo.value()[0].alphabetHeightWidthMinRatio, 15);
+    EXPECT_EQ(urlRuleInfo.value()[1].alphabetIdentificationMinSize, 1);
+    EXPECT_EQ(urlRuleInfo.value()[1].alphabetHeightWidthMinRatio, globalAlphabetHeightWidthMinRatio);
+    EXPECT_EQ(urlRuleInfo.value()[2].alphabetIdentificationMinSize, globalAlphabetIdentificationMinSize);
+    EXPECT_EQ(urlRuleInfo.value()[2].alphabetHeightWidthMinRatio, 2);
+    EXPECT_EQ(urlRuleInfo.value()[3].alphabetIdentificationMinSize, globalAlphabetIdentificationMinSize);
+    EXPECT_EQ(urlRuleInfo.value()[3].alphabetHeightWidthMinRatio, globalAlphabetIdentificationMinSize);
+}
+
+TEST_F(NwebAutolayoutTest, ParseUrlRuleInfo_InvalidUrlPrefixPattern)
+{
+    const std::string invalid_url_prefix_str = R"({
+        "urlRuleInfos": [
+            {
+                "urlPrefix": "()(",
+                "strategy": 3,
+                "alphabetIdentificationMinSize": 15,
+                "alphabetHeightWidthMinRatio": 15
+            },
+            {
+                "urlPrefix": "https://www.example.com/path\\",
+                "strategy": 3,
+                "alphabetIdentificationMinSize": 15,
+                "alphabetHeightWidthMinRatio": 15
+            }
+        ]})";
+    std::optional<base::Value> rule_with_invalid_url_prefix = base::JSONReader::Read(invalid_url_prefix_str);
+    ASSERT_TRUE(rule_with_invalid_url_prefix.has_value());
+    ASSERT_TRUE(rule_with_invalid_url_prefix->is_dict());
+    int globalAlphabetIdentificationMinSize = 20;
+    int globalAlphabetHeightWidthMinRatio = 20;
+    mCCMConfig_.alphabet_identification_min_size = globalAlphabetIdentificationMinSize;
+    mCCMConfig_.alphabet_height_width_min_ratio = globalAlphabetHeightWidthMinRatio;
+    std::optional<std::vector<UrlRuleInfoEntry>> urlRuleInfo =
+        ParseUrlRuleInfo(rule_with_invalid_url_prefix->GetDict());
+    EXPECT_TRUE(urlRuleInfo.has_value());
+    EXPECT_TRUE(urlRuleInfo.value().empty());
+}
+
+TEST_F(NwebAutolayoutTest, ParseUrlRuleInfo_InvalidStrategy)
+{
+    const std::string invalid_strategy_str = R"({
+        "urlRuleInfos": [
+            {
+                "urlPrefix": "https://www.example.com/path",
+                "strategy": "3",
+                "alphabetIdentificationMinSize": 15,
+                "alphabetHeightWidthMinRatio": 15
+            },
+            {
+                "urlPrefix": "https://www.example.com/path",
+                "strategy": {},
+                "alphabetIdentificationMinSize": 15,
+                "alphabetHeightWidthMinRatio": 15
+            },
+            {
+                "urlPrefix": "https://www.example.com/path",
+                "strategy": [],
+                "alphabetIdentificationMinSize": 15,
+                "alphabetHeightWidthMinRatio": 15
+            }
+        ]})";
+    std::optional<base::Value> rule_with_invalid_strategy = base::JSONReader::Read(invalid_strategy_str);
+    ASSERT_TRUE(rule_with_invalid_strategy.has_value());
+    ASSERT_TRUE(rule_with_invalid_strategy->is_dict());
+    mCCMConfig_.alphabet_identification_min_size = 20;
+    mCCMConfig_.alphabet_height_width_min_ratio = 20;
+    std::optional<std::vector<UrlRuleInfoEntry>> urlRuleInfo = ParseUrlRuleInfo(rule_with_invalid_strategy->GetDict());
+    EXPECT_TRUE(urlRuleInfo.has_value());
+    EXPECT_TRUE(urlRuleInfo.value().empty());
+}
+
+TEST_F(NwebAutolayoutTest, ParseUrlRuleInfo_InvalidAlphabetIdentificationMinSize)
+{
+    const std::string invalid_alphabet_identification_min_size_str = R"({
+        "urlRuleInfos": [
+            {
+                "urlPrefix": "https://www.example.com/path",
+                "strategy": 3,
+                "alphabetIdentificationMinSize": -1,
+                "alphabetHeightWidthMinRatio": 15
+            },
+            {
+                "urlPrefix": "https://www.example.com/path",
+                "strategy": 3,
+                "alphabetIdentificationMinSize": 50,
+                "alphabetHeightWidthMinRatio": 15
+            },
+            {
+                "urlPrefix": "https://www.example.com/path",
+                "strategy": 3,
+                "alphabetIdentificationMinSize": "15",
+                "alphabetHeightWidthMinRatio": 15
+            },
+            {
+                "urlPrefix": "https://www.example.com/path",
+                "strategy": 3,
+                "alphabetIdentificationMinSize": [],
+                "alphabetHeightWidthMinRatio": 15
+            }
+        ]})";
+    std::optional<base::Value> rule_with_invalid_alphabet_identification_min_size =
+        base::JSONReader::Read(invalid_alphabet_identification_min_size_str);
+    ASSERT_TRUE(rule_with_invalid_alphabet_identification_min_size.has_value());
+    ASSERT_TRUE(rule_with_invalid_alphabet_identification_min_size->is_dict());
+    mCCMConfig_.alphabet_identification_min_size = 20;
+    mCCMConfig_.alphabet_height_width_min_ratio = 20;
+    std::optional<std::vector<UrlRuleInfoEntry>> urlRuleInfo = ParseUrlRuleInfo(
+            rule_with_invalid_alphabet_identification_min_size->GetDict());
+    EXPECT_TRUE(urlRuleInfo.has_value());
+    ASSERT_EQ(urlRuleInfo.value().size(), 4);
+    EXPECT_EQ(urlRuleInfo.value()[0].alphabetIdentificationMinSize, 20);
+    EXPECT_EQ(urlRuleInfo.value()[1].alphabetIdentificationMinSize, 20);
+    EXPECT_EQ(urlRuleInfo.value()[2].alphabetIdentificationMinSize, 20);
+    EXPECT_EQ(urlRuleInfo.value()[3].alphabetIdentificationMinSize, 20);
+}
+
+TEST_F(NwebAutolayoutTest, ParseUrlRuleInfo_InvalidAlphabetHeightWidthMinRatio)
+{
+    const std::string invalid_alphabet_height_width_min_ratio_str = R"({
+        "urlRuleInfos": [
+            {
+                "urlPrefix": "https://www.example.com/path",
+                "strategy": 3,
+                "alphabetIdentificationMinSize": 15,
+                "alphabetHeightWidthMinRatio": -1
+            },
+            {
+                "urlPrefix": "https://www.example.com/path",
+                "strategy": 3,
+                "alphabetIdentificationMinSize": 15,
+                "alphabetHeightWidthMinRatio": 50
+            },
+            {
+                "urlPrefix": "https://www.example.com/path",
+                "strategy": 3,
+                "alphabetIdentificationMinSize": 15,
+                "alphabetHeightWidthMinRatio": "15"
+            },
+            {
+                "urlPrefix": "https://www.example.com/path",
+                "strategy": 3,
+                "alphabetIdentificationMinSize": 15,
+                "alphabetHeightWidthMinRatio": {}
+            }
+        ]})";
+    std::optional<base::Value> rule_with_invalid_alphabet_height_width_min_ratio =
+        base::JSONReader::Read(invalid_alphabet_height_width_min_ratio_str);
+    ASSERT_TRUE(rule_with_invalid_alphabet_height_width_min_ratio.has_value());
+    ASSERT_TRUE(rule_with_invalid_alphabet_height_width_min_ratio->is_dict());
+    mCCMConfig_.alphabet_identification_min_size = 20;
+    mCCMConfig_.alphabet_height_width_min_ratio = 20;
+    std::optional<std::vector<UrlRuleInfoEntry>> urlRuleInfo = ParseUrlRuleInfo(
+            rule_with_invalid_alphabet_height_width_min_ratio->GetDict());
+    EXPECT_TRUE(urlRuleInfo.has_value());
+    ASSERT_EQ(urlRuleInfo.value().size(), 4);
+    EXPECT_EQ(urlRuleInfo.value()[0].alphabetHeightWidthMinRatio, 20);
+    EXPECT_EQ(urlRuleInfo.value()[1].alphabetHeightWidthMinRatio, 20);
+    EXPECT_EQ(urlRuleInfo.value()[2].alphabetHeightWidthMinRatio, 20);
+    EXPECT_EQ(urlRuleInfo.value()[3].alphabetHeightWidthMinRatio, 20);
+}
+
+TEST_F(NwebAutolayoutTest, CreateH5AutoLayoutParam_ValidOutput)
+{
+    std::optional<base::Value> root = base::JSONReader::Read(g_valid_config_with_nwe_params);
+    ASSERT_TRUE(root.has_value());
+    ASSERT_TRUE(root->is_dict());
+    mAppBundleName_ = "com.example.app";
+    ASSERT_TRUE(Parse(*root));
+    ASSERT_TRUE(mCCMConfig_.whitelist.urlRuleInfos.has_value());
+    ASSERT_FALSE(mCCMConfig_.whitelist.urlRuleInfos.value().empty());
+    std::string output = CreateH5AutoLayoutParam(mCCMConfig_.whitelist.urlRuleInfos.value()[0]);
+
+    std::optional<base::Value> autoLayout_param = base::JSONReader::Read(output);
+    ASSERT_TRUE(autoLayout_param.has_value());
+    ASSERT_TRUE(autoLayout_param->is_dict());
+    const base::Value::Dict& param_dict = autoLayout_param.value().GetDict();
+
+    auto min_mask_area_ratio_threshold = param_dict.FindInt(ConfigConstants::kMinMaskAreaRatioThresholdKey);
+    ASSERT_TRUE(min_mask_area_ratio_threshold);
+    EXPECT_EQ(*min_mask_area_ratio_threshold, 60);
+
+    auto min_content_area_ratio_threshold = param_dict.FindInt(ConfigConstants::kMinContentAreaRatioThresholdKey);
+    ASSERT_TRUE(min_content_area_ratio_threshold);
+    EXPECT_EQ(*min_content_area_ratio_threshold, 20);
+
+    auto scale_animation_duration = param_dict.FindInt(ConfigConstants::kScaleAnimationDurationKey);
+    ASSERT_TRUE(scale_animation_duration);
+    EXPECT_EQ(*scale_animation_duration, 100);
+
+    auto min_scale_factor = param_dict.FindInt(ConfigConstants::kMinDesScaleKey);
+    ASSERT_TRUE(min_scale_factor);
+    EXPECT_EQ(*min_scale_factor, 30);
+
+    auto strategy = param_dict.FindInt(ConfigConstants::kStrategyKey);
+    ASSERT_TRUE(strategy);
+    EXPECT_EQ(*strategy, 3);
+
+    auto alphabet_identification_min_size = param_dict.FindInt(ConfigConstants::kAlphabetIdentificationMinSizeKey);
+    ASSERT_TRUE(alphabet_identification_min_size);
+    EXPECT_EQ(*alphabet_identification_min_size, 15);
+
+    auto alphabet_height_width_min_ratio = param_dict.FindInt(ConfigConstants::kAlphabetHeightWidthMinRatioKey);
+    ASSERT_TRUE(alphabet_height_width_min_ratio);
+    EXPECT_EQ(*alphabet_height_width_min_ratio, 15);
+
+    auto need_check_id_and_page = param_dict.FindBool(ConfigConstants::kNeedCheckIdAndPageKey);
+    ASSERT_TRUE(need_check_id_and_page);
+    EXPECT_FALSE(*need_check_id_and_page);
+}
+
+TEST_F(NwebAutolayoutTest, FindBestMatchRule_EmptyUrlRule)
+{
+    std::string load_url = "https://www.example.com/path/xxx.html";
+    const UrlRuleInfoEntry* url_rule_info_entry = FindBestMatchRule(load_url);
+    EXPECT_FALSE(url_rule_info_entry);
+}
+
+TEST_F(NwebAutolayoutTest, FindBestMatchRule_MatchWhitelist)
+{
+    std::optional<base::Value> root = base::JSONReader::Read(g_valid_config_with_nwe_params);
+    ASSERT_TRUE(root.has_value());
+    ASSERT_TRUE(root->is_dict());
+    mAppBundleName_ = "com.example.app";
+    ASSERT_TRUE(Parse(*root));
+    ASSERT_TRUE(mCCMConfig_.whitelist.urlRuleInfos.has_value());
+    ASSERT_FALSE(mCCMConfig_.whitelist.urlRuleInfos.value().empty());
+
+    std::string load_url = "https://www.example.com/path/xxx.html";
+    const UrlRuleInfoEntry* url_rule_info_entry = FindBestMatchRule(load_url);
+    ASSERT_TRUE(url_rule_info_entry);
+    EXPECT_EQ(url_rule_info_entry->alphabetIdentificationMinSize, 15);
+    EXPECT_EQ(url_rule_info_entry->alphabetHeightWidthMinRatio, 15);
+    EXPECT_EQ(url_rule_info_entry->strategy, 3);
+}
+
+TEST_F(NwebAutolayoutTest, FindBestMatchRule_NotMatchWhitelist)
+{
+    std::optional<base::Value> root = base::JSONReader::Read(g_valid_config_with_nwe_params);
+    ASSERT_TRUE(root.has_value());
+    ASSERT_TRUE(root->is_dict());
+    mAppBundleName_ = "com.example.app";
+    ASSERT_TRUE(Parse(*root));
+    ASSERT_TRUE(mCCMConfig_.whitelist.urlRuleInfos.has_value());
+    ASSERT_FALSE(mCCMConfig_.whitelist.urlRuleInfos.value().empty());
+    std::string load_url = "https://127.0.0.1:8080";
+    const UrlRuleInfoEntry* url_rule_info_entry = FindBestMatchRule(load_url);
+    EXPECT_FALSE(url_rule_info_entry);
+}
+
+TEST_F(NwebAutolayoutTest, FindBestMatchRule_BestMatch)
+{
+    const std::string url_rule_info_str = R"({
+        "urlRuleInfos": [
+            {
+                "urlPrefix": "https://www.example.com",
+                "strategy": 1,
+                "alphabetIdentificationMinSize": 1,
+                "alphabetHeightWidthMinRatio": 1
+            },
+            {
+                "urlPrefix": "https://www.example.com/path",
+                "strategy": 2,
+                "alphabetIdentificationMinSize": 2,
+                "alphabetHeightWidthMinRatio": 2
+            }
+        ]})";
+    std::optional<base::Value> url_rule_info = base::JSONReader::Read(url_rule_info_str);
+    ASSERT_TRUE(url_rule_info.has_value());
+    ASSERT_TRUE(url_rule_info->is_dict());
+
+    mCCMConfig_.alphabet_identification_min_size = 20;
+    mCCMConfig_.alphabet_height_width_min_ratio = 20;
+    ASSERT_TRUE(ParseWhitelistEntry(url_rule_info->GetDict()));
+
+    std::string load_url = "https://www.example.com/path/xxx.html";
+    const UrlRuleInfoEntry* url_rule_info_entry = FindBestMatchRule(load_url);
+    ASSERT_TRUE(url_rule_info_entry);
+    EXPECT_EQ(url_rule_info_entry->alphabetIdentificationMinSize, 2);
+    EXPECT_EQ(url_rule_info_entry->alphabetHeightWidthMinRatio, 2);
+    EXPECT_EQ(url_rule_info_entry->strategy, 2);
+}
+
+TEST_F(NwebAutolayoutTest, FindBestMatchRule_RegaxMatch)
+{
+    const std::string url_rule_info_str = R"({
+        "urlRuleInfos": [
+            {
+                "urlPrefix": "https://127.0.0.1:\\d+",
+                "strategy": 1,
+                "alphabetIdentificationMinSize": 1,
+                "alphabetHeightWidthMinRatio": 1
+            }
+        ]})";
+    std::optional<base::Value> url_rule_info = base::JSONReader::Read(url_rule_info_str);
+    ASSERT_TRUE(url_rule_info.has_value());
+    ASSERT_TRUE(url_rule_info->is_dict());
+
+    mCCMConfig_.alphabet_identification_min_size = 20;
+    mCCMConfig_.alphabet_height_width_min_ratio = 20;
+    ASSERT_TRUE(ParseWhitelistEntry(url_rule_info->GetDict()));
+
+    std::string load_url1 = "https://127.0.0.1:8080";
+    const UrlRuleInfoEntry* url_rule_info_entry1 = FindBestMatchRule(load_url1);
+    ASSERT_TRUE(url_rule_info_entry1);
+    EXPECT_EQ(url_rule_info_entry1->alphabetIdentificationMinSize, 1);
+    EXPECT_EQ(url_rule_info_entry1->alphabetHeightWidthMinRatio, 1);
+    EXPECT_EQ(url_rule_info_entry1->strategy, 1);
+
+    std::string load_url2 = "https://127.0.0.1:9090";
+    const UrlRuleInfoEntry* url_rule_info_entry2 = FindBestMatchRule(load_url2);
+    ASSERT_TRUE(url_rule_info_entry2);
+    EXPECT_EQ(url_rule_info_entry2->alphabetIdentificationMinSize, 1);
+    EXPECT_EQ(url_rule_info_entry2->alphabetHeightWidthMinRatio, 1);
+    EXPECT_EQ(url_rule_info_entry2->strategy, 1);
+}
+
+TEST_F(NwebAutolayoutTest, FindBestMatchRule_RegaxBestMatch)
+{
+    const std::string url_rule_info_str = R"({
+        "urlRuleInfos": [
+            {
+                "urlPrefix": "https://127.0.0.1:\\d+",
+                "strategy": 1,
+                "alphabetIdentificationMinSize": 1,
+                "alphabetHeightWidthMinRatio": 1
+            },
+            {
+                "urlPrefix": "https://127.0.0.1:\\d+/path",
+                "strategy": 2,
+                "alphabetIdentificationMinSize": 2,
+                "alphabetHeightWidthMinRatio": 2
+            },
+            {
+                "urlPrefix": "https://127.0.0.1:\\d+/path/to/index.html",
+                "strategy": 3,
+                "alphabetIdentificationMinSize": 3,
+                "alphabetHeightWidthMinRatio": 3
+            }
+        ]})";
+    std::optional<base::Value> url_rule_info = base::JSONReader::Read(url_rule_info_str);
+    ASSERT_TRUE(url_rule_info.has_value());
+    ASSERT_TRUE(url_rule_info->is_dict());
+
+    mCCMConfig_.alphabet_identification_min_size = 20;
+    mCCMConfig_.alphabet_height_width_min_ratio = 20;
+    ASSERT_TRUE(ParseWhitelistEntry(url_rule_info->GetDict()));
+
+    std::string load_url1 = "https://127.0.0.1:8080/path/index.html";
+    const UrlRuleInfoEntry* url_rule_info_entry1 = FindBestMatchRule(load_url1);
+    ASSERT_TRUE(url_rule_info_entry1);
+    EXPECT_EQ(url_rule_info_entry1->alphabetIdentificationMinSize, 2);
+    EXPECT_EQ(url_rule_info_entry1->alphabetHeightWidthMinRatio, 2);
+    EXPECT_EQ(url_rule_info_entry1->strategy, 2);
+
+    std::string load_url2 = "https://127.0.0.1:9090/path/to/index.html";
+    const UrlRuleInfoEntry* url_rule_info_entry2 = FindBestMatchRule(load_url2);
+    ASSERT_TRUE(url_rule_info_entry2);
+    EXPECT_EQ(url_rule_info_entry2->alphabetIdentificationMinSize, 3);
+    EXPECT_EQ(url_rule_info_entry2->alphabetHeightWidthMinRatio, 3);
+    EXPECT_EQ(url_rule_info_entry2->strategy, 3);
 }
 }

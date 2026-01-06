@@ -237,6 +237,8 @@ component("cef_nweb") {
       "src/cef_delegate/nweb_extension_prompt_cef_delegate.h",
       "src/cef_delegate/nweb_extension_proxy_cef_delegate.cc",
       "src/cef_delegate/nweb_extension_proxy_cef_delegate.h",
+      "src/cef_delegate/nweb_extension_reading_list_cef_delegate.cc",
+      "src/cef_delegate/nweb_extension_reading_list_cef_delegate.h",
       "src/cef_delegate/nweb_extension_search_cef_delegate.cc",
       "src/cef_delegate/nweb_extension_search_cef_delegate.h",
       "src/cef_delegate/nweb_extension_side_panel_cef_controller.cc",

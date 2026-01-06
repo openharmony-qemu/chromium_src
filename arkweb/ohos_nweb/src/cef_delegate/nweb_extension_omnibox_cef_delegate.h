@@ -34,6 +34,8 @@ class NWebExtensionOmniboxCefDelegate {
 
   static NWebExtensionOmniboxCefDelegate& GetInstance();
 
+  void OnInputStarted(const std::string& extension_id);
+
   void OnInputChanged(int32_t tab_id,
                       const std::string& text,
                       const std::string& extension_id);
@@ -43,7 +45,15 @@ class NWebExtensionOmniboxCefDelegate {
                       const std::string& text,
                       const std::string& extension_id);
 
+  void OnInputCancelled(const std::string& extension_id);
+
+  void OnDeleteSuggestion(const std::string& suggestion,
+                          const std::string& extension_id);
+
   void OnInputChangedCallback(const std::vector<OmniboxSuggestResult>& results);
+
+  void SetDefaultSuggestionCallback(const std::string& extension_id,
+                                    const OmniboxSuggestResult& result);
 
  private:
   NWebExtensionOmniboxCefDelegate() = default;

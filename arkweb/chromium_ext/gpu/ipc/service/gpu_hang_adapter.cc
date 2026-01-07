@@ -96,7 +96,10 @@ GpuHangAdapter::GpuHangAdapter(std::string thread_name):thread_name_(thread_name
       checkHangWatch_ = true;
   }
 
-  base::CurrentThread::Get()->AddTaskObserver(this);
+  auto runner = base::CurrentThread::Get();
+  if (runner) {
+    runner->AddTaskObserver(this);
+  }
 
   auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
                                         .GetSystemPropertiesInstance();
@@ -108,7 +111,10 @@ GpuHangAdapter::GpuHangAdapter(std::string thread_name):thread_name_(thread_name
 
 GpuHangAdapter::~GpuHangAdapter() {
   LOG(INFO) << "GpuHangAdapter::~GpuHangAdapter " << thread_name_;
-  base::CurrentThread::Get()->RemoveTaskObserver(this);
+  auto runner = base::CurrentThread::Get();
+  if (runner) {
+    runner->RemoveTaskObserver(this);
+  }
 }
 
 // static

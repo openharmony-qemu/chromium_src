@@ -162,6 +162,10 @@ void ApplyOhosWebPreferences(const web_pref::WebPreferences& prefs,
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
   settings->SetClipboardSitePermissionEnabled(prefs.clipboard_site_permission_enabled);
 #endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+  settings->SetCastEnabled(prefs.cast_enabled);
+#endif  // BUILDFLAG(ARKWEB_MEDIA_CAST)
 }
 
 void WebView::ApplyWebPreferencesForInclude(

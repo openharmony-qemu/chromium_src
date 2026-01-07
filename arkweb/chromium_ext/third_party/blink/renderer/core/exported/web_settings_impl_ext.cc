@@ -237,6 +237,12 @@ bool WebSettingsImplExt::IsViewportScale()
   return settings_->IsViewportScale();
 }
 #endif  // BUILDFLAG(ARKWEB_MENU)
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+void WebSettingsImplExt::SetCastEnabled(bool enabled) {
+  settings_->SetCastEnabled(enabled);
+}
+#endif
 // LCOV_EXCL_STOP
 
 }  // namespace blink

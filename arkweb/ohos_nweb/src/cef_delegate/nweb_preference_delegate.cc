@@ -302,6 +302,11 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
       GetDelayDurationForBackgroundTabFreezing();
 #endif
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+  browser_settings.cast_enabled =
+      GetCastEnabled() ? STATE_ENABLED : STATE_DISABLED;
+#endif  // ARKWEB_MEDIA_CAST
+
 #if BUILDFLAG(ARKWEB_MEDIA_NETWORK_TRAFFIC_PROMPT)
   browser_settings.enable_media_network_traffic_prompt =
       enable_media_network_traffic_prompt_;
@@ -1314,8 +1319,23 @@ void NWebPreferenceDelegate::PutWebMediaAVSessionEnabled(bool enable) {
   LOG(INFO) << "NWebPreferenceDelegate::PutWebMediaAVSessionEnabled enable:"
             << enable;
   browser_->GetHost()->PutWebMediaAVSessionEnabled(enable);
+
+  bool isWebMediaAVSessionSwitch = false;
+  auto currentProcess = base::CommandLine::ForCurrentProcess();
+  if (currentProcess && !currentProcess->HasSwitch(::switches::kEnableMediaAvsession)) {
+    isWebMediaAVSessionSwitch = true;
+  }
+  cast_enabled_ = isWebMediaAVSessionSwitch && enable;
+  LOG(INFO) << "NWebPreferenceDelegate::PutWebMediaAVSessionEnabled cast_enabled_:"
+            << cast_enabled_;
 }
 #endif  // ARKWEB_MEDIA_AVSESSION
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+  bool NWebPreferenceDelegate::GetCastEnabled() {
+    return cast_enabled_;
+  }
+#endif  // ARKWEB_MEDIA_CAST
 
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)
 void NWebPreferenceDelegate::PutErrorPageEnabled(bool enable) {

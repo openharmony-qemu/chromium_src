@@ -133,6 +133,10 @@ class CORE_EXPORT WebSettingsImplExt final : public WebSettingsImpl {
   void SetViewportScaleState(bool viewportScale) override;
   bool IsViewportScale() override;
 #endif  // BUILDFLAG(ARKWEB_MENU)
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+  void SetCastEnabled(bool enable) override;
+#endif  // BUILDFLAG(ARKWEB_MEDIA_CAST)
 };
 }  // namespace blink
 

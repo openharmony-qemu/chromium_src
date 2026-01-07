@@ -58,7 +58,7 @@ class WebFrameWidgetImplExt : public WebFrameWidgetImpl {
       gfx::Rect clipped_selection_bounds) override;
   void CleanFocusCache() override;
   void SelectRangeV2(const gfx::Point& position, bool is_base) override;
-  bool IsSelectionRangeEmpty(blink::WebRange range, WebLocalFrame* focused_frame);
+  void NotifySelectionRangeEmpty(blink::WebRange range, WebLocalFrame* focused_frame);
 #endif
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)

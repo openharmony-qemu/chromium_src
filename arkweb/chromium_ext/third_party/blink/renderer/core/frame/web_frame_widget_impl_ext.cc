@@ -150,7 +150,7 @@ void WebFrameWidgetImplExt::SelectRangeV2(const gfx::Point& position,
                                is_base);
 }
 
-bool WebFrameWidgetImplExt::IsSelectionRangeEmpty(
+void WebFrameWidgetImplExt::NotifySelectionRangeEmpty(
     blink::WebRange range,
     WebLocalFrame* focused_frame) {
   if (range.IsNull()) {
@@ -158,9 +158,7 @@ bool WebFrameWidgetImplExt::IsSelectionRangeEmpty(
       focused_frame->Client()->DidChangeSelection(
           true, blink::SyncCondition::kNotForced);
     }
-    return true;
   }
-  return false;
 }
 #endif
 

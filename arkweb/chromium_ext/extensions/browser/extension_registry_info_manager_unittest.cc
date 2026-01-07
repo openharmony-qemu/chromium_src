@@ -592,6 +592,26 @@ TEST_F(ExtensionRegistryInfoManagerTest,
               std::string::npos);
 }
 
+TEST_F(ExtensionRegistryInfoManagerTest, GetExtensionManifestInfo_ShortName) {
+  const std::string extension_id = "test-extension-id";
+  const std::string name = "test-extension-name";
+  const std::string short_name = "test-short-name";
+
+  auto manifest_tmp = base::Value::Dict()
+                          .Set("name", name)
+                          .Set("version", "1")
+                          .Set("manifest_version", 3)
+                          .Set("short_name", short_name);
+  scoped_refptr<Extension> extension(
+      CreateTestExtensionWithManifest(extension_id, std::move(manifest_tmp)));
+  WebExtensionManifestInfo manifest;
+
+  GetInfoManager()->GetExtensionManifestInfo(*extension.get(), manifest);
+  ASSERT_TRUE(manifest.short_name.has_value());
+  EXPECT_EQ(manifest.short_name.value(), short_name);
+  EXPECT_EQ(manifest.name, name);
+}
+
 TEST_F(ExtensionRegistryInfoManagerTest,
        ExtensionRegistryInfoManager_OnExtensionLoadedCallBack) {
   WebExtensionInfo extension_info;

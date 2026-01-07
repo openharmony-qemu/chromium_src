@@ -3488,7 +3488,6 @@ test("base_unittests") {
     "no_destructor_unittest.cc",
     "observer_list_threadsafe_unittest.cc",
     "observer_list_unittest.cc",
-    "ohos/task_scheduler/task_runner_ohos_unittest.cc",
     "one_shot_event_unittest.cc",
     "parameter_pack_unittest.cc",
     "pickle_unittest.cc",

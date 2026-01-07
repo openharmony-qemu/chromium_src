@@ -27,6 +27,7 @@ import { I18nAdapterBind } from '../jsbindings/I18nAdapterBind';
 import { IMFAdapterBind } from '../jsbindings/IMFAdapterBind';
 import { MediaAdapterBind } from '../jsbindings/MediaAdapterBind';
 import { MimeTypeAdapterBind } from '../jsbindings/MimeTypeAdapterBind';
+import { NativeMessagingAdapterBind } from '../jsbindings/NativeMessagingAdapterBind';
 import { NativeThemeAdapterBind } from '../jsbindings/NativeThemeAdapterBind';
 import { NetConnectionAdapterBind } from '../jsbindings/NetConnectionAdapterBind';
 import { NotificationAdapterBind } from '../jsbindings/NotificationAdapterBind';
@@ -70,6 +71,7 @@ export class JsBindingMethod {
     IMFAdapterBind.bind();
     MediaAdapterBind.bind();
     MimeTypeAdapterBind.bind();
+    NativeMessagingAdapterBind.bind();
     NativeThemeAdapterBind.bind();
     NetConnectionAdapterBind.bind();
     NotificationAdapterBind.bind();

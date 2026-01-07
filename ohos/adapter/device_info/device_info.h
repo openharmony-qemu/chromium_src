@@ -24,6 +24,7 @@ enum SdkVersion {
   SDK_VERSION_15 = 15,
   SDK_VERSION_19 = 19,
   SDK_VERSION_20 = 20,
+  SDK_VERSION_21 = 21,
   SDK_VERSION_22 = 22,
 };
 

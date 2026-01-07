@@ -46,6 +46,7 @@ if (is_ohos) {
       "//ohos/adapter/media_manager:media_manager",
       "//ohos/adapter/mime_type:mime_type",
       "//ohos/adapter/multiprocess:multiprocess",
+      "//ohos/adapter/native_messaging:native_messaging",
       "//ohos/adapter/native_theme:native_theme",
       "//ohos/adapter/net:net",
       "//ohos/adapter/node_handle:node_handle",

@@ -391,6 +391,9 @@ struct BASE_EXPORT LaunchOptions {
 
   // isolated process startup requires special handling to establish IPC channel
   bool is_isolated_process = false;
+
+  // native message host process startup requires special handling
+  bool is_native_message = false;
 #endif  // BUILDFLAG(IS_OHOS)
 };
 

@@ -107,6 +107,8 @@ TEST_F(DigitalIdentityCrossDeviceTransactionTest, NoAdapter) {
   std::unique_ptr<Transaction> transaction = Transaction::New(
       origin(), request(), qr_generator_key(), network_context_factory(),
       base::DoNothing(), callback_.GetCallback());
+  // Callback should not have been called synchronously.
+  EXPECT_FALSE(callback_.IsReady());
   EXPECT_THAT(callback_.Take(), ContainsError(SystemError::kNoBleSupport));
 }
 
@@ -143,8 +145,11 @@ TEST_F(DigitalIdentityCrossDeviceTransactionTest, NoPowerThenPowered) {
 
 TEST_F(DigitalIdentityCrossDeviceTransactionTest, NeedPermissionThenDenied) {
   EXPECT_CALL(*mock_adapter_, IsPresent).WillRepeatedly(Return(true));
+  // Both FidoCableDiscovery and TransactionImpl will call
+  // GetOsPermissionStatus() when getting the adapter. This is why it will be
+  // called twice.
   EXPECT_CALL(*mock_adapter_, GetOsPermissionStatus)
-      .WillOnce(
+      .WillRepeatedly(
           Return(device::BluetoothAdapter::PermissionStatus::kUndetermined));
   EXPECT_CALL(*mock_adapter_, IsPowered).WillRepeatedly(Return(true));
 

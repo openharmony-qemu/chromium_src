@@ -191,8 +191,10 @@ component("gpu") {
     import("//build/config/ohos/config.gni")
  
     sources += [
-      "ohos/ohos_video_decoder.h",
       "ohos/ohos_video_decoder.cc",
+      "ohos/ohos_video_decoder.h",
+      "ohos/ohos_video_encode_accelerator.cc",
+      "ohos/ohos_video_encode_accelerator.h",
       "ohos/codec_allocator.cc",
       "ohos/codec_allocator.h",
       "ohos/codec_buffer_wait_coordinator.cc",

@@ -667,7 +667,7 @@ void PrepareImgBufferForRead(OH_Pixelmap_ImageInfo*& image_info,
 
   // Reads image from the ClipboardData.
   void ReadPng(Clipboard::ReadPngCallback callback) {
-    if (!HasFormatInMisc(ClipboardInternalFormat::kPng)) {
+    if (!IsFormatAvailable(ClipboardInternalFormat::kPng)) {
       LOG(ERROR) << "[Pasteboard]ReadPng no bitMap format in pasteboard";
       std::move(callback).Run(std::vector<uint8_t>());
       return;

@@ -14,13 +14,14 @@
 #include "media/base/sample_format.h"
 #include "media/base/supported_video_decoder_config.h"
 #include "media/base/video_codecs.h"
+#include "media/video/video_encode_accelerator.h"
 
 namespace media {
 
 class OhosMediaCodecUtil {
  public:
   static OH_AVCapability* GetCodecCapability(const std::string& mime,
-                                             bool is_codec);
+                                             bool is_encoder);
   /**
    * get AVC/H264 supported profiles and range for current chip by NDK
    */
@@ -33,6 +34,9 @@ class OhosMediaCodecUtil {
    * get VVC/H266 supported profiles and range for current chip by NDK
    */
   static std::optional<SupportedVideoDecoderConfig> GetVVCSupportedConfig();
+
+  static std::vector<VideoEncodeAccelerator::SupportedProfile> GetSupportedAVCEncodeProfiles();
+
   static VideoCodecProfile OhosToCodecAVCProfileType(OH_AVCProfile avc_profile);
   static VideoCodecProfile OhosToCodecHEVCProfileType(OH_HEVCProfile hevc_profile);
   static VideoCodecProfile OhosToCodecVVCProfileType(OH_VVCProfile vvc_profile);

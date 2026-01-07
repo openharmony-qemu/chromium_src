@@ -34,6 +34,7 @@ if (is_ohos) {
       "native_media_codecbase",
       "native_media_core",
       "native_media_vdec",
+      "native_media_venc",
       "native_window",
     ]
     if(enable_wiseplay) {

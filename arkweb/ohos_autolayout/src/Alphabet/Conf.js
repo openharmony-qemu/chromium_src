@@ -62,4 +62,31 @@ module.exports = {
         SLIDE_TRANSITION_MICRO_SECONDS: 500,
         HM_SYMBOL_FONT_FAMILY_NAME: 'HM Symbol',
     },
+    BUTTON_BOX: {
+        TYPE: 'buttonBox',
+        SIDE_DISTANCE: {
+            RIGHT_DEFAULT: 15,
+            RIGHT_PLUS: 0,
+            BOTTOM_DEFAULT: 15,
+            BOTTOM_PLUS: 5,
+        },
+        BUTTON_TEXT: {
+            UP: '↑',
+            DOWN: '↓',
+        },
+        BUTTON_SWITCH_TYPES: {
+            UP: 'up',
+            DOWN: 'down',
+        },
+        LAST_PAGE_BOTTOM_DISTANCE: 20,
+        ALPHABET_TRANSITION_STYLE: 'transform 0.5s ease',
+    },
+    MICRO_DOTS: {
+        TYPE: 'microDots',
+        MICRO_DISPLAY_TEXT: '.',
+        DISTRIBUTE_WEIGHT_TYPES: ['start', 'center', 'end'],
+        DISTRIBUTE_WEIGHT_TYPE_DEFAULT: 'center',
+        TEXT_NODE_NAME: '#text',
+        COMMENT_NODE_NAME: '#comment',
+    },
 };

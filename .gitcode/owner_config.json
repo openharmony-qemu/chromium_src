@@ -5,7 +5,8 @@
             "doublelucky"
         ],
         "arkweb-DFX": [
-            "StringChen"
+            "StringChen",
+            "hjoksky"
         ],
         "arkweb-framework": [
             "cloud_nine999",
@@ -50,6 +51,9 @@
             "info": "[构建工程]"
         },
         "StringChen": {
+            "info": "[DFX]"
+        },
+        "hjoksky": {
             "info": "[DFX]"
         },
         "cloud_nine999": {

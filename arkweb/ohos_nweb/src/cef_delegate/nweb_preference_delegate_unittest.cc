@@ -1889,6 +1889,13 @@ TEST(NWebPreferenceDelegateTest, PutWebMediaAVSessionEnabled) {
     preference_delegate->PutWebMediaAVSessionEnabled(false);
 }
 
+TEST(NWebPreferenceDelegateTest, GetCastEnabled) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    CefRefPtr<CefBrowser> browser = nullptr;
+    preference_delegate->SetBrowser(browser);
+    EXPECT_FALSE(preference_delegate->GetCastEnabled());
+}
+
 TEST(NWebPreferenceDelegateTest, PutErrorPageEnabled) {
     auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
     CefRefPtr<CefBrowser> browser = nullptr;

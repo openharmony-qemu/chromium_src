@@ -37,7 +37,7 @@
 #include "content/browser/media/video_assistant/video_assistant.h"
 #include "content/public/browser/media_player_controller.h"
 #include "content/public/browser/media_player_listener.h"
-#include "gpu/ipc/common/nweb_native_window_tracker.h"
+#include "gpu/ipc/common/nweb_video_native_window.h"
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
 #include "base/trace_event/optional_trace_event.h"
@@ -915,8 +915,8 @@ void WebContentsImplExt::SetVideoSurface(const MediaPlayerId& id,
 
 void WebContentsImplExt::DelVideoSurface(int32_t surface_id) {
   void* native_window =
-      NWebNativeWindowTracker::Get()->GetNativeWindow(surface_id);
-  NWebNativeWindowTracker::Get()->DestroyNativeWindow(surface_id);
+      NWebVideoNativeWindow::Get()->GetNativeWindow(surface_id);
+  NWebVideoNativeWindow::Get()->DestroyNativeWindow(surface_id);
   OHOS::NWeb::OhosAdapterHelperExt::GetWindowAdapterNdkInstance()
       .DestroyNativeWindow(native_window);
 

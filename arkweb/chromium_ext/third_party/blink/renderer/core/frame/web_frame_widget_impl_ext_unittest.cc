@@ -20,9 +20,13 @@
 #include "arkweb/chromium_ext/third_party/blink/renderer/platform/widget/widget_base_utils.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "third_party/blink/public/web/web_local_frame.h"
+#include "third_party/blink/public/web/web_range.h"
 #include "third_party/blink/renderer/core/dom/document.h"
 #include "third_party/blink/renderer/core/frame/frame_test_helpers.h"
+#include "third_party/blink/renderer/core/frame/local_frame.h"
 #include "third_party/blink/renderer/core/frame/web_frame_widget_impl.h"
+#include "third_party/blink/renderer/core/html/html_iframe_element.h"
 #include "third_party/blink/renderer/core/testing/sim/sim_request.h"
 #include "third_party/blink/renderer/core/testing/sim/sim_test.h"
 
@@ -111,6 +115,8 @@ class WebFrameWidgetImplExtSimTest : public SimTest {
         <div>Test content</div>
         <input type="text" id="input1" value="First input">
         <input type="text" id="input2" value="Second input">
+        <div id="content">Text</div>
+        <iframe id="child"></iframe>
       </body>
       </html>
     )HTML");
@@ -682,5 +688,37 @@ TEST_F(WebFrameWidgetImplExtSimTest, GetOverScrollOffset_WithoutWidgetBase1) {
   SetWidgetBaseForTesting(std::move(widget_base));
 }
 
+TEST_F(WebFrameWidgetImplExtSimTest, NotifySelectionRangeEmptyTest) {
+  WebLocalFrameImpl* main_frame = &MainFrame();
+  // Scenario 1: Range is not empty (covers the return false branch)
+  {
+    WebRange valid_range(0, 1);
+    MockMainFrameWidget()->NotifySelectionRangeEmpty(valid_range, main_frame);
+  }
+  // Scene 2: Range is empty, and Focused Frame is nullptr
+  {
+    WebRange null_range;
+    EXPECT_TRUE(null_range.IsNull());
+    MockMainFrameWidget()->NotifySelectionRangeEmpty(null_range, nullptr);
+  }
+  // Scene 3: Range is empty, Frame exists, but Client is empty
+  {
+    WebRange null_range;
+    auto* iframe_element = To<HTMLIFrameElement>(
+        GetDocument().getElementById(AtomicString("child")));
+    LocalFrame* child_local_frame = To<LocalFrame>(iframe_element->ContentFrame());
+    WebLocalFrameImpl* child_web_frame = 
+        WebLocalFrameImpl::FromFrame(child_local_frame);
+    iframe_element->remove();
+    EXPECT_TRUE(child_web_frame->Client() == nullptr);
+    MockMainFrameWidget()->NotifySelectionRangeEmpty(null_range, child_web_frame);
+  }
+  // Scene 4: Range is empty, while Frame and Client are functioning properly
+  {
+    WebRange null_range;
+    EXPECT_TRUE(main_frame->Client() != nullptr);
+    MockMainFrameWidget()->NotifySelectionRangeEmpty(null_range, main_frame);
+  }
+}
 }  // namespace
 }  // namespace blink

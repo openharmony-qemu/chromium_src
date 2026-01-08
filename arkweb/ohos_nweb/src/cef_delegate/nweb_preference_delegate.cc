@@ -1320,12 +1320,13 @@ void NWebPreferenceDelegate::PutWebMediaAVSessionEnabled(bool enable) {
             << enable;
   browser_->GetHost()->PutWebMediaAVSessionEnabled(enable);
 
-  bool isWebMediaAVSessionSwitch = false;
+#if BUILDFLAG(ARKWEB_NWEB_EX)
   auto currentProcess = base::CommandLine::ForCurrentProcess();
   if (currentProcess && !currentProcess->HasSwitch(::switches::kEnableMediaAvsession)) {
-    isWebMediaAVSessionSwitch = true;
+    cast_enabled_ = true;
   }
-  cast_enabled_ = isWebMediaAVSessionSwitch && enable;
+#endif // ARKWEB_NWEB_EX
+  cast_enabled_ = cast_enabled_ && enable;
   LOG(INFO) << "NWebPreferenceDelegate::PutWebMediaAVSessionEnabled cast_enabled_:"
             << cast_enabled_;
 }

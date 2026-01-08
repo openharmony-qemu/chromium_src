@@ -84,7 +84,7 @@ public:
             const PermissionRequestDescription& request_description,
             const base::OnceCallback<void(const std::vector<PermissionStatus>&)>
                 callback),
-            (override));
+        (override));
     MOCK_METHOD(
         void,
         RequestPermissions,
@@ -92,16 +92,16 @@ public:
             const PermissionRequestDescription& request_description,
             const base::OnceCallback<void(const std::vector<PermissionStatus>&)>
                 callback),
-            (override));
+        (override));
     MOCK_METHOD(bool,
         IsPermissionOverridable,
         (PermissionType, const std::optional<url::Origin>&),
-            (override));
-#if BUILDFLAG(ARKWEB_CLIPBOARD)    
+        (override));
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
     MOCK_METHOD(void,
         GetPermissionStatusAsync,
         (PermissionType permission, const GURL& requesting_origin,
-        base::OnceCallback<void(PermissionStatus)> callback),
+            base::OnceCallback<void(PermissionStatus)> callback),
         (override));
     MOCK_METHOD(bool, IsClipboardSitePermissionEnabled, (), (override));
 #endif // BUILDFLAG(ARKWEB_CLIPBOARD)
@@ -109,7 +109,7 @@ public:
 } // namespace
 
 class PermissionServiceImplTest : public RenderViewHostTestHarness {
-    public:
+public:
     PermissionServiceImplTest() = default;
     PermissionServiceImplTest(const PermissionServiceImplTest&) = delete;
     PermissionServiceImplTest& operator=(const PermissionServiceImplTest&) =
@@ -130,9 +130,9 @@ class PermissionServiceImplTest : public RenderViewHostTestHarness {
                 render_frame_host);
         reinterpret_cast<TestBrowserContext*>(browser_context())->SetPermissionControllerDelegate(
             std::make_unique<::testing::NiceMock<MockManagerWithRequests>>());
-        
-            permission_service_ = std::make_unique<PermissionServiceImpl>(
-                permission_service_context(), origin_);
+
+        permission_service_ = std::make_unique<PermissionServiceImpl>(
+            permission_service_context(), origin_);
     }
 
     void TearDown() override {
@@ -151,7 +151,7 @@ class PermissionServiceImplTest : public RenderViewHostTestHarness {
     PermissionServiceContext* permission_service_context() {
         return permission_service_context_;
     }
-    
+
     RenderFrameHostImpl* render_frame_host() { return render_frame_host_impl_; }
 
     PermissionServiceImpl* permission_service() {
@@ -169,11 +169,11 @@ class PermissionServiceImplTest : public RenderViewHostTestHarness {
 
     void SetNWebExCommandLineSwitch(bool enabled) {
 #if BUILDFLAG(ARKWEB_NWEB_EX)
-        if(enabled) {
-            base::COmmandLine::ForCurrentProcess()->AppendSwitch(
+        if (enabled) {
+            base::CommandLine::ForCurrentProcess()->AppendSwitch(
                 switches::kEnableNwebEx);
-        }else {
-            base::COmmandLine::ForCurrentProcess()->RemoveSwitch(
+        } else {
+            base::CommandLine::ForCurrentProcess()->RemoveSwitch(
                 switches::kEnableNwebEx);
         }
 #endif
@@ -183,8 +183,8 @@ class PermissionServiceImplTest : public RenderViewHostTestHarness {
         blink::mojom::PermissionDescriptorPtr permission,
         PermissionStatusCallback callback) {
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
-            permission_service()->HasPermissionAsync(
-                std::move(permission), std::move(callback));
+        permission_service()->HasPermissionAsync(
+            std::move(permission), std::move(callback));
 #endif
     }
     void PermissionServiceRequestPermissionSync(
@@ -192,11 +192,11 @@ class PermissionServiceImplTest : public RenderViewHostTestHarness {
         bool user_gesture,
         PermissionStatusCallback callback) {
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
-            permission_service()->RequestPermissionSync(
-                std::move(permission), user_gesture, std::move(callback));
+        permission_service()->RequestPermissionSync(
+            std::move(permission), user_gesture, std::move(callback));
 #endif
     }
-    private:
+private:
     url::Origin origin_;
     raw_ptr<PermissionControllerImpl> permission_controller_;
     raw_ptr<RenderFrameHostImpl> render_frame_host_impl_;
@@ -204,17 +204,17 @@ class PermissionServiceImplTest : public RenderViewHostTestHarness {
     std::unique_ptr<PermissionServiceImpl> permission_service_;
 };
 
-Test_F(PermissionServiceImplTest, HasPermissionAsync_001) {
+TEST_F(PermissionServiceImplTest, HasPermissionAsync_001) {
 #if BUILDFLAG(ARKWEB_CLIPBOARD) && BUILDFLAG(ARKWEB_NWEB_EX)
     SetNWebExCommandLineSwitch(true);
     EXPECT_CALL(*mock_manager(), IsClipboardSitePermissionEnabled())
         .WillOnce(testing::Return(true));
 
-        auto forward_callbacks = testing::WithArg<2>(
-            [](base::OnceCallback<void(blink::mojom::PermissionStatus)> callback) {
-                std::move(callback).Run(blink::mojom::PermissionStatus::DENIED);
-                return 0;
-            });
+    auto forward_callbacks = testing::WithArg<2>(
+        [](base::OnceCallback<void(blink::mojom::PermissionStatus)> callback) {
+            std::move(callback).Run(blink::mojom::PermissionStatus::DENIED);
+            return 0;
+        });
     EXPECT_CALL(*mock_manager(),
                 GetPermissionStatusAsync(
                     PermissionType::CLIPBOARD_READ_WRITE, origin().GetURL(),
@@ -228,12 +228,12 @@ Test_F(PermissionServiceImplTest, HasPermissionAsync_001) {
 #endif // BUILDFLAG(ARKWEB_CLIPBOARD) && BUILDFLAG(ARKWEB_NWEB_EX)
 }
 
-Test_F(PermissionServiceImplTest, HasPermissionAsync_002) {
+TEST_F(PermissionServiceImplTest, HasPermissionAsync_002) {
 #if BUILDFLAG(ARKWEB_CLIPBOARD) && BUILDFLAG(ARKWEB_NWEB_EX)
     SetNWebExCommandLineSwitch(true);
     EXPECT_CALL(*mock_manager(), IsClipboardSitePermissionEnabled())
         .WillOnce(testing::Return(false));
-    
+
     base::MockCallback<PermissionStatusCallback> callback;
     PermissionServiceHasPermissionAsync(
         CreateClipboardPermissionDescriptor(PermissionType::CLIPBOARD_SANITIZED_WRITE),
@@ -241,7 +241,7 @@ Test_F(PermissionServiceImplTest, HasPermissionAsync_002) {
 #endif // BUILDFLAG(ARKWEB_CLIPBOARD) && BUILDFLAG(ARKWEB_NWEB_EX)
 }
 
-Test_F(PermissionServiceImplTest, HasPermissionAsync_003) {
+TEST_F(PermissionServiceImplTest, HasPermissionAsync_003) {
 #if BUILDFLAG(ARKWEB_CLIPBOARD) && BUILDFLAG(ARKWEB_NWEB_EX)
     SetNWebExCommandLineSwitch(true);
     base::MockCallback<PermissionStatusCallback> callback;
@@ -251,7 +251,7 @@ Test_F(PermissionServiceImplTest, HasPermissionAsync_003) {
 #endif // BUILDFLAG(ARKWEB_CLIPBOARD) && BUILDFLAG(ARKWEB_NWEB_EX)
 }
 
-Test_F(PermissionServiceImplTest, HasPermissionAsync_004) {
+TEST_F(PermissionServiceImplTest, HasPermissionAsync_004) {
 #if BUILDFLAG(ARKWEB_CLIPBOARD) && BUILDFLAG(ARKWEB_NWEB_EX)
     SetNWebExCommandLineSwitch(false);
     base::MockCallback<PermissionStatusCallback> callback;
@@ -261,11 +261,11 @@ Test_F(PermissionServiceImplTest, HasPermissionAsync_004) {
 #endif // BUILDFLAG(ARKWEB_CLIPBOARD) && BUILDFLAG(ARKWEB_NWEB_EX)
 }
 
-Test_F(PermissionServiceImplTest, RequestPermissionSync) {
+TEST_F(PermissionServiceImplTest, RequestPermissionSync) {
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
     auto forward_callbacks = testing::WithArg<2>(
         [](base::OnceCallback<void(const std::vector<blink::mojom::PermissionStatus>&)> callback) {
-            std::move(callback).Run( {blink::mojom::PermissionStatus::DENIED } );
+            std::move(callback).Run({ blink::mojom::PermissionStatus::DENIED });
             return 0;
         });
     bool user_gesture = true;

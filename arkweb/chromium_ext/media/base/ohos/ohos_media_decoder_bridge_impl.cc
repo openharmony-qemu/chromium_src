@@ -23,7 +23,7 @@
 #include "arkweb/ohos_adapter_ndk/ohos_adapter_helper_ext.h"
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-#include "gpu/ipc/common/nweb_video_native_window.h"
+#include "gpu/ipc/common/nweb_native_window_tracker.h"
 #endif // ARKWEB_VIDEO_ASSISTANT
 
 #include "media/filters/ohos/ohos_audio_decoder.h"
@@ -709,7 +709,7 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::SetVideoSurface(
     }
     video_surface_id_ = widget_id;
 
-    void* native_window = NWebVideoNativeWindow::Get()->GetNativeWindow(video_surface_id_, true);
+    void* native_window = NWebNativeWindowTracker::Get()->GetNativeWindow(video_surface_id_, true);
     if (!native_window) {
         LOG(ERROR) << "MediaCodecDecoderBridgeImpl::SetVideoSurface native_window is NULL";
         return DecoderAdapterCode::DECODER_ERROR;

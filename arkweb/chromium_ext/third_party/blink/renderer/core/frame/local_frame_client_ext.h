@@ -31,6 +31,10 @@ class WebNativeBridge;
 class WebNativeClient;
 #endif
 
+#if BUILDFLAG(ARKWEB_NETWORK_DFX)
+class LocalFrame;
+#endif
+
 class LocalFrameClientExt {
 public:
 #if BUILDFLAG(ARKWEB_ADBLOCK)
@@ -51,6 +55,9 @@ public:
 #endif
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   virtual void NotifyLcpForBlankless() {}
+#endif
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  virtual void DispatchHistoryGoEvent(LocalFrame* frame, int delta){};
 #endif
 };
 }

@@ -152,6 +152,11 @@ void NetworkChangeNotifierOhos::OnIPAddressChanged() {
 void NetworkChangeNotifierOhos::OnConnectionChanged(
     NetworkChangeNotifier::ConnectionType connection_type) {
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
+  if (connection_type_ != connection_type) {
+    LOG_FEEDBACK(INFO, kNetwork)
+        << __func__ << " connectionType:" << connection_type_ << "->"
+        << connection_type;
+  }
   {
     base::AutoLock scoped_lock(lock_);
     connection_type_ = connection_type;

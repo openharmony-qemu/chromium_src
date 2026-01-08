@@ -36,7 +36,6 @@ class BaseFetchContextUtil {
             resource_request, options,
             ResourceRequestBlockedReason::kSubresourceFilter, type);
       }
-      LOG(INFO) << "[User AdBlock] Subresource request blocked : ***";
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
       LOG_FEEDBACK(INFO) << "[User AdBlock] Subresource request blocked : "
                          << url::LogUtils::ConvertUrlWithMask(

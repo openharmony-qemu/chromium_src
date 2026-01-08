@@ -186,9 +186,6 @@ bool FFmpegGlue::OpenContext(bool is_local_file) {
     return false;
   }
 
-#if BUILDFLAG(ARKWEB_MEDIA)
-  LOG(INFO) << "OhMedia::OpenContext format=" << format_context_->iformat->name;
-#endif // BUILDFLAG(ARKWEB)
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
   LOG_FEEDBACK(INFO) << "OhMedia::OpenContext format="
                      << format_context_->iformat->name;

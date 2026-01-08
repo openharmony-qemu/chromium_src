@@ -29,7 +29,6 @@ void ResolveContext::NotifyDohStatsInit() {
     stats->current_connection_success = true;
     stats->last_failure = base::TimeTicks();
     stats->last_success = base::TimeTicks();
-    LOG(INFO) << "Doh server " << i << " stats init successfully.";
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
     LOG_FEEDBACK(INFO) << "Doh server " << i << " stats init successfully.";
 #endif

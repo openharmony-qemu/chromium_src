@@ -684,6 +684,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void PutVaultPlainTextCallback(
       std::shared_ptr<OHOS::NWeb::NWebVaultPlainTextCallback> callback) override;
   void StopFling() override;
+  void ReloadIgnoreCache() override;
 
 #if BUILDFLAG(ARKWEB_WEBRTC)
   void StartCamera() override;

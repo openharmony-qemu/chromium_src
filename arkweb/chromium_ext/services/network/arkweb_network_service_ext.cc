@@ -162,8 +162,6 @@ void ArkWebNetworkServiceExt::SetURLRequestContext(
   net::URLRequestContext* url_request_context =
       network_context->url_request_context();
   if (url_request_context) {
-    LOG(INFO) << "Register network context and set network timeout "
-              << timeout_override_ << " second(s)";
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
     LOG_FEEDBACK(INFO) << "Register network context and set network timeout "
                        << timeout_override_ << " second(s)";
@@ -181,11 +179,9 @@ void ArkWebNetworkServiceExt::SetURLRequestContext(
 }
 
 void ArkWebNetworkServiceExt::SetConnectTimeout(int seconds) {
-  LOG(INFO) << "Network service set network timeout " << seconds
-            << " second(s)";
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-  LOG_FEEDBACK(INFO) << "Network service set network timeout " << seconds
-                     << " second(s)";
+  LOG_FEEDBACK(INFO, kNetwork)
+      << "SetConnectTimeout timeout:" << seconds << "s";
 #endif
   timeout_override_ = seconds;
   for (NetworkContext* network_context : network_contexts_) {
@@ -199,8 +195,6 @@ void ArkWebNetworkServiceExt::SetConnectTimeout(int seconds) {
 
 void ArkWebNetworkServiceExt::BindDnsToNetwork(int network) {
   if (network_for_dns_ == network) {
-    LOG(INFO) << "bind dns to network return for network is same with "
-              << network_for_dns_;
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
     LOG_FEEDBACK(INFO) << "bind dns to network return for network is same with "
                        << network_for_dns_;
@@ -209,7 +203,6 @@ void ArkWebNetworkServiceExt::BindDnsToNetwork(int network) {
   }
   network_for_dns_ = network;
   if (host_resolver_manager_) {
-    LOG(INFO) << "bind dns to network " << network << " invalid dns cache.";
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
     LOG_FEEDBACK(INFO) << "bind dns to network " << network
                        << " invalid dns cache.";
@@ -246,25 +239,15 @@ void ArkWebNetworkServiceExt::SetHttpsDnsFallbackData(
   std::vector<std::string> ip_list;
   if (config) {
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-    LOG_FEEDBACK(INFO)
-        << "DOH-Fallback set https dns fallback config enabled: "
-        << config->enabled << " https_dns_server_template: "
+    LOG_FEEDBACK(INFO, kNetwork)
+        << "SetHttpsDnsFallbackData enabled:" << config->enabled
+        << " httpsDnsServerTemplate:"
         << url::LogUtils::ConvertUrlWithMask(config->https_dns_server_template)
-        << ", SetHttpsDnsFallbackData, enabled " << config->enabled
-        << ", connect_job_with_dns_only_timeout "
+        << " connectJobWithDnsOnlyTimeout:"
         << config->connect_job_with_dns_only_timeout
-        << ", https_dns_server_template "
-        << url::LogUtils::ConvertUrlWithMask(config->https_dns_server_template)
-        << ", source_host_list.size " << config->source_host_list.size()
-        << ", suspect_ip_list.size " << config->suspect_ip_list.size();
+        << " sourceHostListSize:" << config->source_host_list.size()
+        << " suspectIPListSize:" << config->suspect_ip_list.size();
 #endif
-    LOG(INFO) << "SetHttpsDnsFallbackData, enabled " << config->enabled
-              << ", connect_job_with_dns_only_timeout "
-              << config->connect_job_with_dns_only_timeout
-              << ", https_dns_server_template "
-              << config->https_dns_server_template << ", source_host_list.size "
-              << config->source_host_list.size() << ", suspect_ip_list.size "
-              << config->suspect_ip_list.size();
     https_dns_fallback_enabled = config->enabled;
     http_dns_server_template = config->https_dns_server_template;
     connect_job_with_secure_dns_only_timeout_ =
@@ -293,16 +276,18 @@ void ArkWebNetworkServiceExt::SetHttpsDnsFallbackData(
 void ArkWebNetworkServiceExt::SetHttpsDnsHostResolver(
     bool enabled,
     const std::string& server_template) {
-  LOG(INFO) << "SetHttpsDnsHostResolver, enabled " << enabled
-            << ", real_https_dns_fallback_enabled_ "
-            << real_https_dns_fallback_enabled_ << ", server_template "
-            << server_template << ", real_http_dns_server_template_ "
-            << real_http_dns_server_template_ << ", network_for_dns "
-            << network_for_dns_;
   if (enabled == real_https_dns_fallback_enabled_ &&
       server_template == real_http_dns_server_template_) {
     return;
   }
+  LOG_FEEDBACK(INFO, kNetwork)
+      << "SetHttpsDnsHostResolver enabled:" << enabled
+      << " realHttpsDnsFallbackEnabled:" << real_https_dns_fallback_enabled_
+      << " serverTemplate:"
+      << url::LogUtils::ConvertUrlWithMask(server_template)
+      << " realHttpDnsServerTemplate:"
+      << url::LogUtils::ConvertUrlWithMask(real_http_dns_server_template_)
+      << " networkForDns:" << network_for_dns_;
   real_https_dns_fallback_enabled_ = enabled;
   real_http_dns_server_template_ = server_template;
 

@@ -23,10 +23,14 @@
 #include "content/public/browser/back_forward_cache.h"
 
 namespace content {
+class RenderFrameHostImpl;
+class NavigationRequest;
 
-CONTENT_EXPORT void ArkWebUnloadOldFrame(const BackForwardCache&,
-                                         const std::string reason,
-                                         bool& can_store);
+CONTENT_EXPORT void ArkWebUnloadOldFrame(
+    RenderFrameHostImpl* old_render_frame_host,
+    const BackForwardCache&,
+    const std::string& reason,
+    bool& can_store);
 
 CONTENT_EXPORT void ArkWebGetFrameHostForNavigation(
     const std::string& shared_render_process_token,

@@ -116,12 +116,28 @@ MediaAVSessionAdapterImpl::~MediaAVSessionAdapterImpl() {
         }
     }
 
+    if (avMediaDescriptionBuilder_) {
+        AVQueueItem_Result ret = OH_AVSession_AVMediaDescriptionBuilder_Destroy(avMediaDescriptionBuilder_);
+        if (ret != AVQUEUEITEM_SUCCESS) {
+            WVLOG_E("OH_AVSession_AVMediaDescriptionBuilder_Destroy failed. ret: %{public}d", ret);
+        }
+    }
+
+    if (avMediaDescription_) {
+        AVQueueItem_Result ret = OH_AVSession_AVMediaDescription_Destroy(avMediaDescription_);
+        if (ret != AVQUEUEITEM_SUCCESS) {
+            WVLOG_E("OH_AVSession_AVMediaDescription_Destroy failed. ret: %{public}d", ret);
+        }
+    }
+
     if (callback_index_ > 0) {
         callback_wrapper_.Clear(callback_index_);
         callback_index_ = 0;
     }
     avMetadata_ = nullptr;
     builder_ = nullptr;
+    avMediaDescriptionBuilder_ = nullptr;
+    avMediaDescription_ = nullptr;
     DestroyAVSession();
 }
 
@@ -160,7 +176,7 @@ bool MediaAVSessionAdapterImpl::CreateAVSession(MediaAVSessionType type) {
 void MediaAVSessionAdapterImpl::DestroyAVSession() {
     WVLOG_I("DestroyAVSession in");
     SetAvCast(false);
-    MediaCastStopped();
+    UnregisterMediaCastOutputDeviceCallback();
     HandleStopMediaCast();
     {
         std::lock_guard<std::mutex> lock(avsession_mutex_);
@@ -175,7 +191,12 @@ void MediaAVSessionAdapterImpl::DestroyAVSession() {
             } else {
                 WVLOG_I("DestroyAVSession Destroy() success, ret: %{public}d", ret);
             }
+            ret = OH_AVCastController_Destroy(avCastController_);
+            if (ret != AV_SESSION_ERR_SUCCESS) {
+                WVLOG_E("DestroyAVSession OH_AVCastController_Destroy failed, ret: %{public}d", ret);
+            }
             avSession_ = nullptr;
+            avCastController_ = nullptr;
         }
     }
     if (avSessionKey_) {
@@ -530,7 +551,7 @@ void MediaAVSessionAdapterImpl::DestroyAndEraseSession() {
         return;
     }
     iter->second->SetAvCast(false);
-    iter->second->MediaCastStopped();
+    iter->second->UnregisterMediaCastOutputDeviceCallback();
     iter->second->HandleStopMediaCast();
     if (iter->second->avSession_) {
         auto it_avsession = avSessionMapOther_.find(iter->second->avSession_);
@@ -544,11 +565,17 @@ void MediaAVSessionAdapterImpl::DestroyAndEraseSession() {
     } else {
         WVLOG_I("DestroyAndEraseSession Destroy success");
     }
+    ret = OH_AVCastController_Destroy(avCastController_);
+    if (ret != AV_SESSION_ERR_SUCCESS) {
+        WVLOG_E("DestroyAVSession OH_AVCastController_Destroy failed, ret: %{public}d", ret);
+    }
     // clear adapter->avSession, otherwise it will crash when callback
     iter->second->avSession_ = nullptr;
+    iter->second->avCastController_ = nullptr;
 
     avSession_ = nullptr;
-    avSessionMap.erase(iter);
+    avCastController_ = nullptr;
+    avSessionMap.erase(iter);    
     WVLOG_I("DestroyAndEraseSession out");
 }
 
@@ -581,6 +608,7 @@ bool MediaAVSessionAdapterImpl::CreateNewSession(const MediaAVSessionType& type)
             WVLOG_I("OH_AVSession_Create failed. ret: %{public}d", ret);
             return false;
         }
+        SetAvCast(false);
     }
 
     avSessionKey_->SetType(type);

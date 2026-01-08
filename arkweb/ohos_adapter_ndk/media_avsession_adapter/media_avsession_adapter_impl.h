@@ -63,7 +63,7 @@ struct MediaCastDescription {
     std::string title;
     std::string subtitle;
     std::string artist;
-    const char* mediaType = nullptr;;
+    const char* mediaType = nullptr;
     std::string lyricContent;
     int32_t duration = 0;
     std::string mediaUri;

@@ -136,6 +136,8 @@ MediaAVSessionAdapterImpl::~MediaAVSessionAdapterImpl() {
     }
     avMetadata_ = nullptr;
     builder_ = nullptr;
+    avMediaDescriptionBuilder_ = nullptr;
+    avMediaDescription_ = nullptr;
     DestroyAVSession();
 }
 

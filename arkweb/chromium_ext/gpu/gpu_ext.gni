@@ -8,7 +8,6 @@ gpu_unittests_ext = {
     "//arkweb/chromium_ext/content/browser/gpu/ark_web_compositor_util_unittest.cc",
     "//arkweb/chromium_ext/content/gpu/in_process_gpu_thread_utils_unittest.cc",
     "//arkweb/chromium_ext/gpu/command_buffer/common/gpu_memory_buffer_support_utils_unittest.cc",
-    "//arkweb/chromium_ext/gpu/ipc/common/nweb_video_native_window_unittest.cc",
   ]
   sources_del = [ ]
   deps = [

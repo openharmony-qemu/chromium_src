@@ -19,7 +19,6 @@
 #include "ohos_glue/base/include/ark_web_errno.h"
 
 #include "gpu/ipc/common/nweb_native_window_tracker.h"
-#include "gpu/ipc/common/nweb_video_native_window.h"
 #include "content/browser/gpu/gpu_process_host.h"
 
 extern "C" {
@@ -236,7 +235,7 @@ void OHOSMediaPlayerBridge::SetPlayerSurface() {
   if (pending_new_surface_id_ > 0) {
     LOG(INFO) << "SetPlayerSurface enter component pending_new_surface_id_:" << pending_new_surface_id_;
     pending_new_surface_id_ = -1;
-    void* native_window = NWebVideoNativeWindow::Get()->GetNativeWindow(new_surface_id_);
+    void* native_window = NWebNativeWindowTracker::Get()->GetNativeWindow(new_surface_id_);
     if (native_window) {
        ret = player_->SetVideoSurfaceNew(native_window);
       if (ret != 0) {
@@ -656,13 +655,13 @@ void OHOSMediaPlayerBridge::SetVideoSurfaceNew(int32_t surface_id) {
         return;
     }
     if (new_surface_id_ > 0) {
-        NWebVideoNativeWindow::Get()->DestroyNativeWindow(new_surface_id_);
+        NWebNativeWindowTracker::Get()->DestroyNativeWindow(new_surface_id_);
         new_surface_id_ = -1;
     }
     new_surface_id_ = surface_id;
     void* native_window = nullptr;
     if (player_) {
-        native_window = NWebVideoNativeWindow::Get()->GetNativeWindow(surface_id);
+        native_window = NWebNativeWindowTracker::Get()->GetNativeWindow(surface_id);
     } else {
         LOG(INFO) << "SetVideoSurfaceNew, player is empty, has pending_new_surface_id_";
         pending_new_surface_id_ = new_surface_id_;
@@ -677,7 +676,7 @@ void OHOSMediaPlayerBridge::SetVideoSurfaceNew(int32_t surface_id) {
 
 void OHOSMediaPlayerBridge::SetVideoSurfaceOld() {
     if (new_surface_id_ > 0) {
-        NWebVideoNativeWindow::Get()->DestroyNativeWindow(new_surface_id_);
+        NWebNativeWindowTracker::Get()->DestroyNativeWindow(new_surface_id_);
         new_surface_id_ = -1;
     }
     if (!player_) {

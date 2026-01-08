@@ -31,7 +31,7 @@ class NwebFallbackProxy {
  
   static void PutProxyClientCallback(
       std::shared_ptr<NWebProxyClientCallback> proxy_callback);
-  static void OnUpdateProxyToken(const std::string& old_token);
+  static void OnUpdateProxyToken(std::string old_token);
   static void UpdateProxyToken(const char* token, const char* token_info);
   static void SetGlobalListConfigPath(const char* file_path,
                                       const char* version);

@@ -46,6 +46,9 @@ static void WebPreferenceMojomExt(blink::mojom::WebPreferencesDataView data,
 #if BUILDFLAG(ARKWEB_SCROLLBAR)
   out->scrollbar_color = data.scrollbar_color();
 #endif  // ARKWEB_SCROLLBAR
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+  out->cast_enabled = data.cast_enabled();
+#endif  // BUILDFLAG(ARKWEB_MEDIA_CAST)
 #if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
   out->font_scale_factor = data.font_scale_factor();
   out->font_weight_adjustment = data.font_weight_adjustment();

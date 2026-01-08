@@ -30,7 +30,8 @@ void MediaRemotingInterstitial::AddMediaCastBackGround() {
   left_button_ = MakeGarbageCollected<HTMLDivElement>(GetDocument());
   left_button_->setAttribute(html_names::kClassAttr,
                             AtomicString("internal-media-remoting-button"));
-  left_button_->setInnerText(String::FromUTF8("\u7ed3\u675f\u6295\u5c4f")); // "stop cast"
+  left_button_->setInnerText(GetVideoElement().GetLocale().QueryString(
+        IDS_MEDIA_REMOTING_CAST_STOP_CAST));
 
   // Bind a click event to the left button
   left_button_->addEventListener(
@@ -43,7 +44,8 @@ void MediaRemotingInterstitial::AddMediaCastBackGround() {
   right_button_ = MakeGarbageCollected<HTMLDivElement>(GetDocument());
   right_button_->setAttribute(html_names::kClassAttr,
                              AtomicString("internal-media-remoting-button"));
-  right_button_->setInnerText(String::FromUTF8("\u5207\u6362\u8bbe\u5907")); // "Switch Device"
+  right_button_->setInnerText(GetVideoElement().GetLocale().QueryString(
+        IDS_MEDIA_REMOTING_CAST_SWITCH_DEVICE));
 
   // Bind a click event to the right button
   right_button_->addEventListener(

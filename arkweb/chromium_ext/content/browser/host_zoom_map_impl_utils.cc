@@ -30,16 +30,22 @@ const int64_t ZOOM_FREQUENCY_LIMIT = 30;
   }
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-  bool HostZoomMapImplUtils::IsZoomTooFast(base::Time last_modified, double level) {
-    base::TimeDelta elapsed = last_modified - last_modified_;
+  bool HostZoomMapImplUtils::IsZoomTooFast(const std::string& host, base::Time last_modified, double level) {
+    const auto it = host_last_modified_.find(host);
+    if (it == host_last_modified_.end()) {
+      LOG(INFO)<<"No need to throw zoom event cause host not zoomed.";
+      host_last_modified_[host] = last_modified;
+      return false;
+    }
+    base::TimeDelta elapsed = last_modified - it->second;
     int64_t elapsed_ms = elapsed.InMilliseconds();
     if (elapsed_ms < ZOOM_FREQUENCY_LIMIT) {
       LOG(INFO) << "Throw zoom event because frequency limit, last_modified:"
-                << last_modified_ << ",last_modified:" << last_modified
+                << it->second << ",last_modified:" << last_modified
                 << ",elapsed_ms:" << elapsed_ms;
       return true;
     }
-    last_modified_ = last_modified;
+    it->second = last_modified;
     TRACE_EVENT1("cc", "HostZoomMapImpl::SetZoomLevelForHostInternal",
                  "zoom_level", level);
     return false;

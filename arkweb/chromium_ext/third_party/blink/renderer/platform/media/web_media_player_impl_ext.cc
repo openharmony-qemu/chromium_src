@@ -206,8 +206,6 @@ void WebMediaPlayerImplExt::DoReloadForPrimitive() {
 
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
 void WebMediaPlayerImplExt::RestartForPrimitive() {
-  LOG(INFO) << "RestartForPrimitive, primitive_renderer_type_["
-            << GetRendererName(primitive_renderer_type_) << "]";
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
   LOG_FEEDBACK(INFO) << "RestartForPrimitive, primitive_renderer_type_["
                      << GetRendererName(primitive_renderer_type_) << "]";

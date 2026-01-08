@@ -1776,8 +1776,6 @@ void HostResolverManager::InvalidateCaches(bool network_change) {
 #if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
           switches::kEnableNwebExHttpDnsFallback)) {
-    LOG(INFO) << "Host caches has been invalidated";
-
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
     LOG_FEEDBACK(INFO) << "Host caches has been invalidated";
 #endif

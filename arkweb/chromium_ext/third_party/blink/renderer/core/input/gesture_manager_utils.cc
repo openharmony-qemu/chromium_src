@@ -52,7 +52,6 @@ void GestureManagerUtils::CloseAIOverlay(
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
 WebInputEventResult GestureManagerUtils::HandleGestureDragLongPress(
     const GestureEventWithHitTestResults& targeted_event) {
-  LOG(INFO) << "DragDrop HandleGestureDragLongPress";
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
   LOG_FEEDBACK(INFO) << "DragDrop HandleGestureDragLongPress";
 #endif

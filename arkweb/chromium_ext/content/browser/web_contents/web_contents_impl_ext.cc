@@ -185,7 +185,7 @@ void WebContentsImplExt::StopMicrophone(int nWebID) {
     return;
   }
 
-  auto media_stream_manager = 
+  auto media_stream_manager =
       BrowserMainLoop::GetInstance()->media_stream_manager();
   if (!media_stream_manager) {
     LOG(ERROR) << "media_stream_manager null";
@@ -525,13 +525,10 @@ void WebContentsImplExt::OnNativeEmbedStatusUpdate(
       param_list += item.first + " ";
       param_list += item.second + ", ";
     }
-    LOG(INFO) << "[NativeEmbed] OnNativeEmbedStatusUpdate " << " state is "
-              << (int)state << ", " << native_embed_info
-              << ", params: " << param_list;
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
     LOG_FEEDBACK(INFO) << "[NativeEmbed] OnNativeEmbedStatusUpdate "
                        << " state is " << (int)state << ", "
-                       << native_embed_info << ", params: " << param_list;
+                       << native_embed_info << ", params:" << param_list;
 #endif
   }
   if (delegate_) {

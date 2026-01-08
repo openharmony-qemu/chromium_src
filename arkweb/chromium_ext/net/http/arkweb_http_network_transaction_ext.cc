@@ -318,24 +318,28 @@ void ArkWebHttpNetworkTransactionExt::StopRecording() {
 }
 
 void ArkWebHttpNetworkTransactionExt::ReportTimeout() {
-  base::Value::Dict record;
+  std::string response_info_record;
+
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
   const HttpResponseInfo* response_info = GetResponseInfo();
   if (response_info) {
-    record.Set("ip", net::LogUtils::AnonymizeIpAddress(response_info->remote_endpoint));
-    record.Set("connection_info", net::HttpConnectionInfoToString(response_info->connection_info));
-    record.Set("received_body_bytes", base::NumberToString(received_body_bytes_));
+    response_info_record = base::StringPrintf(
+        "ip:%s connectionInfo:%s receivedBodyBytes: %ld",
+        net::LogUtils::AnonymizeIpAddress(response_info->remote_endpoint)
+            .c_str(),
+        net::HttpConnectionInfoToString(response_info->connection_info).data(),
+        received_body_bytes_);
   }
 #endif
 
-  LOG(INFO) << "INFO: request had no reponse within 5 seconds. url: *** " << record;
+
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-  LOG_FEEDBACK(INFO) << "INFO: request had no reponse within 5 seconds. url: "
-                     << url::LogUtils::ConvertUrlWithMask(url_.spec())
-                     << " " << record;
+  LOG_FEEDBACK(INFO, kNetwork)
+      << "NetworkTransactionTimeout " << response_info_record
+      << " url:" << url::LogUtils::ConvertUrlWithMask(url_.spec());
   if (!session_->is_strict_log_mode()) {
     LOG(URL) << "request had no reponse within 5 seconds. url: " << url_.spec()
-             << " " << record;
+             << " " << response_info_record;
   }
 #endif
 }

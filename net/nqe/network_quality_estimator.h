@@ -286,6 +286,11 @@ class NET_EXPORT_PRIVATE NetworkQualityEstimator
   // production receivers doesn't notice Wifi.
   void ForceReportWifiAsSlow2GForTesting();
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  std::string DebugString();
+  void OnComputeEffectiveConnectionType();
+#endif
+
   typedef nqe::internal::Observation Observation;
   typedef nqe::internal::ObservationBuffer ObservationBuffer;
 

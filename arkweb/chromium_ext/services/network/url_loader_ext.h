@@ -34,7 +34,7 @@ std::string BoolToString(bool value);
 
 std::string GetProtocol(const GURL& url, const net::HttpResponseInfo& info);
 
-void ReportUrlQuicInfo(net::URLRequest* url_request, int error_code);
+void ReportMainResourceMetrics(net::URLRequest* url_request, int error_code);
 #endif
 }  // namespace network
 #endif

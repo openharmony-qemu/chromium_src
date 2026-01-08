@@ -17,6 +17,8 @@
 
 #include "arkweb/build/features/features.h"
 #include "base/logging.h"
+#include "content/browser/renderer_host/navigation_request.h"
+#include "content/browser/renderer_host/render_frame_host_impl.h"
 #include "content/public/browser/back_forward_cache.h"
 
 #if BUILDFLAG(ARKWEB_RENDER_PROCESS_SHARE)
@@ -27,22 +29,34 @@
 namespace content {
 
 // LCOV_EXCL_START
-void ArkWebUnloadOldFrame(const BackForwardCache& back_forward_cache,
-                          const std::string reason,
+void ArkWebUnloadOldFrame(RenderFrameHostImpl* old_render_frame_host,
+                          const BackForwardCache& back_forward_cache,
+                          const std::string& reason,
                           bool& can_store) {
 #if BUILDFLAG(ARKWEB_BFCACHE)
+  std::string arkweb_reason;
   if (back_forward_cache.ArkWebGetCacheSize() <= 0 ||
       back_forward_cache.ArkWebGetTimeToLive() <= 0) {
     can_store = false;
   }
-  LOG(INFO) << "[BFCACHE] UnloadOldFrame can_store: " << can_store
-            << " bfcache_eligibility.flattened_reasons:" << reason;
 #endif
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  bool has_diff_useragent =
+      old_render_frame_host &&
+      old_render_frame_host->GetUserAgentDifferentFromNavigatingFrame();
+  if (has_diff_useragent) {
+    can_store = false;
+    old_render_frame_host->SetUserAgentDifferentFromNavigatingFrame(false);
+  }
+#endif
+
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-  LOG_FEEDBACK(INFO) << "RenderFrameHostManager::UnloadOldFrame the value of "
-                        "bfcache_eligibility.flattened_reasons is: "
-                     << reason;
-#endif  // BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(INFO, kNavigation)
+      << "CanEnterBFCache canStore:" << can_store
+      << " cacheSize:" << back_forward_cache.ArkWebGetCacheSize()
+      << " timeToLive:" << back_forward_cache.ArkWebGetTimeToLive()
+      << "s hasDiffUserAgent:" << has_diff_useragent << " reason:" << reason;
+#endif
 }
 // LCOV_EXCL_STOP
 

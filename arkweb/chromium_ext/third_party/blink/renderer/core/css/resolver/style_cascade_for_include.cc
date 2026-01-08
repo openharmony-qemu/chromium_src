@@ -46,11 +46,6 @@ void StyleCascadeUtil::LookupAndApplyDeclarationExt(
           ->utils->DidMatchCssRule(
               StyleCascadeObj->state_.GetElement().GetDocument().Url(),
               GetDomPath(StyleCascadeObj->state_.GetElement(), false, true));
-      LOG(INFO) << "[AdBlock] Element("
-                << StyleCascadeObj->state_.GetElement().ToString()
-                << " ) dom path:"
-                << GetDomPath(StyleCascadeObj->state_.GetElement(), false,
-                              true);
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
       LOG_FEEDBACK(INFO) << "[AdBlock] Element("
                          << StyleCascadeObj->state_.GetElement().ToString()
@@ -81,11 +76,6 @@ void StyleCascadeUtil::LookupAndApplyDeclarationExt(
           ->utils->DidMatchCssRule(
               StyleCascadeObj->state_.GetElement().GetDocument().Url(),
               GetDomPath(StyleCascadeObj->state_.GetElement(), false, true));
-      LOG(INFO) << "[User AdBlock] Element("
-                << StyleCascadeObj->state_.GetElement().ToString()
-                << ") dom path:"
-                << GetDomPath(StyleCascadeObj->state_.GetElement(), false,
-                              true);
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
       LOG_FEEDBACK(INFO) << "[User AdBlock] Element("
                          << StyleCascadeObj->state_.GetElement().ToString()

@@ -472,11 +472,18 @@ constexpr LogSeverity LOGGING_0 = LOGGING_ERROR;
 // function of LogMessage which seems to avoid the problem.
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
 #define LOG_STREAM(severity) COMPACT_ARKWEB_LOG_ ## severity.stream()
+#define BASE_LOG(severity) \
+  LAZY_STREAM(LOG_STREAM(severity), LOG_IS_ON(severity))
+
+#define GET_LOG_MACRO(_1, _2, NAME, ...) NAME
+#define LOG(...) GET_LOG_MACRO(__VA_ARGS__, LOG2, LOG1)(__VA_ARGS__)
+#define LOG1(level) BASE_LOG(level)
+#define LOG2(level, module) BASE_LOG(level) << ::logging::module << " "
 #else
 #define LOG_STREAM(severity) COMPACT_GOOGLE_LOG_ ## severity.stream()
+#define LOG(severity) LAZY_STREAM(LOG_STREAM(severity), LOG_IS_ON(severity))
 #endif // BUILDFLAG(ARKWEB_LOGGER_REPORT)
 
-#define LOG(severity) LAZY_STREAM(LOG_STREAM(severity), LOG_IS_ON(severity))
 #define LOG_IF(severity, condition) \
   LAZY_STREAM(LOG_STREAM(severity), LOG_IS_ON(severity) && (condition))
 
@@ -654,7 +661,11 @@ class BASE_EXPORT LogMessage {
 
   void HandleFatal(size_t stack_start, const std::string& str_newline) const;
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LogSeverity severity_;
+#else
   const LogSeverity severity_;
+#endif
   std::ostringstream stream_;
   size_t message_start_;  // Offset of the start of the message (past prefix
                           // info).

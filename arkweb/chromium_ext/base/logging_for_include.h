@@ -13,7 +13,6 @@ typedef void (*LoggerCallbackFunction)(int severity,
                                        int policy,
                                        const std::string& str);
 BASE_EXPORT void SetLoggerCallbackToBase(LoggerCallbackFunction loggerCallback);
-BASE_EXPORT bool SupportFeedback();
 
 using LogPriority = int;
 constexpr LogPriority PRIORITY_INFO = 0;
@@ -24,6 +23,11 @@ constexpr LogPriority PRIORITY_DEBUG = 4;
 constexpr LogSeverity LOGGING_FEEDBACK = 6;
 constexpr LogSeverity LOGGING_URL = 7;
 constexpr LogSeverity LOGGING_MAX = 9;  // 后续新增POLICY时需要同时将该变量+1
+
+BASE_EXPORT extern const char kNetwork[];
+BASE_EXPORT extern const char kNavigation[];
+BASE_EXPORT extern const char kLoadTracker[];
+BASE_EXPORT extern const char kHttpsUpgrades[];
 #endif
 
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
@@ -101,9 +105,16 @@ constexpr LogSeverity LOGGING_MAX = 9;  // 后续新增POLICY时需要同时将�
 #endif  // ARKWEB_LOGGER_REPORT
 
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-#define LOG_FEEDBACK(level) \
-  LAZY_STREAM(LOG_FEEDBACK_STREAM(level), LOG_IS_ON(level) && ::logging::SupportFeedback())
+#define BASE_LOG_FEEDBACK(level) \
+  LAZY_STREAM(LOG_FEEDBACK_STREAM(level), LOG_IS_ON(level))
 #define LOG_FEEDBACK_STREAM(level) COMPACT_ARKWEB_LOG_FEEDBACK_##level.stream()
+
+#define GET_LOG_MACRO(_1, _2, NAME, ...) NAME
+#define LOG_FEEDBACK(...) \
+  GET_LOG_MACRO(__VA_ARGS__, LOG_FEEDBACK2, LOG_FEEDBACK1)(__VA_ARGS__)
+#define LOG_FEEDBACK1(level) BASE_LOG_FEEDBACK(level)
+#define LOG_FEEDBACK2(level, module) \
+  BASE_LOG_FEEDBACK(level) << ::logging::module << " "
 #endif
 
 #endif

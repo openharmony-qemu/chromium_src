@@ -798,14 +798,10 @@ int URLRequest::DoCancel(int error, const SSLInfo& ssl_info) {
       // Don't log an error code on ERR_ABORTED, since that's redundant.
       net_log_.AddEventWithNetErrorCode(NetLogEventType::CANCELLED,
                                         error == ERR_ABORTED ? OK : error);
-#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
-      LOG(INFO) << "DoCancel the url_request, url: ***"
-                << ", error " << error;
-#endif
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-      LOG_FEEDBACK(INFO) << "DoCancel the url_request, url: "
-                         << url::LogUtils::ConvertUrlWithMask(url().spec())
-                         << ", error " << error;
+      LOG_FEEDBACK(INFO, kNetwork)
+          << "URLRequestCanceled error:" << net::ErrorToDebugString(error)
+          << " url:" << url::LogUtils::ConvertUrlWithMask(url().spec());
 #endif
     }
   }

@@ -741,6 +741,9 @@ source_set("unittests") {
     "src/nweb_engine_impl_unittest.cc",
     "src/native_media_player/nweb_media_info_impl_unittest.cc",
     "browser/performance_manager/mechanisms/background_task_holder_unittest.cc",
+    "src/cef_delegate/nweb_extension_reading_list_cef_delegate_unittest.cc",
+    "src/cef_delegate/nweb_extension_omnibox_cef_delegate_unittest.cc",
+    "src/cef_delegate/nweb_extension_history_cef_delegate_unittest.cc",
   ]
 
   deps = [

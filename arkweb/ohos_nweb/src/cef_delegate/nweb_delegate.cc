@@ -6519,4 +6519,13 @@ void NWebDelegate::SetFocusWebId(int32_t nweb_id) {
   GetBrowser()->GetHost()->SetFocusWebId(nweb_id);
 }
 #endif
+
+void NWebDelegate::ReloadIgnoreCache() {
+  if (GetBrowser() == nullptr) {
+    LOG(ERROR) << "reloadignorecache can not get browser";
+    return;
+  }
+
+  GetBrowser()->ReloadIgnoreCache();
+}
 }  // namespace OHOS::NWeb

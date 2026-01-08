@@ -759,6 +759,7 @@ class NWebImpl : public NWeb {
   void StartDownload(const char* url);
   void ResumeDownload(std::shared_ptr<NWebDownloadItem> web_download);
   void StopFling() override;
+  void ReloadIgnoreCache() override;
   static void ResumeDownloadStatic(
       std::shared_ptr<NWebDownloadItem> download_item);
 

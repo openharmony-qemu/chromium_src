@@ -33,6 +33,13 @@
 #include "third_party/blink/renderer/core/layout/layout_view.h"
 #include "third_party/blink/renderer/core/render_mojom/render_mojom_client.h"
 #include "third_party/blink/renderer/platform/widget/widget_base.h"
+#include "third_party/blink/renderer/core/xml/document_xpath_evaluator.h"
+#include "third_party/blink/renderer/bindings/core/v8/script_value.h"
+#include "third_party/blink/renderer/core/xml/xpath_result.h"
+#include "third_party/blink/renderer/bindings/core/v8/v8_file.h"
+#include "third_party/blink/renderer/bindings/core/v8/v8_html_document.h"
+#include "third_party/blink/renderer/bindings/core/v8/v8_node.h"
+
 #if BUILDFLAG(ARKWEB_SLIDE_LTPO)
 #include "base/ohos/ltpo/include/touch_observer.h"
 #endif
@@ -96,6 +103,34 @@ void WebFrameWidgetImplExt::SetOverscrollMode(int mode) {
     return;
   }
   widget_base_->utils()->SetOverscrollMode(mode);
+}
+bool WebFrameWidgetImplExt::IsElementExist(std::string xPath)
+{
+  if (!local_root_ || !local_root_->GetFrame()) {
+    LOG(ERROR) << "WebFrameWidgetImplExt::IsElementExist local is null";
+    return false;
+  }
+  Document *document = local_root_->GetFrame()->GetDocument();
+  if (!document) {
+    LOG(ERROR) << "WebFrameWidgetImplExt::IsElementExist document is null";
+    return false;
+  }
+  ExecutionContext *context = document->GetExecutionContext();
+  DummyExceptionStateForTesting exception_state;
+  XPathResult *result = DocumentXPathEvaluator::evaluate(*document,
+    WTF::String::FromUTF8(xPath), document, nullptr,
+    XPathResult::kFirstOrderedNodeType, ScriptValue(), exception_state);
+  if (!result) {
+    LOG(INFO) << "WebFrameWidgetImplExt::IsElementExist XPathResult is null";
+    return false;
+  }
+  Node *node = result->singleNodeValue(exception_state);
+  if (node) {
+    LOG(INFO) << "WebFrameWidgetImplExt::IsElementExist node GET";
+    return true;
+  }
+  LOG(INFO) << "WebFrameWidgetImplExt::IsElementExist node not find";
+  return false;
 }
 #endif
 // LCOV_EXCL_STOP

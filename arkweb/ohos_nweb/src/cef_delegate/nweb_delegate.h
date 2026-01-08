@@ -883,6 +883,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   std::pair<double, double> GetLastTouchMousePosition() override {
     return last_touch_mouse_position_;
   }
+  bool IsElementExist(std::string& xPath) override;
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 #if BUILDFLAG(ARKWEB_PIP)
   void SetPipNativeWindow(int delegate_id,

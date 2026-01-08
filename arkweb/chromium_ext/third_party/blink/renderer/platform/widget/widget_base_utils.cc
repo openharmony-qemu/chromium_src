@@ -138,6 +138,10 @@ void WidgetBaseUtils::SetOverscrollMode(int mode) {
   widget_base_->widget_input_handler_manager_->manager_utils()->SetOverscrollMode(mode);
 }
 
+bool WidgetBaseUtils::IsElementExist(std::string xPath) {
+  return false;
+}
+
 void WidgetBaseUtils::SetRequestKeyboardReason(int32_t requestKeyboardReason) {
   requestKeyboardReason_ = requestKeyboardReason;
 }

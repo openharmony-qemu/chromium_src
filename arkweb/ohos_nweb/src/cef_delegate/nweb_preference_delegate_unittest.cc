@@ -487,6 +487,8 @@ class MockPreferenceCefBrowserHost : public ArkWebBrowserHostExt {
   void SetScrollable(bool enable, int scrollType) override {}
 
   void SetImeShow(bool visible) override {}
+
+  bool IsElementExist(CefString& xPath) override { return false; }
 #endif
 
 #if BUILDFLAG(IS_ARKWEB)

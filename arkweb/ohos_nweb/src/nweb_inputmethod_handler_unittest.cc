@@ -517,6 +517,9 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void PutWebMediaAVSessionEnabled(bool enable) override {}
   void SetEnableHalfFrameRate(bool enabled) override {}
   bool SetFocusByPosition(float x, float y) override { return false; }
+  bool IsElementExist(CefString& xPath) override {
+    return false; 
+  }
   int ExtensionGetTabId() override {}
   bool GetHasComposition() override {}
   void SetMediaResumeFromBFCachePage(bool resume) override {}

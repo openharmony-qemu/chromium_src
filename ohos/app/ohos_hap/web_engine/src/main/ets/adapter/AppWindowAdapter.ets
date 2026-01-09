@@ -20,7 +20,7 @@ import { ContextAdapter } from './ContextAdapter';
 import { DeviceInfoAdapter } from "../adapter/DeviceInfoAdapter";
 import { NativeThemeAdapter } from './NativeThemeAdapter';
 import { NodeHandleManager } from '../common/NodeHandleManager';
-import { kTitleBarHeight } from '../common/Constants';
+import { kTitleBarHeightVP } from '../common/Constants';
 import CheckEmptyUtils from '../utils/CheckEmptyUtils';
 
 const TAG: string = 'AppWindow';
@@ -104,7 +104,7 @@ export class AppWindowAdapter extends BaseAdapter {
       !param.hide_title_bar) {
       // Keep the bounds saved in Chromium consistent with the bounds in windowRectChange,
       // otherwise the window will shift downwards the next time it is created.
-      xComTop = uiContext ? uiContext.vp2px(kTitleBarHeight.kDefault) : xComTop;
+      xComTop = uiContext ? uiContext.vp2px(kTitleBarHeightVP.kDefault) : xComTop;
     }
 
     let options: StartOptions = {

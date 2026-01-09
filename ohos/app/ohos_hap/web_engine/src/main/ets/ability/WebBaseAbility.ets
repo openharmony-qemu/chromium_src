@@ -53,8 +53,8 @@ export class WebBaseAbility extends UIAbility implements WebProxy {
       if (want.parameters["webappWindow"] !== undefined && want.parameters["webappWindow"] !== '') {
         this.appId = "--app-id=" + want.parameters['webappWindow'] as string;
       }
-      if (want.parameters["status"] !== undefined) {
-        this.initStatus = want.parameters['status'] as WindowStatus;
+      if (want.parameters["initStatus"] !== undefined) {
+        this.initStatus = want.parameters['initStatus'] as WindowStatus;
       }
     }
 

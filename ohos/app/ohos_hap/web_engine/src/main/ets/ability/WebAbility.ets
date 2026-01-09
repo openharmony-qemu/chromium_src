@@ -201,11 +201,15 @@ export class WebAbility extends WebBaseAbility {
                       exception: ${JSON.stringify(exception)}`);
       }
 
-      if (this.initStatus === WindowStatus.MAXIMIZE) {
+      if (this.initStatus === WindowStatus.MAXIMIZE &&
+        data.getWindowStatus() !== window.WindowStatusType.MAXIMIZE) {
         data.maximize(window.MaximizePresentation.EXIT_IMMERSIVE).then(() => {
-          LogUtil.info(TAG, 'Window starts in maximized state.');
+          LogUtil.warn(TAG,
+            `[ohoswindow] Window starts maximized.`);
         }).catch((err: BusinessError) => {
-          LogUtil.error(TAG, 'Window fails to start in maximized state. Cause:' + JSON.stringify(err));
+          LogUtil.error(TAG,
+            `[ohoswindow] Window fails to start from {${data.getWindowStatus()}} to maximized. Cause:` +
+            JSON.stringify(err));
         });
       }
     });

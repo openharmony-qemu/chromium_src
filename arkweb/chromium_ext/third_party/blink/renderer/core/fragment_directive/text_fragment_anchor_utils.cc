@@ -36,14 +36,14 @@ TextFragmentAnchorUtils::TextFragmentAnchorUtils(
       weak_ptr_factory_(this) {}
 
 void TextFragmentAnchorUtils::StartHighlightFadeTimer() {
-  if (!(frame_ && frame_->GetDocument() &&
-        frame_->GetDocument()->GetSettings() &&
-        frame_->GetDocument()->GetSettings()->GetArkwebAgentEnabled())) {
+  if (!(frame_ &&
+        frame_->GetSettings() &&
+        frame_->GetSettings()->GetArkwebAgentEnabled())) {
     LOG(ERROR) << "Start highlight fade timer failed, agent not enabled.";
     return;
   }
 
-  if (frame_->GetDocument()->GetSettings()->GetAgentNeedHighlight()) {
+  if (frame_->GetSettings()->GetAgentNeedHighlight()) {
     frame_->StartHighlightFadeTimer(HighlightFadeDelay());
   } else {
     frame_->StartHighlightFadeTimer(base::Milliseconds(0));

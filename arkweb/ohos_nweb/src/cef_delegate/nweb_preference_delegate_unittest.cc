@@ -2074,3 +2074,13 @@ TEST(NWebPreferenceDelegateTest, PutZoomControlAccess) {
     preference_delegate->PutZoomControlAccess(false);
     EXPECT_FALSE(preference_delegate->IsZoomControlAccess());
 }
+
+TEST(NWebPreferenceDelegateTest, SetAgentNeedHighlight_BrowserNull) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    CefRefPtr<CefBrowser> browser = nullptr;
+    preference_delegate->SetBrowser(browser);
+    preference_delegate->PutAgentNeedHighlight(true);
+    EXPECT_TRUE(preference_delegate->GetAgentNeedHighlight());
+    preference_delegate->PutAgentNeedHighlight(false);
+    EXPECT_FALSE(preference_delegate->GetAgentNeedHighlight());
+}

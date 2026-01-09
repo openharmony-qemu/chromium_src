@@ -733,4 +733,14 @@ TEST_F(LocalFrameUtilTest, LocalFrameUtilTest_021) {
   local_frame_->SetVideoPriority(videoVec);
 }
 #endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
+#if BUILDFLAG(ARKWEB_AI)
+TEST_F(LocalFrameUtilTest, StartHighlightFadeTimer_001) {
+  local_frame_->GetSettings()->SetArkwebAgentEnabled(false);
+  local_frame_->StartHighlightFadeTimer(base::Milliseconds(1000));
+  local_frame_->GetSettings()->SetArkwebAgentEnabled(true);
+  local_frame_->StartHighlightFadeTimer(base::Milliseconds(1000));
+  local_frame_->StartHighlightFadeTimer(base::Milliseconds(0));
+}
+#endif
 }  // namespace blink

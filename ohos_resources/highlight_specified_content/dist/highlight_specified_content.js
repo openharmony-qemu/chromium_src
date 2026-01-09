@@ -30,71 +30,138 @@
     };
 
     window.AgentHighlightUtils = {
+        __regex: /\p{C}/ug,
+
+        GetTargetText(targetText) {
+            let start = targetText;
+            let end = '';
+            if (targetText.match(this.__regex)) {
+                start = '';
+                const segmenter = new Intl.Segmenter('en', { granularity: 'word' });
+                const iteratorTarget = segmenter.segment(targetText)[Symbol.iterator]();
+                let targetSegments = [];
+                let value = iteratorTarget.next().value;
+                while (value &&
+                    !value.segment.match(this.__regex) &&
+                    start.length <= HIGHLIGHT_CONTENT_CONFIG.maxFixLength) {
+                    start += value.segment;
+                    value = iteratorTarget.next().value;
+                }
+                while (value) {
+                    targetSegments.push(value.segment);
+                    value = iteratorTarget.next().value;
+                }
+
+                let lastSegment = targetSegments.pop();
+                while (lastSegment &&
+                    !lastSegment.match(this.__regex) &&
+                    end.length + lastSegment.length <= HIGHLIGHT_CONTENT_CONFIG.maxFixLength &&
+                    targetSegments.length) {
+                    end = lastSegment + end;
+                    lastSegment = targetSegments.pop();
+                }
+                end = (end.length ? ',' : '') + end;
+            }
+
+            if (targetText.length > HIGHLIGHT_CONTENT_CONFIG.maxContentLength) {
+                start = targetText.substring(0, HIGHLIGHT_CONTENT_CONFIG.maxFixLength);
+                end = `,${targetText.substring(targetText.length - HIGHLIGHT_CONTENT_CONFIG.maxFixLength,
+                    targetText.length)}`;
+            }
+            return [start, end];
+        },
+
+        GetPrefix(searchPrefix) {
+            if (searchPrefix) {
+                let prefix = '';
+                const segmenter = new Intl.Segmenter('en', { granularity: 'word' });
+                const iteratorPrefix = segmenter.segment(searchPrefix)[Symbol.iterator]();
+                let prefixSegments = [];
+                let value = iteratorPrefix.next().value;
+                while (value) {
+                    if (value.segment.match(this.__regex)) {
+                        break;
+                    }
+                    prefixSegments.push(value.segment);
+                    value = iteratorPrefix.next().value;
+                }
+
+                let firstSegment = prefixSegments.pop();
+                while (firstSegment &&
+                    prefix.length + firstSegment.length <= HIGHLIGHT_CONTENT_CONFIG.maxFixLength &&
+                    prefixSegments.length) {
+                    prefix = firstSegment + prefix;
+                    firstSegment = prefixSegments.pop();
+                }
+                prefix += prefix.length ? '-,' : '';
+                return prefix;
+            }
+            return '';
+        },
+
+        GetSuffix(searchSuffix) {
+            if (searchSuffix) {
+                let suffix = '';
+                const segmenter = new Intl.Segmenter('en', { granularity: 'word' });
+                const iteratorSuffix = segmenter.segment(searchSuffix)[Symbol.iterator]();
+                let suffixSegments = [];
+                let value = iteratorSuffix.next().value;
+                while (value) {
+                    if (value.segment.match(this.__regex)) {
+                        break;
+                    }
+                    suffixSegments.push(value.segment);
+                    value = iteratorSuffix.next().value;
+                }
+
+                let i = 1;
+                let lastSegment = suffixSegments[0];
+                while (lastSegment &&
+                    suffix.length + lastSegment.length <= HIGHLIGHT_CONTENT_CONFIG.maxFixLength &&
+                    i < suffixSegments.length) {
+                    suffix += lastSegment;
+                    lastSegment = suffixSegments[i];
+                    i++;
+                }
+                suffix = (suffix.length ? ',-' : '') + suffix;
+                return suffix;
+            }
+            return '';
+        },
+
         ParseHashFromText(preText, nodeText, nextText, targetText) {
             let prefix = '';
             let suffix = '';
-            let start = targetText;
+            let start = '';
             let end = '';
 
+            if (!targetText) {
+                return '';
+            }
             let targetPos = nodeText.indexOf(targetText);
             if (targetPos !== -1) {
                 let searchPrefix = '';
                 if (targetPos > 0) {
-                    searchPrefix = nodeText.substring(Math.max(0, targetPos - HIGHLIGHT_CONTENT_CONFIG.fixBufferLength), targetPos).trim();
+                    searchPrefix = nodeText.substring(Math.max(0,
+                        targetPos - HIGHLIGHT_CONTENT_CONFIG.fixBufferLength), targetPos).trim();
                 } else {
-                    searchPrefix = preText?.substring(Math.max(0, preText.length - HIGHLIGHT_CONTENT_CONFIG.fixBufferLength)).trim();
+                    searchPrefix = preText?.substring(Math.max(0,
+                        preText.length - HIGHLIGHT_CONTENT_CONFIG.fixBufferLength)).trim();
                 }
-
-                if (searchPrefix) {
-                    const segmenter = new Intl.Segmenter('en', { granularity: 'word' });
-                    const iteratorPrefix = segmenter.segment(searchPrefix)[Symbol.iterator]();
-                    let prefixSegments = [];
-                    let value = iteratorPrefix.next().value;
-                    while (value) {
-                        prefixSegments.push(value);
-                        value = iteratorPrefix.next().value;
-                    }
-
-                    let firstSegment = prefixSegments.pop().segment;
-                    while (prefix.length + firstSegment.length <= HIGHLIGHT_CONTENT_CONFIG.maxFixLength && prefixSegments.length) {
-                        prefix = firstSegment + prefix;
-                        firstSegment = prefixSegments.pop().segment;
-                    }
-                    prefix += prefix.length ? '-,' : '';
-                }
+                prefix = this.GetPrefix(searchPrefix);
 
                 let searchSuffix = '';
                 if (targetPos + targetText.length < nodeText.length) {
                     searchSuffix = nodeText.substring(targetPos + targetText.length,
-                        Math.min(nodeText.length, targetPos + targetText.length + HIGHLIGHT_CONTENT_CONFIG.fixBufferLength)).trim();
+                        Math.min(nodeText.length,
+                            targetPos + targetText.length + HIGHLIGHT_CONTENT_CONFIG.fixBufferLength)).trim();
                 } else {
-                    searchSuffix = nextText?.substring(0, Math.min(nextText.length, HIGHLIGHT_CONTENT_CONFIG.fixBufferLength)).trim();
+                    searchSuffix = nextText?.substring(0,
+                        Math.min(nextText.length, HIGHLIGHT_CONTENT_CONFIG.fixBufferLength)).trim();
                 }
-
-                if (searchSuffix) {
-                    const segmenter = new Intl.Segmenter('en', { granularity: 'word' });
-                    const iteratorSuffix = segmenter.segment(searchSuffix)[Symbol.iterator]();
-                    let suffixSegments = [];
-                    let value = iteratorSuffix.next().value;
-                    while (value) {
-                        suffixSegments.push(value);
-                        value = iteratorSuffix.next().value;
-                    }
-
-                    let i = 1;
-                    let lastSegment = suffixSegments[0].segment;
-                    while (suffix.length + lastSegment.length <= HIGHLIGHT_CONTENT_CONFIG.maxFixLength && i < suffixSegments.length) {
-                        suffix += lastSegment;
-                        lastSegment = suffixSegments[i].segment;
-                        i++;
-                    }
-                    suffix = (suffix.length ? ',-' : '') + suffix;
-                }
+                suffix = this.GetSuffix(searchSuffix);
             }
-            if (targetText.length > HIGHLIGHT_CONTENT_CONFIG.maxContentLength) {
-                start = targetText.substring(0, HIGHLIGHT_CONTENT_CONFIG.maxFixLength);
-                end = `,${targetText.substring(targetText.length - HIGHLIGHT_CONTENT_CONFIG.maxFixLength, targetText.length)}`;
-            }
+            [start, end] = this.GetTargetText(targetText);
 
             const result = prefix + start + end + suffix;
             return encodeURI(result);
@@ -121,8 +188,9 @@
                     errorMessage.push(error.message);
                     continue;
                 }
-                let hashText = `text=${this.ParseHashFromText(preText, nodeText, nextText, content)}`;
-                urlString += (urlString.length ? '&' : ':~:') + hashText;
+                let hashText = this.ParseHashFromText(preText, nodeText, nextText, content);
+                hashText = (hashText.length ? 'text=' : '') + hashText;
+                urlString += hashText.length ? (urlString.length ? '&' : ':~:') + hashText : '';
                 errorMessage.push('noErr');
             }
             location.hash = urlString;

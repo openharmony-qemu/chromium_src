@@ -27,6 +27,15 @@ class NWebHighlightSpecifiedContent {
   void SetHighlightSpecifiedContentEnable(bool enable);
 
  private:
+  FRIEND_TEST_ALL_PREFIXES(NWebHighlightSpecifiedContentTest, SetHighlightSpecifiedContentEnable_NoDelegate);
+  FRIEND_TEST_ALL_PREFIXES(NWebHighlightSpecifiedContentTest, SetHighlightSpecifiedContentEnable_001);
+  FRIEND_TEST_ALL_PREFIXES(NWebHighlightSpecifiedContentTest, SetHighlightSpecifiedContentEnable_002);
+  FRIEND_TEST_ALL_PREFIXES(NWebHighlightSpecifiedContentTest, RegisterHighlight_NoDelegate);
+  FRIEND_TEST_ALL_PREFIXES(NWebHighlightSpecifiedContentTest, RegisterHighlight_001);
+  FRIEND_TEST_ALL_PREFIXES(NWebHighlightSpecifiedContentTest, RegisterHighlight_002);
+  FRIEND_TEST_ALL_PREFIXES(NWebHighlightSpecifiedContentTest, RemoveHighlightFunctions_NoDelegate);
+  FRIEND_TEST_ALL_PREFIXES(NWebHighlightSpecifiedContentTest, RemoveHighlightFunctions_001);
+  FRIEND_TEST_ALL_PREFIXES(NWebHighlightSpecifiedContentTest, RemoveHighlightFunctions_002);
   void RegisterHighlight();
   void RemoveHighlightFunctions();
 

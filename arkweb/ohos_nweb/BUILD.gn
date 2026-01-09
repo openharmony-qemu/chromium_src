@@ -703,6 +703,7 @@ source_set("unittests") {
     "src/cef_delegate/nweb_event_handler_unittest.cc",
     "src/cef_delegate/nweb_find_delegate_unittest.cc",
     "src/cef_delegate/nweb_handler_delegate_unittest.cc",
+    "src/cef_delegate/nweb_highlight_specified_content_unittest.cc",
     "src/cef_delegate/nweb_pipe_resource_handler_unittest.cc",
     "src/cef_delegate/nweb_preference_delegate_unittest.cc",
     "src/cef_delegate/nweb_web_storage_delegate_unittest.cc",

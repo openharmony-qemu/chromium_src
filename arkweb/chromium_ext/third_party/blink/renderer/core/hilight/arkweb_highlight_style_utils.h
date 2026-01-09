@@ -36,10 +36,6 @@ class CORE_EXPORT ArkWebHighlightStyleUtils {
 #endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
 
 #if BUILDFLAG(ARKWEB_AI)
-  static bool ShouldUseAIColors(PseudoId pseudo,
-                                const CSSProperty& property,
-                                const Document& document);
-
   static Color GetTargetTextForegroundColor(
       const Document& document,
       mojom::blink::ColorScheme color_scheme);

@@ -166,6 +166,9 @@ bool PlatformSensorOhos::SubscribeParameterInit(
 
 bool PlatformSensorOhos::StartSensor(
     const PlatformSensorConfiguration& configuration) {
+  //StartSensor need to be idempotent.
+  StopSensor();
+
   if (!SubscribeParameterInit(configuration)) {
     StopSensor();
     return false;

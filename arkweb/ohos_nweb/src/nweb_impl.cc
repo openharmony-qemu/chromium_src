@@ -264,6 +264,7 @@ extern bool g_siteIsolationMode;
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
 #include "content/browser/gpu/gpu_process_host.h"
 #include "services/viz/privileged/mojom/gl/gpu_service.mojom.h"
+#include "arkweb/chromium_ext/base/debug/arkweb_dump_info.h"
 #endif
 
 #include "net/proxy_resolution/proxy_config_service_ohos.h"

@@ -33,6 +33,9 @@
 #include "base/task/thread_pool/thread_pool_instance.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+#include "arkweb/chromium_ext/base/debug/arkweb_dump_info.h"
+#endif
 namespace OHOS::NWeb {
 
 namespace {

@@ -37,7 +37,7 @@ void NwebFallbackProxy::PutProxyClientCallback(
 }
  
 // static
-void NwebFallbackProxy::OnUpdateProxyToken(const std::string& old_token) {
+void NwebFallbackProxy::OnUpdateProxyToken(std::string old_token) {
   LOG(DEBUG) << "NwebFallbackProxy::onUpdateProxyToken";
   if (!GetProxyClientCallback() || !GetProxyClientCallback()->onUpdateProxyToken) {
     LOG(ERROR) << "GetProxyClientCallback is null";

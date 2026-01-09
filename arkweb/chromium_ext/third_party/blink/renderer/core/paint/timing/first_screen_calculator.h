@@ -36,10 +36,10 @@ class FirstScreenCalculator : public GarbageCollected<FirstScreenCalculator> {
                         const ImageRecord* record,
                         std::optional<uint64_t> viewport_size,
                         bool is_video);
-  void NotifyTextPaint(const TextRecord* record, base::TimeTicks timestamp);
+  void NotifyTextPaint(const TextRecord* record, const base::TimeTicks& timestamp);
   void AssignImagePaintTime(MediaRecordIdHash record_id_hash,
                             const gfx::Rect& rect,
-                            base::TimeTicks timestamp);
+                            const base::TimeTicks& timestamp);
   bool RemoveImageRecord(MediaRecordIdHash record_id_hash);
   void Trace(Visitor* visitor) const;
   void OnUserScroll();
@@ -50,7 +50,7 @@ class FirstScreenCalculator : public GarbageCollected<FirstScreenCalculator> {
  private:
   struct PaintRectInfo {
     PaintRectInfo() {}
-    PaintRectInfo(const gfx::Rect rect, base::TimeTicks timestamp)
+    PaintRectInfo(const gfx::Rect rect, const base::TimeTicks& timestamp)
         : rect_(rect), paint_time_(timestamp) {}
     gfx::Rect rect_;
     base::TimeTicks paint_time_ = base::TimeTicks();
@@ -64,6 +64,7 @@ class FirstScreenCalculator : public GarbageCollected<FirstScreenCalculator> {
   bool DoesRectIntersectExistingRects(const gfx::Rect& rect);
   void RemoveExistingRectsContainedByRect(const gfx::Rect& rect);
   bool IsRectTooSmallWhenNearlyFinished(const gfx::Rect& rect);
+  bool GetViewportAreaAndTrimRect(gfx::Rect& rect);
 
   std::unordered_map<MediaRecordIdHash, PaintRectInfo> image_rects_map_;
   std::vector<MediaRecordIdHash> intersected_image_ids_;
@@ -74,7 +75,7 @@ class FirstScreenCalculator : public GarbageCollected<FirstScreenCalculator> {
   Member<LocalFrameView> frame_view_;
   bool user_scrolled_ = false;
   MediaRecordIdHash background_image_id_ = 0;
-  uint64_t viewport_size_ = 0;
+  gfx::Rect viewport_rect_{gfx::Rect()};
   gfx::Rect occupied_rect_{gfx::Rect()};
   bool nearly_finished_ = false;
 };

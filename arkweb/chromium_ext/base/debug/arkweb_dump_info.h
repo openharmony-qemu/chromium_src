@@ -42,7 +42,7 @@ public:
   void DumpArkWebNWebInfo(std::string& result);
   std::string GetCurrentTimeInfo() const;
   std::string GetProcessAndThreadIdInfo() const;
-  void WriteArkWebDumpInfo(const std::string& info);
+  void WriteArkWebDumpInfo(const std::string& info, DumpInfoType type);
   void FormatAndWriteNWebDumpInfo(const std::string& nwebInfo);
 
 private:

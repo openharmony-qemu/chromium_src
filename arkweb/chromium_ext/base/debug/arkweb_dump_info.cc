@@ -48,7 +48,7 @@ void ArkWebDumpInfo::ParseCmdParamAndDump(const std::string& param, std::string&
   } else if (param == "--NWeb") {
     DumpArkWebNWebInfo(result);
   } else {
-    result.append("Paramter not supported. More features are under development.");
+    result.append("Parameter not supported. More features are under development.");
   }
 }
 

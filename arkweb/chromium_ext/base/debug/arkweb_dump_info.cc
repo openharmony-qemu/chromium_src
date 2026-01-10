@@ -63,7 +63,7 @@ void ArkWebDumpInfo::DumpArkWebNWebInfo(std::string& result) {
   }
 }
 
-void ArkWebDumpInfo::WriteArkWebDumpInfo(std::string& info, DumpInfoType type) {
+void ArkWebDumpInfo::WriteArkWebDumpInfo(const std::string& info, DumpInfoType type) {
   std::shared_lock<std::shared_mutex> lockGuard(dumpMutex_);
   std::string key;
   switch(type) {
@@ -97,7 +97,7 @@ std::string ArkWebDumpInfo::GetProcessAndThreadIdInfo() const {
   return base::StringPrintf("[P%d-T%d]", pid, tid);
 }
 
-void ArkWebDumpInfo::FormatAndWriteNWebDumpInfo(std::string& nwebInfo) {
+void ArkWebDumpInfo::FormatAndWriteNWebDumpInfo(const std::string& nwebInfo) {
   if (!dump_enable_) {
     return;
   }

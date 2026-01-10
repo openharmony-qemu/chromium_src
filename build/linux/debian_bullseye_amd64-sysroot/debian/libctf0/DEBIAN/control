@@ -1,0 +1,14 @@
+Package: libctf0
+Source: binutils
+Version: 2.35.2-2
+Architecture: amd64
+Maintainer: Matthias Klose <doko@debian.org>
+Installed-Size: 141
+Depends: libbinutils (= 2.35.2-2), libc6 (>= 2.14), zlib1g (>= 1:1.2.0)
+Section: devel
+Priority: optional
+Multi-Arch: same
+Homepage: https://www.gnu.org/software/binutils/
+Description: Compact C Type Format library (runtime, BFD dependency)
+ This package includes the libctf-nobfd shared library.  The Compact C Type
+ Format (CTF) is a way of representing information about a binary program

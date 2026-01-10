@@ -1,0 +1,18 @@
+Package: libc-dev-bin
+Source: glibc
+Version: 2.31-13+deb11u5
+Architecture: amd64
+Maintainer: GNU Libc Maintainers <debian-glibc@lists.debian.org>
+Installed-Size: 377
+Depends: libc6 (>> 2.31), libc6 (<< 2.32)
+Recommends: manpages, manpages-dev, libc-devtools (>> 2.31)
+Section: libdevel
+Priority: optional
+Multi-Arch: foreign
+Homepage: https://www.gnu.org/software/libc/libc.html
+Description: GNU C Library: Development binaries
+ This package contains utility programs related to the GNU C Library
+ development package.
+ .
+  * gencat: generate message catalogs
+  * rpcgen: compile RPC protocols to C

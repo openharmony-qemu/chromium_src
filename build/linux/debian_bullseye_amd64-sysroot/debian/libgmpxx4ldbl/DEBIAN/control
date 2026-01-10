@@ -1,0 +1,17 @@
+Package: libgmpxx4ldbl
+Source: gmp
+Version: 2:6.2.1+dfsg-1+deb11u1
+Architecture: amd64
+Maintainer: Debian Science Team <debian-science-maintainers@lists.alioth.debian.org>
+Installed-Size: 367
+Depends: libc6 (>= 2.4), libgcc-s1 (>= 3.0), libgmp10, libstdc++6 (>= 5.2)
+Conflicts: libgmp3, libgmpxx4
+Replaces: libgmp3
+Section: libs
+Priority: optional
+Multi-Arch: same
+Homepage: http://gmplib.org/
+Description: Multiprecision arithmetic library (C++ bindings)
+ GNU MP is a programmer's library for arbitrary precision
+ arithmetic (ie, a bignum package).  It can operate on signed
+ integer, rational, and floating point numeric types.

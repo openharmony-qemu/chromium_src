@@ -1,0 +1,14 @@
+Package: python3-markupsafe
+Source: markupsafe
+Version: 2.0.1-2~bpo11+1
+Architecture: amd64
+Maintainer: Piotr Ożarowski <piotr@debian.org>
+Installed-Size: 51
+Depends: python3 (<< 3.10), python3 (>= 3.9~), python3:any, libc6 (>= 2.14)
+Section: python
+Priority: optional
+Homepage: https://palletsprojects.com/p/markupsafe/
+Description: HTML/XHTML/XML string library
+ MarkupSafe is a Python library implementing a unicode subclass that is
+ aware of HTML escaping rules. It can be used to implement automatic
+ string escaping.

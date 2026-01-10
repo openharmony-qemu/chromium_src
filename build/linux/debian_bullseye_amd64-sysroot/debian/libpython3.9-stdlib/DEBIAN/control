@@ -1,0 +1,18 @@
+Package: libpython3.9-stdlib
+Source: python3.9
+Version: 3.9.2-1
+Architecture: amd64
+Maintainer: Matthias Klose <doko@debian.org>
+Installed-Size: 7894
+Depends: libpython3.9-minimal (= 3.9.2-1), media-types | mime-support, tzdata, libbz2-1.0, libc6 (>= 2.28), libcrypt1 (>= 1:4.1.0), libdb5.3, libffi7 (>= 3.3~20180313), liblzma5 (>= 5.1.1alpha+20120614), libmpdec3, libncursesw6 (>= 6), libnsl2 (>= 1.0), libreadline8 (>= 7.0~beta), libsqlite3-0 (>= 3.7.15), libtinfo6 (>= 6), libtirpc3 (>= 1.0.2), libuuid1 (>= 2.20.1)
+Recommends: ca-certificates
+Section: python
+Priority: optional
+Multi-Arch: same
+Description: Interactive high-level object-oriented language (standard library, version 3.9)
+ Python is a high-level, interactive, object-oriented language. Its 3.9 version
+ includes an extensive class library with lots of goodies for
+ network programming, system administration, sounds and graphics.
+ .
+ This package contains Python 3.9's standard library. It is normally not
+ used on its own, but as a dependency of python3.9.

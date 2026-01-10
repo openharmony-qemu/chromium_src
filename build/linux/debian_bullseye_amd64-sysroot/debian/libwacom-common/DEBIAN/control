@@ -1,0 +1,16 @@
+Package: libwacom-common
+Source: libwacom
+Version: 1.8-2
+Architecture: all
+Maintainer: Timo Aaltonen <tjaalton@debian.org>
+Installed-Size: 745
+Replaces: libwacom0 (<= 0.2-1)
+Section: libs
+Priority: optional
+Multi-Arch: foreign
+Description: Wacom model feature query library (common files)
+ libwacom is a library to identify wacom tablets and their model-specific
+ features. It provides easy access to information such as "is this a built-in
+ on-screen tablet", "what is the size of this model", etc.
+ .
+ This package contains common data files for libwacom.

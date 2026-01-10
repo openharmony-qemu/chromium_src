@@ -1,0 +1,16 @@
+Package: sensible-utils
+Version: 0.0.14
+Architecture: all
+Maintainer: Anibal Monsalve Salazar <anibal@debian.org>
+Installed-Size: 44
+Replaces: debianutils (<= 2.32.3), manpages-pl (<= 20060617-3~)
+Section: utils
+Priority: required
+Multi-Arch: foreign
+Description: Utilities for sensible alternative selection
+ This package provides a number of small utilities which are used
+ by programs to sensibly select and spawn an appropriate browser,
+ editor, or pager.
+ .
+ The specific utilities included are: sensible-browser sensible-editor
+ sensible-pager

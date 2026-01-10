@@ -33,6 +33,11 @@ bool ArkWebDumpInfo::IsDumpEnabled() const {
 }
 
 void ArkWebDumpInfo::ParseCmdParamAndDump(const std::string& param, std::string& result) {
+  if (!dump_enable_) {
+    result.append("web.debug.dump.on = false");
+    return;
+  }
+
   if (param.empty()) {
     DumpArkWebAllInfo(result);
     return;

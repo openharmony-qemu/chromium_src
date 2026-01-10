@@ -63,23 +63,6 @@ void ArkWebDumpInfo::DumpArkWebNWebInfo(std::string& result) {
   }
 }
 
-void ArkWebDumpInfo::WriteArkWebDumpInfo(const std::string& info, DumpInfoType type) {
-  std::shared_lock<std::shared_mutex> lockGuard(dumpMutex_);
-  std::string key;
-  switch(type) {
-    case DUMP_NWEB_INFO:
-      key = "key";
-      break;
-    default:
-      return;
-  }
-
-  if (buffer_.size() >= max_capacity_) {
-    buffer_.pop_front();
-  }
-  buffer_.push_back(std::make_pair(key, info));
-}
-
 std::string ArkWebDumpInfo::GetCurrentTimeInfo() const {
   // ICU is not initialized, so a time zone offset of 8 hours needs to be manually added.
   base::Time now = base::Time::Now() + base::Hours(8);
@@ -95,6 +78,23 @@ std::string ArkWebDumpInfo::GetProcessAndThreadIdInfo() const {
   base::ProcessId pid = base::GetCurrentProcId();
   int tid = base::PlatformThread::CurrentId();
   return base::StringPrintf("[P%d-T%d]", pid, tid);
+}
+
+void ArkWebDumpInfo::WriteArkWebDumpInfo(const std::string& info, DumpInfoType type) {
+  std::shared_lock<std::shared_mutex> lockGuard(dumpMutex_);
+  std::string key;
+  switch(type) {
+    case DUMP_NWEB_INFO:
+      key = "key";
+      break;
+    default:
+      return;
+  }
+
+  if (buffer_.size() >= max_capacity_) {
+    buffer_.pop_front();
+  }
+  buffer_.push_back(std::make_pair(key, info));
 }
 
 void ArkWebDumpInfo::FormatAndWriteNWebDumpInfo(const std::string& nwebInfo) {

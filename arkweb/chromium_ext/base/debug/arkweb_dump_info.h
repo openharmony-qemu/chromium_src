@@ -42,8 +42,8 @@ public:
   void DumpArkWebNWebInfo(std::string& result);
   std::string GetCurrentTimeInfo() const;
   std::string GetProcessAndThreadIdInfo() const;
-  void WriteArkWebDumpInfo(std::string& info);
-  void FormatAndWriteNWebDumpInfo(std::string& nwebInfo);
+  void WriteArkWebDumpInfo(const std::string& info);
+  void FormatAndWriteNWebDumpInfo(const std::string& nwebInfo);
 
 private:
   ArkWebDumpInfo();

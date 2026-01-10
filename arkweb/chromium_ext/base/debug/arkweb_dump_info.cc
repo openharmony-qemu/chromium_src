@@ -23,33 +23,61 @@
 
 namespace base::debug {
 ArkWebDumpInfo::ArkWebDumpInfo() {
-  totalSize_ = 0;
   dump_enable_ = OHOS::NWeb::OhosAdapterHelper::GetInstance()
                   .GetSystemPropertiesInstance()
                   .GetBoolParameter("web.debug.dump.on", true);
-  InitializeDumpMap();
-}
-
-void ArkWebDumpInfo::InitializeDumpMap() {
-  dump_map_["NWeb"] = "";  // Initialize "NWeb" key
 }
 
 bool ArkWebDumpInfo::IsDumpEnabled() const {
   return dump_enable_;
 }
 
-void ArkWebDumpInfo::WriteNWebDumpInfo(std::string& info) {
-  std::shared_lock<std::shared_mutex> lockGuard(dumpMutex_);
-  std::string& nwebValue = dump_map_["NWeb"];
-  uint64_t infoSize = 0;
-  if (nwebValue.empty()) {
-    nwebValue += "NWEB:\n";
-    infoSize += nwebValue.size();
+void ArkWebDumpInfo::ParseCmdParamAndDump(const std::string& param, std::string& result) {
+  if (param.empty()) {
+    DumpArkWebAllInfo(result);
+    return;
   }
 
-  infoSize += info.size();
-  nwebValue += info;
-  totalSize_ += infoSize;
+  if (param == "--all") {
+    DumpArkWebAllInfo(result);
+  } else if (param == "--NWeb") {
+    DumpArkWebNWebInfo(result);
+  } else {
+    result.append("Paramter not supported. More features are under development.");
+  }
+}
+
+void ArkWebDumpInfo::DumpArkWebAllInfo(std::string& result) {
+  std::shared_lock<std::shared_mutex> lockGuard(dumpMutex_);
+  for (const auto& [key, value] : buffer_) {
+    result.append(key).append(":").append(value);
+  }
+}
+
+void ArkWebDumpInfo::DumpArkWebNWebInfo(std::string& result) {
+  std::shared_lock<std::shared_mutex> lockGuard(dumpMutex_);
+  for (const auto& [key, value] : buffer_) {
+    if (key == "NWeb") {
+      result.append(value);
+    }
+  }
+}
+
+void ArkWebDumpInfo::WriteArkWebDumpInfo(std::string& info, DumpInfoType type) {
+  std::shared_lock<std::shared_mutex> lockGuard(dumpMutex_);
+  std::string key;
+  switch(type) {
+    case DUMP_NWEB_INFO:
+      key = "key";
+      break;
+    default:
+      return;
+  }
+
+  if (buffer_.size() >= max_capacity_) {
+    buffer_.pop_front();
+  }
+  buffer_.push_back(std::make_pair(key, info));
 }
 
 std::string ArkWebDumpInfo::GetCurrentTimeInfo() const {
@@ -79,21 +107,6 @@ void ArkWebDumpInfo::FormatAndWriteNWebDumpInfo(std::string& nwebInfo) {
 
   std::string formatStr = base::StringPrintf("[%s] %s %s\n",
                                             timeInfo.c_str(), processThreadInfo.c_str(), nwebInfo.c_str());
-  WriteNWebDumpInfo(formatStr);
-}
-
-void ArkWebDumpInfo::DumpArkWebInfo(std::string& result) {
-  std::shared_lock<std::shared_mutex> lockGuard(dumpMutex_);
-  for (auto it : dump_map_) {
-    result += it.second;
-  }
-
-  result += "get chromium result success!\n";
-  return;
-}
-
-uint64_t ArkWebDumpInfo::GetDumpInfoSize() {
-  std::shared_lock<std::shared_mutex> lockGuard(dumpMutex_);
-  return totalSize_;
+  WriteNWebDumpInfo(formatStr, DUMP_NWEB_INFO);
 }
 } //namespace base::debug

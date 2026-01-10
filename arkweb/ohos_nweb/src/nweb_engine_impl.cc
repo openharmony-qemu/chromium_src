@@ -380,12 +380,8 @@ std::string NWebEngineImpl::DumpArkWebInfo(const std::string& param) {
     return "web.debug.dump.on = false";
   }
 
-  std::string result = "";
-  if (param == "") {
-    arkwebDumpInfo.DumpArkWebInfo(result);
-  } else {
-    result += "Parameter not supported. More features are under development.";
-  }
+  std::string result;
+  arkwebDumpInfo.ParseCmdParamAndDump(param, result);
   return result;
 }
 #endif

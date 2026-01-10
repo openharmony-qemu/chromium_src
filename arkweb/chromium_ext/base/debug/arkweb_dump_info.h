@@ -21,8 +21,14 @@
 #include <shared_mutex>
 #include <unordered_map>
 #include "base/no_destructor.h"
+#include "base/containers/circular_deque.h"
 
 namespace base::debug {
+enum DumpInfoType {
+  DUMP_NWEB_INFO,
+  DUMP_OTHER_INFO = 1 << 31 // preserved
+};
+
 class ArkWebDumpInfo {
 public:
   static ArkWebDumpInfo& GetInstance() {
@@ -30,14 +36,14 @@ public:
     return *instance_;
   }
 
-  void InitializeDumpMap();
   bool IsDumpEnabled() const;
-  void DumpArkWebInfo(std::string& result);
+  void ParseCmdParamAndDump(const std::string& param, std::string& result);
+  void DumpArkWebAllInfo(std::string& result);
+  void DumpArkWebNWebInfo(std::string& result);
   std::string GetCurrentTimeInfo() const;
   std::string GetProcessAndThreadIdInfo() const;
-  void WriteNWebDumpInfo(std::string& info);
+  void WriteArkWebDumpInfo(std::string& info);
   void FormatAndWriteNWebDumpInfo(std::string& nwebInfo);
-  uint64_t GetDumpInfoSize();
 
 private:
   ArkWebDumpInfo();
@@ -46,11 +52,11 @@ private:
   ArkWebDumpInfo(const ArkWebDumpInfo&) = delete;
   ArkWebDumpInfo& operator=(const ArkWebDumpInfo&) = delete;
 
+  static constexpr size_t max_capacity_ = 5000;
   friend class base::NoDestructor<ArkWebDumpInfo>;
   bool dump_enable_;
-  uint64_t totalSize_;
   std::shared_mutex dumpMutex_;
-  std::unordered_map<std::string, std::string> dump_map_;
+  base::circular_deque<std::pair<std::string, std::string>> buffer_;
 };
 }
 #endif //ARKWEB_DUMP_INFO_H_

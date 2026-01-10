@@ -37,6 +37,7 @@ public:
   }
 
   bool IsDumpEnabled() const;
+  size_t GetBufferSize();
   void ParseCmdParamAndDump(const std::string& param, std::string& result);
   void DumpArkWebAllInfo(std::string& result);
   void DumpArkWebNWebInfo(std::string& result);
@@ -58,5 +59,5 @@ private:
   std::shared_mutex dumpMutex_;
   base::circular_deque<std::pair<std::string, std::string>> buffer_;
 };
-}
+} // namespace base::debug
 #endif //ARKWEB_DUMP_INFO_H_

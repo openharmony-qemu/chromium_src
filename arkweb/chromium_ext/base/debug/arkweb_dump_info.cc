@@ -32,6 +32,11 @@ bool ArkWebDumpInfo::IsDumpEnabled() const {
   return dump_enable_;
 }
 
+bool ArkWebDumpInfo::GetBufferSize() {
+  std::shared_lock<std::shared_mutex> lockGuard(dumpMutex_);
+  return buffer_.size();
+}
+
 void ArkWebDumpInfo::ParseCmdParamAndDump(const std::string& param, std::string& result) {
   if (!dump_enable_) {
     result.append("web.debug.dump.on = false");
@@ -112,6 +117,6 @@ void ArkWebDumpInfo::FormatAndWriteNWebDumpInfo(const std::string& nwebInfo) {
 
   std::string formatStr = base::StringPrintf("[%s] %s %s\n",
                                             timeInfo.c_str(), processThreadInfo.c_str(), nwebInfo.c_str());
-  WriteNWebDumpInfo(formatStr, DUMP_NWEB_INFO);
+  WriteArkWebDumpInfo(formatStr, DUMP_NWEB_INFO);
 }
-} //namespace base::debug
+} // namespace base::debug

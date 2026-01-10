@@ -12,9 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arkweb/build/features/features.h"
+if BUILDFLAG(ARKWEB_UNITTESTS)
 #define private public
 #include "base/debug/arkweb_dump_info.h"
 #undef private
+#else
+#include "base/debug/arkweb_dump_info.h"
+#endif
 #include "base/logging.h"
 #include "base/no_destructor.h"
 #include "gmock/gmock.h"
@@ -31,12 +36,12 @@ protected:
 
 TEST_F(ArkWebDumpInfoTest, GetInstance) {
   ArkWebDumpInfo& arkwebDumpInfo = ArkWebDumpInfo::GetInstance();
-  EXPECT_THAT(arkwebDumpInfo.dump_enable_, test::AnyOf(0, 1));
+  EXPECT_THAT(arkwebDumpInfo.dump_enable_, ::testing::AnyOf(0, 1));
 }
 
 TEST_F(ArkWebDumpInfoTest, IsDumpEnabled) {
   ArkWebDumpInfo& arkwebDumpInfo = ArkWebDumpInfo::GetInstance();
-  EXPECT_THAT(arkwebDumpInfo.dump_enable_, test::AnyOf(0, 1));
+  EXPECT_THAT(arkwebDumpInfo.dump_enable_, ::testing::AnyOf(0, 1));
 }
 
 TEST_F(ArkWebDumpInfoTest, GetBufferSize) {
@@ -56,7 +61,7 @@ TEST_F(ArkWebDumpInfoTest, ParseCmdParamAndDump_002) {
   std::string result;
   ArkWebDumpInfo& arkwebDumpInfo = ArkWebDumpInfo::GetInstance();
   arkwebDumpInfo.dump_enable_ = 1;
-  arkwebDumpInfo.FormatAndWriteNWebDumpInfo("test ParseCmdParamAndDump_002", DUMP_NWEB_INFO);
+  arkwebDumpInfo.FormatAndWriteNWebDumpInfo("test ParseCmdParamAndDump_002");
   arkwebDumpInfo.ParseCmdParamAndDump("", result);
   EXPECT_GE(result.size(), 0);
   result.clear();
@@ -74,7 +79,7 @@ TEST_F(ArkWebDumpInfoTest, DumpArkWebAllInfo) {
   std::string result;
   ArkWebDumpInfo& arkwebDumpInfo = ArkWebDumpInfo::GetInstance();
   arkwebDumpInfo.dump_enable_ = 1;
-  arkwebDumpInfo.FormatAndWriteNWebDumpInfo("test DumpArkWebAllInfo", DUMP_NWEB_INFO);
+  arkwebDumpInfo.FormatAndWriteNWebDumpInfo("test DumpArkWebAllInfo");
   arkwebDumpInfo.DumpArkWebAllInfo(result);
   EXPECT_GE(result.size(), 0);
 }
@@ -83,7 +88,7 @@ TEST_F(ArkWebDumpInfoTest, DumpArkWebNWebInfo) {
   std::string result;
   ArkWebDumpInfo& arkwebDumpInfo = ArkWebDumpInfo::GetInstance();
   arkwebDumpInfo.dump_enable_ = 1;
-  arkwebDumpInfo.FormatAndWriteNWebDumpInfo("test DumpArkWebNWebInfo", DUMP_NWEB_INFO);
+  arkwebDumpInfo.FormatAndWriteNWebDumpInfo("test DumpArkWebNWebInfo");
   arkwebDumpInfo.DumpArkWebNWebInfo(result);
   EXPECT_GE(result.size(), 0);
 }

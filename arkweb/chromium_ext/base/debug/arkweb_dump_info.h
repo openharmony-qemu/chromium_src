@@ -21,7 +21,14 @@
 #include <shared_mutex>
 #include <unordered_map>
 #include "base/no_destructor.h"
+#include "arkweb/build/features/features.h"
+if BUILDFLAG(ARKWEB_UNITTESTS)
+#undef private
+#endif
 #include "base/containers/circular_deque.h"
+if BUILDFLAG(ARKWEB_UNITTESTS)
+#define private public
+#endif
 
 namespace base::debug {
 enum DumpInfoType {

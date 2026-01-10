@@ -95,7 +95,7 @@ void ArkWebDumpInfo::WriteArkWebDumpInfo(const std::string& info, DumpInfoType t
   std::string key;
   switch(type) {
     case DUMP_NWEB_INFO:
-      key = "key";
+      key = "NWeb";
       break;
     default:
       return;

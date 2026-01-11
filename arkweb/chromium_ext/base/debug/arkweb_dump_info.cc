@@ -43,12 +43,7 @@ void ArkWebDumpInfo::ParseCmdParamAndDump(const std::string& param, std::string&
     return;
   }
 
-  if (param.empty()) {
-    DumpArkWebAllInfo(result);
-    return;
-  }
-
-  if (param == "--all") {
+  if (param.empty() || param == "--all") {
     DumpArkWebAllInfo(result);
   } else if (param == "--NWeb") {
     DumpArkWebNWebInfo(result);

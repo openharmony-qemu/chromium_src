@@ -246,7 +246,7 @@ void HostZoomMapImpl::SetZoomLevelForHostInternal(const std::string& host,
                                                   base::Time last_modified) {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-  if (imp_utils_->IsZoomTooFast(last_modified, level)) {
+  if (imp_utils_->IsZoomTooFast(host, last_modified, level)) {
     return;
   }
 #endif

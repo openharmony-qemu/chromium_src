@@ -1836,8 +1836,8 @@ void NWebImpl::Resize(uint32_t width, uint32_t height, bool isKeyboard) {
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
   if (base::debug::ArkWebDumpInfo::GetInstance().IsDumpEnabled()) {
     std::string dumpNWebInfo = base::StringPrintf(
-          "NWeb Resize, nweb_id = %u, width = %u, height = %u, isKeyBoard = %u",
-          nweb_id_, width, height, isKeyBoard);
+          "NWeb Resize, nweb_id = %u, width = %u, height = %u, isKeyboard = %u",
+          nweb_id_, width, height, isKeyboard);
     base::debug::ArkWebDumpInfo::GetInstance().FormatAndWriteNWebDumpInfo(dumpNWebInfo);
   }
 #endif

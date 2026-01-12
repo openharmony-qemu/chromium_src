@@ -194,6 +194,10 @@ size_t ArkwebRenderProcessHostImplUtils::GetProcessCountForLimitArkweb(
 // LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
 void DelayedRenderKiller::StartTimer() {
+  if (!timer_){
+    LOG(ERROR) << "DelayedRenderKiller::StartTimer: timer_ is null";
+    return;
+  }
   if (!timer_->IsRunning()) {
     rep_ = 0;
     timer_->Start(FROM_HERE, base::Seconds(SLEEP_TIME),
@@ -210,6 +214,10 @@ void DelayedRenderKiller::TryKillRender() {
   rep_++;
   if (rep_ > MAX_REP) {
     LOG(INFO) << "DelayedRenderKiller up to limit";
+    if (!timer_){
+      LOG(ERROR) << "DelayedRenderKiller::StartTimer: timer_ is null";
+      return;
+    }
     timer_->Stop();
     return;
   }

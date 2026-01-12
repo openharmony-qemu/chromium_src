@@ -46,7 +46,7 @@ TEST_F(ArkWebDumpInfoTest, IsDumpEnabled) {
 
 TEST_F(ArkWebDumpInfoTest, GetBufferSize) {
   ArkWebDumpInfo& arkwebDumpInfo = ArkWebDumpInfo::GetInstance();
-  EXPECT_GE(arkwebDumpInfo.GetBufferSize, 0);
+  EXPECT_GE(arkwebDumpInfo.GetBufferSize(), 0);
 }
 
 TEST_F(ArkWebDumpInfoTest, ParseCmdParamAndDump_001) {
@@ -122,7 +122,7 @@ TEST_F(ArkWebDumpInfoTest, WriteArkWebDumpInfo) {
 }
 
 TEST_F(ArkWebDumpInfoTest, FormatAndWriteNWebDumpInfo) {
-  std::string info = "test WriteArkWebDumpInfo";
+  std::string info = "test FormatAndWriteNWebDumpInfo";
   ArkWebDumpInfo& arkwebDumpInfo = ArkWebDumpInfo::GetInstance();
   arkwebDumpInfo.dump_enable_ = 1;
   size_t t = arkwebDumpInfo.GetBufferSize();

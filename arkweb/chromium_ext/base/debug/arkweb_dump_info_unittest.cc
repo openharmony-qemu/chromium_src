@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 #include "arkweb/build/features/features.h"
-if BUILDFLAG(ARKWEB_UNITTESTS)
+#if BUILDFLAG(ARKWEB_UNITTESTS)
 #define private public
 #include "base/debug/arkweb_dump_info.h"
 #undef private

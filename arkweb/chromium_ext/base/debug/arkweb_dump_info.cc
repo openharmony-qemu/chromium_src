@@ -32,7 +32,7 @@ bool ArkWebDumpInfo::IsDumpEnabled() const {
   return dump_enable_;
 }
 
-bool ArkWebDumpInfo::GetBufferSize() {
+size_t ArkWebDumpInfo::GetBufferSize() {
   std::shared_lock<std::shared_mutex> lockGuard(dumpMutex_);
   return buffer_.size();
 }

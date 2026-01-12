@@ -1057,6 +1057,12 @@ class NWebHandlerDelegate : public ArkWebClientExt,
                                         const std::string& referrer,
                                         int transition_type,
                                         bool is_key_request) override;
+  void OnRewriteUrlForNavigationAsync(
+      const CefString& original_url,
+      const CefString& referrer,
+      int transition_type,
+      bool is_key_request,
+      CefRefPtr<CefRewriteUrlCallback> callback) override;
 #endif
 
 #if BUILDFLAG(ARKWEB_WEBRTC)

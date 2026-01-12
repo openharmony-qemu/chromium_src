@@ -5713,6 +5713,28 @@ std::string NWebHandlerDelegate::OnRewriteUrlForNavigation(const std::string& or
 #endif  // ARKWEB_NWEB_EX
   return "";
 }
+
+void NWebHandlerDelegate::OnRewriteUrlForNavigationAsync(
+    const CefString& original_url,
+    const CefString& referrer,
+    int transition_type,
+    bool is_key_request,
+    CefRefPtr<CefRewriteUrlCallback> callback) {
+  if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
+    content::GetUIThreadTaskRunner({})->PostTask(
+        FROM_HERE,
+        base::BindOnce(&NWebHandlerDelegate::OnRewriteUrlForNavigationAsync,
+                       weak_this_, original_url, referrer,
+                       transition_type, is_key_request, callback));
+    return;
+  }
+  if (callback) {
+    std::string rewrited_url =
+        OnRewriteUrlForNavigation(original_url.ToString(), referrer.ToString(),
+                                  transition_type, is_key_request);
+    callback->OnComplete(CefString(rewrited_url));
+  }
+}
 #endif
 
 #if BUILDFLAG(ARKWEB_WEBRTC)

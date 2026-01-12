@@ -363,6 +363,19 @@ TEST_F(NWebDelegateTest, OnTextSelected) {
   ASSERT_NE(nweb_delegate_, nullptr);
   nweb_delegate_->OnTextSelected();
 }
+
+TEST_F(NWebDelegateTest, RegisterOnLoadStartedCbForHighlightContent_001) {
+  ASSERT_NE(nweb_delegate_, nullptr);
+  std::function<void(void)> callback = []() {};
+  nweb_delegate_->handler_delegate_ = nullptr;
+  nweb_delegate_->RegisterOnLoadStartedCbForHighlightContent(std::move(callback));
+}
+
+TEST_F(NWebDelegateTest, RegisterOnLoadStartedCbForHighlightContent_002) {
+  ASSERT_NE(nweb_delegate_, nullptr);
+  std::function<void(void)> callback = []() {};
+  nweb_delegate_->RegisterOnLoadStartedCbForHighlightContent(std::move(callback));
+}
 #endif
 
 #if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)

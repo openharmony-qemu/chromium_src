@@ -946,6 +946,7 @@ void SetFocusWebId(int32_t nweb_id) override;
   RAW_PTR_EXCLUSION const char** argv_;
 
  private:
+  FRIEND_TEST_ALL_PREFIXES(NWebDelegateTest, RegisterOnLoadStartedCbForHighlightContent_001);
   void RunMessageLoop();
 
   void InitializeCef(std::string url,

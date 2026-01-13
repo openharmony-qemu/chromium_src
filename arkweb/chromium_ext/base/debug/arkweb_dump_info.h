@@ -31,8 +31,9 @@
 #endif
 
 namespace base::debug {
-enum DumpInfoType {
-  DUMP_NWEB_INFO,
+
+enum class DumpInfoType {
+  DUMP_NWEB_INFO = 0,
   DUMP_OTHER_INFO = 1 << 31 // preserved
 };
 

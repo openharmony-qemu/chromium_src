@@ -53,15 +53,27 @@ void ArkWebDumpInfo::ParseCmdParamAndDump(const std::string& param, std::string&
 }
 
 void ArkWebDumpInfo::DumpArkWebAllInfo(std::string& result) {
-  std::shared_lock<std::shared_mutex> lockGuard(dumpMutex_);
-  for (const auto& [key, value] : buffer_) {
+  stad::vector<std::pair<std::string, std::string>> localBuffer;
+
+  {
+    std::shared_lock<std::shared_mutex> lockGuard(dumpMutex_);
+    localBuffer.assign(buffer_.begin(), buffer_.end());
+  }
+  
+  for (const auto& [key, value] : localBuffer) {
     result.append(key).append(":").append(value);
   }
 }
 
 void ArkWebDumpInfo::DumpArkWebNWebInfo(std::string& result) {
-  std::shared_lock<std::shared_mutex> lockGuard(dumpMutex_);
-  for (const auto& [key, value] : buffer_) {
+  stad::vector<std::pair<std::string, std::string>> localBuffer;
+
+  {
+    std::shared_lock<std::shared_mutex> lockGuard(dumpMutex_);
+    localBuffer.assign(buffer_.begin(), buffer_.end());
+  }
+
+  for (const auto& [key, value] : localBuffer) {
     if (key == "NWeb") {
       result.append(value);
     }
@@ -89,7 +101,7 @@ void ArkWebDumpInfo::WriteArkWebDumpInfo(const std::string& info, DumpInfoType t
   std::shared_lock<std::shared_mutex> lockGuard(dumpMutex_);
   std::string key;
   switch(type) {
-    case DUMP_NWEB_INFO:
+    case DumpInfoType::DUMP_NWEB_INFO:
       key = "NWeb";
       break;
     default:
@@ -112,6 +124,6 @@ void ArkWebDumpInfo::FormatAndWriteNWebDumpInfo(const std::string& nwebInfo) {
 
   std::string formatStr = base::StringPrintf("[%s] %s %s\n",
                                             timeInfo.c_str(), processThreadInfo.c_str(), nwebInfo.c_str());
-  WriteArkWebDumpInfo(formatStr, DUMP_NWEB_INFO);
+  WriteArkWebDumpInfo(formatStr, DumpInfoType::DUMP_NWEB_INFO);
 }
 } // namespace base::debug

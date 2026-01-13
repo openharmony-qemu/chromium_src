@@ -112,11 +112,11 @@ TEST_F(ArkWebDumpInfoTest, WriteArkWebDumpInfo) {
   ArkWebDumpInfo& arkwebDumpInfo = ArkWebDumpInfo::GetInstance();
   arkwebDumpInfo.dump_enable_ = 1;
   size_t t = arkwebDumpInfo.GetBufferSize();
-  arkwebDumpInfo.WriteArkWebDumpInfo(info, DUMP_NWEB_INFO);
+  arkwebDumpInfo.WriteArkWebDumpInfo(info, DumpInfoType::DUMP_NWEB_INFO);
   size_t r = arkwebDumpInfo.GetBufferSize();
   EXPECT_EQ(r, t + 1);
   t = arkwebDumpInfo.GetBufferSize();
-  arkwebDumpInfo.WriteArkWebDumpInfo(info, DUMP_OTHER_INFO);
+  arkwebDumpInfo.WriteArkWebDumpInfo(info, DumpInfoType::DUMP_OTHER_INFO);
   r = arkwebDumpInfo.GetBufferSize();
   EXPECT_EQ(r, t);
 }

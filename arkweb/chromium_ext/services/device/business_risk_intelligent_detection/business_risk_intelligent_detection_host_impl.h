@@ -20,6 +20,13 @@
 
 namespace device {
 
+typedef int32_t (*DetectSimulatedClickRiskEnhancedFFI)(
+    const char *&result,
+    const int8_t *nonceArr,
+    size_t nonceLength,
+    int32_t alg,
+    int32_t version);
+
 class BusinessRiskIntelligentDetectionHostImpl
     : public device::mojom::BusinessRiskIntelligentDetection {
  public:
@@ -36,6 +43,8 @@ class BusinessRiskIntelligentDetectionHostImpl
       const std::vector<int8_t>& nonce,
       int32_t version,
       DetectSimulatedClickRiskEnhancedCallback callback);
+
+  virtual DetectSimulatedClickRiskEnhancedFFI GetDetectFunc();
 
  private:
   void* detect_sim_click_risk_enhanced_handler_ = nullptr;

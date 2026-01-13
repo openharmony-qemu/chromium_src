@@ -63,7 +63,7 @@ void ReportAudioFrameDropStats(int frameCount);
 
 void ReportVideoFrameDropStats(uint32_t frameCount, uint64_t frameDuration);
 
-void ReportDumplicateFileUpload(const std::string errorDesc);
+void ReportDuplicateFileUpload(const std::string errorDesc);
 
 void ReportDragDropStatus(const std::string& eventName, int32_t id);
 

@@ -823,6 +823,7 @@ arkweb_base_unittest_sources = [
   "//arkweb/chromium_ext/base/ohos/task_scheduler/task_runner_ohos_unittest.cc",
   "//arkweb/chromium_ext/components/js_injection/js_communication_host_utils_unittests.cc",
   "//arkweb/ohos_adapter_ndk/hiviewdfx_adapter/hiappevent_adapter_impl_unittest.cc",
+  "//arkweb/chromium_ext/base/debug/arkweb_dump_info_unittest.cc",
 ]
 
 arkweb_base_trace_event_sources = [

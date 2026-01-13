@@ -264,6 +264,7 @@ extern bool g_siteIsolationMode;
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
 #include "content/browser/gpu/gpu_process_host.h"
 #include "services/viz/privileged/mojom/gl/gpu_service.mojom.h"
+#include "arkweb/chromium_ext/base/debug/arkweb_dump_info.h"
 #endif
 
 #include "net/proxy_resolution/proxy_config_service_ohos.h"
@@ -1413,6 +1414,13 @@ bool NWebImpl::Init(std::shared_ptr<NWebCreateInfo> create_info) {
         kDefaultConfigId, true);
   });
 #endif
+
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+  if (base::debug::ArkWebDumpInfo::GetInstance().IsDumpEnabled()) {
+    std::string dumpNWebInfo = base::StringPrintf("NWeb Init, nweb_id = %u", nweb_id_);
+    base::debug::ArkWebDumpInfo::GetInstance().FormatAndWriteNWebDumpInfo(dumpNWebInfo);
+  }
+#endif
   return true;
 }
 
@@ -1503,6 +1511,13 @@ void NWebImpl::OnDestroy() {
   ReportMultiInstanceStats(nweb_id_, g_nweb_count, g_nweb_max_count);
 #endif
   NWebConnectNativeManager::GetInstance()->UnRegisterNWebHandler(nweb_id_);
+
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+  if (base::debug::ArkWebDumpInfo::GetInstance().IsDumpEnabled()) {
+    std::string dumpNWebInfo = base::StringPrintf("NWeb destroy, nweb_id = %u", nweb_id_);
+    base::debug::ArkWebDumpInfo::GetInstance().FormatAndWriteNWebDumpInfo(dumpNWebInfo);
+  }
+#endif
 }
 
 void NWebImpl::ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args) {
@@ -1810,6 +1825,14 @@ void NWebImpl::Resize(uint32_t width, uint32_t height, bool isKeyboard) {
 #endif
   nweb_delegate_->Resize(width, height, isKeyboard);
   output_handler_->Resize(width, height);
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+  if (base::debug::ArkWebDumpInfo::GetInstance().IsDumpEnabled()) {
+    std::string dumpNWebInfo = base::StringPrintf(
+          "NWeb Resize, nweb_id = %u, width = %u, height = %u, isKeyboard = %u",
+          nweb_id_, width, height, isKeyboard);
+    base::debug::ArkWebDumpInfo::GetInstance().FormatAndWriteNWebDumpInfo(dumpNWebInfo);
+  }
+#endif
 }
 
 void NWebImpl::ResizeVisibleViewport(uint32_t width,
@@ -3691,6 +3714,12 @@ void NWebImpl::OnRenderToBackground() {
     return;
   }
   nweb_delegate_->OnWindowHide();
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+  if (base::debug::ArkWebDumpInfo::GetInstance().IsDumpEnabled()) {
+    std::string dumpNWebInfo = base::StringPrintf("OnWindowHide, nweb_id = %u", nweb_id_);
+    base::debug::ArkWebDumpInfo::GetInstance().FormatAndWriteNWebDumpInfo(dumpNWebInfo);
+  }
+#endif
 }
 
 void NWebImpl::OnRenderToForeground() {
@@ -3704,6 +3733,12 @@ void NWebImpl::OnRenderToForeground() {
     return;
   }
   nweb_delegate_->OnWindowShow();
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+  if (base::debug::ArkWebDumpInfo::GetInstance().IsDumpEnabled()) {
+    std::string dumpNWebInfo = base::StringPrintf("OnWindowShow, nweb_id = %u", nweb_id_);
+    base::debug::ArkWebDumpInfo::GetInstance().FormatAndWriteNWebDumpInfo(dumpNWebInfo);
+  }
+#endif
 }
 
 void NWebImpl::OnOnlineRenderToForeground() {

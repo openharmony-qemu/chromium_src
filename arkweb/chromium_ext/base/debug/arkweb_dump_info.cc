@@ -53,7 +53,7 @@ void ArkWebDumpInfo::ParseCmdParamAndDump(const std::string& param, std::string&
 }
 
 void ArkWebDumpInfo::DumpArkWebAllInfo(std::string& result) {
-  stad::vector<std::pair<std::string, std::string>> localBuffer;
+  std::vector<std::pair<std::string, std::string>> localBuffer;
 
   {
     std::shared_lock<std::shared_mutex> lockGuard(dumpMutex_);
@@ -66,7 +66,7 @@ void ArkWebDumpInfo::DumpArkWebAllInfo(std::string& result) {
 }
 
 void ArkWebDumpInfo::DumpArkWebNWebInfo(std::string& result) {
-  stad::vector<std::pair<std::string, std::string>> localBuffer;
+  std::vector<std::pair<std::string, std::string>> localBuffer;
 
   {
     std::shared_lock<std::shared_mutex> lockGuard(dumpMutex_);

@@ -29,9 +29,21 @@ struct NWebExtensionSession {
   std::optional<WebExtensionWindow> window;
 };
 
+struct NWebExtensionSessionsDevice {
+  static constexpr int NUM_PROPERTIES = 2;
+  std::string device_name;
+  std::vector<NWebExtensionSession> sessions;
+};
+
 struct NWebExtensionSessionsFilter {
   static constexpr int NUM_PROPERTIES = 1;
   std::optional<int32_t> max_results;
+};
+
+struct NWebExtensionSessionsGetDevicesParams {
+  static constexpr int NUM_PROPERTIES = 2;
+  std::optional<NWebExtensionSessionsFilter> filter;
+  std::optional<NWebExtensionFunctionContext> context;
 };
 
 struct NWebExtensionSessionsGetRecentlyClosedParams {
@@ -44,6 +56,12 @@ struct NWebExtensionSessionsRestoreParams {
   static constexpr int NUM_PROPERTIES = 2;
   std::optional<std::string> session_id;
   std::optional<NWebExtensionFunctionContext> context;
+};
+
+struct NWebExtensionSessionsGetDevicesCallbackParams {
+  static constexpr int NUM_PROPERTIES = 2;
+  std::vector<NWebExtensionSessionsDevice> devices;
+  std::optional<std::string> error;
 };
 
 struct NWebExtensionSessionsGetRecentlyClosedCallbackParams {

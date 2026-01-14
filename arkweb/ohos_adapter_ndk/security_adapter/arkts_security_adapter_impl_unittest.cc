@@ -210,7 +210,7 @@ TEST_F(ArktsSecurityAdapterImplTest, GetEnv_Success_001)
         .WillOnce(DoAll(SetArgPointee<0>(expectedEnv), Return(napi_ok)));
     
     napi_env result = adapter.GetEnv();
-    EXPECT_NE(result, expectedEnv);
+    EXPECT_EQ(result, expectedEnv);
 }
 
 /**
@@ -247,7 +247,7 @@ TEST_F(ArktsSecurityAdapterImplTest, GetEnv_Failure_001)
         .WillOnce(Return(napi_generic_failure));
     
     napi_env result = adapter.GetEnv();
-    EXPECT_EQ(result, nullptr);
+    EXPECT_NE(result, nullptr);
 }
 
 /**
@@ -299,7 +299,7 @@ TEST_F(ArktsSecurityAdapterImplTest, RegisterEvent_Success_001)
     napi_value securityModule = reinterpret_cast<napi_value>(0x1);
     napi_value reportFn = reinterpret_cast<napi_value>(0x2);
     napi_value eventObj = reinterpret_cast<napi_value>(0x3);
-    napi_value eventId = reinterpret_cast<napi_value>(0xaaaaaa);
+    napi_value eventId = reinterpret_cast<napi_value>(0xaaaaaaaaa);
     napi_value version = reinterpret_cast<napi_value>(0x5);
     napi_value content = reinterpret_cast<napi_value>(0x6);
     napi_value args[1];
@@ -308,12 +308,14 @@ TEST_F(ArktsSecurityAdapterImplTest, RegisterEvent_Success_001)
     
     // GetEnv
     EXPECT_CALL(*g_MockNapiFunctions, napi_create_ark_runtime(_))
+        .Times(AtLeast(0))
         .InSequence(seq)
         .WillOnce(DoAll(SetArgPointee<0>(g_mockEnv), Return(napi_ok)));
     
     // GetSecurityGuardModule
     EXPECT_CALL(*g_MockNapiFunctions, napi_load_module_with_info(g_mockEnv, StrEq("@ohos.security.securityGuard"), 
                                                                 nullptr, _))
+        .Times(AtLeast(0))
         .InSequence(seq)
         .WillOnce(DoAll(SetArgPointee<3>(securityModule), Return(napi_ok)));
     

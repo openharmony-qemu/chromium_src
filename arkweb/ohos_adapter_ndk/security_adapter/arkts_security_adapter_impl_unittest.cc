@@ -65,7 +65,7 @@ public:
     
     MOCK_METHOD(napi_status, napi_create_ark_runtime, (napi_env* env));
     MOCK_METHOD(napi_status, napi_load_module_with_info, (napi_env env, const char* name, 
-                                                          void* reserved, napi_value* result));
+                                                          const char* reserved, napi_value* result));
     MOCK_METHOD(napi_status, napi_create_object, (napi_env env, napi_value* result));
     MOCK_METHOD(napi_status, napi_get_named_property, (napi_env env, napi_value object, 
                                                        const char* utf8name, napi_value* result));
@@ -92,7 +92,7 @@ extern "C" {
     }
     
     napi_status napi_load_module_with_info(napi_env env, const char* name, 
-                                         void* reserved, napi_value* result) {
+                                         const char* reserved, napi_value* result) {
         if (name == nullptr || result == nullptr) {
             return napi_invalid_arg;
         }
@@ -261,7 +261,7 @@ TEST_F(ArktsSecurityAdapterImplTest, GetEnv_Failure_001)
 TEST_F(ArktsSecurityAdapterImplTest, GetSecurityGuardModule_Success_001)
 {
     napi_env env = reinterpret_cast<napi_env>(0x3);
-    napi_value securityModule = reinterpret_cast<napi_env>(0x1);
+    napi_value securityModule = reinterpret_cast<napi_value>(0x1);
     
     EXPECT_CALL(*g_MockNapiFunctions, napi_load_module_with_info( _, StrEq("@ohos.security.securityGuard"), 
                                                                 nullptr, _))
@@ -298,12 +298,12 @@ TEST_F(ArktsSecurityAdapterImplTest, RegisterEvent_Success_001)
     const std::string testEvent = "test_event_data";
     napi_env g_mockEnv = reinterpret_cast<napi_env>(0x1);
 
-    napi_value securityModule = reinterpret_cast<napi_env>(0x1);
-    napi_value reportFn = reinterpret_cast<napi_env>(0x2);
-    napi_value eventObj = reinterpret_cast<napi_env>(0x3);
-    napi_value eventId = reinterpret_cast<napi_env>(0xaaaaaaaaaaaaaaaaa);
-    napi_value version = reinterpret_cast<napi_env>(0x5);
-    napi_value content = reinterpret_cast<napi_env>(0x6);
+    napi_value securityModule = reinterpret_cast<napi_value>(0x1);
+    napi_value reportFn = reinterpret_cast<napi_value>(0x2);
+    napi_value eventObj = reinterpret_cast<napi_value>(0x3);
+    napi_value eventId = reinterpret_cast<napi_value>(0xaaaaaa);
+    napi_value version = reinterpret_cast<napi_value>(0x5);
+    napi_value content = reinterpret_cast<napi_value>(0x6);
     napi_value args[1];
     
     Sequence seq;

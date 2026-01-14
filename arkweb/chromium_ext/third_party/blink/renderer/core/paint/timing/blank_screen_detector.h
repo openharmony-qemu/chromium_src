@@ -54,7 +54,7 @@ class BlankScreenDetector : public GarbageCollected<BlankScreenDetector> {
   void GetPaintRects();
 
   base::OneShotTimer detection_task_;
-  Member<LocalFrame> local_frame_;
+  WeakMember<LocalFrame> local_frame_;
   std::vector<int32_t> task_delays_ms_;
   std::vector<gfx::Point> test_points_;
   std::vector<gfx::Rect> paint_rects_;

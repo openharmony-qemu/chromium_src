@@ -37,23 +37,22 @@ const double NEARLY_FINISHED_THRESHOLD = 0.8;
 const double SMALL_RECT_THRESHOLD = 0.01;
 
 void FirstScreenCalculator::OnFirstScreenInvoked() {
+#if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT)
   const base::TimeDelta as_time_delta =
       first_screen_paint_time_ - base::TimeTicks();
   base::TimeTicks navigation_start_time = base::TimeTicks();
-  if (frame_view_) {
+  if (local_frame_) {
     DocumentLoader* loader =
-        frame_view_->GetFrame().Loader().GetDocumentLoader();
+        local_frame_->Loader().GetDocumentLoader();
     if (loader) {
       navigation_start_time = loader->GetTiming().NavigationStart();
-#if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT)
       if (navigation_start_time_ != navigation_start_time &&
           !first_screen_paint_time_.is_null()) {
         navigation_start_time_ = navigation_start_time;
-        frame_view_->GetFrame().OnFirstScreenPaint(loader->GetUrl().GetString(),
-                                                   navigation_start_time_,
-                                                   first_screen_paint_time_);
+        local_frame_->OnFirstScreenPaint(
+            loader->GetUrl().GetString(), navigation_start_time_,
+            first_screen_paint_time_);
       }
-#endif
     }
   }
 
@@ -68,7 +67,7 @@ void FirstScreenCalculator::OnFirstScreenInvoked() {
     }
     std::string fsp_time_str =
         std::to_string(paint_time_delta.InMilliseconds());
-    if (frame_view_) {
+    if (local_frame_ && local_frame_->View()) {
       std::string code1 =
           R"(Performance.mark("First Screen Paint",{ startTime : )" +
           std::to_string(paint_time_delta.InMilliseconds()) + ", ";
@@ -77,7 +76,7 @@ void FirstScreenCalculator::OnFirstScreenInvoked() {
           fsp_time_str;
       std::string code3 = R"( ms"] ], tooltipText: "FSP" } } } ))";
       std::string code = code1 + code2 + code3;
-      bool ret = frame_view_->RunJavaScriptForFSP(code);
+      bool ret = local_frame_->View()->RunJavaScriptForFSP(code);
       if (!ret) {
         return;
       }
@@ -86,6 +85,7 @@ void FirstScreenCalculator::OnFirstScreenInvoked() {
     DumpImageRect();
     DumpTextRect();
   }
+#endif
 }
 
 void FirstScreenCalculator::DumpImageRect() {
@@ -109,10 +109,10 @@ void FirstScreenCalculator::RestartTimerForFirstScreenDetection() {
     return;
   }
 
-  if (!frame_view_) {
+  if (!local_frame_) {
     return;
   }
-  auto window = frame_view_->GetFrame().DomWindow();
+  auto window = local_frame_->DomWindow();
   if (!window || !window->navigator()) {
     return;
   }
@@ -349,10 +349,10 @@ bool FirstScreenCalculator::RemoveImageRecord(
 }
 
 bool FirstScreenCalculator::GetViewportAreaAndTrimRect(gfx::Rect& rect) {
-  if (frame_view_ && frame_view_->ViewportWidth() > 0 &&
-      frame_view_->ViewportHeight() > 0) {
-    viewport_rect_.set_width(frame_view_->ViewportWidth());
-    viewport_rect_.set_height(frame_view_->ViewportHeight());
+  if (local_frame_ && local_frame_->View() && local_frame_->View()->ViewportWidth() > 0 &&
+      local_frame_->View()->ViewportHeight() > 0) {
+    viewport_rect_.set_width(local_frame_->View()->ViewportWidth());
+    viewport_rect_.set_height(local_frame_->View()->ViewportHeight());
   } else {
     return false;
   }
@@ -367,8 +367,8 @@ void FirstScreenCalculator::OnUserScroll() {
   user_scrolled_ = true;
   OnFirstScreenInvoked();
 #if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
-  if (frame_view_) {
-    auto detector = frame_view_->GetFrame().GetBlankScreenDetector();
+  if (local_frame_) {
+    auto detector = local_frame_->GetBlankScreenDetector();
     if (detector) {
       detector->OnInputOrScroll();
     }
@@ -408,6 +408,6 @@ void FirstScreenCalculator::GetPaintRects(std::vector<gfx::Rect>& paint_rects) {
 }
 
 void FirstScreenCalculator::Trace(Visitor* visitor) const {
-  visitor->Trace(frame_view_);
+  visitor->Trace(local_frame_);
 }
 }  // namespace blink

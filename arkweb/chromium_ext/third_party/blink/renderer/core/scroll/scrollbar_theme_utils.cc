@@ -41,7 +41,7 @@ void ScrollbarThemeUtils::OffsetPointForHitTest(
   double RadiusBottomRight = 0.0f;
 
   auto layoutBox = scrollbar.GetLayoutBox();
- 	if (!layoutBox || !layoutBox->GetFrameView()) {
+  if (!layoutBox || !layoutBox->GetFrameView()) {
     return;
   }
 

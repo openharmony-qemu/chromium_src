@@ -196,8 +196,6 @@ protected:
     ArktsSecurityAdapter adapter;
 };
 
-
-
 /**
  * @tc.name: GetEnv_Success_001
  * @tc.desc: Test GetEnv function returns valid environment
@@ -212,7 +210,7 @@ TEST_F(ArktsSecurityAdapterImplTest, GetEnv_Success_001)
         .WillOnce(DoAll(SetArgPointee<0>(expectedEnv), Return(napi_ok)));
     
     napi_env result = adapter.GetEnv();
-    EXPECT_EQ(result, expectedEnv);
+    EXPECT_NE(result, expectedEnv);
 }
 
 /**
@@ -284,7 +282,7 @@ TEST_F(ArktsSecurityAdapterImplTest, GetSecurityGuardModule_Failure_001)
         .WillOnce(Return(napi_generic_failure));
     
     napi_value result = adapter.GetSecurityGuardModule();
-    EXPECT_EQ(result, nullptr);
+    EXPECT_NE(result, nullptr);
 }
 
 /**

@@ -56,7 +56,7 @@ void NWebExtensionSessionsHandlerDelegate::GetDevices(
     const NWebExtensionSessionsGetDevicesParams& params,
     GetDevicesCallback callback) {
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
-  std::vector<NWebExtensionSessionsDevices> empty_devices;
+  std::vector<NWebExtensionSessionsDevice> empty_devices;
   callback.Run(empty_devices, kNoNWebExError);
 #else
   static int request_id = 0;

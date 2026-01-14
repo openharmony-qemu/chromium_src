@@ -245,7 +245,11 @@ class HostResolverManager::Job : public PrioritizedDispatcher::Job,
 
   void InsecureCacheLookup();
 
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  void StartDnsTask(bool secure, bool secure_fallback = false);
+#else
   void StartDnsTask(bool secure);
+#endif  // ARKWEB_EXT_HTTP_DNS_FALLBACK
   void StartNextDnsTransaction();
   // Called if DnsTask fails. It is posted from StartDnsTask, so Job may be
   // deleted before this callback. In this case dns_task is deleted as well,

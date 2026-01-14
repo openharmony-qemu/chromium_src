@@ -201,6 +201,14 @@ bool ContextHostResolver::CanUseSecureDnsFallback() const {
   }
   return manager_->CanUseSecureDnsFallback(resolve_context_.get());
 }
+
+void ContextHostResolver::GetLocalAddress(IPEndPoint* address) {
+  if (!manager_) {
+    return;
+  }
+
+  manager_->GetLocalAddress(address);
+}
 #endif
 
 }  // namespace net

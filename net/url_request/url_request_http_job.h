@@ -223,6 +223,7 @@ class NET_EXPORT_PRIVATE URLRequestHttpJob : public URLRequestJob {
 #if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   bool CanRetryWithSecureDnsOnly(int net_error);
   void RetryWithSecureDnsOnly();
+  void ReportSecureFallbackDnsRetryResult(int net_error);
   void MaybeRetryWithSecureDnsOnly(int result);
 #endif
 #if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
@@ -379,6 +380,7 @@ class NET_EXPORT_PRIVATE URLRequestHttpJob : public URLRequestJob {
 #if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK) \
   || BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
   int original_net_error_ = 0;
+  bool is_retrying_secure_dns_only_{false};
 #endif
 #if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   RetryState state_ = RetryState::INIT;

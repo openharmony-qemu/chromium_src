@@ -167,6 +167,9 @@ HostResolverDnsTask::HostResolverDnsTask(
     const NetLogWithSource& job_net_log,
     const base::TickClock* tick_clock,
     bool fallback_available,
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+    bool secure_fallback,
+#endif
     const HostResolver::HttpsSvcbOptions& https_svcb_options)
     : client_(client),
       host_(std::move(host)),
@@ -179,6 +182,9 @@ HostResolverDnsTask::HostResolverDnsTask(
       tick_clock_(tick_clock),
       task_start_time_(tick_clock_->NowTicks()),
       fallback_available_(fallback_available),
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+      secure_fallback_(secure_fallback),
+#endif
       https_svcb_options_(https_svcb_options) {
   DCHECK(client_);
   DCHECK(delegate_);

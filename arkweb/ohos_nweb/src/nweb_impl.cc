@@ -1379,12 +1379,6 @@ bool NWebImpl::Init(std::shared_ptr<NWebCreateInfo> create_info) {
     return false;
   }
 
-#if BUILDFLAG(ARKWEB_NETWORK_PROXY)
-  OHOS::NWeb::OhosAdapterHelper::GetInstance()
-      .GetNetProxyInstance()
-      .StartListen();
-#endif
-
 #if BUILDFLAG(ARKWEB_SITE_ISOLATION)
   g_siteIsolationMode = ShouldEnableSiteIsolation();
   OHOS::NWeb::ResSchedClientAdapter::ReportSiteIsolationMode(
@@ -1499,12 +1493,6 @@ void NWebImpl::OnDestroy() {
   } else {
     WVLOG_W("NWebImpl::OnDestroy, input_handler_ is nullptr");
   }
-
-#if BUILDFLAG(ARKWEB_NETWORK_PROXY)
-  OHOS::NWeb::OhosAdapterHelper::GetInstance()
-      .GetNetProxyInstance()
-      .StopListen();
-#endif
 
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
   // Report nweb instance count

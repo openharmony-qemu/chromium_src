@@ -129,6 +129,42 @@ class FrameSinkManagerImplUtilsTest : public testing::Test {
     ASSERT_NO_FATAL_FAILURE(utils_.EvictFrameBackBuffers(frameSinkId1));
   }
 
+  void TestSetIsOfflineWebComponentInactive() {
+    ServerSharedBitmapManager shared_bitmap_manager_;
+    TestOutputSurfaceProvider output_surface_provider_;
+    FrameSinkManagerImpl managerImpl(FrameSinkManagerImpl::
+      InitParams(&shared_bitmap_manager_, &output_surface_provider_));
+    FrameSinkManagerImplUtils utils_(&managerImpl);
+
+    managerImpl.root_sink_map_.clear();
+    ASSERT_NO_FATAL_FAILURE(utils_.SetIsOfflineWebComponentInactive(true, frameSinkId1));
+
+    RootCompositorFrameSinkData root_data;
+    managerImpl.CreateRootCompositorFrameSink(root_data.BuildParams(frameSinkId1));
+    for (auto &item : managerImpl.root_sink_map_) {
+      EXPECT_NE(item.second, nullptr);
+    }
+    ASSERT_NO_FATAL_FAILURE(utils_.SetIsOfflineWebComponentInactive(false, frameSinkId1));
+  }
+
+  void TestSetRootCompositorFrameSink() {
+    ServerSharedBitmapManager shared_bitmap_manager_;
+    TestOutputSurfaceProvider output_surface_provider_;
+    FrameSinkManagerImpl managerImpl(FrameSinkManagerImpl::
+      InitParams(&shared_bitmap_manager_, &output_surface_provider_));
+    FrameSinkManagerImplUtils utils_(&managerImpl);
+
+    managerImpl.root_sink_map_.clear();
+    ASSERT_NO_FATAL_FAILURE(utils_.SetRootCompositorFrameSink(frameSinkId1));
+
+    RootCompositorFrameSinkData root_data;
+    managerImpl.CreateRootCompositorFrameSink(root_data.BuildParams(frameSinkId1));
+    for (auto &item : managerImpl.root_sink_map_) {
+      EXPECT_NE(item.second, nullptr);
+    }
+    ASSERT_NO_FATAL_FAILURE(utils_.SetRootCompositorFrameSink(frameSinkId1));
+  }
+
   void TestSetEnableLowerFrameRate() {
     ServerSharedBitmapManager shared_bitmap_manager_;
     TestOutputSurfaceProvider output_surface_provider_;
@@ -293,6 +329,14 @@ TEST_F(FrameSinkManagerImplUtilsTest, RestoreRenderFit) {
 #if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
 TEST_F(FrameSinkManagerImplUtilsTest, EvictFrameBackBuffers) {
   TestEvictFrameBackBuffers();
+}
+
+TEST_F(FrameSinkManagerImplUtilsTest, SetIsOfflineWebComponentInactive) {
+  TestSetIsOfflineWebComponentInactive();
+}
+
+TEST_F(FrameSinkManagerImplUtilsTest, SetRootCompositorFrameSink) {
+  TestSetRootCompositorFrameSink();
 }
 
 TEST_F(FrameSinkManagerImplUtilsTest, SetEnableLowerFrameRate) {

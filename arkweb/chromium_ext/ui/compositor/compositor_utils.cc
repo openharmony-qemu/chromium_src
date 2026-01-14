@@ -99,6 +99,13 @@ void CompositorUtils::EvictFrameBackBuffers() {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+void CompositorUtils::SetIsOfflineWebComponentInactive(bool is_inactive) {
+  compositor_->context_factory_->GetHostFrameSinkManager()->managerUtils->SetIsOfflineWebComponentInactive( 
+      is_inactive, compositor_->frame_sink_id());
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_VIDEO_LTPO)
 void CompositorUtils::UpdateVSyncFrequency() {
   compositor_->context_factory_->GetHostFrameSinkManager()->managerUtils->UpdateVSyncFrequency(

@@ -32,6 +32,10 @@ public:
     void EvictFrameBackBuffers(const FrameSinkId& frame_sink_id);
 #endif
 
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+    void SetIsOfflineWebComponentInactive(bool is_inactive, const FrameSinkId& frame_sink_id);
+#endif
+
 #if BUILDFLAG(ARKWEB_VIDEO_LTPO)
     void UpdateVSyncFrequency(const FrameSinkId& frame_sink_id);
     void ResetVSyncFrequency(const FrameSinkId& frame_sink_id);

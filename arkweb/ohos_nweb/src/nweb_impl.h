@@ -534,6 +534,7 @@ class NWebImpl : public NWeb {
   void SetAudioExclusive(bool audioExclusive) override;
   void SetAudioSessionType(int32_t audioSessionType) override;
   void NotifyMemoryLevel(int32_t level) override;
+  void SetIsOfflineWebComponent() override;
   void OnWebviewHide() override;
   void OnWebviewShow() override;
   void StartCamera() override;

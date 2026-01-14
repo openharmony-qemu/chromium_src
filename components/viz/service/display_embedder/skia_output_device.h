@@ -165,6 +165,10 @@ class VIZ_SERVICE_EXPORT SkiaOutputDevice {
   virtual void EnsureBackbuffer();
   virtual void DiscardBackbuffer();
 
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+  virtual void CleanBufferAfterSwapBuffer(bool delay_clean) {}
+#endif
+
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
   virtual void SetNativeInnerWeb(bool isInnerWeb) {}
 #endif

@@ -2005,6 +2005,16 @@ void NWebDelegate::OnPause() {
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 }
 
+void NWebDelegate::SetIsOfflineWebComponent() {
+  LOG(DEBUG) << "NWebDelegate::SetIsOfflineWebComponent";
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
+    return;
+  }
+  GetBrowser()->GetHost()->SetIsOfflineWebComponent();
+#endif
+}
+
 void NWebDelegate::OnWindowShow() {
   TRACE_EVENT1("base", "NWebDelegate::OnWindowShow", "nweb id = ", nweb_id_);
   LOG(INFO) << "NWebDelegate::OnWindowShow, nweb id = " << nweb_id_;

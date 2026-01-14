@@ -53,6 +53,15 @@ void HostFrameSinkManagerUtils::EvictFrameBackBuffers(
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+void HostFrameSinkManagerUtils::SetIsOfflineWebComponentInactive(
+    bool is_inactive,
+    const FrameSinkId& frame_sink_id)
+{
+  hostFrameSinkManager->frame_sink_manager_->SetIsOfflineWebComponentInactive(is_inactive, frame_sink_id);
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_VIDEO_LTPO)
 void HostFrameSinkManagerUtils::UpdateVSyncFrequency(
     const FrameSinkId& frame_sink_id)

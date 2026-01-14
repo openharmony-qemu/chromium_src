@@ -3670,6 +3670,15 @@ void NWebImpl::NotifyMemoryLevel(int32_t level) {
 #endif  // ARKWEB_PERFORMANCE_MEMORY_THRESHOLD
 }
 
+void NWebImpl::SetIsOfflineWebComponent() {
+  WVLOG_D("NWebImpl::SetIsOfflineWebComponent");
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("SetIsOfflineWebComponent nweb delegate is null");
+    return;
+  }
+  nweb_delegate_->SetIsOfflineWebComponent();
+}
+
 void NWebImpl::OnWebviewHide() {
   WVLOG_D("NWebImpl::OnWebviewHide");
 }

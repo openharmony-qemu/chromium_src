@@ -82,6 +82,10 @@ class RootCompositorFrameSinkImplExt : public RootCompositorFrameSinkImpl {
   void EvictFrameBackBuffers();
 #endif
 
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+  void SetIsOfflineWebComponentInactive(bool is_inactive);
+#endif
+
 #if BUILDFLAG(ARKWEB_VIDEO_LTPO)
   void UpdateVSyncFrequency(int frame_rate);
   void ResetVSyncFrequency();

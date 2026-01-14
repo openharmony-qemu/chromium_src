@@ -140,5 +140,24 @@ void WebContentsImplUtils::EvictFrameBackBuffersWhenNWebWasHidden() {
     }
   }
 }
+
+void WebContentsImplUtils::SetIsOfflineWebComponent() {
+  DCHECK(!webContentsImpl->IsBeingDestroyed());
+  is_offline_component_ = true;
+}
+
+void WebContentsImplUtils::SetIsOfflineWebComponentInactive(Visibility new_visibility) {
+  DCHECK(!webContentsImpl->IsBeingDestroyed());
+  if (auto* view = webContentsImpl->GetRenderWidgetHostView()) {
+    if (is_offline_component_) {
+      if (new_visibility == Visibility::VISIBLE) {
+        view->SetIsOfflineWebComponentInactive(false);
+        is_offline_component_ = false;
+      } else {
+        view->SetIsOfflineWebComponentInactive(true);
+      }
+    }
+  }
+}
 #endif
 }  // namespace content

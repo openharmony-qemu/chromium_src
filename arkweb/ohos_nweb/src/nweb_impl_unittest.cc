@@ -1501,6 +1501,11 @@ TEST_F(NWebImplTest, TestGetNWebNonExistingId) {
   EXPECT_EQ(result, nullptr);
 }
 
+TEST_F(NWebImplTest, SetIsOfflineWebComponentWithNullInputHandler) {
+  nweb_impl_->SetIsOfflineWebComponent();
+  EXPECT_NE(nweb_impl_, nullptr);
+}
+
 TEST_F(NWebImplTest, OnWebviewHideWithNullInputHandler) {
   nweb_impl_->OnWebviewHide();
   EXPECT_NE(nweb_impl_, nullptr);

@@ -154,6 +154,8 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
 
   void WasOccluded(bool occluded) override {}
 
+  void SetIsOfflineWebComponent() override {}
+
   void OnWindowShow() override {}
 
   void OnWindowHide() override {}

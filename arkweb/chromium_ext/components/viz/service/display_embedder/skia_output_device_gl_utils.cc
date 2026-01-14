@@ -16,6 +16,7 @@
 #include "arkweb/chromium_ext/components/viz/service/display_embedder/skia_output_device_gl_utils.h"
 
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#include "base/task/single_thread_task_runner.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 #include "ui/gl/gl_surface.h"
 
@@ -50,6 +51,9 @@ gfx::SwapResult SkiaOutputDeviceGLUtils::SwapBuffers(
                       update_rect->y() - update_rect->height()
                << ", " << update_rect->width() << ", " << update_rect->height()
                << "]";
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+    CleanBufferAfterSwapBuffer(result);
+#endif
   } else {
     result = skiaOutPutDeviceGl_->gl_surface_->SwapBuffers(std::move(feedback),
                                                            std::move(data));
@@ -57,4 +61,27 @@ gfx::SwapResult SkiaOutputDeviceGLUtils::SwapBuffers(
   return result;
 }
 
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+void SkiaOutputDeviceGLUtils::SetDelayClean(bool delay_clean) {
+  delay_clean_ = delay_clean;
+}
+
+void SkiaOutputDeviceGLUtils::CleanBufferAfterSwapBuffer(gfx::SwapResult result) {
+  if (result == gfx::SwapResult::SWAP_ACK && delay_clean_) {
+    LOG(DEBUG) << "Post delay task clean offline buffer";
+    base::SingleThreadTaskRunner::GetCurrentDefault()->PostDelayedTask(
+      FROM_HERE,
+      base::BindOnce(&SkiaOutputDeviceGLUtils::CleanOfflineBuffer, weak_ptr_factory_.GetWeakPtr()),
+        base::Milliseconds(100)); // 100: delay 100ms.
+  }
+}
+
+void SkiaOutputDeviceGLUtils::CleanOfflineBuffer() {
+  if (delay_clean_) {
+    LOG(DEBUG) << "SkiaOutputDeviceGLUtils::CleanOfflineBuffer";
+    skiaOutPutDeviceGl_->gl_surface_->Recreate();
+    delay_clean_ = false;
+  }
+}
+#endif
 }  // namespace viz

@@ -60,7 +60,10 @@ class WebContentsImplUtils {
 #endif
 
 #if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+  bool is_offline_component_ = false;
   void EvictFrameBackBuffersWhenNWebWasHidden();
+  void SetIsOfflineWebComponent();
+  void SetIsOfflineWebComponentInactive(Visibility new_visibility);
 #endif
 };
 }  // namespace content

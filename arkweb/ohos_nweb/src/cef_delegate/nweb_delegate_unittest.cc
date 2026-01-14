@@ -123,6 +123,11 @@ TEST_F(NWebDelegateTest, Resize) {
   nweb_delegate_->Resize(width, height, isKeyboard);
 }
 
+TEST_F(NWebDelegateTest, SetIsOfflineWebComponent) {
+  ASSERT_NE(nweb_delegate_, nullptr);
+  nweb_delegate_->SetIsOfflineWebComponent();
+}
+
 TEST_F(NWebDelegateTest, OnTouchPress) {
   ASSERT_NE(nweb_delegate_, nullptr);
   int32_t id = 1;

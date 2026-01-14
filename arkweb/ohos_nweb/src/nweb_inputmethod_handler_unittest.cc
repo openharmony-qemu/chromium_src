@@ -120,6 +120,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void WasResized() override {}
   void WasHidden(bool hidden) override {}
   void WasOccluded(bool occluded) override {}
+  void SetIsOfflineWebComponent() override {}
   void OnWindowShow() override {}
   void OnWindowHide() override {}
   void OnOnlineRenderToForeground() override {}

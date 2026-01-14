@@ -1949,6 +1949,11 @@ void RenderProcessHostImpl::ResetChannelProxy() {
   if (!channel_)
     return;
 
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+  ArkwebRenderProcessHostImplExt* implExt = static_cast<ArkwebRenderProcessHostImplExt*>(this);
+  implExt->CancelChannelConnectedCheckTask(implExt);
+#endif
+
   channel_.reset();
   channel_connected_ = false;
 }
@@ -3830,6 +3835,10 @@ void RenderProcessHostImpl::OnAssociatedInterfaceRequest(
 
 void RenderProcessHostImpl::OnChannelConnected(int32_t peer_pid) {
   channel_connected_ = true;
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+  ArkwebRenderProcessHostImplExt* implExt = static_cast<ArkwebRenderProcessHostImplExt*>(this);
+  implExt->CancelChannelConnectedCheckTask(implExt);
+#endif
 
   // Propagate the pseudonymization salt to all the child processes.
   //
@@ -4920,7 +4929,12 @@ RenderProcessHost* RenderProcessHostImpl::GetProcessHostForSiteInstance(
           SiteInstanceProcessAssignment::REUSED_EXISTING_PROCESS);
 #if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
       LOG(INFO) << "Use an existing rendering process, render_process: "
-                << render_process_host->GetProcess().Handle();
+                << render_process_host->GetProcess().Handle()
+                << " render_process status: " << render_process_host->IsReady();
+      if (!render_process_host->IsReady()) {
+         ArkwebRenderProcessHostImplExt* implExt = static_cast<ArkwebRenderProcessHostImplExt*>(render_process_host);
+         implExt->StartChannelConnectedCheckTask(implExt);
+      }
 #endif
     }
   }

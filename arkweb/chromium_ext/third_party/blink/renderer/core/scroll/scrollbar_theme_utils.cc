@@ -42,6 +42,8 @@ void ScrollbarThemeUtils::OffsetPointForHitTest(
 
   auto layoutBox = scrollbar.GetLayoutBox();
   if (!layoutBox || !layoutBox->GetFrameView()) {
+    LOG(ERROR) << "invalid layoutBox or frameView." <<
+               << "scrollbar hit test for avoid border radius failed.";
     return;
   }
 

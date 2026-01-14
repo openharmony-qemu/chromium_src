@@ -1153,7 +1153,7 @@ void PrepareImgBufferForRead(OH_Pixelmap_ImageInfo*& image_info,
     ClipboardSequenceNumberToken token;
   } clipboard_sequence_;
   ohos::adapter::common::SharedLibrary pasteboard_lib_;
-  PasteboardGetChangeCountFunc* pasteboard_get_change_count_func_;
+  PasteboardGetChangeCountFunc* pasteboard_get_change_count_func_ = nullptr;
 
   base::WeakPtrFactory<ClipboardOHOSInternal> weak_factory_{this};
 };

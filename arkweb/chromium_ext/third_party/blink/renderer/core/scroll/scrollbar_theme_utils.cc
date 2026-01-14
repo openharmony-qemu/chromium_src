@@ -40,8 +40,12 @@ void ScrollbarThemeUtils::OffsetPointForHitTest(
   double RadiusTopRight = 0.0f;
   double RadiusBottomRight = 0.0f;
 
-  ChromeClient* client =
-      scrollbar.GetLayoutBox()->GetFrameView()->GetChromeClient();
+  auto layoutBox = scrollbar.GetLayoutBox();
+ 	if (!layoutBox || !layoutBox->GetFrameView()) {
+    return;
+  }
+
+  ChromeClient* client = layoutBox->GetFrameView()->GetChromeClient();
   if (!client || !client->GetWebView() ||
       !client->GetWebView()->GetSettings()) {
     return;

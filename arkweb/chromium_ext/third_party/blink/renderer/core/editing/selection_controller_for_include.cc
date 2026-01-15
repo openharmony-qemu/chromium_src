@@ -91,7 +91,7 @@ bool SelectionController::SelectClosestWordFromLiveLink(
     const HitTestResult& result) {
   Node* const inner_node = result.InnerNode();
 
-  if (!inner_node || !inner_node->GetLayoutObject()) {
+  if (!inner_node || !inner_node->GetLayoutObject() || !result.URLElement()) {
     return false;
   }
   inner_node->GetDocument().UpdateStyleAndLayoutTree();
@@ -109,10 +109,9 @@ bool SelectionController::SelectClosestWordFromLiveLink(
       isCreateFlatTreeByAnchorNode ? SelectionInFlatTree::Builder()
                                          .SelectAllChildren(*pos.AnchorNode())
                                          .Build()
-      : isCreateFlatTreeByUrlElement ? SelectionInFlatTree::Builder()
-                                           .SelectAllChildren(*url_element)
-                                           .Build()
-                                     : SelectionInFlatTree();
+                                   : SelectionInFlatTree::Builder()
+                                         .SelectAllChildren(*url_element)
+                                         .Build();
 
   return UpdateSelectionForMouseDownDispatchingSelectStart(
       inner_node,

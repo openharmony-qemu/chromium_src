@@ -358,7 +358,6 @@ TEST_F(SelectionControllerForIncludeTest, SelectClosestWordFromLiveLinkTest_5thI
   Node* node = span;
 
   HitTestResult hit_test_result;
-
   hit_test_result.SetInnerNode(node);
   hit_test_result.SetURLElement(
       GetDocument().getElementById(AtomicString("link")));

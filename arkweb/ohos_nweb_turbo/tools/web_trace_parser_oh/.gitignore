@@ -1,6 +1,0 @@
-.idea
-.idea/workspace.xml
-/input/*
-/output/*
-*.pyc
-__pycache__/

@@ -1,2 +1,0 @@
-#开启性能优化后时间反而增加，导致UT测试NG
--AXTreeTest.UnserializePerformance

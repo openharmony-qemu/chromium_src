@@ -1,8 +1,0 @@
-include_rules = [
-  "-chrome",
-
-  "+ash/capture_mode",
-  "+content/public/browser",
-  "+content/public/test",
-  "+services/video_capture/public/mojom",
-]

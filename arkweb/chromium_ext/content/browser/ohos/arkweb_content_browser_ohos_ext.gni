@@ -1,4 +1,0 @@
-arkweb_content_browser_ohos_sources = [
-    "//arkweb/chromium_ext/content/browser/ohos/content_view_statics_ohos.cc",
-    "//arkweb/chromium_ext/content/browser/ohos/content_view_statics_ohos.h",
-]

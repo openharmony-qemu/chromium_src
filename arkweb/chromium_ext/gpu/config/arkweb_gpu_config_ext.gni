@@ -1,3 +1,0 @@
-arkweb_gpu_config_unittest = [
-    "//arkweb/chromium_ext/gpu/config/gpu_finch_features_unittest.cc",
-]

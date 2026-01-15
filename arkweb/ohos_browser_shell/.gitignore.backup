@@ -1,9 +1,0 @@
-**/.preview
-**/build
-/.deveco
-/.idea
-/local.properties
-/node_modules
-/.hvigor
-/package-lock.json
-/oh_modules

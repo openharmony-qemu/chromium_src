@@ -1,3 +1,0 @@
-config("disable_extra_semi") {
-    cflags = [ "-Wno-extra-semi" ]
-}

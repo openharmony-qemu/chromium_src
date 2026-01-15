@@ -1,3 +1,0 @@
-arkweb_configs = [
-    "//arkweb/build/config/extra_semi:disable_extra_semi"
-]

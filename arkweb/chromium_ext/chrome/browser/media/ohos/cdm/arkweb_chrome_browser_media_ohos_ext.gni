@@ -1,4 +1,0 @@
-arkweb_chrome_browser_media_ohos_sources = [
-  "//arkweb/chromium_ext/chrome/browser/media/ohos/cdm/media_drm_storage_factory.cc",
-  "//arkweb/chromium_ext/chrome/browser/media/ohos/cdm/media_drm_storage_factory.h",
-]

@@ -15,7 +15,7 @@
 
 #include "log_utils.h"
 
-#include "stdlib.h"
+#include <cstdlib>
 
 #include "net/base/ip_address.h"
 #include "net/base/ip_endpoint.h"
@@ -44,7 +44,7 @@ void AppendIPv4Address(const unsigned char address[4], url::CanonOutput* output)
 void AppendIPv6Address(const unsigned char address[16], url::CanonOutput* output) {
   for (int i = 0; i <= 14;) {
     // Consume the next 16 bits from |address|.
-    int x = address[i] << 8 | address[i + 1];
+    int x = (address[i] << 8) | address[i + 1];
     i += 2;
 
     // Stringify the 16 bit number (at most requires 4 hex digits).

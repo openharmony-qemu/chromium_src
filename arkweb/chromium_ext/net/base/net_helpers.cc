@@ -8,9 +8,6 @@
 #include "base/files/file_path.h"
 #include "base/path_service.h"
 #include "base/strings/string_util.h"
-#include "base/feature_list.h"
-#include "base/feature_list_utils.h"
-#include "content/public/common/content_features.h"
 #include "include/base/cef_logging.h"
 #include "net/base/load_flags.h"
 #include "url/gurl.h"
@@ -371,21 +368,13 @@ bool NetHelpers::ShouldAllowInsecurePrivateNetworkRequests() {
 }
 
 void NetHelpers::SetPrivateNetworkAccess(bool enable) {
-#if !defined(COMPONENT_BUILD)
-  if (enable && !base::FeatureList::GetInstance()->IsFeatureOverridden(
-        features::kPrivateNetworkAccessSendPreflights.name)) {
-    base::FeatureList::GetInstance()->GetUtils()->SetOverrideStateByFeatureName(
-        features::kPrivateNetworkAccessSendPreflights.name,
-        base::FeatureList::OverrideState::OVERRIDE_ENABLE_FEATURE);
-  }
-#endif
   std::lock_guard<std::mutex> lock(*enable_private_network_check_mutex);
   enable_private_network_check = enable;
 }
 
 bool NetHelpers::GetPrivateNetworkAccess() {
   std::lock_guard<std::mutex> lock(*enable_private_network_check_mutex);
-  return enable_private_network_check.value_or(false);
+  return enable_private_network_check.value_or(true);
 }
 #endif
 

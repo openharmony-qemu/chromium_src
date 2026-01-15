@@ -34,6 +34,9 @@ OHOSAudioOutputStream::OHOSAudioOutputStream(OHOSAudioManager* manager,
   if (ret != AUDIOSTREAM_SUCCESS) {
     LOG(ERROR) << "AudioStreamBuilder create failed.";
   }
+  if (base::ohos::IsPcDevice() && parameters.latency_tag() != AudioLatency::Type::kRtc) {
+    isCommunication_ = false;
+  }
 
   sample_format_ = kSampleFormatS16;
   bytes_per_frame_ = parameters.GetBytesPerFrame(sample_format_);
@@ -713,6 +716,11 @@ bool OHOSAudioOutputStream::IsPreloadOrMutedMediaMode() {
     return false;
   }
 
+  if (parameters_.latency_tag() == AudioLatency::Type::kInteractive) {
+    LOG(INFO) << "OHOSAudioOutputStream::IsPreloadOrMutedMediaMode AudioContext";
+    return false;
+  }
+  
   content::MediaSessionImpl::NWebMediaSessionState sessionState =
       OHOSAudioFocusController::GetSessionState(parameters_);
   bool is_active = OHOSAudioFocusController::IsActive(parameters_);

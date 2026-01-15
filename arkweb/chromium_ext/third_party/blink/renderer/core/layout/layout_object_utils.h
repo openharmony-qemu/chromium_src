@@ -18,10 +18,11 @@
 #include "third_party/blink/renderer/core/layout/layout_object.h"
 
 namespace blink {
-class CORE_EXPORT LayoutObjectUtils {
+class CORE_EXPORT LayoutObjectUtils : public GarbageCollected<LayoutObjectUtils> {
  public:
-  LayoutObject* layout_object_;
+  Member<LayoutObject> layout_object_;
   LayoutObjectUtils(LayoutObject* impl);
+  void Trace(Visitor*) const;
 
 #if BUILDFLAG(ARKWEB_MENU)
   bool ArkWebVisibleToHitTestRequest(const HitTestRequest& request) const;

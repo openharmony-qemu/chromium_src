@@ -42,4 +42,8 @@ CSSStyleSheetResource* CSSStyleSheetResourceUtils::CreateForOfflineResource(
                                                      decoder_options);
 }
 #endif
+
+void CSSStyleSheetResourceUtils::Trace(Visitor* visitor) const {
+  visitor->Trace(cssStyleSheetResource);
+}
 }  // namespace blink

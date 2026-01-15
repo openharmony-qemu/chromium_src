@@ -351,6 +351,10 @@ class WebContentsImplExt : public WebContentsImpl {
                                          bool is_key_request) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+void OnMediaCastEnter();
+#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
+
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 friend class WebContentsImpl;
 friend class WebContentsImplUtils;
@@ -358,6 +362,7 @@ private:
   std::unique_ptr<VideoAssistant> video_assistant_;
   bool custom_media_player_enabled_ = false;
   std::map<MediaPlayerId, int32_t> surface_widget_map_;
+  std::optional<MediaPlayerId> media_player_id_;
 #if BUILDFLAG(ARKWEB_TEST)
   friend class WebContentsImplExtTest;
 #endif  // ARKWEB_TEST
@@ -383,6 +388,7 @@ private:
   void SetVideoSurface(const MediaPlayerId& id, int32_t surface_widget);
   void DelVideoSurface(int32_t surface_id);
   void DelAllVideoSurfaces();
+  void DelVideoAssistant();
   void ReportVideoDecoderName(const std::string& decoder_name);
 #endif  // ARKWEB_VIDEO_ASSISTANT
 

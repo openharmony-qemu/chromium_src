@@ -27,23 +27,23 @@ class COMPONENT_EXPORT(URL) LogUtils {
  public:
   static bool IsURLSlash(char ch) { return ch == '/' || ch == '\\'; }
 
-  static bool IsSupportScheme(const std::string& url,
+  static bool IsSupportScheme(const std::string_view url,
                               unsigned int urlLen,
                               unsigned int& colonIndex);
-  static void FixupUrlPart(const std::string& text,
+  static void FixupUrlPart(const std::string_view text,
                            const url::Component& part,
                            std::string& converted);
-  static void ConvertUrlHost(const std::string& url,
+  static void ConvertUrlHost(const std::string_view url,
                              url::Parsed& parsed,
                              std::string& converted,
                              bool is_for_report = false);
-  static void ConvertUrlPath(const std::string& url,
+  static void ConvertUrlPath(const std::string_view url,
                              const url::Component& part,
                              std::string& converted);
-  static void ConvertUrlQuery(const std::string& url,
+  static void ConvertUrlQuery(const std::string_view url,
                               const url::Component& part,
                               std::string& converted);
-  static void ConvertUrlRef(const std::string& url,
+  static void ConvertUrlRef(const std::string_view url,
                             const url::Component& part,
                             std::string& converted);
   // Rules for URL anonymization using ConvertUrl.
@@ -61,11 +61,11 @@ class COMPONENT_EXPORT(URL) LogUtils {
   FRIEND_TEST_ALL_PREFIXES(LogUtilsTest, IsSupportScheme);
   FRIEND_TEST_ALL_PREFIXES(LogUtilsTest, ConvertUrl);
 
-  static bool IsSupportScheme(const std::string& scheme);
+  static bool IsSupportScheme(const std::string_view scheme);
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
   static bool IsSupportParam(const std::string& param);
 #endif
-  static std::string MaskHost(const std::string& host);
+  static std::string MaskHost(const std::string_view host);
 };
 }  // namespace url
 

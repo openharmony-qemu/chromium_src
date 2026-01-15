@@ -178,6 +178,7 @@
 #endif
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
 #include "arkweb/chromium_ext/base/ohos/logger.h"
+#include "cef/ohos_cef_ext/libcef/common/net/ssl_info_util_ex.h"
 #endif
 #if BUILDFLAG(ARKWEB_AUTOLAYOUT)
 #include "nweb_autolayout.h"
@@ -655,6 +656,7 @@ NWebHandlerDelegate::NWebHandlerDelegate(
   if (!is_enhance_surface_) {
     window_ = window;
   }
+  weak_this_ = weak_factory_.GetWeakPtr();
 }
 
 void NWebHandlerDelegate::OnDestroy() {
@@ -730,6 +732,11 @@ void NWebHandlerDelegate::RegisterNWebAgentHandler(
   if (render_handler_ != nullptr) {
     render_handler_->RegisterNWebAgentHandler(handler);
   }
+}
+
+void NWebHandlerDelegate::RegisterOnLoadStartedCbForHighlightContent(
+    std::function<void(void)>&& callback) {
+  onLoadStartedCbForHighlightContent_ = std::move(callback);
 }
 #endif
 
@@ -1083,7 +1090,7 @@ void NWebHandlerDelegate::InjectJsToWebInner(
     ScriptItemsByOrder& scriptItemsByOrder) {
   if (!main_browser_ || !main_browser_->GetHost()) {
     return;
-  } 
+  }
   switch (time) {
     case JsRunTime::Start:
       scriptItems = preference_delegate_->GetJavaScriptOnDocumentStart();
@@ -1441,10 +1448,19 @@ void NWebHandlerDelegate::OnBeforeClose(CefRefPtr<CefBrowser> browser) {
     }
   } else {
     content::GpuProcessHost* host = content::GpuProcessHost::Get();
-    if (host != nullptr && host->gpu_host() != nullptr && main_browser_ != nullptr && main_browser_->GetHost()) {
-      NWebNativeWindowTracker::GetInstance()->DestroyNativeWindow(
-        main_browser_->GetHost()->GetAcceleratedWidget(false));
-      host->gpu_host()->DestroyNativeWindow(main_browser_->GetHost()->GetAcceleratedWidget(false));
+    if (host != nullptr && host->gpu_host() != nullptr &&
+        main_browser_ != nullptr && main_browser_->GetHost()) {
+      const auto main_widget =
+          main_browser_->GetHost()->GetAcceleratedWidget(false);
+      NWebNativeWindowTracker::GetInstance()->DestroyNativeWindow(main_widget);
+      host->gpu_host()->DestroyNativeWindow(main_widget);
+      const auto popup_widget =
+          main_browser_->GetHost()->GetAcceleratedWidget(true);
+      if (popup_widget != main_widget) {
+        NWebNativeWindowTracker::GetInstance()->DestroyNativeWindow(
+            popup_widget);
+        host->gpu_host()->DestroyNativeWindow(popup_widget);
+      }
     } else {
       LOG(ERROR) << "host|host->get_host()|main_browser_|main_browser_->GetHost() is nullptr";
     }
@@ -1720,7 +1736,6 @@ void NWebHandlerDelegate::OnLoadStart(CefRefPtr<CefBrowser> browser,
                                       CefRefPtr<CefFrame> frame,
                                       const CefString& url,
                                       TransitionType transition_type) {
-  LOG(INFO) << "NWebHandlerDelegate::OnLoadStart";
   if (frame == nullptr || !frame->IsMain()) {
     return;
   }
@@ -1729,9 +1744,17 @@ void NWebHandlerDelegate::OnLoadStart(CefRefPtr<CefBrowser> browser,
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
       ::switches::kEnableNwebEx) &&
       IsPrerendering(frame)) {
+    LOG_FEEDBACK(INFO, kNavigation)
+        << "OnPageBegin transitionType:" << transition_type
+        << " prerenderingUrl:"
+        << url::LogUtils::ConvertUrlWithMask(url.ToString());
     return;
   }
 #endif
+
+  LOG_FEEDBACK(INFO, kNavigation)
+      << "OnPageBegin transitionType:" << transition_type
+      << " url:" << url::LogUtils::ConvertUrlWithMask(url.ToString());
 
 #if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
   if (!setWebPaintedTask_.IsCancelled()) {
@@ -1757,15 +1780,22 @@ void NWebHandlerDelegate::OnLoadEnd(CefRefPtr<CefBrowser> browser,
   if (frame == nullptr || !frame->IsMain()) {
     return;
   }
-  LOG(INFO) << "NWebHandlerDelegate:: Mainframe OnLoadEnd";
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
       ::switches::kEnableNwebEx) &&
       IsPrerendering(frame)) {
+    LOG_FEEDBACK(INFO, kNavigation)
+        << "OnPageEnd httpStatusCode:" << http_status_code
+        << " prerenderingUrl:"
+        << url::LogUtils::ConvertUrlWithMask(frame->GetURL().ToString());
     return;
   }
 #endif
+
+  LOG_FEEDBACK(INFO, kNavigation)
+      << "OnPageEnd httpStatusCode:" << http_status_code << " url:"
+      << url::LogUtils::ConvertUrlWithMask(frame->GetURL().ToString());
 
 #if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
   setWebPaintedTask_.Reset(
@@ -1874,14 +1904,20 @@ void NWebHandlerDelegate::OnDataResubmission(CefRefPtr<CefBrowser> browser,
 
 void NWebHandlerDelegate::OnNavigationEntryCommitted(
     CefRefPtr<CefLoadCommittedDetails> details) {
-  LOG(INFO) << "NWebHandlerDelegate::OnNavigationEntryCommitted";
 #if BUILDFLAG(ARKWEB_NAVIGATION)
   if (nweb_handler_ != nullptr) {
     if (!details) {
-      LOG(WARNING) << "NWebHandlerDelegate::OnNavigationEntryCommitted failed "
-                      "for details is null";
+      LOG_FEEDBACK(WARNING, kNavigation)
+          << "NavigationEntryCommitted message:detailsIsNull";
       return;
     }
+    LOG_FEEDBACK(INFO, kNavigation)
+        << "NavigationEntryCommitted type:" << details->GetNavigationType()
+        << " mainFrame:" << details->IsMainFrame()
+        << " sameDocument:" << details->IsSameDocument()
+        << " didReplaceEntry:" << details->DidReplaceEntry() << " url:"
+        << url::LogUtils::ConvertUrlWithMask(
+               details->GetCurrentURL().ToString());
     auto type = static_cast<NWebLoadCommittedDetails::NavigationType>(
         details->GetNavigationType());
     std::shared_ptr<NWebLoadCommittedDetails> web_details =
@@ -1943,8 +1979,12 @@ void NWebHandlerDelegate::OnLoadError(CefRefPtr<CefBrowser> browser,
                                       ErrorCode error_code,
                                       const CefString& error_text,
                                       const CefString& failed_url) {
-  LOG(INFO) << "NWebHandlerDelegate::OnLoadError";
   CEF_REQUIRE_UI_THREAD();
+
+  LOG_FEEDBACK(INFO, kNavigation)
+      << __func__ << " errorCode:" << net::ErrorToDebugString(error_code)
+      << " mainFrame:" << (frame ? (frame->IsMain() ? "1" : "0") : "-1")
+      << " url:" << url::LogUtils::ConvertUrlWithMask(failed_url.ToString());
 
   // Don't display an error for downloaded files.
   if (error_code == ERR_ABORTED) {
@@ -2030,6 +2070,13 @@ void NWebHandlerDelegate::OnHttpError(CefRefPtr<CefRequest> request,
                                       bool is_main_frame,
                                       bool has_user_gesture,
                                       CefRefPtr<CefResponse> response) {
+  if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
+    content::GetUIThreadTaskRunner({})->PostTask(
+        FROM_HERE,
+        base::BindOnce(&NWebHandlerDelegate::OnHttpError, weak_this_, request,
+                       is_main_frame, has_user_gesture, response));
+    return;
+  }
   if (nweb_handler_ != nullptr) {
     CefRequest::HeaderMap cef_request_headers;
     request->GetHeaderMap(cef_request_headers);
@@ -2167,9 +2214,12 @@ bool NWebHandlerDelegate::OnBeforeBrowse(CefRefPtr<CefBrowser> browser,
   bool result = false;
   if (nweb_handler_ != nullptr) {
     result = nweb_handler_->OnHandleInterceptUrlLoading(nweb_request);
-    LOG(DEBUG) << "NWebHandlerDelegate::OnBeforeBrowse "
-                  "OnHandleInterceptUrlLoading result: "
-               << result;
+    LOG_FEEDBACK(INFO, kNavigation)
+        << "OnLoadIntercept result:" << result
+        << " requestMethod:" << request->GetMethod().ToString()
+        << " userGesture:" << user_gesture << " mainFrame:" << frame->IsMain()
+        << " isServerRedirect:" << is_redirect << " url:"
+        << url::LogUtils::ConvertUrlWithMask(request->GetURL().ToString());
   } else {
     LOG(DEBUG) << "NWebHandlerDelegate::OnBeforeBrowse result: " << result;
   }
@@ -2187,17 +2237,27 @@ bool NWebHandlerDelegate::OnCertificateErrorExt(
     const CefString& request_url,
     CefRefPtr<CefSSLInfo> ssl_info,
     CefRefPtr<ArkWebCefSslCallback> callback) {
-  LOG(INFO) << "NWebHandlerDelegate::OnCertificateError happened";
   SslError error = SslErrorConvert(cert_error);
 
   CEF_REQUIRE_IO_THREAD();
+
+  std::string log_content = base::StringPrintf(
+      "OnSslErrorEventReceive netCode:%s certStatus:%d certIssuer:%s "
+      "certExpiresDate:%s url:%s",
+      net::ErrorToDebugString(cert_error).c_str(),
+      (ssl_info ? ssl_info->GetCertStatus() : -1),
+      ssl_info_util::GetIssuerDisplayName(ssl_info).c_str(),
+      ssl_info_util::GetValidExpiry(ssl_info).c_str(),
+      url::LogUtils::ConvertUrlWithMask(request_url.ToString()).c_str());
 
   std::shared_ptr<NWebJSSslErrorResult> js_result =
       std::make_shared<NWebJSSslErrorResultImpl>(callback);
 
   if (ssl_info == nullptr) {
     if (nweb_handler_ != nullptr) {
-      return nweb_handler_->OnSslErrorRequestByJS(js_result, error);
+      bool result = nweb_handler_->OnSslErrorRequestByJS(js_result, error);
+      LOG_FEEDBACK(INFO, kNavigation) << log_content << " result:" << result;
+      return result;
     }
     return false;
   }
@@ -2207,7 +2267,9 @@ bool NWebHandlerDelegate::OnCertificateErrorExt(
   CefX509Certificate::IssuerChainBinaryList der_chain_list;
   if (cert == nullptr) {
     if (nweb_handler_ != nullptr) {
-      return nweb_handler_->OnSslErrorRequestByJS(js_result, error);
+      bool result = nweb_handler_->OnSslErrorRequestByJS(js_result, error);
+      LOG_FEEDBACK(INFO, kNavigation) << log_content << " result:" << result;
+      return result;
     }
     return false;
   }
@@ -2235,8 +2297,11 @@ bool NWebHandlerDelegate::OnCertificateErrorExt(
     bool flag =
         nweb_handler_->OnSslErrorRequestByJSV2(js_result, error, certChainData);
     if (ArkWebGetErrno() != ArkWebInterfaceResult::RESULT_OK) {
+      LOG_FEEDBACK(WARNING, kNavigation)
+          << "OnSslErrorEventReceive message:calledWithCertChainDataFailed";
       flag = nweb_handler_->OnSslErrorRequestByJS(js_result, error);
     }
+    LOG_FEEDBACK(INFO, kNavigation) << log_content << " result:" << flag;
     return flag;
   }
   return false;
@@ -2278,7 +2343,7 @@ bool NWebHandlerDelegate::OnVerifyPin(
       CefRefPtr<CefVerifyPinCallback> callback) {
   LOG(INFO) << "NWebHandlerDelegate::OnVerifyPin";
   CEF_REQUIRE_IO_THREAD();
- 
+
   std::shared_ptr<NWebJSVerifyPinResultImpl> js_result =
       std::make_shared<NWebJSVerifyPinResultImpl>(callback);
   if (nweb_handler_ != nullptr) {
@@ -2390,9 +2455,13 @@ bool NWebHandlerDelegate::ShouldOverrideUrlLoading(
   bool result = false;
   if (nweb_handler_ != nullptr) {
     result = nweb_handler_->OnHandleOverrideUrlLoading(nweb_request);
-    LOG(DEBUG) << "NWebHandlerDelegate::ShouldOverrideUrlLoading "
-                  "OnHandleOverrideUrlLoading result: "
-               << result;
+    LOG_FEEDBACK(INFO, kNavigation)
+        << "OnOverrideUrlLoading result:" << result
+        << " method:" << method.ToString()
+        << " mainFrame:" << is_outermost_main_frame
+        << " userGesture:" << user_gesture
+        << " isServerRedirect:" << is_redirect
+        << " url:" << url::LogUtils::ConvertUrlWithMask(url.ToString());
     return result;
   }
   LOG(DEBUG) << "NWebHandlerDelegate::ShouldOverrideUrlLoading result: "
@@ -2791,6 +2860,11 @@ bool NWebHandlerDelegate::OnOpenURLFromTab(
     bool user_gesture) {
 #if BUILDFLAG(ARKWEB_NWEB_EX)
   if (IsNativeApiEnable()) {
+    if (dispatcher_.HasOnOpenURLFromTabV2()) {
+      return dispatcher_.OnOpenURLFromTabV2(target_url.ToString(),
+                                        static_cast<int>(target_disposition),
+                                        user_gesture);
+    }
     return dispatcher_.OnOpenURLFromTab(target_url.ToString(),
                                         static_cast<int>(target_disposition),
                                         user_gesture);
@@ -4361,7 +4435,7 @@ int NWebHandlerDelegate::ProcessNativeProxyResultThread(
   char** ptr = (char**)malloc(sizeof(char*) * args->GetSize());
   if(ptr == nullptr) {
     // malloc failed
-    return 1;    
+    return 1;
   }
   for (size_t i = 0; i < args->GetSize(); i++) {
     CefValueType type = args->GetType(i);
@@ -4591,7 +4665,7 @@ int NWebHandlerDelegate::NotifyJavaScriptResult(CefRefPtr<CefListValue> args,
     ParseNWebValueToValue(ark_result, result);
     return 0;
   }
- 
+
   ParseNWebValueToHapValue(hap_result, result);
   return 0;
 }
@@ -4917,7 +4991,7 @@ void NWebHandlerDelegate::GetJavaScriptObjectMethods(
                   "nweb_javascript_callback_ is null";
     return;
   }
-  
+
   std::shared_ptr<NWebHapValue> hap_result =
       std::make_shared<NWebCoreValue>(NWebHapValue::Type::NONE);
   nweb_javascript_callback_->GetJavaScriptObjectMethodsV2(object_id,
@@ -5040,12 +5114,25 @@ bool NWebHandlerDelegate::OnAllCertificateError(
   CEF_REQUIRE_IO_THREAD();
   std::shared_ptr<NWebJSAllSslErrorResult> js_result =
       std::make_shared<NWebJSAllSslErrorResultImpl>(callback);
+
+  std::string log_content = base::StringPrintf(
+      "OnSslErrorEvent certError:%s certStatus:%d certIssuer:%s "
+      "certExpiresDate:%s mainFrame:%d isFatalError:%d requestUrl:%s",
+      net::ErrorToDebugString(cert_error).c_str(),
+      (ssl_info ? ssl_info->GetCertStatus() : -1),
+      ssl_info_util::GetIssuerDisplayName(ssl_info).c_str(),
+      ssl_info_util::GetValidExpiry(ssl_info).c_str(),
+      is_main_frame_request, is_fatal_error,
+      url::LogUtils::ConvertUrlWithMask(request_url.ToString()).c_str());
+
+  bool result = false;
   if (nweb_handler_ != nullptr) {
-    return nweb_handler_->OnAllSslErrorRequestByJS(
+    result = nweb_handler_->OnAllSslErrorRequestByJS(
         js_result, error, request_url, origin_url, referrer, is_fatal_error,
         is_main_frame_request);
   }
-  return false;
+  LOG_FEEDBACK(INFO, kNavigation) << log_content << " result:" << result;
+  return result;
 }
 
 void NWebHandlerDelegate::OnLoadStarted(CefRefPtr<CefFrame> frame,
@@ -5055,7 +5142,13 @@ void NWebHandlerDelegate::OnLoadStarted(CefRefPtr<CefFrame> frame,
     return;
   }
 
-  if (nweb_handler_ != nullptr) {
+#if BUILDFLAG(ARKWEB_AI)
+  if (onLoadStartedCbForHighlightContent_) {
+    onLoadStartedCbForHighlightContent_();
+  }
+#endif
+
+if (nweb_handler_ != nullptr) {
     nweb_handler_->OnLoadStarted(url.ToString());
   }
 }
@@ -5290,14 +5383,29 @@ void NWebHandlerDelegate::SetPopupSurface(void* popup_window) {
   if (main_browser_ && main_browser_->GetHost()) {
     if (!is_enhance_surface_) {
       if (popup_window_ != nullptr && popup_window_ != popup_window) {
+        const auto old_popup_widget =
+            main_browser_->GetHost()->GetAcceleratedWidget(true);
+        LOG(INFO) << "SetPopupSurface destroying old popup window, widget_id: "
+                  << old_popup_widget;
+        NWebNativeWindowTracker::GetInstance()->DestroyNativeWindow(
+            old_popup_widget);
+        content::GpuProcessHost* host = content::GpuProcessHost::Get();
+        if (host != nullptr && host->gpu_host() != nullptr) {
+          host->gpu_host()->DestroyNativeWindow(old_popup_widget);
+        }
         OHOS::NWeb::OhosAdapterHelperExt::GetWindowAdapterNdkInstance()
             .DestroyNativeWindow(popup_window_);
         popup_window_ = nullptr;
       }
       popup_window_ = popup_window;
       main_browser_->GetHost()->SetPopupWindow(popup_window_);
+      const auto new_popup_widget =
+          main_browser_->GetHost()->GetAcceleratedWidget(true);
+      LOG(INFO) << "SetPopupSurface set new popup window done, new widget_id: "
+                << new_popup_widget;
     }
   } else {
+    LOG(INFO) << "SetPopupSurface main_browser or host is null";
     popup_window_ = popup_window;
   }
 }
@@ -5605,6 +5713,28 @@ std::string NWebHandlerDelegate::OnRewriteUrlForNavigation(const std::string& or
 #endif  // ARKWEB_NWEB_EX
   return "";
 }
+
+void NWebHandlerDelegate::OnRewriteUrlForNavigationAsync(
+    const CefString& original_url,
+    const CefString& referrer,
+    int transition_type,
+    bool is_key_request,
+    CefRefPtr<CefRewriteUrlCallback> callback) {
+  if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
+    content::GetUIThreadTaskRunner({})->PostTask(
+        FROM_HERE,
+        base::BindOnce(&NWebHandlerDelegate::OnRewriteUrlForNavigationAsync,
+                       weak_this_, original_url, referrer,
+                       transition_type, is_key_request, callback));
+    return;
+  }
+  if (callback) {
+    std::string rewrited_url =
+        OnRewriteUrlForNavigation(original_url.ToString(), referrer.ToString(),
+                                  transition_type, is_key_request);
+    callback->OnComplete(CefString(rewrited_url));
+  }
+}
 #endif
 
 #if BUILDFLAG(ARKWEB_WEBRTC)
@@ -5638,4 +5768,14 @@ void NWebHandlerDelegate::OnDocumentEndReady(const CefString& id, const CefStrin
 #endif
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+void NWebHandlerDelegate::OnMediaCastEnter() {
+  LOG(INFO) << "NWebHandlerDelegate::OnMediaCastEnter";
+  if (nweb_handler_) {
+    nweb_handler_->OnMediaCastEnter();
+  }
+}
+#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
+
 }  // namespace OHOS::NWeb

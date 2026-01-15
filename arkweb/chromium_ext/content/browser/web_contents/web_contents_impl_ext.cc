@@ -185,7 +185,7 @@ void WebContentsImplExt::StopMicrophone(int nWebID) {
     return;
   }
 
-  auto media_stream_manager = 
+  auto media_stream_manager =
       BrowserMainLoop::GetInstance()->media_stream_manager();
   if (!media_stream_manager) {
     LOG(ERROR) << "media_stream_manager null";
@@ -525,13 +525,10 @@ void WebContentsImplExt::OnNativeEmbedStatusUpdate(
       param_list += item.first + " ";
       param_list += item.second + ", ";
     }
-    LOG(INFO) << "[NativeEmbed] OnNativeEmbedStatusUpdate " << " state is "
-              << (int)state << ", " << native_embed_info
-              << ", params: " << param_list;
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
     LOG_FEEDBACK(INFO) << "[NativeEmbed] OnNativeEmbedStatusUpdate "
                        << " state is " << (int)state << ", "
-                       << native_embed_info << ", params: " << param_list;
+                       << native_embed_info << ", params:" << param_list;
 #endif
   }
   if (delegate_) {
@@ -874,6 +871,8 @@ void WebContentsImplExt::PopluateVideoAssistantConfig(
 void WebContentsImplExt::OnVideoPlaying(
     media::mojom::VideoAttributesForVASTPtr video_attributes,
     const MediaPlayerId& id) {
+  LOG(INFO) << "OhMedia, OnVideoPlaying media_player_id:" << id.delegate_id;
+  media_player_id_ = id;
   video_assistant_->OnVideoPlaying(std::move(video_attributes), id);
 }
 
@@ -930,6 +929,14 @@ void WebContentsImplExt::DelAllVideoSurfaces() {
        iter != surface_widget_map_.end();) {
     DelVideoSurface(iter->second);
     surface_widget_map_.erase(iter++);
+  }
+}
+
+void WebContentsImplExt::DelVideoAssistant() {
+  if (media_player_id_.has_value()) {
+    LOG(INFO) << "OhMedia, DelVideoAssistant media_player_id:"
+              << media_player_id_.value().delegate_id;
+    video_assistant_->OnVideoDestroyed(media_player_id_.value());
   }
 }
 
@@ -1400,4 +1407,14 @@ void WebContentsImplExt::OnDocumentEndReady(const FrameInfos& frameInfo) {
   }
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+void WebContentsImplExt::OnMediaCastEnter() {
+  LOG(INFO) << "WebContentsImplExt::OnMediaCastEnter";
+  if (delegate_) {
+    delegate_->OnMediaCastEnter();
+  }
+}
+#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
+
 }  // namespace content

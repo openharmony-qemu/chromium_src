@@ -247,4 +247,101 @@ bool MediaSessionImpl::GetMediaPlayerMuteState() {
   return is_muted_;
 }
 #endif  // ARKWEB_MEDIA_POLICY
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+void MediaSessionImpl::OnNotifyMeidaCastUri(const std::string& media_uri) {
+  if (session_ohos_) {
+    LOG(INFO) << "MediaSessionImpl: OnNotifyMeidaCastUri";
+    session_ohos_->OnNotifyMeidaCastUri(media_uri);
+  }
+}
+ 
+void MediaSessionImpl::CreateAVCastAdapter() {
+  LOG(INFO) << "MediaSessionImpl::CreateAVCastAdapter";
+  if (session_ohos_) {
+    LOG(INFO) << "MediaSessionImpl: CreateAVCastAdapter";
+    session_ohos_->CreateAVCastAdapter();
+  }
+}
+ 
+void MediaSessionImpl::HandleStopMediaCast() {
+  LOG(INFO) << "MediaSessionImpl::HandleStopMediaCast";
+  if (session_ohos_) {
+    LOG(INFO) << "MediaSessionImpl: HandleStopMediaCast";
+    session_ohos_->HandleStopMediaCast();
+  }
+}
+ 
+void MediaSessionImpl::UpdateRemotePlayState(bool is_playing) {
+  LOG(INFO) << "MediaSessionImpl::UpdateRemotePlayState";
+  if (session_ohos_) {
+    LOG(INFO) << "MediaSessionImpl: UpdateRemotePlayState";
+    session_ohos_->UpdateRemotePlayState(is_playing);
+  }
+}
+ 
+void MediaSessionImpl::UpdateRemotePlayPosition(int64_t position) {
+  LOG(INFO) << "MediaSessionImpl::UpdateRemotePlayPosition";
+  if (session_ohos_) {
+    LOG(INFO) << "MediaSessionImpl: UpdateRemotePlayPosition";
+    session_ohos_->UpdateRemotePlayPosition(position);
+  }
+}
+ 
+ 
+int32_t MediaSessionImpl::GetMediaCastCurrentTime() {
+  LOG(INFO) << "MediaSessionImpl::GetMediaCastCurrentTime, enter";
+  for (const auto& it : normal_players_) {
+    LOG(INFO) << "MediaSessionImpl::GetMediaCastCurrentTime";
+    return it.first.observer->GetMediaCastCurrentTime(it.first.player_id);
+  }
+  
+  return 0;
+}
+ 
+void MediaSessionImpl::PullUpCastBackGround(const std::string& device_name) {
+  LOG(INFO) << "MediaSessionImpl::PullUpCastBackGround, enter";
+  for (const auto& it : normal_players_) {
+    LOG(INFO) << "MediaSessionImpl::PullUpCastBackGround";
+    it.first.observer->PullUpCastBackGround(it.first.player_id, device_name);
+  }
+}
+ 
+void MediaSessionImpl::MediaCastStopped() {
+  LOG(INFO) << "MediaSessionImpl::MediaCastStopped, enter";
+  for (const auto& it : normal_players_) {
+    LOG(INFO) << "MediaSessionImpl::MediaCastStopped";
+    it.first.observer->MediaCastStopped(it.first.player_id);
+  }
+}
+ 
+void MediaSessionImpl::UpdateUiPlayState(bool is_playing) {
+  LOG(INFO) << "MediaSessionImpl::UpdateUiPlayState, enter";
+  for (const auto& it : normal_players_) {
+    LOG(INFO) << "MediaSessionImpl::UpdateUiPlayState";
+    it.first.observer->UpdateUiPlayState(it.first.player_id, is_playing);
+  }
+}
+ 
+void MediaSessionImpl::UpdateUiPlayPosition(int64_t position) {
+  LOG(DEBUG) << "MediaSessionImpl::UpdateUiPlayPosition, enter";
+  for (const auto& it : normal_players_) {
+    LOG(DEBUG) << "MediaSessionImpl::UpdateUiPlayPosition";
+    it.first.observer->UpdateUiPlayPosition(it.first.player_id, position);
+  }
+}
+
+bool MediaSessionImpl::IsPageBackground() {
+  content::Visibility visibility = web_contents()->GetVisibility();
+  bool is_background = (visibility != content::Visibility::VISIBLE);
+  LOG(INFO) << "MediaSessionImpl::IsPageBackground " << is_background;
+  return is_background;
+}
+
+void MediaSessionImpl::SetPauseByAvcast(bool pause_avcast) { 
+  LOG(INFO) << "SetPauseByAvcast, pause_avcast: " << pause_avcast;
+  pause_avcast_ = pause_avcast; 
+}
+
+#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
 }

@@ -33,6 +33,7 @@ static void WebPreferenceMojomExt(blink::mojom::WebPreferencesDataView data,
 #if BUILDFLAG(ARKWEB_AI)
   out->image_analyzer_enabled = data.image_analyzer_enabled();
   out->arkweb_agent_enabled = data.arkweb_agent_enabled();
+  out->agent_need_highlight = data.agent_need_highlight();
 #endif
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   out->hide_vertical_scrollbars = data.hide_vertical_scrollbars();
@@ -45,6 +46,9 @@ static void WebPreferenceMojomExt(blink::mojom::WebPreferencesDataView data,
 #if BUILDFLAG(ARKWEB_SCROLLBAR)
   out->scrollbar_color = data.scrollbar_color();
 #endif  // ARKWEB_SCROLLBAR
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+  out->cast_enabled = data.cast_enabled();
+#endif  // BUILDFLAG(ARKWEB_MEDIA_CAST)
 #if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
   out->font_scale_factor = data.font_scale_factor();
   out->font_weight_adjustment = data.font_weight_adjustment();

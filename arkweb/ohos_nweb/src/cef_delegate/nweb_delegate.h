@@ -128,6 +128,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #if BUILDFLAG(ARKWEB_AI)
   void RegisterNWebAgentHandler(
       std::shared_ptr<NWebAgentHandler> handler) override;
+  void RegisterOnLoadStartedCbForHighlightContent(std::function<void(void)>&& callback);
 #endif
   void RegisterRenderCb(
       std::function<void(const char*)> render_update_cb) override;
@@ -683,6 +684,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void PutVaultPlainTextCallback(
       std::shared_ptr<OHOS::NWeb::NWebVaultPlainTextCallback> callback) override;
   void StopFling() override;
+  void ReloadIgnoreCache() override;
 
 #if BUILDFLAG(ARKWEB_WEBRTC)
   void StartCamera() override;
@@ -944,6 +946,7 @@ void SetFocusWebId(int32_t nweb_id) override;
   RAW_PTR_EXCLUSION const char** argv_;
 
  private:
+  FRIEND_TEST_ALL_PREFIXES(NWebDelegateTest, RegisterOnLoadStartedCbForHighlightContent_001);
   void RunMessageLoop();
 
   void InitializeCef(std::string url,
@@ -1082,6 +1085,11 @@ void SetFocusWebId(int32_t nweb_id) override;
   bool hidden_ = false;
   bool occluded_ = false;
   bool is_popup_ready_ = false;
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+  // Maximum number of buffer evictions allowed when the nweb is hidden.
+  static constexpr int kMaxBufferEvictCount = 5;
+  int32_t bufferEvictCount_ = 0;
+#endif
 #if BUILDFLAG(ARKWEB_COMPOSITE_RENDER) || BUILDFLAG(ARKWEB_PAGE_UP_DOWN) || BUILDFLAG(ARKWEB_VIEWPORT_AVOID) || \
     BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   uint32_t width_ = 0;

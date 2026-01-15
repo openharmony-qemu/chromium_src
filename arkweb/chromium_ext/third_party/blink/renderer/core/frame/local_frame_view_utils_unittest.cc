@@ -62,7 +62,7 @@ class LocalFrameViewUtilsTest : public RenderingTest {
     EnableCompositing();
     RenderingTest::SetUp();
     web_view_helper_.Initialize();
-    utils_ = std::make_unique<LocalFrameViewUtils>(GetDocument().View());
+    utils_ = MakeGarbageCollected<LocalFrameViewUtils>(GetDocument().View());
   }
 
   void TearDown() override {
@@ -97,7 +97,7 @@ class LocalFrameViewUtilsTest : public RenderingTest {
     GetDocument().View()->UpdateAllLifecyclePhasesForTest();
   }
 
-  std::unique_ptr<LocalFrameViewUtils> utils_;
+  Member<LocalFrameViewUtils> utils_;
 
  private:
   Persistent<AnimationMockChromeClient> chrome_client_;
@@ -136,6 +136,43 @@ TEST_F(LocalFrameViewUtilsTest, PerformLayoutOnPreload_NoLayoutObject) {
 }
 
 TEST_F(LocalFrameViewUtilsTest, PerformLayoutOnPreload_EmptyUrl) {
+  CreateShortDocument();
+  GetDocument().SetURL(KURL(""));
+  utils_->PerformLayoutOnPreload(&GetDocument());
+}
+
+TEST_F(LocalFrameViewUtilsTest, UpdateCompositedSelectionIfNeed1) {
+  SetBodyInnerHTML("<div></div>");
+  utils_->UpdateCompositedSelectionIfNeed();
+}
+
+TEST_F(LocalFrameViewUtilsTest, UpdateCompositedSelectionIfNeed_NoFocusedFrame1) {
+  SetBodyInnerHTML("<div></div>");
+  GetDocument().GetPage()->GetFocusController().SetFocusedFrame(nullptr);
+  utils_->UpdateCompositedSelectionIfNeed();
+}
+
+TEST_F(LocalFrameViewUtilsTest, PerformLayoutOnPreload_NullDocument1) {
+  utils_->PerformLayoutOnPreload(nullptr);
+}
+
+TEST_F(LocalFrameViewUtilsTest, PerformLayoutOnPreload_HeightExceeded1) {
+  CreateTallDocument();
+  utils_->PerformLayoutOnPreload(&GetDocument());
+}
+
+TEST_F(LocalFrameViewUtilsTest, PerformLayoutOnPreload_HeightNotExceeded1) {
+  CreateShortDocument();
+  utils_->PerformLayoutOnPreload(&GetDocument());
+}
+
+TEST_F(LocalFrameViewUtilsTest, PerformLayoutOnPreload_NoLayoutObject1) {
+  SetBodyInnerHTML("");
+  GetDocument().body()->remove();
+  utils_->PerformLayoutOnPreload(&GetDocument());
+}
+
+TEST_F(LocalFrameViewUtilsTest, PerformLayoutOnPreload_EmptyUrl1) {
   CreateShortDocument();
   GetDocument().SetURL(KURL(""));
   utils_->PerformLayoutOnPreload(&GetDocument());

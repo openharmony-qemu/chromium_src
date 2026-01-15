@@ -72,7 +72,8 @@ void HTMLMediaElementUtils::ScheduleNamedEventUtils(const AtomicString& event_na
       event_name == event_type_names::kWaiting ||
       event_name == event_type_names::kSeeking ||
       event_name == event_type_names::kStalled) {
-    LOG(INFO) << "OhMedia::ScheduleEvent() " << event_name;
+    LOG(INFO) << "OhMedia::ScheduleEvent() " << event_name
+              << "(hash" << std::hex << base::FastHash(base::byte_span_from_ref(htmlMediaElement_)) << ")";
   }
 #endif // ARKWEB_MEDIA
 
@@ -521,4 +522,36 @@ void HTMLMediaElementUtils::SetVideoIsPlaying(bool playing) {
   htmlMediaElement_->GetDocument().SetVideoIsPlaying(videoStr, playing);
 }
 #endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+void HTMLMediaElementUtils::OnMediaCastEnter() {
+  LOG(INFO) << "HTMLMediaElementUtils::OnMediaCastEnter";
+  if (!htmlMediaElement_) {
+    LOG(ERROR) << "HTMLMediaElementUtils::OnMediaCastEnter, htmlMediaElement_ is nullptr";
+    return;
+  }
+  for (auto& observer : htmlMediaElement_->media_player_observer_remote_set_->Value()) {
+    observer->OnMediaCastEnter();
+  }
+}
+
+void HTMLMediaElementUtils::OnNotifyMeidaCastUri() {
+  if (!htmlMediaElement_) {
+    LOG(ERROR) << "HTMLMediaElementUtils::OnNotifyMeidaCastUri, htmlMediaElement_ is nullptr";
+    return;
+  }
+
+  auto mediaUri = (htmlMediaElement_->currentSrc()).GetString();
+  if (mediaUri.IsNull() || mediaUri.empty()) {
+    LOG(ERROR) << "OnNotifyMeidaCastUri, mediaUri IsNull";
+    return;
+  }
+  if (htmlMediaElement_->IsHTMLVideoElement()) {
+    for (auto& observer : htmlMediaElement_->media_player_observer_remote_set_->Value()) {
+      observer->OnNotifyMeidaCastUri(mediaUri);
+    }
+  }
+}
+#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
+
 }

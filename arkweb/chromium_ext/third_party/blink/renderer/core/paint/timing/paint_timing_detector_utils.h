@@ -52,7 +52,7 @@ class PaintTimingDetectorUtils {
   explicit PaintTimingDetectorUtils(PaintTimingDetector* paint_timing_detector);
 #endif
 #if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT) || BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
-  std::shared_ptr<FirstScreenCalculator> GetFirstScreenCalculator();
+  FirstScreenCalculator* GetFirstScreenCalculator();
   void RestartRecordingFirstScreenPaint();
   void OnUserScroll();
 #endif
@@ -89,7 +89,7 @@ private:
   PTDSupplementForBL ptd_supplement_for_bl_;
 #endif
 #if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT) || BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
-  std::shared_ptr<FirstScreenCalculator> first_screen_calculator_;
+ Member<FirstScreenCalculator> first_screen_calculator_;
 #endif
 };
 

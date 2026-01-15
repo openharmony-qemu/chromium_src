@@ -938,7 +938,9 @@ void HostResolverDnsTask::OnFailure(
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
           switches::kEnableNwebExHttpDnsFallback) &&
       allow_fallback) {
-    utils->ArkWebFailedTransaction(net_error, failed_transaction_type);
+    if (utils->ArkWebFailedTransaction(net_error, failed_transaction_type)) {
+      return;
+    }
   } else if (allow_fallback && AnyPotentiallyFatalTransactionsRemain()) {
 #else
   // On non-fatal errors, if any potentially fatal transactions remain, need

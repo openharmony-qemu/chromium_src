@@ -27,11 +27,13 @@ class ExecutionContext;
 class KURL;
 class SubresourceFilter;
 
-class CORE_EXPORT ArkWebSubresourceFilterExt {
+class CORE_EXPORT ArkWebSubresourceFilterExt : public GarbageCollected<ArkWebSubresourceFilterExt> {
  public:
-  SubresourceFilter* subresourceFilter;
+  Member<SubresourceFilter> subresourceFilter;
   ArkWebSubresourceFilterExt(SubresourceFilter *filter);
   ~ArkWebSubresourceFilterExt();
+
+  void Trace(Visitor*) const;
 
 #if BUILDFLAG(ARKWEB_ADBLOCK)
   std::unique_ptr<std::string> GetElementHidingSelectors(

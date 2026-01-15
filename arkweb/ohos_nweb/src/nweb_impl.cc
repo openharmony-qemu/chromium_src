@@ -264,6 +264,7 @@ extern bool g_siteIsolationMode;
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
 #include "content/browser/gpu/gpu_process_host.h"
 #include "services/viz/privileged/mojom/gl/gpu_service.mojom.h"
+#include "arkweb/chromium_ext/base/debug/arkweb_dump_info.h"
 #endif
 
 #include "net/proxy_resolution/proxy_config_service_ohos.h"
@@ -335,10 +336,6 @@ bool OHOS::NWeb::NWebImpl::should_lazy_init_web_engine_ = false;
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
 #include "base/ohos/sys_info_utils_ext.h"
-#endif
-
-#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
-#include "cef/ohos_cef_ext/libcef/browser/fallback_proxy/fallback_proxy_service.h"
 #endif
 
 namespace {
@@ -609,10 +606,6 @@ using ASHelper = OHOS::NWeb::NWebAdvancedSecurityHelper;
 std::shared_ptr<NWebLoggerCallback> g_logger_callback;
 #endif
 bool g_logger_callback_initialized = false;
-
-#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
-std::shared_ptr<NWebProxyClientCallback> g_proxy_client_callback = nullptr;
-#endif
 
 #if BUILDFLAG(ARKWEB_EXT_PASSWORD)
 static const int kMigrationBase = 10;
@@ -1027,7 +1020,7 @@ void InitialWebEngineArgs(
     web_engine_args.emplace_back(arg);
   }
 #endif  // BUILDFLAG(IS_ARKWEB_EXT)
-  
+
   std::string oemmode = OHOS::NWeb::OhosAdapterHelper::GetInstance()
                             .GetSystemPropertiesInstance().GetStringParameter("const.boot.oemmode", "");
   LOG(INFO) << "const.boot.oemmode: " << oemmode;
@@ -1041,7 +1034,7 @@ void InitialWebEngineArgs(
             web_engine_args.emplace_back(arg);
           }
           LOG(INFO) << "ohos connamd line args analysis from ohos-command-line file succ.";
-      }  
+      }
   } else {
     LOG(INFO) << "oemmode is not rd or ohos-command-line does not exist.";
   }
@@ -1074,7 +1067,7 @@ void MigratePasswordsToPasswordVault() {
     g_browser_process->local_state()->SetInteger(browser_prefs::kMigrationCount, count + 1);
     g_browser_process->local_state()->CommitPendingWrite();
     if (count <= kMigrationBase || (count % kMigrationBase == 0 && count <= kMigrationMaxCount)) {
-      std::shared_ptr<OHOS::NWeb::NWebWebStorageImpl> nweb_web_storage = 
+      std::shared_ptr<OHOS::NWeb::NWebWebStorageImpl> nweb_web_storage =
           std::make_shared<OHOS::NWeb::NWebWebStorageImpl>();
       nweb_web_storage->MigratePasswords();
     } else if (count > kMigrationMaxCount) {
@@ -1386,12 +1379,6 @@ bool NWebImpl::Init(std::shared_ptr<NWebCreateInfo> create_info) {
     return false;
   }
 
-#if BUILDFLAG(ARKWEB_NETWORK_PROXY)
-  OHOS::NWeb::OhosAdapterHelper::GetInstance()
-      .GetNetProxyInstance()
-      .StartListen();
-#endif
-
 #if BUILDFLAG(ARKWEB_SITE_ISOLATION)
   g_siteIsolationMode = ShouldEnableSiteIsolation();
   OHOS::NWeb::ResSchedClientAdapter::ReportSiteIsolationMode(
@@ -1420,6 +1407,13 @@ bool NWebImpl::Init(std::shared_ptr<NWebCreateInfo> create_info) {
     OHOS::NWeb::NWebSafeBrowsingUAPushConfig::GetInstance().EnableUAPushConfig(
         kDefaultConfigId, true);
   });
+#endif
+
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+  if (base::debug::ArkWebDumpInfo::GetInstance().IsDumpEnabled()) {
+    std::string dumpNWebInfo = base::StringPrintf("NWeb Init, nweb_id = %u", nweb_id_);
+    base::debug::ArkWebDumpInfo::GetInstance().FormatAndWriteNWebDumpInfo(dumpNWebInfo);
+  }
 #endif
   return true;
 }
@@ -1500,17 +1494,18 @@ void NWebImpl::OnDestroy() {
     WVLOG_W("NWebImpl::OnDestroy, input_handler_ is nullptr");
   }
 
-#if BUILDFLAG(ARKWEB_NETWORK_PROXY)
-  OHOS::NWeb::OhosAdapterHelper::GetInstance()
-      .GetNetProxyInstance()
-      .StopListen();
-#endif
-
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
   // Report nweb instance count
   ReportMultiInstanceStats(nweb_id_, g_nweb_count, g_nweb_max_count);
 #endif
   NWebConnectNativeManager::GetInstance()->UnRegisterNWebHandler(nweb_id_);
+
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+  if (base::debug::ArkWebDumpInfo::GetInstance().IsDumpEnabled()) {
+    std::string dumpNWebInfo = base::StringPrintf("NWeb destroy, nweb_id = %u", nweb_id_);
+    base::debug::ArkWebDumpInfo::GetInstance().FormatAndWriteNWebDumpInfo(dumpNWebInfo);
+  }
+#endif
 }
 
 void NWebImpl::ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args) {
@@ -1818,6 +1813,14 @@ void NWebImpl::Resize(uint32_t width, uint32_t height, bool isKeyboard) {
 #endif
   nweb_delegate_->Resize(width, height, isKeyboard);
   output_handler_->Resize(width, height);
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+  if (base::debug::ArkWebDumpInfo::GetInstance().IsDumpEnabled()) {
+    std::string dumpNWebInfo = base::StringPrintf(
+          "NWeb Resize, nweb_id = %u, width = %u, height = %u, isKeyboard = %u",
+          nweb_id_, width, height, isKeyboard);
+    base::debug::ArkWebDumpInfo::GetInstance().FormatAndWriteNWebDumpInfo(dumpNWebInfo);
+  }
+#endif
 }
 
 void NWebImpl::ResizeVisibleViewport(uint32_t width,
@@ -3632,10 +3635,16 @@ void NWebImpl::NotifyMemoryLevel(int32_t level) {
 #if BUILDFLAG(ARKWEB_PERFORMANCE_MEMORY_THRESHOLD)
   using MemoryPressureLevel = base::MemoryPressureListener::MemoryPressureLevel;
   static constexpr int32_t kMemoryLevelModerate = 0;
+  static constexpr int32_t kMemoryLevelMax = 3;
   static constexpr base::TimeDelta kNotifyGapTime = base::Seconds(3);
   static MemoryPressureLevel last_memory_level =
       MemoryPressureLevel::MEMORY_PRESSURE_LEVEL_NONE;
   static base::Time last_notify_time;
+
+  if (level >= kMemoryLevelMax) {
+    LOG(WARNING) << "The memory level >= kMemoryLevelMax(3), not supported";
+    return;
+  }
 
   base::Time now = base::Time::Now();
   MemoryPressureLevel memory_pressure_level;
@@ -3693,6 +3702,12 @@ void NWebImpl::OnRenderToBackground() {
     return;
   }
   nweb_delegate_->OnWindowHide();
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+  if (base::debug::ArkWebDumpInfo::GetInstance().IsDumpEnabled()) {
+    std::string dumpNWebInfo = base::StringPrintf("OnWindowHide, nweb_id = %u", nweb_id_);
+    base::debug::ArkWebDumpInfo::GetInstance().FormatAndWriteNWebDumpInfo(dumpNWebInfo);
+  }
+#endif
 }
 
 void NWebImpl::OnRenderToForeground() {
@@ -3706,6 +3721,12 @@ void NWebImpl::OnRenderToForeground() {
     return;
   }
   nweb_delegate_->OnWindowShow();
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+  if (base::debug::ArkWebDumpInfo::GetInstance().IsDumpEnabled()) {
+    std::string dumpNWebInfo = base::StringPrintf("OnWindowShow, nweb_id = %u", nweb_id_);
+    base::debug::ArkWebDumpInfo::GetInstance().FormatAndWriteNWebDumpInfo(dumpNWebInfo);
+  }
+#endif
 }
 
 void NWebImpl::OnOnlineRenderToForeground() {
@@ -3923,7 +3944,7 @@ void NWebImpl::PrefetchPage(
 void NWebImpl::PrefetchPageV2(
     const std::string& url,
     const std::map<std::string, std::string>& additional_http_headers,
-    int32_t min_time_between_prefetches, 
+    int32_t min_time_between_prefetches,
     bool ignore_cache_control_no_store) {
 #if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
   if (nweb_delegate_ == nullptr) {
@@ -3936,7 +3957,7 @@ void NWebImpl::PrefetchPageV2(
                         header.second.c_str());
   }
   output.append("\r\n");
-  nweb_delegate_->PrefetchPage(PrefetchOptions(url, output, 
+  nweb_delegate_->PrefetchPage(PrefetchOptions(url, output,
     min_time_between_prefetches, ignore_cache_control_no_store));
 #endif  // BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
 }
@@ -4088,8 +4109,8 @@ void NWebImpl::RunJavaScriptInFrames(RunJavaScriptParam param,
   if (callback == nullptr) {
     LOG(WARNING) << "NWebImpl::RunJavaScriptInFrames callback is nullptr";
     return;
-  } 
- 
+  }
+
   nweb_delegate_->RunJavaScriptInFrames(param, callback);
 }
 
@@ -4772,49 +4793,6 @@ void NWebImpl::PutLoggerCallback(
 void NWebImpl::RemoveLoggerCallback() {
   WVLOG_D("remove logger callback");
   NWebHandlerDelegate::UnRegisterLoggerCallback();
-}
-#endif
-
-#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
-void NWebImpl::PutProxyClientCallback(
-    std::shared_ptr<NWebProxyClientCallback> proxy_callback) {
-  WVLOG_D("PutProxyClientCallback callback");
-  g_proxy_client_callback = proxy_callback;
-}
-
-void NWebImpl::RemoveProxyClientCallback() {
-  WVLOG_D("remove PutProxyClientCallback callback");
-  g_proxy_client_callback = nullptr;
-}
-
-void NWebImpl::OnUpdateProxyToken(const std::string& old_token) {
-  LOG(DEBUG) << "Fallback NWebHandlerDelegate::onUpdateProxyToken";
-  if (!g_proxy_client_callback) {
-    LOG(ERROR) << "g_proxy_client_callback is null";
-    return;
-  }
-  g_proxy_client_callback->onUpdateProxyToken(old_token.c_str());
-}
-
-void NWebImpl::UpdateProxyToken(const char* token, const char* token_info) {
-  WVLOG_I(
-      "fallback NWebImpl::UpdateProxyToken token:%{public}s, "
-      "token_info:%{public}s",
-      token, token_info);
-  fallback_proxy::FallbackProxyService::GetInstance()->UpdateProxyToken(
-      token, token_info);
-}
-
-void NWebImpl::SetGlobalListConfigPath(const char* file_path,
-                                       const char* version) {
-  WVLOG_I(
-      "fallback NWebImpl::SetGlobalListConfigPath file_path:%{public}s, "
-      "version:%{public}s",
-      file_path, version);
-  std::string file_path_str = file_path;
-  std::string version_str = version;
-  fallback_proxy::ArkwebGlobalListConfig::GetInstance()
-      ->SetGlobalListConfigPath(base::FilePath(file_path_str), version_str);
 }
 #endif
 
@@ -6132,7 +6110,7 @@ static void ApplySiteIsolationMode(bool mode){
   OHOS::NWeb::ResSchedClientAdapter::ReportSiteIsolationMode(
       g_siteIsolationMode);
   ReportSiteIsolationMode(std::to_string(g_siteIsolationMode));
-  g_siteIsolationModeInitValue = 
+  g_siteIsolationModeInitValue =
     (g_siteIsolationMode == true) ? SiteIsolationInitMode::STRICT : SiteIsolationInitMode::PARTIAL;
   LOG(INFO) << "Final site isolation mode set to:" << g_siteIsolationMode;
 }
@@ -7258,7 +7236,7 @@ int32_t NWebImpl::SetBlanklessLoadingWithKey(const std::string& key, bool isStar
     databaseInstance.ClearSnapshot(blankless_key);
     databaseInstance.ClearSnapshotDataItem({blankless_key});
     return -5;
-  }  
+  }
   if (status_code != base::ohos::BlanklessController::StatusCode::INSERTED ||
       databaseInstance.GetBlanklessLoadingCacheCapacity() == 0) {
     LOG(DEBUG) << "blankless SetBlanklessLoadingWithKey nweb_id: " << nweb_id_
@@ -7546,7 +7524,7 @@ void NWebImpl::SetTouchHandleExistState(bool touchHandleExist) {
     nweb_delegate_->SetTouchHandleExistState(touchHandleExist);
   }
 }
-  
+
 void NWebImpl::SetViewportScaleState() {
   if (nweb_delegate_) {
     nweb_delegate_->SetViewportScaleState(true);
@@ -7606,9 +7584,9 @@ void NWebImpl::OnBrowserBackground() {
 
 #if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
 void NWebImpl::EnableHttpsUpgrades(bool enable) {
-  LOG(INFO) << "NWebImpl::EnableHttpsUpgrades.";
   if (nweb_delegate_ == nullptr) {
-    WVLOG_E("EnableHttpsUpgrades nweb_delegate_ is null");
+    LOG_FEEDBACK(WARNING, kHttpsUpgrades)
+        << "EnableHttpsUpgrades message:nwebDelegateIsNull";
     return;
   }
   nweb_delegate_->EnableHttpsUpgrades(enable);
@@ -7715,3 +7693,10 @@ std::shared_ptr<NWebEngineInitArgs> NWebImpl::GetSaveInitargs() {
   return save_initargs_;
 }
 #endif
+
+void NWebImpl::ReloadIgnoreCache() {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->ReloadIgnoreCache();
+}

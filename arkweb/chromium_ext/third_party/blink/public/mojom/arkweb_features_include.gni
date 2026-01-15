@@ -109,6 +109,10 @@ if (arkweb_error_page) {
   mojom_platform_enabled_features += [ "arkweb_error_page" ]
 }
 
+if (arkweb_media_cast) {
+  mojom_platform_enabled_features += [ "arkweb_media_cast" ]
+}
+
 if (arkweb_precompile) {
   mojom_core_enabled_features += [ "arkweb_precompile" ]
 }

@@ -89,6 +89,7 @@ component("cef_nweb") {
   deps = [
     "//ohos_glue:ohos_adapter_glue_source",
     "//third_party:huawei_securec",
+    "//third_party/re2",
     "//cef/libcef/features",
     "//cef/libcef/common/mojom",
     "//components/js_injection/common",
@@ -194,6 +195,8 @@ component("cef_nweb") {
     "src/cef_delegate/nweb_web_storage_origin_impl.h",
     "src/cef_delegate/nweb_agent_manager_impl.cc",
     "src/cef_delegate/nweb_agent_manager_impl.h",
+    "src/cef_delegate/nweb_highlight_specified_content.cc",
+    "src/cef_delegate/nweb_highlight_specified_content.h",
     "src/cef_delegate/nweb_custom_keyboard_handler_impl.cc",
     "src/cef_delegate/nweb_custom_keyboard_handler_impl.h",
     "src/sysevent/event_reporter.cc",
@@ -234,6 +237,8 @@ component("cef_nweb") {
       "src/cef_delegate/nweb_extension_prompt_cef_delegate.h",
       "src/cef_delegate/nweb_extension_proxy_cef_delegate.cc",
       "src/cef_delegate/nweb_extension_proxy_cef_delegate.h",
+      "src/cef_delegate/nweb_extension_reading_list_cef_delegate.cc",
+      "src/cef_delegate/nweb_extension_reading_list_cef_delegate.h",
       "src/cef_delegate/nweb_extension_search_cef_delegate.cc",
       "src/cef_delegate/nweb_extension_search_cef_delegate.h",
       "src/cef_delegate/nweb_extension_side_panel_cef_controller.cc",
@@ -514,6 +519,13 @@ component("nweb_sources") {
     ]
   }
 
+  if (defined(arkweb_ex_fallback_proxy) && arkweb_ex_fallback_proxy) {
+    sources += [
+      "src/nweb_fallback_proxy.cc",
+      "src/nweb_fallback_proxy.h",
+    ]
+  }
+
   if (arkweb_navigation) {
     sources += [
       "src/nweb_load_committed_details_impl.cc",
@@ -587,7 +599,10 @@ component("nweb_sources") {
   ]
 
   if (defined(arkweb_ai) && arkweb_ai) {
-    deps += [ "//ohos_resources/data_detector:data_detector_resources" ]
+    deps += [
+      "//ohos_resources/data_detector:data_detector_resources",
+      "//ohos_resources/highlight_specified_content:highlight_specified_content_resources",
+    ]
   }
 
   if (defined(arkweb_autolayout) && arkweb_autolayout) {
@@ -688,6 +703,7 @@ source_set("unittests") {
     "src/cef_delegate/nweb_event_handler_unittest.cc",
     "src/cef_delegate/nweb_find_delegate_unittest.cc",
     "src/cef_delegate/nweb_handler_delegate_unittest.cc",
+    "src/cef_delegate/nweb_highlight_specified_content_unittest.cc",
     "src/cef_delegate/nweb_pipe_resource_handler_unittest.cc",
     "src/cef_delegate/nweb_preference_delegate_unittest.cc",
     "src/cef_delegate/nweb_web_storage_delegate_unittest.cc",
@@ -726,6 +742,9 @@ source_set("unittests") {
     "src/nweb_engine_impl_unittest.cc",
     "src/native_media_player/nweb_media_info_impl_unittest.cc",
     "browser/performance_manager/mechanisms/background_task_holder_unittest.cc",
+    "src/cef_delegate/nweb_extension_reading_list_cef_delegate_unittest.cc",
+    "src/cef_delegate/nweb_extension_omnibox_cef_delegate_unittest.cc",
+    "src/cef_delegate/nweb_extension_history_cef_delegate_unittest.cc",
   ]
 
   deps = [

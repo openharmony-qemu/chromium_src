@@ -293,6 +293,7 @@
 /arkweb/ohos_nweb/src/nweb_hilog.h @arkweb-DFX
 /arkweb/ohos_nweb/src/nweb_sysevent.gni @arkweb-DFX
 /arkweb/ohos_nweb/src/sysevent/ @arkweb-DFX
+/arkweb/ohos_adapter_ndk/hiviewdfx_adapter/ @arkweb-DFX
 
 # Framework
 /arkweb/ut_tools/ @arkweb-framework
@@ -340,10 +341,12 @@
 /components/viz/host/client_frame_sink_video_capturer* @arkweb-compositor
 /components/viz/common/hit_test/ @arkweb-compositor
 
-#交互安全
-/arkweb/ohos_adapter_ndk/access_token_adapter/ @zhu-sheng-le
-/arkweb/ohos_adapter_ndk/inputmethodframework_adapter/ @zhu-sheng-le
-/arkweb/ohos_adapter_ndk/keystore_adapter/ @zhu-sheng-le
+#Security
+/arkweb/ohos_adapter_ndk/access_token_adapter/ @arkweb-security
+/arkweb/ohos_adapter_ndk/inputmethodframework_adapter/ @arkweb-security
+/arkweb/ohos_adapter_ndk/keystore_adapter/ @arkweb-security
+/arkweb/chromium_ext/sandbox/ @arkweb-security
+/sandbox/ @arkweb-security
 
 # Storage
 /arkweb/ohos_nweb/src/capi/nweb_app_client_extension_callback.h @arkweb-storage

@@ -166,14 +166,11 @@ int NetworkServiceNetworkDelegate::OnHeadersReceived(
 #if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
   if (original_response_headers &&
       original_response_headers->response_code() >= 400) {
-    LOG(INFO) << "INFO: resource: ***"
-              << " error code: " << original_response_headers->response_code();
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-    LOG_FEEDBACK(INFO) << "INFO: resource: "
-                       << url::LogUtils::ConvertUrlWithMask(
-                              request->url().spec())
-                       << " error code: "
-                       << original_response_headers->response_code();
+    LOG_FEEDBACK(INFO, kNetwork)
+        << "OnHeadersReceived responseCode:"
+        << original_response_headers->response_code()
+        << " url:" << url::LogUtils::ConvertUrlWithMask(request->url().spec());
     if (!network_context_->AsArkWebNetworkContextExt()->IsStrictLogMode()) {
       LOG(URL) << "resource : " << request->url().spec()
                << " error code: " << original_response_headers->response_code();

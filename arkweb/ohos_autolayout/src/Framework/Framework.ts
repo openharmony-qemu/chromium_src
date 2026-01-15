@@ -120,7 +120,13 @@ export default class Framework {
 
         if (CCMConfig.getInstance().isAlphabetNavigatorEnable(strategy)) {
             Log.info('开始执行索引条截断修复...', Framework.TAG);
-            Alphabet.start();
+            const configObj = {
+                alphabetIdentificationMinSize: CCMConfig.getInstance().getAlphabetIdentificationMinSize(),
+                alphabetHeightWidthMinRatio: CCMConfig.getInstance().getAlphabetHeightWidthMinRatio()
+            };
+            const jsonString = JSON.stringify(configObj);
+            Alphabet.start(jsonString);
+            CCMConfig.getInstance().setAlphabetNavigatorFixExecuted(true);
         }
     }
 

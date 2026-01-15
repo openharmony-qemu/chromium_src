@@ -30,6 +30,10 @@
 #include "ohos_nweb_ex/overrides/cef/libcef/browser/alloy/alloy_video_load_optimization_config.h"
 #endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+#include "base/functional/callback.h"
+#endif
+
 namespace content {
 
 class RenderProcessHostImpl;
@@ -48,6 +52,12 @@ class CONTENT_EXPORT ArkwebRenderProcessHostImplExt : public RenderProcessHostIm
   bool IsProcessBackgrounded() override;
 
   const base::TimeTicks& ProcessBackgroundTime() override;
+
+  void RenderProcessChannelConnectCheck();
+  static void StartChannelConnectedCheckTask(ArkwebRenderProcessHostImplExt* host);
+  static void CancelChannelConnectedCheckTask(ArkwebRenderProcessHostImplExt* host);
+
+  base::CancelableOnceCallback<void()> channel_connected_check_callback_;
 #endif
 
 #if BUILDFLAG(ARKWEB_THEME_FONT)
@@ -83,6 +93,7 @@ class CONTENT_EXPORT ArkwebRenderProcessHostImplExt : public RenderProcessHostIm
 #endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 
  private:
+  base::WeakPtrFactory<ArkwebRenderProcessHostImplExt> instance_weak_factory_{this};
 };
 
 }  // namespace content

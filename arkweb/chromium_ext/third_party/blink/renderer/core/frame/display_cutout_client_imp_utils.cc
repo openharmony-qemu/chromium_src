@@ -30,6 +30,11 @@ namespace blink {
 DisplayCutoutClientImplUtils::DisplayCutoutClientImplUtils(
     DisplayCutoutClientImpl* impl)
     : impl_(impl) {}
+
+void DisplayCutoutClientImplUtils::Trace(cppgc::Visitor* visitor) const {
+  visitor->Trace(impl_);
+}
+
 #if BUILDFLAG(ARKWEB_DISPLAY_CUTOUT)
 void DisplayCutoutClientImplUtils::UpdateSafeArea(LocalFrame* frame) {
   if (!frame || !frame->GetDocument() || !frame->GetPage()) {

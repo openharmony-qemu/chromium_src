@@ -245,7 +245,7 @@ bool SkiaVkHWVideoNBImageRepresentation::BeginAccess(
     }
   }
 
-#if BUILDFLAG(ARKWEB_VULKAN)
+#if BUILDFLAG(ARKWEB_VULKAN) && !BUILDFLAG(ARKWEB_TEST)
   if (base::FeatureList::IsEnabled(features::kInsertVKEndSemaphore) && end_semaphores) {
     end_access_semaphore_ =
         vk_implementation()->CreateExternalSemaphore(vk_device());

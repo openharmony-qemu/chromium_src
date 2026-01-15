@@ -65,6 +65,7 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkServiceNetworkDelegateExt
   net::AddressList ResolveFromCacheInternal(net::HostCache::Key& key);
   void RecordErrorInfo(net::URLRequest* request, int net_error);
   int32_t GetDownStreamThroughputKbps();
+  std::string GetNetworkQualityInfo();
 #endif
 };
 

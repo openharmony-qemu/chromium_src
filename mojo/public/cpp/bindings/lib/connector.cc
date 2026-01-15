@@ -415,6 +415,11 @@ void Connector::OnWatcherHandleReady(const char* interface_name,
   // to alias without copying to the stack.
   base::debug::Alias(&interface_name);
 
+#if BUILDFLAG(IS_ARKWEB)
+  if (!base::internal::SequenceLocalStorageMap::IsSetForCurrentThread()) {
+    LOG(ERROR) << "SequenceLocalStorageSlot cannot be used, mojo interface_name: " << interface_name;
+  }
+#endif
   OnHandleReadyInternal(result);
 }
 

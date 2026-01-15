@@ -177,6 +177,8 @@ class NWebPreferenceDelegate : public NWebPreference {
   bool GetImageAnalyzerEnabled() override;
   void PutArkwebAgentEnabled(bool enabled);
   bool GetArkwebAgentEnabled();
+  void PutAgentNeedHighlight(bool enabled);
+  bool GetAgentNeedHighlight();
 #endif
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
@@ -313,6 +315,10 @@ class NWebPreferenceDelegate : public NWebPreference {
   void PutWebMediaAVSessionEnabled(bool enable) override;
 #endif  // ARKWEB_MEDIA_AVSESSION
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+  bool GetCastEnabled();
+#endif  // ARKWEB_MEDIA_CAST
+
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)
   bool ErrorPageEnabled();
   void PutErrorPageEnabled(bool enable);
@@ -397,6 +403,7 @@ class NWebPreferenceDelegate : public NWebPreference {
 #if BUILDFLAG(ARKWEB_AI)
   bool image_analyzer_enabled_{true};
   bool arkweb_agent_enabled_{false};
+  bool agent_need_highlight_{true};
 #endif
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   bool horizontal_scrollBar_access_{true};
@@ -485,6 +492,9 @@ class NWebPreferenceDelegate : public NWebPreference {
   bool pref_hash_cached_ = false;
   int64_t pref_hash_ = 0;
   uint32_t rotationType_ = 0;
+#endif
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+  bool cast_enabled_ = false;
 #endif
 };
 }  // namespace OHOS::NWeb

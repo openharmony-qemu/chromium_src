@@ -142,8 +142,8 @@ void FirstScreenCalculator::RestartTimerForFirstScreenDetection() {
 
 #endif
   timer_.Start(FROM_HERE, base::Milliseconds(task_delay_ms),
-               base::BindOnce(&FirstScreenCalculator::OnFirstScreenInvoked,
-                              weak_factory_.GetSafeRef()));
+               WTF::BindOnce(&FirstScreenCalculator::OnFirstScreenInvoked,
+                             WrapWeakPersistent(this)));
 }
 
 bool FirstScreenCalculator::IsRectContainedByExistingRects(
@@ -200,13 +200,10 @@ bool FirstScreenCalculator::DoesRectIntersectExistingRects(
 
 bool FirstScreenCalculator::IsRectTooSmallWhenNearlyFinished(
     const gfx::Rect& rect) {
-  if (!viewport_size_) {
-    return false;
-  }
   if (!nearly_finished_) {
     occupied_rect_.Union(rect);
     double occupied_ratio =
-        occupied_rect_.size().GetArea() * 1.0 / viewport_size_;
+        occupied_rect_.size().GetArea() * 1.0 / viewport_rect_.size().GetArea();
     if (occupied_ratio > NEARLY_FINISHED_THRESHOLD) {
       nearly_finished_ = true;
     } else {
@@ -214,7 +211,8 @@ bool FirstScreenCalculator::IsRectTooSmallWhenNearlyFinished(
     }
   }
 
-  double rect_ratio = rect.size().GetArea() * 1.0 / viewport_size_;
+  double rect_ratio =
+      rect.size().GetArea() * 1.0 / viewport_rect_.size().GetArea();
   if (rect_ratio < SMALL_RECT_THRESHOLD) {
     return true;
   }
@@ -229,13 +227,17 @@ void FirstScreenCalculator::NotifyImagePaint(
   if (!record || user_scrolled_ || !record->lcp_rect_info_) {
     return;
   }
-  viewport_size_ = *viewport_size;
-
   gfx::Rect rect = record->lcp_rect_info_->GetRootRectInfo();
-  double image_ratio = rect.size().GetArea() * 1.0 / (*viewport_size);
+  if (!GetViewportAreaAndTrimRect(rect)) {
+    return;
+  }
+  double image_ratio = rect.size().GetArea() * 1.0 / viewport_rect_.size().GetArea();
   if (image_ratio > BACKGROUND_IMAGE_THRESHOLD) {
     LOG(INFO) << "FirstScreenCalculator::NotifyImagePaint image_ratio "
               << image_ratio << " is too large.";
+    if (!DoesRectIntersectExistingRects(rect)) {
+      background_image_id_ = record_id_hash;
+    }
     return;
   }
   if (is_video) {
@@ -267,15 +269,14 @@ void FirstScreenCalculator::NotifyImagePaint(
 }
 
 void FirstScreenCalculator::NotifyTextPaint(const TextRecord* record,
-                                            base::TimeTicks timestamp) {
+                                            const base::TimeTicks& timestamp) {
   if (!record || user_scrolled_ || !record->lcp_rect_info_) {
     return;
   }
-  if (!viewport_size_ && frame_view_) {
-    viewport_size_ =
-        frame_view_->ViewportWidth() * frame_view_->ViewportHeight();
-  }
   gfx::Rect rect = record->lcp_rect_info_->GetRootRectInfo();
+  if (!GetViewportAreaAndTrimRect(rect)) {
+    return;
+  }
   if (text_paint_rects_.empty()) {
     text_paint_rects_.emplace_back(PaintRectInfo(rect, record->paint_time));
     if (first_screen_paint_time_.is_null() ||
@@ -285,7 +286,6 @@ void FirstScreenCalculator::NotifyTextPaint(const TextRecord* record,
     RestartTimerForFirstScreenDetection();
     return;
   }
-
   if (IsRectContainedByExistingRects(rect) ||
       IsRectTooSmallWhenNearlyFinished(rect)) {
     return;
@@ -306,16 +306,18 @@ void FirstScreenCalculator::NotifyTextPaint(const TextRecord* record,
 void FirstScreenCalculator::AssignImagePaintTime(
     MediaRecordIdHash record_id_hash,
     const gfx::Rect& rect,
-    base::TimeTicks timestamp) {
-  const auto& it = image_rects_map_.find(record_id_hash);
-  if (it == image_rects_map_.end() || !it->second.paint_time_.is_null()) {
-    return;
-  }
-
-  image_rects_map_[record_id_hash] = PaintRectInfo(rect, timestamp);
-  for (const auto& id : intersected_image_ids_) {
-    if (id == record_id_hash) {
+    const base::TimeTicks& timestamp) {
+  if (record_id_hash != background_image_id_) {
+    const auto& it = image_rects_map_.find(record_id_hash);
+    if (it == image_rects_map_.end() || !it->second.paint_time_.is_null()) {
       return;
+    }
+
+    image_rects_map_[record_id_hash] = PaintRectInfo(rect, timestamp);
+    for (const auto& id : intersected_image_ids_) {
+      if (id == record_id_hash) {
+        return;
+      }
     }
   }
 
@@ -346,6 +348,21 @@ bool FirstScreenCalculator::RemoveImageRecord(
   return false;
 }
 
+bool FirstScreenCalculator::GetViewportAreaAndTrimRect(gfx::Rect& rect) {
+  if (frame_view_ && frame_view_->ViewportWidth() > 0 &&
+      frame_view_->ViewportHeight() > 0) {
+    viewport_rect_.set_width(frame_view_->ViewportWidth());
+    viewport_rect_.set_height(frame_view_->ViewportHeight());
+  } else {
+    return false;
+  }
+  rect.Intersect(viewport_rect_);
+  if (!rect.size().GetArea()) {
+    return false;
+  }
+  return true;
+}
+
 void FirstScreenCalculator::OnUserScroll() {
   user_scrolled_ = true;
   OnFirstScreenInvoked();
@@ -367,10 +384,12 @@ void FirstScreenCalculator::RestartRecordingFirstScreenPaint() {
   user_scrolled_ = false;
   nearly_finished_ = false;
   first_screen_paint_time_ = base::TimeTicks();
+  background_image_id_ = 0;
   image_rects_map_.clear();
   text_paint_rects_.clear();
   intersected_image_ids_.clear();
   occupied_rect_ = gfx::Rect();
+  viewport_rect_ = gfx::Rect();
 }
 
 void FirstScreenCalculator::GetPaintRects(std::vector<gfx::Rect>& paint_rects) {
@@ -386,5 +405,9 @@ void FirstScreenCalculator::GetPaintRects(std::vector<gfx::Rect>& paint_rects) {
     }
     paint_rects.emplace_back(it->rect_);
   }
+}
+
+void FirstScreenCalculator::Trace(Visitor* visitor) const {
+  visitor->Trace(frame_view_);
 }
 }  // namespace blink

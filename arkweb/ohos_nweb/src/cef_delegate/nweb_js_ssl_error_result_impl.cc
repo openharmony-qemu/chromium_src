@@ -15,6 +15,8 @@
 
 #include "nweb_js_ssl_error_result_impl.h"
 
+#include "base/logging.h"
+
 using namespace OHOS::NWeb;
 
 NWebJSSslErrorResultImpl::NWebJSSslErrorResultImpl(
@@ -23,18 +25,22 @@ NWebJSSslErrorResultImpl::NWebJSSslErrorResultImpl(
 
 void NWebJSSslErrorResultImpl::HandleConfirm() {
   if (callback_ != nullptr) {
+    LOG_FEEDBACK(INFO, kNavigation) << "OnSslErrorEventReceiveHandleConfirm";
     return callback_->Continue();
   }
 }
 
 void NWebJSSslErrorResultImpl::HandleCancel() {
   if (callback_ != nullptr) {
+    LOG_FEEDBACK(INFO, kNavigation) << "OnSslErrorEventReceiveHandleCancel";
     return callback_->Cancel();
   }
 }
 
 void NWebJSSslErrorResultImpl::HandleCancelV2(bool abortLoading) {
   if (callback_ != nullptr) {
+    LOG_FEEDBACK(INFO, kNavigation)
+        << "OnSslErrorEventReceiveHandleCancelV2 abortLoading:" << abortLoading;
     return callback_->Cancel(abortLoading);
   }
 }
@@ -45,18 +51,22 @@ NWebJSAllSslErrorResultImpl::NWebJSAllSslErrorResultImpl(
 
 void NWebJSAllSslErrorResultImpl::HandleConfirm() {
   if (callback_ != nullptr) {
+    LOG_FEEDBACK(INFO, kNavigation) << "OnSslErrorEventHandleConfirm";
     return callback_->Continue();
   }
 }
 
 void NWebJSAllSslErrorResultImpl::HandleCancel() {
   if (callback_ != nullptr) {
+    LOG_FEEDBACK(INFO, kNavigation) << "OnSslErrorEventHandleCancel";
     return callback_->Cancel();
   }
 }
 
 void NWebJSAllSslErrorResultImpl::HandleCancelV2(bool abortLoading) {
   if (callback_ != nullptr) {
+    LOG_FEEDBACK(INFO, kNavigation)
+        << "OnSslErrorEventHandleCancelV2 abortLoading:" << abortLoading;
     return callback_->Cancel(abortLoading);
   }
 }

@@ -15,6 +15,7 @@
 
 #include "arkweb/chromium_ext/third_party/blink/renderer/core/hilight/arkweb_highlight_style_utils.h"
 
+#include "components/shared_highlighting/core/common/fragment_directives_constants.h"
 #include "third_party/blink/renderer/core/dom/document.h"
 #include "third_party/blink/renderer/core/frame/settings.h"
 #include "third_party/blink/renderer/core/page/page.h"
@@ -28,4 +29,34 @@ bool ArkWebHighlightStyleUtils::InSelectionDragging(const Document& document) {
          !document.Printing();
 }
 #endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
+
+#if BUILDFLAG(ARKWEB_AI)
+Color ArkWebHighlightStyleUtils::GetTargetTextForegroundColor(
+    const Document& document,
+    mojom::blink::ColorScheme color_scheme) {
+  if (document.GetSettings() &&
+      document.GetSettings()->GetArkwebAgentEnabled()) {
+    return color_scheme == mojom::blink::ColorScheme::kDark
+               ? Color::kWhite
+               : Color::kBlack;
+  }
+  return LayoutTheme::GetTheme().PlatformTextSearchColor(
+      false /* active match */, document.InForcedColorsMode(), color_scheme,
+      document.GetColorProviderForPainting(color_scheme),
+      document.IsInWebAppScope());
+}
+
+Color ArkWebHighlightStyleUtils::GetTargetTextBackgroundColor(
+    const Document& document,
+    mojom::blink::ColorScheme color_scheme) {
+  if (document.GetSettings() &&
+      document.GetSettings()->GetArkwebAgentEnabled()) {
+    return color_scheme == mojom::blink::ColorScheme::kDark
+               ? Color::FromRGBA32(kTargetTextBackgroundColorDark)
+               : Color::FromRGBA32(kTargetTextBackgroundColor);
+  }
+  return Color::FromRGBA32(
+      shared_highlighting::kFragmentTextBackgroundColorARGB);
+}
+#endif
 }  // namespace blink

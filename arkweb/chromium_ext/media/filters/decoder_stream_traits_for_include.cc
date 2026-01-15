@@ -13,6 +13,16 @@ void DecoderStreamTraits<DemuxerStream::VIDEO>::PipEnable(
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+void DecoderStreamTraits<DemuxerStream::VIDEO>::SetPreciseSeekTarget(
+    DecoderType* decoder,
+    int64_t target_timestamp) {
+  if (decoder) {
+    decoder->SetPreciseSeekTarget(target_timestamp);
+  }
+}
+#endif  // ARKWEB_VIDEO_ASSISTANT
+
 #if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
 void DecoderStreamTraits<DemuxerStream::VIDEO>::RecycleDmaBuffer(
     DecoderType* decoder) {

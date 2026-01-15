@@ -1205,16 +1205,10 @@ void RenderFrameHostManager::UnloadOldFrame(
                 bfcache_eligibility.flattened_reasons.ToString());
 
 #if BUILDFLAG(ARKWEB_BFCACHE) || BUILDFLAG(ARKWEB_LOGGER_REPORT)
-    ArkWebUnloadOldFrame(back_forward_cache,
+    ArkWebUnloadOldFrame(old_render_frame_host.get(), back_forward_cache,
                          bfcache_eligibility.flattened_reasons.ToString(),
                          can_store);
 #endif  // BUILDFLAG(ARKWEB_BFCACHE) || BUILDFLAG(ARKWEB_LOGGER_REPORT)
-#if BUILDFLAG(ARKWEB_USERAGENT)
-    if (old_render_frame_host->GetUserAgentDifferentFromNavigatingFrame()) {
-      can_store = false;
-      old_render_frame_host->SetUserAgentDifferentFromNavigatingFrame(false);
-    }
-#endif  // BUILDFLAG(ARKWEB_USERAGENT)
     if (can_store) {
       bool is_same_process =
           (old_render_frame_host->GetProcess() ==
@@ -1700,23 +1694,10 @@ RenderFrameHostManager::GetFrameHostForNavigation(
   IsSameSiteGetter is_same_site_getter(is_same_site);
 
   std::string site_instance_reason;
-#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-  std::string valid_reason;
-  scoped_refptr<SiteInstanceImpl> dest_site_instance =
-      GetSiteInstanceForNavigationRequest(request, is_same_site_getter,
-                                          browsing_context_group_swap,
-                                          &valid_reason);
-  if (!valid_reason.empty()) {
-    LOG_FEEDBACK(INFO)
-        << "OHBFCACHE: GetSiteInstanceForNavigationRequest reason="
-        << valid_reason;
-  }
-#else
   scoped_refptr<SiteInstanceImpl> dest_site_instance =
       GetSiteInstanceForNavigationRequest(request, is_same_site_getter,
                                           browsing_context_group_swap,
                                           &site_instance_reason);
-#endif
   SCOPED_CRASH_KEY_STRING256("rvh-double", "si_reason", site_instance_reason);
   if (reason) {
     reason->append(site_instance_reason);
@@ -2115,7 +2096,6 @@ RenderFrameHostManager::GetFrameHostForNavigation(
                    << request->GetUrlInfo().is_sandboxed;
     }
   }
-
   return navigation_rfh;
 }
 

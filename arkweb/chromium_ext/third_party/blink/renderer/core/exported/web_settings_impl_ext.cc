@@ -45,6 +45,10 @@ void WebSettingsImplExt::SetImageAnalyzerEnabled(bool enabled) {
 void WebSettingsImplExt::SetArkwebAgentEnabled(bool enabled) {
   settings_->SetArkwebAgentEnabled(enabled);
 }
+
+void WebSettingsImplExt::SetAgentNeedHighlight(bool enabled) {
+  settings_->SetAgentNeedHighlight(enabled);
+}
 #endif
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
@@ -233,6 +237,12 @@ bool WebSettingsImplExt::IsViewportScale()
   return settings_->IsViewportScale();
 }
 #endif  // BUILDFLAG(ARKWEB_MENU)
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+void WebSettingsImplExt::SetCastEnabled(bool enabled) {
+  settings_->SetCastEnabled(enabled);
+}
+#endif
 // LCOV_EXCL_STOP
 
 }  // namespace blink

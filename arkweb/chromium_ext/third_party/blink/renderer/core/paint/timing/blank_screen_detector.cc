@@ -93,8 +93,8 @@ void BlankScreenDetector::ScheduleNextTask() {
     if (current_delay_ms > 0) {
       detection_task_.Start(
           FROM_HERE, base::Milliseconds(current_delay_ms),
-          base::BindOnce(&BlankScreenDetector::RunDetectionTask,
-                         weak_factory_.GetWeakPtr()));
+          WTF::BindOnce(&BlankScreenDetector::RunDetectionTask,
+                        WrapWeakPersistent(this)));
     } else {
       ScheduleNextTask();
     }
@@ -212,5 +212,9 @@ void BlankScreenDetector::GenerateTestPointsByMethodDetection17(
                                 height * y / DIVIDED_BY_FIVE);
     }
   }
+}
+
+void BlankScreenDetector::Trace(Visitor* visitor) const {
+  visitor->Trace(local_frame_);
 }
 }  // namespace blink

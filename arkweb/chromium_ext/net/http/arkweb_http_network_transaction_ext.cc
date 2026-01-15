@@ -97,6 +97,10 @@
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "arkweb/chromium_ext/net/base/log_utils.h"
+#endif
+
 namespace net {
 
 #if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
@@ -314,12 +318,28 @@ void ArkWebHttpNetworkTransactionExt::StopRecording() {
 }
 
 void ArkWebHttpNetworkTransactionExt::ReportTimeout() {
-  LOG(INFO) << "INFO: request had no reponse within 5 seconds. url: ***";
+  std::string response_info_record;
+
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-  LOG_FEEDBACK(INFO) << "INFO: request had no reponse within 5 seconds. url: "
-                     << url::LogUtils::ConvertUrlWithMask(url_.spec());
+  const HttpResponseInfo* response_info = GetResponseInfo();
+  if (response_info) {
+    response_info_record = base::StringPrintf(
+        "ip:%s connectionInfo:%s receivedBodyBytes: %ld",
+        net::LogUtils::AnonymizeIpAddress(response_info->remote_endpoint)
+            .c_str(),
+        net::HttpConnectionInfoToString(response_info->connection_info).data(),
+        received_body_bytes_);
+  }
+#endif
+
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(INFO, kNetwork)
+      << "NetworkTransactionTimeout " << response_info_record
+      << " url:" << url::LogUtils::ConvertUrlWithMask(url_.spec());
   if (!session_->is_strict_log_mode()) {
-    LOG(URL) << "request had no reponse within 5 seconds. url: " << url_.spec();
+    LOG(URL) << "request had no reponse within 5 seconds. url: " << url_.spec()
+             << " " << response_info_record;
   }
 #endif
 }

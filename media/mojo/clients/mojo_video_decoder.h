@@ -73,6 +73,7 @@ class MojoVideoDecoder final : public VideoDecoder,
   int GetMaxDecodeRequests() const final;
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   void SetVideoSurface(int32_t widget_id) final;
+  void SetPreciseSeekTarget(int64_t target_timestamp) final;
 #endif // ARKWEB_VIDEO_ASSISTANT
 
   // mojom::VideoDecoderClient implementation.

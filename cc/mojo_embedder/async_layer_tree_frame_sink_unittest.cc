@@ -291,6 +291,10 @@ TEST_F(AsyncLayerTreeFrameSinkSimpleTest,
   EXPECT_FALSE(
       viz::HitTestRegionList::IsEqual(hit_test_region_list, GetHitTestData()));
 }
-
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+TEST_F(AsyncLayerTreeFrameSinkSimpleTest, UpdateThrottleMode) {
+    ASSERT_NO_FATAL_FAILURE(layer_tree_frame_sink_->UpdateThrottleMode(false));
+}
+#endif // ARKWEB_THROTTLE_FRAME
 }  // namespace mojo_embedder
 }  // namespace cc

@@ -40,6 +40,7 @@ public:
 #if BUILDFLAG(ARKWEB_AI)
   virtual void SetImageAnalyzerEnabled(bool) = 0;
   virtual void SetArkwebAgentEnabled(bool) = 0;
+  virtual void SetAgentNeedHighlight(bool) = 0;
 #endif  // BUILDFLAG(ARKWEB_AI)
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   virtual void SetVerticalHideScrollbars(bool) = 0;
@@ -82,6 +83,10 @@ public:
 
 #if BUILDFLAG(ARKWEB_FOCUS)
   virtual void SetGestureFocusMode(int) = 0;
+#endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+  virtual void SetCastEnabled(bool) = 0;
 #endif
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)

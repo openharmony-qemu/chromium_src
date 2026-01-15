@@ -5,7 +5,8 @@
             "doublelucky"
         ],
         "arkweb-DFX": [
-            "StringChen"
+            "StringChen",
+            "hjoksky"
         ],
         "arkweb-framework": [
             "cloud_nine999",
@@ -40,6 +41,9 @@
             "shawshank",
             "chenjiadong",
             "zhangyanchuan"
+        ],
+        "arkweb-security": [
+            "zhu-sheng-le"
         ]
     },
     "userInfos": {
@@ -47,6 +51,9 @@
             "info": "[构建工程]"
         },
         "StringChen": {
+            "info": "[DFX]"
+        },
+        "hjoksky": {
             "info": "[DFX]"
         },
         "cloud_nine999": {
@@ -105,6 +112,9 @@
         },
         "doublelucky": {
             "info": "[build test]"
+        },
+        "zhu-sheng-le": {
+            "info": "[交互安全]"
         }
     }
 }

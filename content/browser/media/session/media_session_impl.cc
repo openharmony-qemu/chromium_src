@@ -618,7 +618,9 @@ void MediaSessionImpl::OnPlayerPaused(MediaSessionPlayerObserver* observer,
   // Otherwise, suspend the session.
   // The session might not have audio focus if it was paused prior to being
   // suspended, which is fine.
-  implUtils_->DoEndSessionWhenHide();
+  if (!pause_avcast_) {
+    implUtils_->DoEndSessionWhenHide();
+  }
   OnSuspendInternal(SuspendType::kContent, State::SUSPENDED);
 }
 

@@ -308,7 +308,7 @@ void ReportVideoPlayErrorInfo(const std::string errorType,
 void ReportAudioFrameDropStats(int frameCount) {
   OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
       AUDIO_FRAME_DROP_STATISTICS, HiSysEventAdapter::EventType::STATISTIC,
-      {AUDIO_BLANK_FRAME_COUNT, std::to_string(frameCount)});
+      {AUDIO_BLANK_FRAME_COUNT, frameCount});
 }
 
 void ReportVideoFrameDropStats(uint32_t frameCount, uint64_t frameDuration) {

@@ -341,7 +341,16 @@ MediaWebContentsObserver::MediaPlayerHostImpl::MediaPlayerHostImpl(
     : frame_routing_id_(frame_routing_id),
       media_web_contents_observer_(media_web_contents_observer) {}
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+MediaWebContentsObserver::MediaPlayerHostImpl::~MediaPlayerHostImpl() {
+  if (media_web_contents_observer_ && media_web_contents_observer_->web_contents_impl() &&
+    media_web_contents_observer_->web_contents_impl()->AsWebContentsImplExt()) {
+    media_web_contents_observer_->web_contents_impl()->AsWebContentsImplExt()->DelVideoAssistant();
+  }
+}
+#else
 MediaWebContentsObserver::MediaPlayerHostImpl::~MediaPlayerHostImpl() = default;
+#endif // ARKWEB_VIDEO_ASSISTANT
 
 void MediaWebContentsObserver::MediaPlayerHostImpl::AddMediaPlayerHostReceiver(
     mojo::PendingAssociatedReceiver<media::mojom::MediaPlayerHost> receiver) {

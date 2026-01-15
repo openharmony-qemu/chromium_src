@@ -80,6 +80,7 @@ void MediaSessionOHOS::Prepare(OHOS::NWeb::MediaAVSessionType type) {
 
     media_session_->RebuildAndNotifyMetadataChanged();
     media_session_->RebuildAndNotifyMediaPositionChanged();
+    avsession_adapter_->SetRemoteCastEnabled(true);
   }
 }
 
@@ -297,8 +298,12 @@ void MediaSessionOHOS::SetWebviewShow(bool show, bool is_special_for_audio) {
     }
   } else {
     if (avsession_adapter_) {
-      avsession_adapter_->DestroyAVSession();
-      media_type_ = OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_INVALID;
+      if (is_avcast_ && media_session_->IsPageBackground()) {
+        LOG(INFO) << "has avcast skip destroy avsession";
+      } else {
+        avsession_adapter_->DestroyAVSession();
+        media_type_ = OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_INVALID;
+      }
     }
   }
 }
@@ -313,6 +318,82 @@ bool MediaSessionOHOS::IsPlayingAudio() {
     ret = true;
   }
   return ret;
+}
+
+void MediaSessionOHOS::OnNotifyMeidaCastUri(const std::string& media_uri) {
+  media_uri_ = media_uri;
+}
+
+void MediaSessionOHOS::CreateAVCastAdapter() {
+  if (avsession_adapter_) {
+    avsession_adapter_->SetMediaCastUri(media_uri_);
+    avsession_adapter_->PrepareMediaCastDescription();
+  }
+}
+
+void MediaSessionOHOS::HandleStopMediaCast() {
+  LOG(INFO) << "MediaSessionOHOS::HandleStopMediaCast";
+  if (avsession_adapter_) {
+    avsession_adapter_->HandleStopMediaCast();
+  }
+}
+
+int32_t MediaSessionOHOS::GetMediaCastCurrentTime() {
+  if (!media_session_) {
+    LOG(ERROR) << "MediaSessionOHOS::GetMediaCastCurrentTime, media_session_ is nullptr";
+    return 0;
+  }
+  return media_session_->GetMediaCastCurrentTime();
+}
+
+void MediaSessionOHOS::PullUpCastBackGround(const std::string& device_name) {
+  if (!media_session_) {
+    LOG(ERROR) << "MediaSessionOHOS::PullUpCastBackGround, media_session_ is nullptr";
+    return;
+  }
+  media_session_->PullUpCastBackGround(device_name);
+}
+
+void MediaSessionOHOS::MediaCastStopped() {
+  if (!media_session_) {
+    LOG(ERROR) << "MediaSessionOHOS::MediaCastStopped, media_session_ is nullptr";
+    return;
+  }
+  media_session_->MediaCastStopped();
+}
+
+void MediaSessionOHOS::SetAvCast(bool is_avcast) {
+  is_avcast_ = is_avcast;
+}
+
+void MediaSessionOHOS::UpdateUiPlayState(bool is_playing) {
+  if (!media_session_) {
+    LOG(ERROR) << "MediaSessionOHOS::UpdateUiPlayState, media_session_ is nullptr";
+    return;
+  }
+  media_session_->UpdateUiPlayState(is_playing);
+}
+
+void MediaSessionOHOS::UpdateUiPlayPosition(int64_t position) {
+  if (!media_session_) {
+    LOG(ERROR) << "MediaSessionOHOS::UpdateUiPlayPosition, media_session_ is nullptr";
+    return;
+  }
+  media_session_->UpdateUiPlayPosition(position);
+}
+
+void MediaSessionOHOS::UpdateRemotePlayState(bool is_playing) {
+  LOG(INFO) << "MediaSessionOHOS::UpdateRemotePlayState";
+  if (avsession_adapter_) {
+    avsession_adapter_->UpdateRemotePlayState(is_playing);
+  }
+}
+
+void MediaSessionOHOS::UpdateRemotePlayPosition(int64_t position) {
+  LOG(INFO) << "MediaSessionOHOS::UpdateRemotePlayPosition";
+  if (avsession_adapter_) {
+    avsession_adapter_->UpdateRemotePlayPosition(position);
+  }
 }
 
 OHOSMediaAVSessionCallback::OHOSMediaAVSessionCallback(
@@ -362,6 +443,72 @@ void OHOSMediaAVSessionCallback::SeekTo(int64_t millisTime) {
   task_runner_->PostTask(
       FROM_HERE, base::BindOnce(&MediaSessionOHOS::SeekTo, media_session_ohos_,
                                 millisTime));
+}
+
+int32_t OHOSMediaAVSessionCallback::GetMediaCastCurrentTime() {
+  if (!media_session_ohos_) {
+    return 0;
+  }
+
+  base::WaitableEvent event(base::WaitableEvent::ResetPolicy::AUTOMATIC,
+                            base::WaitableEvent::InitialState::NOT_SIGNALED);
+  int32_t result = 0;
+  task_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(
+          [](base::WeakPtr<MediaSessionOHOS> session, int32_t* result,
+             base::WaitableEvent* event) {
+            *result = session ? session->GetMediaCastCurrentTime() : 0;
+            event->Signal();
+          },
+          media_session_ohos_, &result, &event));
+  event.Wait();
+  return result;
+}
+
+void OHOSMediaAVSessionCallback::PullUpCastBackGround(const std::string& device_name) {
+  if (!media_session_ohos_) {
+    return;
+  }
+  LOG(INFO) << "OHOSMediaAVSessionCallback::PullUpCastBackGround";
+  task_runner_->PostTask(
+      FROM_HERE, base::BindOnce(&MediaSessionOHOS::PullUpCastBackGround, media_session_ohos_, device_name));
+}
+
+void OHOSMediaAVSessionCallback::MediaCastStopped() {
+  if (!media_session_ohos_) {
+    return;
+  }
+  LOG(INFO) << "OHOSMediaAVSessionCallback::MediaCastStopped";
+  task_runner_->PostTask(
+      FROM_HERE, base::BindOnce(&MediaSessionOHOS::MediaCastStopped, media_session_ohos_));
+}
+
+void OHOSMediaAVSessionCallback::SetAvCast(bool is_avcast) {
+  if (!media_session_ohos_) {
+    return;
+  }
+  task_runner_->PostTask(
+      FROM_HERE, base::BindOnce(&MediaSessionOHOS::SetAvCast, media_session_ohos_,
+                                is_avcast));
+}
+
+void OHOSMediaAVSessionCallback::UpdateUiPlayState(bool is_playing) {
+  if (!media_session_ohos_) {
+    return;
+  }
+  task_runner_->PostTask(
+      FROM_HERE, base::BindOnce(&MediaSessionOHOS::UpdateUiPlayState, media_session_ohos_,
+                                is_playing));
+}
+
+void OHOSMediaAVSessionCallback::UpdateUiPlayPosition(int64_t position) {
+  if (!media_session_ohos_) {
+    return;
+  }
+  task_runner_->PostTask(
+      FROM_HERE, base::BindOnce(&MediaSessionOHOS::UpdateUiPlayPosition, media_session_ohos_,
+                                position));
 }
 
 void OHOSMediaAVSessionMetadata::SetTitle(const std::string& title) {

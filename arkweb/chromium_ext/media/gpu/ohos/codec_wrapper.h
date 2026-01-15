@@ -51,6 +51,7 @@ class MEDIA_GPU_EXPORT CodecOutputBuffer {
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   bool RenderVideoView() { return render_video_view_; }
+  void OnBufferRendered();
 #endif // ARKWEB_VIDEO_ASSISTANT
 
  private:
@@ -103,7 +104,8 @@ class MEDIA_GPU_EXPORT CodecWrapper {
   bool SetSurface(scoped_refptr<CodecSurfaceBundle> surface_bundle);
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-  void SetVideoSurface(int32_t widget_id);
+  void SetVideoSurface(int32_t widget_id, bool is_surface_pending);
+  void SetPreciseSeekTarget(int64_t target_timestamp);
 #endif // ARKWEB_VIDEO_ASSISTANT
 
 #if BUILDFLAG(ARKWEB_MEDIA_DMABUF)

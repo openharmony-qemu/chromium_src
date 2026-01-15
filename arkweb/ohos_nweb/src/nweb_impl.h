@@ -759,6 +759,7 @@ class NWebImpl : public NWeb {
   void StartDownload(const char* url);
   void ResumeDownload(std::shared_ptr<NWebDownloadItem> web_download);
   void StopFling() override;
+  void ReloadIgnoreCache() override;
   static void ResumeDownloadStatic(
       std::shared_ptr<NWebDownloadItem> download_item);
 
@@ -1049,16 +1050,6 @@ class NWebImpl : public NWeb {
   static void PutLoggerCallback(
       std::shared_ptr<NWebLoggerCallback> logger_callback);
   static void RemoveLoggerCallback();
-#endif
-
-#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
-  static void PutProxyClientCallback(
-      std::shared_ptr<NWebProxyClientCallback> proxy_callback);
-  static void RemoveProxyClientCallback();
-  static void OnUpdateProxyToken(const std::string& old_token);
-  static void UpdateProxyToken(const char* token, const char* token_info);
-  static void SetGlobalListConfigPath(const char* file_path,
-                                      const char* version);
 #endif
 
   int SetUrlTrustList(const std::string& urlTrustList) override;

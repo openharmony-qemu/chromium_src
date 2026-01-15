@@ -126,7 +126,7 @@ class NET_EXPORT ProxyConfigServiceOHOS : public ProxyConfigService {
 class NetProxyEventCallback : public OHOS::NWeb::NetProxyEventCallbackAdapter {
  public:
   static std::shared_ptr<NetProxyEventCallback> GetInstance();
-  ~NetProxyEventCallback() = default;
+  ~NetProxyEventCallback();
 
   void Changed(const std::string& host,
                const uint16_t& port,

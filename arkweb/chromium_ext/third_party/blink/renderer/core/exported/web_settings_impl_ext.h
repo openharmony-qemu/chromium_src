@@ -42,6 +42,7 @@ class CORE_EXPORT WebSettingsImplExt final : public WebSettingsImpl {
 #if BUILDFLAG(ARKWEB_AI)
   void SetImageAnalyzerEnabled(bool) override;
   void SetArkwebAgentEnabled(bool) override;
+  void SetAgentNeedHighlight(bool) override;
 #endif  // BUILDFLAG(ARKWEB_AI)
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   void SetVerticalHideScrollbars(bool) override;
@@ -132,6 +133,10 @@ class CORE_EXPORT WebSettingsImplExt final : public WebSettingsImpl {
   void SetViewportScaleState(bool viewportScale) override;
   bool IsViewportScale() override;
 #endif  // BUILDFLAG(ARKWEB_MENU)
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+  void SetCastEnabled(bool enable) override;
+#endif  // BUILDFLAG(ARKWEB_MEDIA_CAST)
 };
 }  // namespace blink
 

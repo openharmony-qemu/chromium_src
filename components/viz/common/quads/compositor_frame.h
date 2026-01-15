@@ -37,6 +37,12 @@ class VIZ_COMMON_EXPORT CompositorFrame {
 
   float device_scale_factor() const { return metadata.device_scale_factor; }
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  float stretch_content_none_device_scale_factor() const {
+    return metadata.stretch_content_none_device_scale_factor;
+  }
+#endif
+
   const gfx::Size& size_in_pixels() const {
     DCHECK(!render_pass_list.empty());
     return render_pass_list.back()->output_rect.size();

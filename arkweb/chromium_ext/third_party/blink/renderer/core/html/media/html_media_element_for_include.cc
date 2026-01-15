@@ -37,9 +37,9 @@
 #include "arkweb/ohos_nweb/src/sysevent/event_reporter.h"
 #endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
-#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION) || BUILDFLAG(ARKWEB_MEDIA_CAST)
 #include "third_party/blink/renderer/core/html/media/html_video_element.h"
-#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION || ARKWEB_MEDIA_CAST
 
 namespace blink {
 namespace {
@@ -54,7 +54,6 @@ float PageConstraintInitalScale(const Document& document) {
   if (auto* page = document.GetPage()) {
     scale = page->GetPageScaleConstraintsSet().FinalConstraints().initial_scale;
   } else {
-    LOG(INFO) << "using default scale 1.0";
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
     LOG_FEEDBACK(INFO) << "using default scale 1.0";
 #endif  // ARKWEB_LOGGER_REPORT
@@ -177,9 +176,6 @@ std::string HTMLMediaElement::GetOutgoingReferrerString() {
 }
 
 void HTMLMediaElement::UpdatePlaybackStatus(uint32_t status) {
-  LOG(INFO) << "UpdatePlaybackStatus(" << status << "), paused_[" << paused_
-            << "]";
-
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
   LOG_FEEDBACK(INFO) << "UpdatePlaybackStatus(" << status << "), paused_["
                      << paused_ << "]";
@@ -226,7 +222,6 @@ gfx::Rect HTMLMediaElement::GetVideoRect() {
     return gfx::Rect(ToFlooredPoint(layout_box->Location()),
                      ToFlooredSize(layout_box->Size()));
   }
-  LOG(INFO) << "using default vidoe size";
 
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
   LOG_FEEDBACK(INFO) << "using default vidoe size";
@@ -715,5 +710,71 @@ void HTMLMediaElement::MediaLoadingFailed(WebMediaPlayer::NetworkState error,
   UpdateLayoutObject();
 }
 #endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+void HTMLMediaElement::OnMediaCastEnter() {
+  LOG(INFO) << "HTMLMediaElement::OnMediaCastEnter";
+  html_media_element_utils_.OnMediaCastEnter();
+}
+
+void HTMLMediaElement::PullUpCastBackGround(const String& device_name) {
+  LOG(INFO) << "HTMLMediaElement::PullUpCastBackGround";
+  if (auto* video_element = DynamicTo<HTMLVideoElement>(this)) {
+    video_element->MediaRemotingStarted(WebString(device_name));
+    for (auto& observer : media_player_observer_remote_set_->Value()) {
+      observer->SetPauseByAvcast(true);
+    }
+  }
+}
+
+void HTMLMediaElement::MediaCastStopByNavigation() {
+  MediaCastStopped();
+}
+
+void HTMLMediaElement::MediaCastStopped() {
+  LOG(INFO) << "HTMLMediaElement::MediaRemotingStopped";
+  if (auto* video_element = DynamicTo<HTMLVideoElement>(this)) {
+    video_element->MediaRemotingStopped(MediaPlayerClient::kMediaRemotingStopNoText);
+    for (auto& observer : media_player_observer_remote_set_->Value()) {
+      observer->SetPauseByAvcast(false);
+    }
+  }
+}
+
+void HTMLMediaElement::HandleStopMediaCast() {
+  LOG(INFO) << "HTMLMediaElement::HandleStopMediaCast";
+  for (auto& observer : media_player_observer_remote_set_->Value()) {
+    observer->HandleStopMediaCast();
+  }
+}
+
+void HTMLMediaElement::UpdateUiPlayState(bool is_playing) {
+  LOG(INFO) << "HTMLMediaElement::UpdateUiPlayState";
+  if (auto* video_element = DynamicTo<HTMLVideoElement>(this)) {
+    video_element->UpdateUiPlayState(is_playing);
+  }
+}
+
+void HTMLMediaElement::UpdateUiPlayPosition(int64_t position) {
+  LOG(DEBUG) << "HTMLMediaElement::UpdateUiPlayPosition";
+  if (auto* video_element = DynamicTo<HTMLVideoElement>(this)) {
+    video_element->UpdateUiPlayPosition(position);
+  }
+}
+
+bool HTMLMediaElement::EnableMediaCastByUrlProtocol() {
+  LOG(INFO) << "HTMLMediaElement::EnableMediaCastByUrlProtocol";
+  if (currentSrc().ProtocolIsInHTTPFamily()) {
+    LOG(INFO) << "HTMLMediaElement::EnableMediaCastByUrlProtocol, url is http or https";
+    return true;
+  }
+  return false;
+}
+
+void HTMLMediaElement::GetMediaCastCurrentTime(GetMediaCastCurrentTimeCallback callback) {
+  LOG(INFO) << "HTMLMediaElement::GetMediaCastCurrentTime: " << currentTime();
+  std::move(callback).Run(currentTime());
+}
+#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
 
 }  // namespace blink

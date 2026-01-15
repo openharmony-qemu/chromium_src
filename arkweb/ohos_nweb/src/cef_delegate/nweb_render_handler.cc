@@ -1640,7 +1640,6 @@ void NWebRenderHandler::OnFirstScreenPaint(const std::string& url,
                                            int64_t firstScreenPaintTime) {
   LOG(INFO) << "NWebRenderHandler::OnFirstScreenPaint"
       << " duration: " << (firstScreenPaintTime - navigationStartTime)
-      << "  url: " << url
       << " navigationStartTime: " << navigationStartTime
       << " firstScreenPaintTime: " << firstScreenPaintTime;
   

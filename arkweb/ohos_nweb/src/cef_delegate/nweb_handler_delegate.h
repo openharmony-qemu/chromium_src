@@ -157,6 +157,7 @@ class NWebHandlerDelegate : public ArkWebClientExt,
       const std::vector<std::shared_ptr<NWebJsProxyCallback>>& callbacks);
 #if BUILDFLAG(ARKWEB_AI)
   void RegisterNWebAgentHandler(std::shared_ptr<NWebAgentHandler> handler);
+  void RegisterOnLoadStartedCbForHighlightContent(std::function<void(void)>&& callback);
 #endif
 
   using NativeJSProxyCallbackFunc =
@@ -1056,6 +1057,12 @@ class NWebHandlerDelegate : public ArkWebClientExt,
                                         const std::string& referrer,
                                         int transition_type,
                                         bool is_key_request) override;
+  void OnRewriteUrlForNavigationAsync(
+      const CefString& original_url,
+      const CefString& referrer,
+      int transition_type,
+      bool is_key_request,
+      CefRefPtr<CefRewriteUrlCallback> callback) override;
 #endif
 
 #if BUILDFLAG(ARKWEB_WEBRTC)
@@ -1069,6 +1076,10 @@ class NWebHandlerDelegate : public ArkWebClientExt,
 #if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
   void OnDocumentEndReady(const CefString& id, const CefString& parent_id) override;
 #endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+void OnMediaCastEnter() override;
+#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
 
  private:
 #if BUILDFLAG(ARKWEB_JSPROXY)
@@ -1105,6 +1116,7 @@ class NWebHandlerDelegate : public ArkWebClientExt,
   std::shared_ptr<NWebHandler> nweb_handler_ = nullptr;
 #if BUILDFLAG(ARKWEB_AI)
   std::shared_ptr<NWebAgentHandler> nweb_agent_handler_ = nullptr;
+  std::function<void(void)> onLoadStartedCbForHighlightContent_ = nullptr;
 #endif
   std::shared_ptr<NWebJavaScriptResultCallBack> nweb_javascript_callback_ =
       nullptr;
@@ -1258,6 +1270,7 @@ class NWebHandlerDelegate : public ArkWebClientExt,
   CefRefPtr<CefScreenCaptureCallback> screen_capture_cb_ = nullptr;
 #endif // ARKWEB_EX_SCREEN_CAPTURE
 
+  base::WeakPtr<NWebHandlerDelegate> weak_this_;
   base::WeakPtrFactory<NWebHandlerDelegate> weak_factory_{this};
 
 #if BUILDFLAG(ARKWEB_MENU)

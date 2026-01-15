@@ -215,6 +215,8 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
       GetImageAnalyzerEnabled() ? STATE_ENABLED : STATE_DISABLED;
   browser_settings.arkweb_agent_enabled =
       GetArkwebAgentEnabled() ? STATE_ENABLED : STATE_DISABLED;
+  browser_settings.agent_need_highlight =
+      GetAgentNeedHighlight() ? STATE_ENABLED : STATE_DISABLED;
 #endif
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   browser_settings.hide_horizontal_scrollbars =
@@ -299,6 +301,11 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
   browser_settings.delay_for_background_tab_freezing =
       GetDelayDurationForBackgroundTabFreezing();
 #endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+  browser_settings.cast_enabled =
+      GetCastEnabled() ? STATE_ENABLED : STATE_DISABLED;
+#endif  // ARKWEB_MEDIA_CAST
 
 #if BUILDFLAG(ARKWEB_MEDIA_NETWORK_TRAFFIC_PROMPT)
   browser_settings.enable_media_network_traffic_prompt =
@@ -818,6 +825,15 @@ void NWebPreferenceDelegate::PutArkwebAgentEnabled(bool enabled) {
 bool NWebPreferenceDelegate::GetArkwebAgentEnabled() {
   return arkweb_agent_enabled_;
 }
+
+void NWebPreferenceDelegate::PutAgentNeedHighlight(bool enabled) {
+  agent_need_highlight_ = enabled;
+  WebPreferencesChanged();
+}
+
+bool NWebPreferenceDelegate::GetAgentNeedHighlight() {
+  return agent_need_highlight_;
+}
 #endif
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
@@ -1303,8 +1319,24 @@ void NWebPreferenceDelegate::PutWebMediaAVSessionEnabled(bool enable) {
   LOG(INFO) << "NWebPreferenceDelegate::PutWebMediaAVSessionEnabled enable:"
             << enable;
   browser_->GetHost()->PutWebMediaAVSessionEnabled(enable);
+
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  auto currentProcess = base::CommandLine::ForCurrentProcess();
+  if (currentProcess && !currentProcess->HasSwitch(::switches::kEnableMediaAvsession)) {
+    cast_enabled_ = true;
+  }
+#endif // ARKWEB_NWEB_EX
+  cast_enabled_ = cast_enabled_ && enable;
+  LOG(INFO) << "NWebPreferenceDelegate::PutWebMediaAVSessionEnabled cast_enabled_:"
+            << cast_enabled_;
 }
 #endif  // ARKWEB_MEDIA_AVSESSION
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+  bool NWebPreferenceDelegate::GetCastEnabled() {
+    return cast_enabled_;
+  }
+#endif  // ARKWEB_MEDIA_CAST
 
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)
 void NWebPreferenceDelegate::PutErrorPageEnabled(bool enable) {

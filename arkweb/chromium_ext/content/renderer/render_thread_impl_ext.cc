@@ -237,8 +237,6 @@ void RenderThreadImpl::OnChannelListenError() {
           .HasSwitch(switches::kEnableLoggerReport)) {
     if (logging::GetLogMessageHandler()) {
       logging::SetLogMessageHandler(nullptr);
-      LOG(INFO) << "remove log message handler for "
-                << base::GetCurrentProcId();
       LOG_FEEDBACK(INFO) << "remove log message handler for "
                          << base::GetCurrentProcId();
     }
@@ -253,8 +251,6 @@ void RenderThreadImpl::OnChannelConnected(int32_t peer_pid) {
     if (!logging::GetLogMessageHandler()) {
       logging::SetLogMessageHandler(RenderProcessLogMessageHandler);
     } else {
-      LOG(INFO) << "maybe you runs in single process mode, log message handler "
-                   "had been setted by other";
       LOG_FEEDBACK(INFO)
           << "maybe you runs in single process mode, log message handler "
              "had been setted by other";

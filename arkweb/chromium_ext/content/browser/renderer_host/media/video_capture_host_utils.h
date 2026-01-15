@@ -40,6 +40,9 @@ public:
 #endif
 #if BUILDFLAG(ARKWEB_WEBRTC)
   void OnCameraCaptureStateChanged(CameraCaptureState new_state);
+  static void OnCameraCaptureStateChangedBind(CameraCaptureState camera_state,
+                                              CameraCaptureState new_state,
+                                              GlobalRenderFrameHostId render_frame_host_id);
   void OnCameraCaptureStarted(const VideoCaptureControllerID& controller_id);
 #endif
 

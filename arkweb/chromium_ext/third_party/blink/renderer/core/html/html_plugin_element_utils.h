@@ -38,9 +38,11 @@ struct ParamChangeInfo {
   AtomicString value;
 };
 
-class HTMLPlugInElementUtils {
+class HTMLPlugInElementUtils final
+  : public GarbageCollected<HTMLPlugInElementUtils> {
  public:
   HTMLPlugInElementUtils(HTMLPlugInElement* pluginElement);
+  void Trace(Visitor*) const;
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
   bool CheckNativeType(const char* key) const;
   bool CheckIntrinsicSizeEnable() const;
@@ -63,7 +65,7 @@ class HTMLPlugInElementUtils {
 #if BUILDFLAG(ARKWEB_TEST)
   friend class HTMLPlugInElementUtilsTest;
 #endif
-  raw_ptr<HTMLPlugInElement> plugin_;
+  Member<HTMLPlugInElement> plugin_;
   bool native_embed_overlay_{false};
   bool native_embed_overlay_infinity_{false};
   bool stretch_content_to_fill_bounds_{true};

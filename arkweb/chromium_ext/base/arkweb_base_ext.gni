@@ -58,6 +58,12 @@ if (arkweb_crashpad) {
   ]
 }
 
+if (arkweb_dfx_dump) {
+  arkweb_base_ext_sources += [
+    "//arkweb/chromium_ext/base/debug/arkweb_dump_info.cc",
+    "//arkweb/chromium_ext/base/debug/arkweb_dump_info.h",
+  ]
+}
 arkweb_metrics_sources = [
   "//arkweb/chromium_ext/base/metrics/field_trial_utils.cc",
   "//arkweb/chromium_ext/base/metrics/field_trial_utils.h",

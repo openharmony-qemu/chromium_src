@@ -96,6 +96,11 @@ class AsyncDestroyVideoDecoder final : public VideoDecoder {
     DCHECK(wrapped_decoder_);
     wrapped_decoder_->StartPlayingFrom(start_timestamp);
   }
+
+  void SetPreciseSeekTarget(int64_t target_timestamp) override {
+    DCHECK(wrapped_decoder_);
+    wrapped_decoder_->SetPreciseSeekTarget(target_timestamp);
+  }
 #endif // ARKWEB_VIDEO_ASSISTANT
 #if BUILDFLAG(ARKWEB_PIP)
   void PipEnable(bool enable) override {

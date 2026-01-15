@@ -18,6 +18,9 @@
 namespace page_load_metrics {
 
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT) && !BUILDFLAG(ARKWEB_NWEB_EX)
+void MetricsWebContentsObserver::DidStartNavigation(
+    content::NavigationHandle* navigation_handle) {}
+
 void MetricsWebContentsObserver::OnResourceLoadComplete(
     content::RenderFrameHost* render_frame_host,
     const content::GlobalRequestID& request_id,

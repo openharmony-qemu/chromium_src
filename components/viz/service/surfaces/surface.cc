@@ -268,14 +268,12 @@ Surface::QueueFrameResult Surface::CommitFrame(FrameData frame) {
 
   TakePendingLatencyInfo(&frame.frame.metadata.latency_info);
 #if BUILDFLAG(ARKWEB_SUPPORTS_DAMAGE_REGION)
-  if (!features::IsUsingVulkan()) {
-    auto new_page_scale_factor = frame.frame.metadata.page_scale_factor;
-    if (current_page_scale_factor_ != new_page_scale_factor) {
-      current_page_scale_factor_ = new_page_scale_factor;
-      base::ohos::SetPageScale(true);
-    } else {
-      base::ohos::SetPageScale(false);
-    }
+  auto new_page_scale_factor = frame.frame.metadata.page_scale_factor;
+  if (current_page_scale_factor_ != new_page_scale_factor) {
+    current_page_scale_factor_ = new_page_scale_factor;
+    base::ohos::SetPageScale(true);
+  } else {
+    base::ohos::SetPageScale(false);
   }
 #endif
 

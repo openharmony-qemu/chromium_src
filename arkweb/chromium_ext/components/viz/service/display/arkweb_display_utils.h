@@ -73,6 +73,10 @@ class ArkwebDisplayUtils {
                    gfx::Size current_surface_size,
                    AggregatedFrame& frame);
 
+#if BUILDFLAG(ARKWEB_VULKAN)
+  void JudgePartialSwap();
+#endif
+
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   void DumpSnapshotForBlankLess(AggregatedFrame& frame);
 

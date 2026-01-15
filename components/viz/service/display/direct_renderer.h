@@ -83,6 +83,10 @@ class VIZ_SERVICE_EXPORT DirectRenderer {
 
 #if BUILDFLAG(ARKWEB_VULKAN)
   void disable_partial_swap() { use_partial_swap_ = false; }
+
+  void enable_partial_swap() {
+    use_partial_swap_ = true;
+  }
 #endif
 
 #if BUILDFLAG(ARKWEB_SAME_LAYER)

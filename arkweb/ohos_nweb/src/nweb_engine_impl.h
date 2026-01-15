@@ -143,7 +143,7 @@ class NWebEngineImpl : public NWebEngine {
                      bool lazy) override;
 #endif
 
-#ifdef BUILDFLAG(ARKWEB_DFX_DUMP)
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
   std::string DumpArkWebInfo(const std::string& param) override;
 #endif
  private:

@@ -373,7 +373,7 @@ void NWebEngineImpl::LibraryLoaded(
 }
 #endif
 
-#ifdef BUILDFLAG(ARKWEB_DFX_DUMP)
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
 std::string NWebEngineImpl::DumpArkWebInfo(const std::string& param) {
   base::debug::ArkWebDumpInfo& arkwebDumpInfo = base::debug::ArkWebDumpInfo::GetInstance();
   if (!arkwebDumpInfo.IsDumpEnabled()) {

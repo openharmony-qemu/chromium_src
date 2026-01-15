@@ -172,6 +172,12 @@ BASE_FEATURE(kOpaqueResponseBlockingV02,
              base::FEATURE_DISABLED_BY_DEFAULT);
 #endif
 
+#if BUILDFLAG(IS_ARKWEB)
+BASE_FEATURE(kDeleteHistoryServiceDB,
+             "DeleteHistoryServiceDB",
+             base::FEATURE_ENABLED_BY_DEFAULT);
+#endif
+
 
 // Treat ORB blocked responses to script-initiated fetches as errors too.
 // Complements ORB v0.2, which exempts script-initiated fetches.

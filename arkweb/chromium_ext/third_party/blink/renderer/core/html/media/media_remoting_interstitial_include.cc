@@ -296,7 +296,7 @@ void MediaRemotingInterstitial::EnterFullscreen() {
     LOG(INFO) << "MediaRemotingInterstitial::EnterFullscreen, "
               << "switched to exit-fullscreen icon";
   }
-  NotifyRemoteInterstitial(MediaControlsSizingClass::kMedium);
+  NotifyRemoteInterstitial(GetVideoElement().GetMediaControlsSizingClass());
 }
 
 // Exit Full Screen
@@ -312,7 +312,7 @@ void MediaRemotingInterstitial::ExitFullscreen() {
     LOG(INFO) << "MediaRemotingInterstitial::ExitFullscreen, "
               << "switched to enter-fullscreen icon";
   }
-  NotifyRemoteInterstitial(MediaControlsSizingClass::kSmall);
+  NotifyRemoteInterstitial(GetVideoElement().GetMediaControlsSizingClass());
   LOG(INFO) << "MediaRemotingInterstitial::ExitFullscreen, exited";
 }
 

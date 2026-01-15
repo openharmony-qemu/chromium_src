@@ -87,7 +87,9 @@ class NET_EXPORT_PRIVATE HttpCache::Transaction : public HttpTransaction {
   ~Transaction() override;
   friend class HttpTransactionUtils;
 
-  raw_ptr<HttpTransactionUtils> http_transation_utils_;
+#if BUILDFLAG(IS_ARKWEB) || BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK) || BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  std::unique_ptr<HttpTransactionUtils> http_transation_utils_;
+#endif
   // Virtual so it can be extended for testing.
   virtual Mode mode() const;
 

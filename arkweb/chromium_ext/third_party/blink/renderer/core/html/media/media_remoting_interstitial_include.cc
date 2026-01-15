@@ -23,13 +23,11 @@ void MediaRemotingInterstitial::AddMediaCastBackGround() {
   LOG(INFO) << "AddMediaCastBackGround, enter";
 
   button_container_ = MakeGarbageCollected<HTMLDivElement>(GetDocument());
-  button_container_->setAttribute(html_names::kClassAttr,
-                                 AtomicString("internal-media-remoting-container"));
+  button_container_->SetShadowPseudoId(AtomicString("-internal-media-remoting-container-remote"));
 
   // Create Left Button
   left_button_ = MakeGarbageCollected<HTMLDivElement>(GetDocument());
-  left_button_->setAttribute(html_names::kClassAttr,
-                            AtomicString("internal-media-remoting-button"));
+  left_button_->SetShadowPseudoId(AtomicString("-internal-media-remoting-button-remote"));
   left_button_->setInnerText(GetVideoElement().GetLocale().QueryString(
         IDS_MEDIA_REMOTING_CAST_STOP_CAST));
 
@@ -42,8 +40,7 @@ void MediaRemotingInterstitial::AddMediaCastBackGround() {
 
   // Create Right Button
   right_button_ = MakeGarbageCollected<HTMLDivElement>(GetDocument());
-  right_button_->setAttribute(html_names::kClassAttr,
-                             AtomicString("internal-media-remoting-button"));
+  right_button_->SetShadowPseudoId(AtomicString("-internal-media-remoting-button-remote"));
   right_button_->setInnerText(GetVideoElement().GetLocale().QueryString(
         IDS_MEDIA_REMOTING_CAST_SWITCH_DEVICE));
 
@@ -59,7 +56,9 @@ void MediaRemotingInterstitial::AddMediaCastBackGround() {
   button_container_->AppendChild(right_button_);
 
   // Add the container to the parent element
-  AppendChild(button_container_);
+  if (video_casting_) {
+    video_casting_->AppendChild(button_container_);
+  }
 
   ParseMediaCastControl();
 }
@@ -69,18 +68,17 @@ void MediaRemotingInterstitial::ParseMediaCastControl() {
   
   // Creating a Control Container
   controls_container_ = MakeGarbageCollected<HTMLDivElement>(document);
-  controls_container_->setAttribute(
-      html_names::kClassAttr, AtomicString("video-controls-container"));
+  controls_container_->SetShadowPseudoId(AtomicString("-internal-video-controls-container-remote"));
   
   // Left button group: Play/Pause
   left_group_ = MakeGarbageCollected<HTMLDivElement>(document);
   left_group_->setAttribute(
-      html_names::kClassAttr, AtomicString("video-controls-left"));
+      html_names::kClassAttr, AtomicString("remote-video-controls-left"));
   
   // Create Play/Pause Button
   play_pause_button_ = MakeGarbageCollected<HTMLDivElement>(document);
   play_pause_button_->setAttribute(
-      html_names::kClassAttr, AtomicString("play-pause-button"));
+      html_names::kClassAttr, AtomicString("remote-play-pause-button"));
   
   // Binding a Click Event
   // Bind a click event to the left button
@@ -97,31 +95,31 @@ void MediaRemotingInterstitial::ParseMediaCastControl() {
   progress_group_ = MakeGarbageCollected<HTMLDivElement>(document);
   progress_group_->setAttribute(
       html_names::kClassAttr,
-      AtomicString("progress-container"));
+      AtomicString("remote-progress-container"));
   
   // Current time display
   current_time_display_ = MakeGarbageCollected<HTMLSpanElement>(document);
   current_time_display_->setAttribute(
       html_names::kClassAttr,
-      AtomicString("time-display"));
+      AtomicString("remote-time-display"));
   
   // Progress Bar Container
   progress_bar_ = MakeGarbageCollected<HTMLDivElement>(document);
   progress_bar_->setAttribute(
       html_names::kClassAttr,
-      AtomicString("progress-bar"));
+      AtomicString("remote-progress-bar"));
   
   // Actual Progress
   progress_fill_ = MakeGarbageCollected<HTMLDivElement>(document);
   progress_fill_->setAttribute(
       html_names::kClassAttr,
-      AtomicString("progress-fill"));
+      AtomicString("remote-progress-fill"));
   
   // Progress bar slider
   progress_thumb_ = MakeGarbageCollected<HTMLDivElement>(document);
   progress_thumb_->setAttribute(
       html_names::kClassAttr,
-      AtomicString("progress-thumb"));
+      AtomicString("remote-progress-thumb"));
   
   // Assembly Progress Bar
   progress_bar_->AppendChild(progress_fill_);
@@ -151,7 +149,7 @@ void MediaRemotingInterstitial::DurationAndFullScreenAddEvent() {
   duration_display_ = MakeGarbageCollected<HTMLSpanElement>(document);
   duration_display_->setAttribute(
       html_names::kClassAttr,
-      AtomicString("time-display"));
+      AtomicString("remote-time-display"));
   duration_display_->setInnerText(FormatTime(duration_));
   
   // Assemble progress bar group
@@ -163,13 +161,11 @@ void MediaRemotingInterstitial::DurationAndFullScreenAddEvent() {
   right_group_ = MakeGarbageCollected<HTMLDivElement>(document);
   right_group_->setAttribute(
       html_names::kClassAttr,
-      AtomicString("video-controls-right"));
+      AtomicString("remote-video-controls-right"));
   
   // Create a full-screen button
   fullscreen_button_ = MakeGarbageCollected<HTMLDivElement>(document);
-  fullscreen_button_->setAttribute(
-      html_names::kClassAttr,
-      AtomicString("fullscreen-button-cast enter-fullscreen"));
+  fullscreen_button_->SetShadowPseudoId(AtomicString("-internal-fullscreen-button-cast-remote"));
   
   // Binding a Click Event
   fullscreen_button_->addEventListener(
@@ -259,12 +255,12 @@ void MediaRemotingInterstitial::UpdatePlayButtonUI() {
     LOG(INFO) << "MediaRemotingInterstitial::UpdatePlayButtonUI, playing";
     play_pause_button_->setAttribute(
         html_names::kClassAttr,
-        AtomicString("play-pause-button playing"));
+        AtomicString("remote-play-pause-button playing"));
   } else {
     LOG(INFO) << "MediaRemotingInterstitial::UpdatePlayButtonUI, pause";
     play_pause_button_->setAttribute(
         html_names::kClassAttr,
-        AtomicString("play-pause-button"));
+        AtomicString("remote-play-pause-button"));
   }
 }
 
@@ -272,7 +268,11 @@ void MediaRemotingInterstitial::UpdatePlayButtonUI() {
 void MediaRemotingInterstitial::OnFullscreenClicked() {
   LOG(INFO) << "MediaRemotingInterstitial::OnFullscreenClicked, "
             << "is_fullscreen_=" << is_fullscreen_;
-  
+  if (GetVideoElement().IsFullscreen()) {
+    LOG(INFO) << "MediaRemotingInterstitial::OnFullscreenClicked, VideoElement is fullscreen";
+    ExitFullscreen();
+    return;
+  }
   if (!is_fullscreen_) {
     EnterFullscreen();
   } else {
@@ -282,6 +282,9 @@ void MediaRemotingInterstitial::OnFullscreenClicked() {
 
 void MediaRemotingInterstitial::EnterFullscreen() {
   LOG(INFO) << "MediaRemotingInterstitial::EnterFullscreen, enter";
+  MediaControlsImpl& media_controls =
+      *static_cast<MediaControlsImpl*>(GetVideoElement().GetMediaControls());
+  media_controls.EnterFullscreen();
   Fullscreen::RequestFullscreen(GetVideoElement().GetMediaRemotingInterstitial());
 
     // Switch full-screen mode flag
@@ -289,13 +292,11 @@ void MediaRemotingInterstitial::EnterFullscreen() {
 
   // Toggle the icon of the full screen button: changes to the icon of exiting the full screen.
   if (fullscreen_button_) {
-    fullscreen_button_->setAttribute(
-        html_names::kClassAttr,
-        AtomicString("fullscreen-button-cast exit-fullscreen"));
-    
+    UpdateRemoteFullScreenCss(true);    
     LOG(INFO) << "MediaRemotingInterstitial::EnterFullscreen, "
               << "switched to exit-fullscreen icon";
   }
+  NotifyRemoteInterstitial(MediaControlsSizingClass::kMedium);
 }
 
 // Exit Full Screen
@@ -307,14 +308,11 @@ void MediaRemotingInterstitial::ExitFullscreen() {
   
   // Switch full-screen button icon: revert to the full-screen entry icon
   if (fullscreen_button_) {
-    fullscreen_button_->setAttribute(
-        html_names::kClassAttr,
-        AtomicString("fullscreen-button-cast enter-fullscreen"));
-    
+    UpdateRemoteFullScreenCss(false);    
     LOG(INFO) << "MediaRemotingInterstitial::ExitFullscreen, "
               << "switched to enter-fullscreen icon";
   }
-  
+  NotifyRemoteInterstitial(MediaControlsSizingClass::kSmall);
   LOG(INFO) << "MediaRemotingInterstitial::ExitFullscreen, exited";
 }
 
@@ -334,6 +332,11 @@ void MediaRemotingInterstitial::UpdateProgressUI() {
     progress_fill_->setAttribute(
         html_names::kStyleAttr,
         AtomicString(style_value));
+    if (progress_thumb_) {
+      String thumb_style = String::Format("left: %.2f%%", percentage);
+      progress_thumb_->setAttribute(
+          html_names::kStyleAttr, AtomicString(thumb_style));
+    }
     
     LOG(INFO) << "Update progress bar width: " << percentage << "%";
   }
@@ -412,6 +415,12 @@ void MediaRemotingInterstitial::OnProgressDragStart() {
     progress_fill_->setAttribute(
         html_names::kStyleAttr,
         AtomicString(new_style));
+    if (progress_thumb_) {
+      String current_thumb_style = progress_thumb_->getAttribute(html_names::kStyleAttr);
+      String new_thumb_style = current_thumb_style + "; transition: none !important;";
+      progress_thumb_->setAttribute(
+          html_names::kStyleAttr, AtomicString(new_thumb_style));
+    }
   }
 }
 
@@ -438,11 +447,15 @@ void MediaRemotingInterstitial::OnProgressDragging(double percentage) {
   if (progress_fill_) {
     String preview_style = String::Format(
         "width: %.2f%%; background: #FFFFFF; transition: none !important;", 
-        percentage);
-    
+        percentage);    
     progress_fill_->setAttribute(
         html_names::kStyleAttr,
         AtomicString(preview_style));
+    if (progress_thumb_) {
+      String thumb_style = String::Format("left: %.2f%%; transition: none !important;", percentage);
+      progress_thumb_->setAttribute(
+          html_names::kStyleAttr, AtomicString(thumb_style));
+    }
   }
 }
 
@@ -465,6 +478,12 @@ void MediaRemotingInterstitial::OnProgressDragEnd(double percentage) {
     progress_fill_->setAttribute(
         html_names::kStyleAttr,
         AtomicString(new_style));
+    if (progress_thumb_) {
+      String current_thumb_style = progress_thumb_->getAttribute(html_names::kStyleAttr);
+      String new_thumb_style = current_thumb_style.Replace("transition: none !important;", "");
+      progress_thumb_->setAttribute(
+          html_names::kStyleAttr, AtomicString(new_thumb_style));
+    }
   }
   
   // Execute jump
@@ -536,11 +555,63 @@ void MediaRemotingInterstitial::OnProgressDragCancel() {
       progress_fill_->setAttribute(
           html_names::kStyleAttr,
           AtomicString(new_style));
+      if (progress_thumb_) {
+        String current_thumb_style = progress_thumb_->getAttribute(html_names::kStyleAttr);
+        String new_thumb_style = current_thumb_style.Replace("transition: none !important;", "");
+        progress_thumb_->setAttribute(
+            html_names::kStyleAttr, AtomicString(new_thumb_style));
+      }
     }
 
     // Reset Status
     should_resume_after_drag_ = false;
     was_playing_before_drag_ = false;
+  }
+}
+
+void MediaRemotingInterstitial::NotifyRemoteInterstitial(MediaControlsSizingClass sizing_class) {
+  LOG(INFO) << "MediaRemotingInterstitial::NotifyRemoteInterstitial, sizing_class: " << static_cast<int>(sizing_class);
+  if (cast_text_message_) {
+    cast_text_message_->setAttribute(
+        html_names::kClassAttr, MediaControls::GetSizingCSSClass(sizing_class));
+  }
+
+  if (left_button_) {
+    left_button_->setAttribute(
+        html_names::kClassAttr, MediaControls::GetSizingCSSClass(sizing_class));
+  }
+
+  if (right_button_) {
+    right_button_->setAttribute(
+        html_names::kClassAttr, MediaControls::GetSizingCSSClass(sizing_class));
+  }
+
+  if (controls_container_) {
+    controls_container_->setAttribute(
+        html_names::kClassAttr, MediaControls::GetSizingCSSClass(sizing_class));
+  }
+
+  if (video_casting_) {
+    video_casting_->setAttribute(
+        html_names::kClassAttr, MediaControls::GetSizingCSSClass(sizing_class));
+  }
+
+  if (button_container_) {
+    button_container_->setAttribute(
+        html_names::kClassAttr, MediaControls::GetSizingCSSClass(sizing_class));
+  }
+
+  // Force a layout since |LayoutMedia::UpdateLayout()| will sometimes miss a
+  // layout otherwise.
+  if (GetLayoutObject())
+    GetLayoutObject()->SetNeedsLayout(layout_invalidation_reason::kSizeChanged);
+}
+
+void MediaRemotingInterstitial::UpdateRemoteFullScreenCss(bool is_fullscreen) {
+  if (is_fullscreen) {
+    fullscreen_button_->classList().Add(AtomicString("fullscreen"));
+  } else {
+    fullscreen_button_->classList().Remove(AtomicString("fullscreen"));
   }
 }
 

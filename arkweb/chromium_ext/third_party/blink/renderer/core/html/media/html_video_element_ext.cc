@@ -269,6 +269,21 @@ void HTMLVideoElement::UpdateRemotePlayPosition(int64_t position) {
     observer->UpdateRemotePlayPosition(position);
   }
 }
+
+void HTMLVideoElement::NotifyRemoteInterstitial(MediaControlsSizingClass sizing_class) {
+  LOG(INFO) << "HTMLVideoElement::NotifyRemoteExitFullScreen";
+  sizing_class_ = sizing_class;
+  if (remoting_interstitial_) {
+    remoting_interstitial_->NotifyRemoteInterstitial(sizing_class);
+  }
+}
+
+void HTMLVideoElement::UpdateRemoteFullScreenCss() {
+  LOG(INFO) << "HTMLVideoElement::UpdateRemoteFullScreenCss";
+  if (remoting_interstitial_) {
+    remoting_interstitial_->UpdateRemoteFullScreenCss(false);
+  }
+}
 #endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
 
 }  // namespace blink

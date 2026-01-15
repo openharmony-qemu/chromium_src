@@ -352,7 +352,8 @@ class WebContentsImplExt : public WebContentsImpl {
 #endif
 
 #if BUILDFLAG(ARKWEB_MEDIA_CAST)
-void OnMediaCastEnter();
+  void OnMediaCastEnter(); 
+  void NotifyRemoteExitFullScreen() override;
 #endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)

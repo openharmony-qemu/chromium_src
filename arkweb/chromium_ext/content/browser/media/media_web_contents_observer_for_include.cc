@@ -515,5 +515,11 @@ void MediaWebContentsObserver::DidFinishNavigation(NavigationHandle* navigation_
   }
 }
 
+void MediaWebContentsObserver::NotifyRemoteExitFullScreen() {
+  if (session_controllers_manager_) {
+    session_controllers_manager_->NotifyRemoteExitFullScreen();
+  }
+}
+
 #endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
 }

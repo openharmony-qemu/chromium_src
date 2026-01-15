@@ -89,6 +89,17 @@ void MediaSessionControllersManager::SetPauseByAvcast(const MediaPlayerId& id, b
     controller->AsMediaSessionControllerExt()->SetPauseByAvcast(pause_avcast);
   }
 }
+
+void MediaSessionControllersManager::NotifyRemoteExitFullScreen() {
+  LOG(INFO) << "MediaSessionControllersManager::NotifyRemoteExitFullScreen";
+  if (!IsMediaSessionEnabled())
+    return;
+  for (auto& entry : controllers_map_) {
+    if (entry.second->AsMediaSessionControllerExt()) {
+      entry.second->AsMediaSessionControllerExt()->NotifyRemoteExitFullScreen();
+    }
+  }
+}
 #endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
 
 }

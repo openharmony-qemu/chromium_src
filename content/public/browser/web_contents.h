@@ -1375,6 +1375,10 @@ class WebContents : public PageNavigator, public base::SupportsUserData {
   virtual void OnWebPreferencesChanged() = 0;
 #endif
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+  virtual void NotifyRemoteExitFullScreen() {}
+#endif // ARKWEB_MEDIA_CAST
+
   // Requests the renderer to exit fullscreen.
   // |will_cause_resize| indicates whether the fullscreen change causes a
   // view resize. e.g. This will be false when going from tab fullscreen to

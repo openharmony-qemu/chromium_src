@@ -351,9 +351,7 @@ void ProgressBarEventListener::HandleMouseDown(MouseEvent* event) {
   double percentage = CalculatePercentage(client_x);
   if (weak_ptr_) {
     weak_ptr_->OnProgressBarClicked(percentage);
-    if (weak_ptr_) {
-      weak_ptr_->GetMediaRemotingProgressBar().setPointerCapture(kRemoteMousePointerId, ASSERT_NO_EXCEPTION);
-    }
+    weak_ptr_->GetMediaRemotingProgressBar().setPointerCapture(kRemoteMousePointerId, ASSERT_NO_EXCEPTION);
   }
   StartDragging(client_x);
 }

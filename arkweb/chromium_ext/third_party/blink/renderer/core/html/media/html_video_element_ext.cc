@@ -280,9 +280,11 @@ void HTMLVideoElement::NotifyRemoteInterstitial(MediaControlsSizingClass sizing_
 
 void HTMLVideoElement::UpdateRemoteFullScreenCss() {
   LOG(INFO) << "HTMLVideoElement::UpdateRemoteFullScreenCss";
+#if !defined(COMPONENT_BUILD)
   if (remoting_interstitial_) {
     remoting_interstitial_->UpdateRemoteFullScreenCss(false);
   }
+#endif // COMPONENT_BUILD
 }
 #endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
 

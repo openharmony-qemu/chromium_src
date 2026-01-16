@@ -451,7 +451,7 @@ void MediaRemotingInterstitial::OnProgressDragging(double percentage) {
   if (progress_fill_) {
     String preview_style = String::Format(
         "width: %.2f%%; background: #FFFFFF; transition: none !important;", 
-        percentage);    
+        percentage);
     progress_fill_->setAttribute(
         html_names::kStyleAttr,
         AtomicString(preview_style));

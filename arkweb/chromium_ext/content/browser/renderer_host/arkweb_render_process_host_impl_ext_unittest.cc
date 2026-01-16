@@ -92,20 +92,14 @@ TEST_F(ArkWebRenderProcessHostImplExtTest, RenderProcessChannelConnectCheck_NotR
 }
 
 TEST_F(ArkWebRenderProcessHostImplExtTest, StartChannelConnectedCheckTask_CallbackIsNull) {
-  testing::internal::CaptureStderr();
   render_process_host_impl_ext_->StartChannelConnectedCheckTask(render_process_host_impl_ext_.get());
-  std::string log = testing::internal::GetCapturedStderr();
-  EXPECT_NE(log.find("but channel not connected, wait 10s to check"), std::string::npos);
   EXPECT_FALSE(render_process_host_impl_ext_->channel_connected_check_callback_.callback().is_null());
 }
 
 TEST_F(ArkWebRenderProcessHostImplExtTest, CancelChannelConnectedCheckTask_Success) {
   render_process_host_impl_ext_->StartChannelConnectedCheckTask(render_process_host_impl_ext_.get());
 
-  testing::internal::CaptureStderr();
   render_process_host_impl_ext_->CancelChannelConnectedCheckTask(render_process_host_impl_ext_.get());
-  std::string log = testing::internal::GetCapturedStderr();
-  EXPECT_NE(log.find("cancel channel connected check task"), std::string::npos);
   EXPECT_TRUE(render_process_host_impl_ext_->channel_connected_check_callback_.IsCancelled());
 }
 

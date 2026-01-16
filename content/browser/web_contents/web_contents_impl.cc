@@ -275,6 +275,9 @@
 #include "content/public/common/content_switches.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_PDF)
+#include "extensions/common/constants.h"
+#endif  // BUILDFLAG(ARKWEB_PDF)
 namespace content {
 
 namespace {
@@ -9614,6 +9617,13 @@ void WebContentsImpl::OnFocusedElementChangedInFrame(
                         "render_frame_host", frame);
   RenderWidgetHostViewBase* root_view =
       static_cast<RenderWidgetHostViewBase*>(GetRenderWidgetHostView());
+#if BUILDFLAG(ARKWEB_PDF)
+  const GURL& url = frame->GetLastCommittedURL();
+  if (url.host_piece() == extension_misc::kPdfExtensionId) {
+    root_view = static_cast<RenderWidgetHostViewBase*>(
+        GetOutermostWebContents()->GetRenderWidgetHostView());
+  }
+#endif  // BUILDFLAG(ARKWEB_PDF)
   if (!root_view || !frame->GetView()) {
     return;
   }

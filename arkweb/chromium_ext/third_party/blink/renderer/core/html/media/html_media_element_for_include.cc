@@ -727,6 +727,13 @@ void HTMLMediaElement::PullUpCastBackGround(const String& device_name) {
   }
 }
 
+void HTMLMediaElement::NotifyRemoteExitFullScreen() {
+  LOG(INFO) << "HTMLMediaElement::NotifyRemoteExitFullScreen";
+  if (auto* video_element = DynamicTo<HTMLVideoElement>(this)) {
+    video_element->UpdateRemoteFullScreenCss();
+  }
+}
+
 void HTMLMediaElement::MediaCastStopByNavigation() {
   MediaCastStopped();
 }

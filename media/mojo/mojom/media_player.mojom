@@ -173,6 +173,9 @@ interface MediaPlayer {
 
   [Sync, EnableIf=arkweb_media_cast]
   GetMediaCastCurrentTime() => (double time);
+
+  [EnableIf=arkweb_media_cast]
+  NotifyRemoteExitFullScreen();
 };
 
 // Implemented by the MediaWebContentsObserver. The remote lives in the renderer

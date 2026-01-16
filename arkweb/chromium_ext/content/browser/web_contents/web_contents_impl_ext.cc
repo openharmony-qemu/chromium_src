@@ -1415,6 +1415,13 @@ void WebContentsImplExt::OnMediaCastEnter() {
     delegate_->OnMediaCastEnter();
   }
 }
+
+void WebContentsImplExt::NotifyRemoteExitFullScreen() {
+  LOG(INFO) << "WebContentsImplExt::NotifyRemoteExitFullScreen";
+  if (media_web_contents_observer()) {
+    media_web_contents_observer()->NotifyRemoteExitFullScreen();
+  }  
+}
 #endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
 
 }  // namespace content

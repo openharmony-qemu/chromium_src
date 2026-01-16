@@ -745,6 +745,9 @@ source_set("unittests") {
     "src/cef_delegate/nweb_extension_reading_list_cef_delegate_unittest.cc",
     "src/cef_delegate/nweb_extension_omnibox_cef_delegate_unittest.cc",
     "src/cef_delegate/nweb_extension_history_cef_delegate_unittest.cc",
+    "src/cef_delegate/nweb_extension_search_cef_delegate_unittest.cc",
+    "src/cef_delegate/nweb_extension_sessions_handler_delegate_unittest.cc",
+    "src/cef_delegate/nweb_extension_tab_groups_cef_delegate_unittest.cc",
   ]
 
   deps = [

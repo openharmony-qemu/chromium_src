@@ -33,8 +33,8 @@ typedef int32_t (*AdvSecModeGetPtr)(const char *feature, uint32_t featureLen,
       const char *param, uint32_t paramLen, uint32_t *state);
 
 NO_SANITIZE("cfi-icall") NWebAdvancedSecurityHelper::NWebAdvancedSecurityHelper() {
-  base::CommandLine* cmd_line = base::CommandLine::ForCurrentProcess();
-  if (cmd_line) {
+  if (base::CommandLine::InitializedForCurrentProcess()) {
+    base::CommandLine* cmd_line = base::CommandLine::ForCurrentProcess();
     std::string process_type = cmd_line->GetSwitchValueASCII(switches::kProcessType);
     if (process_type == switches::kRendererProcess) {
       if (cmd_line->HasSwitch(switches::kAdSecValue)) {

@@ -282,9 +282,13 @@ void MediaRemotingInterstitial::OnFullscreenClicked() {
 
 void MediaRemotingInterstitial::EnterFullscreen() {
   LOG(INFO) << "MediaRemotingInterstitial::EnterFullscreen, enter";
-  MediaControlsImpl& media_controls =
-      *static_cast<MediaControlsImpl*>(GetVideoElement().GetMediaControls());
-  media_controls.EnterFullscreen();
+#if !defined(COMPONENT_BUILD)
+  if (GetVideoElement().GetMediaControls()) {
+    MediaControlsImpl& media_controls =
+        *static_cast<MediaControlsImpl*>(GetVideoElement().GetMediaControls());
+    media_controls.EnterFullscreen();
+  }
+#endif // COMPONENT_BUILD
   Fullscreen::RequestFullscreen(GetVideoElement().GetMediaRemotingInterstitial());
 
     // Switch full-screen mode flag

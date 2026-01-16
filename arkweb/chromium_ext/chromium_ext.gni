@@ -585,6 +585,11 @@ arkweb_third_patry_blink_renderer_core_html_sources = [
   "//arkweb/chromium_ext/third_party/blink/renderer/core/html/html_native_loader.h",
 ]
 
+arkweb_third_patry_blink_renderer_core_html_forms_sources = [
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/html/forms/popup_utils.h",
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/html/forms/popup_utils.cc",
+]
+
 arkweb_third_patry_blink_renderer_core_fragment_directive_sources = [
   "//arkweb/chromium_ext/third_party/blink/renderer/core/fragment_directive/text_fragment_anchor_utils.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/core/fragment_directive/text_fragment_anchor_utils.h",
@@ -916,6 +921,7 @@ arkweb_third_party_blink_renderer_core_unittest_sources = [
   "//arkweb/chromium_ext/third_party/blink/renderer/core/frame/local_frame_view_utils_unittest.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/core/frame/web_frame_widget_impl_ext_unittest.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/core/hilight/arkweb_highlight_style_utils_unittest.cc",
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/html/forms/popup_utils_unittest.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/core/html/html_meta_element_for_include_unittest.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/core/html/html_plugin_element_utils_unittest.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/core/html/html_embed_element_for_include_unittest.cc",

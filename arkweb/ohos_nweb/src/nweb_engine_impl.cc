@@ -385,4 +385,14 @@ std::string NWebEngineImpl::DumpArkWebInfo(const std::string& param) {
   return result;
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_USERAGENT)
+void NWebEngineImpl::SetUserAgentClientHintsEnabled(bool enabled) {
+  NWebImpl::SetUserAgentClientHintsEnabled(enabled);
+}
+
+bool NWebEngineImpl::GetUserAgentClientHintsEnabled() {
+  return NWebImpl::GetUserAgentClientHintsEnabled();
+}
+#endif
 }  // namespace OHOS::NWeb

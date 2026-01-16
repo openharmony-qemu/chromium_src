@@ -36,6 +36,10 @@ namespace OHOS::NWeb {
 namespace {
 
 static std::map<int,
+                NWebExtensionSessionsHandlerDelegate::GetDevicesCallback>
+    g_get_devices_callbacks_;
+
+static std::map<int,
                 NWebExtensionSessionsHandlerDelegate::GetRecentlyClosedCallback>
     g_get_recently_closed_callbacks_;
 
@@ -46,6 +50,20 @@ const char kNoNWebExError[] = "Not supported: no browser.";
 const char kInternalHandleError[] = "Internal handle error.";
 
 }  // namespace
+
+// static
+void NWebExtensionSessionsHandlerDelegate::GetDevices(
+    const NWebExtensionSessionsGetDevicesParams& params,
+    GetDevicesCallback callback) {
+#if !BUILDFLAG(ARKWEB_NWEB_EX)
+  std::vector<NWebExtensionSessionsDevice> empty_devices;
+  callback.Run(empty_devices, kNoNWebExError);
+#else
+  static int request_id = 0;
+  g_get_devices_callbacks_[++request_id] = std::move(callback);
+  NWebExtensionSessionsDispatcher::GetDevices(request_id, params);
+#endif
+}
 
 // static
 void NWebExtensionSessionsHandlerDelegate::GetRecentlyClosed(
@@ -76,6 +94,20 @@ void NWebExtensionSessionsHandlerDelegate::Restore(
 }
 
 // static
+void NWebExtensionSessionsHandlerDelegate::OnGetDevices(
+    int request_id,
+    NWebExtensionSessionsGetDevicesCallbackParams& params) {
+  if (g_get_devices_callbacks_.count(request_id)) {
+    std::move(g_get_devices_callbacks_[request_id])
+        .Run(params.devices, params.error);
+ 
+    g_get_devices_callbacks_.erase(request_id);
+  } else {
+    LOG(ERROR) << "NWeb GetDevices callback called more than once";
+  }
+}
+
+// static
 void NWebExtensionSessionsHandlerDelegate::OnRecentlyClosedReceived(
     int request_id,
     NWebExtensionSessionsGetRecentlyClosedCallbackParams& params) {
@@ -101,6 +133,14 @@ void NWebExtensionSessionsHandlerDelegate::OnSessionRestored(
   } else {
     LOG(ERROR) << "NWeb Restore callback called more than once";
   }
+}
+
+// static
+void NWebExtensionSessionsHandlerDelegate::HandleGetDevicesError(
+    int request_id) {
+  NWebExtensionSessionsGetDevicesCallbackParams params;
+  params.error = kInternalHandleError;
+  OnGetDevices(request_id, params);
 }
 
 // static

@@ -714,6 +714,7 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::SetVideoSurface(
         LOG(ERROR) << "MediaCodecDecoderBridgeImpl::SetVideoSurface native_window is NULL";
         return DecoderAdapterCode::DECODER_ERROR;
     }
+    LOG(INFO) << "MediaCodecDecoderBridgeImpl::SetVideoSurface(" << widget_id << "), SetOutputSurface";
     DecoderAdapterCode status = videoDecoder_->SetOutputSurface(native_window);
     OHOS::NWeb::OhosAdapterHelper::GetInstance().GetWindowAdapterInstance().NativeWindowUnRef(native_window);
     return status;

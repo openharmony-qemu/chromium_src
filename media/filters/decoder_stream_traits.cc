@@ -324,6 +324,7 @@ void DecoderStreamTraits<DemuxerStream::VIDEO>::OnOutputReady(
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 void DecoderStreamTraits<DemuxerStream::VIDEO>::SetVideoSurface(
     DecoderType* decoder, int surface_id) {
+  LOG(INFO) << "DecoderStreamTraits, SetVideoSurface, surface_id:" << surface_id;
   if (decoder) {
     decoder->SetVideoSurface(surface_id);
   }

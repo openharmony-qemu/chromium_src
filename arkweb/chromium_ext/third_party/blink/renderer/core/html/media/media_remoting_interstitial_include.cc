@@ -629,7 +629,7 @@ void MediaRemotingInterstitial::InitializeMediaRemotingInterstitial() {
       AtomicString("-internal-media-interstitial-background-image-remote"));
   background_image_->setAttribute(
       html_names::kSrcAttr,
-      videoElement.FastGetAttribute(html_names::kPosterAttr));
+      GetVideoElement().FastGetAttribute(html_names::kPosterAttr));
   AppendChild(background_image_);
 
   video_casting_ = MakeGarbageCollected<HTMLDivElement>(GetDocument());

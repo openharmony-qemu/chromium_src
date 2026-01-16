@@ -291,11 +291,13 @@ void MediaRemotingInterstitial::EnterFullscreen() {
   is_fullscreen_ = true;
 
   // Toggle the icon of the full screen button: changes to the icon of exiting the full screen.
+#if !defined(COMPONENT_BUILD)
   if (fullscreen_button_) {
     UpdateRemoteFullScreenCss(true);    
     LOG(INFO) << "MediaRemotingInterstitial::EnterFullscreen, "
               << "switched to exit-fullscreen icon";
   }
+#endif // COMPONENT_BUILD
   NotifyRemoteInterstitial(GetVideoElement().GetMediaControlsSizingClass());
 }
 
@@ -307,11 +309,13 @@ void MediaRemotingInterstitial::ExitFullscreen() {
   is_fullscreen_ = false;
   
   // Switch full-screen button icon: revert to the full-screen entry icon
+#if !defined(COMPONENT_BUILD)
   if (fullscreen_button_) {
     UpdateRemoteFullScreenCss(false);    
     LOG(INFO) << "MediaRemotingInterstitial::ExitFullscreen, "
               << "switched to enter-fullscreen icon";
   }
+#endif // COMPONENT_BUILD
   NotifyRemoteInterstitial(GetVideoElement().GetMediaControlsSizingClass());
   LOG(INFO) << "MediaRemotingInterstitial::ExitFullscreen, exited";
 }
@@ -607,6 +611,7 @@ void MediaRemotingInterstitial::NotifyRemoteInterstitial(MediaControlsSizingClas
     GetLayoutObject()->SetNeedsLayout(layout_invalidation_reason::kSizeChanged);
 }
 
+#if !defined(COMPONENT_BUILD)
 void MediaRemotingInterstitial::UpdateRemoteFullScreenCss(bool is_fullscreen) {
   if (is_fullscreen) {
     fullscreen_button_->classList().Add(AtomicString("fullscreen"));
@@ -614,5 +619,6 @@ void MediaRemotingInterstitial::UpdateRemoteFullScreenCss(bool is_fullscreen) {
     fullscreen_button_->classList().Remove(AtomicString("fullscreen"));
   }
 }
+#endif // COMPONENT_BUILD
 
 } // namespace blink

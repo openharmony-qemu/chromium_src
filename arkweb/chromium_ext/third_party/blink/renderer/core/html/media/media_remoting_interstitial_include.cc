@@ -621,4 +621,40 @@ void MediaRemotingInterstitial::UpdateRemoteFullScreenCss(bool is_fullscreen) {
 }
 #endif // COMPONENT_BUILD
 
+void MediaRemotingInterstitial::InitializeMediaRemotingInterstitial() {
+  weak_this_ = this;
+  SetShadowPseudoId(AtomicString("-internal-media-interstitial-remote"));
+  background_image_ = MakeGarbageCollected<HTMLImageElement>(GetDocument());
+  background_image_->SetShadowPseudoId(
+      AtomicString("-internal-media-interstitial-background-image-remote"));
+  background_image_->setAttribute(
+      html_names::kSrcAttr,
+      videoElement.FastGetAttribute(html_names::kPosterAttr));
+  AppendChild(background_image_);
+
+  video_casting_ = MakeGarbageCollected<HTMLDivElement>(GetDocument());
+  video_casting_->SetShadowPseudoId(AtomicString("-internal-video-casting-main-container-remote"));
+  AppendChild(video_casting_);
+
+  cast_icon_ = MakeGarbageCollected<HTMLDivElement>(GetDocument());
+  cast_icon_->setAttribute(html_names::kClassAttr,
+      AtomicString("internal-media-casting-text"));
+  cast_icon_->setInnerText(GetVideoElement().GetLocale().QueryString(
+      IDS_MEDIA_REMOTING_CAST_CASTING)); // casting
+  video_casting_->AppendChild(cast_icon_);
+
+  cast_text_message_ = MakeGarbageCollected<HTMLDivElement>(GetDocument());
+  cast_text_message_->SetShadowPseudoId(
+      AtomicString("-internal-media-interstitial-message-remote"));
+  video_casting_->AppendChild(cast_text_message_);
+
+  toast_message_ = MakeGarbageCollected<HTMLDivElement>(GetDocument());
+  toast_message_->SetShadowPseudoId(
+      AtomicString("-internal-media-remoting-toast-message"));
+  AppendChild(toast_message_);
+  duration_ = GetVideoElement().duration();
+  AddMediaCastBackGround();
+  NotifyRemoteInterstitial(GetVideoElement().GetMediaControlsSizingClass());
+}
+
 } // namespace blink

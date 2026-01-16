@@ -98,7 +98,7 @@ std::string ArkWebDumpInfo::GetProcessAndThreadIdInfo() const {
 }
 
 void ArkWebDumpInfo::WriteArkWebDumpInfo(const std::string& info, DumpInfoType type) {
-  std::shared_lock<std::shared_mutex> lockGuard(dumpMutex_);
+  std::unique_lock<std::shared_mutex> lockGuard(dumpMutex_);
   std::string key;
   switch(type) {
     case DumpInfoType::DUMP_NWEB_INFO:

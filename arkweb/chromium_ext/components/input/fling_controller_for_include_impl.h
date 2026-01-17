@@ -149,7 +149,7 @@ void FlingController::StartWebPageFling() {
       LOG(ERROR) << "Get gpu_host error";
       return;
     }
-    auto* host_impl = host->gpu_host()
+    auto* host_impl = host->gpu_host();
     host_impl->StartMonitor(focus_nweb_id_);
     TRACE_EVENT0("input", "DynamicFrameLossEvent Start");
     content::GetUIThreadTaskRunner({})->PostTask(

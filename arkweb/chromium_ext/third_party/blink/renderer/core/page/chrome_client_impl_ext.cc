@@ -41,7 +41,9 @@ gfx::Rect ChromeClientImplExt::GetVisibleRectToWeb(LocalFrame* frame) {
 #if BUILDFLAG(ARKWEB_FILE_UPLOAD)
 // LCOV_EXCL_START
 void ChromeClientImplExt::DisconnectClient() {
+#if !defined(COMPONENT_BUILD)
   ReportDuplicateFileUpload("Size of file_chooser_queue_ is " + std::to_string(file_chooser_queue_.size()));
+#endif
   file_chooser_queue_.front().get()->CloseChooser();
 }
 // LCOV_EXCL_STOP

@@ -30,8 +30,8 @@ class TextRecord;
 
 class FirstScreenCalculator : public GarbageCollected<FirstScreenCalculator> {
  public:
-  explicit FirstScreenCalculator(LocalFrameView* local_frame_view)
-      : frame_view_(local_frame_view) {}
+  explicit FirstScreenCalculator(LocalFrame* local_frame)
+      : local_frame_(local_frame) {}
   void NotifyImagePaint(MediaRecordIdHash record_id_hash,
                         const ImageRecord* record,
                         std::optional<uint64_t> viewport_size,
@@ -72,7 +72,7 @@ class FirstScreenCalculator : public GarbageCollected<FirstScreenCalculator> {
   base::OneShotTimer timer_;
   base::TimeTicks first_screen_paint_time_;
   base::TimeTicks navigation_start_time_;
-  Member<LocalFrameView> frame_view_;
+  WeakMember<LocalFrame> local_frame_;
   bool user_scrolled_ = false;
   MediaRecordIdHash background_image_id_ = 0;
   gfx::Rect viewport_rect_{gfx::Rect()};

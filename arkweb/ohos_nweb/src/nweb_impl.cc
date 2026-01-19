@@ -6361,6 +6361,36 @@ void NWebImpl::SetUserAgentForHosts(const std::string& user_agent,
                                     const std::vector<std::string>& hosts) {
   AlloyBrowserUAConfig::GetInstance()->SetUserAgentForHosts(user_agent, hosts);
 }
+
+bool NWebImpl::GetUserAgentClientHintsEnabled() {
+  return AlloyBrowserUAConfig::GetInstance()->GetUserAgentClientHintsEnabled();
+}
+
+void NWebImpl::SetUserAgentClientHintsEnabled(bool enabled) {
+  AlloyBrowserUAConfig::GetInstance()->SetUserAgentClientHintsEnabled(enabled);
+}
+
+void NWebImpl::SetUserAgentMetadata(
+    const std::string& user_agent,
+    std::shared_ptr<NWebUserAgentMetadata> metadata) {
+  if (!nweb_delegate_) {
+    LOG(WARNING) << kUserAgentMetadataTag
+                 << " SetUserAgentMetadata failed, no nweb or delegate";
+    return;
+  }
+  nweb_delegate_->SetUserAgentMetadata(user_agent, metadata);
+}
+
+std::shared_ptr<NWebUserAgentMetadata> NWebImpl::GetUserAgentMetadata(
+    const std::string& user_agent) {
+  if (!nweb_delegate_) {
+    LOG(WARNING) << kUserAgentMetadataTag
+                 << " GetUserAgentMetadata failed, no nweb or delegate";
+    return nullptr;
+  }
+  return nweb_delegate_->GetUserAgentMetadata(user_agent);
+}
+
 #endif
 
 void NWebImpl::SuggestionSelected(int index) {

@@ -1045,6 +1045,25 @@ bool WebContentsImplExt::isSameUserAgent(
   return false;
 }
 
+void WebContentsImplExt::SetUserAgentMetadata(
+    const std::string& user_agent,
+    const blink::UserAgentMetadata& metadata) {
+  user_agent_for_metadata_map_[user_agent] = metadata;
+}
+
+const blink::UserAgentMetadata WebContentsImplExt::GetUserAgentMetadata(
+    const std::string& user_agent) {
+  auto it = user_agent_for_metadata_map_.find(user_agent);
+  if (it != user_agent_for_metadata_map_.end()) {
+    return it->second;
+  }
+#if !defined(COMPONENT_BUILD)
+  return embedder_support::GetUserAgentMetadata();
+#else 
+  return blink::UserAgentMetadata();
+#endif
+}
+
 #endif
 #if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
 void WebContentsImplExt::OneShotMediaPlayerStopped() {

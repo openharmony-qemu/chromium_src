@@ -41,6 +41,10 @@
 #include "nweb_inputmethod_client.h"
 #include "nweb_render_handler.h"
 
+#if BUILDFLAG(ARKWEB_USERAGENT)
+#include "arkweb/ohos_nweb/src/cef_delegate/nweb_user_agent_metadata_impl.h"
+#endif
+
 #if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
 #endif
@@ -939,6 +943,14 @@ void AbortDistill() override;
 
 #if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
 void SetFocusWebId(int32_t nweb_id) override;
+#endif
+
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  void SetUserAgentMetadata(
+      const std::string& user_agent,
+      std::shared_ptr<NWebUserAgentMetadata> metadata) override;
+  std::shared_ptr<NWebUserAgentMetadata> GetUserAgentMetadata(
+      const std::string& user_agent) override;
 #endif
 
  public:

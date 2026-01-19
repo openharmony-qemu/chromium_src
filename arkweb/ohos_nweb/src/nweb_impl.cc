@@ -43,6 +43,11 @@
 #include "components/web_cache/browser/web_cache_manager.h"
 #include "arkweb/ohos_adapter_ndk/ohos_adapter_helper_ext.h"
 #include "arkweb/chromium_ext/components/web_cache/browser/web_cache_manager_utils.h"
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#include "base/path_service.h"
+#include "base/files/file_path.h"
+#include "chrome/common/chrome_paths.h"
+#include "chrome/common/chrome_switches.h"
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_MEMORY_THRESHOLD)
 #include "base/memory/memory_pressure_listener.h"
@@ -956,7 +961,19 @@ void InitialWebEngineArgs(
 
   auto args_to_add = GetArgsToAdd(init_args);
 
-  args_to_add.push_back("--user-data-dir=");
+  bool isSeparation = false;
+  for (auto arg : args_to_add) {
+    if (arg.find(switches::kUserDataDirSeparation) != std::string::npos) {
+ 	    isSeparation = true;
+    }
+  }
+
+  if (!isSeparation) {
+    args_to_add.push_back("--user-data-dir=cache/web");
+  } else {
+    args_to_add.push_back("--user-data-dir=");
+  }
+
   args_to_add.push_back("--arkweb-app-data-dir=/data/storage/el2/base");
 
   base::FilePath user_data_dir = base::FilePath();

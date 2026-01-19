@@ -270,6 +270,10 @@ void FlingController::UpdateFlingVelocityLimit(const gfx::Vector2dF& velocity) {
 void FlingController::SetFocusWebId(int32_t nweb_id) {
   focus_nweb_id_ = nweb_id;
 }
+
+void FlingController::SetScrollable(bool enable) {
+  scroll_enabled_ = enable;
+}
 #endif
 }
 #endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,19 +12,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 /**
  * @addtogroup OHAVSession
  * @{
  *
  * @brief Provide the definition of the C interface for the avsession module.
  *
- * @syscap SystemCapability.Multimedia.AVSession.Core
- *
  * @since 23
  * @version 1.0
  */
- 
+
 /**
  * @file native_avqueueitem.h
  *
@@ -36,18 +34,17 @@
  * @since 23
  * @version 1.0
  */
- 
+
 #ifndef NATIVE_AVQUEUEITEM_H
 #define NATIVE_AVQUEUEITEM_H
- 
+
 #include <stdint.h>
-#include "pixelmap_native.h"
 #include "native_avsession_errors.h"
- 
+
 #ifdef __cplusplus
 extern "C" {
 #endif
- 
+
 /**
  * @brief Declaring the AVMediaDescription.
  * The instance of AVMediaDescription set by application for current resource.
@@ -56,7 +53,7 @@ extern "C" {
  * @version 1.0
  */
 typedef struct OH_AVSession_AVMediaDescription OH_AVSession_AVMediaDescription;
- 
+
 /**
  * @brief Declaring the avqueue item.
  * The instance of AVQueueItem.
@@ -69,13 +66,13 @@ typedef struct OH_AVSession_AVQueueItem {
      * @brief itemId.
      */
     uint32_t itemId;
- 
+
     /**
      * @brief media item info.
      */
     OH_AVSession_AVMediaDescription *description;
 } OH_AVSession_AVQueueItem;
- 
+
 /**
  * @brief Declaring the AVMediaDescription builder.
  * The instance of builder is used for creating AVMediaDescription.
@@ -84,9 +81,11 @@ typedef struct OH_AVSession_AVQueueItem {
  * @version 1.0
  */
 typedef struct OH_AVSession_AVMediaDescriptionBuilder OH_AVSession_AVMediaDescriptionBuilder;
- 
+
 /**
- * @brief Creates an AVMetadataBuilder instance.
+ * @brief Creates an OH_AVSession_AVMediaDescriptionBuilder instance.
+ * Call {@link OH_AVSession_AVMediaDescriptionBuilder_Destroy} to release the builder object
+ * when it is not used anymore.
  *
  * @param builder The builder reference to the created result.
  * @return Function result code:
@@ -96,9 +95,9 @@ typedef struct OH_AVSession_AVMediaDescriptionBuilder OH_AVSession_AVMediaDescri
  * @since 23
  */
 AVQueueItem_Result OH_AVSession_AVMediaDescriptionBuilder_Create(OH_AVSession_AVMediaDescriptionBuilder** builder);
- 
+
 /**
- * @brief Destroy a bulder.
+ * @brief Destroy a builder.
  *
  * @param builder The AVMediaDescription builder instance pointer
  * @return Function result code:
@@ -107,7 +106,7 @@ AVQueueItem_Result OH_AVSession_AVMediaDescriptionBuilder_Create(OH_AVSession_AV
  * @since 23
  */
 AVQueueItem_Result OH_AVSession_AVMediaDescriptionBuilder_Destroy(OH_AVSession_AVMediaDescriptionBuilder* builder);
- 
+
 /**
  * @brief Set current asset id of the resource
  *
@@ -122,7 +121,7 @@ AVQueueItem_Result OH_AVSession_AVMediaDescriptionBuilder_Destroy(OH_AVSession_A
  */
 AVQueueItem_Result OH_AVSession_AVMediaDescriptionBuilder_SetAssetId(OH_AVSession_AVMediaDescriptionBuilder* builder,
     const char* assetId);
- 
+
 /**
  * @brief Set the title of the resource
  *
@@ -137,7 +136,7 @@ AVQueueItem_Result OH_AVSession_AVMediaDescriptionBuilder_SetAssetId(OH_AVSessio
  */
 AVQueueItem_Result OH_AVSession_AVMediaDescriptionBuilder_SetTitle(OH_AVSession_AVMediaDescriptionBuilder* builder,
     const char* title);
- 
+
 /**
  * @brief Set the subtitle of the resource
  *
@@ -152,7 +151,7 @@ AVQueueItem_Result OH_AVSession_AVMediaDescriptionBuilder_SetTitle(OH_AVSession_
  */
 AVQueueItem_Result OH_AVSession_AVMediaDescriptionBuilder_SetSubTitle(OH_AVSession_AVMediaDescriptionBuilder* builder,
     const char* subtitle);
- 
+
 /**
  * @brief Set the artist of the resource
  *
@@ -167,27 +166,27 @@ AVQueueItem_Result OH_AVSession_AVMediaDescriptionBuilder_SetSubTitle(OH_AVSessi
  */
 AVQueueItem_Result OH_AVSession_AVMediaDescriptionBuilder_SetArtist(OH_AVSession_AVMediaDescriptionBuilder* builder,
     const char* artist);
- 
+
 /**
- * @brief Set the image of the resource
+ * @brief Set the media image url of the resource
  *
  * @param builder The AVMediaDescription builder instance pointer
- * @param mediaImage The image of resource use to display in media center.
+ * @param albumCoverUri The image url of resource use to display in media center.
  * @return Function result code:
  *         {@link AVQUEUEITEM_SUCCESS} If the execution is successful.
  *         {@link AVQUEUEITEM_ERROR_INVALID_PARAM}:
  *                                                 1.The param of builder is nullptr;
- *                                                 2.The param of mediaImage is nullptr.
+ *                                                 2.The param of albumCoverUri is nullptr.
  * @since 23
  */
-AVQueueItem_Result OH_AVSession_AVMediaDescriptionBuilder_SetMediaImage(OH_AVSession_AVMediaDescriptionBuilder* builder,
-    OH_PixelmapNative *mediaImage);
- 
+AVQueueItem_Result OH_AVSession_AVMediaDescriptionBuilder_SetAlbumCoverUri(
+    OH_AVSession_AVMediaDescriptionBuilder* builder, const char* albumCoverUri);
+
 /**
- * @brief Set the mediaType of the resource
+ * @brief Set the media type of the resource
  *
  * @param builder The AVMediaDescription builder instance pointer
- * @param mediaType The type of this resource, such as VEDIO or AUDIO, which is capital.
+ * @param mediaType The type of this resource, such as VIDEO or AUDIO, which is capital.
  * @return Return code:
  *         {@link AVQUEUEITEM_SUCCESS} If the execution is successful.
  *         {@link AVQUEUEITEM_ERROR_INVALID_PARAM}:
@@ -197,12 +196,12 @@ AVQueueItem_Result OH_AVSession_AVMediaDescriptionBuilder_SetMediaImage(OH_AVSes
  */
 AVQueueItem_Result OH_AVSession_AVMediaDescriptionBuilder_SetMediaType(OH_AVSession_AVMediaDescriptionBuilder* builder,
     const char* mediaType);
- 
+
 /**
- * @brief Set the lyric of the resource
+ * @brief Set the lyric content of the resource
  *
  * @param builder The AVMediaDescription builder instance pointer
- * @param lyricContent The lyric content of resource, it should be lrc format.
+ * @param lyricContent The lyricContent of resource, it should be lrc format.
  * @return Function result code:
  *         {@link AVQUEUEITEM_SUCCESS} If the execution is successful.
  *         {@link AVQUEUEITEM_ERROR_INVALID_PARAM}:
@@ -212,7 +211,7 @@ AVQueueItem_Result OH_AVSession_AVMediaDescriptionBuilder_SetMediaType(OH_AVSess
  */
 AVQueueItem_Result OH_AVSession_AVMediaDescriptionBuilder_SetLyricContent(
     OH_AVSession_AVMediaDescriptionBuilder* builder, const char* lyricContent);
- 
+
 /**
  * @brief Set the duration of the resource
  *
@@ -220,12 +219,14 @@ AVQueueItem_Result OH_AVSession_AVMediaDescriptionBuilder_SetLyricContent(
  * @param duration The duration of resource, in miliseconds
  * @return Function result code:
  *         {@link AVQUEUEITEM_SUCCESS} If the execution is successful.
- *         {@link AVQUEUEITEM_ERROR_INVALID_PARAM} The param of duration is invalid.
+ *         {@link AVQUEUEITEM_ERROR_INVALID_PARAM}:
+ *                                                 1. The param of builder is nullptr.
+ *                                                 2. The param of duration is invalid.
  * @since 23
  */
 AVQueueItem_Result OH_AVSession_AVMediaDescriptionBuilder_SetDuration(OH_AVSession_AVMediaDescriptionBuilder* builder,
     const int32_t duration);
- 
+
 /**
  * @brief Set the media uri of the resource
  *
@@ -240,12 +241,12 @@ AVQueueItem_Result OH_AVSession_AVMediaDescriptionBuilder_SetDuration(OH_AVSessi
  */
 AVQueueItem_Result OH_AVSession_AVMediaDescriptionBuilder_SetMediaUri(OH_AVSession_AVMediaDescriptionBuilder* builder,
     const char* mediaUri);
- 
+
 /**
- * @brief Set the startPosition of the resource
+ * @brief Set the start position of the resource
  *
  * @param builder The AVMediaDescription builder instance pointer
- * @param startPosition The startPosition of resource.
+ * @param startPosition The start position of resource.
  * @return Function result code:
  *         {@link AVQUEUEITEM_SUCCESS} If the execution is successful.
  *         {@link AVQUEUEITEM_ERROR_INVALID_PARAM}:
@@ -255,7 +256,7 @@ AVQueueItem_Result OH_AVSession_AVMediaDescriptionBuilder_SetMediaUri(OH_AVSessi
  */
 AVQueueItem_Result OH_AVSession_AVMediaDescriptionBuilder_SetStartPosition(
     OH_AVSession_AVMediaDescriptionBuilder* builder, const int32_t startPosition);
- 
+
 /**
  * @brief Set the size of the resource
  *
@@ -270,12 +271,12 @@ AVQueueItem_Result OH_AVSession_AVMediaDescriptionBuilder_SetStartPosition(
  */
 AVQueueItem_Result OH_AVSession_AVMediaDescriptionBuilder_SetMediaSize(OH_AVSession_AVMediaDescriptionBuilder* builder,
     const int32_t mediaSize);
- 
+
 /**
- * @brief Set the album of the resource
+ * @brief Set the album title of the resource
  *
  * @param builder The AVMediaDescription builder instance pointer
- * @param albumTitle The album of resource.
+ * @param albumTitle The album title of resource.
  * @return Function result code:
  *         {@link AVQUEUEITEM_SUCCESS} If the execution is successful.
  *         {@link AVQUEUEITEM_ERROR_INVALID_PARAM}:
@@ -285,9 +286,9 @@ AVQueueItem_Result OH_AVSession_AVMediaDescriptionBuilder_SetMediaSize(OH_AVSess
  */
 AVQueueItem_Result OH_AVSession_AVMediaDescriptionBuilder_SetAlbumTitle(OH_AVSession_AVMediaDescriptionBuilder* builder,
     const char* albumTitle);
- 
+
 /**
- * @brief Set the app Name of the resource
+ * @brief Set the app name of the resource
  *
  * @param builder The AVMediaDescription builder instance pointer
  * @param appName The app name of resource.
@@ -300,7 +301,7 @@ AVQueueItem_Result OH_AVSession_AVMediaDescriptionBuilder_SetAlbumTitle(OH_AVSes
  */
 AVQueueItem_Result OH_AVSession_AVMediaDescriptionBuilder_SetAppName(OH_AVSession_AVMediaDescriptionBuilder* builder,
     const char* appName);
- 
+
  /**
  * @brief Get current asset id of the resource
  *
@@ -315,7 +316,7 @@ AVQueueItem_Result OH_AVSession_AVMediaDescriptionBuilder_SetAppName(OH_AVSessio
  */
 AVQueueItem_Result OH_AVSession_AVMediaDescription_GetAssetId(OH_AVSession_AVMediaDescription* description,
     char** assetId);
- 
+
 /**
  * @brief Get the title of the resource
  *
@@ -330,7 +331,7 @@ AVQueueItem_Result OH_AVSession_AVMediaDescription_GetAssetId(OH_AVSession_AVMed
  */
 AVQueueItem_Result OH_AVSession_AVMediaDescription_GetTitle(OH_AVSession_AVMediaDescription* description,
     char** title);
- 
+
 /**
  * @brief Get the subtitle of the resource
  *
@@ -345,7 +346,7 @@ AVQueueItem_Result OH_AVSession_AVMediaDescription_GetTitle(OH_AVSession_AVMedia
  */
 AVQueueItem_Result OH_AVSession_AVMediaDescription_GetSubtitle(OH_AVSession_AVMediaDescription* description,
     char** subtitle);
- 
+
 /**
  * @brief Get the artist of the resource
  *
@@ -360,21 +361,21 @@ AVQueueItem_Result OH_AVSession_AVMediaDescription_GetSubtitle(OH_AVSession_AVMe
  */
 AVQueueItem_Result OH_AVSession_AVMediaDescription_GetArtist(OH_AVSession_AVMediaDescription* description,
     char** artist);
- 
+
 /**
- * @brief Get the media image of the resource
+ * @brief Get the media image url of the resource
  *
  * @param description The AVMediaDescription instance pointer
- * @param mediaImage The pixelmap of resource.
+ * @param albumCoverUri The media image url of resource.
  * @return Function result code:
  *         {@link AVQUEUEITEM_SUCCESS} If the execution is successful.
  *         {@link AVQUEUEITEM_ERROR_INVALID_PARAM}:
  *                                                1.The param of description is nullptr.
- *                                                2.The param of mediaImage is nullptr.
+ *                                                2.The param of albumCoverUri is nullptr.
  * @since 23
  */
-AVQueueItem_Result OH_AVSession_AVMediaDescription_GetMediaImage(OH_AVSession_AVMediaDescription* description,
-    OH_PixelmapNative** mediaImage);
+AVQueueItem_Result OH_AVSession_AVMediaDescription_GetAlbumCoverUri(OH_AVSession_AVMediaDescription* description,
+    char** albumCoverUri);
 /**
  * @brief Get the media type information
  *
@@ -389,7 +390,7 @@ AVQueueItem_Result OH_AVSession_AVMediaDescription_GetMediaImage(OH_AVSession_AV
  */
 AVQueueItem_Result OH_AVSession_AVMediaDescription_GetMediaType(OH_AVSession_AVMediaDescription* description,
     char** mediaType);
- 
+
 /**
  * @brief Get the lyric content of the resource
  *
@@ -404,7 +405,7 @@ AVQueueItem_Result OH_AVSession_AVMediaDescription_GetMediaType(OH_AVSession_AVM
  */
 AVQueueItem_Result OH_AVSession_AVMediaDescription_GetLyricContent(OH_AVSession_AVMediaDescription* description,
     char** lyricContent);
- 
+
 /**
  * @brief Get the duration of the resource
  *
@@ -419,7 +420,7 @@ AVQueueItem_Result OH_AVSession_AVMediaDescription_GetLyricContent(OH_AVSession_
  */
 AVQueueItem_Result OH_AVSession_AVMediaDescription_GetDuration(OH_AVSession_AVMediaDescription* description,
     int32_t* duration);
- 
+
 /**
  * @brief Get the media uri of the resource
  *
@@ -434,7 +435,7 @@ AVQueueItem_Result OH_AVSession_AVMediaDescription_GetDuration(OH_AVSession_AVMe
  */
 AVQueueItem_Result OH_AVSession_AVMediaDescription_GetMediaUri(OH_AVSession_AVMediaDescription* description,
     char** mediaUri);
- 
+
 /**
  * @brief Get start position of the resource
  *
@@ -449,7 +450,7 @@ AVQueueItem_Result OH_AVSession_AVMediaDescription_GetMediaUri(OH_AVSession_AVMe
  */
 AVQueueItem_Result OH_AVSession_AVMediaDescription_GetStartPosition(OH_AVSession_AVMediaDescription* description,
     int32_t* startPosition);
- 
+
 /**
  * @brief Get media size of the resource
  *
@@ -464,7 +465,7 @@ AVQueueItem_Result OH_AVSession_AVMediaDescription_GetStartPosition(OH_AVSession
  */
 AVQueueItem_Result OH_AVSession_AVMediaDescription_GetMediaSize(OH_AVSession_AVMediaDescription* description,
     int32_t* mediaSize);
- 
+
 /**
  * @brief Get the album title of the resource
  *
@@ -479,7 +480,7 @@ AVQueueItem_Result OH_AVSession_AVMediaDescription_GetMediaSize(OH_AVSession_AVM
  */
 AVQueueItem_Result OH_AVSession_AVMediaDescription_GetAlbumTitle(OH_AVSession_AVMediaDescription* description,
     char** albumTitle);
- 
+
 /**
  * @brief Get the appName of the resource
  *
@@ -494,23 +495,25 @@ AVQueueItem_Result OH_AVSession_AVMediaDescription_GetAlbumTitle(OH_AVSession_AV
  */
 AVQueueItem_Result OH_AVSession_AVMediaDescription_GetAppName(OH_AVSession_AVMediaDescription* description,
     char** appName);
- 
+
 /**
  * @brief Create the avMediaDescription.
+ * Call {@link OH_AVSession_AVMediaDescription_Destroy} to release the avMediaDescription object
+ * when it is not used anymore.
  *
  * @param builder The AVMediaDescription builder instance pointer
- * @param avMediaDescription Pointer to a viriable to receive the avMediaDescription object.
+ * @param avMediaDescription Pointer to a variable to receive the avMediaDescription object.
  * @return Function result code:
  *         {@link AVQUEUEITEM_SUCCESS} If the execution is successful.
  *         {@link AVQUEUEITEM_ERROR_NO_MEMORY} No memory to allocate a new instance.
  *         {@link AVQUEUEITEM_ERROR_INVALID_PARAM}:
- *                                                 1.The param of builder is nullptr.
+ *                                                 1.The param of builder is nullptr;
  *                                                 2.The param of avMediaDescription is nullptr.
  * @since 23
  */
 AVQueueItem_Result OH_AVSession_AVMediaDescriptionBuilder_GenerateAVMediaDescription(
     OH_AVSession_AVMediaDescriptionBuilder* builder, OH_AVSession_AVMediaDescription** avMediaDescription);
- 
+
 /**
  * @brief Request to release the avMediaDescription.
  *
@@ -521,10 +524,10 @@ AVQueueItem_Result OH_AVSession_AVMediaDescriptionBuilder_GenerateAVMediaDescrip
  * @since 23
  */
 AVQueueItem_Result OH_AVSession_AVMediaDescription_Destroy(OH_AVSession_AVMediaDescription* avMediaDescription);
- 
+
 #ifdef __cplusplus
 }
 #endif
- 
+
 #endif // NATIVE_AVQUEUEITEM_H
 /** @} */

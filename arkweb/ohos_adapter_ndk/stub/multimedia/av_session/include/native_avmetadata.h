@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -36,14 +36,13 @@
  * @since 13
  * @version 1.0
  */
+
 #ifndef NATIVE_AVMETADATA_H
 #define NATIVE_AVMETADATA_H
 
 #include <stdint.h>
 #include "native_avsession_errors.h"
 #include "native_avsession_base.h"
-
-#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -287,10 +286,12 @@ AVMetadata_Result OH_AVMetadataBuilder_SetDisplayTags(OH_AVMetadataBuilder* buil
  * @brief Set the protocols supported
  *
  * @param builder The metadata builder instance pointer
- * @param filter The protocols supported by this session, if not set, the default is {@link TYPE_CAST_PLUS_STREAM}
+ * @param filter The protocols supported by this session,if not set, the default is {@link TYPE_CAST_PLUS_STREAM}
  * @return Function result code:
  *         {@link AVMETADATA_SUCCESS} If the execution is successful.
- *         {@link AVMETADATA_ERROR_INVALID_PARAM} The param of filter is invalid.
+ *         {@link AVMETADATA_ERROR_INVALID_PARAM}:
+ *                                                 1.The param of builder is nullptr;
+ *                                                 2.The param of filter is invalid.
  * @since 23
  */
 AVMetadata_Result OH_AVMetadataBuilder_SetFilter(OH_AVMetadataBuilder* builder, uint32_t filter);

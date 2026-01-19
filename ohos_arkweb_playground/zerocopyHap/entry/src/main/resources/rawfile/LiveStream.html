@@ -1,0 +1,29 @@
+ <!-- index.html -->
+ <!DOCTYPE html>
+ <html>
+ <head>
+   <meta charset="UTF-8">
+ </head>
+ <body>
+ <video id="video" width="500px" height="500px" autoplay="autoplay"></video>
+ <canvas id="canvas" width="500px" height="500px"></canvas>
+ <br>
+ <input type="button" title="HTML5 camera" value="open camera" onclick="getMedia()"/>
+ <script>
+   function getMedia() {
+     let constraints = {
+       video: {width: 500, height: 500},
+       audio: true,
+     };
+     // get video camera area
+     let video = document.getElementById('video');
+     // Promise object
+     let promise = navigator.mediaDevices.getUserMedia(constraints);
+     promise.then((MediaStream) => {
+       video.srcObject = MediaStream;
+       video.play();
+     });
+   }
+ </script>
+ </body>
+ </html>

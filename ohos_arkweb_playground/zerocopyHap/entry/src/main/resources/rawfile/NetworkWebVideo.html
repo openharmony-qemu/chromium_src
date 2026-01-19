@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network video player</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #f0f0f0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            padding: 25px 0;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #ff4e50, #f9d423);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            color: #aaa;
+            max-width: 700px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        
+        .video-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            justify-content: center;
+            margin-bottom: 40px;
+        }
+        
+        .video-wrapper {
+            flex: 1;
+            min-width: 300px;
+            max-width: 420px;
+            background: rgba(30, 30, 46, 0.8);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .video-wrapper:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.7);
+        }
+        
+        .video-title {
+            padding: 15px 20px;
+            background: rgba(255, 78, 80, 0.2);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .video-title i {
+            color: #ff4e50;
+        }
+        
+        video {
+            width: 100%;
+            display: block;
+            outline: none;
+            background-color: #000;
+        }
+        
+        .video-controls {
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .control-btn {
+            background: linear-gradient(90deg, #ff4e50, #f9d423);
+            border: none;
+            color: white;
+            padding: 10px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .control-btn:hover {
+            background: linear-gradient(90deg, #f9d423, #ff4e50);
+            transform: scale(1.05);
+        }
+        
+        .control-btn:active {
+            transform: scale(0.98);
+        }
+        
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 150px;
+        }
+        
+        .volume-slider {
+            flex-grow: 1;
+            cursor: pointer;
+        }
+        
+        .global-controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            padding: 25px;
+            background: rgba(30, 30, 46, 0.6);
+            border-radius: 15px;
+            max-width: 800px;
+            margin: 0 auto 30px;
+        }
+        
+        .global-btn {
+            background: linear-gradient(90deg, #ff4e50, #f9d423);
+            border: none;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .global-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 15px rgba(255, 78, 80, 0.4);
+        }
+        
+        footer {
+            text-align: center;
+            padding: 25px;
+            color: #aaa;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: 20px;
+        }
+        
+        .instructions {
+            max-width: 800px;
+            margin: 0 auto 30px;
+            padding: 20px;
+            background: rgba(30, 30, 46, 0.6);
+            border-radius: 10px;
+            line-height: 1.6;
+        }
+        
+        .instructions h3 {
+            color: #ff4e50;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .video-source {
+            font-size: 0.9rem;
+            color: #888;
+            margin-top: 5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .video-source i {
+            color: #f9d423;
+        }
+        
+        @media (max-width: 1100px) {
+            .video-wrapper {
+                max-width: 100%;
+            }
+            
+            .video-container {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+        
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .global-controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .global-btn {
+                width: 80%;
+                justify-content: center;
+            }
+            
+            .video-controls {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .volume-control {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-video"></i>Network video player</h1>
+        </header>
+        
+        <div class="video-container">
+            <!-- video 1 -->
+            <div class="video-wrapper">
+                <div class="video-title" onclick="switchVideoSource(0)">
+                    <i class="fas fa-mountain"></i>
+                    <span>video 1</span>
+                </div>
+                <video id="video1" playsinline poster="https://cdn.pixabay.com/photo/2015/04/23/22/00/tree-736885_1280.jpg">
+                    <!-- Network video source -->
+                    <source src="https://vjs.zencdn.net/v/oceans.mp4" type="video/mp4">
+                    <!-- Backup video source -->
+                    <source src="https://media.w3.org/2010/05/sintel/trailer.mp4" type="video/mp4">
+                    Your hap does not support the HTML5 video tag.
+                </video>
+                <div class="video-controls">
+                    <button class="control-btn" onclick="togglePlayPause(0)">
+                        <i class="fas fa-play"></i>
+                        <span>Play/Stop</span>
+                    </button>
+                    <div class="volume-control">
+                        <i class="fas fa-volume-up"></i>
+                        <input type="range" class="volume-slider" min="0" max="1" step="0.1" value="1" oninput="changeVolume(0, this.value)">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- video 2 -->
+            <div class="video-wrapper">
+                <div class="video-title" onclick="switchVideoSource(1)">
+                    <i class="fas fa-city"></i>
+                    <span>video 2</span>
+                </div>
+                <video id="video2" playsinline poster="https://cdn.pixabay.com/photo/2017/12/10/17/40/chaoyang-3010716_1280.jpg">
+                    <source src="https://qiniu.iiilab.com/video/big_buck_bunny.mp4" type="video/mp4">
+                    <source src="https://media.w3.org/2010/05/bunny/trailer.mp4" type="video/mp4">
+                    Your hap does not support the HTML5 video tag.
+                </video>
+                <div class="video-controls">
+                    <button class="control-btn" onclick="togglePlayPause(1)">
+                        <i class="fas fa-play"></i>
+                        <span>Play/Stop</span>
+                    </button>
+                    <div class="volume-control">
+                        <i class="fas fa-volume-up"></i>
+                        <input type="range" class="volume-slider" min="0" max="1" step="0.1" value="1" oninput="changeVolume(1, this.value)">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- video 3 -->
+            <div class="video-wrapper">
+                <div class="video-title" onclick="switchVideoSource(2)">
+                    <i class="fas fa-robot"></i>
+                    <span>video 3</span>
+                </div>
+
+                <video id="video3" playsinline poster="https://cdn.pixabay.com/photo/2018/05/04/18/50/technology-3374654_1280.jpg">
+                    <source src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" type="video/mp4">
+                    <source src="https://media.w3.org/2010/05/video/movie_300.mp4" type="video/mp4">
+                    Your hap does not support the HTML5 video tag.
+                </video>
+                <div class="video-controls">
+                    <button class="control-btn" onclick="togglePlayPause(2)">
+                        <i class="fas fa-play"></i>
+                        <span>Play/Stop</span>
+                    </button>
+                    <div class="volume-control">
+                        <i class="fas fa-volume-up"></i>
+                        <input type="range" class="volume-slider" min="0" max="1" step="0.1" value="1" oninput="changeVolume(2, this.value)">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="global-controls">
+            <button class="global-btn" onclick="playAllVideos()">
+                <i class="fas fa-play-circle"></i>
+                Play all video
+            </button>
+            <button class="global-btn" onclick="pauseAllVideos()">
+                <i class="fas fa-pause-circle"></i>
+                Stop all video
+            </button>
+            <button class="global-btn" onclick="muteAllVideos()">
+                <i class="fas fa-volume-mute"></i>
+                Mute all video
+            </button>
+            <button class="global-btn" onclick="unmuteAllVideos()">
+                <i class="fas fa-volume-up"></i>
+                Unmute all video
+            </button>
+            <button class="global-btn" onclick="reloadAllVideos()">
+                <i class="fas fa-redo-alt"></i>
+                Reload video
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        // Get video element
+        const videos = [
+            document.getElementById('video1'),
+            document.getElementById('video2'),
+            document.getElementById('video3'),
+        ];
+        
+        // all video source
+        const videoSources = [
+            [
+                'https://vjs.zencdn.net/v/oceans.mp4',
+                'https://media.w3.org/2010/05/sintel/trailer.mp4',
+            ],
+            [
+                'https://qiniu.iiilab.com/video/big_buck_bunny.mp4',
+                'https://media.w3.org/2010/05/bunny/trailer.mp4',
+            ],
+            [
+                'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
+                'https://media.w3.org/2010/05/video/movie_300.mp4',
+            ],
+        ];
+
+        const titleVariants = [
+            ['video1'],
+            ['video2'],
+            ['video3'],
+        ];
+        
+        // video source index
+        const currentSourceIndex = [0, 0, 0];
+        
+        function switchVideoSource(videoIndex) {
+            currentSourceIndex[videoIndex] = (currentSourceIndex[videoIndex] + 1) % videoSources[videoIndex].length;
+            
+            video.pause();
+            
+            const titleElement = document.querySelectorAll('.video-title span')[videoIndex];
+            const originalTitle = titleElement.textContent;
+            titleElement.innerHTML = `<i class="fas fa-spinner fa-spin"></i> loading...`;
+            
+            video.src = videoSources[videoIndex][currentSourceIndex[videoIndex]];
+            
+            titleElement.textContent = titleVariants[videoIndex][currentSourceIndex[videoIndex]];
+            
+            const sourceLabels = ['source1', 'source2', 'source3'];
+            const sourceElement = document.querySelectorAll('.video-source span')[videoIndex];
+            sourceElement.textContent = `video source: ${sourceLabels[videoIndex]}`;
+            
+            video.load();
+            
+            video.addEventListener('loadeddata', function onLoad() {
+                if (!videos[videoIndex].paused) {
+                    video.play().then(() => {
+                        video.currentTime = videos[videoIndex].currentTime;
+                    });
+                }
+                video.removeEventListener('loadeddata', onLoad);
+            }, { once: true });
+            
+            video.addEventListener('error', function onError() {
+                titleElement.textContent = originalTitle;
+                video.removeEventListener('error', onError);
+            }, { once: true });
+        }
+        
+        function togglePlayPause(videoIndex) {
+            const video = videos[videoIndex];
+            const btnIcon = document.querySelectorAll('.control-btn i')[videoIndex];
+            
+            if (video.paused) {
+                video.play().then(() => {
+                    btnIcon.className = 'fas fa-pause';
+                });
+            } else {
+                video.pause();
+                btnIcon.className = 'fas fa-play';
+            }
+        }
+        
+        function changeVolume(videoIndex, volume) {
+            videos[videoIndex].volume = volume;
+            const volumeIcon = document.querySelectorAll('.volume-control i')[videoIndex];
+            
+            if (volume === 0) {
+                volumeIcon.className = 'fas fa-volume-mute';
+            } else if (volume < 0.5) {
+                volumeIcon.className = 'fas fa-volume-down';
+            } else {
+                volumeIcon.className = 'fas fa-volume-up';
+            }
+        }
+        
+        function playAllVideos() {
+            videos.forEach((video, index) => {
+                video.play().then(() => {
+                    document.querySelectorAll('.control-btn i')[index].className = 'fas fa-pause';
+                });
+            });
+        }
+        
+        function pauseAllVideos() {
+            videos.forEach(video => {
+                video.pause();
+            });
+            
+            document.querySelectorAll('.control-btn i').forEach(icon => {
+                icon.className = 'fas fa-play';
+            });
+        }
+        
+        function muteAllVideos() {
+            videos.forEach((video, index) => {
+                video.volume = 0;
+                document.querySelectorAll('.volume-slider')[index].value = 0;
+                document.querySelectorAll('.volume-control i')[index].className = 'fas fa-volume-mute';
+            });
+        }
+        
+        function unmuteAllVideos() {
+            videos.forEach((video, index) => {
+                video.volume = 1;
+                document.querySelectorAll('.volume-slider')[index].value = 1;
+                document.querySelectorAll('.volume-control i')[index].className = 'fas fa-volume-up';
+            });
+        }
+        
+        function reloadAllVideos() {
+            videos.forEach((video, index) => {
+                video.load();
+                
+                if (!video.paused) {
+                    video.play();
+                }
+            });
+        }
+        
+        videos.forEach((video, index) => {
+            video.addEventListener('play', () => {
+                document.querySelectorAll('.control-btn i')[index].className = 'fas fa-pause';
+            });
+            
+            video.addEventListener('pause', () => {
+                document.querySelectorAll('.control-btn i')[index].className = 'fas fa-play';
+            });
+            
+            video.addEventListener('loadeddata', () => {
+                video.volume = 1;
+            });
+        });
+        
+        window.addEventListener('load', () => {
+            videos.forEach((video, index) => {
+                // timeout time (10s)
+                const loadTimeout = setTimeout(() => {
+                    if (video.networkState === video.NETWORK_LOADING && video.readyState < video.HAVE_CURRENT_DATA) {
+                        switchVideoSource(index);
+                    }
+                }, 10000);
+
+                video.addEventListener('loadeddata', () => clearTimeout(loadTimeout));
+                video.addEventListener('error', () => clearTimeout(loadTimeout));
+
+                video.load();
+            });
+        });
+    </script>
+</body>
+</html>

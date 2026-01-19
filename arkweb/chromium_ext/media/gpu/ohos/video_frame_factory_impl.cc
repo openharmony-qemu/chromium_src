@@ -31,6 +31,7 @@
 #include "media/gpu/ohos/codec_wrapper.h"
 #include "mojo/public/cpp/bindings/callback_helpers.h"
 #include "ui/gl/scoped_make_current.h"
+#include "arkweb/chromium_ext/gpu/config/gpu_finch_features_ext.h"
 
 namespace media {
 namespace {
@@ -93,6 +94,37 @@ void VideoFrameFactoryImpl::SetSurfaceBundle(
   }
 }
 
+bool VideoFrameFactoryImpl::GetVideoFrameCopyStatus() {
+  bool copy_required =
+#if BUILDFLAG(ARKWEB_PIP)
+    IsPipEnable() ||
+#endif
+    video_frame_copy_required_;
+  int getValue = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                 .GetSystemPropertiesInstance()
+                 .GetIntParameter("web.gpu.videocopy",
+                                  static_cast<int>(VideoFrameCopyStatus::kDefault));
+
+  switch (getValue) {
+    case static_cast<int>(VideoFrameCopyStatus::kZeroCopy):
+      copy_required = false;
+      break;
+    case static_cast<int>(VideoFrameCopyStatus::kOneCopy):
+      copy_required = true;
+      break;
+    case static_cast<int>(VideoFrameCopyStatus::kDefault):
+      if (base::FeatureList::IsEnabled(features::kVulkanVideoZeroCopy)) {
+        copy_required = copy_required || features::IsUsingVulkan();
+      } else {
+        copy_required = true;
+      }
+      break;
+    default:
+      break;
+  }
+  return copy_required;
+}
+
 void VideoFrameFactoryImpl::CreateVideoFrame(
     std::unique_ptr<CodecOutputBuffer> output_buffer,
     base::TimeDelta timestamp,
@@ -115,15 +147,14 @@ void VideoFrameFactoryImpl::CreateVideoFrame(
     return;
   }
 
+  bool copy_required = GetVideoFrameCopyStatus();
+  LOG(DEBUG) << "Video Frame Copy Status: " << copy_required;
+
   auto image_ready_cb = base::BindOnce(
       &VideoFrameFactoryImpl::CreateVideoFrame_OnImageReady,
       weak_factory_.GetWeakPtr(), std::move(output_cb), timestamp, natural_size,
       !!codec_buffer_wait_coordinator_, pixel_format,
-#if BUILDFLAG(ARKWEB_PIP)
-      video_frame_copy_required_ || IsPipEnable(),
-#else
-      video_frame_copy_required_,
-#endif
+      copy_required,
       gpu_task_runner_);
 
   RequestImage(std::move(output_buffer_renderer), std::move(image_ready_cb));

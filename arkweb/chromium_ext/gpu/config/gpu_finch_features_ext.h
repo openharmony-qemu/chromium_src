@@ -32,6 +32,8 @@ bool IsEnableVulkan();
 
 #if BUILDFLAG(ARKWEB_VULKAN)
 GPU_EXPORT BASE_DECLARE_FEATURE(kInsertVKEndSemaphore);
+
+GPU_EXPORT BASE_DECLARE_FEATURE(kVulkanVideoZeroCopy);
 #endif
 
 #if BUILDFLAG(ARKWEB_DRDC)

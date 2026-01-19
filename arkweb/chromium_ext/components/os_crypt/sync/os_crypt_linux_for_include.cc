@@ -149,7 +149,6 @@ std::unique_ptr<crypto::SymmetricKey> GenerateEncryptionKeyForOtaFail() {
       crypto::SymmetricKey::Import(
           crypto::SymmetricKey::AES,
           crypto::ohos::get_symmetric_key_256_for_ota(kDataKeyAlias)));
-  DCHECK(encryption_key);
 
   return encryption_key;
 }

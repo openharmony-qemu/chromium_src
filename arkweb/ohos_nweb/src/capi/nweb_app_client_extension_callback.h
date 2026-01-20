@@ -145,6 +145,13 @@ struct NWebAppClientExtensionCallback {
                                            bool is_key_request,
                                            int32_t nweb_id);
 #endif
+
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+  void (*OnSafeBrowsingCheckDetail)(int32_t nweb_id,
+                                    int code,
+                                    int policy,
+                                    int threat);
+#endif
 };
 
 #endif  // OHOS_NWEB_SRC_NWEB_APP_CLIENT_EXTENSION_CALLBACK_H_

@@ -5778,4 +5778,24 @@ void NWebHandlerDelegate::OnMediaCastEnter() {
 }
 #endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
 
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+void NWebHandlerDelegate::OnSafeBrowsingCheckDetail(int code,
+                                                    int policy,
+                                                    int threat) {
+  LOG(INFO) << "NWebHandlerDelegate::OnSafeBrowsingCheckDetail code:" << code
+            << " ,policy:" << policy << " ,threat:" << threat;
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  if (IsNativeApiEnable()) {
+    dispatcher_.OnSafeBrowsingCheckDetail(code, policy, threat);
+    return;
+  }
+#endif
+  if (web_app_client_extension_listener_ != nullptr &&
+      web_app_client_extension_listener_->OnSafeBrowsingCheckDetail !=
+          nullptr) {
+    web_app_client_extension_listener_->OnSafeBrowsingCheckDetail(
+        web_app_client_extension_listener_->nweb_id, code, policy, threat);
+  }
+}
+#endif
 }  // namespace OHOS::NWeb

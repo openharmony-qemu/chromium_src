@@ -912,6 +912,10 @@ class CONTENT_EXPORT WebContentsDelegate {
                      int height) {}
 #endif
 
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+  virtual void OnSafeBrowsingCheckDetail(int code, int policy, int threat) {};
+#endif
+
  protected:
   virtual ~WebContentsDelegate();
 

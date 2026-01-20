@@ -1676,6 +1676,10 @@ class WebContents : public PageNavigator, public base::SupportsUserData {
   virtual void OnPipEvent(int event) = 0;
 #endif
 
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+  virtual void OnSafeBrowsingCheckDetail(int code, int policy, int threat) {}
+#endif
+
  private:
   // This interface should only be implemented inside content.
   friend class WebContentsImpl;

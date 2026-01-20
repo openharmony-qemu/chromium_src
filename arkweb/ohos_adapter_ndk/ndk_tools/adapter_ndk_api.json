@@ -460,9 +460,15 @@
                 "AbilityRuntime_ErrorCode OH_AbilityRuntime_ApplicationContextGetBundleName(char* buffer, int32_t bufferSize, int32_t* writeLength)",
                 "AbilityRuntime_ErrorCode OH_AbilityRuntime_ApplicationContextGetAreaMode(AbilityRuntime_AreaMode* areaMode)"
 
+            ],
+            "23": [
+                "AbilityRuntime_ErrorCode OH_AbilityRuntime_ApplicationContextNotifyPageChanged(const char* targetPageName, int32_t targetPageNameLength, int32_t windowId)"
             ]
         },
-        "includes": []
+        "includes": [
+            "stdint.h",
+            "AbilityKit/ability_runtime/ability_runtime_common.h"
+        ]
     },
 
     "ability_access":{

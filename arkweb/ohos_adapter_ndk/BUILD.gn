@@ -143,6 +143,8 @@ component("adapter_ndk") {
     "arkts_adapter/arkts_hilog_adapter.cpp",
     "security_adapter/arkts_security_adapter_impl.h",
     "security_adapter/arkts_security_adapter_impl.cpp",
+    "ability_runtime_adapter/native_ability_runtime_adapter_impl.h",
+    "ability_runtime_adapter/native_ability_runtime_adapter_impl.cpp",
   ]
 
   include_dirs = [

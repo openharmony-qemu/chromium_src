@@ -697,6 +697,14 @@ void RenderInputRouter::SetFocusWebId(int32_t nweb_id) {
   }
   input_router()->SetFocusWebId(nweb_id);
 }
+
+void RenderInputRouter::SetScrollable(bool enable) {
+  if (input_router() == nullptr) {
+    LOG(ERROR) << "SetScrollable can not get input_router";
+    return;
+  }
+  input_router()->SetScrollable(enable);
+}
 #endif
 
 }  // namespace input

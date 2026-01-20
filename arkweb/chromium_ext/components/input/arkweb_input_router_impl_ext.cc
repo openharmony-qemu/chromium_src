@@ -71,6 +71,10 @@ void ArkwebInputRouterImplExt::DynamicFrameLossEvent(const std::string& sceneId,
 void ArkwebInputRouterImplExt::SetFocusWebId(int32_t nweb_id) {
   gesture_event_queue_.SetFocusWebId(nweb_id);
 }
+
+void ArkwebInputRouterImplExt::SetScrollable(bool enable) {
+  gesture_event_queue_.SetScrollable(enable);
+}
 #endif
 
 }  // namespace input

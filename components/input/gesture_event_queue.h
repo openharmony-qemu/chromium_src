@@ -149,6 +149,8 @@ class COMPONENT_EXPORT(INPUT) GestureEventQueue {
 
 #if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
   void SetFocusWebId(int32_t nweb_id);
+
+  void SetScrollable(bool enable);
 #endif
 
  private:

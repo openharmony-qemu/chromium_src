@@ -250,5 +250,9 @@ void GestureEventQueue::OnWheelEventAck(
 void GestureEventQueue::SetFocusWebId(int32_t nweb_id) {
   fling_controller_.SetFocusWebId(nweb_id);
 }
+
+void GestureEventQueue::SetScrollable(bool enable) {
+  fling_controller_.SetScrollable(enable);
+}
 #endif
 }  // namespace input

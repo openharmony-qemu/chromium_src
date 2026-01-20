@@ -60,6 +60,16 @@ constexpr int kMaxBackForwardCacheSize = 50;
 }  // namespace
 
 #if BUILDFLAG(ARKWEB_BFCACHE)
+//static
+BFCacheFeatureConfigDataEx* BFCacheFeatureConfigDataEx::GetInstance() {
+  static base::NoDestructor<BFCacheFeatureConfigDataEx> instance;
+  return instance.get();
+}
+
+BFCacheFeatureConfigDataEx::BFCacheFeatureConfigDataEx() {}
+
+BFCacheFeatureConfigDataEx::~BFCacheFeatureConfigDataEx() = default;
+
 void BackForwardCacheImpl::SetCacheSize(int size) {
   if (size <= 0) {
     size = 0;

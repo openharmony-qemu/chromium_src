@@ -3406,6 +3406,7 @@ bool NWebHandlerDelegate::OnSetFocus(CefRefPtr<CefBrowser> browser,
   }
   if (render_handler_ != nullptr) {
     render_handler_->SetFocusStatus(true);
+    render_handler_->EnableVirtualKeyboardRequestFocus(true);
   }
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
   return false;
@@ -3729,6 +3730,11 @@ bool NWebHandlerDelegate::OnFileDialog(
         break;
     }
   }
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  if (render_handler_ != nullptr) {
+    render_handler_->EnableVirtualKeyboardRequestFocus(false);
+  }
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
   std::string default_name = default_file_path.ToString();
   std::string default_path = start_in.ToString();
   size_t pos = default_name.find_last_of('/');

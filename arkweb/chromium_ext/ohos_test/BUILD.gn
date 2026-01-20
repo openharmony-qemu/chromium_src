@@ -75,7 +75,7 @@ group("ohos_fuzz") {
       "//arkweb/chromium_ext/ohos_test/fuzztest/chromium_ext/components/download/internal/common/arkweb_download_file_impl_ext_fuzzer",
       "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_adapter_ndk/ohos_adapter_ndk_ai_fuzzer:ohos_adapter_ndk_api01_fuzzer",
       "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_adapter_ndk/ohos_adapter_ndk_ai_fuzzer:ohos_adapter_ndk_api02_fuzzer",
-      "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_adapter_ndk/media_avsession_adapter::media_avsession_adapter_impl_fuzzer",
+      "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_adapter_ndk/media_avsession_adapter:media_avsession_adapter_impl_fuzzer",
     ]
 }
 

@@ -227,6 +227,7 @@ private:
     int64_t lastUiTime_ = 0;
     bool avCastStarted_ = false;
     bool is_seeking_ = false;
+    bool is_avcast_ = false;
 };
 } // namespace OHOS::NWeb
 

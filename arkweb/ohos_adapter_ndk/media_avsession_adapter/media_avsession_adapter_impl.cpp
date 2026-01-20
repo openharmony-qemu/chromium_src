@@ -830,7 +830,7 @@ void MediaAVSessionAdapterImpl::PullUpCastBackGround() {
 }
 
 bool MediaAVSessionAdapterImpl::PrepareAndStartCast() {
-    WVLOG_I("OH_AVSession_GetAVCastController enter.");
+    WVLOG_I("PrepareAndStartCast enter.");
     if (!GetAVCastController()) {
         WVLOG_E("MediaAVSessionAdapterImpl::PrepareAndStartCast, GetAVCastController failed");
         return false;
@@ -1005,9 +1005,9 @@ bool MediaAVSessionAdapterImpl::GetAVCastController() {
         WVLOG_E("GetAVCastController avSession_ is nullptr.");
         return false;
     }
-    AVSession_ErrCode ret = OH_AVSession_GetAVCastController(avSession_, &avCastController_);
+    AVSession_ErrCode ret = OH_AVSession_CreateAVCastController(avSession_, &avCastController_);
     if (ret != AV_SESSION_ERR_SUCCESS) {
-        WVLOG_I("OH_AVSession_GetAVCastController failed. ret: %{public}d", ret);
+        WVLOG_I("OH_AVSession_CreateAVCastController failed. ret: %{public}d", ret);
         return false;
     }
     return true;
@@ -1133,7 +1133,8 @@ bool MediaAVSessionAdapterImpl::StartCast() {
 }
 
 bool MediaAVSessionAdapterImpl::RegisterCallback() {
-    AVSession_ErrCode errCode = OH_AVCastController_RegisterPlaybackStateChangedCallback(avCastController_,
+    int filter = FILTER_STATE + FILTER_POSITION;
+    AVSession_ErrCode errCode = OH_AVCastController_RegisterPlaybackStateChangedCallback(avCastController_, filter,
         &MediaAVSessionAdapterImpl::PlaybackStateChangedCallback, reinterpret_cast<void *>(avsession_callback_index_));
     if (errCode != AV_SESSION_ERR_SUCCESS) {
         WVLOG_E("MediaAVSessionAdapterImpl RegisterPlaybackStateChangedCallback err: %{public}d", errCode);

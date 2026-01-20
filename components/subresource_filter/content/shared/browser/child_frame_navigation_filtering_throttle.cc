@@ -93,10 +93,6 @@ ChildFrameNavigationFilteringThrottle::WillProcessResponse() {
   // and there are outstanding load policy calculations, we are either in dry
   // run mode or checking aliases.
   if (pending_load_policy_calculations_ > 0) {
-    CHECK(parent_frame_filter_->activation_state().activation_level ==
-                  mojom::ActivationLevel::kDryRun ||
-              navigation_handle()->GetDnsAliases().size() > 0,
-          base::NotFatalUntil::M129);
     DeferStart(DeferStage::kWillProcessResponse);
     return DEFER;
   }

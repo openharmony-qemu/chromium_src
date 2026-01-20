@@ -17,8 +17,34 @@
 #define ARKWEB_CHROMIUM_EXT_CONTENT_BROWSER_RENDERER_HOST_ARK_WEB_BACK_FORWARD_CACHE_IMPL_H_
 
 #include "third_party/blink/public/common/scheduler/web_scheduler_tracked_feature.h"
+#if BUILDFLAG(ARKWEB_BFCACHE)
+#include "base/no_destructor.h"
+#include "content/common/content_export.h"
+#endif
 
 bool GetArkWebBackForwardCacheFeatures(
     blink::scheduler::WebSchedulerTrackedFeatures& features);
 
+namespace content {
+
+#if BUILDFLAG(ARKWEB_BFCACHE)
+class CONTENT_EXPORT BFCacheFeatureConfigDataEx {
+ public:
+  static BFCacheFeatureConfigDataEx* GetInstance();
+  void SetCacheControlNoStoreEnabled(bool value) {
+    cache_control_no_store_enabled_ = value;
+  }
+  bool GetCacheControlNoStoreEnabled() {
+    return cache_control_no_store_enabled_;
+  }
+
+ private:
+  friend class base::NoDestructor<BFCacheFeatureConfigDataEx>;
+  BFCacheFeatureConfigDataEx();
+  ~BFCacheFeatureConfigDataEx();
+  bool cache_control_no_store_enabled_ = false;
+};
+#endif // ARKWEB_BFCACHE
+
+}
 #endif  // ARKWEB_CHROMIUM_EXT_CONTENT_BROWSER_RENDERER_HOST_ARK_WEB_BACK_FORWARD_CACHE_IMPL_H_

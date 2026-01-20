@@ -434,6 +434,12 @@ const base::FeatureParam<CacheControlNoStoreExperimentLevel>
                         &cache_control_levels};
 
 CacheControlNoStoreExperimentLevel GetCacheControlNoStoreLevel() {
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  if (IsBackForwardCacheEnabled() &&
+      BFCacheFeatureConfigDataEx::GetInstance()->GetCacheControlNoStoreEnabled()) {
+    return CacheControlNoStoreExperimentLevel::kStoreAndRestoreUnlessCookieChange;
+  }
+#endif
   if (!IsBackForwardCacheEnabled() ||
       !base::FeatureList::IsEnabled(
           features::kCacheControlNoStoreEnterBackForwardCache)) {

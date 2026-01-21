@@ -86,6 +86,8 @@ class WebContentsImplExt : public WebContentsImpl {
   void AddMediaPlayerAudibleCount();
   void DelMediaPlayerAudibleCount();
   bool GetMediaPlayerCurrentAudible();
+  bool OnAudioStateChangedExt(bool is_currently_audible, bool is_ohos_currently_audible);
+  void OnAudioStateChangedExtSetAudible(bool is_ohos_currently_audible);
 #endif  // BUILDFLAG(ARKWEB_MEDIA_MUTE_AUDIO)
 
 #if BUILDFLAG(IS_ARKWEB)

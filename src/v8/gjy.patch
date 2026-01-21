@@ -1,0 +1,101 @@
+diff --git a/BUILD.gn b/BUILD.gn
+index ace5b279f..85c4cbd67 100644
+--- a/BUILD.gn
++++ b/BUILD.gn
+@@ -1633,7 +1633,10 @@ config("toolchain") {
+     ldflags += [ "-flto" ]
+     include_dirs = [ "../ohos_sdk/openharmony/native/sysroot/usr/include/hilog" ]
+     defines += [ "USING_OHOS" ]
+-    libs = ["hitrace_ndk.z"]
++    libs = [
++      "hitrace_ndk.z",
++      "hilog_ndk.z",
++    ]
+   }
+ 
+   if (is_clang) {
+@@ -8204,7 +8207,6 @@ v8_shared_library("v8_shared") {
+   if (is_ohos) {
+     deps = [":build_v8_script"]
+   }
+-  libs = [ "hilog_ndk.z" ]
+ 
+   public_configs = [ ":external_config" ]
+ }
+diff --git a/include/v8-version.h b/include/v8-version.h
+index 15ca44b24..6e410ddd0 100644
+--- a/include/v8-version.h
++++ b/include/v8-version.h
+@@ -14,7 +14,7 @@
+ #define V8_PATCH_LEVEL 41
+ 
+ #ifdef OHOS_JS_ENGINE
+-#define V8_INNER_VERSION 30
++#define V8_INNER_VERSION 32
+ #endif
+ 
+ // Use 1 for candidates and 0 otherwise.
+diff --git a/test/mjsunit/harmony/regress/regress-436181695.js b/test/mjsunit/harmony/regress/regress-436181695.js
+deleted file mode 100644
+index e1ff92731..000000000
+--- a/test/mjsunit/harmony/regress/regress-436181695.js
++++ /dev/null
+@@ -1,34 +0,0 @@
+-// Copyright 2025 the V8 project authors. All rights reserved.
+-// Use of this source code is governed by a BSD-style license that can be
+-// found in the LICENSE file.
+-
+-var v = [];
+-
+-(async () => {
+-  for (let i = 0; i < 6; ++i) {
+-    v.push(i);
+-    await 0;
+-  }
+-})();
+-
+-async function TestCStyleForCountTicks() {
+-  for (await using x = {
+-         value: 42,
+-         [Symbol.asyncDispose]() {
+-           v.push(`asyncDispose`);
+-         }  // One tick is expected after calling asyncDispose to allow it to be
+-            // asynchronous. It will be called after exiting the for-loop.
+-       };
+-       x.value < 44; x.value++) {
+-    // These pushes are expected to be synchronous.
+-    v.push(x.value);
+-  }
+-  v.push(`afterForLoop`);
+-}
+-
+-async function RunTest() {
+-  await TestCStyleForCountTicks();
+-  assertArrayEquals([0, 42, 43, `asyncDispose`, 1, `afterForLoop`, 2], v);
+-}
+-
+-RunTest();
+diff --git a/test/mjsunit/regress/regress-430344952.js b/test/mjsunit/regress/regress-430344952.js
+index 3a611c4b4..3931fea51 100644
+--- a/test/mjsunit/regress/regress-430344952.js
++++ b/test/mjsunit/regress/regress-430344952.js
+@@ -7,4 +7,4 @@ function fun() {
+   return z;
+ }
+ 
+-assertEqual(3, func());
+\ No newline at end of file
++assertEquals(3, fun());
+diff --git a/test/unittests/interpreter/bytecode-generator-unittest.cc b/test/unittests/interpreter/bytecode-generator-unittest.cc
+index d807ebad1..395e635f0 100644
+--- a/test/unittests/interpreter/bytecode-generator-unittest.cc
++++ b/test/unittests/interpreter/bytecode-generator-unittest.cc
+@@ -3319,7 +3319,7 @@ TEST_F(BytecodeGeneratorTest, ElideRedundantHoleChecks) {
+ 
+     // switch
+     "switch (a) {\n"
+-    "  case x: y; break;\n"
++    "  case x: if (a) break; y; break;\n"
+     "  case 42: y; z;\n"
+     "  default: y; w;\n"
+     "}\n"

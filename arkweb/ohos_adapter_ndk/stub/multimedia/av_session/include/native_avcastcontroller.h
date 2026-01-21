@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,19 +12,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 /**
  * @addtogroup OHAVSession
  * @{
  *
  * @brief Provide the definition of the C interface for the avsession module.
  *
- * @syscap SystemCapability.Multimedia.AVSession.Core
- *
  * @since 23
  * @version 1.0
  */
- 
+
 /**
  * @file native_avcastcontroller.h
  *
@@ -36,22 +34,22 @@
  * @since 23
  * @version 1.0
  */
- 
+
 #ifndef NATIVE_AVCASTCONTROLLER_H
 #define NATIVE_AVCASTCONTROLLER_H
- 
+
 #include <stdint.h>
 #include "native_avsession_errors.h"
 #include "native_avsession.h"
 #include "native_avqueueitem.h"
 #include "native_avplaybackstate.h"
- 
+
 #ifdef __cplusplus
 extern "C" {
 #endif
- 
+
 /**
- * @brief AVSession object
+ * @brief OH_AVCastController object
  *
  * A pointer can be created using {@link OH_AVSession_GetAVCastController} method.
  *
@@ -59,7 +57,7 @@ extern "C" {
  * @version 1.0
  */
 typedef struct OH_AVCastController OH_AVCastController;
- 
+
 /**
  * @brief Declaring the callback struct for PlaybackStateChanged
  *
@@ -68,7 +66,7 @@ typedef struct OH_AVCastController OH_AVCastController;
  */
 typedef AVSessionCallback_Result(*OH_AVCastControllerCallback_PlaybackStateChanged)(
     OH_AVCastController* avcastcontroller, OH_AVSession_AVPlaybackState* playbackState, void* userData);
- 
+
 /**
  * @brief Declaring the callback struct for mediaItemChange
  *
@@ -77,7 +75,7 @@ typedef AVSessionCallback_Result(*OH_AVCastControllerCallback_PlaybackStateChang
  */
 typedef AVSessionCallback_Result(*OH_AVCastControllerCallback_MediaItemChange)(OH_AVCastController* avcastcontroller,
     OH_AVSession_AVQueueItem* avQueueItem, void* userData);
- 
+
 /**
  * @brief Declaring the callback struct for Play Next
  *
@@ -86,7 +84,7 @@ typedef AVSessionCallback_Result(*OH_AVCastControllerCallback_MediaItemChange)(O
  */
 typedef AVSessionCallback_Result(*OH_AVCastControllerCallback_PlayNext)(OH_AVCastController* avcastcontroller,
     void* userData);
- 
+
 /**
  * @brief Declaring the callback struct for Play Previous
  *
@@ -95,7 +93,7 @@ typedef AVSessionCallback_Result(*OH_AVCastControllerCallback_PlayNext)(OH_AVCas
  */
 typedef AVSessionCallback_Result(*OH_AVCastControllerCallback_PlayPrevious)(OH_AVCastController* avcastcontroller,
     void* userData);
- 
+
 /**
  * @brief Declaring the callback struct for seekDone
  *
@@ -104,7 +102,7 @@ typedef AVSessionCallback_Result(*OH_AVCastControllerCallback_PlayPrevious)(OH_A
  */
 typedef AVSessionCallback_Result(*OH_AVCastControllerCallback_SeekDone)(OH_AVCastController* avcastcontroller,
     int32_t position, void* userData);
- 
+
 /**
  * @brief Declaring the callback struct for EndOfStream
  *
@@ -113,7 +111,7 @@ typedef AVSessionCallback_Result(*OH_AVCastControllerCallback_SeekDone)(OH_AVCas
  */
 typedef AVSessionCallback_Result(*OH_AVCastControllerCallback_EndOfStream)(OH_AVCastController* avcastcontroller,
     void* userData);
- 
+
 /**
  * @brief Declaring the callback struct for cast play error
  *
@@ -122,25 +120,29 @@ typedef AVSessionCallback_Result(*OH_AVCastControllerCallback_EndOfStream)(OH_AV
  */
 typedef AVSessionCallback_Result(*OH_AVCastControllerCallback_Error)(OH_AVCastController* avcastcontroller,
     void* userData, AVSession_ErrCode error);
- 
+
 /**
  * @brief Request to destory the avcastcontroller.
  *
  * @param avcastcontroller The avcastcontroller instance pointer
- * @return Function result code：
+ * @return Function result code:
  *         {@link AV_SESSION_ERR_SUCCESS} If the execution is successful.
+ *         {@link AV_SESSION_ERR_SERVICE_EXCEPTION} Internal server error.
  *         {@link AV_SESSION_ERR_INVALID_PARAMETER} The param of avcastcontroller is nullptr.
  * @since 23
  */
 AVSession_ErrCode OH_AVCastController_Destroy(OH_AVCastController* avcastcontroller);
- 
+
 /**
  * @brief Get the playback status of the current player.
+ * Do not release the playbackState pointer separately.
+ * It will be destroyed when {@link OH_AVCastController_Destroy} is called.
  *
  * @param avcastcontroller The avcastcontroller instance pointer
  * @param playbackState The returned playbackState
- * @return Function result code：
+ * @return Function result code:
  *         {@link AV_SESSION_ERR_SUCCESS} If the execution is successful.
+ *         {@link AV_SESSION_ERR_SERVICE_EXCEPTION} Internal server error.
  *         {@link AV_SESSION_ERR_INVALID_PARAMETER}
  *                                                 1. The param of avcastcontroller is nullptr.
  *                                                 2. The param of playbackState is nullptr.
@@ -148,24 +150,27 @@ AVSession_ErrCode OH_AVCastController_Destroy(OH_AVCastController* avcastcontrol
  */
 AVSession_ErrCode OH_AVCastController_GetPlaybackState(OH_AVCastController* avcastcontroller,
     OH_AVSession_AVPlaybackState** playbackState);
- 
+
 /**
  * @brief Request to register playback state changed callback.
  *
  * @param avcastcontroller The avcastcontroller instance pointer
- * @param callback the {@link OH_AVCastControllerCallback_PlaybackStateChanged} to be registered.
+ * @param filter The filter {@link AVSession_PlaybackFilter} of playback state determines
+ *               which param are included in callback.
+ * @param callback The callback {@link OH_AVCastControllerCallback_PlaybackStateChanged} to be registered.
  * @param userData User data which is passed by user.
- * @return Function result code：
+ * @return Function result code:
  *         {@link AV_SESSION_ERR_SUCCESS} If the execution is successful.
  *         {@link AV_SESSION_ERR_SERVICE_EXCEPTION} Internal server error.
  *         {@link AV_SESSION_ERR_INVALID_PARAMETER}
  *                                                 1. The param of avcastcontroller is nullptr.
  *                                                 2. The param of callback is nullptr.
+ *                                                 3. filter is invalid
  * @since 23
  */
 AVSession_ErrCode OH_AVCastController_RegisterPlaybackStateChangedCallback(OH_AVCastController* avcastcontroller,
-    OH_AVCastControllerCallback_PlaybackStateChanged callback, void* userData);
- 
+    int32_t filter, OH_AVCastControllerCallback_PlaybackStateChanged callback, void* userData);
+
 /**
  * @brief Request to unregister playback state changed callback.
  *
@@ -181,14 +186,14 @@ AVSession_ErrCode OH_AVCastController_RegisterPlaybackStateChangedCallback(OH_AV
  */
 AVSession_ErrCode OH_AVCastController_UnregisterPlaybackStateChangedCallback(OH_AVCastController* avcastcontroller,
     OH_AVCastControllerCallback_PlaybackStateChanged callback);
- 
+
 /**
  * @brief Request to register current media changed callback.
  *
  * @param avcastcontroller The avcastcontroller instance pointer
  * @param callback the {@link OH_AVCastControllerCallback_MediaItemChange} to be registered.
  * @param userData User data which is passed by user.
- * @return Function result code：
+ * @return Function result code:
  *         {@link AV_SESSION_ERR_SUCCESS} If the execution is successful.
  *         {@link AV_SESSION_ERR_SERVICE_EXCEPTION} Internal server error.
  *         {@link AV_SESSION_ERR_INVALID_PARAMETER}
@@ -198,13 +203,13 @@ AVSession_ErrCode OH_AVCastController_UnregisterPlaybackStateChangedCallback(OH_
  */
 AVSession_ErrCode OH_AVCastController_RegisterMediaItemChangedCallback(OH_AVCastController* avcastcontroller,
     OH_AVCastControllerCallback_MediaItemChange callback, void* userData);
- 
+
 /**
  * @brief Request to unregister current media item changed callback.
  *
  * @param avcastcontroller The avcastcontroller instance pointer
  * @param callback the {@link OH_AVCastControllerCallback_MediaItemChange} to be unregistered.
- * @return Function result code：
+ * @return Function result code:
  *         {@link AV_SESSION_ERR_SUCCESS} If the execution is successful.
  *         {@link AV_SESSION_ERR_SERVICE_EXCEPTION} Internal server error.
  *         {@link AV_SESSION_ERR_INVALID_PARAMETER}
@@ -214,14 +219,14 @@ AVSession_ErrCode OH_AVCastController_RegisterMediaItemChangedCallback(OH_AVCast
  */
 AVSession_ErrCode OH_AVCastController_UnregisterMediaItemChangedCallback(OH_AVCastController* avcastcontroller,
     OH_AVCastControllerCallback_MediaItemChange callback);
- 
+
 /**
  * @brief Request to register playnext callback send by remote side or media center.
  *
  * @param avcastcontroller The avcastcontroller instance pointer
  * @param callback the {@link OH_AVCastControllerCallback_PlayNext} to be registered.
  * @param userData User data which is passed by user.
- * @return Function result code：
+ * @return Function result code:
  *         {@link AV_SESSION_ERR_SUCCESS} If the execution is successful.
  *         {@link AV_SESSION_ERR_SERVICE_EXCEPTION} Internal server error.
  *         {@link AV_SESSION_ERR_INVALID_PARAMETER}
@@ -231,13 +236,13 @@ AVSession_ErrCode OH_AVCastController_UnregisterMediaItemChangedCallback(OH_AVCa
  */
 AVSession_ErrCode OH_AVCastController_RegisterPlayNextCallback(OH_AVCastController* avcastcontroller,
     OH_AVCastControllerCallback_PlayNext callback, void* userData);
- 
+
 /**
- * @brief Request to unregister mediaItem callback.
+ * @brief Request to unregister playnext callback send by remote side or media center.
  *
  * @param avcastcontroller The avcastcontroller instance pointer
- * @param callback the {@link OH_AVCastControllerCallback_MediaItemChange} to be unregistered.
- * @return Function result code：
+ * @param callback the {@link OH_AVCastControllerCallback_PlayNext} to be unregistered.
+ * @return Function result code:
  *         {@link AV_SESSION_ERR_SUCCESS} If the execution is successful.
  *         {@link AV_SESSION_ERR_SERVICE_EXCEPTION} Internal server error.
  *         {@link AV_SESSION_ERR_INVALID_PARAMETER}
@@ -247,14 +252,14 @@ AVSession_ErrCode OH_AVCastController_RegisterPlayNextCallback(OH_AVCastControll
  */
 AVSession_ErrCode OH_AVCastController_UnregisterPlayNextCallback(OH_AVCastController* avcastcontroller,
     OH_AVCastControllerCallback_PlayNext callback);
- 
+
 /**
  * @brief Request to register playprevious command callback send by remote side or media center.
  *
  * @param avcastcontroller The avcastcontroller instance pointer
  * @param callback the {@link OH_AVCastControllerCallback_PlayPrevious} to be registered.
  * @param userData User data which is passed by user.
- * @return Function result code：
+ * @return Function result code:
  *         {@link AV_SESSION_ERR_SUCCESS} If the execution is successful.
  *         {@link AV_SESSION_ERR_SERVICE_EXCEPTION} Internal server error.
  *         {@link AV_SESSION_ERR_INVALID_PARAMETER}
@@ -264,13 +269,13 @@ AVSession_ErrCode OH_AVCastController_UnregisterPlayNextCallback(OH_AVCastContro
  */
 AVSession_ErrCode OH_AVCastController_RegisterPlayPreviousCallback(OH_AVCastController* avcastcontroller,
     OH_AVCastControllerCallback_PlayPrevious callback, void* userData);
- 
+
 /**
  * @brief Request to unregister playprevious command callback send by remote side or media center.
  *
  * @param avcastcontroller The avcastcontroller instance pointer
  * @param callback the {@link OH_AVCastControllerCallback_PlayPrevious} to be unregistered.
- * @return Function result code：
+ * @return Function result code:
  *         {@link AV_SESSION_ERR_SUCCESS} If the execution is successful.
  *         {@link AV_SESSION_ERR_SERVICE_EXCEPTION} Internal server error.
  *         {@link AV_SESSION_ERR_INVALID_PARAMETER}
@@ -280,14 +285,14 @@ AVSession_ErrCode OH_AVCastController_RegisterPlayPreviousCallback(OH_AVCastCont
  */
 AVSession_ErrCode OH_AVCastController_UnregisterPlayPreviousCallback(OH_AVCastController* avcastcontroller,
     OH_AVCastControllerCallback_PlayPrevious callback);
- 
+
 /**
  * @brief Request to register seek done callback.
  *
  * @param avcastcontroller The avcastcontroller instance pointer
- * @param callback the {@link OH_AVCastController_RegisterSeekDoneCallback} to be registered.
+ * @param callback the {@link OH_AVCastControllerCallback_SeekDone} to be registered.
  * @param userData User data which is passed by user.
- * @return Function result code：
+ * @return Function result code:
  *         {@link AV_SESSION_ERR_SUCCESS} If the execution is successful.
  *         {@link AV_SESSION_ERR_SERVICE_EXCEPTION} Internal server error.
  *         {@link AV_SESSION_ERR_INVALID_PARAMETER}
@@ -297,13 +302,13 @@ AVSession_ErrCode OH_AVCastController_UnregisterPlayPreviousCallback(OH_AVCastCo
  */
 AVSession_ErrCode OH_AVCastController_RegisterSeekDoneCallback(OH_AVCastController* avcastcontroller,
     OH_AVCastControllerCallback_SeekDone callback, void* userData);
- 
+
 /**
  * @brief Request to unregister seek done callback.
  *
  * @param avcastcontroller The avcastcontroller instance pointer
- * @param callback the {@link OH_AVCastController_RegisterSeekDoneCallback} to be unregistered.
- * @return Function result code：
+ * @param callback the {@link OH_AVCastControllerCallback_SeekDone} to be unregistered.
+ * @return Function result code:
  *         {@link AV_SESSION_ERR_SUCCESS} If the execution is successful.
  *         {@link AV_SESSION_ERR_SERVICE_EXCEPTION} Internal server error.
  *         {@link AV_SESSION_ERR_INVALID_PARAMETER}
@@ -313,14 +318,14 @@ AVSession_ErrCode OH_AVCastController_RegisterSeekDoneCallback(OH_AVCastControll
  */
 AVSession_ErrCode OH_AVCastController_UnregisterSeekDoneCallback(OH_AVCastController* avcastcontroller,
     OH_AVCastControllerCallback_SeekDone callback);
- 
+
 /**
- * @brief Request to register endofStream state callback.
+ * @brief Request to register end of stream callback.
  *
  * @param avcastcontroller The avcastcontroller instance pointer
- * @param callback the {@link OH_AVCastController_RegisterEndOfStreamCallback} to be registered.
+ * @param callback the {@link OH_AVCastControllerCallback_EndOfStream} to be registered.
  * @param userData User data which is passed by user.
- * @return Function result code：
+ * @return Function result code:
  *         {@link AV_SESSION_ERR_SUCCESS} If the execution is successful.
  *         {@link AV_SESSION_ERR_SERVICE_EXCEPTION} Internal server error.
  *         {@link AV_SESSION_ERR_INVALID_PARAMETER}
@@ -330,13 +335,13 @@ AVSession_ErrCode OH_AVCastController_UnregisterSeekDoneCallback(OH_AVCastContro
  */
 AVSession_ErrCode OH_AVCastController_RegisterEndOfStreamCallback(OH_AVCastController* avcastcontroller,
     OH_AVCastControllerCallback_EndOfStream callback, void* userData);
- 
+
 /**
- * @brief Request to unregister endofStream state callback.
+ * @brief Request to unregister end of stream callback.
  *
  * @param avcastcontroller The avcastcontroller instance pointer
- * @param callback the {@link OH_AVCastController_RegisterEndOfStreamCallback} to be unregistered.
- * @return Function result code：
+ * @param callback the {@link OH_AVCastControllerCallback_EndOfStream} to be unregistered.
+ * @return Function result code:
  *         {@link AV_SESSION_ERR_SUCCESS} If the execution is successful.
  *         {@link AV_SESSION_ERR_SERVICE_EXCEPTION} Internal server error.
  *         {@link AV_SESSION_ERR_INVALID_PARAMETER}
@@ -346,14 +351,14 @@ AVSession_ErrCode OH_AVCastController_RegisterEndOfStreamCallback(OH_AVCastContr
  */
 AVSession_ErrCode OH_AVCastController_UnregisterEndOfStreamCallback(OH_AVCastController* avcastcontroller,
     OH_AVCastControllerCallback_EndOfStream callback);
- 
+
 /**
  * @brief Request to register listener for playback error events.
  *
  * @param avcastcontroller The avcastcontroller instance pointer
- * @param callback the {@link OH_AVCastControllerCallback_MediaItemChange} to be registered.
+ * @param callback the {@link OH_AVCastControllerCallback_Error} to be registered.
  * @param userData User data which is passed by user.
- * @return Function result code：
+ * @return Function result code:
  *         {@link AV_SESSION_ERR_SUCCESS} If the execution is successful.
  *         {@link AV_SESSION_ERR_SERVICE_EXCEPTION} Internal server error.
  *         {@link AV_SESSION_ERR_INVALID_PARAMETER}
@@ -363,13 +368,13 @@ AVSession_ErrCode OH_AVCastController_UnregisterEndOfStreamCallback(OH_AVCastCon
  */
 AVSession_ErrCode OH_AVCastController_RegisterErrorCallback(OH_AVCastController* avcastcontroller,
     OH_AVCastControllerCallback_Error callback, void* userData);
- 
+
 /**
  * @brief Request to unregister listener for playback error events.
  *
  * @param avcastcontroller The avcastcontroller instance pointer
- * @param callback the {@link OH_AVCastControllerCallback_MediaItemChange} to be unregistered.
- * @return Function result code：
+ * @param callback the {@link OH_AVCastControllerCallback_Error} to be unregistered.
+ * @return Function result code:
  *         {@link AV_SESSION_ERR_SUCCESS} If the execution is successful.
  *         {@link AV_SESSION_ERR_SERVICE_EXCEPTION} Internal server error.
  *         {@link AV_SESSION_ERR_INVALID_PARAMETER}
@@ -379,29 +384,29 @@ AVSession_ErrCode OH_AVCastController_RegisterErrorCallback(OH_AVCastController*
  */
 AVSession_ErrCode OH_AVCastController_UnregisterErrorCallback(OH_AVCastController* avcastcontroller,
     OH_AVCastControllerCallback_Error callback);
- 
+
 /**
  * @brief Request to send common command to Remote, only support to send play pause stop playnext playprevious command.
  *
  * @param avcastcontroller The avcastcontroller instance pointer
  * @param avCastControlcommand control command {@link AVSession_AVCastControlCommandType}.
- * @return Function result code：
+ * @return Function result code:
  *         {@link AV_SESSION_ERR_SUCCESS} If the execution is successful.
  *         {@link AV_SESSION_ERR_SERVICE_EXCEPTION} Internal server error.
  *         {@link AV_SESSION_ERR_INVALID_PARAMETER} The param of avcastcontroller is nullptr.
- *         {@link AV_SESSION_ERR_CODE_COMMAND_INVALID} The param of controlCommand is invalid.
+ *         {@link AV_SESSION_ERR_CODE_COMMAND_INVALID} The param of avCastControlcommand is invalid.
  *         {@link AV_SESSION_ERR_CODE_REMOTE_CONNECTION_NOT_EXIST} The remote connection is not established.
  * @since 23
  */
 AVSession_ErrCode OH_AVCastController_SendCommonCommand(OH_AVCastController* avcastcontroller,
     AVSession_AVCastControlCommandType* avCastControlcommand);
- 
+
 /**
  * @brief Request to send seek command to Remote.
  *
  * @param avcastcontroller The avcastcontroller instance pointer
  * @param seekTimeMS seek time, the unit of time is milliseconds.
- * @return Function result code：
+ * @return Function result code:
  *        {@link AV_SESSION_ERR_SUCCESS} If the execution is successful.
  *        {@link AV_SESSION_ERR_SERVICE_EXCEPTION} Internal server error.
  *        {@link AV_SESSION_ERR_INVALID_PARAMETER}
@@ -411,13 +416,13 @@ AVSession_ErrCode OH_AVCastController_SendCommonCommand(OH_AVCastController* avc
  * @since 23
  */
 AVSession_ErrCode OH_AVCastController_SendSeekCommand(OH_AVCastController* avcastcontroller, int32_t seekTimeMS);
- 
+
 /**
  * @brief Request to send forward command to Remote.
  *
  * @param avcastcontroller The avcastcontroller instance pointer
  * @param forwardTimeS forward time, the unit of time is seconds.
- * @return Function result code：
+ * @return Function result code:
  *        {@link AV_SESSION_ERR_SUCCESS} If the execution is successful.
  *        {@link AV_SESSION_ERR_SERVICE_EXCEPTION} Internal server error.
  *        {@link AV_SESSION_ERR_INVALID_PARAMETER}
@@ -428,46 +433,46 @@ AVSession_ErrCode OH_AVCastController_SendSeekCommand(OH_AVCastController* avcas
  */
 AVSession_ErrCode OH_AVCastController_SendFastForwardCommand(OH_AVCastController* avcastcontroller,
     int32_t forwardTimeS);
- 
+
 /**
  * @brief Request to send rewind command to Remote.
  *
  * @param avcastcontroller The avcastcontroller instance pointer
  * @param rewindTimeS rewind time, the unit of time is seconds.
- * @return Function result code：
+ * @return Function result code:
  *        {@link AV_SESSION_ERR_SUCCESS} If the execution is successful.
  *        {@link AV_SESSION_ERR_SERVICE_EXCEPTION} Internal server error.
  *        {@link AV_SESSION_ERR_INVALID_PARAMETER}
  *                                                1. The param of avcastcontroller is nullptr.
  *                                                2. rewindTimeS invalid.
- * *      {@link AV_SESSION_ERR_CODE_REMOTE_CONNECTION_NOT_EXIST} The remote connection is not established.
+ *        {@link AV_SESSION_ERR_CODE_REMOTE_CONNECTION_NOT_EXIST} The remote connection is not established.
  * @since 23
  */
 AVSession_ErrCode OH_AVCastController_SendRewindCommand(OH_AVCastController* avcastcontroller, int32_t rewindTimeS);
- 
+
 /**
  * @brief Request to send set speed command to Remote.
  *
  * @param avcastcontroller The avcastcontroller instance pointer
  * @param speed control command {@link AVSession_PlaybackSpeed}.
- * @return Function result code：
+ * @return Function result code:
  *         {@link AV_SESSION_ERR_SUCCESS} If the execution is successful.
  *         {@link AV_SESSION_ERR_SERVICE_EXCEPTION} Internal server error.
  *         {@link AV_SESSION_ERR_INVALID_PARAMETER}
  *                                                 1. The param of avcastcontroller is nullptr.
  *                                                 2. speed invalid.
- * *       {@link AV_SESSION_ERR_CODE_REMOTE_CONNECTION_NOT_EXIST} The remote connection is not established.
+ *         {@link AV_SESSION_ERR_CODE_REMOTE_CONNECTION_NOT_EXIST} The remote connection is not established.
  * @since 23
  */
 AVSession_ErrCode OH_AVCastController_SendSetSpeedCommand(OH_AVCastController* avcastcontroller,
     AVSession_PlaybackSpeed speed);
- 
+
 /**
  * @brief Request to send volume command to Remote.
  *
  * @param avcastcontroller The avcastcontroller instance pointer
  * @param volume volume.
- * @return Function result code：
+ * @return Function result code:
  *         {@link AV_SESSION_ERR_SUCCESS} If the execution is successful.
  *         {@link AV_SESSION_ERR_SERVICE_EXCEPTION} Internal server error.
  *         {@link AV_SESSION_ERR_INVALID_PARAMETER}
@@ -483,7 +488,7 @@ AVSession_ErrCode OH_AVCastController_SendVolumeCommand(OH_AVCastController* avc
  *
  * @param avcastcontroller The avcastcontroller instance pointer
  * @param avqueueItem  item media item info {@link OH_AVSession_AVQueueItem}.
- * @return Function result code：
+ * @return Function result code:
  *         {@link AV_SESSION_ERR_SUCCESS} If the execution is successful.
  *         {@link AV_SESSION_ERR_SERVICE_EXCEPTION} Internal server error.
  *         {@link AV_SESSION_ERR_INVALID_PARAMETER}
@@ -494,13 +499,13 @@ AVSession_ErrCode OH_AVCastController_SendVolumeCommand(OH_AVCastController* avc
  */
 AVSession_ErrCode OH_AVCastController_Prepare(OH_AVCastController* avcastcontroller,
     OH_AVSession_AVQueueItem* avqueueItem);
- 
+
 /**
  * @brief Request to Play the current item, should contain mediauriotherwise the playback will fail.
  *
  * @param avcastcontroller The avcastcontroller instance pointer
  * @param avqueueItem  item media item info {@link OH_AVSession_AVQueueItem}.
- * @return Function result code：
+ * @return Function result code:
  *         {@link AV_SESSION_ERR_SUCCESS} If the execution is successful.
  *         {@link AV_SESSION_ERR_SERVICE_EXCEPTION} Internal server error.
  *         {@link AV_SESSION_ERR_INVALID_PARAMETER}
@@ -510,10 +515,10 @@ AVSession_ErrCode OH_AVCastController_Prepare(OH_AVCastController* avcastcontrol
  */
 AVSession_ErrCode OH_AVCastController_Start(OH_AVCastController* avcastcontroller,
     OH_AVSession_AVQueueItem* avqueueItem);
- 
+
 #ifdef __cplusplus
 }
 #endif
- 
+
 #endif // NATIVE_AVCASTCONTROLLER_H
 /** @} */

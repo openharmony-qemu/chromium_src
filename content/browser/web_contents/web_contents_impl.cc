@@ -2890,6 +2890,7 @@ void WebContentsImpl::OnAudioStateChanged() {
   if (is_currently_audible == is_currently_audible_) {
     return;
   }
+
   // Update internal state.
   is_currently_audible_ = is_currently_audible;
 #if BUILDFLAG(ARKWEB_MEDIA_MUTE_AUDIO)

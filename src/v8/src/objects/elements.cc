@@ -3539,6 +3539,10 @@ class TypedElementsAccessor
     ElementType* data = static_cast<ElementType*>(typed_array->DataPtr());
     ElementType* first = data + start;
     ElementType* last = data + end;
+
+    // Guard against switching the ElementsKind to make this too big.
+    SBXCHECK(sizeof(ElementType) * end <= TypedArray::kMaxByteLength);
+
     if (typed_array->buffer()->is_shared()) {
       // TypedArrays backed by shared buffers need to be filled using atomic
       // operations. Since 8-byte data are not currently always 8-byte aligned,
@@ -3766,6 +3770,10 @@ class TypedElementsAccessor
     if (len == 0) return;
 
     ElementType* data = static_cast<ElementType*>(typed_array->DataPtr());
+
+    // Guard against switching the ElementsKind to make this too big.
+    SBXCHECK(ElementsKindToByteSize(Kind) * len <= TypedArray::kMaxByteLength);
+
     if (typed_array->buffer()->is_shared()) {
       // TypedArrays backed by shared buffers need to be reversed using atomic
       // operations. Since 8-byte data are not currently always 8-byte aligned,
@@ -3907,6 +3915,10 @@ class TypedElementsAccessor
       }
     } else {
       std::unique_ptr<uint8_t[]> cloned_source_elements;
+
+      // Guard against switching the ElementsKind to make this too big.
+      SBXCHECK(source_byte_length <= TypedArray::kMaxByteLength);
+      SBXCHECK(dest_byte_length <= TypedArray::kMaxByteLength);
 
       // If the typedarrays are overlapped, clone the source.
       if (dest_data + dest_byte_length > source_data &&
@@ -4073,6 +4085,11 @@ class TypedElementsAccessor
     Isolate* isolate = destination->GetIsolate();
     // 8. Let k be 0.
     // 9. Repeat, while k < srcLength,
+
+    // Guard against switching the ElementsKind to make this too big.
+    SBXCHECK(ElementsKindToByteSize(Kind) * length <=
+             TypedArray::kMaxByteLength);
+
     for (size_t i = 0; i < length; i++) {
       Handle<Object> elem;
       // a. Let Pk be ! ToString(𝔽(k)).
@@ -4176,6 +4193,10 @@ struct CopyBetweenBackingStoresImpl {
   static void Copy(SourceElementType* source_data_ptr,
                    ElementType* dest_data_ptr, size_t length,
                    IsSharedBuffer is_shared) {
+    SBXCHECK(ElementsKindToByteSize(SourceKind) * length <=
+             TypedArray::kMaxByteLength);
+    SBXCHECK(ElementsKindToByteSize(Kind) * length <=
+             TypedArray::kMaxByteLength);
     for (; length > 0; --length, ++source_data_ptr, ++dest_data_ptr) {
       // We use scalar accessors to avoid boxing/unboxing, so there are no
       // allocations.

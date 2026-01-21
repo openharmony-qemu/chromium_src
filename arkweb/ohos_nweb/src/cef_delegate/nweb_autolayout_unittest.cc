@@ -317,6 +317,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void RegisterNativeJSProxy(const CefString&, const std::vector<CefString>&,
     int32_t, bool, const CefString&) override {}
   void SendTouchpadFlingEvent(const CefMouseEvent&, double, double) override {}
+  void SendCancelFlingEvent(const CefMouseEvent&) override {}
   void SetFitContentMode(int) override {}
   void UpdateDrawRect() override {}
   void OnTextSelected(bool) override {}

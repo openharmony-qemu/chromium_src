@@ -618,6 +618,7 @@ class NWebDelegateInterface
       double vx,
       double vy,
       const std::vector<int32_t>& pressedCodes) = 0;
+  virtual void WebSendCancelFlingEvent() = 0;
 #endif
 
 #if BUILDFLAG(ARKWEB_SAFEBROWSING)

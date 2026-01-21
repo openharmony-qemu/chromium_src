@@ -772,6 +772,9 @@ class MockNWebDelegate : public NWebDelegateInterface {
                double vy,
                const std::vector<int32_t>& pressedCodes),
               (override));
+  MOCK_METHOD(void,
+            WebSendCancelFlingEvent, (),
+            (override));
 #endif
 
 #if BUILDFLAG(IS_OHOS)

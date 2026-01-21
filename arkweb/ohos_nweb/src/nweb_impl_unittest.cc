@@ -101,6 +101,7 @@ class MockNWebInputHandler : public NWebInputHandler {
   MOCK_METHOD5(
       WebSendTouchpadFlingEvent,
       void(double, double, double, double, const std::vector<int32_t>&));
+  MOCK_METHOD0(WebSendCancelFlingEvent, void());
   MOCK_METHOD1(WebSendMouseEvent,
                void (const std::shared_ptr<OHOS::NWeb::NWebMouseEvent>&));
   MOCK_METHOD1(SendKeyboardEvent,
@@ -1179,6 +1180,16 @@ TEST_F(NWebImplTest, NWebImplTest_WebSendTouchpadFlingEvent_001) {
       .Times(0);
 
   nweb_impl_->WebSendTouchpadFlingEvent(x, y, deltaX, deltaY, pressedCodes);
+  EXPECT_EQ(nweb_impl_->input_handler_, nullptr);
+}
+
+TEST_F(NWebImplTest, NWebImplTest_WebSendCancelFlingEvent_001) {
+  nweb_impl_->input_handler_ = nullptr;
+  input_handler_ = std::make_shared<MockNWebInputHandler>(mock_delegate_);
+  EXPECT_CALL(*input_handler_, WebSendCancelFlingEvent())
+      .Times(0);
+
+  nweb_impl_->WebSendCancelFlingEvent();
   EXPECT_EQ(nweb_impl_->input_handler_, nullptr);
 }
 
@@ -7694,6 +7705,13 @@ TEST_F(NWebImplTest, WebSendTouchpadFlingEvent001) {
   input_handler_ = std::make_shared<MockNWebInputHandler>(mock_delegate_);
   nweb_impl_->input_handler_ = input_handler_;
   nweb_impl_->WebSendTouchpadFlingEvent(x, y, deltaX, deltaY, pressedCodes);
+  EXPECT_NE(nweb_impl_->input_handler_, nullptr);
+}
+
+TEST_F(NWebImplTest, WebSendCancelFlingEvent001) {
+  input_handler_ = std::make_shared<MockNWebInputHandler>(mock_delegate_);
+  nweb_impl_->input_handler_ = input_handler_;
+  nweb_impl_->WebSendCancelFlingEvent();
   EXPECT_NE(nweb_impl_->input_handler_, nullptr);
 }
 

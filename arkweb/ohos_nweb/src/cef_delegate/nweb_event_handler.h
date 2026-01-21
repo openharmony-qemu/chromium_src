@@ -88,6 +88,7 @@ class NWebEventHandler {
                                  double vx,
                                  double vy,
                                  const std::vector<int32_t>& pressedCodes);
+  void WebSendCancelFlingEvent();
   void WebSendMouseEvent(
       const std::shared_ptr<OHOS::NWeb::NWebMouseEvent>& mouseEvent,
       float ratio);

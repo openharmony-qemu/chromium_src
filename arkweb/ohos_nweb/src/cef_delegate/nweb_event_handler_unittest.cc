@@ -567,6 +567,10 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
               (const CefMouseEvent&, double, double),
               (override));
 
+  MOCK_METHOD(void,
+              SendCancelFlingEvent, (const CefMouseEvent&),
+              (override));
+
   void SetFitContentMode(int mode) override {}
 
   void UpdateDrawRect() override {}
@@ -1466,6 +1470,50 @@ TEST_F(NWebEventHandlerTest, WebSendTouchpadFlingEvent_TEST004) {
       .Times(0);
 
   handler->WebSendTouchpadFlingEvent(100.0, 200.0, 10.0, 20.0, pressedCodes);
+  ASSERT_NE(handler, nullptr);
+}
+
+TEST_F(NWebEventHandlerTest, WebSendCancelFlingEvent_TEST001) {
+  ON_CALL(*mock_browser, GetHost()).WillByDefault(::testing::Return(mock_host));
+  EXPECT_CALL(*mock_host,
+              SendCancelFlingEvent(::testing::_));
+
+  handler->WebSendCancelFlingEvent();
+  ASSERT_NE(handler, nullptr);
+}
+
+TEST_F(NWebEventHandlerTest, WebSendCancelFlingEvent_TEST002) {
+  handler->SetBrowser(nullptr);
+
+  ON_CALL(*mock_browser, GetHost()).WillByDefault(::testing::Return(nullptr));
+  EXPECT_CALL(*mock_host,
+              SendCancelFlingEvent(::testing::_))
+      .Times(0);
+
+  handler->WebSendCancelFlingEvent();
+  ASSERT_NE(handler, nullptr);
+}
+
+TEST_F(NWebEventHandlerTest, WebSendCancelFlingEvent_TEST003) {
+
+  ON_CALL(*mock_browser, GetHost()).WillByDefault(::testing::Return(nullptr));
+  EXPECT_CALL(*mock_host,
+              SendCancelFlingEvent(::testing::_))
+      .Times(0);
+
+  handler->WebSendCancelFlingEvent();
+  ASSERT_NE(handler, nullptr);
+}
+
+TEST_F(NWebEventHandlerTest, WebSendCancelFlingEvent_TEST004) {
+  handler->SetBrowser(nullptr);
+
+  ON_CALL(*mock_browser, GetHost()).WillByDefault(::testing::Return(mock_host));
+  EXPECT_CALL(*mock_host,
+              SendCancelFlingEvent(::testing::_))
+      .Times(0);
+
+  handler->WebSendCancelFlingEvent();
   ASSERT_NE(handler, nullptr);
 }
 

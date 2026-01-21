@@ -241,6 +241,13 @@ void NWebInputHandler::WebSendTouchpadFlingEvent(
   nweb_delegate_->WebSendTouchpadFlingEvent(x, y, vx, vy, pressedCodes);
 }
 
+void NWebInputHandler::WebSendCancelFlingEvent() {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->WebSendCancelFlingEvent();
+}
+
 void NWebInputHandler::WebSendMouseEvent(
     const std::shared_ptr<OHOS::NWeb::NWebMouseEvent>& mouseEvent) {
   if (nweb_delegate_ == nullptr) {

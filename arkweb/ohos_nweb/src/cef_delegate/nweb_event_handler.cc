@@ -525,6 +525,18 @@ void NWebEventHandler::WebSendTouchpadFlingEvent(
   browser_->GetHost()->SendTouchpadFlingEvent(mouseEvent, vx, vy);
 }
 
+void NWebEventHandler::WebSendCancelFlingEvent()
+{
+  if (!browser_ || !browser_->GetHost()) {
+    LOG(ERROR)
+        << "WebSendCancelFlingEvent browser_ or host is nullptr, browser_: "
+        << !browser_;
+    return;
+  }
+  CefMouseEvent mouseEvent;
+  browser_->GetHost()->SendCancelFlingEvent(mouseEvent);
+}
+
 void NWebEventHandler::WebSendMouseEvent(
     const std::shared_ptr<OHOS::NWeb::NWebMouseEvent>& mouseEvent,
     float ratio) {

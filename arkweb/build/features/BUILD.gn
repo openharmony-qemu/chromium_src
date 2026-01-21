@@ -327,6 +327,7 @@ if (!enable_arkweb) {
   arkweb_offline_web_evict_back_buffers = false
   arkweb_ohos_mem_usage_report = false
   arkweb_media_cast = false
+  arkweb_ext_http_dns_fallback_on_dns_hijacking = false
 }
 
 buildflag_header("features") {
@@ -596,6 +597,7 @@ buildflag_header("features") {
     "ARKWEB_READER_MODE=false",
     "ARKWEB_EXT_HTTPS_UPGRADES=$arkweb_ext_https_upgrades",
     "ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION=false",
+    "ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING=$arkweb_ext_http_dns_fallback_on_dns_hijacking",
   ]
 
   public_configs = [ ":arkweb_global_config" ]

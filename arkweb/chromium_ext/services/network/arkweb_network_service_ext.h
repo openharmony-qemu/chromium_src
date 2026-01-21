@@ -103,6 +103,12 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) ArkWebNetworkServiceExt
       mojom::HttpsDnsFallbackConfigPtr config) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING)
+  void SetHttpsDnsFallbackDataOnDnsHijacking(
+      const std::vector<std::string>& dns_hijacking_protect_list,
+      const std::vector<std::string>& dns_hijacking_errorcode_list) override;
+#endif
+
 #if BUILDFLAG(ARKWEB_HTTP_DNS)
   net::DnsConfigOverrides ConfigureStubHostResolverExt(
       net::SecureDnsMode secure_dns_mode,

@@ -97,6 +97,17 @@ bool URLRequestContextExt::CanUseSecureDnsFallback() const
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING)
+bool URLRequestContextExt::NeedRetryDnsOnDnsHijack(
+    const GURL& url,
+    const std::string& errorcode) const {
+  if (!host_resolver()) {
+    return false;
+  }
+  return host_resolver()->NeedRetryDnsOnDnsHijack(url, errorcode);
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
 void URLRequestContextExt::SetSocketIdleTimeout(int32_t timeout) {
   if (auto* session = http_network_session()) {

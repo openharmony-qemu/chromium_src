@@ -323,6 +323,17 @@ void ArkWebNetworkServiceExt::SetHttpsDnsHostResolver(
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING)
+void ArkWebNetworkServiceExt::SetHttpsDnsFallbackDataOnDnsHijacking(
+    const std::vector<std::string>& dns_hijacking_protect_list,
+    const std::vector<std::string>& dns_hijacking_errorcode_list) {
+  if (host_resolver_manager_) {
+    host_resolver_manager_->SetHttpsDnsFallbackDataOnDnsHijacking(
+        dns_hijacking_protect_list, dns_hijacking_errorcode_list);
+  }
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_HTTP_DNS)
 net::DnsConfigOverrides ArkWebNetworkServiceExt::ConfigureStubHostResolverExt(
     net::SecureDnsMode secure_dns_mode,

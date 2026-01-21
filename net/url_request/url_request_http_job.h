@@ -379,6 +379,7 @@ class NET_EXPORT_PRIVATE URLRequestHttpJob : public URLRequestJob {
 #if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK) \
   || BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
   int original_net_error_ = 0;
+  bool is_retrying_secure_dns_only_{false};
 #endif
 #if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   RetryState state_ = RetryState::INIT;
@@ -391,6 +392,10 @@ class NET_EXPORT_PRIVATE URLRequestHttpJob : public URLRequestJob {
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   size_t restarted_ = 0;
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING)
+  bool is_retry_dns_on_dns_hijacking_ = false;
 #endif
 
   base::WeakPtrFactory<URLRequestHttpJob> weak_factory_{this};

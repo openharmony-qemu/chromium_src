@@ -43,25 +43,29 @@ bool IsTraditionalLanguage() {
 std::string ComputeLanguageByRegion(const std::string& region) {
   std::string locale = "";
   std::string systemLanguage = GetSystemLanguage();
+  // format: "language-region"
+  // zh-Hant and region is "HK"/"MO" return "zh-HK", other return "zh-TW"
+  // zh-Hans or other zh, return zh-CN
+  // en only region is "GB" return "en-GB", other return "en-US"
+  // bo only "bo-CN", ug only "ug"
   if (systemLanguage.find("zh-Hant") != std::string::npos) {
     locale = (region == "HK" || region == "MO") ? "zh-HK" : "zh-TW";
     return locale;
   }
 
   if (systemLanguage.find("en") != std::string::npos) {
-    locale = systemLanguage == "en-GB" ? systemLanguage : "en-US";
+    locale = region == "GB" ? "en-GB" : "en-US";
   } else if (systemLanguage.find("zh") != std::string::npos) {
     locale = "zh-CN";
   } else if (systemLanguage.find("bo") != std::string::npos) {
     locale = "bo-CN";
   } else if (systemLanguage.find("ug") != std::string::npos) {
     locale = "ug";
-  } else if (systemLanguage.find("my") != std::string::npos) {
-    locale = "my";
-  } else if (systemLanguage.find("ms") != std::string::npos) {
-    locale = "ms";
-  } else if (systemLanguage.find("lo") != std::string::npos) {
-    locale = "lo";
+  } else {
+    locale = systemLanguage;
+    if (locale.find("-") == std::string::npos && !region.empty()) {
+      locale += "-" + region;
+    }
   }
   return locale;
 }

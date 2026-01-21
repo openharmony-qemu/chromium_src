@@ -1422,6 +1422,9 @@ void URLRequestHttpJob::OnStartCompleted(int result) {
 #endif
 
       case RetryState::DOH_FALLBACK:
+        if (is_retrying_secure_dns_only_) {
+          ReportSecureFallbackDnsRetryResult(result);
+        }
         if (result == net::ERR_NAME_NOT_RESOLVED && original_net_error_) {
           if (transaction_ && transaction_->GetResponseInfo() &&
               transaction_->GetResponseInfo()->resolve_error_info.error !=

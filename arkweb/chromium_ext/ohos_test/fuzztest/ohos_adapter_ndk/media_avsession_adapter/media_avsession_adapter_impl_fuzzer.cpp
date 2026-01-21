@@ -28,6 +28,8 @@ using namespace OHOS::NWeb;
 
 namespace OHOS {
 
+constexpr int32_t kFuzzMaxOriginalStreamNums = 1024;
+static int64_t kFuzzMaxOriginalStream = 0;
 class MediaAVSessionCallbackAdapterMock : public MediaAVSessionCallbackAdapter {
 public:
     MediaAVSessionCallbackAdapterMock() = default;
@@ -96,8 +98,10 @@ bool MediaAVSessionAdapterImplFuzzTest(FuzzedDataProvider* fdp)
         std::make_shared<MediaAVSessionPositionAdapterMock>();
     std::shared_ptr<MediaAVSessionAdapterImpl> avSessionAdapter = std::make_shared<MediaAVSessionAdapterImpl>();
     std::shared_ptr<MediaAVSessionKey> key = std::make_shared<MediaAVSessionKey>();
-    OH_AVSession_Create(SESSION_TYPE_AUDIO, "OH_AVSession_Create_001",
-                        "com.xxx.hmxx", "ndkxx", &(avSessionAdapter->avSession_));
+    if (kFuzzMaxOriginalStream <= kFuzzMaxOriginalStreamNums) {
+        OH_AVSession_Create(SESSION_TYPE_AUDIO, "OH_AVSession_Create_001",
+            "com.xxx.hmxx", "ndkxx", &(avSessionAdapter->avSession_));
+    }
     auto type = MediaAVSessionType::MEDIA_TYPE_AUDIO;
     avSessionAdapter->CreateAVSession(type);
     type = MediaAVSessionType::MEDIA_TYPE_VIDEO;

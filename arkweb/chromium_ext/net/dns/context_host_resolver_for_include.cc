@@ -24,6 +24,14 @@ bool ContextHostResolver::CanUseSecureDnsFallback() const {
   }
   return manager_->CanUseSecureDnsFallback(resolve_context_.get());
 }
+
+void ContextHostResolver::GetLocalAddress(IPEndPoint* address) {
+  if (!manager_) {
+    return;
+  }
+
+  manager_->GetLocalAddress(address);
+}
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING)

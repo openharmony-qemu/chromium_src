@@ -15,6 +15,17 @@
 
 #include "arkweb/chromium_ext/url/ohos/log_utils.h"
 
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#include "arkweb/chromium_ext/base/arkweb_report_statistics.h"
+#include "arkweb/chromium_ext/base/ohos/nweb_engine_event_logger.h"
+#include "arkweb/chromium_ext/base/ohos/nweb_engine_event_logger_code.h"
+#include "base/json/json_writer.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "arkweb/chromium_ext/net/base/log_utils.h"
+#endif
+
 #if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING)
 #include "url/url_util.h"
 #endif
@@ -26,12 +37,38 @@ namespace {
 #if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
 const char* kSceneString[] = {"normal DNS", "ErrorRetry"};
 const char* kDnsTransactionString[] = {"local DNS", "https DNS"};
+const char* kSecureFallbackDnsEventType = "secure_dns_fallback_result";
+const char* kScene = "scene";
+const char* kHost = "host";
+const char* kUdpDnsIpList = "udp_dns_ip_list";
+const char* kSecureFallbackIpList = "ip_list";
+const char* kLocalIp = "local_ip";
+const char* kNetworkType = "network_type";
+const char* kResult = "result";
+const char* kDuration = "duration";
+const char* kMccCode = "mcc";
+const char* kMncCode = "mnc";
+const char* kTimeStamp = "time_stamp";
+
+std::string ToJsonStr(const std::vector<std::string>& content) {
+  base::Value::List list;
+  for (const auto& value : content) {
+    list.Append(value);
+  }
+  auto json = base::WriteJson(list);
+  return json.value_or("[]");
+}
 
 void IPListToString(const std::vector<IPEndPoint>& endpoints,
-                    std::string& ipInfo) {
+                    std::string& ipInfo,
+                    bool anonymize) {
   ipInfo.append("[");
   for (size_t index = 0; index < endpoints.size(); index++) {
-    ipInfo.append(endpoints[index].address().ToString());
+    if (anonymize) {
+      ipInfo.append(net::LogUtils::AnonymizeIpAddress(endpoints[index]));
+    } else {
+      ipInfo.append(endpoints[index].address().ToString());
+    }
     if (index < endpoints.size() - 1) {
       ipInfo.append(", ");
     }
@@ -172,6 +209,13 @@ void HostResolverManager::SetSuspectIpListAndSourceHostList(
   // Todo(huawei)
 }
 
+void HostResolverManager::GetLocalAddress(IPEndPoint* address) {
+  if (!dns_client_) {
+    return;
+  }
+  dns_client_->GetLocalAddress(address);
+}
+
 void HostResolverManager::ReportSecureFallbackDnsResult(
     const std::optional<HostCache::Entry> insecure_results,
     const HostCache::Entry& secure_fallback_results,
@@ -179,29 +223,96 @@ void HostResolverManager::ReportSecureFallbackDnsResult(
     const int index,
     const base::TimeDelta& duration) {
   std::string insecure_ip_info;
-  if (insecure_results && insecure_results->ip_endpoints().empty()) {
-    IPListToString(insecure_results->ip_endpoints(), insecure_ip_info);
+  std::string insecure_ip_info_mask;
+  if (insecure_results && !insecure_results->ip_endpoints().empty()) {
+    IPListToString(insecure_results->ip_endpoints(), insecure_ip_info, false);
+    IPListToString(insecure_results->ip_endpoints(), insecure_ip_info_mask,
+                   true);
   } else {
     insecure_ip_info.append("[]");
+    insecure_ip_info_mask.append("[]");
   }
 
   std::string secure_ip_info;
+  std::string secure_ip_info_mask;
   if (secure_fallback_results.error() == OK &&
-      secure_fallback_results.ip_endpoints().empty()) {
-    IPListToString(secure_fallback_results.ip_endpoints(), secure_ip_info);
+      !secure_fallback_results.ip_endpoints().empty()) {
+    IPListToString(secure_fallback_results.ip_endpoints(), secure_ip_info,
+                   false);
+    IPListToString(secure_fallback_results.ip_endpoints(), secure_ip_info_mask,
+                   true);
   } else {
     secure_ip_info.append("[]");
+    secure_ip_info_mask.append("[]");
   }
+
+  std::vector<std::string> content;
+  content.push_back(kScene);
+  content.push_back(kSceneString[index]);
+  content.push_back(kHost);
+  content.push_back(host);
+  content.push_back(kUdpDnsIpList);
+  content.push_back(insecure_ip_info);
+  content.push_back(kSecureFallbackIpList);
+  content.push_back(secure_ip_info);
+  IPEndPoint localIp;
+  GetLocalAddress(&localIp);
+  content.push_back(kLocalIp);
+  content.push_back(localIp.address().ToString());
+  content.push_back(kNetworkType);
+  NetworkChangeNotifier::ConnectionType type =
+      NetworkChangeNotifier::GetConnectionType();
+  content.push_back(
+      std::string(NetworkChangeNotifier::ConnectionTypeToString(type)));
+  content.push_back(kResult);
+  content.push_back(base::NumberToString(secure_fallback_results.error()));
+  content.push_back(kDuration);
+  content.push_back(base::NumberToString(duration.InMilliseconds()));
+  auto time_stamp =
+      static_cast<int64_t>(base::Time::Now().InSecondsFSinceUnixEpoch());
+  content.push_back(kTimeStamp);
+  content.push_back(base::NumberToString(time_stamp));
+  std::vector<std::string> mcc_mnc(2, "");
+  content.push_back(kMccCode);
+  content.push_back(mcc_mnc[0]);
+  content.push_back(kMncCode);
+  content.push_back(mcc_mnc[1]);
 
   std::ostringstream ostr;
   ostr << "scene=" << kSceneString[index]
        << ", udp_dns_ip_list=" << insecure_ip_info
-       << ", ip_list=" << secure_ip_info
+       << ", ip_list=" << secure_ip_info << ", network_type="
+       << std::string(NetworkChangeNotifier::ConnectionTypeToString(type))
        << ", result=" << secure_fallback_results.error()
-       << ", duration=" << duration.InMilliseconds();
+       << ", duration=" << duration.InMilliseconds()
+       << ", time_stamp=" << time_stamp;
+
+  // 经分打点数据上报
+  base::ohos::OperationStatistics::Statistics(
+      base::ohos::REGION_CHINA, base::ohos::PLATFORM_OPERATION_ANALYSIS,
+      base::ohos::OperationStatistics::GROUP_BECE, kSecureFallbackDnsEventType,
+      base::ohos::OperationStatistics::DEFAULT_DATA_VERSION, ToJsonStr(content),
+      true, false, true, base::ohos::REPORT_DAILY);
+  base::ohos::OperationStatistics::Statistics(
+      base::ohos::REGION_OVERSEA, base::ohos::PLATFORM_BUSINESS_INTELLIGENCE,
+      base::ohos::OperationStatistics::GROUP_BECE, kSecureFallbackDnsEventType,
+      base::ohos::OperationStatistics::DEFAULT_DATA_VERSION, ToJsonStr(content),
+      true, false, true, base::ohos::REPORT_DAILY);
+  // 运维打点数据上报
+  base::ohos::ReportEngineEvent(base::ohos::kModuleContentBrowser, host,
+                                base::ohos::kSecureDnsFallbackResult,
+                                ostr.str());
 
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-  LOG_FEEDBACK(INFO, kNetwork) << "HttpDNSResult " << ostr.str();
+  LOG_FEEDBACK(INFO, kNetwork)
+      << "HttpDNSResult scene:" << kSceneString[index]
+      << " networkType:" << NetworkChangeNotifier::ConnectionTypeToString(type)
+      << " udpDnsIpList:" << insecure_ip_info_mask
+      << " ipList:" << secure_ip_info_mask
+      << " result:" << secure_fallback_results.error()
+      << " duration:" << duration.InMilliseconds()
+      << " timeStamp:" << time_stamp
+      << " host:" << url::LogUtils::ConvertUrlWithMask(host);
 #endif
 }
 

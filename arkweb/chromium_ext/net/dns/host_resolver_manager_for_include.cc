@@ -15,6 +15,10 @@
 
 #include "arkweb/chromium_ext/url/ohos/log_utils.h"
 
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING)
+#include "url/url_util.h"
+#endif
+
 namespace net {
 
 namespace {
@@ -212,6 +216,85 @@ void HostResolverManager::ReportDnsTransactionResult(int index,
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
   LOG_FEEDBACK(INFO, kNetwork) << "HttpDNSTransaction " << ostr.str();
 #endif
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING)
+void HostResolverManager::SetHttpsDnsFallbackDataOnDnsHijacking(
+    const std::vector<std::string>& dns_hijacking_protect_list,
+    const std::vector<std::string>& dns_hijacking_errorcode_list) {
+  dns_hijacking_protect_list_.clear();
+  dns_hijacking_errorcode_list_.clear();
+
+  for (const auto& host : dns_hijacking_protect_list) {
+    dns_hijacking_protect_list_.insert(host);
+  }
+  for (const auto& error_code : dns_hijacking_errorcode_list) {
+    dns_hijacking_errorcode_list_.insert(error_code);
+  }
+  #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(INFO) << "DOH-Fallback dns_hijacking_protect_list.size "
+                     << dns_hijacking_protect_list.size()
+                     << ", dns_hijacking_errorcode_list.size "
+                     << dns_hijacking_errorcode_list.size()
+                     << ", dns_hijacking_protect_list_.size "
+                     << dns_hijacking_protect_list_.size()
+                     << ", dns_hijacking_errorcode_list_.size "
+                     << dns_hijacking_errorcode_list_.size();
+#endif
+}
+
+bool HostResolverManager::IsProtectedDomain(const GURL& url) const {
+  if (!url.is_valid()) {
+    return false;
+  }
+
+  if (dns_hijacking_protect_list_.empty()) {
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(WARNING) << "DOH-Fallback protect list is empty, please check "
+                             "cloud control config";
+#endif
+    return false;
+  }
+
+  std::string lower_domain;
+  std::string lower_url_domain = base::ToLowerASCII(url.host());
+  for (const auto& domain : dns_hijacking_protect_list_) {
+    lower_domain = base::ToLowerASCII(domain);
+    if (url::DomainIs(lower_url_domain, lower_domain)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+bool HostResolverManager::NeedRetryDnsOnDnsHijack(
+    const GURL& url,
+    const std::string& error_code) const {
+  if (dns_hijacking_errorcode_list_.count(error_code) == 0) {
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(WARNING) << "DOH-Fallback retry skipped for error code "
+                          << error_code << " not configured";
+#endif
+    return false;
+  }
+
+  if (!IsProtectedDomain(url)) {
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(WARNING) << "DOH-Fallback retry skipped for domain "
+                          << url::LogUtils::ConvertUrlWithMask(url.spec())
+                          << " not configured";
+#endif
+    return false;
+  }
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(INFO) << "DOH-Fallback need retry, domain: "
+                     << url::LogUtils::ConvertUrlWithMask(url.spec())
+                     << ", error code: " << error_code;
+#endif
+  return true;
 }
 #endif
 

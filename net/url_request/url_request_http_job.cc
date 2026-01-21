@@ -1304,6 +1304,21 @@ bool URLRequestHttpJob::CanRetryWithSecureDnsOnly(int net_error) {
     return false;
   }
 
+// httpdns retry will be performed for neterror and url that meet cloud control
+// configuration.
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING)
+  if (request_->url().HostIsIPAddress()) {
+    return false;
+  }
+  std::string error_code = base::NumberToString(net_error);
+  if (const_cast<URLRequestContext*>(request_->context())
+          ->AsURLRequestContextExt()
+          ->NeedRetryDnsOnDnsHijack(request_->url(), error_code)) {
+    is_retry_dns_on_dns_hijacking_ = true;
+    return true;
+  }
+#endif
+
   // The following net errors will retry to use httpdns to resolve the ip
   // in the connect phase, and connect again.
   if (net_error == net::ERR_TIMED_OUT ||
@@ -1373,6 +1388,7 @@ void URLRequestHttpJob::RetryWithSecureDnsOnly() {
 void URLRequestHttpJob::MaybeRetryWithSecureDnsOnly(int result) {
   state_ = RetryState::DOH_FALLBACK;
   if (CanRetryWithSecureDnsOnly(result)) {
+    is_retrying_secure_dns_only_ = true;
     original_net_error_ = result;
     RetryWithSecureDnsOnly();
     return;
@@ -1391,6 +1407,18 @@ void URLRequestHttpJob::OnStartCompleted(int result) {
       case RetryState::INIT:
         MaybeRetryWithSecureDnsOnly(result);
         return;
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING)
+        if (is_retrying_secure_dns_only_) {
+          if (is_retry_dns_on_dns_hijacking_) {
+            ReportDnsFallbackOnDnsHijacking(request_->url().host(),
+                                            original_net_error_, result);
+            is_retry_dns_on_dns_hijacking_ = false;
+          }
+          // httpdns retry can be triggered only once per request.
+          is_retrying_secure_dns_only_ = false;
+          state_ = RetryState::MAX;
+        }
+#endif
 
       case RetryState::DOH_FALLBACK:
         if (result == net::ERR_NAME_NOT_RESOLVED && original_net_error_) {
@@ -2094,8 +2122,7 @@ void URLRequestHttpJob::RecordTimer() {
 
 void URLRequestHttpJob::ResetTimer() {
 #if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
-  if (state_ != RetryState::DOH_FALLBACK &&
-    !request_creation_time_.is_null()) {
+  if (state_ == RetryState::INIT && !request_creation_time_.is_null()) {
 #else
   if (!request_creation_time_.is_null()) {
 #endif

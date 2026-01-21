@@ -260,6 +260,7 @@ declare_args() {
   arkweb_offline_web_evict_back_buffers = true
   arkweb_ohos_mem_usage_report = true
   arkweb_media_cast = true
+  arkweb_ext_http_dns_fallback_on_dns_hijacking = false
 }
 
 # Features enabled in mojom bindings.
@@ -325,6 +326,7 @@ if (defined(enable_arkweb_ext) && enable_arkweb_ext) {
     "arkweb_ext_network_connection",
     "arkweb_ext_http_dns_fallback",
     "arkweb_ext_video_load_optimization",
+    "arkweb_ext_http_dns_fallback_on_dns_hijacking",
   ]
 }  #endif  // BUILDFLAG(ARKWEB_EXT)
 

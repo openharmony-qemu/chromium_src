@@ -423,6 +423,12 @@ interface NetworkService {
   SetHttpsDnsFallbackData(network.mojom.HttpsDnsFallbackConfig config);
   // #endif
 
+  // #if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING)
+  [EnableIf=arkweb_ext_http_dns_fallback_on_dns_hijacking]
+  SetHttpsDnsFallbackDataOnDnsHijacking(array<string> dns_hijacking_protect_list,
+                                        array<string> dns_hijacking_errorcode_list);
+  // #endif
+
   // #if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
   [EnableIf=arkweb_network_service]
   SetSocketIdleTimeout(int32 timeout);

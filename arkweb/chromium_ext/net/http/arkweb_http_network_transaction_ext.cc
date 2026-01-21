@@ -127,6 +127,10 @@ int ArkWebHttpNetworkTransactionExt::RestartWithSecureDnsOnly(
     return ERR_TOO_MANY_RETRIES;
   }
 
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING)
+  observed_bad_certs_.clear();
+#endif
+
   // Reset the other member variables.
   // Note: this is necessary only with SSL renegotiation.
   ResetStateForRestart();

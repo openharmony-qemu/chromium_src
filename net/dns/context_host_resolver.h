@@ -98,6 +98,11 @@ class NET_EXPORT ContextHostResolver : public HostResolver {
   bool CanUseSecureDnsFallback() const override;
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING)
+  bool NeedRetryDnsOnDnsHijack(const GURL& url,
+                               const std::string& errorcode) const override;
+#endif
+
  private:
   std::unique_ptr<HostResolverManager> owned_manager_;
   // `manager_` might point to `owned_manager_`. It must be declared last and

@@ -395,6 +395,10 @@ class NET_EXPORT_PRIVATE URLRequestHttpJob : public URLRequestJob {
   size_t restarted_ = 0;
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING)
+  bool is_retry_dns_on_dns_hijacking_ = false;
+#endif
+
   base::WeakPtrFactory<URLRequestHttpJob> weak_factory_{this};
 };
 

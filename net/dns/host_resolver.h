@@ -550,6 +550,13 @@ class NET_EXPORT HostResolver {
   virtual bool CanUseSecureDnsFallback() const { return false; }
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING)
+  virtual bool NeedRetryDnsOnDnsHijack(const GURL& url,
+                                       const std::string& errorcode) const {
+    return false;
+  }
+#endif
+
   // Creates a new HostResolver. |manager| must outlive the returned resolver.
   //
   // If |mapping_rules| is non-empty, the mapping rules will be applied to

@@ -26,6 +26,13 @@ void GetLocalAddress(IPEndPoint* address);
 void SetSuspectIpListAndSourceHostList(
     const std::vector<std::string>& ip_list,
     const std::vector<std::string>& host_list);
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING)
+void SetHttpsDnsFallbackDataOnDnsHijacking(
+    const std::vector<std::string>& dns_hijacking_protect_list,
+    const std::vector<std::string>& dns_hijacking_errorcode_list);
+bool NeedRetryDnsOnDnsHijack(const GURL& url,
+                             const std::string& error_code) const;
+#endif
 
 private:
 friend class ArkWebHostResolverManagerJobExt;
@@ -53,6 +60,12 @@ bool https_dns_fallback_enabled_{false};
 std::string doh_fallback_server_template_;
 std::vector<std::unique_ptr<WarmUpHttpDnsFallbackImpl>>
     warmup_httpdns_fallback_list_;
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING)
+bool IsProtectedDomain(const GURL& url) const;
+
+std::unordered_set<std::string> dns_hijacking_protect_list_;
+std::unordered_set<std::string> dns_hijacking_errorcode_list_;
+#endif
 #endif
 
 #endif  // NET_DNS_HOST_RESOLVER_MANAGER_FOR_INCLUDE_H

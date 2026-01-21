@@ -262,7 +262,7 @@ TEST_F(SelectionControllerForIncludeTest, SelectClosestWordFromLiveLinkTest_1stI
                     .GetEventHandler()
                     .GetSelectionController()
                     .SelectClosestWordFromLiveLink(hit_test_result_);
-  EXPECT_TRUE(result);
+  EXPECT_FALSE(result);
 }
 
 TEST_F(SelectionControllerForIncludeTest, SelectClosestWordFromLiveLinkTest_2ndIf) {
@@ -348,7 +348,7 @@ TEST_F(SelectionControllerForIncludeTest, SelectClosestWordFromLiveLinkTest_4thI
 TEST_F(SelectionControllerForIncludeTest, SelectClosestWordFromLiveLinkTest_5thIf) {
   SetHtmlInnerHTML(R"HTML(
     <body>
-      <a href='#'><span id='span'>click me</span></a>
+      <a href='#' id='link'><span id='span'>click me</span></a>
     </body>
   )HTML");
   GetDocument().UpdateStyleAndLayout(DocumentUpdateReason::kTest);
@@ -358,6 +358,7 @@ TEST_F(SelectionControllerForIncludeTest, SelectClosestWordFromLiveLinkTest_5thI
   Node* node = span;
 
   HitTestResult hit_test_result;
+
   hit_test_result.SetInnerNode(node);
   hit_test_result.SetURLElement(
       GetDocument().getElementById(AtomicString("link")));

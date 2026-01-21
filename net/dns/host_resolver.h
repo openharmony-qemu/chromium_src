@@ -546,6 +546,7 @@ class NET_EXPORT HostResolver {
   virtual handles::NetworkHandle GetTargetNetworkForTesting() const;
 
 #if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  virtual void GetLocalAddress(IPEndPoint* address) { *address = IPEndPoint(); }
   virtual bool CanUseSecureDnsFallback() const { return false; }
 #endif
 

@@ -33,7 +33,7 @@ bool ContextHostResolver::NeedRetryDnsOnDnsHijack(
   if (!manager_) {
     return false;
   }
-  return manager_->NeedRetryDnsOnDnsHijack(url, error_code);
+  return manager_->NeedRetryDnsOnDnsHijack(url, errorcode);
 }
 #endif
 

@@ -254,6 +254,22 @@ void WebContentsImplExt::DelMediaPlayerAudibleCount() {
 bool WebContentsImplExt::GetMediaPlayerCurrentAudible() {
   return media_player_audible_count_ > 0;
 }
+
+bool WebContentsImplExt::OnAudioStateChangedExt(bool is_currently_audible, bool is_ohos_currently_audible) {
+  if (is_ohos_currently_audible != is_ohos_currently_audible_ 
+      && is_currently_audible == is_currently_audible_) {
+    is_ohos_currently_audible_ = is_ohos_currently_audible;
+    observers_.NotifyObservers(&WebContentsObserver::OnAudioStateChanged,
+                               is_ohos_currently_audible_);
+    LOG(INFO) << "WebContentsImplExt::OnAudioStateChangedExt is_ohos_currently_audible: " << is_ohos_currently_audible_;
+    return true;
+  }
+  return false;
+}
+
+void WebContentsImplExt::OnAudioStateChangedExtSetAudible(bool is_ohos_currently_audible) {
+  is_ohos_currently_audible_ = is_ohos_currently_audible;
+}
 #endif  // BUILDFLAG(ARKWEB_MEDIA_MUTE_AUDIO)
 // LCOV_EXCL_STOP
 

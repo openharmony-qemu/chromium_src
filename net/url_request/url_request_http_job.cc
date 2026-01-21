@@ -1304,12 +1304,13 @@ bool URLRequestHttpJob::CanRetryWithSecureDnsOnly(int net_error) {
     return false;
   }
 
-// httpdns retry will be performed for neterror and url that meet cloud control
-// configuration.
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING)
   if (request_->url().HostIsIPAddress()) {
     return false;
   }
+
+// HTTPDNS retry will be performed for neterror and url that meet cloud control
+// configuration.
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING)
   std::string error_code = base::NumberToString(net_error);
   if (const_cast<URLRequestContext*>(request_->context())
           ->AsURLRequestContextExt()
@@ -1414,7 +1415,7 @@ void URLRequestHttpJob::OnStartCompleted(int result) {
                                             original_net_error_, result);
             is_retry_dns_on_dns_hijacking_ = false;
           }
-          // httpdns retry can be triggered only once per request.
+          // HTTPDNS retry can be triggered only once per request.
           is_retrying_secure_dns_only_ = false;
           state_ = RetryState::MAX;
         }
@@ -2122,6 +2123,7 @@ void URLRequestHttpJob::RecordTimer() {
 
 void URLRequestHttpJob::ResetTimer() {
 #if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  // Allowing ResetTimer to be reset repeatedly when HTTPDNS retry occurs.
   if (state_ == RetryState::INIT && !request_creation_time_.is_null()) {
 #else
   if (!request_creation_time_.is_null()) {

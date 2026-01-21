@@ -343,7 +343,7 @@ void HostResolverManager::SetHttpsDnsFallbackDataOnDnsHijacking(
   for (const auto& error_code : dns_hijacking_errorcode_list) {
     dns_hijacking_errorcode_list_.insert(error_code);
   }
-  #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
   LOG_FEEDBACK(INFO) << "DOH-Fallback dns_hijacking_protect_list.size "
                      << dns_hijacking_protect_list.size()
                      << ", dns_hijacking_errorcode_list.size "

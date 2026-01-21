@@ -29,6 +29,8 @@ enum class CrashType {
 void ReportRenderJsFreeze(int32_t pid, const std::string& packageName, const std::string& processName,
                           const std::string& freezeMsg, int32_t uid);
 
+void ReportRenderProcessTerminate(bool is_gpu, const std::string& pid, const std::string& reason);
+
 void ReportPageLoadStats(int instanceId,
                          int accessSumCount,
                          int accessSuccCount,

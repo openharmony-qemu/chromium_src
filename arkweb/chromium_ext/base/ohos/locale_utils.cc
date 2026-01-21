@@ -47,7 +47,7 @@ std::string ComputeLanguageByRegion(const std::string& region) {
   // zh-Hant and region is "HK"/"MO" return "zh-HK", other return "zh-TW"
   // zh-Hans or other zh, return zh-CN
   // en only region is "GB" return "en-GB", other return "en-US"
-  // bo only "bo-CN", ug only "ug-CN"
+  // bo only "bo-CN", ug only "ug"
   if (systemLanguage.find("zh-Hant") != std::string::npos) {
     locale = (region == "HK" || region == "MO") ? "zh-HK" : "zh-TW";
     return locale;
@@ -60,7 +60,7 @@ std::string ComputeLanguageByRegion(const std::string& region) {
   } else if (systemLanguage.find("bo") != std::string::npos) {
     locale = "bo-CN";
   } else if (systemLanguage.find("ug") != std::string::npos) {
-    locale = "ug-CN";
+    locale = "ug";
   } else {
     locale = systemLanguage;
     if (locale.find("-") == std::string::npos && !region.empty()) {

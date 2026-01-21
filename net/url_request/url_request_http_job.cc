@@ -1408,20 +1408,22 @@ void URLRequestHttpJob::OnStartCompleted(int result) {
       case RetryState::INIT:
         MaybeRetryWithSecureDnsOnly(result);
         return;
+
+      case RetryState::DOH_FALLBACK:
 #if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING)
         if (is_retrying_secure_dns_only_) {
           if (is_retry_dns_on_dns_hijacking_) {
             ReportDnsFallbackOnDnsHijacking(request_->url().host(),
                                             original_net_error_, result);
             is_retry_dns_on_dns_hijacking_ = false;
+          } else {
+            ReportSecureFallbackDnsRetryResult(result);
           }
           // HTTPDNS retry can be triggered only once per request.
           is_retrying_secure_dns_only_ = false;
           state_ = RetryState::MAX;
         }
 #endif
-
-      case RetryState::DOH_FALLBACK:
         if (result == net::ERR_NAME_NOT_RESOLVED && original_net_error_) {
           if (transaction_ && transaction_->GetResponseInfo() &&
               transaction_->GetResponseInfo()->resolve_error_info.error !=

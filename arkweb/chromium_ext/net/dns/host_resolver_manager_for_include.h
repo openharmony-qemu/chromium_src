@@ -22,6 +22,7 @@ public:
 // successfully
 bool CanUseSecureDnsFallback(ResolveContext* context) const;
 void SetHttpsDnsFallbackData(bool enabled, const std::string& server_template);
+void GetLocalAddress(IPEndPoint* address);
 void SetSuspectIpListAndSourceHostList(
     const std::vector<std::string>& ip_list,
     const std::vector<std::string>& host_list);

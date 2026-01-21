@@ -96,6 +96,9 @@ class ArkWebHostResolverDnsTest : public HostResolverManagerTest {
         &*job->key().resolve_context, false, job->key().secure_dns_mode, job,
         job->net_log_, job->tick_clock_,
         !job->tasks_.empty() /* fallback_available */,
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+        false /* secure_fallback */,
+#endif
         job->https_svcb_options_);
     dns_task_ = job->dns_task_.get();
     dns_task_ext_ = std::make_unique<ArkWebHostResolverDnsTaskExt>(dns_task_);

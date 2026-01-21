@@ -46,6 +46,7 @@ const char kUserCacheDir[] = "user-cache-dir";
 const char kArkwebAppDataDir[] = "arkweb-app-data-dir";
 const char kCacheDirExists[] = "ohos-cache-dir-exists";
 const char kUserDataDirExists[] = "ohos-user-data-dir-exists";
+const char kUserDataDirSeparation[] = "user-data-dir-separation";
 
 #endif
 

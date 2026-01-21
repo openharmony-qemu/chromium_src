@@ -17,7 +17,35 @@
 #include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#include "arkweb/chromium_ext/base/arkweb_report_statistics.h"
+#include "arkweb/chromium_ext/base/ohos/nweb_engine_event_logger.h"
+#include "arkweb/chromium_ext/base/ohos/nweb_engine_event_logger_code.h"
+#include "base/json/json_writer.h"
+#endif
+
 namespace {
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+const char* kDnsRetryResultEventType = "dns_retry_result";
+const char* kUrl = "url";
+const char* kOriginalResult = "original_result";
+const char* kFinalResult = "final_result";
+const char* kHost = "host";
+const char* kLocalIp = "local_ip";
+const char* kNetworkType = "network_type";
+const char* kMccCode = "mcc";
+const char* kMncCode = "mnc";
+
+std::string ToJsonStr(const std::vector<std::string>& content) {
+  base::Value::List list;
+  for (const auto& value : content) {
+    list.Append(value);
+  }
+  auto json = base::WriteJson(list);
+  return json.value_or("[]");
+}
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+
 #if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
 bool IsFallbackProxyIgnoreErrorCode(int result) {
   if (result == net::OK || net::IsCertificateError(result) ||
@@ -70,6 +98,7 @@ bool URLRequestHttpJob::MaybeRetryWithFallbackProxy(int result) {
                (reason == ProxyUnusedReason::NOT_CONNECTION_ERROR &&
                 is_main_frame)) {
       original_net_error_ = result;
+      is_retrying_secure_dns_only_ = false;
       int malicious_type = -1;
       int hw_code = -1;
       SBThreatURLPolicy policy =
@@ -339,5 +368,56 @@ void URLRequestHttpJob::RetryWithDirect() {
 }
 
 #endif  // BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+void URLRequestHttpJob::ReportSecureFallbackDnsRetryResult(int net_error) {
+  std::vector<std::string> content;
+  content.push_back(kUrl);
+  content.push_back(request_->url().host());
+  content.push_back(kOriginalResult);
+  content.push_back(base::NumberToString(original_net_error_));
+  content.push_back(kFinalResult);
+  content.push_back(base::NumberToString(net_error));
+
+  net::IPEndPoint address;
+  if (request_->context() && request_->context()->host_resolver()) {
+    request_->context()->host_resolver()->GetLocalAddress(&address);
+  }
+  content.push_back(kLocalIp);
+  content.push_back(address.address().ToString());
+
+  content.push_back(kNetworkType);
+  NetworkChangeNotifier::ConnectionType type =
+      NetworkChangeNotifier::GetConnectionType();
+  content.push_back(
+      std::string(NetworkChangeNotifier::ConnectionTypeToString(type)));
+
+  std::vector<std::string> mcc_mnc(2, "");
+  content.push_back(kMccCode);
+  content.push_back(mcc_mnc[0]);
+  content.push_back(kMncCode);
+  content.push_back(mcc_mnc[1]);
+  std::ostringstream ostr;
+  ostr << "original_result=" << original_net_error_
+       << ", final_result=" << net_error << ", network_type="
+       << std::string(NetworkChangeNotifier::ConnectionTypeToString(type));
+
+  // 经分打点数据上报
+  base::ohos::OperationStatistics::Statistics(
+      base::ohos::REGION_CHINA, base::ohos::PLATFORM_OPERATION_ANALYSIS,
+      base::ohos::OperationStatistics::GROUP_BECE, kDnsRetryResultEventType,
+      base::ohos::OperationStatistics::DEFAULT_DATA_VERSION, ToJsonStr(content),
+      true, false, true, base::ohos::REPORT_DAILY);
+  base::ohos::OperationStatistics::Statistics(
+      base::ohos::REGION_OVERSEA, base::ohos::PLATFORM_BUSINESS_INTELLIGENCE,
+      base::ohos::OperationStatistics::GROUP_BECE, kDnsRetryResultEventType,
+      base::ohos::OperationStatistics::DEFAULT_DATA_VERSION, ToJsonStr(content),
+      true, false, true, base::ohos::REPORT_DAILY);
+  // 运维打点数据上报
+  base::ohos::ReportEngineEvent(base::ohos::kModuleContentBrowser,
+                                request_->url().host(),
+                                base::ohos::kSecureDnsRetryResult, ostr.str());
+}
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 
 }  // namespace net

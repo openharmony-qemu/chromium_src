@@ -176,6 +176,9 @@ interface MediaPlayer {
 
   [EnableIf=arkweb_media_cast]
   NotifyRemoteExitFullScreen();
+
+  [EnableIf=arkweb_media_cast]
+  NotifyCastControlShow(bool is_show);
 };
 
 // Implemented by the MediaWebContentsObserver. The remote lives in the renderer

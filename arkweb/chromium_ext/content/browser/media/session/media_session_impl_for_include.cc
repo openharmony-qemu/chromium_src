@@ -343,5 +343,12 @@ void MediaSessionImpl::SetPauseByAvcast(bool pause_avcast) {
   pause_avcast_ = pause_avcast; 
 }
 
+void MediaSessionImpl::NotifyCastControlShow(bool is_show) {
+  LOG(INFO) << "MediaSessionImpl::NotifyCastControlShow, enter";
+  for (const auto& it : normal_players_) {
+    it.first.observer->NotifyCastControlShow(it.first.player_id, is_show);
+  }
+}
+
 #endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
 }

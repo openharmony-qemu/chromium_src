@@ -69,7 +69,7 @@ struct MediaCastDescription {
     std::string mediaUri;
     int32_t startPosition = 0;
     int32_t mediaSize = 0;
-    std::string albumTitle;
+    std::string albumUrl;
     std::string appName;
 };
 
@@ -106,7 +106,7 @@ public:
     bool IsAvCastPlaying();
     int64_t GetPlaybackPosition();
     void SetPlaybackPositionRemote(const int32_t millis);
-    void UpdateRemotePlayStateCast(bool is_playing);    
+    void UpdateRemotePlayStateCast(bool is_playing);
     void UpdateRemotePlayPositionCast(int64_t position);
     AVSession_PlaybackState GetAVCastPlaybackState();
     void SetAVCastUiPlayState(AVSession_PlaybackState& avSessionPlaybackState);
@@ -215,9 +215,10 @@ private:
     std::deque<std::string> url_queue_;
     std::mutex url_mutex_;
     std::mutex avsession_mutex_;
-    std::string media_uri_storage_;
-    std::string pid_avsession_;
-    std::string deviceName_;
+    std::string media_uri_storage_ = "";
+    std::string pid_avsession_ = "";
+    std::string deviceName_ = "";
+    std::string album_url_ = "";
     OH_AVCastController* avCastController_ = nullptr;
     OH_AVSession_AVMediaDescriptionBuilder* avMediaDescriptionBuilder_ = nullptr;
     OH_AVSession_AVMediaDescription* avMediaDescription_ = nullptr;
@@ -227,6 +228,7 @@ private:
     int64_t lastUiTime_ = 0;
     bool avCastStarted_ = false;
     bool is_seeking_ = false;
+    bool is_error_ = false;
 };
 } // namespace OHOS::NWeb
 

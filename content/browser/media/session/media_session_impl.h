@@ -791,6 +791,7 @@ class MediaSessionImpl : public MediaSession,
   void MediaCastStopped();
   bool IsPageBackground();
   void SetPauseByAvcast(bool pause_avcast);
+  void NotifyCastControlShow(bool is_show);
 #endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
 
  private:

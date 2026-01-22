@@ -190,6 +190,10 @@ void MediaAVSessionAdapterImpl::DestroyAVSession() {
                 WVLOG_E("DestroyAVSession Destroy() failed, ret: %{public}d", ret);
             } else {
                 WVLOG_I("DestroyAVSession Destroy() success, ret: %{public}d", ret);
+                auto media = callback_wrapper_.GetCallback(callback_index_);
+                if (media) {
+                    media->NotifyCastControlShow(false);
+                }
             }
             ret = OH_AVCastController_Destroy(avCastController_);
             if (ret != AV_SESSION_ERR_SUCCESS) {
@@ -440,6 +444,7 @@ bool MediaAVSessionAdapterImpl::UpdateMetaData(const std::shared_ptr<MediaAVSess
         poster_new_ = metadata->GetImageUrl();
         AddUrl(metadata->GetImageUrl());
     }
+    album_url_ = metadata->GetImageUrl();
 
     if (updated) {
         OH_AVMetadataBuilder_SetMediaImageUri(builder_, "");
@@ -564,6 +569,10 @@ void MediaAVSessionAdapterImpl::DestroyAndEraseSession() {
         WVLOG_E("DestroyAndEraseSession Destroy failed, ret: %{public}d", ret);
     } else {
         WVLOG_I("DestroyAndEraseSession Destroy success");
+        auto media = callback_wrapper_.GetCallback(iter->second->callback_index_);
+        if (media) {
+            media->NotifyCastControlShow(false);
+        }
     }
     ret = OH_AVCastController_Destroy(avCastController_);
     if (ret != AV_SESSION_ERR_SUCCESS) {
@@ -775,7 +784,12 @@ void MediaAVSessionAdapterImpl::AVCastStateDisconnect(OH_AVSession *session) {
         MediaAVSessionAdapterImpl* adapter = it->second;
         adapter->MediaCastStopped();
         adapter->SetAvCast(false);
-        adapter->SeekNative(adapter->GetPlaybackPosition());
+        adapter->UnregisterCallback();
+        if (!adapter->is_error_) {
+            WVLOG_I("AVCastStateDisconnect SeekNative: %{public}d", adapter->GetPlaybackPosition());
+            adapter->SeekNative(adapter->GetPlaybackPosition());
+            adapter->is_error_ = false;
+        }
         if (adapter->IsAvCastPlaying()) {
             WVLOG_I("MediaAVSessionAdapterImpl::AVCastStateDisconnect PlayNative");
             adapter->PlayNative();
@@ -866,6 +880,9 @@ void MediaAVSessionAdapterImpl::SetMediaCastUri(const std::string& mediaUri) {
     // set media assetId
     pid_avsession_ = std::to_string(avSessionKey_->GetPID());
     MediaCastDescription_.assetId = pid_avsession_;
+
+    // set poster url
+    MediaCastDescription_.albumUrl = album_url_;
 }
 
 void MediaAVSessionAdapterImpl::HandleStopMediaCast() {
@@ -936,7 +953,7 @@ void MediaAVSessionAdapterImpl::UpdateUiPlayState(bool is_playing) {
 }
 
 void MediaAVSessionAdapterImpl::UpdateUiPlayPosition(int64_t position) {
-    WVLOG_I("MediaAVSessionAdapterImpl UpdateUiPlayPosition: %{public}d", position);
+    WVLOG_D("MediaAVSessionAdapterImpl UpdateUiPlayPosition: %{public}d", position);
     auto media = callback_wrapper_.GetCallback(callback_index_);
     if (!media) {
         WVLOG_E("UpdateUiPlayPosition, ohmedia: media is null");
@@ -1054,6 +1071,13 @@ bool MediaAVSessionAdapterImpl::Prepare(const MediaCastDescription& mediaCastDes
         mediaCastDescription.assetId.c_str());
     if (ret != AVQUEUEITEM_SUCCESS) {
         WVLOG_E("OH_AVSession_AVMediaDescriptionBuilder_SetAssetId failed. ret: %{public}d", ret);
+        return false;
+    }
+
+    ret = OH_AVSession_AVMediaDescriptionBuilder_SetAlbumCoverUri(avMediaDescriptionBuilder_,
+        mediaCastDescription.albumUrl.c_str());
+    if (ret != AVQUEUEITEM_SUCCESS) {
+        WVLOG_E("OH_AVSession_AVMediaDescriptionBuilder_SetAlbumCoverUri failed. ret: %{public}d", ret);
         return false;
     }
 
@@ -1233,6 +1257,10 @@ void MediaAVSessionAdapterImpl::UpdateUiPlayPosition(std::shared_ptr<MediaAVSess
 
 AVSessionCallback_Result MediaAVSessionAdapterImpl::PlaybackStateChangedCallback(OH_AVCastController* avcastcontroller,
     OH_AVSession_AVPlaybackState* playbackState, void* userData) {
+    if (!userData) {
+        WVLOG_E("PlaybackStateChangedCallback, userData is null");
+        return AVSESSION_CALLBACK_RESULT_FAILURE;
+    }
     size_t callback_index = reinterpret_cast<size_t>(userData);
     std::shared_ptr<MediaAVSessionAdapterImpl> adapter = avsession_callback_wrapper_.GetCallback(callback_index);
     if (!adapter) {
@@ -1266,6 +1294,10 @@ AVSessionCallback_Result MediaAVSessionAdapterImpl::MediaItemChangeCallback(OH_A
 AVSessionCallback_Result MediaAVSessionAdapterImpl::SeekDoneCallback(OH_AVCastController* avcastcontroller,
     int32_t position, void* userData) {
     WVLOG_I("MediaAVSessionAdapterImpl::SeekDoneCallback");
+    if (!userData) {
+        WVLOG_E("SeekDoneCallback, userData is null");
+        return AVSESSION_CALLBACK_RESULT_FAILURE;
+    }
     size_t callback_index = reinterpret_cast<size_t>(userData);
     std::shared_ptr<MediaAVSessionAdapterImpl> adapter = avsession_callback_wrapper_.GetCallback(callback_index);
     if (!adapter) {
@@ -1286,6 +1318,21 @@ AVSessionCallback_Result MediaAVSessionAdapterImpl::EndOfStreamCallback(OH_AVCas
 AVSessionCallback_Result MediaAVSessionAdapterImpl::ErrorCallback(OH_AVCastController* avcastcontroller,
     void* userData, AVSession_ErrCode error) {
     WVLOG_I("MediaAVSessionAdapterImpl::ErrorCallback assetId %{public}d", error);
+    if (!userData) {
+        WVLOG_E("ErrorCallback, userData is null");
+        return AVSESSION_CALLBACK_RESULT_FAILURE;
+    }
+    size_t callback_index = reinterpret_cast<size_t>(userData);
+    std::shared_ptr<MediaAVSessionAdapterImpl> adapter = avsession_callback_wrapper_.GetCallback(callback_index);
+    if (!adapter) {
+        WVLOG_I("MediaAVSessionAdapterImpl:SeekDoneCallback adapter is null");
+        return AVSESSION_CALLBACK_RESULT_FAILURE;
+    }
+    if (error != AV_SESSION_ERR_SUCCESS) {
+        adapter->is_error_ = true;
+    } else {
+        adapter->is_error_ = false;
+    }
     return AVSESSION_CALLBACK_RESULT_SUCCESS;
 }
 

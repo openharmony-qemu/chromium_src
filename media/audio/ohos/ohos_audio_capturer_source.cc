@@ -191,16 +191,16 @@ void OHOSAudioCapturerSource::ReadDataOnCapturerThread(void* buffer,
 }
 
 void OHOSAudioCapturerSource::SetVolume(double volume) {
-  NOTREACHED();
+  NOTIMPLEMENTED();
 }
 
 void OHOSAudioCapturerSource::SetAutomaticGainControl(bool enable) {
-  NOTREACHED();
+  NOTIMPLEMENTED();
 }
 
 void OHOSAudioCapturerSource::SetOutputDeviceForAec(
     const std::string& output_device_id) {
-  NOTREACHED();
+  NOTIMPLEMENTED();
 }
 
 void OHOSAudioCapturerSource::NotifyCaptureError(const std::string& message) {

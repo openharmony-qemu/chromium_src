@@ -751,6 +751,12 @@ std::unique_ptr<media::VideoCaptureDevice> DesktopCaptureDevice::Create(
     const DesktopMediaID& source) {
   VLOG(1) << __func__ << "(source=" << source.ToString() << ")";
   auto options = desktop_capture::CreateDesktopCaptureOptions();
+
+#if BUILDFLAG(IS_OHOS)
+  options.set_use_system_picker(true);
+  options.set_prefer_cursor_embedded(true);
+#endif
+
   std::unique_ptr<webrtc::DesktopCapturer> capturer;
   std::unique_ptr<media::VideoCaptureDevice> result;
 

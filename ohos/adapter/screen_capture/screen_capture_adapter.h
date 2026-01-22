@@ -48,6 +48,20 @@ using SetCaptureStrategyFunc =
 using ReleaseCaptureStrategyFunc =
     OH_AVSCREEN_CAPTURE_ErrCode(OH_AVScreenCapture_CaptureStrategy* strategy);
 
+using ShowCursorFunc =
+    OH_AVSCREEN_CAPTURE_ErrCode(struct OH_AVScreenCapture* capture, bool value);
+
+using OnCaptureContentChangedFunc =
+    void(OH_AVScreenCapture* capture,
+         OH_AVScreenCaptureContentChangedEvent event,
+         OH_Rect* area,
+         void* user_data);
+
+using SetCaptureContentChangedFunc = OH_AVSCREEN_CAPTURE_ErrCode(
+    struct OH_AVScreenCapture* capture,
+    OnCaptureContentChangedFunc callback,
+    void* user_data);
+
 class ADAPTER_EXPORT_API ScreenCaptureAdapter {
  public:
   static ScreenCaptureAdapter& GetInstance();
@@ -55,6 +69,13 @@ class ADAPTER_EXPORT_API ScreenCaptureAdapter {
   ScreenCaptureAdapter& operator=(const ScreenCaptureAdapter&) = delete;
 
   bool SetAutoRotation(OH_AVScreenCapture* screen_capture);
+
+  OH_AVSCREEN_CAPTURE_ErrCode ShowCursor(OH_AVScreenCapture* screen_capture);
+
+  OH_AVSCREEN_CAPTURE_ErrCode SetCaptureContentChanged(
+      OH_AVScreenCapture* screen_capture,
+      OnCaptureContentChangedFunc callback,
+      void* user_data);
 
  private:
   bool LoadAllFunctions();
@@ -79,6 +100,8 @@ class ADAPTER_EXPORT_API ScreenCaptureAdapter {
       strategy_for_canvas_follow_rotation_func_ = nullptr;
   SetCaptureStrategyFunc* set_capture_strategy_func_ = nullptr;
   ReleaseCaptureStrategyFunc* release_capture_strategy_func_ = nullptr;
+  ShowCursorFunc* show_cursor_func_ = nullptr;
+  SetCaptureContentChangedFunc* set_capture_content_changed_func_ = nullptr;
 };
 
 }  // namespace ohos::adapter

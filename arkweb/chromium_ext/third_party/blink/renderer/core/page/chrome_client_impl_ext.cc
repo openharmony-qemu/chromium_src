@@ -14,6 +14,7 @@
  */
 #include "arkweb/chromium_ext/third_party/blink/renderer/core/page/chrome_client_impl_ext.h"
 
+#include "arkweb/ohos_nweb/src/sysevent/event_reporter.h"
 #include "third_party/blink/renderer/core/exported/web_view_impl.h"
 #include "third_party/blink/renderer/core/frame/local_frame.h"
 #include "third_party/blink/renderer/core/frame/web_frame_widget_impl.h"
@@ -40,9 +41,10 @@ gfx::Rect ChromeClientImplExt::GetVisibleRectToWeb(LocalFrame* frame) {
 #if BUILDFLAG(ARKWEB_FILE_UPLOAD)
 // LCOV_EXCL_START
 void ChromeClientImplExt::DisconnectClient() {
-  if (file_chooser_queue_.size() != 1) {
-    file_chooser_queue_.front().get()->DisconnectClient();
-  }
+#if !defined(COMPONENT_BUILD)
+  ReportDuplicateFileUpload("Size of file_chooser_queue_ is " + std::to_string(file_chooser_queue_.size()));
+#endif
+  file_chooser_queue_.front().get()->CloseChooser();
 }
 // LCOV_EXCL_STOP
 #endif

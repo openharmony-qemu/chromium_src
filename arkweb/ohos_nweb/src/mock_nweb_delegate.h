@@ -889,7 +889,8 @@ class MockNWebDelegate : public NWebDelegateInterface {
 #if BUILDFLAG(ARKWEB_URL_TRUST_LIST)
   MOCK_METHOD(int,
               SetUrlTrustListWithErrMsg,
-              (const std::string& urlTrustList, std::string& detailErrMsg),
+              (const std::string& urlTrustList, bool allowOpaqueOrigin,
+               bool supportWildcard, std::string& detailErrMsg),
               (override));
 #endif
 
@@ -1300,7 +1301,19 @@ class MockNWebDelegate : public NWebDelegateInterface {
 
 #if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
   MOCK_METHOD(void, SetFocusWebId, (int32_t nweb_id), (override));
-#endif 
+#endif
+
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  MOCK_METHOD(void,
+              SetUserAgentMetadata,
+              (const std::string& user_agent,
+               std::shared_ptr<NWebUserAgentMetadata> metadata),
+              (override));
+  MOCK_METHOD(std::shared_ptr<NWebUserAgentMetadata>,
+              GetUserAgentMetadata,
+              (const std::string& user_agent),
+              (override));
+#endif
 };
 }  // namespace OHOS::NWeb
 

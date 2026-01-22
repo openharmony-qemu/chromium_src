@@ -316,6 +316,14 @@ class DnsClientImpl : public DnsClient {
     }
   }
 
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  void GetLocalAddress(IPEndPoint* address) override {
+    if (session_) {
+      session_->udp_tracker()->GetLocalAddress(address);
+    }
+  }
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+
   bool insecure_enabled_ = false;
   bool can_query_additional_types_via_insecure_ = false;
   int insecure_fallback_failures_ = 0;

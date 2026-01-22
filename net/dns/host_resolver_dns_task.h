@@ -103,6 +103,9 @@ class NET_EXPORT_PRIVATE HostResolverDnsTask final {
                       const NetLogWithSource& job_net_log,
                       const base::TickClock* tick_clock,
                       bool fallback_available,
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+                      bool secure_fallback,
+#endif
                       const HostResolver::HttpsSvcbOptions& https_svcb_options);
   ~HostResolverDnsTask();
 
@@ -120,6 +123,7 @@ class NET_EXPORT_PRIVATE HostResolverDnsTask final {
   bool secure() const { return secure_; }
 
 #if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  bool secure_fallback() { return secure_fallback_; }
   bool need_to_sniff_ip_result() { return need_to_sniff_ip_result_; }
 #endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
 
@@ -273,6 +277,7 @@ class NET_EXPORT_PRIVATE HostResolverDnsTask final {
   bool fallback_available_;
 
 #if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  bool secure_fallback_{false};
   bool need_to_sniff_ip_result_ = false;
   std::unique_ptr<ArkWebHostResolverDnsTaskExt> utils;
 #endif

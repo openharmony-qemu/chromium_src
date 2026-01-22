@@ -254,6 +254,22 @@ void WebContentsImplExt::DelMediaPlayerAudibleCount() {
 bool WebContentsImplExt::GetMediaPlayerCurrentAudible() {
   return media_player_audible_count_ > 0;
 }
+
+bool WebContentsImplExt::OnAudioStateChangedExt(bool is_currently_audible, bool is_ohos_currently_audible) {
+  if (is_ohos_currently_audible != is_ohos_currently_audible_ 
+      && is_currently_audible == is_currently_audible_) {
+    is_ohos_currently_audible_ = is_ohos_currently_audible;
+    observers_.NotifyObservers(&WebContentsObserver::OnAudioStateChanged,
+                               is_ohos_currently_audible_);
+    LOG(INFO) << "WebContentsImplExt::OnAudioStateChangedExt is_ohos_currently_audible: " << is_ohos_currently_audible_;
+    return true;
+  }
+  return false;
+}
+
+void WebContentsImplExt::OnAudioStateChangedExtSetAudible(bool is_ohos_currently_audible) {
+  is_ohos_currently_audible_ = is_ohos_currently_audible;
+}
 #endif  // BUILDFLAG(ARKWEB_MEDIA_MUTE_AUDIO)
 // LCOV_EXCL_STOP
 
@@ -1043,6 +1059,25 @@ bool WebContentsImplExt::isSameUserAgent(
   }
 
   return false;
+}
+
+void WebContentsImplExt::SetUserAgentMetadata(
+    const std::string& user_agent,
+    const blink::UserAgentMetadata& metadata) {
+  user_agent_for_metadata_map_[user_agent] = metadata;
+}
+
+const blink::UserAgentMetadata WebContentsImplExt::GetUserAgentMetadata(
+    const std::string& user_agent) {
+  auto it = user_agent_for_metadata_map_.find(user_agent);
+  if (it != user_agent_for_metadata_map_.end()) {
+    return it->second;
+  }
+#if !defined(COMPONENT_BUILD)
+  return embedder_support::GetUserAgentMetadata();
+#else 
+  return blink::UserAgentMetadata();
+#endif
 }
 
 #endif

@@ -134,6 +134,8 @@ class InputRouter {
 
 #if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
   virtual void SetFocusWebId(int32_t nweb_id) = 0;
+
+  virtual void SetScrollable(bool enable) = 0;
 #endif
 };
 

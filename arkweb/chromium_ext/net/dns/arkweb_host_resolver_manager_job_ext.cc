@@ -86,7 +86,7 @@ void ArkWebHostResolverManagerJobExt::ReportDnsFallBackTaskResult(
     base::TimeDelta duration) {
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
           switches::kEnableNwebExHttpDnsFallback)) {
-    if (dns_task_->secure()) {
+    if (dns_task_->secure_fallback()) {
       HostResolverManager::RequestImpl* req = requests_.head()->value();
       int index = req->parameters().only_use_secure_fallback ? 1 : 0;
       std::optional<HostCache::Entry> insecure_resolved;

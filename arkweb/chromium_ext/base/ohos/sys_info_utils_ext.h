@@ -105,6 +105,16 @@ BASE_EXPORT bool IsPageScale();
 BASE_EXPORT std::string ComponentName();
 
 BASE_EXPORT bool IsPcMode();
+
+#if BUILDFLAG(ARKWEB_USERAGENT)
+BASE_EXPORT extern const char kPlatformName[];
+BASE_EXPORT extern const char kWebName[];
+BASE_EXPORT extern const char kBitness64[];
+BASE_EXPORT const std::string GetDeviceTypeString();
+BASE_EXPORT const std::string GetProductModel();
+BASE_EXPORT const std::string GetOSDistVersion();
+
+#endif
 }  // namespace ohos
 }  // namespace base
 

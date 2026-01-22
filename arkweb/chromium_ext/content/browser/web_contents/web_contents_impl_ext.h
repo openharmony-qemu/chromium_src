@@ -24,6 +24,10 @@
 #include "content/public/browser/media_player_listener.h"
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
+#if BUILDFLAG(ARKWEB_USERAGENT)
+#include "libcef/browser/alloy/alloy_browser_ua_config.h"
+#endif
+
 namespace content {
 
 class WebContentsImpl;
@@ -82,6 +86,8 @@ class WebContentsImplExt : public WebContentsImpl {
   void AddMediaPlayerAudibleCount();
   void DelMediaPlayerAudibleCount();
   bool GetMediaPlayerCurrentAudible();
+  bool OnAudioStateChangedExt(bool is_currently_audible, bool is_ohos_currently_audible);
+  void OnAudioStateChangedExtSetAudible(bool is_ohos_currently_audible);
 #endif  // BUILDFLAG(ARKWEB_MEDIA_MUTE_AUDIO)
 
 #if BUILDFLAG(IS_ARKWEB)
@@ -272,6 +278,10 @@ class WebContentsImplExt : public WebContentsImpl {
   void SetCustomUA(std::string custom_user_agent) override;
   std::string GetCustomUA() override;
   bool isSameUserAgent(const blink::UserAgentOverride& ua_override);
+  void SetUserAgentMetadata(const std::string& user_agent,
+                            const blink::UserAgentMetadata& metadata);
+  const blink::UserAgentMetadata GetUserAgentMetadata(
+      const std::string& user_agent);
 #endif
 #if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
   void OneShotMediaPlayerStopped() override;
@@ -447,7 +457,10 @@ private:
   bool touch_insert_handle_menu_show_ = false;
 #endif
 #if BUILDFLAG(ARKWEB_USERAGENT) || BUILDFLAG(ARKWEB_EXT_UA)
+  using UserAgentForMetadataMap =
+      base::flat_map<std::string, blink::UserAgentMetadata>;
   std::string user_agent_{""};
+  UserAgentForMetadataMap user_agent_for_metadata_map_;
 #endif  // ARKWEB_EXT_UA
 #if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
   cc::BrowserControlsState browser_controls_state_ =

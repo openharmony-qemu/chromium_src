@@ -43,6 +43,11 @@
 #include "components/web_cache/browser/web_cache_manager.h"
 #include "arkweb/ohos_adapter_ndk/ohos_adapter_helper_ext.h"
 #include "arkweb/chromium_ext/components/web_cache/browser/web_cache_manager_utils.h"
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#include "base/path_service.h"
+#include "base/files/file_path.h"
+#include "chrome/common/chrome_paths.h"
+#include "chrome/common/chrome_switches.h"
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_MEMORY_THRESHOLD)
 #include "base/memory/memory_pressure_listener.h"
@@ -956,7 +961,19 @@ void InitialWebEngineArgs(
 
   auto args_to_add = GetArgsToAdd(init_args);
 
-  args_to_add.push_back("--user-data-dir=");
+  bool isSeparation = false;
+  for (auto arg : args_to_add) {
+    if (arg.find(switches::kUserDataDirSeparation) != std::string::npos) {
+ 	    isSeparation = true;
+    }
+  }
+
+  if (!isSeparation) {
+    args_to_add.push_back("--user-data-dir=cache/web");
+  } else {
+    args_to_add.push_back("--user-data-dir=");
+  }
+
   args_to_add.push_back("--arkweb-app-data-dir=/data/storage/el2/base");
 
   base::FilePath user_data_dir = base::FilePath();
@@ -2837,7 +2854,7 @@ void NWebImpl::RegisterArkJSfunction(
       object_name, method_list, async_method_list, object_id, "");
 }
 
-void NWebImpl::RegisterArkJSfunction(
+void NWebImpl::RegisterArkJSfunctionV2(
     const std::string& object_name,
     const std::vector<std::string>& method_list,
     const std::vector<std::string>& async_method_list,
@@ -6361,6 +6378,36 @@ void NWebImpl::SetUserAgentForHosts(const std::string& user_agent,
                                     const std::vector<std::string>& hosts) {
   AlloyBrowserUAConfig::GetInstance()->SetUserAgentForHosts(user_agent, hosts);
 }
+
+bool NWebImpl::GetUserAgentClientHintsEnabled() {
+  return AlloyBrowserUAConfig::GetInstance()->GetUserAgentClientHintsEnabled();
+}
+
+void NWebImpl::SetUserAgentClientHintsEnabled(bool enabled) {
+  AlloyBrowserUAConfig::GetInstance()->SetUserAgentClientHintsEnabled(enabled);
+}
+
+void NWebImpl::SetUserAgentMetadata(
+    const std::string& user_agent,
+    std::shared_ptr<NWebUserAgentMetadata> metadata) {
+  if (!nweb_delegate_) {
+    LOG(WARNING) << kUserAgentMetadataTag
+                 << " SetUserAgentMetadata failed, no nweb or delegate";
+    return;
+  }
+  nweb_delegate_->SetUserAgentMetadata(user_agent, metadata);
+}
+
+std::shared_ptr<NWebUserAgentMetadata> NWebImpl::GetUserAgentMetadata(
+    const std::string& user_agent) {
+  if (!nweb_delegate_) {
+    LOG(WARNING) << kUserAgentMetadataTag
+                 << " GetUserAgentMetadata failed, no nweb or delegate";
+    return nullptr;
+  }
+  return nweb_delegate_->GetUserAgentMetadata(user_agent);
+}
+
 #endif
 
 void NWebImpl::SuggestionSelected(int index) {
@@ -6512,7 +6559,22 @@ int NWebImpl::SetUrlTrustListWithErrMsg(const std::string& urlTrustList,
     return static_cast<int>(ohos_safe_browsing::UrlListSetResult::INIT_ERROR);
   }
 
-  return nweb_delegate_->SetUrlTrustListWithErrMsg(urlTrustList, detailErrMsg);
+  return nweb_delegate_->SetUrlTrustListWithErrMsg(urlTrustList,
+    true, false, detailErrMsg);
+#else
+  return -1;
+#endif
+}
+
+int NWebImpl::SetUrlTrustListWithErrMsg(const std::string& urlTrustList,
+    bool allowOpaqueOrigin, bool supportWildcard, std::string& detailErrMsg) {
+#if BUILDFLAG(ARKWEB_URL_TRUST_LIST)
+  if (nweb_delegate_ == nullptr) {
+    return static_cast<int>(ohos_safe_browsing::UrlListSetResult::INIT_ERROR);
+  }
+
+  return nweb_delegate_->SetUrlTrustListWithErrMsg(urlTrustList,
+    allowOpaqueOrigin, supportWildcard, detailErrMsg);
 #else
   return -1;
 #endif

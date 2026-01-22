@@ -93,6 +93,9 @@ constexpr char VIDEO_FRAME_DROP_STATISTICS[] = "VIDEO_FRAME_DROP_STATISTICS";
 constexpr char VIDEO_FRAME_DROPPED_COUNT[] = "VIDEO_FRAME_DROPPED_COUNT";
 constexpr char VIDEO_FRAME_DROPPED_DURATION[] = "VIDEO_FRAME_DROPPED_DURATION";
 
+// For dumplicate file upload statistics
+constexpr char DUPLICATE_FILE_UPLOAD[] = "DUPLICATE_FILE_UPLOAD";
+
 constexpr char NWEB_ID[] = "NWEB_ID";
 constexpr char PLAIN_TEXT[] = "PLAIN_TEXT";
 constexpr char LINK_URL[] = "LINK_URL";
@@ -317,6 +320,17 @@ void ReportVideoFrameDropStats(uint32_t frameCount, uint64_t frameDuration) {
       {VIDEO_FRAME_DROPPED_COUNT, frameCount, VIDEO_FRAME_DROPPED_DURATION,
        frameDuration});
 }
+
+void ReportDuplicateFileUpload(const std::string errorDesc) {
+  std::string error_desc = "";
+  if (!errorDesc.empty()) {
+    error_desc = errorDesc;
+  }
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      DUPLICATE_FILE_UPLOAD, HiSysEventAdapter::EventType::STATISTIC,
+      {ERROR_DESC, error_desc});
+}
+
 void ReportDragDropStatus(const std::string& eventName, int32_t id) {
   OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
       eventName, HiSysEventAdapter::EventType::BEHAVIOR,

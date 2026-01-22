@@ -44,6 +44,7 @@ public:
 
   static bool GetMediaPlayerMuteState(const AudioParameters& parameters);
 
+  static bool IsWebContentCurrentlyAudible(const AudioParameters& parameters);
 private:
   // OHOSAudioOutputStream mediaSession State
   static bool CheckActiveOnUIThread(const AudioParameters& params);
@@ -71,6 +72,8 @@ private:
   static bool CheckIsSuspendedUIThread(const AudioParameters& params);
 
   static bool CheckGetMediaPlayerMuteStateOnUIThread(const AudioParameters& params);
+
+  static bool IsWebContentCurrentlyAudibleOnUIThread(const AudioParameters& params);
 };
 
 } // media

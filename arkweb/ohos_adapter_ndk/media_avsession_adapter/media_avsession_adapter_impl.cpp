@@ -206,7 +206,11 @@ void MediaAVSessionAdapterImpl::DestroyAVSession() {
     if (avSessionKey_) {
         auto iter = avSessionMap.find(avSessionKey_->ToString());
         if (iter != avSessionMap.end()) {
-            avSessionMap.erase(iter);
+            if (iter->second && iter->second->is_avcast_) {
+                WVLOG_I("DestroyAVSession, current process is casting, no need to clear avSessionMap");
+            } else {
+                avSessionMap.erase(iter);
+            }
         }
     }
     poster_url_ = "";
@@ -934,6 +938,7 @@ bool MediaAVSessionAdapterImpl::GetUiSeekingByClient() {
 
 void MediaAVSessionAdapterImpl::SetAvCast(bool is_avcast) {
     WVLOG_I("MediaAVSessionAdapterImpl SetAvCast: %{public}d", is_avcast);
+    is_avcast_ = is_avcast;
     auto media = callback_wrapper_.GetCallback(callback_index_);
     if (!media) {
         WVLOG_E("SetAvCast, ohmedia: media is null");

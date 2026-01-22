@@ -79,6 +79,10 @@ struct RunJavaScriptParam;
 #include "ohos_nweb_ex/core/extension/nweb_app_client_extension_dispatcher.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_USERAGENT)
+#include "nweb_user_agent_metadata.h"
+#endif
+
 #if BUILDFLAG(ARKWEB_READER_MODE)
 #include "capi/nweb_extension_distill_item.h"
 #endif // ARKWEB_READER_MODE
@@ -276,7 +280,7 @@ class NWebImpl : public NWeb {
                              const std::vector<std::string>& method_list,
                              const std::vector<std::string>& async_method_list,
                              const int32_t object_id) override;
-  void RegisterArkJSfunction(
+  void RegisterArkJSfunctionV2(
       const std::string& object_name,
       const std::vector<std::string>& method_list,
       const std::vector<std::string>& async_method_list,
@@ -952,6 +956,13 @@ class NWebImpl : public NWeb {
   static void SetAppCustomUserAgent(const std::string& userAgent);
   static void SetUserAgentForHosts(const std::string& userAgent,
                                    const std::vector<std::string>& hosts);
+  static bool GetUserAgentClientHintsEnabled();
+  static void SetUserAgentClientHintsEnabled(bool enabled);
+  void SetUserAgentMetadata(
+      const std::string& user_agent,
+      std::shared_ptr<NWebUserAgentMetadata> metadata) override;
+  std::shared_ptr<NWebUserAgentMetadata> GetUserAgentMetadata(
+      const std::string& user_agent) override;
 #endif
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
@@ -1055,6 +1066,9 @@ class NWebImpl : public NWeb {
   int SetUrlTrustList(const std::string& urlTrustList) override;
   int SetUrlTrustListWithErrMsg(const std::string& urlTrustList,
                                 std::string& detailErrMsg) override;
+
+  int SetUrlTrustListWithErrMsg(const std::string& urlTrustList,
+      bool allowOpaqueOrigin, bool supportWildcard, std::string& detailErrMsg) override;
 
 #if BUILDFLAG(ARKWEB_DISPLAY_CUTOUT)
   void OnSafeInsetsChange(int left, int top, int right, int bottom) override;

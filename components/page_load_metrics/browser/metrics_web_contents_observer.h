@@ -345,6 +345,8 @@ class MetricsWebContentsObserver
                              const content::CookieAccessDetails& details);
 
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  void DidStartNavigation(
+      content::NavigationHandle* navigation_handle) override;
   void OnResourceLoadComplete(
       content::RenderFrameHost* render_frame_host,
       const content::GlobalRequestID& request_id,
@@ -414,6 +416,12 @@ class MetricsWebContentsObserver
   bool web_contents_will_soon_be_destroyed_ = false;
 
   base::TimeTicks created_;
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  base::Value::Dict load_resource_failed_metrics_;
+  int64_t navigation_handle_id_ = 0;
+  int64_t total_resource_count_ = 0;
+#endif
 
   base::WeakPtrFactory<MetricsWebContentsObserver> weak_ptr_factory_{this};
 

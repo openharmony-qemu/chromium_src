@@ -96,7 +96,8 @@ void NetworkServiceNetworkDelegateExt::RecordErrorInfo(net::URLRequest* request,
   LOG_FEEDBACK(INFO, kNavigation) << log_content;
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
           ::switches::kEnableLoggerReport)) {
-    if (!network_context_->AsArkWebNetworkContextExt()->IsStrictLogMode()) {
+    if (!network_context_->IsDestructing() &&
+        !network_context_->AsArkWebNetworkContextExt()->IsStrictLogMode()) {
       std::string url_info = request->url().spec();
       const size_t url_print_len = 1024;
       if (url_info.length() > url_print_len) {

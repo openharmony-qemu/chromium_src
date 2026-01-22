@@ -139,8 +139,8 @@ class VideoURLLoaderImpl::ClientAdapter final
  private:
   void NotifyError(TimerBase*);
 
-  VideoURLLoaderImpl* loader_;
-  WebAssociatedURLLoaderClient* client_;
+  raw_ptr<VideoURLLoaderImpl> loader_;
+  raw_ptr<WebAssociatedURLLoaderClient> client_;
   WebAssociatedURLLoaderOptions options_;
   network::mojom::RequestMode request_mode_;
   network::mojom::CredentialsMode credentials_mode_;
@@ -346,7 +346,7 @@ class VideoURLLoaderImpl::Observer final
     ExecutionContextLifecycleObserver::Trace(visitor);
   }
 
-  VideoURLLoaderImpl* parent_;
+  raw_ptr<VideoURLLoaderImpl> parent_;
 };
 
 VideoURLLoaderImpl::VideoURLLoaderImpl(ExecutionContext* context,

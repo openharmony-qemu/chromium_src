@@ -1459,4 +1459,13 @@ void WebContentsImplExt::NotifyRemoteExitFullScreen() {
 }
 #endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
 
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+void WebContentsImplExt::OnSafeBrowsingCheckDetail(int code,
+                                                   int policy,
+                                                   int threat) {
+  if (delegate_) {
+    delegate_->OnSafeBrowsingCheckDetail(code, policy, threat);
+  }
+}
+#endif
 }  // namespace content

@@ -1081,6 +1081,10 @@ class NWebHandlerDelegate : public ArkWebClientExt,
 void OnMediaCastEnter() override;
 #endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
 
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+  void OnSafeBrowsingCheckDetail(int code, int policy, int threat) override;
+#endif
+
  private:
 #if BUILDFLAG(ARKWEB_JSPROXY)
   enum class JsRunTime{Start = 0, End = 1, HEAD_READY};

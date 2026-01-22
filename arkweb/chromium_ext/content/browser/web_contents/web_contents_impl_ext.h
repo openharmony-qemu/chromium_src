@@ -434,6 +434,10 @@ private:
   void OnDocumentEndReady(const FrameInfos& frameInfo) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+  void OnSafeBrowsingCheckDetail(int code, int policy, int threat) override;
+#endif
+
 private:
 #if BUILDFLAG(ARKWEB_TEST)
   friend class WebContentsImplUtilsTest;

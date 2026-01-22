@@ -105,7 +105,7 @@ void ArkWebTransportConnectJobExt::ClearMultiJobsAndStopTimers() {
 }
 
 void ArkWebTransportConnectJobExt::WillDoMultiConnect() {
-  DCHECK(websocket_endpoint_lock_manager());
+  DCHECK(!websocket_endpoint_lock_manager());
   if (multi_ip_enabled_ && !websocket_endpoint_lock_manager() &&
       multi_connect_ip_addresses_.size() > 1) {
     multi_connect_timer_.Start(

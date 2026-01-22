@@ -378,6 +378,17 @@ TEST_F(NWebImplTest, DisableBoost001) {
   nweb_impl_->DisableBoost(0);
   EXPECT_EQ(nweb_impl_->ResizeTime_, 0);
 }
+
+TEST_F(NWebImplTest, DisableBoost002) {
+  int32_t id = 0;
+  std::shared_ptr<NWebImpl> nweb = std::make_shared<NWebImpl>(id);
+  EXPECT_NE(nweb, nullptr);
+  nweb->AddNwebToMap(id, nweb);
+  auto result = NWebImpl::GetNWebSharedPtr(id);
+  EXPECT_NE(result, nullptr);
+  nweb_impl_->DisableBoost(id);
+  EXPECT_EQ(nweb_impl_->ResizeTime_, 0);
+}
 #endif
 
 #if BUILDFLAG(ARKWEB_SAME_LAYER)

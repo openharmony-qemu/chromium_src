@@ -236,6 +236,10 @@
 #include "content/common/thread_type_switcher.mojom.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "third_party/blink/public/mojom/memory_usage_monitor_linux.mojom.h"
+#endif
+
 #if BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
 #include "content/public/browser/stable_video_decoder_factory.h"
 #endif
@@ -3764,7 +3768,7 @@ void RenderProcessHostImpl::OnChannelConnected(int32_t peer_pid) {
     for (auto& observer : observers_)
       observer.RenderProcessReady(this);
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
     // Provide /proc/{renderer pid}/status and statm files for
     // MemoryUsageMonitor in blink.
     ProvideStatusFileForRenderer();
@@ -5405,7 +5409,7 @@ void RenderProcessHostImpl::OnProcessLaunched() {
     for (auto& observer : observers_)
       observer.RenderProcessReady(this);
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
     // Provide /proc/{renderer pid}/status and statm files for
     // MemoryUsageMonitor in blink.
     ProvideStatusFileForRenderer();
@@ -5597,7 +5601,7 @@ void RenderProcessHostImpl::BindTracedProcess(
   BindReceiver(std::move(receiver));
 }
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 void RenderProcessHostImpl::ProvideStatusFileForRenderer() {
   // We use ScopedAllowBlocking, because opening /proc/{pid}/status and
   // /proc/{pid}/statm is not blocking call.

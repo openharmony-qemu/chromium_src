@@ -48,9 +48,6 @@ class VIEWS_EXPORT DesktopWindowTreeHostOhos
   DesktopWindowTreeHostOhos& operator=(const DesktopWindowTreeHostOhos&) =
       delete;
 
-  void Show(ui::mojom::WindowShowState show_state,
-            const gfx::Rect& restore_bounds) override;
-
   ~DesktopWindowTreeHostOhos() override;
   std::unique_ptr<aura::ScopedEnableUnadjustedMouseEvents>
   RequestUnadjustedMovement() override;

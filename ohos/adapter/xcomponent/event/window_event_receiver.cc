@@ -37,6 +37,7 @@
 #include "ohos/adapter/window/window_common.h"
 #include "ohos/adapter/xcomponent/adapter/window_adapter.h"
 
+using WindowStatusType = ohos::adapter::window::WindowStatusType;
 namespace ohos::adapter::xcomponent {
 
 void OnWindowInitSize(const aki::Value window_rect,
@@ -179,10 +180,10 @@ void OnCaptionButtonRectChange(const std::string& xcomponent_id,
 
 void SetSystemWindowLimits(const aki::Value window_limits) {
   WindowLimits limits;
-  limits.max_width = window_limits["maxWidth"].As<int>();
-  limits.max_height = window_limits["maxHeight"].As<int>();
-  limits.min_width = window_limits["minWidth"].As<int>();
-  limits.min_height = window_limits["minHeight"].As<int>();
+  limits.max_width = window_limits["max_width"].As<int>();
+  limits.max_height = window_limits["max_height"].As<int>();
+  limits.min_width = window_limits["min_width"].As<int>();
+  limits.min_height = window_limits["min_height"].As<int>();
   WindowAdapter::GetInstance().SetSystemWindowLimits(limits);
 }
 

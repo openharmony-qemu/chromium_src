@@ -46,11 +46,11 @@ export interface CommandResult {
   last_widget_Id: number;
 }
 
-export interface WindowLimits {
-  maxHeight: number;
-  maxWidth: number;
-  minHeight: number;
-  minWidth: number;
+export interface WinLimits {
+  max_height: number;
+  max_width: number;
+  min_height: number;
+  min_width: number;
 }
 
 export interface NativeContext {
@@ -96,7 +96,7 @@ export interface NativeContext {
   ClearWindowEventFilter: (origin_window_id: number) => void;
   OnCaptionButtonRectChange: (id: string, event: CaptionButtonRect) => void;
   UpdateWindowDeviceModeSwitchCB: (mode: DeviceMode) => void;
-  SetSystemWindowLimits: (windowLimits: WindowLimits) => void;
+  SetSystemWindowLimits: (windowLimits: WinLimits) => void;
   OnDeviceModeChange: (id: string, event: ChangeEventType, status: window.WindowStatusType) => void;
   OnWindowDisplayIdChange: (id: string, displayId: number) => void;
   OnAvoidAreaChangeCallback: (statusBarHeight: number) => void;
@@ -281,6 +281,15 @@ export interface BatteryInfo {
   remainingEnergy: number
 }
 
+export enum WindowStatus{
+  UNDEFINED,
+  FULL_SCREEN,
+  MAXIMIZE,
+  MINIMIZE,
+  FLOATING,
+  SPLIT_SCREEN
+}
+
 export interface NewWindowParam {
   parent_id: string
   window_id: string,
@@ -290,7 +299,9 @@ export interface NewWindowParam {
   use_dark_mode: boolean,
   caption_button_visible: boolean,
   ability_type: AbilityType,
-  app_id: string
+  app_id: string,
+  status: WindowStatus,
+  window_limit: WinLimits
 }
 
 export interface ISubWindowInfo {

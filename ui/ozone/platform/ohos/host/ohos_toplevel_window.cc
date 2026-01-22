@@ -37,6 +37,7 @@
 #include "ohos/adapter/browser/browser_adapter.h"
 #include "ohos/adapter/device_info/device_info.h"
 #include "ohos/adapter/ime_adapter/input_method_ohos_adapter.h"
+#include "ohos/adapter/node_handle/node_handle_impl.h"
 #include "ohos/adapter/window/app_window_adapter.h"
 #include "ohos/adapter/xcomponent/xcomponent_manager.h"
 #include "ui/base/hit_test.h"
@@ -50,6 +51,8 @@
 #include "ui/ozone/platform/ohos/host/ohos_window_manager.h"
 
 namespace ui {
+
+using NodeHandleImpl = ohos::adapter::nodeHandle::NodeHandleImpl;
 
 constexpr gfx::AcceleratedWidget kDefaultWidget = 1;
 
@@ -65,6 +68,10 @@ OhosToplevelWindow::OhosToplevelWindow(PlatformWindowDelegate* delegate,
 OhosToplevelWindow::~OhosToplevelWindow() = default;
 
 void OhosToplevelWindow::Show(bool inactive) {
+  if (NodeHandleImpl::GetInstance().IsSupportNodeHandle() &&
+      need_create_ability_) {
+    CreateAndShowInternal();
+  }
   OhosWindow::BindNodeHandle();
   OhosWindow::Show(inactive);
 }
@@ -219,6 +226,19 @@ void OhosToplevelWindow::OnInitialize(
 bool OhosToplevelWindow::OnCreateWindow(WindowInitParameter param) {
   LOG(INFO) << "[ohoswindow] OhosToplevelWindow::OnCreateWindow, "
             << "type is " << static_cast<int>(param.type);
+  if (NodeHandleImpl::GetInstance().IsSupportNodeHandle()) {
+    std::string ability_id =
+        XComponentManager::GetInstance()->GetCreatedAbility();
+    if (ability_id.empty()) {
+      need_create_ability_ = true;
+      XComponentManager::GetInstance()->AddCreatingAbility(param.window_id);
+    } else {
+      need_create_ability_ = false;
+      param.window_id = ability_id;
+    }
+    init_param_ = param;
+  }
+
   std::string create_id = XComponentManager::GetInstance()->CreateWindow(param);
   if (create_id.empty()) {
     return false;
@@ -620,6 +640,31 @@ void OhosToplevelWindow::CloseInternal() {
   } else {
     AppWindowAdapter::GetInstance().Close(GetWidget());
   }
+}
+
+void OhosToplevelWindow::CreateAndShowInternal() {
+  if (state_ == PlatformWindowState::kMaximized) {
+    // When bounds is empty, UIAbility will start in OH window saved state.
+    init_param_.bounds = {0, 0, 0, 0};
+    init_param_.status = WindowStatusType::MAXIMIZE;
+  } else {
+    init_param_.bounds = {bounds_in_pixels_.x(), bounds_in_pixels_.y(),
+                          bounds_in_pixels_.width(),
+                          bounds_in_pixels_.height()};
+  }
+  init_param_.window_limit = {
+      max_size_in_pixels_.height(), max_size_in_pixels_.width(),
+      min_size_in_pixels_.height(), min_size_in_pixels_.width()};
+
+  XComponentManager::GetInstance()->CreateAndShowAbility(init_param_,
+                                                         init_param_.window_id);
+
+  std::string window_title = window_title_.has_value()
+                                 ? base::UTF16ToUTF8(window_title_.value())
+                                 : std::string();
+  AppWindowAdapter::GetInstance().SetTitle(window_title, GetWidget());
+
+  need_create_ability_ = false;
 }
 
 void OhosToplevelWindow::StartWindowMovingWithOffset(const float offset_x,

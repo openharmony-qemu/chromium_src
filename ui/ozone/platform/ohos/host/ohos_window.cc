@@ -87,6 +87,11 @@ bool OhosWindow::Initialize(PlatformWindowInitProperties properties) {
   display::Display current_display = PrepareDisplayForNewWindow();
   bounds_in_pixels_ = display::ohos::ScreenOhos::ConvertDipToPixel(
       current_display, properties.bounds);
+  if (ohos::adapter::nodeHandle::NodeHandleImpl::GetInstance()
+          .IsSupportNodeHandle() &&
+      current_display.is_valid()) {
+    SetCurrentDisplayId(current_display.id());
+  }
 
   OnInitialize(std::move(properties));
 

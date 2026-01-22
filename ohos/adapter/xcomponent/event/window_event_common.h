@@ -36,6 +36,9 @@
 #include <string>
 
 #include "ohos/adapter/export.h"
+#include "ohos/adapter/window/window_common.h"
+
+using WindowStatusType = ohos::adapter::window::WindowStatusType;
 
 namespace ohos::adapter::xcomponent {
 
@@ -63,15 +66,6 @@ enum class WindowEventType {
   WINDOW_VISIBLE = 6,
   WINDOW_DESTROYED = 7,
   WINDOW_CLOSE= 1000
-};
-
-enum class WindowStatusType {
-  UNDEFINED = 0,
-  FULL_SCREEN,
-  MAXIMIZE,
-  MINIMIZE,
-  FLOATING,
-  SPLIT_SCREEN
 };
 
 enum class RectChangeReason {

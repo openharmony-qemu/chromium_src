@@ -61,6 +61,9 @@ class WebContentsImplExt : public WebContentsImpl {
 
   content::WebContentsImplExt* AsWebContentsImplExt() override { return this; }
 
+  base::WeakPtr<content::WebContentsImplExt> AsWebContentsImplExtWeakThis() override {
+    return weak_factory_.GetWeakPtr();
+  }
   // WebContents ------------------------------------------------------
   void SetDelegate(WebContentsDelegate* delegate) override;
   void MediaDestroyed(const MediaPlayerId& id);
@@ -511,6 +514,7 @@ private:
   RenderFrameHostManager* test_manager_ = nullptr;
   bool flag_ = false;
 #endif  // ARKWEB_TEST
+  base::WeakPtrFactory<WebContentsImplExt> weak_factory_{this};
 };
 }  // namespace content
 

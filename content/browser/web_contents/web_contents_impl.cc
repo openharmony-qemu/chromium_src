@@ -2881,8 +2881,10 @@ void WebContentsImpl::OnAudioStateChanged() {
                         "is_currently_audible", is_currently_audible,
                         "was_audible", is_currently_audible_);
 #if BUILDFLAG(ARKWEB_MEDIA_MUTE_AUDIO)
-  bool is_ohos_currently_audible = is_currently_audible || AsWebContentsImplExt()->GetMediaPlayerCurrentAudible();
-  if (AsWebContentsImplExt()->OnAudioStateChangedExt(is_currently_audible, is_ohos_currently_audible)) {
+  bool is_ohos_currently_audible = is_currently_audible ||
+      (AsWebContentsImplExtWeakThis() && AsWebContentsImplExtWeakThis()->GetMediaPlayerCurrentAudible());
+  if (AsWebContentsImplExtWeakThis() &&
+      AsWebContentsImplExtWeakThis()->OnAudioStateChangedExt(is_currently_audible, is_ohos_currently_audible)) {
     return;
   }
 #endif  // BUILDFLAG(ARKWEB_MEDIA_MUTE_AUDIO)
@@ -2894,7 +2896,9 @@ void WebContentsImpl::OnAudioStateChanged() {
   // Update internal state.
   is_currently_audible_ = is_currently_audible;
 #if BUILDFLAG(ARKWEB_MEDIA_MUTE_AUDIO)
-    AsWebContentsImplExt()->OnAudioStateChangedExtSetAudible(is_ohos_currently_audible);
+  if (AsWebContentsImplExtWeakThis()) {
+    AsWebContentsImplExtWeakThis()->OnAudioStateChangedExtSetAudible(is_ohos_currently_audible);
+  }
 #endif  // BUILDFLAG(ARKWEB_MEDIA_MUTE_AUDIO)
   was_ever_audible_ = was_ever_audible_ || is_currently_audible_;
 

@@ -6238,7 +6238,7 @@ TEST_F(NWebImplTest, SetUrlTrustListWithErrMsg001) {
   temp = -2;
 #endif
   nweb_impl_->nweb_delegate_ = nullptr;
-  EXPECT_CALL(*mock_delegate_, SetUrlTrustListWithErrMsg(urlTrustList, detailErrMsg)).Times(0);
+  EXPECT_CALL(*mock_delegate_, SetUrlTrustListWithErrMsg(urlTrustList, true, false, detailErrMsg)).Times(0);
   auto result = nweb_impl_->SetUrlTrustListWithErrMsg(urlTrustList, detailErrMsg);
   EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
   EXPECT_EQ(result, temp);
@@ -6251,7 +6251,8 @@ TEST_F(NWebImplTest, SetUrlTrustListWithErrMsg002) {
   nweb_impl_->nweb_delegate_ = mock_delegate_;
 #if BUILDFLAG(ARKWEB_URL_TRUST_LIST)
   temp = 1;
-  EXPECT_CALL(*mock_delegate_, SetUrlTrustListWithErrMsg(urlTrustList, detailErrMsg)).WillOnce(::testing::Return(temp));
+  EXPECT_CALL(*mock_delegate_, SetUrlTrustListWithErrMsg(urlTrustList,
+      true, false, detailErrMsg)).WillOnce(::testing::Return(temp));
 #endif
   auto result = nweb_impl_->SetUrlTrustListWithErrMsg(urlTrustList, detailErrMsg);
   EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);

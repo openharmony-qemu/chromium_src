@@ -769,7 +769,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 
 #if BUILDFLAG(ARKWEB_URL_TRUST_LIST)
   int SetUrlTrustListWithErrMsg(const std::string& urlTrustList,
-                                std::string& detailErrMsg) override;
+      bool allowOpaqueOrigin, bool supportWildcard, std::string& detailErrMsg) override;
 #endif
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)

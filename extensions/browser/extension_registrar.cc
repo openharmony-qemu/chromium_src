@@ -109,7 +109,6 @@ void ExtensionRegistrar::AddExtension(
   delegate_->PreAddExtension(extension.get(), old);
 
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-  LOG(INFO) << "add extension " << extension->id();
   LOG_FEEDBACK(INFO) << "add extension " << extension->id();
 #endif
 
@@ -179,7 +178,6 @@ void ExtensionRegistrar::RemoveExtension(const ExtensionId& extension_id,
   reloading_extensions_.erase(extension->id());
 
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-  LOG(INFO) << "remove extension " << extension_id;
   LOG_FEEDBACK(INFO) << "remove extension " << extension_id;
 #endif
 
@@ -222,7 +220,6 @@ void ExtensionRegistrar::EnableExtension(const ExtensionId& extension_id) {
     return;
 
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-  LOG(INFO) << "enable extension " << extension_id;
   LOG_FEEDBACK(INFO) << "enable extension " << extension_id;
 #endif
 
@@ -294,7 +291,6 @@ void ExtensionRegistrar::DisableExtension(const ExtensionId& extension_id,
          registry_->terminated_extensions().Contains(extension->id()));
 
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-  LOG(INFO) << "disable extension " << extension_id;
   LOG_FEEDBACK(INFO) << "disable extension " << extension_id;
 #endif
 
@@ -384,7 +380,6 @@ void ExtensionRegistrar::ReloadExtension(
       registry_->enabled_extensions().GetByID(extension_id);
 
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-  LOG(INFO) << "reload extension " << extension_id;
   LOG_FEEDBACK(INFO) << "reload extension " << extension_id;
 #endif
 

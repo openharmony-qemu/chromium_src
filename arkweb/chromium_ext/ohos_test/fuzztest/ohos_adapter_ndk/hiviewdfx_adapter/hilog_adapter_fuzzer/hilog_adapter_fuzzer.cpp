@@ -41,7 +41,7 @@ void PrintLogFuzzTest(const uint8_t* data, size_t size) {
     std::string tag = dataProvider.ConsumeRandomLengthString(MAX_STRING_LENGTH);
     std::string fmt = dataProvider.ConsumeRandomLengthString(MAX_STRING_LENGTH);
     std::string message = dataProvider.ConsumeRandomLengthString(MAX_STRING_LENGTH);
-    HiLogAdapter::PrintLog(logLevel, tag.c_str(), fmt.c_str(), message.c_str());
+    HiLogAdapter::PrintLog(logLevel, tag.c_str(), "%s", message.c_str());
 }
 
 void PrintConsoleLogFuzzTest(const uint8_t* data, size_t size) {
@@ -55,7 +55,7 @@ void PrintConsoleLogFuzzTest(const uint8_t* data, size_t size) {
     std::string tag = dataProvider.ConsumeRandomLengthString(MAX_STRING_LENGTH);
     std::string fmt = dataProvider.ConsumeRandomLengthString(MAX_STRING_LENGTH);
     std::string message = dataProvider.ConsumeRandomLengthString(MAX_STRING_LENGTH);
-    HiLogAdapter::PrintConsoleLog(logLevel, tag.c_str(), fmt.c_str(), message.c_str());
+    HiLogAdapter::PrintConsoleLog(logLevel, tag.c_str(), "%s", message.c_str());
 }
 
 // main

@@ -103,6 +103,7 @@ export interface NativeContext {
   OnAbilityStartedCB: (id: string) => void;
   IsSupportNodeHandleFeature: () => boolean;
   OnBackToLastPage: (id: string) => void;
+  GetLastActiveWidgetId: () => number;
 }
 
 export interface IParams {

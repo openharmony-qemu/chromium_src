@@ -85,9 +85,7 @@ export class WebAbilityStage extends AbilityStage {
       if (lastActiveBrowserId !== undefined) {
         return lastActiveBrowserId;
       }
-      let result = this.nativeContext?.ExecuteCommand(
-        CommandType.kGetLastActiveWidget, { is_sync: true });
-      let widgetId = result?.last_widget_Id;
+      let widgetId = this.nativeContext?.GetLastActiveWidgetId();
       if (widgetId) {
         return ConfigData.WINDOW_PREFIX + widgetId;
       }

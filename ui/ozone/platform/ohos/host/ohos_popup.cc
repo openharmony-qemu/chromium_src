@@ -48,14 +48,18 @@ OhosPopup::OhosPopup(PlatformWindowDelegate* delegate,
 OhosPopup::~OhosPopup() = default;
 
 void OhosPopup::Show(bool inactive) {
+  LOG(INFO) << "[ohoswindow] OhosPopup::Show, inactive is " << inactive;
   DCHECK(parent_window());
 
   OhosWindow::BindNodeHandle();
   OhosWindow::Show(inactive);
 
-  if (menu_created_) {
-    SubWindowAdapter::GetInstance().Show(GetWindowUniqueId());
+  if (!menu_created_) {
+    LOG(WARNING) << "[ohoswindow] "
+                 << "in OhosPopup::Show menu not created.";
+    return;
   }
+  SubWindowAdapter::GetInstance().Show(GetWindowUniqueId());
 }
 
 void OhosPopup::Hide() {
@@ -150,14 +154,19 @@ void OhosPopup::OnInitialize(PlatformWindowInitProperties properties) {
 }
 
 bool OhosPopup::OnCreateWindow(WindowInitParameter param) {
+  LOG(INFO) << "[ohoswindow] OhosPopup::OnCreateWindow, "
+            << "type is " << static_cast<int>(param.type);
   auto root_parent_window = GetRootParentWindow();
   if (root_parent_window->type() != PlatformWindowType::kWindow) {
-    LOG(ERROR) << "Cannot create subwindow from another subwindow";
+    LOG(ERROR) << "[ohoswindow]"
+               << "Cannot create subwindow from another subwindow";
     return false;
   }
 
   std::string create_id = XComponentManager::GetInstance()->CreateWindow(param);
   if (create_id.empty()) {
+    LOG(ERROR) << "[ohoswindow] in OhosPopup::OnCreateWindow "
+               << "create id is empty.";
     return false;
   }
   // Enable the sub-window reuse feature.  may return a different widget id 
@@ -173,7 +182,7 @@ bool OhosPopup::OnCreateWindow(WindowInitParameter param) {
 
 void OhosPopup::SetWindowState(PlatformWindowState state) {
   if (state_ != state) {
-    VLOG(1) << "OhosPopup::SetWindowState, from: "
+    VLOG(1) << "[ohoswindow] OhosPopup::SetWindowState, from: "
             << static_cast<std::underlying_type<PlatformWindowState>::type>(
                     state_)
             << ", to: "

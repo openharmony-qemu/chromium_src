@@ -95,6 +95,8 @@ class OzonePlatformOhos : public OzonePlatform {
   std::unique_ptr<PlatformWindow> CreatePlatformWindow(
       PlatformWindowDelegate* delegate,
       PlatformWindowInitProperties properties) override {
+    LOG(INFO) << "[ohoswindow] CreatePlatformWindow enter, type is "
+              << static_cast<int>(properties.type);
     return OhosWindow::Create(delegate, window_manager_.get(),
                               std::move(properties));
   }

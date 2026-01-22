@@ -147,20 +147,24 @@ void OhosWindow::UnRegistWindowEvent() {
 }
 
 void OhosWindow::OnSurfaceCreated() {
+  LOG(INFO) << "[ohoswindow] in OhosWindow OnSurfaceCreated.";
   auto task = base::BindOnce([](base::WeakPtr<OhosWindow> window,
                                 gfx::AcceleratedWidget widget) {
-        if (window) {
-          window->delegate()->OnAcceleratedWidgetAvailable(widget);
+        if (!window) {
+          LOG(WARNING) << "[ohoswindow] window is nullptr.";
+          return;
         }
+        window->delegate()->OnAcceleratedWidgetAvailable(widget);
       },
       AsWeakPtr(), GetWidget());
   ui_task_runner_->PostTask(FROM_HERE, std::move(task));
 }
 
 void OhosWindow::OnSurfaceDestoryed() {
+  LOG(INFO) << "[ohoswindow] in OhosWindow OnSurfaceDestoryed.";
   auto task = base::BindOnce([](base::WeakPtr<OhosWindow> window) {
         if (window) {
-          LOG(INFO) << "OhosWindow on surface destroyed call window on close request";
+          LOG(INFO) << "[ohoswindow] OhosWindow on surface destroyed call window on close request";
           window->delegate()->OnCloseRequest();
         }
       },
@@ -178,6 +182,8 @@ void OhosWindow::Applied(const gfx::Rect& origin_bounds,
 }
 
 void OhosWindow::Show(bool inactive) {
+  LOG(INFO) << "[ohoswindow] in OhosWindow Show, visible is "
+               << is_visible_;
   if (is_visible_) {
     return;
   }
@@ -185,6 +191,8 @@ void OhosWindow::Show(bool inactive) {
 }
 
 void OhosWindow::Hide() {
+  LOG(INFO) << "[ohoswindow] in OhosWindow Hide, visible is "
+               << is_visible_;
   if (!is_visible_) {
     return;
   }

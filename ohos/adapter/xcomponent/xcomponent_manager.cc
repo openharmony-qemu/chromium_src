@@ -416,13 +416,16 @@ std::string XComponentManager::CreateWindow(const WindowInitParameter& param) {
       create_id = CreateSubWindow(std::move(newParam));
       break;
     default:
-      LOGE("unsupported window type:%{public}d", (int)param.type);
+      LOGE("[ohoswindow] unsupported window type:%{public}d",
+           static_cast<int>(param.type));
       break;
   }
   return create_id;
 }
 
 std::string XComponentManager::CreateMainWindow(const NewWindowParam& param) {
+  LOGI("[ohoswindow] XComponentManager CreateMainWindow id is %{public}s",
+       param.window_id.c_str());
   if (nodeHandle::NodeHandleImpl::GetInstance().IsSupportNodeHandle()) {
     return CreateMainWindowViaNodeHandle(std::move(param));
   } else {
@@ -487,10 +490,12 @@ std::string XComponentManager::CreateMainWindowViaNodeHandle(
 }
 
 std::string XComponentManager::CreateSubWindow(const NewWindowParam& param) {
+  LOGI("[ohoswindow] XComponentManager CreateSubWindow id is %{public}s",
+       param.window_id.c_str());
   std::string reuse_window_id =
       SubWindowAdapter::GetInstance().ReuseSubWindow(param);
   if (!reuse_window_id.empty()) {
-    LOGI("XComponentManager::CreateSubWindow reuse sub window, id: %{public}s",
+    LOGI("[ohoswindow] CreateSubWindow reuse sub window, id: %{public}s",
          reuse_window_id.c_str());
  
     if (nodeHandle::NodeHandleImpl::GetInstance().IsSupportNodeHandle()) {
@@ -561,9 +566,12 @@ void XComponentManager::OnActivationChanged(const std::string& id, bool active) 
 }
 
 void XComponentManager::OnWidgetAvailable(const std::string& id) {
+  LOGI("[ohoswindow] XComponentManager OnWidgetAvailable id is %{public}s",
+       id.c_str());
   auto render = GetXComponentBase(id);
   if (!render) {
-    LOGI("filter sub window render: %{public}s", id.c_str());
+    LOGI("[ohoswindow] filter sub window render: %{public}s",
+         id.c_str());
     return;
   }
   

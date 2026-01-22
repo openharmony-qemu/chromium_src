@@ -54,6 +54,8 @@ DesktopWindowTreeHostOhos::~DesktopWindowTreeHostOhos() = default;
 
 void DesktopWindowTreeHostOhos::OnNativeWidgetCreated(
     const Widget::InitParams& params) {
+  LOG(INFO) << "[ohoswindow] in DesktopWindowTreeHostOhos OnNativeWidgetCreated, "
+            << "type is " << params.type;
   CreateNonClientEventFilter();
   DesktopWindowTreeHostPlatform::OnNativeWidgetCreated(params);
 }
@@ -65,6 +67,8 @@ void DesktopWindowTreeHostOhos::OnClosed() {
 
 void DesktopWindowTreeHostOhos::Show(ui::mojom::WindowShowState show_state,
                                      const gfx::Rect& restore_bounds) {
+  LOG(INFO) << "[ohoswindow] in DesktopWindowTreeHostOhos Show, "
+            << "show_state is " << show_state;
   if (show_state == ui::mojom::WindowShowState::kMaximized) {
     display::Display display = AccessDisplayNearestRootWindow();
     gfx::Rect work_area = display.work_area();
@@ -258,6 +262,7 @@ void DesktopWindowTreeHostOhos::UnlockMouse(aura::Window* window) {
 DesktopWindowTreeHost* DesktopWindowTreeHost::Create(
     internal::NativeWidgetDelegate* native_widget_delegate,
     DesktopNativeWidgetAura* desktop_native_widget_aura) {
+  LOG(INFO) << "[ohoswindow] in DesktopWindowTreeHost Create.";
   return new DesktopWindowTreeHostOhos(native_widget_delegate,
                                        desktop_native_widget_aura);
 }

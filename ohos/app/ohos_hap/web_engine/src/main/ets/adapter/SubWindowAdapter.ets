@@ -65,6 +65,7 @@ export class SubWindowAdapter extends BaseAdapter {
 
   @LogMethod
   createSubWindow(param: NewWindowParam) {
+    LogUtil.info(TAG, `[ohoswindow] in SubWindowAdapter createSubWindow, param is ${JSON.stringify(param)}`);
     let parentId = param.parent_id
     let fixedBounds = this.adjustBounds(parentId, param.bounds);
     const para: Record<string, IParams> = {
@@ -95,7 +96,7 @@ export class SubWindowAdapter extends BaseAdapter {
         this.moveSubWindow(reusableWindow.subWindow, fixedBounds.left, fixedBounds.top, parentId);
         return reusableWindow.id;
       } catch (e) {
-        LogUtil.error(TAG,'reuseSubWindow error' + reusableWindow.id);
+        LogUtil.error(TAG,'[ohoswindow] reuseSubWindow error' + reusableWindow.id);
       }
     }
     return "";
@@ -163,9 +164,9 @@ export class SubWindowAdapter extends BaseAdapter {
           }
         }
         if (!found) {
-          LogUtil.error(TAG, 'Global cache is inconsistent with cache of ' + reusableWindow.parentId);
+          LogUtil.error(TAG, '[ohoswindow] Global cache is inconsistent with cache of ' + reusableWindow.parentId);
         }
-        LogUtil.error(TAG, `reusableWindow ${reusableWindow.id} size ${reusableSubWindowList.length}`);
+        LogUtil.error(TAG, `[ohoswindow] reusableWindow ${reusableWindow.id} size ${reusableSubWindowList.length}`);
         this.subWindowList.push(reusableWindow);
         return reusableWindow;
       }
@@ -177,6 +178,7 @@ export class SubWindowAdapter extends BaseAdapter {
                           id: string,
                           bounds: WindowBound,
                           subStorage: LocalStorage) {
+    LogUtil.info(TAG, `[ohoswindow] in SubWindowAdapter createNewWindow, id is ${id}, parent id is ${parentId}`);
     let proxy = this.abilityManager.getProxy(parentId);
     if (!proxy) {
       let mainWindowId = this.systemFloatingWindowManager.getMainWindowId(parentId);
@@ -186,7 +188,7 @@ export class SubWindowAdapter extends BaseAdapter {
       .then((data: window.Window) => {
         this.initSubWindow(data, parentId, id, bounds, subStorage);
       }).catch((error: BusinessError) => {
-      LogUtil.error(TAG, 'Failed to create the subWindow. Cause: ' + JSON.stringify(error));
+      LogUtil.error(TAG, '[ohoswindow] Failed to create the subWindow. Cause: ' + JSON.stringify(error));
     });
   }
 
@@ -195,6 +197,7 @@ export class SubWindowAdapter extends BaseAdapter {
                         id: string,
                         bounds: WindowBound,
                         subStorage: LocalStorage) {
+    LogUtil.info(TAG, `[ohoswindow] in SubWindowAdapter initSubWindow, id is ${id}, parent id is ${parentId}`);
     try {
       let windowClass = data;
       windowClass.keepKeyboardOnFocus(true);
@@ -222,21 +225,21 @@ export class SubWindowAdapter extends BaseAdapter {
       }
       windowClass.loadContent(this.getContentPath(), subStorage, (err) => {
         if (err.code) {
-          LogUtil.error(TAG, 'Failed to load the subwindow. Cause:' + JSON.stringify(err));
+          LogUtil.error(TAG, '[ohoswindow] Failed to load the subwindow. Cause:' + JSON.stringify(err));
           return;
         }
         windowClass.setWindowFocusable(false)
           .then(() => {
             windowClass.showWindow()
               .catch((err: BusinessError) => {
-                LogUtil.error(TAG, 'Failed to show SubWindow. Cause: ' + JSON.stringify(err));
+                LogUtil.error(TAG, '[ohoswindow] Failed to show SubWindow. Cause: ' + JSON.stringify(err));
               });
           }).catch(() => {
-          LogUtil.error(TAG, 'set focusable false failed')
+          LogUtil.error(TAG, '[ohoswindow] set focusable false failed')
         });
       });
     } catch (exception) {
-      LogUtil.error(TAG,'Failed to create sub window. Cause: ' + JSON.stringify(exception));
+      LogUtil.error(TAG,'[ohoswindow] Failed to create sub window. Cause: ' + JSON.stringify(exception));
     }
   }
 
@@ -298,6 +301,7 @@ export class SubWindowAdapter extends BaseAdapter {
   }
 
   private addReuseWindow(item: ISubWindowInfo) {
+    LogUtil.info(TAG, `[ohoswindow] in SubWindowAdapter addReuseWindow.`);
     if (!item) {
       LogUtil.error(TAG, 'addReuseWindow fail');
     }
@@ -351,9 +355,10 @@ export class SubWindowAdapter extends BaseAdapter {
 
   @LogMethod
   showSubWindow(id: string) {
+    LogUtil.info(TAG, `[ohoswindow] in SubWindowAdapter showSubWindow, id is ${id}`);
     const item = this.findSubWindow(id);
     item?.subWindow.showWindow().catch((err: BusinessError) => {
-      LogUtil.error(TAG, 'Failed to show SubWindow. Cause: ' + JSON.stringify(err));
+      LogUtil.error(TAG, '[ohoswindow] Failed to show SubWindow. Cause: ' + JSON.stringify(err));
     });
   }
 

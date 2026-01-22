@@ -73,6 +73,7 @@ export class WebAbility extends WebBaseAbility {
   }
  
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam) {
+    LogUtil.info(TAG, '[ohoswindow] in WebAbility onCreate.');    
     super.onCreate(want, launchParam);
     kvManager.init(this.context);
     this.updateWebAppIcon();
@@ -89,6 +90,7 @@ export class WebAbility extends WebBaseAbility {
   }
 
   onWindowStageCreate(windowStage: window.WindowStage) {
+    LogUtil.info(TAG, '[ohoswindow] in WebAbility onWindowStageCreate.');
     super.onWindowStageCreate(windowStage);
 
     if (this.checkSingleInstance()) {
@@ -288,6 +290,7 @@ export class WebAbility extends WebBaseAbility {
   }
 
   onWindowStageDestroy() {
+    LogUtil.info(TAG, '[ohoswindow] in WebAbility onWindowStageDestroy.');    
     if (CheckEmptyUtils.isEmpty(this.xcomponentId)) {
       LogUtil.warn(TAG, 'onWindowStageDestroy component is not instantiated');
       return;
@@ -303,6 +306,7 @@ export class WebAbility extends WebBaseAbility {
   }
 
   onNewWant(want: Want, launchParam: AbilityConstant.LaunchParam): void {
+    LogUtil.info(TAG, `[ohoswindow] in WebAbility onNewWant, want is ${JSON.stringify(want)}, param is ${JSON.stringify(launchParam)}.`);
     const params = want?.parameters;    
     let uriNotNull = want["uri"] !== undefined && want["uri"] !== '';
     if (want!== undefined && want !== null) {

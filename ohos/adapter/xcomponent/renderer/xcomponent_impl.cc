@@ -92,15 +92,16 @@ std::shared_ptr<XComponentImpl> GetXComponent(const std::string& render_id) {
 
 void OnSurfaceCreatedCB(OH_NativeXComponent* component, void* window) {
   std::string render_id = GetRenderId(component);
+  LOGI("[ohoswindow] in XComponentImpl OnSurfaceCreatedCB, id: %{public}s.", render_id.c_str());
   auto impl = GetXComponent(render_id);
   if (!impl) {
-    LOGW("Failed to get XComponent instance in %{public}s. render_id:%{public}s",
-         __FUNCTION__, render_id.c_str());
+    LOGW("[ohoswindow] Failed to get XComponent instance in %{public}s. \
+         render_id:%{public}s", __FUNCTION__, render_id.c_str());
     return;
   }
   if (render_id != impl->GetId()) {
-    LOGE("xcomponent not matched, receive id %{public}s, id %{public}s",
-         render_id.c_str(), impl->GetId().c_str());
+    LOGE("[ohoswindow] xcomponent not matched, receive id %{public}s, \
+         id %{public}s", render_id.c_str(), impl->GetId().c_str());
     return;
   }
 
@@ -109,13 +110,13 @@ void OnSurfaceCreatedCB(OH_NativeXComponent* component, void* window) {
   int32_t ret =
       OH_NativeXComponent_GetXComponentSize(component, window, &width, &height);
   if (ret != OH_NATIVEXCOMPONENT_RESULT_SUCCESS) {
-    LOGE("Get xcomponent surface size error:%{public}lu %{public}lu, render_id:%{public}s",
-         width, height, render_id.c_str());
+    LOGE("[ohoswindow] Get xcomponent surface size error:%{public}lu \
+         %{public}lu, render_id:%{public}s", width, height, render_id.c_str());
     return;
   }
   
-  LOGI("Get xcomponent surface size success:%{public}lu %{public}lu, render_id:%{public}s",
-       width, height, render_id.c_str());
+  LOGI("[ohoswindow] Get xcomponent surface size success:%{public}lu \
+       %{public}lu, render_id:%{public}s", width, height, render_id.c_str());
   WindowAdapter::GetInstance().AddWindow(render_id, window);
   int32_t widget_id = WindowAdapter::GetInstance().GetWidgetId(render_id);
   impl->SetWidget(widget_id);
@@ -126,8 +127,8 @@ void OnSurfaceChangedCB(OH_NativeXComponent* component, void* window) {
   std::string render_id = GetRenderId(component);
   auto impl = GetXComponent(render_id);
   if (!impl) {
-    LOGW("Failed to get XComponent instance in %{public}s. render_id:%{public}s",
-         __FUNCTION__, render_id.c_str());
+    LOGW("[ohoswindow] Failed to get XComponent instance in %{public}s. \
+         render_id:%{public}s", __FUNCTION__, render_id.c_str());
     return;
   }
   impl->OnSurfaceChanged();
@@ -137,16 +138,17 @@ void OnSurfaceDestroyedCB(OH_NativeXComponent* component, void* window) {
   std::string render_id = GetRenderId(component);
   auto impl = GetXComponent(render_id);
   if (!impl) {
-    LOGW("Failed to get XComponent instance in %{public}s. render_id:%{public}s",
-         __FUNCTION__, render_id.c_str());
+    LOGW("[ohoswindow] Failed to get XComponent instance in %{public}s. \
+         render_id:%{public}s", __FUNCTION__, render_id.c_str());
     return;
   }
   if (render_id != impl->GetId()) {
-    LOGE("xcomponent not matched, receive id %{public}s, id %{public}s",
-         render_id.c_str(), impl->GetId().c_str());
+    LOGE("[ohoswindow] xcomponent not matched, receive id %{public}s, \
+         id %{public}s", render_id.c_str(), impl->GetId().c_str());
     return;
   }
-  LOGI("Destroy XComponent, render_id:%{public}s", render_id.c_str());
+  LOGI("[ohoswindow] Destroy XComponent, render_id:%{public}s",
+       render_id.c_str());
   WindowAdapter::GetInstance().RemoveWindow(render_id);
 
   impl->OnSurfaceDestroyed();
@@ -329,10 +331,11 @@ XComponentImpl::~XComponentImpl() {
 
 void XComponentImpl::Initialize(OH_NativeXComponent* component,
                                 XComponentDelegate* delegate) {
-  LOGI("XComponentImpl initialize instance.");
+  LOGI("[ohoswindow] in XComponentImpl initialize instance.");
   if (instance_ != nullptr &&
       instance_ != component) {
-    LOGW("XComponentImpl RegisterCallback have already set xcomponent!");
+    LOGW("[ohoswindow] XComponentImpl RegisterCallback have already \
+         set xcomponent!");
   }
   instance_ = component;
   delegate_ = delegate;

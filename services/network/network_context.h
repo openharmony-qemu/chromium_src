@@ -701,6 +701,10 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkContext
   bool IsNetworkForNonceAndUrlAllowed(const base::UnguessableToken& nonce,
                                       const GURL& url) const;
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  bool IsDestructing() const;
+#endif  // BUILDFLAG(ARKWEB_LOGGER_REPORT)
+
  private:
 #if BUILDFLAG(ARKWEB_CUSTOM_DNS) || BUILDFLAG(ARKWEB_PRP_PRELOAD)
   friend class ArkWebNetworkContextExt;

@@ -1265,6 +1265,27 @@ class NWebImpl : public NWeb {
   static std::shared_ptr<NWebEngineInitArgs> GetSaveInitargs();
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+  std::map<std::string, std::string> GetRequestHeader(int32_t nweb_request_key);
+  std::string GetRequestUrl(int32_t nweb_request_key);
+  bool IsRequestGesture(int32_t nweb_request_key);
+  bool IsMainFrame(int32_t nweb_request_key);
+  bool IsRedirect(int32_t nweb_request_key);
+  std::string GetRequestMethod(int32_t nweb_request_key);
+  int32_t GetPageTransition(int32_t nweb_request_key);
+  int32_t GetRequestType(int32_t nweb_request_key);
+ 
+  std::string GetMimeType(int32_t nweb_response_key);
+  std::string GetEncoding(int nweb_response_key);
+  int32_t GetStatusCode(int nweb_response_key);
+  std::string GetReasonPhrase(int nweb_response_key);
+  std::map<std::string, std::string> GetResponseHeader(int32_t nweb_response_key);
+  bool GetIsFromNetwork(int nweb_response_key);
+  void ResourceRequestDelete(int nweb_request_key);
+  void ResourceResponseDelete(int nweb_response_key);
+  int32_t GetLastCommittedEntryPageTransition();
+#endif
+
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);
   void InitWebEngineArgs(std::shared_ptr<NWebEngineInitArgs> init_args);

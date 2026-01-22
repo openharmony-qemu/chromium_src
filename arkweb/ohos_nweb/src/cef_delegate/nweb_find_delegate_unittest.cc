@@ -801,6 +801,10 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void EnableHttpsUpgrades(bool enable) override {}
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+  int32_t GetLastCommittedEntryPageTransition() override { return 0; }
+#endif
+
 #if BUILDFLAG(ARKWEB_UNITTESTS)
   void SetMediaResumeFromBFCachePage(bool resume) override {}
   void SetHasComposition(bool has_composition) override {}

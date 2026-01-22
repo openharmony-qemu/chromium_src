@@ -261,6 +261,7 @@ declare_args() {
   arkweb_ohos_mem_usage_report = true
   arkweb_media_cast = true
   arkweb_ext_http_dns_fallback_on_dns_hijacking = false
+  arkweb_ext_receive_response = false
 }
 
 # Features enabled in mojom bindings.

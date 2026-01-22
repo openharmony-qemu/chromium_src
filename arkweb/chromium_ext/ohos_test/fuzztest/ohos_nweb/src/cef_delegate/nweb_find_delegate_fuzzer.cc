@@ -760,6 +760,9 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   }
   void EnableHttpsUpgrades(bool enable) override {}
 #endif
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+  int32_t GetLastCommittedEntryPageTransition() override { return 0; }
+#endif
 
 };
 

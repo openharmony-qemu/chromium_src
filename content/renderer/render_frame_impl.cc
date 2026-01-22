@@ -6357,6 +6357,12 @@ void RenderFrameImpl::BeginNavigationInternal(
     transition_type = ui::PageTransitionFromInt(
         transition_type | ui::PAGE_TRANSITION_CLIENT_REDIRECT);
   }
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+  if (info->is_triggered_by_js) {
+    transition_type = ui::PageTransitionFromInt(
+        transition_type | ui::PAGE_TRANSITION_FROM_JAVASCRIPT);
+  }
+#endif
 
   // Note: At this stage, the goal is to apply all the modifications the
   // renderer wants to make to the request, and then send it to the browser, so

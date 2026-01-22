@@ -151,6 +151,10 @@ class CONTENT_EXPORT NavigationControllerImpl : public NavigationController {
   bool IsInitialNavigation() override;
   bool IsInitialBlankNavigation() override;
   void Reload(ReloadType reload_type, bool check_for_repost) override;
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+  void ReloadEx(ReloadType reload_type, bool check_for_repost, int transition_type) override;
+  void Reload(ReloadType reload_type, bool check_for_repost, int transition_type) override;
+#endif
   void NotifyEntryChanged(NavigationEntry* entry) override;
   void CopyStateFrom(NavigationController* source, bool needs_reload) override;
   bool CanPruneAllButLastCommitted() override;

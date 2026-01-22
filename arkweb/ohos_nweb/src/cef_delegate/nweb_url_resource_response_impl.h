@@ -156,6 +156,11 @@ class NWebUrlResourceResponseImpl : public NWebUrlResourceResponse {
 
   size_t GetResponseDataBufferSize() override;
 
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+  void PutResponseIsFromNetwork(bool is_from_network);
+  bool ResponseIsFromNetwork();
+#endif
+
  private:
   std::string mime_type_;
   std::string encoding_;
@@ -171,6 +176,9 @@ class NWebUrlResourceResponseImpl : public NWebUrlResourceResponse {
   std::shared_ptr<NWebResourceReadyCallback> readyCallback_ = nullptr;
   raw_ptr<char> buffer_;
   size_t bufferSize_ = 0;
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+  bool is_from_network_ = false;
+#endif;
 };
 
 }  // namespace OHOS::NWeb

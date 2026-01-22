@@ -112,6 +112,12 @@ enum PageTransition : int32_t {
   PAGE_TRANSITION_LAST_CORE = PAGE_TRANSITION_KEYWORD_GENERATED,
   PAGE_TRANSITION_CORE_MASK = 0xFF,
 
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+  PAGE_TRANSITION_FROM_JAVASCRIPT = 0x00200000,
+ 
+  PAGE_TRANSITION_FROM_PULL_DOWN = 0x00400000,
+#endif
+
   // Qualifiers
   // Any of the core values above can be augmented by one or more qualifiers.
   // These qualifiers further define the transition.

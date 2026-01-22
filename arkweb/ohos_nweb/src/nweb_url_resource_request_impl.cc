@@ -22,13 +22,25 @@ NWebUrlResourceRequestImpl::NWebUrlResourceRequestImpl(
     const std::string& url,
     bool has_gesture,
     bool is_for_main_frame,
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+    bool is_redirect,
+    int32_t transition_type,
+    int32_t request_type)
+#else
     bool is_redirect)
+#endif
     : method_(method),
       request_headers_(request_headers),
       url_(url),
       has_gesture_(has_gesture),
       is_for_main_frame_(is_for_main_frame),
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+      is_redirect_(is_redirect),
+      transition_type_(transition_type),
+      request_type_(request_type) {}
+#else
       is_redirect_(is_redirect) {}
+#endif
 
 std::string NWebUrlResourceRequestImpl::Method() {
   return method_;
@@ -54,4 +66,22 @@ bool NWebUrlResourceRequestImpl::IsAboutMainFrame() {
 bool NWebUrlResourceRequestImpl::IsRequestRedirect() {
   return is_redirect_;
 }
+
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+void NWebUrlResourceRequestImpl::SetRequestType(int request_type) {
+  request_type_ = request_type;
+}
+ 
+void NWebUrlResourceRequestImpl::SetPageTransition(int transition_type) {
+  transition_type_ = transition_type;
+}
+ 
+int32_t NWebUrlResourceRequestImpl::GetRequestType() {
+  return request_type_;
+}
+ 
+int32_t NWebUrlResourceRequestImpl::GetPageTransition() {
+  return transition_type_;
+}
+#endif
 }  // namespace OHOS::NWeb

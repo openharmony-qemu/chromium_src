@@ -4618,6 +4618,10 @@ void WebContentsImpl::UpdateVisibilityAndNotifyPageAndView(
     ForEachRenderViewHost(view_mask, update_frame_tree_visibility);
   }
 
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+    implUtils_->SetIsOfflineWebComponentInactive(new_visibility);
+#endif
+
   // |GetRenderWidgetHostView()| can be null if the user middle clicks a link to
   // open a tab in the background, then closes the tab before selecting it.
   // This is because closing the tab calls WebContentsImpl::Destroy(), which
@@ -4709,6 +4713,10 @@ void WebContentsImpl::UpdateVisibilityAndNotifyPageAndView(
 #if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
 void WebContentsImpl::EvictFrameBackBuffersWhenNWebWasHidden() {
   implUtils_->EvictFrameBackBuffersWhenNWebWasHidden();
+}
+
+void WebContentsImpl::SetIsOfflineWebComponent() {
+  implUtils_->SetIsOfflineWebComponent();
 }
 #endif
 

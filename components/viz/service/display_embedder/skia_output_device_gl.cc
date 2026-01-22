@@ -333,6 +333,12 @@ void SkiaOutputDeviceGL::DiscardBackbuffer() {
   gl_surface_->SetBackbufferAllocation(false);
 }
 
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+void SkiaOutputDeviceGL::CleanBufferAfterSwapBuffer(bool delay_clean) {
+  implUtils_->SetDelayClean(delay_clean);
+}
+#endif
+
 SkSurface* SkiaOutputDeviceGL::BeginPaint(
     std::vector<GrBackendSemaphore>* end_semaphores) {
   DCHECK(sk_surface_);

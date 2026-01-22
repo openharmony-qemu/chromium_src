@@ -421,4 +421,12 @@ void ArkwebDisplayUtils::DiscardBackbuffer() {
   }
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+void ArkwebDisplayUtils::CleanBufferAfterSwapBuffer(bool delay_clean) {
+  if (display_->output_surface_) {
+    display_->output_surface_->CleanBufferAfterSwapBuffer(delay_clean);
+  }
+}
+#endif
 }  // namespace viz

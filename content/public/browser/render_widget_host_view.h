@@ -133,6 +133,10 @@ class CONTENT_EXPORT RenderWidgetHostView {
   virtual bool GetScrollable() = 0;
 #endif
 
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+  virtual void SetIsOfflineWebComponentInactive(bool is_inactive) {}
+#endif
+
   // Whether the view is showing.
   virtual bool IsShowing() = 0;
 

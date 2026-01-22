@@ -2633,6 +2633,12 @@ void SkiaOutputSurfaceImplOnGpu::DiscardBackbuffer() {
   output_device_->DiscardBackbuffer();
 }
 
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+void SkiaOutputSurfaceImplOnGpu::CleanBufferAfterSwapBuffer(bool delay_clean) {
+  output_device_->CleanBufferAfterSwapBuffer(delay_clean);
+}
+#endif
+
 #if BUILDFLAG(ENABLE_VULKAN)
 gfx::GpuFenceHandle SkiaOutputSurfaceImplOnGpu::CreateReleaseFenceForVulkan(
     const GrBackendSemaphore& semaphore) {

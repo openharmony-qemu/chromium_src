@@ -66,6 +66,7 @@ public:
   void BindToClient(OutputSurfaceClient* client) {}
   void EnsureBackbuffer() {}
   void DiscardBackbuffer() {}
+  void CleanBufferAfterSwapBuffer(bool delay_clean) {}
   void Reshape(const ReshapeParams& params) {}
   void SwapBuffers(OutputSurfaceFrame frame) {}
   void SetUpdateVSyncParametersCallback(

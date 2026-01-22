@@ -255,6 +255,9 @@ void FrameSinkManagerImpl::CreateRootCompositorFrameSink(
           /*render_input_router_config=*/nullptr, create_input_receiver,
           widget);
     }
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+    managerImplUtils->SetRootCompositorFrameSink(frame_sink_id);
+#endif
   }
 
   MaybeAddHitTestQuery(frame_sink_id);
@@ -998,6 +1001,13 @@ void FrameSinkManagerImpl::SendInternalBeginFrame(const FrameSinkId& id) {
 void FrameSinkManagerImpl::EvictFrameBackBuffers(
     const FrameSinkId& root_frame_sink_id) {
     managerImplUtils->EvictFrameBackBuffers(root_frame_sink_id);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+void FrameSinkManagerImpl::SetIsOfflineWebComponentInactive(bool is_inactive,
+    const FrameSinkId& frame_sink_id) {
+    managerImplUtils->SetIsOfflineWebComponentInactive(is_inactive, frame_sink_id);
 }
 #endif
 

@@ -64,6 +64,27 @@ void FrameSinkManagerImplUtils::SetEnableHalfFrameRate(
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+void FrameSinkManagerImplUtils::SetIsOfflineWebComponentInactive(
+    bool is_inactive,
+    const FrameSinkId& frame_sink_id)
+{
+  is_inactive_ = is_inactive;
+  auto root_it = frameSinkManagerImpl->root_sink_map_.find(frame_sink_id);
+  if (root_it != frameSinkManagerImpl->root_sink_map_.end()) {
+    if (!root_it->second) {
+      LOG(ERROR) << "RootCompositorFrameSinkImpl is null";
+      return;
+    }
+    root_it->second->AsExt()->SetIsOfflineWebComponentInactive(is_inactive);
+  }
+}
+
+void FrameSinkManagerImplUtils::SetRootCompositorFrameSink(const FrameSinkId& frame_sink_id)
+{
+  SetIsOfflineWebComponentInactive(is_inactive_, frame_sink_id);
+}
+#endif
 
 #if BUILDFLAG(ARKWEB_VIDEO_LTPO)
 void FrameSinkManagerImplUtils::UpdateVSyncFrequency(

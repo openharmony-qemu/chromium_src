@@ -192,6 +192,10 @@ class VIZ_SERVICE_EXPORT OutputSurface {
   virtual void EnsureBackbuffer() = 0;
   virtual void DiscardBackbuffer() = 0;
 
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+  virtual void CleanBufferAfterSwapBuffer(bool delay_clean) {}
+#endif
+
   // Reshape the output surface.
   struct ReshapeParams {
     gfx::Size size;

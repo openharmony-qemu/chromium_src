@@ -110,6 +110,10 @@ class MockFrameSinkManager : public mojom::FrameSinkManager {
               (const ::viz::FrameSinkId& frame_sink_id),
               (override));
   MOCK_METHOD(void,
+              SetIsOfflineWebComponentInactive,
+              (bool is_inactive, const ::viz::FrameSinkId& frame_sink_id),
+              (override));
+  MOCK_METHOD(void,
               SetPipActive,
               (bool active, const ::viz::FrameSinkId& frame_sink_id),
               (override));
@@ -227,6 +231,14 @@ TEST_F(HostFrameSinkManagerUtilsTest, EvictFrameBackBuffers) {
   const FrameSinkId sink_id(0, 0);
   EXPECT_CALL(*FrameSinkManager(), EvictFrameBackBuffers);
   utils.EvictFrameBackBuffers(sink_id);
+}
+
+TEST_F(HostFrameSinkManagerUtilsTest, SetIsOfflineWebComponentInactive) {
+  HostFrameSinkManagerUtils utils(HostManager());
+  bool is_inactive = false;
+  const FrameSinkId sink_id(0, 0);
+  EXPECT_CALL(*FrameSinkManager(), SetIsOfflineWebComponentInactive);
+  utils.SetIsOfflineWebComponentInactive(is_inactive, sink_id);
 }
 #endif
 

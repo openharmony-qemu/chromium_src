@@ -1605,6 +1605,7 @@ class CONTENT_EXPORT WebContentsImpl
 
 #if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
   void EvictFrameBackBuffersWhenNWebWasHidden();
+  void SetIsOfflineWebComponent();
 #endif
 
 #if BUILDFLAG(ARKWEB_TEST)

@@ -31,6 +31,9 @@ mojom("mojom") {
     enabled_features += [ "arkweb_occluded_opt" ]
   }
 
+  if (arkweb_offline_web_evict_back_buffers) {
+    enabled_features += [ "arkweb_offline_web_evict_back_buffers" ]
+  }
 }
 
 source_set("unit_tests") {

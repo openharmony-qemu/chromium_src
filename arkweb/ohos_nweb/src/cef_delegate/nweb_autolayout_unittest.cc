@@ -113,6 +113,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void SetNativeWindow(cef_native_window_t) override {}
   void SetWebDebuggingAccess(bool) override {}
   void WasOccluded(bool) override {}
+  void SetIsOfflineWebComponent() override {}
   void OnWindowShow() override {}
   void OnWindowHide() override {}
   void OnOnlineRenderToForeground() override {}

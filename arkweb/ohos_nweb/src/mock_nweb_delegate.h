@@ -28,6 +28,7 @@ namespace OHOS::NWeb {
 class MockNWebDelegate : public NWebDelegateInterface {
  public:
   virtual ~MockNWebDelegate() {}
+  MOCK_METHOD(void, SetIsOfflineWebComponent, (), (override));
   MOCK_METHOD(void, OnWindowShow, (), (override));
   MOCK_METHOD(void, OnWindowHide, (), (override));
   MOCK_METHOD(void, OnOnlineRenderToForeground, (), (override));

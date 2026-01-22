@@ -106,6 +106,12 @@ void RootCompositorFrameSinkImplExt::EvictFrameBackBuffers() {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+void RootCompositorFrameSinkImplExt::SetIsOfflineWebComponentInactive(bool is_inactive) {
+  display_->display_utils()->CleanBufferAfterSwapBuffer(is_inactive);
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_VIDEO_LTPO)
 void RootCompositorFrameSinkImplExt::UpdateVSyncFrequency(int frame_rate) {
   external_begin_frame_source_->UpdateVSyncFrequency(frame_rate);

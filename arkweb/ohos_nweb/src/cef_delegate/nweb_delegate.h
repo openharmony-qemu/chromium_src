@@ -100,6 +100,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #if BUILDFLAG(ARKWEB_AI)
   friend class NWebAgentManagerImpl;
 #endif
+  void SetIsOfflineWebComponent() override;
   void OnWindowShow() override;
   void OnWindowHide() override;
   void OnOnlineRenderToForeground() override;

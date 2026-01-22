@@ -102,6 +102,7 @@ class NWebDelegateInterface
     : public std::enable_shared_from_this<NWebDelegateInterface> {
  public:
   virtual ~NWebDelegateInterface() = default;
+  virtual void SetIsOfflineWebComponent() = 0;
   virtual void OnWindowShow() = 0;
   virtual void OnWindowHide() = 0;
   virtual void OnOnlineRenderToForeground() = 0;

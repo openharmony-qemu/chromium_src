@@ -17,6 +17,8 @@
 #define NWEB_URL_RESOURCE_REQUEAST_IMPL_H
 
 #include "nweb_url_resource_request.h"
+#include "build/buildflag.h"
+#include "arkweb/build/features/features.h"
 
 namespace OHOS::NWeb {
 class NWebUrlResourceRequestImpl : public NWebUrlResourceRequest {

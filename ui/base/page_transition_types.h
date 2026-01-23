@@ -8,7 +8,7 @@
 #include <stdint.h>
 
 #include "base/component_export.h"
-
+#include "build/buildflag.h"
 namespace ui {
 
 // Types of transitions between pages. These are stored in the history

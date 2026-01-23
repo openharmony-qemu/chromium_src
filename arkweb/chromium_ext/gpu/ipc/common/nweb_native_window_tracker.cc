@@ -73,6 +73,8 @@ int32_t NWebNativeWindowTracker::AddNativeWindow(void* native_window) {
   base::AutoLock lock(window_map_lock_);
   int32_t native_window_id = next_native_window_id_++;
   native_window_map_.emplace(native_window_id, std::move((void*)native_window));
+  OHOS::NWeb::OhosAdapterHelper::GetInstance()
+    .GetWindowAdapterInstance().NativeWindowSetUsage(native_window);
   LOG(DEBUG) << "Add native window id = " << native_window_id;
   return native_window_id;
 }
@@ -91,6 +93,8 @@ void* NWebNativeWindowTracker::GetNativeWindow(int32_t native_window_id) {
       void *window = g_browser_client_->QueryRenderSurface(native_window_id);
       if (window) {
         native_window_map_.emplace(native_window_id, std::move((void *)window));
+        OHOS::NWeb::OhosAdapterHelper::GetInstance()
+            .GetWindowAdapterInstance().NativeWindowSetUsage(window);
         LOG(DEBUG) << "Add native window id = " << native_window_id;
         return window;
       }

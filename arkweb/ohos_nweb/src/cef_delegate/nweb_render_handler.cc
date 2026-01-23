@@ -868,7 +868,8 @@ void NWebRenderHandler::OnVirtualKeyboardRequestedEx(
   bool is_hide = (text_input_info.node_id == 0) || text_input_info.always_hide_ime;
   if (!is_hide) {
     auto delegate = delegate_interface_.lock();
-    if (delegate && delegate->OnFocus()) {
+    if (delegate) {
+      if (virtualKeyboardRequestFocus_) delegate->OnFocus();
       // If the inputmode is none and keyboard exists, the keyboard should be hide.
       if (text_input_info.input_mode == CEF_TEXT_INPUT_MODE_NONE &&
           inputmethod_client_->IsKeyboardShow()) {
@@ -950,6 +951,10 @@ void NWebRenderHandler::HandleKeyboardDetach() {
     }
   }
   UpdateSecurityLayer(false);
+}
+
+void NWebRenderHandler::EnableVirtualKeyboardRequestFocus(bool isNeedRequestFocus) {
+	virtualKeyboardRequestFocus_ = isNeedRequestFocus;
 }
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 

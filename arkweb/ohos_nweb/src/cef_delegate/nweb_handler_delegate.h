@@ -80,6 +80,7 @@
 #if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
 #include "ohos_nweb/src/capi/nweb_resource_request.h"
 #include "ohos_nweb/src/capi/nweb_resource_response.h"
+#include "ohos_nweb/src/capi/nweb_resource_request_response.h"
 #endif
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)

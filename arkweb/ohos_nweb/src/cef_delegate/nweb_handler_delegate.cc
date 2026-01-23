@@ -6053,6 +6053,32 @@ void NWebHandlerDelegate::OnReceiveResponse(CefRefPtr<CefRequest> request,
     return;
   }
   
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  if (IsNativeApiEnable() && dispatcher_.HasOnReceiveResponseV2()) {
+    CefRequest::HeaderMap cef_request_headers;
+    request->GetHeaderMap(cef_request_headers);
+    std::map<std::string, std::string> request_headers;
+    ConvertMapToHeaderMap(cef_request_headers, request_headers);
+ 
+    WebUrlResourceRequest resource_request = {
+        is_request_gesture, is_main_frame, is_redirect, 
+        resource_type, transition_type, 
+        request->GetURL().ToString(), 
+        request->GetMethod().ToString(), request_headers};
+ 
+    CefResponse::HeaderMap cef_response_headers;
+    response_info->GetHeaderMap(cef_response_headers);
+    std::map<std::string, std::string> response_headers;
+    ConvertMapToHeaderMap(cef_response_headers, response_headers);
+ 
+    WebUrlResourceResponse resource_response = {
+        is_from_network, response_info->GetStatus(), response_info->GetMimeType(),
+        response_info->GetCharset(), response_info->GetStatusText(), response_headers};
+ 
+    return dispatcher_.OnReceiveResponseByPb(resource_request, resource_response);
+  }
+#endif
+
   CefRequest::HeaderMap cef_request_headers;
   request->GetHeaderMap(cef_request_headers);
   std::map<std::string, std::string> request_headers;

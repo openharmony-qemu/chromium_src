@@ -18,6 +18,7 @@
 #include "arkweb/chromium_ext/url/ohos/log_utils.h"
 #include "base/logging.h"
 #include "base/strings/string_util.h"
+#include "content/public/browser/browser_thread.h"
 #include "net/base/mime_sniffer.h"
 #include "net/http/http_util.h"
 #include "ohos_adapter_helper.h"
@@ -409,7 +410,10 @@ void NWebPipeResourceHandler::CallOnRequestStop() const {
   }
 
   if (resource_handler_ && resource_request_) {
-    factory_->OnRequestStop(resource_request_, web_tag_, from_service_worker_);
+    content::GetIOThreadTaskRunner({})->PostTask(
+        FROM_HERE,
+        base::BindOnce(&NWebSchemeHandlerFactory::OnRequestStop, factory_,
+                       resource_request_, web_tag_, from_service_worker_));
   } else {
     LOG(ERROR) << "scheme_handler resource_handler_ " << resource_handler_
                << " resource_request_ " << resource_request_;
@@ -417,7 +421,9 @@ void NWebPipeResourceHandler::CallOnRequestStop() const {
 }
 
 bool NWebPipeResourceHandler::Release() const {
+  lock_.Acquire();
   if (ref_count_.Release()) {
+    lock_.Release();
     delete static_cast<const NWebPipeResourceHandler*>(this);
     return true;
   }
@@ -425,6 +431,7 @@ bool NWebPipeResourceHandler::Release() const {
   if (HasOneRef() && (canceled_ || finished_ || finished_with_error_)) {
     CallOnRequestStop();
   }
+  lock_.Release();
   return false;
 }
 

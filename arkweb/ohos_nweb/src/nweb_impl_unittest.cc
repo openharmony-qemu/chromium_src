@@ -1872,6 +1872,24 @@ TEST_F(NWebImplTest, SetNWebHandler002) {
   EXPECT_NE(nweb_impl_->nweb_handle_, client);
 }
 
+#if BUILDFLAG(ARKWEB_AI)
+TEST_F(NWebImplTest, SetNWebAgentHandler001) {
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_NE(nweb_impl_, nullptr);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  std::shared_ptr<NWebAgentHandler> agent_handler = nullptr;
+  nweb_impl_->SetNWebAgentHandler(agent_handler);
+}
+
+TEST_F(NWebImplTest, SetNWebAgentHandler002) {
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_NE(nweb_impl_, nullptr);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  std::shared_ptr<NWebAgentHandler> agent_handler = nullptr;
+  nweb_impl_->SetNWebAgentHandler(agent_handler);
+}
+#endif
+
 TEST_F(NWebImplTest, Resize001) {
   uint32_t width = 100;
   uint32_t height = 200;

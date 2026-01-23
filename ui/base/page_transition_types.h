@@ -9,6 +9,7 @@
 
 #include "base/component_export.h"
 #include "build/buildflag.h"
+#include "arkweb/build/features/features.h"
 namespace ui {
 
 // Types of transitions between pages. These are stored in the history

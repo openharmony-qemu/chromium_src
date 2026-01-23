@@ -16,6 +16,7 @@
 #ifndef SERVICES_DEVICE_BUSINESS_RISK_INTELLIGENT_DETECTION_HOST_IMPL_H_
 #define SERVICES_DEVICE_BUSINESS_RISK_INTELLIGENT_DETECTION_HOST_IMPL_H_
 
+#include "base/memory/raw_ptr.h"
 #include "arkweb/chromium_ext/services/device/public/mojom/business_risk_intelligent_detection.mojom.h"
 
 namespace device {
@@ -47,7 +48,7 @@ class BusinessRiskIntelligentDetectionHostImpl
   virtual DetectSimulatedClickRiskEnhancedFFI GetDetectFunc();
 
  private:
-  void* detect_sim_click_risk_enhanced_handler_ = nullptr;
+  raw_ptr<void> detect_sim_click_risk_enhanced_handler_ = nullptr;
 };
 
 }  // namespace device

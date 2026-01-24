@@ -5804,4 +5804,323 @@ void NWebHandlerDelegate::OnSafeBrowsingCheckDetail(int code,
   }
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+ 
+static std::atomic<int> nweb_resource_request_new_key = 0;
+static std::unordered_map<int, std::shared_ptr<NWebResourceRequest>>
+    g_nweb_resource_request_map;
+static std::shared_mutex g_nweb_resource_request_map_shared_lock;
+ 
+static std::atomic<int> nweb_resource_response_new_key = 0;
+static std::unordered_map<int, std::shared_ptr<NWebResourceResponse>>
+    g_nweb_resource_response_map;
+static std::shared_mutex g_nweb_resource_response_map_shared_lock;
+ 
+ 
+// static
+int NWebHandlerDelegate::InsertResourceRequest(
+    std::shared_ptr<NWebResourceRequest> nweb_request) {
+  std::unique_lock<std::shared_mutex> lock(g_nweb_resource_request_map_shared_lock);
+  g_nweb_resource_request_map[++nweb_resource_request_new_key] = nweb_request;
+  return nweb_resource_request_new_key;
+}
+ 
+// static
+std::shared_ptr<NWebResourceRequest>
+NWebHandlerDelegate::GetResourceRequestByKey(int key) {
+  std::shared_lock<std::shared_mutex> lock(g_nweb_resource_request_map_shared_lock);
+  if (auto it = g_nweb_resource_request_map.find(key); it != g_nweb_resource_request_map.end()) {
+    return it->second;
+  }
+  return nullptr;
+}
+ 
+// static
+int NWebHandlerDelegate::InsertResourceResponse(
+    std::shared_ptr<NWebResourceResponse> nweb_response) {
+  std::unique_lock<std::shared_mutex> lock(g_nweb_resource_response_map_shared_lock);
+  g_nweb_resource_response_map[++nweb_resource_response_new_key] = nweb_response;
+  return nweb_resource_response_new_key;
+}
+ 
+// static
+std::shared_ptr<NWebResourceResponse>
+NWebHandlerDelegate::GetResourceResponseByKey(int key) {
+  std::shared_lock<std::shared_mutex> lock(g_nweb_resource_response_map_shared_lock);
+  if (auto it = g_nweb_resource_response_map.find(key); it != g_nweb_resource_response_map.end()) {
+    return it->second;
+  }
+  return nullptr;
+}
+ 
+void NWebHandlerDelegate::ResourceRequestDelete(int nweb_request_key) {
+  LOG(DEBUG) << "delete request by key is " << nweb_request_key;
+  std::unique_lock<std::shared_mutex> lock(g_nweb_resource_request_map_shared_lock);
+  if (g_nweb_resource_request_map.find(nweb_request_key) != g_nweb_resource_request_map.end()) {
+    g_nweb_resource_request_map.erase(nweb_request_key);
+  }
+}
+ 
+void NWebHandlerDelegate::ResourceResponseDelete(int nweb_response_key) {
+  LOG(DEBUG) << "delete request by key is " << nweb_response_key;
+  std::unique_lock<std::shared_mutex> lock(g_nweb_resource_response_map_shared_lock);
+  if (g_nweb_resource_response_map.find(nweb_response_key) != g_nweb_resource_response_map.end()) {
+    g_nweb_resource_response_map.erase(nweb_response_key);
+  }
+}
+ 
+std::map<std::string, std::string> NWebHandlerDelegate::ResourceRequestGetRequestHeader(
+  int32_t nweb_request_key) {
+  LOG(INFO) << "NWebHandlerDelegate::ResourceRequestGetRequestHeaders";
+  std::shared_ptr<NWebResourceRequest> nweb_request =
+      GetResourceRequestByKey(nweb_request_key);
+  if (!nweb_request) {
+    LOG(ERROR) << "failed to ResourceRequestGetRequestHeaders, nweb_request is null";
+    return {};
+  }
+  return nweb_request->GetRequestHeader();
+}
+ 
+std::string NWebHandlerDelegate::ResourceRequestGetRequestUrl(
+    int nweb_request_key) {
+  LOG(INFO) << "NWebHandlerDelegate::ResourceRequestGetRequestUrl";
+  std::shared_ptr<NWebResourceRequest> nweb_request =
+      GetResourceRequestByKey(nweb_request_key);
+  if (!nweb_request) {
+    LOG(ERROR) << "failed to ResourceRequestGetRequestUrl, nweb_request is null";
+    return std::string();
+  }
+  return nweb_request->GetRequestUrl();
+}
+ 
+bool NWebHandlerDelegate::ResourceRequestIsRequestGesture(
+    int nweb_request_key) {
+  LOG(INFO) << "NWebHandlerDelegate::ResourceRequestIsRequestGesture";
+  std::shared_ptr<NWebResourceRequest> nweb_request =
+      GetResourceRequestByKey(nweb_request_key);
+  if (!nweb_request) {
+    LOG(ERROR) << "failed to ResourceRequestIsRequestGesture, nweb_request is null";
+    return false;
+  }
+  return nweb_request->IsRequestGesture();
+}
+ 
+bool NWebHandlerDelegate::ResourceRequestIsMainFrame(
+    int nweb_request_key) {
+  LOG(INFO) << "NWebHandlerDelegate::ResourceRequestIsMainFrame";
+  std::shared_ptr<NWebResourceRequest> nweb_request =
+      GetResourceRequestByKey(nweb_request_key);
+  if (!nweb_request) {
+    LOG(ERROR) << "failed to ResourceRequestIsMainFrame, nweb_request is null";
+    return false;
+  }
+  return nweb_request->IsMainFrame();
+}
+ 
+bool NWebHandlerDelegate::ResourceRequestIsRedirect(
+    int nweb_request_key) {
+  LOG(INFO) << "NWebHandlerDelegate::ResourceRequestIsRedirect";
+  std::shared_ptr<NWebResourceRequest> nweb_request =
+      GetResourceRequestByKey(nweb_request_key);
+  if (!nweb_request) {
+    LOG(ERROR) << "failed to ResourceRequestIsRedirect, nweb_request is null";
+    return false;
+  }
+  return nweb_request->IsRedirect();
+}
+ 
+std::string NWebHandlerDelegate::ResourceRequestGetRequestMethod(
+    int nweb_request_key) {
+  LOG(INFO) << "NWebHandlerDelegate::ResourceRequestGetRequestMethod";
+  std::shared_ptr<NWebResourceRequest> nweb_request =
+      GetResourceRequestByKey(nweb_request_key);
+  if (!nweb_request) {
+    LOG(ERROR) << "failed to ResourceRequestGetRequestMethod, nweb_request is null";
+    return std::string();
+  }
+  return nweb_request->GetRequestMethod();
+}
+ 
+int32_t NWebHandlerDelegate::ResourceRequestGetPageTransition(
+    int nweb_request_key) {
+  LOG(INFO) << "NWebHandlerDelegate::ResourceRequestGetPageTransition";
+  std::shared_ptr<NWebResourceRequest> nweb_request =
+      GetResourceRequestByKey(nweb_request_key);
+  if (!nweb_request) {
+    LOG(ERROR) << "failed to ResourceRequestGetPageTransition, nweb_request is null";
+    return -1;
+  }
+  return nweb_request->GetPageTransition();
+}
+ 
+int32_t NWebHandlerDelegate::ResourceRequestGetRequestType(
+    int nweb_request_key) {
+  LOG(INFO) << "NWebHandlerDelegate::ResourceRequestGetRequestType";
+  std::shared_ptr<NWebResourceRequest> nweb_request =
+      GetResourceRequestByKey(nweb_request_key);
+  if (!nweb_request) {
+    LOG(ERROR) << "failed to ResourceRequestGetRequestType, nweb_request is null";
+    return -1;
+  }
+  return nweb_request->GetRequestType();
+}
+ 
+std::string NWebHandlerDelegate::ResourceResponseGetMimeType(
+    int nweb_response_key) {
+  LOG(INFO) << "NWebHandlerDelegate::ResourceResponseGetMimeType";
+  std::shared_ptr<NWebResourceResponse> nweb_response =
+      GetResourceResponseByKey(nweb_response_key);
+  if (!nweb_response) {
+    LOG(ERROR) << "failed to ResourceResponseGetMimeType, nweb_response is null";
+    return std::string();
+  }
+  return nweb_response->GetMimeType();
+}
+ 
+std::string NWebHandlerDelegate::ResourceResponseGetEncoding(int nweb_response_key) {
+  LOG(INFO) << "NWebHandlerDelegate::ResourceResponseGetEncoding";
+  std::shared_ptr<NWebResourceResponse> nweb_response =
+      GetResourceResponseByKey(nweb_response_key);
+  if (!nweb_response) {
+    LOG(ERROR) << "failed to ResourceResponseGetMimeType, nweb_response is null";
+    return std::string();
+  }
+  return nweb_response->GetEncoding();
+}
+ 
+int32_t NWebHandlerDelegate::ResourceResponseGetStatusCode(int nweb_response_key) {
+  LOG(INFO) << "NWebHandlerDelegate::ResourceResponseGetStatusCode";
+  std::shared_ptr<NWebResourceResponse> nweb_response =
+      GetResourceResponseByKey(nweb_response_key);
+  if (!nweb_response) {
+    LOG(ERROR) << "failed to ResourceResponseGetStatusCode, nweb_response is null";
+    return -1;
+  }
+  return nweb_response->GetStatusCode();
+}
+ 
+std::string NWebHandlerDelegate::ResourceResponseGetReasonPhrase(int nweb_response_key) {
+  LOG(INFO) << "NWebHandlerDelegate::ResourceResponseGetReasonPhrase";
+  std::shared_ptr<NWebResourceResponse> nweb_response =
+      GetResourceResponseByKey(nweb_response_key);
+  if (!nweb_response) {
+    LOG(ERROR) << "failed to ResourceResponseGetReasonPhrase, nweb_request is null";
+    return std::string();
+  }
+  return nweb_response->GetReasonPhrase();
+}
+ 
+std::map<std::string, std::string> NWebHandlerDelegate::ResourceResponseGetResponseHeader(
+  int32_t nweb_response_key) {
+  LOG(INFO) << "NWebHandlerDelegate::ResourceResponseGetResponseHeaders";
+  std::shared_ptr<NWebResourceResponse> nweb_response =
+      GetResourceResponseByKey(nweb_response_key);
+  if (!nweb_response) {
+    LOG(ERROR) << "failed to ResourceResponseGetResponseHeaders, nweb_request is null";
+    return {};
+  }
+  return nweb_response->GetResponseHeader();
+}
+ 
+bool NWebHandlerDelegate::ResourceResponseGetIsFromNetwork(int nweb_response_key) {
+  LOG(INFO) << "NWebHandlerDelegate::ResourceResponseGetIsFromNetwork";
+  std::shared_ptr<NWebResourceResponse> nweb_response =
+      GetResourceResponseByKey(nweb_response_key);
+  if (!nweb_response) {
+    LOG(ERROR) << "failed to ResourceResponseGetIsFromNetwork, nweb_response is null";
+    return false;
+  }
+  return nweb_response->GetIsFromNetwork();
+}
+ 
+int32_t NWebHandlerDelegate::GetLastCommittedEntryPageTransition() {
+  if (GetBrowser() && GetBrowser()->GetHost()) {
+    return GetBrowser()->GetHost()->GetLastCommittedEntryPageTransition();
+  }
+  return -1;
+}
+ 
+void NWebHandlerDelegate::OnReceiveResponse(CefRefPtr<CefRequest> request,
+                                              bool is_request_gesture,
+                                              int transition_type,
+                                              bool is_main_frame,
+                                              bool is_redirect,
+                                              int resource_type,
+                                              CefRefPtr<CefResponse> response_info,
+                                              bool is_from_network) {
+ 
+  if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
+    content::GetUIThreadTaskRunner({})->PostTask(
+        FROM_HERE, base::BindOnce(&NWebHandlerDelegate::OnReceiveResponse,
+                                  weak_factory_.GetWeakPtr(), request, is_request_gesture, transition_type, 
+                                  is_main_frame, is_redirect,
+                                  resource_type, response_info, is_from_network));
+    return;
+  }
+  
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  if (IsNativeApiEnable() && dispatcher_.HasOnReceiveResponseV2()) {
+    CefRequest::HeaderMap cef_request_headers;
+    request->GetHeaderMap(cef_request_headers);
+    std::map<std::string, std::string> request_headers;
+    ConvertMapToHeaderMap(cef_request_headers, request_headers);
+ 
+    WebUrlResourceRequest resource_request = {
+        is_request_gesture, is_main_frame, is_redirect, 
+        resource_type, transition_type, 
+        request->GetURL().ToString(), 
+        request->GetMethod().ToString(), request_headers};
+ 
+    CefResponse::HeaderMap cef_response_headers;
+    response_info->GetHeaderMap(cef_response_headers);
+    std::map<std::string, std::string> response_headers;
+    ConvertMapToHeaderMap(cef_response_headers, response_headers);
+ 
+    WebUrlResourceResponse resource_response = {
+        is_from_network, response_info->GetStatus(), response_info->GetMimeType(),
+        response_info->GetCharset(), response_info->GetStatusText(), response_headers};
+ 
+    return dispatcher_.OnReceiveResponseByPb(resource_request, resource_response);
+  }
+#endif
+
+  CefRequest::HeaderMap cef_request_headers;
+  request->GetHeaderMap(cef_request_headers);
+  std::map<std::string, std::string> request_headers;
+  ConvertMapToHeaderMap(cef_request_headers, request_headers);
+  std::shared_ptr<NWebUrlResourceRequestImpl> web_request =
+      std::make_shared<NWebUrlResourceRequestImpl>(
+          request->GetMethod().ToString(), request_headers,
+          request->GetURL().ToString(), is_request_gesture, is_main_frame);
+  web_request->SetRequestType(resource_type);
+  web_request->SetPageTransition(transition_type);
+  std::shared_ptr<NWebResourceRequest> nweb_request =
+        std::make_shared<NWebResourceRequest>(GetNWebId(), web_request);
+ 
+  std::string data;
+  CefResponse::HeaderMap cef_response_headers;
+  response_info->GetHeaderMap(cef_response_headers);
+  std::map<std::string, std::string> response_headers;
+  ConvertMapToHeaderMap(cef_response_headers, response_headers);
+  std::shared_ptr<NWebUrlResourceResponseImpl> web_response =
+      std::make_shared<NWebUrlResourceResponseImpl>(
+          response_info->GetMimeType(), response_info->GetCharset(),
+          response_info->GetStatus(), response_info->GetStatusText(), response_headers,
+          data);
+  web_response->PutResponseIsFromNetwork(is_from_network);
+  std::shared_ptr<NWebResourceResponse> nweb_response =
+      std::make_shared<NWebResourceResponse>(GetNWebId(), web_response);
+  int nweb_request_key = InsertResourceRequest(nweb_request);
+  int nweb_response_key = InsertResourceResponse(nweb_response);
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  if (IsNativeApiEnable()) {
+    dispatcher_.OnReceiveResponse(nweb_request_key, nweb_response_key);
+    return;
+  }
+  ResourceRequestDelete(nweb_request_key);
+  ResourceResponseDelete(nweb_response_key);
+#endif
+}
+#endif
 }  // namespace OHOS::NWeb

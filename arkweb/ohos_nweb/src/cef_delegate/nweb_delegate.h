@@ -942,6 +942,27 @@ void AbortDistill() override;
   void EnableHttpsUpgrades(bool enable) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+  std::map<std::string, std::string> ResourceRequestGetRequestHeader(int nweb_request_key) override;
+  std::string ResourceRequestGetRequestUrl(int nweb_request_key) override;
+  bool ResourceRequestIsRequestGesture(int nweb_request_key) override;
+  bool ResourceRequestIsMainFrame(int nweb_request_key) override;
+  bool ResourceRequestIsRedirect(int nweb_request_key) override;
+  std::string ResourceRequestGetRequestMethod(int nweb_request_key) override;
+  int32_t ResourceRequestGetPageTransition(int nweb_request_key) override;
+  int32_t ResourceRequestGetRequestType(int nweb_request_key) override;
+  void ResourceRequestDelete(int nweb_request_key) override;
+ 
+  std::string ResourceResponseGetMimeType(int nweb_response_key) override;
+  std::string ResourceResponseGetEncoding(int nweb_response_key) override;
+  int32_t ResourceResponseGetStatusCode(int nweb_response_key) override;
+  std::string ResourceResponseGetReasonPhrase(int nweb_response_key) override;
+  std::map<std::string, std::string> ResourceResponseGetResponseHeader(int nweb_response_key) override;
+  bool ResourceResponseGetIsFromNetwork(int nweb_response_key) override;
+  void ResourceResponseDelete(int nweb_response_key) override;
+  int32_t GetLastCommittedEntryPageTransition() override;
+#endif
+
 #if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
 void SetFocusWebId(int32_t nweb_id) override;
 #endif

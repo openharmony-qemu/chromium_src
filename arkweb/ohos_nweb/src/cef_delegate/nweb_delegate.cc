@@ -6481,6 +6481,167 @@ void NWebDelegate::EnableHttpsUpgrades(bool enable) {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+std::map<std::string, std::string> NWebDelegate::ResourceRequestGetRequestHeader(int nweb_request_key) {
+  if (!handler_delegate_) {
+    LOG(ERROR)
+        << "failed to ResourceRequestGetRequestHeader, handler delegate is null";
+    return {};
+  }
+  return handler_delegate_->ResourceRequestGetRequestHeader(nweb_request_key);
+}
+ 
+std::string NWebDelegate::ResourceRequestGetRequestUrl(int nweb_request_key) {
+  if (!handler_delegate_) {
+    LOG(ERROR)
+        << "failed to ResourceRequestGetRequestUrl, handler delegate is null";
+    return std::string();
+  }
+  return handler_delegate_->ResourceRequestGetRequestUrl(nweb_request_key);
+}
+ 
+bool NWebDelegate::ResourceRequestIsRequestGesture(int nweb_request_key) {
+  if (!handler_delegate_) {
+    LOG(ERROR)
+        << "failed to ResourceRequestIsRequestGesture, handler delegate is null";
+    return false;
+  }
+  return handler_delegate_->ResourceRequestIsRequestGesture(nweb_request_key);
+}
+ 
+bool NWebDelegate::ResourceRequestIsMainFrame(int nweb_request_key) {
+  if (!handler_delegate_) {
+    LOG(ERROR)
+        << "failed to ResourceRequestIsMainFrame, handler delegate is null";
+    return false;
+  }
+  return handler_delegate_->ResourceRequestIsMainFrame(nweb_request_key);  
+}
+ 
+bool NWebDelegate::ResourceRequestIsRedirect(int nweb_request_key) {
+  if (!handler_delegate_) {
+    LOG(ERROR)
+        << "failed to ResourceRequestIsRedirect, handler delegate is null";
+    return false;
+  }
+  return handler_delegate_->ResourceRequestIsRedirect(nweb_request_key);
+}
+ 
+std::string NWebDelegate::ResourceRequestGetRequestMethod(int nweb_request_key) {
+  if (!handler_delegate_) {
+    LOG(ERROR)
+        << "failed to ResourceRequestGetRequestMethod, handler delegate is null";
+    return std::string();
+  }
+  return handler_delegate_->ResourceRequestGetRequestMethod(nweb_request_key);
+}
+ 
+int32_t NWebDelegate::ResourceRequestGetPageTransition(int nweb_request_key) {
+  if (!handler_delegate_) {
+    LOG(ERROR)
+        << "failed to ResourceRequestGetPageTransition, handler delegate is null";
+    return -1;
+  }
+  return handler_delegate_->ResourceRequestGetPageTransition(nweb_request_key);
+}
+ 
+int32_t NWebDelegate::ResourceRequestGetRequestType(int nweb_request_key) {
+  if (!handler_delegate_) {
+    LOG(ERROR)
+        << "failed to ResourceRequestGetRequestType, handler delegate is null";
+    return -1;
+  }
+  return handler_delegate_->ResourceRequestGetRequestType(nweb_request_key);
+}
+ 
+ 
+std::string NWebDelegate::ResourceResponseGetMimeType(int nweb_response_key) {
+  if (!handler_delegate_) {
+    LOG(ERROR)
+        << "failed to ResourceResponseGetMimeType, handler delegate is null";
+    return std::string();
+  }
+  return handler_delegate_->ResourceResponseGetMimeType(nweb_response_key);
+}
+ 
+std::string NWebDelegate::ResourceResponseGetEncoding(int nweb_response_key) {
+  if (!handler_delegate_) {
+    LOG(ERROR)
+        << "failed to ResourceResponseGetEncoding, handler delegate is null";
+    return std::string();
+  }
+  return handler_delegate_->ResourceResponseGetEncoding(nweb_response_key);
+}
+ 
+int32_t NWebDelegate::ResourceResponseGetStatusCode(int nweb_response_key) {
+  if (!handler_delegate_) {
+    LOG(ERROR)
+        << "failed to ResourceResponseGetStatusCode, handler delegate is null";
+    return -1;
+  }
+  return handler_delegate_->ResourceResponseGetStatusCode(nweb_response_key);
+}
+ 
+std::string NWebDelegate::ResourceResponseGetReasonPhrase(int nweb_response_key) {
+  if (!handler_delegate_) {
+    LOG(ERROR)
+        << "failed to ResourceResponseGetReasonPhrase, handler delegate is null";
+    return std::string();
+  }
+  return handler_delegate_->ResourceResponseGetReasonPhrase(nweb_response_key);
+}
+ 
+std::map<std::string, std::string> NWebDelegate::ResourceResponseGetResponseHeader(int nweb_request_key) {
+  if (!handler_delegate_) {
+    LOG(ERROR)
+        << "failed to ResourceResponseGetResponseHeader, handler delegate is null";
+    return {};
+  }
+  return handler_delegate_->ResourceResponseGetResponseHeader(nweb_request_key);
+}
+ 
+bool NWebDelegate::ResourceResponseGetIsFromNetwork(int nweb_response_key) {
+  if (!handler_delegate_) {
+    LOG(ERROR)
+        << "failed to ResourceResponseGetIsFromNetwork, handler delegate is null";
+    return false;
+  }
+  return handler_delegate_->ResourceResponseGetIsFromNetwork(nweb_response_key);
+}
+ 
+void NWebDelegate::ResourceRequestDelete(int nweb_request_key) {
+  if (!handler_delegate_) {
+    LOG(ERROR)
+        << "failed to ResourceRequestDelete, handler delegate is null";
+    return;
+  }
+  return handler_delegate_->ResourceRequestDelete(nweb_request_key);
+}
+ 
+void NWebDelegate::ResourceResponseDelete(int nweb_response_key) {
+  if (!handler_delegate_) {
+    LOG(ERROR)
+        << "failed to ResourceResponseDelete, handler delegate is null";
+    return;
+  }
+  return handler_delegate_->ResourceResponseDelete(nweb_response_key);
+}
+ 
+int32_t NWebDelegate::GetLastCommittedEntryPageTransition() {
+  if (!handler_delegate_) {
+    LOG(ERROR)
+        << "failed to GetLastCommittedEntryPageTransition, handler delegate is null";
+    return -1;
+  }
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "GetLastCommittedEntryPageTransition can not get browser";
+    return -1;
+  }
+  LOG(INFO) << "NWebDelegate::GetLastCommittedEntryPageTransition";
+  return GetBrowser()->GetHost()->GetLastCommittedEntryPageTransition();
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
 void NWebDelegate::SetBlankScreenDetectionConfig(
     bool enable,

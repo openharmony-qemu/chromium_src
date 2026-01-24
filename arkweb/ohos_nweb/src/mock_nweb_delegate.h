@@ -1300,6 +1300,28 @@ class MockNWebDelegate : public NWebDelegateInterface {
   MOCK_METHOD(void, EnableHttpsUpgrades, (bool enable), (override));                               
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+  MOCK_METHOD((std::map<std::string, std::string>), ResourceRequestGetRequestHeader, 
+              (int nweb_request_key), (override));
+  MOCK_METHOD(std::string, ResourceRequestGetRequestUrl, (int nweb_request_key), (override));
+  MOCK_METHOD(bool, ResourceRequestIsRequestGesture, (int nweb_request_key), (override));
+  MOCK_METHOD(bool, ResourceRequestIsMainFrame, (int nweb_request_key), (override));
+  MOCK_METHOD(bool, ResourceRequestIsRedirect, (int nweb_request_key), (override));
+  MOCK_METHOD(std::string, ResourceRequestGetRequestMethod, (int nweb_request_key), (override));
+  MOCK_METHOD(int32_t, ResourceRequestGetPageTransition, (int nweb_request_key), (override));
+  MOCK_METHOD(int32_t, ResourceRequestGetRequestType, (int nweb_request_key), (override));
+  MOCK_METHOD(void, ResourceRequestDelete, (int nweb_request_key), (override));
+  MOCK_METHOD(std::string, ResourceResponseGetMimeType, (int nweb_response_key), (override));
+  MOCK_METHOD(std::string, ResourceResponseGetEncoding, (int nweb_response_key), (override));
+  MOCK_METHOD(int32_t, ResourceResponseGetStatusCode, (int nweb_response_key), (override));
+  MOCK_METHOD(std::string, ResourceResponseGetReasonPhrase, (int nweb_response_key), (override));
+  MOCK_METHOD((std::map<std::string, std::string>), ResourceResponseGetResponseHeader,
+             (int nweb_response_key), (override));
+  MOCK_METHOD(bool, ResourceResponseGetIsFromNetwork, (int nweb_response_key), (override));
+  MOCK_METHOD(void, ResourceResponseDelete, (int nweb_response_key), (override));
+  MOCK_METHOD(int32_t, GetLastCommittedEntryPageTransition, (), (override));
+#endif
+
 #if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
   MOCK_METHOD(void, SetFocusWebId, (int32_t nweb_id), (override));
 #endif

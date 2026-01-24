@@ -820,6 +820,11 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
                          int32_t transition_type) override {}
   void EnableHttpsUpgrades(bool enable) override {}
 #endif
+
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+  int32_t GetLastCommittedEntryPageTransition() override { return 0; }
+#endif
+
 #if BUILDFLAG(ARKWEB_UNITTESTS)
   void SetImeShow(bool visible) override {}
 #endif // ARKWEB_UNITTESTS

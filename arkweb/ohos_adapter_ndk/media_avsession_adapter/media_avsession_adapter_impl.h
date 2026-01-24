@@ -151,6 +151,7 @@ private:
         AVSession_ConnectionState state, AVSession_OutputDeviceInfo *outputDeviceInfo);
     static void AVCastStateConnect(OH_AVSession *session, AVSession_OutputDeviceInfo *outputDeviceInfo);
     static void AVCastStateDisconnect(OH_AVSession *session);
+    static void AVCastStateDisconnectDefault(OH_AVSession *session);
 
     AVMetadata_Result UpdateAVMetadata();
     bool UpdateMetaData(const std::shared_ptr<MediaAVSessionMetadataAdapter> metadata);

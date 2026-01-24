@@ -753,7 +753,8 @@ AVSessionCallback_Result MediaAVSessionAdapterImpl::OutputDeviceChangeCallback(O
             return AVSESSION_CALLBACK_RESULT_SUCCESS;
         }
         default:
-            WVLOG_E("MediaAVSessionAdapterImpl::OutputDeviceChange: %{public}d", state);
+            WVLOG_E("MediaAVSessionAdapterImpl::OutputDeviceChange, STATE_DEFAULT: %{public}d", state);
+            AVCastStateDisconnectDefault(session);
             return AVSESSION_CALLBACK_RESULT_FAILURE;
     }
 }
@@ -763,14 +764,18 @@ void MediaAVSessionAdapterImpl::AVCastStateConnect(OH_AVSession *session,
     WVLOG_I("MediaAVSessionAdapterImpl::AVCastStateConnect, enter");
     auto it = avSessionMapOther_.find(session);
     if (it != avSessionMapOther_.end()) {
-        WVLOG_I("MediaAVSessionAdapterImpl::OutputDeviceChange");
+        WVLOG_I("MediaAVSessionAdapterImpl::AVCastStateConnect");
         MediaAVSessionAdapterImpl* adapter = it->second;
+        if (!adapter) {
+            WVLOG_E("AVCastStateConnect adapter is nullptr");
+            return;
+        }
         adapter->UpdateAVCastDevice(outputDeviceInfo);
         std::string LOCAL_DEVICE = "LocalDevice";
         if (adapter->GetAVCastDevice() != LOCAL_DEVICE) {
-            WVLOG_I("MediaAVSessionAdapterImpl::OutputDeviceChange, not LocalDevice");
+            WVLOG_I("AVCastStateConnect, not LocalDevice");
             if (!adapter->PrepareAndStartCast()) {
-                WVLOG_E("MediaAVSessionAdapterImpl::OutputDeviceChange, PrepareAndStartCast failed");
+                WVLOG_E("AVCastStateConnect, PrepareAndStartCast failed");
                 return;
             }            
             adapter->PullUpCastBackGround();
@@ -786,10 +791,13 @@ void MediaAVSessionAdapterImpl::AVCastStateDisconnect(OH_AVSession *session) {
     if (it != avSessionMapOther_.end()) {
         WVLOG_I("MediaAVSessionAdapterImpl::AVCastStateDisconnect");
         MediaAVSessionAdapterImpl* adapter = it->second;
+        if (!adapter) {
+            WVLOG_E("AVCastStateDisconnect adapter is nullptr");
+            return;
+        }
         adapter->MediaCastStopped();
-        adapter->SetAvCast(false);
         adapter->UnregisterCallback();
-        if (!adapter->is_error_) {
+        if (!adapter->is_error_ || adapter->is_avcast_) {
             WVLOG_I("AVCastStateDisconnect SeekNative: %{public}d", adapter->GetPlaybackPosition());
             adapter->SeekNative(adapter->GetPlaybackPosition());
             adapter->is_error_ = false;
@@ -801,6 +809,21 @@ void MediaAVSessionAdapterImpl::AVCastStateDisconnect(OH_AVSession *session) {
             WVLOG_I("MediaAVSessionAdapterImpl::AVCastStateDisconnect PauseNative");
             adapter->PauseNative();
         }
+        adapter->SetAvCast(false);
+    }
+}
+
+void MediaAVSessionAdapterImpl::AVCastStateDisconnectDefault(OH_AVSession *session) {
+    auto it = avSessionMapOther_.find(session);
+    if (it != avSessionMapOther_.end()) {
+        WVLOG_I("MediaAVSessionAdapterImpl::AVCastStateDisconnectDefault");
+        MediaAVSessionAdapterImpl* adapter = it->second;
+        if (!adapter) {
+            WVLOG_E("AVCastStateDisconnectDefault adapter is nullptr");
+            return;
+        }
+        adapter->is_error_ = false;
+        adapter->SetAvCast(false);
     }
 }
 

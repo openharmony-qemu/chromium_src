@@ -111,8 +111,9 @@ bool MediaAVSessionAdapterImplFuzzTest(FuzzedDataProvider* fdp)
         type = MediaAVSessionType::MEDIA_TYPE_VIDEO;
         avSessionAdapter->CreateAVSession(type);
 
+    } else {
+        return flase;
     }
-
 
     key->Init();
     key->GetPID();

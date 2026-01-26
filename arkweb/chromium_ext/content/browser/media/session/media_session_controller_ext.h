@@ -59,6 +59,7 @@ public:
   void UpdateUiPlayState(int player_id, bool is_playing) override;
   void UpdateUiPlayPosition(int player_id, int64_t position) override;
   void MediaCastStopped(int player_id) override;
+  void NotifyCastControlShow(int player_id, bool is_show) override;
 #endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
 };
 

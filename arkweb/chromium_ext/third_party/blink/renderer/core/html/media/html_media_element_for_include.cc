@@ -782,6 +782,17 @@ void HTMLMediaElement::GetMediaCastCurrentTime(GetMediaCastCurrentTimeCallback c
   LOG(INFO) << "HTMLMediaElement::GetMediaCastCurrentTime: " << currentTime();
   std::move(callback).Run(currentTime());
 }
+
+void HTMLMediaElement::NotifyCastControlShow(bool is_show) {
+  LOG(INFO) << "HTMLMediaElement::NotifyCastControlShow, is_show: " << is_show;
+  cast_botton_show_ = is_show;
+#if !defined(COMPONENT_BUILD)
+  if (GetMediaControls()) {
+    LOG(INFO) << "HTMLMediaElement::NotifyCastControlShow go on";
+    GetMediaControls()->NotifyCastControlShow();
+  }
+#endif // COMPONENT_BUILD
+}
 #endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
 
 }  // namespace blink

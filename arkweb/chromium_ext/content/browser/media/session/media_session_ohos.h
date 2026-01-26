@@ -77,6 +77,7 @@ class MediaSessionOHOS final
   void UpdateUiPlayPosition(int64_t position);
   void UpdateRemotePlayState(bool is_playing);
   void UpdateRemotePlayPosition(int64_t position);
+  void NotifyCastControlShow(bool is_show);
 
  private:
   void CheckMediaInfo();
@@ -124,6 +125,7 @@ class OHOSMediaAVSessionCallback
   void SetAvCast(bool is_avcast) override;
   void UpdateUiPlayState(bool is_playing) override;
   void UpdateUiPlayPosition(int64_t position) override;
+  void NotifyCastControlShow(bool is_show) override;
 
  private:
   scoped_refptr<base::SingleThreadTaskRunner> task_runner_;

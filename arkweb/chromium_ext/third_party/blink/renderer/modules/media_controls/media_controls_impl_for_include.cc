@@ -30,4 +30,10 @@ bool MediaControlsImpl::DownloadButtonIsWanted() const {
   return false;
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST) && !defined(COMPONENT_BUILD)
+void MediaControlsImpl::NotifyCastControlShow() {
+  RefreshCastButtonVisibility();
+}
+#endif // ARKWEB_MEDIA_CAST
 }  // namespace blink

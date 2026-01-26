@@ -729,6 +729,7 @@ source_set("unittests") {
     "src/nweb_adsblock_manager_impl_unittest.cc",
     "src/nweb_cookie_manager_impl_unittest.cc",
     "src/nweb_download_manager_impl_unittest.cc",
+    "src/nweb_fallback_proxy_unittest.cc",
     "src/nweb_permission_status_query_manager_unittest.cc",
     "src/nweb_impl_unittest.cc",
     "src/nweb_input_handler_unittest.cc",

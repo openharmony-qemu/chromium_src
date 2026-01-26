@@ -807,7 +807,6 @@ arkweb_base_unittest_sources = [
   "//arkweb/chromium_ext/base/files/file_util_posix_unittest.cc",
   "//arkweb/chromium_ext/base/files/memory_mapped_file_ext_unittest.cc",
   "//arkweb/chromium_ext/base/files/file_path_sta_ext_unittest.cc",
-  "//arkweb/chromium_ext/chrome/app/chrome_main_delegate_for_include_unittest.cc",
   "//arkweb/chromium_ext/components/download/internal/common/arkweb_download_item_impl_ext_unittest.cc",
   "//arkweb/chromium_ext/components/policy/core/common/policy_loader_ohos_unittest.cc",
   "//arkweb/chromium_ext/components/subresource_filter/content/browser/ohos_adblock_config_unittest.cc",

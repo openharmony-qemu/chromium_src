@@ -960,57 +960,8 @@ void InitialWebEngineArgs(
   }
 
   auto args_to_add = GetArgsToAdd(init_args);
-
-  bool isSeparation = false;
   for (auto arg : args_to_add) {
-    if (arg.find(switches::kUserDataDirSeparation) != std::string::npos) {
- 	    isSeparation = true;
-    }
-  }
-
-  if (!isSeparation) {
-    args_to_add.push_back("--user-data-dir=cache/web");
-  } else {
-    args_to_add.push_back("--user-data-dir=");
-  }
-
-  args_to_add.push_back("--arkweb-app-data-dir=/data/storage/el2/base");
-
-  base::FilePath user_data_dir = base::FilePath();
-  base::FilePath app_data_dir = base::FilePath("/data/storage/el2/base");
-  for (auto arg : args_to_add) {
-    if (arg.find("--user-data-dir") != std::string::npos) {
-      size_t eq_pos = arg.find("=");
-      if (eq_pos != std::string::npos) {
-        std::string path_str = arg.substr(eq_pos + 1);
-        user_data_dir = base::FilePath(path_str);
-      }
-    }
-    if (arg.find("--arkweb-app-data-dir") != std::string::npos) {
-      size_t eq_pos = arg.find("=");
-      if (eq_pos != std::string::npos) {
-        std::string path_str = arg.substr(eq_pos + 1);
-        app_data_dir = base::FilePath(path_str);
-      }
-    }
     web_engine_args.emplace_back(arg);
-  }
-
-  base::FilePath cache_web_dir = base::FilePath("/data/storage/el2/base/cache/web");
-  if (base::PathExists(cache_web_dir)) {
-    web_engine_args.emplace_back("--ohos-cache-dir-exists");
-  }
-
-  base::FilePath absolute_user_data_dir = user_data_dir;
-  if (!app_data_dir.IsParent(user_data_dir) &&
-      app_data_dir != user_data_dir) {
-    absolute_user_data_dir = user_data_dir.empty() ?
-                    app_data_dir.Append("files/__arkweb") :
-                    app_data_dir.Append(user_data_dir);
-  }
-
-  if (base::PathExists(absolute_user_data_dir)) {
-    web_engine_args.emplace_back("--ohos-user-data-dir-exists");
   }
 
 #if BUILDFLAG(ARKWEB_GWP_ASAN)

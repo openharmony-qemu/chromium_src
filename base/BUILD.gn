@@ -3802,7 +3802,6 @@ test("base_unittests") {
   # TODO(42223878): Remove standalone WebRTC dependency on //base.
   if (arkweb_unittests) {
    deps += ["//storage/browser"]
-   deps += ["//chrome/common"]
    deps += ["//components/web_cache/browser"]
    deps += ["//components/storage_monitor"]
    deps += ["//components/performance_manager"]

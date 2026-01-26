@@ -13,40 +13,27 @@
 * limitations under the License.
 */
 
-static bool SetUserDataDirForArkweb(base::CommandLine* command_line) {
-  bool cache_web_exists = base::CommandLine::ForCurrentProcess()->HasSwitch(
-          switches::kCacheDirExists);
-  bool arkweb_exists = base::CommandLine::ForCurrentProcess()->HasSwitch(
-          switches::kUserDataDirExists);
-  base::FilePath arkweb_app_base_dir = command_line->GetSwitchValuePath(switches::kArkwebAppDataDir);
-  base::FilePath user_data_dir = command_line->GetSwitchValuePath(switches::kUserDataDir);
-  if (arkweb_app_base_dir.empty()) {
-    LOG(ERROR) << " arkweb_app_data_dir is empty. ";
-    return true;
+static bool SetUserDataDirForArkweb(const base::FilePath& user_data_dir) {
+  static const std::string web_data_tag("cache/web");	 
+ 
+  base::FilePath cache_web_data_dir;	 
+  if (!user_data_dir.empty() &&	 
+      user_data_dir.MaybeAsASCII().find(web_data_tag) == std::string::npos) {	 
+    cache_web_data_dir = user_data_dir.Append(web_data_tag);
   }
 
-  base::FilePath arkweb_user_data_dir = user_data_dir;
-  if (!arkweb_app_base_dir.IsParent(user_data_dir) &&
-      arkweb_app_base_dir != user_data_dir) {
-    arkweb_user_data_dir = user_data_dir.empty() ?
-                    arkweb_app_base_dir.Append("files/__arkweb") :
-                    arkweb_app_base_dir.Append(user_data_dir);
-  }
-
-  base::FilePath target_user_data_dir;
-  if (cache_web_exists && !arkweb_exists) {
-    // mix
-    target_user_data_dir = base::FilePath("/data/storage/el2/base/cache/web");
-  } else {
-    // separation
-    target_user_data_dir = arkweb_user_data_dir;
-  }
-
-  command_line->AppendSwitchPath(switches::kUserDataDir, target_user_data_dir);
-
-  base::PathService::OverrideAndCreateIfNeeded(
-    base::DIR_USER_DATA, target_user_data_dir, false, true);
-
-  return !base::PathService::OverrideAndCreateIfNeeded(
-            chrome::DIR_USER_DATA, target_user_data_dir, false, true);
+  const bool cache_web_directory_valid =	 
+      !cache_web_data_dir.empty() &&	 
+      base::PathService::OverrideAndCreateIfNeeded(	 
+          chrome::DIR_USER_DATA, cache_web_data_dir, false, true);	 
+ 
+  bool specified_directory_was_invalid = false;	 
+  if (!cache_web_directory_valid) { 
+    specified_directory_was_invalid = 
+        !user_data_dir.empty() && 
+        !base::PathService::OverrideAndCreateIfNeeded( 
+          chrome::DIR_USER_DATA, user_data_dir, false, true); 
+  }	 
+ 
+  return specified_directory_was_invalid;
 }

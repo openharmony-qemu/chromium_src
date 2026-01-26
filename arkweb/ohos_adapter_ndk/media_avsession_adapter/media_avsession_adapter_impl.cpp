@@ -1353,7 +1353,7 @@ AVSessionCallback_Result MediaAVSessionAdapterImpl::ErrorCallback(OH_AVCastContr
     size_t callback_index = reinterpret_cast<size_t>(userData);
     std::shared_ptr<MediaAVSessionAdapterImpl> adapter = avsession_callback_wrapper_.GetCallback(callback_index);
     if (!adapter) {
-        WVLOG_I("MediaAVSessionAdapterImpl:SeekDoneCallback adapter is null");
+        WVLOG_I("ErrorCallback adapter is null");
         return AVSESSION_CALLBACK_RESULT_FAILURE;
     }
     if (error != AV_SESSION_ERR_SUCCESS) {

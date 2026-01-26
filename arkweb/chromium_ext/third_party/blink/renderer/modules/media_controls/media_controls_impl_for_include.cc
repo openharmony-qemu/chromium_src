@@ -31,7 +31,7 @@ bool MediaControlsImpl::DownloadButtonIsWanted() const {
 }
 #endif
 
-#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+#if BUILDFLAG(ARKWEB_MEDIA_CAST) && !defined(COMPONENT_BUILD)
 void MediaControlsImpl::NotifyCastControlShow() {
   RefreshCastButtonVisibility();
 }

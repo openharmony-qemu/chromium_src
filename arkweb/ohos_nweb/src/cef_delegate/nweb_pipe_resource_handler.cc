@@ -410,6 +410,11 @@ void NWebPipeResourceHandler::CallOnRequestStop() const {
   }
 
   if (resource_handler_ && resource_request_) {
+    if(resource_request_->is_ets_) {
+      factory_->OnRequestStop(resource_request_, web_tag_,
+                              from_service_worker_);
+      return;
+    }
     content::GetIOThreadTaskRunner({})->PostTask(
         FROM_HERE,
         base::BindOnce(&NWebSchemeHandlerFactory::OnRequestStop, factory_,

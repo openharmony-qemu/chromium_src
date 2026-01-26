@@ -822,7 +822,7 @@ void MediaAVSessionAdapterImpl::AVCastStateDisconnectDefault(OH_AVSession *sessi
             WVLOG_E("AVCastStateDisconnectDefault adapter is nullptr");
             return;
         }
-        adapter->is_error_ = false;
+        adapter->is_error_ = true;
         adapter->SetAvCast(false);
     }
 }

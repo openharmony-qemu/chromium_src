@@ -6549,13 +6549,18 @@ void UpdateBlinkBrandLists(const std::vector<std::string>& brand,
     return;
   }
   size_t len = brand.size();
-  brand_version_list.clear();
-  brand_full_version_list.clear();
-  brand_version_list.reserve(len);
-  brand_full_version_list.reserve(len);
+  blink::UserAgentBrandList tmp_brand_version_list;
+  blink::UserAgentBrandList tmp_brand_full_version_list;
   for (size_t i = 0; i < len; ++i) {
-    brand_version_list.emplace_back(brand[i], major_version[i]);
-    brand_full_version_list.emplace_back(brand[i], full_version[i]);
+    if (brand[i].empty() || major_version[i].empty() || full_version[i].empty()) {
+      continue;
+    }
+    tmp_brand_version_list.emplace_back(brand[i], major_version[i]);
+    tmp_brand_full_version_list.emplace_back(brand[i], full_version[i]);
+  }
+  if (!(tmp_brand_version_list.empty() || tmp_brand_full_version_list.empty())) {
+    brand_version_list = tmp_brand_version_list;
+    brand_full_version_list = tmp_brand_full_version_list;
   }
 }
 

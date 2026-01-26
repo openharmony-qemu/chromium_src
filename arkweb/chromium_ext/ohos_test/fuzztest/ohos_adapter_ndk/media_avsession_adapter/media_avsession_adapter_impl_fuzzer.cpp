@@ -112,7 +112,7 @@ bool MediaAVSessionAdapterImplFuzzTest(FuzzedDataProvider* fdp)
         avSessionAdapter->CreateAVSession(type);
 
     } else {
-        return flase;
+        return false;
     }
 
     key->Init();

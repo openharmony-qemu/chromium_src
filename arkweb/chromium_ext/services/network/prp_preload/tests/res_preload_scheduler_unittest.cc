@@ -71,7 +71,7 @@ TEST_F(ResPreloadSchedulerTest, ResPreloadSchedulerTest_CreateReqLoaderAndStart)
   std::shared_ptr<PRPPRequestLoaderFactory> requestLoader =
     PRPPRequestLoaderFactory::CreatePRPPRequestLoaderFactory(url, url_request_context->GetWeakPtr());
   EXPECT_NE(requestLoader, nullptr);
-  scheduler.SetPRPPReqLoaderFac(requestLoader->GetWeak());
+  scheduler.SetPRPPReqLoaderFac(requestLoader->GetWeak(), (requestLoader->GetWeak().get() != nullptr));
   EXPECT_NE(scheduler.loader_fac_weak_, nullptr);
   scheduler.CreateReqLoaderAndStart(info);
 
@@ -102,16 +102,16 @@ TEST_F(ResPreloadSchedulerTest, ResPreloadSchedulerTest_SetPRPPReqLoaderFac)
   EXPECT_NE(url_request_context, nullptr);
   PRPPOnPageOriginCB on_page_origin_cb;
   ResPreloadScheduler scheduler(url, net_task_runner, url_request_context->GetWeakPtr(), on_page_origin_cb);
-  scheduler.SetPRPPReqLoaderFac(nullptr);
+  scheduler.SetPRPPReqLoaderFac(nullptr, false);
   EXPECT_EQ(scheduler.loader_fac_weak_, nullptr);
 
   scheduler.preload_triggered_ = true;
   std::shared_ptr<PRPPRequestLoaderFactory> requestLoader =
     PRPPRequestLoaderFactory::CreatePRPPRequestLoaderFactory(url, url_request_context->GetWeakPtr());
   EXPECT_NE(requestLoader, nullptr);
-  scheduler.SetPRPPReqLoaderFac(requestLoader->GetWeak());
+  scheduler.SetPRPPReqLoaderFac(requestLoader->GetWeak(), (requestLoader->GetWeak().get() != nullptr));
   scheduler.preload_triggered_ = false;
-  scheduler.SetPRPPReqLoaderFac(requestLoader->GetWeak());
+  scheduler.SetPRPPReqLoaderFac(requestLoader->GetWeak(), (requestLoader->GetWeak().get() != nullptr));
 }
 
 TEST_F(ResPreloadSchedulerTest, ResPreloadSchedulerTest_SchedulePreloads)

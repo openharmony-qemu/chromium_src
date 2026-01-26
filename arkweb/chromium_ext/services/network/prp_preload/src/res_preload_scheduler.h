@@ -26,7 +26,7 @@ class ResPreloadScheduler : public base::RefCounted<ResPreloadScheduler> {
   ~ResPreloadScheduler() = default;
 
   void StopPreload();
-  void SetPRPPReqLoaderFac(base::WeakPtr<PRPPRequestLoaderFactory> loader_fac_weak);
+  void SetPRPPReqLoaderFac(base::WeakPtr<PRPPRequestLoaderFactory> loader_fac_weak, bool valid);
   void SchedulePreloads(const PRPPPreconnectInfoList& preconnect_info_list,
     const std::shared_ptr<PRPPReqInfoTreeNode>& preload_info_tree,
     const std::set<std::string>& need_record_header_urls);
@@ -48,6 +48,7 @@ class ResPreloadScheduler : public base::RefCounted<ResPreloadScheduler> {
   int info_list_version_ { 0 };
   int idle_prerequest_count_ { 0 };
   base::WeakPtr<PRPPRequestLoaderFactory> loader_fac_weak_ { nullptr };
+  bool loader_fac_weak_valid_ { false };
   PRPPPreconnectInfoList prpp_preconnect_info_list_;
   std::shared_ptr<PRPPReqInfoTreeNode> preload_info_tree_;
   std::shared_ptr<PRPPReqInfoTreeNode> cur_parent_;

@@ -7361,7 +7361,7 @@ bool NWebImpl::ProcessBlanklessForUrl(uint64_t blanklessKey, bool isAnime) {
   base::ohos::BlanklessController::GetInstance().RecordSystemTime(nweb_id_, blankless_key_, system_time);
   nweb_delegate_->SetBlanklessLoadingKey(nweb_id_, blankless_key_);
   OHOS::NWeb::SnapshotDataItem dataItem = databaseInstance.GetSnapshotDataItem(blankless_key_, GetPreferenceHash());
-  CallBlanklessFrameFunc(blankless_key_, dataItem, isAnime);
+  CallBlanklessFrameFuncForWhiteList(blankless_key_, dataItem, isAnime);
   return true;
 }
 
@@ -7374,6 +7374,21 @@ void NWebImpl::SetVisibility(bool isVisible) {
     return;
   }
   auto& instance = base::ohos::BlanklessController::GetInstance();
+  if (!IsUserEnableBlankless()){
+    uint64_t recorded_time = instance.GetSystemTime(nweb_id_, blankless_key_);
+    auto system_time = base::Time::Now().ToInternalValue() / base::Time::kMicrosecondsPerMillisecond;
+    int32_t corrected_time = static_cast<int32_t>(static_cast<uint64_t>(system_time) - recorded_time);
+    int32_t lcp_time = instance.FireFrameInsertCallback(nweb_id_, blankless_key_);
+    int32_t lifetime = lcp_time - (corrected_time);
+    if (corrected_time < 0  || lifetime < base::ohos::BlanklessController::MINIMUM_FRAME_LIFETIME) { // 40 ms
+      return;
+    }
+    nweb_handle_->OnRemoveBlanklessFrame(lifetime);
+    instance.RegisterFrameRemoveCallback(nweb_id_, blankless_key_, [handle = this->nweb_handle_](){
+      handle->OnRemoveBlanklessFrame(0);
+    });
+    return;
+  }
   int32_t lcp_time = instance.FireFrameInsertCallback(nweb_id_, blankless_key_);
   if (lcp_time > 0) {
     nweb_handle_->OnRemoveBlanklessFrame(lcp_time);
@@ -7526,6 +7541,32 @@ void NWebImpl::CallBlanklessFrameFuncV2(uint64_t blankless_key, SnapshotDataItem
   if (is_visible_) {
     nweb_handle_->OnInsertBlanklessFrameWithSize(file, dataItem.width, dataItem.height);
     RemoveBlanklessFrame(nweb_handle_, lcp_time, isAnime);
+  } else {
+    instance.RegisterFrameInsertCallback(nweb_id_, blankless_key_,
+        [handle = this->nweb_handle_, file, width = dataItem.width, height = dataItem.height](){
+          handle->OnInsertBlanklessFrameWithSize(file, width, height);
+        }, lcp_time);
+  }
+}
+
+void NWebImpl::CallBlanklessFrameFuncForWhiteList(uint64_t blankless_key, SnapshotDataItem& dataItem, bool isAnime) {
+  std::string file = isAnime ? dataItem.wholePath : dataItem.staticPath;
+  if (nweb_handle_ == nullptr || dataItem.lcpTime == INT32_MAX || dataItem.lcpTime <= 0 || file.empty()) {
+    return;
+  }
+  auto& instance = base::ohos::BlanklessController::GetInstance();
+  if (dataItem.lcpTime < base::ohos::BlanklessController::MINIMUM_FRAME_LIFETIME) { // 40 ms
+    LOG(DEBUG) << "blankless CallBlanklessFrameFuncForWhiteList lcpTime invalid " << dataItem.lcpTime;
+    return;
+  }
+  int32_t lcp_time = std::min(dataItem.lcpTime, base::ohos::BlanklessController::MAXIMUM_FRAME_LIFETIME);  // 2000 ms
+  LOG(DEBUG) << "blankless OnRemoveBlanklessFrame Delay Time: " << lcp_time;
+  if (is_visible_) {
+    nweb_handle_->OnInsertBlanklessFrameWithSize(file, dataItem.width, dataItem.height);
+    RemoveBlanklessFrame(nweb_handle_, lcp_time, isAnime);
+    instance.RegisterFrameRemoveCallback(nweb_id_, blankless_key_, [handle = this->nweb_handle_, isAnime](){
+      RemoveBlanklessFrame(handle, 0, isAnime);
+    });
   } else {
     instance.RegisterFrameInsertCallback(nweb_id_, blankless_key_,
         [handle = this->nweb_handle_, file, width = dataItem.width, height = dataItem.height](){

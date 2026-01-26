@@ -52,5 +52,6 @@ void TextFragmentAnchorUtils::StartHighlightFadeTimer() {
 
 void TextFragmentAnchorUtils::Trace(Visitor* visitor) const {
   visitor->Trace(text_fragment_anchor_);
+  visitor->Trace(frame_);
 }
 }  // namespace blink

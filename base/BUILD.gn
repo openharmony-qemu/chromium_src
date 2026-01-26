@@ -3726,6 +3726,7 @@ test("base_unittests") {
       "//arkweb/ohos_nweb/src/sysevent/event_reporter.cc",
       "//arkweb/chromium_ext/ohos_test/unittest/event_reporter/event_reporter_unittest.cc",
     ]
+    sources += arkweb_cjson_unittest_sources
     sources += arkweb_content_browser_dfx_unittests_sources
     if (arkweb_test) {
       sources += [

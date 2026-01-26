@@ -1173,6 +1173,10 @@ arkweb_ptrace_unittest_sources = [
   "//arkweb/chromium_ext/ohos_test/unittest/ptrace_broker_utils/ptrace_broker_utils_unittest.cc",
 ]
 
+arkweb_cjson_unittest_sources = [
+  "//arkweb/ohos_adapter_ndk/inputmethodframework_adapter/third_party/cJSON/cJSON_unittest.cc",
+]
+
 arkweb_crashpad_client = [
   "//arkweb/chromium_ext/third_party/crashpad/crashpad/handler/linux/crashpad_client_linux_utils.cc",
   "//arkweb/chromium_ext/third_party/crashpad/crashpad/handler/linux/crashpad_client_linux_utils.h"

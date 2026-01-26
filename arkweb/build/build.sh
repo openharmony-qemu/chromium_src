@@ -232,7 +232,7 @@ fi
 log_file="${ROOT_DIR}/${build_dir}build.log"
 if [ -f "$log_file" ]; then
   mv "$log_file" "${log_file%.*}_$(date -r "$log_file" +%Y%m%d%H%M%S).log"
-fi  
+fi
 exec > >(tee "$log_file") 2>&1
 
 case "${build_target}" in
@@ -350,7 +350,7 @@ if [ ${build_fuzz} -eq 1 ]; then
 fi
 
 if [ ${build_v8} -eq 1 ]; then
-  GN_ARGS="${GN_ARGS} v8_component_build = true use_custom_libcxx = false use_custom_libcxx_for_host = false v8_enable_pointer_compression = false v8_enable_pointer_compression_shared_cage = false v8_use_external_startup_data = false v8_deprecation_warnings = false v8_use_libm_trig_functions = false v8_enable_i18n_support = false cppgc_enable_slim_write_barrier = false v8_enable_pointer_compression_8gb = false"
+  GN_ARGS="${GN_ARGS} v8_component_build = true use_custom_libcxx = false use_custom_libcxx_for_host = false v8_enable_pointer_compression = true v8_enable_pointer_compression_shared_cage = true v8_enable_sandbox = false v8_use_external_startup_data = false v8_deprecation_warnings = false v8_use_libm_trig_functions = false v8_enable_i18n_support = false cppgc_enable_slim_write_barrier = false v8_enable_pointer_compression_8gb = false"
 fi
 
 if [ ${use_thin_lto} -eq 1 ]; then

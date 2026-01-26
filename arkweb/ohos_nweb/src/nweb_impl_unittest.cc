@@ -8342,6 +8342,248 @@ TEST_F(NWebImplTest, StopMicrophone001) {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+TEST_F(NWebImplTest, SearchBillingTrack_GetRequestHeader001) {
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, ResourceRequestGetRequestHeader).Times(0);
+  nweb_impl_->GetRequestHeader(1);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SearchBillingTrack_GetRequestHeader002) {
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, ResourceRequestGetRequestHeader).Times(1);
+  nweb_impl_->GetRequestHeader(1);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SearchBillingTrack_GetRequestUrl001) {
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, ResourceRequestGetRequestUrl).Times(0);
+  nweb_impl_->GetRequestUrl(1);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SearchBillingTrack_GetRequestUrl002) {
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, ResourceRequestGetRequestUrl).Times(1);
+  nweb_impl_->GetRequestUrl(1);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SearchBillingTrack_IsRequestGesture001) {
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, ResourceRequestIsRequestGesture).Times(0);
+  nweb_impl_->IsRequestGesture(1);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SearchBillingTrack_IsRequestGesture002) {
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, ResourceRequestIsRequestGesture).Times(1);
+  nweb_impl_->IsRequestGesture(1);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SearchBillingTrack_IsMainFrame001) {
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, ResourceRequestIsMainFrame).Times(0);
+  nweb_impl_->IsMainFrame(1);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SearchBillingTrack_IsMainFrame002) {
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, ResourceRequestIsMainFrame).Times(1);
+  nweb_impl_->IsMainFrame(1);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SearchBillingTrack_IsRedirect001) {
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, ResourceRequestIsRedirect).Times(0);
+  nweb_impl_->IsRedirect(1);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SearchBillingTrack_IsRedirect002) {
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, ResourceRequestIsRedirect).Times(1);
+  nweb_impl_->IsRedirect(1);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SearchBillingTrack_GetRequestMethod001) {
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, ResourceRequestGetRequestMethod).Times(0);
+  nweb_impl_->GetRequestMethod(1);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SearchBillingTrack_GetRequestMethod002) {
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, ResourceRequestGetRequestMethod).Times(1);
+  nweb_impl_->GetRequestMethod(1);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SearchBillingTrack_GetPageTransition001) {
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, ResourceRequestGetPageTransition).Times(0);
+  nweb_impl_->GetPageTransition(1);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SearchBillingTrack_GetPageTransition002) {
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, ResourceRequestGetPageTransition).Times(1);
+  nweb_impl_->GetPageTransition(1);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SearchBillingTrack_GetRequestType001) {
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, ResourceRequestGetRequestType).Times(0);
+  nweb_impl_->GetRequestType(1);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SearchBillingTrack_GetRequestType002) {
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, ResourceRequestGetRequestType).Times(1);
+  nweb_impl_->GetRequestType(1);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SearchBillingTrack_GetMimeType001) {
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, ResourceResponseGetMimeType).Times(0);
+  nweb_impl_->GetMimeType(1);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SearchBillingTrack_GetMimeType002) {
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, ResourceResponseGetMimeType).Times(1);
+  nweb_impl_->GetMimeType(1);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SearchBillingTrack_GetEncoding001) {
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, ResourceResponseGetEncoding).Times(0);
+  nweb_impl_->GetEncoding(1);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SearchBillingTrack_GetEncoding002) {
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, ResourceResponseGetEncoding).Times(1);
+  nweb_impl_->GetEncoding(1);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SearchBillingTrack_GetStatusCode001) {
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, ResourceResponseGetStatusCode).Times(0);
+  nweb_impl_->GetStatusCode(1);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SearchBillingTrack_GetStatusCode002) {
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, ResourceResponseGetStatusCode).Times(1);
+  nweb_impl_->GetStatusCode(1);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SearchBillingTrack_GetReasonPhrase001) {
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, ResourceResponseGetReasonPhrase).Times(0);
+  nweb_impl_->GetReasonPhrase(1);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SearchBillingTrack_GetReasonPhrase002) {
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, ResourceResponseGetReasonPhrase).Times(1);
+  nweb_impl_->GetReasonPhrase(1);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SearchBillingTrack_GetResponseHeader001) {
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, ResourceResponseGetResponseHeader).Times(0);
+  nweb_impl_->GetResponseHeader(1);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SearchBillingTrack_GetResponseHeader002) {
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, ResourceResponseGetResponseHeader).Times(1);
+  nweb_impl_->GetResponseHeader(1);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SearchBillingTrack_GetIsFromNetwork001) {
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, ResourceResponseGetIsFromNetwork).Times(0);
+  nweb_impl_->GetIsFromNetwork(1);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SearchBillingTrack_GetIsFromNetwork002) {
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, ResourceResponseGetIsFromNetwork).Times(1);
+  nweb_impl_->GetIsFromNetwork(1);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SearchBillingTrack_ResourceRequestDelete001) {
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, ResourceRequestDelete).Times(0);
+  nweb_impl_->ResourceRequestDelete(1);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SearchBillingTrack_ResourceRequestDelete002) {
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, ResourceRequestDelete).Times(1);
+  nweb_impl_->ResourceRequestDelete(1);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SearchBillingTrack_ResourceResponseDelete001) {
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, ResourceResponseDelete).Times(0);
+  nweb_impl_->ResourceResponseDelete(1);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SearchBillingTrack_ResourceResponseDelete002) {
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, ResourceResponseDelete).Times(1);
+  nweb_impl_->ResourceResponseDelete(1);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest,
+       SearchBillingTrack_GetLastCommittedEntryPageTransition001) {
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, GetLastCommittedEntryPageTransition).Times(0);
+  nweb_impl_->GetLastCommittedEntryPageTransition();
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest,
+       SearchBillingTrack_GetLastCommittedEntryPageTransition002) {
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, GetLastCommittedEntryPageTransition).Times(1);
+  nweb_impl_->GetLastCommittedEntryPageTransition();
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+#endif
+
 TEST_F(NWebImplTest, ReloadIgnoreCache001) {
   nweb_impl_->nweb_delegate_ = nullptr;
   EXPECT_CALL(*mock_delegate_, ReloadIgnoreCache()).Times(0);

@@ -169,7 +169,7 @@ class NwebAutolayout {
 
   ParsedCCMConfig mCCMConfig_;
   std::string mAppBundleName_;
-  WhitelistEntry* mWListEntry_ = nullptr;
+  raw_ptr<WhitelistEntry> mWListEntry_ = nullptr;
   bool mEnable_ = true;
   std::string mAutoLayoutJSSource_;
   std::string mPatternJSSource_;

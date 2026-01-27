@@ -675,7 +675,7 @@ TEST(BackgroundTaskPolicyTEST, AudioContextPlayersBoundary001) {
     content::GlobalRenderFrameHostId valid_id = content::GlobalRenderFrameHostId(1, 1);
 
     for (int i = 0; i < 10; ++i) { // 10 test case
-        background_task_policy->OnAudioContextPlaybackStarted(std::make_pair(valid_id, i));
+        background_task_policy->OnAudioContextPlaybackStarted(valid_id, i);
     }
     EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), 10); // test case 10
 

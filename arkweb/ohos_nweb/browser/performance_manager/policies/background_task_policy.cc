@@ -277,12 +277,14 @@ void BackgroundTaskPolicy::SetBrowserBackground(const PageNode* page_node)
 #endif
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
-void BackgroundTaskPolicy::OnAudioContextPlaybackStarted(const AudioContextId& audio_context_id) {
-  audio_context_players_num_.insert(audio_context_id);
+void BackgroundTaskPolicy::OnAudioContextPlaybackStarted(content::GlobalRenderFrameHostId rfh_id, int audio_context_id) {
+  AudioContextIdPlayer player{rfh_id, audio_context_id};
+  audio_context_players_num_.insert(player);
 }
 
-void BackgroundTaskPolicy::OnAudioContextPlaybackStopped(const AudioContextId& audio_context_id) {
-  audio_context_players_num_.erase(audio_context_id);
+void BackgroundTaskPolicy::OnAudioContextPlaybackStopped(content::GlobalRenderFrameHostId rfh_id, int audio_context_id) {
+  AudioContextIdPlayer player{rfh_id, audio_context_id};
+  audio_context_players_num_.erase(player);
 }
 
 bool BackgroundTaskPolicy::IsWebAudioRequestBackgroundRunning() {
@@ -340,7 +342,8 @@ void BackgroundTaskPolicy::ProcessAudioContextPlayersOnUIThread(const PageNode* 
             << audio_context_players_num_.size();
   for (auto iter = audio_context_players_num_.begin();
        iter != audio_context_players_num_.end();) {
-    content::RenderFrameHost* render_frame_host = iter->first;
+    content::GlobalRenderFrameHostId rfh_id = iter->first;
+    content::RenderFrameHost* render_frame_host = content::RenderFrameHost::FromID(rfh_id);
     if (!render_frame_host) {
       continue;
     }
@@ -385,7 +388,8 @@ bool BackgroundTaskPolicy::GetWebAudioStartBackgroundTaskOnUIThread() {
   }
   bool result = false;
   for (const auto& audio_context_id : audio_context_players_num_) {
-    content::RenderFrameHost* render_frame_host = audio_context_id.first;
+    content::GlobalRenderFrameHostId rfh_id = player.first;
+    content::RenderFrameHost* render_frame_host = content::RenderFrameHost::FromID(rfh_id);
     if (!render_frame_host) {
         continue;
     }

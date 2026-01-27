@@ -25,6 +25,9 @@
 #include "components/performance_manager/public/graph/page_node.h"
 #include "components/performance_manager/test_support/graph_test_harness.h"
 #include "components/performance_manager/test_support/mock_graphs.h"
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)	 
+#include "content/public/browser/web_contents_observer.h"	 
+#endif
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "url/gurl.h"
@@ -41,6 +44,10 @@ class PageNodeImplExtTest : public GraphTestHarness {
 using testing::_;
 using testing::Invoke;
 using testing::InvokeWithoutArgs;
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK) 
+using AudioContextId = content::WebContentsObserver::AudioContextId; 
+#endif
 
 class LenientMockObserver : public PageNodeImpl::Observer {
 public:

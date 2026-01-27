@@ -548,6 +548,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
       double vx,
       double vy,
       const std::vector<int32_t>& pressedCodes) override;
+  void WebSendCancelFlingEvent() override;
   bool SendKeyboardEvent(const std::shared_ptr<OHOS::NWeb::NWebKeyboardEvent>&
                              keyboardEvent) override;
   bool ScrollByWithResult(float delta_x, float delta_y) override;

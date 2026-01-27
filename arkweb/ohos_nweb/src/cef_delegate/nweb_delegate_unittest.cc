@@ -335,6 +335,11 @@ TEST_F(NWebDelegateTest, WebSendTouchpadFlingEvent) {
   nweb_delegate_->WebSendTouchpadFlingEvent(x, y, vx, vy, pressedCodes);
 }
 
+TEST_F(NWebDelegateTest, WebSendCancelFlingEvent) {
+  ASSERT_NE(nweb_delegate_, nullptr);
+  nweb_delegate_->WebSendCancelFlingEvent();
+}
+
 TEST_F(NWebDelegateTest, SetVirtualKeyBoardArg) {
   ASSERT_NE(nweb_delegate_, nullptr);
   int32_t width = 100;

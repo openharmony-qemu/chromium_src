@@ -3756,6 +3756,14 @@ void NWebDelegate::WebSendTouchpadFlingEvent(
   }
 }
 
+void NWebDelegate::WebSendCancelFlingEvent() {
+  if (event_handler_ != nullptr) {
+    event_handler_->WebSendCancelFlingEvent();
+  } else {
+    LOG(ERROR) << "WebSendCancelFlingEvent event_handler_ is nullptr";
+  }
+}
+
 bool NWebDelegate::SendKeyboardEvent(
     const std::shared_ptr<OHOS::NWeb::NWebKeyboardEvent>& keyboardEvent) {
   bool retVal = false;

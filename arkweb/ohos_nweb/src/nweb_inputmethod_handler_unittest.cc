@@ -359,6 +359,9 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
               SendTouchpadFlingEvent,
               (const CefMouseEvent&, double, double),
               (override));
+  MOCK_METHOD(void,
+              SendCancelFlingEvent, (const CefMouseEvent&),
+              (override));
   void SetFitContentMode(int mode) override {}
   void UpdateDrawRect() override {}
   void OnTextSelected(bool flag) override {}

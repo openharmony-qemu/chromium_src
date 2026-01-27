@@ -3461,6 +3461,17 @@ void NWebImpl::WebSendTouchpadFlingEvent(
   input_handler_->WebSendTouchpadFlingEvent(x, y, vx, vy, pressedCodes);
 }
 
+void NWebImpl::WebSendCancelFlingEvent() {
+  if (input_handler_ == nullptr) {
+    LOG(ERROR) << "WebSendCancelFlingEvent input_handler_ is nullptr";
+    return;
+  }
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  ClearBlanklessKey();
+#endif
+  input_handler_->WebSendCancelFlingEvent();
+}
+
 bool NWebImpl::SendKeyboardEvent(
     const std::shared_ptr<OHOS::NWeb::NWebKeyboardEvent>& keyboardEvent) {
   if (input_handler_ == nullptr) {

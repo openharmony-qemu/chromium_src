@@ -470,6 +470,25 @@ TEST_F(NWebInputHandlerTest,
   EXPECT_NE(input_handler_->nweb_delegate_, nullptr);
 }
 
+TEST_F(NWebInputHandlerTest,
+       NWebInputHandlerTest_WebSendCancelFlingEvent_001) {
+  input_handler_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, WebSendCancelFlingEvent())
+      .Times(0);
+
+  input_handler_->WebSendCancelFlingEvent();
+  EXPECT_EQ(input_handler_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebInputHandlerTest,
+       NWebInputHandlerTest_WebSendCancelFlingEvent_002) {
+  EXPECT_CALL(*mock_delegate_, WebSendCancelFlingEvent())
+      .Times(1);
+
+  input_handler_->WebSendCancelFlingEvent();
+  EXPECT_NE(input_handler_->nweb_delegate_, nullptr);
+}
+
 TEST_F(NWebInputHandlerTest, NWebInputHandlerTest_WebSendMouseEvent_001) {
   std::shared_ptr<OHOS::NWeb::NWebMouseEvent> mouseEvent = std::make_shared<MockNWebMouseEvent>();
   EXPECT_CALL(*mock_delegate_, WebSendMouseEvent(mouseEvent))

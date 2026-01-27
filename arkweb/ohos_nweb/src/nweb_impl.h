@@ -1397,6 +1397,7 @@ class NWebImpl : public NWeb {
   void CallBlanklessFrameFunc(uint64_t blankless_key, SnapshotDataItem& dataItem, bool isAnime = false);
   void CallBlanklessFrameFuncV2(uint64_t blankless_key, SnapshotDataItem& dataItem,
                                 int32_t duration, bool isAnime = false);
+  void CallBlanklessFrameFuncForWhiteList(uint64_t blankless_key, SnapshotDataItem& dataItem, bool isAnime = false);
   void ExecuteBlanklessCallback(const std::string& key, int32_t state, const std::string& reason);
   // To avoid include blankless_controller.h in nweb_impl.h, we use UINT64_MAX instead of INVALID_BLANKLESS_KEY.
   std::atomic<uint64_t> blankless_key_ = UINT64_MAX;

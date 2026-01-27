@@ -391,4 +391,13 @@ TEST_F(NWebDelegateTest, SetFocusWebId) {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_SCREEN_OFFSET)
+TEST_F(NWebDelegateTest, SetScreenOffset) {
+  ASSERT_NE(nweb_delegate_, nullptr);
+  double x = 20.0;
+  double y = 30.0;
+  nweb_delegate_->SetScreenOffset(x, y);
+}
+#endif
+
 }  // namespace OHOS::NWeb

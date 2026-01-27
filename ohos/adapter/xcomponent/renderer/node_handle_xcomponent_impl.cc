@@ -42,6 +42,7 @@
 #include "ohos/adapter/xcomponent/xcomponent_manager.h"
 
 namespace ohos::adapter::xcomponent {
+using ohos::adapter::NodeHandleDragDropOhosAdapter;
 
 namespace {
 static constexpr int32_t kPanGestureTriggerMinFingerNum = 1;
@@ -241,6 +242,28 @@ void OnMouseEvent(ArkUI_NodeEvent* node_event, ArkUI_NodeHandle node_handle) {
     return;
   }
 
+  if (NodeHandleDragDropOhosAdapter::GetInstance().IsDraggingStarted()) {
+    auto action = OH_ArkUI_UIInputEvent_GetAction(mouse_event);
+    // When Chromium is dragging, intercept the mouse events send to Chromium.
+    if (action == UI_MOUSE_EVENT_ACTION_RELEASE) {
+      LOGW(
+          "[OhosDragNodeHandle]Receive mouse release event, drag is ended, "
+          "SetDraggingStarted false, "
+          "render_id:%{public}s",
+          render_id.c_str());
+      NodeHandleDragDropOhosAdapter::GetInstance().SetDraggingStarted(false);
+      return;
+    }
+    if (action == UI_MOUSE_EVENT_ACTION_PRESS) {
+      LOGW(
+          "[OhosDragNodeHandle]Receive mouse press event, "
+          "IsDraggingStarted value is invalid, SetDraggingStarted false, "
+          "render_id:%{public}s",
+          render_id.c_str());
+      NodeHandleDragDropOhosAdapter::GetInstance().SetDraggingStarted(false);
+    }
+  }
+
   impl->OnMouseEvent(mouse_event);
 }
 
@@ -306,26 +329,25 @@ void OnNodeEventCB(ArkUI_NodeEvent* event) {
       break;
     case NODE_ON_DRAG_ENTER: {
       auto render_id = GetRenderId(node_handle);
-      ohos::adapter::NodeHandleDragDropOhosAdapter::GetInstance().OnDragEnterCB(
-          render_id, event);
+      NodeHandleDragDropOhosAdapter::GetInstance().OnDragEnterCB(render_id,
+                                                                 event);
       break;
     }
     case NODE_ON_DRAG_MOVE: {
       auto render_id = GetRenderId(node_handle);
-      ohos::adapter::NodeHandleDragDropOhosAdapter::GetInstance().OnDragMoveCB(
-          render_id, event);
+      NodeHandleDragDropOhosAdapter::GetInstance().OnDragMoveCB(render_id,
+                                                                event);
       break;
     }
     case NODE_ON_DRAG_LEAVE: {
       auto render_id = GetRenderId(node_handle);
-      ohos::adapter::NodeHandleDragDropOhosAdapter::GetInstance().OnDragLeaveCB(
-          render_id, event);
+      NodeHandleDragDropOhosAdapter::GetInstance().OnDragLeaveCB(render_id,
+                                                                 event);
       break;
     }
     case NODE_ON_DROP: {
       auto render_id = GetRenderId(node_handle);
-      ohos::adapter::NodeHandleDragDropOhosAdapter::GetInstance().OnDropCB(
-          render_id, event);
+      NodeHandleDragDropOhosAdapter::GetInstance().OnDropCB(render_id, event);
       break;
     }
     default:
@@ -665,6 +687,28 @@ bool NodeHandleXComponentImpl::BindNativeXComponentNode(
     return false;
   }
 
+  return true;
+}
+
+bool NodeHandleXComponentImpl::UnBindNativeXComponentNode(
+    ArkUI_NodeContentHandle node_content_handle) {
+  if (node_handle_ == nullptr) {
+    LOGE(
+        "NodeHandleXComponentImpl::UnBindNativeXComponentNode node handle is "
+        "not initialized");
+    return false;
+  }
+ 
+  auto result =
+      OH_ArkUI_NodeContent_RemoveNode(node_content_handle, node_handle_);
+  if (result != ARKUI_ERROR_CODE_NO_ERROR) {
+    LOGE(
+        "NodeHandleXComponentImpl::UnBindNativeXComponentNode failed error "
+        "code is %{public}d",
+        result);
+    return false;
+  }
+ 
   return true;
 }
 

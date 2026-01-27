@@ -127,8 +127,8 @@ void ResParallelPreloadCtrler::DoSetPageOrigin(const std::string& page_origin)
   res_req_info_updater_->SetPageOrigin(page_origin);
 }
 
-void ResParallelPreloadCtrler::DoSetPRPPReqLoaderFac(base::WeakPtr<PRPPRequestLoaderFactory> loader_fac_weak, bool valid)
-{
+void ResParallelPreloadCtrler::DoSetPRPPReqLoaderFac(base::WeakPtr<PRPPRequestLoaderFactory> loader_fac_weak,
+    bool valid) {
   if (res_preload_scheduler_ == nullptr) {
     return;
   }

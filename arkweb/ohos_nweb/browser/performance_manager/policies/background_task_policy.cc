@@ -277,12 +277,14 @@ void BackgroundTaskPolicy::SetBrowserBackground(const PageNode* page_node)
 #endif
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
-void BackgroundTaskPolicy::OnAudioContextPlaybackStarted(content::GlobalRenderFrameHostId rfh_id, int audio_context_id) {
+void BackgroundTaskPolicy::OnAudioContextPlaybackStarted(content::GlobalRenderFrameHostId rfh_id,
+                                                         int audio_context_id) {
   AudioContextIdPlayer player{rfh_id, audio_context_id};
   audio_context_players_num_.insert(player);
 }
 
-void BackgroundTaskPolicy::OnAudioContextPlaybackStopped(content::GlobalRenderFrameHostId rfh_id, int audio_context_id) {
+void BackgroundTaskPolicy::OnAudioContextPlaybackStopped(content::GlobalRenderFrameHostId rfh_id,
+                                                         int audio_context_id) {
   AudioContextIdPlayer player{rfh_id, audio_context_id};
   audio_context_players_num_.erase(player);
 }

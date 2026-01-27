@@ -387,7 +387,7 @@ bool BackgroundTaskPolicy::GetWebAudioStartBackgroundTaskOnUIThread() {
     return true;
   }
   bool result = false;
-  for (const auto& audio_context_id : audio_context_players_num_) {
+  for (const auto& player : audio_context_players_num_) {
     content::GlobalRenderFrameHostId rfh_id = player.first;
     content::RenderFrameHost* render_frame_host = content::RenderFrameHost::FromID(rfh_id);
     if (!render_frame_host) {

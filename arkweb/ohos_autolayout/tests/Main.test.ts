@@ -77,6 +77,7 @@ describe('Main Module - Complete Tests', () => {
       expect(typeof Main.start_).toBe('function');
       expect(typeof Main.stop).toBe('function');
       expect(typeof Main.restart).toBe('function');
+      expect(typeof Main.alphabetStart).toBe('function');
     });
 
     test('Main.initFlag should be initially false', () => {
@@ -209,6 +210,13 @@ describe('Main Module - Complete Tests', () => {
       expect(mockFramework.stopFlag).toBe(false);
       expect(mockLog.d).toHaveBeenCalledWith('Autolayout reInit');
       expect(mockUtils.isWideScreen).toHaveBeenCalled();
+    });
+  });
+
+  describe('alphabetStart() method', () => {
+    test('should judge input config and return void', () => {
+      const startResult = Main.alphabetStart('invalid config');
+      expect(startResult).toBe(undefined);
     });
   });
 });

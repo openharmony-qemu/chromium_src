@@ -167,7 +167,9 @@ class DelayedRenderKiller {
 #else
   private:
 #endif
-    DelayedRenderKiller() = default;
+    DelayedRenderKiller()
+      : timer_(std::make_unique<base::RepeatingTimer>()) {
+    }
     DelayedRenderKiller(const DelayedRenderKiller& i) = delete;
     DelayedRenderKiller& operator= (const DelayedRenderKiller& i) = delete;
  

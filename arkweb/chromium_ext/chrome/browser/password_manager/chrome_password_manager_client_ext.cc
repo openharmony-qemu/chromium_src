@@ -478,6 +478,17 @@ void ChromePasswordManagerClientExt::OnRequestAutofill(
 
 bool ChromePasswordManagerClientExt::ArkPromptUserToSaveOrUpdatePassword(
     std::unique_ptr<password_manager::PasswordFormManagerForUI> form_to_save) {
+  
+  if (!web_contents()) {
+    LOG(ERROR) << "web contents is nullptr, can't get autofill enable state.";
+  } else {
+    auto web_preference = web_contents()->GetOrCreateWebPreferences();
+    if (!web_preference.is_autofill_enabled) {
+      LOG(INFO) << "[PassWord Autofill] autofill interception successful.";
+      return false;
+    }
+  }
+ 
   if (!form_to_save) {
     LOG(ERROR) << "form_to_save is nullptr";
     return false;

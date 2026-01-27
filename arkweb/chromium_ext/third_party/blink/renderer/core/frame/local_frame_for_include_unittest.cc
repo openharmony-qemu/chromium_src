@@ -396,4 +396,351 @@ TEST_F(LocalFrameUtilTest, VideoLoadOpt_SetVideoPriorityTest) {
 }
 #endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 
+TEST_F(LocalFrameUtilTest, LocalFrameUtilTest_001) {
+  base::ohos::SysInfoUtilsMock::mockIsTabletDevice = true;
+  auto& system_properties_mock = base::ohos::SysInfoUtilsMock::GetInstance();
+  EXPECT_CALL(system_properties_mock, IsTabletDevice())
+      .WillOnce(testing::Return(false))
+      .WillRepeatedly(testing::Return(false));
+
+  float layout_zoom = 1.5f;
+  float text_zoom = 1.2f;
+  bool layout_zoom_changed = true;
+
+  local_frame_->scale_limits_min_changed_ = false;
+  local_frame_->scale_limits_max_changed_ = false;
+
+  LocalFrameUtil::SetLayoutAndTextZoomFactorsExt(
+      local_frame_, layout_zoom, text_zoom, layout_zoom_changed, page_);
+
+  EXPECT_FALSE(local_frame_->scale_limits_min_changed_);
+  EXPECT_FALSE(local_frame_->scale_limits_max_changed_);
+  base::ohos::SysInfoUtilsMock::mockIsTabletDevice = false;
+}
+
+TEST_F(LocalFrameUtilTest, LocalFrameUtilTest_002) {
+  base::ohos::SysInfoUtilsMock::mockIsTabletDevice = true;
+  auto& system_properties_mock = base::ohos::SysInfoUtilsMock::GetInstance();
+  EXPECT_CALL(system_properties_mock, IsTabletDevice())
+      .WillOnce(testing::Return(true))
+      .WillRepeatedly(testing::Return(true));
+
+  float layout_zoom = 0.8f;
+  float text_zoom = 1.0f;
+  bool layout_zoom_changed = true;
+
+  local_frame_->scale_limits_min_changed_ = false;
+  local_frame_->scale_limits_max_changed_ = false;
+
+  LocalFrameUtil::SetLayoutAndTextZoomFactorsExt(
+      local_frame_, layout_zoom, text_zoom, layout_zoom_changed, page_);
+
+  EXPECT_FALSE(local_frame_->scale_limits_min_changed_);
+  EXPECT_TRUE(local_frame_->scale_limits_max_changed_);
+  base::ohos::SysInfoUtilsMock::mockIsTabletDevice = false;
+}
+
+TEST_F(LocalFrameUtilTest, LocalFrameUtilTest_003) {
+  base::ohos::SysInfoUtilsMock::mockIsTabletDevice = true;
+  auto& system_properties_mock = base::ohos::SysInfoUtilsMock::GetInstance();
+  EXPECT_CALL(system_properties_mock, IsTabletDevice())
+      .WillOnce(testing::Return(true))
+      .WillRepeatedly(testing::Return(true));
+
+  float layout_zoom = 1.5f;
+  float text_zoom = 1.2f;
+  bool layout_zoom_changed = false;
+
+  local_frame_->scale_limits_min_changed_ = false;
+  local_frame_->scale_limits_max_changed_ = false;
+
+  LocalFrameUtil::SetLayoutAndTextZoomFactorsExt(
+      local_frame_, layout_zoom, text_zoom, layout_zoom_changed, page_);
+
+  EXPECT_FALSE(local_frame_->scale_limits_min_changed_);
+  EXPECT_FALSE(local_frame_->scale_limits_max_changed_);
+  base::ohos::SysInfoUtilsMock::mockIsTabletDevice = false;
+}
+
+TEST_F(LocalFrameUtilTest, LocalFrameUtilTest_004) {
+  float layout_zoom = 1.0f;
+  float text_zoom = 1.0f;
+
+  bool result = LocalFrameUtil::SetLayoutAndTextZoomFactorsPage(
+      local_frame_, layout_zoom, text_zoom, nullptr);
+
+  EXPECT_FALSE(result);
+}
+
+TEST_F(LocalFrameUtilTest, LocalFrameUtilTest_005) {
+  SetLayoutZoomFactor(1.5f);
+  SetTextZoomFactor(1.2f);
+  page_->GetSettings().SetTextZoomFactor(1.2f);
+
+  float layout_zoom = 1.5f;
+  float text_zoom = 0.0f;
+
+  bool result = LocalFrameUtil::SetLayoutAndTextZoomFactorsPage(
+      local_frame_, layout_zoom, text_zoom, page_);
+
+  EXPECT_FALSE(result);
+  EXPECT_EQ(text_zoom, 1.2f);
+}
+
+TEST_F(LocalFrameUtilTest, LocalFrameUtilTest_006) {
+  SetLayoutZoomFactor(1.0f);
+  SetTextZoomFactor(1.0f);
+  page_->GetSettings().SetTextZoomFactor(1.0f);
+
+  float layout_zoom = 1.5f;
+  float text_zoom = 0.0f;
+
+  bool result = LocalFrameUtil::SetLayoutAndTextZoomFactorsPage(
+      local_frame_, layout_zoom, text_zoom, page_);
+
+  EXPECT_TRUE(result);
+  EXPECT_EQ(text_zoom, 1.0f);
+}
+
+TEST_F(LocalFrameUtilTest, LocalFrameUtilTest_007) {
+  SetLayoutZoomFactor(1.0f);
+  SetTextZoomFactor(1.0f);
+  page_->GetSettings().SetTextZoomFactor(1.5f);
+
+  float layout_zoom = 1.0f;
+  float text_zoom = 0.0f;
+
+  bool result = LocalFrameUtil::SetLayoutAndTextZoomFactorsPage(
+      local_frame_, layout_zoom, text_zoom, page_);
+
+  EXPECT_TRUE(result);
+  EXPECT_EQ(text_zoom, 1.5f);
+}
+
+TEST_F(LocalFrameUtilTest, LocalFrameUtilTest_008) {
+  LocalFrameUtil::SetTextZoomFactorsExt(local_frame_);
+}
+
+TEST_F(LocalFrameUtilTest, LocalFrameUtilTest_009) {
+  base::ohos::SysInfoUtilsMock::mockIsTabletDevice = true;
+  auto& system_properties_mock = base::ohos::SysInfoUtilsMock::GetInstance();
+  EXPECT_CALL(system_properties_mock, IsTabletDevice())
+      .WillOnce(testing::Return(true))
+      .WillRepeatedly(testing::Return(true));
+
+  float layout_zoom = 1.5f;
+  float text_zoom = 1.2f;
+  bool layout_zoom_changed = true;
+
+  local_frame_->scale_limits_min_changed_ = true;
+  local_frame_->scale_limits_max_changed_ = false;
+
+  LocalFrameUtil::SetLayoutAndTextZoomFactorsExt(
+      local_frame_, layout_zoom, text_zoom, layout_zoom_changed, page_);
+
+  EXPECT_TRUE(local_frame_->scale_limits_min_changed_);
+  EXPECT_FALSE(local_frame_->scale_limits_max_changed_);
+  base::ohos::SysInfoUtilsMock::mockIsTabletDevice = false;
+}
+
+TEST_F(LocalFrameUtilTest, LocalFrameUtilTest_010) {
+  local_frame_->SetAdBlockEnableForSite(true);
+  EXPECT_TRUE(local_frame_->GetAdBlockEnableForSite());
+  local_frame_->SetAdBlockEnableForSite(false);
+  EXPECT_FALSE(local_frame_->GetAdBlockEnableForSite());
+}
+
+TEST_F(LocalFrameUtilTest, LocalFrameUtilTest_011) {
+  base::ohos::SysInfoUtilsMock::mockIsTabletDevice = true;
+  auto& system_properties_mock = base::ohos::SysInfoUtilsMock::GetInstance();
+  EXPECT_CALL(system_properties_mock, IsTabletDevice())
+      .WillOnce(testing::Return(false))
+      .WillRepeatedly(testing::Return(false));
+
+  float layout_zoom = 1.5f;
+  float text_zoom = 1.2f;
+  bool layout_zoom_changed = true;
+
+  local_frame_->scale_limits_min_changed_ = false;
+  local_frame_->scale_limits_max_changed_ = false;
+
+  LocalFrameUtil::SetLayoutAndTextZoomFactorsExt(
+      local_frame_, layout_zoom, text_zoom, layout_zoom_changed, page_);
+
+  EXPECT_FALSE(local_frame_->scale_limits_min_changed_);
+  EXPECT_FALSE(local_frame_->scale_limits_max_changed_);
+  base::ohos::SysInfoUtilsMock::mockIsTabletDevice = false;
+}
+
+TEST_F(LocalFrameUtilTest, LocalFrameUtilTest_012) {
+  base::ohos::SysInfoUtilsMock::mockIsTabletDevice = true;
+  auto& system_properties_mock = base::ohos::SysInfoUtilsMock::GetInstance();
+  EXPECT_CALL(system_properties_mock, IsTabletDevice())
+      .WillOnce(testing::Return(true))
+      .WillRepeatedly(testing::Return(true));
+
+  float layout_zoom = 1.5f;
+  float text_zoom = 1.2f;
+  bool layout_zoom_changed = false;
+
+  local_frame_->scale_limits_min_changed_ = false;
+  local_frame_->scale_limits_max_changed_ = false;
+
+  LocalFrameUtil::SetLayoutAndTextZoomFactorsExt(
+      local_frame_, layout_zoom, text_zoom, layout_zoom_changed, page_);
+
+  EXPECT_FALSE(local_frame_->scale_limits_min_changed_);
+  EXPECT_FALSE(local_frame_->scale_limits_max_changed_);
+  base::ohos::SysInfoUtilsMock::mockIsTabletDevice = false;
+}
+
+TEST_F(LocalFrameUtilTest, LocalFrameUtilTest_013) {
+  base::ohos::SysInfoUtilsMock::mockIsTabletDevice = true;
+  auto& system_properties_mock = base::ohos::SysInfoUtilsMock::GetInstance();
+  EXPECT_CALL(system_properties_mock, IsTabletDevice())
+      .WillOnce(testing::Return(true))
+      .WillRepeatedly(testing::Return(true));
+
+  float layout_zoom = 0.8f;
+  float text_zoom = 1.0f;
+  bool layout_zoom_changed = true;
+
+  local_frame_->scale_limits_min_changed_ = false;
+  local_frame_->scale_limits_max_changed_ = false;
+
+  LocalFrameUtil::SetLayoutAndTextZoomFactorsExt(
+      local_frame_, layout_zoom, text_zoom, layout_zoom_changed, page_);
+
+  EXPECT_FALSE(local_frame_->scale_limits_min_changed_);
+  EXPECT_TRUE(local_frame_->scale_limits_max_changed_);
+  base::ohos::SysInfoUtilsMock::mockIsTabletDevice = false;
+}
+
+TEST_F(LocalFrameUtilTest, LocalFrameUtilTest_014) {
+  base::ohos::SysInfoUtilsMock::mockIsTabletDevice = true;
+  auto& system_properties_mock = base::ohos::SysInfoUtilsMock::GetInstance();
+  EXPECT_CALL(system_properties_mock, IsTabletDevice())
+      .WillOnce(testing::Return(true))
+      .WillRepeatedly(testing::Return(true));
+
+  float layout_zoom = 1.5f;
+  float text_zoom = 1.2f;
+  bool layout_zoom_changed = true;
+
+  local_frame_->scale_limits_min_changed_ = true;
+  local_frame_->scale_limits_max_changed_ = false;
+
+  LocalFrameUtil::SetLayoutAndTextZoomFactorsExt(
+      local_frame_, layout_zoom, text_zoom, layout_zoom_changed, page_);
+
+  EXPECT_TRUE(local_frame_->scale_limits_min_changed_);
+  EXPECT_FALSE(local_frame_->scale_limits_max_changed_);
+  base::ohos::SysInfoUtilsMock::mockIsTabletDevice = false;
+}
+
+TEST_F(LocalFrameUtilTest, LocalFrameUtilTest_015) {
+  base::ohos::SysInfoUtilsMock::mockIsTabletDevice = true;
+  auto& system_properties_mock = base::ohos::SysInfoUtilsMock::GetInstance();
+  EXPECT_CALL(system_properties_mock, IsTabletDevice())
+      .WillOnce(testing::Return(true))
+      .WillRepeatedly(testing::Return(true));
+  
+  float layout_zoom = 1.5f;
+  float text_zoom = 1.2f;
+  bool layout_zoom_changed = true;
+
+  local_frame_->scale_limits_min_changed_ = false;
+  local_frame_->scale_limits_max_changed_ = true;
+
+  LocalFrameUtil::SetLayoutAndTextZoomFactorsExt(
+      local_frame_, layout_zoom, text_zoom, layout_zoom_changed, page_);
+
+  EXPECT_TRUE(local_frame_->scale_limits_min_changed_);
+  EXPECT_FALSE(local_frame_->scale_limits_max_changed_);
+  base::ohos::SysInfoUtilsMock::mockIsTabletDevice = false;
+}
+
+TEST_F(LocalFrameUtilTest, LocalFrameUtilTest_016) {
+  base::ohos::SysInfoUtilsMock::mockIsTabletDevice = true;
+  auto& system_properties_mock = base::ohos::SysInfoUtilsMock::GetInstance();
+  EXPECT_CALL(system_properties_mock, IsTabletDevice())
+      .WillOnce(testing::Return(true))
+      .WillRepeatedly(testing::Return(true));
+
+  float layout_zoom = 0.8f;
+  float text_zoom = 1.0f;
+  bool layout_zoom_changed = true;
+
+  local_frame_->scale_limits_min_changed_ = false;
+  local_frame_->scale_limits_max_changed_ = true;
+
+  LocalFrameUtil::SetLayoutAndTextZoomFactorsExt(
+      local_frame_, layout_zoom, text_zoom, layout_zoom_changed, page_);
+
+  EXPECT_FALSE(local_frame_->scale_limits_min_changed_);
+  EXPECT_TRUE(local_frame_->scale_limits_max_changed_);
+  base::ohos::SysInfoUtilsMock::mockIsTabletDevice = false;
+}
+
+TEST_F(LocalFrameUtilTest, LocalFrameUtilTest_017) {
+  base::ohos::SysInfoUtilsMock::mockIsTabletDevice = true;
+  auto& system_properties_mock = base::ohos::SysInfoUtilsMock::GetInstance();
+  EXPECT_CALL(system_properties_mock, IsTabletDevice())
+      .WillOnce(testing::Return(true))
+      .WillRepeatedly(testing::Return(true));
+
+  float layout_zoom = 0.8f;
+  float text_zoom = 1.0f;
+  bool layout_zoom_changed = true;
+
+  local_frame_->scale_limits_min_changed_ = true;
+  local_frame_->scale_limits_max_changed_ = false;
+
+  LocalFrameUtil::SetLayoutAndTextZoomFactorsExt(
+      local_frame_, layout_zoom, text_zoom, layout_zoom_changed, page_);
+
+  EXPECT_FALSE(local_frame_->scale_limits_min_changed_);
+  EXPECT_TRUE(local_frame_->scale_limits_max_changed_);
+  base::ohos::SysInfoUtilsMock::mockIsTabletDevice = false;
+}
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+TEST_F(LocalFrameUtilTest, LocalFrameUtilTest_018) {
+  EXPECT_FALSE(local_frame_->IsVideoPrioritySupported());
+}
+
+TEST_F(LocalFrameUtilTest, LocalFrameUtilTest_019) {
+  EXPECT_FALSE(local_frame_->SetNewsFeedPageFitted());
+}
+
+TEST_F(LocalFrameUtilTest, LocalFrameUtilTest_020) {
+  std::string videoId = "v_662102_html5_api";
+  local_frame_->SetVideoIsPlaying(videoId, false);
+}
+
+TEST_F(LocalFrameUtilTest, LocalFrameUtilTest_021) {
+  HeapVector<Member<VideoPriority>> videoVec;
+  auto* videoPri = MakeGarbageCollected<VideoPriority>();
+  videoPri->setId("v_662102_html5_api");
+  videoPri->setPriority(1);
+
+  auto* videoPriOther = MakeGarbageCollected<VideoPriority>();
+  videoPriOther->setId("v_7a47ff_html5_api");
+  videoPriOther->setPriority(2);
+
+  videoVec.push_back(videoPri);
+  videoVec.push_back(videoPriOther);
+  local_frame_->SetVideoPriority(videoVec);
+}
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
+#if BUILDFLAG(ARKWEB_AI)
+TEST_F(LocalFrameUtilTest, StartHighlightFadeTimer_001) {
+  local_frame_->GetSettings()->SetArkwebAgentEnabled(false);
+  local_frame_->StartHighlightFadeTimer(base::Milliseconds(1000));
+  local_frame_->GetSettings()->SetArkwebAgentEnabled(true);
+  local_frame_->StartHighlightFadeTimer(base::Milliseconds(1000));
+  local_frame_->StartHighlightFadeTimer(base::Milliseconds(0));
+}
+#endif
 }  // namespace blink

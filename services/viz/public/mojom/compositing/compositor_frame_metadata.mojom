@@ -27,6 +27,9 @@ import "ui/latency/mojom/latency_info.mojom";
 // compositor in the GPU process.
 struct CompositorFrameMetadata {
   float device_scale_factor;
+  [EnableIf=arkweb_same_layer]
+  float stretch_content_none_device_scale_factor;
+
   gfx.mojom.PointF root_scroll_offset;
   float page_scale_factor;
   gfx.mojom.SizeF scrollable_viewport_size;
@@ -79,6 +82,12 @@ struct CompositorFrameMetadata {
   // Add for sliding response debug
   [EnableIf=arkweb_slide]
   bool is_scrolling;
+
+  [EnableIf=arkweb_report_sys_event]
+  int64 dropped_frame_count;
+
+  [EnableIf=arkweb_report_sys_event]
+  int64 dropped_frame_duration;
 
   // When set, the compositor frame submission also informs viz to issue a
   // screenshot against the previous surface.

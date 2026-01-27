@@ -34,9 +34,4 @@ constexpr base::FilePath::CharType kUnindexedRulesetLicenseFileName[] =
 constexpr base::FilePath::CharType kUnindexedRulesetDataFileName[] =
     FILE_PATH_LITERAL("Filtering Rules");
 
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-const base::FilePath::CharType kAdblockEasylistFileName[] =
-    FILE_PATH_LITERAL("easylist.txt");
-#endif
-
 }  // namespace subresource_filter

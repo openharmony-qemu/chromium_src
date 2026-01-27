@@ -271,6 +271,15 @@ void NativeLoader::OnLayerRectChange(const gfx::Rect& rect) {
   for (auto& observer : native_bridge_observer_remote_set_->Value()) {
     observer->OnEmbedRectChange(TransformRect(bounds_to_viewport));
   }
+  auto* frame = CurrentFrame();
+  if (!frame) {
+    return;
+  }
+  float factor = frame->Client()->GetDeviceScaleFactor(*this);
+  LOG(INFO) << "NativeEmbed NativeLoader::GetDeviceScaleFactor:" << factor;
+  if (web_native_bridge_) {
+    web_native_bridge_->UpdateDeviceScaleFactor(factor);
+  }
 }
 
 // LCOV_EXCL_START
@@ -444,6 +453,20 @@ void NativeLoader::SetNativeEmbedOverlay(bool native_embed_overlay) {
   if (native_embed_overlay) {
     cc_layer_->layer_utils()->SetShouldInterceptTouchEvent(true);
   }
+}
+
+void NativeLoader::SetStretchContentToFillBounds(bool stretch_content_to_fill_bounds) {
+  LOG(INFO) << "[NativeEmbed] NativeLoader: SetstretchContentToFillBounds"
+            << stretch_content_to_fill_bounds;
+  stretch_content_to_fill_bounds_ = stretch_content_to_fill_bounds;
+  if (web_native_bridge_) {
+    web_native_bridge_->SetStretchContentToFillBounds(
+        stretch_content_to_fill_bounds_);
+  }
+}
+
+bool NativeLoader::GetStretchContentToFillBounds() {
+  return stretch_content_to_fill_bounds_;
 }
 
 void NativeLoader::ProcessParamChanges(const Vector<ParamChangeInfo>& changes) {

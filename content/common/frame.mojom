@@ -743,7 +743,10 @@ interface FrameHost {
       => (CreateNewWindowStatus status, CreateNewWindowReply? reply);
 
   [EnableIf=arkweb_multi_window, Sync]
-  GetCreateNewWindow(url.mojom.Url target_url, ui.mojom.WindowOpenDisposition disposition, bool allow_popup)
+  GetCreateNewWindow(url.mojom.Url target_url,
+                     ui.mojom.WindowOpenDisposition disposition,
+                     bool allow_popup,
+                     blink.mojom.WindowFeatures window_features)
       => (CreateNewWindowStatus status);
 
   // Asynchronously creates a child frame. A blink.mojom.LocalFrameToken must
@@ -913,6 +916,11 @@ interface FrameHost {
   // #if BUILDFLAG(ARKWEB_PDF)
   [EnableIf=arkweb_pdf]
   OnPdfLoadEvent(int32 result, string url);
+  // #endif
+
+  // #if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+  [EnableIf=arkweb_js_on_document_end]
+  OnDocumentEndReady();
   // #endif
 
 };

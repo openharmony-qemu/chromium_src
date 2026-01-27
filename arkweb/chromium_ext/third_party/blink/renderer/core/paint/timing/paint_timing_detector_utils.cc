@@ -14,11 +14,11 @@
  */
 
 #include "arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/paint_timing_detector_utils.h"
+#include "third_party/blink/renderer/core/frame/local_frame.h"
 #include "third_party/blink/renderer/core/paint/timing/paint_timing_detector.h"
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
 #include "arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h"
-#include "third_party/blink/renderer/core/frame/local_frame.h"
 #include "third_party/blink/renderer/core/loader/document_loader.h"
 #include "third_party/blink/renderer/core/paint/timing/image_paint_timing_detector.h"
 #include "third_party/blink/renderer/core/paint/timing/largest_contentful_paint_calculator.h"
@@ -42,6 +42,13 @@ PaintTimingDetectorUtils::PaintTimingDetectorUtils(PaintTimingDetector* paint_ti
   } else {
     paint_timing_detector->GetImagePaintTimingDetector().SetForBlankless();
     paint_timing_detector->GetTextPaintTimingDetector().SetForBlankless();
+  }
+#endif
+#if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT) || BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  if (paint_timing_detector_ && paint_timing_detector_->frame_view_ &&
+      !paint_timing_detector_->frame_view_->GetFrame().Parent()) {
+    first_screen_calculator_ = MakeGarbageCollected<FirstScreenCalculator>(
+        &paint_timing_detector_->frame_view_->GetFrame());
   }
 #endif
 }
@@ -264,6 +271,9 @@ void PaintTimingDetectorUtils::Trace(Visitor* visitor) const {
   if (need_supplement_for_bl_) {
     visitor->Trace(ptd_supplement_for_bl_);
   }
+#if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT) || BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  visitor->Trace(first_screen_calculator_);
+#endif
 }
 
 void PaintTimingDetector::RestartRecordingForBlankless() {
@@ -295,4 +305,37 @@ void LargestContentfulPaintCalculator::SetForBlankless() {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT) || BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+FirstScreenCalculator*
+PaintTimingDetectorUtils::GetFirstScreenCalculator() {
+  if (!paint_timing_detector_ || !paint_timing_detector_->frame_view_) {
+    return nullptr;
+  }
+  Frame* parent_frame =
+      paint_timing_detector_->frame_view_->GetFrame().Parent();
+  if (!parent_frame) {
+    return first_screen_calculator_;
+  }
+
+  LocalFrame* local_frame = static_cast<LocalFrame*>(parent_frame);
+  if (!local_frame || !local_frame->View()) {
+    return nullptr;
+  }
+  return local_frame->View()
+      ->GetPaintTimingDetector()
+      .GetFirstScreenCalculator();
+}
+
+void PaintTimingDetectorUtils::RestartRecordingFirstScreenPaint() {
+  if (auto first_screen_calculator = GetFirstScreenCalculator()) {
+    first_screen_calculator->RestartRecordingFirstScreenPaint(); 
+  }
+}
+
+void PaintTimingDetectorUtils::OnUserScroll() {
+  if (auto first_screen_calculator = GetFirstScreenCalculator()) {
+    first_screen_calculator->OnUserScroll(); 
+  }
+}
+#endif
 }  // namespace blink

@@ -93,13 +93,13 @@ void ResParallelPreloadCtrler::SetPageOrigin(const std::string& page_origin)
     weak_factory_.GetWeakPtr(), std::move(page_origin)));
 }
 
-void ResParallelPreloadCtrler::SetPRPPReqLoaderFac(base::WeakPtr<PRPPRequestLoaderFactory> loader_fac_weak)
+void ResParallelPreloadCtrler::SetPRPPReqLoaderFac(base::WeakPtr<PRPPRequestLoaderFactory> loader_fac_weak, bool valid)
 {
   if (sth_task_runner_ == nullptr) {
     return;
   }
   sth_task_runner_->PostTask(FROM_HERE, base::BindOnce(&ResParallelPreloadCtrler::DoSetPRPPReqLoaderFac,
-    weak_factory_.GetWeakPtr(), loader_fac_weak));
+    weak_factory_.GetWeakPtr(), loader_fac_weak, valid));
 }
 
 void ResParallelPreloadCtrler::UpdateIdlePrerequestCount()
@@ -127,12 +127,12 @@ void ResParallelPreloadCtrler::DoSetPageOrigin(const std::string& page_origin)
   res_req_info_updater_->SetPageOrigin(page_origin);
 }
 
-void ResParallelPreloadCtrler::DoSetPRPPReqLoaderFac(base::WeakPtr<PRPPRequestLoaderFactory> loader_fac_weak)
-{
+void ResParallelPreloadCtrler::DoSetPRPPReqLoaderFac(base::WeakPtr<PRPPRequestLoaderFactory> loader_fac_weak,
+    bool valid) {
   if (res_preload_scheduler_ == nullptr) {
     return;
   }
-  res_preload_scheduler_->SetPRPPReqLoaderFac(loader_fac_weak);
+  res_preload_scheduler_->SetPRPPReqLoaderFac(loader_fac_weak, valid);
 }
 
 void ResParallelPreloadCtrler::DoInit(const scoped_refptr<base::SingleThreadTaskRunner>& net_task_runner,

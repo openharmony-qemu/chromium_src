@@ -481,7 +481,22 @@ std::shared_ptr<NetProxyEventCallback> NetProxyEventCallback::GetInstance() {
   OHOS::NWeb::OhosAdapterHelper::GetInstance()
       .GetNetProxyInstance()
       .RegNetProxyEvent(*proxy_event_callback_);
+#if BUILDFLAG(ARKWEB_NETWORK_PROXY)
+  LOG(INFO) << "netproxy NetProxyEventCallback() start listen";
+  OHOS::NWeb::OhosAdapterHelper::GetInstance()
+      .GetNetProxyInstance()
+      .StartListen();
+#endif
   return *proxy_event_callback_;
+}
+
+NetProxyEventCallback::~NetProxyEventCallback() {
+#if BUILDFLAG(ARKWEB_NETWORK_PROXY)
+  LOG(INFO) << "netproxy ~NetProxyEventCallback() stop listen";
+  OHOS::NWeb::OhosAdapterHelper::GetInstance()
+      .GetNetProxyInstance()
+      .StopListen();
+#endif
 }
  
 void NetProxyEventCallback::AddObserver(ProxyConfigServiceOHOS* observer) {

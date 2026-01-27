@@ -147,6 +147,8 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
 
   void WasOccluded(bool occluded) override {}
 
+  void SetIsOfflineWebComponent() override {}
+
   void OnWindowShow() override {}
 
   void OnWindowHide() override {}
@@ -655,7 +657,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   bool IsAdsBlockEnabledForCurPage() override { return false; }
   void EnableAdsBlock(bool enable) override {}
   int SetUrlTrustListWithErrMsg(const CefString& urlTrustList,
-                                CefString& detailErrMsg) override {
+      bool allowOpaqueOrigin, bool supportWildcard, CefString& detailErrMsg) override {
     return 0;
   }
   void SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) override {}
@@ -759,6 +761,9 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
     return 0;
   }
   void EnableHttpsUpgrades(bool enable) override {}
+#endif
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+  int32_t GetLastCommittedEntryPageTransition() override { return 0; }
 #endif
 
 };

@@ -132,6 +132,11 @@
 #include "url/ohos/log_utils.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#include "base/command_line.h"
+#endif
+
 namespace network {
 
 namespace {
@@ -824,6 +829,14 @@ URLLoader::URLLoader(
         request.net_log_reference_info.value());
   }
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          ::switches::kEnableNwebEx) &&
+      request.retry_with_fallback_proxy) {
+    url_request_->SetRetryWithFallbackProxy(true);
+  }
+#endif
+
   // Resolve elements from request_body and prepare upload data.
   if (request.request_body.get()) {
     OpenFilesForUpload(request);
@@ -1370,6 +1383,13 @@ void URLLoader::FollowRedirect(
 
   deferred_redirect_url_.reset();
   new_redirect_url_ = new_url;
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          ::switches::kEnableNwebEx)) {
+    url_request_->SetRetryWithFallbackProxy(false);
+  }
+#endif
 
   net::HttpRequestHeaders merged_modified_headers = modified_headers;
   merged_modified_headers.MergeFrom(modified_cors_exempt_headers);
@@ -2068,16 +2088,11 @@ void URLLoader::ContinueOnResponseStarted() {
     CompleteBlockedResponse(net::ERR_BLOCKED_BY_RESPONSE, false,
                             blocked_reason);
 
-#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
-    LOG(INFO)
-        << "ContinueOnResponseStarted blocked by response, blocked_reason "
-        << static_cast<int>(*blocked_reason) << ", url: ***";
-#endif
-
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-    LOG_FEEDBACK(INFO)
-        << "ContinueOnResponseStarted blocked by response, blocked_reason "
-        << static_cast<int>(*blocked_reason) << ", url: "
+    LOG_FEEDBACK(INFO, kNetwork)
+        << "ContinueOnResponseStartedBlocked blockedReason:"
+        << static_cast<int>(*blocked_reason)
+        << " isStrictLogMode:" << is_strict_log_mode_ << " url:"
         << url::LogUtils::ConvertUrlWithMask(url_request_->url().spec());
     if (base::CommandLine::ForCurrentProcess()->HasSwitch(
             ::switches::kEnableLoggerReport)) {
@@ -2130,15 +2145,10 @@ void URLLoader::ContinueOnResponseStarted() {
         orb_analyzer_->Init(url_request_->url(), url_request_->initiator(),
                             request_mode_, request_destination_, *response_);
     if (MaybeBlockResponseForOrb(decision)) {
-#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
-      LOG(INFO) << "ContinueOnResponseStarted blocked the request for "
-                   "ORB blocked origin "
-                   "response, url: ***";
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-      LOG_FEEDBACK(INFO)
-          << "ContinueOnResponseStarted blocked the request for "
-             "Cross-Origin Read Blocking (CORB) blocked cross-origin "
-             "response, url: "
+      LOG_FEEDBACK(INFO, kNetwork)
+          << "ContinueOnResponseStartedBlockedForOrb isStrictLogMode:"
+          << is_strict_log_mode_ << " url:"
           << url::LogUtils::ConvertUrlWithMask(url_request_->url().spec());
       if (!is_strict_log_mode_) {
         LOG(URL) << "ContinueOnResponseStarted blocked the request for "
@@ -2146,7 +2156,6 @@ void URLLoader::ContinueOnResponseStarted() {
                     "response, url: "
                  << url_request_->url().spec();
       }
-#endif
 #endif
       return;
     }
@@ -2371,24 +2380,19 @@ void URLLoader::DidRead(int num_bytes,
         }
 
         if (MaybeBlockResponseForOrb(orb_decision)) {
-#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
-      LOG(INFO) << "ContinueOnResponseStarted blocked the request for "
-                   "ORB blocked origin "
-                   "response, url: ***";
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-      LOG_FEEDBACK(INFO)
-          << "DidRead blocked the request for Cross-Origin Read "
-             "Blocking (CORB) blocked cross-origin response, url: "
-          << url::LogUtils::ConvertUrlWithMask(url_request_->url().spec());
-      if (base::CommandLine::ForCurrentProcess()->HasSwitch(
-              ::switches::kEnableLoggerReport)) {
+          LOG_FEEDBACK(INFO, kNetwork)
+              << "DidReadBlockedForOrb isStrictLogMode:" << is_strict_log_mode_
+              << " url:"
+              << url::LogUtils::ConvertUrlWithMask(url_request_->url().spec());
+          if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+                  ::switches::kEnableLoggerReport)) {
             if (!is_strict_log_mode_) {
               LOG(URL) << "DidRead blocked the request for Cross-Origin Read "
                           "Blocking (CORB) blocked cross-origin response, url: "
                        << url_request_->url().spec();
             }
-      }
-#endif
+          }
 #endif
           return;
         }
@@ -2630,7 +2634,7 @@ void URLLoader::NotifyCompleted(int error_code) {
 #if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
   if (url_request_->isolation_info().request_type() ==
                         net::IsolationInfo::RequestType::kMainFrame) {
-    ReportUrlQuicInfo(url_request_.get(), error_code);
+    ReportMainResourceMetrics(url_request_.get(), error_code);
   }
 #endif // BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
   // Ensure sending the final upload progress message here, since
@@ -2690,6 +2694,14 @@ void URLLoader::NotifyCompleted(int error_code) {
     status.decoded_body_length = total_written_bytes_;
     status.resolve_error_info =
         url_request_->response_info().resolve_error_info;
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+    if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+            ::switches::kEnableNwebEx)) {
+      status.used_fallback_proxy = url_request_->used_fallback_proxy();
+      status.needs_reload_with_fallback_proxy =
+          url_request_->needs_reload_with_fallback_proxy();
+    }
+#endif
     if (trust_token_status_)
       status.trust_token_operation_status = *trust_token_status_;
     status.cors_error_status = cors_error_status_;

@@ -2628,6 +2628,7 @@ class CONTENT_EXPORT RenderFrameHostImpl
   void GetCreateNewWindow(const GURL& target_url,
                           WindowOpenDisposition disposition,
                           bool allow_popup,
+                          blink::mojom::WindowFeaturesPtr window_features,
                           GetCreateNewWindowCallback callback) override;
 #endif
 #if BUILDFLAG(ARKWEB_PRECOMPILE)
@@ -2649,6 +2650,10 @@ class CONTENT_EXPORT RenderFrameHostImpl
       std::vector<blink::mojom::DraggableRegionPtr> regions) override;
   void NotifyDocumentInteractive() override;
   void OnFirstContentfulPaint() override;
+
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+  void OnDocumentEndReady() override;
+#endif
 
   void ReportNoBinderForInterface(const std::string& error);
 
@@ -3254,6 +3259,11 @@ class CONTENT_EXPORT RenderFrameHostImpl
       const std::vector<int32_t>& detectionMethods,
       int32_t contentfulNodesCountThreshold);
 #endif
+#if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT)
+  void OnFirstScreenPaint(const std::string& url,
+                          int64_t navigation_start_time,
+                          int64_t first_screen_paintTime) override;
+#endif
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)
   void CommitFailedNavigation(
     mojom::NavigationClient* navigation_client,
@@ -3273,6 +3283,19 @@ class CONTENT_EXPORT RenderFrameHostImpl
 #endif
 #if BUILDFLAG(ARKWEB_PDF)
   void SetIsPDF(bool is_pdf);
+#endif
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  void OnCommitNavigation(
+      const GURL& url,
+      bool is_same_document,
+      const base::UnguessableToken& devtools_navigation_token);
+  void OnDidCommitNavigationInternal(
+      const GURL& url,
+      bool is_same_document,
+      NavigationRequest* navigation_request,
+      const base::UnguessableToken& devtools_navigation_token);
+  void OnResetOwnedNavigationRequests(NavigationDiscardReason reason);
 #endif
 
  protected:

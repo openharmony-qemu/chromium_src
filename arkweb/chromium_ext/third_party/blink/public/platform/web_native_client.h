@@ -38,6 +38,8 @@ class BLINK_PLATFORM_EXPORT WebNativeClient {
   virtual void OnLayerRectVisibilityChange(bool visibility) = 0;
   virtual void CleanupVisibilityForRemovedLayer(bool visibility) = 0;
   virtual void OnDestroyNativeSurface() = 0;
+  virtual void SetStretchContentToFillBounds(bool stretch_content_to_fill_bounds) = 0;
+  virtual bool GetStretchContentToFillBounds() = 0;
 
   // Returns the color space to render media into if.
   // Rendering media into this color space may avoid some conversions.

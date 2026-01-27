@@ -70,13 +70,12 @@ void ArkwebGlSurfaceEglUtils::SwapBuffersWithDamageSolution(
                  << static_cast<int32_t>(buffer_result);
   }
 
-  if (duration >= GPU_WAIT_IO_TIMEOUT) {
-    ReportGpuProcessEvent(CrashType::TIMEOUT, "GPU Process SwapBuffer timeout(>3000ms) exceeded");
-  }
-
   if (buffer_result == gfx::SwapResult::SWAP_FAILED) {
     LOG(ERROR) << "web render log: SwapBuffersWithDamage failed, size = "
                << size.ToString();
+    if (duration >= GPU_WAIT_IO_TIMEOUT) {
+      ReportGpuProcessEvent(CrashType::TIMEOUT, "GPU Process SwapBuffer timeout(>3000ms) exceeded");
+    }
   }
 }
 

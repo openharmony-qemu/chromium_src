@@ -25,6 +25,7 @@
 #include "third_party/blink/public/web/web_frame_content_dumper.h"
 #include "third_party/blink/public/web/web_language_detection_details.h"
 #include "third_party/blink/public/web/web_local_frame.h"
+#include "third_party/blink/public/web/web_local_frame_client.h"
 #include "third_party/blink/renderer/core/editing/frame_selection.h"
 #include "third_party/blink/renderer/core/events/web_input_event_conversion.h"
 #include "third_party/blink/renderer/core/exported/web_view_impl.h"
@@ -147,6 +148,17 @@ void WebFrameWidgetImplExt::SelectRangeV2(const gfx::Point& position,
   }
   focused_frame->SelectRangeV2(widget_base_->DIPsToRoundedBlinkSpace(position),
                                is_base);
+}
+
+void WebFrameWidgetImplExt::NotifySelectionRangeEmpty(
+    blink::WebRange range,
+    WebLocalFrame* focused_frame) {
+  if (range.IsNull()) {
+    if (focused_frame && focused_frame->Client()) {
+      focused_frame->Client()->DidChangeSelection(
+          true, blink::SyncCondition::kNotForced);
+    }
+  }
 }
 #endif
 

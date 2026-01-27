@@ -8,6 +8,7 @@
 #include "content/browser/web_contents/web_contents_impl.h"
 
 namespace content {
+  constexpr int kMilliseconds = 1000;
 
   MediaSessionControllerExt::MediaSessionControllerExt(const MediaPlayerId& id,
                                                        WebContentsImpl* web_contents)
@@ -94,4 +95,171 @@ void MediaSessionControllerExt::OnNotifyMemoryLevel(int player_id, int32_t level
   }
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+void MediaSessionControllerExt::OnNotifyMeidaCastUri(const std::string& media_uri) {
+  if (media_session_) {
+    media_session_->OnNotifyMeidaCastUri(media_uri);
+  }
+}
+
+void MediaSessionControllerExt::CreateAVCastAdapter() {
+  LOG(INFO) << "MediaSessionController::CreateAVCastAdapter";
+  if (media_session_) {
+    media_session_->CreateAVCastAdapter();
+  }
+}
+
+void MediaSessionControllerExt::HandleStopMediaCast() {
+  LOG(INFO) << "MediaSessionController::HandleStopMediaCast";
+  if (media_session_) {
+    media_session_->HandleStopMediaCast();
+  }
+}
+
+void MediaSessionControllerExt::UpdateRemotePlayState(bool is_playing) {
+  LOG(INFO) << "MediaSessionController::UpdateRemotePlayState";
+  if (media_session_) {
+    media_session_->UpdateRemotePlayState(is_playing);
+  }
+}
+
+void MediaSessionControllerExt::UpdateRemotePlayPosition(int64_t position) {
+  LOG(INFO) << "MediaSessionController::UpdateRemotePlayPosition";
+  if (media_session_) {
+    media_session_->UpdateRemotePlayPosition(position);
+  }
+}
+
+int32_t MediaSessionControllerExt::GetMediaCastCurrentTime(int player_id) {
+  DCHECK_EQ(player_id_, player_id);
+  if (!web_contents_) {
+    LOG(ERROR) << "GetMediaCastCurrentTime, web_contents is null";
+    return 0;
+  }
+  auto web_contents_observer = web_contents_->media_web_contents_observer();
+  if (!web_contents_observer) {
+    LOG(ERROR) << "GetMediaCastCurrentTime, web_contents_observer is null";
+    return 0;
+  }
+  if (web_contents_observer->IsPlayerIdInMediaPlayerRemotesMap(id_)) {
+    LOG(INFO) << "MediaSessionControllerExt:GetMediaCastCurrentTime";
+    double time = 0.0;
+    web_contents_observer->GetMediaPlayerRemote(id_)->GetMediaCastCurrentTime(&time);
+    LOG(INFO) << "Current media cast time: " << time;
+    return static_cast<int32_t>(time * kMilliseconds);
+  }
+  return 0;
+}
+
+void MediaSessionControllerExt::PullUpCastBackGround(int player_id, const std::string& device_name) {
+  LOG(INFO) << "MediaSessionControllerExt::PullUpCastBackGround enter";
+  if (!web_contents_) {
+    LOG(ERROR) << "GetMediaCastCurrentTime, web_contents is null";
+    return;
+  }
+  auto web_contents_observer = web_contents_->media_web_contents_observer();
+  if (!web_contents_observer) {
+    LOG(ERROR) << "PullUpCastBackGround, web_contents_observer is null";
+    return;
+  }
+  if (web_contents_observer->IsPlayerIdInMediaPlayerRemotesMap(id_)) {
+    LOG(INFO) << "MediaSessionControllerExt:PullUpCastBackGround.";
+    web_contents_observer->GetMediaPlayerRemote(id_)->PullUpCastBackGround(device_name);
+  }
+}
+
+void MediaSessionControllerExt::MediaCastStopped(int player_id) {
+  LOG(INFO) << "MediaSessionControllerExt::MediaCastStopped enter";
+  if (!web_contents_) {
+    LOG(ERROR) << "MediaCastStopped, web_contents is null";
+    return;
+  }
+  auto web_contents_observer = web_contents_->media_web_contents_observer();
+  if (!web_contents_observer) {
+    LOG(ERROR) << "MediaCastStopped, web_contents_observer is null";
+    return;
+  }
+  if (web_contents_observer->IsPlayerIdInMediaPlayerRemotesMap(id_)) {
+    LOG(INFO) << "MediaSessionControllerExt:MediaCastStopped";
+    web_contents_observer->GetMediaPlayerRemote(id_)->MediaCastStopped();
+  }
+}
+
+void MediaSessionControllerExt::UpdateUiPlayState(int player_id, bool is_playing) {
+  LOG(INFO) << "MediaSessionControllerExt::UpdateUiPlayState enter";
+  if (!web_contents_) {
+    LOG(ERROR) << "UpdateUiPlayState, web_contents is null";
+    return;
+  }
+  auto web_contents_observer = web_contents_->media_web_contents_observer();
+  if (!web_contents_observer) {
+    LOG(ERROR) << "UpdateUiPlayState, web_contents_observer is null";
+    return;
+  }
+  if (web_contents_observer->IsPlayerIdInMediaPlayerRemotesMap(id_)) {
+    LOG(INFO) << "MediaSessionControllerExt:UpdateUiPlayState";
+    web_contents_observer->GetMediaPlayerRemote(id_)->UpdateUiPlayState(is_playing);
+  }
+}
+
+void MediaSessionControllerExt::UpdateUiPlayPosition(int player_id, int64_t position) {
+  if (!web_contents_) {
+    LOG(ERROR) << "UpdateUiPlayPosition, web_contents is null";
+    return;
+  }
+  auto web_contents_observer = web_contents_->media_web_contents_observer();
+  if (!web_contents_observer) {
+    LOG(ERROR) << "UpdateUiPlayPosition, web_contents_observer is null";
+    return;
+  }
+  if (web_contents_observer->IsPlayerIdInMediaPlayerRemotesMap(id_)) {
+    LOG(DEBUG) << "MediaSessionControllerExt:UpdateUiPlayPosition ";
+    web_contents_observer->GetMediaPlayerRemote(id_)->UpdateUiPlayPosition(position);
+  }
+}
+
+void MediaSessionControllerExt::MediaCastStopByNavigation() {
+  if (!web_contents_)
+    return;
+  auto web_contents_observer = web_contents_->media_web_contents_observer();
+  if (!web_contents_observer)
+    return;
+  if (web_contents_observer->IsPlayerIdInMediaPlayerRemotesMap(id_)) {
+    web_contents_observer->GetMediaPlayerRemote(id_)->MediaCastStopByNavigation();
+  }
+}
+
+void MediaSessionControllerExt::SetPauseByAvcast(bool pause_avcast) {
+  LOG(INFO) << "MediaSessionController::SetPauseByAvcast";
+  if (media_session_) {
+    media_session_->SetPauseByAvcast(pause_avcast);
+  }
+}
+
+void MediaSessionControllerExt::NotifyRemoteExitFullScreen() {
+  if (!web_contents_)
+    return;
+  auto web_contents_observer = web_contents_->media_web_contents_observer();
+  if (!web_contents_observer)
+    return;
+  if (web_contents_observer->IsPlayerIdInMediaPlayerRemotesMap(id_)) {
+    web_contents_observer->GetMediaPlayerRemote(id_)->NotifyRemoteExitFullScreen();
+  }
+}
+
+void MediaSessionControllerExt::NotifyCastControlShow(int player_id, bool is_show) {
+  DCHECK_EQ(player_id_, player_id);
+  LOG(INFO) << "MediaSessionControllerExt::NotifyCastControlShow";
+  if (!web_contents_)
+    return;
+  auto web_contents_observer = web_contents_->media_web_contents_observer();
+  if (!web_contents_observer)
+    return;
+  if (web_contents_observer->IsPlayerIdInMediaPlayerRemotesMap(id_)) {
+    web_contents_observer->GetMediaPlayerRemote(id_)->NotifyCastControlShow(is_show);
+  }
+}
+
+#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
 }

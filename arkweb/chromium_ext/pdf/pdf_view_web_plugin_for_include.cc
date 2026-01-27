@@ -21,8 +21,10 @@ namespace {
 // The minimum scale level allowed.
 constexpr double kMinScale = 0.001f;
 
-constexpr base::TimeDelta kPDFScrollDelay = base::Milliseconds(100);
-constexpr base::TimeDelta kPDFSelectionDelay = base::Milliseconds(50);
+constexpr base::TimeDelta kScrollDelay = base::Milliseconds(100);
+constexpr base::TimeDelta kSelectionDelay = base::Milliseconds(100);
+constexpr base::TimeDelta kPaintDelay = base::Milliseconds(100);
+constexpr base::TimeDelta kMenuDelay = base::Milliseconds(100);
 #endif  // BUILDFLAG(ARKWEB_PDF)
 
 }  // namespace
@@ -80,7 +82,7 @@ int32_t PdfViewWebPlugin::CastFpdfErrorToPdfLoadEvent(int pdf_error) {
   return static_cast<int32_t>(load_event);
 }
 
-void PdfViewWebPlugin::UpdateClientClippedSelectionBoundsForPDF(gfx::Rect& clipped_selection_bounds) {
+void PdfViewWebPlugin::ConvertAndUpdateSelectionBounds(gfx::Rect& clipped_selection_bounds) {
   if (std::abs(device_scale_) <= kMinScale) {
     LOG(ERROR) << "PDF device scale is almost equal to 0.";
     return;
@@ -92,70 +94,93 @@ void PdfViewWebPlugin::UpdateClientClippedSelectionBoundsForPDF(gfx::Rect& clipp
   converted_origin.set_x(converted_origin.x() * inverse_scale);
   converted_origin.set_y(converted_origin.y() * inverse_scale);
   gfx::Size converted_size(clipped_selection_bounds.width() * inverse_scale,
-                            clipped_selection_bounds.height() * inverse_scale);
+                           clipped_selection_bounds.height() * inverse_scale);
   clipped_selection_bounds.set_origin(converted_origin);
   clipped_selection_bounds.set_size(converted_size);
-  pdf_host_->UpdateClientClippedSelectionBoundsForPDF(clipped_selection_bounds);
+  pdf_host_->ConvertAndUpdateSelectionBounds(clipped_selection_bounds);
 }
 
-void PdfViewWebPlugin::RefreshMenuWithTouchAndScroll() {
-  bool is_menu_hidden = false;
-  if (!is_touching_ && !is_scrolling_ && !is_pinching_) {
-    is_menu_hidden = false;
-  } else {
-    is_menu_hidden = true;
+void PdfViewWebPlugin::SelectionChangedAtScrollStopped() {
+  if (!engine_) {
+    LOG(ERROR) << __func__ << ", PDF engine_ is null.";
   }
-  bool expected_is_menu_hidden = is_menu_hidden_.load();
-  if (expected_is_menu_hidden == is_menu_hidden) {
-    return;
-  }
-  is_menu_hidden_.store(is_menu_hidden);
-  pdf_host_->HideHandleAndQuickMenuForPDF(is_menu_hidden);
-}
-
-void PdfViewWebPlugin::ForceSelectionChanged() {
-  auto left = current_left_;
-  auto right = current_right_;
-
-  gfx::PointF left_point(left.x() + available_area_.x(), left.y());
-  gfx::PointF right_point(right.x() + available_area_.x(), right.y());
-
-  const float inverse_scale = 1.0f / device_scale_;
-  left_point.Scale(inverse_scale);
-  right_point.Scale(inverse_scale);
-
-  pdf_host_->SelectionChanged(left_point, left.height() * inverse_scale,
-                              right_point, right.height() * inverse_scale);
-
-  if (accessibility_state_ == AccessibilityState::kLoaded)
-    PrepareAndSetAccessibilityViewportInfo();
+  engine_->SelectionChangedAtScrollStopped();
 }
 
 void PdfViewWebPlugin::SetIsTouching(bool is_touching) {
-  if (is_touching_ == is_touching) {
+  bool expected_is_touching = is_touching_.load();
+  if (expected_is_touching == is_touching) {
     return;
   }
-  is_touching_ = is_touching;
-  RefreshMenuWithTouchAndScroll();
+  is_touching_.store(is_touching);
+  HideOrShowMenuAfterDelay();
 }
 
 void PdfViewWebPlugin::SetIsScrolling(bool is_scrolling) {
-  if (is_scrolling_ == is_scrolling) {
+  bool expected_is_scrolling = is_scrolling_.load();
+  if (expected_is_scrolling == is_scrolling) {
     return;
   }
-  is_scrolling_ = is_scrolling;
-  RefreshMenuWithTouchAndScroll();
-  if (!is_scrolling_) {
-    paint_manager_.DoPaintAtScrollStopped();
-  }
+  is_scrolling_.store(is_scrolling);
+  HideOrShowMenuAfterDelay();
 }
 
 void PdfViewWebPlugin::SetIsPinching(bool is_pinching) {
-  if (is_pinching_ == is_pinching) {
+  bool expected_is_pinching = is_pinching_.load();
+  if (expected_is_pinching == is_pinching) {
     return;
   }
-  is_pinching_ = is_pinching;
-  RefreshMenuWithTouchAndScroll();
+  is_pinching_.store(is_pinching);
+  HideOrShowMenuAfterDelay();
+}
+
+void PdfViewWebPlugin::SetIsSelectionVisible(bool visible) {
+  bool expected_is_selection_visible = is_selection_visible_.load();
+  if (expected_is_selection_visible == visible) {
+    return;
+  }
+  is_selection_visible_.store(visible);
+  HideOrShowMenuAfterDelay();
+}
+
+bool PdfViewWebPlugin::ShouldHideMenu() {
+  bool is_selection_visible = is_selection_visible_.load();
+  bool is_touching = is_touching_.load();
+  bool is_scrolling = is_scrolling_.load();
+  bool is_pinching = is_pinching_.load();
+  return !is_selection_visible || is_touching || is_scrolling || is_pinching;
+}
+
+void PdfViewWebPlugin::HideOrShowMenuAfterDelay() {
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  bool hide_menu = ShouldHideMenu();
+  if (cancelable_menu_delayed_task_.IsValid()) {
+    cancelable_menu_delayed_task_.CancelTask();
+  } else {
+    // If no task can be canceled, run it immediately.
+    HideHandleAndQuickMenu(hide_menu);
+  }
+  auto task_runner = GetTaskRunner();
+  if (!task_runner) {
+    LOG(ERROR) << "PDF task runner is null.";
+    return;
+  }
+  cancelable_menu_delayed_task_ = task_runner->PostCancelableDelayedTask(
+      base::subtle::PostDelayedTaskPassKey(),
+      FROM_HERE,
+      base::BindOnce(&PdfViewWebPlugin::HideHandleAndQuickMenu,
+                     weak_factory_.GetWeakPtr(),
+                     hide_menu),
+      kMenuDelay);
+}
+
+void PdfViewWebPlugin::HideHandleAndQuickMenu(bool hide) {
+  bool expected_is_menu_hidden = is_menu_hidden_.load();
+  if (expected_is_menu_hidden == hide) {
+    return;
+  }
+  is_menu_hidden_.store(hide);
+  pdf_host_->HideHandleAndQuickMenu(hide);
 }
 
 scoped_refptr<base::SequencedTaskRunner> PdfViewWebPlugin::GetTaskRunner() {
@@ -164,19 +189,20 @@ scoped_refptr<base::SequencedTaskRunner> PdfViewWebPlugin::GetTaskRunner() {
 }
 
 void PdfViewWebPlugin::SetScrollStoppedAfterDelay() {
-  if (cancelable_scroll_task_.IsValid()) {
-    cancelable_scroll_task_.CancelTask();
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  if (cancelable_scroll_delayed_task_.IsValid()) {
+    cancelable_scroll_delayed_task_.CancelTask();
   }
   auto task_runner = GetTaskRunner();
   if (!task_runner) {
     LOG(ERROR) << "PDF task runner is null.";
     return;
   }
-  cancelable_scroll_task_ = task_runner->PostCancelableDelayedTask(
+  cancelable_scroll_delayed_task_ = task_runner->PostCancelableDelayedTask(
       base::subtle::PostDelayedTaskPassKey(),
       FROM_HERE,
       base::BindOnce(&PdfViewWebPlugin::SetIsScrolling, weak_factory_.GetWeakPtr(), false),
-      kPDFScrollDelay);
+      kScrollDelay);
 }
 
 void PdfViewWebPlugin::ResetResponsePendingInputEvent() {
@@ -189,27 +215,80 @@ void PdfViewWebPlugin::HandleClickBookmarkMessage(const base::Value::Dict& messa
     LOG(ERROR) << "Invalid bookmark ID received";
     return;
   }
+  if (!engine_) {
+    LOG(ERROR) << __func__ << ", PDF engine_ is null.";
+  }
   engine_->OnClickBookmark(*nullableId);
 }
 
-void PdfViewWebPlugin::ForceSelectionChangedAfterDelay() {
-  if (cancelable_selection_task_.IsValid()) {
-    cancelable_selection_task_.CancelTask();
+void PdfViewWebPlugin::SelectionChangedAfterDelay() {
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  if (cancelable_selection_delayed_task_.IsValid()) {
+    cancelable_selection_delayed_task_.CancelTask();
   }
   auto task_runner = GetTaskRunner();
   if (!task_runner) {
     LOG(ERROR) << "PDF task runner is null.";
     return;
   }
-  cancelable_selection_task_ = task_runner->PostCancelableDelayedTask(
+  cancelable_selection_delayed_task_ = task_runner->PostCancelableDelayedTask(
       base::subtle::PostDelayedTaskPassKey(),
       FROM_HERE,
-      base::BindOnce(&PdfViewWebPlugin::ForceSelectionChanged, weak_factory_.GetWeakPtr()),
-      kPDFSelectionDelay);
+      base::BindOnce(&PdfViewWebPlugin::SelectionChangedAtScrollStopped, weak_factory_.GetWeakPtr()),
+      kSelectionDelay);
 }
 
 void PdfViewWebPlugin::ClearTextSelection() {
+  if (!engine_) {
+    LOG(ERROR) << __func__ << ", PDF engine_ is null.";
+  }
   engine_->ClearTextSelection();
+}
+
+void PdfViewWebPlugin::DoPaintAtScrollStopped() {
+  paint_manager_.DoPaintAtScrollStopped();
+}
+
+void PdfViewWebPlugin::DoPaintAfterDelay() {
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  if (cancelable_paint_delayed_task_.IsValid()) {
+    cancelable_paint_delayed_task_.CancelTask();
+  }
+  auto task_runner = GetTaskRunner();
+  if (!task_runner) {
+    LOG(ERROR) << "PDF task runner is null.";
+    return;
+  }
+  cancelable_paint_delayed_task_ = task_runner->PostCancelableDelayedTask(
+      base::subtle::PostDelayedTaskPassKey(),
+      FROM_HERE,
+      base::BindOnce(&PdfViewWebPlugin::DoPaintAtScrollStopped, weak_factory_.GetWeakPtr()),
+      kPaintDelay);
+}
+
+void PdfViewWebPlugin::OnScaleChanged() {
+  if (!engine_) {
+    LOG(ERROR) << __func__ << ", PDF engine_ is null.";
+  }
+  engine_->ClearTextSelection();
+}
+
+void PdfViewWebPlugin::SetIsLeftHandleVisible(bool visible) {
+  bool expected_is_left_visible = is_left_visible_.load();
+  if (expected_is_left_visible == visible) {
+    return;
+  }
+  is_left_visible_.store(visible);
+  pdf_host_->SetIsLeftHandleVisible(is_left_visible_.load());
+}
+
+void PdfViewWebPlugin::SetIsRightHandleVisible(bool visible) {
+  bool expected_is_right_visible = is_right_visible_.load();
+  if (expected_is_right_visible == visible) {
+    return;
+  }
+  is_right_visible_.store(visible);
+  pdf_host_->SetIsRightHandleVisible(is_right_visible_.load());
 }
 #endif  // BUILDFLAG(ARKWEB_PDF)
 

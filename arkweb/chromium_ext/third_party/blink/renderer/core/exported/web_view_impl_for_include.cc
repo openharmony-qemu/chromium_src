@@ -51,6 +51,8 @@ void ApplyOhosWebPreferences(const web_pref::WebPreferences& prefs,
                              WebViewImpl* web_view_impl) {
 #if BUILDFLAG(ARKWEB_AI)
   settings->SetImageAnalyzerEnabled(prefs.image_analyzer_enabled);
+  settings->SetArkwebAgentEnabled(prefs.arkweb_agent_enabled);
+  settings->SetAgentNeedHighlight(prefs.agent_need_highlight);
 #endif  // BUILDFLAG(ARKWEB_AI)
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   settings->SetVerticalHideScrollbars(prefs.hide_vertical_scrollbars);
@@ -89,6 +91,10 @@ void ApplyOhosWebPreferences(const web_pref::WebPreferences& prefs,
       prefs.border_radius_top_left, prefs.border_radius_top_right,
       prefs.border_radius_bottom_left, prefs.border_radius_bottom_right);
 #endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
+
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  settings->SetEnableAutoFill(prefs.is_autofill_enabled);
+#endif  // BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
 
 #if BUILDFLAG(ARKWEB_MENU)
   settings->SetTouchHandleExistState(prefs.touch_handle_exist);
@@ -156,6 +162,10 @@ void ApplyOhosWebPreferences(const web_pref::WebPreferences& prefs,
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
   settings->SetClipboardSitePermissionEnabled(prefs.clipboard_site_permission_enabled);
 #endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+  settings->SetCastEnabled(prefs.cast_enabled);
+#endif  // BUILDFLAG(ARKWEB_MEDIA_CAST)
 }
 
 void WebView::ApplyWebPreferencesForInclude(

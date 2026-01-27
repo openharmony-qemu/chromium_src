@@ -78,6 +78,9 @@ class MEDIA_EXPORT VideoRenderer {
 #if BUILDFLAG(ARKWEB_PIP)
   virtual void PipEnable(bool enable) = 0;
 #endif
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  virtual void SetPreciseSeekTarget(int64_t target_timestamp) = 0;
+#endif // ARKWEB_VIDEO_ASSISTANT
 #if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
   virtual void RecycleDmaBuffer() = 0;
   virtual void ResumeDmaBuffer() = 0;

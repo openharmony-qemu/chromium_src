@@ -28,18 +28,20 @@ namespace blink {
 class ImageRecord;
 class TextRecord;
 
-class FirstScreenCalculator {
+class FirstScreenCalculator : public GarbageCollected<FirstScreenCalculator> {
  public:
-  explicit FirstScreenCalculator(LocalFrameView* local_frame_view)
-      : frame_view_(local_frame_view) {}
+  explicit FirstScreenCalculator(LocalFrame* local_frame)
+      : local_frame_(local_frame) {}
   void NotifyImagePaint(MediaRecordIdHash record_id_hash,
                         const ImageRecord* record,
-                        std::optional<uint64_t> viewport_size);
-  void NotifyTextPaint(const TextRecord* record, base::TimeTicks timestamp);
+                        std::optional<uint64_t> viewport_size,
+                        bool is_video);
+  void NotifyTextPaint(const TextRecord* record, const base::TimeTicks& timestamp);
   void AssignImagePaintTime(MediaRecordIdHash record_id_hash,
                             const gfx::Rect& rect,
-                            base::TimeTicks timestamp);
+                            const base::TimeTicks& timestamp);
   bool RemoveImageRecord(MediaRecordIdHash record_id_hash);
+  void Trace(Visitor* visitor) const;
   void OnUserScroll();
   bool HasUserScrolled() const;
   void RestartRecordingFirstScreenPaint();
@@ -48,7 +50,7 @@ class FirstScreenCalculator {
  private:
   struct PaintRectInfo {
     PaintRectInfo() {}
-    PaintRectInfo(const gfx::Rect rect, base::TimeTicks timestamp)
+    PaintRectInfo(const gfx::Rect rect, const base::TimeTicks& timestamp)
         : rect_(rect), paint_time_(timestamp) {}
     gfx::Rect rect_;
     base::TimeTicks paint_time_ = base::TimeTicks();
@@ -57,15 +59,25 @@ class FirstScreenCalculator {
   void DumpImageRect();
   void DumpTextRect();
   void OnFirstScreenInvoked();
-  void RestartTimerForFirstScreenDetection(base::TimeDelta delay);
+  void RestartTimerForFirstScreenDetection();
+  bool IsRectContainedByExistingRects(const gfx::Rect& rect);
+  bool DoesRectIntersectExistingRects(const gfx::Rect& rect);
+  void RemoveExistingRectsContainedByRect(const gfx::Rect& rect);
+  bool IsRectTooSmallWhenNearlyFinished(const gfx::Rect& rect);
+  bool GetViewportAreaAndTrimRect(gfx::Rect& rect);
 
   std::unordered_map<MediaRecordIdHash, PaintRectInfo> image_rects_map_;
-  std::vector<PaintRectInfo> text_paint_rect_;
+  std::vector<MediaRecordIdHash> intersected_image_ids_;
+  std::vector<PaintRectInfo> text_paint_rects_;
   base::OneShotTimer timer_;
   base::TimeTicks first_screen_paint_time_;
-  Member<LocalFrameView> frame_view_;
+  base::TimeTicks navigation_start_time_;
+  WeakMember<LocalFrame> local_frame_;
   bool user_scrolled_ = false;
-  base::WeakPtrFactory<FirstScreenCalculator> weak_factory_{this};
+  MediaRecordIdHash background_image_id_ = 0;
+  gfx::Rect viewport_rect_{gfx::Rect()};
+  gfx::Rect occupied_rect_{gfx::Rect()};
+  bool nearly_finished_ = false;
 };
 
 }  // namespace blink

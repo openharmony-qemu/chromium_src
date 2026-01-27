@@ -79,13 +79,17 @@ void NetworkChangeNotifierPassive::OnDNSChanged() {
 }
 
 void NetworkChangeNotifierPassive::OnIPAddressChanged() {
+#if !BUILDFLAG(ARKWEB_NETWORK_BASE)
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
+#endif
   NetworkChangeNotifier::NotifyObserversOfIPAddressChange();
 }
 
 void NetworkChangeNotifierPassive::OnConnectionChanged(
     NetworkChangeNotifier::ConnectionType connection_type) {
+#if !BUILDFLAG(ARKWEB_NETWORK_BASE)
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
+#endif
   {
     base::AutoLock scoped_lock(lock_);
     connection_type_ = connection_type;
@@ -101,7 +105,9 @@ void NetworkChangeNotifierPassive::OnConnectionChanged(
 void NetworkChangeNotifierPassive::OnConnectionSubtypeChanged(
     NetworkChangeNotifier::ConnectionType connection_type,
     NetworkChangeNotifier::ConnectionSubtype connection_subtype) {
+#if !BUILDFLAG(ARKWEB_NETWORK_BASE)
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
+#endif
   double max_bandwidth_mbps =
       GetMaxBandwidthMbpsForConnectionSubtype(connection_subtype);
   {

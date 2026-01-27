@@ -17,10 +17,12 @@ OpenHarmony 6.0系统ArkWebCore内核默认升级到了M132版本，同时系统
 enum ArkWebEngineVersion {
     SYSTEM_DEFAULT = 0,
     M114 = 1,
-    M132 = 2
+    M132 = 2,
+    ARKWEB_EVERGREEN = 99999
 }
 static setActiveWebEngineVersion(engineVersion: ArkWebEngineVersion): void;
 static getActiveWebEngineVersion(): ArkWebEngineVersion;
+static isActiveWebEngineEvergreen(): boolean;
 ```
 
 ArkWebEngineVersion枚举值定义：
@@ -29,7 +31,8 @@ ArkWebEngineVersion枚举值定义：
 | :--------------: | ------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
 |       M132       | 6.0版本的常青内核        | 6.0版本上的默认内核。如果后续OpenHarmony系统版本上不存在此内核则设置无效。                                                      |
 |       M114       | 6.0版本的遗留内核        | 开发者可选择此遗留内核。如果后续OpenHarmony系统版本上不存在此内核则设置无效。 计划在2026-Q2禁用此内核。                                |
-|  SYSTEM_DEFAULT  | 系统默认                 | 使用系统上默认内核，6.0版本上默认为M132                                                                                |
+|  SYSTEM_DEFAULT  | 系统默认                 | 使用系统上默认内核，6.0版本上默认为M132 |
+| ARKWEB_EVERGREEN | 常青内核，系统的最新内核 | 开发者可选择在每个系统版本上都使用最新的内核，6.1以及之后所有系统版本都生效，比如7.0系统上常青内核可能是最新的其他内核。<br>**说明：** 从API version 23开始支持|
 
 应用在Web组件加载之前，可以通过SDK 20的setActiveWebEngineVersion接口，指定ArkWebCore内核的版本。[示例代码](https://gitcode.com/openharmony/applications_app_samples/blob/master/code/DocsSample/ArkWeb/DualWebCore)：
 

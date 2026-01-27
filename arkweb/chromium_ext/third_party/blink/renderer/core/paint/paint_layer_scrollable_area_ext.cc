@@ -31,7 +31,6 @@
 #include "third_party/blink/renderer/core/page/chrome_client.h"
 #include "third_party/blink/renderer/core/exported/web_view_impl.h"
 #include "third_party/blink/public/web/web_view.h"
-#include "third_party/blink/renderer/core/frame/settings.h"
 #include "third_party/blink/public/web/web_settings.h"
 
 #if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS) || BUILDFLAG(ARKWEB_SCROLLBAR)
@@ -533,7 +532,7 @@ void PaintLayerScrollableAreaExt::ComputeScrollbarExistence(
   if (is_vertical_scrollbars_hide) {
     needs_vertical_scrollbar = false;
   }
-#endif  // OH_INPUT_EVENT
+#endif  // ARKWEB_INPUT_EVENTS
   // If this is being performed before layout, we want to only update scrollbar
   // existence if its based on purely style based reasons.
   if (option == kOverflowIndependent) {

@@ -40,6 +40,10 @@
 #include "base/mac/mac_util.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_WEBGL)
+#include "arkweb/chromium_ext/gpu/config/gpu_finch_features_ext.h"
+#endif
+
 namespace gpu {
 namespace gles2 {
 
@@ -210,6 +214,13 @@ FeatureInfo::FeatureInfo(
       gfx::BufferFormat::P010);
 #elif BUILDFLAG(IS_APPLE)
   feature_flags_.chromium_image_ycbcr_p010 = true;
+#endif
+
+#if BUILDFLAG(ARKWEB_WEBGL)
+  if (base::FeatureList::IsEnabled(features::kPreferDrawToCopy)) {
+    workarounds_.prefer_draw_to_copy = true;
+  }
+  LOG(DEBUG) << "workaround prefer_draw_to_copy property: " << workarounds_.prefer_draw_to_copy;
 #endif
 }
 

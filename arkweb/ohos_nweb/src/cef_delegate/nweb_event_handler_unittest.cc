@@ -22,6 +22,7 @@
 #include "include/cef_client.h"
 #include "include/cef_devtools_message_handler_delegate.h"
 #include "nweb_input_delegate.h"
+#include "ohos_cef_ext/libcef/common/cef_open_devtools_ext_opt.h"
 #include "ui/events/keycodes/keyboard_code_conversion_x.h"
 #include "ui/events/keycodes/keysym_to_unicode.h"
 
@@ -196,6 +197,8 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void WasHidden(bool hidden) override {}
 
   void WasOccluded(bool occluded) override {}
+
+  void SetIsOfflineWebComponent() override {}
 
   void OnWindowShow() override {}
 
@@ -637,6 +640,12 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
       CefRefPtr<CefDevToolsMessageHandlerDelegate> delegate,
       const CefPoint& inspect_element_at) override {}
 
+  void ShowDevToolsWithByPb(
+      CefRefPtr<ArkWebBrowserHostExt> frontend_browser,
+      CefRefPtr<CefDevToolsMessageHandlerDelegate> delegate,
+      const CefPoint& inspect_element_at,
+      const CefOpenDevToolsExtOpt& ext_opt) override {}
+
   bool IsFullscreen() override { return false; }
 
   void ExitFullscreen(bool will_cause_resize) override {}
@@ -728,6 +737,8 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   bool IsAdsBlockEnabledForCurPage() override { return false; }
   void EnableAdsBlock(bool enable) override {}
   int SetUrlTrustListWithErrMsg(const CefString& urlTrustList,
+                                bool allowOpaqueOrigin,
+                                bool supportWildcard,
                                 CefString& detailErrMsg) override {
     return 0;
   }
@@ -809,6 +820,11 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
                          int32_t transition_type) override {}
   void EnableHttpsUpgrades(bool enable) override {}
 #endif
+
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+  int32_t GetLastCommittedEntryPageTransition() override { return 0; }
+#endif
+
 #if BUILDFLAG(ARKWEB_UNITTESTS)
   void SetImeShow(bool visible) override {}
 #endif // ARKWEB_UNITTESTS
@@ -880,6 +896,8 @@ class MockCefBrowser : public ArkWebBrowserExt {
   bool IsAdsBlockEnabledForCurPage() override { return false; }
   void EnableAdsBlock(bool enable) override {}
   int SetUrlTrustListWithErrMsg(const CefString& urlTrustList,
+                                bool allowOpaqueOrigin,
+                                bool supportWildcard,
                                 CefString& detailErrMsg) override {
     return 0;
   }

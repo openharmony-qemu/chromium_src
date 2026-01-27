@@ -240,6 +240,10 @@ class CONTENT_EXPORT WebContentsImpl
     return nullptr;
   }
 
+  virtual base::WeakPtr<content::WebContentsImplExt> AsWebContentsImplExtWeakThis() {
+    return nullptr;
+  }
+
   static std::unique_ptr<WebContentsImpl> CreateWithOpener(
       const WebContents::CreateParams& params,
       RenderFrameHostImpl* opener_rfh);
@@ -1598,6 +1602,11 @@ class CONTENT_EXPORT WebContentsImpl
   void ClearPartitionedPopinOpenerForTesting();
 
   WebContents* GetOpenedPartitionedPopin() const override;
+
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+  void EvictFrameBackBuffersWhenNWebWasHidden();
+  void SetIsOfflineWebComponent();
+#endif
 
 #if BUILDFLAG(ARKWEB_TEST)
  public:

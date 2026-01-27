@@ -151,6 +151,10 @@ class CONTENT_EXPORT NavigationControllerImpl : public NavigationController {
   bool IsInitialNavigation() override;
   bool IsInitialBlankNavigation() override;
   void Reload(ReloadType reload_type, bool check_for_repost) override;
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+  void ReloadEx(ReloadType reload_type, bool check_for_repost, int transition_type) override;
+  void Reload(ReloadType reload_type, bool check_for_repost, int transition_type) override;
+#endif
   void NotifyEntryChanged(NavigationEntry* entry) override;
   void CopyStateFrom(NavigationController* source, bool needs_reload) override;
   bool CanPruneAllButLastCommitted() override;
@@ -1021,6 +1025,10 @@ class CONTENT_EXPORT NavigationControllerImpl : public NavigationController {
   // entries_ cannot go away (e.g., due to PruneForwardEntries) and that it can
   // go back into place after any subsequent commit.
   std::unique_ptr<NavigationEntryImpl> entry_replaced_by_post_commit_error_;
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  ErrorPageReloadReason  reload_reason_ = ErrorPageReloadReason ::INVALID;
+#endif
 
   // NOTE: This must be the last member.
   base::WeakPtrFactory<NavigationControllerImpl> weak_factory_{this};

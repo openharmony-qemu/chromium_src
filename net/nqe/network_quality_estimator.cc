@@ -635,6 +635,10 @@ void NetworkQualityEstimator::ComputeEffectiveConnectionType() {
   event_creator_.MaybeAddNetworkQualityChangedEventToNetLog(
       effective_connection_type_, network_quality_);
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  OnComputeEffectiveConnectionType();
+#endif
+
   rtt_observations_size_at_last_ect_computation_ =
       rtt_ms_observations_[nqe::internal::OBSERVATION_CATEGORY_HTTP].Size() +
       rtt_ms_observations_[nqe::internal::OBSERVATION_CATEGORY_TRANSPORT]

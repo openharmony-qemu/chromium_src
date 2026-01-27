@@ -35,11 +35,13 @@ bool MatchUrlRegex(const std::string& url, const std::string& regex) {
   }
   if (regex[0] == '*' || regex[0] == '+' || regex[0] == '?' ||
       regex[0] == '{') {
+    LOG(ERROR) << "Invalid regex: starts with an unsupported character:'*','+','?','{'.";
     return false;
   }
 
   const RE2 pattern(regex);
   if (!pattern.ok()) {
+    LOG(ERROR) << "MatchUrlRegex: Failed to convert regex to RE2.";
     return false;
   }
 
@@ -55,6 +57,7 @@ bool JsCommunicationUtils::MatchUrlRegexRules(blink::WebString& script,
   
   GURL url = url_formatter::FixupURL(url_text, "");
   if (!url.is_valid() || scripts_regex_rules.empty()) {
+    LOG(DEBUG) << "MatchUrlRegexRules: fixupURL failed or scripts_regex_rules is empty.";
     return false;
   }
 
@@ -71,11 +74,14 @@ bool JsCommunicationUtils::MatchUrlRegexRules(blink::WebString& script,
       }
 
       if (MatchUrlRegex(url_text, regexRule.rule)) {
+        LOG(DEBUG) << "MatchUrlRegexRule: regexRules match success.";
         return true;
       }
     }
     break;
   }
+
+  LOG(DEBUG) << "JsCommunicationUtils::MatchUrlRegexRules regexRules no match.";
   return false;
 }
 
@@ -141,6 +147,8 @@ void JsCommunicationUtils::RunScriptsAtDocumentEnd()
     jsCommunication_->render_frame()->GetWebFrame()->ExecuteScript(
         blink::WebScriptSource(script->script));
   }
+
+  jsCommunication_->render_frame()->OnDocumentEndReady();
 }
 
 void JsCommunicationUtils::AddHeadReadyScript(

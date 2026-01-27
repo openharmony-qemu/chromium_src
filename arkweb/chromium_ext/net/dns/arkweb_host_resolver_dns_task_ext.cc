@@ -44,7 +44,7 @@ void ArkWebHostResolverDnsTaskExt::ArkWebSetNotNeedQueryType(int legacy_results_
   }
 }
 
-void ArkWebHostResolverDnsTaskExt::ArkWebFailedTransaction(
+bool ArkWebHostResolverDnsTaskExt::ArkWebFailedTransaction(
     int net_error, std::optional<DnsQueryType> failed_transaction_type) {
   if (failed_transaction_type.has_value() &&
       IsAddressType(failed_transaction_type.value())) {
@@ -58,9 +58,10 @@ void ArkWebHostResolverDnsTaskExt::ArkWebFailedTransaction(
       RecordFailedTransactionInfo(completed_transaction_index, net_error,
                                   dns_query_type);
       hostResolverDnsTask->OnTransactionsFinished(/*single_transaction_results=*/std::nullopt);
-      return;
+      return true;
     }
   }
+  return false;
 }
 
 bool ArkWebHostResolverDnsTaskExt::AnyAOrAAAATransactionRemain() {
@@ -79,12 +80,6 @@ void ArkWebHostResolverDnsTaskExt::RecordFailedTransactionInfo(
     int index,
     int net_error,
     DnsQueryType dns_query_type) {
-  LOG(INFO) << "The completed transaction [" << index << "] is failed "
-            << net_error << ", failedQueryType "
-            << static_cast<int>(dns_query_type) << ", host "
-            << url::LogUtils::ConvertUrlWithMask(std::string(
-                   hostResolverDnsTask->host_.GetHostnameWithoutBrackets()))
-            << ", and needed tranactions num is 2";
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
   LOG_FEEDBACK(INFO)
       << "The completed transaction [" << index << "] is failed " << net_error

@@ -373,6 +373,14 @@ std::unique_ptr<network::ResourceRequest> CreateResourceRequest(
       request_info.shared_storage_writable_eligible;
   new_request->is_ad_tagged = request_info.is_ad_tagged;
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          ::switches::kEnableNwebEx)) {
+    new_request->retry_with_fallback_proxy =
+        request_info.retry_with_fallback_proxy;
+    new_request->original_error_code = request_info.original_error_code;
+  }
+#endif
   return new_request;
 }
 
@@ -1106,10 +1114,11 @@ void NavigationURLLoaderImpl::OnReceiveResponse(
   bool is_download =
       !head->intercepted_by_plugin && (must_download || !known_mime_type);
 #if BUILDFLAG(IS_ARKWEB)
-  LOG(INFO) << "is_download " << is_download
-            << " must_download " << must_download
-            << " known_mime_type " << known_mime_type
-            << " mime_type " << head->mime_type;
+  LOG_FEEDBACK(INFO, kNavigation)
+      << "OnReceiveResponse isDownload:" << is_download
+      << " mustDownload:" << must_download
+      << " knownMimeType:" << known_mime_type << " mimeType:" << head->mime_type
+      << " url:" << url::LogUtils::ConvertUrlWithMask(url_.spec());
 #endif
   CallOnReceivedResponse(std::move(head),
                          std::move(url_loader_client_endpoints), is_download);
@@ -1168,11 +1177,6 @@ void NavigationURLLoaderImpl::CallOnReceivedResponse(
 
   ParseHeaders(url_, head_ptr, std::move(on_receive_response));
 }
-#if BUILDFLAG(ARKWEB_USERAGENT)
-void NavigationURLLoaderImpl::EnableRedirectAbortCancel() {
-  redirect_abort_cancel_ = true;
-}
-#endif
 
 void NavigationURLLoaderImpl::OnReceiveRedirect(
     const net::RedirectInfo& redirect_info,
@@ -1189,25 +1193,11 @@ void NavigationURLLoaderImpl::OnReceiveRedirect(
   if (!bypass_redirect_checks &&
       !IsSafeRedirectTarget(url_, redirect_info.new_url)) {
     error = net::ERR_UNSAFE_REDIRECT;
-  } else if (
-#if BUILDFLAG(ARKWEB_USERAGENT)
-      redirect_abort_cancel_ ||
-#endif
-      (--redirect_limit_ == 0)) {
-#if BUILDFLAG(ARKWEB_USERAGENT)
-    LOG(DEBUG) << "NavigationURLLoaderImpl::OnReceiveRedirect "
-                  "redirect_limit_ is "
-               << redirect_limit_ << " redirect_abort_cancel_ is "
-               << redirect_abort_cancel_;
-#endif
-
+  } else if (--redirect_limit_ == 0) {
     error = net::ERR_TOO_MANY_REDIRECTS;
     if (redirect_info.is_signed_exchange_fallback_redirect) {
       UMA_HISTOGRAM_BOOLEAN("SignedExchange.FallbackRedirectLoop", true);
     }
-#if BUILDFLAG(ARKWEB_USERAGENT)
-      redirect_abort_cancel_ = false;
-#endif
   }
   if (error != net::OK) {
     if (url_loader_) {
@@ -1802,6 +1792,14 @@ void NavigationURLLoaderImpl::FollowRedirect(
     resource_request_->headers.SetHeader(net::HttpRequestHeaders::kAccept,
                                          header_value);
   }
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          ::switches::kEnableNwebEx)) {
+    resource_request_->retry_with_fallback_proxy = false;
+    resource_request_->original_error_code = net::OK;
+  }
+#endif
 
   Restart();
 }

@@ -246,6 +246,7 @@ if (!enable_arkweb) {
   arkweb_ndk = false
   arkweb_cert_authentication = false
   arkweb_fling = false
+  arkweb_throttle_frame = false
   arkweb_occluded_opt = false
   arkweb_performance_trace = false
   arkweb_report_loss_frame = false
@@ -317,10 +318,16 @@ if (!enable_arkweb) {
   arkweb_bgtask = false
   arkweb_privacy_compliance = true
   arkweb_blank_screen_detection = false
+  arkweb_first_screen_paint = false
   arkweb_blank_prop_config = true
   arkweb_autolayout = false
+  arkweb_ex_fallback_proxy = false
   arkweb_ext_video_load_optimization = false
   arkweb_console_logging=false
+  arkweb_offline_web_evict_back_buffers = false
+  arkweb_ohos_mem_usage_report = false
+  arkweb_media_cast = false
+  arkweb_ext_http_dns_fallback_on_dns_hijacking = false
 }
 
 buildflag_header("features") {
@@ -477,6 +484,7 @@ buildflag_header("features") {
     "ARKWEB_NDK=$arkweb_ndk",
     "ARKWEB_CERT_AUTHENTICATION=$arkweb_cert_authentication",
     "ARKWEB_FLING=$arkweb_fling",
+    "ARKWEB_THROTTLE_FRAME=$arkweb_throttle_frame",
     "ARKWEB_SKIA_CACHE=$arkweb_skia_cache",
     "ARKWEB_OCCLUDED_OPT=$arkweb_occluded_opt",
     "ARKWEB_OPTIMIZE_PARSER_BUDGET=$arkweb_optimize_parser_budget",
@@ -560,9 +568,14 @@ buildflag_header("features") {
     "ARKWEB_PRIVACY_COMPLIANCE=$arkweb_privacy_compliance",
     "ARKWEB_BGTASK=$arkweb_bgtask",
     "ARKWEB_BLANK_SCREEN_DETECTION=$arkweb_blank_screen_detection",
+    "ARKWEB_FIRST_SCREEN_PAINT=$arkweb_first_screen_paint",
     "ARKWEB_BLANK_PROP_CONFIG=$arkweb_blank_prop_config",
     "ARKWEB_AUTOLAYOUT=$arkweb_autolayout",
+    "ARKWEB_EX_FALLBACK_PROXY=$arkweb_ex_fallback_proxy",
     "ARKWEB_CONSOLE_LOGGING=$arkweb_console_logging",
+    "ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS=$arkweb_offline_web_evict_back_buffers",
+    "ARKWEB_OHOS_MEM_USAGE_REPORT=$arkweb_ohos_mem_usage_report",
+    "ARKWEB_MEDIA_CAST=$arkweb_media_cast",
 
     # ARKWEB_EXT dafault value
     "ARKWEB_EXT_BLANK_TARGET_POPUP_INTERCEPT=false",
@@ -584,6 +597,8 @@ buildflag_header("features") {
     "ARKWEB_READER_MODE=false",
     "ARKWEB_EXT_HTTPS_UPGRADES=$arkweb_ext_https_upgrades",
     "ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION=false",
+    "ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING=$arkweb_ext_http_dns_fallback_on_dns_hijacking",
+    "ARKWEB_EXT_RECEIVE_RESPONSE=$arkweb_ext_receive_response",
   ]
 
   public_configs = [ ":arkweb_global_config" ]

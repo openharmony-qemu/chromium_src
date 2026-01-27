@@ -25,7 +25,7 @@
 namespace blink {
 class LocalFrameClientImpl;
 
-class LocalFrameClientImplUtils {
+class LocalFrameClientImplUtils : public GarbageCollected<LocalFrameClientImplUtils> {
  public:
   LocalFrameClientImplUtils(LocalFrameClientImpl* impl);
 
@@ -35,6 +35,7 @@ class LocalFrameClientImplUtils {
 
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
   std::unique_ptr<WebNativeBridge> CreateWebNativeBridge(NativeLoader&, WebNativeClient*);
+  float GetDeviceScaleFactor(NativeLoader&);
 #endif
 
 #if BUILDFLAG(ARKWEB_ADBLOCK)
@@ -45,9 +46,9 @@ class LocalFrameClientImplUtils {
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   void NotifyLcpForBlankless();
 #endif
-
+  void Trace(Visitor* visitor) const;
  private:
-  raw_ptr<LocalFrameClientImpl> frame_client_impl_;
+  Member<LocalFrameClientImpl> frame_client_impl_;
 };
 }  // namespace blink
 

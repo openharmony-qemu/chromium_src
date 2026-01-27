@@ -52,10 +52,13 @@ void GestureManagerUtils::CloseAIOverlay(
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
 WebInputEventResult GestureManagerUtils::HandleGestureDragLongPress(
     const GestureEventWithHitTestResults& targeted_event) {
-  LOG(INFO) << "DragDrop HandleGestureDragLongPress";
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
   LOG_FEEDBACK(INFO) << "DragDrop HandleGestureDragLongPress";
 #endif
+  if (long_press_select_text_progress_) {
+    LOG(INFO) << "long press to select text, cancel this drag operation";
+    return WebInputEventResult::kNotHandled;
+  }
   const WebGestureEvent& gesture_event = targeted_event.Event();
 
   // FIXME: Ideally we should try to remove the extra mouse-specific hit-tests
@@ -119,6 +122,14 @@ void GestureManagerUtils::UpdateContextMenuForFreeCopy(
     HitTestLocation& location) {
   Node* inner_node = hit_test_result.InnerNode();
   bool is_contextmenu_customization_enabled = false;
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  long_press_select_text_progress_ = false;
+  if (hit_test_result.IsContentEditable() && hit_test_result.IsSelected(location)) {
+    LOG(INFO) << "within the editable area, long press in selection area. "
+                 "selection area will be dragged, cancel update selection area";
+    return;
+  }
+#endif
   if (gesture_manager_->frame_->GetSettings()) {
 #if BUILDFLAG(ARKWEB_EX_FREE_COPY)
     is_contextmenu_customization_enabled =
@@ -138,6 +149,9 @@ void GestureManagerUtils::UpdateContextMenuForFreeCopy(
                   gesture_manager_->frame_->GetSettings()->GetShowContextMenuOnMouseUp())) {
 #else
               hit_test_result)) {
+#endif
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+        long_press_select_text_progress_ = true;
 #endif
         gesture_manager_->mouse_event_manager_->FocusDocumentView();
       }
@@ -161,6 +175,9 @@ void GestureManagerUtils::UpdateContextMenuForFreeCopy(
                 gesture_manager_->frame_->GetSettings()->GetShowContextMenuOnMouseUp())) {
 #else
             hit_test_result)) {
+#endif
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+      long_press_select_text_progress_ = true;
 #endif
       gesture_manager_->mouse_event_manager_->FocusDocumentView();
     }

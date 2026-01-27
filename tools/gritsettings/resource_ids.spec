@@ -1411,6 +1411,11 @@
     "includes": [10200],
   },
 
+  # For highlight specified content
+  "ohos_resources/highlight_specified_content/highlight_specified_content_resources.grd": {
+    "includes": [10260],
+  },
+
   "cef/libcef/resources/cef_resources.grd": {
     "META": {"align": 31500},
     "includes": [31500],

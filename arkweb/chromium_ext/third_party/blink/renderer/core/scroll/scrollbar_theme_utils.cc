@@ -40,8 +40,14 @@ void ScrollbarThemeUtils::OffsetPointForHitTest(
   double RadiusTopRight = 0.0f;
   double RadiusBottomRight = 0.0f;
 
-  ChromeClient* client =
-      scrollbar.GetLayoutBox()->GetFrameView()->GetChromeClient();
+  auto layoutBox = scrollbar.GetLayoutBox();
+  if (!layoutBox || !layoutBox->GetFrameView()) {
+    LOG(ERROR) << "invalid layoutBox or frameView."
+               << "scrollbar hit test for avoid border radius failed.";
+    return;
+  }
+
+  ChromeClient* client = layoutBox->GetFrameView()->GetChromeClient();
   if (!client || !client->GetWebView() ||
       !client->GetWebView()->GetSettings()) {
     return;

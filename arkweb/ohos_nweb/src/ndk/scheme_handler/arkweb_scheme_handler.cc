@@ -16,6 +16,9 @@
 #include "ohos_nweb/src/capi/arkweb_scheme_handler.h"
 
 #include "base/logging.h"
+#include "base/task/sequenced_task_runner.h"
+#include "base/task/task_runner.h"
+#include "content/public/browser/browser_thread.h"
 #include "ohos_nweb/src/cef_delegate/nweb_application.h"
 #include "ohos_nweb/src/cef_delegate/nweb_scheme_handler_factory.h"
 #include "ohos_nweb/src/ndk/scheme_handler/http_body_stream.h"
@@ -475,7 +478,8 @@ ARKWEB_EXPORT bool OH_ArkWeb_SetSchemeHandler(
     LOG(ERROR) << "scheme_handler factory is nullptr.";
     return false;
   }
-
+  LOG(INFO) << "set scheme_handler web tag is " << web_tag << " scheme is "
+            << scheme;
   factory->SetSchemeHandler(std::string(web_tag), scheme_handler);
   return true;
 }
@@ -490,7 +494,7 @@ ARKWEB_EXPORT int32_t OH_ArkWeb_ClearSchemeHandlers(const char* web_tag) {
     LOG(ERROR) << "scheme_handler web tag is nullptr.";
     return ARKWEB_INVALID_PARAM;
   }
-
+  LOG(INFO) << "clear scheme_handler web tag is " << web_tag;
   OHOS::NWeb::NWebSchemeHandlerFactory::ClearSchemeHandlers(
       std::string(web_tag));
   return ARKWEB_NET_OK;
@@ -511,8 +515,17 @@ ARKWEB_EXPORT void OH_ArkWeb_DestroySchemeHandler(
     LOG(ERROR) << "scheme_handler scheme handler is nullptr.";
     return;
   }
+  LOG(INFO) << "destroy scheme handler. scheme_handler->fromEts is "
+            << scheme_handler->fromEts;
   OHOS::NWeb::NWebSchemeHandlerFactory::ClearAllSchemeHandlers(scheme_handler);
-  delete scheme_handler;
+  if (!scheme_handler->fromEts) {
+    content::GetIOThreadTaskRunner({})->PostTask(
+        FROM_HERE,
+        base::BindOnce([](ArkWeb_SchemeHandler* handler) { delete handler; },
+                       scheme_handler));
+  } else {
+    delete scheme_handler;
+  }
 }
 
 ARKWEB_EXPORT int32_t

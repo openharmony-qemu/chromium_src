@@ -69,13 +69,15 @@ TEST_F(RenderFrameHostImplForIncludeTest, GetCreateNewWindow_NoDelegate) {
   GURL target_url = GURL("https://parent.example.test/");
   WindowOpenDisposition disposition = WindowOpenDisposition::NEW_POPUP;
   bool allow_popup = true;
+  auto features = blink::mojom::WindowFeatures::New();
   content::mojom::FrameHost::GetCreateNewWindowCallback callback = base::DoNothing();
   
   RenderFrameHostImpl* rfh = main_test_rfh();
   auto delegate = rfh->delegate();
   SetDelegate(rfh, nullptr);
   ASSERT_FALSE(rfh->delegate());
-  rfh->GetCreateNewWindow(target_url, disposition, allow_popup, std::move(callback));
+  rfh->GetCreateNewWindow(target_url, disposition, allow_popup,
+                          std::move(features), std::move(callback));
   SetDelegate(rfh, delegate);
   ASSERT_TRUE(rfh->delegate());
 }
@@ -84,30 +86,39 @@ TEST_F(RenderFrameHostImplForIncludeTest, GetCreateNewWindow_AllowPopupTrue) {
   GURL target_url = GURL("https://parent.example.test/");
   WindowOpenDisposition disposition = WindowOpenDisposition::NEW_POPUP;
   bool allow_popup = true;
+  auto features = blink::mojom::WindowFeatures::New();
   content::mojom::FrameHost::GetCreateNewWindowCallback callback = base::DoNothing();
   
   RenderFrameHostImpl* rfh = main_test_rfh();
-  ASSERT_NO_FATAL_FAILURE(rfh->GetCreateNewWindow(target_url, disposition, allow_popup, std::move(callback)));
+  ASSERT_NO_FATAL_FAILURE(
+      rfh->GetCreateNewWindow(target_url, disposition, allow_popup,
+                              std::move(features), std::move(callback)));
 }
 
 TEST_F(RenderFrameHostImplForIncludeTest, GetCreateNewWindow_AllowPopupFalse_HasTransientActivation) {
   GURL target_url = GURL("https://parent.example.test/");
   WindowOpenDisposition disposition = WindowOpenDisposition::NEW_POPUP;
   bool allow_popup = false;
+  auto features = blink::mojom::WindowFeatures::New();
   content::mojom::FrameHost::GetCreateNewWindowCallback callback = base::DoNothing();
   
   RenderFrameHostImpl* rfh = main_test_rfh();
-  ASSERT_NO_FATAL_FAILURE(rfh->GetCreateNewWindow(target_url, disposition, allow_popup, std::move(callback)));
+  ASSERT_NO_FATAL_FAILURE(
+      rfh->GetCreateNewWindow(target_url, disposition, allow_popup,
+                              std::move(features), std::move(callback)));
 }
 
 TEST_F(RenderFrameHostImplForIncludeTest, GetCreateNewWindow_AllowPopupFalse_NoTransientActivation) {
   GURL target_url = GURL("https://parent.example.test/");
   WindowOpenDisposition disposition = WindowOpenDisposition::NEW_POPUP;
   bool allow_popup = false;
+  auto features = blink::mojom::WindowFeatures::New();
   content::mojom::FrameHost::GetCreateNewWindowCallback callback = base::DoNothing();
 
   RenderFrameHostImpl* rfh = main_test_rfh();
-  ASSERT_NO_FATAL_FAILURE(rfh->GetCreateNewWindow(target_url, disposition, allow_popup, std::move(callback)));
+  ASSERT_NO_FATAL_FAILURE(
+      rfh->GetCreateNewWindow(target_url, disposition, allow_popup,
+                              std::move(features), std::move(callback)));
 }
 
 TEST_F(RenderFrameHostImplForIncludeTest, GenerateCodeCache_OptionsConversion) {
@@ -387,6 +398,11 @@ TEST_F(RenderFrameHostImplForIncludeTest, OnPdfLoadEvent_NoDelegate) {
   TestOnPdfLoadEvent(rfh, result, url);
   SetDelegate(rfh, delegate);
   ASSERT_TRUE(rfh->delegate());
+}
+
+TEST_F(RenderFrameHostImplForIncludeTest, OnDocumentEndReady) {
+  RenderFrameHostImpl* rfh = main_test_rfh();
+  ASSERT_NO_FATAL_FAILURE(rfh->OnDocumentEndReady());
 }
 
 }  // namespace content

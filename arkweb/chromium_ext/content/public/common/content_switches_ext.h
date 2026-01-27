@@ -45,6 +45,11 @@ CONTENT_EXPORT extern const char kCalcTabletMode[];
 CONTENT_EXPORT extern const char kDisableMobileStyleSheet[];
 CONTENT_EXPORT extern const char kDisableNonAdvancedSecurityMode[];
 CONTENT_EXPORT extern const char kDisableNextPreviousFlag[];
+CONTENT_EXPORT extern const char kUserCacheDir[];
+CONTENT_EXPORT extern const char kArkwebAppDataDir[];
+CONTENT_EXPORT extern const char kCacheDirExists[];
+CONTENT_EXPORT extern const char kUserDataDirExists[];
+CONTENT_EXPORT extern const char kUserDataDirSeparation[];
 #endif
 
 #if BUILDFLAG(ARKWEB_SCHEME_HANDLER)

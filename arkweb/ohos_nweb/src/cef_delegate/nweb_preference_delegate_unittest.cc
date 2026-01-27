@@ -28,6 +28,7 @@
 #include "cef/include/cef_devtools_message_handler_delegate.h"
 #include "cef/ohos_cef_ext/libcef/browser/net_service/net_helpers.h"
 #include "gtest/gtest.h"
+#include "ohos_cef_ext/libcef/common/cef_open_devtools_ext_opt.h"
 #include "nweb.h"
 
 #if BUILDFLAG(IS_ARKWEB_EXT)
@@ -610,6 +611,12 @@ class MockPreferenceCefBrowserHost : public ArkWebBrowserHostExt {
   void ShowDevToolsWith(CefRefPtr<ArkWebBrowserHostExt> frontend_browser,
                         CefRefPtr<CefDevToolsMessageHandlerDelegate> delegate,
                         const CefPoint& inspect_element_at) override {}
+  
+  void ShowDevToolsWithByPb(
+      CefRefPtr<ArkWebBrowserHostExt> frontend_browser,
+      CefRefPtr<CefDevToolsMessageHandlerDelegate> delegate,
+      const CefPoint& inspect_element_at,
+      const CefOpenDevToolsExtOpt& ext_opt) override {}
 
   bool IsFullscreen() override { return false; }
 
@@ -706,7 +713,7 @@ class MockPreferenceCefBrowserHost : public ArkWebBrowserHostExt {
   bool IsAdsBlockEnabledForCurPage() override { return false; }
   void EnableAdsBlock(bool enable) override {}
   int SetUrlTrustListWithErrMsg(const CefString& urlTrustList,
-                                CefString& detailErrMsg) override {
+    bool allowOpaqueOrigin, bool supportWildcard, CefString& detailErrMsg) override {
     return 0;
   }
   void SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) override {}
@@ -905,6 +912,11 @@ class MockPreferenceCefBrowser : public CefBrowser, public CefBrowserHost {
   CefRefPtr<ArkWebBrowserHostExt> frontend_browser,
   CefRefPtr<CefDevToolsMessageHandlerDelegate> delegate,
   const CefPoint& inspect_element_at) override {}
+  void ShowDevToolsWithByPb(
+  CefRefPtr<ArkWebBrowserHostExt> frontend_browser,
+  CefRefPtr<CefDevToolsMessageHandlerDelegate> delegate,
+  const CefPoint& inspect_element_at,
+  const CefOpenDevToolsExtOpt& ext_opt) override {}
   #endif // BUILDFLAG(ARKWEB_DEVTOOLS)
   void CloseDevTools() override {}
   bool HasDevTools() override {return false;}
@@ -1877,6 +1889,13 @@ TEST(NWebPreferenceDelegateTest, PutWebMediaAVSessionEnabled) {
     preference_delegate->PutWebMediaAVSessionEnabled(false);
 }
 
+TEST(NWebPreferenceDelegateTest, GetCastEnabled) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    CefRefPtr<CefBrowser> browser = nullptr;
+    preference_delegate->SetBrowser(browser);
+    EXPECT_FALSE(preference_delegate->GetCastEnabled());
+}
+
 TEST(NWebPreferenceDelegateTest, PutErrorPageEnabled) {
     auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
     CefRefPtr<CefBrowser> browser = nullptr;
@@ -2054,4 +2073,14 @@ TEST(NWebPreferenceDelegateTest, PutZoomControlAccess) {
     auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
     preference_delegate->PutZoomControlAccess(false);
     EXPECT_FALSE(preference_delegate->IsZoomControlAccess());
+}
+
+TEST(NWebPreferenceDelegateTest, SetAgentNeedHighlight_BrowserNull) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    CefRefPtr<CefBrowser> browser = nullptr;
+    preference_delegate->SetBrowser(browser);
+    preference_delegate->PutAgentNeedHighlight(true);
+    EXPECT_TRUE(preference_delegate->GetAgentNeedHighlight());
+    preference_delegate->PutAgentNeedHighlight(false);
+    EXPECT_FALSE(preference_delegate->GetAgentNeedHighlight());
 }

@@ -1600,4 +1600,11 @@ TEST_F(WebContentsImplExtTest, RenderViewReady002) {
       RenderViewHost::FromID(render_process_id, render_view_id);
   ExtendContent()->RenderViewReady(view_host);
 }
+
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+TEST_F(WebContentsImplExtTest, OnDocumentEndReady001) {
+  FrameInfos frameInfo;
+  ExtendContent()->OnDocumentEndReady(frameInfo);
+}
+#endif
 }  // namespace content

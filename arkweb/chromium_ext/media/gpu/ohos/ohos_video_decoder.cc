@@ -433,8 +433,13 @@ void OhosVideoDecoder::OnCodecConfigured(
     LOG(ERROR) << "codec_ is null.";
   }
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  if (target_timestamp_ > -1) {
+    codec_->SetPreciseSeekTarget(target_timestamp_);
+    target_timestamp_ = -1;
+  }
+
   if (pending_surface_id_ > 0) {
-    codec_->SetVideoSurface(pending_surface_id_);
+    codec_->SetVideoSurface(pending_surface_id_, true);
     pending_surface_id_ = -1;
   }
 #endif // ARKWEB_VIDEO_ASSISTANT
@@ -795,9 +800,21 @@ int OhosVideoDecoder::GetMaxDecodeRequests() const {
 void OhosVideoDecoder::SetVideoSurface(int32_t widget_id) {
   LOG(INFO) << "SetVideoSurface(" << widget_id << "), codec_[" << (!!codec_) << "]";
   if (codec_) {
-    codec_->SetVideoSurface(widget_id);
+    codec_->SetVideoSurface(widget_id, false);
+    if (widget_id == -1 && texture_owner_bundle_) {
+      texture_owner_bundle_->OnVideoSurfaceChanged();
+    }
   } else {
     pending_surface_id_ = widget_id;
+  }
+}
+
+void OhosVideoDecoder::SetPreciseSeekTarget(int64_t target_timestamp) {
+  LOG(INFO) << "OhosVideoDecoder::SetPreciseSeek";
+  if (codec_) {
+    codec_->SetPreciseSeekTarget(target_timestamp);
+  } else {
+    target_timestamp_ = target_timestamp;
   }
 }
 #endif // ARKWEB_VIDEO_ASSISTANT

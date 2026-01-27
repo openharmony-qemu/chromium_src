@@ -21,13 +21,6 @@
 
 namespace device {
 
-typedef int32_t (*DetectSimulatedClickRiskEnhancedFFI)(
-    const char *&result,
-    const int8_t *nonceArr,
-    size_t nonceLength,
-    int32_t alg,
-    int32_t version);
-
 BusinessRiskIntelligentDetectionHostImpl::BusinessRiskIntelligentDetectionHostImpl() {}
 
 BusinessRiskIntelligentDetectionHostImpl::~BusinessRiskIntelligentDetectionHostImpl() {
@@ -52,25 +45,8 @@ void BusinessRiskIntelligentDetectionHostImpl::DetectSimulatedClickRiskEnhanced(
     DetectSimulatedClickRiskEnhancedCallback callback) {
   LOG(INFO) << "DetectSim: DetectSimulatedClickRiskEnhanced host enter.";
 
-  if (!detect_sim_click_risk_enhanced_handler_) {
-    detect_sim_click_risk_enhanced_handler_ = dlopen("/system/lib64/libbrid_client.z.so", RTLD_LAZY);
-
-    if (!detect_sim_click_risk_enhanced_handler_) {
-      const char* error = dlerror();
-      LOG(WARNING) << "DetectSim: dlopen failed for :" << (error ? error : "Unknown error.");
-      std::move(callback).Run(request_id, -1, "");
-      return;
-    }
-  }
-
-  DetectSimulatedClickRiskEnhancedFFI func = nullptr;
-  func = (DetectSimulatedClickRiskEnhancedFFI)
-      dlsym(detect_sim_click_risk_enhanced_handler_, "DetectSimulatedClickRiskEnhancedFFI");
+  DetectSimulatedClickRiskEnhancedFFI func = GetDetectFunc();
   if (!func) {
-    const char* error = dlerror();
-    LOG(WARNING) << "DetectSim: dlsym failed for :" << (error ? error : "Unknown error.");
-    dlclose(detect_sim_click_risk_enhanced_handler_);
-    detect_sim_click_risk_enhanced_handler_ = nullptr;
     std::move(callback).Run(request_id, -1, "");
     return;
   }
@@ -86,6 +62,30 @@ void BusinessRiskIntelligentDetectionHostImpl::DetectSimulatedClickRiskEnhanced(
   } else {
     std::move(callback).Run(request_id, ans, "");
   }
+}
+
+DetectSimulatedClickRiskEnhancedFFI BusinessRiskIntelligentDetectionHostImpl::GetDetectFunc() {
+  if (!detect_sim_click_risk_enhanced_handler_) {
+    detect_sim_click_risk_enhanced_handler_ = dlopen("/system/lib64/libbrid_client.z.so", RTLD_LAZY);
+
+    if (!detect_sim_click_risk_enhanced_handler_) {
+      const char* error = dlerror();
+      LOG(WARNING) << "DetectSim: dlopen failed for :" << (error ? error : "Unknown error.");
+      return nullptr;
+    }
+  }
+
+  DetectSimulatedClickRiskEnhancedFFI func = (DetectSimulatedClickRiskEnhancedFFI)
+      dlsym(detect_sim_click_risk_enhanced_handler_, "DetectSimulatedClickRiskEnhancedFFI");
+  if (!func) {
+    const char* error = dlerror();
+    LOG(WARNING) << "DetectSim: dlsym failed for :" << (error ? error : "Unknown error.");
+    dlclose(detect_sim_click_risk_enhanced_handler_);
+    detect_sim_click_risk_enhanced_handler_ = nullptr;
+    return nullptr;
+  }
+
+  return func;
 }
 
 }  // namespace device

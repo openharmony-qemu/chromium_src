@@ -7,6 +7,7 @@
 #include <stdlib.h>
 
 #include "arkweb/build/features/features.h"
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
 #include "base/command_line.h"
 #include "base/functional/bind.h"
 #include "base/logging.h"
@@ -17,10 +18,12 @@
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 
 namespace media {
-
+constexpr int kPcModeMaxOutputStreams = 65536;
+constexpr int kDefaultMaxOutputStreams = 10;
 constexpr int kDefaultSampleRate = 48000;
 constexpr int kDefaultChannelCount = 2;
 constexpr int kMinimumOutputBufferSize = 2048;
+constexpr int kLowLatencyOutputBufferSize = 960;
 #if BUILDFLAG(ARKWEB_WEBRTC)
 constexpr int kMinimumInputBufferSize = 2048;
 #endif  // BUILDFLAG(ARKWEB_WEBRTC)
@@ -50,7 +53,14 @@ std::unique_ptr<AudioManager> CreateAudioManager(
 
 OHOSAudioManager::OHOSAudioManager(std::unique_ptr<AudioThread> audio_thread,
                                    AudioLogFactory* audio_log_factory)
-    : AudioManagerBase(std::move(audio_thread), audio_log_factory) {}
+    : AudioManagerBase(std::move(audio_thread), audio_log_factory) {
+      if (base::ohos::IsPcDevice() || base::ohos::IsPcMode()) {
+        LOG(INFO) << "OHOSAudioManager Pc";
+        SetMaxOutputStreamsAllowed(kPcModeMaxOutputStreams);
+      } else {
+        SetMaxOutputStreamsAllowed(kDefaultMaxOutputStreams);
+      }
+    }
 
 OHOSAudioManager::~OHOSAudioManager() {
   int32_t ret = OhosAdapterHelper::GetInstance()
@@ -215,9 +225,13 @@ AudioParameters OHOSAudioManager::GetPreferredOutputStreamParameters(
     const AudioParameters& input_params) {
   LOG(INFO) << "OHOSAudioManager::GetPreferredOutputStreamParameters";
   SelectAudioDevice(output_device_id, false);
+  int buffer_size = kLowLatencyOutputBufferSize;
+  if (input_params.latency_tag() == AudioLatency::Type::kPlayback) {
+    buffer_size = kMinimumOutputBufferSize;
+  }
   return AudioParameters(AudioParameters::AUDIO_PCM_LOW_LATENCY,
                          ChannelLayoutConfig::Guess(kDefaultChannelCount),
-                         kDefaultSampleRate, kMinimumOutputBufferSize);
+                         kDefaultSampleRate, buffer_size);
 }
 
 #if BUILDFLAG(ARKWEB_WEBRTC)

@@ -297,8 +297,13 @@ void CompositorFrameSinkSupport::ApplyPreferredFrameRate(uint64_t source_id) {
   // a constant video playback but can be changed to a higher value if
   // over firing occurs in some edge case while always aiming to keep it
   // lower than a full frame interval.
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+  if ((last_known_frame_interval_ - preferred_frame_interval_).magnitude() >
+      base::Milliseconds(2) && !is_root()) {
+#else
   if ((last_known_frame_interval_ - preferred_frame_interval_).magnitude() >
       base::Milliseconds(2)) {
+#endif
     TRACE_EVENT_INSTANT2("viz", "Set sink framerate", TRACE_EVENT_SCOPE_THREAD,
                          "interval", preferred_frame_interval_, "sourceid",
                          source_id);
@@ -915,7 +920,10 @@ SubmitResult CompositorFrameSinkSupport::MaybeSubmitCompositorFrame(
     SurfaceId surface_id(frame_sink_id_, local_surface_id);
     SurfaceInfo surface_info(surface_id, frame.device_scale_factor(),
                              frame.size_in_pixels());
-
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+    surface_info.set_stretch_content_none_device_scale_factor(
+        frame.stretch_content_none_device_scale_factor());
+#endif
     // LocalSurfaceIds should be monotonically increasing. This ID is used
     // to determine the freshness of a surface at aggregation time.
     const LocalSurfaceId& last_created_local_surface_id =
@@ -1618,6 +1626,12 @@ bool CompositorFrameSinkSupport::ShouldSendBeginFrame(
   }
 
   if (should_throttle_as_requested) {
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+    if (throttle_mode_ && !throttle_started_) {
+      throttle_started_ = true;
+      TRACE_EVENT0("viz", "CompositorFrameSinkSupport::UpdateThrottleMode Start");
+    }
+#endif
     ++frames_throttled_since_last_;
     return RecordShouldSendBeginFrame("ThrottleRequested", false);
   }

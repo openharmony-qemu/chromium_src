@@ -153,4 +153,14 @@ size_t NWebUrlResourceResponseImpl::GetResponseDataBufferSize() {
   return bufferSize_;
 }
 
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+void NWebUrlResourceResponseImpl::PutResponseIsFromNetwork(bool is_from_network) {
+  is_from_network_ = is_from_network;
+}
+ 
+bool NWebUrlResourceResponseImpl::ResponseIsFromNetwork() {
+  return is_from_network_;
+}
+#endif
+
 }  // namespace OHOS::NWeb

@@ -66,6 +66,10 @@
 #include "services/network/public/mojom/ct_log_info.mojom.h"
 #endif  // BUILDFLAG(IS_CT_SUPPORTED)
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#include "arkweb/chromium_ext/servieces/network/public/mojom/network_config_ohos.mojom.h"
+#endif
+
 namespace mojo_base {
 class ProtoWrapper;
 }

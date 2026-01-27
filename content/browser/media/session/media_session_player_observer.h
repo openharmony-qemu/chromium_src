@@ -100,6 +100,20 @@ class MediaSessionPlayerObserver {
   virtual void OnNotifyMemoryLevel(int player_id, int32_t level) {}
 #endif
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+  virtual int32_t GetMediaCastCurrentTime(int player_id) {}
+
+  virtual void PullUpCastBackGround(int player_id, const std::string& device_name) {}
+
+  virtual void UpdateUiPlayState(int player_id, bool is_playing) {}
+
+  virtual void UpdateUiPlayPosition(int player_id, int64_t position) {}
+
+  virtual void MediaCastStopped(int player_id) {}
+
+  virtual void NotifyCastControlShow(int player_id, bool is_show) {}
+#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
+
   // Returns true if `player_id` is paused.
   virtual bool IsPaused(int player_id) const = 0;
 

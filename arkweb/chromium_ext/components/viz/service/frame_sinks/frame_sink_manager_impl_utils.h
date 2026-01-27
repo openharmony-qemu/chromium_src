@@ -38,6 +38,11 @@ public:
   void SetEnableLowerFrameRate(bool enabled, const FrameSinkId& frame_sink_id);
   void SetEnableHalfFrameRate(bool enabled, const FrameSinkId& frame_sink_id);
 #endif
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+  bool is_inactive_ = false;
+  void SetRootCompositorFrameSink(const FrameSinkId& frame_sink_id);
+  void SetIsOfflineWebComponentInactive(bool is_inactive, const FrameSinkId& frame_sink_id);
+#endif
 #if BUILDFLAG(ARKWEB_VIDEO_LTPO)
   void UpdateVSyncFrequency(const FrameSinkId& frame_sink_id,
                             uint32_t client_id);

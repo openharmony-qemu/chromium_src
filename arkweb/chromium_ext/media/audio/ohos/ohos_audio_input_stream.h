@@ -53,6 +53,9 @@ class OHOSAudioInputStream : public AudioInputStream {
   static int GetNWebIdOnUIThread(const AudioParameters& params);
   AudioParameters GetAudioParameters() override { return parameters_; }
   void OnMicrophoneCaptureStateChanged(AudioCaptureState new_state) override;
+  static void OnMicrophoneCaptureStateChangedBind(AudioCaptureState audio_capture_state,
+                                                  AudioCaptureState new_state,
+                                                  const AudioParameters& parameters);
   void ResumeMicrophone() override;
   void PauseMicrophone() override;
 

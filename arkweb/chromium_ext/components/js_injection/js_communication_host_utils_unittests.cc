@@ -113,6 +113,17 @@ TEST_F(JsCommunicationHostUtilsTest, AddHeadReadyPendingJavaScript001)
   EXPECT_FALSE(result.error_message->empty());
 }
 
+TEST_F(JsCommunicationHostUtilsTest, AddHeadReadyPendingJavaScript002) {
+  JsCommunicationHost* host = nullptr;
+  JsCommunicationHostUtils utils(host);
+  std::u16string script = u"123";
+  std::vector<std::string> rules = {"0", "1"};
+  std::vector<std::pair<std::string, std::string>> script_regex_rules;
+  JsCommunicationHost::AddScriptResult result = utils.AddHeadReadyPendingJavaScript(
+    script, rules, script_regex_rules);
+  EXPECT_FALSE(result.error_message->empty());
+}
+
 TEST_F(JsCommunicationHostUtilsTest, AddDocumentEndPendingJavaScript001)
 {
   JsCommunicationHost* host = nullptr;
@@ -125,12 +136,34 @@ TEST_F(JsCommunicationHostUtilsTest, AddDocumentEndPendingJavaScript001)
   EXPECT_FALSE(result.error_message->empty());
 }
 
+TEST_F(JsCommunicationHostUtilsTest, AddDocumentEndPendingJavaScript002) {
+  JsCommunicationHost* host = nullptr;
+  JsCommunicationHostUtils utils(host);
+  std::u16string script = u"123";
+  std::vector<std::string> rules = {"0", "1"};
+  std::vector<std::pair<std::string, std::string>> script_regex_rules;
+  JsCommunicationHost::AddScriptResult result = utils.AddDocumentEndPendingJavaScript(
+    script, rules, script_regex_rules);
+  EXPECT_FALSE(result.error_message->empty());
+}
+
 TEST_F(JsCommunicationHostUtilsTest, AddDocumentStartPendingJavaScript001)
 {
   JsCommunicationHost* host = nullptr;
   JsCommunicationHostUtils utils(host);
   std::u16string script = u"123";
   std::vector<std::string> rules = {"0"};
+  std::vector<std::pair<std::string, std::string>> script_regex_rules;
+  JsCommunicationHost::AddScriptResult result = utils.AddDocumentStartPendingJavaScript(
+    script, rules, script_regex_rules);
+  EXPECT_FALSE(result.error_message->empty());
+}
+
+TEST_F(JsCommunicationHostUtilsTest, AddDocumentStartPendingJavaScript002) {
+  JsCommunicationHost* host = nullptr;
+  JsCommunicationHostUtils utils(host);
+  std::u16string script = u"123";
+  std::vector<std::string> rules = {"0", "1"};
   std::vector<std::pair<std::string, std::string>> script_regex_rules;
   JsCommunicationHost::AddScriptResult result = utils.AddDocumentStartPendingJavaScript(
     script, rules, script_regex_rules);

@@ -113,12 +113,44 @@ void LocalFrame::OnDetectedBlankScreen(const WTF::String& url,
                                                   detectedContentfulNodesCount);
 }
 
-std::shared_ptr<BlankScreenDetector> LocalFrame::GetBlankScreenDetector(
+BlankScreenDetector* LocalFrame::GetBlankScreenDetector(
     bool force) {
   if (!blank_screen_detector_ && force) {
-    blank_screen_detector_ = std::make_shared<BlankScreenDetector>(this);
+    blank_screen_detector_ = MakeGarbageCollected<BlankScreenDetector>(this);
   }
   return blank_screen_detector_;
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT)
+void LocalFrame::OnFirstScreenPaint(
+    const WTF::String& url,
+    const base::TimeTicks& navigation_start,
+    const base::TimeTicks& first_screen_paint) {
+  base::Time reference_wall_time = base::Time::Now();
+  base::TimeTicks reference_monotonic_time = base::TimeTicks().Now();
+
+  base::TimeDelta navigation_start_elapsed_time =
+      navigation_start - reference_monotonic_time;
+  base::Time navigation_start_wall_time =
+      reference_wall_time + navigation_start_elapsed_time;
+  double navigation_start_wall_time_double_t =
+      navigation_start_wall_time.InSecondsFSinceUnixEpoch();
+  int64_t navigation_start_time =
+      static_cast<int64_t>(navigation_start_wall_time_double_t *
+                           base::Time::kMicrosecondsPerMillisecond);
+
+  base::TimeDelta first_screen_paint_elapsed_time =
+      first_screen_paint - reference_monotonic_time;
+  base::Time first_screen_paint_wall_time =
+      reference_wall_time + first_screen_paint_elapsed_time;
+  double first_screen_paint_time_t =
+      first_screen_paint_wall_time.InSecondsFSinceUnixEpoch();
+  int64_t first_screen_paint_time = static_cast<int64_t>(
+      first_screen_paint_time_t * base::Time::kMicrosecondsPerMillisecond);
+  GetLocalFrameHostRemote().OnFirstScreenPaint(url,
+                                               navigation_start_time,
+                                               first_screen_paint_time);
 }
 #endif
 
@@ -224,4 +256,31 @@ void LocalFrame::NotifyFinished(base::WeakPtr<VideoURLLoaderImpl> loader) {
   loader_manager_.RemoveUrlLoader(loader);
 }
 #endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
+#if BUILDFLAG(ARKWEB_AI)
+void LocalFrame::StartHighlightFadeTimer(base::TimeDelta delay) {
+  if (!(GetSettings() && GetSettings()->GetArkwebAgentEnabled())) {
+    return;
+  }
+  highlight_fade_timer_.Stop();
+  highlight_fade_timer_.SetTaskRunner(
+      GetTaskRunner(TaskType::kInternalFindInPage));
+
+  if (delay.is_zero()) {
+    ClearHighlight();
+  } else {
+    highlight_fade_timer_.Start(FROM_HERE, delay,
+                                WTF::BindOnce(&LocalFrame::ClearHighlight,
+                                              weak_local_frame_.GetWeakPtr()));
+  }
+}
+
+void LocalFrame::ClearHighlight() {
+  if (!GetTextFragmentHandler()) {
+    LOG(ERROR) << "LocalFrame::ClearHighlight failed, no handler.";
+    return;
+  }
+  GetTextFragmentHandler()->RemoveFragments();
+}
+#endif
 }  // namespace blink

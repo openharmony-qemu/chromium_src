@@ -125,6 +125,12 @@ TEST_F(CompositorTest, SetEnableHalfFrameRate) {
   g_compositor->Utils()->SetEnableHalfFrameRate(true);
 }
 
+TEST_F(CompositorTest, SetIsOfflineWebComponentInactive) {
+  ASSERT_NE(g_compositor, nullptr);
+  g_compositor->Utils()->SetIsOfflineWebComponentInactive(true);
+  g_compositor->Utils()->SetIsOfflineWebComponentInactive(false);
+}
+
 TEST_F(CompositorTest, EvictFrameBackBuffers) {
   ASSERT_NE(g_compositor, nullptr);
   g_compositor->Utils()->EvictFrameBackBuffers();

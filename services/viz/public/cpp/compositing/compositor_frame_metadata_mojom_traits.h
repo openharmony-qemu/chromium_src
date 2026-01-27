@@ -37,6 +37,14 @@ struct StructTraits<viz::mojom::CompositorFrameMetadataDataView,
     return metadata.device_scale_factor;
   }
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  static float stretch_content_none_device_scale_factor(
+      const viz::CompositorFrameMetadata& metadata) {
+    DCHECK_GT(metadata.stretch_content_none_device_scale_factor, 0);
+    return metadata.stretch_content_none_device_scale_factor;
+  }
+#endif
+
   static gfx::PointF root_scroll_offset(
       const viz::CompositorFrameMetadata& metadata) {
     return metadata.root_scroll_offset;
@@ -59,6 +67,16 @@ struct StructTraits<viz::mojom::CompositorFrameMetadataDataView,
 #if BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SLIDE)
   static bool is_scrolling(const viz::CompositorFrameMetadata& metadata) {
     return metadata.is_scrolling;
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+  static int64_t dropped_frame_count(const viz::CompositorFrameMetadata& metadata) {
+    return metadata.dropped_frame_count;
+  }
+
+  static int64_t dropped_frame_duration(const viz::CompositorFrameMetadata& metadata) {
+    return metadata.dropped_frame_duration;
   }
 #endif
 

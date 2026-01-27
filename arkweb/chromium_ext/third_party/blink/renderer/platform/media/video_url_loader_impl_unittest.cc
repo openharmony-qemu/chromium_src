@@ -13,7 +13,10 @@
  * limitations under the License.
  */
 
+#include "ohos_sdk/openharmony/native/llvm/bin/../include/libcxx-ohos/include/c++/v1/__ranges/lazy_split_view.h"
+#define private public
 #include "arkweb/chromium_ext/third_party/blink/renderer/platform/media/video_url_loader_impl.h"
+#undef private
 
 #include "build/build_config.h"
 #include "testing/gtest/include/gtest/gtest.h"
@@ -37,6 +40,13 @@
 #include "third_party/blink/renderer/platform/testing/url_test_helpers.h"
 #include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
 
+#define private public
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/media/video_url_loader_impl.cc"
+#undef private
+
+using ::testing::_;
+using ::testing::Return;
+using ::testing::Mock;
 using blink::test::RunPendingTasks;
 using blink::url_test_helpers::ToKURL;
 
@@ -193,7 +203,6 @@ public:
     options.untrusted_http = true;
     CheckFails(request, options);
   }
-
 
   bool CheckAccessControlHeaders(const char* header_name, bool exposed) {
     std::string id("http://www.other.com/CheckAccessControlExposeHeaders_");
@@ -596,5 +605,513 @@ TEST_F(VideoUrlLoaderImplTest, VideoOpt_BypassAccessCheckForLocalURL) {
   EXPECT_TRUE(did_finish_loading_);
   EXPECT_FALSE(did_fail_);
 }
+
 #undef MAYBE_UntrustedCheckHeaders
+
+
+// HTTPRequestHeaderValidator unittests
+class HTTPRequestHeaderValidatorTest : public testing::Test {
+public:
+  void SetUp() override {
+    validator_ = std::make_unique<HTTPRequestHeaderValidator>();
+  }
+
+  void TearDown() override {
+  }
+protected:
+  std::unique_ptr<HTTPRequestHeaderValidator> validator_;
+};
+
+// Test 1: Empty headers should be safe
+TEST_F(HTTPRequestHeaderValidatorTest, VideoOpt_EmptyHeaders) {
+  // Test with no headers (default state)
+  EXPECT_TRUE(validator_->IsSafe());
+}
+
+// Test 2: Valid headers should be safe
+TEST_F(HTTPRequestHeaderValidatorTest, VideoOpt_ValidHeaders) {
+  // Mock header names and values
+  WebString valid_name("User-Agent");
+  WebString valid_value("Mozilla/5.0");
+  
+  // This would be called by the visitor pattern
+  // Since we can't directly call VisitHeader, we'll test the logic
+  // by testing the individual validation functions
+  
+  EXPECT_TRUE(IsValidHTTPToken(valid_name));
+  EXPECT_TRUE(cors::IsForbiddenRequestHeader(valid_name, valid_value));
+  EXPECT_TRUE(IsValidHTTPHeaderValue(valid_value));
+  
+  // Test with multiple valid headers
+  validator_->VisitHeader(valid_name, valid_value);
+  EXPECT_FALSE(validator_->IsSafe());
+}
+
+// VideoURLLoaderImpl::ClientAdapter unittests
+class MockWebAssociatedURLLoaderClientTest : public WebAssociatedURLLoaderClient {
+public:
+  MOCK_METHOD2(WillFollowRedirect, bool(const WebURL&, const WebURLResponse&));
+  MOCK_METHOD2(DidSendData, void(uint64_t, uint64_t));
+  MOCK_METHOD1(DidReceiveResponse, void(const WebURLResponse&));
+  MOCK_METHOD1(DidDownloadData, void(uint64_t));
+  MOCK_METHOD1(DidReceiveData, void(base::span<const char>));
+  MOCK_METHOD0(DidFinishLoading, void());
+  MOCK_METHOD1(DidFail, void(const WebURLError&));
+  MOCK_METHOD0(DidReStart, void());
+
+  ~MockWebAssociatedURLLoaderClientTest() override = default;
+};
+
+class VideoURLLoaderClientAdapterTest : public ::testing::Test {
+public:
+  void RegisterMockedURLLoadWithCustomResponse(const WebURL& full_url,
+                                               WebURLResponse response,
+                                               const WebString& file_path) {
+    url_test_helpers::RegisterMockedURLLoadWithCustomResponse(
+        full_url, file_path, response);
+  }
+
+  KURL RegisterMockedUrl(const std::string& url_root,
+                         const WTF::String& filename) {
+    WebURLResponse response;
+    response.SetMimeType("text/html");
+    KURL url = ToKURL(url_root + filename.Utf8());
+    std::string data_base_path = "third_party/blink/renderer/core/testing/data/";
+    WebString data_path = WebString::FromUTF8(data_base_path + filename.Utf8());
+    RegisterMockedURLLoadWithCustomResponse(url, response, data_path);
+    return url;
+  }
+
+  WebLocalFrameImpl* MainFrame() const {
+    return helper_.GetWebView()->MainFrameImpl();
+  }
+
+  std::unique_ptr<WebAssociatedURLLoader> CreateAssociatedURLLoader(
+      const WebAssociatedURLLoaderOptions options =
+          WebAssociatedURLLoaderOptions()) {
+    return MainFrame()->CreateVideoURLLoader(options);
+  }
+
+  void SetUp() override {
+    frame_file_path_ = "third_party/blink/renderer/core/testing/data/iframes_test.html";
+
+    helper_.Initialize();
+    std::string url_root = "http://www.test.com/";
+    KURL url = RegisterMockedUrl(url_root, "iframes_test.html");
+    const char* iframe_support_files[] = {
+        "invisible_iframe.html",
+        "visible_iframe.html",
+        "zero_sized_iframe.html",
+    };
+    for (size_t i = 0; i < std::size(iframe_support_files); ++i) {
+      RegisterMockedUrl(url_root, iframe_support_files[i]);
+    }
+
+    frame_test_helpers::LoadFrame(MainFrame(), url.GetString().Utf8().c_str());
+    url_test_helpers::RegisterMockedURLUnregister(url);
+
+    loader_ = CreateAssociatedURLLoader();
+    client_ = new MockWebAssociatedURLLoaderClientTest();
+  }
+
+  void TearDown() override {
+    delete client_;
+    url_test_helpers::UnregisterAllURLsAndClearMemoryCache();
+  }
+
+protected:
+  test::TaskEnvironment task_environment_;
+  String frame_file_path_;
+  frame_test_helpers::WebViewHelper helper_;
+
+  std::unique_ptr<WebAssociatedURLLoader> loader_;
+  MockWebAssociatedURLLoaderClientTest* client_;
+
+  WebAssociatedURLLoaderOptions options_;
+  network::mojom::RequestMode request_mode_;
+  network::mojom::CredentialsMode credentials_mode_;
+};
+
+// Test 1: Constructor initializes all members correctly
+TEST_F(VideoURLLoaderClientAdapterTest, VideoOpt_ConstructorInitialization) {
+  VideoURLLoaderImpl* url_loader  = static_cast<VideoURLLoaderImpl*>(loader_.get());
+  auto adapter = MakeGarbageCollected<VideoURLLoaderImpl::ClientAdapter>(
+    url_loader,
+    client_,
+    options_,
+    request_mode_,
+    credentials_mode_,
+    task_environment_.GetMainThreadTaskRunner());
+
+  // Verify that all members are properly initialized
+  EXPECT_NE(adapter->loader_, nullptr);
+  EXPECT_NE(adapter->client_, nullptr);
+  EXPECT_FALSE(adapter->enable_error_notifications_);
+  EXPECT_FALSE(adapter->did_fail_);
+  EXPECT_FALSE(adapter->error_.has_value());
+}
+
+// Test 2: WillFollowRedirect returns true when client is null
+TEST_F(VideoURLLoaderClientAdapterTest, VideoOpt_WillFollowRedirectNullClient) {
+  VideoURLLoaderImpl* url_loader  = static_cast<VideoURLLoaderImpl*>(loader_.get());
+  auto adapter = MakeGarbageCollected<VideoURLLoaderImpl::ClientAdapter>(
+    url_loader,
+    nullptr,  // null client
+    options_,
+    request_mode_,
+    credentials_mode_,
+    task_environment_.GetMainThreadTaskRunner());
+
+  KURL new_url("http://example.com");
+  ResourceResponse response;
+
+  // Should return true when client is null
+  EXPECT_TRUE(adapter->WillFollowRedirect(1, new_url, response));
+}
+
+// Test 3: WillFollowRedirect forwards to client when client exists
+TEST_F(VideoURLLoaderClientAdapterTest, VideoOpt_WillFollowRedirectForwardsToClient) {
+  KURL new_url("http://example.com");
+  ResourceResponse response;
+  
+  EXPECT_CALL(*client_, WillFollowRedirect(_, _))
+      .WillOnce(Return(false));
+  
+  VideoURLLoaderImpl* url_loader  = static_cast<VideoURLLoaderImpl*>(loader_.get());
+  auto adapter = MakeGarbageCollected<VideoURLLoaderImpl::ClientAdapter>(
+    url_loader,
+    client_,
+    options_,
+    request_mode_,
+    credentials_mode_,
+    task_environment_.GetMainThreadTaskRunner());
+  
+  EXPECT_FALSE(adapter->WillFollowRedirect(1, new_url, response));
+}
+
+// Test 4: DidSendData does nothing when client is null
+TEST_F(VideoURLLoaderClientAdapterTest, VideoOpt_DidSendDataNullClient) {
+  VideoURLLoaderImpl* url_loader  = static_cast<VideoURLLoaderImpl*>(loader_.get());
+  auto adapter = MakeGarbageCollected<VideoURLLoaderImpl::ClientAdapter>(
+    url_loader,
+    nullptr,  // null client
+    options_,
+    request_mode_,
+    credentials_mode_,
+    task_environment_.GetMainThreadTaskRunner());
+  
+  adapter->DidSendData(100, 200);
+  // Should not crash or call any client methods
+}
+
+// Test 5: DidSendData forwards to client when client exists
+TEST_F(VideoURLLoaderClientAdapterTest, VideoOpt_DidSendDataForwardsToClient) {
+  EXPECT_CALL(*client_, DidSendData(100, 200))
+      .Times(1);
+  
+  VideoURLLoaderImpl* url_loader  = static_cast<VideoURLLoaderImpl*>(loader_.get());
+  auto adapter = MakeGarbageCollected<VideoURLLoaderImpl::ClientAdapter>(
+    url_loader,
+    client_,
+    options_,
+    request_mode_,
+    credentials_mode_,
+    task_environment_.GetMainThreadTaskRunner());
+  
+  adapter->DidSendData(100, 200);
+}
+
+// Test 6: DidReceiveResponse with no CORS mode and all headers exposed
+TEST_F(VideoURLLoaderClientAdapterTest, VideoOpt_DidReceiveResponseNoCorsMode) {
+  ResourceResponse response;
+  
+  EXPECT_CALL(*client_, DidReceiveResponse(_))
+      .Times(1);
+    
+  VideoURLLoaderImpl* url_loader  = static_cast<VideoURLLoaderImpl*>(loader_.get());
+  auto adapter = MakeGarbageCollected<VideoURLLoaderImpl::ClientAdapter>(
+    url_loader,
+    client_,
+    options_,
+    network::mojom::RequestMode::kNoCors,
+    credentials_mode_,
+    task_environment_.GetMainThreadTaskRunner());
+    
+  adapter->DidReceiveResponse(1, response);
+}
+
+// Test 7: DidReceiveResponse with CORS mode and blocked headers
+TEST_F(VideoURLLoaderClientAdapterTest, VideoOpt_DidReceiveResponseCORSModeBlockedHeaders) {
+  ResourceResponse response;
+
+  response.SetHttpHeaderField(AtomicString("Authorization"), AtomicString("Bearer token"));
+  response.SetHttpHeaderField(AtomicString("Cookie"), AtomicString("session=123"));
+  
+  EXPECT_CALL(*client_, DidReceiveResponse(_))
+    .Times(1);
+    
+  VideoURLLoaderImpl* url_loader  = static_cast<VideoURLLoaderImpl*>(loader_.get());
+  auto adapter = MakeGarbageCollected<VideoURLLoaderImpl::ClientAdapter>(
+    url_loader,
+    client_,
+    options_,
+    network::mojom::RequestMode::kCors,
+    credentials_mode_,
+    task_environment_.GetMainThreadTaskRunner());
+
+  adapter->DidReceiveResponse(1, response);
+}
+
+// Test 8: DidDownloadData does nothing when client is null
+TEST_F(VideoURLLoaderClientAdapterTest, VideoOpt_DidDownloadDataNullClient) {
+  VideoURLLoaderImpl* url_loader  = static_cast<VideoURLLoaderImpl*>(loader_.get());
+  auto adapter = MakeGarbageCollected<VideoURLLoaderImpl::ClientAdapter>(
+    url_loader,
+    nullptr,  // null client
+    options_,
+    request_mode_,
+    credentials_mode_,
+    task_environment_.GetMainThreadTaskRunner());
+  
+  adapter->DidDownloadData(1024);
+  // Should not crash or call any client methods
+}
+
+// Test 9: DidDownloadData forwards to client when client exists
+TEST_F(VideoURLLoaderClientAdapterTest, VideoOpt_DidDownloadDataForwardsToClient) {
+  EXPECT_CALL(*client_, DidDownloadData(1024))
+      .Times(1);
+  
+  VideoURLLoaderImpl* url_loader  = static_cast<VideoURLLoaderImpl*>(loader_.get());
+  auto adapter = MakeGarbageCollected<VideoURLLoaderImpl::ClientAdapter>(
+    url_loader,
+    client_,
+    options_,
+    request_mode_,
+    credentials_mode_,
+    task_environment_.GetMainThreadTaskRunner());
+  
+  adapter->DidDownloadData(1024);
+}
+
+// Test 10: DidReceiveData does nothing when client is null
+TEST_F(VideoURLLoaderClientAdapterTest, VideoOpt_DidReceiveDataNullClient) {
+  VideoURLLoaderImpl* url_loader  = static_cast<VideoURLLoaderImpl*>(loader_.get());
+  auto adapter = MakeGarbageCollected<VideoURLLoaderImpl::ClientAdapter>(
+    url_loader,
+    nullptr,  // null client
+    options_,
+    request_mode_,
+    credentials_mode_,
+    task_environment_.GetMainThreadTaskRunner());
+  
+  base::span<const char> data;
+  adapter->DidReceiveData(data);
+  // Should not crash or call any client methods
+}
+
+// Test 11: DidReceiveData forwards to client when client exists
+TEST_F(VideoURLLoaderClientAdapterTest, VideoOpt_DidReceiveDataForwardsToClient) {
+  base::span<const char> data;
+  EXPECT_CALL(*client_, DidReceiveData(_))
+      .Times(1);
+
+  VideoURLLoaderImpl* url_loader  = static_cast<VideoURLLoaderImpl*>(loader_.get());
+  auto adapter = MakeGarbageCollected<VideoURLLoaderImpl::ClientAdapter>(
+    url_loader,
+    client_,
+    options_,
+    request_mode_,
+    credentials_mode_,
+    task_environment_.GetMainThreadTaskRunner());
+  
+  adapter->DidReceiveData(data);
+}
+
+// Test 12: DidFinishLoading calls ClientAdapterDone and releases client
+TEST_F(VideoURLLoaderClientAdapterTest, VideoOpt_DidFinishLoading) {
+  VideoURLLoaderImpl* url_loader  = static_cast<VideoURLLoaderImpl*>(loader_.get());
+
+  EXPECT_CALL(*client_, DidFinishLoading())
+    .Times(1);
+
+  auto adapter = MakeGarbageCollected<VideoURLLoaderImpl::ClientAdapter>(
+    url_loader,
+    client_,
+    options_,
+    request_mode_,
+    credentials_mode_,
+    task_environment_.GetMainThreadTaskRunner());
+  
+  adapter->DidFinishLoading(1);
+  EXPECT_EQ(url_loader->client_, nullptr);
+  // Client should be released after DidFinishLoading
+}
+
+// Test 13: DidFail sets error and enables notifications
+TEST_F(VideoURLLoaderClientAdapterTest, VideoOpt_DidFail) {
+  ResourceError error(404, ToKURL("test"), std::nullopt);
+
+  VideoURLLoaderImpl* url_loader  = static_cast<VideoURLLoaderImpl*>(loader_.get());
+
+  auto adapter = MakeGarbageCollected<VideoURLLoaderImpl::ClientAdapter>(
+    url_loader,
+    client_,
+    options_,
+    request_mode_,
+    credentials_mode_,
+    task_environment_.GetMainThreadTaskRunner());
+  
+  // Enable error notifications
+  adapter->EnableErrorNotifications();
+  
+  adapter->DidFail(1, error);
+  
+  // Verify error was set
+  EXPECT_TRUE(adapter->did_fail_);
+  EXPECT_TRUE(adapter->error_.has_value());
+}
+
+// Test 14: DidFailRedirectCheck calls DidFail with failure error
+TEST_F(VideoURLLoaderClientAdapterTest, VideoOpt_DidFailRedirectCheck) {
+  ResourceError error = ResourceError::Failure(NullURL());
+
+  VideoURLLoaderImpl* url_loader  = static_cast<VideoURLLoaderImpl*>(loader_.get());
+  auto adapter = MakeGarbageCollected<VideoURLLoaderImpl::ClientAdapter>(
+    url_loader,
+    client_,
+    options_,
+    request_mode_,
+    credentials_mode_,
+    task_environment_.GetMainThreadTaskRunner());
+  
+  adapter->DidFailRedirectCheck(1);
+  EXPECT_EQ(url_loader->client_, nullptr);
+}
+
+// Test 15: EnableErrorNotifications enables notifications and starts timer if error occurred
+TEST_F(VideoURLLoaderClientAdapterTest, VideoOpt_EnableErrorNotifications) {
+  ResourceError error(404, ToKURL("test"), std::nullopt);
+  
+  VideoURLLoaderImpl* url_loader  = static_cast<VideoURLLoaderImpl*>(loader_.get());
+  auto adapter = MakeGarbageCollected<VideoURLLoaderImpl::ClientAdapter>(
+    url_loader,
+    client_,
+    options_,
+    request_mode_,
+    credentials_mode_,
+    task_environment_.GetMainThreadTaskRunner());
+  
+  // Set error first
+  adapter->DidFail(1, error);
+  
+  // Enable notifications
+  adapter->EnableErrorNotifications();
+  
+  // Should have enabled notifications
+  EXPECT_TRUE(adapter->enable_error_notifications_);
+  EXPECT_TRUE(adapter->did_fail_);
+}
+
+// Test 16: ReleaseClient returns client and sets it to null
+TEST_F(VideoURLLoaderClientAdapterTest, VideoOpt_ReleaseClient) {
+  VideoURLLoaderImpl* url_loader  = static_cast<VideoURLLoaderImpl*>(loader_.get());
+  auto adapter = MakeGarbageCollected<VideoURLLoaderImpl::ClientAdapter>(
+    url_loader,
+    client_,
+    options_,
+    request_mode_,
+    credentials_mode_,
+    task_environment_.GetMainThreadTaskRunner());
+  
+  WebAssociatedURLLoaderClient* released_client = adapter->ReleaseClient();
+  
+  EXPECT_EQ(released_client, client_);
+  EXPECT_EQ(adapter->client_, nullptr);
+}
+
+// Test 17: ClientAdapterDone is called when DidFinishLoading is called
+TEST_F(VideoURLLoaderClientAdapterTest, VideoOpt_ClientAdapterDoneCalled) {
+  VideoURLLoaderImpl* url_loader  = static_cast<VideoURLLoaderImpl*>(loader_.get());
+  
+  EXPECT_CALL(*client_, DidFinishLoading())
+    .Times(1);
+
+  auto adapter = MakeGarbageCollected<VideoURLLoaderImpl::ClientAdapter>(
+    url_loader,
+    client_,
+    options_,
+    request_mode_,
+    credentials_mode_,
+    task_environment_.GetMainThreadTaskRunner());
+  
+  adapter->DidFinishLoading(1);
+  EXPECT_EQ(url_loader->client_, nullptr);
+}
+
+// Test 18: NotifyError calls DidFail on client
+TEST_F(VideoURLLoaderClientAdapterTest, VideoOpt_NotifyErrorCallsDidFail) {
+  ResourceError error(404, ToKURL("test"), std::nullopt);
+
+  VideoURLLoaderImpl* url_loader  = static_cast<VideoURLLoaderImpl*>(loader_.get());
+
+  EXPECT_CALL(*client_, DidFail(_))
+    .Times(1);
+
+  auto adapter = MakeGarbageCollected<VideoURLLoaderImpl::ClientAdapter>(
+    url_loader,
+    client_,
+    options_,
+    request_mode_,
+    credentials_mode_,
+    task_environment_.GetMainThreadTaskRunner());
+  
+  // Set error and enable notifications
+  adapter->DidFail(1, error);
+  adapter->EnableErrorNotifications();
+  
+  // Manually call NotifyError to test the timer functionality
+  adapter->NotifyError(&adapter->error_timer_);
+  EXPECT_EQ(url_loader->client_, nullptr);
+}
+
+// Test 19: Multiple calls to DidFail should not crash
+TEST_F(VideoURLLoaderClientAdapterTest, VideoOpt_MultipleDidFailCalls) {
+  ResourceError error1(404, ToKURL("test1"), std::nullopt);
+  ResourceError error2(500, ToKURL("test2"), std::nullopt);
+
+  VideoURLLoaderImpl* url_loader  = static_cast<VideoURLLoaderImpl*>(loader_.get());
+
+  auto adapter = MakeGarbageCollected<VideoURLLoaderImpl::ClientAdapter>(
+    url_loader,
+    client_,
+    options_,
+    request_mode_,
+    credentials_mode_,
+    task_environment_.GetMainThreadTaskRunner());
+  
+  adapter->DidFail(1, error1);
+  adapter->DidFail(2, error2);
+  
+  EXPECT_TRUE(adapter->did_fail_);
+}
+
+// Test 20: ClientAdapterDone is called when DidFail is called
+TEST_F(VideoURLLoaderClientAdapterTest, VideoOpt_ClientAdapterDoneCalledOnDidFail) {
+  ResourceError error(404, ToKURL("test"), std::nullopt);
+
+  VideoURLLoaderImpl* url_loader  = static_cast<VideoURLLoaderImpl*>(loader_.get());
+
+  auto adapter = MakeGarbageCollected<VideoURLLoaderImpl::ClientAdapter>(
+    url_loader,
+    client_,
+    options_,
+    request_mode_,
+    credentials_mode_,
+    task_environment_.GetMainThreadTaskRunner());
+  
+  adapter->DidFail(1, error);
+  EXPECT_EQ(url_loader->client_, nullptr);
+}
+
 }

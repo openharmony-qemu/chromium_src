@@ -8,6 +8,7 @@ import Log from '../Debug/Log';
 import Tag from '../Debug/Tag';
 import { PopupStateManager } from './Popup/PopupStateManager';
 import { PopupLayoutState } from './Popup/PopupLayoutState';
+import Constant from './Common/Constant';
 
 export default class IntelligentLayout {
     static TAG = Tag.intelligentLayout;
@@ -44,7 +45,7 @@ export default class IntelligentLayout {
             IntelligentLayout.calculateForPopWin(popupInfo);
         } else {
             let metrics: LayoutConstraintMetrics = {
-                resultCode: -2,
+                resultCode: Constant.RESULT_CODE_NO_POPUP,
                 errorMsg: 'no popup found',
                 duration: 0,
                 report: 'no popup found',

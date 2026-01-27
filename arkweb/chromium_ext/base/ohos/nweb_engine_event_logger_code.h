@@ -47,9 +47,21 @@ namespace ohos {
 BASE_EXPORT extern const char kDefaultUrl[];
 
 // Module Name Value
+BASE_EXPORT extern const char kModuleComponent[];
 BASE_EXPORT extern const char kModuleContentBrowser[];
 BASE_EXPORT extern const char kModuleContentRender[];
 BASE_EXPORT extern const char kModuleNet[];
+
+// Fallback proxy usage report.
+BASE_EXPORT extern const char kFallbackProxyUsage[];
+// Use fallback proxy result.
+BASE_EXPORT extern const char kUseFallbackProxyResult[];
+// Proxy exception report result.
+BASE_EXPORT extern const char kProxyExceptionResult[];
+// Proxy tunnel connect result.
+BASE_EXPORT extern const char kProxyTunnelConnectResult[];
+// Proxy transport connect result.
+BASE_EXPORT extern const char kProxyTransportConnectResult[];
 
 // 网络请求错误
 BASE_EXPORT extern const char kNetworkSSLError[];

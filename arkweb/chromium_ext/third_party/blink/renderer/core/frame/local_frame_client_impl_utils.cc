@@ -44,6 +44,18 @@ std::unique_ptr<WebNativeBridge> LocalFrameClientImplUtils::CreateWebNativeBridg
   return CoreInitializer::GetInstance().CreateWebNativeBridge(
       web_frame->Client(), native_loader, client);
 }
+
+float LocalFrameClientImplUtils::GetDeviceScaleFactor(
+    NativeLoader& native_loader) {
+  WebLocalFrameImpl* web_frame =
+      WebLocalFrameImpl::FromFrame(native_loader.CurrentFrame());
+  if (!web_frame || !web_frame->Client()) {
+    return 1.0f;
+  }
+
+  return CoreInitializer::GetInstance().GetDeviceScaleFactor(
+      web_frame->Client());
+}
 #endif
 
 // LCOV_EXCL_START
@@ -66,4 +78,8 @@ void LocalFrameClientImplUtils::NotifyLcpForBlankless() {
 }
 #endif
 // LCOV_EXCL_STOP
+
+void LocalFrameClientImplUtils::Trace(Visitor* visitor) const {
+  visitor->Trace(frame_client_impl_);
+}
 } // namespace blink

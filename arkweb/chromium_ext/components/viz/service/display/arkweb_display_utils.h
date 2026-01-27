@@ -85,6 +85,10 @@ class ArkwebDisplayUtils {
   void DiscardBackbuffer();
 #endif
 
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+  void CleanBufferAfterSwapBuffer(bool delay_clean);
+#endif
+
  private:
 #if BUILDFLAG(ARKWEB_UNITTESTS)
   friend class ArkwebDisplayUtilsTest;

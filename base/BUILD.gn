@@ -1124,6 +1124,9 @@ component("base") {
   if (is_ohos && enable_arkweb) {
     sources += arkweb_base_ext_sources
     deps += [ "//arkweb//build/features", "//base/third_party/xdg_user_dirs",]
+    if (is_component_build) {
+      deps += [ "//content/public/common:switches" ]
+    }
     public_deps += [ "//arkweb//build/features" ]
     public_deps += [ ":ohos_package_info" ]
     if (is_ohos) {
@@ -3799,6 +3802,7 @@ test("base_unittests") {
   # TODO(42223878): Remove standalone WebRTC dependency on //base.
   if (arkweb_unittests) {
    deps += ["//storage/browser"]
+   deps += ["//chrome/common"]
    deps += ["//components/web_cache/browser"]
    deps += ["//components/storage_monitor"]
    deps += ["//components/performance_manager"]
@@ -4378,8 +4382,11 @@ test("base_unittests") {
       "//arkweb/ohos_adapter_ndk:adapter_ndk",
     ]
     include_dirs = [
+      "//arkweb/glue",
+      "//arkweb/ohos_adapter_ndk/interfaces",
       "//third_party/ohos_ndk/includes/ohos_adapter",
     ]
+    include_dirs += [ "//ohos_sdk/openharmony/native/sysroot/usr/include/multimedia/image_framework/image" ]
   }
 
   if (arkweb_test) {

@@ -44,6 +44,23 @@ public:
 #if BUILDFLAG(ARKWEB_MEDIA_MEMORY_PRESSURE)
   void OnNotifyMemoryLevel(int player_id, int32_t level) override;
 #endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+  void OnNotifyMeidaCastUri(const std::string& media_uri);
+  void CreateAVCastAdapter();
+  void HandleStopMediaCast();
+  void UpdateRemotePlayState(bool is_playing);
+  void UpdateRemotePlayPosition(int64_t position);
+  void MediaCastStopByNavigation();
+  void SetPauseByAvcast(bool pause_avcast);
+  void NotifyRemoteExitFullScreen();
+  int32_t GetMediaCastCurrentTime(int player_id) override;
+  void PullUpCastBackGround(int player_id, const std::string& device_name) override;
+  void UpdateUiPlayState(int player_id, bool is_playing) override;
+  void UpdateUiPlayPosition(int player_id, int64_t position) override;
+  void MediaCastStopped(int player_id) override;
+  void NotifyCastControlShow(int player_id, bool is_show) override;
+#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
 };
 
 }

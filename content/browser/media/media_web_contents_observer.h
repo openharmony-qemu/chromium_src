@@ -37,6 +37,10 @@
 #if BUILDFLAG(IS_ANDROID)
 #include "ui/android/view_android.h"
 #endif  // BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+#include "content/public/browser/navigation_handle.h"
+#include "content/public/browser/navigation_entry.h"
+#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
 
 namespace blink {
 enum class WebFullscreenVideoStatus;
@@ -193,6 +197,11 @@ class CONTENT_EXPORT MediaWebContentsObserver
   MediaPlayerId GetMediaPlayerId(
     int delegate_id, int child_id, int frame_routing_id, bool& status);
 #endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+    void DidFinishNavigation(NavigationHandle* navigation_handle) override;
+    void NotifyRemoteExitFullScreen();
+#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
  protected:
   MediaSessionControllersManager* session_controllers_manager() {
     return session_controllers_manager_.get();
@@ -326,6 +335,15 @@ class CONTENT_EXPORT MediaWebContentsObserver
     void OnPictureInPictureStateChanged(
         uint32_t state, int32_t width, int32_t height) override;
 #endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+    void OnMediaCastEnter() override;
+    void OnNotifyMeidaCastUri(const std::string& media_uri) override;
+    void HandleStopMediaCast() override;
+    void UpdateRemotePlayState(bool is_playing) override;
+    void UpdateRemotePlayPosition(int64_t position) override;
+    void SetPauseByAvcast(bool pause_avcast) override;
+#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
    private:
     PlayerInfo* GetPlayerInfo();
     void NotifyAudioStreamMonitorIfNeeded();

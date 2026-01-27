@@ -244,4 +244,48 @@ void HTMLVideoElement::setHbsMoovSize(uint16_t ms) {
 }
 // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+void HTMLVideoElement::UpdateUiPlayState(bool is_playing) {
+  if (remoting_interstitial_) {
+    remoting_interstitial_->UpdateUiPlayState(is_playing);
+  }
+}
+
+void HTMLVideoElement::UpdateUiPlayPosition(int64_t position) {
+  if (remoting_interstitial_) {
+    remoting_interstitial_->UpdateUiPlayPosition(position);
+  }
+}
+
+void HTMLVideoElement::UpdateRemotePlayState(bool is_playing) {
+  for (auto& observer : GetMediaPlayerObserverRemoteSet()) {
+    observer->UpdateRemotePlayState(is_playing);
+  }
+    
+}
+
+void HTMLVideoElement::UpdateRemotePlayPosition(int64_t position) {
+  for (auto& observer : GetMediaPlayerObserverRemoteSet()) {
+    observer->UpdateRemotePlayPosition(position);
+  }
+}
+
+void HTMLVideoElement::NotifyRemoteInterstitial(MediaControlsSizingClass sizing_class) {
+  LOG(INFO) << "HTMLVideoElement::NotifyRemoteExitFullScreen";
+  sizing_class_ = sizing_class;
+  if (remoting_interstitial_) {
+    remoting_interstitial_->NotifyRemoteInterstitial(sizing_class);
+  }
+}
+
+void HTMLVideoElement::UpdateRemoteFullScreenCss() {
+  LOG(INFO) << "HTMLVideoElement::UpdateRemoteFullScreenCss";
+#if !defined(COMPONENT_BUILD)
+  if (remoting_interstitial_) {
+    remoting_interstitial_->UpdateRemoteFullScreenCss(false);
+  }
+#endif // COMPONENT_BUILD
+}
+#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
+
 }  // namespace blink

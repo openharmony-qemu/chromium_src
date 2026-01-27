@@ -16,7 +16,7 @@
 namespace pdf {
 
 #if BUILDFLAG(ARKWEB_PDF)
-void PDFDocumentHelper::UpdateClientClippedSelectionBoundsForPDF(
+void PDFDocumentHelper::ConvertAndUpdateSelectionBounds(
     const gfx::Rect& clipped_selection_bounds) {
   if (!touch_selection_controller_client_manager_) {
     InitTouchSelectionClientManager();
@@ -28,23 +28,27 @@ void PDFDocumentHelper::UpdateClientClippedSelectionBoundsForPDF(
   }
 
   LOG(DEBUG) << "PDF clipped selection bounds: " << clipped_selection_bounds.ToString();
+  UpdateScaleFactor();
   gfx::Point bounds_origin = clipped_selection_bounds.origin();
   gfx::Size bounds_size = clipped_selection_bounds.size();
-  gfx::PointF bounds_origin_f =
-    ConvertToRoot(gfx::PointF(bounds_origin.x(), bounds_origin.y()));
+  gfx::PointF bounds_origin_f = gfx::PointF(bounds_origin.x(), bounds_origin.y());
+  bounds_origin_f.Scale(page_scale_factor_);
+  bounds_origin_f = ConvertToRoot(bounds_origin_f);
   bounds_origin.set_x(bounds_origin_f.x());
   bounds_origin.set_y(bounds_origin_f.y());
+  bounds_size.set_width(SafeScale(bounds_size.width(), page_scale_factor_));
+  bounds_size.set_height(SafeScale(bounds_size.height(), page_scale_factor_));
   gfx::Rect converted_bounds(bounds_origin, bounds_size);
 
   // Convert selection bounds. The converted_bounds value will change.
   touch_selection_controller_client_manager_->
       ConvertClientClippedSelectionBounds(converted_bounds);
-  // Uptate the final converted_bounds.
+  // Update the final converted_bounds.
   touch_selection_controller_client_manager_->
       UpdateClientClippedSelectionBounds(converted_bounds);
 }
 
-void PDFDocumentHelper::HideHandleAndQuickMenuForPDF(bool hide_handles) {
+void PDFDocumentHelper::HideHandleAndQuickMenu(bool hide) {
   if (!touch_selection_controller_client_manager_) {
     InitTouchSelectionClientManager();
   }
@@ -54,10 +58,10 @@ void PDFDocumentHelper::HideHandleAndQuickMenuForPDF(bool hide_handles) {
     return;
   }
   
-  LOG(DEBUG) << "PDF hide handle and quick menu: " << hide_handles;
+  LOG(DEBUG) << "PDF hide handle and quick menu: " << hide;
   touch_selection_controller_client_manager_->
-      HideHandleAndQuickMenuIfNecessary(hide_handles);
-  if (!hide_handles) {
+      HideHandleAndQuickMenuIfNecessary(hide);
+  if (!hide) {
     touch_selection_controller_client_manager_->SetQuickMenuRequested(true);
     UpdateQuickMenu();
   }
@@ -88,32 +92,6 @@ void PDFDocumentHelper::UpdateQuickMenu() {
   }
 
   touch_selection_controller_client_manager_->UpdateQuickMenu();
-}
-
-void PDFDocumentHelper::ScaleSelection(gfx::PointF& left,
-                                       int32_t& left_height,
-                                       gfx::PointF& right,
-                                       int32_t& right_height) {
-  auto main_frame = render_frame_host().GetOutermostMainFrameOrEmbedder();
-  if (!main_frame) {
-    LOG(ERROR) << __func__ << ", PDF main_frame is null.";
-    return;
-  }
-  auto host_impl = content::RenderFrameHostImpl::From(main_frame);
-  if (!host_impl) {
-    LOG(ERROR) << __func__ << ", PDF host_impl is null.";
-    return;
-  }
-  float scale_factor = host_impl->GetPageScaleFactor();
-  if (scale_factor <= 0) {
-    LOG(ERROR) << __func__ << ", PDF invalid scale factor.";
-    return;
-  }
-
-  left.Scale(scale_factor);
-  right.Scale(scale_factor);
-  left_height = SafeScale(left_height, scale_factor);
-  right_height = SafeScale(right_height, scale_factor);
 }
 
 int32_t PDFDocumentHelper::SafeScale(int32_t value, float scale_factor) {
@@ -148,6 +126,59 @@ void PDFDocumentHelper::ClearTextSelection() {
     return;
   }
   remote_pdf_client_->ClearTextSelection();
+}
+
+void PDFDocumentHelper::UpdateScaleFactor() {
+  auto main_frame = render_frame_host().GetOutermostMainFrameOrEmbedder();
+  if (!main_frame) {
+    LOG(ERROR) << __func__ << ", PDF main_frame is null.";
+    return;
+  }
+  auto host_impl = content::RenderFrameHostImpl::From(main_frame);
+  if (!host_impl) {
+    LOG(ERROR) << __func__ << ", PDF host_impl is null.";
+    return;
+  }
+  float page_scale_factor = host_impl->GetPageScaleFactor();
+  if (page_scale_factor <= 0) {
+    LOG(ERROR) << __func__ << ", PDF invalid scale factor.";
+    return;
+  }
+  page_scale_factor_ = page_scale_factor;
+}
+
+void PDFDocumentHelper::OnScaleChanged(float new_page_scale_factor) {
+  page_scale_factor_ = new_page_scale_factor;
+  if (!remote_pdf_client_) {
+    LOG(ERROR) << __func__ << ", PDF remote_pdf_client_ is null.";
+    return;
+  }
+  remote_pdf_client_->OnScaleChanged();
+}
+
+void PDFDocumentHelper::SetIsLeftHandleVisible(bool visible) {
+  bool expected_is_left_visible = is_left_visible_.load();
+  if (expected_is_left_visible == visible) {
+    return;
+  }
+  is_left_visible_.store(visible);
+}
+
+void PDFDocumentHelper::SetIsRightHandleVisible(bool visible) {
+  bool expected_is_right_visible = is_right_visible_.load();
+  if (expected_is_right_visible == visible) {
+    return;
+  }
+  is_right_visible_.store(visible);
+}
+
+void PDFDocumentHelper::SetSelectionBoundsVisibility(gfx::SelectionBound& start,
+                                                     gfx::SelectionBound& end) {
+  if (has_selection_) {
+    // Control the visibility of the left and right handles separately.
+    start.set_visible(is_left_visible_.load());
+    end.set_visible(is_right_visible_.load());
+  }                              
 }
 #endif  // BUILDFLAG(ARKWEB_PDF)
 

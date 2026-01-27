@@ -97,6 +97,10 @@
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "arkweb/chromium_ext/net/base/log_utils.h"
+#endif
+
 namespace net {
 
 #if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
@@ -122,6 +126,10 @@ int ArkWebHttpNetworkTransactionExt::RestartWithSecureDnsOnly(
   if (!CheckMaxRestarts()) {
     return ERR_TOO_MANY_RETRIES;
   }
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING)
+  observed_bad_certs_.clear();
+#endif
 
   // Reset the other member variables.
   // Note: this is necessary only with SSL renegotiation.
@@ -185,6 +193,111 @@ int ArkWebHttpNetworkTransactionExt::DoCreateFallbackStreamWithSecureDnsOnlyComp
 }
 #endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+int ArkWebHttpNetworkTransactionExt::RestartWithFallbackProxy(
+    CompletionOnceCallback callback) {
+  DCHECK(!stream_.get());
+  DCHECK(!stream_request_.get());
+  DCHECK_EQ(STATE_NONE, next_state_);
+  if (!CheckMaxRestarts()) {
+    return ERR_TOO_MANY_RETRIES;
+  }
+
+  // Reset the other member variables.
+  // Note: this is necessary only with SSL renegotiation.
+  ResetStateForRestart();
+  next_state_ = STATE_CREATE_FALLBACK_STREAM_WITH_FALLBACK_PROXY;
+  int rv = DoLoop(OK);
+  if (rv == ERR_IO_PENDING) {
+    callback_ = std::move(callback);
+  }
+
+  // This always returns ERR_IO_PENDING because DoCreateStream() does, but
+  // GenerateNetworkErrorLoggingReportIfError() should be called here if any
+  // other net::Error can be returned.
+  CHECK_EQ(rv, ERR_IO_PENDING);
+  return rv;
+}
+
+int ArkWebHttpNetworkTransactionExt::DoCreateStreamWithFallbackProxy() {
+  response_.network_accessed = true;
+
+  next_state_ = STATE_CREATE_FALLBACK_STREAM_WITH_FALLBACK_PROXY_COMPLETE;
+  // IP based pooling is only enabled on a retry after 421 Misdirected Request
+  // is received. Alternative Services are also disabled in this case (though
+  // they can also be disabled when retrying after a QUIC error).
+  if (!enable_ip_based_pooling_) {
+    DCHECK(!enable_alternative_services_);
+  }
+
+  if (!request_) {
+    LOG(INFO) << "DoCreateStreamWithFallbackProxy return ERR_ABORTED for "
+                  "request is nullptr";
+    return ERR_ABORTED;
+  }
+
+  if (ForWebSocketHandshake()) {
+    stream_request_ =
+        session_->http_stream_factory()->RequestWebSocketHandshakeStream(
+            *request_, priority_, /*allowed_bad_certs=*/observed_bad_certs_,
+            this, websocket_handshake_stream_base_create_helper_,
+            enable_ip_based_pooling_, enable_alternative_services_, net_log_);
+  } else {
+    stream_request_ = session_->http_stream_factory()->RequestStream(
+        *request_, priority_, /*allowed_bad_certs=*/observed_bad_certs_, this,
+        enable_ip_based_pooling_, enable_alternative_services_, net_log_);
+  }
+  CHECK(stream_request_.get());
+  return ERR_IO_PENDING;
+}
+
+int ArkWebHttpNetworkTransactionExt::DoCreateStreamWithFallbackProxyComplete(
+    int result) {
+  CopyConnectionAttemptsFromStreamRequest();
+  if (result == OK) {
+    next_state_ = STATE_CONNECTED_CALLBACK;
+    DCHECK(stream_.get());
+  } else if (result == ERR_HTTP_1_1_REQUIRED ||
+             result == ERR_PROXY_HTTP_1_1_REQUIRED) {
+    return HandleHttp11Required(result);
+  }
+
+  // Handle possible client certificate errors that may have occurred if the
+  // stream used SSL for one or more of the layers.
+  result = HandleSSLClientAuthError(result);
+
+  // At this point we are done with the stream_request_.
+  stream_request_.reset();
+  return result;
+}
+
+int ArkWebHttpNetworkTransactionExt::RestartWithDirect(
+    CompletionOnceCallback callback) {
+  DCHECK(!stream_.get());
+  DCHECK(!stream_request_.get());
+  DCHECK_EQ(STATE_NONE, next_state_);
+  if (!CheckMaxRestarts()) {
+    return ERR_TOO_MANY_RETRIES;
+  }
+
+  // Reset the other member variables.
+  // Note: this is necessary only with SSL renegotiation.
+  ResetStateForRestart();
+  response_ = HttpResponseInfo();
+  next_state_ = STATE_CREATE_STREAM;
+  int rv = DoLoop(OK);
+  if (rv == ERR_IO_PENDING) {
+    callback_ = std::move(callback);
+  }
+
+  // This always returns ERR_IO_PENDING because DoCreateStream() does, but
+  // GenerateNetworkErrorLoggingReportIfError() should be called here if any
+  // other net::Error can be returned.
+  CHECK_EQ(rv, ERR_IO_PENDING);
+  return rv;
+}
+#endif  // BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+
 #if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
 void ArkWebHttpNetworkTransactionExt::StartRecording() {
   if (is_recording_) {
@@ -209,12 +322,28 @@ void ArkWebHttpNetworkTransactionExt::StopRecording() {
 }
 
 void ArkWebHttpNetworkTransactionExt::ReportTimeout() {
-  LOG(INFO) << "INFO: request had no reponse within 5 seconds. url: ***";
+  std::string response_info_record;
+
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-  LOG_FEEDBACK(INFO) << "INFO: request had no reponse within 5 seconds. url: "
-                     << url::LogUtils::ConvertUrlWithMask(url_.spec());
+  const HttpResponseInfo* response_info = GetResponseInfo();
+  if (response_info) {
+    response_info_record = base::StringPrintf(
+        "ip:%s connectionInfo:%s receivedBodyBytes: %ld",
+        net::LogUtils::AnonymizeIpAddress(response_info->remote_endpoint)
+            .c_str(),
+        net::HttpConnectionInfoToString(response_info->connection_info).data(),
+        received_body_bytes_);
+  }
+#endif
+
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(INFO, kNetwork)
+      << "NetworkTransactionTimeout " << response_info_record
+      << " url:" << url::LogUtils::ConvertUrlWithMask(url_.spec());
   if (!session_->is_strict_log_mode()) {
-    LOG(URL) << "request had no reponse within 5 seconds. url: " << url_.spec();
+    LOG(URL) << "request had no reponse within 5 seconds. url: " << url_.spec()
+             << " " << response_info_record;
   }
 #endif
 }

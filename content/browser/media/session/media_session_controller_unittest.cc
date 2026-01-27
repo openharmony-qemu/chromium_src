@@ -196,6 +196,22 @@ class TestMediaPlayer : public media::mojom::MediaPlayer {
   void SetVolume(double volume) override {}
 
   void GetVolume(GetVolumeCallback callback) override {}
+
+  void PullUpCastBackGround(const std::string& device_name) override {}
+
+  void UpdateUiPlayState(bool is_playing) override {}
+
+  void UpdateUiPlayPosition(int64_t position) override {}
+
+  void MediaCastStopped() override {}
+
+  void MediaCastStopByNavigation() override {}
+
+  void GetMediaCastCurrentTime(GetMediaCastCurrentTimeCallback callback) override {}
+
+  void NotifyRemoteExitFullScreen() override {}
+
+  void NotifyCastControlShow(bool is_show) override {}
 #endif
 
   // Helper method to set expected video visibility, which is later used as an

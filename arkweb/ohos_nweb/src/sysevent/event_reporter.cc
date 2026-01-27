@@ -93,6 +93,9 @@ constexpr char VIDEO_FRAME_DROP_STATISTICS[] = "VIDEO_FRAME_DROP_STATISTICS";
 constexpr char VIDEO_FRAME_DROPPED_COUNT[] = "VIDEO_FRAME_DROPPED_COUNT";
 constexpr char VIDEO_FRAME_DROPPED_DURATION[] = "VIDEO_FRAME_DROPPED_DURATION";
 
+// For dumplicate file upload statistics
+constexpr char DUPLICATE_FILE_UPLOAD[] = "DUPLICATE_FILE_UPLOAD";
+
 constexpr char NWEB_ID[] = "NWEB_ID";
 constexpr char PLAIN_TEXT[] = "PLAIN_TEXT";
 constexpr char LINK_URL[] = "LINK_URL";
@@ -145,6 +148,7 @@ constexpr char MAILBOX_NONEXISTENT[] = "MAILBOX_NONEXISTENT";
 // For render freeze monitoring
 constexpr char PROCESS_FREEZE_WARNING[] = "PROCESS_FREEZE_WARNING";
 
+constexpr char RENDER_PROCESS_TERMINATE[] = "RENDER_PROCESS_TERMINATE";
 }  // namespace
 
 void ReportRenderJsFreeze(int32_t pid, const std::string& packageName, const std::string& processName,
@@ -159,6 +163,16 @@ void ReportRenderJsFreeze(int32_t pid, const std::string& packageName, const std
         "UID", uid
       });
 }                         
+
+void ReportRenderProcessTerminate(bool is_gpu, const std::string& pid, const std::string& reason) {
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      RENDER_PROCESS_TERMINATE, HiSysEventAdapter::EventType::FAULT,
+      {
+        "PROCESS_TYPE", is_gpu ? std::string("gpu") : std::string("render"),
+        "PID", pid,
+        "REASON", reason
+      });
+}
 
 void ReportPageLoadStats(int instanceId,
                          int accessSumCount,
@@ -308,7 +322,7 @@ void ReportVideoPlayErrorInfo(const std::string errorType,
 void ReportAudioFrameDropStats(int frameCount) {
   OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
       AUDIO_FRAME_DROP_STATISTICS, HiSysEventAdapter::EventType::STATISTIC,
-      {AUDIO_BLANK_FRAME_COUNT, std::to_string(frameCount)});
+      {AUDIO_BLANK_FRAME_COUNT, frameCount});
 }
 
 void ReportVideoFrameDropStats(uint32_t frameCount, uint64_t frameDuration) {
@@ -317,6 +331,17 @@ void ReportVideoFrameDropStats(uint32_t frameCount, uint64_t frameDuration) {
       {VIDEO_FRAME_DROPPED_COUNT, frameCount, VIDEO_FRAME_DROPPED_DURATION,
        frameDuration});
 }
+
+void ReportDuplicateFileUpload(const std::string errorDesc) {
+  std::string error_desc = "";
+  if (!errorDesc.empty()) {
+    error_desc = errorDesc;
+  }
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      DUPLICATE_FILE_UPLOAD, HiSysEventAdapter::EventType::STATISTIC,
+      {ERROR_DESC, error_desc});
+}
+
 void ReportDragDropStatus(const std::string& eventName, int32_t id) {
   OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
       eventName, HiSysEventAdapter::EventType::BEHAVIOR,

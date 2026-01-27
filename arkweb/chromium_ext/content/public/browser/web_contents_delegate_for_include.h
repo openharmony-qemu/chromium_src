@@ -149,4 +149,13 @@ virtual void OnCameraCaptureStateChanged(int original_state, int new_state) {}
 #if BUILDFLAG(ARKWEB_WEBRTC)
 virtual void OnMicrophoneCaptureStateChanged(int original_state, int new_state) {}
 #endif
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+virtual void OnDocumentEndReady(const FrameInfos& frameInfo) {}
+#endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+virtual void OnMediaCastEnter() {}
+#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
+
+
 #endif  // ARKWEB_CHROMIUM_EXT_CONTENT_PUBLIC_BROWSER_WEB_CONTENTS_DELEGATE_FOR_INCLUDE_H_

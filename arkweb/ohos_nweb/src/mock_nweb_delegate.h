@@ -28,6 +28,7 @@ namespace OHOS::NWeb {
 class MockNWebDelegate : public NWebDelegateInterface {
  public:
   virtual ~MockNWebDelegate() {}
+  MOCK_METHOD(void, SetIsOfflineWebComponent, (), (override));
   MOCK_METHOD(void, OnWindowShow, (), (override));
   MOCK_METHOD(void, OnWindowHide, (), (override));
   MOCK_METHOD(void, OnOnlineRenderToForeground, (), (override));
@@ -66,6 +67,12 @@ class MockNWebDelegate : public NWebDelegateInterface {
               (std::shared_ptr<NWebAppClientExtensionCallback>
                    web_app_client_extension_listener),
               (override));
+#if BUILDFLAG(ARKWEB_AI)
+  MOCK_METHOD(void,
+              RegisterNWebAgentHandler,
+              (std::shared_ptr<NWebAgentHandler> handler),
+              (override));
+#endif
   MOCK_METHOD(void,
               SetInputMethodClient,
               (CefRefPtr<NWebInputMethodClient> client),
@@ -92,6 +99,14 @@ class MockNWebDelegate : public NWebDelegateInterface {
   MOCK_METHOD(void,
               FillAutofillDataV2,
               (std::shared_ptr<NWebRomValue> data),
+              (override));
+  MOCK_METHOD(void,
+              FillAutofillDataFromTriggerType,
+              (std::shared_ptr<NWebRomValue> data, int32_t type),
+              (override));
+  MOCK_METHOD(void,
+              PutVaultPlainTextCallback,
+              (std::shared_ptr<OHOS::NWeb::NWebVaultPlainTextCallback> callback),
               (override));
   MOCK_METHOD(void,
               ExecuteCreatePDFExt,
@@ -313,6 +328,12 @@ class MockNWebDelegate : public NWebDelegateInterface {
               GetPreference,
               (),
               (const, override));
+#if BUILDFLAG(ARKWEB_AI)
+  MOCK_METHOD(std::shared_ptr<NWebAgentManager>,
+              GetAgentManager,
+              (),
+              (const, override));
+#endif
   MOCK_METHOD(std::string, Title, (), (override));
   MOCK_METHOD(std::shared_ptr<HitTestResult>,
               GetHitTestResult,
@@ -614,6 +635,7 @@ class MockNWebDelegate : public NWebDelegateInterface {
                const std::vector<int32_t>& pressedCodes,
                int32_t source),
               (override));
+  MOCK_METHOD(void, ReloadIgnoreCache, (), (override));
 
 #if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
   MOCK_METHOD(void, GetOverScrollOffset, (float*, float*), (override));
@@ -868,7 +890,8 @@ class MockNWebDelegate : public NWebDelegateInterface {
 #if BUILDFLAG(ARKWEB_URL_TRUST_LIST)
   MOCK_METHOD(int,
               SetUrlTrustListWithErrMsg,
-              (const std::string& urlTrustList, std::string& detailErrMsg),
+              (const std::string& urlTrustList, bool allowOpaqueOrigin,
+               bool supportWildcard, std::string& detailErrMsg),
               (override));
 #endif
 
@@ -1102,10 +1125,6 @@ class MockNWebDelegate : public NWebDelegateInterface {
                std::unique_ptr<NWebExtensionTabDetachInfo> detachInfo),
               (override));
   MOCK_METHOD(void,
-              WebExtensionTabHighlighted,
-              (NWebExtensionTabHighlightInfo & highlightInfo),
-              (override));
-  MOCK_METHOD(void,
               WebExtensionTabMoved,
               (int32_t tab_id,
                std::unique_ptr<NWebExtensionTabMoveInfo> moveInfo),
@@ -1149,6 +1168,12 @@ class MockNWebDelegate : public NWebDelegateInterface {
               OpenDevtoolsWith,
               (std::shared_ptr<NWebDelegateInterface> nweb_delegate,
                std::unique_ptr<OpenDevToolsParam> param),
+              (override));
+  MOCK_METHOD(void,
+              OpenDevtoolsWithByPb,
+              (std::shared_ptr<NWebDelegateInterface> nweb_delegate,
+               std::unique_ptr<OpenDevToolsParam> param,
+               OpenDevToolsExtOpt& ext_opt),
               (override));
   MOCK_METHOD(void, CloseDevtools, (), (override));
 
@@ -1275,9 +1300,43 @@ class MockNWebDelegate : public NWebDelegateInterface {
   MOCK_METHOD(void, EnableHttpsUpgrades, (bool enable), (override));                               
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+  MOCK_METHOD((std::map<std::string, std::string>), ResourceRequestGetRequestHeader, 
+              (int nweb_request_key), (override));
+  MOCK_METHOD(std::string, ResourceRequestGetRequestUrl, (int nweb_request_key), (override));
+  MOCK_METHOD(bool, ResourceRequestIsRequestGesture, (int nweb_request_key), (override));
+  MOCK_METHOD(bool, ResourceRequestIsMainFrame, (int nweb_request_key), (override));
+  MOCK_METHOD(bool, ResourceRequestIsRedirect, (int nweb_request_key), (override));
+  MOCK_METHOD(std::string, ResourceRequestGetRequestMethod, (int nweb_request_key), (override));
+  MOCK_METHOD(int32_t, ResourceRequestGetPageTransition, (int nweb_request_key), (override));
+  MOCK_METHOD(int32_t, ResourceRequestGetRequestType, (int nweb_request_key), (override));
+  MOCK_METHOD(void, ResourceRequestDelete, (int nweb_request_key), (override));
+  MOCK_METHOD(std::string, ResourceResponseGetMimeType, (int nweb_response_key), (override));
+  MOCK_METHOD(std::string, ResourceResponseGetEncoding, (int nweb_response_key), (override));
+  MOCK_METHOD(int32_t, ResourceResponseGetStatusCode, (int nweb_response_key), (override));
+  MOCK_METHOD(std::string, ResourceResponseGetReasonPhrase, (int nweb_response_key), (override));
+  MOCK_METHOD((std::map<std::string, std::string>), ResourceResponseGetResponseHeader,
+             (int nweb_response_key), (override));
+  MOCK_METHOD(bool, ResourceResponseGetIsFromNetwork, (int nweb_response_key), (override));
+  MOCK_METHOD(void, ResourceResponseDelete, (int nweb_response_key), (override));
+  MOCK_METHOD(int32_t, GetLastCommittedEntryPageTransition, (), (override));
+#endif
+
 #if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
   MOCK_METHOD(void, SetFocusWebId, (int32_t nweb_id), (override));
-#endif 
+#endif
+
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  MOCK_METHOD(void,
+              SetUserAgentMetadata,
+              (const std::string& user_agent,
+               std::shared_ptr<NWebUserAgentMetadata> metadata),
+              (override));
+  MOCK_METHOD(std::shared_ptr<NWebUserAgentMetadata>,
+              GetUserAgentMetadata,
+              (const std::string& user_agent),
+              (override));
+#endif
 };
 }  // namespace OHOS::NWeb
 

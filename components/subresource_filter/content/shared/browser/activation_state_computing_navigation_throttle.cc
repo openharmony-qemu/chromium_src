@@ -84,6 +84,22 @@ void ActivationStateComputingNavigationThrottle::
   ruleset_handle_ = ruleset_handle->AsWeakPtr();
 }
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+void ActivationStateComputingNavigationThrottle::
+    NotifyPageActivationWithRuleset(
+        VerifiedRuleset::Handle* ruleset_handle,
+        VerifiedRuleset::Handle* user_ruleset_handle,
+        const mojom::ActivationState& page_activation_state) {
+  LOG(DEBUG) << "[AdBlock] NotifyPageActivationWithRuleset activation_level:"
+             << page_activation_state.activation_level;
+
+  parent_activation_state_ = page_activation_state;
+  CHECK(ruleset_handle, base::NotFatalUntil::M129);
+  ruleset_handle_ = ruleset_handle->AsWeakPtr();
+  user_ruleset_handle_ = user_ruleset_handle->AsWeakPtr();
+}
+#endif
+
 content::NavigationThrottle::ThrottleCheckResult
 ActivationStateComputingNavigationThrottle::WillStartRequest() {
   if (parent_activation_state_)
@@ -146,6 +162,14 @@ void ActivationStateComputingNavigationThrottle::CheckActivationState() {
     params.parent_document_origin = parent->GetLastCommittedOrigin();
   }
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  async_filter_ = std::make_unique<AsyncDocumentSubresourceFilter>(
+      ruleset_handle_.get(), user_ruleset_handle_.get(), std::move(params),
+      base::BindOnce(&ActivationStateComputingNavigationThrottle::
+                         OnActivationStateComputed,
+                     weak_ptr_factory_.GetWeakPtr()),
+      uma_tag_);
+#else
   // If there is an existing |async_filter_| that hasn't called
   // OnActivationStateComputed, it will be deleted here and never call that
   // method. This is by design of the AsyncDocumentSubresourceFilter, which
@@ -156,6 +180,7 @@ void ActivationStateComputingNavigationThrottle::CheckActivationState() {
                          OnActivationStateComputed,
                      weak_ptr_factory_.GetWeakPtr()),
       uma_tag_);
+#endif
 }
 
 void ActivationStateComputingNavigationThrottle::OnActivationStateComputed(

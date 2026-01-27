@@ -80,6 +80,64 @@ typedef struct {
   int32_t loadingTime;
 } ArkWeb_BlanklessInfo;
 
+/**
+ * @brief Defines the blankless loading callback information.
+ *
+ * @since 23
+ */
+typedef struct {
+  /**
+   * The key value that uniquely identifies the current page. It is the same as the key value of the
+   * OH_NativeArkWeb_SetBlanklessLoadingParams API.
+   */
+  const char* key;
+  /** The state of blankless loading progress. */
+  ArkWeb_BlanklessLoadingState state;
+  /** Indicates the time when the frame insertion succeeds or the frame insertion is removed. */
+  int64_t timestamp;
+  /** Indicates the reason why the frame insertion failed. */
+  const char* reason;
+} ArkWeb_BlanklessLoadingInfo;
+
+/**
+ * @brief Defines the callback of blankless.
+ * @param blanklessLoadingInfo {@Link ArkWeb_BlanklessLoadingInfo}.
+ * It will carries some interpolated frame information.
+ * @since 23
+ */
+typedef void (*OH_ArkWeb_OnBlanklessLoadingCallback)(const ArkWeb_BlanklessLoadingInfo* blanklessLoadingInfo);
+
+/**
+ * @brief Defines the blankless loading parameter.
+ *
+ * @since 23
+ */
+typedef struct {
+  /**
+   * Whether to enable frame interpolation. The value true indicates to enable
+   * frame interpolation, and the value false indicates the opposite.
+   */
+  bool enable = false;
+  /**
+   * The duration time of frame interpolation. The unit is ms and the value
+   * must between 200 and 2000. Additionally, a default value of 0 can be specified. This means
+   * that the duration of frame interpolation will be determined by the system.
+   */
+  int32_t duration = 0;
+  /**
+   * Indicates the time when the historical frame interpolation expires. It is
+   * UTC time. When the system exceeds this time, it will trigger cleaning.
+   * The maximum validity period is 30 days, this represents the current UTC time plus 30 days.
+   * It represents using the system's default cleaning time when passing 0 and the default value is 0.
+   */
+  int64_t expirationTime = 0;
+  /**
+   * Called after the frame insertion successful, failed, or removed.
+   * For details, see {@Link OH_ArkWeb_OnBlanklessLoadingCallback}.
+   */
+  OH_ArkWeb_OnBlanklessLoadingCallback callback = nullptr;
+} ArkWeb_BlanklessLoadingParam;
+
 void OH_ArkWeb_RunJavaScript(const char* webTag,
                              const ArkWeb_JavaScriptObject* javascriptObject);
 void OH_ArkWeb_RegisterJavaScriptProxy(const char* webTag,
@@ -201,6 +259,10 @@ ArkWeb_BlanklessInfo OH_NativeArkWeb_GetBlanklessInfoWithKey(const char* webTag,
 ArkWeb_BlanklessErrorCode OH_NativeArkWeb_SetBlanklessLoadingWithKey(const char* webTag,
                                                                      const char* key,
                                                                      bool isStarted);
+
+ArkWeb_BlanklessErrorCode OH_NativeArkWeb_SetBlanklessLoadingParams(const char* webTag,
+                                                                    const char* key,
+                                                                    const ArkWeb_BlanklessLoadingParam& param);
 
 #ifdef __cplusplus
 }

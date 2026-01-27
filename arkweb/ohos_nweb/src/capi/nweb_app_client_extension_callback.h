@@ -48,6 +48,10 @@ struct NWebAppClientExtensionCallback {
                            int type,
                            bool user_gesture,
                            int nweb_id);
+  bool (*OnOpenURLFromTabV2)(std::string target_url,
+                           int type,
+                           bool user_gesture,
+                           int nweb_id);
   void (*OnHidePasswordAutofillPopup)(int nweb_id);
   void (*OnSaveOrUpdatePassword)(bool isUpdate, std::string url, int nweb_id);
   void (*OnUpdateTargetURL)(std::string url, int nweb_id);
@@ -140,6 +144,13 @@ struct NWebAppClientExtensionCallback {
                                            int transition_type,
                                            bool is_key_request,
                                            int32_t nweb_id);
+#endif
+
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+  void (*OnSafeBrowsingCheckDetail)(int32_t nweb_id,
+                                    int code,
+                                    int policy,
+                                    int threat);
 #endif
 };
 

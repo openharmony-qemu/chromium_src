@@ -49,6 +49,7 @@ bool ParseResReqInfoList(LinkedHashMap& info_list,
   for (auto info : info_list) {
     if (mode == PRPPreloadMode::PRELOAD &&
         (((info.second->preload_flag() & PRPP_FLAGS_VISIBLE) != PRPP_FLAGS_VISIBLE) ||
+        (info.second->cache_type() != PRRequestCacheType::FORCE_CACHE) ||
         (DoNotNeedToStore(info.second, page_index)))) {
       continue;
     }

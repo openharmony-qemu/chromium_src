@@ -101,18 +101,27 @@ int ArktsHilogAdapter::LogInternal(LogLevel level, const char* fmt, ...)
         return -1;
     }
 
+    napi_handle_scope scope = nullptr;
+    napi_open_handle_scope(env, &scope);
+    if (!scope) {
+        return -1;
+    }
+
     napi_value hilogModule = GetHilogModule();
-    if(!hilogModule) {
+    if (!hilogModule) {
+        napi_close_handle_scope(env, scope);
         return -1;
     }
 
     napi_value infoFn;
     auto it = LEVEL_MAP.find(level);
     if (it == LEVEL_MAP.end()) {
+        napi_close_handle_scope(env, scope);
         return -1;
     }
     napi_status status = napi_get_named_property(env, hilogModule, it->second.c_str(), &infoFn);
     if (status != napi_ok) {
+        napi_close_handle_scope(env, scope);
         return -1;
     }
 
@@ -126,20 +135,30 @@ int ArktsHilogAdapter::LogInternal(LogLevel level, const char* fmt, ...)
     va_end(ap);
 
     napi_value outputResult;
-    napi_create_string_utf8(env, outputString.c_str(), outputString.size(), &outputResult);
+    status = napi_create_string_utf8(env, outputString.c_str(), outputString.size(), &outputResult);
+    if (status != napi_ok) {
+        napi_close_handle_scope(env, scope);
+        return -1;
+    }
 
     napi_value flag;
     uint32_t domain = LOG_RENDER_DOMAIN;
     if ((getuid() / BROWSER_UID_BASE) != 0) {
         domain = LOG_APP_DOMAIN;
     }
-    napi_create_int32(env, domain, &flag);
+    status = napi_create_int32(env, domain, &flag);
+    if (status != napi_ok) {
+        napi_close_handle_scope(env, scope);
+        return -1;
+    }
 
     napi_value args[ARG_NUM] = {flag, tag, outputResult};
     status = napi_call_function(env, hilogModule, infoFn, ARG_NUM, args, nullptr);
     if (status != napi_ok) {
+        napi_close_handle_scope(env, scope);
         return -1;
     }
 
+    napi_close_handle_scope(env, scope);
     return 0;
 }

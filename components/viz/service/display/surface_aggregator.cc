@@ -54,7 +54,6 @@
 #include "ui/gfx/geometry/transform.h"
 #include "ui/gfx/geometry/vector2d.h"
 #include "ui/gfx/overlay_transform_utils.h"
-
 namespace viz {
 
 struct MaskFilterInfoExt {
@@ -871,8 +870,20 @@ void SurfaceAggregator::EmitSurfaceContent(
         surface_quad_rect.height() /
         static_cast<float>(resolved_frame.size_in_pixels().height());
   } else {
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+    float stretch_factor = resolved_frame.stretch_content_none_device_scale_factor();
+    constexpr float kEpsilon = 0.001;
+    if (stretch_factor > kEpsilon) {
+      extra_content_scale_x = extra_content_scale_y =
+          parent_device_scale_factor / stretch_factor;
+    } else {
+      extra_content_scale_x = extra_content_scale_y =
+          parent_device_scale_factor / resolved_frame.device_scale_factor();
+    }
+#else
     extra_content_scale_x = extra_content_scale_y =
         parent_device_scale_factor / resolved_frame.device_scale_factor();
+#endif
   }
   float inverse_extra_content_scale_x = SK_Scalar1 / extra_content_scale_x;
   float inverse_extra_content_scale_y = SK_Scalar1 / extra_content_scale_y;

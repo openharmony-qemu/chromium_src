@@ -37,13 +37,16 @@
 #include "arkweb/ohos_nweb/src/sysevent/event_reporter.h"
 #endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
-#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION) || BUILDFLAG(ARKWEB_MEDIA_CAST)
 #include "third_party/blink/renderer/core/html/media/html_video_element.h"
-#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION || ARKWEB_MEDIA_CAST
 
 namespace blink {
 namespace {
 extern std::string GetFormatFromType(std::string type);
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+extern String BuildElementErrorMessage(const String& error);
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
 float PageConstraintInitalScale(const Document& document) {
@@ -51,7 +54,6 @@ float PageConstraintInitalScale(const Document& document) {
   if (auto* page = document.GetPage()) {
     scale = page->GetPageScaleConstraintsSet().FinalConstraints().initial_scale;
   } else {
-    LOG(INFO) << "using default scale 1.0";
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
     LOG_FEEDBACK(INFO) << "using default scale 1.0";
 #endif  // ARKWEB_LOGGER_REPORT
@@ -174,9 +176,6 @@ std::string HTMLMediaElement::GetOutgoingReferrerString() {
 }
 
 void HTMLMediaElement::UpdatePlaybackStatus(uint32_t status) {
-  LOG(INFO) << "UpdatePlaybackStatus(" << status << "), paused_[" << paused_
-            << "]";
-
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
   LOG_FEEDBACK(INFO) << "UpdatePlaybackStatus(" << status << "), paused_["
                      << paused_ << "]";
@@ -223,7 +222,6 @@ gfx::Rect HTMLMediaElement::GetVideoRect() {
     return gfx::Rect(ToFlooredPoint(layout_box->Location()),
                      ToFlooredSize(layout_box->Size()));
   }
-  LOG(INFO) << "using default vidoe size";
 
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
   LOG_FEEDBACK(INFO) << "using default vidoe size";
@@ -599,5 +597,202 @@ bool HTMLMediaElement::IsUseVideoLoadOptimization() const {
   return GetDocument().IsUseVideoLoadOptimization();
 }
 #endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+// Please make incremental modifications based on the native implementation during each upgrade.
+void HTMLMediaElement::MediaLoadingFailed(WebMediaPlayer::NetworkState error,
+                                          const String& input_message) {
+  DVLOG(3) << "MediaLoadingFailed(" << *this << ", " << int{error}
+           << ", message='" << input_message << "')";
+ 
+#if BUILDFLAG(ARKWEB_MEDIA)
+  LOG(INFO) << "OhMedia::MediaLoadingFailed error = " << (int)error
+            << ", input_message = " << input_message << ")";
+#endif // ARKWEB_MEDIA
+  bool should_be_opaque = MediaShouldBeOpaque();
+  if (should_be_opaque)
+    error = WebMediaPlayer::kNetworkStateNetworkError;
+  String empty_string;
+  const String& message = should_be_opaque ? empty_string : input_message;
+ 
+  StopPeriodicTimers();
+ 
+  // If we failed while trying to load a <source> element, the movie was never
+  // parsed, and there are more <source> children, schedule the next one
+  if (ready_state_ < kHaveMetadata &&
+      load_state_ == kLoadingFromSourceElement) {
+    // resource selection algorithm
+    // Step 9.Otherwise.9 - Failed with elements: Queue a task, using the DOM
+    // manipulation task source, to fire a simple event named error at the
+    // candidate element.
+    if (current_source_node_) {
+      current_source_node_->ScheduleErrorEvent();
+    } else {
+      DVLOG(3) << "mediaLoadingFailed(" << *this
+               << ") - error event not sent, <source> was removed";
+    }
+ 
+    // 9.Otherwise.10 - Asynchronously await a stable state. The synchronous
+    // section consists of all the remaining steps of this algorithm until the
+    // algorithm says the synchronous section has ended.
+ 
+    // 9.Otherwise.11 - Forget the media element's media-resource-specific
+    // tracks.
+    ForgetResourceSpecificTracks();
+ 
+    if (HavePotentialSourceChild()) {
+      DVLOG(3) << "mediaLoadingFailed(" << *this
+               << ") - scheduling next <source>";
+      ScheduleNextSourceChild();
+    } else {
+      DVLOG(3) << "mediaLoadingFailed(" << *this
+               << ") - no more <source> elements, waiting";
+      WaitForSourceChange();
+    }
+ 
+    return;
+  }
+ 
+  std::string error_type;
+  bool is_message_not_clear = false;
+  if (error == WebMediaPlayer::kNetworkStateNetworkError &&
+      ready_state_ >= kHaveMetadata) {
+    if (html_media_element_utils_.IsFeedsPage()) {
+      MediaEngineError(MakeGarbageCollected<MediaError>(
+          MediaError::kMediaErrNetwork, AddErrorCodeToMessage(error, message).c_str()));
+    } else {
+      MediaEngineError(MakeGarbageCollected<MediaError>(
+          MediaError::kMediaErrNetwork, message));
+    }
+    error_type = "Network Error";
+  } else if (error == WebMediaPlayer::kNetworkStateDecodeError) {
+    if (html_media_element_utils_.IsFeedsPage()) {
+      MediaEngineError(MakeGarbageCollected<MediaError>(
+          MediaError::kMediaErrDecode, AddErrorCodeToMessage(error, message).c_str()));
+    } else {
+      MediaEngineError(MakeGarbageCollected<MediaError>(
+          MediaError::kMediaErrDecode, message));
+    }
+    error_type = "Decode Error";
+  } else if ((error == WebMediaPlayer::kNetworkStateFormatError ||
+              error == WebMediaPlayer::kNetworkStateNetworkError) &&
+             (load_state_ == kLoadingFromSrcAttr ||
+              (load_state_ == kLoadingFromSrcObject &&
+               src_object_media_source_handle_))) {
+    if (message.empty()) {
+      // Generate a more meaningful error message to differentiate the two types
+      // of MEDIA_SRC_ERR_NOT_SUPPORTED.
+      if (html_media_element_utils_.IsFeedsPage()) {
+        NoneSupported(BuildElementErrorMessage(AddErrorCodeToMessage(error,
+            (error == WebMediaPlayer::kNetworkStateFormatError ? "Format error"
+                                                               : "Network error")).c_str()));
+      } else {
+        NoneSupported(BuildElementErrorMessage(
+            error == WebMediaPlayer::kNetworkStateFormatError ? "Format error"
+                                                              : "Network error"));
+      }
+      is_message_not_clear = true;
+      error_type =
+          (error == WebMediaPlayer::kNetworkStateFormatError ? "Format Error"
+                                                             : "Network Error");
+    } else {
+      if (html_media_element_utils_.IsFeedsPage()) {
+        NoneSupported(BuildElementErrorMessage(AddErrorCodeToMessage(error,message).c_str()));
+      } else {
+        NoneSupported(message);
+      }
+      error_type = "Others";
+    }
+  }
+ 
+  ReportMediaLoadingErrorMessage(error_type, error, message, is_message_not_clear);
+ 
+  UpdateLayoutObject();
+}
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+void HTMLMediaElement::OnMediaCastEnter() {
+  LOG(INFO) << "HTMLMediaElement::OnMediaCastEnter";
+  html_media_element_utils_.OnMediaCastEnter();
+}
+
+void HTMLMediaElement::PullUpCastBackGround(const String& device_name) {
+  LOG(INFO) << "HTMLMediaElement::PullUpCastBackGround";
+  if (auto* video_element = DynamicTo<HTMLVideoElement>(this)) {
+    video_element->MediaRemotingStarted(WebString(device_name));
+    for (auto& observer : media_player_observer_remote_set_->Value()) {
+      observer->SetPauseByAvcast(true);
+    }
+  }
+}
+
+void HTMLMediaElement::NotifyRemoteExitFullScreen() {
+  LOG(INFO) << "HTMLMediaElement::NotifyRemoteExitFullScreen";
+  if (auto* video_element = DynamicTo<HTMLVideoElement>(this)) {
+    video_element->UpdateRemoteFullScreenCss();
+  }
+}
+
+void HTMLMediaElement::MediaCastStopByNavigation() {
+  MediaCastStopped();
+}
+
+void HTMLMediaElement::MediaCastStopped() {
+  LOG(INFO) << "HTMLMediaElement::MediaRemotingStopped";
+  if (auto* video_element = DynamicTo<HTMLVideoElement>(this)) {
+    video_element->MediaRemotingStopped(MediaPlayerClient::kMediaRemotingStopNoText);
+    for (auto& observer : media_player_observer_remote_set_->Value()) {
+      observer->SetPauseByAvcast(false);
+    }
+  }
+}
+
+void HTMLMediaElement::HandleStopMediaCast() {
+  LOG(INFO) << "HTMLMediaElement::HandleStopMediaCast";
+  for (auto& observer : media_player_observer_remote_set_->Value()) {
+    observer->HandleStopMediaCast();
+  }
+}
+
+void HTMLMediaElement::UpdateUiPlayState(bool is_playing) {
+  LOG(INFO) << "HTMLMediaElement::UpdateUiPlayState";
+  if (auto* video_element = DynamicTo<HTMLVideoElement>(this)) {
+    video_element->UpdateUiPlayState(is_playing);
+  }
+}
+
+void HTMLMediaElement::UpdateUiPlayPosition(int64_t position) {
+  LOG(DEBUG) << "HTMLMediaElement::UpdateUiPlayPosition";
+  if (auto* video_element = DynamicTo<HTMLVideoElement>(this)) {
+    video_element->UpdateUiPlayPosition(position);
+  }
+}
+
+bool HTMLMediaElement::EnableMediaCastByUrlProtocol() {
+  LOG(INFO) << "HTMLMediaElement::EnableMediaCastByUrlProtocol";
+  if (currentSrc().ProtocolIsInHTTPFamily()) {
+    LOG(INFO) << "HTMLMediaElement::EnableMediaCastByUrlProtocol, url is http or https";
+    return true;
+  }
+  return false;
+}
+
+void HTMLMediaElement::GetMediaCastCurrentTime(GetMediaCastCurrentTimeCallback callback) {
+  LOG(INFO) << "HTMLMediaElement::GetMediaCastCurrentTime: " << currentTime();
+  std::move(callback).Run(currentTime());
+}
+
+void HTMLMediaElement::NotifyCastControlShow(bool is_show) {
+  LOG(INFO) << "HTMLMediaElement::NotifyCastControlShow, is_show: " << is_show;
+  cast_botton_show_ = is_show;
+#if !defined(COMPONENT_BUILD)
+  if (GetMediaControls()) {
+    LOG(INFO) << "HTMLMediaElement::NotifyCastControlShow go on";
+    GetMediaControls()->NotifyCastControlShow();
+  }
+#endif // COMPONENT_BUILD
+}
+#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
 
 }  // namespace blink

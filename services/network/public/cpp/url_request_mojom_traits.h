@@ -429,11 +429,24 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE)
   static bool is_download_request(const network::ResourceRequest& request) {
     return request.is_download_request;
   }
+  static bool is_triggered_by_download(const network::ResourceRequest& request) {
+ 	  return request.is_triggered_by_download;
+ 	}
 #endif  //  ARKWEB_EX_DOWNLOAD
   static const net::SocketTag& socket_tag(
       const network::ResourceRequest& request) {
     return request.socket_tag;
   }
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  static bool retry_with_fallback_proxy(
+      const network::ResourceRequest& request) {
+    return request.retry_with_fallback_proxy;
+  }
+  static int original_error_code(const network::ResourceRequest& request) {
+    return request.original_error_code;
+  }
+#endif
 
   static bool Read(network::mojom::URLRequestDataView data,
                    network::ResourceRequest* out);

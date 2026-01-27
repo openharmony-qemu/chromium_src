@@ -52,6 +52,7 @@ class NET_EXPORT DnsClient {
 #if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   virtual bool CanUseSecureDnsFallbackTransactions(
       ResolveContext* context) const = 0;
+  virtual void GetLocalAddress(IPEndPoint* address) = 0;
 #endif
 
   // Returns true if the DnsClient is able and allowed to make insecure DNS

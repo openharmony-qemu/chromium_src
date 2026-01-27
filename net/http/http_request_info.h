@@ -86,8 +86,13 @@ struct NET_EXPORT HttpRequestInfo {
   // Secure DNS Tag for the request.
   SecureDnsPolicy secure_dns_policy = SecureDnsPolicy::kAllow;
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)\
+  || BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
   bool secure_dns_only = false;
+#endif
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  bool retry_with_fallback_proxy = false;
 #endif
 
   // Tag applied to all sockets used to service request.

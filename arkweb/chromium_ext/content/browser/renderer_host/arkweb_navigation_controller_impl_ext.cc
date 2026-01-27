@@ -176,13 +176,10 @@ const std::string& ArkWebNavigationControllerImplExt::GetOriginalUrl() {
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
 NavigationController::NavigationEntryUpdateError
 ArkWebNavigationControllerImplExt::InsertBackForwardEntry(int index, const GURL& url) {
-  DLOG(INFO) << "InsertNavigationEntryAtFront url: "
-             << url::LogUtils::ConvertUrlWithMask(url.spec()) << "[index]"
-             << index;
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-  LOG_FEEDBACK(INFO) << "InsertBackForwardEntry url: "
-                     << url::LogUtils::ConvertUrlWithMask(url.spec())
-                     << "[index]" << index;
+  LOG_FEEDBACK(INFO, kNavigation)
+      << "InsertBackForwardEntry url:"
+      << url::LogUtils::ConvertUrlWithMask(url.spec()) << " index:" << index;
 #endif
   if (index < 0 || static_cast<size_t>(index) > entries_.size()) {
     return NavigationEntryUpdateError::ERR_WRONG_OFFSET;
@@ -222,21 +219,15 @@ ArkWebNavigationControllerImplExt::InsertBackForwardEntry(int index, const GURL&
 
 NavigationController::NavigationEntryUpdateError
 ArkWebNavigationControllerImplExt::UpdateNavigationEntryUrl(int index, const GURL& url) {
-  DLOG(INFO) << "UpdateNavigationEntryUrl url: "
-             << url::LogUtils::ConvertUrlWithMask(url.spec()) << "[index]" << index;
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-  LOG_FEEDBACK(INFO) << "UpdateNavigationEntryUrl url: "
-                     << url::LogUtils::ConvertUrlWithMask(url.spec())
-                     << "[index]" << index;
+  LOG_FEEDBACK(INFO, kNavigation)
+      << "UpdateNavigationEntryUrl index:" << index
+      << " url:" << url::LogUtils::ConvertUrlWithMask(url.spec());
 #endif
   if (frame_tree_->IsLoadingIncludingInnerFrameTrees()) {
-    LOG(ERROR)
-        << "If the url of the entry is modified during the loading process,"
-        << " it will cause some unpredictable effects!";
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-    LOG_FEEDBACK(ERROR)
-        << "If the url of the entry is modified during the loading process,"
-        << " it will cause some unpredictable effects!";
+    LOG_FEEDBACK(ERROR, kNavigation)
+        << "UpdateNavigationEntryUrl message:failedDueLoading";
 #endif
     return NavigationEntryUpdateError::ERR_OTHER;
   }
@@ -254,5 +245,15 @@ ArkWebNavigationControllerImplExt::UpdateNavigationEntryUrl(int index, const GUR
   return NavigationEntryUpdateError::UPDATE_OK;
 }
 #endif  // BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+void ArkWebNavigationControllerImplExt::ReloadWithNetError(
+    ReloadType reload_type,
+    bool check_for_repost,
+    ErrorPageReloadReason  reason) {
+  reload_reason_ = reason;
+  Reload(reload_type, check_for_repost);
+}
+#endif
 
 }  // namespace content

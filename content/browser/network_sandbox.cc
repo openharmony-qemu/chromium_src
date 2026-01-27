@@ -274,7 +274,9 @@ bool MaybeGrantAccessToDataPath(const SandboxParameters& sandbox_params,
 SandboxGrantResult MaybeGrantSandboxAccessToNetworkContextData(
     const SandboxParameters& sandbox_params,
     network::mojom::NetworkContextParams* params) {
+#if !BUILDFLAG(ARKWEB_COOKIE)
   DCHECK(!BrowserThread::CurrentlyOn(BrowserThread::UI));
+#endif
 #if BUILDFLAG(IS_WIN)
 #if DCHECK_IS_ON()
   params->win_permissions_set = true;

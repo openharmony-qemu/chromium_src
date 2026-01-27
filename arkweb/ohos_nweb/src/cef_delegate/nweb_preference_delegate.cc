@@ -203,6 +203,9 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
   browser_settings.border_radius_bottom_left = border_radius_bottom_left_;
   browser_settings.border_radius_bottom_right = border_radius_bottom_right_;
 #endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  browser_settings.is_autofill_enabled = is_autofill_enabled_;
+#endif  // BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
 #if BUILDFLAG(ARKWEB_MENU)
   browser_settings.touch_handle_exist = touch_handle_exist_;
   browser_settings.viewport_scale = viewport_scale_;
@@ -210,6 +213,10 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
 #if BUILDFLAG(ARKWEB_AI)
   browser_settings.image_analyzer_enabled =
       GetImageAnalyzerEnabled() ? STATE_ENABLED : STATE_DISABLED;
+  browser_settings.arkweb_agent_enabled =
+      GetArkwebAgentEnabled() ? STATE_ENABLED : STATE_DISABLED;
+  browser_settings.agent_need_highlight =
+      GetAgentNeedHighlight() ? STATE_ENABLED : STATE_DISABLED;
 #endif
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   browser_settings.hide_horizontal_scrollbars =
@@ -294,6 +301,11 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
   browser_settings.delay_for_background_tab_freezing =
       GetDelayDurationForBackgroundTabFreezing();
 #endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+  browser_settings.cast_enabled =
+      GetCastEnabled() ? STATE_ENABLED : STATE_DISABLED;
+#endif  // ARKWEB_MEDIA_CAST
 
 #if BUILDFLAG(ARKWEB_MEDIA_NETWORK_TRAFFIC_PROMPT)
   browser_settings.enable_media_network_traffic_prompt =
@@ -402,6 +414,13 @@ void NWebPreferenceDelegate::SetBorderRadiusFromWeb(
   }
 }
 #endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
+
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+void NWebPreferenceDelegate::SetEnableAutoFill(bool enable) {
+  is_autofill_enabled_ = enable;
+  WebPreferencesChanged();
+}
+#endif  // BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
 
 #if BUILDFLAG(ARKWEB_MENU)
 void NWebPreferenceDelegate::SetTouchHandleExistState(bool touchHandleExist) {
@@ -797,6 +816,24 @@ void NWebPreferenceDelegate::PutImageAnalyzerEnabled(bool enabled) {
 bool NWebPreferenceDelegate::GetImageAnalyzerEnabled() {
   return image_analyzer_enabled_;
 }
+
+void NWebPreferenceDelegate::PutArkwebAgentEnabled(bool enabled) {
+  arkweb_agent_enabled_ = enabled;
+  WebPreferencesChanged();
+}
+
+bool NWebPreferenceDelegate::GetArkwebAgentEnabled() {
+  return arkweb_agent_enabled_;
+}
+
+void NWebPreferenceDelegate::PutAgentNeedHighlight(bool enabled) {
+  agent_need_highlight_ = enabled;
+  WebPreferencesChanged();
+}
+
+bool NWebPreferenceDelegate::GetAgentNeedHighlight() {
+  return agent_need_highlight_;
+}
 #endif
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
@@ -841,6 +878,7 @@ int NWebPreferenceDelegate::GetBlurEnable() {
 }
 
 void NWebPreferenceDelegate::SetScrollable(bool enable) {
+  LOG(INFO) << "SetScrollable enable:" << enable;
   scroll_enabled_ = enable;
   WebPreferencesChanged();
   if (!(browser_.get()) || !(browser_->GetHost())) {
@@ -852,6 +890,8 @@ void NWebPreferenceDelegate::SetScrollable(bool enable) {
 }
 
 void NWebPreferenceDelegate::SetScrollable(bool enable, int32_t scrollType) {
+  LOG(INFO) << "SetScrollable enable:" << enable
+            << " scrollType:" << scrollType;
   scroll_enabled_ = enable;
   setting_scroll_enabled_ = enable;
   if (scrollType == static_cast<int32_t>(WebScrollType::UNKNOWN)) {
@@ -1261,6 +1301,16 @@ void NWebPreferenceDelegate::SetAutofillCallback(
     CefRefPtr<CefWebMessageReceiver> callback) {
   autofill_callback_ = callback;
 }
+
+std::shared_ptr<NWebVaultPlainTextCallback> NWebPreferenceDelegate::GetVaultPlainTextCallback() {
+  return vault_plain_text_callback_;
+}
+
+void NWebPreferenceDelegate::PutVaultPlainTextCallback(
+    std::shared_ptr<NWebVaultPlainTextCallback> callback) {
+  vault_plain_text_callback_ = callback;
+}
+
 #endif  // BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
 
 #if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
@@ -1272,8 +1322,24 @@ void NWebPreferenceDelegate::PutWebMediaAVSessionEnabled(bool enable) {
   LOG(INFO) << "NWebPreferenceDelegate::PutWebMediaAVSessionEnabled enable:"
             << enable;
   browser_->GetHost()->PutWebMediaAVSessionEnabled(enable);
+
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  auto currentProcess = base::CommandLine::ForCurrentProcess();
+  if (currentProcess && !currentProcess->HasSwitch(::switches::kEnableMediaAvsession)) {
+    cast_enabled_ = true;
+  }
+#endif // ARKWEB_NWEB_EX
+  cast_enabled_ = cast_enabled_ && enable;
+  LOG(INFO) << "NWebPreferenceDelegate::PutWebMediaAVSessionEnabled cast_enabled_:"
+            << cast_enabled_;
 }
 #endif  // ARKWEB_MEDIA_AVSESSION
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+  bool NWebPreferenceDelegate::GetCastEnabled() {
+    return cast_enabled_;
+  }
+#endif  // ARKWEB_MEDIA_CAST
 
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)
 void NWebPreferenceDelegate::PutErrorPageEnabled(bool enable) {

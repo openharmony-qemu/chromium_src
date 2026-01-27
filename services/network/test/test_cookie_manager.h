@@ -83,6 +83,8 @@ class TestCookieManager : public network::mojom::CookieManager {
       network::mojom::CookieDeletionFilterPtr filter,
       DeleteCookiesSyncCallback callback) override {}
   void GetAllCookiesSync(GetAllCookiesSyncCallback callback) override {}
+  void SetAllCookies(const net::CookieList& list,
+                     SetAllCookiesCallback callback) override {}
 #endif
 
   virtual void DispatchCookieChange(const net::CookieChangeInfo& change);

@@ -123,6 +123,11 @@ TEST_F(NWebDelegateTest, Resize) {
   nweb_delegate_->Resize(width, height, isKeyboard);
 }
 
+TEST_F(NWebDelegateTest, SetIsOfflineWebComponent) {
+  ASSERT_NE(nweb_delegate_, nullptr);
+  nweb_delegate_->SetIsOfflineWebComponent();
+}
+
 TEST_F(NWebDelegateTest, OnTouchPress) {
   ASSERT_NE(nweb_delegate_, nullptr);
   int32_t id = 1;
@@ -362,6 +367,19 @@ TEST_F(NWebDelegateTest, GetSelectInfo) {
 TEST_F(NWebDelegateTest, OnTextSelected) {
   ASSERT_NE(nweb_delegate_, nullptr);
   nweb_delegate_->OnTextSelected();
+}
+
+TEST_F(NWebDelegateTest, RegisterOnLoadStartedCbForHighlightContent_001) {
+  ASSERT_NE(nweb_delegate_, nullptr);
+  std::function<void(void)> callback = []() {};
+  nweb_delegate_->handler_delegate_ = nullptr;
+  nweb_delegate_->RegisterOnLoadStartedCbForHighlightContent(std::move(callback));
+}
+
+TEST_F(NWebDelegateTest, RegisterOnLoadStartedCbForHighlightContent_002) {
+  ASSERT_NE(nweb_delegate_, nullptr);
+  std::function<void(void)> callback = []() {};
+  nweb_delegate_->RegisterOnLoadStartedCbForHighlightContent(std::move(callback));
 }
 #endif
 

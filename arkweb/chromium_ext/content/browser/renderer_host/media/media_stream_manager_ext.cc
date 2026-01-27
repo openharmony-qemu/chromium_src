@@ -43,6 +43,19 @@ void MediaStreamManagerExt::SetScreenCaptureDelegateCallback(
 
 void MediaStreamManagerExt::StopScreenCapture(int32_t nweb_id,
                                               const std::string& session_id) {
+  if (!BrowserThread::CurrentlyOn(BrowserThread::IO)) {
+    auto io_task_runner = GetIOThreadTaskRunner({});
+    if (!io_task_runner) {
+      LOG(ERROR) << "StopScreenCapture io_task_runner is nullptr";
+      return;
+    }
+    io_task_runner->PostTask(
+      FROM_HERE,
+      base::BindOnce(&MediaStreamManagerExt::StopScreenCapture,
+                     weak_factory_.GetWeakPtr(), nweb_id, session_id));
+      return;
+  }
+  LOG(INFO) << "MediaStreamManagerExt::StopScreenCapture, nweb_id=" << nweb_id;
   if (!video_capture_manager_) {
     LOG(ERROR) << "videoCaptureManager null";
     return;
@@ -62,6 +75,19 @@ void MediaStreamManagerExt::StopScreenCapture(int32_t nweb_id,
 
 // LCOV_EXCL_START
 void MediaStreamManagerExt::SetScreenCapturePickerShow() {
+  if (!BrowserThread::CurrentlyOn(BrowserThread::IO)) {
+    auto io_task_runner = GetIOThreadTaskRunner({});
+    if (!io_task_runner) {
+      LOG(ERROR) << "SetScreenCapturePickerShow io_task_runner is nullptr";
+      return;
+    }
+    io_task_runner->PostTask(
+      FROM_HERE,
+      base::BindOnce(&MediaStreamManagerExt::SetScreenCapturePickerShow,
+                     weak_factory_.GetWeakPtr()));
+      return;
+  }
+  LOG(INFO) << "MediaStreamManagerExt::SetScreenCapturePickerShow";
   if (!video_capture_manager_) {
     LOG(ERROR) << "videoCaptureManager null";
     return;
@@ -71,6 +97,19 @@ void MediaStreamManagerExt::SetScreenCapturePickerShow() {
 }
 
 void MediaStreamManagerExt::DisableSessionReuse() {
+  if (!BrowserThread::CurrentlyOn(BrowserThread::IO)) {
+    auto io_task_runner = GetIOThreadTaskRunner({});
+    if (!io_task_runner) {
+      LOG(ERROR) << "DisableSessionReuse io_task_runner is nullptr";
+      return;
+    }
+    io_task_runner->PostTask(
+      FROM_HERE,
+      base::BindOnce(&MediaStreamManagerExt::DisableSessionReuse,
+                     weak_factory_.GetWeakPtr()));
+      return;
+  }
+  LOG(INFO) << "MediaStreamManagerExt::DisableSessionReuse";
   if (!video_capture_manager_) {
     LOG(ERROR) << "videoCaptureManager null";
     return;
@@ -183,17 +222,22 @@ void MediaStreamManagerExt::CloseAudioCapture(int32_t nweb_id) {
     LOG(ERROR) << "audio_input_device_manager() is nullptr.";
     return;
   }
+  auto io_task_runner = GetIOThreadTaskRunner({});
   auto& audio_nweb_id_map = audio_input_device_manager()->GetNWebIdMap();
   for (auto& audio : audio_nweb_id_map) {
     if (audio.second == nweb_id) {
-      blink::mojom::MediaStreamType type = audio_input_device_manager()->GetDeviceType(audio.first);
-      GetIOThreadTaskRunner({})->PostTask(
-        FROM_HERE, base::BindOnce(&MediaStreamManager::StopDevice,
-                                   weak_factory_.GetSafeRef(), type, audio.first));
+      blink::mojom::MediaStreamType type =
+          audio_input_device_manager()->GetDeviceType(audio.first);
+      if (!BrowserThread::CurrentlyOn(BrowserThread::IO) && io_task_runner) {
+        io_task_runner->PostTask(
+            FROM_HERE,
+            base::BindOnce(&MediaStreamManager::StopDevice,
+                           weak_factory_.GetSafeRef(), type, audio.first));
+        continue;
+      }
+      StopDevice(type, audio.first);
     }
   }
 }
-
 #endif
-
 }

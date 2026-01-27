@@ -48,6 +48,8 @@
 #endif
 
 #if BUILDFLAG(ARKWEB_USERAGENT)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#include "arkweb/chromium_ext/content/common/arkweb_user_agent_ext.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 #endif
 
@@ -329,6 +331,12 @@ std::vector<size_t> GetRandomOrder(int seed, size_t size) {
 blink::UserAgentBrandList ShuffleBrandList(
     blink::UserAgentBrandList brand_version_list,
     int seed) {
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  const size_t min_shuffle_size = 2;
+  if (brand_version_list.size() < min_shuffle_size) {
+    return brand_version_list;
+  }
+#endif
   const std::vector<size_t> order =
       GetRandomOrder(seed, brand_version_list.size());
   CHECK_EQ(brand_version_list.size(), order.size());
@@ -434,15 +442,18 @@ blink::UserAgentBrandList GenerateBrandVersionList(
       enable_updated_grease_by_policy, output_version_type);
   blink::UserAgentBrandVersion chromium_bv = {"Chromium", version};
 
-  blink::UserAgentBrandList brand_version_list = {std::move(greasey_bv),
-                                                  std::move(chromium_bv)};
+  blink::UserAgentBrandList brand_version_list = {
+#if !BUILDFLAG(ARKWEB_USERAGENT)
+    std::move(greasey_bv),
+#endif
+    std::move(chromium_bv)
+  };
   if (brand) {
     brand_version_list.emplace_back(brand.value(), version);
   }
   if (additional_brand_version) {
     brand_version_list.emplace_back(additional_brand_version.value());
   }
-
   return ShuffleBrandList(brand_version_list, seed);
 }
 
@@ -604,9 +615,13 @@ blink::UserAgentMetadata GetUserAgentMetadata(const PrefService* pref_service,
   metadata.platform_version =
       base::StringPrintf("%d.%d.%d", major, minor, bugfix);
 #endif
+#if BUILDFLAG(ARKWEB_USERAGENT) && !defined(COMPONENT_BUILD)
+  content::UpdateUserAgentMetaData(metadata);
+#else
   metadata.architecture = content::GetCpuArchitecture();
   metadata.bitness = content::GetCpuBitness();
   metadata.wow64 = content::IsWoW64();
+#endif
 
   return metadata;
 }

@@ -69,8 +69,9 @@ void PRParallelPreloadMgrImpl::Init(const scoped_refptr<base::SingleThreadTaskRu
   LOG(DEBUG) << "PRPPreload.PRParallelPreloadMgrImpl::Init ENABLE";
   if (!is_inited_) {
 	is_inited_ = true;
-	sth_task_runner_ = base::ThreadPool::CreateSingleThreadTaskRunner(
-	  {base::TaskPriority::USER_VISIBLE}, base::SingleThreadTaskRunnerThreadMode::DEDICATED);
+	sth_thread_ = std::make_unique<base::Thread>("preload_thread");
+	sth_thread_->Start();
+	sth_task_runner_ = sth_thread_->task_runner();
 	if (sth_task_runner_ == nullptr || net_task_runner == nullptr) {
 	  is_inited_ = false;
 	  LOG(WARNING) << "PRPPreload.PRParallelPreloadMgrImpl::Init failed";
@@ -216,7 +217,8 @@ void PRParallelPreloadMgrImpl::SetPageOrigin(const std::string& url, const net::
 	  if (!prp_preload_info.page_origin_ready_) {
 		prp_preload_info.page_origin_ready_ = true;
 		prp_preload_info.prpp_req_loader_fac_->SetPRPPIsolation(isl);
-		prp_preload_info.rp_preload_ctrler_->SetPRPPReqLoaderFac(prp_preload_info.prpp_req_loader_fac_->GetWeak());
+		prp_preload_info.rp_preload_ctrler_->SetPRPPReqLoaderFac(prp_preload_info.prpp_req_loader_fac_->GetWeak(),
+		  (prp_preload_info.prpp_req_loader_fac_->GetWeak().get() != nullptr));
 	  }
 	  prp_preload_info.rp_preload_ctrler_->SetPageOrigin(isl.frame_origin().value().GetURL().spec());
 	}
@@ -278,7 +280,8 @@ void PRParallelPreloadMgrImpl::SetURLLoaderFactoryParam(network::mojom::URLLoade
 	if (prp_preload_info.prpp_req_loader_fac_ && !prp_preload_info.page_origin_ready_) {
 	  prp_preload_info.page_origin_ready_ = true;
 	  prp_preload_info.prpp_req_loader_fac_->SetPRPPIsolation(params->isolation_info);
-	  prp_preload_info.rp_preload_ctrler_->SetPRPPReqLoaderFac(prp_preload_info.prpp_req_loader_fac_->GetWeak());
+	  prp_preload_info.rp_preload_ctrler_->SetPRPPReqLoaderFac(prp_preload_info.prpp_req_loader_fac_->GetWeak(),
+	    (prp_preload_info.prpp_req_loader_fac_->GetWeak().get() != nullptr));
 	}
   });
 }

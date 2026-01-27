@@ -85,6 +85,12 @@ virtual void ShowAutofillPopup(
 virtual void HideAutofillPopup() = 0;
 #endif
 
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  virtual std::shared_ptr<OHOS::NWeb::NWebVaultPlainTextCallback> GetVaultPlainTextCallback() { return nullptr; }
+  virtual void SetVaultPlainTextCallback(
+      std::shared_ptr<OHOS::NWeb::NWebVaultPlainTextCallback> callback) {}
+#endif
+
 #if BUILDFLAG(ARKWEB_WEBRTC)
 virtual void StartCamera(int nWebID) = 0;
 virtual void StopCamera(int nWebID) = 0;

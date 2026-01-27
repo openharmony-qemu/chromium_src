@@ -708,8 +708,16 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::SetVideoSurface(
         return DecoderAdapterCode::DECODER_ERROR;
     }
     video_surface_id_ = widget_id;
-    return videoDecoder_->SetOutputSurface(
-        NWebNativeWindowTracker::Get()->GetNativeWindow(video_surface_id_));
+
+    void* native_window = NWebNativeWindowTracker::Get()->GetNativeWindow(video_surface_id_, true);
+    if (!native_window) {
+        LOG(ERROR) << "MediaCodecDecoderBridgeImpl::SetVideoSurface native_window is NULL";
+        return DecoderAdapterCode::DECODER_ERROR;
+    }
+    LOG(INFO) << "MediaCodecDecoderBridgeImpl::SetVideoSurface(" << widget_id << "), SetOutputSurface";
+    DecoderAdapterCode status = videoDecoder_->SetOutputSurface(native_window);
+    OHOS::NWeb::OhosAdapterHelper::GetInstance().GetWindowAdapterInstance().NativeWindowUnRef(native_window);
+    return status;
 }
 #endif // ARKWEB_VIDEO_ASSISTANT
 

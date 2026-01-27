@@ -82,7 +82,7 @@ TEST_F(ArkWebRenderFrameHostManagerTest, ArkWebUnloadOldFrame001) {
   EXPECT_CALL(*mock_, ArkWebGetTimeToLive())
       .Times(1)
       .WillOnce(Return(expected_time_value));
-  ArkWebUnloadOldFrame(*mock_, reason, can_store);
+  ArkWebUnloadOldFrame(nullptr, *mock_, reason, can_store);
 }
 
 TEST_F(ArkWebRenderFrameHostManagerTest, ArkWebUnloadOldFrame002) {
@@ -98,7 +98,7 @@ TEST_F(ArkWebRenderFrameHostManagerTest, ArkWebUnloadOldFrame002) {
   EXPECT_CALL(*mock_, ArkWebGetTimeToLive())
       .Times(1)
       .WillOnce(Return(expected_time_value));
-  ArkWebUnloadOldFrame(*mock_, reason, can_store);
+  ArkWebUnloadOldFrame(nullptr, *mock_, reason, can_store);
 }
 
 TEST_F(ArkWebRenderFrameHostManagerTest, ArkWebUnloadOldFrame003) {
@@ -114,6 +114,6 @@ TEST_F(ArkWebRenderFrameHostManagerTest, ArkWebUnloadOldFrame003) {
   EXPECT_CALL(*mock_, ArkWebGetTimeToLive())
       .Times(1)
       .WillOnce(Return(expected_time_value));
-  ArkWebUnloadOldFrame(*mock_, reason, can_store);
+  ArkWebUnloadOldFrame(nullptr, *mock_, reason, can_store);
 }
 }  // namespace content

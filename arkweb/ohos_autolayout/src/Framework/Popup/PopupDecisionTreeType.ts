@@ -3,4 +3,5 @@ export enum PopupDecisionTreeType{
     'Center_Button_Overlap' = 2,
     'Bottom' = 3,
     'Picker' = 4,
+    'Input' = 5,
 }

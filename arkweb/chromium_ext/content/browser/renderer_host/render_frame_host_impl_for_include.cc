@@ -80,11 +80,37 @@ void RenderFrameHostImpl::OnOverScrollOffsetChanged(float offset_x,
 void RenderFrameHostImpl::SendAccessibilityEvent(int64_t accessibilityId,
                                                  int32_t eventType,
                                                  const std::string& argument) {
-  RenderWidgetHostViewBase* view = static_cast<RenderWidgetHostViewBase*>(
-      render_view_host_->GetWidget()->GetView());
+  if (!render_view_host_ || !render_view_host_->GetWidget()) {
+    LOG(ERROR) << "RenderFrameHostImpl::SendAccessibilityEvent accessibilityId " << accessibilityId
+               << ", cannot get view from current.";
+    return;
+  }
+  RenderWidgetHostViewBase* view = static_cast<RenderWidgetHostViewBase*>(render_view_host_->GetWidget()->GetView());
   if (view) {
     view->SendAccessibilityEvent(accessibilityId, eventType, argument);
+    return;
   }
+  // on tablet-type devices, view in current frame may be null
+  RenderFrameHostImpl* parent = GetParent();
+  uint8_t depth = 0;
+  constexpr uint8_t kMaxIframeDepth = 5;
+  while (parent && depth < kMaxIframeDepth) {
+    depth++;
+    if (!parent->render_view_host_ || !parent->render_view_host_->GetWidget()) {
+      parent = parent->GetParent();
+      continue;
+    }
+    view = static_cast<RenderWidgetHostViewBase*>(parent->render_view_host_->GetWidget()->GetView());
+    if (view) {
+      LOG(DEBUG) << "RenderFrameHostImpl::SendAccessibilityEvent accessibilityId " << accessibilityId
+                 << ", successfully get view from parent, recursive count " << static_cast<int32_t>(depth);
+      view->SendAccessibilityEvent(accessibilityId, eventType, argument);
+      return;
+    }
+    parent = parent->GetParent();
+  }
+  LOG(ERROR) << "RenderFrameHostImpl::SendAccessibilityEvent accessibilityId " << accessibilityId
+             << ", cannot get view from current or parent.";
 }
 #endif
 
@@ -101,6 +127,7 @@ void RenderFrameHostImpl::GetCreateNewWindow(
     const GURL& target_url,
     WindowOpenDisposition disposition,
     bool allow_popup,
+    blink::mojom::WindowFeaturesPtr features,
     GetCreateNewWindowCallback callback) {
   if (delegate_ && delegate_->IsActiveFileChooser()) {
     // Do not allow opening a new window or tab while a file select is active
@@ -116,7 +143,7 @@ void RenderFrameHostImpl::GetCreateNewWindow(
       allow_popup || frame_tree_node_->HasTransientUserActivation();
   GetContentClient()->browser()->CanCreateWindow(
       this, target_url, disposition, effective_transient_activation_state,
-      std::move(callback));
+      features->bounds, std::move(callback));
 }
 #endif  // BUILDFLAG(ARKWEB_MULTI_WINDOW)
 
@@ -271,13 +298,13 @@ bool RenderFrameHostImpl::GetWorldId(const std::string& worldName, int32_t* worl
     isolated_world_.emplace(worldName, *worldId);
     return true;
   }
- 
+
   auto it = isolated_world_.find(worldName);
   if (it != isolated_world_.end()) {
     *worldId = it->second;
     return true;
   }
- 
+
   int32_t maxValue = INT_MIN;
   for (const auto& pair : isolated_world_) {
     if (pair.second > maxValue) {
@@ -288,7 +315,7 @@ bool RenderFrameHostImpl::GetWorldId(const std::string& worldName, int32_t* worl
   isolated_world_.emplace(worldName, *worldId);
   return true;
 }
- 
+
 void RenderFrameHostImpl::ExecuteJavaScriptInFrames(
     const std::u16string& javascript,
     bool recursive,
@@ -296,7 +323,7 @@ void RenderFrameHostImpl::ExecuteJavaScriptInFrames(
     JavaScriptResultCallback callback) {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
   CHECK(CanExecuteJavaScript());
- 
+
   const bool wants_result = !callback.is_null();
   int32_t worldId = 0;
   bool worldIdResult = GetWorldId(worldName, &worldId);
@@ -307,11 +334,11 @@ void RenderFrameHostImpl::ExecuteJavaScriptInFrames(
     GetAssociatedLocalFrame()->JavaScriptExecuteRequest(javascript, wants_result,
                                                         std::move(callback));
   }
- 
+
   if (!recursive) {
     return;
   }
- 
+
   RenderFrameHostImpl* initialFrame = this;
   ForEachRenderFrameHost(
     [&javascript, &worldName, &initialFrame](RenderFrameHostImpl* rfh) {
@@ -320,7 +347,7 @@ void RenderFrameHostImpl::ExecuteJavaScriptInFrames(
       return;
     }
     rfh->AllowInjectingJavaScript();
-    bool worldId_result = rfh->GetWorldId(worldName, &world_id); 
+    bool worldId_result = rfh->GetWorldId(worldName, &world_id);
     if (worldId_result) {
       rfh->GetAssociatedLocalFrame()->JavaScriptExecuteRequestInIsolatedWorld(
         javascript, false, world_id, JavaScriptResultCallback {});
@@ -449,6 +476,18 @@ void RenderFrameHostImpl::SetBlankScreenDetectionConfig(
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT)
+void RenderFrameHostImpl::OnFirstScreenPaint(const std::string& url,
+                                             int64_t navigationStartTime,
+                                             int64_t firstScreenPaintTime) {
+  RenderWidgetHostViewBase* view = static_cast<RenderWidgetHostViewBase*>(
+      render_view_host_->GetWidget()->GetView());
+  if (view) {
+    view->OnFirstScreenPaint(url, navigationStartTime, firstScreenPaintTime);
+  }
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_READER_MODE)
 net::Error RenderFrameHostImpl::GetNetErrorCode() {
   return net_error_;
@@ -489,5 +528,45 @@ void RenderFrameHostImpl::DidAddMessageToConsoleV2(
   LogConsoleMessage(log_level, message, line_no, is_builtin_component,
                     is_off_the_record, updated_source_id);
 }
+#endif
+
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+void RenderFrameHostImpl::OnDocumentEndReady() {
+  WebContentsImplExt* web_contents =
+      static_cast<WebContentsImplExt*>(WebContents::FromRenderFrameHost(this));
+
+  auto globalId = GetGlobalId();
+
+  FrameInfos frameInfo;
+  frameInfo.id = std::to_string(globalId.child_id) + "_" + std::to_string(globalId.frame_routing_id);
+  if (content::RenderFrameHostImpl* parent = GetParent()) {
+    auto parentGlobalId = parent->GetGlobalId();
+    frameInfo.parentId = std::to_string(parentGlobalId.child_id) + "_" +
+                         std::to_string(parentGlobalId.frame_routing_id);
+  } else {
+    frameInfo.parentId.clear();
+  }
+
+  LOG(DEBUG) << "RenderFrameHostImpl::OnDocumentEndReady frameInfo id:" << frameInfo.id
+            << " ,parentId:" << frameInfo.parentId;
+
+  if (web_contents) {
+    web_contents->OnDocumentEndReady(frameInfo);
+  }
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT) && !BUILDFLAG(ARKWEB_NWEB_EX)
+void RenderFrameHostImpl::OnCommitNavigation(
+    const GURL& url,
+    bool is_same_document,
+    const base::UnguessableToken& navigation_token) {}
+void RenderFrameHostImpl::OnDidCommitNavigationInternal(
+    const GURL& url,
+    bool is_same_document,
+    NavigationRequest* navigation_request,
+    const base::UnguessableToken& navigation_token) {}
+void RenderFrameHostImpl::OnResetOwnedNavigationRequests(
+    NavigationDiscardReason reason) {}
 #endif
 }  // namespace content

@@ -32,23 +32,23 @@ constexpr float kPointRatio = 72.0f;
 #if BUILDFLAG(ARKWEB_PDF)
 std::atomic<uint64_t> g_bookmark_id_{0};
 
-void PDFiumEngine::OnSelectionPositionChangedForPDF(gfx::Rect& left,
-                                                    gfx::Rect& right,
-                                                    gfx::Rect& clipped_selection_bounds,
-                                                    const std::vector<PDFiumRange>& selections) {
+void PDFiumEngine::UpdateSelectionBoundsAndPositions(gfx::Rect& left,
+                                                     gfx::Rect& right,
+                                                     gfx::Rect& clipped_selection_bounds,
+                                                     const std::vector<PDFiumRange>& selections) {
   if (!selections.empty()) {
-    int rect_left = std::numeric_limits<int32_t>::max();
-    int rect_top = std::numeric_limits<int32_t>::max();
-    int rect_right = 0;
-    int rect_bottom = 0;
-    PDFiumRange fitst_selection = selections[0];
+    int32_t rect_left = std::numeric_limits<int32_t>::max();
+    int32_t rect_top = std::numeric_limits<int32_t>::max();
+    int32_t rect_right = std::numeric_limits<int32_t>::min();
+    int32_t rect_bottom = std::numeric_limits<int32_t>::min();
+    PDFiumRange first_selection = selections[0];
     PDFiumRange last_selection = selections.back();
 
     for (const auto& sel : selections) {
-      if (fitst_selection.page_index() > sel.page_index() ||
-          (fitst_selection.page_index() == sel.page_index() &&
-          fitst_selection.char_index() > sel.char_index())) {
-        fitst_selection = sel;
+      if (first_selection.page_index() > sel.page_index() ||
+          (first_selection.page_index() == sel.page_index() &&
+          first_selection.char_index() > sel.char_index())) {
+        first_selection = sel;
       }
       if (last_selection.page_index() < sel.page_index() ||
           (last_selection.page_index() == sel.page_index() &&
@@ -69,7 +69,7 @@ void PDFiumEngine::OnSelectionPositionChangedForPDF(gfx::Rect& left,
     clipped_selection_bounds = gfx::Rect(rect_left, rect_top,
                                          rect_right - rect_left, rect_bottom - rect_top);
     const std::vector<gfx::Rect>& left_screen_rects =
-        fitst_selection.GetScreenRects(GetVisibleRect().origin(), current_zoom_,
+        first_selection.GetScreenRects(GetVisibleRect().origin(), current_zoom_,
                            layout_.options().default_page_orientation());
     const std::vector<gfx::Rect>& right_screen_rects =
         last_selection.GetScreenRects(GetVisibleRect().origin(), current_zoom_,
@@ -184,6 +184,45 @@ gfx::PointF PDFiumEngine::ConverPageToScreen(int page_index, gfx::PointF point) 
 
   gfx::PointF transformed_point(rotated_x, rotated_y);
   return transformed_point;
+}
+
+void PDFiumEngine::CheckSelectionVisibility(const gfx::Rect& left,
+                                            const gfx::Rect& right,
+                                            gfx::Rect& clipped_selection_bounds) {
+  // Check if left handle is unvisible.
+  if (left.x() < 0 || left.x() > plugin_size().width() ||
+      left.y() < 0 || left.y() > plugin_size().height()) {
+        client_->SetIsLeftHandleVisible(false);
+  } else {
+    client_->SetIsLeftHandleVisible(true);
+  }
+
+  // Check if right handle is unvisible.
+  if (right.x() < 0 || right.x() > plugin_size().width() ||
+      right.y() < 0 || right.y() > plugin_size().height()) {
+        client_->SetIsRightHandleVisible(false);
+  } else {
+    client_->SetIsRightHandleVisible(true);
+  }
+
+  // Check if selections are unvisible.
+  if (clipped_selection_bounds.x() > plugin_size().width() ||
+      clipped_selection_bounds.x() + clipped_selection_bounds.width() < 0 ||
+      clipped_selection_bounds.y() > plugin_size().height() ||
+      clipped_selection_bounds.y() + clipped_selection_bounds.height() < 0) {
+    client_->SetIsSelectionVisible(false);
+  } else {
+    client_->SetIsSelectionVisible(true);
+    if (clipped_selection_bounds.y() < 0) {
+      clipped_selection_bounds.set_height(
+          clipped_selection_bounds.height() + clipped_selection_bounds.y());
+      clipped_selection_bounds.set_y(0);
+    }
+  }
+}
+
+void PDFiumEngine::SelectionChangedAtScrollStopped() {
+  OnSelectionPositionChanged();
 }
 #endif  // BUILDFLAG(ARKWEB_PDF)
 

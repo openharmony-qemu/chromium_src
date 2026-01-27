@@ -658,6 +658,9 @@ void PdfViewWebPlugin::UpdateGeometry(const gfx::Rect& window_rect,
     // Convert back to CSS pixels.
     scroll_position.Scale(1.0f / device_scale_);
     UpdateScroll(scroll_position);
+  } else {
+    SetIsScrolling(true);
+    DoPaintAfterDelay();
   }
 #else
   gfx::PointF scroll_position = client_->GetScrollPosition();
@@ -670,6 +673,10 @@ void PdfViewWebPlugin::UpdateGeometry(const gfx::Rect& window_rect,
 void PdfViewWebPlugin::UpdateScroll(const gfx::PointF& scroll_position) {
   if (stop_scrolling_)
     return;
+
+#if BUILDFLAG(ARKWEB_PDF)
+  SetIsScrolling(true);
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   float max_x = std::max(document_size_.width() * static_cast<float>(zoom_) -
                              plugin_dip_size_.width(),
@@ -691,11 +698,8 @@ void PdfViewWebPlugin::UpdateScroll(const gfx::PointF& scroll_position) {
   engine_->ScrolledToYPosition(scaled_scroll_position.y());
   
 #if BUILDFLAG(ARKWEB_PDF)
-  ForceSelectionChangedAfterDelay();
-  SetIsScrolling(true);
-  SetScrollStoppedAfterDelay();
+  DoPaintAfterDelay();
 #endif  // BUILDFLAG(ARKWEB_PDF)
-  
 }
 
 void PdfViewWebPlugin::UpdateFocus(bool focused,
@@ -1449,10 +1453,6 @@ SkColor PdfViewWebPlugin::GetBackgroundColor() const {
 
 void PdfViewWebPlugin::SelectionChanged(const gfx::Rect& left,
                                         const gfx::Rect& right) {
-#if BUILDFLAG(ARKWEB_PDF)
-  current_left_ = left;
-  current_right_ = right;
-#endif
   gfx::PointF left_point(left.x() + available_area_.x(), left.y());
   gfx::PointF right_point(right.x() + available_area_.x(), right.y());
 
@@ -2053,7 +2053,8 @@ void PdfViewWebPlugin::OnPaint(const std::vector<gfx::Rect>& paint_rects,
   base::AutoReset<bool> auto_reset_in_paint(&in_paint_, true);
   DoPaint(paint_rects, ready, pending);
 #if BUILDFLAG(ARKWEB_PDF)
-  ForceSelectionChangedAfterDelay();
+  SelectionChangedAfterDelay();
+  SetScrollStoppedAfterDelay();
 #endif
 }
 

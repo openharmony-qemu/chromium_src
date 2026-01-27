@@ -449,6 +449,17 @@ void SkiaOutputSurfaceImpl::DiscardBackbuffer() {
   gpu_task_scheduler_->ScheduleOrRetainGpuTask(std::move(callback), {});
 }
 
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+void SkiaOutputSurfaceImpl::CleanBufferAfterSwapBuffer(bool delay_clean) {
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  // impl_on_gpu_ is released on the GPU thread by a posted task from
+  // SkiaOutputSurfaceImpl::dtor. So it is safe to use base::Unretained.
+  auto callback = base::BindOnce(&SkiaOutputSurfaceImplOnGpu::CleanBufferAfterSwapBuffer,
+                                 base::Unretained(impl_on_gpu_.get()), delay_clean);
+  gpu_task_scheduler_->ScheduleOrRetainGpuTask(std::move(callback), {});
+}
+#endif
+
 void SkiaOutputSurfaceImpl::RecreateRootDDLRecorder() {
   if (graphite_recorder_) {
     return;

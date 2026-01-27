@@ -145,6 +145,12 @@ void CompositorFrameSinkImpl::SetWantsBeginFrameAcks() {
   support_->SetWantsBeginFrameAcks();
 }
 
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+void CompositorFrameSinkImpl::UpdateThrottleMode(bool is_enable) {
+  compositor_frame_sink_impl_util_->UpdateThrottleMode(is_enable);
+}
+#endif
+
 void CompositorFrameSinkImpl::SetAutoNeedsBeginFrame() {
   support_->SetAutoNeedsBeginFrame();
 }

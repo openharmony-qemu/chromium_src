@@ -41,6 +41,7 @@
 #include "third_party/blink/public/mojom/service_worker/service_worker_container.mojom.h"
 #include "third_party/blink/public/web/web_document_loader.h"
 #include "third_party/blink/public/web/web_navigation_control.h"
+#include "third_party/blink/public/web/web_window_features.h"
 #include "third_party/blink/public/platform/web_document_subresource_filter.h"
 #include "third_party/blink/public/platform/modules/service_worker/web_service_worker_network_provider.h"
 #define private public
@@ -57,11 +58,21 @@ class MockFrameHostForArkWeb : public mojom::FrameHost {
  public:
   MOCK_METHOD(void, CreateNewWindow, (mojom::CreateNewWindowParamsPtr params,
       CreateNewWindowCallback callback));
-  MOCK_METHOD(bool, GetCreateNewWindow, (const ::GURL& target_url, ::WindowOpenDisposition disposition,
-      bool allow_popup, mojom::CreateNewWindowStatus* out_status));
+  MOCK_METHOD(bool,
+              GetCreateNewWindow,
+              (const ::GURL& target_url,
+               ::WindowOpenDisposition disposition,
+               bool allow_popup,
+               ::blink::mojom::WindowFeaturesPtr window_features,
+               mojom::CreateNewWindowStatus* out_status));
   using GetCreateNewWindowCallback = base::OnceCallback<void(mojom::CreateNewWindowStatus)>;
-  MOCK_METHOD(void, GetCreateNewWindow, (const ::GURL& target_url, ::WindowOpenDisposition disposition,
-      bool allow_popup, GetCreateNewWindowCallback callback));
+  MOCK_METHOD(void,
+              GetCreateNewWindow,
+              (const ::GURL& target_url,
+               ::WindowOpenDisposition disposition,
+               bool allow_popup,
+               ::blink::mojom::WindowFeaturesPtr window_features,
+               GetCreateNewWindowCallback callback));
   MOCK_METHOD(void, CreateChildFrame, (const blink::LocalFrameToken& child_frame_token,
       mojo::PendingAssociatedRemote<mojom::Frame> frame,
       mojo::PendingReceiver<blink::mojom::BrowserInterfaceBroker> browser_interface_broker,
@@ -106,6 +117,9 @@ class MockFrameHostForArkWeb : public mojom::FrameHost {
   MOCK_METHOD(int, GetVideoBitrateDefault, (), (const));
   MOCK_METHOD(bool, SetNewsFeedPageFitted, ());
 #endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+  MOCK_METHOD(void, OnDocumentEndReady, ());
+#endif
 };
 
 class MockWebDocumentSubresourceFilter : public blink::WebDocumentSubresourceFilter {
@@ -203,8 +217,12 @@ class ArkWebRenderFrameImplTest : public RenderFrameImplTest {
   void TestSetDocumentLoader(blink::WebDocumentLoader* document_loader) {
     GetMainRenderFrame()->frame_->SetDocumentLoaderForTest(document_loader);
   }
-  bool TestGetNewWindowWebView(const GURL& target_url, blink::WebNavigationPolicy policy, bool allow_popup) {
-    return GetMainRenderFrame()->GetNewWindowWebView(target_url, policy, allow_popup);
+  bool TestGetNewWindowWebView(const GURL& target_url,
+                               blink::WebNavigationPolicy policy,
+                               bool allow_popup,
+                               const blink::WebWindowFeatures& features) {
+    return GetMainRenderFrame()->GetNewWindowWebView(target_url, policy,
+                                                     allow_popup, features);
   }
   void SetFrameHostForTest(mojom::FrameHost* frame_host) {
     GetMainRenderFrame()->SetFrameHostForTest(frame_host);
@@ -307,7 +325,7 @@ TEST_F(ArkWebRenderFrameImplTest, NotifyLcpForBlankless_NoBlanklessKey) {
   EXPECT_EQ(TestGetNWebId(), 1);
 }
 
-TEST_F(ArkWebRenderFrameImplTest, PageLoadStartLoggerReport_False) {
+TEST_F(ArkWebRenderFrameImplTest, OnDidCommitNavigation_False) {
   blink::WebDocumentLoader* document_loader = TestGetDocumentLoader();
   EXPECT_NE(document_loader, nullptr);
   GetMainRenderFrame()->GetWebView()->SetStrictLogMode(false);
@@ -315,11 +333,12 @@ TEST_F(ArkWebRenderFrameImplTest, PageLoadStartLoggerReport_False) {
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
   EXPECT_FALSE(base::CommandLine::Init(0, nullptr));
   command_line->AppendSwitch("enable-nweb-logger-report");
-  GetMainRenderFrame()->PageLoadStartLoggerReport(document_loader);
-  GetMainRenderFrame()->PageLoadFinishedLoggerReport();
+  GetMainRenderFrame()->OnDidCommitNavigation(
+      document_loader, blink::WebHistoryCommitType::kWebStandardCommit);
+  GetMainRenderFrame()->OnDidHandleOnloadEvents();
 }
 
-TEST_F(ArkWebRenderFrameImplTest, PageLoadStartLoggerReport_True) {
+TEST_F(ArkWebRenderFrameImplTest, OnDidCommitNavigation_True) {
   blink::WebDocumentLoader* document_loader = TestGetDocumentLoader();
   EXPECT_NE(document_loader, nullptr);
   GetMainRenderFrame()->GetWebView()->SetStrictLogMode(true);
@@ -327,11 +346,12 @@ TEST_F(ArkWebRenderFrameImplTest, PageLoadStartLoggerReport_True) {
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
   EXPECT_FALSE(base::CommandLine::Init(0, nullptr));
   command_line->AppendSwitch("enable-nweb-logger-report");
-  GetMainRenderFrame()->PageLoadStartLoggerReport(document_loader);
-  GetMainRenderFrame()->PageLoadFinishedLoggerReport();
+  GetMainRenderFrame()->OnDidCommitNavigation(
+      document_loader, blink::WebHistoryCommitType::kWebStandardCommit);
+  GetMainRenderFrame()->OnDidHandleOnloadEvents();
 }
 
-TEST_F(ArkWebRenderFrameImplTest, PageLoadStartLoggerReport_WithoutView) {
+TEST_F(ArkWebRenderFrameImplTest, OnDidCommitNavigation_WithoutView) {
   auto* web_view = GetMainRenderFrame()->GetWebView();
   blink::WebDocumentLoader* document_loader = TestGetDocumentLoader();
   EXPECT_NE(document_loader, nullptr);
@@ -340,48 +360,50 @@ TEST_F(ArkWebRenderFrameImplTest, PageLoadStartLoggerReport_WithoutView) {
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
   EXPECT_FALSE(base::CommandLine::Init(0, nullptr));
   command_line->AppendSwitch("enable-nweb-logger-report");
-  GetMainRenderFrame()->PageLoadStartLoggerReport(document_loader);
-  GetMainRenderFrame()->PageLoadFinishedLoggerReport();
+  GetMainRenderFrame()->OnDidCommitNavigation(
+      document_loader, blink::WebHistoryCommitType::kWebStandardCommit);
+  GetMainRenderFrame()->OnDidHandleOnloadEvents();
   GetMainRenderFrame()->SetWebViewForTest(web_view);
 }
 
-TEST_F(ArkWebRenderFrameImplTest, PageLoadFinishedLoggerReport_WithoutView) {
+TEST_F(ArkWebRenderFrameImplTest, OnDidHandleOnloadEvents_WithoutView) {
   auto* web_view = GetMainRenderFrame()->GetWebView();
   GetMainRenderFrame()->SetWebViewForTest(nullptr);
   base::CommandLine::Init(0, nullptr);
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
   EXPECT_FALSE(base::CommandLine::Init(0, nullptr));
   command_line->AppendSwitch("enable-nweb-logger-report");
-  GetMainRenderFrame()->PageLoadFinishedLoggerReport();
+  GetMainRenderFrame()->OnDidHandleOnloadEvents();
   GetMainRenderFrame()->SetWebViewForTest(web_view);
 }
 
-TEST_F(ArkWebRenderFrameImplTest, ContentLoadFailedLoggerReport_False) {
+TEST_F(ArkWebRenderFrameImplTest, OnDidDispatchDOMContentLoadedEvent_False) {
   GetMainRenderFrame()->GetWebView()->SetStrictLogMode(false);
   base::CommandLine::Init(0, nullptr);
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
   EXPECT_FALSE(base::CommandLine::Init(0, nullptr));
   command_line->AppendSwitch("enable-nweb-logger-report");
-  GetMainRenderFrame()->ContentLoadFailedLoggerReport();
+  GetMainRenderFrame()->OnDidDispatchDOMContentLoadedEvent();
 }
 
-TEST_F(ArkWebRenderFrameImplTest, ContentLoadFailedLoggerReport_True) {
+TEST_F(ArkWebRenderFrameImplTest, OnDidDispatchDOMContentLoadedEvent_True) {
   GetMainRenderFrame()->GetWebView()->SetStrictLogMode(true);
   base::CommandLine::Init(0, nullptr);
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
   EXPECT_FALSE(base::CommandLine::Init(0, nullptr));
   command_line->AppendSwitch("enable-nweb-logger-report");
-  GetMainRenderFrame()->ContentLoadFailedLoggerReport();
+  GetMainRenderFrame()->OnDidDispatchDOMContentLoadedEvent();
 }
 
-TEST_F(ArkWebRenderFrameImplTest, ContentLoadFailedLoggerReport_WithoutView) {
+TEST_F(ArkWebRenderFrameImplTest,
+       OnDidDispatchDOMContentLoadedEvent_WithoutView) {
   auto* web_view = GetMainRenderFrame()->GetWebView();
   GetMainRenderFrame()->SetWebViewForTest(nullptr);
   base::CommandLine::Init(0, nullptr);
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
   EXPECT_FALSE(base::CommandLine::Init(0, nullptr));
   command_line->AppendSwitch("enable-nweb-logger-report");
-  GetMainRenderFrame()->ContentLoadFailedLoggerReport();
+  GetMainRenderFrame()->OnDidDispatchDOMContentLoadedEvent();
   GetMainRenderFrame()->SetWebViewForTest(web_view);
 }
 
@@ -468,8 +490,10 @@ TEST_F(ArkWebRenderFrameImplTest, GetNewWindowWebView_WithoutFrameHost) {
   SetFrameHostForTest(nullptr);
   GURL target_url("https://www.google.com");
   bool allow_popup = true;
-  auto result = TestGetNewWindowWebView(target_url,
-      blink::WebNavigationPolicy::kWebNavigationPolicyNewWindow, allow_popup);
+  blink::WebWindowFeatures features;
+  auto result = TestGetNewWindowWebView(
+      target_url, blink::WebNavigationPolicy::kWebNavigationPolicyNewWindow,
+      allow_popup, features);
   EXPECT_EQ(result, false);
   SetFrameHostForTest(frame_host);
 }
@@ -479,10 +503,17 @@ TEST_F(ArkWebRenderFrameImplTest, GetNewWindowWebView_ReturnFalse) {
   SetFrameHostForTest(&test_frame_host);
   GURL target_url("https://www.google.com");
   bool allow_popup = true;
-  EXPECT_CALL(test_frame_host, GetCreateNewWindow(Matcher<const GURL&>(_), Matcher<::WindowOpenDisposition>(_),
-      Matcher<bool>(_), Matcher<mojom::CreateNewWindowStatus*>(_))).WillOnce(Return(false));
-  auto result = TestGetNewWindowWebView(target_url,
-      blink::WebNavigationPolicy::kWebNavigationPolicyNewWindow, allow_popup);
+  blink::WebWindowFeatures features;
+  EXPECT_CALL(
+      test_frame_host,
+      GetCreateNewWindow(Matcher<const GURL&>(_),
+                         Matcher<::WindowOpenDisposition>(_), Matcher<bool>(_),
+                         Matcher<::blink::mojom::WindowFeaturesPtr>(_),
+                         Matcher<mojom::CreateNewWindowStatus*>(_)))
+      .WillOnce(Return(false));
+  auto result = TestGetNewWindowWebView(
+      target_url, blink::WebNavigationPolicy::kWebNavigationPolicyNewWindow,
+      allow_popup, features);
   EXPECT_EQ(result, false);
 }
 
@@ -491,10 +522,17 @@ TEST_F(ArkWebRenderFrameImplTest, GetNewWindowWebView_NoSuccess) {
   SetFrameHostForTest(&test_frame_host);
   GURL target_url("https://www.google.com");
   bool allow_popup = true;
-  EXPECT_CALL(test_frame_host, GetCreateNewWindow(Matcher<const GURL&>(_), Matcher<::WindowOpenDisposition>(_),
-      Matcher<bool>(_), Matcher<mojom::CreateNewWindowStatus*>(_))).WillOnce(Return(true));
-  auto result = TestGetNewWindowWebView(target_url,
-      blink::WebNavigationPolicy::kWebNavigationPolicyNewWindow, allow_popup);
+  blink::WebWindowFeatures features;
+  EXPECT_CALL(
+      test_frame_host,
+      GetCreateNewWindow(Matcher<const GURL&>(_),
+                         Matcher<::WindowOpenDisposition>(_), Matcher<bool>(_),
+                         Matcher<::blink::mojom::WindowFeaturesPtr>(_),
+                         Matcher<mojom::CreateNewWindowStatus*>(_)))
+      .WillOnce(Return(true));
+  auto result = TestGetNewWindowWebView(
+      target_url, blink::WebNavigationPolicy::kWebNavigationPolicyNewWindow,
+      allow_popup, features);
   EXPECT_EQ(result, false);
 }
 
@@ -503,11 +541,18 @@ TEST_F(ArkWebRenderFrameImplTest, GetNewWindowWebView_Success) {
   SetFrameHostForTest(&test_frame_host);
   GURL target_url("https://www.google.com");
   bool allow_popup = true;
-  EXPECT_CALL(test_frame_host, GetCreateNewWindow(Matcher<const GURL&>(_), Matcher<::WindowOpenDisposition>(_),
-      Matcher<bool>(_), Matcher<mojom::CreateNewWindowStatus*>(_)))
-      .WillOnce(DoAll(SetArgPointee<3>(mojom::CreateNewWindowStatus::kSuccess), Return(true)));
-  auto result = TestGetNewWindowWebView(target_url,
-      blink::WebNavigationPolicy::kWebNavigationPolicyNewWindow, allow_popup);
+  blink::WebWindowFeatures features;
+  EXPECT_CALL(
+      test_frame_host,
+      GetCreateNewWindow(Matcher<const GURL&>(_),
+                         Matcher<::WindowOpenDisposition>(_), Matcher<bool>(_),
+                         Matcher<::blink::mojom::WindowFeaturesPtr>(_),
+                         Matcher<mojom::CreateNewWindowStatus*>(_)))
+      .WillOnce(DoAll(SetArgPointee<4>(mojom::CreateNewWindowStatus::kSuccess),
+                      Return(true)));
+  auto result = TestGetNewWindowWebView(
+      target_url, blink::WebNavigationPolicy::kWebNavigationPolicyNewWindow,
+      allow_popup, features);
   EXPECT_EQ(result, true);
 }
 
@@ -516,11 +561,18 @@ TEST_F(ArkWebRenderFrameImplTest, GetNewWindowWebView_True) {
   SetFrameHostForTest(&test_frame_host);
   GURL target_url("https://www.google.com");
   bool allow_popup = true;
-  EXPECT_CALL(test_frame_host, GetCreateNewWindow(Matcher<const GURL&>(_), Matcher<::WindowOpenDisposition>(_),
-      Matcher<bool>(_), Matcher<mojom::CreateNewWindowStatus*>(_)))
-      .WillOnce(DoAll(SetArgPointee<3>(mojom::CreateNewWindowStatus::kBlocked), Return(true)));
-  auto result = TestGetNewWindowWebView(target_url,
-      blink::WebNavigationPolicy::kWebNavigationPolicyNewWindow, allow_popup);
+  blink::WebWindowFeatures features;
+  EXPECT_CALL(
+      test_frame_host,
+      GetCreateNewWindow(Matcher<const GURL&>(_),
+                         Matcher<::WindowOpenDisposition>(_), Matcher<bool>(_),
+                         Matcher<::blink::mojom::WindowFeaturesPtr>(_),
+                         Matcher<mojom::CreateNewWindowStatus*>(_)))
+      .WillOnce(DoAll(SetArgPointee<4>(mojom::CreateNewWindowStatus::kBlocked),
+                      Return(true)));
+  auto result = TestGetNewWindowWebView(
+      target_url, blink::WebNavigationPolicy::kWebNavigationPolicyNewWindow,
+      allow_popup, features);
   EXPECT_EQ(result, false);
 }
 
@@ -582,5 +634,15 @@ TEST_F(ArkWebRenderFrameImplTest, VideoLoadOpt_SetNewsFeedPageFittedTest) {
   GetMainRenderFrame()->SetNewsFeedPageFitted();
 }
 #endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+TEST_F(ArkWebRenderFrameImplTest, OnDocumentEndReady) {
+  auto* frame_host = TestGetFrameHost();
+  SetFrameHostForTest(nullptr);
+  GetMainRenderFrame()->OnDocumentEndReady();
+  SetFrameHostForTest(frame_host);
+  GetMainRenderFrame()->OnDocumentEndReady();
+}
+#endif
 
 }  // namespace content

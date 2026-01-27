@@ -50,6 +50,10 @@ bool OverscrollControllerOHOS::WillHandleGestureEvent(
     return false;
   }
 
+  if (event.SourceDevice() != blink::WebGestureDevice::kTouchscreen) {
+    return false;
+  }
+
   if (!refresh_effect_) {
     return false;
   }

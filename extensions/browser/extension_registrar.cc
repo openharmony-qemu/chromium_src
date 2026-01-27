@@ -108,6 +108,10 @@ void ExtensionRegistrar::AddExtension(
   // Notify the delegate we will add the extension.
   delegate_->PreAddExtension(extension.get(), old);
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(INFO) << "add extension " << extension->id();
+#endif
+
   if (was_reloading) {
     failed_to_reload_unpacked_extensions_.erase(extension->path());
     ReplaceReloadedExtension(extension);
@@ -173,6 +177,10 @@ void ExtensionRegistrar::RemoveExtension(const ExtensionId& extension_id,
   // Stop tracking whether the extension was meant to be enabled after a reload.
   reloading_extensions_.erase(extension->id());
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(INFO) << "remove extension " << extension_id;
+#endif
+
   if (registry_->enabled_extensions().Contains(extension_id)) {
     registry_->RemoveEnabled(extension_id);
     DeactivateExtension(extension.get(), reason);
@@ -210,6 +218,10 @@ void ExtensionRegistrar::EnableExtension(const ExtensionId& extension_id) {
   // This can happen if sync enables an extension that is not installed yet.
   if (!extension)
     return;
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(INFO) << "enable extension " << extension_id;
+#endif
 
   // Actually enable the extension.
   registry_->AddEnabled(extension);
@@ -277,6 +289,10 @@ void ExtensionRegistrar::DisableExtension(const ExtensionId& extension_id,
   // The extension is either enabled or terminated.
   DCHECK(registry_->enabled_extensions().Contains(extension->id()) ||
          registry_->terminated_extensions().Contains(extension->id()));
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(INFO) << "disable extension " << extension_id;
+#endif
 
   // Move the extension to the disabled list.
   registry_->AddDisabled(extension);
@@ -362,6 +378,10 @@ void ExtensionRegistrar::ReloadExtension(
 
   const Extension* enabled_extension =
       registry_->enabled_extensions().GetByID(extension_id);
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(INFO) << "reload extension " << extension_id;
+#endif
 
   // Disable the extension if it's loaded. It might not be loaded if it crashed.
   if (enabled_extension) {

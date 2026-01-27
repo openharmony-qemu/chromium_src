@@ -43,7 +43,4 @@ const base::FilePath::CharType kUserUnindexedRulesetDataFileName[] =
 
 const base::FilePath::CharType kUserDataBaseFileName[] =
     FILE_PATH_LITERAL("user_adblock.db");
-
-const base::FilePath::CharType kUserEasylistFileName[] =
-    FILE_PATH_LITERAL("user_easylist.txt");
 }  // namespace subresource_filter

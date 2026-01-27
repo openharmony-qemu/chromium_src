@@ -65,7 +65,12 @@
 #include "capi/nweb_extension_distill_item.h"
 #endif // ARKWEB_READER_MODE
 
+#if BUILDFLAG(ARKWEB_USERAGENT)
+#include "nweb_user_agent_metadata.h"
+#endif
+
 struct OpenDevToolsParam;
+struct OpenDevToolsExtOpt;
 struct RunJavaScriptParam;
 
 namespace OHOS::NWeb {
@@ -97,6 +102,7 @@ class NWebDelegateInterface
     : public std::enable_shared_from_this<NWebDelegateInterface> {
  public:
   virtual ~NWebDelegateInterface() = default;
+  virtual void SetIsOfflineWebComponent() = 0;
   virtual void OnWindowShow() = 0;
   virtual void OnWindowHide() = 0;
   virtual void OnOnlineRenderToForeground() = 0;
@@ -108,6 +114,10 @@ class NWebDelegateInterface
   virtual void RegisterReleaseSurfaceListener(
       std::shared_ptr<NWebReleaseSurfaceCallback> releaseSurfaceListener) = 0;
   virtual void RegisterNWebHandler(std::shared_ptr<NWebHandler> handler) = 0;
+#if BUILDFLAG(ARKWEB_AI)
+  virtual void RegisterNWebAgentHandler(
+      std::shared_ptr<NWebAgentHandler> handler) = 0;
+#endif
   virtual void RegisterRenderCb(
       std::function<void(const char*)> render_update_cb) = 0;
 #if BUILDFLAG(ARKWEB_NWEB_EX)
@@ -132,6 +142,10 @@ class NWebDelegateInterface
       std::shared_ptr<NWebMessageValueCallback> callback) = 0;
   virtual void FillAutofillData(std::shared_ptr<NWebMessage> data) = 0;
   virtual void FillAutofillDataV2(std::shared_ptr<NWebRomValue> data) = 0;
+  virtual void FillAutofillDataFromTriggerType(
+      std::shared_ptr<NWebRomValue> data, int32_t type) = 0;
+  virtual void PutVaultPlainTextCallback(
+      std::shared_ptr<OHOS::NWeb::NWebVaultPlainTextCallback> callback) = 0;
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   virtual void SetNWebDelegateInterface(
@@ -274,6 +288,9 @@ class NWebDelegateInterface
   virtual void SetEnableLowerFrameRate(bool enabled) = 0;
   virtual void SetEnableHalfFrameRate(bool enabled) = 0;
   virtual std::shared_ptr<NWebPreference> GetPreference() const = 0;
+#if BUILDFLAG(ARKWEB_AI)
+  virtual std::shared_ptr<NWebAgentManager> GetAgentManager() const = 0;
+#endif
   virtual std::string Title() = 0;
   virtual std::shared_ptr<HitTestResult> GetHitTestResult() const = 0;
   virtual std::shared_ptr<HitTestResult> GetLastHitTestResult() const = 0;
@@ -437,6 +454,7 @@ class NWebDelegateInterface
   virtual void GetImages(std::shared_ptr<NWebBoolValueCallback> callback) = 0;
   virtual void RemoveCache(bool include_disk_files) = 0;
   virtual void StopFling() = 0;
+  virtual void ReloadIgnoreCache() = 0;
 
 #if BUILDFLAG(ARKWEB_NAVIGATION)
   virtual std::shared_ptr<NWebHistoryList> GetHistoryList() = 0;
@@ -743,7 +761,7 @@ class NWebDelegateInterface
 
 #if BUILDFLAG(ARKWEB_URL_TRUST_LIST)
   virtual int SetUrlTrustListWithErrMsg(const std::string& urlTrustList,
-                                        std::string& detailErrMsg) = 0;
+      bool allowOpaqueOrigin, bool supportWildcard, std::string& detailErrMsg) = 0;
 #endif
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
@@ -771,7 +789,6 @@ class NWebDelegateInterface
   virtual void WebExtensionTabDetached(
       int tab_id,
       std::unique_ptr<NWebExtensionTabDetachInfo> detachInfo) = 0;
-  virtual void WebExtensionTabHighlighted(NWebExtensionTabHighlightInfo& highlightInfo) = 0;
   virtual void WebExtensionTabMoved(
       int32_t tab_id,
       std::unique_ptr<NWebExtensionTabMoveInfo> moveInfo) = 0;
@@ -825,6 +842,10 @@ class NWebDelegateInterface
   virtual void OpenDevtoolsWith(
       std::shared_ptr<NWebDelegateInterface> nweb_delegate,
       std::unique_ptr<OpenDevToolsParam> param) = 0;
+  virtual void OpenDevtoolsWithByPb(
+      std::shared_ptr<NWebDelegateInterface> nweb_delegate,
+      std::unique_ptr<OpenDevToolsParam> param,
+      OpenDevToolsExtOpt& ext_opt) = 0;
   virtual void CloseDevtools() = 0;
 
 #if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
@@ -952,6 +973,27 @@ class NWebDelegateInterface
   virtual void EnableHttpsUpgrades(bool enable) = 0;
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+  virtual std::map<std::string, std::string> ResourceRequestGetRequestHeader(int nweb_request_key) = 0;
+  virtual std::string ResourceRequestGetRequestUrl(int nweb_request_key) = 0;
+  virtual bool ResourceRequestIsRequestGesture(int nweb_request_key) = 0;
+  virtual bool ResourceRequestIsMainFrame(int nweb_request_key) = 0;
+  virtual bool ResourceRequestIsRedirect(int nweb_request_key) = 0;
+  virtual std::string ResourceRequestGetRequestMethod(int nweb_request_key) = 0;
+  virtual int32_t ResourceRequestGetPageTransition(int nweb_request_key) = 0;
+  virtual int32_t ResourceRequestGetRequestType(int nweb_request_key) = 0;
+  virtual void ResourceRequestDelete(int nweb_request_key) = 0;
+ 
+  virtual std::string ResourceResponseGetMimeType(int nweb_response_key) = 0;
+  virtual std::string ResourceResponseGetEncoding(int nweb_response_key) = 0;
+  virtual int32_t ResourceResponseGetStatusCode(int nweb_response_key) = 0;
+  virtual std::string ResourceResponseGetReasonPhrase(int nweb_response_key) = 0;
+  virtual std::map<std::string, std::string> ResourceResponseGetResponseHeader(int nweb_response_key) = 0;
+  virtual bool ResourceResponseGetIsFromNetwork(int nweb_response_key) = 0;
+  virtual void ResourceResponseDelete(int nweb_response_key) = 0;
+  virtual int32_t GetLastCommittedEntryPageTransition() = 0;
+#endif
+
 #if BUILDFLAG(ARKWEB_BGTASK)
   virtual void OnBrowserForeground() = 0;
   virtual void OnBrowserBackground() = 0;
@@ -959,6 +1001,15 @@ class NWebDelegateInterface
 
 #if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
 virtual void SetFocusWebId(int32_t nweb_id) = 0;
+#endif
+
+
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  virtual void SetUserAgentMetadata(
+      const std::string& user_agent,
+      std::shared_ptr<NWebUserAgentMetadata> metadata) = 0;
+  virtual std::shared_ptr<NWebUserAgentMetadata> GetUserAgentMetadata(
+      const std::string& user_agent) = 0;
 #endif
 };
 }  // namespace OHOS::NWeb

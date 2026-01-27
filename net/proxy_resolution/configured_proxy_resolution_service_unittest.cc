@@ -263,6 +263,8 @@ class TestResolveProxyDelegate : public ProxyDelegate {
   void SetProxyResolutionService(
       ProxyResolutionService* proxy_resolution_service) override {}
 
+#include "arkweb/chromium_ext/net/proxy_resolution/test_resolve_proxy_delegate_for_include.cc"
+
  private:
   int num_resolve_proxy_called_ = 0;
   bool add_proxy_ = false;
@@ -316,6 +318,8 @@ class TestProxyFallbackProxyDelegate : public ProxyDelegate {
   int last_proxy_fallback_net_error() const {
     return last_proxy_fallback_net_error_;
   }
+
+#include "arkweb/chromium_ext/net/proxy_resolution/test_proxy_fallback_proxy_delegate_for_include.cc"
 
   const ProxyRetryInfoMap& last_proxy_retry_info() const {
     return last_proxy_retry_info_;

@@ -21,6 +21,10 @@
 #include "arkweb/chromium_ext/media/mojo/mojom/native_bridge.mojom.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+#include "arkweb/ohos_nweb/src/capi/nweb_extension_javascript_item.h"
+#endif
+
 namespace content {
 
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
@@ -69,6 +73,9 @@ class RenderFrameHostDelegateExt {
   virtual bool IsActiveFileChooser() {}
   virtual void SetFileChooserInActive() {}
 #endif  // BUILDFLAG(ARKWEB_FILE_UPLOAD)
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+  virtual void OnDocumentEndReady(const FrameInfos& frameInfo) {}
+#endif
 };
 }  // namespace content
 #endif  // CONTENT_BROWSER_RENDERER_HOST_RENDER_FRAME_HOST_DELEGATE_EXT_H_

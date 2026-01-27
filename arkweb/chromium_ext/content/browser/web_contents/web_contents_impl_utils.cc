@@ -125,4 +125,39 @@ void WebContentsImplUtils::JudgeIsPdfPageVisibilityChanged(Visibility visibility
   }
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+void WebContentsImplUtils::EvictFrameBackBuffersWhenNWebWasHidden() {
+  DCHECK(!webContentsImpl->IsBeingDestroyed());
+  PageVisibilityState page_visibility = webContentsImpl->CalculatePageVisibilityState(Visibility::HIDDEN);
+
+  bool view_is_visible = !webContentsImpl->IsCrashed() && page_visibility != PageVisibilityState::kHidden;
+  if (auto* view = webContentsImpl->GetRenderWidgetHostView()) {
+    if (!view_is_visible) {
+#if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
+      view->EvictFrameBackBuffers();
+#endif
+    }
+  }
+}
+
+void WebContentsImplUtils::SetIsOfflineWebComponent() {
+  DCHECK(!webContentsImpl->IsBeingDestroyed());
+  is_offline_component_ = true;
+}
+
+void WebContentsImplUtils::SetIsOfflineWebComponentInactive(Visibility new_visibility) {
+  DCHECK(!webContentsImpl->IsBeingDestroyed());
+  if (auto* view = webContentsImpl->GetRenderWidgetHostView()) {
+    if (is_offline_component_) {
+      if (new_visibility == Visibility::VISIBLE) {
+        view->SetIsOfflineWebComponentInactive(false);
+        is_offline_component_ = false;
+      } else {
+        view->SetIsOfflineWebComponentInactive(true);
+      }
+    }
+  }
+}
+#endif
 }  // namespace content

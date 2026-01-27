@@ -19,21 +19,24 @@
 #include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "ui/gfx/geometry/insets.h"
+#include "third_party/blink/renderer/platform/heap/member.h"
 
 namespace blink {
 class DisplayCutoutClientImpl;
 class LocalFrame;
 
-class DisplayCutoutClientImplUtils {
+class DisplayCutoutClientImplUtils final
+  : public cppgc::GarbageCollected<DisplayCutoutClientImplUtils> {
  public:
   DisplayCutoutClientImplUtils(DisplayCutoutClientImpl* impl);
+  void Trace(cppgc::Visitor*) const;
 #if BUILDFLAG(ARKWEB_DISPLAY_CUTOUT)
   static void UpdateSafeArea(LocalFrame* frame);
 #endif
   void SetSafeArea(const gfx::Insets& safe_area);
 
  private:
-  raw_ptr<DisplayCutoutClientImpl> impl_;
+  Member<DisplayCutoutClientImpl> impl_;
 };
 }  // namespace blink
 #endif  // THIRD_PARTY_BLINK_RENDERER_CORE_FRAME_DISPLAY_CUTOUT_CLIENT_IMPL_UTILS_H_

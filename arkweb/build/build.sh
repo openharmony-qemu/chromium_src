@@ -232,7 +232,7 @@ fi
 log_file="${ROOT_DIR}/${build_dir}build.log"
 if [ -f "$log_file" ]; then
   mv "$log_file" "${log_file%.*}_$(date -r "$log_file" +%Y%m%d%H%M%S).log"
-fi  
+fi
 exec > >(tee "$log_file") 2>&1
 
 case "${build_target}" in
@@ -350,7 +350,7 @@ if [ ${build_fuzz} -eq 1 ]; then
 fi
 
 if [ ${build_v8} -eq 1 ]; then
-  GN_ARGS="${GN_ARGS} v8_component_build = true v8_enable_pointer_compression = false v8_enable_pointer_compression_shared_cage = false v8_use_external_startup_data = false v8_deprecation_warnings = false v8_use_libm_trig_functions = false v8_enable_i18n_support = false cppgc_enable_slim_write_barrier = false v8_enable_pointer_compression_8gb = false"
+  GN_ARGS="${GN_ARGS} v8_component_build = true use_custom_libcxx = false use_custom_libcxx_for_host = false v8_enable_pointer_compression = true v8_enable_pointer_compression_shared_cage = true v8_enable_sandbox = false v8_use_external_startup_data = false v8_deprecation_warnings = false v8_use_libm_trig_functions = false v8_enable_i18n_support = false cppgc_enable_slim_write_barrier = false v8_enable_pointer_compression_8gb = false"
 fi
 
 if [ ${use_thin_lto} -eq 1 ]; then
@@ -442,6 +442,9 @@ else
   fi
 fi
 
+echo "Copying NDK stub files..."
+python3 "${ROOT_DIR}/arkweb/build/copy_ndk_files.py" "${ROOT_DIR}"
+
 if ! [ -d "${CUR_DIR}/deps_code" ]; then
   mkdir -p ${CUR_DIR}/deps_code
   echo "create new deps_code dir"
@@ -461,18 +464,6 @@ cd -
 time_start_for_build=$(date +%s)
 time_start_for_gn=$time_start_for_build
 
-cp "./arkweb/ohos_adapter_ndk/stub/network/netstack/net_ssl/include/net_ssl_c.h" "./ohos_sdk/openharmony/native/sysroot/usr/include/network/netstack/net_ssl/net_ssl_c.h"
-cp "./arkweb/ohos_adapter_ndk/stub/network/netstack/net_ssl/lib/aarch64-linux-ohos/libnet_ssl.so" "./ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libnet_ssl.so"
-cp "./arkweb/ohos_adapter_ndk/stub/network/netstack/net_ssl/lib/x86_64-linux-ohos/libnet_ssl.so" "./ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libnet_ssl.so"
-cp "./arkweb/ohos_adapter_ndk/stub/network/netstack/net_ssl/lib/arm-linux-ohos/libnet_ssl.so" "./ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libnet_ssl.so"
-
-cp "./arkweb/ohos_adapter_ndk/stub/huks/include/native_huks_external_crypto_api.h" "./ohos_sdk/openharmony/native/sysroot/usr/include/huks/native_huks_external_crypto_api.h"
-cp "./arkweb/ohos_adapter_ndk/stub/huks/include/native_huks_external_crypto_type.h" "./ohos_sdk/openharmony/native/sysroot/usr/include/huks/native_huks_external_crypto_type.h"
-cp "./arkweb/ohos_adapter_ndk/stub/huks/include/native_huks_type.h" "./ohos_sdk/openharmony/native/sysroot/usr/include/huks/native_huks_type.h"
- 
-mkdir -p "./ohos_sdk/openharmony/native/sysroot/usr/include/certificate_manager"
-cp "./arkweb/ohos_adapter_ndk/stub/certificate_manager/include/cm_native_api.h" "./ohos_sdk/openharmony/native/sysroot/usr/include/certificate_manager/cm_native_api.h"
-cp "./arkweb/ohos_adapter_ndk/stub/certificate_manager/include/cm_native_type.h" "./ohos_sdk/openharmony/native/sysroot/usr/include/certificate_manager/cm_native_type.h"
 
 if [ $buildgn = 1 ]; then
   echo "generating args list:"

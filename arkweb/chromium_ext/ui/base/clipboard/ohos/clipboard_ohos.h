@@ -15,6 +15,7 @@
 
 namespace OHOS::NWeb {
 class NWebSpanstringConvertHtmlCallback;
+class NWebVaultPlainTextCallback;
 }  // namespace OHOS::NWeb
 
 namespace ui {
@@ -117,6 +118,8 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) ClipboardOHOS : public Clipboard {
   bool HasPasteData() const override;
   void OnClipboardDataGuard(bool status) override;
   void UpdateClipboardData(UpdateClipboardDataCallback callback) override;
+  bool HandlePasswordVault(
+      const std::shared_ptr<OHOS::NWeb::NWebVaultPlainTextCallback>& callback) override;
 
   const std::unique_ptr<ClipboardOHOSInternal> clipboard_internal_;
 };

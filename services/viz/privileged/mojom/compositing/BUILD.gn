@@ -98,6 +98,9 @@ mojom("compositing") {
   ]
 
   enabled_features += ["arkweb_occluded_opt"]
+  if (arkweb_offline_web_evict_back_buffers) {
+    enabled_features += [ "arkweb_offline_web_evict_back_buffers" ]
+  }
   enabled_features += ["arkweb_video_ltpo"]
   enabled_features += ["arkweb_performance_jitter"]
   enabled_features += ["arkweb_maximize_resize"]

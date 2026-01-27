@@ -109,10 +109,14 @@ HttpStreamFactory::StreamRequestInfo::StreamRequestInfo(
       secure_dns_policy(http_request_info.secure_dns_policy),
       socket_tag(http_request_info.socket_tag)
 #if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
-,
+      ,
       secure_dns_only(http_request_info.secure_dns_only)
 #endif
-      {}
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+      ,
+      retry_with_fallback_proxy(http_request_info.retry_with_fallback_proxy)
+#endif
+{}
 
 HttpStreamFactory::StreamRequestInfo::StreamRequestInfo(
     const StreamRequestInfo& other) = default;

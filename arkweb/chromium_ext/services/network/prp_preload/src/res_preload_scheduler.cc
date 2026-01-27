@@ -31,7 +31,7 @@ void ResPreloadScheduler::CreateReqLoaderAndStart(const std::shared_ptr<PRReques
   if (net_task_runner_ == nullptr) {
     return;
   }
-  if (loader_fac_weak_.get() == nullptr) {
+  if (!loader_fac_weak_valid_) {
     prerequest_info_list_.push_back(info);
     return;
   }
@@ -53,11 +53,11 @@ void ResPreloadScheduler::StopPreload()
   need_record_header_urls_.clear();
 }
 
-void ResPreloadScheduler::SetPRPPReqLoaderFac(base::WeakPtr<PRPPRequestLoaderFactory> loader_fac_weak)
+void ResPreloadScheduler::SetPRPPReqLoaderFac(base::WeakPtr<PRPPRequestLoaderFactory> loader_fac_weak, bool valid)
 {
   loader_fac_weak_ = loader_fac_weak;
-  PRPPRequestLoaderFactory* loader_fac = loader_fac_weak_.get();
-  if (loader_fac == nullptr) {
+  loader_fac_weak_valid_ = valid;
+  if (!loader_fac_weak_valid_) {
     LOG(WARNING) << "PRPPreload.ResPreloadScheduler::SetPRPPReqLoaderFac invalid loader_fac_weak";
     return;
   }
@@ -148,10 +148,9 @@ void ResPreloadScheduler::ContinueSchedulePreconnects(PreconnectInfoListIter pre
 
 void ResPreloadScheduler::SchedulePrerequests(uint32_t limit, int32_t info_list_version)
 {
-  PRPPRequestLoaderFactory* loader_fac = loader_fac_weak_.get();
   if ((info_list_version != info_list_version_) ||
       !preload_triggered_ || !cur_parent_ ||
-      net_task_runner_ == nullptr || !loader_fac) {
+      net_task_runner_ == nullptr || !loader_fac_weak_valid_) {
     return;
   }
 

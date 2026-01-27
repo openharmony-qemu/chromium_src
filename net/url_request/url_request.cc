@@ -62,6 +62,8 @@
 #include "arkweb/chromium_ext/url/ohos/log_utils.h"
 #endif
 
+#include "arkweb/chromium_ext/net/url_request/url_request_for_include.cc"
+
 namespace net {
 
 namespace {
@@ -689,6 +691,9 @@ void URLRequest::StartJob(std::unique_ptr<URLRequestJob> job) {
     return NetLogURLRequestStartParams(
         url(), method_, load_flags(), isolation_info_, site_for_cookies_,
         initiator_,
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+        RetryWithFallbackProxy(),
+#endif
         upload_data_stream_ ? upload_data_stream_->identifier() : -1);
   });
 
@@ -793,14 +798,10 @@ int URLRequest::DoCancel(int error, const SSLInfo& ssl_info) {
       // Don't log an error code on ERR_ABORTED, since that's redundant.
       net_log_.AddEventWithNetErrorCode(NetLogEventType::CANCELLED,
                                         error == ERR_ABORTED ? OK : error);
-#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
-      LOG(INFO) << "DoCancel the url_request, url: ***"
-                << ", error " << error;
-#endif
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-      LOG_FEEDBACK(INFO) << "DoCancel the url_request, url: "
-                         << url::LogUtils::ConvertUrlWithMask(url().spec())
-                         << ", error " << error;
+      LOG_FEEDBACK(INFO, kNetwork)
+          << "URLRequestCanceled error:" << net::ErrorToDebugString(error)
+          << " url:" << url::LogUtils::ConvertUrlWithMask(url().spec());
 #endif
     }
   }
@@ -1082,6 +1083,10 @@ void URLRequest::Redirect(
     partial_load_flags_ &= ~LOAD_CAN_USE_SHARED_DICTIONARY;
   }
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  used_fallback_proxy_ = false;
+#endif
+
   url_chain_.push_back(redirect_info.new_url);
   --redirect_limit_;
 
@@ -1267,6 +1272,15 @@ void URLRequest::NotifyRequestCompleted() {
   // not be needed.
   if (has_notified_completion_)
     return;
+
+#if BUILDFLAG(IS_ARKWEB)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          ::switches::kEnableNwebEx)) {
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+    HandleFallbackProxyResult();
+#endif
+  }
+#endif
 
   is_pending_ = false;
   is_redirecting_ = false;

@@ -122,7 +122,13 @@ class BASE_EXPORT HangWatcher : public DelegateSimpleThread::Delegate {
     kIOThread = 0,
     kMainThread = 1,
     kThreadPoolThread = 2,
+#if BUILDFLAG(IS_ARKWEB)
+    kCompositorGpuThread = 3,
+    kInProcessGpuThread = 4,
+    kMax = kInProcessGpuThread
+#else
     kMax = kThreadPoolThread
+#endif
   };
 
   // Notes on lifetime:
@@ -162,6 +168,11 @@ class BASE_EXPORT HangWatcher : public DelegateSimpleThread::Delegate {
   static bool IsEnabled();
   static bool IsThreadPoolHangWatchingEnabled();
   static bool IsIOThreadHangWatchingEnabled();
+
+#if BUILDFLAG(IS_ARKWEB)
+  static bool IsCompositorGpuThreadHangWatchingEnabled();
+  static bool IsInProcessGpuThreadHangWatchingEnabled();
+#endif
 
   // Returns true if crash dump reporting is configured for any thread type.
   static bool IsCrashReportingEnabled();

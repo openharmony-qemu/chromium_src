@@ -117,6 +117,9 @@ interface Renderer {
   [EnableIf=arkweb_video_assistant]
   SetVideoSurface(int32 surface_id);
 
+  [EnableIf=arkweb_video_assistant]
+  SetPreciseSeekTarget(int64 target_timestamp);
+
   [EnableIf=arkweb_media]
   SetNativeWindowSurface(int32 native_window_id);
 

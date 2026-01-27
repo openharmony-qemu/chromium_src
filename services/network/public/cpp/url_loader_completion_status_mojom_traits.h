@@ -127,6 +127,18 @@ class COMPONENT_EXPORT(NETWORK_CPP_BASE)
     return status.should_collapse_initiator;
   }
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  static bool used_fallback_proxy(
+      const network::URLLoaderCompletionStatus& status) {
+    return status.used_fallback_proxy;
+  }
+
+  static bool needs_reload_with_fallback_proxy(
+      const network::URLLoaderCompletionStatus& status) {
+    return status.needs_reload_with_fallback_proxy;
+  }
+#endif
+
   static bool Read(network::mojom::URLLoaderCompletionStatusDataView data,
                    network::URLLoaderCompletionStatus* out);
 };

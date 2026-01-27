@@ -36,6 +36,10 @@
 #include "third_party/blink/public/mojom/navigation/system_entropy.mojom-forward.h"
 #include "url/origin.h"
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+#include "arkweb/chromium_ext/content/public/browser/error_page_reload_reason.h"
+#endif
+
 namespace blink {
 struct FramePolicy;
 namespace scheduler {
@@ -519,6 +523,18 @@ class CONTENT_EXPORT NavigationEntryImpl : public NavigationEntry {
     return navigation_transition_data_;
   }
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  void SetReloadReason(ErrorPageReloadReason  reason);
+  ErrorPageReloadReason  GetCurrentReloadReason() {
+    return current_reload_reason_;
+  }
+  std::set<ErrorPageReloadReason > GetReloadReasonList() {
+    return reload_reason_list_;
+  }
+  int GetErrorCode() const override { return error_code_; }
+  void set_error_code(int error_code) { error_code_ = error_code; }
+#endif
+
  private:
   std::unique_ptr<NavigationEntryImpl> CloneAndReplaceInternal(
       scoped_refptr<FrameNavigationEntry> frame_entry,
@@ -661,6 +677,15 @@ class CONTENT_EXPORT NavigationEntryImpl : public NavigationEntry {
   // Information about a navigation transition. See the comments on the class
   // for details.
   NavigationTransitionData navigation_transition_data_;
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  ErrorPageReloadReason  current_reload_reason_ = ErrorPageReloadReason ::INVALID;
+  std::set<ErrorPageReloadReason > reload_reason_list_;
+#endif
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  int error_code_;
+#endif
 };
 
 }  // namespace content

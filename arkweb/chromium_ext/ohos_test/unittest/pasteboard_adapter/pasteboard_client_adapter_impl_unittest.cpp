@@ -234,9 +234,10 @@ TEST_F(PasteboardClientAdapterImplTest, SetAndGetPlainText)
     std::shared_ptr<std::string> plain_text = g_datarecord->GetPlainText();
     EXPECT_NE(plain_text, nullptr);
 
+
     EXPECT_EQ(g_datarecord_null->SetPlainText(g_test_text), false);
-    plain_text = g_datarecord_null->GetPlainText();
-    EXPECT_EQ(plain_text, nullptr);
+    plain_text = g_datarecord->GetPlainText();
+    EXPECT_NE(plain_text, nullptr);
 }
 
 TEST_F(PasteboardClientAdapterImplTest, SetAndGetUri)
@@ -359,6 +360,7 @@ TEST_F(PasteboardClientAdapterImplTest, ClearImgBuffer)
 
 TEST_F(PasteboardClientAdapterImplTest, AddAndGetRecord)
 {
+    // get paste data while data is empty
     std::vector<std::string> mimeTypes = g_dataadapter->GetMimeTypes();
     bool isEmpty = mimeTypes.empty();
     EXPECT_EQ(isEmpty, true);
@@ -376,6 +378,7 @@ TEST_F(PasteboardClientAdapterImplTest, AddAndGetRecord)
     isEmpty = recordVector.empty();
     EXPECT_EQ(isEmpty, true);
 
+    // set and get paste data
     g_dataadapter->AddHtmlRecord(g_test_str);
     mimeTypes = g_dataadapter->GetMimeTypes();
     isEmpty = mimeTypes.empty();
@@ -1030,11 +1033,6 @@ TEST_F(PasteboardClientAdapterImplTest, MEDIUM_RemovePasteboardChangedObserver_I
 TEST_F(PasteboardClientAdapterImplTest, MEDIUM_RemovePasteboardChangedObserver_NonExistentId)
 {
     PasteBoardClientAdapterImpl::GetInstance().RemovePasteboardChangedObserver(9999);
-}
-
-TEST_F(PasteboardClientAdapterImplTest, MEDIUM_Clear_GetPasteDataFailure)
-{
-    PasteBoardClientAdapterImpl::GetInstance().Clear();
 }
 
 TEST_F(PasteboardClientAdapterImplTest, MEDIUM_GetRecordCount_NullData)

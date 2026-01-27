@@ -27,10 +27,19 @@ class SkiaOutputDeviceGLUtils {
   gfx::SwapResult SwapBuffers(const std::optional<gfx::Rect>& update_rect,
                               SkiaOutputDevice::BufferPresentedCallback& feedback,
                               OutputSurfaceFrame& frame);
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+  void SetDelayClean(bool delay_clean);
+  void CleanBufferAfterSwapBuffer(gfx::SwapResult result);
+  void CleanOfflineBuffer();
+#endif
 
  private:
   raw_ptr<SkiaOutputDeviceGL> skiaOutPutDeviceGl_;
   bool supports_damage_region_;
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+  bool delay_clean_ = false;
+  base::WeakPtrFactory<SkiaOutputDeviceGLUtils> weak_ptr_factory_{this};
+#endif
 };
 }  // namespace viz
 #endif  // COMPONENTS_VIZ_SERVICE_DISPLAY_EMBEDDER_SKIA_OUTPUT_DEVICE_GL_UTILS_H

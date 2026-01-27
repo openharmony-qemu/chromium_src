@@ -50,7 +50,7 @@ class CrashpadDfx {
                                  const std::string error_reason);
   static std::string GetProcessBundleName();
   static std::string GetCurrentTime();
-  static int32_t GetProcessTypeByPid(pid_t pid);
+  static int32_t GetProcessType();
   static std::string UpdateCrashDumpPathSuffix();
 
  private:

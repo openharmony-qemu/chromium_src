@@ -31,6 +31,10 @@ PageUtils::PageUtils(Page* page) : page_(page) {}
 
 PageUtils::~PageUtils() {}
 
+void PageUtils::Trace(Visitor* visitor) const {
+  visitor->Trace(page_);
+}
+
 #if BUILDFLAG(IS_ARKWEB)
 bool PageUtils::IsNotPageScaleLimits(PageScaleConstraints new_defaults) {
   return !enable_default_page_scale_limits_update_ ||

@@ -148,6 +148,10 @@ class NWebPreferenceDelegate : public NWebPreference {
                               double borderRadiusBottomRight);
 #endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
 
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  void SetEnableAutoFill(bool enable) override;
+#endif  // BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+
 #if BUILDFLAG(ARKWEB_MENU)
   void SetTouchHandleExistState(bool touchHandleExist);
   void SetViewportScaleState(bool viewportScale);
@@ -171,6 +175,10 @@ class NWebPreferenceDelegate : public NWebPreference {
 #if BUILDFLAG(ARKWEB_AI)
   void PutImageAnalyzerEnabled(bool enabled) override;
   bool GetImageAnalyzerEnabled() override;
+  void PutArkwebAgentEnabled(bool enabled);
+  bool GetArkwebAgentEnabled();
+  void PutAgentNeedHighlight(bool enabled);
+  bool GetAgentNeedHighlight();
 #endif
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
@@ -298,11 +306,18 @@ class NWebPreferenceDelegate : public NWebPreference {
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
   CefRefPtr<CefWebMessageReceiver> GetAutofillCallback();
   void SetAutofillCallback(CefRefPtr<CefWebMessageReceiver> callback);
+
+  std::shared_ptr<NWebVaultPlainTextCallback> GetVaultPlainTextCallback();
+  void PutVaultPlainTextCallback(std::shared_ptr<NWebVaultPlainTextCallback> callback);
 #endif
 
 #if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
   void PutWebMediaAVSessionEnabled(bool enable) override;
 #endif  // ARKWEB_MEDIA_AVSESSION
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+  bool GetCastEnabled();
+#endif  // ARKWEB_MEDIA_CAST
 
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)
   bool ErrorPageEnabled();
@@ -372,6 +387,9 @@ class NWebPreferenceDelegate : public NWebPreference {
   double border_radius_bottom_left_{0.0};
   double border_radius_bottom_right_{0.0};
 #endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  bool is_autofill_enabled_{true};
+#endif  // BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
 #if BUILDFLAG(ARKWEB_MENU)
   bool touch_handle_exist_{false};
   bool viewport_scale_{false};
@@ -384,6 +402,8 @@ class NWebPreferenceDelegate : public NWebPreference {
 #endif
 #if BUILDFLAG(ARKWEB_AI)
   bool image_analyzer_enabled_{true};
+  bool arkweb_agent_enabled_{false};
+  bool agent_need_highlight_{true};
 #endif
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   bool horizontal_scrollBar_access_{true};
@@ -465,12 +485,16 @@ class NWebPreferenceDelegate : public NWebPreference {
 
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
   CefRefPtr<CefWebMessageReceiver> autofill_callback_ = nullptr;
+  std::shared_ptr<NWebVaultPlainTextCallback> vault_plain_text_callback_ = nullptr;
 #endif
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   bool pref_hash_cached_ = false;
   int64_t pref_hash_ = 0;
   uint32_t rotationType_ = 0;
+#endif
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+  bool cast_enabled_ = false;
 #endif
 };
 }  // namespace OHOS::NWeb

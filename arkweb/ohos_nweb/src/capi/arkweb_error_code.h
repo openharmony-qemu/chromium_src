@@ -102,6 +102,16 @@ typedef enum ArkWeb_BlanklessErrorCode {
    */
   ARKWEB_BLANKLESS_ERR_SIGNIFICANT_CHANGE = -5,
 
+  /**
+   * @error The duration of BlanklessLoadingParam is out of range.
+   */
+  ARKWEB_BLANKLESS_ERR_DURATION_OUT_OF_RANGE = -6,
+
+  /**
+   * @error The expirationTime of BlanklessLoadingParam is out of range.
+   */
+  ARKWEB_BLANKLESS_ERR_EXPIRATION_TIME_OUT_OF_RANGE = -7,
+
   /** @error The device does not support this feature. */
   ARKWEB_BLANKLESS_ERR_DEVICE_NOT_SUPPORT = 801,
 } ArkWeb_BlanklessErrorCode;

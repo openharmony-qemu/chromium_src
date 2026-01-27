@@ -23,6 +23,14 @@ void MojoVideoDecoderService::PipEnable(bool enable) {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+void MojoVideoDecoderService::SetPreciseSeekTarget(int64_t target_timestamp) {
+  if (decoder_) {
+    decoder_->SetPreciseSeekTarget(target_timestamp);
+  }
+}
+#endif // ARKWEB_VIDEO_ASSISTANT
+
 #if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
 void MojoVideoDecoderService::RecycleDmaBuffer() {
   if (decoder_) {

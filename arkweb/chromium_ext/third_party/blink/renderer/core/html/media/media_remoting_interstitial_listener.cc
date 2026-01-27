@@ -1,0 +1,408 @@
+/*
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/html/media/media_remoting_interstitial_listener.h"
+#include "third_party/blink/renderer/core/events/pointer_event_factory.h"
+#include "third_party/blink/public/common/input/web_mouse_event.h"
+
+namespace {
+
+constexpr double kLargestPercentage = 100.0;
+constexpr int kRemoteMousePointerId = 1;
+
+}  // namespace
+
+namespace blink {
+
+void RemotingButtonEventListener::HandleClick(Event* event) {
+  if (!event || !media_remoting_interstitial_) {
+    LOG(ERROR) << "RemotingButtonEventListener HandleClick, event media_remoting_interstitial_ is nullptr";
+    return;
+  }
+  event->stopPropagation();
+  event->preventDefault();
+
+  switch (button_type_) {
+    case RemotingButtonType::kStopCasting:
+      media_remoting_interstitial_->OnStopCastingClicked();
+      break;
+    case RemotingButtonType::kSwitchDevice:
+      media_remoting_interstitial_->OnSwitchDeviceClicked();
+      break;
+    case RemotingButtonType::kPlayPause:
+      media_remoting_interstitial_->UpdateRemotePlayState(!media_remoting_interstitial_->GetPlayingState());
+      media_remoting_interstitial_->OnPlayPauseClicked();
+      break;
+    case RemotingButtonType::kFullscreenToggle:
+      media_remoting_interstitial_->OnFullscreenClicked();
+      break;
+    default:
+      LOG(ERROR) << "RemotingButtonEventListener HandleClick, button_type_ is unknow";
+      break;
+  }
+}
+
+void ProgressBarEventListener::Invoke(ExecutionContext* context, Event* event) {
+  if (!weak_ptr_ || !progress_bar_ || !event) {
+    return;
+  }
+  
+  // Dispatch and handle according to event type
+  const AtomicString& event_type = event->type();
+  const std::string type_str = event_type.Utf8();
+
+  static const std::unordered_map<std::string, 
+    std::function<void(ProgressBarEventListener*, Event*)>> handlers = {
+    {"click", [](ProgressBarEventListener* self, Event* e) {
+      auto* mouse_event = DynamicTo<MouseEvent>(e);
+      if (mouse_event) self->HandleMouseClick(mouse_event);
+    }},
+    {"mousedown", [](ProgressBarEventListener* self, Event* e) {
+      auto* mouse_event = DynamicTo<MouseEvent>(e);
+      if (mouse_event) self->HandleMouseDown(mouse_event);
+    }},
+    {"mousemove", [](ProgressBarEventListener* self, Event* e) {
+      auto* mouse_event = DynamicTo<MouseEvent>(e);
+      if (mouse_event) self->HandleMouseMove(mouse_event);
+    }},
+    {"mouseup", [](ProgressBarEventListener* self, Event* e) {
+      auto* mouse_event = DynamicTo<MouseEvent>(e);
+      if (mouse_event) self->HandleMouseUp(mouse_event);
+    }},
+    {"mouseleave", [](ProgressBarEventListener* self, Event* e) {
+      auto* mouse_event = DynamicTo<MouseEvent>(e);
+      if (mouse_event) self->HandleMouseLeave(mouse_event);
+    }},
+    {"touchstart", [](ProgressBarEventListener* self, Event* e) {
+      auto* touch_event = DynamicTo<TouchEvent>(e);
+      if (touch_event) self->HandleTouchStart(touch_event);
+    }},
+    {"touchmove", [](ProgressBarEventListener* self, Event* e) {
+      auto* touch_event = DynamicTo<TouchEvent>(e);
+      if (touch_event) self->HandleTouchMove(touch_event);
+    }},
+    {"touchend", [](ProgressBarEventListener* self, Event* e) {
+      auto* touch_event = DynamicTo<TouchEvent>(e);
+      if (touch_event) self->HandleTouchEnd(touch_event);
+    }},
+    {"touchcancel", [](ProgressBarEventListener* self, Event* e) {
+      auto* touch_event = DynamicTo<TouchEvent>(e);
+      if (touch_event) self->HandleTouchCancel(touch_event);
+    }}
+  };
+  
+  auto it = handlers.find(type_str);
+  if (it != handlers.end()) {
+    it->second(this, event);
+    LOG(INFO) << "progress bar event type: " << type_str;
+  }
+}
+
+void ProgressBarEventListener::HandleTouchStart(TouchEvent* event) {
+  LOG(INFO) << "Handling touch start events";
+  if (!event) {
+    return;
+  }
+  event->stopPropagation();
+  event->preventDefault();
+  
+  // If already dragging, ignore the new touch.
+  if (is_touch_dragging_ || is_dragging_) {
+    LOG(INFO) << "Already in drag state, ignoring new touch.";
+    return;
+  }
+  
+  // Get the first touch point
+  Touch* active_touch = GetActiveTouch(event);
+  if (!active_touch) {
+    LOG(WARNING) << "Unable to obtain valid touch points";
+    return;
+  }
+  
+  // Start touch and drag
+  is_touch_dragging_ = true;
+  active_touch_id_ = active_touch->identifier();  
+  float client_x = active_touch->clientX();
+  double percentage = CalculatePercentage(client_x);
+  if (weak_ptr_) {
+    weak_ptr_->OnProgressBarClicked(percentage);
+  }
+  StartDragging(client_x);
+}
+
+void ProgressBarEventListener::HandleTouchMove(TouchEvent* event) {
+  if (!is_touch_dragging_ || !event) {
+    return;
+  }
+  
+  event->stopPropagation();
+  event->preventDefault();
+  
+  // Find the touch point for the activity
+  Touch* active_touch = nullptr;
+  TouchList* touches = event->targetTouches();
+  
+  for (unsigned i = 0; i < touches->length(); ++i) {
+    Touch* touch = touches->item(i);
+    if (touch->identifier() == active_touch_id_) {
+      active_touch = touch;
+      break;
+    }
+  }
+  
+  if (!active_touch) {
+    LOG(WARNING) << "Unable to find the touch point for the activity ID";
+    return;
+  }
+  
+  // Update Drag Position
+  float client_x = active_touch->clientX();
+  UpdateDragging(client_x);
+}
+
+void ProgressBarEventListener::UpdateDragging(float client_x) {
+  double percentage = CalculatePercentageFromDrag(client_x);
+  if (weak_ptr_) {
+    weak_ptr_->OnProgressDragging(percentage);
+  }
+}
+
+void ProgressBarEventListener::HandleTouchEnd(TouchEvent* event) {
+  if (!is_touch_dragging_ || !event) {
+    return;
+  }
+  
+  LOG(INFO) << "Handling touch end events";  
+  event->stopPropagation();
+  event->preventDefault();
+  
+  // End touch and drag
+  is_touch_dragging_ = false;
+  
+  // Get the last location (if available)
+  float client_x = drag_start_x_; // Default starting point used.
+  TouchList* touches = event->changedTouches();
+  
+  for (unsigned i = 0; i < touches->length(); ++i) {
+    Touch* touch = touches->item(i);
+    if (touch->identifier() == active_touch_id_) {
+      client_x = touch->clientX();
+      break;
+    }
+  }  
+  EndDragging(client_x);
+  active_touch_id_ = -1;
+}
+
+void ProgressBarEventListener::HandleTouchCancel(TouchEvent* event) {
+  LOG(INFO) << "Handling touch cancellation events";
+  if (!event) {
+    return;
+  }
+
+  if (is_touch_dragging_) {
+    is_touch_dragging_ = false;
+    active_touch_id_ = -1;
+    
+    // Cancel dragging, do not perform jump.
+    if (weak_ptr_) {
+      weak_ptr_->OnProgressDragCancel();
+    }    
+    LOG(INFO) << "Touch and drag canceled.";
+  }
+}
+
+void ProgressBarEventListener::EndDragging(float client_x) {
+  is_dragging_ = false;  
+  double percentage = CalculatePercentageFromDrag(client_x);  
+  if (weak_ptr_) {
+    weak_ptr_->OnProgressDragEnd(percentage);
+  }
+}
+
+double ProgressBarEventListener::CalculatePercentageFromDrag(float client_x) {
+  float left = GetProgressBarLeft();
+  float width = GetProgressBarWidth();
+  if (width <= 0) {
+    LOG(ERROR) << "Invalid progress bar width";
+    return drag_start_percentage_;
+  }
+  
+  // Calculate the offset relative to the drag start point
+  float delta_x = client_x - drag_start_x_;  
+  // Calculate Offset Percentage
+  float delta_percentage = (delta_x / width) * kLargestPercentage;  
+  // Calculate New Percentage
+  double new_percentage = drag_start_percentage_ + delta_percentage;  
+  // Limit between 0 and 100.
+  new_percentage = std::max(0.0, std::min(kLargestPercentage, new_percentage));  
+  return new_percentage;
+}
+
+Touch* ProgressBarEventListener::GetActiveTouch(TouchEvent* event) {
+  if (!event) return nullptr;
+  
+  TouchList* touches = event->targetTouches();
+  if (touches->length() > 0) {
+    return touches->item(0); // Return to the first touch point
+  }
+  
+  // If targetTouches is empty, try changedTouches.
+  touches = event->changedTouches();
+  if (touches->length() > 0) {
+    return touches->item(0);
+  }  
+  return nullptr;
+}
+
+void ProgressBarEventListener::StartDragging(float client_x) {
+  is_dragging_ = true;
+  drag_start_x_ = client_x;
+  
+  // Get the current progress percentage as the drag start point
+  drag_start_percentage_ = CalculatePercentage(client_x);  
+  if (weak_ptr_) {
+    weak_ptr_->OnProgressDragStart();
+  }
+}
+
+double ProgressBarEventListener::CalculatePercentage(float client_x) {
+  float left = GetProgressBarLeft();
+  float width = GetProgressBarWidth();
+  
+  if (width <= 0) {
+    LOG(ERROR) << "Invalid progress bar width";
+    return 0.0;
+  }
+  
+  // Calculate the position relative to the progress bar
+  float relative_x = client_x - left;
+  
+  // Ensure it is within the scope.
+  relative_x = std::max(0.0f, std::min(width, relative_x));
+  
+  // Calculate percentage
+  double percentage = (relative_x / width) * kLargestPercentage;
+  percentage = std::max(0.0, std::min(kLargestPercentage, percentage));
+  
+  return percentage;
+}
+
+float ProgressBarEventListener::GetProgressBarLeft() {
+  if (!progress_bar_) return 0.0f;
+  
+  DOMRect* dom_rect = progress_bar_->GetBoundingClientRect();
+  if (!dom_rect) return 0.0f;
+  
+  return static_cast<float>(dom_rect->left());
+}
+
+float ProgressBarEventListener::GetProgressBarWidth() {
+  if (!progress_bar_) return 0.0f;
+  
+  DOMRect* dom_rect = progress_bar_->GetBoundingClientRect();
+  if (!dom_rect) return 0.0f;
+  
+  return static_cast<float>(dom_rect->width());
+}
+
+
+void ProgressBarEventListener::HandleMouseClick(MouseEvent* event) {
+  LOG(INFO) << "Handling progress bar click events";
+  if (!event) {
+    return;
+  }
+  event->stopPropagation();
+  event->preventDefault();
+  
+  float client_x = event->clientX();
+  double percentage = CalculatePercentage(client_x);  
+  if (weak_ptr_) {
+    weak_ptr_->OnProgressBarClicked(percentage);
+  }
+}
+
+void ProgressBarEventListener::HandleMouseDown(MouseEvent* event) {
+  LOG(INFO) << "Handling mouse press events";
+  if (!event) {
+    return;
+  }
+  event->stopPropagation();
+  event->preventDefault();
+  
+  // If already touching and dragging, ignore mouse events.
+  if (is_touch_dragging_) {
+    LOG(INFO) << "Touch and drag in progress, ignoring mouse events.";
+    return;
+  }  
+  float client_x = event->clientX();
+  double percentage = CalculatePercentage(client_x);
+  if (weak_ptr_) {
+    weak_ptr_->OnProgressBarClicked(percentage);
+    weak_ptr_->GetMediaRemotingProgressBar().setPointerCapture(kRemoteMousePointerId, ASSERT_NO_EXCEPTION);
+  }
+  StartDragging(client_x);
+}
+
+void ProgressBarEventListener::HandleMouseMove(MouseEvent* event) {
+  if (!event) {
+    return;
+  }
+  event->stopPropagation();
+  event->preventDefault();
+  // Process mouse movement only during drag state.
+  if (!is_dragging_ || is_touch_dragging_ || !event) {
+    return;
+  }
+  
+  float client_x = event->clientX();
+  UpdateDragging(client_x);
+}
+
+void ProgressBarEventListener::HandleMouseUp(MouseEvent* event) {
+  if (!event) {
+    return;
+  }
+  event->stopPropagation();
+  event->preventDefault();
+  if (!is_dragging_ || is_touch_dragging_ || !event) {
+    return;
+  }
+  
+  LOG(INFO) << "Handling mouse release events";
+  if (weak_ptr_) {
+    weak_ptr_->GetMediaRemotingProgressBar().releasePointerCapture(kRemoteMousePointerId, ASSERT_NO_EXCEPTION);
+  }
+  float client_x = event->clientX();
+  EndDragging(client_x);
+}
+
+void ProgressBarEventListener::HandleMouseLeave(MouseEvent* event) {
+  if (!event) {
+    return;
+  }
+  event->stopPropagation();
+  event->preventDefault();
+  if (is_dragging_ && !is_touch_dragging_) {
+    LOG(INFO) << "Mouse leaves the element, ending the drag.";
+    if (weak_ptr_) {
+      weak_ptr_->GetMediaRemotingProgressBar().releasePointerCapture(kRemoteMousePointerId, ASSERT_NO_EXCEPTION);
+    }
+    float client_x = event->clientX();
+    EndDragging(client_x);
+  }
+}
+
+} // namespace blink

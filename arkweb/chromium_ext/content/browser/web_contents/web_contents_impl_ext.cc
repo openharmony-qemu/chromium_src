@@ -185,7 +185,7 @@ void WebContentsImplExt::StopMicrophone(int nWebID) {
     return;
   }
 
-  auto media_stream_manager = 
+  auto media_stream_manager =
       BrowserMainLoop::GetInstance()->media_stream_manager();
   if (!media_stream_manager) {
     LOG(ERROR) << "media_stream_manager null";
@@ -253,6 +253,22 @@ void WebContentsImplExt::DelMediaPlayerAudibleCount() {
 
 bool WebContentsImplExt::GetMediaPlayerCurrentAudible() {
   return media_player_audible_count_ > 0;
+}
+
+bool WebContentsImplExt::OnAudioStateChangedExt(bool is_currently_audible, bool is_ohos_currently_audible) {
+  if (is_ohos_currently_audible != is_ohos_currently_audible_ 
+      && is_currently_audible == is_currently_audible_) {
+    is_ohos_currently_audible_ = is_ohos_currently_audible;
+    observers_.NotifyObservers(&WebContentsObserver::OnAudioStateChanged,
+                               is_ohos_currently_audible_);
+    LOG(INFO) << "WebContentsImplExt::OnAudioStateChangedExt is_ohos_currently_audible: " << is_ohos_currently_audible_;
+    return true;
+  }
+  return false;
+}
+
+void WebContentsImplExt::OnAudioStateChangedExtSetAudible(bool is_ohos_currently_audible) {
+  is_ohos_currently_audible_ = is_ohos_currently_audible;
 }
 #endif  // BUILDFLAG(ARKWEB_MEDIA_MUTE_AUDIO)
 // LCOV_EXCL_STOP
@@ -525,13 +541,10 @@ void WebContentsImplExt::OnNativeEmbedStatusUpdate(
       param_list += item.first + " ";
       param_list += item.second + ", ";
     }
-    LOG(INFO) << "[NativeEmbed] OnNativeEmbedStatusUpdate " << " state is "
-              << (int)state << ", " << native_embed_info
-              << ", params: " << param_list;
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
     LOG_FEEDBACK(INFO) << "[NativeEmbed] OnNativeEmbedStatusUpdate "
                        << " state is " << (int)state << ", "
-                       << native_embed_info << ", params: " << param_list;
+                       << native_embed_info << ", params:" << param_list;
 #endif
   }
   if (delegate_) {
@@ -874,6 +887,8 @@ void WebContentsImplExt::PopluateVideoAssistantConfig(
 void WebContentsImplExt::OnVideoPlaying(
     media::mojom::VideoAttributesForVASTPtr video_attributes,
     const MediaPlayerId& id) {
+  LOG(INFO) << "OhMedia, OnVideoPlaying media_player_id:" << id.delegate_id;
+  media_player_id_ = id;
   video_assistant_->OnVideoPlaying(std::move(video_attributes), id);
 }
 
@@ -933,6 +948,14 @@ void WebContentsImplExt::DelAllVideoSurfaces() {
   }
 }
 
+void WebContentsImplExt::DelVideoAssistant() {
+  if (media_player_id_.has_value()) {
+    LOG(INFO) << "OhMedia, DelVideoAssistant media_player_id:"
+              << media_player_id_.value().delegate_id;
+    video_assistant_->OnVideoDestroyed(media_player_id_.value());
+  }
+}
+
 void WebContentsImplExt::ReportVideoDecoderName(
     const std::string& decoder_name) {
   video_assistant_->ReportVideoDecoderName(decoder_name);
@@ -959,6 +982,17 @@ void WebContentsImplExt::HideAutofillPopup() {
   }
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+std::shared_ptr<OHOS::NWeb::NWebVaultPlainTextCallback> WebContentsImplExt::GetVaultPlainTextCallback() {
+  return vault_plain_text_callback_;
+}
+void WebContentsImplExt::SetVaultPlainTextCallback(
+    std::shared_ptr<OHOS::NWeb::NWebVaultPlainTextCallback> callback) {
+  vault_plain_text_callback_ = callback;
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
 void WebContentsImplExt::OnShareFile(const std::string& filePath,
                                      const std::string& utdTypeId) {
@@ -1025,6 +1059,25 @@ bool WebContentsImplExt::isSameUserAgent(
   }
 
   return false;
+}
+
+void WebContentsImplExt::SetUserAgentMetadata(
+    const std::string& user_agent,
+    const blink::UserAgentMetadata& metadata) {
+  user_agent_for_metadata_map_[user_agent] = metadata;
+}
+
+const blink::UserAgentMetadata WebContentsImplExt::GetUserAgentMetadata(
+    const std::string& user_agent) {
+  auto it = user_agent_for_metadata_map_.find(user_agent);
+  if (it != user_agent_for_metadata_map_.end()) {
+    return it->second;
+  }
+#if !defined(COMPONENT_BUILD)
+  return embedder_support::GetUserAgentMetadata();
+#else 
+  return blink::UserAgentMetadata();
+#endif
 }
 
 #endif
@@ -1379,6 +1432,40 @@ std::string WebContentsImplExt::NotifyNavigationRewriteUrl(const std::string& or
                                                            int transition_type,
                                                            bool is_key_request) {
   return OnRewriteUrlForNavigation(original_url, referrer, transition_type, is_key_request);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+void WebContentsImplExt::OnDocumentEndReady(const FrameInfos& frameInfo) {
+  if (delegate_) {
+    delegate_->OnDocumentEndReady(frameInfo);
+  }
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+void WebContentsImplExt::OnMediaCastEnter() {
+  LOG(INFO) << "WebContentsImplExt::OnMediaCastEnter";
+  if (delegate_) {
+    delegate_->OnMediaCastEnter();
+  }
+}
+
+void WebContentsImplExt::NotifyRemoteExitFullScreen() {
+  LOG(INFO) << "WebContentsImplExt::NotifyRemoteExitFullScreen";
+  if (media_web_contents_observer()) {
+    media_web_contents_observer()->NotifyRemoteExitFullScreen();
+  }  
+}
+#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
+
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+void WebContentsImplExt::OnSafeBrowsingCheckDetail(int code,
+                                                   int policy,
+                                                   int threat) {
+  if (delegate_) {
+    delegate_->OnSafeBrowsingCheckDetail(code, policy, threat);
+  }
 }
 #endif
 }  // namespace content

@@ -3456,4 +3456,10 @@ void NetworkContext::InitializePrefetchURLLoaderFactory() {
                          CreateURLLoaderFactoryParamsForPrefetch());
 }
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+bool NetworkContext::IsDestructing() const {
+  return is_destructing_;
+}
+#endif // BUILDFLAG(ARKWEB_LOGGER_REPORT)
+
 }  // namespace network

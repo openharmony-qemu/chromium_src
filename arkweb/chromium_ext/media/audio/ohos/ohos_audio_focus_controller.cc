@@ -331,6 +331,29 @@ bool OHOSAudioFocusController::GetPlayingState(const AudioParameters &parameters
     return result;
 }
 
+bool OHOSAudioFocusController::IsWebContentCurrentlyAudible(const AudioParameters &parameters)
+{
+    if (content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
+        return CheckGetPlayingStateOnUIThread(parameters);
+    }
+
+    bool result = false;
+    base::WaitableEvent event(
+        base::WaitableEvent::ResetPolicy::AUTOMATIC, base::WaitableEvent::InitialState::NOT_SIGNALED);
+
+    content::GetUIThreadTaskRunner({})->PostTask(FROM_HERE,
+        base::BindOnce(
+            [](const media::AudioParameters &params, bool *out_result, base::WaitableEvent *out_event) {
+                *out_result = IsWebContentCurrentlyAudibleOnUIThread(params);
+                out_event->Signal();
+            },
+            parameters,
+            &result,
+            &event));
+    event.Wait();
+    return result;
+}
+
 bool OHOSAudioFocusController::CheckGetPlayingStateOnUIThread(const AudioParameters &params)
 {
     DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
@@ -675,6 +698,29 @@ bool OHOSAudioFocusController::CheckGetMediaPlayerMuteStateOnUIThread(
     }
 
     return media_session->GetMediaPlayerMuteState();
+}
+
+bool OHOSAudioFocusController::IsWebContentCurrentlyAudibleOnUIThread(
+    const AudioParameters& params) {
+    DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
+
+    content::RenderFrameHost* render_frame_host =
+        content::RenderFrameHost::FromID(params.render_process_id(),
+                                         params.render_frame_id());
+    if (!render_frame_host) {
+        LOG(ERROR) << __func__ << "render_frame_host not found for PID: "
+                   << params.render_process_id()
+                   << ", frame_id: " << params.render_frame_id();
+        return true;
+    }
+
+    content::WebContents* web_contents =
+        content::WebContents::FromRenderFrameHost(render_frame_host);
+    if (!web_contents) {
+        LOG(ERROR) << "web_contents not found for render_frame_host";
+        return true;
+    }
+    return web_contents->IsCurrentlyAudible();
 }
 
 }  // namespace media

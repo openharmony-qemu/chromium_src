@@ -57,6 +57,9 @@ class NWebRenderHandler : public ArkWebRenderHandlerExt {
       std::function<void(double, double)>&& callback);
   void RegisterRenderCb(std::function<void(const char*)> render_update_cb);
   void RegisterNWebHandler(std::shared_ptr<NWebHandler> handler);
+#if BUILDFLAG(ARKWEB_AI)
+  void RegisterNWebAgentHandler(std::shared_ptr<NWebAgentHandler> handler);
+#endif
   void Resize(uint32_t width, uint32_t height);
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   void ResizeVisibleViewport(uint32_t width, uint32_t height);
@@ -83,6 +86,7 @@ class NWebRenderHandler : public ArkWebRenderHandlerExt {
                                     const CefString& text,
                                     const CefRange& selected_range,
                                     const CefRange& compositon_range) override;
+  void EnableVirtualKeyboardRequestFocus(bool isNeedRequestFocus);
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 #if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
   void SetViewportAvoidHeight(int32_t viewportAvoidHeight);
@@ -304,6 +308,12 @@ class NWebRenderHandler : public ArkWebRenderHandlerExt {
                              int32_t detectedContentfulNodesCount) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT)
+  void OnFirstScreenPaint(const std::string& url,
+                          int64_t navigationStartTime,
+                          int64_t firstScreenPaintTime) override;
+#endif
+
 #if BUILDFLAG(ARKWEB_ACCESSIBILITY)
   void OnAccessibilityEvent(int64_t accessibilityId,
                             int32_t eventType,
@@ -339,6 +349,7 @@ class NWebRenderHandler : public ArkWebRenderHandlerExt {
   bool needFocusViewport_ = false;
   int32_t node_id_ = -1;
   bool noNeedKeyboardByInput_ = false;
+  bool virtualKeyboardRequestFocus_ = true;
 #endif
 #if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
   float scroll_offset_x_ = 0.0f;
@@ -361,7 +372,9 @@ class NWebRenderHandler : public ArkWebRenderHandlerExt {
   bool is_irregular_drag_background_ = true;
   bool select_all_ = false;
 #endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
-
+#if BUILDFLAG(ARKWEB_AI)
+  std::weak_ptr<NWebAgentHandler> nweb_agent_handler_;
+#endif
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   std::weak_ptr<NWebDelegateInterface> delegate_interface_;
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)

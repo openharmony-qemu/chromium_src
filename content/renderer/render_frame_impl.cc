@@ -2780,7 +2780,6 @@ void RenderFrameImpl::CommitNavigation(
     mojom::CookieManagerInfoPtr cookie_manager_info,
     mojom::StorageInfoPtr storage_info,
     mojom::NavigationClient::CommitNavigationCallback commit_callback) {
-  LOG(INFO) << "RenderFrameImpl::CommitNavigation " << devtools_navigation_token.ToString();
   base::ElapsedTimer timer;
   base::ScopedUmaHistogramTimer histogram_timer(kCommitRenderFrame);
   base::ScopedUmaHistogramTimer histogram_timer_frame(base::StrCat(
@@ -2863,6 +2862,12 @@ void RenderFrameImpl::CommitNavigation(
       ToWebPolicyContainer(std::move(policy_container));
   navigation_params->view_transition_state =
       std::move(commit_params->view_transition_state);
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  OnCommitNavigation(common_params->url, is_client_redirect,
+                     common_params->navigation_type, devtools_navigation_token,
+                     commit_params->navigation_delivery_type);
+#endif
 
   if (frame_->IsOutermostMainFrame() && permissions_policy) {
     navigation_params->permissions_policy_override = permissions_policy;
@@ -4097,10 +4102,8 @@ void RenderFrameImpl::DidCommitNavigation(
 
 #if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE) && BUILDFLAG(CONTENT_ENABLE_LEGACY_IPC)
   if (IsMainFrame()) {
-    LOG(WARNING) << "event_message: page load start, routing_id: "
-                 << GetRoutingID() << ", url: ***";
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-    PageLoadStartLoggerReport(document_loader);
+    OnDidCommitNavigation(document_loader, commit_type);
 #endif
 
 #if BUILDFLAG(ARKWEB_CRASHPAD)
@@ -4360,14 +4363,10 @@ void RenderFrameImpl::DidDispatchDOMContentLoadedEvent() {
   for (auto& observer : observers_)
     observer.DidDispatchDOMContentLoadedEvent();
 
-#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE) && BUILDFLAG(CONTENT_ENABLE_LEGACY_IPC)
-  if (IsMainFrame()) {
-    LOG(WARNING) << "event_message: content load finished, routing_id: "
-                 << GetRoutingID() << ", url: ***";
-  }
-#endif
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-  ContentLoadFailedLoggerReport();
+  if (IsMainFrame()) {
+    OnDidDispatchDOMContentLoadedEvent();
+  }
 #endif  // ARKWEB_LOGGER_REPORT
 
   // Check whether we have new encoding name.
@@ -4389,10 +4388,8 @@ void RenderFrameImpl::DidHandleOnloadEvents() {
     observer.DidHandleOnloadEvents();
 #if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE) && BUILDFLAG(CONTENT_ENABLE_LEGACY_IPC)
   if (IsMainFrame()) {
-    LOG(WARNING) << "event_message: page load finished, routing_id: "
-                 << GetRoutingID() << ", url: ***";
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-    PageLoadFinishedLoggerReport();
+    OnDidHandleOnloadEvents();
 #endif
   }
 #endif
@@ -6360,6 +6357,12 @@ void RenderFrameImpl::BeginNavigationInternal(
     transition_type = ui::PageTransitionFromInt(
         transition_type | ui::PAGE_TRANSITION_CLIENT_REDIRECT);
   }
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+  if (info->is_triggered_by_js) {
+    transition_type = ui::PageTransitionFromInt(
+        transition_type | ui::PAGE_TRANSITION_FROM_JAVASCRIPT);
+  }
+#endif
 
   // Note: At this stage, the goal is to apply all the modifications the
   // renderer wants to make to the request, and then send it to the browser, so
@@ -6967,7 +6970,7 @@ WebView* RenderFrameImpl::CreateNewWindow(
     params->allow_popup = true;
 
 #if BUILDFLAG(ARKWEB_MULTI_WINDOW)
-  GetNewWindowWebView(request.Url(), policy, params->allow_popup);
+  GetNewWindowWebView(request.Url(), policy, params->allow_popup, features);
 #endif
 
   params->window_container_type = WindowFeaturesToContainerType(features);

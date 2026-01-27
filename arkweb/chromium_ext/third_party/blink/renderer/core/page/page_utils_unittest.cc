@@ -41,11 +41,11 @@ public:
       PageTestBase::SetUp(gfx::Size());
       page_ = &GetPage();
       drag_controller_ = blink::MakeGarbageCollected<DragControllerExt>(page_);
-      page_utils_ = std::make_unique<PageUtils>(page_);
+      page_utils_ = blink::MakeGarbageCollected<PageUtils>(page_);
   }
   Page* page_;
   Member<DragControllerExt> drag_controller_;
-  std::unique_ptr<PageUtils> page_utils_;
+  Persistent<PageUtils> page_utils_;
 };
 
 TEST_F(PageUtilsTest, IsInTextDraging_NullDragController) {

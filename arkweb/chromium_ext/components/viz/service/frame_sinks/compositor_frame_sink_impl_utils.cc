@@ -100,6 +100,14 @@ void CompositorFrameSinkImplUtil::OnSetBypassVsyncCondition(int32_t condition) {
   }
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+void CompositorFrameSinkImplUtil::UpdateThrottleMode(bool is_enable) {
+  if (compositorFrameSinkImpl_ && compositorFrameSinkImpl_->support_) {
+    (compositorFrameSinkImpl_->support_)->supportUtils->UpdateThrottleMode(is_enable);
+  }
+}
+#endif
 //LCOV_EXCL_STOP
 
 }  // namespace cc

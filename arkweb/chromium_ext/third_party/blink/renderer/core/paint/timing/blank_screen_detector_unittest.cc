@@ -35,13 +35,13 @@ class BlankScreenDetectorTest : public RenderingTest {
     web_view_helper_.Initialize();
     dummy_page_holder_ = std::make_unique<DummyPageHolder>(gfx::Size(800, 600));
     local_frame_ = &dummy_page_holder_->GetFrame();
-    detector_ = std::make_unique<BlankScreenDetector>(local_frame_.get());
+    detector_ = MakeGarbageCollected<BlankScreenDetector>(local_frame_.get());
   }
   void TearDown() override {}
 
   std::unique_ptr<DummyPageHolder> dummy_page_holder_;
   raw_ptr<LocalFrame> local_frame_;
-  std::unique_ptr<BlankScreenDetector> detector_;
+  Member<BlankScreenDetector> detector_;
   frame_test_helpers::WebViewHelper web_view_helper_;
 };
 

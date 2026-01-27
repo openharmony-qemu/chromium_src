@@ -41,6 +41,8 @@
 #include "base/command_line.h"
 #include "components/embedder_support/arkweb_version.h"
 #include "content/public/common/content_switches.h"
+#include "third_party/blink/public/common/user_agent/user_agent_brand_version_type.h"
+#include "third_party/blink/public/common/user_agent/user_agent_metadata.h"
 #include "third_party/bounds_checking_function/include/securec.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 #endif
@@ -55,6 +57,7 @@ extern void ResetArkwebUserAgentExtStateForTest();
 std::string GetDistVersion();
 std::string GetOhosFullname();
 void SetProductString(std::string& user_agent);
+void UpdateUserAgentMetaData(blink::UserAgentMetadata& metadata);
 #endif
 
 }  // namespace content

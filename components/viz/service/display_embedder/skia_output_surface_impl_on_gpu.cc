@@ -2435,9 +2435,9 @@ void SkiaOutputSurfaceImplOnGpu::PostSubmit(
     }
 
     output_device_->SetViewportSize(frame->size);
-
+#if !BUILDFLAG(ARKWEB_SUPPORTS_DAMAGE_REGION)
     DCHECK(!frame->sub_buffer_rect || capabilities().supports_post_sub_buffer);
-
+#endif
 #if BUILDFLAG(ARKWEB_SWAP_BUFFER_TRACE)
     OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
         std::to_string(frame->data.swap_trace_id), "step", "FinishBufferSwap");
@@ -2632,6 +2632,12 @@ void SkiaOutputSurfaceImplOnGpu::DiscardBackbuffer() {
   MakeCurrent(/*need_framebuffer=*/true);
   output_device_->DiscardBackbuffer();
 }
+
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+void SkiaOutputSurfaceImplOnGpu::CleanBufferAfterSwapBuffer(bool delay_clean) {
+  output_device_->CleanBufferAfterSwapBuffer(delay_clean);
+}
+#endif
 
 #if BUILDFLAG(ENABLE_VULKAN)
 gfx::GpuFenceHandle SkiaOutputSurfaceImplOnGpu::CreateReleaseFenceForVulkan(

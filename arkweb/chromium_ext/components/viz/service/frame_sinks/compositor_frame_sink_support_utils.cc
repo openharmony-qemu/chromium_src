@@ -96,5 +96,23 @@ int64_t CompositorFrameSinkSupportUtils::GetCurrentTimeStampMS()
       .count();
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+void CompositorFrameSinkSupportUtils::UpdateThrottleMode(bool is_enable) {
+  if (!compositorFrameSinkSupport->is_root()) {
+    if (is_enable) {
+      compositorFrameSinkSupport->throttle_mode_ = true;
+    } else {
+      if (compositorFrameSinkSupport->throttle_mode_ && compositorFrameSinkSupport->throttle_started_) {
+        TRACE_EVENT0("viz", "CompositorFrameSinkSupport::UpdateThrottleMode End");
+        compositorFrameSinkSupport->throttle_started_ = false;
+      }
+      compositorFrameSinkSupport->throttle_mode_ = false;
+      compositorFrameSinkSupport->preferred_frame_interval_ = base::TimeDelta::FromInternalValue(0);
+      compositorFrameSinkSupport->ApplyPreferredFrameRate(compositorFrameSinkSupport->frame_sink_id_.sink_id());
+    }
+  }
+}
+#endif
 //LCOV_EXCL_STOP
 }  // namespace viz

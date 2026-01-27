@@ -60,11 +60,20 @@ mojom("mojom") {
   if (arkweb_slide) {
     enabled_features += [ "arkweb_slide" ]
   }
+  if (arkweb_same_layer) {
+    enabled_features += ["arkweb_same_layer"]
+  }
   if (arkweb_performance_scheduling) {
     enabled_features += ["arkweb_performance_scheduling"]
   }
   if (arkweb_vsync_schedule) {
     enabled_features += ["arkweb_vsync_schedule"]
+  }
+  if (arkweb_throttle_frame) {
+    enabled_features += ["arkweb_throttle_frame"]
+  }
+  if (arkweb_report_sys_event) {
+    enabled_features += ["arkweb_report_sys_event"]
   }
 
   deps = [ "//gpu/ipc/common:gmb_interface" ]

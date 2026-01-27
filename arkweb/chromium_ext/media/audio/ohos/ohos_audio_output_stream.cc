@@ -34,6 +34,9 @@ OHOSAudioOutputStream::OHOSAudioOutputStream(OHOSAudioManager* manager,
   if (ret != AUDIOSTREAM_SUCCESS) {
     LOG(ERROR) << "AudioStreamBuilder create failed.";
   }
+  if (base::ohos::IsPcDevice() && parameters.latency_tag() != AudioLatency::Type::kRtc) {
+    isCommunication_ = false;
+  }
 
   sample_format_ = kSampleFormatS16;
   bytes_per_frame_ = parameters.GetBytesPerFrame(sample_format_);
@@ -451,8 +454,14 @@ bool OHOSAudioOutputStream::InitRender() {
                                         parameters_.sample_rate());
   OH_AudioStreamBuilder_SetChannelCount(audio_stream_builder_,
                                         parameters_.channels());
-  OH_AudioStreamBuilder_SetLatencyMode(audio_stream_builder_,
-                                       AUDIOSTREAM_LATENCY_MODE_NORMAL);
+  if (parameters_.latency_tag() == AudioLatency::Type::kPlayback) {
+    OH_AudioStreamBuilder_SetLatencyMode(audio_stream_builder_,
+                                      AUDIOSTREAM_LATENCY_MODE_NORMAL);
+  } else {
+    LOG(INFO) << "OHOSAudioOutputStream InitRender low latency stream";
+    OH_AudioStreamBuilder_SetLatencyMode(audio_stream_builder_,
+                                        AUDIOSTREAM_LATENCY_MODE_FAST);
+  }
   OH_AudioStreamBuilder_SetFrameSizeInCallback(audio_stream_builder_,
                                                parameters_.frames_per_buffer());
   OH_AudioStreamBuilder_SetEncodingType(audio_stream_builder_,
@@ -680,6 +689,18 @@ void OHOSAudioOutputStream::SetUpAudioSilentState() {
                   "parameters or audioRender failed!";
     return;
   }
+
+  if (parameters_.latency_tag() == AudioLatency::Type::kInteractive) {
+    if (OHOSAudioFocusController::IsWebContentCurrentlyAudible(parameters_)) {
+      OH_AudioRenderer_SetSilentModeAndMixWithOthers(audio_renderer_, false);
+      LOG(INFO) << "OHOSAudioOutputStream AudioContext SetAudioSilentMode false!";
+      isSilentMode_ = false;
+    } else {
+      LOG(DEBUG) << "OHOSAudioOutputStream IsWebContentCurrentlyAudible is false";
+    }
+    return;
+  }
+
   bool is_playing = OHOSAudioFocusController::IsActive(parameters_) ||
                     OHOSAudioFocusController::GetPlayingState(parameters_) ||
                     write_data_counts_ >= 1;
@@ -707,6 +728,16 @@ bool OHOSAudioOutputStream::IsPreloadOrMutedMediaMode() {
     return false;
   }
 
+  if (parameters_.latency_tag() == AudioLatency::Type::kInteractive) {
+    LOG(INFO) << "OHOSAudioOutputStream::IsPreloadOrMutedMediaMode AudioContext";
+    if (audio_renderer_) {
+      LOG(INFO) << "OHOSAudioOutputStream AudioContext SetAudioSilentMode true";
+      OH_AudioRenderer_SetSilentModeAndMixWithOthers(audio_renderer_, true);
+      isSilentMode_ = true;
+    }
+    return false;
+  }
+  
   content::MediaSessionImpl::NWebMediaSessionState sessionState =
       OHOSAudioFocusController::GetSessionState(parameters_);
   bool is_active = OHOSAudioFocusController::IsActive(parameters_);

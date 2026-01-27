@@ -33,7 +33,7 @@ int32_t NWebNativeWindowTracker::AddNativeWindow(void* native_window) {
   return native_window_id;
 }
 
-void* NWebNativeWindowTracker::GetNativeWindow(int32_t native_window_id) {
+void* NWebNativeWindowTracker::GetNativeWindow(int32_t native_window_id, bool is_ref) {
   base::AutoLock lock(window_map_lock_);
   auto it = native_window_map_.find(native_window_id);
   if (it == native_window_map_.end()) {
@@ -48,6 +48,9 @@ void* NWebNativeWindowTracker::GetNativeWindow(int32_t native_window_id) {
       if (window) {
         native_window_map_.emplace(native_window_id, std::move((void *)window));
         LOG(DEBUG) << "Add native window id = " << native_window_id;
+        if (is_ref) {
+          OHOS::NWeb::OhosAdapterHelper::GetInstance().GetWindowAdapterInstance().AddNativeWindowRef(window);
+        }
         return window;
       }
     }
@@ -57,6 +60,9 @@ void* NWebNativeWindowTracker::GetNativeWindow(int32_t native_window_id) {
 
   LOG(DEBUG) << __FUNCTION__
              << "Get for native_window id = " << native_window_id;
+  if (is_ref) {
+    OHOS::NWeb::OhosAdapterHelper::GetInstance().GetWindowAdapterInstance().AddNativeWindowRef(it->second);
+  }
   return it->second;
 }
 

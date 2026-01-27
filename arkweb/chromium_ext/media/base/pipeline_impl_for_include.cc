@@ -82,6 +82,23 @@ void PipelineImpl::PipEnable(bool enable) {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+void PipelineImpl::RendererWrapper::SetPreciseSeekTarget(
+    int64_t target_timestamp) {
+  DCHECK(media_task_runner_->RunsTasksInCurrentSequence());
+  target_timestamp_ = target_timestamp;
+  is_set_precise_seek_ = true;
+}
+
+void PipelineImpl::SetPreciseSeekTarget(int64_t target_timestamp) {
+  DCHECK(thread_checker_.CalledOnValidThread());
+  media_task_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(&RendererWrapper::SetPreciseSeekTarget,
+                     renderer_wrapper_->AsWeakPtr(), target_timestamp));
+}
+#endif // ARKWEB_VIDEO_ASSISTANT
+
 #if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
 // LCOV_EXCL_START
 void PipelineImpl::RendererWrapper::RecycleDmaBuffer() {
@@ -99,7 +116,7 @@ void PipelineImpl::RecycleDmaBuffer() {
   DCHECK(thread_checker_.CalledOnValidThread());
   LOG(INFO) << "DMABUF::PipelineImpl, RecycleDmaBuffer";
 
- media_task_runner_->PostTask(
+  media_task_runner_->PostTask(
       FROM_HERE, base::BindOnce(&RendererWrapper::RecycleDmaBuffer,
                                 renderer_wrapper_->AsWeakPtr()));
 }

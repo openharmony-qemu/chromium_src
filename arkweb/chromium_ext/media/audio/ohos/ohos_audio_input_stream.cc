@@ -213,13 +213,37 @@ void OHOSAudioInputStream::PauseMicrophone() {
   }
 }
 
-void OHOSAudioInputStream::OnMicrophoneCaptureStateChanged(
-    AudioCaptureState new_state) {
-  if (audio_capture_state_ == new_state) {
+void OHOSAudioInputStream::OnMicrophoneCaptureStateChangedBind(AudioCaptureState audio_capture_state,
+                                                               AudioCaptureState new_state,
+                                                               const AudioParameters& parameters) {
+  if (audio_capture_state == new_state) {
     return;
   }
+
+  if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
+    base::WaitableEvent event(base::WaitableEvent::ResetPolicy::AUTOMATIC,
+                              base::WaitableEvent::InitialState::NOT_SIGNALED);
+    auto ui_task_runner = content::GetUIThreadTaskRunner({});
+    if (!ui_task_runner) {
+      LOG(ERROR) << "OHOSAudioInputStream::OnMicrophoneCaptureStateChangedBind "
+                    "ui_task_runner is nullptr";
+      return;
+    }
+    ui_task_runner->PostTask(
+        FROM_HERE,
+        base::BindOnce([](AudioCaptureState audio_capture_state,
+                          AudioCaptureState new_state,
+                          const AudioParameters& parameters,
+                          base::WaitableEvent* out_event) {
+            OHOSAudioInputStream::OnMicrophoneCaptureStateChangedBind(audio_capture_state, new_state, parameters);
+            out_event->Signal();
+        }, audio_capture_state, new_state, parameters, &event));
+    event.Wait();
+    return;
+  }
+
   content::RenderFrameHost* renderFrameHost = content::RenderFrameHost::FromID(
-      parameters_.render_process_id(), parameters_.render_frame_id());
+      parameters.render_process_id(), parameters.render_frame_id());
   if (!renderFrameHost) {
     return;
   }
@@ -227,8 +251,14 @@ void OHOSAudioInputStream::OnMicrophoneCaptureStateChanged(
       content::WebContents::FromRenderFrameHost(renderFrameHost);
   if (webContent) {
     webContent->OnMicrophoneCaptureStateChanged(
-        static_cast<int>(audio_capture_state_), static_cast<int>(new_state));
+        static_cast<int>(audio_capture_state), static_cast<int>(new_state));
+    LOG(INFO) << "OHOSAudioInputStream::OnMicrophoneCaptureStateChangedBind in "
+                 "BrowserThread::UI";
   }
-  audio_capture_state_ = new_state;
+}
+
+void OHOSAudioInputStream::OnMicrophoneCaptureStateChanged(AudioCaptureState new_state) {
+    OHOSAudioInputStream::OnMicrophoneCaptureStateChangedBind(audio_capture_state_, new_state, parameters_);
+    audio_capture_state_ = new_state;
 }
 }  // namespace media

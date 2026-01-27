@@ -46,6 +46,9 @@ class GestureManagerUtils : public GarbageCollected<GestureManagerUtils> {
   void UpdateContextMenuForFreeCopy(HitTestResult& hit_test_result, HitTestLocation& location);
 #endif
   void Trace(Visitor*) const;
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  bool long_press_select_text_progress_ = false;
+#endif
   Member<GestureManager> gesture_manager_;
 };
 }  // namespace blink

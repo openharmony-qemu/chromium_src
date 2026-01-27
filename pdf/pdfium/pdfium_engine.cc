@@ -179,6 +179,8 @@ constexpr char PDF_FIRST_PAINT_TIME[] = "PDF_FIRST_PAINT_TIME";
 constexpr char FIRST_PAINT_TIME[] = "FIRST_PAINT_TIME";
 constexpr char PDF_PAINT_VISIBLE_PAGES_TAME[] = "PDF_PAINT_VISIBLE_PAGES_TAME";
 constexpr char PAINT_VISIBLE_PAGES_TAME[] = "PAINT_VISIBLE_PAGES_TAME";
+// Frame rate is considered below 30fps if rendering time exceeds this threshold.
+constexpr int64_t RENDER_TIME_30FPS_THRESHOLD = 33333;
 #endif
 FontMappingMode g_font_mapping_mode = FontMappingMode::kNoMapping;
 
@@ -792,11 +794,12 @@ void PDFiumEngine::Paint(const gfx::Rect& rect,
 #if BUILDFLAG(ARKWEB_PDF)
   int64_t paintVisiblePagesTime =
       (base::TimeTicks::Now() - begin_time).ToInternalValue();
-  OHOS::NWeb::OhosAdapterHelper::GetInstance()
-      .GetHiSysEventAdapterInstance()
-      .Write(PDF_PAINT_VISIBLE_PAGES_TAME,
-             OHOS::NWeb::HiSysEventAdapter::EventType::BEHAVIOR,
-             {PAINT_VISIBLE_PAGES_TAME, std::to_string(paintVisiblePagesTime)});
+  if (paintVisiblePagesTime > RENDER_TIME_30FPS_THRESHOLD)
+    OHOS::NWeb::OhosAdapterHelper::GetInstance()
+        .GetHiSysEventAdapterInstance()
+        .Write(PDF_PAINT_VISIBLE_PAGES_TAME,
+              OHOS::NWeb::HiSysEventAdapter::EventType::BEHAVIOR,
+              {PAINT_VISIBLE_PAGES_TAME, std::to_string(paintVisiblePagesTime)});
 #endif
 }
 
@@ -3884,7 +3887,7 @@ void PDFiumEngine::OnSelectionPositionChanged() {
   // When searching for results, do not calculate the selection position to
   // hide the menu and handles.
   if (!is_finding_result_) {
-    OnSelectionPositionChangedForPDF(left, right, clipped_selection_bounds, selection_);
+    UpdateSelectionBoundsAndPositions(left, right, clipped_selection_bounds, selection_);
   }
 #else
   for (const auto& sel : selection_) {
@@ -3905,10 +3908,11 @@ void PDFiumEngine::OnSelectionPositionChanged() {
     left.set_x(0);
     left.set_y(0);
   }
-  client_->SelectionChanged(left, right);
 #if BUILDFLAG(ARKWEB_PDF)
-  client_->UpdateClientClippedSelectionBoundsForPDF(clipped_selection_bounds);
+  CheckSelectionVisibility(left, right, clipped_selection_bounds);
+  client_->ConvertAndUpdateSelectionBounds(clipped_selection_bounds);
 #endif  // BUILDFLAG(ARKWEB_PDF)
+  client_->SelectionChanged(left, right);
 }
 
 gfx::Size PDFiumEngine::ApplyDocumentLayout(

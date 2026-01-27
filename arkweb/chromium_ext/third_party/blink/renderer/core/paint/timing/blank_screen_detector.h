@@ -31,7 +31,7 @@ enum class BlankScreenDetectionMethod : int32_t {
   DETECTION_CONTENTFUL_NODES_SEVENTEEN = 0,
 };
 
-class BlankScreenDetector {
+class BlankScreenDetector : public GarbageCollected<BlankScreenDetector> {
  public:
   explicit BlankScreenDetector(LocalFrame* local_frame)
       : local_frame_(local_frame) {}
@@ -40,6 +40,7 @@ class BlankScreenDetector {
                          const std::vector<int32_t>& detection_methods,
                          int32_t contentful_nodes_count_threshold);
   void OnInputOrScroll();
+  void Trace(Visitor* visitor) const;
 
  private:
   void GenerateTestPointsByMethodDetection17(int32_t width, int32_t height);
@@ -53,7 +54,7 @@ class BlankScreenDetector {
   void GetPaintRects();
 
   base::OneShotTimer detection_task_;
-  Member<LocalFrame> local_frame_;
+  WeakMember<LocalFrame> local_frame_;
   std::vector<int32_t> task_delays_ms_;
   std::vector<gfx::Point> test_points_;
   std::vector<gfx::Rect> paint_rects_;
@@ -63,7 +64,6 @@ class BlankScreenDetector {
   WTF::String url_;
   const std::vector<int32_t> default_task_delays_ms_ = {1000, 3000, 5000};
   base::TimeTicks task_timestamp_;
-  base::WeakPtrFactory<BlankScreenDetector> weak_factory_{this};
 };
 
 }  // namespace blink

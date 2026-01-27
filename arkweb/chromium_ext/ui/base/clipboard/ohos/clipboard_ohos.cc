@@ -44,6 +44,10 @@
 #include "ui/gfx/color_space.h"
 #include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
 
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+#include "ohos_nweb/include/nweb_vault_plain_text_callback.h"
+#endif
+
 using namespace OHOS::NWeb;
 
 namespace ui {
@@ -255,45 +259,9 @@ class ClipboardOHOSInternal {
     }
   }
 
-  void UpdateClipboardDataRun() {
-    LOG(INFO) << "update clipboard data async";
-    UpdateClipboardData();
-  }
-
-  void OnUpdateClipboardData(Clipboard::UpdateClipboardDataCallback callback) {
-    if (!callback) {
-      LOG(ERROR) << "UpdateClipboardDataAsync Failed";
-      return;
-    }
-    std::move(callback).Run();
-  }
-
-  void UpdateClipboardData(Clipboard::UpdateClipboardDataCallback callback) {
-    LOG(INFO) << "Update clipboard data start";
-    base::ThreadPool::PostTaskAndReply(
-        FROM_HERE, {base::MayBlock(), base::TaskPriority::USER_VISIBLE},
-        base::BindOnce(&ClipboardOHOSInternal::UpdateClipboardDataRun,
-                       weak_ptr_factory_.GetWeakPtr()),
-        base::BindOnce(&ClipboardOHOSInternal::OnUpdateClipboardData,
-                       weak_ptr_factory_.GetWeakPtr(), std::move(callback)));
-  }
-
-  PasteRecordVector GetPasteDataFromSystem() {
-    auto records = std::make_shared<PasteRecordVector>();
-
-    OhosAdapterHelper::GetInstance().GetPasteBoard().GetPasteData(*records);
-    return (records ? *records : PasteRecordVector());
-  }
-
-  void UpdateClipboardData() {
-    if (state_ != ClipboardState::kOutOfDate) {
-      LOG(DEBUG) << "No need to update Clipboard";
-      return;
-    }
-    LOG(INFO) << "Update clipboard data, state=" << static_cast<int>(state_);
-
+  void UpdateClipboardDataFromRecords(PasteRecordVector record_vector) {
+    DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
     read_data_ = nullptr;
-    PasteRecordVector record_vector = GetPasteDataFromSystem();
     if (!record_vector.empty()) {
       // Notice: Because pasteboard observer dont notify cross device.
       // So now we always get data from system clipboard instead of cache data.
@@ -301,13 +269,64 @@ class ClipboardOHOSInternal {
       ClipboardOhosReadData::SetConvertHtmlCallback(convert_html_callback_);
       read_data_ = std::make_shared<ClipboardOhosReadData>(record_vector);
       return;
-    } else {
-      state_ = ClipboardState::kUpToDate;
     }
+
+    state_ = ClipboardState::kUpToDate;
     LOG(ERROR) << "UpdateClipboardData Failed";
     if (is_data_guard_enabled_) {
       state_ = ClipboardState::kInvalidDate;
     }
+  }
+
+  void UpdateClipboardData(Clipboard::UpdateClipboardDataCallback callback) {
+    DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
+    LOG(INFO) << "Update clipboard data start";
+    bool should_update = (state_ == ClipboardState::kOutOfDate);
+    base::ThreadPool::PostTaskAndReplyWithResult(
+        FROM_HERE, {base::MayBlock(), base::TaskPriority::USER_VISIBLE},
+        base::BindOnce(&ClipboardOHOSInternal::GetPasteDataFromSystemIfNeeded,
+                       should_update),
+        base::BindOnce(&ClipboardOHOSInternal::OnUpdateClipboardData,
+                       weak_ptr_factory_.GetWeakPtr(), should_update,
+                       std::move(callback)));
+  }
+
+  static PasteRecordVector GetPasteDataFromSystemIfNeeded(bool should_update) {
+    if (!should_update) {
+      return PasteRecordVector();
+    }
+    return GetPasteDataFromSystem();
+  }
+
+  static PasteRecordVector GetPasteDataFromSystem() {
+    PasteRecordVector records;
+    OhosAdapterHelper::GetInstance().GetPasteBoard().GetPasteData(records);
+    return records;
+  }
+
+  void OnUpdateClipboardData(bool should_update,
+                            Clipboard::UpdateClipboardDataCallback callback,
+                            PasteRecordVector record_vector) {
+    DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
+    if (should_update && state_ == ClipboardState::kOutOfDate) {
+      UpdateClipboardDataFromRecords(std::move(record_vector));
+    }
+    if (!callback) {
+      LOG(ERROR) << "UpdateClipboardDataAsync Failed";
+      return;
+    }
+    std::move(callback).Run();
+  }
+
+  void UpdateClipboardData() {
+    DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
+    if (state_ != ClipboardState::kOutOfDate) {
+      LOG(DEBUG) << "No need to update Clipboard";
+      return;
+    }
+    LOG(INFO) << "Update clipboard data, state=" << static_cast<int>(state_);
+
+    UpdateClipboardDataFromRecords(GetPasteDataFromSystem());
   }
 
   // Reads text from the ClipboardData.
@@ -438,7 +457,8 @@ class ClipboardOHOSInternal {
             FROM_HERE, {base::MayBlock(), base::TaskPriority::USER_BLOCKING},
             base::BindOnce(&clipboard_util::EncodeBitmapToPng, std::move(img)),
             base::BindOnce(&ClipboardOHOSInternal::DidGetPng,
-                           base::Unretained(this), std::move(callback)));
+                           weak_ptr_factory_.GetWeakPtr(), 
+                           std::move(callback)));
         SetOutOfDateAfterRead();
         return;
       }
@@ -599,6 +619,21 @@ class ClipboardOHOSInternal {
         data->CalculateSize(format, custom_data_format));
   }
 
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  bool HandlePasswordVault(
+      const std::shared_ptr<OHOS::NWeb::NWebVaultPlainTextCallback>& callback) {
+    if (!callback) {
+      LOG(INFO) << "callback is nullptr.";
+      return false;
+    }
+    auto& pasteboard = OhosAdapterHelper::GetInstance().GetPasteBoard();
+    if (!pasteboard.HasType(kMiscServicesMimeTypeAutoFillSecure)) {
+      return false;
+    }
+    return callback->ProcessAutoFillOnPaste();
+  }
+#endif
+
   static void SetSpanstringConvertHtml(
       std::shared_ptr<OHOS::NWeb::NWebSpanstringConvertHtmlCallback> callback) {
     convert_html_callback_ = callback;
@@ -617,47 +652,27 @@ class ClipboardOHOSInternal {
 
   bool HasFormatInMisc(ClipboardInternalFormat format) {
     UpdateClipboardData();
-    int allFormat = 0;
     if (!read_data_) {
       return false;
     }
-    PasteRecordVector record_vector = read_data_->GetPasteRecordVector();
-    const std::string SPAN_STRING_TAG = "openharmony.styled-string";
-    for (auto& record : record_vector) {
-      std::shared_ptr<std::string> html = record->GetHtmlText();
-      std::shared_ptr<std::string> text = record->GetPlainText();
-      std::shared_ptr<ClipBoardImageDataAdapterImpl> imgData =
-          std::make_shared<ClipBoardImageDataAdapterImpl>();
 
-      bool imgFlag = record->GetImgData(imgData);
-      std::shared_ptr<PasteCustomData> pasteCustomData =
-          record->GetCustomData();
-      if (pasteCustomData &&
-          (pasteCustomData->find(SPAN_STRING_TAG) != pasteCustomData->end())) {
-        allFormat |= static_cast<int>(ClipboardInternalFormat::kHtml);
-      }
-      if (html) {
-        allFormat |= static_cast<int>(ClipboardInternalFormat::kHtml);
-      }
-      if (text) {
-        allFormat |= static_cast<int>(ClipboardInternalFormat::kText);
-      }
-      if (imgFlag) {
-        allFormat |= static_cast<int>(ClipboardInternalFormat::kPng);
-        auto pixels = imgData->GetData();
-        if (pixels) {
-          free(pixels);
-        }
-      }
+    auto& pasteboard = OhosAdapterHelper::GetInstance().GetPasteBoard();
+    switch (format) {
+      case ClipboardInternalFormat::kText:
+        return pasteboard.HasType(kMiscServicesMimeTypeTextHtml) ||
+               pasteboard.HasType(kMiscServicesMimeTypeTextPlain);
+      case ClipboardInternalFormat::kHtml:
+        return pasteboard.HasType(kMiscServicesMimeTypeTextHtml);
+      case ClipboardInternalFormat::kPng:
+        return pasteboard.HasType(kMiscServicesMimeTypePixelmap);
+      case ClipboardInternalFormat::kCustom:
+        return read_data_->HasCustomData();
+      case ClipboardInternalFormat::kFilenames:
+        return pasteboard.HasType(kMiscServicesMimeTypeTextUri) ||
+               read_data_->HasFileUri();
+      default:
+        return false;
     }
-
-    if (read_data_->HasFileUri()) {
-      allFormat |= static_cast<int>(ClipboardInternalFormat::kFilenames);
-    }
-    if (read_data_->HasCustomData()) {
-      allFormat |= static_cast<int>(ClipboardInternalFormat::kCustom);
-    }
-    return allFormat & static_cast<int>(format);
   }
 
   bool ReadBitmapInternal(const std::shared_ptr<PasteDataRecordAdapter>& record,
@@ -1179,5 +1194,15 @@ void ClipboardOHOS::UpdateClipboardData(
     clipboard_internal_->UpdateClipboardData(std::move(callback));
   }
 }
+
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+bool ClipboardOHOS::HandlePasswordVault(
+    const std::shared_ptr<OHOS::NWeb::NWebVaultPlainTextCallback>& callback) {
+  if (clipboard_internal_) {
+    return clipboard_internal_->HandlePasswordVault(callback);
+  }
+  return false;
+}
+#endif
 
 }  // namespace ui

@@ -680,11 +680,11 @@ std::shared_ptr<PasteCustomData> PasteDataRecordAdapterImpl::GetCustomData()
     }
 
     auto customData = std::make_shared<PasteCustomData>();
-    unsigned char* entrys;
+    unsigned char* entrys = nullptr;
     char typeId[] = "ohos/custom-data";
     unsigned int count = 0;
     int getGeneralEntry_res = OH_UdmfRecord_GetGeneralEntry(record_, typeId, &entrys, &count);
-    if (getGeneralEntry_res != UDMF_E_OK) {
+    if (getGeneralEntry_res != UDMF_E_OK || !entrys) {
         WVLOG_E("GetGeneralEntry failed. error code is : %{public}d", getGeneralEntry_res);
         return nullptr;
     }
@@ -991,6 +991,7 @@ bool PasteBoardClientAdapterImpl::GetPasteData(PasteRecordVector& data)
     code = OH_AbilityRuntime_ApplicationContextGetCacheDir(cacheDir, NATIVE_BUFFER_SIZE, &cacheDirLength);
     if (code != ABILITY_RUNTIME_ERROR_CODE_NO_ERROR) {
         WVLOG_E("GetDistributedFilesDirOfApplicationContext failed:err=%{public}d", code);
+        OH_Pasteboard_GetDataParams_Destroy(params);
         return false;
     }
 
@@ -999,6 +1000,7 @@ bool PasteBoardClientAdapterImpl::GetPasteData(PasteRecordVector& data)
     int uriRes = PasteboardClientAdapterUtils::GetUriFromPath(cacheDir, cacheDirLength, &pcacheUri);
     if (uriRes != 0) {
         WVLOG_E("GetPasteData failed at GetUri. error code is: %{public}d.", uriRes);
+        OH_Pasteboard_GetDataParams_Destroy(params);
         return false;
     }
 
@@ -1057,8 +1059,7 @@ void PasteBoardClientAdapterImpl::SetPasteData(const PasteRecordVector& data, Co
 
     OH_UdmfData* uData = OH_UdmfData_Create();
     for (auto& record: data) {
-        PasteDataRecordAdapterImpl* rawRecord =
-            reinterpret_cast<PasteDataRecordAdapterImpl*>(record.get());
+        auto* rawRecord = static_cast<PasteDataRecordAdapterImpl*>(record.get());
         if (rawRecord == nullptr) {
             continue;
         }
@@ -1093,8 +1094,7 @@ void PasteBoardClientAdapterImpl::Clear()
         return;
     }
     for (auto& record: recordVector) {
-        PasteDataRecordAdapterImpl* rawRecord =
-            reinterpret_cast<PasteDataRecordAdapterImpl*>(record.get());
+        auto* rawRecord = static_cast<PasteDataRecordAdapterImpl*>(record.get());
         if (rawRecord == nullptr) {
             continue;
         }
@@ -1183,10 +1183,20 @@ int32_t PasteBoardClientAdapterImpl::AddPasteboardChangedObserver(
         //if subscribe failed, should remove and destroy observer
         if (ret != ERR_OK) {
             WVLOG_E("Subscribe pasteboard failed. error code is : %{public}d", ret);
-            ObserverMap::iterator iter = reg_.find(id);
-            if (iter != reg_.end()) {
-                (void)OH_PasteboardObserver_Destroy(iter->second);
-                reg_.erase(iter);
+            OH_PasteboardObserver* observerToDestroy = nullptr;
+            {
+                std::lock_guard<std::mutex> lock(mutex_);
+                ObserverMap::iterator iter = reg_.find(id);
+                if (iter != reg_.end()) {
+                    observerToDestroy = iter->second;
+                    reg_.erase(iter);
+                }
+            }
+            if (observerToDestroy != nullptr) {
+                int des_ret = OH_PasteboardObserver_Destroy(observerToDestroy);
+                if (des_ret != ERR_OK) {
+                    WVLOG_E("PasteboardObserver destroy failed. error code is : %{public}d", des_ret);
+                }
             }
         }
     }
@@ -1215,5 +1225,16 @@ void PasteBoardClientAdapterImpl::RemovePasteboardChangedObserver(
     if (ret != ERR_OK) {
         WVLOG_E("destroy observer failed. error code is : %{public}d", ret);
     }
+}
+
+bool PasteBoardClientAdapterImpl::HasType(const char* type)
+{
+    if (pasteboard_ == nullptr || type == nullptr) {
+        WVLOG_E("pasteboard_ or type is nullptr");
+        return false;
+    }
+    bool has = OH_Pasteboard_HasType(pasteboard_, type);
+    WVLOG_D("HasType query type:%{public}s, result:%{public}d", type, has);
+    return has;
 }
 } // namespace OHOS::NWeb

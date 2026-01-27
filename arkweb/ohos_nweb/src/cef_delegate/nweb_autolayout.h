@@ -34,14 +34,29 @@
 #include "base/json/json_reader.h"
 #include "base/values.h"
 #include "base/time/time.h"
+#include "third_party/re2/src/re2/re2.h"
+#include "third_party/re2/src/re2/stringpiece.h"
 
 namespace OHOS::NWeb {
+enum class AutoLayoutStrategyType : uint32_t {
+  kPopupScale = 1,
+  kAlphabetNavigator = 1 << 1
+};
+
+struct UrlRuleInfoEntry {
+  std::string urlPrefix;
+  std::unique_ptr<re2::RE2> urlPrefixPattern;
+  int strategy;
+  int alphabetIdentificationMinSize;
+  int alphabetHeightWidthMinRatio;
+};
 
 struct WhitelistEntry {
   std::string_view pattern;
   std::string_view getID;
   std::string_view getPage;
   std::optional<base::Value::List> appRuleInfos;
+  std::optional<std::vector<UrlRuleInfoEntry>> urlRuleInfos;
 };
 
 struct ParsedCCMConfig {
@@ -50,7 +65,16 @@ struct ParsedCCMConfig {
   int min_content_area_ratio_threshold;
   int scale_animation_duration;
   int minScaleFactor;
-  std::unordered_map<std::string_view, WhitelistEntry> whitelist;
+  int alphabet_identification_min_size;
+  int alphabet_height_width_min_ratio;
+  WhitelistEntry whitelist;
+};
+
+struct RangeLimits {
+  int min;
+  int max;
+  bool inclusive_min;
+  bool inclusive_max;
 };
 
 namespace ConfigConstants {
@@ -62,10 +86,15 @@ constexpr int kMinContentAreaRatioThreshold = 10;
 constexpr int kMaxContentAreaRatioThreshold = 100;
 constexpr int kMinScaleAnimationDuration = 50;
 constexpr int kMaxScaleAnimationDuration = 400;
-constexpr int kMinScaleFactor = 55;
+constexpr int kMinScaleFactor = 30;
 constexpr int kMaxScaleFactor = 100;
+constexpr int kMinAlphabetIdentificationMinSize = 0;
+constexpr int kMaxAlphabetIdentificationMinSize = 26;
+constexpr int kMinAlphabetHeightWidthMinRatio = 0;
+constexpr int kMaxAlphabetHeightWidthMinRatio = 30;
+constexpr int kInvalidValue = -1;
 
-
+constexpr std::string_view kCCMConfigPath = "/sys_prod/etc/web/WebAutoLayoutConfig.json";
 constexpr std::string_view kMinMaskAreaRatioThresholdKey = "minMaskAreaRatioThreshold";
 constexpr std::string_view kOpacityFilterKey = "opacityFilter";
 constexpr std::string_view kMinContentAreaRatioThresholdKey = "minContentAreaRatioThreshold";
@@ -79,11 +108,18 @@ constexpr std::string_view kIdKey = "id";
 constexpr std::string_view kPgKey = "pg";
 constexpr std::string_view kWildcard = "*";
 constexpr std::string_view kMinDesScaleKey = "minScaleFactor";
-constexpr std::string_view kMinDesScale = "const.product.web.minScaleFactor";
 constexpr std::string_view kConfigPath = "const.product.web.alconfig";
 
+constexpr std::string_view kAlphabetAutoLayoutBegin = "AutoLayout.Main.alphabetStart(`";
 constexpr std::string_view kAutoLayoutBegin = "AutoLayout.Main.start(`";
 constexpr std::string_view kAutoLayoutEnd = "`);";
+
+constexpr std::string_view kUrlRuleInfosKey = "urlRuleInfos";
+constexpr std::string_view kUrlPrefixKey = "urlPrefix";
+constexpr std::string_view kStrategyKey = "strategy";
+constexpr std::string_view kAlphabetIdentificationMinSizeKey = "alphabetIdentificationMinSize";
+constexpr std::string_view kAlphabetHeightWidthMinRatioKey = "alphabetHeightWidthMinRatio";
+constexpr std::string_view kNeedCheckIdAndPageKey = "needCheckIdAndPage";
 }
 
 class ScopedTimeLogger {
@@ -120,13 +156,20 @@ class NwebAutolayout {
   bool Parse(const base::Value& root);
   bool ParseToplevelConfig(const base::Value::Dict& root_dict);
   bool ParseWhitelist(const base::Value::Dict& whitelist_list);
-  bool ParseWhitelistEntry(std::string_view app_bundle_name_sv, const base::Value::Dict& whitelist_dict);
+  bool ParseWhitelistEntry(const base::Value::Dict& whitelist_dict);
+  std::optional<base::Value::List> ParseAppRuleInfo(
+      const base::Value::Dict& whitelist_dict, WhitelistEntry& current_entry);
+  std::optional<std::vector<UrlRuleInfoEntry>> ParseUrlRuleInfo(const base::Value::Dict& whitelist_dict);
   void LoadAutoLayoutFromHap();
   std::optional<int> ParseInt(std::string_view input);
 
+  std::string CreateH5AutoLayoutParam(const UrlRuleInfoEntry& urlRuleInfo);
+  void ApplyH5AutoLayoutStrategy(const UrlRuleInfoEntry& url_rule_entry, CefRefPtr<CefFrame> frame);
+  const UrlRuleInfoEntry* FindBestMatchRule(const std::string& current_url) const;
+
   ParsedCCMConfig mCCMConfig_;
   std::string mAppBundleName_;
-  WhitelistEntry* mWListEntry_;
+  WhitelistEntry* mWListEntry_ = nullptr;
   bool mEnable_ = true;
   std::string mAutoLayoutJSSource_;
   std::string mPatternJSSource_;

@@ -58,8 +58,6 @@ PaintImage ImageExt::ClipResizeAndOrientImage(
   transform.ScaleNonUniform(image_scale.x(), image_scale.y());
 
   if (size.IsEmpty()) {
-    LOG(INFO) << "DragDrop Clip resize and orient image but the size is empty.";
-
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
     LOG_FEEDBACK(INFO)
         << "DragDrop Clip resize and orient image but the size is empty.";
@@ -71,8 +69,6 @@ PaintImage ImageExt::ClipResizeAndOrientImage(
   if (transform.IsIdentity() && opacity == 1 &&
       clip_rect.width() == image.width() &&
       clip_rect.height() == image.height()) {
-    LOG(INFO) << "DragDrop Nothing to adjust drag image, just use the original";
-
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
     LOG_FEEDBACK(INFO)
         << "DragDrop Nothing to adjust drag image, just use the original";
@@ -117,11 +113,6 @@ PaintImage ImageExt::ClipResizeAndOrientImage(
                         dst_rect, sampling, &paint,
                         SkCanvas::kFast_SrcRectConstraint);
 
-  LOG(INFO) << "DragDrop Create a clipped drag image(" << clip_rect.ToString()
-            << ") from intrinsic(" << image.width() << "*" << image.height()
-            << ") to visual size(" << clip_size.width() << "*"
-            << clip_size.height() << "), opacity=" << opacity;
-
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
   LOG_FEEDBACK(INFO) << "DragDrop Create a clipped drag image("
                      << clip_rect.ToString() << ") from intrinsic("
@@ -129,6 +120,7 @@ PaintImage ImageExt::ClipResizeAndOrientImage(
                      << ") to visual size(" << clip_size.width() << "*"
                      << clip_size.height() << "), opacity=" << opacity;
 #endif
+
   return PaintImageBuilder::WithProperties(std::move(image))
       .set_image(surface->makeImageSnapshot(), PaintImage::GetNextContentId())
       .TakePaintImage();

@@ -141,6 +141,10 @@ component("adapter_ndk") {
     "net_event_adapter/net_event_adapter_impl.cpp",
     "arkts_adapter/arkts_hilog_adapter.h",
     "arkts_adapter/arkts_hilog_adapter.cpp",
+    "security_adapter/arkts_security_adapter_impl.h",
+    "security_adapter/arkts_security_adapter_impl.cpp",
+    "ability_runtime_adapter/native_ability_runtime_adapter_impl.h",
+    "ability_runtime_adapter/native_ability_runtime_adapter_impl.cpp",
   ]
 
   include_dirs = [
@@ -159,6 +163,7 @@ component("adapter_ndk") {
   if (target_cpu == "arm" || target_cpu == "arm64" || target_cpu == "x86_64") {
     include_dirs += [ "//ohos_sdk/openharmony/native/sysroot/usr/include/bundle" ]
   }
+  include_dirs += [ "//ohos_sdk/openharmony/native/sysroot/usr/include/multimedia/image_framework/image" ]
 
   if (target_cpu == "arm64") {
     libs = [ "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libffrt.z.so",

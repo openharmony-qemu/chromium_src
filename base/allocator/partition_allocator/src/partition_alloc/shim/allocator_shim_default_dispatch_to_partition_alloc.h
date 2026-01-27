@@ -181,7 +181,7 @@ PA_ALWAYS_INLINE void ConfigurePartitionsForTesting() {
   size_t scheduler_loop_quarantine_capacity_in_bytes = 0;
   auto zapping_by_free_flags = ZappingByFreeFlags(false);
   auto eventually_zero_freed_memory = EventuallyZeroFreedMemory(false);
-  auto fewer_memory_regions = FewerMemoryRegions(false);
+  auto fewer_memory_regions = FewerMemoryRegions(true);
   auto use_pool_offset_freelists = UsePoolOffsetFreelists(true);
   auto use_small_single_slot_spans = UseSmallSingleSlotSpans(true);
 

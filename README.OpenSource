@@ -4,7 +4,7 @@
         "License":"BSD-3-Clause",
         "License File": "LICENSE.chromium_os",
         "Version Number": "4d72a4ae68dd2ebf3b4e330683c613eb58ac80b2",
-        "Owner": "zouzhiwe2@huawei.com",
+        "Owner": "huamengzheng@huawei.com",
         "Upstream URL": "https://chromium.googlesource.com/chromium@4d72a4ae68dd2ebf3b4e330683c613eb58ac80b2",
         "Description": "chromium src主仓"
     }

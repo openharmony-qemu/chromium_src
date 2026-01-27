@@ -819,6 +819,7 @@ bool ContentBrowserClient::CanCreateWindow(
     const GURL& target_url,
     WindowOpenDisposition disposition,
     bool user_gesture,
+    const gfx::Rect& window_features,
     content::mojom::FrameHost::GetCreateNewWindowCallback callback) {
   std::move(callback).Run(mojom::CreateNewWindowStatus::kBlocked);
   return false;

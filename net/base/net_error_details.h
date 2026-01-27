@@ -41,7 +41,8 @@ struct NET_EXPORT NetErrorDetails {
   bool quic_port_migration_detected = false;
   bool quic_connection_migration_attempted = false;
   bool quic_connection_migration_successful = false;
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)\
+  || BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
   bool stream_created = false;
 #endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
 };

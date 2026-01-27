@@ -151,8 +151,12 @@
 #include "arkweb/build/features/features.h"
 #include "cc/trees/layer_tree_impl_utils.h"
 
-#if BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SLIDE)
+#if BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SLIDE) || BUILDFLAG(ARKWEB_THROTTLE_FRAME)
 #include "cc/trees/layer_tree_host_impl_for_include.cc"
+#endif
+
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 #endif
 
 #if BUILDFLAG(IS_ARKWEB)
@@ -3092,7 +3096,11 @@ viz::CompositorFrame LayerTreeHostImpl::GenerateCompositorFrame(
     // There are main-thread, high frequency impl-thread animations, or input
     // events.
     frame_rate_estimator_.WillDraw(CurrentBeginFrameArgs().frame_time);
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+    preferred_frame_interval = ThrottleFrameEnd();
+#else
     preferred_frame_interval = frame_rate_estimator_.GetPreferredInterval();
+#endif
   }
 
   metadata.activation_dependencies = std::move(frame->activation_dependencies);
@@ -3443,11 +3451,39 @@ void LayerTreeHostImpl::DidFinishImplFrame(const viz::BeginFrameArgs& args) {
 
 void LayerTreeHostImpl::DidNotProduceFrame(const viz::BeginFrameAck& ack,
                                            FrameSkippedReason reason) {
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  TRACE_EVENT2(
+    "cc,benchmark", "LayerTreeHostImpl::DidNotProduceFrame",
+    "FrameSkippedReason",
+    [](FrameSkippedReason reason) {
+      switch(reason) {
+        case FrameSkippedReason::kRecoverLatency:
+          return "kRecoverLatency";
+        case FrameSkippedReason::kNoDamage:
+          return "kNoDamage";
+        case FrameSkippedReason::kWaitingOnMain:
+          return "kWaitingOnMain";
+        case FrameSkippedReason::kDrawThrottled:
+          return "kDrawThrottled";
+      }
+      return "";
+    }(reason),
+    "Frame Sequence Number", ack.frame_id.sequence_number);
+#endif
   frame_rate_estimator_.DidNotProduceFrame();
+
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+  frame_rate_estimator_.DidNotProduceFrameWithReason(reason);
+#endif
   if (layer_tree_frame_sink_) {
     static const bool feature_allowed = base::FeatureList::IsEnabled(
         features::kThrottleFrameRateOnManyDidNotProduceFrame);
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+    if (feature_allowed || IsThrottleEnable()) {
+      ThrottleFrameStart();
+#else
     if (feature_allowed) {
+#endif
       viz::BeginFrameAck adjust_ack = ack;
       adjust_ack.preferred_frame_interval =
           frame_rate_estimator_.GetPreferredInterval();

@@ -552,6 +552,10 @@ struct URLRequest {
   // True for download request.
   [EnableIf=arkweb_ex_download]
   bool is_download_request = false;
+
+  [EnableIf=arkweb_ex_download]
+ 	bool is_triggered_by_download;
+
   // The socket tag to associate this request with. This is typically set by the
   // embedder.
   SocketTag socket_tag;
@@ -577,6 +581,11 @@ struct URLRequest {
   [EnableIf=is_android_or_arkweb_cookie]
   bool disable_web_security_;
   // #endif
+
+  [EnableIf=arkweb_ex_fallback_proxy]
+  bool retry_with_fallback_proxy;
+  [EnableIf=arkweb_ex_fallback_proxy]
+  int32 original_error_code;
 };
 
 // URLRequestBody represents body (i.e. upload data) of a HTTP request.

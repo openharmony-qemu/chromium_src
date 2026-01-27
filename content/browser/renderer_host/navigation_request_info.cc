@@ -39,7 +39,13 @@ NavigationRequestInfo::NavigationRequestInfo(
     int64_t navigation_id,
     bool shared_storage_writable_eligible,
     bool is_ad_tagged,
-    bool force_no_https_upgrade)
+    bool force_no_https_upgrade
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+    ,
+    bool retry_with_fallback_proxy,
+    int original_error_code
+#endif
+    )
     : common_params(std::move(common_params)),
       begin_params(std::move(begin_params)),
       sandbox_flags(sandbox_flags),
@@ -67,7 +73,14 @@ NavigationRequestInfo::NavigationRequestInfo(
       navigation_id(navigation_id),
       shared_storage_writable_eligible(shared_storage_writable_eligible),
       is_ad_tagged(is_ad_tagged),
-      force_no_https_upgrade(force_no_https_upgrade) {}
+      force_no_https_upgrade(force_no_https_upgrade)
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+      ,
+      retry_with_fallback_proxy(retry_with_fallback_proxy),
+      original_error_code(original_error_code)
+#endif
+{
+}
 
 NavigationRequestInfo::~NavigationRequestInfo() {}
 

@@ -389,13 +389,17 @@ bool BackgroundTaskPolicy::GetWebAudioStartBackgroundTaskOnUIThread() {
     if (!render_frame_host) {
         continue;
     }
-    auto webContent = content::WebContents::FromRenderFrameHost(render_frame_host);
-    if (!webContent) {
-        LOG(ERROR) << "GetWebAudioStartBackgroundTaskOnUIThread get webContent "
-                      "failed.";
+    if (!render_frame_host->IsRenderFrameLive()) {
         continue;
     }
-    result = webContent->OnStartBackgroundTask(WEB_AUDIO_PLAYBACK,
+    auto web_content = content::WebContents::FromRenderFrameHost(render_frame_host);
+    if (!web_content || web_content->IsBeingDestroyed() ||
+        !web_content->GetPrimaryMainFrame()) {
+        LOG(ERROR) << "GetWebAudioStartBackgroundTaskOnUIThread get web_content "
+                      "failed or it is being destroyed or get PrimaryMainFrame failed.";
+        continue;
+    }
+    result = web_content->OnStartBackgroundTask(WEB_AUDIO_PLAYBACK,
                                                "web audio playback scenarios");
     if (result) {
         break;

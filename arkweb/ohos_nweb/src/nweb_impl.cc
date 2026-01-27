@@ -43,6 +43,11 @@
 #include "components/web_cache/browser/web_cache_manager.h"
 #include "arkweb/ohos_adapter_ndk/ohos_adapter_helper_ext.h"
 #include "arkweb/chromium_ext/components/web_cache/browser/web_cache_manager_utils.h"
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#include "base/path_service.h"
+#include "base/files/file_path.h"
+#include "chrome/common/chrome_paths.h"
+#include "chrome/common/chrome_switches.h"
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_MEMORY_THRESHOLD)
 #include "base/memory/memory_pressure_listener.h"
@@ -264,6 +269,7 @@ extern bool g_siteIsolationMode;
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
 #include "content/browser/gpu/gpu_process_host.h"
 #include "services/viz/privileged/mojom/gl/gpu_service.mojom.h"
+#include "arkweb/chromium_ext/base/debug/arkweb_dump_info.h"
 #endif
 
 #include "net/proxy_resolution/proxy_config_service_ohos.h"
@@ -336,6 +342,7 @@ bool OHOS::NWeb::NWebImpl::should_lazy_init_web_engine_ = false;
 #if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
 #include "base/ohos/sys_info_utils_ext.h"
 #endif
+
 namespace {
 uint32_t g_nweb_count = 0;
 const uint32_t kSurfaceMaxWidth = 7680;
@@ -953,8 +960,57 @@ void InitialWebEngineArgs(
   }
 
   auto args_to_add = GetArgsToAdd(init_args);
+
+  bool isSeparation = false;
   for (auto arg : args_to_add) {
+    if (arg.find(switches::kUserDataDirSeparation) != std::string::npos) {
+ 	    isSeparation = true;
+    }
+  }
+
+  if (!isSeparation) {
+    args_to_add.push_back("--user-data-dir=cache/web");
+  } else {
+    args_to_add.push_back("--user-data-dir=");
+  }
+
+  args_to_add.push_back("--arkweb-app-data-dir=/data/storage/el2/base");
+
+  base::FilePath user_data_dir = base::FilePath();
+  base::FilePath app_data_dir = base::FilePath("/data/storage/el2/base");
+  for (auto arg : args_to_add) {
+    if (arg.find("--user-data-dir") != std::string::npos) {
+      size_t eq_pos = arg.find("=");
+      if (eq_pos != std::string::npos) {
+        std::string path_str = arg.substr(eq_pos + 1);
+        user_data_dir = base::FilePath(path_str);
+      }
+    }
+    if (arg.find("--arkweb-app-data-dir") != std::string::npos) {
+      size_t eq_pos = arg.find("=");
+      if (eq_pos != std::string::npos) {
+        std::string path_str = arg.substr(eq_pos + 1);
+        app_data_dir = base::FilePath(path_str);
+      }
+    }
     web_engine_args.emplace_back(arg);
+  }
+
+  base::FilePath cache_web_dir = base::FilePath("/data/storage/el2/base/cache/web");
+  if (base::PathExists(cache_web_dir)) {
+    web_engine_args.emplace_back("--ohos-cache-dir-exists");
+  }
+
+  base::FilePath absolute_user_data_dir = user_data_dir;
+  if (!app_data_dir.IsParent(user_data_dir) &&
+      app_data_dir != user_data_dir) {
+    absolute_user_data_dir = user_data_dir.empty() ?
+                    app_data_dir.Append("files/__arkweb") :
+                    app_data_dir.Append(user_data_dir);
+  }
+
+  if (base::PathExists(absolute_user_data_dir)) {
+    web_engine_args.emplace_back("--ohos-user-data-dir-exists");
   }
 
 #if BUILDFLAG(ARKWEB_GWP_ASAN)
@@ -981,7 +1037,7 @@ void InitialWebEngineArgs(
     web_engine_args.emplace_back(arg);
   }
 #endif  // BUILDFLAG(IS_ARKWEB_EXT)
-  
+
   std::string oemmode = OHOS::NWeb::OhosAdapterHelper::GetInstance()
                             .GetSystemPropertiesInstance().GetStringParameter("const.boot.oemmode", "");
   LOG(INFO) << "const.boot.oemmode: " << oemmode;
@@ -995,7 +1051,7 @@ void InitialWebEngineArgs(
             web_engine_args.emplace_back(arg);
           }
           LOG(INFO) << "ohos connamd line args analysis from ohos-command-line file succ.";
-      }  
+      }
   } else {
     LOG(INFO) << "oemmode is not rd or ohos-command-line does not exist.";
   }
@@ -1028,7 +1084,7 @@ void MigratePasswordsToPasswordVault() {
     g_browser_process->local_state()->SetInteger(browser_prefs::kMigrationCount, count + 1);
     g_browser_process->local_state()->CommitPendingWrite();
     if (count <= kMigrationBase || (count % kMigrationBase == 0 && count <= kMigrationMaxCount)) {
-      std::shared_ptr<OHOS::NWeb::NWebWebStorageImpl> nweb_web_storage = 
+      std::shared_ptr<OHOS::NWeb::NWebWebStorageImpl> nweb_web_storage =
           std::make_shared<OHOS::NWeb::NWebWebStorageImpl>();
       nweb_web_storage->MigratePasswords();
     } else if (count > kMigrationMaxCount) {
@@ -1087,10 +1143,6 @@ WebDestroyMode NWebImpl::webDestroyMode_ = WebDestroyMode::NORMAL_MODE;
 ScrollbarMode NWebImpl::scrollbarMode_ = ScrollbarMode::OVERLAY_LAYOUT_SCROLLBAR;
 bool NWebImpl::scrollbarModeChanged_ = false;
 
-#if BUILDFLAG(ARKWEB_SOFTKEYBOARD_AVOID)
- WebSoftKeyboardBehaviorMode NWebImpl::keyboardBehaviorMode_ = WebSoftKeyboardBehaviorMode::DEFAULT;
-#endif
- 
 // static
 std::shared_ptr<NWeb> NWebImpl::CreateNWeb(
     std::shared_ptr<NWebCreateInfo> create_info) {
@@ -1344,12 +1396,6 @@ bool NWebImpl::Init(std::shared_ptr<NWebCreateInfo> create_info) {
     return false;
   }
 
-#if BUILDFLAG(ARKWEB_NETWORK_PROXY)
-  OHOS::NWeb::OhosAdapterHelper::GetInstance()
-      .GetNetProxyInstance()
-      .StartListen();
-#endif
-
 #if BUILDFLAG(ARKWEB_SITE_ISOLATION)
   g_siteIsolationMode = ShouldEnableSiteIsolation();
   OHOS::NWeb::ResSchedClientAdapter::ReportSiteIsolationMode(
@@ -1363,7 +1409,10 @@ bool NWebImpl::Init(std::shared_ptr<NWebCreateInfo> create_info) {
   if (!g_logger_callback_initialized) {
     g_logger_callback_initialized = true;
     base::ohos::SetUploadCallback(UploadCallback);
-    base::ohos::SetReportStatisticTaskRunner();
+    if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+      ::switches::kEnableNwebEx)) {
+      base::ohos::SetReportStatisticTaskRunner();
+    }
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
     NWebHandlerDelegate::RegisterLoggerCallback(g_logger_callback);
 #endif
@@ -1375,6 +1424,13 @@ bool NWebImpl::Init(std::shared_ptr<NWebCreateInfo> create_info) {
     OHOS::NWeb::NWebSafeBrowsingUAPushConfig::GetInstance().EnableUAPushConfig(
         kDefaultConfigId, true);
   });
+#endif
+
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+  if (base::debug::ArkWebDumpInfo::GetInstance().IsDumpEnabled()) {
+    std::string dumpNWebInfo = base::StringPrintf("NWeb Init, nweb_id = %u", nweb_id_);
+    base::debug::ArkWebDumpInfo::GetInstance().FormatAndWriteNWebDumpInfo(dumpNWebInfo);
+  }
 #endif
   return true;
 }
@@ -1455,17 +1511,18 @@ void NWebImpl::OnDestroy() {
     WVLOG_W("NWebImpl::OnDestroy, input_handler_ is nullptr");
   }
 
-#if BUILDFLAG(ARKWEB_NETWORK_PROXY)
-  OHOS::NWeb::OhosAdapterHelper::GetInstance()
-      .GetNetProxyInstance()
-      .StopListen();
-#endif
-
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
   // Report nweb instance count
   ReportMultiInstanceStats(nweb_id_, g_nweb_count, g_nweb_max_count);
 #endif
   NWebConnectNativeManager::GetInstance()->UnRegisterNWebHandler(nweb_id_);
+
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+  if (base::debug::ArkWebDumpInfo::GetInstance().IsDumpEnabled()) {
+    std::string dumpNWebInfo = base::StringPrintf("NWeb destroy, nweb_id = %u", nweb_id_);
+    base::debug::ArkWebDumpInfo::GetInstance().FormatAndWriteNWebDumpInfo(dumpNWebInfo);
+  }
+#endif
 }
 
 void NWebImpl::ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args) {
@@ -1702,6 +1759,21 @@ void NWebImpl::SetNWebHandler(std::shared_ptr<NWebHandler> client) {
   client->SetNWeb(shared_from_this());
 }
 
+#if BUILDFLAG(ARKWEB_AI)
+void NWebImpl::SetNWebAgentHandler(
+    std::shared_ptr<NWebAgentHandler> agent_handler) {
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E(
+        "set nweb agent handler failed, nweb delegate is nullptr, nweb_id = "
+        "%{public}u",
+        nweb_id_);
+    return;
+  }
+
+  nweb_delegate_->RegisterNWebAgentHandler(agent_handler);
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
 void NWebImpl::DisableBoost(uint32_t nweb_id) {
   std::shared_ptr<NWebImpl> newb_impl = GetNWebSharedPtr(nweb_id);
@@ -1758,6 +1830,14 @@ void NWebImpl::Resize(uint32_t width, uint32_t height, bool isKeyboard) {
 #endif
   nweb_delegate_->Resize(width, height, isKeyboard);
   output_handler_->Resize(width, height);
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+  if (base::debug::ArkWebDumpInfo::GetInstance().IsDumpEnabled()) {
+    std::string dumpNWebInfo = base::StringPrintf(
+          "NWeb Resize, nweb_id = %u, width = %u, height = %u, isKeyboard = %u",
+          nweb_id_, width, height, isKeyboard);
+    base::debug::ArkWebDumpInfo::GetInstance().FormatAndWriteNWebDumpInfo(dumpNWebInfo);
+  }
+#endif
 }
 
 void NWebImpl::ResizeVisibleViewport(uint32_t width,
@@ -2219,6 +2299,13 @@ void NWebImpl::PutOptimizeParserBudgetEnabled(bool enable) {
   nweb_delegate_->PutOptimizeParserBudgetEnabled(enable);
 }
 
+void NWebImpl::NotifyPopupWindowDisposition(
+      CefLifeSpanHandler::WindowOpenDisposition disposition) {
+  if (disposition == CEF_WOD_NEW_BACKGROUND_TAB) {
+    is_pause_ = true;
+  }
+}
+
 void NWebImpl::OnPause() {
   if (!GetWebOptimizationValue()) {
     LOG(DEBUG) << "WebOptimization disabled.";
@@ -2383,6 +2470,15 @@ std::shared_ptr<NWebPreference> NWebImpl::GetPreference() {
   return nweb_delegate_->GetPreference();
 }
 
+#if BUILDFLAG(ARKWEB_AI)
+std::shared_ptr<NWebAgentManager> NWebImpl::GetAgentManager() {
+  if (nweb_delegate_ == nullptr) {
+    return nullptr;
+  }
+  return nweb_delegate_->GetAgentManager();
+}
+#endif  // BUILDFLAG(ARKWEB_AI)
+
 std::string NWebImpl::Title() {
   if (nweb_delegate_ == nullptr) {
     return "";
@@ -2493,6 +2589,25 @@ void NWebImpl::FillAutofillDataV2(std::shared_ptr<NWebRomValue> data) {
     return;
   }
   nweb_delegate_->FillAutofillDataV2(data);
+}
+
+void NWebImpl::FillAutofillDataFromTriggerType(
+    std::shared_ptr<NWebRomValue> data, const NWebAutoFillTriggerType& type) {
+  LOG(INFO) << "NWebImpl::FillAutofillDataFromTriggerType";
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("JSAPI nweb_delegate_ its null");
+    return;
+  }
+  nweb_delegate_->FillAutofillDataFromTriggerType(data, static_cast<int32_t>(type));
+}
+
+void NWebImpl::PutVaultPlainTextCallback(
+    std::shared_ptr<NWebVaultPlainTextCallback> callback) {
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("JSAPI nweb_delegate_ its null");
+    return;
+  }
+  nweb_delegate_->PutVaultPlainTextCallback(callback);
 }
 
 void NWebImpl::OnAutofillCancel(const std::string& fillContent) {
@@ -2739,7 +2854,7 @@ void NWebImpl::RegisterArkJSfunction(
       object_name, method_list, async_method_list, object_id, "");
 }
 
-void NWebImpl::RegisterArkJSfunction(
+void NWebImpl::RegisterArkJSfunctionV2(
     const std::string& object_name,
     const std::vector<std::string>& method_list,
     const std::vector<std::string>& async_method_list,
@@ -3537,10 +3652,16 @@ void NWebImpl::NotifyMemoryLevel(int32_t level) {
 #if BUILDFLAG(ARKWEB_PERFORMANCE_MEMORY_THRESHOLD)
   using MemoryPressureLevel = base::MemoryPressureListener::MemoryPressureLevel;
   static constexpr int32_t kMemoryLevelModerate = 0;
+  static constexpr int32_t kMemoryLevelMax = 3;
   static constexpr base::TimeDelta kNotifyGapTime = base::Seconds(3);
   static MemoryPressureLevel last_memory_level =
       MemoryPressureLevel::MEMORY_PRESSURE_LEVEL_NONE;
   static base::Time last_notify_time;
+
+  if (level >= kMemoryLevelMax) {
+    LOG(WARNING) << "The memory level >= kMemoryLevelMax(3), not supported";
+    return;
+  }
 
   base::Time now = base::Time::Now();
   MemoryPressureLevel memory_pressure_level;
@@ -3564,6 +3685,15 @@ void NWebImpl::NotifyMemoryLevel(int32_t level) {
                     : "MEMORY_PRESSURE_LEVEL_CRITICAL");
   base::MemoryPressureListener::NotifyMemoryPressure(memory_pressure_level);
 #endif  // ARKWEB_PERFORMANCE_MEMORY_THRESHOLD
+}
+
+void NWebImpl::SetIsOfflineWebComponent() {
+  WVLOG_D("NWebImpl::SetIsOfflineWebComponent");
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("SetIsOfflineWebComponent nweb delegate is null");
+    return;
+  }
+  nweb_delegate_->SetIsOfflineWebComponent();
 }
 
 void NWebImpl::OnWebviewHide() {
@@ -3598,6 +3728,12 @@ void NWebImpl::OnRenderToBackground() {
     return;
   }
   nweb_delegate_->OnWindowHide();
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+  if (base::debug::ArkWebDumpInfo::GetInstance().IsDumpEnabled()) {
+    std::string dumpNWebInfo = base::StringPrintf("OnWindowHide, nweb_id = %u", nweb_id_);
+    base::debug::ArkWebDumpInfo::GetInstance().FormatAndWriteNWebDumpInfo(dumpNWebInfo);
+  }
+#endif
 }
 
 void NWebImpl::OnRenderToForeground() {
@@ -3611,6 +3747,12 @@ void NWebImpl::OnRenderToForeground() {
     return;
   }
   nweb_delegate_->OnWindowShow();
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+  if (base::debug::ArkWebDumpInfo::GetInstance().IsDumpEnabled()) {
+    std::string dumpNWebInfo = base::StringPrintf("OnWindowShow, nweb_id = %u", nweb_id_);
+    base::debug::ArkWebDumpInfo::GetInstance().FormatAndWriteNWebDumpInfo(dumpNWebInfo);
+  }
+#endif
 }
 
 void NWebImpl::OnOnlineRenderToForeground() {
@@ -3828,7 +3970,7 @@ void NWebImpl::PrefetchPage(
 void NWebImpl::PrefetchPageV2(
     const std::string& url,
     const std::map<std::string, std::string>& additional_http_headers,
-    int32_t min_time_between_prefetches, 
+    int32_t min_time_between_prefetches,
     bool ignore_cache_control_no_store) {
 #if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
   if (nweb_delegate_ == nullptr) {
@@ -3841,7 +3983,7 @@ void NWebImpl::PrefetchPageV2(
                         header.second.c_str());
   }
   output.append("\r\n");
-  nweb_delegate_->PrefetchPage(PrefetchOptions(url, output, 
+  nweb_delegate_->PrefetchPage(PrefetchOptions(url, output,
     min_time_between_prefetches, ignore_cache_control_no_store));
 #endif  // BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
 }
@@ -3993,8 +4135,8 @@ void NWebImpl::RunJavaScriptInFrames(RunJavaScriptParam param,
   if (callback == nullptr) {
     LOG(WARNING) << "NWebImpl::RunJavaScriptInFrames callback is nullptr";
     return;
-  } 
- 
+  }
+
   nweb_delegate_->RunJavaScriptInFrames(param, callback);
 }
 
@@ -4010,6 +4152,21 @@ void NWebImpl::OpenDevtools(std::unique_ptr<OpenDevToolsParam> param) {
     return;
   }
   nweb_delegate_->OpenDevtoolsWith(nweb->nweb_delegate_, std::move(param));
+}
+
+void NWebImpl::OpenDevtoolsByPb(std::unique_ptr<OpenDevToolsParam> param,
+                      OpenDevToolsExtOpt& ext_opt) {
+  if (nweb_delegate_ == nullptr) {
+    LOG(WARNING) << "OpenDevtoolsV2 failed, no nweb_delegate";
+    return;
+  }
+  int32_t devtools_nweb_id = param->nweb_id;
+  NWebImpl* nweb = NWebImpl::FromID(devtools_nweb_id);
+  if (!nweb) {
+    LOG(WARNING) << "OpenDevtoolsV2 failed, no nweb";
+    return;
+  }
+  nweb_delegate_->OpenDevtoolsWithByPb(nweb->nweb_delegate_, std::move(param), ext_opt);
 }
 
 void NWebImpl::CloseDevtools() {
@@ -5979,7 +6136,7 @@ static void ApplySiteIsolationMode(bool mode){
   OHOS::NWeb::ResSchedClientAdapter::ReportSiteIsolationMode(
       g_siteIsolationMode);
   ReportSiteIsolationMode(std::to_string(g_siteIsolationMode));
-  g_siteIsolationModeInitValue = 
+  g_siteIsolationModeInitValue =
     (g_siteIsolationMode == true) ? SiteIsolationInitMode::STRICT : SiteIsolationInitMode::PARTIAL;
   LOG(INFO) << "Final site isolation mode set to:" << g_siteIsolationMode;
 }
@@ -6230,6 +6387,36 @@ void NWebImpl::SetUserAgentForHosts(const std::string& user_agent,
                                     const std::vector<std::string>& hosts) {
   AlloyBrowserUAConfig::GetInstance()->SetUserAgentForHosts(user_agent, hosts);
 }
+
+bool NWebImpl::GetUserAgentClientHintsEnabled() {
+  return AlloyBrowserUAConfig::GetInstance()->GetUserAgentClientHintsEnabled();
+}
+
+void NWebImpl::SetUserAgentClientHintsEnabled(bool enabled) {
+  AlloyBrowserUAConfig::GetInstance()->SetUserAgentClientHintsEnabled(enabled);
+}
+
+void NWebImpl::SetUserAgentMetadata(
+    const std::string& user_agent,
+    std::shared_ptr<NWebUserAgentMetadata> metadata) {
+  if (!nweb_delegate_) {
+    LOG(WARNING) << kUserAgentMetadataTag
+                 << " SetUserAgentMetadata failed, no nweb or delegate";
+    return;
+  }
+  nweb_delegate_->SetUserAgentMetadata(user_agent, metadata);
+}
+
+std::shared_ptr<NWebUserAgentMetadata> NWebImpl::GetUserAgentMetadata(
+    const std::string& user_agent) {
+  if (!nweb_delegate_) {
+    LOG(WARNING) << kUserAgentMetadataTag
+                 << " GetUserAgentMetadata failed, no nweb or delegate";
+    return nullptr;
+  }
+  return nweb_delegate_->GetUserAgentMetadata(user_agent);
+}
+
 #endif
 
 void NWebImpl::SuggestionSelected(int index) {
@@ -6381,7 +6568,22 @@ int NWebImpl::SetUrlTrustListWithErrMsg(const std::string& urlTrustList,
     return static_cast<int>(ohos_safe_browsing::UrlListSetResult::INIT_ERROR);
   }
 
-  return nweb_delegate_->SetUrlTrustListWithErrMsg(urlTrustList, detailErrMsg);
+  return nweb_delegate_->SetUrlTrustListWithErrMsg(urlTrustList,
+    true, false, detailErrMsg);
+#else
+  return -1;
+#endif
+}
+
+int NWebImpl::SetUrlTrustListWithErrMsg(const std::string& urlTrustList,
+    bool allowOpaqueOrigin, bool supportWildcard, std::string& detailErrMsg) {
+#if BUILDFLAG(ARKWEB_URL_TRUST_LIST)
+  if (nweb_delegate_ == nullptr) {
+    return static_cast<int>(ohos_safe_browsing::UrlListSetResult::INIT_ERROR);
+  }
+
+  return nweb_delegate_->SetUrlTrustListWithErrMsg(urlTrustList,
+    allowOpaqueOrigin, supportWildcard, detailErrMsg);
 #else
   return -1;
 #endif
@@ -6574,13 +6776,6 @@ void NWebImpl::WebExtensionTabDetached(
     return;
   }
   nweb_delegate_->WebExtensionTabDetached(tab_id, std::move(detachInfo));
-}
-
-void NWebImpl::WebExtensionTabHighlighted(NWebExtensionTabHighlightInfo& highlightInfo) {
-  if (nweb_delegate_ == nullptr) {
-    return;
-  }
-  nweb_delegate_->WebExtensionTabHighlighted(highlightInfo);
 }
 
 void NWebImpl::WebExtensionTabMoved(
@@ -6961,6 +7156,9 @@ void NWebImpl::RegisterNativeJavaScriptProxy(const std::string& objName,
 #if BUILDFLAG(ARKWEB_SOFTKEYBOARD_AVOID)
 void NWebImpl::SetSoftKeyboardBehaviorMode(WebSoftKeyboardBehaviorMode mode) {
   keyboardBehaviorMode_ = mode;
+  LOG(DEBUG)
+      << "NWebImpl::SetSoftKeyboardBehaviorMode keyboardBehaviorMode_: "
+      << static_cast<int>(keyboardBehaviorMode_);
 }
 #endif
 
@@ -7109,7 +7307,7 @@ int32_t NWebImpl::SetBlanklessLoadingWithKey(const std::string& key, bool isStar
     databaseInstance.ClearSnapshot(blankless_key);
     databaseInstance.ClearSnapshotDataItem({blankless_key});
     return -5;
-  }  
+  }
   if (status_code != base::ohos::BlanklessController::StatusCode::INSERTED ||
       databaseInstance.GetBlanklessLoadingCacheCapacity() == 0) {
     LOG(DEBUG) << "blankless SetBlanklessLoadingWithKey nweb_id: " << nweb_id_
@@ -7163,7 +7361,7 @@ bool NWebImpl::ProcessBlanklessForUrl(uint64_t blanklessKey, bool isAnime) {
   base::ohos::BlanklessController::GetInstance().RecordSystemTime(nweb_id_, blankless_key_, system_time);
   nweb_delegate_->SetBlanklessLoadingKey(nweb_id_, blankless_key_);
   OHOS::NWeb::SnapshotDataItem dataItem = databaseInstance.GetSnapshotDataItem(blankless_key_, GetPreferenceHash());
-  CallBlanklessFrameFunc(blankless_key_, dataItem, isAnime);
+  CallBlanklessFrameFuncForWhiteList(blankless_key_, dataItem, isAnime);
   return true;
 }
 
@@ -7176,6 +7374,21 @@ void NWebImpl::SetVisibility(bool isVisible) {
     return;
   }
   auto& instance = base::ohos::BlanklessController::GetInstance();
+  if (!IsUserEnableBlankless()){
+    uint64_t recorded_time = instance.GetSystemTime(nweb_id_, blankless_key_);
+    auto system_time = base::Time::Now().ToInternalValue() / base::Time::kMicrosecondsPerMillisecond;
+    int32_t corrected_time = static_cast<int32_t>(static_cast<uint64_t>(system_time) - recorded_time);
+    int32_t lcp_time = instance.FireFrameInsertCallback(nweb_id_, blankless_key_);
+    int32_t lifetime = lcp_time - (corrected_time);
+    if (corrected_time < 0  || lifetime < base::ohos::BlanklessController::MINIMUM_FRAME_LIFETIME) { // 40 ms
+      return;
+    }
+    nweb_handle_->OnRemoveBlanklessFrame(lifetime);
+    instance.RegisterFrameRemoveCallback(nweb_id_, blankless_key_, [handle = this->nweb_handle_](){
+      handle->OnRemoveBlanklessFrame(0);
+    });
+    return;
+  }
   int32_t lcp_time = instance.FireFrameInsertCallback(nweb_id_, blankless_key_);
   if (lcp_time > 0) {
     nweb_handle_->OnRemoveBlanklessFrame(lcp_time);
@@ -7183,6 +7396,60 @@ void NWebImpl::SetVisibility(bool isVisible) {
       handle->OnRemoveBlanklessFrame(0);
     });
   }
+}
+
+int32_t NWebImpl::SetBlanklessLoadingParams(const std::string& key, bool enable, int32_t duration,
+  int64_t expirationTime, std::shared_ptr<NWebBlanklessCallback> callback) {
+  MarkUserEnableBlankless();
+  if (!base::ohos::BlanklessController::CheckGlobalProperty() || !CheckNetAvailable()) {
+    return -5;  // ERR_SIGNIFICANT_CHANGE
+  }
+  auto& instance = base::ohos::BlanklessController::GetInstance();
+  uint64_t blankless_key = base::ohos::BlanklessController::ConvertToBlanklessKey(key);
+  auto status_code = instance.MatchKey(nweb_id_, blankless_key);
+  LOG(DEBUG) << "blankless SetBlanklessLoadingParams nweb_id: " << nweb_id_
+             << ", blankless_key: " << blankless_key << ", status: " << static_cast<int>(status_code);
+  if (status_code == base::ohos::BlanklessController::StatusCode::KEY_NOT_MATCH) {
+    return -4;    // ERR_KEY_NOT_MATCH
+  }
+  if (callback) {
+    blankless_callback_ = callback;
+  }
+  string_key_ = key;
+  auto& databaseInstance = base::ohos::BlanklessDataController::GetInstance();
+  auto window_id = instance.GetWindowIdByNWebId(nweb_id_);
+  auto is_private = OHOS::NWeb::WindowManagerAdapterImpl::GetWindowPrivacyMode(window_id);
+  if (is_private) {
+    LOG(DEBUG) << "blankless this is a private window: "<< window_id;
+    databaseInstance.ClearSnapshot(blankless_key);
+    databaseInstance.ClearSnapshotDataItem({blankless_key});
+    ExecuteBlanklessCallback(key, 1, std::string("this is a private window")); // 1 LOADING_FAILED
+    return -5;
+  }
+  if (expirationTime != 0) {
+    databaseInstance.InsertExpirationInfo(static_cast<int64_t>(blankless_key), expirationTime * 1000); // ms->μs
+  }
+  if (status_code != base::ohos::BlanklessController::StatusCode::INSERTED ||
+      databaseInstance.GetBlanklessLoadingCacheCapacity() == 0) {
+    LOG(DEBUG) << "blankless SetBlanklessLoadingParams nweb_id: " << nweb_id_
+               << ", blankless_key: " << blankless_key << ", status: " << static_cast<int>(status_code)
+               << ", capacity: " << databaseInstance.GetBlanklessLoadingCacheCapacity()
+               << ", enable: " << enable;
+    return (enable ? -5 : 0);  // ERR_SIGNIFICANT_CHANGE(true) or SUCCESS(false)
+  }
+  if (enable) {
+    OHOS::NWeb::SnapshotDataItem dataItem = databaseInstance.GetSnapshotDataItem(blankless_key, GetPreferenceHash());
+    if (dataItem.historySimilarity < 0.33) {
+      LOG(DEBUG) << "blankless SetBlanklessLoadingParams similarity < 0.33";
+      return -5;    // ERR_SIGNIFICANT_CHANGE
+    }
+    CallBlanklessFrameFuncV2(blankless_key, dataItem, duration);
+  }
+  return 0;   // SUCCESS
+}
+
+void NWebImpl::CallExecuteBlanklessCallback(int32_t state, const std::string& reason) {
+  ExecuteBlanklessCallback(string_key_, state, reason);
 }
 
 void NWebImpl::ClearBlanklessKey() {
@@ -7244,6 +7511,77 @@ void NWebImpl::CallBlanklessFrameFunc(uint64_t blankless_key, SnapshotDataItem& 
   }
 }
 
+void NWebImpl::CallBlanklessFrameFuncV2(uint64_t blankless_key, SnapshotDataItem& dataItem,
+                                        int32_t duration, bool isAnime) {
+  std::string file = isAnime ? dataItem.wholePath : dataItem.staticPath;
+  if (nweb_handle_ == nullptr || dataItem.lcpTime == INT32_MAX || dataItem.lcpTime <= 0 || file.empty()) {
+    ExecuteBlanklessCallback(string_key_, 1, std::string("invalid frame insertion file")); // 1 LOADING_FAILED
+    return;
+  }
+  auto& instance = base::ohos::BlanklessController::GetInstance();
+  auto system_time = base::Time::Now().ToInternalValue() / base::Time::kMicrosecondsPerMillisecond;
+  uint64_t recorded_time = instance.GetSystemTime(nweb_id_, blankless_key_);
+  int32_t corrected_time = static_cast<int32_t>(static_cast<uint64_t>(system_time) - recorded_time);
+  if (corrected_time < 0 || corrected_time >= dataItem.lcpTime ||
+      dataItem.lcpTime - corrected_time < base::ohos::BlanklessController::MINIMUM_FRAME_LIFETIME) { // 40 ms
+    LOG(DEBUG) << "blankless CallBlanklessFrameFuncV2 corrected time error " <<
+      corrected_time << " " << dataItem.lcpTime;
+    ExecuteBlanklessCallback(string_key_, 1, std::string("invalid frame insertion file")); // 1 LOADING_FAILED
+    return;
+  }
+  int32_t lcp_time = base::ohos::BlanklessController::MAXIMUM_FRAME_LIFETIME;
+  if (duration != 0) {
+    lcp_time = duration;
+  } else {
+    if (dataItem.lcpTime >= base::ohos::BlanklessController::A_STANDARD) {
+      lcp_time = std::min(dataItem.lcpTime, base::ohos::BlanklessController::MAXIMUM_FRAME_LIFETIME);  // 2000 ms
+    }
+  }
+  LOG(DEBUG) << "blankless CallBlanklessFrameFuncV2 OnRemoveBlanklessFrame Delay Time: " << lcp_time;
+  if (is_visible_) {
+    nweb_handle_->OnInsertBlanklessFrameWithSize(file, dataItem.width, dataItem.height);
+    RemoveBlanklessFrame(nweb_handle_, lcp_time, isAnime);
+  } else {
+    instance.RegisterFrameInsertCallback(nweb_id_, blankless_key_,
+        [handle = this->nweb_handle_, file, width = dataItem.width, height = dataItem.height](){
+          handle->OnInsertBlanklessFrameWithSize(file, width, height);
+        }, lcp_time);
+  }
+}
+
+void NWebImpl::CallBlanklessFrameFuncForWhiteList(uint64_t blankless_key, SnapshotDataItem& dataItem, bool isAnime) {
+  std::string file = isAnime ? dataItem.wholePath : dataItem.staticPath;
+  if (nweb_handle_ == nullptr || dataItem.lcpTime == INT32_MAX || dataItem.lcpTime <= 0 || file.empty()) {
+    return;
+  }
+  auto& instance = base::ohos::BlanklessController::GetInstance();
+  if (dataItem.lcpTime < base::ohos::BlanklessController::MINIMUM_FRAME_LIFETIME) { // 40 ms
+    LOG(DEBUG) << "blankless CallBlanklessFrameFuncForWhiteList lcpTime invalid " << dataItem.lcpTime;
+    return;
+  }
+  int32_t lcp_time = std::min(dataItem.lcpTime, base::ohos::BlanklessController::MAXIMUM_FRAME_LIFETIME);  // 2000 ms
+  LOG(DEBUG) << "blankless OnRemoveBlanklessFrame Delay Time: " << lcp_time;
+  if (is_visible_) {
+    nweb_handle_->OnInsertBlanklessFrameWithSize(file, dataItem.width, dataItem.height);
+    RemoveBlanklessFrame(nweb_handle_, lcp_time, isAnime);
+    instance.RegisterFrameRemoveCallback(nweb_id_, blankless_key_, [handle = this->nweb_handle_, isAnime](){
+      RemoveBlanklessFrame(handle, 0, isAnime);
+    });
+  } else {
+    instance.RegisterFrameInsertCallback(nweb_id_, blankless_key_,
+        [handle = this->nweb_handle_, file, width = dataItem.width, height = dataItem.height](){
+          handle->OnInsertBlanklessFrameWithSize(file, width, height);
+        }, lcp_time);
+  }
+}
+
+void NWebImpl::ExecuteBlanklessCallback(const std::string& key, int32_t state, const std::string& reason) {
+  if (blankless_callback_) {
+    auto current_time = (base::Time::Now() - base::Time::UnixEpoch()).InMilliseconds();
+    blankless_callback_->OnReceiveValue(key, state, static_cast<int64_t>(current_time), reason);
+  }
+}
+
 int64_t NWebImpl::GetPreferenceHash() {
   if (!nweb_delegate_) {
     return base::ohos::BlanklessDataController::INVALID_PREF_HASH;
@@ -7298,7 +7636,7 @@ void NWebImpl::SetTouchHandleExistState(bool touchHandleExist) {
     nweb_delegate_->SetTouchHandleExistState(touchHandleExist);
   }
 }
-  
+
 void NWebImpl::SetViewportScaleState() {
   if (nweb_delegate_) {
     nweb_delegate_->SetViewportScaleState(true);
@@ -7358,9 +7696,9 @@ void NWebImpl::OnBrowserBackground() {
 
 #if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
 void NWebImpl::EnableHttpsUpgrades(bool enable) {
-  LOG(INFO) << "NWebImpl::EnableHttpsUpgrades.";
   if (nweb_delegate_ == nullptr) {
-    WVLOG_E("EnableHttpsUpgrades nweb_delegate_ is null");
+    LOG_FEEDBACK(WARNING, kHttpsUpgrades)
+        << "EnableHttpsUpgrades message:nwebDelegateIsNull";
     return;
   }
   nweb_delegate_->EnableHttpsUpgrades(enable);
@@ -7449,6 +7787,145 @@ void NWebImpl::EnableRewriteUrlForNavigation(bool enable) {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+std::map<std::string, std::string> NWebImpl::GetRequestHeader(int nweb_request_key) {
+  if (!nweb_delegate_) {
+    LOG(ERROR) << "failed to GetRequestHeader, delegate is null";
+    return {};
+  }
+  return nweb_delegate_->ResourceRequestGetRequestHeader(nweb_request_key);
+}
+ 
+std::string NWebImpl::GetRequestUrl(int nweb_request_key) {
+  if (!nweb_delegate_) {
+    LOG(ERROR) << "failed to GetRequestUrl, delegate is null";
+    return std::string();
+  }
+  return nweb_delegate_->ResourceRequestGetRequestUrl(nweb_request_key);
+}
+ 
+bool NWebImpl::IsRequestGesture(int32_t nweb_request_key) {
+  if (!nweb_delegate_) {
+    LOG(ERROR) << "failed to IsRequestGesture, delegate is null";
+    return false;
+  }
+  return nweb_delegate_->ResourceRequestIsRequestGesture(nweb_request_key);
+}
+ 
+bool NWebImpl::IsMainFrame(int32_t nweb_request_key) {
+  if (!nweb_delegate_) {
+    LOG(ERROR) << "failed to IsMainFrame, delegate is null";
+    return false;
+  }
+  return nweb_delegate_->ResourceRequestIsMainFrame(nweb_request_key);
+}
+ 
+bool NWebImpl::IsRedirect(int32_t nweb_request_key) {
+  if (!nweb_delegate_) {
+    LOG(ERROR) << "failed to IsRedirect, delegate is null";
+    return false;
+  }
+  return nweb_delegate_->ResourceRequestIsRedirect(nweb_request_key);
+}
+ 
+std::string NWebImpl::GetRequestMethod(int32_t nweb_request_key) {
+  if (!nweb_delegate_) {
+    LOG(ERROR) << "failed to GetRequestMethod, delegate is null";
+    return std::string();
+  }
+  return nweb_delegate_->ResourceRequestGetRequestMethod(nweb_request_key);
+}
+ 
+int32_t NWebImpl::GetPageTransition(int32_t nweb_request_key) {
+  if (!nweb_delegate_) {
+    LOG(ERROR) << "failed to GetPageTransition, delegate is null";
+    return -1;
+  }
+  return nweb_delegate_->ResourceRequestGetPageTransition(nweb_request_key);
+}
+ 
+int32_t NWebImpl::GetRequestType(int32_t nweb_request_key) {
+  if (!nweb_delegate_) {
+    LOG(ERROR) << "failed to GetRequestType, delegate is null";
+    return -1;
+  }
+  return nweb_delegate_->ResourceRequestGetRequestType(nweb_request_key);
+}
+ 
+ 
+std::string NWebImpl::GetMimeType(int nweb_response_key) {
+  if (!nweb_delegate_) {
+    LOG(ERROR) << "failed to GetMimeType, delegate is null";
+    return std::string();
+  }
+  return nweb_delegate_->ResourceResponseGetMimeType(nweb_response_key);
+}
+ 
+std::string NWebImpl::GetEncoding(int nweb_response_key) {
+  if (!nweb_delegate_) {
+    LOG(ERROR) << "failed to GetEncoding, delegate is null";
+    return std::string();
+  }
+  return nweb_delegate_->ResourceResponseGetEncoding(nweb_response_key);
+}
+ 
+int32_t NWebImpl::GetStatusCode(int nweb_response_key) {
+  if (!nweb_delegate_) {
+    LOG(ERROR) << "failed to GetStatusCode, delegate is null";
+    return -1;
+  }
+  return nweb_delegate_->ResourceResponseGetStatusCode(nweb_response_key);
+}
+ 
+std::string NWebImpl::GetReasonPhrase(int nweb_response_key) {
+  if (!nweb_delegate_) {
+    LOG(ERROR) << "failed to GetReasonPhrase, delegate is null";
+    return std::string();
+  }
+  return nweb_delegate_->ResourceResponseGetReasonPhrase(nweb_response_key);
+}
+ 
+std::map<std::string, std::string> NWebImpl::GetResponseHeader(int nweb_response_key) {
+  if (!nweb_delegate_) {
+    LOG(ERROR) << "failed to GetResponseHeader, delegate is null";
+    return {};
+  }
+  return nweb_delegate_->ResourceResponseGetResponseHeader(nweb_response_key);
+}
+ 
+bool NWebImpl::GetIsFromNetwork(int nweb_response_key) {
+  if (!nweb_delegate_) {
+    LOG(ERROR) << "failed to GetIsFromNetwork, delegate is null";
+    return false;
+  }
+  return nweb_delegate_->ResourceResponseGetIsFromNetwork(nweb_response_key);
+}
+ 
+void NWebImpl::ResourceRequestDelete(int nweb_request_key) {
+  if (!nweb_delegate_) {
+    LOG(ERROR) << "failed to ResourceRequestDelete, delegate is null";
+    return;
+  }
+  nweb_delegate_->ResourceRequestDelete(nweb_request_key);
+}
+ 
+void NWebImpl::ResourceResponseDelete(int nweb_response_key) {
+  if (!nweb_delegate_) {
+    LOG(ERROR) << "failed to ResourceResponseDelete, delegate is null";
+    return;
+  }
+  nweb_delegate_->ResourceResponseDelete(nweb_response_key);
+}
+int32_t NWebImpl::GetLastCommittedEntryPageTransition() {
+  LOG(INFO) << "NWebImpl::GetLastCommittedEntryPageTransition.";
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("GetLastCommittedEntryPageTransition nweb_delegate_ is null");
+    return -1;
+  }
+  return nweb_delegate_->GetLastCommittedEntryPageTransition();
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_COOKIE)
 void NWebImpl::LibraryLoaded(std::shared_ptr<NWebEngineInitArgs> init_args,
                              bool lazy) {
@@ -7467,3 +7944,10 @@ std::shared_ptr<NWebEngineInitArgs> NWebImpl::GetSaveInitargs() {
   return save_initargs_;
 }
 #endif
+
+void NWebImpl::ReloadIgnoreCache() {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->ReloadIgnoreCache();
+}

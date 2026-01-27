@@ -450,4 +450,76 @@ void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
   }
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::OnMediaCastEnter() {
+  LOG(INFO) << "MediaPlayerObserverHostImpl::OnMediaCastEnter";
+ if (!media_web_contents_observer_) {
+   LOG(ERROR) << "MediaPlayerObserverHostImpl::OnMediaCastEnter, media_web_contents_observer_ is nullptr";
+   return;
+ }
+ if (media_web_contents_observer_->web_contents_impl() && media_web_contents_observer_
+         ->web_contents_impl()->AsWebContentsImplExt()) {
+   media_web_contents_observer_
+        ->web_contents_impl()->AsWebContentsImplExt()->OnMediaCastEnter();
+  }
+  if (media_web_contents_observer_->session_controllers_manager()) {
+    media_web_contents_observer_->session_controllers_manager()->CreateAVCastAdapter(media_player_id_);
+  }
+}
+
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
+    OnNotifyMeidaCastUri(const std::string& media_uri) {
+    LOG(INFO) << "MediaPlayerObserverHostImpl::OnNotifyMeidaCastUri, mediaUri: " << media_uri;
+    if (media_web_contents_observer_->session_controllers_manager()) {
+      media_web_contents_observer_->session_controllers_manager()->OnNotifyMeidaCastUri(media_player_id_, media_uri);
+    }
+}
+
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::HandleStopMediaCast() {
+    LOG(INFO) << "MediaPlayerObserverHostImpl::HandleStopMediaCast";
+    if (media_web_contents_observer_->session_controllers_manager()) {
+      media_web_contents_observer_->session_controllers_manager()->HandleStopMediaCast(media_player_id_);
+    }
+}
+
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::UpdateRemotePlayState(bool is_playing) {
+  LOG(INFO) << "MediaPlayerObserverHostImpl::UpdateRemotePlayState";
+  if (media_web_contents_observer_->session_controllers_manager()) {
+    media_web_contents_observer_->session_controllers_manager()->UpdateRemotePlayState(media_player_id_, is_playing);
+  }
+}
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::UpdateRemotePlayPosition(int64_t position) {
+  LOG(INFO) << "MediaPlayerObserverHostImpl::UpdateRemotePlayPosition";
+  if (media_web_contents_observer_->session_controllers_manager()) {
+    media_web_contents_observer_->session_controllers_manager()->UpdateRemotePlayPosition(media_player_id_, position);
+  }
+}
+
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::SetPauseByAvcast(bool pause_avcast) {
+    LOG(INFO) << "MediaPlayerObserverHostImpl::SetPauseByAvcast";
+    if (media_web_contents_observer_->session_controllers_manager()) {
+      media_web_contents_observer_->session_controllers_manager()->SetPauseByAvcast(media_player_id_, pause_avcast);
+    }
+}
+
+void MediaWebContentsObserver::DidFinishNavigation(NavigationHandle* navigation_handle) {
+  LOG(INFO) << "DidFinishNavigation, enter";
+  // History navigation has been submitted.
+  if (navigation_handle->HasCommitted() &&
+    (navigation_handle->GetPageTransition() & ui::PAGE_TRANSITION_FORWARD_BACK)) {
+      LOG(INFO) << "DidFinishNavigation MediaCastStopByNavigation, back or forward";
+      if (session_controllers_manager_) {
+        session_controllers_manager_->MediaCastStopByNavigation();
+      }
+  }
+}
+
+void MediaWebContentsObserver::NotifyRemoteExitFullScreen() {
+  if (session_controllers_manager_) {
+    session_controllers_manager_->NotifyRemoteExitFullScreen();
+  }
+}
+
+#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
 }

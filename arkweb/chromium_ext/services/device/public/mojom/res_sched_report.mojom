@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 module device.mojom;
 
 interface ResSchedReport {
@@ -20,4 +19,5 @@ interface ResSchedReport {
   ReportGestureId(uint32 id);
   ReportGestureEx(uint32 id, bool tag);
   StartPerformanceBoost();
+  ReportMemoryUsage(string msg);
 };

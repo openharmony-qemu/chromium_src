@@ -40,6 +40,10 @@ class BLINK_EXPORT WebLocalFrameClientExt : public WebLocalFrameClient {
   virtual WebNativeBridge* CreateWebNativeBridge(WebNativeClient* client) {
     return nullptr;
   }
+  
+  virtual float DeviceScaleFactor() {
+    return 1.0f;
+  }
 #endif
 
 

@@ -22,6 +22,8 @@
 
 #if BUILDFLAG(ARKWEB_AI)
   bool image_analyzer_enabled_ = true;
+  bool arkweb_agent_enabled_ = false;
+  bool agent_need_highlight_ = true;
 #endif  // BUILDFLAG(ARKWEB_AI)
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
@@ -67,6 +69,10 @@
 #if BUILDFLAG(ARKWEB_BFCACHE)
   bool media_resume_from_bfcache_page_ = true;
 #endif  // BUILDFLAG(ARKWEB_BFCACHE)
+
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  bool is_autofill_enabled_ = true;
+#endif  // BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
 
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
   bool clipboard_site_permission_enabled_ = false;

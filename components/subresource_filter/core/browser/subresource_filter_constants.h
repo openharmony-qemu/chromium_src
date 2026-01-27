@@ -53,10 +53,6 @@ extern const base::FilePath::CharType kUnindexedRulesetDataFileName[];
 // The name of the filter. This is used for metrics logging.
 inline constexpr std::string_view kUmaFilterTag = "SubresourceFilter";
 
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-extern const base::FilePath::CharType kAdblockEasylistFileName[];
-#endif
-
 // Console message to be displayed on activation.
 constexpr char kActivationConsoleMessage[] =
     "Chrome is blocking ads on this site because this site tends to show ads "

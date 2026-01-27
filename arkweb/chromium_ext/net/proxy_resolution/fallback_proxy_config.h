@@ -12,20 +12,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-#ifndef HUAWEI_NET_PROXY_RESOLUTION_FALLBACK_PROXY_UTILS_H_
-#define HUAWEI_NET_PROXY_RESOLUTION_FALLBACK_PROXY_UTILS_H_
-
+ 
+#ifndef HUAWEI_NET_PROXY_RESOLUTION_FALLBACK_PROXY_CONFIG_H_
+#define HUAWEI_NET_PROXY_RESOLUTION_FALLBACK_PROXY_CONFIG_H_
+ 
 #include <memory>
 #include <string>
-
+ 
 #include "net/base/net_export.h"
 #include "url/gurl.h"
-
+ 
 namespace net {
-
+ 
 enum SBThreatURLPolicy { PROCEED, WAIT, DENY };
-
+ 
 enum class ProxyUnusedReason {
   CLOUD_CONTROL_SWITCH_DISABLED = 0,
   ERROR_CODE_NOT_IN_CLOUD_LIST,
@@ -39,38 +39,17 @@ enum class ProxyUnusedReason {
   MAX_VALUE = 0xFF,
 };
 
-NET_EXPORT_PRIVATE void ReportFallbackProxyUsage(const GURL& url,
-                                                 int can_use_fallback_proxy,
-                                                 int reason,
-                                                 int result,
-                                                 int policy = -1,
-                                                 int hw_code = -1);
-
-NET_EXPORT_PRIVATE void ReportUseFallbackProxyResult(const GURL& url,
-                                                     int error_code_before,
-                                                     int error_code_final);
-
-NET_EXPORT_PRIVATE void ReportProxyTunnelConnectResult(const std::string& host,
-                                                       int response_code,
-                                                       int error_code);
-
-NET_EXPORT_PRIVATE void ReportProxyExceptionReason(int reason);
-
-NET_EXPORT_PRIVATE void ReportProxyTransportConnectResult(
-    const std::string& host,
-    int error_code);
-
 class NET_EXPORT_PRIVATE FallbackProxyConfigStatus {
  public:
   static void SetStatus(bool enable, bool has_token);
   static int ProxyConfigEnable();
   static int HasToken();
-
+ 
  private:
   static bool proxy_config_enable_;
   static bool has_token_;
 };
 
 }  // namespace net
-
-#endif  // HUAWEI_NET_PROXY_RESOLUTION_FALLBACK_PROXY_UTILS_H_
+ 
+#endif  // HUAWEI_NET_PROXY_RESOLUTION_FALLBACK_PROXY_CONFIG_H_

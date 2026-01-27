@@ -297,6 +297,11 @@
 #include "content/public/common/content_switches.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_CACHE)
+#include "base/path_service.h"
+#include "base/files/file_path.h"
+#endif
+
 // VLOG additional statements in Fuchsia release builds.
 #if BUILDFLAG(IS_FUCHSIA)
 #define MAYBEVLOG VLOG
@@ -1714,9 +1719,15 @@ bool RenderProcessHostImpl::Init() {
       !base::CommandLine::ForCurrentProcess()->HasSwitch(
           switches::kDisableGpuShaderDiskCache)) {
     if (auto* cache_factory = GetGpuDiskCacheFactorySingleton()) {
+#if BUILDFLAG(ARKWEB_CACHE)
+      base::FilePath path;
+      base::PathService::Get(base::DIR_CACHE, &path);
+#else
+      base::FilePath path = storage_partition_impl_->GetPath();
+#endif
       for (const gpu::GpuDiskCacheType type : gpu::kGpuDiskCacheTypes) {
         auto handle = cache_factory->GetCacheHandle(
-            type, storage_partition_impl_->GetPath().Append(
+            type, path.Append(
                       gpu::GetGpuDiskCacheSubdir(type)));
         gpu_client_->SetDiskCacheHandle(handle);
       }
@@ -1937,6 +1948,11 @@ void RenderProcessHostImpl::InitializeSharedMemoryRegionsOnceChannelIsUp() {
 void RenderProcessHostImpl::ResetChannelProxy() {
   if (!channel_)
     return;
+
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+  ArkwebRenderProcessHostImplExt* implExt = static_cast<ArkwebRenderProcessHostImplExt*>(this);
+  implExt->CancelChannelConnectedCheckTask(implExt);
+#endif
 
   channel_.reset();
   channel_connected_ = false;
@@ -3275,6 +3291,15 @@ void RenderProcessHostImpl::AppendRendererCommandLine(
       *base::CommandLine::ForCurrentProcess();
   PropagateBrowserCommandLineToRenderer(browser_command_line, command_line);
 
+#if BUILDFLAG(ARKWEB_OHOS_MEM_USAGE_REPORT)
+    if(base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kEnableNwebEx)){
+      int count = blink::features::kMemUsageReportCount.Get();
+      if (count > 0){
+        command_line->AppendSwitchASCII("mur", std::to_string(count));
+      }
+    }
+#endif  // BUILDFLAG(ARKWEB_OHOS_MEM_USAGE_REPORT)
+
   // Pass on the browser locale.
   const std::string locale =
       GetContentClient()->browser()->GetApplicationLocale();
@@ -3810,6 +3835,10 @@ void RenderProcessHostImpl::OnAssociatedInterfaceRequest(
 
 void RenderProcessHostImpl::OnChannelConnected(int32_t peer_pid) {
   channel_connected_ = true;
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+  ArkwebRenderProcessHostImplExt* implExt = static_cast<ArkwebRenderProcessHostImplExt*>(this);
+  implExt->CancelChannelConnectedCheckTask(implExt);
+#endif
 
   // Propagate the pseudonymization salt to all the child processes.
   //
@@ -4900,7 +4929,8 @@ RenderProcessHost* RenderProcessHostImpl::GetProcessHostForSiteInstance(
           SiteInstanceProcessAssignment::REUSED_EXISTING_PROCESS);
 #if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
       LOG(INFO) << "Use an existing rendering process, render_process: "
-                << render_process_host->GetProcess().Handle();
+                << render_process_host->GetProcess().Handle()
+                << " render_process status: " << render_process_host->IsReady();
 #endif
     }
   }
@@ -5492,7 +5522,10 @@ void RenderProcessHostImpl::OnProcessLaunched() {
     // TODO(crbug.com/40590142): This should be based on
     // |priority_.GetProcessPriority()|, see similar check below.
     DCHECK_EQ(blink::kLaunchingProcessIsBackgrounded, !priority_.visible);
-
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+    ArkwebRenderProcessHostImplExt* implExt = static_cast<ArkwebRenderProcessHostImplExt*>(this);
+    implExt->StartChannelConnectedCheckTask(implExt);
+#endif
     // Unpause the channel now that the process is launched. We don't flush it
     // yet to ensure that any initialization messages sent here (e.g., things
     // done in response to OnRenderProcessHostCreated; see below) preempt

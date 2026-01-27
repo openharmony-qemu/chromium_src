@@ -219,6 +219,8 @@ class MockCefBrowser : public ArkWebBrowserExt {
   bool IsAdsBlockEnabledForCurPage() override { return false; }
   void EnableAdsBlock(bool enable) override {}
   int SetUrlTrustListWithErrMsg(const CefString& urlTrustList,
+                                bool allowOpaqueOrigin,
+                                bool supportWildcard,
                                 CefString& detailErrMsg) override {
     return 0;
   }
@@ -605,3 +607,12 @@ TEST_F(NWebHandlerDelegateTest, IsShowHandle) {
   auto result = delegate->IsShowHandle();
   EXPECT_FALSE(result);
 }
+
+#if BUILDFLAG(ARKWEB_AI)
+TEST_F(NWebHandlerDelegateTest, RegisterOnLoadStartedCbForHighlightContent) {
+  ASSERT_NE(delegate, nullptr);
+  std::function<void(void)> callback = []() {};
+  delegate->RegisterOnLoadStartedCbForHighlightContent(std::move(callback));
+  EXPECT_NE(delegate->onLoadStartedCbForHighlightContent_, nullptr);
+}
+#endif

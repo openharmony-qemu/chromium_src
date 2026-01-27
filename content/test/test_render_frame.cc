@@ -229,11 +229,15 @@ class MockFrameHost : public mojom::FrameHost {
   void GetCreateNewWindow(const ::GURL& target_url,
                           ::WindowOpenDisposition disposition,
                           bool allow_popup,
+                          ::blink::mojom::WindowFeaturesPtr window_features,
                           GetCreateNewWindowCallback callback) override {}
 
   void CloseImageOverlaySelection() override {}
   void OnPdfScrollAtBottom(const std::string& url) override {}
   void OnPdfLoadEvent(int32_t result, const std::string& url) override {}
+#endif
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+  void OnDocumentEndReady() override {}
 #endif
  private:
   mojom::DidCommitProvisionalLoadParamsPtr last_commit_params_;

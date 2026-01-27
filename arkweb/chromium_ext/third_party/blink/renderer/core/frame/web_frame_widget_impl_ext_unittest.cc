@@ -20,9 +20,13 @@
 #include "arkweb/chromium_ext/third_party/blink/renderer/platform/widget/widget_base_utils.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "third_party/blink/public/web/web_local_frame.h"
+#include "third_party/blink/public/web/web_range.h"
 #include "third_party/blink/renderer/core/dom/document.h"
 #include "third_party/blink/renderer/core/frame/frame_test_helpers.h"
+#include "third_party/blink/renderer/core/frame/local_frame.h"
 #include "third_party/blink/renderer/core/frame/web_frame_widget_impl.h"
+#include "third_party/blink/renderer/core/html/html_iframe_element.h"
 #include "third_party/blink/renderer/core/testing/sim/sim_request.h"
 #include "third_party/blink/renderer/core/testing/sim/sim_test.h"
 
@@ -111,6 +115,8 @@ class WebFrameWidgetImplExtSimTest : public SimTest {
         <div>Test content</div>
         <input type="text" id="input1" value="First input">
         <input type="text" id="input2" value="Second input">
+        <div id="content">Text</div>
+        <iframe id="child"></iframe>
       </body>
       </html>
     )HTML");
@@ -405,5 +411,314 @@ TEST_F(WebFrameWidgetImplExtSimTest, GetOverScrollOffset_WithoutWidgetBase) {
   SetWidgetBaseForTesting(std::move(widget_base));
 }
 
+TEST_F(WebFrameWidgetImplExtSimTest, ArkWebHandleTouchEvent_RawKeyDown1) {
+  WebTouchEvent event(WebInputEvent::Type::kRawKeyDown, 
+                         WebInputEvent::kNoModifiers,
+                         WebInputEvent::GetStaticTimeStampForTests());
+  MockMainFrameWidget()->ArkWebHandleTouchEvent(event);
+  EXPECT_EQ(MockMainFrameWidget()->rawKeyDownTime_, 1);
+
+  base::RunLoop run_loop;
+  base::SingleThreadTaskRunner::GetCurrentDefault()->PostDelayedTask(
+      FROM_HERE, run_loop.QuitClosure(), base::Milliseconds(10));
+  run_loop.Run();
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, ArkWebHandleTouchEvent_MouseUp1) {
+  WebMouseEvent event(WebInputEvent::Type::kMouseUp,
+                      WebInputEvent::kNoModifiers,
+                      WebInputEvent::GetStaticTimeStampForTests());
+
+  MockMainFrameWidget()->ArkWebHandleTouchEvent(event);
+  EXPECT_EQ(MockMainFrameWidget()->rawKeyDownTime_, 1);
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, ArkWebHandleTouchEvent_PointerUp1) {
+  WebTouchEvent touch_event;
+  touch_event.SetType(WebInputEvent::Type::kTouchStart);
+  touch_event.SetTimeStamp(base::TimeTicks::Now());
+  touch_event.touches_length = 1;
+  
+  WebTouchPoint touch_point;
+  touch_point.state = WebTouchPoint::State::kStatePressed;
+  touch_point.SetPositionInWidget(gfx::PointF(10, 10));
+  touch_point.SetPositionInScreen(gfx::PointF(10, 10));
+  touch_point.radius_x = 5.0f;
+  touch_point.radius_y = 5.0f;
+  touch_event.touches[0] = touch_point;
+  WebPointerEvent event(touch_event, touch_point);
+
+  MockMainFrameWidget()->ArkWebHandleTouchEvent(event);
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, ArkWebHandleTouchEvent_OtherEvent1) {
+  WebMouseEvent event(WebInputEvent::Type::kMouseMove,
+                      WebInputEvent::kNoModifiers,
+                      WebInputEvent::GetStaticTimeStampForTests());
+
+  MockMainFrameWidget()->ArkWebHandleTouchEvent(event);
+  EXPECT_EQ(MockMainFrameWidget()->rawKeyDownTime_, 0);
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, SelectRangeV2_WithoutFocusedFrame1) {
+  MockMainFrameWidget()->SelectRangeV2ForTest(gfx::Point(1, 1), false);
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, GetVisibleRectToWeb1) {
+  gfx::Rect rect = MockMainFrameWidget()->GetVisibleRectToWeb();
+  EXPECT_TRUE(rect.IsEmpty());
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, CreateOverlay_WithValidRect1) {
+  SkBitmap bitmap;
+  gfx::Point touch_point(10, 10);
+  
+  MockMainFrameWidget()->CreateOverlay(
+      bitmap, touch_point,
+      base::BindRepeating([](gfx::RectF& rect) { rect = gfx::RectF(0, 0, 100, 100); }),
+      base::BindRepeating([](bool) {}),
+      base::BindRepeating([]() {}));
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, CreateOverlay_WithEmptyRect1) {
+  SkBitmap bitmap;
+  gfx::Point touch_point(10, 10);
+  
+  MockMainFrameWidget()->CreateOverlay(
+      bitmap, touch_point,
+      base::BindRepeating([](gfx::RectF& rect) { rect = gfx::RectF(); }),
+      base::BindRepeating([](bool) {}),
+      base::BindRepeating([]() {}));
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, OnTextRecognized1) {
+  WTF::Vector<mojom::blink::TextRecognizeResultPtr> results;
+  auto result = mojom::blink::TextRecognizeResult::New();
+  result->raw_value = "Test";
+  result->bounding_box = gfx::RectF(10, 10, 100, 100);
+  result->corner_points = {gfx::PointF(10, 10), gfx::PointF(10, 10), gfx::PointF(10, 10), gfx::PointF(10, 10)};
+  results.push_back(std::move(result));
+
+  MockMainFrameWidget()->on_text_recognize_callback_ = 
+      base::BindRepeating([](std::vector<String>, std::vector<gfx::PointF>, float) {});
+  MockMainFrameWidget()->OnTextRecognizedForTest(std::move(results), 1.0f);
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, GetWordSelection_Valid1) {
+  WTF::String text = "Hello";
+  WTF::Vector<int8_t> selection = MockMainFrameWidget()->GetWordSelection(text, 0);
+  EXPECT_EQ(selection.size(), 2u);
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, GetWordSelection_FailCase1) {
+  auto selection = MockMainFrameWidget()->GetWordSelection("测试文本", 3);
+  ASSERT_EQ(selection.size(), 2u);
+  EXPECT_EQ(selection[0], -1);
+  EXPECT_EQ(selection[1], -1);
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, OnTextSelected1) {
+  MockMainFrameWidget()->on_text_selected_callback_ = base::BindRepeating([](bool) {});
+  MockMainFrameWidget()->OnTextSelectedForTest(true);
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, OnDestroyImageAnalyzerOverlay1) {
+  MockMainFrameWidget()->on_destroy_image_overlay_callback_ = base::BindRepeating([]() {});
+  MockMainFrameWidget()->OnDestroyImageAnalyzerOverlayForTest();
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, OnDataDetectorSelectText1) {
+  MockMainFrameWidget()->OnDataDetectorSelectTextForTest();
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, GetImageRectInner_Valid1) {
+  MockMainFrameWidget()->get_rect_callback_ = 
+      base::BindRepeating([](gfx::RectF& rect) { rect = gfx::RectF(10, 10, 100, 100); });
+  
+  gfx::Rect rect = MockMainFrameWidget()->GetImageRectInner();
+  EXPECT_FALSE(rect.IsEmpty());
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, GetImageRectInner_Empty1) {
+  MockMainFrameWidget()->get_rect_callback_ = 
+      base::BindRepeating([](gfx::RectF& rect) { rect = gfx::RectF(); });
+  
+  gfx::Rect rect = MockMainFrameWidget()->GetImageRectInner();
+  EXPECT_TRUE(rect.IsEmpty());
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, RegisterClippedVisualViewportSelectionBounds1) {
+  MockMainFrameWidget()->RegisterClippedVisualViewportSelectionBounds(gfx::Rect(10, 10, 100, 100));
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, CleanFocusCache1) {
+  MockMainFrameWidget()->CleanFocusCache();
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, ShowFreeCopyMenu1) {
+  MockMainFrameWidget()->ShowFreeCopyMenuForTest();
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, DisableBoost1) {
+  MockMainFrameWidget()->rawKeyDownTime_ = 1;
+
+  MockMainFrameWidget()->DisableBoost();
+  EXPECT_EQ(MockMainFrameWidget()->rawKeyDownTime_, 0);
+
+  MockMainFrameWidget()->rawKeyDownTime_ = 2;
+  MockMainFrameWidget()->DisableBoost();
+  EXPECT_EQ(MockMainFrameWidget()->rawKeyDownTime_, 1);
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, TouchHitTest1) {
+  WebTouchEvent touch_event;
+  touch_event.SetType(WebInputEvent::Type::kTouchStart);
+  touch_event.SetTimeStamp(base::TimeTicks::Now());
+  touch_event.touches_length = 1;
+  
+  WebTouchPoint touch_point;
+  touch_point.state = WebTouchPoint::State::kStatePressed;
+  touch_point.SetPositionInWidget(gfx::PointF(10, 10));
+  touch_point.SetPositionInScreen(gfx::PointF(10, 10));
+  touch_point.radius_x = 5.0f;
+  touch_point.radius_y = 5.0f;
+  touch_event.touches[0] = touch_point;
+  WebPointerEvent event(touch_event, touch_point);
+  
+  MockMainFrameWidget()->TouchHitTest(event, 0);
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, MouseHitTest1) {
+  WebMouseEvent event(WebInputEvent::Type::kMouseDown,
+                      WebInputEvent::kNoModifiers,
+                      WebInputEvent::GetStaticTimeStampForTests());
+  
+  MockMainFrameWidget()->MouseHitTest(event, 1);
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, GetInputElementAttributes1) {
+  HashMap<String, String> attributes;
+  MockMainFrameWidget()->GetInputElementAttributes(attributes);
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, SetOverscrollMode1) {
+  MockMainFrameWidget()->SetOverscrollMode(1);
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, SelectRangeV21) {
+  MockMainFrameWidget()->SelectRangeV2(gfx::Point(10, 10), false);
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, ReportBlank1) {
+  int64_t start = MockMainFrameWidget()->GetCurrentTimestampMS();
+  int64_t end = start + 100;
+  
+  MockMainFrameWidget()->ReportBlank(start, end);
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, ReportBlank_Branches1) {
+  int64_t start = MockMainFrameWidget()->GetCurrentTimestampMS();
+  int64_t end = start + 10;
+  int64_t duration = end - start;
+  int64_t kDragBlankTime = 80;
+  EXPECT_FALSE(duration > kDragBlankTime);
+  MockMainFrameWidget()->ReportBlank(start, end);
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, GetOverScrollOffset_ForTest1) {
+  auto offset = MockMainFrameWidget()->GetOverScrollOffsetForTest();
+  EXPECT_EQ(offset.x(), 0);
+  EXPECT_EQ(offset.y(), 0);
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, OnTextSelected_False1) {
+  MockMainFrameWidget()->OnTextSelectedForTest(true);
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, OnDestroyImageAnalyzerOverlay_False1) {
+  MockMainFrameWidget()->OnDestroyImageAnalyzerOverlayForTest();
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, ShowFreeCopyMenu_Focused1) {
+  auto* input_element = GetDocument().getElementById(AtomicString("input1"));
+  ASSERT_TRUE(input_element);
+  input_element->Focus();
+  ASSERT_TRUE(GetDocument().FocusedElement());
+  MockMainFrameWidget()->ShowFreeCopyMenuForTest();
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, SelectRangeV2_Focused1) {
+  auto* input_element = GetDocument().getElementById(AtomicString("input1"));
+  ASSERT_TRUE(input_element);
+  input_element->Focus();
+  ASSERT_TRUE(GetDocument().FocusedElement());
+  MockMainFrameWidget()->SelectRangeV2ForTest(gfx::Point(1, 1), false);
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, OnDataDetectorSelectText_Focused1) {
+  auto* input_element = GetDocument().getElementById(AtomicString("input1"));
+  ASSERT_TRUE(input_element);
+  input_element->Focus();
+  ASSERT_TRUE(GetDocument().FocusedElement());
+  MockMainFrameWidget()->OnDataDetectorSelectTextForTest();
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, SetZoomLevel_WithoutWidgetBase1) {
+  auto widget_base = std::move(MockMainFrameWidget()->widget_base_);
+  SetWidgetBaseForTesting(nullptr);
+  MockMainFrameWidget()->SetZoomLevel(1.5, gfx::Point(10, 20));
+  SetWidgetBaseForTesting(std::move(widget_base));
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, SetOverscrollMode_WithoutWidgetBase1) {
+  auto widget_base = std::move(MockMainFrameWidget()->widget_base_);
+  SetWidgetBaseForTesting(nullptr);
+  int mode = 42;
+  EXPECT_TRUE(MockMainFrameWidget()->widget_base_);
+  MockMainFrameWidget()->SetOverscrollMode(mode);
+  SetWidgetBaseForTesting(std::move(widget_base));
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, GetOverScrollOffset_WithoutWidgetBase1) {
+  auto widget_base = std::move(MockMainFrameWidget()->widget_base_);
+  SetWidgetBaseForTesting(nullptr);
+  auto offset = MockMainFrameWidget()->GetOverScrollOffsetForTest();
+  EXPECT_EQ(offset.x(), 0);
+  EXPECT_EQ(offset.y(), 0);
+  SetWidgetBaseForTesting(std::move(widget_base));
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, NotifySelectionRangeEmptyTest) {
+  WebLocalFrameImpl* main_frame = &MainFrame();
+  // Scenario 1: Range is not empty (covers the return false branch)
+  {
+    WebRange valid_range(0, 1);
+    MockMainFrameWidget()->NotifySelectionRangeEmpty(valid_range, main_frame);
+  }
+  // Scene 2: Range is empty, and Focused Frame is nullptr
+  {
+    WebRange null_range;
+    EXPECT_TRUE(null_range.IsNull());
+    MockMainFrameWidget()->NotifySelectionRangeEmpty(null_range, nullptr);
+  }
+  // Scene 3: Range is empty, Frame exists, but Client is empty
+  {
+    WebRange null_range;
+    auto* iframe_element = To<HTMLIFrameElement>(
+        GetDocument().getElementById(AtomicString("child")));
+    LocalFrame* child_local_frame = To<LocalFrame>(iframe_element->ContentFrame());
+    WebLocalFrameImpl* child_web_frame = 
+        WebLocalFrameImpl::FromFrame(child_local_frame);
+    iframe_element->remove();
+    EXPECT_TRUE(child_web_frame->Client() == nullptr);
+    MockMainFrameWidget()->NotifySelectionRangeEmpty(null_range, child_web_frame);
+  }
+  // Scene 4: Range is empty, while Frame and Client are functioning properly
+  {
+    WebRange null_range;
+    EXPECT_TRUE(main_frame->Client() != nullptr);
+    MockMainFrameWidget()->NotifySelectionRangeEmpty(null_range, main_frame);
+  }
+}
 }  // namespace
 }  // namespace blink

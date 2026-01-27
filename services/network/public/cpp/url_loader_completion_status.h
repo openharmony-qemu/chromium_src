@@ -117,6 +117,11 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE) URLLoaderCompletionStatus {
   bool abort_due_to_cef_browser_destroyed = false;
 #endif
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  bool used_fallback_proxy = false;
+  bool needs_reload_with_fallback_proxy = false;
+#endif
+
   // Write a representation of this struct into a trace.
   void WriteIntoTrace(perfetto::TracedValue context) const;
 };

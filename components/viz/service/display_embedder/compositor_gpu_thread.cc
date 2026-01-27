@@ -265,6 +265,9 @@ void CompositorGpuThread::Init() {
       FROM_HERE, base::BindRepeating(&CompositorGpuThread::HandleMemoryPressure,
                                      base::Unretained(this))),
   init_succeeded_ = true;
+#if BUILDFLAG(IS_ARKWEB) && !defined(COMPONENT_BUILD)
+  gpu_hang_ = gpu::GpuHangAdapter::CreateGpuHangAdapterForCompositorGpu();
+#endif
 }
 
 void CompositorGpuThread::CleanUp() {

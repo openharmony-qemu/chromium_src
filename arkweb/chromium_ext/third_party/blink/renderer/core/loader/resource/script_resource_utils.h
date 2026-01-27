@@ -16,6 +16,8 @@
 #define THIRD_PARTY_BLINK_RENDERER_CORE_LOADER_RESOURCE_SCRIPT_RESOURCE_UTILS_H_
 
 #include "arkweb/build/features/features.h"
+#include "third_party/blink/renderer/platform/heap/garbage_collected.h"
+#include "third_party/blink/renderer/platform/heap/member.h"
 #include "third_party/blink/renderer/platform/heap/persistent.h"
 #include "third_party/blink/renderer/platform/weborigin/kurl.h"
 #include "third_party/blink/renderer/platform/loader/fetch/resource_response.h"
@@ -23,9 +25,10 @@
 namespace blink {
 class ScriptResource;
 
-class ScriptResourceUtils {
+class ScriptResourceUtils : public GarbageCollected<ScriptResourceUtils> {
 public:
-	ScriptResource* scriptResource;
+	void Trace(Visitor* visitor) const;
+	Member<ScriptResource> scriptResource;
 	ScriptResourceUtils(ScriptResource* impl);
 
 #if BUILDFLAG(ARKWEB_INJECT_OFFLINE_RESOURCE)

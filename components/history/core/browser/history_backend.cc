@@ -77,6 +77,10 @@
 #include "base/ios/scoped_critical_action.h"
 #endif
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "services/network/public/cpp/features.h"
+#endif
+
 using base::Time;
 using base::TimeTicks;
 using favicon::FaviconBitmap;
@@ -419,6 +423,15 @@ void HistoryBackend::Init(
 
   if (!force_fail)
     InitImpl(history_database_params);
+#if BUILDFLAG(IS_ARKWEB)
+  if (force_fail && base::FeatureList::IsEnabled(network::features::kDeleteHistoryServiceDB)) {
+    base::FilePath history_name = history_database_params.history_dir.Append(kHistoryFilename);
+    if (base::PathExists(history_name)) {
+      LOG(INFO) << "HistoryBackend::Init delete history file.";
+      sql::Database::Delete(history_name);
+    }
+  }
+#endif
   delegate_->DBLoaded();
 
   history_sync_bridge_ = std::make_unique<HistorySyncBridge>(

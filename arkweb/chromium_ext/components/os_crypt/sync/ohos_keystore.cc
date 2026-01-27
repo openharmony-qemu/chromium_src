@@ -34,6 +34,35 @@ constexpr uint32_t IV_SIZE = 16;
 constexpr char V10[] = "V10";
 constexpr uint32_t V10_SIZE = 3;
 
+namespace {
+size_t GetEncryptSize() {
+  return V10_SIZE + IV_SIZE + KEY_LENGTH;
+}
+
+bool ValidateKeyAndGetEncryptedData(const base::FilePath& key_file_path, std::string& encryptedData) {
+  if (!base::PathExists(key_file_path)) {
+    return false;
+  }
+
+  bool res = base::ReadFileToString(key_file_path, &encryptedData);
+  if (!res) {
+    PLOG(INFO) << "failed to read file";
+    return false;
+  }
+
+  if (encryptedData.length() == GetEncryptSize() && encryptedData.compare(0, V10_SIZE, std::string(V10)) == 0) {
+    return true;
+  }
+
+  if (encryptedData.length() == KEY_LENGTH) {
+    return true;
+  }
+
+  LOG(ERROR) << "validate key fail encrypted data length: " << encryptedData.length();
+  return false;
+}
+}
+
 std::string GetKey(const std::string& alias) {
   base::FilePath cache_path;
   base::PathService::Get(base::DIR_CACHE, &cache_path);
@@ -50,13 +79,8 @@ std::string GetKey(const std::string& alias) {
   }
   base::FilePath key_file = key_dir.Append(FILE_PATH_LITERAL(alias));
 
-  if (base::PathExists(key_file)) {
-    std::string encryptedData;
-    bool res = base::ReadFileToString(key_file, &encryptedData);
-    if (!res) {
-      PLOG(INFO) << "failed to read file: " << alias;
-      return std::string();
-    }
+  std::string encryptedData;
+  if (ValidateKeyAndGetEncryptedData(key_file, encryptedData)) {
     std::string local_key;
     for (int i = 0; i < COUNT_FOR_RETRY; i++) {
       local_key = OHOS::NWeb::OhosAdapterHelper::GetInstance()
@@ -72,13 +96,16 @@ std::string GetKey(const std::string& alias) {
                              base::File::FLAG_READ);
     std::string local_key = GenerateLocalKey(KEY_LENGTH);
 
-    std::string encryptedData;
     for (int i = 0; i < COUNT_FOR_RETRY; i++) {
       encryptedData = OHOS::NWeb::OhosAdapterHelper::GetInstance()
                           .GetKeystoreAdapterInstance()
                           .EncryptKey(alias, local_key);
       if (!encryptedData.empty()) {
-        base::WriteFile(key_file, encryptedData.c_str());
+        base::WriteFile(
+            key_file,
+            base::span<const uint8_t>(
+                reinterpret_cast<const uint8_t*>(encryptedData.data()),
+                encryptedData.size()));
         return local_key;
       }
     }

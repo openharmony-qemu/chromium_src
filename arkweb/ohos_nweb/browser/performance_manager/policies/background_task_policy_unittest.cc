@@ -328,9 +328,9 @@ TEST(BackgroundTaskPolicyTEST, OnIsAudibleChanged004) {
     background_task_policy->audio_state_num_ = 1;
     page_node_mock.SetIsAudible(false);
 
-    content::RenderFrameHost* mock_rfh = reinterpret_cast<content::RenderFrameHost*>(0x1234); // 0x1234 test case
-    background_task_policy->audio_context_players_num_.insert(std::make_pair(mock_rfh, 1));
-    background_task_policy->audio_context_players_num_.insert(std::make_pair(mock_rfh, 2)); // test case 2
+    content::GlobalRenderFrameHostId valid_id = content::GlobalRenderFrameHostId(1, 1);
+    background_task_policy->audio_context_players_num_.insert(std::make_pair(valid_id, 1));
+    background_task_policy->audio_context_players_num_.insert(std::make_pair(valid_id, 2)); // test case 2
 
     EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), 2); // test case 2
 
@@ -343,9 +343,9 @@ TEST(BackgroundTaskPolicyTEST, OnIsAudibleChanged004) {
 TEST(BackgroundTaskPolicyTEST, OnIsAudibleChanged005) {
     auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
 
-    content::RenderFrameHost* mock_rfh = reinterpret_cast<content::RenderFrameHost*>(0x1234); // 0x1234 test case
-    background_task_policy->audio_context_players_num_.insert(std::make_pair(mock_rfh, 1));
-    background_task_policy->audio_context_players_num_.insert(std::make_pair(mock_rfh, 2)); // test case 2
+    content::GlobalRenderFrameHostId valid_id = content::GlobalRenderFrameHostId(1, 1);
+    background_task_policy->audio_context_players_num_.insert(std::make_pair(valid_id, 1));
+    background_task_policy->audio_context_players_num_.insert(std::make_pair(valid_id, 2)); // test case 2
 
     size_t initial_size = background_task_policy->audio_context_players_num_.size();
     EXPECT_EQ(initial_size, 2);  // test case 2

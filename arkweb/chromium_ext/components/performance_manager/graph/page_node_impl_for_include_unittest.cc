@@ -79,8 +79,8 @@ public:
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
     MOCK_METHOD(void, OnDecrementAudioNum, (const PageNode *), (override));
-    MOCK_METHOD(void, OnAudioContextPlaybackStarted, (const AudioContextId &), (override));
-    MOCK_METHOD(void, OnAudioContextPlaybackStopped, (const AudioContextId &), (override));
+    MOCK_METHOD(void, OnAudioContextPlaybackStarted, (content::GlobalRenderFrameHostId, int), (override));
+    MOCK_METHOD(void, OnAudioContextPlaybackStopped, (content::GlobalRenderFrameHostId, int), (override));
     void SetNotifiedAudioContextId(const AudioContextId &audio_context_id)
     {
         audio_context_id_ = audio_context_id;

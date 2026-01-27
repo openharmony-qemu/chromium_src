@@ -64,6 +64,7 @@ class OhosToplevelWindow : public OhosWindow,
       const gfx::Point& pointer_location_in_px) override;
 
   // PlatformWindow:
+  void Show(bool inactive) override;
   void Hide() override;
   void Close() override;
   bool IsVisible() const override;
@@ -113,6 +114,7 @@ class OhosToplevelWindow : public OhosWindow,
   void OnWindowRectChangeEvent(std::shared_ptr<XCEvent> event);
   void OnWindowCaptionButtonRectChangeEvent(std::shared_ptr<XCEvent> event);
   void OnWindowDisplayIdChangeEvent(std::shared_ptr<XCEvent> event);
+  void OnBackToLastPage();
 
   void UpdateMinAndMaxSize();
   absl::optional<gfx::Size> GetMinimumSizeForOhosWindow();
@@ -140,6 +142,7 @@ class OhosToplevelWindow : public OhosWindow,
   bool HasInitDone() override;
 
   void CloseInternal();
+  void CreateAndShowInternal();
 
   bool use_native_frame_ = false;
 
@@ -170,6 +173,9 @@ class OhosToplevelWindow : public OhosWindow,
   bool caption_button_visible_ = true;
   AbilityType ability_type_ = AbilityType::kEntryAbility;
   std::string app_id_;
+
+  bool need_create_ability_ = false;
+  WindowInitParameter init_param_;
 };
 
 }  // namespace ui

@@ -1,6 +1,31 @@
-// Copyright (c) 2025 Huawei Device Co., Ltd. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
+/*
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this list of
+ *    conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice, this list
+ *    of conditions and the following disclaimer in the documentation and/or other materials
+ *    provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its contributors may be used
+ *    to endorse or promote products derived from this software without specific prior written
+ *    permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #ifndef UI_OZONE_PLATFORM_OHOS_HOST_OHOS_EVENT_SOURCE_NODE_HANDLE_H_
 #define UI_OZONE_PLATFORM_OHOS_HOST_OHOS_EVENT_SOURCE_NODE_HANDLE_H_
@@ -16,7 +41,7 @@ namespace ui {
 
 using namespace ohos::adapter::xcomponent;
 
-struct ArkUI_TouchEventData {
+struct NodeHandleTouchEventData {
   float x = 0.0f;
   float y = 0.0f;
   float tilt_x = 0.0f;
@@ -27,13 +52,16 @@ struct ArkUI_TouchEventData {
   float force = 0.0f;
   int32_t touch_action = 0;
   int32_t tool_type = 0;
+  int64_t timestamp;
 };
 
-struct ArkUI_MouseEventData {
+struct NodeHandleMouseEventData {
   float x;
   float y;
   float screenX;
   float screenY;
+  float raw_delta_x;
+  float raw_delta_y;
   int64_t timestamp;
   int32_t action;
   int32_t button;
@@ -46,14 +74,18 @@ class OhosEventSourceNodeHandle : public OhosEventSourceBase {
   OhosEventSourceNodeHandle(const OhosEventSourceNodeHandle&) = delete;
   OhosEventSourceNodeHandle& operator=(const OhosEventSourceNodeHandle&) =
       delete;
-  explicit OhosEventSourceNodeHandle(OhosWindowManager* window_manager);
+  explicit OhosEventSourceNodeHandle(OhosWindowManager* window_manager,
+                                     OhosWindowDragManager* window_drag_manager);
   ~OhosEventSourceNodeHandle() override = default;
 
   void OnTouchEvent(const gfx::AcceleratedWidget widget_id,
-                    const ArkUI_TouchEventData& touch_event_data);
+                    const NodeHandleTouchEventData& touch_event_data,
+                    const int32_t display_id);
   void OnMouseEvent(const gfx::AcceleratedWidget widget_id,
-                    const ArkUI_MouseEventData& mouse_event_data);
-  void SimulateLeftButtonUp(const gfx::AcceleratedWidget widget_id) override;
+                    const NodeHandleMouseEventData& mouse_event_data,
+                    const int32_t display_id,
+                    const EventFlags key_flags);
+  void SimulateTouchUp(const gfx::AcceleratedWidget widget_id) override;
 
   EventType GetTouchAction(const int32_t touch_action);
   EventPointerType GetPointType(const int32_t tool_type);
@@ -65,21 +97,40 @@ class OhosEventSourceNodeHandle : public OhosEventSourceBase {
   void OnPinchEvent(const ArkUI_GestureEventActionType action_type,
                     const gfx::AcceleratedWidget widget_id,
                     const NodeHandlePinchEvent& gesture_event);
-  void OnDoubleTapEvent(const gfx::AcceleratedWidget widget_id,
-                        const NodeHandleTapEvent& event);
 
   // OhosWindowObserver
   void OnWindowAdded(OhosWindow* window) override;
   void OnWindowRemoved(OhosWindow* window) override;
 
+  void SendWindowMouseEventForTabDragNodeHandle(
+      const gfx::AcceleratedWidget widget_id,
+      std::shared_ptr<NodeHandleMouseEventData> mouse_event_data,
+      const int32_t display_id,
+      const EventFlags key_flags);
+  void SendWindowTouchEventForTabDragNodeHandle(
+      const gfx::AcceleratedWidget widget_id,
+      std::shared_ptr<NodeHandleTouchEventData> touch_event_data,
+      const int32_t display_id);
+
  private:
   void OnMouseMoveEvent(const gfx::AcceleratedWidget widget_id,
-                        const ArkUI_MouseEventData& mouse_event_data,
-                        const gfx::PointF& original_location);
+                        const NodeHandleMouseEventData& mouse_event_data,
+                        const gfx::PointF& original_location,
+                        const int32_t display_id);
   void CreateAndDispatchFlingEvent(const gfx::AcceleratedWidget widget_id,
                                    const NodeHandlePanEvent& ohos_event,
                                    const EventFlags& event_flags,
                                    const bool is_stop);
+  void PrepareXcomponentPointForTouchEvent(
+      const gfx::AcceleratedWidget widget_id,
+      std::shared_ptr<NodeHandleTouchEventData> touch_event_data,
+      const float display_x,
+      const float display_y);
+  void PrepareXcomponentPointForMouseEvent(
+      const gfx::AcceleratedWidget widget_id,
+      std::shared_ptr<NodeHandleMouseEventData> mouse_event_data,
+      const float display_x,
+      const float display_y);
 
   std::shared_ptr<NodeHandleInputEventCallBack> event_callback_;
 };

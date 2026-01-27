@@ -31,56 +31,31 @@
 #define OHOS_ADAPTER_DRAG_ADAPTER_DRAG_DROP_OHOS_ADAPTER_H
 
 #include <cstdint>
+#include <iostream>
 #include <memory>
+#include <sstream>
 #include <string>
 
-#include <multimedia/image_framework/image_mdk_common.h>
-#include <multimedia/image_framework/image_pixel_map_mdk.h>
-
+#include "ohos/adapter/drag_drop/drag_drop_common.h"
 #include "ohos/adapter/export.h"
 #include "third_party/aki/include/aki/value/array_buffer.h"
 
 namespace ohos {
 namespace adapter {
-
-struct OhosBasicDragData {
-  std::string text;
-  std::string url;
-  std::string urlTitle;
-  std::string html;
-  std::vector<uint8_t> bookmarkData;
-  std::vector<uint8_t> webCustomData;
-};
-
-struct OhosStartDragParam {
-  OhosBasicDragData basicData;
-  std::string webImageFilePath;
-  std::shared_ptr<char[]> pixelMapBuffer;
-  int pixelMapWidth;
-  int pixelMapHeight;
-  int pixelMapTouchX;
-  int pixelMapTouchY;
-};
-
-struct OhosDropData {
-  OhosBasicDragData basicData;
-  std::vector<std::string> filePaths;
-};
-
 struct OhosDragParamToJs {
   std::string text;
   std::string url;
-  std::string urlTitle;
+  std::string url_title;
   std::string html;
-  std::string webImageFilePath;
-  aki::ArrayBuffer bookmarkBuffer;
-  aki::ArrayBuffer webCustomBuffer;
-  aki::ArrayBuffer pixelMapBuffer;
-  int pixelMapWidth;
-  int pixelMapHeight;
-  int pixelMapTouchX;
-  int pixelMapTouchY;
-  std::string windowId;
+  std::string web_image_file_path;
+  aki::ArrayBuffer bookmark_buffer;
+  aki::ArrayBuffer web_custom_buffer;
+  aki::ArrayBuffer pixelmap_buffer;
+  int pixelmap_width;
+  int pixelmap_height;
+  int pixelmap_touch_x;
+  int pixelmap_touch_y;
+  std::string window_id;
 };
 
 class ADAPTER_EXPORT_API DragDropOhosAdapter {
@@ -99,10 +74,17 @@ class ADAPTER_EXPORT_API DragDropOhosAdapter {
 
   std::string GetDraggedExtensionFileName();
   void SetDraggedExtensionFileName(const std::string& file_name);
+  void SetDraggingStarted(bool dragging_start) {
+    is_dragging_started_.store(dragging_start, std::memory_order_release);
+  }
+  bool IsDraggingStarted() {
+    return is_dragging_started_.load(std::memory_order_acquire);
+  }
 
  private:
   DragDropOhosAdapter();
   std::string dragged_extension_file_name_;
+  std::atomic<bool> is_dragging_started_ = false;
 };
 
 }  // namespace adapter

@@ -2527,6 +2527,9 @@ source_set("browser") {
       "file_system_access/file_path_watcher/file_path_watcher_inotify.cc",
       "file_system_access/file_path_watcher/file_path_watcher_inotify.h",
     ]
+    deps += [
+      "//third_party/blink/public/mojom:memory_usage_monitor_linux_mojo_bindings",
+    ]
   }
 
   if (is_win) {

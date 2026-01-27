@@ -31,10 +31,12 @@ import { ContainerModule } from 'inversify';
 
 import { AbilityManager } from '../common/AbilityManager';
 import { DragParamManager } from '../common/DragParamManager';
+import { NodeHandleManager } from './NodeHandleManager';
 import { SystemFloatingWindowManager } from './SystemFloatingWindowManager';
 
 export const commonModule = new ContainerModule((bind) => {
   bind(AbilityManager).toSelf();
   bind(DragParamManager).toSelf();
   bind(SystemFloatingWindowManager).toSelf();
+  bind(NodeHandleManager).toSelf();  
 });

@@ -31,7 +31,7 @@ OhosMojoMediaClient::~OhosMojoMediaClient() {}
 std::unique_ptr<AudioDecoder> OhosMojoMediaClient::CreateAudioDecoder(
     scoped_refptr<base::SequencedTaskRunner> task_runner,
     std::unique_ptr<MediaLog> media_log) {
-  return std::make_unique<OhosAudioDecoder>(task_runner);
+  return std::make_unique<OhosAudioDecoder>(task_runner, std::move(media_log));
 }
 
 std::unique_ptr<CdmFactory> OhosMojoMediaClient::CreateCdmFactory(

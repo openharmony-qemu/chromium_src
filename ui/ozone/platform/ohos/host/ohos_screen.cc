@@ -44,7 +44,7 @@
 #include "ui/display/screen.h"
 #include "ui/display/util/display_util.h"
 #include "ui/gfx/geometry/dip_util.h"
-#include "ui/ozone/platform/ohos/host/ohos_event_source.h"
+#include "ui/ozone/platform/ohos/host/ohos_event_source_base.h"
 #include "ui/ozone/platform/ohos/host/ohos_window.h"
 #include "ui/ozone/public/ozone_switches.h"
 
@@ -173,8 +173,8 @@ display::Display OhosScreen::GetDisplayForAcceleratedWidget(
 }
 
 gfx::Point OhosScreen::GetCursorScreenPoint() const {
-    gfx::Point point =
-      (static_cast<OhosEventSource*>(event_source_))->GetCursorScreenPoint();
+  gfx::Point point = (static_cast<OhosEventSourceBase*>(event_source_))
+                         ->GetCursorScreenPoint();
   return gfx::ToFlooredPoint(
       gfx::ConvertPointToDips(point, device_scale_factor_));
 }
@@ -310,8 +310,8 @@ gfx::AcceleratedWidget OhosScreen::GetLocalProcessWidgetAtPoint(
 }
 
 gfx::Point OhosScreen::GetCursorScreenPoint(const int32_t display_id) const {
-    gfx::Point point =
-      (static_cast<OhosEventSource*>(event_source_))->GetCursorScreenPoint();
+  gfx::Point point = (static_cast<OhosEventSourceBase*>(event_source_))
+                         ->GetCursorScreenPoint();
   float device_scale_factor = device_scale_factor_;
   auto it = display_list_.FindDisplayById(display_id);
   if (it != display_list_.displays().end()) {

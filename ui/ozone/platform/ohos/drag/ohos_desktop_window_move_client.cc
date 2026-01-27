@@ -33,7 +33,7 @@
 #include "ui/events/event.h"
 #include "ui/gfx/geometry/rect.h"
 #include "ui/ozone/platform/ohos/common/ohos_util.h"
-#include "ui/ozone/platform/ohos/host/ohos_event_source.h"
+#include "ui/ozone/platform/ohos/host/ohos_event_source_base.h"
 
 namespace ui {
 
@@ -66,7 +66,8 @@ void OhosDesktopWindowMoveClient::OnTouchMove() {
     return;
   }
   gfx::Point cursor_pointer =
-      reinterpret_cast<OhosEventSource*>(event_source)->GetCursorScreenPoint();
+      reinterpret_cast<OhosEventSourceBase*>(event_source)
+          ->GetCursorScreenPoint();
   gfx::Point system_loc = cursor_pointer - window_offset_;
   if (window_size_.IsZero()) {
     window_size_ =  window_delegate_->GetSize();

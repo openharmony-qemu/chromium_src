@@ -6,6 +6,7 @@
 
 #include <utility>
 
+#include "build/build_config.h"
 #include "base/json/json_reader.h"
 #include "base/json/json_writer.h"
 #include "base/json/values_util.h"
@@ -34,7 +35,11 @@ constexpr base::FeatureParam<int> kTimeoutMs{&kParcelTracking, kTimeoutParam,
 
 // URL to get parcel status.
 const char kDefaultServiceBaseUrl[] =
+#if BUILDFLAG(IS_OHOS)
+    "https://xxx";
+#else
     "https://memex-pa.googleapis.com/v1/shopping/parcels";
+#endif
 const char kBaseUrlParam[] = "parcel_service_base_url";
 constexpr base::FeatureParam<std::string> kServiceBaseUrl{
     &commerce::kParcelTracking, kBaseUrlParam, kDefaultServiceBaseUrl};

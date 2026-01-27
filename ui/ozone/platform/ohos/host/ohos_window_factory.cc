@@ -48,6 +48,8 @@ std::unique_ptr<OhosWindow> OhosWindow::Create(
     PlatformWindowDelegate* delegate,
     OhosWindowManager* manager,
     PlatformWindowInitProperties properties) {
+  LOG(INFO) << "[ohoswindow] OhosWindow::Create enter, type is "
+            << static_cast<int>(properties.type);
   std::unique_ptr<OhosWindow> window;
   switch (properties.type) {
     case PlatformWindowType::kPopup:
@@ -57,7 +59,8 @@ std::unique_ptr<OhosWindow> OhosWindow::Create(
       if (auto* parent = manager->GetWindow(properties.parent_widget)) {
         window = std::make_unique<OhosPopup>(delegate, manager, parent);
       } else {
-        LOG(WARNING) << "Failed to determine parent for menu/popup window.";
+        LOG(WARNING) << "[ohoswindow] "
+                     << "Failed to determine parent for menu/popup window.";
         window = std::make_unique<OhosFakeWindow>(delegate, manager);
       }
       break;

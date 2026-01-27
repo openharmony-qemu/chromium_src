@@ -7,6 +7,7 @@
 
 #include <ace/xcomponent/native_interface_xcomponent.h>
 #include <arkui/native_gesture.h>
+#include <multimodalinput/oh_input_manager.h>
 
 #include "ohos/adapter/drag_drop/drag_drop_common.h"
 #include "ohos/adapter/export.h"
@@ -39,8 +40,12 @@ struct ADAPTER_EXPORT_API NodeHandleInputEventCallBack {
   void (*pinchEventCallback)(const ArkUI_GestureEventActionType action_type,
                              const int32_t widget_id,
                              const NodeHandlePinchEvent& event);
-  void (*doubleTapEventCallback)(const int32_t widget_id,
-                                 const NodeHandleTapEvent& tap_event);
+  void (*sendWindowMouseEventForTabDragCallback)(
+      const int32_t widget_id,
+      Input_MouseEvent* window_mouse_event);
+  void (*sendWindowTouchEventForTabDragCallback)(
+      const int32_t widget_id,
+      Input_TouchEvent* window_touch_event);
 };
 
 }  // namespace ohos::adapter::xcomponent

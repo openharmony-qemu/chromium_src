@@ -75,6 +75,8 @@ class ADAPTER_EXPORT_API AppWindowAdapter {
   bool ShiftWindowTouchEvent(const int32_t source_id,
                              const int32_t target_id,
                              const int32_t finger_id);
+  bool Bind(const std::string& id);
+  bool UnBind(const std::string& id);
 
  private:
   AppWindowAdapter() = default;

@@ -71,8 +71,4 @@ export default class StatelessAbility extends WebAbility {
   onBackground() {
     super.onBackground();
   }
- 
-  override getContentPath(): string {
-    return 'pages/Index';
-  }
 };

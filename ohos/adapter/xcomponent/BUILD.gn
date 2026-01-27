@@ -31,19 +31,26 @@ component("xcomponent") {
     sources = [
       "adapter/window_adapter.cc",
       "adapter/window_adapter.h",
-      "event/gesture_event_receiver.cc",
+      "event/node_handle_gesture_event_common.h",
+      "event/node_handle_input_event_common.h",
       "event/gesture_event_common.h",
+      "event/gesture_event_receiver.cc",
       "event/input_event_common.h",
-      "event/window_event_receiver.cc",
       "event/window_event_common.cc",
       "event/window_event_common.h",
       "event/window_event_filter_adapter.cc",
       "event/window_event_filter_adapter.h",
+      "event/window_event_receiver.cc",
+      "node_handle_util.cc",
+      "node_handle_util.h",
+      "renderer/node_handle_xcomponent_impl.cc",
+      "renderer/node_handle_xcomponent_impl.h",
+      "renderer/xcomponent_base.h",
       "renderer/xcomponent_impl.cc",
       "renderer/xcomponent_impl.h",
+      "xcomponent_delegate.h",
       "xcomponent_manager.cc",
       "xcomponent_manager.h",
-      "xcomponent_delegate.h"
     ]
 
     cflags = [
@@ -52,7 +59,10 @@ component("xcomponent") {
       "-Wno-error=parentheses-equality"
     ]
 
-    deps = [ "//third_party/aki:aki_jsbind" ]
+    deps = [ 
+      "//third_party/aki:aki_jsbind",
+      "//ohos/adapter/task_runner:task_runner" 
+    ]
 
     libs = [
       "hilog_ndk.z",

@@ -215,6 +215,13 @@ class OhosWindow : public PlatformWindow,
   // Contains the current state of the window.
   PlatformWindowState state_ = PlatformWindowState::kUnknown;
 
+ protected:
+  void BindNodeHandle();
+  void UnBindNodeHandle();
+  // whether the node handle xcomponent already bound with node content in
+  // ability
+  bool is_ability_bound_ = false;
+
  private:
   uint32_t DispatchEventToDelegate(const PlatformEvent& native_event);
 

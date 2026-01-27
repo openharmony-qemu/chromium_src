@@ -12,6 +12,9 @@ if (is_ohos) {
     ]
 
     sources = [
+      "ohos_media_codec_bridge_impl.cc",
+      "ohos_media_codec_bridge_impl.h",
+      "ohos_media_codec_bridge.h",
       "ohos_media_decoder_bridge_impl.cc",
       "ohos_media_decoder_bridge_impl.h",
       "ohos_media_codec_util.cc",

@@ -36,10 +36,8 @@ function implSubWindowAdapter(): SubWindowAdapter {
   return Inject.getOrCreate(SubWindowAdapter);
 }
 
-function createSubWindow(
-  param: NewWindowParam,
-  callback: (id: string) => void) {
-  implSubWindowAdapter().createSubWindow(param, callback)
+function createSubWindow(param: NewWindowParam) {
+  implSubWindowAdapter().createSubWindow(param)
 }
 
 function showSubWindow(id: string) {
@@ -58,6 +56,10 @@ function setSubWindowBounds(id: string, r: WindowBound) {
   implSubWindowAdapter().setSubWindowBounds(id, r);
 }
 
+function reuseSubWindow(param: NewWindowParam): string {
+  return implSubWindowAdapter().reuseSubWindow(param);
+}
+
 export class SubWindowAdapterBind {
   static bind() {
     JsBindingUtils.bindFunction("SubWindow.Create", createSubWindow);
@@ -65,5 +67,6 @@ export class SubWindowAdapterBind {
     JsBindingUtils.bindFunction("SubWindow.Hide", hideSubWindow);
     JsBindingUtils.bindFunction("SubWindow.Cancel", cancelSubWindow);
     JsBindingUtils.bindFunction("SubWindow.SetBounds", setSubWindowBounds);
+    JsBindingUtils.bindFunction("SubWindow.ReuseSubWindow", reuseSubWindow);
   }
 }

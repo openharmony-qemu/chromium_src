@@ -939,6 +939,12 @@ void DesktopWindowTreeHostPlatform::OnClosed() {
 void DesktopWindowTreeHostPlatform::OnWindowStateChanged(
     ui::PlatformWindowState old_state,
     ui::PlatformWindowState new_state) {
+#if BUILDFLAG(IS_OHOS)
+  LOG(INFO) << __FUNCTION__ << " Window state changed, window id: "
+            << platform_window()->GetWindowUniqueId()
+            << ", old state: " << static_cast<int>(old_state)
+            << ", new state: " << static_cast<int>(new_state);
+#endif
   bool was_minimized = old_state == ui::PlatformWindowState::kMinimized;
   bool is_minimized = new_state == ui::PlatformWindowState::kMinimized;
 
@@ -1014,6 +1020,10 @@ void DesktopWindowTreeHostPlatform::OnFullscreenSwitched(bool is_enter_fullscree
 display::Display DesktopWindowTreeHostPlatform::AccessDisplayNearestRootWindow()
     const {
   return GetDisplayNearestRootWindow();
+}
+
+bool DesktopWindowTreeHostPlatform::OnBackToLastPage() {
+  return GetWidget()->ExecuteCommand(IDC_BACK);
 }
 #endif
 

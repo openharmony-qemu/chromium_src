@@ -50,6 +50,7 @@
 #include "base/strings/utf_string_conversions.h"
 #include "base/synchronization/lock.h"
 #include "base/task/thread_pool.h"
+#include "base/threading/hang_watcher.h"
 #include "base/types/optional_util.h"
 #include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
@@ -77,6 +78,7 @@ namespace ohos_permission = ohos::adapter::permission;
 namespace ui {
 namespace {
 
+constexpr base::TimeDelta kClipboardHangWatchTime = base::Seconds(30);
 constexpr int kMaxUriDecodeLen = 2048;
 const char* kImageBmp = "image/bmp";
 const std::string K_PASTEBOARD_LOG_TAG = "[OhosPasteboard] ";
@@ -154,6 +156,10 @@ class ClipboardOHOSInternal {
       DestroyUdmfData(&udmf_data);
       return;
     }
+
+    //The value must be the same as the timeout interval of the OH pasteboard interface.
+    base::WatchHangsInScope scope(kClipboardHangWatchTime);
+    
     result = OH_Pasteboard_SetData(pasteboard_, udmf_data);
     if (result != ERR_OK) {
       LOG(ERROR) << "[Pasteboard]WritePasteboard OH_Pasteboard_SetData failed,error code is :" 
@@ -287,6 +293,10 @@ class ClipboardOHOSInternal {
         << " ReadTextFromPasteBoard OH_Pasteboard_HasData fail.";
         return;
     }
+
+    //The value must be the same as the timeout interval of the OH pasteboard interface.
+    base::WatchHangsInScope scope(kClipboardHangWatchTime);
+    
     OH_UdmfData* udmf_data = OH_Pasteboard_GetData(pasteboard_, &status);
     if (status != ERR_OK) {
         LOG(ERROR) << K_PASTEBOARD_LOG_TAG
@@ -850,19 +860,21 @@ void PrepareImgBufferForRead(OH_Pixelmap_ImageInfo*& image_info,
     }
     DestroyUdsPlainText(&uds_plain_text);
   }
-
-  void WriteCustomeDataToRecord(std::string custome_data,
-                                const ClipboardFormatType format_type,
-                                OH_UdmfRecord* record) {
-    unsigned int count = custome_data.length();
-    unsigned char* entry =
-        reinterpret_cast<unsigned char*>(custome_data.data());
-    int entry_res = OH_UdmfRecord_AddGeneralEntry(
-        record, format_type.GetName().c_str(), entry, count);
-    if (entry_res != UDMF_E_OK) {
-      LOG(ERROR) << "[Pasteboard]WriteData OH_UdmfRecord_AddGeneralEntry "
-                    "failed,code is :"
-                 << entry_res;
+  void WriteCustomDataToRecord(const CustomDataMap& custom_datas,
+                               OH_UdmfRecord* record) {
+    for (auto it = custom_datas.begin(); it != custom_datas.end(); ++it) {
+      const ClipboardFormatType format_type = it->first;
+      std::string custom_data = it->second;
+      unsigned int count = custom_data.length();
+      unsigned char* entry =
+          reinterpret_cast<unsigned char*>(custom_data.data());
+      int entry_res = OH_UdmfRecord_AddGeneralEntry(
+          record, format_type.GetName().c_str(), entry, count);
+      if (entry_res != UDMF_E_OK) {
+        LOG(ERROR) << "[Pasteboard]WriteData OH_UdmfRecord_AddGeneralEntry "
+                      "failed,code is :"
+                  << entry_res;
+      }
     }
   }
 
@@ -902,12 +914,8 @@ void PrepareImgBufferForRead(OH_Pixelmap_ImageInfo*& image_info,
     }
 
     if (HasFormat(ClipboardInternalFormat::kCustom)) {
-      const ClipboardFormatType book_mark_type =
-          ClipboardFormatType::BookMarkType();
-      if (current_data->HasCustomDataFormat(book_mark_type)) {
-        std::string custome_data = current_data->GetCustomData(book_mark_type);
-        WriteCustomeDataToRecord(custome_data, book_mark_type, udmf_record);
-      }
+      const CustomDataMap& custom_datas = current_data->GetAllCustomData();
+      WriteCustomDataToRecord(custom_datas, udmf_record);
     }
 
     WritePasteboard(udmf_record);

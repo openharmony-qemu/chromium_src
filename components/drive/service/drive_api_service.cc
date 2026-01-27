@@ -13,6 +13,7 @@
 #include <utility>
 #include <vector>
 
+#include "build/build_config.h"
 #include "base/functional/bind.h"
 #include "base/observer_list.h"
 #include "base/strings/stringprintf.h"
@@ -79,10 +80,17 @@ namespace drive {
 namespace {
 
 // OAuth2 scopes for Drive API.
+#if BUILDFLAG(IS_OHOS)
+const char kDriveScope[] = "https://xxx";
+const char kDriveAppsReadonlyScope[] =
+    "https://xxx";
+const char kDriveAppsScope[] = "https://xxx";
+#else
 const char kDriveScope[] = "https://www.googleapis.com/auth/drive";
 const char kDriveAppsReadonlyScope[] =
     "https://www.googleapis.com/auth/drive.apps.readonly";
 const char kDriveAppsScope[] = "https://www.googleapis.com/auth/drive.apps";
+#endif
 
 // Mime type to create a directory.
 const char kFolderMimeType[] = "application/vnd.google-apps.folder";

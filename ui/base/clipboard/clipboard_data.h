@@ -26,6 +26,10 @@ class SkBitmap;
 
 namespace ui {
 
+#if BUILDFLAG(IS_OHOS)
+  using CustomDataMap = std::map<ClipboardFormatType, std::string>;
+#endif  // BUILDFLAG(IS_OHOS)
+
 // Clipboard data format used by ClipboardInternal.
 enum class ClipboardInternalFormat {
   kText = 1 << 0,
@@ -146,6 +150,10 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) ClipboardData {
   // `application/web;type="custom/format0"` exists.
   bool HasCustomDataFormat(const ClipboardFormatType& format) const;
   std::string GetCustomData(const ClipboardFormatType& data_format) const;
+
+#if BUILDFLAG(IS_OHOS)
+  const CustomDataMap& GetAllCustomData() const;
+#endif  // BUILDFLAG(IS_OHOS)
   // Returns the ClipboardFormatType::DataTransferCustomType() pickle.
   std::string GetDataTransferCustomData() const;
   void SetCustomData(const ClipboardFormatType& format,

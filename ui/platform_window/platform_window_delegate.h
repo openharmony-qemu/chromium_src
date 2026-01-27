@@ -204,6 +204,8 @@ class COMPONENT_EXPORT(PLATFORM_WINDOW) PlatformWindowDelegate {
   virtual void SetSurfaceId(uint64_t surface_id) = 0;
 
   virtual void OnFullscreenSwitched(bool is_enter_fullscreen);
+
+  virtual bool OnBackToLastPage();
 #endif
 
   // Requests size constraints for the PlatformWindow in DIP.

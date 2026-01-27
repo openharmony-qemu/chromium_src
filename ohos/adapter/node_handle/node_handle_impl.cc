@@ -87,7 +87,9 @@ bool NodeHandleImpl::LoadAllNodeHandleFunctions(
              "OH_ArkUI_SurfaceCallback_SetSurfaceChangedEvent") &&
          ace_ndk_lib_.LoadFunction(
              &set_surface_destroyed_event_func_,
-             "OH_ArkUI_SurfaceCallback_SetSurfaceDestroyedEvent");
+             "OH_ArkUI_SurfaceCallback_SetSurfaceDestroyedEvent") &&
+         ace_ndk_lib_.LoadFunction(&accessibility_provider_create_func_,
+                                   "OH_ArkUI_AccessibilityProvider_Create");
 }
 
 NodeHandleImpl::~NodeHandleImpl() {
@@ -103,10 +105,12 @@ NodeHandleImpl::~NodeHandleImpl() {
   set_surface_created_event_func_ = nullptr;
   set_surface_changed_event_func_ = nullptr;
   set_surface_destroyed_event_func_ = nullptr;
+  accessibility_provider_create_func_ = nullptr;
 }
 
 __attribute__((no_sanitize("cfi", "cfi-icall")))
-OH_ArkUI_SurfaceHolder* NodeHandleImpl::SurfaceHolderCreate(ArkUI_NodeHandle node) {
+OH_ArkUI_SurfaceHolder* NodeHandleImpl::SurfaceHolderCreate(
+    ArkUI_NodeHandle node) {
   if (surface_holder_create_func_ == nullptr) {
     LOGE("NodeHandleImpl::SurfaceHolderCreate func null");
     return nullptr;
@@ -223,8 +227,18 @@ OHNativeWindow* NodeHandleImpl::GetNativeWindow(
   return get_native_window_func_(surface_holder);
 }
 
+__attribute__((no_sanitize("cfi", "cfi-icall")))
+ArkUI_AccessibilityProvider* NodeHandleImpl::AccessibilityProviderCreate(
+    ArkUI_NodeHandle node) {
+  if (accessibility_provider_create_func_ == nullptr) {
+    LOGE("NodeHandleImpl::AccessibilityProviderCreate func null");
+    return nullptr;
+  }
+  return accessibility_provider_create_func_(node);
+}
+
 bool NodeHandleImpl::IsSupportNodeHandle() {
-  return false;
+  return is_support_node_handle_;
 }
 
 bool IsSupportNodeHandleFeature() {

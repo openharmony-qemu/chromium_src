@@ -67,6 +67,7 @@ class PRParallelPreloadMgrImpl : public PRParallelPreloadMgr {
   std::atomic_bool is_inited_ { false };
   std::mutex mgr_mutex_;
   std::list<std::string> stopped_pages_;
+  base::WeakPtrFactory<PRParallelPreloadMgrImpl> weak_factory_ { this };
 };
 
 }  // namespace ohos_prp_preload

@@ -53,7 +53,7 @@ int MapCertStatusToNetError(CertStatus cert_status) {
 
 #if BUILDFLAG(IS_OHOS)
   if (cert_status & CERT_STATUS_DEPTH_ZERO_SELF_SIGNED_CERT)
-    return ERR_SSL_VERSION_OR_CIPHER_MISMATCH;
+    return ERR_CERT_AUTHORITY_INVALID;
   if (cert_status & CERT_STATUS_LEGACY_TLS)
     return ERR_SSL_VERSION_OR_CIPHER_MISMATCH;
 #endif

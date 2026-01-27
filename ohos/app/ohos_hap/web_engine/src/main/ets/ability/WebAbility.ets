@@ -10,7 +10,7 @@ import Want from '@ohos.app.ability.Want';
 
 import { AbilityManager } from '../common/AbilityManager';
 import { AppLifecycleAdapter } from '../adapter/AppLifecycleAdapter';
-import { BrowserCloseResponse, CaptionButtonRect, WindowBound, WindowLimits, IWebAppInfo } from '../interface/CommonInterface';
+import { BrowserCloseResponse, CaptionButtonRect, WindowBound, WinLimits, IWebAppInfo, WindowStatus } from '../interface/CommonInterface';
 import { BusinessError, deviceInfo, settings } from '@kit.BasicServicesKit';
 import { CommandType, ConfigData, WebStatus } from '../common/Constants';
 import { Configuration } from '@ohos.app.ability.Configuration';
@@ -73,6 +73,7 @@ export class WebAbility extends WebBaseAbility {
   }
  
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam) {
+    LogUtil.info(TAG, '[ohoswindow] in WebAbility onCreate.');    
     super.onCreate(want, launchParam);
     kvManager.init(this.context);
     this.updateWebAppIcon();
@@ -89,6 +90,7 @@ export class WebAbility extends WebBaseAbility {
   }
 
   onWindowStageCreate(windowStage: window.WindowStage) {
+    LogUtil.info(TAG, '[ohoswindow] in WebAbility onWindowStageCreate.');
     super.onWindowStageCreate(windowStage);
 
     if (this.checkSingleInstance()) {
@@ -198,7 +200,18 @@ export class WebAbility extends WebBaseAbility {
         LogUtil.error(TAG, `register displayIdChange listener fail, xcomponentId:${this.xcomponentId},
                       exception: ${JSON.stringify(exception)}`);
       }
-      
+
+      if (this.initStatus === WindowStatus.MAXIMIZE &&
+        data.getWindowStatus() !== window.WindowStatusType.MAXIMIZE) {
+        data.maximize(window.MaximizePresentation.EXIT_IMMERSIVE).then(() => {
+          LogUtil.warn(TAG,
+            `[ohoswindow] Window starts maximized.`);
+        }).catch((err: BusinessError) => {
+          LogUtil.error(TAG,
+            `[ohoswindow] Window fails to start from {${data.getWindowStatus()}} to maximized. Cause:` +
+            JSON.stringify(err));
+        });
+      }
     });
 
     try {
@@ -235,6 +248,12 @@ export class WebAbility extends WebBaseAbility {
       }
 
       let window: window.Window = windowStage.getMainWindowSync();
+
+      let isPCStatus = settings.getValueSync(this.context, 'isSystemModePc', '', settings.domainName.USER_PROPERTY);
+      if (deviceInfo.deviceType === 'tablet' && isPCStatus !== 'true') {
+        this.onPadWindowStageCreate(window, storage);
+      }
+
       // hide title bar
       window.setWindowDecorVisible(!this.hideTitleBar);
       if (!this.titleButtonVisible && !this.deviceInfoAdapter?.isNormalWindowMode()) {
@@ -263,20 +282,15 @@ export class WebAbility extends WebBaseAbility {
         this.nativeContext.RegisterWindowEventFilter(window.getWindowProperties().id);
       }
 
-      let isPCStatus = settings.getValueSync(this.context, 'isSystemModePc', '', settings.domainName.USER_PROPERTY);
-      if (deviceInfo.deviceType === 'tablet' && isPCStatus !== 'true') {
-        this.onPadWindowStageCreate(window, storage);
-      }
-
       try {
         if (this.xcomponentId === ConfigData.DEFAULT_WINDOW_ID) {
           let windowLimits = this.getWindow()?.getWindowLimits();
           let uiContext = window.getUIContext();
-          let limits: WindowLimits = {
-            maxHeight: Math.ceil(uiContext.px2vp(windowLimits?.maxHeight ?? 0)),
-            maxWidth: Math.ceil(uiContext.px2vp(windowLimits?.maxWidth ?? 0)),
-            minHeight: Math.ceil(uiContext.px2vp(windowLimits?.minHeight ?? 0)),
-            minWidth: Math.ceil(uiContext.px2vp(windowLimits?.minWidth ?? 0))
+          let limits: WinLimits = {
+            max_height: Math.ceil(uiContext.px2vp(windowLimits?.maxHeight ?? 0)),
+            max_width: Math.ceil(uiContext.px2vp(windowLimits?.maxWidth ?? 0)),
+            min_height: Math.ceil(uiContext.px2vp(windowLimits?.minHeight ?? 0)),
+            min_width: Math.ceil(uiContext.px2vp(windowLimits?.minWidth ?? 0))
           }
           this.nativeContext.SetSystemWindowLimits(limits);
         }
@@ -287,6 +301,7 @@ export class WebAbility extends WebBaseAbility {
   }
 
   onWindowStageDestroy() {
+    LogUtil.info(TAG, '[ohoswindow] in WebAbility onWindowStageDestroy.');    
     if (CheckEmptyUtils.isEmpty(this.xcomponentId)) {
       LogUtil.warn(TAG, 'onWindowStageDestroy component is not instantiated');
       return;
@@ -302,6 +317,7 @@ export class WebAbility extends WebBaseAbility {
   }
 
   onNewWant(want: Want, launchParam: AbilityConstant.LaunchParam): void {
+    LogUtil.info(TAG, `[ohoswindow] in WebAbility onNewWant, want is ${JSON.stringify(want)}, param is ${JSON.stringify(launchParam)}.`);
     const params = want?.parameters;    
     let uriNotNull = want["uri"] !== undefined && want["uri"] !== '';
     if (want!== undefined && want !== null) {

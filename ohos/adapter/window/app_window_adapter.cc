@@ -29,7 +29,10 @@
 
 #include "ohos/adapter/window/app_window_adapter.h"
 
+#include <arkui/native_node_napi.h>
+
 #include "ohos/adapter/aki_hook/aki_hook.h"
+#include "ohos/adapter/xcomponent/xcomponent_manager.h"
 
 namespace ohos::adapter::window {
 
@@ -40,9 +43,11 @@ AppWindowAdapter& AppWindowAdapter::GetInstance() {
 
 void AppWindowAdapter::Create(const NewWindowParam& param) {
   auto jsFunc = ohos::adapter::GetJSFunction("AppWindow.CreateWindow");
-  if (jsFunc) {
-    jsFunc->Invoke<void>(param);
+  if (!jsFunc) {
+    LOGW("[ohoswindow] AppWindow.CreateWindow not found.");
+    return;
   }
+  jsFunc->Invoke<void>(param);
 }
 
 void AppWindowAdapter::Close(int32_t id) {
@@ -53,19 +58,27 @@ void AppWindowAdapter::Close(int32_t id) {
 }
 
 void AppWindowAdapter::Show(int32_t id) {
+  LOGI("[ohoswindow] AppWindowAdapter::Show, id:%{public}d.",
+       id);
   auto jsFunc = ohos::adapter::GetJSFunction("AppWindow.ShowWindow");
-  if (jsFunc) {
-    jsFunc->Invoke<void>(id);
+  if (!jsFunc) {
+    LOGW("[ohoswindow] AppWindow.ShowWindow not found.");
+    return;
   }
+  jsFunc->Invoke<void>(id);
 }
 
 void AppWindowAdapter::Hide(int32_t id) {}
 
 void AppWindowAdapter::Activate(int32_t id) {
+  LOGI("[ohoswindow] AppWindowAdapter::Activate, id:%{public}d.",
+       id);
   auto jsFunc = ohos::adapter::GetJSFunction("AppWindow.ActivateWindow");
-  if (jsFunc) {
-    jsFunc->Invoke<void>(id);
+  if (!jsFunc) {
+    LOGW("[ohoswindow] AppWindow.ActivateWindow not found.");
+    return;
   }
+  jsFunc->Invoke<void>(id);
 }
 
 void AppWindowAdapter::SetFullscreen(int32_t id) {
@@ -231,6 +244,77 @@ bool AppWindowAdapter::ShiftWindowTouchEvent(const int32_t source_id,
         "result:%{public}d",
         __FUNCTION__, result);
     return result;
+  }
+  return false;
+}
+
+bool AppWindowAdapter::Bind(const std::string& id) {
+  auto promise = std::make_shared<std::promise<bool>>();
+  std::function<void(aki::Value)> callback = [promise,
+                                              id](aki::Value node_content) {
+    ArkUI_NodeContentHandle node_content_handle = nullptr;
+    OH_ArkUI_GetNodeContentFromNapiValue(aki::JSBind::GetScopedEnv(),
+                                         node_content.GetHandle(),
+                                         &node_content_handle);
+    if (node_content_handle == nullptr) {
+      LOGE(
+          "AppWindowAdapter::Bind Get content node handle failed, "
+          "id:%{public}s",
+          id.c_str());
+      promise->set_value(false);
+      return;
+    }
+
+    promise->set_value(
+        xcomponent::XComponentManager::GetInstance()->BindNativeXComponentNode(
+            id, node_content_handle));
+  };
+
+  auto js_func = ohos::adapter::GetJSFunction("AppWindow.Bind");
+  if (js_func) {
+    js_func->Invoke<void>(id, callback);
+    auto future = promise->get_future();
+    auto status = future.wait_for(std::chrono::seconds(3));
+    if (status == std::future_status::timeout) {
+      LOGE("AppWindowAdapter::Bind timeout for %{public}s", id.c_str());
+      return false;
+    }
+ 
+    return future.get();
+  }
+  return false;
+}
+
+bool AppWindowAdapter::UnBind(const std::string& id) {
+  auto promise = std::make_shared<std::promise<bool>>();
+  std::function<void(aki::Value)> callback = [promise,
+                                              id](aki::Value node_content) {
+    ArkUI_NodeContentHandle node_content_handle = nullptr;
+    OH_ArkUI_GetNodeContentFromNapiValue(aki::JSBind::GetScopedEnv(),
+                                         node_content.GetHandle(),
+                                         &node_content_handle);
+    if (node_content_handle == nullptr) {
+      LOGE("AppWindowAdapter::UnBind Get content node handle failed");
+      promise->set_value(false);
+      return;
+    }
+ 
+    promise->set_value(
+        xcomponent::XComponentManager::GetInstance()
+            ->UnBindNativeXComponentNode(id, node_content_handle));
+  };
+ 
+  auto js_func = ohos::adapter::GetJSFunction("AppWindow.UnBind");
+  if (js_func) {
+    js_func->Invoke<void>(id, callback);
+    auto future = promise->get_future();
+    auto status = future.wait_for(std::chrono::seconds(3));
+    if (status == std::future_status::timeout) {
+      LOGE("AppWindowAdapter::UnBind timeout for %{public}s", id.c_str());
+      return false;
+    }
+ 
+    return future.get();
   }
   return false;
 }

@@ -62,6 +62,13 @@ void WindowInitParameter::SetBackground(uint32_t color_argb) {
   background_color = GetRGB(color_argb);
 }
 
+JSBIND_CLASS(WindowLimits) {
+  JSBIND_PROPERTY(max_height);
+  JSBIND_PROPERTY(max_width);
+  JSBIND_PROPERTY(min_height);
+  JSBIND_PROPERTY(min_width);
+}
+
 JSBIND_CLASS(WindowRect) {
   JSBIND_PROPERTY(left);
   JSBIND_PROPERTY(top);
@@ -79,6 +86,8 @@ JSBIND_CLASS(NewWindowParam) {
   JSBIND_PROPERTY(caption_button_visible);
   JSBIND_PROPERTY(ability_type);
   JSBIND_PROPERTY(app_id);
+  JSBIND_PROPERTY(status);
+  JSBIND_PROPERTY(window_limit);
 }
 
 JSBIND_CLASS(PointCoordinate) {

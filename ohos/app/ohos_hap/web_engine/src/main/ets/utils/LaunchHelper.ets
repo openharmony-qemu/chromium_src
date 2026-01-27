@@ -42,15 +42,15 @@ export default class LaunchHelper {
       let context = uiContext as common.UIAbilityContext ||
         uiContext as common.UIExtensionContext;
       if (!context) {
-        LogUtil.error(TAG, `excute failed, want: ${JSON.stringify(want)}, options:  ${JSON.stringify(options)}`);
+        LogUtil.error(TAG, `[ohoswindow] excute failed, want: ${JSON.stringify(want)}, options:  ${JSON.stringify(options)}`);
         return false;
       }
       context.startAbility(want, options)
         .catch((error: BusinessError) => {
-        LogUtil.error(TAG, `excute failed. Cause: ${JSON.stringify(error)}`);
+        LogUtil.error(TAG, `[ohoswindow] excute failed. Cause: ${JSON.stringify(error)}`);
       });
     } catch (exception) {
-      LogUtil.error(TAG, `excute failed exception. Cause: ${JSON.stringify(exception)}`);
+      LogUtil.error(TAG, `[ohoswindow] excute failed exception. Cause: ${JSON.stringify(exception)}`);
       return false;
     }
     return true;

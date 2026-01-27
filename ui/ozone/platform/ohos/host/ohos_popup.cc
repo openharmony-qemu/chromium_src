@@ -29,6 +29,7 @@
 
 #include "ui/ozone/platform/ohos/host/ohos_popup.h"
 
+#include "ohos/adapter/task_runner/main_thread_task_runner.h"
 #include "ohos/adapter/window/sub_window_adapter.h"
 #include "ohos/adapter/xcomponent/xcomponent_manager.h"
 #include "ui/gfx/geometry/rect.h"
@@ -47,13 +48,18 @@ OhosPopup::OhosPopup(PlatformWindowDelegate* delegate,
 OhosPopup::~OhosPopup() = default;
 
 void OhosPopup::Show(bool inactive) {
+  LOG(INFO) << "[ohoswindow] OhosPopup::Show, inactive is " << inactive;
   DCHECK(parent_window());
 
+  OhosWindow::BindNodeHandle();
   OhosWindow::Show(inactive);
 
-  if (menu_created_) {
-    SubWindowAdapter::GetInstance().Show(GetWindowUniqueId());
+  if (!menu_created_) {
+    LOG(WARNING) << "[ohoswindow] "
+                 << "in OhosPopup::Show menu not created.";
+    return;
   }
+  SubWindowAdapter::GetInstance().Show(GetWindowUniqueId());
 }
 
 void OhosPopup::Hide() {
@@ -79,6 +85,17 @@ void OhosPopup::Close() {
     SubWindowAdapter::GetInstance().Cancel(GetWindowUniqueId());
   }
 
+  if (ohos::adapter::nodeHandle::NodeHandleImpl::GetInstance()
+          .IsSupportNodeHandle()) {
+    OhosWindow::UnBindNodeHandle();
+    if (!is_ability_bound_) {
+      auto task =
+          std::bind(&XComponentManager::RemoveNodeHandleXComponent,
+                    XComponentManager::GetInstance(), GetWindowUniqueId());
+      ohos::adapter::taskRunner::MainThreadTaskRunner::GetInstance().PostTask(
+          task);
+    }
+  }
   OhosWindow::Close();
 }
 
@@ -137,14 +154,19 @@ void OhosPopup::OnInitialize(PlatformWindowInitProperties properties) {
 }
 
 bool OhosPopup::OnCreateWindow(WindowInitParameter param) {
+  LOG(INFO) << "[ohoswindow] OhosPopup::OnCreateWindow, "
+            << "type is " << static_cast<int>(param.type);
   auto root_parent_window = GetRootParentWindow();
   if (root_parent_window->type() != PlatformWindowType::kWindow) {
-    LOG(ERROR) << "Cannot create subwindow from another subwindow";
+    LOG(ERROR) << "[ohoswindow]"
+               << "Cannot create subwindow from another subwindow";
     return false;
   }
 
   std::string create_id = XComponentManager::GetInstance()->CreateWindow(param);
   if (create_id.empty()) {
+    LOG(ERROR) << "[ohoswindow] in OhosPopup::OnCreateWindow "
+               << "create id is empty.";
     return false;
   }
   // Enable the sub-window reuse feature.  may return a different widget id 
@@ -160,7 +182,7 @@ bool OhosPopup::OnCreateWindow(WindowInitParameter param) {
 
 void OhosPopup::SetWindowState(PlatformWindowState state) {
   if (state_ != state) {
-    VLOG(1) << "OhosPopup::SetWindowState, from: "
+    VLOG(1) << "[ohoswindow] OhosPopup::SetWindowState, from: "
             << static_cast<std::underlying_type<PlatformWindowState>::type>(
                     state_)
             << ", to: "
@@ -223,6 +245,10 @@ void OhosPopup::OnWindowSizeChangeEvent(std::shared_ptr<XCEvent> event) {
 display::Display OhosPopup::GetCurrentDisplay() {
   OhosWindow* parent_window = GetRootParentWindow();
   return parent_window->GetCurrentDisplay();
+}
+
+bool OhosPopup::ShouldWindowContentsBeTransparent() const {
+  return true;
 }
 
 }  // namespace ui

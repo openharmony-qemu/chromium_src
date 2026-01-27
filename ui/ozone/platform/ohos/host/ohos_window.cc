@@ -37,6 +37,7 @@
 #include "content/public/browser/browser_thread.h"
 #include "ohos/adapter/accessibility/accessibility_delegate_ohos_registry.h"
 #include "ohos/adapter/cursor/cursor.h"
+#include "ohos/adapter/node_handle/node_handle_impl.h"
 #include "ohos/adapter/window/app_window_adapter.h"
 #include "ohos/adapter/window/system_floating_window_adapter.h"
 #include "ohos/adapter/xcomponent/adapter/window_adapter.h"
@@ -86,6 +87,11 @@ bool OhosWindow::Initialize(PlatformWindowInitProperties properties) {
   display::Display current_display = PrepareDisplayForNewWindow();
   bounds_in_pixels_ = display::ohos::ScreenOhos::ConvertDipToPixel(
       current_display, properties.bounds);
+  if (ohos::adapter::nodeHandle::NodeHandleImpl::GetInstance()
+          .IsSupportNodeHandle() &&
+      current_display.is_valid()) {
+    SetCurrentDisplayId(current_display.id());
+  }
 
   OnInitialize(std::move(properties));
 
@@ -146,20 +152,24 @@ void OhosWindow::UnRegistWindowEvent() {
 }
 
 void OhosWindow::OnSurfaceCreated() {
+  LOG(INFO) << "[ohoswindow] in OhosWindow OnSurfaceCreated.";
   auto task = base::BindOnce([](base::WeakPtr<OhosWindow> window,
                                 gfx::AcceleratedWidget widget) {
-        if (window) {
-          window->delegate()->OnAcceleratedWidgetAvailable(widget);
+        if (!window) {
+          LOG(WARNING) << "[ohoswindow] window is nullptr.";
+          return;
         }
+        window->delegate()->OnAcceleratedWidgetAvailable(widget);
       },
       AsWeakPtr(), GetWidget());
   ui_task_runner_->PostTask(FROM_HERE, std::move(task));
 }
 
 void OhosWindow::OnSurfaceDestoryed() {
+  LOG(INFO) << "[ohoswindow] in OhosWindow OnSurfaceDestoryed.";
   auto task = base::BindOnce([](base::WeakPtr<OhosWindow> window) {
         if (window) {
-          LOG(INFO) << "OhosWindow on surface destroyed call window on close request";
+          LOG(INFO) << "[ohoswindow] OhosWindow on surface destroyed call window on close request";
           window->delegate()->OnCloseRequest();
         }
       },
@@ -177,6 +187,8 @@ void OhosWindow::Applied(const gfx::Rect& origin_bounds,
 }
 
 void OhosWindow::Show(bool inactive) {
+  LOG(INFO) << "[ohoswindow] in OhosWindow Show, visible is "
+               << is_visible_;
   if (is_visible_) {
     return;
   }
@@ -184,6 +196,8 @@ void OhosWindow::Show(bool inactive) {
 }
 
 void OhosWindow::Hide() {
+  LOG(INFO) << "[ohoswindow] in OhosWindow Hide, visible is "
+               << is_visible_;
   if (!is_visible_) {
     return;
   }
@@ -302,7 +316,12 @@ void OhosWindow::UpdateCursorShape(
     return;
   }
   if (platform_cursor->type() == mojom::CursorType::kCustom) {
-    auto bitmap = platform_cursor->bitmap();
+    auto bitmaps = platform_cursor->bitmaps();
+    if (bitmaps.empty()) {
+      LOG(ERROR) << "bitmaps is empty";
+      return;
+    }
+    const SkBitmap& bitmap = bitmaps[0];
     auto pixmap = bitmap.pixmap();
     size_t buff_size = bitmap.computeByteSize();
     std::shared_ptr<char[]> buff = std::make_shared<char[]>(buff_size);
@@ -316,13 +335,13 @@ void OhosWindow::UpdateCursorShape(
                                                  hotspot.x(),
                                                  hotspot.y(),
                                                  buff};
-      ohos::adapter::SetCustomCursor(cursor_info);
+      ohos::adapter::Cursor::GetInstance().SetCustomCursor(cursor_info);
     } else {
       LOG(ERROR) << "read pixels failed";
     }
   } else {
     auto ohos_cursor_type = ConvertToOhosCursorType(platform_cursor->type());
-    ohos::adapter::SetCursor(GetWidget(), ohos_cursor_type);
+    ohos::adapter::Cursor::GetInstance().SetCursor(GetWidget(), ohos_cursor_type);
   }
   cursor_ = platform_cursor;
 }
@@ -437,7 +456,7 @@ void OhosWindow::OnPointerFocusChanged(const bool focused) {
     UpdateCursorShape(cursor_);
   } else if (cursor_->type() == mojom::CursorType::kNone) {
     // invisible cursor blur need to set visible
-    ohos::adapter::SetCursorVisible(true);
+    ohos::adapter::Cursor::GetInstance().SetCursorVisible(true);
   }
 }
 
@@ -506,6 +525,24 @@ display::Display OhosWindow::GetCurrentDisplay() {
   NOTIMPLEMENTED_LOG_ONCE();
   display::Display current_display;
   return current_display;
+}
+
+void OhosWindow::BindNodeHandle() {
+  if (ohos::adapter::nodeHandle::NodeHandleImpl::GetInstance()
+          .IsSupportNodeHandle() &&
+      !is_ability_bound_) {
+    is_ability_bound_ =
+        AppWindowAdapter::GetInstance().Bind(GetWindowUniqueId());
+  }
+}
+
+void OhosWindow::UnBindNodeHandle() {
+  if (ohos::adapter::nodeHandle::NodeHandleImpl::GetInstance()
+          .IsSupportNodeHandle() &&
+      is_ability_bound_) {
+    is_ability_bound_ =
+        !AppWindowAdapter::GetInstance().UnBind(GetWindowUniqueId());
+  }
 }
 
 }  // namespace ui

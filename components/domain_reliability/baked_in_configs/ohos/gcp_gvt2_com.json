@@ -1,0 +1,21 @@
+{
+  "origin": "https://xxx/",
+  "has_same_origin_collector": false,
+  "success_sample_rate": 0.05,
+  "collectors": [
+    "https://xxx",
+    "https://xxx",
+    "https://xxx",
+    "https://xxx",
+    "https://xxx",
+    "https://xxx",
+    "https://xxx",
+    "https://xxx"
+  ],
+  "failure_sample_rate": 1.0,
+  "include_subdomains": true,
+  "path_prefixes": [
+    "/domainreliability/*",
+    ""
+  ]
+}

@@ -33,6 +33,7 @@
 #include "ohos/adapter/common/trace.h"
 #include "ohos/adapter/xcomponent/adapter/window_adapter.h"
 #include "ohos/adapter/xcomponent/xcomponent_manager.h"
+#include "ohos/adapter/drag_drop/drag_drop_ohos_adapter.h"
 
 namespace ohos::adapter::xcomponent {
 
@@ -91,15 +92,16 @@ std::shared_ptr<XComponentImpl> GetXComponent(const std::string& render_id) {
 
 void OnSurfaceCreatedCB(OH_NativeXComponent* component, void* window) {
   std::string render_id = GetRenderId(component);
+  LOGI("[ohoswindow] in XComponentImpl OnSurfaceCreatedCB, id: %{public}s.", render_id.c_str());
   auto impl = GetXComponent(render_id);
   if (!impl) {
-    LOGW("Failed to get XComponent instance in %{public}s. render_id:%{public}s",
-         __FUNCTION__, render_id.c_str());
+    LOGW("[ohoswindow] Failed to get XComponent instance in %{public}s. \
+         render_id:%{public}s", __FUNCTION__, render_id.c_str());
     return;
   }
   if (render_id != impl->GetId()) {
-    LOGE("xcomponent not matched, receive id %{public}s, id %{public}s",
-         render_id.c_str(), impl->GetId().c_str());
+    LOGE("[ohoswindow] xcomponent not matched, receive id %{public}s, \
+         id %{public}s", render_id.c_str(), impl->GetId().c_str());
     return;
   }
 
@@ -108,13 +110,13 @@ void OnSurfaceCreatedCB(OH_NativeXComponent* component, void* window) {
   int32_t ret =
       OH_NativeXComponent_GetXComponentSize(component, window, &width, &height);
   if (ret != OH_NATIVEXCOMPONENT_RESULT_SUCCESS) {
-    LOGE("Get xcomponent surface size error:%{public}lu %{public}lu, render_id:%{public}s",
-         width, height, render_id.c_str());
+    LOGE("[ohoswindow] Get xcomponent surface size error:%{public}lu \
+         %{public}lu, render_id:%{public}s", width, height, render_id.c_str());
     return;
   }
   
-  LOGI("Get xcomponent surface size success:%{public}lu %{public}lu, render_id:%{public}s",
-       width, height, render_id.c_str());
+  LOGI("[ohoswindow] Get xcomponent surface size success:%{public}lu \
+       %{public}lu, render_id:%{public}s", width, height, render_id.c_str());
   WindowAdapter::GetInstance().AddWindow(render_id, window);
   int32_t widget_id = WindowAdapter::GetInstance().GetWidgetId(render_id);
   impl->SetWidget(widget_id);
@@ -125,8 +127,8 @@ void OnSurfaceChangedCB(OH_NativeXComponent* component, void* window) {
   std::string render_id = GetRenderId(component);
   auto impl = GetXComponent(render_id);
   if (!impl) {
-    LOGW("Failed to get XComponent instance in %{public}s. render_id:%{public}s",
-         __FUNCTION__, render_id.c_str());
+    LOGW("[ohoswindow] Failed to get XComponent instance in %{public}s. \
+         render_id:%{public}s", __FUNCTION__, render_id.c_str());
     return;
   }
   impl->OnSurfaceChanged();
@@ -136,16 +138,17 @@ void OnSurfaceDestroyedCB(OH_NativeXComponent* component, void* window) {
   std::string render_id = GetRenderId(component);
   auto impl = GetXComponent(render_id);
   if (!impl) {
-    LOGW("Failed to get XComponent instance in %{public}s. render_id:%{public}s",
-         __FUNCTION__, render_id.c_str());
+    LOGW("[ohoswindow] Failed to get XComponent instance in %{public}s. \
+         render_id:%{public}s", __FUNCTION__, render_id.c_str());
     return;
   }
   if (render_id != impl->GetId()) {
-    LOGE("xcomponent not matched, receive id %{public}s, id %{public}s",
-         render_id.c_str(), impl->GetId().c_str());
+    LOGE("[ohoswindow] xcomponent not matched, receive id %{public}s, \
+         id %{public}s", render_id.c_str(), impl->GetId().c_str());
     return;
   }
-  LOGI("Destroy XComponent, render_id:%{public}s", render_id.c_str());
+  LOGI("[ohoswindow] Destroy XComponent, render_id:%{public}s",
+       render_id.c_str());
   WindowAdapter::GetInstance().RemoveWindow(render_id);
 
   impl->OnSurfaceDestroyed();
@@ -237,6 +240,27 @@ void OnMouseEventCB(OH_NativeXComponent* component, void* window) {
     return;
   }
 
+  if (DragDropOhosAdapter::GetInstance().IsDraggingStarted()) {
+    // When Chromium is dragging, intercept the mouse release event send to Chromium.
+    if (mouse_event.action == OH_NATIVEXCOMPONENT_MOUSE_RELEASE) {
+      LOGW(
+          "[OhosDrag]receive mouse release event, drag is ended, "
+          "SetDraggingStarted false, "
+          "render_id:%{public}s",
+          render_id.c_str());
+      DragDropOhosAdapter::GetInstance().SetDraggingStarted(false);
+      return;
+    }
+    if (mouse_event.action == OH_NATIVEXCOMPONENT_MOUSE_PRESS) {
+      LOGW(
+          "[OhosDrag]Receive mouse press event, "
+          "IsDraggingStarted value is invalid, SetDraggingStarted false, "
+          "render_id:%{public}s",
+          render_id.c_str());
+      DragDropOhosAdapter::GetInstance().SetDraggingStarted(false);
+    }
+  }
+
   if (mouse_event.action != OH_NATIVEXCOMPONENT_MOUSE_MOVE) {
     LOGI(
         "%{public}s: xcomponent mouse event x:%{public}f y:%{public}f "
@@ -281,8 +305,8 @@ void OnHoverEventCB(OH_NativeXComponent* component, bool is_hover) {
 }
 
 XComponentImpl::XComponentImpl(const std::string& id,
-                               const std::string& type) {
-  this->id_ = id;
+                               const std::string& type)
+                               : XComponentBase(id) {
   this->type_ = ConvertXComponentType(type);
 
   surface_callback_ = {
@@ -307,10 +331,11 @@ XComponentImpl::~XComponentImpl() {
 
 void XComponentImpl::Initialize(OH_NativeXComponent* component,
                                 XComponentDelegate* delegate) {
-  LOGI("XComponentImpl initialize instance.");
+  LOGI("[ohoswindow] in XComponentImpl initialize instance.");
   if (instance_ != nullptr &&
       instance_ != component) {
-    LOGW("XComponentImpl RegisterCallback have already set xcomponent!");
+    LOGW("[ohoswindow] XComponentImpl RegisterCallback have already \
+         set xcomponent!");
   }
   instance_ = component;
   delegate_ = delegate;

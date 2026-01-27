@@ -46,11 +46,11 @@ export interface CommandResult {
   last_widget_Id: number;
 }
 
-export interface WindowLimits {
-  maxHeight: number;
-  maxWidth: number;
-  minHeight: number;
-  minWidth: number;
+export interface WinLimits {
+  max_height: number;
+  max_width: number;
+  min_height: number;
+  min_width: number;
 }
 
 export interface NativeContext {
@@ -96,14 +96,17 @@ export interface NativeContext {
   ClearWindowEventFilter: (origin_window_id: number) => void;
   OnCaptionButtonRectChange: (id: string, event: CaptionButtonRect) => void;
   UpdateWindowDeviceModeSwitchCB: (mode: DeviceMode) => void;
-  SetSystemWindowLimits: (windowLimits: WindowLimits) => void;
+  SetSystemWindowLimits: (windowLimits: WinLimits) => void;
   OnDeviceModeChange: (id: string, event: ChangeEventType, status: window.WindowStatusType) => void;
   OnWindowDisplayIdChange: (id: string, displayId: number) => void;
   OnAvoidAreaChangeCallback: (statusBarHeight: number) => void;
+  OnAbilityStartedCB: (id: string) => void;
+  IsSupportNodeHandleFeature: () => boolean;
+  OnBackToLastPage: (id: string) => void;
+  GetLastActiveWidgetId: () => number;
 }
 
 export interface IParams {
-  callback: (id: string) => void,
   id: string,
   size: number[], // [width, height]
   initColorRgb: string,
@@ -128,17 +131,17 @@ export const kAbilityMap = new Map<AbilityType, string>([
 export interface OhosDragParamToJs {
   text: string;
   url: string;
-  urlTitle: string;
+  url_title: string;
   html: string;
-  webImageFilePath: string;
-  bookmarkBuffer: ArrayBuffer;
-  webCustomBuffer: ArrayBuffer;
-  pixelMapBuffer: ArrayBuffer;
-  pixelMapWidth: number;
-  pixelMapHeight: number;
-  pixelMapTouchX: number;
-  pixelMapTouchY: number;
-  windowId: string;
+  web_image_file_path: string;
+  bookmark_buffer: ArrayBuffer;
+  web_custom_buffer: ArrayBuffer;
+  pixelmap_buffer: ArrayBuffer;
+  pixelmap_width: number;
+  pixelmap_height: number;
+  pixelmap_touch_x: number;
+  pixelmap_touch_y: number;
+  window_id: string;
 }
 
 export interface OhosDropData {
@@ -278,6 +281,15 @@ export interface BatteryInfo {
   remainingEnergy: number
 }
 
+export enum WindowStatus{
+  UNDEFINED,
+  FULL_SCREEN,
+  MAXIMIZE,
+  MINIMIZE,
+  FLOATING,
+  SPLIT_SCREEN
+}
+
 export interface NewWindowParam {
   parent_id: string
   window_id: string,
@@ -287,7 +299,9 @@ export interface NewWindowParam {
   use_dark_mode: boolean,
   caption_button_visible: boolean,
   ability_type: AbilityType,
-  app_id: string
+  app_id: string,
+  status: WindowStatus,
+  window_limit: WinLimits
 }
 
 export interface ISubWindowInfo {

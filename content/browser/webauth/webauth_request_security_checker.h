@@ -7,6 +7,7 @@
 
 #include <string>
 
+#include "build/build_config.h"
 #include "base/functional/callback.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/ref_counted.h"
@@ -87,9 +88,17 @@ class CONTENT_EXPORT WebAuthRequestSecurityChecker
   // Legacy App IDs, which google.com origins are allowed to assert for
   // compatibility reasons.
   static constexpr char kGstaticAppId[] =
+#if BUILDFLAG(IS_OHOS)
+      "https://xxx";
+#else
       "https://www.gstatic.com/securitykey/origins.json";
+#endif
   static constexpr char kGstaticCorpAppId[] =
+#if BUILDFLAG(IS_OHOS)
+      "https://xxx";
+#else
       "https://www.gstatic.com/securitykey/a/google.com/origins.json";
+#endif
 
   explicit WebAuthRequestSecurityChecker(RenderFrameHost* host);
   WebAuthRequestSecurityChecker(const WebAuthRequestSecurityChecker&) = delete;

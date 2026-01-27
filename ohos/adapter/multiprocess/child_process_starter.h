@@ -33,6 +33,7 @@
 #include <cstdint>
 #include <functional>
 #include <map>
+#include <mutex>
 #include <string>
 #include <vector>
 #include "ohos/adapter/export.h"
@@ -64,6 +65,7 @@ class ADAPTER_EXPORT_API ChildProcessStarter {
   int StartChildProcess(std::function<void(StartCallbackFunc)> startFunc,
                         const std::vector<std::string>& command,
                         const std::vector<std::pair<int, int>>& fds);
+  std::mutex mutex_;
 };
 
 }  // namespace ohos::adapter::multiprocess

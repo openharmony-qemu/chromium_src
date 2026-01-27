@@ -56,6 +56,7 @@ class ADAPTER_EXPORT_API FileManagerAdapter {
   std::string GetFileTypeIdByFileExtension(const std::string& file_extension_);
   void GetFileIconByFileTypeId(const std::string& file_type_id_,
                                FileIconCallback callback);
+  void GetUriForPath(const char* path, std::string& uri);
 
  private:
   FileManagerAdapter() = default;

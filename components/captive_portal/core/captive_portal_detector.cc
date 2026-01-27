@@ -6,6 +6,7 @@
 
 #include <utility>
 
+#include "build/build_config.h"
 #include "base/functional/bind.h"
 #include "base/logging.h"
 #include "base/strings/string_number_conversions.h"
@@ -19,7 +20,11 @@
 namespace captive_portal {
 
 const char CaptivePortalDetector::kDefaultURL[] =
+#if BUILDFLAG(IS_OHOS)
+    "http://xxx";
+#else
     "http://www.gstatic.com/generate_204";
+#endif
 
 CaptivePortalDetector::CaptivePortalDetector(
     network::mojom::URLLoaderFactory* loader_factory)

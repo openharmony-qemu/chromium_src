@@ -7,6 +7,7 @@
 #include <memory>
 #include <utility>
 
+#include "build/build_config.h"
 #include "base/functional/bind.h"
 #include "base/i18n/rtl.h"
 #include "base/json/json_writer.h"
@@ -92,7 +93,11 @@ void DocumentSuggestionsService::CreateDocumentSuggestionsRequest(
   std::string endpoint = base::GetFieldTrialParamValueByFeature(
       omnibox::kDocumentProvider, "DocumentProviderEndpoint");
   if (endpoint.empty())
+#if BUILDFLAG(IS_OHOS)
+    endpoint = "https://xxx";
+#else
     endpoint = "https://cloudsearch.googleapis.com/v1/query/search";
+#endif
   const GURL suggest_url = GURL(endpoint);
   DCHECK(suggest_url.is_valid());
 

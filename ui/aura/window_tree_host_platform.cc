@@ -270,6 +270,7 @@ void WindowTreeHostPlatform::OnBoundsChanged(const BoundsChange& change) {
   auto weak_ref = GetWeakPtr();
   auto new_size = GetBoundsInPixels().size();
   bool size_changed = size_in_pixels_ != new_size;
+  auto old_size = size_in_pixels_;
   size_in_pixels_ = new_size;
   if (change.origin_changed) {
     OnHostMovedInPixels();
@@ -278,6 +279,14 @@ void WindowTreeHostPlatform::OnBoundsChanged(const BoundsChange& change) {
       return;
   }
   if (size_changed || current_scale != new_scale) {
+#if BUILDFLAG(IS_OHOS)
+    LOG(INFO) << __FUNCTION__ << " Bounds changed, window id: "
+              << platform_window_->GetWindowUniqueId()
+              << ", old scale: " << current_scale
+              << ", new scale: " << new_scale
+              << ", old size: " << old_size.ToString()
+              << ", new size: " << new_size.ToString();
+#endif
     OnHostResizedInPixels(new_size);
     // Changing the size may destroy this.
     if (!weak_ref)

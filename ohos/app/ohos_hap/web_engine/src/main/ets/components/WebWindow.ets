@@ -107,7 +107,11 @@ export struct WebWindow {
       .gesture(
         GestureGroup(GestureMode.Exclusive,
           TapGesture({ count: 2})
-            .onAction(() => {})
+            .onAction(() => {
+              // when double tap is triggered, we do nothing, because the event
+              // processing flow in Chromium will converts mouse and touch events to
+              // double tap events.
+            })
         )
       )
       .onDragEnter((event?: DragEvent) => {

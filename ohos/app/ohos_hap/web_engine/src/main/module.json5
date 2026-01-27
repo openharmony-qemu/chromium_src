@@ -91,7 +91,18 @@
       {
         "name": "ohos.permission.CUSTOM_SCREEN_CAPTURE",
         "reason": "$string:screenshot"
+      },
+      {
+        "name": "ohos.permission.LOCK_WINDOW_CURSOR"
+      },
+      {
+        "name": "ohos.permission.WEB_NATIVE_MESSAGING"
       }
+    ],
+    "definePermissions": [
+      {
+        "name": "ohos.permission.LOCK_WINDOW_CURSOR"
+      },      
     ]
   }
 }

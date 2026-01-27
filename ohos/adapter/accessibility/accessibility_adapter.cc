@@ -30,6 +30,7 @@
 #include "ohos/adapter/accessibility/accessibility_adapter.h"
 
 #include <dlfcn.h>
+
 #include <cstring>
 
 #include "aki/jsbind.h"
@@ -37,6 +38,7 @@
 #include "ohos/adapter/aki_hook/aki_hook.h"
 #include "ohos/adapter/common/logging.h"
 #include "ohos/adapter/device_info/device_info.h"
+#include "ohos/adapter/node_handle/node_handle_impl.h"
 
 namespace ohos::adapter::accessibility {
 
@@ -95,12 +97,26 @@ void AccessibilityAdapter::Initialize(OH_NativeXComponent* native_xcomponent,
     return;
   }
 
-  accessibility_provider_callbacks_ = {
-      FindAccessibilityNodeInfosById,    FindAccessibilityNodeInfosByText,
-      FindFocusedAccessibilityNode,      FindNextFocusAccessibilityNode,
-      ExecuteAccessibilityAction,        ClearFocusedFocusAccessibilityNode,
-      GetAccessibilityNodeCursorPosition};
+  RegisterCallback(id);
+}
 
+void AccessibilityAdapter::Initialize(ArkUI_NodeHandle node, std::string& id) {
+  provider_ =
+      nodeHandle::NodeHandleImpl::GetInstance().AccessibilityProviderCreate(
+          node);
+  if (provider_ == nullptr) {
+    LOGE(
+        "AccessibilityAdapter::Initialize "
+        "AccessibilityProviderCreate get provider "
+        "fail");
+    return;
+  }
+
+  RegisterCallback(id);
+}
+
+__attribute__((no_sanitize("cfi", "cfi-icall")))
+void AccessibilityAdapter::RegisterCallback(std::string& id) {
   if (accessibility_provider_register_callback_fn_ == nullptr) {
     LOGE(
         "AccessibilityAdapter::Initialize "
@@ -109,7 +125,13 @@ void AccessibilityAdapter::Initialize(OH_NativeXComponent* native_xcomponent,
     return;
   }
 
-  ret = accessibility_provider_register_callback_fn_(
+  accessibility_provider_callbacks_ = {
+      FindAccessibilityNodeInfosById,    FindAccessibilityNodeInfosByText,
+      FindFocusedAccessibilityNode,      FindNextFocusAccessibilityNode,
+      ExecuteAccessibilityAction,        ClearFocusedFocusAccessibilityNode,
+      GetAccessibilityNodeCursorPosition};
+
+  int32_t ret = accessibility_provider_register_callback_fn_(
       id.c_str(), provider_, &accessibility_provider_callbacks_);
   if (ret != 0) {
     LOGE(

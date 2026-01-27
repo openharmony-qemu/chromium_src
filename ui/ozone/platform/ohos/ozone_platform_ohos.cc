@@ -32,6 +32,7 @@
 #include <memory>
 
 #include "build/build_config.h"
+#include "ohos/adapter/node_handle/node_handle_impl.h"
 #include "ui/base/cursor/cursor_factory.h"
 #include "ui/base/ime/ohos/input_method_ohos.h"
 #include "ui/display/types/native_display_delegate.h"
@@ -45,6 +46,7 @@
 #include "ui/ozone/platform/ohos/gpu/ohos_surface_factory.h"
 #include "ui/ozone/platform/ohos/host/ohos_canvas_surface.h"
 #include "ui/ozone/platform/ohos/host/ohos_event_source.h"
+#include "ui/ozone/platform/ohos/host/ohos_event_source_node_handle.h"
 #include "ui/ozone/platform/ohos/host/ohos_screen.h"
 #include "ui/ozone/platform/ohos/host/ohos_window.h"
 #include "ui/ozone/platform/ohos/host/ohos_window_manager.h"
@@ -93,6 +95,8 @@ class OzonePlatformOhos : public OzonePlatform {
   std::unique_ptr<PlatformWindow> CreatePlatformWindow(
       PlatformWindowDelegate* delegate,
       PlatformWindowInitProperties properties) override {
+    LOG(INFO) << "[ohoswindow] CreatePlatformWindow enter, type is "
+              << static_cast<int>(properties.type);
     return OhosWindow::Create(delegate, window_manager_.get(),
                               std::move(properties));
   }
@@ -117,8 +121,14 @@ class OzonePlatformOhos : public OzonePlatform {
     window_drag_manager_ = std::make_unique<OhosWindowDragManager>();
     // This unbreaks tests that create their own.
     if (!PlatformEventSource::GetInstance()) {
-      platform_event_source_ =
-          std::make_unique<OhosEventSource>(window_manager_.get(), window_drag_manager_.get());
+      if (ohos::adapter::nodeHandle::NodeHandleImpl::GetInstance()
+              .IsSupportNodeHandle()) {
+        platform_event_source_ = std::make_unique<OhosEventSourceNodeHandle>(
+            window_manager_.get(), window_drag_manager_.get());
+      } else {
+        platform_event_source_ = std::make_unique<OhosEventSource>(
+            window_manager_.get(), window_drag_manager_.get());
+      }
     }
     keyboard_layout_engine_ = std::make_unique<StubKeyboardLayoutEngine>();
     KeyboardLayoutEngineManager::SetKeyboardLayoutEngine(

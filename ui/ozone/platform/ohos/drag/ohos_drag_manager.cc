@@ -37,6 +37,9 @@
 #include "base/path_service.h"
 #include "base/run_loop.h"
 #include "base/strings/utf_string_conversions.h"
+#include "ohos/adapter/drag_drop/drag_drop_ohos_adapter.h"
+#include "ohos/adapter/drag_drop/node_handle_drag_drop_ohos_adapter.h"
+#include "ohos/adapter/node_handle/node_handle_impl.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkImage.h"
 #include "ui/base/clipboard/clipboard_format_type.h"
@@ -66,6 +69,7 @@ const std::string kBookmarkFormatString = "chromium/x-bookmark-entries";
 const std::string kWebCustomFormatString = "chromium/x-web-custom-data";
 const std::string kWebImageDragFolder = "dragdrop";
 constexpr int kHalfDivisor = 2;
+constexpr base::TimeDelta kDragOverInterval = base::Milliseconds(65);
 }
 
 OhosDragManager::OhosDragManager(PlatformWindowDelegate* delegate,
@@ -76,6 +80,7 @@ OhosDragManager::OhosDragManager(PlatformWindowDelegate* delegate,
   SetWmMoveLoopHandler(platform_window_, this);
   ohos_window_move_client_ =
       std::make_unique<OhosDesktopWindowMoveClient>(this);
+  drag_over_timer_ = std::make_unique<base::RepeatingTimer>();
 }
 
 OhosDragManager::~OhosDragManager() {
@@ -150,8 +155,17 @@ bool OhosDragManager::StartDrag(
   drag_delegate_->SetDragSourceWidget();
   auto drag_param = std::make_shared<OhosStartDragParam>();
   PrepareDragParamForStartDrag(data, drag_param);
-  bool result = ohos::adapter::DragDropOhosAdapter::GetInstance().ExecuteDrag(
-      drag_param, platform_window_->GetWindowUniqueId());
+
+  bool result = false;
+  if (ohos::adapter::nodeHandle::NodeHandleImpl::GetInstance()
+          .IsSupportNodeHandle()) {
+    result =
+        ohos::adapter::NodeHandleDragDropOhosAdapter::GetInstance().ExecuteDrag(
+            drag_param, platform_window_->GetWindowUniqueId());
+  } else {
+    result = ohos::adapter::DragDropOhosAdapter::GetInstance().ExecuteDrag(
+        drag_param, platform_window_->GetWindowUniqueId());
+  }
   if (!result) {
     LOG(ERROR) << "[OhosDrag]" << __FUNCTION__ << ", ExecuteDrag fail";
     return false;
@@ -164,6 +178,7 @@ bool OhosDragManager::StartDrag(
 }
 
 void OhosDragManager::CancelDrag() {
+  StopDragOverTimer();
   if (!quit_closure_.is_null()) {
     std::move(quit_closure_).Run();
   }
@@ -206,6 +221,13 @@ void OhosDragManager::UpdateDrag(const gfx::Point& window_point) {
     drop_handler->OnDragDataAvailable(std::move(data));
     notified_enter_ = true;
   }
+
+  drag_move_point_ = local_point_in_dip;
+  drag_move_operations_ = suggested_operations;
+
+  if (drag_over_timer_->IsRunning()) {
+    drag_over_timer_->Reset();
+  }
   drop_handler->OnDragMotion(local_point_in_dip, suggested_operations,
                              current_modifier_);
 }
@@ -228,10 +250,18 @@ void OhosDragManager::DragEnter(const OhosDropData& drop_data,
   HandleDropData(drop_data, data_->provider());
   source_provider_ =
       static_cast<const OSExchangeDataProviderNonBacked*>(&data_->provider());
+
+  if (!drag_over_timer_->IsRunning()) {
+    drag_over_timer_->Start(
+        FROM_HERE, kDragOverInterval,
+        base::BindRepeating(&OhosDragManager::SendDragOverEvent,
+                            weak_factory_.GetWeakPtr()));
+  }
 }
 
 void OhosDragManager::OnDrop(const OhosDropData& drop_data,
                              gfx::PointF screen_point) {
+  StopDragOverTimer();
   WmDropHandler* drop_handler = ui::GetWmDropHandler(*platform_window_);
   if (!drop_handler) {
     LOG(ERROR) << "[OhosDrag] execute drop fail,no drop handler";
@@ -254,6 +284,7 @@ void OhosDragManager::OnDrop(const OhosDropData& drop_data,
 }
 
 void OhosDragManager::DragLeave() {
+  StopDragOverTimer();
   WmDropHandler* drop_handler = ui::GetWmDropHandler(*platform_window_);
   if (!drop_handler) {
     LOG(ERROR) << "[OhosDrag] drag leave fail,no drop handler";
@@ -295,20 +326,20 @@ void OhosDragManager::DragEnd() {
 void OhosDragManager::HandleDropData(
     const OhosDropData& drop_data,
     OSExchangeDataProvider& provider) {
-  if (!drop_data.basicData.text.empty()) {
-    provider.SetString(base::UTF8ToUTF16(drop_data.basicData.text));
+  if (!drop_data.basic_data.text.empty()) {
+    provider.SetString(base::UTF8ToUTF16(drop_data.basic_data.text));
   }
-  if (!drop_data.basicData.url.empty()) {
-    GURL url = GURL(drop_data.basicData.url);
-    provider.SetURL(url, base::UTF8ToUTF16(drop_data.basicData.urlTitle));
+  if (!drop_data.basic_data.url.empty()) {
+    GURL url = GURL(drop_data.basic_data.url);
+    provider.SetURL(url, base::UTF8ToUTF16(drop_data.basic_data.url_title));
   }
-  if (!drop_data.basicData.html.empty()) {
+  if (!drop_data.basic_data.html.empty()) {
     GURL base_url;
-    provider.SetHtml(base::UTF8ToUTF16(drop_data.basicData.html), base_url);
+    provider.SetHtml(base::UTF8ToUTF16(drop_data.basic_data.html), base_url);
   }
-  if (!drop_data.filePaths.empty()) {
+  if (!drop_data.file_paths.empty()) {
     std::vector<FileInfo> file_names;
-    for (const std::string& file_path : drop_data.filePaths) {
+    for (const std::string& file_path : drop_data.file_paths) {
       file_names.emplace_back(base::FilePath(FILE_PATH_LITERAL(file_path)),
                               base::FilePath());
     }
@@ -316,18 +347,18 @@ void OhosDragManager::HandleDropData(
     ohos::adapter::DragDropOhosAdapter::GetInstance()
         .SetDraggedExtensionFileName(file_names.front().path.value());
   }
-  if (drop_data.basicData.bookmarkData.size() > 0) {
+  if (drop_data.basic_data.bookmark_data.size() > 0) {
     base::Pickle pickle = base::Pickle::WithData((
-        base::span(reinterpret_cast<const uint8_t*>(drop_data.basicData.bookmarkData.data()),
-                   drop_data.basicData.bookmarkData.size())));
+        base::span(reinterpret_cast<const uint8_t*>(drop_data.basic_data.bookmark_data.data()),
+                   drop_data.basic_data.bookmark_data.size())));
     provider.SetPickledData(
         ui::ClipboardFormatType::GetType(kBookmarkFormatString),
         std::move(pickle));
   }
-  if (drop_data.basicData.webCustomData.size() > 0) {
+  if (drop_data.basic_data.web_custom_data.size() > 0) {
     base::Pickle pickle = base::Pickle::WithData((
-        base::span(reinterpret_cast<const uint8_t*>(drop_data.basicData.webCustomData.data()),
-                   drop_data.basicData.webCustomData.size())));
+        base::span(reinterpret_cast<const uint8_t*>(drop_data.basic_data.web_custom_data.data()),
+                   drop_data.basic_data.web_custom_data.size())));
     provider.SetPickledData(
         ui::ClipboardFormatType::GetType(kWebCustomFormatString),
         std::move(pickle));
@@ -348,19 +379,19 @@ void OhosDragManager::HandleBasicDragData(
     std::shared_ptr<OhosStartDragParam> drag_param) {
   if (std::optional<std::u16string> string = data.GetString();
       string.has_value() && !string->empty()) {
-    drag_param->basicData.text = base::UTF16ToUTF8(*string);
+    drag_param->basic_data.text = base::UTF16ToUTF8(*string);
   }
 
   if (std::optional<ui::OSExchangeData::UrlInfo> url = data.GetURLAndTitle(
           ui::FilenameToURLPolicy::DO_NOT_CONVERT_FILENAMES);
       url.has_value() && url->url.is_valid()) {
-    drag_param->basicData.url = url->url.spec();
-    drag_param->basicData.urlTitle = base::UTF16ToUTF8(url->title);
+    drag_param->basic_data.url = url->url.spec();
+    drag_param->basic_data.url_title = base::UTF16ToUTF8(url->title);
   }
 
   if (std::optional<ui::OSExchangeData::HtmlInfo> html = data.GetHtml();
       html.has_value()) {
-    drag_param->basicData.html = base::UTF16ToUTF8(html->html);
+    drag_param->basic_data.html = base::UTF16ToUTF8(html->html);
   }
 }
 
@@ -393,7 +424,7 @@ void OhosDragManager::HandleWebImageFilePath(
     base::FilePath file_path(folder_path);
     file_path = file_path.Append(file_contents->filename);
     if (base::WriteFile(file_path, file_contents->file_contents)) {
-      drag_param->webImageFilePath = file_path.value().c_str();
+      drag_param->web_image_file_path = file_path.value().c_str();
     } else {
       LOG(ERROR) << "[OhosDrag]drag image file write fail";
     }
@@ -410,7 +441,7 @@ void OhosDragManager::HandlePickleData(
       bookmark_pickle.has_value()) {
     const uint8_t* pickle_data = bookmark_pickle.value().data();
     size_t length = bookmark_pickle.value().size();
-    drag_param->basicData.bookmarkData =
+    drag_param->basic_data.bookmark_data =
         std::vector<uint8_t>(pickle_data, pickle_data + length);
   }
 
@@ -421,7 +452,7 @@ void OhosDragManager::HandlePickleData(
       web_custom_pickle.has_value()) {
     const uint8_t* pickle_data = web_custom_pickle.value().data();
     size_t length = web_custom_pickle.value().size();
-    drag_param->basicData.webCustomData =
+    drag_param->basic_data.web_custom_data =
         std::vector<uint8_t>(pickle_data, pickle_data + length);
   }
 }
@@ -450,9 +481,9 @@ void OhosDragManager::HandlePixelMapData(
     width = kDefaultWidth;
     height = kDefaultHeight;
   }
-  drag_param->pixelMapBuffer = std::move(buff);
-  drag_param->pixelMapWidth = width;
-  drag_param->pixelMapHeight = height;
+  drag_param->pixelmap_buffer = std::move(buff);
+  drag_param->pixelmap_width = width;
+  drag_param->pixelmap_height = height;
 
   gfx::Vector2d drag_image_offset = data.provider().GetDragImageOffset();
   int image_offset_x = drag_image_offset.x();
@@ -466,8 +497,23 @@ void OhosDragManager::HandlePixelMapData(
   if (image_offset_y < 0 || image_offset_y > height) {
     image_offset_y = height / kHalfDivisor;
   }
-  drag_param->pixelMapTouchX = image_offset_x;
-  drag_param->pixelMapTouchY = image_offset_y;
+  drag_param->pixelmap_touch_x = image_offset_x;
+  drag_param->pixelmap_touch_y = image_offset_y;
+}
+
+void OhosDragManager::SendDragOverEvent() {
+  WmDropHandler* drop_handler = ui::GetWmDropHandler(*platform_window_);
+  if (!drop_handler) {
+    LOG(ERROR) << "[OhosDrag] " << __FUNCTION__ << " fail,no drop handler";
+    return;
+  }
+  drop_handler->OnDragMotion(drag_move_point_, drag_move_operations_,
+                             current_modifier_);
+}
+
+void OhosDragManager::StopDragOverTimer() {
+  LOG(INFO) << "[OhosDrag] " << __FUNCTION__ << " stop drag over timer";
+  drag_over_timer_->Stop();
 }
 
 }  // namespace ui

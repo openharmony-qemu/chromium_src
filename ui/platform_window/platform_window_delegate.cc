@@ -72,6 +72,10 @@ void PlatformWindowDelegate::OnWindowTiledStateChanged(
 void PlatformWindowDelegate::OnFullscreenStateChanged() {}
 
 void PlatformWindowDelegate::OnFullscreenSwitched(bool is_enter_fullscreen) {}
+
+bool PlatformWindowDelegate::OnBackToLastPage() {
+  return false;
+}
 #endif
 
 std::optional<gfx::Size> PlatformWindowDelegate::GetMinimumSizeForWindow()

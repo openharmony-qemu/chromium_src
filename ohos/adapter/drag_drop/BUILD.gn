@@ -29,9 +29,20 @@ import("//build/config/ohos/config.gni")
 
 component("drag_drop_adapter") {
   sources = [
-    "drag_drop_ohos_adapter.h",
+    "drag_drop_common.h",
     "drag_drop_ohos_adapter.cc",
+    "drag_drop_ohos_adapter.h",
+    "node_handle_drag_drop_ohos_adapter.cc",
+    "node_handle_drag_drop_ohos_adapter.h",
   ]
   deps = [ "//third_party/aki:aki_jsbind" ]
-  libs = [ "pixelmap_ndk.z"]
+  libs = [
+    "ace_ndk.z",
+    "ace_napi.z",
+    "image_ndk.z",
+    "udmf",
+    "ohimage",
+    "pixelmap",
+    "pixelmap_ndk.z"
+  ]
 }

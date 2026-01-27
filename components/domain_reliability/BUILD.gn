@@ -6,6 +6,7 @@ action("bake_in_configs") {
   visibility = [ ":*" ]
   script = "bake_in_configs.py"
 
+if (!is_ohos) {
   inputs = [
     "baked_in_configs/c_android_clients_google_com.json",
     "baked_in_configs/c_bigcache_googleapis_com.json",
@@ -26,8 +27,32 @@ action("bake_in_configs") {
     "baked_in_configs/gvt2_com.json",
     "baked_in_configs/gvt6_com.json",
     "baked_in_configs/ssl_gstatic_com.json",
-    "baked_in_configs/www_google_com.json",
+    "baked_in_configs/www_google_com.json"
   ]
+} else {
+    inputs = [
+    "baked_in_configs/ohos/c_android_clients_google_com.json",
+    "baked_in_configs/ohos/c_bigcache_googleapis_com.json",
+    "baked_in_configs/ohos/c_doc-0-0-sj_sj_googleusercontent_com.json",
+    "baked_in_configs/ohos/c_docs_google_com.json",
+    "baked_in_configs/ohos/c_drive_google_com.json",
+    "baked_in_configs/ohos/c_googlesyndication_com.json",
+    "baked_in_configs/ohos/c_pack_google_com.json",
+    "baked_in_configs/ohos/c_play_google_com.json",
+    "baked_in_configs/ohos/c_youtube_com.json",
+    "baked_in_configs/ohos/clients2_google_com.json",
+    "baked_in_configs/ohos/docs_google_com.json",
+    "baked_in_configs/ohos/gcp_gvt2_com.json",
+    "baked_in_configs/ohos/gcp_gvt6_com.json",
+    "baked_in_configs/ohos/google-analytics_com.json",
+    "baked_in_configs/ohos/googlevideo_com.json",
+    "baked_in_configs/ohos/gvt1_com.json",
+    "baked_in_configs/ohos/gvt2_com.json",
+    "baked_in_configs/ohos/gvt6_com.json",
+    "baked_in_configs/ohos/ssl_gstatic_com.json",
+    "baked_in_configs/ohos/www_google_com.json"
+  ]
+}
 
   output_file = "$target_gen_dir/baked_in_configs.cc"
   outputs = [ output_file ]

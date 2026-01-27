@@ -283,6 +283,7 @@ bool OHOSAudioOutputStream::InitRender() {
   // set callback
   OH_AudioRenderer_Callbacks callbacks = {};
   callbacks.OH_AudioRenderer_OnWriteData = AudioRendererOnWriteData;
+  callbacks.OH_AudioRenderer_OnStreamEvent = nullptr;
   callbacks.OH_AudioRenderer_OnError = AudioRendererOnError;
   callbacks.OH_AudioRenderer_OnInterruptEvent = AudioRendererOnInterruptEvent;
   audio_stream_result = OH_AudioStreamBuilder_SetRendererCallback(audio_stream_builder_, callbacks, this);

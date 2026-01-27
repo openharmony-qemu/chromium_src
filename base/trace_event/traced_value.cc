@@ -732,7 +732,11 @@ TracedValue::ValueHolder::ValueHolder(TracedValue::Array& value) {
 TracedValue::ValueHolder::ValueHolder(TracedValue::ValueHolder&& other) {
   // Remember to call a destructor if necessary.
   if (kept_value_type_ == KeptValueType::kStdStringType) {
+#if BUILDFLAG(IS_OHOS)
+    kept_value_.std_string_value.~basic_string();
+#else
     delete (&kept_value_.std_string_value);
+#endif
   }
   switch (other.kept_value_type_) {
     case KeptValueType::kIntType: {

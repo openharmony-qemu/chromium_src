@@ -5779,8 +5779,8 @@ WebContents* WebContentsImpl::OpenURL(
             params.url.spec());
     if (activate_result !=
         ohos_permission::PermissionActivationResult::SUCCESS) {
-      LOG(ERROR) << "Failed to activate file uri: " << params.url.spec()
-                 << "error code: " << static_cast<int32_t>(activate_result);
+      LOG(ERROR) << "Failed to activate error code: "
+                 << static_cast<int32_t>(activate_result);
     }
   }
 #endif
@@ -10796,7 +10796,7 @@ void WebContentsImpl::DidChangeScreenOrientation() {
 void WebContentsImpl::SetHaveEncryptedMedia(bool have_encrypted_media) {
   if (!have_encrypted_media_ && have_encrypted_media) {
     have_encrypted_media_ = have_encrypted_media;
-    LOG(INFO) << __func__ << " [WiseplayDRM] browser window enter privacy mode due to load encrypted media.";
+    LOG(INFO) << __func__ << " [WebContent] browser window enter privacy mode due to load encrypted media.";
     delegate_->SetPrivacyMode(have_encrypted_media);
   }
 }

@@ -44,7 +44,8 @@ class ADAPTER_EXPORT_API SubWindowAdapter {
 
   static SubWindowAdapter& GetInstance();
 
-  std::string Create(const NewWindowParam& param);
+  void Create(const NewWindowParam& param);
+  std::string ReuseSubWindow(const NewWindowParam& param);
   void Cancel(const std::string& id);
 
   void Show(const std::string& id);

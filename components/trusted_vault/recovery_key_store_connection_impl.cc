@@ -6,6 +6,7 @@
 
 #include <memory>
 
+#include "build/build_config.h"
 #include "base/notreached.h"
 #include "base/time/time.h"
 #include "components/signin/public/identity_manager/account_info.h"
@@ -21,7 +22,11 @@ namespace {
 
 // The "/0" suffix is required but ignored.
 constexpr char kUpdateVaultUrl[] =
+#if BUILDFLAG(IS_OHOS)
+    "https://xxx";
+#else
     "https://cryptauthvault.googleapis.com/v1/vaults/0";
+#endif
 
 void ProcessUpdateVaultResponseResponse(
     RecoveryKeyStoreConnection::UpdateRecoveryKeyStoreCallback callback,

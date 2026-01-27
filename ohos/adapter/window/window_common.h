@@ -51,6 +51,29 @@ enum class AbilityType {
   kTaskManagerAbility,
 };
 
+enum class AdapterType {
+  kAppWindow,
+  kSubWindow,
+  kSystemFloatingWindow,
+};
+
+enum class WindowStatusType {
+  UNDEFINED = 0,
+  FULL_SCREEN,
+  MAXIMIZE,
+  MINIMIZE,
+  FLOATING,
+  SPLIT_SCREEN
+};
+
+struct WindowLimits {
+ public:
+  int32_t max_height;
+  int32_t max_width;
+  int32_t min_height;
+  int32_t min_width;
+};
+
 struct NewWindowParam {
  public:
   std::string parent_id;
@@ -58,11 +81,13 @@ struct NewWindowParam {
   WindowRect bounds;
   std::string init_color_argb;
   bool hide_title_bar;
-  bool use_floating_window;
   bool use_dark_mode;
   bool caption_button_visible;
   AbilityType ability_type;
   std::string app_id;
+  AdapterType adapter_type{AdapterType::kAppWindow};
+  WindowStatusType status{WindowStatusType::FLOATING};
+  WindowLimits window_limit;
 };
 
 struct PointCoordinate {
@@ -81,13 +106,6 @@ enum class WindowInitType {
   kBubble,
 };
 
-struct WindowLimits {
-  int max_width;
-  int max_height;
-  int min_width;
-  int min_height;
-};
-
 class ADAPTER_EXPORT_API WindowInitParameter {
 public:
   WindowInitParameter();
@@ -97,6 +115,7 @@ public:
 
   WindowInitParameter(WindowInitParameter&& props);
   WindowInitParameter& operator=(WindowInitParameter&&);
+  WindowInitParameter& operator=(const WindowInitParameter& other) = default;
 
   ~WindowInitParameter();
 
@@ -123,9 +142,12 @@ public:
   bool caption_button_visible = true;
 
   AbilityType ability_type = AbilityType::kEntryAbility;
-
   // Tells the browser load is webapp.
   std::string_view app_id = "";
+
+  WindowStatusType status = WindowStatusType::FLOATING;
+
+  WindowLimits window_limit;
 };
 
 }  // namespace ohos::adapter::window

@@ -59,9 +59,16 @@ const int32_t kNativeUIRootParentId = -2100000;
 
 AccessibilityBridgeOhosImpl::AccessibilityBridgeOhosImpl(
     aura::Window* root_window)
-    : root_window_(root_window) {}
+    : root_window_(root_window) {
+  root_window_->AddObserver(this);
+}
 
-AccessibilityBridgeOhosImpl::~AccessibilityBridgeOhosImpl() {}
+AccessibilityBridgeOhosImpl::~AccessibilityBridgeOhosImpl() {
+  if (root_window_) {
+    root_window_->RemoveObserver(this);
+    root_window_ = nullptr;
+  }
+}
 
 void AccessibilityBridgeOhosImpl::GetRootWindowPosition() {
   if (root_window_) {
@@ -77,7 +84,7 @@ void AccessibilityBridgeOhosImpl::GetRootWindowPosition() {
       }
     }
   } else {
-    LOG(ERROR) << "AccessibilityBridgeOhosImpl::GetRootWindowPosition fail";
+    LOG(ERROR) << __func__ << " [Accessibility] root_window_ not exist";
     return;
   }
 }
@@ -108,10 +115,16 @@ void AccessibilityBridgeOhosImpl::AddNativeUIElementDetails(
     int32_t parent_id) {
   OH_ArkUI_AccessibilityElementInfoSetElementId(element, id);
   OH_ArkUI_AccessibilityElementInfoSetParentId(element, parent_id);
+  OH_ArkUI_AccessibilityElementInfoSetComponentType(
+      element, node->GetRoleString().c_str());
   OH_ArkUI_AccessibilityElementInfoSetContents(element,
                                                node->GetText().c_str());
-  OH_ArkUI_AccessibilityElementInfoSetComponentType(
-      element, node->GetComponentType().c_str());
+  OH_ArkUI_AccessibilityElementInfoSetAccessibilityDescription(
+      element, node->GetDescription().c_str());
+  OH_ArkUI_AccessibilityElementInfoSetHintText(element,
+                                               node->GetHint().c_str());
+  OH_ArkUI_AccessibilityElementInfoSetIsHint(element, node->IsHint());
+
   OH_ArkUI_AccessibilityElementInfoSetVisible(element,
                                               !node->IsInvisibleOrIgnored());
   SetElementRect(element, node);
@@ -119,11 +132,52 @@ void AccessibilityBridgeOhosImpl::AddNativeUIElementDetails(
                                                 node->IsPlatformCheckable());
   OH_ArkUI_AccessibilityElementInfoSetChecked(element, node->IsChecked());
   OH_ArkUI_AccessibilityElementInfoSetClickable(element, node->IsClickable());
+  OH_ArkUI_AccessibilityElementInfoSetLongClickable(element,
+                                                    node->IsLongClickable());
   OH_ArkUI_AccessibilityElementInfoSetFocused(element, node->IsFocused());
   OH_ArkUI_AccessibilityElementInfoSetScrollable(element, node->IsScrollable());
   OH_ArkUI_AccessibilityElementInfoSetSelected(
       element, node->ISelectionItemProviderIsSelected());
   OH_ArkUI_AccessibilityElementInfoSetEnabled(element, node->IsEnabled());
+
+  OH_ArkUI_AccessibilityElementInfoSetBackgroundColor(
+      element, node->GetBackgroundColor().c_str());
+  OH_ArkUI_AccessibilityElementInfoSetBackgroundImage(
+      element, node->GetBackgroundImage().c_str());
+
+  OH_ArkUI_AccessibilityElementInfoSetAccessibilityOpacity(element,
+                                                           node->GetOpacity());
+
+  std::vector<ArkUI_AccessibleAction> actions;
+  if (node->IsClickable()) {
+    actions.push_back(
+        {.actionType = ARKUI_ACCESSIBILITY_NATIVE_ACTION_TYPE_CLICK,
+         .description = ui::ToString(ax::mojom::BoolAttribute::kClickable)});
+  }
+
+  if (node->IsFocused()) {
+    actions.push_back(
+        {.actionType =
+             ARKUI_ACCESSIBILITY_NATIVE_ACTION_TYPE_GAIN_ACCESSIBILITY_FOCUS,
+         .description = ui::ToString(ax::mojom::Action::kFocus)});
+    actions.push_back(
+        {.actionType =
+             ARKUI_ACCESSIBILITY_NATIVE_ACTION_TYPE_CLEAR_ACCESSIBILITY_FOCUS,
+         .description =
+             ui::ToString(ax::mojom::Action::kClearAccessibilityFocus)});
+  }
+
+  if (node->IsLongClickable()) {
+    actions.push_back(
+        {.actionType = ARKUI_ACCESSIBILITY_NATIVE_ACTION_TYPE_LONG_CLICK,
+         .description =
+             ui::ToString(ax::mojom::BoolAttribute::kLongClickable)});
+  }
+
+  if (!actions.empty()) {
+    OH_ArkUI_AccessibilityElementInfoSetOperationActions(
+        element, static_cast<int32_t>(actions.size()), actions.data());
+  }
 }
 
 int SetElementChildIds(ArkUI_AccessibilityElementInfo* element,
@@ -189,6 +243,10 @@ void AccessibilityBridgeOhosImpl::SetParentNativeUIElement(
   if (element_id == kSearchFromRootMode) {
     AddNativeUIRootElement(element_list, ax_platform_node);
   } else {
+    if (root_window_ == nullptr) {
+      LOG(ERROR) << __func__ << " [Accessibility] root_window_ not exist";
+      return;
+    }
     ui::AXPlatformNodeOHOS* parent = static_cast<ui::AXPlatformNodeOHOS*>(
         ax_platform_node->GetPlatformParent());
     if (!parent) {
@@ -229,6 +287,10 @@ void AccessibilityBridgeOhosImpl::SetSiblingsNativeUIElements(
   if (element_id == kSearchFromRootMode) {
     AddNativeUIRootElement(element_list, ax_platform_node);
   } else {
+    if (root_window_ == nullptr) {
+      LOG(ERROR) << __func__ << " [Accessibility] root_window_ not exist";
+      return;
+    }
     ui::AXPlatformNodeOHOS* parent = static_cast<ui::AXPlatformNodeOHOS*>(
         ax_platform_node->GetPlatformParent());
     if (!parent) {

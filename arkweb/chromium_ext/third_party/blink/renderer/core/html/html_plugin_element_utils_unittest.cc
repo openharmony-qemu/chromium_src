@@ -275,4 +275,24 @@ TEST_F(HTMLPlugInElementUtilsTest, HandlesInvalidValue) {
   utils_->AnalysisStretchContentToFillBounds(params);
 }
 
+TEST_F(HTMLPlugInElementUtilsTest, TestProcessParamChanges) {
+  Vector<ParamChangeInfo> param_changes;
+  param_changes.push_back(ParamChangeInfo(ParamChangeInfo::Status::kAdd,
+                                          AtomicString("id"),
+                                          AtomicString("name"),
+                                          AtomicString("value")));
+  utils_->ProcessParamChanges(param_changes);
+}
+
+TEST_F(HTMLPlugInElementUtilsTest, TestProcessBufferedParamChanges) {
+  SetNativeLoader(nullptr);
+  Vector<ParamChangeInfo> param_changes;
+  param_changes.push_back(ParamChangeInfo(ParamChangeInfo::Status::kAdd,
+                                          AtomicString("id"),
+                                          AtomicString("name"),
+                                          AtomicString("value")));
+  AppendBufferedParamChanges(param_changes);
+  utils_->ProcessBufferedParamChanges();
+}
+
 }  // namespace blink

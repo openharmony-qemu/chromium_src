@@ -1025,4 +1025,20 @@ TEST_F(NWebRenderHandlerTest, OnNativeEmbedGestureEvent) {
                                                    nullptr);
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_SCREEN_OFFSET)
+TEST_F(NWebRenderHandlerTest, SetScreenOffset) {
+  ON_CALL(*mock_browser, GetHost()).WillByDefault(::testing::Return(mock_host));
+  double x = 20.0;
+  double y = 30.0;
+  g_nweb_render_handler->SetScreenOffset(x, y);
+}
+
+TEST_F(NWebRenderHandlerTest, GetScreenOffset) {
+  ON_CALL(*mock_browser, GetHost()).WillByDefault(::testing::Return(mock_host));
+  double x = 20.0;
+  double y = 30.0;
+  g_nweb_render_handler->GetScreenOffset(mock_browser, x, y);
+}
+#endif
 }  // namespace OHOS::NWeb

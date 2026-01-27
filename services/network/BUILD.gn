@@ -635,7 +635,6 @@ source_set("tests") {
       "//arkweb/chromium_ext/services/network/network_service_network_delegate_ext_unittest.cc",
       "//arkweb/chromium_ext/services/network/tests/url_loader_ext_unittests.cc",
       "//arkweb/chromium_ext/services/network/sec_header_helpers_ext_unittest.cc",
-      "//arkweb/chromium_ext/services/network/throttling/throttling_network_transaction_for_include_unittest.cc",
     ]
   }
 }

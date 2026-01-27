@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "net/dns/resolve_context.h"
 
 #include <stdint.h>
 
@@ -47,6 +46,14 @@
 #include "net/url_request/url_request_test_util.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
+
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#define private public
+#include "net/dns/resolve_context.h"
+#undef private
+#else
+#include "net/dns/resolve_context.h"
+#endif
 
 namespace net {
 
@@ -1561,5 +1568,8 @@ TEST_F(ResolveContextTest, SessionChange_NoDohServers) {
   context.UnregisterDohStatusObserver(&observer);
 }
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#include "arkweb/chromium_ext/net/dns/resolve_context_for_include_unittest.cc"
+#endif  // ARKWEB_UNITTESTS
 }  // namespace
 }  // namespace net

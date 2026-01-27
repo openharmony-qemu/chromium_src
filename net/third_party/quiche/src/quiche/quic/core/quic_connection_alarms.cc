@@ -167,6 +167,9 @@ class MultiplexerAlarmDelegate : public QuicAlarm::Delegate {
   QuicAlarmMultiplexer* multiplexer_;
 };
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+#include "arkweb/chromium_ext/net/quiche/quic_connection_alarms_for_include.cc"
+#endif
 }  // namespace
 
 std::string QuicAlarmSlotName(QuicAlarmSlot slot) {
@@ -189,6 +192,10 @@ std::string QuicAlarmSlotName(QuicAlarmSlot slot) {
       return "MultiPortProbing";
     case QuicAlarmSlot::kIdleNetworkDetector:
       return "IdleNetworkDetector";
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    case QuicAlarmSlot::kStreamFrameDetector:
+      return "StreamFrameDetector";
+#endif
     case QuicAlarmSlot::kNetworkBlackholeDetector:
       return "NetworkBlackholeDetector";
     case QuicAlarmSlot::kPing:
@@ -205,7 +212,11 @@ QuicAlarmMultiplexer::QuicAlarmMultiplexer(
     : deadlines_({QuicTime::Zero(), QuicTime::Zero(), QuicTime::Zero(),
                   QuicTime::Zero(), QuicTime::Zero(), QuicTime::Zero(),
                   QuicTime::Zero(), QuicTime::Zero(), QuicTime::Zero(),
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+                  QuicTime::Zero(), QuicTime::Zero(), QuicTime::Zero()}),
+#else
                   QuicTime::Zero(), QuicTime::Zero()}),
+#endif
       now_alarm_(alarm_factory.CreateAlarm(
           arena.New<MultiplexerAlarmDelegate>(this), &arena)),
       later_alarm_(alarm_factory.CreateAlarm(
@@ -359,6 +370,11 @@ void QuicAlarmMultiplexer::Fire(QuicAlarmSlot slot) {
     case QuicAlarmSlot::kIdleNetworkDetector:
       connection_->OnIdleDetectorAlarm();
       return;
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    case QuicAlarmSlot::kStreamFrameDetector:
+      connection_->OnStreamFrameDetectorAlarm();
+      return;
+#endif
     case QuicAlarmSlot::kNetworkBlackholeDetector:
       connection_->OnNetworkBlackholeDetectorAlarm();
       return;
@@ -422,6 +438,10 @@ QuicConnectionAlarmHolder::QuicConnectionAlarmHolder(
           arena.New<MultiPortProbingAlarmDelegate>(delegate), &arena)),
       idle_network_detector_alarm_(alarm_factory.CreateAlarm(
           arena.New<IdleDetectorAlarmDelegate>(delegate), &arena)),
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+      stream_frame_detector_alarm_(alarm_factory.CreateAlarm(
+          arena.New<StreamFrameDetectorAlarmDelegate>(delegate), &arena)),
+#endif
       network_blackhole_detector_alarm_(alarm_factory.CreateAlarm(
           arena.New<NetworkBlackholeDetectorAlarmDelegate>(delegate), &arena)),
       ping_alarm_(alarm_factory.CreateAlarm(

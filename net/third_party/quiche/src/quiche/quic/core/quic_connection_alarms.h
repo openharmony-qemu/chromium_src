@@ -39,6 +39,9 @@ class QUICHE_EXPORT QuicConnectionAlarmsDelegate {
   virtual void OnIdleDetectorAlarm() = 0;
   virtual void OnNetworkBlackholeDetectorAlarm() = 0;
   virtual void OnPingAlarm() = 0;
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  virtual void OnStreamFrameDetectorAlarm() = 0;
+#endif
 
   virtual QuicConnectionContext* context() = 0;
   virtual const QuicClock* clock() const = 0;
@@ -73,6 +76,10 @@ enum class QuicAlarmSlot : uint8_t {
   kMultiPortProbing,
   // An alarm for QuicIdleNetworkDetector.
   kIdleNetworkDetector,
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  // An alarm for QuicStreamFrameDetector.
+  kStreamFrameDetector,
+#endif
   // An alarm for QuicNetworkBlackholeDetection.
   kNetworkBlackholeDetector,
   // An alarm for QuicPingManager.
@@ -335,6 +342,14 @@ class QUICHE_EXPORT QuicConnectionAlarmHolder {
   ConstAlarmProxy ping_alarm() const {
     return ConstAlarmProxy(ping_alarm_.get());
   }
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  AlarmProxy stream_frame_detector_alarm() {
+    return AlarmProxy(stream_frame_detector_alarm_.get());
+  }
+  ConstAlarmProxy stream_frame_detector_alarm() const {
+    return ConstAlarmProxy(stream_frame_detector_alarm_.get());
+  }
+#endif
 
  private:
   // An alarm that fires when an ACK should be sent to the peer.
@@ -360,6 +375,10 @@ class QUICHE_EXPORT QuicConnectionAlarmHolder {
   QuicArenaScopedPtr<QuicAlarm> multi_port_probing_alarm_;
   // An alarm for QuicIdleNetworkDetector.
   QuicArenaScopedPtr<QuicAlarm> idle_network_detector_alarm_;
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  // An alarm for QuicStreamFrameDetector.
+  QuicArenaScopedPtr<QuicAlarm> stream_frame_detector_alarm_;
+#endif
   // An alarm for QuicNetworkBlackholeDetection.
   QuicArenaScopedPtr<QuicAlarm> network_blackhole_detector_alarm_;
   // An alarm for QuicPingManager.
@@ -648,6 +667,10 @@ class QUICHE_EXPORT QuicConnectionAlarms {
       multiplexer_->ResumeUnderlyingAlarmScheduling();
     }
   }
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/net/quiche/quic_connection_alarms_for_include.h"
+#endif
 
  private:
   std::optional<QuicConnectionAlarmHolder> holder_;

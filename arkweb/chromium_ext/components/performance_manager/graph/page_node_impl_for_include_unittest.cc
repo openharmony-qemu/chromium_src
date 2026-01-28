@@ -26,7 +26,7 @@
 #include "components/performance_manager/test_support/graph_test_harness.h"
 #include "components/performance_manager/test_support/mock_graphs.h"
 #if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)	 
-#include "content/public/browser/web_contents_observer.h"	 
+#include "content/public/browser/global_routing_id.h"	 
 #endif
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
@@ -44,10 +44,6 @@ class PageNodeImplExtTest : public GraphTestHarness {
 using testing::_;
 using testing::Invoke;
 using testing::InvokeWithoutArgs;
-
-#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK) 
-using AudioContextId = content::WebContentsObserver::AudioContextId; 
-#endif
 
 class LenientMockObserver : public PageNodeImpl::Observer {
 public:
@@ -88,12 +84,12 @@ public:
     MOCK_METHOD(void, OnDecrementAudioNum, (const PageNode *), (override));
     MOCK_METHOD(void, OnAudioContextPlaybackStarted, (content::GlobalRenderFrameHostId, int), (override));
     MOCK_METHOD(void, OnAudioContextPlaybackStopped, (content::GlobalRenderFrameHostId, int), (override));
-    void SetNotifiedAudioContextId(const AudioContextId &audio_context_id)
+    void SetNotifiedAudioContextId(content::GlobalRenderFrameHostId rfh_id, int audio_context_id)
     {
         audio_context_id_ = audio_context_id;
     }
 
-    const AudioContextId TakeNotifiedAudioContextId()
+    const int TakeNotifiedAudioContextId()
     {
         return audio_context_id_;
     }
@@ -113,7 +109,7 @@ public:
 
 private:
 #if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
-    AudioContextId audio_context_id_;
+    int audio_context_id_;
 #endif
     raw_ptr<const PageNode, DanglingUntriaged> notified_page_node_ = nullptr;
 };
@@ -150,15 +146,16 @@ TEST_F(PageNodeImplExtTest, AudioContextTest) {
   page_node->OneShotMediaPlayerStopped();
   EXPECT_EQ(raw_page_node, obs.TakeNotifiedPageNode());
 
-  const AudioContextId audio_context_id = std::make_pair(nullptr, 1);
-  EXPECT_CALL(obs, OnAudioContextPlaybackStarted(_))
+  content::GlobalRenderFrameHostId valid_id = content::GlobalRenderFrameHostId(1, 1);
+  int audio_context_id = 1;
+  EXPECT_CALL(obs, OnAudioContextPlaybackStarted(_,_))
       .WillOnce(Invoke(&obs, &MockObserver::SetNotifiedAudioContextId));
-  page_node->AudioContextPlaybackStarted(audio_context_id);
+  page_node->AudioContextPlaybackStarted(valid_id, audio_context_id);
   EXPECT_EQ(audio_context_id, obs.TakeNotifiedAudioContextId());
 
-  EXPECT_CALL(obs, OnAudioContextPlaybackStopped(_))
+  EXPECT_CALL(obs, OnAudioContextPlaybackStopped(_,_))
       .WillOnce(Invoke(&obs, &MockObserver::SetNotifiedAudioContextId));
-  page_node->AudioContextPlaybackStopped(audio_context_id);
+  page_node->AudioContextPlaybackStopped(valid_id, audio_context_id);
   EXPECT_EQ(audio_context_id, obs.TakeNotifiedAudioContextId());
 
   graph()->RemovePageNodeObserver(&obs);

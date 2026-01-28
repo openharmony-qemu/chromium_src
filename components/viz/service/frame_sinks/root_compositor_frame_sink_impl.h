@@ -149,6 +149,11 @@ class VIZ_SERVICE_EXPORT RootCompositorFrameSinkImpl
     void UpdateThrottleMode(bool is_enable) override {}
 #endif
 
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  void DisplayDidRealSwapBuffer() override;
+  bool needs_notify_first_swap_buffer_ = false;
+#endif
+
 #if BUILDFLAG(IS_ANDROID)
   base::ScopedClosureRunner GetCacheBackBufferCb();
 #endif

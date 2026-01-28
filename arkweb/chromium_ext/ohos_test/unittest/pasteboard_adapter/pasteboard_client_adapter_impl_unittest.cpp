@@ -712,4 +712,336 @@ TEST_F(PasteboardClientAdapterImplTest, GetPasteDataTest004)
     SetMockState(false);
 }
 
+TEST_F(PasteboardClientAdapterImplTest, CRITICAL_SetUri_NullptrFromOH_UdsFileUri_Create)
+{
+    std::shared_ptr<PasteDataRecordAdapter> record = PasteDataRecordAdapter::NewRecord("text/html");
+    ASSERT_NE(record, nullptr);
+
+    EXPECT_EQ(record->SetUri(g_test_uri), true);
+
+    std::shared_ptr<std::string> retrievedUri = record->GetUri();
+    ASSERT_NE(retrievedUri, nullptr);
+    EXPECT_EQ(*retrievedUri, g_test_uri);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, CRITICAL_SetHtmlText_NullptrParameter)
+{
+    std::shared_ptr<PasteDataRecordAdapter> record = PasteDataRecordAdapter::NewRecord("text/html");
+    ASSERT_NE(record, nullptr);
+    std::shared_ptr<std::string> validText = std::make_shared<std::string>("<html>test</html>");
+    EXPECT_EQ(record->SetHtmlText(validText), true);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, CRITICAL_SetPlainText_NullptrParameter)
+{
+    std::shared_ptr<PasteDataRecordAdapter> record = PasteDataRecordAdapter::NewRecord("text/plain");
+    ASSERT_NE(record, nullptr);
+    std::shared_ptr<std::string> validText = std::make_shared<std::string>("plain text");
+    EXPECT_EQ(record->SetPlainText(validText), true);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, CRITICAL_GetPasteData_NullptrFromOH_Pasteboard_GetDataParams_Create)
+{
+    SetMockState(true);
+    PasteRecordVector data;
+    auto& mock = MockOHOSFunction::GetInstance();
+
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_Create()).WillOnce(Return(nullptr));
+
+    EXPECT_EQ(PasteBoardClientAdapterImpl::GetInstance().GetPasteData(data), false);
+
+    SetMockState(false);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, CRITICAL_SetPasteData_NullptrFromOH_UdmfData_Create)
+{
+    PasteRecordVector data;
+    std::shared_ptr<PasteDataRecordAdapter> record = PasteDataRecordAdapter::NewRecord("text/html");
+    ASSERT_NE(record, nullptr);
+
+    std::shared_ptr<std::string> htmlText = std::make_shared<std::string>("<html>test</html>");
+    record->SetHtmlText(htmlText);
+    data.push_back(record);
+
+    PasteBoardClientAdapterImpl::GetInstance().SetPasteData(data);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, HIGH_GetPrimaryHtml_CreateFailure)
+{
+    std::shared_ptr<PasteDataAdapter> adapter = std::make_shared<PasteDataAdapterImpl>();
+    ASSERT_NE(adapter, nullptr);
+
+    std::shared_ptr<std::string> result = adapter->GetPrimaryHtml();
+    EXPECT_EQ(result, nullptr);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, HIGH_GetPrimaryText_CreateFailure)
+{
+    std::shared_ptr<PasteDataAdapter> adapter = std::make_shared<PasteDataAdapterImpl>();
+    ASSERT_NE(adapter, nullptr);
+
+    std::shared_ptr<std::string> result = adapter->GetPrimaryText();
+    EXPECT_EQ(result, nullptr);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, HIGH_RemovePasteboardChangedObserver_UnsubscribeFailure)
+{
+    std::shared_ptr<PasteboardObserverAdapter> observer = std::make_shared<MockPasteboardObserver>();
+
+    int32_t id = PasteBoardClientAdapterImpl::GetInstance().AddPasteboardChangedObserver(observer);
+    ASSERT_GE(id, 0);
+
+    PasteBoardClientAdapterImpl::GetInstance().RemovePasteboardChangedObserver(id);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, HIGH_RemovePasteboardChangedObserver_DestroyFailure)
+{
+    std::shared_ptr<PasteboardObserverAdapter> observer = std::make_shared<MockPasteboardObserver>();
+
+    int32_t id = PasteBoardClientAdapterImpl::GetInstance().AddPasteboardChangedObserver(observer);
+    ASSERT_GE(id, 0);
+
+    PasteBoardClientAdapterImpl::GetInstance().RemovePasteboardChangedObserver(id);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, HIGH_HasType_NullptrPasteboard)
+{
+    PasteBoardClientAdapterImpl::GetInstance().pasteboard_ = nullptr;
+
+    bool result = PasteBoardClientAdapterImpl::GetInstance().HasType("text/html");
+    EXPECT_EQ(result, false);
+
+    PasteBoardClientAdapterImpl::GetInstance().pasteboard_ = OH_Pasteboard_Create();
+}
+
+TEST_F(PasteboardClientAdapterImplTest, HIGH_HasType_NullptrType)
+{
+    bool result = PasteBoardClientAdapterImpl::GetInstance().HasType(nullptr);
+    EXPECT_EQ(result, false);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, HIGH_GetMimeType_NullptrRecord)
+{
+    std::shared_ptr<PasteDataRecordAdapterImpl> record_null =
+        std::make_shared<PasteDataRecordAdapterImpl>(nullptr, std::shared_ptr<OH_UdmfData>());
+    ASSERT_NE(record_null, nullptr);
+
+    std::string result = record_null->GetMimeType();
+    EXPECT_EQ(result, "");
+}
+
+TEST_F(PasteboardClientAdapterImplTest, HIGH_GetMimeTypes_NullptrRecord)
+{
+    std::shared_ptr<PasteDataRecordAdapterImpl> record_null =
+        std::make_shared<PasteDataRecordAdapterImpl>(nullptr, std::shared_ptr<OH_UdmfData>());
+    ASSERT_NE(record_null, nullptr);
+
+    std::vector<std::string> result = record_null->GetMimeTypes();
+    EXPECT_EQ(result.empty(), true);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, HIGH_GetHtmlText_NullptrRecord)
+{
+    std::shared_ptr<PasteDataRecordAdapterImpl> record_null =
+        std::make_shared<PasteDataRecordAdapterImpl>(nullptr, std::shared_ptr<OH_UdmfData>());
+    ASSERT_NE(record_null, nullptr);
+
+    std::shared_ptr<std::string> result = record_null->GetHtmlText();
+    EXPECT_EQ(result, nullptr);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, HIGH_GetUri_NullptrRecord)
+{
+    std::shared_ptr<PasteDataRecordAdapterImpl> record_null =
+        std::make_shared<PasteDataRecordAdapterImpl>(nullptr, std::shared_ptr<OH_UdmfData>());
+    ASSERT_NE(record_null, nullptr);
+
+    std::shared_ptr<std::string> result = record_null->GetUri();
+    EXPECT_EQ(result, nullptr);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, HIGH_GetCustomData_NullptrRecord)
+{
+    std::shared_ptr<PasteDataRecordAdapterImpl> record_null =
+        std::make_shared<PasteDataRecordAdapterImpl>(nullptr, std::shared_ptr<OH_UdmfData>());
+    ASSERT_NE(record_null, nullptr);
+
+    std::shared_ptr<PasteCustomData> result = record_null->GetCustomData();
+    EXPECT_EQ(result, nullptr);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, HIGH_GetImgData_NullptrRecord)
+{
+    std::shared_ptr<PasteDataRecordAdapterImpl> record_null =
+        std::make_shared<PasteDataRecordAdapterImpl>(nullptr, std::shared_ptr<OH_UdmfData>());
+    ASSERT_NE(record_null, nullptr);
+
+    std::shared_ptr<MockClipBoardImageDataAdapter> image = std::make_shared<MockClipBoardImageDataAdapter>();
+
+    bool result = record_null->GetImgData(image);
+    EXPECT_EQ(result, false);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, HIGH_SetImgData_NullptrImageData)
+{
+    std::shared_ptr<PasteDataRecordAdapter> record = PasteDataRecordAdapter::NewRecord("image/png");
+    ASSERT_NE(record, nullptr);
+
+    bool result = record->SetImgData(nullptr);
+    EXPECT_EQ(result, false);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, MEDIUM_SetUri_EmptyUri)
+{
+    std::shared_ptr<PasteDataRecordAdapter> record = PasteDataRecordAdapter::NewRecord("text/html");
+    ASSERT_NE(record, nullptr);
+
+    bool result = record->SetUri("");
+    EXPECT_EQ(result, false);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, MEDIUM_SetCustomData_EmptyData)
+{
+    std::shared_ptr<PasteDataRecordAdapter> record = PasteDataRecordAdapter::NewRecord("text/html");
+    ASSERT_NE(record, nullptr);
+
+    PasteCustomData emptyData;
+    bool result = record->SetCustomData(emptyData);
+    EXPECT_EQ(result, false);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, MEDIUM_AddHtmlRecord_NullData)
+{
+    std::shared_ptr<PasteDataAdapterImpl> adapter_null = std::make_shared<PasteDataAdapterImpl>(nullptr);
+    ASSERT_NE(adapter_null, nullptr);
+
+    adapter_null->AddHtmlRecord(g_test_str);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, MEDIUM_AddTextRecord_NullData)
+{
+    std::shared_ptr<PasteDataAdapterImpl> adapter_null = std::make_shared<PasteDataAdapterImpl>(nullptr);
+    ASSERT_NE(adapter_null, nullptr);
+
+    adapter_null->AddTextRecord(g_test_str);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, MEDIUM_GetMimeTypes_NullData)
+{
+    std::shared_ptr<PasteDataAdapterImpl> adapter_null = std::make_shared<PasteDataAdapterImpl>(nullptr);
+    ASSERT_NE(adapter_null, nullptr);
+
+    std::vector<std::string> result = adapter_null->GetMimeTypes();
+    EXPECT_EQ(result.empty(), true);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, MEDIUM_GetPrimaryHtml_NullData)
+{
+    std::shared_ptr<PasteDataAdapterImpl> adapter_null = std::make_shared<PasteDataAdapterImpl>(nullptr);
+    ASSERT_NE(adapter_null, nullptr);
+
+    std::shared_ptr<std::string> result = adapter_null->GetPrimaryHtml();
+    EXPECT_EQ(result, nullptr);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, MEDIUM_GetPrimaryText_NullData)
+{
+    std::shared_ptr<PasteDataAdapterImpl> adapter_null = std::make_shared<PasteDataAdapterImpl>(nullptr);
+    ASSERT_NE(adapter_null, nullptr);
+
+    std::shared_ptr<std::string> result = adapter_null->GetPrimaryText();
+    EXPECT_EQ(result, nullptr);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, MEDIUM_GetPrimaryMimeType_NullData)
+{
+    std::shared_ptr<PasteDataAdapterImpl> adapter_null = std::make_shared<PasteDataAdapterImpl>(nullptr);
+    ASSERT_NE(adapter_null, nullptr);
+
+    std::shared_ptr<std::string> result = adapter_null->GetPrimaryMimeType();
+    EXPECT_EQ(result, nullptr);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, MEDIUM_AllRecords_NullData)
+{
+    std::shared_ptr<PasteDataAdapterImpl> adapter_null = std::make_shared<PasteDataAdapterImpl>(nullptr);
+    ASSERT_NE(adapter_null, nullptr);
+
+    PasteRecordVector result = adapter_null->AllRecords();
+    EXPECT_EQ(result.empty(), true);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, MEDIUM_GetRecordAt_NullData)
+{
+    std::shared_ptr<PasteDataAdapterImpl> adapter_null = std::make_shared<PasteDataAdapterImpl>(nullptr);
+    ASSERT_NE(adapter_null, nullptr);
+
+    std::shared_ptr<PasteDataRecordAdapter> result = adapter_null->GetRecordAt(0);
+    EXPECT_EQ(result, nullptr);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, MEDIUM_GetRecordAt_OutOfBounds)
+{
+    std::shared_ptr<PasteDataAdapter> adapter = std::make_shared<PasteDataAdapterImpl>();
+    ASSERT_NE(adapter, nullptr);
+
+    std::shared_ptr<PasteDataRecordAdapter> result = adapter->GetRecordAt(999);
+    EXPECT_EQ(result, nullptr);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, MEDIUM_SetPasteData_NoneCopyOption)
+{
+    PasteRecordVector data;
+    std::shared_ptr<PasteDataRecordAdapter> record = PasteDataRecordAdapter::NewRecord("text/html");
+    ASSERT_NE(record, nullptr);
+    data.push_back(record);
+
+    PasteBoardClientAdapterImpl::GetInstance().SetPasteData(data, CopyOptionMode::NONE);
+}
+
+
+TEST_F(PasteboardClientAdapterImplTest, MEDIUM_GetTokenId)
+{
+    uint32_t result = PasteBoardClientAdapterImpl::GetInstance().GetTokenId();
+    EXPECT_EQ(result, 0);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, MEDIUM_OpenRemoteUri)
+{
+    int32_t result = PasteBoardClientAdapterImpl::GetInstance().OpenRemoteUri("/data/test/path");
+    EXPECT_EQ(result, -1);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, MEDIUM_TransitionCopyOption_CrossDevice)
+{
+    Udmf_ShareOption result = PasteBoardClientAdapterImpl::GetInstance().
+        TransitionCopyOption(CopyOptionMode::CROSS_DEVICE);
+    EXPECT_EQ(result, Udmf_ShareOption::SHARE_OPTIONS_CROSS_APP);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, MEDIUM_AddPasteboardChangedObserver_NullptrCallback)
+{
+    int32_t id = PasteBoardClientAdapterImpl::GetInstance().AddPasteboardChangedObserver(nullptr);
+    EXPECT_EQ(id, -1);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, MEDIUM_RemovePasteboardChangedObserver_InvalidId)
+{
+    PasteBoardClientAdapterImpl::GetInstance().RemovePasteboardChangedObserver(-1);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, MEDIUM_RemovePasteboardChangedObserver_NonExistentId)
+{
+    PasteBoardClientAdapterImpl::GetInstance().RemovePasteboardChangedObserver(9999);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, MEDIUM_GetRecordCount_NullData)
+{
+    std::shared_ptr<PasteDataAdapterImpl> adapter_null = std::make_shared<PasteDataAdapterImpl>(nullptr);
+    ASSERT_NE(adapter_null, nullptr);
+
+    std::size_t result = adapter_null->GetRecordCount();
+    EXPECT_EQ(result, 0);
+}
+
 }

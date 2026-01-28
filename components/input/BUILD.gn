@@ -27,6 +27,7 @@ component("input") {
     "fling_controller.h",
     "//arkweb/chromium_ext/components/input/fling_controller_for_include.h",
     "//arkweb/chromium_ext/components/input/fling_controller_for_include_impl.h",
+    "//arkweb/chromium_ext/components/input/tap_suppression_controller_for_include.h",
     "fling_scheduler_base.h",
     "gesture_event_queue.cc",
     "gesture_event_queue.h",

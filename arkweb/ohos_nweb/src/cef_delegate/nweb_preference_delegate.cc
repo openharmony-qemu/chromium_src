@@ -878,6 +878,7 @@ int NWebPreferenceDelegate::GetBlurEnable() {
 }
 
 void NWebPreferenceDelegate::SetScrollable(bool enable) {
+  LOG(INFO) << "SetScrollable enable:" << enable;
   scroll_enabled_ = enable;
   WebPreferencesChanged();
   if (!(browser_.get()) || !(browser_->GetHost())) {
@@ -889,6 +890,8 @@ void NWebPreferenceDelegate::SetScrollable(bool enable) {
 }
 
 void NWebPreferenceDelegate::SetScrollable(bool enable, int32_t scrollType) {
+  LOG(INFO) << "SetScrollable enable:" << enable
+            << " scrollType:" << scrollType;
   scroll_enabled_ = enable;
   setting_scroll_enabled_ = enable;
   if (scrollType == static_cast<int32_t>(WebScrollType::UNKNOWN)) {

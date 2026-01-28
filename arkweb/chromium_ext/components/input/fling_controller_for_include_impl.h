@@ -273,6 +273,7 @@ void FlingController::SetFocusWebId(int32_t nweb_id) {
 
 void FlingController::SetScrollable(bool enable) {
   scroll_enabled_ = enable;
+  touchscreen_tap_suppression_controller_.SetScrollable(enable);
 }
 #endif
 }

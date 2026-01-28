@@ -41,6 +41,11 @@
 #include "third_party/abseil-cpp/absl/types/variant.h"
 #include "url/url_constants.h"
 
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#include "net/base/features.h"
+#include "services/network/public/cpp/features.h"
+#endif
+
 namespace net {
 
 namespace {
@@ -672,10 +677,41 @@ void HostResolverManager::Job::OnSystemTaskComplete(
                                        addr_list.dns_aliases().end());
 
 #if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-  if (AsArkWebHostResolverManagerJobExt()->CheckDnsFallBackTask(net_error)) {
+  if (base::FeatureList::IsEnabled(
+          network::features::kEnableNwebExHttpDnsFallback)) {
+    AddressList new_addr_list = addr_list;
+    bool secure_dns_fallback_available = false;
+    if (resolver_) {
+      secure_dns_fallback_available =
+          resolver_->CanUseSecureDnsFallback(&*key_.resolve_context);
+    }
+
+    if (AsArkWebHostResolverManagerJobExt()) {
+      AsArkWebHostResolverManagerJobExt()->MaybeModifyProcResolveResults(
+          std::string(key_.host.GetHostnameWithoutBrackets()),
+          secure_dns_fallback_available, net_error, new_addr_list);
+
+      if (AsArkWebHostResolverManagerJobExt()->CheckDnsFallBackTask(
+              net_error)) {
+        return;
+      }
+
+      AsArkWebHostResolverManagerJobExt()->RecordIllegalIPAddrToLog(
+          std::string(key_.host.GetHostnameWithoutBrackets()), new_addr_list);
+    }
+
+    CompleteRequests(
+        HostCache::Entry(
+            net_error,
+            net_error == OK
+                ? AddressList::CopyWithPort(new_addr_list, 0).endpoints()
+                : std::vector<IPEndPoint>(),
+            std::set<std::string>(), HostCache::Entry::SOURCE_UNKNOWN),
+        ttl, /*allow_cache=*/true, /*secure=*/false, TaskType::SYSTEM);
+
     return;
   }
-#endif
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 
   // Source unknown because the system resolver could have gotten it from a
   // hosts file, its own cache, a DNS lookup or somewhere else.
@@ -802,8 +838,12 @@ void HostResolverManager::Job::OnDnsTaskComplete(base::TimeTicks start_time,
 
   base::TimeDelta duration = tick_clock_->NowTicks() - start_time;
 #if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-  AsArkWebHostResolverManagerJobExt()->ReportDnsFallBackTaskResult(results,
-                                                                   duration);
+  if (base::FeatureList::IsEnabled(
+          network::features::kEnableNwebExHttpDnsFallback) &&
+      AsArkWebHostResolverManagerJobExt()) {
+    AsArkWebHostResolverManagerJobExt()->ReportDnsFallBackTaskResult(results,
+                                                                     duration);
+  }
 #endif
   if (results.error() != OK) {
     OnDnsTaskFailure(dns_task_->AsWeakPtr(), duration, allow_fallback, results,

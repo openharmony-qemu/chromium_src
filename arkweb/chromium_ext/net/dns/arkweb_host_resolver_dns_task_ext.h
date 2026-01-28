@@ -53,6 +53,10 @@ class NET_EXPORT_PRIVATE ArkWebHostResolverDnsTaskExt final {
                                    int net_error,
                                    DnsQueryType dns_query_type);
   void SetNotNeedMoreAttemptIPQueryType(DnsQueryType dns_query_type);
+  void MaybeModifyInsecureDnsTaskResolveResults(
+      const std::string& host,
+      bool secure_dns_fallback_available,
+      HostCache::Entry& out_results);
 #endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
 };
 

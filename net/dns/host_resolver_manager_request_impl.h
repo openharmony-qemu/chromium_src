@@ -149,6 +149,10 @@ class HostResolverManager::RequestImpl
 
   ClientSocketFactory* GetClientSocketFactory();
 
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  void MaybeModifyResolveLocallyResults(HostCache::Entry& out_results);
+#endif
+
   const NetLogWithSource source_net_log_;
 
   const HostResolver::Host request_host_;

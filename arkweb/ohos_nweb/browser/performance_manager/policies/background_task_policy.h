@@ -59,8 +59,8 @@ class BackgroundTaskPolicy : public GraphOwnedDefaultImpl,
   void SetBrowserBackground(const PageNode* page_node) override;
 #endif
 #if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
-  void OnAudioContextPlaybackStarted(const AudioContextId& audio_context_id) override;
-  void OnAudioContextPlaybackStopped(const AudioContextId& audio_context_id) override;
+  void OnAudioContextPlaybackStarted(content::GlobalRenderFrameHostId rfh_id, int audio_context_id) override;
+  void OnAudioContextPlaybackStopped(content::GlobalRenderFrameHostId rfh_id, int audio_context_id) override;
 
   bool IsWebAudioRequestBackgroundRunning();
   void ProcessAudioContextPlayers(const PageNode* page_node);
@@ -68,8 +68,9 @@ class BackgroundTaskPolicy : public GraphOwnedDefaultImpl,
   bool GetWebAudioStartBackgroundTask();
   bool GetWebAudioStartBackgroundTaskOnUIThread();
 
+  using AudioContextIdPlayer = std::pair<content::GlobalRenderFrameHostId, int>;
   // Set of active audio contexts
-  std::set<AudioContextId> audio_context_players_num_;
+  std::set<AudioContextIdPlayer> audio_context_players_num_;
 #endif
 
   raw_ptr<const PageNode> page_node_being_removed_ = nullptr;

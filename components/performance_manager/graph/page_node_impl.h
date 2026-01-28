@@ -123,8 +123,8 @@ class PageNodeImpl
 #if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
   void SetIsMediaPlaying(bool is_media_playing);
   void OneShotMediaPlayerStopped();
-  void AudioContextPlaybackStarted(const AudioContextId& audio_context_id);
-  void AudioContextPlaybackStopped(const AudioContextId& audio_context_id);
+  void AudioContextPlaybackStarted(content::GlobalRenderFrameHostId rfh_id, int audio_context_id);
+  void AudioContextPlaybackStopped(content::GlobalRenderFrameHostId rfh_id, int audio_context_id);
 #endif
   void SetHasPictureInPicture(bool has_picture_in_picture);
   void SetLoadingState(LoadingState loading_state);

@@ -44,15 +44,15 @@ bool PageNodeImpl::IsMediaPlaying() const {
   return is_media_playing();
 }
 
-void PageNodeImpl::AudioContextPlaybackStarted(const AudioContextId& audio_context_id) {
+void PageNodeImpl::AudioContextPlaybackStarted(content::GlobalRenderFrameHostId rfh_id, int audio_context_id) {
   for (auto& observer : GetObservers()) {
-    observer.OnAudioContextPlaybackStarted(audio_context_id);
+    observer.OnAudioContextPlaybackStarted(rfh_id, audio_context_id);
   }
 }
 
-void PageNodeImpl::AudioContextPlaybackStopped(const AudioContextId& audio_context_id) {
+void PageNodeImpl::AudioContextPlaybackStopped(content::GlobalRenderFrameHostId rfh_id, int audio_context_id) {
   for (auto& observer : GetObservers()) {
-    observer.OnAudioContextPlaybackStopped(audio_context_id);
+    observer.OnAudioContextPlaybackStopped(rfh_id, audio_context_id);
   }
 }
 // LCOV_EXCL_STOP

@@ -57,6 +57,9 @@ class QUICHE_EXPORT QuicStreamFrameDetector {
   }
  
  private:
+  friend class test::QuicConnectionPeer;
+  friend class test::QuicStreamFrameDetectorTestPeer;
+
   void SetAlarm();
  
   Delegate* delegate_;  // Not owned.

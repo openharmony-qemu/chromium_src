@@ -27,6 +27,7 @@ namespace quic {
 
 namespace test {
 class QuicConnectionPeer;
+class QuicStreamFrameDetectorTestPeer;
 }  // namespace test
  
 // QuicStreamFrameDetector detects when no STREAM_FRAME has been received

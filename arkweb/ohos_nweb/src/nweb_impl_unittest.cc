@@ -7596,6 +7596,22 @@ TEST_F(NWebImplTest, FillAutofillDataV2002) {
   EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
 }
 
+TEST_F(NWebImplTest, FillAutofillDataFromTriggerType001) {
+  std::shared_ptr<NWebRomValue> data = nullptr;
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = nullptr;
+  nweb_impl_->FillAutofillDataFromTriggerType(data, NWebAutoFillTriggerType::PASTE_REQUEST);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, FillAutofillDataFromTriggerType002) {
+  std::shared_ptr<NWebRomValue> data = nullptr;
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  nweb_impl_->FillAutofillDataFromTriggerType(data, NWebAutoFillTriggerType::PASTE_REQUEST);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
 TEST_F(NWebImplTest, RegisterArkJSfunction003) {
   const std::string object_name = "test_id";
   const std::vector<std::string> method_list = {"Default", "IncludeSensitive", "Everything"};

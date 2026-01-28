@@ -651,6 +651,25 @@ class QUICHE_EXPORT QuicConnectionAlarms {
         QuicConnectionAlarmHolder::ConstAlarmProxy(holder_->ping_alarm()));
   }
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  AlarmProxy stream_frame_detector_alarm() {
+    if (use_multiplexer_) {
+      return AlarmProxy(QuicAlarmMultiplexer::AlarmProxy(
+          &*multiplexer_, QuicAlarmSlot::kStreamFrameDetector));
+    }
+    return AlarmProxy(QuicConnectionAlarmHolder::AlarmProxy(
+        holder_->stream_frame_detector_alarm()));
+  }
+  ConstAlarmProxy stream_frame_detector_alarm() const {
+    if (use_multiplexer_) {
+      return ConstAlarmProxy(QuicAlarmMultiplexer::ConstAlarmProxy(
+          &*multiplexer_, QuicAlarmSlot::kStreamFrameDetector));
+    }
+    return ConstAlarmProxy(QuicConnectionAlarmHolder::ConstAlarmProxy(
+        holder_->stream_frame_detector_alarm()));
+  }
+#endif  // ARKWEB_NETWORK_LOAD
+
   void CancelAllAlarms() {
     if (use_multiplexer_) {
       multiplexer_->CancelAllAlarms();
@@ -667,10 +686,6 @@ class QUICHE_EXPORT QuicConnectionAlarms {
       multiplexer_->ResumeUnderlyingAlarmScheduling();
     }
   }
-
-#if BUILDFLAG(IS_ARKWEB)
-#include "arkweb/chromium_ext/net/quiche/quic_connection_alarms_for_include.h"
-#endif
 
  private:
   std::optional<QuicConnectionAlarmHolder> holder_;

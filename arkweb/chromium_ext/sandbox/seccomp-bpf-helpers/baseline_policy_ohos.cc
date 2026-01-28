@@ -161,7 +161,6 @@ ResultExpr BaselinePolicyOhos::EvaluateSyscall(int sysno) const {
     case __NR_shutdown:
     case __NR_mincore:
     case __NR_memfd_create:
-    case __NR_faccessat:
     case __NR_openat:
     case __NR_connect:
     case __NR_readlinkat:

@@ -89,7 +89,7 @@ public:
         audio_context_id_ = audio_context_id;
     }
 
-    const int TakeNotifiedAudioContextId()
+    int TakeNotifiedAudioContextId()
     {
         return audio_context_id_;
     }

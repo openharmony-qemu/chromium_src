@@ -214,7 +214,7 @@ void SystemPropertiesAdapterImpl::InitPreferences()
 
 void SystemPropertiesAdapterImpl::InitParam()
 {
-    SetIntParameter(WEB_LTPO_STRATEGY.c_str(), static_cast<int>(LTPOStrategy::ALL));
+    SetIntParameter(WEB_LTPO_STRATEGY.c_str(), static_cast<int>(LTPOStrategy::DISABLED));
 
     const int NUM = 3;
     int param[NUM][NUM] = {

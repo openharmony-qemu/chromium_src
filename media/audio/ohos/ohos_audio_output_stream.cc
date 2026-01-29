@@ -156,7 +156,6 @@ void OHOSAudioOutputStream::Start(AudioSourceCallback* callback) {
   if (!StartRender()) {
     LOG(ERROR) << "OHOSAudioOutputStream::StartRender failed";
   }
-  FlushData();
 }
 
 void OHOSAudioOutputStream::Stop() {

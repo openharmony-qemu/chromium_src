@@ -105,9 +105,7 @@ void VideoCaptureHostUtils::OnCameraCaptureStateChangedBind(CameraCaptureState c
                               GlobalRenderFrameHostId render_frame_host_id,
                               base::WaitableEvent* out_event) {
                 VideoCaptureHostUtils::OnCameraCaptureStateChangedBind(camera_state, new_state, render_frame_host_id);
-                out_event->Signal();
             }, camera_state, new_state, render_frame_host_id, &event));
-        event.Wait();
         return;
     }
 

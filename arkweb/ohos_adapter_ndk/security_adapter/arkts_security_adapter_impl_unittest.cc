@@ -26,8 +26,7 @@
 #define private public
 #include "arkts_security_adapter_impl.h"
 #undef private
-#include "napi/native_api.h"
-#include "js_native_api.h"
+#include "../mock_ndk_api/include/mock_napi_api.h"
 
 using namespace testing;
 using namespace std;
@@ -58,112 +57,6 @@ const std::string SPECIAL_EVENT = R"(event with "quotes" and \backslashes\)";
 
 namespace OHOS {
 namespace NWeb {
-
-class MockNapiFunctions {
-public:
-    virtual ~MockNapiFunctions() = default;
-    
-    MOCK_METHOD(napi_status, napi_create_ark_runtime, (napi_env* env));
-    MOCK_METHOD(napi_status, napi_load_module_with_info, (napi_env env, const char* name, 
-                                                          const char* reserved, napi_value* result));
-    MOCK_METHOD(napi_status, napi_create_object, (napi_env env, napi_value* result));
-    MOCK_METHOD(napi_status, napi_get_named_property, (napi_env env, napi_value object, 
-                                                       const char* utf8name, napi_value* result));
-    MOCK_METHOD(napi_status, napi_create_uint32, (napi_env env, uint32_t value, napi_value* result));
-    MOCK_METHOD(napi_status, napi_set_named_property, (napi_env env, napi_value object, 
-                                                       const char* utf8name, napi_value value));
-    MOCK_METHOD(napi_status, napi_create_string_utf8, (napi_env env, const char* str, 
-                                                       size_t length, napi_value* result));
-    MOCK_METHOD(napi_status, napi_call_function, (napi_env env, napi_value recv, napi_value func, 
-                                                  size_t argc, const napi_value* argv, napi_value* result));
-};
-
-static MockNapiFunctions* g_MockNapiFunctions = nullptr;
-
-extern "C" {
-    napi_status napi_create_ark_runtime(napi_env* env) {
-        if (env == nullptr) {
-            return napi_invalid_arg;
-        }
-        if (g_MockNapiFunctions != nullptr) {
-            return g_MockNapiFunctions->napi_create_ark_runtime(env);
-        }
-        return napi_generic_failure;
-    }
-    
-    napi_status napi_load_module_with_info(napi_env env, const char* name, 
-                                         const char* reserved, napi_value* result) {
-        if (name == nullptr || result == nullptr) {
-            return napi_invalid_arg;
-        }
-        if (g_MockNapiFunctions != nullptr) {
-            return g_MockNapiFunctions->napi_load_module_with_info(env, name, reserved, result);
-        }
-        return napi_generic_failure;
-    }
-    
-    napi_status napi_create_object(napi_env env, napi_value* result) {
-        if (result == nullptr) {
-            return napi_invalid_arg;
-        }
-        if (g_MockNapiFunctions != nullptr) {
-            return g_MockNapiFunctions->napi_create_object(env, result);
-        }
-        return napi_generic_failure;
-    }
-    
-    napi_status napi_get_named_property(napi_env env, napi_value object, 
-                                       const char* utf8name, napi_value* result) {
-        if (utf8name == nullptr || result == nullptr) {
-            return napi_invalid_arg;
-        }
-        if (g_MockNapiFunctions != nullptr) {
-            return g_MockNapiFunctions->napi_get_named_property(env, object, utf8name, result);
-        }
-        return napi_generic_failure;
-    }
-    
-    napi_status napi_create_uint32(napi_env env, uint32_t value, napi_value* result) {
-        if (result == nullptr) {
-            return napi_invalid_arg;
-        }
-        if (g_MockNapiFunctions != nullptr) {
-            return g_MockNapiFunctions->napi_create_uint32(env, value, result);
-        }
-        return napi_generic_failure;
-    }
-    
-    napi_status napi_set_named_property(napi_env env, napi_value object, 
-                                       const char* utf8name, napi_value value) {
-        if (utf8name == nullptr) {
-            return napi_invalid_arg;
-        }
-        if (g_MockNapiFunctions != nullptr) {
-            return g_MockNapiFunctions->napi_set_named_property(env, object, utf8name, value);
-        }
-        return napi_generic_failure;
-    }
-    
-    napi_status napi_create_string_utf8(napi_env env, const char* str, 
-                                       size_t length, napi_value* result) {
-        if (str == nullptr || result == nullptr) {
-            return napi_invalid_arg;
-        }
-        if (g_MockNapiFunctions != nullptr) {
-            return g_MockNapiFunctions->napi_create_string_utf8(env, str, length, result);
-        }
-        return napi_generic_failure;
-    }
-    
-    napi_status napi_call_function(napi_env env, napi_value recv, napi_value func, 
-                                   size_t argc, const napi_value* argv, napi_value* result) {
-        if (g_MockNapiFunctions != nullptr) {
-            return g_MockNapiFunctions->napi_call_function(env, recv, func, argc, argv, result);
-        }
-        return napi_generic_failure;
-    }
-}
-
 class ArktsSecurityAdapterImplTest : public testing::Test {
 protected:
     static void SetUpTestCase() {

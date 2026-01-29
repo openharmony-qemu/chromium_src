@@ -67,7 +67,7 @@ class QuicStreamFrameDetectorTest : public QuicTest {
  
 TEST_F(QuicStreamFrameDetectorTest, StreamFrameDetected) {
   EXPECT_TRUE(alarm_->IsSet());
-  detector_.OnStreamFrameReceived(clock_->Now());
+  detector_.OnStreamFrameReceived(clock_.Now());
   EXPECT_EQ(clock_.Now() + QuicTime::Delta::FromSeconds(10),
             alarm_->deadline());
  
@@ -79,11 +79,11 @@ TEST_F(QuicStreamFrameDetectorTest, StreamFrameDetected) {
  
 TEST_F(QuicIdleNetworkDetectorTest, StreamFrameReceivedExtendsDeadline) {
   EXPECT_TRUE(alarm_->IsSet());
-  detector_.OnStreamFrameReceived(clock_->Now());
+  detector_.OnStreamFrameReceived(clock_.Now());
  
   // No stream frame activity for 5s.
   clock_.AdvanceTime(QuicTime::Delta::FromSeconds(5));
-  detector_.OnStreamFrameReceived(clock_->Now());
+  detector_.OnStreamFrameReceived(clock_.Now());
   EXPECT_EQ(clock_.Now() + QuicTime::Delta::FromSeconds(10),
             alarm_->deadline());
   alarm_->Fire();
@@ -91,7 +91,7 @@ TEST_F(QuicIdleNetworkDetectorTest, StreamFrameReceivedExtendsDeadline) {
  
 TEST_F(QuicIdleNetworkDetectorTest, NoAlarmAfterStopped) {
   detector_.StopDetection();
-  detector_.OnStreamFrameReceived(clock_->Now());
+  detector_.OnStreamFrameReceived(clock_.Now());
   EXPECT_FALSE(alarm_->IsSet());
 }
  

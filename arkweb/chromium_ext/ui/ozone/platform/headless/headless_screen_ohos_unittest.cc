@@ -356,4 +356,173 @@ TEST_F(HeadlessScreenOhosTest, LayoutDisplays_003) {
   EXPECT_EQ(displays[13].bounds().origin(), gfx::Point(-1000, -1000));
   EXPECT_EQ(displays[14].bounds().origin(), gfx::Point(500, -1000));
 }
+
+TEST_F(HeadlessScreenOhosTest, DisplayHeadlessScreenTest001) {
+  auto primary = screen_->GetPrimaryDisplay();
+  EXPECT_NE(primary.id(), display::kInvalidDisplayId);
+
+  constexpr OHOS::NWeb::DisplayId test_id = 1;
+  screen_->OnDisplayCreate(test_id);
+  screen_->OnDisplayDestroy(test_id);
+  auto displays = screen_->GetAllDisplays();
+  EXPECT_FALSE(displays.empty());
+
+  MockDisplayObserver observer;
+  screen_->AddObserver(&observer);
+  screen_->RemoveObserver(&observer);
+
+  constexpr OHOS::NWeb::DisplayId test_id2 = 2;
+  listener_->OnCreate(test_id2);
+  listener_->OnDestroy(test_id2);
+  listener_->OnChange(test_id2);
+
+  std::shared_ptr<MockDisplayAdapter> display_adapter =
+      std::make_shared<MockDisplayAdapter>();
+  EXPECT_CALL(*display_adapter, GetDisplaySourceMode())
+      .WillRepeatedly(Return(OHOS::NWeb::DisplaySourceMode::MAIN));
+  bool result = screen_->ConvertDisplay(display_adapter, dst_display);
+  EXPECT_TRUE(result);
+}
+
+TEST_F(HeadlessScreenOhosTest, DisplayHeadlessScreenTest002) {
+  std::shared_ptr<MockDisplayAdapter> display_adapter =
+      std::make_shared<MockDisplayAdapter>();
+  EXPECT_CALL(*display_adapter, GetDisplaySourceMode())
+      .WillRepeatedly(Return(OHOS::NWeb::DisplaySourceMode::EXTEND));
+  bool result = screen_->ConvertDisplay(display_adapter, dst_display);
+  EXPECT_TRUE(result);
+}
+
+TEST_F(HeadlessScreenOhosTest, DisplayHeadlessScreenTest003) {
+  std::shared_ptr<MockDisplayAdapter> display_adapter =
+      std::make_shared<MockDisplayAdapter>();
+  EXPECT_CALL(*display_adapter, GetVirtualPixelRatio())
+      .WillRepeatedly(Return(1));
+  bool result = screen_->ConvertDisplay(display_adapter, dst_display);
+  EXPECT_FALSE(result);
+}
+
+TEST_F(HeadlessScreenOhosTest, DisplayHeadlessScreenTest004) {
+  std::shared_ptr<MockDisplayAdapter> display_adapter =
+      std::make_shared<MockDisplayAdapter>();
+  EXPECT_CALL(*display_adapter, GetDisplaySourceMode())
+      .WillRepeatedly(Return(OHOS::NWeb::DisplaySourceMode::MAIN));
+  EXPECT_CALL(*display_adapter, GetRotation())
+      .WillRepeatedly(Return(OHOS::NWeb::RotationType::ROTATION_BUTT));
+  bool result = screen_->ConvertDisplay(display_adapter, dst_display);
+  EXPECT_TRUE(result);
+}
+
+TEST_F(HeadlessScreenOhosTest, DisplayHeadlessScreenTest005) {
+  std::shared_ptr<MockDisplayAdapter> display_adapter =
+      std::make_shared<MockDisplayAdapter>();
+  EXPECT_CALL(*display_adapter, GetDisplaySourceMode())
+      .WillRepeatedly(Return(OHOS::NWeb::DisplaySourceMode::MAIN));
+  EXPECT_CALL(*display_adapter, GetRotation())
+      .WillRepeatedly(Return(OHOS::NWeb::RotationType::ROTATION_180));
+  bool result = screen_->ConvertDisplay(display_adapter, dst_display);
+  EXPECT_TRUE(result);
+}
+
+TEST_F(HeadlessScreenOhosTest, DisplayHeadlessScreenTest006) {
+  std::shared_ptr<MockDisplayAdapter> display_adapter =
+      std::make_shared<MockDisplayAdapter>();
+  EXPECT_CALL(*display_adapter, GetDisplaySourceMode())
+      .WillRepeatedly(Return(OHOS::NWeb::DisplaySourceMode::MAIN));
+  EXPECT_CALL(*display_adapter, GetRotation())
+      .WillRepeatedly(Return(OHOS::NWeb::RotationType::ROTATION_90));
+  bool result = screen_->ConvertDisplay(display_adapter, dst_display);
+  EXPECT_TRUE(result);
+}
+
+TEST_F(HeadlessScreenOhosTest, DisplayHeadlessScreenTest007) {
+  std::shared_ptr<MockDisplayAdapter> display_adapter =
+      std::make_shared<MockDisplayAdapter>();
+  EXPECT_CALL(*display_adapter, GetDisplaySourceMode())
+      .WillRepeatedly(Return(OHOS::NWeb::DisplaySourceMode::MAIN));
+  EXPECT_CALL(*display_adapter, GetRotation())
+      .WillRepeatedly(Return(OHOS::NWeb::RotationType::ROTATION_270));
+  bool result = screen_->ConvertDisplay(display_adapter, dst_display);
+  EXPECT_TRUE(result);
+}
+
+TEST_F(HeadlessScreenOhosTest, DisplayHeadlessScreenTest008) {
+  std::shared_ptr<MockDisplayAdapter> display_adapter =
+      std::make_shared<MockDisplayAdapter>();
+  EXPECT_CALL(*display_adapter, GetDisplaySourceMode())
+      .WillRepeatedly(Return(OHOS::NWeb::DisplaySourceMode::MAIN));
+  EXPECT_CALL(*display_adapter, GetRotation())
+      .WillRepeatedly(Return(OHOS::NWeb::RotationType::ROTATION_BUTT));
+  bool result = screen_->ConvertDisplay(display_adapter, dst_display);
+  EXPECT_TRUE(result);
+}
+
+TEST_F(HeadlessScreenOhosTest, DisplayHeadlessScreenTest009) {
+  constexpr OHOS::NWeb::DisplayId test_id = 1;
+  const std::string& event = "change";
+  screen_->display_manager_adapter_ = nullptr;
+  display::DisplayList current_displays;
+  bool result = screen_->FetchDisplays(current_displays);
+  EXPECT_FALSE(result);
+  screen_->OnDisplayEvent(event, test_id);
+}
+
+TEST_F(HeadlessScreenOhosTest, DisplayHeadlessScreenTest010) {
+  display::DisplayList displays;
+  auto manager = new MockDisplayManagerAdapter();
+  screen_->display_manager_adapter_.reset(manager);
+  auto adapter = std::make_shared<MockDisplayAdapter>();
+  EXPECT_CALL(*manager, GetAllDisplays()).WillOnce(testing::Invoke([=]() {
+    std::vector<std::shared_ptr<DisplayAdapter>> ohos_displays{adapter};
+    return ohos_displays;
+  }));
+  EXPECT_CALL(*manager, GetDefaultDisplayId());
+  EXPECT_CALL(*manager, GetPrimaryDisplay());
+  EXPECT_CALL(*adapter, GetDisplaySourceMode())
+      .WillRepeatedly(Return(OHOS::NWeb::DisplaySourceMode::MAIN));
+  EXPECT_CALL(*adapter, GetId()).WillRepeatedly(Return(UINT64_MAX));
+  EXPECT_FALSE(screen_->FetchDisplays(displays));
+  EXPECT_TRUE(displays.displays().empty());
+}
+
+TEST_F(HeadlessScreenOhosTest, DisplayHeadlessScreenTest011) {
+  display::Displays displays = {
+      display::Display(0, gfx::Rect(0, 0, 0, 0)),
+      display::Display(1, gfx::Rect(0, 0, 100, 100))};
+  screen_->LayoutDisplays(displays);
+  EXPECT_EQ(displays[0].bounds().origin(), gfx::Point(0, 0));
+  EXPECT_EQ(displays[1].bounds().origin(), gfx::Point(0, 0));
+}
+
+TEST_F(HeadlessScreenOhosTest, DisplayHeadlessScreenTest012) {
+  display::Displays displays = {
+      display::Display(0, gfx::Rect(100, 0, 100, 100)),
+      display::Display(1, gfx::Rect(-100, 0, 100, 100))};
+  screen_->LayoutDisplays(displays);
+  EXPECT_EQ(displays[0].bounds().origin(), gfx::Point(100, 0));
+  EXPECT_EQ(displays[1].bounds().origin(), gfx::Point(-100, 0));
+}
+
+TEST_F(HeadlessScreenOhosTest, DisplayHeadlessScreenTest013) {
+  display::Displays displays = {
+      display::Display(0, gfx::Rect(0, 0, 100, 3000)),
+      display::Display(1, gfx::Rect(1000, 0, 1000, 2000)),
+      display::Display(2, gfx::Rect(1000, 0, 2000, 2000)),
+      display::Display(3, gfx::Rect(2000, 3000, 1000, 1000)),
+      display::Display(4, gfx::Rect(3000, -2000, 1000, 1000)),
+      display::Display(5, gfx::Rect(3000, 2000, 1000, 1000)),
+      display::Display(6, gfx::Rect(0, 1000, 2000, 2000)),
+      display::Display(7, gfx::Rect(500, 1000, 2000, 1000)),
+      display::Display(8, gfx::Rect(-400, 3000, 1000, 1000)),
+      display::Display(9, gfx::Rect(1000, 1000, 1000, 1000)),
+      display::Display(10, gfx::Rect(-2000, 2000, 1000, 1000))};
+  screen_->LayoutDisplays(displays);
+  EXPECT_EQ(displays[0].bounds().origin(), gfx::Point(0, 0));
+  EXPECT_EQ(displays[1].bounds().origin(), gfx::Point(4100, 0));
+  EXPECT_EQ(displays[2].bounds().origin(), gfx::Point(2100, 0));
+  EXPECT_EQ(displays[7].bounds().origin(), gfx::Point(2100, 2000));
+  EXPECT_EQ(displays[8].bounds().origin(), gfx::Point(-400, 3000));
+  EXPECT_EQ(displays[9].bounds().origin(), gfx::Point(2100, 3000));
+  EXPECT_EQ(displays[10].bounds().origin(), gfx::Point(-2000, 2000));
+}
 } // namespace ui

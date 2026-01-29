@@ -77,7 +77,7 @@ TEST_F(QuicStreamFrameDetectorTest, StreamFrameDetected) {
   alarm_->Fire();
 }
  
-TEST_F(QuicIdleNetworkDetectorTest, StreamFrameReceivedExtendsDeadline) {
+TEST_F(QuicStreamFrameDetectorTest, StreamFrameReceivedExtendsDeadline) {
   EXPECT_TRUE(alarm_->IsSet());
   detector_.OnStreamFrameReceived(clock_.Now());
  
@@ -89,7 +89,7 @@ TEST_F(QuicIdleNetworkDetectorTest, StreamFrameReceivedExtendsDeadline) {
   alarm_->Fire();
 }
  
-TEST_F(QuicIdleNetworkDetectorTest, NoAlarmAfterStopped) {
+TEST_F(QuicStreamFrameDetectorTest, NoAlarmAfterStopped) {
   detector_.StopDetection();
   detector_.OnStreamFrameReceived(clock_.Now());
   EXPECT_FALSE(alarm_->IsSet());

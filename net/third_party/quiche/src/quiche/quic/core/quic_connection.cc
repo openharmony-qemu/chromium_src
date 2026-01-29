@@ -220,6 +220,10 @@ QuicConnection::QuicConnection(
       blackhole_detector_(this, alarms_.network_blackhole_detector_alarm()),
       idle_network_detector_(this, clock_->ApproximateNow(),
                              alarms_.idle_network_detector_alarm()),
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+      stream_frame_detector_(std::make_unique<QuicStreamFrameDetector>(
+        this, clock_->ApproximateNow(), alarms_.stream_frame_detector_alarm())),
+#endif
       path_validator_(alarm_factory_, &arena_, this, random_generator_, clock_,
                       &context_),
       ping_manager_(perspective, this, alarms_.ping_alarm()),
@@ -1326,6 +1330,11 @@ bool QuicConnection::OnStreamFrame(const QuicStreamFrame& frame) {
   if (!UpdatePacketContent(STREAM_FRAME)) {
     return false;
   }
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  // Update stream frame detector.
+  stream_frame_detector_->OnStreamFrameReceived(clock_->ApproximateNow());
+#endif
 
   if (debug_visitor_ != nullptr) {
     debug_visitor_->OnStreamFrame(frame);
@@ -7570,3 +7579,7 @@ QuicConnection::SerializeLargePacketNumberConnectionClosePacket(
 #undef ENDPOINT  // undef for jumbo builds
 
 }  // namespace quic
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+#include "arkweb/chromium_ext/net/quiche/quic_connection_for_include.cc"
+#endif

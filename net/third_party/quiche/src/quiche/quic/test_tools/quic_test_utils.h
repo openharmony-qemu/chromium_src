@@ -477,6 +477,10 @@ class MockQuicConnectionVisitor : public QuicConnectionVisitorInterface {
   MOCK_METHOD(bool, WillingAndAbleToWrite, (), (const, override));
   MOCK_METHOD(bool, ShouldKeepConnectionAlive, (), (const, override));
   MOCK_METHOD(std::string, GetStreamsInfoForLogging, (), (const, override));
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  MOCK_METHOD(std::string, GetStreamsInfoForQuicBroken, (), (const, override));
+  MOCK_METHOD(size_t, GetNumActiveStreamsForInterface, (), (const, override));
+#endif
   MOCK_METHOD(void, OnSuccessfulVersionNegotiation,
               (const ParsedQuicVersion& version), (override));
   MOCK_METHOD(void, OnPacketReceived,

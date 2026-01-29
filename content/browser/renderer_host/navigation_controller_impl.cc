@@ -4257,8 +4257,11 @@ NavigationControllerImpl::CreateNavigationRequestFromLoadParams(
           /*local_surface_id=*/std::nullopt,
 #if BUILDFLAG(ARKWEB_ADBLOCK)
            false, /* site_adblock_enabled */
-           node->current_frame_host()->GetCachedPermissionStatuses());
 #endif
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+           0, /* custom_viewport_width */
+#endif       
+           node->current_frame_host()->GetCachedPermissionStatuses());
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_BASE)
   if (ValidateDataURLAsString(params.data_url_as_string)) {
     commit_params->data_url_as_string = params.data_url_as_string->as_string();

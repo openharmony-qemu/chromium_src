@@ -237,6 +237,9 @@
 #include "third_party/blink/public/web/web_view.h"
 #include "third_party/blink/public/web/web_widget.h"
 #include "third_party/blink/public/web/web_window_features.h"
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+#include "third_party/blink/renderer/core/exported/web_view_impl.h"
+#endif
 #include "ui/accessibility/ax_tree_update.h"
 #include "ui/events/base_event_utils.h"
 #include "url/origin.h"
@@ -2837,6 +2840,12 @@ void RenderFrameImpl::CommitNavigation(
       std::move(navigation_client_impl_), request_id,
       was_initiated_in_this_frame);
 
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+  if (blink::WebViewImpl* web_view_impl = blink::To<blink::WebViewImpl>(GetWebView())) {
+    web_view_impl->ApplyCachedViewportMetaEnabled();
+  }
+#endif
+
 #if BUILDFLAG(ARKWEB_USERAGENT)
   if (IsMainFrame() &&
       viewport_meta_enabled_ != GetBlinkPreferences().viewport_meta_enabled &&
@@ -2867,6 +2876,10 @@ void RenderFrameImpl::CommitNavigation(
   OnCommitNavigation(common_params->url, is_client_redirect,
                      common_params->navigation_type, devtools_navigation_token,
                      commit_params->navigation_delivery_type);
+#endif
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+  navigation_params->custom_viewport_width = commit_params->custom_viewport_width;
 #endif
 
   if (frame_->IsOutermostMainFrame() && permissions_policy) {

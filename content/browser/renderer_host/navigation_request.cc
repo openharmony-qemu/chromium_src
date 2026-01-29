@@ -1441,6 +1441,9 @@ std::unique_ptr<NavigationRequest> NavigationRequest::CreateRendererInitiated(
 #if BUILDFLAG(ARKWEB_ADBLOCK)
           false, /* site_adblock_enabled */
 #endif
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+          0, /* custom_viewport_width */
+#endif
           frame_tree_node->current_frame_host()->GetCachedPermissionStatuses());
 
   commit_params->navigation_timing->system_entropy_at_navigation_start =
@@ -1601,6 +1604,9 @@ NavigationRequest::CreateForSynchronousRendererCommit(
           /*local_surface_id=*/std::nullopt,
 #if BUILDFLAG(ARKWEB_ADBLOCK)
           false, /* site_adblock_enabled */
+#endif
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+          0, /* custom_viewport_width */
 #endif
           frame_tree_node->current_frame_host()->GetCachedPermissionStatuses());
   blink::mojom::BeginNavigationParamsPtr begin_params =
@@ -10931,6 +10937,12 @@ void NavigationRequest::CreateWebUIIfNeeded(RenderFrameHostImpl* frame_host) {
 
   web_ui_->SetController(std::move(controller));
 }
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+void NavigationRequest::SetCustomViewportWidth(int32_t width) {
+  commit_params_->custom_viewport_width = width;
+}
+#endif
 
 bool NavigationRequest::IsDeferred() {
   return throttle_runner_->GetDeferringThrottle() != nullptr;

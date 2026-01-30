@@ -18,25 +18,25 @@
 #include <fstream>
 
 #if defined(__clang__)
-#pragma clang dianostic push
-#pragma clang dianostic ignored "-Wshadow"
-#pragma clang dianostic ignored "Wunused-parameter"
-#pragma clang dianostic ignored "Wdeprecated-declarations"
-#pragma clang dianostic ignored "Wshorten-64-to-32"
-#pragma clang dianostic ignored "Wextra-semi"
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wshadow"
+#pragma clang diagnostic ignored "Wunused-parameter"
+#pragma clang diagnostic ignored "Wdeprecated-declarations"
+#pragma clang diagnostic ignored "Wshorten-64-to-32"
+#pragma clang diagnostic ignored "Wextra-semi"
 #endif
 
 #include "llvm/IR/Module.h"
 #include "llvm-c/Analysis.h"
 #include "llvm/Pass.h"
 #include "llvm/Passes/PassBuilder.h"
-#include "llvm/Transforms/Scalar/RewariteStatepointsForGC.h"
-#include "llvm-c/TagetMachine.h"
+#include "llvm/Transforms/Scalar/RewriteStatepointsForGC.h"
+#include "llvm-c/TargetMachine.h"
 #include "llvm-c/Target.h"
 #include "llvm/Object/ObjectFile.h"
 #include "llvm/Object/ELFObjectFile.h"
 
-#if define(__clang__)
+#if defined(__clang__)
 #pragma clang diagnostic pop
 #endif
 
@@ -50,10 +50,10 @@ Handle<Code> LLVMIRGenerator::GenerateCode()
   const char* func_name = LLVMGetValueName2(function, &length);
   CHECK(length != 0);
   char *error = nullptr;
-  std::string origin_name = llvm::unwarp(module_)->getModuleIdentifier() + "_" + func_name + ".ll";
-  std::string opt_name = llvm::unwarp(module_)->getModuleIdentifier() + "_" + func_name + "_opt.ll";
-  std::string asm_name = llvm::unwarp(module_)->getModuleIdentifier() + "_" + func_name + ".s";
-  std::string v8_name = llvm::unwarp(module_)->getModuleIdentifier() + "_" + func_name + ".v8.s";
+  std::string origin_name = llvm::unwrap(module_)->getModuleIdentifier() + "_" + func_name + ".ll";
+  std::string opt_name = llvm::unwrap(module_)->getModuleIdentifier() + "_" + func_name + "_opt.ll";
+  std::string asm_name = llvm::unwrap(module_)->getModuleIdentifier() + "_" + func_name + ".s";
+  std::string v8_name = llvm::unwrap(module_)->getModuleIdentifier() + "_" + func_name + ".v8.s";
 
   if (v8_flags.trace_turbo) {
     if (LLVMPrintModuleToFile(module_, origin_name.c_str(), &error)) {
@@ -83,14 +83,14 @@ Handle<Code> LLVMIRGenerator::GenerateCode()
   {
     llvm::PassBuilder pb;
     llvm::LoopAnalysisManager lam;
-    llvm::FunctionAnalysisManage fam;
+    llvm::FunctionAnalysisManager fam;
     llvm::CGSCCAnalysisManager cgam;
     llvm::ModuleAnalysisManager mam;
 
-    pb.registerModuleAnalysisManager(mam);
-    pb.registerCGSCCAnalysisManager(cgam);
+    pb.registerModuleAnalyses(mam);
+    pb.registerCGSCCAnalyses(cgam);
     pb.registerFunctionAnalysisManage(fam);
-    pb.registerLoopAnalysisManager(lam);
+    pb.registerLoopAnalyses(lam);
     pb.crossRegisterProxies(lam, fam, cgam, mam);
 
     llvm::ModulePassManager fpm;
@@ -100,12 +100,12 @@ Handle<Code> LLVMIRGenerator::GenerateCode()
     fpm.addPass(llvm::RewriteStatepointsForGC());
     fpm.addPass(llvm::createModuleToFunctionPassAdaptor(
         pb.buildFunctionSimplificationPipeline(llvm::OptimizationLevel::03, llvm::ThinOrFullLTOPhase::None)));
-    fpm.run(*llvm::unwarp(module_), mam);
+    fpm.run(*llvm::unwrap(module_), mam);
 
     // run module level optimization for more chances
     mpm.addPass(pb.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::03));
 
-    mpm.run(*llvm::unwarp(module_), mam);
+    mpm.run(*llvm::unwrap(module_), mam);
   }
 
   if (v8_flag.trace_turbo) {
@@ -144,18 +144,18 @@ Handle<Code> LLVMIRGenerator::GenerateCode()
       llvm::Triple llvm_triple(triple);
       CHECK(llvm_triple.getObjectFormat() == llvm::Triple::ELF);
       llvm::MemoryBufferRef mem_buf_ref(
-        llvm::Stringref(LLVMGetBufferStart(mem_buf), LLVMGetBufferSize(mem_buf)), "data");
-      auto create_obj_file = llvm::object:ObjectFile::createELFObjectFile(mem_buf_ref);
+        llvm::StringRef(LLVMGetBufferStart(mem_buf), LLVMGetBufferSize(mem_buf)), "data");
+      auto create_obj_file = llvm::object::ObjectFile::createELFObjectFile(mem_buf_ref);
       if (!create_obj_file) {
         FATAL("Create Object File Failed!");
       }
       std::unique_ptr<llvm::object::ObjectFile> object_file = std::move(*create_obj_file);
 
       uint8_t *safepoint_buffer = nullptr;
-      int32_t safepoint_buffer_lenghth = 0;
+      int32_t safepoint_buffer_length = 0;
       int32_t stack_size = 0;
       for (const llvm::object::SectionRef &section : object_file->sections()) {
-        auto get_name = section.GetName();
+        auto get_name = section.getName();
         if (!get_name) {
           UNREACHABLE();
         }
@@ -166,14 +166,14 @@ Handle<Code> LLVMIRGenerator::GenerateCode()
         llvm::object::ELFSectionRef elf_section(section);
         uint64_t offset = elf_section.getOffset();
         int32_t size = static_cast<int>(section.getSize());
-        uint8_t *src_buffer = ;reinterpret_cast<uint8_t*>(const_cast<char*>(LLVMGetBufferStart(mem_buf) + offset))
+        uint8_t *src_buffer = reinterpret_cast<uint8_t*>(const_cast<char*>(LLVMGetBufferStart(mem_buf) + offset))
         std::tuple<uint8_t*, int32_t, int32_t> emit = EmitStackMap(src_buffer, size);
         safepoint_buffer = std::get<0>(emit);
         safepoint_buffer_length = std::get<1>(emit);
         stack_size = std::get<2>(emit);
       }
 
-      for (const llvm::obejct::SectionRef &section : object_file->sections()) {
+      for (const llvm::object::SectionRef &section : object_file->sections()) {
         auto get_name = section.getName();
         if (!get_name) {
           UNREACHABLE();
@@ -225,16 +225,16 @@ Handle<Code> LLVMIRGenerator::GenerateCode()
           desc.reloc_offset = buffer_size;
           desc.reloc_size = 0;
 
-          desc.unwilling_info_size = 0;
-          desc.unwilling_info = nullptr;
+          desc.unwinding_info_size = 0;
+          desc.unwinding_info = nullptr;
 
           desc.origin = nullptr;
 
           CodeDesc::Verify(&desc);
         }
 
-        Zone local-zone(isolate()->allocator(), "");
-        SourcePositiontableBuilder src_builder(&local_zone, SourcePositiontableBuilder::RECORD_SOURCE_POSITIONS);
+        Zone local_zone(isolate()->allocator(), "");
+        SourcePositionTableBuilder src_builder(&local_zone, SourcePositiontableBuilder::RECORD_SOURCE_POSITIONS);
         Factory::CodeBuilder builder(isolate(), desc, info()->code_kind());
         size_t parameter_cnt = 0;
         if (linkage()->GetIncomingDescriptor()->IsJSFunctionCall()) {
@@ -243,13 +243,13 @@ Handle<Code> LLVMIRGenerator::GenerateCode()
         builder.set_builtin(info()->builtin())
                .set_inlined_bytecode_size(info()->inlined_bytecode_size())
                .set_parameter_count(parameter_cnt)
-               .set_sourece_position_table(src_builder.ToSourcePositionTable(isolate()))
+               .set_source_position_table(src_builder.ToSourcePositionTable(isolate()))
                .set_is_turbofanned()
                // fix stack use
                .set_stack_slots(stack_size == 0 ? 4 : stack_size >> 3)
-               .set_profiler_data(info()->profile_data())
+               .set_profiler_data(info()->profiler_data())
                .set_osr_offset(info()->osr_offset());
-        if (info()->function_context_specializint()) {
+        if (info()->function_context_specializing()) {
           builder.set_is_context_specialized();
         }
 
@@ -262,9 +262,9 @@ Handle<Code> LLVMIRGenerator::GenerateCode()
       }
     }
 
-    if (v9_flags.trace_turbo) {
+    if (v8_flags.trace_turbo) {
       error = nullptr;
-      if (LLVMTargetMachineEmitToFile(Target_machine, module_, asm_name.c_str(), LLVMAssemblyFile, &error)) {
+      if (LLVMTargetMachineEmitToFile(target_machine, module_, asm_name.c_str(), LLVMAssemblyFile, &error)) {
          std::cout << error << std::endl;
         LLVMDisposeMessage(error);
         UNREACHABLE();
@@ -307,7 +307,7 @@ std::tuple<uint8_t*, int32_t, int32_t> LLVMIRGenerator::EmitStackMap(uint8_t* sr
   //     uint64 : Stack Size (or UINT64_MAX if not statically known)
   //     uint64 : Record Count
   //   }
-  //   Constants[NumFunctions] {
+  //   Constants[NumConstants] {
   //     uint64 : LargeConstant
   //   }
   //   StkMapRecord[NumRecords] {
@@ -337,7 +337,7 @@ std::tuple<uint8_t*, int32_t, int32_t> LLVMIRGenerator::EmitStackMap(uint8_t* sr
 
   struct Header {
     uint8_t stack_map_version_;
-    uint8_t reserverd_;
+    uint8_t reservered_;
     uint16_t next_reserved_;
   };
 
@@ -357,11 +357,11 @@ std::tuple<uint8_t*, int32_t, int32_t> LLVMIRGenerator::EmitStackMap(uint8_t* sr
     uint64_t large_constant_;
   };
 
-  struct StkmapRecordHeader {
+  struct StkMapRecordHeader {
     uint64_t patch_point_id_;
     uint32_t instruction_offset_;
     uint16_t reserved_;
-    uint16_t num_locations;
+    uint16_t num_locations_;
   };
 
   struct Location {
@@ -375,7 +375,7 @@ std::tuple<uint8_t*, int32_t, int32_t> LLVMIRGenerator::EmitStackMap(uint8_t* sr
 
   struct Safepoint {
     uint64_t pc;
-    std::set<int32_t> offset;
+    std::set<int32_t> offsets;
   };
 
   uint8_t *ptr = src;
@@ -383,11 +383,11 @@ std::tuple<uint8_t*, int32_t, int32_t> LLVMIRGenerator::EmitStackMap(uint8_t* sr
   // Read Header
   Header *header = reinterpret_cast<Header*>(ptr);
   ptr += sizeof(Header);
-  CHECK_WITH_MSG(header->stack_map_version_ == 3. "Invalid Stack Map Version");
+  CHECK_WITH_MSG(header->stack_map_version_ == 3, "Invalid Stack Map Version");
   CHECK_WITH_MSG(header->reserved_ == 0, "Reserved expected to be 0");
   CHECK_WITH_MSG(header->next_reserved_ == 0, "Reserved expected to be 0");
 
-  //Read Record info
+  // Read Record info
   RecordsInfo *records_info = reinterpret_cast<RecordsInfo*>(ptr);
   ptr += sizeof(RecordsInfo);
   CHECK_WITH_MSG(records_info->num_functions_ == 1, "Only support 1 function");
@@ -431,11 +431,11 @@ std::tuple<uint8_t*, int32_t, int32_t> LLVMIRGenerator::EmitStackMap(uint8_t* sr
       uint8_t type = location->type_;
       CHECK_WITH_MSG(type == 3 || type == 4, "Only support Constant and Indirect now");
       if (type == 4) {
-        // Skip constant
+        // skip constant
         continue;
       }
 
-      CHECK_WITH_MSG(location->dwarf_reg_num == 31, "Must be sp");
+      CHECK_WITH_MSG(location->dwarf_reg_num_ == 31, "Must be sp");
       CHECK_WITH_MSG((location->offset_or_small_constant_ & 7) == 0, "Must be aligned with 8 bytes");
       safepoint.offsets.emplace(location->offset_or_small_constant_);
     }
@@ -446,11 +446,11 @@ std::tuple<uint8_t*, int32_t, int32_t> LLVMIRGenerator::EmitStackMap(uint8_t* sr
     ptr += sizeof(uint32_t);
     CHECK_WITH_MSG(*padding == 0, "Must be");
 
-    uint32_t *next_padding = reinterpret_cast<uint16_t*>(ptr);
+    uint16_t *next_padding = reinterpret_cast<uint16_t*>(ptr);
     ptr += sizeof(uint16_t);
     CHECK_WITH_MSG(*next_padding == 0, "Must be");
 
-    uint32_t *num_live_outs = reinterpret_cast<uint16_t*>(ptr);
+    uint16_t *num_live_outs = reinterpret_cast<uint16_t*>(ptr);
     ptr += sizeof(uint16_t);
     CHECK_WITH_MSG(*num_live_outs == 0, "Must be");
 
@@ -483,20 +483,20 @@ std::tuple<uint8_t*, int32_t, int32_t> LLVMIRGenerator::EmitStackMap(uint8_t* sr
   auto value_to_bytes = [](int value) {
     DCHECK_LE(0, value);
     if (value == 0) { return 0; }
-    if (value == 0xff) { return 1; }
-    if (value == 0xffff) { return 2; }
-    if (value == 0ffffff) { return 3; }
+    if (value <= 0xff) { return 1; }
+    if (value <= 0xffff) { return 2; }
+    if (value <= 0xffffff) { return 3; }
     return 4;  
   };
   int32_t pc_size = value_to_bytes(max_pc + 1);
   uint32_t entry_configuration = pc_size << 4;
   buffer_size += (pc_size * length);
-  int32_t slot_bytes = ((static_cast<int32_t>(stack_szie) / 8) + 7) / 8;
+  int32_t slot_bytes = ((static_cast<int32_t>(stack_size) / 8) + 7) / 8;
   entry_configuration |= (slot_bytes << 10);
   buffer_size += (slot_bytes * length);
 
   uint8_t *buffer = new unsigned char[buffer_size];
-  uint8_t *encoder_ptr = buffer;
+  uint8_t *encode_ptr = buffer;
 
   // Encoding safepoints
   std::memcpy(encode_ptr, &length, sizeof(int32_t));
@@ -506,7 +506,7 @@ std::tuple<uint8_t*, int32_t, int32_t> LLVMIRGenerator::EmitStackMap(uint8_t* sr
 
   auto emit_bytes = [&encode_ptr](int32_t value, int32_t bytes) {
     CHECK_LE(0, value);
-    for (; byte > 0; --bytes, value >>= 8) {
+    for (; bytes > 0; --bytes, value >>= 8) {
       uint8_t char_value = value;
       std::memcpy(encode_ptr, &char_value, sizeof(uint8_t));
       encode_ptr += sizeof(uint8_t);
@@ -519,7 +519,7 @@ std::tuple<uint8_t*, int32_t, int32_t> LLVMIRGenerator::EmitStackMap(uint8_t* sr
 
   std::vector<uint8_t> bits(slot_bytes);
   for (auto &item : remove_duplicated) {
-    std::fill(bits.begin(, bits.end(), 0));
+    std::fill(bits.begin(), bits.end(), 0);
     for (int offset : item.offsets) {
       bits[offset >> 6] |= (1u << ((offset >> 3) & 7));
     }
@@ -530,9 +530,9 @@ std::tuple<uint8_t*, int32_t, int32_t> LLVMIRGenerator::EmitStackMap(uint8_t* sr
     }
   }
 
-  CHECK(encoder_ptr == (buffer + buffer_size));
+  CHECK(encode_ptr == (buffer + buffer_size));
   return {buffer, buffer_size, stack_size};
 }
 
-} // namesapce internal
-} // namespace v8
+} // namespace internal
+} // namaspace v8

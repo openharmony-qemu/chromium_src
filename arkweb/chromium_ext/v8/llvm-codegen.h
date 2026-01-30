@@ -17,12 +17,12 @@
 #define V8_CODEGEN_LLVM_LLVM_CODEGEN_H_
 
 #if defined(__clang__)
-#pragma clang dianostic push
-#pragma clang dianostic ignored "-Wshadow"
-#pragma clang dianostic ignored "Wunused-parameter"
-#pragma clang dianostic ignored "Wdeprecated-declarations"
-#pragma clang dianostic ignored "Wshorten-64-to-32"
-#pragma clang dianostic ignored "Wextra-semi"
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wshadow"
+#pragma clang diagnostic ignored "Wunused-parameter"
+#pragma clang diagnostic ignored "Wdeprecated-declarations"
+#pragma clang diagnostic ignored "Wshorten-64-to-32"
+#pragma clang diagnostic ignored "Wextra-semi"
 #endif
 
 #include "llvm-c/Core.h"
@@ -30,7 +30,7 @@
 
 #include "llvm-ir-builder.h"
 
-#if define(__clang__)
+#if defined(__clang__)
 #pragma clang diagnostic pop
 #endif
 
@@ -78,3 +78,5 @@ class LLVMIRGenerator {
 
 }  // namespace internal
 }  // namespace v8
+
+#endif // V8_CODEGEN_LLVM_LLVM_CODEGEN_H_

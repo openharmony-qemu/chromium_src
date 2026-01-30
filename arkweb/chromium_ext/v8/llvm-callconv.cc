@@ -21,7 +21,7 @@ using namespace compiler;
 using namespace turboshaft;
 
 LLVMCallConvDesc::LLVMCallConvDesc(int id, const std::string &intRegList,
-    const std::string &nintRegList, const std::string &retReglist)
+    const std::string &nintRegList, const std::string &retRegList)
 {
   id_ = id;
   splitStringToVector(intRegList, intRegList_);
@@ -42,10 +42,10 @@ bool LLVMCallConvDesc::verify(const CallDescriptor* call_descriptor)
 {
   int intIdx = 0;
   int nintIdx = 0;
-  ing retIdx = 0;
+  int retIdx = 0;
 
-  size_t param_count = call_descriptor->parameterCount();
-  size_t idx_context = 0
+  size_t param_count = call_descriptor->ParameterCount();
+  size_t idx_context = 0;
   bool has_context = false;
   if (id_ != LLVMCCallConv) {
     // root:X26 and compressed_ptr:X28
@@ -59,10 +59,10 @@ bool LLVMCallConvDesc::verify(const CallDescriptor* call_descriptor)
     }
   }
 
-  //param in reg
+  // param in reg
   for (size_t i = 0; i < param_count; i++) {
     auto location = call_descriptor->GetInputLocation(i+1);
-    if (location.IsRegister() && (!has_count || idx_context != i)) {
+    if (location.IsRegister() && (!has_context || idx_context != i)) {
       MachineType type = call_descriptor->GetParameterType(i);
       if (IsFloatingPoint(type.representation())) {
         CHECK_EQ(nintRegList_[nintIdx++], location.AsRegister());
@@ -72,7 +72,7 @@ bool LLVMCallConvDesc::verify(const CallDescriptor* call_descriptor)
     }
   }
 
-  if (call_descriptor->Kind() == CallDescriptor::kCallJSFunction) {
+  if (call_descriptor->kind() == CallDescriptor::kCallJSFunction) {
     // handle kfunction param:X1
     CHECK_EQ(intRegList_[intIdx++], 1);
   }
@@ -94,7 +94,7 @@ bool LLVMCallConvDesc::verify(const CallDescriptor* call_descriptor)
     }
   }
 
-  //return
+  // return
   for (size_t i = 0; i < call_descriptor->ReturnCount(); i++) {
     auto p = call_descriptor->GetReturnLocation(i);
     if (p.IsRegister()) {

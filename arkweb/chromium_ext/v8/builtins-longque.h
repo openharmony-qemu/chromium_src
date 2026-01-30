@@ -29,7 +29,7 @@ static_assert(kVersion <= kSmiMaxValue);
 
 enum PropertyNameFilterFlag : int {
   kSkipPrototypeChain = 1 << 0,    // Skip properties of prototype chain
-  kSkipPrefixUnderscore = 1 << 1,  // Skip property name that starts with '-'
+  kSkipPrefixUnderscore = 1 << 1,  // Skip property name that starts with '_'
   kSkipPrefixDollar = 1 << 2,      // Skip property name that starts with '$'
   kSkipConstructor = 1 << 3,       // Skip 'constructor'
   // Update it when append new enum item
@@ -45,4 +45,4 @@ extern size_t GetGlobalSmiConstantsCount();
 }  // namespace internal
 }  // namespace v8
 
-#endif  //V8_BUILTINS_BUILTINS_LONGQUUE_H_
+#endif  //V8_BUILTINS_BUILTINS_LONGQUE_H_

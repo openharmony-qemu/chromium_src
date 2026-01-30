@@ -24,7 +24,7 @@ if USE_PTY:
 def _call_with_output(cmd:str):
     sys.stderr.write(f"# {cmd}\n")
     sys.stderr.flush()
-    parent, child = pty.openty()
+    parent, child = pty.openpty()
     p = subprocess.Popen(cmd, shell=True, stdin=child, stdout=child, stderr=child, close_fds=True)
     os.close(child)
     output = []
@@ -80,7 +80,7 @@ def main():
                     "LLVMCoverage "
                     "LLVMDebugInfoBTF "
                     "LLVMDebugInfoCodeView "
-                    "LLVMDebugInfod "
+                    "LLVMDebuginfod "
                     "LLVMDebugInfoDWARF "
                     "LLVMDebugInfoGSYM "
                     "LLVMDebugInfoLogicalView "
@@ -95,7 +95,7 @@ def main():
                     "LLVMFrontendOffloading "
                     "LLVMFrontendOpenACC "
                     "LLVMFrontendOpenMP "
-                    "LLVMFuzzCLI "
+                    "LLVMFuzzerCLI "
                     "LLVMFuzzMutate "
                     "LLVMGlobalISel "
                     "LLVMHipStdPar "
@@ -108,6 +108,7 @@ def main():
                     "LLVMIRReader "
                     "LLVMJITLink "
                     "LLVMLibDriver "
+                    "LLVMLineEditor"
                     "LLVMLinker "
                     "LLVMLTO "
                     "LLVMMC "
@@ -115,7 +116,7 @@ def main():
                     "LLVMMCDisassembler "
                     "LLVMMCJIT "
                     "LLVMMCParser "
-                    "LLVMMIRParser " 
+                    "LLVMMIRParser "
                     "LLVMObjCARCOpts "
                     "LLVMObjCopy "
                     "LLVMObject "
@@ -126,7 +127,7 @@ def main():
                     "LLVMRemarks "
                     "LLVMRuntimeDyld "
                     "LLVMSandboxIR "
-                    "LLVMScalarOpts " 
+                    "LLVMScalarOpts "
                     "LLVMSelectionDAG "
                     "LLVMSupport "
                     "LLVMSymbolize "
@@ -142,17 +143,17 @@ def main():
     if os.path.exists(f'{obs_path}{build_dir}'):
         cmd = f"cd {obs_path}{build_dir} && {make_targets}"
     else:
-        cmake_tools = f"cmake -S ./ -B {tools_dir} -DCMAKE_BUILD_TYPE={de_or_re} -DLLVM_TARGET_TO_BUILD=AArch64 -DLLVM_INCLUDE_UTILS=OFF -DLLVM_INCLUDE_TESTS=OFF -DLLVM_INCLUDE_TOOLS=OFF -DLLVM_INCLUDE_RUNTIME=OFF -DLLVM_INCLUDE_EXAMPLES=OFF -DLLVM_INCLUDE_BENCHMARKS=OFF -DLLVM_ENABLE_OCAMLDOC=OFF -DLLVM_ENABLE_BINDINGS=OFF -DLLVM_INCLUDE_DOCS=OFF -DLLVM_USE_SPLIT_DWARF=ON"
-        cmake_targets = (f"cmake -S ./ -B {build_dir} " 
-                    "-DCMAKE_BUILD_TYPE={de_or_re} " 
-                    "-DLLVM_TARGET_TO_BUILD=AArch64 "
+        cmake_tools = f"cmake -S ./ -B {tools_dir} -DCMAKE_BUILD_TYPE={de_or_re} -DLLVM_TARGETS_TO_BUILD=AArch64 -DLLVM_INCLUDE_UTILS=OFF -DLLVM_INCLUDE_TESTS=OFF -DLLVM_INCLUDE_TOOLS=OFF -DLLVM_INCLUDE_RUNTIME=OFF -DLLVM_INCLUDE_EXAMPLES=OFF -DLLVM_INCLUDE_BENCHMARKS=OFF -DLLVM_ENABLE_OCAMLDOC=OFF -DLLVM_ENABLE_BINDINGS=OFF -DLLVM_INCLUDE_DOCS=OFF -DLLVM_USE_SPLIT_DWARF=ON"
+        cmake_targets = (f"cmake -S ./ -B {build_dir} "
+                    f"-DCMAKE_BUILD_TYPE={de_or_re} " 
+                    "-DLLVM_TARGETS_TO_BUILD=AArch64 "
                     "-DLLVM_INCLUDE_UTILS=OFF "
                     "-DLLVM_INCLUDE_TESTS=OFF "
                     "-DLLVM_INCLUDE_TOOLS=OFF "
-                    "-DLLVM_INCLUDE_RUNTIME=OFF "
+                    "-DLLVM_INCLUDE_RUNTIMES=OFF "
                     "-DLLVM_INCLUDE_EXAMPLES=OFF "
                     "-DLLVM_INCLUDE_BENCHMARKS=OFF "
-                    "-DLLVM_ENABLE_OCAMLDOC=OFF " 
+                    "-DLLVM_ENABLE_OCAMLDOC=OFF "
                     "-DLLVM_ENABLE_BINDINGS=OFF "
                     "-DLLVM_INCLUDE_DOCS=OFF "
                     "-DLLVM_USE_SPLIT_DWARF=ON "
@@ -162,14 +163,14 @@ def main():
                     "-DCMAKE_CXX_COMPILER=`pwd`/../../../ohos_sdk/openharmony/native/llvm/bin/clang++ "
                     "-DCMAKE_ASM_COMPILER=`pwd`/../../../ohos_sdk/openharmony/native/llvm/bin/clang "
                     f"-DCMAKE_CXX_FLAGS=\"${{CMAKE_CXX_FLAGS}} "
-                        "-I`pwd`/../../../buildtools/third_party/libc++"
+                        "-I`pwd`/../../../buildtools/third_party/libc++ "
                         "-isystem`pwd`/../../../third_party/libc++/src/include "
-                        "-isystem`pwd`/../../../third_party/libc++api/src/include "
-                        "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDING_MODE_EXTENSIVE "
+                        "-isystem`pwd`/../../../third_party/libc++abi/src/include "
+                        "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE "
                         "-nostdinc++ \" ")
         cmd = f"cd {obs_path} && {cmake_tools} && cd {tools_dir} && {make_tools} && cd {obs_path} && {cmake_targets} && cd {build_dir} && {make_targets}"
     return _call_with_output(cmd)
 
 if __name__ == '__main__':
     return_code = main()
-    sys.exit(return_code)  
+    sys.exit(return_code)

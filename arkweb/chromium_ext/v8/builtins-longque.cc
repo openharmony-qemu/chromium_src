@@ -20,31 +20,35 @@
 #include "src/heap/heap-inl.h"
 #include "src/logging/counters.h"
 #include "src/objects/objects-inl.h"
-#include "src/objects/property-decriptor.h"
+#include "src/objects/property-descriptor.h"
 
 namespace v8 {
 namespace internal {
 namespace longque {
 const char* name = "__Longque__";
 
-//key: property name, value: property value
+// key: property name, value: property value
 static constexpr std::pair<const char*, int> global_smi_constants[] = {
     {"version", kVersion},
     {"SKIP_PROTOTYPE_CHAIN", kSkipPrototypeChain},
-    {"SKIP_PREFIX_UDNERSCORE", kSkipPrefixUnderscore},
+    {"SKIP_PREFIX_UNDERSCORE", kSkipPrefixUnderscore},
     {"SKIP_PREFIX_DOLLAR", kSkipPrefixDollar},
     {"SKIP_CONSTRUCTOR", kSkipConstructor},
 };
 
 const std::pair<const char*, int>* GetGlobalSmiConstants() {
-    return arraysize(global_smi_constants);
+  return global_smi_constants;
 }
-} //namespace longque
+
+size_t GetGlobalSmiConstantsCount() {
+  return arraysize(global_smi_constants);
+}
+} // namespace longque
 
 class DelegateBuilder {
  public:
   DelegateBuilder(Isolate* isolate, Handle<JSObject> underlying_object,
-                  Handle<JSOBject> init_object, Handle<Object> filter,
+                  Handle<JSObject> init_object, Handle<Object> filter,
                   bool skip_prototype_chain)
       :isolate_(isolate),
       underlying_object_(underlying_object),
@@ -56,7 +60,7 @@ class DelegateBuilder {
 
   Handle<JSObject> CreateDelegate();
 
-  Handle<String> GetRedefineProperty() const { return redefiend_property_; }
+  Handle<String> GetRedefinedProperty() const { return redefiend_property_; }
 
  private:
   Handle<JSObject> GetOrCreateInitObject() const;
@@ -77,23 +81,23 @@ class DelegateBuilder {
 
 static inline Tagged<Object> ThrowTypeError(Isolate* isolate,
                                             const char* message) {
-  Handle<String> messageStr = 
+  Handle<String> messageStr =
       isolate->factory()->InternalizeUtf8String(message);
   return isolate->Throw(*isolate->factory()->NewError(
-      isolate->type_error_function(), messageStr)); 
+      isolate->type_error_function(), messageStr));
 }
 
 static inline Handle<Name> GetDelegateKey(Isolate* isolate) {
   AllowGarbageCollection allow_gc;
-  static Handle<object> symbol = isolate->global_handles()->Create(
+  static Handle<Object> symbol = isolate->global_handles()->Create(
       *Cast<Object>(isolate->factory()->NewPrivateSymbol()));
   DCHECK(!symbol.is_null());
   return Cast<Symbol>(symbol);
 }
 
-static inline bool IsDelegate (Isolate* isolate, Handle<JSObject> object) {
+static inline bool IsDelegate(Isolate* isolate, Handle<JSObject> object) {
   Handle<Name> delegate_key = GetDelegateKey(isolate);
-  Maybe<bool> result = 
+  Maybe<bool> result =
       JSReceiver::HasOwnProperty(isolate, object, delegate_key);
   return result.ToChecked();
 }
@@ -104,7 +108,7 @@ static inline void SetDelegateKey(Isolate* isolate, Handle<JSObject> object,
   PropertyDescriptor desc;
   desc.set_enumerable(false);
   desc.set_configurable(false);
-  desc.set_writable(false);0
+  desc.set_writable(false);
   desc.set_value(value);
   Handle<Name> delegate_key = GetDelegateKey(isolate);
   Maybe<bool> result = JSReceiver::OrdinaryDefineOwnProperty(
@@ -113,29 +117,29 @@ static inline void SetDelegateKey(Isolate* isolate, Handle<JSObject> object,
   DCHECK(result.ToChecked());
 }
 
-static void GetterFirDelegate(v8::Local<v8::Name> name, 
+static void GetterForDelegate(v8::Local<v8::Name> name, 
                               const v8::PropertyCallbackInfo<v8::Value>& info) {
   Isolate* isolate = reinterpret_cast<Isolate*>(info.GetIsolate());
   HandleScope scope(isolate);
   Tagged<JSObject> holder = 
-      Cast<JSObject>(*Utils::OpenDirectHandle(*info.holderV2()));
+      Cast<JSObject>(*Utils::OpenDirectHandle(*info.HolderV2()));
   auto symbol_key = GetDelegateKey(isolate);
   Handle<Object> target = 
       JSReceiver::GetDataProperty(isolate, handle(holder, isolate), symbol_key);
-  //Maybe not data Property
-  Handle<Name> property _name = Util::OpenHandle(&name);
+  //Maybe not data property
+  Handle<Name> property _name = Utils::OpenHandle(*name);
   MaybeHandle<Object> maybe;
   if (property_name->IsArrayIndex()) {
     uint32_t index = 0;
     property_name->AsArrayIndex(&index);
     maybe = JSReceiver::GetElement(isolate, Cast<JSReceiver>(target), index);
   } else {
-    maybe = JSReceiver::GetProperty(isolate, Cast<JSReceiver>(target), 
+    maybe = JSReceiver::GetProperty(isolate, Cast<JSReceiver>(target),
                                     property_name);
   }
   //`maybe`may be null if the underlyingObject's getter throw exception
   if(maybe.is_null()) {
-    info.GetReturnvalue().Set(
+    info.GetReturnValue().Set(
         Utils::ToLocal(isolate->factory()->undefined_value()));
     return;
   }
@@ -150,7 +154,7 @@ static void SetterForDelegate(Local<v8::Name> property, Local<v8::Value> value,
   Tagged<JSObject> holder = 
       Cast<JSObject>(*Utils::OpenDirectHandle(*info.HolderV2()));
   auto symbol_key = GetDelegateKey(isolate);
-  Handle<OBJect> target = 
+  Handle<Object> target = 
       JSReceiver::GetDataProperty(isolate, handle(holder, isolate), symbol_key);
   AllowGarbageCollection allow_gc;
   // Handle exception if needed
@@ -165,13 +169,14 @@ void DelegateBuilder::ParsePropertyFilterFlags() {
     return;
   }
   DCHECK(IsSmi(*filter_));
+  int flags = Smi::ToInt(*filter_);
   if (flags & longque::kSkipPrefixUnderscore) {
     skip_prefix_underscore = true;
   }
-  if(flags & longque::kSkipPrefixDollar) {
+  if (flags & longque::kSkipPrefixDollar) {
     skip_prefix_dollar = true;
   }
-  if(flags & longque::kSkipConstructor) {
+  if (flags & longque::kSkipConstructor) {
     skip_constructor = true;
   }
 }
@@ -183,7 +188,7 @@ inline bool DelegateBuilder::ShouldDefineAccessor(
       str_key->HasOneBytePrefix(base::CStrVector("_"))) {
     return false;
   }
-  if (skip_prefix_dollar && str_key->hasOneBytePrefix(base::CStrVector("$"))) {
+  if (skip_prefix_dollar && str_key->HasOneBytePrefix(base::CStrVector("$"))) {
     return false;
   }
   if (skip_constructor &&
@@ -203,7 +208,7 @@ inline void DelegateBuilder::MayDefineAccessor(Handle<JSObject> object,
   Handle<String> name = handle(str_key, isolate_);
   Handle<AccessorInfo> accessor = Accessors::MakeAccessor(
       isolate_, name, GetterForDelegate, SetterForDelegate);
-  MaybeHandle<ObJect> maybe =
+  MaybeHandle<Object> maybe =
       JSObject::SetAccessor(object, name, accessor, NONE);
   if (maybe.is_null() || IsUndefined(*maybe.ToHandleChecked())) {
     redefined_property_ = name;
@@ -224,8 +229,8 @@ inline bool IsPrototypeChainContainsNonJSObject(Isolate* isolate,
   Handle<JSReceiver> holder = receiver;
   do {
     if (!IsJSObject(*holder)) {
-        //For example: JSProxy, WasmObject
-        return true;
+        // For example: JSProxy, WasmObject
+      return true;
     }
     holder = handle(NextHolder(isolate, holder->map()), isolate);
   } while (!(*holder).is_null());
@@ -241,20 +246,21 @@ Handle<JSObject> DelegateBuilder::GetOrCreateInitObject() const {
 
 Handle<JSObject> DelegateBuilder::CreateDelegate() {
   Handle<JSObject> result = GetOrCreateInitObject();
-  SetDelegateKey(isolate_, result, underlying_object);
+  SetDelegateKey(isolate_, result, underlying_object_);
   Handle<JSReceiver> holder = underlying_object_;
   do {
-    MaybeHandle<FixedArray> maybe = KeyAccumulator::Getkeys(
-        isolate_, holder, keyCollectionMode::kOwnOnly, ENUMERABLE_STRINGS,
-        GetKeysConversation::kConvertToString);
+    MaybeHandle<FixedArray> maybe = KeyAccumulator::GetKeys(
+        isolate_, holder, KeyCollectionMode::kOwnOnly, ENUMERABLE_STRINGS,
+        GetKeysConversion::kConvertToString);
     Handle<FixedArray> prop_names = maybe.ToHandleChecked();
     int length = prop_names->length();
     for (int i = 0; i < length; i++) {
       Handle<Object> key = Handle<Object>(prop_names->get(i), isolate_);
-      DCHECK(IsString(result, *key));
+      DCHECK(IsString(*key));
+      MayDefineAccessor(result, *key);
     }
     if (skip_prototype_chain_) {
-        break;
+      break;
     }
     holder = handle(NextHolder(isolate_, holder->map()), isolate_);
   } while (!(*holder).is_null());
@@ -267,17 +273,17 @@ BUILTIN(CreateDelegate) {
   constexpr int kInitObject = 2;
   constexpr int kPropertyFilterIndex = 3;
 
-  //1. Check parameter underlyingObject.
-  Handle<Object> underlying_objct = args.at(kUnderlyingObjectIndex);
+  // 1. Check parameter underlyingObject.
+  Handle<Object> underlying_object = args.at(kUnderlyingObjectIndex);
   if (!IsJSObject(*underlying_object)) {
     if (!IsJSReceiver(*underlying_object)) {
-        return ThrowTypeError(
-            isolate, "The 1st parameter (underlyingObject) is not an object");
+      return ThrowTypeError(
+        isolate, "The 1st parameter (underlyingObject) is not an object");
     }
     return ThrowTypeError(
-            isolate, 
-            "The 1st parameter (underlyingObject) is not an unsupported "
-            "exotic object (such as proxy)"); 
+        isolate, 
+        "The 1st parameter (underlyingObject) is an unsupported "
+        "exotic object (such as proxy)"); 
   }
 
   // 2. Check parameter initObject.
@@ -285,14 +291,14 @@ BUILTIN(CreateDelegate) {
   Handle<JSObject> real_init_object{};
   if (!IsUndefined(*init_object)) {
     // Check user_defined initObject.
-    if (!isJSObject(*init_object)) {
+    if (!IsJSObject(*init_object)) {
         if (!IsJSReceiver(*init_object)) {
             return ThrowTypeError(
                 isolate, "The 2nd parameter (initObject) is not an object");
         }
       return ThrowTypeError(isolate, 
-                            "The 2nd parameter (initObject) is not an unsupported "
-                            "exotic object (such as proxy)"); 
+                            "The 2nd parameter (initObject) is an unsupported "
+                            "exotic object (such as proxy)");
     }
     if (IsDelegate(isolate, Cast<JSObject>(init_object))) {
       return ThrowTypeError(
@@ -320,18 +326,18 @@ BUILTIN(CreateDelegate) {
       skip_prototype_chain = true;
     }
   }
-  
-  // 4. Check prototype chain of underlyingObject if neeeded.
+
+  // 4. Check prototype chain of underlyingObject if needed.
   // If underlyingObject is a non-JSObject or it's prototype chain (if we don't
   // skip prototype chain) contains any non-JSObject, throw a TypeError
   // exception.
   if (!skip_prototype_chain) {
-    if (IsPrototypeChainContainsNonObject(
+    if (IsPrototypeChainContainsNonJSObject(
             isolate, Cast<JSReceiver>(underlying_object))) {
-      return ThrowTypeError(isolate, 
-                            "The 1st parameter (underlying_object)'s prototype "
+      return ThrowTypeError(isolate,
+                            "The 1st parameter (underlyingObject)'s prototype "
                             "chain contains unsupported "
-                            "exotic object (sunch as proxy)"); 
+                            "exotic object (such as proxy)"); 
     }
   }
 
@@ -346,5 +352,5 @@ BUILTIN(CreateDelegate) {
   }
   return *result;
 }
-}  // namespace interal
+}  // namespace internal
 }  // namespace v8

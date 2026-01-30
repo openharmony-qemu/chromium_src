@@ -45,17 +45,17 @@ bool CallDescriptor::hasContext(size_t& context_idx) const
 void CallDescriptor::printDescInfo() const
 {
   std::cout << debug_name() << ": kind=" << kind() << ", flags=" << flags() << ", shifted_tag="
-            << shifted_tag() << ", ReturnCount=" << RetrunCount() << ", parameterCount=" << ParameterCount()
+            << shifted_tag() << ", ReturnCount=" << ReturnCount() << ", ParameterCount=" << ParameterCount()
             << ", GPParameterCount=" << GPParameterCount() << ", FPParameterCount=" << FPParameterCount()
             << ", NeedsCallerSavedRegisters=" << NeedsCallerSavedRegisters()
             << ", NeedsCallerSavedFPRegisters=" << NeedsCallerSavedFPRegisters()
-            << ", GetTaggedParameterSlots((first slot << 16) | num_slots)" << GetTaggedParameterSlots();
+            << ", GetTaggedParameterSlots((first slot << 16) | num_slots)" << GetTaggedParameterSlots()
             << ", ParameterSlotCount=" << ParameterSlotCount() << ", paramslot list=";
   for (size_t i = 0; i < ParameterSlotCount(); i++) {
     std::cout<<GetStackIndexFromSlot((int)i)<<",";
   }
   std::cout<<" ReturnSlotCount="<<ReturnSlotCount()<<", return list=";
-  for (size_t i = 0; i < ReturnCount; i++) {
+  for (size_t i = 0; i < ReturnCount(); i++) {
     auto p = GetReturnLocation(i);
     if (p.IsRegister()) {
       std::cout<<"reg:"<<p.AsRegister()<<",";
@@ -66,15 +66,15 @@ void CallDescriptor::printDescInfo() const
   std::cout<<" InputCount="<<InputCount()<<", input list=";
   for (size_t i = 0; i < InputCount(); i++) {
     auto p = GetInputLocation(i);
-     if (p.IsRegister()) {
+    if (p.IsRegister()) {
       std::cout<<"reg:"<<p.AsRegister()<<",";
     } else {
       std::cout<<"slot:"<<p.GetLocation()<<",";
     }
   }
   std::cout<<", AllocatableRegisters="<<AllocatableRegisters()
-           <<", CallerSavedRegisters="<<CallerSavedRegisters()
-           <<", CallerSavedFPRegisters="<<CallerSavedFPRegisters()
+           <<", CalleeSavedRegisters="<<CalleeSavedRegisters()
+           <<", CalleeSavedFPRegisters="<<CalleeSavedFPRegisters()
            <<std::endl<<std::endl;
 }
 

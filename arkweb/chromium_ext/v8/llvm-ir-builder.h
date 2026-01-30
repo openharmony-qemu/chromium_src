@@ -33,7 +33,7 @@ using namespace compiler;
 using namespace turboshaft;
 
 class LLVMIRBuilder;
-using HnadleType = void(LLVMIRBuilder::*)(OpIndex);
+using HandleType = void(LLVMIRBuilder::*)(OpIndex);
 using Rep = turboshaft::RegisterRepresentation;
 
 #define IROPCODES(V)                                \
@@ -54,7 +54,7 @@ using Rep = turboshaft::RegisterRepresentation;
   V(Call, (OpIndex node))                           \
   V(TailCall, (OpIndex node))                       \
   V(Switch, (OpIndex node))                         \
-  V(OverflowCheckBinop, (OpIndex node))             \
+  V(OverflowCheckedBinop, (OpIndex node))           \
   V(Projection, (OpIndex node))                     \
   V(Tuple, (OpIndex node))                          \
   V(DidntThrow, (OpIndex node))                     \
@@ -63,7 +63,7 @@ using Rep = turboshaft::RegisterRepresentation;
   V(Unreachable, (OpIndex node))                    \
   V(StackPointerGreaterThan, (OpIndex node))        \
   V(FrameConstant, (OpIndex node))                  \
-  V(Return, (OpIndex node))                         \
+  V(Return, (OpIndex node))                         
 
 class LLVMModule {
 public:
@@ -90,10 +90,10 @@ public:
   }
 
   LLVMValueRef GetFunction() { return func_; }
-  LLVMValueRef GetModule() { return module_; }
+  LLVMModuleRef GetModule() { return module_; }
   LLVMContextRef GetContext() { return context_; }
 
-  LLVMTypeRef GetVoidT() { return vodT_; }
+  LLVMTypeRef GetVoidT() { return voidT_; }
   LLVMTypeRef GetInt1T() { return int1T_; }
   LLVMTypeRef GetInt8T() { return int8T_; }
   LLVMTypeRef GetInt16T() { return int16T_; }
@@ -107,7 +107,7 @@ public:
   LLVMTypeRef GetRawPtrT() { return rawPtrT_; }
 
 private:
-  LLVMValueRef func_ (nullptr);
+  LLVMValueRef func_ {nullptr};
   int ptr_compr_cage_base_index_ {-1};
   int root_index_ {-1};
   std::unordered_map<int, int> turboshaftParamIdx2llvmParamIdx_;
@@ -139,16 +139,16 @@ private:
   #define DECLAREVISITIROPCODE(name, signature) void Visit##name signature;
     IROPCODES(DECLAREVISITIROPCODE)
   #undef DECLAREVISITIROPCODE
-  #define DECLAREHANDLEIROPCODE(name, signature) void Handle##name(OpIndex node);
+  #define DECLAREHANDLEIROPCODE(name, ignore) void Handle##name(OpIndex node);
     IROPCODES(DECLAREHANDLEIROPCODE)
   #undef DECLAREHANDLEIROPCODE
 
   void InitialHandlers();
-  LLVMTypeRef convertLLVMTypeFromMachineType(MachineType type)
+  LLVMTypeRef ConvertLLVMTypeFromMachineType(MachineType type)
   {
-    return llvm_module_->convertLLVMTypeFromMachineType(type);
+    return llvm_module_->ConvertLLVMTypeFromMachineType(type);
   }
-  LLVMTypeRef convertLLVMTypeFromRep(Rep rep);
+  LLVMTypeRef ConvertLLVMTypeFromRep(Rep rep);
   LLVMTypeRef GetVoidT()
   {
     return llvm_module_->GetVoidT();
@@ -222,37 +222,37 @@ private:
     return get;
   }
   void CompletePendingPhis();
-  uint32_t GetPtrAddressSpace(LLVMvalueRef value) const;
-  LLVMValuRef CanonicalizeToPtr(LLVMValueRef value, LLVMTypeRef ptr_type) const;
+  uint32_t GetPtrAddressSpace(LLVMValueRef value) const;
+  LLVMValueRef CanonicalizeToPtr(LLVMValueRef value, LLVMTypeRef ptr_type) const;
   LLVMValueRef FixTypeTo(LLVMValueRef value, LLVMTypeRef to_type, LLVMBasicBlockRef insert);
   void SetGCLeafFunction(LLVMValueRef call);
 
   // turboshaft node helper
   std::string NodeName(OpIndex node);
   Constant ToConstant(const ConstantOp& constant);
-  bool IsMaterializableFromRoot(Handle<HeapObject> obejct, RootIndex* index_return);
+  bool IsMaterializableFromRoot(Handle<HeapObject> object, RootIndex* index_return);
   LLVMValueRef GetPtrComprCageBase()
   {
-    return LLVMBuildIntToPtr(buidler, GetPurePtrComprCageBase(), GetTaggedHPtrT(), "");
+    return LLVMBuildIntToPtr(builder_, GetPurePtrComprCageBase(), GetTaggedHPtrT(), "");
   }
   LLVMValueRef GetRoot()
   {
-    return LLVMBuildIntToPtr(buidler, GetPureRoot(), GetTaggedHPtrT(), "");
+    return LLVMBuildIntToPtr(builder_, GetPureRoot(), GetTaggedHPtrT(), "");
   }
   LLVMValueRef GetPurePtrComprCageBase()
   {
-    return ptr_compr_cage_base;
+    return ptr_compr_cage_base_;
   }
    LLVMValueRef GetPureRoot()
   {
-    return root_reg;
+    return root_reg_;
   }
 
-  LLVMCallConv GetLLVMCallConvByDescriptor(const CallDescriptor* discriptor);
+  LLVMCallConv GetLLVMCallConvByDescriptor(const CallDescriptor* descriptor);
   void InitDescriptorCallConvMap();
   void PrepareCallParams(const CallDescriptor* call_descriptor, base::Vector<const OpIndex>& arguments,
     std::vector<LLVMTypeRef>& param_types, std::vector<LLVMValueRef>& args, LLVMValueRef callee);
-  LLVMValueRef GetLLVMparamByTurboshaftParamIdx(int shaftIdx)
+  LLVMValueRef GetLLVMParamByTurboshaftParamIdx(int shaftIdx)
   {
     return LLVMGetParam(function_, llvm_module_->GetLLVMParamIdxByTurboshaftParamIdx(shaftIdx));
   }
@@ -265,22 +265,22 @@ private:
 
   LLVMModuleRef module_ {nullptr};
   LLVMContextRef context_ {nullptr};
-  LLVMValueref function_ {nullptr};
+  LLVMValueRef function_ {nullptr};
   LLVMBuilderRef builder_ {nullptr};
   LLVMBasicBlockRef current_lbb {nullptr};
 
   LLVMValueRef root_reg_ {nullptr};
   LLVMValueRef ptr_compr_cage_base_ {nullptr};
 
-  std::unordered_map<OpCode, HandleType> op_handlers_;
-  std::unordered_map<std::string, std::vector<LLVMCallConv>> descriptor2cc_;
+  std::unordered_map<Opcode, HandleType> op_handlers_;
+  std::unordered_map<std::string, std::vector<LLVMCallConv>> decscriptor2cc_;
   std::unordered_map<uint32_t, LLVMValueRef> node2LValue_;
-  std::map<BlockIndex, LLVMBasicBlockRef> block2LBB;
+  std::map<BlockIndex, LLVMBasicBlockRef> block2LBB_;
   // if a block was split to [ LBB1 ... LBB3], this map records the last LBB (LBB3).
   // if not, this map records the only LBB.
   std::map<BlockIndex, LLVMBasicBlockRef> block2EndLBB_;
   std::set<std::pair<OpIndex, Block*>> pending_phis_;
-  Block* current_block {nullptr};
+  Block* current_block_ {nullptr};
 
   LLVMModule* llvm_module_ {nullptr};
   std::shared_ptr<LLVMCallConvList> llvmCallConvList_;

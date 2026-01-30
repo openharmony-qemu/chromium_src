@@ -21,10 +21,10 @@
 #include "llvm-c/Core.h"
 #include "llvm-c/DebugInfo.h"
 
-#include "src/complier/linkage.h"
-#include "src/complier/opcodes.h"
-#include "src/complier/turboshaft/phase.h"
-#include "src/object/heap-object-inl.h"
+#include "src/compiler/linkage.h"
+#include "src/compiler/opcodes.h"
+#include "src/compiler/turboshaft/phase.h"
+#include "src/objects/heap-object-inl.h"
 
 namespace v8 {
 namespace internal {
@@ -32,37 +32,37 @@ using namespace compiler;
 using namespace turboshaft;
 
 #define CC_DESC_LIST(V)                                                                         \
-  V(LLVMAArc64V8BigIntEqCallConv, "26,28,27,0,1", "0", "0")                                     \
-  V(LLVMAArc64V8KeyedLoadWithVectorCallConv, "26,28,27,1,0,2,3", "0", "0")                      \
-  V(LLVMAArc64V8LoadWithVectorCallConv, "26, 28, 27, 1, 2, 0, 3", "0", "0")                     \
-  V(LLVMAArc64V8ToNameCallConv, "26, 28, 27, 1, 2, 0, 3", "0", "0")                             \
-  V(LLVMAArc64V8CallFunctionTemplateGenericCallConv, "26, 28, 27, 1, 2, 3", "0", "0")           \
-  V(LLVMAArc64V8CallApiCallbackOptimizedCallConv, "26, 28, 27, 1, 2, 3, 0", "0", "0")           \
-  V(LLVMAArc64V8CallTrampolineCallConv, "26, 28, 27, 1, 0", "0", "0")                           \
-  V(LLVMAArc64V8CallApiCallbackGenericCallConv, "26, 28, 27, 2, 1, 3, 0", "0", "0")             \
-  V(LLVMAArc64V8AllocateCallConv, "26, 28, 1, 0, 2", "0", "0")                                  \
-  V(LLVMAArc64V8ProxyGetPropertyCallConv, "26, 28, 27, 0, 1, 2, 3, 4", "0", "0")                \
-  V(LLVMAArc64InterpreterDispatchCallConv, "26, 28, 27, 0, 19, 20, 21", "0", "0")               \
-  V(LLVMAArc64InterpreterNoContextCallConv, "26, 28, 0, 19, 20, 21", "0", "0")                  \
-  V(LLVMAArc64V8StoreWithVectorCallConv, "26, 28, 27, 1, 2, 0, 4, 3", "0", "0")                 \
-  V(LLVMAArc64V8StoreTransitionCallConv, "26, 28, 27, 1, 2, 5, 0, 4", "0", "0")                 \
-  V(LLVMAArc64JSCallCallConv, "26, 28, 27, 3, 0, 1", "0", "0")                                  \
-  V(LLVMAArc64JSCallLeapTierCallConv, "26, 28, 27, 3, 0, 4, 1", "0", "0")                       \
-  V(LLVMAArc64V8CLikeCallConv, "26, 28, 0, 1, 2", "0", "0")                                     \
-  V(LLVMAArc64V8JSTrampolineCallConv, "26, 28, 27, 1, 3, 0, 4", "0", "0")                       \
-  V(LLVMAArc64ConstructStubCallConv, "26, 28, 27, 1, 3, 0", "0", "0")                           \
-  V(LLVMAArc64CallVarargsCallConv, "26, 28, 27, 1, 0, 4, 2", "0", "0")                          \
-  V(LLVMAArc64GrowArrayElementsCallConv, "26, 28, 0, 3", "0", "0")                              \
-  V(LLVMAArc64LoadGlobalWithVectorCallConv, "26, 28, 27, 2, 0, 3", "0", "0")                    \
-  V(LLVMAArc64LoadBaselineCallConv, "26, 28, 1, 2, 0", "0", "0")                                \
-  V(LLVMAArc64EnumeratedKeyedLoadCallConv, "26, 28, 27, 1, 0, 4, 5, 2", "0", "0")               \
-  V(LLVMAArc64V8ApiGetterCallConv, "26, 28, 27, 1, 0, 3", "0", "0")
+  V(LLVMAArch64V8BigIntEqCallConv, "26,28,27,0,1", "0", "0")                                    \
+  V(LLVMAArch64V8KeyedLoadWithVectorCallConv, "26,28,27,1,0,2,3", "0", "0")                     \
+  V(LLVMAArch64V8LoadWithVectorCallConv, "26, 28, 27, 1, 2, 0, 3", "0", "0")                    \
+  V(LLVMAArch64V8ToNameCallConv, "26, 28, 27, 1, 0", "0", "0")                                  \
+  V(LLVMAArch64V8CallFunctionTemplateGenericCallConv, "26, 28, 27, 1, 2, 3", "0", "0")          \
+  V(LLVMAArch64V8CallApiCallbackOptimizedCallConv, "26, 28, 27, 1, 2, 3, 0", "0", "0")          \
+  V(LLVMAArch64V8CallTrampolineCallConv, "26, 28, 27, 1, 0", "0", "0")                          \
+  V(LLVMAArch64V8CallApiCallbackGenericCallConv, "26, 28, 27, 2, 1, 3, 0", "0", "0")            \
+  V(LLVMAArch64V8AllocateCallConv, "26, 28, 1, 0, 2", "0", "0")                                 \
+  V(LLVMAArch64V8ProxyGetPropertyCallConv, "26, 28, 27, 0, 1, 2, 3, 4", "0", "0")               \
+  V(LLVMAArch64InterpreterDispatchCallConv, "26, 28, 27, 0, 19, 20, 21", "0", "0")              \
+  V(LLVMAArch64InterpreterNoContextCallConv, "26, 28, 0, 19, 20, 21", "0", "0")                 \
+  V(LLVMAArch64V8StoreWithVectorCallConv, "26, 28, 27, 1, 2, 0, 4, 3", "0", "0")                \
+  V(LLVMAArch64V8StoreTransitionCallConv, "26, 28, 27, 1, 2, 5, 0, 4", "0", "0")                \
+  V(LLVMAArch64JSCallCallConv, "26, 28, 27, 3, 0, 1", "0", "0")                                 \
+  V(LLVMAArch64JSCallLeapTierCallConv, "26, 28, 27, 3, 0, 4, 1", "0", "0")                      \
+  V(LLVMAArch64V8CLikeCallConv, "26, 28, 0, 1, 2", "0", "0")                                    \
+  V(LLVMAArch64V8JSTrampolineCallConv, "26, 28, 27, 1, 3, 0, 4", "0", "0")                      \
+  V(LLVMAArch64ConstructStubCallConv, "26, 28, 27, 1, 3, 0", "0", "0")                          \
+  V(LLVMAArch64CallVarargsCallConv, "26, 28, 27, 1, 0, 4, 2", "0", "0")                         \
+  V(LLVMAArch64GrowArrayElementsCallConv, "26, 28, 0, 3", "0", "0")                             \
+  V(LLVMAArch64LoadGlobalWithVectorCallConv, "26, 28, 27, 2, 0, 3", "0", "0")                   \
+  V(LLVMAArch64LoadBaselineCallConv, "26, 28, 1, 2, 0", "0", "0")                               \
+  V(LLVMAArch64EnumeratedKeyedLoadCallConv, "26, 28, 27, 1, 0, 4, 5, 2", "0", "0")              \
+  V(LLVMAArch64V8ApiGetterCallConv, "26, 28, 27, 1, 0, 3", "0", "0")
 
-class LLVMCallConvDEsc {
+class LLVMCallConvDesc {
 public:
   LLVMCallConvDesc(int id, const std::string &intRegList,
-                   const std::string &nintRegList, const std::string &retReglist);
-                   
+                   const std::string &nintRegList, const std::string &retRegList);
+
   ~LLVMCallConvDesc() {}
   bool verify(const CallDescriptor* call_descriptor);
 

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "src/compiler/turboshaft/piplines.h"
+#include "src/compiler/turboshaft/pipelines.h"
 
 #include "llvm-ir-builder.h"
 #include "llvm-codegen.h"
@@ -22,18 +22,18 @@ namespace v8::internal::compiler::turboshaft {
 
 bool Pipeline::IsSupportedBuiltin(Builtin builtin)
 {
-  switch (builtin)
-  {
+  switch (builtin) {
   case Builtin::kBigIntEqual:
   case Builtin::kLoadIC:
   case Builtin::kKeyedLoadIC_Megamorphic:
   case Builtin::kForInFilter:
   case Builtin::kStoreIC:
   case Builtin::kKeyedStoreIC_Megamorphic:
-  case Builtin::kCreateShallowObjectliteral:
+  case Builtin::kCreateShallowObjectLiteral:
   case Builtin::kDefineNamedOwnIC:
   case Builtin::kFindOrderedHashSetEntry:
   case Builtin::kGetProperty:
+  case Builtin::kKeyedHasIC_Megamorphic:
   case Builtin::kKeyedLoadIC:
   case Builtin::kKeyedLoadIC_PolymorphicName:
   case Builtin::kKeyedStoreIC:
@@ -44,7 +44,7 @@ bool Pipeline::IsSupportedBuiltin(Builtin builtin)
   case Builtin::kArrayIncludesSmiOrObject:
   case Builtin::kArrayIndexOfSmiOrObject:
   case Builtin::kCreateEmptyLiteralObject:
-  case Builtin::kCreateShallowArrayLieral:
+  case Builtin::kCreateShallowArrayLiteral:
   case Builtin::kEnqueueMicrotask:
   case Builtin::kFastNewFunctionContextFunction:
   case Builtin::kForInEnumerate:
@@ -57,7 +57,7 @@ bool Pipeline::IsSupportedBuiltin(Builtin builtin)
   case Builtin::kStoreIC_Megamorphic:
   case Builtin::kStrictEqual_WithFeedback:
   case Builtin::kSubString:
-  case Builtin::kTypeOf:
+  case Builtin::kTypeof:
   case Builtin::kWeakCollectionSet:
     return true;
   default:

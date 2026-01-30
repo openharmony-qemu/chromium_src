@@ -2413,7 +2413,7 @@ void LLVMIRBuilder::VisitTailCall(OpIndex node) {
       }
     }
 #else
-    LLVMValueRef offset = LLVMConstInt(GetInt64T(), Code::kInstrctionStartOffset - kHeapObjectTag, 0);
+    LLVMValueRef offset = LLVMConstInt(GetInt64T(), Code::kInstructionStartOffset - kHeapObjectTag, 0);
     callee = FixTypeTo(callee, GetInt64T(), nullptr);
     callee = LLVMBuildAdd(builder_, callee, offset, "");
     callee = CanonicalizeToPtr(callee, LLVMPointerType(GetInt64T(), 0));

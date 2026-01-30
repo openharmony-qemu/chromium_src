@@ -7,11 +7,16 @@
 
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "base/component_export.h"
 #include "base/feature_list.h"
 #include "base/metrics/field_trial_params.h"
 #include "base/time/time.h"
 #include "build/build_config.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif  // BUILDFLAG(IS_ARKWEB_EXT)
 
 namespace url {
 class Origin;
@@ -220,6 +225,11 @@ COMPONENT_EXPORT(NETWORK_CPP) BASE_DECLARE_FEATURE(kStorageAccessHeadersTrial);
 COMPONENT_EXPORT(NETWORK_CPP)
 BASE_DECLARE_FEATURE(kEnableLockCookieDatabaseByDefault);
 #endif  // BUILDFLAG(IS_WIN)
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+COMPONENT_EXPORT(NETWORK_CPP)
+BASE_DECLARE_FEATURE(kEnableNwebExHttpDnsFallback);
+#endif
 
 }  // namespace network::features
 

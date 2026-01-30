@@ -33,6 +33,15 @@
 #include "net/socket/client_socket_factory.h"
 #include "net/url_request/url_request_context.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/net/dns/host_resolver_manager_request_impl_for_include.cc"
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#include "net/base/features.h"
+#include "services/network/public/cpp/features.h"
+#endif
+
 namespace net {
 
 HostResolverManager::RequestImpl::RequestImpl(
@@ -343,6 +352,12 @@ int HostResolverManager::RequestImpl::DoResolveLocally() {
       only_ipv6_reachable_, job_key_, ip_address_, parameters_.cache_usage,
       parameters_.secure_dns_policy, parameters_.source, source_net_log_,
       host_cache(), &tasks_, &stale_info);
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  if (base::FeatureList::IsEnabled(
+          network::features::kEnableNwebExHttpDnsFallback)) {
+    MaybeModifyResolveLocallyResults(results);
+  }
+#endif
   if (results.error() != ERR_DNS_CACHE_MISS ||
       parameters_.source == HostResolverSource::LOCAL_ONLY || tasks_.empty()) {
     if (results.error() == OK && !parameters_.is_speculative) {

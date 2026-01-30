@@ -85,6 +85,7 @@ class NET_EXPORT_PRIVATE HostResolverDnsTask final {
     virtual void AddTransactionResultForReport(const DnsQueryType query_type,
                                                int net_error) = 0;
     virtual void InitReportInfoForDohFallback() = 0;
+    virtual bool CanUseSecureDnsFallback(ResolveContext* resolve_context) = 0;
 #endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
 
    protected:

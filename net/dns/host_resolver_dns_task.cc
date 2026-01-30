@@ -25,9 +25,11 @@
 #include "third_party/abseil-cpp/absl/types/variant.h"
 
 #if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
 #include "base/base_switches.h"
 #include "base/command_line.h"
-#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#include "net/base/features.h"
+#include "services/network/public/cpp/features.h"
 #endif
 
 namespace net {
@@ -793,6 +795,21 @@ void HostResolverDnsTask::HandleTransactionResults(
   HostCache::Entry legacy_results(transaction_results, base::Time::Now(),
                                   tick_clock_->NowTicks(),
                                   HostCache::Entry::SOURCE_DNS);
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  if (base::FeatureList::IsEnabled(
+          network::features::kEnableNwebExHttpDnsFallback) &&
+      utils) {
+    bool secure_dns_fallback_available = false;
+    if (delegate_) {
+      secure_dns_fallback_available =
+          delegate_->CanUseSecureDnsFallback(&*resolve_context_);
+    }
+    utils->MaybeModifyInsecureDnsTaskResolveResults(
+        std::string(host_.GetHostnameWithoutBrackets()),
+        secure_dns_fallback_available, legacy_results);
+  }
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 
   // Merge results with saved results from previous transactions.
   if (saved_results_) {

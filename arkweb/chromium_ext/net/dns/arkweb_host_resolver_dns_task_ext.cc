@@ -28,8 +28,12 @@
 
 #if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
 #include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#include "arkweb/chromium_ext/net/dns/secure_dns_fallback_utils.h"
 #include "base/base_switches.h"
 #include "base/command_line.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/overrides/net/dns/secure_dns_fallback_utils.h"
+#endif  // BUILDFLAG(IS_ARKWEB_EXT)
 #endif
 
 namespace net {
@@ -104,6 +108,38 @@ void ArkWebHostResolverDnsTaskExt::SetNotNeedMoreAttemptIPQueryType(
     }
   }
 }
+
+void ArkWebHostResolverDnsTaskExt::MaybeModifyInsecureDnsTaskResolveResults(
+    const std::string& host,
+    bool secure_dns_fallback_available,
+    HostCache::Entry& out_results) {
+  if (out_results.error() != OK) {
+    return;
+  }
+  if (out_results.ip_endpoints().empty()) {
+    return;
+  }
+
+  bool need_to_modify_resolve_result = false;
+  std::vector<IPEndPoint> ip_endpoints_modified;
+  bool need_to_replace_address = MaybeNeedToProcessAddressList(
+      host, out_results.ip_endpoints(), secure_dns_fallback_available,
+      ip_endpoints_modified, need_to_modify_resolve_result);
+  if (!need_to_replace_address) {
+    return;
+  }
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+  ReportDnsHijackHitInfo(host, RecordQueryType::UDP,
+                         out_results.ip_endpoints());
+#endif  // BUILDFLAG(IS_ARKWEB_EXT)
+
+  out_results.set_ip_endpoints(ip_endpoints_modified);
+  if (need_to_modify_resolve_result) {
+    out_results.set_error(ERR_NAME_NOT_RESOLVED);
+  }
+}
+
 #endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
 
 }  // namespace net

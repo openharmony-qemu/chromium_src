@@ -53,8 +53,9 @@ float PaintLayerScrollableAreaExt::ComputeVisibleAreaScale() const {
   Page* page = GetLayoutBox()->GetDocument().GetPage();
   DCHECK(page);
   float scale_factor = page->PageScaleFactor();
+  bool will_be_overlay = GetPageScrollbarTheme().UsesOverlayScrollbars();
   if (is_pinch_gesture_active_ && !base::ohos::IsPcDevice() &&
-      scale_factor > 1.f && layer_->IsRootLayer()) {
+      scale_factor > 1.f && layer_->IsRootLayer() && will_be_overlay) {
     return scale_factor;
   }
   return 1.f;

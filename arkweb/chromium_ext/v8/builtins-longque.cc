@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #include "builtins-longque.h"
 
 #include "src/api/api-inl.h"
@@ -60,7 +61,7 @@ class DelegateBuilder {
 
   Handle<JSObject> CreateDelegate();
 
-  Handle<String> GetRedefinedProperty() const { return redefiend_property_; }
+  Handle<String> GetRedefinedProperty() const { return redefined_property_; }
 
  private:
   Handle<JSObject> GetOrCreateInitObject() const;
@@ -127,7 +128,7 @@ static void GetterForDelegate(v8::Local<v8::Name> name,
   Handle<Object> target = 
       JSReceiver::GetDataProperty(isolate, handle(holder, isolate), symbol_key);
   //Maybe not data property
-  Handle<Name> property _name = Utils::OpenHandle(*name);
+  Handle<Name> property_name = Utils::OpenHandle(*name);
   MaybeHandle<Object> maybe;
   if (property_name->IsArrayIndex()) {
     uint32_t index = 0;

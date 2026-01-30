@@ -47,7 +47,7 @@ using namespace turboshaft;
   V(LLVMAArch64V8StoreWithVectorCallConv, "26, 28, 27, 1, 2, 0, 4, 3", "0", "0")                \
   V(LLVMAArch64V8StoreTransitionCallConv, "26, 28, 27, 1, 2, 5, 0, 4", "0", "0")                \
   V(LLVMAArch64JSCallCallConv, "26, 28, 27, 3, 0, 1", "0", "0")                                 \
-  V(LLVMAArch64JSCallLeapTierCallConv, "26, 28, 27, 3, 0, 4, 1", "0", "0")                      \
+  V(LLVMAArch64JSCallLeapTireCallConv, "26, 28, 27, 3, 0, 4, 1", "0", "0")                      \
   V(LLVMAArch64V8CLikeCallConv, "26, 28, 0, 1, 2", "0", "0")                                    \
   V(LLVMAArch64V8JSTrampolineCallConv, "26, 28, 27, 1, 3, 0, 4", "0", "0")                      \
   V(LLVMAArch64ConstructStubCallConv, "26, 28, 27, 1, 3, 0", "0", "0")                          \

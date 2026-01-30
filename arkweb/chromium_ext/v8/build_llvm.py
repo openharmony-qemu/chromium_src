@@ -108,7 +108,7 @@ def main():
                     "LLVMIRReader "
                     "LLVMJITLink "
                     "LLVMLibDriver "
-                    "LLVMLineEditor"
+                    "LLVMLineEditor "
                     "LLVMLinker "
                     "LLVMLTO "
                     "LLVMMC "
@@ -143,7 +143,7 @@ def main():
     if os.path.exists(f'{obs_path}{build_dir}'):
         cmd = f"cd {obs_path}{build_dir} && {make_targets}"
     else:
-        cmake_tools = f"cmake -S ./ -B {tools_dir} -DCMAKE_BUILD_TYPE={de_or_re} -DLLVM_TARGETS_TO_BUILD=AArch64 -DLLVM_INCLUDE_UTILS=OFF -DLLVM_INCLUDE_TESTS=OFF -DLLVM_INCLUDE_TOOLS=OFF -DLLVM_INCLUDE_RUNTIME=OFF -DLLVM_INCLUDE_EXAMPLES=OFF -DLLVM_INCLUDE_BENCHMARKS=OFF -DLLVM_ENABLE_OCAMLDOC=OFF -DLLVM_ENABLE_BINDINGS=OFF -DLLVM_INCLUDE_DOCS=OFF -DLLVM_USE_SPLIT_DWARF=ON"
+        cmake_tools = f"cmake -S ./ -B {tools_dir} -DCMAKE_BUILD_TYPE={de_or_re} -DLLVM_TARGETS_TO_BUILD=AArch64 -DLLVM_INCLUDE_UTILS=OFF -DLLVM_INCLUDE_TESTS=OFF -DLLVM_INCLUDE_TOOLS=OFF -DLLVM_INCLUDE_RUNTIMES=OFF -DLLVM_INCLUDE_EXAMPLES=OFF -DLLVM_INCLUDE_BENCHMARKS=OFF -DLLVM_ENABLE_OCAMLDOC=OFF -DLLVM_ENABLE_BINDINGS=OFF -DLLVM_INCLUDE_DOCS=OFF -DLLVM_USE_SPLIT_DWARF=ON"
         cmake_targets = (f"cmake -S ./ -B {build_dir} "
                     f"-DCMAKE_BUILD_TYPE={de_or_re} " 
                     "-DLLVM_TARGETS_TO_BUILD=AArch64 "

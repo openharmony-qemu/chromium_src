@@ -20,10 +20,10 @@
 #if defined(__clang__)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wshadow"
-#pragma clang diagnostic ignored "Wunused-parameter"
-#pragma clang diagnostic ignored "Wdeprecated-declarations"
-#pragma clang diagnostic ignored "Wshorten-64-to-32"
-#pragma clang diagnostic ignored "Wextra-semi"
+#pragma clang diagnostic ignored "-Wunused-parameter"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wshorten-64-to-32"
+#pragma clang diagnostic ignored "-Wextra-semi"
 #endif
 
 #include "llvm/IR/Module.h"
@@ -89,7 +89,7 @@ Handle<Code> LLVMIRGenerator::GenerateCode()
 
     pb.registerModuleAnalyses(mam);
     pb.registerCGSCCAnalyses(cgam);
-    pb.registerFunctionAnalysisManage(fam);
+    pb.registerFunctionAnalyses(fam);
     pb.registerLoopAnalyses(lam);
     pb.crossRegisterProxies(lam, fam, cgam, mam);
 
@@ -99,16 +99,16 @@ Handle<Code> LLVMIRGenerator::GenerateCode()
     // run func level optimization first
     fpm.addPass(llvm::RewriteStatepointsForGC());
     fpm.addPass(llvm::createModuleToFunctionPassAdaptor(
-        pb.buildFunctionSimplificationPipeline(llvm::OptimizationLevel::03, llvm::ThinOrFullLTOPhase::None)));
+        pb.buildFunctionSimplificationPipeline(llvm::OptimizationLevel::O3, llvm::ThinOrFullLTOPhase::None)));
     fpm.run(*llvm::unwrap(module_), mam);
 
     // run module level optimization for more chances
-    mpm.addPass(pb.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::03));
+    mpm.addPass(pb.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O3));
 
     mpm.run(*llvm::unwrap(module_), mam);
   }
 
-  if (v8_flag.trace_turbo) {
+  if (v8_flags.trace_turbo) {
     error = nullptr;
     if (LLVMPrintModuleToFile(module_, opt_name.c_str(), &error)) {
       std::cout << error << std::endl;
@@ -166,7 +166,7 @@ Handle<Code> LLVMIRGenerator::GenerateCode()
         llvm::object::ELFSectionRef elf_section(section);
         uint64_t offset = elf_section.getOffset();
         int32_t size = static_cast<int>(section.getSize());
-        uint8_t *src_buffer = reinterpret_cast<uint8_t*>(const_cast<char*>(LLVMGetBufferStart(mem_buf) + offset))
+        uint8_t *src_buffer = reinterpret_cast<uint8_t*>(const_cast<char*>(LLVMGetBufferStart(mem_buf) + offset));
         std::tuple<uint8_t*, int32_t, int32_t> emit = EmitStackMap(src_buffer, size);
         safepoint_buffer = std::get<0>(emit);
         safepoint_buffer_length = std::get<1>(emit);
@@ -234,7 +234,7 @@ Handle<Code> LLVMIRGenerator::GenerateCode()
         }
 
         Zone local_zone(isolate()->allocator(), "");
-        SourcePositionTableBuilder src_builder(&local_zone, SourcePositiontableBuilder::RECORD_SOURCE_POSITIONS);
+        SourcePositionTableBuilder src_builder(&local_zone, SourcePositionTableBuilder::RECORD_SOURCE_POSITIONS);
         Factory::CodeBuilder builder(isolate(), desc, info()->code_kind());
         size_t parameter_cnt = 0;
         if (linkage()->GetIncomingDescriptor()->IsJSFunctionCall()) {
@@ -337,7 +337,7 @@ std::tuple<uint8_t*, int32_t, int32_t> LLVMIRGenerator::EmitStackMap(uint8_t* sr
 
   struct Header {
     uint8_t stack_map_version_;
-    uint8_t reservered_;
+    uint8_t reserved_;
     uint16_t next_reserved_;
   };
 

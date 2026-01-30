@@ -267,7 +267,7 @@ private:
   LLVMContextRef context_ {nullptr};
   LLVMValueRef function_ {nullptr};
   LLVMBuilderRef builder_ {nullptr};
-  LLVMBasicBlockRef current_lbb {nullptr};
+  LLVMBasicBlockRef current_lbb_ {nullptr};
 
   LLVMValueRef root_reg_ {nullptr};
   LLVMValueRef ptr_compr_cage_base_ {nullptr};

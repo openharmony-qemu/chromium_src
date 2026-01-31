@@ -16,6 +16,7 @@
 #ifndef EXTENSIONS_BROWSER_EXTENSION_REGISTRY_INFO_MANAGER_H_
 #define EXTENSIONS_BROWSER_EXTENSION_REGISTRY_INFO_MANAGER_H_
 
+#include "base/memory/raw_ref.h"
 #include "base/scoped_multi_source_observation.h"
 #include "chrome/browser/extensions/api/side_panel/side_panel_service.h"
 #include "chrome/browser/extensions/menu_manager.h"
@@ -51,8 +52,10 @@ class ExtensionRegistryInfoManager : public MenuManager::LoadObserver,
    private:
     void PopulateAllSyncInfo();
     void NotifyManagerExtensionLoaded();
+    bool IsExtensionValid() const;
 
-    const Extension& extension_;
+    raw_ref<const Extension> extension_;
+    std::string extension_id_;
     raw_ptr<content::BrowserContext> browser_context_;
     raw_ptr<ExtensionRegistryInfoManager> info_manager_;
     gfx::Image placeholder_icon_;

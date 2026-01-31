@@ -364,6 +364,7 @@ ExtensionRegistryInfoManager::BrowserNotifier::BrowserNotifier(
     content::BrowserContext* browser_context,
     ExtensionRegistryInfoManager* info_manager)
     : extension_(extension),
+      extension_id_(extension.id()),
       browser_context_(browser_context),
       info_manager_(info_manager),
       action_icon_is_ready_(false),
@@ -403,8 +404,19 @@ ExtensionRegistryInfoManager::BrowserNotifier::~BrowserNotifier() {
 
 void ExtensionRegistryInfoManager::BrowserNotifier::HandleImageEvent(
     IconImage* icon_image) {
-  if (!icon_image->is_valid()) {
+  if (!IsExtensionValid() || !icon_image->is_valid()) {
     LOG(INFO) << "extension has been unloaded";
+
+    if (g_load_phase != kNormalLoad) {
+      g_initial_loaded_extensions().erase(extension_id_);
+      if (g_load_phase == kEndInitialLoad &&
+          g_initial_loaded_extensions().empty()) {
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+        NWebExtensionManagerDispatcher::OnExtensionInitLoadEndCallBack();
+#endif
+        g_load_phase = kNormalLoad;
+      }
+    }
     return;
   }
 
@@ -422,11 +434,11 @@ void ExtensionRegistryInfoManager::BrowserNotifier::NotifyIfReady() {
   if (!action_icon_is_ready_ || !manifest_icon_is_ready_) {
     return;
   }
-  LOG(INFO) << "BrowserNotifier ready to notify extension: " << extension_.id();
+  LOG(INFO) << "BrowserNotifier ready to notify extension: " << extension_id_;
   NotifyManagerExtensionLoaded();
 
   if (g_load_phase != kNormalLoad) {
-    g_initial_loaded_extensions().erase(extension_.id());
+    g_initial_loaded_extensions().erase(extension_id_);
     if (g_load_phase == kEndInitialLoad && g_initial_loaded_extensions().empty()) {
 #if BUILDFLAG(ARKWEB_NWEB_EX)
       NWebExtensionManagerDispatcher::OnExtensionInitLoadEndCallBack();
@@ -475,27 +487,36 @@ void ExtensionRegistryInfoManager::BrowserNotifier::PopulateAllSyncInfo() {
   if (!management_policy) {
     return;
   }
-  loaded_info_.info.extensionId = extension_.id();
+  loaded_info_.info.extensionId = extension_->id();
   loaded_info_.info.mustRemainInstalled =
-      management_policy->MustRemainInstalled(&extension_, nullptr);
+      management_policy->MustRemainInstalled(&extension_.get(), nullptr);
 
   loaded_info_.info.action =
-      info_manager_->GetExtensionActionInfo(extension_, kTabIdNone);
+      info_manager_->GetExtensionActionInfo(*extension_, kTabIdNone);
   loaded_info_.info.sidePanel =
-      info_manager_->GetExtensionSidePanelInfo(extension_, std::nullopt);
+      info_manager_->GetExtensionSidePanelInfo(*extension_, std::nullopt);
   loaded_info_.info.contextMenus =
-      info_manager_->GetAllExtensionContextMenus(extension_.id());
-  info_manager_->GetExtensionManifestInfo(extension_,
+      info_manager_->GetAllExtensionContextMenus(extension_->id());
+  info_manager_->GetExtensionManifestInfo(*extension_,
                                           loaded_info_.manifest_info);
   loaded_info_.is_incognito_enabled =
-      util::IsIncognitoEnabled(extension_.id(), browser_context_);
+      util::IsIncognitoEnabled(extension_->id(), browser_context_);
   loaded_info_.contextMenusV2 =
-      info_manager_->GetAllExtensionContextMenusV2(extension_.id());
+      info_manager_->GetAllExtensionContextMenusV2(extension_->id());
   loaded_info_.action_v2 =
-      info_manager_->GetExtensionActionInfoV2(extension_, kTabIdNone);
-  loaded_info_.install_time =
-      ExtensionPrefs::Get(browser_context_)->GetFirstInstallTime(extension_.id()).InMillisecondsFSinceUnixEpoch();
+      info_manager_->GetExtensionActionInfoV2(*extension_, kTabIdNone);
+  loaded_info_.install_time = ExtensionPrefs::Get(browser_context_)
+                                  ->GetFirstInstallTime(extension_->id())
+                                  .InMillisecondsFSinceUnixEpoch();
 #endif
+}
+
+bool ExtensionRegistryInfoManager::BrowserNotifier::IsExtensionValid() const {
+  ExtensionRegistry* registry = ExtensionRegistry::Get(browser_context_);
+  const Extension* extension =
+      registry ? registry->enabled_extensions().GetByID(extension_id_)
+               : nullptr;
+  return extension != nullptr;
 }
 
 void ExtensionRegistryInfoManager::BrowserNotifier::

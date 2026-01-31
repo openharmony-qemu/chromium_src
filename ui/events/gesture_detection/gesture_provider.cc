@@ -651,7 +651,6 @@ class GestureProvider::GestureListenerImpl : public ScaleGestureListener,
   void OnCreateOverlay(const MotionEvent& e) override {
     LOG(DEBUG) << "CreateOverlay GestureDetector::OnCreateOverlay";
     DCHECK(!IsDoubleTapInProgress());
-    SetIgnoreSingleTap(true);
     GestureEventDetails create_overlay_details =
         CreateTouchGestureDetails(EventType::kGestureCreateOverlay);
     Send(CreateGesture(create_overlay_details, e));

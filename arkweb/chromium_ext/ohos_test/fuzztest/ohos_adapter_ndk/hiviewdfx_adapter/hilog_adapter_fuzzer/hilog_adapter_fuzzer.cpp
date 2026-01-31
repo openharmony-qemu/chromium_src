@@ -60,7 +60,7 @@ void PrintConsoleLogFuzzTest(const uint8_t* data, size_t size) {
 
 // main
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
-    if(HILOG_ADAPTER_TESTS_COUNT < HILOG_ADAPTER_TESTS_NUM){
+    if (HILOG_ADAPTER_TESTS_COUNT < HILOG_ADAPTER_TESTS_NUM){
       HILOG_ADAPTER_TESTS_COUNT++;
     }
     else {

@@ -93,10 +93,8 @@ void MediaAVSessionAdapterImpl::InitMediaAVSessionAdapterImpl() {
 
     avPlaybackState_ = PLAYBACK_STATE_INITIAL;
     playbackState_ = PLAYBACK_STATE_INITIAL;
-    avQueueItem_.itemId = 0;
-    avQueueItem_.description = nullptr;
-    playbackPosition_.elapsedTime = 0;
-    playbackPosition_.updateTime = 0;
+    avQueueItem_ = {0, nullptr};
+    playbackPosition_ = {0, 0};
 }
 
 MediaAVSessionAdapterImpl::~MediaAVSessionAdapterImpl() {

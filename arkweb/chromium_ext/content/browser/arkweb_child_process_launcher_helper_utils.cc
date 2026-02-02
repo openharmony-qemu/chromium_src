@@ -16,7 +16,9 @@
 #include "arkweb/chromium_ext/content/browser/arkweb_child_process_launcher_helper_utils.h"
 
 #if BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
+#include "content/public/common/content_switches.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#include "arkweb/ohos_nweb/src/sysevent/event_reporter.h"
 #endif
 
 namespace content {
@@ -69,19 +71,23 @@ void ArkwebChildProcessLauncherHelperUtils::LaunchChildProcess(
       save_browser_connect_ = true;
     }
 #endif
-
+    auto process_type = child_process_launcher_helper_->GetProcessType();
     LOG(INFO)
         << "Initiate a request to AMS to create a child process, child type: "
-        << child_process_launcher_helper_->GetProcessType();
+        << process_type;
     int ret =
         child_process_launcher_helper_->app_mgr_client_adapter_
             ->StartChildProcess(
                 argv_ss.str(), ipc_fd, shared_fd, crash_signal_fd, render_pid,
-                child_process_launcher_helper_->GetProcessType());
+                process_type);
     if (ret != 0) {
       LOG(ERROR) << "start render process error, ret=" << ret
-                 << ", render pid=" << render_pid << ", process type="
-                 << child_process_launcher_helper_->GetProcessType();
+                 << ", render pid=" << render_pid << ", process type=" << process_type;
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP) && !defined(COMPONENT_BUILD)
+      if (process_type == switches::kRendererProcess) {
+        ReportRenderProcessTerminate(false, -1, std::string("TERMINATION_STATUS_LAUNCH_FAILED"), ret);
+      }
+#endif
       process.process = base::Process();
     } else {
       process.process = base::Process(render_pid);
@@ -137,6 +143,48 @@ ArkwebChildProcessLauncherHelperUtils::GetProcessStatusByExitCode(
   return base::TERMINATION_STATUS_NORMAL_TERMINATION;
 }
 
+void ArkwebChildProcessLauncherHelperUtils::RenderProcessExitedInfo(pid_t pid, int exitCode, bool known_dead) {
+  base::TerminationStatus status = GetProcessStatusByExitCode(exitCode, known_dead);
+  switch(status) {
+    case base::TERMINATION_STATUS_NORMAL_TERMINATION:
+      if (WIFSIGNALED(exitCode)) {
+        LOG(WARNING) << "RenderExited pid: " << pid << " known_dead: " << known_dead << " exitCode: " << exitCode
+                     << " exitSig: " << WTERMSIG(exitCode) << " exitReason: process exit unknown";
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP) && !defined(COMPONENT_BUILD)
+        ReportRenderProcessTerminate(false, pid, std::string("TERMINATION_STATUS_PROCESS_UNKNOWN"), exitCode);
+#endif
+        return;
+      }
+      LOG(INFO) << "RenderExited pid: " << pid << " known_dead: " << known_dead
+                << " exitStatus: " << WEXITSTATUS(exitCode) << " exitReason: process normal termination";
+      break;
+    case base::TERMINATION_STATUS_ABNORMAL_TERMINATION:
+      LOG(ERROR) << "RenderExited pid: " << pid << " known_dead: " << known_dead
+                 << " exitStatus: " << WEXITSTATUS(exitCode) << " exitReason: process abnormal termination";
+      break;
+    case base::TERMINATION_STATUS_PROCESS_CRASHED:
+      LOG(ERROR) << "RenderExited pid: " << pid << " known_dead: " << known_dead
+                 << " exitSig: " << WTERMSIG(exitCode) << " exitReason: process crashed";
+      break;
+    case base::TERMINATION_STATUS_PROCESS_WAS_KILLED:
+      LOG(ERROR) << "RenderExited pid: " << pid << " known_dead: "
+                 << " exitSig: " << WTERMSIG(exitCode) << " exitReason: process was killed";
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP) && !defined(COMPONENT_BUILD)
+      ReportRenderProcessTerminate(false, pid, std::string("TERMINATION_STATUS_PROCESS_WAS_KILLED"),
+        WTERMSIG(exitCode));
+#endif
+      break;
+    default:
+      LOG(ERROR) << "RenderExited pid: " << pid << " known_dead: " << known_dead << " exitCode: " << exitCode
+                 << " exitStatus: " << WEXITSTATUS(exitCode) << " exitSig: " << WTERMSIG(exitCode)
+		         << " exitReason: process exit unknown";
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP) && !defined(COMPONENT_BUILD)
+      ReportRenderProcessTerminate(false, pid, std::string("TERMINATION_STATUS_PROCESS_UNKNOWN"), exitCode);
+#endif
+      break;
+  }
+}
+
 std::string
 ArkwebChildProcessLauncherHelperUtils::GetExitReasonByTerminationStatus(
     base::TerminationStatus status) {
@@ -177,7 +225,6 @@ bool ArkwebChildProcessLauncherHelperUtils::TerminateProcessByAppMgr(
     return false;
   }
 
-  std::string renderExitReason;
   int exitStatus;
   int ret = app_mgr_client_adapter->GetRenderProcessTerminationStatus(
       process.Handle(), exitStatus);
@@ -187,11 +234,7 @@ bool ArkwebChildProcessLauncherHelperUtils::TerminateProcessByAppMgr(
     return false;
   }
 
-  renderExitReason = GetExitReasonByTerminationStatus(
-      GetProcessStatusByExitCode(exitStatus, false));
-  LOG(INFO) << "GetTermination pid: " << process.Handle()
-            << " exitStatus: " << exitStatus
-            << " exitReason: " << renderExitReason;
+  RenderProcessExitedInfo(process.Handle(), exitStatus, false);
   return true;
 }
 #endif
@@ -217,10 +260,7 @@ void ArkwebChildProcessLauncherHelperUtils::GetTerminationInfoArkweb(
       info.status =
           ArkwebChildProcessLauncherHelperUtils::GetProcessStatusByExitCode(
               exitStatus, known_dead);
-      LOG(INFO) << "GetTermination known_dead pid: " << process.Handle()
-                << " exitStatus: " << exitStatus << " exitReason: "
-                << ArkwebChildProcessLauncherHelperUtils::
-                       GetExitReasonByTerminationStatus(info.status);
+      RenderProcessExitedInfo(process.Handle(), exitStatus, known_dead);
     }
   } else {
     info.status = base::TERMINATION_STATUS_STILL_RUNNING;

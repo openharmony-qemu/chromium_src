@@ -2377,7 +2377,11 @@ void NWebHandlerDelegate::OnRenderProcessTerminated(
   RenderExitReason reason;
   std::string error_desc = "";
   switch (status) {
-    case TS_ABNORMAL_TERMINATION:
+    case TS_ABNORMAL_TERMINATION:  
+     /*
+      * When the count of render processes exceeds the upper limit,
+      * the kernel proactively reclaims inactive render processes and reports this event.
+      */
       reason = RenderExitReason::PROCESS_ABNORMAL_TERMINATION;
       error_desc = "process abnormal termination";
       break;
@@ -2395,13 +2399,17 @@ void NWebHandlerDelegate::OnRenderProcessTerminated(
       break;
     default:
       reason = RenderExitReason::PROCESS_EXIT_UNKNOWN;
-      error_desc = "process exit unknown";
+      if (status == TS_LAUNCH_FAILED) {
+        error_desc = "process launch failed";
+      } else {
+        error_desc = "process exit unknown";
+      }
       break;
   }
 
-  LOG(INFO) << "NWebId: " << nweb_id_
-            << " render process exit, reason = " << static_cast<int>(reason)
-            << " reason info = " << error_desc;
+  LOG(ERROR) << "OnRenderExited NWebId: " << nweb_id_
+             << " render process exit, reason = " << static_cast<int>(reason)
+             << " reason info = " << error_desc;
   nweb_handler_->OnRenderExited(reason);
 
 #if BUILDFLAG(ARKWEB_NWEB_EX) && BUILDFLAG(ARKWEB_CRASHPAD)

@@ -180,7 +180,10 @@ TEST_F(ArkwebChildProcessLauncherHelperUtilsTest, GetProcessStatusByExitCode001)
     bool known_dead = false;
     base::TerminationStatus temp = base::TERMINATION_STATUS_PROCESS_CRASHED;
     auto result = ArkwebChildProcessLauncherHelperUtils::GetProcessStatusByExitCode(status, known_dead);
-    EXPECT_EQ(result, temp);
+    EXPECT_EQ(result, temp); 
+    ArkwebChildProcessLauncherHelperUtils::RenderProcessExitedInfo(test_pid_, status, known_dead);
+    std::string log_output = testing::internal::GetCapturedStderr();
+    EXPECT_TRUE(log_output.find(TERMINAL_REASONS[2]) != std::string::npos);
 }
 
 TEST_F(ArkwebChildProcessLauncherHelperUtilsTest, GetProcessStatusByExitCode002) {
@@ -237,6 +240,9 @@ TEST_F(ArkwebChildProcessLauncherHelperUtilsTest, GetProcessStatusByExitCode008)
     base::TerminationStatus temp = base::TERMINATION_STATUS_NORMAL_TERMINATION;
     auto result = ArkwebChildProcessLauncherHelperUtils::GetProcessStatusByExitCode(status, known_dead);
     EXPECT_EQ(result, temp);
+    ArkwebChildProcessLauncherHelperUtils::RenderProcessExitedInfo(test_pid_, status, known_dead);
+    std::string log_output = testing::internal::GetCapturedStderr();
+    EXPECT_TRUE(log_output.find(TERMINAL_REASONS[0]) != std::string::npos);
 }
 
 TEST_F(ArkwebChildProcessLauncherHelperUtilsTest, GetProcessStatusByExitCode009) {
@@ -248,6 +254,9 @@ TEST_F(ArkwebChildProcessLauncherHelperUtilsTest, GetProcessStatusByExitCode009)
 #endif
     auto result = ArkwebChildProcessLauncherHelperUtils::GetProcessStatusByExitCode(status, known_dead);
     EXPECT_EQ(result, temp);
+    ArkwebChildProcessLauncherHelperUtils::RenderProcessExitedInfo(test_pid_, status, known_dead);
+    std::string log_output = testing::internal::GetCapturedStderr();
+    EXPECT_TRUE(log_output.find(TERMINAL_REASONS[3]) != std::string::npos);
 }
 
 TEST_F(ArkwebChildProcessLauncherHelperUtilsTest, GetProcessStatusByExitCode010) {
@@ -280,6 +289,9 @@ TEST_F(ArkwebChildProcessLauncherHelperUtilsTest, GetProcessStatusByExitCode013)
     base::TerminationStatus temp = base::TERMINATION_STATUS_ABNORMAL_TERMINATION;
     auto result = ArkwebChildProcessLauncherHelperUtils::GetProcessStatusByExitCode(status, known_dead);
     EXPECT_EQ(result, temp);
+    ArkwebChildProcessLauncherHelperUtils::RenderProcessExitedInfo(test_pid_, status, known_dead);
+    std::string log_output = testing::internal::GetCapturedStderr();
+    EXPECT_TRUE(log_output.find(TERMINAL_REASONS[1]) != std::string::npos);
 }
 
 TEST_F(ArkwebChildProcessLauncherHelperUtilsTest,GetProcessStatusByExitCode014) {

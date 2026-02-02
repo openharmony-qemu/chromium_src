@@ -6304,6 +6304,35 @@ TEST_F(NWebImplTest, SetUrlTrustListWithErrMsg002) {
   EXPECT_EQ(result, temp);
 }
 
+TEST_F(NWebImplTest, SetUrlTrustListWithErrMsg003) {
+  const std::string urlTrustList = "test";
+  std::string detailErrMsg = "message";
+  int temp = -1;
+#if BUILDFLAG(ARKWEB_URL_TRUST_LIST)
+  temp = -2;
+#endif
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, SetUrlTrustListWithErrMsg(urlTrustList, true, false, detailErrMsg)).Times(0);
+  auto result = nweb_impl_->SetUrlTrustListWithErrMsg(urlTrustList, true, false, detailErrMsg);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+
+TEST_F(NWebImplTest, SetUrlTrustListWithErrMsg004) {
+  const std::string urlTrustList = "test";
+  std::string detailErrMsg = "message";
+  int temp = -1;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+#if BUILDFLAG(ARKWEB_URL_TRUST_LIST)
+  temp = 1;
+  EXPECT_CALL(*mock_delegate_, SetUrlTrustListWithErrMsg(urlTrustList,
+      true, false, detailErrMsg)).WillOnce(::testing::Return(temp));
+#endif
+  auto result = nweb_impl_->SetUrlTrustListWithErrMsg(urlTrustList, true, false, detailErrMsg);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
 TEST_F(NWebImplTest, SetPathAllowingUniversalAccess001) {
   const std::vector<std::string> pathList = {"Default", "IncludeSensitive", "Everything"};

@@ -61,6 +61,7 @@
 
 #if BUILDFLAG(ARKWEB_AI)
 #include "nweb_agent_manager_impl.h"
+#include "nweb_content_change_detection.h"
 #endif
 
 #if BUILDFLAG(ARKWEB_NAVIGATION)
@@ -6446,6 +6447,15 @@ void NWebDelegate::AbortDistill() {
 #endif // ARKWEB_READER_MODE
 
 #if BUILDFLAG(ARKWEB_AI)
+void NWebDelegate::RegisterOnLoadStartedCbForContentChange(
+    std::function<void(void)>&& callback) {
+  if (handler_delegate_) {
+    handler_delegate_->RegisterOnLoadStartedCbForContentChange(std::move(callback));
+  } else {
+    LOG(ERROR) << "RegisterOnLoadStartedCbForContentChange, handler_delegate_ is nullptr"; 
+  }
+}
+
 void NWebDelegate::RegisterOnLoadStartedCbForHighlightContent(
     std::function<void(void)>&& callback) {
   if (handler_delegate_) {

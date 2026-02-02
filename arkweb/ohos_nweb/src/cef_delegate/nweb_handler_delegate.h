@@ -192,6 +192,9 @@ class NWebHandlerDelegate : public ArkWebClientExt,
       const std::string& permission);
   void RegisterNativeLoadStartCallback(std::function<void(void)>&& callback);
   void RegisterNativeLoadEndCallback(std::function<void(void)>&& callback);
+#if BUILDFLAG(ARKWEB_AI)
+  void RegisterOnLoadStartedCbForContentChange(std::function<void(void)>&& callback);
+#endif
   int GetFlowbufCount(void* mem);
   char* FlowbufStrAtIndex(void* mem,
                           int flowbufIndex,
@@ -1290,6 +1293,9 @@ void OnMediaCastEnter() override;
   PermissionMap javascript_async_permission_map_;
   std::function<void(void)> onLoadStartCallback_ = nullptr;
   std::function<void(void)> onLoadEndCallback_ = nullptr;
+#if BUILDFLAG(ARKWEB_AI)
+  std::function<void(void)> onLoadStartedCbForContentChange_ = nullptr;
+#endif
 
 #if BUILDFLAG(ARKWEB_ADBLOCK)
   bool is_global_adblock_enabled_ = false;

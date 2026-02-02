@@ -884,6 +884,10 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void MaximizeResize() override;
 #endif
 
+#if BUILDFLAG(ARKWEB_AI)
+  void RegisterOnLoadStartedCbForContentChange(std::function<void(void)>&& callback);
+#endif
+
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   bool SetFocusByPosition(float x, float y) override;
   std::pair<double, double> GetLastTouchMousePosition() override {

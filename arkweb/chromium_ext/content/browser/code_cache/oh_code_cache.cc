@@ -84,6 +84,8 @@ base::NoDestructor<std::unique_ptr<base::FilePath>> ResponseCache::cache_dir_pat
     std::make_unique<base::FilePath>());
 base::NoDestructor<std::map<std::string, std::shared_ptr<ResponseCacheMetadata>>>
     ResponseCache::cache_metadata_map_{};
+base::Lock ResponseCache::cache_metadata_map_lock_;
+std::atomic<bool> ResponseCache::cache_cleared_{false};
 
 // static
 void ResponseCache::InitCacheDirectory(base::FilePath path) {
@@ -151,7 +153,13 @@ void ResponseCache::ClearAllCache() {
     }
   }
 
-  (*cache_metadata_map_).clear();
+  {
+    base::AutoLock lock(cache_metadata_map_lock_);
+    (*cache_metadata_map_).clear();
+  }
+
+  // Set the cleared flag to prevent reading from deleted metadata file
+  cache_cleared_.store(true, std::memory_order_release);
 }
 
 ResponseCache::ResponseCache(const std::string& url) : url_(url) {}
@@ -164,11 +172,21 @@ NextOp ResponseCache::Write(
   response_body_in_ = response_body;
 
   if (!FindMetadata()) {
-    return DoCreate();
+    NextOp result = DoCreate();
+    if (result == NextOp::WRITE_CODE_CACHE) {
+      // Reset the cleared flag after successfully creating new cache
+      cache_cleared_.store(false, std::memory_order_release);
+    }
+    return result;
   }
 
   if (NeedUpdate()) {
-    return DoUpdate();
+    NextOp result = DoUpdate();
+    if (result == NextOp::WRITE_CODE_CACHE) {
+      // Reset the cleared flag after successfully updating cache
+      cache_cleared_.store(false, std::memory_order_release);
+    }
+    return result;
   }
 
   return NextOp::DO_NOTHING;
@@ -203,25 +221,51 @@ bool ResponseCache::CreateStream() {
 bool ResponseCache::FindMetadata() {
   TRACE_EVENT1("net", "ResponseCache::FindMetadata", "url", url_);
 
-  if ((*cache_metadata_map_).empty()) {
-    if (!CreateStream()) {
-      return false;
-    }
-
-    while (ReadMetadata()) {
-      (*cache_metadata_map_).emplace(metadata_out_->url_hash_, metadata_out_);
-    }
-
-    CloseStream();
-  }
-
-  auto it = (*cache_metadata_map_).find(url_hash_);
-
-  if (it == (*cache_metadata_map_).end()) {
+  // Fast path: check cleared flag without lock (performance optimization)
+  if (cache_cleared_.load(std::memory_order_acquire)) {
     return false;
   }
 
-  metadata_out_ = it->second;
+  // Check if map is empty (need lock)
+  {
+    base::AutoLock lock(cache_metadata_map_lock_);
+    if (!(*cache_metadata_map_).empty()) {
+      // Map has data, try to find the entry
+      auto it = (*cache_metadata_map_).find(url_hash_);
+      if (it != (*cache_metadata_map_).end()) {
+        metadata_out_ = it->second;
+        return true;
+      }
+      return false;
+    }
+  }  // Lock released here
+
+  // Map is empty, need to load from file (no lock during file I/O)
+  if (!CreateStream()) {
+    return false;
+  }
+
+  // Load metadata into a temporary map to minimize lock time
+  std::map<std::string, std::shared_ptr<ResponseCacheMetadata>> temp_map;
+  while (ReadMetadata()) {
+    temp_map[metadata_out_->url_hash_] = metadata_out_;
+  }
+
+  CloseStream();
+
+  // Update the shared map with lock
+  {
+    base::AutoLock lock(cache_metadata_map_lock_);
+    (*cache_metadata_map_) = std::move(temp_map);
+
+    // Now find the entry
+    auto it = (*cache_metadata_map_).find(url_hash_);
+    if (it == (*cache_metadata_map_).end()) {
+      return false;
+    }
+    metadata_out_ = it->second;
+  }
+
   return true;
 }
 
@@ -308,7 +352,10 @@ NextOp ResponseCache::DoCreate() {
     return NextOp::THROW_ERROR;
   }
 
-  (*cache_metadata_map_).emplace(url_hash_, metadata_in_);
+  {
+    base::AutoLock lock(cache_metadata_map_lock_);
+    (*cache_metadata_map_).emplace(url_hash_, metadata_in_);
+  }
 
   if (!DoWriteIntoFile(cache_file_path_, response_body_in_)) {
     LOG(ERROR)
@@ -357,11 +404,12 @@ bool ResponseCache::DoUpdateMetadata() {
   }
 
   bool result = false;
+  bool entry_updated = false;
   while (ReadMetadata()) {
     auto wait_to_write = metadata_out_;
     if (metadata_out_->url_hash_ == url_hash_) {
       wait_to_write = metadata_in_;
-      result = true;
+      entry_updated = true;
     }
 
     std::string data = wait_to_write->ToString();
@@ -371,14 +419,12 @@ bool ResponseCache::DoUpdateMetadata() {
       break;
     }
 
-    if (result) {
-      (*cache_metadata_map_)[url_hash_] = metadata_in_;
-    }
+    result = true;
   }
 
   CloseStream();
 
-  if (!result) {
+  if (!result || !entry_updated) {
     base::DeleteFile(temp_file_path);
     return false;
   }
@@ -391,6 +437,12 @@ bool ResponseCache::DoUpdateMetadata() {
 
   temp_file->Unlock();
   temp_file->Close();
+
+  // Update the map with lock (after file I/O is complete)
+  {
+    base::AutoLock lock(cache_metadata_map_lock_);
+    (*cache_metadata_map_)[url_hash_] = metadata_in_;
+  }
 
   return true;
 }

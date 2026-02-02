@@ -376,6 +376,18 @@ void WebMediaPlayerImplExt::OnWebURLError(int reason) {
 int WebMediaPlayerImplExt::GetWebURLErrorReason() const {
   return web_url_error_reason_;
 }
+
+WebString WebMediaPlayerImplExt::GetMimeType() const {
+  if (demuxer_manager_) {
+    std::string mime_type = demuxer_manager_->GetMimeType();
+    return blink::WebString::FromUTF8(mime_type);
+  }
+  return WebString();
+}
+
+bool WebMediaPlayerImplExt::UsingMediaPlayer() const {
+  return using_media_player_renderer_;
+}
 #endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)

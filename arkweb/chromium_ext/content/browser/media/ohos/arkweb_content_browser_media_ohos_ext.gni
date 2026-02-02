@@ -7,3 +7,8 @@ arkweb_content_browser_media_ohos_audio_sources = [
     "//arkweb/chromium_ext/content/browser/media/ohos/ohos_media_player_renderer_web_contents_observer.cc",
     "//arkweb/chromium_ext/content/browser/media/ohos/ohos_media_player_renderer_web_contents_observer.h",
 ]
+
+arkweb_content_browser_media_ohos_video_experience = [
+    "//arkweb/chromium_ext/content/browser/media/ohos/ohos_video_experience_reporter.cc",
+    "//arkweb/chromium_ext/content/browser/media/ohos/ohos_video_experience_reporter.h",
+]

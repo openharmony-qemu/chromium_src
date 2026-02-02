@@ -227,6 +227,8 @@ public:
   media::PipelineStatusCodes GetPipelineStatus() const override;
   void OnWebURLError(int reason);
   int GetWebURLErrorReason() const override;
+  WebString GetMimeType() const override;
+  bool UsingMediaPlayer() const override;
 #endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
 #if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)

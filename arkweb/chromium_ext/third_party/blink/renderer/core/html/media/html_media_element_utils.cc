@@ -27,6 +27,7 @@
 #include "third_party/blink/renderer/core/html/media/html_media_element_controls_list.h"
 #include "third_party/blink/renderer/core/html/time_ranges.h"
 #include "base/strings/string_split.h"
+#include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
 
 namespace blink {
 
@@ -113,22 +114,116 @@ void HTMLMediaElementUtils::ScheduleNamedEventUtils(const AtomicString& event_na
     played_time_recorder_.StartRecord();
     freeze_time_recorder_.StartRecord();
   } else if (event_name == event_type_names::kPlaying) {
+    played_time_recorder_.StartRecord();
     freeze_time_recorder_.StopRecord();
   } else if (event_name == event_type_names::kPause) {
     played_time_recorder_.PauseRecord();
     freeze_time_recorder_.PauseRecord();
+  } else if (event_name == event_type_names::kWaiting) {
+    media_player_waiting_cnt_++;
   }
 #endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 }
 // LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
 void HTMLMediaElementUtils::ResetMediaPlayerAndMediaSourceUtils() {
+  has_reported_experience_ = false;
   // reset mediaplayer and wait for new src, so reset flags too.
   if (!htmlMediaElement_->paused_ && htmlMediaElement_->ready_state_ < HTMLMediaElement::kHaveMetadata &&
       htmlMediaElement_->load_state_ == HTMLMediaElement::kLoadingFromSourceElement) {
     played_time_recorder_.StartRecord();
     freeze_time_recorder_.StartRecord();
   }
+}
+
+mojom::blink::VideoExpParamsPtr HTMLMediaElementUtils::ReportVideoExperienceToBI() {
+  if (!htmlMediaElement_ || !htmlMediaElement_->IsHTMLVideoElement()) {
+    LOG(INFO) << "OhMedia, ReportVideoExperienceToBI: htmlMediaElement_ is nullptr or not a video element";
+    return nullptr;
+  }
+  if (IsFeedsPage()) {
+    LOG(INFO) << "OhMedia, ReportVideoExperienceToBI: IsFeedPage, returning";
+    return nullptr;
+  }
+  if (has_reported_experience_) {
+    LOG(INFO) << "OhMedia, ReportVideoExperienceToBI: already reported, returning";
+    return nullptr;
+  }
+  has_reported_experience_ = true;
+  int error_code = 0;
+  String error_msg = g_empty_string;
+  if (htmlMediaElement_->error_) {
+    error_code = htmlMediaElement_->error_->code();
+    error_msg = htmlMediaElement_->error_->message();
+  }
+  freeze_time_recorder_.StopRecord();
+  played_time_recorder_.StopRecord();
+
+  int64_t start_used_time = freeze_time_recorder_.GetDuration().InMilliseconds();
+  int64_t total_freeze_time = start_used_time;
+  if (htmlMediaElement_->web_media_player_) {
+    total_freeze_time += htmlMediaElement_->web_media_player_->GetFreezeTime();
+  }
+  int64_t total_played_time = played_time_recorder_.GetDuration().InMilliseconds();
+
+  if (start_used_time == 0 && total_played_time == 0 && error_code == 0) {
+    LOG(INFO) << "OhMedia, ReportVideoExperienceToBI start_used_time and total_played_time is zero";
+    return nullptr;
+  }
+
+  mojom::blink::VideoExpParamsPtr params = mojom::blink::VideoExpParams::New();
+  params->start_used_time = start_used_time;
+  params->total_freeze_time = total_freeze_time;
+  params->total_played_time = total_played_time;
+  params->video_freeze_cnt = media_player_waiting_cnt_;
+  params->error_code = error_code;
+  params->error_msg = error_msg;
+  params->page_url = String::FromUTF8(GetMainUrl().c_str());
+  params->video_src = (htmlMediaElement_->currentSrc().ProtocolIsInHTTPFamily() ?
+    htmlMediaElement_->currentSrc() : KURL()).GetString();
+  if (!params->video_src) {
+    params->video_src = g_empty_string;
+  }
+  params->pipeline_status = g_empty_string;
+  params->mime_type = g_empty_string;
+  params->net_error_code = 0;
+  params->video_duration = static_cast<int64_t>(htmlMediaElement_->duration_ * 1000);
+  params->video_width = 0;
+  params->video_height = 0;
+  params->video_player = htmlMediaElement_->GetMediaPlayerType();
+
+  auto webMediaPlayer =  htmlMediaElement_->GetWebMediaPlayer();
+  if (webMediaPlayer) {
+    params->pipeline_status = String::FromUTF8(PipelineStatusToString(
+      webMediaPlayer->GetPipelineStatus()).c_str());
+    params->mime_type = static_cast<String>(webMediaPlayer->GetMimeType());
+    if (!params->mime_type) {
+      params->mime_type = g_empty_string;
+    }
+    params->net_error_code = webMediaPlayer->GetWebURLErrorReason();
+    params->video_width = webMediaPlayer->NaturalSize().width();
+    params->video_height = webMediaPlayer->NaturalSize().height();
+  }
+  freeze_time_recorder_.Reset();
+  played_time_recorder_.Reset();
+  media_player_waiting_cnt_ = 0;
+  return params;
+}
+
+std::string HTMLMediaElementUtils::GetMainUrl() const {
+  KURL url;
+  auto page = htmlMediaElement_->GetDocument().GetPage();
+  if (page && page->MainFrame() && page->MainFrame()->IsLocalFrame()) {
+      url = DynamicTo<LocalFrame>(page->MainFrame())->GetDocument()->Url();
+  } else {
+    url = htmlMediaElement_->GetDocument().Url();
+  }
+
+  GURL main_url;
+  if (!url.IsEmpty() && url.IsValid()) {
+    main_url = GURL(url.GetString().Utf8().data());
+  }
+  return main_url.spec();
 }
 #endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 

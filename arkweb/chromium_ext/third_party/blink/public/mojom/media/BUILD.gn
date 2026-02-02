@@ -1,0 +1,13 @@
+# Copyright (c) Huawei Technologies Co., Ltd. 2022-2026. All rights reserved.
+ 
+import("//mojo/public/tools/bindings/mojom.gni")
+ 
+mojom("mojom") {
+  sources = [
+    "video_experience_reporter.mojom",
+  ]
+ 
+  public_deps = [
+    "//url/mojom:url_mojom_gurl",
+  ]
+}

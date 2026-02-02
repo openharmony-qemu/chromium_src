@@ -635,7 +635,6 @@ class MockNWebDelegate : public NWebDelegateInterface {
                const std::vector<int32_t>& pressedCodes,
                int32_t source),
               (override));
-  MOCK_METHOD(void, ReloadIgnoreCache, (), (override));
 
 #if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
   MOCK_METHOD(void, GetOverScrollOffset, (float*, float*), (override));

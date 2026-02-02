@@ -1069,9 +1069,6 @@ class NWebImpl : public NWeb {
   int SetUrlTrustListWithErrMsg(const std::string& urlTrustList,
                                 std::string& detailErrMsg) override;
 
-  int SetUrlTrustListWithErrMsg(const std::string& urlTrustList,
-      bool allowOpaqueOrigin, bool supportWildcard, std::string& detailErrMsg) override;
-
 #if BUILDFLAG(ARKWEB_DISPLAY_CUTOUT)
   void OnSafeInsetsChange(int left, int top, int right, int bottom) override;
 #endif

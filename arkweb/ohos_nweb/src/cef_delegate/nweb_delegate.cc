@@ -5710,7 +5710,7 @@ bool NWebDelegate::WebPageSnapshot(const char* id,
 
 #if BUILDFLAG(ARKWEB_URL_TRUST_LIST)
 int NWebDelegate::SetUrlTrustListWithErrMsg(const std::string& urlTrustList,
-    bool allowOpaqueOrigin, bool supportWildcard, std::string& detailErrMsg) {
+                                            std::string& detailErrMsg) {
   LOG(INFO) << "NWebDelegate::SetUrlTrustListErrMsg";
   if (!GetBrowser().get()) {
     LOG(ERROR)
@@ -5718,8 +5718,8 @@ int NWebDelegate::SetUrlTrustListWithErrMsg(const std::string& urlTrustList,
     return static_cast<int>(ohos_safe_browsing::UrlListSetResult::INIT_ERROR);
   }
   CefString detailErrMsgCef;
-  int res = GetBrowser()->SetUrlTrustListWithErrMsg(urlTrustList,
-      allowOpaqueOrigin, supportWildcard, detailErrMsgCef);
+  int res =
+      GetBrowser()->SetUrlTrustListWithErrMsg(urlTrustList, detailErrMsgCef);
   detailErrMsg = detailErrMsgCef.ToString();
   return res;
 }

@@ -4102,6 +4102,39 @@ void NWebImpl::RunJavaScriptInFrames(RunJavaScriptParam param,
   nweb_delegate_->RunJavaScriptInFrames(param, callback);
 }
 
+void NWebImpl::GetAllFrameInfos(OnReceiveFrameInfosCallback callback) {
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E(
+        "remove web app client extension callback failed, nweb delegate is "
+        "nullptr, nweb_id = %{public}u",
+        nweb_id_);
+    return;
+  }
+  if (callback == nullptr) {
+    LOG(WARNING) << "NWebImpl::GetAllFrameInfos callback is nullptr";
+    return;
+  }
+
+  nweb_delegate_->GetAllFrameInfos(callback);
+}
+
+void NWebImpl::GetLastJavaScriptProxyCallingFrameInfo(
+    OnLastJavaScriptProxyCallingFrameInfoCallback callback) {
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E(
+        "remove web app client extension callback failed, nweb delegate is "
+        "nullptr, nweb_id = %{public}u",
+        nweb_id_);
+    return;
+  }
+  if (callback == nullptr) {
+    LOG(WARNING) << "NWebImpl::GetLastJavaScriptProxyCallingFrameInfo callback is nullptr";
+    return;
+  }
+
+  nweb_delegate_->GetLastJavaScriptProxyCallingFrameInfo(callback);
+}
+
 void NWebImpl::OpenDevtools(std::unique_ptr<OpenDevToolsParam> param) {
   if (nweb_delegate_ == nullptr) {
     LOG(WARNING) << "OpenDevtools failed, no nweb_delegate";

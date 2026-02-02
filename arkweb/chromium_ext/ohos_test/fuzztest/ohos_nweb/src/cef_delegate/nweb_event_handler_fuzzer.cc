@@ -730,6 +730,9 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
       bool recursive,
       IsolatedWorld world,
       CefRefPtr<CefJavaScriptResultCallback> callback) override {}
+void GetAllFrameInfos(CefRefPtr<CefFrameInfosCallback> callback) override {}
+void GetLastJavaScriptProxyCallingFrameInfo(
+    CefRefPtr<CefLastJavaScriptProxyCallingFrameInfoCallback> callback) override {}
 #endif
 #endif  // BUILDFLAG(IS_OHOS)
   int PrerenderPage(const CefString& url,

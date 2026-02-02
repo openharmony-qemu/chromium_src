@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include <atomic>
 #include <fstream>
 #include <map>
 #include <regex>
@@ -20,6 +21,7 @@
 
 #include "base/files/file_enumerator.h"
 #include "base/files/file_util.h"
+#include "base/synchronization/lock.h"
 #include "base/task/thread_pool.h"
 #include "base/time/time.h"
 #include "base/trace_event/trace_event.h"
@@ -103,6 +105,8 @@ class ResponseCache {
   static base::NoDestructor<std::unique_ptr<base::FilePath>> cache_dir_path_;
   static base::NoDestructor<std::map<std::string, std::shared_ptr<ResponseCacheMetadata>>>
       cache_metadata_map_;
+  static base::Lock cache_metadata_map_lock_;
+  static std::atomic<bool> cache_cleared_;
 
   std::string url_;
   std::string url_hash_;

@@ -26,10 +26,10 @@
 using namespace OHOS::NWeb;
 
 namespace {
-  constexpr uint8_t MAX_STRING_LENGTH = UINT8_MAX;
-  constexpr uint32_t MAX_LOG_LEVEL = 5;
-  constexpr int32_t HILOG_ADAPTER_TESTS_NUM = 1024;
-  static int32_t HILOG_ADAPTER_TESTS_COUNT = 0;
+    constexpr uint8_t MAX_STRING_LENGTH = UINT8_MAX;
+    constexpr uint32_t MAX_LOG_LEVEL = 5;
+    constexpr int32_t HILOG_ADAPTER_TESTS_NUM = 1024;
+    static int32_t HILOG_ADAPTER_TESTS_COUNT = 0;
 }
 
 void PrintLogFuzzTest(const uint8_t* data, size_t size) {

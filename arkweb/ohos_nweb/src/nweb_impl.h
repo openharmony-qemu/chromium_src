@@ -79,10 +79,6 @@ struct RunJavaScriptParam;
 #include "ohos_nweb_ex/core/extension/nweb_app_client_extension_dispatcher.h"
 #endif
 
-#if BUILDFLAG(ARKWEB_USERAGENT)
-#include "nweb_user_agent_metadata.h"
-#endif
-
 #if BUILDFLAG(ARKWEB_READER_MODE)
 #include "capi/nweb_extension_distill_item.h"
 #endif // ARKWEB_READER_MODE
@@ -957,13 +953,6 @@ class NWebImpl : public NWeb {
   static void SetAppCustomUserAgent(const std::string& userAgent);
   static void SetUserAgentForHosts(const std::string& userAgent,
                                    const std::vector<std::string>& hosts);
-  static bool GetUserAgentClientHintsEnabled();
-  static void SetUserAgentClientHintsEnabled(bool enabled);
-  void SetUserAgentMetadata(
-      const std::string& user_agent,
-      std::shared_ptr<NWebUserAgentMetadata> metadata) override;
-  std::shared_ptr<NWebUserAgentMetadata> GetUserAgentMetadata(
-      const std::string& user_agent) override;
 #endif
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)

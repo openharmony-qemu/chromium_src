@@ -1325,19 +1325,7 @@ class MockNWebDelegate : public NWebDelegateInterface {
 
 #if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
   MOCK_METHOD(void, SetFocusWebId, (int32_t nweb_id), (override));
-#endif
-
-#if BUILDFLAG(ARKWEB_USERAGENT)
-  MOCK_METHOD(void,
-              SetUserAgentMetadata,
-              (const std::string& user_agent,
-               std::shared_ptr<NWebUserAgentMetadata> metadata),
-              (override));
-  MOCK_METHOD(std::shared_ptr<NWebUserAgentMetadata>,
-              GetUserAgentMetadata,
-              (const std::string& user_agent),
-              (override));
-#endif
+#endif 
 };
 }  // namespace OHOS::NWeb
 

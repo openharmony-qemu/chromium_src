@@ -302,7 +302,6 @@ void GLSurfacePresentationHelper::CheckPendingFrames() {
       else
         std::move(frame.callback).Run(gfx::PresentationFeedback::Failure());
     }
-
     if (gpu_timing_client_) {
       gpu_timing_client_->ClearQuery();
     }

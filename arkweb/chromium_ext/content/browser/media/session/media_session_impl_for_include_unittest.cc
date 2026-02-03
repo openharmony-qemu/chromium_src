@@ -397,4 +397,168 @@ TEST_F(MediaSessionImplForIncludeTest,
 }
 #endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+TEST_F(MediaSessionImplForIncludeTest, OnNotifyMeidaCastUri) {
+  ASSERT_NE(media_session_->session_ohos_, nullptr);
+  std::string media_uri = "http://www.example.com/"; 
+  ASSERT_NO_FATAL_FAILURE(media_session_->OnNotifyMeidaCastUri(media_uri));
+  media_session_->session_ohos_.reset();
+  ASSERT_NO_FATAL_FAILURE(media_session_->OnNotifyMeidaCastUri(media_uri));
+}
+
+TEST_F(MediaSessionImplForIncludeTest, CreateAVCastAdapter) {
+  ASSERT_NE(media_session_->session_ohos_, nullptr);
+  std::string media_uri = "http://www.example.com/"; 
+  ASSERT_NO_FATAL_FAILURE(media_session_->CreateAVCastAdapter());
+  media_session_->session_ohos_.reset();
+  ASSERT_NO_FATAL_FAILURE(media_session_->CreateAVCastAdapter());
+}
+
+TEST_F(MediaSessionImplForIncludeTest, HandleStopMediaCast) {
+  ASSERT_NE(media_session_->session_ohos_, nullptr);
+  std::string media_uri = "http://www.example.com/"; 
+  ASSERT_NO_FATAL_FAILURE(media_session_->HandleStopMediaCast());
+  media_session_->session_ohos_.reset();
+  ASSERT_NO_FATAL_FAILURE(media_session_->HandleStopMediaCast());
+}
+
+TEST_F(MediaSessionImplForIncludeTest, UpdateRemotePlayState) {
+  ASSERT_NE(media_session_->session_ohos_, nullptr);
+  bool is_playing = true; 
+  ASSERT_NO_FATAL_FAILURE(media_session_->UpdateRemotePlayState(is_playing));
+  media_session_->session_ohos_.reset();
+  ASSERT_NO_FATAL_FAILURE(media_session_->UpdateRemotePlayState(is_playing));
+}
+
+TEST_F(MediaSessionImplForIncludeTest, UpdateRemotePlayPosition) {
+  ASSERT_NE(media_session_->session_ohos_, nullptr);
+  int64_t position = 12345; 
+  ASSERT_NO_FATAL_FAILURE(media_session_->UpdateRemotePlayPosition(position));
+  media_session_->session_ohos_.reset();
+  ASSERT_NO_FATAL_FAILURE(media_session_->UpdateRemotePlayPosition(position));
+}
+
+TEST_F(MediaSessionImplForIncludeTest, GetMediaCastCurrentTime) {
+  std::vector<content::MediaSessionImpl::PlayerIdentifier> ids;
+  media_session_->ForAllPlayers(base::BindRepeating(
+      [](std::vector<content::MediaSessionImpl::PlayerIdentifier>* out,
+         const content::MediaSessionImpl::PlayerIdentifier& p) {
+        out->push_back(p);
+      },
+      &ids));
+  for (const auto& p : ids) {
+    media_session_->RemovePlayer(p.observer, p.player_id);
+  }
+  EXPECT_EQ(media_session_->GetMediaCastCurrentTime(), 0);
+}
+
+TEST_F(MediaSessionImplForIncludeTest, PullUpCastBackGround_NoPlayers) {
+  std::vector<content::MediaSessionImpl::PlayerIdentifier> ids;
+  media_session_->ForAllPlayers(base::BindRepeating(
+      [](std::vector<content::MediaSessionImpl::PlayerIdentifier>* out,
+         const content::MediaSessionImpl::PlayerIdentifier& p) {
+        out->push_back(p);
+      },
+      &ids));
+  for (const auto& p : ids) {
+    media_session_->RemovePlayer(p.observer, p.player_id);
+  }
+  ASSERT_NO_FATAL_FAILURE(media_session_->PullUpCastBackGround("device1"));
+}
+
+TEST_F(MediaSessionImplForIncludeTest, PullUpCastBackGround_WithPlayer) {
+  int player_id = player_observer_->StartNewPlayer();
+  media_session_->AddPlayer(player_observer_.get(), player_id);
+  ASSERT_NO_FATAL_FAILURE(media_session_->PullUpCastBackGround("test_device"));
+  media_session_->RemovePlayer(player_observer_.get(), player_id);
+}
+
+TEST_F(MediaSessionImplForIncludeTest, MediaCastStopped_NoPlayers) {
+  std::vector<content::MediaSessionImpl::PlayerIdentifier> ids;
+  media_session_->ForAllPlayers(base::BindRepeating(
+      [](std::vector<content::MediaSessionImpl::PlayerIdentifier>* out,
+         const content::MediaSessionImpl::PlayerIdentifier& p) {
+        out->push_back(p);
+      },
+      &ids));
+  for (const auto& p : ids) {
+    media_session_->RemovePlayer(p.observer, p.player_id);
+  }
+  ASSERT_NO_FATAL_FAILURE(media_session_->MediaCastStopped());
+}
+
+TEST_F(MediaSessionImplForIncludeTest, MediaCastStopped_WithPlayer) {
+  int player_id = player_observer_->StartNewPlayer();
+  media_session_->AddPlayer(player_observer_.get(), player_id);
+  ASSERT_NO_FATAL_FAILURE(media_session_->MediaCastStopped());
+  media_session_->RemovePlayer(player_observer_.get(), player_id);
+}
+
+TEST_F(MediaSessionImplForIncludeTest, UpdateUiPlayState_NoPlayers) {
+  std::vector<content::MediaSessionImpl::PlayerIdentifier> ids;
+  media_session_->ForAllPlayers(base::BindRepeating(
+      [](std::vector<content::MediaSessionImpl::PlayerIdentifier>* out,
+         const content::MediaSessionImpl::PlayerIdentifier& p) {
+        out->push_back(p);
+      },
+      &ids));
+  for (const auto& p : ids) {
+    media_session_->RemovePlayer(p.observer, p.player_id);
+  }
+  ASSERT_NO_FATAL_FAILURE(media_session_->UpdateUiPlayState(true));
+  ASSERT_NO_FATAL_FAILURE(media_session_->UpdateUiPlayState(false));
+}
+
+TEST_F(MediaSessionImplForIncludeTest, UpdateUiPlayState_WithPlayer) {
+  int player_id = player_observer_->StartNewPlayer();
+  media_session_->AddPlayer(player_observer_.get(), player_id);
+  ASSERT_NO_FATAL_FAILURE(media_session_->UpdateUiPlayState(true));
+  ASSERT_NO_FATAL_FAILURE(media_session_->UpdateUiPlayState(false));
+  media_session_->RemovePlayer(player_observer_.get(), player_id);
+}
+
+TEST_F(MediaSessionImplForIncludeTest, UpdateUiPlayPosition_NoPlayers) {
+  std::vector<content::MediaSessionImpl::PlayerIdentifier> ids;
+  media_session_->ForAllPlayers(base::BindRepeating(
+      [](std::vector<content::MediaSessionImpl::PlayerIdentifier>* out,
+         const content::MediaSessionImpl::PlayerIdentifier& p) {
+        out->push_back(p);
+      },
+      &ids));
+  for (const auto& p : ids) {
+    media_session_->RemovePlayer(p.observer, p.player_id);
+  }
+  ASSERT_NO_FATAL_FAILURE(media_session_->UpdateUiPlayPosition(1000));
+  ASSERT_NO_FATAL_FAILURE(media_session_->UpdateUiPlayPosition(0));
+  ASSERT_NO_FATAL_FAILURE(media_session_->UpdateUiPlayPosition(-1));
+}
+
+TEST_F(MediaSessionImplForIncludeTest, UpdateUiPlayPosition_WithPlayer) {
+  int player_id = player_observer_->StartNewPlayer();
+  media_session_->AddPlayer(player_observer_.get(), player_id);
+  ASSERT_NO_FATAL_FAILURE(media_session_->UpdateUiPlayPosition(5000));
+  ASSERT_NO_FATAL_FAILURE(media_session_->UpdateUiPlayPosition(0));
+  media_session_->RemovePlayer(player_observer_.get(), player_id);
+}
+
+TEST_F(MediaSessionImplForIncludeTest, IsPageBackground) {
+  std::vector<content::MediaSessionImpl::PlayerIdentifier> ids;
+  media_session_->ForAllPlayers(base::BindRepeating(
+      [](std::vector<content::MediaSessionImpl::PlayerIdentifier>* out,
+         const content::MediaSessionImpl::PlayerIdentifier& p) {
+        out->push_back(p);
+      },
+      &ids));
+  for (const auto& p : ids) {
+    media_session_->RemovePlayer(p.observer, p.player_id);
+  }
+  ASSERT_NO_FATAL_FAILURE(media_session_->IsPageBackground()); 
+}
+
+TEST_F(MediaSessionImplForIncludeTest, SetPauseByAvcast) {
+  ASSERT_NO_FATAL_FAILURE(media_session_->SetPauseByAvcast(true));
+  ASSERT_NO_FATAL_FAILURE(media_session_->SetPauseByAvcast(false));
+  ASSERT_NO_FATAL_FAILURE(media_session_->SetPauseByAvcast(true));
+}
+#endif  // BUILDFLAG(ARKWEB_MEDIA_CAST)
 }  // namespace content

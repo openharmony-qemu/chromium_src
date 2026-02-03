@@ -893,8 +893,7 @@ class MockNWebDelegate : public NWebDelegateInterface {
 #if BUILDFLAG(ARKWEB_URL_TRUST_LIST)
   MOCK_METHOD(int,
               SetUrlTrustListWithErrMsg,
-              (const std::string& urlTrustList, bool allowOpaqueOrigin,
-               bool supportWildcard, std::string& detailErrMsg),
+              (const std::string& urlTrustList, std::string& detailErrMsg),
               (override));
 #endif
 

@@ -741,8 +741,6 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   bool IsAdsBlockEnabledForCurPage() override { return false; }
   void EnableAdsBlock(bool enable) override {}
   int SetUrlTrustListWithErrMsg(const CefString& urlTrustList,
-                                bool allowOpaqueOrigin,
-                                bool supportWildcard,
                                 CefString& detailErrMsg) override {
     return 0;
   }
@@ -900,8 +898,6 @@ class MockCefBrowser : public ArkWebBrowserExt {
   bool IsAdsBlockEnabledForCurPage() override { return false; }
   void EnableAdsBlock(bool enable) override {}
   int SetUrlTrustListWithErrMsg(const CefString& urlTrustList,
-                                bool allowOpaqueOrigin,
-                                bool supportWildcard,
                                 CefString& detailErrMsg) override {
     return 0;
   }

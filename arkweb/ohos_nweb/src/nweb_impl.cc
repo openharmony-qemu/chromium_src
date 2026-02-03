@@ -6579,22 +6579,7 @@ int NWebImpl::SetUrlTrustListWithErrMsg(const std::string& urlTrustList,
     return static_cast<int>(ohos_safe_browsing::UrlListSetResult::INIT_ERROR);
   }
 
-  return nweb_delegate_->SetUrlTrustListWithErrMsg(urlTrustList,
-    true, false, detailErrMsg);
-#else
-  return -1;
-#endif
-}
-
-int NWebImpl::SetUrlTrustListWithErrMsg(const std::string& urlTrustList,
-    bool allowOpaqueOrigin, bool supportWildcard, std::string& detailErrMsg) {
-#if BUILDFLAG(ARKWEB_URL_TRUST_LIST)
-  if (nweb_delegate_ == nullptr) {
-    return static_cast<int>(ohos_safe_browsing::UrlListSetResult::INIT_ERROR);
-  }
-
-  return nweb_delegate_->SetUrlTrustListWithErrMsg(urlTrustList,
-    allowOpaqueOrigin, supportWildcard, detailErrMsg);
+  return nweb_delegate_->SetUrlTrustListWithErrMsg(urlTrustList, detailErrMsg);
 #else
   return -1;
 #endif

@@ -392,7 +392,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   bool IsAdsBlockEnabled() override { return false; }
   bool IsAdsBlockEnabledForCurPage() override { return false; }
   void EnableAdsBlock(bool) override {}
-  int SetUrlTrustListWithErrMsg(const CefString&, bool, bool, CefString&) override { return 0; }
+  int SetUrlTrustListWithErrMsg(const CefString&, CefString&) override { return 0; }
   void EnableSafeBrowsingDetection(bool, bool) override {}
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   int InsertBackForwardEntry(int, const CefString&) override { return 0; }

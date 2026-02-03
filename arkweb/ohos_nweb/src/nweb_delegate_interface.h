@@ -454,7 +454,6 @@ class NWebDelegateInterface
   virtual void GetImages(std::shared_ptr<NWebBoolValueCallback> callback) = 0;
   virtual void RemoveCache(bool include_disk_files) = 0;
   virtual void StopFling() = 0;
-  virtual void ReloadIgnoreCache() = 0;
 
 #if BUILDFLAG(ARKWEB_NAVIGATION)
   virtual std::shared_ptr<NWebHistoryList> GetHistoryList() = 0;

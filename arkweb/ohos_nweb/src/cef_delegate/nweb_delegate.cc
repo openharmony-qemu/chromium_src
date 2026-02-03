@@ -6827,13 +6827,4 @@ std::shared_ptr<NWebUserAgentMetadata> NWebDelegate::GetUserAgentMetadata(
   return metadata;
 }
 #endif
-
-void NWebDelegate::ReloadIgnoreCache() {
-  if (GetBrowser() == nullptr) {
-    LOG(ERROR) << "reloadignorecache can not get browser";
-    return;
-  }
-
-  GetBrowser()->ReloadIgnoreCache();
-}
 }  // namespace OHOS::NWeb

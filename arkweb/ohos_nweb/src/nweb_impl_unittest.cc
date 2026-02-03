@@ -8645,18 +8645,5 @@ TEST_F(NWebImplTest,
   EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
 }
 #endif
-
-TEST_F(NWebImplTest, ReloadIgnoreCache001) {
-  nweb_impl_->nweb_delegate_ = nullptr;
-  EXPECT_CALL(*mock_delegate_, ReloadIgnoreCache()).Times(0);
-  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
-}
-
-TEST_F(NWebImplTest, ReloadIgnoreCache002) {
-  nweb_impl_->nweb_delegate_ = mock_delegate_;
-  EXPECT_CALL(*mock_delegate_, ReloadIgnoreCache()).Times(1);
-  nweb_impl_->ReloadIgnoreCache();
-  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
-}
 }  // namespace OHOS::NWeb
                           

@@ -7940,10 +7940,3 @@ std::shared_ptr<NWebEngineInitArgs> NWebImpl::GetSaveInitargs() {
   return save_initargs_;
 }
 #endif
-
-void NWebImpl::ReloadIgnoreCache() {
-  if (nweb_delegate_ == nullptr) {
-    return;
-  }
-  nweb_delegate_->ReloadIgnoreCache();
-}

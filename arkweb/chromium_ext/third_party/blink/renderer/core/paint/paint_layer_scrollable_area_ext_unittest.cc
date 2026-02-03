@@ -188,6 +188,100 @@ TEST_P(PaintLayerTest, HasScrollbarAvoidCorner001) {
   EXPECT_FALSE(scrollable_area_ext->HasScrollbarAvoidCorner());
 }
 
+TEST_P(PaintLayerTest, UpdateScrollbarLengthOrCreateWidthScale001) {
+  SetBodyInnerHTML(R"HTML(
+    <div id='scroll' style='width: 100px; height: 100px; overflow: scroll;
+        will-change: transform'>
+      <div id='content' style='position: relative; background: blue;
+          width: 2000px; height: 2000px'></div>
+    </div>
+  )HTML");
+ 
+  PaintLayer* scroll_layer = GetPaintLayerByElementId("scroll");
+  ASSERT_TRUE(scroll_layer);
+  PaintLayerScrollableArea* scrollable_area = scroll_layer->GetScrollableArea();
+  ASSERT_TRUE(scrollable_area);
+  PaintLayerScrollableAreaExt* scrollable_area_ext = scrollable_area->AsPaintLayerScrollableAreaExt();
+  ASSERT_TRUE(scrollable_area_ext);
+  ASSERT_TRUE(scrollable_area_ext->GetLayoutBox());
+  Page* page = scrollable_area_ext->GetLayoutBox()->GetDocument().GetPage();
+  ASSERT_TRUE(page);
+  ASSERT_TRUE(scrollable_area_ext->HasHorizontalScrollbar());
+  ASSERT_TRUE(scrollable_area_ext->HasVerticalScrollbar());
+  scrollable_area_ext->UpdateScrollbarLengthOrCreateWidthScale();
+  ASSERT_TRUE(scrollable_area_ext->is_pinch_gesture_active_);
+}
+ 
+TEST_P(PaintLayerTest, UpdateScrollbarLengthOrCreateWidthScale002) {
+  SetBodyInnerHTML(R"HTML(
+    <div id='scroll' style='width: 100px; height: 100px; overflow: scroll hidden;
+        will-change: transform'>
+      <div id='content' style='position: relative; background: blue;
+          width: 2000px; height: 2000px'></div>
+    </div>
+  )HTML");
+ 
+  PaintLayer* scroll_layer = GetPaintLayerByElementId("scroll");
+  ASSERT_TRUE(scroll_layer);
+  PaintLayerScrollableArea* scrollable_area = scroll_layer->GetScrollableArea();
+  ASSERT_TRUE(scrollable_area);
+  PaintLayerScrollableAreaExt* scrollable_area_ext = scrollable_area->AsPaintLayerScrollableAreaExt();
+  ASSERT_TRUE(scrollable_area_ext);
+  ASSERT_TRUE(scrollable_area_ext->GetLayoutBox());
+  Page* page = scrollable_area_ext->GetLayoutBox()->GetDocument().GetPage();
+  ASSERT_TRUE(page);
+  ASSERT_TRUE(scrollable_area_ext->HasHorizontalScrollbar());
+  ASSERT_FALSE(scrollable_area_ext->HasVerticalScrollbar());
+  scrollable_area_ext->UpdateScrollbarLengthOrCreateWidthScale();
+  ASSERT_TRUE(scrollable_area_ext->is_pinch_gesture_active_);
+}
+ 
+TEST_P(PaintLayerTest, UpdateScrollbarLengthOrCreateWidthScale003) {
+  SetBodyInnerHTML(R"HTML(
+    <div id='scroll' style='width: 100px; height: 100px; overflow: hidden scroll;
+        will-change: transform'>
+      <div id='content' style='position: relative; background: blue;
+          width: 2000px; height: 2000px'></div>
+    </div>
+  )HTML");
+ 
+  PaintLayer* scroll_layer = GetPaintLayerByElementId("scroll");
+  ASSERT_TRUE(scroll_layer);
+  PaintLayerScrollableArea* scrollable_area = scroll_layer->GetScrollableArea();
+  ASSERT_TRUE(scrollable_area);
+  PaintLayerScrollableAreaExt* scrollable_area_ext = scrollable_area->AsPaintLayerScrollableAreaExt();
+  ASSERT_TRUE(scrollable_area_ext);
+  ASSERT_TRUE(scrollable_area_ext->GetLayoutBox());
+  Page* page = scrollable_area_ext->GetLayoutBox()->GetDocument().GetPage();
+  ASSERT_TRUE(page);
+  ASSERT_FALSE(scrollable_area_ext->HasHorizontalScrollbar());
+  ASSERT_TRUE(scrollable_area_ext->HasVerticalScrollbar());
+  scrollable_area_ext->UpdateScrollbarLengthOrCreateWidthScale();
+  ASSERT_TRUE(scrollable_area_ext->is_pinch_gesture_active_);
+}
+ 
+TEST_P(PaintLayerTest, UpdateScrollbar001) {
+  SetBodyInnerHTML(R"HTML(
+    <div id='scroll' style='width: 100px; height: 100px; overflow: scroll;
+        will-change: transform'>
+      <div id='content' style='position: relative; background: blue;
+          width: 2000px; height: 2000px'></div>
+    </div>
+  )HTML");
+ 
+  PaintLayer* scroll_layer = GetPaintLayerByElementId("scroll");
+  ASSERT_TRUE(scroll_layer);
+  PaintLayerScrollableArea* scrollable_area = scroll_layer->GetScrollableArea();
+  ASSERT_TRUE(scrollable_area);
+  PaintLayerScrollableAreaExt* scrollable_area_ext = scrollable_area->AsPaintLayerScrollableAreaExt();
+  ASSERT_TRUE(scrollable_area_ext);
+  ASSERT_TRUE(scrollable_area_ext->GetLayoutBox());
+  Page* page = scrollable_area_ext->GetLayoutBox()->GetDocument().GetPage();
+  ASSERT_TRUE(page);
+  scrollable_area_ext->UpdateScrollbar();
+  ASSERT_TRUE(scrollable_area_ext->HasHorizontalScrollbar());
+  ASSERT_TRUE(scrollable_area_ext->HasVerticalScrollbar());
+}
 }
 
 #if BUILDFLAG(ARKWEB_TEST)

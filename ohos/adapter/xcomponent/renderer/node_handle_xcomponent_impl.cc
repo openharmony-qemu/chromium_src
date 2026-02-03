@@ -430,11 +430,6 @@ NodeHandleXComponentImpl::NodeHandleXComponentImpl(const std::string& id,
 
 __attribute__((no_sanitize("cfi", "cfi-icall")))
 NodeHandleXComponentImpl::~NodeHandleXComponentImpl() {
-  if (node_handle_) {
-    UnRegisterCallBack();
-    GetNativeNodeAPI()->disposeNode(node_handle_);
-    node_handle_ = nullptr;
-  }
   if (surface_holder_) {
     nodeHandle::NodeHandleImpl::GetInstance().SurfaceHolderDispose(
         surface_holder_);
@@ -444,6 +439,11 @@ NodeHandleXComponentImpl::~NodeHandleXComponentImpl() {
     nodeHandle::NodeHandleImpl::GetInstance().SurfaceCallbackDispose(
         surface_callback_);
     surface_callback_ = nullptr;
+  }
+  if (node_handle_) {
+    UnRegisterCallBack();
+    GetNativeNodeAPI()->disposeNode(node_handle_);
+    node_handle_ = nullptr;
   }
 }
 

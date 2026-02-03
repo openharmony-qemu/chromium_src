@@ -85,6 +85,7 @@ arkweb_services_network_sources = [
 
 arkweb_services_network_unittest_sources = [
   "//arkweb/chromium_ext/services/network/arkweb_network_service_ext_unittest.cc",
+  "//arkweb/chromium_ext/services/network/throttling/throttling_network_transaction_for_include_unittest.cc",
 ]
 
 arkweb_power_save_blocker_source = [

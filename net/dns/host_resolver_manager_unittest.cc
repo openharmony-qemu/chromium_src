@@ -7,8 +7,6 @@
 #pragma allow_unsafe_buffers
 #endif
 
-#include "net/dns/host_resolver_manager_unittest.h"
-
 #include <iterator>
 #include <limits>
 #include <optional>
@@ -106,6 +104,14 @@
 #include "url/gurl.h"
 #include "url/scheme_host_port.h"
 #include "url/url_constants.h"
+
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#define private public
+#include "net/dns/host_resolver_manager_unittest.h"
+#undef private
+#else
+#include "net/dns/host_resolver_manager_unittest.h"
+#endif
 
 #if BUILDFLAG(ENABLE_MDNS)
 #include "net/dns/mdns_client_impl.h"
@@ -15251,8 +15257,8 @@ TEST_F(HostResolverManagerTest,
   IPv4AddressLiteralInIPv6OnlyNetworkBadAddressTest(false);
 }
 
-#if BUILDFLAG(ARKWEB_TEST)
+#if BUILDFLAG(ARKWEB_UNITTESTS)
 #include "arkweb/chromium_ext/net/dns/host_resolver_manager_for_include_unittest.cc"
-#endif  // ARKWEB_TEST
+#endif  // ARKWEB_UNITTESTS
 
 }  // namespace net

@@ -277,6 +277,17 @@ int SSLConnectJob::DoTransportConnectComplete(int result) {
   connection_attempts_.insert(connection_attempts_.end(),
                               connection_attempts.begin(),
                               connection_attempts.end());
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  resolve_info_ = nested_connect_job_->GetResolveInfo();
+  ConnectionAttempts extra_connection_attempts =
+      nested_connect_job_->GetExtraConnectionAttempts();
+  extra_connection_attempts_.insert(extra_connection_attempts_.end(),
+                                    extra_connection_attempts.begin(),
+                                    extra_connection_attempts.end());
+  SetExtraConnectionAttemptsToSocket(extra_connection_attempts_);
+#endif
+
   if (result == OK) {
     next_state_ = STATE_SSL_CONNECT;
     nested_socket_ = nested_connect_job_->PassSocket();
@@ -304,6 +315,17 @@ int SSLConnectJob::DoSOCKSConnect() {
 
 int SSLConnectJob::DoSOCKSConnectComplete(int result) {
   resolve_error_info_ = nested_connect_job_->GetResolveErrorInfo();
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  resolve_info_ = nested_connect_job_->GetResolveInfo();
+  ConnectionAttempts extra_connection_attempts =
+      nested_connect_job_->GetExtraConnectionAttempts();
+  extra_connection_attempts_.insert(extra_connection_attempts_.end(),
+                                    extra_connection_attempts.begin(),
+                                    extra_connection_attempts.end());
+  SetExtraConnectionAttemptsToSocket(extra_connection_attempts_);
+#endif
+
   if (result == OK) {
     next_state_ = STATE_SSL_CONNECT;
     nested_socket_ = nested_connect_job_->PassSocket();
@@ -330,6 +352,16 @@ int SSLConnectJob::DoTunnelConnect() {
 int SSLConnectJob::DoTunnelConnectComplete(int result) {
   resolve_error_info_ = nested_connect_job_->GetResolveErrorInfo();
   nested_socket_ = nested_connect_job_->PassSocket();
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  resolve_info_ = nested_connect_job_->GetResolveInfo();
+  ConnectionAttempts extra_connection_attempts =
+      nested_connect_job_->GetExtraConnectionAttempts();
+  extra_connection_attempts_.insert(extra_connection_attempts_.end(),
+                                    extra_connection_attempts.begin(),
+                                    extra_connection_attempts.end());
+  SetExtraConnectionAttemptsToSocket(extra_connection_attempts_);
+#endif
 
   if (result < 0) {
     // Extract the information needed to prompt for appropriate proxy
@@ -465,6 +497,9 @@ int SSLConnectJob::DoSSLConnectComplete(int result) {
 
   if (result == OK || IsCertificateError(result)) {
     SetSocket(std::move(ssl_socket_), std::move(dns_aliases_));
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+    SetExtraConnectionAttemptsToSocket(extra_connection_attempts_);
+#endif
   } else if (result == ERR_SSL_CLIENT_AUTH_CERT_NEEDED) {
     ssl_cert_request_info_ = base::MakeRefCounted<SSLCertRequestInfo>();
     ssl_socket_->GetSSLCertRequestInfo(ssl_cert_request_info_.get());
@@ -507,5 +542,15 @@ void SSLConnectJob::ChangePriorityInternal(RequestPriority priority) {
     nested_connect_job_->ChangePriority(priority);
   }
 }
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+ResolveInfo SSLConnectJob::GetResolveInfo() const {
+  return resolve_info_;
+}
+
+ConnectionAttempts SSLConnectJob::GetExtraConnectionAttempts() const {
+  return extra_connection_attempts_;
+}
+#endif
 
 }  // namespace net

@@ -68,6 +68,11 @@ class NET_EXPORT_PRIVATE ArkWebHttpNetworkTransactionExt : public HttpNetworkTra
   int RestartWithDirect(CompletionOnceCallback callback) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  ConnectionAttempts GetExtraConnectionAttempts() const override;
+  void CopyConnectionAttemptsFromStreamRequest() override;
+#endif
+
  private:
 #if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   int DoCreateFallbackStreamWithSecureDnsOnly();
@@ -86,6 +91,10 @@ class NET_EXPORT_PRIVATE ArkWebHttpNetworkTransactionExt : public HttpNetworkTra
 
   base::RepeatingTimer timer_;
   bool is_recording_;
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  ConnectionAttempts extra_connection_attempts_;
 #endif
 };
 

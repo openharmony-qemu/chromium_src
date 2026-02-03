@@ -423,6 +423,10 @@ class MetricsWebContentsObserver
   int64_t total_resource_count_ = 0;
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  std::string current_page_trace_id_;
+#endif
+
   base::WeakPtrFactory<MetricsWebContentsObserver> weak_ptr_factory_{this};
 
   WEB_CONTENTS_USER_DATA_KEY_DECL();

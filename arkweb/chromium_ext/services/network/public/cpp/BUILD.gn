@@ -1,0 +1,24 @@
+# Copyright (c) 2026 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//arkweb/chromium_ext/chromium_ext.gni")
+
+component("navigation_info_mojom_support") {
+  sources = arkweb_services_network_mojom_traits_sources
+  deps = [
+    "//arkweb/chromium_ext/services/network/public/mojom:mojom_navigation_info_shared",
+    "//mojo/public/cpp/base:shared_typemap_traits",
+    "//net",
+  ]
+  defines = [ "IS_NETWORK_CPP_NAVIGATION_INFO_IMPL" ]
+}

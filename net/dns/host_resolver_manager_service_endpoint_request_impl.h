@@ -57,7 +57,15 @@ class HostResolverManager::ServiceEndpointRequestImpl
 
   // These should only be called from HostResolver::Job.
   void AssignJob(base::SafeRef<Job> job);
-  void OnJobCompleted(const HostCache::Entry& results, bool obtained_securely);
+  void OnJobCompleted(const HostCache::Entry& results,
+                      bool obtained_securely
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                      ,
+                      int dns_status,
+                      const std::vector<TaskType>& finished_tasks,
+                      const std::vector<IPEndPoint>& truncation_results
+#endif
+  );
   void OnJobCancelled();
   void OnServiceEndpointsChanged();
 
@@ -71,6 +79,23 @@ class HostResolverManager::ServiceEndpointRequestImpl
   HostCache* host_cache() const {
     return resolve_context_ ? resolve_context_->host_cache() : nullptr;
   }
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  void set_resolve_info(int error_code,
+                        int dns_status,
+                        const std::vector<TaskType> finished_tasks,
+                        const std::vector<IPEndPoint>& truncation_results);
+  ResolveInfo GetResolveInfo() const override { return resolve_info_; }
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  void MaybeModifyResolveLocallyResults(
+      HostCache::Entry& out_results,
+      std::vector<IPEndPoint>& truncation_results);
+  void MaybeModifyResolveLocallyResultsAndUpdateResolveInfo(
+      HostCache::Entry& out_results,
+      int dns_status);
+#endif
+#endif
 
   base::WeakPtr<ServiceEndpointRequestImpl> GetWeakPtr();
 
@@ -131,6 +156,11 @@ class HostResolverManager::ServiceEndpointRequestImpl
   std::optional<base::SafeRef<Job>> job_;
 
   ResolveErrorInfo error_info_;
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  ResolveInfo resolve_info_;
+  bool is_for_arkweb_ex_{false};
+#endif
 
   SEQUENCE_CHECKER(sequence_checker_);
 

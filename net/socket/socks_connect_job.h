@@ -106,6 +106,11 @@ class NET_EXPORT_PRIVATE SOCKSConnectJob : public ConnectJob,
   bool HasEstablishedConnection() const override;
   ResolveErrorInfo GetResolveErrorInfo() const override;
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  ResolveInfo GetResolveInfo() const override;
+  ConnectionAttempts GetExtraConnectionAttempts() const override;
+#endif
+
   // Returns the handshake timeout used by SOCKSConnectJobs.
   static base::TimeDelta HandshakeTimeoutForTesting();
 
@@ -157,6 +162,10 @@ class NET_EXPORT_PRIVATE SOCKSConnectJob : public ConnectJob,
 #if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
   // Only for transport_connect_job
   int timeout_override_for_nested_job_{0};
+#endif
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  ResolveInfo resolve_info_;
+  ConnectionAttempts extra_connection_attempts_;
 #endif
 };
 

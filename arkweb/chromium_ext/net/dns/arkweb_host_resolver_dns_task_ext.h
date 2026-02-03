@@ -56,7 +56,8 @@ class NET_EXPORT_PRIVATE ArkWebHostResolverDnsTaskExt final {
   void MaybeModifyInsecureDnsTaskResolveResults(
       const std::string& host,
       bool secure_dns_fallback_available,
-      HostCache::Entry& out_results);
+      HostCache::Entry& out_results,
+      std::vector<IPEndPoint>& truncation_results);
 #endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
 };
 

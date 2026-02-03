@@ -82,6 +82,10 @@ class FakeServiceEndpointRequest : public HostResolver::ServiceEndpointRequest {
   ResolveErrorInfo GetResolveErrorInfo() override;
   void ChangeRequestPriority(RequestPriority priority) override;
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  ResolveInfo GetResolveInfo() const override { return {}; }
+#endif
+
  private:
   raw_ptr<Delegate> delegate_;
 

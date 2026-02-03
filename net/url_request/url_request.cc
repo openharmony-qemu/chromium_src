@@ -641,7 +641,12 @@ URLRequest::URLRequest(base::PassKey<URLRequestContext> pass_key,
       redirect_limit_(kMaxRedirects),
       priority_(priority),
       creation_time_(base::TimeTicks::Now()),
-      traffic_annotation_(traffic_annotation) {
+      traffic_annotation_(traffic_annotation)
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+      ,
+      request_uuid_(base::Uuid::GenerateRandomV4().AsLowercaseString())
+#endif
+{
   // Sanity check out environment.
   DCHECK(base::SingleThreadTaskRunner::HasCurrentDefault());
 

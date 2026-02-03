@@ -3296,4 +3296,22 @@ void SpdySession::MaybeDisableBrokenConnectionDetection() {
   check_connection_on_radio_wakeup_ = false;
 }
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+const ResolveInfo SpdySession::GetResolveInfo() const {
+  if (socket_) {
+    return socket_->GetDnsResolveInfo();
+  }
+
+  return ResolveInfo();
+}
+
+const ConnectionAttempts SpdySession::GetExtraConnectionAttempts() const {
+  if (socket_) {
+    return socket_->GetExtraConnectionAttempts();
+  }
+
+  return ConnectionAttempts();
+}
+#endif
+
 }  // namespace net

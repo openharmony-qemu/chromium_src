@@ -758,6 +758,13 @@ int HttpStreamFactory::Job::DoInitConnectionImpl() {
       }
       negotiated_protocol_ = kProtoHTTP2;
       next_state_ = STATE_CREATE_STREAM;
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+      resolve_info_ = existing_spdy_session_->GetResolveInfo();
+      if (delegate_) {
+        delegate_->AddExtraConnectionAttemptsToRequest(
+            this, existing_spdy_session_->GetExtraConnectionAttempts());
+      }
+#endif
       return OK;
     }
   }
@@ -926,6 +933,15 @@ int HttpStreamFactory::Job::DoInitConnectionComplete(int result) {
   }
 
   resolve_error_info_ = connection_->resolve_error_info();
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  if (using_quic_) {
+    resolve_info_ = quic_request_.GetDnsResolveInfo();
+  } else {
+    resolve_info_ = connection_->resolve_info();
+  }
+  MaybeCopyExtraConnectionAttemptsFromHandle();
+#endif
 
   // Determine the protocol (HTTP/1.1, HTTP/2, or HTTP/3). This covers both the
   // origin and some proxy cases. First, if the URL is HTTPS (or WSS), we may
@@ -1221,6 +1237,14 @@ void HttpStreamFactory::Job::OnSpdySessionAvailable(
   existing_spdy_session_ = spdy_session;
   next_state_ = STATE_CREATE_STREAM;
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  resolve_info_ = existing_spdy_session_->GetResolveInfo();
+  if (delegate_) {
+    delegate_->AddExtraConnectionAttemptsToRequest(
+        this, existing_spdy_session_->GetExtraConnectionAttempts());
+  }
+#endif
+
   // This will synchronously close |connection_|, so no need to worry about it
   // calling back into |this|.
   RunLoop(OK);
@@ -1245,6 +1269,17 @@ void HttpStreamFactory::Job::MaybeCopyConnectionAttemptsFromHandle() {
   delegate_->AddConnectionAttemptsToRequest(this,
                                             connection_->connection_attempts());
 }
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+void HttpStreamFactory::Job::MaybeCopyExtraConnectionAttemptsFromHandle() {
+  if (!connection_) {
+    return;
+  }
+
+  delegate_->AddExtraConnectionAttemptsToRequest(
+      this, connection_->GetExtraConnectionAttempts());
+}
+#endif
 
 HttpStreamFactory::JobFactory::JobFactory() = default;
 

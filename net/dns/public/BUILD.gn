@@ -8,6 +8,13 @@ if (is_android) {
 if (is_ohos) {
   import("//build/config/ohos/config.gni")
 }
+
+import("//arkweb/chromium_ext/chromium_ext.gni")
+
+if (is_arkweb_ext) {
+  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
+}
+
 source_set("public") {
   # Due to circular dependencies, should only be depended on through //net.
   # Limit visibility to //net and other source_sets with the same access
@@ -44,6 +51,10 @@ source_set("public") {
     "util.cc",
     "util.h",
   ]
+
+  if (arkweb_ext_navigation) {
+    sources += arkweb_net_public_for_ext_navigation_sources
+  }
 
   if (is_posix && !is_android && !is_ohos) {
     sources += [

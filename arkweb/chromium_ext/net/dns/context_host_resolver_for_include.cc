@@ -34,6 +34,16 @@ void ContextHostResolver::GetLocalAddress(IPEndPoint* address) {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+std::string ContextHostResolver::GetDnsServersString() {
+  if (!manager_) {
+    return std::string();
+  }
+
+  return manager_->GetDnsServersString();
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING)
 bool ContextHostResolver::NeedRetryDnsOnDnsHijack(
     const GURL& url,

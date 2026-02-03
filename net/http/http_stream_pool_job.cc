@@ -198,4 +198,12 @@ void HttpStreamPool::Job::CallOnNeedsClientAuth(SSLCertRequestInfo* cert_info) {
   delegate_->OnNeedsClientAuth(this, cert_info);
 }
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+ResolveInfo HttpStreamPool::Job::resolve_info() {
+  return attempt_manager_ && attempt_manager_->service_endpoint_request()
+             ? attempt_manager_->service_endpoint_request()->GetResolveInfo()
+             : ResolveInfo();
+}
+#endif
+
 }  // namespace net

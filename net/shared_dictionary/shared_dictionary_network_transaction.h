@@ -100,6 +100,9 @@ class NET_EXPORT SharedDictionaryNetworkTransaction : public HttpTransaction {
       base::RepeatingCallback<bool()> callback) override;
   int ResumeNetworkStart() override;
   ConnectionAttempts GetConnectionAttempts() const override;
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  ConnectionAttempts GetExtraConnectionAttempts() const override;
+#endif
   void CloseConnectionOnDestruction() override;
   bool IsMdlMatchForMetrics() const override;
 

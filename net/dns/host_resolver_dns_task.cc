@@ -119,7 +119,6 @@ void RecordResolveTimeDiff(const char* histogram_variant,
     RecordResolveTimeDiffForBucket(histogram_variant, "SlowerThan1s", diff);
   }
 }
-
 }  // namespace
 
 HostResolverDnsTask::SingleTransactionResults::SingleTransactionResults(
@@ -807,7 +806,7 @@ void HostResolverDnsTask::HandleTransactionResults(
     }
     utils->MaybeModifyInsecureDnsTaskResolveResults(
         std::string(host_.GetHostnameWithoutBrackets()),
-        secure_dns_fallback_available, legacy_results);
+        secure_dns_fallback_available, legacy_results, truncation_results_);
   }
 #endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 
@@ -987,14 +986,24 @@ void HostResolverDnsTask::OnFailure(
   // Expect this to result in destroying `this` and thus cancelling any
   // remaining transactions.
   delegate_->OnDnsTaskComplete(task_start_time_, allow_fallback,
-                               std::move(results), secure_);
+                               std::move(results), secure_
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                               ,
+                               truncation_results_
+#endif
+  );
 }
 
 void HostResolverDnsTask::OnSuccess(HostCache::Entry results) {
   net_log_.EndEvent(NetLogEventType::HOST_RESOLVER_DNS_TASK,
                     [&] { return NetLogResults(results); });
   delegate_->OnDnsTaskComplete(task_start_time_, /*allow_fallback=*/true,
-                               std::move(results), secure_);
+                               std::move(results), secure_
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                               ,
+                               truncation_results_
+#endif
+  );
 }
 
 bool HostResolverDnsTask::AnyOfTypeTransactionsRemain(

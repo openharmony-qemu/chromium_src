@@ -725,6 +725,11 @@ class CONTENT_EXPORT NavigationHandle : public base::SupportsUserData {
   virtual bool HasBeenReloadedForThisReason(ErrorPageReloadReason  reason) = 0;
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  virtual bool IsAutoReload() = 0;
+  virtual void OnReportNewNavigationInfo(const std::string& page_trace_id) = 0;
+#endif
+
 #if BUILDFLAG(IS_ANDROID)
   // Returns a reference to NavigationHandle Java counterpart.
   virtual const base::android::JavaRef<jobject>& GetJavaNavigationHandle() = 0;

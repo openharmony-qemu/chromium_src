@@ -42,6 +42,12 @@
 #include "services/network/public/cpp/features.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#include "base/base_switches.h"
+#include "base/command_line.h"
+#endif
+
 namespace net {
 
 HostResolverManager::RequestImpl::RequestImpl(
@@ -231,8 +237,22 @@ void HostResolverManager::RequestImpl::OnJobCancelled(const JobKey& job_key) {
 void HostResolverManager::RequestImpl::OnJobCompleted(
     const JobKey& job_key,
     int error,
-    bool is_secure_network_error) {
+    bool is_secure_network_error
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+    ,
+    int dns_status,
+    const std::vector<TaskType>& finished_tasks,
+    const std::vector<IPEndPoint>& truncation_results
+#endif
+) {
   set_error_info(error, is_secure_network_error);
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableNwebEx)) {
+    set_resolve_info(error, dns_status, finished_tasks, truncation_results);
+  }
+#endif
 
   CHECK(job_.has_value());
   CHECK(job_key == job_.value()->key());
@@ -347,17 +367,28 @@ int HostResolverManager::RequestImpl::DoGetParametersComplete(int rv) {
 }
 
 int HostResolverManager::RequestImpl::DoResolveLocally() {
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  int dns_status = kDnsResolvedUndefined;
+#endif
+
   std::optional<HostCache::EntryStaleness> stale_info;
   HostCache::Entry results = resolver_->ResolveLocally(
       only_ipv6_reachable_, job_key_, ip_address_, parameters_.cache_usage,
       parameters_.secure_dns_policy, parameters_.source, source_net_log_,
-      host_cache(), &tasks_, &stale_info);
+      host_cache(), &tasks_, &stale_info
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+      ,
+      dns_status, resolve_info_
+#endif
+  );
+
 #if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
   if (base::FeatureList::IsEnabled(
           network::features::kEnableNwebExHttpDnsFallback)) {
-    MaybeModifyResolveLocallyResults(results);
+    MaybeModifyResolveLocallyResultsAndUpdateResolveInfo(results, dns_status);
   }
 #endif
+
   if (results.error() != ERR_DNS_CACHE_MISS ||
       parameters_.source == HostResolverSource::LOCAL_ONLY || tasks_.empty()) {
     if (results.error() == OK && !parameters_.is_speculative) {
@@ -472,5 +503,35 @@ HostResolverManager::RequestImpl::GetClientSocketFactory() {
     return ClientSocketFactory::GetDefaultFactory();
   }
 }
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+void HostResolverManager::RequestImpl::set_resolve_info(
+    int error_code,
+    int dns_status,
+    const std::vector<TaskType> finished_tasks,
+    const std::vector<IPEndPoint>& truncation_results) {
+  resolve_info_.error_code = error_code;
+  resolve_info_.dns_status = dns_status;
+  if (results_) {
+    for (const auto& ip : results_->ip_endpoints()) {
+      resolve_info_.AppendAddress(ip);
+    }
+  }
+
+  for (const auto& ip : truncation_results) {
+    resolve_info_.truncation_ips.emplace_back(ip.ToStringWithoutPort());
+  }
+
+  for (auto task : finished_tasks) {
+    resolve_info_.AddTransitionType(
+        static_cast<int>(HostResolverManager::ConvertFromTaskType(task)));
+  }
+}
+
+net::ResolveInfo HostResolverManager::RequestImpl::GetResolveInfo() const {
+  DCHECK(complete_);
+  return resolve_info_;
+}
+#endif
 
 }  // namespace net

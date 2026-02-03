@@ -430,6 +430,8 @@ class NWebHandlerDelegate : public ArkWebClientExt,
                              const CefString& request_url,
                              CefRefPtr<CefSSLInfo> ssl_info,
                              CefRefPtr<ArkWebCefSslCallback> callback) override;
+  void OnReportNewNavigationInfo(
+      CefRefPtr<CefWebNavigationInfo> navigation_info) override;
 
   bool OnSelectClientCertificate(
       CefRefPtr<CefBrowser> browser,

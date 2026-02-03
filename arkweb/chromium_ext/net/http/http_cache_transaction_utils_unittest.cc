@@ -60,6 +60,10 @@ class MockHttpTransaction : public HttpTransaction {
   }
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  MOCK_CONST_METHOD0(GetExtraConnectionAttempts, ConnectionAttempts());
+#endif
+
   MOCK_METHOD3(Start,
                int(const HttpRequestInfo* request_info,
                    CompletionOnceCallback callback,

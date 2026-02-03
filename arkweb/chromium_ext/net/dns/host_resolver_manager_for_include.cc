@@ -331,6 +331,16 @@ void HostResolverManager::ReportDnsTransactionResult(int index,
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+std::string HostResolverManager::GetDnsServersString() {
+  if (!dns_client_) {
+    return std::string();
+  }
+
+  return dns_client_->GetDnsServersString();
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING)
 void HostResolverManager::SetHttpsDnsFallbackDataOnDnsHijacking(
     const std::vector<std::string>& dns_hijacking_protect_list,

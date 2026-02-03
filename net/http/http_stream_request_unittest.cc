@@ -69,7 +69,11 @@ TEST(HttpStreamRequestTest, SetPriority) {
   request->SetPriority(MEDIUM);
   EXPECT_EQ(MEDIUM, job_controller_raw_ptr->main_job()->priority());
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  EXPECT_CALL(request_delegate, OnStreamFailed(_, _, _, _, _)).Times(1);
+#else
   EXPECT_CALL(request_delegate, OnStreamFailed(_, _, _, _)).Times(1);
+#endif
   job_controller_raw_ptr->OnStreamFailed(job_factory.main_job(), ERR_FAILED);
 
   request->SetPriority(IDLE);

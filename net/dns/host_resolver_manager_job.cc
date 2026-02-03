@@ -377,6 +377,11 @@ void HostResolverManager::Job::OnEvicted() {
 
 bool HostResolverManager::Job::ServeFromHosts() {
   DCHECK_GT(num_active_requests(), 0u);
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  dns_status_ = kDnsResolvedFromHosts;
+#endif
+
   std::optional<HostCache::Entry> results = resolver_->ServeFromHosts(
       key_.host.GetHostnameWithoutBrackets(), key_.query_types,
       key_.flags & HOST_RESOLVER_DEFAULT_FAMILY_SET_DUE_TO_NO_IPV6, tasks_);
@@ -455,6 +460,10 @@ void HostResolverManager::Job::RunNextTask() {
   }
   tasks_.pop_front();
   job_running_ = true;
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  finished_tasks_.push_back(next_task);
+#endif
 
   switch (next_task) {
     case TaskType::SYSTEM:
@@ -625,6 +634,10 @@ void HostResolverManager::Job::StartSystemTask() {
   DCHECK_EQ(1, num_occupied_job_slots_);
   DCHECK(HasAddressType(key_.query_types));
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  dns_status_ = kDnsResolvedBySystemDns;
+#endif
+
   std::optional<HostResolverSystemTask::CacheParams> cache_params;
   if (key_.resolve_context->host_resolver_cache()) {
     cache_params.emplace(*key_.resolve_context->host_resolver_cache(),
@@ -685,11 +698,12 @@ void HostResolverManager::Job::OnSystemTaskComplete(
       secure_dns_fallback_available =
           resolver_->CanUseSecureDnsFallback(&*key_.resolve_context);
     }
-
+    std::vector<IPEndPoint> truncation_results;
     if (AsArkWebHostResolverManagerJobExt()) {
       AsArkWebHostResolverManagerJobExt()->MaybeModifyProcResolveResults(
           std::string(key_.host.GetHostnameWithoutBrackets()),
-          secure_dns_fallback_available, net_error, new_addr_list);
+          secure_dns_fallback_available, net_error, new_addr_list,
+          truncation_results);
 
       if (AsArkWebHostResolverManagerJobExt()->CheckDnsFallBackTask(
               net_error)) {
@@ -707,8 +721,8 @@ void HostResolverManager::Job::OnSystemTaskComplete(
                 ? AddressList::CopyWithPort(new_addr_list, 0).endpoints()
                 : std::vector<IPEndPoint>(),
             std::set<std::string>(), HostCache::Entry::SOURCE_UNKNOWN),
-        ttl, /*allow_cache=*/true, /*secure=*/false, TaskType::SYSTEM);
-
+        ttl, /*allow_cache=*/true, /*secure=*/false, TaskType::SYSTEM,
+        truncation_results);
     return;
   }
 #endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
@@ -733,6 +747,10 @@ void HostResolverManager::Job::InsecureCacheLookup() {
       host_cache_, key_.ToCacheKey(/*secure=*/false), cache_usage_,
       false /* ignore_secure */, net_log_, &stale_info);
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  dns_status_ = kDnsResolvedFromInsecureCache;
+#endif
+
   if (resolved) {
     DCHECK(stale_info);
     DCHECK(!stale_info.value().is_stale());
@@ -751,6 +769,14 @@ void HostResolverManager::Job::StartDnsTask(bool secure) {
   DCHECK_EQ(secure, !dispatched_);
   DCHECK_EQ(dispatched_ ? 1 : 0, num_occupied_job_slots_);
   DCHECK(!resolver_->ShouldForceSystemResolverDueToTestOverride());
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION) && BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  if (secure_fallback) {
+    dns_status_ = kDnsResolvedByHttpsDns;
+  } else if (!secure) {
+    dns_status_ = kDnsResolvedByLocalDns;
+  }
+#endif
 
   // Need to create the task even if we're going to post a failure instead of
   // running it, as a "started" job needs a task to be properly cleaned up.
@@ -821,10 +847,16 @@ void HostResolverManager::Job::OnDnsTaskFailure(
   RunNextTask();
 }
 
-void HostResolverManager::Job::OnDnsTaskComplete(base::TimeTicks start_time,
-                                                 bool allow_fallback,
-                                                 HostCache::Entry results,
-                                                 bool secure) {
+void HostResolverManager::Job::OnDnsTaskComplete(
+    base::TimeTicks start_time,
+    bool allow_fallback,
+    HostCache::Entry results,
+    bool secure
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+    ,
+    std::vector<IPEndPoint> truncation_results
+#endif
+) {
   DCHECK(dns_task_);
 
   // Tasks containing address queries are only considered successful overall
@@ -872,7 +904,12 @@ void HostResolverManager::Job::OnDnsTaskComplete(base::TimeTicks start_time,
   }
 
   CompleteRequests(results, bounded_ttl, true /* allow_cache */, secure,
-                   secure ? TaskType::SECURE_DNS : TaskType::DNS);
+                   secure ? TaskType::SECURE_DNS : TaskType::DNS
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                   ,
+                   truncation_results
+#endif
+  );
 }
 
 void HostResolverManager::Job::OnIntermediateTransactionsComplete(
@@ -1080,7 +1117,12 @@ void HostResolverManager::Job::CompleteRequests(
     base::TimeDelta ttl,
     bool allow_cache,
     bool secure,
-    std::optional<TaskType> task_type) {
+    std::optional<TaskType> task_type
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+    ,
+    const std::vector<IPEndPoint>& truncation_results
+#endif
+) {
   CHECK(resolver_.get());
 
   // This job must be removed from resolver's |jobs_| now to make room for a
@@ -1125,7 +1167,12 @@ void HostResolverManager::Job::CompleteRequests(
     }
     req->OnJobCompleted(
         key_, results.error(),
-        /*is_secure_network_error=*/secure && results.error() != OK);
+        /*is_secure_network_error=*/secure && results.error() != OK
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+        ,
+        dns_status_, finished_tasks_, truncation_results
+#endif
+    );
 
     // Check if the resolver was destroyed as a result of running the
     // callback. If it was, we could continue, but we choose to bail.
@@ -1138,7 +1185,12 @@ void HostResolverManager::Job::CompleteRequests(
     ServiceEndpointRequestImpl* request =
         service_endpoint_requests_.head()->value();
     request->RemoveFromList();
-    request->OnJobCompleted(results, secure);
+    request->OnJobCompleted(results, secure
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                            ,
+                            dns_status_, finished_tasks_, truncation_results
+#endif
+    );
     if (!resolver_.get()) {
       return;
     }

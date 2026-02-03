@@ -25,8 +25,28 @@
 
 namespace net {
 
+void HostResolverManager::RequestImpl::
+    MaybeModifyResolveLocallyResultsAndUpdateResolveInfo(
+        HostCache::Entry& out_results,
+        int dns_status) {
+  std::vector<IPEndPoint> truncation_results;
+  MaybeModifyResolveLocallyResults(out_results, truncation_results);
+
+  for (auto ip : truncation_results) {
+    resolve_info_.AppendTruncationAddress(ip);
+  }
+
+  for (auto ip : out_results.ip_endpoints()) {
+    resolve_info_.ip_endpoints.emplace_back(ip.ToStringWithoutPort());
+  }
+
+  resolve_info_.dns_status = dns_status;
+  resolve_info_.error_code = out_results.error();
+}
+
 void HostResolverManager::RequestImpl::MaybeModifyResolveLocallyResults(
-    HostCache::Entry& out_results) {
+    HostCache::Entry& out_results,
+    std::vector<IPEndPoint>& truncation_results) {
   if (out_results.error() != OK) {
     return;
   }
@@ -44,7 +64,8 @@ void HostResolverManager::RequestImpl::MaybeModifyResolveLocallyResults(
   std::vector<IPEndPoint> ip_endpoints_modified;
   bool need_to_replace_address = MaybeNeedToProcessAddressList(
       host, out_results.ip_endpoints(), secure_dns_fallback_available,
-      ip_endpoints_modified, need_to_modify_resolve_result);
+      ip_endpoints_modified, need_to_modify_resolve_result, truncation_results);
+
   if (!need_to_replace_address) {
     return;
   }

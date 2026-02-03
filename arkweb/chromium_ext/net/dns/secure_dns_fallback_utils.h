@@ -41,7 +41,8 @@ NET_EXPORT_PRIVATE bool MaybeNeedToProcessAddressList(
     const std::vector<IPEndPoint>& legacy_addresses,
     bool doh_fallback_available,
     std::vector<IPEndPoint>& out_addresses,
-    bool& need_to_modify_result);
+    bool& need_to_modify_result,
+    std::vector<IPEndPoint>& truncation_address);
 #endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 }  // namespace net
 #endif  // ARKWEB_NET_DNS_SECURE_DNS_FALLBACK_UTILS_H_

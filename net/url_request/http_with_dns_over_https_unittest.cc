@@ -238,7 +238,12 @@ class TestHttpDelegate : public HttpStreamRequest::Delegate {
   }
 
   void OnStreamReady(const ProxyInfo& used_proxy_info,
-                     std::unique_ptr<HttpStream> stream) override {
+                     std::unique_ptr<HttpStream> stream
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                     ,
+                     ResolveInfo resolve_info
+#endif
+                     ) override {
     stream->Close(false);
     loop_.Quit();
   }
@@ -254,13 +259,20 @@ class TestHttpDelegate : public HttpStreamRequest::Delegate {
   void OnStreamFailed(int status,
                       const NetErrorDetails& net_error_details,
                       const ProxyInfo& used_proxy_info,
-                      ResolveErrorInfo resolve_eror_info) override {}
+                      ResolveErrorInfo resolve_eror_info
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                      ,
+                      ResolveInfo resolve_info
+#endif
+                      ) override {
+  }
 
   void OnCertificateError(int status,
                           const SSLInfo& ssl_info
-#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY) && BUILDFLAG(ARKWEB_EXT_NAVIGATION)
                           ,
-                          bool used_fallback_proxy
+                          bool used_fallback_proxy,
+                          ResolveInfo resolve_info
 #endif
                           ) override {
   }

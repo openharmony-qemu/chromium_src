@@ -1449,6 +1449,22 @@ void WebContentsImplExt::OnDocumentEndReady(const FrameInfos& frameInfo) {
     delegate_->OnDocumentEndReady(frameInfo);
   }
 }
+
+void WebContentsImplExt::SetSafeBrowsingCheckDetail(int code,
+                                                    int threat_type,
+                                                    const GURL& url) {
+  safe_browsing_check_code_ = code;
+  safe_browsing_check_threat_type_ = threat_type;
+  safe_browsing_check_url_ = url;
+}
+
+void WebContentsImplExt::GetSafeBrowsingCheckDetail(int& code,
+                                                    int& threat_type,
+                                                    GURL& url) const {
+  code = safe_browsing_check_code_;
+  threat_type = safe_browsing_check_threat_type_;
+  url = safe_browsing_check_url_;
+}
 #endif
 
 #if BUILDFLAG(ARKWEB_MEDIA_CAST)

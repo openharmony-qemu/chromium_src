@@ -30,6 +30,10 @@
 #include "net/socket/stream_socket_handle.h"
 #include "net/ssl/ssl_cert_request_info.h"
 
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 namespace net {
 
 class ConnectJob;
@@ -167,6 +171,19 @@ class NET_EXPORT ClientSocketHandle : public StreamSocketHandle {
     return connection_attempts_;
   }
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  void SetResolveInfo(const ResolveInfo& resolve_info) {
+    resolve_info_ = resolve_info;
+  }
+  ResolveInfo resolve_info() const { return resolve_info_; }
+  void SetExtraConnectionAttempts(const ConnectionAttempts& attempts) {
+    extra_connection_attempts_ = attempts;
+  }
+  const ConnectionAttempts& GetExtraConnectionAttempts() {
+    return extra_connection_attempts_;
+  }
+#endif
+
   // These may only be used if is_initialized() is true.
   const ClientSocketPool::GroupId& group_id() const { return group_id_; }
   int64_t group_generation() const { return group_generation_; }
@@ -209,6 +226,11 @@ class NET_EXPORT ClientSocketHandle : public StreamSocketHandle {
   bool is_ssl_error_ = false;
   scoped_refptr<SSLCertRequestInfo> ssl_cert_request_info_;
   std::vector<ConnectionAttempt> connection_attempts_;
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  ResolveInfo resolve_info_;
+  ConnectionAttempts extra_connection_attempts_;
+#endif
 
   NetLogSource requesting_source_;
 

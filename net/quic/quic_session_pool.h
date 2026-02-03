@@ -257,6 +257,14 @@ class NET_EXPORT_PRIVATE QuicSessionRequest {
     return dns_resolution_end_time_;
   }
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  void SetDnsResolveInfo(const ResolveInfo& resolve_info) {
+    resolve_info_ = resolve_info;
+  }
+
+  const ResolveInfo& GetDnsResolveInfo() const { return resolve_info_; }
+#endif
+
  private:
   raw_ptr<QuicSessionPool> pool_;
   QuicSessionKey session_key_;
@@ -278,6 +286,9 @@ class NET_EXPORT_PRIVATE QuicSessionRequest {
   CompletionOnceCallback host_resolution_callback_;
 
   CompletionOnceCallback create_session_callback_;
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  ResolveInfo resolve_info_;
+#endif
 };
 
 // Represents a single QUIC endpoint and the information necessary to attempt
@@ -532,6 +543,17 @@ class NET_EXPORT_PRIVATE QuicSessionPool
       const quic::ParsedQuicVersion& known_quic_version,
       const ConnectionEndpointMetadata& metadata,
       bool svcb_optional) const;
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  void SetDnsResolveInfo(const ResolveInfo& resolve_info) {
+    resolve_info_ = resolve_info;
+  }
+  std::optional<ResolveInfo> TakeDnsResolveInfo() {
+    std::optional<ResolveInfo> resolve_info = std::move(resolve_info_);
+    resolve_info_ = std::nullopt;
+    return resolve_info;
+  }
+#endif
 
  private:
   class Job;
@@ -883,6 +905,10 @@ class NET_EXPORT_PRIVATE QuicSessionPool
       quic::kQuicDefaultConnectionIdLength};
 
   std::optional<base::TimeDelta> time_delay_for_waiting_job_for_testing_;
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  std::optional<ResolveInfo> resolve_info_;
+#endif
 
   base::WeakPtrFactory<QuicSessionPool> weak_factory_{this};
 };

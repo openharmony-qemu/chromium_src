@@ -20,6 +20,14 @@
 #include "services/network/public/mojom/trust_tokens.mojom-shared.h"
 #include "third_party/perfetto/include/perfetto/tracing/traced_value_forward.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+#include "arkweb/chromium_ext/net/base/navigation_info.h"
+#endif
+
 namespace network {
 
 // NOTE: When adding/removing fields to this struct, don't forget to update
@@ -120,6 +128,10 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE) URLLoaderCompletionStatus {
 #if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
   bool used_fallback_proxy = false;
   bool needs_reload_with_fallback_proxy = false;
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  std::optional<net::NavigationInfo> navigation_info;
 #endif
 
   // Write a representation of this struct into a trace.

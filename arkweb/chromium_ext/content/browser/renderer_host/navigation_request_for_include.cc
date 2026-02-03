@@ -54,3 +54,16 @@ bool NavigationRequest::HasBeenReloadedForThisReason(
   return true;
 }
 #endif  // BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+bool NavigationRequest::IsAutoReload() {
+  return current_reload_reason_ > ErrorPageReloadReason::INVALID;
+}
+
+void NavigationRequest::OnReportNewNavigationInfo(
+    const std::string& page_trace_id) {
+  if (nav_request_utils_) {
+    nav_request_utils_->OnReportNewNavigationInfo(page_trace_id);
+  }
+}
+#endif

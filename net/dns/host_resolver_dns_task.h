@@ -64,10 +64,16 @@ class NET_EXPORT_PRIVATE HostResolverDnsTask final {
 
   class Delegate {
    public:
-    virtual void OnDnsTaskComplete(base::TimeTicks start_time,
-                                   bool allow_fallback,
-                                   HostCache::Entry results,
-                                   bool secure) = 0;
+    virtual void OnDnsTaskComplete(
+        base::TimeTicks start_time,
+        bool allow_fallback,
+        HostCache::Entry results,
+        bool secure
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+        ,
+        std::vector<IPEndPoint> truncation_result = {}
+#endif
+        ) = 0;
 
     // Called when one transaction completes successfully, or one more
     // transactions get cancelled, but only if more transactions are
@@ -127,6 +133,13 @@ class NET_EXPORT_PRIVATE HostResolverDnsTask final {
   bool secure_fallback() { return secure_fallback_; }
   bool need_to_sniff_ip_result() { return need_to_sniff_ip_result_; }
 #endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  void MaybeModifyInsecureDnsTaskResolveResults(
+      const std::string& host,
+      Results& transaction_results,
+      std::vector<IPEndPoint>& truncation_results);
+#endif
 
   void StartNextTransaction();
 
@@ -284,6 +297,10 @@ class NET_EXPORT_PRIVATE HostResolverDnsTask final {
 #endif
 
   const HostResolver::HttpsSvcbOptions https_svcb_options_;
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  std::vector<IPEndPoint> truncation_results_ = {};
+#endif
 
   base::WeakPtrFactory<HostResolverDnsTask> weak_ptr_factory_{this};
 };

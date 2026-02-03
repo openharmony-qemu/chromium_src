@@ -213,7 +213,12 @@ void HttpStreamPool::JobController::OnStreamReady(
   request_->Complete(negotiated_protocol,
                      ALTERNATE_PROTOCOL_USAGE_UNSPECIFIED_REASON);
   // `job` should not be destroyed yet.
-  delegate_->OnStreamReady(job->proxy_info(), std::move(stream));
+  delegate_->OnStreamReady(job->proxy_info(), std::move(stream)
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                                                  ,
+                           job->resolve_info()
+#endif
+  );
 }
 
 void HttpStreamPool::JobController::OnStreamFailed(
@@ -226,7 +231,12 @@ void HttpStreamPool::JobController::OnStreamFailed(
   if (AllJobsFinished()) {
     // `job` should not be destroyed yet.
     delegate_->OnStreamFailed(status, net_error_details, job->proxy_info(),
-                              std::move(resolve_error_info));
+                              std::move(resolve_error_info)
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                                  ,
+                              job->resolve_info()
+#endif
+    );
   }
 }
 
@@ -237,7 +247,8 @@ void HttpStreamPool::JobController::OnCertificateError(
   request_->AddConnectionAttempts(job->connection_attempts());
   CancelOtherJob(job);
 
-#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY) && BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  ResolveInfo resolve_info;
   bool used_fallback_proxy = false;
 #if BUILDFLAG(IS_ARKWEB)
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
@@ -246,8 +257,10 @@ void HttpStreamPool::JobController::OnCertificateError(
   if (job) {
 #endif
     used_fallback_proxy = job->proxy_info().used_fallback_proxy();
+    resolve_info = job->resolve_info();
   }
-  delegate_->OnCertificateError(status, ssl_info, used_fallback_proxy);
+  delegate_->OnCertificateError(status, ssl_info, used_fallback_proxy,
+                                resolve_info);
 #else
   delegate_->OnCertificateError(status, ssl_info);
 #endif  // BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
@@ -315,7 +328,12 @@ void HttpStreamPool::JobController::CallRequestComplete(
   CHECK(delegate_);
   request_->Complete(negotiated_protocol,
                      ALTERNATE_PROTOCOL_USAGE_UNSPECIFIED_REASON);
-  delegate_->OnStreamReady(proxy_info_, std::move(stream));
+  delegate_->OnStreamReady(proxy_info_, std::move(stream)
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                                            ,
+                           ResolveInfo()
+#endif
+  );
 }
 
 void HttpStreamPool::JobController::SetJobResult(Job* job, int status) {

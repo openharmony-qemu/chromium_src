@@ -186,6 +186,14 @@ int QuicSessionAttempt::DoCreateSession() {
         std::move(local_endpoint_), std::move(ip_endpoint_),
         std::move(proxy_stream_), std::move(user_agent), net_log(), network_);
   } else {
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+    if (delegate_) {
+      if (auto resolve_info = delegate_->GetDnsResolveInfo()) {
+        pool()->SetDnsResolveInfo(resolve_info.value());
+      }
+    }
+#endif
+
     if (base::FeatureList::IsEnabled(net::features::kAsyncQuicSession)) {
       return pool()->CreateSessionAsync(
           base::BindOnce(&QuicSessionAttempt::OnCreateSessionComplete,

@@ -13,22 +13,57 @@
  * limitations under the License.
  */
 #include "arkweb/chromium_ext/services/network/url_loader_utils.h"
-#include "base/logging.h"
-#include "base/trace_event/trace_event.h"
-#include "net/base/load_timing_info.h"
-#include "services/network/public/mojom/url_response_head.mojom.h"
+
+#include "arkweb/chromium_ext/net/base/fallback_proxy_constants.h"
 #include "arkweb/chromium_ext/services/network/url_loader_ext.h"
-#include "services/network/public/cpp/resource_request.h"
+#include "base/logging.h"
+#include "base/strings/string_number_conversions.h"
+#include "base/trace_event/trace_event.h"
+#include "net/base/ip_endpoint.h"
+#include "net/base/load_timing_info.h"
+#include "net/base/proxy_delegate.h"
+#include "net/dns/host_resolver.h"
 #include "net/url_request/url_request_context.h"
-#include "services/network/throttling/scoped_throttling_token.h"
-#include "services/network/shared_dictionary/shared_dictionary_manager.h"
 #include "services/network/public/cpp/header_util.h"
+#include "services/network/public/cpp/resource_request.h"
+#include "services/network/public/mojom/url_response_head.mojom.h"
 #include "services/network/sec_header_helpers.h"
+#include "services/network/shared_dictionary/shared_dictionary_manager.h"
+#include "services/network/throttling/scoped_throttling_token.h"
 
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
 #include "arkweb/chromium_ext/services/network/prp_preload/include/page_res_parallel_preload_mgr.h"
 #include "base/functional/callback.h"
 #endif
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+#include "arkweb/chromium_ext/net/base/navigation_info.h"
+#endif
+
+namespace {
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+// Helper function to check if fallback proxy is enabled from any proxy context.
+// This is decoupled from URLRequest and only depends on the context.
+bool IsFallbackProxyEnabled(const net::URLRequestContext* context,
+                            const net::URLRequest* request) {
+  if (!context || !request) {
+    return false;
+  }
+
+  auto* proxy_delegate = context->proxy_delegate();
+  if (!proxy_delegate) {
+    LOG_FEEDBACK(ERROR, kNetwork)
+        << "FailGetFallbackProxyEnabled message:proxyDelegateIsNull";
+    return false;
+  }
+
+  return proxy_delegate->GetFallbackProxyStatus() ==
+         net::FallbackProxyStatus::NORMAL;
+}
+#endif
+
+}  // namespace
 
 namespace network {
 
@@ -594,6 +629,68 @@ int URLLoaderUtils::ReadDataFromLoaderOrRequest(scoped_refptr<NetToMojoIOBuffer>
                                     url_loader_->pending_write_buffer_offset_));
   }
   return bytes_read;
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+std::optional<network::URLLoaderCompletionStatus>
+URLLoaderUtils::CreateURLLoaderCompletionStatus() {
+  // FIXME: add cloud control
+  if (!url_loader_ || !url_loader_->url_request_ ||
+      !url_loader_->url_request_->context()) {
+    return std::nullopt;
+  }
+
+  auto* url_request = url_loader_->url_request_.get();
+
+  URLLoaderCompletionStatus status;
+  status.resolve_error_info = url_request->response_info().resolve_error_info;
+  PopulateURLLoaderCompletionStatus(status);
+
+  return status;
+}
+
+void URLLoaderUtils::PopulateURLLoaderCompletionStatus(
+    URLLoaderCompletionStatus& status) {
+  // FIXME: add cloud control
+  if (!url_loader_ || !url_loader_->url_request_) {
+    return;
+  }
+
+  auto* url_request = url_loader_->url_request_.get();
+
+  net::NavigationInfo nav_info;
+  nav_info.request_url = url_request->url().spec();
+  nav_info.request_uuid = url_request->request_uuid();
+  nav_info.time_stamp = base::NumberToString(
+      (url_request->creation_time() - base::TimeTicks::UnixEpoch())
+          .InMilliseconds());
+  nav_info.error_code = url_request->GetStatus();
+  nav_info.original_error_code = url_request->GetOriginalNetErrorCode();
+
+  nav_info.is_fallback_proxy_enabled =
+      IsFallbackProxyEnabled(url_loader_->url_request_context_, url_request);
+  status.used_fallback_proxy = url_request->used_fallback_proxy();
+  status.needs_reload_with_fallback_proxy =
+      url_request->needs_reload_with_fallback_proxy();
+
+  if (url_loader_->url_request_context_) {
+    if (auto* host_resolver =
+            url_loader_->url_request_context_->host_resolver()) {
+      nav_info.dns_name_servers = host_resolver->GetDnsServersString();
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+      nav_info.can_use_secure_dns = host_resolver->CanUseSecureDnsFallback();
+      net::IPEndPoint local_address;
+      host_resolver->GetLocalAddress(&local_address);
+      nav_info.local_address = local_address.ToStringWithoutPort();
+#endif
+    }
+  }
+
+  nav_info.request_attempts = url_request->GetRequestAttempts();
+  nav_info.resolve_info = url_request->response_info().resolve_info;
+
+  status.navigation_info = std::move(nav_info);
 }
 #endif
 }

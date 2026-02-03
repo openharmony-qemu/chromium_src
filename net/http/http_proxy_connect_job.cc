@@ -534,6 +534,13 @@ int HttpProxyConnectJob::DoTransportConnect() {
 
 int HttpProxyConnectJob::DoTransportConnectComplete(int result) {
   resolve_error_info_ = nested_connect_job_->GetResolveErrorInfo();
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  extra_connection_attempts_ =
+      nested_connect_job_->GetExtraConnectionAttempts();
+  resolve_info_ = nested_connect_job_->GetResolveInfo();
+#endif
+
   ProxyServer::Scheme scheme = GetProxyServerScheme();
   if (result != OK) {
 

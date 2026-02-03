@@ -345,7 +345,12 @@ void HttpStreamFactory::JobController::OnStreamReady(Job* job) {
   DCHECK(request_->completed());
 
   HistogramProxyUsed(job->proxy_info(), /*success=*/true);
-  delegate_->OnStreamReady(job->proxy_info(), std::move(stream));
+  delegate_->OnStreamReady(job->proxy_info(), std::move(stream)
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                                                  ,
+                           job->resolve_info()
+#endif
+  );
 }
 
 void HttpStreamFactory::JobController::OnBidirectionalStreamImplReady(
@@ -477,7 +482,12 @@ void HttpStreamFactory::JobController::OnStreamFailed(Job* job, int status) {
 
   HistogramProxyUsed(job->proxy_info(), /*success=*/false);
   delegate_->OnStreamFailed(status, *job->net_error_details(),
-                            job->proxy_info(), job->resolve_error_info());
+                            job->proxy_info(), job->resolve_error_info()
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                                                   ,
+                            job->resolve_info()
+#endif
+  );
 }
 
 void HttpStreamFactory::JobController::OnFailedOnDefaultNetwork(Job* job) {
@@ -512,12 +522,17 @@ void HttpStreamFactory::JobController::OnCertificateError(
     BindJob(job);
   }
 
-#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY) && BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   bool used_fallback_proxy = false;
-  if (job) {
+  ResolveInfo resolve_info;
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableNwebEx) &&
+      job) {
     used_fallback_proxy = job->proxy_info().used_fallback_proxy();
+    resolve_info = job->resolve_info();
   }
-  delegate_->OnCertificateError(status, ssl_info, used_fallback_proxy);
+  delegate_->OnCertificateError(status, ssl_info, used_fallback_proxy,
+                                resolve_info);
 #else
   delegate_->OnCertificateError(status, ssl_info);
 #endif  // BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
@@ -614,6 +629,18 @@ void HttpStreamFactory::JobController::AddConnectionAttemptsToRequest(
 
   request_->AddConnectionAttempts(attempts);
 }
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+void HttpStreamFactory::JobController::AddExtraConnectionAttemptsToRequest(
+    Job* job,
+    const ConnectionAttempts& extra_attempts) {
+  if (is_preconnect_ || IsJobOrphaned(job)) {
+    return;
+  }
+
+  request_->AddExtraConnectionAttempts(extra_attempts);
+}
+#endif
 
 void HttpStreamFactory::JobController::ResumeMainJobLater(
     const base::TimeDelta& delay) {
@@ -1230,7 +1257,12 @@ void HttpStreamFactory::JobController::NotifyRequestFailed(int rv) {
     return;
   }
   delegate_->OnStreamFailed(rv, NetErrorDetails(), ProxyInfo(),
-                            ResolveErrorInfo());
+                            ResolveErrorInfo()
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                                ,
+                            ResolveInfo()
+#endif
+  );
 }
 
 void HttpStreamFactory::JobController::RewriteUrlWithHostMappingRules(

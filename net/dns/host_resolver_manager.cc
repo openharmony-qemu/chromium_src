@@ -820,7 +820,13 @@ HostCache::Entry HostResolverManager::ResolveLocally(
     const NetLogWithSource& source_net_log,
     HostCache* cache,
     std::deque<TaskType>* out_tasks,
-    std::optional<HostCache::EntryStaleness>* out_stale_info) {
+    std::optional<HostCache::EntryStaleness>* out_stale_info
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+    ,
+    int& dns_status,
+    ResolveInfo& resolve_info
+#endif
+) {
   DCHECK(out_stale_info);
   *out_stale_info = std::nullopt;
 
@@ -879,15 +885,27 @@ HostCache::Entry HostResolverManager::ResolveLocally(
   while (!out_tasks->empty() && IsLocalTask(out_tasks->front())) {
     TaskType task = out_tasks->front();
     out_tasks->pop_front();
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+    resolve_info.AddTransitionType(
+        static_cast<int>(HostResolverManager::ConvertFromTaskType(task)));
+#endif
     if (task == TaskType::SECURE_CACHE_LOOKUP ||
         task == TaskType::INSECURE_CACHE_LOOKUP ||
         task == TaskType::CACHE_LOOKUP) {
       bool secure = task == TaskType::SECURE_CACHE_LOOKUP;
       HostCache::Key key = job_key.ToCacheKey(secure);
-
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+      dns_status = kDnsResolvedFromInsecureCache;
+      bool is_from_secure_cache = false;
+#endif
       bool ignore_secure = task == TaskType::CACHE_LOOKUP;
       resolved = MaybeServeFromCache(cache, key, cache_usage, ignore_secure,
-                                     source_net_log, out_stale_info);
+                                     source_net_log, out_stale_info
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                                     ,
+                                     &is_from_secure_cache
+#endif
+      );
       if (resolved) {
         // |MaybeServeFromCache()| will update |*out_stale_info| as needed.
         DCHECK(out_stale_info->has_value());
@@ -895,6 +913,13 @@ HostCache::Entry HostResolverManager::ResolveLocally(
             NetLogEventType::HOST_RESOLVER_MANAGER_CACHE_HIT,
             [&] { return NetLogResults(resolved.value()); });
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+        if (is_from_secure_cache) {
+          dns_status = kDnsResolvedFromSecureCache;
+        } else {
+          dns_status = kDnsResolvedFromInsecureCache;
+        }
+#endif
         // TODO(crbug.com/40178456): Call StartBootstrapFollowup() if the Secure
         // DNS Policy is kBootstrap and the result is not secure.  Note: A naive
         // implementation could cause an infinite loop if |resolved| always
@@ -918,6 +943,9 @@ HostCache::Entry HostResolverManager::ResolveLocally(
         source_net_log.AddEvent(
             NetLogEventType::HOST_RESOLVER_MANAGER_HOSTS_HIT,
             [&] { return NetLogResults(resolved.value()); });
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+        dns_status = kDnsResolvedFromHosts;
+#endif
         return resolved.value();
       }
     } else {
@@ -1019,7 +1047,12 @@ std::optional<HostCache::Entry> HostResolverManager::MaybeServeFromCache(
     ResolveHostParameters::CacheUsage cache_usage,
     bool ignore_secure,
     const NetLogWithSource& source_net_log,
-    std::optional<HostCache::EntryStaleness>* out_stale_info) {
+    std::optional<HostCache::EntryStaleness>* out_stale_info
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+    ,
+    bool* out_is_from_secure_cache
+#endif
+) {
   DCHECK(out_stale_info);
   *out_stale_info = std::nullopt;
 
@@ -1050,6 +1083,11 @@ std::optional<HostCache::Entry> HostResolverManager::MaybeServeFromCache(
     source_net_log.AddEvent(
         NetLogEventType::HOST_RESOLVER_MANAGER_CACHE_HIT,
         [&] { return NetLogResults(cache_result->second); });
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+    if (out_is_from_secure_cache) {
+      *out_is_from_secure_cache = cache_result->first.secure;
+    }
+#endif
     return cache_result->second;
   }
   return std::nullopt;
@@ -1817,5 +1855,32 @@ std::unique_ptr<DnsProbeRunner> HostResolverManager::CreateDohProbeRunner(
   return dns_client_->GetTransactionFactory()->CreateDohProbeRunner(
       resolve_context);
 }
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+// static
+HostResolverManager::DnsTaskTransitionType
+HostResolverManager::ConvertFromTaskType(TaskType type) {
+  switch (type) {
+    case TaskType::SYSTEM:
+      return DnsTaskTransitionType::SYSTEM;
+    case TaskType::DNS:
+      return DnsTaskTransitionType::DNS;
+    case TaskType::SECURE_DNS:
+      return DnsTaskTransitionType::SECURE_DNS;
+    case TaskType::CACHE_LOOKUP:
+      return DnsTaskTransitionType::CACHE_LOOKUP;
+    case TaskType::INSECURE_CACHE_LOOKUP:
+      return DnsTaskTransitionType::INSECURE_CACHE;
+    case TaskType::SECURE_CACHE_LOOKUP:
+      return DnsTaskTransitionType::SECURE_CACHE;
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+    case TaskType::SECURE_DNS_FALLBACK:
+      return DnsTaskTransitionType::SECURE_DNS_FALLBACK;
+#endif
+    default:
+      return DnsTaskTransitionType::DEFAULT;
+  }
+}
+#endif
 
 }  // namespace net

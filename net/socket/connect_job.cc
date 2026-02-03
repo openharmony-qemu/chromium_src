@@ -150,6 +150,25 @@ ConnectionAttempts ConnectJob::GetConnectionAttempts() const {
   return ConnectionAttempts();
 }
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+void ConnectJob::SetResolveInfoToSocket(const ResolveInfo& resolve_info) {
+  if (socket_) {
+    socket_->SetDnsResolveInfo(resolve_info);
+  }
+}
+
+void ConnectJob::SetExtraConnectionAttemptsToSocket(
+    const ConnectionAttempts& extra_connection_attempts) {
+  if (socket_) {
+    socket_->SetExtraConnectionAttempt(extra_connection_attempts);
+  }
+}
+
+ConnectionAttempts ConnectJob::GetExtraConnectionAttempts() const {
+  return {};
+}
+#endif
+
 bool ConnectJob::IsSSLError() const {
   return false;
 }

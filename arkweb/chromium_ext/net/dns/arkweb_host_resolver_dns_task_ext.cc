@@ -112,7 +112,12 @@ void ArkWebHostResolverDnsTaskExt::SetNotNeedMoreAttemptIPQueryType(
 void ArkWebHostResolverDnsTaskExt::MaybeModifyInsecureDnsTaskResolveResults(
     const std::string& host,
     bool secure_dns_fallback_available,
-    HostCache::Entry& out_results) {
+    HostCache::Entry& out_results,
+    std::vector<IPEndPoint>& truncation_results) {
+  if (hostResolverDnsTask->secure_fallback()) {
+    return;
+  }
+
   if (out_results.error() != OK) {
     return;
   }
@@ -124,7 +129,7 @@ void ArkWebHostResolverDnsTaskExt::MaybeModifyInsecureDnsTaskResolveResults(
   std::vector<IPEndPoint> ip_endpoints_modified;
   bool need_to_replace_address = MaybeNeedToProcessAddressList(
       host, out_results.ip_endpoints(), secure_dns_fallback_available,
-      ip_endpoints_modified, need_to_modify_resolve_result);
+      ip_endpoints_modified, need_to_modify_resolve_result, truncation_results);
   if (!need_to_replace_address) {
     return;
   }

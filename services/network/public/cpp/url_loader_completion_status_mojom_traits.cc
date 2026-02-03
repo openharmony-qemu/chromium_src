@@ -8,6 +8,10 @@
 #include "mojo/public/cpp/base/time_mojom_traits.h"
 #include "services/network/public/cpp/network_param_mojom_traits.h"
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+#include "arkweb/chromium_ext/services/network/public/cpp/navigation_info_mojom_traits.h"
+#endif
+
 namespace mojo {
 
 bool StructTraits<network::mojom::BlockedByResponseReasonWrapperDataView,
@@ -32,6 +36,12 @@ bool StructTraits<network::mojom::URLLoaderCompletionStatusDataView,
       !data.ReadResolveErrorInfo(&out->resolve_error_info)) {
     return false;
   }
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  if (!data.ReadNavigationInfo(&out->navigation_info)) {
+    return false;
+  }
+#endif
 
   out->error_code = data.error_code();
   out->extended_error_code = data.extended_error_code();

@@ -1272,6 +1272,10 @@ component("net") {
     libs = [ "net_connection" ]
   }
 
+  if (defined(arkweb_ext_navigation) && arkweb_ext_navigation) {
+    sources += arkweb_net_for_ext_navigation_sources
+  }
+
   if (is_chromeos && use_nss_certs) {
     sources += [
       "cert/nss_cert_database_chromeos.cc",

@@ -74,12 +74,6 @@ class SystemProperties {
 
   std::string compatible_device_type() { return compatible_device_type_; }
 
-  OHOS::NWeb::ProductDeviceType device_type() { return device_type_; }
-
-  std::string ua_model() { return ua_model_; }
-
-  std::string os_dist_version() { return os_dist_version_; }
-
   bool is_compatible_mode() {
     LOG(INFO) << "systemProperties compatible type is "
               << compatible_device_type_.c_str();
@@ -108,8 +102,6 @@ class SystemProperties {
   std::string product_model_;
   std::string api_version_;
   std::string compatible_device_type_;
-  std::string ua_model_;
-  std::string os_dist_version_;
   float virtual_pixel_ratio_ = 2.0;
   bool is_pc_mode_ = false;
 };
@@ -152,14 +144,7 @@ SystemProperties::SystemProperties()
                        .GetDeviceInfoApiVersion()),
       compatible_device_type_(OhosAdapterHelper::GetInstance()
                                   .GetSystemPropertiesInstance()
-                                  .GetCompatibleDeviceType()),
-      ua_model_(OHOS::NWeb::OhosAdapterHelper::GetInstance()
-                    .GetSystemPropertiesInstance()
-                    .GetStringParameter("const.product.model", "")),
-      os_dist_version_(
-          OHOS::NWeb::OhosAdapterHelper::GetInstance()
-              .GetSystemPropertiesInstance()
-              .GetStringParameter("const.product.os.dist.version", "")) {
+                                  .GetCompatibleDeviceType()) {
   is_pc_mode_ = NotifyIsPcMode();
 }
 
@@ -283,34 +268,6 @@ BASE_EXPORT std::string ComponentName() {
 BASE_EXPORT bool IsPcMode() {
   return SystemProperties::Instance()->is_pc_mode();
 }
-#if BUILDFLAG(ARKWEB_USERAGENT)
-const char kPlatformName[] = "OpenHarmony";
-const char kWebName[] = "ArkWeb";
-const char kBitness64[] = "64";
-const std::string GetDeviceTypeString() {
-  switch (SystemProperties::Instance()->device_type()) {
-    case OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_MOBILE:
-      return "Mobile";
-    case OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_WEARABLE:
-      return "Watch";
-    case OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_2IN1:
-      return "Desktop";
-    case OHOS::NWeb::ProductDeviceType::DEVICE_TYPE_TABLET:
-      return "Tablet";
-    default:
-      return "";
-  }
-}
-
-const std::string GetProductModel() {
-  return SystemProperties::Instance()->ua_model();
-}
-
-const std::string GetOSDistVersion() {
-  return SystemProperties::Instance()->os_dist_version();
-}
-
-#endif
 }  // namespace ohos
 
 }  // namespace base

@@ -65,10 +65,6 @@
 #include "capi/nweb_extension_distill_item.h"
 #endif // ARKWEB_READER_MODE
 
-#if BUILDFLAG(ARKWEB_USERAGENT)
-#include "nweb_user_agent_metadata.h"
-#endif
-
 struct OpenDevToolsParam;
 struct OpenDevToolsExtOpt;
 struct RunJavaScriptParam;
@@ -1001,15 +997,6 @@ class NWebDelegateInterface
 
 #if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
 virtual void SetFocusWebId(int32_t nweb_id) = 0;
-#endif
-
-
-#if BUILDFLAG(ARKWEB_USERAGENT)
-  virtual void SetUserAgentMetadata(
-      const std::string& user_agent,
-      std::shared_ptr<NWebUserAgentMetadata> metadata) = 0;
-  virtual std::shared_ptr<NWebUserAgentMetadata> GetUserAgentMetadata(
-      const std::string& user_agent) = 0;
 #endif
 };
 }  // namespace OHOS::NWeb

@@ -6,7 +6,6 @@
 #include "arkweb/chromium_ext/content/common/arkweb_user_agent_ext.h"
 
 #if !defined(COMPONENT_BUILD)
-#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
 #include "cef/ohos_cef_ext/libcef/browser/useragent/ua_push_config.h"
 #endif
 namespace content {
@@ -34,7 +33,6 @@ std::string& g_compatible_device_type() {
   return *compatible_device_type;
 }
 }  // namespace
-
 #endif
 
 std::string GetDistVersion() {
@@ -141,24 +139,6 @@ void SetProductString(std::string& user_agent) {
   }
 
   base::StringAppendF(&user_agent, "%s", product_string.c_str());
-}
-
-void UpdateUserAgentMetaData(blink::UserAgentMetadata& metadata) {
-  metadata.mobile = base::ohos::IsMobileDevice();
-  metadata.platform = base::ohos::kPlatformName;
-  metadata.architecture = "";
-  metadata.bitness = base::ohos::IsPcDevice() ? base::ohos::kBitness64 : "";
-  metadata.full_version = "";
-  metadata.form_factors.clear();
-  metadata.form_factors = {base::ohos::GetDeviceTypeString()};
-  metadata.model =
-      base::ohos::IsMobileDevice() ? base::ohos::GetProductModel() : "";
-  metadata.platform_version = base::ohos::GetOSDistVersion();
-  metadata.brand_version_list.emplace_back(
-      base::ohos::kWebName,
-      GetDistVersion());
-  metadata.brand_full_version_list.emplace_back(base::ohos::kWebName,
-                                                ARKWEB_VERSION);
 }
 #endif  // ARKWEB_USERAGENT
 

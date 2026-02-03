@@ -388,6 +388,16 @@ WebString WebMediaPlayerImplExt::GetMimeType() const {
 bool WebMediaPlayerImplExt::UsingMediaPlayer() const {
   return using_media_player_renderer_;
 }
+
+bool WebMediaPlayerImplExt::OnHiddenVideoReport(bool storing_in_bfcache) {
+  if (IsPageHidden() || (IsHidden() && should_pause_when_frame_is_hidden_)) {
+    if (storing_in_bfcache && client_) {
+      LOG(INFO) << "OhMedia, ReportVideoExperienceToBI when page hidden";
+      client_->ReportVideoExperienceToBI();
+    }
+  }
+}
+
 #endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)

@@ -229,6 +229,7 @@ public:
   int GetWebURLErrorReason() const override;
   WebString GetMimeType() const override;
   bool UsingMediaPlayer() const override;
+  void OnHiddenVideoReport(bool storing_in_bfcache) override;
 #endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
 #if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)

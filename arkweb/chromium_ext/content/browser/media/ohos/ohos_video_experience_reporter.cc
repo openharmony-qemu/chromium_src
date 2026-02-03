@@ -76,7 +76,7 @@ void OHOSVideoExperienceReporter::ReportVideoExperienceToBI(
   if (!params) {
     return;
   }
-
+  LOG(INFO) << "OhMedia, ReportVideoExperienceToBI";
   base::Value::Dict record;
   record.Set(kStartUsedTime, base::NumberToString(params->start_used_time));
   record.Set(kTotalFreezeTime, base::NumberToString(params->total_freeze_time));

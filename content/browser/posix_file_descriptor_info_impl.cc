@@ -85,7 +85,9 @@ void PosixFileDescriptorInfoImpl::AddToMapping(
     int id,
     base::PlatformFile fd,
     const base::MemoryMappedFile::Region& region) {
+#if !BUILDFLAG(IS_ARKWEB)
   DCHECK(!HasID(id));
+#endif
   mapping_.push_back(std::make_pair(fd, id));
   if (region != base::MemoryMappedFile::Region::kWholeFile)
     ids_to_regions_[id] = region;

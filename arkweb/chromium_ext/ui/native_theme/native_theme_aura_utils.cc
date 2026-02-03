@@ -27,14 +27,14 @@
 
 namespace ui {
 // 1 vp = 1.5 * px
-constexpr int kForceScrollbarActiveWidth = 12;
+constexpr int kForceScrollbarActiveWidth = 14;
 constexpr int kForceScrollbarActiveRadius = 6;
 constexpr int kForceScrollbarActiveOffset = 0;
-constexpr int kForceScrollbarActiveHotSize = 4;
-constexpr int kForceScrollbarInactiveWidth = 12;
-constexpr int kForceScrollbarInactiveRadius = 3;
+constexpr int kForceScrollbarActiveHotSize = 2;
+constexpr int kForceScrollbarInactiveWidth = 14;
+constexpr int kForceScrollbarInactiveRadius = 2;
 constexpr int kForceScrollbarInactiveOffset = 0;
-constexpr int kForceScrollbarInactiveHotSize = 8;
+constexpr int kForceScrollbarInactiveHotSize = 10;
 // Scrollbar's width,include hot zone(20) + visible width(8) + marginRight(4)
 constexpr int kOverlayScrollbarHotSize = 20;
 constexpr int kOverlayScrollbarHotSizePc = 0;

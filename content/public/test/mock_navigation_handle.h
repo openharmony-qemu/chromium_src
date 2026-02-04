@@ -251,7 +251,9 @@ class MockNavigationHandle : public NavigationHandle {
   MOCK_METHOD(std::optional<NavigationDiscardReason>,
               GetNavigationDiscardReason,
               ());
-
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+  MOCK_METHOD(void, SetCustomViewportWidth, (int32_t));
+#endif
 #if BUILDFLAG(IS_ANDROID)
   MOCK_METHOD(const base::android::JavaRef<jobject>&,
               GetJavaNavigationHandle,

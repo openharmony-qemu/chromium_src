@@ -262,6 +262,7 @@ declare_args() {
   arkweb_media_cast = true
   arkweb_ext_http_dns_fallback_on_dns_hijacking = false
   arkweb_ext_receive_response = false
+  arkweb_custom_viewport_width = true
 }
 
 # Features enabled in mojom bindings.
@@ -352,3 +353,9 @@ if (defined(arkweb_network_service) && arkweb_network_service) {
   arkweb_mojo_features += [ "arkweb_network_service" ]
 }
 #endif // BUILDFLAG(ARKWEB_NETWORK_SERVICE)
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+if (defined(arkweb_custom_viewport_width) && arkweb_custom_viewport_width) {
+  arkweb_mojo_features += [ "arkweb_custom_viewport_width" ]
+}
+#endif // BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)

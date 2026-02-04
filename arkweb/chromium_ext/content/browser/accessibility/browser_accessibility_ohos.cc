@@ -1641,6 +1641,8 @@ std::u16string BrowserAccessibilityOHOS::GetRoleDescription() const {
     case ax::mojom::Role::kComboBoxMenuButton:
     case ax::mojom::Role::kComboBoxSelect:
       return GetLocalizedString(IDS_AX_ROLE_COMBO_BOX);
+    case ax::mojom::Role::kList:
+      return GetLocalizedString(IDS_AX_ROLE_LIST);
     case ax::mojom::Role::kDescriptionList:
       return GetLocalizedString(IDS_AX_ROLE_DESCRIPTION_LIST);
     case ax::mojom::Role::kFigure:

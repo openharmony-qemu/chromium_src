@@ -1344,9 +1344,12 @@ bool ContentMainRunnerImpl::RunRenderRemoteProxy(
       process_type != switches::kGpuProcess) {
     return true;
   }
-  RenderRemoteProxy::CreateAndRegist(command_line);
-  if (!RenderRemoteProxy::WaitForBrowserFd()) {
-    return false;
+
+  RenderRemoteProxy::CreateAndRegist(command_line, process_type);
+
+  if (process_type == switches::kGpuProcess ||
+      !RenderRemoteProxy::IsFdsChannelReady()) {
+    return RenderRemoteProxy::WaitForBrowserFd();
   }
   return true;
 }

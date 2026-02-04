@@ -685,6 +685,9 @@ class NWebImpl : public NWeb {
   void RemoveWebExtensionCallback();
   void RunJavaScriptInFrames(RunJavaScriptParam param,
                              OnReceiveValueCallback callback);
+  void GetAllFrameInfos(OnReceiveFrameInfosCallback callback);
+  void GetLastJavaScriptProxyCallingFrameInfo(
+      OnLastJavaScriptProxyCallingFrameInfoCallback callback);
   void GetImageFromContextNode();
   void GetImageFromCache(const std::string& url);
   void ReloadOriginalUrl() const;

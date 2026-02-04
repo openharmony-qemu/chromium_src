@@ -44,6 +44,10 @@ struct IsolatedWorld {
   }
 };
 
+struct GetFrameInfosParam {
+  std::vector<FrameInfos> frameinfoList;
+};
+
 struct RunJavaScriptParam {
   std::string script;
   std::optional<FrameInfos> rootFrame = std::nullopt;
@@ -90,6 +94,11 @@ struct JavaScriptValue {
 #if BUILDFLAG(ARKWEB_NWEB_EX)
 typedef void (*OnReceiveValueCallback)(int32_t nwebId, int32_t callbackId,
                                        const ArkWebPbBuffer* pb_result_buffer);
+typedef void (*OnReceiveFrameInfosCallback)(int32_t nwebId,
+                                            const ArkWebPbBuffer* pb_result_buffer);
+
+typedef void (*OnLastJavaScriptProxyCallingFrameInfoCallback)(int32_t nwebId,
+                                                              const ArkWebPbBuffer* pb_result_buffer);
 #endif
 
 #endif //OHOS_NWEB_SRC_WEB_EXTENSION_JAVASCRIPT_ITEM_H_

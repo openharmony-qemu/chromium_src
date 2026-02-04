@@ -18,6 +18,7 @@
 #include "arkweb/ohos_adapter_ndk/mock_ndk_api/include/mock_ndk_api.h"
 #define private public
 #include "arkweb/ohos_adapter_ndk/net_connect_adapter/net_connect_adapter_impl.h"
+#include "third_party/bounds_checking_function/include/securec.h"
 #undef private
 
 using namespace testing;
@@ -429,4 +430,290 @@ TEST_F(NetConnectAdapterImplTest, NetConnectAdapterImplTest_GetDnsServersByNetId
   result = net_connect_adapter_impl.GetDnsServersByNetId(netId);
   EXPECT_EQ(result.empty(), true);
   g_mock_OH_NetConn_GetAllNets = nullptr;
+}
+
+/**
+ * @tc.name: NetConnectAdapterImplTest_HasVpnTransport.
+ * @tc.desc: test of GetDnsServersByNetId in NetConnectAdapterImplTest
+ * @tc.type: FUNC.
+ */
+TEST_F(NetConnectAdapterImplTest, HasVpnTransport_001) {
+  MockNetConnectAdapterImpl net_connect_adapter_impl;
+  g_mock_OH_NetConn_GetAllNets = [](NetConn_NetHandleList *netHandleList) {
+    return -1;
+  };
+  bool result = net_connect_adapter_impl.HasVpnTransport();
+  EXPECT_EQ(result, false);
+  g_mock_OH_NetConn_GetAllNets = nullptr;
+}
+
+TEST_F(NetConnectAdapterImplTest, HasVpnTransport_002) {
+  MockNetConnectAdapterImpl net_connect_adapter_impl;
+  g_mock_OH_NetConn_GetAllNets = [](NetConn_NetHandleList *netHandleList) {
+    netHandleList->netHandleListSize = 0;
+    return 0;
+  };
+  bool result = net_connect_adapter_impl.HasVpnTransport();
+  EXPECT_EQ(result, false);
+  g_mock_OH_NetConn_GetAllNets = nullptr;
+}
+
+TEST_F(NetConnectAdapterImplTest, HasVpnTransport_003) {
+  MockNetConnectAdapterImpl net_connect_adapter_impl;
+  g_mock_OH_NetConn_GetAllNets = [](NetConn_NetHandleList *netHandleList) {
+    netHandleList->netHandleListSize = 1;
+    netHandleList->netHandles[0].netId = 100;
+    return 0;
+  };
+  g_mock_OH_NetConn_GetNetCapabilities = [](NetConn_NetHandle *, NetConn_NetCapabilities *) {
+    return -1;
+  };
+  bool result = net_connect_adapter_impl.HasVpnTransport();
+  EXPECT_EQ(result, false);
+  g_mock_OH_NetConn_GetAllNets = nullptr;
+  g_mock_OH_NetConn_GetNetCapabilities = nullptr;
+}
+
+TEST_F(NetConnectAdapterImplTest, HasVpnTransport_004) {
+  MockNetConnectAdapterImpl net_connect_adapter_impl;
+  g_mock_OH_NetConn_GetAllNets = [](NetConn_NetHandleList *netHandleList) {
+    netHandleList->netHandleListSize = 1;
+    netHandleList->netHandles[0].netId = 100;
+    return 0;
+  };
+  g_mock_OH_NetConn_GetNetCapabilities = [](NetConn_NetHandle *, NetConn_NetCapabilities *netCapabilities) {
+    netCapabilities->bearerTypesSize = 1;
+    netCapabilities->bearerTypes[0] = NETCONN_BEARER_VPN;
+    return 0;
+  };
+  bool result = net_connect_adapter_impl.HasVpnTransport();
+  EXPECT_EQ(result, true);
+  g_mock_OH_NetConn_GetAllNets = nullptr;
+  g_mock_OH_NetConn_GetNetCapabilities = nullptr;
+}
+
+/**
+ * @tc.name: NetConnectAdapterImplTest_GetDnsServersForVpn.
+ * @tc.desc: test of GetDnsServersByNetId in NetConnectAdapterImplTest
+ * @tc.type: FUNC.
+ */
+TEST_F(NetConnectAdapterImplTest, GetDnsServersForVpn_001) {
+  MockNetConnectAdapterImpl net_connect_adapter_impl;
+  g_mock_OH_NetConn_GetAllNets = [](NetConn_NetHandleList *netHandleList) {
+    return -1;
+  };
+  auto result = net_connect_adapter_impl.GetDnsServersForVpn();
+  EXPECT_EQ(result.empty(), true);
+  g_mock_OH_NetConn_GetAllNets = nullptr;
+}
+
+TEST_F(NetConnectAdapterImplTest, GetDnsServersForVpn_002) {
+  MockNetConnectAdapterImpl net_connect_adapter_impl;
+  g_mock_OH_NetConn_GetAllNets = [](NetConn_NetHandleList *netHandleList) {
+    netHandleList->netHandleListSize = 0;
+    return 0;
+  };
+  auto result = net_connect_adapter_impl.GetDnsServersForVpn();
+  EXPECT_EQ(result.empty(), true);
+  g_mock_OH_NetConn_GetAllNets = nullptr;
+}
+
+TEST_F(NetConnectAdapterImplTest, GetDnsServersForVpn_003) {
+  MockNetConnectAdapterImpl net_connect_adapter_impl;
+  g_mock_OH_NetConn_GetAllNets = [](NetConn_NetHandleList *netHandleList) {
+    netHandleList->netHandleListSize = 1;
+    netHandleList->netHandles[0].netId = 100;
+    return 0;
+  };
+  g_mock_OH_NetConn_GetNetCapabilities = [](NetConn_NetHandle *, NetConn_NetCapabilities *) {
+    return -1;
+  };
+  auto result = net_connect_adapter_impl.GetDnsServersForVpn();
+  EXPECT_EQ(result.empty(), true);
+  g_mock_OH_NetConn_GetAllNets = nullptr;
+  g_mock_OH_NetConn_GetNetCapabilities = nullptr;
+}
+
+TEST_F(NetConnectAdapterImplTest, GetDnsServersForVpn_004) {
+  MockNetConnectAdapterImpl net_connect_adapter_impl;
+  g_mock_OH_NetConn_GetAllNets = [](NetConn_NetHandleList *netHandleList) {
+    netHandleList->netHandleListSize = 2;
+    netHandleList->netHandles[0].netId = 100;
+    netHandleList->netHandles[0].netId = 200;
+    return 0;
+  };
+  g_mock_OH_NetConn_GetNetCapabilities = [](NetConn_NetHandle *, NetConn_NetCapabilities *netCapabilities) {
+    netCapabilities->bearerTypesSize = 1;
+    netCapabilities->bearerTypes[0] = NETCONN_BEARER_WIFI;
+    return 0;
+  };
+  auto result = net_connect_adapter_impl.GetDnsServersForVpn();
+  EXPECT_EQ(result.empty(), true);
+  g_mock_OH_NetConn_GetAllNets = nullptr;
+  g_mock_OH_NetConn_GetNetCapabilities = nullptr;
+}
+
+TEST_F(NetConnectAdapterImplTest, GetDnsServersForVpn_005) {
+  NetConnectAdapterImpl net_connect_adapter_impl;
+  g_mock_OH_NetConn_GetAllNets = [](NetConn_NetHandleList *netHandleList) {
+    netHandleList->netHandleListSize = 1;
+    netHandleList->netHandles[0].netId = 100;
+    return 0;
+  };
+  g_mock_OH_NetConn_GetNetCapabilities = [](NetConn_NetHandle *, NetConn_NetCapabilities *netCapabilities) {
+    netCapabilities->bearerTypesSize = 1;
+    netCapabilities->bearerTypes[0] = NETCONN_BEARER_VPN;
+    return 0;
+  };
+  g_mock_OH_NetConn_GetConnectionProperties = [](NetConn_NetHandle *, NetConn_ConnectionProperties *properties) {
+    properties->dnsListSize = 1;
+    errno_t res = strcpy_s(properties->netAddrList[0].address,
+                           sizeof(properties->netAddrList[0].address),
+                           "8.8.8.8");
+    if (res != EOK) {
+    return -1;
+    }
+    return 0;
+  };
+  auto result = net_connect_adapter_impl.GetDnsServersForVpn();
+  EXPECT_EQ(result.empty(), false);
+  g_mock_OH_NetConn_GetAllNets = nullptr;
+  g_mock_OH_NetConn_GetNetCapabilities = nullptr;
+  g_mock_OH_NetConn_GetConnectionProperties = nullptr;
+}
+
+/**
+ * @tc.name: NetConnectAdapterImplTest_GetNetAddrListForVpn.
+ * @tc.desc: test of GetDnsServersByNetId in NetConnectAdapterImplTest
+ * @tc.type: FUNC.
+ */
+TEST_F(NetConnectAdapterImplTest, GetNetAddrListForVpn_001) {
+  MockNetConnectAdapterImpl net_connect_adapter_impl;
+  g_mock_OH_NetConn_GetAllNets = [](NetConn_NetHandleList *netHandleList) {
+    return -1;
+  };
+  auto result = net_connect_adapter_impl.GetNetAddrListForVpn();
+  EXPECT_EQ(result.empty(), true);
+  g_mock_OH_NetConn_GetAllNets = nullptr;
+}
+
+TEST_F(NetConnectAdapterImplTest, GetNetAddrListForVpn_002) {
+  MockNetConnectAdapterImpl net_connect_adapter_impl;
+  g_mock_OH_NetConn_GetAllNets = [](NetConn_NetHandleList *netHandleList) {
+    netHandleList->netHandleListSize = 0;
+    return 0;
+  };
+  auto result = net_connect_adapter_impl.GetNetAddrListForVpn();
+  EXPECT_EQ(result.empty(), true);
+  g_mock_OH_NetConn_GetAllNets = nullptr;
+}
+
+TEST_F(NetConnectAdapterImplTest, GetNetAddrListForVpn_003) {
+  MockNetConnectAdapterImpl net_connect_adapter_impl;
+  g_mock_OH_NetConn_GetAllNets = [](NetConn_NetHandleList *netHandleList) {
+    netHandleList->netHandleListSize = 1;
+    netHandleList->netHandles[0].netId = 100;
+    return 0;
+  };
+  g_mock_OH_NetConn_GetNetCapabilities = [](NetConn_NetHandle *, NetConn_NetCapabilities *) {
+    return -1;
+  };
+  auto result = net_connect_adapter_impl.GetNetAddrListForVpn();
+  EXPECT_EQ(result.empty(), true);
+  g_mock_OH_NetConn_GetAllNets = nullptr;
+  g_mock_OH_NetConn_GetNetCapabilities = nullptr;
+}
+
+TEST_F(NetConnectAdapterImplTest, GetNetAddrListForVpn_004) {
+  MockNetConnectAdapterImpl net_connect_adapter_impl;
+  g_mock_OH_NetConn_GetAllNets = [](NetConn_NetHandleList *netHandleList) {
+    netHandleList->netHandleListSize = 2;
+    netHandleList->netHandles[0].netId = 100;
+    netHandleList->netHandles[0].netId = 200;
+    return 0;
+  };
+  g_mock_OH_NetConn_GetNetCapabilities = [](NetConn_NetHandle *, NetConn_NetCapabilities *netCapabilities) {
+    netCapabilities->bearerTypesSize = 1;
+    netCapabilities->bearerTypes[0] = NETCONN_BEARER_WIFI;
+    return 0;
+  };
+  auto result = net_connect_adapter_impl.GetNetAddrListForVpn();
+  EXPECT_EQ(result.empty(), true);
+  g_mock_OH_NetConn_GetAllNets = nullptr;
+  g_mock_OH_NetConn_GetNetCapabilities = nullptr;
+}
+
+TEST_F(NetConnectAdapterImplTest, GetNetAddrListForVpn_005) {
+  MockNetConnectAdapterImpl net_connect_adapter_impl;
+  g_mock_OH_NetConn_GetAllNets = [](NetConn_NetHandleList *netHandleList) {
+    netHandleList->netHandleListSize = 1;
+    netHandleList->netHandles[0].netId = 100;
+    return 0;
+  };
+  g_mock_OH_NetConn_GetNetCapabilities = [](NetConn_NetHandle *, NetConn_NetCapabilities *netCapabilities) {
+    netCapabilities->bearerTypesSize = 1;
+    netCapabilities->bearerTypes[0] = NETCONN_BEARER_VPN;
+    return 0;
+  };
+  g_mock_OH_NetConn_GetConnectionProperties = [](NetConn_NetHandle *, NetConn_ConnectionProperties *properties) {
+    properties->netAddrListSize = 1;
+    errno_t res = strcpy_s(properties->netAddrList[0].address,
+                           sizeof(properties->netAddrList[0].address),
+                           "8.8.8.8");
+    if (res != EOK) {
+    return -1;
+    }
+    return 0;
+  };
+  auto result = net_connect_adapter_impl.GetNetAddrListForVpn();
+  EXPECT_EQ(result.empty(), false);
+  g_mock_OH_NetConn_GetAllNets = nullptr;
+  g_mock_OH_NetConn_GetNetCapabilities = nullptr;
+  g_mock_OH_NetConn_GetConnectionProperties = nullptr;
+}
+
+/**
+ * @tc.name: NetConnectAdapterImplTest_GetNetAddrListInternal.
+ * @tc.desc: test of GetDnsServersByNetId in NetConnectAdapterImplTest
+ * @tc.type: FUNC.
+ */
+TEST_F(NetConnectAdapterImplTest, GetNetAddrListInternal_001) {
+  MockNetConnectAdapterImpl net_connect_adapter_impl;
+  NetConn_NetHandle netHandle;
+  g_mock_OH_NetConn_GetConnectionProperties = [](NetConn_NetHandle *, NetConn_ConnectionProperties *) {
+    return -1;
+  };
+  auto result = net_connect_adapter_impl.GetNetAddrListInternal(netHandle);
+  EXPECT_EQ(result.empty(), true);
+  g_mock_OH_NetConn_GetConnectionProperties = nullptr;
+}
+
+TEST_F(NetConnectAdapterImplTest, GetNetAddrListInternal_002) {
+  MockNetConnectAdapterImpl net_connect_adapter_impl;
+  NetConn_NetHandle netHandle;
+  g_mock_OH_NetConn_GetConnectionProperties = [](NetConn_NetHandle *, NetConn_ConnectionProperties *properties) {
+    properties->netAddrListSize = 0;
+    return 0;
+  };
+  auto result = net_connect_adapter_impl.GetNetAddrListInternal(netHandle);
+  EXPECT_EQ(result.empty(), true);
+  g_mock_OH_NetConn_GetConnectionProperties = nullptr;
+}
+
+TEST_F(NetConnectAdapterImplTest, GetNetAddrListInternal_003) {
+  MockNetConnectAdapterImpl net_connect_adapter_impl;
+  NetConn_NetHandle netHandle;
+  g_mock_OH_NetConn_GetConnectionProperties = [](NetConn_NetHandle *, NetConn_ConnectionProperties *properties) {
+    properties->netAddrListSize = 1;
+    errno_t res = strcpy_s(properties->netAddrList[0].address,
+                           sizeof(properties->netAddrList[0].address),
+                           "8.8.8.8");
+    if (res != EOK) {
+    return -1;
+    }
+    return 0;
+  };
+  auto result = net_connect_adapter_impl.GetNetAddrListInternal(netHandle);
+  EXPECT_EQ(result.empty(), false);
+  g_mock_OH_NetConn_GetConnectionProperties = nullptr;
 }

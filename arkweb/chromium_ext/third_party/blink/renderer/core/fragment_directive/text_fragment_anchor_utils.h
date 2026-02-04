@@ -22,6 +22,7 @@
 
 namespace blink {
 class LocalFrame;
+class DocumentLoader;
 
 class CORE_EXPORT TextFragmentAnchorUtils
     : public GarbageCollected<TextFragmentAnchorUtils> {
@@ -32,6 +33,7 @@ class CORE_EXPORT TextFragmentAnchorUtils
                           bool should_scroll,
                           TextFragmentAnchor* text_fragment_anchor);
   void StartHighlightFadeTimer();
+  static bool ShouldIgnoreToken(const DocumentLoader& loader);
   void Trace(Visitor*) const;
 
  private:

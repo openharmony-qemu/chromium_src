@@ -287,11 +287,12 @@ void LocalFrame::StartHighlightFadeTimer(base::TimeDelta delay) {
 }
 
 void LocalFrame::ClearHighlight() {
-  if (!GetTextFragmentHandler()) {
-    LOG(ERROR) << "LocalFrame::ClearHighlight failed, no handler.";
+  if (GetTextFragmentHandler() && GetSettings() &&
+      GetSettings()->GetArkwebAgentEnabled()) {
+    GetTextFragmentHandler()->RemoveFragments();
     return;
   }
-  GetTextFragmentHandler()->RemoveFragments();
+  LOG(ERROR) << "LocalFrame::ClearHighlight failed, no handler.";
 }
 #endif
 }  // namespace blink

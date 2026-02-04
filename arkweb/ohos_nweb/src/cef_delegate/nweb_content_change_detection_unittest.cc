@@ -16,15 +16,10 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include <memory>
-
-#include "arkweb/build/features/features.h"
-#include "arkweb/ohos_nweb/src/mock_nweb_delegate.h"
 #include "base/files/file_path.h"
-#include "base/memory/weak_ptr.h"
-#include "nweb_content_change_detection.h"
-#include "nweb_delegate.h"
 #include "ui/base/resource/resource_bundle.h"
+#include "nweb_content_change_detection.h"
+#include "mock_nweb_delegate.h"
 
 using namespace testing;
 
@@ -33,11 +28,8 @@ namespace OHOS::NWeb {
 class NWebContentChangeDetectionTest : public ::testing::Test {
  public:
   void SetUp() override {
-    // Initialize ResourceBundle with empty pak path
-    // GetRawDataResource will return empty string_view
     ui::ResourceBundle::CleanupSharedInstance();
     ui::ResourceBundle::InitSharedInstanceWithPakPath(base::FilePath());
-
     mock_delegate_ = std::make_shared<MockNWebDelegate>();
     weak_delegate_ = mock_delegate_->WeakFromThis();
   }
@@ -64,12 +56,9 @@ TEST_F(NWebContentChangeDetectionTest, SetEnable_NullDelegate) {
 // Test: SetContentChangeDetectionEnable with valid delegate, enable = true
 TEST_F(NWebContentChangeDetectionTest, SetEnable_EnableTrue) {
   NWebContentChangeDetection detection(weak_delegate_);
-
-#if BUILDFLAG(ARKWEB_AI)
   EXPECT_CALL(*mock_delegate_,
               RegisterOnLoadStartedCbForContentChange(_))
       .Times(1);
-#endif
 
   detection.SetContentChangeDetectionEnable(true);
 }
@@ -77,12 +66,9 @@ TEST_F(NWebContentChangeDetectionTest, SetEnable_EnableTrue) {
 // Test: SetContentChangeDetectionEnable with valid delegate, enable = false
 TEST_F(NWebContentChangeDetectionTest, SetEnable_EnableFalse) {
   NWebContentChangeDetection detection(weak_delegate_);
-
-#if BUILDFLAG(ARKWEB_AI)
   EXPECT_CALL(*mock_delegate_,
               RegisterOnLoadStartedCbForContentChange(_))
       .Times(1);
-#endif
 
   detection.SetContentChangeDetectionEnable(false);
 }
@@ -129,12 +115,9 @@ TEST_F(NWebContentChangeDetectionTest, SetConfig_NullDelegate) {
 // Test: Multiple calls to SetContentChangeDetectionEnable
 TEST_F(NWebContentChangeDetectionTest, SetEnable_MultipleCalls) {
   NWebContentChangeDetection detection(weak_delegate_);
-
-#if BUILDFLAG(ARKWEB_AI)
   EXPECT_CALL(*mock_delegate_,
               RegisterOnLoadStartedCbForContentChange(_))
       .Times(3);
-#endif
 
   detection.SetContentChangeDetectionEnable(true);
   detection.SetContentChangeDetectionEnable(false);
@@ -147,11 +130,9 @@ TEST_F(NWebContentChangeDetectionTest, SetConfig_BeforeSetEnable) {
 
   detection.SetContentChangeDetectionConfig(200, 0.3f);
 
-#if BUILDFLAG(ARKWEB_AI)
   EXPECT_CALL(*mock_delegate_,
               RegisterOnLoadStartedCbForContentChange(_))
       .Times(1);
-#endif
 
   detection.SetContentChangeDetectionEnable(true);
 }
@@ -159,12 +140,9 @@ TEST_F(NWebContentChangeDetectionTest, SetConfig_BeforeSetEnable) {
 // Test: SetConfig after SetEnable
 TEST_F(NWebContentChangeDetectionTest, SetConfig_AfterSetEnable) {
   NWebContentChangeDetection detection(weak_delegate_);
-
-#if BUILDFLAG(ARKWEB_AI)
   EXPECT_CALL(*mock_delegate_,
               RegisterOnLoadStartedCbForContentChange(_))
       .Times(1);
-#endif
 
   detection.SetContentChangeDetectionEnable(true);
   detection.SetContentChangeDetectionConfig(300, 0.4f);
@@ -173,12 +151,9 @@ TEST_F(NWebContentChangeDetectionTest, SetConfig_AfterSetEnable) {
 // Test: Delegate becomes invalid during operation
 TEST_F(NWebContentChangeDetectionTest, DelegateBecomesInvalid) {
   NWebContentChangeDetection detection(weak_delegate_);
-
-#if BUILDFLAG(ARKWEB_AI)
   EXPECT_CALL(*mock_delegate_,
               RegisterOnLoadStartedCbForContentChange(_))
       .Times(1);
-#endif
 
   detection.SetContentChangeDetectionEnable(true);
 
@@ -243,12 +218,9 @@ TEST_F(NWebContentChangeDetectionTest, SetConfig_VerySmallTextRatio) {
 // Test: Alternating enable/disable
 TEST_F(NWebContentChangeDetectionTest, SetEnable_Alternating) {
   NWebContentChangeDetection detection(weak_delegate_);
-
-#if BUILDFLAG(ARKWEB_AI)
   EXPECT_CALL(*mock_delegate_,
               RegisterOnLoadStartedCbForContentChange(_))
       .Times(5);
-#endif
 
   detection.SetContentChangeDetectionEnable(true);
   detection.SetContentChangeDetectionEnable(false);
@@ -260,12 +232,9 @@ TEST_F(NWebContentChangeDetectionTest, SetEnable_Alternating) {
 // Test: Config change while enabled
 TEST_F(NWebContentChangeDetectionTest, SetConfig_WhileEnabled) {
   NWebContentChangeDetection detection(weak_delegate_);
-
-#if BUILDFLAG(ARKWEB_AI)
   EXPECT_CALL(*mock_delegate_,
               RegisterOnLoadStartedCbForContentChange(_))
       .Times(1);
-#endif
 
   detection.SetContentChangeDetectionEnable(true);
   detection.SetContentChangeDetectionConfig(200, 0.25f);

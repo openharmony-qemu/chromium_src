@@ -16,13 +16,13 @@
 #ifndef NWEB_CONTENT_CHANGE_DETECTION_H
 #define NWEB_CONTENT_CHANGE_DETECTION_H
 
-#include "nweb_delegate.h"
+#include "nweb_delegate_interface.h"
 
 namespace OHOS::NWeb {
 
 class NWebContentChangeDetection {
  public:
-  explicit NWebContentChangeDetection(base::WeakPtr<NWebDelegate> nweb_delegate);
+  explicit NWebContentChangeDetection(base::WeakPtr<NWebDelegateInterface> nweb_delegate);
   void SetContentChangeDetectionEnable(bool enable);
   void SetContentChangeDetectionConfig(int32_t min_report_time, float text_content_ratio);
 
@@ -34,7 +34,7 @@ class NWebContentChangeDetection {
   int32_t min_report_time_ = 100;
   float text_content_ratio_ = 0.15f;
 
-  base::WeakPtr<NWebDelegate> nweb_delegate_;
+  base::WeakPtr<NWebDelegateInterface> nweb_delegate_;
   base::WeakPtrFactory<NWebContentChangeDetection> weak_factory_{this};
 };
 

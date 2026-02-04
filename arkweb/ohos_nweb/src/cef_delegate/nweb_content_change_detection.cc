@@ -26,7 +26,7 @@ constexpr std::string_view kStartTemplate = "(function(window) { window.viewport
 constexpr std::string_view kStopTemplate = "(function(window) { window.viewportFontMonitor.stop(); })(window);";
 
 NWebContentChangeDetection::NWebContentChangeDetection(
-    base::WeakPtr<NWebDelegate> nweb_delegate)
+    base::WeakPtr<NWebDelegateInterface> nweb_delegate)
     : nweb_delegate_(nweb_delegate) {}
 
 void NWebContentChangeDetection::SetContentChangeDetectionEnable(bool enable) {

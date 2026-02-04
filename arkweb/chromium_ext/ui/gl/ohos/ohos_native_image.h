@@ -53,6 +53,7 @@ class GL_EXPORT OhosNativeImage
  private:
   friend class base::RefCountedThreadSafe<OhosNativeImage>;
   virtual ~OhosNativeImage();
+  void DestroyPassedSurfaceFromGpuProcess();
 
   std::unique_ptr<OHOS::NWeb::NativeImageAdapter> native_image_adapter_;
   std::shared_ptr<OHOS::NWeb::FrameAvailableListenerImpl> listener_;

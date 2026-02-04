@@ -25,6 +25,9 @@
 #include "ohos_nweb/src/capi/nweb_extension_javascript_item.h"
 #include "ohos_nweb/src/capi/nweb_native_embed_first_frame_paint_event.h"
 #include "ohos_nweb/src/capi/nweb_permission_request.h"
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+#include "ohos_nweb/src/capi/nweb_extension_safe_browsing_params.h"
+#endif
 
 #if BUILDFLAG(ARKWEB_NAVIGATION)
 #include "arkweb/ohos_nweb/src/capi/nweb_icon_size.h"
@@ -144,13 +147,6 @@ struct NWebAppClientExtensionCallback {
                                            int transition_type,
                                            bool is_key_request,
                                            int32_t nweb_id);
-#endif
-
-#if BUILDFLAG(ARKWEB_SAFEBROWSING)
-  void (*OnSafeBrowsingCheckDetail)(int32_t nweb_id,
-                                    int code,
-                                    int policy,
-                                    int threat);
 #endif
 };
 

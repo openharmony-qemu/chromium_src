@@ -70,4 +70,11 @@ BASE_FEATURE(kPreferDrawToCopy,
              "PreferDrawToCopy",
              base::FEATURE_ENABLED_BY_DEFAULT);
 #endif
+
+#if BUILDFLAG(ARKWEB_ANGLE)
+BASE_FEATURE(kDefaultANGLE,
+             "DefaultANGLE",
+             base::FEATURE_ENABLED_BY_DEFAULT);
+#endif
+
 }

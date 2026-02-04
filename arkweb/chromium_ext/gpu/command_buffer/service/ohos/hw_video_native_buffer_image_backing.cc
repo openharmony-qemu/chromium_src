@@ -43,58 +43,6 @@
 namespace gpu {
 
 namespace {
-void CreateAndBindEglImageFromNativeBuffer(OHOSNativeBuffer buffer,
-                                           GLuint service_id) {
-  TRACE_EVENT0("gpu",
-               "HwVideoNativeBufferImageBacking::"
-               "BeginAccess::CreateAndBindEglImageFromNativeBuffer");
-  DCHECK(buffer);
-
-  EGLClientBuffer egl_client_buffer;
-
-  // Trace time taken for GetEGLClientBufferFromNativeBuffer
-  {
-    TRACE_EVENT0("gpu",
-                 "HwVideoNativeBufferImageBacking::"
-                 "BeginAccess::GetEGLClientBufferFromNativeBuffer");
-    if (gl::ohos::GetEGLClientBufferFromNativeBuffer(buffer,
-                                                     &egl_client_buffer) != 0) {
-      LOG(ERROR) << "Failed to get EGLClientBuffer!";
-      return;
-    }
-  }
-  {
-    // Trace time taken for CreateEGLImage
-    TRACE_EVENT0("gpu",
-                 "HwVideoNativeBufferImageBacking::"
-                 "BeginAccess::CreateEGLImage");
-    auto egl_image = gl::ohos::CreateEGLImageForVideo(egl_client_buffer);
-
-    // Trace time taken for FreeEGLClientBuffer
-    {
-      TRACE_EVENT0("gpu",
-                   "HwVideoNativeBufferImageBacking::"
-                   "BeginAccess::FreeEGLClientBuffer");
-      gl::ohos::FreeEGLClientBuffer(egl_client_buffer);
-    }
-
-    if (egl_image == EGL_NO_IMAGE_KHR) {
-      LOG(ERROR) << "Failed to create EGLImage! ";
-      return;
-    }
-
-    {
-      TRACE_EVENT0("gpu",
-                   "HwVideoNativeBufferImageBacking::"
-                   "BeginAccess::glBindTexture");
-      gl::ScopedRestoreTexture scoped_restore(gl::g_current_gl_context,
-                                              GL_TEXTURE_EXTERNAL_OES);
-      glBindTexture(GL_TEXTURE_EXTERNAL_OES, service_id);
-      glEGLImageTargetTexture2DOES(GL_TEXTURE_EXTERNAL_OES, egl_image.get());
-    }
-  }
-}
-
 std::unique_ptr<VulkanImage> CreateVkImageFromNativeBufferHandle(
     gpu::ScopedNativeBufferHandle nb_handle,
     SharedContextState* context_state,
@@ -257,6 +205,69 @@ class HwVideoNativeBufferImageBacking::GLTextureVideoImageRepresentation
   }
 //LCOV_EXCL_STOP
 
+void CreateAndBindEglImageFromNativeBuffer(OHOSNativeBuffer buffer,
+                                           GLuint service_id) {
+  TRACE_EVENT0("gpu",
+               "HwVideoNativeBufferImageBacking::"
+               "BeginAccess::CreateAndBindEglImageFromNativeBuffer");
+  DCHECK(buffer);
+
+  EGLClientBuffer egl_client_buffer;
+
+  // Trace time taken for GetEGLClientBufferFromNativeBuffer
+  {
+    TRACE_EVENT0("gpu",
+                 "HwVideoNativeBufferImageBacking::"
+                 "BeginAccess::GetEGLClientBufferFromNativeBuffer");
+    if (gl::ohos::GetEGLClientBufferFromNativeBuffer(buffer,
+                                                     &egl_client_buffer) != 0) {
+      LOG(ERROR) << "Failed to get EGLClientBuffer!";
+      return;
+    }
+  }
+  {
+    // Trace time taken for CreateEGLImage
+    TRACE_EVENT0("gpu",
+                 "HwVideoNativeBufferImageBacking::"
+                 "BeginAccess::CreateEGLImage");
+    auto egl_image = gl::ohos::CreateEGLImageForVideo(egl_client_buffer);
+
+    // Trace time taken for FreeEGLClientBuffer
+    {
+      TRACE_EVENT0("gpu",
+                   "HwVideoNativeBufferImageBacking::"
+                   "BeginAccess::FreeEGLClientBuffer");
+      gl::ohos::FreeEGLClientBuffer(egl_client_buffer);
+    }
+
+    if (egl_image == EGL_NO_IMAGE_KHR) {
+      LOG(ERROR) << "Failed to create EGLImage! ";
+      return;
+    }
+
+    {
+      TRACE_EVENT0("gpu",
+                   "HwVideoNativeBufferImageBacking::"
+                   "BeginAccess::glBindTexture");
+      if (gl::g_current_gl_driver->ext.b_GL_ANGLE_texture_external_update) {
+        // Notify the texture that its size has changed.
+        unsigned int target = GL_TEXTURE_EXTERNAL_OES;
+        GLint prev_texture = 0;
+        glGetIntegerv(gles2::GetTextureBindingQuery(target), &prev_texture);
+        glBindTexture(target, texture_->service_id());
+
+        glEGLImageTargetTexture2DOES(GL_TEXTURE_EXTERNAL_OES, egl_image.get());
+        glBindTexture(target, prev_texture);
+      } else {
+        gl::ScopedRestoreTexture scoped_restore(gl::g_current_gl_context,
+                                                GL_TEXTURE_EXTERNAL_OES);
+        glBindTexture(GL_TEXTURE_EXTERNAL_OES, service_id);
+        glEGLImageTargetTexture2DOES(GL_TEXTURE_EXTERNAL_OES, egl_image.get());
+      }
+    }
+  }
+}
+
   bool BeginAccess(GLenum mode) override {
     TRACE_EVENT0("gpu",
                  "HwVideoNativeBufferImageBacking::"
@@ -301,6 +312,107 @@ class HwVideoNativeBufferImageBacking::GLTextureVideoImageRepresentation
   std::unique_ptr<ScopedNativeBufferFenceSync> scoped_native_buffer_;
 };
 
+// Representation of HwVideoNativeBufferImageBacking as a GL Texture.
+class HwVideoNativeBufferImageBacking::GLTexturePassthroughVideoImageRepresentation
+    : public GLTexturePassthroughImageRepresentation,
+      public RefCountedLockHelperDrDc {
+ public:
+  GLTexturePassthroughVideoImageRepresentation(
+      SharedImageManager* manager,
+      HwVideoNativeBufferImageBacking* backing,
+      MemoryTypeTracker* tracker,
+      std::unique_ptr<AbstractTextureOHOS> texture,
+      scoped_refptr<RefCountedLock> drdc_lock)
+      : GLTexturePassthroughImageRepresentation(manager, backing, tracker),
+        RefCountedLockHelperDrDc(std::move(drdc_lock)),
+        abstract_texture_(std::move(texture)),
+        passthrough_texture_(gles2::TexturePassthrough::CheckedCast(
+            abstract_texture_->GetTextureBase())) {}
+
+  ~GLTexturePassthroughVideoImageRepresentation() override {
+    if (!has_context()) {
+      abstract_texture_->NotifyOnContextLost();
+    }
+  }
+
+  // Disallow copy and assign.
+  GLTexturePassthroughVideoImageRepresentation(
+    const GLTexturePassthroughVideoImageRepresentation&) = delete;
+  GLTexturePassthroughVideoImageRepresentation& operator=(
+      const GLTexturePassthroughVideoImageRepresentation&) = delete;
+
+  const scoped_refptr<gles2::TexturePassthrough>& GetTexturePassthrough (
+      int plane_index) override {
+    DCHECK_EQ(plane_index, 0);
+    return passthrough_texture_;
+  }
+
+void CreateAndBindEglImageFromNativeBuffer(OHOSNativeBuffer buffer,
+                                           GLuint service_id) {
+  TRACE_EVENT0("gpu",
+               "HwVideoNativeBufferImageBacking::"
+               "BeginAccess::CreateAndBindEglImageFromNativeBuffer");
+  DCHECK(buffer);
+
+  EGLClientBuffer egl_client_buffer;
+  gl::ohos::GetEGLClientBufferFromNativeBuffer(buffer, &egl_client_buffer);
+
+  auto egl_image = gl::ohos::CreateEGLImageForVideo(egl_client_buffer);
+
+  if (egl_image == EGL_NO_IMAGE_KHR) {
+    LOG(ERROR) << "Failed to create EGLImage! ";
+    return;
+  } else {
+    gl::ScopedRestoreTexture scoped_restore(gl::g_current_gl_context,
+                                            GL_TEXTURE_EXTERNAL_OES);
+    glBindTexture(GL_TEXTURE_EXTERNAL_OES, service_id);
+    glEGLImageTargetTexture2DOES(GL_TEXTURE_EXTERNAL_OES, egl_image.get());
+
+  }
+}
+  bool BeginAccess(GLenum mode) override {
+    TRACE_EVENT0("gpu",
+                 "HwVideoNativeBufferImageBacking::"
+                 "GLTexturePassthroughVideoImageRepresentation::BeginAccess");
+    // This representation should only be called for read.
+    DCHECK(mode == GL_SHARED_IMAGE_ACCESS_MODE_READ_CHROMIUM);
+
+    auto* video_backing =
+        static_cast<HwVideoNativeBufferImageBacking*>(backing());
+    {
+      base::AutoLockMaybe auto_lock(GetDrDcLockPtr());
+      scoped_native_buffer_ =
+          video_backing->stream_texture_sii_->GetNativeBuffer();
+     }
+    if (!scoped_native_buffer_) {
+      LOG(ERROR) << "Failed to get the hardware buffer.";
+      return false;
+    }
+
+    SyncFenceWait(scoped_native_buffer_->TakeFence());
+    CreateAndBindEglImageFromNativeBuffer(scoped_native_buffer_->buffer(),
+                                          abstract_texture_->service_id());
+    return true;
+  }
+
+  void EndAccess() override {
+    DCHECK(scoped_native_buffer_);
+    TRACE_EVENT0("gpu",
+                 "HwVideoNativeBufferImageBacking::"
+                 "GLTexturePassthroughVideoImageRepresentation::EndAccess");
+    base::ScopedFD sync_fd = gl::CreateEglFenceAndExportFd();
+
+    scoped_native_buffer_->SetReadFence(std::move(sync_fd));
+    base::AutoLockMaybe auto_lock(GetDrDcLockPtr());
+    scoped_native_buffer_ = nullptr;
+  }
+
+ private:
+  std::unique_ptr<AbstractTextureOHOS> abstract_texture_;
+  scoped_refptr<gles2::TexturePassthrough> passthrough_texture_;
+  std::unique_ptr<ScopedNativeBufferFenceSync> scoped_native_buffer_;
+};
+
 //LCOV_EXCL_START
 std::unique_ptr<GLTextureImageRepresentation>
 HwVideoNativeBufferImageBacking::ProduceGLTexture(SharedImageManager* manager,
@@ -324,6 +436,26 @@ HwVideoNativeBufferImageBacking::ProduceGLTexture(SharedImageManager* manager,
       manager, this, tracker, std::move(texture), GetDrDcLock());
 }
 //LCOV_EXCL_STOP
+
+std::unique_ptr<GLTexturePassthroughImageRepresentation>
+HwVideoNativeBufferImageBacking::ProduceGLTexturePassthrough(
+    SharedImageManager* manager,
+    MemoryTypeTracker* tracker) {
+  base::AutoLockMaybe auto_lock(GetDrDcLockPtr());
+  // For (old) overlays, we don't have a texture owner, but overlay promotion
+  // might not happen for some reasons. In that case, it will try to draw
+  // which should result in no image.
+  if (!stream_texture_sii_->HasTextureOwner())
+    return nullptr;
+
+  // Generate an abstract texture.
+  auto texture = GenAbstractTexture(/*passthrough=*/true);
+  if (!texture)
+    return nullptr;
+
+  return std::make_unique<GLTexturePassthroughVideoImageRepresentation>(
+      manager, this, tracker, std::move(texture), GetDrDcLock());
+}
 
 class HwVideoNativeBufferImageBacking::SkiaVkNBRepresentation
                 : public SkiaVkHWVideoNBImageRepresentation,

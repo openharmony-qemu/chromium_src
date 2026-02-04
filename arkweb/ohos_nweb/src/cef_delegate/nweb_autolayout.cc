@@ -28,6 +28,13 @@
 #include "libcef/browser/thread_util.h"
 #include "hilog/log.h"
 
+#define PARSE_AND_ASSIGN_CONFIG_OPTIONAL(Dict, key, Limits, Member, DefaultValue) \
+  do { \
+    int temp_value = DefaultValue; \
+    ParseConfig((Dict), (key), (Limits), temp_value, false); \
+    (Member) = temp_value; \
+  } while(0)
+
 namespace OHOS::NWeb {
 using namespace ConfigConstants;
 std::shared_ptr<NwebAutolayout> NwebAutolayout::GetInstance() {
@@ -127,6 +134,7 @@ std::string NwebAutolayout::CreateH5AutoLayoutParam(const UrlRuleInfoEntry& url_
   root_dict.Set(kStrategyKey, url_rule_info.strategy);
   root_dict.Set(kAlphabetIdentificationMinSizeKey, url_rule_info.alphabetIdentificationMinSize);
   root_dict.Set(kAlphabetHeightWidthMinRatioKey, url_rule_info.alphabetHeightWidthMinRatio);
+  root_dict.Set(kTargetHeightRatioKey, url_rule_info.targetHeightRatio);
   root_dict.Set(kNeedCheckIdAndPageKey, base::Value(false));
 
   base::Value::List opacity_list;
@@ -232,6 +240,8 @@ bool NwebAutolayout::ParseToplevelConfig(const base::Value::Dict& root_dict) {
     kMinAlphabetIdentificationMinSize, kMaxAlphabetIdentificationMinSize, false, true};
   constexpr RangeLimits kAlphabetHeightWidthMinRatioRange{
     kMinAlphabetHeightWidthMinRatio, kMaxAlphabetHeightWidthMinRatio, false, true};
+  constexpr RangeLimits kTargetHeightRatioRange{
+    kMinTargetHeightRatio, kMaxTargetHeightRatio, false, true};
 
   int min_mask_area_ratio_threshold = 0;
   if (!ParseConfig(root_dict, kMinMaskAreaRatioThresholdKey, kMaskAreaThresholdRange,
@@ -261,15 +271,12 @@ bool NwebAutolayout::ParseToplevelConfig(const base::Value::Dict& root_dict) {
   mCCMConfig_.scale_animation_duration = scale_animation_duration;
 
   // alphabet_identification_min_size 和 alphabet_height_width_min_ratio 设置为非必填，兼容旧json格式
-  int alphabet_identification_min_size = kInvalidValue;
-  ParseConfig(root_dict, kAlphabetIdentificationMinSizeKey, kAlphabetIdentificationMinSizeRange,
-                         alphabet_identification_min_size, false);
-  mCCMConfig_.alphabet_identification_min_size = alphabet_identification_min_size;
-
-  int alphabet_height_width_min_ratio = kInvalidValue;
-  ParseConfig(root_dict, kAlphabetHeightWidthMinRatioKey, kAlphabetHeightWidthMinRatioRange,
-                         alphabet_height_width_min_ratio, false);
-  mCCMConfig_.alphabet_height_width_min_ratio = alphabet_height_width_min_ratio;
+  PARSE_AND_ASSIGN_CONFIG_OPTIONAL(root_dict, kAlphabetIdentificationMinSizeKey,
+      kAlphabetIdentificationMinSizeRange, mCCMConfig_.alphabet_identification_min_size, kInvalidValue);
+  PARSE_AND_ASSIGN_CONFIG_OPTIONAL(root_dict, kAlphabetHeightWidthMinRatioKey,
+      kAlphabetHeightWidthMinRatioRange, mCCMConfig_.alphabet_height_width_min_ratio, kInvalidValue);
+  PARSE_AND_ASSIGN_CONFIG_OPTIONAL(root_dict, kTargetHeightRatioKey,
+      kTargetHeightRatioRange, mCCMConfig_.target_height_ratio, kDefaultTargetHeightRatio);
 
   return ParseOpacityFilter(root_dict, mCCMConfig_.opacity_filter);
 }
@@ -383,6 +390,13 @@ std::optional<std::vector<UrlRuleInfoEntry>> NwebAutolayout::ParseUrlRuleInfo(
       url_rule_info_entry.alphabetHeightWidthMinRatio = mCCMConfig_.alphabet_height_width_min_ratio;
     }
 
+    url_rule_info_entry.targetHeightRatio = mCCMConfig_.target_height_ratio;
+    std::optional<int> target_height_ratio = url_rule_dict.FindInt(kTargetHeightRatioKey);
+    if (target_height_ratio.has_value() && target_height_ratio.value() > kMinTargetHeightRatio &&	 
+         target_height_ratio.value() <= kMaxTargetHeightRatio) {
+      url_rule_info_entry.targetHeightRatio = target_height_ratio.value();
+    }
+
     url_rules.push_back(std::move(url_rule_info_entry));
   }
   return url_rules;
@@ -457,6 +471,8 @@ void NwebAutolayout::CheckWebContainer(CefRefPtr<CefBrowser> browser, CefRefPtr<
     LOG(DEBUG) << "start to check the web container.pattern:" << EscapeForJS_TemplateLiteral(mPatternJSSource_);
     CefRefPtr<JSResultCallbackImpl> JsResultCb = new JSResultCallbackImpl(frame);
     browser->GetHost()->ExecuteJavaScript(EscapeForJS_TemplateLiteral(mPatternJSSource_), JsResultCb, false);
+  } else {
+    LOG(INFO) << "Miss in url whitelist and miniApp whitelist.";
   }
 }
 

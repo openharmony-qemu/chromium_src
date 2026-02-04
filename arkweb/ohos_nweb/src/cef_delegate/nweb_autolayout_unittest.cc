@@ -55,6 +55,7 @@ const std::string g_valid_config_with_nwe_params = R"({
     "scaleAnimationDuration": 100,
     "alphabetIdentificationMinSize": 12,
     "alphabetHeightWidthMinRatio": 10,
+    "targetHeightRatio": 70,
     "whitelist": {
         "com.example.app": {
             "pattern": "some_pattern",
@@ -68,7 +69,8 @@ const std::string g_valid_config_with_nwe_params = R"({
                     "urlPrefix": "https://www.example.com/path",
                     "strategy": 3,
                     "alphabetIdentificationMinSize": 15,
-                    "alphabetHeightWidthMinRatio": 15
+                    "alphabetHeightWidthMinRatio": 15,
+                    "targetHeightRatio": 90
                 },
                 {
                     "urlPrefix": "https://www.example.com/path/to/xxx.html",
@@ -2259,6 +2261,7 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_ValidConfigWithNewParams)
     EXPECT_EQ(mCCMConfig_.opacity_filter.second, 90);
     EXPECT_EQ(mCCMConfig_.alphabet_identification_min_size, 12);
     EXPECT_EQ(mCCMConfig_.alphabet_height_width_min_ratio, 10);
+    EXPECT_EQ(mCCMConfig_.target_height_ratio, 70);
 }
 
 TEST_F(NwebAutolayoutTest, ParseToplevelConfig_CompatibleConfigFile)
@@ -2278,6 +2281,7 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_CompatibleConfigFile)
     EXPECT_TRUE(ParseToplevelConfig(config->GetDict()));
     EXPECT_EQ(mCCMConfig_.alphabet_identification_min_size, 12);
     EXPECT_EQ(mCCMConfig_.alphabet_height_width_min_ratio, 10);
+    EXPECT_EQ(mCCMConfig_.target_height_ratio, 70);
 }
 
 TEST_F(NwebAutolayoutTest, ParseToplevelConfig_InvalidAlphabetIdentificationMinSize)
@@ -2396,7 +2400,8 @@ TEST_F(NwebAutolayoutTest, ParseUrlRuleInfo_ValidConfig)
                 "urlPrefix": "https://www.example.com/path",
                 "strategy": 3,
                 "alphabetIdentificationMinSize": 15,
-                "alphabetHeightWidthMinRatio": 15
+                "alphabetHeightWidthMinRatio": 15,
+                "targetHeightRatio": 90
             }
         ]})";
     std::optional<base::Value> url_rule_infos = base::JSONReader::Read(url_rule_info_str);
@@ -2413,6 +2418,7 @@ TEST_F(NwebAutolayoutTest, ParseUrlRuleInfo_ValidConfig)
     EXPECT_EQ(urlRuleInfo.value()[0].strategy, 3);
     EXPECT_EQ(urlRuleInfo.value()[0].alphabetIdentificationMinSize, 15);
     EXPECT_EQ(urlRuleInfo.value()[0].alphabetHeightWidthMinRatio, 15);
+    EXPECT_EQ(urlRuleInfo.value()[0].targetHeightRatio, 90);
 }
 
 TEST_F(NwebAutolayoutTest, ParseUrlRuleInfo_MissKey)
@@ -2686,6 +2692,10 @@ TEST_F(NwebAutolayoutTest, CreateH5AutoLayoutParam_ValidOutput)
     auto need_check_id_and_page = param_dict.FindBool(ConfigConstants::kNeedCheckIdAndPageKey);
     ASSERT_TRUE(need_check_id_and_page);
     EXPECT_FALSE(*need_check_id_and_page);
+
+    auto target_height_ratio = param_dict.FindInt(ConfigConstants::kTargetHeightRatioKey);
+    ASSERT_TRUE(target_height_ratio);
+    EXPECT_EQ(*target_height_ratio, 90);
 }
 
 TEST_F(NwebAutolayoutTest, FindBestMatchRule_EmptyUrlRule)
@@ -2711,6 +2721,7 @@ TEST_F(NwebAutolayoutTest, FindBestMatchRule_MatchWhitelist)
     EXPECT_EQ(url_rule_info_entry->alphabetIdentificationMinSize, 15);
     EXPECT_EQ(url_rule_info_entry->alphabetHeightWidthMinRatio, 15);
     EXPECT_EQ(url_rule_info_entry->strategy, 3);
+    EXPECT_EQ(url_rule_info_entry->targetHeightRatio, 90);
 }
 
 TEST_F(NwebAutolayoutTest, FindBestMatchRule_NotMatchWhitelist)

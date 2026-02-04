@@ -49,6 +49,7 @@ struct UrlRuleInfoEntry {
   int strategy;
   int alphabetIdentificationMinSize;
   int alphabetHeightWidthMinRatio;
+  int targetHeightRatio;
 };
 
 struct WhitelistEntry {
@@ -67,6 +68,7 @@ struct ParsedCCMConfig {
   int minScaleFactor;
   int alphabet_identification_min_size;
   int alphabet_height_width_min_ratio;
+  int target_height_ratio;
   WhitelistEntry whitelist;
 };
 
@@ -92,6 +94,9 @@ constexpr int kMinAlphabetIdentificationMinSize = 0;
 constexpr int kMaxAlphabetIdentificationMinSize = 26;
 constexpr int kMinAlphabetHeightWidthMinRatio = 0;
 constexpr int kMaxAlphabetHeightWidthMinRatio = 30;
+constexpr int kMinTargetHeightRatio = 0;
+constexpr int kMaxTargetHeightRatio = 10000;
+constexpr int kDefaultTargetHeightRatio = 70;
 constexpr int kInvalidValue = -1;
 
 constexpr std::string_view kCCMConfigPath = "/sys_prod/etc/web/WebAutoLayoutConfig.json";
@@ -120,6 +125,7 @@ constexpr std::string_view kStrategyKey = "strategy";
 constexpr std::string_view kAlphabetIdentificationMinSizeKey = "alphabetIdentificationMinSize";
 constexpr std::string_view kAlphabetHeightWidthMinRatioKey = "alphabetHeightWidthMinRatio";
 constexpr std::string_view kNeedCheckIdAndPageKey = "needCheckIdAndPage";
+constexpr std::string_view kTargetHeightRatioKey = "targetHeightRatio";
 }
 
 class ScopedTimeLogger {

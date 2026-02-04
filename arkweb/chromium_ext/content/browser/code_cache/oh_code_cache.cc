@@ -156,10 +156,11 @@ void ResponseCache::ClearAllCache() {
   {
     base::AutoLock lock(cache_metadata_map_lock_);
     (*cache_metadata_map_).clear();
-  }
 
-  // Set the cleared flag to prevent reading from deleted metadata file
-  cache_cleared_.store(true, std::memory_order_release);
+    // Set the cleared flag within the lock to prevent race condition
+    // between map.clear() and flag setting
+    cache_cleared_.store(true, std::memory_order_release);
+  }
 }
 
 ResponseCache::ResponseCache(const std::string& url) : url_(url) {}
@@ -229,6 +230,13 @@ bool ResponseCache::FindMetadata() {
   // Check if map is empty (need lock)
   {
     base::AutoLock lock(cache_metadata_map_lock_);
+
+    // Double-check: verify cache_cleared_ flag after acquiring lock
+    // to prevent race condition between lock release and flag setting
+    if (cache_cleared_.load(std::memory_order_acquire)) {
+      return false;
+    }
+
     if (!(*cache_metadata_map_).empty()) {
       // Map has data, try to find the entry
       auto it = (*cache_metadata_map_).find(url_hash_);
@@ -256,6 +264,10 @@ bool ResponseCache::FindMetadata() {
   // Update the shared map with lock
   {
     base::AutoLock lock(cache_metadata_map_lock_);
+
+    // Use the loaded temp_map without re-checking cache_cleared_ flag
+    // Reason: The data has already been read from file, discarding it would waste I/O
+    // If there's newer data from concurrent Write(), it will be handled in next cycle
     (*cache_metadata_map_) = std::move(temp_map);
 
     // Now find the entry

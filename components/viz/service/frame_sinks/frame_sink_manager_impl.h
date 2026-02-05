@@ -491,6 +491,10 @@ class VIZ_SERVICE_EXPORT FrameSinkManagerImpl
   void EvictFrameBackBuffers(const FrameSinkId& root_frame_sink_id) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+  void SetIfNeedCleanBuffers(const FrameSinkId& frame_sink_id, bool need_clean_buffers) override;
+#endif
+
 #if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
   void SetIsOfflineWebComponentInactive(bool is_inactive, const FrameSinkId& frame_sink_id) override;
 #endif

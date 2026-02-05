@@ -106,6 +106,17 @@ void RootCompositorFrameSinkImplExt::EvictFrameBackBuffers() {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+void RootCompositorFrameSinkImplExt::SetIfNeedCleanBuffers(bool need_clean_buffers)
+{
+  TRACE_EVENT1("viz", "RootCompositorFrameSinkImplExt::SetIfNeedCleanBuffers ",
+               "need_clean_buffers: ", need_clean_buffers);
+  if (display_ && display_->display_utils()) {
+    display_->display_utils()->SetIfNeedCleanBuffers(need_clean_buffers);
+  }
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
 void RootCompositorFrameSinkImplExt::SetIsOfflineWebComponentInactive(bool is_inactive) {
   display_->display_utils()->CleanBufferAfterSwapBuffer(is_inactive);

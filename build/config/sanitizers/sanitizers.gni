@@ -191,7 +191,7 @@ declare_args() {
                               sanitizer_coverage_flags != "")
 }
 
-assert(!is_hwasan || (target_os == "android" && target_cpu == "arm64"),
+assert(!is_hwasan || (target_os == "android" && target_cpu == "arm64") || (target_os == "ohos" && target_cpu == "arm64"),
        "HWASan only supported on Android ARM64 builds.")
 
 assert(

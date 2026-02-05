@@ -77,8 +77,10 @@ config("compiler") {
 
   if (current_cpu == "arm64") {
     if (arm_control_flow_integrity == "standard") {
-      cflags += [ "-mbranch-protection=pac-ret+b-key+bti" ]
-      rustflags = [ "-Zbranch-protection=bti" ]
+      if (!is_hwasan) {
+        cflags += [ "-mbranch-protection=pac-ret+b-key+bti" ]
+        rustflags = [ "-Zbranch-protection=bti" ]
+      }
     } else if (arm_control_flow_integrity == "pac") {
       cflags += [ "-mbranch-protection=pac-ret+b-key" ]
       rustflags = [ "-Zbranch-protection=pac-ret" ]
@@ -175,6 +177,10 @@ config("runtime_library") {
         libasan_file = "$ohos_toolchain_root/lib/clang/current/lib/arm-linux-ohos/libclang_rt.asan.a"
         libs += [ rebase_path(libasan_file) ]
       }
+      if (is_hwasan) {
+        libasan_file = "$ohos_toolchain_root/lib/clang/current/lib/arm-linux-ohos/libclang_rt.hwasan.a"
+        libs += [ rebase_path(libasan_file) ]
+      }
       if (using_sanitizer) {
         libasan_file = "$ohos_toolchain_root/lib/clang/current/lib/arm-linux-ohos/libclang_rt.ubsan_standalone.so"
         libs += [ rebase_path(libasan_file) ]
@@ -201,6 +207,10 @@ config("runtime_library") {
 
       if (is_asan) {
         libasan_file = "$ohos_toolchain_root/lib/clang/$llvm_version/lib/aarch64-linux-ohos/libclang_rt.asan.a"
+        libs += [ rebase_path(libasan_file) ]
+      }
+      if (is_hwasan) {
+        libasan_file = "$ohos_toolchain_root/lib/clang/$llvm_version/lib/aarch64-linux-ohos/libclang_rt.hwasan.a"
         libs += [ rebase_path(libasan_file) ]
       }
     }

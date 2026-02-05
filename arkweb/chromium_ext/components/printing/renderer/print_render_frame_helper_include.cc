@@ -14,6 +14,31 @@
  */
 
 #if BUILDFLAG(ARKWEB_PRINT)
+
+namespace {
+class SubWindowCallPrint {
+  public:
+    SubWindowCallPrint() {
+      if (!base::ohos::IsPcDevice()) {
+        return;
+      }
+      auto pid = base::GetCurrentRealPid();
+      OHOS::NWeb::ResSchedClientAdapter::ReportSubwindowCall(
+          OHOS::NWeb::ResSchedStatusAdapter::WEB_SUBWIN_CALL_START,
+          static_cast<uint32_t>(pid), static_cast<uint32_t>(pid));
+    }
+    ~SubWindowCallPrint() {
+      if (!base::ohos::IsPcDevice()) {
+        return;
+      }
+      auto pid = base::GetCurrentRealPid();
+      OHOS::NWeb::ResSchedClientAdapter::ReportSubwindowCall(
+          OHOS::NWeb::ResSchedStatusAdapter::WEB_SUBWIN_CALL_STOP,
+          static_cast<uint32_t>(pid), static_cast<uint32_t>(pid));
+    }
+};
+}
+
 void ClosuresForMojoResponse::SetPrintRequestedPreviewQuitClosure(
     base::OnceClosure quit_print_preview)
 {
@@ -45,6 +70,7 @@ void PrintRenderFrameHelper::DidDispatchPrintEvent(bool isBefore)
 
 void PrintRenderFrameHelper::ApplicationPrintRequestedPages()
 {
+  SubWindowCallPrint subWindowCallPrint{};
   ScopedIPC scoped_ipc(weak_ptr_factory_.GetWeakPtr());
   if (ipc_nesting_level_ > kAllowedIpcDepthForPrint) {
     return;
@@ -60,6 +86,11 @@ void PrintRenderFrameHelper::ApplicationPrintRequestedPages()
   auto plugin = delegate_->GetPdfElement(frame);
 
   Print(frame, plugin, PrintRequestType::kRegular);
+}
+
+void PrintRenderFrameHelper::PrintRequestedPages() {
+  SubWindowCallPrint subWindowCallPrint{};
+  PrintRequestedPagesInternal(/*already_notified_frame=*/false);
 }
 
 bool PrintRenderFrameHelper::CheckCancel()

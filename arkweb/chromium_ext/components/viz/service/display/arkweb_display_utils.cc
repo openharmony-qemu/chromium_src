@@ -30,6 +30,7 @@
 
 #if BUILDFLAG(ARKWEB_VULKAN)
 #include "gpu/config/gpu_finch_features.h"
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
 #endif
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
@@ -338,9 +339,24 @@ void ArkwebDisplayUtils::Resize(const gfx::Size& size) {
 #endif
 }
 
+#if BUILDFLAG(ARKWEB_VULKAN)
+void ArkwebDisplayUtils::JudgePartialSwap() {
+  if (features::IsUsingVulkan() && display_ && display_->renderer_) {
+    if (base::ohos::IsPageScale()) {
+      display_->renderer_->disable_partial_swap();
+    } else {
+      display_->renderer_->enable_partial_swap();
+    }
+  }
+}
+#endif
+
 void ArkwebDisplayUtils::DrawAndSwap(AggregatedRenderPass& last_render_pass,
                                      gfx::Size current_surface_size,
                                      AggregatedFrame& frame) {
+#if BUILDFLAG(ARKWEB_VULKAN)
+  JudgePartialSwap();
+#endif
   if (draw_mode_ ||
       (display_->settings_.auto_resize_output_surface &&
        last_render_pass.output_rect.size() != current_surface_size &&

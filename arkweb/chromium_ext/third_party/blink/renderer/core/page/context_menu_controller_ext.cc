@@ -211,9 +211,12 @@ void ContextMenuControllerExt::GetImgUrl(HitTestResult& result,
       // try to get background image url.
       const ComputedStyle* style =
           node->GetComputedStyleForElementOrLayoutObject();
-      StyleImage* style_image =
-          style ? style->BackgroundLayers().GetImage() : nullptr;
-      if (!style_image || !style->HasBackgroundImage()) {
+      if (!style || !style->HasBackgroundImage()) {
+        continue;
+      }
+
+      StyleImage* style_image = style->BackgroundLayers().GetImage();
+      if (!style_image) {
         continue;
       }
 

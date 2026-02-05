@@ -200,13 +200,13 @@ void ContextMenuControllerExt::GetImgUrl(HitTestResult& result,
         AtomicString img_src = img_element->getAttribute(html_names::kSrcAttr);
         if (!img_src.empty()) {
           data.src_url = GURL(inner_node->GetDocument().CompleteURL(
-                blink::StripLeadingAndTrailingHTMLSpaces(img_src)));
-            data.media_type = mojom::ContextMenuDataMediaType::kImage;
-            data.media_flags |= ContextMenuData::kMediaCanPrint;
-            data.has_image_contents = true;
-            break;
-          }
+              blink::StripLeadingAndTrailingHTMLSpaces(img_src)));
+          data.media_type = mojom::ContextMenuDataMediaType::kImage;
+          data.media_flags |= ContextMenuData::kMediaCanPrint;
+          data.has_image_contents = true;
+          break;
         }
+      }
 
       // try to get background image url.
       const ComputedStyle* style =

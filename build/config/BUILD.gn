@@ -82,6 +82,9 @@ config("feature_flags") {
   if (is_ohos && is_hwasan) {
     defines += [ "HWADDRESS_SANITIZER" ]
   }
+  if (is_ohos && is_hwasan) {
+    defines += [ "HWADDRESS_SANITIZER" ]
+  }
   if (is_lsan) {
     defines += [ "LEAK_SANITIZER" ]
   }

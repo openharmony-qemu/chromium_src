@@ -258,6 +258,11 @@ void FrameSinkManagerImpl::CreateRootCompositorFrameSink(
 #if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
     managerImplUtils->SetRootCompositorFrameSink(frame_sink_id);
 #endif
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+  if (managerImplUtils) {
+    managerImplUtils->UpdateIfNeedCleanBuffers(frame_sink_id);
+  }
+#endif
   }
 
   MaybeAddHitTestQuery(frame_sink_id);
@@ -332,6 +337,11 @@ void FrameSinkManagerImpl::DestroyCompositorFrameSink(
 #endif
   sink_map_.erase(frame_sink_id);
   root_sink_map_.erase(frame_sink_id);
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+  if (managerImplUtils) {
+    managerImplUtils->EraseIfNeedCleanBuffers(frame_sink_id);
+  }
+#endif
   std::move(callback).Run();
 }
 
@@ -1021,6 +1031,15 @@ void FrameSinkManagerImpl::SendInternalBeginFrame(const FrameSinkId& id) {
 void FrameSinkManagerImpl::EvictFrameBackBuffers(
     const FrameSinkId& root_frame_sink_id) {
     managerImplUtils->EvictFrameBackBuffers(root_frame_sink_id);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+void FrameSinkManagerImpl::SetIfNeedCleanBuffers(const FrameSinkId& frame_sink_id, bool need_clean_buffers)
+{
+  if (managerImplUtils) {
+    managerImplUtils->SetIfNeedCleanBuffers(frame_sink_id, need_clean_buffers);
+  }
 }
 #endif
 

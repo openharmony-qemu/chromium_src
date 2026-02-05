@@ -17,6 +17,7 @@
 #define COMPONENTS_VIZ_SERVICE_DISPLAY_EMBEDDER_SKIA_OUTPUT_DEVICE_VULKAN_UTILS_H_
 
 #include "components/viz/service/display_embedder/skia_output_device_vulkan.h"
+#include "base/cancelable_callback.h"
 #include "base/memory/raw_ptr.h"
 
 namespace viz {
@@ -30,6 +31,22 @@ public:
     #if BUILDFLAG(ARKWEB_VULKAN)
         void DiscardBackbuffer();
     #endif
+
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+    void SetIfNeedCleanBuffers(bool need_clean_buffers);
+    void CleanBuffersIfNeed();
+#endif
+private:
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+  bool clean_buffers_when_invisible_enabled_ = false;
+  bool need_clean_buffers_ = false;
+  bool do_clean_buffers_ = false;
+  base::TimeTicks prev_clean_buffers_time_ = base::TimeTicks::Now();
+  bool has_delay_clean_buffer_task_ = false;
+  std::unique_ptr<base::CancelableOnceClosure> delay_clean_buffer_task_closure_;
+  void DoCleanBuffers();
+#endif
+  base::WeakPtrFactory<SkiaOutputDeviceVulkanUtils> weak_ptr_factory_{this};
 };
 }  // namespace gpu
 

@@ -212,6 +212,9 @@ class QUICHE_EXPORT QuicConnectionVisitorInterface {
   virtual std::string GetStreamsInfoForLogging() const = 0;
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  // Called to retrieve server host for quic broken purpose.
+  virtual std::string GetServerHostForQuicBroken() const = 0;
+
   // Called to retrieve streams information for quic broken purpose.
   virtual std::string GetStreamsInfoForQuicBroken() const = 0;
  

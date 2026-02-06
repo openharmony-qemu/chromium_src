@@ -52,6 +52,7 @@ class QuicEndpoint : public QuicEndpointBase,
 
   std::string GetStreamsInfoForLogging() const override { return ""; }
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  std::string GetServerHostForQuicBroken() const override { return ""; }
   std::string GetStreamsInfoForQuicBroken() const override { return ""; }
   size_t GetNumActiveStreamsForInterface() const override { return 0; }
 #endif

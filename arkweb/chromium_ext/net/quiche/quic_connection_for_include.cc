@@ -23,10 +23,18 @@
 namespace quic {
 
 void QuicConnection::OnBrokenDetect() {
-  if (visitor_->GetNumActiveStreamsForInterface() > 0) {
-    LOG(INFO) << "QUIC Broken " << visitor_
-        ->GetStreamsInfoForQuicBroken();
+  if (visitor_->GetNumActiveStreamsForInterface() == 0) {
+    return;
   }
+
+  LOG(INFO) << "QUIC Broken " << visitor_->GetStreamsInfoForQuicBroken()
+          << ", host " << visitor_->GetServerHostForQuicBroken();
+
+  // 运维打点
+  base::ohos::ReportEngineEvent(base::ohos::kModuleNet,
+                                visitor_->GetServerHostForQuicBroken(),
+                                base::ohos::kHostDidUseQUIC,
+                                visitor_->GetStreamsInfoForQuicBroken());
 }
 
 void QuicConnection::OnStreamFrameDetectorAlarm() {

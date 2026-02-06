@@ -698,6 +698,7 @@ class QUICHE_EXPORT QuicSession
   }
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  std::string GetServerHostForQuicBroken() const override { return ""; }
   std::string GetStreamsInfoForQuicBroken() const override;
   size_t GetNumActiveStreamsForInterface() const override;
 #endif

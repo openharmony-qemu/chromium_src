@@ -43,7 +43,7 @@ public:
 private:
   friend class OHOSVideoExperienceReporterTest;
 
-  OHOSVideoExperienceReporter(content::RenderFrameHost* rfh);
+  explicit OHOSVideoExperienceReporter(content::RenderFrameHost* rfh);
  
   // content::WebContentsObserver implements
   void WebContentsDestroyed() override;

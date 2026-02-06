@@ -720,7 +720,7 @@ void HTMLMediaElement::MediaLoadingFailed(WebMediaPlayer::NetworkState error,
  
   ReportMediaLoadingErrorMessage(error_type, error, message, is_message_not_clear);
 
-  if (is_logger_export_ && !html_media_element_utils_.IsFeedsPage() && !web_media_player_) {
+  if (is_logger_export_ && !html_media_element_utils_.IsFeedsPage()) {
     LOG(INFO) << "OhMedia, MediaLoadingFailed report video experience";
     ReportVideoExperienceToBI();
   }

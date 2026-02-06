@@ -106,7 +106,7 @@ IN_PROC_BROWSER_TEST_F(OHOSVideoExperienceReporterTest, DFX_TestReportVideoExper
     params->error_code = 0;
     params->error_msg = "No error";
     params->page_url = "http://example.com";
-    params->video_src = GURL("http://example.com/video.mp4");
+    params->video_src = "http://example.com/video.mp4";
     params->pipeline_status = "playing";
     params->mime_type = "video/mp4";
     params->net_error_code = 0;

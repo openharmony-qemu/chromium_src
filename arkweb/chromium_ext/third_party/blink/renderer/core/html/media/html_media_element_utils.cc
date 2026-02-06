@@ -177,10 +177,10 @@ mojom::blink::VideoExpParamsPtr HTMLMediaElementUtils::ReportVideoExperienceToBI
   params->total_played_time = total_played_time;
   params->video_freeze_cnt = media_player_waiting_cnt_;
   params->error_code = error_code;
-  params->error_msg = error_msg;
+  params->error_msg = error_msg ? error_msg : g_empty_string;
   params->page_url = String::FromUTF8(GetMainUrl().c_str());
-  params->video_src = (htmlMediaElement_->currentSrc().ProtocolIsInHTTPFamily() ?
-    htmlMediaElement_->currentSrc() : KURL()).GetString();
+  params->video_src = ((htmlMediaElement_->currentSrc().ProtocolIsInHTTPFamily() ||
+    htmlMediaElement_->HasMediaSource()) ? htmlMediaElement_->currentSrc() : KURL()).GetString();
   if (!params->video_src) {
     params->video_src = g_empty_string;
   }
@@ -227,32 +227,6 @@ std::string HTMLMediaElementUtils::GetMainUrl() const {
 }
 #endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
-#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
-double HTMLMediaElementUtils::playedTime() {
-  if (!IsFeedsPage()) {
-    LOG(INFO) << "HTMLMediaElement::playedTime is not feedsPage";
-    return 0.0;
-  }
-  played_time_recorder_.StopRecord();
-  double total_played_time = played_time_recorder_.GetDuration().InMillisecondsF();
-  played_time_recorder_.Reset();
-  return total_played_time;
-}
-
-double HTMLMediaElementUtils::freezeTime() {
-  if (!IsFeedsPage()) {
-    LOG(INFO) << "HTMLMediaElement::freezeTime is not feedsPage";
-    return 0.0;
-  }
-  freeze_time_recorder_.StopRecord();
-  base::TimeDelta total_freeze_time = freeze_time_recorder_.GetDuration();
-  if (htmlMediaElement_->web_media_player_) {
-    total_freeze_time += base::Milliseconds(htmlMediaElement_->web_media_player_->GetFreezeTime());
-  }
-  freeze_time_recorder_.Reset();
-  return total_freeze_time.InMillisecondsF();
-}
-#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 // LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)

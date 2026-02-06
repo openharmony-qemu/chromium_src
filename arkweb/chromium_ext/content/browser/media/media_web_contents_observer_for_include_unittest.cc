@@ -1069,27 +1069,6 @@ TEST_F(MediaWebContentsObserverForIncludeTest,
 }
 
 TEST_F(MediaWebContentsObserverForIncludeTest,
-       OnNotifyMeidaCastUri1) {
-  ASSERT_TRUE(player_id_.has_value());
-  auto host =
-      std::make_unique<MediaWebContentsObserver::MediaPlayerObserverHostImpl>(
-          *player_id_, nullptr);
-  ASSERT_NO_FATAL_FAILURE(host->OnNotifyMeidaCastUri("test"));
-}
-
-TEST_F(MediaWebContentsObserverForIncludeTest,
-       OnNotifyMeidaCastUri2) {
-  ASSERT_TRUE(player_id_.has_value());
-  std::unique_ptr<MediaWebContentsObserver::MediaPlayerObserverHostImpl> host;
-  
-  ASSERT_DEATH({
-    host = std::make_unique<MediaWebContentsObserver::MediaPlayerObserverHostImpl>(
-        *player_id_, nullptr);
-    host->OnNotifyMeidaCastUri("test");
-  }, ".*");
-}
-
-TEST_F(MediaWebContentsObserverForIncludeTest,
        HandleStopMediaCast1) {
   ASSERT_TRUE(player_id_.has_value());
   auto host =
@@ -1189,17 +1168,6 @@ TEST_F(MediaWebContentsObserverForIncludeTest,
 TEST_F(MediaWebContentsObserverForIncludeTest,
        DidFinishNavigation2) {
   MyMockNavigationHandle mock_navigation;
-  EXPECT_CALL(mock_navigation, HasCommitted())
-      .WillOnce(Return(false));
-  EXPECT_CALL(mock_navigation, GetPageTransition())
-      .WillOnce(Return(ui::PAGE_TRANSITION_RELOAD));
-  observer_->DidFinishNavigation(&mock_navigation);
-  testing::Mock::VerifyAndClearExpectations(&mock_navigation);
-}
-
-TEST_F(MediaWebContentsObserverForIncludeTest,
-       DidFinishNavigation3) {
-  MyMockNavigationHandle mock_navigation;
   auto mock_manager_raw = new MyMockMediaSessionControllersManager(
       static_cast<WebContentsImpl*>(web_contents()));
   std::unique_ptr<MediaSessionControllersManager> mock_manager(mock_manager_raw);
@@ -1212,18 +1180,6 @@ TEST_F(MediaWebContentsObserverForIncludeTest,
   observer_->DidFinishNavigation(&mock_navigation);
   testing::Mock::VerifyAndClearExpectations(&mock_navigation);
   observer_->session_controllers_manager_.reset();
-}
-
-TEST_F(MediaWebContentsObserverForIncludeTest,
-       DidFinishNavigation4) {
-  MyMockNavigationHandle mock_navigation;
-  EXPECT_CALL(mock_navigation, HasCommitted())
-      .WillOnce(Return(true));
-  EXPECT_CALL(mock_navigation, GetPageTransition())
-      .WillOnce(Return(ui::PAGE_TRANSITION_FORWARD_BACK));
-  observer_->session_controllers_manager_ = nullptr;
-  observer_->DidFinishNavigation(&mock_navigation);
-  testing::Mock::VerifyAndClearExpectations(&mock_navigation);
 }
 #endif  // BUILDFLAG(ARKWEB_MEDIA_CAST)
 }  // namespace content

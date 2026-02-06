@@ -70,6 +70,7 @@ void GLVersionInfo::ParseVersionString(const char* version_str) {
   std::string_view lstr(version_str);
   constexpr std::string_view kESPrefix = "OpenGL ES ";
   if (!lstr.starts_with(kESPrefix)) {
+    LOG(INFO) << "ParseVersionString version_str = " << version_str << " lstr = "<< lstr;
     LOG(FATAL) << "Chrome runs only on top of OpenGL ES "
                << "through either ANGLE or native: " << "VERSION = "
                << version_str;

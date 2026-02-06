@@ -256,13 +256,9 @@ int32_t SystemPropertiesAdapterImpl::GetDeviceInfoMajorVersion()
 
 ProductDeviceType SystemPropertiesAdapterImpl::GetProductDeviceType()
 {
-    ProductDeviceType factoryLevel = AnalysisFromConfig();
-    if (factoryLevel != ProductDeviceType::DEVICE_TYPE_UNKNOWN) {
-        return factoryLevel;
-    }
-    WVLOG_W("read config factoryLevel: fail");
     // RK or other device cant read config，need read from system deviceType
     std::string deviceType = OH_GetDeviceType();
+    WVLOG_I("OH_GetDeviceType deviceType: %{public}s ", deviceType.c_str());
     if (deviceType == "phone" || deviceType == "default") {
         return ProductDeviceType::DEVICE_TYPE_MOBILE;
     } else if (deviceType == "tablet") {
@@ -275,34 +271,6 @@ ProductDeviceType SystemPropertiesAdapterImpl::GetProductDeviceType()
         return ProductDeviceType::DEVICE_TYPE_TV;
     }
     return ProductDeviceType::DEVICE_TYPE_UNKNOWN;
-}
-
-ProductDeviceType SystemPropertiesAdapterImpl::AnalysisFromConfig()
-{
-#ifdef WEBVIEW_ONLY
-    std::string factoryLevel = NWebConfigHelper::Instance()
-        .ParsePerfConfig(FACTORY_CONFIG_VALUE, FACTORY_LEVEL_VALUE);
-    if (factoryLevel.empty()) {
-        NWebConfigHelper::Instance().ReadConfigIfNeeded();
-        factoryLevel = NWebConfigHelper::Instance().
-            ParsePerfConfig(FACTORY_CONFIG_VALUE, FACTORY_LEVEL_VALUE);
-    }
-    WVLOG_D("read config factoryLevel: %{public}s ", factoryLevel.c_str());
-    if (factoryLevel == FACTORY_LEVEL_PHONE || factoryLevel == FACTORY_LEVEL_DEFAULT) {
-        return ProductDeviceType::DEVICE_TYPE_MOBILE;
-    } else if (factoryLevel == FACTORY_LEVEL_TABLET) {
-        return ProductDeviceType::DEVICE_TYPE_TABLET;
-    } else if (factoryLevel == FACTORY_LEVEL_PC) {
-        return ProductDeviceType::DEVICE_TYPE_2IN1;
-    } else if (factoryLevel == FACTORY_LEVEL_WATCH) {
-        return ProductDeviceType::DEVICE_TYPE_WEARABLE;
-    } else if (factoryLevel == FACTORY_LEVEL_TV) {
-        return ProductDeviceType::DEVICE_TYPE_TV;
-    }
-    return ProductDeviceType::DEVICE_TYPE_UNKNOWN;
-#else
-    return ProductDeviceType::DEVICE_TYPE_MOBILE;
-#endif
 }
 
 bool SystemPropertiesAdapterImpl::GetWebOptimizationValue()

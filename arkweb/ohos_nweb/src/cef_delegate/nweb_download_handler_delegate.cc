@@ -181,7 +181,10 @@ std::string NWebDownloadHandlerDelegate::GenerateSuggestedFilename(
                   : "utf-8");
   std::string content_disposition = GetContentDisposition(download_item,
                                                           default_charset);
-  GURL gurl(download_item->GetURL().ToString());
+  GURL gurl = GURL();
+  if (!(download_item->GetURL().size() > url::kMaxURLChars)) {
+    gurl = GURL(download_item->GetURL().ToString());
+  } 
   base::FilePath generated_filename = net::GenerateFileName(
       gurl, content_disposition, default_charset,
       suggested_filename, sniffed_mime_type, default_filename);

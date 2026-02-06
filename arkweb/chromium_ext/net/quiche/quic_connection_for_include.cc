@@ -19,6 +19,8 @@
 
 #include "net/third_party/quiche/src/quiche/quic/core/quic_connection.h"
 #include "arkweb/chromium_ext/net/quiche/quic_stream_frame_detector.h"
+#include "arkweb/chromium_ext/base/ohos/nweb_engine_event_logger.h"
+#include "arkweb/chromium_ext/base/ohos/nweb_engine_event_logger_code.h"
 
 namespace quic {
 

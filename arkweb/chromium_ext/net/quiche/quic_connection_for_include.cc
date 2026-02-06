@@ -27,7 +27,7 @@ void QuicConnection::OnBrokenDetect() {
     return;
   }
 
-  LOG(INFO) << "QUIC Broken " << visitor_->GetStreamsInfoForQuicBroken()
+  LOG(URL) << "QUIC Broken " << visitor_->GetStreamsInfoForQuicBroken()
           << ", host " << visitor_->GetServerHostForQuicBroken();
 
   // 运维打点

@@ -1202,7 +1202,7 @@ TEST_F(MediaWebContentsObserverForIncludeTest,
   MyMockNavigationHandle mock_navigation;
   auto mock_manager_raw = new MyMockMediaSessionControllersManager(
       static_cast<WebContentsImpl*>(web_contents()));
-  std::make_unique<MediaSessionControllersManager> mock_manager(mock_manager_raw);
+  std::unique_ptr<MediaSessionControllersManager> mock_manager(mock_manager_raw);
   EXPECT_CALL(mock_navigation, HasCommitted())
       .WillOnce(Return(true));
   EXPECT_CALL(mock_navigation, GetPageTransition())

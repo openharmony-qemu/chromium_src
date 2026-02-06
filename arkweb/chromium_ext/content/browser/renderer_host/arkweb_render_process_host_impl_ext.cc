@@ -81,9 +81,9 @@ void ArkwebRenderProcessHostImplExt::RenderProcessChannelConnectCheck() {
   if (!IsReady()) {
     LOG(WARNING) << "RenderProcessHost channel connect timeout(6s), terminate process: "
                  << GetProcess().Handle();
-#if !defined(COMPONENT_BUILD)
-    ReportRenderProcessTerminate(false, std::to_string(GetProcess().Handle()),
-                                 std::string("ChannelConnectFailed"));
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP) && !defined(COMPONENT_BUILD)
+    ReportRenderProcessTerminate(false, GetProcess().Handle(),
+      std::string("TERMINATION_CHANNEL_CONNECT_FAILED"), 0);
 #endif
     internal::ChildProcessLauncherHelper::TerminateProcess(GetProcess(), 0);
   }

@@ -164,13 +164,14 @@ void ReportRenderJsFreeze(int32_t pid, const std::string& packageName, const std
       });
 }                         
 
-void ReportRenderProcessTerminate(bool is_gpu, const std::string& pid, const std::string& reason) {
+void ReportRenderProcessTerminate(bool is_gpu, int32_t pid, const std::string& reason, int32_t error) {
   OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
       RENDER_PROCESS_TERMINATE, HiSysEventAdapter::EventType::FAULT,
       {
         "PROCESS_TYPE", is_gpu ? std::string("gpu") : std::string("render"),
-        "PID", pid,
-        "REASON", reason
+        "PID", std::to_string(pid),
+        "REASON", reason,
+        "ERROR", std::to_string(error)
       });
 }
 

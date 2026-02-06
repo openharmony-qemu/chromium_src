@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #ifndef BINARY_READER_BASE_H
 #define BINARY_READER_BASE_H
 
@@ -9,12 +24,12 @@ class BinaryReaderBase {
  public:
   virtual ~BinaryReaderBase() = default;
   // read data from current pos and then advance pos
-  virtual bool ReadData(uint32_t read_size, uint8_t* out) = 0;
+  virtual bool ReadData(uint32_t read_size, uint8_t* out, uint32_t out_size) = 0;
   // read data at offset, but not change current pos
-  virtual void ReadDataAt(uint32_t offset, uint32_t read_size, uint8_t* out) {}
+  virtual bool ReadDataAt(uint32_t offset, uint32_t read_size, uint8_t* out, uint32_t out_size) = 0;
   virtual uint32_t BinarySize() const = 0;
   virtual uint32_t CurrentPosition() = 0;
-  virtual void SetPosition(uint32_t pos) {};
+  virtual void SetPosition(uint32_t pos) = 0;
 };
 }  // namespace dfx
 #endif

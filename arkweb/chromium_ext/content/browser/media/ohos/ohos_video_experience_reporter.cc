@@ -73,6 +73,7 @@ OHOSVideoExperienceReporter::~OHOSVideoExperienceReporter() = default;
 
 void OHOSVideoExperienceReporter::ReportVideoExperienceToBI(
     blink::mojom::VideoExpParamsPtr params) {
+#if BUILDFLAG(IS_ARKWEB_EXT)
   if (!params) {
     return;
   }
@@ -108,6 +109,7 @@ void OHOSVideoExperienceReporter::ReportVideoExperienceToBI(
         base::ohos::OperationStatistics::DEFAULT_DATA_VERSION, json.value(), 
         true, false, true, base::ohos::REPORT_DAILY);
   }
+#endif // BUILDFLAG(IS_ARKWEB_EXT)
 }
 
 void OHOSVideoExperienceReporter::BindChannel(

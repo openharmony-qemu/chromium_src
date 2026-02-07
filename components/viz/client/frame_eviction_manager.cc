@@ -22,6 +22,9 @@
 
 #include "arkweb/build/features/features.h"
 #include "arkweb/chromium_ext/components/viz/client/frame_eviction_manager_ext.h"
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+#include "components/viz/common/viz_utils.h"
+#endif
 
 namespace viz {
 namespace {
@@ -107,6 +110,11 @@ void FrameEvictionManager::RegisterUnlockedFrame(
 }
 
 size_t FrameEvictionManager::GetMaxNumberOfSavedFrames() const {
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  if (IsEvictUnlockFrameEnabled()) {
+    return 0;
+  }
+#endif
   int percentage = 100;
   base::MemoryPressureMonitor* monitor = base::MemoryPressureMonitor::Get();
 

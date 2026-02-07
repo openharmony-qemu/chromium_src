@@ -79,6 +79,9 @@ class DirectLayerTreeFrameSink : public cc::LayerTreeFrameSink,
   void RestoreRenderFit(const viz::FrameSinkId& frame_sink_id) override {}
 #endif // ARKWEB_MAXIMIZE_RESIZE
 
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  void DisplayDidRealSwapBuffer() override {}
+#endif
  private:
   // viz::mojom::CompositorFrameSinkClient implementation:
   void DidReceiveCompositorFrameAck(

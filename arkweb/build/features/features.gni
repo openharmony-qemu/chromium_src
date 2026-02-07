@@ -263,6 +263,7 @@ declare_args() {
   arkweb_ext_http_dns_fallback_on_dns_hijacking = false
   arkweb_ext_receive_response = false
   arkweb_custom_viewport_width = true
+  arkweb_evict_unlock_frames = !is_component_build
 }
 
 # Features enabled in mojom bindings.

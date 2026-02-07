@@ -95,6 +95,9 @@ class WaitForSwapDisplayClient : public DisplayClient {
       gpu::SurfaceHandle child_window) override {}
   void SetWideColorEnabled(bool enabled) override {}
   void SetPreferredFrameInterval(base::TimeDelta interval) override {}
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  void DisplayDidRealSwapBuffer() override {}
+#endif
   base::TimeDelta GetPreferredFrameIntervalForFrameSinkId(
       const FrameSinkId& id,
       mojom::CompositorFrameSinkType* type) override {

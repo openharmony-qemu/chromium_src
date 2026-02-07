@@ -57,6 +57,10 @@
 #include "arkweb/chromium_ext/components/viz/service/frame_sinks/external_begin_frame_source_ohos.h"
 #endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
 
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+#include "components/viz/common/viz_utils.h"
+#endif
+
 namespace viz {
 
 class RootCompositorFrameSinkImpl::StandaloneBeginFrameObserver
@@ -319,6 +323,19 @@ void RootCompositorFrameSinkImpl::SetDisplayVisible(bool visible) {
     // eviction content.
     eviction_handler_.MaybeFinishEvictionProcess();
   }
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  if (IsEvictUnlockFrameEnabled()) {
+    if (visible) {
+      eviction_handler_.SetNextEvictLocalSurfaceId(LocalSurfaceId());
+    } else {
+      needs_notify_first_swap_buffer_ = true;
+    }
+    LOG(INFO) << "viz RootCompositorFrameSinkImpl::SetDisplayVisible needs_notify_first_swap_buffer: " <<
+      needs_notify_first_swap_buffer_ << " visible: " << visible;
+    TRACE_EVENT2("viz", "RootCompositorFrameSinkImpl::SetDisplayVisible", " visible: ", visible,
+      "sink_id:", support_->frame_sink_id().ToString());
+  }
+#endif
   display_->SetVisible(visible);
 }
 
@@ -754,7 +771,32 @@ void RootCompositorFrameSinkImpl::DisplayWillDrawAndSwap(
     AggregatedRenderPassList* render_passes) {
   DCHECK(support_->GetHitTestAggregator());
   support_->GetHitTestAggregator()->Aggregate(display_->CurrentSurfaceId());
+
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  if (IsEvictUnlockFrameEnabled() && will_draw_and_swap &&
+      eviction_handler_.GetNextEvictLocalSurfaceId().is_valid()) {
+    display_->disable_draw_and_swap_on_next_frame_ = true;
+  }
+#endif
 }
+
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+void RootCompositorFrameSinkImpl::DisplayDidRealSwapBuffer() {
+  if (IsEvictUnlockFrameEnabled()) {
+    LOG(DEBUG) << "viz RootCompositorFrameSinkImpl::NotifyFirstRealSwapBuffer will notify sink_id: " <<
+      support_->frame_sink_id().ToString() << "needs_notify_first_swap_buffer: " << needs_notify_first_swap_buffer_;
+    if (display_client_ && needs_notify_first_swap_buffer_) {
+      TRACE_EVENT2("viz", "RootCompositorFrameSinkImpl::DisplayDidRealSwapBuffer",
+        "needs_notify_first_swap_buffer", needs_notify_first_swap_buffer_, " sink_id: ",
+        support_->frame_sink_id().ToString());
+      display_client_->NotifyFirstRealSwapBuffer();
+      needs_notify_first_swap_buffer_ = false;
+      LOG(INFO) << "viz RootCompositorFrameSinkImpl::NotifyFirstRealSwapBuffer sink_id: " <<
+        support_->frame_sink_id().ToString();
+    }
+  }
+}
+#endif
 
 #if BUILDFLAG(IS_ANDROID)
 base::ScopedClosureRunner RootCompositorFrameSinkImpl::GetCacheBackBufferCb() {

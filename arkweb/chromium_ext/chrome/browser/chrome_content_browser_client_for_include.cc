@@ -346,12 +346,12 @@ class ChromeContentBrowserClientUtils {
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   static void LoadBlockPage(base::WeakPtr<content::WebContents> web_contents, const GURL& url) {
     CHECK(content::BrowserThread::CurrentlyOn(content::BrowserThread::UI));
-    if (!web_contents || !url.is_valid()) {
+    content::WebContents* contents = web_contents.get();
+    if (!contents || !url.is_valid()) {
         return;
     }
 
     auto locale = base::i18n::GetConfiguredLocale();
-    content::WebContents* contents = web_contents.get();
     auto controller = std::make_unique<SbControllerClient>(contents, nullptr, url, locale, false);
     std::unique_ptr<ohos_safe_browsing::SbBlockPage> blocking_page = std::make_unique<ohos_safe_browsing::SbBlockPage>(
         contents, url, ohos_safe_browsing::OHSBPolicyType::POLICY_URL_TRUST_LIST,
@@ -364,7 +364,8 @@ class ChromeContentBrowserClientUtils {
     contents->GetController().LoadURLWithParams(block_params);
   }
 
-  static bool ShouldBlockInUrlTrustList(const GURL& url, content::RenderFrameHost* render_frame_host) {
+  static bool BlockIfNotTrustUrl(const GURL& url, content::RenderFrameHost* render_frame_host) {
+    CHECK(content::BrowserThread::CurrentlyOn(content::BrowserThread::UI));
     content::WebContents* web_contents = content::WebContents::FromRenderFrameHost(render_frame_host);
     if (!web_contents) {
         return false;

@@ -40,7 +40,17 @@ export class SubWindowAdapter extends BaseAdapter {
 
   @LogMethod
   createSubWindow(param: NewWindowParam) {
-    LogUtil.info(TAG, `[ohoswindow] in SubWindowAdapter createSubWindow, param is ${JSON.stringify(param)}`);
+    LogUtil.info(
+        TAG,
+        `[ohoswindow] in SubWindowAdapter createSubWindow, param is:\n` +
+            `parent_id=${param.parent_id}\n` + `window_id=${param.window_id}\n` +
+            `bounds={ left=${param.bounds.left}, top=${param.bounds.top}, ` +
+            `width=${param.bounds.width}, height=${param.bounds.height} }\n` +
+            `init_color_argb=${param.init_color_argb}\n` +
+            `hide_title_bar=${param.hide_title_bar}\n` +
+            `use_dark_mode=${param.use_dark_mode}\n` +
+            `caption_button_visible=${param.caption_button_visible}\n` +
+            `ability_type=${param.ability_type}\n` + `app_id=${param.app_id}`);
     let parentId = param.parent_id
     let fixedBounds = this.adjustBounds(parentId, param.bounds);
     const para: Record<string, IParams> = {
@@ -61,6 +71,17 @@ export class SubWindowAdapter extends BaseAdapter {
     const reusableWindow =
       this.findReuseableSubWindow(parentId, fixedBounds.width, fixedBounds.height);
     if (reusableWindow) {
+      LogUtil.info(
+          TAG,
+          `[ohoswindow] in SubWindowAdapter reuseSubWindow, param is:\n` +
+              `parent_id=${param.parent_id}\n` + `window_id=${param.window_id}\n` +
+              `bounds={ left=${param.bounds.left}, top=${param.bounds.top}, ` +
+              `width=${param.bounds.width}, height=${param.bounds.height} }\n` +
+              `init_color_argb=${param.init_color_argb}\n` +
+              `hide_title_bar=${param.hide_title_bar}\n` +
+              `use_dark_mode=${param.use_dark_mode}\n` +
+              `caption_button_visible=${param.caption_button_visible}\n` +
+              `ability_type=${param.ability_type}\n` + `app_id=${param.app_id}`);
       try {
         let paramsLink: SubscribedAbstractProperty<IParams> =
           reusableWindow.localStorage.link('subWindowParams');
@@ -264,15 +285,15 @@ export class SubWindowAdapter extends BaseAdapter {
 
   @LogMethod
   cancelSubWindow(id: string) {
-    for (let i = 0; i < this.subWindowList.length; i++) {
-      const item = this.subWindowList[i];
-      if (item && item.id === id) {
-        item.subWindow.minimize();
-        this.addReuseWindow(item);
-        this.subWindowList.splice(i, 1);
-        break;
-      }
+    const index = this.subWindowList.findIndex(item => item?.id === id);
+    if (index === -1) {
+      LogUtil.error(TAG, 'Failed to find and cancel SubWindow, id' + id);
+      return;
     }
+    const item = this.subWindowList[index];
+    item.subWindow.minimize();
+    this.addReuseWindow(item);
+    this.subWindowList.splice(index, 1);
   }
 
   private addReuseWindow(item: ISubWindowInfo) {
@@ -323,7 +344,11 @@ export class SubWindowAdapter extends BaseAdapter {
   @LogMethod
   hideSubWindow(id: string) {
     const item = this.findSubWindow(id);
-    item?.subWindow.minimize().catch((err: BusinessError) => {
+    if (item == undefined) {
+      LogUtil.error(TAG, 'Failed to find and hide SubWindow, id: ' + id);
+      return;
+    }
+    item.subWindow.minimize().catch((err: BusinessError) => {
       LogUtil.error(TAG, 'Failed to hide SubWindow. Cause: ' + JSON.stringify(err));
     });
   }

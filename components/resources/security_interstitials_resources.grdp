@@ -24,5 +24,9 @@
     <include name="IDR_BLOCK_ERROR_OHOS_HTML_LARGE" file="../security_interstitials/ohos_ui_resources/safe_browsing_ohos_large.html" flattenhtml="true" type="BINDATA"/>
     <include name="URL_TRUST_LIST_ERROR_OHOS_HTML" file="../security_interstitials/ohos_ui_resources/url_trust_list_error.html" flattenhtml="true" type="BINDATA"/>
     <include name="IDR_MINOR_CONTROL_HTML" file="../security_interstitials/ohos_ui_resources/minor_control.html" flattenhtml="true" type="BINDATA"/>
+    <include name="IDR_MINOR_CONTROL_HTML_LARGE" file="../security_interstitials/ohos_ui_resources/minor_control_phone.html" flattenhtml="true" type="BINDATA"/>
+    <include name="IDR_MINOR_CONTROL_HTML_PHONE" file="../security_interstitials/ohos_ui_resources/minor_control_large.html" flattenhtml="true" type="BINDATA"/>
+    <include name="IDR_BLOCK_ERROR_OHOS_HTML_HIGH_RISK_PHONE" file="../security_interstitials/ohos_ui_resources/safe_browsing_ohos_high_risk_phone.html" flattenhtml="true" type="BINDATA"/>
+    <include name="IDR_BLOCK_ERROR_OHOS_HTML_HIGH_RISK_LARGE" file="../security_interstitials/ohos_ui_resources/safe_browsing_ohos_high_risk_large.html" flattenhtml="true" type="BINDATA"/>
   </if>
 </grit-part>

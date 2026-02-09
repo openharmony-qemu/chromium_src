@@ -196,9 +196,9 @@ std::string NWebDownloadHandlerDelegate::GenerateSuggestedFilename(
   std::string content_disposition = GetContentDisposition(download_item,
                                                           default_charset);
   GURL gurl = GURL();
-  if (!(IsDataScheme(download_item->GetURL()) &&
-        download_item->GetURL().size() > content::kMaxLengthOfDataURLStringPub)) {
-    gurl = GURL(download_item->GetURL().ToString());
+  CefString url = download_item->GetURL();
+  if (!(IsDataScheme(url) && url.length() > content::kMaxLengthOfDataURLStringPub)) {
+    gurl = GURL(url.ToString());
   }
 
   base::FilePath generated_filename = net::GenerateFileName(

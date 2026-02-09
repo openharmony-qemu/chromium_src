@@ -159,6 +159,13 @@ FrameEvictionManager::FrameEvictionManager()
   UPDATE_MAX_NUMBER_OF_FRAMES(max_number_of_saved_frames_);
 #endif
 
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  LOG(INFO) << "FrameEvictionManager::FrameEvictionManager, max_number_of_saved_frames_: "
+            << max_number_of_saved_frames_;
+  TRACE_EVENT1("viz", "FrameEvictionManager::FrameEvictionManager",
+               "max_number_of_saved_frames_", max_number_of_saved_frames_);
+#endif
+
   // For WebView, we may not have a default task runner.
   if (base::SingleThreadTaskRunner::HasCurrentDefault()) {
     base::trace_event::MemoryDumpManager::GetInstance()->RegisterDumpProvider(
@@ -177,6 +184,14 @@ void FrameEvictionManager::CullUnlockedFrames(size_t saved_frame_limit) {
          unlocked_frames_.size() + locked_frames_.size() > saved_frame_limit) {
     size_t old_size = unlocked_frames_.size();
     // Should remove self from list.
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+    LOG(INFO) << "FrameEvictionManager EvictCurrentFrame, unlocked_frames_: " << unlocked_frames_.size()
+              << ", locked_frames_: " << locked_frames_.size()
+              << ", saved_frame_limit: " << saved_frame_limit;
+    TRACE_EVENT2("viz", "frame EvictCurrentFrame",
+                 "unlocked_frames_", unlocked_frames_.size(),
+                 "locked_frames_", locked_frames_.size());
+#endif
     auto* frame = unlocked_frames_.back().first;
     frame->EvictCurrentFrame();
     if (unlocked_frames_.size() == old_size)

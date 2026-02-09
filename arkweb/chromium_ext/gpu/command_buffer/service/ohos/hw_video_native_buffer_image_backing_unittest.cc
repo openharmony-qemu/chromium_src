@@ -271,4 +271,190 @@ TEST_F(HwVideoNativeBufferImageBackingTest, BeginReadAccess_Fail)
         &begin_semaphores, &end_semaphores, &end_state);
     EXPECT_TRUE(result.empty());
 }
+
+// Test: GLTexturePassthroughVideoImageRepresentation constructor initializes correctly
+TEST_F(HwVideoNativeBufferImageBackingTest, GLTexturePassthrough_Constructor)
+{
+    EXPECT_CALL(*stream_texture_sii_, HasTextureOwner())
+        .WillOnce(Return(true));
+    SharedImageManager manager;
+    std::unique_ptr<GLTexturePassthroughImageRepresentation> representation =
+        backing_->ProduceGLTexturePassthrough(&manager, tracker_.get());
+    EXPECT_NE(representation, nullptr);
+}
+
+// Test: ProduceGLTexturePassthrough returns nullptr when there is no texture owner
+TEST_F(HwVideoNativeBufferImageBackingTest, ProduceGLTexturePassthrough_NoTextureOwner)
+{
+    EXPECT_CALL(*stream_texture_sii_, HasTextureOwner())
+        .WillOnce(Return(false));
+    SharedImageManager manager;
+    std::unique_ptr<GLTexturePassthroughImageRepresentation> result =
+        backing_->ProduceGLTexturePassthrough(&manager, tracker_.get());
+    EXPECT_EQ(result, nullptr);
+}
+
+// Test: ProduceGLTexturePassthrough successfully creates when there is a texture owner
+TEST_F(HwVideoNativeBufferImageBackingTest, ProduceGLTexturePassthrough_Success)
+{
+    EXPECT_CALL(*stream_texture_sii_, HasTextureOwner())
+        .WillOnce(Return(true));
+    SharedImageManager manager;
+    std::unique_ptr<GLTexturePassthroughImageRepresentation> result =
+        backing_->ProduceGLTexturePassthrough(&manager, tracker_.get());
+    EXPECT_NE(result, nullptr);
+    EXPECT_NE(result->GetTexturePassthrough(0), nullptr);
+}
+
+// Test: BeginAccess returns false when the native buffer is null
+TEST_F(HwVideoNativeBufferImageBackingTest, GLTexturePassthrough_BeginAccess_NullBuffer)
+{
+    EXPECT_CALL(*stream_texture_sii_, HasTextureOwner())
+        .WillOnce(Return(true));
+    SharedImageManager manager;
+    std::unique_ptr<GLTexturePassthroughImageRepresentation> representation =
+        backing_->ProduceGLTexturePassthrough(&manager, tracker_.get());
+    EXPECT_NE(representation, nullptr);
+    EXPECT_CALL(*stream_texture_sii_, GetNativeBuffer())
+        .WillOnce(Return(nullptr));
+    bool result = representation->BeginAccess(GL_SHARED_IMAGE_ACCESS_MODE_READ_CHROMIUM);
+    EXPECT_FALSE(result);
+}
+
+// Test: BeginAccess successfully obtained native buffer
+TEST_F(HwVideoNativeBufferImageBackingTest, GLTexturePassthrough_BeginAccess_Success)
+{
+    EXPECT_CALL(*stream_texture_sii_, HasTextureOwner())
+        .WillOnce(Return(true));
+    SharedImageManager manager;
+    std::unique_ptr<GLTexturePassthroughImageRepresentation> representation =
+        backing_->ProduceGLTexturePassthrough(&manager, tracker_.get());
+    EXPECT_NE(representation, nullptr);
+    auto mock_native_buffer = std::make_unique<MockScopedNativeBufferFenceSync>();
+    EXPECT_CALL(*stream_texture_sii_, GetNativeBuffer())
+        .WillOnce(Return(testing::ByMove(std::move(mock_native_buffer))));
+    bool result = representation->BeginAccess(GL_SHARED_IMAGE_ACCESS_MODE_READ_CHROMIUM);
+    EXPECT_TRUE(result);
+}
+
+// Test: GLTexturePassthroughVideoImageRepresentation::EndAccess set fence
+TEST_F(HwVideoNativeBufferImageBackingTest, GLTexturePassthrough_EndAccess)
+{
+    EXPECT_CALL(*stream_texture_sii_, HasTextureOwner())
+        .WillOnce(Return(true));
+    SharedImageManager manager;
+    std::unique_ptr<GLTexturePassthroughImageRepresentation> representation =
+        backing_->ProduceGLTexturePassthrough(&manager, tracker_.get());
+    EXPECT_NE(representation, nullptr);
+    auto mock_native_buffer = std::make_unique<MockScopedNativeBufferFenceSync>();
+    EXPECT_CALL(*stream_texture_sii_, GetNativeBuffer())
+        .WillOnce(Return(testing::ByMove(std::move(mock_native_buffer))));
+    bool begin_result = representation->BeginAccess(GL_SHARED_IMAGE_ACCESS_MODE_READ_CHROMIUM);
+    EXPECT_TRUE(begin_result);
+
+    representation->EndAccess();
+}
+
+// Test: GetTexturePassthrough returns passthrough_texture_ and plane_index must be 0
+TEST_F(HwVideoNativeBufferImageBackingTest, GLTexturePassthrough_GetTexturePassthrough)
+{
+    EXPECT_CALL(*stream_texture_sii_, HasTextureOwner())
+        .WillOnce(Return(true));
+    SharedImageManager manager;
+    std::unique_ptr<GLTexturePassthroughImageRepresentation> representation =
+        backing_->ProduceGLTexturePassthrough(&manager, tracker_.get());
+    EXPECT_NE(representation, nullptr);
+    const scoped_refptr<gles2::TexturePassthrough>& texture = representation->GetTexturePassthrough(0);
+    EXPECT_NE(texture, nullptr);
+    EXPECT_EQ(texture->target(), GL_TEXTURE_EXTERNAL_OES);
+}
+
+// Test: CreateAndBindEglImageFromNativeBuffer calls EGL function
+TEST_F(HwVideoNativeBufferImageBackingTest, GLTexturePassthrough_BeginAccess_WithValidBuffer)
+{
+    EXPECT_CALL(*stream_texture_sii_, HasTextureOwner())
+        .WillOnce(Return(true));
+    SharedImageManager manager;
+    std::unique_ptr<GLTexturePassthroughImageRepresentation> representation =
+        backing_->ProduceGLTexturePassthrough(&manager, tracker_.get());
+    EXPECT_NE(representation, nullptr);
+
+    int efd = eventfd(1, 0);
+    ASSERT_NE(efd, -1);
+    auto mock_native_buffer = std::make_unique<MockScopedNativeBufferFenceSync>(
+        ScopedNativeBufferHandle(),
+        base::ScopedFD(efd)
+    );
+    EXPECT_CALL(*stream_texture_sii_, GetNativeBuffer())
+        .WillOnce(Return(testing::ByMove(std::move(mock_native_buffer))));
+
+    bool result = representation->BeginAccess(GL_SHARED_IMAGE_ACCESS_MODE_READ_CHROMIUM);
+    EXPECT_TRUE(result);
+}
+
+// Test: The destructor calls NotifyOnContextLost when there is no context
+TEST_F(HwVideoNativeBufferImageBackingTest, GLTexturePassthrough_Destructor_ContextLost)
+{
+    EXPECT_CALL(*stream_texture_sii_, HasTextureOwner())
+        .WillOnce(Return(true));
+    SharedImageManager manager;
+    auto representation = backing_->ProduceGLTexturePassthrough(&manager, tracker_.get());
+    EXPECT_NE(representation, nullptr);
+
+    // Simulate context loss by releasing GL context
+    if (gl_context_ && surf_) {
+        gl_context_->ReleaseCurrent(surf_.get());
+    }
+
+    // Destroy representation - destructor should call NotifyOnContextLost
+    representation.reset();
+}
+
+// Test: GLTexturePassthroughVideoImageRepresentation type is correct
+TEST_F(HwVideoNativeBufferImageBackingTest, GLTexturePassthrough_CorrectType)
+{
+    EXPECT_CALL(*stream_texture_sii_, HasTextureOwner())
+        .WillOnce(Return(true));
+    SharedImageManager manager;
+    std::unique_ptr<GLTexturePassthroughImageRepresentation> result =
+        backing_->ProduceGLTexturePassthrough(&manager, tracker_.get());
+    EXPECT_NE(result, nullptr);
+    // Verify the representation is indeed passthrough type
+    EXPECT_NE(result->GetTexturePassthrough(0), nullptr);
+}
+
+// Test: ProduceGLTexturePassthrough creates two different representation instances
+TEST_F(HwVideoNativeBufferImageBackingTest, ProduceGLTexturePassthrough_MultipleCalls)
+{
+    EXPECT_CALL(*stream_texture_sii_, HasTextureOwner())
+        .Times(2)
+        .WillRepeatedly(Return(true));
+    SharedImageManager manager;
+    auto representation1 = backing_->ProduceGLTexturePassthrough(&manager, tracker_.get());
+    auto representation2 = backing_->ProduceGLTexturePassthrough(&manager, tracker_.get());
+    EXPECT_NE(representation1, nullptr);
+    EXPECT_NE(representation2, nullptr);
+    // Each should have its own texture
+    EXPECT_NE(representation1->GetTexturePassthrough(0), representation2->GetTexturePassthrough(0));
+}
+
+// Test: BeginAccess using DrDC lock protection
+TEST_F(HwVideoNativeBufferImageBackingTest, GLTexturePassthrough_BeginAccess_ThreadSafe)
+{
+    EXPECT_CALL(*stream_texture_sii_, HasTextureOwner())
+        .WillOnce(Return(true));
+    SharedImageManager manager;
+    std::unique_ptr<GLTexturePassthroughImageRepresentation> representation =
+        backing_->ProduceGLTexturePassthrough(&manager, tracker_.get());
+    EXPECT_NE(representation, nullptr);
+
+    auto mock_native_buffer = std::make_unique<MockScopedNativeBufferFenceSync>();
+    EXPECT_CALL(*stream_texture_sii_, GetNativeBuffer())
+        .WillOnce(Return(testing::ByMove(std::move(mock_native_buffer))));
+
+    // BeginAccess should complete without deadlocks with DrDC lock
+    bool result = representation->BeginAccess(GL_SHARED_IMAGE_ACCESS_MODE_READ_CHROMIUM);
+    EXPECT_TRUE(result);
+}
+
 }  // namespace gpu

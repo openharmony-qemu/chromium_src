@@ -302,6 +302,7 @@ if (!enable_arkweb) {
   arkweb_ex_refresh_iframe = false
   arkweb_notification = false
   arkweb_vulkan = false
+  arkweb_angle = false
   arkweb_pull_to_refresh = false
   arkweb_ex_http_dns_fallback = false
   arkweb_screen_offset = false
@@ -547,6 +548,7 @@ buildflag_header("features") {
     "ARKWEB_EX_SCREEN_CAPTURE=$arkweb_ex_screen_capture",
     "ARKWEB_EX_REFRESH_IFRAME=$arkweb_ex_refresh_iframe",
     "ARKWEB_VULKAN=$arkweb_vulkan",
+    "ARKWEB_ANGLE=$arkweb_angle",
     "ARKWEB_D_VSYNC=$arkweb_d_vsync",
     "ARKWEB_SCREEN_OFFSET=$arkweb_screen_offset",
     "ARKWEB_SCREEN_SIZE=$arkweb_screen_size",

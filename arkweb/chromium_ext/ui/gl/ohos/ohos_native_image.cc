@@ -13,6 +13,12 @@
 #include "base/debug/crash_logging.h"
 #include "gpu/ipc/common/nweb_native_window_tracker.h"
 #include "ui/gl/gl_bindings.h"
+#include "base/logging.h"
+
+#ifndef GL_ANGLE_texture_storage_external
+#define GL_ANGLE_texture_storage_external 1
+#define GL_TEXTURE_NATIVE_ID_ANGLE 0x3481
+#endif /* GL_ANGLE_texture_storage_external */
 
 namespace {
 constexpr char kProcessType[] = "type";
@@ -24,12 +30,24 @@ namespace gl {
 std::mutex g_mutex_native_image;
 
 scoped_refptr<OhosNativeImage> OhosNativeImage::Create(int texture_id) {
+  int native_id = texture_id;
+
+  if (texture_id != 0 &&
+      gl::g_current_gl_driver->ext.b_GL_ANGLE_texture_external_update) {
+    GLint prev_texture = 0;
+    glGetIntegerv(GL_TEXTURE_BINDING_EXTERNAL_OES, &prev_texture);
+    glBindTexture(GL_TEXTURE_EXTERNAL_OES, texture_id);
+    glGetTexParameteriv(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_NATIVE_ID_ANGLE,
+                        &native_id);
+    glBindTexture(GL_TEXTURE_EXTERNAL_OES, prev_texture);
+  }
+
   auto nativeImageAdapter =
       OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateNativeImageAdapter();
   if (nativeImageAdapter == nullptr) {
     return nullptr;
   }
-  nativeImageAdapter->CreateNativeImage(texture_id, GL_TEXTURE_EXTERNAL_OES);
+  nativeImageAdapter->CreateNativeImage(native_id, GL_TEXTURE_EXTERNAL_OES);
   return new OhosNativeImage(std::move(nativeImageAdapter));
 }
 
@@ -67,6 +85,10 @@ void OhosNativeImage::UpdateNativeImage() {
     return;
   }
   native_image_adapter_->UpdateSurfaceImage();
+
+  if (gl::g_current_gl_driver->ext.b_GL_ANGLE_texture_external_update) {
+    glInvalidateTextureANGLE(GL_TEXTURE_EXTERNAL_OES);
+  }
 }
 //LCOV_EXCL_STOP
 
@@ -98,9 +120,18 @@ void OhosNativeImage::AttachToGLContext() {
   }
 
   int texture_id = 0;
-  glGetIntegerv(GL_TEXTURE_BINDING_EXTERNAL_OES, &texture_id);
+  if (gl::g_current_gl_driver->ext.b_GL_ANGLE_texture_external_update) {
+    glGetTexParameteriv(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_NATIVE_ID_ANGLE,
+                        &texture_id);
+  } else {
+    glGetIntegerv(GL_TEXTURE_BINDING_EXTERNAL_OES, &texture_id);
+  }
+
   DCHECK(texture_id);
   native_image_adapter_->AttachContext(texture_id);
+  if (gl::g_current_gl_driver->ext.b_GL_ANGLE_texture_external_update) {
+    glInvalidateTextureANGLE(GL_TEXTURE_EXTERNAL_OES);
+  }
 }
 
 void OhosNativeImage::DetachFromGLContext() {

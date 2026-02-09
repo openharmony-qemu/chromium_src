@@ -1189,6 +1189,10 @@ class NWebImpl : public NWeb {
 
   static void SetMigrationPasswordReady(const bool migrationReady);
 
+#if BUILDFLAG(ARKWEB_ANGLE) && BUILDFLAG(ARKWEB_NWEB_EX)
+  static void UpdateAngleConfig(bool angle_switch);
+#endif // ARKWEB_ANGLE && ARKWEB_NWEB_EX
+
 #if BUILDFLAG(ARKWEB_EDM_POLICY)
   static void SetEnterprisePolicy(const std::string& policy, int version);
 #endif

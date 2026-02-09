@@ -50,6 +50,10 @@ class HwVideoNativeBufferImageBacking : public OhosVideoImageBacking,
       SharedImageManager* manager,
       MemoryTypeTracker* tracker) override;
 
+  std::unique_ptr<GLTexturePassthroughImageRepresentation> ProduceGLTexturePassthrough(
+    SharedImageManager* manager,
+    MemoryTypeTracker* tracker) override;
+
   std::unique_ptr<SkiaGaneshImageRepresentation> ProduceSkiaGanesh(
       SharedImageManager* manager,
       MemoryTypeTracker* tracker,
@@ -79,6 +83,7 @@ class HwVideoNativeBufferImageBacking : public OhosVideoImageBacking,
   };
 
   class GLTextureVideoImageRepresentation;
+  class GLTexturePassthroughVideoImageRepresentation;
   class SkiaVkNBRepresentation;
 
   gpu::ScopedNativeBufferHandle GetNativeBufferHandle() const ;

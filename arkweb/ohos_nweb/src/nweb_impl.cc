@@ -343,6 +343,10 @@ bool OHOS::NWeb::NWebImpl::should_lazy_init_web_engine_ = false;
 #include "base/ohos/sys_info_utils_ext.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_ANGLE) && BUILDFLAG(ARKWEB_NWEB_EX)
+#include "arwkweb/chromium_ext/gpu/config/gpu_finch_feature_ext.h"
+#endif
+
 namespace {
 uint32_t g_nweb_count = 0;
 const uint32_t kSurfaceMaxWidth = 7680;
@@ -358,6 +362,16 @@ int32_t g_browser_service_sdk_api_level = 0;
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
 bool g_clipboard_site_permission_enabled = false;
 #endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
+
+#if BUILDFLAG(ARKWEB_ANGLE) && BUILDFLAG(ARKWEB_NWEB_EX)
+static bool g_angle_config = false;
+
+enum class AngleStatus : int {
+  kDefaultAngleStatus,
+  kEnableAngle,
+  kDisableAngle
+};
+#endif
 
 #if BUILDFLAG(ARKWEB_SITE_ISOLATION)
 enum class SiteIsolationInitMode{
@@ -624,6 +638,65 @@ bool GetWebOptimizationValue() {
                                         .GetSystemPropertiesInstance();
   return system_properties_adapter.GetWebOptimizationValue();
 }
+
+#if BUILDFLAG(ARKWEB_ANGLE) && BUILDFLAG(ARKWEB_NWEB_EX)
+AngleStatus GetANGLEStatus() {
+  auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                                        .GetSystemPropertiesInstance();
+  int angle_value = system_properties_adapter.GetIntParameter("web.gpu.angle", 0);
+  return static_cast<AngleStatus>(angle_value);
+}
+
+bool GetVulkanStatus(const std::list<std::string>& web_engine_args) {
+  std::string vulkan_status = "false";
+  for (const auto& arg : web_engine_args) {
+    if (arg.find("--ohos-enable-vulkan") != std::string::npos) {
+      size_t pos = arg.find("=");
+      if (pos != std::string::npos) {
+        vulkan_status = arg.substr(pos + 1);
+      } else {
+        vulkan_status = "true";
+      }
+      break;
+    }
+  }
+
+  auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                                        .GetSystemPropertiesInstance();
+  std::string cmd_vulkan_enable = system_properties_adapter.GetVulkanStatus();
+
+  if (cmd_vulkan_enable != "None") {
+    vulkan_status = cmd_vulkan_enable;
+  }
+
+  return vulkan_status != "false";
+}
+
+void ApplyANGLEStatus(std::list<std::string>& web_engine_args) {
+  if (!base::FeatureList::IsEnable(features::kDefaultANGLE) || base::ohos::IsEmulator()) {
+    return;
+  }
+
+  AngleStatus angle_status = GetAngleStatus();
+  bool vulkan_status = GetVulkanStatus(web_engine_args);
+  bool angle_flag = false;
+  if (vulkan_status && g_angle_config) {
+    angle_flag = true;
+  }
+
+  if (angle_status == AngleStatus::kEnableAngle) {
+    angle_flag = true;
+  } else if (angle_status == AngleStatus::kDisableAngle) {
+    angle_flag = false;
+  }
+
+  if (angle_flag) {
+    LOG(INFO) << "ANGLE enabled";
+    web_engine_args.emplace_back("--use-gl=angle");
+    web_engine_args.emplace_back("--use-cmd-decoder=passthrough");
+  }
+}
+#endif
 
 static bool IsAdvancedSecurityMode() {
   return ASHelper::Inst().IsSecFeatureEnabled(ASHelper::Feature::SECURE_SHIELD_ENABLED);
@@ -988,6 +1061,10 @@ void InitialWebEngineArgs(
     web_engine_args.emplace_back(arg);
   }
 #endif  // BUILDFLAG(IS_ARKWEB_EXT)
+
+#if BUILDFLAG(ARKWEB_ANGLE) && BUILDFLAG(ARKWEB_NWEB_EX)
+  ApplyANGLEStatus(web_engine_args);
+#endif
 
   std::string oemmode = OHOS::NWeb::OhosAdapterHelper::GetInstance()
                             .GetSystemPropertiesInstance().GetStringParameter("const.boot.oemmode", "");
@@ -6184,6 +6261,13 @@ void NWebImpl::SetMigrationPasswordReady(const bool migrationReady) {
   }
 #endif
 }
+
+#if BUILDFLAG(ARKWEB_ANGLE) && BUILDFLAG(ARKWEB_NWEB_EX)
+// static
+void NWebImpl::UpdateAngleConfig(bool angle_switch) {
+  g_angle_config = angle_switch;
+}
+#endif
 
 }  // namespace OHOS::NWeb
 

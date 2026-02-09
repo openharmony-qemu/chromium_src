@@ -18,6 +18,7 @@
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
 #include "base/task/single_thread_task_runner.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#include "ui/gl/gl_context.h"
 #include "ui/gl/gl_surface.h"
 
 namespace viz {
@@ -78,9 +79,15 @@ void SkiaOutputDeviceGLUtils::CleanBufferAfterSwapBuffer(gfx::SwapResult result)
 
 void SkiaOutputDeviceGLUtils::CleanOfflineBuffer() {
   if (delay_clean_) {
-    LOG(DEBUG) << "SkiaOutputDeviceGLUtils::CleanOfflineBuffer";
-    skiaOutPutDeviceGl_->gl_surface_->Recreate();
     delay_clean_ = false;
+    if (!gl::GLContext::GetCurrent() || !gl::GLSurface::GetCurrent()) {
+      LOG(ERROR) << "context or surface is nullptr";
+      return;
+    }
+    if (skiaOutPutDeviceGl_ && skiaOutPutDeviceGl_->gl_surface_) {
+      LOG(DEBUG) << "SkiaOutputDeviceGLUtils::CleanOfflineBuffer";
+      skiaOutPutDeviceGl_->gl_surface_->Recreate();
+    }
   }
 }
 #endif

@@ -3728,6 +3728,11 @@ void NWebImpl::NotifyMemoryLevel(int32_t level) {
 
 void NWebImpl::SetIsOfflineWebComponent() {
   WVLOG_D("NWebImpl::SetIsOfflineWebComponent");
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("SetIsOfflineWebComponent nweb delegate is null");
+    return;
+  }
+  nweb_delegate_->SetIsOfflineWebComponent();
 }
 
 void NWebImpl::OnWebviewHide() {

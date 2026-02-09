@@ -19,14 +19,24 @@
 
 #include "net/third_party/quiche/src/quiche/quic/core/quic_connection.h"
 #include "arkweb/chromium_ext/net/quiche/quic_stream_frame_detector.h"
+#include "arkweb/chromium_ext/base/ohos/nweb_engine_event_logger.h"
+#include "arkweb/chromium_ext/base/ohos/nweb_engine_event_logger_code.h"
 
 namespace quic {
 
 void QuicConnection::OnBrokenDetect() {
-  if (visitor_->GetNumActiveStreamsForInterface() > 0) {
-    LOG(INFO) << "QUIC Broken " << visitor_
-        ->GetStreamsInfoForQuicBroken();
+  if (visitor_->GetNumActiveStreamsForInterface() == 0) {
+    return;
   }
+
+  LOG(URL) << "QUIC Broken " << visitor_->GetStreamsInfoForQuicBroken()
+          << ", host " << visitor_->GetServerHostForQuicBroken();
+
+  // 运维打点
+  base::ohos::ReportEngineEvent(base::ohos::kModuleNet,
+                                visitor_->GetServerHostForQuicBroken(),
+                                base::ohos::kHostDidUseQUIC,
+                                visitor_->GetStreamsInfoForQuicBroken());
 }
 
 void QuicConnection::OnStreamFrameDetectorAlarm() {

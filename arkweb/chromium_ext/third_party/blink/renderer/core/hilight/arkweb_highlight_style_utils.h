@@ -43,7 +43,7 @@ class CORE_EXPORT ArkWebHighlightStyleUtils {
       const Document& document,
       mojom::blink::ColorScheme color_scheme);
 
-  static constexpr RGBA32 kTargetTextBackgroundColor = 0x1FA479FF;
+  static constexpr RGBA32 kTargetTextBackgroundColor = 0x33A479FF;
   static constexpr RGBA32 kTargetTextBackgroundColorDark = 0x33A479FF;
 #endif
 };

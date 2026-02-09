@@ -49,7 +49,7 @@
             const segmenter = new Intl.Segmenter('en', { granularity: 'word' });
             const iterator = segmenter.segment(text)[Symbol.iterator]();
             let { value } = iterator.next();
-            while (value && !value.segment.match(this.__regex)) {
+            while (value) {
                 segments.push(value.segment);
                 ({ value } = iterator.next());
             }
@@ -60,6 +60,9 @@
             let result = '';
             let i = 0;
             while (i < segments.length && result.length + segments[i].length <= maxLength) {
+                if (segments[i].match(this.__regex)) {
+                    break;
+                }
                 result += segments[i];
                 i++;
             }
@@ -69,6 +72,9 @@
         BuildFromEnd(segments, maxLength) {
             let result = '';
             while (segments.length && result.length + segments[segments.length - 1].length <= maxLength) {
+                if (segments[segments.length - 1].match(this.__regex)) {
+                    break;
+                }
                 result = segments.pop() + result;
             }
             return result;
@@ -211,7 +217,7 @@
 
                 if (result.success) {
                     urlString += result.hashText.length ?
-                        (urlString.length ? '&' : ':~:') + result.hashText : '';
+                        (urlString.length ? '&' : '#:~:') + result.hashText : '';
                     if (result.warning) {
                         errorMessage.push(result.warning);
                     }
@@ -220,7 +226,9 @@
                 }
             });
 
-            location.hash = urlString;
+            if (urlString.length) {
+                location.replace(urlString);
+            }
             return JSON.stringify(errorMessage);
         },
     };

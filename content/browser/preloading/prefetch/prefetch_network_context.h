@@ -17,6 +17,10 @@
 #include "services/network/public/mojom/network_context.mojom.h"
 #include "services/network/public/mojom/url_loader_factory.mojom.h"
 
+#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+#include "content/public/browser/render_frame_host.h"
+#endif
+
 namespace content {
 
 class BrowserContext;
@@ -50,6 +54,12 @@ class CONTENT_EXPORT PrefetchNetworkContext {
 
   // Close any idle connections with |network_context_|.
   void CloseIdleConnections();
+
+#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+  bool IsReferringRenderFrameHostValid() {
+    return RenderFrameHost::FromID(referring_render_frame_host_id_) != nullptr;
+  }
+#endif
 
  private:
   // Returns a URLLoaderFactory associated with the given |network_context|.

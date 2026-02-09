@@ -870,7 +870,7 @@ void HandleAdvancedSecurityMode(std::list<std::string>& web_engine_args) {
     std::string AdSec = "--advanced_sec_value=" + std::to_string(ASHelper::Inst().GetAdStat());
     web_engine_args.emplace_back(AdSec);
 
-#if BUILDFLAG(REPORT_SYS_EVENT)
+#if defined(REPORT_SYS_EVENT)
     ReportLockdownModeStatus();
 #endif
   }

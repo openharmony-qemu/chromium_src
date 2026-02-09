@@ -37,18 +37,7 @@ OhosNativeImage::OhosNativeImage(
 
 OhosNativeImage::~OhosNativeImage() {
   if (native_image_adapter_ != nullptr) {
-    // Here we need to inform browser process to release the native window
-    // passed from GPU process previously when gpu isolation is enabled.
-    auto type = base::CommandLine::ForCurrentProcess()->
-      GetSwitchValueASCII(kProcessType);
-    if (type == kGpuProcess) {
-      uint64_t surface_id = 0;
-      auto ret = native_image_adapter_->GetSurfaceId(&surface_id);
-      if (ret == 0) {
-        NWebNativeWindowTracker::GetInstance()
-            ->g_browser_client_->DestroyPassedSurface(surface_id);
-      }
-    }
+    DestroyPassedSurfaceFromGpuProcess();
     native_image_adapter_->DestroyNativeImage();
   }
 }
@@ -125,6 +114,7 @@ void OhosNativeImage::ReleaseNativeImage() {
   if (native_image_adapter_ == nullptr) {
     return;
   }
+  DestroyPassedSurfaceFromGpuProcess();
   native_image_adapter_->DestroyNativeImage();
 }
 
@@ -195,6 +185,21 @@ void OhosNativeImage::GetTransformMatrixV1(float mtx[16], size_t mtx_size) {
     return;
   }
   native_image_adapter_->GetTransformMatrix(mtx);
+}
+
+void OhosNativeImage::DestroyPassedSurfaceFromGpuProcess() {
+  // Here we need to inform browser process to release the native window
+  // passed from GPU process previously when gpu isolation is enabled.
+  auto type = base::CommandLine::ForCurrentProcess()->
+    GetSwitchValueASCII(kProcessType);
+  if (type == kGpuProcess) {
+    uint64_t surface_id = 0;
+    auto ret = native_image_adapter_->GetSurfaceId(&surface_id);
+    if (ret == 0) {
+      NWebNativeWindowTracker::GetInstance()
+        ->g_browser_client_->DestroyPassedSurface(surface_id);
+    }
+  }
 }
 //LCOV_EXCL_STOP
 }  // namespace gl

@@ -980,6 +980,13 @@ void InitialWebEngineArgs(
     }
   }
 
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+  if (IsAdvancedSecurityMode()) {
+    // when Advanced Security Mode is enabled
+    HandleAdvancedSecurityMode(web_engine_args);
+  }
+#endif  // BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+
   if (GetIsMultiRendererProcess(init_args)) {
     web_engine_args.emplace_back("--enable-multi-renderer-process");
   }
@@ -989,13 +996,6 @@ void InitialWebEngineArgs(
     web_engine_args.emplace_back(arg);
   }
 #endif  // BUILDFLAG(IS_ARKWEB_EXT)
-
-#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
-  if (IsAdvancedSecurityMode()) {
-    // when Advanced Security Mode is enabled
-    HandleAdvancedSecurityMode(web_engine_args);
-  }
-#endif  // BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
 
   std::string oemmode = OHOS::NWeb::OhosAdapterHelper::GetInstance()
                             .GetSystemPropertiesInstance().GetStringParameter("const.boot.oemmode", "");

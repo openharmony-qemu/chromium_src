@@ -305,6 +305,7 @@
 /arkweb/ohos_nweb/src/cef_delegate/nweb_default_engine_init_args_impl.cc @arkweb-framework
 /arkweb/ohos_nweb/src/nweb_delegate_adapter.cc @arkweb-framework
 /arkweb/ohos_nweb/src/nweb_delegate_adapter.h @arkweb-framework
+/arkweb/ohos_nweb/src/nweb_impl.cc @arkweb-framework
 /ui/views/accessibility/ @arkweb-framework
 /ui/accessibility/ @arkweb-framework
 /styleguide/c++/ @arkweb-framework

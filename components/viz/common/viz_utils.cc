@@ -239,7 +239,7 @@ void SetCopyOutoutRequestResultSize(CopyOutputRequest* request,
 #if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
 bool IsEvictUnlockFrameEnabled() {
   static bool evictUnlockFrameEnabled = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance()
-    .GetBoolParameter("persist.web.frame_evictor.enabled", false);
+    .GetBoolParameter("const.web.frame_evictor.enabled", false);
   return evictUnlockFrameEnabled;
 }
 #endif

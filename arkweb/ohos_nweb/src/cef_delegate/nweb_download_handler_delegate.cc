@@ -22,7 +22,7 @@
 #include "cef/include/wrapper/cef_closure_task.h"
 #include "cef/include/wrapper/cef_helpers.h"
 #include "chrome/grit/generated_resources.h"
-#include "content/common/content_constants_internal.h"
+#include "content/public/common/content_constants.h"
 #include "net/base/filename_util.h"
 #include "net/http/http_content_disposition.h"
 #include "nweb_impl.h"
@@ -197,7 +197,7 @@ std::string NWebDownloadHandlerDelegate::GenerateSuggestedFilename(
                                                           default_charset);
   GURL gurl = GURL();
   if (!(IsDataScheme(download_item->GetURL()) &&
-        download_item->GetURL().size() > content::kMaxLengthOfDataURLString)) {
+        download_item->GetURL().size() > content::kMaxLengthOfDataURLStringPub)) {
     gurl = GURL(download_item->GetURL().ToString());
   }
 

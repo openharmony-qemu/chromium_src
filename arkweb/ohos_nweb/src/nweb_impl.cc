@@ -983,9 +983,6 @@ void InitialWebEngineArgs(
     }
   }
 
-  // when Advanced Security Mode is enabled
-  HandleAdvancedSecurityMode(web_engine_args);
-
   if (GetIsMultiRendererProcess(init_args)) {
     web_engine_args.emplace_back("--enable-multi-renderer-process");
   }
@@ -1013,6 +1010,8 @@ void InitialWebEngineArgs(
   } else {
     LOG(INFO) << "oemmode is not rd or ohos-command-line does not exist.";
   }
+  // when Advanced Security Mode is enabled, the function call must be scheduled as the last step.
+  HandleAdvancedSecurityMode(web_engine_args);
 }
 #endif  // BUILDFLAG(ARKWEB_API_INIT_WEB_ENGINE)
 

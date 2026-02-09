@@ -337,7 +337,7 @@ TEST_F(BrowserAccessibilityManagerOhosTest, DispatchEvent_002) {
   root.child_ids = {6701};
 
   ui::AXNodeData b1;
-  b1.id = 4601;
+  b1.id = 6701;
   b1.role = ax::mojom::Role::kButton;
   
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, b1);

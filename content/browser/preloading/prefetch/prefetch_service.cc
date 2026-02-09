@@ -1248,6 +1248,16 @@ void PrefetchService::StartSinglePrefetch(
 
 void PrefetchService::SendPrefetchRequest(
     base::WeakPtr<PrefetchContainer> prefetch_container) {
+#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+  if (prefetch_container &&
+      prefetch_container->GetOrCreateNetworkContextForCurrentPrefetch() &&
+      !prefetch_container->GetOrCreateNetworkContextForCurrentPrefetch()
+          ->IsReferringRenderFrameHostValid()) {
+    base::debug::DumpWithoutCrashing();
+    return;
+  }
+#endif
+
   net::NetworkTrafficAnnotationTag traffic_annotation =
       net::DefineNetworkTrafficAnnotation("speculation_rules_prefetch",
                                           R"(

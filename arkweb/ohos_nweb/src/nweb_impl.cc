@@ -848,30 +848,29 @@ void HandleAdvancedSecurityMode(std::list<std::string>& web_engine_args) {
 #if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
   if (IsAdvancedSecurityMode()) {
     WVLOG_I(
-      "In advanced security mode, some HTML5 features will be unavailable, "
-      "including "
-      "WebAssembly, WebGL, PDF viewer, MatchML, speech recognition, etc.");
+        "In advanced security mode, some HTML5 features will be unavailable, "
+        "including "
+        "WebAssembly, WebGL, PDF viewer, MathML, speech recognition, etc.");
+    web_engine_args.emplace_back("--js-flags=--jitless");
 
-      web_engine_args.emplace_back("--js-flags=--jitless");
+    if (ASHelper::Inst().IsSecFeatureEnabled(ASHelper::Feature::ENABLE_WEBGL)) {
+      web_engine_args.emplace_back("--disable-webgl");
+      web_engine_args.emplace_back("--disable-webgl2");
+    }
 
-      if (ASHelper::Inst().IsSecFeatureEnabled(ASHelper::Feature::ENABLE_WEBGL)) {
-        web_engine_args.emplace_back("--disable-webgl");
-        web_engine_args.emplace_back("--disable-webgl2");
-      }
+    if (ASHelper::Inst().IsSecFeatureEnabled(ASHelper::Feature::ENABLE_PDFVIEWER)) {
+      web_engine_args.emplace_back("--disable-pdf-extension");
+    }
 
-      if (ASHelper::Inst().IsSecFeatureEnabled(ASHelper::Feature::ENABLE_PDFVIEWER)) {
-        web_engine_args.emplace_back("--disable-pdf-extension");
-      }
+    if (ASHelper::Inst().IsSecFeatureEnabled(ASHelper::Feature::ENABLE_SPEECHAPI)) {
+      web_engine_args.emplace_back(
+          "--disable-blink-features=NonAdvancedSecurityMode");
+    }
 
-      if (ASHelper::Inst().IsSecFeatureEnabled(ASHelper::Feature::ENABLE_SPEECHAPI)) {
-        web_engine_args.emplace_back(
-            "--disable-blink-features=NonAdvancedSecurityMode");
-      }
+    std::string AdSec = "--advanced_sec_value=" + std::to_string(ASHelper::Inst().GetAdStat());
+    web_engine_args.emplace_back(AdSec);
 
-      std::string AdSec = "--advanced_sec_value=" + std::to_string(ASHelper::Inst().GetAdStat());
-      web_engine_args.emplace_back(AdSec);
-
-#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+#if BUILDFLAG(REPORT_SYS_EVENT)
     ReportLockdownModeStatus();
 #endif
   }

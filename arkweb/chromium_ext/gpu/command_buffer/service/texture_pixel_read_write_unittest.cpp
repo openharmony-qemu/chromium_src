@@ -78,23 +78,33 @@ class TexturePixelReadWriteTest : public ::testing::Test {
     for (GLuint buf : buffers_) gl::g_current_gl_context->glDeleteBuffersFn(1, &buf);
     for (GLuint prog : programs_) gl::g_current_gl_context->glDeleteProgramFn(prog);
     for (GLuint shader : shaders_) gl::g_current_gl_context->glDeleteShaderFn(shader);
-    textures_.clear(); framebuffers_.clear(); buffers_.clear(); programs_.clear(); shaders_.clear();
+    textures_.clear();
+    framebuffers_.clear();
+    buffers_.clear();
+    programs_.clear();
+    shaders_.clear();
   }
 
  protected:
   GLuint CreateTexture() {
-    GLuint tex; gl::g_current_gl_context->glGenTexturesFn(1, &tex);
-    textures_.push_back(tex); return tex;
+    GLuint tex;
+    gl::g_current_gl_context->glGenTexturesFn(1, &tex);
+    textures_.push_back(tex);
+    return tex;
   }
 
   GLuint CreateFramebuffer() {
-    GLuint fbo; gl::g_current_gl_context->glGenFramebuffersFn(1, &fbo);
-    framebuffers_.push_back(fbo); return fbo;
+    GLuint fbo;
+    gl::g_current_gl_context->glGenFramebuffersFn(1, &fbo);
+    framebuffers_.push_back(fbo);
+    return fbo;
   }
 
   GLuint CreateBuffer() {
-    GLuint buf; gl::g_current_gl_context->glGenBuffersFn(1, &buf);
-    buffers_.push_back(buf); return buf;
+    GLuint buf;
+    gl::g_current_gl_context->glGenBuffersFn(1, &buf);
+    buffers_.push_back(buf);
+    return buf;
   }
 
   void CreateTexture2D(GLuint tex, GLsizei w, GLsizei h, GLenum format = GL_RGBA) {
@@ -178,7 +188,8 @@ TEST_F(TexturePixelReadWriteTest, Category1_RGB8_TextureFormatCompatibility) {
 
   gl::g_current_gl_context->glBindTextureFn(GL_TEXTURE_2D, tex);
   std::vector<ColorRGB> data(size * size, {COLOR_RED.r, COLOR_RED.g, COLOR_RED.b});
-  gl::g_current_gl_context->glTexImage2DFn(GL_TEXTURE_2D, 0, GL_RGB, size, size, 0, GL_RGB, GL_UNSIGNED_BYTE, data.data());
+  gl::g_current_gl_context->glTexImage2DFn(GL_TEXTURE_2D, 0, GL_RGB, size, size, 0,
+                                           GL_RGB, GL_UNSIGNED_BYTE, data.data());
   gl::g_current_gl_context->glTexParameteriFn(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
   GLuint fbo = CreateFramebuffer();
@@ -205,7 +216,10 @@ TEST_F(TexturePixelReadWriteTest, Category1_TextureParameterValidation) {
   gl::g_current_gl_context->glTexParameteriFn(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
   gl::g_current_gl_context->glTexParameteriFn(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-  GLint min_filter = 0, mag_filter = 0, wrap_s = 0, wrap_t = 0;
+  GLint min_filter = 0;
+  GLint mag_filter = 0;
+  GLint wrap_s = 0;
+  GLint wrap_t = 0;
   gl::g_current_gl_context->glGetTexParameterivFn(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, &min_filter);
   gl::g_current_gl_context->glGetTexParameterivFn(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, &mag_filter);
   gl::g_current_gl_context->glGetTexParameterivFn(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, &wrap_s);
@@ -274,7 +288,8 @@ TEST_F(TexturePixelReadWriteTest, Category2_TexSubImage2D_IncrementalUpdate) {
   ColorRGBA colors[] = {COLOR_RED, COLOR_GREEN, COLOR_BLUE};
   for (const auto& color : colors) {
     std::vector<ColorRGBA> data(32 * 32, color);
-    gl::g_current_gl_context->glTexSubImage2DFn(GL_TEXTURE_2D, 0, 16, 16, 32, 32, GL_RGBA, GL_UNSIGNED_BYTE, data.data());
+    gl::g_current_gl_context->glTexSubImage2DFn(GL_TEXTURE_2D, 0, 16, 16, 32, 32,
+                                                GL_RGBA, GL_UNSIGNED_BYTE, data.data());
 
     ColorRGBA pixel = ReadPixel(32, 32);
     EXPECT_TRUE(pixel.Equals(color, 10)) << "TexSubImage2D update failed";
@@ -288,7 +303,8 @@ TEST_F(TexturePixelReadWriteTest, Category3_MipmapGenerationAndSampling) {
 
   gl::g_current_gl_context->glBindTextureFn(GL_TEXTURE_2D, tex);
   std::vector<ColorRGBA> data(size * size, COLOR_RED);
-  gl::g_current_gl_context->glTexImage2DFn(GL_TEXTURE_2D, 0, GL_RGBA, size, size, 0, GL_RGBA, GL_UNSIGNED_BYTE, data.data());
+  gl::g_current_gl_context->glTexImage2DFn(GL_TEXTURE_2D, 0, GL_RGBA, size, size, 0,
+                                           GL_RGBA, GL_UNSIGNED_BYTE, data.data());
 
   gl::g_current_gl_context->glGenerateMipmapFn(GL_TEXTURE_2D);
   gl::g_current_gl_context->glTexParameteriFn(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
@@ -346,7 +362,8 @@ TEST_F(TexturePixelReadWriteTest, Category3_WebGL2_TextureStorage) {
   gl::g_current_gl_context->glTexStorage2DFn(GL_TEXTURE_2D, 1, GL_RGBA8, size, size);
 
   std::vector<ColorRGBA> data(size * size, COLOR_BLUE);
-  gl::g_current_gl_context->glTexSubImage2DFn(GL_TEXTURE_2D, 0, 0, 0, size, size, GL_RGBA, GL_UNSIGNED_BYTE, data.data());
+  gl::g_current_gl_context->glTexSubImage2DFn(GL_TEXTURE_2D, 0, 0, 0, size, size,
+                                              GL_RGBA, GL_UNSIGNED_BYTE, data.data());
 
   GLuint fbo = CreateFramebuffer();
   gl::g_current_gl_context->glBindFramebufferFn(GL_FRAMEBUFFER, fbo);
@@ -409,7 +426,8 @@ TEST_F(TexturePixelReadWriteTest, Category4_ReadWriteConsistency) {
   }
 
   gl::g_current_gl_context->glBindTextureFn(GL_TEXTURE_2D, tex);
-  gl::g_current_gl_context->glTexSubImage2DFn(GL_TEXTURE_2D, 0, 0, 0, size, size, GL_RGBA, GL_UNSIGNED_BYTE, original_data.data());
+  gl::g_current_gl_context->glTexSubImage2DFn(GL_TEXTURE_2D, 0, 0, 0, size, size,
+                                              GL_RGBA, GL_UNSIGNED_BYTE, original_data.data());
 
   GLuint fbo = CreateFramebuffer();
   gl::g_current_gl_context->glBindFramebufferFn(GL_FRAMEBUFFER, fbo);
@@ -427,5 +445,6 @@ TEST_F(TexturePixelReadWriteTest, Category4_ReadWriteConsistency) {
   }
 
   float match_ratio = static_cast<float>(match_count) / (size * size);
-  EXPECT_GT(match_ratio, 0.99f) << "Read/write consistency check failed: only " << match_ratio * 100 << "% pixels match";
+  EXPECT_GT(match_ratio, 0.99f) << "Read/write consistency check failed: only " 
+                                << (match_ratio * 100) << "% pixels match";
 }

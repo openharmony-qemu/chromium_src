@@ -78,23 +78,33 @@ class AngleBackendSyncTest : public ::testing::Test {
     for (GLuint buf : buffers_) gl::g_current_gl_context->glDeleteBuffersFn(1, &buf);
     for (GLuint prog : programs_) gl::g_current_gl_context->glDeleteProgramFn(prog);
     for (GLuint shader : shaders_) gl::g_current_gl_context->glDeleteShaderFn(shader);
-    textures_.clear(); framebuffers_.clear(); buffers_.clear(); programs_.clear(); shaders_.clear();
+    textures_.clear();
+    framebuffers_.clear();
+    buffers_.clear();
+    programs_.clear();
+    shaders_.clear();
   }
 
  protected:
   GLuint CreateTexture() {
-    GLuint tex; gl::g_current_gl_context->glGenTexturesFn(1, &tex);
-    textures_.push_back(tex); return tex;
+    GLuint tex;
+    gl::g_current_gl_context->glGenTexturesFn(1, &tex);
+    textures_.push_back(tex);
+    return tex;
   }
 
   GLuint CreateFramebuffer() {
-    GLuint fbo; gl::g_current_gl_context->glGenFramebuffersFn(1, &fbo);
-    framebuffers_.push_back(fbo); return fbo;
+    GLuint fbo;
+    gl::g_current_gl_context->glGenFramebuffersFn(1, &fbo);
+    framebuffers_.push_back(fbo);
+    return fbo;
   }
 
   GLuint CreateBuffer() {
-    GLuint buf; gl::g_current_gl_context->glGenBuffersFn(1, &buf);
-    buffers_.push_back(buf); return buf;
+    GLuint buf;
+    gl::g_current_gl_context->glGenBuffersFn(1, &buf);
+    buffers_.push_back(buf);
+    return buf;
   }
 
   void CreateTexture2D(GLuint tex, GLsizei w, GLsizei h) {
@@ -107,7 +117,8 @@ class AngleBackendSyncTest : public ::testing::Test {
   void CreateTexture2DWithData(GLuint tex, GLsizei w, GLsizei h, const ColorRGBA& c) {
     gl::g_current_gl_context->glBindTextureFn(GL_TEXTURE_2D, tex);
     std::vector<ColorRGBA> data(w * h, c);
-    gl::g_current_gl_context->glTexImage2DFn(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data.data());
+    gl::g_current_gl_context->glTexImage2DFn(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0,
+                                            GL_RGBA, GL_UNSIGNED_BYTE, data.data());
     gl::g_current_gl_context->glTexParameteriFn(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     gl::g_current_gl_context->glTexParameteriFn(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   }
@@ -177,7 +188,8 @@ TEST_F(AngleBackendSyncTest, Scene1_TextureToFBOToReadPixels) {
 // Test: FBO switching with dual texture binding
 TEST_F(AngleBackendSyncTest, Scene1_FBOSwitchingDualTexture) {
   const GLsizei size = 64;
-  GLuint texA = CreateTexture(), texB = CreateTexture();
+  GLuint texA = CreateTexture();
+  GLuint texB = CreateTexture();
   CreateTexture2D(texA, size, size);
   CreateTexture2D(texB, size, size);
 
@@ -213,7 +225,8 @@ TEST_F(AngleBackendSyncTest, Scene1_TexSubImage2DIncrementalUpdate) {
   ColorRGBA colors[] = {COLOR_RED, COLOR_GREEN, COLOR_BLUE};
   for (const auto& color : colors) {
     std::vector<ColorRGBA> data(32 * 32, color);
-    gl::g_current_gl_context->glTexSubImage2DFn(GL_TEXTURE_2D, 0, 16, 16, 32, 32, GL_RGBA, GL_UNSIGNED_BYTE, data.data());
+    gl::g_current_gl_context->glTexSubImage2DFn(GL_TEXTURE_2D, 0, 16, 16, 32,
+                                                32, GL_RGBA, GL_UNSIGNED_BYTE, data.data());
     EXPECT_TRUE(ReadPixel(32, 32).Equals(color, 10)) << "TexSubImage2D sync failed for color";
   }
 }
@@ -297,8 +310,10 @@ TEST_F(AngleBackendSyncTest, Scene3_TexImage2DImmediateSampling) {
     gl::g_current_gl_context->glFramebufferTexture2DFn(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, dstTex, 0);
 
     GLuint prog = CreateProgram(
-        "attribute vec2 aPos; varying vec2 vTC; void main() { gl_Position = vec4(aPos, 0, 1); vTC = aPos * 0.5 + 0.5; }",
-        "precision mediump float; varying vec2 vTC; uniform sampler2D uTex; void main() { gl_FragColor = texture2D(uTex, vTC); }");
+        "attribute vec2 aPos; varying vec2 vTC; void main() { gl_Position = vec4(aPos, 0, 1); "
+        "vTC = aPos * 0.5 + 0.5; }",
+        "precision mediump float; varying vec2 vTC; uniform sampler2D uTex; void main() { "
+        "gl_FragColor = texture2D(uTex, vTC); }");
     gl::g_current_gl_context->glUseProgramFn(prog);
     gl::g_current_gl_context->glActiveTextureFn(GL_TEXTURE0);
     gl::g_current_gl_context->glBindTextureFn(GL_TEXTURE_2D, srcTex);
@@ -330,8 +345,6 @@ TEST_F(AngleBackendSyncTest, Scene3_BufferDataImmediateUse) {
   for (int i = 0; i < 10; i++) {
     uint8_t r = (i * 25) % 256;
     char fs[128];
-    snprintf(fs, sizeof(fs), "precision mediump float; uniform vec3 uColor; void main() { gl_FragColor = vec4(%f,%f,%f,1); }",
-            r / 255.0f, 128 / 255.0f, 64 / 255.0f);
 
     GLuint prog = CreateProgram("attribute vec2 aPos; void main() { gl_Position = vec4(aPos, 0, 1); }", fs);
     gl::g_current_gl_context->glUseProgramFn(prog);
@@ -448,13 +461,16 @@ TEST_F(AngleBackendSyncTest, Scene5_CopyBufferSubDataSync) {
 
   GLuint srcBuf = CreateBuffer();
   gl::g_current_gl_context->glBindBufferFn(GL_COPY_READ_BUFFER, srcBuf);
-  gl::g_current_gl_context->glBufferDataFn(GL_COPY_READ_BUFFER, srcData.size() * sizeof(float), srcData.data(), GL_STATIC_DRAW);
+  gl::g_current_gl_context->glBufferDataFn(GL_COPY_READ_BUFFER, srcData.size() * sizeof(float),
+                                           srcData.data(), GL_STATIC_DRAW);
 
   GLuint dstBuf = CreateBuffer();
   gl::g_current_gl_context->glBindBufferFn(GL_COPY_WRITE_BUFFER, dstBuf);
-  gl::g_current_gl_context->glBufferDataFn(GL_COPY_WRITE_BUFFER, srcData.size() * sizeof(float), nullptr, GL_STATIC_DRAW);
+  gl::g_current_gl_context->glBufferDataFn(GL_COPY_WRITE_BUFFER, srcData.size() * sizeof(float),
+                                           nullptr, GL_STATIC_DRAW);
 
-  gl::g_current_gl_context->glCopyBufferSubDataFn(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, srcData.size() * sizeof(float));
+  gl::g_current_gl_context->glCopyBufferSubDataFn(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0,
+                                                  srcData.size() * sizeof(float));
 
   if (gl::g_current_gl_context->glGetBufferSubDataFn) {
     std::vector<float> dstData(dataSize);
@@ -482,7 +498,8 @@ TEST_F(AngleBackendSyncTest, Scene5_TextureStorageSync) {
   gl::g_current_gl_context->glTexStorage2DFn(GL_TEXTURE_2D, 1, GL_RGBA8, size, size);
 
   std::vector<ColorRGBA> data(size * size, COLOR_RED);
-  gl::g_current_gl_context->glTexSubImage2DFn(GL_TEXTURE_2D, 0, 0, 0, size, size, GL_RGBA, GL_UNSIGNED_BYTE, data.data());
+  gl::g_current_gl_context->glTexSubImage2DFn(GL_TEXTURE_2D, 0, 0, 0, size, size,
+                                              GL_RGBA, GL_UNSIGNED_BYTE, data.data());
 
   GLuint fbo = CreateFramebuffer();
   gl::g_current_gl_context->glBindFramebufferFn(GL_FRAMEBUFFER, fbo);

@@ -22,6 +22,7 @@
 #include "cef/include/wrapper/cef_closure_task.h"
 #include "cef/include/wrapper/cef_helpers.h"
 #include "chrome/grit/generated_resources.h"
+#include "content/public/common/content_constants.h"
 #include "net/base/filename_util.h"
 #include "net/http/http_content_disposition.h"
 #include "nweb_impl.h"
@@ -36,6 +37,9 @@
 namespace OHOS::NWeb {
 
 namespace {
+
+const int kDataSchemePrefixLen = 5;
+
 const std::string GetContentDisposition(
     CefRefPtr<CefDownloadItem> download_item, std::string default_charset) {
     std::string origin_content_disposition =
@@ -64,6 +68,16 @@ std::string DesensitizeStr(const std::string& str) {
     }
     return str.substr(0, 2) + "**";
 }
+
+static bool IsDataScheme(const CefString& url) {
+  if (url.length() < kDataSchemePrefixLen) {
+    return false;
+  }
+  CefString prefix(url.c_str(), kDataSchemePrefixLen, true);
+  CefString dataScheme("data:");
+  return prefix == dataScheme;
+}
+
 }
 
 NWebDownloadHandlerDelegate::NWebDownloadHandlerDelegate(
@@ -181,7 +195,12 @@ std::string NWebDownloadHandlerDelegate::GenerateSuggestedFilename(
                   : "utf-8");
   std::string content_disposition = GetContentDisposition(download_item,
                                                           default_charset);
-  GURL gurl(download_item->GetURL().ToString());
+  GURL gurl = GURL();
+  CefString url = download_item->GetURL();
+  if (!(IsDataScheme(url) && url.length() > content::kMaxLengthOfDataURLStringPub)) {
+    gurl = GURL(url.ToString());
+  }
+
   base::FilePath generated_filename = net::GenerateFileName(
       gurl, content_disposition, default_charset,
       suggested_filename, sniffed_mime_type, default_filename);

@@ -54,6 +54,7 @@ export class PopupWindowRelayout extends AComponent {
     private equivalentMask: HTMLElement;
     private contentNodes: HTMLElement[] = []; // 存储弹窗内容主体节点
     private minScaleFactor = CCMConfig.getInstance().getMinScaleFactor() / 100;
+    private targetHeightRatio = CCMConfig.getInstance().getTargetHeightRatio() / 100;
     private scaleAnimationDuration = CCMConfig.getInstance().getScaleAnimationDuration();
     private scrollNodes: HTMLElement[] = [];  // 带滚动条的节点
 
@@ -317,7 +318,7 @@ export class PopupWindowRelayout extends AComponent {
 
         let oriHeight = this.maxBottom - this.minTop;
         let screenHeight = this.visualHeight;
-        this.scale = Math.min(1, Math.max((screenHeight * 0.7) / oriHeight, this.minScaleFactor));
+        this.scale = Math.min(1, Math.max((screenHeight * this.targetHeightRatio) / oriHeight, this.minScaleFactor));
         Log.d(`PopWindow智能布局: calcScale = ${this.scale}, bottomNode: ${this.bottomNode.className}`);
     }
 

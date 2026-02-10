@@ -57,7 +57,8 @@ extern void ResetArkwebUserAgentExtStateForTest();
 std::string GetDistVersion();
 std::string GetOhosFullname();
 void SetProductString(std::string& user_agent);
-void UpdateUserAgentMetaData(blink::UserAgentMetadata& metadata);
+void UpdateHighEntropyCh(blink::UserAgentMetadata& metadata);
+void UpdateLowEntropyCh(blink::UserAgentMetadata& metadata);
 #endif
 
 }  // namespace content

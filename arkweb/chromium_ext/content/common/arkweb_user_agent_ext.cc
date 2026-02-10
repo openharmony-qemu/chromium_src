@@ -143,9 +143,7 @@ void SetProductString(std::string& user_agent) {
   base::StringAppendF(&user_agent, "%s", product_string.c_str());
 }
 
-void UpdateUserAgentMetaData(blink::UserAgentMetadata& metadata) {
-  metadata.mobile = base::ohos::IsMobileDevice();
-  metadata.platform = base::ohos::kPlatformName;
+void UpdateHighEntropyCh(blink::UserAgentMetadata& metadata) {
   metadata.architecture = "";
   metadata.bitness = base::ohos::IsPcDevice() ? base::ohos::kBitness64 : "";
   metadata.full_version = "";
@@ -154,11 +152,15 @@ void UpdateUserAgentMetaData(blink::UserAgentMetadata& metadata) {
   metadata.model =
       base::ohos::IsMobileDevice() ? base::ohos::GetProductModel() : "";
   metadata.platform_version = base::ohos::GetOSDistVersion();
-  metadata.brand_version_list.emplace_back(
-      base::ohos::kWebName,
-      GetDistVersion());
   metadata.brand_full_version_list.emplace_back(base::ohos::kWebName,
                                                 ARKWEB_VERSION);
+}
+ 
+void UpdateLowEntropyCh(blink::UserAgentMetadata& metadata) {
+  metadata.brand_version_list.emplace_back(base::ohos::kWebName,
+                                           GetDistVersion());
+  metadata.mobile = base::ohos::IsMobileDevice();
+  metadata.platform = base::ohos::kPlatformName;
 }
 #endif  // ARKWEB_USERAGENT
 

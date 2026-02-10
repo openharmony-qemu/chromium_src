@@ -56,6 +56,10 @@
 #include "media/audio/audio_manager.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_USERAGENT)
+#include "base/strings/string_util.h"
+#endif
+
 namespace content {
 
 // LCOV_EXCL_START
@@ -1074,8 +1078,12 @@ const blink::UserAgentMetadata WebContentsImplExt::GetUserAgentMetadata(
     return it->second;
   }
 #if !defined(COMPONENT_BUILD)
-  return embedder_support::GetUserAgentMetadata();
-#else 
+  if (user_agent.empty()) {
+    return embedder_support::GetUserAgentMetadata(true);
+  }
+  return embedder_support::GetUserAgentMetadata(
+      !base::Contains(user_agent, embedder_support::GetUserAgent()));
+#else
   return blink::UserAgentMetadata();
 #endif
 }

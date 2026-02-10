@@ -22,6 +22,7 @@ namespace OHOS::NWeb {
 NWebAgentManagerImpl::NWebAgentManagerImpl(
     base::WeakPtr<NWebDelegate> nweb_delegate)
     : nweb_delegate_(nweb_delegate) {
+    content_change_detection_ = std::make_unique<NWebContentChangeDetection>(nweb_delegate);
     highlight_specified_content_ = std::make_unique<NWebHighlightSpecifiedContent>(nweb_delegate);
 }
 
@@ -30,6 +31,9 @@ void NWebAgentManagerImpl::SetAgentEnabled(bool enabled) {
         nweb_delegate_ ? nweb_delegate_->preference_delegate_ : nullptr;
     if (pref) {
         pref->PutArkwebAgentEnabled(enabled);
+    }
+    if (content_change_detection_) {
+        content_change_detection_->SetContentChangeDetectionEnable(enabled);
     }
     if (highlight_specified_content_) {
       highlight_specified_content_->SetHighlightSpecifiedContentEnable(enabled);
@@ -40,6 +44,12 @@ bool NWebAgentManagerImpl::IsAgentEnabled() {
     std::shared_ptr<NWebPreferenceDelegate> pref = 
         nweb_delegate_ ? nweb_delegate_->preference_delegate_ : nullptr;
     return pref ? pref->GetArkwebAgentEnabled() : false;
+}
+
+void NWebAgentManagerImpl::SetContentChangeDetectionConfig(int32_t min_report_time, float text_content_ratio) {
+    if (content_change_detection_) {
+        content_change_detection_->SetContentChangeDetectionConfig(min_report_time, text_content_ratio);
+    }
 }
 
 void NWebAgentManagerImpl::SetAgentNeedHighlight(bool enabled) {

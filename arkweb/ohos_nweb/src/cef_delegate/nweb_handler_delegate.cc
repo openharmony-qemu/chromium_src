@@ -183,6 +183,9 @@
 #if BUILDFLAG(ARKWEB_AUTOLAYOUT)
 #include "nweb_autolayout.h"
 #endif
+#if BUILDFLAG(ARKWEB_AI)
+#include "nweb_content_change_detection.h"
+#endif
 
 #if BUILDFLAG(ARKWEB_MULTI_WINDOW)
 #include "ohos_nweb/src/nweb_window_new_event_info_impl.h"
@@ -4319,6 +4322,13 @@ void NWebHandlerDelegate::RegisterNativeLoadEndCallback(
   onLoadEndCallback_ = std::move(callback);
 }
 
+#if BUILDFLAG(ARKWEB_AI)
+void NWebHandlerDelegate::RegisterOnLoadStartedCbForContentChange(
+    std::function<void(void)>&& callback) {
+  onLoadStartedCbForContentChange_ = std::move(callback);
+}
+#endif
+
 void NWebHandlerDelegate::RegisterNativeJavaScriptCallBack(
     const char* objName,
     const std::vector<std::shared_ptr<NWebJsProxyCallback>>& callbacks) {
@@ -5157,6 +5167,10 @@ void NWebHandlerDelegate::OnLoadStarted(CefRefPtr<CefFrame> frame,
   }
 
 #if BUILDFLAG(ARKWEB_AI)
+  if (onLoadStartedCbForContentChange_) {
+    onLoadStartedCbForContentChange_();
+  }
+
   if (onLoadStartedCbForHighlightContent_) {
     onLoadStartedCbForHighlightContent_();
   }

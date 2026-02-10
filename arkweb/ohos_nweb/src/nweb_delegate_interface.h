@@ -290,6 +290,8 @@ class NWebDelegateInterface
   virtual std::shared_ptr<NWebPreference> GetPreference() const = 0;
 #if BUILDFLAG(ARKWEB_AI)
   virtual std::shared_ptr<NWebAgentManager> GetAgentManager() const = 0;
+  virtual void RegisterOnLoadStartedCbForContentChange(
+      std::function<void(void)>&& callback) = 0;
 #endif
   virtual std::string Title() = 0;
   virtual std::shared_ptr<HitTestResult> GetHitTestResult() const = 0;

@@ -21,6 +21,7 @@
 #include <memory>
 #include <vector>
 
+#include "base/memory/weak_ptr.h"
 #include "capi/nweb_devtools_message_handler.h"
 #include "nweb_delegate_interface.h"
 
@@ -333,6 +334,10 @@ class MockNWebDelegate : public NWebDelegateInterface {
               GetAgentManager,
               (),
               (const, override));
+  MOCK_METHOD(void,
+              RegisterOnLoadStartedCbForContentChange,
+              (std::function<void(void)>&& callback),
+              (override));
 #endif
   MOCK_METHOD(std::string, Title, (), (override));
   MOCK_METHOD(std::shared_ptr<HitTestResult>,
@@ -1348,6 +1353,14 @@ class MockNWebDelegate : public NWebDelegateInterface {
               (const std::string& user_agent),
               (override));
 #endif
+
+  // Support for weak_ptr
+  base::WeakPtr<MockNWebDelegate> WeakFromThis() {
+    return weak_factory_.GetWeakPtr();
+  }
+
+ private:
+  base::WeakPtrFactory<MockNWebDelegate> weak_factory_{this};
 };
 }  // namespace OHOS::NWeb
 

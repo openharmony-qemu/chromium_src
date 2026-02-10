@@ -19,6 +19,7 @@
 #include "ohos_nweb/include/nweb_agent_manager.h"
 
 #include "nweb_delegate.h"
+#include "nweb_content_change_detection.h"
 #include "nweb_highlight_specified_content.h"
 
 namespace OHOS::NWeb {
@@ -32,9 +33,13 @@ public:
 
     bool IsAgentEnabled() override;
 
+    void SetContentChangeDetectionConfig(int32_t min_report_time, float text_content_ratio) override;
+
     void SetAgentNeedHighlight(bool enabled) override;
 private:
     base::WeakPtr<NWebDelegate> nweb_delegate_;
+
+    std::unique_ptr<NWebContentChangeDetection> content_change_detection_;
 
     std::unique_ptr<NWebHighlightSpecifiedContent> highlight_specified_content_;
 };

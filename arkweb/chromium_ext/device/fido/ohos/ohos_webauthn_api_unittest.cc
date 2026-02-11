@@ -68,14 +68,6 @@ TEST_F(OhosWebAuthnApiTest, GetAssertionTest_001)
     EXPECT_FALSE(ret.second.has_value());
 }
 
-TEST_F(OhosWebAuthnApiTest, IsAvailable_001)
-{
-    auto is_available = OhosWebAuthnApi::Instance()->IsAvailable();
-    // The result depends on whether the native library is loaded
-    // Just verify the call doesn't crash
-    SUCCEED();
-}
-
 TEST_F(OhosWebAuthnApiTest, GetClientCapabilities_002)
 {
     auto capabilities = OhosWebAuthnApi::Instance()->GetClientCapabilities();

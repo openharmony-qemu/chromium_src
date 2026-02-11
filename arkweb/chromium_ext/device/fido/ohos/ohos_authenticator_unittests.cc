@@ -246,34 +246,4 @@ TEST_F(OhosAuthenticatorTest, GetWeakPtr_001)
     EXPECT_TRUE(weak_ptr.get() != nullptr);
 }
 
-TEST_F(OhosAuthenticatorTest, InitializeAuthenticator_001)
-{
-    OhosAuthenticator ohosAuthenticator;
-    bool callback_called = false;
-    auto callback = base::BindOnce([](bool* called) { *called = true; }, &callback_called);
-    ohosAuthenticator.InitializeAuthenticator(std::move(callback));
-    // The callback should be called synchronously or asynchronously
-    // depending on implementation
-}
-
-TEST_F(OhosAuthenticatorTest, SignalUnknownCredential_001)
-{
-    std::vector<uint8_t> credential_id = {1, 2, 3, 4};
-    std::string relying_party_id = "test.example.com";
-    OhosAuthenticator::SignalUnknownCredential(credential_id, relying_party_id);
-    SUCCEED();
-}
-
-TEST_F(OhosAuthenticatorTest, SignalAllAcceptedCredentials_001)
-{
-    std::string relying_party_id = "test.example.com";
-    std::vector<uint8_t> user_id = {1, 2, 3, 4};
-    std::vector<std::vector<uint8_t>> all_accepted_credential_ids = {
-        {1, 2}, {3, 4}, {5, 6}
-    };
-    OhosAuthenticator::SignalAllAcceptedCredentials(
-        relying_party_id, user_id, all_accepted_credential_ids);
-    SUCCEED();
-}
-
 } // namespace

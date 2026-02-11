@@ -632,6 +632,12 @@ static const int kMigrationMaxCount = 10000;
 constexpr base::FilePath::CharType kMigrateKeyFlagFile[] =
     FILE_PATH_LITERAL("migrate/MIGRATE_ASSET_SUCCESS");
 #endif
+enum class GpuMode {
+  UNINITIALIZED = 0,
+  FORCE_OOP = 1,
+  FORCE_IN_PROCESS = 2
+};
+static GpuMode oop_gpu_switch = GpuMode::UNINITIALIZED;
 
 bool GetWebOptimizationValue() {
   auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
@@ -916,6 +922,37 @@ std::string GetGwpAsanEnable()
 }
 #endif
 
+static void UpdateInprocessGpuArg(std::list<std::string>& web_engine_args,
+                                  bool xml_gpu) {
+  std::string oop_gpu_enable = GetOOPGPUStatus();
+  if (oop_gpu_enable == "true") {
+    auto it = std::find(web_engine_args.begin(), web_engine_args.end(),
+                        "--in-process-gpu");
+    if (it != web_engine_args.end()) {
+      web_engine_args.erase(it);
+    }
+    return;
+  } else if (oop_gpu_enable == "false") {
+    return;
+  }
+  bool enable_oop_gpu_switch = false;
+  if (oop_gpu_switch == GpuMode::UNINITIALIZED) {
+    enable_oop_gpu_switch = xml_gpu;
+  } else if (oop_gpu_switch == GpuMode::FORCE_OOP) {
+    enable_oop_gpu_switch = true;
+  } else if (oop_gpu_switch == GpuMode::FORCE_IN_PROCESS) {
+    enable_oop_gpu_switch = false;
+  }
+
+  if (enable_oop_gpu_switch) {
+    auto it = std::find(web_engine_args.begin(), web_engine_args.end(),
+                        "--in-process-gpu");
+    if (it != web_engine_args.end()) {
+      web_engine_args.erase(it);
+    } 
+  }
+}
+
 #if BUILDFLAG(ARKWEB_API_INIT_WEB_ENGINE)
 void InitialWebEngineArgs(
     std::list<std::string>& web_engine_args,
@@ -1042,15 +1079,7 @@ void InitialWebEngineArgs(
   web_engine_args.emplace_back(gwpEnable);
 #endif
 
-  std::string oop_gpu_enable = GetOOPGPUStatus();
-  if ((xml_gpu && oop_gpu_enable != "false") ||
-      (!xml_gpu && oop_gpu_enable == "true")) {
-    auto it = std::find(web_engine_args.begin(), web_engine_args.end(),
-                        "--in-process-gpu");
-    if (it != web_engine_args.end()) {
-      web_engine_args.erase(it);
-    }
-  }
+  UpdateInprocessGpuArg(web_engine_args, xml_gpu);
 
   if (GetIsMultiRendererProcess(init_args)) {
     web_engine_args.emplace_back("--enable-multi-renderer-process");
@@ -6273,6 +6302,19 @@ void NWebImpl::UpdateAngleConfig(bool angle_switch) {
   g_angle_config = angle_switch;
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_GPU)
+// static
+void NWebImpl::UpdateGpuConfig(bool gpu_switch) {
+  const char* switch_status = gpu_switch ? "ON" : "OFF";
+  LOG(INFO) << "NWebImpl::SetOopGpuMasterSwitch: " << switch_status;
+  if (gpu_switch) {
+    oop_gpu_switch = GpuMode::FORCE_OOP;
+  } else {
+    oop_gpu_switch = GpuMode::FORCE_IN_PROCESS;
+  }
+}
+#endif // BUILDFLAG(ARKWEB_GPU)
 
 }  // namespace OHOS::NWeb
 

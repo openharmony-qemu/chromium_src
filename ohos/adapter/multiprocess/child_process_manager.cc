@@ -30,6 +30,7 @@
 #include "child_process_manager.h"
 
 #include <cctype>
+#include <filesystem>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -62,6 +63,17 @@ static const std::string kProcessTypePrefix = "--type=";
 static const std::string kProcessSubTypePrefix = "--utility-sub-type=";
 constexpr int32_t kInvalidPid = -1;
 static constexpr int kProcessStartIntervalUs = 200000;
+// Maximum wait time is 5 seconds, cannot wait indefinitely
+static constexpr std::chrono::milliseconds kWait = std::chrono::milliseconds(5000);
+// Maximum sleep time per iteration is 256 ms
+static const uint32_t kMaxSleepInMicroseconds = 1 << 18;  // ~256 ms
+// Initial sleep time is 1 ms
+static const uint32_t kInitialSleepTime = 1 << 10;        // ~1 ms
+// Adjust sleep time after every 4 sleep iterations
+static const int kSleepTimeMultiplier = 4;
+// Each adjustment doubles the sleep time
+static const int kSleepTimeDouble = 2;
+static constexpr const char* kPidPathDir = "/proc/";
 
 using ohos::adapter::xcomponent::CrossProcessSyncResult;
 using ohos::adapter::xcomponent::WindowAdapter;
@@ -505,5 +517,69 @@ int ChildProcessManager::CreateGpuProcessInternal(
   }
 
   return ret;
+}
+
+bool CheckProcessDirectoryExists(pid_t pid) {
+  std::string fileName = kPidPathDir + std::to_string(pid);
+  return std::filesystem::exists(fileName);
+}
+
+pid_t WaitpidBlock(pid_t handle) {
+  auto wakeupTime = std::chrono::steady_clock::now() + kWait;
+  uint32_t maxSleepTimeUsecs = kInitialSleepTime;
+  int doubleSleepTime = 0;
+  while (CheckProcessDirectoryExists(handle)) {
+    auto now = std::chrono::steady_clock::now();
+    if (now > wakeupTime) {
+      break;
+    }
+
+    auto sleep_time = std::chrono::microseconds(std::min<uint64_t>(
+        std::chrono::duration_cast<std::chrono::microseconds>(wakeupTime - now)
+            .count(),
+        maxSleepTimeUsecs));
+    std::this_thread::sleep_for(sleep_time);
+    if ((maxSleepTimeUsecs < kMaxSleepInMicroseconds) &&
+        (doubleSleepTime++ % kSleepTimeMultiplier == 0)) {
+      maxSleepTimeUsecs *= kSleepTimeDouble;
+    }
+  }
+
+  if (CheckProcessDirectoryExists(handle)) {
+    LOGE("[ChildProcess] Check Process Exists pid: %{public}d", handle);
+    return -1;
+  }
+  return handle;
+}
+
+pid_t Waitpid(pid_t handle, int* status, int nonBlocking) {
+  bool childProcessExist = CheckProcessDirectoryExists(handle);
+  LOGI("[ChildProcess] Check Process Exists: %{public}d pid: %{public}d",
+       childProcessExist, handle);
+  int tmpStatus = 0;
+  if (!status) {
+    status = &tmpStatus;
+  }
+
+  pid_t retPid = ChildProcessManager::GetInstance().WaitChildPid(
+      handle, status, !nonBlocking);
+  LOGI(
+      "[ChildProcess] get termination status impl can_block: %{public}d, "
+      "pid: %{public}d, result: %{public}d,"
+      " status: %{public}d, WIFSIGNALED(status): %{public}d, "
+      "WTERMSIG(status): %{public}d",
+      !nonBlocking, handle, retPid, *status, WIFSIGNALED(*status),
+      WTERMSIG(*status));
+  if (retPid >= 0) {
+    return retPid;
+  }
+
+  childProcessExist = CheckProcessDirectoryExists(handle);
+  LOGI("[ChildProcess] Check Process Exists: %{public}d pid: %{public}d",
+       childProcessExist, handle);
+  if (nonBlocking && childProcessExist) {
+    return 0;
+  }
+  return WaitpidBlock(handle);
 }
 }  // namespace ohos::adapter::multiprocess

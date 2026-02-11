@@ -23,6 +23,10 @@
 #include "base/trace_event/base_tracing.h"
 #include "build/build_config.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "ohos/adapter/multiprocess/child_process_manager.h"
+#endif
+
 #if BUILDFLAG(IS_MAC)
 #include <sys/event.h>
 #endif
@@ -66,12 +70,22 @@ bool WaitpidWithTimeout(base::ProcessHandle handle,
   // the application itself it would probably be best to examine other routes.
 
   if (wait == base::TimeDelta::Max()) {
+#if BUILDFLAG(IS_OHOS)
+    return ohos::adapter::multiprocess::Waitpid(handle, status, false) > 0;
+#else
     return HANDLE_EINTR(waitpid(handle, status, 0)) > 0;
+#endif
   }
-
+ 
+#if BUILDFLAG(IS_OHOS)
+  pid_t ret_pid =
+      ohos::adapter::multiprocess::Waitpid(handle, status, true);
+#else
   pid_t ret_pid = HANDLE_EINTR(waitpid(handle, status, WNOHANG));
-  static const uint32_t kMaxSleepInMicroseconds = 1 << 18;  // ~256 ms.
-  uint32_t max_sleep_time_usecs = 1 << 10;                  // ~1 ms.
+#endif
+ 
+  static const uint32_t kMaxSleepInMicroseconds = 1 << 18; // ~256 ms.
+  uint32_t max_sleep_time_usecs = 1 << 10;                 // ~1 ms.
   int double_sleep_time = 0;
 
   // If the process hasn't exited yet, then sleep and try again.
@@ -87,7 +101,11 @@ bool WaitpidWithTimeout(base::ProcessHandle handle,
     // usleep() will return 0 and set errno to EINTR on receipt of a signal
     // such as SIGCHLD.
     usleep(sleep_time_usecs);
+#if BUILDFLAG(IS_OHOS)
+    ret_pid = ohos::adapter::multiprocess::Waitpid(handle, status, true);
+#else
     ret_pid = HANDLE_EINTR(waitpid(handle, status, WNOHANG));
+#endif
 
     if ((max_sleep_time_usecs < kMaxSleepInMicroseconds) &&
         (double_sleep_time++ % 4 == 0)) {

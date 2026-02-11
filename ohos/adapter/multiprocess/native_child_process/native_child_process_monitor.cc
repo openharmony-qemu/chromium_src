@@ -88,9 +88,9 @@ int32_t NativeChildProcessMonitor::WaitChildPid(const int32_t pid,
                 "can_block", can_block);
   std::unique_lock<std::mutex> lock(monitor_mutex_);
 
+  int tmpStatus = 0;
   if (!status) {
-    LOGW("[ChildProcess] WaitChildPid | status is nullptr, return -1.");
-    return -1;
+    status = &tmpStatus;
   }
 
   auto it = native_processes_.find(pid);

@@ -214,4 +214,36 @@ TEST_F(OhosAuthenticatorTest, Cancel_001)
     ohosAuthenticator.Cancel();
     EXPECT_TRUE(ohosAuthenticator.waiting_for_cancellation_);
 }
+
+TEST_F(OhosAuthenticatorTest, GetId_001)
+{
+    OhosAuthenticator ohosAuthenticator;
+    std::string id = ohosAuthenticator.GetId();
+    EXPECT_FALSE(id.empty());
+}
+
+TEST_F(OhosAuthenticatorTest, Options_001)
+{
+    OhosAuthenticator ohosAuthenticator;
+    const auto& options = ohosAuthenticator.Options();
+    // Verify that options are accessible
+    EXPECT_TRUE(options.supports_resident_key ||
+                options.user_verification_availability != 
+                device::AuthenticatorSupportedOptions::UserVerificationAvailability::kNotSupported);
+}
+
+TEST_F(OhosAuthenticatorTest, AuthenticatorTransport_001)
+{
+    OhosAuthenticator ohosAuthenticator;
+    auto transport = ohosAuthenticator.AuthenticatorTransport();
+    ASSERT_FALSE(transport.has_value());
+}
+
+TEST_F(OhosAuthenticatorTest, GetWeakPtr_001)
+{
+    OhosAuthenticator ohosAuthenticator;
+    auto weak_ptr = ohosAuthenticator.GetWeakPtr();
+    EXPECT_TRUE(weak_ptr.get() != nullptr);
+}
+
 } // namespace

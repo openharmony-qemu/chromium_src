@@ -329,4 +329,20 @@ TEST_F(WebMediaPlayerImplTest, ExtTestMediaResumeFromBFCachePage) {
 }
 #endif  // BUILDFLAG(ARKWEB_BFCACHE)
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+TEST_F(WebMediaPlayerImplTest, ExtTestGetMimeType) {
+  InitializeWebMediaPlayerImpl();
+  wmpi_->demuxer_manager_->SetLoadedUrl(GURL("media-remoting:test-video"));
+  auto data_source = std::make_unique<media::MemoryDataSource>("test data");
+  wmpi_->demuxer_manager_->data_source_ = std::move(data_source);
+  ASSERT_NO_FATAL_FAILURE(
+      wmpi_->AsWebMediaPlayerImplExt()->GetMimeType());
+}
+
+TEST_F(WebMediaPlayerImplTest, ExtTestUsingMediaPlayer) {
+  InitializeWebMediaPlayerImpl();
+  ASSERT_NO_FATAL_FAILURE(wmpi_->AsWebMediaPlayerImplExt()->UsingMediaPlayer());
+}
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+
 }  // namespace blink

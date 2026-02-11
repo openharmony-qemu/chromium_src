@@ -753,4 +753,117 @@ TEST_P(HTMLMediaElementTest, VideoLoadOpt_IncludeTestHbsMediaMoovSize) {
 }
 #endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+TEST_P(HTMLMediaElementTest, DFX_TESTReportVideoExperience001) {
+  if (GetParam() != MediaTestParam::kVideo) {
+    return;
+  }
+  auto* video = To<HTMLVideoElement>(Media());
+  video->is_logger_export_ = false;
+  ASSERT_NO_FATAL_FAILURE(video->ReportVideoExperienceToBI());
+}
+
+TEST_P(HTMLMediaElementTest, DFX_TESTReportVideoExperience002) {
+  if (GetParam() != MediaTestParam::kVideo) {
+    return;
+  }
+  auto* video = To<HTMLVideoElement>(Media());
+  video->is_logger_export_ = true;
+  ASSERT_NO_FATAL_FAILURE(video->ReportVideoExperienceToBI());
+}
+
+TEST_P(HTMLMediaElementTest, DFX_TESTReportVideoExperience003) {
+  if (GetParam() != MediaTestParam::kVideo) {
+    return;
+  }
+  auto* video = To<HTMLVideoElement>(Media());
+  video->is_logger_export_ = true;
+  video->SetVideoExperienceMojo();
+  ASSERT_NO_FATAL_FAILURE(video->ReportVideoExperienceToBI());
+}
+
+TEST_P(HTMLMediaElementTest, DFX_TestGetMediaPlayerType001) {
+  if (GetParam() != MediaTestParam::kVideo) {
+    return;
+  }
+  auto* video = To<HTMLVideoElement>(Media());
+  video->GetDocument().body()->AppendChild(video);
+  video->SetSrc(SrcSchemeToURL(TestURLScheme::kHttp));
+  test::RunPendingTasks();
+  ASSERT_NO_FATAL_FAILURE(video->GetMediaPlayerType());
+}
+
+TEST_P(HTMLMediaElementTest, DFX_TestGetMediaPlayerType002) {
+  if (GetParam() != MediaTestParam::kVideo) {
+    return;
+  }
+  auto* video = To<HTMLVideoElement>(Media());
+  video->GetDocument().body()->AppendChild(video);
+  video->SetSrc(SrcSchemeToURL(TestURLScheme::kData));
+  test::RunPendingTasks();
+  ASSERT_NO_FATAL_FAILURE(video->GetMediaPlayerType());
+}
+
+TEST_P(HTMLMediaElementTest, DFX_TestGetMediaPlayerType003) {
+  if (GetParam() != MediaTestParam::kVideo) {
+    return;
+  }
+  auto* video = To<HTMLVideoElement>(Media());
+  video->GetDocument().body()->AppendChild(video);
+  video->SetSrc(SrcSchemeToURL(TestURLScheme::kBlob));
+  test::RunPendingTasks();
+  ASSERT_NO_FATAL_FAILURE(video->GetMediaPlayerType());
+}
+
+TEST_P(HTMLMediaElementTest, DFX_TestScheduleVideoFreezeEvent) {
+  if (GetParam() != MediaTestParam::kVideo) {
+    return;
+  }
+  int32_t usage_scenario = 5;
+  Media()->GetDocument().GetSettings()->SetUsageScenario(usage_scenario);
+  auto* video = To<HTMLVideoElement>(Media());
+  ASSERT_NO_FATAL_FAILURE(video->ScheduleVideoFreezeEvent());
+}
+
+TEST_P(HTMLMediaElementTest, DFX_TestFreezeTime001) {
+  if (GetParam() != MediaTestParam::kVideo) {
+    return;
+  }
+  auto* video = To<HTMLVideoElement>(Media());
+  double result = video->freezeTime();
+  ASSERT_EQ(result, 0.0);
+}
+
+TEST_P(HTMLMediaElementTest, DFX_TestFreezeTime002) {
+  if (GetParam() != MediaTestParam::kVideo) {
+    return;
+  }
+  int32_t usage_scenario = 5;
+  Media()->GetDocument().GetSettings()->SetUsageScenario(usage_scenario);
+  auto* video = To<HTMLVideoElement>(Media());
+  double result = video->freezeTime();
+  ASSERT_EQ(result, 0.0);
+}
+
+TEST_P(HTMLMediaElementTest, DFX_TestPlayedTime001) {
+  if (GetParam() != MediaTestParam::kVideo) {
+    return;
+  }
+  auto* video = To<HTMLVideoElement>(Media());
+  double result = video->playedTime();
+  ASSERT_EQ(result, 0.0);
+}
+
+TEST_P(HTMLMediaElementTest, DFX_TestPlayedTime002) {
+  if (GetParam() != MediaTestParam::kVideo) {
+    return;
+  }
+  int32_t usage_scenario = 5;
+  Media()->GetDocument().GetSettings()->SetUsageScenario(usage_scenario);
+  auto* video = To<HTMLVideoElement>(Media());
+  double result = video->playedTime();
+  ASSERT_EQ(result, 0.0);
+}
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+
 }  // namespace blink

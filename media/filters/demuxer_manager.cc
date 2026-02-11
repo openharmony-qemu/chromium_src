@@ -182,6 +182,19 @@ void DemuxerManager::RestartClientForPrimitive() {
 }
 #endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+const std::string DemuxerManager::GetMimeType() const {
+  std::string mime_type;
+  if (data_source_) {
+    auto* co_data_source = data_source_->GetAsCrossOriginDataSource();
+    if (co_data_source) {
+      mime_type = co_data_source->GetMimeType();
+    }
+  }
+  return mime_type;
+}
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+
 void DemuxerManager::OnPipelineError(PipelineStatus error) {
   DCHECK(client_);
 

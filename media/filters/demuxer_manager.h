@@ -183,6 +183,10 @@ class MEDIA_EXPORT DemuxerManager {
   bool PassedDataSourceTimingAllowOriginCheck() const;
   bool IsLiveContent() const;
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+  const std::string GetMimeType() const;
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+
  private:
   // Demuxer creation and helper methods
   std::unique_ptr<media::Demuxer> CreateChunkDemuxer();

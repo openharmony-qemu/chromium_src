@@ -368,6 +368,19 @@ void HTMLMediaElement::ReportMediaLoadingErrorMessage(
                       << AddErrorCodeToMessage(error, builder.ToString());
 #endif // ARKWEB_LOGGER_REPORT
 }
+
+void HTMLMediaElement::SetVideoExperienceMojo() {
+  if (is_logger_export_) {
+    LocalFrame* frame = GetDocument().GetFrame();
+    if (frame) {
+      if (video_experience_reporter_) {
+        video_experience_reporter_.reset();
+      }
+      frame->GetBrowserInterfaceBroker().GetInterface(
+        video_experience_reporter_.BindNewPipeAndPassReceiver(nullptr));
+    }
+  }
+}
 #endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
 media::mojom::blink::MediaInfoForVASTPtr
@@ -706,9 +719,81 @@ void HTMLMediaElement::MediaLoadingFailed(WebMediaPlayer::NetworkState error,
   }
  
   ReportMediaLoadingErrorMessage(error_type, error, message, is_message_not_clear);
- 
+
+  if (is_logger_export_ && !html_media_element_utils_.IsFeedsPage()) {
+    LOG(INFO) << "OhMedia, MediaLoadingFailed report video experience";
+    ReportVideoExperienceToBI();
+  }
+
   UpdateLayoutObject();
 }
+
+void HTMLMediaElement::ReportVideoExperienceToBI() {
+  if (!is_logger_export_) {
+    return;
+  }
+  if (!video_experience_reporter_) {
+    return;
+  }
+  auto params = html_media_element_utils_.ReportVideoExperienceToBI();
+  if (!params) {
+    return;
+  }
+  video_experience_reporter_->ReportVideoExperienceToBI(std::move(params));
+}
+
+String HTMLMediaElement::GetMediaPlayerType() const {
+  switch (GetLoadType()) {
+    case WebMediaPlayer::kLoadTypeMediaSource:
+      return String("MediaSource");
+    case WebMediaPlayer::kLoadTypeMediaStream:
+      return String("MediaStream");
+    case WebMediaPlayer::kLoadTypeURL:
+      if (GetWebMediaPlayer()) {
+        if (GetWebMediaPlayer()->UsingMediaPlayer()) {
+          return String("MediaPlayer");
+        } else {
+          return String("MediaCodec");
+        }
+      }
+      break;
+    default:
+      break;
+  }
+  return g_empty_string;
+}
+
+void HTMLMediaElement::ScheduleVideoFreezeEvent() {
+  if (html_media_element_utils_.IsFeedsPage()) {
+    ScheduleNamedEvent(event_type_names::kVideofreeze);
+  }
+}
+
+double HTMLMediaElement::freezeTime() {
+  if (!html_media_element_utils_.IsFeedsPage()) {
+    LOG(INFO) << "HTMLMediaElement::freezeTime is not feedsPage";
+    return 0.0;
+  }
+  html_media_element_utils_.freeze_time_recorder_.StopRecord();
+  base::TimeDelta total_freeze_time = html_media_element_utils_.freeze_time_recorder_.GetDuration();
+  if (web_media_player_) {
+    total_freeze_time += base::Milliseconds(web_media_player_->GetFreezeTime());
+  }
+  html_media_element_utils_.freeze_time_recorder_.Reset();
+  return total_freeze_time.InMillisecondsF();
+}
+
+double HTMLMediaElement::playedTime() {
+  if (!html_media_element_utils_.IsFeedsPage()) {
+    LOG(INFO) << "HTMLMediaElement::playedTime is not feedsPage";
+    return 0.0;
+  }
+  html_media_element_utils_.played_time_recorder_.StopRecord();
+  double total_played_time = html_media_element_utils_.played_time_recorder_.GetDuration().InMillisecondsF();
+  html_media_element_utils_.played_time_recorder_.Reset();
+  return total_played_time;
+}
+
 #endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
 #if BUILDFLAG(ARKWEB_MEDIA_CAST)

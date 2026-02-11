@@ -1524,7 +1524,7 @@ void NWebDelegate::NotifyScreenInfoChanged(RotationType rotation,
     int width = std::ceil(display->GetWidth() / display_ratio);
     int height = std::ceil(display->GetHeight() / display_ratio);
 #if BUILDFLAG(ARKWEB_SCREEN_ROTATION)
-    bool default_portrait = display_manager_adapter_->IsDefaultPortrait();
+    bool default_portrait = display_manager_adapter_->IsDefaultPortrait() || base::ohos::IsCompatibleMode();
     render_handler_->SetScreenInfo({rotation, orientation, width, height,
                                     display_ratio, default_portrait});
 #endif  // #if BUILDFLAG(ARKWEB_SCREEN_ROTATION)

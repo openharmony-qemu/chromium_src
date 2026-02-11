@@ -214,4 +214,66 @@ TEST_F(OhosAuthenticatorTest, Cancel_001)
     ohosAuthenticator.Cancel();
     EXPECT_TRUE(ohosAuthenticator.waiting_for_cancellation_);
 }
+
+TEST_F(OhosAuthenticatorTest, GetId_001)
+{
+    OhosAuthenticator ohosAuthenticator;
+    std::string id = ohosAuthenticator.GetId();
+    EXPECT_FALSE(id.empty());
+}
+
+TEST_F(OhosAuthenticatorTest, Options_001)
+{
+    OhosAuthenticator ohosAuthenticator;
+    const auto& options = ohosAuthenticator.Options();
+    // Verify that options are accessible
+    EXPECT_TRUE(options.supports_resident_key ||
+                options.user_verification_availability != 
+                device::AuthenticatorSupportedOptions::UserVerificationAvailability::kNotSupported);
+}
+
+TEST_F(OhosAuthenticatorTest, AuthenticatorTransport_001)
+{
+    OhosAuthenticator ohosAuthenticator;
+    auto transport = ohosAuthenticator.AuthenticatorTransport();
+    ASSERT_FALSE(transport.has_value());
+}
+
+TEST_F(OhosAuthenticatorTest, GetWeakPtr_001)
+{
+    OhosAuthenticator ohosAuthenticator;
+    auto weak_ptr = ohosAuthenticator.GetWeakPtr();
+    EXPECT_TRUE(weak_ptr.get() != nullptr);
+}
+
+TEST_F(OhosAuthenticatorTest, InitializeAuthenticator_001)
+{
+    OhosAuthenticator ohosAuthenticator;
+    bool callback_called = false;
+    auto callback = base::BindOnce([](bool* called) { *called = true; }, &callback_called);
+    ohosAuthenticator.InitializeAuthenticator(std::move(callback));
+    // The callback should be called synchronously or asynchronously
+    // depending on implementation
+}
+
+TEST_F(OhosAuthenticatorTest, SignalUnknownCredential_001)
+{
+    std::vector<uint8_t> credential_id = {1, 2, 3, 4};
+    std::string relying_party_id = "test.example.com";
+    OhosAuthenticator::SignalUnknownCredential(credential_id, relying_party_id);
+    SUCCEED();
+}
+
+TEST_F(OhosAuthenticatorTest, SignalAllAcceptedCredentials_001)
+{
+    std::string relying_party_id = "test.example.com";
+    std::vector<uint8_t> user_id = {1, 2, 3, 4};
+    std::vector<std::vector<uint8_t>> all_accepted_credential_ids = {
+        {1, 2}, {3, 4}, {5, 6}
+    };
+    OhosAuthenticator::SignalAllAcceptedCredentials(
+        relying_party_id, user_id, all_accepted_credential_ids);
+    SUCCEED();
+}
+
 } // namespace

@@ -271,7 +271,9 @@ bool Process::SetPriority(Priority priority) {
                                                          : kForegroundPriority;
   int result =
       setpriority(PRIO_PROCESS, static_cast<id_t>(process_), priority_value);
+#if !BUILDFLAG(IS_OHOS)
   DPCHECK(result == 0);
+#endif
   return result == 0;
 }
 

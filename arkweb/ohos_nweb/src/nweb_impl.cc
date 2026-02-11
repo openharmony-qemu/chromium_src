@@ -954,6 +954,39 @@ static void UpdateInprocessGpuArg(std::list<std::string>& web_engine_args,
 }
 
 #if BUILDFLAG(ARKWEB_API_INIT_WEB_ENGINE)
+void HandleAdvancedSecurityMode(std::list<std::string>& web_engine_args) {
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+  if (IsAdvancedSecurityMode()) {
+    WVLOG_I(
+        "In advanced security mode, some HTML5 features will be unavailable, "
+        "including "
+        "WebAssembly, WebGL, PDF viewer, MathML, speech recognition, etc.");
+    web_engine_args.emplace_back("--js-flags=--jitless");
+
+    if (ASHelper::Inst().IsSecFeatureEnabled(ASHelper::Feature::ENABLE_WEBGL)) {
+      web_engine_args.emplace_back("--disable-webgl");
+      web_engine_args.emplace_back("--disable-webgl2");
+    }
+
+    if (ASHelper::Inst().IsSecFeatureEnabled(ASHelper::Feature::ENABLE_PDFVIEWER)) {
+      web_engine_args.emplace_back("--disable-pdf-extension");
+    }
+
+    if (ASHelper::Inst().IsSecFeatureEnabled(ASHelper::Feature::ENABLE_SPEECHAPI)) {
+      web_engine_args.emplace_back(
+          "--disable-blink-features=NonAdvancedSecurityMode");
+    }
+
+    std::string AdSec = "--advanced_sec_value=" + std::to_string(ASHelper::Inst().GetAdStat());
+    web_engine_args.emplace_back(AdSec);
+
+#if defined(REPORT_SYS_EVENT)
+    ReportLockdownModeStatus();
+#endif
+  }
+#endif  // BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+}
+
 void InitialWebEngineArgs(
     std::list<std::string>& web_engine_args,
     std::shared_ptr<OHOS::NWeb::NWebEngineInitArgs> init_args) {
@@ -1020,35 +1053,6 @@ void InitialWebEngineArgs(
         "--log-net-log=/data/storage/el2/base/cache/web/netlog.json");
   }
 
-  if (IsAdvancedSecurityMode()) {
-    WVLOG_I(
-        "In advanced security mode, some HTML5 features will be unavailable, "
-        "including "
-        "WebAssembly, WebGL, PDF viewer, MathML, speech recognition, etc.");
-    web_engine_args.emplace_back("--js-flags=--jitless");
-
-    if (ASHelper::Inst().IsSecFeatureEnabled(ASHelper::Feature::ENABLE_WEBGL)) {
-      web_engine_args.emplace_back("--disable-webgl");
-      web_engine_args.emplace_back("--disable-webgl2");
-    }
-
-    if (ASHelper::Inst().IsSecFeatureEnabled(ASHelper::Feature::ENABLE_PDFVIEWER)) {
-      web_engine_args.emplace_back("--disable-pdf-extension");
-    }
-
-    if (ASHelper::Inst().IsSecFeatureEnabled(ASHelper::Feature::ENABLE_SPEECHAPI)) {
-      web_engine_args.emplace_back(
-          "--disable-blink-features=NonAdvancedSecurityMode");
-    }
-
-    std::string AdSec = "--advanced_sec_value=" + std::to_string(ASHelper::Inst().GetAdStat());
-    web_engine_args.emplace_back(AdSec);
-
-#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
-    ReportLockdownModeStatus();
-#endif
-  }
-
   web_engine_args.emplace_back("--enable-media-stream");
   if (GetIsEnhanceSurface(init_args)) {
     WVLOG_I("is_enhance_surface is true");
@@ -1112,6 +1116,8 @@ void InitialWebEngineArgs(
   } else {
     LOG(INFO) << "oemmode is not rd or ohos-command-line does not exist.";
   }
+  // when Advanced Security Mode is enabled, the function call must be scheduled as the last step.
+  HandleAdvancedSecurityMode(web_engine_args);
 }
 #endif  // BUILDFLAG(ARKWEB_API_INIT_WEB_ENGINE)
 

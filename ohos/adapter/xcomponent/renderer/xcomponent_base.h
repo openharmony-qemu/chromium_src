@@ -32,6 +32,7 @@
 
 #include <string>
 
+#include "ohos/adapter/xcomponent/event/node_handle_input_event_common.h"
 #include "ohos/adapter/xcomponent/xcomponent_delegate.h"
 
 namespace ohos::adapter::xcomponent {
@@ -48,8 +49,12 @@ class XComponentBase {
 
   virtual void SendWindowMouseEventForTabDrag(
       Input_MouseEvent* window_mouse_event) {}  // NOT_IMPLEMENTED
+  virtual void SendWindowMouseEventForTabDragNodeHandle(
+      NodeHandleMouseEventData& window_mouse_data) {}  // NOT_IMPLEMENTED
   virtual void SendWindowTouchEventForTabDrag(
       Input_TouchEvent* window_touch_event) {}  // NOT_IMPLEMENTED
+  virtual void SendWindowTouchEventForTabDragNodeHandle(
+      NodeHandleTouchEventData& window_touch_data) {}  // NOT_IMPLEMENTED
 
  protected:
   XComponentDelegate* delegate_ = nullptr;

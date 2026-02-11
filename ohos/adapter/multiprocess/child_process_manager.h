@@ -110,6 +110,8 @@ class ADAPTER_EXPORT_API ChildProcessManager {
   std::unique_ptr<NativeChildProcessMonitor> monitor_;
 };
 
+pid_t ADAPTER_EXPORT_API Waitpid(pid_t handle, int *status, int nonBlocking);
+
 }  // namespace ohos::adapter::multiprocess
 
 #endif  // OHOS_ADAPTER_CHILD_PROCESS_MANAGER_H

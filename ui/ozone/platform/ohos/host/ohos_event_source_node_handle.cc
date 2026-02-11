@@ -163,6 +163,9 @@ void OhosEventSourceNodeHandle::OnTouchEvent(
     const NodeHandleTouchEventData & touch_event_data,
     const int32_t display_id) {
   EventType type = GetTouchAction(touch_event_data.touch_action);
+  if (type == EventType::kUnknown) {
+    return;
+  }
   gfx::Point touch_location(touch_event_data.x, touch_event_data.y);
   cursor_screen_point_.SetPoint(touch_event_data.display_x,
                                 touch_event_data.display_y);
@@ -171,6 +174,11 @@ void OhosEventSourceNodeHandle::OnTouchEvent(
       pointer_type, touch_event_data.id, 0.0, 0.0, touch_event_data.force, 0.0,
       touch_event_data.tilt_x, touch_event_data.tilt_y);
   TouchEvent event(type, touch_location, EventTimeForNow(), pointer_details);
+  if (type != EventType::kTouchMoved) {
+    LOG(INFO) << "[multiinput] NodeHandle OnTouchEvent event: "
+              << event.ToString() << ", widget_id: " << widget_id << std::endl
+              << "pointer_details: " << pointer_details.ToString();
+  }
   event.set_display_id(display_id);
   SetTargetAndDispatchEvent(widget_id, event);
 }
@@ -193,8 +201,9 @@ EventType OhosEventSourceNodeHandle::GetTouchAction(
       break;
     default:
       type = EventType::kUnknown;
-      LOG(ERROR)
-          << "OhosEventSourceNodeHandle::OnTouchEvent,unknow touch action";
+      LOG(ERROR) << "[multiinput] OhosEventSourceNodeHandle::OnTouchEvent, "
+                    "unknown touch action: "
+                 << touch_action;
   }
   return type;
 }
@@ -315,6 +324,9 @@ void OhosEventSourceNodeHandle::OnMouseEvent(
   EventFlags flags = pointer_flags_ | changed_button | key_flags_;
   MouseEvent event(type, pointer_location_, original_pointer_location,
                    EventTimeForNow(), flags, changed_button);
+  LOG(INFO) << "[multiinput] NodeHandle OnMouseEvent event: "
+            << event.ToString() << ", widget_id: " << widget_id
+            << ", display_id: " << display_id;
   event.set_display_id(display_id);
   SetTargetAndDispatchEvent(widget_id, event);
 }

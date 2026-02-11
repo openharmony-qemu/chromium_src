@@ -32,8 +32,13 @@ GlobalDescriptors* GlobalDescriptors::GetInstance() {
 int GlobalDescriptors::Get(Key key) const {
   const int ret = MaybeGet(key);
 
+#if BUILDFLAG(IS_ARKWEB)
+  if (ret == -1)
+    DLOG(ERROR) << "Unknown global descriptor: " << key;
+#else
   if (ret == -1)
     DLOG(FATAL) << "Unknown global descriptor: " << key;
+#endif
   return ret;
 }
 

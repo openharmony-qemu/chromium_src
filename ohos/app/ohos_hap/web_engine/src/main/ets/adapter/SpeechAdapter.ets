@@ -40,9 +40,10 @@ import { SpeakingParams, EngineCreationParams, VoiceQuery, VoiceInfo } from '../
 
 // When the engine creation method is invoked, if no parameter is transferred,
 // the default configuration is used to initialize the engine.
+// refer https://developer.huawei.com/consumer/cn/doc/harmonyos-references/hms-ai-texttospeech#section235272615215
 const defaultCreateEngineParams: EngineCreationParams = {
   language: 'zh-CN',
-  person: 0,
+  person: 13,
   online: 1,
   extraParams: {
     "style": 'interaction-broadcast',
@@ -51,13 +52,10 @@ const defaultCreateEngineParams: EngineCreationParams = {
   }
 }
 
+// refer https://developer.huawei.com/consumer/cn/doc/harmonyos-references/hms-ai-texttospeech#section1638144844811
 const defaultVoiceQueryParams: VoiceQuery = {
   requestId: 'VOICEQUERY',
-  online: 1,
-  extraParams: {
-    "language": 'zh-CN',
-    "person": 0
-  }
+  online: 1
 }
 
 interface listVoiceMsg {
@@ -145,6 +143,7 @@ export class SpeechAdapter extends BaseAdapter {
   textToSpeechEngineListVoices(callback: Function): void {
     if (this.isCreated) {
       try {
+        defaultVoiceQueryParams.requestId = defaultVoiceQueryParams.requestId + Date.now();
         this.ttsEngine?.listVoices(defaultVoiceQueryParams as textToSpeech.VoiceQuery)
           .then((res: textToSpeech.VoiceInfo[]) => {
             this.voiceList = res as Array<VoiceInfo>;

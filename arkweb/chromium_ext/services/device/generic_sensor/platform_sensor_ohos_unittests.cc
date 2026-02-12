@@ -162,4 +162,93 @@ TEST_F(PlatformSensorOHOSTest, IsSupportedTest_001)
     ret = PlatformSensorOHOS::IsSupported(mojom::SensorType::ACCELEROMETER);
     EXPECT_TRUE(ret);
 }
-} // namespace base
+
+TEST_F(PlatformSensorOHOSTest, StopTest_001)
+{
+    sensor->current_sampling_interval_ = 1;
+    sensor->StopSensor();
+    EXPECT_EQ(sensor->current_sampling_interval_, 0);
+    sensor->sensor_adapter_ = nullptr;
+    sensor->StopSensor();
+}
+
+TEST_F(PlatformSensorOHOSTest, IsSupportedInstanceTest_001)
+{
+    auto ret = sensor->IsSupported();
+    EXPECT_TRUE(ret);
+}
+
+TEST_F(PlatformSensorOHOSTest, ConstructorTest_001)
+{
+    mojom::SensorType type = mojom::SensorType::GYROSCOPE;
+    SensorReadingSharedBuffer reading_buffer;
+    PlatformSensorProviderOHOS platformSensorProviderOHOS;
+    WeakPtr<PlatformSensorProvider> provider = platformSensorProviderOHOS.AsWeakPtr();
+    auto sensor2 = MakeRefCounted<PlatformSensorOHOS>(type, &reading_buffer, provider);
+    EXPECT_NE(sensor2, nullptr);
+}
+
+TEST_F(PlatformSensorOHOSTest, GetReportingModeTest_002)
+{
+    mojom::SensorType type = mojom::SensorType::GYROSCOPE;
+    SensorReadingSharedBuffer reading_buffer;
+    PlatformSensorProviderOHOS platformSensorProviderOHOS;
+    WeakPtr<PlatformSensorProvider> provider = platformSensorProviderOHOS.AsWeakPtr();
+    auto gyroSensor = MakeRefCounted<PlatformSensorOHOS>(type, &reading_buffer, provider);
+    auto ret = gyroSensor->GetReportingMode();
+    EXPECT_EQ(ret, mojom::ReportingMode::CONTINUOUS);
+}
+
+TEST_F(PlatformSensorOHOSTest, GetDefaultConfigurationTest_002)
+{
+    mojom::SensorType type = mojom::SensorType::GYROSCOPE;
+    SensorReadingSharedBuffer reading_buffer;
+    PlatformSensorProviderOHOS platformSensorProviderOHOS;
+    WeakPtr<PlatformSensorProvider> provider = platformSensorProviderOHOS.AsWeakPtr();
+    auto gyroSensor = MakeRefCounted<PlatformSensorOHOS>(type, &reading_buffer, provider);
+    auto configuration = gyroSensor->GetDefaultConfiguration();
+    EXPECT_EQ(configuration.frequency(), 5);
+}
+
+TEST_F(PlatformSensorOHOSTest, CheckSensorConfigurationTest_002)
+{
+    PlatformSensorConfiguration configuration(10.0);
+    auto checkVal = sensor->CheckSensorConfiguration(configuration);
+    EXPECT_TRUE(checkVal);
+    configuration.set_frequency(500.0);
+    checkVal = sensor->CheckSensorConfiguration(configuration);
+    EXPECT_TRUE(checkVal);
+    configuration.set_frequency(501.0);
+    checkVal = sensor->CheckSensorConfiguration(configuration);
+    EXPECT_FALSE(checkVal);
+    configuration.set_frequency(4.9);
+    checkVal = sensor->CheckSensorConfiguration(configuration);
+    EXPECT_FALSE(checkVal);
+}
+
+TEST_F(PlatformSensorOHOSTest, StartSensorTest_002)
+{
+    PlatformSensorConfiguration configuration(10.0);
+    auto startVal = sensor->StartSensor(configuration);
+    EXPECT_TRUE(startVal);
+    sensor->StopSensor();
+    configuration.set_frequency(500.0);
+    startVal = sensor->StartSensor(configuration);
+    EXPECT_TRUE(startVal);
+    sensor->StopSensor();
+}
+
+TEST_F(PlatformSensorOHOSTest, CreateTest_002)
+{
+    mojom::SensorType type = mojom::SensorType::GYROSCOPE;
+    SensorReadingSharedBuffer reading_buffer;
+    PlatformSensorProviderOHOS platformSensorProviderOHOS;
+    WeakPtr<PlatformSensorProvider> provider = platformSensorProviderOHOS.AsWeakPtr();
+    auto ret = PlatformSensorOHOS::Create(type, &reading_buffer, provider);
+    EXPECT_NE(ret, nullptr);
+    type = mojom::SensorType::MAGNETOMETER;
+    ret = PlatformSensorOHOS::Create(type, &reading_buffer, provider);
+    EXPECT_NE(ret, nullptr);
+}
+
+} // namespace device

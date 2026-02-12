@@ -106,7 +106,9 @@ Trap::Trap() {
     static const char kExistingSIGSYSMsg[] =
         "Existing signal handler when trying to install SIGSYS. SIGSYS needs "
         "to be reserved for seccomp-bpf.";
+#if !BUILDFLAG(IS_ARKWEB)
     DLOG(FATAL) << kExistingSIGSYSMsg;
+#endif
     LOG(ERROR) << kExistingSIGSYSMsg;
   }
 

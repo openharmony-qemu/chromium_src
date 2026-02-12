@@ -378,6 +378,13 @@ void Display::SetVisible(bool visible) {
 
 void Display::Resize(const gfx::Size& size) {
   disable_swap_until_resize_ = false;
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  LOG(INFO) << "Display::Resize, current size: " << current_surface_size_.ToString()
+            << ", new size: " << size.ToString();
+  TRACE_EVENT2("viz", "Display::Resize info",
+               "current size", current_surface_size_.ToString(),
+               "new size", size.ToString());
+#endif
   if (size == current_surface_size_)
     return;
 
@@ -1054,6 +1061,11 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
     }
 
     OverdrawTracker::EstimateAndRecordOverdrawAsUMAMetric(&frame);
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+    if (IsEvictUnlockFrameEnabled() && disable_draw_and_swap_on_next_frame_) {
+      renderer_->SetNextFrameSkipsDrawRenderPasses(true);
+    }
+#endif
 
     draw_timer.emplace();
     overlay_processor_->SetFrameSequenceNumber(frame_sequence_number_);
@@ -1069,6 +1081,11 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
 #if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
   should_swap = display_utils_->ShouldDisableSwap(should_swap);
 #endif  // ARKWEB_MAXIMIZE_RESIZE
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  if (IsEvictUnlockFrameEnabled()) {
+    should_swap = !disable_draw_and_swap_on_next_frame_ && should_swap;
+  }
+#endif
   if (should_swap) {
     PresentationGroupTiming& presentation_group_timing =
         pending_presentation_group_timings_.emplace_back();
@@ -1210,6 +1227,11 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
                              pending_swaps_);
 
     renderer_->SwapBuffers(std::move(swap_frame_data));
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+    if (IsEvictUnlockFrameEnabled()) {
+      client_->DisplayDidRealSwapBuffer();
+    }
+#endif
   } else {
     TRACE_EVENT_INSTANT0("viz", "Swap skipped.", TRACE_EVENT_SCOPE_THREAD);
 
@@ -1243,6 +1265,10 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
       scheduler_->DidReceiveSwapBuffersAck();
     }
   }
+
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  disable_draw_and_swap_on_next_frame_ = false;
+#endif
 
   client_->DisplayDidDrawAndSwap();
   // Garbage collection can lead to sync IPCs to the GPU service to verify sync

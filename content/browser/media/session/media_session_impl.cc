@@ -527,6 +527,9 @@ void MediaSessionImpl::RemovePlayer(MediaSessionPlayerObserver* observer,
 #endif
 #if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
   if (has_normal_player && (normal_players_.size() == 0)) {
+    if (session_ohos_) {
+      session_ohos_->SetAvCast(false);
+    }
     SetWebviewShow(false, false);
   }
 #endif // ARKWEB_MEDIA_AVSESSION

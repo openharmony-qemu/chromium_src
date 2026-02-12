@@ -4931,10 +4931,6 @@ RenderProcessHost* RenderProcessHostImpl::GetProcessHostForSiteInstance(
       LOG(INFO) << "Use an existing rendering process, render_process: "
                 << render_process_host->GetProcess().Handle()
                 << " render_process status: " << render_process_host->IsReady();
-      if (!render_process_host->IsReady()) {
-         ArkwebRenderProcessHostImplExt* implExt = static_cast<ArkwebRenderProcessHostImplExt*>(render_process_host);
-         implExt->StartChannelConnectedCheckTask(implExt);
-      }
 #endif
     }
   }
@@ -5526,7 +5522,10 @@ void RenderProcessHostImpl::OnProcessLaunched() {
     // TODO(crbug.com/40590142): This should be based on
     // |priority_.GetProcessPriority()|, see similar check below.
     DCHECK_EQ(blink::kLaunchingProcessIsBackgrounded, !priority_.visible);
-
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+    ArkwebRenderProcessHostImplExt* implExt = static_cast<ArkwebRenderProcessHostImplExt*>(this);
+    implExt->StartChannelConnectedCheckTask(implExt);
+#endif
     // Unpause the channel now that the process is launched. We don't flush it
     // yet to ensure that any initialization messages sent here (e.g., things
     // done in response to OnRenderProcessHostCreated; see below) preempt

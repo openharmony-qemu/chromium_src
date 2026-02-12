@@ -61,6 +61,14 @@ bool InitializeStaticNativeEGLInternal() {
 bool InitializeStaticEGLInternal(GLImplementationParts implementation) {
   bool initialized = false;
 
+#if BUILDFLAG(USE_STATIC_ANGLE)
+  // Use ANGLE if it is requested and it is statically linked
+  if (implementation.gl == kGLImplementationEGLANGLE) {
+    LOG(INFO) << "ANGLE InitializeStaticEGLInternal() kGLImplementationEGLANGLE";
+    initialized = InitializeStaticANGLEEGL();
+  }
+#endif  // BUILDFLAG(USE_STATIC_ANGLE) && BUILDFLAG(ARKWEB_ANGLE)
+
   if (!initialized) {
     initialized = InitializeStaticNativeEGLInternal();
   }

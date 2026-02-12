@@ -594,7 +594,9 @@ blink::UserAgentMetadata GetUserAgentMetadata(const PrefService* pref_service,
                ? blink::UserAgentMetadata()
                : metadata;
   }
-
+#if BUILDFLAG(ARKWEB_USERAGENT) && !defined(COMPONENT_BUILD)
+  content::UpdateLowEntropyCh(metadata);
+#endif
   if (only_low_entropy_ch) {
     return metadata;
   }
@@ -616,7 +618,7 @@ blink::UserAgentMetadata GetUserAgentMetadata(const PrefService* pref_service,
       base::StringPrintf("%d.%d.%d", major, minor, bugfix);
 #endif
 #if BUILDFLAG(ARKWEB_USERAGENT) && !defined(COMPONENT_BUILD)
-  content::UpdateUserAgentMetaData(metadata);
+  content::UpdateHighEntropyCh(metadata);
 #else
   metadata.architecture = content::GetCpuArchitecture();
   metadata.bitness = content::GetCpuBitness();

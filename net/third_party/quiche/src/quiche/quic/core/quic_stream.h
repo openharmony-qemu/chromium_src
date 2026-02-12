@@ -422,6 +422,10 @@ class QUICHE_EXPORT QuicStream : public QuicStreamSequencer::StreamInterface {
 
   const QuicTime::Delta pending_duration() const { return pending_duration_; }
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  uint64_t BufferedBytesInSequence() const;
+#endif
+
  protected:
   // Called when data of [offset, offset + data_length] is buffered in send
   // buffer.

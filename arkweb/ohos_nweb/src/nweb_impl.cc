@@ -343,6 +343,10 @@ bool OHOS::NWeb::NWebImpl::should_lazy_init_web_engine_ = false;
 #include "base/ohos/sys_info_utils_ext.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_ANGLE) && BUILDFLAG(ARKWEB_NWEB_EX)
+#include "arwkweb/chromium_ext/gpu/config/gpu_finch_feature_ext.h"
+#endif
+
 namespace {
 uint32_t g_nweb_count = 0;
 const uint32_t kSurfaceMaxWidth = 7680;
@@ -358,6 +362,16 @@ int32_t g_browser_service_sdk_api_level = 0;
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
 bool g_clipboard_site_permission_enabled = false;
 #endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
+
+#if BUILDFLAG(ARKWEB_ANGLE) && BUILDFLAG(ARKWEB_NWEB_EX)
+static bool g_angle_config = false;
+
+enum class AngleStatus : int {
+  kDefaultAngleStatus,
+  kEnableAngle,
+  kDisableAngle
+};
+#endif
 
 #if BUILDFLAG(ARKWEB_SITE_ISOLATION)
 enum class SiteIsolationInitMode{
@@ -618,12 +632,77 @@ static const int kMigrationMaxCount = 10000;
 constexpr base::FilePath::CharType kMigrateKeyFlagFile[] =
     FILE_PATH_LITERAL("migrate/MIGRATE_ASSET_SUCCESS");
 #endif
+enum class GpuMode {
+  UNINITIALIZED = 0,
+  FORCE_OOP = 1,
+  FORCE_IN_PROCESS = 2
+};
+static GpuMode oop_gpu_switch = GpuMode::UNINITIALIZED;
 
 bool GetWebOptimizationValue() {
   auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
                                         .GetSystemPropertiesInstance();
   return system_properties_adapter.GetWebOptimizationValue();
 }
+
+#if BUILDFLAG(ARKWEB_ANGLE) && BUILDFLAG(ARKWEB_NWEB_EX)
+AngleStatus GetANGLEStatus() {
+  auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                                        .GetSystemPropertiesInstance();
+  int angle_value = system_properties_adapter.GetIntParameter("web.gpu.angle", 0);
+  return static_cast<AngleStatus>(angle_value);
+}
+
+bool GetVulkanStatus(const std::list<std::string>& web_engine_args) {
+  std::string vulkan_status = "false";
+  for (const auto& arg : web_engine_args) {
+    if (arg.find("--ohos-enable-vulkan") != std::string::npos) {
+      size_t pos = arg.find("=");
+      if (pos != std::string::npos) {
+        vulkan_status = arg.substr(pos + 1);
+      } else {
+        vulkan_status = "true";
+      }
+      break;
+    }
+  }
+
+  auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                                        .GetSystemPropertiesInstance();
+  std::string cmd_vulkan_enable = system_properties_adapter.GetVulkanStatus();
+
+  if (cmd_vulkan_enable != "None") {
+    vulkan_status = cmd_vulkan_enable;
+  }
+
+  return vulkan_status != "false";
+}
+
+void ApplyANGLEStatus(std::list<std::string>& web_engine_args) {
+  if (!base::FeatureList::IsEnable(features::kDefaultANGLE) || base::ohos::IsEmulator()) {
+    return;
+  }
+
+  AngleStatus angle_status = GetAngleStatus();
+  bool vulkan_status = GetVulkanStatus(web_engine_args);
+  bool angle_flag = false;
+  if (vulkan_status && g_angle_config) {
+    angle_flag = true;
+  }
+
+  if (angle_status == AngleStatus::kEnableAngle) {
+    angle_flag = true;
+  } else if (angle_status == AngleStatus::kDisableAngle) {
+    angle_flag = false;
+  }
+
+  if (angle_flag) {
+    LOG(INFO) << "ANGLE enabled";
+    web_engine_args.emplace_back("--use-gl=angle");
+    web_engine_args.emplace_back("--use-cmd-decoder=passthrough");
+  }
+}
+#endif
 
 static bool IsAdvancedSecurityMode() {
   return ASHelper::Inst().IsSecFeatureEnabled(ASHelper::Feature::SECURE_SHIELD_ENABLED);
@@ -843,7 +922,71 @@ std::string GetGwpAsanEnable()
 }
 #endif
 
+static void UpdateInprocessGpuArg(std::list<std::string>& web_engine_args,
+                                  bool xml_gpu) {
+  std::string oop_gpu_enable = GetOOPGPUStatus();
+  if (oop_gpu_enable == "true") {
+    auto it = std::find(web_engine_args.begin(), web_engine_args.end(),
+                        "--in-process-gpu");
+    if (it != web_engine_args.end()) {
+      web_engine_args.erase(it);
+    }
+    return;
+  } else if (oop_gpu_enable == "false") {
+    return;
+  }
+  bool enable_oop_gpu_switch = false;
+  if (oop_gpu_switch == GpuMode::UNINITIALIZED) {
+    enable_oop_gpu_switch = xml_gpu;
+  } else if (oop_gpu_switch == GpuMode::FORCE_OOP) {
+    enable_oop_gpu_switch = true;
+  } else if (oop_gpu_switch == GpuMode::FORCE_IN_PROCESS) {
+    enable_oop_gpu_switch = false;
+  }
+
+  if (enable_oop_gpu_switch) {
+    auto it = std::find(web_engine_args.begin(), web_engine_args.end(),
+                        "--in-process-gpu");
+    if (it != web_engine_args.end()) {
+      web_engine_args.erase(it);
+    } 
+  }
+}
+
 #if BUILDFLAG(ARKWEB_API_INIT_WEB_ENGINE)
+void HandleAdvancedSecurityMode(std::list<std::string>& web_engine_args) {
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+  if (IsAdvancedSecurityMode()) {
+    WVLOG_I(
+        "In advanced security mode, some HTML5 features will be unavailable, "
+        "including "
+        "WebAssembly, WebGL, PDF viewer, MathML, speech recognition, etc.");
+    web_engine_args.emplace_back("--js-flags=--jitless");
+
+    if (ASHelper::Inst().IsSecFeatureEnabled(ASHelper::Feature::ENABLE_WEBGL)) {
+      web_engine_args.emplace_back("--disable-webgl");
+      web_engine_args.emplace_back("--disable-webgl2");
+    }
+
+    if (ASHelper::Inst().IsSecFeatureEnabled(ASHelper::Feature::ENABLE_PDFVIEWER)) {
+      web_engine_args.emplace_back("--disable-pdf-extension");
+    }
+
+    if (ASHelper::Inst().IsSecFeatureEnabled(ASHelper::Feature::ENABLE_SPEECHAPI)) {
+      web_engine_args.emplace_back(
+          "--disable-blink-features=NonAdvancedSecurityMode");
+    }
+
+    std::string AdSec = "--advanced_sec_value=" + std::to_string(ASHelper::Inst().GetAdStat());
+    web_engine_args.emplace_back(AdSec);
+
+#if defined(REPORT_SYS_EVENT)
+    ReportLockdownModeStatus();
+#endif
+  }
+#endif  // BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+}
+
 void InitialWebEngineArgs(
     std::list<std::string>& web_engine_args,
     std::shared_ptr<OHOS::NWeb::NWebEngineInitArgs> init_args) {
@@ -910,35 +1053,6 @@ void InitialWebEngineArgs(
         "--log-net-log=/data/storage/el2/base/cache/web/netlog.json");
   }
 
-  if (IsAdvancedSecurityMode()) {
-    WVLOG_I(
-        "In advanced security mode, some HTML5 features will be unavailable, "
-        "including "
-        "WebAssembly, WebGL, PDF viewer, MathML, speech recognition, etc.");
-    web_engine_args.emplace_back("--js-flags=--jitless");
-
-    if (ASHelper::Inst().IsSecFeatureEnabled(ASHelper::Feature::ENABLE_WEBGL)) {
-      web_engine_args.emplace_back("--disable-webgl");
-      web_engine_args.emplace_back("--disable-webgl2");
-    }
-
-    if (ASHelper::Inst().IsSecFeatureEnabled(ASHelper::Feature::ENABLE_PDFVIEWER)) {
-      web_engine_args.emplace_back("--disable-pdf-extension");
-    }
-
-    if (ASHelper::Inst().IsSecFeatureEnabled(ASHelper::Feature::ENABLE_SPEECHAPI)) {
-      web_engine_args.emplace_back(
-          "--disable-blink-features=NonAdvancedSecurityMode");
-    }
-
-    std::string AdSec = "--advanced_sec_value=" + std::to_string(ASHelper::Inst().GetAdStat());
-    web_engine_args.emplace_back(AdSec);
-
-#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
-    ReportLockdownModeStatus();
-#endif
-  }
-
   web_engine_args.emplace_back("--enable-media-stream");
   if (GetIsEnhanceSurface(init_args)) {
     WVLOG_I("is_enhance_surface is true");
@@ -960,57 +1074,8 @@ void InitialWebEngineArgs(
   }
 
   auto args_to_add = GetArgsToAdd(init_args);
-
-  bool isSeparation = false;
   for (auto arg : args_to_add) {
-    if (arg.find(switches::kUserDataDirSeparation) != std::string::npos) {
- 	    isSeparation = true;
-    }
-  }
-
-  if (!isSeparation) {
-    args_to_add.push_back("--user-data-dir=cache/web");
-  } else {
-    args_to_add.push_back("--user-data-dir=");
-  }
-
-  args_to_add.push_back("--arkweb-app-data-dir=/data/storage/el2/base");
-
-  base::FilePath user_data_dir = base::FilePath();
-  base::FilePath app_data_dir = base::FilePath("/data/storage/el2/base");
-  for (auto arg : args_to_add) {
-    if (arg.find("--user-data-dir") != std::string::npos) {
-      size_t eq_pos = arg.find("=");
-      if (eq_pos != std::string::npos) {
-        std::string path_str = arg.substr(eq_pos + 1);
-        user_data_dir = base::FilePath(path_str);
-      }
-    }
-    if (arg.find("--arkweb-app-data-dir") != std::string::npos) {
-      size_t eq_pos = arg.find("=");
-      if (eq_pos != std::string::npos) {
-        std::string path_str = arg.substr(eq_pos + 1);
-        app_data_dir = base::FilePath(path_str);
-      }
-    }
     web_engine_args.emplace_back(arg);
-  }
-
-  base::FilePath cache_web_dir = base::FilePath("/data/storage/el2/base/cache/web");
-  if (base::PathExists(cache_web_dir)) {
-    web_engine_args.emplace_back("--ohos-cache-dir-exists");
-  }
-
-  base::FilePath absolute_user_data_dir = user_data_dir;
-  if (!app_data_dir.IsParent(user_data_dir) &&
-      app_data_dir != user_data_dir) {
-    absolute_user_data_dir = user_data_dir.empty() ?
-                    app_data_dir.Append("files/__arkweb") :
-                    app_data_dir.Append(user_data_dir);
-  }
-
-  if (base::PathExists(absolute_user_data_dir)) {
-    web_engine_args.emplace_back("--ohos-user-data-dir-exists");
   }
 
 #if BUILDFLAG(ARKWEB_GWP_ASAN)
@@ -1018,15 +1083,7 @@ void InitialWebEngineArgs(
   web_engine_args.emplace_back(gwpEnable);
 #endif
 
-  std::string oop_gpu_enable = GetOOPGPUStatus();
-  if ((xml_gpu && oop_gpu_enable != "false") ||
-      (!xml_gpu && oop_gpu_enable == "true")) {
-    auto it = std::find(web_engine_args.begin(), web_engine_args.end(),
-                        "--in-process-gpu");
-    if (it != web_engine_args.end()) {
-      web_engine_args.erase(it);
-    }
-  }
+  UpdateInprocessGpuArg(web_engine_args, xml_gpu);
 
   if (GetIsMultiRendererProcess(init_args)) {
     web_engine_args.emplace_back("--enable-multi-renderer-process");
@@ -1037,6 +1094,10 @@ void InitialWebEngineArgs(
     web_engine_args.emplace_back(arg);
   }
 #endif  // BUILDFLAG(IS_ARKWEB_EXT)
+
+#if BUILDFLAG(ARKWEB_ANGLE) && BUILDFLAG(ARKWEB_NWEB_EX)
+  ApplyANGLEStatus(web_engine_args);
+#endif
 
   std::string oemmode = OHOS::NWeb::OhosAdapterHelper::GetInstance()
                             .GetSystemPropertiesInstance().GetStringParameter("const.boot.oemmode", "");
@@ -1055,6 +1116,8 @@ void InitialWebEngineArgs(
   } else {
     LOG(INFO) << "oemmode is not rd or ohos-command-line does not exist.";
   }
+  // when Advanced Security Mode is enabled, the function call must be scheduled as the last step.
+  HandleAdvancedSecurityMode(web_engine_args);
 }
 #endif  // BUILDFLAG(ARKWEB_API_INIT_WEB_ENGINE)
 
@@ -3461,6 +3524,17 @@ void NWebImpl::WebSendTouchpadFlingEvent(
   input_handler_->WebSendTouchpadFlingEvent(x, y, vx, vy, pressedCodes);
 }
 
+void NWebImpl::WebSendCancelFlingEvent() {
+  if (input_handler_ == nullptr) {
+    LOG(ERROR) << "WebSendCancelFlingEvent input_handler_ is nullptr";
+    return;
+  }
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  ClearBlanklessKey();
+#endif
+  input_handler_->WebSendCancelFlingEvent();
+}
+
 bool NWebImpl::SendKeyboardEvent(
     const std::shared_ptr<OHOS::NWeb::NWebKeyboardEvent>& keyboardEvent) {
   if (input_handler_ == nullptr) {
@@ -4138,6 +4212,39 @@ void NWebImpl::RunJavaScriptInFrames(RunJavaScriptParam param,
   }
 
   nweb_delegate_->RunJavaScriptInFrames(param, callback);
+}
+
+void NWebImpl::GetAllFrameInfos(OnReceiveFrameInfosCallback callback) {
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E(
+        "remove web app client extension callback failed, nweb delegate is "
+        "nullptr, nweb_id = %{public}u",
+        nweb_id_);
+    return;
+  }
+  if (callback == nullptr) {
+    LOG(WARNING) << "NWebImpl::GetAllFrameInfos callback is nullptr";
+    return;
+  }
+
+  nweb_delegate_->GetAllFrameInfos(callback);
+}
+
+void NWebImpl::GetLastJavaScriptProxyCallingFrameInfo(
+    OnLastJavaScriptProxyCallingFrameInfoCallback callback) {
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E(
+        "remove web app client extension callback failed, nweb delegate is "
+        "nullptr, nweb_id = %{public}u",
+        nweb_id_);
+    return;
+  }
+  if (callback == nullptr) {
+    LOG(WARNING) << "NWebImpl::GetLastJavaScriptProxyCallingFrameInfo callback is nullptr";
+    return;
+  }
+
+  nweb_delegate_->GetLastJavaScriptProxyCallingFrameInfo(callback);
 }
 
 void NWebImpl::OpenDevtools(std::unique_ptr<OpenDevToolsParam> param) {
@@ -6195,6 +6302,26 @@ void NWebImpl::SetMigrationPasswordReady(const bool migrationReady) {
 #endif
 }
 
+#if BUILDFLAG(ARKWEB_ANGLE) && BUILDFLAG(ARKWEB_NWEB_EX)
+// static
+void NWebImpl::UpdateAngleConfig(bool angle_switch) {
+  g_angle_config = angle_switch;
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_GPU)
+// static
+void NWebImpl::UpdateGpuConfig(bool gpu_switch) {
+  const char* switch_status = gpu_switch ? "ON" : "OFF";
+  LOG(INFO) << "NWebImpl::SetOopGpuMasterSwitch: " << switch_status;
+  if (gpu_switch) {
+    oop_gpu_switch = GpuMode::FORCE_OOP;
+  } else {
+    oop_gpu_switch = GpuMode::FORCE_IN_PROCESS;
+  }
+}
+#endif // BUILDFLAG(ARKWEB_GPU)
+
 }  // namespace OHOS::NWeb
 
 using namespace OHOS::NWeb;
@@ -7361,7 +7488,7 @@ bool NWebImpl::ProcessBlanklessForUrl(uint64_t blanklessKey, bool isAnime) {
   base::ohos::BlanklessController::GetInstance().RecordSystemTime(nweb_id_, blankless_key_, system_time);
   nweb_delegate_->SetBlanklessLoadingKey(nweb_id_, blankless_key_);
   OHOS::NWeb::SnapshotDataItem dataItem = databaseInstance.GetSnapshotDataItem(blankless_key_, GetPreferenceHash());
-  CallBlanklessFrameFunc(blankless_key_, dataItem, isAnime);
+  CallBlanklessFrameFuncForWhiteList(blankless_key_, dataItem, isAnime);
   return true;
 }
 
@@ -7374,6 +7501,21 @@ void NWebImpl::SetVisibility(bool isVisible) {
     return;
   }
   auto& instance = base::ohos::BlanklessController::GetInstance();
+  if (!IsUserEnableBlankless()){
+    uint64_t recorded_time = instance.GetSystemTime(nweb_id_, blankless_key_);
+    auto system_time = base::Time::Now().ToInternalValue() / base::Time::kMicrosecondsPerMillisecond;
+    int32_t corrected_time = static_cast<int32_t>(static_cast<uint64_t>(system_time) - recorded_time);
+    int32_t lcp_time = instance.FireFrameInsertCallback(nweb_id_, blankless_key_);
+    int32_t lifetime = lcp_time - (corrected_time);
+    if (corrected_time < 0  || lifetime < base::ohos::BlanklessController::MINIMUM_FRAME_LIFETIME) { // 40 ms
+      return;
+    }
+    nweb_handle_->OnRemoveBlanklessFrame(lifetime);
+    instance.RegisterFrameRemoveCallback(nweb_id_, blankless_key_, [handle = this->nweb_handle_](){
+      handle->OnRemoveBlanklessFrame(0);
+    });
+    return;
+  }
   int32_t lcp_time = instance.FireFrameInsertCallback(nweb_id_, blankless_key_);
   if (lcp_time > 0) {
     nweb_handle_->OnRemoveBlanklessFrame(lcp_time);
@@ -7526,6 +7668,32 @@ void NWebImpl::CallBlanklessFrameFuncV2(uint64_t blankless_key, SnapshotDataItem
   if (is_visible_) {
     nweb_handle_->OnInsertBlanklessFrameWithSize(file, dataItem.width, dataItem.height);
     RemoveBlanklessFrame(nweb_handle_, lcp_time, isAnime);
+  } else {
+    instance.RegisterFrameInsertCallback(nweb_id_, blankless_key_,
+        [handle = this->nweb_handle_, file, width = dataItem.width, height = dataItem.height](){
+          handle->OnInsertBlanklessFrameWithSize(file, width, height);
+        }, lcp_time);
+  }
+}
+
+void NWebImpl::CallBlanklessFrameFuncForWhiteList(uint64_t blankless_key, SnapshotDataItem& dataItem, bool isAnime) {
+  std::string file = isAnime ? dataItem.wholePath : dataItem.staticPath;
+  if (nweb_handle_ == nullptr || dataItem.lcpTime == INT32_MAX || dataItem.lcpTime <= 0 || file.empty()) {
+    return;
+  }
+  auto& instance = base::ohos::BlanklessController::GetInstance();
+  if (dataItem.lcpTime < base::ohos::BlanklessController::MINIMUM_FRAME_LIFETIME) { // 40 ms
+    LOG(DEBUG) << "blankless CallBlanklessFrameFuncForWhiteList lcpTime invalid " << dataItem.lcpTime;
+    return;
+  }
+  int32_t lcp_time = std::min(dataItem.lcpTime, base::ohos::BlanklessController::MAXIMUM_FRAME_LIFETIME);  // 2000 ms
+  LOG(DEBUG) << "blankless OnRemoveBlanklessFrame Delay Time: " << lcp_time;
+  if (is_visible_) {
+    nweb_handle_->OnInsertBlanklessFrameWithSize(file, dataItem.width, dataItem.height);
+    RemoveBlanklessFrame(nweb_handle_, lcp_time, isAnime);
+    instance.RegisterFrameRemoveCallback(nweb_id_, blankless_key_, [handle = this->nweb_handle_, isAnime](){
+      RemoveBlanklessFrame(handle, 0, isAnime);
+    });
   } else {
     instance.RegisterFrameInsertCallback(nweb_id_, blankless_key_,
         [handle = this->nweb_handle_, file, width = dataItem.width, height = dataItem.height](){
@@ -7743,6 +7911,145 @@ void NWebImpl::StopFling() {
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
 void NWebImpl::EnableRewriteUrlForNavigation(bool enable) {
   OhosUrlRewriteController::EnableRewriteUrl(enable);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+std::map<std::string, std::string> NWebImpl::GetRequestHeader(int nweb_request_key) {
+  if (!nweb_delegate_) {
+    LOG(ERROR) << "failed to GetRequestHeader, delegate is null";
+    return {};
+  }
+  return nweb_delegate_->ResourceRequestGetRequestHeader(nweb_request_key);
+}
+ 
+std::string NWebImpl::GetRequestUrl(int nweb_request_key) {
+  if (!nweb_delegate_) {
+    LOG(ERROR) << "failed to GetRequestUrl, delegate is null";
+    return std::string();
+  }
+  return nweb_delegate_->ResourceRequestGetRequestUrl(nweb_request_key);
+}
+ 
+bool NWebImpl::IsRequestGesture(int32_t nweb_request_key) {
+  if (!nweb_delegate_) {
+    LOG(ERROR) << "failed to IsRequestGesture, delegate is null";
+    return false;
+  }
+  return nweb_delegate_->ResourceRequestIsRequestGesture(nweb_request_key);
+}
+ 
+bool NWebImpl::IsMainFrame(int32_t nweb_request_key) {
+  if (!nweb_delegate_) {
+    LOG(ERROR) << "failed to IsMainFrame, delegate is null";
+    return false;
+  }
+  return nweb_delegate_->ResourceRequestIsMainFrame(nweb_request_key);
+}
+ 
+bool NWebImpl::IsRedirect(int32_t nweb_request_key) {
+  if (!nweb_delegate_) {
+    LOG(ERROR) << "failed to IsRedirect, delegate is null";
+    return false;
+  }
+  return nweb_delegate_->ResourceRequestIsRedirect(nweb_request_key);
+}
+ 
+std::string NWebImpl::GetRequestMethod(int32_t nweb_request_key) {
+  if (!nweb_delegate_) {
+    LOG(ERROR) << "failed to GetRequestMethod, delegate is null";
+    return std::string();
+  }
+  return nweb_delegate_->ResourceRequestGetRequestMethod(nweb_request_key);
+}
+ 
+int32_t NWebImpl::GetPageTransition(int32_t nweb_request_key) {
+  if (!nweb_delegate_) {
+    LOG(ERROR) << "failed to GetPageTransition, delegate is null";
+    return -1;
+  }
+  return nweb_delegate_->ResourceRequestGetPageTransition(nweb_request_key);
+}
+ 
+int32_t NWebImpl::GetRequestType(int32_t nweb_request_key) {
+  if (!nweb_delegate_) {
+    LOG(ERROR) << "failed to GetRequestType, delegate is null";
+    return -1;
+  }
+  return nweb_delegate_->ResourceRequestGetRequestType(nweb_request_key);
+}
+ 
+ 
+std::string NWebImpl::GetMimeType(int nweb_response_key) {
+  if (!nweb_delegate_) {
+    LOG(ERROR) << "failed to GetMimeType, delegate is null";
+    return std::string();
+  }
+  return nweb_delegate_->ResourceResponseGetMimeType(nweb_response_key);
+}
+ 
+std::string NWebImpl::GetEncoding(int nweb_response_key) {
+  if (!nweb_delegate_) {
+    LOG(ERROR) << "failed to GetEncoding, delegate is null";
+    return std::string();
+  }
+  return nweb_delegate_->ResourceResponseGetEncoding(nweb_response_key);
+}
+ 
+int32_t NWebImpl::GetStatusCode(int nweb_response_key) {
+  if (!nweb_delegate_) {
+    LOG(ERROR) << "failed to GetStatusCode, delegate is null";
+    return -1;
+  }
+  return nweb_delegate_->ResourceResponseGetStatusCode(nweb_response_key);
+}
+ 
+std::string NWebImpl::GetReasonPhrase(int nweb_response_key) {
+  if (!nweb_delegate_) {
+    LOG(ERROR) << "failed to GetReasonPhrase, delegate is null";
+    return std::string();
+  }
+  return nweb_delegate_->ResourceResponseGetReasonPhrase(nweb_response_key);
+}
+ 
+std::map<std::string, std::string> NWebImpl::GetResponseHeader(int nweb_response_key) {
+  if (!nweb_delegate_) {
+    LOG(ERROR) << "failed to GetResponseHeader, delegate is null";
+    return {};
+  }
+  return nweb_delegate_->ResourceResponseGetResponseHeader(nweb_response_key);
+}
+ 
+bool NWebImpl::GetIsFromNetwork(int nweb_response_key) {
+  if (!nweb_delegate_) {
+    LOG(ERROR) << "failed to GetIsFromNetwork, delegate is null";
+    return false;
+  }
+  return nweb_delegate_->ResourceResponseGetIsFromNetwork(nweb_response_key);
+}
+ 
+void NWebImpl::ResourceRequestDelete(int nweb_request_key) {
+  if (!nweb_delegate_) {
+    LOG(ERROR) << "failed to ResourceRequestDelete, delegate is null";
+    return;
+  }
+  nweb_delegate_->ResourceRequestDelete(nweb_request_key);
+}
+ 
+void NWebImpl::ResourceResponseDelete(int nweb_response_key) {
+  if (!nweb_delegate_) {
+    LOG(ERROR) << "failed to ResourceResponseDelete, delegate is null";
+    return;
+  }
+  nweb_delegate_->ResourceResponseDelete(nweb_response_key);
+}
+int32_t NWebImpl::GetLastCommittedEntryPageTransition() {
+  LOG(INFO) << "NWebImpl::GetLastCommittedEntryPageTransition.";
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("GetLastCommittedEntryPageTransition nweb_delegate_ is null");
+    return -1;
+  }
+  return nweb_delegate_->GetLastCommittedEntryPageTransition();
 }
 #endif
 

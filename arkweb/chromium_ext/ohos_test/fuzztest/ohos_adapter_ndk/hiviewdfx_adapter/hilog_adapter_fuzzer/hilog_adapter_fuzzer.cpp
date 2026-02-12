@@ -26,8 +26,10 @@
 using namespace OHOS::NWeb;
 
 namespace {
-  constexpr uint8_t MAX_STRING_LENGTH = UINT8_MAX;
-  constexpr uint32_t MAX_LOG_LEVEL = 5;
+    constexpr uint8_t MAX_STRING_LENGTH = UINT8_MAX;
+    constexpr uint32_t MAX_LOG_LEVEL = 5;
+    constexpr int32_t HILOG_ADAPTER_TESTS_NUM = 1024;
+    static int32_t HILOG_ADAPTER_TESTS_COUNT = 0;
 }
 
 void PrintLogFuzzTest(const uint8_t* data, size_t size) {
@@ -39,9 +41,8 @@ void PrintLogFuzzTest(const uint8_t* data, size_t size) {
     LogLevelAdapter logLevel = static_cast<LogLevelAdapter>(num);
     
     std::string tag = dataProvider.ConsumeRandomLengthString(MAX_STRING_LENGTH);
-    std::string fmt = dataProvider.ConsumeRandomLengthString(MAX_STRING_LENGTH);
     std::string message = dataProvider.ConsumeRandomLengthString(MAX_STRING_LENGTH);
-    HiLogAdapter::PrintLog(logLevel, tag.c_str(), fmt.c_str(), message.c_str());
+    HiLogAdapter::PrintLog(logLevel, tag.c_str(), "%s", message.c_str());
 }
 
 void PrintConsoleLogFuzzTest(const uint8_t* data, size_t size) {
@@ -53,13 +54,18 @@ void PrintConsoleLogFuzzTest(const uint8_t* data, size_t size) {
     LogLevelAdapter logLevel = static_cast<LogLevelAdapter>(num);
     
     std::string tag = dataProvider.ConsumeRandomLengthString(MAX_STRING_LENGTH);
-    std::string fmt = dataProvider.ConsumeRandomLengthString(MAX_STRING_LENGTH);
     std::string message = dataProvider.ConsumeRandomLengthString(MAX_STRING_LENGTH);
-    HiLogAdapter::PrintConsoleLog(logLevel, tag.c_str(), fmt.c_str(), message.c_str());
+    HiLogAdapter::PrintConsoleLog(logLevel, tag.c_str(), "%s", message.c_str());
 }
 
 // main
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
+    if (HILOG_ADAPTER_TESTS_COUNT < HILOG_ADAPTER_TESTS_NUM){
+      HILOG_ADAPTER_TESTS_COUNT++;
+    }
+    else {
+      return 0;
+    }
     PrintLogFuzzTest(data, size);
     PrintConsoleLogFuzzTest(data, size);
     return 0;

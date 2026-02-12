@@ -26,6 +26,9 @@ class MockConnectionAlarmsDelegate : public QuicConnectionAlarmsDelegate {
   MOCK_METHOD(void, OnIdleDetectorAlarm, (), (override));
   MOCK_METHOD(void, OnNetworkBlackholeDetectorAlarm, (), (override));
   MOCK_METHOD(void, OnPingAlarm, (), (override));
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  MOCK_METHOD(void, OnStreamFrameDetectorAlarm, (), (override));
+#endif
 
   QuicConnectionContext* context() override { return nullptr; }
   const QuicClock* clock() const override { return &clock_; }

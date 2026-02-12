@@ -16,7 +16,7 @@
 #ifndef NATIVE_BUFFER_CONFIG_IMPL_H
 #define NATIVE_BUFFER_CONFIG_IMPL_H
 
-#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_native_buffer_adapter.h"
+#include "../../../../../../third_party/ohos_ndk/includes/ohos_adapter/ohos_native_buffer_adapter.h"
 
 namespace OHOS::NWeb {
 

@@ -948,8 +948,25 @@ void NavigationControllerImpl::Restore(
   FinishRestore(selected_navigation, type);
 }
 
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+void NavigationControllerImpl::ReloadEx(ReloadType reload_type,
+                                        bool check_for_repost,
+                                        int transition_type) {
+  Reload(reload_type, check_for_repost, transition_type);
+}
+ 
 void NavigationControllerImpl::Reload(ReloadType reload_type,
                                       bool check_for_repost) {
+  Reload(reload_type, check_for_repost, /*transition_type=*/-1);
+}
+ 
+void NavigationControllerImpl::Reload(ReloadType reload_type,
+                                      bool check_for_repost,
+                                      int transition_type) {
+#else
+void NavigationControllerImpl::Reload(ReloadType reload_type,
+                                      bool check_for_repost) {
+#endif
   SCOPED_CRASH_KEY_NUMBER("nav_reentrancy_caller1", "Reload_type",
                           (int)reload_type);
   SCOPED_CRASH_KEY_BOOL("nav_reentrancy_caller1", "Reload_check",
@@ -1019,6 +1036,13 @@ void NavigationControllerImpl::Reload(ReloadType reload_type,
   pending_entry_ = entry;
   pending_entry_index_ = current_index;
   pending_entry_->SetTransitionType(ui::PAGE_TRANSITION_RELOAD);
+
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+  if (transition_type > 0) {
+    pending_entry_->SetTransitionType(ui::PageTransitionFromInt(
+        pending_entry_->GetTransitionType() | transition_type));
+  }
+#endif
 
 #if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
   pending_entry_->SetReloadReason(reload_reason_);
@@ -4233,8 +4257,11 @@ NavigationControllerImpl::CreateNavigationRequestFromLoadParams(
           /*local_surface_id=*/std::nullopt,
 #if BUILDFLAG(ARKWEB_ADBLOCK)
            false, /* site_adblock_enabled */
-           node->current_frame_host()->GetCachedPermissionStatuses());
 #endif
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+           0, /* custom_viewport_width */
+#endif       
+           node->current_frame_host()->GetCachedPermissionStatuses());
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_BASE)
   if (ValidateDataURLAsString(params.data_url_as_string)) {
     commit_params->data_url_as_string = params.data_url_as_string->as_string();

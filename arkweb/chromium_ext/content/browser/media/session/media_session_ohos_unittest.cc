@@ -63,6 +63,29 @@ class FakeAVSessionAdapter : public OHOS::NWeb::MediaAVSessionAdapter {
     set_playback_called_ = true;
     last_playback_state_ = state;
   }
+  void SetMediaCastUri(const std::string& uri) override {
+    set_media_cast_uri_called_ = true;
+    media_cast_uri_ = uri;
+  }
+
+  void PrepareMediaCastDescription() override {
+    prepare_media_cast_desc_called_ = true;
+  }
+
+  void HandleStopMediaCast() override {
+    handle_stop_media_cast_called_ = true;
+  }
+
+  void UpdateRemotePlayState(bool is_playing) override {
+    update_remote_play_state_called_ = true;
+    remote_play_state_ = is_playing;
+  }
+  bool set_media_cast_uri_called_ = false;
+  std::string media_cast_uri_;
+  bool prepare_media_cast_desc_called_ = false;
+  bool handle_stop_media_cast_called_ = false;
+  bool update_remote_play_state_called_ = false;
+  bool remote_play_state_ = false;
   bool create_called_ = false;
   bool regist_called_ = false;
   bool callback_ok_ = false;
@@ -736,6 +759,181 @@ TEST_F(MediaSessionOHOSTest, CallBackSeekTo) {
       media_session_ohos_->task_runner_,
       media_session_ohos_->weak_factory_.GetWeakPtr());
   ASSERT_NO_FATAL_FAILURE(callback_valid->SeekTo(3000));
+  base::RunLoop().RunUntilIdle();
+}
+
+TEST_F(MediaSessionOHOSTest, CreateAVCastAdapter) {
+  media_session_ohos_->avsession_adapter_.reset();
+  ASSERT_NO_FATAL_FAILURE(media_session_ohos_->CreateAVCastAdapter());
+  auto* fake = new FakeAVSessionAdapter(true, true);
+  media_session_ohos_->avsession_adapter_.reset(fake);
+  media_session_ohos_->media_uri_ = "https://example.com/media.mp4";
+  ASSERT_NO_FATAL_FAILURE(media_session_ohos_->CreateAVCastAdapter());
+  EXPECT_TRUE(fake->set_media_cast_uri_called_);
+  EXPECT_EQ(fake->media_cast_uri_, "https://example.com/media.mp4");
+  EXPECT_TRUE(fake->prepare_media_cast_desc_called_);
+}
+
+TEST_F(MediaSessionOHOSTest, HandleStopMediaCast) {
+  media_session_ohos_->avsession_adapter_.reset();
+  ASSERT_NO_FATAL_FAILURE(media_session_ohos_->HandleStopMediaCast());
+  auto* fake = new FakeAVSessionAdapter(true, true);
+  media_session_ohos_->avsession_adapter_.reset(fake);
+  ASSERT_NO_FATAL_FAILURE(media_session_ohos_->HandleStopMediaCast());
+  EXPECT_TRUE(fake->handle_stop_media_cast_called_);
+}
+
+TEST_F(MediaSessionOHOSTest, GetMediaCastCurrentTime) {
+  const_cast<raw_ptr<MediaSessionImpl, DanglingUntriaged>&>(
+      media_session_ohos_->media_session_) = nullptr;
+  EXPECT_EQ(media_session_ohos_->GetMediaCastCurrentTime(), 0);
+  const_cast<raw_ptr<MediaSessionImpl, DanglingUntriaged>&>(
+      media_session_ohos_->media_session_) = media_session_impl_;
+  ASSERT_NO_FATAL_FAILURE(media_session_ohos_->GetMediaCastCurrentTime());
+}
+
+TEST_F(MediaSessionOHOSTest, PullUpCastBackGround) {
+  const_cast<raw_ptr<MediaSessionImpl, DanglingUntriaged>&>(
+      media_session_ohos_->media_session_) = nullptr;
+  ASSERT_NO_FATAL_FAILURE(media_session_ohos_->PullUpCastBackGround("device1"));
+  const_cast<raw_ptr<MediaSessionImpl, DanglingUntriaged>&>(
+      media_session_ohos_->media_session_) = media_session_impl_;
+  ASSERT_NO_FATAL_FAILURE(media_session_ohos_->PullUpCastBackGround("device2"));
+}
+
+TEST_F(MediaSessionOHOSTest, MediaCastStopped) {
+  const_cast<raw_ptr<MediaSessionImpl, DanglingUntriaged>&>(
+      media_session_ohos_->media_session_) = nullptr;
+  ASSERT_NO_FATAL_FAILURE(media_session_ohos_->MediaCastStopped());
+  const_cast<raw_ptr<MediaSessionImpl, DanglingUntriaged>&>(
+      media_session_ohos_->media_session_) = media_session_impl_;
+  ASSERT_NO_FATAL_FAILURE(media_session_ohos_->MediaCastStopped());
+}
+
+TEST_F(MediaSessionOHOSTest, SetAvCast) {
+  EXPECT_FALSE(media_session_ohos_->is_avcast_);
+  media_session_ohos_->SetAvCast(true);
+  EXPECT_TRUE(media_session_ohos_->is_avcast_);
+  media_session_ohos_->SetAvCast(false);
+  EXPECT_FALSE(media_session_ohos_->is_avcast_);
+}
+
+TEST_F(MediaSessionOHOSTest, UpdateUiPlayState) {
+  const_cast<raw_ptr<MediaSessionImpl, DanglingUntriaged>&>(
+      media_session_ohos_->media_session_) = nullptr;
+  ASSERT_NO_FATAL_FAILURE(media_session_ohos_->UpdateUiPlayState(true));
+  ASSERT_NO_FATAL_FAILURE(media_session_ohos_->UpdateUiPlayState(false));
+  const_cast<raw_ptr<MediaSessionImpl, DanglingUntriaged>&>(
+      media_session_ohos_->media_session_) = media_session_impl_;
+  ASSERT_NO_FATAL_FAILURE(media_session_ohos_->UpdateUiPlayState(true));
+  ASSERT_NO_FATAL_FAILURE(media_session_ohos_->UpdateUiPlayState(false));
+}
+
+TEST_F(MediaSessionOHOSTest, UpdateUiPlayPosition) {
+  const_cast<raw_ptr<MediaSessionImpl, DanglingUntriaged>&>(
+      media_session_ohos_->media_session_) = nullptr;
+  ASSERT_NO_FATAL_FAILURE(media_session_ohos_->UpdateUiPlayPosition(1000));
+  ASSERT_NO_FATAL_FAILURE(media_session_ohos_->UpdateUiPlayPosition(-1000));
+  const_cast<raw_ptr<MediaSessionImpl, DanglingUntriaged>&>(
+      media_session_ohos_->media_session_) = media_session_impl_;
+  ASSERT_NO_FATAL_FAILURE(media_session_ohos_->UpdateUiPlayPosition(5000));
+  ASSERT_NO_FATAL_FAILURE(media_session_ohos_->UpdateUiPlayPosition(0));
+}
+
+TEST_F(MediaSessionOHOSTest, UpdateRemotePlayState) {
+  media_session_ohos_->avsession_adapter_.reset();
+  ASSERT_NO_FATAL_FAILURE(media_session_ohos_->UpdateRemotePlayState(true));
+  ASSERT_NO_FATAL_FAILURE(media_session_ohos_->UpdateRemotePlayState(false));
+  auto* fake = new FakeAVSessionAdapter(true, true);
+  media_session_ohos_->avsession_adapter_.reset(fake);
+  ASSERT_NO_FATAL_FAILURE(media_session_ohos_->UpdateRemotePlayState(true));
+  EXPECT_TRUE(fake->update_remote_play_state_called_);
+  EXPECT_TRUE(fake->remote_play_state_);
+  fake->update_remote_play_state_called_ = false;
+  ASSERT_NO_FATAL_FAILURE(media_session_ohos_->UpdateRemotePlayState(false));
+  EXPECT_TRUE(fake->update_remote_play_state_called_);
+  EXPECT_FALSE(fake->remote_play_state_);
+}
+
+TEST_F(MediaSessionOHOSTest, SetWebviewShow_WithAvCast) {
+  auto* fake = new FakeAVSessionAdapter(true, true);
+  media_session_ohos_->avsession_adapter_.reset(fake);
+  media_session_ohos_->media_type_ = OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_AUDIO;
+  media_session_ohos_->is_avcast_ = false;
+  ASSERT_NO_FATAL_FAILURE(media_session_ohos_->SetWebviewShow(false, true));
+  EXPECT_EQ(media_session_ohos_->media_type_,
+            OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_INVALID);
+  media_session_ohos_->media_type_ = OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_AUDIO;
+  media_session_ohos_->is_avcast_ = true;
+  ASSERT_NO_FATAL_FAILURE(media_session_ohos_->SetWebviewShow(false, true));
+}
+
+TEST_F(MediaSessionOHOSTest, CallBackPullUpCastBackGround) {
+  media_session_ohos_->task_runner_ =
+      base::SingleThreadTaskRunner::GetCurrentDefault();
+  auto callback_null = std::make_unique<OHOSMediaAVSessionCallback>(
+      media_session_ohos_->task_runner_, base::WeakPtr<MediaSessionOHOS>());
+  ASSERT_NO_FATAL_FAILURE(callback_null->PullUpCastBackGround("device1"));
+  auto callback_valid = std::make_unique<OHOSMediaAVSessionCallback>(
+      media_session_ohos_->task_runner_,
+      media_session_ohos_->weak_factory_.GetWeakPtr());
+  ASSERT_NO_FATAL_FAILURE(callback_valid->PullUpCastBackGround("device2"));
+  base::RunLoop().RunUntilIdle();
+}
+
+TEST_F(MediaSessionOHOSTest, CallBackMediaCastStopped) {
+  media_session_ohos_->task_runner_ =
+      base::SingleThreadTaskRunner::GetCurrentDefault();
+  auto callback_null = std::make_unique<OHOSMediaAVSessionCallback>(
+      media_session_ohos_->task_runner_, base::WeakPtr<MediaSessionOHOS>());
+  ASSERT_NO_FATAL_FAILURE(callback_null->MediaCastStopped());
+  auto callback_valid = std::make_unique<OHOSMediaAVSessionCallback>(
+      media_session_ohos_->task_runner_,
+      media_session_ohos_->weak_factory_.GetWeakPtr());
+  ASSERT_NO_FATAL_FAILURE(callback_valid->MediaCastStopped());
+  base::RunLoop().RunUntilIdle();
+}
+
+TEST_F(MediaSessionOHOSTest, CallBackSetAvCast) {
+  media_session_ohos_->task_runner_ =
+      base::SingleThreadTaskRunner::GetCurrentDefault();
+  auto callback_null = std::make_unique<OHOSMediaAVSessionCallback>(
+      media_session_ohos_->task_runner_, base::WeakPtr<MediaSessionOHOS>());
+  ASSERT_NO_FATAL_FAILURE(callback_null->SetAvCast(true));
+  auto callback_valid = std::make_unique<OHOSMediaAVSessionCallback>(
+      media_session_ohos_->task_runner_,
+      media_session_ohos_->weak_factory_.GetWeakPtr());
+  ASSERT_NO_FATAL_FAILURE(callback_valid->SetAvCast(true));
+  base::RunLoop().RunUntilIdle();
+  EXPECT_TRUE(media_session_ohos_->is_avcast_);
+  ASSERT_NO_FATAL_FAILURE(callback_valid->SetAvCast(false));
+  base::RunLoop().RunUntilIdle();
+  EXPECT_FALSE(media_session_ohos_->is_avcast_);
+}
+
+TEST_F(MediaSessionOHOSTest, CallBackUpdateUiPlayState) {
+  media_session_ohos_->task_runner_ =
+      base::SingleThreadTaskRunner::GetCurrentDefault();
+  auto callback_null = std::make_unique<OHOSMediaAVSessionCallback>(
+      media_session_ohos_->task_runner_, base::WeakPtr<MediaSessionOHOS>());
+  ASSERT_NO_FATAL_FAILURE(callback_null->UpdateUiPlayState(true));
+  auto callback_valid = std::make_unique<OHOSMediaAVSessionCallback>(
+      media_session_ohos_->task_runner_,
+      media_session_ohos_->weak_factory_.GetWeakPtr());
+  ASSERT_NO_FATAL_FAILURE(callback_valid->UpdateUiPlayState(true));
+  base::RunLoop().RunUntilIdle();
+}
+
+TEST_F(MediaSessionOHOSTest, CallBackUpdateUiPlayPosition) {
+  media_session_ohos_->task_runner_ =
+      base::SingleThreadTaskRunner::GetCurrentDefault();
+  auto callback_null = std::make_unique<OHOSMediaAVSessionCallback>(
+      media_session_ohos_->task_runner_, base::WeakPtr<MediaSessionOHOS>());
+  ASSERT_NO_FATAL_FAILURE(callback_null->UpdateUiPlayPosition(1000));
+  auto callback_valid = std::make_unique<OHOSMediaAVSessionCallback>(
+      media_session_ohos_->task_runner_,
+      media_session_ohos_->weak_factory_.GetWeakPtr());
+  ASSERT_NO_FATAL_FAILURE(callback_valid->UpdateUiPlayPosition(5000));
   base::RunLoop().RunUntilIdle();
 }
 }  // namespace content

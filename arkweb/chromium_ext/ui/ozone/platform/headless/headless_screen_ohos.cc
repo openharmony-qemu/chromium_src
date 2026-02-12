@@ -219,7 +219,7 @@ HeadlessScreenListener::HeadlessScreenListener(
 
 void HeadlessScreenListener::OnCreate(OHOS::NWeb::DisplayId display_id) {
   DCHECK(task_runner_.get());
-  if (headless_screen_ohos_) {
+  if (task_runner_) {
     task_runner_->PostTask(FROM_HERE,
                            base::BindOnce(&HeadlessScreenOhos::OnDisplayCreate,
                                           headless_screen_ohos_, display_id));
@@ -228,7 +228,7 @@ void HeadlessScreenListener::OnCreate(OHOS::NWeb::DisplayId display_id) {
 
 void HeadlessScreenListener::OnDestroy(OHOS::NWeb::DisplayId display_id) {
   DCHECK(task_runner_.get());
-  if (headless_screen_ohos_) {
+  if (task_runner_) {
     task_runner_->PostTask(FROM_HERE,
                            base::BindOnce(&HeadlessScreenOhos::OnDisplayDestroy,
                                           headless_screen_ohos_, display_id));
@@ -237,7 +237,7 @@ void HeadlessScreenListener::OnDestroy(OHOS::NWeb::DisplayId display_id) {
 
 void HeadlessScreenListener::OnChange(OHOS::NWeb::DisplayId display_id) {
   DCHECK(task_runner_.get());
-  if (headless_screen_ohos_) {
+  if (task_runner_) {
     task_runner_->PostTask(FROM_HERE,
                            base::BindOnce(&HeadlessScreenOhos::OnDisplayChange,
                                           headless_screen_ohos_, display_id));
@@ -430,18 +430,30 @@ void HeadlessScreenOhos::OnDisplayEvent(const std::string& event,
 // LCOV_EXCL_START
 void HeadlessScreenOhos::OnDisplayCreate(
     const OHOS::NWeb::DisplayId display_id) {
+  if (!weak_factory_.HasWeakPtrs()) {
+    LOG(ERROR) << "HeadlessScreenOhos has been destroyed.";
+    return;
+  }
   auto id = static_cast<int64_t>(display_id);
   OnDisplayEvent("create", id);
 }
 
 void HeadlessScreenOhos::OnDisplayDestroy(
     const OHOS::NWeb::DisplayId display_id) {
+  if (!weak_factory_.HasWeakPtrs()) {
+    LOG(ERROR) << "HeadlessScreenOhos has been destroyed.";
+    return;
+  }
   auto id = static_cast<int64_t>(display_id);
   OnDisplayEvent("destroy", id);
 }
 
 void HeadlessScreenOhos::OnDisplayChange(
     const OHOS::NWeb::DisplayId display_id) {
+  if (!weak_factory_.HasWeakPtrs()) {
+    LOG(ERROR) << "HeadlessScreenOhos has been destroyed.";
+    return;
+  }
   auto id = static_cast<int64_t>(display_id);
   OnDisplayEvent("change", id);
 }

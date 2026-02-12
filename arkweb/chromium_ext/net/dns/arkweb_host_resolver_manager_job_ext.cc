@@ -42,8 +42,12 @@
 
 #if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 #include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#include "arkweb/chromium_ext/net/dns/secure_dns_fallback_utils.h"
 #include "base/base_switches.h"
 #include "base/command_line.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/overrides/net/dns/secure_dns_fallback_utils.h"
+#endif  // BUILDFLAG(IS_ARKWEB_EXT)
 #endif
 
 namespace net {
@@ -142,6 +146,65 @@ void ArkWebHostResolverManagerJobExt::InitReportInfoForDohFallback() {
   failed_transactions_type_ = DnsTransactionAddressFailedType::BOTH_OK;
   resolved_result_for_ipv4_ = 0;
   resolved_result_for_ipv6_ = 0;
+}
+
+bool ArkWebHostResolverManagerJobExt::CanUseSecureDnsFallback(
+    ResolveContext* resolve_context) {
+  if (resolver_) {
+    return resolver_->CanUseSecureDnsFallback(resolve_context);
+  }
+  return false;
+}
+
+void ArkWebHostResolverManagerJobExt::RecordIllegalIPAddrToLog(
+    const std::string& host,
+    const AddressList& addrlist) {
+  if (addrlist.empty()) {
+    return;
+  }
+
+  const IPAddress zeroIPv4 = net::IPAddress::IPv4AllZeros();
+  const IPAddress zeroIPv6 = net::IPAddress::IPv6AllZeros();
+
+  for (const auto& endpoint : addrlist) {
+    const IPAddress& addr = endpoint.address();
+    if ((addr.IsIPv4() && zeroIPv4 == addr) ||
+        (addr.IsIPv6() && zeroIPv6 == addr)) {
+      LOG(INFO) << "The IP address resolved from dns cache with host "
+                << url::LogUtils::ConvertUrlWithMask(host)
+                << " maybe illegal, and maybe we can't connect IP successful.";
+    }
+  }
+}
+
+void ArkWebHostResolverManagerJobExt::MaybeModifyProcResolveResults(
+    const std::string& host,
+    bool secure_dns_fallback_available,
+    int& net_error,
+    AddressList& out_addr_list) {
+  if (net_error != OK) {
+    return;
+  }
+
+  bool need_to_modify_resolve_result = false;
+  // AddressList addresses;
+  std::vector<IPEndPoint> addresses;
+  bool need_to_replace_address = MaybeNeedToProcessAddressList(
+      host, out_addr_list.endpoints(), secure_dns_fallback_available, addresses,
+      need_to_modify_resolve_result);
+  if (!need_to_replace_address) {
+    return;
+  }
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+  ReportDnsHijackHitInfo(host, RecordQueryType::PROC,
+                         out_addr_list.endpoints());
+#endif  // BUILDFLAG(IS_ARKWEB_EXT)
+
+  out_addr_list = AddressList(addresses);
+  if (need_to_modify_resolve_result) {
+    net_error = ERR_NAME_NOT_RESOLVED;
+  }
 }
 #endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 

@@ -9,6 +9,9 @@
 #include "base/strings/string_util.h"
 #include "build/branding_buildflags.h"
 #include "build/build_config.h"
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+#include "content/common/content_constants_internal.h"
+#endif
 
 namespace content {
 
@@ -62,6 +65,10 @@ const int kPluginOomScore = kMiscOomScore - kOomScoreBump;
 
 static_assert(kMiscOomScore > 0, "kMiscOomScore should be greater than 0");
 static_assert(kPluginOomScore > 0, "kPluginOomScore should be greater than 0");
+#endif
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+const size_t kMaxLengthOfDataURLStringPub = kMaxLengthOfDataURLString;
 #endif
 
 #if BUILDFLAG(IS_ANDROID)

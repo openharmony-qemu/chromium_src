@@ -118,6 +118,12 @@ class NWebImpl : public NWeb {
   static void DisableBoost(uint32_t nweb_id);
 #endif
 
+#if BUILDFLAG(ARKWEB_GPU)
+  static void UpdateGpuConfig(bool gpu_switch);
+#endif // BUILDFLAG(ARKWEB_GPU)
+  static void UpdateInprocessGpuArg(std::list<std::string>& web_engine_args,
+                                    bool xml_gpu);
+
   /* event interface */
   void Resize(uint32_t width,
               uint32_t height,
@@ -510,6 +516,7 @@ class NWebImpl : public NWeb {
       double vx,
       double vy,
       const std::vector<int32_t>& pressedCodes) override;
+  void WebSendCancelFlingEvent() override;
   bool SendKeyboardEvent(const std::shared_ptr<OHOS::NWeb::NWebKeyboardEvent>&
                              keyboardEvent) override;
   bool ScrollByWithResult(float delta_x, float delta_y) override;
@@ -684,6 +691,9 @@ class NWebImpl : public NWeb {
   void RemoveWebExtensionCallback();
   void RunJavaScriptInFrames(RunJavaScriptParam param,
                              OnReceiveValueCallback callback);
+  void GetAllFrameInfos(OnReceiveFrameInfosCallback callback);
+  void GetLastJavaScriptProxyCallingFrameInfo(
+      OnLastJavaScriptProxyCallingFrameInfoCallback callback);
   void GetImageFromContextNode();
   void GetImageFromCache(const std::string& url);
   void ReloadOriginalUrl() const;
@@ -1185,6 +1195,10 @@ class NWebImpl : public NWeb {
 
   static void SetMigrationPasswordReady(const bool migrationReady);
 
+#if BUILDFLAG(ARKWEB_ANGLE) && BUILDFLAG(ARKWEB_NWEB_EX)
+  static void UpdateAngleConfig(bool angle_switch);
+#endif // ARKWEB_ANGLE && ARKWEB_NWEB_EX
+
 #if BUILDFLAG(ARKWEB_EDM_POLICY)
   static void SetEnterprisePolicy(const std::string& policy, int version);
 #endif
@@ -1264,6 +1278,27 @@ class NWebImpl : public NWeb {
                             bool lazy);
   static bool ShouldLazyInitWebEngine();
   static std::shared_ptr<NWebEngineInitArgs> GetSaveInitargs();
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+  std::map<std::string, std::string> GetRequestHeader(int32_t nweb_request_key);
+  std::string GetRequestUrl(int32_t nweb_request_key);
+  bool IsRequestGesture(int32_t nweb_request_key);
+  bool IsMainFrame(int32_t nweb_request_key);
+  bool IsRedirect(int32_t nweb_request_key);
+  std::string GetRequestMethod(int32_t nweb_request_key);
+  int32_t GetPageTransition(int32_t nweb_request_key);
+  int32_t GetRequestType(int32_t nweb_request_key);
+ 
+  std::string GetMimeType(int32_t nweb_response_key);
+  std::string GetEncoding(int nweb_response_key);
+  int32_t GetStatusCode(int nweb_response_key);
+  std::string GetReasonPhrase(int nweb_response_key);
+  std::map<std::string, std::string> GetResponseHeader(int32_t nweb_response_key);
+  bool GetIsFromNetwork(int nweb_response_key);
+  void ResourceRequestDelete(int nweb_request_key);
+  void ResourceResponseDelete(int nweb_response_key);
+  int32_t GetLastCommittedEntryPageTransition();
 #endif
 
  private:
@@ -1376,6 +1411,7 @@ class NWebImpl : public NWeb {
   void CallBlanklessFrameFunc(uint64_t blankless_key, SnapshotDataItem& dataItem, bool isAnime = false);
   void CallBlanklessFrameFuncV2(uint64_t blankless_key, SnapshotDataItem& dataItem,
                                 int32_t duration, bool isAnime = false);
+  void CallBlanklessFrameFuncForWhiteList(uint64_t blankless_key, SnapshotDataItem& dataItem, bool isAnime = false);
   void ExecuteBlanklessCallback(const std::string& key, int32_t state, const std::string& reason);
   // To avoid include blankless_controller.h in nweb_impl.h, we use UINT64_MAX instead of INVALID_BLANKLESS_KEY.
   std::atomic<uint64_t> blankless_key_ = UINT64_MAX;

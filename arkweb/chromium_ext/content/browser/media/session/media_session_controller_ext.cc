@@ -248,5 +248,18 @@ void MediaSessionControllerExt::NotifyRemoteExitFullScreen() {
   }
 }
 
+void MediaSessionControllerExt::NotifyCastControlShow(int player_id, bool is_show) {
+  DCHECK_EQ(player_id_, player_id);
+  LOG(INFO) << "MediaSessionControllerExt::NotifyCastControlShow";
+  if (!web_contents_)
+    return;
+  auto web_contents_observer = web_contents_->media_web_contents_observer();
+  if (!web_contents_observer)
+    return;
+  if (web_contents_observer->IsPlayerIdInMediaPlayerRemotesMap(id_)) {
+    web_contents_observer->GetMediaPlayerRemote(id_)->NotifyCastControlShow(is_show);
+  }
+}
+
 #endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
 }

@@ -512,6 +512,12 @@ export class PopupWindowDetector {
         const [bestSiblingContent, root] = PopupWindowDetector.findBestSiblingContent(maskNode);
 
         if (bestSiblingContent && root) {
+            // 特例处理：如果最终确定的root节点是body，则不是B型弹窗，直接返回null
+            if (root === document.body) {
+                Log.d(`B型弹窗特例：root节点为body，不是有效的弹窗结构，返回null`, Tag.popupDetector);
+                return null;
+            }
+
             // 严格使用 `maskNode.parentNode` 进行可见性检查
             const parentNode = maskNode.parentNode;
             if (!parentNode || !(parentNode instanceof Element)) {
@@ -542,11 +548,25 @@ export class PopupWindowDetector {
         Log.d(`Mask定位方式: ${maskPosition}`, Tag.popupDetector);
 
         if (maskPosition === 'fixed' || maskPosition === 'absolute') {
+            // 特例处理：如果最终确定的root节点是body，则不是C型弹窗，直接返回null
+            // 注意：C型弹窗的mask节点本身就是其根节点
+            if (maskNode && maskNode === document.body) {
+                Log.d(`C型弹窗特例：root节点为body，不是有效的弹窗结构，返回null`, Tag.popupDetector);
+                return null;
+            }
             Log.d(`识别为C型弹窗`, Tag.popupDetector);
             return { contentNode: bestDescendantContent, rootNode: maskNode, popupType: PopupType.C };
         } else {
             // 此处逻辑与原始代码的 while + if(!rootNode) fallback 等价
             const rootNode = this.findPositionedAncestor(maskNode) || maskNode.parentElement;
+            Log.d(`最终确定的root节点: ${rootNode ? (rootNode as HTMLElement).className || rootNode.tagName : '未找到'}`, Tag.popupDetector);
+            
+            // 特例处理：如果最终确定的root节点是body，则不是A型弹窗，直接返回null
+            if (rootNode && rootNode === document.body) {
+                Log.d(`A型弹窗特例：root节点为body，不是有效的弹窗结构，返回null`, Tag.popupDetector);
+                return null;
+            }
+
             if (rootNode) {
                 Log.d(`识别为A型弹窗，找到定位祖先节点: ${(rootNode as HTMLElement).className}`, Tag.popupDetector);
                 return { contentNode: bestDescendantContent, rootNode: rootNode, popupType: PopupType.A };

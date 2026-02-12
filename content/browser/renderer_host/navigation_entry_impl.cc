@@ -1049,6 +1049,9 @@ NavigationEntryImpl::ConstructCommitNavigationParams(
 #if BUILDFLAG(ARKWEB_ADBLOCK)
           false, /* site_adblock_enabled */
 #endif
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+          0, /* ustom_viewport_width */
+#endif
           /*initial_permission_statuses=*/std::nullopt);
 #if BUILDFLAG(IS_ANDROID)
   // `data_url_as_string` is saved in NavigationEntry but should only be used by

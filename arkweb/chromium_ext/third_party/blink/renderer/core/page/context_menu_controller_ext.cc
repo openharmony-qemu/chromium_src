@@ -215,7 +215,12 @@ void ContextMenuControllerExt::GetImgUrl(HitTestResult& result,
         continue;
       }
 
-      CSSValue* value = style->BackgroundLayers().GetImage()->ComputedCSSValue(
+      StyleImage* style_image = style->BackgroundLayers().GetImage();
+      if (!style_image) {
+        continue;
+      }
+
+      CSSValue* value = style_image->ComputedCSSValue(
           *style, false, CSSValuePhase::kResolvedValue);
       if (value && value->IsURIValue()) {
         background_url =

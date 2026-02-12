@@ -697,6 +697,12 @@ class QUICHE_EXPORT QuicSession
     return enable_stop_sending_for_zombie_streams_;
   }
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  std::string GetServerHostForQuicBroken() const override { return ""; }
+  std::string GetStreamsInfoForQuicBroken() const override;
+  size_t GetNumActiveStreamsForInterface() const override;
+#endif
+
  protected:
   using StreamMap =
       absl::flat_hash_map<QuicStreamId, std::unique_ptr<QuicStream>>;

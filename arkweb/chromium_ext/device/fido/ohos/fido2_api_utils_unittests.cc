@@ -202,4 +202,88 @@ TEST_F(Fido2ApiUtilsTest, ParseTest_007)
     auto ret = Parse(&credential);
     EXPECT_FALSE(ret.has_value());
 }
-} // namespace base
+
+TEST_F(Fido2ApiUtilsTest, ParseTest_008)
+{
+    // Test with valid packed attestation but invalid authData
+    FIDO2_PublicKeyAttestationCredential credential;
+    const char* json_str = "{\"fmt\": \"packed\", \"attStmt\": {\"alg\": -7, \"sig\":"
+        " \"signature\", \"x5c\": [\"cert\"]}, \"authData\": \"invalid\"}";
+    uint8_t* json_data = reinterpret_cast<uint8_t*>(const_cast<char*>(json_str));
+    const size_t len = strlen(json_str);
+    Uint8Buff buffer = {static_cast<uint32_t>(len), json_data};
+    credential.response.attestationObject = buffer;
+    auto ret = Parse(&credential);
+    EXPECT_FALSE(ret.has_value());
+}
+
+TEST_F(Fido2ApiUtilsTest, ParseTest_009)
+{
+    // Test with non-packed format
+    FIDO2_PublicKeyAttestationCredential credential;
+    const char* json_str = "{\"fmt\": \"tpm\", \"attStmt\": {\"alg\": -7, \"sig\":"
+        " \"signature\", \"x5c\": [\"cert\"]}, \"authData\": \"invalid\"}";
+    uint8_t* json_data = reinterpret_cast<uint8_t*>(const_cast<char*>(json_str));
+    const size_t len = strlen(json_str);
+    Uint8Buff buffer = {static_cast<uint32_t>(len), json_data};
+    credential.response.attestationObject = buffer;
+    auto ret = Parse(&credential);
+    EXPECT_FALSE(ret.has_value());
+}
+
+TEST_F(Fido2ApiUtilsTest, ParseTest_010)
+{
+    // Test with empty x5c array
+    FIDO2_PublicKeyAttestationCredential credential;
+    const char* json_str = "{\"fmt\": \"packed\", \"attStmt\": {\"alg\": -7, \"sig\":"
+        " \"signature\", \"x5c\": []}, \"authData\": \"authData\"}";
+    uint8_t* json_data = reinterpret_cast<uint8_t*>(const_cast<char*>(json_str));
+    const size_t len = strlen(json_str);
+    Uint8Buff buffer = {static_cast<uint32_t>(len), json_data};
+    credential.response.attestationObject = buffer;
+    auto ret = Parse(&credential);
+    EXPECT_FALSE(ret.has_value());
+}
+
+TEST_F(Fido2ApiUtilsTest, BuildPackedAttestationStatementTest_006)
+{
+    // Test with multiple x5c certificates
+    base::Value::Dict att_stmt;
+    att_stmt.Set("alg", -257);
+    att_stmt.Set("sig", "signature123");
+    base::Value::List x5c_list;
+    x5c_list.Append("cert1");
+    x5c_list.Append("cert2");
+    x5c_list.Append("cert3");
+    att_stmt.Set("x5c", std::move(x5c_list));
+    auto ret = BuildPackedAttestationStatement(&att_stmt);
+    EXPECT_NE(ret, nullptr);
+}
+
+TEST_F(Fido2ApiUtilsTest, BuildPackedAttestationStatementTest_007)
+{
+    // Test with ES256 algorithm (-7)
+    base::Value::Dict att_stmt;
+    att_stmt.Set("alg", -7);
+    att_stmt.Set("sig", "es256_signature");
+    base::Value::List x5c_list;
+    x5c_list.Append("es256_cert");
+    att_stmt.Set("x5c", std::move(x5c_list));
+    auto ret = BuildPackedAttestationStatement(&att_stmt);
+    EXPECT_NE(ret, nullptr);
+}
+
+TEST_F(Fido2ApiUtilsTest, BuildPackedAttestationStatementTest_008)
+{
+    // Test with RS256 algorithm (-257)
+    base::Value::Dict att_stmt;
+    att_stmt.Set("alg", -257);
+    att_stmt.Set("sig", "rs256_signature");
+    base::Value::List x5c_list;
+    x5c_list.Append("rs256_cert");
+    att_stmt.Set("x5c", std::move(x5c_list));
+    auto ret = BuildPackedAttestationStatement(&att_stmt);
+    EXPECT_NE(ret, nullptr);
+}
+
+} // namespace device

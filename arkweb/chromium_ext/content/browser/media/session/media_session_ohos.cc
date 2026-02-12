@@ -81,6 +81,7 @@ void MediaSessionOHOS::Prepare(OHOS::NWeb::MediaAVSessionType type) {
     media_session_->RebuildAndNotifyMetadataChanged();
     media_session_->RebuildAndNotifyMediaPositionChanged();
     avsession_adapter_->SetRemoteCastEnabled(true);
+    NotifyCastControlShow(true);
   }
 }
 
@@ -382,6 +383,14 @@ void MediaSessionOHOS::UpdateUiPlayPosition(int64_t position) {
   media_session_->UpdateUiPlayPosition(position);
 }
 
+void MediaSessionOHOS::NotifyCastControlShow(bool is_show) {
+  if (!media_session_) {
+    LOG(ERROR) << "MediaSessionOHOS::NotifyCastControlShow, media_session_ is nullptr";
+    return;
+  }
+  media_session_->NotifyCastControlShow(is_show);
+}
+
 void MediaSessionOHOS::UpdateRemotePlayState(bool is_playing) {
   LOG(INFO) << "MediaSessionOHOS::UpdateRemotePlayState";
   if (avsession_adapter_) {
@@ -509,6 +518,15 @@ void OHOSMediaAVSessionCallback::UpdateUiPlayPosition(int64_t position) {
   task_runner_->PostTask(
       FROM_HERE, base::BindOnce(&MediaSessionOHOS::UpdateUiPlayPosition, media_session_ohos_,
                                 position));
+}
+
+void OHOSMediaAVSessionCallback::NotifyCastControlShow(bool is_show) {
+  if (!media_session_ohos_) {
+    return;
+  }
+  task_runner_->PostTask(
+      FROM_HERE, base::BindOnce(&MediaSessionOHOS::NotifyCastControlShow, media_session_ohos_,
+                                is_show));
 }
 
 void OHOSMediaAVSessionMetadata::SetTitle(const std::string& title) {

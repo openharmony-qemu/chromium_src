@@ -524,6 +524,10 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
               SendTouchpadFlingEvent,
               (const CefMouseEvent&, double, double),
               (override));
+  
+  MOCK_METHOD(void,
+              SendCancelFlingEvent, (const CefMouseEvent&),
+              (override));
 
   void SetFitContentMode(int mode) override {}
 
@@ -753,6 +757,11 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void RunJavaScriptInFrames(const std::string& jsString, FrameInfos rootFrame,
                              bool recursive, IsolatedWorld world,
                              CefRefPtr<CefJavaScriptResultCallback> callback) override {}
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  void GetAllFrameInfos(CefRefPtr<CefFrameInfosCallback> callback) override {}
+  void GetLastJavaScriptProxyCallingFrameInfo(
+      CefRefPtr<CefLastJavaScriptProxyCallingFrameInfoCallback> callback) override {}
+#endif
 #if BUILDFLAG(IS_ARKWEB)
   void EnableAppLinking(bool enable) override {}
   bool IsAppLinkingEnabled() const override { return false; }
@@ -1023,6 +1032,22 @@ TEST_F(NWebRenderHandlerTest, OnNativeEmbedGestureEvent) {
 
   g_nweb_render_handler->OnNativeEmbedGestureEvent(nullptr, touchEvent,
                                                    nullptr);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_SCREEN_OFFSET)
+TEST_F(NWebRenderHandlerTest, SetScreenOffset) {
+  ON_CALL(*mock_browser, GetHost()).WillByDefault(::testing::Return(mock_host));
+  double x = 20.0;
+  double y = 30.0;
+  g_nweb_render_handler->SetScreenOffset(x, y);
+}
+
+TEST_F(NWebRenderHandlerTest, GetScreenOffset) {
+  ON_CALL(*mock_browser, GetHost()).WillByDefault(::testing::Return(mock_host));
+  double x = 20.0;
+  double y = 30.0;
+  g_nweb_render_handler->GetScreenOffset(mock_browser, x, y);
 }
 #endif
 }  // namespace OHOS::NWeb

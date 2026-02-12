@@ -19,6 +19,10 @@
 #include "third_party/blink/public/common/switches.h"
 #include "ui/gfx/switches.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif  // BUILDFLAG(IS_ARKWEB_EXT)
+
 namespace content {
 
 std::vector<base::FeatureList::FeatureOverrideInfo>
@@ -180,6 +184,15 @@ GetSwitchDependentFeatureOverrides(const base::CommandLine& command_line) {
     if (command_line.HasSwitch(info.switch_name))
       overrides.emplace_back(std::make_pair(info.feature, info.override_state));
   }
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableNwebExHttpDnsFallback)) {
+    overrides.emplace_back(std::make_pair(
+        std::cref(network::features::kEnableNwebExHttpDnsFallback),
+        base::FeatureList::OVERRIDE_ENABLE_FEATURE));
+  }
+#endif
 
   return overrides;
 }

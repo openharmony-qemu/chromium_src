@@ -74,7 +74,7 @@ class VideoURLLoaderImpl final : public WebAssociatedURLLoader {
     return client;
   }
 
-  WebAssociatedURLLoaderClient* client_;
+  raw_ptr<WebAssociatedURLLoaderClient> client_;
   WebAssociatedURLLoaderOptions options_;
 
   // Converts ThreadableLoaderClient method calls into WebURLLoaderClient method

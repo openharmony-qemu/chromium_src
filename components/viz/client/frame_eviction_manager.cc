@@ -22,6 +22,9 @@
 
 #include "arkweb/build/features/features.h"
 #include "arkweb/chromium_ext/components/viz/client/frame_eviction_manager_ext.h"
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+#include "components/viz/common/viz_utils.h"
+#endif
 
 namespace viz {
 namespace {
@@ -107,6 +110,11 @@ void FrameEvictionManager::RegisterUnlockedFrame(
 }
 
 size_t FrameEvictionManager::GetMaxNumberOfSavedFrames() const {
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  if (IsEvictUnlockFrameEnabled()) {
+    return 0;
+  }
+#endif
   int percentage = 100;
   base::MemoryPressureMonitor* monitor = base::MemoryPressureMonitor::Get();
 
@@ -151,6 +159,13 @@ FrameEvictionManager::FrameEvictionManager()
   UPDATE_MAX_NUMBER_OF_FRAMES(max_number_of_saved_frames_);
 #endif
 
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  LOG(INFO) << "FrameEvictionManager::FrameEvictionManager, max_number_of_saved_frames_: "
+            << max_number_of_saved_frames_;
+  TRACE_EVENT1("viz", "FrameEvictionManager::FrameEvictionManager",
+               "max_number_of_saved_frames_", max_number_of_saved_frames_);
+#endif
+
   // For WebView, we may not have a default task runner.
   if (base::SingleThreadTaskRunner::HasCurrentDefault()) {
     base::trace_event::MemoryDumpManager::GetInstance()->RegisterDumpProvider(
@@ -169,6 +184,14 @@ void FrameEvictionManager::CullUnlockedFrames(size_t saved_frame_limit) {
          unlocked_frames_.size() + locked_frames_.size() > saved_frame_limit) {
     size_t old_size = unlocked_frames_.size();
     // Should remove self from list.
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+    LOG(INFO) << "FrameEvictionManager EvictCurrentFrame, unlocked_frames_: " << unlocked_frames_.size()
+              << ", locked_frames_: " << locked_frames_.size()
+              << ", saved_frame_limit: " << saved_frame_limit;
+    TRACE_EVENT2("viz", "frame EvictCurrentFrame",
+                 "unlocked_frames_", unlocked_frames_.size(),
+                 "locked_frames_", locked_frames_.size());
+#endif
     auto* frame = unlocked_frames_.back().first;
     frame->EvictCurrentFrame();
     if (unlocked_frames_.size() == old_size)

@@ -95,10 +95,21 @@ void LocalFrameUtil::SetTextZoomFactorsExt(LocalFrame* LocalFrameObj) {
 #if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
 void LocalFrame::OnOverScrollOffsetChanged(float offset_x, float offset_y) {
   if (!IsMainThread()) {
-    GetTaskRunner(TaskType::kInternalDefault)
-        ->PostTask(FROM_HERE,
-                   WTF::BindOnce(&LocalFrame::OnOverScrollOffsetChanged,
-                                 weak_local_frame_.GetSafeRef(), offset_x, offset_y));
+    if (!GetFrameScheduler()) {
+      LOG(ERROR) << "LocalFrame::OnOverScrollOffsetChanged GetFrameScheduler "
+                    "is nullptr";
+      return;
+    }
+    auto task_runner = GetTaskRunner(TaskType::kInternalDefault);
+    if (!task_runner) {
+      LOG(ERROR)
+          << "LocalFrame::OnOverScrollOffsetChanged GetTaskRunner is nullptr";
+      return;
+    }
+    task_runner->PostTask(
+        FROM_HERE,
+        WTF::BindOnce(&LocalFrame::OnOverScrollOffsetChanged,
+                      weak_local_frame_.GetSafeRef(), offset_x, offset_y));
   } else {
     GetLocalFrameHostRemote().OnOverScrollOffsetChanged(offset_x, offset_y);
   }
@@ -276,11 +287,12 @@ void LocalFrame::StartHighlightFadeTimer(base::TimeDelta delay) {
 }
 
 void LocalFrame::ClearHighlight() {
-  if (!GetTextFragmentHandler()) {
-    LOG(ERROR) << "LocalFrame::ClearHighlight failed, no handler.";
+  if (GetTextFragmentHandler() && GetSettings() &&
+      GetSettings()->GetArkwebAgentEnabled()) {
+    GetTextFragmentHandler()->RemoveFragments();
     return;
   }
-  GetTextFragmentHandler()->RemoveFragments();
+  LOG(ERROR) << "LocalFrame::ClearHighlight failed, no handler.";
 }
 #endif
 }  // namespace blink

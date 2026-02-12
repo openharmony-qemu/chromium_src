@@ -21,7 +21,7 @@
 #include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
-#include "content/public/browser/web_contents_observer.h"
+#include "content/public/browser/global_routing_id.h"
 #endif
 
 class GURL;
@@ -31,9 +31,6 @@ class WebContents;
 }
 
 namespace performance_manager {
-#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
-using AudioContextId = content::WebContentsObserver::AudioContextId;
-#endif
 class FrameNode;
 class PageNodeObserver;
 
@@ -310,8 +307,8 @@ class PageNodeObserver : public base::CheckedObserver {
 #if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
   virtual void OnIsMediaPlayingChanged(const PageNode* page_node) {}
   virtual void OnDecrementAudioNum(const PageNode* page_node) {}
-  virtual void OnAudioContextPlaybackStarted(const AudioContextId& audio_context_id) {}
-  virtual void OnAudioContextPlaybackStopped(const AudioContextId& audio_context_id) {}
+  virtual void OnAudioContextPlaybackStarted(content::GlobalRenderFrameHostId rfh_id, int audio_context_id) {}
+  virtual void OnAudioContextPlaybackStopped(content::GlobalRenderFrameHostId rfh_id, int audio_context_id) {}
 #endif
 
   // Invoked when the GetLoadingState property changes.
@@ -402,8 +399,8 @@ class PageNode::ObserverDefaultImpl : public PageNodeObserver {
   void OnIsMediaPlayingChanged(const PageNode* page_node) override {}
 
   void OnDecrementAudioNum(const PageNode* page_node) override {}
-  void OnAudioContextPlaybackStarted(const AudioContextId& audio_context_id) override {}
-  void OnAudioContextPlaybackStopped(const AudioContextId& audio_context_id) override {}
+  void OnAudioContextPlaybackStarted(content::GlobalRenderFrameHostId rfh_id, int audio_context_id) override {}
+  void OnAudioContextPlaybackStopped(content::GlobalRenderFrameHostId rfh_id, int audio_context_id) override {}
 #endif
   void OnIsAudibleChanged(const PageNode* page_node) override {}
   void OnHasPictureInPictureChanged(const PageNode* page_node) override {}

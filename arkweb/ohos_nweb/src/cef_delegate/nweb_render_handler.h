@@ -86,6 +86,7 @@ class NWebRenderHandler : public ArkWebRenderHandlerExt {
                                     const CefString& text,
                                     const CefRange& selected_range,
                                     const CefRange& compositon_range) override;
+  void EnableVirtualKeyboardRequestFocus(bool isNeedRequestFocus);
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 #if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
   void SetViewportAvoidHeight(int32_t viewportAvoidHeight);
@@ -348,6 +349,7 @@ class NWebRenderHandler : public ArkWebRenderHandlerExt {
   bool needFocusViewport_ = false;
   int32_t node_id_ = -1;
   bool noNeedKeyboardByInput_ = false;
+  bool virtualKeyboardRequestFocus_ = true;
 #endif
 #if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
   float scroll_offset_x_ = 0.0f;

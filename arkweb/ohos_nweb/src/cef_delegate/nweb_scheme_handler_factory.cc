@@ -176,14 +176,13 @@ CefRefPtr<CefResourceHandler> NWebSchemeHandlerFactory::Create(
       new ArkWeb_ResourceHandler(resource_request, this, web_tag, false);
   handler->on_request_start(handler, resource_request, resource_handler,
                             &intercept);
-
+  LOG(INFO) << "scheme_handler on_request_start intercept: " << intercept
+            << " webTag: " << web_tag;
   if (!intercept) {
-    LOG(INFO) << "scheme_handler not intercept the request.";
     delete resource_request;
     delete resource_handler;
     return nullptr;
   }
-  LOG(DEBUG) << "scheme_handler will intercept the request.";
   return resource_handler->pipe_resource_handler_;
 }
 

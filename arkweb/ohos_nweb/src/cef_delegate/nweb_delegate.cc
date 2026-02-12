@@ -61,6 +61,7 @@
 
 #if BUILDFLAG(ARKWEB_AI)
 #include "nweb_agent_manager_impl.h"
+#include "nweb_content_change_detection.h"
 #endif
 
 #if BUILDFLAG(ARKWEB_NAVIGATION)
@@ -669,6 +670,77 @@ class JavaScriptInFramesResultCallbackImpl : public CefJavaScriptResultCallback 
   uint32_t nweb_id_ = 0;
 
   IMPLEMENT_REFCOUNTING(JavaScriptInFramesResultCallbackImpl);
+};
+
+class FrameInfosCallbackImpl : public CefFrameInfosCallback {
+ public:
+  FrameInfosCallbackImpl(
+      OnReceiveFrameInfosCallback callback,
+      uint32_t nweb_id)
+      : callback_(callback),
+        nweb_id_(nweb_id){}
+  ~FrameInfosCallbackImpl() {}
+
+  NO_SANITIZE("cfi")
+  void OnFrameInfosCallback(GetFrameInfosParam value) override {
+    if (callback_ != nullptr) {
+      LOG(DEBUG) << "FrameInfosCallbackImpl OnFrameInfosCallback ";
+      nweb_ex::proto::GetFrameInfosParam pb_value;
+      NwebExtensionJavaScriptTypesUtils::ExtensionGetFrameInfosParamClassToPb(value, pb_value);
+      ArkWebPbBuffer pb_result_buffer = {};
+      bool ret = NWebBasicTypesUtils::AllocAndPopulateArkWebPbBuffer(pb_value, pb_result_buffer);
+      if (!ret) {
+        LOG(ERROR) << "failed to convert GetFrameInfosParam into pb buffer";
+        return;
+      }
+
+      callback_(nweb_id_, &pb_result_buffer);
+
+      NWebBasicTypesUtils::FreeArkWebPbBuffer(pb_result_buffer);
+    }
+  }
+
+ private:
+  OnReceiveFrameInfosCallback callback_ = nullptr;
+  uint32_t nweb_id_ = 0;
+
+  IMPLEMENT_REFCOUNTING(FrameInfosCallbackImpl);
+};
+
+class CefLastJavaScriptProxyCallingFrameInfoCallbackImpl
+    : public CefLastJavaScriptProxyCallingFrameInfoCallback {
+ public:
+  CefLastJavaScriptProxyCallingFrameInfoCallbackImpl(
+      OnLastJavaScriptProxyCallingFrameInfoCallback callback,
+      uint32_t nweb_id)
+      : callback_(callback),
+        nweb_id_(nweb_id){}
+  ~CefLastJavaScriptProxyCallingFrameInfoCallbackImpl() {}
+
+  NO_SANITIZE("cfi")
+  void OnLastFrameInfoCallback(FrameInfos value) override {
+    if (callback_ != nullptr) {
+      LOG(DEBUG) << "CefLastJavaScriptProxyCallingFrameInfoCallbackImpl OnLastFrameInfoCallback ";
+      nweb_ex::proto::FrameInfos pb_value;
+      NwebExtensionJavaScriptTypesUtils::ExtensionFrameInfosClassToPb(value, pb_value);
+      ArkWebPbBuffer pb_result_buffer = {};
+      bool ret = NWebBasicTypesUtils::AllocAndPopulateArkWebPbBuffer(pb_value, pb_result_buffer);
+      if (!ret) {
+        LOG(ERROR) << "failed to convert FrameInfos into pb buffer";
+        return;
+      }
+
+      callback_(nweb_id_, &pb_result_buffer);
+
+      NWebBasicTypesUtils::FreeArkWebPbBuffer(pb_result_buffer);
+    }
+  }
+
+ private:
+  OnLastJavaScriptProxyCallingFrameInfoCallback callback_ = nullptr;
+  uint32_t nweb_id_ = 0;
+
+  IMPLEMENT_REFCOUNTING(CefLastJavaScriptProxyCallingFrameInfoCallbackImpl);
 };
 #endif
 
@@ -3756,6 +3828,14 @@ void NWebDelegate::WebSendTouchpadFlingEvent(
   }
 }
 
+void NWebDelegate::WebSendCancelFlingEvent() {
+  if (event_handler_ != nullptr) {
+    event_handler_->WebSendCancelFlingEvent();
+  } else {
+    LOG(ERROR) << "WebSendCancelFlingEvent event_handler_ is nullptr";
+  }
+}
+
 bool NWebDelegate::SendKeyboardEvent(
     const std::shared_ptr<OHOS::NWeb::NWebKeyboardEvent>& keyboardEvent) {
   bool retVal = false;
@@ -6396,6 +6476,43 @@ void NWebDelegate::RunJavaScriptInFrames(RunJavaScriptParam param,,
                                                    param.recursive, param.world.value(), JsResultCb);
   }
 }
+
+void NWebDelegate::GetAllFrameInfos(OnReceiveFrameInfosCallback callback) {
+  if (!CEF_CURRENTLY_ON_UIT()) {
+    CEF_POST_TASK(
+        CEF_UIT,
+        base::BindOnce((void(NWebDelegate::*)(
+                           OnReceiveFrameInfosCallback)) &
+                           NWebDelegate::GetAllFrameInfos,
+                       weak_factory_.GetWeakPtr(), callback));
+    return;
+  }
+
+  if (GetBrowser().get()) {
+    CefRefPtr<FrameInfosCallbackImpl> JsResultCb =
+        new FrameInfosCallbackImpl(callback, nweb_id_);
+    GetBrowser()->GetHost()->GetAllFrameInfos(JsResultCb);
+  }
+}
+
+void NWebDelegate::GetLastJavaScriptProxyCallingFrameInfo(
+    OnLastJavaScriptProxyCallingFrameInfoCallback callback) {
+  if (!CEF_CURRENTLY_ON_UIT()) {
+    CEF_POST_TASK(
+        CEF_UIT,
+        base::BindOnce((void(NWebDelegate::*)(
+                           OnLastJavaScriptProxyCallingFrameInfoCallback)) &
+                           NWebDelegate::GetLastJavaScriptProxyCallingFrameInfo,
+                       weak_factory_.GetWeakPtr(), callback));
+    return;
+  }
+
+  if (GetBrowser().get()) {
+    CefRefPtr<CefLastJavaScriptProxyCallingFrameInfoCallbackImpl> JsResultCb =
+        new CefLastJavaScriptProxyCallingFrameInfoCallbackImpl(callback, nweb_id_);
+    GetBrowser()->GetHost()->GetLastJavaScriptProxyCallingFrameInfo(JsResultCb);
+  }
+}
 #endif
 
 #if BUILDFLAG(ARKWEB_READER_MODE)
@@ -6438,6 +6555,15 @@ void NWebDelegate::AbortDistill() {
 #endif // ARKWEB_READER_MODE
 
 #if BUILDFLAG(ARKWEB_AI)
+void NWebDelegate::RegisterOnLoadStartedCbForContentChange(
+    std::function<void(void)>&& callback) {
+  if (handler_delegate_) {
+    handler_delegate_->RegisterOnLoadStartedCbForContentChange(std::move(callback));
+  } else {
+    LOG(ERROR) << "RegisterOnLoadStartedCbForContentChange, handler_delegate_ is nullptr"; 
+  }
+}
+
 void NWebDelegate::RegisterOnLoadStartedCbForHighlightContent(
     std::function<void(void)>&& callback) {
   if (handler_delegate_) {
@@ -6478,6 +6604,167 @@ void NWebDelegate::EnableHttpsUpgrades(bool enable) {
     return;
   }
   GetBrowser()->GetHost()->EnableHttpsUpgrades(enable);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+std::map<std::string, std::string> NWebDelegate::ResourceRequestGetRequestHeader(int nweb_request_key) {
+  if (!handler_delegate_) {
+    LOG(ERROR)
+        << "failed to ResourceRequestGetRequestHeader, handler delegate is null";
+    return {};
+  }
+  return handler_delegate_->ResourceRequestGetRequestHeader(nweb_request_key);
+}
+ 
+std::string NWebDelegate::ResourceRequestGetRequestUrl(int nweb_request_key) {
+  if (!handler_delegate_) {
+    LOG(ERROR)
+        << "failed to ResourceRequestGetRequestUrl, handler delegate is null";
+    return std::string();
+  }
+  return handler_delegate_->ResourceRequestGetRequestUrl(nweb_request_key);
+}
+ 
+bool NWebDelegate::ResourceRequestIsRequestGesture(int nweb_request_key) {
+  if (!handler_delegate_) {
+    LOG(ERROR)
+        << "failed to ResourceRequestIsRequestGesture, handler delegate is null";
+    return false;
+  }
+  return handler_delegate_->ResourceRequestIsRequestGesture(nweb_request_key);
+}
+ 
+bool NWebDelegate::ResourceRequestIsMainFrame(int nweb_request_key) {
+  if (!handler_delegate_) {
+    LOG(ERROR)
+        << "failed to ResourceRequestIsMainFrame, handler delegate is null";
+    return false;
+  }
+  return handler_delegate_->ResourceRequestIsMainFrame(nweb_request_key);  
+}
+ 
+bool NWebDelegate::ResourceRequestIsRedirect(int nweb_request_key) {
+  if (!handler_delegate_) {
+    LOG(ERROR)
+        << "failed to ResourceRequestIsRedirect, handler delegate is null";
+    return false;
+  }
+  return handler_delegate_->ResourceRequestIsRedirect(nweb_request_key);
+}
+ 
+std::string NWebDelegate::ResourceRequestGetRequestMethod(int nweb_request_key) {
+  if (!handler_delegate_) {
+    LOG(ERROR)
+        << "failed to ResourceRequestGetRequestMethod, handler delegate is null";
+    return std::string();
+  }
+  return handler_delegate_->ResourceRequestGetRequestMethod(nweb_request_key);
+}
+ 
+int32_t NWebDelegate::ResourceRequestGetPageTransition(int nweb_request_key) {
+  if (!handler_delegate_) {
+    LOG(ERROR)
+        << "failed to ResourceRequestGetPageTransition, handler delegate is null";
+    return -1;
+  }
+  return handler_delegate_->ResourceRequestGetPageTransition(nweb_request_key);
+}
+ 
+int32_t NWebDelegate::ResourceRequestGetRequestType(int nweb_request_key) {
+  if (!handler_delegate_) {
+    LOG(ERROR)
+        << "failed to ResourceRequestGetRequestType, handler delegate is null";
+    return -1;
+  }
+  return handler_delegate_->ResourceRequestGetRequestType(nweb_request_key);
+}
+ 
+ 
+std::string NWebDelegate::ResourceResponseGetMimeType(int nweb_response_key) {
+  if (!handler_delegate_) {
+    LOG(ERROR)
+        << "failed to ResourceResponseGetMimeType, handler delegate is null";
+    return std::string();
+  }
+  return handler_delegate_->ResourceResponseGetMimeType(nweb_response_key);
+}
+ 
+std::string NWebDelegate::ResourceResponseGetEncoding(int nweb_response_key) {
+  if (!handler_delegate_) {
+    LOG(ERROR)
+        << "failed to ResourceResponseGetEncoding, handler delegate is null";
+    return std::string();
+  }
+  return handler_delegate_->ResourceResponseGetEncoding(nweb_response_key);
+}
+ 
+int32_t NWebDelegate::ResourceResponseGetStatusCode(int nweb_response_key) {
+  if (!handler_delegate_) {
+    LOG(ERROR)
+        << "failed to ResourceResponseGetStatusCode, handler delegate is null";
+    return -1;
+  }
+  return handler_delegate_->ResourceResponseGetStatusCode(nweb_response_key);
+}
+ 
+std::string NWebDelegate::ResourceResponseGetReasonPhrase(int nweb_response_key) {
+  if (!handler_delegate_) {
+    LOG(ERROR)
+        << "failed to ResourceResponseGetReasonPhrase, handler delegate is null";
+    return std::string();
+  }
+  return handler_delegate_->ResourceResponseGetReasonPhrase(nweb_response_key);
+}
+ 
+std::map<std::string, std::string> NWebDelegate::ResourceResponseGetResponseHeader(int nweb_request_key) {
+  if (!handler_delegate_) {
+    LOG(ERROR)
+        << "failed to ResourceResponseGetResponseHeader, handler delegate is null";
+    return {};
+  }
+  return handler_delegate_->ResourceResponseGetResponseHeader(nweb_request_key);
+}
+ 
+bool NWebDelegate::ResourceResponseGetIsFromNetwork(int nweb_response_key) {
+  if (!handler_delegate_) {
+    LOG(ERROR)
+        << "failed to ResourceResponseGetIsFromNetwork, handler delegate is null";
+    return false;
+  }
+  return handler_delegate_->ResourceResponseGetIsFromNetwork(nweb_response_key);
+}
+ 
+void NWebDelegate::ResourceRequestDelete(int nweb_request_key) {
+  if (!handler_delegate_) {
+    LOG(ERROR)
+        << "failed to ResourceRequestDelete, handler delegate is null";
+    return;
+  }
+  return handler_delegate_->ResourceRequestDelete(nweb_request_key);
+}
+ 
+void NWebDelegate::ResourceResponseDelete(int nweb_response_key) {
+  if (!handler_delegate_) {
+    LOG(ERROR)
+        << "failed to ResourceResponseDelete, handler delegate is null";
+    return;
+  }
+  return handler_delegate_->ResourceResponseDelete(nweb_response_key);
+}
+ 
+int32_t NWebDelegate::GetLastCommittedEntryPageTransition() {
+  if (!handler_delegate_) {
+    LOG(ERROR)
+        << "failed to GetLastCommittedEntryPageTransition, handler delegate is null";
+    return -1;
+  }
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "GetLastCommittedEntryPageTransition can not get browser";
+    return -1;
+  }
+  LOG(INFO) << "NWebDelegate::GetLastCommittedEntryPageTransition";
+  return GetBrowser()->GetHost()->GetLastCommittedEntryPageTransition();
 }
 #endif
 
@@ -6549,13 +6836,18 @@ void UpdateBlinkBrandLists(const std::vector<std::string>& brand,
     return;
   }
   size_t len = brand.size();
-  brand_version_list.clear();
-  brand_full_version_list.clear();
-  brand_version_list.reserve(len);
-  brand_full_version_list.reserve(len);
+  blink::UserAgentBrandList tmp_brand_version_list;
+  blink::UserAgentBrandList tmp_brand_full_version_list;
   for (size_t i = 0; i < len; ++i) {
-    brand_version_list.emplace_back(brand[i], major_version[i]);
-    brand_full_version_list.emplace_back(brand[i], full_version[i]);
+    if (brand[i].empty() || major_version[i].empty() || full_version[i].empty()) {
+      continue;
+    }
+    tmp_brand_version_list.emplace_back(brand[i], major_version[i]);
+    tmp_brand_full_version_list.emplace_back(brand[i], full_version[i]);
+  }
+  if (!(tmp_brand_version_list.empty() || tmp_brand_full_version_list.empty())) {
+    brand_version_list = tmp_brand_version_list;
+    brand_full_version_list = tmp_brand_full_version_list;
   }
 }
 

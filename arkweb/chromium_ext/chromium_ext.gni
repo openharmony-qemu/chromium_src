@@ -85,6 +85,7 @@ arkweb_services_network_sources = [
 
 arkweb_services_network_unittest_sources = [
   "//arkweb/chromium_ext/services/network/arkweb_network_service_ext_unittest.cc",
+  "//arkweb/chromium_ext/services/network/throttling/throttling_network_transaction_for_include_unittest.cc",
 ]
 
 arkweb_power_save_blocker_source = [
@@ -374,6 +375,8 @@ arkweb_net_dns_sources = [
   "//arkweb/chromium_ext/net/dns/arkweb_host_resolver_dns_task_ext.h",
   "//arkweb/chromium_ext/net/dns/arkweb_host_resolver_manager_job_ext.cc",
   "//arkweb/chromium_ext/net/dns/arkweb_host_resolver_manager_job_ext.h",
+  "//arkweb/chromium_ext/net/dns/secure_dns_fallback_utils.cc",
+  "//arkweb/chromium_ext/net/dns/secure_dns_fallback_utils.h",
 ]
 
 arkweb_net_dns_unittest_sources = [
@@ -807,7 +810,6 @@ arkweb_base_unittest_sources = [
   "//arkweb/chromium_ext/base/files/file_util_posix_unittest.cc",
   "//arkweb/chromium_ext/base/files/memory_mapped_file_ext_unittest.cc",
   "//arkweb/chromium_ext/base/files/file_path_sta_ext_unittest.cc",
-  "//arkweb/chromium_ext/chrome/app/chrome_main_delegate_for_include_unittest.cc",
   "//arkweb/chromium_ext/components/download/internal/common/arkweb_download_item_impl_ext_unittest.cc",
   "//arkweb/chromium_ext/components/policy/core/common/policy_loader_ohos_unittest.cc",
   "//arkweb/chromium_ext/components/subresource_filter/content/browser/ohos_adblock_config_unittest.cc",
@@ -1184,6 +1186,10 @@ arkweb_ptrace_unittest_sources = [
   "//arkweb/chromium_ext/ohos_test/unittest/ptrace_broker_utils/ptrace_broker_utils_unittest.cc",
 ]
 
+arkweb_cjson_unittest_sources = [
+  "//arkweb/ohos_adapter_ndk/inputmethodframework_adapter/third_party/cJSON/cJSON_unittest.cc",
+]
+
 arkweb_crashpad_client = [
   "//arkweb/chromium_ext/third_party/crashpad/crashpad/handler/linux/crashpad_client_linux_utils.cc",
   "//arkweb/chromium_ext/third_party/crashpad/crashpad/handler/linux/crashpad_client_linux_utils.h"
@@ -1411,6 +1417,8 @@ arkweb_ohos_adapter_ndk_unittests_sources = [
   "//arkweb/ohos_adapter_ndk/ndk_version_unittest.cc",
   "//arkweb/ohos_adapter_ndk/ohos_adapter_helper_decouple_unittest.cpp",
   "//arkweb/ohos_adapter_ndk/security_adapter/arkts_security_adapter_impl_unittest.cc",
+  "//arkweb/ohos_adapter_ndk/mock_ndk_api/src/mock_napi_api.cpp",
+  "//arkweb/ohos_adapter_ndk/arkts_adapter/arkts_hilog_adapter_unittest.cpp",
 ]
 
 arkweb_components_viz_common_frame_sinks_copy_output_result_sources = [

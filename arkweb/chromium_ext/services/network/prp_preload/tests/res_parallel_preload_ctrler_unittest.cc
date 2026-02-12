@@ -244,7 +244,7 @@ TEST_F(ResParallelPreloadCtrlerTest, SetPRPPReqLoaderFacTest01) {
     net::NetworkAnonymizationKey key;
     PRPPCtrlerTimeoutCB timeout_cb = base::DoNothing();
     ResParallelPreloadCtrler ctrler(url, key, nullptr, timeout_cb);
-    ctrler.SetPRPPReqLoaderFac(nullptr);
+    ctrler.SetPRPPReqLoaderFac(nullptr, false);
     EXPECT_EQ(ctrler.url_, url);
   }
   {
@@ -253,7 +253,7 @@ TEST_F(ResParallelPreloadCtrlerTest, SetPRPPReqLoaderFacTest01) {
     PRPPCtrlerTimeoutCB timeout_cb = base::DoNothing();
     auto task_runner = base::SingleThreadTaskRunner::GetCurrentDefault();
     ResParallelPreloadCtrler ctrler(url, key, task_runner.get(), timeout_cb);
-    ctrler.SetPRPPReqLoaderFac(nullptr);
+    ctrler.SetPRPPReqLoaderFac(nullptr, false);
     EXPECT_EQ(ctrler.res_preload_scheduler_, nullptr);
     base::RunLoop().RunUntilIdle();
   }
@@ -277,7 +277,7 @@ TEST_F(ResParallelPreloadCtrlerTest, SetPRPPReqLoaderFacTest02) {
       PRPPRequestLoaderFactory::CreatePRPPRequestLoaderFactory(
           "page", url_request_context->GetWeakPtr());
   EXPECT_EQ(ctrler.res_preload_scheduler_->loader_fac_weak_, nullptr);
-  ctrler.SetPRPPReqLoaderFac(factory->GetWeak());
+  ctrler.SetPRPPReqLoaderFac(factory->GetWeak(), (factory->GetWeak().get() != nullptr));
   base::RunLoop().RunUntilIdle();
   EXPECT_NE(ctrler.res_preload_scheduler_->loader_fac_weak_, nullptr);
 }

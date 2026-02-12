@@ -328,9 +328,9 @@ TEST(BackgroundTaskPolicyTEST, OnIsAudibleChanged004) {
     background_task_policy->audio_state_num_ = 1;
     page_node_mock.SetIsAudible(false);
 
-    content::RenderFrameHost* mock_rfh = reinterpret_cast<content::RenderFrameHost*>(0x1234); // 0x1234 test case
-    background_task_policy->audio_context_players_num_.insert(std::make_pair(mock_rfh, 1));
-    background_task_policy->audio_context_players_num_.insert(std::make_pair(mock_rfh, 2)); // test case 2
+    content::GlobalRenderFrameHostId valid_id = content::GlobalRenderFrameHostId(1, 1);
+    background_task_policy->audio_context_players_num_.insert(std::make_pair(valid_id, 1));
+    background_task_policy->audio_context_players_num_.insert(std::make_pair(valid_id, 2)); // test case 2
 
     EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), 2); // test case 2
 
@@ -343,9 +343,9 @@ TEST(BackgroundTaskPolicyTEST, OnIsAudibleChanged004) {
 TEST(BackgroundTaskPolicyTEST, OnIsAudibleChanged005) {
     auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
 
-    content::RenderFrameHost* mock_rfh = reinterpret_cast<content::RenderFrameHost*>(0x1234); // 0x1234 test case
-    background_task_policy->audio_context_players_num_.insert(std::make_pair(mock_rfh, 1));
-    background_task_policy->audio_context_players_num_.insert(std::make_pair(mock_rfh, 2)); // test case 2
+    content::GlobalRenderFrameHostId valid_id = content::GlobalRenderFrameHostId(1, 1);
+    background_task_policy->audio_context_players_num_.insert(std::make_pair(valid_id, 1));
+    background_task_policy->audio_context_players_num_.insert(std::make_pair(valid_id, 2)); // test case 2
 
     size_t initial_size = background_task_policy->audio_context_players_num_.size();
     EXPECT_EQ(initial_size, 2);  // test case 2
@@ -514,41 +514,38 @@ TEST(BackgroundTaskPolicyTEST, SetBrowserBackground004) {
 TEST(BackgroundTaskPolicyTEST, OnAudioContextPlaybackStarted001) {
     auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
     size_t initial_size = background_task_policy->audio_context_players_num_.size();
-    AudioContextId empty_id = std::make_pair(nullptr, 0);
-    background_task_policy->OnAudioContextPlaybackStarted(empty_id);
+    content::GlobalRenderFrameHostId empty_id = content::GlobalRenderFrameHostId();
+    background_task_policy->OnAudioContextPlaybackStarted(empty_id, 0);
     EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), initial_size + 1);
 }
 
 TEST(BackgroundTaskPolicyTEST, OnAudioContextPlaybackStarted002) {
     auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    content::RenderFrameHost* mock_rfh = reinterpret_cast<content::RenderFrameHost*>(0x1234); // 0x1234 test case
-    AudioContextId valid_id = std::make_pair(mock_rfh, 1);
-    AudioContextId valid_id2 = std::make_pair(mock_rfh, 2); // test case 2
-
-    background_task_policy->OnAudioContextPlaybackStarted(valid_id);
+    content::GlobalRenderFrameHostId valid_id = content::GlobalRenderFrameHostId(1, 1);
+    content::GlobalRenderFrameHostId valid_id2 = content::GlobalRenderFrameHostId(2, 2);
+    background_task_policy->OnAudioContextPlaybackStarted(valid_id, 1);
     EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), 1);
 
-    background_task_policy->OnAudioContextPlaybackStarted(valid_id2);
-    EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), 2); // test case 2
+    background_task_policy->OnAudioContextPlaybackStarted(valid_id2, 2);
+    EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), 2);
 }
 
 TEST(BackgroundTaskPolicyTEST, OnAudioContextPlaybackStopped001) {
     auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
     size_t initial_size = background_task_policy->audio_context_players_num_.size();
-    AudioContextId empty_id = std::make_pair(nullptr, 0);
-    background_task_policy->OnAudioContextPlaybackStopped(empty_id);
+     content::GlobalRenderFrameHostId empty_id = content::GlobalRenderFrameHostId();
+    background_task_policy->OnAudioContextPlaybackStopped(empty_id, 0);
     EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), initial_size);
 }
 
 TEST(BackgroundTaskPolicyTEST, OnAudioContextPlaybackStopped002) {
     auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    content::RenderFrameHost* mock_rfh = reinterpret_cast<content::RenderFrameHost*>(0x1234); // 0x1234 test case
-    AudioContextId valid_id = std::make_pair(mock_rfh, 1);
+    content::GlobalRenderFrameHostId valid_id = content::GlobalRenderFrameHostId(1, 1);
 
-    background_task_policy->OnAudioContextPlaybackStarted(valid_id);
+    background_task_policy->OnAudioContextPlaybackStarted(valid_id, 1);
     EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), 1);
 
-    background_task_policy->OnAudioContextPlaybackStopped(valid_id);
+    background_task_policy->OnAudioContextPlaybackStopped(valid_id, 1);
     EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), 0);
 }
 
@@ -561,9 +558,9 @@ TEST(BackgroundTaskPolicyTEST, IsWebAudioRequestBackgroundRunning001) {
 TEST(BackgroundTaskPolicyTEST, IsWebAudioRequestBackgroundRunning002) {
     auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
     background_task_policy->audio_state_num_ = 2; // test case 2
-    content::RenderFrameHost* mock_rfh = reinterpret_cast<content::RenderFrameHost*>(0x1234); // 0x1234 test case
-    background_task_policy->OnAudioContextPlaybackStarted(std::make_pair(mock_rfh, 1));
-    background_task_policy->OnAudioContextPlaybackStarted(std::make_pair(mock_rfh, 2)); // test case 2
+    content::GlobalRenderFrameHostId valid_id = content::GlobalRenderFrameHostId(1, 1);
+    background_task_policy->OnAudioContextPlaybackStarted(valid_id, 1);
+    background_task_policy->OnAudioContextPlaybackStarted(valid_id, 2); // test case 2
 
     bool result = background_task_policy->IsWebAudioRequestBackgroundRunning();
     EXPECT_TRUE(result);
@@ -572,8 +569,8 @@ TEST(BackgroundTaskPolicyTEST, IsWebAudioRequestBackgroundRunning002) {
 TEST(BackgroundTaskPolicyTEST, IsWebAudioRequestBackgroundRunning003) {
     auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
     background_task_policy->audio_state_num_ = 3;
-    content::RenderFrameHost* mock_rfh = reinterpret_cast<content::RenderFrameHost*>(0x1234); // 0x1234 test case
-    background_task_policy->OnAudioContextPlaybackStarted(std::make_pair(mock_rfh, 1));
+    content::GlobalRenderFrameHostId valid_id = content::GlobalRenderFrameHostId(1, 1);
+    background_task_policy->OnAudioContextPlaybackStarted(valid_id, 1);
 
     bool result = background_task_policy->IsWebAudioRequestBackgroundRunning();
     EXPECT_TRUE(result);
@@ -590,8 +587,8 @@ TEST(BackgroundTaskPolicyTEST, ProcessAudioContextPlayers002) {
     auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
     PageNodeMock page_node_mock;
     background_task_policy->audio_state_num_ = 0;
-    background_task_policy->audio_context_players_num_.insert(
-        std::make_pair(reinterpret_cast<content::RenderFrameHost*>(0x1234), 1)); // 0x1234 test case
+    content::GlobalRenderFrameHostId valid_id = content::GlobalRenderFrameHostId(1, 1);
+    background_task_policy->audio_context_players_num_.insert(std::make_pair(valid_id, 1));
     EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), 1);
     background_task_policy->ProcessAudioContextPlayersOnUIThread(&page_node_mock);
     EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), 0);
@@ -611,9 +608,9 @@ TEST(BackgroundTaskPolicyTEST, ProcessAudioContextPlayers004) {
     auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
     PageNodeMock page_node_mock;
     background_task_policy->audio_state_num_ = 2; // test case 2
-    content::RenderFrameHost* mock_rfh = reinterpret_cast<content::RenderFrameHost*>(0x1234); // 0x1234 test case
-    background_task_policy->audio_context_players_num_.insert(std::make_pair(mock_rfh, 1));
-    background_task_policy->audio_context_players_num_.insert(std::make_pair(mock_rfh, 2)); // test case 2
+    content::GlobalRenderFrameHostId valid_id = content::GlobalRenderFrameHostId(1, 1);
+    background_task_policy->audio_context_players_num_.insert(std::make_pair(valid_id, 1));
+    background_task_policy->audio_context_players_num_.insert(std::make_pair(valid_id, 2)); // test case 2
 
     size_t initial_size = background_task_policy->audio_context_players_num_.size();
     background_task_policy->ProcessAudioContextPlayers(&page_node_mock);
@@ -631,8 +628,9 @@ TEST(BackgroundTaskPolicyTEST, ProcessAudioContextPlayersOnUIThread002) {
     auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
     PageNodeMock page_node_mock;
     background_task_policy->audio_state_num_ = 0;
+    content::GlobalRenderFrameHostId valid_id = content::GlobalRenderFrameHostId(1, 1);
     background_task_policy->audio_context_players_num_.insert(
-        std::make_pair(reinterpret_cast<content::RenderFrameHost*>(0x1234), 1)); // 0x1234 test case
+        std::make_pair(valid_id, 1));
 
     background_task_policy->ProcessAudioContextPlayersOnUIThread(&page_node_mock);
     EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), 0);
@@ -650,7 +648,8 @@ TEST(BackgroundTaskPolicyTEST, ProcessAudioContextPlayersOnUIThread003) {
 
 TEST(BackgroundTaskPolicyTEST, GetWebAudioStartBackgroundTask001) {
     auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    background_task_policy->audio_context_players_num_.insert(std::make_pair(nullptr, 1));
+    content::GlobalRenderFrameHostId valid_id = content::GlobalRenderFrameHostId(1, 1);
+    background_task_policy->audio_context_players_num_.insert(std::make_pair(valid_id, 1));
     EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), 1);
     bool result = background_task_policy->GetWebAudioStartBackgroundTaskOnUIThread();
     EXPECT_TRUE(result == true || result == false);
@@ -664,7 +663,8 @@ TEST(BackgroundTaskPolicyTEST, GetWebAudioStartBackgroundTaskOnUIThread001) {
 
 TEST(BackgroundTaskPolicyTEST, GetWebAudioStartBackgroundTaskOnUIThread002) {
     auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    background_task_policy->audio_context_players_num_.insert(std::make_pair(nullptr, 1));
+    content::GlobalRenderFrameHostId valid_id = content::GlobalRenderFrameHostId(1, 1);
+    background_task_policy->audio_context_players_num_.insert(std::make_pair(valid_id, 1));
 
     bool result = background_task_policy->GetWebAudioStartBackgroundTaskOnUIThread();
     EXPECT_FALSE(result);
@@ -672,10 +672,10 @@ TEST(BackgroundTaskPolicyTEST, GetWebAudioStartBackgroundTaskOnUIThread002) {
 
 TEST(BackgroundTaskPolicyTEST, AudioContextPlayersBoundary001) {
     auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    content::RenderFrameHost* mock_rfh = reinterpret_cast<content::RenderFrameHost*>(0x1234); // 0x1234 test case
+    content::GlobalRenderFrameHostId valid_id = content::GlobalRenderFrameHostId(1, 1);
 
     for (int i = 0; i < 10; ++i) { // 10 test case
-        background_task_policy->OnAudioContextPlaybackStarted(std::make_pair(mock_rfh, i));
+        background_task_policy->OnAudioContextPlaybackStarted(valid_id, i);
     }
     EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), 10); // test case 10
 
@@ -686,11 +686,10 @@ TEST(BackgroundTaskPolicyTEST, AudioContextPlayersBoundary001) {
 
 TEST(BackgroundTaskPolicyTEST, AudioContextPlayersBoundary002) {
     auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    content::RenderFrameHost* mock_rfh = reinterpret_cast<content::RenderFrameHost*>(0x1234); // test case 0x1234
-    AudioContextId same_id = std::make_pair(mock_rfh, 1);
+    content::GlobalRenderFrameHostId same_id = content::GlobalRenderFrameHostId(1, 1);
 
-    background_task_policy->OnAudioContextPlaybackStarted(same_id);
-    background_task_policy->OnAudioContextPlaybackStarted(same_id);
+    background_task_policy->OnAudioContextPlaybackStarted(same_id, 1);
+    background_task_policy->OnAudioContextPlaybackStarted(same_id, 1);
 
     EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), 1);
 
@@ -701,8 +700,8 @@ TEST(BackgroundTaskPolicyTEST, AudioContextPlayersBoundary002) {
 
 TEST(BackgroundTaskPolicyTEST, Destructor002) {
     auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    content::RenderFrameHost* mock_rfh = reinterpret_cast<content::RenderFrameHost*>(0x1234); // test case 0x1234
-    background_task_policy->OnAudioContextPlaybackStarted(std::make_pair(mock_rfh, 1));
+    content::GlobalRenderFrameHostId valid_id = content::GlobalRenderFrameHostId(1, 1);
+    background_task_policy->OnAudioContextPlaybackStarted(valid_id, 1);
 
     EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), 1);
 

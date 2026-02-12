@@ -148,6 +148,7 @@ constexpr char MAILBOX_NONEXISTENT[] = "MAILBOX_NONEXISTENT";
 // For render freeze monitoring
 constexpr char PROCESS_FREEZE_WARNING[] = "PROCESS_FREEZE_WARNING";
 
+constexpr char RENDER_PROCESS_TERMINATE[] = "RENDER_PROCESS_TERMINATE";
 }  // namespace
 
 void ReportRenderJsFreeze(int32_t pid, const std::string& packageName, const std::string& processName,
@@ -162,6 +163,17 @@ void ReportRenderJsFreeze(int32_t pid, const std::string& packageName, const std
         "UID", uid
       });
 }                         
+
+void ReportRenderProcessTerminate(bool is_gpu, int32_t pid, const std::string& reason, int32_t error) {
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      RENDER_PROCESS_TERMINATE, HiSysEventAdapter::EventType::FAULT,
+      {
+        "PROCESS_TYPE", is_gpu ? std::string("gpu") : std::string("render"),
+        "PID", std::to_string(pid),
+        "REASON", reason,
+        "ERROR", std::to_string(error)
+      });
+}
 
 void ReportPageLoadStats(int instanceId,
                          int accessSumCount,

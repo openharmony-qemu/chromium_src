@@ -290,6 +290,8 @@ class NWebDelegateInterface
   virtual std::shared_ptr<NWebPreference> GetPreference() const = 0;
 #if BUILDFLAG(ARKWEB_AI)
   virtual std::shared_ptr<NWebAgentManager> GetAgentManager() const = 0;
+  virtual void RegisterOnLoadStartedCbForContentChange(
+      std::function<void(void)>&& callback) = 0;
 #endif
   virtual std::string Title() = 0;
   virtual std::shared_ptr<HitTestResult> GetHitTestResult() const = 0;
@@ -619,6 +621,7 @@ class NWebDelegateInterface
       double vx,
       double vy,
       const std::vector<int32_t>& pressedCodes) = 0;
+  virtual void WebSendCancelFlingEvent() = 0;
 #endif
 
 #if BUILDFLAG(ARKWEB_SAFEBROWSING)
@@ -949,6 +952,9 @@ class NWebDelegateInterface
 #if BUILDFLAG(ARKWEB_NWEB_EX)
   virtual void RunJavaScriptInFrames(RunJavaScriptParam param,
                                      OnReceiveValueCallback callback) = 0;
+  virtual void GetAllFrameInfos(OnReceiveFrameInfosCallback callback) = 0;
+  virtual void GetLastJavaScriptProxyCallingFrameInfo(
+      OnLastJavaScriptProxyCallingFrameInfoCallback callback) = 0;
 #endif
 
 #if BUILDFLAG(ARKWEB_READER_MODE)
@@ -971,6 +977,27 @@ class NWebDelegateInterface
 
 #if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
   virtual void EnableHttpsUpgrades(bool enable) = 0;
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+  virtual std::map<std::string, std::string> ResourceRequestGetRequestHeader(int nweb_request_key) = 0;
+  virtual std::string ResourceRequestGetRequestUrl(int nweb_request_key) = 0;
+  virtual bool ResourceRequestIsRequestGesture(int nweb_request_key) = 0;
+  virtual bool ResourceRequestIsMainFrame(int nweb_request_key) = 0;
+  virtual bool ResourceRequestIsRedirect(int nweb_request_key) = 0;
+  virtual std::string ResourceRequestGetRequestMethod(int nweb_request_key) = 0;
+  virtual int32_t ResourceRequestGetPageTransition(int nweb_request_key) = 0;
+  virtual int32_t ResourceRequestGetRequestType(int nweb_request_key) = 0;
+  virtual void ResourceRequestDelete(int nweb_request_key) = 0;
+ 
+  virtual std::string ResourceResponseGetMimeType(int nweb_response_key) = 0;
+  virtual std::string ResourceResponseGetEncoding(int nweb_response_key) = 0;
+  virtual int32_t ResourceResponseGetStatusCode(int nweb_response_key) = 0;
+  virtual std::string ResourceResponseGetReasonPhrase(int nweb_response_key) = 0;
+  virtual std::map<std::string, std::string> ResourceResponseGetResponseHeader(int nweb_response_key) = 0;
+  virtual bool ResourceResponseGetIsFromNetwork(int nweb_response_key) = 0;
+  virtual void ResourceResponseDelete(int nweb_response_key) = 0;
+  virtual int32_t GetLastCommittedEntryPageTransition() = 0;
 #endif
 
 #if BUILDFLAG(ARKWEB_BGTASK)

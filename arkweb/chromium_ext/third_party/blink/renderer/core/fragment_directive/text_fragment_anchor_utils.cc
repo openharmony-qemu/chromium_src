@@ -19,12 +19,13 @@
 #include "third_party/blink/renderer/core/fragment_directive/text_fragment_handler.h"
 #include "third_party/blink/renderer/core/frame/local_frame.h"
 #include "third_party/blink/renderer/core/frame/settings.h"
+#include "third_party/blink/renderer/core/loader/document_loader.h"
 
 namespace blink {
 // static
 base::TimeDelta TextFragmentAnchorUtils::HighlightFadeDelay() {
   // Fade delay start from scroll start.
-  return base::Milliseconds(1000);
+  return base::Milliseconds(5000);
 }
 
 TextFragmentAnchorUtils::TextFragmentAnchorUtils(
@@ -50,7 +51,14 @@ void TextFragmentAnchorUtils::StartHighlightFadeTimer() {
   }
 }
 
+bool TextFragmentAnchorUtils::ShouldIgnoreToken(const DocumentLoader& loader) {
+  auto frame = loader.GetFrame();
+  return frame && frame->GetSettings() &&
+         frame->GetSettings()->GetArkwebAgentEnabled();
+}
+
 void TextFragmentAnchorUtils::Trace(Visitor* visitor) const {
   visitor->Trace(text_fragment_anchor_);
+  visitor->Trace(frame_);
 }
 }  // namespace blink

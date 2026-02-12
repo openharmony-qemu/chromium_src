@@ -2375,4 +2375,49 @@ TEST_F(ContextMenuControllerTest, GetImgUrlTest_001) {
   EXPECT_TRUE(data_.src_url.is_empty());
 }
 
+// Test for style_image null pointer check when using CSS gradient
+// (HasBackgroundImage returns true but GetImage returns null)
+TEST_F(ContextMenuControllerTest, GetImgUrlTest_StyleImageNull) {
+  ContextMenuAllowedScope context_menu_allowed_scope;
+
+  GetDocument()->documentElement()->setInnerHTML(R"HTML(
+    <body>
+     <style>
+        #target {
+          top: 0;
+          left: 0;
+          position: absolute;
+          width: 100px;
+          height: 100px;
+          z-index: 1;
+          background: linear-gradient(to right, red, blue);
+        }
+      </style>
+     <div id="target">Text with gradient background</div>
+    </body>
+  )HTML");
+  GetDocument()->UpdateStyleAndLayout(DocumentUpdateReason::kTest);
+
+  Node* node = GetDocument()->getElementById(AtomicString("target"));
+  ASSERT_TRUE(node != nullptr);
+
+  ContextMenuData data_;
+  HitTestResult hit_test_result_;
+  PhysicalOffset offset_(LayoutUnit(50), LayoutUnit(50));
+  HitTestLocation location(offset_);
+  PhysicalRect rect(PhysicalOffset(0, 0), PhysicalSize(100, 100));
+  WebMenuSourceType source_type_ = kMenuSourceLongPress;
+
+  hit_test_result_.SetInnerNode(node);
+  hit_test_result_.AddNodeToListBasedTestResult(node, location, rect);
+
+  auto& helper =
+      web_view_helper_.GetWebView()->GetPage()->GetContextMenuController();
+  auto ext = helper.AsContextMenuControllerExt();
+  ASSERT_TRUE(ext != nullptr);
+  // Should not crash even when style_image is null (gradient returns null)
+  ext->GetImgUrl(hit_test_result_, data_, source_type_);
+  EXPECT_TRUE(data_.src_url.is_empty());
+}
+
 }  // namespace blink

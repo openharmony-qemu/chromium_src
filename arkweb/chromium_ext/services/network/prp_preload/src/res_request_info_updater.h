@@ -35,10 +35,10 @@ class ResRequestInfoUpdater : public base::RefCounted<ResRequestInfoUpdater> {
     const net::NetworkAnonymizationKey& networkAnonymizationKey,
     const std::string& page_seq_num);
   void BuildPreloadTree(const std::shared_ptr<PRRequestInfo>& info,
-    std::shared_ptr<PRPPReqInfoTreeNode> current,
-    std::shared_ptr<PRPPReqInfoTreeNode> cur_first,
-    std::shared_ptr<PRPPReqInfoTreeNode> cur_parent,
-    int64_t cur_level_end_time,
+    std::shared_ptr<PRPPReqInfoTreeNode>& current,
+    std::shared_ptr<PRPPReqInfoTreeNode>& cur_first,
+    std::shared_ptr<PRPPReqInfoTreeNode>& cur_parent,
+    int64_t& cur_level_end_time,
     const std::string& page_seq_num);
   void UpdateResRequestInfoForDynamicHeaders(std::shared_ptr<PRPPReqInfoTreeNode> parent,
     std::shared_ptr<PRRequestInfo> child_info);

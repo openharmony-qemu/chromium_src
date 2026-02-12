@@ -435,13 +435,23 @@ void NWebPreferenceDelegate::SetViewportScaleState(bool viewportScale) {
 #endif  // BUILDFLAG(ARKWEB_MENU)
 
 void NWebPreferenceDelegate::PutForceDarkModeEnabled(int forceDark) {
-  LOG(INFO) << "NWebPreferenceDelegate::PutForceDarkModeEnabled:" << forceDark;
+  int nweb_id = -1;
+  if (browser_.get() && browser_->GetHost()) {
+    nweb_id = browser_->GetHost()->GetNWebId();
+  }
+  LOG(INFO) << "NWebPreferenceDelegate::PutForceDarkModeEnabled nweb_id: " << nweb_id
+            << ", forceDark: " << forceDark;
   force_dark_mode_enabled_ = forceDark;
   WebPreferencesChanged();
 }
 
 void NWebPreferenceDelegate::PutDarkSchemeEnabled(int darkScheme) {
-  LOG(INFO) << "NWebPreferenceDelegate::PutDarkSchemeEnabled:" << darkScheme;
+  int nweb_id = -1;
+  if (browser_.get() && browser_->GetHost()) {
+    nweb_id = browser_->GetHost()->GetNWebId();
+  }
+  LOG(INFO) << "NWebPreferenceDelegate::PutDarkSchemeEnabled nweb_id: " << nweb_id
+            << ", darkScheme: " << darkScheme;
   dark_prefer_color_scheme_enabled_ = darkScheme;
   WebPreferencesChanged();
 }
@@ -878,6 +888,7 @@ int NWebPreferenceDelegate::GetBlurEnable() {
 }
 
 void NWebPreferenceDelegate::SetScrollable(bool enable) {
+  LOG(INFO) << "SetScrollable enable:" << enable;
   scroll_enabled_ = enable;
   WebPreferencesChanged();
   if (!(browser_.get()) || !(browser_->GetHost())) {
@@ -889,6 +900,8 @@ void NWebPreferenceDelegate::SetScrollable(bool enable) {
 }
 
 void NWebPreferenceDelegate::SetScrollable(bool enable, int32_t scrollType) {
+  LOG(INFO) << "SetScrollable enable:" << enable
+            << " scrollType:" << scrollType;
   scroll_enabled_ = enable;
   setting_scroll_enabled_ = enable;
   if (scrollType == static_cast<int32_t>(WebScrollType::UNKNOWN)) {
@@ -963,7 +976,12 @@ bool NWebPreferenceDelegate::IsEnableCustomVideoPlayer() {
 
 #if BUILDFLAG(ARKWEB_VIEWPORT)
 void NWebPreferenceDelegate::SetViewportEnable(bool enable) {
-  LOG(INFO) << "set metaViewport: " << enable;
+  int nweb_id = -1;
+  if (browser_.get() && browser_->GetHost()) {
+    nweb_id = browser_->GetHost()->GetNWebId();
+  }
+  LOG(INFO) << "NWebPreferenceDelegate::SetViewportEnable nweb_id: " << nweb_id
+            << ", metaViewport: " << enable;
   viewport_enabled_ = enable;
   WebPreferencesChanged();
 }

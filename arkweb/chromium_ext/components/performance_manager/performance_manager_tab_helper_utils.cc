@@ -49,16 +49,24 @@ void PerformanceManagerTabHelper::OneShotMediaPlayerStopped() {
 
 void PerformanceManagerTabHelper::AudioContextPlaybackStarted(
       const AudioContextId& audio_context_id) {
-  PerformanceManagerImpl::CallOnGraphImpl(
-      FROM_HERE, base::BindOnce(&PageNodeImpl::AudioContextPlaybackStarted,
-                                base::Unretained(primary_page_node()), audio_context_id));
+  if (audio_context_id.first) {
+    PerformanceManagerImpl::CallOnGraphImpl(
+        FROM_HERE, base::BindOnce(&PageNodeImpl::AudioContextPlaybackStarted,
+                                base::Unretained(primary_page_node()),
+                                audio_context_id.first->GetGlobalId(),
+                                audio_context_id.second));
+  }
 }
 
 void PerformanceManagerTabHelper::AudioContextPlaybackStopped(
       const AudioContextId& audio_context_id) {
-  PerformanceManagerImpl::CallOnGraphImpl(
-      FROM_HERE, base::BindOnce(&PageNodeImpl::AudioContextPlaybackStopped,
-                                base::Unretained(primary_page_node()), audio_context_id));
+  if (audio_context_id.first) {
+    PerformanceManagerImpl::CallOnGraphImpl(
+        FROM_HERE, base::BindOnce(&PageNodeImpl::AudioContextPlaybackStopped,
+                                base::Unretained(primary_page_node()),
+                                audio_context_id.first->GetGlobalId(),
+                                audio_context_id.second));
+  }
 }
 // LCOV_EXCL_STOP
 #endif

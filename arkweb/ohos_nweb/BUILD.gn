@@ -275,6 +275,13 @@ component("cef_nweb") {
       "//components/crx_file",
     ]
 
+    if (defined(arkweb_ai) && arkweb_ai) {
+      sources += [
+        "src/cef_delegate/nweb_content_change_detection.cc",
+        "src/cef_delegate/nweb_content_change_detection.h",
+      ]
+    }
+
     if (defined(arkweb_autolayout) && arkweb_autolayout) {
       sources += [
         "src/cef_delegate/nweb_autolayout.cc",
@@ -613,6 +620,10 @@ component("nweb_sources") {
     deps += [ "//arkweb/ohos_autolayout:autolayout_resources" ]
   }
 
+  if (defined(arkweb_ai) && arkweb_ai) {
+    deps += [ "//ohos_resources/content_change_detection:content_change_detection_resources" ]
+  }
+
   #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   if (defined(arkweb_video_assistant) && arkweb_video_assistant) {
     sources += [
@@ -715,6 +726,7 @@ source_set("unittests") {
     "src/cef_delegate/nweb_render_handler_unittest.cc",
     "src/cef_delegate/nweb_scheme_handler_factory_unittest.cc",
     "src/cef_delegate/nweb_autolayout_unittest.cc",
+    "src/cef_delegate/nweb_content_change_detection_unittest.cc",
     "src/ndk/arkweb_model_unittest.cc",
     "src/ndk/arkweb_native_object_unittest.cc",
     "src/native_media_player/nweb_native_media_player_handler_impl_unittests.cc",
@@ -729,6 +741,7 @@ source_set("unittests") {
     "src/nweb_adsblock_manager_impl_unittest.cc",
     "src/nweb_cookie_manager_impl_unittest.cc",
     "src/nweb_download_manager_impl_unittest.cc",
+    "src/nweb_fallback_proxy_unittest.cc",
     "src/nweb_permission_status_query_manager_unittest.cc",
     "src/nweb_impl_unittest.cc",
     "src/nweb_input_handler_unittest.cc",

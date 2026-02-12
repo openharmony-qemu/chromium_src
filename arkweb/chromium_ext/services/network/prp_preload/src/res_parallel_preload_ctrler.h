@@ -30,7 +30,7 @@ class ResParallelPreloadCtrler : public base::RefCountedThreadSafe<ResParallelPr
   void Stop();
   void UpdateResRequestInfo(const std::shared_ptr<PRRequestInfo>& info);
   void SetPageOrigin(const std::string& page_origin);
-  void SetPRPPReqLoaderFac(base::WeakPtr<PRPPRequestLoaderFactory> loader_fac_weak);
+  void SetPRPPReqLoaderFac(base::WeakPtr<PRPPRequestLoaderFactory> loader_fac_weak, bool valid);
   void UpdateIdlePrerequestCount();
  private:
   void DoInit(const scoped_refptr<base::SingleThreadTaskRunner>& net_task_runner,
@@ -40,7 +40,7 @@ class ResParallelPreloadCtrler : public base::RefCountedThreadSafe<ResParallelPr
   void DoStop();
   void DoUpdateResRequestInfo(const std::shared_ptr<PRRequestInfo>& info);
   void DoSetPageOrigin(const std::string& page_origin);
-  void DoSetPRPPReqLoaderFac(base::WeakPtr<PRPPRequestLoaderFactory> loader_fac_weak);
+  void DoSetPRPPReqLoaderFac(base::WeakPtr<PRPPRequestLoaderFactory> loader_fac_weak, bool valid);
   void DoUpdateIdlePrerequestCount();
   void OnResPreloadInfos(const PRPPPreconnectInfoList& preconnect_info_list,
     const std::shared_ptr<PRPPReqInfoTreeNode>& preload_info_tree,

@@ -92,4 +92,22 @@ TEST_F(TextFragmentAnchorUtilsTest, StartHighlightFadeTimer_004) {
   text_fragment_anchor_utils_->StartHighlightFadeTimer();
   EXPECT_TRUE(local_frame_->GetSettings()->GetAgentNeedHighlight());
 }
+
+TEST_F(TextFragmentAnchorUtilsTest, ShouldIgnoreToken_001) {
+  local_frame_->Loader().GetDocumentLoader()->DetachFromFrame(false);
+  EXPECT_FALSE(TextFragmentAnchorUtils::ShouldIgnoreToken(
+      *(local_frame_->Loader().GetDocumentLoader())));
+}
+
+TEST_F(TextFragmentAnchorUtilsTest, ShouldIgnoreToken_002) {
+  local_frame_->GetSettings()->SetArkwebAgentEnabled(false);
+  EXPECT_FALSE(TextFragmentAnchorUtils::ShouldIgnoreToken(
+      *(local_frame_->Loader().GetDocumentLoader())));
+}
+
+TEST_F(TextFragmentAnchorUtilsTest, ShouldIgnoreToken_003) {
+  local_frame_->GetSettings()->SetArkwebAgentEnabled(true);
+  EXPECT_TRUE(TextFragmentAnchorUtils::ShouldIgnoreToken(
+      *(local_frame_->Loader().GetDocumentLoader())));
+}
 }  // namespace blink

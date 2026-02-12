@@ -302,6 +302,8 @@ if (!enable_arkweb) {
   arkweb_ex_refresh_iframe = false
   arkweb_notification = false
   arkweb_vulkan = false
+  arkweb_angle = false
+  arkweb_gpu = false
   arkweb_pull_to_refresh = false
   arkweb_ex_http_dns_fallback = false
   arkweb_screen_offset = false
@@ -328,6 +330,8 @@ if (!enable_arkweb) {
   arkweb_ohos_mem_usage_report = false
   arkweb_media_cast = false
   arkweb_ext_http_dns_fallback_on_dns_hijacking = false
+  arkweb_custom_viewport_width = false
+  arkweb_evict_unlock_frames = false
 }
 
 buildflag_header("features") {
@@ -545,6 +549,8 @@ buildflag_header("features") {
     "ARKWEB_EX_SCREEN_CAPTURE=$arkweb_ex_screen_capture",
     "ARKWEB_EX_REFRESH_IFRAME=$arkweb_ex_refresh_iframe",
     "ARKWEB_VULKAN=$arkweb_vulkan",
+    "ARKWEB_ANGLE=$arkweb_angle",
+    "ARKWEB_GPU=$arkweb_gpu",
     "ARKWEB_D_VSYNC=$arkweb_d_vsync",
     "ARKWEB_SCREEN_OFFSET=$arkweb_screen_offset",
     "ARKWEB_SCREEN_SIZE=$arkweb_screen_size",
@@ -576,6 +582,8 @@ buildflag_header("features") {
     "ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS=$arkweb_offline_web_evict_back_buffers",
     "ARKWEB_OHOS_MEM_USAGE_REPORT=$arkweb_ohos_mem_usage_report",
     "ARKWEB_MEDIA_CAST=$arkweb_media_cast",
+    "ARKWEB_CUSTOM_VIEWPORT_WIDTH=$arkweb_custom_viewport_width",
+    "ARKWEB_EVICT_UNLOCK_FRAMES=$arkweb_evict_unlock_frames",
 
     # ARKWEB_EXT dafault value
     "ARKWEB_EXT_BLANK_TARGET_POPUP_INTERCEPT=false",
@@ -598,6 +606,7 @@ buildflag_header("features") {
     "ARKWEB_EXT_HTTPS_UPGRADES=$arkweb_ext_https_upgrades",
     "ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION=false",
     "ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING=$arkweb_ext_http_dns_fallback_on_dns_hijacking",
+    "ARKWEB_EXT_RECEIVE_RESPONSE=$arkweb_ext_receive_response",
   ]
 
   public_configs = [ ":arkweb_global_config" ]

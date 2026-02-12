@@ -7,8 +7,6 @@
 #pragma allow_unsafe_buffers
 #endif
 
-#include "net/url_request/url_request.h"
-
 #include <stdint.h>
 
 #include <algorithm>
@@ -55,6 +53,15 @@
 #include "build/build_config.h"
 #include "build/buildflag.h"
 #include "crypto/sha2.h"
+#include "net/http/http_transaction.h"
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#define private public
+#include "net/url_request/url_request.h"
+#include "net/url_request/url_request_context.h"
+#undef private
+#else
+#include "net/url_request/url_request.h"
+#endif
 #include "net/base/chunked_upload_data_stream.h"
 #include "net/base/directory_listing.h"
 #include "net/base/elements_upload_data_stream.h"
@@ -13968,4 +13975,7 @@ TEST_F(StorageAccessHeaderURLRequestTest,
       /*expected_bucket_count=*/1);
 }
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#include "arkweb/chromium_ext/net/url_request/url_request_for_include_unittest.cc"
+#endif  // ARKWEB_UNITTESTS
 }  // namespace net

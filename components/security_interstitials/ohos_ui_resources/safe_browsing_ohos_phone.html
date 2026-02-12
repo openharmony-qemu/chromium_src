@@ -1,6 +1,7 @@
 <!doctype html>
 <html>
   <head>
+    <meta name="color-scheme" content="light dark">
     <meta charset="utf-8">
     <meta name="theme-color" content="#fff">
     <meta name="viewport"
@@ -58,7 +59,7 @@
       }
  
       window.addEventListener("resize", () => {
-            calcViewportSize();   
+            calcViewportSize();
       }, false)
  
       window.onload = function() {
@@ -87,8 +88,8 @@
     <div id="main"></div>
     <div class="hw_block_page" style="direction: $i18n{page_direction};">
       <div class="hw-content--wrap">
-        <div class="hw-block-img">
-          <img src="ic_safe_browsing_error.svg" id="hw_block_img" aria-label="$i18n{block_info_title}"/>
+        <div class="hw-block-img threat-non-high-risk">
+          <img src="ic_safe_browsing_error_non_high_risk.svg" id="hw_block_img" aria-label="$i18n{block_info_title}"/>
         </div>
  
         <div class="hw-block-info">
@@ -97,12 +98,12 @@
             <p>$i18n{block_info_body}</p>
           </div>
         </div>
- 
-        <div class="hw-block-link">
-          <div class="hw-link">
-            <a id="hw-not-proceed" href="#" onclick="onDontProceed()">$i18n{dontproceed}</a>
-            <a id="hw-proceed" href="#" onclick="onProceed()">$i18n{proceed}</a>
-          </div>
+      </div>
+       
+      <div class="hw-block-link-sb">
+        <div class="hw-link-sb">
+          <a id="hw-proceed" href="#" onclick="onProceed()">$i18n{proceed}</a>
+          <a id="hw-not-proceed" href="#" onclick="onDontProceed()">$i18n{dontproceed}</a>
         </div>
       </div>
     </div>

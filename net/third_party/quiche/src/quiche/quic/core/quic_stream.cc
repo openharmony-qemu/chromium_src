@@ -1508,3 +1508,7 @@ QuicByteCount QuicStream::CalculateSendWindowSize() const {
 }
 
 }  // namespace quic
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+#include "arkweb/chromium_ext/net/quiche/quic_stream_for_include.cc"
+#endif

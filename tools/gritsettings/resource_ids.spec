@@ -1411,6 +1411,11 @@
     "includes": [10200],
   },
 
+  # For content change detection
+  "ohos_resources/content_change_detection/content_change_detection_resources.grd": {
+    "includes": [10220],
+  },
+
   # For highlight specified content
   "ohos_resources/highlight_specified_content/highlight_specified_content_resources.grd": {
     "includes": [10260],

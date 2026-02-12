@@ -83,6 +83,10 @@ class VIZ_SERVICE_EXPORT DirectRenderer {
 
 #if BUILDFLAG(ARKWEB_VULKAN)
   void disable_partial_swap() { use_partial_swap_ = false; }
+
+  void enable_partial_swap() {
+    use_partial_swap_ = true;
+  }
 #endif
 
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
@@ -91,6 +95,12 @@ class VIZ_SERVICE_EXPORT DirectRenderer {
 
 #if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
   void SetBypassVsyncCondition(int32_t condition);
+#endif
+
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  void SetNextFrameSkipsDrawRenderPasses(bool skip) {
+    next_frame_skips_draw_render_passes_ = skip;
+  }
 #endif
 
   void SetOutputSurfaceClipRect(const gfx::Rect& clip_rect);
@@ -481,6 +491,9 @@ class VIZ_SERVICE_EXPORT DirectRenderer {
   gfx::OverlayTransform reshape_display_transform_ =
       gfx::OVERLAY_TRANSFORM_INVALID;
   uint64_t total_pixels_rendered_this_frame_ = 0;
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  bool next_frame_skips_draw_render_passes_ = false;
+#endif
 };
 
 }  // namespace viz

@@ -133,5 +133,33 @@ TEST_F(SystemPropertiesTest, is_compatible_mode005) {
   properties_->compatible_device_type_ = "Phone";
   EXPECT_FALSE(properties_->is_compatible_mode());
 }
+
+TEST_F(SystemPropertiesTest, is_pc_mode001) {
+  properties_->device_type_ = ProductDeviceType::DEVICE_TYPE_2IN1;
+  properties_->compatible_device_type_ = "Phone";
+  EXPECT_TRUE(properties_->is_compatible_mode());
+  properties_->NotifyIsPcMode();
+}
+
+TEST_F(SystemPropertiesTest, is_pc_mode002) {
+  properties_->device_type_ = ProductDeviceType::DEVICE_TYPE_MOBILE;
+  properties_->compatible_device_type_ = "Phone";
+  EXPECT_FALSE(properties_->is_compatible_mode());
+  properties_->NotifyIsPcMode();
+}
+
+TEST_F(SystemPropertiesTest, is_pc_mode003) {
+  properties_->device_type_ = ProductDeviceType::DEVICE_TYPE_TABLET;
+  properties_->compatible_device_type_ = "Phone";
+  EXPECT_FALSE(properties_->is_compatible_mode());
+  properties_->NotifyIsPcMode();
+}
+
+TEST_F(SystemPropertiesTest, is_pc_mode004) {
+  properties_->device_type_ = ProductDeviceType::DEVICE_TYPE_TV;
+  properties_->compatible_device_type_ = "Phone";
+  EXPECT_FALSE(properties_->is_compatible_mode());
+  properties_->NotifyIsPcMode();
+}
 }  // namespace ohos
 }  // namespace base

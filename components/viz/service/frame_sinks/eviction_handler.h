@@ -46,6 +46,11 @@ class EvictionHandler : public ReservedResourceDelegate {
       const std::vector<TransferableResource>& resources) override;
   void UnrefResources(const std::vector<ReturnedResource>& resources) override;
 
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+    LocalSurfaceId GetNextEvictLocalSurfaceId() const;
+    void SetNextEvictLocalSurfaceId(LocalSurfaceId surfaceId);
+#endif
+
  private:
   void TakeSnapshotForEviction(const SurfaceId& surface_id, double scale);
 

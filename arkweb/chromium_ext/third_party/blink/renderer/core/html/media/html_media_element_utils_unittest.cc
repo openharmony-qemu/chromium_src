@@ -38,6 +38,7 @@
 #include "third_party/blink/renderer/platform/testing/task_environment.h"
 #include "third_party/blink/public/platform/web_media_player_source.h"
 #include "third_party/blink/renderer/platform/testing/unit_test_helpers.h"
+#include "third_party/blink/renderer/core/html/media/media_error.h"
 
 using ::testing::_;
 using ::testing::AnyNumber;
@@ -487,17 +488,6 @@ TEST_F(HTMLMediaElementUtilsTest, TestResetMediaPlayerAndMediaSourceUtils) {
 #endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
 #if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
-TEST_F(HTMLMediaElementUtilsTest, TestfreeezTime) {
-  media_ =
-      MakeGarbageCollected<HTMLVideoElement>(dummy_page_holder_->GetDocument());
-  HTMLMediaElementUtils element_utils_(Media());
-  Media()->web_media_player_ = nullptr;
-  double result = element_utils_.freezeTime();
-  ASSERT_EQ(result, 0);
-}
-#endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
-
-#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
 TEST_F(HTMLMediaElementUtilsTest, TestStartRecord) {
   HTMLMediaElementUtils::Recorder* recorder_ =
       new HTMLMediaElementUtils::Recorder();
@@ -511,6 +501,68 @@ TEST_F(HTMLMediaElementUtilsTest, TestStopRecord) {
   recorder_->total_duration_ = base::TimeDelta() + base::Milliseconds(1000);
   ASSERT_NO_FATAL_FAILURE(recorder_->StopRecord());
 }
+
+TEST_F(HTMLMediaElementUtilsTest, DFX_TESTReportVideoExperience001) {
+  media_ =
+    MakeGarbageCollected<HTMLAudioElement>(dummy_page_holder_->GetDocument());
+  HTMLMediaElementUtils element_utils_(Media());
+  auto report_param = element_utils_.ReportVideoExperienceToBI();
+  EXPECT_EQ(report_param.get(), nullptr);
+}
+
+TEST_F(HTMLMediaElementUtilsTest, DFX_TESTReportVideoExperience002) {
+  media_ =
+    MakeGarbageCollected<HTMLVideoElement>(dummy_page_holder_->GetDocument());
+  HTMLMediaElementUtils element_utils_(Media());
+  int32_t usage_scenario = 5;
+  Media()->GetDocument().GetSettings()->SetUsageScenario(usage_scenario);
+  auto report_param = element_utils_.ReportVideoExperienceToBI();
+  EXPECT_EQ(report_param.get(), nullptr);
+}
+
+TEST_F(HTMLMediaElementUtilsTest, DFX_TESTReportVideoExperience003) {
+  media_ =
+    MakeGarbageCollected<HTMLVideoElement>(dummy_page_holder_->GetDocument());
+  HTMLMediaElementUtils element_utils_(Media());
+  int32_t usage_scenario = 1;
+  Media()->GetDocument().GetSettings()->SetUsageScenario(usage_scenario);
+  element_utils_.has_reported_experience_ = true;
+  auto report_param = element_utils_.ReportVideoExperienceToBI();
+  EXPECT_EQ(report_param.get(), nullptr);
+}
+
+TEST_F(HTMLMediaElementUtilsTest, DFX_TESTReportVideoExperience004) {
+  media_ =
+    MakeGarbageCollected<HTMLVideoElement>(dummy_page_holder_->GetDocument());
+  HTMLMediaElementUtils element_utils_(Media());
+  int32_t usage_scenario = 1;
+  Media()->GetDocument().GetSettings()->SetUsageScenario(usage_scenario);
+  element_utils_.has_reported_experience_ = false;
+
+  auto report_param = element_utils_.ReportVideoExperienceToBI();
+  EXPECT_EQ(report_param.get(), nullptr);
+}
+
+TEST_F(HTMLMediaElementUtilsTest, DFX_TESTReportVideoExperience005) {
+  media_ =
+    MakeGarbageCollected<HTMLVideoElement>(dummy_page_holder_->GetDocument());
+  HTMLMediaElementUtils element_utils_(Media());
+  int32_t usage_scenario = 1;
+  Media()->GetDocument().GetSettings()->SetUsageScenario(usage_scenario);
+  element_utils_.has_reported_experience_ = false;
+
+  Media()->SetError(MakeGarbageCollected<MediaError>(MediaError::kMediaErrDecode, ""));
+  auto report_param = element_utils_.ReportVideoExperienceToBI();
+  EXPECT_NE(report_param.get(), nullptr);
+}
+
+TEST_F(HTMLMediaElementUtilsTest, DFX_TestGetMainUrl) {
+  media_ =
+      MakeGarbageCollected<HTMLVideoElement>(dummy_page_holder_->GetDocument());
+  HTMLMediaElementUtils element_utils_(Media());
+  ASSERT_NO_FATAL_FAILURE(element_utils_.GetMainUrl());
+}
+
 #endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
 TEST_F(HTMLMediaElementUtilsTest, TestIsMediaPlayerShown) {

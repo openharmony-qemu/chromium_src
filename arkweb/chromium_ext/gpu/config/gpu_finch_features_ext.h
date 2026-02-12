@@ -41,6 +41,10 @@ bool IsDrDcForVulkan();
 #if BUILDFLAG(ARKWEB_WEBGL)
 GPU_EXPORT BASE_DECLARE_FEATURE(kPreferDrawToCopy);
 #endif
+
+#if BUILDFLAG(ARKWEB_ANGLE)
+GPU_EXPORT BASE_DECLARE_FEATURE(kDefaultANGLE);
+#endif
 }
 
 #endif

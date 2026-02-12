@@ -348,4 +348,58 @@ std::string LogUtils::ConvertPathWithMask(const std::string& file_path) {
     return result;
 }
 
+std::string LogUtils::ConvertUrlParamWithMask(const std::string& url) {
+    std::string maskedUrl = url;
+    size_t questionMarkPos = maskedUrl.find('?');
+
+    // Return original URL if no query parameters are present
+    if (questionMarkPos == std::string::npos || questionMarkPos == maskedUrl.length() - 1) {
+        return maskedUrl;
+    }
+
+    size_t currentPos = questionMarkPos + 1;
+    while (currentPos < maskedUrl.length()) {
+      size_t equalSignPos = maskedUrl.find('=', currentPos);
+
+      // Break if no '=' is found, indicating no more key-value pairs
+      if (equalSignPos == std::string::npos) {
+          break;
+      }
+
+      size_t valueStart = equalSignPos + 1;
+      size_t ampersandPos = maskedUrl.find('&', valueStart);
+
+      size_t valueEnd;
+      if (ampersandPos == std::string::npos) {
+          // This is the last parameter, process until the end of the string
+          valueEnd = maskedUrl.length();
+      }
+      else {
+          // There are subsequent parameters after this one
+          valueEnd = ampersandPos;
+      }
+
+      // Replace the value part with "***"
+      if (valueEnd > valueStart) {
+          maskedUrl.replace(valueStart, valueEnd - valueStart, "***");
+          // Update position to the end of the newly inserted "***"
+          currentPos = valueStart + 3;
+      }
+      else {
+          // Handle cases where the value is empty (e.g., "key=&"), just move forward
+          currentPos = valueStart;
+      }
+
+      // Locate the beginning of the next parameter
+      currentPos = maskedUrl.find('&', currentPos);
+      if (currentPos == std::string::npos) {
+          break;
+      }
+      currentPos++; // Skip the '&' delimiter
+    }
+
+    return maskedUrl;
+}
+
+
 }  // namespace url

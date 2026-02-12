@@ -16,11 +16,12 @@
 #ifndef OHOS_ADAPTER_HELPER_EXT_H
 #define OHOS_ADAPTER_HELPER_EXT_H
 
+#include "arkweb/ohos_adapter_ndk/ability_runtime_adapter/native_ability_runtime_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/display_manager_adapter/native_display_manager_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/graphic_adapter/native_window_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/graphic_adapter/window_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/multimodalinputnew_adapter/mmi_new_adapter_impl.h"
-#include "arkweb/ohos_nweb/src/nweb_hilog.h"
+
 namespace OHOS::NWeb {
 
 class OhosAdapterHelperExt {
@@ -52,6 +53,11 @@ public:
     static std::unique_ptr<MMIAdapter> CreateMMIAdapter()
     {
       return std::make_unique<MMINewAdapterImpl>();
+    }
+
+    static std::unique_ptr<NativeAbilityRuntimeAdapterImpl> CreateAbilityRuntimeAdapter()
+    {
+      return std::make_unique<NativeAbilityRuntimeAdapterImpl>();
     }
 };
 

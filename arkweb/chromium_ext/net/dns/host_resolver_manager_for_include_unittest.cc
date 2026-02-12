@@ -52,9 +52,9 @@ TEST_F(HostResolverManagerDnsTest, ReportSecureFallbackDnsResult001) {
     constexpr base::TimeDelta second = base::Seconds(100);
     resolver_->ReportSecureFallbackDnsResult(insecure_results, secure_fallback_results, "example.com", 0, second);
     std::string log_output = testing::internal::GetCapturedStderr();
-    EXPECT_NE(log_output.find("udp_dns_ip_list=[]"), std::string::npos);
-    EXPECT_NE(log_output.find("ip_list=[]"), std::string::npos);
-    EXPECT_NE(log_output.find("scene=normal DNS"), std::string::npos);
+    EXPECT_EQ(log_output.find("udp_dns_ip_list=[]"), std::string::npos);
+    EXPECT_EQ(log_output.find("ip_list=[]"), std::string::npos);
+    EXPECT_EQ(log_output.find("scene=normal DNS"), std::string::npos);
 }
 
 TEST_F(HostResolverManagerDnsTest, ReportSecureFallbackDnsResult002) {
@@ -72,8 +72,56 @@ TEST_F(HostResolverManagerDnsTest, ReportSecureFallbackDnsResult002) {
     constexpr base::TimeDelta second = base::Seconds(100);
     resolver_->ReportSecureFallbackDnsResult(insecure_results, secure_fallback_results, "example.com", 0, second);
     std::string log_output = testing::internal::GetCapturedStderr();
-    EXPECT_NE(log_output.find("udp_dns_ip_list=[]"), std::string::npos);
-    EXPECT_NE(log_output.find("ip_list=[]"), std::string::npos);
-    EXPECT_NE(log_output.find("scene=normal DNS"), std::string::npos);
+    EXPECT_EQ(log_output.find("udp_dns_ip_list=[]"), std::string::npos);
+    EXPECT_EQ(log_output.find("ip_list=[]"), std::string::npos);
+    EXPECT_EQ(log_output.find("scene=normal DNS"), std::string::npos);
 }
 #endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING)
+
+TEST_F(HostResolverManagerDnsTest, SetHttpsDnsFallbackDataOnDnsHijacking) {
+    std::vector<std::string> protect_list = {"example.com", "test.org"};
+    std::vector<std::string> errorcode_list = {"ERR_NAME_NOT_RESOLVED", "ERR_CONNECTION_TIMED_OUT"};
+    
+    resolver_->SetHttpsDnsFallbackDataOnDnsHijacking(protect_list, errorcode_list);
+    EXPECT_EQ(resolver_->dns_hijacking_protect_list_.size(), 2);
+    EXPECT_NE(resolver_->dns_hijacking_protect_list_.find("example.com"), 
+              resolver_->dns_hijacking_protect_list_.end());
+    EXPECT_NE(resolver_->dns_hijacking_protect_list_.find("test.org"), 
+              resolver_->dns_hijacking_protect_list_.end());
+    EXPECT_EQ(resolver_->dns_hijacking_errorcode_list_.size(), 2);
+    EXPECT_NE(resolver_->dns_hijacking_errorcode_list_.find("ERR_NAME_NOT_RESOLVED"), 
+              resolver_->dns_hijacking_errorcode_list_.end());
+    EXPECT_NE(resolver_->dns_hijacking_errorcode_list_.find("ERR_CONNECTION_TIMED_OUT"), 
+              resolver_->dns_hijacking_errorcode_list_.end());
+    resolver_->SetHttpsDnsFallbackDataOnDnsHijacking({}, {});
+    EXPECT_TRUE(resolver_->dns_hijacking_protect_list_.empty());
+    EXPECT_TRUE(resolver_->dns_hijacking_errorcode_list_.empty());
+}
+
+TEST_F(HostResolverManagerDnsTest, IsProtectedDomain) {
+    std::vector<std::string> protect_list = {"example.com", "test.org", "sub.domain.com"};
+    resolver_->SetHttpsDnsFallbackDataOnDnsHijacking(protect_list, {"ERR_DNS_FAIL"});
+    GURL empty_url;
+    EXPECT_FALSE(resolver_->IsProtectedDomain(empty_url));
+    GURL subdomain("http://sub.domain.com");
+    EXPECT_TRUE(resolver_->IsProtectedDomain(subdomain));
+    GURL not_match("http://notprotected.com");
+    EXPECT_FALSE(resolver_->IsProtectedDomain(not_match));
+    resolver_->SetHttpsDnsFallbackDataOnDnsHijacking({}, {});
+    GURL test_url("http://example.com");
+    EXPECT_FALSE(resolver_->IsProtectedDomain(test_url));
+}
+
+TEST_F(HostResolverManagerDnsTest, NeedRetryDnsOnDnsHijack) {
+    std::vector<std::string> protect_list = {"example.com", "test.org"};
+    std::vector<std::string> error_list = {"ERR_DNS_FAIL", "ERR_CONNECTION_TIMED_OUT"};
+    resolver_->SetHttpsDnsFallbackDataOnDnsHijacking(protect_list, error_list);
+    GURL protected_url("http://example.com");
+    EXPECT_TRUE(resolver_->NeedRetryDnsOnDnsHijack(protected_url, "ERR_DNS_FAIL"));
+    EXPECT_FALSE(resolver_->NeedRetryDnsOnDnsHijack(protected_url, "ERR_OTHER_ERROR"));
+    GURL non_protected_url("http://notprotected.com");
+    EXPECT_FALSE(resolver_->NeedRetryDnsOnDnsHijack(non_protected_url, "ERR_DNS_FAIL"));
+}
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING)

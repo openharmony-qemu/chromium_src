@@ -75,6 +75,8 @@ VIZ_COMMON_EXPORT void SetCopyOutoutRequestResultSize(
     const gfx::Size& output_size,
     const gfx::Size& surface_size_in_pixels);
 
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+VIZ_COMMON_EXPORT bool IsEvictUnlockFrameEnabled();
+#endif
 }  // namespace viz
-
 #endif  // COMPONENTS_VIZ_COMMON_VIZ_UTILS_H_

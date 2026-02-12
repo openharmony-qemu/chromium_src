@@ -19,6 +19,10 @@
 #include "third_party/blink/renderer/platform/heap/garbage_collected.h"
 #include "third_party/blink/renderer/platform/heap/member.h"
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+#include "arkweb/chromium_ext/third_party/blink/public/mojom/media/video_experience_reporter.mojom-blink.h"
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+
 namespace blink {
 class HTMLMediaElement;
 
@@ -48,13 +52,11 @@ class HTMLMediaElement;
     };
     Recorder played_time_recorder_;
     Recorder freeze_time_recorder_;
+    mojom::blink::VideoExpParamsPtr ReportVideoExperienceToBI();
 #endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
     void ScheduleNamedEventUtils(const AtomicString& event_name);
     void ResetMediaPlayerAndMediaSourceUtils();
-
-    double playedTime();
-    double freezeTime();
 
     /**
     * 场景类型
@@ -130,6 +132,13 @@ class HTMLMediaElement;
   void OnMediaCastEnter();
   void OnNotifyMeidaCastUri();
 #endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
+
+private:
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+  int media_player_waiting_cnt_ = 0;
+  bool has_reported_experience_{false};
+  std::string GetMainUrl() const;
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
  };
 
  } // namespace blink

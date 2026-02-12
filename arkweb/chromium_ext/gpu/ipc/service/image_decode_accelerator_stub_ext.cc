@@ -115,6 +115,7 @@ bool ImageDecodeAcceleratorStubExt::ProcessCompletedDecodeExt(mojom::ScheduleIma
                                 std::vector<sk_sp<SkImage>> plane_sk_images,
                                 std::optional<base::ScopedClosureRunner>& notify_gl_state_changed,
                                 std::unique_ptr<ImageDecodeAcceleratorWorker::DecodeResult>& completed_decode) {
+#if !BUILDFLAG(ARKWEB_TEST)
   // We should notify the SharedContextState that we or Skia may have modified
   // the driver's GL state. We put this in a ScopedClosureRunner so that if we
   // return early, the SharedContextState ends up in a consistent state.
@@ -264,6 +265,7 @@ bool ImageDecodeAcceleratorStubExt::ProcessCompletedDecodeExt(mojom::ScheduleIma
   }
   DCHECK(notify_gl_state_changed);
   notify_gl_state_changed->RunAndReset();
+#endif
   return false;
 }
 

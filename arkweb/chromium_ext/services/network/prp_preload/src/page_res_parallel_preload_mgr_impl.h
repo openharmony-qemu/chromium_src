@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include "arkweb/chromium_ext/services/network/prp_preload/include/page_res_parallel_preload_mgr.h"
 #include "arkweb/chromium_ext/services/network/prp_preload/src/res_parallel_preload_ctrler.h"
+#include "base/threading/thread.h"
 
 namespace ohos_prp_preload {
 class PRParallelPreloadMgrImpl : public PRParallelPreloadMgr {
@@ -47,6 +48,7 @@ class PRParallelPreloadMgrImpl : public PRParallelPreloadMgr {
       std::function<void(PRParallelPreloadInfo&)> func);
   bool IsPageAlreadyStarted(const std::string& key, PageOriginCallback& callback);
   bool is_inited_ { false };
+  std::unique_ptr<base::Thread> sth_thread_;
   scoped_refptr<base::SingleThreadTaskRunner> sth_task_runner_;
   scoped_refptr<base::SingleThreadTaskRunner> net_task_runner_;
   std::unordered_map<std::string, PRParallelPreloadInfo> prp_preload_info_map_;

@@ -493,4 +493,20 @@ BASE_FEATURE(kEnableLockCookieDatabaseByDefault,
              base::FEATURE_ENABLED_BY_DEFAULT);
 #endif  // BUILDFLAG(IS_WIN)
 
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+// Enables Https DNS Server Fallback, Only when the NwebEx feature is enabled.
+// If HTTPS DNS Server Fallback is enabled and the HTTPS DNS server detection
+// is successful, the normal DNS resolution process is modified as follows:
+// A new task type, TaskType::SECURE_DNS_FALLBACK,
+// uses the https_dns_server_template in the cloud control's DNSConfig
+// Other internal logic of DnsTask remains unchanged.
+// When an exception occurs in the main frame request and an error page needs
+// to be displayed, if HTTPS DNS Server Fallback is enabled, the system will
+// re-resolve the request using SECURE_DNS_FALLBACK only if net_error matches
+// a specific error code.
+BASE_FEATURE(kEnableNwebExHttpDnsFallback,
+             "EnableNwebExHttpDnsFallback",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+#endif
+
 }  // namespace network::features

@@ -2869,6 +2869,10 @@ void RenderFrameImpl::CommitNavigation(
                      commit_params->navigation_delivery_type);
 #endif
 
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+  navigation_params->custom_viewport_width = commit_params->custom_viewport_width;
+#endif
+
   if (frame_->IsOutermostMainFrame() && permissions_policy) {
     navigation_params->permissions_policy_override = permissions_policy;
   }
@@ -6357,6 +6361,12 @@ void RenderFrameImpl::BeginNavigationInternal(
     transition_type = ui::PageTransitionFromInt(
         transition_type | ui::PAGE_TRANSITION_CLIENT_REDIRECT);
   }
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+  if (info->is_triggered_by_js) {
+    transition_type = ui::PageTransitionFromInt(
+        transition_type | ui::PAGE_TRANSITION_FROM_JAVASCRIPT);
+  }
+#endif
 
   // Note: At this stage, the goal is to apply all the modifications the
   // renderer wants to make to the request, and then send it to the browser, so

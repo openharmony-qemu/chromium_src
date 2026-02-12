@@ -1013,6 +1013,9 @@ need to be translated for each locale.-->
         <message name="IDS_AX_COMBOBOX_COLLAPSED" desc="Accessibility utterance for when a combobox element is collapsed, but due to authoring errors we cannot say any more information than that.">
           collapsed.
         </message>
+        <message name="IDS_AX_ROLE_LIST" desc="Accessibility role description for a list">
+          list
+        </message>
       </if>
    </messages>
   </release>

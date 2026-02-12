@@ -546,6 +546,11 @@ class NavigationController {
   // NOTE: |reload_type| should never be NONE.
   virtual void Reload(ReloadType reload_type, bool check_for_repost) = 0;
 
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+  virtual void ReloadEx(ReloadType reload_type, bool check_for_repost, int transition_type) = 0;
+  virtual void Reload(ReloadType reload_type, bool check_for_repost, int transition_type) = 0;
+#endif
+
 #if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
   virtual void ReloadWithNetError(ReloadType reload_type,
                                   bool check_for_repost,

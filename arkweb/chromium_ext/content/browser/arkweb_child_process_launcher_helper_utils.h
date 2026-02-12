@@ -73,6 +73,7 @@ class ArkwebChildProcessLauncherHelperUtils {
 #endif
  private:
 #if BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
+  static void RenderProcessExitedInfo(pid_t pid, int exitStatus, bool known_dead);
   static base::TerminationStatus GetProcessStatusByExitCode(int status,
                                                             bool known_dead);
   static bool TerminateProcessByAppMgr(const base::Process& process);

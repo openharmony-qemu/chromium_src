@@ -1,3 +1,4 @@
+import("//build/config/ohos/config.gni")
 arkweb_gpu_command_buffer_service_ohos_sources = [
     "//arkweb/chromium_ext/gpu/command_buffer/service/ohos/native_image_texture_gl_owner.cc",
     "//arkweb/chromium_ext/gpu/command_buffer/service/ohos/native_image_texture_gl_owner.h",

@@ -226,6 +226,8 @@ declare_args() {
   arkweb_ex_refresh_iframe = true
   arkweb_notification = true
   arkweb_vulkan = true
+  arkweb_angle = !is_component_build
+  arkweb_gpu = !is_component_build
   arkweb_pull_to_refresh = true
   arkweb_ex_http_dns_fallback = false
   arkweb_d_vsync = true
@@ -261,6 +263,9 @@ declare_args() {
   arkweb_ohos_mem_usage_report = true
   arkweb_media_cast = true
   arkweb_ext_http_dns_fallback_on_dns_hijacking = false
+  arkweb_ext_receive_response = false
+  arkweb_custom_viewport_width = true
+  arkweb_evict_unlock_frames = !is_component_build
 }
 
 # Features enabled in mojom bindings.
@@ -351,3 +356,9 @@ if (defined(arkweb_network_service) && arkweb_network_service) {
   arkweb_mojo_features += [ "arkweb_network_service" ]
 }
 #endif // BUILDFLAG(ARKWEB_NETWORK_SERVICE)
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+if (defined(arkweb_custom_viewport_width) && arkweb_custom_viewport_width) {
+  arkweb_mojo_features += [ "arkweb_custom_viewport_width" ]
+}
+#endif // BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)

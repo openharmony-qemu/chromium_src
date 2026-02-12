@@ -77,6 +77,12 @@
 #include "capi/nweb_icon_size.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+#include "ohos_nweb/src/capi/nweb_resource_request.h"
+#include "ohos_nweb/src/capi/nweb_resource_response.h"
+#include "ohos_nweb/src/capi/nweb_resource_request_response.h"
+#endif
+
 #if BUILDFLAG(ARKWEB_NWEB_EX)
 #include "ohos_nweb_ex/core/extension/nweb_app_client_extension_dispatcher.h"
 #endif
@@ -186,6 +192,9 @@ class NWebHandlerDelegate : public ArkWebClientExt,
       const std::string& permission);
   void RegisterNativeLoadStartCallback(std::function<void(void)>&& callback);
   void RegisterNativeLoadEndCallback(std::function<void(void)>&& callback);
+#if BUILDFLAG(ARKWEB_AI)
+  void RegisterOnLoadStartedCbForContentChange(std::function<void(void)>&& callback);
+#endif
   int GetFlowbufCount(void* mem);
   char* FlowbufStrAtIndex(void* mem,
                           int flowbufIndex,
@@ -1085,6 +1094,44 @@ void OnMediaCastEnter() override;
   void OnSafeBrowsingCheckDetail(int code, int policy, int threat) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+  void OnReceiveResponse(CefRefPtr<CefRequest> request,
+                         bool is_request_gesture,
+                         int transition_type,
+                         bool is_main_frame,
+                         bool is_redirect,
+                         int resource_type,
+                         CefRefPtr<CefResponse> response_info,
+                         bool is_from_network) override;
+ 
+  std::map<std::string, std::string> ResourceRequestGetRequestHeader(int nweb_request_key);
+  std::string ResourceRequestGetRequestUrl(int nweb_request_key);
+  bool ResourceRequestIsRequestGesture(int nweb_request_key);
+  bool ResourceRequestIsMainFrame(int nweb_request_key);
+  bool ResourceRequestIsRedirect(int nweb_request_key);
+  std::string ResourceRequestGetRequestMethod(int nweb_request_key);
+  int32_t ResourceRequestGetPageTransition(int nweb_request_key);
+  int32_t ResourceRequestGetRequestType(int nweb_request_key);
+ 
+  std::string ResourceResponseGetMimeType(int nweb_response_key);
+  std::string ResourceResponseGetEncoding(int nweb_response_key);
+  int32_t ResourceResponseGetStatusCode(int nweb_response_key);
+  std::string ResourceResponseGetReasonPhrase(int nweb_response_key);
+  std::map<std::string, std::string> ResourceResponseGetResponseHeader(int nweb_response_key);
+  bool ResourceResponseGetIsFromNetwork(int nweb_response_key);
+ 
+  int32_t GetLastCommittedEntryPageTransition();
+ 
+  void ResourceRequestDelete(int nweb_request_key);
+  void ResourceResponseDelete(int nweb_response_key);
+  
+  static int InsertResourceRequest(std::shared_ptr<NWebResourceRequest> nweb_request);
+  static std::shared_ptr<NWebResourceRequest> GetResourceRequestByKey(int key);
+  
+  static int InsertResourceResponse(std::shared_ptr<NWebResourceResponse> nweb_response);
+  static std::shared_ptr<NWebResourceResponse> GetResourceResponseByKey(int key);
+#endif
+
  private:
 #if BUILDFLAG(ARKWEB_JSPROXY)
   enum class JsRunTime{Start = 0, End = 1, HEAD_READY};
@@ -1246,6 +1293,9 @@ void OnMediaCastEnter() override;
   PermissionMap javascript_async_permission_map_;
   std::function<void(void)> onLoadStartCallback_ = nullptr;
   std::function<void(void)> onLoadEndCallback_ = nullptr;
+#if BUILDFLAG(ARKWEB_AI)
+  std::function<void(void)> onLoadStartedCbForContentChange_ = nullptr;
+#endif
 
 #if BUILDFLAG(ARKWEB_ADBLOCK)
   bool is_global_adblock_enabled_ = false;

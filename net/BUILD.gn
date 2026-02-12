@@ -3113,6 +3113,10 @@ target(_test_target_type, "net_unittests") {
     "//url:buildflags",
   ]
 
+  if (defined(arkweb_ext_http_dns_fallback) && arkweb_ext_http_dns_fallback) {
+    deps += [ "//services/network/public/cpp:cpp", ]
+  }
+
   if (!is_cronet_build) {
     sources += [
       "extras/sqlite/sqlite_persistent_cookie_store_unittest.cc",

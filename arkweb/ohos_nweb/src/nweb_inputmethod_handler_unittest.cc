@@ -359,6 +359,9 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
               SendTouchpadFlingEvent,
               (const CefMouseEvent&, double, double),
               (override));
+  MOCK_METHOD(void,
+              SendCancelFlingEvent, (const CefMouseEvent&),
+              (override));
   void SetFitContentMode(int mode) override {}
   void UpdateDrawRect() override {}
   void OnTextSelected(bool flag) override {}
@@ -552,6 +555,11 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void RunJavaScriptInFrames(const std::string& jsString, FrameInfos rootFrame,
                              bool recursive, IsolatedWorld world,
                              CefRefPtr<CefJavaScriptResultCallback> callback) override {}
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  void GetAllFrameInfos(CefRefPtr<CefFrameInfosCallback> callback) override {}
+  void GetLastJavaScriptProxyCallingFrameInfo(
+    CefRefPtr<CefLastJavaScriptProxyCallingFrameInfoCallback> callback) override {}
+#endif
 #if BUILDFLAG(ARKWEB_READER_MODE)
   void Distill(const std::string& guid, const DistillOptions& distill_options,
     CefRefPtr<CefDistillCallback> callback) override {}

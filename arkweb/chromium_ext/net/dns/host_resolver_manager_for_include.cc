@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include "arkweb/chromium_ext/net/dns/secure_dns_fallback_utils.h"
 #include "arkweb/chromium_ext/url/ohos/log_utils.h"
 
 #if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
@@ -206,7 +207,7 @@ void HostResolverManager::SetHttpsDnsFallbackData(
 void HostResolverManager::SetSuspectIpListAndSourceHostList(
     const std::vector<std::string>& ip_list,
     const std::vector<std::string>& host_list) {
-  // Todo(huawei)
+  StoreSuspectIPListAndSourceHostList(ip_list, host_list);
 }
 
 void HostResolverManager::GetLocalAddress(IPEndPoint* address) {

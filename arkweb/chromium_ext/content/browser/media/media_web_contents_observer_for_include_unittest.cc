@@ -24,6 +24,11 @@
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "ui/gfx/geometry/rect.h"
+#include "content/public/test/mock_navigation_handle.h"
+#include "content/browser/media/session/media_session_controllers_manager.h"
+#include "services/media_session/public/cpp/test/mock_media_session.h"
+using::testing::_;
+using::testing::Return;
 
 namespace content {
 class MockMediaPlayerListener : public content::MediaPlayerListener {
@@ -206,6 +211,7 @@ class TestMediaPlayer : public media::mojom::MediaPlayer {
   void MediaCastStopByNavigation() override {}
   void GetMediaCastCurrentTime(GetMediaCastCurrentTimeCallback callback) override {}
   void NotifyRemoteExitFullScreen() override {}
+  void NotifyCastControlShow(bool is_show) override {}
 #endif // ARKWEB_UNITTESTS
 
  private:
@@ -247,6 +253,27 @@ class MediaWebContentsObserverForIncludeTest
  protected:
   std::unique_ptr<MediaWebContentsObserver> observer_;
   std::optional<MediaPlayerId> player_id_;
+};
+
+class MyMockNavigationHandle : public content::MockNavigationHandle {
+  public:
+    MOCK_METHOD(bool, HasCommitted, (), (const, override));
+    MOCK_METHOD(ui::PageTransition, GetPageTransition, (), ());
+};
+
+class MyMockMediaSession : public media_session::test::MockMediaSession {
+  public:
+    explicit MyMockMediaSession(WebContentsImpl* web_contents)
+      : media_session::test::MockMediaSession(web_contents) {}
+    MOCK_METHOD(void, MediaCastStopByNavigation, (), ());
+};
+
+class MyMockMediaSessionControllersManager : public MediaSessionControllersManager {
+ public:
+  explicit MyMockMediaSessionControllersManager(WebContentsImpl* web_contents)
+      : MediaSessionControllersManager(web_contents) {}
+  
+  MOCK_METHOD(void, MediaCastStopByNavigation, (), ());
 };
 
 #if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
@@ -1021,4 +1048,138 @@ TEST_F(MediaWebContentsObserverForIncludeTest,
   ASSERT_NO_FATAL_FAILURE(host->OnPictureInPictureStateChanged(1, 2, 3));
 }
 #endif  // BUILDFLAG(ARKWEB_PIP)
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+TEST_F(MediaWebContentsObserverForIncludeTest,
+       OnMediaCastEnter1) {
+  ASSERT_TRUE(player_id_.has_value());
+  auto host =
+      std::make_unique<MediaWebContentsObserver::MediaPlayerObserverHostImpl>(
+          *player_id_, nullptr);
+  ASSERT_NO_FATAL_FAILURE(host->OnMediaCastEnter());
+}
+
+TEST_F(MediaWebContentsObserverForIncludeTest,
+       OnMediaCastEnter2) {
+  ASSERT_TRUE(player_id_.has_value());
+  auto host =
+      std::make_unique<MediaWebContentsObserver::MediaPlayerObserverHostImpl>(
+          *player_id_, observer_.get());
+  ASSERT_NO_FATAL_FAILURE(host->OnMediaCastEnter());
+}
+
+TEST_F(MediaWebContentsObserverForIncludeTest,
+       HandleStopMediaCast1) {
+  ASSERT_TRUE(player_id_.has_value());
+  auto host =
+      std::make_unique<MediaWebContentsObserver::MediaPlayerObserverHostImpl>(
+          *player_id_, observer_.get());
+  ASSERT_NO_FATAL_FAILURE(host->HandleStopMediaCast());
+}
+
+TEST_F(MediaWebContentsObserverForIncludeTest,
+       HandleStopMediaCast2) {
+  ASSERT_TRUE(player_id_.has_value());
+  std::unique_ptr<MediaWebContentsObserver::MediaPlayerObserverHostImpl> host;
+  
+  ASSERT_DEATH({
+    host = std::make_unique<MediaWebContentsObserver::MediaPlayerObserverHostImpl>(
+        *player_id_, nullptr);
+    host->HandleStopMediaCast();
+  }, ".*");
+}
+
+TEST_F(MediaWebContentsObserverForIncludeTest,
+       UpdateRemotePlayState1) {
+  ASSERT_TRUE(player_id_.has_value());
+  auto host =
+      std::make_unique<MediaWebContentsObserver::MediaPlayerObserverHostImpl>(
+          *player_id_, observer_.get());
+  ASSERT_NO_FATAL_FAILURE(host->UpdateRemotePlayState(true));
+}
+
+TEST_F(MediaWebContentsObserverForIncludeTest,
+       UpdateRemotePlayState2) {
+  ASSERT_TRUE(player_id_.has_value());
+  std::unique_ptr<MediaWebContentsObserver::MediaPlayerObserverHostImpl> host;
+  
+  ASSERT_DEATH({
+    host = std::make_unique<MediaWebContentsObserver::MediaPlayerObserverHostImpl>(
+        *player_id_, nullptr);
+    host->UpdateRemotePlayState(true);
+  }, ".*");
+}
+
+TEST_F(MediaWebContentsObserverForIncludeTest,
+       UpdateRemotePlayPosition1) {
+  ASSERT_TRUE(player_id_.has_value());
+  auto host =
+      std::make_unique<MediaWebContentsObserver::MediaPlayerObserverHostImpl>(
+          *player_id_, observer_.get());
+  ASSERT_NO_FATAL_FAILURE(host->UpdateRemotePlayPosition(1));
+  host.reset();
+}
+
+TEST_F(MediaWebContentsObserverForIncludeTest,
+       UpdateRemotePlayPosition2) {
+  ASSERT_TRUE(player_id_.has_value());
+  std::unique_ptr<MediaWebContentsObserver::MediaPlayerObserverHostImpl> host;
+  
+  ASSERT_DEATH({
+    host = std::make_unique<MediaWebContentsObserver::MediaPlayerObserverHostImpl>(
+        *player_id_, nullptr);
+    host->UpdateRemotePlayPosition(1);
+  }, ".*");
+  host.reset();
+}
+
+TEST_F(MediaWebContentsObserverForIncludeTest,
+       SetPauseByAvcast1) {
+  ASSERT_TRUE(player_id_.has_value());
+  auto host =
+      std::make_unique<MediaWebContentsObserver::MediaPlayerObserverHostImpl>(
+          *player_id_, observer_.get());
+  ASSERT_NO_FATAL_FAILURE(host->SetPauseByAvcast(true));
+  host.reset();
+}
+
+TEST_F(MediaWebContentsObserverForIncludeTest,
+       SetPauseByAvcast2) {
+  ASSERT_TRUE(player_id_.has_value());
+  std::unique_ptr<MediaWebContentsObserver::MediaPlayerObserverHostImpl> host;
+  
+  ASSERT_DEATH({
+    host = std::make_unique<MediaWebContentsObserver::MediaPlayerObserverHostImpl>(
+        *player_id_, nullptr);
+    host->SetPauseByAvcast(true);
+  }, ".*");
+  host.reset();
+}
+
+TEST_F(MediaWebContentsObserverForIncludeTest,
+       DidFinishNavigation1) {
+  MyMockNavigationHandle mock_navigation;
+  EXPECT_CALL(mock_navigation, HasCommitted())
+      .WillOnce(Return(false));
+  observer_->DidFinishNavigation(&mock_navigation);
+  testing::Mock::VerifyAndClearExpectations(&mock_navigation);
+}
+
+TEST_F(MediaWebContentsObserverForIncludeTest,
+       DidFinishNavigation2) {
+  MyMockNavigationHandle mock_navigation;
+  auto mock_manager_raw = new MyMockMediaSessionControllersManager(
+      static_cast<WebContentsImpl*>(web_contents()));
+  std::unique_ptr<MediaSessionControllersManager> mock_manager(mock_manager_raw);
+  EXPECT_CALL(mock_navigation, HasCommitted())
+      .WillOnce(Return(true));
+  EXPECT_CALL(mock_navigation, GetPageTransition())
+      .WillOnce(Return(ui::PAGE_TRANSITION_FORWARD_BACK));
+  testing::Mock::AllowLeak(mock_manager_raw);
+  observer_->session_controllers_manager_ = std::move(mock_manager);
+  observer_->DidFinishNavigation(&mock_navigation);
+  testing::Mock::VerifyAndClearExpectations(&mock_navigation);
+  observer_->session_controllers_manager_.reset();
+}
+#endif  // BUILDFLAG(ARKWEB_MEDIA_CAST)
 }  // namespace content

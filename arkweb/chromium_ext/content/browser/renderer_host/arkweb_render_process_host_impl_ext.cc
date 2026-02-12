@@ -71,39 +71,43 @@ const base::TimeTicks& ArkwebRenderProcessHostImplExt::ProcessBackgroundTime() {
 }
 
 void ArkwebRenderProcessHostImplExt::RenderProcessChannelConnectCheck() {
-  LOG(ERROR) << "RenderProcessHostImpl: " << GetProcess().Handle()
-             << " check channel connect status";
+  LOG(INFO) << "RenderProcessHost: " << GetProcess().Handle()
+            << " check channel connect status";
   if (is_dead() || !GetProcess().Handle()) {
-    LOG(ERROR) << "RenderProcessHostImpl channel connect host: " << GetProcess().Handle()
+    LOG(ERROR) << "RenderProcessHost channel connect host: " << GetProcess().Handle()
                << " is dead";
     return;
   }
   if (!IsReady()) {
-    LOG(ERROR) << "RenderProcessHostImpl channel connect timeout(10s), terminate process: "
-               << GetProcess().Handle();
+    LOG(WARNING) << "RenderProcessHost channel connect timeout(6s), terminate process: "
+                 << GetProcess().Handle();
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP) && !defined(COMPONENT_BUILD)
+    ReportRenderProcessTerminate(false, GetProcess().Handle(),
+      std::string("TERMINATION_CHANNEL_CONNECT_FAILED"), 0);
+#endif
     internal::ChildProcessLauncherHelper::TerminateProcess(GetProcess(), 0);
   }
 }
 
 void ArkwebRenderProcessHostImplExt::StartChannelConnectedCheckTask(ArkwebRenderProcessHostImplExt* host) {
   if (host->channel_connected_check_callback_.callback().is_null()) {
-    LOG(WARNING) << "Reused existing process: " << host->GetProcess().Handle()
-                 << " but channel not connected, wait 10s to check";
+    LOG(WARNING) << "RenderProcessHost: " << host->GetProcess().Handle()
+                 << " Wait 6-second to monitoring channel connection status.";
     host->channel_connected_check_callback_.Reset(
       base::BindOnce(&ArkwebRenderProcessHostImplExt::RenderProcessChannelConnectCheck,
                      host->instance_weak_factory_.GetWeakPtr()));
     /* If the render process and the main process are killed before establishing IPC,
      * the main process cannot detect the death of the render process. This would cause
      * RenderProcessHostImpl to mistakenly assume that it still holds the connection,
-     * leading to incorrect reuse. Therefore, a 10-second check is set to verify whether
+     * leading to incorrect reuse. Therefore, a 6-second check is set to verify whether
      * the IPC channel has been established; if not, the process is terminated and an
      * onRenderProcessExited callback is reported.
      */
     GetUIThreadTaskRunner({})->PostDelayedTask(
-      FROM_HERE, host->channel_connected_check_callback_.callback(), base::Seconds(10));
+      FROM_HERE, host->channel_connected_check_callback_.callback(), base::Seconds(6));
   } else if (host->channel_connected_check_callback_.IsCancelled()) {
-    LOG(ERROR) << "RenderProcessHostImpl channel connect timeout(10s), terminate process: "
-               << host->GetProcess().Handle();
+    LOG(ERROR) << "RenderProcessHost: " << host->GetProcess().Handle()
+               << " channel connect check is cancelled.";
   }
 }
 
@@ -112,8 +116,8 @@ void ArkwebRenderProcessHostImplExt::CancelChannelConnectedCheckTask(ArkwebRende
       host->channel_connected_check_callback_.IsCancelled()) {
     return;
   }
-  LOG(ERROR) << "RenderProcessHostImpl: " << host->GetProcess().Handle()
-             << " cancel channel connected check task";
+  LOG(INFO) << "RenderProcessHost: " << host->GetProcess().Handle()
+            << " cancel channel connected check task";
   host->channel_connected_check_callback_.Cancel();
 }
 #endif  // ARKWEB_RENDER_PROCESS_MODE

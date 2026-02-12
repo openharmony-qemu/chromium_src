@@ -34,10 +34,10 @@ interface DisplayPrivate {
 
   [EnableIf=is_ohos]
   SetDrawRect(gfx.mojom.Rect rect);
- 
+
   [EnableIf=is_ohos]
   SetDrawMode(int32 mode);
- 
+
   // Resizes the display.
   Resize(gfx.mojom.Size size);
 
@@ -176,4 +176,8 @@ interface DisplayClient {
   // Notifies that there is a new refresh rate preference.
   [EnableIf=can_set_refresh_rate]
   SetPreferredRefreshRate(float refresh_rate);
+
+  // Notifies first real swap buffer after show.
+  [EnableIf=arkweb_evict_unlock_frames]
+  NotifyFirstRealSwapBuffer();
 };

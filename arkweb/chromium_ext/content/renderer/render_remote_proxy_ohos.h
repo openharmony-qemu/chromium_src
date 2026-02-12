@@ -34,18 +34,30 @@ class RenderRemoteProxy : public OHOS::NWeb::AafwkRenderSchedulerHostAdapter {
       std::shared_ptr<OHOS::NWeb::AafwkBrowserClientAdapter> clientAdapter)
       override;
 
-  static void CreateAndRegist(const base::CommandLine& command_line);
+  static void CreateAndRegist(const base::CommandLine& command_line,
+                             const std::string& process_type);
   static bool WaitForBrowserFd();
+  static bool IsFdsChannelReady();
 
  private:
   int32_t ipc_fd_ = 0;
   int32_t shared_fd_ = 0;
   int32_t crash_id_ = 0;
+  struct Fds {
+    int32_t ipcFd = -1;
+    int32_t sharedFd = -1;
+    int32_t crashFd = -1;
+    bool HasAllFds() const { return ipcFd > 0 && sharedFd > 0 && crashFd > 0; }
+  };
 
   static std::mutex browser_fd_mtx_;
   static std::condition_variable browser_fd_cv_;
   static bool is_browser_fd_received_;
   static bool is_for_test_;
+  static bool fds_channel_ready_;
+
+  void SetBrowserFd(int32_t ipcFd, int32_t sharedFd, int32_t crashFd);
+  static Fds ParseFdsFromCommandLine(const base::CommandLine& command_line);
 };
 #endif
 

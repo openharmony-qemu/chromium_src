@@ -21,6 +21,7 @@
 #include <memory>
 #include <vector>
 
+#include "base/memory/weak_ptr.h"
 #include "capi/nweb_devtools_message_handler.h"
 #include "nweb_delegate_interface.h"
 
@@ -333,6 +334,10 @@ class MockNWebDelegate : public NWebDelegateInterface {
               GetAgentManager,
               (),
               (const, override));
+  MOCK_METHOD(void,
+              RegisterOnLoadStartedCbForContentChange,
+              (std::function<void(void)>&& callback),
+              (override));
 #endif
   MOCK_METHOD(std::string, Title, (), (override));
   MOCK_METHOD(std::shared_ptr<HitTestResult>,
@@ -773,6 +778,9 @@ class MockNWebDelegate : public NWebDelegateInterface {
                double vy,
                const std::vector<int32_t>& pressedCodes),
               (override));
+  MOCK_METHOD(void,
+            WebSendCancelFlingEvent, (),
+            (override));
 #endif
 
 #if BUILDFLAG(IS_OHOS)
@@ -1278,6 +1286,14 @@ class MockNWebDelegate : public NWebDelegateInterface {
               (RunJavaScriptParam,
                OnReceiveValueCallback callback),
               (override));
+  MOCK_METHOD(void,
+              GetAllFrameInfos,
+              (OnReceiveFrameInfosCallback callback),
+              (override));
+  MOCK_METHOD(void,
+              GetLastJavaScriptProxyCallingFrameInfo,
+              (OnLastJavaScriptProxyCallingFrameInfoCallback callback),
+              (override));
 #endif
 
 #if BUILDFLAG(ARKWEB_READER_MODE)
@@ -1300,6 +1316,28 @@ class MockNWebDelegate : public NWebDelegateInterface {
   MOCK_METHOD(void, EnableHttpsUpgrades, (bool enable), (override));                               
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+  MOCK_METHOD((std::map<std::string, std::string>), ResourceRequestGetRequestHeader, 
+              (int nweb_request_key), (override));
+  MOCK_METHOD(std::string, ResourceRequestGetRequestUrl, (int nweb_request_key), (override));
+  MOCK_METHOD(bool, ResourceRequestIsRequestGesture, (int nweb_request_key), (override));
+  MOCK_METHOD(bool, ResourceRequestIsMainFrame, (int nweb_request_key), (override));
+  MOCK_METHOD(bool, ResourceRequestIsRedirect, (int nweb_request_key), (override));
+  MOCK_METHOD(std::string, ResourceRequestGetRequestMethod, (int nweb_request_key), (override));
+  MOCK_METHOD(int32_t, ResourceRequestGetPageTransition, (int nweb_request_key), (override));
+  MOCK_METHOD(int32_t, ResourceRequestGetRequestType, (int nweb_request_key), (override));
+  MOCK_METHOD(void, ResourceRequestDelete, (int nweb_request_key), (override));
+  MOCK_METHOD(std::string, ResourceResponseGetMimeType, (int nweb_response_key), (override));
+  MOCK_METHOD(std::string, ResourceResponseGetEncoding, (int nweb_response_key), (override));
+  MOCK_METHOD(int32_t, ResourceResponseGetStatusCode, (int nweb_response_key), (override));
+  MOCK_METHOD(std::string, ResourceResponseGetReasonPhrase, (int nweb_response_key), (override));
+  MOCK_METHOD((std::map<std::string, std::string>), ResourceResponseGetResponseHeader,
+             (int nweb_response_key), (override));
+  MOCK_METHOD(bool, ResourceResponseGetIsFromNetwork, (int nweb_response_key), (override));
+  MOCK_METHOD(void, ResourceResponseDelete, (int nweb_response_key), (override));
+  MOCK_METHOD(int32_t, GetLastCommittedEntryPageTransition, (), (override));
+#endif
+
 #if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
   MOCK_METHOD(void, SetFocusWebId, (int32_t nweb_id), (override));
 #endif
@@ -1315,6 +1353,14 @@ class MockNWebDelegate : public NWebDelegateInterface {
               (const std::string& user_agent),
               (override));
 #endif
+
+  // Support for weak_ptr
+  base::WeakPtr<MockNWebDelegate> WeakFromThis() {
+    return weak_factory_.GetWeakPtr();
+  }
+
+ private:
+  base::WeakPtrFactory<MockNWebDelegate> weak_factory_{this};
 };
 }  // namespace OHOS::NWeb
 

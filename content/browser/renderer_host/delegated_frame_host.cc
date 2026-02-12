@@ -46,6 +46,9 @@ constexpr float kFrameContentCaptureQuality = 0.4f;
 
 ////////////////////////////////////////////////////////////////////////////////
 // DelegatedFrameHost
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+bool DelegatedFrameHost::evictUnlockFrameEnabled_ = false;
+#endif
 
 DelegatedFrameHost::DelegatedFrameHost(const viz::FrameSinkId& frame_sink_id,
                                        DelegatedFrameHostClient* client,
@@ -55,6 +58,10 @@ DelegatedFrameHost::DelegatedFrameHost(const viz::FrameSinkId& frame_sink_id,
       should_register_frame_sink_id_(should_register_frame_sink_id),
       host_frame_sink_manager_(GetHostFrameSinkManager()),
       frame_evictor_(std::make_unique<viz::FrameEvictor>(this)) {
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  evictUnlockFrameEnabled_ = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance()
+    .GetBoolParameter("const.web.frame_evictor.enabled", false);
+#endif
   CHECK(host_frame_sink_manager_);
   frame_evictor_->SetVisible(client_->DelegatedFrameHostIsVisible());
 
@@ -81,6 +88,23 @@ void DelegatedFrameHost::RemoveObserverForTesting(Observer* observer) {
   observers_.RemoveObserver(observer);
 }
 
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+cc::DeadlinePolicy DelegatedFrameHost::FirstFrameDeadlinePolicy() {
+  if (evictUnlockFrameEnabled_) {
+    return cc::DeadlinePolicy::UseSpecifiedDeadline(600); // 600: deadline in frames
+  } else {
+    return cc::DeadlinePolicy::UseDefaultDeadline();
+  }
+}
+
+void DelegatedFrameHost::SetUseSpecifiedDeadlinePolicy(bool shouldUse) {
+  if (shouldUseSpecifiedPolicy_ != shouldUse) {
+    shouldUseSpecifiedPolicy_ = shouldUse;
+    LOG(INFO) << "ui DelegatedFrameHost::SetUseSpecifiedDeadlinePolicy shouldUse: " << shouldUse;
+  }
+}
+#endif
+
 void DelegatedFrameHost::WasShown(
     const viz::LocalSurfaceId& new_local_surface_id,
     const gfx::Size& new_dip_size,
@@ -99,8 +123,12 @@ void DelegatedFrameHost::WasShown(
 
   // Use the default deadline to synchronize web content with browser UI.
   // TODO(fsamuel): Investigate if there is a better deadline to use here.
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  EmbedSurface(new_local_surface_id, new_dip_size, FirstFrameDeadlinePolicy());
+#else
   EmbedSurface(new_local_surface_id, new_dip_size,
                cc::DeadlinePolicy::UseDefaultDeadline());
+#endif
 
   // Remove stale content that might be displayed.
   if (stale_content_layer_->has_external_content()) {
@@ -253,9 +281,15 @@ void DelegatedFrameHost::EmbedSurface(
     const viz::LocalSurfaceId& new_local_surface_id,
     const gfx::Size& new_dip_size,
     cc::DeadlinePolicy deadline_policy) {
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  if (shouldUseSpecifiedPolicy_) {
+    deadline_policy = FirstFrameDeadlinePolicy();
+    LOG(INFO) << "ui DelegatedFrameHost::EmbedSurface: " << "surface_id: " << new_local_surface_id.ToString() <<
+              "deadline_policy: " <<deadline_policy.ToString();
+  }
+#endif
   TRACE_EVENT2("viz", "DelegatedFrameHost::EmbedSurface", "surface_id",
-               new_local_surface_id.ToString(), "deadline_policy",
-               deadline_policy.ToString());
+               new_local_surface_id.ToString(), "deadline_policy", deadline_policy.ToString());
 
   const viz::SurfaceId* primary_surface_id =
       client_->DelegatedFrameHostGetLayer()->GetSurfaceId();

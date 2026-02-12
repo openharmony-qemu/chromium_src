@@ -26,6 +26,55 @@
 namespace gl {
 namespace init {
 
+namespace {
+
+// Used to render into an already current context+surface,
+// that we do not have ownership of (draw callback).
+// TODO(boliu): Make this inherit from GLContextEGL.
+class GLNonOwnedContext : public GLContextReal {
+ public:
+  explicit GLNonOwnedContext(GLShareGroup* share_group);
+
+  GLNonOwnedContext(const GLNonOwnedContext&) = delete;
+  GLNonOwnedContext& operator=(const GLNonOwnedContext&) = delete;
+
+  bool MakeCurrentImpl(GLSurface* surface) override;
+  void ReleaseCurrent(GLSurface* surface) override {}
+  bool IsCurrent(GLSurface* surface) override;
+  void* GetHandle() override { return nullptr; }
+
+ protected:
+  ~GLNonOwnedContext() override {}
+  // Implement GLContext.
+  bool InitializeImpl(GLSurface* compatible_surface,
+                  const GLContextAttribs& attribs) override;
+
+ private:
+  EGLDisplay display_;
+};
+
+GLNonOwnedContext::GLNonOwnedContext(GLShareGroup* share_group)
+    : GLContextReal(share_group), display_(nullptr) {}
+
+bool GLNonOwnedContext::InitializeImpl(GLSurface* compatible_surface,
+                                   const GLContextAttribs& attribs) {
+  display_ = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+  return true;
+}
+
+bool GLNonOwnedContext::MakeCurrentImpl(GLSurface* surface) {
+  BindGLApi();
+  SetCurrent(surface);
+  InitializeDynamicBindings();
+  return true;
+}
+
+bool GLNonOwnedContext::IsCurrent(GLSurface* surface) {
+  return GetRealCurrent() == this;
+}
+
+}  // namespace
+
 //LCOV_EXCL_START
 std::vector<GLImplementationParts> GetAllowedGLImplementations() {
   return std::vector<gl::GLImplementationParts>{
@@ -39,6 +88,9 @@ bool GetGLWindowSystemBindingInfo(const GLVersionInfo& gl_info,
                                   GLWindowSystemBindingInfo* info) {
   switch (GetGLImplementation()) {
     case kGLImplementationEGLGLES2:
+      return false;
+    case kGLImplementationEGLANGLE:
+      return GetGLWindowSystemBindingInfoEGL(info);
     default:
       return false;
   }
@@ -68,9 +120,12 @@ scoped_refptr<GLContext> CreateGLContext(GLShareGroup* share_group,
           compatible_surface->IsSurfaceless()) {
         return InitializeGLContext(new GLContextEGL(share_group),
                                    compatible_surface, attribs);
+      } else {
+        return InitializeGLContext(new GLNonOwnedContext(share_group),
+                                   compatible_surface, attribs);
       }
   }
-  return nullptr;
+
 }
 
 scoped_refptr<GLSurface> CreateViewGLSurface(GLDisplay* display,

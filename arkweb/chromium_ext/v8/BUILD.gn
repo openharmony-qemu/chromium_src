@@ -1,0 +1,120 @@
+# Copyright (c) 2026 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+config("lib_llvm_for_v8_config") {
+
+  include_dirs = [
+    "//third_party/llvm-for-jsvm/llvm/include",
+  ]
+  if (is_debug) {
+      include_dirs += [ "//third_party/llvm-for-jsvm/llvm/build_debug/include", ]
+  } else {
+      include_dirs += [ "//third_party/llvm-for-jsvm/llvm/build_release/include", ]
+  }
+  if (is_debug) {
+      lib_dirs = [ "//third_party/llvm-for-jsvm/llvm/build_debug/lib" ]
+  } else {
+      lib_dirs = [ "//third_party/llvm-for-jsvm/llvm/build_release/lib" ]
+  }
+
+  libs = [
+    "LLVMAArch64AsmParser",
+    "LLVMAArch64CodeGen",
+    "LLVMAArch64Desc",
+    "LLVMAArch64Disassembler",
+    "LLVMAArch64Info",
+    "LLVMAArch64Utils",
+    "LLVMAggressiveInstCombine",
+    "LLVMAnalysis",
+    "LLVMAsmParser",
+    "LLVMAsmPrinter",
+    "LLVMBinaryFormat",
+    "LLVMBitReader",
+    "LLVMBitstreamReader",
+    "LLVMBitWriter",
+    "LLVMCFGuard",
+    "LLVMCodeGen",
+    "LLVMCodeGenData",
+    "LLVMCodeGenTypes",
+    "LLVMCore",
+    "LLVMCoroutines",
+    "LLVMCoverage",
+    "LLVMDebugInfoBTF",
+    "LLVMDebugInfoCodeView",
+    "LLVMDebugInfod",
+    "LLVMDebugInfoDWARF",
+    "LLVMDebugInfoGSYM",
+    "LLVMDebugInfoLogicalView",
+    "LLVMDebugInfoMSF",
+    "LLVMDebugInfoPDB",
+    "LLVMDemangle",
+    "LLVMExecutionEngine",
+    "LLVMExtensions",
+    "LLVMFileCheck",
+    "LLVMFrontendDriver",
+    "LLVMFrontendHLSL",
+    "LLVMFrontendOffloading",
+    "LLVMFrontendOpenACC",
+    "LLVMFrontendOpenMP",
+    "LLVMFuzzerCLI",
+    "LLVMFuzzMutate",
+    "LLVMGlobalISel",
+    "LLVMHipStdPar",
+    "LLVMInstCombine",
+    "LLVMInstrumentation",
+    "LLVMInterfaceStub",
+    "LLVMInterpreter",
+    "LLVMipo",
+    "LLVMIRPrinter",
+    "LLVMIRReader",
+    "LLVMJITLink",
+    "LLVMLibDriver",
+    "LLVMLineEditor",
+    "LLVMLinker",
+    "LLVMLTO",
+    "LLVMMC",
+    "LLVMMCA",
+    "LLVMMCDisassembler",
+    "LLVMMCJIT",
+    "LLVMMCParser",
+    "LLVMMIRParser",
+    "LLVMObjCARCOpts",
+    "LLVMObjCopy",
+    "LLVMObject",
+    "LLVMObjectYAML",
+    "LLVMOption",
+    "LLVMPasses",
+    "LLVMProfileData",
+    "LLVMRemarks",
+    "LLVMRuntimeDyld",
+    "LLVMSandboxIR",
+    "LLVMScalarOpts",
+    "LLVMSelectionDAG",
+    "LLVMSupport",
+    "LLVMSymbolize",
+    "LLVMTableGen",
+    "LLVMTableGenBasic",
+    "LLVMTableGenCommon",
+    "LLVMTarget",
+    "LLVMTargetParser",
+    "LLVMTextAPI",
+    "LLVMTextAPIBinaryReader",
+    "LLVMTransformUtils",
+    "LLVMVectorize",
+  ]
+
+  ldflags = [
+    "-lstdc++",
+    "-lz",
+  ]
+}

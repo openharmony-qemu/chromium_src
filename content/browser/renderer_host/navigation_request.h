@@ -341,6 +341,10 @@ class CONTENT_EXPORT NavigationRequest
   // above memory threshold) or whether the site is already isolated.
   bool ShouldRequestSiteIsolationForCOOP();
 
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+  void SetCustomViewportWidth(int32_t width) override;
+#endif
+
   // NavigationHandle implementation:
   int64_t GetNavigationId() const override;
   ukm::SourceId GetNextPageUkmSourceId() override;

@@ -775,6 +775,10 @@ class CONTENT_EXPORT NavigationHandle : public base::SupportsUserData {
   // the discarding. See `NavigationDiscardReason` for the various cases.
   virtual std::optional<NavigationDiscardReason>
   GetNavigationDiscardReason() = 0;
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+  virtual void SetCustomViewportWidth(int32_t width) = 0;
+#endif
 };
 
 }  // namespace content

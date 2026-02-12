@@ -532,6 +532,10 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
               SendTouchpadFlingEvent,
               (const CefMouseEvent&, double, double),
               (override));
+  
+  MOCK_METHOD(void,
+              SendCancelFlingEvent, (const CefMouseEvent&),
+              (override));
 
   void SetFitContentMode(int mode) override {}
 
@@ -782,7 +786,11 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
       bool recursive,
       IsolatedWorld world,
       CefRefPtr<CefJavaScriptResultCallback> callback) override {}
-
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  void GetAllFrameInfos(CefRefPtr<CefFrameInfosCallback> callback) override {}
+  void GetLastJavaScriptProxyCallingFrameInfo(
+      CefRefPtr<CefLastJavaScriptProxyCallingFrameInfoCallback> callback) override {}
+#endif
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   void GetFocusedFrameInfo(int32_t& frame_id, CefString& frame_url) override {}
 #endif  // ARKWEB_ARKWEB_EXTENSIONS
@@ -801,6 +809,10 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void AbortDistill() override {}
 #endif
   void EnableHttpsUpgrades(bool enable) override {}
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+  int32_t GetLastCommittedEntryPageTransition() override { return 0; }
 #endif
 
 #if BUILDFLAG(ARKWEB_UNITTESTS)

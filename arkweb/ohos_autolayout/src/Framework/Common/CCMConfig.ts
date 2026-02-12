@@ -23,6 +23,7 @@ export interface AppRuleInfo {
   'strategy' ?: number;
   'alphabetIdentificationMinSize' ?: number;
   'alphabetHeightWidthMinRatio' ?: number;
+  'targetHeightRatio' ?: number;
 }
 
 export enum AutoLayoutStrategyType {
@@ -78,6 +79,12 @@ export interface ICCMConfigBase {
    * 即元素 高 > 宽 * alphabetHeightWidthMinRatio 才判断为字母导航条
    */
   alphabetHeightWidthMinRatio?: number;
+
+  /**
+   * 弹窗缩放时，目标高度与视口高度的比值。单位为%，targetHeightRatio=70表示70%.
+   * 即弹窗缩放因子scale = 弹窗高度 / (视口高度 * (targetHeightRatio /100)).
+   */
+  targetHeightRatio?: number;
 
   /**
    * 是否需要校验id和page，为true时为小程序逻辑，为false时为H5网页url校验
@@ -145,8 +152,9 @@ const defaultCCMConfig: ICCMConfig = {
     { widthRange: { min: 1000, max: 1150 }, aspectRatioRange: { min: 1.3, max: 1.45 } }
   ],
   appRuleInfos: [{'id':'000','pg':['home']}],
-  needCheckIdAndPage: false,
+  needCheckIdAndPage: true,
   strategy: 3,
+  targetHeightRatio: 70,
   minSARTofStickyComponent:5,
   maxSARTofStickyComponent:45,
 };
@@ -186,6 +194,8 @@ export class CCMConfig {
   private strategy: number = AutoLayoutStrategyType.popupScale;
   // 记录是否已执行字母导航条修复
   private isAlphabetNavigatorFixExecuted: boolean = false;
+  // 默认比值为70%，与之前算法保持一致
+  private _targetHeightRatio: number = 70;
 
   /**
    * 构造函数，用于初始化 ProductConfig 实例
@@ -205,12 +215,6 @@ export class CCMConfig {
     this._breakpoints = data.breakpoints;
     this._appRuleInfos = data.appRuleInfos;
     this._needCheckIdAndPage = data.needCheckIdAndPage;
-    // 若needCheckIdAndPage为false，跳过id和page的校验
-    if (data.needCheckIdAndPage) {
-      this.checkRuleStateResult = CheckRuleStateResult.initial;
-    } else {
-      this.checkRuleStateResult = CheckRuleStateResult.skipCheck;
-    }
     this.appId = '';
     this.page = '';
     this._minSARTofStickyComponent = data.minSARTofStickyComponent;
@@ -281,6 +285,10 @@ export class CCMConfig {
     return this._alphabetHeightWidthMinRatio;
   }
 
+  public getTargetHeightRatio(): number {
+    return this._targetHeightRatio;
+  }
+
   public setAlphabetNavigatorFixExecuted(isExecuted: boolean): void {
     this.isAlphabetNavigatorFixExecuted = isExecuted;
   }
@@ -311,8 +319,17 @@ export class CCMConfig {
       this._minScaleFactor = data.minScaleFactor ;
       this._alphabetIdentificationMinSize = data.alphabetIdentificationMinSize;
       this._alphabetHeightWidthMinRatio = data.alphabetHeightWidthMinRatio;
+      if (data.targetHeightRatio > 0) {
+        this._targetHeightRatio = data.targetHeightRatio;
+      }
       this._appRuleInfos = typeof data.appRuleInfos === 'string' ? JSON.parse(data.appRuleInfos) : data.appRuleInfos;
       this._needCheckIdAndPage = data.needCheckIdAndPage;
+      // 若needCheckIdAndPage为false，跳过id和page的校验
+      if (data.needCheckIdAndPage) {
+        this.checkRuleStateResult = CheckRuleStateResult.initial;
+      } else {
+        this.checkRuleStateResult = CheckRuleStateResult.skipCheck;
+      }
   }
 
   /**
@@ -386,22 +403,32 @@ export class CCMConfig {
       if (isIdMatch && isPgMatch) {
         // 立即返回 true，因为已经找到了一个匹配项
         this.checkRuleStateResult = CheckRuleStateResult.inWhiteList;
-        Log.info('id, page 检查成功，查询策略...', Tag.ccmConfig);
-        if (rule.strategy) {
-          this.strategy = rule.strategy;
-          Log.info(`当前页面策略为：${this.strategy}`, Tag.ccmConfig);
-        }
-        if (rule.alphabetIdentificationMinSize) {
-          this._alphabetIdentificationMinSize = rule.alphabetIdentificationMinSize;
-        }
-        if (rule.alphabetHeightWidthMinRatio) {
-          this._alphabetHeightWidthMinRatio = rule.alphabetHeightWidthMinRatio;
-        }
+        this.parseMiniappOptionalConfig(rule);
         return this.checkRuleStateResult;
       }
     }
     this.checkRuleStateResult = CheckRuleStateResult.outOfWhiteList;
     return this.checkRuleStateResult;
+  }
+
+  /**
+   * 解析AppRuleInfo内可选参数
+   */
+  private parseMiniappOptionalConfig(appRuleInfo :AppRuleInfo): void {
+    Log.info('id, page 检查成功，查询策略...', Tag.ccmConfig);
+    if (appRuleInfo.strategy) {
+      this.strategy = appRuleInfo.strategy;
+      Log.info(`当前页面策略为：${this.strategy}`, Tag.ccmConfig);
+    }
+    if (appRuleInfo.alphabetIdentificationMinSize) {
+      this._alphabetIdentificationMinSize = appRuleInfo.alphabetIdentificationMinSize;
+    }
+    if (appRuleInfo.alphabetHeightWidthMinRatio) {
+      this._alphabetHeightWidthMinRatio = appRuleInfo.alphabetHeightWidthMinRatio;
+    }
+    if (appRuleInfo.targetHeightRatio && appRuleInfo.targetHeightRatio > 0) {
+      this._targetHeightRatio = appRuleInfo.targetHeightRatio;
+    }
   }
 
   /**

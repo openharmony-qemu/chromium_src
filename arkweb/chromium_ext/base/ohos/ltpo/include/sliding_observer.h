@@ -20,6 +20,7 @@
 
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/ohos/ltpo/include/ltpo_strategy.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/adapter_base.h"
 namespace base {

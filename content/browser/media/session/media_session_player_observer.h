@@ -110,6 +110,8 @@ class MediaSessionPlayerObserver {
   virtual void UpdateUiPlayPosition(int player_id, int64_t position) {}
 
   virtual void MediaCastStopped(int player_id) {}
+
+  virtual void NotifyCastControlShow(int player_id, bool is_show) {}
 #endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
 
   // Returns true if `player_id` is paused.

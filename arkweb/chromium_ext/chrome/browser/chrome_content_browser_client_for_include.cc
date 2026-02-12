@@ -71,6 +71,9 @@
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
 #include "cef/libcef/browser/browser_host_base.h"
 #include "cef/ohos_cef_ext/libcef/browser/net/extra_headers_throttle.h"
+#include "cef/ohos_cef_ext/libcef/browser/ohos_safe_browsing/ohos_sb_block_page.h"
+#include "cef/ohos_cef_ext/libcef/browser/ohos_safe_browsing/ohos_sb_controller_client.h"
+#include "cef/ohos_cef_ext/libcef/browser/ohos_safe_browsing/ohos_url_trust_list_interface.h"
 #endif
 
 enum AppLoadedInTabSource {
@@ -337,6 +340,47 @@ class ChromeContentBrowserClientUtils {
         net_service::NetHelpers::GetDefaultSocketIdleTimeout()) {
       network_service->SetSocketIdleTimeout(socket_idle_timeout);
     }
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  static void LoadBlockPage(base::WeakPtr<content::WebContents> web_contents, const GURL& url) {
+    CHECK(content::BrowserThread::CurrentlyOn(content::BrowserThread::UI));
+    content::WebContents* contents = web_contents.get();
+    if (!contents || !url.is_valid()) {
+        return;
+    }
+
+    auto locale = base::i18n::GetConfiguredLocale();
+    auto controller = std::make_unique<SbControllerClient>(contents, nullptr, url, locale, false);
+    std::unique_ptr<ohos_safe_browsing::SbBlockPage> blocking_page = std::make_unique<ohos_safe_browsing::SbBlockPage>(
+        contents, url, ohos_safe_browsing::OHSBPolicyType::POLICY_URL_TRUST_LIST,
+        ohos_safe_browsing::OHSBThreatType::THREAT_URL_TRUST_LIST, std::move(controller));
+    std::string html = blocking_page->GetUrlTrustListErrorHTMLContents();
+    std::string block_data = "data:text/html,";
+    block_data.append(html);
+    GURL block_url(block_data);
+    content::NavigationController::LoadURLParams block_params(block_url);
+    contents->GetController().LoadURLWithParams(block_params);
+  }
+
+  static bool BlockIfNotTrustUrl(const GURL& url, content::RenderFrameHost* render_frame_host) {
+    CHECK(content::BrowserThread::CurrentlyOn(content::BrowserThread::UI));
+    content::WebContents* web_contents = content::WebContents::FromRenderFrameHost(render_frame_host);
+    if (!web_contents) {
+        return false;
+    }
+    auto manager = static_cast<ohos_safe_browsing::UrlTrustListInterface*>(
+        web_contents->GetUserData(&ohos_safe_browsing::UrlTrustListInterface::interfaceKey));
+    if (!manager) {
+        return false;
+    }
+    if (manager->CheckUrlTrustList(url) != ohos_safe_browsing::UrlTrustCheckResult::RESULT_ALLOW) {
+        content::GetUIThreadTaskRunner({})->PostTask(
+            FROM_HERE, base::BindOnce(&LoadBlockPage, web_contents->GetWeakPtr(), url));
+        return true;
+    }
+    return false;
   }
 #endif
 };

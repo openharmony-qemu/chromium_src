@@ -1106,6 +1106,8 @@ void AutofillAgent::ApplyFieldAction(
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
           case mojom::FieldActionType::kNotSmartReplaceSelection:
             [[fallthrough]];
+          case mojom::FieldActionType::kManualReplaceSelection:
+            [[fallthrough]];
 #endif
           case mojom::FieldActionType::kReplaceSelection:
             NOTIMPLEMENTED()
@@ -1127,6 +1129,12 @@ void AutofillAgent::ApplyFieldAction(
           case mojom::FieldActionType::kNotSmartReplaceSelection: {
             form_control.PasteText(WebString::FromUTF16(value),
                                    /*replace_all=*/false, false);
+            break;
+          }
+          case mojom::FieldActionType::kManualReplaceSelection: {
+            form_control.PasteText(WebString::FromUTF16(value),
+                                   /*replace_all=*/false, false,
+                                   /*suppress_paste_event=*/true);
             break;
           }
 #endif
@@ -1188,10 +1196,15 @@ void AutofillAgent::ApplyFieldAction(
           case mojom::FieldActionType::kNotSmartReplaceSelection:
             content_editable.PasteText(
                 WebString::FromUTF16(value),
-                /*replace_all=*/
-                (action_type == mojom::FieldActionType::kReplaceAll),
-                /*should_smart_replace=*/
-                false);
+                /*replace_all=*/false,
+                /*should_smart_replace=*/false);
+            break;
+          case mojom::FieldActionType::kManualReplaceSelection:
+            content_editable.PasteText(
+                WebString::FromUTF16(value),
+                /*replace_all=*/false,
+                /*should_smart_replace=*/false,
+                /*suppress_paste_event=*/true);
             break;
 #endif
           case mojom::FieldActionType::kReplaceAll:

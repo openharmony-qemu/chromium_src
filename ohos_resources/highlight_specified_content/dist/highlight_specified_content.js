@@ -29,171 +29,206 @@
         maxContentLength: 300,
     };
 
+    const ERROR_TYPE = {
+        SUCCESS: 0,
+        XPATH_ERROR: 1,
+        NODE_NOT_FOUND: 2,
+        TEXT_NOT_MATCH: 3,
+    };
+
     window.AgentHighlightUtils = {
+        // Text containing control characters (e.g., \n) can cause errors.
         __regex: /\p{C}/ug,
 
+        EscapeText(text) {
+            return encodeURIComponent(text).replace(/-/g, '%2D');
+        },
+
+        CollectSegments(text) {
+            const segments = [];
+            const segmenter = new Intl.Segmenter('en', { granularity: 'word' });
+            const iterator = segmenter.segment(text)[Symbol.iterator]();
+            let { value } = iterator.next();
+            while (value) {
+                segments.push(value.segment);
+                ({ value } = iterator.next());
+            }
+            return segments;
+        },
+
+        BuildFromStart(segments, maxLength) {
+            let result = '';
+            let i = 0;
+            while (i < segments.length && result.length + segments[i].length <= maxLength) {
+                if (segments[i].match(this.__regex)) {
+                    break;
+                }
+                result += segments[i];
+                i++;
+            }
+            return result;
+        },
+
+        BuildFromEnd(segments, maxLength) {
+            let result = '';
+            while (segments.length && result.length + segments[segments.length - 1].length <= maxLength) {
+                if (segments[segments.length - 1].match(this.__regex)) {
+                    break;
+                }
+                result = segments.pop() + result;
+            }
+            return result;
+        },
+
         GetTargetText(targetText) {
-            let start = targetText;
-            let end = '';
+            let start;
+            let end;
+
             if (targetText.match(this.__regex)) {
-                start = '';
                 const segmenter = new Intl.Segmenter('en', { granularity: 'word' });
-                const iteratorTarget = segmenter.segment(targetText)[Symbol.iterator]();
-                let targetSegments = [];
-                let value = iteratorTarget.next().value;
-                while (value &&
-                    !value.segment.match(this.__regex) &&
+                const iterator = segmenter.segment(targetText)[Symbol.iterator]();
+                let { value } = iterator.next();
+
+                start = '';
+                while (value && !value.segment.match(this.__regex) &&
                     start.length <= HIGHLIGHT_CONTENT_CONFIG.maxFixLength) {
                     start += value.segment;
-                    value = iteratorTarget.next().value;
+                    ({ value } = iterator.next());
                 }
+
+                const segments = [];
                 while (value) {
-                    targetSegments.push(value.segment);
-                    value = iteratorTarget.next().value;
+                    if (!value.segment.match(this.__regex)) {
+                        segments.push(value.segment);
+                    }
+                    ({ value } = iterator.next());
                 }
-
-                let lastSegment = targetSegments.pop();
-                while (lastSegment &&
-                    !lastSegment.match(this.__regex) &&
-                    end.length + lastSegment.length <= HIGHLIGHT_CONTENT_CONFIG.maxFixLength &&
-                    targetSegments.length) {
-                    end = lastSegment + end;
-                    lastSegment = targetSegments.pop();
-                }
-                end = (end.length ? ',' : '') + end;
-            }
-
-            if (targetText.length > HIGHLIGHT_CONTENT_CONFIG.maxContentLength) {
+                end = this.BuildFromEnd(segments, HIGHLIGHT_CONTENT_CONFIG.maxFixLength);
+            } else if (targetText.length > HIGHLIGHT_CONTENT_CONFIG.maxContentLength) {
                 start = targetText.substring(0, HIGHLIGHT_CONTENT_CONFIG.maxFixLength);
-                end = `,${targetText.substring(targetText.length - HIGHLIGHT_CONTENT_CONFIG.maxFixLength,
-                    targetText.length)}`;
+                end = targetText.substring(targetText.length - HIGHLIGHT_CONTENT_CONFIG.maxFixLength);
+            } else {
+                start = targetText;
+                end = '';
             }
-            return [start, end];
+
+            return [this.EscapeText(start), (end.length ? ',' : '') + this.EscapeText(end)];
         },
 
-        GetPrefix(searchPrefix) {
-            if (searchPrefix) {
-                let prefix = '';
-                const segmenter = new Intl.Segmenter('en', { granularity: 'word' });
-                const iteratorPrefix = segmenter.segment(searchPrefix)[Symbol.iterator]();
-                let prefixSegments = [];
-                let value = iteratorPrefix.next().value;
-                while (value) {
-                    if (value.segment.match(this.__regex)) {
-                        break;
-                    }
-                    prefixSegments.push(value.segment);
-                    value = iteratorPrefix.next().value;
-                }
-
-                let firstSegment = prefixSegments.pop();
-                while (firstSegment &&
-                    prefix.length + firstSegment.length <= HIGHLIGHT_CONTENT_CONFIG.maxFixLength &&
-                    prefixSegments.length) {
-                    prefix = firstSegment + prefix;
-                    firstSegment = prefixSegments.pop();
-                }
-                prefix += prefix.length ? '-,' : '';
-                return prefix;
+        GetPrefix(targetPos, nodeText, preText) {
+            let searchPrefix;
+            if (targetPos > 0) {
+                searchPrefix = nodeText.substring(
+                    Math.max(0, targetPos - HIGHLIGHT_CONTENT_CONFIG.fixBufferLength),
+                    targetPos
+                ).trim();
+            } else {
+                searchPrefix = preText?.substring(
+                    Math.max(0, preText.length - HIGHLIGHT_CONTENT_CONFIG.fixBufferLength)
+                ).trim() || '';
             }
-            return '';
+
+            if (!searchPrefix) {
+                return '';
+            }
+            const segments = this.CollectSegments(searchPrefix);
+            const prefix = this.BuildFromEnd(segments, HIGHLIGHT_CONTENT_CONFIG.maxFixLength);
+            return this.EscapeText(prefix) + (prefix.length ? '-,' : '');
         },
 
-        GetSuffix(searchSuffix) {
-            if (searchSuffix) {
-                let suffix = '';
-                const segmenter = new Intl.Segmenter('en', { granularity: 'word' });
-                const iteratorSuffix = segmenter.segment(searchSuffix)[Symbol.iterator]();
-                let suffixSegments = [];
-                let value = iteratorSuffix.next().value;
-                while (value) {
-                    if (value.segment.match(this.__regex)) {
-                        break;
-                    }
-                    suffixSegments.push(value.segment);
-                    value = iteratorSuffix.next().value;
-                }
-
-                let i = 1;
-                let lastSegment = suffixSegments[0];
-                while (lastSegment &&
-                    suffix.length + lastSegment.length <= HIGHLIGHT_CONTENT_CONFIG.maxFixLength &&
-                    i < suffixSegments.length) {
-                    suffix += lastSegment;
-                    lastSegment = suffixSegments[i];
-                    i++;
-                }
-                suffix = (suffix.length ? ',-' : '') + suffix;
-                return suffix;
+        GetSuffix(targetPos, targetLength, nodeText, nextText) {
+            let searchSuffix;
+            if (targetPos + targetLength < nodeText.length) {
+                searchSuffix = nodeText.substring(
+                    targetPos + targetLength,
+                    Math.min(nodeText.length, targetPos + targetLength + HIGHLIGHT_CONTENT_CONFIG.fixBufferLength)
+                ).trim();
+            } else {
+                searchSuffix = nextText?.substring(
+                    0, Math.min(nextText.length, HIGHLIGHT_CONTENT_CONFIG.fixBufferLength)
+                ).trim() || '';
             }
-            return '';
+
+            if (!searchSuffix) {
+                return '';
+            }
+            const segments = this.CollectSegments(searchSuffix);
+            const suffix = this.BuildFromStart(segments, HIGHLIGHT_CONTENT_CONFIG.maxFixLength);
+            return (suffix.length ? ',-' : '') + this.EscapeText(suffix);
         },
 
         ParseHashFromText(preText, nodeText, nextText, targetText) {
-            let prefix = '';
-            let suffix = '';
-            let start = '';
-            let end = '';
-
             if (!targetText) {
                 return '';
             }
-            let targetPos = nodeText.indexOf(targetText);
-            if (targetPos !== -1) {
-                let searchPrefix = '';
-                if (targetPos > 0) {
-                    searchPrefix = nodeText.substring(Math.max(0,
-                        targetPos - HIGHLIGHT_CONTENT_CONFIG.fixBufferLength), targetPos).trim();
-                } else {
-                    searchPrefix = preText?.substring(Math.max(0,
-                        preText.length - HIGHLIGHT_CONTENT_CONFIG.fixBufferLength)).trim();
-                }
-                prefix = this.GetPrefix(searchPrefix);
 
-                let searchSuffix = '';
-                if (targetPos + targetText.length < nodeText.length) {
-                    searchSuffix = nodeText.substring(targetPos + targetText.length,
-                        Math.min(nodeText.length,
-                            targetPos + targetText.length + HIGHLIGHT_CONTENT_CONFIG.fixBufferLength)).trim();
-                } else {
-                    searchSuffix = nextText?.substring(0,
-                        Math.min(nextText.length, HIGHLIGHT_CONTENT_CONFIG.fixBufferLength)).trim();
-                }
-                suffix = this.GetSuffix(searchSuffix);
+            const targetPos = nodeText.indexOf(targetText);
+            if (targetPos === -1) {
+                const [start, end] = this.GetTargetText(targetText);
+                return start + end;
             }
-            [start, end] = this.GetTargetText(targetText);
 
-            const result = prefix + start + end + suffix;
-            return encodeURI(result);
+            const prefix = this.GetPrefix(targetPos, nodeText, preText);
+            const suffix = this.GetSuffix(targetPos, targetText.length, nodeText, nextText);
+            const [start, end] = this.GetTargetText(targetText);
+
+            return prefix + start + end + suffix;
+        },
+
+        ProcessXPathNode(XpathNode, index, content) {
+            try {
+                const iterator = _document.evaluate(XpathNode.value, _document, null,
+                    XPathResult.FIRST_ORDERED_NODE_TYPE, null);
+                if (!iterator.singleNodeValue) {
+                    return { type: ERROR_TYPE.NODE_NOT_FOUND, index, content, message: 'Node not found' };
+                }
+
+                const nodeText = iterator.singleNodeValue.innerText;
+                const preText = iterator.singleNodeValue.previousElementSibling?.innerText || '';
+                const nextText = iterator.singleNodeValue.nextElementSibling?.innerText || '';
+
+                // Check if text matches, but continue execution regardless of match result,
+                // shadow-root where text cannot be read.
+                const isTextMatch = nodeText.indexOf(content) !== -1;
+                const hashText = this.ParseHashFromText(preText, nodeText, nextText, content);
+
+                if (!isTextMatch) {
+                    return {
+                        success: true,
+                        hashText: (hashText ? 'text=' : '') + hashText,
+                        warning: { type: ERROR_TYPE.TEXT_NOT_MATCH, index, content, message: 'Target content not found in node.' },
+                    };
+                }
+
+                return { success: true, hashText: (hashText ? 'text=' : '') + hashText };
+            } catch (error) {
+                return { type: ERROR_TYPE.XPATH_ERROR, index, content, message: error.message };
+            }
         },
 
         HighlightTargetContent(XpathJson, contentJson) {
-            const Xpaths = decodeURIComponent(XpathJson);
             const content = decodeURIComponent(contentJson);
-            const XpathNodes = JSON.parse(Xpaths);
+            const XpathNodes = JSON.parse(decodeURIComponent(XpathJson));
             let urlString = '';
-            let errorMessage = [];
-            for (const XpathNode of XpathNodes) {
-                let iterator = null;
-                let nodeText = '';
-                let preText = '';
-                let nextText = '';
-                try {
-                    iterator = _document.evaluate(XpathNode.value, _document, null,
-                        XPathResult.FIRST_ORDERED_NODE_TYPE, null);
-                    nodeText = iterator.singleNodeValue.innerText;
-                    preText = iterator.singleNodeValue.previousElementSibling?.innerText;
-                    nextText = iterator.singleNodeValue.nextElementSibling?.innerText;
-                } catch (error) {
-                    errorMessage.push(error.message);
-                    continue;
+            const errorMessage = [];
+
+            XpathNodes.forEach((XpathNode, index) => {
+                const result = this.ProcessXPathNode(XpathNode, index, content);
+
+                if (result.success) {
+                    urlString += result.hashText.length ?
+                        (urlString.length ? '&' : '#:~:') + result.hashText : '';
+                    if (result.warning) {
+                        errorMessage.push(result.warning);
+                    }
+                } else {
+                    errorMessage.push(result);
                 }
-                let hashText = this.ParseHashFromText(preText, nodeText, nextText, content);
-                hashText = (hashText.length ? 'text=' : '') + hashText;
-                urlString += hashText.length ? (urlString.length ? '&' : ':~:') + hashText : '';
-                errorMessage.push('noErr');
+            });
+
+            if (urlString.length) {
+                location.replace(urlString);
             }
-            location.hash = urlString;
             return JSON.stringify(errorMessage);
         },
     };

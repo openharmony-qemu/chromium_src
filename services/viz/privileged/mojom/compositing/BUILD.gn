@@ -77,6 +77,10 @@ mojom("compositing") {
     enabled_features += [ "arkweb_blank_optimize" ]
   }
 
+  if (arkweb_evict_unlock_frames) {
+    enabled_features += [ "arkweb_evict_unlock_frames" ]
+  }
+
   cpp_typemaps = [
     {
       types = [

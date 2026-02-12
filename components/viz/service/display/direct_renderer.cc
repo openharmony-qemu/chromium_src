@@ -512,6 +512,9 @@ void DirectRenderer::DrawFrame(
   backdrop_filter_output_rects_.clear();
   has_pixel_moving_foreground_filters_ = false;
 
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  SetNextFrameSkipsDrawRenderPasses(false);
+#endif
   current_frame_valid_ = false;
 }
 
@@ -669,6 +672,13 @@ void DirectRenderer::DrawRenderPassAndExecuteCopyRequests(
       render_pass_bypass_quads_.end()) {
     return;
   }
+
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  if (IsEvictUnlockFrameEnabled() && next_frame_skips_draw_render_passes_) {
+    LOG(INFO) << "DirectRenderer::DrawRenderPassAndExecuteCopyRequests skipped";
+    return;
+  }
+#endif
 
   // Repeated draw to simulate a slower device for the evaluation of performance
   // improvements in UI effects.

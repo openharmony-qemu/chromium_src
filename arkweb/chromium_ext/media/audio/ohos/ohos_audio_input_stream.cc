@@ -236,9 +236,7 @@ void OHOSAudioInputStream::OnMicrophoneCaptureStateChangedBind(AudioCaptureState
                           const AudioParameters& parameters,
                           base::WaitableEvent* out_event) {
             OHOSAudioInputStream::OnMicrophoneCaptureStateChangedBind(audio_capture_state, new_state, parameters);
-            out_event->Signal();
         }, audio_capture_state, new_state, parameters, &event));
-    event.Wait();
     return;
   }
 

@@ -56,6 +56,7 @@ class COMPONENT_EXPORT(URL) LogUtils {
                                 bool should_noise_url = true);
   static std::string ConvertUrlWithMask(const std::string& url);
   static std::string ConvertPathWithMask(const std::string& file_path);
+  static std::string ConvertUrlParamWithMask(const std::string& url);
 
  private:
   FRIEND_TEST_ALL_PREFIXES(LogUtilsTest, IsSupportScheme);

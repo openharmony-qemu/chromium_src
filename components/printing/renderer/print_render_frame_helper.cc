@@ -96,6 +96,12 @@
 #include "ui/gfx/geometry/size_conversions.h"
 #include "ui/gfx/geometry/size_f.h"
 
+#if BUILDFLAG(ARKWEB_PRINT)
+#include "arkweb/chromium_ext/base/process/process_handle_posix_ex.h"
+#include "base/ohos/sys_info_utils_ext.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/res_sched_client_adapter.h"
+#endif
+
 using blink::web_pref::WebPreferences;
 
 namespace printing {
@@ -1281,9 +1287,11 @@ void PrintRenderFrameHelper::BindPrintRenderFrameReceiver(
   receivers_.Add(this, std::move(receiver));
 }
 
+#ifndef BUILDFLAG(ARKWEB_PRINT)
 void PrintRenderFrameHelper::PrintRequestedPages() {
   PrintRequestedPagesInternal(/*already_notified_frame=*/false);
 }
+#endif
 
 void PrintRenderFrameHelper::PrintRequestedPagesInternal(
     bool already_notified_frame) {

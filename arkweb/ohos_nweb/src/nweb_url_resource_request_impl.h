@@ -17,6 +17,8 @@
 #define NWEB_URL_RESOURCE_REQUEAST_IMPL_H
 
 #include "nweb_url_resource_request.h"
+#include "build/buildflag.h"
+#include "arkweb/build/features/features.h"
 
 namespace OHOS::NWeb {
 class NWebUrlResourceRequestImpl : public NWebUrlResourceRequest {
@@ -27,7 +29,13 @@ class NWebUrlResourceRequestImpl : public NWebUrlResourceRequest {
       const std::string& url,
       bool has_gesture,
       bool is_for_main_frame,
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+      bool is_redirect = false,
+      int32_t transition_type = -1,
+      int32_t request_type = -1);
+#else
       bool is_redirect = false);
+#endif
   ~NWebUrlResourceRequestImpl() = default;
 
   std::string Method() override;
@@ -36,6 +44,12 @@ class NWebUrlResourceRequestImpl : public NWebUrlResourceRequest {
   bool FromGesture() override;
   bool IsAboutMainFrame() override;
   bool IsRequestRedirect() override;
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+  int GetPageTransition();
+  int GetRequestType();
+  void SetPageTransition(int32_t transition_type);
+  void SetRequestType(int32_t request_type);
+#endif
 
  private:
   std::string method_;
@@ -44,6 +58,10 @@ class NWebUrlResourceRequestImpl : public NWebUrlResourceRequest {
   bool has_gesture_;
   bool is_for_main_frame_;
   bool is_redirect_;
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+  int32_t transition_type_;
+  int32_t request_type_;
+#endif
 };
 }  // namespace OHOS::NWeb
 #endif  // NWEB_URL_RESOURCE_REQUEAST_IMPL_H

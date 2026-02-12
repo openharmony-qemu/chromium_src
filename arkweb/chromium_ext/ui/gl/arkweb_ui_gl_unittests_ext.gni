@@ -17,4 +17,5 @@ arkweb_unittests_sources = [
   "//arkweb/ohos_nweb/src/sysevent/event_reporter.cc",
   "//arkweb/chromium_ext/ui/gl/ohos/native_buffer_utils_unittest.cc",
   "//arkweb/chromium_ext/ui/gl/ohos/ohos_native_image_unittest.cc",
+  "//arkweb/chromium_ext/ui/gl/init/gl_factory_ohos_unittest.cc",
 ]

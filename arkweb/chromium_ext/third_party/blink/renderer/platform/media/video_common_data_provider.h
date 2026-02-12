@@ -170,7 +170,7 @@ class VideoRangeURLLoaderClient : public WebAssociatedURLLoaderClient {
   int64_t byte_pos_;
 
   // Temporary storage for incoming data.
-  std::list<scoped_refptr<media::DataBuffer>>* fifo_ptr_;
+  raw_ptr<std::list<scoped_refptr<media::DataBuffer>>> fifo_ptr_;
 
   // How many retries have we done at the current position.
   int retries_ = 0;

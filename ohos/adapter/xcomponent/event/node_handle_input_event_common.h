@@ -15,6 +15,34 @@
 
 namespace ohos::adapter::xcomponent {
 
+struct NodeHandleMouseEventData {
+  float x;
+  float y;
+  float screenX;
+  float screenY;
+  float raw_delta_x;
+  float raw_delta_y;
+  int64_t timestamp;
+  int32_t action;
+  int32_t button;
+  int32_t display_id;
+};
+
+struct NodeHandleTouchEventData {
+  float x = 0.0f;
+  float y = 0.0f;
+  float tilt_x = 0.0f;
+  float tilt_y = 0.0f;
+  float display_x = 0.0f;
+  float display_y = 0.0f;
+  int32_t id = 0;
+  float force = 0.0f;
+  int32_t touch_action = 0;
+  int32_t tool_type = 0;
+  int64_t timestamp;
+  int32_t display_id;
+};
+
 struct ADAPTER_EXPORT_API NodeHandleInputEventCallBack {
  public:
   void (*touchEventCallback)(const int32_t widget_id,
@@ -42,10 +70,10 @@ struct ADAPTER_EXPORT_API NodeHandleInputEventCallBack {
                              const NodeHandlePinchEvent& event);
   void (*sendWindowMouseEventForTabDragCallback)(
                             const int32_t widget_id,
-                            Input_MouseEvent* window_mouse_event);
+                            NodeHandleMouseEventData& window_mouse_data);
   void (*sendWindowTouchEventForTabDragCallback)(
         const int32_t widget_id,
-        Input_TouchEvent* window_touch_event);
+        NodeHandleTouchEventData& window_touch_data);
 };
 
 }  // namespace ohos::adapter::xcomponent

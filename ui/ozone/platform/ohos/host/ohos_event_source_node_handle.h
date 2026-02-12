@@ -41,32 +41,6 @@ namespace ui {
 
 using namespace ohos::adapter::xcomponent;
 
-struct NodeHandleTouchEventData {
-  float x = 0.0f;
-  float y = 0.0f;
-  float tilt_x = 0.0f;
-  float tilt_y = 0.0f;
-  float display_x = 0.0f;
-  float display_y = 0.0f;
-  int32_t id = 0;
-  float force = 0.0f;
-  int32_t touch_action = 0;
-  int32_t tool_type = 0;
-  int64_t timestamp;
-};
-
-struct NodeHandleMouseEventData {
-  float x;
-  float y;
-  float screenX;
-  float screenY;
-  float raw_delta_x;
-  float raw_delta_y;
-  int64_t timestamp;
-  int32_t action;
-  int32_t button;
-};
-
 class OhosEventSourceNodeHandle : public OhosEventSourceBase {
  public:
   OhosEventSourceNodeHandle(OhosEventSourceNodeHandle&&) = delete;
@@ -104,13 +78,11 @@ class OhosEventSourceNodeHandle : public OhosEventSourceBase {
 
   void SendWindowMouseEventForTabDragNodeHandle(
       const gfx::AcceleratedWidget widget_id,
-      std::shared_ptr<NodeHandleMouseEventData> mouse_event_data,
-      const int32_t display_id,
+      NodeHandleMouseEventData& mouse_event_data,
       const EventFlags key_flags);
   void SendWindowTouchEventForTabDragNodeHandle(
       const gfx::AcceleratedWidget widget_id,
-      std::shared_ptr<NodeHandleTouchEventData> touch_event_data,
-      const int32_t display_id);
+      NodeHandleTouchEventData& touch_event_data);
 
  private:
   void OnMouseMoveEvent(const gfx::AcceleratedWidget widget_id,
@@ -123,12 +95,12 @@ class OhosEventSourceNodeHandle : public OhosEventSourceBase {
                                    const bool is_stop);
   void PrepareXcomponentPointForTouchEvent(
       const gfx::AcceleratedWidget widget_id,
-      std::shared_ptr<NodeHandleTouchEventData> touch_event_data,
+      NodeHandleTouchEventData& touch_event_data,
       const float display_x,
       const float display_y);
   void PrepareXcomponentPointForMouseEvent(
       const gfx::AcceleratedWidget widget_id,
-      std::shared_ptr<NodeHandleMouseEventData> mouse_event_data,
+      NodeHandleMouseEventData& mouse_event_data,
       const float display_x,
       const float display_y);
 

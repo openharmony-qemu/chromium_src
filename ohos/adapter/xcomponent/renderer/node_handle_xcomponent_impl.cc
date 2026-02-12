@@ -931,20 +931,20 @@ void NodeHandleXComponentImpl::OnPinchEvent(
 }
 
 __attribute__((no_sanitize("cfi", "cfi-icall")))
-void NodeHandleXComponentImpl::SendWindowMouseEventForTabDrag(
-    Input_MouseEvent* window_mouse_event) {
-  if (event_callback_ != nullptr && window_mouse_event != nullptr) {
+void NodeHandleXComponentImpl::SendWindowMouseEventForTabDragNodeHandle(
+    NodeHandleMouseEventData& window_mouse_data) {
+  if (event_callback_ != nullptr) {
     event_callback_->sendWindowMouseEventForTabDragCallback(GetWidget(),
-                                                            window_mouse_event);
+                                                            window_mouse_data);
   }
 }
 
 __attribute__((no_sanitize("cfi", "cfi-icall")))
-void NodeHandleXComponentImpl::SendWindowTouchEventForTabDrag(
-    Input_TouchEvent* window_touch_event) {
-  if (event_callback_ != nullptr && window_touch_event != nullptr) {
+void NodeHandleXComponentImpl::SendWindowTouchEventForTabDragNodeHandle(
+    NodeHandleTouchEventData& window_touch_data) {
+  if (event_callback_ != nullptr) {
     event_callback_->sendWindowTouchEventForTabDragCallback(GetWidget(),
-                                                            window_touch_event);
+                                                            window_touch_data);
   }
 }
 

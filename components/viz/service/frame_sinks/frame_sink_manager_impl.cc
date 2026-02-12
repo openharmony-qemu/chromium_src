@@ -299,8 +299,7 @@ void FrameSinkManagerImpl::CreateCompositorFrameSink(
   TRACE_EVENT("viz", "FrameSinkManagerImpl::CreateCompositorFrameSink",
               "frame_sink_id", frame_sink_id);
 #if BUILDFLAG(ARKWEB_DFX_TRACING)
-  LOG(INFO) << "CreateCompositorFrameSink client_id " <<  frame_sink_id.client_id()
-            << " sink_id " << frame_sink_id.sink_id();
+  LOG(INFO) << "CreateCompositorFrameSink, frame_sink_id info: " << frame_sink_id.ToString();
 #endif
   if (base::Contains(sink_map_, frame_sink_id)) {
 #if BUILDFLAG(ARKWEB_DFX_TRACING)
@@ -329,8 +328,7 @@ void FrameSinkManagerImpl::DestroyCompositorFrameSink(
     const FrameSinkId& frame_sink_id,
     DestroyCompositorFrameSinkCallback callback) {
 #if BUILDFLAG(ARKWEB_DFX_TRACING)
-  LOG(INFO) << "DestroyCompositorFrameSink client_id " << frame_sink_id.client_id()
-            << " sink_id " << frame_sink_id.sink_id();
+  LOG(INFO) << "DestroyCompositorFrameSink, frame_sink_id info: " << frame_sink_id.ToString();
 #endif
   sink_map_.erase(frame_sink_id);
   root_sink_map_.erase(frame_sink_id);

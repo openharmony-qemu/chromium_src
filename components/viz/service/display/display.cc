@@ -378,6 +378,13 @@ void Display::SetVisible(bool visible) {
 
 void Display::Resize(const gfx::Size& size) {
   disable_swap_until_resize_ = false;
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  LOG(INFO) << "Display::Resize, current size: " << current_surface_size_.ToString()
+            << ", new size: " << size.ToString();
+  TRACE_EVENT2("viz", "Display::Resize info",
+               "current size", current_surface_size_.ToString(),
+               "new size", size.ToString());
+#endif
   if (size == current_surface_size_)
     return;
 

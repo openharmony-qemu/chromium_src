@@ -268,9 +268,16 @@ void FrameSinkManagerImpl::CreateFrameSinkBundle(
     mojo::PendingReceiver<mojom::FrameSinkBundle> receiver,
     mojo::PendingRemote<mojom::FrameSinkBundleClient> client) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  LOG(INFO) << "CreateFrameSinkBundle client_id " << bundle_id.client_id()
+            << " bundle_id " << bundle_id.bundle_id();
+#endif
   if (base::Contains(bundle_map_, bundle_id)) {
     uint32_t client_id = bundle_id.client_id();
     uint32_t bundle_id_value = bundle_id.bundle_id();
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+    LOG(ERROR) << "ReportBadMessage Duplicate FrameSinkBundle ID";
+#endif
     frame_sink_manager_receiver_.ReportBadMessage(
         "Duplicate FrameSinkBundle ID");
     base::debug::Alias(&client_id);
@@ -291,7 +298,13 @@ void FrameSinkManagerImpl::CreateCompositorFrameSink(
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   TRACE_EVENT("viz", "FrameSinkManagerImpl::CreateCompositorFrameSink",
               "frame_sink_id", frame_sink_id);
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  LOG(INFO) << "CreateCompositorFrameSink, frame_sink_id info: " << frame_sink_id.ToString();
+#endif
   if (base::Contains(sink_map_, frame_sink_id)) {
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+    LOG(ERROR) << "ReportBadMessage Duplicate FrameSinkId";
+#endif
     frame_sink_manager_receiver_.ReportBadMessage("Duplicate FrameSinkId");
     return;
   }
@@ -314,6 +327,9 @@ void FrameSinkManagerImpl::CreateCompositorFrameSink(
 void FrameSinkManagerImpl::DestroyCompositorFrameSink(
     const FrameSinkId& frame_sink_id,
     DestroyCompositorFrameSinkCallback callback) {
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  LOG(INFO) << "DestroyCompositorFrameSink, frame_sink_id info: " << frame_sink_id.ToString();
+#endif
   sink_map_.erase(frame_sink_id);
   root_sink_map_.erase(frame_sink_id);
   std::move(callback).Run();
@@ -508,6 +524,10 @@ void FrameSinkManagerImpl::RequestCopyOfOutput(
 }
 
 void FrameSinkManagerImpl::DestroyFrameSinkBundle(const FrameSinkBundleId& id) {
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  LOG(INFO) << "DestroyFrameSinkBundle client_id " << id.client_id()
+            << " bundle_id " << id.bundle_id();
+#endif
   bundle_map_.erase(id);
 }
 

@@ -1140,6 +1140,14 @@ void SurfaceAggregator::EmitDefaultBackgroundColorQuad(
   // No matching surface was found so create a SolidColorDrawQuad with the
   // SurfaceDrawQuad default background color.
   SkColor4f background_color = surface_quad->default_background_color;
+
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  LOG(INFO) << "SurfaceAggregator::EmitDefaultBackgroundColorQuad, background_color: "
+            << background_color.toBytes_RGBA();
+  TRACE_EVENT1("viz", "SurfaceAggregator::EmitDefaultBackgroundColorQuad",
+               "background_color(RGBA)", background_color.toBytes_RGBA());
+#endif
+
   auto* shared_quad_state = CopySharedQuadState(
       surface_quad->shared_quad_state, embedder_client_namespace_id,
       target_transform, clip_rect, mask_filter_info, dest_pass);

@@ -174,11 +174,11 @@ class NET_EXPORT ClientSocketPool : public LowerLayeredPool {
     bool operator<(const GroupId& other) const {
       return std::tie(destination_, privacy_mode_, network_anonymization_key_,
                       secure_dns_policy_, disable_cert_network_fetches_,
-                      secure_dns_policy_) <
+                      secure_dns_only_) <
              std::tie(
                  other.destination_, other.privacy_mode_,
                  other.network_anonymization_key_, other.secure_dns_policy_,
-                 other.disable_cert_network_fetches_, other.secure_dns_policy_);
+                 other.disable_cert_network_fetches_, other.secure_dns_only_);
     }
 #else
     bool operator<(const GroupId& other) const {

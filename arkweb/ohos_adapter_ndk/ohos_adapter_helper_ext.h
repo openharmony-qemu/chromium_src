@@ -21,6 +21,7 @@
 #include "arkweb/ohos_adapter_ndk/graphic_adapter/native_window_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/graphic_adapter/window_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/multimodalinputnew_adapter/mmi_new_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/vibrator_adapter/vibrator_adapter_impl.h"
 
 namespace OHOS::NWeb {
 
@@ -58,6 +59,11 @@ public:
     static std::unique_ptr<NativeAbilityRuntimeAdapterImpl> CreateAbilityRuntimeAdapter()
     {
       return std::make_unique<NativeAbilityRuntimeAdapterImpl>();
+    }
+
+    static std::unique_ptr<VibratorAdapterImpl> CreateVibratorAdapter()
+    {
+      return std::make_unique<VibratorAdapterImpl>();
     }
 };
 

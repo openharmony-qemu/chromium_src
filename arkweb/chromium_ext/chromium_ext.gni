@@ -1414,6 +1414,7 @@ arkweb_ohos_adapter_ndk_unittests_sources = [
   "//arkweb/ohos_adapter_ndk/audio_capturer_adapter/audio_capturer_adapter_impl_unittest.cc",
   "//arkweb/chromium_ext/ohos_test/unittest/devices/arkweb_device_data_manager_utils_unittest.cc",
   "//arkweb/ohos_adapter_ndk/sensor_adapter/sensor_adapter_impl_unittest.cc",
+  "//arkweb/ohos_adapter_ndk/vibrator_adapter/vibrator_adapter_impl_unittest.cc",
   "//arkweb/ohos_adapter_ndk/ndk_version_unittest.cc",
   "//arkweb/ohos_adapter_ndk/ohos_adapter_helper_decouple_unittest.cpp",
   "//arkweb/ohos_adapter_ndk/security_adapter/arkts_security_adapter_impl_unittest.cc",

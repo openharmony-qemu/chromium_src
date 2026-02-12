@@ -33,6 +33,7 @@
 #include <multimedia/av_session/native_avsession.h>
 #include <multimedia/av_session/native_avsession_errors.h>
 #include <sensors/oh_sensor.h>
+#include <sensors/vibrator.h>
 #include <ohaudio/native_audiocapturer.h>
 #include <ohaudio/native_audiostream_base.h>
 #include <ohaudio/native_audiostreambuilder.h>
@@ -456,6 +457,24 @@ public:
     MOCK_METHOD(int32_t, OH_Sensor_DestroySubscriptionAttribute, (Sensor_SubscriptionAttribute*));
 };
 
+class MockVibratorSupport {
+public:
+    static bool enablePlayVibration;
+    static bool enableCancel;
+    static void EnableAll(bool enable) {
+        enablePlayVibration = enable;
+        enableCancel = enable;
+    }
+
+    static MockVibratorSupport& getInstance() {
+        static MockVibratorSupport instance;
+        return instance;
+    }
+
+    MOCK_METHOD(int32_t, OH_Vibrator_PlayVibration, (int32_t, Vibrator_Attribute));
+    MOCK_METHOD(int32_t, OH_Vibrator_Cancel, ());
+};
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -479,6 +498,8 @@ extern int32_t (*__real_OH_Sensor_DestroySubscriptionAttribute)(Sensor_Subscript
 extern int32_t (*__real_OH_SensorEvent_GetType)(Sensor_Event*, Sensor_Type*);
 extern int32_t (*__real_OH_SensorEvent_GetData)(Sensor_Event*, float**, uint32_t*);
 extern int32_t (*__real_OH_SensorEvent_GetTimestamp)(Sensor_Event*, int64_t*);
+extern int32_t (*__real_OH_Vibrator_PlayVibration)(int32_t, Vibrator_Attribute);
+extern int32_t (*__real_OH_Vibrator_Cancel)(void);
 
 const CommonEvent_Parameters * __real_OH_CommonEvent_GetParametersFromRcvData(const CommonEvent_RcvData *rcvData);
 bool __real_OH_CommonEvent_HasKeyInParameters(const CommonEvent_Parameters *para, const char *key);

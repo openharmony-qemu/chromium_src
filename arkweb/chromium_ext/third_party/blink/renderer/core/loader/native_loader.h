@@ -167,6 +167,7 @@ class CORE_EXPORT NativeLoader : public GarbageCollected<NativeLoader>,
       native_bridge_observer_remote_set_;
   Vector<media::mojom::blink::NativeEmbedParamItemPtr> pending_param_changes_;
   bool param_update_task_pending_ = false;
+  base::WeakPtrFactory<NativeLoader> weak_ptr_factory_{this};
 };
 
 }  // namespace blink

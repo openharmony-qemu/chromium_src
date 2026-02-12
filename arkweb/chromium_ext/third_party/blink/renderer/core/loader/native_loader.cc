@@ -497,7 +497,7 @@ void NativeLoader::ProcessParamChanges(const Vector<ParamChangeInfo>& changes) {
   if (plugin_element_) {
     param_update_task_pending_ = true;
     plugin_element_->GetDocument().GetTaskRunner(TaskType::kInternalMedia)->PostTask(
-        FROM_HERE, WTF::BindOnce(&NativeLoader::ProcessPendingParamChanges, WrapWeakPersistent(this)));
+        FROM_HERE, base::BindOnce(&NativeLoader::ProcessPendingParamChanges, weak_ptr_factory_.GetWeakPtr()));
   } else {
     param_update_task_pending_ = false;
     pending_param_changes_.clear();
@@ -532,6 +532,7 @@ void NativeLoader::ProcessPendingParamChanges() {
       observer->OnEmbedObjectParamChange(param_info.Clone());
     }
   }
+
 }
 // LCOV_EXCL_STOP
 }  // namespace blink

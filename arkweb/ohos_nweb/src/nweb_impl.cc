@@ -7686,7 +7686,10 @@ void NWebImpl::CallBlanklessFrameFuncForWhiteList(uint64_t blankless_key, Snapsh
     LOG(DEBUG) << "blankless CallBlanklessFrameFuncForWhiteList lcpTime invalid " << dataItem.lcpTime;
     return;
   }
-  int32_t lcp_time = std::min(dataItem.lcpTime, base::ohos::BlanklessController::MAXIMUM_FRAME_LIFETIME);  // 2000 ms
+  int32_t lcp_time = base::ohos::BlanklessController::MAXIMUM_FRAME_LIFETIME;
+  if (dataItem.lcpTime >= base::ohos::BlanklessController::A_STANDARD) {
+    lcp_time = std::min(dataItem.lcpTime, base::ohos::BlanklessController::MAXIMUM_FRAME_LIFETIME);  // 2000 ms
+  }
   LOG(DEBUG) << "blankless OnRemoveBlanklessFrame Delay Time: " << lcp_time;
   if (is_visible_) {
     nweb_handle_->OnInsertBlanklessFrameWithSize(file, dataItem.width, dataItem.height);

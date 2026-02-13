@@ -130,6 +130,7 @@ declare_args() {
   arkweb_render_process_share = true
   arkweb_render_process_startup = true
   arkweb_recource_scheme = true
+  arkweb_save_page = true
   arkweb_scheme_handler = true
   arkweb_screen_lock = true
   arkweb_screen_rotation = true

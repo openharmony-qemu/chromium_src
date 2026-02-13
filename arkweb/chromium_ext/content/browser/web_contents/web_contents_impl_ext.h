@@ -445,6 +445,10 @@ private:
   void OnSafeBrowsingCheckDetail(int code, int policy, int threat) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_SAVE_PAGE)
+  bool SavePageEx(const base::FilePath& main_file, SavePageType save_type) override;
+#endif // ARKWEB_SAVE_PAGE
+
 private:
 #if BUILDFLAG(ARKWEB_TEST)
   friend class WebContentsImplUtilsTest;

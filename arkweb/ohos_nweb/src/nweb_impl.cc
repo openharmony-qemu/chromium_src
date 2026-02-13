@@ -5556,6 +5556,15 @@ void NWebImpl::WebExtensionContextMenuReloadFocusedFrame() {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_SAVE_PAGE)
+bool NWebImpl::SavePage(int32_t type, const std::string& filePath) {
+  if (nweb_delegate_ == nullptr) {
+    return false;
+  }
+  return nweb_delegate_->SavePage(type, filePath);
+}
+#endif // ARKWEB_SAVE_PAGE
+
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 void NWebImpl::WebExtensionContextMenuGetFocusedFrameInfo(
     int32_t& frame_id,

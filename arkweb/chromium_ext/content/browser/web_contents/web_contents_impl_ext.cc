@@ -60,6 +60,10 @@
 #include "base/strings/string_util.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_SAVE_PAGE)
+#include "content/browser/download/save_package.h"
+#endif // ARKWEB_SAVE_PAGE
+
 namespace content {
 
 // LCOV_EXCL_START
@@ -1538,4 +1542,31 @@ void WebContentsImplExt::GetAllFrameInfos(
     return should_block_frame_loading;
   }
 #endif  // ARKWEB_NOT_LOAD_IFRAME
+#if BUILDFLAG(ARKWEB_SAVE_PAGE)
+bool WebContentsImplExt::SavePageEx(const base::FilePath& main_file, SavePageType save_type) {
+  OPTIONAL_TRACE_EVENT0("content", "WebContentsImplExt::OnSavePageEx");
+  // If we can not save the page, try to download it.
+
+  if ((save_type != SAVE_PAGE_TYPE_AS_ONLY_HTML) &&
+      (save_type != SAVE_PAGE_TYPE_AS_MHTML) &&
+      (save_type != SAVE_PAGE_TYPE_AS_COMPLETE_HTML)) {
+    LOG(ERROR) << "invalid save type " << static_cast<int32_t>(save_type);
+    return false;
+  }
+
+  if (!IsSavable()) {
+    SaveFrame(GetLastCommittedURL(), Referrer(), GetPrimaryMainFrame());
+    return false;
+  }
+
+  Stop();
+
+  // Create the save package and possibly prompt the user for the name to save
+  // the page as. The user prompt is an asynchronous operation that runs on
+  // another thread.
+  save_package_ = new SavePackage(GetPrimaryPage(), save_type, main_file);
+  save_package_->GetSaveInfoEx();
+  return true;
+}
+#endif
 }  // namespace content

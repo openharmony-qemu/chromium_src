@@ -133,6 +133,7 @@ if (!enable_arkweb) {
   arkweb_dfx_tracing = false
   arkweb_disable_services = false
   arkweb_dispatch_before_unload = true
+  arkweb_save_page = true
   arkweb_display_cutout = false
   arkweb_download = false
   arkweb_drag_drop = false
@@ -375,6 +376,7 @@ buildflag_header("features") {
     "ARKWEB_DFX_TRACING=$arkweb_dfx_tracing",
     "ARKWEB_DISABLE_SERVICES=$arkweb_disable_services",
     "ARKWEB_DISATCH_BEFORE_UNLOAD=$arkweb_dispatch_before_unload",
+    "ARKWEB_SAVE_PAGE=$arkweb_save_page",
     "ARKWEB_DISPLAY_CUTOUT=$arkweb_display_cutout",
     "ARKWEB_DOWNLOAD=$arkweb_download",
     "ARKWEB_DRAG_DROP=$arkweb_drag_drop",

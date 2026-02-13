@@ -1185,6 +1185,11 @@ class NWebImpl : public NWeb {
   bool NeedToFireBeforeUnloadOrUnloadEvents();
   void DispatchBeforeUnload();
 #endif  // ARKWEB_DISATCH_BEFORE_UNLOAD
+
+#if BUILDFLAG(ARKWEB_SAVE_PAGE)
+  bool SavePage(int32_t type, const std::string& filePath);
+#endif // ARKWEB_SAVE_PAGE
+
 #if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
   void StopScreenCapture(int32_t nweb_id, const char* session_id);
   void SetScreenCapturePickerShow();

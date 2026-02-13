@@ -1538,3 +1538,7 @@ void SavePackage::FinalizeDownloadEntry() {
 }
 
 }  // namespace content
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/content/browser/download/save_package_for_include.cc"
+#endif // IS_ARKWEB

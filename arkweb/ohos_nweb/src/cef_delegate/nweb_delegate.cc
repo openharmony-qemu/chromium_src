@@ -6306,6 +6306,17 @@ void NWebDelegate::WebExtensionContextMenuReloadFocusedFrame() {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_SAVE_PAGE)
+bool NWebDelegate::SavePage(int32_t type, const std::string& filePath) {
+  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
+    LOG(ERROR) << "SavePage can not get browser";
+    return false;
+  }
+  auto cef_file_path = CefString(filePath);
+  return GetBrowser()->GetHost()->SavePage(type, cef_file_path);
+}
+#endif // ARKWEB_SAVE_PAGE
+
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 void NWebDelegate::WebExtensionContextMenuGetFocusedFrameInfo(
     int32_t& frame_id,

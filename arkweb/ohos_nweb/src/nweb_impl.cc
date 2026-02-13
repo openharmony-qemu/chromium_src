@@ -74,6 +74,10 @@
 #include "arkweb/chromium_ext/ui/base/clipboard/ohos/clipboard_ohos.h"
 #endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
 
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+#include "content/public/browser/download_manager.h"
+#endif
+
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
 #include "event_reporter.h"
 #endif
@@ -5299,6 +5303,19 @@ void NWebImpl::StartDownload(const char* url) {
   nweb_delegate_->StartDownload(url);
 }
 
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+void NWebImpl::StartDownload(const char* url,
+                             const DownloadUrlParameters& params) {
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E(
+        "start download failed, nweb delegate is nullptr, nweb_id = %{public}u",
+        nweb_id_);
+    return;
+  }
+  nweb_delegate_->StartDownload(url, params);
+}
+#endif
+
 void NWebImpl::ResumeDownload(std::shared_ptr<NWebDownloadItem> web_download) {
   if (nweb_delegate_ == nullptr) {
     WVLOG_E(
@@ -5596,6 +5613,140 @@ void NWebImpl::ReadDownloadData(const std::string& guid,
       new NWebReadDownloadDataCallback(callback);
   CefReadDownloaData(guid, read_size, read_download_data_callback);
 }
+
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+std::string NWebImpl::GetOriginUrlByGuid(const std::string& guid) {
+  WVLOG_D("NWebImpl::GetOriginUrlByGuid guid %{public}s", guid.c_str());
+
+  CefRefPtr<CefDownloadItem> download_item = CefGetDownloadItem(guid);
+  if (!download_item) {
+    LOG(ERROR) << "GetOriginUrlByGuid failed, for download_item is nullptr, "
+               << "guid " << guid;
+    return "";
+  }
+
+  return NWebDownloadItem::GetNWebOriginUrl(download_item);
+}
+
+std::string NWebImpl::GetReferrerByGuid(const std::string& guid) {
+  WVLOG_D("NWebImpl::GetReferrerByGuid guid %{public}s", guid.c_str());
+
+  CefRefPtr<CefDownloadItem> download_item = CefGetDownloadItem(guid);
+  if (!download_item) {
+    LOG(ERROR) << "GetReferrerByGuid failed, for download_item is nullptr, "
+               << "guid " << guid;
+    return "";
+  }
+
+  return NWebDownloadItem::GetNWebReferrer(download_item);
+}
+
+std::string NWebImpl::GetInitiatorByGuid(const std::string& guid) {
+  WVLOG_D("NWebImpl::GetInitiatorByGuid guid %{public}s", guid.c_str());
+
+  CefRefPtr<CefDownloadItem> download_item = CefGetDownloadItem(guid);
+  if (!download_item) {
+    LOG(ERROR) << "GetInitiatorByGuid failed, for download_item is nullptr, "
+               << "guid " << guid;
+    return "";
+  }
+
+  return NWebDownloadItem::GetNWebInitiator(download_item);
+}
+
+bool NWebImpl::GetCanResumeByGuid(const std::string& guid) {
+  WVLOG_D("NWebImpl::GetCanResumeByGuid guid %{public}s", guid.c_str());
+
+  CefRefPtr<CefDownloadItem> download_item = CefGetDownloadItem(guid);
+  if (!download_item) {
+    LOG(ERROR) << "GetCanResumeByGuid failed, for download_item is nullptr, "
+               << "guid " << guid;
+    return false;
+  }
+
+  return NWebDownloadItem::GetNWebCanResume(download_item);
+}
+
+bool NWebImpl::GetTransientByGuid(const std::string& guid) {
+  WVLOG_D("NWebImpl::GetTransientByGuid guid %{public}s", guid.c_str());
+
+  CefRefPtr<CefDownloadItem> download_item = CefGetDownloadItem(guid);
+  if (!download_item) {
+    LOG(ERROR) << "GetTransientByGuid failed, for download_item is nullptr, "
+               << "guid " << guid;
+    return false;
+  }
+  return NWebDownloadItem::GetNWebTransient(download_item);
+}
+
+NWebDownloadSource NWebImpl::GetDownloadSourceByGuid(const std::string& guid) {
+  WVLOG_D("NWebImpl::GetDownloadSourceByGuid guid %{public}s", guid.c_str());
+
+  CefRefPtr<CefDownloadItem> download_item = CefGetDownloadItem(guid);
+  if (!download_item) {
+    LOG(ERROR)
+        << "GetDownloadSourceByGuid failed, for download_item is nullptr, "
+        << "guid " << guid;
+    return NWebDownloadSource::UNKNOWN;
+  }
+  return NWebDownloadItem::GetNWebDownloadSource(download_item);
+}
+
+NWebTargetDisposition NWebImpl::GetTargetDispositionByGuid(
+    const std::string& guid) {
+  WVLOG_D("NWebImpl::GetTargetDispositionByGuid guid %{public}s", guid.c_str());
+
+  CefRefPtr<CefDownloadItem> download_item = CefGetDownloadItem(guid);
+  if (!download_item) {
+    LOG(ERROR) << "GetTargetDispositionByGuid, for download_item is nullptr, "
+               << "guid " << guid;
+    return NWebTargetDisposition::PROMPT;
+  }
+  return NWebDownloadItem::GetNWebTargetDisposition(download_item);
+}
+
+std::string NWebImpl::GetByExtensionIdByGuid(const std::string& guid) {
+  WVLOG_D("NWebImpl::GetByExtensionIdByGuid guid %{public}s", guid.c_str());
+
+  CefRefPtr<CefDownloadItem> download_item = CefGetDownloadItem(guid);
+  if (!download_item) {
+    LOG(ERROR)
+        << "GetByExtensionIdByGuid failed, for download_item is nullptr, "
+        << "guid " << guid;
+    return "";
+  }
+
+  return NWebDownloadItem::GetNWebByExtensionId(download_item);
+}
+
+std::string NWebImpl::GetByExtensionNameByGuid(const std::string& guid) {
+  WVLOG_D("NWebImpl::GetByExtensionNameByGuid guid %{public}s", guid.c_str());
+
+  CefRefPtr<CefDownloadItem> download_item = CefGetDownloadItem(guid);
+  if (!download_item) {
+    LOG(ERROR)
+        << "GetByExtensionNameByGuid failed, for download_item is nullptr, "
+        << "guid " << guid;
+    return "";
+  }
+
+  return NWebDownloadItem::GetNWebByExtensionName(download_item);
+}
+
+NWebFilenameConflictAction NWebImpl::GetConflictActionByGuid(
+    const std::string& guid) {
+  WVLOG_D("NWebImpl::GetConflictActionByGuid guid %{public}s", guid.c_str());
+
+  CefRefPtr<CefDownloadItem> download_item = CefGetDownloadItem(guid);
+  if (!download_item) {
+    LOG(ERROR)
+        << "GetConflictActionByGuid failed, for download_item is nullptr, "
+        << "guid " << guid;
+    return NWebFilenameConflictAction::CONFLICT_ACTION_NONE;
+  }
+  return NWebDownloadItem::GetNWebConflictAction(download_item);
+}
+#endif
 
 #if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
 void NWebImpl::UpdateBrowserControlsState(int constraints,

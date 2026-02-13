@@ -18,6 +18,7 @@
 
 #include "cef/include/cef_download_item.h"
 #include "ohos_nweb/src/capi/nweb_c_api.h"
+#include "ohos_nweb/src/capi/browser_service/nweb_extension_downloader_types.h"
 #include "ohos_nweb/src/nweb_hilog.h"
 #include "include/cef_download_item_ext.h"
 
@@ -50,6 +51,13 @@ struct NWebDownloadItem {
   char* method = nullptr;
   char* received_slices = nullptr;
   NWebDownloadItemState state;
+  bool can_resume;
+  bool transient;
+  char* referrer_url = nullptr;
+  char* initiator = nullptr;
+  char* by_extension_id = nullptr;
+  char* by_extension_name = nullptr;
+  NWebFilenameConflictAction conflict_action; 
 
   NWebDownloadItem() { WVLOG_I("NWebDownloadItem() is called"); }
 
@@ -75,6 +83,14 @@ struct NWebDownloadItem {
       free(original_url);
       original_url = nullptr;
     }
+    if (referrer_url) {
+      free(referrer_url);
+      referrer_url = nullptr;
+    }
+    if (initiator) {
+      free(initiator);
+      initiator = nullptr;
+    }
     if (suggested_file_name) {
       free(suggested_file_name);
       suggested_file_name = nullptr;
@@ -99,6 +115,14 @@ struct NWebDownloadItem {
       free(received_slices);
       received_slices = nullptr;
     }
+    if (by_extension_id) {
+      free(by_extension_id);
+      by_extension_id = nullptr;
+    }
+    if (by_extension_name) {
+      free(by_extension_name);
+      by_extension_name = nullptr;
+    }
   }
 
   NWebDownloadItem(CefRefPtr<CefDownloadItem> download_item) {
@@ -120,6 +144,12 @@ struct NWebDownloadItem {
     url = strdup(url_.c_str());
     std::string original_url_ = download_item->GetOriginalUrl().ToString();
     original_url = strdup(original_url_.c_str());
+    std::string referrer_url_ =
+        download_item->AsArkDownloadItem()->GetReferrerUrl().ToString();
+    referrer_url = strdup(referrer_url_.c_str());
+    std::string initiator_ =
+        download_item->AsArkDownloadItem()->GetRequestInitiator().ToString();
+    initiator = strdup(initiator_.c_str());
     std::string content_disposition_ =
         download_item->GetContentDisposition().ToString();
     content_disposition = strdup(content_disposition_.c_str());
@@ -139,6 +169,15 @@ struct NWebDownloadItem {
     last_modified = strdup(last_modified_.c_str());
     std::string etag_ = download_item->AsArkDownloadItem()->GetETag();
     etag = strdup(etag_.c_str());
+    can_resume = download_item->AsArkDownloadItem()->CanResume();
+    transient = download_item->AsArkDownloadItem()->IsTransient();
+    std::string by_extension_id_ =
+        download_item->AsArkDownloadItem()->GetByExtensionId().ToString();
+    by_extension_id = strdup(by_extension_id_.c_str());
+    std::string by_extension_name_ =
+        download_item->AsArkDownloadItem()->GetByExtensionName().ToString();
+    by_extension_name = strdup(by_extension_name_.c_str());
+    conflict_action = GetNWebConflictAction(download_item);
   }
 
   static NWebDownloadItemState GetNWebState(
@@ -171,6 +210,118 @@ struct NWebDownloadItem {
       }
     }
     return nweb_state;
+  }
+
+  static std::string GetNWebOriginUrl(
+      CefRefPtr<CefDownloadItem> download_item) {
+    CHECK(download_item);
+    WVLOG_I("GetNWebOriginUrl is called");
+    auto original_url = download_item->GetOriginalUrl();
+    return original_url;
+  }
+
+  static std::string GetNWebReferrer(CefRefPtr<CefDownloadItem> download_item) {
+    CHECK(download_item);
+    WVLOG_I("GetNWebReferrer is called");
+    auto referrer = download_item->AsArkDownloadItem()->GetReferrerUrl();
+    return referrer;
+  }
+
+  static std::string GetNWebInitiator(
+      CefRefPtr<CefDownloadItem> download_item) {
+    CHECK(download_item);
+    WVLOG_I("GetNWebInitiator is called");
+    auto initiator = download_item->AsArkDownloadItem()->GetRequestInitiator();
+    return initiator;
+  }
+
+  static bool GetNWebCanResume(CefRefPtr<CefDownloadItem> download_item) {
+    CHECK(download_item);
+    WVLOG_I("GetNWebCanResume is called");
+    auto canresume = download_item->AsArkDownloadItem()->CanResume();
+    return canresume;
+  }
+
+  static bool GetNWebTransient(CefRefPtr<CefDownloadItem> download_item) {
+    CHECK(download_item);
+    WVLOG_I("GetNWebTransient is called");
+    auto transient = download_item->AsArkDownloadItem()->IsTransient();
+    return transient;
+  }
+
+  static NWebDownloadSource GetNWebDownloadSource(
+      CefRefPtr<CefDownloadItem> download_item) {
+    CHECK(download_item);
+    WVLOG_I("GetNWebDownloadSource is called");
+    auto download_resource = static_cast<NWebDownloadSource>(
+        download_item->AsArkDownloadItem()->GetDownloadSource());
+    switch (download_resource) {
+      case NWebDownloadSource::NAVIGATION:
+        return NWebDownloadSource::NAVIGATION;
+      case NWebDownloadSource::DRAG_AND_DROP:
+        return NWebDownloadSource::DRAG_AND_DROP;
+      case NWebDownloadSource::EXTENSION_API:
+        return NWebDownloadSource::EXTENSION_API;
+      case NWebDownloadSource::EXTENSION_INSTALLER:
+        return NWebDownloadSource::EXTENSION_INSTALLER;
+      case NWebDownloadSource::CONTEXT_MENU:
+        return NWebDownloadSource::CONTEXT_MENU;
+      case NWebDownloadSource::RETRY:
+        return NWebDownloadSource::RETRY;
+      default:
+        return NWebDownloadSource::UNKNOWN;
+    }
+  }
+
+  static NWebTargetDisposition GetNWebTargetDisposition(
+      CefRefPtr<CefDownloadItem> download_item) {
+    CHECK(download_item);
+    WVLOG_I("GetNWebTargetDisposition is called");
+    auto target_disposition =
+        download_item->AsArkDownloadItem()->GetTargetDisposition();
+    NWebTargetDisposition ret_target_disposition =
+        NWebTargetDisposition::PROMPT;
+    if (target_disposition ==
+        static_cast<int>(NWebTargetDisposition::OVERWRITE)) {
+      ret_target_disposition = NWebTargetDisposition::OVERWRITE;
+    }
+    return ret_target_disposition;
+  }
+
+  static std::string GetNWebByExtensionId(
+      CefRefPtr<CefDownloadItem> download_item) {
+    CHECK(download_item);
+    WVLOG_I("GetNWebByExtensionId is called");
+    auto id = download_item->AsArkDownloadItem()->GetByExtensionId();
+    return id;
+  }
+
+  static std::string GetNWebByExtensionName(
+      CefRefPtr<CefDownloadItem> download_item) {
+    CHECK(download_item);
+    WVLOG_I("GetNWebByExtensionName is called");
+    auto name = download_item->AsArkDownloadItem()->GetByExtensionName();
+    return name;
+  }
+
+  static NWebFilenameConflictAction GetNWebConflictAction(
+      CefRefPtr<CefDownloadItem> download_item) {
+    CHECK(download_item);
+    WVLOG_I("GetNWebConflictAction is called");
+    auto conflict_action = static_cast<NWebFilenameConflictAction>(
+        download_item->AsArkDownloadItem()->GetConflictAction());
+    switch (conflict_action) {
+      case NWebFilenameConflictAction::CONFLICT_ACTION_NONE:
+        return NWebFilenameConflictAction::CONFLICT_ACTION_NONE;
+      case NWebFilenameConflictAction::CONFLICT_ACTION_UNIQUIFY:
+        return NWebFilenameConflictAction::CONFLICT_ACTION_UNIQUIFY;
+      case NWebFilenameConflictAction::CONFLICT_ACTION_OVERWRITE:
+        return NWebFilenameConflictAction::CONFLICT_ACTION_OVERWRITE;
+      case NWebFilenameConflictAction::CONFLICT_ACTION_PROMPT:
+        return NWebFilenameConflictAction::CONFLICT_ACTION_PROMPT;
+      default:
+        return NWebFilenameConflictAction::CONFLICT_ACTION_NONE;
+    }
   }
 };
 

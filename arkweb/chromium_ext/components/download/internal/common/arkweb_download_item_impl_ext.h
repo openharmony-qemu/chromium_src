@@ -168,6 +168,13 @@ class COMPONENTS_DOWNLOAD_EXPORT ArkWebDownloadItemImplExt : public DownloadItem
     NWebIdData(int nweb_id) { nweb_id_ = nweb_id; }
   };
   void Cancel(bool user_cancel) override;
+
+  void SetByExtensionId(const std::string& extension_id);
+  void SetByExtensionName(const std::string& extension_name);
+  void SetConflictAction(int conflict_action);
+  std::string GetByExtensionId() const;
+  std::string GetByExtensionName() const;
+  int GetConflictAction() const;
 #endif  //  BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
 
  private:
@@ -195,6 +202,9 @@ class COMPONENTS_DOWNLOAD_EXPORT ArkWebDownloadItemImplExt : public DownloadItem
   base::OnceCallback<void(const std::vector<uint8_t>&)>
       read_download_callback_from_ui_;
   uint32_t read_download_size_;
+  std::string extension_id_;
+  std::string extension_name_;
+  int conflict_action_{0};
 #endif
 
   base::WeakPtrFactory<ArkWebDownloadItemImplExt> weak_ptr_factory_{this};

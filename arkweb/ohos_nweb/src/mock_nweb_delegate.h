@@ -84,6 +84,12 @@ class MockNWebDelegate : public NWebDelegateInterface {
       (std::shared_ptr<NWebDownloadDelegateCallback> downloadDelegateListener),
       (override));
   MOCK_METHOD(void, StartDownload, (const char* url), (override));
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+  MOCK_METHOD(void,
+              StartDownload,
+              (const char* url, const DownloadUrlParameters& input_params),
+              (override));
+#endif
   MOCK_METHOD(void,
               ResumeDownload,
               (std::shared_ptr<NWebDownloadItem> web_download),

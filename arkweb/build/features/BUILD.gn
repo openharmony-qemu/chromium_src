@@ -585,6 +585,7 @@ buildflag_header("features") {
     "ARKWEB_MEDIA_CAST=$arkweb_media_cast",
     "ARKWEB_CUSTOM_VIEWPORT_WIDTH=$arkweb_custom_viewport_width",
     "ARKWEB_EVICT_UNLOCK_FRAMES=$arkweb_evict_unlock_frames",
+    "ARKWEB_NOT_LOAD_IFRAME=$arkweb_not_load_iframe",
 
     # ARKWEB_EXT dafault value
     "ARKWEB_EXT_BLANK_TARGET_POPUP_INTERCEPT=false",
@@ -608,7 +609,6 @@ buildflag_header("features") {
     "ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION=false",
     "ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING=$arkweb_ext_http_dns_fallback_on_dns_hijacking",
     "ARKWEB_EXT_RECEIVE_RESPONSE=$arkweb_ext_receive_response",
-    "ARKWEB_NOT_LOAD_IFRAME=$arkweb_not_load_iframe",
   ]
 
   public_configs = [ ":arkweb_global_config" ]

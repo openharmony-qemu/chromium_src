@@ -5100,7 +5100,7 @@ void RenderProcessHostImpl::ProcessDied(
   DCHECK(!deleting_soon_);
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
-  base::ProcessId process_id = GetProcess().Pid();
+  base::ProcessId process_id = GetProcess().IsValid() ? GetProcess().Pid() : base::kNullProcessHandle;
   OHOS::NWeb::ResSchedClientAdapter::ReportKeyThread(
       OHOS::NWeb::ResSchedStatusAdapter::THREAD_DESTROYED, process_id,
       process_id, OHOS::NWeb::ResSchedRoleAdapter::IMPORTANT_DISPLAY);

@@ -1866,6 +1866,35 @@ void PdfViewWebPlugin::HandleViewportMessage(const base::Value::Dict& message) {
 
   gfx::Vector2dF scroll_offset(*message.FindDouble("xOffset"),
                                *message.FindDouble("yOffset"));
+#if BUILDFLAG(ARKWEB_PDF)
+  if (!message.FindInt("pinchPhase")) {
+    LOG(ERROR) << "Viewport 'pinchPhase' is empty, message: \n" << message.DebugString();
+    return;
+  }
+  const PinchPhase pinch_phase =
+      static_cast<PinchPhase>(*message.FindInt("pinchPhase"));
+  received_viewport_message_ = true;
+  stop_scrolling_ = false;
+  if (pinch_phase == PinchPhase::kNone || pinch_phase == PinchPhase::kEnd) {
+    SetIsPinching(false);
+  } else {
+    SetIsPinching(true);
+  }
+  if (pinch_phase == PinchPhase::kStart) {
+    scroll_offset_at_last_raster_ = scroll_offset;
+    last_bitmap_smaller_ = false;
+    needs_reraster_ = false;
+    return;
+  }
+  if (!message.FindDouble("zoom")) {
+    LOG(ERROR) << "Viewport 'zoom' is empty, PinchPhase: " << static_cast<uint8_t>(pinch_phase)
+              <<  ", message: \n" << message.DebugString();
+    return;
+  }
+  double new_zoom = *message.FindDouble("zoom");
+
+  const double zoom_ratio = new_zoom / zoom_;
+#else
   double new_zoom = *message.FindDouble("zoom");
   const PinchPhase pinch_phase =
       static_cast<PinchPhase>(*message.FindInt("pinchPhase"));
@@ -1874,20 +1903,13 @@ void PdfViewWebPlugin::HandleViewportMessage(const base::Value::Dict& message) {
   stop_scrolling_ = false;
   const double zoom_ratio = new_zoom / zoom_;
 
-#if BUILDFLAG(ARKWEB_PDF)
-  if (pinch_phase == PinchPhase::kNone || pinch_phase == PinchPhase::kEnd) {
-    SetIsPinching(false);
-  } else {
-    SetIsPinching(true);
-  }
-#endif  // BUILDFLAG(ARKWEB_PDF)
-
   if (pinch_phase == PinchPhase::kStart) {
     scroll_offset_at_last_raster_ = scroll_offset;
     last_bitmap_smaller_ = false;
     needs_reraster_ = false;
     return;
   }
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   // When zooming in, we set a layer transform to avoid unneeded rerasters.
   // Also, if we're zooming out and the last time we rerastered was when

@@ -1510,7 +1510,7 @@ void WebContentsImplExt::GetAllFrameInfos(
     if((status != base::TERMINATION_STATUS_ABNORMAL_TERMINATION &&
       status != base::TERMINATION_STATUS_PROCESS_CRASHED &&
       status != base::TERMINATION_STATUS_PROCESS_WAS_KILLED &&
-      status != base::TERMINATION_STATUS_OOM &&) ||
+      status != base::TERMINATION_STATUS_OOM) ||
       (status == base::TERMINATION_STATUS_PROCESS_WAS_KILLED &&
       exit_code != RESULT_CODE_HUNG)) {
         LOG(INFO) << "render is not indicate a crash "<< (int)status << " "<< (int64_t) this;

@@ -7783,6 +7783,25 @@ void NavigationRequest::WillStartRequest() {
   EnterChildTraceEvent("WillStartRequest", this);
   DCHECK_EQ(state_, WILL_START_REQUEST);
   will_start_request_time_ = base::TimeTicks::Now();
+#if BUILDFLAG(ARKWEB_NOT_LOAD_IFRAME)
+  if(!IsInMainFrame()) {
+    RenderFrameHostImpl* rfh = frame_tree_node_->current_frame_host();
+    bool flag = false;
+    if (rfh) {
+      WebContentsImpl* web_contents = static_cast<WebContentsImpl*>(
+        WebContents::FromRenderFrameHost(rfh));
+      if (web_contents) {
+        LOG(INFO) << "start GetIframeLoadingFlag iframe";
+        flag = web_contents->GetIframeLoadingFlag();
+      }
+    }
+    if (flag) {
+      LOG(INFO) << "stop load iframe";
+      OnWillProcessResponseChecksComplete(NavigationThrottle::CANCEL);
+      return;
+    }
+  }
+#endif  // ARKWEB_NOT_LOAD_IFRAME
 
   if (IsSelfReferentialURL()) {
     SetState(CANCELING);

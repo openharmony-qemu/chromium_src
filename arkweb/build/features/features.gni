@@ -266,6 +266,7 @@ declare_args() {
   arkweb_ext_receive_response = false
   arkweb_custom_viewport_width = true
   arkweb_evict_unlock_frames = !is_component_build
+  arkweb_not_load_iframe = true
 }
 
 # Features enabled in mojom bindings.

@@ -686,6 +686,12 @@ class CONTENT_EXPORT WebContentsImpl
 
   void SetOverscrollNavigationEnabled(bool enabled) override;
 
+#if BUILDFLAG(ARKWEB_NOT_LOAD_IFRAME)
+  void NotifyFrameGoneReason(base::TerminationStatus status, int exit_code) override;
+
+  bool GetIframeLoadingFlag() override;
+#endif  // ARKWEB_NOT_LOAD_IFRAME
+
   // RenderFrameHostDelegate ---------------------------------------------------
   bool OnMessageReceived(RenderFrameHostImpl* render_frame_host,
                          const IPC::Message& message) override;
@@ -2685,6 +2691,14 @@ class CONTENT_EXPORT WebContentsImpl
 #if BUILDFLAG(ARKWEB_PIP)
   bool picture_in_picture_active_ = false;
 #endif
+
+#if BUILDFLAG(ARKWEB_NOT_LOAD_IFRAME)
+  static const int CRASH_TIME_WINDOW_MS = 30000;  // 30s = 30*1000(ms)
+
+  std::deque<int64_t> crash_frameTimeStamp_list;
+
+  bool should_block_frame_loading = false;
+#endif  // ARKWEB_NOT_LOAD_IFRAME
 
   // Only set if this WebContents represents a document picture-in-picture
   // window. This points to the WebContents that originally opened this

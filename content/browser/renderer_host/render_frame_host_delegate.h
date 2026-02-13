@@ -209,6 +209,12 @@ class CONTENT_EXPORT RenderFrameHostDelegate : public RenderFrameHostDelegateExt
   // listen for when RenderFrame objects are created.
   virtual void RenderFrameDeleted(RenderFrameHostImpl* render_frame_host) {}
 
+#if BUILDFLAG(ARKWEB_NOT_LOAD_IFRAME)
+  virtual void NotifyFrameGoneReason(base::TerminationStatus status, int exit_code) {}
+
+  virtual bool GetIframeLoadingFlag() {}
+#endif  // ARKWEB_NOT_LOAD_IFRAME
+
   // A context menu should be shown, to be built using the context information
   // provided in the supplied params.
   virtual void ShowContextMenu(

@@ -332,6 +332,7 @@ if (!enable_arkweb) {
   arkweb_ext_http_dns_fallback_on_dns_hijacking = false
   arkweb_custom_viewport_width = false
   arkweb_evict_unlock_frames = false
+  arkweb_not_load_iframe = false
 }
 
 buildflag_header("features") {
@@ -584,6 +585,7 @@ buildflag_header("features") {
     "ARKWEB_MEDIA_CAST=$arkweb_media_cast",
     "ARKWEB_CUSTOM_VIEWPORT_WIDTH=$arkweb_custom_viewport_width",
     "ARKWEB_EVICT_UNLOCK_FRAMES=$arkweb_evict_unlock_frames",
+    "ARKWEB_NOT_LOAD_IFRAME=$arkweb_not_load_iframe",
 
     # ARKWEB_EXT dafault value
     "ARKWEB_EXT_BLANK_TARGET_POPUP_INTERCEPT=false",

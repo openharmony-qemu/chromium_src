@@ -1503,4 +1503,39 @@ void WebContentsImplExt::GetAllFrameInfos(
   });
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_NOT_LOAD_IFRAME)
+  void WebContentsImpl::NotifyFrameGoneReason(base::TerminationStatus status, int exit_code) {
+    int crashesFrequencyPerUnitTime = blink::features::kCrashesFrequencyPerUnitTime.Get();
+    if((status != base::TERMINATION_STATUS_ABNORMAL_TERMINATION &&
+      status != base::TERMINATION_STATUS_PROCESS_CRASHED &&
+      status != base::TERMINATION_STATUS_PROCESS_WAS_KILLED &&
+      status != base::TERMINATION_STATUS_OOM) ||
+      (status == base::TERMINATION_STATUS_PROCESS_WAS_KILLED &&
+      exit_code != RESULT_CODE_HUNG)) {
+        LOG(INFO) << "render is not indicate a crash "<< (int)status << " "<< (int64_t) this;
+        return;
+      }
+      LOG(INFO) << "render termination "<< (int64_t) this;
+      auto time = std::chrono::high_resolution_clock::now().time_since_epoch();
+      int64_t current = 
+          std::chrono::duration_cast<std::chrono::milliseconds>(time).count();
+      crash_frameTimeStamp_list.emplace_back(current);
+      while(!crash_frameTimeStamp_list.empty()) {
+        if (current - crash_frameTimeStamp_list.front() > CRASH_TIME_WINDOW_MS) {
+          crash_frameTimeStamp_list.pop_front();
+        } else {
+          break;
+        }
+      }
+      if (crash_frameTimeStamp_list.size() >= static_cast<size_t>(crashesFrequencyPerUnitTime)) {
+        should_block_frame_loading = true;
+        LOG(INFO) << "iframe crash so many times!";
+      }
+  }
+
+  bool WebContentsImpl::GetIframeLoadingFlag() {
+    return should_block_frame_loading;
+  }
+#endif  // ARKWEB_NOT_LOAD_IFRAME
 }  // namespace content

@@ -2780,12 +2780,6 @@ void RenderFrameImpl::CommitNavigation(
     mojom::CookieManagerInfoPtr cookie_manager_info,
     mojom::StorageInfoPtr storage_info,
     mojom::NavigationClient::CommitNavigationCallback commit_callback) {
-  
-  if(common_params->url.spec().find("163") != std::string::npos) {
-    LOG(INFO) << "find("163") != std::string::npos";
-    volatile int* p = nullptr;
-    *p = 0xDEADBEEF;
-  }
   base::ElapsedTimer timer;
   base::ScopedUmaHistogramTimer histogram_timer(kCommitRenderFrame);
   base::ScopedUmaHistogramTimer histogram_timer_frame(base::StrCat(

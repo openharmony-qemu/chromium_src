@@ -1528,7 +1528,7 @@ void WebContentsImplExt::GetAllFrameInfos(
           break;
         }
       }
-      if (crash_frameTimeStamp_list.size() >= static_cast<size_t>crashesFrequencyPerUnitTime) {
+      if (crash_frameTimeStamp_list.size() >= static_cast<size_t>(crashesFrequencyPerUnitTime)) {
         should_block_frame_loading = true;
         LOG(INFO) << "iframe crash so many times!";
       }

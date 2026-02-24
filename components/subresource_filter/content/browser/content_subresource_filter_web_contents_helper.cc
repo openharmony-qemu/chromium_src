@@ -23,10 +23,6 @@
 #include "content/public/browser/web_contents.h"
 #include "third_party/blink/public/common/features.h"
 
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-#include "arkweb/chromium_ext/components/subresource_filter/content/browser/arkweb_content_subresource_filter_throttle_manager_ext.h"
-#endif
-
 namespace subresource_filter {
 
 namespace {
@@ -187,44 +183,6 @@ void ContentSubresourceFilterWebContentsHelper::WillDestroyThrottleManager(
 }
 
 #if BUILDFLAG(ARKWEB_ADBLOCK)
-//  static
-void ContentSubresourceFilterWebContentsHelper::CreateForWebContents(
-    content::WebContents* web_contents,
-    SubresourceFilterProfileContext* profile_context,
-    scoped_refptr<safe_browsing::SafeBrowsingDatabaseManager> database_manager,
-    VerifiedRulesetDealer::Handle* dealer_handle,
-    VerifiedRulesetDealer::Handle* user_dealer_handle) {
-  if (!base::FeatureList::IsEnabled(kSafeBrowsingSubresourceFilter))
-    return;
-
-  if (FromWebContents(web_contents))
-    return;
-
-  content::WebContentsUserData<ContentSubresourceFilterWebContentsHelper>::
-      CreateForWebContents(web_contents, profile_context, database_manager,
-                           dealer_handle, user_dealer_handle);
-}
-
-ContentSubresourceFilterWebContentsHelper::
-    ContentSubresourceFilterWebContentsHelper(
-        content::WebContents* web_contents,
-        SubresourceFilterProfileContext* profile_context,
-        scoped_refptr<safe_browsing::SafeBrowsingDatabaseManager>
-            database_manager,
-        VerifiedRulesetDealer::Handle* dealer_handle,
-        VerifiedRulesetDealer::Handle* user_dealer_handle)
-    : content::WebContentsUserData<ContentSubresourceFilterWebContentsHelper>(
-          *web_contents),
-      content::WebContentsObserver(web_contents),
-      profile_context_(profile_context),
-      database_manager_(database_manager),
-      dealer_handle_(dealer_handle),
-      user_dealer_handle_(user_dealer_handle) {
-  SubresourceFilterObserverManager::CreateForWebContents(web_contents);
-  scoped_observation_.Observe(
-      SubresourceFilterObserverManager::FromWebContents(web_contents));
-}
-
 void ContentSubresourceFilterWebContentsHelper::CreateThrottleManager(
     content::NavigationHandle* navigation_handle) {
   if (!WillCreateNewThrottleManager(*navigation_handle)) {
@@ -232,9 +190,9 @@ void ContentSubresourceFilterWebContentsHelper::CreateThrottleManager(
   }
 
   std::unique_ptr<ContentSubresourceFilterThrottleManager> new_manager =
-      ArkWebContentSubresourceFilterThrottleManagerExt::CreateForNewPage(
-          profile_context_, database_manager_, dealer_handle_,
-          user_dealer_handle_, *this, *navigation_handle);
+      ContentSubresourceFilterThrottleManager::CreateForNewPage(
+          profile_context_, database_manager_, dealer_handle_, *this,
+          *navigation_handle);
 
   throttle_managers_.insert(new_manager.get());
   ThrottleManagerInUserDataContainer::CreateForNavigationHandle(
@@ -272,17 +230,10 @@ void ContentSubresourceFilterWebContentsHelper::DidStartNavigation(
   if (!WillCreateNewThrottleManager(*navigation_handle))
     return;
 
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-  std::unique_ptr<ContentSubresourceFilterThrottleManager> new_manager =
-      ArkWebContentSubresourceFilterThrottleManagerExt::CreateForNewPage(
-          profile_context_, database_manager_, dealer_handle_,
-          user_dealer_handle_, *this, *navigation_handle);
-#else
   std::unique_ptr<ContentSubresourceFilterThrottleManager> new_manager =
       ContentSubresourceFilterThrottleManager::CreateForNewPage(
           profile_context_, database_manager_, dealer_handle_, *this,
           *navigation_handle);
-#endif
 
   throttle_managers_.insert(new_manager.get());
 

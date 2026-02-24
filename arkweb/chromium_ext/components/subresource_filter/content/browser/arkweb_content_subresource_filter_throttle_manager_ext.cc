@@ -32,7 +32,6 @@
 #include "components/subresource_filter/core/browser/async_document_subresource_filter.h"
 #include "components/subresource_filter/core/browser/subresource_filter_constants.h"
 #include "components/subresource_filter/core/browser/subresource_filter_features.h"
-#include "components/subresource_filter/core/browser/verified_ruleset_dealer.h"
 #include "components/subresource_filter/core/common/common_features.h"
 #include "components/subresource_filter/core/common/constants.h"
 #include "content/public/browser/browser_task_traits.h"
@@ -57,39 +56,18 @@
 #endif
 
 namespace subresource_filter {
-// static
-std::unique_ptr<ArkWebContentSubresourceFilterThrottleManagerExt>
-ArkWebContentSubresourceFilterThrottleManagerExt::CreateForNewPage(
-    SubresourceFilterProfileContext* profile_context,
-    scoped_refptr<safe_browsing::SafeBrowsingDatabaseManager> database_manager,
-    VerifiedRulesetDealer::Handle* dealer_handle,
-    VerifiedRulesetDealer::Handle* user_dealer_handle,
-    ContentSubresourceFilterWebContentsHelper& web_contents_helper,
-    content::NavigationHandle& initiating_navigation_handle) {
-  CHECK(IsInSubresourceFilterRoot(&initiating_navigation_handle),
-        base::NotFatalUntil::M129);
 
-  if (!base::FeatureList::IsEnabled(kSafeBrowsingSubresourceFilter)) {
-    return nullptr;
-  }
-
-  return std::make_unique<ArkWebContentSubresourceFilterThrottleManagerExt>(
-      profile_context, database_manager, dealer_handle, user_dealer_handle,
-      web_contents_helper, initiating_navigation_handle);
-}
 ArkWebContentSubresourceFilterThrottleManagerExt::
     ArkWebContentSubresourceFilterThrottleManagerExt(
         SubresourceFilterProfileContext* profile_context,
         scoped_refptr<safe_browsing::SafeBrowsingDatabaseManager> database_manager,
         VerifiedRulesetDealer::Handle* dealer_handle,
-        VerifiedRulesetDealer::Handle* user_dealer_handle,
         ContentSubresourceFilterWebContentsHelper& web_contents_helper,
         content::NavigationHandle& initiating_navigation_handle)
     : ContentSubresourceFilterThrottleManager(
         profile_context,
         database_manager,
         dealer_handle,
-        user_dealer_handle,
         web_contents_helper,
         initiating_navigation_handle) {}
   ArkWebContentSubresourceFilterThrottleManagerExt::~ArkWebContentSubresourceFilterThrottleManagerExt() = default;
@@ -111,15 +89,11 @@ mojom::ActivationState ArkWebContentSubresourceFilterThrottleManagerExt::AdBlock
   state.user_subresource_filter_replace =
       OHOS::adblock::AdBlockConfig::GetInstance()
           ->GetUserEasylistReplaceSwitch();
+  throttle->NotifyPageActivationWithRuleset(EnsureRulesetHandle(), state);
 
   if (state.activation_level == mojom::ActivationLevel::kDisabled) {
     return mojom::ActivationState();
   }
-
-  if (!(EnsureRulesetHandle()->ruleset_.get()->Get()) && !(EnsureUserRulesetHandle()->ruleset_.get()->Get())) {
-    return mojom::ActivationState();
-  }
-  throttle->NotifyPageActivationWithRuleset(EnsureRulesetHandle(), EnsureUserRulesetHandle(), state);
   throttle->WillSendActivationToRenderer();
   return state;
 }
@@ -193,10 +167,7 @@ void ArkWebContentSubresourceFilterThrottleManagerExt::OnPageAdBlockActivationSt
     return;
   }
 
-  if (!(EnsureRulesetHandle()->ruleset_.get()->Get()) && !(EnsureUserRulesetHandle()->ruleset_.get()->Get())) {
-    return;
-  }
-  it->second->NotifyPageActivationWithRuleset(EnsureRulesetHandle(), EnsureUserRulesetHandle(), state);
+  it->second->NotifyPageActivationWithRuleset(EnsureRulesetHandle(), state);
   return;
 }
 
@@ -217,10 +188,7 @@ void ArkWebContentSubresourceFilterThrottleManagerExt::AdBlockMaybeCreateActivat
         OHOS::adblock::AdBlockConfig::GetInstance()
             ->GetUserEasylistReplaceSwitch();
 
-    if (!(EnsureRulesetHandle()->ruleset_.get()->Get()) && !(EnsureUserRulesetHandle()->ruleset_.get()->Get())) {
-      return;
-    }
-    throttle->NotifyPageActivationWithRuleset(EnsureRulesetHandle(), EnsureUserRulesetHandle(), state);
+    throttle->NotifyPageActivationWithRuleset(EnsureRulesetHandle(), state);
   }
 }
 

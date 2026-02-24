@@ -31,3 +31,7 @@ struct FallbackProxyInfoConfig {
   int32 proxy_connect_timeout;
   int32 malicious_url_check_wait_time;
 };
+
+struct ArkWebGlobalConfig {
+  bool should_report_new_navigation_info = false;
+};

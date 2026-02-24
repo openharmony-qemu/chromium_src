@@ -72,6 +72,10 @@
 #include "arkweb/chromium_ext/servieces/network/public/mojom/network_config_ohos.mojom.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+#include "arkweb/chromium_ext/servieces/network/public/mojom/network_config_ohos.mojom.h"
+#endif
+
 namespace network {
 
 class NetworkService;
@@ -122,6 +126,10 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) ArkWebNetworkServiceExt
 
 #if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
   void SetSocketIdleTimeout(int32_t timeout) override;
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  void SetArkWebGlobalConfig(mojom::ArkWebGlobalConfigPtr config) override;
 #endif
 
  private:

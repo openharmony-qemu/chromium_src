@@ -405,4 +405,26 @@ void ArkWebNetworkServiceExt::SetSocketIdleTimeout(int32_t timeout) {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+void ArkWebNetworkServiceExt::SetArkWebGlobalConfig(
+    mojom::ArkWebGlobalConfigPtr config) {
+  if (!config) {
+    return;
+  }
+
+  LOG_FEEDBACK(INFO, kNetwork) << __func__ << " reportNewNavigationInfoEnabled:"
+                               << config->should_report_new_navigation_info;
+
+  for (NetworkContext* network_context : network_contexts_) {
+    net::URLRequestContext* url_request_context =
+        network_context->url_request_context();
+    if (url_request_context) {
+      url_request_context->AsURLRequestContextExt()
+          ->SetShouldReportNewNavigationInfo(
+              config->should_report_new_navigation_info);
+    }
+  }
+}
+#endif
+
 }  // namespace network

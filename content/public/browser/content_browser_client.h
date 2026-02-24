@@ -3190,6 +3190,8 @@ class CONTENT_EXPORT ContentBrowserClient {
   virtual void OnReportNewNavigationInfo(
       WebContents* web_contents,
       const net::WebNavigationInfo& navigation_info) {}
+
+  virtual bool ShouldReportNewNavigationInfo() { return false; }
 #endif
 };
 

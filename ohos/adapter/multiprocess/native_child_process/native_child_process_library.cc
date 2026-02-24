@@ -59,7 +59,6 @@ NativeChildProcessLibrary::NativeChildProcessLibrary()
     lib_child_process_.LoadFunction(
         &unregister_native_child_process_exit_callback_func_,
         "OH_Ability_UnregisterNativeChildProcessExitCallback");
-        OH_Ability_RegisterNativeChildProcessExitCallback;
 
     supports_start_child_process_ = start_native_child_process_func_ != nullptr;
     supports_start_child_process_with_configs_ =

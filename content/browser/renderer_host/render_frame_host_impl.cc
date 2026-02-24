@@ -3818,7 +3818,9 @@ void RenderFrameHostImpl::RenderProcessGone(
   LOG(INFO) << "render process is gone";
 #if BUILDFLAG(ARKWEB_NOT_LOAD_IFRAME)
   if(base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kEnableNwebEx)) {
-    if (IsCrossProcessSubframe()){
+    if (IsCrossProcessSubframe() &&
+      (GetMainFrame()->GetLastCommittedURL().SchemeIs(url::kHttpScheme) ||
+       GetMainFrame()->GetLastCommittedURL().SchemeIs(url::kHttpsScheme))) {
       delegate_->NotifyFrameGoneReason(info.status, info.exit_code);
     }
   }

@@ -85,10 +85,10 @@ ContentSubresourceFilterThrottleManager::CreateForNewPage(
 
 #if BUILDFLAG(ARKWEB_ADBLOCK)
   return std::make_unique<ArkWebContentSubresourceFilterThrottleManagerExt>(
-      profile_context, database_manager, dealer_handle, nullptr,
-      web_contents_helper, initiating_navigation_handle);
+      profile_context, database_manager, dealer_handle, web_contents_helper,
+      initiating_navigation_handle);
 #else
-  return std::make_unique<ArkWebContentSubresourceFilterThrottleManager>(
+  return std::make_unique<ContentSubresourceFilterThrottleManager>(
       profile_context, database_manager, dealer_handle, web_contents_helper,
       initiating_navigation_handle);
 #endif
@@ -731,14 +731,8 @@ ContentSubresourceFilterThrottleManager::
     if (base::FeatureList::IsEnabled(kAdTagging)) {
       mojom::ActivationState ad_tagging_state;
       ad_tagging_state.activation_level = mojom::ActivationLevel::kDryRun;
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-      throttle->NotifyPageActivationWithRuleset(EnsureRulesetHandle(),
-                                                EnsureUserRulesetHandle(),
-                                                ad_tagging_state);
-#else
       throttle->NotifyPageActivationWithRuleset(EnsureRulesetHandle(),
                                                 ad_tagging_state);
-#endif
     }
 
 #if BUILDFLAG(ARKWEB_ADBLOCK)
@@ -822,34 +816,6 @@ ContentSubresourceFilterThrottleManager::EnsureRulesetHandle() {
     ruleset_handle_ = std::make_unique<VerifiedRuleset::Handle>(dealer_handle_);
   return ruleset_handle_.get();
 }
-
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-ContentSubresourceFilterThrottleManager::
-    ContentSubresourceFilterThrottleManager(
-        SubresourceFilterProfileContext* profile_context,
-        scoped_refptr<safe_browsing::SafeBrowsingDatabaseManager>
-            database_manager,
-        VerifiedRulesetDealer::Handle* dealer_handle,
-        VerifiedRulesetDealer::Handle* user_dealer_handle,
-        ContentSubresourceFilterWebContentsHelper& web_contents_helper,
-        content::NavigationHandle& initiating_navigation_handle)
-    : receiver_(initiating_navigation_handle.GetWebContents(), this),
-      user_receiver_(initiating_navigation_handle.GetWebContents(), this),
-      dealer_handle_(dealer_handle),
-      user_dealer_handle_(user_dealer_handle),
-      database_manager_(std::move(database_manager)),
-      profile_interaction_manager_(
-          std::make_unique<subresource_filter::ProfileInteractionManager>(
-              profile_context)),
-      web_contents_helper_(web_contents_helper) {}
-
-VerifiedRuleset::Handle*
-ContentSubresourceFilterThrottleManager::EnsureUserRulesetHandle() {
-  if (!user_ruleset_handle_)
-    user_ruleset_handle_ = std::make_unique<VerifiedRuleset::Handle>(user_dealer_handle_);
-  return user_ruleset_handle_.get();
-}
-#endif
 
 void ContentSubresourceFilterThrottleManager::
     DestroyRulesetHandleIfNoLongerUsed() {

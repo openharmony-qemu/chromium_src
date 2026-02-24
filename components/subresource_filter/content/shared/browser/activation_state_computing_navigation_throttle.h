@@ -74,13 +74,6 @@ class ActivationStateComputingNavigationThrottle
       VerifiedRuleset::Handle* ruleset_handle,
       const mojom::ActivationState& page_activation_state);
 
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-void NotifyPageActivationWithRuleset(
-      VerifiedRuleset::Handle* ruleset_handle,
-      VerifiedRuleset::Handle* user_ruleset_handle,
-      const mojom::ActivationState& page_activation_state);
-#endif
-
   // content::NavigationThrottle:
   content::NavigationThrottle::ThrottleCheckResult WillStartRequest() override;
   content::NavigationThrottle::ThrottleCheckResult WillRedirectRequest()
@@ -125,10 +118,6 @@ void NotifyPageActivationWithRuleset(
   // For root frame navigations, this member will be nullptr until
   // NotifyPageActivationWithRuleset is called.
   base::WeakPtr<VerifiedRuleset::Handle> ruleset_handle_;
-
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-  base::WeakPtr<VerifiedRuleset::Handle> user_ruleset_handle_;
-#endif
 
   // Will be set to true when DEFER is called in WillProcessResponse.
   bool deferred_ = false;

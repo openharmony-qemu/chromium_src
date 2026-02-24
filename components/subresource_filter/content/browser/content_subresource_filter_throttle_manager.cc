@@ -88,7 +88,7 @@ ContentSubresourceFilterThrottleManager::CreateForNewPage(
        profile_context, database_manager, dealer_handle, web_contents_helper,
        initiating_navigation_handle); 
  #else 
-   return std::make_unique<ArkWebContentSubresourceFilterThrottleManager>( 
+   return std::make_unique<ContentSubresourceFilterThrottleManager>( 
        profile_context, database_manager, dealer_handle, web_contents_helper,	 
        initiating_navigation_handle);	 
  #endif

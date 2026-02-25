@@ -8754,5 +8754,85 @@ TEST_F(NWebImplTest, ReloadIgnoreCache002) {
   nweb_impl_->ReloadIgnoreCache();
   EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
 }
+
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+TEST_F(NWebImplTest, OpenDevtoolsByPb001) {
+  std::unique_ptr<OpenDevToolsParam> param = std::make_unique<OpenDevToolsParam>();
+  param->nweb_id = 1;
+  OpenDevToolsExtOpt ext_opt;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, OpenDevtoolsWithByPb(::testing::_, ::testing::_, ::testing::_)).Times(0);
+  nweb_impl_->OpenDevtoolsByPb(std::move(param), ext_opt);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, OpenDevtoolsByPb002) {
+  std::unique_ptr<OpenDevToolsParam> param = std::make_unique<OpenDevToolsParam>();
+  param->nweb_id = -1;
+  OpenDevToolsExtOpt ext_opt;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, OpenDevtoolsWithByPb(::testing::_, ::testing::_, ::testing::_)).Times(0);
+  nweb_impl_->OpenDevtoolsByPb(std::move(param), ext_opt);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, OpenDevtoolsByPb003) {
+  std::unique_ptr<OpenDevToolsParam> param = std::make_unique<OpenDevToolsParam>();
+  int32_t id = 0;
+  param->nweb_id = id;
+  std::shared_ptr<NWebImpl> nweb = std::make_shared<NWebImpl>(id);
+  EXPECT_NE(nweb, nullptr);
+  nweb->AddNWebToMap(id, nweb);
+  auto result = NWebImpl::FromID(id);
+  EXPECT_NE(result, nullptr);
+  OpenDevToolsExtOpt ext_opt;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, OpenDevtoolsWithByPb(::testing::_, ::testing::_, ::testing::_)).Times(1);
+  nweb_impl_->OpenDevtoolsByPb(std::move(param), ext_opt);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, GetContextMenuItem001) {
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, GetContextMenuItem()).Times(0);
+  nweb_impl_->GetContextMenuItem();
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, GetContextMenuItem002) {
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, GetContextMenuItem()).Times(1);
+  nweb_impl_->GetContextMenuItem();
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, OnContextMenuSelected001) {
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, OnContextMenuSelected(::testing::_)).Times(0);
+  nweb_impl_->OnContextMenuSelected(1);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, OnContextMenuSelected002) {
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, OnContextMenuSelected(::testing::_)).Times(1);
+  nweb_impl_->OnContextMenuSelected(1);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, OnContextMenuClosed001) {
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, OnContextMenuClosed()).Times(0);
+  nweb_impl_->OnContextMenuClosed();
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, OnContextMenuClosed002) {
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, OnContextMenuClosed()).Times(1);
+  nweb_impl_->OnContextMenuClosed();
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+#endif // BUILDFLAG(ARKWEB_DEVTOOLS)
 }  // namespace OHOS::NWeb
                           

@@ -4053,6 +4053,7 @@ bool NWebHandlerDelegate::RunContextMenu(
     CefRefPtr<CefContextMenuParams> params,
     CefRefPtr<CefMenuModel> model,
     CefRefPtr<CefRunContextMenuCallback> callback) {
+  LOG(INFO) << "NWebHandlerDelegate::RunContextMenu x: " << params->GetXCoord() << ", y: " << params->GetYCoord();
   if (!nweb_handler_ || !render_handler_) {
     return false;
   }

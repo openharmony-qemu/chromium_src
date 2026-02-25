@@ -199,6 +199,7 @@ struct OpenDevToolsParam final {
 
 struct OpenDevToolsExtOpt final {
     bool canDock = false;
+    bool useNativeMenu = false;
 };
 
 #endif  // OHOS_NWEB_SRC_CAPI_NWEB_DEVTOOLS_MESSAGE_HANDLER_H_

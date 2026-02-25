@@ -72,6 +72,7 @@ struct RunJavaScriptParam;
 #include "capi/nweb_offscreen_document_permission_request_callback.h"
 #include "capi/web_extension_tab_items.h"
 #include "ohos_nweb/src/capi/nweb_context_menus_on_clicked_data.h"
+#include "ohos_nweb/src/capi/nweb_context_menus_item.h"
 #include "ohos_nweb/src/capi/web_extension_install_crx_items.h"
 #endif // ARKWEB_ARKWEB_EXTENSIONS
 
@@ -1299,6 +1300,9 @@ class NWebImpl : public NWeb {
   void ResourceRequestDelete(int nweb_request_key);
   void ResourceResponseDelete(int nweb_response_key);
   int32_t GetLastCommittedEntryPageTransition();
+  std::vector<WebExtensionContextMenusItem> GetContextMenuItem();
+  void OnContextMenuSelected(int command_id);
+  void OnContextMenuClosed();
 #endif
 
  private:

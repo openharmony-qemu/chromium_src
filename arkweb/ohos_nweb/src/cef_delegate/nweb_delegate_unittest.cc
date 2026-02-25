@@ -45,6 +45,118 @@ class MockNWebTouchPointInfo : public NWebTouchPointInfo {
   MOCK_METHOD(double, GetY, (), (override));
 };
 
+class MockCefMenuModelImpl : public CefMenuModelImpl {
+ public:
+  MockCefMenuModelImpl() : CefMenuModelImpl(nullptr, nullptr, false) {}
+  ~MockCefMenuModelImpl() override {}
+
+  MOCK_METHOD(size_t, GetCount, (), (override));
+  MOCK_METHOD(int, GetCommandIdAt, (size_t), (override));
+  MOCK_METHOD(int, GetGroupIdAt, (size_t), (override));
+  MOCK_METHOD(bool, IsSubMenu, (), (override));
+  MOCK_METHOD(bool, IsEnabledAt, (size_t), (override));
+  MOCK_METHOD(bool, IsVisibleAt, (size_t), (override));
+  MOCK_METHOD(bool, IsCheckedAt, (size_t), (override));
+  MOCK_METHOD(CefString, GetLabelAt, (size_t), (override));
+  MOCK_METHOD(CefMenuModel::MenuItemType, GetTypeAt, (size_t), (override));
+  MOCK_METHOD(CefRefPtr<CefMenuModel>, GetSubMenuAt, (size_t), (override));
+};
+
+class MockAlloyBrowserHostImpl {
+ public:
+  MOCK_METHOD(CefMenuManager*, GetMenuManager, (), ());
+};
+
+class MockCefMenuManager {
+ public:
+  MOCK_METHOD(CefRefPtr<CefMenuModelImpl>, GetContextMenuModel, (), ());
+};
+
+class MockArkWebBrowserHostExt : public ArkWebBrowserHostExt {
+ public:
+  MockArkWebBrowserHostExt() : alloy_host_(nullptr) {}
+  ~MockArkWebBrowserHostExt() override = default;
+
+  CefRefPtr<CefBrowser> GetBrowser() override { return nullptr; }
+  void CloseBrowser(bool force_close) override {}
+  bool TryCloseBrowser() override { return false; }
+  void SetFocus(bool focus) override {}
+  bool HasView() override { return false; }
+  CefRefPtr<CefClient> GetClient() override { return nullptr; }
+  CefRefPtr<CefRequestContext> GetRequestContext() override { return nullptr; }
+  double GetZoomLevel() override { return 0.0; }
+  void SetZoomLevel(double zoomLevel) override {}
+  void RunFileDialog(FileDialogMode mode, const CefString& title,
+                     const CefString& default_file_path,
+                     const std::vector<CefString>& accept_filters,
+                     CefRefPtr<CefRunFileDialogCallback> callback) override {}
+  void StartDownload(const CefString& url) override {}
+  void DownloadImage(const CefString& image_url, bool is_favicon,
+                     uint32_t max_image_size, bool bypass_cache,
+                     CefRefPtr<CefDownloadImageCallback> callback) override {}
+  void Print() override {}
+  void PrintToPDF(const CefString& path, const CefPdfPrintSettings& settings,
+                  CefRefPtr<CefPdfPrintCallback> callback) override {}
+  void Find(const CefString& searchText, bool forward, bool matchCase,
+            bool findNext) override {}
+  void StopFinding(bool clearSelection) override {}
+  void ShowDevTools(const CefWindowInfo& windowInfo, CefRefPtr<CefClient> client,
+                    const CefBrowserSettings& settings,
+                    const CefPoint& inspect_element_at) override {}
+  void CloseDevTools() override {}
+  bool CanGoBack() override { return false; }
+  void GoBack() override {}
+  bool CanGoForward() override { return false; }
+  void GoForward() override {}
+  bool IsLoading() override { return false; }
+  void Reload() override {}
+  void ReloadIgnoreCache() override {}
+  void StopLoad() override {}
+  int GetIdentifier() override { return 0; }
+  bool IsSame(CefRefPtr<CefBrowser> that) override { return false; }
+  CefRefPtr<CefBrowser> GetFocusedFrame() override { return nullptr; }
+  CefRefPtr<CefFrame> GetFrame(int64_t identifier) override { return nullptr; }
+  CefRefPtr<CefFrame> GetFrame(const CefString& name) override { return nullptr; }
+  CefRefPtr<ZoomObserver> GetZoomObserver() override { return nullptr; }
+  void SendTouchEvent(const CefTouchEvent& event) override {}
+  void SendMouseClickEvent(const CefMouseEvent& event,
+                           cef_mouse_button_type_t type, int mouse_flags,
+                           bool is_keyboard_accelerated) override {}
+  void SendMouseMoveEvent(const CefMouseEvent& event, bool mouse_leave) override {}
+  void SendMouseWheelEvent(const CefMouseEvent& event, int deltaX, int deltaY) override {}
+  void SendKeyEvent(const CefKeyEvent& event) override {}
+  CefWindowHandle GetWindowHandle() { return 0; }
+  CefWindowHandle GetOpenerWindowHandle() { return 0; }
+
+  void SetMockAlloyBrowserHostImpl(MockAlloyBrowserHostImpl* alloy_host) {
+    alloy_host_ = alloy_host;
+  }
+
+  MockAlloyBrowserHostImpl* AsAlloyBrowserHostImpl() {
+    return alloy_host_;
+  }
+
+ private:
+  MockAlloyBrowserHostImpl* alloy_host_;
+};
+
+class MockNWebHandlerDelegate : public NWebHandlerDelegate {
+ public:
+  MockNWebHandlerDelegate() = default;
+  ~MockNWebHandlerDelegate() override = default;
+
+  CefRefPtr<ArkWebBrowserExt> GetBrowser() override {
+    return browser_ext_;
+  }
+
+  void SetMockBrowserHostExt(MockArkWebBrowserHostExt* host_ext) {
+    browser_ext_ = host_ext;
+  }
+
+ private:
+  CefRefPtr<ArkWebBrowserExt> browser_ext_;
+};
+
 class NWebDelegateTest : public ::testing::Test {
  public:
   NWebDelegateTest() = default;
@@ -402,6 +514,354 @@ TEST_F(NWebDelegateTest, SetScreenOffset) {
   double x = 20.0;
   double y = 30.0;
   nweb_delegate_->SetScreenOffset(x, y);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+TEST_F(NWebDelegateTest, GetContextMenuItem001) {
+  ASSERT_NE(nweb_delegate_, nullptr);
+  
+  auto mock_host = new MockArkWebBrowserHostExt();
+  auto mock_alloy_host = new MockAlloyBrowserHostImpl();
+  auto mock_menu_manager = new MockCefMenuManager();
+  auto mock_menu_model = new MockCefMenuModelImpl();
+  
+  mock_host->SetMockAlloyBrowserHostImpl(mock_alloy_host);
+  
+  EXPECT_CALL(*mock_menu_model, GetCount()).WillRepeatedly(Return(0));
+  EXPECT_CALL(*mock_menu_manager, GetContextMenuModel())
+      .WillRepeatedly(Return(CefRefPtr<CefMenuModelImpl>(mock_menu_model)));
+  EXPECT_CALL(*mock_alloy_host, GetMenuManager())
+      .WillRepeatedly(Return(mock_menu_manager));
+  
+  auto mock_handler = new MockNWebHandlerDelegate();
+  mock_handler->SetMockBrowserHostExt(mock_host);
+  nweb_delegate_->handler_delegate_ = mock_handler;
+  
+  auto items = nweb_delegate_->GetContextMenuItem();
+  EXPECT_TRUE(items.empty());
+}
+
+TEST_F(NWebDelegateTest, GetContextMenuItem002) {
+  ASSERT_NE(nweb_delegate_, nullptr);
+  
+  auto mock_host = new MockArkWebBrowserHostExt();
+  auto mock_alloy_host = new MockAlloyBrowserHostImpl();
+  auto mock_menu_manager = new MockCefMenuManager();
+  auto mock_menu_model = new MockCefMenuModelImpl();
+  
+  mock_host->SetMockAlloyBrowserHostImpl(mock_alloy_host);
+  
+  EXPECT_CALL(*mock_menu_model, GetCount()).WillRepeatedly(Return(1));
+  EXPECT_CALL(*mock_menu_model, GetCommandIdAt(0)).WillRepeatedly(Return(100));
+  EXPECT_CALL(*mock_menu_model, GetGroupIdAt(0)).WillRepeatedly(Return(1));
+  EXPECT_CALL(*mock_menu_model, IsSubMenu()).WillRepeatedly(Return(false));
+  EXPECT_CALL(*mock_menu_model, IsEnabledAt(0)).WillRepeatedly(Return(true));
+  EXPECT_CALL(*mock_menu_model, IsVisibleAt(0)).WillRepeatedly(Return(true));
+  EXPECT_CALL(*mock_menu_model, IsCheckedAt(0)).WillRepeatedly(Return(false));
+  EXPECT_CALL(*mock_menu_model, GetLabelAt(0))
+      .WillRepeatedly(Return(CefString("Test Item")));
+  EXPECT_CALL(*mock_menu_model, GetTypeAt(0))
+      .WillRepeatedly(Return(static_cast<CefMenuModel::MenuItemType>(CefMenuModel::MENUITEMTYPE_COMMAND)));
+  
+  EXPECT_CALL(*mock_menu_manager, GetContextMenuModel())
+      .WillRepeatedly(Return(CefRefPtr<CefMenuModelImpl>(mock_menu_model)));
+  EXPECT_CALL(*mock_alloy_host, GetMenuManager())
+      .WillRepeatedly(Return(mock_menu_manager));
+  
+  auto mock_handler = new MockNWebHandlerDelegate();
+  mock_handler->SetMockBrowserHostExt(mock_host);
+  nweb_delegate_->handler_delegate_ = mock_handler;
+  
+  auto items = nweb_delegate_->GetContextMenuItem();
+  EXPECT_EQ(items.size(), 1);
+  EXPECT_EQ(items[0].commandId, 100);
+  EXPECT_EQ(items[0].groupId, 1);
+  EXPECT_EQ(items[0].parentId, 1);
+  EXPECT_FALSE(items[0].isSubMenu);
+  EXPECT_TRUE(items[0].enabled);
+  EXPECT_TRUE(items[0].visible);
+  EXPECT_FALSE(items[0].checked);
+  EXPECT_EQ(items[0].label, "Test Item");
+  EXPECT_EQ(items[0].type, WebExtensionMenusType::WEB_EXTENSION_MENUITEMTYPE_COMMAND);
+}
+
+TEST_F(NWebDelegateTest, GetContextMenuItem003) {
+  ASSERT_NE(nweb_delegate_, nullptr);
+  
+  auto mock_host = new MockArkWebBrowserHostExt();
+  auto mock_alloy_host = new MockAlloyBrowserHostImpl();
+  auto mock_menu_manager = new MockCefMenuManager();
+  auto mock_menu_model = new MockCefMenuModelImpl();
+  
+  mock_host->SetMockAlloyBrowserHostImpl(mock_alloy_host);
+  
+  EXPECT_CALL(*mock_menu_model, GetCount()).WillRepeatedly(Return(3));
+  
+  EXPECT_CALL(*mock_menu_model, GetCommandIdAt(0)).WillRepeatedly(Return(100));
+  EXPECT_CALL(*mock_menu_model, GetGroupIdAt(0)).WillRepeatedly(Return(1));
+  EXPECT_CALL(*mock_menu_model, IsSubMenu()).WillRepeatedly(Return(false));
+  EXPECT_CALL(*mock_menu_model, IsEnabledAt(0)).WillRepeatedly(Return(true));
+  EXPECT_CALL(*mock_menu_model, IsVisibleAt(0)).WillRepeatedly(Return(true));
+  EXPECT_CALL(*mock_menu_model, IsCheckedAt(0)).WillRepeatedly(Return(false));
+  EXPECT_CALL(*mock_menu_model, GetLabelAt(0)).WillRepeatedly(Return(CefString("Item 1")));
+  EXPECT_CALL(*mock_menu_model, GetTypeAt(0))
+      .WillRepeatedly(Return(static_cast<CefMenuModel::MenuItemType>(CefMenuModel::MENUITEMTYPE_COMMAND)));
+  
+  EXPECT_CALL(*mock_menu_model, GetCommandIdAt(1)).WillRepeatedly(Return(200));
+  EXPECT_CALL(*mock_menu_model, GetGroupIdAt(1)).WillRepeatedly(Return(2));
+  EXPECT_CALL(*mock_menu_model, IsEnabledAt(1)).WillRepeatedly(Return(true));
+  EXPECT_CALL(*mock_menu_model, IsVisibleAt(1)).WillRepeatedly(Return(true));
+  EXPECT_CALL(*mock_menu_model, IsCheckedAt(1)).WillRepeatedly(Return(false));
+  EXPECT_CALL(*mock_menu_model, GetLabelAt(1)).WillRepeatedly(Return(CefString("Item 2")));
+  EXPECT_CALL(*mock_menu_model, GetTypeAt(1))
+      .WillRepeatedly(Return(static_cast<CefMenuModel::MenuItemType>(CefMenuModel::MENUITEMTYPE_COMMAND)));
+  
+  EXPECT_CALL(*mock_menu_model, GetCommandIdAt(2)).WillRepeatedly(Return(300));
+  EXPECT_CALL(*mock_menu_model, GetGroupIdAt(2)).WillRepeatedly(Return(3));
+  EXPECT_CALL(*mock_menu_model, IsEnabledAt(2)).WillRepeatedly(Return(true));
+  EXPECT_CALL(*mock_menu_model, IsVisibleAt(2)).WillRepeatedly(Return(true));
+  EXPECT_CALL(*mock_menu_model, IsCheckedAt(2)).WillRepeatedly(Return(false));
+  EXPECT_CALL(*mock_menu_model, GetLabelAt(2)).WillRepeatedly(Return(CefString("Item 3")));
+  EXPECT_CALL(*mock_menu_model, GetTypeAt(2))
+      .WillRepeatedly(Return(static_cast<CefMenuModel::MenuItemType>(CefMenuModel::MENUITEMTYPE_COMMAND)));
+  
+  EXPECT_CALL(*mock_menu_manager, GetContextMenuModel())
+      .WillRepeatedly(Return(CefRefPtr<CefMenuModelImpl>(mock_menu_model)));
+  EXPECT_CALL(*mock_alloy_host, GetMenuManager())
+      .WillRepeatedly(Return(mock_menu_manager));
+  
+  auto mock_handler = new MockNWebHandlerDelegate();
+  mock_handler->SetMockBrowserHostExt(mock_host);
+  nweb_delegate_->handler_delegate_ = mock_handler;
+  
+  auto items = nweb_delegate_->GetContextMenuItem();
+  EXPECT_EQ(items.size(), 3);
+  EXPECT_EQ(items[0].commandId, 100);
+  EXPECT_EQ(items[0].label, "Item 1");
+  EXPECT_EQ(items[1].commandId, 200);
+  EXPECT_EQ(items[1].label, "Item 2");
+  EXPECT_EQ(items[2].commandId, 300);
+  EXPECT_EQ(items[2].label, "Item 3");
+}
+
+TEST_F(NWebDelegateTest, GetContextMenuItem004) {
+  ASSERT_NE(nweb_delegate_, nullptr);
+  
+  auto mock_host = new MockArkWebBrowserHostExt();
+  auto mock_alloy_host = new MockAlloyBrowserHostImpl();
+  auto mock_menu_manager = new MockCefMenuManager();
+  auto mock_menu_model = new MockCefMenuModelImpl();
+  
+  mock_host->SetMockAlloyBrowserHostImpl(mock_alloy_host);
+  
+  EXPECT_CALL(*mock_menu_model, GetCount()).WillRepeatedly(Return(1));
+  EXPECT_CALL(*mock_menu_model, GetCommandIdAt(0)).WillRepeatedly(Return(100));
+  EXPECT_CALL(*mock_menu_model, GetGroupIdAt(0)).WillRepeatedly(Return(1));
+  EXPECT_CALL(*mock_menu_model, IsSubMenu()).WillRepeatedly(Return(false));
+  EXPECT_CALL(*mock_menu_model, IsEnabledAt(0)).WillRepeatedly(Return(true));
+  EXPECT_CALL(*mock_menu_model, IsVisibleAt(0)).WillRepeatedly(Return(true));
+  EXPECT_CALL(*mock_menu_model, IsCheckedAt(0)).WillRepeatedly(Return(true));
+  EXPECT_CALL(*mock_menu_model, GetLabelAt(0)).WillRepeatedly(Return(CefString("Check Item")));
+  EXPECT_CALL(*mock_menu_model, GetTypeAt(0))
+      .WillRepeatedly(Return(static_cast<CefMenuModel::MenuItemType>(CefMenuModel::MENUITEMTYPE_CHECK)));
+  
+  EXPECT_CALL(*mock_menu_manager, GetContextMenuModel())
+      .WillRepeatedly(Return(CefRefPtr<CefMenuModelImpl>(mock_menu_model)));
+  EXPECT_CALL(*mock_alloy_host, GetMenuManager())
+      .WillRepeatedly(Return(mock_menu_manager));
+  
+  auto mock_handler = new MockNWebHandlerDelegate();
+  mock_handler->SetMockBrowserHostExt(mock_host);
+  nweb_delegate_->handler_delegate_ = mock_handler;
+  
+  auto items = nweb_delegate_->GetContextMenuItem();
+  EXPECT_EQ(items.size(), 1);
+  EXPECT_EQ(items[0].commandId, 100);
+  EXPECT_TRUE(items[0].checked);
+  EXPECT_EQ(items[0].type, WebExtensionMenusType::WEB_EXTENSION_MENUITEMTYPE_CHECK);
+}
+
+TEST_F(NWebDelegateTest, GetContextMenuItem005) {
+  ASSERT_NE(nweb_delegate_, nullptr);
+  
+  auto mock_host = new MockArkWebBrowserHostExt();
+  auto mock_alloy_host = new MockAlloyBrowserHostImpl();
+  auto mock_menu_manager = new MockCefMenuManager();
+  auto mock_menu_model = new MockCefMenuModelImpl();
+  
+  mock_host->SetMockAlloyBrowserHostImpl(mock_alloy_host);
+  
+  EXPECT_CALL(*mock_menu_model, GetCount()).WillRepeatedly(Return(1));
+  EXPECT_CALL(*mock_menu_model, GetCommandIdAt(0)).WillRepeatedly(Return(100));
+  EXPECT_CALL(*mock_menu_model, GetGroupIdAt(0)).WillRepeatedly(Return(5));
+  EXPECT_CALL(*mock_menu_model, IsSubMenu()).WillRepeatedly(Return(false));
+  EXPECT_CALL(*mock_menu_model, IsEnabledAt(0)).WillRepeatedly(Return(true));
+  EXPECT_CALL(*mock_menu_model, IsVisibleAt(0)).WillRepeatedly(Return(true));
+  EXPECT_CALL(*mock_menu_model, IsCheckedAt(0)).WillRepeatedly(Return(false));
+  EXPECT_CALL(*mock_menu_model, GetLabelAt(0)).WillRepeatedly(Return(CefString("Radio Item")));
+  EXPECT_CALL(*mock_menu_model, GetTypeAt(0))
+      .WillRepeatedly(Return(static_cast<CefMenuModel::MenuItemType>(CefMenuModel::MENUITEMTYPE_RADIO)));
+  
+  EXPECT_CALL(*mock_menu_manager, GetContextMenuModel())
+      .WillRepeatedly(Return(CefRefPtr<CefMenuModelImpl>(mock_menu_model)));
+  EXPECT_CALL(*mock_alloy_host, GetMenuManager())
+      .WillRepeatedly(Return(mock_menu_manager));
+  
+  auto mock_handler = new MockNWebHandlerDelegate();
+  mock_handler->SetMockBrowserHostExt(mock_host);
+  nweb_delegate_->handler_delegate_ = mock_handler;
+  
+  auto items = nweb_delegate_->GetContextMenuItem();
+  EXPECT_EQ(items.size(), 1);
+  EXPECT_EQ(items[0].commandId, 100);
+  EXPECT_EQ(items[0].groupId, 5);
+  EXPECT_EQ(items[0].parentId, 5);
+  EXPECT_EQ(items[0].type, WebExtensionMenusType::WEB_EXTENSION_MENUITEMTYPE_RADIO);
+}
+
+TEST_F(NWebDelegateTest, GetContextMenuItem006) {
+  ASSERT_NE(nweb_delegate_, nullptr);
+  
+  auto mock_host = new MockArkWebBrowserHostExt();
+  auto mock_alloy_host = new MockAlloyBrowserHostImpl();
+  auto mock_menu_manager = new MockCefMenuManager();
+  auto mock_menu_model = new MockCefMenuModelImpl();
+  
+  mock_host->SetMockAlloyBrowserHostImpl(mock_alloy_host);
+  
+  EXPECT_CALL(*mock_menu_model, GetCount()).WillRepeatedly(Return(1));
+  EXPECT_CALL(*mock_menu_model, GetCommandIdAt(0)).WillRepeatedly(Return(0));
+  EXPECT_CALL(*mock_menu_model, GetGroupIdAt(0)).WillRepeatedly(Return(0));
+  EXPECT_CALL(*mock_menu_model, IsSubMenu()).WillRepeatedly(Return(false));
+  EXPECT_CALL(*mock_menu_model, IsEnabledAt(0)).WillRepeatedly(Return(true));
+  EXPECT_CALL(*mock_menu_model, IsVisibleAt(0)).WillRepeatedly(Return(true));
+  EXPECT_CALL(*mock_menu_model, IsCheckedAt(0)).WillRepeatedly(Return(false));
+  EXPECT_CALL(*mock_menu_model, GetLabelAt(0)).WillRepeatedly(Return(CefString("")));
+  EXPECT_CALL(*mock_menu_model, GetTypeAt(0))
+      .WillRepeatedly(Return(static_cast<CefMenuModel::MenuItemType>(CefMenuModel::MENUITEMTYPE_SEPARATOR)));
+  
+  EXPECT_CALL(*mock_menu_manager, GetContextMenuModel())
+      .WillRepeatedly(Return(CefRefPtr<CefMenuModelImpl>(mock_menu_model)));
+  EXPECT_CALL(*mock_alloy_host, GetMenuManager())
+      .WillRepeatedly(Return(mock_menu_manager));
+  
+  auto mock_handler = new MockNWebHandlerDelegate();
+  mock_handler->SetMockBrowserHostExt(mock_host);
+  nweb_delegate_->handler_delegate_ = mock_handler;
+  
+  auto items = nweb_delegate_->GetContextMenuItem();
+  EXPECT_EQ(items.size(), 1);
+  EXPECT_EQ(items[0].commandId, 0);
+  EXPECT_EQ(items[0].type, WebExtensionMenusType::WEB_EXTENSION_MENUITEMTYPE_SEPARATOR);
+}
+
+TEST_F(NWebDelegateTest, GetContextMenuItem007) {
+  ASSERT_NE(nweb_delegate_, nullptr);
+  
+  auto mock_host = new MockArkWebBrowserHostExt();
+  auto mock_alloy_host = new MockAlloyBrowserHostImpl();
+  auto mock_menu_manager = new MockCefMenuManager();
+  auto mock_menu_model = new MockCefMenuModelImpl();
+  
+  mock_host->SetMockAlloyBrowserHostImpl(mock_alloy_host);
+  
+  EXPECT_CALL(*mock_menu_model, GetCount()).WillRepeatedly(Return(1));
+  EXPECT_CALL(*mock_menu_model, GetCommandIdAt(0)).WillRepeatedly(Return(100));
+  EXPECT_CALL(*mock_menu_model, GetGroupIdAt(0)).WillRepeatedly(Return(1));
+  EXPECT_CALL(*mock_menu_model, IsSubMenu()).WillRepeatedly(Return(true));
+  EXPECT_CALL(*mock_menu_model, IsEnabledAt(0)).WillRepeatedly(Return(true));
+  EXPECT_CALL(*mock_menu_model, IsVisibleAt(0)).WillRepeatedly(Return(true));
+  EXPECT_CALL(*mock_menu_model, IsCheckedAt(0)).WillRepeatedly(Return(false));
+  EXPECT_CALL(*mock_menu_model, GetLabelAt(0)).WillRepeatedly(Return(CefString("Submenu")));
+  EXPECT_CALL(*mock_menu_model, GetTypeAt(0))
+      .WillRepeatedly(Return(static_cast<CefMenuModel::MenuItemType>(CefMenuModel::MENUITEMTYPE_SUBMENU)));
+  
+  EXPECT_CALL(*mock_menu_manager, GetContextMenuModel())
+      .WillRepeatedly(Return(CefRefPtr<CefMenuModelImpl>(mock_menu_model)));
+  EXPECT_CALL(*mock_alloy_host, GetMenuManager())
+      .WillRepeatedly(Return(mock_menu_manager));
+  
+  auto mock_handler = new MockNWebHandlerDelegate();
+  mock_handler->SetMockBrowserHostExt(mock_host);
+  nweb_delegate_->handler_delegate_ = mock_handler;
+  
+  auto items = nweb_delegate_->GetContextMenuItem();
+  EXPECT_EQ(items.size(), 1);
+  EXPECT_EQ(items[0].commandId, 100);
+  EXPECT_TRUE(items[0].isSubMenu);
+  EXPECT_EQ(items[0].type, WebExtensionMenusType::WEB_EXTENSION_MENUITEMTYPE_SUBMENU);
+}
+
+TEST_F(NWebDelegateTest, GetContextMenuItem008) {
+  ASSERT_NE(nweb_delegate_, nullptr);
+  
+  auto mock_host = new MockArkWebBrowserHostExt();
+  auto mock_alloy_host = new MockAlloyBrowserHostImpl();
+  auto mock_menu_manager = new MockCefMenuManager();
+  auto mock_menu_model = new MockCefMenuModelImpl();
+  
+  mock_host->SetMockAlloyBrowserHostImpl(mock_alloy_host);
+  
+  EXPECT_CALL(*mock_menu_model, GetCount()).WillRepeatedly(Return(1));
+  EXPECT_CALL(*mock_menu_model, GetCommandIdAt(0)).WillRepeatedly(Return(100));
+  EXPECT_CALL(*mock_menu_model, GetGroupIdAt(0)).WillRepeatedly(Return(1));
+  EXPECT_CALL(*mock_menu_model, IsSubMenu()).WillRepeatedly(Return(false));
+  EXPECT_CALL(*mock_menu_model, IsEnabledAt(0)).WillRepeatedly(Return(false));
+  EXPECT_CALL(*mock_menu_model, IsVisibleAt(0)).WillRepeatedly(Return(false));
+  EXPECT_CALL(*mock_menu_model, IsCheckedAt(0)).WillRepeatedly(Return(false));
+  EXPECT_CALL(*mock_menu_model, GetLabelAt(0)).WillRepeatedly(Return(CefString("Disabled Item")));
+  EXPECT_CALL(*mock_menu_model, GetTypeAt(0))
+      .WillRepeatedly(Return(static_cast<CefMenuModel::MenuItemType>(CefMenuModel::MENUITEMTYPE_COMMAND)));
+  
+  EXPECT_CALL(*mock_menu_manager, GetContextMenuModel())
+      .WillRepeatedly(Return(CefRefPtr<CefMenuModelImpl>(mock_menu_model)));
+  EXPECT_CALL(*mock_alloy_host, GetMenuManager())
+      .WillRepeatedly(Return(mock_menu_manager));
+  
+  auto mock_handler = new MockNWebHandlerDelegate();
+  mock_handler->SetMockBrowserHostExt(mock_host);
+  nweb_delegate_->handler_delegate_ = mock_handler;
+  
+  auto items = nweb_delegate_->GetContextMenuItem();
+  EXPECT_EQ(items.size(), 1);
+  EXPECT_EQ(items[0].commandId, 100);
+  EXPECT_FALSE(items[0].enabled);
+  EXPECT_FALSE(items[0].visible);
+}
+
+TEST_F(NWebDelegateTest, OnContextMenuSelected001) {
+  ASSERT_NE(nweb_delegate_, nullptr);
+  nweb_delegate_->OnContextMenuSelected(1);
+}
+
+TEST_F(NWebDelegateTest, OnContextMenuSelected002) {
+  ASSERT_NE(nweb_delegate_, nullptr);
+  nweb_delegate_->OnContextMenuSelected(1);
+}
+
+TEST_F(NWebDelegateTest, OnContextMenuClosed001) {
+  ASSERT_NE(nweb_delegate_, nullptr);
+  nweb_delegate_->OnContextMenuClosed();
+}
+
+TEST_F(NWebDelegateTest, OnContextMenuClosed002) {
+  ASSERT_NE(nweb_delegate_, nullptr);
+  nweb_delegate_->OnContextMenuClosed();
+}
+
+TEST_F(NWebDelegateTest, OpenDevtoolsWithByPb001) {
+  ASSERT_NE(nweb_delegate_, nullptr);
+  std::unique_ptr<OpenDevToolsParam> param = std::make_unique<OpenDevToolsParam>();
+  OpenDevToolsExtOpt ext_opt;
+  nweb_delegate_->OpenDevtoolsWithByPb(nweb_delegate_, std::move(param), ext_opt);
+}
+
+TEST_F(NWebDelegateTest, OpenDevtoolsWithByPb002) {
+  ASSERT_NE(nweb_delegate_, nullptr);
+  std::unique_ptr<OpenDevToolsParam> param = std::make_unique<OpenDevToolsParam>();
+  OpenDevToolsExtOpt ext_opt;
+  nweb_delegate_->OpenDevtoolsWithByPb(nweb_delegate_, std::move(param), ext_opt);
 }
 #endif
 

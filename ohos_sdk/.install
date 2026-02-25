@@ -68,9 +68,6 @@ sdk_upgrade() {
     return ${rc}
   fi
 
-  rm -rf "../third_party/rust-toolchain"
-  cp -ra "rust-toolchain" "../third_party"
-
   return ${rc}
 }
 

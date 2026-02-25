@@ -85,6 +85,10 @@ public:
   virtual void SetGestureFocusMode(int) = 0;
 #endif
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+  virtual void SetCastEnabled(bool) = 0;
+#endif
+
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   virtual void SetVideoAssistantEnabled(bool enabled) {}
   virtual void SetCustomMediaPlayerEnabled(bool enabled) {}

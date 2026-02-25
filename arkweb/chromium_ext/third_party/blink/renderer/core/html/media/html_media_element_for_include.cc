@@ -54,7 +54,6 @@ float PageConstraintInitalScale(const Document& document) {
   if (auto* page = document.GetPage()) {
     scale = page->GetPageScaleConstraintsSet().FinalConstraints().initial_scale;
   } else {
-    LOG(INFO) << "using default scale 1.0";
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
     LOG_FEEDBACK(INFO) << "using default scale 1.0";
 #endif  // ARKWEB_LOGGER_REPORT
@@ -177,9 +176,6 @@ std::string HTMLMediaElement::GetOutgoingReferrerString() {
 }
 
 void HTMLMediaElement::UpdatePlaybackStatus(uint32_t status) {
-  LOG(INFO) << "UpdatePlaybackStatus(" << status << "), paused_[" << paused_
-            << "]";
-
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
   LOG_FEEDBACK(INFO) << "UpdatePlaybackStatus(" << status << "), paused_["
                      << paused_ << "]";
@@ -226,7 +222,6 @@ gfx::Rect HTMLMediaElement::GetVideoRect() {
     return gfx::Rect(ToFlooredPoint(layout_box->Location()),
                      ToFlooredSize(layout_box->Size()));
   }
-  LOG(INFO) << "using default vidoe size";
 
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
   LOG_FEEDBACK(INFO) << "using default vidoe size";
@@ -729,6 +724,13 @@ void HTMLMediaElement::PullUpCastBackGround(const String& device_name) {
     for (auto& observer : media_player_observer_remote_set_->Value()) {
       observer->SetPauseByAvcast(true);
     }
+  }
+}
+
+void HTMLMediaElement::NotifyRemoteExitFullScreen() {
+  LOG(INFO) << "HTMLMediaElement::NotifyRemoteExitFullScreen";
+  if (auto* video_element = DynamicTo<HTMLVideoElement>(this)) {
+    video_element->UpdateRemoteFullScreenCss();
   }
 }
 

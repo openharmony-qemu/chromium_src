@@ -2435,9 +2435,9 @@ void SkiaOutputSurfaceImplOnGpu::PostSubmit(
     }
 
     output_device_->SetViewportSize(frame->size);
-
+#if !BUILDFLAG(ARKWEB_SUPPORTS_DAMAGE_REGION)
     DCHECK(!frame->sub_buffer_rect || capabilities().supports_post_sub_buffer);
-
+#endif
 #if BUILDFLAG(ARKWEB_SWAP_BUFFER_TRACE)
     OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
         std::to_string(frame->data.swap_trace_id), "step", "FinishBufferSwap");

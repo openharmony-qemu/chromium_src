@@ -24,12 +24,19 @@ namespace OHOS::NWeb {
 
 class NWebExtensionSessionsHandlerDelegate {
  public:
+  using GetDevicesCallback =
+      base::RepeatingCallback<void(std::vector<NWebExtensionSessionsDevice>&,
+                                   const std::optional<std::string>&)>;
   using GetRecentlyClosedCallback =
       base::RepeatingCallback<void(std::vector<NWebExtensionSession>&,
                                    const std::optional<std::string>&)>;
   using RestoreCallback =
       base::RepeatingCallback<void(std::optional<NWebExtensionSession>&,
                                    const std::optional<std::string>&)>;
+
+  static void GetDevices(
+      const NWebExtensionSessionsGetDevicesParams& params,
+      GetDevicesCallback callback);
 
   static void GetRecentlyClosed(
       const NWebExtensionSessionsGetRecentlyClosedParams& params,
@@ -38,6 +45,10 @@ class NWebExtensionSessionsHandlerDelegate {
   static void Restore(const NWebExtensionSessionsRestoreParams& params,
                       RestoreCallback callback);
 
+  static void OnGetDevices(
+      int request_id,
+      NWebExtensionSessionsGetDevicesCallbackParams& params);
+
   static void OnRecentlyClosedReceived(
       int request_id,
       NWebExtensionSessionsGetRecentlyClosedCallbackParams& params);
@@ -45,6 +56,8 @@ class NWebExtensionSessionsHandlerDelegate {
   static void OnSessionRestored(
       int request_id,
       NWebExtensionSessionsRestoreCallbackParams& params);
+
+  static void HandleGetDevicesError(int request_id);
 
   static void HandleGetRecentlyClosedError(int request_id);
 

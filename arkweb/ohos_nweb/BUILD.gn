@@ -189,6 +189,10 @@ component("cef_nweb") {
     "src/cef_delegate/nweb_touch_handle_state_impl.h",
     "src/cef_delegate/nweb_url_resource_response_impl.cc",
     "src/cef_delegate/nweb_url_resource_response_impl.h",
+    "src/cef_delegate/nweb_user_agent_metadata_impl.cc",
+    "src/cef_delegate/nweb_user_agent_metadata_impl.h",
+    "src/cef_delegate/nweb_user_agent_brand_version_impl.cc",
+    "src/cef_delegate/nweb_user_agent_brand_version_impl.h",
     "src/cef_delegate/nweb_web_storage_delegate.cc",
     "src/cef_delegate/nweb_web_storage_delegate.h",
     "src/cef_delegate/nweb_web_storage_origin_impl.cc",
@@ -703,6 +707,7 @@ source_set("unittests") {
     "src/cef_delegate/nweb_event_handler_unittest.cc",
     "src/cef_delegate/nweb_find_delegate_unittest.cc",
     "src/cef_delegate/nweb_handler_delegate_unittest.cc",
+    "src/cef_delegate/nweb_highlight_specified_content_unittest.cc",
     "src/cef_delegate/nweb_pipe_resource_handler_unittest.cc",
     "src/cef_delegate/nweb_preference_delegate_unittest.cc",
     "src/cef_delegate/nweb_web_storage_delegate_unittest.cc",
@@ -741,6 +746,12 @@ source_set("unittests") {
     "src/nweb_engine_impl_unittest.cc",
     "src/native_media_player/nweb_media_info_impl_unittest.cc",
     "browser/performance_manager/mechanisms/background_task_holder_unittest.cc",
+    "src/cef_delegate/nweb_extension_reading_list_cef_delegate_unittest.cc",
+    "src/cef_delegate/nweb_extension_omnibox_cef_delegate_unittest.cc",
+    "src/cef_delegate/nweb_extension_history_cef_delegate_unittest.cc",
+    "src/cef_delegate/nweb_extension_search_cef_delegate_unittest.cc",
+    "src/cef_delegate/nweb_extension_sessions_handler_delegate_unittest.cc",
+    "src/cef_delegate/nweb_extension_tab_groups_cef_delegate_unittest.cc",
   ]
 
   deps = [

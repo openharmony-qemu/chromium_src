@@ -26,7 +26,9 @@ std::string GetStringFromArgs(const char* name,
   str += " | ";
   str += arg1_name;
   str += "=";
-  args.values()[0].AppendAsString(args.types()[0], &str);
+  if (args.types()[0] != TRACE_VALUE_TYPE_PROTO) {
+    args.values()[0].AppendAsString(args.types()[0], &str);
+  }
   return str;
 }
 
@@ -43,11 +45,15 @@ std::string GetStringFromArgs(const char* name,
   str += " | ";
   str += arg1_name;
   str += "=";
-  args.values()[0].AppendAsString(args.types()[0], &str);
+  if (args.types()[0] != TRACE_VALUE_TYPE_PROTO) {
+    args.values()[0].AppendAsString(args.types()[0], &str);
+  }
   str += " | ";
   str += arg2_name;
   str += "=";
-  args.values()[1].AppendAsString(args.types()[1], &str);
+  if (args.types()[1] != TRACE_VALUE_TYPE_PROTO) {
+    args.values()[1].AppendAsString(args.types()[1], &str);
+  }
   return str;
 }
 #endif  // TRACE_EVENT_OH_H

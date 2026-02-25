@@ -569,7 +569,8 @@ void NWebEventHandler::WebSendMouseEvent(
         browser_->GetHost()->SendMouseMoveEvent(mouseInfo, true);
       }
     } else if (NWebInputDelegate::IsMouseMove(mouseEvent->GetAction())) {
-      if (mouseInfo.raw_x == 0 && mouseInfo.raw_y == 0) {
+      if (last_mouse_x_ == mouseInfo.x && last_mouse_y_ == mouseInfo.y &&
+          mouseInfo.raw_x == 0 && mouseInfo.raw_y == 0) {
         LOG(DEBUG) << "no change in coordinates, cancel mouse move event";
         return;
       }

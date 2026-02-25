@@ -33,6 +33,9 @@
 #include "base/task/thread_pool/thread_pool_instance.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+#include "arkweb/chromium_ext/base/debug/arkweb_dump_info.h"
+#endif
 namespace OHOS::NWeb {
 
 namespace {
@@ -370,4 +373,26 @@ void NWebEngineImpl::LibraryLoaded(
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+std::string NWebEngineImpl::DumpArkWebInfo(const std::string& param) {
+  base::debug::ArkWebDumpInfo& arkwebDumpInfo = base::debug::ArkWebDumpInfo::GetInstance();
+  if (!arkwebDumpInfo.IsDumpEnabled()) {
+    return "web.debug.dump.on = false";
+  }
+
+  std::string result;
+  arkwebDumpInfo.ParseCmdParamAndDump(param, result);
+  return result;
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_USERAGENT)
+void NWebEngineImpl::SetUserAgentClientHintsEnabled(bool enabled) {
+  NWebImpl::SetUserAgentClientHintsEnabled(enabled);
+}
+
+bool NWebEngineImpl::GetUserAgentClientHintsEnabled() {
+  return NWebImpl::GetUserAgentClientHintsEnabled();
+}
+#endif
 }  // namespace OHOS::NWeb

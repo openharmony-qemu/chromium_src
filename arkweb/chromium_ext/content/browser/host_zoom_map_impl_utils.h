@@ -24,9 +24,9 @@ class CONTENT_EXPORT HostZoomMapImplUtils {
   HostZoomMapImplUtils(HostZoomMapImpl* impl);
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-  bool IsZoomTooFast(base::Time last_modified, double level);
-
-  base::Time last_modified_ = base::Time();
+  bool IsZoomTooFast(const std::string& host, base::Time last_modified, double level);
+  typedef std::map<std::string, base::Time> HostLastModified;
+  HostLastModified host_last_modified_;
 #endif
 };
 }  // namespace content

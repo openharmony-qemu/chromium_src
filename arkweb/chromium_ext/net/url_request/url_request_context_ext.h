@@ -52,6 +52,10 @@ public:
   void SetConnectJobWithSecureDnsOnlyTimeout(int second);
   bool CanUseSecureDnsFallback() const;
 #endif
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING)
+  bool NeedRetryDnsOnDnsHijack(const GURL& url,
+                               const std::string& errorcode) const;
+#endif
 #if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
   void SetSocketIdleTimeout(int32_t timeout);
 #endif

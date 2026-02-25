@@ -179,6 +179,7 @@ class PictureInPictureMediaPlayerReceiver : public media::mojom::MediaPlayer {
   void MediaCastStopped() override {}
   void MediaCastStopByNavigation() override {}
   void GetMediaCastCurrentTime(GetMediaCastCurrentTimeCallback callback) override {}
+  void NotifyRemoteExitFullScreen() override {}
 #endif
 
  private:

@@ -123,6 +123,7 @@ class CONTENT_EXPORT MediaSessionControllersManager {
   void UpdateRemotePlayPosition(const MediaPlayerId& id, int64_t position);
   void SetPauseByAvcast(const MediaPlayerId& id, bool pause_avcast);
   void MediaCastStopByNavigation();
+  void NotifyRemoteExitFullScreen();
 #endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
 
  private:

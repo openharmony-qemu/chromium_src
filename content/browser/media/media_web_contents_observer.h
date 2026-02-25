@@ -200,6 +200,7 @@ class CONTENT_EXPORT MediaWebContentsObserver
 
 #if BUILDFLAG(ARKWEB_MEDIA_CAST)
     void DidFinishNavigation(NavigationHandle* navigation_handle) override;
+    void NotifyRemoteExitFullScreen();
 #endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
  protected:
   MediaSessionControllersManager* session_controllers_manager() {

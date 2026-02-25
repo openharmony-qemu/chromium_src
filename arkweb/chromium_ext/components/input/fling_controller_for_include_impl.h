@@ -58,12 +58,16 @@ FlingController::~FlingController() {
   }
   LOG(DEBUG) << "stop web page fling";
   auto frame_rate = base::ohos::SlidingObserver::GetInstance().StopFling();
-  if (auto* host = content::GpuProcessHost::Get()) {
-    if (auto* host_impl = host->gpu_host()) {
-      host_impl->StopMonitor();
-      if (frame_rate >= 0) {
-        host_impl->ReportSlidingFrameRate(frame_rate);
-      }
+  if (scroll_enabled_) {
+    auto* host = content::GpuProcessHost::Get();
+    if(!host || !host->gpu_host()) {
+      LOG(ERROR) << "Get gpu_host error";
+      return;
+    }
+    auto* host_impl = host->gpu_host();
+    host_impl->StopMonitor();
+    if (frame_rate >= 0) {
+      host_impl->ReportSlidingFrameRate(frame_rate);
     }
   }
 }
@@ -139,14 +143,18 @@ void FlingController::StartWebPageFling() {
       ->ApplySocPerfConfigByIdEx(socPerfId, true);
 #if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
   LOG(DEBUG) << "start web page fling";
-  if (auto* host = content::GpuProcessHost::Get()) {
-    if (auto* host_impl = host->gpu_host()) {
-      host_impl->StartMonitor(focus_nweb_id_);
-      TRACE_EVENT0("input", "DynamicFrameLossEvent Start");
-      content::GetUIThreadTaskRunner({})->PostTask(
-          FROM_HERE, base::BindOnce(&FlingController::DynamicFrameLossEvent,
-              weak_ptr_factory_.GetWeakPtr(), fling_string, true));
+  if (scroll_enabled_) {
+    auto* host = content::GpuProcessHost::Get();
+    if(!host || !host->gpu_host()) {
+      LOG(ERROR) << "Get gpu_host error";
+      return;
     }
+    auto* host_impl = host->gpu_host();
+    host_impl->StartMonitor(focus_nweb_id_);
+    TRACE_EVENT0("input", "DynamicFrameLossEvent Start");
+    content::GetUIThreadTaskRunner({})->PostTask(
+        FROM_HERE, base::BindOnce(&FlingController::DynamicFrameLossEvent,
+            weak_ptr_factory_.GetWeakPtr(), fling_string, true));
   }
 #endif
 #endif
@@ -221,18 +229,22 @@ void FlingController::StopWebPageFling() {
 
 #if BUILDFLAG(ARKWEB_SLIDE_LTPO)
   auto frame_rate = base::ohos::SlidingObserver::GetInstance().StopFling();
-  if (auto* host = content::GpuProcessHost::Get()) {
-    if (auto* host_impl = host->gpu_host()) {
-      host_impl->StopMonitor();
-      if (frame_rate >= 0) {
-        host_impl->ReportSlidingFrameRate(frame_rate);
-      }
-      TRACE_EVENT0("input", "DynamicFrameLossEvent End");
-      content::GetUIThreadTaskRunner({})->PostTask(
-          FROM_HERE,
-          base::BindOnce(&FlingController::DynamicFrameLossEvent,
-                         weak_ptr_factory_.GetWeakPtr(), fling_string, false));
+  if (scroll_enabled_) {
+    auto* host = content::GpuProcessHost::Get();
+    if(!host || !host->gpu_host()) {
+      LOG(ERROR) << "Get gpu_host error";
+      return;
     }
+    auto* host_impl = host->gpu_host();
+    host_impl->StopMonitor();
+    if (frame_rate >= 0) {
+      host_impl->ReportSlidingFrameRate(frame_rate);
+    }
+    TRACE_EVENT0("input", "DynamicFrameLossEvent End");
+    content::GetUIThreadTaskRunner({})->PostTask(
+        FROM_HERE,
+        base::BindOnce(&FlingController::DynamicFrameLossEvent,
+                        weak_ptr_factory_.GetWeakPtr(), fling_string, false));
   }
 #endif
 
@@ -257,6 +269,10 @@ void FlingController::UpdateFlingVelocityLimit(const gfx::Vector2dF& velocity) {
 #if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
 void FlingController::SetFocusWebId(int32_t nweb_id) {
   focus_nweb_id_ = nweb_id;
+}
+
+void FlingController::SetScrollable(bool enable) {
+  scroll_enabled_ = enable;
 }
 #endif
 }

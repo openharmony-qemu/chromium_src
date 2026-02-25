@@ -108,7 +108,8 @@ bool ShouldExcludeNavigationFromUpgrades(
     return true;
   }
   content::NavigationRequest* request = frame_tree_node->navigation_request();
-  // if is_browser_initiated == false, it means user tap a link to start navigation. 
+  // if is_browser_initiated == false, it means user tap a link to start
+  // navigation.
   bool is_browser_initiated = request->browser_initiated();
   bool is_url_typed_with_http_scheme = request->is_url_typed_with_http_scheme();
   bool is_force_no_https_upgrade = request->is_force_no_https_upgrade();
@@ -285,7 +286,7 @@ void OhosHttpsUpgradesInterceptor::MaybeCreateLoaderOnHstsQueryCompleted(
     std::move(callback).Run({});
     return;
   }
-  
+
   // For non-strict modes, skip attempting to upgrade URLs with non-default
   // ports, as these are unlikely to succeed (the server needs to support HTTP
   // and HTTPS on the same port, or the URL needs to be incorrectly have an
@@ -371,9 +372,8 @@ void OhosHttpsUpgradesInterceptor::MaybeCreateLoaderOnHstsQueryCompleted(
     // the HTTPS-First Mode interstitial. If we add a better way to "fast fail"
     // navigations directly to the interstitial, then we could probably use that
     // here as well as an optimization.
-    LOG(INFO) << "The URL was previously upgraded to HTTPS"
-              <<  " but has been fallback to HTTP, "
-              <<  "no further upgrade will be performed this time.";
+    LOG_FEEDBACK(INFO, kHttpsUpgrades)
+        << "CreateLoaderForHttpsUpgrades result:0 reason:httpFallbackHttpEver";
     std::move(callback).Run(CreateRedirectHandler(tab_helper->fallback_url()));
     return;
   }
@@ -384,7 +384,7 @@ void OhosHttpsUpgradesInterceptor::MaybeCreateLoaderOnHstsQueryCompleted(
   // Mark navigation as upgraded.
   tab_helper->set_is_navigation_upgraded(true);
   tab_helper->set_fallback_url(tentative_resource_request.url);
-  LOG(INFO) << "The URL will be upgrade to https";
+  LOG_FEEDBACK(INFO, kHttpsUpgrades) << "CreateLoaderForHttpsUpgrades result:1";
   GURL https_url = UpgradeUrlToHttps(tentative_resource_request.url);
   std::move(callback).Run(CreateRedirectHandler(https_url));
 }
@@ -420,8 +420,9 @@ bool OhosHttpsUpgradesInterceptor::MaybeCreateLoaderForResponse(
   // cancelling or blocking the navigation.
   // Only intercept if the navigation failed.
   if (!tab_helper->is_ssl_error() && status.error_code == net::OK) {
-    LOG(INFO) << "httpsUpgrades: this navigation status_code is OK and has no ssl error, "
-              << "which will not fall back to http";
+    LOG_FEEDBACK(INFO, kHttpsUpgrades)
+        << "CreateLoaderForHttpsUpgradesFallback result:0 "
+           "reason:netOKWithNoSSLError";
     return false;
   }
 
@@ -446,8 +447,10 @@ bool OhosHttpsUpgradesInterceptor::MaybeCreateLoaderForResponse(
         tab_helper->fallback_url().host(),
         rfh->GetStoragePartition());
   }
-  LOG(INFO) << "httpsUpgrades: the url has been fallback to http, status_code is " << status.error_code
-            << ", and is_ssl_error is " << tab_helper->is_ssl_error();
+  LOG_FEEDBACK(INFO, kHttpsUpgrades)
+      << "CreateLoaderForHttpsUpgradesFallback result:1 netCode:"
+      << net::ErrorToDebugString(status.error_code)
+      << " isSSLError:" << tab_helper->is_ssl_error();
   tab_helper->set_is_navigation_upgraded(false);
   tab_helper->set_is_navigation_fallback(true);
   tab_helper->add_failed_upgrade(tab_helper->fallback_url());

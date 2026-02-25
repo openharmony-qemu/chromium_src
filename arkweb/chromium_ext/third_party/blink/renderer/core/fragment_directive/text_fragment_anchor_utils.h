@@ -35,9 +35,17 @@ class CORE_EXPORT TextFragmentAnchorUtils
   void Trace(Visitor*) const;
 
  private:
- Member<LocalFrame> frame_;
- Member<TextFragmentAnchor> text_fragment_anchor_;
- base::WeakPtrFactory<TextFragmentAnchorUtils> weak_ptr_factory_;
+  FRIEND_TEST_ALL_PREFIXES(TextFragmentAnchorUtilsTest,
+                           StartHighlightFadeTimer_001);
+  FRIEND_TEST_ALL_PREFIXES(TextFragmentAnchorUtilsTest,
+                           StartHighlightFadeTimer_002);
+  FRIEND_TEST_ALL_PREFIXES(TextFragmentAnchorUtilsTest,
+                           StartHighlightFadeTimer_003);
+  FRIEND_TEST_ALL_PREFIXES(TextFragmentAnchorUtilsTest,
+                           StartHighlightFadeTimer_004);
+  Member<LocalFrame> frame_;
+  Member<TextFragmentAnchor> text_fragment_anchor_;
+  base::WeakPtrFactory<TextFragmentAnchorUtils> weak_ptr_factory_;
 };
 
 }  // namespace blink

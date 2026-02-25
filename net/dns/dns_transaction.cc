@@ -306,8 +306,12 @@ class DnsUDPAttempt : public DnsAttempt {
     }
     next_state_ = STATE_SEND_QUERY;
     IPEndPoint local_address;
-    if (socket_->GetLocalAddress(&local_address) == OK)
+    if (socket_->GetLocalAddress(&local_address) == OK) {
       udp_tracker_->RecordQuery(local_address.port(), query_->id());
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+      udp_tracker_->RecordLocalAddress(local_address);
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+    }
     return OK;
   }
 

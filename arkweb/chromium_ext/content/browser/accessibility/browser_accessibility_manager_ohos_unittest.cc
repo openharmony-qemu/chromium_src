@@ -96,6 +96,40 @@ TEST_F(AccessibilityEventDispatcherTest, EnqueueEvent003) {
   ASSERT_NO_FATAL_FAILURE(dispatcher.EnqueueEvent(0, 1, ""));
 }
 
+TEST_F(AccessibilityEventDispatcherTest, EnqueueEvent004) {
+  std::unordered_map<int32_t, int32_t> delays = {{2, 200}};
+  std::unordered_set<int32_t> events = {2};
+  AccessibilityEventDispatcher dispatcher(delays, events, manager_);
+  dispatcher.manager_ = manager_;
+
+  int64_t uuid = 2;
+  auto millis = std::chrono::time_point_cast<std::chrono::milliseconds>(
+    std::chrono::system_clock::now());
+  auto now = millis.time_since_epoch().count();
+  dispatcher.eventLastFiredTimes_[uuid] = now - 300;
+
+  ASSERT_NO_FATAL_FAILURE(dispatcher.EnqueueEvent(0, 2, ""));
+  EXPECT_EQ(dispatcher.pendingEvents_.size(), 0);
+  EXPECT_TRUE(dispatcher.eventLastFiredTimes_.find(uuid) != dispatcher.eventLastFiredTimes_.end());
+}
+
+TEST_F(AccessibilityEventDispatcherTest, EnqueueEvent005) {
+  std::unordered_map<int32_t, int32_t> delays = {{4, 200}};
+  std::unordered_set<int32_t> events;
+  AccessibilityEventDispatcher dispatcher(delays, events, manager_);
+  dispatcher.manager_ = manager_;
+
+  int64_t uuid = 4;
+  auto millis = std::chrono::time_point_cast<std::chrono::milliseconds>(
+    std::chrono::system_clock::now());
+  auto now = millis.time_since_epoch().count();
+  dispatcher.eventLastFiredTimes_[uuid] = now - 100;
+
+  size_t events_before = dispatcher.pendingEvents_.size();
+  ASSERT_NO_FATAL_FAILURE(dispatcher.EnqueueEvent(0, 4, ""));
+  EXPECT_EQ(dispatcher.pendingEvents_.size(), events_before);
+}
+
 TEST_F(AccessibilityEventDispatcherTest, RunTask001) {
   BrowserAccessibilityManagerOHOS* manager = nullptr;
   std::unordered_map<int32_t, int32_t> delays = {{0, 1}, {2, 3}};
@@ -294,6 +328,23 @@ TEST_F(BrowserAccessibilityManagerOhosTest, DispatchEvent) {
   EXPECT_FALSE((manager->DispatchEvent(4601,kEventType,kArgument)));
   EXPECT_FALSE((manager->DispatchEvent(kArkWebId,kEventType,kArgument)));
   EXPECT_FALSE((manager->DispatchEvent(999,kEventType,kArgument)));
+}
+
+TEST_F(BrowserAccessibilityManagerOhosTest, DispatchEvent_002) {
+  ui::AXNodeData root;
+  root.id = 6700;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids = {6701};
+
+  ui::AXNodeData b1;
+  b1.id = 4601;
+  b1.role = ax::mojom::Role::kButton;
+  
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, b1);
+  std::unique_ptr<ui::BrowserAccessibilityManagerOHOS> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
+  bool result = manager->DispatchEvent(6701, 1, "test");
+  EXPECT_FALSE(result);
 }
 
 TEST_F(BrowserAccessibilityManagerOhosTest, MoveAccessibilityFocusToId) {
@@ -737,4 +788,94 @@ TEST_F(BrowserAccessibilityManagerOhosTest, PredicateForSearchKey_Unknown_UsesAl
       update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   int64_t result = manager->FindElementType(6002, "unknown_selector", true, true, false);
   EXPECT_NE(result, 0);
+}
+
+TEST_F(BrowserAccessibilityManagerOhosTest, MoveAccessibilityFocusToIdAndRefocusIfNeeded_001) {
+  ui::AXNodeData root;
+  root.id = 7000;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids = {7001, 7002};
+
+  ui::AXNodeData b1;
+  b1.id = 7001;
+  b1.role = ax::mojom::Role::kButton;
+
+  ui::AXNodeData b2;
+  b2.id = 7002;
+  b2.role = ax::mojom::Role::kButton;
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, b1, b2);
+  std::unique_ptr<ui::BrowserAccessibilityManagerOHOS> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
+  manager->eventDispatcher_ = nullptr;
+
+  int64_t root_id = manager->GetRootAccessibilityId();
+  ASSERT_NE(root_id, kInvalidAccessibilityId);
+
+  manager->accessibilityFocusId_ = 7001;
+  ASSERT_EQ(manager->accessibilityFocusId_, 7001);
+  ASSERT_NO_FATAL_FAILURE(
+      manager->MoveAccessibilityFocusToIdAndRefocusIfNeeded(7001));
+  EXPECT_EQ(manager->accessibilityFocusId_, root_id);
+}
+
+TEST_F(BrowserAccessibilityManagerOhosTest, MoveAccessibilityFocusToIdAndRefocusIfNeeded_002) {
+  ui::AXNodeData root;
+  root.id = 7100;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids = {7101, 7102};
+
+  ui::AXNodeData b1;
+  b1.id = 7101;
+  b1.role = ax::mojom::Role::kButton;
+
+  ui::AXNodeData b2;
+  b2.id = 7102;
+  b2.role = ax::mojom::Role::kButton;
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, b1, b2);
+  std::unique_ptr<ui::BrowserAccessibilityManagerOHOS> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
+  manager->eventDispatcher_ = nullptr;
+  manager->accessibilityFocusId_ = 7101;
+  ASSERT_EQ(manager->accessibilityFocusId_, 7101);
+  ASSERT_NO_FATAL_FAILURE(
+      manager->MoveAccessibilityFocusToIdAndRefocusIfNeeded(7102));
+  EXPECT_EQ(manager->accessibilityFocusId_, 7102);
+}
+
+TEST_F(BrowserAccessibilityManagerOhosTest, Copy) {
+  ui::AXNodeData root;
+  root.id = 7200;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids = {};
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root);
+  std::unique_ptr<ui::BrowserAccessibilityManagerOHOS> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, nullptr);
+  ASSERT_NO_FATAL_FAILURE(manager->Copy());
+}
+
+TEST_F(BrowserAccessibilityManagerOhosTest, Cut) {
+  ui::AXNodeData root;
+  root.id = 7300;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids = {};
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root);
+  std::unique_ptr<ui::BrowserAccessibilityManagerOHOS> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, nullptr);
+  ASSERT_NO_FATAL_FAILURE(manager->Cut());
+}
+
+TEST_F(BrowserAccessibilityManagerOhosTest, Paste) {
+  ui::AXNodeData root;
+  root.id = 7400;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids = {};
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root);
+  std::unique_ptr<ui::BrowserAccessibilityManagerOHOS> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, nullptr);
+  ASSERT_NO_FATAL_FAILURE(manager->Paste());
 }

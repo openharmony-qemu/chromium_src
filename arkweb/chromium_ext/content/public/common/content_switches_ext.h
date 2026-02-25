@@ -49,6 +49,7 @@ CONTENT_EXPORT extern const char kUserCacheDir[];
 CONTENT_EXPORT extern const char kArkwebAppDataDir[];
 CONTENT_EXPORT extern const char kCacheDirExists[];
 CONTENT_EXPORT extern const char kUserDataDirExists[];
+CONTENT_EXPORT extern const char kUserDataDirSeparation[];
 #endif
 
 #if BUILDFLAG(ARKWEB_SCHEME_HANDLER)

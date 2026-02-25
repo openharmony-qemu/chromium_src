@@ -31,27 +31,6 @@ bool ArkWebHighlightStyleUtils::InSelectionDragging(const Document& document) {
 #endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
 
 #if BUILDFLAG(ARKWEB_AI)
-bool ArkWebHighlightStyleUtils::ShouldUseAIColors(PseudoId pseudo,
-                                                  const CSSProperty& property,
-                                                  const Document& document) {
-  if (pseudo == PseudoId::kPseudoIdTargetText) {
-    switch (property.PropertyID()) {
-      case CSSPropertyID::kColor:
-      case CSSPropertyID::kBackgroundColor: {
-        if (document.GetSettings() &&
-            document.GetSettings()->GetArkwebAgentEnabled()) {
-          return true;
-        }
-        break;
-      }
-      default:
-        break;
-    }
-  }
-
-  return false;
-}
-
 Color ArkWebHighlightStyleUtils::GetTargetTextForegroundColor(
     const Document& document,
     mojom::blink::ColorScheme color_scheme) {

@@ -2695,11 +2695,6 @@ void NavigationRequest::BeginNavigationImpl() {
   SetState(WILL_START_NAVIGATION);
 #if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
   if (frame_tree_node_->IsMainFrame()) {
-    LOG(INFO) << "event_message: "
-              << " is_browser_initiated_: "
-              << commit_params_->is_browser_initiated
-              << " was_redirected_: " << was_redirected_
-              << " " << devtools_navigation_token_;
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
     StartNavigationExt();
 #endif
@@ -4678,7 +4673,22 @@ void NavigationRequest::SelectFrameHostForOnResponseStarted(
                 this, &browsing_context_group_swap_, &rfh_selected_reason);
         result.has_value()) {
       render_frame_host_ = result.value()->GetSafeRef();
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+      LOG_FEEDBACK(INFO, kNavigation)
+          << "SelectFrameHostForOnResponseStarted navigationId:"
+          << render_frame_host_.value()->navigation_id()
+          << " routingId:" << render_frame_host_.value()->GetRoutingID()
+          << " rfhSelectedReason:" << rfh_selected_reason << " url:"
+          << url::LogUtils::ConvertUrlWithMask(common_params_->url.spec());
+#endif
     } else {
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+      LOG_FEEDBACK(INFO, kNavigation)
+          << "SelectFrameHostForOnResponseStarted navigationId:"
+          << navigation_id_ << " rfhSelectedReason:" << rfh_selected_reason
+          << " error:" << static_cast<int>(result.error()) << " url:"
+          << url::LogUtils::ConvertUrlWithMask(common_params_->url.spec());
+#endif
       switch (result.error()) {
         case GetFrameHostForNavigationFailed::kCouldNotReinitializeMainFrame:
           // TODO(crbug.com/40250311): This was unhandled before and

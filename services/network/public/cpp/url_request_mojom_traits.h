@@ -429,6 +429,9 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE)
   static bool is_download_request(const network::ResourceRequest& request) {
     return request.is_download_request;
   }
+  static bool is_triggered_by_download(const network::ResourceRequest& request) {
+ 	  return request.is_triggered_by_download;
+ 	}
 #endif  //  ARKWEB_EX_DOWNLOAD
   static const net::SocketTag& socket_tag(
       const network::ResourceRequest& request) {

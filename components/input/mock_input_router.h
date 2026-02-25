@@ -81,7 +81,9 @@ class MockInputRouter : public InputRouter {
 #endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
 #if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
-void SetFocusWebId(int32_t nweb_id) override {}
+  void SetFocusWebId(int32_t nweb_id) override {}
+
+  void SetScrollable(bool enable) override {}
 #endif
 
   bool sent_mouse_event_;

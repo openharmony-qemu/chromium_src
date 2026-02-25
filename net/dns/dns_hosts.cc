@@ -25,6 +25,11 @@
 #include "net/dns/dns_util.h"
 #include "url/url_canon.h"
 
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#include "base/command_line.h"
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#endif
+
 namespace net {
 
 namespace {
@@ -235,6 +240,13 @@ bool DnsHostsFileParser::ParseHosts(DnsHosts* dns_hosts) const {
 
   std::optional<int64_t> size = base::GetFileSize(hosts_file_path_);
   if (!size.has_value()) {
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+    if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+            ::switches::kEnableNwebEx)) {
+      // When the hosts file fails to be read, an empty hosts file is obtained.
+      return true; 
+    }
+#endif
     return false;
   }
 

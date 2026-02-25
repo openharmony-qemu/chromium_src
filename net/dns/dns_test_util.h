@@ -404,6 +404,7 @@ class MockDnsClient : public DnsClient {
   // DnsClient interface:
   bool CanUseSecureDnsTransactions() const override;
 #if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  void GetLocalAddress(IPEndPoint* address) override{};
   bool CanUseSecureDnsFallbackTransactions(
     ResolveContext* context) const override {
       return false;

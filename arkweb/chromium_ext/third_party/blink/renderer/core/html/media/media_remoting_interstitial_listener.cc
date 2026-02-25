@@ -14,10 +14,13 @@
  */
 
 #include "arkweb/chromium_ext/third_party/blink/renderer/core/html/media/media_remoting_interstitial_listener.h"
+#include "third_party/blink/renderer/core/events/pointer_event_factory.h"
+#include "third_party/blink/public/common/input/web_mouse_event.h"
 
 namespace {
 
 constexpr double kLargestPercentage = 100.0;
+constexpr int kRemoteMousePointerId = 1;
 
 }  // namespace
 
@@ -132,6 +135,10 @@ void ProgressBarEventListener::HandleTouchStart(TouchEvent* event) {
   is_touch_dragging_ = true;
   active_touch_id_ = active_touch->identifier();  
   float client_x = active_touch->clientX();
+  double percentage = CalculatePercentage(client_x);
+  if (weak_ptr_) {
+    weak_ptr_->OnProgressBarClicked(percentage);
+  }
   StartDragging(client_x);
 }
 
@@ -341,10 +348,20 @@ void ProgressBarEventListener::HandleMouseDown(MouseEvent* event) {
     return;
   }  
   float client_x = event->clientX();
+  double percentage = CalculatePercentage(client_x);
+  if (weak_ptr_) {
+    weak_ptr_->OnProgressBarClicked(percentage);
+    weak_ptr_->GetMediaRemotingProgressBar().setPointerCapture(kRemoteMousePointerId, ASSERT_NO_EXCEPTION);
+  }
   StartDragging(client_x);
 }
 
 void ProgressBarEventListener::HandleMouseMove(MouseEvent* event) {
+  if (!event) {
+    return;
+  }
+  event->stopPropagation();
+  event->preventDefault();
   // Process mouse movement only during drag state.
   if (!is_dragging_ || is_touch_dragging_ || !event) {
     return;
@@ -355,11 +372,19 @@ void ProgressBarEventListener::HandleMouseMove(MouseEvent* event) {
 }
 
 void ProgressBarEventListener::HandleMouseUp(MouseEvent* event) {
+  if (!event) {
+    return;
+  }
+  event->stopPropagation();
+  event->preventDefault();
   if (!is_dragging_ || is_touch_dragging_ || !event) {
     return;
   }
   
   LOG(INFO) << "Handling mouse release events";
+  if (weak_ptr_) {
+    weak_ptr_->GetMediaRemotingProgressBar().releasePointerCapture(kRemoteMousePointerId, ASSERT_NO_EXCEPTION);
+  }
   float client_x = event->clientX();
   EndDragging(client_x);
 }
@@ -368,8 +393,13 @@ void ProgressBarEventListener::HandleMouseLeave(MouseEvent* event) {
   if (!event) {
     return;
   }
+  event->stopPropagation();
+  event->preventDefault();
   if (is_dragging_ && !is_touch_dragging_) {
     LOG(INFO) << "Mouse leaves the element, ending the drag.";
+    if (weak_ptr_) {
+      weak_ptr_->GetMediaRemotingProgressBar().releasePointerCapture(kRemoteMousePointerId, ASSERT_NO_EXCEPTION);
+    }
     float client_x = event->clientX();
     EndDragging(client_x);
   }

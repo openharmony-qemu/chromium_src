@@ -1889,6 +1889,13 @@ TEST(NWebPreferenceDelegateTest, PutWebMediaAVSessionEnabled) {
     preference_delegate->PutWebMediaAVSessionEnabled(false);
 }
 
+TEST(NWebPreferenceDelegateTest, GetCastEnabled) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    CefRefPtr<CefBrowser> browser = nullptr;
+    preference_delegate->SetBrowser(browser);
+    EXPECT_FALSE(preference_delegate->GetCastEnabled());
+}
+
 TEST(NWebPreferenceDelegateTest, PutErrorPageEnabled) {
     auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
     CefRefPtr<CefBrowser> browser = nullptr;
@@ -2066,4 +2073,14 @@ TEST(NWebPreferenceDelegateTest, PutZoomControlAccess) {
     auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
     preference_delegate->PutZoomControlAccess(false);
     EXPECT_FALSE(preference_delegate->IsZoomControlAccess());
+}
+
+TEST(NWebPreferenceDelegateTest, SetAgentNeedHighlight_BrowserNull) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    CefRefPtr<CefBrowser> browser = nullptr;
+    preference_delegate->SetBrowser(browser);
+    preference_delegate->PutAgentNeedHighlight(true);
+    EXPECT_TRUE(preference_delegate->GetAgentNeedHighlight());
+    preference_delegate->PutAgentNeedHighlight(false);
+    EXPECT_FALSE(preference_delegate->GetAgentNeedHighlight());
 }

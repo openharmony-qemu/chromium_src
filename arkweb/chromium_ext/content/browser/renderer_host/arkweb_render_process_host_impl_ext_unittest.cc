@@ -33,6 +33,9 @@ class ArkWebRenderProcessHostImplExtTest : public RenderViewHostImplTestHarness 
   }
 
   void TearDown() override {
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+    render_process_host_impl_ext_->CancelChannelConnectedCheckTask(render_process_host_impl_ext_.get());
+#endif
     render_process_host_impl_ext_.reset();
     RenderViewHostImplTestHarness::TearDown();
   }
@@ -43,6 +46,70 @@ class ArkWebRenderProcessHostImplExtTest : public RenderViewHostImplTestHarness 
 
   std::unique_ptr<ArkwebRenderProcessHostImplExt> render_process_host_impl_ext_;
 };
+
+
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+
+class MockArkwebRenderProcessHostImplExt : public ArkwebRenderProcessHostImplExt {
+ public:
+  explicit MockArkwebRenderProcessHostImplExt(
+      BrowserContext* browser_context, StoragePartitionImpl* storage_partition_impl, int flags)
+      : ArkwebRenderProcessHostImplExt(browser_context, storage_partition_impl, flags) {}
+
+  bool mock_is_dead_ = false;
+  bool mock_is_ready_ = false;
+
+  bool is_dead() const {
+    return mock_is_dead_;
+  }
+
+  bool IsReady() override {
+    return mock_is_ready_;
+  }
+};
+
+std::unique_ptr<MockArkwebRenderProcessHostImplExt> CreateMockHost(
+    ArkWebRenderProcessHostImplExtTest* test) {
+  BrowserContext* browser_context_test = test->browser_context();
+  StoragePartitionImpl* storage_partition = static_cast<StoragePartitionImpl*>(
+      browser_context_test->GetDefaultStoragePartition());
+  return std::make_unique<MockArkwebRenderProcessHostImplExt>(
+      browser_context_test, storage_partition, true);
+}
+
+TEST_F(ArkWebRenderProcessHostImplExtTest, RenderProcessChannelConnectCheck_IsDead) {
+  auto mock_host = CreateMockHost(this);
+  mock_host->mock_is_dead_ = true;
+  mock_host->mock_is_ready_ = true;
+  EXPECT_NO_FATAL_FAILURE(mock_host->RenderProcessChannelConnectCheck());
+}
+
+TEST_F(ArkWebRenderProcessHostImplExtTest, RenderProcessChannelConnectCheck_NotReady) {
+  auto mock_host = CreateMockHost(this);
+  mock_host->mock_is_dead_ = false;
+  mock_host->mock_is_ready_ = false;
+  EXPECT_NO_FATAL_FAILURE(mock_host->RenderProcessChannelConnectCheck());
+}
+
+TEST_F(ArkWebRenderProcessHostImplExtTest, StartChannelConnectedCheckTask_CallbackIsNull) {
+  render_process_host_impl_ext_->StartChannelConnectedCheckTask(render_process_host_impl_ext_.get());
+  EXPECT_FALSE(render_process_host_impl_ext_->channel_connected_check_callback_.callback().is_null());
+}
+
+TEST_F(ArkWebRenderProcessHostImplExtTest, CancelChannelConnectedCheckTask_Success) {
+  render_process_host_impl_ext_->StartChannelConnectedCheckTask(render_process_host_impl_ext_.get());
+
+  render_process_host_impl_ext_->CancelChannelConnectedCheckTask(render_process_host_impl_ext_.get());
+  EXPECT_TRUE(render_process_host_impl_ext_->channel_connected_check_callback_.IsCancelled());
+}
+
+TEST_F(ArkWebRenderProcessHostImplExtTest, CancelChannelConnectedCheckTask_CallbackIsNullorCancelled) {
+  render_process_host_impl_ext_->CancelChannelConnectedCheckTask(render_process_host_impl_ext_.get());
+  EXPECT_TRUE(render_process_host_impl_ext_->channel_connected_check_callback_.callback().is_null());
+  EXPECT_TRUE(render_process_host_impl_ext_->channel_connected_check_callback_.IsCancelled());
+}
+
+#endif
 
 TEST_F(ArkWebRenderProcessHostImplExtTest, OnThemeFontChange) {
   render_process_host_impl_ext_->OnThemeFontChange();

@@ -1114,10 +1114,11 @@ void NavigationURLLoaderImpl::OnReceiveResponse(
   bool is_download =
       !head->intercepted_by_plugin && (must_download || !known_mime_type);
 #if BUILDFLAG(IS_ARKWEB)
-  LOG(INFO) << "is_download " << is_download
-            << " must_download " << must_download
-            << " known_mime_type " << known_mime_type
-            << " mime_type " << head->mime_type;
+  LOG_FEEDBACK(INFO, kNavigation)
+      << "OnReceiveResponse isDownload:" << is_download
+      << " mustDownload:" << must_download
+      << " knownMimeType:" << known_mime_type << " mimeType:" << head->mime_type
+      << " url:" << url::LogUtils::ConvertUrlWithMask(url_.spec());
 #endif
   CallOnReceivedResponse(std::move(head),
                          std::move(url_loader_client_endpoints), is_download);

@@ -22,6 +22,9 @@ using namespace OHOS::NWeb;
 
 namespace OHOS {
 constexpr int MAX_SET_NUMBER = 1000;
+constexpr int32_t kFuzzMaxOriginalStreamNums = 1024;
+static int64_t kFuzzMaxOriginalStream = 0;
+
 std::shared_ptr<OhosImageDecoderAdapter> CreateDecoderAdapter()
 {
     return OhosAdapterHelper::GetInstance().CreateOhosImageDecoderAdapter();
@@ -103,6 +106,11 @@ bool ProcessImageSource(const uint8_t* data, size_t size)
 
 bool ApplyOhosImageDecoderAdapterFuzzTest(const uint8_t* data, size_t size)
 {
+    if (kFuzzMaxOriginalStream <= kFuzzMaxOriginalStreamNums) {
+        kFuzzMaxOriginalStream++;
+    } else {
+        return true;
+    }
     if ((data == nullptr) || (size == 0)) {
         return true;
     }

@@ -200,10 +200,6 @@ void DemuxerManager::OnPipelineError(PipelineStatus error) {
   }
 #endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 
-#if BUILDFLAG(ARKWEB_MEDIA)
-  LOG(INFO) << "OhMedia::OnError PipelineStatus = " << (int)error.code();
-#endif // BUILDFLAG(ARKWEB_MEDIA)
-
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
   LOG_FEEDBACK(INFO) << "OhMedia::OnError PipelineStatus = "
                      << (int)error.code();

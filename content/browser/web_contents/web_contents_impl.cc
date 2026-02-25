@@ -275,6 +275,9 @@
 #include "content/public/common/content_switches.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_PDF)
+#include "extensions/common/constants.h"
+#endif  // BUILDFLAG(ARKWEB_PDF)
 namespace content {
 
 namespace {
@@ -2877,12 +2880,22 @@ void WebContentsImpl::OnAudioStateChanged() {
   OPTIONAL_TRACE_EVENT2("content", "WebContentsImpl::OnAudioStateChanged",
                         "is_currently_audible", is_currently_audible,
                         "was_audible", is_currently_audible_);
+#if BUILDFLAG(ARKWEB_MEDIA_MUTE_AUDIO)
+  bool is_ohos_currently_audible = is_currently_audible || AsWebContentsImplExt()->GetMediaPlayerCurrentAudible();
+  if (AsWebContentsImplExt()->OnAudioStateChangedExt(is_currently_audible, is_ohos_currently_audible)) {
+    return;
+  }
+#endif  // BUILDFLAG(ARKWEB_MEDIA_MUTE_AUDIO)
+
   if (is_currently_audible == is_currently_audible_) {
     return;
   }
 
   // Update internal state.
   is_currently_audible_ = is_currently_audible;
+#if BUILDFLAG(ARKWEB_MEDIA_MUTE_AUDIO)
+    AsWebContentsImplExt()->OnAudioStateChangedExtSetAudible(is_ohos_currently_audible);
+#endif  // BUILDFLAG(ARKWEB_MEDIA_MUTE_AUDIO)
   was_ever_audible_ = was_ever_audible_ || is_currently_audible_;
 
   ExecutePageBroadcastMethod([is_currently_audible](RenderViewHostImpl* rvh) {
@@ -9614,6 +9627,13 @@ void WebContentsImpl::OnFocusedElementChangedInFrame(
                         "render_frame_host", frame);
   RenderWidgetHostViewBase* root_view =
       static_cast<RenderWidgetHostViewBase*>(GetRenderWidgetHostView());
+#if BUILDFLAG(ARKWEB_PDF)
+  const GURL& url = frame->GetLastCommittedURL();
+  if (url.host_piece() == extension_misc::kPdfExtensionId) {
+    root_view = static_cast<RenderWidgetHostViewBase*>(
+        GetOutermostWebContents()->GetRenderWidgetHostView());
+  }
+#endif  // BUILDFLAG(ARKWEB_PDF)
   if (!root_view || !frame->GetView()) {
     return;
   }

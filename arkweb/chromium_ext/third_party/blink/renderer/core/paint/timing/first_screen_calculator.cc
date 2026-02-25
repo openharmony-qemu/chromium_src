@@ -37,23 +37,22 @@ const double NEARLY_FINISHED_THRESHOLD = 0.8;
 const double SMALL_RECT_THRESHOLD = 0.01;
 
 void FirstScreenCalculator::OnFirstScreenInvoked() {
+#if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT)
   const base::TimeDelta as_time_delta =
       first_screen_paint_time_ - base::TimeTicks();
   base::TimeTicks navigation_start_time = base::TimeTicks();
-  if (frame_view_) {
+  if (local_frame_) {
     DocumentLoader* loader =
-        frame_view_->GetFrame().Loader().GetDocumentLoader();
+        local_frame_->Loader().GetDocumentLoader();
     if (loader) {
       navigation_start_time = loader->GetTiming().NavigationStart();
-#if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT)
       if (navigation_start_time_ != navigation_start_time &&
           !first_screen_paint_time_.is_null()) {
         navigation_start_time_ = navigation_start_time;
-        frame_view_->GetFrame().OnFirstScreenPaint(loader->GetUrl().GetString(),
-                                                   navigation_start_time_,
-                                                   first_screen_paint_time_);
+        local_frame_->OnFirstScreenPaint(
+            loader->GetUrl().GetString(), navigation_start_time_,
+            first_screen_paint_time_);
       }
-#endif
     }
   }
 
@@ -68,7 +67,7 @@ void FirstScreenCalculator::OnFirstScreenInvoked() {
     }
     std::string fsp_time_str =
         std::to_string(paint_time_delta.InMilliseconds());
-    if (frame_view_) {
+    if (local_frame_ && local_frame_->View()) {
       std::string code1 =
           R"(Performance.mark("First Screen Paint",{ startTime : )" +
           std::to_string(paint_time_delta.InMilliseconds()) + ", ";
@@ -77,7 +76,7 @@ void FirstScreenCalculator::OnFirstScreenInvoked() {
           fsp_time_str;
       std::string code3 = R"( ms"] ], tooltipText: "FSP" } } } ))";
       std::string code = code1 + code2 + code3;
-      bool ret = frame_view_->RunJavaScriptForFSP(code);
+      bool ret = local_frame_->View()->RunJavaScriptForFSP(code);
       if (!ret) {
         return;
       }
@@ -86,6 +85,7 @@ void FirstScreenCalculator::OnFirstScreenInvoked() {
     DumpImageRect();
     DumpTextRect();
   }
+#endif
 }
 
 void FirstScreenCalculator::DumpImageRect() {
@@ -109,10 +109,10 @@ void FirstScreenCalculator::RestartTimerForFirstScreenDetection() {
     return;
   }
 
-  if (!frame_view_) {
+  if (!local_frame_) {
     return;
   }
-  auto window = frame_view_->GetFrame().DomWindow();
+  auto window = local_frame_->DomWindow();
   if (!window || !window->navigator()) {
     return;
   }
@@ -200,13 +200,10 @@ bool FirstScreenCalculator::DoesRectIntersectExistingRects(
 
 bool FirstScreenCalculator::IsRectTooSmallWhenNearlyFinished(
     const gfx::Rect& rect) {
-  if (!viewport_size_) {
-    return false;
-  }
   if (!nearly_finished_) {
     occupied_rect_.Union(rect);
     double occupied_ratio =
-        occupied_rect_.size().GetArea() * 1.0 / viewport_size_;
+        occupied_rect_.size().GetArea() * 1.0 / viewport_rect_.size().GetArea();
     if (occupied_ratio > NEARLY_FINISHED_THRESHOLD) {
       nearly_finished_ = true;
     } else {
@@ -214,7 +211,8 @@ bool FirstScreenCalculator::IsRectTooSmallWhenNearlyFinished(
     }
   }
 
-  double rect_ratio = rect.size().GetArea() * 1.0 / viewport_size_;
+  double rect_ratio =
+      rect.size().GetArea() * 1.0 / viewport_rect_.size().GetArea();
   if (rect_ratio < SMALL_RECT_THRESHOLD) {
     return true;
   }
@@ -229,10 +227,11 @@ void FirstScreenCalculator::NotifyImagePaint(
   if (!record || user_scrolled_ || !record->lcp_rect_info_) {
     return;
   }
-  viewport_size_ = *viewport_size;
-
   gfx::Rect rect = record->lcp_rect_info_->GetRootRectInfo();
-  double image_ratio = rect.size().GetArea() * 1.0 / (*viewport_size);
+  if (!GetViewportAreaAndTrimRect(rect)) {
+    return;
+  }
+  double image_ratio = rect.size().GetArea() * 1.0 / viewport_rect_.size().GetArea();
   if (image_ratio > BACKGROUND_IMAGE_THRESHOLD) {
     LOG(INFO) << "FirstScreenCalculator::NotifyImagePaint image_ratio "
               << image_ratio << " is too large.";
@@ -270,15 +269,14 @@ void FirstScreenCalculator::NotifyImagePaint(
 }
 
 void FirstScreenCalculator::NotifyTextPaint(const TextRecord* record,
-                                            base::TimeTicks timestamp) {
+                                            const base::TimeTicks& timestamp) {
   if (!record || user_scrolled_ || !record->lcp_rect_info_) {
     return;
   }
-  if (!viewport_size_ && frame_view_) {
-    viewport_size_ =
-        frame_view_->ViewportWidth() * frame_view_->ViewportHeight();
-  }
   gfx::Rect rect = record->lcp_rect_info_->GetRootRectInfo();
+  if (!GetViewportAreaAndTrimRect(rect)) {
+    return;
+  }
   if (text_paint_rects_.empty()) {
     text_paint_rects_.emplace_back(PaintRectInfo(rect, record->paint_time));
     if (first_screen_paint_time_.is_null() ||
@@ -288,7 +286,6 @@ void FirstScreenCalculator::NotifyTextPaint(const TextRecord* record,
     RestartTimerForFirstScreenDetection();
     return;
   }
-
   if (IsRectContainedByExistingRects(rect) ||
       IsRectTooSmallWhenNearlyFinished(rect)) {
     return;
@@ -309,7 +306,7 @@ void FirstScreenCalculator::NotifyTextPaint(const TextRecord* record,
 void FirstScreenCalculator::AssignImagePaintTime(
     MediaRecordIdHash record_id_hash,
     const gfx::Rect& rect,
-    base::TimeTicks timestamp) {
+    const base::TimeTicks& timestamp) {
   if (record_id_hash != background_image_id_) {
     const auto& it = image_rects_map_.find(record_id_hash);
     if (it == image_rects_map_.end() || !it->second.paint_time_.is_null()) {
@@ -351,12 +348,27 @@ bool FirstScreenCalculator::RemoveImageRecord(
   return false;
 }
 
+bool FirstScreenCalculator::GetViewportAreaAndTrimRect(gfx::Rect& rect) {
+  if (local_frame_ && local_frame_->View() && local_frame_->View()->ViewportWidth() > 0 &&
+      local_frame_->View()->ViewportHeight() > 0) {
+    viewport_rect_.set_width(local_frame_->View()->ViewportWidth());
+    viewport_rect_.set_height(local_frame_->View()->ViewportHeight());
+  } else {
+    return false;
+  }
+  rect.Intersect(viewport_rect_);
+  if (!rect.size().GetArea()) {
+    return false;
+  }
+  return true;
+}
+
 void FirstScreenCalculator::OnUserScroll() {
   user_scrolled_ = true;
   OnFirstScreenInvoked();
 #if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
-  if (frame_view_) {
-    auto detector = frame_view_->GetFrame().GetBlankScreenDetector();
+  if (local_frame_) {
+    auto detector = local_frame_->GetBlankScreenDetector();
     if (detector) {
       detector->OnInputOrScroll();
     }
@@ -377,6 +389,7 @@ void FirstScreenCalculator::RestartRecordingFirstScreenPaint() {
   text_paint_rects_.clear();
   intersected_image_ids_.clear();
   occupied_rect_ = gfx::Rect();
+  viewport_rect_ = gfx::Rect();
 }
 
 void FirstScreenCalculator::GetPaintRects(std::vector<gfx::Rect>& paint_rects) {
@@ -395,6 +408,6 @@ void FirstScreenCalculator::GetPaintRects(std::vector<gfx::Rect>& paint_rects) {
 }
 
 void FirstScreenCalculator::Trace(Visitor* visitor) const {
-  visitor->Trace(frame_view_);
+  visitor->Trace(local_frame_);
 }
 }  // namespace blink

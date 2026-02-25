@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -132,7 +132,7 @@ typedef AVSessionCallback_Result (*OH_AVSessionCallback_OnToggleFavorite)(OH_AVS
  * @version 1.0
  */
 typedef AVSessionCallback_Result (*OH_AVSessionCallback_OutputDeviceChange)(OH_AVSession* session,
-    AVSession_ConnectionState state, AVSession_OutputDeviceInfo *outputDeviceInfo);
+    AVSession_ConnectionState state, AVSession_OutputDeviceInfo* outputDeviceInfo);
 
 /**
  * @brief Request to create the avsession.
@@ -296,13 +296,14 @@ AVSession_ErrCode OH_AVSession_SetFavorite(OH_AVSession* avsession, bool favorit
 AVSession_ErrCode OH_AVSession_SetLoopMode(OH_AVSession* avsession, AVSession_LoopMode loopMode);
 
 /**
- * @brief Request to set extra info.
+ * @brief Request to enable remote cast.
  *
  * @param avsession The avsession instance pointer
- * @param isEnable true: Enable Cast Stream
- * @return Function result code：
+ * @param enabled enable or disable remote cast
+ * @return Function result code:
  *         {@link AV_SESSION_ERR_SUCCESS} If the execution is successful.
  *         {@link AV_SESSION_ERR_SERVICE_EXCEPTION} Internal server error.
+ *         {@link AV_SESSION_ERR_CODE_SESSION_NOT_EXIST} session does not exist.
  *         {@link AV_SESSION_ERR_INVALID_PARAMETER}
  *                                                 1. The param of avsession is nullptr.
  * @since 23
@@ -516,7 +517,7 @@ AVSession_ErrCode OH_AVSession_UnregisterToggleFavoriteCallback(OH_AVSession* av
  *
  * @param avsession The avsession instance pointer
  * @param callback the {@link OH_AVSessionCallback_OutputDeviceChange} to be registered.
- * @return Function result code：
+ * @return Function result code:
  *         {@link AV_SESSION_ERR_SUCCESS} If the execution is successful.
  *         {@link AV_SESSION_ERR_SERVICE_EXCEPTION} Internal server error.
  *         {@link AV_SESSION_ERR_INVALID_PARAMETER}
@@ -526,13 +527,13 @@ AVSession_ErrCode OH_AVSession_UnregisterToggleFavoriteCallback(OH_AVSession* av
  */
 AVSession_ErrCode OH_AVSession_RegisterOutputDeviceChangeCallback(OH_AVSession* avsession,
     OH_AVSessionCallback_OutputDeviceChange callback);
- 
+
 /**
  * @brief Request to unregister output device change callback.
  *
  * @param avsession The avsession instance pointer
  * @param callback the {@link OH_AVSessionCallback_OutputDeviceChange} to be unregistered.
- * @return Function result code：
+ * @return Function result code:
  *         {@link AV_SESSION_ERR_SUCCESS} If the execution is successful.
  *         {@link AV_SESSION_ERR_SERVICE_EXCEPTION} Internal server error.
  *         {@link AV_SESSION_ERR_INVALID_PARAMETER}
@@ -542,55 +543,78 @@ AVSession_ErrCode OH_AVSession_RegisterOutputDeviceChangeCallback(OH_AVSession* 
  */
 AVSession_ErrCode OH_AVSession_UnregisterOutputDeviceChangeCallback(OH_AVSession* avsession,
     OH_AVSessionCallback_OutputDeviceChange callback);
- 
+
 /**
- * @brief Get AVCastController object.
+ * @brief Request to acquire an AVSession instance if already created.
+ * Call {@link OH_AVSession_Destroy} to release the OH_AVSession when it is not used anymore.
  *
- * @param avcastcontroller {@link OH_AVCastController} Pointer to a viriable to receive the avcastcontroller
+ * @param sessionTag The session tag set by the application
+ * @param bundleName The bundle name to set
+ * @param abilityName The abilityName name to set
+ * @param avsession Pointer to a viriable to receive the OH_AVSession
  * @return Function result code:
  *         {@link AV_SESSION_ERR_SUCCESS} If the execution is successful.
- *         {@link AV_SESSION_ERR_SERVICE_EXCEPTION}:
+ *         {@link AV_SESSION_ERR_CODE_SESSION_NOT_EXIST} If session is not existed.
+ *         {@link AV_SESSION_ERR_INVALID_PARAMETER}:
+ *                                                 1. The param of sessionTag is invalid.
+ *                                                 2. The param of bundleName is nullptr.
+ *                                                 3. The param of abilityName is nullptr.
+ *                                                 4. The param of avsession is nullptr.
+ * @since 23
+ */
+AVSession_ErrCode OH_AVSession_AcquireSession(const char* sessionTag, const char* bundleName, const char* abilityName,
+    OH_AVSession** avsession);
+
+/**
+ * @brief Create an AVCastController object.
+ * Call {@link OH_AVCastController_Destroy} to release the OH_AVCastController when it is not used anymore.
+ *
+ * @param avsession The avsession instance pointer
+ * @param avcastcontroller {@link OH_AVCastController} Pointer to a variable to receive the avcastcontroller
+ * @return Function result code:
+ *         {@link AV_SESSION_ERR_SUCCESS} If the execution is successful.
+ *         {@link AV_SESSION_ERR_SERVICE_EXCEPTION} Internal server error.
+ *         {@link AV_SESSION_ERR_CODE_SESSION_NOT_EXIST} The session does not exist.
  *         {@link AV_SESSION_ERR_INVALID_PARAMETER}
  *                                                 1. The param of avsession is nullptr.
  *                                                 2. The param of avcastcontroller is nullptr.
  * @since 23
  */
-AVSession_ErrCode OH_AVSession_GetAVCastController(OH_AVSession* avsession, OH_AVCastController** avcastcontroller);
- 
+AVSession_ErrCode OH_AVSession_CreateAVCastController(OH_AVSession* avsession, OH_AVCastController** avcastcontroller);
+
 /**
  * @brief Request to stop current cast and disconnect device connection.
  *
  * @param avsession The avsession instance pointer
- * @return Function result code：
+ * @return Function result code:
  *         {@link AV_SESSION_ERR_SUCCESS} If the execution is successful.
  *         {@link AV_SESSION_ERR_SERVICE_EXCEPTION} Internal server error.
+ *         {@link AV_SESSION_ERR_CODE_SESSION_NOT_EXIST} The session does not exist.
  *         {@link AV_SESSION_ERR_INVALID_PARAMETER}
  *                                                 1. The param of avsession is nullptr.
- *         {@link AV_SESSION_ERR_CODE_REMOTE_CONNECTION_NOT_EXIST} The remote connection is not established.
  * @since 23
  */
 AVSession_ErrCode OH_AVSession_StopCasting(OH_AVSession* avsession);
- 
+
 /**
- * @brief Get Output device.
+ * @brief Acquire current output device.
  *
  * @param avsession The avsession instance pointer
- * @param outputDeviceInfos Pointer {@link AVSession_OutputDeviceInfo} to a viriable to receive the OutputDeviceInfo
- *     Do not release the outputDeviceInfo pointer separately
- *     instead call {@link OH_AVSession_ReleaseOutputDevice} to release the outputDeviceInfo 
- *     when it is no use anymore.
+ * @param outputDeviceInfo Pointer {@link AVSession_OutputDeviceInfo} to a variable to receive the OutputDeviceInfo
+ *     Do not release the outputDeviceInfo pointer separately, instead call {@link OH_AVSession_ReleaseOutputDevice}
+ *     to release the outputDeviceInfo when it is not used anymore.
  * @return Function result code:
  *         {@link AV_SESSION_ERR_SUCCESS} If the execution is successful.
- *         {@link AV_SESSION_ERR_SERVICE_EXCEPTION}:
- *         {@link AV_SESSION_ERR_CODE_SESSION_NOT_EXIST}:
+ *         {@link AV_SESSION_ERR_SERVICE_EXCEPTION} Internal server error.
+ *         {@link AV_SESSION_ERR_CODE_SESSION_NOT_EXIST} The session does not exist.
  *         {@link AV_SESSION_ERR_INVALID_PARAMETER}
  *                                                 1. The param of avsession is nullptr.
- *                                                 1. The param of outputDeviceInfo is nullptr.
+ *                                                 2. The param of outputDeviceInfo is nullptr.
  * @since 23
  */
- AVSession_ErrCode OH_AVSession_GetOutputDevice(OH_AVSession* avsession, 
-    AVSession_OutputDeviceInfo **outputDeviceInfo);
- 
+AVSession_ErrCode OH_AVSession_AcquireOutputDevice(OH_AVSession* avsession,
+    AVSession_OutputDeviceInfo** outputDeviceInfo);
+
 /**
  * @brief Release outputDeviceInfo object.
  *
@@ -598,9 +622,9 @@ AVSession_ErrCode OH_AVSession_StopCasting(OH_AVSession* avsession);
  * @param outputDeviceInfo outputdeivce should be released.
  * @return Function result code:
  *         {@link AV_SESSION_ERR_SUCCESS} If the execution is successful.
- *         {@link AV_SESSION_ERR_INVALID_PARAMETER} 
- *                                                  1.The param of avsession is nullptr;
- *                                                  2.The param of outputDeviceInfo is nullptr.
+ *         {@link AV_SESSION_ERR_INVALID_PARAMETER}
+ *                                                 1.The param of avsession is nullptr;
+ *                                                 2.The param of outputDeviceInfo is nullptr.
  * @since 23
  */
 AVSession_ErrCode OH_AVSession_ReleaseOutputDevice(OH_AVSession* avsession,

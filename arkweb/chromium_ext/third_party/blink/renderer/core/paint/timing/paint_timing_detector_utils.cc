@@ -48,7 +48,7 @@ PaintTimingDetectorUtils::PaintTimingDetectorUtils(PaintTimingDetector* paint_ti
   if (paint_timing_detector_ && paint_timing_detector_->frame_view_ &&
       !paint_timing_detector_->frame_view_->GetFrame().Parent()) {
     first_screen_calculator_ = MakeGarbageCollected<FirstScreenCalculator>(
-        paint_timing_detector->frame_view_);
+        &paint_timing_detector_->frame_view_->GetFrame());
   }
 #endif
 }

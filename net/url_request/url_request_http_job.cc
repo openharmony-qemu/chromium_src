@@ -1280,7 +1280,6 @@ bool URLRequestHttpJob::CanRetryWithSecureDnsOnly(int net_error) {
 
   if (request_->isolation_info().request_type() !=
       IsolationInfo::RequestType::kMainFrame) {
-    LOG(INFO) << "DOH-Fallback request is not mainframe";
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
     LOG_FEEDBACK(INFO) << "DOH-Fallback request is not mainframe";
 #endif
@@ -1290,8 +1289,6 @@ bool URLRequestHttpJob::CanRetryWithSecureDnsOnly(int net_error) {
   if (transaction_ && transaction_->GetResponseInfo() &&
       transaction_->GetResponseInfo()
           ->resolve_error_info.is_secure_network_error) {
-    LOG(INFO) << "DOH-Fallback won't retry for is_secure_network_error is "
-                 "true";
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
     LOG_FEEDBACK(INFO)
         << "DOH-Fallback won't retry for is_secure_network_error is "
@@ -1301,12 +1298,27 @@ bool URLRequestHttpJob::CanRetryWithSecureDnsOnly(int net_error) {
   }
 
   if (!const_cast<URLRequestContext*>(request_->context())->AsURLRequestContextExt()->CanUseSecureDnsFallback()) {
-    LOG(INFO) << "DOH-Fallback can't use secure dns fallback";
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
     LOG_FEEDBACK(INFO) << "DOH-Fallback can't use secure dns fallback";
 #endif
     return false;
   }
+
+  if (request_->url().HostIsIPAddress()) {
+    return false;
+  }
+
+// HTTPDNS retry will be performed for neterror and url that meet cloud control
+// configuration.
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING)
+  std::string error_code = base::NumberToString(net_error);
+  if (const_cast<URLRequestContext*>(request_->context())
+          ->AsURLRequestContextExt()
+          ->NeedRetryDnsOnDnsHijack(request_->url(), error_code)) {
+    is_retry_dns_on_dns_hijacking_ = true;
+    return true;
+  }
+#endif
 
   // The following net errors will retry to use httpdns to resolve the ip
   // in the connect phase, and connect again.
@@ -1332,8 +1344,6 @@ bool URLRequestHttpJob::CanRetryWithSecureDnsOnly(int net_error) {
     PopulateNetErrorDetails(&details);
     // 如果stream已经创建成功。证明dns阶段没有发生问题，所以我们不需要重试.
     if (details.stream_created) {
-      LOG(INFO) << "DOH-Fallback cann't retry with secure dns since the stream "
-                   "is created.";
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
       LOG_FEEDBACK(INFO)
           << "DOH-Fallback cann't retry with secure dns since the stream "
@@ -1358,8 +1368,6 @@ void URLRequestHttpJob::RetryWithSecureDnsOnly() {
 
   ResetTimer();
 
-  LOG(INFO) << "DOH-Fallback will retry with secure dns only";
-
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
   LOG_FEEDBACK(INFO) << "DOH-Fallback will retry with secure dns only";
 #endif
@@ -1381,6 +1389,7 @@ void URLRequestHttpJob::RetryWithSecureDnsOnly() {
 void URLRequestHttpJob::MaybeRetryWithSecureDnsOnly(int result) {
   state_ = RetryState::DOH_FALLBACK;
   if (CanRetryWithSecureDnsOnly(result)) {
+    is_retrying_secure_dns_only_ = true;
     original_net_error_ = result;
     RetryWithSecureDnsOnly();
     return;
@@ -1401,6 +1410,20 @@ void URLRequestHttpJob::OnStartCompleted(int result) {
         return;
 
       case RetryState::DOH_FALLBACK:
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING)
+        if (is_retrying_secure_dns_only_) {
+          if (is_retry_dns_on_dns_hijacking_) {
+            ReportDnsFallbackOnDnsHijacking(request_->url().host(),
+                                            original_net_error_, result);
+            is_retry_dns_on_dns_hijacking_ = false;
+          } else {
+            ReportSecureFallbackDnsRetryResult(result);
+          }
+          // HTTPDNS retry can be triggered only once per request.
+          is_retrying_secure_dns_only_ = false;
+          state_ = RetryState::MAX;
+        }
+#endif
         if (result == net::ERR_NAME_NOT_RESOLVED && original_net_error_) {
           if (transaction_ && transaction_->GetResponseInfo() &&
               transaction_->GetResponseInfo()->resolve_error_info.error !=
@@ -1422,6 +1445,12 @@ void URLRequestHttpJob::OnStartCompleted(int result) {
   if (MaybeRetryWithFallbackProxy(result)) {
     // re-execute OnStartCompleted later
     return;
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  if (transaction_ && transaction_->GetResponseInfo() && request_) {
+    request_->set_used_http_dns(request_info_.secure_dns_only);
   }
 #endif
 
@@ -2096,8 +2125,8 @@ void URLRequestHttpJob::RecordTimer() {
 
 void URLRequestHttpJob::ResetTimer() {
 #if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
-  if (state_ != RetryState::DOH_FALLBACK &&
-    !request_creation_time_.is_null()) {
+  // Allowing ResetTimer to be reset repeatedly when HTTPDNS retry occurs.
+  if (state_ == RetryState::INIT && !request_creation_time_.is_null()) {
 #else
   if (!request_creation_time_.is_null()) {
 #endif

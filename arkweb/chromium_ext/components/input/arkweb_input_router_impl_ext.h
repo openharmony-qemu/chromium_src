@@ -53,6 +53,8 @@ class COMPONENT_EXPORT(INPUT) ArkwebInputRouterImplExt : public InputRouterImpl 
 
 #if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
   void SetFocusWebId(int32_t nweb_id) override;
+
+  void SetScrollable(bool enable) override;
 #endif
 
  private:

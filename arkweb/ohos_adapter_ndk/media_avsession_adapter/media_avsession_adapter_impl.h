@@ -63,12 +63,12 @@ struct MediaCastDescription {
     std::string title;
     std::string subtitle;
     std::string artist;
-    const char* mediaType;
+    const char* mediaType = nullptr;
     std::string lyricContent;
-    int32_t duration;
+    int32_t duration = 0;
     std::string mediaUri;
-    int32_t startPosition;
-    int32_t mediaSize;
+    int32_t startPosition = 0;
+    int32_t mediaSize = 0;
     std::string albumTitle;
     std::string appName;
 };
@@ -227,6 +227,7 @@ private:
     int64_t lastUiTime_ = 0;
     bool avCastStarted_ = false;
     bool is_seeking_ = false;
+    bool is_avcast_ = false;
 };
 } // namespace OHOS::NWeb
 

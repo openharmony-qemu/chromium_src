@@ -41,6 +41,10 @@
 #include "nweb_inputmethod_client.h"
 #include "nweb_render_handler.h"
 
+#if BUILDFLAG(ARKWEB_USERAGENT)
+#include "arkweb/ohos_nweb/src/cef_delegate/nweb_user_agent_metadata_impl.h"
+#endif
+
 #if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
 #endif
@@ -684,6 +688,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void PutVaultPlainTextCallback(
       std::shared_ptr<OHOS::NWeb::NWebVaultPlainTextCallback> callback) override;
   void StopFling() override;
+  void ReloadIgnoreCache() override;
 
 #if BUILDFLAG(ARKWEB_WEBRTC)
   void StartCamera() override;
@@ -940,11 +945,20 @@ void AbortDistill() override;
 void SetFocusWebId(int32_t nweb_id) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  void SetUserAgentMetadata(
+      const std::string& user_agent,
+      std::shared_ptr<NWebUserAgentMetadata> metadata) override;
+  std::shared_ptr<NWebUserAgentMetadata> GetUserAgentMetadata(
+      const std::string& user_agent) override;
+#endif
+
  public:
   int argc_;
   RAW_PTR_EXCLUSION const char** argv_;
 
  private:
+  FRIEND_TEST_ALL_PREFIXES(NWebDelegateTest, RegisterOnLoadStartedCbForHighlightContent_001);
   void RunMessageLoop();
 
   void InitializeCef(std::string url,
@@ -1084,7 +1098,9 @@ void SetFocusWebId(int32_t nweb_id) override;
   bool occluded_ = false;
   bool is_popup_ready_ = false;
 #if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
-  bool hasEvictedBufferWhenHidden_ = false;
+  // Maximum number of buffer evictions allowed when the nweb is hidden.
+  static constexpr int kMaxBufferEvictCount = 5;
+  int32_t bufferEvictCount_ = 0;
 #endif
 #if BUILDFLAG(ARKWEB_COMPOSITE_RENDER) || BUILDFLAG(ARKWEB_PAGE_UP_DOWN) || BUILDFLAG(ARKWEB_VIEWPORT_AVOID) || \
     BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)

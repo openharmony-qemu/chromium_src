@@ -191,7 +191,9 @@ HttpCache::Transaction::Transaction(RequestPriority priority, HttpCache* cache)
     : trace_id_(GetNextTraceId(cache)),
       priority_(priority),
       cache_(cache->GetWeakPtr()) {
-  http_transation_utils_ = new HttpTransactionUtils(this);
+#if BUILDFLAG(IS_ARKWEB)
+  http_transation_utils_ = std::make_unique<HttpTransactionUtils>(this);
+#endif
   static_assert(HttpCache::Transaction::kNumValidationHeaders ==
                     std::size(kValidationHeaders),
                 "invalid number of validation headers");
@@ -217,7 +219,6 @@ HttpCache::Transaction::~Transaction() {
       cache_->RemovePendingTransaction(this);
     }
   }
-  delete http_transation_utils_;
 }
 
 HttpCache::Transaction::Mode HttpCache::Transaction::mode() const {

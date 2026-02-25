@@ -293,6 +293,7 @@
 /arkweb/ohos_nweb/src/nweb_hilog.h @arkweb-DFX
 /arkweb/ohos_nweb/src/nweb_sysevent.gni @arkweb-DFX
 /arkweb/ohos_nweb/src/sysevent/ @arkweb-DFX
+/arkweb/ohos_adapter_ndk/hiviewdfx_adapter/ @arkweb-DFX
 
 # Framework
 /arkweb/ut_tools/ @arkweb-framework

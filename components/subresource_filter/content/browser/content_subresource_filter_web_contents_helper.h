@@ -95,6 +95,21 @@ class ContentSubresourceFilterWebContentsHelper
       ContentSubresourceFilterThrottleManager* throttle_manager);
 
 #if BUILDFLAG(ARKWEB_ADBLOCK)
+  explicit ContentSubresourceFilterWebContentsHelper(
+      content::WebContents* web_contents,
+      SubresourceFilterProfileContext* profile_context,
+      scoped_refptr<safe_browsing::SafeBrowsingDatabaseManager>
+          database_manager,
+      VerifiedRulesetDealer::Handle* dealer_handle,
+      VerifiedRulesetDealer::Handle* user_dealer_handle);
+  static void CreateForWebContents(
+      content::WebContents* web_contents,
+      SubresourceFilterProfileContext* profile_context,
+      scoped_refptr<safe_browsing::SafeBrowsingDatabaseManager>
+          database_manager,
+      VerifiedRulesetDealer::Handle* dealer_handle,
+      VerifiedRulesetDealer::Handle* user_dealer_handle);
+
   void CreateThrottleManager(content::NavigationHandle* navigation_handle);
 #endif
 
@@ -125,6 +140,10 @@ class ContentSubresourceFilterWebContentsHelper
 
   scoped_refptr<safe_browsing::SafeBrowsingDatabaseManager> database_manager_;
   raw_ptr<VerifiedRulesetDealer::Handle, DanglingUntriaged> dealer_handle_;
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  raw_ptr<VerifiedRulesetDealer::Handle, DanglingUntriaged> user_dealer_handle_;
+#endif
 
   // Set of frames across all pages in this WebContents that have had at least
   // one committed or aborted navigation. Keyed by FrameTreeNodeId.

@@ -208,6 +208,8 @@ class TestMediaPlayer : public media::mojom::MediaPlayer {
   void MediaCastStopByNavigation() override {}
 
   void GetMediaCastCurrentTime(GetMediaCastCurrentTimeCallback callback) override {}
+
+  void NotifyRemoteExitFullScreen() override {}
 #endif
 
   // Helper method to set expected video visibility, which is later used as an

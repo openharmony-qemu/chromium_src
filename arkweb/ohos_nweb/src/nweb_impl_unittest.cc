@@ -7557,7 +7557,7 @@ TEST_F(NWebImplTest, RegisterArkJSfunction005) {
   nweb_impl_->nweb_delegate_ = nullptr;
   EXPECT_CALL(*mock_delegate_, RegisterArkJSfunction(
       object_name, method_list, async_method_list, object_id, permission)).Times(0);
-  nweb_impl_->RegisterArkJSfunction(object_name, method_list, async_method_list, object_id, permission);
+  nweb_impl_->RegisterArkJSfunctionV2(object_name, method_list, async_method_list, object_id, permission);
   EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
 }
 
@@ -7571,7 +7571,7 @@ TEST_F(NWebImplTest, RegisterArkJSfunction006) {
   nweb_impl_->nweb_delegate_ = mock_delegate_;
   EXPECT_CALL(*mock_delegate_, RegisterArkJSfunction(
       object_name, method_list, async_method_list, object_id, permission)).Times(1);
-  nweb_impl_->RegisterArkJSfunction(object_name, method_list, async_method_list, object_id, permission);
+  nweb_impl_->RegisterArkJSfunctionV2(object_name, method_list, async_method_list, object_id, permission);
   EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
 }
 
@@ -8322,5 +8322,18 @@ TEST_F(NWebImplTest, StopMicrophone001) {
   ASSERT_NO_FATAL_FAILURE(nweb_impl_->StopMicrophone());
 }
 #endif
+
+TEST_F(NWebImplTest, ReloadIgnoreCache001) {
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, ReloadIgnoreCache()).Times(0);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, ReloadIgnoreCache002) {
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, ReloadIgnoreCache()).Times(1);
+  nweb_impl_->ReloadIgnoreCache();
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
 }  // namespace OHOS::NWeb
                           

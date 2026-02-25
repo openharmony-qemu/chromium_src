@@ -1542,6 +1542,10 @@ mojom("mojom") {
     public_deps += [ "//arkweb/chromium_ext/servieces/network/public/mojom" ]
   }
 
+  if (arkweb_ext_http_dns_fallback_on_dns_hijacking) {
+    enabled_features += [ "arkweb_ext_http_dns_fallback_on_dns_hijacking" ]
+  }
+
   if (is_win) {
     public_deps += [ "//services/proxy_resolver_win/public/mojom" ]
   }

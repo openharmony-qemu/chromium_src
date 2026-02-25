@@ -933,9 +933,19 @@ class CONTENT_EXPORT RenderFrameImpl
 #endif
 
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-  void PageLoadStartLoggerReport(blink::WebDocumentLoader* document_loader);
-  void ContentLoadFailedLoggerReport();
-  void PageLoadFinishedLoggerReport();
+  bool IsStrictLogMode();
+  void OnCommitNavigation(
+      const GURL& url,
+      bool is_client_redirect,
+      blink::mojom::NavigationType navigation_type,
+      const base::UnguessableToken& devtools_navigation_token,
+      network::mojom::NavigationDeliveryType navigation_delivery_type);
+  void OnDidCommitNavigation(
+      blink::WebDocumentLoader* document_loader,
+      blink::WebHistoryCommitType commit_type =
+          blink::WebHistoryCommitType::kWebStandardCommit);
+  void OnDidDispatchDOMContentLoadedEvent();
+  void OnDidHandleOnloadEvents();
 #endif
 #if BUILDFLAG(ARKWEB_TEST)
   bool web_frame_widget_test_mode = false;

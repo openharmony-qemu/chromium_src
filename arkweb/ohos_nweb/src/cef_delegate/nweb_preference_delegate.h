@@ -315,6 +315,10 @@ class NWebPreferenceDelegate : public NWebPreference {
   void PutWebMediaAVSessionEnabled(bool enable) override;
 #endif  // ARKWEB_MEDIA_AVSESSION
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+  bool GetCastEnabled();
+#endif  // ARKWEB_MEDIA_CAST
+
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)
   bool ErrorPageEnabled();
   void PutErrorPageEnabled(bool enable);
@@ -488,6 +492,9 @@ class NWebPreferenceDelegate : public NWebPreference {
   bool pref_hash_cached_ = false;
   int64_t pref_hash_ = 0;
   uint32_t rotationType_ = 0;
+#endif
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+  bool cast_enabled_ = false;
 #endif
 };
 }  // namespace OHOS::NWeb

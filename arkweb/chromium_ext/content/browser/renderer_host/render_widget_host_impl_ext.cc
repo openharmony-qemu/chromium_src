@@ -209,6 +209,14 @@ void RenderWidgetHostImplExt::SetFocusWebId(int32_t nweb_id) {
   }
   GetRenderInputRouter()->SetFocusWebId(nweb_id);
 }
+
+void RenderWidgetHostImplExt::SetScrollable(bool enable) {
+  if (GetRenderInputRouter() == nullptr) {
+    LOG(ERROR) << "SetScrollable can not get RenderInputRouter";
+    return;
+  }
+  GetRenderInputRouter()->SetScrollable(enable);
+}
 #endif
 
 }  // namespace content

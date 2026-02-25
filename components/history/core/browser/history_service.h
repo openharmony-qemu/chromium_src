@@ -45,6 +45,10 @@
 #include "sql/init_status.h"
 #include "ui/base/page_transition_types.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "services/network/public/cpp/features.h"
+#endif
+
 class GURL;
 class HistoryQuickProviderTest;
 class InMemoryURLIndexTest;
@@ -111,10 +115,11 @@ class HistoryService : public KeyedService,
   // the history files.
   bool Init(const HistoryDatabaseParams& history_database_params) {
 #if BUILDFLAG(IS_ARKWEB)
-    return Init(true, history_database_params);
-#else
-    return Init(false, history_database_params);
+    if (base::FeatureList::IsEnabled(network::features::kDeleteHistoryServiceDB)) {
+      return Init(true, history_database_params); 
+    }
 #endif // IS_ARKWEB
+    return Init(false, history_database_params);
   }
 
   // Returns the directory containing the History databases.

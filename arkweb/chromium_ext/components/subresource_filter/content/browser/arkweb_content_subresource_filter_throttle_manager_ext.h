@@ -41,13 +41,25 @@ class SubresourceFilterProfileContext;
 
 class ArkWebContentSubresourceFilterThrottleManagerExt : public ContentSubresourceFilterThrottleManager {
  public:
+  static std::unique_ptr<ArkWebContentSubresourceFilterThrottleManagerExt>
+  CreateForNewPage(
+      SubresourceFilterProfileContext* profile_context,
+      scoped_refptr<safe_browsing::SafeBrowsingDatabaseManager>
+          database_manager,
+      VerifiedRulesetDealer::Handle* dealer_handle,
+      VerifiedRulesetDealer::Handle* user_dealer_handle,
+      ContentSubresourceFilterWebContentsHelper& web_contents_helper,
+      content::NavigationHandle& initiating_navigation_handle);
+
   ArkWebContentSubresourceFilterThrottleManagerExt(
       SubresourceFilterProfileContext* profile_context,
       scoped_refptr<safe_browsing::SafeBrowsingDatabaseManager>
           database_manager,
       VerifiedRulesetDealer::Handle* dealer_handle,
+      VerifiedRulesetDealer::Handle* user_dealer_handle,
       ContentSubresourceFilterWebContentsHelper& web_contents_helper,
       content::NavigationHandle& initiating_navigation_handle);
+
   ~ArkWebContentSubresourceFilterThrottleManagerExt();
 
   // Disallow copy and assign.

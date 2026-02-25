@@ -143,6 +143,14 @@ class NWebEngineImpl : public NWebEngine {
                      bool lazy) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+  std::string DumpArkWebInfo(const std::string& param) override;
+#endif
+
+#if BUILDFLAG(ARKWEB_USERAGENT)
+ 	void SetUserAgentClientHintsEnabled(bool enabled) override;
+ 	bool GetUserAgentClientHintsEnabled() override;
+#endif
  private:
   std::shared_ptr<NWebDataBase> nweb_data_base_ = nullptr;
   std::shared_ptr<NWebWebStorage> nweb_web_storage_ = nullptr;

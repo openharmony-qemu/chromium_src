@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 /**
  * @addtogroup OHAVSession
  * @{
@@ -21,14 +21,14 @@
  *
  * @syscap SystemCapability.Multimedia.AVSession.Core
  *
- * @since 13
+ * @since 23
  * @version 1.0
  */
- 
-/**
+
+ /**
  * @file native_deviceinfo.h
  *
- * @brief Declare deviceinfo interface.
+ * @brief Declare device info interfaces.
  *
  * @library libohavsession.so
  * @syscap SystemCapability.Multimedia.AVSession.Core
@@ -36,18 +36,18 @@
  * @since 23
  * @version 1.0
  */
- 
+
 #ifndef NATIVE_DEVICEINFO_H
 #define NATIVE_DEVICEINFO_H
- 
+
 #include <stdint.h>
 #include "native_avsession_base.h"
 #include "native_avsession_errors.h"
- 
+
 #ifdef __cplusplus
 extern "C" {
 #endif
- 
+
 /**
  * @brief Declaring the device information.
  * The instance is used to get more device information detail attributes.
@@ -55,73 +55,74 @@ extern "C" {
  * @since 23
  */
 typedef struct AVSession_DeviceInfo AVSession_DeviceInfo;
- 
+
 /**
- * @brief Declaring the target Device Information.
+ * @brief Declaring the target Device Infomation.
  *
- * @since 12
+ * @since 23
  */
+
 typedef struct AVSession_OutputDeviceInfo {
     /**
      * @brief Array size of device information.
      */
     uint32_t size;
- 
     /**
      * @brief Arrays of device information.
      */
     AVSession_DeviceInfo **deviceInfos;
 } AVSession_OutputDeviceInfo;
- 
+
 /**
  * @brief Get Cast Category of the target device.
  *
  * @param deviceInfo The deviceInfo instance pointer
- * @param aVCastCategory The pointer {@link AVSession_AVCastCategory} variable that will be set the device Cast Category value.
- * @return Function result code：
- *         {@link AV_SESSION_ERR_SUCCESS} If the execution is successful.
- *         {@link AV_SESSION_ERR_INVALID_PARAMETER} 
- *                                                  1.The param of deviceInfo is nullptr;
- *                                                  2.The param of aVCastCategory is nullptr.
- * @since 23
- */
-AVSession_ErrCode OH_DeviceInfo_GetAVCastCategory(AVSession_DeviceInfo* deviceInfo,
-    AVSession_AVCastCategory *aVCastCategory);
- 
-/**
- * @brief Get device Id of the target device.
- *
- * @param deviceInfo The deviceInfo instance pointer
- * @param deviceId The pointer variable that will be set the device id value.
- * @return Function result code：
+ * @param aVCastCategory The pointer {@link AVSession_AVCastCategory} variable
+ *                       that will be set the device Cast Category value.
+ * @return Function result code:
  *         {@link AV_SESSION_ERR_SUCCESS} If the execution is successful.
  *         {@link AV_SESSION_ERR_INVALID_PARAMETER}
  *                                                 1.The param of deviceInfo is nullptr;
  *                                                 2.The param of aVCastCategory is nullptr.
  * @since 23
  */
-AVSession_ErrCode OH_DeviceInfo_GetDeviceId(AVSession_DeviceInfo *deviceInfo, char** deviceId);
- 
+AVSession_ErrCode OH_DeviceInfo_GetAVCastCategory(AVSession_DeviceInfo *deviceInfo,
+    AVSession_AVCastCategory *aVCastCategory);
+
 /**
  * @brief Get device Id of the target device.
  *
- * @param deviceInfo The deviceInfo instance pointer.
- * @param deviceName The pointer variable that will be set the device name value.
- * @return Function result code：
+ * @param deviceInfo The deviceInfo instance pointer
+ * @param deviceId the pointer variable that will be set the device id value.
+ * @return Function result code:
+ *         {@link AV_SESSION_ERR_SUCCESS} If the execution is successful.
+ *         {@link AV_SESSION_ERR_INVALID_PARAMETER}
+ *                                                 1.The param of deviceInfo is nullptr;
+ *                                                 2.The param of deviceId is nullptr.
+ * @since 23
+ */
+AVSession_ErrCode OH_DeviceInfo_GetDeviceId(AVSession_DeviceInfo *deviceInfo, char **deviceId);
+
+/**
+ * @brief Get device name of the target device.
+ *
+ * @param deviceInfo The deviceInfo instance pointer
+ * @param deviceName the pointer variable that will be set the device name value.
+ * @return Function result code:
  *         {@link AV_SESSION_ERR_SUCCESS} If the execution is successful.
  *         {@link AV_SESSION_ERR_INVALID_PARAMETER}
  *                                                 1.The param of deviceInfo is nullptr;
  *                                                 2.The param of deviceName is nullptr.
  * @since 23
  */
-AVSession_ErrCode OH_DeviceInfo_GetDeviceName(AVSession_DeviceInfo* deviceInfo, char** deviceName);
- 
+AVSession_ErrCode OH_DeviceInfo_GetDeviceName(AVSession_DeviceInfo *deviceInfo, char **deviceName);
+
 /**
- * @brief Get device Name of the target device.
+ * @brief Get device type of the target device.
  *
  * @param deviceInfo The deviceInfo instance pointer
- * @param deviceType The pointer {@link AVSession_DeviceType} variable that will be set the device type value.
- * @return Function result code：
+ * @param deviceType the pointer {@link AVSession_DeviceType} variable that will be set the device type value.
+ * @return Function result code:
  *         {@link AV_SESSION_ERR_SUCCESS} If the execution is successful.
  *         {@link AV_SESSION_ERR_INVALID_PARAMETER}
  *                                                 1.The param of deviceInfo is nullptr;
@@ -129,14 +130,14 @@ AVSession_ErrCode OH_DeviceInfo_GetDeviceName(AVSession_DeviceInfo* deviceInfo, 
  * @since 23
  */
 AVSession_ErrCode OH_DeviceInfo_GetDeviceType(AVSession_DeviceInfo *deviceInfo, AVSession_DeviceType *deviceType);
- 
+
 /**
- * @brief Get device Id of the target device.
+ * @brief Get supported protocols of the target device.
  *
  * @param deviceInfo The deviceInfo instance pointer
- * @param deviceProtocolType The pointer variable that will be set the protocols supported by current device,
+ * @param deviceProtocolType the pointer variable that will be set the protocols supported by current device,
  *                           can be union of {@link ProtocolType}.
- * @return Function result code：
+ * @return Function result code:
  *         {@link AV_SESSION_ERR_SUCCESS} If the execution is successful.
  *         {@link AV_SESSION_ERR_INVALID_PARAMETER}
  *                                                 1.The param of deviceInfo is nullptr;
@@ -145,10 +146,10 @@ AVSession_ErrCode OH_DeviceInfo_GetDeviceType(AVSession_DeviceInfo *deviceInfo, 
  */
 AVSession_ErrCode OH_DeviceInfo_GetSupportedProtocols(AVSession_DeviceInfo *deviceInfo,
     uint32_t *deviceProtocolType);
- 
+
 #ifdef __cplusplus
 }
 #endif
- 
+
 #endif // NATIVE_DEVICEINFO_H
 /** @} */

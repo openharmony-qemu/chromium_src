@@ -27,6 +27,11 @@ constexpr bool kUseTestPolicies = false;
 }  // namespace
 
 void RegisterBrowserPolicyProfilePrefs(PrefRegistrySimple* registry) {
+  if (registry->defaults()->GetValue(
+          policy::policy_prefs::kBrowserPolicyVersion, nullptr)) {
+    return;
+  }
+
   registry->RegisterIntegerPref(policy::policy_prefs::kBrowserPolicyVersion, 0);
 }
 

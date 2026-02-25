@@ -18,18 +18,26 @@
 
 #include "arkweb/ohos_adapter_ndk/interfaces/graphic_adapter.h"
 #include "arkweb/ohos_adapter_ndk/interfaces/ohos_adapter_helper.h"
-#include "base/memory/raw_ptr.h"
+#include "base/memory/scoped_refptr.h"
+#include "base/memory/weak_ptr.h"
+#include "base/task/single_thread_task_runner.h"
+
+namespace gl {
+  class OhosNativeImage;
+}
 
 namespace OHOS::NWeb {
 
 class FrameAvailableListenerImpl : public FrameAvailableListener {
- public:
-   FrameAvailableListenerImpl(raw_ptr<OhosNativeImageAdapter> adapter);
+  public:
+    FrameAvailableListenerImpl(base::WeakPtr<gl::OhosNativeImage> adapter,
+                               scoped_refptr<base::SingleThreadTaskRunner> task_runner);
 
-   void OnFrameAvailableListener() override;
+    void OnFrameAvailableListener() override;
 
- private:
-  raw_ptr<OhosNativeImageAdapter> ohos_native_image_adapter_ = nullptr;
+  private:
+    base::WeakPtr<gl::OhosNativeImage> oni_wptr = nullptr;
+    scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
 };
 
 }  // namespace OHOS::NWeb

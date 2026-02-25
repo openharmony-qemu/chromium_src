@@ -111,6 +111,10 @@ class HttpStreamPool::Job {
     return connection_attempts_;
   }
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  ResolveInfo resolve_info();
+#endif
+
  private:
   void CallOnStreamReady(std::unique_ptr<HttpStream> stream,
                          NextProto negotiated_protocol);

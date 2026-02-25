@@ -72,6 +72,10 @@
 #include "net/base/proxy_delegate.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+#include "arkweb/chromium_ext/net/base/request_attempt.h"
+#endif
+
 namespace net {
 
 class CookieOptions;
@@ -975,6 +979,14 @@ class NET_EXPORT URLRequest : public base::SupportsUserData {
   bool used_http_dns() { return used_http_dns_; }
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  int GetOriginalNetErrorCode() const;
+  ConnectionAttempts GetExtraConnectionAttempts() const;
+  std::vector<net::RequestAttempt> GetRequestAttempts() const;
+  int GetStatus() const { return status(); }
+  const std::string& request_uuid() const { return request_uuid_; }
+#endif
+
  protected:
   // Allow the URLRequestJob class to control the is_pending() flag.
   void set_is_pending(bool value) { is_pending_ = value; }
@@ -1264,6 +1276,10 @@ class NET_EXPORT URLRequest : public base::SupportsUserData {
 
 #if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
   bool used_http_dns_{false};
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  std::string request_uuid_;
 #endif
 
   SharedDictionaryGetter shared_dictionary_getter_;

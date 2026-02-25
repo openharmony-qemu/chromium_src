@@ -72,10 +72,12 @@ class ArkWebHostResolverManagerJobExt : public HostResolverManager::Job {
   void InitReportInfoForDohFallback() override;
   void InSecureCacheLookupWithoutRunTask(
       std::optional<HostCache::Entry>& resolved);
-  void MaybeModifyProcResolveResults(const std::string& host,
-                                     bool secure_dns_fallback_available,
-                                     int& net_error,
-                                     AddressList& out_addr_list);
+  void MaybeModifyProcResolveResults(
+      const std::string& host,
+      bool secure_dns_fallback_available,
+      int& net_error,
+      AddressList& out_addr_list,
+      std::vector<IPEndPoint>& truncation_results);
   void RecordIllegalIPAddrToLog(const std::string& host,
                                const AddressList& addrlist);
 

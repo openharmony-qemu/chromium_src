@@ -362,6 +362,11 @@ class MockNavigationHandle : public NavigationHandle {
     was_started_from_context_menu_ = was_started_from_context_menu;
   }
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  bool IsAutoReload() override {}
+  void OnReportNewNavigationInfo(const std::string& page_trace_id) override {}
+#endif
+
  private:
   int64_t navigation_id_;
   GURL url_;

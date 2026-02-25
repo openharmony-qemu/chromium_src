@@ -510,6 +510,13 @@ ConnectionAttempts SharedDictionaryNetworkTransaction::GetConnectionAttempts()
   return network_transaction_->GetConnectionAttempts();
 }
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+ConnectionAttempts
+SharedDictionaryNetworkTransaction::GetExtraConnectionAttempts() const {
+  return network_transaction_->GetExtraConnectionAttempts();
+}
+#endif
+
 void SharedDictionaryNetworkTransaction::CloseConnectionOnDestruction() {
   network_transaction_->CloseConnectionOnDestruction();
 }

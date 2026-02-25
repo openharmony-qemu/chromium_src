@@ -7,6 +7,7 @@
 #include <set>
 
 #include "net/base/net_errors.h"
+#include "net/socket/connection_attempts.h"
 
 namespace net {
 
@@ -38,5 +39,24 @@ void Socket::SetDnsAliases(std::set<std::string> aliases) {
 const std::set<std::string>& Socket::GetDnsAliases() const {
   return dns_aliases_;
 }
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+void Socket::SetDnsResolveInfo(const ResolveInfo& resolve_info) {
+  dns_resolve_info_ = resolve_info;
+}
+
+const ResolveInfo& Socket::GetDnsResolveInfo() const {
+  return dns_resolve_info_;
+}
+
+void Socket::SetExtraConnectionAttempt(
+    const ConnectionAttempts& extra_connection_attempts) {
+  extra_connection_attempts_ = extra_connection_attempts;
+}
+
+ConnectionAttempts Socket::GetExtraConnectionAttempts() const {
+  return extra_connection_attempts_;
+}
+#endif
 
 }  // namespace net

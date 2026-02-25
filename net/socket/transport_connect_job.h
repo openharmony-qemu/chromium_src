@@ -171,6 +171,12 @@ class NET_EXPORT_PRIVATE TransportConnectJob : public ConnectJob {
   LoadState GetLoadState() const override;
   bool HasEstablishedConnection() const override;
   ConnectionAttempts GetConnectionAttempts() const override;
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  ResolveInfo GetResolveInfo() const override;
+  ConnectionAttempts GetExtraConnectionAttempts() const override;
+#endif
+
   ResolveErrorInfo GetResolveErrorInfo() const override;
   std::optional<HostResolverEndpointResult> GetHostResolverEndpointResult()
       const override;
@@ -282,6 +288,11 @@ class NET_EXPORT_PRIVATE TransportConnectJob : public ConnectJob {
   std::vector<std::unique_ptr<TransportConnectSubJob>>
       multi_connect_fallback_jobs_;
 #endif  // BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  ResolveInfo resolve_info_;
+  ConnectionAttempts extra_connection_attempts_;
+#endif
 
   base::WeakPtrFactory<TransportConnectJob> weak_ptr_factory_{this};
 };

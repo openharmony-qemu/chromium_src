@@ -1008,6 +1008,13 @@ QuicChromiumClientSession::QuicChromiumClientSession(
       allow_server_preferred_address_(allow_server_preferred_address),
       session_creation_initiator_(session_creation_initiator) {
   default_network_ = default_network;
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  if (session_pool_) {
+    if (auto resolve_info = session_pool_->TakeDnsResolveInfo()) {
+      socket->SetDnsResolveInfo(resolve_info.value());
+    }
+  }
+#endif
   auto* socket_raw = socket.get();
   packet_readers_.push_back(std::make_unique<QuicChromiumPacketReader>(
       std::move(socket), clock, this, yield_after_packets, yield_after_duration,

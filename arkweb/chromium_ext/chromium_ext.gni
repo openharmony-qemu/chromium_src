@@ -1281,7 +1281,7 @@ arkweb_content_browser_renderer_host_sources = [
 
 if (is_arkweb_ext) {
   arkweb_content_browser_renderer_host_sources += [
-  "//arkweb/ohos_nweb_ex/overrides/chromium/content/browser/renderer_host/render_frame_host_impl_nweb_ex.cc"
+    "//arkweb/ohos_nweb_ex/overrides/chromium/content/browser/renderer_host/render_frame_host_impl_nweb_ex.cc"
   ]
 }
 
@@ -1513,5 +1513,37 @@ if (is_arkweb_ext) {
 } else {
   arkweb_components_page_load_metrics_browser_sources += [
     "//arkweb/chromium_ext/components/page_load_metrics/browser/metrics_web_contents_observer_ext.cc"
+  ]
+}
+
+arkweb_services_network_mojom_traits_sources = []
+arkweb_services_network_mojom_sources = []
+arkweb_net_for_ext_navigation_sources = []
+arkweb_net_public_for_ext_navigation_sources = []
+if (is_arkweb_ext) {
+  arkweb_services_network_mojom_traits_sources += [
+    "//arkweb/chromium_ext/services/network/public/cpp/navigation_info_mojom_traits.cc",
+    "//arkweb/chromium_ext/services/network/public/cpp/navigation_info_mojom_traits.h",
+  ]
+  arkweb_services_network_mojom_sources += [
+    "//arkweb/chromium_ext/services/network/public/mojom/navigation_info.mojom",
+  ]
+  arkweb_net_for_ext_navigation_sources += [
+    "//arkweb/chromium_ext/net/base/navigation_info.cc",
+    "//arkweb/chromium_ext/net/base/navigation_info.h",
+    "//arkweb/chromium_ext/net/base/request_attempt.cc",
+    "//arkweb/chromium_ext/net/base/request_attempt.h",
+    "//arkweb/chromium_ext/net/dns/public/dns_info.cc",
+    "//arkweb/chromium_ext/net/dns/public/dns_info.h",
+    "//arkweb/chromium_ext/net/socket/socket_info.cc",
+    "//arkweb/chromium_ext/net/socket/socket_info.h",
+    "//arkweb/chromium_ext/net/ssl/arkweb_ssl_info.cc",
+    "//arkweb/chromium_ext/net/ssl/arkweb_ssl_info.h",
+    "//arkweb/chromium_ext/net/base/web_navigation_info.cc",
+    "//arkweb/chromium_ext/net/base/web_navigation_info.h"
+  ]
+  arkweb_net_public_for_ext_navigation_sources += [
+    "//arkweb/chromium_ext/net/dns/public/resolve_info.cc",
+    "//arkweb/chromium_ext/net/dns/public/resolve_info.h"
   ]
 }

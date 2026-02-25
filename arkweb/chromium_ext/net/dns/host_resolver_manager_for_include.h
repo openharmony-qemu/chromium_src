@@ -68,4 +68,11 @@ std::unordered_set<std::string> dns_hijacking_errorcode_list_;
 #endif
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+public:
+std::string GetDnsServersString();
+
+private:
+#endif
+
 #endif  // NET_DNS_HOST_RESOLVER_MANAGER_FOR_INCLUDE_H

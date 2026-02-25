@@ -1,0 +1,91 @@
+/*
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module network.mojom;
+
+// host resolve info
+[EnableIf=arkweb_ext_navigation]
+struct ResolveInfo {
+  int32 error_code = 0;
+  int32 dns_status = 0;
+  uint32 dns_transition = 0;
+  string query_host;
+  array<string> ip_endpoints;
+  array<string> truncation_ips;
+};
+
+// DNS info
+[EnableIf=arkweb_ext_navigation]
+struct DnsInfo {
+  int32 result = 0;
+  uint32 dns_transition = 0;
+  int32 dns_status = 0;
+  string host;
+  array<string> address_list;
+  array<string> truncation_ips;
+};
+
+// ArkWeb SSL info
+[EnableIf=arkweb_ext_navigation]
+struct ArkWebSSLInfo {
+  string host;
+  int32 result = 0;
+  string issuer;
+  bool is_fatal_cert_error = false;
+  string expired_date;
+};
+
+// Socket info
+[EnableIf=arkweb_ext_navigation]
+struct SocketInfo {
+  string host;
+  int32 result = 0;
+  array<string> address_list;
+};
+
+// Struct representing a single connection attempt during a request.
+[EnableIf=arkweb_ext_navigation]
+struct RequestAttempt {
+  string request_trace_id;
+  int32 attempt_type = 0;
+  int32 request_result = 0;
+  bool was_fetched_via_proxy = false;
+  DnsInfo dns_info;
+  ArkWebSSLInfo ssl_info;
+  SocketInfo socket_info;
+};
+
+// Navigation info collection fields for ArkWeb extension.
+[EnableIf=arkweb_ext_navigation]
+struct NavigationInfo {
+  // String members
+  string request_url;
+  string request_uuid;
+  string time_stamp;
+  string dns_name_servers;
+  string local_address;
+
+  // Integer members
+  int32 original_error_code = 0;
+  int32 error_code = 0;
+
+  // Boolean members
+  bool can_use_secure_dns = false;
+  bool is_fallback_proxy_enabled = false;
+
+  // Complex type members
+  ResolveInfo resolve_info;
+  array<RequestAttempt> request_attempts;
+};

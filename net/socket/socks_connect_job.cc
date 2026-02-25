@@ -170,6 +170,13 @@ int SOCKSConnectJob::DoTransportConnect() {
 
 int SOCKSConnectJob::DoTransportConnectComplete(int result) {
   resolve_error_info_ = transport_connect_job_->GetResolveErrorInfo();
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  resolve_info_ = transport_connect_job_->GetResolveInfo();
+  extra_connection_attempts_ =
+      transport_connect_job_->GetExtraConnectionAttempts();
+#endif
+
   if (result != OK)
     return ERR_PROXY_CONNECTION_FAILED;
 
@@ -202,14 +209,26 @@ int SOCKSConnectJob::DoSOCKSConnect() {
 }
 
 int SOCKSConnectJob::DoSOCKSConnectComplete(int result) {
-  if (!socks_params_->is_socks_v5())
+  if (!socks_params_->is_socks_v5()) {
     resolve_error_info_ = socks_socket_ptr_->GetResolveErrorInfo();
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+    resolve_info_ = socks_socket_ptr_->GetResolveInfo();
+#endif
+  }
+
   if (result != OK) {
     socket_->Disconnect();
     return result;
   }
 
   SetSocket(std::move(socket_), std::nullopt /* dns_aliases */);
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  SetResolveInfoToSocket(resolve_info_);
+  SetExtraConnectionAttemptsToSocket(extra_connection_attempts_);
+#endif
+
   return result;
 }
 
@@ -228,6 +247,16 @@ void SOCKSConnectJob::ChangePriorityInternal(RequestPriority priority) {
 void SOCKSConnectJob::SetConnectTimeout(int timeout_override) {
   timeout_override_for_nested_job_ = timeout_override;
   timeout_override_ = base::TimeDelta();
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+ResolveInfo SOCKSConnectJob::GetResolveInfo() const {
+  return resolve_info_;
+}
+
+ConnectionAttempts SOCKSConnectJob::GetExtraConnectionAttempts() const {
+  return extra_connection_attempts_;
 }
 #endif
 

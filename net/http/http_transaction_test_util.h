@@ -272,6 +272,10 @@ class MockNetworkTransaction final : public HttpTransaction {
 
   RequestPriority priority() const { return priority_; }
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  ConnectionAttempts GetExtraConnectionAttempts() const override { return {}; }
+#endif
+
   base::WeakPtr<MockNetworkTransaction> AsWeakPtr() {
     return weak_factory_.GetWeakPtr();
   }

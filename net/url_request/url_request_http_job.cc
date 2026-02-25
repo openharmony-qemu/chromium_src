@@ -489,6 +489,10 @@ void URLRequestHttpJob::Start() {
   }
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  should_set_original_code_ = true;
+#endif
+
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
           switches::kEnableLoggerReport)) {
@@ -754,6 +758,9 @@ void URLRequestHttpJob::StartTransactionInternal() {
     network_quality_estimator->NotifyStartTransaction(*request_);
 
   if (transaction_.get()) {
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+    current_attempt_type_ = AttemptType::kWithAuth;
+#endif
     rv = transaction_->RestartWithAuth(
         auth_credentials_, base::BindOnce(&URLRequestHttpJob::OnStartCompleted,
                                           base::Unretained(this)));
@@ -1368,6 +1375,10 @@ void URLRequestHttpJob::RetryWithSecureDnsOnly() {
 
   ResetTimer();
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  current_attempt_type_ = AttemptType::kHttpDnsOnly;
+#endif
+
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
   LOG_FEEDBACK(INFO) << "DOH-Fallback will retry with secure dns only";
 #endif
@@ -1400,6 +1411,13 @@ void URLRequestHttpJob::MaybeRetryWithSecureDnsOnly(int result) {
 
 void URLRequestHttpJob::OnStartCompleted(int result) {
   TRACE_EVENT0(NetTracingCategory(), "URLRequestHttpJob::OnStartCompleted");
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          ::switches::kEnableNwebEx)) {
+    GenerateRequestAttempt(result);
+  }
+#endif
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   if (!request_->RetryWithFallbackProxy() && !wait_for_sb_threat_type_) {
@@ -1940,6 +1958,10 @@ void URLRequestHttpJob::ContinueWithCertificate(
 
   ResetTimer();
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  current_attempt_type_ = AttemptType::kContinueWithCertificate;
+#endif
+
   int rv = transaction_->RestartWithCertificate(
       std::move(client_cert), std::move(client_private_key),
       base::BindOnce(&URLRequestHttpJob::OnStartCompleted,
@@ -1979,6 +2001,10 @@ void URLRequestHttpJob::ContinueDespiteLastErrorInternal() {
   receive_headers_end_ = base::TimeTicks();
 
   ResetTimer();
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  current_attempt_type_ = AttemptType::kContinueDespiteLastError;
+#endif
 
   int rv = transaction_->RestartIgnoringLastError(base::BindOnce(
       &URLRequestHttpJob::OnStartCompleted, base::Unretained(this)));

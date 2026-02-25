@@ -33,6 +33,10 @@
 #include "net/url_request/url_request.h"
 #include "url/gurl.h"
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+#include "arkweb/chromium_ext/net/base/request_attempt.h"
+#endif
+
 namespace net {
 
 class AuthChallengeInfo;
@@ -282,6 +286,14 @@ class NET_EXPORT URLRequestJob {
       const GURL& original_referrer,
       const GURL& destination,
       bool* same_origin_out_for_metrics = nullptr);
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  virtual ConnectionAttempts GetExtraConnectionAttempts() const { return {}; }
+  virtual std::vector<net::RequestAttempt> GetRequestAttempts() const {
+    return {};
+  }
+  virtual int GetOriginalNetErrorCode() const { return net::OK; }
+#endif
 
  protected:
   // Notifies the job that we are connected.

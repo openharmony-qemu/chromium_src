@@ -140,6 +140,12 @@ class HttpStreamFactory::JobController
       Job* job,
       const ConnectionAttempts& attempts) override;
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  void AddExtraConnectionAttemptsToRequest(
+      Job* job,
+      const ConnectionAttempts& extra_attempts) override;
+#endif
+
   // Invoked when |job| finishes initiating a connection.
   // Resume the other job if there's an error raised.
   void OnConnectionInitialized(Job* job, int rv) override;

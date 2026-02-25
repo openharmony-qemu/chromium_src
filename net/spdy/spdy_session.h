@@ -608,6 +608,11 @@ class NET_EXPORT SpdySession
   // Whether connection status monitoring is active or not.
   bool IsBrokenConnectionDetectionEnabled() const;
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  const ResolveInfo GetResolveInfo() const;
+  const ConnectionAttempts GetExtraConnectionAttempts() const;
+#endif
+
  private:
   friend class test::SpdyStreamTest;
   friend class base::RefCounted<SpdySession>;

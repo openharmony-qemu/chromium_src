@@ -2711,6 +2711,12 @@ void URLLoader::NotifyCompleted(int error_code) {
       status.ssl_info = url_request_->ssl_info();
     }
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+    if (url_loader_utils_ && url_request_->context()) {
+      url_loader_utils_->PopulateURLLoaderCompletionStatus(status);
+    }
+#endif
+
     url_loader_client_.Get()->OnComplete(status);
 #if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
     if (url_loader_utils_) {
@@ -2755,6 +2761,15 @@ void URLLoader::SendResponseToClient() {
       url_request_->url());
   DCHECK_EQ(emitted_devtools_raw_request_, emitted_devtools_raw_response_);
   response_->emitted_extra_info = emitted_devtools_raw_request_;
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  if (url_loader_utils_) {
+    auto status = url_loader_utils_->CreateURLLoaderCompletionStatus();
+    if (status) {
+      response_->status = std::move(*status);
+    }
+  }
+#endif
 
   url_loader_client_.Get()->OnReceiveResponse(
       response_->Clone(), std::move(consumer_handle_), std::nullopt);

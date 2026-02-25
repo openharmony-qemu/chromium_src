@@ -242,6 +242,10 @@ class NET_EXPORT_PRIVATE HttpTransaction {
 
   virtual ConnectionAttempts GetConnectionAttempts() const = 0;
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  virtual ConnectionAttempts GetExtraConnectionAttempts() const = 0;
+#endif
+
   // Configures the transaction to close the network connection, if any, on
   // destruction. Intended for cases where keeping the socket alive may leak
   // data. Does not immediately close the socket. If multiple transactions are

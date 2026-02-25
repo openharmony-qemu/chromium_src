@@ -84,6 +84,10 @@ class NET_EXPORT_PRIVATE SOCKSClientSocket : public StreamSocket {
   // Returns error information about any host resolution attempt.
   ResolveErrorInfo GetResolveErrorInfo() const;
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  ResolveInfo GetResolveInfo() const;
+#endif
+
  private:
   FRIEND_TEST_ALL_PREFIXES(SOCKSClientSocketTest, CompleteHandshake);
   FRIEND_TEST_ALL_PREFIXES(SOCKSClientSocketTest, SOCKS4AFailedDNS);
@@ -149,6 +153,10 @@ class NET_EXPORT_PRIVATE SOCKSClientSocket : public StreamSocket {
   const NetworkAnonymizationKey network_anonymization_key_;
   RequestPriority priority_;
   ResolveErrorInfo resolve_error_info_;
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  ResolveInfo resolve_info_;
+#endif
 
   NetLogWithSource net_log_;
 

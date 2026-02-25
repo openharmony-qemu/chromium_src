@@ -104,6 +104,11 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) ThrottlingNetworkTransaction
       base::RepeatingCallback<bool()> callback) override;
   int ResumeNetworkStart() override;
   net::ConnectionAttempts GetConnectionAttempts() const override;
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  net::ConnectionAttempts GetExtraConnectionAttempts() const override;
+#endif
+
   void CloseConnectionOnDestruction() override;
   bool IsMdlMatchForMetrics() const override;
 

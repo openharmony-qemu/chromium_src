@@ -51,6 +51,13 @@ class QuicSessionPool::DirectJob : public QuicSessionPool::Job {
                       RequestPriority new_priority) override;
   void PopulateNetErrorDetails(NetErrorDetails* details) const override;
 
+  // QuicSessionAttempt::Delegate implementation.
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  std::optional<ResolveInfo> GetDnsResolveInfo() override {
+    return resolve_host_request_->GetResolveInfo();
+  }
+#endif
+
  private:
   int DoLoop(int rv);
   int DoResolveHost();

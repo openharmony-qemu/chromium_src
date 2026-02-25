@@ -23,6 +23,9 @@ import "services/network/public/mojom/service_worker_router_info.mojom";
 import "services/proxy_resolver/public/mojom/proxy_resolver.mojom";
 import "url/mojom/url.mojom";
 
+[EnableIf=arkweb_ext_navigation]
+import "services/network/public/mojom/url_loader_completion_status.mojom";
+
 // Describes the navigational delivery type of the response.
 // `kNavigationalPrefetch` if the response is served by Prefetch; `kDefault`
 // if the response if served from a normal network request, even if the response
@@ -310,4 +313,7 @@ struct URLResponseHead {
 
   // True when a proxy will handle the redirect checks.
   bool bypass_redirect_checks = false;
+
+  [EnableIf=arkweb_ext_navigation]
+  URLLoaderCompletionStatus? status;
 };

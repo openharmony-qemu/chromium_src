@@ -10,6 +10,9 @@ import "services/network/public/mojom/blocked_by_response_reason.mojom";
 import "services/network/public/mojom/cors.mojom";
 import "services/network/public/mojom/trust_tokens.mojom";
 
+[EnableIf=arkweb_ext_navigation]
+import "arkweb/chromium_ext/services/network/public/mojom/navigation_info.mojom";
+
 // Unlike structs, enums are not nullable, so we wrap this enum in a struct.
 struct BlockedByResponseReasonWrapper {
   // More detailed reason for failing the response with
@@ -102,4 +105,8 @@ struct URLLoaderCompletionStatus {
   bool used_fallback_proxy = false;
   [EnableIf = arkweb_ex_fallback_proxy]
   bool needs_reload_with_fallback_proxy = false;
+
+  // Navigation info collection fields
+  [EnableIf = arkweb_ext_navigation]
+  NavigationInfo? navigation_info;
 };

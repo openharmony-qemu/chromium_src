@@ -12,6 +12,10 @@ import("//mojo/public/tools/bindings/mojom.gni")
 import("//net/features.gni")
 import("//services/network/public/cpp/features.gni")
 
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
+
 # These interfaces are put in their own target to avoid a circular dependency,
 # which comes from the fact that proxy_resolver service uses these interfaces,
 # and the network service uses the proxy_resolver service.
@@ -556,6 +560,13 @@ mojom("url_loader_base") {
     export_class_attribute_blink = "BLINK_PLATFORM_EXPORT"
     export_define_blink = "BLINK_PLATFORM_IMPLEMENTATION=1"
     export_header_blink = "third_party/blink/public/platform/web_common.h"
+  }
+
+  if (arkweb_ext_navigation) {
+    public_deps += [
+      "//arkweb/chromium_ext/services/network/public/mojom:mojom_navigation_info"
+    ]
+    enabled_features += [ "arkweb_ext_navigation" ]
   }
 
   # Shared by cpp_typemaps and blink_cpp_typemaps.
@@ -1557,6 +1568,13 @@ mojom("mojom") {
   if (is_ct_supported) {
     enabled_features += [ "is_ct_supported" ]
     sources += [ "ct_log_info.mojom" ]
+  }
+
+  if (arkweb_ext_navigation) {
+    public_deps += [
+      "//arkweb/chromium_ext/services/network/public/mojom:mojom_navigation_info"
+    ]
+    enabled_features += [ "arkweb_ext_navigation" ]
   }
 
   if (is_p2p_enabled) {

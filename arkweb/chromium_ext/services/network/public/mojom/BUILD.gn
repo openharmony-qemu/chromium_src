@@ -1,0 +1,73 @@
+# Copyright (c) 2026 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//arkweb/chromium_ext/chromium_ext.gni")
+import("//mojo/public/tools/bindings/mojom.gni")
+
+if (defined(is_arkweb_ext) && is_arkweb_ext) {
+  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
+}
+
+# Navigation info mojom for ArkWeb extension
+mojom("mojom_navigation_info") {
+  sources = arkweb_services_network_mojom_sources
+
+  public_deps = [ "//mojo/public/mojom/base" ]
+
+  if (arkweb_ext_navigation) {
+    enabled_features = [ "arkweb_ext_navigation" ]
+  }
+
+  if (!is_ios) {
+    export_class_attribute_blink = "BLINK_PLATFORM_EXPORT"
+    export_define_blink = "BLINK_PLATFORM_IMPLEMENTATION=1"
+    export_header_blink = "third_party/blink/public/platform/web_common.h"
+  }
+
+  # Typemaps for navigation info structures
+  shared_cpp_typemaps = [
+    {
+      types = [
+        {
+          mojom = "network.mojom.DnsInfo"
+          cpp = "::net::DnsInfo"
+        },
+        {
+          mojom = "network.mojom.ArkWebSSLInfo"
+          cpp = "::net::ArkWebSSLInfo"
+        },
+        {
+          mojom = "network.mojom.SocketInfo"
+          cpp = "::net::SocketInfo"
+        },
+        {
+          mojom = "network.mojom.RequestAttempt"
+          cpp = "::net::RequestAttempt"
+        },
+        {
+          mojom = "network.mojom.NavigationInfo"
+          cpp = "::net::NavigationInfo"
+        },
+      ]
+      traits_headers = [ "//arkweb/chromium_ext/services/network/public/cpp/navigation_info_mojom_traits.h" ]
+      traits_public_deps = [
+        "//arkweb/chromium_ext/services/network/public/cpp:navigation_info_mojom_support",
+        "//net",
+      ]
+    },
+  ]
+  cpp_typemaps = []
+  cpp_typemaps += shared_cpp_typemaps
+  blink_cpp_typemaps = []
+  blink_cpp_typemaps += shared_cpp_typemaps
+}

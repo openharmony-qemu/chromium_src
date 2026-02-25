@@ -20,6 +20,14 @@
 #include "net/http/http_vary_data.h"
 #include "net/ssl/ssl_info.h"
 
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+#include "arkweb/chromium_ext/net/dns/public/resolve_info.h"
+#endif
+
 namespace base {
 class Pickle;
 }
@@ -174,6 +182,10 @@ class NET_EXPORT HttpResponseInfo {
 #if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
   bool used_fallback_proxy{false};
   int fallback_proxy_response_code{0};
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  ResolveInfo resolve_info;
 #endif
 
   // If the response headers indicate a 401 or 407 failure, then this structure

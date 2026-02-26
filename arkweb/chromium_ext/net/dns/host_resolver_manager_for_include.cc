@@ -123,6 +123,10 @@ class HostResolverManager::WarmUpHttpDnsFallbackImpl
   void PreDnsOfDohFallbackServer() {
     DCHECK(resolver_);
     DCHECK(context_);
+    if (!context_ || !resolver_) {
+      return;
+    }
+
     if (request_) {
       return;
     }

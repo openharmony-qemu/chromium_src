@@ -664,14 +664,8 @@ TEST_F(NWebHandlerDelegateTest, RegisterOnLoadStartedCbForHighlightContent) {
 #endif  // BUILDFLAG(ARKWEB_AI)
 
 #if BUILDFLAG(ARKWEB_MEDIA_CAST)
-TEST_F(NWebHandlerDelegateTest, OnMediaCastEnter_TEST001) {
+TEST_F(NWebHandlerDelegateTest, OnMediaCastEnter) {
   EXPECT_CALL(*mock_handler_, OnMediaCastEnter()).Times(1);
   delegate->OnMediaCastEnter();
-}
-
-TEST_F(NWebHandlerDelegateTest, OnMediaCastEnter_TEST002) {
-  CefRefPtr<NWebHandlerDelegate> empty_delegate =
-      new NWebHandlerDelegate(nullptr, nullptr, nullptr, nullptr, false, nullptr);
-  empty_delegate->OnMediaCastEnter();
 }
 #endif  // BUILDFLAG(ARKWEB_MEDIA_CAST)

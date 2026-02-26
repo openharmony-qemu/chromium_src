@@ -226,6 +226,7 @@ declare_args() {
   arkweb_ex_refresh_iframe = true
   arkweb_notification = true
   arkweb_vulkan = true
+  arkweb_gpu = !is_component_build
   arkweb_pull_to_refresh = true
   arkweb_ex_http_dns_fallback = false
   arkweb_d_vsync = true

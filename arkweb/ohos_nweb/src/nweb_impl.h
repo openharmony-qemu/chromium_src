@@ -114,6 +114,12 @@ class NWebImpl : public NWeb {
   static void DisableBoost(uint32_t nweb_id);
 #endif
 
+#if BUILDFLAG(ARKWEB_GPU)
+  static void UpdateGpuConfig(bool gpu_switch);
+#endif // BUILDFLAG(ARKWEB_GPU)
+  static void UpdateInprocessGpuArg(std::list<std::string>& web_engine_args,
+                                    bool xml_gpu);
+
   /* event interface */
   void Resize(uint32_t width,
               uint32_t height,

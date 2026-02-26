@@ -13,6 +13,7 @@
 #include "base/task/sequenced_task_runner.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/trace_event/trace_event.h"
+#include "third_party/blink/public/platform/platform.h"
 #include "third_party/blink/renderer/bindings/core/v8/script_controller.h"
 #include "third_party/blink/renderer/core/frame/local_frame.h"
 #include "third_party/blink/renderer/core/inspector/devtools_agent.h"
@@ -181,6 +182,7 @@ DevToolsSession::DevToolsSession(
     for (wtf_size_t i = 0; i < agents_.size(); i++)
       agents_[i]->Restore();
   }
+  Platform::Current()->DevToolsAgentAttached();
 }
 
 DevToolsSession::~DevToolsSession() {
@@ -226,6 +228,7 @@ void DevToolsSession::Detach() {
   agents_.clear();
   v8_session_.reset();
   agent_->client_->DebuggerTaskFinished();
+  Platform::Current()->DevToolsAgentDetached();
 }
 
 void DevToolsSession::DetachFromV8() {

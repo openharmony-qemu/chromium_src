@@ -31,6 +31,7 @@
 #include "base/task/thread_pool.h"
 #include "base/time/time.h"
 #include "build/build_config.h"
+#include "cef/libcef/features/features.h"
 #include "chrome/browser/actor/actor_features.h"
 #include "chrome/browser/browser_process.h"
 #include "chrome/browser/download/download_core_service.h"
@@ -179,6 +180,10 @@
 #endif  // BUILDFLAG(SAFE_BROWSING_DOWNLOAD_PROTECTION)
 
 #include "base/android/device_info.h"
+
+#if BUILDFLAG(ENABLE_CEF)
+#include "cef/libcef/browser/download_manager_delegate.h"
+#endif
 
 using content::BrowserThread;
 using content::DownloadManager;
@@ -602,6 +607,10 @@ ChromeDownloadManagerDelegate::ChromeDownloadManagerDelegate(Profile* profile)
       download_message_bridge_(std::make_unique<DownloadMessageBridge>()),
 #endif
       download_prefs_(std::make_unique<DownloadPrefs>(profile)) {
+#if BUILDFLAG(ENABLE_CEF)
+  cef_delegate_ =
+      cef::DownloadManagerDelegate::Create(profile_->GetDownloadManager());
+#endif
 }
 
 ChromeDownloadManagerDelegate::~ChromeDownloadManagerDelegate() {
@@ -665,6 +674,9 @@ void ChromeDownloadManagerDelegate::Shutdown() {
     download_manager_->RemoveObserver(this);
     download_manager_ = nullptr;
   }
+#if BUILDFLAG(ENABLE_CEF)
+  cef_delegate_.reset();
+#endif
 }
 
 void ChromeDownloadManagerDelegate::OnDownloadCanceledAtShutdown(
@@ -732,6 +744,12 @@ bool ChromeDownloadManagerDelegate::DetermineDownloadTarget(
       !download->HasUserGesture()) {
     ReportPDFLoadStatus(PDFLoadStatus::kTriggeredNoGestureDriveByDownload);
   }
+
+#if BUILDFLAG(ENABLE_CEF)
+  if (cef_delegate_->DetermineDownloadTarget(download, callback)) {
+    return true;
+  }
+#endif
 
   DownloadTargetDeterminer::CompletionCallback target_determined_callback =
       base::BindOnce(&ChromeDownloadManagerDelegate::OnDownloadTargetDetermined,
@@ -1262,8 +1280,12 @@ void ChromeDownloadManagerDelegate::OpenDownload(DownloadItem* download) {
   }
 
   Browser* browser = chrome::ScopedTabbedBrowserDisplayer(profile_).browser();
-  CHECK(browser && browser->CanSupportWindowFeature(
-                       Browser::WindowFeature::kFeatureTabStrip));
+  CHECK(browser
+#if !BUILDFLAG(ENABLE_CEF)
+        && browser->CanSupportWindowFeature(
+               Browser::WindowFeature::kFeatureTabStrip)
+#endif
+  );
   content::OpenURLParams params(
       net::FilePathToFileURL(download->GetTargetFilePath()),
       content::Referrer(), WindowOpenDisposition::NEW_FOREGROUND_TAB,

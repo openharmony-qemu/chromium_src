@@ -25,6 +25,7 @@
 #include "ui/display/screen.h"
 #include "ui/events/event.h"
 #include "ui/linux/linux_ui.h"
+#include "ui/ozone/platform_selection.h"
 #include "ui/platform_window/extensions/wayland_extension.h"
 #include "ui/platform_window/extensions/x11_extension.h"
 #include "ui/platform_window/platform_window.h"
@@ -194,6 +195,18 @@ Widget::MoveLoopResult DesktopWindowTreeHostLinux::RunMoveLoop(
   return result;
 }
 
+gfx::Rect DesktopWindowTreeHostLinux::GetWindowBoundsInScreen() const {
+  if (!screen_bounds_.IsEmpty())
+    return screen_bounds_;
+  return DesktopWindowTreeHostPlatform::GetWindowBoundsInScreen();
+}
+
+gfx::Point DesktopWindowTreeHostLinux::GetLocationOnScreenInPixels() const {
+  if (!screen_bounds_.IsEmpty())
+    return screen_bounds_.origin();
+  return DesktopWindowTreeHostPlatform::GetLocationOnScreenInPixels();
+}
+
 void DesktopWindowTreeHostLinux::DispatchEvent(ui::Event* event) {
   // In Windows, the native events sent to chrome are separated into client
   // and non-client versions of events, which we record on our LocatedEvent
@@ -333,6 +346,15 @@ void DesktopWindowTreeHostLinux::AddAdditionalInitProperties(
   properties->wm_role_name = params.wm_role_name;
 
   properties->wayland_app_id = params.wayland_app_id;
+
+  // See CEF issue #3937.
+  if (std::string(ui::GetOzonePlatformName()) == "wayland") {
+    if (!properties->parent_widget) {
+      properties->parent_widget = params.parent_widget;
+    }
+  } else {
+    properties->parent_widget = params.parent_widget;
+  }
 
   DCHECK(!properties->x11_extension_delegate);
   properties->x11_extension_delegate = this;

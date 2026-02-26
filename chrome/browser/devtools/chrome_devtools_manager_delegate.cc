@@ -13,6 +13,7 @@
 #include "base/strings/strcat.h"
 #include "base/strings/utf_string_conversions.h"
 #include "build/build_config.h"
+#include "cef/libcef/features/features.h"
 #include "chrome/browser/browser_features.h"
 #include "chrome/browser/devtools/chrome_devtools_session.h"
 #include "chrome/browser/devtools/device/android_device_manager.h"
@@ -67,6 +68,10 @@
 #if BUILDFLAG(IS_CHROMEOS)
 #include "ash/constants/ash_switches.h"
 #include "chromeos/constants/chromeos_features.h"
+#endif
+
+#if BUILDFLAG(ENABLE_CEF)
+#include "cef/libcef/browser/chrome/extensions/chrome_extension_util.h"
 #endif
 
 using content::DevToolsAgentHost;
@@ -314,6 +319,12 @@ std::string ChromeDevToolsManagerDelegate::GetTargetType(
   if (views::WebView::IsWebViewContents(web_contents)) {
     return DevToolsAgentHost::kTypePage;
   }
+
+#if BUILDFLAG(ENABLE_CEF)
+  if (cef::IsAlloyContents(web_contents, /*primary_only=*/true)) {
+    return DevToolsAgentHost::kTypePage;
+  }
+#endif
 
   return DevToolsAgentHost::kTypeOther;
 }

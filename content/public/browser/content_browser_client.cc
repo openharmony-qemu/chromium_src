@@ -1220,7 +1220,7 @@ ContentBrowserClient::CreateURLLoaderHandlerForServiceWorkerNavigationPreload(
 void ContentBrowserClient::OnNetworkServiceCreated(
     network::mojom::NetworkService* network_service) {}
 
-void ContentBrowserClient::ConfigureNetworkContextParams(
+bool ContentBrowserClient::ConfigureNetworkContextParams(
     BrowserContext* context,
     bool in_memory,
     const base::FilePath& relative_partition_path,
@@ -1229,6 +1229,7 @@ void ContentBrowserClient::ConfigureNetworkContextParams(
         cert_verifier_creation_params) {
   network_context_params->user_agent = GetUserAgentBasedOnPolicy(context);
   network_context_params->accept_language = "en-us,en";
+  return true;
 }
 
 std::vector<base::FilePath>

@@ -866,6 +866,11 @@ class BLINK_PLATFORM_EXPORT Platform {
   // calling an OOM.
   virtual void OnV8HeapLastResortGC() {}
 
+  // DevTools ------------------------------------------------------------
+
+  virtual void DevToolsAgentAttached() {}
+  virtual void DevToolsAgentDetached() {}
+
  private:
   static void InitializeMainThreadCommon(
       std::unique_ptr<MainThread> main_thread);

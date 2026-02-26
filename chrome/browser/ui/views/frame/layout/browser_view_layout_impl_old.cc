@@ -29,6 +29,10 @@
 #include "chrome/browser/ui/fullscreen_util_mac.h"
 #endif
 
+#if BUILDFLAG(ENABLE_CEF)
+#include "cef/libcef/browser/chrome/views/chrome_views_util.h"
+#endif
+
 namespace {
 
 // The number of pixels the constrained window should overlap the bottom
@@ -439,6 +443,15 @@ void BrowserViewLayoutImplOld::LayoutWebUITabStrip(
 
 void BrowserViewLayoutImplOld::LayoutToolbar(gfx::Rect& available_bounds) {
   TRACE_EVENT0("ui", "BrowserViewLayout::LayoutToolbar");
+
+#if BUILDFLAG(ENABLE_CEF)
+  if (cef::IsCefView(views().toolbar)) {
+    // CEF may take ownership of the toolbar. Early exit to avoid the DCHECK
+    // in LayoutManager::SetViewVisibility().
+    return;
+  }
+#endif
+
   bool toolbar_visible = delegate().IsToolbarVisible();
   SetViewVisibility(views().toolbar, toolbar_visible);
 
@@ -737,7 +750,7 @@ gfx::Point BrowserViewLayoutImplOld::GetDialogPosition(
   }
   const int middle_x =
       leading_x + layout_result.contents_container_bounds.width() / 2;
-  return gfx::Point(middle_x - dialog_size.width() / 2, dialog_top_y_);
+  return gfx::Point(middle_x - dialog_size.width() / 2, GetDialogTopY());
 }
 
 gfx::Size BrowserViewLayoutImplOld::GetMaximumDialogSize() const {
@@ -751,6 +764,12 @@ gfx::Size BrowserViewLayoutImplOld::GetMaximumDialogSize() const {
   // universally.
   views::View* view = views().contents_container;
   gfx::Rect content_area = view->ConvertRectToWidget(view->GetLocalBounds());
-  const int top = dialog_top_y_;
+  const int top = GetDialogTopY();
   return gfx::Size(content_area.width(), content_area.bottom() - top);
+}
+
+int BrowserViewLayoutImplOld::GetDialogTopY() const {
+  int dialog_top_y = dialog_top_y_;
+  delegate().UpdateDialogTopInsetInBrowserView(&dialog_top_y);
+  return dialog_top_y;
 }

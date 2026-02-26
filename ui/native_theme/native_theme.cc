@@ -281,6 +281,8 @@ void NativeTheme::NotifyOnNativeThemeUpdated() {
 
   NotifyOnNativeThemeUpdatedImpl();
 
+  color_provider_manager.AfterNativeThemeUpdated();
+
   RecordNumColorProvidersInitializedDuringOnNativeThemeUpdated(
       color_provider_manager.num_providers_initialized() -
       initial_providers_initialized);
@@ -366,6 +368,13 @@ bool NativeTheme::IsForcedDarkMode() {
       base::CommandLine::ForCurrentProcess()->HasSwitch(
           switches::kForceDarkMode);
   return kIsForcedDarkMode;
+}
+
+bool NativeTheme::IsForcedLightMode() {
+  static bool kIsForcedLightMode =
+      base::CommandLine::ForCurrentProcess()->HasSwitch(
+          "force-light-mode");
+  return kIsForcedLightMode;
 }
 
 bool NativeTheme::IsForcedHighContrast() {
@@ -581,8 +590,13 @@ ColorProviderKey::ForcedColors NativeTheme::CalculateForcedColors() const {
 
 NativeTheme::PreferredColorScheme NativeTheme::CalculatePreferredColorScheme()
     const {
-  return IsForcedDarkMode() ? PreferredColorScheme::kDark
-                            : OsSettingsProvider::Get().PreferredColorScheme();
+  if (IsForcedDarkMode()) {
+    return PreferredColorScheme::kDark;
+  }
+  if (IsForcedLightMode()) {
+    return PreferredColorScheme::kLight;
+  }
+  return OsSettingsProvider::Get().PreferredColorScheme();
 }
 
 NativeTheme::PreferredContrast NativeTheme::CalculatePreferredContrast() const {

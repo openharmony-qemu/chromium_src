@@ -27,6 +27,7 @@
 #include "build/branding_buildflags.h"
 #include "build/build_config.h"
 #include "build/util/chromium_git_revision.h"
+#include "cef/libcef/features/features.h"
 #include "components/embedder_support/pref_names.h"
 #include "components/embedder_support/switches.h"
 #include "components/policy/core/common/policy_pref_names.h"
@@ -53,6 +54,10 @@
 
 #if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_MAC)
 #include <sys/utsname.h>
+#endif
+
+#if BUILDFLAG(ENABLE_CEF)
+constexpr char kUserAgentProductAndVersion[] = "user-agent-product";
 #endif
 
 namespace embedder_support {
@@ -474,6 +479,13 @@ std::string BuildOSCpuInfo(
 
 std::string GetProductAndVersion(
     UserAgentReductionEnterprisePolicyState user_agent_reduction) {
+#if BUILDFLAG(ENABLE_CEF)
+  base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+  if (command_line->HasSwitch(kUserAgentProductAndVersion)) {
+    return command_line->GetSwitchValueASCII(kUserAgentProductAndVersion);
+  }
+#endif
+
   return ShouldReduceUserAgentMinorVersion(user_agent_reduction)
              ? version_info::GetProductNameAndVersionForReducedUserAgent(
                    blink::features::kUserAgentFrozenBuildVersion.Get())

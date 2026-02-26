@@ -11,6 +11,7 @@ import("//build/config/compiler/pgo/pgo.gni")
 import("//build/config/features.gni")
 import("//build/config/python.gni")
 import("//build/config/ui.gni")
+import("//cef/libcef/features/features.gni")
 import("//chrome/browser/buildflags.gni")
 import("//chrome/browser/downgrade/buildflags.gni")
 import("//chrome/common/features.gni")
@@ -358,8 +359,6 @@ static_library("browser") {
     "data_sharing/data_sharing_navigation_utils.h",
     "data_sharing/data_sharing_service_factory.cc",
     "data_sharing/data_sharing_service_factory.h",
-    "data_sharing/migration/migratable_sync_service_coordinator_factory.cc",
-    "data_sharing/migration/migratable_sync_service_coordinator_factory.h",
     "data_sharing/personal_collaboration_data/personal_collaboration_data_service_factory.cc",
     "data_sharing/personal_collaboration_data/personal_collaboration_data_service_factory.h",
     "defaults.cc",
@@ -1825,6 +1824,7 @@ static_library("browser") {
     "//build/config/compiler:compiler_buildflags",
     "//build/config/linux/dbus:buildflags",
     "//cc",
+    "//cef/libcef/features:buildflags",
     "//chrome:extra_resources",
     "//chrome:resources",
     "//chrome:strings",
@@ -2655,6 +2655,10 @@ static_library("browser") {
     sources += [ "net/net_error_diagnostics_dialog_win.cc" ]
   } else {
     sources += [ "net/net_error_diagnostics_dialog_stub.cc" ]
+  }
+
+  if (enable_cef) {
+    configs += [ "//cef/libcef/features:config" ]
   }
 
   if (is_android) {

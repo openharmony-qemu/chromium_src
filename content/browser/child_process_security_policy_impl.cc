@@ -2192,6 +2192,16 @@ bool ChildProcessSecurityPolicyImpl::PerformJailAndCitadelChecks(
         if (actual_process_lock.MatchesScheme(url::kDataScheme)) {
           return true;
         }
+
+        // Allow other schemes that are non-standard, non-local and WebSafe.
+        if (lock_url.is_valid() && !lock_url.IsStandard() &&
+            !base::Contains(url::GetLocalSchemes(), lock_url.scheme())) {
+          base::AutoLock schemes_lock(schemes_lock_);
+          if (base::Contains(schemes_okay_to_request_in_any_process_,
+                             std::string(lock_url.scheme()))) {
+            return true;
+          }
+        }
       }
 
       // Make an exception to allow most visited tiles to commit in third-party

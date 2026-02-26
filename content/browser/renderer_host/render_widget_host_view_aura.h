@@ -463,6 +463,12 @@ class CONTENT_EXPORT RenderWidgetHostViewAura
   }
 #endif  // BUILDFLAG(IS_WIN)
 
+  using RootWindowBoundsCallback =
+      base::RepeatingCallback<std::optional<gfx::Rect>()>;
+  void SetRootWindowBoundsCallback(const RootWindowBoundsCallback& callback) {
+    root_window_bounds_callback_ = callback;
+  }
+
  protected:
   ~RenderWidgetHostViewAura() override;
 
@@ -885,6 +891,8 @@ class CONTENT_EXPORT RenderWidgetHostViewAura
 #endif  // BUILDFLAG(IS_WIN)
 
   std::optional<display::ScopedDisplayObserver> display_observer_;
+
+  RootWindowBoundsCallback root_window_bounds_callback_;
 
   base::WeakPtrFactory<RenderWidgetHostViewAura> weak_ptr_factory_{this};
 };

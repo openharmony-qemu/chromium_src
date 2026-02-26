@@ -52,6 +52,10 @@ namespace base {
 class FilePath;
 }
 
+namespace pref_helper {
+class Registrar;
+}
+
 namespace prefs {
 class ScopedDictionaryPrefUpdate;
 }
@@ -436,6 +440,8 @@ class COMPONENTS_PREFS_EXPORT PrefService {
   // declared as a friend, too.
   friend class PrefChangeRegistrar;
   friend class subtle::PrefMemberBase;
+  // CEF registration manager.
+  friend class pref_helper::Registrar;
 
   // These are protected so they can only be accessed by the friend
   // classes listed above.

@@ -63,6 +63,8 @@ class VIEWS_EXPORT DesktopWindowTreeHostLinux
   // client-drawn shadow.
   virtual void UpdateFrameHints();
 
+  void set_screen_bounds(const gfx::Rect& bounds) { screen_bounds_ = bounds; }
+
  protected:
   // Overridden from DesktopWindowTreeHost:
   void Init(const Widget::InitParams& params) override;
@@ -72,6 +74,8 @@ class VIEWS_EXPORT DesktopWindowTreeHostLinux
       const gfx::Vector2d& drag_offset,
       Widget::MoveLoopSource source,
       Widget::MoveLoopEscapeBehavior escape_behavior) override;
+  gfx::Rect GetWindowBoundsInScreen() const override;
+  gfx::Point GetLocationOnScreenInPixels() const override;
 
   // PlatformWindowDelegate:
   void DispatchEvent(ui::Event* event) override;
@@ -120,6 +124,9 @@ class VIEWS_EXPORT DesktopWindowTreeHostLinux
   std::unique_ptr<aura::ScopedWindowTargeter> targeter_for_modal_;
 
   uint32_t modal_dialog_counter_ = 0;
+
+   // Override the screen bounds when the host is a child window.
+  gfx::Rect screen_bounds_;
 
   // The display and the native X window hosting the root window.
   base::WeakPtrFactory<DesktopWindowTreeHostLinux> weak_factory_{this};

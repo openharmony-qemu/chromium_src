@@ -34,9 +34,13 @@ content::WebContents* AddAndReturnTabAt(
   // Time new tab page creation time.  We keep track of the timing data in
   // WebContents, but we want to include the time it takes to create the
   // WebContents object too.
+  // For CEF use a PageTransition that matches
+  // CefFrameHostImpl::kPageTransitionExplicit.
   base::TimeTicks new_tab_start_time = base::TimeTicks::Now();
-  NavigateParams params(browser, url.is_empty() ? browser->GetNewTabURL() : url,
-                        ui::PAGE_TRANSITION_TYPED);
+  NavigateParams params(
+      browser, url.is_empty() ? browser->GetNewTabURL() : url,
+      static_cast<ui::PageTransition>(ui::PAGE_TRANSITION_TYPED |
+                                      ui::PAGE_TRANSITION_FROM_ADDRESS_BAR));
   params.disposition = foreground ? WindowOpenDisposition::NEW_FOREGROUND_TAB
                                   : WindowOpenDisposition::NEW_BACKGROUND_TAB;
   params.tabstrip_index = idx;
@@ -92,6 +96,16 @@ content::WebContents* AddWebContents(
   // Can't create a new contents for the current tab - invalid case.
   DCHECK(disposition != WindowOpenDisposition::CURRENT_TAB);
 
+#if BUILDFLAG(ENABLE_CEF)
+  if (browser && browser->cef_delegate() && new_contents) {
+    new_contents =
+        browser->cef_delegate()->AddWebContents(std::move(new_contents));
+    if (!new_contents) {
+      return nullptr;
+    }
+  }
+#endif
+
   NavigateParams params(browser, std::move(new_contents));
   params.source_contents = source_contents;
   params.url = target_url;
@@ -115,8 +129,6 @@ void CloseWebContents(Browser* browser,
                       bool add_to_history) {
   int index = browser->tab_strip_model()->GetIndexOfWebContents(contents);
   if (index == TabStripModel::kNoTab) {
-    DUMP_WILL_BE_NOTREACHED()
-        << "CloseWebContents called for tab not in our strip";
     return;
   }
 

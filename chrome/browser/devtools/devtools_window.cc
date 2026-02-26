@@ -42,6 +42,7 @@
 #include "chrome/browser/search_engines/template_url_service_factory.h"
 #include "chrome/browser/task_manager/web_contents_tags.h"
 #include "chrome/browser/ui/browser_dialogs.h"
+#include "chrome/browser/ui/browser_finder.h"
 #include "chrome/browser/ui/prefs/prefs_tab_helper.h"
 #include "chrome/browser/ui/scoped_tabbed_browser_displayer.h"
 #include "chrome/browser/ui/tabs/tab_group_deletion_dialog_controller.h"
@@ -1355,6 +1356,13 @@ DevToolsWindow* DevToolsWindow::Create(
     if (!browser || !browser->window()->CanDockDevTools()) {
       can_dock = false;
     }
+
+#if BUILDFLAG(ENABLE_CEF)
+    if (can_dock && browser && browser->cef_delegate()) {
+      // Don't dock DevTools for CEF-managed browsers.
+      can_dock = false;
+    }
+#endif
   }
 #endif
 
@@ -1817,7 +1825,9 @@ void DevToolsWindow::OpenInNewTab(const GURL& url) {
                                        /*navigation_handle_callback=*/{})) {
 #if BUILDFLAG(IS_ANDROID)
     NOTIMPLEMENTED();
-#else
+#elif !BUILDFLAG(ENABLE_CEF)
+    // Remove default behavior when CEF handles the open via OnOpenURLFromTab.
+    // See CEF issue #3735.
     chrome::ScopedTabbedBrowserDisplayer displayer(profile_);
     chrome::AddSelectedTabWithURL(displayer.browser(), fixed_url,
                                   ui::PAGE_TRANSITION_LINK);
@@ -2021,12 +2031,27 @@ void DevToolsWindow::CreateDevToolsBrowser() {
       Browser::CreationStatus::kOk) {
     return;
   }
-  browser_ =
-      Browser::Create(Browser::CreateParams::CreateForDevTools(profile_));
-  browser_->GetTabStripModel()->AddWebContents(
-      OwnedMainWebContents::TakeWebContents(
-          std::move(owned_main_web_contents_)),
-      -1, ui::PAGE_TRANSITION_AUTO_TOPLEVEL, AddTabTypes::ADD_ACTIVE);
+
+  auto* inspected_web_contents = GetInspectedWebContents();
+  auto* opener = chrome::FindBrowserWithTab(inspected_web_contents);
+  auto devtools_contents = OwnedMainWebContents::TakeWebContents(
+      std::move(owned_main_web_contents_));
+
+#if BUILDFLAG(ENABLE_CEF)
+  // If a Browser is created, it will take ownership of |devtools_contents|.
+  browser_ = cef::BrowserDelegate::CreateDevToolsBrowser(
+      profile_, opener, inspected_web_contents, devtools_contents);
+#endif
+
+  if (!browser_) {
+    auto create_params = Browser::CreateParams::CreateForDevTools(profile_);
+    create_params.opener = opener;
+
+    browser_ = Browser::Create(std::move(create_params));
+    browser_->GetTabStripModel()->AddWebContents(
+        std::move(devtools_contents),
+        -1, ui::PAGE_TRANSITION_AUTO_TOPLEVEL, AddTabTypes::ADD_ACTIVE);
+  }
 #endif
   OverrideAndSyncDevToolsRendererPrefs();
 }

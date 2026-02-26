@@ -98,7 +98,9 @@ void ProfileMenuCoordinator::ShowWithPromoResults(
       BrowserElements::From(browser)->GetElement(kToolbarAvatarButtonElementId);
   std::unique_ptr<ProfileMenuViewBase> bubble;
   const bool is_incognito = GetProfile()->IsIncognitoProfile();
-  if (is_incognito) {
+  if (is_incognito ||
+         (GetProfile()->IsOffTheRecord() &&
+          GetProfile()->GetOTRProfileID().IsUniqueForCEF())) {
     bubble =
         std::make_unique<IncognitoMenuView>(avatar_toolbar_button, browser);
   } else {

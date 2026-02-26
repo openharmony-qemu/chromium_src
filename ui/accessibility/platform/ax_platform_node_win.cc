@@ -1644,6 +1644,10 @@ IFACEMETHODIMP AXPlatformNodeWin::accLocation(LONG* physical_pixel_left,
       var_id, physical_pixel_left, physical_pixel_top, width, height, target);
   AXPlatform::GetInstance().OnMinimalPropertiesUsed();
 
+  if (!target || target->IsDestroyed()) {
+    return S_FALSE;
+  }
+
   gfx::Rect bounds = target->GetDelegate()->GetBoundsRect(
       AXCoordinateSystem::kScreenPhysicalPixels,
       AXClippingBehavior::kUnclipped);

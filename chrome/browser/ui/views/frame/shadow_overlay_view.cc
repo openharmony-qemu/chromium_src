@@ -220,6 +220,9 @@ void ShadowOverlayView::VisibilityChanged(View* starting_from, bool visible) {
 }
 
 void ShadowOverlayView::AddedToWidget() {
+  if (!browser_view_->toolbar_height_side_panel()) {
+    return;
+  }
   side_panel_observer_.Observe(browser_view_->toolbar_height_side_panel());
   side_panel_observer_.GetSource()->animation_coordinator()->AddObserver(
       kShadowOverlayOpacityAnimation, this);

@@ -93,6 +93,15 @@ int BrowserViewLayoutDelegateImpl::GetTopInsetInBrowserView() const {
   return 0;
 }
 
+void BrowserViewLayoutDelegateImpl::UpdateDialogTopInsetInBrowserView(
+    int* dialog_top_y) const {
+#if BUILDFLAG(ENABLE_CEF)
+  if (auto cef_delegate = browser_view_->browser()->cef_delegate()) {
+    cef_delegate->UpdateDialogTopInset(dialog_top_y);
+  }
+#endif
+}
+
 void BrowserViewLayoutDelegateImpl::LayoutWebAppWindowTitle(
     const gfx::Rect& available_space,
     views::Label& window_title_label) const {

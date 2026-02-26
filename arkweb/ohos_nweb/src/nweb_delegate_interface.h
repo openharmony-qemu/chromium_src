@@ -48,6 +48,7 @@
 #endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
 #include "cef_delegate/nweb_custom_keyboard_handler_impl.h"
+#include "capi/nweb_context_menus_item.h"
 
 #if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
 #include "capi/nweb_screencapture_delegate_callback.h"
@@ -1003,6 +1004,9 @@ class NWebDelegateInterface
   virtual void ResourceResponseDelete(int nweb_response_key) = 0;
   virtual int32_t GetLastCommittedEntryPageTransition() = 0;
 #endif
+  virtual std::vector<WebExtensionContextMenusItem> GetContextMenuItem() = 0;
+  virtual void OnContextMenuSelected(int command_id) = 0;
+  virtual void OnContextMenuClosed() = 0;
 
 #if BUILDFLAG(ARKWEB_BGTASK)
   virtual void OnBrowserForeground() = 0;

@@ -49,6 +49,10 @@
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+#include "ohos_nweb/src/capi/nweb_context_menus_item.h"
+#endif // ARKWEB_DEVTOOLS
+
 #if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
 #include <memory>
 
@@ -974,6 +978,9 @@ void AbortDistill() override;
   void ResourceResponseDelete(int nweb_response_key) override;
   int32_t GetLastCommittedEntryPageTransition() override;
 #endif
+  std::vector<WebExtensionContextMenusItem> GetContextMenuItem() override;
+  void OnContextMenuSelected(int command_id) override;
+  void OnContextMenuClosed() override;
 
 #if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
 void SetFocusWebId(int32_t nweb_id) override;

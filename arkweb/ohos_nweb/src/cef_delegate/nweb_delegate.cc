@@ -81,6 +81,12 @@
 #include "nweb_find_delegate.h"
 #include "nweb_preference_delegate.h"
 #include "ui/events/gesture_detection/gesture_configuration.h"
+#include "cef/libcef/browser/alloy/alloy_browser_host_impl.h"
+#include "ohos_nweb/src/capi/nweb_context_menus_item.h"
+#include "cef/include/internal/cef_string_types.h"
+#include "cef/libcef/browser/menu_model_impl.h"
+#include "cef/libcef/browser/menu_manager.h"
+#include "cef/include/internal/cef_types.h"
 
 #if BUILDFLAG(ARKWEB_URL_TRUST_LIST)
 #include "cef/ohos_cef_ext/libcef/browser/ohos_safe_browsing/ohos_url_trust_list_interface.h"
@@ -99,7 +105,9 @@
 #endif
 
 #include "ohos_nweb/src/capi/nweb_devtools_message_handler.h"
+#include "ohos_nweb/src/capi/nweb_context_menus_item.h"
 #include "ohos_nweb/src/cef_delegate/nweb_devtools_message_handler_impl.h"
+#include "ohos_cef_ext/libcef/browser/arkweb_browser_host_ext.h"
 #if BUILDFLAG(ARKWEB_DEVTOOLS)
 #include "cef/include/cef_devtools_message_handler_delegate.h"
 #include "ohos_cef_ext/libcef/common/cef_open_devtools_ext_opt.h"
@@ -135,6 +143,82 @@
 
 namespace {
 static const float richtextDisplayRatio = 1.0;
+
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+struct CefOpenDevToolsExtOpt GetCefExtOpt(OpenDevToolsExtOpt& ext_opt) {
+  struct CefOpenDevToolsExtOpt cef_ext_opt;
+  cef_ext_opt.canDock = ext_opt.canDock;
+  cef_ext_opt.useNativeMenu = ext_opt.useNativeMenu;
+ 
+  return cef_ext_opt;
+}
+ 
+WebExtensionMenusType GetMenuTypeByCefMenuModel(CefMenuModel::MenuItemType type) {
+    switch (type) {
+      case CefMenuModel::MenuItemType::MENUITEMTYPE_COMMAND:
+        return WebExtensionMenusType::WEB_EXTENSION_MENUITEMTYPE_COMMAND;
+      case CefMenuModel::MenuItemType::MENUITEMTYPE_CHECK:
+        return WebExtensionMenusType::WEB_EXTENSION_MENUITEMTYPE_CHECK;
+      case CefMenuModel::MenuItemType::MENUITEMTYPE_RADIO:
+        return WebExtensionMenusType::WEB_EXTENSION_MENUITEMTYPE_RADIO;
+      case CefMenuModel::MenuItemType::MENUITEMTYPE_SEPARATOR:
+        return WebExtensionMenusType::WEB_EXTENSION_MENUITEMTYPE_SEPARATOR;
+      case CefMenuModel::MenuItemType::MENUITEMTYPE_SUBMENU:
+        return WebExtensionMenusType::WEB_EXTENSION_MENUITEMTYPE_SUBMENU;
+      default:
+        return WebExtensionMenusType::WEB_EXTENSION_MENUITEMTYPE_NONE;
+    }
+}
+ 
+void GetSubMenuItemByMenuModel(std::vector<WebExtensionContextMenusItem>& items,
+                               CefRefPtr<CefMenuModel> model,
+                               int parentId) {
+  size_t count = model->GetCount();
+  LOG(INFO) << "NWebDelegate::GetSubMenuItemByMenuModel model count: " << count;
+  for (size_t i = 0; i < count; ++i) {
+    WebExtensionContextMenusItem item;
+    
+    item.commandId = model->GetCommandIdAt(i);
+    item.groupId = model->GetGroupIdAt(i);
+    item.isSubMenu = model->IsSubMenu();
+    item.parentId = parentId;
+    item.enabled = model->IsEnabledAt(i);
+    item.visible = model->IsVisibleAt(i);
+    item.checked = model->IsCheckedAt(i);
+    item.label = model->GetLabelAt(i).ToString();
+    item.type = GetMenuTypeByCefMenuModel(model->GetTypeAt(i));
+ 
+    items.push_back(item);
+    if (model->GetSubMenuAt(i)) {
+      GetSubMenuItemByMenuModel(items, model->GetSubMenuAt(i), item.commandId);
+    }
+  }
+}
+ 
+void GetMenuItemByMenuModel(std::vector<WebExtensionContextMenusItem>& items, CefRefPtr<CefMenuModelImpl> model) {
+  size_t count = model->GetCount();
+  LOG(INFO) << "NWebDelegate::GetMenuItemByMenuModel model count: " << count;
+  for (size_t i = 0; i < count; ++i) {
+    WebExtensionContextMenusItem item;
+    
+    item.commandId = model->GetCommandIdAt(i);
+    item.groupId = model->GetGroupIdAt(i);
+    item.parentId = item.groupId;
+    item.isSubMenu = model->IsSubMenu();
+    item.enabled = model->IsEnabledAt(i);
+    item.visible = model->IsVisibleAt(i);
+    item.checked = model->IsCheckedAt(i);
+    item.label = model->GetLabelAt(i).ToString();
+    item.type = GetMenuTypeByCefMenuModel(model->GetTypeAt(i));
+ 
+    items.push_back(item);
+    if (model->GetSubMenuAt(i)) {
+      GetSubMenuItemByMenuModel(items, model->GetSubMenuAt(i), item.commandId);
+    }
+    
+  }
+}
+#endif // BUILDFLAG(ARKWEB_DEVTOOLS)
 }
 
 namespace OHOS::NWeb {
@@ -6218,7 +6302,7 @@ void NWebDelegate::OpenDevtoolsWithByPb(
   }
 
   CefPoint inspect_element_at(param->point.x, param->point.y);
-  CefOpenDevToolsExtOpt cef_ext_opt(ext_opt.canDock);
+  struct CefOpenDevToolsExtOpt cef_ext_opt = GetCefExtOpt(ext_opt);
   GetBrowser()->GetHost()->ShowDevToolsWithByPb(
       devtools_delegate->GetBrowser()->GetHost(),
       devtools_message_handler, inspect_element_at, cef_ext_opt);
@@ -6969,5 +7053,114 @@ void NWebDelegate::ReloadIgnoreCache() {
   }
 
   GetBrowser()->ReloadIgnoreCache();
+}
+
+std::vector<WebExtensionContextMenusItem> NWebDelegate::GetContextMenuItem() {
+  LOG(INFO) << "NWebDelegate::GetContextMenuItem";
+  std::vector<WebExtensionContextMenusItem> items;
+  DCHECK(CEF_CURRENTLY_ON_UIT());
+  if (!CEF_CURRENTLY_ON_UIT()) {
+    LOG(ERROR) << "NWebDelegate::GetContextMenuItem is not UI.";
+    return items;
+  }
+  if (GetBrowser().get() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "SetFocusWebId can not get browser";
+    return items;
+  }
+ 
+  auto* arkweb_host_ext = static_cast<ArkWebBrowserHostExtImpl*>(GetBrowser()->GetHost().get());
+  if (!arkweb_host_ext) {
+    LOG(ERROR) << "arkweb_host_ext is nullptr";
+    return items;
+  }
+  auto alloy_host = arkweb_host_ext->AsAlloyBrowserHostImpl();
+  if (!alloy_host) {
+    LOG(ERROR) << "alloy_host is nullptr";
+    return items;
+  }
+ 
+  CefMenuManager* menu_manager = alloy_host->GetMenuManager();
+  if (!menu_manager) {
+    LOG(ERROR) << "menu_manager is nullptr";
+    return items;
+  }
+ 
+  CefRefPtr<CefMenuModelImpl> model = menu_manager->GetContextMenuModel();
+  if (!model) {
+    return items;
+  }
+ 
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  GetMenuItemByMenuModel(items, model);
+ 
+#endif // BUILDFLAG(ARKWEB_DEVTOOLS)
+  return items;
+}
+ 
+void NWebDelegate::OnContextMenuSelected(int command_id) {
+  LOG(INFO) << "NWebDelegate::OnContextMenuSelected command_id: " << command_id;
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  DCHECK(CEF_CURRENTLY_ON_UIT());
+  if (!CEF_CURRENTLY_ON_UIT()) {
+    LOG(ERROR) << "NWebDelegate::OnContextMenuSelected is not UI.";
+    return;
+  }
+  if (GetBrowser().get() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "SetFocusWebId can not get browser";
+    return;
+  }
+ 
+  auto* arkweb_host_ext = static_cast<ArkWebBrowserHostExtImpl*>(GetBrowser()->GetHost().get());
+  if (!arkweb_host_ext) {
+    LOG(ERROR) << "arkweb_host_ext is nullptr";
+    return;
+  }
+  auto alloy_host = arkweb_host_ext->AsAlloyBrowserHostImpl();
+  if (!alloy_host) {
+    LOG(ERROR) << "alloy_host is nullptr";
+    return;
+  }
+ 
+  CefMenuManager* menu_manager = alloy_host->GetMenuManager();
+  if (!menu_manager) {
+    LOG(ERROR) << "menu_manager is nullptr";
+    return;
+  }
+  menu_manager->onConTextMenuSelected(command_id);
+  
+#endif // BUILDFLAG(ARKWEB_DEVTOOLS)
+}
+ 
+void NWebDelegate::OnContextMenuClosed() {
+  LOG(INFO) << "NWebDelegate::OnContextMenuClosed";
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  DCHECK(CEF_CURRENTLY_ON_UIT());
+  if (!CEF_CURRENTLY_ON_UIT()) {
+    LOG(ERROR) << "NWebDelegate::OnContextMenuClosed is not UI.";
+    return;
+  }
+  if (GetBrowser().get() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "SetFocusWebId can not get browser";
+    return;
+  }
+ 
+  auto* arkweb_host_ext = static_cast<ArkWebBrowserHostExtImpl*>(GetBrowser()->GetHost().get());
+  if (!arkweb_host_ext) {
+    LOG(ERROR) << "arkweb_host_ext is nullptr";
+    return;
+  }
+  auto alloy_host = arkweb_host_ext->AsAlloyBrowserHostImpl();
+  if (!alloy_host) {
+    LOG(ERROR) << "alloy_host is nullptr";
+    return;
+  }
+ 
+  CefMenuManager* menu_manager = alloy_host->GetMenuManager();
+  if (!menu_manager) {
+    LOG(ERROR) << "menu_manager is nullptr";
+    return;
+  }
+  menu_manager->onContextMenuClosed();
+#endif // BUILDFLAG(ARKWEB_DEVTOOLS)
 }
 }  // namespace OHOS::NWeb

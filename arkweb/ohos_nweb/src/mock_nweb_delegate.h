@@ -1186,6 +1186,18 @@ class MockNWebDelegate : public NWebDelegateInterface {
                std::unique_ptr<OpenDevToolsParam> param,
                OpenDevToolsExtOpt& ext_opt),
               (override));
+  MOCK_METHOD(std::vector<WebExtensionContextMenusItem>,
+              GetContextMenuItem,
+              (),
+              (override));
+  MOCK_METHOD(void,
+              OnContextMenuSelected,
+              (int command_id),
+              (override));
+  MOCK_METHOD(void,
+              OnContextMenuClosed,
+              (),
+              (override));
   MOCK_METHOD(void, CloseDevtools, (), (override));
 
 #if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)

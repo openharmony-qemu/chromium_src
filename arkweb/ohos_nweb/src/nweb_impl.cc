@@ -70,6 +70,7 @@
 #include "nweb_hit_test_result_impl.h"
 #include "ohos_adapter_helper.h"
 #include "res_sched_client_adapter.h"
+#include "ohos_nweb/src/capi/nweb_context_menus_item.h"
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
 #include "arkweb/chromium_ext/ui/base/clipboard/ohos/clipboard_ohos.h"
 #endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
@@ -4303,6 +4304,33 @@ void NWebImpl::DisableAutoResize() {
     return;
   }
   nweb_delegate_->DisableViewAutoResize();
+}
+
+std::vector<WebExtensionContextMenusItem> NWebImpl::GetContextMenuItem() {
+  LOG(INFO) << "NWebImpl::GetContextMenuItem.";
+  if (!nweb_delegate_) {
+    WVLOG_E("GetContextMenuItem nweb_delegate_ is null");
+    return std::vector<WebExtensionContextMenusItem>();
+  }
+  return nweb_delegate_->GetContextMenuItem();
+}
+ 
+void NWebImpl::OnContextMenuSelected(int command_id) {
+  LOG(INFO) << "NWebImpl::OnContextMenuSelected.";
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("OnContextMenuSelected nweb_delegate_ is null");
+    return;
+  }
+  nweb_delegate_->OnContextMenuSelected(command_id);
+}
+ 
+void NWebImpl::OnContextMenuClosed() {
+  LOG(INFO) << "NWebImpl::OnContextMenuClosed.";
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("OnContextMenuClosed nweb_delegate_ is null");
+    return;
+  }
+  nweb_delegate_->OnContextMenuClosed();
 }
 #endif  // BUILDFLAG(ARKWEB_NWEB_EX)
 

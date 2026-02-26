@@ -195,6 +195,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void SetPopupWindow(cef_native_window_t) override {}
   void CreateToPDF(const CefPdfPrintSettings&, CefRefPtr<CefPdfValueCallback>) override {}
   void EnableVideoAssistant(bool) override {}
+  void EnableVideoAssistantAVCast(bool) override {}
   void ExecuteVideoAssistantFunction(const CefString&) override {}
   bool IsIframe() override { return false; }
   void ReloadFocusedFrame() override {}

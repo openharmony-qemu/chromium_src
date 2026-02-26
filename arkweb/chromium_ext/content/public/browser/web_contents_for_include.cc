@@ -120,6 +120,7 @@ virtual void OnShareFile(const std::string& filePath,
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 virtual void EnableVideoAssistant(bool enable) = 0;
+virtual void EnableVideoAssistantAVCast(bool enable) = 0;
 virtual void ExecuteVideoAssistantFunction(const std::string& cmdId) = 0;
 virtual void CustomWebMediaPlayer(bool enable) = 0;
 #endif  // ARKWEB_VIDEO_ASSISTANT

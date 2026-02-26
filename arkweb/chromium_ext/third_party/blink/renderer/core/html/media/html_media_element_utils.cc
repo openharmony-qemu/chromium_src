@@ -64,6 +64,33 @@ WebString HTMLMediaElementUtils::GetTitle() const {
   }
   return WebString();
 }
+
+WebString HTMLMediaElementUtils::GetIconUrl() {
+  if (!htmlMediaElement_) {
+    LOG(ERROR) << "GetIconUrl, htmlMediaElement_ is nullptr";
+    return WebString();
+  }
+  Document* doc = nullptr;
+  if (htmlMediaElement_->GetDocument().GetPage() && htmlMediaElement_->GetDocument().GetPage()->MainFrame()) {
+    Frame* main_frame = htmlMediaElement_->GetDocument().GetPage()->MainFrame();
+    if (main_frame && main_frame->IsLocalFrame()) {
+      doc = DynamicTo<LocalFrame>(main_frame)->GetDocument();
+    }
+  }
+  if (!doc) {
+    LOG(ERROR) << "GetIconUrl, main document doc is nullptr";
+    return WebString();
+  }
+  Vector<IconURL> icon_urls = doc->IconURLs(1 << static_cast<int>(mojom::blink::FaviconIconType::kFavicon));
+#if !defined(COMPONENT_BUILD)
+  if (!icon_urls.empty() && !icon_urls[0].icon_url_.IsEmpty()) {
+    return htmlMediaElement_->GetUrlString(icon_urls[0].icon_url_);
+  } else if (doc->Url().ProtocolIsInHTTPFamily()) {
+    return htmlMediaElement_->GetUrlString(IconURL::DefaultFavicon(doc->Url()).icon_url_);
+  }
+#endif // !defined(COMPONENT_BUILD)
+  return WebString();
+}
 #endif // ARKWEB_MEDIA || ARKWEB_VIDEO_ASSISTANT()
 // LCOV_EXCL_STOP
 
@@ -296,6 +323,7 @@ bool HTMLMediaElementUtils::IsMediaPlayerShown() const {
 media::mojom::blink::VideoAttributesForVASTPtr HTMLMediaElementUtils::CollectVideoAttributesForVAST() {
   auto attributes = media::mojom::blink::VideoAttributesForVAST::New();
   attributes->show_fullscreen_button = true;
+  attributes->show_cast_button = true;
   attributes->show_download_button = !htmlMediaElement_->controls_list_->ShouldHideDownload();
   attributes->show_playback_rate_menu = true;
   attributes->current_playback_rate = htmlMediaElement_->playbackRate();
@@ -367,6 +395,23 @@ void HTMLMediaElementUtils::EnterFullScreenOverlay() {
     }
     for (auto& observer : htmlMediaElement_->media_player_observer_remote_set_->Value()) {
       observer->OnFullScreenOverlayEnter(attributes.Clone());
+    }
+  }
+}
+
+void HTMLMediaElementUtils::RequestAVCastStarted() {
+  if (!htmlMediaElement_->IsCustomMediaPlayerEnabled()) {
+    return;
+  }
+  LOG(INFO) << "HTMLMediaElementUtils::RequestAVCastStarted";
+  if (htmlMediaElement_->IsHTMLVideoElement()) {
+    auto attributes = htmlMediaElement_->CollectMediaInfoAttributesForVAST();
+    if (!attributes) {
+      LOG(INFO) << "RequestAVCastStarted, failed, no player";
+      return;
+    }
+    for (auto& observer : htmlMediaElement_->media_player_observer_remote_set_->Value()) {
+      observer->OnAVCastStarted(attributes.Clone());
     }
   }
 }

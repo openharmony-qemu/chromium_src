@@ -5454,6 +5454,20 @@ void NWebDelegate::EnableVideoAssistant(bool enable) {
   GetBrowser()->GetHost()->EnableVideoAssistant(enable);
 }
 
+void NWebDelegate::EnableVideoAssistantAVCast(bool enable) {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    if (!handler_delegate_) {
+      LOG(ERROR)
+          << "failed to enable video assistant avcast, handler delegate is null";
+      return;
+    }
+    handler_delegate_->EnableVideoAssistantAVCast(enable);
+    return;
+  }
+
+  GetBrowser()->GetHost()->EnableVideoAssistantAVCast(enable);
+}
+
 void NWebDelegate::ExecuteVideoAssistantFunction(const std::string& cmd_id) {
   if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
     LOG(ERROR) << "failed to get host when execute video assistant function";

@@ -622,6 +622,8 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
 
   void EnableVideoAssistant(bool enable) override { return false; }
 
+  void EnableVideoAssistantAVCast(bool enable) override {}
+
   void ExecuteVideoAssistantFunction(const CefString& cmdId) override {}
 
   bool IsIframe() override { return false; }

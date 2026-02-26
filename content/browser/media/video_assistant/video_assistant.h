@@ -29,9 +29,11 @@ class VideoAssistant {
   virtual ~VideoAssistant();
 
   virtual void EnableVideoAssistant(bool enable);
+  virtual void EnableVideoAssistantAVCast(bool enable);
   virtual void ExecuteVideoAssistantFunction(const std::string& cmd_id);
 
   virtual bool Enabled();
+  virtual bool AVCastEnabled();
   virtual void DidFinishNavigation();
   virtual void UpdateVideoAssistantConfig(
       const media::mojom::VideoAssistantConfigPtr& config);

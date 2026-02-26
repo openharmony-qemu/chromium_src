@@ -404,11 +404,23 @@ HTMLMediaElement::CollectMediaInfoAttributesForVAST() {
   mediaInfoAttr->show_download_button = !controls_list_->ShouldHideDownload();
   mediaInfoAttr->supports_save = SupportsSave();
   mediaInfoAttr->fullscreen_overlay = true;
+  mediaInfoAttr->icon_url = html_media_element_utils_.GetIconUrl();
+  mediaInfoAttr->poster_url = GetUrlString(PosterImageURL());
+  mediaInfoAttr->video_url = GetUrlString(currentSrc());
 
   if (GetWebMediaPlayer() && !GetWebMediaPlayer()->SupportVideoSurface()) {
     mediaInfoAttr->fullscreen_overlay = false;
   }
+
   return mediaInfoAttr;
+}
+
+WebString HTMLMediaElement::GetUrlString(const KURL& url) {
+  auto url_assistant = url.GetString();
+  if (url_assistant.IsNull() || url_assistant.empty()) {
+    return WTF::String::FromUTF8(WebString().Utf8());
+  }
+  return WTF::String::FromUTF8(url_assistant.Utf8());
 }
 
 void HTMLMediaElement::OnVideoAssistantConfigReceived(
@@ -477,6 +489,12 @@ void HTMLMediaElement::GetVolume(GetVolumeCallback callback)
 {
   LOG(INFO) << "HTMLMediaElement::GetVolume volume=" << EffectiveMediaVolume();
   std::move(callback).Run(EffectiveMediaVolume());
+}
+
+void HTMLMediaElement::RequestAVCastStarted()
+{
+  LOG(INFO) << "HTMLMediaElement::RequestAVCastStarted";
+  html_media_element_utils_.RequestAVCastStarted();
 }
 
 void HTMLMediaElement::RequestExitFullscreenIfNeeded() {

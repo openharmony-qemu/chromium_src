@@ -4315,6 +4315,14 @@ void NWebImpl::EnableVideoAssistant(bool enable) {
   nweb_delegate_->EnableVideoAssistant(enable);
 }
 
+void NWebImpl::EnableVideoAssistantAVCast(bool enable) {
+  if (nweb_delegate_ == nullptr) {
+    LOG(WARNING) << "nweb delegate is nullptr when enable video assistant avcast";
+    return;
+  }
+  nweb_delegate_->EnableVideoAssistantAVCast(enable);
+}
+
 void NWebImpl::ExecuteVideoAssistantFunction(const std::string& cmd_id) {
   if (nweb_delegate_ == nullptr) {
     LOG(WARNING)

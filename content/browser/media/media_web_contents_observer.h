@@ -191,6 +191,7 @@ class CONTENT_EXPORT MediaWebContentsObserver
   void HidePlaybackSpeedList(const MediaPlayerId& player_id);
   void SetVolume(double volume, const MediaPlayerId& player_id);
   double GetVolume(const MediaPlayerId& player_id);
+  void RequestAVCastStarted(bool enable, const MediaPlayerId& player_id);
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
 #if BUILDFLAG(ARKWEB_PIP)
@@ -306,6 +307,8 @@ class CONTENT_EXPORT MediaWebContentsObserver
         media::mojom::VideoAttributesForVASTPtr video_attributes) override;
     void OnVideoDestroyed() override;
     void OnFullScreenOverlayEnter(
+        media::mojom::MediaInfoForVASTPtr media_info) override;
+    void OnAVCastStarted(
         media::mojom::MediaInfoForVASTPtr media_info) override;
 
     void UpdatePlayStateOverlay(uint32_t playState) override;

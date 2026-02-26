@@ -20,6 +20,7 @@ enum VideoAssistantDownloadButton {
 struct VideoAssistantConfig {
   bool video_assistant;
   bool playback_rate;
+  bool avcast_button;
   VideoAssistantDownloadButton download_button;
 };
  
@@ -34,6 +35,7 @@ struct VideoAttributesForVAST {
   bool supports_save;
   double duration;
   bool visible;
+  bool show_cast_button;
 };
 
 [EnableIf=arkweb_video_assistant]
@@ -53,6 +55,10 @@ struct MediaInfoForVAST {
   bool show_download_button;
   bool supports_save;
   bool fullscreen_overlay;
+
+  string poster_url;
+  string icon_url;
+  string video_url;
 };
 
 // Implemented by HTMLMediaElement in the renderer process to allow the
@@ -119,6 +125,9 @@ interface MediaPlayer {
 
   [EnableIf=arkweb_custom_video_player]
   RequestExitFullscreen();
+
+  [EnableIf=arkweb_video_assistant]
+  RequestAVCastStarted();
 
   [EnableIf=arkweb_video_assistant]
   SetPlaybackRate(double playback_rate);
@@ -280,6 +289,9 @@ interface MediaPlayerObserver {
 
   [EnableIf=arkweb_video_assistant]
   OnFullScreenOverlayEnter(MediaInfoForVAST media_info);
+
+  [EnableIf=arkweb_video_assistant]
+  OnAVCastStarted(MediaInfoForVAST media_info);
 
   [EnableIf=arkweb_video_assistant]
   UpdatePlayStateOverlay(uint32 playState);

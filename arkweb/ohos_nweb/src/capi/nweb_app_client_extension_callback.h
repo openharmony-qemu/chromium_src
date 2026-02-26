@@ -116,6 +116,9 @@ struct NWebAppClientExtensionCallback {
   NWebMediaPlayerListener* (*OnFullScreenOverlayEnter)(int32_t nweb_id,
       NWebMediaPlayerController* media_player_controller,
       const char* media_info);
+  NWebMediaPlayerListener* (*OnAVCastStarted)(int32_t nweb_id,
+      NWebMediaPlayerController* media_player_controller,
+      const char* media_info);
 #endif // ARKWEB_VIDEO_ASSISTANT
 
   void (*OnShowToast)(int32_t nweb_id, double duration, const char* toast);

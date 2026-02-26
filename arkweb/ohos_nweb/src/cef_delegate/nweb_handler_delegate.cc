@@ -1326,6 +1326,12 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
             *video_assistant_enabled_);
       }
     }
+    if (video_assistant_avcast_enabled_) {
+      if (main_browser_ && main_browser_->GetHost()) {
+        main_browser_->GetHost()->EnableVideoAssistantAVCast(
+            *video_assistant_avcast_enabled_);
+      }
+    }
     if (custom_web_media_player_enabled_) {
       if (main_browser_ && main_browser_->GetHost()) {
         main_browser_->GetHost()->CustomWebMediaPlayer(
@@ -1381,6 +1387,11 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
   if (video_assistant_enabled_) {
     if (main_browser_ && main_browser_->GetHost()) {
       main_browser_->GetHost()->EnableVideoAssistant(*video_assistant_enabled_);
+    }
+  }
+  if (video_assistant_avcast_enabled_) {
+    if (main_browser_ && main_browser_->GetHost()) {
+      main_browser_->GetHost()->EnableVideoAssistantAVCast(*video_assistant_avcast_enabled_);
     }
   }
   if (custom_web_media_player_enabled_) {
@@ -5328,6 +5339,48 @@ NWebHandlerDelegate::OnFullScreenOverlayEnter(
       std::unique_ptr<NWebMediaPlayerListener>(listener));
 }
 
+CefOwnPtr<CefMediaPlayerListenerForVAST>
+NWebHandlerDelegate::OnAVCastStarted(
+    CefOwnPtr<CefMediaPlayerController> media_player_controller,
+    const std::string& extra_info) {
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  if (IsNativeApiEnable()) {
+    nweb_media_player_controller_ =
+        std::make_unique<NWebMediaPlayerControllerImpl>(
+            std::move(media_player_controller));
+
+    auto listener =
+        dispatcher_.OnAVCastStarted(nullptr, extra_info.c_str());
+    if (!listener) {
+      return nullptr;
+    }
+    return std::make_unique<NWebMediaPlayerListenerForVAST>(
+        std::unique_ptr<NWebMediaPlayerCallback>(listener));
+  }
+#endif  // ARKWEB_NWEB_EX
+
+  if (!web_app_client_extension_listener_) {
+    LOG(WARNING) << "application extension listener is nullptr";
+    return nullptr;
+  }
+
+  if (!web_app_client_extension_listener_->OnAVCastStarted) {
+    LOG(WARNING) << "OnAVCastStarted is nullptr";
+    return nullptr;
+  }
+  auto controller = std::make_unique<NWebMediaPlayerControllerImpl>(
+      std::move(media_player_controller));
+
+  auto listener = web_app_client_extension_listener_->OnAVCastStarted(
+      web_app_client_extension_listener_->nweb_id,
+      controller.release(), extra_info.c_str());
+  if (!listener) {
+    return nullptr;
+  }
+  return std::make_unique<NWebMediaPlayerListenerForVAST>(
+      std::unique_ptr<NWebMediaPlayerListener>(listener));
+}
+
 void NWebHandlerDelegate::WebMediaPlayerControllerPlay() {
   (nweb_media_player_controller_.get()
        ->*(nweb_media_player_controller_->play))();
@@ -5559,6 +5612,11 @@ void NWebHandlerDelegate::Discard()
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 void NWebHandlerDelegate::EnableVideoAssistant(bool enable) {
   video_assistant_enabled_ = enable;
+}
+
+void NWebHandlerDelegate::EnableVideoAssistantAVCast(bool enable) {
+  LOG(INFO) << "NWebHandlerDelegate::EnableVideoAssistantAVCast enter, enable: " << enable;
+  video_assistant_avcast_enabled_ = enable;
 }
 #endif  // ARKWEB_VIDEO_ASSISTANT
 

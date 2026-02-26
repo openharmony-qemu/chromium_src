@@ -30,6 +30,7 @@ class HTMLMediaElement;
  public:
     enum class PlayState { kPause = 0, kPlay, kWaiting, kPlaying };
     WebString GetTitle() const;
+    WebString GetIconUrl();
     DISALLOW_NEW();
     void Trace(Visitor* visitor) const;
     Member<HTMLMediaElement> htmlMediaElement_ = nullptr;
@@ -104,6 +105,7 @@ class HTMLMediaElement;
   void UpdateVideoAssistantAttributes();
   void NotifyVideoVisible(bool visible);
   void EnterFullScreenOverlay();
+  void RequestAVCastStarted();
   void UpdatePlayStateOverlay(PlayState playState);
   void MutedChangedOverlay(bool muted);
   void PlaybackRateChangedOverlay(double playback_rate);

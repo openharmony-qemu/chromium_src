@@ -694,10 +694,28 @@ bool MockOhSensorSupport::enableDestroySubscriptionAttribute = false;
 bool MockOhSensorSupport::enableEventGetType = false;
 bool MockOhSensorSupport::enableEventGetData = false;
 bool MockOhSensorSupport::enableEventGetTimestamp = false;
+bool MockVibratorSupport::enablePlayVibration = false;
+bool MockVibratorSupport::enableCancel = false;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+int32_t __wrap_OH_Vibrator_PlayVibration(int32_t duration, Vibrator_Attribute attribute) {
+    if (MockVibratorSupport::enablePlayVibration) {
+        return MockVibratorSupport::getInstance().OH_Vibrator_PlayVibration(duration, attribute);
+    } else {
+        return __real_OH_Vibrator_PlayVibration(duration, attribute);
+    }
+}
+
+int32_t __wrap_OH_Vibrator_Cancel(void) {
+    if (MockVibratorSupport::enableCancel) {
+        return MockVibratorSupport::getInstance().OH_Vibrator_Cancel();
+    } else {
+        return __real_OH_Vibrator_Cancel();
+    }
+}
 
 Sensor_Result __wrap_OH_Sensor_GetInfos(Sensor_Info** infos, uint32_t* count) {
     if (MockOhSensorSupport::enableGetInfos) {

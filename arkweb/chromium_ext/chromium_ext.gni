@@ -954,7 +954,7 @@ arkweb_third_party_blink_renderer_core_unittest_sources = [
   "//arkweb/chromium_ext/third_party/blink/renderer/modules/media_controls/media_controls_impl_utils_unittest.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/core/editing/commands/document_exec_command_for_include_unittest.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/core/html/media/media_remoting_interstitial_listener_unittest.cc",
- 	"//arkweb/chromium_ext/third_party/blink/renderer/core/html/media/media_remoting_interstitial_include_unittest.cc",
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/html/media/media_remoting_interstitial_include_unittest.cc",
 ]
 
 arkweb_third_party_blink_renderer_platform_unittest_sources = [

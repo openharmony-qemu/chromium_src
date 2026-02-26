@@ -4305,6 +4305,33 @@ void NWebImpl::DisableAutoResize() {
   }
   nweb_delegate_->DisableViewAutoResize();
 }
+
+std::vector<WebExtensionContextMenusItem> NWebImpl::GetContextMenuItem() {
+  LOG(INFO) << "NWebImpl::GetContextMenuItem.";
+  if (!nweb_delegate_) {
+    WVLOG_E("GetContextMenuItem nweb_delegate_ is null");
+    return std::vector<WebExtensionContextMenusItem>();
+  }
+  return nweb_delegate_->GetContextMenuItem();
+}
+ 
+void NWebImpl::OnContextMenuSelected(int command_id) {
+  LOG(INFO) << "NWebImpl::OnContextMenuSelected.";
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("OnContextMenuSelected nweb_delegate_ is null");
+    return;
+  }
+  nweb_delegate_->OnContextMenuSelected(command_id);
+}
+ 
+void NWebImpl::OnContextMenuClosed() {
+  LOG(INFO) << "NWebImpl::OnContextMenuClosed.";
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("OnContextMenuClosed nweb_delegate_ is null");
+    return;
+  }
+  nweb_delegate_->OnContextMenuClosed();
+}
 #endif  // BUILDFLAG(ARKWEB_NWEB_EX)
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
@@ -8056,33 +8083,6 @@ int32_t NWebImpl::GetLastCommittedEntryPageTransition() {
   return nweb_delegate_->GetLastCommittedEntryPageTransition();
 }
 #endif
-
-std::vector<WebExtensionContextMenusItem> NWebImpl::GetContextMenuItem() {
-  LOG(INFO) << "NWebImpl::GetContextMenuItem.";
-  if (!nweb_delegate_) {
-    WVLOG_E("GetContextMenuItem nweb_delegate_ is null");
-    return std::vector<WebExtensionContextMenusItem>();
-  }
-  return nweb_delegate_->GetContextMenuItem();
-}
- 
-void NWebImpl::OnContextMenuSelected(int command_id) {
-  LOG(INFO) << "NWebImpl::OnContextMenuSelected.";
-  if (nweb_delegate_ == nullptr) {
-    WVLOG_E("OnContextMenuSelected nweb_delegate_ is null");
-    return;
-  }
-  nweb_delegate_->OnContextMenuSelected(command_id);
-}
- 
-void NWebImpl::OnContextMenuClosed() {
-  LOG(INFO) << "NWebImpl::OnContextMenuClosed.";
-  if (nweb_delegate_ == nullptr) {
-    WVLOG_E("OnContextMenuClosed nweb_delegate_ is null");
-    return;
-  }
-  nweb_delegate_->OnContextMenuClosed();
-}
 
 #if BUILDFLAG(ARKWEB_COOKIE)
 void NWebImpl::LibraryLoaded(std::shared_ptr<NWebEngineInitArgs> init_args,

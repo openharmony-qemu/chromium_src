@@ -707,6 +707,9 @@ class NWebImpl : public NWeb {
       int32_t min_width, int32_t min_height, int32_t max_width, int32_t max_height);
   void DisableAutoResize();
   std::shared_ptr<HitTestResult> GetLastHitTestResultForBrowser();
+  std::vector<WebExtensionContextMenusItem> GetContextMenuItem();
+  void OnContextMenuSelected(int command_id);
+  void OnContextMenuClosed();
 #endif
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
@@ -1300,9 +1303,6 @@ class NWebImpl : public NWeb {
   void ResourceRequestDelete(int nweb_request_key);
   void ResourceResponseDelete(int nweb_response_key);
   int32_t GetLastCommittedEntryPageTransition();
-  std::vector<WebExtensionContextMenusItem> GetContextMenuItem();
-  void OnContextMenuSelected(int command_id);
-  void OnContextMenuClosed();
 #endif
 
  private:

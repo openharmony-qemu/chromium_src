@@ -24,11 +24,11 @@ import subprocess
 import re
 
 
-def load_blacklist():
-    blacklist_path = os.path.join(os.path.dirname(__file__), 'symbol_blacklist.txt')
+def load_removelist():
+    removelist_path = os.path.join(os.path.dirname(__file__), 'symbol_removelist.txt')
     patterns = []
-    if os.path.exists(blacklist_path):
-        with open(blacklist_path, 'r', encoding='utf-8') as f:
+    if os.path.exists(removelist_path):
+        with open(removelist_path, 'r', encoding='utf-8') as f:
             for line in f:
                 line = line.strip()
                 if line and not line.startswith('#'):
@@ -101,13 +101,13 @@ def create_mini_debug_info(binary_path, stripped_binary_path, root_path, clang_b
     with os.fdopen(os.open(tmp_file1, os.O_RDWR | os.O_CREAT), 'r', encoding='utf-8') as output_file:
         lines = output_file.readlines()
         sort_lines = []
-        blacklist_patterns = load_blacklist()
+        removelist_patterns = load_removelist()
         for line in lines:
             columns = line.strip().split()
             if len(columns) > 2 and ('t' in columns[1] or 'T' in columns[1] or 'd' in columns[1]):
                 symbol_name = columns[0]
-                # Filter by blacklist patterns
-                if any(pattern.search(symbol_name) for pattern in blacklist_patterns):
+                # Filter by removelist patterns
+                if any(pattern.search(symbol_name) for pattern in removelist_patterns):
                     continue
                 sort_lines.append(symbol_name)
 

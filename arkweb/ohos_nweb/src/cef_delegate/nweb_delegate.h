@@ -996,14 +996,6 @@ void SetFocusWebId(int32_t nweb_id) override;
 
  private:
   FRIEND_TEST_ALL_PREFIXES(NWebDelegateTest, RegisterOnLoadStartedCbForHighlightContent_001);
-  FRIEND_TEST_ALL_PREFIXES(NWebDelegateTest, GetContextMenuItem001);
-  FRIEND_TEST_ALL_PREFIXES(NWebDelegateTest, GetContextMenuItem002);
-  FRIEND_TEST_ALL_PREFIXES(NWebDelegateTest, GetContextMenuItem003);
-  FRIEND_TEST_ALL_PREFIXES(NWebDelegateTest, GetContextMenuItem004);
-  FRIEND_TEST_ALL_PREFIXES(NWebDelegateTest, GetContextMenuItem005);
-  FRIEND_TEST_ALL_PREFIXES(NWebDelegateTest, GetContextMenuItem006);
-  FRIEND_TEST_ALL_PREFIXES(NWebDelegateTest, GetContextMenuItem007);
-  FRIEND_TEST_ALL_PREFIXES(NWebDelegateTest, GetContextMenuItem008);
   void RunMessageLoop();
 
   void InitializeCef(std::string url,

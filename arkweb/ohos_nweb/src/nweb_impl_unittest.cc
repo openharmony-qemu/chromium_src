@@ -8755,7 +8755,7 @@ TEST_F(NWebImplTest, ReloadIgnoreCache002) {
   EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
 }
 
-#if BUILDFLAG(ARKWEB_DEVTOOLS)
+#if BUILDFLAG(ARKWEB_NWEB_EX)
 TEST_F(NWebImplTest, OpenDevtoolsByPb001) {
   std::unique_ptr<OpenDevToolsParam> param = std::make_unique<OpenDevToolsParam>();
   param->nweb_id = 1;
@@ -8833,6 +8833,6 @@ TEST_F(NWebImplTest, OnContextMenuClosed002) {
   nweb_impl_->OnContextMenuClosed();
   EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
 }
-#endif // BUILDFLAG(ARKWEB_DEVTOOLS)
+#endif // BUILDFLAG(ARKWEB_NWEB_EX)
 }  // namespace OHOS::NWeb
                           

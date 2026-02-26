@@ -859,6 +859,10 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void WebExtensionContextMenuReloadFocusedFrame() override;
 #endif
 
+#if BUILDFLAG(ARKWEB_SAVE_PAGE)
+  bool SavePage(int32_t type, const std::string& filePath) override;
+#endif // ARKWEB_SAVE_PAGE
+
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   void WebExtensionContextMenuGetFocusedFrameInfo(
       int32_t& frame_id,

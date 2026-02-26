@@ -20,7 +20,7 @@
 #include <vector>
 
 #include "arkweb/build/features/features.h"
-#include "build/build_config.h"
+#include "arkweb/ohos_nweb/src/capi/nweb_prefetch_options.h"
 #include "cef_browser.h"
 #include "include/cef_base.h"
 #include "include/cef_browser.h"
@@ -29,13 +29,9 @@
 #include "nweb_js_dialog_result_impl.h"
 #include "ohos_nweb/include/nweb_errors.h"
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
-
 #define private public
 #include "nweb_handler_delegate.h"
-
+#include "arkweb/ohos_nweb/src/nweb_delegate_interface.h"
 using namespace testing;
 using namespace OHOS::NWeb;
 
@@ -112,10 +108,7 @@ class MockFileSelectorCallbackImpl : public NWebStringVectorValueCallback {
 class MockNWebHandler : public NWebHandler {
  public:
   MOCK_METHOD1(OnPreKeyEvent, bool(std::shared_ptr<NWebKeyEvent>));
-  MOCK_METHOD(bool,
-              OnUnProcessedKeyEvent,
-              (std::shared_ptr<NWebKeyEvent>),
-              (override));
+  MOCK_METHOD1(OnUnProcessedKeyEvent, bool(std::shared_ptr<NWebKeyEvent>));
   MOCK_METHOD1(OnFocus, bool(NWebFocusSource source));
   MOCK_METHOD3(OnAlertDialogByJS,
                bool(const std::string&,
@@ -139,12 +132,13 @@ class MockNWebHandler : public NWebHandler {
   MOCK_METHOD2(OnFileSelectorShow,
                bool(std::shared_ptr<NWebStringVectorValueCallback>,
                     std::shared_ptr<NWebFileSelectorParams>));
+  MOCK_METHOD0(OnMediaCastEnter, void());
 };
 
 class MockWebAppClientExtensionListener
     : public NWebAppClientExtensionCallback {
  public:
-  MOCK_METHOD3(OnSaveOrUpdatePassword, void(bool, const std::string&, int));
+  MOCK_METHOD3(MockOnSaveOrUpdatePassword, void(bool, const std::string&, int));
 };
 
 class MockCefBrowser : public ArkWebBrowserExt {
@@ -261,6 +255,8 @@ class NWebHandlerDelegateTest : public ::testing::Test {
   bool is_reload_ = false;
   bool suppress_message = true;
   std::shared_ptr<MockWebAppClientExtensionListener> listener;
+  static MockWebAppClientExtensionListener* current_listener_;
+  static void StaticOnSaveOrUpdatePassword(bool is_update, std::string url, int nweb_id);
 };
 
 void NWebHandlerDelegateTest::SetUp() {
@@ -277,16 +273,27 @@ void NWebHandlerDelegateTest::SetUp() {
   delegate->event_handler_ =
       std::shared_ptr<MockEventHandler>(mock_event_handler_);
 
-  listener = std::shared_ptr<MockWebAppClientExtensionListener>();
+  listener = std::make_shared<MockWebAppClientExtensionListener>();
+  current_listener_ = listener.get();
+  listener->OnSaveOrUpdatePassword = StaticOnSaveOrUpdatePassword;
   delegate->web_app_client_extension_listener_ = listener;
 }
 
 void NWebHandlerDelegateTest::TearDown() {
+  current_listener_ = nullptr;
   delegate = nullptr;
   mock_handler_ = nullptr;
+  mock_event_handler_ = nullptr;
+  mock_render_handler_ = nullptr;
 }
 
-// Test cases
+MockWebAppClientExtensionListener* NWebHandlerDelegateTest::current_listener_ = nullptr;
+void NWebHandlerDelegateTest::StaticOnSaveOrUpdatePassword(bool is_update, std::string url, int nweb_id) {
+  if (current_listener_) {
+    current_listener_->MockOnSaveOrUpdatePassword(is_update, url, nweb_id);
+  }
+}
+
 TEST_F(NWebHandlerDelegateTest, GetFocusHandler) {
   CefRefPtr<CefFocusHandler> focusHandler = delegate->GetFocusHandler();
   EXPECT_EQ(focusHandler.get(), delegate);
@@ -385,7 +392,6 @@ TEST_F(NWebHandlerDelegateTest, OnPreKeyEvent_TEST004) {
   EXPECT_FALSE(result);
 }
 
-// OnKeyEvent
 TEST_F(NWebHandlerDelegateTest, OnKeyEvent_TEST001) {
   event_.type = KEYEVENT_RAWKEYDOWN;
   event_.windows_key_code = 65;
@@ -423,20 +429,19 @@ TEST_F(NWebHandlerDelegateTest, OnKeyEvent_TEST004) {
   EXPECT_FALSE(result);
 }
 
-// showpassword
 #if BUILDFLAG(ARKWEB_EXT_PASSWORD)
 TEST_F(NWebHandlerDelegateTest, ShowPasswordDialog_TEST001) {
-  EXPECT_CALL(*listener, OnSaveOrUpdatePassword(true, "http://example.com", _))
+  EXPECT_CALL(*listener, MockOnSaveOrUpdatePassword(true, "http://example.com", _))
       .Times(1);
   delegate->ShowPasswordDialog(true, "http://example.com");
 }
 
 TEST_F(NWebHandlerDelegateTest, ShowPasswordDialog_TEST002) {
-  EXPECT_CALL(*listener, OnSaveOrUpdatePassword(false, "http://example.com", _))
+  EXPECT_CALL(*listener, MockOnSaveOrUpdatePassword(false, "http://example.com", _))
       .Times(1);
   delegate->ShowPasswordDialog(false, "http://example.com");
 }
-#endif  // ARKWEB_EXT_PASSWORD
+#endif  // BUILDFLAG(ARKWEB_EXT_PASSWORD)
 
 #if BUILDFLAG(ARKWEB_FOCUS)
 TEST_F(NWebHandlerDelegateTest, GetFocusState) {
@@ -452,7 +457,7 @@ TEST_F(NWebHandlerDelegateTest, SetFocusState_TEST002) {
   delegate->SetFocusState(false);
   EXPECT_FALSE(delegate->GetFocusState());
 }
-#endif  // #if BUILDFLAG(ARKWEB_FOCUS)
+#endif  // BUILDFLAG(ARKWEB_FOCUS)
 
 TEST_F(NWebHandlerDelegateTest, OnSetFocus_TEST001) {
   CefRefPtr<MockCefBrowser> browser =
@@ -609,8 +614,6 @@ TEST_F(NWebHandlerDelegateTest, IsShowHandle) {
 }
 
 #if BUILDFLAG(ARKWEB_AI)
-// Tests for RegisterOnLoadStartedCbForContentChange
-
 TEST_F(NWebHandlerDelegateTest, RegisterOnLoadStartedCbForContentChange_TEST001) {
   bool callback_invoked = false;
   std::function<void(void)> callback = [&callback_invoked]() {
@@ -618,15 +621,12 @@ TEST_F(NWebHandlerDelegateTest, RegisterOnLoadStartedCbForContentChange_TEST001)
   };
 
   delegate->RegisterOnLoadStartedCbForContentChange(std::move(callback));
-
-  // Verify the callback is stored by invoking it
   ASSERT_NE(delegate->onLoadStartedCbForContentChange_, nullptr);
   delegate->onLoadStartedCbForContentChange_();
   EXPECT_TRUE(callback_invoked);
 }
 
 TEST_F(NWebHandlerDelegateTest, RegisterOnLoadStartedCbForContentChange_TEST002) {
-  // Test that registering a new callback replaces the previous one
   int first_callback_invoked = 0;
   int second_callback_invoked = 0;
 
@@ -639,35 +639,39 @@ TEST_F(NWebHandlerDelegateTest, RegisterOnLoadStartedCbForContentChange_TEST002)
   };
 
   delegate->RegisterOnLoadStartedCbForContentChange(std::move(first_callback));
-
-  // Invoke first callback
   delegate->onLoadStartedCbForContentChange_();
   EXPECT_EQ(first_callback_invoked, 1);
   EXPECT_EQ(second_callback_invoked, 0);
-
-  // Register second callback (should replace first)
   delegate->RegisterOnLoadStartedCbForContentChange(std::move(second_callback));
-
-  // Invoke second callback
   delegate->onLoadStartedCbForContentChange_();
-  EXPECT_EQ(first_callback_invoked, 1);  // First callback should not be invoked again
-  EXPECT_EQ(second_callback_invoked, 2);  // Second callback should be invoked
+  EXPECT_EQ(first_callback_invoked, 1);
+  EXPECT_EQ(second_callback_invoked, 2);
 }
 
 TEST_F(NWebHandlerDelegateTest, RegisterOnLoadStartedCbForContentChange_TEST003) {
-  // Test registering empty callback (nullptr)
   std::function<void(void)> empty_callback = nullptr;
   delegate->RegisterOnLoadStartedCbForContentChange(std::move(empty_callback));
 
   EXPECT_EQ(delegate->onLoadStartedCbForContentChange_, nullptr);
 }
-#endif  // BUILDFLAG(ARKWEB_AI)
 
-#if BUILDFLAG(ARKWEB_AI)
 TEST_F(NWebHandlerDelegateTest, RegisterOnLoadStartedCbForHighlightContent) {
   ASSERT_NE(delegate, nullptr);
   std::function<void(void)> callback = []() {};
   delegate->RegisterOnLoadStartedCbForHighlightContent(std::move(callback));
   EXPECT_NE(delegate->onLoadStartedCbForHighlightContent_, nullptr);
 }
-#endif
+#endif  // BUILDFLAG(ARKWEB_AI)
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+TEST_F(NWebHandlerDelegateTest, OnMediaCastEnter_TEST001) {
+  EXPECT_CALL(*mock_handler_, OnMediaCastEnter()).Times(1);
+  delegate->OnMediaCastEnter();
+}
+
+TEST_F(NWebHandlerDelegateTest, OnMediaCastEnter_TEST002) {
+  CefRefPtr<NWebHandlerDelegate> empty_delegate =
+      new NWebHandlerDelegate(nullptr, nullptr, nullptr, nullptr, false, nullptr);
+  empty_delegate->OnMediaCastEnter();
+}
+#endif  // BUILDFLAG(ARKWEB_MEDIA_CAST)

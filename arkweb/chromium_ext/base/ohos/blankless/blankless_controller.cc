@@ -155,6 +155,14 @@ void BlanklessController::BlankOptWhiteList::ParseAppWhiteList(std::vector<char>
     return;
   }
 
+  base::Value* fullUrls = dict.Find("full-match");
+  if (fullUrls && fullUrls->is_list()) {
+    base::Value::List& fullMatchList = fullUrls->GetList();
+    for (const auto& item : fullMatchList) {
+      m_full_match_set_.insert(item.GetString());
+    }
+  }
+
   base::Value* queryUrls = dict.Find("query-match");
   if (queryUrls && queryUrls->is_list()) {
     base::Value::List& queryUrlsList = queryUrls->GetList();
@@ -216,6 +224,11 @@ std::string BlanklessController::BlankOptWhiteList::GetQueryUrl(const std::strin
   return result.str();
 }
 
+bool BlanklessController::BlankOptWhiteList::FullMatch(const std::string& url)
+{
+  return m_full_match_set_.find(url) != m_full_match_set_.end();
+}
+
 bool BlanklessController::BlankOptWhiteList::QueryMatch(const std::string& url)
 {
   std::string baseUrl = GetBaseUrl(url);
@@ -225,6 +238,11 @@ bool BlanklessController::BlankOptWhiteList::QueryMatch(const std::string& url)
 bool BlanklessController::BlankOptWhiteList::CheckAppWhiteList(const std::string& url, uint64_t& blankless_key)
 {
   LoadAppWhiteList();
+  if (FullMatch(url)) {
+    blankless_key = std::hash<std::string>{}(url);
+    return true;
+  }
+
   if (QueryMatch(url)) {
     const std::string queryUrl = GetQueryUrl(url);
     blankless_key = std::hash<std::string>{}(queryUrl);

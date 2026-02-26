@@ -372,6 +372,14 @@ TEST_F(BlanklessControllerTest, CheckAppWhiteList002) {
   bool result = controller.m_white_list_.CheckAppWhiteList(url, blankless_key);
   EXPECT_TRUE(result);
 }
+
+TEST_F(BlanklessControllerTest, CheckAppWhiteList003) {
+  std::string url = "12";
+  uint64_t blankless_key = 1;
+  controller.m_white_list_.m_full_match_set_.insert(url);
+  bool result = controller.m_white_list_.CheckAppWhiteList(url, blankless_key);
+  EXPECT_TRUE(result);
+}
 #endif // BUILDFLAG(ARKWEB_BLANK_PROP_CONFIG)
 
 TEST_F(BlanklessControllerTest, FrameRemoveCallback)

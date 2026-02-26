@@ -25,7 +25,7 @@ import re
 
 
 def load_removelist():
-    removelist_path = os.path.join(os.path.dirname(__file__), 'symbol_removelist.txt')
+    removelist_path = os.path.join(os.path.dirname(__file__), 'symbol_remove.txt')
     patterns = []
     if os.path.exists(removelist_path):
         with open(removelist_path, 'r', encoding='utf-8') as f:

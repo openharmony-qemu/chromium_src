@@ -329,7 +329,7 @@ void ArkwebRenderProcessHostImplUtils::Refresh() {
       auto rfh = RenderFrameHostImpl::FromID(rfh_id);
       if (rfh && rfh->IsActive()) {
         TRACE_EVENT2("base", __FILE__, "func", __func__, "line", __LINE__);
-        LOG(INFO) << "wdflogv10 [NativeEmbed]child_id = " << rfh->GetGlobalId().child_id
+        LOG(INFO) << "[NativeEmbed]child_id = " << rfh->GetGlobalId().child_id
                   << "frame_routing_id=" << rfh->GetGlobalId().frame_routing_id;
         rfh->Reload();
       }

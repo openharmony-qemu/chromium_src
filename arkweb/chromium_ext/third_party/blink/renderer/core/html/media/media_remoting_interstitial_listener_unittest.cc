@@ -193,7 +193,7 @@ TEST_F(ProgressBarEventListenerFullCoverageTest, DragOutOfBounds) {
 
 TEST_F(ProgressBarEventListenerFullCoverageTest, RapidDrag) {
   listener_->Invoke(nullptr, CreateMouseEvent(event_type_names::kMousedown, 50.0f, 1));
-  for (int x = 55; x <= 150; x += 5) {
+  for (int32_t x = 55; x <= 150; x += 5) {
     listener_->Invoke(nullptr, CreateMouseEvent(event_type_names::kMousemove, static_cast<float>(x), 1));
   }
   listener_->Invoke(nullptr, CreateMouseEvent(event_type_names::kMouseup, 150.0f, 0));

@@ -114,7 +114,7 @@ void PRParallelPreloadMgrImpl::StartPage(const std::string& url,
   }
   scoped_refptr<ResParallelPreloadCtrler> rp_preload_ctrler = base::WrapRefCounted(
 	new (std::nothrow) ResParallelPreloadCtrler(main_url, networkAnonymizationKey, sth_task_runner_,
-	base::BindRepeating(&PRParallelPreloadMgrImpl::OnRPPCtrlerTimeout, weak_factory_.GetWeakPtr())));
+	base::BindRepeating(&PRParallelPreloadMgrImpl::OnRPPCtrlerTimeout, base::Unretained(this))));
   if (rp_preload_ctrler == nullptr) {
 	SafeRunGetIsolationCB(callback, CANCEL_ORIGIN);
 	return;

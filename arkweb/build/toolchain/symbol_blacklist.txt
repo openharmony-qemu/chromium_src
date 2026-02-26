@@ -1,0 +1,149 @@
+# ============================================================================
+# ArkWeb Symbol Blacklist Configuration
+# ============================================================================
+# This file defines regex patterns to filter out symbols from mini debug info.
+# Symbols matching any pattern below will be excluded from .gnu_debugdata.
+#
+# Purpose: Reduce mini debug info size by removing base library functions
+#          and unused business functions while preserving core functionality.
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# Section 1: Standard C++ Library (Base Library Functions)
+# ----------------------------------------------------------------------------
+.*Nst.*
+.*__Cr.*
+
+# ----------------------------------------------------------------------------
+# Section 2: Chromium Base Library
+# ----------------------------------------------------------------------------
+# .*N4base.*
+# .*N4base6ohos.*
+# .*N4base6debug.*
+
+# ----------------------------------------------------------------------------
+# Section 3: Chromium Core Modules
+# ----------------------------------------------------------------------------
+# Blink rendering engine
+# .*N5blink.*
+
+# Chrome Compositor
+# .*N2cc.*
+
+# Content module (browser process)
+# .*N7content.*
+
+# UI components
+# .*N2ui.*
+
+# ----------------------------------------------------------------------------
+# Section 4: Media, Network, GPU (Chromium Subsystems)
+# ----------------------------------------------------------------------------
+# GPU functionality
+# .*N3gpu.*
+
+# Media handling
+# .*N6media.*
+
+# Network functionality
+# .*N3net.*
+
+# IPC/RPC
+# .*N4mojo.*
+
+# Chrome services
+# .*N9services.*
+
+# ----------------------------------------------------------------------------
+# Section 5: Test and Debug Symbols
+# ----------------------------------------------------------------------------
+# Unit test symbols
+.*_test.*
+.*_unittest.*
+.*_fuzzer.*
+
+# Mock classes for testing
+.*Mock.*
+.*Test.*
+
+# Debug and dump functions
+.*dump.*
+.*Dump.*
+.*debug.*
+.*Debug.*
+.*trace.*
+.*report.*
+
+# ----------------------------------------------------------------------------
+# Section 6: Third-Party Libraries
+# ----------------------------------------------------------------------------
+# Crashpad (crash reporting)
+.*Crashpad.*
+.*crashpad.*
+
+# CEF (Chromium Embedded Framework)
+# .*Cef.*
+# .*cef_.*
+
+# Widevine (DRM)
+# .*Widevine.*
+# .*widevine.*
+
+# RE2 (regex library)
+# .*N3re2.*
+
+# Skia (graphics)
+# .*N4skia.*
+
+# ----------------------------------------------------------------------------
+# Section 7: Unused Business Functions (Optional - Comment out if needed)
+# ----------------------------------------------------------------------------
+
+# Video Assistant (video playback helper features)
+# Uncomment to exclude video assistant symbols
+# .*N4OHOS.*NWeb.*video_assistant.*
+# .*N4OHOS.*NWeb.*VideoAssistant.*
+# .*N4OHOS.*NWeb.*MediaPlayer.*
+
+# Ads Block (ad blocking functionality)
+# Uncomment to exclude ads block symbols
+# .*N4OHOS.*NWeb.*AdsBlock.*
+# .*N4OHOS.*NWeb.*Adblock.*
+
+# CEF Delegate (CEF integration layer)
+# Uncomment to exclude CEF delegate symbols
+# .*N4OHOS.*NWeb.*cef_delegate.*
+# .*N4OHOS.*NWeb.*CefDelegate.*
+
+# Extension System
+# Uncomment to exclude extension symbols
+# .*N4OHOS.*NWeb.*Extension.*
+
+# Download Manager (if not needed for debugging)
+# Uncomment to exclude download manager symbols
+# .*N4OHOS.*NWeb.*Download.*
+
+# Native Media Player
+# Uncomment to exclude media player symbols
+# .*N4OHOS.*NWeb.*native_media_player.*
+
+# Scheme Handler (custom URL schemes)
+# Uncomment to exclude scheme handler symbols
+# .*N4OHOS.*NWeb.*Scheme.*
+
+# ----------------------------------------------------------------------------
+# Section 8: Additional Filters
+# ----------------------------------------------------------------------------
+# Performance manager (internal optimization)
+# .*performance_manager.*
+
+# V8 JavaScript engine internal symbols
+# .*v8.*internal.*
+# .*v8_inspector.*
+
+# Internal implementation details (usually start with underscore)
+# .*_internal.*
+# .*_impl.*
+
+# GCC/Clang internal symbols
+^__.*

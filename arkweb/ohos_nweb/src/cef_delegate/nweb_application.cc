@@ -19,6 +19,7 @@
 #include <thread>
 
 #include "arkweb/build/features/features.h"
+#include "base/threading/thread_restrictions.h"
 #include "build/build_config.h"
 #include "cef/include/wrapper/cef_helpers.h"
 #include "content/public/browser/browser_task_traits.h"
@@ -61,6 +62,8 @@ const char kNWebId[] = "nweb_id";
 #endif  //  ARKWEB_EX_DOWNLOAD
 }  // namespace
 
+class ScopedAllowBlockingForNwebInit : public base::ScopedAllowBlocking {};
+
 namespace OHOS::NWeb {
 #if BUILDFLAG(ARKWEB_API_INIT_WEB_ENGINE)
 // static
@@ -102,8 +105,12 @@ void NWebApplication::InitializeCef(const CefMainArgs& mainargs,
   std::unique_lock<std::mutex> lk(init_mtx);
   bool initial_result = CefInitialize(mainargs, settings, NWebApplication::GetDefault(), NULL);
 #if BUILDFLAG(ARKWEB_DOWNLOAD)
-  // get download Temp directory.
-  NwebFileWriterCleaner::GetDeletePendingFiles();
+  {
+    // get download Temp directory.
+    ScopedAllowBlockingForNwebInit allow_blocking_for_using_path;
+    NwebFileWriterCleaner::GetDeletePendingFiles();
+  }
+
 #endif  // BUILDFLAG(ARKWEB_DOWNLOAD)
   if (!initial_result) {
     LOG(ERROR) << "CefInitialize failed";

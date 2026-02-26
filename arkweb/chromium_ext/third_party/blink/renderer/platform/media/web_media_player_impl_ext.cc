@@ -291,6 +291,12 @@ void WebMediaPlayerImplExt::SetVideoSurface(int32_t widget_id) {
   LOG(INFO) << "SetVideoSurface(" << widget_id
             << "), has_page_hidden_when_paused:"
             << has_page_hidden_when_paused_;
+#if BUILDFLAG(ARKWEB_PIP)
+  if (video_surface_id_ > 0 && widget_id > 0) {
+    skip_surface_recover_ = true;
+  }
+#endif // ARKWEB_PIP
+
   video_surface_id_ = widget_id;
   if (surface_created_cb_) {
     surface_created_cb_.Run(widget_id);
@@ -415,7 +421,16 @@ void WebMediaPlayerImpl::PipEnable(bool enable) {
     LOG(ERROR) << "Pip pipeline_controller_ is null.";
   }
   if (!enable) {
+    if (skip_surface_recover_) {
+      LOG(INFO) << "Intercept Pip surface recover.";
+      skip_surface_recover_ = false;
+      return;
+    }
+
     video_surface_id_ = -1;
+    if (surface_created_cb_) {
+      surface_created_cb_.Run(video_surface_id_);
+    }
   }
 }
 #endif

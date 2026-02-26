@@ -189,7 +189,7 @@ void GetSubMenuItemByMenuModel(std::vector<WebExtensionContextMenusItem>& items,
     item.type = GetMenuTypeByCefMenuModel(model->GetTypeAt(i));
  
     items.push_back(item);
-    if (model->IsSubMenu()) {
+    if (model->GetSubMenuAt(i)) {
       GetSubMenuItemByMenuModel(items, model->GetSubMenuAt(i), item.commandId);
     }
   }
@@ -212,7 +212,7 @@ void GetMenuItemByMenuModel(std::vector<WebExtensionContextMenusItem>& items, Ce
     item.type = GetMenuTypeByCefMenuModel(model->GetTypeAt(i));
  
     items.push_back(item);
-    if (model->IsSubMenu()) {
+    if (model->GetSubMenuAt(i)) {
       GetSubMenuItemByMenuModel(items, model->GetSubMenuAt(i), item.commandId);
     }
     
@@ -7057,8 +7057,8 @@ std::vector<WebExtensionContextMenusItem> NWebDelegate::GetContextMenuItem() {
     return items;
   }
  
-  auto* arkweb_host_ext = static_cast<ArkWebBrowserHostExtImpl*>(GetBrowser()->GetHost().get());
-  auto alloy_host = arkweb_host_ext->AsAlloyBrowserHostImpl();
+  auto* arkweb_host_ext = dynamic_cast<ArkWebBrowserHostExtImpl*>(GetBrowser()->GetHost().get());
+  auto alloy_host = arkweb_host_ext != nullptr ? arkweb_host_ext->AsAlloyBrowserHostImpl() : nullptr;
   if (!alloy_host) {
     LOG(ERROR) << "alloy_host is nullptr";
     return items;
@@ -7095,8 +7095,8 @@ void NWebDelegate::OnContextMenuSelected(int command_id) {
     return;
   }
  
-  auto* arkweb_host_ext = static_cast<ArkWebBrowserHostExtImpl*>(GetBrowser()->GetHost().get());
-  auto alloy_host = arkweb_host_ext->AsAlloyBrowserHostImpl();
+  auto* arkweb_host_ext = dynamic_cast<ArkWebBrowserHostExtImpl*>(GetBrowser()->GetHost().get());
+  auto alloy_host = arkweb_host_ext != nullptr ? arkweb_host_ext->AsAlloyBrowserHostImpl() : nullptr;
   if (!alloy_host) {
     LOG(ERROR) << "alloy_host is nullptr";
     return;
@@ -7125,8 +7125,8 @@ void NWebDelegate::OnContextMenuClosed() {
     return;
   }
  
-  auto* arkweb_host_ext = static_cast<ArkWebBrowserHostExtImpl*>(GetBrowser()->GetHost().get());
-  auto alloy_host = arkweb_host_ext->AsAlloyBrowserHostImpl();
+  auto* arkweb_host_ext = dynamic_cast<ArkWebBrowserHostExtImpl*>(GetBrowser()->GetHost().get());
+  auto alloy_host = arkweb_host_ext != nullptr ? arkweb_host_ext->AsAlloyBrowserHostImpl() : nullptr;
   if (!alloy_host) {
     LOG(ERROR) << "alloy_host is nullptr";
     return;

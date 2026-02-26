@@ -71,6 +71,8 @@ class BrowserViewLayoutImplOld : public BrowserViewLayout {
 
   bool IsImmersiveModeEnabledWithoutToolbar() const;
 
+  int GetDialogTopY() const;
+
   // Whether or not to use the browser based content minimum size.
   const bool use_browser_content_minimum_size_ = false;
 

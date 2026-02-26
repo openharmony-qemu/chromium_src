@@ -85,6 +85,12 @@ class MultiplexRouter::InterfaceEndpoint
     disconnect_reason_ = disconnect_reason;
   }
 
+  MojoResult error_result() const { return error_result_; }
+  void set_error_result(MojoResult error_result) {
+    router_->AssertLockAcquired();
+    error_result_ = error_result;
+  }
+
   base::SequencedTaskRunner* task_runner() const { return task_runner_.get(); }
 
   InterfaceEndpointClient* client() const { return client_; }
@@ -258,6 +264,7 @@ class MultiplexRouter::InterfaceEndpoint
   bool handle_created_;
 
   std::optional<DisconnectReason> disconnect_reason_;
+  MojoResult error_result_ = MOJO_RESULT_OK;
 
   // The task runner on which |client_|'s methods can be called.
   scoped_refptr<base::SequencedTaskRunner> task_runner_;
@@ -884,6 +891,8 @@ void MultiplexRouter::OnPipeConnectionError(bool force_async_dispatch) {
       for (uint64_t request_id : request_ids)
         endpoint->client()->ForgetAsyncRequest(request_id);
 
+      endpoint->set_error_result(connector_.handle_ready_result());
+
       tasks_.push_back(Task::CreateNotifyErrorTask(endpoint.get()));
     }
 
@@ -1074,7 +1083,7 @@ bool MultiplexRouter::ProcessNotifyErrorTask(
     // It is safe to call into |client| without the lock. Because |client| is
     // always accessed on the same sequence, including DetachEndpointClient().
     MayAutoUnlock unlocker(&lock_);
-    client->NotifyError(disconnect_reason);
+    client->NotifyError(disconnect_reason, endpoint->error_result());
   }
   return true;
 }

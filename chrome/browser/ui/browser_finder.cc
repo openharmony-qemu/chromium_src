@@ -306,7 +306,14 @@ Browser* FindBrowserWithWindow(gfx::NativeWindow window) {
 Browser* FindBrowserWithActiveWindow() {
   BrowserWindowInterface* browser =
       GetLastActiveBrowserWindowInterfaceWithAnyProfile();
-  return browser && browser->GetWindow()->IsActive()
+  // With CEF, |browser->GetWindow()| may return nullptr during Browser
+  // destruction because the BrowserWindow is destroyed first (in
+  // ChromeBrowserWidget::OnNativeWidgetDestroyed). If multiple BrowserWidgets
+  // are destroyed at the same time then multiple calls to
+  // SynchronouslyDestroyBrowser may be pending execution. In that case, the
+  // first call to this method may find another Browser that is also pending
+  // destruction (has no associated BrowserWindow).
+  return browser && browser->GetWindow() && browser->GetWindow()->IsActive()
              ? browser->GetBrowserForMigrationOnly()
              : nullptr;
 }

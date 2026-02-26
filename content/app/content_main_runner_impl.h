@@ -30,7 +30,7 @@ namespace content {
 class BrowserMemoryConsumerRegistry;
 class MojoIpcSupport;
 
-class ContentMainRunnerImpl : public ContentMainRunner {
+class CONTENT_EXPORT ContentMainRunnerImpl : public ContentMainRunner {
  public:
   static std::unique_ptr<ContentMainRunnerImpl> Create();
 
@@ -48,6 +48,8 @@ class ContentMainRunnerImpl : public ContentMainRunner {
   void ReInitializeParams(ContentMainParams new_params) override;
   int Run() override;
   void Shutdown() override;
+
+  void ShutdownOnUIThread();
 
  private:
   int RunBrowser(MainFunctionParams main_function_params,

@@ -531,6 +531,7 @@ bool BrowserCommandController::ExecuteCommandWithDisposition(
   // choose to not implement CommandUpdaterDelegate inside this class and
   // therefore command_updater_ doesn't have the delegate set).
   if (!SupportsCommand(id) || !IsCommandEnabled(id)) {
+    LOG(WARNING) << "Invalid/disabled command " << id;
     return false;
   }
 
@@ -547,6 +548,13 @@ bool BrowserCommandController::ExecuteCommandWithDisposition(
 
   DCHECK(command_updater_.IsCommandEnabled(id))
       << "Invalid/disabled command " << id;
+
+#if BUILDFLAG(ENABLE_CEF)
+  if (browser_->cef_delegate() &&
+      browser_->cef_delegate()->HandleCommand(id, disposition)) {
+    return true;
+  }
+#endif
 
   // The order of commands in this switch statement must match the function
   // declaration order in browser.h!
@@ -1431,12 +1439,14 @@ void BrowserCommandController::TabRestoreServiceLoaded(
 
 bool BrowserCommandController::IsShowingMainUI() {
   return browser_->SupportsWindowFeature(
-      Browser::WindowFeature::kFeatureTabStrip);
+             Browser::WindowFeature::kFeatureTabStrip) ||
+         browser_->toolbar_overridden();
 }
 
 bool BrowserCommandController::IsShowingLocationBar() {
   return browser_->SupportsWindowFeature(
-      Browser::WindowFeature::kFeatureLocationBar);
+             Browser::WindowFeature::kFeatureLocationBar) ||
+         browser_->toolbar_overridden();
 }
 
 void BrowserCommandController::InitCommandState() {

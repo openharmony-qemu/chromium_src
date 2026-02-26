@@ -15,16 +15,20 @@
 #include "third_party/blink/public/platform/browser_interface_broker_proxy.h"
 #include "third_party/blink/public/platform/web_media_player.h"
 #include "third_party/blink/public/web/web_picture_in_picture_window_options.h"
+#include "third_party/blink/public/web/web_view.h"
 #include "third_party/blink/renderer/bindings/core/v8/script_controller.h"
 #include "third_party/blink/renderer/bindings/core/v8/script_promise_resolver.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_binding_for_core.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_throw_dom_exception.h"
+#include "third_party/blink/renderer/bindings/modules/v8/v8_document_picture_in_picture_cef_options.h"
 #include "third_party/blink/renderer/bindings/modules/v8/v8_document_picture_in_picture_options.h"
+#include "third_party/blink/renderer/bindings/modules/v8/v8_document_picture_in_picture_position.h"
 #include "third_party/blink/renderer/core/dom/document.h"
 #include "third_party/blink/renderer/core/dom/dom_exception.h"
 #include "third_party/blink/renderer/core/dom/events/event.h"
 #include "third_party/blink/renderer/core/frame/local_frame.h"
 #include "third_party/blink/renderer/core/frame/settings.h"
+#include "third_party/blink/renderer/core/frame/web_local_frame_impl.h"
 #include "third_party/blink/renderer/core/fullscreen/fullscreen.h"
 #include "third_party/blink/renderer/core/html/media/html_media_element.h"
 #include "third_party/blink/renderer/core/html/media/html_video_element.h"
@@ -37,6 +41,7 @@
 #include "third_party/blink/renderer/platform/weborigin/scheme_registry.h"
 #include "third_party/blink/renderer/platform/widget/frame_widget.h"
 #include "third_party/blink/renderer/platform/wtf/functional.h"
+#include "ui/gfx/geometry/point.h"
 
 namespace blink {
 
@@ -382,7 +387,12 @@ void PictureInPictureControllerImpl::CreateDocumentPictureInPictureWindow(
     LocalDOMWindow& opener,
     DocumentPictureInPictureOptions* options,
     ScriptPromiseResolver<DOMWindow>* resolver) {
-  if (!LocalFrame::ConsumeTransientUserActivation(opener.GetFrame())) {
+  auto* opener_frame_view =
+      WebLocalFrameImpl::FromFrame(opener.GetFrame())->View();
+  bool allow_without_activation =
+      opener_frame_view->AllowPictureInPictureWithoutUserActivation();
+  if (!allow_without_activation &&
+      !LocalFrame::ConsumeTransientUserActivation(opener.GetFrame())) {
     resolver->RejectWithDOMException(DOMExceptionCode::kNotAllowedError,
                                      "Document PiP requires user activation");
     return;
@@ -394,6 +404,11 @@ void PictureInPictureControllerImpl::CreateDocumentPictureInPictureWindow(
   web_options.disallow_return_to_opener = options->disallowReturnToOpener();
   web_options.prefer_initial_window_placement =
       options->preferInitialWindowPlacement();
+
+  if (options->hasCefOptions() && options->cefOptions()->hasPosition()) {
+    const auto* position = options->cefOptions()->position();
+    web_options.initial_position = gfx::Point(position->x(), position->y());
+  }
 
   // If either width or height is specified, then both must be specified.
   if (web_options.width > 0 && web_options.height == 0) {

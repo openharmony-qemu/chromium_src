@@ -88,10 +88,9 @@ void ShowDialog(Browser* browser,
                 std::unique_ptr<ui::DialogModel> dialog_model) {
   ToolbarButtonProvider* toolbar_button_provider =
       BrowserView::GetBrowserViewForBrowser(browser)->toolbar_button_provider();
-  CHECK(toolbar_button_provider);
 
-  views::View* const anchor_view =
-      toolbar_button_provider->GetDefaultExtensionDialogAnchorView();
+  views::View* const anchor_view = toolbar_button_provider ?
+      toolbar_button_provider->GetDefaultExtensionDialogAnchorView() : nullptr;
   auto bubble = std::make_unique<views::BubbleDialogModelHost>(
       std::move(dialog_model), std::move(anchor_view),
       views::BubbleBorder::TOP_RIGHT);

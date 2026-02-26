@@ -43,6 +43,10 @@ void RenderViewContextMenuMacRemoteCocoa::Show() {
       target_view_id_);
 }
 
+bool RenderViewContextMenuMacRemoteCocoa::IsRunning() {
+  return runner_ && runner_->IsRunning();
+}
+
 void RenderViewContextMenuMacRemoteCocoa::CancelToolkitMenu() {
   runner_->Cancel();
 }

@@ -321,6 +321,20 @@ class CORE_EXPORT WebViewImpl final : public WebView,
       const ColorProviderColorMaps& color_provider_colors) override;
   void SetSupportsDraggableRegions(bool supports_draggable_regions) override;
 
+  void SetMovePictureInPictureEnabled(bool enabled) override {
+    move_pip_enabled_ = enabled;
+  }
+  bool MovePictureInPictureEnabled() const override {
+    return move_pip_enabled_;
+  }
+
+  void SetAllowPictureInPictureWithoutUserActivation(bool allow) override {
+    allow_pip_without_user_activation_ = allow;
+  }
+  bool AllowPictureInPictureWithoutUserActivation() const override {
+    return allow_pip_without_user_activation_;
+  }
+
   void DispatchPersistedPageshow(base::TimeTicks navigation_start);
   void DispatchPagehide(mojom::blink::PagehideDispatch pagehide_dispatch);
   void HookBackForwardCacheEviction(bool hook);
@@ -1012,6 +1026,9 @@ class CORE_EXPORT WebViewImpl final : public WebView,
   // Indicates whether the page supports draggable regions via the app-region
   // CSS property.
   bool supports_draggable_regions_ = false;
+
+  bool move_pip_enabled_ = false;
+  bool allow_pip_without_user_activation_ = false;
 
   // All the registered observers.
   base::ObserverList<WebViewObserver> observers_;

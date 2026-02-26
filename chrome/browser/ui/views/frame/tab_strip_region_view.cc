@@ -212,8 +212,7 @@ TabStripRegionView::TabStripRegionView(std::unique_ptr<TabStrip> tab_strip)
   std::unique_ptr<TabSearchContainer> tab_search_container;
   std::unique_ptr<TabStripActionContainer> tab_strip_action_container;
   std::unique_ptr<ProductSpecificationsButton> product_specifications_button;
-  if (browser &&
-      (browser->GetType() == BrowserWindowInterface::Type::TYPE_NORMAL)) {
+  if (browser && browser->IsNormalBrowser()) {
     if (features::HasTabSearchToolbarButton()) {
       tab_strip_action_container = std::make_unique<TabStripActionContainer>(
           tab_strip_->controller(),

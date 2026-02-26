@@ -68,9 +68,10 @@ void ReceiverSetState::Entry::DidDispatchOrReject() {
 }
 
 void ReceiverSetState::Entry::OnDisconnect(uint32_t custom_reason_code,
-                                           const std::string& description) {
+                                           const std::string& description,
+                                           MojoResult error_result) {
   WillDispatch();
-  state_.OnDisconnect(id_, custom_reason_code, description);
+  state_.OnDisconnect(id_, custom_reason_code, description, error_result);
 }
 
 ReceiverSetState::ReceiverSetState() : entries_(PassKey()) {}
@@ -80,12 +81,21 @@ ReceiverSetState::~ReceiverSetState() = default;
 void ReceiverSetState::set_disconnect_handler(base::RepeatingClosure handler) {
   disconnect_handler_ = std::move(handler);
   disconnect_with_reason_handler_.Reset();
+  disconnect_with_reason_and_result_handler_.Reset();
 }
 
 void ReceiverSetState::set_disconnect_with_reason_handler(
     RepeatingConnectionErrorWithReasonCallback handler) {
   disconnect_with_reason_handler_ = std::move(handler);
   disconnect_handler_.Reset();
+  disconnect_with_reason_and_result_handler_.Reset();
+}
+
+void ReceiverSetState::set_disconnect_with_reason_and_result_handler(
+    RepeatingConnectionErrorWithReasonAndResultCallback handler) {
+  disconnect_with_reason_and_result_handler_ = std::move(handler);
+  disconnect_handler_.Reset();
+  disconnect_with_reason_handler_.Reset();
 }
 
 ReportBadMessageCallback ReceiverSetState::GetBadMessageCallback() {
@@ -158,7 +168,8 @@ void ReceiverSetState::SetDispatchContext(void* context,
 
 void ReceiverSetState::OnDisconnect(ReceiverId id,
                                     uint32_t custom_reason_code,
-                                    const std::string& description) {
+                                    const std::string& description,
+                                    MojoResult error_result) {
   auto it = entries_.find(id);
   CHECK(it != entries_.end());
 
@@ -170,6 +181,10 @@ void ReceiverSetState::OnDisconnect(ReceiverId id,
     disconnect_handler_.Run();
   else if (disconnect_with_reason_handler_)
     disconnect_with_reason_handler_.Run(custom_reason_code, description);
+  else if (disconnect_with_reason_and_result_handler_) {
+    disconnect_with_reason_and_result_handler_.Run(custom_reason_code,
+                                                   description, error_result);
+  }
 }
 
 }  // namespace mojo

@@ -51,6 +51,7 @@
 #include "base/win/wrapped_window_proc.h"
 #include "build/branding_buildflags.h"
 #include "build/build_config.h"
+#include "cef/libcef/features/features.h"
 #include "chrome/browser/about_flags.h"
 #include "chrome/browser/active_use_util.h"
 #include "chrome/browser/browser_features.h"
@@ -373,6 +374,7 @@ void UpdatePwaLaunchersForProfile(const base::FilePath& profile_dir) {
 }
 
 void MigratePinnedTaskBarShortcutsIfNeeded() {
+#if !BUILDFLAG(ENABLE_CEF)
   // Update this number when users should go through a taskbar shortcut
   // migration again. The last reason to do this was crrev.com/798174. @
   // 86.0.4231.0.
@@ -393,6 +395,7 @@ void MigratePinnedTaskBarShortcutsIfNeeded() {
           prefs::kShortcutMigrationVersion, version_info::GetVersionNumber()));
     }
   }
+#endif  // !BUILDFLAG(ENABLE_CEF)
 }
 
 void MaybeBlockDynamicCodeForBrowserProcess() {

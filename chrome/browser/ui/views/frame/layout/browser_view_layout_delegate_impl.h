@@ -31,6 +31,7 @@ class BrowserViewLayoutDelegateImpl : public BrowserViewLayoutDelegate {
   BrowserLayoutParams GetBrowserLayoutParams(
       bool use_browser_bounds) const override;
   int GetTopInsetInBrowserView() const override;
+  void UpdateDialogTopInsetInBrowserView(int* dialog_top_y) const override;
   void LayoutWebAppWindowTitle(const gfx::Rect& available_space,
                                views::Label& window_title_label) const override;
   bool IsToolbarVisible() const override;

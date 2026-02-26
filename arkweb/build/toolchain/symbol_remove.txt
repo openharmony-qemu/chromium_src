@@ -1,5 +1,5 @@
 # ============================================================================
-# ArkWeb Symbol Blacklist Configuration
+# ArkWeb Symbol Removed List Configuration
 # ============================================================================
 # This file defines regex patterns to filter out symbols from mini debug info.
 # Symbols matching any pattern below will be excluded from .gnu_debugdata.

@@ -1336,7 +1336,6 @@ void NWebImpl::InitializeWebEngine(
 #if !defined(CEF_USE_SANDBOX)
   settings.no_sandbox = true;
 #endif
-
   NWebApplication::GetDefault()->InitializeCef(mainargs, settings);
   content::GetNetworkService();
 

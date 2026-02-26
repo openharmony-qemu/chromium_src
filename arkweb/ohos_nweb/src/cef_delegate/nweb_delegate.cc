@@ -7057,8 +7057,12 @@ std::vector<WebExtensionContextMenusItem> NWebDelegate::GetContextMenuItem() {
     return items;
   }
  
-  auto* arkweb_host_ext = dynamic_cast<ArkWebBrowserHostExtImpl*>(GetBrowser()->GetHost().get());
-  auto alloy_host = arkweb_host_ext != nullptr ? arkweb_host_ext->AsAlloyBrowserHostImpl() : nullptr;
+  auto* arkweb_host_ext = static_cast<ArkWebBrowserHostExtImpl*>(GetBrowser()->GetHost().get());
+  if (!arkweb_host_ext) {
+    LOG(ERROR) << "arkweb_host_ext is nullptr";
+    return items;
+  }
+  auto alloy_host = arkweb_host_ext->AsAlloyBrowserHostImpl();
   if (!alloy_host) {
     LOG(ERROR) << "alloy_host is nullptr";
     return items;
@@ -7095,8 +7099,12 @@ void NWebDelegate::OnContextMenuSelected(int command_id) {
     return;
   }
  
-  auto* arkweb_host_ext = dynamic_cast<ArkWebBrowserHostExtImpl*>(GetBrowser()->GetHost().get());
-  auto alloy_host = arkweb_host_ext != nullptr ? arkweb_host_ext->AsAlloyBrowserHostImpl() : nullptr;
+  auto* arkweb_host_ext = static_cast<ArkWebBrowserHostExtImpl*>(GetBrowser()->GetHost().get());
+  if (!arkweb_host_ext) {
+    LOG(ERROR) << "arkweb_host_ext is nullptr";
+    return items;
+  }
+  auto alloy_host = arkweb_host_ext->AsAlloyBrowserHostImpl();
   if (!alloy_host) {
     LOG(ERROR) << "alloy_host is nullptr";
     return;
@@ -7125,8 +7133,12 @@ void NWebDelegate::OnContextMenuClosed() {
     return;
   }
  
-  auto* arkweb_host_ext = dynamic_cast<ArkWebBrowserHostExtImpl*>(GetBrowser()->GetHost().get());
-  auto alloy_host = arkweb_host_ext != nullptr ? arkweb_host_ext->AsAlloyBrowserHostImpl() : nullptr;
+  auto* arkweb_host_ext = static_cast<ArkWebBrowserHostExtImpl*>(GetBrowser()->GetHost().get());
+  if (!arkweb_host_ext) {
+    LOG(ERROR) << "arkweb_host_ext is nullptr";
+    return items;
+  }
+  auto alloy_host = arkweb_host_ext->AsAlloyBrowserHostImpl();
   if (!alloy_host) {
     LOG(ERROR) << "alloy_host is nullptr";
     return;

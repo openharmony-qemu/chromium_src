@@ -83,6 +83,7 @@
 #endif
 
 #if BUILDFLAG(ARKWEB_API_INIT_WEB_ENGINE)
+#include "base/threading/thread_restrictions.h"
 #include "cef_delegate/nweb_application.h"
 #include "content/public/browser/network_service_instance.h"
 #include "services/network/network_service.h"
@@ -1195,6 +1196,8 @@ class NWebReadDownloadDataCallback : public CefReadDownloadDataCallback {
 };
 }  // namespace
 
+class ScopedAllowBlockingForNwebInit : public base::ScopedAllowBlocking {};
+
 namespace OHOS::NWeb {
 
 bool NWebImpl::disableWebActivePolicy_ = false;
@@ -1336,8 +1339,13 @@ void NWebImpl::InitializeWebEngine(
 #if !defined(CEF_USE_SANDBOX)
   settings.no_sandbox = true;
 #endif
-  NWebApplication::GetDefault()->InitializeCef(mainargs, settings);
-  content::GetNetworkService();
+
+  {
+    ScopedAllowBlockingForNwebInit allow_blocking_for_using_path;
+    NWebApplication::GetDefault()->InitializeCef(mainargs, settings);
+    content::GetNetworkService();
+  }
+ 
 
 #if BUILDFLAG(ARKWEB_COOKIE)
   should_lazy_init_web_engine_ = false;

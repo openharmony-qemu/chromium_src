@@ -145,6 +145,9 @@ struct StartupProfilePathInfo;
 #if BUILDFLAG(ARKWEB_MSGPORT)
 class ArkWebBrowserHostExtImpl;
 #endif
+#if BUILDFLAG(ARKWEB_API_INIT_WEB_ENGINE)
+class ScopedAllowBlockingForNwebInit;
+#endif
 
 namespace base {
 class Environment;
@@ -675,6 +678,9 @@ class BASE_EXPORT ScopedAllowBlocking {
 #endif
 #if BUILDFLAG(ARKWEB_MSGPORT)
   friend class ::ArkWebBrowserHostExtImpl;
+#endif
+#if BUILDFLAG(ARKWEB_API_INIT_WEB_ENGINE)
+  friend class ::ScopedAllowBlockingForNwebInit;
 #endif
 
   // Sorted by function name (with namespace), ignoring the return type.

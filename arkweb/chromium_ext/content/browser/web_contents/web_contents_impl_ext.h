@@ -28,6 +28,10 @@
 #include "libcef/browser/alloy/alloy_browser_ua_config.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+#include "arkweb/ohos_nweb/src/capi/nweb_safe_browsing_detection_result_item.h"
+#endif
+
 namespace content {
 
 class WebContentsImpl;
@@ -222,10 +226,15 @@ class WebContentsImplExt : public WebContentsImpl {
 #if BUILDFLAG(ARKWEB_SAFEBROWSING)
   bool is_safe_browsing_config_ = false;
   bool is_safe_browsing_enabled_ = true;
+  GURL safe_browsing_check_url_;
+  int safe_browsing_check_code_ = 0;
+  int safe_browsing_check_threat_type_ = 0;
   void EnableSafeBrowsingDetection(bool enable, bool strictMode) override;
   bool IsSafeBrowsingDetectionConfig() override;
   bool IsSafeBrowsingDetectionStrict() override;
   bool IsSafeBrowsingDetectionDisabled() override;
+  void SetSafeBrowsingCheckDetail(int code, int threat_type, const GURL& url);
+  void GetSafeBrowsingCheckDetail(int& code, int& threat_type, GURL& url) const;
 #endif
 
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
@@ -361,7 +370,6 @@ class WebContentsImplExt : public WebContentsImpl {
                                         const std::string& referrer,
                                         int transition_type,
                                         bool is_key_request) override;
-
   std::string NotifyNavigationRewriteUrl(const std::string& original_url,
                                          const std::string& referrer,
                                          int transition_type,
@@ -369,7 +377,7 @@ class WebContentsImplExt : public WebContentsImpl {
 #endif
 
 #if BUILDFLAG(ARKWEB_MEDIA_CAST)
-  void OnMediaCastEnter(); 
+  void OnMediaCastEnter();
   void NotifyRemoteExitFullScreen() override;
 #endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
 
@@ -414,9 +422,7 @@ private:
   bool IsActiveFileChooser() override {
     return active_file_chooser_ != nullptr;
   }
-  void SetFileChooserInActive() override {
-    active_file_chooser_ = nullptr; 
-  }
+  void SetFileChooserInActive() override { active_file_chooser_ = nullptr; }
 #endif  // BUILDFLAG(ARKWEB_FILE_UPLOAD)
 
 #if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
@@ -444,6 +450,10 @@ private:
 #if BUILDFLAG(ARKWEB_SAFEBROWSING)
   void OnSafeBrowsingCheckDetail(int code, int policy, int threat) override;
 #endif
+
+#if BUILDFLAG(ARKWEB_SAVE_PAGE)
+  bool SavePageEx(const base::FilePath& main_file, SavePageType save_type) override;
+#endif // ARKWEB_SAVE_PAGE
 
 private:
 #if BUILDFLAG(ARKWEB_TEST)

@@ -262,6 +262,46 @@ bool OhosInterfaceMock::bAVMetadataBuilderSetMediaImageUri = false;
 bool OhosInterfaceMock::bAVSessionSetPlaybackState = false;
 bool OhosInterfaceMock::bAVSessionSetAVMetadata = false;
 bool OhosInterfaceMock::bAVSessionSetPlaybackPosition = false;
+bool OhosInterfaceMock::bAVCastControllerDestroy = false;
+bool OhosInterfaceMock::bAVSessionRegisterOutputDeviceChangeCallback = false;
+bool OhosInterfaceMock::bAVSessionUnregisterOutputDeviceChangeCallback = false;
+bool OhosInterfaceMock::bDeviceInfoGetDeviceName = false;
+bool OhosInterfaceMock::bAVSessionSetRemoteCastEnabled = false;
+bool OhosInterfaceMock::bAVSessionStopCasting = false;
+bool OhosInterfaceMock::bAVSessionCreateAVCastController = false;
+bool OhosInterfaceMock::bAVSessionAVMediaDescriptionBuilderCreate = false;
+bool OhosInterfaceMock::bAVSessionAVMediaDescriptionBuilderDestroy = false;
+bool OhosInterfaceMock::bAVSessionAVMediaDescriptionDestroy = false;
+bool OhosInterfaceMock::bAVSessionAVMediaDescriptionBuilderSetDuration = false;
+bool OhosInterfaceMock::bAVSessionAVMediaDescriptionBuilderSetMediaUri = false;
+bool OhosInterfaceMock::bAVSessionAVMediaDescriptionBuilderSetStartPosition = false;
+bool OhosInterfaceMock::bAVSessionAVMediaDescriptionBuilderSetMediaType = false;
+bool OhosInterfaceMock::bAVSessionAVMediaDescriptionBuilderSetTitle = false;
+bool OhosInterfaceMock::bAVSessionAVMediaDescriptionBuilderSetAssetId = false;
+bool OhosInterfaceMock::bAVSessionAVMediaDescriptionBuilderSetAlbumCoverUri = false;
+bool OhosInterfaceMock::bAVSessionAVMediaDescriptionBuilderGenerateAVMediaDescription = false;
+bool OhosInterfaceMock::bAVSessionAVMediaDescriptionGetMediaUri = false;
+bool OhosInterfaceMock::bAVSessionAVMediaDescriptionGetStartPosition = false;
+bool OhosInterfaceMock::bAVSessionAVMediaDescriptionGetDuration = false;
+bool OhosInterfaceMock::bAVSessionAVMediaDescriptionGetTitle = false;
+bool OhosInterfaceMock::bAVSessionAVMediaDescriptionGetAssetId = false;
+bool OhosInterfaceMock::bAVCastControllerPrepare = false;
+bool OhosInterfaceMock::bAVCastControllerStart = false;
+bool OhosInterfaceMock::bAVCastControllerRegisterPlaybackStateChangedCallback = false;
+bool OhosInterfaceMock::bAVCastControllerRegisterMediaItemChangedCallback = false;
+bool OhosInterfaceMock::bAVCastControllerRegisterSeekDoneCallback = false;
+bool OhosInterfaceMock::bAVCastControllerRegisterEndOfStreamCallback = false;
+bool OhosInterfaceMock::bAVCastControllerRegisterErrorCallback = false;
+bool OhosInterfaceMock::bAVCastControllerUnregisterPlaybackStateChangedCallback = false;
+bool OhosInterfaceMock::bAVCastControllerUnregisterMediaItemChangedCallback = false;
+bool OhosInterfaceMock::bAVCastControllerUnregisterSeekDoneCallback = false;
+bool OhosInterfaceMock::bAVCastControllerUnregisterEndOfStreamCallback = false;
+bool OhosInterfaceMock::bAVCastControllerUnregisterErrorCallback = false;
+bool OhosInterfaceMock::bAVSessionGetPlaybackState = false;
+bool OhosInterfaceMock::bAVSessionGetPlaybackPosition = false;
+bool OhosInterfaceMock::bAVCastControllerSendCommonCommand = false;
+bool OhosInterfaceMock::bAVCastControllerSendSeekCommand = false;
+bool OhosInterfaceMock::bAVCastControllerGetPlaybackState = false;
 
 bool MockAudioCommonEventSupport::start = false;
 bool MockAudioCommonEventSupport::stop = false;
@@ -654,10 +694,28 @@ bool MockOhSensorSupport::enableDestroySubscriptionAttribute = false;
 bool MockOhSensorSupport::enableEventGetType = false;
 bool MockOhSensorSupport::enableEventGetData = false;
 bool MockOhSensorSupport::enableEventGetTimestamp = false;
+bool MockVibratorSupport::enablePlayVibration = false;
+bool MockVibratorSupport::enableCancel = false;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+int32_t __wrap_OH_Vibrator_PlayVibration(int32_t duration, Vibrator_Attribute attribute) {
+    if (MockVibratorSupport::enablePlayVibration) {
+        return MockVibratorSupport::getInstance().OH_Vibrator_PlayVibration(duration, attribute);
+    } else {
+        return __real_OH_Vibrator_PlayVibration(duration, attribute);
+    }
+}
+
+int32_t __wrap_OH_Vibrator_Cancel(void) {
+    if (MockVibratorSupport::enableCancel) {
+        return MockVibratorSupport::getInstance().OH_Vibrator_Cancel();
+    } else {
+        return __real_OH_Vibrator_Cancel();
+    }
+}
 
 Sensor_Result __wrap_OH_Sensor_GetInfos(Sensor_Info** infos, uint32_t* count) {
     if (MockOhSensorSupport::enableGetInfos) {
@@ -816,6 +874,343 @@ int32_t __wrap_OH_SensorEvent_GetTimestamp(Sensor_Event* event, int64_t* timesta
         return MockOhSensorSupport::getInstance().OH_SensorEvent_GetTimestamp(event, timestamp);
     } else {
         return __real_OH_SensorEvent_GetTimestamp(event, timestamp);
+    }
+}
+
+AVSession_ErrCode __wrap_OH_AVCastController_Destroy(OH_AVCastController* controller) {
+    if (OhosInterfaceMock::bAVCastControllerDestroy) {
+        return OhosInterfaceMock::GetInstance().OH_AVCastController_Destroy(controller);
+    } else {
+        return __real_OH_AVCastController_Destroy(controller);
+    }
+}
+
+AVSession_ErrCode __wrap_OH_AVSession_RegisterOutputDeviceChangeCallback(OH_AVSession* session,
+    OH_AVSessionCallback_OutputDeviceChange callback) {
+    if (OhosInterfaceMock::bAVSessionRegisterOutputDeviceChangeCallback) {
+        return OhosInterfaceMock::GetInstance().OH_AVSession_RegisterOutputDeviceChangeCallback(session, callback);
+    } else {
+        return __real_OH_AVSession_RegisterOutputDeviceChangeCallback(session, callback);
+    }
+}
+
+AVSession_ErrCode __wrap_OH_AVSession_UnregisterOutputDeviceChangeCallback(OH_AVSession* session,
+    OH_AVSessionCallback_OutputDeviceChange callback) {
+    if (OhosInterfaceMock::bAVSessionUnregisterOutputDeviceChangeCallback) {
+        return OhosInterfaceMock::GetInstance().OH_AVSession_UnregisterOutputDeviceChangeCallback(session, callback);
+    } else {
+        return __real_OH_AVSession_UnregisterOutputDeviceChangeCallback(session, callback);
+    }
+}
+
+AVSession_ErrCode __wrap_OH_DeviceInfo_GetDeviceName(AVSession_DeviceInfo* deviceInfo, char** deviceName) {
+    if (OhosInterfaceMock::bDeviceInfoGetDeviceName) {
+        return OhosInterfaceMock::GetInstance().OH_DeviceInfo_GetDeviceName(deviceInfo, deviceName);
+    } else {
+        return __real_OH_DeviceInfo_GetDeviceName(deviceInfo, deviceName);
+    }
+}
+
+AVSession_ErrCode __wrap_OH_AVSession_SetRemoteCastEnabled(OH_AVSession* session, bool enabled) {
+    if (OhosInterfaceMock::bAVSessionSetRemoteCastEnabled) {
+        return OhosInterfaceMock::GetInstance().OH_AVSession_SetRemoteCastEnabled(session, enabled);
+    } else {
+        return __real_OH_AVSession_SetRemoteCastEnabled(session, enabled);
+    }
+}
+
+AVSession_ErrCode __wrap_OH_AVSession_StopCasting(OH_AVSession* session) {
+    if (OhosInterfaceMock::bAVSessionStopCasting) {
+        return OhosInterfaceMock::GetInstance().OH_AVSession_StopCasting(session);
+    } else {
+        return __real_OH_AVSession_StopCasting(session);
+    }
+}
+
+AVSession_ErrCode __wrap_OH_AVSession_CreateAVCastController(OH_AVSession* session, OH_AVCastController** controller) {
+    if (OhosInterfaceMock::bAVSessionCreateAVCastController) {
+        return OhosInterfaceMock::GetInstance().OH_AVSession_CreateAVCastController(session, controller);
+    } else {
+        return __real_OH_AVSession_CreateAVCastController(session, controller);
+    }
+}
+
+AVQueueItem_Result __wrap_OH_AVSession_AVMediaDescriptionBuilder_Create(OH_AVSession_AVMediaDescriptionBuilder** builder) {
+    if (OhosInterfaceMock::bAVSessionAVMediaDescriptionBuilderCreate) {
+        return OhosInterfaceMock::GetInstance().OH_AVSession_AVMediaDescriptionBuilder_Create(builder);
+    } else {
+        return __real_OH_AVSession_AVMediaDescriptionBuilder_Create(builder);
+    }
+}
+
+AVQueueItem_Result __wrap_OH_AVSession_AVMediaDescriptionBuilder_Destroy(OH_AVSession_AVMediaDescriptionBuilder* builder) {
+    if (OhosInterfaceMock::bAVSessionAVMediaDescriptionBuilderDestroy) {
+        return OhosInterfaceMock::GetInstance().OH_AVSession_AVMediaDescriptionBuilder_Destroy(builder);
+    } else {
+        return __real_OH_AVSession_AVMediaDescriptionBuilder_Destroy(builder);
+    }
+}
+
+AVQueueItem_Result __wrap_OH_AVSession_AVMediaDescription_Destroy(OH_AVSession_AVMediaDescription* description) {
+    if (OhosInterfaceMock::bAVSessionAVMediaDescriptionDestroy) {
+        return OhosInterfaceMock::GetInstance().OH_AVSession_AVMediaDescription_Destroy(description);
+    } else {
+        return __real_OH_AVSession_AVMediaDescription_Destroy(description);
+    }
+}
+
+AVQueueItem_Result __wrap_OH_AVSession_AVMediaDescriptionBuilder_SetDuration(OH_AVSession_AVMediaDescriptionBuilder* builder, const int32_t duration) {
+    if (OhosInterfaceMock::bAVSessionAVMediaDescriptionBuilderSetDuration) {
+        return OhosInterfaceMock::GetInstance().OH_AVSession_AVMediaDescriptionBuilder_SetDuration(builder, duration);
+    } else {
+        return __real_OH_AVSession_AVMediaDescriptionBuilder_SetDuration(builder, duration);
+    }
+}
+
+AVQueueItem_Result __wrap_OH_AVSession_AVMediaDescriptionBuilder_SetMediaUri(OH_AVSession_AVMediaDescriptionBuilder* builder, const char* uri) {
+    if (OhosInterfaceMock::bAVSessionAVMediaDescriptionBuilderSetMediaUri) {
+        return OhosInterfaceMock::GetInstance().OH_AVSession_AVMediaDescriptionBuilder_SetMediaUri(builder, uri);
+    } else {
+        return __real_OH_AVSession_AVMediaDescriptionBuilder_SetMediaUri(builder, uri);
+    }
+}
+
+AVQueueItem_Result __wrap_OH_AVSession_AVMediaDescriptionBuilder_SetStartPosition(OH_AVSession_AVMediaDescriptionBuilder* builder, const int32_t position) {
+    if (OhosInterfaceMock::bAVSessionAVMediaDescriptionBuilderSetStartPosition) {
+        return OhosInterfaceMock::GetInstance().OH_AVSession_AVMediaDescriptionBuilder_SetStartPosition(builder, position);
+    } else {
+        return __real_OH_AVSession_AVMediaDescriptionBuilder_SetStartPosition(builder, position);
+    }
+}
+
+AVQueueItem_Result __wrap_OH_AVSession_AVMediaDescriptionBuilder_SetMediaType(OH_AVSession_AVMediaDescriptionBuilder* builder, const char* type) {
+    if (OhosInterfaceMock::bAVSessionAVMediaDescriptionBuilderSetMediaType) {
+        return OhosInterfaceMock::GetInstance().OH_AVSession_AVMediaDescriptionBuilder_SetMediaType(builder, type);
+    } else {
+        return __real_OH_AVSession_AVMediaDescriptionBuilder_SetMediaType(builder, type);
+    }
+}
+
+AVQueueItem_Result __wrap_OH_AVSession_AVMediaDescriptionBuilder_SetTitle(OH_AVSession_AVMediaDescriptionBuilder* builder, const char* title) {
+    if (OhosInterfaceMock::bAVSessionAVMediaDescriptionBuilderSetTitle) {
+        return OhosInterfaceMock::GetInstance().OH_AVSession_AVMediaDescriptionBuilder_SetTitle(builder, title);
+    } else {
+        return __real_OH_AVSession_AVMediaDescriptionBuilder_SetTitle(builder, title);
+    }
+}
+
+AVQueueItem_Result __wrap_OH_AVSession_AVMediaDescriptionBuilder_SetAssetId(OH_AVSession_AVMediaDescriptionBuilder* builder, const char* assetId) {
+    if (OhosInterfaceMock::bAVSessionAVMediaDescriptionBuilderSetAssetId) {
+        return OhosInterfaceMock::GetInstance().OH_AVSession_AVMediaDescriptionBuilder_SetAssetId(builder, assetId);
+    } else {
+        return __real_OH_AVSession_AVMediaDescriptionBuilder_SetAssetId(builder, assetId);
+    }
+}
+
+AVQueueItem_Result __wrap_OH_AVSession_AVMediaDescriptionBuilder_SetAlbumCoverUri(OH_AVSession_AVMediaDescriptionBuilder* builder, const char* uri) {
+    if (OhosInterfaceMock::bAVSessionAVMediaDescriptionBuilderSetAlbumCoverUri) {
+        return OhosInterfaceMock::GetInstance().OH_AVSession_AVMediaDescriptionBuilder_SetAlbumCoverUri(builder, uri);
+    } else {
+        return __real_OH_AVSession_AVMediaDescriptionBuilder_SetAlbumCoverUri(builder, uri);
+    }
+}
+
+AVQueueItem_Result __wrap_OH_AVSession_AVMediaDescriptionBuilder_GenerateAVMediaDescription(
+    OH_AVSession_AVMediaDescriptionBuilder* builder, OH_AVSession_AVMediaDescription** description) {
+    if (OhosInterfaceMock::bAVSessionAVMediaDescriptionBuilderGenerateAVMediaDescription) {
+        return OhosInterfaceMock::GetInstance().OH_AVSession_AVMediaDescriptionBuilder_GenerateAVMediaDescription(builder, description);
+    } else {
+        return __real_OH_AVSession_AVMediaDescriptionBuilder_GenerateAVMediaDescription(builder, description);
+    }
+}
+
+AVQueueItem_Result __wrap_OH_AVSession_AVMediaDescription_GetMediaUri(OH_AVSession_AVMediaDescription* description, char** uri) {
+    if (OhosInterfaceMock::bAVSessionAVMediaDescriptionGetMediaUri) {
+        return OhosInterfaceMock::GetInstance().OH_AVSession_AVMediaDescription_GetMediaUri(description, uri);
+    } else {
+        return __real_OH_AVSession_AVMediaDescription_GetMediaUri(description, uri);
+    }
+}
+
+AVQueueItem_Result __wrap_OH_AVSession_AVMediaDescription_GetStartPosition(OH_AVSession_AVMediaDescription* description, int32_t* position) {
+    if (OhosInterfaceMock::bAVSessionAVMediaDescriptionGetStartPosition) {
+        return OhosInterfaceMock::GetInstance().OH_AVSession_AVMediaDescription_GetStartPosition(description, position);
+    } else {
+        return __real_OH_AVSession_AVMediaDescription_GetStartPosition(description, position);
+    }
+}
+
+AVQueueItem_Result __wrap_OH_AVSession_AVMediaDescription_GetDuration(OH_AVSession_AVMediaDescription* description, int32_t* duration) {
+    if (OhosInterfaceMock::bAVSessionAVMediaDescriptionGetDuration) {
+        return OhosInterfaceMock::GetInstance().OH_AVSession_AVMediaDescription_GetDuration(description, duration);
+    } else {
+        return __real_OH_AVSession_AVMediaDescription_GetDuration(description, duration);
+    }
+}
+
+AVQueueItem_Result __wrap_OH_AVSession_AVMediaDescription_GetTitle(OH_AVSession_AVMediaDescription* description, char** title) {
+    if (OhosInterfaceMock::bAVSessionAVMediaDescriptionGetTitle) {
+        return OhosInterfaceMock::GetInstance().OH_AVSession_AVMediaDescription_GetTitle(description, title);
+    } else {
+        return __real_OH_AVSession_AVMediaDescription_GetTitle(description, title);
+    }
+}
+
+AVQueueItem_Result __wrap_OH_AVSession_AVMediaDescription_GetAssetId(OH_AVSession_AVMediaDescription* description, char** assetId) {
+    if (OhosInterfaceMock::bAVSessionAVMediaDescriptionGetAssetId) {
+        return OhosInterfaceMock::GetInstance().OH_AVSession_AVMediaDescription_GetAssetId(description, assetId);
+    } else {
+        return __real_OH_AVSession_AVMediaDescription_GetAssetId(description, assetId);
+    }
+}
+
+AVSession_ErrCode __wrap_OH_AVCastController_Prepare(OH_AVCastController* controller, OH_AVSession_AVQueueItem* item) {
+    if (OhosInterfaceMock::bAVCastControllerPrepare) {
+        return OhosInterfaceMock::GetInstance().OH_AVCastController_Prepare(controller, item);
+    } else {
+        return __real_OH_AVCastController_Prepare(controller, item);
+    }
+}
+
+AVSession_ErrCode __wrap_OH_AVCastController_Start(OH_AVCastController* controller, OH_AVSession_AVQueueItem* item) {
+    if (OhosInterfaceMock::bAVCastControllerStart) {
+        return OhosInterfaceMock::GetInstance().OH_AVCastController_Start(controller, item);
+    } else {
+        return __real_OH_AVCastController_Start(controller, item);
+    }
+}
+
+AVSession_ErrCode __wrap_OH_AVCastController_RegisterPlaybackStateChangedCallback(OH_AVCastController* controller, int32_t filter,
+    OH_AVCastControllerCallback_PlaybackStateChanged callback, void* userData) {
+    if (OhosInterfaceMock::bAVCastControllerRegisterPlaybackStateChangedCallback) {
+        return OhosInterfaceMock::GetInstance().OH_AVCastController_RegisterPlaybackStateChangedCallback(controller, filter, callback, userData);
+    } else {
+        return __real_OH_AVCastController_RegisterPlaybackStateChangedCallback(controller, filter, callback, userData);
+    }
+}
+
+AVSession_ErrCode __wrap_OH_AVCastController_RegisterMediaItemChangedCallback(OH_AVCastController* controller, int32_t filter,
+    OH_AVCastControllerCallback_MediaItemChange callback, void* userData) {
+    if (OhosInterfaceMock::bAVCastControllerRegisterMediaItemChangedCallback) {
+        return OhosInterfaceMock::GetInstance().OH_AVCastController_RegisterMediaItemChangedCallback(controller, filter, callback, userData);
+    } else {
+        return __real_OH_AVCastController_RegisterMediaItemChangedCallback(controller, filter, callback, userData);
+    }
+}
+
+AVSession_ErrCode __wrap_OH_AVCastController_RegisterSeekDoneCallback(OH_AVCastController* controller, int32_t filter,
+    OH_AVCastControllerCallback_SeekDone callback, void* userData) {
+    if (OhosInterfaceMock::bAVCastControllerRegisterSeekDoneCallback) {
+        return OhosInterfaceMock::GetInstance().OH_AVCastController_RegisterSeekDoneCallback(controller, filter, callback, userData);
+    } else {
+        return __real_OH_AVCastController_RegisterSeekDoneCallback(controller, filter, callback, userData);
+    }
+}
+
+AVSession_ErrCode __wrap_OH_AVCastController_RegisterEndOfStreamCallback(OH_AVCastController* controller, int32_t filter,
+    OH_AVCastControllerCallback_EndOfStream callback, void* userData) {
+    if (OhosInterfaceMock::bAVCastControllerRegisterEndOfStreamCallback) {
+        return OhosInterfaceMock::GetInstance().OH_AVCastController_RegisterEndOfStreamCallback(controller, filter, callback, userData);
+    } else {
+        return __real_OH_AVCastController_RegisterEndOfStreamCallback(controller, filter, callback, userData);
+    }
+}
+
+AVSession_ErrCode __wrap_OH_AVCastController_RegisterErrorCallback(OH_AVCastController* controller, int32_t filter,
+    OH_AVCastControllerCallback_Error callback, void* userData) {
+    if (OhosInterfaceMock::bAVCastControllerRegisterErrorCallback) {
+        return OhosInterfaceMock::GetInstance().OH_AVCastController_RegisterErrorCallback(controller, filter, callback, userData);
+    } else {
+        return __real_OH_AVCastController_RegisterErrorCallback(controller, filter, callback, userData);
+    }
+}
+
+AVSession_ErrCode __wrap_OH_AVCastController_UnregisterPlaybackStateChangedCallback(OH_AVCastController* controller,
+    OH_AVCastControllerCallback_PlaybackStateChanged callback) {
+    if (OhosInterfaceMock::bAVCastControllerUnregisterPlaybackStateChangedCallback) {
+        return OhosInterfaceMock::GetInstance().OH_AVCastController_UnregisterPlaybackStateChangedCallback(controller, callback);
+    } else {
+        return __real_OH_AVCastController_UnregisterPlaybackStateChangedCallback(controller, callback);
+    }
+}
+
+AVSession_ErrCode __wrap_OH_AVCastController_UnregisterMediaItemChangedCallback(OH_AVCastController* controller,
+    OH_AVCastControllerCallback_MediaItemChange callback) {
+    if (OhosInterfaceMock::bAVCastControllerUnregisterMediaItemChangedCallback) {
+        return OhosInterfaceMock::GetInstance().OH_AVCastController_UnregisterMediaItemChangedCallback(controller, callback);
+    } else {
+        return __real_OH_AVCastController_UnregisterMediaItemChangedCallback(controller, callback);
+    }
+}
+
+AVSession_ErrCode __wrap_OH_AVCastController_UnregisterSeekDoneCallback(OH_AVCastController* controller,
+    OH_AVCastControllerCallback_SeekDone callback) {
+    if (OhosInterfaceMock::bAVCastControllerUnregisterSeekDoneCallback) {
+        return OhosInterfaceMock::GetInstance().OH_AVCastController_UnregisterSeekDoneCallback(controller, callback);
+    } else {
+        return __real_OH_AVCastController_UnregisterSeekDoneCallback(controller, callback);
+    }
+}
+
+AVSession_ErrCode __wrap_OH_AVCastController_UnregisterEndOfStreamCallback(OH_AVCastController* controller,
+    OH_AVCastControllerCallback_EndOfStream callback) {
+    if (OhosInterfaceMock::bAVCastControllerUnregisterEndOfStreamCallback) {
+        return OhosInterfaceMock::GetInstance().OH_AVCastController_UnregisterEndOfStreamCallback(controller, callback);
+    } else {
+        return __real_OH_AVCastController_UnregisterEndOfStreamCallback(controller, callback);
+    }
+}
+
+AVSession_ErrCode __wrap_OH_AVCastController_UnregisterErrorCallback(OH_AVCastController* controller,
+    OH_AVCastControllerCallback_Error callback) {
+    if (OhosInterfaceMock::bAVCastControllerUnregisterErrorCallback) {
+        return OhosInterfaceMock::GetInstance().OH_AVCastController_UnregisterErrorCallback(controller, callback);
+    } else {
+        return __real_OH_AVCastController_UnregisterErrorCallback(controller, callback);
+    }
+}
+
+AVSession_ErrCode __wrap_OH_AVSession_GetPlaybackState(OH_AVSession_AVPlaybackState* playbackState,
+    AVSession_PlaybackState* state) {
+    if (OhosInterfaceMock::bAVSessionGetPlaybackState) {
+        return OhosInterfaceMock::GetInstance().OH_AVSession_GetPlaybackState(playbackState, state);
+    } else {
+        return __real_OH_AVSession_GetPlaybackState(playbackState, state);
+    }
+}
+
+AVSession_ErrCode __wrap_OH_AVSession_GetPlaybackPosition(OH_AVSession_AVPlaybackState* playbackState,
+    AVSession_PlaybackPosition* position) {
+    if (OhosInterfaceMock::bAVSessionGetPlaybackPosition) {
+        return OhosInterfaceMock::GetInstance().OH_AVSession_GetPlaybackPosition(playbackState, position);
+    } else {
+        return __real_OH_AVSession_GetPlaybackPosition(playbackState, position);
+    }
+}
+
+AVSession_ErrCode __wrap_OH_AVCastController_SendCommonCommand(OH_AVCastController* controller,
+    AVSession_AVCastControlCommandType* cmdType) {
+    if (OhosInterfaceMock::bAVCastControllerSendCommonCommand) {
+        return OhosInterfaceMock::GetInstance().OH_AVCastController_SendCommonCommand(controller, cmdType);
+    } else {
+        return __real_OH_AVCastController_SendCommonCommand(controller, cmdType);
+    }
+}
+
+AVSession_ErrCode __wrap_OH_AVCastController_SendSeekCommand(OH_AVCastController* controller, int32_t position) {
+    if (OhosInterfaceMock::bAVCastControllerSendSeekCommand) {
+        return OhosInterfaceMock::GetInstance().OH_AVCastController_SendSeekCommand(controller, position);
+    } else {
+        return __real_OH_AVCastController_SendSeekCommand(controller, position);
+    }
+}
+
+AVSession_ErrCode __wrap_OH_AVCastController_GetPlaybackState(OH_AVCastController*controller,
+    OH_AVSession_AVPlaybackState* playbackState) {
+    if (OhosInterfaceMock::bAVCastControllerGetPlaybackState) {
+        return OhosInterfaceMock::GetInstance().OH_AVCastController_GetPlaybackState(controller, playbackState);
+    } else {
+        return __real_OH_AVCastController_GetPlaybackState(controller, playbackState);
     }
 }
 

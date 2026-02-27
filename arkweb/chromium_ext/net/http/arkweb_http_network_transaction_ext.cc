@@ -349,4 +349,21 @@ void ArkWebHttpNetworkTransactionExt::ReportTimeout() {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+ConnectionAttempts ArkWebHttpNetworkTransactionExt::GetExtraConnectionAttempts()
+    const {
+  return extra_connection_attempts_;
+}
+
+void ArkWebHttpNetworkTransactionExt::
+    CopyConnectionAttemptsFromStreamRequest() {
+  HttpNetworkTransaction::CopyConnectionAttemptsFromStreamRequest();
+
+  DCHECK(stream_request_);
+  for (const auto& attempt : stream_request_->extra_connection_attempts()) {
+    extra_connection_attempts_.push_back(attempt);
+  }
+}
+#endif
+
 }  // namespace net

@@ -128,7 +128,12 @@ class NET_EXPORT_PRIVATE HttpNetworkTransaction
 
   // HttpStreamRequest::Delegate methods:
   void OnStreamReady(const ProxyInfo& used_proxy_info,
-                     std::unique_ptr<HttpStream> stream) override;
+                     std::unique_ptr<HttpStream> stream
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                     ,
+                     const ResolveInfo resolve_info = {}
+#endif
+                     ) override;
   void OnBidirectionalStreamImplReady(
       const ProxyInfo& used_proxy_info,
       std::unique_ptr<BidirectionalStreamImpl> stream) override;
@@ -138,12 +143,18 @@ class NET_EXPORT_PRIVATE HttpNetworkTransaction
   void OnStreamFailed(int status,
                       const NetErrorDetails& net_error_details,
                       const ProxyInfo& used_proxy_info,
-                      ResolveErrorInfo resolve_error_info) override;
+                      ResolveErrorInfo resolve_error_info
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                      ,
+                      const ResolveInfo resolve_info = {}
+#endif
+                      ) override;
   void OnCertificateError(int status,
                           const SSLInfo& ssl_info
-#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY) && BUILDFLAG(ARKWEB_EXT_NAVIGATION)
                           ,
-                          bool used_fallback_proxy
+                          bool used_fallback_proxy,
+                          const ResolveInfo resolve_info = {}
 #endif
                           ) override;
   void OnNeedsProxyAuth(const HttpResponseInfo& response_info,
@@ -157,6 +168,10 @@ class NET_EXPORT_PRIVATE HttpNetworkTransaction
       HttpStreamPoolSwitchingInfo switching_info) override;
 
   ConnectionAttempts GetConnectionAttempts() const override;
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  ConnectionAttempts GetExtraConnectionAttempts() const override { return {}; }
+#endif
 
  private:
   FRIEND_TEST_ALL_PREFIXES(HttpNetworkTransactionTest, ResetStateForRestart);
@@ -378,7 +393,11 @@ class NET_EXPORT_PRIVATE HttpNetworkTransaction
   // Returns true if this transaction is for a WebSocket handshake
   bool ForWebSocketHandshake() const;
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  virtual void CopyConnectionAttemptsFromStreamRequest();
+#else
   void CopyConnectionAttemptsFromStreamRequest();
+#endif
 
   // Returns true if response "Content-Encoding" headers respect
   // "Accept-Encoding".

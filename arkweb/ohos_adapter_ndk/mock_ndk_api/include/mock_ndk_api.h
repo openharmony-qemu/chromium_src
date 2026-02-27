@@ -31,8 +31,13 @@
 #include <bundle/native_interface_bundle.h>
 #include <multimedia/av_session/native_avmetadata.h>
 #include <multimedia/av_session/native_avsession.h>
+#include <multimedia/av_session/native_avqueueitem.h>
+#include <multimedia/av_session/native_avcastcontroller.h>
+#include <multimedia/av_session/native_deviceinfo.h>
+#include <multimedia/av_session/native_avplaybackstate.h>
 #include <multimedia/av_session/native_avsession_errors.h>
 #include <sensors/oh_sensor.h>
+#include <sensors/vibrator.h>
 #include <ohaudio/native_audiocapturer.h>
 #include <ohaudio/native_audiostream_base.h>
 #include <ohaudio/native_audiostreambuilder.h>
@@ -232,6 +237,58 @@ public:
     MOCK_METHOD(AVSession_ErrCode, OH_AVSession_SetAVMetadata, (OH_AVSession*, OH_AVMetadata*), (const));
     MOCK_METHOD(AVSession_ErrCode, OH_AVSession_SetPlaybackPosition,
         (OH_AVSession*, AVSession_PlaybackPosition*), (const));
+    MOCK_METHOD(AVSession_ErrCode, OH_AVCastController_Destroy, (OH_AVCastController*), (const));
+    MOCK_METHOD(AVSession_ErrCode, OH_AVSession_RegisterOutputDeviceChangeCallback,
+        (OH_AVSession*, OH_AVSessionCallback_OutputDeviceChange), (const));
+    MOCK_METHOD(AVSession_ErrCode, OH_AVSession_UnregisterOutputDeviceChangeCallback, (OH_AVSession*, OH_AVSessionCallback_OutputDeviceChange), (const));
+    MOCK_METHOD(AVSession_ErrCode, OH_DeviceInfo_GetDeviceName, (AVSession_DeviceInfo*, char**), (const));
+    MOCK_METHOD(AVSession_ErrCode, OH_AVSession_SetRemoteCastEnabled, (OH_AVSession*, bool), (const));
+    MOCK_METHOD(AVSession_ErrCode, OH_AVSession_StopCasting, (OH_AVSession*), (const));
+    MOCK_METHOD(AVSession_ErrCode, OH_AVSession_CreateAVCastController, (OH_AVSession*, OH_AVCastController**), (const));
+    MOCK_METHOD(AVQueueItem_Result, OH_AVSession_AVMediaDescriptionBuilder_Create, (OH_AVSession_AVMediaDescriptionBuilder**), (const));
+    MOCK_METHOD(AVQueueItem_Result, OH_AVSession_AVMediaDescriptionBuilder_Destroy, (OH_AVSession_AVMediaDescriptionBuilder*), (const));
+    MOCK_METHOD(AVQueueItem_Result, OH_AVSession_AVMediaDescription_Destroy, (OH_AVSession_AVMediaDescription*), (const));
+    MOCK_METHOD(AVQueueItem_Result, OH_AVSession_AVMediaDescriptionBuilder_SetDuration, (OH_AVSession_AVMediaDescriptionBuilder*, const int32_t), (const));
+    MOCK_METHOD(AVQueueItem_Result, OH_AVSession_AVMediaDescriptionBuilder_SetMediaUri, (OH_AVSession_AVMediaDescriptionBuilder*, const char*), (const));
+    MOCK_METHOD(AVQueueItem_Result, OH_AVSession_AVMediaDescriptionBuilder_SetStartPosition, (OH_AVSession_AVMediaDescriptionBuilder*, const int32_t), (const));
+    MOCK_METHOD(AVQueueItem_Result, OH_AVSession_AVMediaDescriptionBuilder_SetMediaType, (OH_AVSession_AVMediaDescriptionBuilder*, const char*), (const));
+    MOCK_METHOD(AVQueueItem_Result, OH_AVSession_AVMediaDescriptionBuilder_SetTitle, (OH_AVSession_AVMediaDescriptionBuilder*, const char*), (const));
+    MOCK_METHOD(AVQueueItem_Result, OH_AVSession_AVMediaDescriptionBuilder_SetAssetId, (OH_AVSession_AVMediaDescriptionBuilder*, const char*), (const));
+    MOCK_METHOD(AVQueueItem_Result, OH_AVSession_AVMediaDescriptionBuilder_SetAlbumCoverUri, (OH_AVSession_AVMediaDescriptionBuilder*, const char*), (const));
+    MOCK_METHOD(AVQueueItem_Result, OH_AVSession_AVMediaDescriptionBuilder_GenerateAVMediaDescription,
+        (OH_AVSession_AVMediaDescriptionBuilder*, OH_AVSession_AVMediaDescription**), (const));
+    MOCK_METHOD(AVQueueItem_Result, OH_AVSession_AVMediaDescription_GetMediaUri, (OH_AVSession_AVMediaDescription*, char**), (const));
+    MOCK_METHOD(AVQueueItem_Result, OH_AVSession_AVMediaDescription_GetStartPosition, (OH_AVSession_AVMediaDescription*, int32_t*), (const));
+    MOCK_METHOD(AVQueueItem_Result, OH_AVSession_AVMediaDescription_GetDuration, (OH_AVSession_AVMediaDescription*, int32_t*), (const));
+    MOCK_METHOD(AVQueueItem_Result, OH_AVSession_AVMediaDescription_GetTitle, (OH_AVSession_AVMediaDescription*, char**), (const));
+    MOCK_METHOD(AVQueueItem_Result, OH_AVSession_AVMediaDescription_GetAssetId, (OH_AVSession_AVMediaDescription*, char**), (const));
+    MOCK_METHOD(AVSession_ErrCode, OH_AVCastController_Prepare, (OH_AVCastController*, OH_AVSession_AVQueueItem*), (const));
+    MOCK_METHOD(AVSession_ErrCode, OH_AVCastController_Start, (OH_AVCastController*, OH_AVSession_AVQueueItem*), (const));
+    MOCK_METHOD(AVSession_ErrCode, OH_AVCastController_RegisterPlaybackStateChangedCallback,
+        (OH_AVCastController*, int32_t, OH_AVCastControllerCallback_PlaybackStateChanged, void*), (const));
+    MOCK_METHOD(AVSession_ErrCode, OH_AVCastController_RegisterMediaItemChangedCallback,
+        (OH_AVCastController*, int32_t, OH_AVCastControllerCallback_MediaItemChange, void*), (const));
+    MOCK_METHOD(AVSession_ErrCode, OH_AVCastController_RegisterSeekDoneCallback,
+        (OH_AVCastController*, int32_t, OH_AVCastControllerCallback_SeekDone, void*), (const));
+    MOCK_METHOD(AVSession_ErrCode, OH_AVCastController_RegisterEndOfStreamCallback,
+        (OH_AVCastController*, int32_t, OH_AVCastControllerCallback_EndOfStream, void*), (const));
+    MOCK_METHOD(AVSession_ErrCode, OH_AVCastController_RegisterErrorCallback,
+        (OH_AVCastController*, int32_t, OH_AVCastControllerCallback_Error, void*), (const));
+    MOCK_METHOD(AVSession_ErrCode, OH_AVCastController_UnregisterPlaybackStateChangedCallback,
+        (OH_AVCastController*, OH_AVCastControllerCallback_PlaybackStateChanged), (const));
+    MOCK_METHOD(AVSession_ErrCode, OH_AVCastController_UnregisterMediaItemChangedCallback,
+        (OH_AVCastController*, OH_AVCastControllerCallback_MediaItemChange), (const));
+    MOCK_METHOD(AVSession_ErrCode, OH_AVCastController_UnregisterSeekDoneCallback,
+        (OH_AVCastController*, OH_AVCastControllerCallback_SeekDone), (const));
+    MOCK_METHOD(AVSession_ErrCode, OH_AVCastController_UnregisterEndOfStreamCallback,
+        (OH_AVCastController*, OH_AVCastControllerCallback_EndOfStream), (const));
+    MOCK_METHOD(AVSession_ErrCode, OH_AVCastController_UnregisterErrorCallback,
+        (OH_AVCastController*, OH_AVCastControllerCallback_Error), (const));
+    MOCK_METHOD(AVSession_ErrCode, OH_AVCastController_GetPlaybackState, (OH_AVCastController*, OH_AVSession_AVPlaybackState*), (const));
+    MOCK_METHOD(AVSession_ErrCode, OH_AVSession_GetPlaybackState, (OH_AVSession_AVPlaybackState*, AVSession_PlaybackState*), (const));
+    MOCK_METHOD(AVSession_ErrCode, OH_AVSession_GetPlaybackPosition, (OH_AVSession_AVPlaybackState*, AVSession_PlaybackPosition*), (const));
+    MOCK_METHOD(AVSession_ErrCode, OH_AVCastController_SendCommonCommand, (OH_AVCastController*, AVSession_AVCastControlCommandType*), (const));
+    MOCK_METHOD(AVSession_ErrCode, OH_AVCastController_SendSeekCommand, (OH_AVCastController*, int32_t), (const));
 
     static bool bNativeBundleGetMainElementName;
     static bool bAVMetadataBuilderCreate;
@@ -253,6 +310,46 @@ public:
     static bool bAVSessionSetPlaybackState;
     static bool bAVSessionSetAVMetadata;
     static bool bAVSessionSetPlaybackPosition;
+    static bool bAVCastControllerDestroy;
+    static bool bAVSessionRegisterOutputDeviceChangeCallback;
+    static bool bAVSessionUnregisterOutputDeviceChangeCallback;
+    static bool bDeviceInfoGetDeviceName;
+    static bool bAVSessionSetRemoteCastEnabled;
+    static bool bAVSessionStopCasting;
+    static bool bAVSessionCreateAVCastController;
+    static bool bAVSessionAVMediaDescriptionBuilderCreate;
+    static bool bAVSessionAVMediaDescriptionBuilderDestroy;
+    static bool bAVSessionAVMediaDescriptionDestroy;
+    static bool bAVSessionAVMediaDescriptionBuilderSetDuration;
+    static bool bAVSessionAVMediaDescriptionBuilderSetMediaUri;
+    static bool bAVSessionAVMediaDescriptionBuilderSetStartPosition;
+    static bool bAVSessionAVMediaDescriptionBuilderSetMediaType;
+    static bool bAVSessionAVMediaDescriptionBuilderSetTitle;
+    static bool bAVSessionAVMediaDescriptionBuilderSetAssetId;
+    static bool bAVSessionAVMediaDescriptionBuilderSetAlbumCoverUri;
+    static bool bAVSessionAVMediaDescriptionBuilderGenerateAVMediaDescription;
+    static bool bAVSessionAVMediaDescriptionGetMediaUri;
+    static bool bAVSessionAVMediaDescriptionGetStartPosition;
+    static bool bAVSessionAVMediaDescriptionGetDuration;
+    static bool bAVSessionAVMediaDescriptionGetTitle;
+    static bool bAVSessionAVMediaDescriptionGetAssetId;
+    static bool bAVCastControllerPrepare;
+    static bool bAVCastControllerStart;
+    static bool bAVCastControllerRegisterPlaybackStateChangedCallback;
+    static bool bAVCastControllerRegisterMediaItemChangedCallback;
+    static bool bAVCastControllerRegisterSeekDoneCallback;
+    static bool bAVCastControllerRegisterEndOfStreamCallback;
+    static bool bAVCastControllerRegisterErrorCallback;
+    static bool bAVCastControllerUnregisterPlaybackStateChangedCallback;
+    static bool bAVCastControllerUnregisterMediaItemChangedCallback;
+    static bool bAVCastControllerUnregisterSeekDoneCallback;
+    static bool bAVCastControllerUnregisterEndOfStreamCallback;
+    static bool bAVCastControllerUnregisterErrorCallback;
+    static bool bAVSessionGetPlaybackState;
+    static bool bAVSessionGetPlaybackPosition;
+    static bool bAVCastControllerSendCommonCommand;
+    static bool bAVCastControllerSendSeekCommand;
+    static bool bAVCastControllerGetPlaybackState;
 };
 
 class MockAudioCommonEventSupport {
@@ -380,6 +477,47 @@ extern "C" {
 
     FileManagement_ErrCode __real_OH_FileUri_GetPathFromUri(const char* uri, unsigned int length, char** uriResult);
     FileManagement_ErrCode __real_OH_FileUri_GetFileName(const char* uri, unsigned int length, char** fileName);
+
+    AVSession_ErrCode __real_OH_AVCastController_Destroy(OH_AVCastController*);
+    AVSession_ErrCode __real_OH_AVSession_RegisterOutputDeviceChangeCallback(OH_AVSession*, OH_AVSessionCallback_OutputDeviceChange);
+    AVSession_ErrCode __real_OH_AVSession_UnregisterOutputDeviceChangeCallback(OH_AVSession*, OH_AVSessionCallback_OutputDeviceChange);
+    AVSession_ErrCode __real_OH_DeviceInfo_GetDeviceName(AVSession_DeviceInfo*, char**);
+    AVSession_ErrCode __real_OH_AVSession_SetRemoteCastEnabled(OH_AVSession*, bool);
+    AVSession_ErrCode __real_OH_AVSession_StopCasting(OH_AVSession*);
+    AVSession_ErrCode __real_OH_AVSession_CreateAVCastController(OH_AVSession*, OH_AVCastController**);
+    AVQueueItem_Result __real_OH_AVSession_AVMediaDescriptionBuilder_Create(OH_AVSession_AVMediaDescriptionBuilder**);
+    AVQueueItem_Result __real_OH_AVSession_AVMediaDescriptionBuilder_Destroy(OH_AVSession_AVMediaDescriptionBuilder*);
+    AVQueueItem_Result __real_OH_AVSession_AVMediaDescription_Destroy(OH_AVSession_AVMediaDescription*);
+    AVQueueItem_Result __real_OH_AVSession_AVMediaDescriptionBuilder_SetDuration(OH_AVSession_AVMediaDescriptionBuilder*, const int32_t);
+    AVQueueItem_Result __real_OH_AVSession_AVMediaDescriptionBuilder_SetMediaUri(OH_AVSession_AVMediaDescriptionBuilder*, const char*);
+    AVQueueItem_Result __real_OH_AVSession_AVMediaDescriptionBuilder_SetStartPosition(OH_AVSession_AVMediaDescriptionBuilder*, const int32_t);
+    AVQueueItem_Result __real_OH_AVSession_AVMediaDescriptionBuilder_SetMediaType(OH_AVSession_AVMediaDescriptionBuilder*, const char*);
+    AVQueueItem_Result __real_OH_AVSession_AVMediaDescriptionBuilder_SetTitle(OH_AVSession_AVMediaDescriptionBuilder*, const char*);
+    AVQueueItem_Result __real_OH_AVSession_AVMediaDescriptionBuilder_SetAssetId(OH_AVSession_AVMediaDescriptionBuilder*, const char*);
+    AVQueueItem_Result __real_OH_AVSession_AVMediaDescriptionBuilder_SetAlbumCoverUri(OH_AVSession_AVMediaDescriptionBuilder*, const char*);
+    AVQueueItem_Result __real_OH_AVSession_AVMediaDescriptionBuilder_GenerateAVMediaDescription(OH_AVSession_AVMediaDescriptionBuilder*, OH_AVSession_AVMediaDescription**);
+    AVQueueItem_Result __real_OH_AVSession_AVMediaDescription_GetMediaUri(OH_AVSession_AVMediaDescription*, char**);
+    AVQueueItem_Result __real_OH_AVSession_AVMediaDescription_GetStartPosition(OH_AVSession_AVMediaDescription*, int32_t*);
+    AVQueueItem_Result __real_OH_AVSession_AVMediaDescription_GetDuration(OH_AVSession_AVMediaDescription*, int32_t*);
+    AVQueueItem_Result __real_OH_AVSession_AVMediaDescription_GetTitle(OH_AVSession_AVMediaDescription*, char**);
+    AVQueueItem_Result __real_OH_AVSession_AVMediaDescription_GetAssetId(OH_AVSession_AVMediaDescription*, char**);
+    AVSession_ErrCode __real_OH_AVCastController_Prepare(OH_AVCastController*, OH_AVSession_AVQueueItem*);
+    AVSession_ErrCode __real_OH_AVCastController_Start(OH_AVCastController*, OH_AVSession_AVQueueItem*);
+    AVSession_ErrCode __real_OH_AVCastController_RegisterPlaybackStateChangedCallback(OH_AVCastController*, int32_t, OH_AVCastControllerCallback_PlaybackStateChanged, void*);
+    AVSession_ErrCode __real_OH_AVCastController_RegisterMediaItemChangedCallback(OH_AVCastController*, int32_t, OH_AVCastControllerCallback_MediaItemChange, void*);
+    AVSession_ErrCode __real_OH_AVCastController_RegisterSeekDoneCallback(OH_AVCastController*, int32_t, OH_AVCastControllerCallback_SeekDone, void*);
+    AVSession_ErrCode __real_OH_AVCastController_RegisterEndOfStreamCallback(OH_AVCastController*, int32_t, OH_AVCastControllerCallback_EndOfStream, void*);
+    AVSession_ErrCode __real_OH_AVCastController_RegisterErrorCallback(OH_AVCastController*, int32_t, OH_AVCastControllerCallback_Error, void*);
+    AVSession_ErrCode __real_OH_AVCastController_UnregisterPlaybackStateChangedCallback(OH_AVCastController*, OH_AVCastControllerCallback_PlaybackStateChanged);
+    AVSession_ErrCode __real_OH_AVCastController_UnregisterMediaItemChangedCallback(OH_AVCastController*, OH_AVCastControllerCallback_MediaItemChange);
+    AVSession_ErrCode __real_OH_AVCastController_UnregisterSeekDoneCallback(OH_AVCastController*, OH_AVCastControllerCallback_SeekDone);
+    AVSession_ErrCode __real_OH_AVCastController_UnregisterEndOfStreamCallback(OH_AVCastController*, OH_AVCastControllerCallback_EndOfStream);
+    AVSession_ErrCode __real_OH_AVCastController_UnregisterErrorCallback(OH_AVCastController*, OH_AVCastControllerCallback_Error);
+    AVSession_ErrCode __real_OH_AVCastController_GetPlaybackState(OH_AVCastController*, OH_AVSession_AVPlaybackState*);
+    AVSession_ErrCode __real_OH_AVSession_GetPlaybackState(OH_AVSession_AVPlaybackState*, AVSession_PlaybackState*);
+    AVSession_ErrCode __real_OH_AVSession_GetPlaybackPosition(OH_AVSession_AVPlaybackState*, AVSession_PlaybackPosition*);
+    AVSession_ErrCode __real_OH_AVCastController_SendCommonCommand(OH_AVCastController*, AVSession_AVCastControlCommandType*);
+    AVSession_ErrCode __real_OH_AVCastController_SendSeekCommand(OH_AVCastController*, int32_t);
 #ifdef __cplusplus
 }
 #endif
@@ -456,6 +594,24 @@ public:
     MOCK_METHOD(int32_t, OH_Sensor_DestroySubscriptionAttribute, (Sensor_SubscriptionAttribute*));
 };
 
+class MockVibratorSupport {
+public:
+    static bool enablePlayVibration;
+    static bool enableCancel;
+    static void EnableAll(bool enable) {
+        enablePlayVibration = enable;
+        enableCancel = enable;
+    }
+
+    static MockVibratorSupport& getInstance() {
+        static MockVibratorSupport instance;
+        return instance;
+    }
+
+    MOCK_METHOD(int32_t, OH_Vibrator_PlayVibration, (int32_t, Vibrator_Attribute));
+    MOCK_METHOD(int32_t, OH_Vibrator_Cancel, ());
+};
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -479,6 +635,8 @@ extern int32_t (*__real_OH_Sensor_DestroySubscriptionAttribute)(Sensor_Subscript
 extern int32_t (*__real_OH_SensorEvent_GetType)(Sensor_Event*, Sensor_Type*);
 extern int32_t (*__real_OH_SensorEvent_GetData)(Sensor_Event*, float**, uint32_t*);
 extern int32_t (*__real_OH_SensorEvent_GetTimestamp)(Sensor_Event*, int64_t*);
+extern int32_t (*__real_OH_Vibrator_PlayVibration)(int32_t, Vibrator_Attribute);
+extern int32_t (*__real_OH_Vibrator_Cancel)(void);
 
 const CommonEvent_Parameters * __real_OH_CommonEvent_GetParametersFromRcvData(const CommonEvent_RcvData *rcvData);
 bool __real_OH_CommonEvent_HasKeyInParameters(const CommonEvent_Parameters *para, const char *key);

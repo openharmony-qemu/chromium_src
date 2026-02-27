@@ -40,7 +40,7 @@ BinaryReader::BinaryReader(std::string path)
     file_.seekg(0, std::ios::beg);
     CHECK(file_.good());
   } else {
-    std::string errorMsg = "Failed to open file: " + path;
+    std::string errorMsg = "Failed to open file!";
     LogInfo(errorMsg);
     CHECK(false);
   }
@@ -64,7 +64,7 @@ bool BinaryReader::ReadHeader(dfx::RawHeapHeader& header) {
 }
 
 bool BinaryReader::ReadData(uint32_t read_size, uint8_t* out, uint32_t out_size) {
-  if (!IsValid() || !file_.good()) {
+  if (!IsValid() || !file_.good() || out_size < read_size) {
     return false;
   }
   std::streampos offset = file_.tellg();

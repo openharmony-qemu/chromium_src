@@ -955,6 +955,9 @@ class MockNWebDelegate : public NWebDelegateInterface {
   MOCK_METHOD(bool, WebExtensionContextMenuIsIframe, (), (override));
   MOCK_METHOD(void, WebExtensionContextMenuReloadFocusedFrame, (), (override));
 #endif
+#if BUILDFLAG(ARKWEB_SAVE_PAGE)
+  MOCK_METHOD(bool, SavePage, (int32_t type, const std::string& filePath), (override));
+#endif // ARKWEB_SAVE_PAGE
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   MOCK_METHOD(void,
               WebExtensionContextMenuGetFocusedFrameInfo,
@@ -1182,6 +1185,18 @@ class MockNWebDelegate : public NWebDelegateInterface {
               (std::shared_ptr<NWebDelegateInterface> nweb_delegate,
                std::unique_ptr<OpenDevToolsParam> param,
                OpenDevToolsExtOpt& ext_opt),
+              (override));
+  MOCK_METHOD(std::vector<WebExtensionContextMenusItem>,
+              GetContextMenuItem,
+              (),
+              (override));
+  MOCK_METHOD(void,
+              OnContextMenuSelected,
+              (int command_id),
+              (override));
+  MOCK_METHOD(void,
+              OnContextMenuClosed,
+              (),
               (override));
   MOCK_METHOD(void, CloseDevtools, (), (override));
 

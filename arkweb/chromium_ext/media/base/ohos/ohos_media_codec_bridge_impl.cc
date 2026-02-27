@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <cmath>
 
 #include "base/logging.h"
 #include "buffer_flush_config_adapter_impl.h"
@@ -42,7 +43,7 @@ CodecCodeAdapter FillSurfaceBufferDataCheck(
   LOG(DEBUG) << __FUNCTION__ << " enter";
   std::vector<size_t> frame_planes_size = frame->GetPlaneSize();
   if (frame_planes_size.size() < MAXPLANES) {
-    LOG(DEBUG) << "frame planes cnt < " << MAXPLANES;
+    LOG(ERROR) << "frame planes cnt < " << MAXPLANES;
     return CodecCodeAdapter::ERROR;
   }
   data.width = configAdapter->GetWidth();
@@ -62,14 +63,14 @@ CodecCodeAdapter FillSurfaceBufferDataCheck(
   // check addr.
   if (data.dst_addr == nullptr || nullptr == data.src_addr[VideoFrame::kYPlane] ||
       nullptr == data.src_addr[VideoFrame::kUPlane] || nullptr == data.src_addr[VideoFrame::kVPlane]) {
-    LOG(DEBUG) << "addr is nullptr";
+    LOG(ERROR) << "addr is nullptr";
     return CodecCodeAdapter::ERROR;
   }
   // check stride and width
   if (data.width > data.planes_stride[VideoFrame::kYPlane] ||
       data.width / SAMPLE_RATIO > data.planes_stride[VideoFrame::kUPlane] ||
       data.width / SAMPLE_RATIO > data.planes_stride[VideoFrame::kVPlane]) {
-      LOG(DEBUG) << "width less than stride";
+      LOG(ERROR) << "width less than stride";
       return CodecCodeAdapter::ERROR;
   }
   // check addr size.
@@ -84,6 +85,14 @@ CodecCodeAdapter FillSurfaceBufferDataCheck(
       required_v_src_space > data.src_size[VideoFrame::kVPlane]) {
     LOG(ERROR) << __FUNCTION__ << "failed, plane size error";
     return CodecCodeAdapter::ERROR;
+  }
+  auto offset = std::abs(data.src_addr[VideoFrame::kVPlane] - data.src_addr[VideoFrame::kYPlane]);
+  uint64_t required_all_plane_space = data.src_size[VideoFrame::kVPlane] + offset;
+  uint64_t real_all_plane_space = frame->layout().planes()[VideoFrame::kYPlane].size + 
+      frame->layout().planes()[VideoFrame::kUPlane].size + frame->layout().planes()[VideoFrame::kVPlane].size;
+  if (required_all_plane_space > real_all_plane_space) {
+    LOG(ERROR) << "plane size error, required_all_plane_space > real_all_plane_space!";
+    return CodecCodeAdapter::ERROR; 
   }
   return CodecCodeAdapter::OK;
 }

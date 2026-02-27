@@ -559,9 +559,16 @@ TEST_P(HttpStreamFactoryJobControllerTest, ProxyResolutionFailsSync) {
 
   Initialize(request_info);
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  EXPECT_CALL(
+      request_delegate_,
+      OnStreamFailed(ERR_MANDATORY_PROXY_CONFIGURATION_FAILED, _, _, _, _))
+      .Times(1);
+#else
   EXPECT_CALL(request_delegate_,
               OnStreamFailed(ERR_MANDATORY_PROXY_CONFIGURATION_FAILED, _, _, _))
       .Times(1);
+#endif
   request_ =
       job_controller_->Start(&request_delegate_, nullptr, net_log_with_source_,
                              HttpStreamRequest::HTTP_STREAM, DEFAULT_PRIORITY);
@@ -609,9 +616,16 @@ TEST_P(HttpStreamFactoryJobControllerTest, ProxyResolutionFailsAsync) {
   EXPECT_EQ(LOAD_STATE_RESOLVING_PROXY_FOR_URL,
             job_controller_->GetLoadState());
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  EXPECT_CALL(
+      request_delegate_,
+      OnStreamFailed(ERR_MANDATORY_PROXY_CONFIGURATION_FAILED, _, _, _, _))
+      .Times(1);
+#else
   EXPECT_CALL(request_delegate_,
               OnStreamFailed(ERR_MANDATORY_PROXY_CONFIGURATION_FAILED, _, _, _))
       .Times(1);
+#endif
   proxy_resolver_factory_ptr->pending_requests()[0]->CompleteNowWithForwarder(
       ERR_FAILED, &resolver);
   base::RunLoop().RunUntilIdle();
@@ -632,9 +646,15 @@ TEST_P(HttpStreamFactoryJobControllerTest, NoSupportedProxies) {
 
   Initialize(request_info);
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  EXPECT_CALL(request_delegate_,
+              OnStreamFailed(ERR_NO_SUPPORTED_PROXIES, _, _, _, _))
+      .Times(1);
+#else
   EXPECT_CALL(request_delegate_,
               OnStreamFailed(ERR_NO_SUPPORTED_PROXIES, _, _, _))
       .Times(1);
+#endif
   request_ =
       job_controller_->Start(&request_delegate_, nullptr, net_log_with_source_,
                              HttpStreamRequest::HTTP_STREAM, DEFAULT_PRIORITY);
@@ -2206,8 +2226,13 @@ TEST_F(JobControllerReconsiderProxyAfterErrorTest,
   Initialize(std::move(proxy_resolution_service));
 
   ProxyInfo used_proxy_info;
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  EXPECT_CALL(request_delegate_, OnStreamFailed(ERR_MSG_TOO_BIG, _, _, _, _))
+      .Times(1);
+#else
   EXPECT_CALL(request_delegate_, OnStreamFailed(ERR_MSG_TOO_BIG, _, _, _))
       .Times(1);
+#endif
 
   std::unique_ptr<HttpStreamRequest> request =
       CreateJobController(request_info);
@@ -2240,7 +2265,12 @@ TEST_P(HttpStreamFactoryJobControllerTest, OnStreamFailedWithNoAlternativeJob) {
 
   // There's no other alternative job. Thus when stream failed, it should
   // notify Request of the stream failure.
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  EXPECT_CALL(request_delegate_, OnStreamFailed(ERR_FAILED, _, _, _, _))
+      .Times(1);
+#else
   EXPECT_CALL(request_delegate_, OnStreamFailed(ERR_FAILED, _, _, _)).Times(1);
+#endif
   base::RunLoop().RunUntilIdle();
 }
 
@@ -2527,7 +2557,11 @@ void HttpStreamFactoryJobControllerTestBase::TestOnStreamFailedForBothJobs(
   }
   // The failure of second Job should be reported to Request as there's no more
   // pending Job to serve the Request.
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  EXPECT_CALL(request_delegate_, OnStreamFailed(_, _, _, _, _)).Times(1);
+#else
   EXPECT_CALL(request_delegate_, OnStreamFailed(_, _, _, _)).Times(1);
+#endif
   base::RunLoop().RunUntilIdle();
   VerifyBrokenAlternateProtocolMapping(request_info, false);
   request_.reset();
@@ -2612,7 +2646,11 @@ void HttpStreamFactoryJobControllerTestBase::
   EXPECT_CALL(request_delegate_, OnStreamReadyImpl(_, _));
   // JobController shouldn't report the status of second job as request
   // is already successfully served.
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  EXPECT_CALL(request_delegate_, OnStreamFailed(_, _, _, _, _)).Times(0);
+#else
   EXPECT_CALL(request_delegate_, OnStreamFailed(_, _, _, _)).Times(0);
+#endif
 
   base::RunLoop().RunUntilIdle();
 
@@ -2899,7 +2937,11 @@ void HttpStreamFactoryJobControllerTestBase::
   SetAlternativeService(request_info, alternative_service);
 
   // |main_job| fails but should not report status to Request.
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  EXPECT_CALL(request_delegate_, OnStreamFailed(_, _, _, _, _)).Times(0);
+#else
   EXPECT_CALL(request_delegate_, OnStreamFailed(_, _, _, _)).Times(0);
+#endif
 
   request_ =
       job_controller_->Start(&request_delegate_, nullptr, net_log_with_source_,
@@ -2995,7 +3037,11 @@ void HttpStreamFactoryJobControllerTestBase::
   SetAlternativeService(request_info, alternative_service);
 
   // |main_job| fails but should not report status to Request.
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  EXPECT_CALL(request_delegate_, OnStreamFailed(_, _, _, _, _)).Times(0);
+#else
   EXPECT_CALL(request_delegate_, OnStreamFailed(_, _, _, _)).Times(0);
+#endif
 
   request_ =
       job_controller_->Start(&request_delegate_, nullptr, net_log_with_source_,
@@ -3308,7 +3354,11 @@ void HttpStreamFactoryJobControllerTestBase::
   EXPECT_TRUE(job_controller_->alternative_job());
 
   // |alternative_job| fails but should not report status to Request.
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  EXPECT_CALL(request_delegate_, OnStreamFailed(_, _, _, _, _)).Times(0);
+#else
   EXPECT_CALL(request_delegate_, OnStreamFailed(_, _, _, _)).Times(0);
+#endif
   if (async_quic_session) {
     EXPECT_CALL(*job_factory_.main_job(), Resume()).Times(1).WillOnce([this]() {
       job_factory_.main_job()->DoResume();
@@ -3401,7 +3451,11 @@ void HttpStreamFactoryJobControllerTestBase::
   EXPECT_TRUE(job_controller_->alternative_job());
 
   // |alternative_job| fails but should not report status to Request.
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  EXPECT_CALL(request_delegate_, OnStreamFailed(_, _, _, _, _)).Times(0);
+#else
   EXPECT_CALL(request_delegate_, OnStreamFailed(_, _, _, _)).Times(0);
+#endif
   if (async_quic_session) {
     EXPECT_CALL(*job_factory_.main_job(), Resume()).Times(1).WillOnce([this]() {
       job_factory_.main_job()->DoResume();
@@ -3511,7 +3565,11 @@ TEST_P(HttpStreamFactoryJobControllerTest, GetLoadStateAfterMainJobFailed) {
 
   // |main_job| fails but should not report status to Request.
   // The alternative job will mark the main job complete.
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  EXPECT_CALL(request_delegate_, OnStreamFailed(_, _, _, _, _)).Times(0);
+#else
   EXPECT_CALL(request_delegate_, OnStreamFailed(_, _, _, _)).Times(0);
+#endif
 
   base::RunLoop().RunUntilIdle();
 
@@ -3671,7 +3729,11 @@ TEST_P(HttpStreamFactoryJobControllerTest, HostResolutionHang) {
   // Unpause mock quic data.
   // Will cause |alternative_job| to fail, but its failure should not be
   // reported to Request.
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  EXPECT_CALL(request_delegate_, OnStreamFailed(_, _, _, _, _)).Times(0);
+#else
   EXPECT_CALL(request_delegate_, OnStreamFailed(_, _, _, _)).Times(0);
+#endif
   EXPECT_FALSE(JobControllerPeer::main_job_is_blocked(job_controller_));
   EXPECT_TRUE(JobControllerPeer::main_job_is_resumed(job_controller_));
   // OnStreamFailed will post a task to resume the main job immediately but

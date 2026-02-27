@@ -186,9 +186,6 @@ class VerifiedRuleset::Handle {
  private:
   // This is to allow ADSF to post |ruleset_.get()| pointer to |task_runner_|.
   friend class AsyncDocumentSubresourceFilter;
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-  friend class ArkWebContentSubresourceFilterThrottleManagerExt;
-#endif
 
   // Note: Raw pointer, |ruleset_| already holds a reference to |task_runner_|.
   raw_ptr<base::SequencedTaskRunner, DanglingUntriaged> task_runner_;

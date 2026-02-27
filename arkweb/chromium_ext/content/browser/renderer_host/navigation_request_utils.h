@@ -21,6 +21,10 @@
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+#include "arkweb/chromium_ext/net/base/web_navigation_info.h"
+#endif
+
 namespace {
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
 constexpr char ORIGIN[] = "origin.DEFAULT";
@@ -59,6 +63,16 @@ bool GetCustomScheme(const std::pair<url::Origin, std::string>& origin_and_debug
 
 #if BUILDFLAG(ARKWEB_READER_MODE)
   void BeginNavigationImpl(bool& should_override_url_loading);
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  net::WebNavigationInfo& GetWebNavigationInfo();
+  const net::WebNavigationInfo& GetWebNavigationInfo() const;
+  void PopulateNavigationInfo(
+      const std::optional<network::URLLoaderCompletionStatus>& status);
+  bool IsAutoReload();
+  void OnReportNewNavigationInfo(const std::string& page_trace_id);
+  bool enable_nweb_ex_{false};
 #endif
   base::WeakPtrFactory<NavigationRequestUtils> weak_factory_{this};
 };

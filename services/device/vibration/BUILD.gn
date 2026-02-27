@@ -37,4 +37,11 @@ source_set("vibration") {
 
     deps += [ "//services/device/vibration/android:vibration_jni_headers" ]
   }
+
+  if (is_arkweb) {
+    sources += [
+      "//arkweb/chromium_ext/service/device/vibration/vibration_manager_ohos.cc",
+      "//arkweb/chromium_ext/service/device/vibration/vibration_manager_ohos.h",
+    ]
+  }
 }

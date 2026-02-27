@@ -10,6 +10,8 @@
 #include "arkweb/ohos_adapter_ndk/interfaces/graphic_adapter.h"
 #include "base/functional/callback.h"
 #include "base/memory/ref_counted.h"
+#include "base/memory/weak_ptr.h"
+#include "base/task/single_thread_task_runner.h"
 #include "frame_available_listener_impl.h"
 #include "ui/gl/gl_export.h"
 
@@ -59,6 +61,8 @@ class GL_EXPORT OhosNativeImage
   std::shared_ptr<OHOS::NWeb::FrameAvailableListenerImpl> listener_;
 
   base::RepeatingClosure frame_available_cb_;
+  scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
+  base::WeakPtrFactory<OhosNativeImage> weak_ptr_factory_{this};
 };
 
 }  // namespace gl

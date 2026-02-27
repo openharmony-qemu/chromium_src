@@ -70,6 +70,7 @@
 #include "nweb_hit_test_result_impl.h"
 #include "ohos_adapter_helper.h"
 #include "res_sched_client_adapter.h"
+#include "ohos_nweb/src/capi/nweb_context_menus_item.h"
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
 #include "arkweb/chromium_ext/ui/base/clipboard/ohos/clipboard_ohos.h"
 #endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
@@ -4304,6 +4305,33 @@ void NWebImpl::DisableAutoResize() {
   }
   nweb_delegate_->DisableViewAutoResize();
 }
+
+std::vector<WebExtensionContextMenusItem> NWebImpl::GetContextMenuItem() {
+  LOG(INFO) << "NWebImpl::GetContextMenuItem.";
+  if (!nweb_delegate_) {
+    WVLOG_E("GetContextMenuItem nweb_delegate_ is null");
+    return std::vector<WebExtensionContextMenusItem>();
+  }
+  return nweb_delegate_->GetContextMenuItem();
+}
+ 
+void NWebImpl::OnContextMenuSelected(int command_id) {
+  LOG(INFO) << "NWebImpl::OnContextMenuSelected.";
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("OnContextMenuSelected nweb_delegate_ is null");
+    return;
+  }
+  nweb_delegate_->OnContextMenuSelected(command_id);
+}
+ 
+void NWebImpl::OnContextMenuClosed() {
+  LOG(INFO) << "NWebImpl::OnContextMenuClosed.";
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("OnContextMenuClosed nweb_delegate_ is null");
+    return;
+  }
+  nweb_delegate_->OnContextMenuClosed();
+}
 #endif  // BUILDFLAG(ARKWEB_NWEB_EX)
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
@@ -5555,6 +5583,15 @@ void NWebImpl::WebExtensionContextMenuReloadFocusedFrame() {
   return nweb_delegate_->WebExtensionContextMenuReloadFocusedFrame();
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_SAVE_PAGE)
+bool NWebImpl::SavePage(int32_t type, const std::string& filePath) {
+  if (nweb_delegate_ == nullptr) {
+    return false;
+  }
+  return nweb_delegate_->SavePage(type, filePath);
+}
+#endif // ARKWEB_SAVE_PAGE
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 void NWebImpl::WebExtensionContextMenuGetFocusedFrameInfo(
@@ -7686,7 +7723,10 @@ void NWebImpl::CallBlanklessFrameFuncForWhiteList(uint64_t blankless_key, Snapsh
     LOG(DEBUG) << "blankless CallBlanklessFrameFuncForWhiteList lcpTime invalid " << dataItem.lcpTime;
     return;
   }
-  int32_t lcp_time = std::min(dataItem.lcpTime, base::ohos::BlanklessController::MAXIMUM_FRAME_LIFETIME);  // 2000 ms
+  int32_t lcp_time = base::ohos::BlanklessController::MAXIMUM_FRAME_LIFETIME;
+  if (dataItem.lcpTime >= base::ohos::BlanklessController::A_STANDARD) {
+    lcp_time = std::min(dataItem.lcpTime, base::ohos::BlanklessController::MAXIMUM_FRAME_LIFETIME);  // 2000 ms
+  }
   LOG(DEBUG) << "blankless OnRemoveBlanklessFrame Delay Time: " << lcp_time;
   if (is_visible_) {
     nweb_handle_->OnInsertBlanklessFrameWithSize(file, dataItem.width, dataItem.height);

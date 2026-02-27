@@ -20,6 +20,11 @@
 #include "net/socket/socket_performance_watcher_factory.h"
 #include "net/socket/websocket_endpoint_lock_manager.h"
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#include "base/command_line.h"
+#endif
+
 namespace net {
 
 namespace {
@@ -222,6 +227,14 @@ int TransportConnectSubJob::DoEndpointLockComplete() {
     transport_socket_->NetLog().source().AddToEventParameters(dict);
     return dict;
   });
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  if (parent_job_ && base::CommandLine::ForCurrentProcess()->HasSwitch(
+                         switches::kEnableNwebEx)) {
+    parent_job_->extra_connection_attempts_.emplace_back(
+        ConnectionAttempt(CurrentAddress(), 0));
+  }
+#endif
 
   // If `websocket_endpoint_lock_manager_` is non-null, this class now owns an
   // endpoint lock. Wrap `socket` in a `WebSocketStreamSocket` to take ownership

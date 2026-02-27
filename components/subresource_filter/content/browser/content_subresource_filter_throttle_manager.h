@@ -235,16 +235,6 @@ class ContentSubresourceFilterThrottleManager
   std::optional<blink::FrameAdEvidence> GetAdEvidenceForFrame(
       content::RenderFrameHost* render_frame_host);
 
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-  ContentSubresourceFilterThrottleManager(
-      SubresourceFilterProfileContext* profile_context,
-      scoped_refptr<safe_browsing::SafeBrowsingDatabaseManager>
-          database_manager,
-      VerifiedRulesetDealer::Handle* dealer_handle,
-      VerifiedRulesetDealer::Handle* user_dealer_handle,
-      ContentSubresourceFilterWebContentsHelper& web_contents_helper,
-      content::NavigationHandle& initiating_navigation_handle);
-#endif
  protected:
   // These look like WebContentsObserver overrides but they are not, they're
   // called explicitly from the WebContentsHelper, which is a
@@ -414,10 +404,12 @@ class ContentSubresourceFilterThrottleManager
 
   // Receiver set for all RenderFrames in this throttle manager's page.
   content::RenderFrameHostReceiverSet<mojom::SubresourceFilterHost> receiver_;
+
 #if BUILDFLAG(ARKWEB_ADBLOCK)
   content::RenderFrameHostReceiverSet<mojom::UserSubresourceFilterHost>
       user_receiver_;
 #endif
+
   // Lazily instantiated in EnsureRulesetHandle when the first page level
   // activation is triggered. Will go away when there are no more activated
   // RenderFrameHosts (i.e. activated_frame_hosts_ is empty).
@@ -433,10 +425,6 @@ class ContentSubresourceFilterThrottleManager
   // This member outlives this class.
   raw_ptr<VerifiedRulesetDealer::Handle, AcrossTasksDanglingUntriaged>
       dealer_handle_;
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-  raw_ptr<VerifiedRulesetDealer::Handle, AcrossTasksDanglingUntriaged>
-      user_dealer_handle_;
-#endif
 
   scoped_refptr<safe_browsing::SafeBrowsingDatabaseManager> database_manager_;
 
@@ -448,11 +436,6 @@ class ContentSubresourceFilterThrottleManager
   // class transferred onto it (in ContentSubresourceFilterWebContentsHelper)
   // we'll set this member to point to it.
   raw_ptr<content::Page> page_ = nullptr;
-
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-  VerifiedRuleset::Handle* EnsureUserRulesetHandle();
-  std::unique_ptr<VerifiedRuleset::Handle> user_ruleset_handle_;
-#endif
 
   // The helper class is attached to the WebContents so it is guaranteed to
   // outlive this class which is owned by either a Page or NavigationHandle in

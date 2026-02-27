@@ -131,16 +131,6 @@ class AsyncDocumentSubresourceFilter {
                                  const mojom::ActivationState& activation_state,
                                  std::string_view uma_tag);
 
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-  AsyncDocumentSubresourceFilter(
-      VerifiedRuleset::Handle* ruleset_handle,
-      VerifiedRuleset::Handle* user_ruleset_handle,
-      InitializationParams params,
-      base::OnceCallback<void(mojom::ActivationState)>
-          activation_state_callback,
-      std::string_view uma_tag);
-#endif
-
   AsyncDocumentSubresourceFilter(const AsyncDocumentSubresourceFilter&) =
       delete;
   AsyncDocumentSubresourceFilter& operator=(
@@ -239,13 +229,6 @@ class AsyncDocumentSubresourceFilter::Core {
   mojom::ActivationState Initialize(InitializationParams params,
                                     VerifiedRuleset* verified_ruleset,
                                     std::string_view uma_tag);
-
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-  mojom::ActivationState InitializeForUserRuleSet(InitializationParams params,
-                                    VerifiedRuleset* verified_ruleset,
-                                    VerifiedRuleset* user_verified_ruleset,
-                                    std::string_view uma_tag);
-#endif
 
   // Initializes a DSF using the provided |activation_state|. Should only be
   // used in certain uncommon situations. See the second

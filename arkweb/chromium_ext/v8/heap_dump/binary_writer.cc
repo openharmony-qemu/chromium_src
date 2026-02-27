@@ -105,7 +105,6 @@ void BinaryWriter::OpenFile(const std::string& path) {
   if (fd_ < 0) {
     std::stringstream ss;
     ss << "HeapDump open file failed!" << std::endl;
-    ss << (std::string("open failed for '") + path + "': " + strerror(errno)) << std::endl;
     std::string message = ss.str();
     LogInfo(message);
     CHECK(false);

@@ -32,9 +32,6 @@ using ::testing::_;
 using ::testing::Return;
 
 namespace content {
-namespace {
-constexpr int kMilliseconds = 1000;
-}
 class TestMediaPlayer : public media::mojom::MediaPlayer {
  public:
   enum class PauseRequestType {

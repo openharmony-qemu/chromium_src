@@ -23,10 +23,6 @@
 #include "url/gurl.h"
 #include "url/origin.h"
 
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-#include "base/logging.h"
-#endif
-
 namespace subresource_filter {
 
 mojom::ActivationState ComputeActivationState(
@@ -147,10 +143,6 @@ AsyncDocumentSubresourceFilter::AsyncDocumentSubresourceFilter(
                                 ruleset_handle->ruleset_.get(), uma_tag));
   OnActivateStateCalculated(base::DoNothing(), activation_state);
 }
-
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-#include "arkweb/chromium_ext/components/subresource_filter/core/browser/async_document_subresource_filter_for_include.cc"
-#endif
 
 AsyncDocumentSubresourceFilter::~AsyncDocumentSubresourceFilter() {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
@@ -285,6 +277,7 @@ mojom::ActivationState AsyncDocumentSubresourceFilter::Core::Initialize(
 
   return activation_state;
 }
+
 void AsyncDocumentSubresourceFilter::Core::InitializeWithActivation(
     mojom::ActivationState activation_state,
     const url::Origin& inherited_document_origin,

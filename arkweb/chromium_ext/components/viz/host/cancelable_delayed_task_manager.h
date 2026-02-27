@@ -35,9 +35,15 @@ public:
   // Posts a new delayed task, automatically canceling any previous pending task by the blankless_key
   void PostNewDelayedTask(uint64_t blankless_key, base::OnceClosure task, base::TimeDelta delay);
 
+  // Posts a new remove delayed task, automatically canceling any previous pending task by the blankless_key
+  void PostNewRemoveDelayedTask(uint64_t blankless_key, base::OnceClosure task, base::TimeDelta delay);
+
 private:
   // Wrapper that executes the actual task after safety checks
   void ExecuteTaskWrapper(uint64_t blankless_key, base::OnceClosure task);
+
+  // Wrapper that executes the actual task after safety checks
+  void ExecuteRemoveTaskWrapper(uint64_t blankless_key, base::OnceClosure task);
 
   // Explicitly cancels the current pending task by the blankless_key
   void CancelPendingTask(uint64_t blankless_key);
@@ -47,11 +53,16 @@ private:
 
   std::mutex pending_tasks_mutex_;
 
+  std::mutex remove_pending_tasks_mutex_;
+
   // Sequenced task runner for thread pool
   scoped_refptr<base::SequencedTaskRunner> sequenced_task_runner_;
 
   // Holds current cancelable tasks
   std::map<uint64_t, base::CancelableOnceClosure> pending_tasks_;
+
+  // Holds current remove cancelable tasks
+  std::map<uint64_t, base::CancelableOnceClosure> remove_pending_tasks_;
 
   // Weak pointer factory (MUST be the last member)
   base::WeakPtrFactory<CancelableDelayedTaskManager> weak_factory_{this};

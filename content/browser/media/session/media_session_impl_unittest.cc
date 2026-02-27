@@ -353,6 +353,59 @@ TEST_F(MediaSessionImplTest, RegisterObserver) {
   EXPECT_TRUE(HasObservers(GetMediaSession()));
 }
 
+TEST_F(MediaSessionImplTest, OnPlayerPaused_PepperPlayer) {
+  MediaSessionImpl* session = GetMediaSession();
+  static const base::UnguessableToken test_token =
+      base::UnguessableToken::Create();
+  auto mock_delegate = std::make_unique<MockAudioFocusDelegate>();
+  EXPECT_CALL(*mock_delegate, request_id())
+      .WillRepeatedly(testing::ReturnRef(test_token));
+  EXPECT_CALL(*mock_delegate, ReleaseRequestId()).Times(testing::AnyNumber());
+  SetDelegateForTests(session, mock_delegate.release());
+  player_observer()->SetMediaContentType(media::MediaContentType::kPepper);
+  int pepper_id = player_observer()->StartNewPlayer();
+  ASSERT_TRUE(session->AddPlayer(player_observer(), pepper_id));
+  player_observer()->SetMediaContentType(media::MediaContentType::kPersistent);
+  ASSERT_TRUE(GetForceDuck(session));
+  int normal_id = StartNewPlayer();
+  ASSERT_TRUE(session->IsActive());
+  session->OnPlayerPaused(player_observer(), pepper_id);
+  EXPECT_FALSE(session->HasPepper());
+  EXPECT_FALSE(GetForceDuck(session));
+  EXPECT_TRUE(session->IsActive());
+  EXPECT_TRUE(session->IsControllable());
+  player_observer()->SetPlaying(normal_id, false);
+  session->Suspend(MediaSession::SuspendType::kUI);
+  EXPECT_TRUE(session->IsSuspended());
+
+  session->Resume(MediaSession::SuspendType::kUI);
+  EXPECT_TRUE(session->IsActive());
+}
+
+TEST_F(MediaSessionImplTest, OnPlayerPaused_MultipleNormalPlayers) {
+  MediaSessionImpl* session = GetMediaSession();
+
+  static const base::UnguessableToken test_token =
+      base::UnguessableToken::Create();
+  auto mock_delegate = std::make_unique<MockAudioFocusDelegate>();
+  EXPECT_CALL(*mock_delegate, request_id())
+      .WillRepeatedly(testing::ReturnRef(test_token));
+  EXPECT_CALL(*mock_delegate, ReleaseRequestId()).Times(testing::AnyNumber());
+  SetDelegateForTests(session, mock_delegate.release());
+  int player1 = StartNewPlayer();
+  int player2 = StartNewPlayer();
+  ASSERT_TRUE(session->IsActive());
+  ASSERT_TRUE(session->IsControllable());
+  session->OnPlayerPaused(player_observer(), player1);
+  EXPECT_TRUE(session->IsActive());
+  EXPECT_TRUE(session->IsControllable());
+  player_observer()->SetPlaying(player2, false);
+  session->OnPlayerPaused(player_observer(), player2);
+  EXPECT_TRUE(session->IsSuspended());
+  session->Resume(MediaSession::SuspendType::kUI);
+  EXPECT_TRUE(session->IsActive());
+}
+
 TEST_F(MediaSessionImplTest, SessionInfo_PlaybackState) {
   EXPECT_EQ(MediaPlaybackState::kPaused,
             media_session::test::GetMediaSessionInfoSync(GetMediaSession())

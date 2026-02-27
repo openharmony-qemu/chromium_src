@@ -130,6 +130,7 @@ declare_args() {
   arkweb_render_process_share = true
   arkweb_render_process_startup = true
   arkweb_recource_scheme = true
+  arkweb_save_page = true
   arkweb_scheme_handler = true
   arkweb_screen_lock = true
   arkweb_screen_rotation = true
@@ -266,6 +267,8 @@ declare_args() {
   arkweb_ext_receive_response = false
   arkweb_custom_viewport_width = true
   arkweb_evict_unlock_frames = !is_component_build
+  arkweb_not_load_iframe = true
+  arkweb_ext_navigation = false
 }
 
 # Features enabled in mojom bindings.

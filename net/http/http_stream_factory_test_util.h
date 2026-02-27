@@ -21,6 +21,10 @@
 #include "testing/gmock/include/gmock/gmock.h"
 #include "url/scheme_host_port.h"
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY) && BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+#include "arkweb/chromium_ext/net/dns/public/resolve_info.h"
+#endif
+
 using testing::_;
 using testing::Invoke;
 
@@ -60,7 +64,12 @@ class MockHttpStreamRequestDelegate : public HttpStreamRequest::Delegate {
                void(const ProxyInfo& used_proxy_info, HttpStream* stream));
 
   void OnStreamReady(const ProxyInfo& used_proxy_info,
-                     std::unique_ptr<HttpStream> stream) override {
+                     std::unique_ptr<HttpStream> stream
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                     ,
+                     ResolveInfo resolve_info
+#endif
+                     ) override {
     OnStreamReadyImpl(used_proxy_info, stream.get());
   }
 
@@ -74,15 +83,27 @@ class MockHttpStreamRequestDelegate : public HttpStreamRequest::Delegate {
       const ProxyInfo& used_proxy_info,
       std::unique_ptr<WebSocketHandshakeStreamBase> stream) override {}
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY) && BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  MOCK_METHOD5(OnStreamFailed,
+               void(int status,
+                    const NetErrorDetails& net_error_details,
+                    const ProxyInfo& used_proxy_info,
+                    ResolveErrorInfo resolve_error_info,
+                    ResolveInfo resolve_info));
+#else
   MOCK_METHOD4(OnStreamFailed,
                void(int status,
                     const NetErrorDetails& net_error_details,
                     const ProxyInfo& used_proxy_info,
                     ResolveErrorInfo resolve_error_info));
+#endif
 
-#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
-  MOCK_METHOD3(OnCertificateError, void(int status, const SSLInfo& ssl_info,
-                                        bool used_fallback_proxy));
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY) && BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  MOCK_METHOD4(OnCertificateError,
+               void(int status,
+                    const SSLInfo& ssl_info,
+                    bool used_fallback_proxy,
+                    ResolveInfo resolve_info));
 #else
   MOCK_METHOD2(OnCertificateError, void(int status, const SSLInfo& ssl_info));
 #endif

@@ -3815,6 +3815,17 @@ void RenderFrameHostImpl::RenderProcessGone(
   if (base::FeatureList::IsEnabled(features::kCrashReporting))
     MaybeGenerateCrashReport(info.status, info.exit_code);
 
+  LOG(INFO) << "render process is gone";
+#if BUILDFLAG(ARKWEB_NOT_LOAD_IFRAME)
+  if(base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kEnableNwebEx)) {
+    if (IsCrossProcessSubframe() &&
+      (GetMainFrame()->GetLastCommittedURL().SchemeIs(url::kHttpScheme) ||
+       GetMainFrame()->GetLastCommittedURL().SchemeIs(url::kHttpsScheme))) {
+      delegate_->NotifyFrameGoneReason(info.status, info.exit_code);
+    }
+  }
+#endif  // ARKWEB_NOT_LOAD_IFRAME
+
   // Reporting API: Send any queued reports and mark the reporting source as
   // expired so that the reporting configuration in the network service can be
   // removed. This is done here, rather than in the destructor, as it needs the

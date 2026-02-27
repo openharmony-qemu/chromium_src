@@ -493,6 +493,12 @@ int TransportClientSocketPool::RequestSocketInternal(
     DCHECK(handle);
     if (rv != OK)
       handle->SetAdditionalErrorState(connect_job.get());
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+    handle->SetExtraConnectionAttempts(
+        connect_job.get()->GetExtraConnectionAttempts());
+#endif
+
     std::unique_ptr<StreamSocket> socket = connect_job->PassSocket();
     if (socket) {
       HandOutSocket(std::move(socket),
@@ -500,6 +506,11 @@ int TransportClientSocketPool::RequestSocketInternal(
                     connect_job->connect_timing(), handle,
                     /*time_idle=*/base::TimeDelta(), group, request.net_log());
     }
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+    else {
+      handle->SetResolveInfo(connect_job->GetResolveInfo());
+    }
+#endif
   }
   if (group->IsEmpty())
     RemoveGroup(group_id);
@@ -558,7 +569,12 @@ bool TransportClientSocketPool::AssignIdleSocketToRequest(
         socket->WasEverUsed()
             ? StreamSocketHandle::SocketReuseType::kReusedIdle
             : StreamSocketHandle::SocketReuseType::kUnusedIdle;
-
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+    if (socket && request.handle()) {
+      request.handle()->SetExtraConnectionAttempts(
+          socket->GetExtraConnectionAttempts());
+    }
+#endif
     HandOutSocket(std::move(socket), reuse_type,
                   LoadTimingInfo::ConnectTiming(), request.handle(), idle_time,
                   group, request.net_log());
@@ -1410,12 +1426,24 @@ void TransportClientSocketPool::OnConnectJobComplete(Group* group,
 
   if (result != OK)
     request->handle()->SetAdditionalErrorState(job);
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  request->handle()->SetExtraConnectionAttempts(
+      job->GetExtraConnectionAttempts());
+#endif
+
   if (job->socket()) {
     HandOutSocket(job->PassSocket(),
                   StreamSocketHandle::SocketReuseType::kUnused,
                   job->connect_timing(), request->handle(), base::TimeDelta(),
                   group, request->net_log());
   }
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  else {
+    request->handle()->SetResolveInfo(job->GetResolveInfo());
+  }
+#endif
+
   request->net_log().EndEventWithNetErrorCode(NetLogEventType::SOCKET_POOL,
                                               result);
   InvokeUserCallbackLater(request->handle(), request->release_callback(),

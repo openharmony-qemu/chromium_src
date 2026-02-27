@@ -823,9 +823,6 @@ void OhosVideoDecoder::SetPreciseSeekTarget(int64_t target_timestamp) {
 void OhosVideoDecoder::PipEnable(bool enable) {
   LOG(INFO) << __func__ << " PipEnable enable:" << enable;
   video_frame_factory_->PipEnable(enable);
-  if (!enable) {
-    TransitionToTargetSurface();
-  }
 }
 #endif
 

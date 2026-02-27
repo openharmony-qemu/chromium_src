@@ -317,6 +317,12 @@ bool WebSocketTransportClientSocketPool::TryHandOutSocket(
     HandOutSocket(std::move(socket), connect_timing, handle, request_net_log);
     handed_out_socket = true;
   }
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  else {
+    handle->SetResolveInfo(
+        connect_job_delegate->connect_job()->GetResolveInfo());
+  }
+#endif
 
   request_net_log.EndEventWithNetErrorCode(NetLogEventType::SOCKET_POOL,
                                            result);

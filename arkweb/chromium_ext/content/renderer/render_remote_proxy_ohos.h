@@ -57,7 +57,7 @@ class RenderRemoteProxy : public OHOS::NWeb::AafwkRenderSchedulerHostAdapter {
   static bool fds_channel_ready_;
 
   void SetBrowserFd(int32_t ipcFd, int32_t sharedFd, int32_t crashFd);
-  static Fds ParseFdsFromCommandLine(const base::CommandLine& command_line);
+  static void ParseFdsFromCommandLine(const base::CommandLine& command_line, Fds& fds);
 };
 #endif
 

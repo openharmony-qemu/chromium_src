@@ -1057,7 +1057,7 @@ bool PDFiumEngine::HandleInputEvent(const blink::WebInputEvent& event) {
   defer_page_unload_ = true;
   bool rv = false;
 #if BUILDFLAG(ARKWEB_PDF)
-  LOG(DEBUG) << "PDFiumEngine::HandleInputEvent " << static_cast<int>(event.GetType());
+  LOG(DEBUG) << "PDFiumEngine::HandleInputEvent " << event.GetType();
 #endif
   switch (event.GetType()) {
     case blink::WebInputEvent::Type::kMouseDown:

@@ -35,6 +35,10 @@
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+#include "arkweb/chromium_ext/net/dns/public/resolve_info.h"
+#endif
+
 namespace net {
 
 class ClientSocketFactory;
@@ -284,6 +288,14 @@ class NET_EXPORT_PRIVATE ConnectJob {
   bool IsFromPreload() const {
     return from_preload_;
   }
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  virtual ResolveInfo GetResolveInfo() const { return {}; }
+  void SetResolveInfoToSocket(const ResolveInfo& resolve_info);
+  virtual ConnectionAttempts GetExtraConnectionAttempts() const;
+  void SetExtraConnectionAttemptsToSocket(
+      const ConnectionAttempts& extra_connection_attempts);
 #endif
 
  protected:

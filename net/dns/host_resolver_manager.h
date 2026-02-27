@@ -278,9 +278,7 @@ class NET_EXPORT HostResolverManager
                       handles::NetworkHandle target_network,
                       NetLog* net_log);
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
 #include "arkweb/chromium_ext/net/dns/host_resolver_manager_for_include.h"
-#endif
 
  protected:
   // Callback from HaveOnlyLoopbackAddresses probe.
@@ -315,6 +313,19 @@ class NET_EXPORT HostResolverManager
     kMaxValue = HOSTS,
 #endif
   };
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  enum DnsTaskTransitionType : uint32_t{DEFAULT = 0,
+                                        SYSTEM = 0x00000001,
+                                        DNS = 0x00000010,
+                                        SECURE_DNS = 0x00000100,
+                                        CACHE_LOOKUP = 0x00001000,
+                                        INSECURE_CACHE = 0x00010000,
+                                        SECURE_CACHE = 0x00100000,
+                                        SECURE_DNS_FALLBACK = 0x01000000};
+
+  static DnsTaskTransitionType ConvertFromTaskType(TaskType type);
+#endif
 
   // Returns true if the task is local, synchronous, and instantaneous.
   static bool IsLocalTask(TaskType task);
@@ -354,7 +365,13 @@ class NET_EXPORT HostResolverManager
       const NetLogWithSource& source_net_log,
       HostCache* cache,
       std::deque<TaskType>* out_tasks,
-      std::optional<HostCache::EntryStaleness>* out_stale_info);
+      std::optional<HostCache::EntryStaleness>* out_stale_info
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+      ,
+      int& dns_status,
+      ResolveInfo& resolve_info
+#endif
+  );
 
   // Creates and starts a Job to asynchronously attempt to resolve
   // |request|.
@@ -391,7 +408,12 @@ class NET_EXPORT HostResolverManager
       ResolveHostParameters::CacheUsage cache_usage,
       bool ignore_secure,
       const NetLogWithSource& source_net_log,
-      std::optional<HostCache::EntryStaleness>* out_stale_info);
+      std::optional<HostCache::EntryStaleness>* out_stale_info
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+      ,
+      bool* is_from_secure_cache = nullptr
+#endif
+  );
 
   // Returns any preset resolution result from the active DoH configuration that
   // matches |key.host|.

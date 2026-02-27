@@ -227,6 +227,12 @@ namespace storage {
 class FileSystemBackend;
 }  // namespace storage
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+namespace net {
+class WebNavigationInfo;
+}  // namespace net
+#endif
+
 namespace content {
 enum class SiteIsolationMode;
 enum class SmsFetchFailureType;
@@ -3178,6 +3184,12 @@ class CONTENT_EXPORT ContentBrowserClient {
 
 #if BUILDFLAG(ARKWEB_USERAGENT)
   virtual std::string GetUAStringForHost(const std::string& host);
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  virtual void OnReportNewNavigationInfo(
+      WebContents* web_contents,
+      const net::WebNavigationInfo& navigation_info) {}
 #endif
 };
 

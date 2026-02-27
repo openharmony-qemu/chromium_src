@@ -28,17 +28,9 @@ bool RenderRemoteProxy::is_browser_fd_received_{false};
 bool RenderRemoteProxy::is_for_test_{false};
 bool RenderRemoteProxy::fds_channel_ready_{false};
 
-void RenderRemoteProxy::SetBrowserFd(int32_t ipcFd,
-                                     int32_t sharedFd,
-                                     int32_t crashFd) {
+void RenderRemoteProxy::SetBrowserFd(int32_t ipcFd, int32_t sharedFd, int32_t crashFd) {
   LOG(INFO) << "RenderRemoteProxy::SetBrowserFd, ipcfd=" << ipcFd
             << ", sharedFd=" << sharedFd << ", crashFd=" << crashFd;
-
-  if (ipcFd <= 0 || sharedFd <= 0 || crashFd <= 0) {
-    LOG(ERROR) << "Invalid fds: ipcFd=" << ipcFd << ", sharedFd=" << sharedFd
-               << ", crashFd=" << crashFd;
-    return;
-  }
 
   base::GlobalDescriptors* g_fds = base::GlobalDescriptors::GetInstance();
   if (g_fds != nullptr) {
@@ -50,8 +42,9 @@ void RenderRemoteProxy::SetBrowserFd(int32_t ipcFd,
 
     g_fds->Set(kCrashDumpSignal, crashFd);
     crash_id_ = crashFd;
+
+    fds_channel_ready_ = true;
   }
-  fds_channel_ready_ = true;
 }
 
 void RenderRemoteProxy::NotifyBrowserFd(int32_t ipcFd,
@@ -141,13 +134,49 @@ void RenderRemoteProxy::NotifyBrowser(
         close(crashFd);
       }
     }
+    
+    LOG(INFO) << "Wait for AMS to return IPC fd success and wake up process";
+    RenderRemoteProxy::is_browser_fd_received_ = true;
+    RenderRemoteProxy::browser_fd_cv_.notify_one();
+    if (clientAdapter) {
+      LOG(DEBUG) << "NWebNativeWindowTracker set g_browser_client_";
+      NWebNativeWindowTracker::Get()->g_browser_client_ = clientAdapter;
+    }
+    return;
   }
   LOG(INFO) << "Wait for AMS to return IPC fd success and wake up process";
-  RenderRemoteProxy::is_browser_fd_received_ = true;
-  RenderRemoteProxy::browser_fd_cv_.notify_one();
-  if (clientAdapter) {
+  const base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+  if (!command_line) {
+    LOG(ERROR) << "command_line is nullptr";
+    return;
+  }
+  auto type = command_line->GetSwitchValueASCII(switches::kProcessType);
+  if (clientAdapter && type == switches::kGpuProcess) {
+    // only gpu
+    RenderRemoteProxy::is_browser_fd_received_ = true;
+    RenderRemoteProxy::browser_fd_cv_.notify_one();
     LOG(DEBUG) << "NWebNativeWindowTracker set g_browser_client_";
     NWebNativeWindowTracker::Get()->g_browser_client_ = clientAdapter;
+  }
+}
+
+void RenderRemoteProxy::ParseFdsFromCommandLine(
+    const base::CommandLine& command_line, RenderRemoteProxy::Fds& fds) {
+  std::string fd_str;
+
+  fd_str = command_line.GetSwitchValueASCII("ipc-fd");
+  if (!fd_str.empty()) {
+    base::StringToInt(fd_str, &fds.ipcFd);
+  }
+
+  fd_str = command_line.GetSwitchValueASCII("shared-fd");
+  if (!fd_str.empty()) {
+    base::StringToInt(fd_str, &fds.sharedFd);
+  }
+
+  fd_str = command_line.GetSwitchValueASCII("crash-fd");
+  if (!fd_str.empty()) {
+    base::StringToInt(fd_str, &fds.crashFd);
   }
 }
 
@@ -159,7 +188,8 @@ void RenderRemoteProxy::CreateAndRegist(const base::CommandLine& command_line,
         OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateAafwkAdapter();
     g_render_remote_proxy = std::make_shared<RenderRemoteProxy>();
 
-    Fds fds = ParseFdsFromCommandLine(command_line);
+    Fds fds;
+    ParseFdsFromCommandLine(command_line, fds);
     if (fds.HasAllFds()) {
       g_render_remote_proxy->SetBrowserFd(fds.ipcFd, fds.sharedFd, fds.crashFd);
     }
@@ -200,29 +230,6 @@ bool RenderRemoteProxy::WaitForBrowserFd() {
 
 bool RenderRemoteProxy::IsFdsChannelReady() {
   return fds_channel_ready_;
-}
-
-RenderRemoteProxy::Fds RenderRemoteProxy::ParseFdsFromCommandLine(
-    const base::CommandLine& command_line) {
-  Fds fds;
-  std::string fd_str;
-
-  fd_str = command_line.GetSwitchValueASCII("ipc-fd");
-  if (!fd_str.empty()) {
-    base::StringToInt(fd_str, &fds.ipcFd);
-  }
-
-  fd_str = command_line.GetSwitchValueASCII("shared-fd");
-  if (!fd_str.empty()) {
-    base::StringToInt(fd_str, &fds.sharedFd);
-  }
-
-  fd_str = command_line.GetSwitchValueASCII("crash-fd");
-  if (!fd_str.empty()) {
-    base::StringToInt(fd_str, &fds.crashFd);
-  }
-
-  return fds;
 }
 
 }  // namespace content

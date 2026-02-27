@@ -125,6 +125,13 @@ class URLLoaderUtils {
   bool redirect_updated_ { false };
   bool already_update_info_ { false };
 #endif
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  std::optional<network::URLLoaderCompletionStatus>
+  CreateURLLoaderCompletionStatus();
+  void PopulateURLLoaderCompletionStatus(URLLoaderCompletionStatus& status);
+#endif
+
   base::WeakPtrFactory<URLLoaderUtils> weak_ptr_factory_{this};
 };
 }  // namespace network

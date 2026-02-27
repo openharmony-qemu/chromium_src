@@ -98,6 +98,10 @@ class NET_EXPORT ContextHostResolver : public HostResolver {
   bool CanUseSecureDnsFallback() const override;
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  std::string GetDnsServersString() override;
+#endif
+
 #if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING)
   bool NeedRetryDnsOnDnsHijack(const GURL& url,
                                const std::string& errorcode) const override;

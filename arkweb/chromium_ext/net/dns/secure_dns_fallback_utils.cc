@@ -52,7 +52,8 @@ bool MaybeNeedToProcessAddressList(
     const std::vector<IPEndPoint>& legacy_addresses,
     bool doh_fallback_available,
     std::vector<IPEndPoint>& out_addresses,
-    bool& need_to_modify_result) {
+    bool& need_to_modify_result,
+    std::vector<IPEndPoint>& truncation_address) {
   if (legacy_addresses.empty()) {
     return false;
   }
@@ -68,6 +69,7 @@ bool MaybeNeedToProcessAddressList(
         g_suspect_ip_list->end()) {
       out_addresses.push_back(endpoint);
     } else {
+      truncation_address.push_back(endpoint);
       matched_suspect_ip = true;
     }
   }

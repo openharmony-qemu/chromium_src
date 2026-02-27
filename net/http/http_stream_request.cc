@@ -77,6 +77,19 @@ void HttpStreamRequest::AddConnectionAttempts(
   }
 }
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+const ConnectionAttempts& HttpStreamRequest::extra_connection_attempts() const {
+  return extra_connection_attempts_;
+}
+
+void HttpStreamRequest::AddExtraConnectionAttempts(
+    const ConnectionAttempts& extra_attempts) {
+  for (const auto& attempt : extra_attempts) {
+    extra_connection_attempts_.push_back(attempt);
+  }
+}
+#endif
+
 WebSocketHandshakeStreamBase::CreateHelper*
 HttpStreamRequest::websocket_handshake_stream_create_helper() const {
   return websocket_handshake_stream_create_helper_;

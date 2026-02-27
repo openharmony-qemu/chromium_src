@@ -72,6 +72,7 @@ struct RunJavaScriptParam;
 #include "capi/nweb_offscreen_document_permission_request_callback.h"
 #include "capi/web_extension_tab_items.h"
 #include "ohos_nweb/src/capi/nweb_context_menus_on_clicked_data.h"
+#include "ohos_nweb/src/capi/nweb_context_menus_item.h"
 #include "ohos_nweb/src/capi/web_extension_install_crx_items.h"
 #endif // ARKWEB_ARKWEB_EXTENSIONS
 
@@ -706,6 +707,9 @@ class NWebImpl : public NWeb {
       int32_t min_width, int32_t min_height, int32_t max_width, int32_t max_height);
   void DisableAutoResize();
   std::shared_ptr<HitTestResult> GetLastHitTestResultForBrowser();
+  std::vector<WebExtensionContextMenusItem> GetContextMenuItem();
+  void OnContextMenuSelected(int command_id);
+  void OnContextMenuClosed();
 #endif
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
@@ -1185,6 +1189,11 @@ class NWebImpl : public NWeb {
   bool NeedToFireBeforeUnloadOrUnloadEvents();
   void DispatchBeforeUnload();
 #endif  // ARKWEB_DISATCH_BEFORE_UNLOAD
+
+#if BUILDFLAG(ARKWEB_SAVE_PAGE)
+  bool SavePage(int32_t type, const std::string& filePath);
+#endif // ARKWEB_SAVE_PAGE
+
 #if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
   void StopScreenCapture(int32_t nweb_id, const char* session_id);
   void SetScreenCapturePickerShow();

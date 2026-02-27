@@ -183,6 +183,10 @@ class NET_EXPORT_PRIVATE HttpCache::Transaction : public HttpTransaction {
   void CloseConnectionOnDestruction() override;
   bool IsMdlMatchForMetrics() const override;
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  ConnectionAttempts GetExtraConnectionAttempts() const override;
+#endif
+
   // Invoked when parallel validation cannot proceed due to response failure
   // and this transaction needs to be restarted.
   void SetValidatingCannotProceed();
@@ -239,6 +243,9 @@ class NET_EXPORT_PRIVATE HttpCache::Transaction : public HttpTransaction {
     int64_t total_sent_bytes = 0;
     int64_t received_body_bytes = 0;
     ConnectionAttempts old_connection_attempts;
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+    ConnectionAttempts old_extra_connection_attempts;
+#endif
     IPEndPoint old_remote_endpoint;
     // For metrics. Can be removed when associated histograms are removed.
     // Records whether any destroyed network transactions' ProxyInfo determined

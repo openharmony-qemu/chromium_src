@@ -24,6 +24,11 @@
 #include "base/json/json_writer.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+#include "arkweb/chromium_ext/net/base/request_attempt.h"
+#include "base/i18n/time_formatting.h"
+#endif
+
 namespace {
 #if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 const char* kDnsRetryResultEventType = "dns_retry_result";
@@ -56,6 +61,51 @@ bool IsFallbackProxyIgnoreErrorCode(int result) {
   return false;
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+constexpr int kMaxRequestAttemptSize = 10;
+
+// Helper: Populate DNS info
+void PopulateDnsInfo(const net::HttpResponseInfo* response_info,
+                     const GURL& url,
+                     net::DnsInfo& dns_info) {
+  dns_info.result = response_info->resolve_error_info.error;
+  dns_info.dns_transition = response_info->resolve_info.dns_transition;
+  dns_info.host = url.host();
+  dns_info.address_list = response_info->resolve_info.ip_endpoints;
+  dns_info.truncation_ips = response_info->resolve_info.truncation_ips;
+  dns_info.dns_status = response_info->resolve_info.dns_status;
+}
+
+// Helper: Populate SSL info
+void PopulateSslInfo(const net::HttpResponseInfo* response_info,
+                     const GURL& url,
+                     int result,
+                     net::ArkWebSSLInfo& ssl_info) {
+  ssl_info.host = url.host();
+  ssl_info.result = result;
+  ssl_info.is_fatal_cert_error = response_info->ssl_info.is_fatal_cert_error;
+
+  if (response_info->ssl_info.cert) {
+    ssl_info.issuer = response_info->ssl_info.cert->issuer().GetDisplayName();
+    ssl_info.expired_date = base::UTF16ToUTF8(base::TimeFormatShortDateNumeric(
+        response_info->ssl_info.cert->valid_expiry()));
+  }
+}
+
+// Helper: Populate Socket info
+void PopulateSocketInfo(const net::ConnectionAttempts& connection_attempts,
+                        const GURL& url,
+                        int result,
+                        net::SocketInfo& socket_info) {
+  socket_info.host = url.host();
+  socket_info.result = result;
+  for (const auto& connection_attempt : connection_attempts) {
+    socket_info.address_list.emplace_back(
+        connection_attempt.endpoint.ToStringWithoutPort());
+  }
+}
+#endif  // BUILDFLAG(ARKWEB_EXT_NAVIGATION)
 }
 
 namespace net {
@@ -110,6 +160,9 @@ bool URLRequestHttpJob::MaybeRetryWithFallbackProxy(int result) {
                    << ", is_main_frame " << is_main_frame << ", url "
                    << url::LogUtils::ConvertUrlWithMask(
                           request()->url().spec());
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+        current_attempt_type_ = AttemptType::kCheckSafeBrowsing;
+#endif
         base::SingleThreadTaskRunner::GetCurrentDefault()->PostDelayedTask(
             FROM_HERE,
             base::BindOnce(&URLRequestHttpJob::OnStartCompleted,
@@ -287,6 +340,10 @@ void URLRequestHttpJob::RetryWithFallbackProxy() {
   request_info_.secure_dns_only = false;
   request_info_.retry_with_fallback_proxy = true;
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  current_attempt_type_ = AttemptType::kFallbackProxy;
+#endif
+
   LOG(INFO) << "Will retry with fallback proxy for "
              << url::LogUtils::ConvertUrlWithMask(request_->url().spec());
   int rv = transaction_->RestartWithFallbackProxy(base::BindOnce(
@@ -351,6 +408,10 @@ void URLRequestHttpJob::RetryWithDirect() {
   request_info_.secure_dns_only = false;
   request_info_.retry_with_fallback_proxy = false;
   request_info_.load_flags |= LOAD_BYPASS_PROXY;
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  current_attempt_type_ = AttemptType::kFallbackProxyDirect;
+#endif
 
   LOG(DEBUG) << "Will retry with direct after proxy for "
              << url::LogUtils::ConvertUrlWithMask(request_->url().spec());
@@ -419,5 +480,61 @@ void URLRequestHttpJob::ReportSecureFallbackDnsRetryResult(int net_error) {
                                 base::ohos::kSecureDnsRetryResult, ostr.str());
 }
 #endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+void URLRequestHttpJob::GenerateRequestAttempt(int result) {
+  if (!request_ || request_attempts_.size() > kMaxRequestAttemptSize) {
+    return;
+  }
+
+  if (should_set_original_code_) {
+    original_error_code_ = result;
+    should_set_original_code_ = false;
+  }
+
+  if (current_attempt_type_ == AttemptType::kCheckWirelessChange ||
+      current_attempt_type_ == AttemptType::kCheckSafeBrowsing) {
+    current_attempt_type_ = AttemptType::kNormal;
+    return;
+  }
+
+  RequestAttempt attempt;
+  attempt.request_trace_id = request_->request_uuid();
+  attempt.request_result = result;
+  attempt.attempt_type = current_attempt_type_;
+  current_attempt_type_ = AttemptType::kNormal;
+
+  auto* response_info =
+      transaction_ ? transaction_->GetResponseInfo() : nullptr;
+  if (!response_info) {
+    request_attempts_.emplace_back(std::move(attempt));
+    return;
+  }
+
+  attempt.was_fetched_via_proxy = response_info->WasFetchedViaProxy();
+
+  PopulateDnsInfo(response_info, request_->url(), attempt.dns_info);
+  PopulateSslInfo(response_info, request_->url(), result, attempt.ssl_info);
+  PopulateSocketInfo(GetExtraConnectionAttempts(), request_->url(), result,
+                     attempt.socket_info);
+
+  request_attempts_.emplace_back(std::move(attempt));
+}
+
+int URLRequestHttpJob::GetOriginalNetErrorCode() const {
+  return original_error_code_;
+}
+
+std::vector<net::RequestAttempt> URLRequestHttpJob::GetRequestAttempts() const {
+  return request_attempts_;
+}
+
+ConnectionAttempts URLRequestHttpJob::GetExtraConnectionAttempts() const {
+  if (transaction_) {
+    return transaction_->GetExtraConnectionAttempts();
+  }
+  return {};
+}
+#endif  // BUILDFLAG(ARKWEB_EXT_NAVIGATION)
 
 }  // namespace net

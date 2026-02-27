@@ -8,6 +8,14 @@ import("//net/features.gni")
 import("//services/network/public/cpp/features.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
 
+if (is_arkweb_ext) {
+  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
+}
+
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
+
 _is_directory_transfer_required = is_fuchsia
 buildflag_header("buildflags") {
   header = "network_service_buildflags.h"
@@ -488,6 +496,10 @@ component("cpp_base") {
     "//services/network/public/mojom:url_loader_base",
   ]
   defines = [ "IS_NETWORK_CPP_BASE_IMPL" ]
+
+  if (arkweb_ext_navigation) {
+    public_deps += [ "//arkweb/chromium_ext/services/network/public/cpp:navigation_info_mojom_support" ]
+  }
 
   if (is_p2p_enabled) {
     sources += [

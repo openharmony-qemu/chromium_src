@@ -55,6 +55,10 @@ class NET_EXPORT DnsClient {
   virtual void GetLocalAddress(IPEndPoint* address) = 0;
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  virtual std::string GetDnsServersString() { return std::string(); }
+#endif
+
   // Returns true if the DnsClient is able and allowed to make insecure DNS
   // transactions. If false, insecure transactions should not be created. Will
   // always be false unless SetInsecureEnabled(true) has been called.

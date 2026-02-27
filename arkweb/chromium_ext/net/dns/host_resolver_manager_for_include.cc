@@ -123,6 +123,10 @@ class HostResolverManager::WarmUpHttpDnsFallbackImpl
   void PreDnsOfDohFallbackServer() {
     DCHECK(resolver_);
     DCHECK(context_);
+    if (!context_ || !resolver_) {
+      return;
+    }
+
     if (request_) {
       return;
     }
@@ -328,6 +332,16 @@ void HostResolverManager::ReportDnsTransactionResult(int index,
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
   LOG_FEEDBACK(INFO, kNetwork) << "HttpDNSTransaction " << ostr.str();
 #endif
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+std::string HostResolverManager::GetDnsServersString() {
+  if (!dns_client_) {
+    return std::string();
+  }
+
+  return dns_client_->GetDnsServersString();
 }
 #endif
 

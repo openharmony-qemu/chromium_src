@@ -37,6 +37,8 @@
 #if BUILDFLAG(ARKWEB_CRASHPAD)
 #include "../dfx/dfx_reporter_browser_impl.h"
 #endif
+#include "base/trace_event/trace_event.h"
+
 // VLOG additional statements in Fuchsia release builds.
 #if BUILDFLAG(IS_FUCHSIA)
 #define MAYBEVLOG VLOG
@@ -310,11 +312,12 @@ RenderProcessMode RenderProcessHost::render_process_mode() {
 // static
 #if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
 void ArkwebRenderProcessHostImplUtils::Refresh() {
+  TRACE_EVENT2("base", __FILE__, "func", __func__, "line", __LINE__);
   RenderProcessHost::iterator it = RenderProcessHost::AllHostsIterator();
   if (it.IsAtEnd()) {
     return;
   }
-  do {
+  for (; !it.IsAtEnd(); it.Advance()) {
     RenderProcessHostImpl* host =
         static_cast<RenderProcessHostImpl*>(it.GetCurrentValue());
     if (!host) {
@@ -325,10 +328,13 @@ void ArkwebRenderProcessHostImplUtils::Refresh() {
     for (auto rfh_id : temp_set) {
       auto rfh = RenderFrameHostImpl::FromID(rfh_id);
       if (rfh && rfh->IsActive()) {
+        TRACE_EVENT2("base", __FILE__, "func", __func__, "line", __LINE__);
+        LOG(INFO) << "[NativeEmbed]child_id = " << rfh->GetGlobalId().child_id
+                  << "frame_routing_id=" << rfh->GetGlobalId().frame_routing_id;
         rfh->Reload();
       }
     }
-  } while (0);
+  }
 }
 #endif
 // LCOV_EXCL_STOP

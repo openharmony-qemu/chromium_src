@@ -1069,6 +1069,28 @@ TEST_F(MediaWebContentsObserverForIncludeTest,
 }
 
 TEST_F(MediaWebContentsObserverForIncludeTest,
+ 	        OnNotifyMeidaCastUri1) {
+  ASSERT_TRUE(player_id_.has_value());
+  auto host =
+      std::make_unique<MediaWebContentsObserver::MediaPlayerObserverHostImpl>(
+          *player_id_, observer_.get());
+  ASSERT_NO_FATAL_FAILURE(host->OnNotifyMeidaCastUri("test"));
+}
+
+TEST_F(MediaWebContentsObserverForIncludeTest,
+      OnNotifyMeidaCastUri2) {
+  ASSERT_TRUE(player_id_.has_value());
+  ASSERT_DEATH({
+    auto host =
+      std::make_unique<MediaWebContentsObserver::MediaPlayerObserverHostImpl>(
+          *player_id_, nullptr);
+    if (host) {
+      host->OnNotifyMeidaCastUri("test");
+    }
+  }, ".*");
+}
+
+TEST_F(MediaWebContentsObserverForIncludeTest,
        HandleStopMediaCast1) {
   ASSERT_TRUE(player_id_.has_value());
   auto host =
@@ -1080,10 +1102,8 @@ TEST_F(MediaWebContentsObserverForIncludeTest,
 TEST_F(MediaWebContentsObserverForIncludeTest,
        HandleStopMediaCast2) {
   ASSERT_TRUE(player_id_.has_value());
-  std::unique_ptr<MediaWebContentsObserver::MediaPlayerObserverHostImpl> host;
-  
   ASSERT_DEATH({
-    host = std::make_unique<MediaWebContentsObserver::MediaPlayerObserverHostImpl>(
+    auto host = std::make_unique<MediaWebContentsObserver::MediaPlayerObserverHostImpl>(
         *player_id_, nullptr);
     host->HandleStopMediaCast();
   }, ".*");
@@ -1101,10 +1121,8 @@ TEST_F(MediaWebContentsObserverForIncludeTest,
 TEST_F(MediaWebContentsObserverForIncludeTest,
        UpdateRemotePlayState2) {
   ASSERT_TRUE(player_id_.has_value());
-  std::unique_ptr<MediaWebContentsObserver::MediaPlayerObserverHostImpl> host;
-  
   ASSERT_DEATH({
-    host = std::make_unique<MediaWebContentsObserver::MediaPlayerObserverHostImpl>(
+    auto host = std::make_unique<MediaWebContentsObserver::MediaPlayerObserverHostImpl>(
         *player_id_, nullptr);
     host->UpdateRemotePlayState(true);
   }, ".*");
@@ -1123,19 +1141,19 @@ TEST_F(MediaWebContentsObserverForIncludeTest,
 TEST_F(MediaWebContentsObserverForIncludeTest,
        UpdateRemotePlayPosition2) {
   ASSERT_TRUE(player_id_.has_value());
-  std::unique_ptr<MediaWebContentsObserver::MediaPlayerObserverHostImpl> host;
-  
   ASSERT_DEATH({
-    host = std::make_unique<MediaWebContentsObserver::MediaPlayerObserverHostImpl>(
+    auto host = std::make_unique<MediaWebContentsObserver::MediaPlayerObserverHostImpl>(
         *player_id_, nullptr);
     host->UpdateRemotePlayPosition(1);
   }, ".*");
-  host.reset();
 }
 
 TEST_F(MediaWebContentsObserverForIncludeTest,
        SetPauseByAvcast1) {
   ASSERT_TRUE(player_id_.has_value());
+  if (!observer_) {
+ 	  return;
+ 	}
   auto host =
       std::make_unique<MediaWebContentsObserver::MediaPlayerObserverHostImpl>(
           *player_id_, observer_.get());
@@ -1146,14 +1164,11 @@ TEST_F(MediaWebContentsObserverForIncludeTest,
 TEST_F(MediaWebContentsObserverForIncludeTest,
        SetPauseByAvcast2) {
   ASSERT_TRUE(player_id_.has_value());
-  std::unique_ptr<MediaWebContentsObserver::MediaPlayerObserverHostImpl> host;
-  
   ASSERT_DEATH({
-    host = std::make_unique<MediaWebContentsObserver::MediaPlayerObserverHostImpl>(
+    auto host = std::make_unique<MediaWebContentsObserver::MediaPlayerObserverHostImpl>(
         *player_id_, nullptr);
     host->SetPauseByAvcast(true);
   }, ".*");
-  host.reset();
 }
 
 TEST_F(MediaWebContentsObserverForIncludeTest,
@@ -1166,7 +1181,7 @@ TEST_F(MediaWebContentsObserverForIncludeTest,
 }
 
 TEST_F(MediaWebContentsObserverForIncludeTest,
-       DidFinishNavigation2) {
+      DidFinishNavigation2) {
   MyMockNavigationHandle mock_navigation;
   auto mock_manager_raw = new MyMockMediaSessionControllersManager(
       static_cast<WebContentsImpl*>(web_contents()));

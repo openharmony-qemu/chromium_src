@@ -133,6 +133,7 @@ if (!enable_arkweb) {
   arkweb_dfx_tracing = false
   arkweb_disable_services = false
   arkweb_dispatch_before_unload = true
+  arkweb_save_page = true
   arkweb_display_cutout = false
   arkweb_download = false
   arkweb_drag_drop = false
@@ -332,6 +333,7 @@ if (!enable_arkweb) {
   arkweb_ext_http_dns_fallback_on_dns_hijacking = false
   arkweb_custom_viewport_width = false
   arkweb_evict_unlock_frames = false
+  arkweb_not_load_iframe = false
 }
 
 buildflag_header("features") {
@@ -374,6 +376,7 @@ buildflag_header("features") {
     "ARKWEB_DFX_TRACING=$arkweb_dfx_tracing",
     "ARKWEB_DISABLE_SERVICES=$arkweb_disable_services",
     "ARKWEB_DISATCH_BEFORE_UNLOAD=$arkweb_dispatch_before_unload",
+    "ARKWEB_SAVE_PAGE=$arkweb_save_page",
     "ARKWEB_DISPLAY_CUTOUT=$arkweb_display_cutout",
     "ARKWEB_DOWNLOAD=$arkweb_download",
     "ARKWEB_DRAG_DROP=$arkweb_drag_drop",
@@ -584,6 +587,7 @@ buildflag_header("features") {
     "ARKWEB_MEDIA_CAST=$arkweb_media_cast",
     "ARKWEB_CUSTOM_VIEWPORT_WIDTH=$arkweb_custom_viewport_width",
     "ARKWEB_EVICT_UNLOCK_FRAMES=$arkweb_evict_unlock_frames",
+    "ARKWEB_NOT_LOAD_IFRAME=$arkweb_not_load_iframe",
 
     # ARKWEB_EXT dafault value
     "ARKWEB_EXT_BLANK_TARGET_POPUP_INTERCEPT=false",

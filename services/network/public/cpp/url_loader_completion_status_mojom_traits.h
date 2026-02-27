@@ -19,6 +19,15 @@
 #include "services/network/public/mojom/cors.mojom-shared.h"
 #include "services/network/public/mojom/url_loader_completion_status.mojom-shared.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+#include "arkweb/chromium_ext/net/base/navigation_info.h"
+#include "arkweb/chromium_ext/services/network/public/mojom/navigation_info.mojom-shared.h"
+#endif
+
 namespace mojo {
 
 // The wrapper struct is effectively an alias of the wrapped enum, so map them.
@@ -136,6 +145,13 @@ class COMPONENT_EXPORT(NETWORK_CPP_BASE)
   static bool needs_reload_with_fallback_proxy(
       const network::URLLoaderCompletionStatus& status) {
     return status.needs_reload_with_fallback_proxy;
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  static const std::optional<net::NavigationInfo>& navigation_info(
+      const network::URLLoaderCompletionStatus& status) {
+    return status.navigation_info;
   }
 #endif
 

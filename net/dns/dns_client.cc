@@ -324,6 +324,25 @@ class DnsClientImpl : public DnsClient {
   }
 #endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  std::string GetDnsServersString() override {
+    const DnsConfig* config = GetEffectiveConfig();
+    if (!config) {
+      return "[]";
+    }
+
+    std::string nameservers_str = "";
+    for (const auto& server : config->nameservers) {
+      if (nameservers_str.size() != 0) {
+        nameservers_str = nameservers_str + ", " + server.ToString();
+      } else {
+        nameservers_str += server.ToString();
+      }
+    }
+    return "[" + nameservers_str + "]";
+  }
+#endif  // BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+
   bool insecure_enabled_ = false;
   bool can_query_additional_types_via_insecure_ = false;
   int insecure_fallback_failures_ = 0;

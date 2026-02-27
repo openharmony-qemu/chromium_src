@@ -1112,6 +1112,10 @@ class WebContents : public PageNavigator, public base::SupportsUserData {
   // Prepare for saving the current web page to disk.
   virtual void OnSavePage() = 0;
 
+#if BUILDFLAG(ARKWEB_SAVE_PAGE)
+  virtual bool SavePageEx(const base::FilePath& main_file, SavePageType save_type) = 0;
+#endif // ARKWEB_SAVE_PAGE
+
   // Save page with the main HTML file path, the directory for saving resources,
   // and the save type: HTML only or complete web page. Returns true if the
   // saving process has been initiated successfully.

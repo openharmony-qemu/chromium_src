@@ -15,16 +15,17 @@
 
 #include "frame_available_listener_impl.h"
 
+#include "arkweb/chromium_ext/ui/gl/ohos/ohos_native_image.h"
+
 namespace OHOS::NWeb {
 
 FrameAvailableListenerImpl::FrameAvailableListenerImpl(
-  raw_ptr<OhosNativeImageAdapter> adapter) : ohos_native_image_adapter_(adapter) {}
+        base::WeakPtr<gl::OhosNativeImage> adapter,
+        scoped_refptr<base::SingleThreadTaskRunner> task_runner)
+        :oni_wptr(std::move(adapter)), task_runner_(task_runner) {}
 
 void FrameAvailableListenerImpl::OnFrameAvailableListener() {
-  if (!ohos_native_image_adapter_) {
-    return;
-  }
-  ohos_native_image_adapter_->OnFrameAvailableListener();
+  task_runner_->PostTask(
+              FROM_HERE, base::BindOnce(&gl::OhosNativeImage::OnFrameAvailableListener, oni_wptr));
 }
-
 }  // namespace OHOS::NWeb

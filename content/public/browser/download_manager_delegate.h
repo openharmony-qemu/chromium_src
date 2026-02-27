@@ -168,6 +168,12 @@ class CONTENT_EXPORT DownloadManagerDelegate {
       bool can_save_as_complete,
       SavePackagePathPickedCallback callback) {}
 
+#if BUILDFLAG(ARKWEB_SAVE_PAGE)
+  virtual void SafeBrowsingCallback(
+      const base::FilePath& suggested_path,
+      SavePackagePathPickedCallback callback) {}
+#endif // ARKWEB_SAVE_PAGE
+
   // Sanitize a filename that's going to be used for saving a subresource of a
   // SavePackage.
   //

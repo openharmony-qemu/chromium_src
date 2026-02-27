@@ -55,6 +55,8 @@ public:
 
   static constexpr uint64_t INVALID_BLANKLESS_KEY = UINT64_MAX;
   static constexpr double CALLBACK_SIMILARITY_THRESHOLD = 0.5;
+  static constexpr double CALLBACK_SIMILARITY_THRESHOLD_MIDDLE = 0.3;
+  static constexpr double CALLBACK_SIMILARITY_THRESHOLD_LOW = 0.1;
   static constexpr uint64_t INVALID_TIMESTAMP = UINT64_MAX;
   static constexpr int32_t A_STANDARD = 1600; // 1600 ms
   static constexpr int32_t MINIMUM_FRAME_LIFETIME = 40; // 40 ms
@@ -171,10 +173,12 @@ private:
 #if BUILDFLAG(ARKWEB_BLANK_PROP_CONFIG)
     void LoadAppWhiteList();
     void ParseAppWhiteList(std::vector<char>& buffer);
+    bool FullMatch(const std::string& url);
     bool QueryMatch(const std::string& url);
     std::string GetBaseUrl(const std::string& url);
     std::string GetQueryUrl(const std::string& url);
 
+    std::unordered_set<std::string> m_full_match_set_;
     std::unordered_map<std::string, std::unordered_set<std::string>> m_query_match_map_;
     bool m_is_app_loaded_ = false;
 #endif // BUILDFLAG(ARKWEB_BLANK_PROP_CONFIG)

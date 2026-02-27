@@ -408,6 +408,7 @@ void EventRouter::AddListenerForMainThread(
 
   const mojom::EventListenerOwner& listener_owner =
       *event_listener->listener_owner;
+  LOG(INFO) << "EventRouter: AddListenerForMainThread: " << event_listener->event_name;
   if (listener_owner.is_extension_id() &&
       crx_file::id_util::IdIsValid(listener_owner.get_extension_id())) {
     AddEventListener(event_listener->event_name, process,
@@ -429,6 +430,7 @@ void EventRouter::AddListenerForServiceWorker(
 
   const mojom::EventListenerOwner& listener_owner =
       *event_listener->listener_owner;
+  LOG(INFO) << "EventRouter: AddListenerForServiceWorker: " << event_listener->event_name;
   if (!listener_owner.is_extension_id() ||
       !crx_file::id_util::IdIsValid(listener_owner.get_extension_id())) {
     mojo::ReportBadMessage(kAddEventListenerWithInvalidExtensionID);
@@ -506,6 +508,7 @@ void EventRouter::RemoveListenerForMainThread(
 
   const mojom::EventListenerOwner& listener_owner =
       *event_listener->listener_owner;
+  LOG(INFO) << "EventRouter: RemoveListenerForMainThread: " << event_listener->event_name;
   if (listener_owner.is_extension_id() &&
       crx_file::id_util::IdIsValid(listener_owner.get_extension_id())) {
     RemoveEventListener(event_listener->event_name, process,
@@ -527,6 +530,7 @@ void EventRouter::RemoveListenerForServiceWorker(
 
   const mojom::EventListenerOwner& listener_owner =
       *event_listener->listener_owner;
+  LOG(INFO) << "EventRouter: RemoveListenerForServiceWorker: " << event_listener->event_name;
   if (!listener_owner.is_extension_id() ||
       !crx_file::id_util::IdIsValid(listener_owner.get_extension_id())) {
     mojo::ReportBadMessage(kRemoveEventListenerWithInvalidExtensionID);

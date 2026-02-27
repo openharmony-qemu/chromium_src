@@ -122,6 +122,18 @@ config("mock_ndk_api_config") {
     "-Wl,--wrap=OH_AVSession_SetAVMetadata",
     "-Wl,--wrap=OH_AVSession_SetPlaybackPosition",
     "-Wl,--wrap=OH_AVMetadataBuilder_SetMediaImageUri",
+    "-Wl,--wrap=OH_DeviceInfo_GetDeviceName",
+    "-Wl,--wrap=OH_AVSession_CreateAVCastController",
+    "-Wl,--wrap=OH_AVCastController_RegisterPlaybackStateChangedCallback",
+    "-Wl,--wrap=OH_AVCastController_RegisterMediaItemChangedCallback",
+    "-Wl,--wrap=OH_AVCastController_RegisterSeekDoneCallback",
+    "-Wl,--wrap=OH_AVCastController_RegisterEndOfStreamCallback",
+    "-Wl,--wrap=OH_AVCastController_RegisterErrorCallback",
+    "-Wl,--wrap=OH_AVCastController_UnregisterPlaybackStateChangedCallback",
+    "-Wl,--wrap=OH_AVCastController_UnregisterMediaItemChangedCallback",
+    "-Wl,--wrap=OH_AVCastController_UnregisterSeekDoneCallback",
+    "-Wl,--wrap=OH_AVCastController_UnregisterEndOfStreamCallback",
+    "-Wl,--wrap=OH_AVCastController_UnregisterErrorCallback",
   ]
   #arkweb_base_oh_ndk_config
   ldflags += [

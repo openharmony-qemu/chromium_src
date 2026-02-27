@@ -59,7 +59,12 @@ class NET_EXPORT_PRIVATE HttpStreamRequest {
     // |used_proxy_info| indicates the actual ProxyInfo used for this stream,
     // since the HttpStreamRequest performs the proxy resolution.
     virtual void OnStreamReady(const ProxyInfo& used_proxy_info,
-                               std::unique_ptr<HttpStream> stream) = 0;
+                               std::unique_ptr<HttpStream> stream
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                               ,
+                               ResolveInfo resolve_info
+#endif
+                               ) = 0;
 
     // This is the success case for RequestWebSocketHandshakeStream.
     // |stream| is now owned by the delegate.
@@ -79,14 +84,20 @@ class NET_EXPORT_PRIVATE HttpStreamRequest {
     virtual void OnStreamFailed(int status,
                                 const NetErrorDetails& net_error_details,
                                 const ProxyInfo& used_proxy_info,
-                                ResolveErrorInfo resolve_error_info) = 0;
+                                ResolveErrorInfo resolve_error_info
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                                ,
+                                ResolveInfo resolve_info
+#endif
+                                ) = 0;
 
     // Called when we have a certificate error for the request.
     virtual void OnCertificateError(int status,
                                     const SSLInfo& ssl_info
-#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY) && BUILDFLAG(ARKWEB_EXT_NAVIGATION)
                                     ,
-                                    bool used_fallback_proxy
+                                    bool used_fallback_proxy,
+                                    ResolveInfo resolve_info
 #endif
                                     ) = 0;
 
@@ -176,6 +187,11 @@ class NET_EXPORT_PRIVATE HttpStreamRequest {
   // layer in an attached Job for this stream request.
   void AddConnectionAttempts(const ConnectionAttempts& attempts);
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  const ConnectionAttempts& extra_connection_attempts() const;
+  void AddExtraConnectionAttempts(const ConnectionAttempts& extra_attempts);
+#endif
+
   // Returns the LoadState for the request.
   LoadState GetLoadState() const;
 
@@ -231,6 +247,10 @@ class NET_EXPORT_PRIVATE HttpStreamRequest {
 
   base::TimeTicks dns_resolution_start_time_override_;
   base::TimeTicks dns_resolution_end_time_override_;
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  ConnectionAttempts extra_connection_attempts_;
+#endif
 };
 
 }  // namespace net

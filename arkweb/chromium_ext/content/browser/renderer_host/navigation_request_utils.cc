@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #include "arkweb/chromium_ext/content/browser/renderer_host/navigation_request_utils.h"
 #include "content/public/common/content_switches.h"
 #include "content/browser/renderer_host/frame_tree_node.h"
@@ -19,12 +20,24 @@
 #if BUILDFLAG(ARKWEB_READER_MODE)
 #include "content/public/browser/web_contents_delegate.h"
 #endif
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+#include "arkweb/chromium_ext/content/browser/web_contents/web_contents_impl_ext.h"
+#include "arkweb/chromium_ext/content/public/browser/error_page_reload_reason.h"
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#include "arkweb/chromium_ext/net/base/navigation_info.h"
+#include "arkweb/chromium_ext/net/base/request_attempt.h"
+#include "arkweb/chromium_ext/services/network/public/mojom/navigation_info.mojom.h"
+#include "services/network/public/mojom/url_loader_completion_status.mojom.h"
+#endif
 
 namespace content {
 NavigationRequestUtils::NavigationRequestUtils(NavigationRequest* nav_request)
-{
-  this->nav_request_ = nav_request;
-}
+    : nav_request_(nav_request)
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+      , enable_nweb_ex_(base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableNwebEx))
+#endif
+{}
 
 #if BUILDFLAG(ARKWEB_EXT_UA)
 void NavigationRequestUtils::RemoveUserAgentHeaderForDevTools(
@@ -143,6 +156,127 @@ void NavigationRequestUtils::BeginNavigationImpl(
         nav_request_->common_params_->referrer->url.host() !=
             nav_request_->common_params_->url.host();
   }
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+net::WebNavigationInfo& NavigationRequestUtils::GetWebNavigationInfo() {
+  CHECK(nav_request_);
+  return nav_request_->web_navigation_info_;
+}
+
+const net::WebNavigationInfo& NavigationRequestUtils::GetWebNavigationInfo()
+    const {
+  CHECK(nav_request_);
+  return nav_request_->web_navigation_info_;
+}
+
+void NavigationRequestUtils::PopulateNavigationInfo(
+    const std::optional<network::URLLoaderCompletionStatus>& status) {
+  if (!enable_nweb_ex_) {
+    return;
+  }
+
+  // FIXME: add cloud control
+  if (!status.has_value() || !status->navigation_info.has_value()) {
+    return;
+  }
+
+  if (status->navigation_info->request_attempts.empty() ||
+      status->navigation_info->request_url.empty() ||
+      status->navigation_info->request_uuid.empty()) {
+    return;
+  }
+
+  GetWebNavigationInfo().navigation_info = status->navigation_info.value();
+  GetWebNavigationInfo().navigation_info.request_attempts.clear();
+
+  GetWebNavigationInfo().is_auto_reload = IsAutoReload();
+  GetWebNavigationInfo().auto_reload_reason =
+      nav_request_->GetCurrentReloadReason();
+
+  GetWebNavigationInfo().original_url = nav_request_->original_url_.spec();
+  GetWebNavigationInfo().connection_type =
+      static_cast<int>(net::NetworkChangeNotifier::GetConnectionType());
+
+  GetWebNavigationInfo().did_use_fallback_proxy = status->used_fallback_proxy;
+  GetWebNavigationInfo().is_captive_portal = false;
+
+  const auto& nav_info = status->navigation_info.value();
+  for (const auto& attempt : nav_info.request_attempts) {
+    if (attempt.attempt_type == net::AttemptType::kContinueDespiteLastError) {
+      GetWebNavigationInfo().has_ignore_certificate_error = true;
+      continue;
+    }
+
+    if (attempt.attempt_type == net::AttemptType::kNormal ||
+        attempt.attempt_type == net::AttemptType::kHttpDnsOnly ||
+        attempt.attempt_type == net::AttemptType::kFallbackProxy) {
+      GetWebNavigationInfo().navigation_info.request_attempts.push_back(
+          attempt);
+    }
+
+    if (attempt.attempt_type == net::AttemptType::kFallbackProxy) {
+      continue;
+    }
+
+    if (attempt.dns_info.UsedHttpDns()) {
+      GetWebNavigationInfo().did_use_http_dns = true;
+      GetWebNavigationInfo().secure_dns_records.insert(
+          GetWebNavigationInfo().secure_dns_records.cend(),
+          attempt.dns_info.address_list.cbegin(),
+          attempt.dns_info.address_list.cend());
+    } else if (attempt.dns_info.UsedInsecureDns()) {
+      GetWebNavigationInfo().insecure_dns_records.insert(
+          GetWebNavigationInfo().insecure_dns_records.cend(),
+          attempt.dns_info.address_list.cbegin(),
+          attempt.dns_info.address_list.cend());
+    }
+  }
+}
+
+bool NavigationRequestUtils::IsAutoReload() {
+  return nav_request_->GetCurrentReloadReason() >
+         ErrorPageReloadReason::INVALID;
+}
+
+void NavigationRequestUtils::OnReportNewNavigationInfo(
+    const std::string& page_trace_id) {
+  if (!enable_nweb_ex_) {
+    return;
+  }
+
+  // FIXME: add cloud control
+  if (!(GURL(GetWebNavigationInfo().navigation_info.request_url)
+            .SchemeIsHTTPOrHTTPS())) {
+    GetWebNavigationInfo() = {};
+    return;
+  }
+
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+  // Get safe browsing check detail from WebContents
+  if (NavigatorDelegate* delegate = nav_request_->GetDelegate()) {
+    content::WebContentsImpl* web_contents_impl =
+        static_cast<content::WebContentsImpl*>(delegate);
+    if (web_contents_impl && web_contents_impl->AsWebContentsImplExt()) {
+      int code = 0;
+      int threat_type = 0;
+      GURL sa_url;
+      web_contents_impl->AsWebContentsImplExt()->GetSafeBrowsingCheckDetail(
+          code, threat_type, sa_url);
+      if (sa_url == GURL(GetWebNavigationInfo().navigation_info.request_url)) {
+        GetWebNavigationInfo().hw_code = code;
+        GetWebNavigationInfo().threat_type = threat_type;
+      }
+    }
+  }
+#endif
+
+  GetWebNavigationInfo().page_trace_id = page_trace_id;
+  GetContentClient()->browser()->OnReportNewNavigationInfo(
+      nav_request_->GetWebContents(), GetWebNavigationInfo());
+
+  GetWebNavigationInfo() = {};
 }
 #endif
 

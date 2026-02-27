@@ -60,6 +60,10 @@
 #include "base/strings/string_util.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_SAVE_PAGE)
+#include "content/browser/download/save_package.h"
+#endif // ARKWEB_SAVE_PAGE
+
 namespace content {
 
 // LCOV_EXCL_START
@@ -1449,6 +1453,22 @@ void WebContentsImplExt::OnDocumentEndReady(const FrameInfos& frameInfo) {
     delegate_->OnDocumentEndReady(frameInfo);
   }
 }
+
+void WebContentsImplExt::SetSafeBrowsingCheckDetail(int code,
+                                                    int threat_type,
+                                                    const GURL& url) {
+  safe_browsing_check_code_ = code;
+  safe_browsing_check_threat_type_ = threat_type;
+  safe_browsing_check_url_ = url;
+}
+
+void WebContentsImplExt::GetSafeBrowsingCheckDetail(int& code,
+                                                    int& threat_type,
+                                                    GURL& url) const {
+  code = safe_browsing_check_code_;
+  threat_type = safe_browsing_check_threat_type_;
+  url = safe_browsing_check_url_;
+}
 #endif
 
 #if BUILDFLAG(ARKWEB_MEDIA_CAST)
@@ -1501,6 +1521,68 @@ void WebContentsImplExt::GetAllFrameInfos(
       frameinfos.insert(std::make_pair(current_string, parent_string));
     }
   });
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_NOT_LOAD_IFRAME)
+  void WebContentsImpl::NotifyFrameGoneReason(base::TerminationStatus status, int exit_code) {
+    int crashesFrequencyPerUnitTime = blink::features::kCrashesFrequencyPerUnitTime.Get();
+    if((status != base::TERMINATION_STATUS_ABNORMAL_TERMINATION &&
+      status != base::TERMINATION_STATUS_PROCESS_CRASHED &&
+      status != base::TERMINATION_STATUS_PROCESS_WAS_KILLED &&
+      status != base::TERMINATION_STATUS_OOM) ||
+      (status == base::TERMINATION_STATUS_PROCESS_WAS_KILLED &&
+      exit_code != RESULT_CODE_HUNG)) {
+        LOG(INFO) << "render is not indicate a crash "<< (int)status << " "<< (int64_t) this;
+        return;
+      }
+      LOG(INFO) << "render termination "<< (int64_t) this;
+      auto time = std::chrono::high_resolution_clock::now().time_since_epoch();
+      int64_t current = 
+          std::chrono::duration_cast<std::chrono::milliseconds>(time).count();
+      crash_frameTimeStamp_list.emplace_back(current);
+      while(!crash_frameTimeStamp_list.empty()) {
+        if (current - crash_frameTimeStamp_list.front() > CRASH_TIME_WINDOW_MS) {
+          crash_frameTimeStamp_list.pop_front();
+        } else {
+          break;
+        }
+      }
+      if (crash_frameTimeStamp_list.size() >= static_cast<size_t>(crashesFrequencyPerUnitTime)) {
+        should_block_frame_loading = true;
+        LOG(INFO) << "iframe crash so many times!";
+      }
+  }
+
+  bool WebContentsImpl::GetIframeLoadingFlag() {
+    return should_block_frame_loading;
+  }
+#endif  // ARKWEB_NOT_LOAD_IFRAME
+#if BUILDFLAG(ARKWEB_SAVE_PAGE)
+bool WebContentsImplExt::SavePageEx(const base::FilePath& main_file, SavePageType save_type) {
+  OPTIONAL_TRACE_EVENT0("content", "WebContentsImplExt::OnSavePageEx");
+  // If we can not save the page, try to download it.
+
+  if ((save_type != SAVE_PAGE_TYPE_AS_ONLY_HTML) &&
+      (save_type != SAVE_PAGE_TYPE_AS_MHTML) &&
+      (save_type != SAVE_PAGE_TYPE_AS_COMPLETE_HTML)) {
+    LOG(ERROR) << "invalid save type " << static_cast<int32_t>(save_type);
+    return false;
+  }
+
+  if (!IsSavable()) {
+    SaveFrame(GetLastCommittedURL(), Referrer(), GetPrimaryMainFrame());
+    return false;
+  }
+
+  Stop();
+
+  // Create the save package and possibly prompt the user for the name to save
+  // the page as. The user prompt is an asynchronous operation that runs on
+  // another thread.
+  save_package_ = new SavePackage(GetPrimaryPage(), save_type, main_file);
+  save_package_->GetSaveInfoEx();
+  return true;
 }
 #endif
 }  // namespace content

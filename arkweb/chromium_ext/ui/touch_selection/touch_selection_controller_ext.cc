@@ -143,6 +143,10 @@ bool TouchSelectionController::IsShowHandle() {
 #if BUILDFLAG(ARKWEB_AI)
 int32_t TouchSelectionControllerExt::GetTouchNums(const MotionEvent& event) {
   PreTouchInfo curTouchInfo;
+  if (event.GetPointerCount() == 0) {
+    LOG(ERROR) << "GetPointerCount() == 0, INVALID_CLICK_NUM";
+    return INVALID_CLICK_NUM;
+  }
   curTouchInfo.x = event.GetX(0);
   curTouchInfo.y = event.GetY(0);
   curTouchInfo.start = event.GetEventTime();

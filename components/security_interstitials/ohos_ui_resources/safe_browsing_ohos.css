@@ -88,47 +88,24 @@ body {
   margin: auto;
 }
 
-.hw-ispc .hw-block-img {
-  justify-content: center;
-  display: flex;
-  align-items: center;
-  overflow: hidden;
-  height: 240px;
-  width: 240px;
-  margin: auto;
-}
-
 .hw-block-img img {
   display: block;
 }
 
-.hw-istablet .hw-block-img img {
-  content: url(ic_safe_browsing_error_big.svg);
+.hw-block-img img {
+  content: url(ic_safe_browsing_error.svg);
 }
 
-.hw-ispc .hw-block-img img {
-  content: url(ic_safe_browsing_error_big.svg);
-  height: 240px;
-  width: 240px;
+.hw-block-img.threat-non-high-risk img {
+  content: url(ic_safe_browsing_error_non_high_risk.svg);
+  height: 72px;
+  width: 72px;
 }
-
 
 .hw-block-img.threat-non-high-risk img {
   content: url(ic_safe_browsing_error_non_high_risk.svg);
   width: 72px;
   height: 72px;
-}
-
-.hw-istablet .hw-block-img.threat-non-high-risk img {
-  content: url(ic_safe_browsing_error_non_high_risk.svg);
-  width: 96px;
-  height: 96px;
-}
-
-.hw-ispc .hw-block-img.threat-non-high-risk img {
-  content: url(ic_safe_browsing_error_non_high_risk.svg);
-  width: 144px;
-  height: 144px;
 }
 
 /*******hw-block-info*******/
@@ -146,6 +123,17 @@ body {
   line-height: 1.6;
   word-wrap: break-word;
   max-width: 100%;
+}
+
+.hw-block-info__title,
+.hw-block-info__body {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.hw-block-info__title p,
+.hw-block-info__body p {
+  white-space: normal;
 }
 
 .hw-istablet .hw-block-info__title {
@@ -288,6 +276,7 @@ button > p span {
 .hw-link-sb a#hw-not-proceed {
   order: 2;
   margin-top: auto;
+  margin-bottom: 2px;
 }
 
 .hw-link-sb a:active {
@@ -439,45 +428,37 @@ button:active {
     color: #5291ff;
   }
 
-  #hw_block_img {
+  .hw-block-img img {
     content: url(ic_safe_browsing_error_dark.svg);
   }
 
-  .hw-istablet .hw-block-img img {
-    content: url(ic_safe_browsing_error_big_dark.svg);
-  }
-
-  .hw-ispc .hw-block-img img {
-    content: url(ic_safe_browsing_error_big_dark.svg);
-  }
-
-  .hw-block-img.threat-non-high-risk #hw_block_img {
+  .hw-block-img.threat-non-high-risk img {
     content: url(ic_safe_browsing_error_non_high_risk_dark.svg);
-    width: 72px;
-    height: 72px;
-  }
-
-  .hw-istablet .hw-block-img.threat-non-high-risk #hw_block_img {
-    content: url(ic_safe_browsing_error_non_high_risk_dark.svg);
-    width: 96px;
-    height: 96px;
-  }
-
-  .hw-ispc .hw-block-img.threat-non-high-risk #hw_block_img {
-    content: url(ic_safe_browsing_error_non_high_risk_dark.svg);
-    width: 144px;
-    height: 144px;
   }
 
   @media (min-width: 600px) and (max-width: 1440px) {
-    .hw-block-img.threat-non-high-risk img,
-    .hw-block-img.threat-non-high-risk #hw_block_img {
-      content: url(ic_safe_browsing_error_non_high_risk_dark.svg);
-      width: 96px;
-      height: 96px;
+    .hw-block-img img {
+      content: url(ic_safe_browsing_error_big_dark.svg) !important;
     }
+  
+    .hw-block-img.threat-non-high-risk img {
+      content: url(ic_safe_browsing_error_non_high_risk_dark.svg) !important;
+    }
+
   }
 
+  @media (min-width: 1441px) {
+    .hw-block-img img {
+      content: url(ic_safe_browsing_error_big_dark.svg) !important;
+      height: 240px;
+      width: 240px;
+    }
+  
+    .hw-block-img.threat-non-high-risk img {
+      content: url(ic_safe_browsing_error_non_high_risk_dark.svg) !important;
+    }
+  }
+  
   button > p span {
     color: #5291ff;
     background-color: #000000;
@@ -506,36 +487,19 @@ button:active {
   }
 }
 
-@media (min-aspect-ratio: 1.5/1) and (max-aspect-ratio: 2.2/1) and (max-width: 800px) {
-  .hw_block_page {
-    position: absolute;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .hw-content--wrap {
-    position: absolute;
-    top:calc(24px + env(safe-area-inset-top));
-    transform: none;
-    z-index: 1;
-    box-sizing: border-box;
-  }
-
-  .hw-block-link-sb {
-    position: fixed;
-    bottom: 0px;
-    z-index: 9;
-    box-sizing: border-box;
-  }
-}
-
 @media (max-height: 227px) {
   body {
     overflow: auto;
   }
-  
+
+  .hw_block_page {
+    position: static !important;
+    min-height: 100vh;
+    height: auto;
+  }
+
   .hw-content--wrap {
+    position: static !important;
     top:calc(24px + env(safe-area-inset-top));
     padding-bottom: 8px;
     transform: none;
@@ -549,8 +513,50 @@ button:active {
     position: static !important;
   }
 
+  .hw-block-img img {
+    margin-top: 24px;
+  }
+
   .hw-block-img.threat-non-high-risk {
     margin-top: 24px;
+  }
+
+  @media (min-width: 600px) and (max-width: 1440px) {
+    .hw-content--wrap {
+      transform: none !important;
+    } 
+  }
+}
+
+@media (min-height: 228px) and (max-height: 400px) and (max-width: 1439px) {
+  .hw-content--wrap {
+    position: fixed !important;
+    top: 0 !important;
+    transform: none !important;
+    max-height: calc(100vh - env(safe-area-inset-top, 0) - 164px - env(safe-area-inset-bottom, 0));
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    padding-top: 14px;
+    padding-bottom: 32px;
+    z-index: 1;
+    box-sizing: border-box;
+  }
+
+  .hw-ispc .hw-content--wrap {
+    top: 50% !important;
+    transform: translate(0, -50%) !important;
+  }
+
+  .hw-link-sb {
+    position: static !important;
+  }
+
+  .hw-block-link-sb {
+    position: fixed !important;
+    left: 0;
+    bottom: 0;
+    z-index: 9;
   }
 }
 
@@ -570,8 +576,8 @@ button:active {
   }
 
   .hw-istablet .hw-content--wrap {
-    top: 50%;
-    transform: translate(0, -50%);
+    top: 50% !important;
+    transform: translate(0, -50%) !important;
   }
 
   .hw-block-img {
@@ -585,6 +591,7 @@ button:active {
   }
 
   .hw-block-img img {
+    content: url(ic_safe_browsing_error_big.svg);
     display: block;
     width: 100%;
     height: 100%;
@@ -597,6 +604,25 @@ button:active {
   }
 }
 
+@media (min-width: 1441px) {
+  .hw-block-img {
+    height: 240px;
+    width: 240px;
+  }
+
+  .hw-block-img img {
+    content: url(ic_safe_browsing_error_big.svg);
+    height: 240px;
+    width: 240px;
+  }
+
+  .hw-block-img.threat-non-high-risk img {
+    content: url(ic_safe_browsing_error_non_high_risk.svg);
+    height: 144px;
+    width: 144px;
+  }
+}
+
 @media (min-width: 600px) and (max-width: 839px) {
   .hw-content--wrap {
     margin: 0 24px !important;
@@ -604,7 +630,7 @@ button:active {
   }
 }
 
-@media (min-width: 840px) and (max-width: 1440px) {
+@media (min-width: 840px) {
   .hw-content--wrap {
     margin: 0 32px !important;
     width: calc(100% - 64px);

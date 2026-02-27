@@ -110,6 +110,10 @@ class MockFrameSinkManager : public mojom::FrameSinkManager {
               (const ::viz::FrameSinkId& frame_sink_id),
               (override));
   MOCK_METHOD(void,
+              SetIfNeedCleanBuffers,
+              (const ::viz::FrameSinkId& frame_sink_id, bool need_clean_buffers),
+              (override));
+  MOCK_METHOD(void,
               SetIsOfflineWebComponentInactive,
               (bool is_inactive, const ::viz::FrameSinkId& frame_sink_id),
               (override));

@@ -4630,12 +4630,20 @@ void WebContentsImpl::UpdateVisibilityAndNotifyPageAndView(
   // calls us).
   if (auto* view = GetRenderWidgetHostView()) {
     if (view_is_visible) {
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+      // When web is visible, no need to clean buffers after SwapBuffers
+      view->SetIfNeedCleanBuffers(false);
+#endif
       static_cast<RenderWidgetHostViewBase*>(view)->ShowWithVisibility(
           page_visibility);
     } else if (new_visibility == Visibility::HIDDEN) {
       view->Hide();
 #if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
       view->EvictFrameBackBuffers();
+#endif
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+      // When web is invisible, need to clean buffers after SwapBuffers
+      view->SetIfNeedCleanBuffers(true);
 #endif
     } else {
       view->WasOccluded();

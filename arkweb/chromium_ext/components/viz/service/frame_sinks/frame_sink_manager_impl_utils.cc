@@ -64,6 +64,34 @@ void FrameSinkManagerImplUtils::SetEnableHalfFrameRate(
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+void FrameSinkManagerImplUtils::SetIfNeedCleanBuffers(const FrameSinkId& frame_sink_id, bool need_clean_buffers)
+{
+  TRACE_EVENT2("viz", "FrameSinkManagerImplUtils::SetIfNeedCleanBuffers",
+               "frame_sink_id: ", frame_sink_id.ToString(), "need_clean_buffers: ", need_clean_buffers);
+  need_clean_buffers_ = need_clean_buffers;
+  if (!frameSinkManagerImpl) {
+    LOG(ERROR) << "FrameSinkManagerImpl is null, SetIfNeedCleanBuffers failed";
+    return;
+  }
+  auto root_it = frameSinkManagerImpl->root_sink_map_.find(frame_sink_id);
+  if (root_it != frameSinkManagerImpl->root_sink_map_.end()) {
+    if (!root_it->second) {
+      LOG(ERROR) << "FrameSinkImpl is null, SetIfNeedCleanBuffers failed";
+      return;
+    }
+    root_it->second->AsExt()->SetIfNeedCleanBuffers(need_clean_buffers_);
+  } else {
+    LOG(INFO) << "FrameSinkImpl not found, no need to SetIfNeedCleanBuffers: " << need_clean_buffers;
+  }
+}
+
+void FrameSinkManagerImplUtils::UpdateIfNeedCleanBuffers(const FrameSinkId& frame_sink_id)
+{
+  SetIfNeedCleanBuffers(frame_sink_id, need_clean_buffers_);
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
 void FrameSinkManagerImplUtils::SetIsOfflineWebComponentInactive(
     bool is_inactive,

@@ -99,6 +99,19 @@ void CompositorUtils::EvictFrameBackBuffers() {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+void CompositorUtils::SetIfNeedCleanBuffers(bool need_clean_buffers)
+{
+  if (!compositor_ || !compositor_->context_factory_ ||
+      !compositor_->context_factory_->GetHostFrameSinkManager() ||
+      !compositor_->context_factory_->GetHostFrameSinkManager()->managerUtils) {
+    return;
+  }
+  compositor_->context_factory_->GetHostFrameSinkManager()->managerUtils->SetIfNeedCleanBuffers(
+      compositor_->frame_sink_id(), need_clean_buffers);
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
 void CompositorUtils::SetIsOfflineWebComponentInactive(bool is_inactive) {
   compositor_->context_factory_->GetHostFrameSinkManager()->managerUtils->SetIsOfflineWebComponentInactive( 

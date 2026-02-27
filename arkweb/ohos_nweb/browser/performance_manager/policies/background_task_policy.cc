@@ -347,6 +347,7 @@ void BackgroundTaskPolicy::ProcessAudioContextPlayersOnUIThread(const PageNode* 
     content::GlobalRenderFrameHostId rfh_id = iter->first;
     content::RenderFrameHost* render_frame_host = content::RenderFrameHost::FromID(rfh_id);
     if (!render_frame_host) {
+      iter = audio_context_players_num_.erase(iter);
       continue;
     }
     if (content::WebContents::FromRenderFrameHost(render_frame_host) ==

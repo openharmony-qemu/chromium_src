@@ -3544,6 +3544,11 @@ char* NWebHandlerDelegate::FlowbufStrAtIndex(void* mem, int flowbufIndex, int* a
   }
 
   *strLen = *(header + (i * INDEX_SIZE) + 1) - 1;
+  if ((offset + *strLen) > MAX_FLOWBUF_DATA_SIZE) {
+    LOG(ERROR) << "offset bigger than MAX_FLOWBUF_DATA_SIZE";
+    *argIndex = -1;
+    return nullptr;
+  }
   *argIndex = *entry;
 
   char* dataSegment = static_cast<char*>(mem) + HEADER_SIZE;
@@ -3588,6 +3593,7 @@ int NWebHandlerDelegate::ProcessNativeProxyResultNewFlowbuf(
   size_t argsSize = args->GetSize();
   auto callback = methodMap[method];
   int flowbufSize = GetFlowbufCount(ashmem);
+  int dataListSize = argsSize + flowbufSize;
   std::vector<std::vector<uint8_t>> dataList(argsSize + static_cast<size_t>(flowbufSize));
   std::vector<size_t> dataSize(argsSize + static_cast<size_t>(flowbufSize));
 
@@ -3597,7 +3603,7 @@ int NWebHandlerDelegate::ProcessNativeProxyResultNewFlowbuf(
   int strLen = 0;
   char* flowbufStr = FlowbufStrAtIndex(ashmem, flowbufIndex, &argIndex, &strLen);
   flowbufIndex++;
-  while (argIndex == curIndex) {
+  while (curIndex < dataListSize && argIndex == curIndex) {
     std::string flowbuf_stdstr(flowbufStr,strLen);
     dataList[curIndex] = std::vector<uint8_t>(flowbuf_stdstr.begin(), flowbuf_stdstr.end());
     dataSize[curIndex] = strLen;
@@ -3607,7 +3613,7 @@ int NWebHandlerDelegate::ProcessNativeProxyResultNewFlowbuf(
   }
 
   for (size_t i = 0; i < argsSize; i++) {
-    while (argIndex == curIndex) {
+    while (curIndex < dataListSize && argIndex == curIndex) {
       std::string flowbuf_stdstr(flowbufStr,strLen);
       dataList[curIndex] = std::vector<uint8_t>(flowbuf_stdstr.begin(), flowbuf_stdstr.end());
       dataSize[curIndex] = strLen;
@@ -3648,7 +3654,7 @@ int NWebHandlerDelegate::ProcessNativeProxyResultNewFlowbuf(
     curIndex++;
   }
 
-  while (argIndex == curIndex) {
+  while (curIndex < dataListSize && argIndex == curIndex) {
     std::string flowbuf_stdstr(flowbufStr,strLen);
     dataList[curIndex] = std::vector<uint8_t>(flowbuf_stdstr.begin(), flowbuf_stdstr.end());
     dataSize[curIndex] = strLen;

@@ -179,7 +179,7 @@ void OHOSAudioOutputStream::OnSuspend() {
     LOG(ERROR) << "The playback is stopped. Exit OnSuspend.";
     return;
   }
-  if (OHOSAudioFocusController::IsActive(parameters)) {
+  if (OHOSAudioFocusController::IsActive(parameters) || !isSuspended_) {
     if (audioResumeInterval_ != 0) {
       intervalSinceLastSuspend_ = std::time(nullptr);
     }

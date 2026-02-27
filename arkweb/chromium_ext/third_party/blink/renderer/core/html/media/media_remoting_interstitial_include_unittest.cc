@@ -151,7 +151,7 @@ TEST_F(MediaRemotingInterstitialTest, OnPosterImageChanged) {
                                AtomicString("new_poster.jpg"));
   interstitial->OnPosterImageChanged();
   AtomicString updated_src = bg_image->getAttribute(html_names::kSrcAttr);
-  XPECT_EQ(updated_src, AtomicString("new_poster.jpg"));
+  EXPECT_EQ(updated_src, AtomicString("new_poster.jpg"));
 }
 
 TEST_F(MediaRemotingInterstitialTest, GetVideoElement) {

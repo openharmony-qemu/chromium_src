@@ -497,7 +497,7 @@ void NativeLoader::ProcessParamChanges(const Vector<ParamChangeInfo>& changes) {
   if (plugin_element_) {
     param_update_task_pending_ = true;
     plugin_element_->GetDocument().GetTaskRunner(TaskType::kInternalMedia)->PostTask(
-        FROM_HERE, base::BindOnce(&NativeLoader::ProcessPendingParamChanges, weak_ptr_factory_.GetWeakPtr()));
+        FROM_HERE, WTF::BindOnce(&NativeLoader::ProcessPendingParamChanges, WrapWeakPersistent(this)));
   } else {
     param_update_task_pending_ = false;
     pending_param_changes_.clear();

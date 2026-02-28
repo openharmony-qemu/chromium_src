@@ -1299,6 +1299,7 @@ arkweb_content_browser_test_sources = [
   "//arkweb/chromium_ext/content/browser/permissions/permission_service_impl_for_include_unittest.cc",
   "//arkweb/chromium_ext/chrome/browser/extensions/system_display/display_info_provider_ohos_unittest.cc",
   "//arkweb/chromium_ext/chrome/browser/chrome_content_browser_client_for_include_unittest.cc",
+  "//arkweb/chromium_ext/content/browser/notifications/blink_notification_service_impl_ext_unittest.cc",
 ]
 
 arkweb_fuzzer_test_sources = [

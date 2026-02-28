@@ -147,7 +147,7 @@ void ArkwebChildProcessLauncherHelperUtils::RenderProcessExitedInfo(pid_t pid, i
   base::TerminationStatus status = GetProcessStatusByExitCode(exitCode, known_dead);
   switch(status) {
     case base::TERMINATION_STATUS_NORMAL_TERMINATION:
-      if (WIFSIGNALED(exitCode)) {
+      if (known_dead && WIFSIGNALED(exitCode)) {
         LOG(WARNING) << "RenderExited pid: " << pid << " known_dead: " << known_dead << " exitCode: " << exitCode
                      << " exitSig: " << WTERMSIG(exitCode) << " exitReason: process exit unknown";
 #if BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP) && !defined(COMPONENT_BUILD)

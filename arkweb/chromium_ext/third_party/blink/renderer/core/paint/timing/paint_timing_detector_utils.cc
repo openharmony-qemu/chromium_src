@@ -313,7 +313,7 @@ PaintTimingDetectorUtils::GetFirstScreenCalculator() {
   }
   Frame* parent_frame =
       paint_timing_detector_->frame_view_->GetFrame().Parent();
-  if (!parent_frame) {
+  if (!parent_frame || !parent_frame->IsLocalFrame()) {
     return first_screen_calculator_;
   }
 

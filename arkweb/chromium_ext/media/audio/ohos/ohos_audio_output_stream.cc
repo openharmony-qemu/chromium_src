@@ -704,7 +704,8 @@ void OHOSAudioOutputStream::SetUpAudioSilentState() {
   bool is_playing = OHOSAudioFocusController::IsActive(parameters_) ||
                     OHOSAudioFocusController::GetPlayingState(parameters_) ||
                     write_data_counts_ >= 1;
-  bool is_muted = OHOSAudioFocusController::GetMediaPlayerMuteState(parameters_);
+  bool is_muted = OHOSAudioFocusController::GetMediaPlayerMuteState(parameters_) ||
+                  !OHOSAudioFocusController::IsWebContentCurrentlyAudible(parameters_);
   if (is_playing && !is_muted) {
     OH_AudioRenderer_SetSilentModeAndMixWithOthers(audio_renderer_, false);
     LOG(INFO) << "OHOSAudioOutputStream SetAudioSilentMode false!";
@@ -742,7 +743,8 @@ bool OHOSAudioOutputStream::IsPreloadOrMutedMediaMode() {
       OHOSAudioFocusController::GetSessionState(parameters_);
   bool is_active = OHOSAudioFocusController::IsActive(parameters_);
   bool is_playingState = OHOSAudioFocusController::GetPlayingState(parameters_);
-  bool is_muted = OHOSAudioFocusController::GetMediaPlayerMuteState(parameters_);
+  bool is_muted = OHOSAudioFocusController::GetMediaPlayerMuteState(parameters_) ||
+                  !OHOSAudioFocusController::IsWebContentCurrentlyAudible(parameters_);
   LOG(INFO) << "OHOSAudioOutputStream sessionState:"
             << static_cast<uint32_t>(sessionState) << ", mutedMode:" << is_muted
             << ", activeMode:" << is_active

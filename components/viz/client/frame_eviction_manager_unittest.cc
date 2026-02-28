@@ -36,7 +36,11 @@ class TestFrameEvictionManagerClient : public FrameEvictionManagerClient {
   }
 
   // FrameEvictionManagerClient:
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  void EvictCurrentFrame(bool isProcessMemoryPressure) override {
+#else
   void EvictCurrentFrame() override {
+#endif
     manager_->RemoveFrame(this);
     has_frame_ = false;
   }

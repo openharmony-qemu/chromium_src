@@ -19,11 +19,11 @@
 #if defined(OH_ENABLE_HEAP_DUMP) && \
     (defined(USING_OHOS) || defined(USING_OHOS_WEB))
 
-#include "binary_writer_base.h"
-#include "dump_format.h"
-#include "dump_objects.h"
-#include "dump_roots.h"
-#include "dump_string_tables.h"
+#include "arkweb/chromium_ext/v8/heap_dump/binary_writer_base.h"
+#include "arkweb/chromium_ext/v8/heap_dump/dump_format.h"
+#include "arkweb/chromium_ext/v8/heap_dump/dump_objects.h"
+#include "arkweb/chromium_ext/v8/heap_dump/dump_roots.h"
+#include "arkweb/chromium_ext/v8/heap_dump/dump_string_tables.h"
 #include "src/base/platform/elapsed-timer.h"
 #include "src/codegen/assembler-inl.h"
 #include "src/heap/combined-heap.h"
@@ -31,7 +31,7 @@
 #include "src/heap/heap-visitor.h"
 #include "src/heap/heap.h"
 #include "src/heap/visit-object.h"
-#include "v8_ohlog.h"
+#include "arkweb/chromium_ext/v8/v8_ohlog.h"
 
 namespace dfx {
 

@@ -3548,6 +3548,10 @@ source_set("browser") {
       ]
     }
 
+    if (arkweb_jsheap_dump) {
+      deps += [ "//arkweb/chromium_ext/v8/heap_dump:dfx_jsheapdump_browser" ]
+    }
+
     if (arkweb_enable_cdm) {
       import("//arkweb/chromium_ext/chromium_ext.gni")
       sources += arkweb_content_browser_media_key_system_sources

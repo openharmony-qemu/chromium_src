@@ -45,8 +45,8 @@ void RootTranslator::Translate() {
   uint32_t type{0};
   uint32_t count{0};
   for (uint32_t i = 0; i < type_count_; ++i) {
-    reader_->ReadData(sizeof(type), reinterpret_cast<uint8_t*>(&type), sizeof(type));
-    reader_->ReadData(sizeof(count), reinterpret_cast<uint8_t*>(&count), sizeof(count));
+    CHECK(reader_->ReadData(sizeof(type), reinterpret_cast<uint8_t*>(&type), sizeof(type)));
+    CHECK(reader_->ReadData(sizeof(count), reinterpret_cast<uint8_t*>(&count), sizeof(count)));
     TranslateRoot(type, count);
   }
   CHECK(dump_size_ + table_offset_ == reader_->CurrentPosition());
@@ -61,9 +61,8 @@ void RootTranslator::TranslateRoot(uint32_t type, uint32_t count) {
     CHECK(reader_->CurrentPosition() <=
           reader_->BinarySize() - sizeof(i::Address));
     i::Address root_addr;
-    reader_->ReadData(sizeof(root_addr),
-                      reinterpret_cast<uint8_t*>(&root_addr),
-                      sizeof(root_addr));
+    CHECK(reader_->ReadData(sizeof(root_addr), reinterpret_cast<uint8_t*>(&root_addr),
+        sizeof(root_addr)));
 #ifdef OH_ENABLE_HEAP_DUMP_TEST
     roots_info_[current_root].push_back(root_addr);
     std::cout << "object_address:" << root_addr << std::endl;

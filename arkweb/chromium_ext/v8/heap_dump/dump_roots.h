@@ -18,8 +18,8 @@
 
 #if defined(OH_ENABLE_HEAP_DUMP) && \
     (defined(USING_OHOS) || defined(USING_OHOS_WEB))
-#include "binary_writer_base.h"
-#include "dump_format.h"
+#include "arkweb/chromium_ext/v8/heap_dump/binary_writer_base.h"
+#include "arkweb/chromium_ext/v8/heap_dump/dump_format.h"
 
 #include <set>
 
@@ -28,7 +28,7 @@
 #include "src/heap/heap.h"
 #include "src/objects/visitors.h"
 
-#include "v8_ohlog.h"
+#include "arkweb/chromium_ext/v8/v8_ohlog.h"
 
 namespace dfx {
 

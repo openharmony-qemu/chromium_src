@@ -365,6 +365,10 @@ target(link_target_type, "renderer") {
       ]
     }
 
+    if (arkweb_jsheap_dump) {
+      deps += [ "//arkweb/chromium_ext/v8/heap_dump:dfx_jsheapdump_render" ]
+    }
+
     sources += arkweb_content_renderer_sources
     sources += arkweb_content_render_sources
 

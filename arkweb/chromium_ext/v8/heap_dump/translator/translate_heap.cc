@@ -15,12 +15,12 @@
 
 #if defined(OH_ENABLE_HEAP_DUMP) && \
     (defined(USING_OHOS) || defined(OH_ENABLE_HEAP_DUMP_TEST))
-#include "translate_heap.h"
-#include "translate_objects.h"
-#include "translate_roots.h"
-#include "translate_string_tables.h"
-#include "heap_dump/binary_reader_base.h"
-#include "heap_dump/dump_format-inl.h"
+#include "arkweb/chromium_ext/v8/heap_dump/translator/translate_heap.h"
+#include "arkweb/chromium_ext/v8/heap_dump/translator/translate_objects.h"
+#include "arkweb/chromium_ext/v8/heap_dump/translator/translate_roots.h"
+#include "arkweb/chromium_ext/v8/heap_dump/translator/translate_string_tables.h"
+#include "arkweb/chromium_ext/v8/heap_dump/binary_reader_base.h"
+#include "arkweb/chromium_ext/v8/heap_dump/dump_format-inl.h"
 
 #include "src/common/ptr-compr-inl.h"
 #include "src/common/ptr-compr.h"
@@ -36,11 +36,9 @@ HeapTranslator::HeapTranslator(BinaryReaderBase* reader,
 
 void HeapTranslator::TranslateHeader() {
   uint32_t size = static_cast<uint32_t>(sizeof(header_));
-  reader_->ReadData(size, reinterpret_cast<uint8_t*>(&header_), size);
+  CHECK(reader_->ReadData(size, reinterpret_cast<uint8_t*>(&header_), size));
   i::V8HeapCompressionScheme::InitBase(header_.cage_base_);
   i::ExternalCodeCompressionScheme::InitBase(header_.code_cage_base_);
-  std::cout << "translate header_:" << std::endl;
-  PrintHead(std::cout, header_);
 }
 
 void HeapTranslator::TranslateHeap() {

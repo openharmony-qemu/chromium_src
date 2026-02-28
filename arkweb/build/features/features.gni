@@ -270,6 +270,7 @@ declare_args() {
   arkweb_not_load_iframe = true
   arkweb_ext_navigation = false
   arkweb_clean_buffers_when_invisible = true
+  arkweb_jsheap_dump = false
 }
 
 # Features enabled in mojom bindings.

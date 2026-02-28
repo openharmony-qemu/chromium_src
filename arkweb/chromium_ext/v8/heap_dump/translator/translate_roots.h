@@ -18,12 +18,11 @@
 
 #if defined(OH_ENABLE_HEAP_DUMP) && \
     (defined(USING_OHOS) || defined(OH_ENABLE_HEAP_DUMP_TEST))
-#include "heap_dump/binary_reader_base.h"
-#include "heap_dump/dump_format.h"
-
 #include <unordered_map>
 #include <vector>
 
+#include "arkweb/chromium_ext/v8/heap_dump/binary_reader_base.h"
+#include "arkweb/chromium_ext/v8/heap_dump/dump_format.h"
 #include "include/v8-internal.h"
 #include "src/objects/visitors.h"
 

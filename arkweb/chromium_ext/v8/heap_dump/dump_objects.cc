@@ -15,7 +15,7 @@
 
 #if defined(OH_ENABLE_HEAP_DUMP) && \
     (defined(USING_OHOS) || defined(USING_OHOS_WEB))
-#include "dump_objects.h"
+#include "arkweb/chromium_ext/v8/heap_dump/dump_objects.h"
 
 #include <atomic>
 #include <chrono>

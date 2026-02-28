@@ -16,7 +16,7 @@
 #if defined(OH_ENABLE_HEAP_DUMP) && \
     (defined(USING_OHOS) || defined(USING_OHOS_WEB))
 
-#include "dump_string_tables.h"
+#include "arkweb/chromium_ext/v8/heap_dump/dump_string_tables.h"
 #include "src/objects/string-table.h"
 namespace dfx {
 class VisitStringTableInfo : public v8::internal::RootVisitor {

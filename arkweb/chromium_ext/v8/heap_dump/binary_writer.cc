@@ -16,7 +16,7 @@
 #if defined(OH_ENABLE_HEAP_DUMP) && \
     (defined(USING_OHOS) || defined(OH_ENABLE_HEAP_DUMP_TEST))
 
-#include "binary_writer.h"
+#include "arkweb/chromium_ext/v8/heap_dump/binary_writer.h"
 
 #include <cstdint>
 #include <fstream>
@@ -32,7 +32,7 @@
 #include <unistd.h>
 
 #include "arkweb/ohos_nweb_ex/third_party/securec/include/securec.h"
-#include "v8_ohlog.h"
+#include "arkweb/chromium_ext/v8/v8_ohlog.h"
 
 namespace dfx {
 BinaryWriter::BinaryWriter() : BinaryWriter(kChunkSize) {}

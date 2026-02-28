@@ -15,7 +15,7 @@
 
 #if defined(OH_ENABLE_HEAP_DUMP) && \
     (defined(USING_OHOS) || defined(USING_OHOS_WEB))
-#include "dump_roots.h"
+#include "arkweb/chromium_ext/v8/heap_dump/dump_roots.h"
 
 #include "src/common/ptr-compr.h"
 #include "src/objects/objects-inl.h"

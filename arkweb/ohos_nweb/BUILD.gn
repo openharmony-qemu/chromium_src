@@ -472,6 +472,7 @@ component("nweb_sources") {
     "src/capi/browser_service/nweb_extension_bookmarks_types.h",
     "src/capi/browser_service/nweb_extension_content_settings_types.h",
     "src/capi/browser_service/nweb_extension_downloads_types.h",
+    "src/capi/browser_service/nweb_extension_downloader_types.h",
     "src/capi/browser_service/nweb_extension_history_types.h",
     "src/capi/browser_service/nweb_extension_prompt_types.h",
     "src/capi/browser_service/nweb_extension_proxy_types.h",

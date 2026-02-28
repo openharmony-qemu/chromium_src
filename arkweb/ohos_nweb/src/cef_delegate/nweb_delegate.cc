@@ -1120,6 +1120,21 @@ void NWebDelegate::StartDownload(const char* url) {
   }
 }
 
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+void NWebDelegate::StartDownload(const char* url,
+                                 const DownloadUrlParameters& params) {
+  LOG(INFO) << "NWebDelegate::StartDownload with DownloadUrlParameters";
+  if (handler_delegate_ == nullptr) {
+    LOG(ERROR) << "fail to start download, NWEB handler is nullptr";
+    return;
+  }
+  auto browser = GetBrowser();
+  if (browser != nullptr && browser->GetHost() != nullptr) {
+    browser->GetHost()->StartDownloadWithParams(url, params);
+  }
+}
+#endif
+
 void NWebDelegate::ResumeDownload(
     std::shared_ptr<NWebDownloadItem> web_download) {
 #if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)

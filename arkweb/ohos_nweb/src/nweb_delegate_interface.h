@@ -134,6 +134,10 @@ class NWebDelegateInterface
       std::shared_ptr<NWebDownloadDelegateCallback>
           downloadDelegateListener) = 0;
   virtual void StartDownload(const char* url) = 0;
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+  virtual void StartDownload(const char* url,
+                             const DownloadUrlParameters& input_params) = 0;
+#endif
   virtual void ResumeDownload(
       std::shared_ptr<NWebDownloadItem> web_download) = 0;
 #if BUILDFLAG(ARKWEB_ACTIVE_POLICY)

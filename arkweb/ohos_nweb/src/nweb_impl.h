@@ -776,6 +776,21 @@ class NWebImpl : public NWeb {
   void PutWebDownloadDelegateCallback(
       std::shared_ptr<NWebDownloadDelegateCallback>);
   void StartDownload(const char* url);
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+  void StartDownload(const char* url, const DownloadUrlParameters& params);
+  static std::string GetOriginUrlByGuid(const std::string& guid);
+  static std::string GetReferrerByGuid(const std::string& guid);
+  static std::string GetInitiatorByGuid(const std::string& guid);
+  static bool GetCanResumeByGuid(const std::string& guid);
+  static bool GetTransientByGuid(const std::string& guid);
+  static NWebDownloadSource GetDownloadSourceByGuid(const std::string& guid);
+  static NWebTargetDisposition GetTargetDispositionByGuid(
+      const std::string& guid);
+  static std::string GetByExtensionIdByGuid(const std::string& guid);
+  static std::string GetByExtensionNameByGuid(const std::string& guid);
+  static NWebFilenameConflictAction GetConflictActionByGuid(
+      const std::string& guid);
+#endif
   void ResumeDownload(std::shared_ptr<NWebDownloadItem> web_download);
   void StopFling() override;
   void ReloadIgnoreCache() override;

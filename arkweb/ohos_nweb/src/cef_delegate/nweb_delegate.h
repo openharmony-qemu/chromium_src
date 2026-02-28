@@ -128,6 +128,10 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
       std::shared_ptr<NWebDownloadDelegateCallback> downloadDelegateListener)
       override;
   void StartDownload(const char* url) override;
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+  void StartDownload(const char* url,
+                     const DownloadUrlParameters& params) override;
+#endif
   void ResumeDownload(std::shared_ptr<NWebDownloadItem> web_download) override;
 #if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
   NWebDownloadItemState GetDownloadItemState(long item_id) override;

@@ -272,6 +272,33 @@ void ArkWebDownloadItemImplExt::Cancel(bool user_cancel) {
   DownloadItemImpl::Cancel(user_cancel);
   ReadDataFromDownloadFileDone(std::vector<uint8_t>());
 }
+
+void ArkWebDownloadItemImplExt::SetByExtensionId(
+    const std::string& extension_id) {
+  extension_id_ = extension_id;
+}
+
+void ArkWebDownloadItemImplExt::SetByExtensionName(
+    const std::string& extension_name) {
+  extension_name_ = extension_name;
+}
+
+void ArkWebDownloadItemImplExt::SetConflictAction(int conflict_action) {
+  conflict_action_ = conflict_action;
+}
+
+std::string ArkWebDownloadItemImplExt::GetByExtensionId() const {
+  return extension_id_;
+}
+
+std::string ArkWebDownloadItemImplExt::GetByExtensionName() const {
+  return extension_name_;
+}
+
+int ArkWebDownloadItemImplExt::GetConflictAction() const {
+  return conflict_action_;
+}
+
 #endif  //  ARKWEB_EXT_DOWNLOAD
 
 }  // namespace download

@@ -94,6 +94,7 @@ const std::unordered_map<int32_t, cef_menu_id_t> KMenuCommandIdMap = {
     {CI_REDO, MENU_ID_REDO},
     {CI_UNDO, MENU_ID_UNDO},
     {CI_PASTE_AND_MATCH_STYLE, MENU_ID_PASTE_MATCH_STYLE},
+    {CI_IMAGE_SAVE, MENU_ID_IMAGE_SAVE},
 };
 
 const std::unordered_map<int, int> kCmInputFieldTypeMap = {

@@ -1094,6 +1094,7 @@ class MockNWebDelegate : public NWebDelegateInterface {
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   MOCK_METHOD(void, EnableVideoAssistant, (bool enable), (override));
+  MOCK_METHOD(void, EnableVideoAssistantAVCast, (bool enable), (override));
   MOCK_METHOD(void,
               ExecuteVideoAssistantFunction,
               (const std::string& cmd_id),

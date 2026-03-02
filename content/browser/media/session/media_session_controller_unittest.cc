@@ -212,6 +212,8 @@ class TestMediaPlayer : public media::mojom::MediaPlayer {
   void NotifyRemoteExitFullScreen() override {}
 
   void NotifyCastControlShow(bool is_show) override {}
+
+  void RequestAVCastStarted() override {}
 #endif
 
   // Helper method to set expected video visibility, which is later used as an

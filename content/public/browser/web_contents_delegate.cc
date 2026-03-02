@@ -511,6 +511,13 @@ WebContentsDelegate::OnFullScreenOverlayEnter(
     const MediaPlayerId& media_player_id) {
   return nullptr;
 }
+
+std::unique_ptr<MediaPlayerListener>
+WebContentsDelegate::OnAVCastStarted(
+    media::mojom::MediaInfoForVASTPtr media_info,
+    const MediaPlayerId& media_player_id) {
+  return nullptr;
+}
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
 #if BUILDFLAG(ARKWEB_READER_MODE)

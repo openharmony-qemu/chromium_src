@@ -638,6 +638,8 @@ class MockPreferenceCefBrowserHost : public ArkWebBrowserHostExt {
 
   void EnableVideoAssistant(bool enable) override { return false; }
 
+  void EnableVideoAssistantAVCast(bool enable) override {}
+
   void ExecuteVideoAssistantFunction(const CefString& cmdId) override {}
 
   bool IsIframe() override { return false; }
@@ -997,6 +999,7 @@ class MockPreferenceCefBrowser : public CefBrowser, public CefBrowserHost {
                            CefRefPtr<CefPdfValueCallback> callback) override {}
   #endif
   void EnableVideoAssistant(bool enable) override {}
+  void EnableVideoAssistantAVCast(bool enable) override {}
   void ExecuteVideoAssistantFunction(const CefString& cmdId) override {}
   #if BUILDFLAG(ARKWEB_EX_REFRESH_IFRAME)
   void ReloadFocusedFrame() override {}

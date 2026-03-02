@@ -212,6 +212,23 @@ void MediaWebContentsObserver::RequestFullScreen(
   }
 }
 
+void MediaWebContentsObserver::RequestAVCastStarted(
+    bool enable,
+    const MediaPlayerId& player_id) {
+  const auto iter = media_player_remotes_.find(player_id);
+  if (iter == media_player_remotes_.end()) {
+    return;
+  }
+
+  if (!iter->second) {
+    return;
+  }
+
+  if (enable) {
+    iter->second->RequestAVCastStarted();
+  }
+}
+
 void MediaWebContentsObserver::RequestDownloadUrl(
     const MediaPlayerId& player_id) {
   const auto iter = media_player_remotes_.find(player_id);
@@ -239,7 +256,7 @@ void MediaWebContentsObserver::HidePlaybackSpeedList(
 void MediaWebContentsObserver::MediaPlayerHostImpl::RequestVideoAssistantConfig(
     RequestVideoAssistantConfigCallback callback) {
   LOG(INFO) << "RequestVideoAssistantConfig";
-  auto config = media::mojom::VideoAssistantConfig::New(true, true,
+  auto config = media::mojom::VideoAssistantConfig::New(true, true, true,
       media::mojom::VideoAssistantDownloadButton::kDownloadPerPage);
   if (media_web_contents_observer_) {
     auto* web_contents_impl = media_web_contents_observer_->web_contents_impl();
@@ -291,6 +308,21 @@ void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
     LOG(INFO) << "OnFullScreenOverlayEnter";
     media_player_listener_ = media_web_contents_observer_
         ->web_contents_impl()->AsWebContentsImplExt()->OnFullScreenOverlayEnter(
+            std::move(media_info_ptr), media_player_id_);
+  }
+}
+
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
+    OnAVCastStarted(media::mojom::MediaInfoForVASTPtr media_info_ptr) {
+  if (!media_info_ptr) {
+    LOG(ERROR) << "OnAVCastStarted MediaInfo is empty";
+    return;
+  }
+
+  if (IsWebContentsAvailable()) {
+    LOG(INFO) << "MediaPlayerObserverHostImpl::OnAVCastStarted";
+    media_player_listener_ = media_web_contents_observer_
+        ->web_contents_impl()->AsWebContentsImplExt()->OnAVCastStarted(
             std::move(media_info_ptr), media_player_id_);
   }
 }

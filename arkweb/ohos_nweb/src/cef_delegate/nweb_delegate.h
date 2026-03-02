@@ -1061,6 +1061,7 @@ void SetFocusWebId(int32_t nweb_id) override;
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   void EnableVideoAssistant(bool enable) override;
+  void EnableVideoAssistantAVCast(bool enable) override;
   void ExecuteVideoAssistantFunction(const std::string& cmd_id) override;
   void CustomWebMediaPlayer(bool enable) override;
   void WebMediaPlayerControllerPlay() override;

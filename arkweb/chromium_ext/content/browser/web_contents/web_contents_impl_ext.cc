@@ -849,6 +849,19 @@ void WebContentsImplExt::EnableVideoAssistant(bool enable) {
   OnWebPreferencesChanged();
 }
 
+void WebContentsImplExt::EnableVideoAssistantAVCast(bool enable) {
+  if (!video_assistant_) {
+    LOG(ERROR) << "EnableVideoAssistantAVCast, video_assistant_ is nullptr";
+    return;
+  }
+
+  if (video_assistant_->AVCastEnabled() == enable) {
+    return;
+  }
+  video_assistant_->EnableVideoAssistantAVCast(enable);
+  OnWebPreferencesChanged();
+}
+
 void WebContentsImplExt::ExecuteVideoAssistantFunction(
     const std::string& cmdId) {
   video_assistant_->ExecuteVideoAssistantFunction(cmdId);
@@ -921,6 +934,16 @@ WebContentsImplExt::OnFullScreenOverlayEnter(
                                              media_player_id);
 }
 // LCOV_EXCL_STOP
+
+std::unique_ptr<MediaPlayerListener> WebContentsImplExt::OnAVCastStarted(
+    media::mojom::MediaInfoForVASTPtr media_info,
+    const MediaPlayerId& media_player_id) {
+  if (!delegate_) {
+    return nullptr;
+  }
+  return delegate_->OnAVCastStarted(
+      std::move(media_info), media_player_id);
+}
 
 void WebContentsImplExt::SetVideoSurface(const MediaPlayerId& id,
                                          int32_t surface_widget) {

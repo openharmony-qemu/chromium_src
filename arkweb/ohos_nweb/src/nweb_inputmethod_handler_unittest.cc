@@ -415,6 +415,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   bool IsRenderProcessUnresponsive() override { return false; }
   cef_runtime_style_t GetRuntimeStyle() override { return CEF_RUNTIME_STYLE_DEFAULT; }
   void EnableVideoAssistant(bool enable) override { return false; }
+  void EnableVideoAssistantAVCast(bool enable) override {}
   void ExecuteVideoAssistantFunction(const CefString& cmdId) override {}
   bool IsIframe() override { return false; }
   void ReloadFocusedFrame() override {}

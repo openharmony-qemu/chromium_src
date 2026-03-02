@@ -714,6 +714,7 @@ class NWebImpl : public NWeb {
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   void EnableVideoAssistant(bool enable);
+  void EnableVideoAssistantAVCast(bool enable);
   void ExecuteVideoAssistantFunction(const std::string& cmd_id);
   static void OnReportStatisticLog(const std::string& content);
   static void SetOnReportStatisticLogCallback(OnReportStatisticLogFunc func);

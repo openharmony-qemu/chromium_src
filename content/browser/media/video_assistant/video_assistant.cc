@@ -23,9 +23,11 @@ VideoAssistant::VideoAssistant() = default;
 VideoAssistant::~VideoAssistant() = default;
 
 void VideoAssistant::EnableVideoAssistant(bool enable) {}
+void VideoAssistant::EnableVideoAssistantAVCast(bool enable) {}
 void VideoAssistant::ExecuteVideoAssistantFunction(const std::string& cmd_id) {}
 
 bool VideoAssistant::Enabled() { return false; }
+bool VideoAssistant::AVCastEnabled() { return false; }
 void VideoAssistant::DidFinishNavigation() {}
 void VideoAssistant::UpdateVideoAssistantConfig(
     const media::mojom::VideoAssistantConfigPtr& config) {}

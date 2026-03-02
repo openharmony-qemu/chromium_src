@@ -153,6 +153,8 @@ class TestMediaPlayer : public media::mojom::MediaPlayer {
 
   void RequestExitFullscreen() override {}
 
+  void RequestAVCastStarted() override {}
+
   void SetPlaybackRate(double playback_rate) override {}
 
   void RequestDownloadUrl() override {}

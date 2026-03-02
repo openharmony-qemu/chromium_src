@@ -181,6 +181,9 @@ VIZ_COMMON_EXPORT bool IsCrosContentAdjustedRefreshRateEnabled();
 #if BUILDFLAG(IS_ANDROID)
 VIZ_COMMON_EXPORT bool IsBrowserControlsInVizEnabled();
 #endif  // BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+VIZ_COMMON_EXPORT bool IsEvictUnlockFrameEnabled();
+#endif
 
 }  // namespace features
 

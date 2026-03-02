@@ -60,7 +60,7 @@ DelegatedFrameHost::DelegatedFrameHost(const viz::FrameSinkId& frame_sink_id,
       frame_evictor_(std::make_unique<viz::FrameEvictor>(this)) {
 #if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
   evictUnlockFrameEnabled_ = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance()
-    .GetBoolParameter("const.web.frame_evictor.enabled", false);
+    .GetBoolParameter("const.web.frame_evictor.enabled", false) && features::IsEvictUnlockFrameEnabled();
 #endif
   CHECK(host_frame_sink_manager_);
   frame_evictor_->SetVisible(client_->DelegatedFrameHostIsVisible());
@@ -289,7 +289,8 @@ void DelegatedFrameHost::EmbedSurface(
   }
 #endif
   TRACE_EVENT2("viz", "DelegatedFrameHost::EmbedSurface", "surface_id",
-               new_local_surface_id.ToString(), "deadline_policy", deadline_policy.ToString());
+               new_local_surface_id.ToString(), "deadline_policy",
+               deadline_policy.ToString());
 
   const viz::SurfaceId* primary_surface_id =
       client_->DelegatedFrameHostGetLayer()->GetSurfaceId();

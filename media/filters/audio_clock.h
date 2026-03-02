@@ -61,7 +61,11 @@ class MEDIA_EXPORT AudioClock {
   // |delay_frames| is the current amount of hardware delay.
   void WroteAudio(int frames_written,
                   int frames_requested,
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+                  int64_t delay_frames,
+#else
                   int delay_frames,
+#endif // ARKWEB_MEDIA_POLICY
                   double playback_rate);
 
   // If WroteAudio() calls are suspended (i.e. due to playback being paused) the

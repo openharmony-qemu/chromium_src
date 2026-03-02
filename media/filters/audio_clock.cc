@@ -27,7 +27,11 @@ AudioClock::~AudioClock() = default;
 
 void AudioClock::WroteAudio(int frames_written,
                             int frames_requested,
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+                            int64_t delay_frames,
+#else
                             int delay_frames,
+#endif // ARKWEB_MEDIA_POLICY
                             double playback_rate) {
   CHECK_GE(frames_written, 0);
   CHECK_LE(frames_written, frames_requested);

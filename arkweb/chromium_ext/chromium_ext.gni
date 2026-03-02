@@ -1125,6 +1125,10 @@ arkweb_geolocation_sources = [
   "//arkweb/chromium_ext/service/device/geolocation/ohos/location_provider_ohos.h"
 ]
 
+arkweb_geolocation_unittest_sources = [
+  "//arkweb/chromium_ext/service/device/geolocation/ohos/location_provider_ohos_unittest.cc"
+]
+
 arkweb_string_message_codec_cc_sources = [ "//arkweb/chromium_ext/third_party/blink/common/messaging/string_message_codec_ext.cc" ]
 
 arkweb_string_message_codec_h_sources = [ "//arkweb/chromium_ext/third_party/blink/public/common/messaging/string_message_codec_ext.h" ]

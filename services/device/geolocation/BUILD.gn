@@ -221,4 +221,13 @@ source_set("test_support") {
   if (is_chromeos_ash) {
     deps += [ "//chromeos/ash/components/dbus/shill" ]
   }
+
+  if (defined(arkweb_geolocation) && arkweb_geolocation) {
+    sources += arkweb_geolocation_unittest_sources
+    import("//build/config/ohos/config.gni")
+    include_dirs = ohos_src_includes
+    deps += [
+      "//ohos_glue:ohos_adapter_glue_source",
+    ]
+  }
 }

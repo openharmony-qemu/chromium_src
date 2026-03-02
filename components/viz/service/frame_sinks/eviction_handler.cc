@@ -19,6 +19,10 @@
 #include "gpu/command_buffer/common/shared_image_usage.h"
 #include "ui/gfx/video_types.h"
 
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+#include "components/viz/common/viz_utils.h"
+#endif
+
 namespace viz {
 
 EvictionHandler::EvictionHandler(Display* display,
@@ -54,7 +58,11 @@ bool EvictionHandler::WillEvictSurface(const SurfaceId& surface_id) {
     auto snapshot_scale = features::SnapshotEvictedRootSurfaceScale();
 
     in_progress_ = true;
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+    if (snapshot_scale.has_value() && !IsEvictUnlockFrameEnabled()) {
+#else
     if (snapshot_scale.has_value()) {
+#endif
       TakeSnapshotForEviction(surface_id, *snapshot_scale);
     } else {
       SubmitPlaceholderContentForEviction(surface_id, snapshot_seq_id_,
@@ -97,6 +105,12 @@ void EvictionHandler::DisplayDidDrawAndSwap() {
     // We will get two unref calls and destroy `copy_output_results_` in
     // `UnrefResources`.
   }
+
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  if (IsEvictUnlockFrameEnabled()) {
+    to_evict_on_next_draw_and_swap_ = LocalSurfaceId();
+  }
+#endif
 }
 
 void EvictionHandler::TakeSnapshotForEviction(const SurfaceId& to_evict,
@@ -310,4 +324,13 @@ void EvictionHandler::UnrefResources(
   }
 }
 
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+LocalSurfaceId EvictionHandler::GetNextEvictLocalSurfaceId() const {
+  return to_evict_on_next_draw_and_swap_;
+}
+
+void EvictionHandler::SetNextEvictLocalSurfaceId(LocalSurfaceId surfaceId) {
+  to_evict_on_next_draw_and_swap_ = surfaceId;
+}
+#endif
 }  // namespace viz

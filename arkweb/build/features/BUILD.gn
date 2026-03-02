@@ -329,6 +329,7 @@ if (!enable_arkweb) {
   arkweb_ohos_mem_usage_report = false
   arkweb_media_cast = false
   arkweb_ext_http_dns_fallback_on_dns_hijacking = false
+  arkweb_evict_unlock_frames = false
 }
 
 buildflag_header("features") {
@@ -578,6 +579,7 @@ buildflag_header("features") {
     "ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS=$arkweb_offline_web_evict_back_buffers",
     "ARKWEB_OHOS_MEM_USAGE_REPORT=$arkweb_ohos_mem_usage_report",
     "ARKWEB_MEDIA_CAST=$arkweb_media_cast",
+    "ARKWEB_EVICT_UNLOCK_FRAMES=$arkweb_evict_unlock_frames",
 
     # ARKWEB_EXT dafault value
     "ARKWEB_EXT_BLANK_TARGET_POPUP_INTERCEPT=false",

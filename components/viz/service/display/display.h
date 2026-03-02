@@ -108,6 +108,10 @@ class VIZ_SERVICE_EXPORT Display : public DisplaySchedulerClient,
       std::unique_ptr<DisplaySchedulerBase> scheduler,
       scoped_refptr<base::SingleThreadTaskRunner> current_task_runner);
 
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  bool disable_draw_and_swap_on_next_frame_ = false;
+#endif
+
   Display(const Display&) = delete;
   Display& operator=(const Display&) = delete;
 

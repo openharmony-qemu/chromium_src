@@ -38,6 +38,7 @@
 
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
 #include "arkweb/chromium_ext/net/base/navigation_info.h"
+#include "arkweb/chromium_ext/net/url_request/url_request_context_ext.h"
 #endif
 
 namespace {
@@ -635,9 +636,16 @@ int URLLoaderUtils::ReadDataFromLoaderOrRequest(scoped_refptr<NetToMojoIOBuffer>
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
 std::optional<network::URLLoaderCompletionStatus>
 URLLoaderUtils::CreateURLLoaderCompletionStatus() {
-  // FIXME: add cloud control
   if (!url_loader_ || !url_loader_->url_request_ ||
       !url_loader_->url_request_->context()) {
+    return std::nullopt;
+  }
+
+  auto* ctx =
+      const_cast<net::URLRequestContext*>(url_loader_->url_request_->context());
+  const auto* ctx_ext = ctx->AsURLRequestContextExt();
+
+  if (!ctx_ext || !ctx_ext->ShouldReportNewNavigationInfo()) {
     return std::nullopt;
   }
 
@@ -652,8 +660,15 @@ URLLoaderUtils::CreateURLLoaderCompletionStatus() {
 
 void URLLoaderUtils::PopulateURLLoaderCompletionStatus(
     URLLoaderCompletionStatus& status) {
-  // FIXME: add cloud control
-  if (!url_loader_ || !url_loader_->url_request_) {
+  if (!url_loader_ || !url_loader_->url_request_ ||
+      !url_loader_->url_request_->context()) {
+    return;
+  }
+
+  auto* ctx =
+      const_cast<net::URLRequestContext*>(url_loader_->url_request_->context());
+  const auto* ctx_ext = ctx->AsURLRequestContextExt();
+  if (!ctx_ext || !ctx_ext->ShouldReportNewNavigationInfo()) {
     return;
   }
 

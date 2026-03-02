@@ -1240,7 +1240,7 @@ arkweb_document_subresource_filter_unittest_sources = [
 ]
 
 arkweb_net_url_request_sources = [
-  "//arkweb/chromium_ext/net/url_request/url_requesrt_context_ext.cc",
+  "//arkweb/chromium_ext/net/url_request/url_request_context_ext.cc",
   "//arkweb/chromium_ext/net/url_request/url_request_context_ext.h"
 ]
 

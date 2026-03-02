@@ -50,6 +50,9 @@ import "services/network/public/mojom/ct_log_info.mojom";
 import "arkweb/chromium_ext/servieces/network/public/mojom/network_config_ohos.mojom";
 // #endif
 
+[EnableIf=arkweb_ext_navigation]
+import "arkweb/chromium_ext/servieces/network/public/mojom/network_config_ohos.mojom";
+
 // Values for configuring HTTP authentication that can only be set once.
 struct HttpAuthStaticParams {
   // File name the GSSAPI library to load. Only supported on platforms where an
@@ -432,6 +435,11 @@ interface NetworkService {
   // #if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
   [EnableIf=arkweb_network_service]
   SetSocketIdleTimeout(int32 timeout);
+  // #endif
+
+  // #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  [EnableIf=arkweb_ext_navigation]
+  SetArkWebGlobalConfig(network.mojom.ArkWebGlobalConfig config);
   // #endif
 
   // Set IPv6 reachability override. When `reachability_override` is true, the

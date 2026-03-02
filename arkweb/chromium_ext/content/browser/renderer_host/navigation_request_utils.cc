@@ -177,7 +177,10 @@ void NavigationRequestUtils::PopulateNavigationInfo(
     return;
   }
 
-  // FIXME: add cloud control
+  if (!GetContentClient()->browser()->ShouldReportNewNavigationInfo()) {
+    return;
+  }
+
   if (!status.has_value() || !status->navigation_info.has_value()) {
     return;
   }
@@ -246,7 +249,10 @@ void NavigationRequestUtils::OnReportNewNavigationInfo(
     return;
   }
 
-  // FIXME: add cloud control
+  if (!GetContentClient()->browser()->ShouldReportNewNavigationInfo()) {
+    return;
+  }
+
   if (!(GURL(GetWebNavigationInfo().navigation_info.request_url)
             .SchemeIsHTTPOrHTTPS())) {
     GetWebNavigationInfo() = {};

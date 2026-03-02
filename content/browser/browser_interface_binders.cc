@@ -257,6 +257,10 @@
 #include "arkweb/chromium_ext/content/browser/dfx/dfx_reporter_browser_impl.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_JSHEAP_DUMP)
+#include "arkweb/chromium_ext/v8/heap_dump/mojom_impl/chunk_writer_browser_impl.h"
+#endif
+
 namespace blink {
 class StorageKey;
 }  // namespace blink
@@ -1152,6 +1156,16 @@ void PopulateFrameBinders(RenderFrameHostImpl* host, mojo::BinderMap* map) {
       [](RenderFrameHostImpl *host,
          mojo::PendingReceiver<dfx::mojom::DfxReporter> receiver) {
         DfxReporterImpl::ProcessPendingReceiver(receiver);
+      },
+      host));
+#endif
+
+#if BUILDFLAG(ARKWEB_JSHEAP_DUMP)
+LOG(INFO) << "HeapDump: PopulateFrameBinders\n";
+  map->Add<heapdump::mojom::ChunkWriter>(base::BindRepeating(
+      [](RenderFrameHostImpl* host,
+         mojo::PendingReceiver<heapdump::mojom::ChunkWriter> receiver) {
+        ChunkWriterImpl::ProcessPendingReceiver(receiver);
       },
       host));
 #endif

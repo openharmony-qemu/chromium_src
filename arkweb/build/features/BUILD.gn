@@ -335,6 +335,7 @@ if (!enable_arkweb) {
   arkweb_evict_unlock_frames = false
   arkweb_not_load_iframe = false
   arkweb_clean_buffers_when_invisible = false
+  arkweb_jsheap_dump = false
 }
 
 buildflag_header("features") {
@@ -590,6 +591,7 @@ buildflag_header("features") {
     "ARKWEB_EVICT_UNLOCK_FRAMES=$arkweb_evict_unlock_frames",
     "ARKWEB_NOT_LOAD_IFRAME=$arkweb_not_load_iframe",
     "ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE=$arkweb_clean_buffers_when_invisible",
+    "ARKWEB_JSHEAP_DUMP=$arkweb_jsheap_dump",
 
     # ARKWEB_EXT dafault value
     "ARKWEB_EXT_BLANK_TARGET_POPUP_INTERCEPT=false",

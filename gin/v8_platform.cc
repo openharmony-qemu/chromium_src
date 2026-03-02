@@ -30,6 +30,11 @@
 #include "partition_alloc/buildflags.h"
 #include "v8_platform_page_allocator.h"
 
+#if BUILDFLAG(ARKWEB_JSHEAP_DUMP)
+#include "arkweb/chromium_ext/v8/heap_dump/binary_writer_base.h"
+#include "arkweb/chromium_ext/v8/heap_dump/mojom_impl/binary_writer_render_impl.h"
+#endif
+
 namespace gin {
 
 namespace {
@@ -331,5 +336,11 @@ v8::TracingController* V8Platform::GetTracingController() {
 v8::Platform::StackTracePrinter V8Platform::GetStackTracePrinter() {
   return PrintStackTrace;
 }
+
+#if BUILDFLAG(ARKWEB_JSHEAP_DUMP)
+std::shared_ptr<dfx::BinaryWriterBase> V8Platform::GetBinaryWriter() {
+  return dfx::BinaryWriterRender::GetInstance();
+}
+#endif
 
 }  // namespace gin

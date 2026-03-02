@@ -18,9 +18,6 @@
 
 #if defined(OH_ENABLE_HEAP_DUMP) && \
     (defined(USING_OHOS) || defined(USING_OHOS_WEB))
-#include "binary_writer_base.h"
-#include "dump_format.h"
-
 #include <atomic>
 #include <chrono>
 #include <cinttypes>
@@ -31,14 +28,15 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include "arkweb/chromium_ext/v8/heap_dump/binary_writer_base.h"
+#include "arkweb/chromium_ext/v8/heap_dump/dump_format.h"
+#include "arkweb/chromium_ext/v8/v8_ohlog.h"
 #include "src/codegen/assembler-inl.h"
 #include "src/heap/combined-heap.h"
 #include "src/heap/heap-visitor-inl.h"
 #include "src/heap/heap-visitor.h"
 #include "src/heap/heap.h"
 #include "src/heap/visit-object.h"
-
-#include "v8_ohlog.h"
 
 namespace dfx {
 using namespace std::chrono;
@@ -63,10 +61,10 @@ class ObjectDumper {
 
   std::unique_ptr<v8::internal::SafepointScope> safepoint_scope_;
 
-  i::Heap* heap_{ nullptr };
+  v8::internal::Heap* heap_{nullptr};
   uint32_t object_cnt_{0};
   uint32_t total_object_size_{0};
-  BinaryWriterBase* writer_{ nullptr };
+  BinaryWriterBase* writer_{nullptr};
 
 #ifdef OH_ENABLE_HEAP_DUMP_TEST
   // only for test

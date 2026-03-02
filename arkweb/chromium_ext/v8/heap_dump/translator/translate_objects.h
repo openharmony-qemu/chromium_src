@@ -18,13 +18,12 @@
 
 #if defined(OH_ENABLE_HEAP_DUMP) && \
     (defined(USING_OHOS) || defined(OH_ENABLE_HEAP_DUMP_TEST))
-#include "snapshot_generator.h"
-#include "heap_dump/binary_reader_base.h"
-#include "heap_dump/dump_format.h"
-
 #include <set>
 #include <unordered_map>
 
+#include "arkweb/chromium_ext/v8/heap_dump/binary_reader_base.h"
+#include "arkweb/chromium_ext/v8/heap_dump/dump_format.h"
+#include "arkweb/chromium_ext/v8/heap_dump/translator/snapshot_generator.h"
 #include "include/v8-internal.h"
 #include "src/common/ptr-compr.h"
 
@@ -49,8 +48,8 @@ class ObjectTranslator {
 
  private:
   struct RawHeapObjectHead {
-    uint32_t offset_;     // offset in raw heap
-    uint32_t size_ : 31;  // size in raw heap
+    uint32_t offset_;      // offset in raw heap
+    uint32_t size_ : 31;   // size in raw heap
     uint32_t is_map_ : 1;  // indicate this heap object a map or not
   };
   void PreVisit();

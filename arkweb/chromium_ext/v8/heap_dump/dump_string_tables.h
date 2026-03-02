@@ -18,19 +18,18 @@
 
 #if defined(OH_ENABLE_HEAP_DUMP) && \
     (defined(USING_OHOS) || defined(USING_OHOS_WEB))
-#include "binary_writer_base.h"
-#include "dump_format.h"
-
-#include "src/heap/heap.h"
-#include "src/heap/heap-visitor.h"
+#include "arkweb/chromium_ext/v8/heap_dump/binary_writer_base.h"
+#include "arkweb/chromium_ext/v8/heap_dump/dump_format.h"
 #include "src/heap/heap-visitor-inl.h"
+#include "src/heap/heap-visitor.h"
+#include "src/heap/heap.h"
 #include "src/heap/safepoint.h"
 #include "src/utils/ostreams.h"
 
 namespace dfx {
 
 class StringTableDumper {
-public:
+ public:
   StringTableDumper(v8::internal::Heap* heap, BinaryWriterBase* writer);
   ~StringTableDumper() = default;
 
@@ -44,14 +43,14 @@ public:
   static const int SIZE_OF_ADDR = 8;
   static const int SIZE_OF_LENGTH = 4;
 
-private:
+ private:
   uint32_t string_count_{0};
   uint32_t string_table_dump_size_{0};
 
-  v8::internal::Heap* heap_;
-  BinaryWriterBase* writer_;
+  v8::internal::Heap* heap_{nullptr};
+  BinaryWriterBase* writer_{nullptr};
 };
-} // namespace dfx
+}  // namespace dfx
 #endif
 
 #endif

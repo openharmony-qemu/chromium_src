@@ -1,0 +1,63 @@
+# Copyright (c) 2026 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+heap_dump_include = [
+  "//arkweb/chromium_ext/v8/heap_dump/binary_writer_base.h",
+  "//arkweb/chromium_ext/v8/heap_dump/binary_writer.h",
+  "//arkweb/chromium_ext/v8/heap_dump/dump_format.h",
+  "//arkweb/chromium_ext/v8/heap_dump/dump_heap.h",
+  "//arkweb/chromium_ext/v8/heap_dump/dump_objects.h",
+  "//arkweb/chromium_ext/v8/heap_dump/dump_roots.h",
+  "//arkweb/chromium_ext/v8/heap_dump/dump_string_tables.h",
+]
+
+heap_dump_source = [
+  "//arkweb/chromium_ext/v8/heap_dump/binary_writer.cc",
+  "//arkweb/chromium_ext/v8/heap_dump/dump_heap.cc",
+  "//arkweb/chromium_ext/v8/heap_dump/dump_objects.cc",
+  "//arkweb/chromium_ext/v8/heap_dump/dump_roots.cc",
+  "//arkweb/chromium_ext/v8/heap_dump/dump_string_tables.cc",
+]
+
+heap_dump_ut_include = [
+  "//arkweb/chromium_ext/v8/heap_dump/ut/binary_writer_ut.h",
+  "//arkweb/chromium_ext/v8/heap_dump/ut/binary_reader_ut.h",
+]
+
+heap_dump_translator_include = [
+  "//arkweb/chromium_ext/v8/heap_dump/dump_format.h",
+  "//arkweb/chromium_ext/v8/heap_dump/binary_reader_base.h",
+  "//arkweb/chromium_ext/v8/heap_dump/translator/binary_reader.h",
+  "//arkweb/chromium_ext/v8/heap_dump/translator/translate_objects.h",
+  "//arkweb/chromium_ext/v8/heap_dump/translator/translate_string_tables.h",
+  "//arkweb/chromium_ext/v8/heap_dump/translator/snapshot_generator.h",
+  "//arkweb/chromium_ext/v8/heap_dump/translator/snapshot_serializer.h",
+  "//arkweb/chromium_ext/v8/heap_dump/translator/translate_roots.h",
+  "//arkweb/chromium_ext/v8/heap_dump/translator/translate_heap.h",
+]
+
+heap_dump_translator_source = [
+  "//arkweb/chromium_ext/v8/heap_dump/translator/binary_reader.cc",
+  "//arkweb/chromium_ext/v8/heap_dump/translator/translate_objects.cc",
+  "//arkweb/chromium_ext/v8/heap_dump/translator/translate_string_tables.cc",
+  "//arkweb/chromium_ext/v8/heap_dump/translator/snapshot_generator.cc",
+  "//arkweb/chromium_ext/v8/heap_dump/translator/snapshot_serializer.cc",
+  "//arkweb/chromium_ext/v8/heap_dump/translator/translate_roots.cc",
+  "//arkweb/chromium_ext/v8/heap_dump/translator/translate_heap.cc",
+]
+
+declare_args() {
+  enable_heap_dump = false
+  enable_heap_dump_translate = false
+  enable_heap_dump_test = false
+}

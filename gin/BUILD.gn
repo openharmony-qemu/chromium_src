@@ -119,6 +119,11 @@ component("gin") {
     public_deps += [ "//arkweb/build/features" ]
   }
 
+  if (enable_arkweb && arkweb_jsheap_dump) {
+    defines += [ "OH_ENABLE_HEAP_DUMP" ]
+    deps += [ "//arkweb/chromium_ext/v8/heap_dump:dfx_jsheapdump_render" ]
+  }
+
   if (is_mac) {
     frameworks = [ "CoreFoundation.framework" ]
   }

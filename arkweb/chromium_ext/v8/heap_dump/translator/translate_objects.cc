@@ -15,12 +15,13 @@
 
 #if defined(OH_ENABLE_HEAP_DUMP) && \
     (defined(USING_OHOS) || defined(OH_ENABLE_HEAP_DUMP_TEST))
-#include "translate_objects.h"
-#include "heap_dump/dump_format.h"
+#include "arkweb/chromium_ext/v8/heap_dump/translator/translate_objects.h"
 
 #include <iostream>
 #include <limits>
 
+#include "arkweb/chromium_ext/v8/heap_dump/dump_format.h"
+#include "arkweb/chromium_ext/v8/v8_ohlog.h"
 #include "src/base/logging.h"
 #include "src/codegen/reloc-info.h"
 #include "src/common/globals.h"
@@ -33,8 +34,6 @@
 #include "src/objects/objects.h"
 #include "src/objects/slots.h"
 #include "src/objects/visitors.h"
-
-#include "v8_ohlog.h"
 #if defined(OH_ENABLE_HEAP_DUMP_TEST)
 #include "src/d8/d8.h"
 #endif
@@ -275,12 +274,14 @@ class FakeHeapObject {
                           uint32_t size) {
     data_ =
         reinterpret_cast<uint8_t*>(::operator new(size, std::align_val_t{8}));
-    reader->ReadDataAt(offset, size, data_, size);
+    CHECK(data_);
+    CHECK(reader->ReadDataAt(offset, size, data_, size));
   }
   explicit FakeHeapObject(BinaryReaderBase* reader, uint32_t size) {
     data_ =
         reinterpret_cast<uint8_t*>(::operator new(size, std::align_val_t{8}));
-    reader->ReadData(size, data_, size);
+    CHECK(data_);
+    CHECK(reader->ReadData(size, data_, size));
   }
   ~FakeHeapObject() {
     if (data_ != nullptr) {
@@ -334,11 +335,13 @@ void ObjectTranslator::PreVisit() {
     CHECK(reader_->CurrentPosition() <= table_end - MinSizeOfRawObject);
     // read address and size
     i::Address address{0};
-    reader_->ReadData(sizeof(address), reinterpret_cast<uint8_t*>(&address), sizeof(address));
+    CHECK(reader_->ReadData(sizeof(address),
+                            reinterpret_cast<uint8_t*>(&address),
+                            sizeof(address)));
     uint32_t dump_size{0};
-    reader_->ReadData(sizeof(dump_size),
-                      reinterpret_cast<uint8_t*>(&dump_size),
-                      sizeof(dump_size));
+    CHECK(reader_->ReadData(sizeof(dump_size),
+                            reinterpret_cast<uint8_t*>(&dump_size),
+                            sizeof(dump_size)));
     if (auto [it, inserted] = objects_head_.try_emplace(
             address,
             RawHeapObjectHead{static_cast<uint32_t>(reader_->CurrentPosition()),
@@ -372,11 +375,13 @@ void ObjectTranslator::PreVisit() {
   for (uint32_t i = 0; i < object_count_; i++) {
     // read address and size
     i::Address address{0};
-    reader_->ReadData(sizeof(address), reinterpret_cast<uint8_t*>(&address), sizeof(address));
+    CHECK(reader_->ReadData(sizeof(address),
+                            reinterpret_cast<uint8_t*>(&address),
+                            sizeof(address)));
     uint32_t dump_size{0};
-    reader_->ReadData(sizeof(dump_size),
-                      reinterpret_cast<uint8_t*>(&dump_size),
-                      sizeof(dump_size));
+    CHECK(reader_->ReadData(sizeof(dump_size),
+                            reinterpret_cast<uint8_t*>(&dump_size),
+                            sizeof(dump_size)));
 
     CHECK(dump_size <= table_end - reader_->CurrentPosition());
     FakeHeapObject fake_ho(reader_, dump_size);

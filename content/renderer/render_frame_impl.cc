@@ -269,6 +269,10 @@
 #include "arkweb/chromium_ext/content/browser/dfx/memory_monitor_render_impl.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_JSHEAP_DUMP)
+#include "arkweb/chromium_ext/v8/heap_dump/mojom_impl/binary_writer_render_impl.h"
+#endif
+
 using base::Time;
 using blink::ContextMenuData;
 using blink::WebContentDecryptionModule;
@@ -4117,6 +4121,16 @@ void RenderFrameImpl::DidCommitNavigation(
       );
     }
     MemoryMonitorImpl::GetInstance()->Trigger(document_loader->GetUrl().GetString().Utf8());
+#endif
+
+#if BUILDFLAG(ARKWEB_JSHEAP_DUMP)
+    if (!dfx::BinaryWriterRender::GetInstance()->IsInitialized()) {
+      LOG(INFO) << "HeapDump: GetInstance()->SetInitialized()\n";
+      dfx::BinaryWriterRender::GetInstance()->SetInitialized();
+      LOG(INFO) << "HeapDump: RenderFrameImpl::Initialize\n";
+      GetBrowserInterfaceBroker().GetInterface(std::move(
+          dfx::BinaryWriterRender::GetInstance()->GetPendingReceiver()));
+    }
 #endif
   }
 #endif

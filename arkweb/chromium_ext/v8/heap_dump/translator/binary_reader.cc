@@ -15,8 +15,8 @@
 
 #if defined(OH_ENABLE_HEAP_DUMP) && \
     (defined(USING_OHOS) || defined(OH_ENABLE_HEAP_DUMP_TEST))
-#include "binary_reader.h"
-#include "heap_dump/dump_format.h"
+#include "arkweb/chromium_ext/v8/heap_dump/translator/binary_reader.h"
+#include "arkweb/chromium_ext/v8/heap_dump/dump_format.h"
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -25,7 +25,7 @@
 #include <vector>
 
 #include "src/base/logging.h"
-#include "v8_ohlog.h"
+#include "arkweb/chromium_ext/v8/v8_ohlog.h"
 
 namespace dfx {
 BinaryReader::BinaryReader(std::string path)

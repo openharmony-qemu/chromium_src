@@ -17,12 +17,13 @@
 #define BINARY_READER_H
 #if defined(OH_ENABLE_HEAP_DUMP) && \
     (defined(USING_OHOS) || defined(OH_ENABLE_HEAP_DUMP_TEST))
-#include "heap_dump/binary_reader_base.h"
-#include "heap_dump/dump_format.h"
 
 #include <fstream>
 #include <iostream>
 #include <string>
+
+#include "arkweb/chromium_ext/v8/heap_dump/binary_reader_base.h"
+#include "arkweb/chromium_ext/v8/heap_dump/dump_format.h"
 
 namespace dfx {
 class BinaryReader : public dfx::BinaryReaderBase {
@@ -31,7 +32,10 @@ class BinaryReader : public dfx::BinaryReaderBase {
   ~BinaryReader();
   bool ReadHeader(dfx::RawHeapHeader& header);
   bool ReadData(uint32_t read_size, uint8_t* out, uint32_t out_size) override;
-  bool ReadDataAt(uint32_t offset, uint32_t read_size, uint8_t* out, uint32_t out_size) override;
+  bool ReadDataAt(uint32_t offset,
+                  uint32_t read_size,
+                  uint8_t* out,
+                  uint32_t out_size) override;
 
   uint32_t BinarySize() const override;
   uint32_t CurrentPosition() override;

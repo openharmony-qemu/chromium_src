@@ -15,14 +15,13 @@
 
 #if defined(OH_ENABLE_HEAP_DUMP) && \
     (defined(USING_OHOS) || defined(USING_OHOS_WEB))
-#include "dump_heap.h"
-#include "dump_format-inl.h"
+#include "arkweb/chromium_ext/v8/heap_dump/dump_heap.h"
 
+#include "arkweb/chromium_ext/v8/heap_dump/dump_format-inl.h"
+#include "arkweb/chromium_ext/v8/v8_ohlog.h"
+#include "arkweb/ohos_nweb_ex/third_party/securec/include/securec.h"
 #include "src/common/ptr-compr.h"
 #include "src/heap/heap-inl.h"
-
-#include "arkweb/ohos_nweb_ex/third_party/securec/include/securec.h"
-#include "v8_ohlog.h"
 
 namespace dfx {
 HeapDumper::HeapDumper(v8::internal::Heap* heap, BinaryWriterBase* writer)

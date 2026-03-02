@@ -122,7 +122,7 @@ bool DocumentLoaderImpl::Init(std::unique_ptr<URLLoaderWrapper> loader,
     chunk_stream_.set_eof_pos(std::max(0, loader_->GetContentLength()));
 
 #if BUILDFLAG(ARKWEB_PDF)
-  int contentLength = loader->GetContentLength();
+  int contentLength = loader_->GetContentLength();
   if (contentLength > 0 && static_cast<size_t>(contentLength) > kReadLargeBufferSize) {
     LOG(DEBUG) << "pdf loader use large buffer, content length: " << loader_->GetContentLength();
     buffer_.resize(kReadLargeBufferSize);

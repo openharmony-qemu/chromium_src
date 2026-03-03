@@ -23,6 +23,8 @@
 
     const _document = window.document;
 
+    const SKIP_TAGS = new Set(['script', 'style', 'noscript', 'iframe', 'meta', 'link']);
+
     const HIGHLIGHT_CONTENT_CONFIG = {
         maxFixLength: 20,
         fixBufferLength: 50,
@@ -39,6 +41,26 @@
     window.AgentHighlightUtils = {
         // Text containing control characters (e.g., \n) can cause errors.
         __regex: /\p{C}/ug,
+
+        GetValidSiblingNode(node, direction = 'next', depth = 0) {
+            if (!node || depth >= 100) {
+                return null;
+            }
+            
+            const sibling = direction === 'next' 
+                ? node.nextElementSibling 
+                : node.previousElementSibling;
+
+            if (!sibling) {
+                return null;
+            }
+
+            if (sibling.tagName && SKIP_TAGS.has(sibling.tagName.toLowerCase())) {
+                return this.GetValidSiblingNode(sibling, direction, depth + 1);
+            }
+            
+            return sibling;
+        },
 
         EscapeText(text) {
             return encodeURIComponent(text).replace(/-/g, '%2D');
@@ -178,8 +200,10 @@
                 }
 
                 const nodeText = iterator.singleNodeValue.innerText;
-                const preText = iterator.singleNodeValue.previousElementSibling?.innerText || '';
-                const nextText = iterator.singleNodeValue.nextElementSibling?.innerText || '';
+                const preNode = this.GetValidSiblingNode(iterator.singleNodeValue, 'previous');
+                const nextNode = this.GetValidSiblingNode(iterator.singleNodeValue, 'next');
+                const preText = preNode?.innerText || '';
+                const nextText = nextNode?.innerText || '';
 
                 // Check if text matches, but continue execution regardless of match result,
                 // shadow-root where text cannot be read.

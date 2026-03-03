@@ -42,6 +42,8 @@ class FontUniqueNameLookupOhos : public FontUniqueNameLookup {
   std::optional<bool> sync_available_;
 
   SEQUENCE_CHECKER(sequence_checker_);
+
+  base::WeakPtrFactory<FontUniqueNameLookupOhos> weak_factory_{this};
 };
 
 }  // namespace blink

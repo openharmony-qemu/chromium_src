@@ -35,7 +35,8 @@ void UpdateExt(cc::Layer& layer,
     if (display_item_client) {
       Node* node = DOMNodeIds::NodeForId(display_item_client->OwnerNodeId());
       if (node && node->ShouldOverlay()) {
-        if (node->GetLayoutObject()->HasNonZeroEffectiveOpacity()) {
+        LayoutObject* layout_object = node->GetLayoutObject();
+        if (layout_object && layout_object->HasNonZeroEffectiveOpacity()) {
           should_at_top_in_z_order = true;
         }
       }

@@ -94,7 +94,7 @@ void FontUniqueNameLookupOhos::PrepareFontUniqueNameLookup(
 
   ohos_font_lookup_service_->GetUniqueNameLookupTable(base::BindOnce(
       &FontUniqueNameLookupOhos::ReceiveReadOnlySharedMemoryRegion,
-      base::Unretained(this)));
+      weak_factory_.GetWeakPtr()));
 }
 
 // LCOV_EXCL_START

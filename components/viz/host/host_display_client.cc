@@ -90,4 +90,10 @@ void HostDisplayClient::DidCompleteSwapWithNewSizeOHOS(const gfx::Size& size) {
   NOTIMPLEMENTED();
 }
 #endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+void HostDisplayClient::NotifyFirstRealSwapBuffer() {
+  NOTIMPLEMENTED();
+}
+#endif // BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
 }  // namespace viz

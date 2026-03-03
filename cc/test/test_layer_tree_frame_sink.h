@@ -147,6 +147,9 @@ class TestLayerTreeFrameSink : public LayerTreeFrameSink,
   void RestoreRenderFit(const viz::FrameSinkId& frame_sink_id) override {}
 #endif
 
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  void DisplayDidRealSwapBuffer() override {}
+#endif
  private:
   // ExternalBeginFrameSource implementation.
   void OnNeedsBeginFrames(bool needs_begin_frames) override;

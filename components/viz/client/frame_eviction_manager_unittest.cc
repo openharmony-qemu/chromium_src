@@ -11,6 +11,9 @@
 #include "base/ranges/algorithm.h"
 #include "base/test/test_mock_time_task_runner.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+#include "components/viz/common/viz_utils.h"
+#endif
 
 namespace viz {
 
@@ -33,7 +36,11 @@ class TestFrameEvictionManagerClient : public FrameEvictionManagerClient {
   }
 
   // FrameEvictionManagerClient:
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  void EvictCurrentFrame(bool isProcessMemoryPressure) override {
+#else
   void EvictCurrentFrame() override {
+#endif
     manager_->RemoveFrame(this);
     has_frame_ = false;
   }
@@ -50,7 +57,16 @@ class TestFrameEvictionManagerClient : public FrameEvictionManagerClient {
 class FrameEvictionManagerTest : public testing::Test {};
 
 TEST_F(FrameEvictionManagerTest, ScopedPause) {
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  int kMaxSavedFrames = 0;
+  if (IsEvictUnlockFrameEnabled()) {
+    kMaxSavedFrames = 0;
+  } else {
+    kMaxSavedFrames = 1;
+  }
+#else
   constexpr int kMaxSavedFrames = 1;
+#endif
   constexpr int kFrames = 2;
 
   FrameEvictionManager* manager = FrameEvictionManager::GetInstance();

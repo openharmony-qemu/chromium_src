@@ -35,7 +35,11 @@ namespace viz {
 class FrameEvictionManagerClient {
  public:
   virtual ~FrameEvictionManagerClient() = default;
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  virtual void EvictCurrentFrame(bool isProcessMemoryPressure = false) = 0;
+#else
   virtual void EvictCurrentFrame() = 0;
+#endif
 };
 
 // This class is responsible for globally managing which renderers keep their
@@ -97,7 +101,12 @@ class VIZ_CLIENT_EXPORT FrameEvictionManager
   ~FrameEvictionManager() override;
 
   void StartFrameCullingTimer();
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  void ProcessCullUnlockedFrames();
+  void CullUnlockedFrames(size_t saved_frame_limit, bool isProcessMemoryPressure = false);
+#else
   void CullUnlockedFrames(size_t saved_frame_limit);
+#endif
 #if BUILDFLAG(IS_ANDROID)
   void CullOldUnlockedFrames(base::MemoryReductionTaskContext task_type);
 #else

@@ -133,10 +133,6 @@ class CONTENT_EXPORT RenderWidgetHostView {
   virtual bool GetScrollable() = 0;
 #endif
 
-#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
-  virtual void SetIfNeedCleanBuffers(bool need_clean_buffers) {}
-#endif
-
 #if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
   virtual void SetIsOfflineWebComponentInactive(bool is_inactive) {}
 #endif

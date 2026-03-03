@@ -85,7 +85,6 @@ TEST_F(RootCompositorFrameSinkImplExtTest, RootCompositorFrameSinkImplExtTest01)
     EXPECT_EQ(dealed, true);
 
     ASSERT_NO_FATAL_FAILURE(sinkImplExt->EvictFrameBackBuffers());
-    ASSERT_NO_FATAL_FAILURE(sinkImplExt->SetIfNeedCleanBuffers(false));
     ASSERT_NO_FATAL_FAILURE(sinkImplExt->SetIsOfflineWebComponentInactive(false));
     ASSERT_NO_FATAL_FAILURE(sinkImplExt->SetIsOfflineWebComponentInactive(true));
     ASSERT_NO_FATAL_FAILURE(sinkImplExt->DisableSwapUntilMaximized());

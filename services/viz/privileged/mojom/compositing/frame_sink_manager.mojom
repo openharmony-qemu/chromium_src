@@ -234,11 +234,6 @@ interface FrameSinkManager {
   // When frame is invisible, evict display back buffers
   [EnableIf=arkweb_occluded_opt]
   EvictFrameBackBuffers(FrameSinkId frame_sink_id);
-
-  // Set if need clean buffers
-  [EnableIf=arkweb_clean_buffers_when_invisible]
-  SetIfNeedCleanBuffers(FrameSinkId frame_sink_id, bool need_clean_buffers);
-
   // Set is offline web component inactive.
   [EnableIf=arkweb_offline_web_evict_back_buffers]
   SetIsOfflineWebComponentInactive(bool is_inactive, FrameSinkId frame_sink_id);

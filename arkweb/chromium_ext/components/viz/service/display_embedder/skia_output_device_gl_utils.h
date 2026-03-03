@@ -17,12 +17,9 @@
 #define COMPONENTS_VIZ_SERVICE_DISPLAY_EMBEDDER_SKIA_OUTPUT_DEVICE_GL_UTILS_H
 
 #include "components/viz/service/display_embedder/skia_output_device_gl.h"
-#include "base/cancelable_callback.h"
 #include "base/memory/raw_ptr.h"
 
 namespace viz {
-// 100 ms : minimum time interval between two clean buffers 
-const int64_t CLEAN_BUFFERS_TIME_INTERVAL_MIN = 100;
 
 class SkiaOutputDeviceGLUtils {
  public:
@@ -35,25 +32,13 @@ class SkiaOutputDeviceGLUtils {
   void CleanBufferAfterSwapBuffer(gfx::SwapResult result);
   void CleanOfflineBuffer();
 #endif
-#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
-  void SetIfNeedCleanBuffers(bool need_clean_buffers);
-  void CleanBuffersIfNeed();
-#endif
 
  private:
   raw_ptr<SkiaOutputDeviceGL> skiaOutPutDeviceGl_;
   bool supports_damage_region_;
-  base::WeakPtrFactory<SkiaOutputDeviceGLUtils> weak_ptr_factory_{this};
 #if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
   bool delay_clean_ = false;
-#endif
-#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
-  bool need_clean_buffers_ = false;
-  bool do_clean_buffers_ = false;
-  base::TimeTicks prev_clean_buffers_time_ = base::TimeTicks::Now();
-  bool has_delay_clean_buffer_task = false;
-  std::unique_ptr<base::CancelableOnceClosure> delay_clean_buffer_task_closure_;
-  void DoCleanBuffers();
+  base::WeakPtrFactory<SkiaOutputDeviceGLUtils> weak_ptr_factory_{this};
 #endif
 };
 }  // namespace viz

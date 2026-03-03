@@ -164,9 +164,7 @@ class VIZ_SERVICE_EXPORT SkiaOutputDevice {
   // drawn to. Default no-op.
   virtual void EnsureBackbuffer();
   virtual void DiscardBackbuffer();
-#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
-  virtual void SetIfNeedCleanBuffers(bool need_clean_buffers) {}
-#endif
+
 #if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
   virtual void CleanBufferAfterSwapBuffer(bool delay_clean) {}
 #endif

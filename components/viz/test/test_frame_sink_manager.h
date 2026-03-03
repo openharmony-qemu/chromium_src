@@ -109,7 +109,6 @@ class TestFrameSinkManagerImpl : public mojom::FrameSinkManager {
   void ResetVSyncFrequency(const ::viz::FrameSinkId& frame_sink_id) override {}
   void SendInternalBeginFrame(const ::viz::FrameSinkId& frame_sink_id) override {}
   void EvictFrameBackBuffers(const ::viz::FrameSinkId& frame_sink_id) {}
-  void SetIfNeedCleanBuffers(const ::viz::FrameSinkId& frame_sink_id, bool need_clean_buffers) override {}
   void SetIsOfflineWebComponentInactive(
     bool is_inactive,
     const ::viz::FrameSinkId& frame_sink_id) override {}

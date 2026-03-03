@@ -136,13 +136,6 @@ TEST_F(CompositorTest, EvictFrameBackBuffers) {
   g_compositor->Utils()->EvictFrameBackBuffers();
 }
 
-TEST_F(CompositorTest, SetIfNeedCleanBuffers) {
-  ASSERT_NE(g_compositor, nullptr);
-  ASSERT_NE(g_compositor->Utils(), nullptr);
-  ASSERT_NO_FATAL_FAILURE(g_compositor->Utils()->SetIfNeedCleanBuffers(false));
-  ASSERT_NO_FATAL_FAILURE(g_compositor->Utils()->SetIfNeedCleanBuffers(true));
-}
-
 TEST_F(CompositorTest, UpdateVSyncFrequency) {
   ASSERT_NE(g_compositor, nullptr);
   g_compositor->Utils()->UpdateVSyncFrequency();

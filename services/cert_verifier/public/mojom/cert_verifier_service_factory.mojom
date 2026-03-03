@@ -128,4 +128,7 @@ interface CertVerifierServiceFactory {
   UpdateNetworkTime(mojo_base.mojom.Time system_time,
                     mojo_base.mojom.TimeTicks system_ticks,
                     mojo_base.mojom.Time current_time);
+
+  [EnableIf=is_ohos]
+  PlatformCertRefresh();
 };

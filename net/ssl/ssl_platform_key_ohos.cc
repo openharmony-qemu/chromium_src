@@ -53,36 +53,34 @@
 #include "third_party/boringssl/src/include/openssl/rsa.h"
 #include "third_party/boringssl/src/include/openssl/ssl.h"
 #include "third_party/boringssl/src/include/openssl/x509.h"
- 
+
 using ohos::adapter::CertManagerAdapter;
- 
+
 namespace net {
- 
+
 namespace {
- 
+
 class SSLPlatformKeyOHOS : public ThreadedSSLPrivateKey::Delegate {
  public:
-  SSLPlatformKeyOHOS(int type,
-                     std::string uri_cert)
-      : type_(type) {
+  SSLPlatformKeyOHOS(int type, std::string uri_cert) : type_(type) {
     uri_cert_ = uri_cert;
   }
- 
+
   SSLPlatformKeyOHOS(const SSLPlatformKeyOHOS&) = delete;
   SSLPlatformKeyOHOS& operator=(const SSLPlatformKeyOHOS&) = delete;
- 
+
   ~SSLPlatformKeyOHOS() override = default;
- 
+
   std::string GetProviderName() override {
     // This logic accesses fields directly on the struct, so it may run on any
     // thread without caching.
     return base::StringPrintf("BoringSSL");
   }
- 
+
   std::vector<uint16_t> GetAlgorithmPreferences() override {
     return SSLPrivateKey::DefaultAlgorithmPreferences(type_, true);
   }
- 
+
   Error Sign(uint16_t algorithm,
              base::span<const uint8_t> input,
              std::vector<uint8_t>* signature) override {
@@ -92,19 +90,20 @@ class SSLPlatformKeyOHOS : public ThreadedSSLPrivateKey::Delegate {
     if (ret) {
       return ERR_SSL_CLIENT_AUTH_SIGNATURE_FAILED;
     }
- 
+
     std::vector<uint8_t> out_data(size, 0);
     ret = CertManagerAdapter::GetInstance().SignDataByUri(
-        uri_cert_, (uint8_t*)input.data(), input.size(), out_data.data(), &size);
+        uri_cert_, (uint8_t*)input.data(), input.size(), out_data.data(),
+        &size);
     if (ret) {
       return ERR_SSL_CLIENT_AUTH_SIGNATURE_FAILED;
     }
- 
+
     signature->assign(out_data.data(), out_data.data() + size);
- 
+
     return OK;
   }
- 
+
  private:
   int type_;
   std::string uri_cert_;
@@ -118,7 +117,7 @@ bssl::UniquePtr<EVP_PKEY> FindPrivateKeyByCertOHOS(
   if (!cert || pkey_files.empty()) {
     return nullptr;
   }
- 
+
   for (auto& pkey_file : pkey_files) {
     // load pkey file
     auto pkey_path = base::FilePath::FromUTF8Unsafe(pkey_file.c_str());
@@ -126,7 +125,7 @@ bssl::UniquePtr<EVP_PKEY> FindPrivateKeyByCertOHOS(
     if (!base::ReadFileToString(pkey_path, &pkey_content)) {
       return nullptr;
     }
- 
+
     // check file-format is pem or der
     if (pkey_content.find("-----BEGIN PRIVATE KEY-----") != std::string::npos) {
       // pem pkey file
@@ -135,7 +134,7 @@ bssl::UniquePtr<EVP_PKEY> FindPrivateKeyByCertOHOS(
       if (!pkey_bio) {
         return nullptr;
       }
- 
+
       EVP_PKEY* pkey = nullptr;
       while ((pkey = PEM_read_bio_PrivateKey(pkey_bio.get(), nullptr, nullptr,
                                              nullptr))) {

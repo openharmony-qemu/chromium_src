@@ -893,7 +893,7 @@ chromium-metrics-reviews@google.com.
              management capabilities)"/>
 </enum>
 
-<enum name="EnterprisePolicies">
+<enum name="EnterprisePolicies">asdfsadf
 <!-- Generated from components/policy/resources/templates/policies.yaml -->
 
   <int value="1" label="HomepageLocation"/>

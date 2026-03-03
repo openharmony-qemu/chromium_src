@@ -163,7 +163,10 @@ export class CertificateManagerV2Element extends
         computed: 'computeClientPlatformSubpageLists_(showClientCertImport_,' +
             'showClientCertImportAndBind_)',
         // </if>
-        // <if expr="not chromeos_ash">
+        // <if expr="is_ohos">
+        computed: 'computeClientPlatformSubpageLists_(isSdk22_)',
+        // </if>
+        // <if expr="not chromeos_ash and not is_ohos">
         computed: 'computeClientPlatformSubpageLists_()',
         // </if>
       },
@@ -225,6 +228,13 @@ export class CertificateManagerV2Element extends
       },
       // </if>
 
+      isSdk22_: {
+        type: Boolean,
+        value() {
+          return loadTimeData.getBoolean('ohosSdk22');
+        },
+      },
+
       certificateSourceEnum_: {
         type: Object,
         value: CertificateSource,
@@ -257,6 +267,8 @@ export class CertificateManagerV2Element extends
   private showClientCertImportAndBind_: boolean;
   // </if>
 
+  private isSdk22_ : boolean;
+
   override ready() {
     super.ready();
     const proxy = CertificatesV2BrowserProxy.getInstance();
@@ -265,6 +277,22 @@ export class CertificateManagerV2Element extends
     proxy.callbackRouter.askForConfirmation.addListener(
         this.onAskForConfirmation_.bind(this));
   }
+  // <if expr="is_ohos">
+  private async checkSdk22(): Promise<boolean> {
+    try {
+      const proxy = CertificatesV2BrowserProxy.getInstance();
+      if (!proxy.handler) {
+        return false;
+      }
+      const response = await proxy.handler.isSdk22();
+      this.isSdk22_  = response.result;
+      return this.isSdk22_;
+    } catch (error) {
+      console.error('Failed to check SDK version:', error);
+      return false;
+    }
+  }
+  // </if>
 
   private onAskForImportPassword_(): Promise<PasswordResult> {
     this.showPasswordDialog_ = true;
@@ -454,18 +482,18 @@ export class CertificateManagerV2Element extends
         hideHeader:
             !this.showClientCertImport_ && !this.showClientCertImportAndBind_,
         // </if>
-        // <if expr="is_linux">
+        // <if expr="is_linux or is_ohos">
         showImport: true,
         hideHeader: false,
         // </if>
-        // <if expr="not chromeos_ash and not is_linux">
+        // <if expr="not chromeos_ash and not is_linux and not is_ohos">
         hideHeader: true,
         // </if>
       },
     ];
   }
 
-  // <if expr="is_win or is_macosx">
+  // <if expr="is_win or is_macosx or is_ohos">
   private onManageCertsExternal_() {
     const proxy = CertificatesV2BrowserProxy.getInstance();
     proxy.handler.showNativeManageCertificates();

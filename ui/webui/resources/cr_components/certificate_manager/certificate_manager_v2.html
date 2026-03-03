@@ -125,13 +125,15 @@
             label="[[i18n('certificateManagerV2PlatformCertsViewLink')]]"
             on-click="onClientPlatformCertsLinkRowClick_">
         </cr-link-row>
-        <if expr="is_win or is_macosx">
+        <template is="dom-if" if="[[isSdk22_]]" restamp>
+        <if expr="is_win or is_macosx or is_ohos">
           <cr-link-row external id="manageOsImportedClientCerts" class="hr"
               label="[[i18n('certificateManagerV2PlatformCertsManageLink')]]"
               button-aria-description="[[i18n('certificateManagerV2PlatformCertsManageLinkAriaDescription')]]"
               on-click="onManageCertsExternal_">
           </cr-link-row>
         </if>
+        </template>
       </div>
     </div>
 

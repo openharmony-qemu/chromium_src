@@ -44,6 +44,7 @@ enum CertType {
   CA_CERT,
   USER_CERT,
   SERVER_CERT,
+  USB_CERT,
   NUM_CERT_TYPES
 };
 
@@ -69,8 +70,7 @@ class ADAPTER_EXPORT_API CertManagerAdapter {
   virtual CertInfoList ListCertsInfo();
   CertInfoList ListCACertsInfo(const std::string& pathDir);
   int32_t GetUserId();
-  virtual int InstallPersonalCert(std::shared_ptr<char[]> cert_data,
-                          uint32_t len,
+  virtual int InstallPersonalCert(std::vector<uint8_t> cert_data,
                           const std::string& cert_pass,
                           const std::string& alias);
   int UninstallPersonalCert(const std::string& uri);
@@ -80,10 +80,20 @@ class ADAPTER_EXPORT_API CertManagerAdapter {
                     uint8_t* out,
                     size_t* outlen);
 
+  CertInfoList EnumClientCerts();
+  int SignByHuks(const std::string& uri,
+                  uint8_t* input,
+                  size_t inputlen,
+                  uint8_t* out,
+                  size_t* outlen);
+                  
+
   void ConvertCertInfo(aki::Value cert_info_value, OhosCertInfo* cert_info);
 
   std::vector<std::string> GetCertCrl(const std::string& pathDirPrefix, bool getUserId);
   void ShowCertificateManagerDialog();
+  void ShowCertificateManagerDialog(CertType certType);
+  bool IsSdk22();
 
  private:
   int32_t user_id_ = 0;

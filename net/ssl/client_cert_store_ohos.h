@@ -56,6 +56,8 @@ class NET_EXPORT ClientCertStoreOHOS : public ClientCertStore {
   // ClientCertStore:
   void GetClientCerts(scoped_refptr<const SSLCertRequestInfo> cert_request_info,
                       ClientCertListCallback callback) override;
+  void GetSoftClientCerts(
+      ClientCertListCallback callback) override;
 
   // Examines the certificates in |identities| to find all certificates that
   // match the client certificate request in |request|, removing any that don't.
@@ -71,6 +73,9 @@ class NET_EXPORT ClientCertStoreOHOS : public ClientCertStore {
   // true on will be added. Must be called from a worker thread.
   static void GetPlatformCertsOnWorkerThread(
       ClientCertIdentityList* identities);
+
+  
+  static bool is_huks_;
 
  private:
   ClientCertIdentityList GetAndFilterCertsOnWorkerThread(

@@ -1539,7 +1539,14 @@ component("net") {
         "cert/internal/trust_store_android.h",
       ]
     }
+    if (is_ohos) {
+      sources += [
+        "cert/internal/trust_store_ohos.cc",
+        "cert/internal/trust_store_ohos.h",
+      ]
+    }
   }
+
 
   if (use_nss_certs) {
     sources += [

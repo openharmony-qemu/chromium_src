@@ -24,6 +24,7 @@
 #include "net/ssl/ssl_cert_request_info.h"
 #include "net/ssl/ssl_platform_key_util.h"
 #include "net/ssl/threaded_ssl_private_key.h"
+#include "crypto/nss_crypto_module_delegate.h"
 
 namespace client_certificates {
 
@@ -59,6 +60,8 @@ class ClientCertificatesServiceImpl : public ClientCertificatesService {
   void GetClientCerts(
       scoped_refptr<const net::SSLCertRequestInfo> cert_request_info,
       ClientCertListCallback callback) override;
+  //scoped_refptr<crypto::CryptoModuleBlockingPasswordDelegate> GetPasswordDialogDelegate() override;
+  //scoped_refptr<crypto::CryptoModuleBlockingPasswordDelegate> password_delegate_;
 
  private:
   void FlattenLists(
@@ -103,6 +106,10 @@ void ClientCertificatesServiceImpl::GetClientCerts(
   certificate_provisioning_service_->GetManagedIdentity(
       base::BindOnce(ConvertIdentityToList, barrier_callback));
 }
+
+// scoped_refptr<crypto::CryptoModuleBlockingPasswordDelegate> ClientCertificatesServiceImpl::GetPasswordDialogDelegate() {
+//   return password_delegate_;
+// }
 
 void ClientCertificatesServiceImpl::FlattenLists(
     ClientCertListCallback callback,

@@ -36,6 +36,9 @@ class NET_EXPORT ClientCertStore {
       scoped_refptr<const SSLCertRequestInfo> cert_request_info,
       ClientCertListCallback callback) = 0;
 
+  virtual void GetSoftClientCerts(
+      ClientCertListCallback callback) {}
+
  protected:
   ClientCertStore() = default;
 };

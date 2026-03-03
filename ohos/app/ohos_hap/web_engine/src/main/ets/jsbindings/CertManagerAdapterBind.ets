@@ -59,8 +59,21 @@ function returnUserId(callback: Function): void {
   implCertManagerAdapter().returnUserId(callback);
 }
 
-function showCertificateManagerDialog(): void {
-  implCertManagerAdapter().showCertificateManagerDialog();
+function showCertificateManagerDialog(certType: number): void {
+  implCertManagerAdapter().showCertificateManagerDialog(certType);
+}
+
+function isSdk22(callback: Function): void {
+  implCertManagerAdapter().isSdk22(callback);
+}
+
+function enumClientCerts(callback: Function): void {
+  implCertManagerAdapter().enumClientCerts(callback);
+}
+
+
+function signByHuks(uri: string, inputData: ArrayBuffer, callback: Function): void {
+  implCertManagerAdapter().signByHuks(uri, inputData, callback);
 }
 
 export class CertManagerAdapterBind {
@@ -72,5 +85,8 @@ export class CertManagerAdapterBind {
     JsBindingUtils.bindFunction("CertManagerAdapter.GetCertCrl", getCertCrl);
     JsBindingUtils.bindFunction("CertManagerAdapter.ReturnUserId", returnUserId);
     JsBindingUtils.bindFunction("CertManagerAdapter.ShowCertificateManagerDialog", showCertificateManagerDialog);
+    JsBindingUtils.bindFunction("CertManagerAdapter.IsSdk22", isSdk22);
+    JsBindingUtils.bindFunction("CertManagerAdapter.EnumClientCerts", enumClientCerts);
+    JsBindingUtils.bindFunction("CertManagerAdapter.SignByHuks", signByHuks);
   }
 }

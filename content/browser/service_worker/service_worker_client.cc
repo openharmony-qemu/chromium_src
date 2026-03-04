@@ -841,6 +841,7 @@ void ServiceWorkerClient::OnEnterBackForwardCache() {
     SCOPED_CRASH_KEY_BOOL("SWC_OnEBFC", "is_inherited", is_inherited());
     CHECK(!controller_->BFCacheContainsControllee(client_uuid()));
     controller_->MoveControlleeToBackForwardCacheMap(client_uuid());
+    was_controlled_when_entered_back_forward_cache_ = true;
   }
   is_in_back_forward_cache_ = true;
 }
@@ -858,6 +859,7 @@ void ServiceWorkerClient::OnRestoreFromBackForwardCache() {
     controller_->RestoreControlleeFromBackForwardCacheMap(client_uuid());
   }
   is_in_back_forward_cache_ = false;
+  was_controlled_when_entered_back_forward_cache_ = false;
 }
 
 void ServiceWorkerClient::SyncMatchingRegistrations() {
@@ -988,6 +990,7 @@ void ServiceWorkerClient::UpdateController(bool notify_controllerchange) {
 
   scoped_refptr<ServiceWorkerVersion> previous_version = controller_;
   controller_ = version;
+  was_controlled_when_entered_back_forward_cache_ = false;
   if (version) {
     // TODO(crbug.com/330928087): remove check when this issue resolved.
     SCOPED_CRASH_KEY_NUMBER("SWV_RCFBCM", "client_type",
@@ -1003,6 +1006,7 @@ void ServiceWorkerClient::UpdateController(bool notify_controllerchange) {
       // |this| was not |version|'s controllee when |OnEnterBackForwardCache|
       // was called.
       version->MoveControlleeToBackForwardCacheMap(client_uuid());
+      was_controlled_when_entered_back_forward_cache_ = true;
     }
     if (running_status_observer_) {
       version->AddObserver(running_status_observer_.get());

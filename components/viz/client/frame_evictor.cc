@@ -61,8 +61,10 @@ std::vector<SurfaceId> FrameEvictor::CollectSurfaceIdsForEviction() const {
 #if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
   // 1: max child surface size
   // also need to evict root frame once memory pressure is critical
-  if (IsEvictUnlockFrameEnabled() && ids.embedded_ids.size() > 1 && !isProcessMemoryPressure) {
+  if (IsEvictUnlockFrameEnabled() && output_ids.size() > 1 && !isProcessMemoryPressure) {
     ids.ui_compositor_id = viz::SurfaceId();
+    LOG(DEBUG) << "ids.ui_compositor_id: " << ids.ui_compositor_id.ToString() << "output_ids.size: " <<
+      output_ids.size();
   }
 #endif
   auto current = client_->GetCurrentSurfaceId();

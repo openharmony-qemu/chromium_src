@@ -530,6 +530,7 @@ int TransportConnectJob::HandleSubJobComplete(int result,
     //AsArkWebTransportConnectJobExt()->MultiIpSubJobReport(job);
 #endif  // BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+    SetResolveInfoToSocket(resolve_info_);
     SetExtraConnectionAttemptsToSocket(extra_connection_attempts_);
 #endif
     SetSocket(job->PassSocket(), dns_aliases_);

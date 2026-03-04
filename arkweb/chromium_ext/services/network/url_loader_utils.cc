@@ -678,8 +678,7 @@ void URLLoaderUtils::PopulateURLLoaderCompletionStatus(
   nav_info.request_url = url_request->url().spec();
   nav_info.request_uuid = url_request->request_uuid();
   nav_info.time_stamp = base::NumberToString(
-      (url_request->creation_time() - base::TimeTicks::UnixEpoch())
-          .InMilliseconds());
+      url_request->request_time().InMillisecondsSinceUnixEpoch());
   nav_info.error_code = url_request->GetStatus();
   nav_info.original_error_code = url_request->GetOriginalNetErrorCode();
 

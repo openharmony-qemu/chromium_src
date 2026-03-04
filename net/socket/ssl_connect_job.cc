@@ -498,6 +498,7 @@ int SSLConnectJob::DoSSLConnectComplete(int result) {
   if (result == OK || IsCertificateError(result)) {
     SetSocket(std::move(ssl_socket_), std::move(dns_aliases_));
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+    SetResolveInfoToSocket(resolve_info_);
     SetExtraConnectionAttemptsToSocket(extra_connection_attempts_);
 #endif
   } else if (result == ERR_SSL_CLIENT_AUTH_CERT_NEEDED) {

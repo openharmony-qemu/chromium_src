@@ -670,7 +670,6 @@ void MetricsWebContentsObserver::DidFinishNavigation(
   if (navigation_handle && !navigation_handle->IsSameDocument() &&
       !current_page_trace_id_.empty()) {
     navigation_handle->OnReportNewNavigationInfo(current_page_trace_id_);
-    current_page_trace_id_.clear();
   }
 #endif
 

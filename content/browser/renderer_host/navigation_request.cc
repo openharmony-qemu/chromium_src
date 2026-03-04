@@ -5106,7 +5106,14 @@ void NavigationRequest::OnRequestFailedInternal(
 
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   if (nav_request_utils_) {
-    nav_request_utils_->PopulateNavigationInfo(status);
+    network::URLLoaderCompletionStatus temp_status = status;
+    if (!temp_status.navigation_info.has_value() && response_head_ &&
+        response_head_->status.has_value() &&
+        response_head_->status->navigation_info.has_value()) {
+      temp_status.navigation_info =
+          response_head_->status->navigation_info.value();
+    }
+    nav_request_utils_->PopulateNavigationInfo(temp_status);
   }
 #endif
 

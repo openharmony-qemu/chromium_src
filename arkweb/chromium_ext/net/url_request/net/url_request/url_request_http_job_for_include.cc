@@ -493,7 +493,8 @@ void URLRequestHttpJob::GenerateRequestAttempt(int result) {
   }
 
   if (current_attempt_type_ == AttemptType::kCheckWirelessChange ||
-      current_attempt_type_ == AttemptType::kCheckSafeBrowsing) {
+      current_attempt_type_ == AttemptType::kCheckSafeBrowsing ||
+      current_attempt_type_ == AttemptType::kCheckNotRetryHttpDns) {
     current_attempt_type_ = AttemptType::kNormal;
     return;
   }

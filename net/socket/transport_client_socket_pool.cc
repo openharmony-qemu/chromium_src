@@ -1250,6 +1250,11 @@ void TransportClientSocketPool::HandOutSocket(
     Group* group,
     const NetLogWithSource& net_log) {
   DCHECK(socket);
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  if (socket) {
+    handle->SetResolveInfo(socket->GetDnsResolveInfo());
+  }
+#endif
   handle->SetSocket(std::move(socket));
   handle->set_reuse_type(reuse_type);
   handle->set_idle_time(idle_time);

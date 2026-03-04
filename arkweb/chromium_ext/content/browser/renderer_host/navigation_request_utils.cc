@@ -193,6 +193,7 @@ void NavigationRequestUtils::PopulateNavigationInfo(
 
   GetWebNavigationInfo().navigation_info = status->navigation_info.value();
   GetWebNavigationInfo().navigation_info.request_attempts.clear();
+  GetWebNavigationInfo().navigation_info.error_code = status->error_code;
 
   GetWebNavigationInfo().is_auto_reload = IsAutoReload();
   GetWebNavigationInfo().auto_reload_reason =

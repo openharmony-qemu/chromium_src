@@ -1209,7 +1209,17 @@ void NavigationURLLoaderImpl::OnReceiveRedirect(
     } else {
       // TODO(crbug.com/40118809): Make sure ResetWithReason() is called
       // on the original `url_loader_`.
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+      network::URLLoaderCompletionStatus status =
+          network::URLLoaderCompletionStatus(error);
+      if (head && head->status.has_value() &&
+          head->status->navigation_info.has_value()) {
+        status.navigation_info = head->status->navigation_info.value();
+      }
+      OnComplete(status);
+#else
       OnComplete(network::URLLoaderCompletionStatus(error));
+#endif
     }
     return;
   }

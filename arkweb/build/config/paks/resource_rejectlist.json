@@ -1,21 +1,35 @@
 {
     "reject_file_list": [
         "settings_strings.grdp",
-        "privacy_sandbox_chrome_strings.grdp"
+        "privacy_sandbox_chrome_strings.grdp",
+        "profiles_strings.grdp",
+        "autofill_payments_strings.grdp",
+        "ui_strings.grd",
+        "print_media_strings.grdp",
+        "omnibox_pedal_ui_strings.grdp",
+        "shared_settings_strings.grdp",
+        "omnibox_pedal_synonyms.grd",
+        "autofill_strings.grdp",
+        "settings_chromium_strings.grdp",
+        "site_settings_strings.grdp",
+        "printing_strings.grdp",
+        "history_strings.grdp",
+        "management_strings.grdp",
+        "app_management_strings.grdp",
+        "arc_strings.grdp",
+        "autofill_prediction_improvements_strings.grdp",
+        "flags_strings.grdp",
+        "access_code_cast_strings.grdp",
+        "components_settings_strings.grdp",
+        "printing_component_strings.grdp",
+        "whats_new_strings.grdp"
     ],
     "reject_id_list": [
         {
-            "filename": "profiles_strings.grdp",
+            "filename": "generated_resources.grd",
             "id_list": [
-                "IDS_PROFILE_MENU_OPEN_ACCOUNT_SETTINGS",
-                "IDS_PROFILE_MENU_AUTOFILL_SETTINGS_BUTTON"
-            ]
-        },
-        {
-            "filename": "autofill_payments_strings.grdp",
-            "id_list": [
-                "IDS_AUTOFILL_SAVE_CARD_PROMPT_UPLOAD_EXPLANATION_TOOLTIP",
-                "IDS_AUTOFILL_SAVE_CARD_PROMPT_UPLOAD_EXPLANATION_AND_CARDHOLDER_NAME_TOOLTIP"
+                "IDS_TOS_NOTIFICATION_TITLE",
+                "IDS_TOS_NOTIFICATION_LINK"
             ]
         }
     ]

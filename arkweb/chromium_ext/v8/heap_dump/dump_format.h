@@ -15,13 +15,14 @@
 
 #ifndef DUMP_FORMAT_H
 #define DUMP_FORMAT_H
+#if defined(OH_ENABLE_HEAP_DUMP) || defined(ON_ENABLE_HEAP_TRANSLATE)
 
 #include "include/v8-internal.h"
 #include "src/heap/heap.h"
 
 namespace dfx {
-typedef uintptr_t Address;
-constexpr dfx::Address kRawHeapWeakObjectTag = 0x1;
+static_assert(sizeof(uintptr_t) == sizeof(v8::internal::Address));
+constexpr v8::internal::Address kRawHeapWeakObjectTag = 0x1;
 
 constexpr uint64_t kRawHeapMagic = 0xabc132;
 constexpr uint32_t kRawHeapVersion = 0x1;
@@ -32,8 +33,8 @@ struct RawHeapHeader {
   uint32_t flags_;
   uint64_t timestamp_;
 
-  dfx::Address cage_base_;
-  dfx::Address code_cage_base_;
+  v8::internal::Address cage_base_;
+  v8::internal::Address code_cage_base_;
 
   uint32_t root_table_offset_;
   uint32_t root_table_size_;
@@ -52,10 +53,16 @@ struct RawHeapHeader {
   // ...
 };
 
+struct InstructionStreamInfo {
+  v8::internal::Address object_addr_;
+  int8_t mode_;
+};
+
 struct StringTableElementInfo {
-  dfx::Address string_address_;
-  int len;
+  v8::internal::Address string_address_;
+  int len_;
 };
 
 }  // namespace dfx
+#endif
 #endif

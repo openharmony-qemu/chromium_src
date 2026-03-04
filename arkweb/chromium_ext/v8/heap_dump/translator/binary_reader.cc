@@ -13,10 +13,9 @@
  * limitations under the License.
  */
 
-#if defined(OH_ENABLE_HEAP_DUMP) && \
-    (defined(USING_OHOS) || defined(OH_ENABLE_HEAP_DUMP_TEST))
+#if defined(ON_ENABLE_HEAP_TRANSLATE)
+
 #include "arkweb/chromium_ext/v8/heap_dump/translator/binary_reader.h"
-#include "arkweb/chromium_ext/v8/heap_dump/dump_format.h"
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -24,8 +23,9 @@
 #include <cstdint>
 #include <vector>
 
-#include "src/base/logging.h"
+#include "arkweb/chromium_ext/v8/heap_dump/dump_format.h"
 #include "arkweb/chromium_ext/v8/v8_ohlog.h"
+#include "src/base/logging.h"
 
 namespace dfx {
 BinaryReader::BinaryReader(std::string path)
@@ -63,13 +63,15 @@ bool BinaryReader::ReadHeader(dfx::RawHeapHeader& header) {
   return true;
 }
 
-bool BinaryReader::ReadData(uint32_t read_size, uint8_t* out, uint32_t out_size) {
+bool BinaryReader::ReadData(uint32_t read_size,
+                            uint8_t* out,
+                            uint32_t out_size) {
   if (!IsValid() || !file_.good() || out_size < read_size) {
     return false;
   }
   std::streampos offset = file_.tellg();
-  if (offset < 0 || (static_cast<uint32_t>(offset) <= file_size_ &&
-    read_size > file_size_ - static_cast<uint32_t>(offset))) {
+  if (offset < 0 || (static_cast<uint32_t>(offset) > file_size_ ||
+                     read_size > file_size_ - static_cast<uint32_t>(offset))) {
     return false;
   }
 

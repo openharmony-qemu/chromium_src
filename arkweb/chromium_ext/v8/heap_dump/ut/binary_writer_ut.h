@@ -15,14 +15,13 @@
 
 #ifndef BINARY_WRITER_UT_H
 #define BINARY_WRITER_UT_H
-
-#if defined(OH_ENABLE_HEAP_DUMP)
+#if defined(OH_ENABLE_HEAP_DUMP_TEST)
 
 #include <string>
 #include <vector>
 
+#include "arkweb/chromium_ext/v8/heap_dump/binary_writer_base.h"
 #include "src/base/logging.h"
-#include "heap_dump/binary_writer_base.h"
 
 namespace dfx {
 

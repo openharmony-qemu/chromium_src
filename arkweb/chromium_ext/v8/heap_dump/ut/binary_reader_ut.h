@@ -15,10 +15,9 @@
 
 #ifndef BINARY_READER_UT_H
 #define BINARY_READER_UT_H
-#if defined(OH_ENABLE_HEAP_DUMP)
+#if defined(OH_ENABLE_HEAP_DUMP_TEST)
 
-#include "arkweb/ohos_nweb_ex/third_party/securec/include/securec.h"
-#include "heap_dump/binary_reader_base.h"
+#include "arkweb/chromium_ext/v8/heap_dump/binary_reader_base.h"
 #include "src/base/logging.h"
 
 namespace dfx {
@@ -30,24 +29,19 @@ class BinaryReaderTest : public BinaryReaderBase {
     CHECK(cursor_ <= size_);
     CHECK(read_size <= size_ - cursor_);
     CHECK(read_size <= out_size);
-    errno_t ret = memcpy_s(out, out_size, data_ + cursor_, read_size);
-    if (ret != 0) {
-      LogInfo("memcpy_s failed, ret=" + std::to_string(ret));
-      return false;
-    }
+    memcpy(out, data_ + cursor_, read_size);
     cursor_ += read_size;
     return true;
   }
 
-  bool ReadDataAt(uint32_t offset, uint32_t read_size, uint8_t* out, uint32_t out_size) override {
+  bool ReadDataAt(uint32_t offset,
+                  uint32_t read_size,
+                  uint8_t* out,
+                  uint32_t out_size) override {
     CHECK(offset <= size_);
     CHECK(read_size <= size_ - offset);
     CHECK(read_size <= out_size);
-    errno_t ret = memcpy_s(out, out_size, data_ + offset, read_size);
-    if (ret != 0) {
-      LogInfo("memcpy_s failed, ret=" + std::to_string(ret));
-      return false;
-    }
+    memcpy(out, data_ + offset, read_size);
     return true;
   }
 

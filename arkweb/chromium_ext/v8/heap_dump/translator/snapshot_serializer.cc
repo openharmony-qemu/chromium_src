@@ -13,13 +13,12 @@
  * limitations under the License.
  */
 
-#if defined(OH_ENABLE_HEAP_DUMP) && \
-    (defined(USING_OHOS) || defined(OH_ENABLE_HEAP_DUMP_TEST))
+#if defined(ON_ENABLE_HEAP_TRANSLATE)
 #include "snapshot_serializer.h"
 
 #include <stdio.h>
-#include "arkweb/ohos_nweb_ex/third_party/securec/include/securec.h"
 #include "src/base/logging.h"
+
 
 namespace dfx {
 
@@ -36,7 +35,7 @@ class SnapshotJSONSerializer::SerializeWriter final : public BinaryWriter {
   }
   void AddNumber(uint32_t n) {
     char buf[32] = {0};
-    int len = snprintf_s(buf, sizeof(buf), sizeof(buf) - 1, "%u", n);
+    int len = snprintf(buf, sizeof(buf), "%u", n);
     CHECK(len >= 0);
     WriteBinBlock(reinterpret_cast<uint8_t*>(buf), static_cast<uint32_t>(len));
   }
@@ -44,11 +43,17 @@ class SnapshotJSONSerializer::SerializeWriter final : public BinaryWriter {
 };
 
 SnapshotJSONSerializer::SnapshotJSONSerializer(SnapshotGenerator* generator)
-    : generator_(generator) {}
+    : generator_(generator), out_path_("rawheap.heapsnapshot") {}
+
+SnapshotJSONSerializer::~SnapshotJSONSerializer() = default;
+
+void SnapshotJSONSerializer::SetOutputFile(std::string output) {
+  out_path_ = output;
+}
 
 void SnapshotJSONSerializer::Serialize() {
   writer_ = std::make_unique<SerializeWriter>();
-  writer_->OpenFile("rawheap.heapsnapshot");
+  writer_->OpenFile(out_path_);
 
   trace_function_count_ = 0;
   SerializeImpl();
@@ -303,9 +308,11 @@ void SnapshotJSONSerializer::SerializeString(std::string_view str) {
         writer_->AddCharacter(ch);
         continue;
       default:
+        // NIY
         if (ch > 31 && static_cast<uint8_t>(ch) < 128) {
           writer_->AddCharacter(ch);
         } else if (ch <= 31) {
+          // NIY
           UNREACHABLE();
           // Special character with no dedicated literal.
         } else {

@@ -22,6 +22,9 @@
 namespace dfx {
 using namespace v8;
 
+// NIY: see GlobalObjectsEnumerator in heap-snapshot-generator.cc for Global
+// Objects
+
 ////////// RootVisitor
 // reference to RootsReferencesExtractor
 class RootVisitorForDump final : public i::RootVisitor {
@@ -51,12 +54,14 @@ class RootVisitorForDump final : public i::RootVisitor {
     dumper_->AddRoot(root, object_address, visiting_weak_roots_);
 
 #ifdef OH_ENABLE_HEAP_DUMP_TEST
-    std::stringstream ss;
-    ss << "[HeapDump] root name:" << i::RootVisitor::RootName(root)
-       << " instance type:" << i::ToString(ho->map()->instance_type())
-       << " object addr: " << object_address << " object size:" << ho->Size()
-       << "\n";
-    LogInfo(ss.str());
+    if (i::v8_flags.log_heapdump) {
+      std::stringstream ss;
+      ss << "[HeapDump] root name:" << i::RootVisitor::RootName(root)
+         << " instance type:" << i::ToString(ho->map()->instance_type())
+         << " object addr: " << object_address << " object size:" << ho->Size()
+         << "\n";
+      LogInfo(ss.str());
+    }
 #endif
   }
 
@@ -139,6 +144,10 @@ void RootDumper::Dump() {
     uint32_t count = static_cast<uint32_t>(addresses.size());
     writer_->WriteBinBlock(reinterpret_cast<uint8_t*>(&type), sizeof(type));
     writer_->WriteBinBlock(reinterpret_cast<uint8_t*>(&count), sizeof(count));
+    if (i::v8_flags.log_heapdump) {
+      std::cout << "-----" << i::RootVisitor::RootName(root_type) << "-----"
+                << std::endl;
+    }
     for (auto addr : addresses) {
       writer_->WriteBinBlock(reinterpret_cast<uint8_t*>(&addr), sizeof(addr));
     }

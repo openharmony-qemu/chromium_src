@@ -15,10 +15,7 @@
 
 #ifndef SNAPSHOT_GENERATOR_H
 #define SNAPSHOT_GENERATOR_H
-#if defined(OH_ENABLE_HEAP_DUMP) && \
-    (defined(USING_OHOS) || defined(OH_ENABLE_HEAP_DUMP_TEST))
-#include "arkweb/chromium_ext/v8/heap_dump/dump_format.h"
-
+#if defined(ON_ENABLE_HEAP_TRANSLATE)
 #include <set>
 
 #include "include/v8-profiler.h"
@@ -94,8 +91,8 @@ class SnapshotGenerator {
   explicit SnapshotGenerator();
   ~SnapshotGenerator();
   // get node index from address; get address from
-  Node* GetNode(dfx::Address obj_addr);
-  Node* AddNode(dfx::Address obj_addr,
+  Node* GetNode(v8::internal::Address obj_addr);
+  Node* AddNode(v8::internal::Address obj_addr,
                 Node::Type type,
                 std::string name,
                 uint32_t self_size);
@@ -114,10 +111,13 @@ class SnapshotGenerator {
   void SetNativeBindReference();
   void SetElementReference();
   void SetInternalReference();
-  void SetHiddenReference(dfx::Address parent,
+  void SetHiddenReference(v8::internal::Address parent,
                           uint32_t index,
-                          dfx::Address child);
-  void SetWeakReference();
+                          v8::internal::Address child);
+  void SetWeakReference(v8::internal::Address parent,
+                        uint32_t index,
+                        v8::internal::Address child,
+                        std::optional<int> field_offset);
   void SetPropertyReference();
   void SetDataOrAccessorPropertyReference();
 
@@ -125,7 +125,7 @@ class SnapshotGenerator {
   void SetGcSubrootReference(v8::internal::Root root,
                              std::string description,
                              bool is_weak,
-                             dfx::Address root_address);
+                             v8::internal::Address root_address);
 
  private:
   Node* CreateNode(Node::Type type, std::string name, uint32_t self_size);
@@ -133,16 +133,16 @@ class SnapshotGenerator {
   void AddGcRootNode();
 
   void SetReference(Edge::Type type,
-                    dfx::Address parent,
+                    v8::internal::Address parent,
                     uint32_t name_or_index,
-                    dfx::Address child);
+                    v8::internal::Address child);
 
   std::vector<Node*> nodes_;
   Node* root_{nullptr};
   Node* gc_root_{nullptr};
   std::vector<Node*> gc_subroot_nodes_;
   uint32_t edge_count_{0};
-  std::unordered_map<dfx::Address, uint32_t> node_by_addr_;
+  std::unordered_map<v8::internal::Address, uint32_t> node_by_addr_;
 
   std::unordered_map<std::string, uint32_t> strings_;
 };

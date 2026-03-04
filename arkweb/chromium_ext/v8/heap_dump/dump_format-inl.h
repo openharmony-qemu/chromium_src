@@ -15,17 +15,19 @@
 
 #ifndef DUMP_FORMAT_INL_H
 #define DUMP_FORMAT_INL_H
-#if defined(OH_ENABLE_HEAP_DUMP)
+#if defined(OH_ENABLE_HEAP_DUMP) || defined(ON_ENABLE_HEAP_TRANSLATE)
 #include "dump_format.h"
 
 namespace dfx {
 static void PrintHead(std::ostream& os, const RawHeapHeader& head) {
-  os << "cage_base_: " << head.cage_base_ << ", code_cage_base_: "
-      << head.code_cage_base_ << ", root_table_offset_: "
-      << head.root_table_offset_ << ", root_table_size_: " << head.root_table_size_
-      << ", root_type_count_: " << head.root_type_count_ << ", object_table_offset_: "
-      << head.object_table_offset_ << ", object_table_size_: "
-      << head.object_table_size_ << ", object_count_: " << head.object_count_;
+  os << "cage_base_: " << head.cage_base_
+     << ", code_cage_base_: " << head.code_cage_base_
+     << ", root_table_offset_: " << head.root_table_offset_
+     << ", root_table_size_: " << head.root_table_size_
+     << ", root_type_count_: " << head.root_type_count_
+     << ", object_table_offset_: " << head.object_table_offset_
+     << ", object_table_size_: " << head.object_table_size_
+     << ", object_count_: " << head.object_count_;
 }
 }  // namespace dfx
 

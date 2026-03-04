@@ -12,8 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#if defined(USING_OHOS_WEB) || defined(USING_OHOS)
-
 #include "v8_ohlog.h"
 
 #include <iostream>
@@ -21,16 +19,24 @@
 #include "hilog.h"
 #include "ohlog.h"
 
+#if defined(USING_OHOS_WEB) || defined(USING_OHOS)
+
 #ifdef USING_OHOS_WEB
 void LogInfo(std::string message) {
   StreamHilog(message);
 }
 
-#else
+#else   // USING_OHOS_WEB
 
 void LogInfo(std::string message) {
   HilogPrint(INFO, "%{public}s", message.c_str());
 }
 #endif  // USING_OHOS_WEB
 
-#endif
+#else  // defined(USING_OHOS_WEB) || defined(USING_OHOS)
+
+void LogInfo(std::string message) {
+  std::cout << message << std::endl;
+}
+
+#endif  // defined(USING_OHOS_WEB) || defined(USING_OHOS)

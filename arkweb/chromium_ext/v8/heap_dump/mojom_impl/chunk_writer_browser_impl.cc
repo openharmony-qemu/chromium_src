@@ -15,12 +15,12 @@
 
 #include "chunk_writer_browser_impl.h"
 
+#include <errno.h>
 #include <fcntl.h>
+#include <string.h>
 #include <unistd.h>
 
-#include <cerrno>
 #include <cstdint>
-#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
@@ -104,7 +104,7 @@ void ChunkWriterImpl::WriteBinaryToDisk(const uint8_t* data, size_t size) {
 }
 
 void ChunkWriterImpl::CloseFile(const std::string& path) {
-  LOG(INFO) << "HeapDump: CloseFile" << path;
+  LOG(INFO) << "HeapDump: CloseFile";
 }
 
 void ChunkWriterImpl::clear() {

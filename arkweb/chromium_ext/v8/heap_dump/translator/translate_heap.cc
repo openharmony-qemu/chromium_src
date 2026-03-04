@@ -13,25 +13,24 @@
  * limitations under the License.
  */
 
-#if defined(OH_ENABLE_HEAP_DUMP) && \
-    (defined(USING_OHOS) || defined(OH_ENABLE_HEAP_DUMP_TEST))
+#if (defined(ON_ENABLE_HEAP_TRANSLATE) || defined(OH_ENABLE_HEAP_DUMP_TEST))
+
 #include "arkweb/chromium_ext/v8/heap_dump/translator/translate_heap.h"
+
+#include "arkweb/chromium_ext/v8/heap_dump/binary_reader_base.h"
+#include "arkweb/chromium_ext/v8/heap_dump/dump_format-inl.h"
 #include "arkweb/chromium_ext/v8/heap_dump/translator/translate_objects.h"
 #include "arkweb/chromium_ext/v8/heap_dump/translator/translate_roots.h"
 #include "arkweb/chromium_ext/v8/heap_dump/translator/translate_string_tables.h"
-#include "arkweb/chromium_ext/v8/heap_dump/binary_reader_base.h"
-#include "arkweb/chromium_ext/v8/heap_dump/dump_format-inl.h"
-
+#include "arkweb/chromium_ext/v8/v8_ohlog.h"
 #include "src/common/ptr-compr-inl.h"
 #include "src/common/ptr-compr.h"
-
-#include "arkweb/ohos_nweb_ex/third_party/securec/include/securec.h"
 
 namespace dfx {
 HeapTranslator::HeapTranslator(BinaryReaderBase* reader,
                                SnapshotGenerator* generator)
     : reader_(reader), generator_(generator) {
-  memset_s(&header_, sizeof(header_), 0, sizeof(header_));
+  memset(&header_, 0, sizeof(header_));
 }
 
 void HeapTranslator::TranslateHeader() {
@@ -39,18 +38,26 @@ void HeapTranslator::TranslateHeader() {
   CHECK(reader_->ReadData(size, reinterpret_cast<uint8_t*>(&header_), size));
   i::V8HeapCompressionScheme::InitBase(header_.cage_base_);
   i::ExternalCodeCompressionScheme::InitBase(header_.code_cage_base_);
+  std::cout << "translate header_:" << std::endl;
+  PrintHead(std::cout, header_);
 }
 
 void HeapTranslator::TranslateHeap() {
+  v8::base::ElapsedTimer timer;
+  timer.Start();
   TranslateHeader();
   TranslateRoots();
   TranslateStringTable();
   TranslateObjects();
+  double elapsed = timer.Elapsed().InMillisecondsF();
+  LogInfo("[HeapDump]elapsed time: " + std::to_string(elapsed) + " ms\n");
+  timer.Stop();
 }
 
 void HeapTranslator::TranslateRoots() {
-  root_translator_ = std::make_unique<RootTranslator>(header_.root_table_offset_,
-      header_.root_type_count_, header_.root_table_size_, reader_, generator_);
+  root_translator_ = std::make_unique<RootTranslator>(
+      header_.root_table_offset_, header_.root_type_count_,
+      header_.root_table_size_, reader_, generator_);
   root_translator_->Translate();
 }
 

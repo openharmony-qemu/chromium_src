@@ -52,9 +52,19 @@ class ObjectDumper {
   void Dump();
 
   void PreVisit();
+  uint32_t PreVisitInstructionStream(
+      v8::internal::Tagged<v8::internal::HeapObject> object);
+  void AddInstructionStreamInfo(v8::internal::Address addr,
+                                InstructionStreamInfo info);
 
   uint32_t ObjectCount() const;
   uint32_t ObjectDumpSize() const;
+
+  void IterateInstructionStream(
+      v8::internal::Tagged<v8::internal::HeapObject> object);
+  void WriteInstructionStreamInfo(
+      v8::internal::Tagged<v8::internal::HeapObject> object);
+  BinaryWriterBase* getWriter() { return writer_; }
 
  private:
   DISALLOW_GARBAGE_COLLECTION(no_heap_allocation_)
@@ -65,10 +75,12 @@ class ObjectDumper {
   uint32_t object_cnt_{0};
   uint32_t total_object_size_{0};
   BinaryWriterBase* writer_{nullptr};
+  std::unordered_map<v8::internal::Address, std::vector<InstructionStreamInfo>>
+      InstructionStreamMap_;
 
 #ifdef OH_ENABLE_HEAP_DUMP_TEST
   // only for test
-  std::unordered_map<dfx::Address, bool> heap_objects_;
+  std::unordered_map<v8::internal::Address, bool> heap_objects_;
 #endif
 };
 }  // namespace dfx

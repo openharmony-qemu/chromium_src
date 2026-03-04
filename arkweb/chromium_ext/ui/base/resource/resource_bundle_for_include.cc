@@ -18,6 +18,7 @@
 #if BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)
 #include "base/command_line.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#include "ohos_nweb/src/nweb_common.h"
 #endif
 
 namespace ui {
@@ -113,6 +114,7 @@ static std::unordered_set<std::string> supportLocaleList = {
 bool LocaleDataPakExistsExt(const std::string& locale) {
   const auto path = ResourceBundle::GetLocaleFilePath(locale);
   // If the hap package is not decompressed, the directory does not exist.
+  ScopedAllowBlockingForNwebInit allow_blocking_for_using_path;
   if (path.empty() || !base::PathExists(path)) {
     return supportLocaleList.count(locale) > 0;
   } else {

@@ -27,6 +27,7 @@
 #include "ui/base/resource/resource_bundle.h"
 #include "libcef/browser/thread_util.h"
 #include "hilog/log.h"
+#include "ohos_nweb/src/nweb_common.h"
 
 #define PARSE_AND_ASSIGN_CONFIG_OPTIONAL(Dict, key, Limits, Member, DefaultValue) \
   do { \
@@ -53,6 +54,7 @@ void NwebAutolayout::Initialize() {
   mAppBundleName_ = adapter.GetSystemPropertiesInstance().GetBundleName();
 
   std::string ccmConfig = "";
+  ScopedAllowBlockingForNwebInit allow_blocking_for_using_path;
   base::FilePath ccmfile_path = base::FilePath(kCCMConfigPath);
   if (!base::ReadFileToString(ccmfile_path, &ccmConfig)) {
       LOG(WARNING) << "Failed to read Config.json from " << ccmfile_path.MaybeAsASCII();

@@ -19,7 +19,6 @@
 #include <thread>
 
 #include "arkweb/build/features/features.h"
-#include "base/threading/thread_restrictions.h"
 #include "build/build_config.h"
 #include "cef/include/wrapper/cef_helpers.h"
 #include "content/public/browser/browser_task_traits.h"
@@ -27,6 +26,7 @@
 #include "content/public/common/content_switches.h"
 #include "nweb_handler_delegate.h"
 #include "nweb_impl.h"
+#include "ohos_nweb/src/nweb_common.h"
 
 #if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
@@ -61,8 +61,6 @@ static std::mutex init_mtx;
 const char kNWebId[] = "nweb_id";
 #endif  //  ARKWEB_EX_DOWNLOAD
 }  // namespace
-
-class ScopedAllowBlockingForNwebInit : public base::ScopedAllowBlocking {};
 
 namespace OHOS::NWeb {
 #if BUILDFLAG(ARKWEB_API_INIT_WEB_ENGINE)

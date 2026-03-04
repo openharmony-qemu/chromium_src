@@ -16,6 +16,7 @@
 #ifndef OHOS_NWEB_SRC_NWEB_COMMON_H
 #define OHOS_NWEB_SRC_NWEB_COMMON_H
 
+#include "base/threading/thread_restrictions.h"
 #include "ohos_nweb/src/capi/browser_service/nweb_basic_pub.h"
 
 #ifdef __cplusplus
@@ -29,6 +30,10 @@ bool IsNativeApiEnable();
 void SetFreeMemoryFunc(OnArkWebFreeMemoryFunc func);
 
 void FreeExternalMemory(void* addr);
+
+#if BUILDFLAG(ARKWEB_API_INIT_WEB_ENGINE)
+class ScopedAllowBlockingForNwebInit : public base::ScopedAllowBlocking {};
+#endif
 
 #ifdef __cplusplus
 }

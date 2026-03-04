@@ -38,6 +38,7 @@
 #include "../dfx/dfx_reporter_browser_impl.h"
 #endif
 #include "base/trace_event/trace_event.h"
+#include "ohos_nweb/src/nweb_common.h"
 
 // VLOG additional statements in Fuchsia release builds.
 #if BUILDFLAG(IS_FUCHSIA)
@@ -460,6 +461,7 @@ ThemeFont* ArkwebRenderProcessHostImplUtils::EnsureThemeFont() {
 
   base::FilePath theme_path(kAppThemePathA);
   base::FilePath theme_font_path = theme_path.Append(kAppThemeFontsDirName);
+  ScopedAllowBlockingForNwebInit allow_blocking_for_using_path;
   if (!base::PathExists(
           base::FilePath(kAppThemePathA).Append(kAppThemeFlagFileName))) {
     if (!base::PathExists(

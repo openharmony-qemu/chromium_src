@@ -305,6 +305,7 @@ extern bool g_siteIsolationMode;
 #endif
 
 #include "arkweb/chromium_ext/base/arkweb_report_statistics.h"
+#include "ohos_nweb/src/nweb_common.h"
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 OnReportStatisticLogFunc
@@ -1107,6 +1108,7 @@ void InitialWebEngineArgs(
   std::string oemmode = OHOS::NWeb::OhosAdapterHelper::GetInstance()
                             .GetSystemPropertiesInstance().GetStringParameter("const.boot.oemmode", "");
   LOG(INFO) << "const.boot.oemmode: " << oemmode;
+  ScopedAllowBlockingForNwebInit allow_blocking_for_using_path;
   base::FilePath ohos_command_line_file(
     FILE_PATH_LITERAL("/data/storage/el1/bundle/arkwebcore/libs/ohos-command-line"));
   if (oemmode == "rd" && base::PathExists(ohos_command_line_file)) {
@@ -1139,6 +1141,7 @@ void MigratePasswordsToPasswordVault() {
     return;
   }
   base::FilePath flagFile = cache_path.Append(FILE_PATH_LITERAL(kMigrateKeyFlagFile));
+  ScopedAllowBlockingForNwebInit allow_blocking_for_using_path;
   bool IsFlagFileExist = base::PathExists(flagFile);
   bool migrateReady = g_browser_process->local_state()->GetBoolean(browser_prefs::kMigratePasswordsReady);
   bool migrateVault = g_browser_process->local_state()->GetBoolean(browser_prefs::kMigratePasswordsToPasswordVault);

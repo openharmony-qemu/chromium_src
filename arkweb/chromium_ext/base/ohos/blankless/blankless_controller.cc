@@ -22,6 +22,7 @@
 #include "base/json/json_reader.h"
 #include "base/logging.h"
 #include "base/values.h"
+#include "ohos_nweb/src/nweb_common.h"
 #if BUILDFLAG(ARKWEB_BLANK_PROP_CONFIG)
 #include "net/base/url_util.h"
 #include "url/gurl.h"
@@ -40,6 +41,7 @@ void BlanklessController::BlankOptWhiteList::LoadSysWhiteList()
   }
   m_is_sys_loaded_ = true;
 
+  ScopedAllowBlockingForNwebInit allow_blocking_for_using_path;
 #if BUILDFLAG(ARKWEB_TEST)
   base::FilePath data_path = base::FilePath("/data/ut/blank_opt_white_list.json");
 #else
@@ -122,6 +124,7 @@ void BlanklessController::BlankOptWhiteList::LoadAppWhiteList()
     LOG(WARNING) << "blankless BlankOptWhiteList get app bundle name failed.";
     return;
   }
+  ScopedAllowBlockingForNwebInit allow_blocking_for_using_path;
   base::FilePath data_path = base::FilePath("/sys_prod/etc/web/" + bundleName + ".json");
   base::File tfile(data_path, base::File::FLAG_OPEN | base::File::FLAG_READ);
   if (!tfile.IsValid()) {

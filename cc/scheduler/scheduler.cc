@@ -360,6 +360,9 @@ void Scheduler::CancelPendingBeginFrameTask() {
   if (pending_begin_frame_args_.IsValid()) {
     TRACE_EVENT_INSTANT0("cc", "Scheduler::BeginFrameDropped",
                          TRACE_EVENT_SCOPE_THREAD);
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+    TRACE_EVENT0("cc,benchmark", "CancelPendingBeginFrameTask BeginFrameDropped");
+#endif
     SendDidNotProduceFrame(pending_begin_frame_args_,
                            FrameSkippedReason::kNoDamage);
     // Make pending begin frame invalid so that we don't accidentally use it.

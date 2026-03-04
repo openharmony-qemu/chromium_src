@@ -29,6 +29,7 @@
 #endif
 
 #if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+#include "components/viz/common/features.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 #endif
 
@@ -239,7 +240,7 @@ void SetCopyOutoutRequestResultSize(CopyOutputRequest* request,
 #if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
 bool IsEvictUnlockFrameEnabled() {
   static bool evictUnlockFrameEnabled = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance()
-    .GetBoolParameter("const.web.frame_evictor.enabled", false);
+    .GetBoolParameter("const.web.frame_evictor.enabled", false) && features::IsEvictUnlockFrameEnabled();
   return evictUnlockFrameEnabled;
 }
 #endif

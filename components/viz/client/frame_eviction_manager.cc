@@ -109,7 +109,7 @@ void FrameEvictionManager::UnlockFrame(FrameEvictionManagerClient* frame) {
          unlocked_frames_.size() + locked_frames_.size() > GetMaxNumberOfSavedFrames()) {
       needProcessMemoryPressure = true;
     }
-    LOG(INFO) << "ProcessCullUnlockedFrames needProcessMemoryPressure: " << needProcessMemoryPressure;
+    LOG(DEBUG) << "ProcessCullUnlockedFrames needProcessMemoryPressure: " << needProcessMemoryPressure;
     CullUnlockedFrames(0, needProcessMemoryPressure);
   }
 #endif

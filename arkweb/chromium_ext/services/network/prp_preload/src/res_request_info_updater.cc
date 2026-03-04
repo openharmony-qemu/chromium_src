@@ -138,10 +138,10 @@ void ResRequestInfoUpdater::BuildPreconnectList(const std::shared_ptr<PRRequestI
 }
 
 void ResRequestInfoUpdater::BuildPreloadTree(const std::shared_ptr<PRRequestInfo>& info,
-    std::shared_ptr<PRPPReqInfoTreeNode> current,
-    std::shared_ptr<PRPPReqInfoTreeNode> cur_first,
-    std::shared_ptr<PRPPReqInfoTreeNode> cur_parent,
-    int64_t cur_level_end_time,
+    std::shared_ptr<PRPPReqInfoTreeNode>& current,
+    std::shared_ptr<PRPPReqInfoTreeNode>& cur_first,
+    std::shared_ptr<PRPPReqInfoTreeNode>& cur_parent,
+    int64_t& cur_level_end_time,
     const std::string& page_seq_num)
 {
   if (!info->preload_seq_num().ends_with(page_seq_num) ||

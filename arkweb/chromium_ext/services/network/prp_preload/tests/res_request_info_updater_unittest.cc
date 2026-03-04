@@ -230,8 +230,8 @@ TEST_F(ResRequestInfoUpdaterTest,BuildPreloadTreeTest_01)
 
   EXPECT_EQ(current->req_info_->request_start_time(),100000*2);
   EXPECT_EQ(cur_first->req_info_->request_start_time()+100000,100000);
-
-  updater.BuildPreloadTree(request_info,current,cur_first,cur_parent,1,"test");
+  int64_t end_time = 1;
+  updater.BuildPreloadTree(request_info,current,cur_first,cur_parent,end_time,"test");
 }
 
 TEST_F(ResRequestInfoUpdaterTest,BuildPreloadTreeTest_02)
@@ -262,8 +262,8 @@ TEST_F(ResRequestInfoUpdaterTest,BuildPreloadTreeTest_02)
   GURL request_url2("preflight+https://example.com/path/to/resource2");
   std::shared_ptr<PRRequestInfo> request_info2 = std::make_shared<PRRequestInfo>(request_url2, false);
   cur_first->req_info_ = request_info2;
-
-  updater.BuildPreloadTree(request_info,current,cur_first,cur_parent,0,"test");
+  int64_t end_time = 0;
+  updater.BuildPreloadTree(request_info,current,cur_first,cur_parent,end_time,"test");
 }
 
 TEST_F(ResRequestInfoUpdaterTest,UpdateResRequestInfoForDynamicHeaders_001)

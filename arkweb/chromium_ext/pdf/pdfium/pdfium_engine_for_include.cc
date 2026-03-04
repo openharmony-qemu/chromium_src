@@ -204,7 +204,10 @@ void PDFiumEngine::CheckSelectionVisibility(const gfx::Rect& left,
   } else {
     client_->SetIsRightHandleVisible(true);
   }
-
+  if (clipped_selection_bounds.width() == 0 && clipped_selection_bounds.height() == 0) {
+    client_->SetIsSelectionVisible(false);
+    return;
+  }
   // Check if selections are unvisible.
   if (clipped_selection_bounds.x() > plugin_size().width() ||
       clipped_selection_bounds.x() + clipped_selection_bounds.width() < 0 ||

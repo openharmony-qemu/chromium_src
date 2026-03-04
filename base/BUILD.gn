@@ -3715,6 +3715,7 @@ test("base_unittests") {
     sources += arkweb_storage_browser_database_unittests_sources
     sources += arkweb_components_web_cache_browser_unittest_sources
     sources += arkweb_storage_monitor_unittest_source
+    sources += arkweb_field_trial_utils_unittest_source
     sources += arkweb_crashpad_unittest_sources
     sources += arkweb_crashpad_sources
     sources += arkweb_content_common_unittests_sources

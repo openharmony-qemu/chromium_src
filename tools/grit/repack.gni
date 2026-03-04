@@ -84,6 +84,14 @@ template("repack") {
     if (_compress) {
       args += [ "--compress" ]
     }
+
+    if (is_ohos) {
+      if (defined(invoker.resource_rejectlist)) {
+        inputs += [ invoker.resource_rejectlist ]
+        _rebased_rejectlist = rebase_path(invoker.resource_rejectlist)
+        args += [ "--rejectlist=$_rebased_rejectlist" ]
+      }
+    }
   }
 
   if (_copy_data_to_bundle) {
@@ -169,6 +177,9 @@ template("repack_locales") {
                                "repack_allowlist",
                                "testonly",
                              ])
+      if (is_ohos) {
+        forward_variables_from(invoker, [ "resource_rejectlist" ])
+      }
       visibility = [ ":${invoker.target_name}" ]
       if (is_ios) {
         output = "$_output_dir/${_output_locale}.lproj/locale.pak"

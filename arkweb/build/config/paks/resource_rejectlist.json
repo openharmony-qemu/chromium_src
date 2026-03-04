@@ -1,0 +1,22 @@
+{
+    "reject_file_list": [
+        "settings_strings.grdp",
+        "privacy_sandbox_chrome_strings.grdp"
+    ],
+    "reject_id_list": [
+        {
+            "filename": "profiles_strings.grdp",
+            "id_list": [
+                "IDS_PROFILE_MENU_OPEN_ACCOUNT_SETTINGS",
+                "IDS_PROFILE_MENU_AUTOFILL_SETTINGS_BUTTON"
+            ]
+        },
+        {
+            "filename": "autofill_payments_strings.grdp",
+            "id_list": [
+                "IDS_AUTOFILL_SAVE_CARD_PROMPT_UPLOAD_EXPLANATION_TOOLTIP",
+                "IDS_AUTOFILL_SAVE_CARD_PROMPT_UPLOAD_EXPLANATION_AND_CARDHOLDER_NAME_TOOLTIP"
+            ]
+        }
+    ]
+}

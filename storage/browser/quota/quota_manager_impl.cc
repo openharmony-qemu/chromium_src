@@ -2200,6 +2200,16 @@ void QuotaManagerImpl::OnDbError(int error_code) {
     return;
   }
 
+  if (is_bootstrapping_database_ && error_code == 5) {
+    LOG(INFO) << "fortest QuotaManagerImpl::OnDbError is_bootstrapping_database_:"
+              << is_bootstrapping_database_ << ", error_code : " << error_code;
+    is_bootstrapping_database_ = false;
+    db_disabled_ = true;
+    ReportDatabaseDisabledReason(DatabaseDisabledReason::kRegisterStorageKeyFailed);
+    RunDatabaseCallbacks();
+    return;
+  }
+
   if (!sql::IsErrorCatastrophic(error_code)) {
     return;
   }

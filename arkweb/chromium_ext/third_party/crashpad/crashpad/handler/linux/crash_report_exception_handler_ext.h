@@ -19,6 +19,7 @@
 #include "util/misc/address_types.h"
 #include "util/misc/uuid.h"
 #include "third_party/crashpad/crashpad/minidump/minidump_user_extension_stream_data_source.h"
+#include "base/threading/thread_checker.h"
 
 namespace crashpad {
 
@@ -112,6 +113,9 @@ class OhosUserStreamDataSource : public UserStreamDataSource {
 
  private:
   raw_ptr<PtraceConnection> connection_;
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+  base::ThreadChecker thread_checker_;
+#endif
 };
 
 }  // namespace crashpad

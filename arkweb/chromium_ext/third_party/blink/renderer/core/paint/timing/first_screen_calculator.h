@@ -18,6 +18,7 @@
 
 #include "base/time/time.h"
 #include "base/timer/timer.h"
+#include "base/threading/thread_checker.h"
 #include "third_party/blink/renderer/core/frame/local_frame_view.h"
 #include "third_party/blink/renderer/core/paint/timing/media_record_id.h"
 #include "third_party/blink/renderer/platform/heap/collection_support/heap_hash_set.h"
@@ -78,6 +79,9 @@ class FirstScreenCalculator : public GarbageCollected<FirstScreenCalculator> {
   gfx::Rect viewport_rect_{gfx::Rect()};
   gfx::Rect occupied_rect_{gfx::Rect()};
   bool nearly_finished_ = false;
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+  base::ThreadChecker thread_check_;
+#endif
 };
 
 }  // namespace blink

@@ -38,11 +38,13 @@ def _RepackMain(args):
       output_info_filepath = splitext[0] + '.info'
   else:
     out_path = args.output_pak_file
+  # OHOS add args rejectlist
   data_pack.RePack(out_path,
                    args.input_pak_files,
                    args.allowlist,
                    args.suppress_removed_key_output,
-                   output_info_filepath=output_info_filepath)
+                   output_info_filepath=output_info_filepath,
+                   rejectlist_file=args.rejectlist)
   if args.compress:
     with open(args.output_pak_file, 'wb') as out:
       with gzip.GzipFile(filename='', mode='wb', fileobj=out, mtime=0) as outgz:
@@ -182,6 +184,10 @@ def main():
   sub_parser.add_argument(
       '--allowlist',
       help='Path to a allowlist used to filter output pak file resource IDs.')
+  # OHOS add args rejectlist
+  sub_parser.add_argument(
+      '--rejectlist',
+      help='Path to a rejectlist used to filter output pak file resource IDs.')
   sub_parser.add_argument(
       '--suppress-removed-key-output',
       action='store_true',

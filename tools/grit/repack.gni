@@ -84,6 +84,19 @@ template("repack") {
     if (_compress) {
       args += [ "--compress" ]
     }
+
+    if (is_ohos) {
+      if (defined(invoker.resource_rejectlist)) {
+        resource_rejectlist_file = get_path_info(invoker.resource_rejectlist, "file")
+        resource_rejectlist_json = read_file(invoker.resource_rejectlist, "json")
+        foreach(_id_file, resource_rejectlist_json.reject_id_file_list) {
+          inputs += [ string_replace(invoker.resource_rejectlist, resource_rejectlist_file, _id_file) ]
+        }
+        inputs += [ invoker.resource_rejectlist ]
+        _rebased_rejectlist = rebase_path(invoker.resource_rejectlist)
+        args += [ "--rejectlist=$_rebased_rejectlist" ]
+      }
+    }
   }
 
   if (_copy_data_to_bundle) {
@@ -169,6 +182,9 @@ template("repack_locales") {
                                "repack_allowlist",
                                "testonly",
                              ])
+      if (is_ohos) {
+        forward_variables_from(invoker, [ "resource_rejectlist" ])
+      }
       visibility = [ ":${invoker.target_name}" ]
       if (is_ios) {
         output = "$_output_dir/${_output_locale}.lproj/locale.pak"

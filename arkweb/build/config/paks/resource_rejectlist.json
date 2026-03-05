@@ -1,0 +1,17 @@
+{
+    "reject_file_list": [
+        "whats_new_strings.grdp"
+    ],
+    "reject_id_list": [
+        {
+            "filename": "generated_resources.grd",
+            "id_list": [
+                "IDS_TOS_NOTIFICATION_TITLE",
+                "IDS_TOS_NOTIFICATION_LINK"
+            ]
+        }
+    ],
+    "reject_id_file_list": [
+        "settings_strings_reject_list.txt"
+    ]
+}

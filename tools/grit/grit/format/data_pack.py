@@ -358,6 +358,10 @@ def GetRejectList(input_info_files, rejectlist_file):
     reject_file_list = rejectlist_config['reject_file_list']
     for config_reject_id in rejectlist_config['reject_id_list']:
       reject_id_list += config_reject_id['id_list']
+    for config_reject_id_file in rejectlist_config['reject_id_file_list']:
+      id_file_path = os.path.join(os.path.dirname(rejectlist_file), config_reject_id_file)
+      lines = util.ReadFile(id_file_path, 'utf-8').strip().splitlines()
+      reject_id_list += [x for x in lines]
 
   # filter id from pak.info by reject files and IDs
   pattern = r',(\d+),'

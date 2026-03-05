@@ -87,6 +87,11 @@ template("repack") {
 
     if (is_ohos) {
       if (defined(invoker.resource_rejectlist)) {
+        resource_rejectlist_file = get_path_info(invoker.resource_rejectlist, "file")
+        resource_rejectlist_json = read_file(invoker.resource_rejectlist, "json")
+        foreach(_id_file, resource_rejectlist_json.reject_id_file_list) {
+          inputs += [ string_replace(invoker.resource_rejectlist, resource_rejectlist_file, _id_file) ]
+        }
         inputs += [ invoker.resource_rejectlist ]
         _rebased_rejectlist = rebase_path(invoker.resource_rejectlist)
         args += [ "--rejectlist=$_rebased_rejectlist" ]

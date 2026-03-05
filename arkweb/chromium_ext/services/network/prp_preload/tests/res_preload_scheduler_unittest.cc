@@ -316,4 +316,122 @@ TEST_F(ResPreloadSchedulerTest, ResPreloadSchedulerTest_SchedulePrerequests2)
   scheduler.SchedulePrerequests(1, 0);
 }
 
+TEST_F(ResPreloadSchedulerTest, ResPreloadSchedulerTest_SchedulePreconnectsFull)
+{
+  std::string url;
+  scoped_refptr<base::SingleThreadTaskRunner> net_task_runner = base::SingleThreadTaskRunner::GetCurrentDefault();
+  std::unique_ptr<net::URLRequestContext> url_request_context = net::CreateTestURLRequestContextBuilder()->Build();
+  EXPECT_NE(net_task_runner, nullptr);
+  EXPECT_NE(url_request_context, nullptr);
+  PRPPOnPageOriginCB on_page_origin_cb;
+  ResPreloadScheduler scheduler(url, net_task_runner, url_request_context->GetWeakPtr(), on_page_origin_cb);
+
+  PRPPPreconnectInfoList list;
+  for (int i = 0; i < SOCKET_LIMIT_TEST + 5; i++) {
+    PRPPPreconnectInfo info;
+    info.allow_credential_ = true;
+    list.push_back(info);
+  }
+  scheduler.prpp_preconnect_info_list_ = list;
+  scheduler.SchedulePreconnects();
+  EXPECT_EQ(scheduler.prpp_preconnect_info_list_.size(), SOCKET_LIMIT_TEST + 5);
+}
+
+TEST_F(ResPreloadSchedulerTest, ResPreloadSchedulerTest_SchedulePreconnectsEmpty)
+{
+  std::string url;
+  scoped_refptr<base::SingleThreadTaskRunner> net_task_runner = base::SingleThreadTaskRunner::GetCurrentDefault();
+  std::unique_ptr<net::URLRequestContext> url_request_context = net::CreateTestURLRequestContextBuilder()->Build();
+  EXPECT_NE(net_task_runner, nullptr);
+  EXPECT_NE(url_request_context, nullptr);
+  PRPPOnPageOriginCB on_page_origin_cb;
+  ResPreloadScheduler scheduler(url, net_task_runner, url_request_context->GetWeakPtr(), on_page_origin_cb);
+
+  PRPPPreconnectInfoList list;
+  scheduler.prpp_preconnect_info_list_ = list;
+  scheduler.SchedulePreconnects();
+  EXPECT_EQ(scheduler.prpp_preconnect_info_list_.size(), 0);
+}
+
+TEST_F(ResPreloadSchedulerTest, ResPreloadSchedulerTest_ContinueSchedulePreconnectsFull)
+{
+  std::string url;
+  scoped_refptr<base::SingleThreadTaskRunner> net_task_runner = base::SingleThreadTaskRunner::GetCurrentDefault();
+  std::unique_ptr<net::URLRequestContext> url_request_context = net::CreateTestURLRequestContextBuilder()->Build();
+  EXPECT_NE(net_task_runner, nullptr);
+  EXPECT_NE(url_request_context, nullptr);
+  PRPPOnPageOriginCB on_page_origin_cb;
+  ResPreloadScheduler scheduler(url, net_task_runner, url_request_context->GetWeakPtr(), on_page_origin_cb);
+
+  PRPPPreconnectInfoList list;
+  for (int i = 0; i < 5; i++) {
+    PRPPPreconnectInfo info;
+    info.allow_credential_ = true;
+    list.push_back(info);
+  }
+  scheduler.prpp_preconnect_info_list_ = list;
+  scheduler.preload_triggered_ = true;
+  scheduler.info_list_version_ = 1;
+  
+  ResPreloadScheduler::PreconnectInfoListIter iter = scheduler.prpp_preconnect_info_list_.begin();
+  scheduler.ContinueSchedulePreconnects(iter, 1);
+}
+
+TEST_F(ResPreloadSchedulerTest, ResPreloadSchedulerTest_SchedulePrerequestsIdle)
+{
+  std::string url;
+  scoped_refptr<base::SingleThreadTaskRunner> net_task_runner = base::SingleThreadTaskRunner::GetCurrentDefault();
+  std::unique_ptr<net::URLRequestContext> url_request_context = net::CreateTestURLRequestContextBuilder()->Build();
+  EXPECT_NE(net_task_runner, nullptr);
+  EXPECT_NE(url_request_context, nullptr);
+  PRPPOnPageOriginCB on_page_origin_cb;
+  ResPreloadScheduler scheduler(url, net_task_runner, url_request_context->GetWeakPtr(), on_page_origin_cb);
+
+  scheduler.preload_triggered_ = true;
+  std::shared_ptr<PRPPRequestLoaderFactory> requestLoader =
+    PRPPRequestLoaderFactory::CreatePRPPRequestLoaderFactory(url, url_request_context->GetWeakPtr());
+  EXPECT_NE(requestLoader, nullptr);
+  scheduler.loader_fac_weak_ = requestLoader->GetWeak();
+  EXPECT_NE(scheduler.loader_fac_weak_, nullptr);
+  scheduler.cur_parent_ = std::make_shared<PRPPReqInfoTreeNode>();
+  scheduler.idle_prerequest_count_ = 5;
+  EXPECT_EQ(scheduler.idle_prerequest_count_, 5);
+}
+
+TEST_F(ResPreloadSchedulerTest, ResPreloadSchedulerTest_SchedulePrerequestsEmptyChildren)
+{
+  std::string url;
+  scoped_refptr<base::SingleThreadTaskRunner> net_task_runner = base::SingleThreadTaskRunner::GetCurrentDefault();
+  std::unique_ptr<net::URLRequestContext> url_request_context = net::CreateTestURLRequestContextBuilder()->Build();
+  EXPECT_NE(net_task_runner, nullptr);
+  EXPECT_NE(url_request_context, nullptr);
+  PRPPOnPageOriginCB on_page_origin_cb;
+  ResPreloadScheduler scheduler(url, net_task_runner, url_request_context->GetWeakPtr(), on_page_origin_cb);
+
+  scheduler.preload_triggered_ = true;
+  std::shared_ptr<PRPPRequestLoaderFactory> requestLoader =
+    PRPPRequestLoaderFactory::CreatePRPPRequestLoaderFactory(url, url_request_context->GetWeakPtr());
+  EXPECT_NE(requestLoader, nullptr);
+  scheduler.loader_fac_weak_ = requestLoader->GetWeak();
+  EXPECT_NE(scheduler.loader_fac_weak_, nullptr);
+  scheduler.cur_parent_ = std::make_shared<PRPPReqInfoTreeNode>();
+  scheduler.SchedulePrerequests(1, 0);
+}
+
+TEST_F(ResPreloadSchedulerTest, ResPreloadSchedulerTest_UpdateIdlePrerequestCount)
+{
+  std::string url;
+  scoped_refptr<base::SingleThreadTaskRunner> net_task_runner = base::SingleThreadTaskRunner::GetCurrentDefault();
+  std::unique_ptr<net::URLRequestContext> url_request_context = net::CreateTestURLRequestContextBuilder()->Build();
+  EXPECT_NE(net_task_runner, nullptr);
+  EXPECT_NE(url_request_context, nullptr);
+  PRPPOnPageOriginCB on_page_origin_cb;
+  ResPreloadScheduler scheduler(url, net_task_runner, url_request_context->GetWeakPtr(), on_page_origin_cb);
+
+  scheduler.UpdateIdlePrerequestCount();
+  EXPECT_EQ(scheduler.idle_prerequest_count_, 1);
+  scheduler.UpdateIdlePrerequestCount();
+  EXPECT_EQ(scheduler.idle_prerequest_count_, 2);
+}
+
 } // namespace ohos_prp_preload

@@ -7,6 +7,7 @@
 #include <utility>
 #include "base/logging.h"
 #include "base/posix/eintr_wrapper.h"
+#include <native_window/external_window.h>
 
 namespace gfx {
 

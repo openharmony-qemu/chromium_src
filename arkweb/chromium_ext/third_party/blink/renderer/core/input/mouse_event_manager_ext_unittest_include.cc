@@ -463,6 +463,7 @@ TEST_F(MouseEventManagerExtTest, IsValidOverlayNode002) {
 
   SimTestExt::LogCatch();
   EXPECT_FALSE(GetMouseEventManagerExt().IsValidOverlayNode(inner_node));
+  EXPECT_TRUE(SimTestExt::LogCheck("IsOverlayNodeValid node is null"));
 }
 
 TEST_F(MouseEventManagerExtTest, IsValidOverlayNode003) {

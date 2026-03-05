@@ -1,0 +1,120 @@
+# Copyright (c) 2026 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/config/features.gni")
+import("//testing/libfuzzer/fuzzer_test.gni")
+
+# Define a local config similar to inside_blink for external fuzzer use
+config("frame_fuzzer_blink_config") {
+  defines = [
+    "BLINK_IMPLEMENTATION=1",
+    "INSIDE_BLINK",
+  ]
+  if (is_clang) {
+    cflags = [
+      "-Wconversion",
+      "-Wno-float-conversion",
+      "-Wno-sign-conversion",
+      "-Wno-implicit-float-conversion",
+      "-Wno-implicit-int-conversion",
+    ]
+  }
+}
+
+# Fuzzer for DetectSimulatedClickRiskEnhancedImpl - Priority 1 (Security)
+# Tests click risk detection with various algorithm parameters and nonce values
+fuzzer_test("detect_simulated_click_risk_enhanced_impl_fuzzer") {
+  sources = [ "detect_simulated_click_risk_enhanced_impl_fuzzer.cpp" ]
+  deps = [
+    "//cef:libcef_static",
+    "//ohos_nweb:cef_nweb",
+    "//ohos_nweb:nweb_sources",
+    "//third_party/blink/renderer/platform",
+    "//third_party/blink/renderer/platform:blink_fuzzer_test_support",
+    "//third_party/googletest:gtest",
+    "//content/test:test_support",
+  ]
+  include_dirs = [
+    "//cef",
+    "//cef/include",
+    "//ohos_nweb/include",
+    "//ohos_nweb/src",
+    "//v8/include",
+    "//third_party/blink",
+    "//third_party/blink/renderer/core",
+    "//arkweb/chromium_ext",
+  ]
+  additional_configs = [ ":frame_fuzzer_blink_config" ]
+}
+
+# Fuzzer for LocalFrameViewUtils - Priority 2 (Layout/View)
+# Tests frame view utilities including selection and layout operations
+fuzzer_test("local_frame_view_utils_fuzzer") {
+  sources = [ "local_frame_view_utils_fuzzer.cpp" ]
+  deps = [
+    "//cef:libcef_static",
+    "//ohos_nweb:cef_nweb",
+    "//ohos_nweb:nweb_sources",
+    "//third_party/blink/renderer/platform",
+    "//third_party/blink/renderer/platform:blink_fuzzer_test_support",
+    "//third_party/googletest:gtest",
+    "//content/test:test_support",
+  ]
+  include_dirs = [
+    "//cef",
+    "//cef/include",
+    "//ohos_nweb/include",
+    "//ohos_nweb/src",
+    "//v8/include",
+    "//third_party/blink",
+    "//third_party/blink/renderer/core",
+    "//arkweb/chromium_ext",
+  ]
+  additional_configs = [ ":frame_fuzzer_blink_config" ]
+}
+
+# Fuzzer for ArkWeb - Priority 3 (Core API)
+# Tests scrollbar margin API with various numeric values and boundaries
+fuzzer_test("ark_web_fuzzer") {
+  sources = [ "ark_web_fuzzer.cpp" ]
+  deps = [
+    "//cef:libcef_static",
+    "//ohos_nweb:cef_nweb",
+    "//ohos_nweb:nweb_sources",
+    "//third_party/blink/renderer/platform",
+    "//third_party/blink/renderer/platform:blink_fuzzer_test_support",
+    "//third_party/googletest:gtest",
+    "//content/test:test_support",
+  ]
+  include_dirs = [
+    "//cef",
+    "//cef/include",
+    "//ohos_nweb/include",
+    "//ohos_nweb/src",
+    "//v8/include",
+    "//third_party/blink",
+    "//third_party/blink/renderer/core",
+    "//arkweb/chromium_ext",
+  ]
+  additional_configs = [ ":frame_fuzzer_blink_config" ]
+}
+
+# Group for all frame module fuzzers
+group("frame_fuzzers") {
+  testonly = true
+  deps = [
+    ":detect_simulated_click_risk_enhanced_impl_fuzzer",
+    ":local_frame_view_utils_fuzzer",
+    ":ark_web_fuzzer",
+  ]
+}

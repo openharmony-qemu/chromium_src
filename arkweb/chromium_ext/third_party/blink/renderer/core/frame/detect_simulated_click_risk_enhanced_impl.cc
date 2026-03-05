@@ -174,9 +174,8 @@ void DetectSimulatedClickRiskEnhancedImpl::Dispose() {
     LOG(INFO) << "DetectSim: Dispose, remote reset.";
     detect_service_.reset();
   }
-  for(auto& request : request_map_) {
-    HandleBusinessError(-1, request.value);
-  }
+
+  // The promises will be resolved/rejected when the context is destroyed.
   request_map_.clear();
 }
 

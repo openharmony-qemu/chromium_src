@@ -19,6 +19,7 @@ heap_dump_include = [
   "//arkweb/chromium_ext/v8/heap_dump/dump_objects.h",
   "//arkweb/chromium_ext/v8/heap_dump/dump_roots.h",
   "//arkweb/chromium_ext/v8/heap_dump/dump_string_tables.h",
+  "//arkweb/chromium_ext/v8/heap_dump/heap_dump.h",
 ]
 
 heap_dump_source = [
@@ -27,6 +28,7 @@ heap_dump_source = [
   "//arkweb/chromium_ext/v8/heap_dump/dump_objects.cc",
   "//arkweb/chromium_ext/v8/heap_dump/dump_roots.cc",
   "//arkweb/chromium_ext/v8/heap_dump/dump_string_tables.cc",
+  "//arkweb/chromium_ext/v8/heap_dump/heap_dump.cc",
 ]
 
 heap_dump_ut_include = [

@@ -15,9 +15,7 @@
 
 #ifndef BINARY_READER_H
 #define BINARY_READER_H
-#if defined(OH_ENABLE_HEAP_DUMP) && \
-    (defined(USING_OHOS) || defined(OH_ENABLE_HEAP_DUMP_TEST))
-
+#if defined(ON_ENABLE_HEAP_TRANSLATE)
 #include <fstream>
 #include <iostream>
 #include <string>

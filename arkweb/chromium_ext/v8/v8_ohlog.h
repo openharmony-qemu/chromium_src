@@ -14,13 +14,8 @@
  */
 #ifndef V8_OHLOG_H
 #define V8_OHLOG_H
-
-#if defined(USING_OHOS_WEB) || defined(USING_OHOS)
-
 #include <string>
 
 void LogInfo(std::string message);
-
-#endif
 
 #endif

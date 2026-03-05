@@ -14,24 +14,22 @@
  */
 
 #if defined(OH_ENABLE_HEAP_DUMP) && \
-    (defined(USING_OHOS) || defined(OH_ENABLE_HEAP_DUMP_TEST))
+    (defined(ON_ENABLE_HEAP_TRANSLATE) || defined(OH_ENABLE_HEAP_DUMP_TEST))
 
 #include "arkweb/chromium_ext/v8/heap_dump/binary_writer.h"
 
+#include <fcntl.h>
+#include <unistd.h>
+
+#include <cerrno>
 #include <cstdint>
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
-#include <cerrno>
-#include <cstring>
-
-#include <fcntl.h>
-#include <unistd.h>
-
-#include "arkweb/ohos_nweb_ex/third_party/securec/include/securec.h"
 #include "arkweb/chromium_ext/v8/v8_ohlog.h"
 
 namespace dfx {
@@ -55,11 +53,11 @@ bool BinaryWriter::WriteBinBlock(const uint8_t* block, uint32_t block_size) {
     }
     uint32_t dst_size = chunk_size_ - cur_size_;
     uint32_t write_size = std::min(dst_size, block_size);
-    errno_t ret = memcpy_s(chunk_.data() + cur_size_, dst_size, block + cursor, write_size);
-    if (ret != 0) {
-      LogInfo("memcpy_s failed, ret=" + std::to_string(ret));
-      return false;
-    }
+    if (write_size > dst_size || (cur_size_ + write_size > chunk_size_)) {
+      LogInfo("Fail to memcpy.");
+       return false;
+     }
+    memcpy(chunk_.data() + cur_size_, block + cursor, write_size);
     cursor += write_size;
     block_size -= write_size;
     cur_size_ += write_size;
@@ -101,15 +99,14 @@ void BinaryWriter::OpenFile(const std::string& path) {
     return;
   }
   path_ = path;
-  fd_ = ::open(path.c_str(), O_WRONLY | O_CREAT | O_TRUNC | O_NOFOLLOW | O_CLOEXEC, S_IRUSR | S_IWUSR);
+  fd_ = ::open(path.c_str(),
+               O_WRONLY | O_CREAT | O_TRUNC | O_NOFOLLOW | O_CLOEXEC,
+               S_IRUSR | S_IWUSR);
   if (fd_ < 0) {
-    std::stringstream ss;
-    ss << "HeapDump open file failed!" << std::endl;
-    std::string message = ss.str();
-    LogInfo(message);
+    LogInfo("HeapDump open file failed!");
     CHECK(false);
   }
-} 
+}
 
 const std::string& BinaryWriter::GetFilePath() {
   return path_;

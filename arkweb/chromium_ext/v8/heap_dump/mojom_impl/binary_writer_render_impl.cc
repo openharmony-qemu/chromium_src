@@ -69,19 +69,23 @@ const std::string& BinaryWriterRender::GetFilePath() {
 
 bool BinaryWriterRender::WriteBinBlock(const uint8_t* block,
                                        uint32_t block_size) {
+  if (!remote_.is_bound() || !producer_.is_valid()) {
+    LOG(ERROR) << "HeapDump Remote not bound";
+    return false;
+  }
   uint32_t cursor = 0;
   while (block_size) {
     if (!MaybeWriteChunk()) {
       return false;
     }
+    if (chunk_size_ < cur_size_) {
+       LOG(ERROR) << "Fail to memcpy.";
+       return false;
+     }
     uint32_t dst_size = chunk_size_ - cur_size_;
     uint32_t write_size = std::min(dst_size, block_size);
-    errno_t ret = memcpy_s(chunk_.data() + cur_size_, dst_size, block + cursor,
-                           write_size);
-    if (ret != 0) {
-      LOG(ERROR) << "memcpy_s failed, ret=" + std::to_string(ret);
-      return false;
-    }
+    // dst_size >= write_size is always true
+    memcpy(chunk_.data() + cur_size_, block + cursor, write_size);
     cursor += write_size;
     block_size -= write_size;
     cur_size_ += write_size;
@@ -136,11 +140,8 @@ bool BinaryWriterRender::WriteChunk() {
     }
     uint32_t dst_size = static_cast<uint32_t>(buffer.size());
     uint32_t write_size = std::min(dst_size, cur_size_);
-    errno_t ret = memcpy_s(buffer.data(), dst_size, data, write_size);
-    if (ret != 0) {
-      LOG(ERROR) << "memcpy_s failed, ret=" + std::to_string(ret);
-      return false;
-    }
+    // dst_size >= write_size is always true
+    memcpy(buffer.data(), data, write_size);
     producer_->EndWriteData(write_size);
     data += write_size;
     cur_size_ -= write_size;

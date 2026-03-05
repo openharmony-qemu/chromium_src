@@ -16,8 +16,8 @@
 #ifndef TRANSLATE_ROOTS_H
 #define TRANSLATE_ROOTS_H
 
-#if defined(OH_ENABLE_HEAP_DUMP) && \
-    (defined(USING_OHOS) || defined(OH_ENABLE_HEAP_DUMP_TEST))
+#if (defined(ON_ENABLE_HEAP_TRANSLATE) || defined(OH_ENABLE_HEAP_DUMP_TEST))
+
 #include <unordered_map>
 #include <vector>
 

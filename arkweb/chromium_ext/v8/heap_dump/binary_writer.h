@@ -17,7 +17,7 @@
 #define BINARY_WRITER_H
 
 #if defined(OH_ENABLE_HEAP_DUMP) && \
-    (defined(USING_OHOS) || defined(OH_ENABLE_HEAP_DUMP_TEST))
+    (defined(ON_ENABLE_HEAP_TRANSLATE) || defined(OH_ENABLE_HEAP_DUMP_TEST))
 
 #include <string>
 #include <vector>
@@ -50,6 +50,7 @@ class BinaryWriter : public BinaryWriterBase {
   std::vector<uint8_t> chunk_;
   int fd_{-1};
   std::string path_;
+
  protected:
   static constexpr size_t kBufferMB = 1024 * 1024;
   static constexpr size_t kChunkSize = 4 * 1024 * 1024;

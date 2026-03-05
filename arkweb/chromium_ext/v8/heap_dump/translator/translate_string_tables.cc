@@ -13,8 +13,7 @@
  * limitations under the License.
  */
 
-#if defined(OH_ENABLE_HEAP_DUMP) && \
-    (defined(USING_OHOS) || defined(OH_ENABLE_HEAP_DUMP_TEST))
+#if (defined(ON_ENABLE_HEAP_TRANSLATE) || defined(OH_ENABLE_HEAP_DUMP_TEST))
 #include "translate_string_tables.h"
 
 #include <sstream>
@@ -31,19 +30,24 @@ StringTableTranslator::StringTableTranslator(BinaryReaderBase* reader,
       table_size_(size),
       object_count_(count) {
   CHECK(reader->CurrentPosition() == offset);
-  CHECK(offset + size > offset && size + offset <= reader->BinarySize());
+  CHECK(size < std::numeric_limits<uint32_t>::max() - offset &&
+        size + offset <= reader->BinarySize());
 }
 
 void StringTableTranslator::Translate() {
   StringTableElementInfo info;
   for (uint32_t i = 0; i < GetObjectCount(); ++i) {
-    bool ret = reader_->ReadData(sizeof(info.string_address_),
-        reinterpret_cast<uint8_t*>(&info.string_address_), sizeof(info.string_address_));
+    bool ret =
+        reader_->ReadData(sizeof(info.string_address_),
+                          reinterpret_cast<uint8_t*>(&info.string_address_),
+                          sizeof(info.string_address_));
     if (!ret) {
       LogInfo("fail to read addr");
       CHECK(ret);
     }
-    ret = reader_->ReadData(sizeof(info.len), reinterpret_cast<uint8_t*>(&info.len), sizeof(info.len));
+    ret = reader_->ReadData(sizeof(info.len_),
+                            reinterpret_cast<uint8_t*>(&info.len_),
+                            sizeof(info.len_));
     if (!ret) {
       LogInfo("fail to read length");
       CHECK(ret);

@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#if defined(OH_ENABLE_HEAP_DUMP) && \
-    (defined(USING_OHOS) || defined(OH_ENABLE_HEAP_DUMP_TEST))
+#if (defined(ON_ENABLE_HEAP_TRANSLATE) || defined(OH_ENABLE_HEAP_DUMP_TEST))
+
 #include "arkweb/chromium_ext/v8/heap_dump/translator/translate_objects.h"
 
 #include <iostream>
@@ -28,15 +28,19 @@
 #include "src/common/ptr-compr.h"
 #include "src/heap/heap-visitor-inl.h"
 #include "src/heap/heap-visitor.h"
+#include "src/init/heap-symbols.h"
+#include "src/objects/elements-kind.h"
 #include "src/objects/heap-object.h"
+#include "src/objects/hole.h"
+#include "src/objects/instance-type-inl.h"
 #include "src/objects/instruction-stream.h"
+#include "src/objects/js-regexp.h"
 #include "src/objects/objects-inl.h"
 #include "src/objects/objects.h"
+#include "src/objects/oddball.h"
 #include "src/objects/slots.h"
 #include "src/objects/visitors.h"
-#if defined(OH_ENABLE_HEAP_DUMP_TEST)
-#include "src/d8/d8.h"
-#endif
+#include "src/roots/roots.h"
 
 namespace v8::internal {
 // see ObjectVisitorForwarder in visit-object.cc for more info
@@ -143,6 +147,11 @@ class HeapObjectVisitor final : public HeapVisitor<HeapObjectVisitor> {
     visitor_->VisitProtectedPointer(host, slot);
   }
 
+  void VisitProtectedPointer(i::Tagged<i::TrustedObject> host,
+                             i::ProtectedMaybeObjectSlot slot) override {
+    visitor_->VisitProtectedPointer(host, slot);
+  }
+
   void VisitTrustedPointerTableEntry(i::Tagged<i::HeapObject> host,
                                      i::IndirectPointerSlot slot) override {
     visitor_->VisitTrustedPointerTableEntry(host, slot);
@@ -156,6 +165,12 @@ class HeapObjectVisitor final : public HeapVisitor<HeapObjectVisitor> {
   void VisitMapPointer(i::Tagged<i::HeapObject> host) override {
     UNREACHABLE();
   }
+
+#define STRING_METHOD(_, name, value) \
+  std::string name() const { return value; }
+
+  INTERNALIZED_STRING_LIST_GENERATOR(STRING_METHOD, _)
+#undef STRING_METHOD
 
  private:
   ObjectVisitor* const visitor_;
@@ -180,7 +195,9 @@ class ObjectDetailVisitor : public i::ObjectVisitorWithCageBases {
         cage_base_(cage_base),
         code_cage_base_(code_cage_base) {}
 
-  void VisitMapPointer(i::Tagged<i::HeapObject> host) override {}
+  void VisitMapPointer(i::Tagged<i::HeapObject> host) override {
+    VisitSlotImpl(host, cage_base_, host->map_slot());
+  }
 
   void VisitPointers(i::Tagged<i::HeapObject> host,
                      i::ObjectSlot start,
@@ -206,6 +223,7 @@ class ObjectDetailVisitor : public i::ObjectVisitorWithCageBases {
 
   // class InstructionStream::BodyDescriptor in objects-body-descriptors-inl.h
   // will call it.
+  // NIY: if use DCHECK, it will fail before this visit
   void VisitCodeTarget(i::Tagged<i::InstructionStream> host,
                        i::RelocInfo* rinfo) override {
     UNREACHABLE();
@@ -238,6 +256,7 @@ class ObjectDetailVisitor : public i::ObjectVisitorWithCageBases {
   void VisitSlotImpl(i::Tagged<i::HeapObject> host,
                      i::PtrComprCageBase cage_base,
                      TSlot slot) {
+    // NIY : if we want to get field_index, we must pass the
     // fake_object_addr
     i::Tagged<i::HeapObject> heap_object;
     // load the pointer
@@ -245,6 +264,8 @@ class ObjectDetailVisitor : public i::ObjectVisitorWithCageBases {
     if (loaded_value.GetHeapObjectIfStrong(&heap_object)) {
       VisitHeapObjectImpl(heap_object.address());
     } else if (loaded_value.GetHeapObjectIfWeak(&heap_object)) {
+      translator_->generator()->SetWeakReference(parent_address_, next_index_++,
+                                                 heap_object.address(), {});
     }
     // here we do nothing for off-heap object and smi
   }
@@ -345,9 +366,15 @@ void ObjectTranslator::PreVisit() {
     if (auto [it, inserted] = objects_head_.try_emplace(
             address,
             RawHeapObjectHead{static_cast<uint32_t>(reader_->CurrentPosition()),
-                              dump_size, false});
+                              dump_size
+#ifdef OH_ENABLE_HEAP_DUMP_TEST
+                              ,
+                              false
+#endif
+            });
         !inserted) {
-      std::cout << "addr " << address << " size " << dump_size << " offset "
+      std::cout << "HeapDump: same address insert twice addr " << address
+                << " size " << dump_size << " offset "
                 << reader_->CurrentPosition() << std::endl;
       UNREACHABLE();
     }
@@ -356,7 +383,7 @@ void ObjectTranslator::PreVisit() {
   }
 
 #if defined(OH_ENABLE_HEAP_DUMP_TEST)
-  if (Shell::options.log_heapdump) {
+  if (i::v8_flags.log_heapdump) {
     std::cout << "HeapDump after PreVisit: objects_head_.size"
               << objects_head_.size() << "\n";
     std::cout << "HeapDump after PreVisit: object_count_" << object_count_
@@ -390,17 +417,25 @@ void ObjectTranslator::PreVisit() {
     ////////// map
     i::Tagged<i::Map> map = fake_heap_object->map(cage_base_);
 
+#ifdef OH_ENABLE_HEAP_DUMP_TEST
     if (auto [it, inserted] = objects_head_.try_emplace(
             map.address(), RawHeapObjectHead{0, 0, true});
         !inserted) {
       it->second.is_map_ = true;
     } else {
-      std::cout << "map not in heap: address " << map.address() << std::endl;
+      std::cout << "HeapDump map not in heap: address " << map.address()
+                << std::endl;
       UNREACHABLE();
     }
-
-    Node* n =
-        generator_->AddNode(address, Node::Type::kObject, "<dummy>", dump_size);
+#endif
+    FakeHeapObject fake_map_ho(reader_, objects_head_[map.address()].offset_,
+                               objects_head_[map.address()].size_);
+    i::Tagged<i::Map> fake_map = UncheckedCast<i::Map>(fake_map_ho.fake_object());
+    // NIY: dump_size is dump size, does it same as self size?
+    // NIY: maybe we should visit from root
+    if (!AddNode(fake_map, fake_heap_object, address, dump_size)) {
+      generator_->AddNode(address, Node::Type::kObject, "<dummy>", dump_size);
+    }
   }
 }
 
@@ -420,7 +455,7 @@ void ObjectTranslator::Translate() {
                             reinterpret_cast<uint8_t*>(&dump_size),
                             sizeof(dump_size)));
 #if defined(OH_ENABLE_HEAP_DUMP_TEST)
-    if (Shell::options.log_heapdump) {
+    if (i::v8_flags.log_heapdump) {
       std::cout << "address:" << address << " dump_size:" << dump_size
                 << " object end:" << (address + dump_size) << std::endl;
     }
@@ -448,9 +483,9 @@ void ObjectTranslator::TranslateHeapObject(i::Address addr, uint32_t size) {
 #endif
 
   FakeHeapObject fake_map_obj(reader_, map_head.offset_, map_head.size_);
-  i::Tagged<i::Map> fake_map = i::Cast<i::Map>(fake_map_obj.fake_object());
+  i::Tagged<i::Map> fake_map = UncheckedCast<i::Map>(fake_map_obj.fake_object());
 #if defined(OH_ENABLE_HEAP_DUMP_TEST)
-  if (Shell::options.log_heapdump) {
+  if (i::v8_flags.log_heapdump) {
     std::cout << "instance type:" << i::ToString(fake_map->instance_type())
               << " " << std::endl;
   }
@@ -464,8 +499,12 @@ void ObjectTranslator::TranslateHeapObject(i::Address addr, uint32_t size) {
   switch (visitor_id) {
     case i::VisitorId::kVisitExternalString:
     case i::VisitorId::kVisitWasmNull:
-    case i::VisitorId::kVisitInstructionStream:
+      // NIY
       return;
+    case i::VisitorId::kVisitInstructionStream: {
+      TranslateInstructionStream(addr, size);
+      return;
+    }
     default:
       break;
   }
@@ -473,7 +512,335 @@ void ObjectTranslator::TranslateHeapObject(i::Address addr, uint32_t size) {
   ObjectDetailVisitor visitor(this, addr, cage_base_, code_cage_base_);
   i::HeapObjectVisitor heap_object_visitor(&visitor, cage_base_,
                                            code_cage_base_);
+  // Note: not all heap object can use Visit
   heap_object_visitor.Visit(fake_map, fake_heap_object);
+}
+
+bool ObjectTranslator::IsStrong(v8::internal::Address addr) {
+  if (addr & dfx::kRawHeapWeakObjectTag) {
+    return false;
+  }
+  return true;
+}
+
+void ObjectTranslator::TranslateInstructionStream(v8::internal::Address addr,
+                                                  uint32_t size) {
+  uint32_t next_index = 0;
+  // accroding to objects-body-descriptors-inl.h: class
+  // InstructionStream::BodyDescripter total size: mapPointer + 2 *
+  // protectedPointer + n * relocInfo (addr + mode)
+  RawHeapObjectHead object_head = objects_head_[addr];
+  v8::internal::Address protect_pointer_addr{0};
+  uint32_t offset = object_head.offset_ + sizeof(v8::internal::Tagged_t);
+  reader_->ReadDataAt(offset, sizeof(v8::internal::Address),
+                      reinterpret_cast<uint8_t*>(&protect_pointer_addr),
+                      sizeof(v8::internal::Address));
+  this->generator()->SetHiddenReference(addr, next_index++,
+                                        protect_pointer_addr);
+
+  protect_pointer_addr = 0;
+  offset += sizeof(v8::internal::Address);
+  reader_->ReadDataAt(offset, sizeof(v8::internal::Address),
+                      reinterpret_cast<uint8_t*>(&protect_pointer_addr),
+                      sizeof(v8::internal::Address));
+  this->generator()->SetHiddenReference(addr, next_index++,
+                                        protect_pointer_addr);
+
+  offset += sizeof(v8::internal::Address);
+  int reloc_info_cnt = (size - sizeof(v8::internal::Tagged_t) -
+                        2 * sizeof(v8::internal::Address)) /
+                       (sizeof(v8::internal::Address) + sizeof(int8_t));
+  for (int i = 0; i < reloc_info_cnt; i++) {
+    InstructionStreamInfo info;
+    reader_->ReadDataAt(offset, sizeof(v8::internal::Address),
+                        reinterpret_cast<uint8_t*>(&info.object_addr_),
+                        sizeof(v8::internal::Address));
+    if (IsStrong(info.object_addr_)) {
+      this->generator()->SetHiddenReference(addr, next_index++,
+                                            info.object_addr_);
+    } else {
+      // NIY (weak reference)
+      this->generator()->SetHiddenReference(
+          addr, next_index++, info.object_addr_ ^ dfx::kRawHeapWeakObjectTag);
+    }
+
+    offset += sizeof(v8::internal::Address);
+    reader_->ReadDataAt(offset, sizeof(info.mode_),
+                        reinterpret_cast<uint8_t*>(&info.mode_),
+                        sizeof(info.mode_));
+    offset += sizeof(int8_t);
+  }
+}
+
+// NIY
+Node* ObjectTranslator::AddNode(i::Tagged<i::Map> map,
+                                i::Tagged<i::HeapObject> object,
+                                i::Address address,
+                                uint32_t size) {
+  i::InstanceType instance_type = map->instance_type();
+  if (i::InstanceTypeChecker::IsJSObject(instance_type)) {
+    if (i::InstanceTypeChecker::IsJSFunction(instance_type)) {
+      i::Tagged<i::JSFunction> func = UncheckedCast<i::JSFunction>(object);
+      i::Tagged<i::SharedFunctionInfo> shared = func->shared();
+      // NIY:Name()
+      return nullptr;
+
+    } else if (i::InstanceTypeChecker::IsJSBoundFunction(instance_type)) {
+      return generator_->AddNode(address, Node::Type::kClosure, "native_bind",
+                                 size);
+    }
+    if (i::InstanceTypeChecker::IsJSRegExp(instance_type)) {
+      i::Tagged<i::JSRegExp> re = UncheckedCast<i::JSRegExp>(object);
+      // NIY:re->source()
+      return generator_->AddNode(address, Node::Type::kRegExp, "source", size);
+    }
+    // TODO(v8:12674) Fix and run full gcmole.
+    i::DisableGCMole no_gcmole;
+    std::string name = GetClassName(map, object, address);
+    if (name.empty()) {
+      return nullptr;
+    }
+    if (i::InstanceTypeChecker::IsJSGlobalObject(instance_type)) {
+      // NIY
+      return nullptr;
+    }
+    return generator_->AddNode(address, Node::Type::kObject, name, size);
+
+  } else if (i::InstanceTypeChecker::IsString(instance_type)) {
+    i::Tagged<i::String> string = UncheckedCast<i::String>(object);
+    if (i::InstanceTypeChecker::IsConsString(instance_type)) {
+      return generator_->AddNode(address, Node::Type::kConsString,
+                                 "(concatenated string)", size);
+    } else if (i::InstanceTypeChecker::IsSlicedString(instance_type)) {
+      return generator_->AddNode(address, Node::Type::kSlicedString,
+                                 "(sliced string)", size);
+    } else {
+      // NIY: get string name
+      return generator_->AddNode(address, Node::Type::kString, "(dummy string)",
+                                 size);
+    }
+  } else if (i::InstanceTypeChecker::IsSymbol(instance_type)) {
+    if (UncheckedCast<i::Symbol>(object)->is_private()) {
+      return generator_->AddNode(address, Node::Type::kHidden, "private symbol",
+                                 size);
+    } else {
+      return generator_->AddNode(address, Node::Type::kSymbol, "symbol", size);
+    }
+
+  } else if (i::InstanceTypeChecker::IsBigInt(instance_type)) {
+    return generator_->AddNode(address, Node::Type::kBigInt, "bigint", size);
+  } else if (i::InstanceTypeChecker::IsInstructionStream(instance_type) ||
+             i::InstanceTypeChecker::IsCode(instance_type)) {
+    return generator_->AddNode(address, Node::Type::kCode, "", size);
+  } else if (i::InstanceTypeChecker::IsSharedFunctionInfo(instance_type)) {
+    // NIY
+    return nullptr;
+  } else if (i::InstanceTypeChecker::IsScript(instance_type)) {
+    // NIY
+    return nullptr;
+  } else if (i::InstanceTypeChecker::IsNativeContext(instance_type)) {
+    return generator_->AddNode(address, Node::Type::kHidden,
+                               "system / NativeContext", size);
+  } else if (i::InstanceTypeChecker::IsContext(instance_type)) {
+    return generator_->AddNode(address, Node::Type::kObject, "system / Context",
+                               size);
+  } else if (i::InstanceTypeChecker::IsHeapNumber(instance_type)) {
+    return generator_->AddNode(address, Node::Type::kHeapNumber, "heap number",
+                               size);
+  }
+#if V8_ENABLE_WEBASSEMBLY
+  if (i::InstanceTypeChecker::IsWasmObject(instance_type)) {
+    // NIY
+    return nullptr;
+  }
+  if (i::InstanceTypeChecker::IsWasmNull(instance_type)) {
+    // Inlined copies of {GetSystemEntryType}, {GetSystemEntryName}, and
+    // {AddEntry}, allowing us to override the size.
+    // The actual object's size is fairly large (at the time of this writing,
+    // just over 64 KB) and mostly includes a guard region. We report it as
+    // much smaller to avoid confusion.
+    static constexpr size_t kSize = i::WasmNull::kHeaderSize;
+    return generator_->AddNode(address, Node::Type::kHidden,
+                               "system / WasmNull", kSize);
+  }
+#endif  // V8_ENABLE_WEBASSEMBLY
+
+  if (i::InstanceTypeChecker::IsForeign(instance_type)) {
+    // NIY
+    return nullptr;
+  }
+
+  // NIY
+  return nullptr;
+}
+
+// According to file src\objects\js-objects.cc:JSReceiver::class_name()
+std::string ObjectTranslator::GetClassName(i::Tagged<i::Map> map,
+                                           i::Tagged<i::HeapObject> object,
+                                           i::Address address) {
+  i::InstanceType instance_type = map->instance_type();
+  ObjectDetailVisitor visitor(this, address, cage_base_, code_cage_base_);
+  i::HeapObjectVisitor heap_object_visitor(&visitor, cage_base_,
+                                           code_cage_base_);
+
+  if (i::InstanceTypeChecker::IsJSFunctionOrBoundFunctionOrWrappedFunction(
+          instance_type)) {
+    return heap_object_visitor.Function_string();
+  }
+  if (i::InstanceTypeChecker::IsJSArgumentsObject(instance_type)) {
+    return heap_object_visitor.Arguments_string();
+  }
+  if (i::InstanceTypeChecker::IsJSArray(instance_type)) {
+    return heap_object_visitor.Array_string();
+  }
+  if (i::InstanceTypeChecker::IsJSArrayBuffer(instance_type)) {
+    // NIY:is_shared()
+    return heap_object_visitor.ArrayBuffer_string();
+  }
+  if (i::InstanceTypeChecker::IsJSArrayIterator(instance_type)) {
+    return heap_object_visitor.ArrayIterator_string();
+  }
+  if (i::InstanceTypeChecker::IsJSDate(instance_type)) {
+    return heap_object_visitor.Date_string();
+  }
+  if (i::InstanceTypeChecker::IsJSError(instance_type)) {
+    return heap_object_visitor.Error_string();
+  }
+  if (i::InstanceTypeChecker::IsJSGeneratorObject(instance_type)) {
+    return heap_object_visitor.Generator_string();
+  }
+  if (i::InstanceTypeChecker::IsJSMap(instance_type)) {
+    return heap_object_visitor.Map_string();
+  }
+  if (i::InstanceTypeChecker::IsJSMapIterator(instance_type)) {
+    return heap_object_visitor.MapIterator_string();
+  }
+  if (i::InstanceTypeChecker::IsJSProxy(instance_type)) {
+    return map->is_callable() ? heap_object_visitor.Function_string()
+                              : heap_object_visitor.Object_string();
+  }
+  if (i::InstanceTypeChecker::IsJSRegExp(instance_type)) {
+    return heap_object_visitor.RegExp_string();
+  }
+  if (i::InstanceTypeChecker::IsJSSet(instance_type)) {
+    return heap_object_visitor.Set_string();
+  }
+  if (i::InstanceTypeChecker::IsJSSetIterator(instance_type)) {
+    return heap_object_visitor.SetIterator_string();
+  }
+  if (i::InstanceTypeChecker::IsJSTypedArray(instance_type)) {
+#define SWITCH_STRING(Type, type, TYPE, ctype)       \
+  if (map->elements_kind() == i::TYPE##_ELEMENTS) {  \
+    return heap_object_visitor.Type##Array_string(); \
+  }
+    TYPED_ARRAYS(SWITCH_STRING)
+#undef SWITCH_STRING
+  }
+
+  if (i::InstanceTypeChecker::IsJSPrimitiveWrapper(instance_type)) {
+    i::Tagged<i::Object> value =
+        i::TaggedField<i::Tagged<i::JSPrimitiveWrapper>>::load(
+            cage_base_, object, i::JSPrimitiveWrapper::kValueOffset);
+    if (i::IsSmi(value)) {
+      return heap_object_visitor.Number_string();
+    }
+    if (i::IsHeapObject(value)) {
+      i::Tagged<i::HeapObject> heap_object = Cast<i::HeapObject>(value);
+      FakeHeapObject fObject(reader_,
+                             objects_head_[heap_object.address()].offset_,
+                             objects_head_[heap_object.address()].size_);
+      i::Tagged<i::Map> fmap = UncheckedCast<i::Map>(fObject.fake_object());
+
+      FakeHeapObject fake_map_ho(reader_, objects_head_[fmap.address()].offset_,
+                                 objects_head_[fmap.address()].size_);
+      i::Tagged<i::Map> fake_map = UncheckedCast<i::Map>(fake_map_ho.fake_object());
+      i::InstanceType type = fake_map->instance_type();
+      if (IsBoolean(type, value)) {
+        return heap_object_visitor.Boolean_string();
+      }
+      if (i::InstanceTypeChecker::IsString(type)) {
+        return heap_object_visitor.String_string();
+      }
+      if (i::InstanceTypeChecker::IsHeapNumber(type)) {
+        return heap_object_visitor.Number_string();
+      }
+      if (i::InstanceTypeChecker::IsBigInt(type)) {
+        return heap_object_visitor.BigInt_string();
+      }
+      if (i::InstanceTypeChecker::IsSymbol(type)) {
+        return heap_object_visitor.Symbol_string();
+      }
+      if (i::InstanceTypeChecker::IsScript(type)) {
+        return heap_object_visitor.Script_string();
+      }
+    }
+    // need fix to UNREACHABLE();
+    return "";
+  }
+
+  if (i::InstanceTypeChecker::IsJSWeakMap(instance_type)) {
+    return heap_object_visitor.WeakMap_string();
+  }
+  if (i::InstanceTypeChecker::IsJSWeakSet(instance_type)) {
+    return heap_object_visitor.WeakSet_string();
+  }
+  if (i::InstanceTypeChecker::IsJSGlobalProxy(instance_type)) {
+    return heap_object_visitor.global_string();
+  }
+  if (IsShared(instance_type)) {
+    if (i::InstanceTypeChecker::IsJSSharedStruct(instance_type)) {
+      return heap_object_visitor.SharedStruct_string();
+    }
+    if (i::InstanceTypeChecker::IsJSSharedArray(instance_type)) {
+      return heap_object_visitor.SharedArray_string();
+    }
+    if (i::InstanceTypeChecker::IsJSAtomicsMutex(instance_type)) {
+      return heap_object_visitor.AtomicsMutex_string();
+    }
+    if (i::InstanceTypeChecker::IsJSAtomicsCondition(instance_type)) {
+      return heap_object_visitor.AtomicsCondition_string();
+    }
+    // need fix to UNREACHABLE();
+    return "";
+  }
+  return heap_object_visitor.Object_string();
+}
+
+bool ObjectTranslator::IsBoolean(
+    v8::internal::InstanceType instance_type,
+    v8::internal::Tagged<v8::internal::Object> obj) {
+  return i::InstanceTypeChecker::IsOddball(instance_type) &&
+         ((Cast<i::Oddball>(obj)->kind() & i::Oddball::kNotBooleanMask) == 0);
+}
+
+bool ObjectTranslator::IsShared(v8::internal::InstanceType instance_type) {
+  // NIY IsReadOnlySpaceShared
+
+  if (i::InstanceTypeChecker::IsAlwaysSharedSpaceJSObject(instance_type)) {
+    return true;
+  }
+  switch (instance_type) {
+    case i::SHARED_SEQ_TWO_BYTE_STRING_TYPE:
+    case i::SHARED_SEQ_ONE_BYTE_STRING_TYPE:
+    case i::SHARED_EXTERNAL_TWO_BYTE_STRING_TYPE:
+    case i::SHARED_EXTERNAL_ONE_BYTE_STRING_TYPE:
+    case i::SHARED_UNCACHED_EXTERNAL_TWO_BYTE_STRING_TYPE:
+    case i::SHARED_UNCACHED_EXTERNAL_ONE_BYTE_STRING_TYPE:
+      return true;
+    case i::INTERNALIZED_TWO_BYTE_STRING_TYPE:
+    case i::INTERNALIZED_ONE_BYTE_STRING_TYPE:
+    case i::EXTERNAL_INTERNALIZED_TWO_BYTE_STRING_TYPE:
+    case i::EXTERNAL_INTERNALIZED_ONE_BYTE_STRING_TYPE:
+    case i::UNCACHED_EXTERNAL_INTERNALIZED_TWO_BYTE_STRING_TYPE:
+    case i::UNCACHED_EXTERNAL_INTERNALIZED_ONE_BYTE_STRING_TYPE:
+      if (i::v8_flags.shared_string_table) {
+        return true;
+      }
+      return false;
+    // NIY HEAP_NUMBER_TYPE-InWritableSharedSpace
+    default:
+      return false;
+  }
 }
 
 }  // namespace dfx

@@ -19,10 +19,8 @@
 
 #include "arkweb/chromium_ext/v8/heap_dump/dump_format-inl.h"
 #include "arkweb/chromium_ext/v8/v8_ohlog.h"
-#include "arkweb/ohos_nweb_ex/third_party/securec/include/securec.h"
 #include "src/common/ptr-compr.h"
 #include "src/heap/heap-inl.h"
-
 namespace dfx {
 HeapDumper::HeapDumper(v8::internal::Heap* heap, BinaryWriterBase* writer)
     : heap_(heap),
@@ -42,18 +40,15 @@ void HeapDumper::DumpHeap() {
   // PreVisit to get header message
   PreVisit();
   DumpHeader();
-  // Dump roots
   root_dumper_.Dump();
   object_dumper_.Dump();
   double elapsed = timer.Elapsed().InMillisecondsF();
-  std::stringstream ss;
-  ss << "elapsed time: " << elapsed << std::endl;
-  LogInfo(ss.str());
+  LogInfo("[HeapDump]elapsed time: " + std::to_string(elapsed) + " ms\n");
   timer.Stop();
 }
 
 void HeapDumper::DumpHeader() {
-  memset_s(&header_, sizeof(header_), 0, sizeof(header_));
+  memset(&header_, 0, sizeof(header_));
   header_.magic_ = kRawHeapMagic;
   header_.version_ = kRawHeapVersion;
 

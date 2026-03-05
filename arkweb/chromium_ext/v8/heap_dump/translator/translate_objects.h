@@ -15,9 +15,7 @@
 
 #ifndef TRANSLATE_OBJECTS_H
 #define TRANSLATE_OBJECTS_H
-
-#if defined(OH_ENABLE_HEAP_DUMP) && \
-    (defined(USING_OHOS) || defined(OH_ENABLE_HEAP_DUMP_TEST))
+#if (defined(ON_ENABLE_HEAP_TRANSLATE) || defined(OH_ENABLE_HEAP_DUMP_TEST))
 #include <set>
 #include <unordered_map>
 
@@ -48,12 +46,26 @@ class ObjectTranslator {
 
  private:
   struct RawHeapObjectHead {
-    uint32_t offset_;      // offset in raw heap
-    uint32_t size_ : 31;   // size in raw heap
+    uint32_t offset_;     // offset in raw heap
+    uint32_t size_ : 31;  // size in raw heap
+#if defined(OH_ENABLE_HEAP_DUMP_TEST)
     uint32_t is_map_ : 1;  // indicate this heap object a map or not
+#endif
   };
   void PreVisit();
   void TranslateHeapObject(v8::internal::Address addr, uint32_t size);
+  void TranslateInstructionStream(v8::internal::Address addr, uint32_t size);
+  bool IsStrong(v8::internal::Address addr);
+  Node* AddNode(i::Tagged<i::Map> map,
+                i::Tagged<i::HeapObject> object,
+                i::Address address,
+                uint32_t size);
+  std::string GetClassName(i::Tagged<i::Map> map,
+                           i::Tagged<i::HeapObject> object,
+                           i::Address address);
+  bool IsShared(v8::internal::InstanceType instance_type);
+  bool IsBoolean(v8::internal::InstanceType instance_type,
+                 v8::internal::Tagged<v8::internal::Object> obj);
 
   BinaryReaderBase* reader_;
   const uint32_t table_offset_;

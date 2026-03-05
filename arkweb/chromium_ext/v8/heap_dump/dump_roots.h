@@ -18,17 +18,15 @@
 
 #if defined(OH_ENABLE_HEAP_DUMP) && \
     (defined(USING_OHOS) || defined(USING_OHOS_WEB))
-#include "arkweb/chromium_ext/v8/heap_dump/binary_writer_base.h"
-#include "arkweb/chromium_ext/v8/heap_dump/dump_format.h"
-
 #include <set>
 
+#include "arkweb/chromium_ext/v8/heap_dump/binary_writer_base.h"
+#include "arkweb/chromium_ext/v8/heap_dump/dump_format.h"
+#include "arkweb/chromium_ext/v8/v8_ohlog.h"
 #include "src/heap/combined-heap.h"
 #include "src/heap/heap-visitor-inl.h"
 #include "src/heap/heap.h"
 #include "src/objects/visitors.h"
-
-#include "arkweb/chromium_ext/v8/v8_ohlog.h"
 
 namespace dfx {
 
@@ -37,7 +35,7 @@ class RootDumper {
   explicit RootDumper(v8::internal::Heap* heap, BinaryWriterBase* writer);
   ~RootDumper() = default;
   inline void AddRoot(v8::internal::Root root,
-                      dfx::Address addr,
+                      v8::internal::Address addr,
                       bool is_weak);
 
   void PreVisit();
@@ -53,7 +51,7 @@ class RootDumper {
 
   v8::internal::Heap* heap_;
   BinaryWriterBase* writer_{nullptr};
-  std::unordered_map<v8::internal::Root, std::set<dfx::Address>>
+  std::unordered_map<v8::internal::Root, std::set<v8::internal::Address>>
       roots_info_;
 };
 }  // namespace dfx

@@ -15,8 +15,7 @@
 
 #ifndef SNAPSHOT_SERIALIZER_H
 #define SNAPSHOT_SERIALIZER_H
-#if defined(OH_ENABLE_HEAP_DUMP) && \
-    (defined(USING_OHOS) || defined(OH_ENABLE_HEAP_DUMP_TEST))
+#if defined(ON_ENABLE_HEAP_TRANSLATE)
 
 #include "arkweb/chromium_ext/v8/heap_dump/binary_writer.h"
 #include "arkweb/chromium_ext/v8/heap_dump/dump_format.h"
@@ -27,8 +26,9 @@ class SnapshotJSONSerializer {
  public:
   class SerializeWriter;
   explicit SnapshotJSONSerializer(SnapshotGenerator* generator);
-  ~SnapshotJSONSerializer() = default;
+  ~SnapshotJSONSerializer();
 
+  void SetOutputFile(std::string output);
   void Serialize();
 
   // see heap-snapshot-generator.h
@@ -57,6 +57,7 @@ class SnapshotJSONSerializer {
   SnapshotGenerator* generator_;
   std::unique_ptr<SerializeWriter> writer_;
   uint32_t trace_function_count_{0};
+  std::string out_path_;
 };
 }  // namespace dfx
 

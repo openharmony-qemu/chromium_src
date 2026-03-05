@@ -13,8 +13,7 @@
  * limitations under the License.
  */
 
-#if defined(OH_ENABLE_HEAP_DUMP) && \
-    (defined(USING_OHOS) || defined(OH_ENABLE_HEAP_DUMP_TEST))
+#if defined(ON_ENABLE_HEAP_TRANSLATE)
 #include "snapshot_generator.h"
 
 #include "include/v8-internal.h"
@@ -70,7 +69,7 @@ std::unordered_map<std::string, uint32_t>& SnapshotGenerator::strings() {
   return strings_;
 }
 
-Node* SnapshotGenerator::GetNode(dfx::Address obj_addr) {
+Node* SnapshotGenerator::GetNode(internal::Address obj_addr) {
   auto it = node_by_addr_.find(obj_addr);
   if (it != node_by_addr_.end()) {
     return nodes_[it->second];
@@ -81,16 +80,18 @@ Node* SnapshotGenerator::GetNode(dfx::Address obj_addr) {
 Node* SnapshotGenerator::CreateNode(Node::Type type,
                                     std::string name,
                                     uint32_t self_size) {
+  // Note: trace_node_id is not support now
   Node* n = new Node();
   n->type_ = static_cast<uint32_t>(type);
   n->name_ = GetStringId(name);
+  // Note: id_ is used when compare two snapshot, get from dump
   n->id_ = static_cast<uint32_t>(nodes_.size());
   n->self_size_ = self_size;
   nodes_.push_back(n);
   return n;
 }
 
-Node* SnapshotGenerator::AddNode(dfx::Address obj_addr,
+Node* SnapshotGenerator::AddNode(internal::Address obj_addr,
                                  Node::Type type,
                                  std::string name,
                                  uint32_t self_size) {
@@ -115,6 +116,7 @@ void SnapshotGenerator::AddSyntheticRootNodes() {
     gc_subroot_nodes_.push_back(
         CreateNode(Node::Type::kSynthetic,
                    i::RootVisitor::RootName(static_cast<i::Root>(root)), 0));
+    // maybe SetIndexedAutoIndexReference?
     gc_root_->SetReference(Edge::Type::kElement, gc_subroot_nodes_.back(),
                            static_cast<uint32_t>(gc_root_->childs_.size() + 1),
                            this);
@@ -144,27 +146,38 @@ uint32_t SnapshotGenerator::GetStringId(std::string str) {
 }
 
 void SnapshotGenerator::SetReference(Edge::Type type,
-                                     dfx::Address parent,
+                                     internal::Address parent,
                                      uint32_t name_or_index,
-                                     dfx::Address child) {
+                                     internal::Address child) {
+  // edges_[parent].insert(child);
   Node* parent_node = GetNode(parent);
   Node* child_node = GetNode(child);
-  CHECK(parent_node != nullptr);
-  CHECK(child_node != nullptr);
+  CHECK(parent_node && child_node);
   parent_node->SetReference(type, child_node, name_or_index, this);
 }
 
 // SetHiddenReference in heap-snapshot-generator.cc
-void SnapshotGenerator::SetHiddenReference(dfx::Address parent,
+void SnapshotGenerator::SetHiddenReference(internal::Address parent,
                                            uint32_t index,
-                                           dfx::Address child) {
+                                           internal::Address child) {
+  // Note: Check IsEssentialObject and IsEssentialHiddenReference
   SetReference(Edge::Type::kHidden, parent, index, child);
 }
 
-void SnapshotGenerator::SetGcSubrootReference(v8::internal::Root root,
-                                              std::string description,
-                                              bool is_weak,
-                                              dfx::Address root_address) {
+void SnapshotGenerator::SetWeakReference(v8::internal::Address parent,
+                                         uint32_t index,
+                                         v8::internal::Address child,
+                                         std::optional<int> field_offset) {
+  // NIY:IsEssentialObject
+  SetReference(Edge::Type::kWeak, parent,
+               GetStringId(std::to_string(index).c_str()), child);
+}
+
+void SnapshotGenerator::SetGcSubrootReference(
+    v8::internal::Root root,
+    std::string description,
+    bool is_weak,
+    v8::internal::Address root_address) {
   // !!!root_address must not be smi, check it in dump_roots.cc
   CHECK(root_ && gc_root_ &&
         static_cast<size_t>(root) < gc_subroot_nodes_.size());
@@ -172,6 +185,7 @@ void SnapshotGenerator::SetGcSubrootReference(v8::internal::Root root,
   Node* root_obj_node = AddNode(root_address, Node::Type::kNotInit, "", 0);
 
   Edge::Type edge_type = is_weak ? Edge::Type::kWeak : Edge::Type::kInternal;
+  // maybe need description? see SetGcSubrootReference in
   // heap-snapshot-generator.cc
   root_node->SetReference(edge_type, root_obj_node, GetStringId(description),
                           this);

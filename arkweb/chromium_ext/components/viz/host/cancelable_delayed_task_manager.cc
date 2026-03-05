@@ -65,6 +65,40 @@ void CancelableDelayedTaskManager::PostNewDelayedTask(uint64_t blankless_key,
   }
 }
 
+void CancelableDelayedTaskManager::PostNewRemoveDelayedTask(uint64_t blankless_key,
+                                                      base::OnceClosure task,
+                                                      base::TimeDelta delay)
+{
+  if (!sequenced_task_runner_) {
+    LOG(WARNING) << "blankless remove task runner is null.";
+    return;
+  }
+
+  // Create a wrapped task with weak reference check
+  auto wrapped_task = base::BindOnce(
+    &CancelableDelayedTaskManager::ExecuteRemoveTaskWrapper,
+    weak_factory_.GetWeakPtr(),
+    blankless_key,
+    std::move(task));
+
+  {
+    std::lock_guard<std::mutex> remove_pending_tasks_guard(remove_pending_tasks_mutex_);
+    // Store task in cancelable closure
+    auto it = remove_pending_tasks_.find(blankless_key);
+    if (it == remove_pending_tasks_.end()) {
+      remove_pending_tasks_.emplace(blankless_key, std::move(wrapped_task));
+    } else {
+      it->second.Reset(std::move(wrapped_task));
+    }
+
+  // Post delayed task to thread pool
+  sequenced_task_runner_->PostDelayedTask(
+    FROM_HERE,
+    remove_pending_tasks_[blankless_key].callback(),  // Get cancelable callback
+    delay);
+  }
+}
+
 void CancelableDelayedTaskManager::ExecuteTaskWrapper(uint64_t blankless_key, base::OnceClosure task)
 {
   // Check if the manager is still valid
@@ -90,12 +124,43 @@ void CancelableDelayedTaskManager::CancelPendingTask(uint64_t blankless_key)
   }
 }
 
+void CancelableDelayedTaskManager::ExecuteRemoveTaskWrapper(uint64_t blankless_key, base::OnceClosure task)
+{
+  // Check if the manager is still valid
+  if (!weak_factory_.HasWeakPtrs()) {
+    LOG(WARNING) << "blankless remove task Skipping task execution - manager destroyed";
+    return;
+  }
+
+  {
+    std::lock_guard<std::mutex> remove_pending_tasks_guard(remove_pending_tasks_mutex_);
+    auto it = remove_pending_tasks_.find(blankless_key);
+    if (it != remove_pending_tasks_.end()) {
+      it->second.Cancel();
+      remove_pending_tasks_.erase(it);
+    }
+  }
+
+  // Execute the actual task logic
+  std::move(task).Run();
+}
+
 void CancelableDelayedTaskManager::CancelAllPendingTask()
 {
-  std::lock_guard<std::mutex> pending_tasks_guard(pending_tasks_mutex_);
-  for (auto it = pending_tasks_.begin(); it != pending_tasks_.end(); it++) {
-    it->second.Cancel();
+  {
+    std::lock_guard<std::mutex> pending_tasks_guard(pending_tasks_mutex_);
+    for (auto it = pending_tasks_.begin(); it != pending_tasks_.end(); it++) {
+      it->second.Cancel();
+    }
+    pending_tasks_.clear();
   }
-  pending_tasks_.clear();
+
+  {
+    std::lock_guard<std::mutex> remove_pending_tasks_guard(remove_pending_tasks_mutex_);
+    for (auto it = remove_pending_tasks_.begin(); it != remove_pending_tasks_.end(); it++) {
+      it->second.Cancel();
+    }
+    remove_pending_tasks_.clear();
+  }
 }
 }  // namespace viz

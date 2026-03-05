@@ -381,6 +381,14 @@ TEST_F(GpuHostImplTest, Discard) {
       metadata->alpha_type = 100000;
       ASSERT_NO_FATAL_FAILURE(gpu_host.DumpBlanklessSnapshot(
         std::move(infoPtr), std::move(buffer), std::move(metadata)));
+
+      infoPtr = CreateInfoPtr();
+      metadata = CreateMetaData();
+      buffer = mojo::SharedBufferHandle::Create(4);
+      metadata->width = 1;
+      metadata->height = 1;
+      ASSERT_NO_FATAL_FAILURE(gpu_host.DumpBlanklessSnapshot(
+      std::move(infoPtr), std::move(buffer), std::move(metadata)));
     }
 #endif
 

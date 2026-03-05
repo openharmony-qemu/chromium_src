@@ -2200,8 +2200,8 @@ void QuotaManagerImpl::OnDbError(int error_code) {
     return;
   }
 
-  if (is_bootstrapping_database_ && error_code == 5) {
-    LOG(INFO) << "fortest QuotaManagerImpl::OnDbError is_bootstrapping_database_:"
+  if (is_bootstrapping_database_ && error_code == sql::SqliteErrorCode::kBusy) {
+    LOG(INFO) << "QuotaManagerImpl::OnDbError is_bootstrapping_database_:"
               << is_bootstrapping_database_ << ", error_code : " << error_code;
     is_bootstrapping_database_ = false;
     db_disabled_ = true;

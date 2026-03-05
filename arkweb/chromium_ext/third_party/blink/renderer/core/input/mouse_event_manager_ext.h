@@ -55,6 +55,9 @@ class MouseEventManagerExt
   MouseEventManagerExt* AsMouseEventManagerExt() override { return this; }
 #if BUILDFLAG(ARKWEB_UNITTESTS)
   friend class MouseEventManagerExtTest;
+  void SetMousePressedForTest(bool pressed) { mouse_pressed_ = pressed; }
+  void SetMousePositionUnknownForTest(bool unknown) { is_mouse_position_unknown_ = unknown; }
+  void SetMouseDownMayStartAutoscrollForTest() { SetMouseDownMayStartAutoscroll(); }
 #endif
 
 #if BUILDFLAG(ARKWEB_DRAG_DROP)

@@ -1,4 +1,16 @@
 <?xml version="1.0" ?>
 <!DOCTYPE translationbundle>
 <translationbundle lang="my">
+<translation id="IDS_OHOS_BLOCK_PAGE_TITLE">မှတ်ချက်</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_INFO_TITLE">ဝက်ဆိုက်ကို ပိတ်ပင်ထားပါသည်</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_FRAUD_INFO_TITLE">အလိမ်မခံရစေရန် သတိထားပါ</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_RISK_INFO_TITLE">အန္တရာယ်ဖြစ်စေနိုင်သော အကြောင်းအရာ ရှိနေသည်</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_URL_TRUST_LIST_TITLE">ဝင်ရောက် သုံးစွဲခွင့် ကန့်သတ်ထားသည်</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_ILLEGAL_INFO_BODY">ဤဝက်ဘ်ဆိုက်တွင် တရားဥပဒေနှင့် မညီသော သို့မဟုတ် တားမြစ်ထားသော အကြောင်းအရာပါဝင်နေသောကြောင့် ဝင်ရောက် သုံးစွဲ၍ မရပါ။</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_FRAUD_INFO_BODY">ဤဝက်ဘ်ဆိုက်သည် သင့်အား လိမ်ညာရန် ဆောင်ရွက်နိုင်သည်။ သင့်ကိုယ်ရေး အချက်အလက်များကို ကာကွယ်ပါ။</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_RISK_INFO_BODY">ဤဝက်ဘ်ဆိုက်သည် မလုံခြုံပါ။ သင့်ကိုယ်ရေး အချက်အလက်များကို ကာကွယ်ပါ။</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_DONT_PROCEED">နောက်သို့</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_PROCEED">ဆက်လုပ်ရန်</translation>
+<translation id="IDS_OHOS_MINOR_PROTECTION_NOTE">လူငယ်သုံးစနစ် ဖွင့်ထားသည်။ ဤဝက်ဘ်ဆိုက်ကို ဝင်ရောက် သုံးစွဲ၍ မရနိုင်ပါ။</translation>
+<translation id="IDS_OHOS_MINOR_PROTECTION_SETING_BUTTON">ဆက်တင်</translation>
 </translationbundle>

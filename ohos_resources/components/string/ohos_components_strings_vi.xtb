@@ -1,4 +1,16 @@
 <?xml version="1.0" ?>
 <!DOCTYPE translationbundle>
 <translationbundle lang="vi">
+<translation id="IDS_OHOS_BLOCK_PAGE_TITLE">Lưu ý</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_INFO_TITLE">Đã chặn trang web</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_FRAUD_INFO_TITLE">Hãy đề phòng gian lận</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_RISK_INFO_TITLE">Trang web chứa nội dung có hại</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_URL_TRUST_LIST_TITLE">Quyền truy cập bị hạn chế</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_ILLEGAL_INFO_BODY">Không thể truy cập trang web này vì trang web có chứa nội dung bị nghiêm cấm hoặc không hợp pháp.</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_FRAUD_INFO_BODY">Trang web này có thể cố gắng lừa đảo bạn. Vui lòng bảo vệ thông tin cá nhân.</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_RISK_INFO_BODY">Trang web này không an toàn. Vui lòng bảo vệ thông tin cá nhân.</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_DONT_PROCEED">Quay lại</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_PROCEED">Tiếp tục</translation>
+<translation id="IDS_OHOS_MINOR_PROTECTION_NOTE">Chế độ Thanh thiếu niên đang bật. Không thể truy cập trang web này.</translation>
+<translation id="IDS_OHOS_MINOR_PROTECTION_SETING_BUTTON">Cài đặt</translation>
 </translationbundle>

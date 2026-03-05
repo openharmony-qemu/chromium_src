@@ -1,4 +1,16 @@
 <?xml version="1.0" ?>
 <!DOCTYPE translationbundle>
 <translationbundle lang="de">
+<translation id="IDS_OHOS_BLOCK_PAGE_TITLE">Hinweis</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_INFO_TITLE">Website blockiert</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_FRAUD_INFO_TITLE">Achtung vor Betrug</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_RISK_INFO_TITLE">Der folgende Inhalt könnte schädlich sein</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_URL_TRUST_LIST_TITLE">Zugriff eingeschränkt</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_ILLEGAL_INFO_BODY">Der Zugriff auf die Website ist nicht möglich, da sie illegale oder verbotene Inhalte enthält.</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_FRAUD_INFO_BODY">Auf dieser Website könnten Sie Opfer von Betrug werden. Schützen Sie Ihre persönlichen Informationen.</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_RISK_INFO_BODY">Diese Website ist nicht sicher. Schützen Sie Ihre persönlichen Informationen.</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_DONT_PROCEED">Zurück</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_PROCEED">Fortfahren</translation>
+<translation id="IDS_OHOS_MINOR_PROTECTION_NOTE">Der Jugendmodus ist eingeschaltet. Auf diese Website kann nicht zugegriffen werden.</translation>
+<translation id="IDS_OHOS_MINOR_PROTECTION_SETING_BUTTON">Einstellungen</translation>
 </translationbundle>

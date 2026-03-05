@@ -42,15 +42,10 @@ function getPreviewSurfaceId(callback?: Function) {
 function getImageReceiver() {
   implMediaAdapter().getImageReceiver();
 }
-
-function getCameraOrientation(): number {
-  return implMediaAdapter().getCameraOrientation();
-}
  
 export class MediaAdapterBind {
   static bind() {
     JsBindingUtils.bindFunction("mediaAdapter.getPreviewSurfaceId", getPreviewSurfaceId);
     JsBindingUtils.bindFunction("mediaAdapter.getImageReceiver", getImageReceiver);
-    JsBindingUtils.bindFunction("mediaAdapter.getCameraOrientation", getCameraOrientation);
   }
 }

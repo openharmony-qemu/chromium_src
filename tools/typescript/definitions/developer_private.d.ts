@@ -209,6 +209,18 @@ declare global {
         submessages: string[];
       }
 
+      export interface OptionalPermission {
+        name: string;
+        message: string;
+        submessages: string[];
+        granted: boolean;
+      }
+
+      export interface OptionalPermissionUpdate {
+        name: string;
+        enabled: boolean;
+      }
+
       export interface SiteControl {
         host: string;
         granted: boolean;
@@ -224,6 +236,8 @@ declare global {
         simplePermissions: chrome.developerPrivate.Permission[];
         runtimeHostPermissions?: RuntimeHostPermissions;
         canAccessSiteData: boolean;
+        optionalSimplePermissions?:
+            chrome.developerPrivate.OptionalPermission[];
       }
 
       export interface ExtensionInfo {
@@ -289,6 +303,7 @@ declare global {
         showAccessRequestsInToolbar?: boolean;
         acknowledgeSafetyCheckWarningReason?: SafetyCheckWarningReason;
         pinnedToToolbar?: boolean;
+        optionalPermission?: OptionalPermissionUpdate;
       }
 
       export interface ProfileConfigurationUpdate {

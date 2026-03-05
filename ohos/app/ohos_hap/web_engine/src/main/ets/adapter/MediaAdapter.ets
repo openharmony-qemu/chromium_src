@@ -47,15 +47,4 @@ export class MediaAdapter extends BaseAdapter {
       }
     })
   }
-  
-  getCameraOrientation(): number {
-    let context = getContext(this);
-    let cameraManager = camera.getCameraManager(context);
-    let cameraDevices = cameraManager.getSupportedCameras();
-    if (cameraDevices.length) {
-      return cameraDevices[0].cameraOrientation;
-    }
-    LogUtil.error(TAG, 'cameraDevices is null, get cameraDevices failed');
-    return 0;
-  }
 }

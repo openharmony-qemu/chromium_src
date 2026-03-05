@@ -13,6 +13,7 @@
 #include "ohos/adapter/media_manager/media_adapter.h"
 
 #include "ohcamera/camera.h"
+#include "ohcamera/camera_device.h"
 #include "ohcamera/camera_input.h"
 #include "ohcamera/camera_manager.h"
 #include "ohcamera/capture_session.h"
@@ -79,6 +80,7 @@ class CAPTURE_EXPORT OHOSCaptureDelegate final {
   void SetErrorState(VideoCaptureError error,
                      const base::Location& from_here,
                      const std::string& reason);
+  int GetRetation();
 
   const scoped_refptr<base::SingleThreadTaskRunner> capture_task_runner_;
   const VideoCaptureDeviceDescriptor device_descriptor_;

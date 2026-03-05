@@ -37,6 +37,9 @@ const double NEARLY_FINISHED_THRESHOLD = 0.8;
 const double SMALL_RECT_THRESHOLD = 0.01;
 
 void FirstScreenCalculator::OnFirstScreenInvoked() {
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+  DCHECK(thread_check_.CalledOnValidThread());
+#endif
 #if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT)
   const base::TimeDelta as_time_delta =
       first_screen_paint_time_ - base::TimeTicks();

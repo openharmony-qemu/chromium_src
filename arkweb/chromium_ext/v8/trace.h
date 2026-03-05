@@ -19,13 +19,19 @@
 #ifdef OSOHOS
 #include "src/init/v8.h"
 #include "hitrace/trace.h"
+#include "arkweb/build/features/features.h"
+#include <string>
 
 class HiTrace {
 public:
     explicit HiTrace(const char *name) : traceName(name)
     {
         if (v8::internal::rcs_enable == true) {
-            OH_HiTrace_StartTrace(traceName);
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+	OH_HiTrace_StartTrace(traceName.c_str());
+#else
+	OH_HiTrace_StartTrace(traceName);
+#endif
         }
     }
     ~HiTrace()
@@ -34,7 +40,11 @@ public:
             OH_HiTrace_FinishTrace();
         }
     }
-    const char *traceName;
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+    std::string traceName;
+#else
+	const char *traceName;
+#endif
 };
 
 #else

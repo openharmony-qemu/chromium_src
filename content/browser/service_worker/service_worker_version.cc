@@ -1120,7 +1120,9 @@ void ServiceWorkerVersion::EvictBackForwardCachedControllee(
     BackForwardCacheMetrics::NotRestoredReason reason) {
   controllee->EvictFromBackForwardCache(reason);
   controllees_to_be_evicted_[controllee->client_uuid()] = reason;
-  RemoveControlleeFromBackForwardCacheMap(controllee->client_uuid());
+  if (controllee->was_controlled_when_entered_back_forward_cache()) {
+    RemoveControlleeFromBackForwardCacheMap(controllee->client_uuid());
+  }
 }
 
 void ServiceWorkerVersion::AddObserver(Observer* observer) {

@@ -21,7 +21,13 @@ NativePixmapDmaBuf::NativePixmapDmaBuf(const gfx::Size& size,
     : size_(size), format_(format), handle_(std::move(handle)) {}
 #endif
 
-NativePixmapDmaBuf::~NativePixmapDmaBuf() {}
+NativePixmapDmaBuf::~NativePixmapDmaBuf() {
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+    OH_NativeWindow_DestroyNativeWindowBuffer(
+        static_cast<OHNativeWindowBuffer*>(native_window_buffer_));
+    native_window_buffer_ = nullptr;
+#endif // ARKWEB_HEIF_SUPPORT
+}
 
 bool NativePixmapDmaBuf::AreDmaBufFdsValid() const {
   if (handle_.planes.empty())

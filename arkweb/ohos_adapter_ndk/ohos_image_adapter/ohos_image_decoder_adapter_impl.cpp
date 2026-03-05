@@ -64,6 +64,10 @@ void ReleaseDecodeOptions(OH_DecodingOptions* decodeOptions)
 void OhosImageDecoderAdapterImpl::NativeBufferFromPixelMap()
 {
     if (pixelMap_) {
+        if (nativeBuffer_) {
+            WVLOG_I("[HeifSupport] NativeBufferFromPixelMap nativeBuffer_ already exists, return");
+            return;
+        }
         Image_ErrorCode errorCode = OH_PixelmapNative_GetNativeBuffer(pixelMap_, &nativeBuffer_);
         if (errorCode == Image_ErrorCode::IMAGE_SUCCESS) {
             return;
@@ -352,7 +356,6 @@ void OhosImageDecoderAdapterImpl::ReleasePixelMap()
         }
     }
     if (nativeWindowBuffer_) {
-        OH_NativeWindow_DestroyNativeWindowBuffer(nativeWindowBuffer_);
         nativeWindowBuffer_ = nullptr;
     }
     if (nativeBuffer_) {
@@ -370,7 +373,8 @@ void OhosImageDecoderAdapterImpl::ReleasePixelMap()
         }
     }
     if (bufferHandle_) {
-        delete bufferHandle_;
+        WVLOG_I("[HeifSupport] OhosImageDecoderAdapterImpl bufferHandle_ unreference");
+        OH_NativeWindow_NativeObjectUnreference(bufferHandle_);
         bufferHandle_ = nullptr;
     }
 }

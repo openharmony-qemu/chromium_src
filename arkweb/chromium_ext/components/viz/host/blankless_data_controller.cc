@@ -50,6 +50,8 @@ const std::string DUMP_FILE_PNG_TYPE = ".png";
 const std::string DUMP_FILE_HEIC_TYPE = ".heic";
 const double SSIM_THRESHOLD = 0.95;
 const int DUMP_TASK_DELAY_TIME = 1000; // Milliseconds
+const int REMOVE_TASK_DELAY_TIME_LONG = 400; // Milliseconds
+const int REMOVE_TASK_DELAY_TIME_SHORT = 200; // Milliseconds
 const int SCREEN_MAX_RESOLUTION = 8000;
 
 // static
@@ -558,6 +560,13 @@ void BlanklessDataController::DumpTask(viz::mojom::BlanklessSendInfoPtr infoPtr,
   }
 }
 
+void BlanklessDataController::RemoveFrame(uint32_t nweb_id, uint64_t blankless_key)
+{
+  auto& instance = base::ohos::BlanklessController::GetInstance();
+  instance.CancelFrameInsertCallback(nweb_id, blankless_key);
+  instance.FireFrameRemoveCallback(nweb_id, blankless_key);
+}
+
 void BlanklessDataController::DumpBlanklessSnapshot(viz::mojom::BlanklessSendInfoPtr infoPtr,
                                                     mojo::ScopedSharedBufferHandle buffer,
                                                     viz::mojom::BlanklessBitmapMetadataPtr metadata)
@@ -592,8 +601,19 @@ void BlanklessDataController::DumpBlanklessSnapshot(viz::mojom::BlanklessSendInf
     LOG(DEBUG) << "blankless CalculateSimilarity nweb_id: " << nweb_id
                << ", blankless_key: " << blankless_key << ", similarity: " << similarity;
     if (similarity >= base::ohos::BlanklessController::CALLBACK_SIMILARITY_THRESHOLD) {
-      instance.CancelFrameInsertCallback(nweb_id, blankless_key);
-      instance.FireFrameRemoveCallback(nweb_id, blankless_key);
+      RemoveFrame(nweb_id, blankless_key);
+    } else if (similarity >= base::ohos::BlanklessController::CALLBACK_SIMILARITY_THRESHOLD_MIDDLE) {
+      if (task_manager_) {
+        auto removeTask = base::BindOnce(&BlanklessDataController::RemoveFrame, nweb_id, blankless_key);
+        task_manager_->PostNewRemoveDelayedTask(blankless_key,
+          std::move(removeTask), base::Milliseconds(REMOVE_TASK_DELAY_TIME_SHORT));
+      }
+    } else if (similarity >= base::ohos::BlanklessController::CALLBACK_SIMILARITY_THRESHOLD_LOW) {
+      if (task_manager_) {
+        auto removeTask = base::BindOnce(&BlanklessDataController::RemoveFrame, nweb_id, blankless_key);
+        task_manager_->PostNewRemoveDelayedTask(blankless_key,
+          std::move(removeTask), base::Milliseconds(REMOVE_TASK_DELAY_TIME_LONG));
+      }
     }
   }
 

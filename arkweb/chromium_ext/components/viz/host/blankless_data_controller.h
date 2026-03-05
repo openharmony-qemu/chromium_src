@@ -65,6 +65,7 @@ private:
   static bool EncodeImage(const SkBitmap& bitmap, std::string& newFile, OHOS::NWeb::SnapshotDataItem* snapshotDataItem);
   static void DumpTask(viz::mojom::BlanklessSendInfoPtr infoPtr, mojo::ScopedSharedBufferHandle buffer,
                        viz::mojom::BlanklessBitmapMetadataPtr metadata, double similarity);
+  static void RemoveFrame(uint32_t nweb_id, uint64_t blankless_key);
 
 private:
   std::shared_ptr<OHOS::NWeb::OhosWebSnapshotDataBaseCallback> web_snapshot_db_callback_ = nullptr;

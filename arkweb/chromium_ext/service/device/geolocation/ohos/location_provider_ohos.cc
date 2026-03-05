@@ -14,11 +14,13 @@ constexpr static int EPOCH_OFFSET_DELAY_TIME = 10;
 class GeolocationManager;
 // LocationProviderOhos
 LocationProviderOhos::LocationProviderOhos() {
-  locator_callback_ = std::make_shared<LocationProviderCallback>();
+  task_runner_ = base::SingleThreadTaskRunner::GetCurrentDefault();
+  DCHECK(task_runner_);
+  locator_callback_ = std::make_shared<LocationProviderCallback>(task_runner_);
 }
 
 LocationProviderOhos::~LocationProviderOhos() {
-  StopProvider();
+  StopProviderTask();
   if (locator_ != nullptr) {
     locator_.reset();
   }
@@ -50,15 +52,29 @@ void LocationProviderOhos::ProviderUpdateCallback(
 
 void LocationProviderOhos::StartProvider(bool high_accuracy) {
   LOG(INFO) << "LocationProviderOhos::StartProvider";
-  StopProvider();
+  task_runner_->PostTask(
+    FROM_HERE,
+    base::BindOnce(&LocationProviderOhos::StartProviderTask, weak_factory_.GetWeakPtr(), high_accuracy));
+}
+
+void LocationProviderOhos::StopProvider() {
+  LOG(INFO) << "LocationProviderOhos::StopProvider";
+  task_runner_->PostTask(
+    FROM_HERE,
+    base::BindOnce(&LocationProviderOhos::StopProviderTask, weak_factory_.GetWeakPtr()));
+}
+
+void LocationProviderOhos::StartProviderTask(bool high_accuracy) {
+  LOG(INFO) << "LocationProviderOhos::StartProviderTask";
+  StopProviderTask();
   state_ = high_accuracy
                ? mojom::GeolocationDiagnostics::ProviderState::kHighAccuracy
                : mojom::GeolocationDiagnostics::ProviderState::kLowAccuracy;
   RequestLocationUpdate(high_accuracy);
 }
 
-void LocationProviderOhos::StopProvider() {
-  LOG(INFO) << "LocationProviderOhos::StopProvider";
+void LocationProviderOhos::StopProviderTask() {
+  LOG(INFO) << "LocationProviderOhos::StopProviderTask";
   if (!is_running_) {
     return;
   }
@@ -179,17 +195,21 @@ void LocationProviderCallback::NewGeopositionReport(
 
 void LocationProviderCallback::OnLocationReport(
     const std::shared_ptr<OHOS::NWeb::LocationInfo> location) {
-  OnNewLocationAvailable(location);
+  LOG(INFO) << "LocationProviderCallback::OnLocationReport";
+  task_runner_->PostTask(
+    FROM_HERE,
+    base::BindOnce(&LocationProviderCallback::OnNewLocationAvailable, weak_factory_.GetWeakPtr(), location));
 }
 
 void LocationProviderCallback::OnLocatingStatusChange(const int status) {}
 
 void LocationProviderCallback::OnErrorReport(const int errorCode) {
-  if (errorCode == LOCATION_GET_FAILED) {
-    OnNewErrorAvailable("Failed to get location!");
-  } else {
-    OnNewErrorAvailable("Unknown error during the locating occured!");
-  }
+  LOG(INFO) << "LocationProviderCallback::OnErrorReport";
+  std::string message =
+    errorCode == LOCATION_GET_FAILED ? "Failed to get location!" : "Unknown error during the locating occured!";
+  task_runner_->PostTask(
+    FROM_HERE,
+    base::BindOnce(&LocationProviderCallback::OnNewErrorAvailable, weak_factory_.GetWeakPtr(), message));
 }
 
 // static

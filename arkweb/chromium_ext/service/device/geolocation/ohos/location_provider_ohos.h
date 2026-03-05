@@ -10,6 +10,7 @@
 #include <memory>
 
 #include "base/memory/weak_ptr.h"
+#include "base/memory/scoped_refptr.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/threading/thread_checker.h"
 #include "services/device/public/cpp/geolocation/location_provider.h"
@@ -19,7 +20,9 @@
 namespace device {
 class LocationProviderCallback : public OHOS::NWeb::LocationCallbackAdapter {
  public:
-  LocationProviderCallback() {}
+  LocationProviderCallback(const scoped_refptr<base::SingleThreadTaskRunner>& task_runner) {
+    task_runner_ = task_runner;
+  }
   ~LocationProviderCallback() = default;
 
   enum LocationErrorCode {
@@ -51,6 +54,8 @@ class LocationProviderCallback : public OHOS::NWeb::LocationCallbackAdapter {
 
   mojom::GeopositionResultPtr last_position_;
   UpdateCallback callback_;
+  scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
+  base::WeakPtrFactory<LocationProviderCallback> weak_factory_{this};
 };
 
 // Location provider for OpenHarmony using the platform provider over JNI.
@@ -71,6 +76,8 @@ class LocationProviderOhos : public LocationProvider {
   void ProviderUpdateCallback(mojom::GeopositionResultPtr position);
 
  private:
+  void StartProviderTask(bool high_accuracy);
+  void StopProviderTask();
   void RequestLocationUpdate(bool high_accuracy);
   void CreateLocationManagerIfNeeded();
   void SetRequestConfig(
@@ -85,6 +92,7 @@ class LocationProviderOhos : public LocationProvider {
   bool is_running_ = false;
   std::shared_ptr<LocationProviderCallback> locator_callback_ = nullptr;
   int32_t callback_id_ = -1;
+  scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
   base::WeakPtrFactory<LocationProviderOhos> weak_factory_{this};
 };
 

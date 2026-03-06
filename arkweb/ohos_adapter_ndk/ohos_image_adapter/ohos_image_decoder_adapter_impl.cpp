@@ -378,7 +378,7 @@ void OhosImageDecoderAdapterImpl::ReleasePixelMap()
         int32_t errorCode = OH_NativeWindow_NativeObjectUnreference(bufferHandle_);
         bufferHandle_ = nullptr;
         if (errorCode != Image_ErrorCode::IMAGE_SUCCESS) {
-            WVLOG_E("[HeifSupport] OH_NativeWindow_DestroyNativeWindowBuffer failed, errorCode = %{public}d", errorCode);
+            WVLOG_E("[HeifSupport] OH_NativeWindow_NativeObjectUnreference failed, errorCode = %{public}d", errorCode);
         }
     }
 }

@@ -356,11 +356,8 @@ void OhosImageDecoderAdapterImpl::ReleasePixelMap()
         }
     }
     if (nativeWindowBuffer_) {
-        int errorCode = OH_NativeWindow_DestroyNativeWindowBuffer(nativeWindowBuffer_);
+        OH_NativeWindow_DestroyNativeWindowBuffer(nativeWindowBuffer_);
         nativeWindowBuffer_ = nullptr;
-        if (errorCode != Image_ErrorCode::IMAGE_SUCCESS) {
-            WVLOG_E("[HeifSupport] OH_NativeWindow_DestroyNativeWindowBuffer failed, errorCode = %{public}d", errorCode);
-        }
     }
     if (nativeBuffer_) {
         int errorCode = OH_NativeBuffer_Unreference(nativeBuffer_);
@@ -378,8 +375,11 @@ void OhosImageDecoderAdapterImpl::ReleasePixelMap()
     }
     if (bufferHandle_) {
         WVLOG_I("[HeifSupport] OhosImageDecoderAdapterImpl bufferHandle_ unreference");
-        OH_NativeWindow_NativeObjectUnreference(bufferHandle_);
+        int errorCode = OH_NativeWindow_NativeObjectUnreference(bufferHandle_);
         bufferHandle_ = nullptr;
+        if (errorCode != Image_ErrorCode::IMAGE_SUCCESS) {
+            WVLOG_E("[HeifSupport] OH_NativeWindow_DestroyNativeWindowBuffer failed, errorCode = %{public}d", errorCode);
+        }
     }
 }
 

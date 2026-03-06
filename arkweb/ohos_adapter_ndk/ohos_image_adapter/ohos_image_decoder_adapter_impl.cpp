@@ -374,11 +374,11 @@ void OhosImageDecoderAdapterImpl::ReleasePixelMap()
         }
     }
     if (bufferHandle_) {
-        WVLOG_D("[HeifSupport] OH_NativeWindow_NativeObjectUnreference bufferHandle_ unreference");
-        int errorCode = OH_NativeWindow_NativeObjectUnreference(bufferHandle_);
+        WVLOG_I("[HeifSupport] OhosImageDecoderAdapterImpl bufferHandle_ unreference");
+        int32_t errorCode = OH_NativeWindow_NativeObjectUnreference(bufferHandle_);
         bufferHandle_ = nullptr;
         if (errorCode != Image_ErrorCode::IMAGE_SUCCESS) {
-            WVLOG_E("[HeifSupport] OH_NativeWindow_NativeObjectUnreference failed, errorCode = %{public}d", errorCode);
+            WVLOG_E("[HeifSupport] OH_NativeWindow_DestroyNativeWindowBuffer failed, errorCode = %{public}d", errorCode);
         }
     }
 }

@@ -79,6 +79,9 @@ struct RunJavaScriptParam;
 #if BUILDFLAG(ARKWEB_NWEB_EX)
 #include "ohos_nweb_ex/core/extension/nweb_app_client_extension_dispatcher.h"
 #endif
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+#include "capi/nweb_request_open_dev_tools_callback.h"
+#endif // ARKWEB_DEVTOOLS
 
 #if BUILDFLAG(ARKWEB_USERAGENT)
 #include "nweb_user_agent_metadata.h"
@@ -699,6 +702,10 @@ class NWebImpl : public NWeb {
   void GetImageFromCache(const std::string& url);
   void ReloadOriginalUrl() const;
   void SetBrowserUserAgentString(const std::string& user_agent);
+  static void StaticOpenDevtools(const std::string& source_id,
+                                 const std::string& target_id,
+                                 std::unique_ptr<OpenDevToolsParam> param,
+                                 OpenDevToolsExtOpt& ext_opt);
   void OpenDevtools(std::unique_ptr<OpenDevToolsParam> param);
   void OpenDevtoolsByPb(std::unique_ptr<OpenDevToolsParam> param,
                         OpenDevToolsExtOpt& ext_opt);
@@ -1057,7 +1064,8 @@ class NWebImpl : public NWeb {
   static void AlertHandle(const int requestId);
   static void ConfirmHandle(const bool type, const int requestId);
   static void PromptHandle(const bool type, const std::string& value, const int requestId);
-
+  static void SetOnRequestOpenDevToolsCallback(OnArkWebStaticRequestOpenDevToolsFunc func);
+  static void OnRequestOpenDevTools(const RequestOpenDevToolsParams& params);
   static void SetOnOffscreenDocumentPermissionRequestCallback(
       OnArkWebStaticOffscreenDocumentPermissionRequestFunc func);
   static void OnOffscreenDocumentPermissionRequest(
@@ -1398,6 +1406,10 @@ class NWebImpl : public NWeb {
   static OnArkWebStaticOffscreenDocumentWindowNewFunc on_off_screen_window_new_callback_;
   static uint32_t off_screen_nweb_id_;
 #endif  // ARKWEB_ARKWEB_EXTENSIONS
+
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  static OnArkWebStaticRequestOpenDevToolsFunc on_request_open_dev_tools_callback_;
+#endif  // ARKWEB_DEVTOOLS
 
 #if BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)
   void RegisterNativeJavaScriptProxy(const std::string& objName,

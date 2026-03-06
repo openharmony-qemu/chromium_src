@@ -144,10 +144,17 @@ std::vector<int32_t> AppWindowAdapter::GetOriginWindowIds(
   return instance->GetOriginWindowIds(window_ids);
 }
 
-bool AppWindowAdapter::ShiftWindowEvent(const int32_t source_id,
-                                        const int32_t target_id) {
+bool AppWindowAdapter::ShiftWindowMouseEvent(const int32_t source_window_id,
+                                             const int32_t target_window_id) {
   MockAppWindowAdapter* instance = MockAppWindowAdapter::GetInstance();
-  return instance->ShiftWindowEvent(source_id, target_id);
+  return instance->ShiftWindowMouseEvent(source_window_id, target_window_id);
+}
+
+bool AppWindowAdapter::ShiftWindowTouchEvent(const int32_t source_id,
+                                             const int32_t target_id,
+                                             const int32_t finger_id) {
+  MockAppWindowAdapter* instance = MockAppWindowAdapter::GetInstance();
+  return instance->ShiftWindowTouchEvent(source_id, target_id, finger_id);
 }
 
 }  // namespace ohos::adapter::window

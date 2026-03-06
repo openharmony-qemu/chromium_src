@@ -94,8 +94,7 @@ export class AppWindowAdapter extends BaseAdapter {
 
     let windowClass = this.ctxAdapter.getActiveProxy().getWindow();
     const windowProp = windowClass?.getWindowProperties();
-    let xComBorder: number = windowProp?.drawableRect.left || 0;
-    let xComTop: number = windowProp?.drawableRect.top || 0;
+    let xComTop: number = 0;
     let uiContext = windowClass?.getUIContext();
 
     if (this.nativeContext.IsSupportNodeHandleFeature() &&
@@ -107,22 +106,22 @@ export class AppWindowAdapter extends BaseAdapter {
     }
 
     let options: StartOptions = {
-      windowLeft: param.bounds.left - xComBorder,
+      windowLeft: param.bounds.left,
       windowTop: param.bounds.top - xComTop,
-      windowWidth: param.bounds.width + xComBorder + xComBorder,
-      windowHeight: param.bounds.height + xComBorder + xComTop,
+      windowWidth: param.bounds.width,
+      windowHeight: param.bounds.height + xComTop,
       minWindowWidth: uiContext ?
         uiContext.px2vp(param.window_limit.min_width === 0 ? 0 :
-          param.window_limit.min_width + xComBorder + xComBorder) : 0,
+          param.window_limit.min_width) : 0,
       minWindowHeight: uiContext ?
         uiContext.px2vp(param.window_limit.min_height === 0 ? 0 :
-          param.window_limit.min_height + xComBorder + xComTop) : 0,
+          param.window_limit.min_height + xComTop) : 0,
       maxWindowWidth: uiContext ?
         uiContext.px2vp(param.window_limit.max_width === 0 ? 0 :
-          param.window_limit.max_width + xComBorder + xComBorder) : 0,
+          param.window_limit.max_width) : 0,
       maxWindowHeight: uiContext ?
         uiContext.px2vp(param.window_limit.max_height === 0 ? 0 :
-          param.window_limit.max_height + xComBorder + xComTop) : 0,
+          param.window_limit.max_height + xComTop) : 0,
       startWindowBackgroundColor: this.backgroundColor(param.use_dark_mode),
     }
     LaunchHelper.LaunchWithOptions(this.ctxAdapter.getActiveContext(), want, options);

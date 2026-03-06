@@ -356,6 +356,7 @@ void OhosImageDecoderAdapterImpl::ReleasePixelMap()
         }
     }
     if (nativeWindowBuffer_) {
+        OH_NativeWindow_DestroyNativeWindowBuffer(nativeWindowBuffer_);
         nativeWindowBuffer_ = nullptr;
     }
     if (nativeBuffer_) {

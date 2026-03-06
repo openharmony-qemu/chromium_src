@@ -24,9 +24,11 @@ NativePixmapDmaBuf::NativePixmapDmaBuf(const gfx::Size& size,
 
 NativePixmapDmaBuf::~NativePixmapDmaBuf() {
 #if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+  if (native_window_buffer_) {
     OH_NativeWindow_DestroyNativeWindowBuffer(
         static_cast<OHNativeWindowBuffer*>(native_window_buffer_));
     native_window_buffer_ = nullptr;
+  }
 #endif // ARKWEB_HEIF_SUPPORT
 }
 

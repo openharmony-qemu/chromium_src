@@ -39,14 +39,7 @@ namespace ohos::adapter {
 
 class IImeAdapter {
  public:
-  using InsertTextCallback = InputMethodOHOSAdapter::InsertTextCallback;
-  using DeleteBackCallback = InputMethodOHOSAdapter::DeleteBackCallback;
-  using DeleteForwardCallback = InputMethodOHOSAdapter::DeleteForwardCallback;
-  using SendEnterKeyEventCallback =
-      InputMethodOHOSAdapter::SendEnterKeyEventCallback;
-  using ExitFullscreenEventCallback =
-      InputMethodOHOSAdapter::ExitFullscreenEventCallback;
-  using MoveCursorCallback = InputMethodOHOSAdapter::MoveCursorCallback;
+  using Delegate = InputMethodOHOSAdapter::Delegate;
 
   virtual void AttachTextInput(IMFAdapterTextConfig textConfig,
                                int32_t requestKeyboardReason) = 0;
@@ -55,22 +48,13 @@ class IImeAdapter {
   virtual void UpdateAttribute(IMFAdapterInputAttribute inputAttribute) = 0;
   virtual void ShowTextInput(int32_t requestKeyboardReason) = 0;
   virtual void ExitFullscreenEvent() = 0;
-  virtual InsertTextCallback GetInsertTextCallbcak() = 0;
-  virtual DeleteBackCallback GetDeleteBackCallbcak() = 0;
-  virtual DeleteForwardCallback GetDeleteForwardCallbcak() = 0;
-  virtual SendEnterKeyEventCallback GetSendEnterKeyEventCallback() = 0;
-  virtual ExitFullscreenEventCallback GetExitFullscreenEventCallback() = 0;
-  virtual MoveCursorCallback GetMoveCursorCallbcak() = 0;
-  virtual void RegisterSendEnterKeyEventCallback(
-      SendEnterKeyEventCallback callback) = 0;
-  virtual void RegisterInsertTextCallback(InsertTextCallback callback) = 0;
-  virtual void RegisterDeleteForwardCallback(
-      DeleteForwardCallback callback) = 0;
-  virtual void RegisterDeleteBackwardCallback(DeleteBackCallback callback) = 0;
-  virtual void RegisterMoveCursorCallback(MoveCursorCallback callback) = 0;
-  virtual void RegisterExitFullscreenEventCallback(
-      ExitFullscreenEventCallback callback) = 0;
   virtual void NotifyCursorUpdate(const IMFAdapterCursorInfo cursorInfo) = 0;
+  virtual void InsertTextCallback(const std::string& text) = 0;
+  virtual void DeleteBackCallback(int32_t length) = 0;
+  virtual void DeleteForwardCallback(int32_t length) = 0;
+  virtual void SendEnterKeyEventCallback() = 0;
+  virtual void MoveCursorCallback(const int direction) = 0;
+  virtual void Register(Delegate* delegate) = 0;
 };
 
 class MockImeAdapter : public IImeAdapter,
@@ -82,21 +66,13 @@ class MockImeAdapter : public IImeAdapter,
   MOCK_METHOD1(UpdateAttribute, void(IMFAdapterInputAttribute));
   MOCK_METHOD1(ShowTextInput, void(int32_t));
   MOCK_METHOD0(ExitFullscreenEvent, void());
-  MOCK_METHOD0(GetInsertTextCallbcak, InsertTextCallback());
-  MOCK_METHOD0(GetDeleteBackCallbcak, DeleteBackCallback());
-  MOCK_METHOD0(GetDeleteForwardCallbcak, DeleteForwardCallback());
-  MOCK_METHOD0(GetSendEnterKeyEventCallback, SendEnterKeyEventCallback());
-  MOCK_METHOD0(GetExitFullscreenEventCallback, ExitFullscreenEventCallback());
-  MOCK_METHOD0(GetMoveCursorCallbcak, MoveCursorCallback());
-  MOCK_METHOD1(RegisterSendEnterKeyEventCallback,
-               void(SendEnterKeyEventCallback));
-  MOCK_METHOD1(RegisterInsertTextCallback, void(InsertTextCallback));
-  MOCK_METHOD1(RegisterDeleteForwardCallback, void(DeleteForwardCallback));
-  MOCK_METHOD1(RegisterDeleteBackwardCallback, void(DeleteBackCallback));
-  MOCK_METHOD1(RegisterMoveCursorCallback, void(MoveCursorCallback));
-  MOCK_METHOD1(RegisterExitFullscreenEventCallback,
-               void(ExitFullscreenEventCallback));
   MOCK_METHOD1(NotifyCursorUpdate, void(const IMFAdapterCursorInfo));
+  MOCK_METHOD1(InsertTextCallback, void(const std::string&));
+  MOCK_METHOD1(DeleteBackCallback, void(int32_t));
+  MOCK_METHOD1(DeleteForwardCallback, void(int32_t));
+  MOCK_METHOD0(SendEnterKeyEventCallback, void());
+  MOCK_METHOD1(MoveCursorCallback, void(const int));
+  MOCK_METHOD1(Register, void(Delegate*));
 };
 }  // namespace ohos::adapter
 

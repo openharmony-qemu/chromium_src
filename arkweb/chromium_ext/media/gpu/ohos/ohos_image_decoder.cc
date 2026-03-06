@@ -50,7 +50,7 @@ OhosImageDecodeStatus OhosImageDecoder::Decode(
     LOG(ERROR) << "[HeifSupport] Decode image failed.";
     return OhosImageDecodeStatus::kExecuteDecodeFailed;
   }
-  LOG(INFO) << "[HeifSupport] Decode native window buffer ";
+  LOG(INFO) << "[HeifSupport] Decode native window buffer";
   return OhosImageDecodeStatus::kSuccess;
 }
 
@@ -82,7 +82,7 @@ OhosImageDecoder::GetOhosImageDecoderAdapter() {
 
 void OhosImageDecoder::ReleaseDecodedPixelMap() {
   if (OhosImageDecoderAdapter_) {
-    LOG(INFO) << "[HeifSupport] ReleaseDecodedPixelMap native window buffer ";
+    LOG(INFO) << "[HeifSupport] ReleaseDecodedPixelMap native window buffer";
     OhosImageDecoderAdapter_->ReleasePixelMap();
   }
 }

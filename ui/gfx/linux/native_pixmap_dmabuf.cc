@@ -7,7 +7,9 @@
 #include <utility>
 #include "base/logging.h"
 #include "base/posix/eintr_wrapper.h"
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
 #include <native_window/external_window.h>
+#endif // ARKWEB_HEIF_SUPPORT
 
 namespace gfx {
 

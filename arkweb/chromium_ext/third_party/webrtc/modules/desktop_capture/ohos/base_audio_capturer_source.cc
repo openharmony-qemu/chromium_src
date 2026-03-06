@@ -38,6 +38,7 @@ namespace webrtc {
 namespace {
 constexpr int32_t kInnerAudioSampleRate = 48000;
 constexpr int32_t kInnerAudioFrameCount = 960;
+constexpr int32_t kInnerAudioChannels = 2;
 }
 
 AudioScreenCapturerReadCallback::AudioScreenCapturerReadCallback(
@@ -171,7 +172,7 @@ void BaseAudioCapturerSource::HandleAudioBuffer(OHOS::NWeb::AudioCaptureSourceTy
 
   base::TimeTicks timeStamp =
       base::TimeTicks() + base::Nanoseconds(audiobuffer->GetTimestamp());
-  auto audio_bus = media::AudioBus::Create(params_.channels(), kInnerAudioFrameCount);
+  auto audio_bus = media::AudioBus::Create(kInnerAudioChannels, kInnerAudioFrameCount);
   audio_bus->FromInterleaved<media::SignedInt16SampleTypeTraits>(
       reinterpret_cast<const int16_t*>(audiobuffer->GetBuffer()),
       static_cast<int>(kInnerAudioFrameCount));

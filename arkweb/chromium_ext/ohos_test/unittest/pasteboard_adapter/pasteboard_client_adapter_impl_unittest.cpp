@@ -22,6 +22,7 @@
 #include <database/udmf/udmf_err_code.h>
 #include <database/udmf/udmf_meta.h>
 #include <database/pasteboard/oh_pasteboard_err_code.h>
+#include "third_party/bounds_checking_function/include/securec.h"
 #include "ohos_sdk/openharmony/native/sysroot/usr/include/AbilityKit/ability_runtime/ability_runtime_common.h"
 #include "arkweb/ohos_adapter_ndk/mock_ndk_api/include/mock_ndk_api_new.h"
 #define private public
@@ -218,7 +219,9 @@ AbilityRuntime_ErrorCode MockGetCacheDirSuccess(char* buffer, int32_t bufferSize
     if (static_cast<size_t>(bufferSize) <= pathLen) {
         return ABILITY_RUNTIME_ERROR_CODE_PARAM_INVALID;
     }
-    (void)memcpy(buffer, cachePath, pathLen);
+    if (memcpy_s(buffer, static_cast<size_t>(bufferSize), cachePath, pathLen) != EOK) {
+        return ABILITY_RUNTIME_ERROR_CODE_PARAM_INVALID;
+    }
     buffer[pathLen] = '\0';
     *writeLength = static_cast<int32_t>(pathLen);
     return ABILITY_RUNTIME_ERROR_CODE_NO_ERROR;

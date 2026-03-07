@@ -1497,6 +1497,10 @@ arkweb_components_performance_manager_graph_test_sources = [
   "//arkweb/chromium_ext/components/performance_manager/graph/page_node_impl_for_include_unittest.cc"
 ]
 
+arkweb_components_performance_manager_test_sources = [
+  "//arkweb/chromium_ext/components/performance_manager/performance_manager_tab_helper_utils_unittest.cc"
+]
+
 arkweb_components_captive_portal_content_sources = [
   "//arkweb/chromium_ext/components/captive_portal/content/captive_portal_tab_helper_ohos.cc",
   "//arkweb/chromium_ext/components/captive_portal/content/captive_portal_tab_helper_ohos.h",

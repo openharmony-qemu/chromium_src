@@ -500,7 +500,10 @@ source_set("unit_tests") {
     sources += [ "power/battery_level_provider_chromeos_unittest.cc" ]
   }
 
+  if (arkweb_unittests) {
   sources += arkweb_components_performance_manager_graph_test_sources
+  sources += arkweb_components_performance_manager_test_sources
+  }
 }
 
 source_set("browser_tests") {

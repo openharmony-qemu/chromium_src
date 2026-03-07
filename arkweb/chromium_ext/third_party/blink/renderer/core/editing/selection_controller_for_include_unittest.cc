@@ -1199,7 +1199,7 @@ TEST_F(SelectionControllerForIncludeTest, HandleEmptyLineTest_2ndIf) {
   const blink::PositionInFlatTree pos(top, 1);
 
   auto pos_ = blink::SelectionControllerUtils::HandleEmptyLine(top, pos, 1);
-  EXPECT_NE(pos, pos_);
+  EXPECT_EQ(pos, pos_);
 }
 
 TEST_F(SelectionControllerForIncludeTest, HandleEmptyLineTest_3rdIf) {
@@ -1237,7 +1237,36 @@ TEST_F(SelectionControllerForIncludeTest, HandleEmptyLineTest_4thIf) {
   const blink::PositionInFlatTree pos(top, 1);
 
   auto pos_ = blink::SelectionControllerUtils::HandleEmptyLine(top, pos, 1);
-  EXPECT_EQ(pos, pos_);
+  EXPECT_NE(pos, pos_);
+  EXPECT_EQ(pos.AnchorNode(), pos_.AnchorNode());
+  EXPECT_EQ(5, pos_.ComputeEditingOffset());
+}
+
+TEST_F(SelectionControllerForIncludeTest,
+       HandleEmptyLineTest_5thIf_UpdateToEditablePreviousSibling) {
+  const char* body_content =
+      "<div id='sample' contenteditable>"
+      "<span id = top>"
+      "<span id='left'>first</span>"
+      "<span id='right'>     </span>"
+      "</span>"
+      "</div>";
+  SetBodyContent(body_content);
+
+  Node* left = GetDocument().getElementById(AtomicString("left"));
+  Node* right = GetDocument().getElementById(AtomicString("right"));
+  ASSERT_TRUE(left != nullptr);
+  ASSERT_TRUE(right != nullptr);
+  ASSERT_TRUE(
+      blink::SelectionControllerUtils::SameEditablePreviousSibling(right) ==
+      left);
+
+  const blink::PositionInFlatTree pos(right, 1);
+
+  auto pos_ = blink::SelectionControllerUtils::HandleEmptyLine(right, pos, 1);
+  EXPECT_NE(pos, pos_);
+  EXPECT_EQ(left, pos_.AnchorNode());
+  EXPECT_EQ(5, pos_.ComputeEditingOffset());
 }
 
 TEST_F(SelectionControllerForIncludeTest, OffsetAdjustWhiteSpace01) {

@@ -64,6 +64,10 @@ void ReleaseDecodeOptions(OH_DecodingOptions* decodeOptions)
 void OhosImageDecoderAdapterImpl::NativeBufferFromPixelMap()
 {
     if (pixelMap_) {
+        if (nativeBuffer_) {
+            WVLOG_I("[HeifSupport] NativeBufferFromPixelMap nativeBuffer_ already exists, return");
+            return;
+        }
         Image_ErrorCode errorCode = OH_PixelmapNative_GetNativeBuffer(pixelMap_, &nativeBuffer_);
         if (errorCode == Image_ErrorCode::IMAGE_SUCCESS) {
             return;
@@ -370,7 +374,7 @@ void OhosImageDecoderAdapterImpl::ReleasePixelMap()
         }
     }
     if (bufferHandle_) {
-        delete bufferHandle_;
+        WVLOG_D("[HeifSupport] OhosImageDecoderAdapterImpl bufferHandle_ enter");
         bufferHandle_ = nullptr;
     }
 }

@@ -7,6 +7,9 @@
 #include <utility>
 #include "base/logging.h"
 #include "base/posix/eintr_wrapper.h"
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+#include <native_window/external_window.h>
+#endif // ARKWEB_HEIF_SUPPORT
 
 namespace gfx {
 
@@ -21,7 +24,15 @@ NativePixmapDmaBuf::NativePixmapDmaBuf(const gfx::Size& size,
     : size_(size), format_(format), handle_(std::move(handle)) {}
 #endif
 
-NativePixmapDmaBuf::~NativePixmapDmaBuf() {}
+NativePixmapDmaBuf::~NativePixmapDmaBuf() {
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+  if (native_window_buffer_) {
+    OH_NativeWindow_DestroyNativeWindowBuffer(
+        static_cast<OHNativeWindowBuffer*>(native_window_buffer_));
+    native_window_buffer_ = nullptr;
+  }
+#endif // ARKWEB_HEIF_SUPPORT
+}
 
 bool NativePixmapDmaBuf::AreDmaBufFdsValid() const {
   if (handle_.planes.empty())

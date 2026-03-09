@@ -16,6 +16,7 @@
 #ifndef THIRD_PARTY_BLINK_RENDERER_PLATFORM_WIDGET_BASE_UTILS_H_
 #define THIRD_PARTY_BLINK_RENDERER_PLATFORM_WIDGET_BASE_UTILS_H_
 
+#include "base/sequence_checker.h"
 #include "third_party/blink/renderer/platform/widget/compositing/layer_tree_view_delegate.h"
 #include "third_party/blink/renderer/platform/widget/compositing/render_frame_metadata_observer_impl.h"
 #include "third_party/blink/renderer/platform/widget/input/widget_base_input_handler.h"
@@ -69,6 +70,7 @@ class BLINK_PLATFORM_EXPORT WidgetBaseUtils {
 #if BUILDFLAG(IS_ARKWEB)
   bool cmd_value_ = false;
 #endif
+  SEQUENCE_CHECKER(sequence_checker_);
   base::WeakPtrFactory<WidgetBaseUtils> weak_ptr_factory_{this};
 };
 

@@ -167,7 +167,7 @@ void WebNativeBridgeImpl::StartPipeline() {
   vfc_task_runner_->PostTask(
       FROM_HERE,
       base::BindOnce(&VideoFrameCompositor::SetOnNewProcessedFrameCallback,
-                     base::Unretained(compositor_.get()),
+                     compositor_->GetWeakPtr(),
                      base::BindPostTaskToCurrentDefault(base::BindOnce(
                          &WebNativeBridgeImpl::OnFirstFrame, weak_this_))));
 

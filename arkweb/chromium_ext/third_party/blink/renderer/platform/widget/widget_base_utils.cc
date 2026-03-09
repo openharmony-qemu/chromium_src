@@ -164,6 +164,7 @@ void WidgetBaseUtils::OnOverScrollOffsetChanged(float offset_x,
 
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
 void WidgetBaseUtils::TouchHitTest(const WebPointerEvent& event, size_t i) {
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   FrameWidget* frame_widget = widget_base_->client_->FrameWidget();
   if (!frame_widget) {
     return;
@@ -171,7 +172,7 @@ void WidgetBaseUtils::TouchHitTest(const WebPointerEvent& event, size_t i) {
   frame_widget->TouchHitTest(event, i);
 }
 void WidgetBaseUtils::NativeHitTestResult(bool isNative, size_t fingerId, int layerId) {
-  if (widget_base_->widget_input_handler_manager_) {
+  if (widget_base_ && widget_base_->widget_input_handler_manager_) {
     widget_base_->widget_input_handler_manager_->manager_utils()
       ->NativeHitTestResult(isNative, fingerId, layerId);
   }
@@ -181,6 +182,10 @@ void WidgetBaseUtils::DidNativeEmbedEvent(blink::WebInputEvent::Type type,
                                           int32_t id,
                                           float x,
                                           float y) {
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  if (!widget_base_ || !widget_base_->widget_host_) {
+    return;
+  }
   mojom::blink::NativeTouchType nativeType;
   switch (type) {
     case WebInputEvent::Type::kTouchStart:
@@ -202,6 +207,7 @@ void WidgetBaseUtils::DidNativeEmbedEvent(blink::WebInputEvent::Type type,
 }
 
 void WidgetBaseUtils::MouseHitTest(const WebMouseEvent& event, int32_t button) {
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   FrameWidget* frame_widget = widget_base_->client_->FrameWidget();
   if (!frame_widget) {
     return;
@@ -212,7 +218,7 @@ void WidgetBaseUtils::MouseHitTest(const WebMouseEvent& event, int32_t button) {
 void WidgetBaseUtils::NativeMouseHitTestResult(bool isNative,
                                                int layerId,
                                                int32_t button) {
-  if (widget_base_->widget_input_handler_manager_) {
+  if (widget_base_ && widget_base_->widget_input_handler_manager_) {
     widget_base_->widget_input_handler_manager_->manager_utils()
       ->NativeMouseHitTestResult(isNative, layerId, button);
   }
@@ -225,6 +231,10 @@ void WidgetBaseUtils::DidNativeEmbedMouseEvent(
     bool isHitNativeArea,
     float x,
     float y) {
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  if (!widget_base_ || !widget_base_->widget_host_) {
+    return;
+  }
   mojom::blink::NativeMouseType nativeMouseType;
   switch (type) {
     case WebInputEvent::Type::kMouseDown:

@@ -30,6 +30,10 @@ void DocumentResourceCoordinatorUtils::OnFormEditingStateChanged(
     uint64_t form_id,
     bool did_submit)
 {
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  if (!document_resource_coordinator_ || !document_resource_coordinator_->service_) {
+    return;
+  }
   document_resource_coordinator_->service_->OnFormEditingStateChanged(
       form_id, did_submit);
 }

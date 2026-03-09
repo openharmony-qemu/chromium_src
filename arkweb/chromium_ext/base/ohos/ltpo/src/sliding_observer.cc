@@ -254,7 +254,6 @@ float SlidingObserver::GetVelocity(float velocity_x, float velocity_y) {
 }
 
 void SlidingObserver::OnDisplayInfoChange() {
-  LOG(DEBUG) << "SlidingObserver::OnDisplayInfoChange";
   if (!is_inited_) {
     return;
   }
@@ -270,7 +269,8 @@ void SlidingObserver::OnDisplayInfoChange() {
   }
   auto dpi = display->GetDpi();
   auto ratio = display->GetVirtualPixelRatio();
-  if (dpi_ > 0 || ratio > 0) {
+  LOG(DEBUG) << "SlidingObserver::OnDisplayInfoChange dpi:" << dpi << ",ratio:" << ratio;
+  if (dpi > 0 && ratio > 0) {
     dpi_ = dpi;
     virtual_pixel_ratio_ = ratio;
   }

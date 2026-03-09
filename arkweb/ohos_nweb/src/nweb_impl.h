@@ -1325,6 +1325,9 @@ class NWebImpl : public NWeb {
   void ResourceResponseDelete(int nweb_response_key);
   int32_t GetLastCommittedEntryPageTransition();
 #endif
+#if BUILDFLAG(ARKWEB_SLIDE_LTPO)
+  void UpdateWebLtpoInfo() override;
+#endif
 
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);

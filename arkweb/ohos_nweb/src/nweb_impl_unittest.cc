@@ -49,6 +49,9 @@
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
 #include "arkweb/ohos_adapter_ndk/distributeddatamgr_adapter/ohos_web_snapshot_data_base.h"
 #endif
+#if BUILDFLAG(ARKWEB_SLIDE_LTPO)
+#include "base/ohos/ltpo/include/sliding_observer.h"
+#endif
 
 using namespace testing;
 using namespace OHOS::NWeb;
@@ -8834,5 +8837,26 @@ TEST_F(NWebImplTest, OnContextMenuClosed002) {
   EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
 }
 #endif // BUILDFLAG(ARKWEB_NWEB_EX)
+
+#if BUILDFLAG(ARKWEB_SLIDE_LTPO)
+TEST_F(NWebImplTest, UpdateWebLtpoInfo001) {
+  // Test that UpdateWebLtpoInfo calls SlidingObserver::OnDisplayInfoChange
+  // This should not crash and should update the display info
+  EXPECT_NO_FATAL_FAILURE(nweb_impl_->UpdateWebLtpoInfo());
+}
+
+TEST_F(NWebImplTest, UpdateWebLtpoInfo002) {
+  // Test that UpdateWebLtpoInfo works with initialized NWebImpl
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_NO_FATAL_FAILURE(nweb_impl_->UpdateWebLtpoInfo());
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, UpdateWebLtpoInfo003) {
+  // Test that UpdateWebLtpoInfo works with null delegate
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_NO_FATAL_FAILURE(nweb_impl_->UpdateWebLtpoInfo());
+}
+#endif // BUILDFLAG(ARKWEB_SLIDE_LTPO)
 }  // namespace OHOS::NWeb
                           

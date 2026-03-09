@@ -113,10 +113,21 @@ void LocalFrame::SetHasGenericHideTypeOption(bool has_generichide_type_option) {
 #if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
 void LocalFrame::OnOverScrollOffsetChanged(float offset_x, float offset_y) {
   if (!IsMainThread()) {
-    GetTaskRunner(TaskType::kInternalDefault)
-        ->PostTask(FROM_HERE,
-                   WTF::BindOnce(&LocalFrame::OnOverScrollOffsetChanged,
-                                 weak_local_frame_.GetSafeRef(), offset_x, offset_y));
+    if (!GetFrameScheduler()) {
+      LOG(ERROR) << "LocalFrame::OnOverScrollOffsetChanged GetFrameScheduler "
+                    "is nullptr";
+      return;
+    }
+    auto task_runner = GetTaskRunner(TaskType::kInternalDefault);
+    if (!task_runner) {
+      LOG(ERROR)
+          << "LocalFrame::OnOverScrollOffsetChanged GetTaskRunner is nullptr";
+      return;
+    }
+    task_runner->PostTask(
+        FROM_HERE,
+        WTF::BindOnce(&LocalFrame::OnOverScrollOffsetChanged,
+                      weak_local_frame_.GetSafeRef(), offset_x, offset_y));
   } else {
     GetLocalFrameHostRemote().OnOverScrollOffsetChanged(offset_x, offset_y);
   }

@@ -45,6 +45,10 @@ bool IsEnableVulkan()
 BASE_FEATURE(kInsertVKEndSemaphore,
              "InsertVKEndSemaphore",
              base::FEATURE_ENABLED_BY_DEFAULT);
+
+BASE_FEATURE(kVulkanVideoZeroCopy,
+             "VulkanVideoZeroCopy",
+             base::FEATURE_ENABLED_BY_DEFAULT);
 #endif
 
 #if BUILDFLAG(ARKWEB_DRDC)

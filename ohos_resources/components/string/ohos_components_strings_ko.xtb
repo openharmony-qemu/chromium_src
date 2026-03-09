@@ -1,4 +1,16 @@
 <?xml version="1.0" ?>
 <!DOCTYPE translationbundle>
 <translationbundle lang="ko">
+<translation id="IDS_OHOS_BLOCK_PAGE_TITLE">참고</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_INFO_TITLE">웹사이트가 차단됨</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_FRAUD_INFO_TITLE">사기 주의</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_RISK_INFO_TITLE">유해 콘텐츠 예고</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_URL_TRUST_LIST_TITLE">액세스 제한됨</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_ILLEGAL_INFO_BODY">이 사이트는 불법이거나 금지된 콘텐츠를 포함하므로 액세스할 수 없습니다.</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_FRAUD_INFO_BODY">이 사이트는 사기를 시도할 수 있습니다. 개인정보를 보호하시기 바랍니다.</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_RISK_INFO_BODY">이 사이트는 안전하지 않습니다. 개인정보를 보호하시기 바랍니다.</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_DONT_PROCEED">뒤로</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_PROCEED">계속</translation>
+<translation id="IDS_OHOS_MINOR_PROTECTION_NOTE">청소년 모드가 켜져 있습니다. 이 사이트에 액세스할 수 없습니다.</translation>
+<translation id="IDS_OHOS_MINOR_PROTECTION_SETING_BUTTON">설정</translation>
 </translationbundle>

@@ -1,4 +1,16 @@
 <?xml version="1.0" ?>
 <!DOCTYPE translationbundle>
 <translationbundle lang="tr">
+<translation id="IDS_OHOS_BLOCK_PAGE_TITLE">Not</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_INFO_TITLE">Web sitesi engellendi</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_FRAUD_INFO_TITLE">Dolandırıcılığa karşı dikkatli olun</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_RISK_INFO_TITLE">Zararlı içeriklere sahip</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_URL_TRUST_LIST_TITLE">Erişim engellendi</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_ILLEGAL_INFO_BODY">Yasa dışı veya yasaklanmış içerik bulunduğu için bu siteye erişilemiyor.</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_FRAUD_INFO_BODY">Bu site sizi dolandırmaya çalışıyor olabilir. Lütfen kişisel bilgilerinizi koruyun.</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_RISK_INFO_BODY">Bu site güvenli değil. Lütfen kişisel bilgilerinizi koruyun.</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_DONT_PROCEED">Geri</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_PROCEED">Devam</translation>
+<translation id="IDS_OHOS_MINOR_PROTECTION_NOTE">Genç modu açık. Bu siteye erişilemiyor.</translation>
+<translation id="IDS_OHOS_MINOR_PROTECTION_SETING_BUTTON">Ayarlar</translation>
 </translationbundle>

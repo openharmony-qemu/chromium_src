@@ -1,4 +1,16 @@
 <?xml version="1.0" ?>
 <!DOCTYPE translationbundle>
 <translationbundle lang="pl">
+<translation id="IDS_OHOS_BLOCK_PAGE_TITLE">Uwaga</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_INFO_TITLE">Witryna internetowa zablokowana</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_FRAUD_INFO_TITLE">Chroń się przed oszustwem</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_RISK_INFO_TITLE">Wykryto szkodliwą zawartość</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_URL_TRUST_LIST_TITLE">Ograniczenia dostępu</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_ILLEGAL_INFO_BODY">Nie można uzyskać dostępu do tej witryny, ponieważ zawiera ona niezgodne z prawem lub zakazane treści.</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_FRAUD_INFO_BODY">Ta witryna może próbować Cię oszukać. Chroń swoje dane osobowe.</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_RISK_INFO_BODY">Ta witryna nie jest bezpieczna. Chroń swoje dane osobowe.</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_DONT_PROCEED">Wstecz</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_PROCEED">Kontynuuj</translation>
+<translation id="IDS_OHOS_MINOR_PROTECTION_NOTE">Tryb dla nastolatków jest włączony. Nie można uzyskać dostępu do tej witryny.</translation>
+<translation id="IDS_OHOS_MINOR_PROTECTION_SETING_BUTTON">Ustawienia</translation>
 </translationbundle>

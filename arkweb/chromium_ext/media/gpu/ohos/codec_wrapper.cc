@@ -474,6 +474,10 @@ CodecWrapper::DequeueStatus CodecWrapper::DequeueOutputBuffer(
 
 bool CodecWrapper::SetSurface(
     scoped_refptr<CodecSurfaceBundle> surface_bundle) {
+  if (!impl_) {
+    LOG(ERROR) << "CodecWrapper::SetSurface, impl_ is nullptr";
+    return false;
+  }
   return impl_->SetSurface(std::move(surface_bundle));
 }
 

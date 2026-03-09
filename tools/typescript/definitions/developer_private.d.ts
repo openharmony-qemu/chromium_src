@@ -209,6 +209,7 @@ declare global {
         submessages: string[];
       }
 
+      // #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
       export interface OptionalPermission {
         name: string;
         message: string;
@@ -220,6 +221,7 @@ declare global {
         name: string;
         enabled: boolean;
       }
+      // #endif
 
       export interface SiteControl {
         host: string;
@@ -236,8 +238,10 @@ declare global {
         simplePermissions: chrome.developerPrivate.Permission[];
         runtimeHostPermissions?: RuntimeHostPermissions;
         canAccessSiteData: boolean;
+        // #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
         optionalSimplePermissions?:
             chrome.developerPrivate.OptionalPermission[];
+        // #endif
       }
 
       export interface ExtensionInfo {
@@ -303,7 +307,9 @@ declare global {
         showAccessRequestsInToolbar?: boolean;
         acknowledgeSafetyCheckWarningReason?: SafetyCheckWarningReason;
         pinnedToToolbar?: boolean;
+        // #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
         optionalPermission?: OptionalPermissionUpdate;
+        // #endif
       }
 
       export interface ProfileConfigurationUpdate {

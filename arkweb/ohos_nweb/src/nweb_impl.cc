@@ -89,6 +89,7 @@
 
 #if BUILDFLAG(ARKWEB_API_INIT_WEB_ENGINE)
 #include "cef_delegate/nweb_application.h"
+#include "components/embedder_support/arkweb_version.h"
 #include "content/public/browser/network_service_instance.h"
 #include "services/network/network_service.h"
 #endif  // BUILDFLAG(ARKWEB_API_INIT_WEB_ENGINE)
@@ -1318,7 +1319,8 @@ bool NWebImpl::InitializeICUStatic(
 // static
 void NWebImpl::InitializeWebEngine(
     std::shared_ptr<NWebEngineInitArgs> init_args) {
-  LOG(INFO) << "NWebImpl::InitializeWebEngine, begin";
+  LOG(INFO) << "InitializeWebEngine: begin to init arkweb engine,version is "
+            << ARKWEB_VERSION;
   std::list<std::string> web_engine_args;
   InitialWebEngineArgs(web_engine_args, init_args);
 

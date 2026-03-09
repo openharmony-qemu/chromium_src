@@ -1320,7 +1320,7 @@ bool NWebImpl::InitializeICUStatic(
 void NWebImpl::InitializeWebEngine(
     std::shared_ptr<NWebEngineInitArgs> init_args) {
   LOG(INFO) << "InitializeWebEngine: begin to init arkweb engine,version is "
-            << ARKWEB_VERSION;
+            << ARKWEB_VERSION << ",compile time is " << ARKWEB_COMPILE_TIME;
   std::list<std::string> web_engine_args;
   InitialWebEngineArgs(web_engine_args, init_args);
 

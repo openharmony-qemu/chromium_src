@@ -1,6 +1,7 @@
 import json
 import optparse
 import sys
+from datetime import datetime
 
 def _ParseOptions():
     parser = optparse.OptionParser()
@@ -25,10 +26,12 @@ def ReadHeader(options):
 
 def WriteHeader(options, version):
     header_macros = "ARKWEB_VERSION_H"
+    compile_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with open(options.output_file, "w") as output_file:
         output_file.write('#ifndef %s\n' % header_macros)
         output_file.write('#define %s\n\n' % header_macros)
         output_file.write('\n#define ARKWEB_VERSION \"%s\"\n' % version)
+        output_file.write('\n#define ARKWEB_COMPILE_TIME \"%s\"\n' % compile_time)
         output_file.write('\n#endif  // %s\n' % header_macros)
 
 

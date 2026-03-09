@@ -750,7 +750,50 @@ TEST_F(NWebImplTest, GetDownloadItemStateByGuid001) {
   std::string guid = "1";
   EXPECT_EQ(nweb_impl_->GetDownloadItemStateByGuid(guid), NWebDownloadItemState::MAX_DOWNLOAD_STATE);
 }
+
+TEST_F(NWebImplTest, GetByExtensionNameByGuid001) {
+  std::string guid = "test_guid";
+  std::string result = nweb_impl_->GetByExtensionNameByGuid(guid);
+  EXPECT_EQ(result, "");
+}
+
+TEST_F(NWebImplTest, GetByExtensionIdByGuid001) {
+  std::string guid = "test_guid";
+  std::string result = nweb_impl_->GetByExtensionIdByGuid(guid);
+  EXPECT_EQ(result, "");
+}
+
+TEST_F(NWebImplTest, GetTransientByGuid001) {
+  std::string guid = "test_guid";
+  bool result = nweb_impl_->GetTransientByGuid(guid);
+  EXPECT_EQ(result, false);
+}
+
+TEST_F(NWebImplTest, GetCanResumeByGuid001) {
+  std::string guid = "test_guid";
+  bool result = nweb_impl_->GetCanResumeByGuid(guid);
+  EXPECT_EQ(result, false);
+}
 #endif // BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+
+#if BUILDFLAG(ARKWEB_SAVE_PAGE)
+TEST_F(NWebImplTest, SavePage001) {
+  int32_t type = 1;
+  std::string filePath = "/data/test.html";
+  nweb_impl_->nweb_delegate_ = nullptr;
+  bool result = nweb_impl_->SavePage(type, filePath);
+  EXPECT_EQ(result, false);
+}
+
+TEST_F(NWebImplTest, SavePage002) {
+  int32_t type = 1;
+  std::string filePath = "/data/test.html";
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, SavePage(type, filePath)).WillOnce(testing::Return(true));
+  bool result = nweb_impl_->SavePage(type, filePath);
+  EXPECT_EQ(result, true);
+}
+#endif //ARKWEB_SAVE_PAGE
 
 #if BUILDFLAG(ARKWEB_EXT_GET_ZOOM_LEVEL)
 TEST_F(NWebImplTest, SetDefaultBrowserZoomLevel001) {
@@ -8325,6 +8368,30 @@ TEST_F(NWebImplTest, SetBlanklessLoadingParams001) {
   EXPECT_EQ(result1, -5);
   auto result2 = nweb_impl_->SetBlanklessLoadingParams(key, true, 0, 0, nullptr);
   EXPECT_EQ(result2, -5);
+}
+
+TEST_F(NWebImplTest, ProcessBlanklessForUrl001) {
+  uint64_t blankless_key = 12345;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  nweb_impl_->nweb_handle_ = nullptr;
+  EXPECT_CALL(*mock_delegate_,
+              SetBlanklessLoadingKey(::testing::_, ::testing::_))
+      .Times(1);
+  bool result = nweb_impl_->ProcessBlanklessForUrl(blankless_key, false);
+  EXPECT_EQ(nweb_impl_->blankless_key_.load(), blankless_key);
+  EXPECT_EQ(result, true);
+}
+
+TEST_F(NWebImplTest, ProcessBlanklessForUrl002) {
+  uint64_t blankless_key = 67890;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  nweb_impl_->nweb_handle_ = nullptr;
+  EXPECT_CALL(*mock_delegate_,
+              SetBlanklessLoadingKey(::testing::_, ::testing::_))
+      .Times(1);
+  bool result = nweb_impl_->ProcessBlanklessForUrl(blankless_key, true);
+  EXPECT_EQ(nweb_impl_->blankless_key_.load(), blankless_key);
+  EXPECT_EQ(result, true);
 }
 #endif  // BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
 

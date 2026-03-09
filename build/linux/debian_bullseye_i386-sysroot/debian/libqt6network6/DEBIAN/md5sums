@@ -1,0 +1,8 @@
+7f3fd342b0a7213c4dde3779a3975a36  usr/lib/i386-linux-gnu/libQt6Network.so.6.4.2
+05e058192e0b24968b78e0b48842a0fa  usr/lib/i386-linux-gnu/qt6/plugins/networkinformation/libqglib.so
+12d0a3b75df744f5e7c61aa8a8da9092  usr/lib/i386-linux-gnu/qt6/plugins/networkinformation/libqnetworkmanager.so
+1ed1439a40a6f5abd039266d8b21578e  usr/lib/i386-linux-gnu/qt6/plugins/tls/libqcertonlybackend.so
+ac2425e8ba19137ba27f48b404183e8d  usr/lib/i386-linux-gnu/qt6/plugins/tls/libqopensslbackend.so
+31b7263503d651300686bd538bd5b287  usr/share/doc/libqt6network6/changelog.Debian.gz
+b34cdcf90ff7d9a4e75b63828abdb651  usr/share/doc/libqt6network6/copyright
+7bfd42c199595f1f0ff25731ce2f5c51  usr/share/lintian/overrides/libqt6network6

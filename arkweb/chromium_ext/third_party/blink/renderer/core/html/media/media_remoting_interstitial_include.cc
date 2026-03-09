@@ -28,6 +28,9 @@ void MediaRemotingInterstitial::AddMediaCastBackGround() {
   // Create Left Button
   left_button_ = MakeGarbageCollected<HTMLDivElement>(GetDocument());
   left_button_->SetShadowPseudoId(AtomicString("-internal-media-remoting-button-remote"));
+  if (GetVideoElement().html_media_element_utils_.IsRTL()) {
+    left_button_->setAttribute(html_names::kDirAttr, AtomicString("rtl"));
+  }
   left_button_->setInnerText(GetVideoElement().GetLocale().QueryString(
         IDS_MEDIA_REMOTING_CAST_STOP_CAST));
 
@@ -41,6 +44,9 @@ void MediaRemotingInterstitial::AddMediaCastBackGround() {
   // Create Right Button
   right_button_ = MakeGarbageCollected<HTMLDivElement>(GetDocument());
   right_button_->SetShadowPseudoId(AtomicString("-internal-media-remoting-button-remote"));
+  if (GetVideoElement().html_media_element_utils_.IsRTL()) {
+    right_button_->setAttribute(html_names::kDirAttr, AtomicString("rtl"));
+  }
   right_button_->setInnerText(GetVideoElement().GetLocale().QueryString(
         IDS_MEDIA_REMOTING_CAST_SWITCH_DEVICE));
 
@@ -643,6 +649,9 @@ void MediaRemotingInterstitial::InitializeMediaRemotingInterstitial() {
   cast_icon_ = MakeGarbageCollected<HTMLDivElement>(GetDocument());
   cast_icon_->setAttribute(html_names::kClassAttr,
       AtomicString("internal-media-casting-text"));
+  if (GetVideoElement().html_media_element_utils_.IsRTL()) {
+    cast_icon_->setAttribute(html_names::kDirAttr, AtomicString("rtl"));
+  }
   cast_icon_->setInnerText(GetVideoElement().GetLocale().QueryString(
       IDS_MEDIA_REMOTING_CAST_CASTING)); // casting
   video_casting_->AppendChild(cast_icon_);

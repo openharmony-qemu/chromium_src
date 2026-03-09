@@ -1,0 +1,21 @@
+Package: binutils-i686-linux-gnu
+Source: binutils
+Version: 2.35.2-2
+Architecture: i386
+Maintainer: Matthias Klose <doko@debian.org>
+Installed-Size: 8995
+Depends: binutils-common (= 2.35.2-2), libbinutils (= 2.35.2-2), libc6 (>= 2.27), libctf-nobfd0 (>= 2.33.50), libctf0 (>= 2.33.50), libgcc-s1 (>= 4.2), libstdc++6 (>= 5.2), zlib1g (>= 1:1.1.4)
+Suggests: binutils-doc (= 2.35.2-2)
+Breaks: binutils (<< 2.29-6)
+Replaces: binutils (<< 2.29-6)
+Provides: binutils-i586-linux-gnu
+Section: devel
+Priority: optional
+Multi-Arch: allowed
+Homepage: https://www.gnu.org/software/binutils/
+Description: GNU binary utilities, for i686-linux-gnu target
+ This package provides GNU assembler, linker and binary utilities
+ for the i686-linux-gnu target.
+ .
+ You don't need this package unless you plan to cross-compile programs
+ for i686-linux-gnu and i686-linux-gnu is not your native platform.

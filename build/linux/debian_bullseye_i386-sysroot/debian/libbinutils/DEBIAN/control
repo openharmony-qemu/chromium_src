@@ -1,0 +1,15 @@
+Package: libbinutils
+Source: binutils
+Version: 2.35.2-2
+Architecture: i386
+Maintainer: Matthias Klose <doko@debian.org>
+Installed-Size: 2317
+Depends: libc6 (>= 2.28), zlib1g (>= 1:1.2.0), binutils-common (= 2.35.2-2)
+Breaks: binutils (<< 2.29-6)
+Replaces: binutils (<< 2.29-6)
+Section: devel
+Priority: optional
+Multi-Arch: same
+Homepage: https://www.gnu.org/software/binutils/
+Description: GNU binary utilities (private shared library)
+ This package includes the private shared libraries libbfd and libopcodes.

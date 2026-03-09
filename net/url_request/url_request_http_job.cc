@@ -1405,6 +1405,7 @@ void URLRequestHttpJob::MaybeRetryWithSecureDnsOnly(int result) {
     RetryWithSecureDnsOnly();
     return;
   }
+  current_attempt_type_ = AttemptType::kCheckNotRetryHttpDns;
   OnStartCompleted(result);
 }
 #endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)

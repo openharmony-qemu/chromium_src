@@ -400,6 +400,12 @@ void WebSocketTransportClientSocketPool::HandOutSocket(
   DCHECK_EQ(StreamSocketHandle::SocketReuseType::kUnused, handle->reuse_type());
   DCHECK_EQ(0, handle->idle_time().InMicroseconds());
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  if (socket) {
+    handle->SetResolveInfo(socket->GetDnsResolveInfo());
+  }
+#endif
+
   handle->SetSocket(std::move(socket));
   handle->set_group_generation(0);
   handle->set_connect_timing(connect_timing);

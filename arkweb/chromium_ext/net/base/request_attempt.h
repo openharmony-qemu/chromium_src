@@ -38,7 +38,8 @@ enum AttemptType : int32_t {
   kContinueWithCertificate,
   kContinueDespiteLastError,
   kCheckWirelessChange,
-  kCheckSafeBrowsing
+  kCheckSafeBrowsing,
+  kCheckNotRetryHttpDns
 };
 
 // Request attempt info.

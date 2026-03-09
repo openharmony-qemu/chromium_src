@@ -327,6 +327,10 @@ class DnsClientImpl : public DnsClient {
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   std::string GetDnsServersString() override {
     const DnsConfig* config = GetEffectiveConfig();
+    if (!config && system_config_) {
+      config = &system_config_.value();
+    }
+
     if (!config) {
       return "[]";
     }

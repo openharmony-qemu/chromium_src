@@ -1740,6 +1740,14 @@ void URLLoader::OnReceivedRedirect(net::URLRequest* url_request,
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
   url_loader_utils_->HandleRedirectUrl(redirect_info);
 #endif
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  auto status = url_loader_utils_->CreateURLLoaderCompletionStatus();
+  if (status) {
+    response->status = std::move(*status);
+  }
+#endif
+
   ProcessInboundAttributionInterceptorOnReceivedRedirect(redirect_info,
                                                          std::move(response));
 }

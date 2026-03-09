@@ -22,9 +22,9 @@
 
 #include "base/json/json_reader.h"
 #include "build/build_config.h"
-#include "components/autofill/core/common/ohos_password_autofill_data.h"
+#include "arkweb/chromium_ext/components/autofill/core/common/arkweb_password_autofill_data.h"
+#include "chrome/test/base/chrome_render_view_host_test_harness.h"
 #include "components/password_manager/core/browser/password_form.h"
-#include "content/public/test/test_renderer_host.h"
 #include "crypto/sha2.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
@@ -82,17 +82,17 @@ class TestableChromePasswordManagerClientExt : public ChromePasswordManagerClien
   std::u16string filled_password;
 };
 
-class ChromePasswordManagerClientExtTest : public content::RenderViewHostTestHarness {
+class ChromePasswordManagerClientExtTest : public ChromeRenderViewHostTestHarness {
  public:
   void SetUp() override {
-    content::RenderViewHostTestHarness::SetUp();
+    ChromeRenderViewHostTestHarness::SetUp();
     client_ =
         std::make_unique<TestableChromePasswordManagerClientExt>(web_contents());
   }
 
   void TearDown() override {
     client_.reset();
-    content::RenderViewHostTestHarness::TearDown();
+    ChromeRenderViewHostTestHarness::TearDown();
   }
 
  protected:
@@ -299,7 +299,8 @@ TEST_F(ChromePasswordManagerClientExtTest, PasswordFormToJsonForSaveContainsExpe
   EXPECT_EQ(*password_value, "pwd_json");
 }
 
-TEST_F(ChromePasswordManagerClientExtTest, PasswordFormToJsonForRequestWithoutFocusedFrameReturnsNullopt) {
+TEST_F(ChromePasswordManagerClientExtTest,
+       PasswordFormToJsonForRequestWithoutCefBrowserReturnsNullopt) {
   const auto username = BuildFillData(
       autofill::FieldRendererId(808), true,
       autofill::mojom::OhosInputElementType::kUsernameType);

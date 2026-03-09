@@ -36,6 +36,8 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/blink/public/common/permissions/permission_utils.h"
 #include "third_party/blink/public/mojom/permissions/permission.mojom.h"
+#include "ui/base/clipboard/test/clipboard_test_util.h"
+#include "ui/base/clipboard/test/test_clipboard.h"
 #include "url/origin.h"
 
 #include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
@@ -110,11 +112,16 @@ public:
 
 class PermissionServiceImplTest : public RenderViewHostTestHarness {
 public:
-    PermissionServiceImplTest() = default;
+    PermissionServiceImplTest() {
+        ui::TestClipboard::CreateForCurrentThread();
+    }
+    ~PermissionServiceImplTest() override {
+        ui::Clipboard::DestroyClipboardForCurrentThread();
+    }
+
     PermissionServiceImplTest(const PermissionServiceImplTest&) = delete;
     PermissionServiceImplTest& operator=(const PermissionServiceImplTest&) =
         delete;
-    ~PermissionServiceImplTest() override = default;
 
     void SetUp() override {
         RenderViewHostTestHarness::SetUp();

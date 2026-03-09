@@ -324,6 +324,11 @@ OnArkWebStaticOffscreenDocumentWindowNewFunc
 uint32_t OHOS::NWeb::NWebImpl::off_screen_nweb_id_ = 0;
 #endif // ARKWEB_ARKWEB_EXTENSIONS
 
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+OnArkWebStaticRequestOpenDevToolsFunc
+    OHOS::NWeb::NWebImpl::on_request_open_dev_tools_callback_ = nullptr;
+#endif // ARKWEB_DEVTOOLS
+
 #if BUILDFLAG(ARKWEB_COOKIE)
 std::shared_ptr<OHOS::NWeb::NWebEngineInitArgs>
     OHOS::NWeb::NWebImpl::save_initargs_ = nullptr;
@@ -4255,6 +4260,26 @@ void NWebImpl::GetLastJavaScriptProxyCallingFrameInfo(
   nweb_delegate_->GetLastJavaScriptProxyCallingFrameInfo(callback);
 }
 
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+// static
+void NWebImpl::StaticOpenDevtools(const std::string& source_id,
+                                  const std::string& target_id,
+                                  std::unique_ptr<OpenDevToolsParam> param,
+                                  OpenDevToolsExtOpt& ext_opt) {
+  LOG(INFO) << " func:" << __func__;
+  int32_t devtools_nweb_id = param->nweb_id;
+  NWebImpl* nweb = NWebImpl::FromID(devtools_nweb_id);
+  if (!nweb) {
+    LOG(WARNING) << "OpenDevtools failed, no nweb";
+    return;
+  }
+  NWebDelegate::StaticOpenDevtoolsWith(nweb->nweb_delegate_,
+                                       source_id, target_id,
+                                       std::move(param),
+                                       ext_opt);
+}
+#endif // ARKWEB_DEVTOOLS
+
 void NWebImpl::OpenDevtools(std::unique_ptr<OpenDevToolsParam> param) {
   if (nweb_delegate_ == nullptr) {
     LOG(WARNING) << "OpenDevtools failed, no nweb_delegate";
@@ -4930,6 +4955,26 @@ void NWebImpl::DenyOffscreenDocumentPermission(int resources, int request_key) {
   LOG(INFO) << " func:" << __FUNCTION__;
   OffscreenPermissionRequestHandler::GetInstance()->Deny(resources,
                                                          request_key);
+}
+
+NO_SANITIZE("cfi")
+void NWebImpl::SetOnRequestOpenDevToolsCallback(
+    OnArkWebStaticRequestOpenDevToolsFunc func) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  on_request_open_dev_tools_callback_ = func;
+}
+
+NO_SANITIZE("cfi")
+void NWebImpl::OnRequestOpenDevTools(const RequestOpenDevToolsParams& params) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  if (on_request_open_dev_tools_callback_) {
+    on_request_open_dev_tools_callback_(params.type.c_str(),
+                                        params.source_id.c_str(),
+                                        params.target_id.c_str(),
+                                        params.extension_id.c_str());
+  } else {
+    LOG(ERROR) << " func:" << __FUNCTION__ << " callback is null.";
+  }
 }
 
 NO_SANITIZE("cfi")

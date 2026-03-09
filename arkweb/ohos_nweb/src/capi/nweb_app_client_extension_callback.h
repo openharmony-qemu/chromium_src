@@ -32,7 +32,9 @@
 #if BUILDFLAG(ARKWEB_NAVIGATION)
 #include "arkweb/ohos_nweb/src/capi/nweb_icon_size.h"
 #endif
-
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+#include "ohos_nweb/src/capi/nweb_devtools_message_handler.h"
+#endif // ARKWEB_DEVTOOLS
 class NWebMediaPlayerController;
 class NWebMediaPlayerListener;
 

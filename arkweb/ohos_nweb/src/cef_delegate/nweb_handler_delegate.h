@@ -85,6 +85,7 @@
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
 #include "ohos_nweb_ex/core/extension/nweb_app_client_extension_dispatcher.h"
+#include "ohos_nweb_ex/public/capi/nweb_static_types.h"
 #endif
 
 struct NativeWindow;
@@ -1004,7 +1005,9 @@ class NWebHandlerDelegate : public ArkWebClientExt,
   void RegisterScreenCaptureDelegateListener(CefRefPtr<CefScreenCaptureCallback> screen_capture_cb);
 #endif // ARKWEB_EX_SCREEN_CAPTURE
 
-  void OnRequestOpenDevTools();
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  void OnRequestOpenDevTools(const RequestOpenDevToolsParams& params) override;
+#endif // ARKWEB_DEVTOOLS
 
   void Discard();
 

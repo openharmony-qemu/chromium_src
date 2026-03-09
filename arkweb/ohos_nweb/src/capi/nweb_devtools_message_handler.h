@@ -17,6 +17,7 @@
 #define OHOS_NWEB_SRC_CAPI_NWEB_DEVTOOLS_MESSAGE_HANDLER_H_
 
 #include <memory>
+#include <string>
 
 namespace OHOS::NWeb {
 class NWebBoolValueCallback;
@@ -200,6 +201,13 @@ struct OpenDevToolsParam final {
 struct OpenDevToolsExtOpt final {
     bool canDock = false;
     bool useNativeMenu = false;
+};
+
+struct RequestOpenDevToolsParams final {
+    std::string type;
+    std::string source_id;
+    std::string target_id;
+    std::string extension_id;
 };
 
 #endif  // OHOS_NWEB_SRC_CAPI_NWEB_DEVTOOLS_MESSAGE_HANDLER_H_

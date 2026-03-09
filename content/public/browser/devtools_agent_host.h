@@ -60,6 +60,9 @@ class CONTENT_EXPORT DevToolsAgentHost
   static const char kTypeOther[];
   static const char kTypeAuctionWorklet[];
   static const char kTypeAssistiveTechnology[];
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  static const char kTypeExtensions[];
+#endif // ARKWEB_DEVTOOLS
   // File descriptor used by DevTools remote debugging pipe handler
   // to read and write protocol messages.
   static constexpr int kReadFD = 3;

@@ -23,8 +23,10 @@
 #include "base/json/json_reader.h"
 #include "build/build_config.h"
 #include "arkweb/chromium_ext/components/autofill/core/common/arkweb_password_autofill_data.h"
+#include "cef/libcef/common/app_manager.h"
 #include "chrome/test/base/chrome_render_view_host_test_harness.h"
 #include "components/password_manager/core/browser/password_form.h"
+#include "content/public/common/content_client.h"
 #include "crypto/sha2.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
@@ -82,8 +84,54 @@ class TestableChromePasswordManagerClientExt : public ChromePasswordManagerClien
   std::u16string filled_password;
 };
 
+class TestCefApp : public CefApp {
+ public:
+  TestCefApp() = default;
+  ~TestCefApp() override = default;
+
+ private:
+  IMPLEMENT_REFCOUNTING(TestCefApp);
+};
+
+class ScopedTestCefAppManager : public CefAppManager {
+ public:
+  ScopedTestCefAppManager() : application_(new TestCefApp()) {}
+  ~ScopedTestCefAppManager() override = default;
+
+  CefRefPtr<CefApp> GetApplication() override { return application_; }
+
+  content::ContentClient* GetContentClient() override {
+    return content::GetContentClient();
+  }
+
+  CefRefPtr<CefRequestContext> GetGlobalRequestContext() override {
+    return nullptr;
+  }
+
+  CefBrowserContext* CreateNewBrowserContext(
+      const CefRequestContextSettings&,
+      base::OnceClosure) override {
+    return nullptr;
+  }
+
+#if BUILDFLAG(ARKWEB_INCOGNITO_MODE)
+  CefRefPtr<CefRequestContext> GetGlobalOTRRequestContext() override {
+    return nullptr;
+  }
+#endif
+
+ private:
+  CefRefPtr<CefApp> application_;
+};
+
 class ChromePasswordManagerClientExtTest : public ChromeRenderViewHostTestHarness {
  public:
+  static void SetUpTestSuite() {
+    scoped_cef_app_manager_ = std::make_unique<ScopedTestCefAppManager>();
+  }
+
+  static void TearDownTestSuite() { scoped_cef_app_manager_.reset(); }
+
   void SetUp() override {
     ChromeRenderViewHostTestHarness::SetUp();
     client_ =
@@ -96,8 +144,12 @@ class ChromePasswordManagerClientExtTest : public ChromeRenderViewHostTestHarnes
   }
 
  protected:
+  static std::unique_ptr<ScopedTestCefAppManager> scoped_cef_app_manager_;
   std::unique_ptr<TestableChromePasswordManagerClientExt> client_;
 };
+
+std::unique_ptr<ScopedTestCefAppManager>
+    ChromePasswordManagerClientExtTest::scoped_cef_app_manager_;
 
 TEST_F(ChromePasswordManagerClientExtTest, ConstructorInitializesDefaultInputTypes) {
   EXPECT_EQ(client_->last_request_fill_username_.type,
@@ -106,6 +158,16 @@ TEST_F(ChromePasswordManagerClientExtTest, ConstructorInitializesDefaultInputTyp
   EXPECT_EQ(client_->last_request_fill_password_.type,
             autofill::mojom::OhosInputElementType::kPasswordType);
   EXPECT_FALSE(client_->last_request_fill_password_.is_focused);
+}
+
+TEST_F(ChromePasswordManagerClientExtTest, CefApplicationAccessIsNonNullInHarnessScope) {
+  ASSERT_NE(CefAppManager::Get(), nullptr);
+  CefRefPtr<CefApp> app = CefAppManager::Get()->GetApplication();
+  ASSERT_TRUE(app);
+  CefRefPtr<CefAudioHandler> audio_handler = app->GetAudioHandler();
+  EXPECT_EQ(audio_handler.get(), nullptr);
+  EXPECT_EQ(CefAppManager::Get()->GetApplication()->GetAudioHandler().get(),
+            nullptr);
 }
 
 TEST_F(ChromePasswordManagerClientExtTest, UpdateLastRequestFilledItemsUpdatesBothFields) {

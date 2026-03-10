@@ -76,6 +76,7 @@ void OHOSAudioCapturerSource::Initialize(
   if (params_.effects() & media::AudioParameters::ECHO_CANCELLER) {
     source_type = OHOS::NWeb::AudioAdapterSourceType::SOURCE_TYPE_VOICE_COMMUNICATION;
   } else {
+    LOG(INFO) << "[webrtc_logging]OHOSAudioCapturerSource::Initialize, effects disable ECHO_CANCELLER";
     source_type = OHOS::NWeb::AudioAdapterSourceType::SOURCE_TYPE_MIC;
   }
   capturerOptions->SetSourceType(source_type);

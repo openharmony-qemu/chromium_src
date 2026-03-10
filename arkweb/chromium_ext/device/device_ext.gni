@@ -12,6 +12,8 @@ device_unittests_ext = {
     "//arkweb/chromium_ext/device/fido/ohos/ohos_webauthn_api_unittest.cc",
     "//arkweb/chromium_ext/device/fido/ohos/type_conversions.cpp",
     "//arkweb/chromium_ext/device/fido/ohos/type_conversions_unittests.cc",
+    "//arkweb/chromium_ext/service/device/battery/battery_status_manager_ohos.cc",
+    "//arkweb/chromium_ext/service/device/battery/battery_status_manager_ohos_unittest.cc",
     "//arkweb/chromium_ext/service/device/wake_lock/power_save_blocker/nweb_screen_lock_tracker.cc",
     "//arkweb/chromium_ext/service/device/wake_lock/power_save_blocker/nweb_screen_lock_tracker_unittest.cc",
     "//arkweb/chromium_ext/service/device/wake_lock/power_save_blocker/power_save_blocker_ohos.cc",

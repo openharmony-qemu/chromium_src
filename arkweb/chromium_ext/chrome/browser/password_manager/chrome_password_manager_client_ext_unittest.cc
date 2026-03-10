@@ -375,7 +375,7 @@ TEST_F(ChromePasswordManagerClientExtTest, ArkPromptUserToSaveOrUpdatePasswordRe
   EXPECT_FALSE(client_->ArkPromptUserToSaveOrUpdatePassword(nullptr));
 }
 
-TEST_F(ChromePasswordManagerClientExtTest, OnRequestAutofillReturnsEarlyWhenClientMissing) {
+TEST_F(ChromePasswordManagerClientExtTest, OnRequestAutofillUpdatesLastFillState) {
   client_->form_to_request_url_ = GURL("https://before.test/");
   client_->last_fill_form_id_ = autofill::FormRendererId(11);
   client_->last_fill_focus_renderer_id_ = autofill::FieldRendererId(22);
@@ -392,9 +392,9 @@ TEST_F(ChromePasswordManagerClientExtTest, OnRequestAutofillReturnsEarlyWhenClie
       autofill::mojom::OhosPasswordFormAutofillState::kNotRequested, username,
       password);
 
-  EXPECT_EQ(client_->form_to_request_url_.spec(), "https://before.test/");
-  EXPECT_EQ(client_->last_fill_form_id_, autofill::FormRendererId(11));
-  EXPECT_EQ(client_->last_fill_focus_renderer_id_, autofill::FieldRendererId(22));
+  EXPECT_EQ(client_->form_to_request_url_.spec(), "https://after.test/");
+  EXPECT_EQ(client_->last_fill_form_id_, autofill::FormRendererId(99));
+  EXPECT_EQ(client_->last_fill_focus_renderer_id_, autofill::FieldRendererId(1));
 }
 
 TEST_F(ChromePasswordManagerClientExtTest, AutofillIdentityCheckUsesLastFocusedIds) {

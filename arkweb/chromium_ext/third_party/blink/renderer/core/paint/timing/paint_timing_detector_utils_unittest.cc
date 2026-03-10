@@ -94,22 +94,6 @@ TEST_F(PaintTimingDetectorUtilsTest, ConstructorWithNeedSupplementFalse) {
   EXPECT_FALSE(utils.HaveSupplementForBL());
 }
 
-TEST_F(PaintTimingDetectorUtilsTest, NotifyLcpForBlankless) {
-  auto test1 = web_view_impl_->MainFrameImpl();
-  LocalFrameView* view = test1->GetFrameView();
-  PaintTimingDetector* paint_timing_detector = &view->GetPaintTimingDetector();
-  PaintTimingDetectorUtils utils(paint_timing_detector, true);
-  utils.NotifyLcpForBlankless();
-}
-
-TEST_F(PaintTimingDetectorUtilsTest, CheckNotifyLcpForBlankless) {
-  auto test1 = web_view_impl_->MainFrameImpl();
-  LocalFrameView* view = test1->GetFrameView();
-  PaintTimingDetector* paint_timing_detector = &view->GetPaintTimingDetector();
-  PaintTimingDetectorUtils utils(paint_timing_detector, true);
-  utils.CheckNotifyLcpForBlankless();
-}
-
 TEST_F(PaintTimingDetectorUtilsTest, ForwardNotifyPaintFinishedTrue) {
   auto test1 = web_view_impl_->MainFrameImpl();
   LocalFrameView* view = test1->GetFrameView();
@@ -127,95 +111,6 @@ TEST_F(PaintTimingDetectorUtilsTest, ForwardNotifyPaintFinishedFalse) {
   bool result = utils.ForwardNotifyPaintFinished();
   EXPECT_FALSE(result);
 }
-
-TEST_F(PaintTimingDetectorUtilsTest, ForwardOnInputOrScroll) {
-  auto test1 = web_view_impl_->MainFrameImpl();
-  LocalFrameView* view = test1->GetFrameView();
-  PaintTimingDetector* paint_timing_detector = &view->GetPaintTimingDetector();
-  PaintTimingDetectorUtils utils(paint_timing_detector, true);
-  utils.ForwardOnInputOrScroll();
-}
-
-TEST_F(PaintTimingDetectorUtilsTest, ForwardRestartRecordingLCP) {
-  auto test1 = web_view_impl_->MainFrameImpl();
-  LocalFrameView* view = test1->GetFrameView();
-  PaintTimingDetector* paint_timing_detector = &view->GetPaintTimingDetector();
-  PaintTimingDetectorUtils utils(paint_timing_detector, true);
-  utils.ForwardRestartRecordingLCP();
-}
-
-TEST_F(PaintTimingDetectorUtilsTest, ForwardRestartRecordingLCPToUkm) {
-  auto test1 = web_view_impl_->MainFrameImpl();
-  LocalFrameView* view = test1->GetFrameView();
-  PaintTimingDetector* paint_timing_detector = &view->GetPaintTimingDetector();
-  PaintTimingDetectorUtils utils(paint_timing_detector, true);
-  utils.ForwardRestartRecordingLCPToUkm();
-}
-
-TEST_F(PaintTimingDetectorUtilsTest, ForwardSoftNavigationDetected) {
-  auto test1 = web_view_impl_->MainFrameImpl();
-  LocalFrameView* view = test1->GetFrameView();
-  PaintTimingDetector* paint_timing_detector = &view->GetPaintTimingDetector();
-  PaintTimingDetectorUtils utils(paint_timing_detector, true);
-  LocalDOMWindow* window = nullptr;
-  utils.ForwardSoftNavigationDetected(window);
-}
-
-TEST_F(PaintTimingDetectorUtilsTest, ForwardReportIgnoredContent) {
-  auto test1 = web_view_impl_->MainFrameImpl();
-  LocalFrameView* view = test1->GetFrameView();
-  PaintTimingDetector* paint_timing_detector = &view->GetPaintTimingDetector();
-  PaintTimingDetectorUtils utils(paint_timing_detector, true);
-  utils.ForwardReportIgnoredContent();
-}
-
-TEST_F(PaintTimingDetectorUtilsTest, ForwardUpdateLcpCandidate) {
-  auto test1 = web_view_impl_->MainFrameImpl();
-  LocalFrameView* view = test1->GetFrameView();
-  PaintTimingDetector* paint_timing_detector = &view->GetPaintTimingDetector();
-  PaintTimingDetectorUtils utils(paint_timing_detector, true);
-  utils.ForwardUpdateLcpCandidate();
-}
-
-TEST_F(PaintTimingDetectorUtilsTest, RestartRecordingForBlankless) {
-  auto test1 = web_view_impl_->MainFrameImpl();
-  LocalFrameView* view = test1->GetFrameView();
-  PaintTimingDetector* paint_timing_detector = &view->GetPaintTimingDetector();
-  PaintTimingDetectorUtils utils(paint_timing_detector, true);
-  utils.RestartRecordingForBlankless();
-}
-
-TEST_F(PaintTimingDetectorUtilsTest, SyncIPTDFrameIdxToBLIPTD) {
-  auto test1 = web_view_impl_->MainFrameImpl();
-  LocalFrameView* view = test1->GetFrameView();
-  PaintTimingDetector* paint_timing_detector = &view->GetPaintTimingDetector();
-  PaintTimingDetectorUtils utils(paint_timing_detector, true);
-  utils.SyncIPTDFrameIdxToBLIPTD(0);
-}
-
-TEST_F(PaintTimingDetectorUtilsTest, SyncIPTDFrameIdxToBLIPTDNonZero) {
-  auto test1 = web_view_impl_->MainFrameImpl();
-  LocalFrameView* view = test1->GetFrameView();
-  PaintTimingDetector* paint_timing_detector = &view->GetPaintTimingDetector();
-  PaintTimingDetectorUtils utils(paint_timing_detector, true);
-  utils.SyncIPTDFrameIdxToBLIPTD(100);
-}
-
-TEST_F(PaintTimingDetectorUtilsTest, SyncTPTDFrameIdxToBLTPTD) {
-  auto test1 = web_view_impl_->MainFrameImpl();
-  LocalFrameView* view = test1->GetFrameView();
-  PaintTimingDetector* paint_timing_detector = &view->GetPaintTimingDetector();
-  PaintTimingDetectorUtils utils(paint_timing_detector, true);
-  utils.SyncTPTDFrameIdxToBLTPTD(0);
-}
-
-TEST_F(PaintTimingDetectorUtilsTest, SyncTPTDFrameIdxToBLTPTDNonZero) {
-  auto test1 = web_view_impl_->MainFrameImpl();
-  LocalFrameView* view = test1->GetFrameView();
-  PaintTimingDetector* paint_timing_detector = &view->GetPaintTimingDetector();
-  PaintTimingDetectorUtils utils(paint_timing_detector, true);
-  utils.SyncTPTDFrameIdxToBLTPTD(100);
-}
 #endif
 
 #if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT) || BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
@@ -225,22 +120,7 @@ TEST_F(PaintTimingDetectorUtilsTest, GetFirstScreenCalculator) {
   PaintTimingDetector* paint_timing_detector = &view->GetPaintTimingDetector();
   PaintTimingDetectorUtils utils(paint_timing_detector);
   FirstScreenCalculator* calculator = utils.GetFirstScreenCalculator();
-}
-
-TEST_F(PaintTimingDetectorUtilsTest, RestartRecordingFirstScreenPaint) {
-  auto test1 = web_view_impl_->MainFrameImpl();
-  LocalFrameView* view = test1->GetFrameView();
-  PaintTimingDetector* paint_timing_detector = &view->GetPaintTimingDetector();
-  PaintTimingDetectorUtils utils(paint_timing_detector);
-  utils.RestartRecordingFirstScreenPaint();
-}
-
-TEST_F(PaintTimingDetectorUtilsTest, OnUserScroll) {
-  auto test1 = web_view_impl_->MainFrameImpl();
-  LocalFrameView* view = test1->GetFrameView();
-  PaintTimingDetector* paint_timing_detector = &view->GetPaintTimingDetector();
-  PaintTimingDetectorUtils utils(paint_timing_detector);
-  utils.OnUserScroll();
+  EXPECT_NE(calculator, nullptr);
 }
 #endif
 

@@ -129,7 +129,7 @@ void SameLayerNativeBufferGLOwner::UpdateNativeImage() {
   TRACE_EVENT0("gpu", "SameLayerNativeBufferGLOwner::UpdateNativeImage");
   base::AutoLock auto_lock(lock_);
   // If we've lost the texture, then do nothing.
-  if (!texture()) {
+  if (!texture() || !loader_) {
     return;
   }
 

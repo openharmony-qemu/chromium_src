@@ -123,7 +123,7 @@ class ExtensionRegistryInfoManager : public MenuManager::LoadObserver,
                               const Extension* extension,
                               UninstallReason reason) override;
   void OnExtensionLoaded(content::BrowserContext* browser_context,
-                         const Extension* extension) override {}
+                         const Extension* extension) override;
   void OnExtensionReady(content::BrowserContext* browser_context,
                         const Extension* extension) override {}
   void OnExtensionWillBeInstalled(content::BrowserContext* browser_context,

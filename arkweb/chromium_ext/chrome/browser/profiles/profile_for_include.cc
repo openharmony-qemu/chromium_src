@@ -19,8 +19,8 @@
 #include "content/public/common/content_switches.h"
 
 bool Profile::HasOTRProfile() {
-  if ((*base::CommandLine::ForCurrentProcess()).HasSwitch(
-      switches::kEnableNwebEx) && base::ohos::IsPcDevice()) {
+  if ((*base::CommandLine::ForCurrentProcess())
+          .HasSwitch(switches::kEnableNwebEx)) {
     return off_the_record_ ? true : false;
   }
 
@@ -28,8 +28,8 @@ bool Profile::HasOTRProfile() {
 }
   
 Profile* Profile::GetOTRProfile() {
-  if ((*base::CommandLine::ForCurrentProcess()).HasSwitch(
-      switches::kEnableNwebEx) && base::ohos::IsPcDevice()) {
+  if ((*base::CommandLine::ForCurrentProcess())
+          .HasSwitch(switches::kEnableNwebEx)) {
     return off_the_record_;
   }
 

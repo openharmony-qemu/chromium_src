@@ -37,16 +37,19 @@ public:
     static NWebExtensionContentSettingsCefDelegate &GetInstance();
 
     // contentsettings.get
+    bool HasOnGet();
     bool OnGet(const NWebExtensionContentSettingsGetParam* getParam, ContentSettingsGetCallback callback);
 
     void OnGetCallback(const NWebExtensionContentSettingsCallbackResult* result);
 
     // contentsettings.set
+    bool HasOnSet();
     bool OnSet(const NWebExtensionContentSettingsSetParam* setParam, ContentSettingsSetCallback callback);
 
     void OnSetCallback(const NWebExtensionContentSettingsCallbackSetResult* result);
 
     // contentsettings.clear
+    bool HasOnClear();
     bool OnClear(const NWebExtensionContentSettingsClearParam* setParam, ContentSettingsClearCallback callback);
 
     void OnClearCallback(const NWebExtensionContentSettingsCallbackSetResult* result);

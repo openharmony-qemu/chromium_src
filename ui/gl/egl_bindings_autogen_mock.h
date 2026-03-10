@@ -291,6 +291,10 @@ static void GL_BINDING_CALL
 Mock_eglSetBlobCacheFuncsANDROID(EGLDisplay dpy,
                                  EGLSetBlobFuncANDROID set,
                                  EGLGetBlobFuncANDROID get);
+static EGLBoolean GL_BINDING_CALL Mock_eglSetDamageRegionKHR(EGLDisplay dpy,
+                                                             EGLSurface surface,
+                                                             EGLint* rects,
+                                                             EGLint n_rects);
 static void GL_BINDING_CALL
 Mock_eglSetValidationEnabledANGLE(EGLBoolean validationState);
 static EGLBoolean GL_BINDING_CALL Mock_eglStreamAttribKHR(EGLDisplay dpy,

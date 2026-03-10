@@ -86,4 +86,33 @@ void SkiaOutputSurfaceImplOnGpu::SetDVsyncIfNecessary() {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+gfx::Rect SkiaOutputSurfaceImplOnGpu::GetLastBufferDamageRect() {
+  if (output_device_) {
+    return output_device_->GetLastBufferDamageRect();
+  }
+  return gfx::Rect();
+}
+
+int SkiaOutputSurfaceImplOnGpu::GetLastBufferAge() {
+  if (output_device_) {
+    return output_device_->GetLastBufferAge();
+  }
+  return 0;
+}
+
+int SkiaOutputSurfaceImplOnGpu::GetLastBufferSameCnt() {
+  if (output_device_) {
+    return output_device_->GetLastBufferSameCnt();
+  }
+  return 0;
+}
+
+void SkiaOutputSurfaceImplOnGpu::SetPresentBufferDamageRect(gfx::Rect damage_rect, gfx::Rect curr_rect) {
+  if (output_device_) {
+    (void)output_device_->SetPresentBufferDamageRect(damage_rect, curr_rect);
+  }
+}
+#endif
+
 } // namespace viz

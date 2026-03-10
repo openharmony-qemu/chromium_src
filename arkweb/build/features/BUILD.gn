@@ -275,6 +275,7 @@ if (!enable_arkweb) {
   arkweb_dss = false
   arkweb_gpu_service = false
   arkweb_same_layer = false
+  arkweb_partial_draw = false
   arkweb_js_on_document_end = false
   arkweb_touchpad_fling = false
   arkweb_media_codec = false
@@ -522,6 +523,7 @@ buildflag_header("features") {
     "ARKWEB_GPU_SERVICE=$arkweb_gpu_service",
     "ARKWEB_ACTIVE_POLICY=$arkweb_active_policy",
     "ARKWEB_SAME_LAYER=$arkweb_same_layer",
+    "ARKWEB_PARTIAL_DRAW=$arkweb_partial_draw",
     "ARKWEB_JS_ON_DOCUMENT_END=$arkweb_js_on_document_end",
     "ARKWEB_TOUCHPAD_FLING=$arkweb_touchpad_fling",
     "ARKWEB_MEDIA_CODEC=$arkweb_media_codec",

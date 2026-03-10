@@ -222,6 +222,13 @@ class VIZ_SERVICE_EXPORT SkiaOutputSurfaceImpl : public SkiaOutputSurface {
   void SetNativeInnerWeb(bool isInnerWeb) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+  gfx::Rect GetLastBufferDamageRect() override;
+  int GetLastBufferAge() override;
+  int GetLastBufferSameCnt() override;
+  bool SetPresentBufferDamageRect(gfx::Rect damage_rect, gfx::Rect curr_rect) override;
+#endif
+
 #if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
   void SetBypassVsyncCondition(int32_t condition) override;
 #endif

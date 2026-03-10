@@ -314,6 +314,13 @@ class SkiaOutputSurfaceImplOnGpu
   void SetNativeInnerWeb(bool isInnerWeb);
 #endif
 
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+  gfx::Rect GetLastBufferDamageRect();
+  int GetLastBufferAge();
+  int GetLastBufferSameCnt();
+  void SetPresentBufferDamageRect(gfx::Rect damage_rect, gfx::Rect curr_rect);
+#endif
+
 #if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
   void SetBypassVsyncCondition(int32_t condition);
 #endif

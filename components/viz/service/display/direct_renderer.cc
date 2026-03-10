@@ -457,6 +457,13 @@ void DirectRenderer::DrawFrame(
   if (needs_full_frame_redraw)
     current_frame()->root_damage_rect = gfx::Rect(device_viewport_size);
 
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+  skip_partial_paint_ = IsPresentBuffersFullDamage(current_frame()->root_damage_rect);
+  if (skip_partial_paint_) {
+    current_frame()->root_damage_rect = gfx::Rect(device_viewport_size);
+  }
+#endif
+
   if (!skip_drawing_root_render_pass) {
     DrawRenderPassAndExecuteCopyRequests(root_render_pass);
   }
@@ -854,6 +861,12 @@ void DirectRenderer::DrawRenderPass(const AggregatedRenderPass* render_pass) {
       continue;
     }
 
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+    if (is_root_render_pass && (quad.material == DrawQuad::Material::kDebugBorder) && partial_draw_debug_) {
+      continue;
+    }
+#endif
+
     if (last_sorting_context_id != quad.shared_quad_state->sorting_context_id) {
       last_sorting_context_id = quad.shared_quad_state->sorting_context_id;
       FlushPolygons(&poly_list, render_pass_scissor_in_draw_space,
@@ -882,6 +895,17 @@ void DirectRenderer::DrawRenderPass(const AggregatedRenderPass* render_pass) {
   }
   FlushPolygons(&poly_list, render_pass_scissor_in_draw_space,
                 render_pass_is_clipped);
+
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+  if (is_root_render_pass && !skip_partial_paint_) {
+    auto it = current_frame()->root_render_pass->quad_list.BackToFrontBegin();
+    const DrawQuad& damage_quad = **it;
+    if (damage_quad.material == DrawQuad::Material::kDebugBorder) {
+      DoDrawQuad(&damage_quad, nullptr);
+    }
+  }
+#endif
+
   FinishDrawingRenderPass();
 
   if (use_render_pass_drawn_rect_ && !is_root_render_pass) {

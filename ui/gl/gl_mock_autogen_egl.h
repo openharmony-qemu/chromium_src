@@ -277,6 +277,11 @@ MOCK_METHOD3(SetBlobCacheFuncsANDROID,
              void(EGLDisplay dpy,
                   EGLSetBlobFuncANDROID set,
                   EGLGetBlobFuncANDROID get));
+MOCK_METHOD4(SetDamageRegionKHR,
+             EGLBoolean(EGLDisplay dpy,
+                        EGLSurface surface,
+                        EGLint* rects,
+                        EGLint n_rects));
 MOCK_METHOD1(SetValidationEnabledANGLE, void(EGLBoolean validationState));
 MOCK_METHOD4(StreamAttribKHR,
              EGLBoolean(EGLDisplay dpy,

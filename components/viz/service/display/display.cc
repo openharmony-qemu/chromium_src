@@ -82,6 +82,10 @@
 #include "ui/gfx/presentation_feedback.h"
 #include "ui/gfx/swap_result.h"
 
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+#include "components/viz/common/quads/debug_border_draw_quad.h"
+#endif
+
 #if BUILDFLAG(IS_ANDROID)
 #include "ui/gfx/android/android_surface_control_compat.h"
 #endif
@@ -828,6 +832,10 @@ OverdrawTracker::OverdrawTimeSeries Display::StopTrackingOverdraw() {
   return overdraw_data;
 }
 
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+void AddDebugQuad(AggregatedRenderPass& last_render_pass);
+#endif
+
 bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
   TRACE_EVENT0("viz", "Display::DrawAndSwap");
   if (debug_settings_->show_aggregated_damage !=
@@ -995,6 +1003,10 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
     MaybeLogQuadsProperties(last_render_pass,
                             &(frame.surface_damage_rect_list_));
   }
+
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+  AddDebugQuad(last_render_pass);
+#endif
 
   // The CompositorFrame provided by the SurfaceAggregator includes the display
   // transform while |current_surface_size_| is the pre-transform size received
@@ -1604,3 +1616,7 @@ void Display::SetClientId(const uint32_t client_id) {
 #endif
 
 }  // namespace viz
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/components/viz/service/display/display_for_include.cc"
+#endif

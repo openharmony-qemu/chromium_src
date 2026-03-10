@@ -41,6 +41,11 @@
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+#include "base/system/sys_info.h"
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#endif
+
 #if !defined(EGL_FIXED_SIZE_ANGLE)
 #define EGL_FIXED_SIZE_ANGLE 0x3201
 #endif
@@ -393,9 +398,17 @@ std::string NativeViewGLSurfaceEGL::GetGLRenderer() {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+bool IsPartialDrawEnable();
+#endif
+
 bool NativeViewGLSurfaceEGL::Initialize(GLSurfaceFormat format) {
   DCHECK(!surface_);
   format_ = format;
+
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+  same_damage_count_ = 0;
+#endif
 
   if (display_->GetDisplay() == EGL_NO_DISPLAY) {
     LOG(ERROR) << "Trying to create NativeViewGLSurfaceEGL with invalid "
@@ -473,6 +486,19 @@ bool NativeViewGLSurfaceEGL::Initialize(GLSurfaceFormat format) {
                         EGL_POST_SUB_BUFFER_SUPPORTED_NV, &surfaceVal);
     supports_post_sub_buffer_ = (surfaceVal && retVal) == EGL_TRUE;
   }
+
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+  const char* extensions = eglQueryString(display_->GetDisplay(), EGL_EXTENSIONS);
+  if (extensions != nullptr && strstr(extensions, "EGL_KHR_partial_update") != nullptr) {
+    bool banned_device = base::ohos::IsEmulator() ||
+                         base::SysInfo::IsLowEndDevice() ||
+                         base::ohos::IsWearableDevice();
+    bool control_policy = IsPartialDrawEnable();
+    supports_post_sub_buffer_ = !banned_device && control_policy;
+  }
+
+  LOG(INFO) << "supports_post_sub_buffer = " << supports_post_sub_buffer_;
+#endif
 
   supports_swap_buffer_with_damage_ =
       display_->ext->b_EGL_KHR_swap_buffers_with_damage;
@@ -976,6 +1002,24 @@ gfx::SwapResult NativeViewGLSurfaceEGL::SwapBuffersWithDamage(
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
   arkweb_surface_utils_->SwapBuffersWithDamageSolution(scoped_swap_buffers.result(), start, GetSize());
 #endif
+
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+  EGLint surfaceVal = 0;
+  EGLBoolean retVal;
+  if (supports_post_sub_buffer_) {
+    retVal = eglQuerySurface(display_->GetDisplay(), surface_,
+                  EGL_BUFFER_AGE_KHR, &surfaceVal);
+    if (!retVal) {
+      LOG(ERROR) << "eglQuerySurface fail " << " retVal " << retVal << " surfaceVal " << surfaceVal;
+      same_damage_count_ = 0;
+    }
+  }
+
+  present_buffer_age_ = surfaceVal;
+  if (!present_buffer_age_) {
+    same_damage_count_ = 0;
+  }
+#endif
   return scoped_swap_buffers.result();
 }
 
@@ -1235,3 +1279,7 @@ SurfacelessEGL::~SurfacelessEGL() {
 }
 
 }  // namespace gl
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/ui/gl/gl_surface_egl_for_include.cc"
+#endif

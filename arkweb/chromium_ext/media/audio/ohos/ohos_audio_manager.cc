@@ -225,6 +225,9 @@ AudioParameters OHOSAudioManager::GetPreferredOutputStreamParameters(
     const AudioParameters& input_params) {
   LOG(INFO) << "OHOSAudioManager::GetPreferredOutputStreamParameters";
   SelectAudioDevice(output_device_id, false);
+  if (!params.effects()) {
+    isCommunication_ = false;
+  }
   int buffer_size = kLowLatencyOutputBufferSize;
   if (input_params.latency_tag() == AudioLatency::Type::kPlayback) {
     buffer_size = kMinimumOutputBufferSize;

@@ -46,10 +46,9 @@ struct MEDIA_EXPORT AudioProcessingSettings {
 #if BUILDFLAG(IS_IOS)
     if (stereo_mirroring)
       return true;
-#else
-    if (echo_cancellation || automatic_gain_control) {
-      return true;
-    }
+#endif
+#if BUILDFLAG(ARKWEB_WEBRTC)
+    return true;
 #endif
 
     return noise_suppression || high_pass_filter || transient_noise_suppression;

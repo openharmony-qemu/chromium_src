@@ -1,9 +1,12 @@
 #include "base/test/launcher/unit_test_launcher.h"
 #include "cef/include/cef_app.h"
+#include "cef/libcef/browser/browser_context.h"
 #include "cef/libcef/common/app_manager.h"
 #include "chrome/test/base/chrome_unit_test_suite.h"
 #include "content/public/common/content_client.h"
 #include "content/public/test/unittest_test_suite.h"
+
+#include <utility>
 
 namespace {
 
@@ -16,6 +19,26 @@ class TestCefApp : public CefApp {
   IMPLEMENT_REFCOUNTING(TestCefApp);
 };
 
+class TestCefBrowserContext : public CefBrowserContext {
+ public:
+  explicit TestCefBrowserContext(const CefRequestContextSettings& settings)
+      : CefBrowserContext(settings) {
+    Initialize();
+  }
+
+  content::BrowserContext* AsBrowserContext() override { return nullptr; }
+  Profile* AsProfile() override { return nullptr; }
+  bool IsInitialized() const override { return true; }
+  void StoreOrTriggerInitCallback(base::OnceClosure callback) override {
+    if (callback) {
+      std::move(callback).Run();
+    }
+  }
+  void AddVisitedURLs(const GURL&,
+                      const std::vector<GURL>&,
+                      ui::PageTransition) override {}
+};
+
 class ScopedTestCefAppManager : public CefAppManager {
  public:
   ScopedTestCefAppManager() : application_(new TestCefApp()) {}
@@ -24,16 +47,24 @@ class ScopedTestCefAppManager : public CefAppManager {
   CefRefPtr<CefApp> GetApplication() override { return application_; }
 
   content::ContentClient* GetContentClient() override {
-    return content::GetContentClient();
+    content::ContentClient* client = content::GetContentClientForTesting();
+    if (client) {
+      return client;
+    }
+    static content::ContentClient fallback_client;
+    return &fallback_client;
   }
 
   CefRefPtr<CefRequestContext> GetGlobalRequestContext() override {
     return nullptr;
   }
 
-  CefBrowserContext* CreateNewBrowserContext(const CefRequestContextSettings&,
-                                             base::OnceClosure) override {
-    return nullptr;
+  CefBrowserContext* CreateNewBrowserContext(const CefRequestContextSettings& settings,
+                                             base::OnceClosure initialized_cb) override {
+    if (initialized_cb) {
+      std::move(initialized_cb).Run();
+    }
+    return new TestCefBrowserContext(settings);
   }
 
 #if BUILDFLAG(ARKWEB_INCOGNITO_MODE)

@@ -24,6 +24,9 @@
 #include "build/build_config.h"
 #include "arkweb/chromium_ext/components/autofill/core/common/arkweb_password_autofill_data.h"
 #include "chrome/test/base/testing_profile.h"
+#include "components/autofill/content/browser/content_autofill_driver_factory.h"
+#include "components/autofill/content/browser/test_autofill_client_injector.h"
+#include "components/autofill/content/browser/test_content_autofill_client.h"
 #include "components/password_manager/core/browser/password_form.h"
 #include "content/public/browser/web_contents.h"
 #include "content/public/test/browser_task_environment.h"
@@ -93,6 +96,9 @@ class ChromePasswordManagerClientExtTest : public testing::Test {
     web_contents_ =
         content::WebContentsTester::CreateTestWebContents(profile_.get(),
                                                           nullptr);
+    ASSERT_NE(autofill::ContentAutofillDriverFactory::FromWebContents(
+                  web_contents_.get()),
+              nullptr);
     client_ =
         std::make_unique<TestableChromePasswordManagerClientExt>(
             web_contents_.get());
@@ -107,6 +113,8 @@ class ChromePasswordManagerClientExtTest : public testing::Test {
  protected:
   content::BrowserTaskEnvironment task_environment_;
   content::RenderViewHostTestEnabler render_view_host_test_enabler_;
+  autofill::TestAutofillClientInjector<autofill::TestContentAutofillClient>
+      autofill_client_injector_;
   std::unique_ptr<TestingProfile> profile_;
   std::unique_ptr<content::WebContents> web_contents_;
   std::unique_ptr<TestableChromePasswordManagerClientExt> client_;
@@ -279,14 +287,17 @@ TEST_F(ChromePasswordManagerClientExtTest, PasswordFormToJsonForSaveContainsExpe
 
   const base::Value* event = FindValueByKey(root, "event");
   ASSERT_NE(event, nullptr);
+  ASSERT_TRUE(event->is_string());
   EXPECT_EQ(event->GetString(), "save");
 
   const base::Value* source = FindValueByKey(root, "source");
   ASSERT_NE(source, nullptr);
+  ASSERT_TRUE(source->is_string());
   EXPECT_EQ(source->GetString(), "login");
 
   const base::Value* page_url = FindValueByKey(root, "pageUrl");
   ASSERT_NE(page_url, nullptr);
+  ASSERT_TRUE(page_url->is_string());
   EXPECT_EQ(page_url->GetString(), "https://example.com/");
 
   const base::Value* username = FindValueByKey(root, "username");
@@ -294,15 +305,19 @@ TEST_F(ChromePasswordManagerClientExtTest, PasswordFormToJsonForSaveContainsExpe
   ASSERT_TRUE(username->is_list());
   const base::Value::List& username_list = username->GetList();
   ASSERT_EQ(username_list.size(), 2u);
+  ASSERT_TRUE(username_list[0].is_dict());
   const std::string* username_value =
       username_list[0].GetDict().FindString("value");
   ASSERT_NE(username_value, nullptr);
   EXPECT_EQ(*username_value, "user_json");
+  ASSERT_TRUE(username_list[1].is_dict());
   const base::Value* selectable =
       username_list[1].GetDict().Find("selectableUsernames");
   ASSERT_NE(selectable, nullptr);
   ASSERT_TRUE(selectable->is_list());
   EXPECT_EQ(selectable->GetList().size(), 2u);
+  ASSERT_TRUE(selectable->GetList()[0].is_string());
+  ASSERT_TRUE(selectable->GetList()[1].is_string());
   EXPECT_EQ(selectable->GetList()[0].GetString(), "alt_a");
   EXPECT_EQ(selectable->GetList()[1].GetString(), "alt_b");
 
@@ -310,6 +325,7 @@ TEST_F(ChromePasswordManagerClientExtTest, PasswordFormToJsonForSaveContainsExpe
   ASSERT_NE(password, nullptr);
   ASSERT_TRUE(password->is_list());
   ASSERT_EQ(password->GetList().size(), 1u);
+  ASSERT_TRUE(password->GetList()[0].is_dict());
   const std::string* password_value =
       password->GetList()[0].GetDict().FindString("value");
   ASSERT_NE(password_value, nullptr);

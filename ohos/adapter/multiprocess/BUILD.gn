@@ -26,6 +26,7 @@
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import("//build/config/ohos/config.gni")
+import("//components/crash/ohos/crashpad.gni")
 import("//ohos/adapter/multiprocess/multiprocess.gni")
 import("//testing/test.gni")
 

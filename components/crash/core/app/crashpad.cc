@@ -266,7 +266,7 @@ void SetUploadConsent(bool consent) {
 
 #endif  // !BUILDFLAG(IS_CHROMEOS_ASH)
 
-#if !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
 void DumpWithoutCrashing() {
   CRASHPAD_SIMULATE_CRASH();
 }

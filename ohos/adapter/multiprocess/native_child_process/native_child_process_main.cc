@@ -43,6 +43,31 @@ using namespace std::chrono_literals;
 using namespace ohos::adapter;
 using namespace ohos::adapter::multiprocess;
 
+namespace {
+void FixInitClientFdForCrashDumpHandler(
+    std::vector<std::string>& cmds,
+    const AppSpawnCommunication::FdRemapVector& id_fds) {
+  std::string init_fd;
+  for (auto& [id, fd] : id_fds) {
+    // refer to content/public/common/content_descriptors.h
+    // id 0, is for crashdump
+    if (id == 0) {
+      init_fd = std::to_string((int)fd);
+      break;
+    }
+  }
+  for (int i = cmds.size() - 1; i >= 0; i--) {
+    auto cmd = cmds[i];
+    if (cmd.npos != cmd.find("--initial-client-fd=")) {
+      std::string rep("--initial-client-fd=");
+      rep.append(init_fd);
+      cmds[i] = rep;
+      return;
+    }
+  }
+}
+}
+
 void ChildMain(NativeChildProcess_Args args) {
   if (args.entryParams == nullptr) {
     return;
@@ -63,6 +88,7 @@ void ChildMain(NativeChildProcess_Args args) {
   std::vector<std::pair<int32_t, int32_t>> fds;
   NativeChildProcessArgsWrapper::Parse(args, commands, fds);
   AppSpawnCommunication::SetFdIdsRemap(fds);
+  FixInitClientFdForCrashDumpHandler(commandlines, fds);
   int ret = web_entry::RunIsolateProcessType(ProcessType::kRenderProcess,
                                              commandlines);
   LOGI("[ChildProcess] ChildMain exited with return: %{public}d", ret);

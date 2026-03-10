@@ -32,7 +32,7 @@ source_set("browser") {
     "//content/public/common",
   ]
 
-  if (is_castos || is_android) {
+  if (is_castos || is_android || is_ohos) {
     sources += [
       "crash_handler_host_linux.cc",
       "crash_handler_host_linux.h",
@@ -64,6 +64,12 @@ source_set("browser") {
     deps += [
       ":jni_headers",
       "//mojo/public/cpp/bindings",
+      "//third_party/crashpad/crashpad/client",
+    ]
+  }
+
+  if (is_ohos) {
+    deps += [
       "//third_party/crashpad/crashpad/client",
     ]
   }

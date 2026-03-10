@@ -217,7 +217,7 @@ AudioInputStream* OHOSAudioManager::MakeLowLatencyInputStream(
   LOG(INFO) << "OHOSAudioManager::MakeLowLatencyInputStream";
   isCommunication_ = true;
   SelectAudioDevice(device_id, true);
-  if (!params.effects()) {
+  if (!(params.effects() & media::AudioParameters::ECHO_CANCELLER)) {
     isCommunication_ = false;
   }
   return new OHOSAudioInputStream(this, params);
@@ -245,9 +245,6 @@ AudioParameters OHOSAudioManager::GetPreferredInputStreamParameters(
       AudioParameters(AudioParameters::AUDIO_PCM_LOW_LATENCY,
                       ChannelLayoutConfig::Guess(kDefaultChannelCount),
                       kDefaultSampleRate, kMinimumInputBufferSize);
-  params.set_effects(AudioParameters::ECHO_CANCELLER |
-                     AudioParameters::NOISE_SUPPRESSION |
-                     AudioParameters::AUTOMATIC_GAIN_CONTROL);
   return params;
 }
 

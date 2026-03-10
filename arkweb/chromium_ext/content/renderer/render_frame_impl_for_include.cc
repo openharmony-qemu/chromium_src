@@ -97,6 +97,14 @@ void RenderFrameImpl::SetOverscrollMode(int mode) {
   web_frame_widget->SetOverscrollMode(mode);
 }
 
+bool RenderFrameImpl::IsElementExist(std::string xPath) {
+  auto web_frame_widget = GetLocalRootWebFrameWidget();
+  if (!web_frame_widget) {
+    return false;
+  }
+  return web_frame_widget->IsElementExist(xPath);
+}
+
 #if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
 gfx::Vector2dF RenderFrameImpl::GetOverScrollOffset() {
   gfx::Vector2dF overscroll_offset;

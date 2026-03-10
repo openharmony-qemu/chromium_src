@@ -475,6 +475,7 @@ class CONTENT_EXPORT RenderFrameImpl
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   void SetZoomLevel(float magnify_delta, const gfx::Point& anchor) override;
   void SetOverscrollMode(int mode) override;
+  bool IsElementExist(std::string xPath) override;
 #if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
   gfx::Vector2dF GetOverScrollOffset() override;
 #endif

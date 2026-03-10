@@ -1408,6 +1408,7 @@ void NWebDelegate::ResizeVisibleViewport(uint32_t width,
     browser->GetHost()->OnTextSelected(false);
   }
 }
+
 #endif
 
 void NWebDelegate::OnTouchPress(int32_t id,
@@ -3807,6 +3808,15 @@ void NWebDelegate::SetNWebDelegateInterface(
     return;
   }
   render_handler_->SetNWebDelegateInterface(client);
+}
+bool NWebDelegate::IsElementExist(std::string& xPath) {
+   if (!GetBrowser().get()) {
+      LOG(ERROR) << "IsElementExist can not get browser";
+     return false;
+   }
+  CefString cefXPath(xPath);
+  
+  return GetBrowser()->GetHost()->IsElementExist(cefXPath);
 }
 
 void NWebDelegate::ScrollTo(float x, float y) {

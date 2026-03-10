@@ -104,6 +104,7 @@ if (!enable_arkweb) {
   arkweb_api_per = false
   arkweb_adblock = false
   arkweb_arkweb_extensions = false
+  arkweb_arkweb_extensions_header_client = false
   arkweb_notification = false
   arkweb_asan = false
   arkweb_autofill = false
@@ -348,6 +349,7 @@ buildflag_header("features") {
     "ARKWEB_API_PER=$arkweb_api_per",
     "ARKWEB_ADBLOCK=$arkweb_adblock",
     "ARKWEB_ARKWEB_EXTENSIONS=$arkweb_arkweb_extensions",
+    "ARKWEB_ARKWEB_EXTENSIONS_HEADER_CLIENT=$arkweb_arkweb_extensions_header_client",
     "ARKWEB_NOTIFICATION=$arkweb_notification",
     "ARKWEB_ASAN=$arkweb_asan",
     "ARKWEB_AUTOFILL=$arkweb_autofill",
@@ -613,7 +615,6 @@ buildflag_header("features") {
     "ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION=false",
     "ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING=$arkweb_ext_http_dns_fallback_on_dns_hijacking",
     "ARKWEB_EXT_RECEIVE_RESPONSE=$arkweb_ext_receive_response",
-    "ARKWEB_ARKWEB_EXTENSIONS_HEADER_CLIENT=false",
   ]
 
   public_configs = [ ":arkweb_global_config" ]

@@ -21,6 +21,9 @@
 #include "base/strings/string_util.h"
 #include "base/strings/stringprintf.h"
 #include "base/system/sys_info_internal.h"
+#if BUILDFLAG(IS_ARKWEB) && DCHECK_IS_ON()
+#include "base/threading/thread_restrictions.h"
+#endif
 #include "build/build_config.h"
 
 namespace {
@@ -132,6 +135,9 @@ SysInfo::HardwareInfo SysInfo::GetHardwareInfoSync() {
   static const size_t kMaxStringSize = 100u;
   HardwareInfo info;
   std::string data;
+#if BUILDFLAG(IS_ARKWEB) && DCHECK_IS_ON()
+  base::ScopedAllowBlockingForDebug allow_blocking;
+#endif
   if (ReadFileToStringWithMaxSize(
           FilePath("/sys/devices/virtual/dmi/id/sys_vendor"), &data,
           kMaxStringSize)) {

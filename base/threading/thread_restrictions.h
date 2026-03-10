@@ -511,6 +511,9 @@ class FilePath;
 class Process;
 class ScopedAllowBlockingForProc;
 class ScopedAllowBlockingForProcessMetrics;
+#if BUILDFLAG(IS_ARKWEB) && DCHECK_IS_ON()
+class ScopedAllowBlockingForDebug;
+#endif
 class ScopedAllowThreadRecallForStackSamplingProfiler;
 class SimpleThread;
 class StackSamplingProfiler;
@@ -606,6 +609,9 @@ class BASE_EXPORT ScopedAllowBlocking {
   friend class base::Process;
   friend class base::ScopedAllowBlockingForProc;
   friend class base::ScopedAllowBlockingForProcessMetrics;
+#if BUILDFLAG(IS_ARKWEB) && DCHECK_IS_ON()
+  friend class base::ScopedAllowBlockingForDebug;
+#endif
   friend class base::StackSamplingProfiler;
   friend class base::android::ScopedAllowBlockingForImportantFileWriter;
   friend class base::android::PmfUtils;
@@ -712,6 +718,10 @@ class BASE_EXPORT ScopedAllowBlocking {
 
   const AutoReset<BooleanWithOptionalStack> resetter_;
 };
+
+#if BUILDFLAG(IS_ARKWEB) && DCHECK_IS_ON()
+class ScopedAllowBlockingForDebug : public ScopedAllowBlocking {};
+#endif
 
 class ScopedAllowBlockingForTesting {
  public:

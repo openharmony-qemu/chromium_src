@@ -3794,6 +3794,7 @@ test("base_unittests") {
 
     # TODO(crbug.com/40158212): Move partition_alloc tests into its repository.
     "allocator/partition_allocator/src/partition_alloc:test_support",
+    "//third_party/blink/public:blink",
   ]
 
   # TODO(crbug.com/40158212): Move partition_alloc tests into its repository.

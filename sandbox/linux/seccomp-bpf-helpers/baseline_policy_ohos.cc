@@ -61,13 +61,10 @@ BaselinePolicyOhos::BaselinePolicyOhos()
 BaselinePolicyOhos::~BaselinePolicyOhos() = default;
 
 ResultExpr BaselinePolicyOhos::EvaluateSyscall(int sysno) const {
-#if DCHECK_IS_ON()
-// debug mode, collect stacktrace call _Unwind_Backtrace
-// _Unwind_Backtrace call syscall __NR_process_vm_readv(270)
+  // crashpad ptracer need call __NR_process_vm_readv on ohos
   if (sysno == __NR_process_vm_readv) {
     return Allow();
   }
-#endif
 
   bool override_and_allow = false;
   bool override_and_trap = false;

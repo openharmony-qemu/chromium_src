@@ -18,8 +18,8 @@
 using namespace std::chrono_literals;
 namespace ohos::adapter::web_entry {
 
-const std::string kFdRemapCommand = "--fds_to_remap=";
-const std::string kCrashpadHandler = "crashpad-handler";
+const std::string kFdRemapCommand = "--fds_to_remap";
+const std::string kCrashpadHandler = "CrashpadHandler";
 
 static bool g_initialized = false;
 static std::atomic<bool> g_destroyed(false);

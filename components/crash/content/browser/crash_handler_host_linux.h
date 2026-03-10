@@ -22,7 +22,7 @@
 #include "base/task/current_thread.h"
 #include "build/build_config.h"
 
-#if !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
 #include "components/crash/core/app/breakpad_linux_impl.h"
 #endif
 
@@ -31,7 +31,7 @@ class SequencedTaskRunner;
 class Thread;
 }
 
-#if !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
 
 namespace breakpad {
 

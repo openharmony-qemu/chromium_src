@@ -30,10 +30,12 @@
 #include "child_process_manager.h"
 
 #include <cctype>
+#include <cerrno>
 #include <filesystem>
 #include <iostream>
 #include <memory>
 #include <string>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <vector>
 
@@ -520,7 +522,8 @@ int ChildProcessManager::CreateGpuProcessInternal(
 
 bool CheckProcessDirectoryExists(pid_t pid) {
   std::string fileName = kPidPathDir + std::to_string(pid);
-  return std::filesystem::exists(fileName);
+  struct stat buffer = {};
+  return (stat(fileName.c_str(), &buffer) == 0);
 }
 
 pid_t WaitpidBlock(pid_t handle) {

@@ -78,6 +78,7 @@ void OHOSAudioCapturerSource::Initialize(
   } else {
     source_type = OHOS::NWeb::AudioAdapterSourceType::SOURCE_TYPE_MIC;
   }
+  capturerOptions->SetSourceType(source_type);
   capturerOptions->SetCapturerFlags(0);
 
   capturer_->Create(capturerOptions);

@@ -200,7 +200,7 @@ struct OpenDevToolsParam final {
 
 struct OpenDevToolsExtOpt final {
     bool canDock = false;
-    bool useNativeMenu = false;
+    bool showToolbox = false;
 };
 
 struct RequestOpenDevToolsParams final {

@@ -149,7 +149,7 @@ static const float richtextDisplayRatio = 1.0;
 struct CefOpenDevToolsExtOpt GetCefExtOpt(OpenDevToolsExtOpt& ext_opt) {
   struct CefOpenDevToolsExtOpt cef_ext_opt;
   cef_ext_opt.canDock = ext_opt.canDock;
-  cef_ext_opt.useNativeMenu = ext_opt.useNativeMenu;
+  cef_ext_opt.showToolbox = ext_opt.showToolbox;
  
   return cef_ext_opt;
 }
@@ -7183,7 +7183,7 @@ void NWebDelegate::OnContextMenuSelected(int command_id) {
     LOG(ERROR) << "menu_manager is nullptr";
     return;
   }
-  menu_manager->onConTextMenuSelected(command_id);
+  menu_manager->onContextMenuSelected(command_id);
   
 #endif // BUILDFLAG(ARKWEB_DEVTOOLS)
 }

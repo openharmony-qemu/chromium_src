@@ -5076,6 +5076,11 @@ std::string NWebImpl::GetUANameConfig(const std::string& host) {
 }
 
 // static
+std::string NWebImpl::GetUserAgentString(const std::string& ua_name) {
+  return nweb_ex::AlloyBrowserUAConfig::GetInstance()->GetUserAgentString(ua_name);
+}
+
+// static
 void NWebImpl::SetBrowserUA(const std::string& ua_name) {
   nweb_ex::AlloyBrowserUAConfig::GetInstance()->SetBrowserUA(ua_name);
 }

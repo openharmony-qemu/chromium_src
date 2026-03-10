@@ -752,6 +752,7 @@ class NWebImpl : public NWeb {
   static void SetUAForHosts(const std::string& ua_name,
                             const std::vector<std::string>& hosts);
   static std::string GetUANameConfig(const std::string& host);
+  static std::string GetUserAgentString(const std::string& ua_name);
   static void SetBrowserUA(const std::string& ua_name);
   static void EnableGlobalBrowserUAConfig(const bool enable);
   void SetBrowserUAConfigPolicy(int ua_config_policy);

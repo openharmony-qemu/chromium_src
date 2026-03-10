@@ -789,6 +789,53 @@ TEST(SlidingObserverTest, OnDisplayInfoChange002) {
   EXPECT_NE(observer.virtual_pixel_ratio_, -1);
 }
 
+TEST(SlidingObserverTest, OnDisplayInfoChange003) {
+  SlidingObserver observer;
+  observer.is_inited_ = false;
+  observer.dpi_ = -1;
+  observer.virtual_pixel_ratio_ = -1;
+
+  observer.OnDisplayInfoChange();
+  EXPECT_EQ(observer.dpi_, -1);
+  EXPECT_EQ(observer.virtual_pixel_ratio_, -1);
+}
+
+TEST(SlidingObserverTest, OnDisplayInfoChange004) {
+  SlidingObserver observer;
+  observer.is_inited_ = true;
+  observer.dpi_ = -1;
+  observer.virtual_pixel_ratio_ = -1;
+
+  observer.OnDisplayInfoChange();
+  EXPECT_NE(observer.dpi_, -1);
+  EXPECT_NE(observer.virtual_pixel_ratio_, -1);
+}
+
+TEST(SlidingObserverTest, OnDisplayInfoChange005) {
+  SlidingObserver observer;
+  observer.is_inited_ = false;
+  observer.dpi_ = 100;
+  observer.virtual_pixel_ratio_ = 2.0;
+
+  // When not initialized, values should not change
+  observer.OnDisplayInfoChange();
+  EXPECT_EQ(observer.dpi_, 100);
+  EXPECT_EQ(observer.virtual_pixel_ratio_, 2.0);
+}
+
+TEST(SlidingObserverTest, OnDisplayInfoChange006) {
+  SlidingObserver observer;
+  observer.is_inited_ = true;
+  observer.dpi_ = 100;
+  observer.virtual_pixel_ratio_ = 2.0;
+
+  // When initialized, values should be updated to display info
+  observer.OnDisplayInfoChange();
+  // Values should be updated from display info
+  EXPECT_GT(observer.dpi_, 0);
+  EXPECT_GT(observer.virtual_pixel_ratio_, 0);
+}
+
 TEST(SlidingObserverTest, SetIsPdf001) {
   SlidingObserver observer;
   observer.SetIsPdf(false);

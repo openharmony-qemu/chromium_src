@@ -268,12 +268,12 @@ ResultExpr BaselinePolicyOhos::EvaluateSyscall(int sysno) const {
   if (sysno == __NR_timerfd_create) {
 #define TFD_CLOEXEC  02000000
 #define TFD_NONBLOCK 00004000
-    const Arg<int> clockid(0);
-    const Arg<int> flags(1);
+    const Arg<int> clockid(0), flags(1);
 
     return Switch(clockid)
         .Cases({CLOCK_MONOTONIC},
-               If(flags == (TFD_CLOEXEC | TFD_NONBLOCK), Allow()).Else(CrashSIGSYS()))
+               If(flags == (TFD_CLOEXEC | TFD_NONBLOCK), Error(EPERM))
+                   .Else(CrashSIGSYS()))
         .Default(BaselinePolicy::EvaluateSyscall(sysno));
   }
 
@@ -284,6 +284,16 @@ ResultExpr BaselinePolicyOhos::EvaluateSyscall(int sysno) const {
     return Switch(option)
         .Cases({TFD_TIMER_ABSTIME, 0},
                Error(EPERM))
+        .Default(BaselinePolicy::EvaluateSyscall(sysno));
+  }
+
+  if (sysno == __NR_getsockopt) {
+    const Arg<int> level(1), optname(2);
+
+    return Switch(level)
+        .Cases(
+            {SOL_SOCKET},
+            If(optname == SO_SNDBUF, Error(EPERM)).Else(CrashSIGSYSSockopt()))
         .Default(BaselinePolicy::EvaluateSyscall(sysno));
   }
 #endif

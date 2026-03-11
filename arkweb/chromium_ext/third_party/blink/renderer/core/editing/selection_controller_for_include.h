@@ -59,6 +59,8 @@ class SelectionControllerUtils {
 
   static Node* UpdateAnchorIfWhiteSpace(Node* inner_node,
                                  const PositionInFlatTree& pos);
+
+  static bool IsValidAISelection(const WTF::Vector<int8_t>& select);
 };
 
 }  // namespace blink

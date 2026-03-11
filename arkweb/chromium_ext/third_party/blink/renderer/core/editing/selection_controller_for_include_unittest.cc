@@ -1706,6 +1706,55 @@ TEST_F(SelectionControllerForIncludeTest, ShowSelectionByLastLinkHitTestResult04
   EXPECT_FALSE(result);
 }
 
+TEST_F(SelectionControllerForIncludeTest, IsValidAISelection_ValidRange) {
+  WTF::Vector<int8_t> select;
+  select.push_back(0);
+  select.push_back(5);
+  EXPECT_TRUE(SelectionControllerUtils::IsValidAISelection(select));
+}
+
+TEST_F(SelectionControllerForIncludeTest, IsValidAISelection_ValidRangeWithZeroStart) {
+  WTF::Vector<int8_t> select;
+  select.push_back(0);
+  select.push_back(3);
+  EXPECT_TRUE(SelectionControllerUtils::IsValidAISelection(select));
+}
+
+TEST_F(SelectionControllerForIncludeTest, IsValidAISelection_FailCase) {
+  WTF::Vector<int8_t> select;
+  select.push_back(-1);
+  select.push_back(-1);
+  EXPECT_FALSE(SelectionControllerUtils::IsValidAISelection(select));
+}
+
+TEST_F(SelectionControllerForIncludeTest, IsValidAISelection_EmptySelection) {
+  WTF::Vector<int8_t> select;
+  select.push_back(5);
+  select.push_back(5);
+  EXPECT_FALSE(SelectionControllerUtils::IsValidAISelection(select));
+}
+
+TEST_F(SelectionControllerForIncludeTest, IsValidAISelection_PartialFailStart) {
+  WTF::Vector<int8_t> select;
+  select.push_back(-1);
+  select.push_back(5);
+  EXPECT_FALSE(SelectionControllerUtils::IsValidAISelection(select));
+}
+
+TEST_F(SelectionControllerForIncludeTest, IsValidAISelection_PartialFailEnd) {
+  WTF::Vector<int8_t> select;
+  select.push_back(5);
+  select.push_back(-1);
+  EXPECT_FALSE(SelectionControllerUtils::IsValidAISelection(select));
+}
+
+TEST_F(SelectionControllerForIncludeTest, IsValidAISelection_EmptyRangeAtZero) {
+  WTF::Vector<int8_t> select;
+  select.push_back(0);
+  select.push_back(0);
+  EXPECT_FALSE(SelectionControllerUtils::IsValidAISelection(select));
+}
+
 TEST_F(SelectionControllerForIncludeTest, ShowSelectionByLastLinkHitTestResult05) {
   GetDocument().documentElement()->setInnerHTML(R"HTML(
     <body>

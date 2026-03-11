@@ -17,7 +17,6 @@
 #include "media/base/audio_glitch_info.h"
 #include "media/base/audio_parameters.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
-#include "arkweb/build/features/features.h"
 
 namespace media {
 

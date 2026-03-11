@@ -18,11 +18,12 @@
 #include <string>
 #include <vector>
 
-#include "arkweb/chromium_ext/net/dns/secure_dns_fallback_utils.h"
 #include "arkweb/chromium_ext/net/dns/public/resolve_info.h"
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/functional/callback.h"
 #include "base/test/task_environment.h"
 #include "base/time/time.h"
+#include "build/build_config.h"
 #include "net/base/connection_endpoint_metadata.h"
 #include "net/base/ip_address.h"
 #include "net/base/ip_endpoint.h"
@@ -42,6 +43,10 @@
 #include "net/url_request/url_request_context_builder.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "url/scheme_host_port.h"
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#include "arkweb/chromium_ext/net/dns/secure_dns_fallback_utils.h"
+#endif
 
 #define private public
 #define protected public
@@ -70,6 +75,7 @@ HostCache::Entry MakeHostCacheEntry(int error,
                           HostCache::Entry::Source::SOURCE_DNS, kTtl);
 }
 
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 // Helper function to set suspect IP and source host lists for testing.
 void SetSuspectData(const std::vector<std::string>& hosts,
                     const std::vector<std::string>& ips) {
@@ -80,6 +86,7 @@ void SetSuspectData(const std::vector<std::string>& hosts,
 void ClearSuspectData() {
   StoreSuspectIPListAndSourceHostList({}, {});
 }
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 
 }  // namespace
 
@@ -101,7 +108,7 @@ class HostResolverManagerServiceEndpointRequestImplTest
         url::SchemeHostPort("https", "example.com", 443),
         NetworkAnonymizationKey(),
         NetLogWithSource(),
-        ResolveHostParameters(),
+        HostResolver::ResolveHostParameters(),
         resolve_context_->GetWeakPtr(),
         base::WeakPtr<HostResolverManager>(),
         base::DefaultTickClock::GetInstance());

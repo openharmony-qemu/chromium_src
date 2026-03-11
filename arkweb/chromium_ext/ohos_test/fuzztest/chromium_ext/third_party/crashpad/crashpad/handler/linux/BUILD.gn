@@ -1,0 +1,73 @@
+# Copyright (c) 2026 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/config/features.gni")
+import("//testing/libfuzzer/fuzzer_test.gni")
+
+fuzzer_test("crash_report_exception_handler_ext_fuzzer") {
+  sources = [ "crash_report_exception_handler_ext_fuzzer.cpp" ]
+  include_dirs = [
+    "//cef",
+    "//ohos_nweb/include",
+    "//ohos_nweb/src",
+    "//third_party/crashpad/crashpad/client",
+  ]
+  deps = [
+    "//cef:libcef_static",
+    "//ohos_nweb:cef_nweb",
+    "//ohos_nweb:nweb_sources",
+    "//third_party/crashpad/crashpad/client",
+  ]
+}
+
+fuzzer_test("crash_report_exception_handler_utils_fuzzer") {
+  sources = [ "crash_report_exception_handler_utils_fuzzer.cpp" ]
+  include_dirs = [
+    "//cef",
+    "//ohos_nweb/include",
+    "//ohos_nweb/src",
+    "//third_party/crashpad/crashpad/client",
+  ]
+  deps = [
+    "//cef:libcef_static",
+    "//ohos_nweb:cef_nweb",
+    "//ohos_nweb:nweb_sources",
+    "//third_party/crashpad/crashpad/client",
+  ]
+}
+
+fuzzer_test("crashpad_client_linux_utils_fuzzer") {
+  sources = [ "crashpad_client_linux_utils_fuzzer.cpp" ]
+  include_dirs = [
+    "//cef",
+    "//ohos_nweb/include",
+    "//ohos_nweb/src",
+    "//third_party/crashpad/crashpad/client",
+  ]
+  deps = [
+    "//cef:libcef_static",
+    "//ohos_nweb:cef_nweb",
+    "//ohos_nweb:nweb_sources",
+    "//third_party/crashpad/crashpad/client",
+  ]
+}
+
+## Crashpad Linux Handler Fuzzers
+group("crashpad_handler_linux_fuzzers") {
+  testonly = true
+  deps = [
+    ":crash_report_exception_handler_ext_fuzzer",
+    ":crash_report_exception_handler_utils_fuzzer",
+    ":crashpad_client_linux_utils_fuzzer",
+  ]
+}

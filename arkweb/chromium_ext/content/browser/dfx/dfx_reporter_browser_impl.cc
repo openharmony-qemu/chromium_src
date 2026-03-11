@@ -86,8 +86,13 @@ void GetGpuUsage(pid_t pid, const std::map<std::string, std::string>& memMap, bo
 void ReportRendererInfo(const std::string& sysEventInfoJson, bool isSysEvent)
 {
   const auto sysEventInfo = base::JSONReader::ReadAndReturnValueWithError(sysEventInfoJson);
-  if (!sysEventInfo.has_value() || !sysEventInfo->is_dict()) {
+  if (!sysEventInfo.has_value()) {
     LOG(ERROR) << "get sysEventInfo error:" << sysEventInfo.error().message;
+    return;
+  }
+
+  if (!sysEventInfo->is_dict()) {
+    LOG(ERROR) << "sysEventInfo is not dictionary type";
     return;
   }
 

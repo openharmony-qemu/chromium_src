@@ -1,0 +1,39 @@
+# Copyright (c) 2026 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/config/features.gni")
+import("//testing/libfuzzer/fuzzer_test.gni")
+
+fuzzer_test("system_memory_pressure_evaluator_ohos_fuzzer") {
+  sources = [ "system_memory_pressure_evaluator_ohos_fuzzer.cpp" ]
+  include_dirs = [
+    "//cef",
+    "//ohos_nweb/include",
+    "//ohos_nweb/src",
+    "//third_party/crashpad/crashpad/client",
+  ]
+  deps = [
+    "//cef:libcef_static",
+    "//ohos_nweb:cef_nweb",
+    "//ohos_nweb:nweb_sources",
+    "//third_party/crashpad/crashpad/client",
+  ]
+}
+
+## Memory Pressure Fuzzers
+group("system_memory_fuzzers") {
+  testonly = true
+  deps = [
+    ":system_memory_pressure_evaluator_ohos_fuzzer",
+  ]
+}

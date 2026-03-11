@@ -1,0 +1,61 @@
+# Copyright (c) 2026 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/buildflag_header.gni")
+import("//build/config/features.gni")
+import("//build/config/ohos/config.gni")
+import("//ohos_nweb/src/nweb_sysevent.gni")
+import("//tools/grit/grit_rule.gni")
+import("//tools/grit/repack.gni")
+import("//testing/libfuzzer/fuzzer_test.gni")
+import("//testing/test.gni")
+import("//arkweb/build/features/features.gni")
+
+fuzzer_test("proc_info_ohos_fuzzer") {
+  sources = [ "proc_info_ohos_fuzzer.cpp" ]
+  include_dirs = [
+    "//cef",
+    "//ohos_nweb/include",
+    "//ohos_nweb/src",
+  ]
+  deps = [
+    "//cef:libcef_static",
+    "//ohos_nweb:cef_nweb",
+    "//ohos_nweb:nweb_sources",
+  ]
+}
+
+fuzzer_test("ptrace_broker_utils_fuzzer") {
+  sources = [ "ptrace_broker_utils_fuzzer.cpp" ]
+  include_dirs = [
+    "//cef",
+    "//ohos_nweb/include",
+    "//ohos_nweb/src",
+    "//third_party/crashpad/crashpad/client",
+  ]
+  deps = [
+    "//cef:libcef_static",
+    "//ohos_nweb:cef_nweb",
+    "//ohos_nweb:nweb_sources",
+    "//third_party/crashpad/crashpad/client",
+  ]
+}
+
+## group for all frame module Fuzzers
+group("crashpad_util_linux_fuzzers") {
+  testonly = true
+  deps = [
+    ":ptrace_broker_utils_fuzzer",
+    ":proc_info_ohos_fuzzer",
+  ]
+}

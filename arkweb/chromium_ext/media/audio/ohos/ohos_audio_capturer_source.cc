@@ -179,7 +179,7 @@ void OHOSAudioCapturerSource::ReadData() {
 // LCOV_EXCL_STOP
 
 void OHOSAudioCapturerSource::SetVolume(double volume) {
-#if BUILDFLAG(ARKWEB_TEST) || BUILDFLAG(ARKWEB_WEBRTC)
+#if BUILDFLAG(ARKWEB_TEST)
   return;
 #endif  
   NOTREACHED();

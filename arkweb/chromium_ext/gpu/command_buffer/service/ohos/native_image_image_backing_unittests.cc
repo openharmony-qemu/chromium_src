@@ -222,4 +222,532 @@ TEST_F(NativeImageImageBackingTest, ProduceSkiaGanesh_NonGLContext)
         backing_->ProduceSkiaGanesh(&manager, tracker_.get(), non_gl_context_state);
     EXPECT_EQ(result, nullptr);
 }
+
+TEST_F(NativeImageImageBackingTest, OnContextLost)
+{
+    EXPECT_CALL(*stream_texture_sii_, ReleaseResources()).Times(1);
+    backing_->OnContextLost();
+    EXPECT_EQ(backing_->context_state_, nullptr);
+    // Destructor should handle context_state_ == nullptr gracefully
+    EXPECT_CALL(*stream_texture_sii_, ReleaseResources()).Times(1);
+    backing_.reset();
+}
+
+TEST_F(NativeImageImageBackingTest, DestructorWithNullStreamTextureSii)
+{
+    // After OnContextLost, stream_texture_sii_ is still valid but
+    // context_state_ is null. Test destructor with stream_texture_sii_ reset.
+    EXPECT_CALL(*stream_texture_sii_, ReleaseResources()).Times(1);
+    backing_->OnContextLost();
+    backing_->stream_texture_sii_.reset();
+    // Destructor should not crash with nullptr stream_texture_sii_
+    backing_.reset();
+}
+
+TEST_F(NativeImageImageBackingTest, ProduceGLTexturePassthrough_Success)
+{
+    EXPECT_CALL(*stream_texture_sii_, HasTextureOwner())
+        .WillOnce(Return(true));
+    SharedImageManager manager;
+    std::unique_ptr<GLTexturePassthroughImageRepresentation> result =
+        backing_->ProduceGLTexturePassthrough(&manager, tracker_.get());
+    EXPECT_NE(result, nullptr);
+    EXPECT_NE(result->GetTexturePassthrough(0), nullptr);
+}
+
+TEST_F(NativeImageImageBackingTest, ProduceSkiaGanesh_GLContext_Success)
+{
+    SharedImageManager manager;
+    std::unique_ptr<SkiaGaneshImageRepresentation> result =
+        backing_->ProduceSkiaGanesh(&manager, tracker_.get(), context_state_);
+    EXPECT_NE(result, nullptr);
+}
+
+TEST_F(NativeImageImageBackingTest, GLTexture_BeginAccess_EndAccess)
+{
+    SharedImageManager manager;
+    auto representation = backing_->ProduceGLTexture(&manager, tracker_.get());
+    ASSERT_NE(representation, nullptr);
+    EXPECT_CALL(*stream_texture_sii_, UpdateAndBindTexImage(testing::_)).Times(1);
+    bool result = representation->BeginAccess(GL_SHARED_IMAGE_ACCESS_MODE_READ_CHROMIUM);
+    EXPECT_TRUE(result);
+    representation->EndAccess();
+}
+
+TEST_F(NativeImageImageBackingTest, GLTexturePassthrough_BeginAccess_EndAccess)
+{
+    EXPECT_CALL(*stream_texture_sii_, HasTextureOwner())
+        .WillOnce(Return(true));
+    SharedImageManager manager;
+    auto representation = backing_->ProduceGLTexturePassthrough(&manager, tracker_.get());
+    ASSERT_NE(representation, nullptr);
+    EXPECT_CALL(*stream_texture_sii_, UpdateAndBindTexImage(testing::_)).Times(1);
+    bool result = representation->BeginAccess(GL_SHARED_IMAGE_ACCESS_MODE_READ_CHROMIUM);
+    EXPECT_TRUE(result);
+    representation->EndAccess();
+}
+
+TEST_F(NativeImageImageBackingTest, GLTexture_GetTexture)
+{
+    SharedImageManager manager;
+    auto representation = backing_->ProduceGLTexture(&manager, tracker_.get());
+    ASSERT_NE(representation, nullptr);
+    auto* texture = representation->GetTexture(0);
+    EXPECT_NE(texture, nullptr);
+}
+
+TEST_F(NativeImageImageBackingTest, GLTexturePassthrough_GetTexturePassthrough)
+{
+    EXPECT_CALL(*stream_texture_sii_, HasTextureOwner())
+        .WillOnce(Return(true));
+    SharedImageManager manager;
+    auto representation = backing_->ProduceGLTexturePassthrough(&manager, tracker_.get());
+    ASSERT_NE(representation, nullptr);
+    const auto& texture = representation->GetTexturePassthrough(0);
+    EXPECT_NE(texture, nullptr);
+}
+
+TEST_F(NativeImageImageBackingTest, BeginGLReadAccess)
+{
+    EXPECT_CALL(*stream_texture_sii_, UpdateAndBindTexImage(123u)).Times(1);
+    backing_->BeginGLReadAccess(123u);
+}
+
+TEST_F(NativeImageImageBackingTest, GetEstimatedSizeForMemoryDump_AlwaysZero)
+{
+    size_t estimated_size = backing_->GetEstimatedSizeForMemoryDump();
+    EXPECT_EQ(estimated_size, 0u);
+}
+
+TEST_F(NativeImageImageBackingTest, MultipleGLTextureRepresentations)
+{
+    EXPECT_CALL(*stream_texture_sii_, HasTextureOwner())
+        .Times(2)
+        .WillRepeatedly(Return(true));
+    SharedImageManager manager;
+    auto rep1 = backing_->ProduceGLTexture(&manager, tracker_.get());
+    auto rep2 = backing_->ProduceGLTexture(&manager, tracker_.get());
+    EXPECT_NE(rep1, nullptr);
+    EXPECT_NE(rep2, nullptr);
+}
+
+TEST_F(NativeImageImageBackingTest, MultiplePassthroughRepresentations)
+{
+    EXPECT_CALL(*stream_texture_sii_, HasTextureOwner())
+        .Times(2)
+        .WillRepeatedly(Return(true));
+    SharedImageManager manager;
+    auto rep1 = backing_->ProduceGLTexturePassthrough(&manager, tracker_.get());
+    auto rep2 = backing_->ProduceGLTexturePassthrough(&manager, tracker_.get());
+    EXPECT_NE(rep1, nullptr);
+    EXPECT_NE(rep2, nullptr);
+}
+
+TEST_F(NativeImageImageBackingTest, BackingMailboxMatchesInput)
+{
+    EXPECT_EQ(backing_->mailbox(), mailbox_);
+}
+
+TEST_F(NativeImageImageBackingTest, BackingSizeMatchesInput)
+{
+    EXPECT_EQ(backing_->size(), size_);
+}
+
+TEST_F(NativeImageImageBackingTest, BackingColorSpaceMatchesInput)
+{
+    EXPECT_EQ(backing_->color_space(), color_space_);
+}
+
+TEST_F(NativeImageImageBackingTest, BackingSurfaceOriginMatchesInput)
+{
+    EXPECT_EQ(backing_->surface_origin(), surface_origin_);
+}
+
+TEST_F(NativeImageImageBackingTest, BackingAlphaTypeMatchesInput)
+{
+    EXPECT_EQ(backing_->alpha_type(), alpha_type_);
+}
+
+TEST_F(NativeImageImageBackingTest, OnContextLost_SetsContextStateToNull)
+{
+    ASSERT_NE(backing_->context_state_, nullptr);
+    EXPECT_CALL(*stream_texture_sii_, ReleaseResources()).Times(1);
+    backing_->OnContextLost();
+    EXPECT_EQ(backing_->context_state_, nullptr);
+    EXPECT_CALL(*stream_texture_sii_, ReleaseResources()).Times(1);
+    backing_.reset();
+}
+
+TEST_F(NativeImageImageBackingTest, OnContextLost_CalledTwice_SecondCallSafe)
+{
+    EXPECT_CALL(*stream_texture_sii_, ReleaseResources()).Times(1);
+    backing_->OnContextLost();
+    EXPECT_EQ(backing_->context_state_, nullptr);
+    // Second call with context_state_ already null should be safe
+    backing_->OnContextLost();
+    EXPECT_EQ(backing_->context_state_, nullptr);
+    EXPECT_CALL(*stream_texture_sii_, ReleaseResources()).Times(1);
+    backing_.reset();
+}
+
+TEST_F(NativeImageImageBackingTest, OnContextLost_StreamTextureSiiRemainsValidAfterContextLost)
+{
+    EXPECT_CALL(*stream_texture_sii_, ReleaseResources()).Times(1);
+    backing_->OnContextLost();
+    EXPECT_NE(backing_->stream_texture_sii_, nullptr);
+    EXPECT_EQ(backing_->context_state_, nullptr);
+    EXPECT_CALL(*stream_texture_sii_, ReleaseResources()).Times(1);
+    backing_.reset();
+}
+
+TEST_F(NativeImageImageBackingTest, GLTexture_BeginAccess_ReadWriteMode)
+{
+    SharedImageManager manager;
+    auto representation = backing_->ProduceGLTexture(&manager, tracker_.get());
+    ASSERT_NE(representation, nullptr);
+    EXPECT_CALL(*stream_texture_sii_, UpdateAndBindTexImage(testing::_)).Times(1);
+    bool result = representation->BeginAccess(GL_SHARED_IMAGE_ACCESS_MODE_READWRITE_CHROMIUM);
+    EXPECT_TRUE(result);
+    representation->EndAccess();
+}
+
+TEST_F(NativeImageImageBackingTest, GLTexture_BeginEndAccess_ThreeCycles)
+{
+    SharedImageManager manager;
+    auto representation = backing_->ProduceGLTexture(&manager, tracker_.get());
+    ASSERT_NE(representation, nullptr);
+    EXPECT_CALL(*stream_texture_sii_, UpdateAndBindTexImage(testing::_)).Times(3);
+    for (int i = 0; i < 3; ++i) {
+        bool result = representation->BeginAccess(GL_SHARED_IMAGE_ACCESS_MODE_READ_CHROMIUM);
+        EXPECT_TRUE(result);
+        representation->EndAccess();
+    }
+}
+
+TEST_F(NativeImageImageBackingTest, GLTexture_DestroyRepresentationWithoutAccess)
+{
+    SharedImageManager manager;
+    auto representation = backing_->ProduceGLTexture(&manager, tracker_.get());
+    ASSERT_NE(representation, nullptr);
+    // Destroy without calling BeginAccess - should be safe
+    representation.reset();
+    EXPECT_NE(backing_, nullptr);
+}
+
+TEST_F(NativeImageImageBackingTest, GLTexturePassthrough_BeginAccess_ReadWriteMode)
+{
+    EXPECT_CALL(*stream_texture_sii_, HasTextureOwner())
+        .WillOnce(Return(true));
+    SharedImageManager manager;
+    auto representation = backing_->ProduceGLTexturePassthrough(&manager, tracker_.get());
+    ASSERT_NE(representation, nullptr);
+    EXPECT_CALL(*stream_texture_sii_, UpdateAndBindTexImage(testing::_)).Times(1);
+    bool result = representation->BeginAccess(GL_SHARED_IMAGE_ACCESS_MODE_READWRITE_CHROMIUM);
+    EXPECT_TRUE(result);
+    representation->EndAccess();
+}
+
+TEST_F(NativeImageImageBackingTest, GLTexturePassthrough_BeginEndAccess_TwoCycles)
+{
+    EXPECT_CALL(*stream_texture_sii_, HasTextureOwner())
+        .WillOnce(Return(true));
+    SharedImageManager manager;
+    auto representation = backing_->ProduceGLTexturePassthrough(&manager, tracker_.get());
+    ASSERT_NE(representation, nullptr);
+    EXPECT_CALL(*stream_texture_sii_, UpdateAndBindTexImage(testing::_)).Times(2);
+    for (int i = 0; i < 2; ++i) {
+        bool result = representation->BeginAccess(GL_SHARED_IMAGE_ACCESS_MODE_READ_CHROMIUM);
+        EXPECT_TRUE(result);
+        representation->EndAccess();
+    }
+}
+
+TEST_F(NativeImageImageBackingTest, GLTexturePassthrough_DestroyRepresentationWithoutAccess)
+{
+    EXPECT_CALL(*stream_texture_sii_, HasTextureOwner())
+        .WillOnce(Return(true));
+    SharedImageManager manager;
+    auto representation = backing_->ProduceGLTexturePassthrough(&manager, tracker_.get());
+    ASSERT_NE(representation, nullptr);
+    representation.reset();
+    EXPECT_NE(backing_, nullptr);
+}
+
+TEST_F(NativeImageImageBackingTest, BeginGLReadAccess_ZeroServiceId)
+{
+    EXPECT_CALL(*stream_texture_sii_, UpdateAndBindTexImage(0u)).Times(1);
+    backing_->BeginGLReadAccess(0u);
+}
+
+TEST_F(NativeImageImageBackingTest, BeginGLReadAccess_LargeServiceId)
+{
+    GLuint large_id = 0x0000FFFFu;
+    EXPECT_CALL(*stream_texture_sii_, UpdateAndBindTexImage(large_id)).Times(1);
+    backing_->BeginGLReadAccess(large_id);
+}
+
+TEST_F(NativeImageImageBackingTest, BeginGLReadAccess_SequentialDifferentIds)
+{
+    EXPECT_CALL(*stream_texture_sii_, UpdateAndBindTexImage(10u)).Times(1);
+    EXPECT_CALL(*stream_texture_sii_, UpdateAndBindTexImage(20u)).Times(1);
+    EXPECT_CALL(*stream_texture_sii_, UpdateAndBindTexImage(30u)).Times(1);
+    backing_->BeginGLReadAccess(10u);
+    backing_->BeginGLReadAccess(20u);
+    backing_->BeginGLReadAccess(30u);
+}
+
+TEST_F(NativeImageImageBackingTest, BeginGLReadAccess_MockTextureServiceId)
+{
+    // mock_texture_ has service_id 123
+    EXPECT_CALL(*stream_texture_sii_, UpdateAndBindTexImage(123u)).Times(1);
+    backing_->BeginGLReadAccess(123u);
+}
+
+TEST_F(NativeImageImageBackingTest, ProduceGLTexture_ThreeRepresentations)
+{
+    EXPECT_CALL(*stream_texture_sii_, HasTextureOwner())
+        .Times(3)
+        .WillRepeatedly(Return(true));
+    SharedImageManager manager;
+    auto rep1 = backing_->ProduceGLTexture(&manager, tracker_.get());
+    auto rep2 = backing_->ProduceGLTexture(&manager, tracker_.get());
+    auto rep3 = backing_->ProduceGLTexture(&manager, tracker_.get());
+    EXPECT_NE(rep1, nullptr);
+    EXPECT_NE(rep2, nullptr);
+    EXPECT_NE(rep3, nullptr);
+}
+
+TEST_F(NativeImageImageBackingTest, ProduceGLTexturePassthrough_ThreeRepresentations)
+{
+    EXPECT_CALL(*stream_texture_sii_, HasTextureOwner())
+        .Times(3)
+        .WillRepeatedly(Return(true));
+    SharedImageManager manager;
+    auto rep1 = backing_->ProduceGLTexturePassthrough(&manager, tracker_.get());
+    auto rep2 = backing_->ProduceGLTexturePassthrough(&manager, tracker_.get());
+    auto rep3 = backing_->ProduceGLTexturePassthrough(&manager, tracker_.get());
+    EXPECT_NE(rep1, nullptr);
+    EXPECT_NE(rep2, nullptr);
+    EXPECT_NE(rep3, nullptr);
+}
+
+TEST_F(NativeImageImageBackingTest, GetEstimatedSizeForMemoryDump_ConsistentResult)
+{
+    size_t result1 = backing_->GetEstimatedSizeForMemoryDump();
+    size_t result2 = backing_->GetEstimatedSizeForMemoryDump();
+    EXPECT_EQ(result1, result2);
+}
+
+TEST_F(NativeImageImageBackingTest, ProduceSkiaGanesh_GLContext_DestroyWithoutAccess)
+{
+    SharedImageManager manager;
+    auto representation = backing_->ProduceSkiaGanesh(&manager, tracker_.get(), context_state_);
+    EXPECT_NE(representation, nullptr);
+    representation.reset();
+    EXPECT_NE(backing_, nullptr);
+}
+
+TEST_F(NativeImageImageBackingTest, ProduceSkiaGanesh_MultipleContexts_NonGLReturnNull)
+{
+    auto vk_context = base::MakeRefCounted<SharedContextState>(
+        base::MakeRefCounted<gl::GLShareGroup>(),
+        surf_, gl_context_, false, base::DoNothing(),
+        GrContextType::kVulkan);
+    SharedImageManager manager;
+    // GL context should succeed
+    auto gl_rep = backing_->ProduceSkiaGanesh(&manager, tracker_.get(), context_state_);
+    EXPECT_NE(gl_rep, nullptr);
+    // Vulkan context should fail for NativeImageImageBacking
+    auto vk_rep = backing_->ProduceSkiaGanesh(&manager, tracker_.get(), vk_context);
+    EXPECT_EQ(vk_rep, nullptr);
+}
+
+TEST_F(NativeImageImageBackingTest, ProduceGLTexture_FailThenSucceed)
+{
+    EXPECT_CALL(*stream_texture_sii_, HasTextureOwner())
+        .WillOnce(Return(false))
+        .WillOnce(Return(true));
+    SharedImageManager manager;
+    auto fail_rep = backing_->ProduceGLTexture(&manager, tracker_.get());
+    EXPECT_EQ(fail_rep, nullptr);
+    auto ok_rep = backing_->ProduceGLTexture(&manager, tracker_.get());
+    EXPECT_NE(ok_rep, nullptr);
+}
+
+TEST_F(NativeImageImageBackingTest, ProduceGLTexturePassthrough_FailThenSucceed)
+{
+    EXPECT_CALL(*stream_texture_sii_, HasTextureOwner())
+        .WillOnce(Return(false))
+        .WillOnce(Return(true));
+    SharedImageManager manager;
+    auto fail_rep = backing_->ProduceGLTexturePassthrough(&manager, tracker_.get());
+    EXPECT_EQ(fail_rep, nullptr);
+    auto ok_rep = backing_->ProduceGLTexturePassthrough(&manager, tracker_.get());
+    EXPECT_NE(ok_rep, nullptr);
+}
+
+TEST_F(NativeImageImageBackingTest, DestructorWithNullContextState_GracefulShutdown)
+{
+    EXPECT_CALL(*stream_texture_sii_, ReleaseResources()).Times(1);
+    backing_->OnContextLost();
+    EXPECT_EQ(backing_->context_state_, nullptr);
+    // Reset stream_texture_sii_ to nullptr (simulate double-free protection)
+    // Destructor should handle gracefully
+    EXPECT_CALL(*stream_texture_sii_, ReleaseResources()).Times(1);
+    backing_.reset();
+}
+
+TEST_F(NativeImageImageBackingTest, ProduceSkiaGanesh_NoTextureOwner_ReturnsNull)
+{
+    EXPECT_CALL(*stream_texture_sii_, HasTextureOwner())
+        .WillOnce(Return(false));
+    SharedImageManager manager;
+    auto rep = backing_->ProduceSkiaGanesh(&manager, tracker_.get(), context_state_);
+    EXPECT_EQ(rep, nullptr);
+}
+
+TEST_F(NativeImageImageBackingTest, ProduceSkiaGanesh_MultipleGLReps)
+{
+    EXPECT_CALL(*stream_texture_sii_, HasTextureOwner())
+        .Times(2)
+        .WillRepeatedly(Return(true));
+    SharedImageManager manager;
+    auto rep1 = backing_->ProduceSkiaGanesh(&manager, tracker_.get(), context_state_);
+    auto rep2 = backing_->ProduceSkiaGanesh(&manager, tracker_.get(), context_state_);
+    EXPECT_NE(rep1, nullptr);
+    EXPECT_NE(rep2, nullptr);
+}
+
+TEST_F(NativeImageImageBackingTest, GLTexture_GetTexture_PlaneZero_Valid)
+{
+    SharedImageManager manager;
+    auto representation = backing_->ProduceGLTexture(&manager, tracker_.get());
+    ASSERT_NE(representation, nullptr);
+    auto* texture = representation->GetTexture(0);
+    EXPECT_NE(texture, nullptr);
+    EXPECT_EQ(texture->target(), GL_TEXTURE_EXTERNAL_OES);
+}
+
+TEST_F(NativeImageImageBackingTest, GLTexturePassthrough_GetTexturePassthrough_PlaneZero_Valid)
+{
+    EXPECT_CALL(*stream_texture_sii_, HasTextureOwner())
+        .WillOnce(Return(true));
+    SharedImageManager manager;
+    auto representation = backing_->ProduceGLTexturePassthrough(&manager, tracker_.get());
+    ASSERT_NE(representation, nullptr);
+    const auto& texture = representation->GetTexturePassthrough(0);
+    EXPECT_NE(texture, nullptr);
+    EXPECT_EQ(texture->target(), GL_TEXTURE_EXTERNAL_OES);
+}
+
+TEST_F(NativeImageImageBackingTest, BackingContextStateNotNullAfterInit)
+{
+    EXPECT_NE(backing_->context_state_, nullptr);
+}
+
+TEST_F(NativeImageImageBackingTest, BackingStreamTextureSiiNotNullAfterInit)
+{
+    EXPECT_NE(backing_->stream_texture_sii_, nullptr);
+}
+
+TEST_F(NativeImageImageBackingTest, GLTexture_BeginAccess_ReadMode_UpdatesTexture)
+{
+    SharedImageManager manager;
+    auto representation = backing_->ProduceGLTexture(&manager, tracker_.get());
+    ASSERT_NE(representation, nullptr);
+    EXPECT_CALL(*stream_texture_sii_, UpdateAndBindTexImage(testing::_)).Times(1);
+    bool result = representation->BeginAccess(GL_SHARED_IMAGE_ACCESS_MODE_READ_CHROMIUM);
+    EXPECT_TRUE(result);
+    representation->EndAccess();
+}
+
+TEST_F(NativeImageImageBackingTest, GLTexture_GetTexture_AfterBeginAccess_SameObject)
+{
+    SharedImageManager manager;
+    auto representation = backing_->ProduceGLTexture(&manager, tracker_.get());
+    ASSERT_NE(representation, nullptr);
+    auto* texture_before = representation->GetTexture(0);
+    EXPECT_NE(texture_before, nullptr);
+    EXPECT_CALL(*stream_texture_sii_, UpdateAndBindTexImage(testing::_)).Times(1);
+    representation->BeginAccess(GL_SHARED_IMAGE_ACCESS_MODE_READ_CHROMIUM);
+    auto* texture_after = representation->GetTexture(0);
+    EXPECT_EQ(texture_before, texture_after);
+    representation->EndAccess();
+}
+
+TEST_F(NativeImageImageBackingTest, ProduceGLTexturePassthrough_MultipleRepsHaveOwnTextures)
+{
+    EXPECT_CALL(*stream_texture_sii_, HasTextureOwner())
+        .Times(2)
+        .WillRepeatedly(Return(true));
+    SharedImageManager manager;
+    auto rep1 = backing_->ProduceGLTexturePassthrough(&manager, tracker_.get());
+    auto rep2 = backing_->ProduceGLTexturePassthrough(&manager, tracker_.get());
+    ASSERT_NE(rep1, nullptr);
+    ASSERT_NE(rep2, nullptr);
+    EXPECT_NE(rep1->GetTexturePassthrough(0), nullptr);
+    EXPECT_NE(rep2->GetTexturePassthrough(0), nullptr);
+}
+
+TEST_F(NativeImageImageBackingTest, ProduceSkiaGanesh_NullForVulkanContext)
+{
+    auto vk_context = base::MakeRefCounted<SharedContextState>(
+        base::MakeRefCounted<gl::GLShareGroup>(),
+        surf_, gl_context_, false, base::DoNothing(),
+        GrContextType::kVulkan);
+    SharedImageManager manager;
+    auto rep = backing_->ProduceSkiaGanesh(&manager, tracker_.get(), vk_context);
+    EXPECT_EQ(rep, nullptr);
+}
+
+TEST_F(NativeImageImageBackingTest, BeginGLReadAccess_DirectCallOnBacking)
+{
+    EXPECT_CALL(*stream_texture_sii_, UpdateAndBindTexImage(42u)).Times(1);
+    backing_->BeginGLReadAccess(42u);
+}
+
+TEST_F(NativeImageImageBackingTest, GLTexture_MixedHasTextureOwnerResponses)
+{
+    EXPECT_CALL(*stream_texture_sii_, HasTextureOwner())
+        .WillOnce(Return(false))
+        .WillOnce(Return(true))
+        .WillOnce(Return(false));
+    SharedImageManager manager;
+    auto rep1 = backing_->ProduceGLTexture(&manager, tracker_.get());
+    EXPECT_EQ(rep1, nullptr);
+    auto rep2 = backing_->ProduceGLTexture(&manager, tracker_.get());
+    EXPECT_NE(rep2, nullptr);
+    auto rep3 = backing_->ProduceGLTexture(&manager, tracker_.get());
+    EXPECT_EQ(rep3, nullptr);
+}
+
+TEST_F(NativeImageImageBackingTest, GLTexturePassthrough_MixedHasTextureOwnerResponses)
+{
+    EXPECT_CALL(*stream_texture_sii_, HasTextureOwner())
+        .WillOnce(Return(true))
+        .WillOnce(Return(false))
+        .WillOnce(Return(true));
+    SharedImageManager manager;
+    auto rep1 = backing_->ProduceGLTexturePassthrough(&manager, tracker_.get());
+    EXPECT_NE(rep1, nullptr);
+    auto rep2 = backing_->ProduceGLTexturePassthrough(&manager, tracker_.get());
+    EXPECT_EQ(rep2, nullptr);
+    auto rep3 = backing_->ProduceGLTexturePassthrough(&manager, tracker_.get());
+    EXPECT_NE(rep3, nullptr);
+}
+
+TEST_F(NativeImageImageBackingTest, GLTexture_BeginAccess_ThenEndAccess_ThenBeginAgain)
+{
+    SharedImageManager manager;
+    auto representation = backing_->ProduceGLTexture(&manager, tracker_.get());
+    ASSERT_NE(representation, nullptr);
+    EXPECT_CALL(*stream_texture_sii_, UpdateAndBindTexImage(testing::_)).Times(2);
+    bool r1 = representation->BeginAccess(GL_SHARED_IMAGE_ACCESS_MODE_READ_CHROMIUM);
+    EXPECT_TRUE(r1);
+    representation->EndAccess();
+    bool r2 = representation->BeginAccess(GL_SHARED_IMAGE_ACCESS_MODE_READ_CHROMIUM);
+    EXPECT_TRUE(r2);
+    representation->EndAccess();
+}
+
 }  // namespace gpu

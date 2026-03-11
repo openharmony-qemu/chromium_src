@@ -66,6 +66,7 @@ class WebFrameWidgetImplExt : public WebFrameWidgetImpl {
   void SetOverscrollMode(int mode) override;
   void GetInputElementAttributes(
       HashMap<String, String>& attributes) const override;
+  bool IsElementExist(std::string xPath) override;
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
   void ArkWebHandleTouchEvent(const WebInputEvent& input_event);

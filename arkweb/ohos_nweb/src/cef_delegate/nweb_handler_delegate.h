@@ -1034,6 +1034,7 @@ class NWebHandlerDelegate : public ArkWebClientExt,
 #if BUILDFLAG(ARKWEB_READER_MODE)
   void OnIsPageDistillable(int page_type,
                           const std::string& distillable_page_url, const std::string& title) override;
+  void OnDidMeaningfulLayout(const std::string& url) override;
 #endif
 
 #if BUILDFLAG(ARKWEB_PDF)

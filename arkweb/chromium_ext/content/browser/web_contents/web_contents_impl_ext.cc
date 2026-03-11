@@ -1384,6 +1384,12 @@ void WebContentsImplExt::OnIsPageDistillable(int page_type,
 bool WebContentsImplExt::IsDistillerPageWebContents() {
   return SharedRenderProcessToken() == "0xAAAAAA";
 }
+
+void WebContentsImplExt::OnDidMeaningfulLayout(const std::string& url) {
+  if (delegate_) {
+    delegate_->OnDidMeaningfulLayout(url);
+  }
+}
 #endif // ARKWEB_READER_MODE
 
 #if BUILDFLAG(ARKWEB_BGTASK)

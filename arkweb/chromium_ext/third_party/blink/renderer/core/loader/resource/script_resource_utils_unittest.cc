@@ -117,6 +117,48 @@ TEST_F(ScriptResourceUtilsTest, CreateForOfflineResource_WithOriginUrl) {
     url, origin_url, response, is_module);
   ASSERT_NE(resource, nullptr);
 }
+
+TEST_F(ScriptResourceUtilsTest, CreateForOfflineResource_WithEmptyCrossOrigin) {
+  KURL url("https://example.com/test.js");
+  KURL origin_url("https://example.com/");
+  ResourceResponse response;
+  response.SetHttpHeaderField(AtomicString("Cross-Origin"), AtomicString());
+  bool is_module = false;
+  ScriptResource* resource = ScriptResourceUtils::CreateForOfflineResource(
+    url, origin_url, response, is_module);
+  ASSERT_NE(resource, nullptr);
+  EXPECT_EQ(resource->GetResourceRequest().GetMode(), network::mojom::RequestMode::kNoCors);
+  EXPECT_EQ(resource->GetResourceRequest().GetCredentialsMode(),
+            network::mojom::CredentialsMode::kInclude);
+}
+
+TEST_F(ScriptResourceUtilsTest, CreateForOfflineResource_WithOtherCrossOriginValue) {
+  KURL url("https://example.com/test.js");
+  KURL origin_url("https://example.com/");
+  ResourceResponse response;
+  response.SetHttpHeaderField(AtomicString("Cross-Origin"), AtomicString("anonymous"));
+  bool is_module = false;
+  ScriptResource* resource = ScriptResourceUtils::CreateForOfflineResource(
+    url, origin_url, response, is_module);
+  ASSERT_NE(resource, nullptr);
+  EXPECT_EQ(resource->GetResourceRequest().GetMode(), network::mojom::RequestMode::kCors);
+  EXPECT_EQ(resource->GetResourceRequest().GetCredentialsMode(),
+            network::mojom::CredentialsMode::kSameOrigin);
+}
+
+TEST_F(ScriptResourceUtilsTest, CreateForOfflineResource_ModuleWithCrossOrigin) {
+  KURL url("https://example.com/test.js");
+  KURL origin_url("https://example.com/");
+  ResourceResponse response;
+  response.SetHttpHeaderField(AtomicString("Cross-Origin"), AtomicString("use-credentials"));
+  bool is_module = true;
+  ScriptResource* resource = ScriptResourceUtils::CreateForOfflineResource(
+    url, origin_url, response, is_module);
+  ASSERT_NE(resource, nullptr);
+  EXPECT_EQ(resource->GetResourceRequest().GetMode(), network::mojom::RequestMode::kCors);
+  EXPECT_EQ(resource->GetResourceRequest().GetCredentialsMode(),
+            network::mojom::CredentialsMode::kSameOrigin);
+}
 #endif
 
 }  // namespace blink

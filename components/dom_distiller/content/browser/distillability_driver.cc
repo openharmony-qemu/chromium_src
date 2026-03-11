@@ -70,6 +70,7 @@ class DistillabilityServiceImpl : public mojom::DistillabilityService {
                                bool is_mobile_friendly) override {}
   void GetHostDistillerInfo(const std::string& host,
                             GetHostDistillerInfoCallback callback) override {}
+  void NotifyDidMeaningfulLayout(const std::string& url) override {}
 #endif
 
   void NotifyIsDistillable(bool is_distillable,
@@ -162,6 +163,13 @@ void DistillabilityDriver::OnDistillability(
   for (auto& observer : observers_)
     observer.OnResult(result);
 }
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+void DistillabilityDriver::OnDidMeaningfulLayout(const std::string& url) {
+  LOG(INFO) << "[Distiller] DistillabilityDriver::OnDidMeaningfulLayout";
+  GetWebContents().OnDidMeaningfulLayout(url);
+}
+#endif
 
 WEB_CONTENTS_USER_DATA_KEY_IMPL(DistillabilityDriver);
 

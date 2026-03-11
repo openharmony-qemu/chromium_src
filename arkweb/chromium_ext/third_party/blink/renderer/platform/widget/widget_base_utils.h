@@ -39,6 +39,7 @@ class BLINK_PLATFORM_EXPORT WidgetBaseUtils {
   void SetOverscrollMode(int mode);
   void SetRequestKeyboardReason(int32_t requestKeyboardReason);
   int32_t GetRequestKeyboardReason() const { return requestKeyboardReason_; }
+  bool IsElementExist(std::string xPath);
 #if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
   gfx::Vector2dF GetOverScrollOffset();
   void OnOverScrollOffsetChanged(float offset_x, float offset_y);

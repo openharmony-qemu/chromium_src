@@ -334,3 +334,200 @@ TEST(DiskCacheInfoParserTest, SetInitiatorToJsonTest) {
   }
   EXPECT_TRUE(dict.contains("initiator"));
 }
+
+TEST(DiskCacheInfoParserTest, SetInitiatorToJsonNoValueTest) {
+  auto info = std::make_shared<PRRequestInfo>();
+  base::Value::Dict dict;
+  std::optional<url::Origin> opt_origin;
+  if (info->initiator()) {
+    dict.Set("initiator", info->initiator()->Serialize());
+  }
+  DiskCacheInfoParser::SetInitiatorToJson(info, "initiator", dict);
+  const std::string* initiator = dict.FindString("initiator");
+  EXPECT_NE(initiator, nullptr);
+}
+
+TEST(DiskCacheInfoParserTest, SetAcceptedStreamTypesToJsonNoValueTest) {
+  auto info = std::make_shared<PRRequestInfo>();
+  base::Value::Dict dict;
+  DiskCacheInfoParser::SetAcceptedStreamTypesToJson(info, "accepted_stream_types", dict);
+  EXPECT_FALSE(dict.contains("accepted_stream_types"));
+}
+
+TEST(DiskCacheInfoParserTest, SetStorageAccessStatusToJsonNoValueTest) {
+  auto info = std::make_shared<PRRequestInfo>();
+  base::Value::Dict dict;
+  DiskCacheInfoParser::SetStorageAccessStatusToJson(info, "storage_access_status", dict);
+  EXPECT_FALSE(dict.contains("storage_access_status"));
+}
+
+TEST(DiskCacheInfoParserTest, SetUrlToJsonPreflightTest) {
+  auto info = std::make_shared<PRRequestInfo>();
+  GURL test_url("http://example.com/test");
+  info->set_url(test_url);
+  info->set_type(PRRequestInfoType::TYPE_PAGE_PREFLIGHT);
+  
+  base::Value::Dict dict;
+  DiskCacheInfoParser::SetUrlToJson(info, "url", dict);
+  const std::string* url = dict.FindString("url");
+  ASSERT_NE(url, nullptr);
+  EXPECT_TRUE(url->starts_with(PRPP_PREFLIGHT_PREFIX));
+}
+
+TEST(DiskCacheInfoParserTest, SetUrlToJsonNormalTest) {
+  auto info = std::make_shared<PRRequestInfo>();
+  GURL test_url("http://example.com/test");
+  info->set_url(test_url);
+  info->set_type(PRRequestInfoType::TYPE_PAGE_ORIGIN);
+  
+  base::Value::Dict dict;
+  DiskCacheInfoParser::SetUrlToJson(info, "url", dict);
+  const std::string* url = dict.FindString("url");
+  ASSERT_NE(url, nullptr);
+  EXPECT_FALSE(url->starts_with(PRPP_PREFLIGHT_PREFIX));
+}
+
+TEST(DiskCacheInfoParserTest, GetAcceptedStreamTypesFromJsonEmptyTest) {
+  auto info = std::make_shared<PRRequestInfo>();
+  base::Value::Dict dict;
+  base::Value::List empty_list;
+  dict.Set("accepted_stream_types", std::move(empty_list));
+  base::Value json(std::move(dict));
+  EXPECT_TRUE(DiskCacheInfoParser::GetAcceptedStreamTypesFromJson(json, "accepted_stream_types", info));
+}
+
+TEST(DiskCacheInfoParserTest, GetDynamicHeaderKeysFromJsonEmptyTest) {
+  auto info = std::make_shared<PRRequestInfo>();
+  base::Value::Dict dict;
+  base::Value::List empty_list;
+  dict.Set("dynamic_header_keys", std::move(empty_list));
+  base::Value json(std::move(dict));
+  EXPECT_TRUE(DiskCacheInfoParser::GetDynamicHeaderKeysFromJson(json, "dynamic_header_keys", info));
+}
+
+TEST(DiskCacheInfoParserTest, GetStorageAccessStatusFromJsonNullTest) {
+  auto info = std::make_shared<PRRequestInfo>();
+  base::Value::Dict dict;
+  base::Value json(std::move(dict));
+  EXPECT_TRUE(DiskCacheInfoParser::GetStorageAccessStatusFromJson(json, "storage_access_status", info));
+}
+
+TEST(DiskCacheInfoParserTest, GetStorageAccessStatusFromJsonValidTest) {
+  auto info = std::make_shared<PRRequestInfo>();
+  base::Value::Dict dict;
+  dict.Set("storage_access_status", static_cast<int>(net::cookie_util::StorageAccessStatus::kActive));
+  base::Value json(std::move(dict));
+  EXPECT_TRUE(DiskCacheInfoParser::GetStorageAccessStatusFromJson(json, "storage_access_status", info));
+}
+
+TEST(DiskCacheInfoParserTest, GetCacheTypeFromJsonValidTest) {
+  auto info = std::make_shared<PRRequestInfo>();
+  base::Value::Dict dict;
+  dict.Set("cache_type", static_cast<int>(PRRequestCacheType::FORCE_CACHE));
+  base::Value json(std::move(dict));
+  EXPECT_TRUE(DiskCacheInfoParser::GetCacheTypeFromJson(json, "cache_type", info));
+}
+
+TEST(DiskCacheInfoParserTest, GetFirstPartyUrlPolicyFromJsonValidTest) {
+  auto info = std::make_shared<PRRequestInfo>();
+  base::Value::Dict dict;
+  dict.Set("first_party_url_policy", static_cast<int>(net::RedirectInfo::FirstPartyURLPolicy::NEVER_CHANGE_URL));
+  base::Value json(std::move(dict));
+  EXPECT_TRUE(DiskCacheInfoParser::GetFirstPartyUrlPolicyFromJson(json, "first_party_url_policy", info));
+}
+
+TEST(DiskCacheInfoParserTest, GetIdempotencyFromJsonValidTest) {
+  auto info = std::make_shared<PRRequestInfo>();
+  base::Value::Dict dict;
+  dict.Set("idempotency", static_cast<int>(net::Idempotency::IDEMPOTENT));
+  base::Value json(std::move(dict));
+  EXPECT_TRUE(DiskCacheInfoParser::GetIdempotencyFromJson(json, "idempotency", info));
+}
+
+TEST(DiskCacheInfoParserTest, GetReferrerPolicyFromJsonValidTest) {
+  auto info = std::make_shared<PRRequestInfo>();
+  base::Value::Dict dict;
+  dict.Set("referrer_policy", static_cast<int>(net::ReferrerPolicy::CLEAR_ON_TRANSITION_FROM_SECURE_TO_INSECURE));
+  base::Value json(std::move(dict));
+  EXPECT_TRUE(DiskCacheInfoParser::GetReferrerPolicyFromJson(json, "referrer_policy", info));
+}
+
+TEST(DiskCacheInfoParserTest, GetSecureDnsPolicyFromJsonValidTest) {
+  auto info = std::make_shared<PRRequestInfo>();
+  base::Value::Dict dict;
+  dict.Set("secure_dns_policy", static_cast<int>(net::SecureDnsPolicy::kAllow));
+  base::Value json(std::move(dict));
+  EXPECT_TRUE(DiskCacheInfoParser::GetSecureDnsPolicyFromJson(json, "secure_dns_policy", info));
+}
+
+TEST(DiskCacheInfoParserTest, GetPreloadFlagsFromJsonValidTest) {
+  auto info = std::make_shared<PRRequestInfo>();
+  base::Value::Dict dict;
+  dict.Set("preload_flag", static_cast<int>(PRRequestFlags::PRPP_FLAGS_VISIBLE));
+  base::Value json(std::move(dict));
+  EXPECT_TRUE(DiskCacheInfoParser::GetPreloadFlagsFromJson(json, "preload_flag", info));
+}
+
+TEST(DiskCacheInfoParserTest, GetRequestInfoTypeFromJsonValidTest) {
+  auto info = std::make_shared<PRRequestInfo>();
+  base::Value::Dict dict;
+  dict.Set("request_info_type", static_cast<int>(PRRequestInfoType::TYPE_PAGE_ORIGIN));
+  base::Value json(std::move(dict));
+  EXPECT_TRUE(DiskCacheInfoParser::GetRequestInfoTypeFromJson(json, "request_info_type", info));
+}
+
+TEST(DiskCacheInfoParserTest, GetFreshnessLifeTimesFromJsonValidTest) {
+  auto info = std::make_shared<PRRequestInfo>();
+  base::Value::Dict dict;
+  dict.Set("freshness_life_times", "123456789");
+  base::Value json(std::move(dict));
+  EXPECT_TRUE(DiskCacheInfoParser::GetFreshnessLifeTimesFromJson(json, "freshness_life_times", info));
+}
+
+TEST(DiskCacheInfoParserTest, GetLimitNumFromJsonValidTest) {
+  auto info = std::make_shared<PRRequestInfo>();
+  base::Value::Dict dict;
+  dict.Set("limit_num", "100");
+  base::Value json(std::move(dict));
+  EXPECT_TRUE(DiskCacheInfoParser::GetLimitNumFromJson(json, "limit_num", info));
+}
+
+TEST(DiskCacheInfoParserTest, GetRequestEndTimeFromJsonValidTest) {
+  auto info = std::make_shared<PRRequestInfo>();
+  base::Value::Dict dict;
+  dict.Set("request_end_time", "123456789");
+  base::Value json(std::move(dict));
+  EXPECT_TRUE(DiskCacheInfoParser::GetRequestEndTimeFromJson(json, "request_end_time", info));
+}
+
+TEST(DiskCacheInfoParserTest, GetRequestStartTimeFromJsonValidTest) {
+  auto info = std::make_shared<PRRequestInfo>();
+  base::Value::Dict dict;
+  dict.Set("request_start_time", "123456789");
+  base::Value json(std::move(dict));
+  EXPECT_TRUE(DiskCacheInfoParser::GetRequestStartTimeFromJson(json, "request_start_time", info));
+}
+
+TEST(DiskCacheInfoParserTest, GetPageIndexFromJsonValidTest) {
+  auto info = std::make_shared<PRRequestInfo>();
+  base::Value::Dict dict;
+  dict.Set("page_index", "100");
+  base::Value json(std::move(dict));
+  EXPECT_TRUE(DiskCacheInfoParser::GetPageIndexFromJson(json, "page_index", info));
+}
+
+TEST(DiskCacheInfoParserTest, GetUrlFromJsonValidTest) {
+  auto info = std::make_shared<PRRequestInfo>();
+  base::Value::Dict dict;
+  dict.Set("url", "http://example.com/test");
+  base::Value json(std::move(dict));
+  EXPECT_TRUE(DiskCacheInfoParser::GetUrlFromJson(json, "url", info));
+}
+
+TEST(DiskCacheInfoParserTest, GetUrlFromJsonEmptyTest) {
+  auto info = std::make_shared<PRRequestInfo>();
+  base::Value::Dict dict;
+  dict.Set("url", "");
+  base::Value json(std::move(dict));
+  EXPECT_FALSE(DiskCacheInfoParser::GetUrlFromJson(json, "url", info));
+}

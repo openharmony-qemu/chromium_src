@@ -17,7 +17,6 @@
 #include "nweb_impl.h"
 
 #include <unistd.h>
-
 #include <cerrno>
 #include <iostream>
 #include <map>
@@ -89,6 +88,7 @@
 
 #if BUILDFLAG(ARKWEB_API_INIT_WEB_ENGINE)
 #include "cef_delegate/nweb_application.h"
+#include "components/embedder_support/arkweb_version.h"
 #include "content/public/browser/network_service_instance.h"
 #include "services/network/network_service.h"
 #endif  // BUILDFLAG(ARKWEB_API_INIT_WEB_ENGINE)
@@ -639,6 +639,12 @@ using ASHelper = OHOS::NWeb::NWebAdvancedSecurityHelper;
 std::shared_ptr<NWebLoggerCallback> g_logger_callback;
 #endif
 bool g_logger_callback_initialized = false;
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+const int32_t WEB_ELEMENT_NOT_FOUND = 131;
+const int32_t WEB_DELEGATE_NOT_FOUND = 102;
+const int32_t WEB_COMMAND_SUCCESS = 10;
+#endif
 
 #if BUILDFLAG(ARKWEB_EXT_PASSWORD)
 static const int kMigrationBase = 10;
@@ -1326,7 +1332,8 @@ bool NWebImpl::InitializeICUStatic(
 // static
 void NWebImpl::InitializeWebEngine(
     std::shared_ptr<NWebEngineInitArgs> init_args) {
-  LOG(INFO) << "NWebImpl::InitializeWebEngine, begin";
+  LOG(INFO) << "InitializeWebEngine: begin to init arkweb engine,version is "
+            << ARKWEB_VERSION;
   std::list<std::string> web_engine_args;
   InitialWebEngineArgs(web_engine_args, init_args);
 
@@ -8161,6 +8168,77 @@ void NWebImpl::StopFling() {
     return;
   }
   nweb_delegate_->StopFling();
+}
+
+int32_t NWebImpl::SendCommandAction(
+    const std::shared_ptr<OHOS::NWeb::NWebCommandAction> action) {
+  LOG(INFO) << "NWebImpl::SendCommandAction";
+  if (!nweb_delegate_ || !action) {
+    LOG(ERROR) << "failed to SendCommandAction, delegate is null";
+    return WEB_DELEGATE_NOT_FOUND;
+  }
+  std::string xpath = action->GetXPath();
+  bool isElement = nweb_delegate_->IsElementExist(xpath);
+  if (!isElement) {
+    LOG(ERROR) << "SendCommandAction element not found";
+    return WEB_ELEMENT_NOT_FOUND;
+  }
+  std::string jsStr =
+      CombineCommandJsString(action->GetEventType(), action->GetXPath(),
+                             action->GetAlign(), action->GetOffset());
+  nweb_delegate_->ExecuteJavaScript(jsStr);
+  return WEB_COMMAND_SUCCESS;
+}
+
+std::string NWebImpl::CombineCommandJsString(std::string eventType,
+                                             std::string xPath,
+                                             std::string align,
+                                             int32_t offset) {
+  auto escapeQuotes = [](std::string str) {
+    size_t pos = 0;
+    while ((pos = str.find("\"", pos)) != std::string::npos) {
+      str.replace(pos, 1, "\\\"");
+      pos += 2;
+    }
+    return str;
+  };
+  std::string safeXPath = escapeQuotes(xPath);
+  std::ostringstream oss;
+  oss << "(function() {"
+      << "  try {"
+      << "    const type = '" << eventType << "'; const xpath = `" << safeXPath << "`;"
+      << "    const align = '" << align << "'; const offsetVal = " << offset << ";"
+      << "    const res = document.evaluate(xpath, document, null, 9, null).singleNodeValue;"
+      << "    if (!res) return JSON.stringify({status:'fail', reason:'NotFound'});"
+      << "    const el = res; if (type === 'click') { el.click(); return JSON.stringify({status:'ok'}); }"
+      << "    let c = el.parentElement;"
+      << "    while (c && c !== document.documentElement) {"
+      << "      const s = window.getComputedStyle(c);"
+      << "      if (/(auto|scroll)/.test(s.overflow + s.overflowY) && c.scrollHeight > c.clientHeight) break;"
+      << "      c = c.parentElement;"
+      << "    }"
+      << "    const isW = !c || c === document.documentElement || c === document.body;"
+      << "    const scale = (window.visualViewport ? window.visualViewport.scale : 1);"
+      << "    if (isW) {"
+      << "      let blockAlign = 'start';"
+      << "      if (align === 'mid') blockAlign = 'center';"
+      << "      else if (align === 'bottom') blockAlign = 'end';"
+      << "      el.scrollIntoView({block: blockAlign, inline: 'nearest', behavior: 'instant'});"
+      << "      if (offsetVal !== 0) window.scrollBy(0, offsetVal / scale);"
+      << "    } else {"
+      << "      var getOff = function(n) { var t = 0; while(n) { t += n.offsetTop; n = n.offsetParent; } return t; };"
+      << "      var cssDiff = getOff(el) - getOff(c);"
+      << "      cssDiff -= (c.clientTop || 0);"
+      << "      let target = 0;"
+      << "      if (align === 'top') target = cssDiff;"
+      << "      else if (align === 'mid') target = cssDiff - (c.clientHeight / 2) + (el.offsetHeight / 2);"
+      << "      else if (align === 'bottom') target = cssDiff - c.clientHeight + el.offsetHeight;"
+      << "      c.scrollTop = target + (offsetVal / scale);"
+      << "    }"
+      << "    return JSON.stringify({status:'success'});"
+      << "  } catch (e) { return JSON.stringify({status:'fail', reason: e.toString()}); }"
+      << "})();";
+    return oss.str();
 }
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)

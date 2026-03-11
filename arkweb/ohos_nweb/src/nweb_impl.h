@@ -1245,6 +1245,8 @@ class NWebImpl : public NWeb {
 #endif
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   bool SetFocusByPosition(float x, float y) override;
+  int32_t SendCommandAction(std::shared_ptr<OHOS::NWeb::NWebCommandAction> action) override;
+  std::string CombineCommandJsString(std::string eventType, std::string xPath, std::string align, int32_t offset);
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 #if BUILDFLAG(ARKWEB_SOFTKEYBOARD_AVOID)
   void SetSoftKeyboardBehaviorMode(WebSoftKeyboardBehaviorMode mode) override;

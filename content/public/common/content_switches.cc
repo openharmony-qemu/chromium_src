@@ -132,6 +132,8 @@ const char kDisableWebGL2[] = "disable-webgl2";
 #if BUILDFLAG(IS_OHOS)
 // Disable ServiceWorker, getUserMedia and RTCDataChannel
 const char kEnabledAdvancedSecurityMode[] = "enabled-advanced-security-mode";
+
+const char kOhosTempDir[] = "ohos-temp-dir";
 #endif
 
 // Disable FileSystem API.

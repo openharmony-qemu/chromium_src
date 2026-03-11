@@ -245,6 +245,7 @@ CONTENT_EXPORT extern const char kZygoteProcess[];
 
 #if BUILDFLAG(IS_OHOS)
 CONTENT_EXPORT extern const char kEnabledAdvancedSecurityMode[];
+CONTENT_EXPORT extern const char kOhosTempDir[];
 #endif
 
 #if BUILDFLAG(IS_ANDROID)

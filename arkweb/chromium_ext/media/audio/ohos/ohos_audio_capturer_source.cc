@@ -17,6 +17,7 @@
 #include "media/base/audio_glitch_info.h"
 #include "media/base/audio_parameters.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#include "arkweb/build/features/features.h"
 
 namespace media {
 
@@ -172,7 +173,7 @@ void OHOSAudioCapturerSource::ReadData() {
 // LCOV_EXCL_STOP
 
 void OHOSAudioCapturerSource::SetVolume(double volume) {
-#if BUILDFLAG(ARKWEB_TEST)
+#if BUILDFLAG(ARKWEB_TEST) || BUILDFLAG(ARKWEB_WEBRTC)
   return;
 #endif  
   NOTREACHED();

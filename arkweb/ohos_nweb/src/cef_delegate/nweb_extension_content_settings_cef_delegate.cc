@@ -66,6 +66,30 @@ NWebExtensionContentSettingsCefDelegate& NWebExtensionContentSettingsCefDelegate
     return instance;
 }
 
+bool NWebExtensionContentSettingsCefDelegate::HasOnGet() {
+#if !BUILDFLAG(ARKWEB_NWEB_EX)
+    return false;
+#else
+    return NWebExtensionContentSettingsDispatcher::GetInstance().HasOnGet();
+#endif
+}
+
+bool NWebExtensionContentSettingsCefDelegate::HasOnSet() {
+#if !BUILDFLAG(ARKWEB_NWEB_EX)
+    return false;
+#else
+    return NWebExtensionContentSettingsDispatcher::GetInstance().HasOnSet();
+#endif
+}
+
+bool NWebExtensionContentSettingsCefDelegate::HasOnClear() {
+#if !BUILDFLAG(ARKWEB_NWEB_EX)
+    return false;
+#else
+    return NWebExtensionContentSettingsDispatcher::GetInstance().HasOnClear();
+#endif
+}
+
 bool NWebExtensionContentSettingsCefDelegate::OnGet(
     const NWebExtensionContentSettingsGetParam* getParam, ContentSettingsGetCallback callback) 
 {

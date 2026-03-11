@@ -326,7 +326,7 @@ TEST_F(HostResolverManagerServiceEndpointRequestImplTest,
 
 TEST_F(HostResolverManagerServiceEndpointRequestImplTest,
        set_resolve_info_SetsBasicInfo) {
-  std::vector<TaskType> finished_tasks;
+  std::vector<HostResolverManager::TaskType> finished_tasks;
   std::vector<IPEndPoint> truncation_results;
 
   request_->set_resolve_info(ERR_CONNECTION_RESET, kDnsResolvedByLocalDns,
@@ -340,7 +340,7 @@ TEST_F(HostResolverManagerServiceEndpointRequestImplTest,
 TEST_F(HostResolverManagerServiceEndpointRequestImplTest,
        set_resolve_info_HandlesEmptyFinalizedResult) {
   // finalized_result_ is not set, so no IPs should be extracted
-  std::vector<TaskType> finished_tasks;
+  std::vector<HostResolverManager::TaskType> finished_tasks;
   std::vector<IPEndPoint> truncation_results;
 
   request_->set_resolve_info(OK, kDnsResolvedUndefined, finished_tasks,
@@ -353,7 +353,7 @@ TEST_F(HostResolverManagerServiceEndpointRequestImplTest,
 
 TEST_F(HostResolverManagerServiceEndpointRequestImplTest,
        set_resolve_info_AddsTruncationIps) {
-  std::vector<TaskType> finished_tasks;
+  std::vector<HostResolverManager::TaskType> finished_tasks;
 
   // Create truncation results
   auto ip1 = IPAddress::FromIPLiteral("192.168.1.1");
@@ -375,10 +375,10 @@ TEST_F(HostResolverManagerServiceEndpointRequestImplTest,
 TEST_F(HostResolverManagerServiceEndpointRequestImplTest,
        set_resolve_info_AddsTransitionTypes) {
   // Create finished tasks
-  std::vector<TaskType> finished_tasks;
-  finished_tasks.push_back(TaskType::DNS);
-  finished_tasks.push_back(TaskType::MDNS);
-  finished_tasks.push_back(TaskType::INSECURE_DNS);
+  std::vector<HostResolverManager::TaskType> finished_tasks;
+  finished_tasks.push_back(HostResolverManager::TaskType::DNS);
+  finished_tasks.push_back(HostResolverManager::TaskType::MDNS);
+  finished_tasks.push_back(HostResolverManager::TaskType::INSECURE_DNS);
 
   std::vector<IPEndPoint> truncation_results;
 
@@ -392,7 +392,7 @@ TEST_F(HostResolverManagerServiceEndpointRequestImplTest,
 
 TEST_F(HostResolverManagerServiceEndpointRequestImplTest,
        set_resolve_info_EmptyTasks) {
-  std::vector<TaskType> finished_tasks;  // Empty
+  std::vector<HostResolverManager::TaskType> finished_tasks;  // Empty
   std::vector<IPEndPoint> truncation_results;
 
   request_->set_resolve_info(OK, kDnsResolvedUndefined, finished_tasks,
@@ -430,7 +430,7 @@ TEST_F(HostResolverManagerServiceEndpointRequestImplTest,
   request_->finalized_result_.emplace(std::move(endpoints),
                                       std::set<std::string>());
 
-  std::vector<TaskType> finished_tasks;
+  std::vector<HostResolverManager::TaskType> finished_tasks;
   std::vector<IPEndPoint> truncation_results;
 
   request_->set_resolve_info(OK, kDnsResolvedByLocalDns, finished_tasks,

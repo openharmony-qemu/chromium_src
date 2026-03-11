@@ -18,8 +18,8 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "arkweb/chromium_ext/net/dns/public/resolve_info.h"
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/functional/callback.h"
 #include "base/test/task_environment.h"
 #include "base/time/time.h"
@@ -118,7 +118,9 @@ class HostResolverManagerServiceEndpointRequestImplTest
     request_.reset();
     resolve_context_.reset();
     url_request_context_.reset();
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
     ClearSuspectData();
+#endif
   }
 
  protected:

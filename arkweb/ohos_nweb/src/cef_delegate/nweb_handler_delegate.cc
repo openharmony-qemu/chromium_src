@@ -546,6 +546,19 @@ NavigationPolicy ConvertDisPositionToNavigation(
   }
   return NavigationPolicy::NEW_POPUP;
 }
+
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  bool IsTargetResourceTypeValue(int resource_type) {
+    switch (resource_type) {
+      case static_cast<int>(blink::mojom::ResourceType::kMainFrame):
+      case static_cast<int>(blink::mojom::ResourceType::kSubFrame):
+      case static_cast<int>(blink::mojom::ResourceType::kXhr):
+        return true;
+      default:
+        return false;
+    }
+  }
+#endif
 }  // namespace
 
 class NWebDateTimeSuggestionImpl : public NWebDateTimeSuggestion {
@@ -6139,7 +6152,9 @@ void NWebHandlerDelegate::OnReceiveResponse(CefRefPtr<CefRequest> request,
   }
   
 #if BUILDFLAG(ARKWEB_NWEB_EX)
-  if (IsNativeApiEnable() && dispatcher_.HasOnReceiveResponseV2()) {
+  bool isDispatcherCalledForResponseReceived = false;
+  if (IsNativeApiEnable() && dispatcher_.HasOnReceiveResponseV2()
+      && IsTargetResourceTypeValue(resource_type)) {
     CefRequest::HeaderMap cef_request_headers;
     request->GetHeaderMap(cef_request_headers);
     std::map<std::string, std::string> request_headers;
@@ -6160,7 +6175,37 @@ void NWebHandlerDelegate::OnReceiveResponse(CefRefPtr<CefRequest> request,
         is_from_network, response_info->GetStatus(), response_info->GetMimeType(),
         response_info->GetCharset(), response_info->GetStatusText(), response_headers};
  
-    return dispatcher_.OnReceiveResponseByPb(resource_request, resource_response);
+    dispatcher_.OnReceiveResponseByPb(resource_request, resource_response);
+    isDispatcherCalledForResponseReceived = true;
+  }
+
+  if (IsNativeApiEnable() && dispatcher_.HasOnReceiveResponseForAllResources()) {
+    CefRequest::HeaderMap cef_request_headers;
+    request->GetHeaderMap(cef_request_headers);
+    std::map<std::string, std::string> request_headers;
+    ConvertMapToHeaderMap(cef_request_headers, request_headers);
+
+    WebUrlResourceRequest resource_request = {
+        is_request_gesture, is_main_frame, is_redirect, 
+        resource_type, transition_type, 
+        request->GetURL().ToString(), 
+        request->GetMethod().ToString(), request_headers};
+
+    CefResponse::HeaderMap cef_response_headers;
+    response_info->GetHeaderMap(cef_response_headers);
+    std::map<std::string, std::string> response_headers;
+    ConvertMapToHeaderMap(cef_response_headers, response_headers);
+
+    WebUrlResourceResponse resource_response = {
+        is_from_network, response_info->GetStatus(), response_info->GetMimeType(),
+        response_info->GetCharset(), response_info->GetStatusText(), response_headers};
+
+    dispatcher_.OnReceiveResponseForAllResources(resource_request, resource_response);
+    isDispatcherCalledForResponseReceived = true;
+  }
+
+  if (isDispatcherCalledForResponseReceived) {
+    return;
   }
 #endif
 

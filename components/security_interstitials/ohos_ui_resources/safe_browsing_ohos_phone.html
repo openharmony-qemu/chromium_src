@@ -59,11 +59,14 @@
       }
  
       window.addEventListener("resize", () => {
-            calcViewportSize();
+            calcViewportSize();   
       }, false)
  
       window.onload = function() {
         onFillErrorPageHtml()
+        if (document.fonts && document.fonts.ready) {
+          document.fonts.ready.then(calcViewportSize);
+        }
       }
  
       function calcViewportSize() {
@@ -73,6 +76,12 @@
         document.documentElement.style.setProperty('--ph', ph + 'px');
         let vw = ((window.innerWidth - 24 * 13) / 6 + 24)  >  MIN_WIDTH ? ((window.innerWidth - 24 * 13) / 6 + 24) : MIN_WIDTH;
         document.documentElement.style.setProperty('--vw', vw + 'px');
+        const bottomBar = document.querySelector('.hw-block-link-sb');
+        const bottomBarHeight = bottomBar ? Math.ceil(bottomBar.getBoundingClientRect().height) : 126;
+        document.documentElement.style.setProperty('--hw-bottom-bar-height', bottomBarHeight + 'px');
+        const blockInfo = document.querySelector('.hw-block-info');
+        const blockInfoHeight = blockInfo ? Math.ceil(blockInfo.getBoundingClientRect().height) : 0;
+        document.documentElement.style.setProperty('--hw-block-info-height', blockInfoHeight + 'px');
       }
  
       function onDontProceed() {

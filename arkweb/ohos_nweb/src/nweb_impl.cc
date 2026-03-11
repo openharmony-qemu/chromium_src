@@ -5170,6 +5170,15 @@ void NWebImpl::SetJsFilePath(const std::string& js_type, const std::string& file
   nweb_ex::AlloyBrowserReaderModeConfig::GetInstance()->SetJsFilePath(js_type, file_path, version);
 }
 
+void NWebImpl::EnableReaderMode(bool enabled) {
+  if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "NWebImpl::EnableReaderMode delegate_ is nullptr";
+    return;
+  }
+
+  nweb_delegate_->EnableReaderMode(enabled);
+}
+
 void NWebImpl::Distill(char** guid, const DistillOptions& distill_options, DistillCallback callback) {
   if (nweb_delegate_ == nullptr) {
     LOG(ERROR) << "NWebImpl::Distill delegate_ is nullptr";

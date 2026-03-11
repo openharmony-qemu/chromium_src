@@ -13,6 +13,9 @@
 
 import("//arkweb/build/features/features.gni")
 import("//build/config/features.gni")
+if (is_arkweb_ext) {
+  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
+}
 
 mojom_platform_enabled_features = []
 mojom_core_enabled_features = []
@@ -171,4 +174,9 @@ if (arkweb_bfcache) {
 
 if (arkweb_console_logging) {
   mojom_core_enabled_features += [ "arkweb_console_logging" ]
+}
+
+if (defined(arkweb_reader_mode) && arkweb_reader_mode) {
+  mojom_core_enabled_features += [ "arkweb_reader_mode" ]
+  mojom_platform_enabled_features += [ "arkweb_reader_mode" ]
 }

@@ -1325,6 +1325,7 @@ class MockNWebDelegate : public NWebDelegateInterface {
 #endif
 
 #if BUILDFLAG(ARKWEB_READER_MODE)
+  MOCK_METHOD(void, EnableReaderMode, (bool enabled), (override));
   MOCK_METHOD(void, Distill, (const std::string& guid, const DistillOptions& distill_options,
     DistillCallback callback), (override));
   MOCK_METHOD(void, AbortDistill, (), (override));

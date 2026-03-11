@@ -38,14 +38,13 @@ class TaskTracker;
 void ModifyDistillerScriptOhos(std::string& script, bool is_distill_catalog);
 
 #if BUILDFLAG(ARKWEB_READER_MODE)
-#define SET_XPATH_CONFIG(xpath_param, func_name, xpath_dict,                 \
-                         distiller_options, xpath_has_value)                 \
-  const std::string* value_##func_name = xpath_dict.FindString(xpath_param); \
-  if (value_##func_name && !value_##func_name->empty()) {                    \
-    distiller_options.mutable_xpath_config()->set_##func_name(               \
-        *value_##func_name);                                                 \
-    xpath_has_value = true;                                                  \
-  }
+dom_distiller::proto::DomDistillerOptions GetCustomDomDistillerOptions(
+    bool is_article,
+    const GURL& gurl,
+    const dom_distiller::proto::DomDistillerOptions& source_options);
+bool SetCustomOptions(
+    const GURL& gurl,
+    dom_distiller::proto::HwCustomOptions* custom_options);
 #endif  // ARKWEB_READER_MODE
 
 class DistillerPageOhos {

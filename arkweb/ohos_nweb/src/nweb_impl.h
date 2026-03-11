@@ -771,6 +771,7 @@ class NWebImpl : public NWeb {
 #if BUILDFLAG(ARKWEB_READER_MODE)
   static void UpdateReaderModeConfig(const std::string& file_path, const std::string& version);
   static void SetJsFilePath(const std::string& js_type, const std::string& file_path, const std::string& version);
+  void EnableReaderMode(bool enabled);
   void Distill(char** guid, const DistillOptions& distill_options, DistillCallback callback);
   void AbortDistill();
 #endif

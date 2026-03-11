@@ -24,6 +24,7 @@ constexpr char kBECEMatchPrevFeature[] = "match_prev_feature";
 constexpr char kBECEMatchNextFeature[] = "match_next_feature";
 constexpr char kBECEMatchCatalogFeature[] = "match_catalog_feature";
 constexpr char kBECEMatchTime[] = "match_time";
+constexpr char kBECEKernelNovelDistillableResult[] = "kernel_novel_distillable_result";
 
 bool UrlIsHomePage(const GURL& url) {
   if (!url.has_path()) {
@@ -33,50 +34,47 @@ bool UrlIsHomePage(const GURL& url) {
   return url.path() == "/" && !has_ref;
 }
 
-void AddBECEContent(std::vector<std::string>& statistics_content,
-                    std::pair<std::string, std::string> item) {
-  if (item.second.empty()) {
-    return;
-  }
-  statistics_content.push_back(item.first + ": " + item.second);
-}
-
-void DocDistillableStatistics(blink::WebDistillabilityMatchInfo& match_info,
+void DocDistillableStatistics(content::RenderFrame* render_frame,
+                              blink::WebDistillabilityMatchInfo& match_info,
                               blink::WebDocument& doc,
                               double cost_time_ms) {
-  std::vector<std::string> ext_info;
-  AddBECEContent(ext_info,
-                 {kBECEMatchTime, base::StringPrintf("%.2f", cost_time_ms)});
+  base::Value::Dict ext_info;
+  ext_info.Set(kBECEHost, GURL(doc.Url()).host());
+  ext_info.Set(kBECEMatchTime, base::StringPrintf("%.2f", cost_time_ms));
   if (match_info.result ==
           blink::WebDistillabilityMatchResult::MATCH_TEMPLATE ||
       match_info.result ==
           blink::WebDistillabilityMatchResult::MATCH_FEATURES ||
       match_info.result == blink::WebDistillabilityMatchResult::MATCH_DETAILS) {
-    AddBECEContent(ext_info, {kBECEResultCode, "0"}); // 0:成功
+    ext_info.Set(kBECEResultCode, "0"); // 0:成功
     if (match_info.distill_by_regex) {
-      AddBECEContent(ext_info, {kBECEResultReason, "success by regex"});
+      ext_info.Set(kBECEResultReason, "success by regex");
     } else {
-      AddBECEContent(ext_info, {kBECEResultReason, "success by template"});
-      AddBECEContent(ext_info, {kBECEMatchTemplateId, std::to_string(match_info.template_id)});
-      AddBECEContent(ext_info, {kBECEMatchTemplate, match_info.templates});
+      ext_info.Set(kBECEResultReason, "success by template");
+      ext_info.Set(kBECEMatchTemplateId, std::to_string(match_info.template_id));
+      ext_info.Set(kBECEMatchTemplate, match_info.templates);
     }
     if (match_info.result ==
         blink::WebDistillabilityMatchResult::MATCH_DETAILS) {
-      AddBECEContent(ext_info, {kBECEPageType, "0"}); // 0:详情页
+      ext_info.Set(kBECEPageType, "0"); // 0:详情页
     } else {
-      AddBECEContent(ext_info, {kBECEPageType, "1"}); // 1:正文页
+      ext_info.Set(kBECEPageType, "1"); // 1:正文页
       if (!match_info.distill_by_regex) {
-        AddBECEContent(ext_info, {kBECEMatchPrevFeature, match_info.prev_feature});
-        AddBECEContent(ext_info, {kBECEMatchNextFeature, match_info.next_feature});
-        AddBECEContent(ext_info,
-                       {kBECEMatchCatalogFeature, match_info.catalog_feature});
+        ext_info.Set(kBECEMatchPrevFeature, match_info.prev_feature);
+        ext_info.Set(kBECEMatchNextFeature, match_info.next_feature);
+        ext_info.Set(kBECEMatchCatalogFeature, match_info.catalog_feature);
       }
     }
-    LOG(INFO) << "[Distiller] kernel_novel_distillable_result: " << base::JoinString(ext_info, "; ");
+    // 经分打点数据上报
+    auto json = base::WriteJson(ext_info);
+    if (json && render_frame) {
+      render_frame->ReportDistillableResult(kBECEKernelNovelDistillableResult, json.value());
+    }
   }
 }
 
 blink::WebDistillabilityMatchResult DetermineDistillableMatchResult(
+    content::RenderFrame* render_frame,
     blink::WebDocument& doc,
     const blink::mojom::UrlHostDistillerInfoPtr& distiller_info) {
   if (UrlIsHomePage(doc.Url())) {
@@ -87,7 +85,7 @@ blink::WebDistillabilityMatchResult DetermineDistillableMatchResult(
   blink::WebDistillabilityMatchInfo match_info =
       doc.DistillabilityMatchInfo(distiller_info);
   double cost_time_ms = (base::TimeTicks::Now() - start_time).InMillisecondsF();
-  DocDistillableStatistics(match_info, doc, cost_time_ms);
+  DocDistillableStatistics(render_frame, match_info, doc, cost_time_ms);
   LOG(INFO) << "[Distiller] match_result:" << (int)match_info.result;
   return match_info.result;
 }

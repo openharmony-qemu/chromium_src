@@ -50,4 +50,8 @@ interface RendererHost {
 
   // A renderer sends this when it wants to know whether a gpu process exists.
   [Sync] HasGpuProcess() => (bool has_gpu_process);
+
+  // report the distillable result to Huawei browser app.
+  [EnableIf=arkweb_reader_mode]
+  ReportDistillableResult(string event_type, string value);
 };

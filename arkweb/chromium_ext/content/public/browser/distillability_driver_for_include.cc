@@ -43,7 +43,7 @@ class DistillabilityServiceImplExt : public DistillabilityServiceImpl {
         blink::mojom::UrlHostDistillerInfo::New();
     distiller_info->is_distillable = false;
 
-    const nweb_ex::BrowserReaderModeWhitelistConfig* whitelist_config =
+    std::optional<nweb_ex::BrowserReaderModeWhitelistConfig> whitelist_config =
         nweb_ex::AlloyBrowserReaderModeConfig::GetInstance()->QueryWhitelistConfig(host);
     if (whitelist_config) {
       distiller_info->is_distillable = true;
@@ -80,7 +80,9 @@ void DistillabilityDriver::DidStartNavigation(
 
 void DistillabilityDriver::DidRedirectNavigation(
     content::NavigationHandle* navigation_handle) {
-  nweb_ex::AlloyBrowserReaderModeConfig::GetInstance()->UpdateRedirectChain(
-      navigation_handle->GetRedirectChain());
+  if (navigation_handle && navigation_handle->IsInMainFrame()) {
+    nweb_ex::AlloyBrowserReaderModeConfig::GetInstance()->UpdateRedirectChain(
+        navigation_handle->GetRedirectChain());
+  }
 }
 #endif  // ARKWEB_READER_MODE

@@ -3873,6 +3873,10 @@ source_set("browser") {
     deps += [ "//arkweb//build/features:features" ]
   }
 
+  if (arkweb_ai) {
+    sources += arkweb_content_browser_ai_ohos_sources
+  }
+
   if (arkweb_same_layer) {
     sources += arkweb_content_browser_media_ohos_sources
   }

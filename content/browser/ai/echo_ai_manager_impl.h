@@ -42,6 +42,9 @@ class EchoAIManagerImpl : public blink::mojom::AIManager {
   EchoAIManagerImpl();
 
   // `blink::mojom::AIManager` implementation.
+#if BUILDFLAG(ARKWEB_AI)
+  void CreateLanguageDetector(CreateLanguageDetectorCallback callback) override {}
+#endif
   void CanCreateLanguageModel(
       blink::mojom::AILanguageModelCreateOptionsPtr options,
       CanCreateLanguageModelCallback callback) override;

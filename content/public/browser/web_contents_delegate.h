@@ -62,6 +62,10 @@
 #include "arkweb/ohos_nweb/src/capi/nweb_extension_javascript_item.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_AI)
+#include "arkweb/chromium_ext/content/public/browser/ai_session_types.h"
+#endif
+
 #if BUILDFLAG(IS_ANDROID)
 #include "base/android/scoped_java_ref.h"
 #include "content/public/browser/back_forward_transition_animation_manager.h"

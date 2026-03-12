@@ -1792,3 +1792,373 @@ TEST_F(SelectionControllerForIncludeTest, ShowSelectionByLastLinkHitTestResult05
                     .ShowSelectionByLastLinkHitTestResult();
   EXPECT_TRUE(result);
 }
+
+TEST_F(SelectionControllerForIncludeTest, SameEditablePreviousSiblingTest_1stIf) {
+  SetHtmlInnerHTML(R"HTML(
+    <body>
+      <div id='parent' contenteditable>
+        <span id='left'>first</span>
+        <span id='right'>second</span>
+      </div>
+    </body>
+  )HTML");
+
+  Node* right = GetDocument().getElementById(AtomicString("right"));
+  ASSERT_TRUE(right != nullptr);
+
+  Node* result =
+      blink::SelectionControllerUtils::SameEditablePreviousSibling(right);
+  EXPECT_NE(result, nullptr);
+}
+
+TEST_F(SelectionControllerForIncludeTest, SameEditablePreviousSiblingTest_2ndIf) {
+  Node* result =
+      blink::SelectionControllerUtils::SameEditablePreviousSibling(nullptr);
+  EXPECT_EQ(result, nullptr);
+}
+
+TEST_F(SelectionControllerForIncludeTest, SameEditableParentTest_1stIf) {
+  SetHtmlInnerHTML(R"HTML(
+    <body>
+      <div id='parent' contenteditable>
+        <span id='child'>text</span>
+      </div>
+    </body>
+  )HTML");
+
+  Node* child = GetDocument().getElementById(AtomicString("child"));
+  ASSERT_TRUE(child != nullptr);
+
+  Node* result = blink::SelectionControllerUtils::SameEditableParent(child);
+  EXPECT_NE(result, nullptr);
+}
+
+TEST_F(SelectionControllerForIncludeTest, SameEditableParentTest_2ndIf) {
+  SetHtmlInnerHTML(R"HTML(
+    <body>
+      <div id='parent'>
+        <span id='child' contenteditable>text</span>
+      </div>
+    </body>
+  )HTML");
+
+  Node* child = GetDocument().getElementById(AtomicString("child"));
+  ASSERT_TRUE(child != nullptr);
+
+  Node* result = blink::SelectionControllerUtils::SameEditableParent(child);
+  EXPECT_EQ(result, nullptr);
+}
+
+TEST_F(SelectionControllerForIncludeTest, SameEditableParentTest_3rdIf) {
+  Node* result = blink::SelectionControllerUtils::SameEditableParent(nullptr);
+  EXPECT_EQ(result, nullptr);
+}
+
+TEST_F(SelectionControllerForIncludeTest, UpdateAnchorIfWhiteSpaceTest_1stIf) {
+  SetHtmlInnerHTML(R"HTML(
+    <body>
+      <div id='sample' contenteditable>
+        <span id='top'>this is a sample test</span>
+      </div>
+    </body>
+  )HTML");
+
+  Node* top = GetDocument().getElementById(AtomicString("top"))->firstChild();
+  ASSERT_TRUE(top != nullptr);
+
+  const blink::PositionInFlatTree pos(top, 1);
+
+  auto result =
+      blink::SelectionControllerUtils::UpdateAnchorIfWhiteSpace(top, pos);
+  EXPECT_EQ(result, top);
+}
+
+TEST_F(SelectionControllerForIncludeTest, UpdateAnchorIfWhiteSpaceTest_2ndIf) {
+  SetHtmlInnerHTML(R"HTML(
+    <body>
+      <div id='sample' contenteditable>
+        <span id='top'>   </span>
+      </div>
+    </body>
+  )HTML");
+
+  Node* top = GetDocument().getElementById(AtomicString("top"))->firstChild();
+  ASSERT_TRUE(top != nullptr);
+
+  const blink::PositionInFlatTree pos(top, 1);
+
+  auto result =
+      blink::SelectionControllerUtils::UpdateAnchorIfWhiteSpace(top, pos);
+  EXPECT_EQ(result, top);
+}
+
+TEST_F(SelectionControllerForIncludeTest, UpdateAnchorIfWhiteSpaceTest_3rdIf) {
+  SetHtmlInnerHTML(R"HTML(
+    <body>
+      <div id='sample' contenteditable>
+        <span id='top'>
+          <span contenteditable=false id='left'>first</span>
+          <span id='right'>   </span>
+        </span>
+      </div>
+    </body>
+  )HTML");
+
+  Node* right = GetDocument().getElementById(AtomicString("right"))->firstChild();
+  ASSERT_TRUE(right != nullptr);
+
+  const blink::PositionInFlatTree pos(right, 1);
+
+  auto result =
+      blink::SelectionControllerUtils::UpdateAnchorIfWhiteSpace(right, pos);
+  EXPECT_EQ(result, right);
+}
+
+TEST_F(SelectionControllerForIncludeTest, SetDataDetectorHitTest_4thIf) {
+  SetHtmlInnerHTML(R"HTML(
+    <body>
+      <style>
+        #target {
+          top: 0;
+          left: 0;
+          position: absolute;
+          width: 100px;
+          height: 100px;
+          z-index: 1;
+        }
+        #linktarget {
+          top: 100px;
+          left: 100px;
+          position: absolute;
+          width: 100px;
+          height: 100px;
+          z-index: 1;
+        }
+      </style>
+      <img id=target src='http://test.png'>
+      <a id=linktarget href='about:blank'>Content</a>
+    </body>
+  )HTML");
+
+  GetDocument().UpdateStyleAndLayout(DocumentUpdateReason::kTest);
+
+  WebMouseEvent mouse_event(WebInputEvent::Type::kMouseDown,
+                            WebInputEvent::kIsCompatibilityEventForTouch,
+                            WebInputEvent::GetStaticTimeStampForTests());
+  mouse_event.SetFrameScale(1);
+  HitTestLocation location((gfx::Point(0, 0)));
+
+  HitTestResult hit_test_result;
+  Node* node =
+      GetDocument().getElementById(AtomicString("linktarget"))->firstChild();
+  ASSERT_TRUE(node != nullptr);
+
+  auto* layout_text_ =
+      MakeGarbageCollected<LayoutText>(node, String("Content"));
+  ASSERT_TRUE(layout_text_ != nullptr);
+
+  Element* link = GetDocument().getElementById(AtomicString("linktarget"));
+  ASSERT_TRUE(link != nullptr);
+
+  auto* style = link->GetComputedStyle();
+  ASSERT_TRUE(style != nullptr);
+  layout_text_->SetStyle(style);
+
+  hit_test_result.SetInnerNode(node);
+  hit_test_result.InnerNode()->SetLayoutObject(layout_text_);
+  hit_test_result.SetURLElement(link);
+
+  const HitTestResult hit_test_result_ = hit_test_result;
+  const MouseEventWithHitTestResults evnet_(mouse_event, location,
+                                            hit_test_result_);
+
+  GetFrame().GetEventHandler().GetSelectionController().SetDataDetectorHitTest(
+      evnet_);
+  EXPECT_TRUE(hit_test_result_.InnerNode());
+}
+
+TEST_F(SelectionControllerForIncludeTest, HandleMouseReleaseEventWithAIExtTest) {
+  SetHtmlInnerHTML(R"HTML(
+    <body>
+      <div id='selectable'>This is a sample text."</div>
+    </body>
+  )HTML");
+
+  UpdateAllLifecyclePhasesForTest();
+
+  SelectionController& controller_ = Controller();
+
+  WebMouseEvent mouse_event(WebInputEvent::Type::kMouseDown,
+                            WebInputEvent::kIsCompatibilityEventForTouch,
+                            WebInputEvent::GetStaticTimeStampForTests());
+  mouse_event.SetFrameScale(1);
+  HitTestLocation location((gfx::Point(0, 0)));
+
+  HitTestResult hit_test_result;
+  Node* node = GetDocument().getElementById(AtomicString("selectable"));
+  ASSERT_TRUE(node != nullptr);
+
+  hit_test_result.SetInnerNode(node);
+  const HitTestResult hit_test_result_ = hit_test_result;
+  const MouseEventWithHitTestResults evnet_(mouse_event, location,
+                                            hit_test_result_);
+
+  blink::SelectionControllerUtils::HandleMouseReleaseEventWithAIExt(
+      &controller_, evnet_);
+}
+
+TEST_F(SelectionControllerForIncludeTest, HandleGestureTapIfSelectionExistTest_11thIf) {
+  const char* body_content =
+      "<div id='sample' contenteditable>"
+      "<span id = top>this is a sample test</span>"
+      "</div>";
+  SetBodyContent(body_content);
+
+  Node* top = GetDocument().getElementById(AtomicString("top"))->firstChild();
+  ASSERT_TRUE(top != nullptr);
+
+  SetNonDirectionalSelectionIfNeeded(SelectionInFlatTree::Builder()
+                                          .Collapse(PositionInFlatTree(top, 0))
+                                          .Extend(PositionInFlatTree(top, 10))
+                                          .Build(),
+                                      TextGranularity::kCharacter);
+
+  blink::WebMouseEvent single_click(
+      blink::WebMouseEvent::Type::kMouseDown, 0,
+      blink::WebInputEvent::GetStaticTimeStampForTests());
+
+  single_click.SetFrameScale(1);
+  HitTestLocation location((gfx::Point(20, 5)));
+  single_click.button = blink::WebMouseEvent::Button::kLeft;
+  single_click.click_count = 1;
+  single_click.SetModifiers(
+      blink::WebInputEvent::Modifiers::kIsCompatibilityEventForTouch);
+
+  HitTestResult result;
+
+  const MouseEventWithHitTestResults event_(single_click, location, result);
+
+  bool result_ = GetFrame()
+                     .GetEventHandler()
+                     .GetSelectionController()
+                     .HandleGestureTapIfSelectionExist(event_);
+
+  EXPECT_FALSE(result_);
+}
+
+TEST_F(SelectionControllerForIncludeTest, HandleGestureTapIfSelectionExistTest_12thIf) {
+  const char* body_content =
+      "<div id='sample' contenteditable>"
+      "<span id = top>this is a sample test</span>"
+      "</div>";
+  SetBodyContent(body_content);
+
+  Node* top = GetDocument().getElementById(AtomicString("top"))->firstChild();
+  ASSERT_TRUE(top != nullptr);
+
+  SetNonDirectionalSelectionIfNeeded(SelectionInFlatTree::Builder()
+                                          .Collapse(PositionInFlatTree(top, 0))
+                                          .Extend(PositionInFlatTree(top, 10))
+                                          .Build(),
+                                      TextGranularity::kCharacter);
+
+  blink::WebMouseEvent single_click(
+      blink::WebMouseEvent::Type::kMouseDown, 0,
+      blink::WebInputEvent::GetStaticTimeStampForTests());
+
+  single_click.SetFrameScale(1);
+  HitTestLocation location((gfx::Point(20, 5)));
+  single_click.button = blink::WebMouseEvent::Button::kLeft;
+  single_click.click_count = 1;
+  single_click.SetModifiers(
+      blink::WebInputEvent::Modifiers::kIsCompatibilityEventForTouch);
+
+  HitTestResult result;
+
+  const MouseEventWithHitTestResults event_(single_click, location, result);
+
+  bool result_ = GetFrame()
+                     .GetEventHandler()
+                     .GetSelectionController()
+                     .HandleGestureTapIfSelectionExist(event_);
+
+  EXPECT_FALSE(result_);
+}
+
+TEST_F(SelectionControllerForIncludeTest, HandleGestureTapIfSelectionExistTest_13thIf) {
+  const char* body_content =
+      "<div id='sample' contenteditable>"
+      "<span id = top>this is a sample test</span>"
+      "</div>";
+  SetBodyContent(body_content);
+
+  Node* top = GetDocument().getElementById(AtomicString("top"))->firstChild();
+  ASSERT_TRUE(top != nullptr);
+
+  SetNonDirectionalSelectionIfNeeded(SelectionInFlatTree::Builder()
+                                          .Collapse(PositionInFlatTree(top, 0))
+                                          .Extend(PositionInFlatTree(top, 10))
+                                          .Build(),
+                                      TextGranularity::kCharacter);
+
+  blink::WebMouseEvent single_click(
+      blink::WebMouseEvent::Type::kMouseDown, 0,
+      blink::WebInputEvent::GetStaticTimeStampForTests());
+
+  single_click.SetFrameScale(1);
+  HitTestLocation location((gfx::Point(20, 5)));
+  single_click.button = blink::WebMouseEvent::Button::kLeft;
+  single_click.click_count = 1;
+  single_click.SetModifiers(
+      blink::WebInputEvent::Modifiers::kIsCompatibilityEventForTouch);
+
+  HitTestResult result;
+
+  const MouseEventWithHitTestResults event_(single_click, location, result);
+
+  bool result_ = GetFrame()
+                     .GetEventHandler()
+                     .GetSelectionController()
+                     .HandleGestureTapIfSelectionExist(event_);
+
+  EXPECT_FALSE(result_);
+}
+
+TEST_F(SelectionControllerForIncludeTest, HandleGestureTapIfSelectionExistTest_14thIf) {
+  const char* body_content =
+      "<div id='sample' contenteditable>"
+      "<span id = top>this is a sample test</span>"
+      "</div>";
+  SetBodyContent(body_content);
+
+  Node* top = GetDocument().getElementById(AtomicString("top"))->firstChild();
+  ASSERT_TRUE(top != nullptr);
+
+  SetNonDirectionalSelectionIfNeeded(SelectionInFlatTree::Builder()
+                                          .Collapse(PositionInFlatTree(top, 0))
+                                          .Extend(PositionInFlatTree(top, 10))
+                                          .Build(),
+                                      TextGranularity::kCharacter);
+
+  blink::WebMouseEvent single_click(
+      blink::WebMouseEvent::Type::kMouseDown, 0,
+      blink::WebInputEvent::GetStaticTimeStampForTests());
+
+  single_click.SetFrameScale(1);
+  HitTestLocation location((gfx::Point(20, 5)));
+  single_click.button = blink::WebMouseEvent::Button::kLeft;
+  single_click.click_count = 1;
+  single_click.SetModifiers(
+      blink::WebInputEvent::Modifiers::kIsCompatibilityEventForTouch);
+
+  HitTestResult result;
+
+  const MouseEventWithHitTestResults event_(single_click, location, result);
+
+  bool result_ = GetFrame()
+                     .GetEventHandler()
+                     .GetSelectionController()
+                     .HandleGestureTapIfSelectionExist(event_);
+
+  EXPECT_FALSE(result_);
+}

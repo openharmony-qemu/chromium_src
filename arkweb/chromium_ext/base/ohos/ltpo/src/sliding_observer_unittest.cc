@@ -898,6 +898,694 @@ TEST(SlidingObserverTest, StopFling005) {
   EXPECT_FALSE(observer.is_off_screen_);
 }
 
+TEST(SlidingObserverTest, StopFling006) {
+  SlidingObserver observer;
+  observer.is_inited_ = true;
+  observer.is_sliding_ = true;
+  observer.is_off_screen_ = true;
+  observer.strategy_ = LTPOStrategy::HGM_FLING;
+  EXPECT_EQ(observer.StopFling(), 0);
+  EXPECT_FALSE(observer.is_sliding_);
+  EXPECT_FALSE(observer.is_off_screen_);
+}
+
+TEST(SlidingObserverTest, StopFling007) {
+  SlidingObserver observer;
+  observer.is_inited_ = true;
+  observer.is_sliding_ = true;
+  observer.is_off_screen_ = true;
+  observer.strategy_ = LTPOStrategy::ALL;
+  EXPECT_EQ(observer.StopFling(), 0);
+  EXPECT_FALSE(observer.is_sliding_);
+  EXPECT_FALSE(observer.is_off_screen_);
+}
+
+TEST(SlidingObserverTest, StopFling008) {
+  SlidingObserver observer;
+  observer.is_inited_ = false;
+  observer.is_sliding_ = true;
+  observer.is_off_screen_ = true;
+  observer.strategy_ = LTPOStrategy::APS_FLING;
+  EXPECT_EQ(observer.StopFling(), -1);
+  EXPECT_TRUE(observer.is_sliding_);
+  EXPECT_TRUE(observer.is_off_screen_);
+}
+
+TEST(SlidingObserverTest, StopFling009) {
+  SlidingObserver observer;
+  observer.is_inited_ = true;
+  observer.is_sliding_ = false;
+  observer.is_off_screen_ = true;
+  observer.strategy_ = LTPOStrategy::APS_FLING;
+  EXPECT_EQ(observer.StopFling(), -1);
+  EXPECT_FALSE(observer.is_sliding_);
+  EXPECT_TRUE(observer.is_off_screen_);
+}
+
+TEST(SlidingObserverTest, StopFling010) {
+  SlidingObserver observer;
+  observer.is_inited_ = true;
+  observer.is_sliding_ = true;
+  observer.is_off_screen_ = false;
+  observer.strategy_ = LTPOStrategy::APS_FLING;
+  EXPECT_EQ(observer.StopFling(), -1);
+  EXPECT_TRUE(observer.is_sliding_);
+  EXPECT_FALSE(observer.is_off_screen_);
+}
+
+TEST(SlidingObserverTest, GetVelocity002) {
+  SlidingObserver observer;
+  static base::NoDestructor<SlidingObserver> instance;
+  float text_velocity_x = 0.0f;
+  float test_velocity_y = 0.0f;
+  float get_result = observer.GetVelocity(text_velocity_x, test_velocity_y);
+  EXPECT_EQ(get_result, 0.0f);
+}
+
+TEST(SlidingObserverTest, GetVelocity003) {
+  SlidingObserver observer;
+  static base::NoDestructor<SlidingObserver> instance;
+  float text_velocity_x = -10.0f;
+  float test_velocity_y = -20.0f;
+  const float kMilliMeterPerInch = 25.4;
+  float convert_unit =
+      kMilliMeterPerInch / instance->dpi_ * instance->virtual_pixel_ratio_;
+  float velocity = std::sqrt(text_velocity_x * text_velocity_x +
+                            test_velocity_y * test_velocity_y);
+  float get_result = observer.GetVelocity(text_velocity_x, test_velocity_y);
+  EXPECT_EQ(get_result, convert_unit * velocity);
+}
+
+TEST(SlidingObserverTest, GetVelocity004) {
+  SlidingObserver observer;
+  static base::NoDestructor<SlidingObserver> instance;
+  float text_velocity_x = 100.0f;
+  float test_velocity_y = 200.0f;
+  const float kMilliMeterPerInch = 25.4;
+  float convert_unit =
+      kMilliMeterPerInch / instance->dpi_ * instance->virtual_pixel_ratio_;
+  float velocity = std::sqrt(text_velocity_x * text_velocity_x +
+                            test_velocity_y * test_velocity_y);
+  float get_result = observer.GetVelocity(text_velocity_x, test_velocity_y);
+  EXPECT_EQ(get_result, convert_unit * velocity);
+}
+
+TEST(SlidingObserverTest, GetVelocity005) {
+  SlidingObserver observer;
+  static base::NoDestructor<SlidingObserver> instance;
+  float text_velocity_x = 0.5f;
+  float test_velocity_y = 0.5f;
+  const float kMilliMeterPerInch = 25.4;
+  float convert_unit =
+      kMilliMeterPerInch / instance->dpi_ * instance->virtual_pixel_ratio_;
+  float velocity = std::sqrt(text_velocity_x * text_velocity_x +
+                            test_velocity_y * test_velocity_y);
+  float get_result = observer.GetVelocity(text_velocity_x, test_velocity_y);
+  EXPECT_EQ(get_result, convert_unit * velocity);
+}
+
+TEST(SlidingObserverTest, GetVelocity006) {
+  SlidingObserver observer;
+  static base::NoDestructor<SlidingObserver> instance;
+  float text_velocity_x = 1.0f;
+  float test_velocity_y = 0.0f;
+  const float kMilliMeterPerInch = 25.4;
+  float convert_unit =
+      kMilliMeterPerInch / instance->dpi_ * instance->virtual_pixel_ratio_;
+  float velocity = std::sqrt(text_velocity_x * text_velocity_x +
+                            test_velocity_y * test_velocity_y);
+  float get_result = observer.GetVelocity(text_velocity_x, test_velocity_y);
+  EXPECT_EQ(get_result, convert_unit * velocity);
+}
+
+TEST(SlidingObserverTest, GetVelocity007) {
+  SlidingObserver observer;
+  static base::NoDestructor<SlidingObserver> instance;
+  float text_velocity_x = 0.0f;
+  float test_velocity_y = 1.0f;
+  const float kMilliMeterPerInch = 25.4;
+  float convert_unit =
+      kMilliMeterPerInch / instance->dpi_ * instance->virtual_pixel_ratio_;
+  float velocity = std::sqrt(text_velocity_x * text_velocity_x +
+                            test_velocity_y * test_velocity_y);
+  float get_result = observer.GetVelocity(text_velocity_x, test_velocity_y);
+  EXPECT_EQ(get_result, convert_unit * velocity);
+}
+
+TEST(SlidingObserverTest, OnScrollUpdateTest009) {
+  SlidingObserver observer;
+  observer.is_sliding_ = true;
+  observer.is_off_screen_ = false;
+  observer.strategy_ = LTPOStrategy::HGM_FLING;
+  observer.sliding_frame_rate_ = 30;
+  std::vector<OHOS::NWeb::FrameRateSetting> settings = {
+      {0.0f, 3000.0f, 30},
+  };
+  observer.on_screen_setting_ = settings;
+  EXPECT_EQ(observer.OnScrollUpdate(10, 10), -1);
+}
+
+TEST(SlidingObserverTest, OnScrollUpdateTest010) {
+  SlidingObserver observer;
+  observer.is_sliding_ = true;
+  observer.is_off_screen_ = false;
+  observer.strategy_ = LTPOStrategy::HGM_FLING;
+  observer.sliding_frame_rate_ = 90;
+  std::vector<OHOS::NWeb::FrameRateSetting> settings = {
+      {0.0f, 3000.0f, 90},
+  };
+  observer.on_screen_setting_ = settings;
+  EXPECT_EQ(observer.OnScrollUpdate(50, 50), -1);
+}
+
+TEST(SlidingObserverTest, OnScrollUpdateTest011) {
+  SlidingObserver observer;
+  observer.is_sliding_ = true;
+  observer.is_off_screen_ = false;
+  observer.strategy_ = LTPOStrategy::HGM_FLING;
+  observer.sliding_frame_rate_ = 120;
+  std::vector<OHOS::NWeb::FrameRateSetting> settings = {
+      {0.0f, 3000.0f, 120},
+  };
+  observer.on_screen_setting_ = settings;
+  EXPECT_EQ(observer.OnScrollUpdate(100, 100), -1);
+}
+
+TEST(SlidingObserverTest, OnScrollUpdateTest012) {
+  SlidingObserver observer;
+  observer.is_sliding_ = true;
+  observer.is_off_screen_ = false;
+  observer.strategy_ = LTPOStrategy::HGM_FLING;
+  observer.sliding_frame_rate_ = 30;
+  std::vector<OHOS::NWeb::FrameRateSetting> settings = {
+      {0.0f, 1000.0f, 30},
+      {1000.0f, 3000.0f, 60},
+  };
+  observer.on_screen_setting_ = settings;
+  EXPECT_EQ(observer.OnScrollUpdate(10, 10), 30);
+}
+
+TEST(SlidingObserverTest, OnScrollUpdateTest013) {
+  SlidingObserver observer;
+  observer.is_sliding_ = true;
+  observer.is_off_screen_ = false;
+  observer.strategy_ = LTPOStrategy::HGM_FLING;
+  observer.sliding_frame_rate_ = 60;
+  std::vector<OHOS::NWeb::FrameRateSetting> settings = {
+      {0.0f, 1000.0f, 30},
+      {1000.0f, 3000.0f, 60},
+  };
+  observer.on_screen_setting_ = settings;
+  EXPECT_EQ(observer.OnScrollUpdate(100, 100), 60);
+}
+
+TEST(SlidingObserverTest, OnFlingUpdateTest009) {
+  SlidingObserver observer;
+  observer.is_sliding_ = true;
+  observer.is_off_screen_ = true;
+  observer.strategy_ = LTPOStrategy::HGM_FLING;
+  observer.sliding_frame_rate_ = 30;
+  std::vector<OHOS::NWeb::FrameRateSetting> settings = {
+      {0.0f, 3000.0f, 30},
+  };
+  observer.off_screen_setting_ = settings;
+  EXPECT_EQ(observer.OnFlingUpdate(10, 10), -1);
+}
+
+TEST(SlidingObserverTest, OnFlingUpdateTest010) {
+  SlidingObserver observer;
+  observer.is_sliding_ = true;
+  observer.is_off_screen_ = true;
+  observer.strategy_ = LTPOStrategy::HGM_FLING;
+  observer.sliding_frame_rate_ = 90;
+  std::vector<OHOS::NWeb::FrameRateSetting> settings = {
+      {0.0f, 3000.0f, 90},
+  };
+  observer.off_screen_setting_ = settings;
+  EXPECT_EQ(observer.OnFlingUpdate(50, 50), -1);
+}
+
+TEST(SlidingObserverTest, OnFlingUpdateTest011) {
+  SlidingObserver observer;
+  observer.is_sliding_ = true;
+  observer.is_off_screen_ = true;
+  observer.strategy_ = LTPOStrategy::HGM_FLING;
+  observer.sliding_frame_rate_ = 120;
+  std::vector<OHOS::NWeb::FrameRateSetting> settings = {
+      {0.0f, 3000.0f, 120},
+  };
+  observer.off_screen_setting_ = settings;
+  EXPECT_EQ(observer.OnFlingUpdate(100, 100), -1);
+}
+
+TEST(SlidingObserverTest, OnFlingUpdateTest012) {
+  SlidingObserver observer;
+  observer.is_sliding_ = true;
+  observer.is_off_screen_ = true;
+  observer.strategy_ = LTPOStrategy::HGM_FLING;
+  observer.sliding_frame_rate_ = 30;
+  std::vector<OHOS::NWeb::FrameRateSetting> settings = {
+      {0.0f, 1000.0f, 30},
+      {1000.0f, 3000.0f, 60},
+  };
+  observer.off_screen_setting_ = settings;
+  EXPECT_EQ(observer.OnFlingUpdate(10, 10), 30);
+}
+
+TEST(SlidingObserverTest, OnFlingUpdateTest013) {
+  SlidingObserver observer;
+  observer.is_sliding_ = true;
+  observer.is_off_screen_ = true;
+  observer.strategy_ = LTPOStrategy::HGM_FLING;
+  observer.sliding_frame_rate_ = 60;
+  std::vector<OHOS::NWeb::FrameRateSetting> settings = {
+      {0.0f, 1000.0f, 30},
+      {1000.0f, 3000.0f, 60},
+  };
+  observer.off_screen_setting_ = settings;
+  EXPECT_EQ(observer.OnFlingUpdate(100, 100), 60);
+}
+
+TEST(SlidingObserverTest, GetPreferedFrameRateTest017) {
+  SlidingObserver observer;
+  std::vector<OHOS::NWeb::FrameRateSetting> settings = {{0.0f, 10.0f, 30},
+                                                        {10.0f, 20.0f, 60},
+                                                        {20.0f, -1.0f, 90}};
+  EXPECT_EQ(observer.GetPreferedFrameRate(5.0f, settings), 30);
+}
+
+TEST(SlidingObserverTest, GetPreferedFrameRateTest018) {
+  SlidingObserver observer;
+  std::vector<OHOS::NWeb::FrameRateSetting> settings = {{0.0f, 10.0f, 30},
+                                                        {10.0f, 20.0f, 60},
+                                                        {20.0f, -1.0f, 90}};
+  EXPECT_EQ(observer.GetPreferedFrameRate(15.0f, settings), 60);
+}
+
+TEST(SlidingObserverTest, GetPreferedFrameRateTest019) {
+  SlidingObserver observer;
+  std::vector<OHOS::NWeb::FrameRateSetting> settings = {{0.0f, 10.0f, 30},
+                                                        {10.0f, 20.0f, 60},
+                                                        {20.0f, -1.0f, 90}};
+  EXPECT_EQ(observer.GetPreferedFrameRate(25.0f, settings), 90);
+}
+
+TEST(SlidingObserverTest, GetPreferedFrameRateTest020) {
+  SlidingObserver observer;
+  std::vector<OHOS::NWeb::FrameRateSetting> settings = {{0.0f, 10.0f, 30},
+                                                        {10.0f, 20.0f, 60},
+                                                        {20.0f, 30.0f, 90}};
+  testing::internal::CaptureStderr();
+  int32_t frameRate = observer.GetPreferedFrameRate(35.0f, settings);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_NE(log_output.find("can not find proper prfered frame rate"),
+            std::string::npos);
+  EXPECT_EQ(frameRate, 120);
+}
+
+TEST(SlidingObserverTest, GetPreferedFrameRateTest021) {
+  SlidingObserver observer;
+  std::vector<OHOS::NWeb::FrameRateSetting> settings = {{5.0f, 15.0f, 30}};
+  EXPECT_EQ(observer.GetPreferedFrameRate(10.0f, settings), 30);
+}
+
+TEST(SlidingObserverTest, GetPreferedFrameRateTest022) {
+  SlidingObserver observer;
+  std::vector<OHOS::NWeb::FrameRateSetting> settings = {{5.0f, 15.0f, 30}};
+  testing::internal::CaptureStderr();
+  int32_t frameRate = observer.GetPreferedFrameRate(4.0f, settings);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_NE(log_output.find("can not find proper prfered frame rate"),
+            std::string::npos);
+  EXPECT_EQ(frameRate, 120);
+}
+
+TEST(SlidingObserverTest, GetPreferedFrameRateTest023) {
+  SlidingObserver observer;
+  std::vector<OHOS::NWeb::FrameRateSetting> settings = {{5.0f, 15.0f, 30}};
+  testing::internal::CaptureStderr();
+  int32_t frameRate = observer.GetPreferedFrameRate(16.0f, settings);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_NE(log_output.find("can not find proper prfered frame rate"),
+            std::string::npos);
+  EXPECT_EQ(frameRate, 120);
+}
+
+TEST(SlidingObserverTest, GetPreferedFrameRateTest024) {
+  SlidingObserver observer;
+  std::vector<OHOS::NWeb::FrameRateSetting> settings = {{0.0f, 100.0f, 120}};
+  observer.use_pdf_rate_ = true;
+  EXPECT_EQ(observer.GetPreferedFrameRate(50.0f, settings), 90);
+}
+
+TEST(SlidingObserverTest, GetPreferedFrameRateTest025) {
+  SlidingObserver observer;
+  std::vector<OHOS::NWeb::FrameRateSetting> settings = {{0.0f, 100.0f, 80}};
+  observer.use_pdf_rate_ = true;
+  EXPECT_EQ(observer.GetPreferedFrameRate(50.0f, settings), 80);
+}
+
+TEST(SlidingObserverTest, GetPreferedFrameRateTest026) {
+  SlidingObserver observer;
+  std::vector<OHOS::NWeb::FrameRateSetting> settings = {{0.0f, 100.0f, 100}};
+  observer.use_pdf_rate_ = true;
+  EXPECT_EQ(observer.GetPreferedFrameRate(50.0f, settings), 90);
+}
+
+TEST(SlidingObserverTest, GetPreferedFrameRateTest027) {
+  SlidingObserver observer;
+  std::vector<OHOS::NWeb::FrameRateSetting> settings = {{0.0f, -1.0f, 30}};
+  EXPECT_EQ(observer.GetPreferedFrameRate(1000.0f, settings), 30);
+}
+
+TEST(SlidingObserverTest, GetPreferedFrameRateTest028) {
+  SlidingObserver observer;
+  std::vector<OHOS::NWeb::FrameRateSetting> settings = {{0.0f, -1.0f, 60}};
+  EXPECT_EQ(observer.GetPreferedFrameRate(5000.0f, settings), 60);
+}
+
+TEST(SlidingObserverTest, GetPreferedFrameRateTest029) {
+  SlidingObserver observer;
+  std::vector<OHOS::NWeb::FrameRateSetting> settings = {{0.0f, 10.0f, 24},
+                                                        {10.0f, 30.0f, 30},
+                                                        {30.0f, 60.0f, 60},
+                                                        {60.0f, -1.0f, 120}};
+  EXPECT_EQ(observer.GetPreferedFrameRate(5.0f, settings), 24);
+}
+
+TEST(SlidingObserverTest, GetPreferedFrameRateTest030) {
+  SlidingObserver observer;
+  std::vector<OHOS::NWeb::FrameRateSetting> settings = {{0.0f, 10.0f, 24},
+                                                        {10.0f, 30.0f, 30},
+                                                        {30.0f, 60.0f, 60},
+                                                        {60.0f, -1.0f, 120}};
+  EXPECT_EQ(observer.GetPreferedFrameRate(20.0f, settings), 30);
+}
+
+TEST(SlidingObserverTest, GetPreferedFrameRateTest031) {
+  SlidingObserver observer;
+  std::vector<OHOS::NWeb::FrameRateSetting> settings = {{0.0f, 10.0f, 24},
+                                                        {10.0f, 30.0f, 30},
+                                                        {30.0f, 60.0f, 60},
+                                                        {60.0f, -1.0f, 120}};
+  EXPECT_EQ(observer.GetPreferedFrameRate(45.0f, settings), 60);
+}
+
+TEST(SlidingObserverTest, GetPreferedFrameRateTest032) {
+  SlidingObserver observer;
+  std::vector<OHOS::NWeb::FrameRateSetting> settings = {0.0f, 10.0f, 24},
+                                                        {10.0f, 30.0f, 30},
+                                                        {30.0f, 60.0f, 60},
+                                                        {60.0f, -1.0f, 120}};
+  EXPECT_EQ(observer.GetPreferedFrameRate(100.0f, settings), 120);
+}
+
+TEST(SlidingObserverTest, OnScrollUpdateTest014) {
+  SlidingObserver observer;
+  observer.is_sliding_ = true;
+  observer.is_off_screen_ = false;
+  observer.strategy_ = LTPOStrategy::HGM_FLING;
+  observer.sliding_frame_rate_ = 24;
+  std::vector<OHOS::NWeb::FrameRateSetting> settings = {
+    {0.0f, 10.0f, 24},
+    {10.0f, 30.0f, 30},
+    {30.0f, 60.0f, 60},
+    {60.0f, -1.0f, 120}
+  };
+  observer.on_screen_setting_ = settings;
+  EXPECT_EQ(observer.OnScrollUpdate(5, 5), 24);
+}
+
+TEST(SlidingObserverTest, OnScrollUpdateTest015) {
+  SlidingObserver observer;
+  observer.is_sliding_ = true;
+  observer.is_off_screen_ = false;
+  observer.strategy_ = LTPOStrategy::HGM_FLING;
+  observer.sliding_frame_rate_ = 30;
+  std::vector<OHOS::NWeb::FrameRateSetting> settings = {
+    {0.0f, 10.0f, 24},
+    {10.0f, 30.0f, 30},
+    {30.0f, 60.0f, 60},
+    {60.0f, -1.0f, 120}
+  };
+  observer.on_screen_setting_ = settings;
+  EXPECT_EQ(observer.OnScrollUpdate(20, 20), 30);
+}
+
+TEST(SlidingObserverTest, OnScrollUpdateTest016) {
+  SlidingObserver observer;
+  observer.is_sliding_ = true;
+  observer.is_off_screen_ = false;
+  observer.strategy_ = LTPOStrategy::HGM_FLING;
+  observer.sliding_frame_rate_ = 60;
+  std::vector<OHOS::NWeb::FrameRateSetting> settings = {
+    {0.0f, 10.0f, 24},
+    {10.0f, 30.0f, 30},
+    {30.0f, 60.0f, 60},
+    {60.0f, -1.0f, 120}
+  };
+  observer.on_screen_setting_ = settings;
+  EXPECT_EQ(observer.OnScrollUpdate(50, 50), 60);
+}
+
+TEST(SlidingObserverTest, OnScrollUpdateTest017) {
+  SlidingObserver observer;
+  observer.is_sliding_ = true;
+  observer.is_off_screen_ = false;
+  observer.strategy_ = LTPOStrategy::HGM_FLING;
+  observer.sliding_frame_rate_ = 120;
+  std::vector<OHOS::NWeb::FrameRateSetting> settings = {
+    {0.0f, 10.0f, 24},
+    {10.0f, 30.0f, 30},
+    {30.0f, 60.0f, 60},
+    {60.0f, -1.0f, 120}
+  };
+  observer.on_screen_setting_ = settings;
+  EXPECT_EQ(observer.OnScrollUpdate(100, 100), 120);
+}
+
+TEST(SlidingObserverTest, OnFlingUpdateTest014) {
+  SlidingObserver observer;
+  observer.is_sliding_ = true;
+  observer.is_off_screen_ = true;
+  observer.strategy_ = LTPOStrategy::HGM_FLING;
+  observer.sliding_frame_rate_ = 24;
+  std::vector<OHOS::NWeb::FrameRateSetting> settings = {
+    {0.0f, 10.0f, 24},
+    {10.0f, 30.0f, 30},
+    {30.0f, 60.0f, 60},
+    {60.0f, -1.0f, 120}
+  };
+  observer.off_screen_setting_ = settings;
+  EXPECT_EQ(observer.OnFlingUpdate(5, 5), 24);
+}
+
+TEST(SlidingObserverTest, OnFlingUpdateTest015) {
+  SlidingObserver observer;
+  observer.is_sliding_ = true;
+  observer.is_off_screen_ = true;
+  observer.strategy_ = LTPOStrategy::HGM_FLING;
+  observer.sliding_frame_rate_ = 30;
+  std::vector<OHOS::NWeb::FrameRateSetting> settings = {
+    {0.0f, 10.0f, 24},
+    {10.0f, 30.0f, 30},
+    {30.0f, 60.0f, 60},
+    {60.0f, -1.0f, 120}
+  };
+  observer.off_screen_setting_ = settings;
+  EXPECT_EQ(observer.OnFlingUpdate(20, 20), 30);
+}
+
+TEST(SlidingObserverTest, OnFlingUpdateTest016) {
+  SlidingObserver observer;
+  observer.is_sliding_ = true;
+  observer.is_off_screen_ = true;
+  observer.strategy_ = LTPOStrategy::HGM_FLING;
+  observer.sliding_frame_rate_ = 60;
+  std::vector<OHOS::NWeb::FrameRateSetting> settings = {
+    {0.0f, 10.0f, 24},
+    {10.0f, 30.0f, 30},
+    {30.0f, 60.0f, 60},
+    {60.0f, -1.0f, 120}
+  };
+  observer.off_screen_setting_ = settings;
+  EXPECT_EQ(observer.OnFlingUpdate(50, 50), 60);
+}
+
+TEST(SlidingObserverTest, OnFlingUpdateTest017) {
+  SlidingObserver observer;
+  observer.is_sliding_ = true;
+  observer.is_off_screen_ = true;
+  observer.strategy_ = LTPOStrategy::HGM_FLING;
+  observer.sliding_frame_rate_ = 120;
+  std::vector<OHOS::NWeb::FrameRateSetting> settings = {
+    {0.0f, 10.0f, 24},
+    {10.0f, 30.0f, 30},
+    {30.0f, 60.0f, 60},
+    {60.0f, -1.0f, 120}
+  };
+  observer.off_screen_setting_ = settings;
+  EXPECT_EQ(observer.OnFlingUpdate(100, 100), 120);
+}
+
+TEST(SlidingObserverTest, StartFlingTest12) {
+  SlidingObserver observer;
+  observer.is_inited_ = true;
+  observer.is_sliding_ = true;
+  observer.strategy_ = LTPOStrategy::HGM_FLING;
+  observer.StartFling();
+  EXPECT_TRUE(observer.is_off_screen_);
+}
+
+TEST(SlidingObserverTest, StartFlingTest13) {
+  SlidingObserver observer;
+  observer.is_inited_ = true;
+  observer.is_sliding_ = true;
+  observer.strategy_ = LTPOStrategy::ALL;
+  observer.StartFling();
+  EXPECT_TRUE(observer.is_off_screen_);
+}
+
+TEST(SlidingObserverTest, StartSliding10) {
+  SlidingObserver observer;
+  observer.strategy_ = LTPOStrategy::HGM_FLING;
+  observer.is_inited_ = true;
+  observer.is_sliding_ = false;
+  observer.StartSliding();
+  EXPECT_TRUE(observer.is_sliding_);
+  EXPECT_FALSE(observer.is_off_screen_);
+}
+
+TEST(SlidingObserverTest, StartSliding11) {
+  SlidingObserver observer;
+  observer.strategy_ = LTPOStrategy::ALL;
+  observer.is_inited_ = true;
+  observer.is_sliding_ = false;
+  observer.StartSliding();
+  EXPECT_TRUE(observer.is_sliding_);
+  EXPECT_FALSE(observer.is_off_screen_);
+}
+
+TEST(SlidingObserverTest, OnDisplayInfoChange003) {
+  SlidingObserver observer;
+  observer.is_inited_ = true;
+  observer.dpi_ = 320;
+  observer.virtual_pixel_ratio_ = 3.0f;
+  observer.OnDisplayInfoChange();
+  EXPECT_EQ(observer.dpi_, 320);
+  EXPECT_EQ(observer.virtual_pixel_ratio_, 3.0f);
+}
+
+TEST(SlidingObserverTest, GetVelocity008) {
+  SlidingObserver observer;
+  static base::NoDestructor<SlidingObserver> instance;
+  float text_velocity_x = -1.0f;
+  float test_velocity_y = 1.0f;
+  const float kMilliMeterPerInch = 25.4;
+  float convert_unit =
+      kMilliMeterPerInch / instance->dpi_ * instance->virtual_pixel_ratio_;
+  float velocity = {text_velocity_x * text_velocity_x +
+                            test_velocity_y * test_velocity_y};
+  float get_result = observer.GetVelocity(text_velocity_x, test_velocity_y);
+  EXPECT_EQ(get_result, convert_unit * velocity);
+}
+
+TEST(SlidingObserverTest, GetVelocity009) {
+  SlidingObserver observer;
+  static base::NoDestructor<SlidingObserver> instance;
+  float text_velocity_x = 50.0f;
+  float test_velocity_y = -50.0f;
+  const float kMilliMeterPerInch = 25.4;
+  float convert_unit =
+      kMilliMeterPerInch / instance->dpi_ * instance->virtual_pixel_ratio_;
+  float velocity = {text_velocity_x * text_velocity_x +
+                            test_velocity_y * test_velocity_y};
+  float get_result = observer.GetVelocity(text_velocity_x, test_velocity_y);
+  EXPECT_EQ(get_result, convert_unit * velocity);
+}
+
+TESTing(SlidingObserverTest, GetVelocity010) {
+  SlidingObserver observer;
+  static base::NoDestructor<SlidingObserver> instance;
+  float text_velocity_x = 0.1f;
+  float test_velocity_y = 0.1f;
+  const float kMilliMeterPerInch = 25.4;
+  float convert_unit =
+      kMilliMeterPerInch / instance->dpi_ * instance->virtual_pixel_ratio_;
+  float velocity = {text_velocity_x * text_velocity_x +
+                            test_velocity_y * test_velocity_y};
+  float get_result = observer.GetVelocity(text_velocity_x, test_velocity_y);
+  EXPECT_EQ(get_result, convert_unit * velocity);
+}
+
+TEST(SlidingObserverTest, GetPreferedFrameRateTest033) {
+  SlidingObserver observer;
+  std::vector<OHOS::NWeb::FrameRateSetting> settings = {{0.0f, 50.0f, 24},
+                                                        {50.0f, 100.0f, 30},
+                                                        {100.0f, 200.0f, 60},
+                                                        {200.0f, -1.0f, 120}};
+  observer.use_pdf_rate_ = true;
+  EXPECT_EQ(observer.GetPreferedFrameRate(25.0f, settings), 24);
+}
+
+TEST(SlidingObserverTest, GetPreferedFrameRateTest034) {
+  SlidingObserver observer;
+  std::vector<OHOS::NWeb::FrameRateSetting> settings = {{0.0f, 50.0f, 100},
+                                                        {50.0f, 100.0f, 100},
+                                                        {100.0f, 200.0f, 100},
+                                                        {200.0f, -1.0f, 100}};
+  observer.use_pdf_rate_ = true;
+  EXPECT_EQ(observer.GetPreferedFrameRate(75.0f, settings), 90);
+}
+
+TEST(SlidingObserverTest, GetPreferedFrameRateTest035) {
+  SlidingObserver observer;
+  std::vector<OHOS::NWeb::FrameRateSetting> settings = {{0.0f, 50.0f, 80},
+                                                        {50.0f, 100.0f, 80},
+                                                        {100.0f, 200.0f, 80},
+                                                        {200.0f, -1.0f, 80}};
+  observer.use_pdf_rate_ = true;
+  EXPECT_EQ(observer.GetPreferedFrameRate(150.0f, settings), 80);
+}
+
+TEST(SlidingObserverTest, GetPreferedFrameRateTest036) {
+  SlidingObserver observer;
+  std::vector<OHOS::NWeb::FrameRateSetting> settings = {{0.0f, 50.0f, 24},
+                                                        {50.0f, 100.0f, 30},
+                                                        {100.0f, 200.0f, 60},
+                                                        {200.0f, -1.0f, 120}};
+  observer.use_pdf_rate_ = false;
+  EXPECT_EQ(observer.GetPreferedFrameRate(300.0f, settings), 120);
+}
+
+TEST(SlidingObserverTest, StopSlidingTest12) {
+  SlidingObserver observer;
+  observer.is_sliding_ = true;
+  observer.is_inited_ = true;
+  observer.is_off_screen_ = false;
+  observer.sliding_frame_rate_ = 60;
+  int32_t result = observer.StopSliding();
+  EXPECT_EQ(result, 0);
+  EXPECT_FALSE(observer.is_sliding_);
+  EXPECT_FALSE(observer.is_off_screen_);
+  EXPECT_EQ(observer.sliding_frame_rate_, 0);
+}
+
+TEST(SlidingObserverTest, StopSlidingTest13) {
+  SlidingObserver observer;
+  observer.is_sliding_ = true;
+  observer.is_inited_ = true;
+  observer.is_off_screen_ = false;
+  observer.sliding_frame_rate_ = 120;
+  observer.current_timestamp_ = 123456;
+  int32_t result = observer.StopSliding();
+  EXPECT_EQ(result, 0);
+  EXPECT_FALSE(observer.is_sliding_);
+  EXPECT_FALSE(observer.is_off_screen_);
+  EXPECT_EQ(observer.sliding_frame_rate_, 0);
+  EXPECT_EQ(observer.current_timestamp_, -1);
+}
+
 }  // namespace ohos
 }  // namespace base
 #endif

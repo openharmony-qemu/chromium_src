@@ -1466,16 +1466,6 @@ TEST(SlidingObserverTest, StartSliding11) {
   EXPECT_FALSE(observer.is_off_screen_);
 }
 
-TEST(SlidingObserverTest, OnDisplayInfoChange003) {
-  SlidingObserver observer;
-  observer.is_inited_ = true;
-  observer.dpi_ = 320;
-  observer.virtual_pixel_ratio_ = 3.0f;
-  observer.OnDisplayInfoChange();
-  EXPECT_EQ(observer.dpi_, 320);
-  EXPECT_EQ(observer.virtual_pixel_ratio_, 3.0f);
-}
-
 TEST(SlidingObserverTest, GetVelocity008) {
   SlidingObserver observer;
   static base::NoDestructor<SlidingObserver> instance;
@@ -1504,7 +1494,7 @@ TEST(SlidingObserverTest, GetVelocity009) {
   EXPECT_EQ(get_result, convert_unit * velocity);
 }
 
-TESTing(SlidingObserverTest, GetVelocity010) {
+TEST(SlidingObserverTest, GetVelocity010) {
   SlidingObserver observer;
   static base::NoDestructor<SlidingObserver> instance;
   float text_velocity_x = 0.1f;

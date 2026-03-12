@@ -7,6 +7,10 @@
 
 namespace content {
 
+#if BUILDFLAG(ARKWEB_SAVE_PAGE)
+  using SavePageExCallback = base::OnceCallback<void(bool)>;
+#endif // ARKWEB_SAVE_PAGE
+
 enum SavePageType {
   // The value of the save type before its set by the user.
   SAVE_PAGE_TYPE_UNKNOWN = -1,

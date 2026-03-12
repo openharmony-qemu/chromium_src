@@ -868,7 +868,9 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #endif
 
 #if BUILDFLAG(ARKWEB_SAVE_PAGE)
-  bool SavePage(int32_t type, const std::string& filePath) override;
+  bool SavePage(int32_t type,
+                const std::string& filePath,
+                CefRefPtr<CefSavePageResultCallback> callback) override;
 #endif // ARKWEB_SAVE_PAGE
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)

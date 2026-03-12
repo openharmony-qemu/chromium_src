@@ -1215,6 +1215,44 @@ class NWebReadDownloadDataCallback : public CefReadDownloadDataCallback {
 
   IMPLEMENT_REFCOUNTING(NWebReadDownloadDataCallback);
 };
+
+#if BUILDFLAG(ARKWEB_SAVE_PAGE)
+class NWebSavePageResultCallback : public CefSavePageResultCallback {
+ public:
+  NWebSavePageResultCallback(int32_t nweb_id,
+                             int32_t callback_id,
+                             SavePageResultCallback callback)
+      : nweb_id_(nweb_id),
+        callback_id_(callback_id),
+        save_page_result_callback_(callback) {}
+
+  ~NWebSavePageResultCallback() = default;
+
+  void OnSavePageDone(bool result) override {
+    if (!save_page_result_callback_) {
+      return;
+    }
+    content::GetUIThreadTaskRunner({})->PostTask(
+        FROM_HERE,
+        base::BindOnce(&NWebSavePageResultCallback::RunCallback,
+                       base::WrapRefCounted(this), result));
+  }
+
+ private:
+  NO_SANITIZE("cfi")
+  void RunCallback(bool result) {
+    if (!save_page_result_callback_) {
+      return;
+    }
+    save_page_result_callback_(nweb_id_, callback_id_, result);
+  }
+  int32_t nweb_id_;
+  int32_t callback_id_;
+  SavePageResultCallback save_page_result_callback_;
+
+  IMPLEMENT_REFCOUNTING(NWebSavePageResultCallback);
+};
+#endif // ARKWEB_SAVE_PAGE
 }  // namespace
 
 namespace OHOS::NWeb {
@@ -5673,11 +5711,17 @@ void NWebImpl::WebExtensionContextMenuReloadFocusedFrame() {
 #endif
 
 #if BUILDFLAG(ARKWEB_SAVE_PAGE)
-bool NWebImpl::SavePage(int32_t type, const std::string& filePath) {
+bool NWebImpl::SavePage(int32_t type,
+                        const std::string& filePath,
+                        int32_t callback_id,
+                        SavePageResultCallback callback) {
   if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "nweb_delegate_ is nullptr";
     return false;
   }
-  return nweb_delegate_->SavePage(type, filePath);
+  CefRefPtr<NWebSavePageResultCallback> save_page_result_callback =
+      new NWebSavePageResultCallback(nweb_id_, callback_id, callback);
+  return nweb_delegate_->SavePage(type, filePath, save_page_result_callback);
 }
 #endif // ARKWEB_SAVE_PAGE
 

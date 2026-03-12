@@ -15,7 +15,10 @@
 
 namespace content {
 
-SavePackage::SavePackage(PageImpl& page, SavePageType save_type,const base::FilePath& file_full_path)
+SavePackage::SavePackage(PageImpl& page,
+                         SavePageType save_type,
+                         const base::FilePath& file_full_path,
+                         SavePageExCallback callback)
     : page_(page.GetWeakPtrImpl()),
       page_url_(GetUrlToBeSaved(&page.GetMainDocument())),
       saved_main_file_path_(file_full_path),
@@ -32,15 +35,20 @@ SavePackage::SavePackage(PageImpl& page, SavePageType save_type,const base::File
       start_tick_(base::TimeTicks::Now()),
       save_type_(save_type),
       file_name_set_(&base::FilePath::CompareLessIgnoreCase),
-      unique_id_(GetNextSavePackageId()) {
+      unique_id_(GetNextSavePackageId()),
+      callback_(std::move(callback)) {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
   InternalInit();
 }
 
 void SavePackage::GetSaveInfoEx() {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
-  if (!page_)
+  if (!page_) {
+    if (callback_) {
+      std::move(callback_).Run(false);
+    }
     return;
+  }
   base::FilePath website_save_dir = saved_main_file_path_;
   base::FilePath download_save_dir = saved_main_file_path_;
 
@@ -65,8 +73,12 @@ void SavePackage::ContinueGetSaveInfoEx(bool can_save_as_complete,
   // The WebContents which owns this SavePackage may have disappeared during
   // the UI->download sequence->UI thread hop of
   // GetSaveInfo->CreateDirectoryOnFileThread->ContinueGetSaveInfo.
-  if (!page_ || !download_manager_->GetDelegate())
+  if (!page_ || !download_manager_->GetDelegate()) {
+    if (callback_) {
+      std::move(callback_).Run(false);
+    }
     return;
+  }
 
   base::FilePath::StringType default_extension;
   if (can_save_as_complete)
@@ -87,8 +99,12 @@ void SavePackage::ContinueGetSaveInfoEx(bool can_save_as_complete,
 void SavePackage::OnPathPickedEx(
     SavePackagePathPickedParams params,
     SavePackageDownloadCreatedCallback download_created_callback) {
-  if (!page_)
+  if (!page_) {
+    if (callback_) {
+      std::move(callback_).Run(false);
+    }
     return;
+  }
   saved_main_file_path_ = params.file_path;
   std::string mime_type =
       static_cast<PageImpl*>(page_.get())->GetContentsMimeType();

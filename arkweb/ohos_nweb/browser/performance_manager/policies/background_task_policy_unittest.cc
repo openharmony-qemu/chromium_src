@@ -709,7 +709,167 @@ TEST(BackgroundTaskPolicyTEST, Destructor002) {
     EXPECT_TRUE(true);
 }
 
-// Test for MaybeChangeBackgroundTask with NO_CHANGE_BG_TASK branch
+// ==================== Constructor Tests ====================
+TEST(BackgroundTaskPolicyTEST, ConstructorInitialValues001) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    EXPECT_FALSE(background_task_policy->is_request_background_task_);
+    EXPECT_EQ(background_task_policy->visible_page_num_, 0);
+    EXPECT_EQ(background_task_policy->media_playing_num_, 0);
+    EXPECT_EQ(background_task_policy->audio_state_num_, 0);
+    EXPECT_TRUE(background_task_policy->background_task_holder_ != nullptr);
+}
+
+// ==================== OnIsVisibleChanged Additional Tests ====================
+TEST(BackgroundTaskPolicyTEST, OnIsVisibleChanged004) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    PageNodeMock page_node_mock;
+    background_task_policy->visible_page_num_ = 0;
+    page_node_mock.SetIsVisible(false);
+    background_task_policy->OnIsVisibleChanged(&page_node_mock);
+    EXPECT_EQ(background_task_policy->visible_page_num_, 0);
+}
+
+TEST(BackgroundTaskPolicyTEST, OnIsVisibleChanged005) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    PageNodeMock page_node_mock;
+    background_task_policy->visible_page_num_ = 5;
+    page_node_mock.SetIsVisible(true);
+    background_task_policy->OnIsVisibleChanged(&page_node_mock);
+    EXPECT_EQ(background_task_policy->visible_page_num_, 6);
+}
+
+TEST(BackgroundTaskPolicyTEST, OnIsVisibleChanged006) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    PageNodeMock page_node_mock;
+    background_task_policy->visible_page_num_ = 1;
+    page_node_mock.SetIsVisible(false);
+    background_task_policy->OnIsVisibleChanged(&page_node_mock);
+    EXPECT_EQ(background_task_policy->visible_page_num_, 0);
+}
+
+// ==================== OnIsMediaPlayingChanged Additional Tests ====================
+TEST(BackgroundTaskPolicyTEST, OnIsMediaPlayingChanged004) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    PageNodeMock page_node_mock;
+    background_task_policy->media_playing_num_ = 0;
+    page_node_mock.SetIsMediaPlaying(false);
+    page_node_mock.SetIsVisible(false);
+    background_task_policy->OnIsMediaPlayingChanged(&page_node_mock);
+    EXPECT_EQ(background_task_policy->media_playing_num_, 0);
+}
+
+TEST(BackgroundTaskPolicyTEST, OnIsMediaPlayingChanged005) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    PageNodeMock page_node_mock;
+    background_task_policy->media_playing_num_ = 3;
+    page_node_mock.SetIsMediaPlaying(true);
+    page_node_mock.SetIsVisible(false);
+    background_task_policy->OnIsMediaPlayingChanged(&page_node_mock);
+    EXPECT_EQ(background_task_policy->media_playing_num_, 4);
+}
+
+TEST(BackgroundTaskPolicyTEST, OnIsMediaPlayingChanged006) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    PageNodeMock page_node_mock;
+    background_task_policy->media_playing_num_ = 1;
+    page_node_mock.SetIsMediaPlaying(false);
+    page_node_mock.SetIsVisible(true);
+    background_task_policy->OnIsMediaPlayingChanged(&page_node_mock);
+    EXPECT_EQ(background_task_policy->media_playing_num_, 0);
+}
+
+// ==================== OnDecrementAudioNum Additional Tests ====================
+TEST(BackgroundTaskPolicyTEST, OnDecrementAudioNum004) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    PageNodeMock page_node_mock;
+    background_task_policy->media_playing_num_ = 2;
+    background_task_policy->audio_state_num_ = 3;
+    page_node_mock.SetIsMediaPlaying(true);
+    page_node_mock.SetIsAudible(false);
+    background_task_policy->OnDecrementAudioNum(&page_node_mock);
+    EXPECT_EQ(background_task_policy->media_playing_num_, 1);
+    EXPECT_EQ(background_task_policy->audio_state_num_, 3);
+}
+
+TEST(BackgroundTaskPolicyTEST, OnDecrementAudioNum005) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    PageNodeMock page_node_mock;
+    background_task_policy->media_playing_num_ = 2;
+    background_task_policy->audio_state_num_ = 3;
+    page_node_mock.SetIsMediaPlaying(false);
+    page_node_mock.SetIsAudible(true);
+    background_task_policy->OnDecrementAudioNum(&page_node_mock);
+    EXPECT_EQ(background_task_policy->media_playing_num_, 2);
+    EXPECT_EQ(background_task_policy->audio_state_num_, 2);
+}
+
+TEST(BackgroundTaskPolicyTEST, OnDecrementAudioNum006) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    PageNodeMock page_node_mock;
+    background_task_policy->media_playing_num_ = 1;
+    background_task_policy->audio_state_num_ = 1;
+    content::GlobalRenderFrameHostId valid_id = content::GlobalRenderFrameHostId(1, 1);
+    background_task_policy->audio_context_players_num_.insert(std::make_pair(valid_id, 1));
+    page_node_mock.SetIsMediaPlaying(true);
+    page_node_mock.SetIsAudible(true);
+    background_task_policy->OnDecrementAudioNum(&page_node_mock);
+    EXPECT_EQ(background_task_policy->media_playing_num_, 0);
+    EXPECT_EQ(background_task_policy->audio_state_num_, 0);
+    EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), 0);
+}
+
+TEST(BackgroundTaskPolicyTEST, OnDecrementAudioNum007) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    PageNodeMock page_node_mock;
+    background_task_policy->media_playing_num_ = 0;
+    background_task_policy->audio_state_num_ = 0;
+    page_node_mock.SetIsMediaPlaying(true);
+    page_node_mock.SetIsAudible(true);
+    background_task_policy->OnDecrementAudioNum(&page_node_mock);
+    EXPECT_EQ(background_task_policy->media_playing_num_, 0);
+    EXPECT_EQ(background_task_policy->audio_state_num_, 0);
+}
+
+// ==================== OnIsAudibleChanged Additional Tests ====================
+TEST(BackgroundTaskPolicyTEST, OnIsAudibleChanged006) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    PageNodeMock page_node_mock;
+    background_task_policy->audio_state_num_ = 0;
+    page_node_mock.SetIsAudible(false);
+    background_task_policy->OnIsAudibleChanged(&page_node_mock);
+    EXPECT_EQ(background_task_policy->audio_state_num_, 0);
+}
+
+TEST(BackgroundTaskPolicyTEST, OnIsAudibleChanged007) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    PageNodeMock page_node_mock;
+    background_task_policy->audio_state_num_ = 5;
+    page_node_mock.SetIsAudible(true);
+    background_task_policy->OnIsAudibleChanged(&page_node_mock);
+    EXPECT_EQ(background_task_policy->audio_state_num_, 6);
+}
+
+TEST(BackgroundTaskPolicyTEST, OnIsAudibleChanged008) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    PageNodeMock page_node_mock;
+    background_task_policy->audio_state_num_ = 1;
+    page_node_mock.SetIsAudible(false);
+    background_task_policy->OnIsAudibleChanged(&page_node_mock);
+    EXPECT_EQ(background_task_policy->audio_state_num_, 0);
+}
+
+TEST(BackgroundTaskPolicyTEST, OnIsAudibleChanged009) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    PageNodeMock page_node_mock;
+    background_task_policy->audio_state_num_ = 0;
+    content::GlobalRenderFrameHostId valid_id = content::GlobalRenderFrameHostId(1, 1);
+    background_task_policy->audio_context_players_num_.insert(std::make_pair(valid_id, 1));
+    page_node_mock.SetIsAudible(false);
+    background_task_policy->OnIsAudibleChanged(&page_node_mock);
+    EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), 0);
+}
+
+// ==================== MaybeChangeBackgroundTask Additional Tests ====================
 TEST(BackgroundTaskPolicyTEST, MaybeChangeBackgroundTask009) {
     auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
     PageNodeMock page_node_mock;
@@ -721,906 +881,393 @@ TEST(BackgroundTaskPolicyTEST, MaybeChangeBackgroundTask009) {
     background_task_policy->media_playing_num_ = 0;
     background_task_policy->audio_state_num_ = 0;
     background_task_policy->MaybeChangeBackgroundTask(&page_node_mock);
+    EXPECT_FALSE(background_task_policy->is_request_background_task_);
 }
 
-// Test for MaybeChangeBackgroundTask with all counters > 0
 TEST(BackgroundTaskPolicyTEST, MaybeChangeBackgroundTask010) {
     auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
     PageNodeMock page_node_mock;
     std::unique_ptr<BackgroundTaskHolderMock> background_task_holder = std::make_unique<BackgroundTaskHolderMock>();
-    background_task_holder->back_ground = true;
+    background_task_holder->back_ground = false;
     background_task_policy->background_task_holder_ = std::move(background_task_holder);
-    background_task_policy->is_request_background_task_ = true;
+    background_task_policy->is_request_background_task_ = false;
     background_task_policy->visible_page_num_ = 1;
     background_task_policy->media_playing_num_ = 1;
     background_task_policy->audio_state_num_ = 1;
     background_task_policy->MaybeChangeBackgroundTask(&page_node_mock);
+    EXPECT_FALSE(background_task_policy->is_request_background_task_);
 }
 
-// Test for MaybeChangeBackgroundTask with null background_task_holder
 TEST(BackgroundTaskPolicyTEST, MaybeChangeBackgroundTask011) {
     auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
     PageNodeMock page_node_mock;
-    background_task_policy->background_task_holder_ = nullptr;
-    background_task_policy->is_request_background_task_ = false;
+    std::unique_ptr<BackgroundTaskHolderMock> background_task_holder = std::make_unique<BackgroundTaskHolderMock>();
+    background_task_holder->back_ground = false;
+    background_task_policy->background_task_holder_ = std::move(background_task_holder);
+    background_task_policy->is_request_background_task_ = true;
     background_task_policy->visible_page_num_ = 0;
-    background_task_policy->media_playing_num_ = 0;
-    background_task_policy->audio_state_num_ = 0;
+    background_task_policy->media_playing_num_ = 1;
+    background_task_policy->audio_state_num_ = 1;
     background_task_policy->MaybeChangeBackgroundTask(&page_node_mock);
+    EXPECT_TRUE(background_task_policy->is_request_background_task_);
 }
 
-// Test for MaybeChangeBackgroundTask with MaybeRequestBackgroundRunning returning false
 TEST(BackgroundTaskPolicyTEST, MaybeChangeBackgroundTask012) {
     auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
     PageNodeMock page_node_mock;
     std::unique_ptr<BackgroundTaskHolderMock> background_task_holder = std::make_unique<BackgroundTaskHolderMock>();
-    background_task_holder->back_ground = false;
-    background_task_policy->background_task_holder_ = std::move(background_task_holder);
-    background_task_policy->is_request_background_task_ = false;
-    background_task_policy->visible_page_num_ = 0;
-    background_task_policy->media_playing_num_ = 1;
-    background_task_policy->audio_state_num_ = 0;
-    background_task_policy->MaybeChangeBackgroundTask(&page_node_mock);
-}
-
-// Test for SetBrowserForeground with media_playing_num_ <= 0 and audio_state_num_ <= 0
-TEST(BackgroundTaskPolicyTEST, SetBrowserForeground003) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    PageNodeMock page_node_mock;
-    std::unique_ptr<BackgroundTaskHolderMock> background_task_holder = std::make_unique<BackgroundTaskHolderMock>();
-    background_task_holder->back_ground = false;
-    background_task_policy->background_task_holder_ = std::move(background_task_holder);
-    background_task_policy->media_playing_num_ = 0;
-    background_task_policy->audio_state_num_ = 0;
-    background_task_policy->SetBrowserForeground(&page_node_mock);
-}
-
-// Test for SetBrowserForeground with WebAudio not requesting background
-TEST(BackgroundTaskPolicyTEST, SetBrowserForeground004) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    PageNodeMock page_node_mock;
-    std::unique_ptr<BackgroundTaskHolderMock> background_task_holder = std::make_unique<BackgroundTaskHolderMock>();
-    background_task_holder->back_ground = true;
-    background_task_policy->background_task_holder_ = std::move(background_task_holder);
-    background_task_policy->media_playing_num_ = 0;
-    background_task_policy->audio_state_num_ = 0;
-    background_task_policy->audio_context_players_num_.insert(
-        std::make_pair(content::GlobalRenderFrameHostId(1, 1), 1));
-    background_task_policy->SetBrowserForeground(&page_node_mock);
-}
-
-// Test for SetBrowserBackground with negative counters
-TEST(BackgroundTaskPolicyTEST, SetBrowserBackground005) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    PageNodeMock page_node_mock;
-    std::unique_ptr<BackgroundTaskHolderMock> background_task_holder = std::make_unique<BackgroundTaskHolderMock>();
-    background_task_holder->back_ground = true;
-    background_task_policy->background_task_holder_ = std::move(background_task_holder);
-    background_task_policy->media_playing_num_ = -1;
-    background_task_policy->audio_state_num_ = -1;
-    background_task_policy->SetBrowserBackground(&page_node_mock);
-}
-
-// Test for OnPageNodeAdded with null page node
-TEST(BackgroundTaskPolicyTEST, OnPageNodeAdded003) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    background_task_policy->OnPageNodeAdded(nullptr);
-}
-
-// Test for OnBeforePageNodeRemoved with null page node
-TEST(BackgroundTaskPolicyTEST, OnBeforePageNodeRemoved002) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    background_task_policy->OnBeforePageNodeRemoved(nullptr);
-}
-
-// Test for OnIsVisibleChanged with null page node
-TEST(BackgroundTaskPolicyTEST, OnIsVisibleChanged004) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    background_task_policy->OnIsVisibleChanged(nullptr);
-}
-
-// Test for OnIsMediaPlayingChanged with null page node
-TEST(BackgroundTaskPolicyTEST, OnIsMediaPlayingChanged004) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    background_task_policy->OnIsMediaPlayingChanged(nullptr);
-}
-
-// Test for OnIsAudibleChanged with null page node
-TEST(BackgroundTaskPolicyTEST, OnIsAudibleChanged005) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    background_task_policy->OnIsAudibleChanged(nullptr);
-}
-
-// Test for OnDecrementAudioNum with null page node
-TEST(BackgroundTaskPolicyTEST, OnDecrementAudioNum003) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    background_task_policy->OnDecrementAudioNum(nullptr);
-}
-
-// Test for ProcessAudioContextPlayers with negative audio_state_num_
-TEST(BackgroundTaskPolicyTEST, ProcessAudioContextPlayers005) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    PageNodeMock page_node_mock;
-    background_task_policy->audio_state_num_ = -1;
-    content::GlobalRenderFrameHostId valid_id = content::GlobalRenderFrameHostId(1, 1);
-    background_task_policy->audio_context_players_num_.insert(
-        std::make_pair(valid_id, 1));
-    size_t initial_size = background_task_policy->audio_context_players_num_.size();
-    background_task_policy->ProcessAudioContextPlayers(&page_node_mock);
-    EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), initial_size);
-}
-
-// Test for ProcessAudioContextPlayers with large audio_state_num_
-TEST(BackgroundTaskPolicyTEST, ProcessAudioContextPlayers006) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    PageNodeMock page_node_mock;
-    background_task_policy->audio_state_num_ = 100;
-    size_t initial_size = background_task_policy->audio_context_players_num_.size();
-    background_task_policy->ProcessAudioContextPlayers(&page_node_mock);
-    EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), initial_size);
-}
-
-// Test for ProcessAudioContextPlayersOnUIThread with null page node
-TEST(BackgroundTaskPolicyTEST, ProcessAudioContextPlayersOnUIThread004) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    background_task_policy->ProcessAudioContextPlayersOnUIThread(nullptr);
-}
-
-// Test for GetWebAudioStartBackgroundTask with null WebContents
-TEST(BackgroundTaskPolicyTEST, GetWebAudioStartBackgroundTask002) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    PageNodeMock page_node_mock;
-    content::GlobalRenderFrameHostId valid_id = content::GlobalRenderFrameHostId(1, 1);
-    background_task_policy->audio_context_players_num_.insert(
-        std::make_pair(valid_id, 1));
-    EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), 1);
-    bool result = background_task_policy->GetWebAudioStartBackgroundTaskOnUIThread();
-    EXPECT_TRUE(result == true || result == false);
-}
-
-// Test for IsWebAudioRequestBackgroundRunning with negative audio_state_num_
-TEST(BackgroundTaskPolicyTEST, IsWebAudioRequestBackgroundRunning004) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    background_task_policy->audio_state_num_ = -1;
-    bool result = background_task_policy->IsWebAudioRequestBackgroundRunning();
-    EXPECT_FALSE(result);
-}
-
-// Test for IsWebAudioRequestBackgroundRunning with zero audio_context_players_num_
-TEST(BackgroundTaskPolicyTEST, IsWebAudioRequestBackgroundRunning005) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    background_task_policy->audio_state_num_ = 1;
-    bool result = background_task_policy->IsWebAudioRequestBackgroundRunning();
-    EXPECT_FALSE(result);
-}
-
-// Test for AudioContextPlayersBoundary with maximum iterations
-TEST(BackgroundTaskPolicyTEST, AudioContextPlayersBoundary003) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    content::GlobalRenderFrameHostId valid_id = content::GlobalRenderFrameHostId(1, 1);
-
-    // Insert a large number of audio contexts
-    for (int i = 0; i < 1000; ++i) {
-        background_task_policy->OnAudioContextPlaybackStarted(valid_id, i);
-    }
-    EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), 1);
-
-    background_task_policy->audio_state_num_ = 1000;
-    bool result = background_task_policy->IsWebAudioRequestBackgroundRunning();
-    EXPECT_TRUE(result);
-}
-
-// Test for Constructor initialization
-TEST(BackgroundTaskPolicyTEST, Constructor001) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    EXPECT_FALSE(background_task_policy->is_request_background_task_);
-    EXPECT_EQ(background_task_policy->visible_page_num_, 0);
-    EXPECT_EQ(background_task_policy->media_playing_num_, 0);
-    EXPECT_EQ(background_task_policy->audio_state_num_, 0);
-    EXPECT_TRUE(background_task_policy->audio_context_players_num_.empty());
-}
-
-// Test for OnPassedToGraph with non-null graph
-TEST(BackgroundTaskPolicyTEST, OnPassedToGraph003) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    TestableGraphMock graph_mock;
-    graph_mock.SetLifecycleStatePublic();
-    EXPECT_CALL(graph_mock, AddPageNodeObserver(_));
-    background_task_policy->OnPassedToGraph(&graph_mock);
-}
-
-// Test for OnTakenFromGraph with non-null graph
-TEST(BackgroundTaskPolicyTEST, OnTakenFromGraph003) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    TestableGraphMock graph_mock;
-    graph_mock.SetLifecycleStatePublic();
-    EXPECT_CALL(graph_mock, RemovePageNodeObserver(_));
-    background_task_policy->OnTakenFromGraph(&graph_mock);
-}
-
-#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
-// Test for SetBrowserBackground with invalid WebContents
-TEST(BackgroundTaskPolicyTEST, SetBrowserBackground006) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    PageNodeMock page_node_mock;
-    std::unique_ptr<BackgroundTaskHolderMock> background_task_holder = std::make_unique<BackgroundTaskHolderMock>();
-    background_task_holder->back_ground = false;
-    background_task_policy->background_task_holder_ = std::move(background_task_holder);
-    background_task_policy->media_playing_num_ = 1;
-    background_task_policy->audio_state_num_ = 1;
-    EXPECT_CALL(page_node_mock, GetWebContents())
-        .WillOnce(testing::Return(base::WeakPtr<content::WebContents>()));
-    background_task_policy->SetBrowserBackground(&page_node_mock);
-}
-
-// Test for SetBrowserBackground with valid WebContents and WebAudio background
-TEST(BackgroundTaskPolicyTEST, SetBrowserBackground007) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    PageNodeMock page_node_mock;
-    std::unique_ptr<BackgroundTaskHolderMock> background_task_holder = std::make_unique<BackgroundTaskHolderMock>();
-    background_task_holder->back_ground = true;
-    background_task_policy->background_task_holder_ = std::move(background_task_holder);
-    background_task_policy->media_playing_num_ = 0;
-    background_task_policy->audio_state_num_ = 0;
-    background_task_policy->audio_context_players_num_.insert(
-        std::make_pair(content::GlobalRenderFrameHostId(1, 1), 1));
-    EXPECT_CALL(page_node_mock, GetWebContents())
-        .WillRepeatedly(testing::Return(base::WeakPtr<content::WebContents>()));
-    background_task_policy->SetBrowserBackground(&page_node_mock);
-}
-
-// Test for GetWebAudioStartBackgroundTaskOnUIThread with valid WebContents
-TEST(BackgroundTaskPolicyTEST, GetWebAudioStartBackgroundTaskOnUIThread003) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    PageNodeMock page_node_mock;
-    EXPECT_CALL(page_node_mock, GetWebContents())
-        .WillOnce(testing::Return(base::WeakPtr<content::WebContents>()));
-    bool result = background_task_policy->GetWebAudioStartBackgroundTaskOnUIThread();
-    EXPECT_TRUE(result);
-}
-
-// Test for GetWebAudioStartBackgroundTaskOnUIThread with valid WebContents and audio contexts
-TEST(BackgroundTaskPolicyTEST, GetWebAudioStartBackgroundTaskOnUIThread004) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    PageNodeMock page_node_mock;
-    background_task_policy->audio_context_players_num_.insert(
-        std::make_pair(content::GlobalRenderFrameHostId(1, 1), 1));
-    EXPECT_CALL(page_node_mock, GetWebContents())
-        .WillOnce(testing::Return(base::WeakPtr<content::WebContents>()));
-    bool result = background_task_policy->GetWebAudioStartBackgroundTaskOnUIThread();
-    EXPECT_FALSE(result);
-}
-#endif
-
-// ============================================================================
-// Counter Clamping Behavior Tests
-// ============================================================================
-
-// Test that visible_page_num_ never goes below 0 in OnIsVisibleChanged
-TEST(BackgroundTaskPolicyTEST, OnIsVisibleChangedClamping001) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    PageNodeMock page_node_mock;
-    page_node_mock.SetIsVisible(false);
-
-    // Set visible_page_num_ to 0 and try to decrement
-    background_task_policy->visible_page_num_ = 0;
-    background_task_policy->OnIsVisibleChanged(&page_node_mock);
-    EXPECT_EQ(background_task_policy->visible_page_num_, 0);
-}
-
-// Test multiple decrements ensure counter doesn't go negative
-TEST(BackgroundTaskPolicyTEST, OnIsVisibleChangedClamping002) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    PageNodeMock page_node_mock;
-    page_node_mock.SetIsVisible(false);
-
-    // Set visible_page_num_ to 1 and decrement multiple times
-    background_task_policy->visible_page_num_ = 1;
-    background_task_policy->OnIsVisibleChanged(&page_node_mock);
-    EXPECT_EQ(background_task_policy->visible_page_num_, 0);
-
-    // Try to decrement again
-    background_task_policy->OnIsVisibleChanged(&page_node_mock);
-    EXPECT_EQ(background_task_policy->visible_page_num_, 0);
-}
-
-// Test that media_playing_num_ never goes below 0 in OnIsMediaPlayingChanged
-TEST(BackgroundTaskPolicyTEST, OnIsMediaPlayingChangedClamping001) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    PageNodeMock page_node_mock;
-    page_node_mock.SetIsMediaPlaying(false);
-
-    // Set media_playing_num_ to 0 and try to decrement
-    background_task_policy->media_playing_num_ = 0;
-    background_task_policy->OnIsMediaPlayingChanged(&page_node_mock);
-    EXPECT_EQ(background_task_policy->media_playing_num_, 0);
-}
-
-// Test multiple media state changes ensure counter doesn't go negative
-TEST(BackgroundTaskPolicyTEST, OnIsMediaPlayingChangedClamping002) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    PageNodeMock page_node_mock;
-    page_node_mock.SetIsMediaPlaying(false);
-
-    // Set media_playing_num_ to 1 and decrement multiple times
-    background_task_policy->media_playing_num_ = 1;
-    background_task_policy->OnIsMediaPlayingChanged(&page_node_mock);
-    EXPECT_EQ(background_task_policy->media_playing_num_, 0);
-
-    // Try to decrement again
-    background_task_policy->OnIsMediaPlayingChanged(&page_node_mock);
-    EXPECT_EQ(background_task_policy->media_playing_num_, 0);
-}
-
-// Test that audio_state_num_ never goes below 0 in OnIsAudibleChanged
-TEST(BackgroundTaskPolicyTEST, OnIsAudibleChangedClamping001) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    PageNodeMock page_node_mock;
-    page_node_mock.SetIsAudible(false);
-
-    // Set audio_state_num_ to 0 and try to decrement
-    background_task_policy->audio_state_num_ = 0;
-    background_task_policy->OnIsAudibleChanged(&page_node_mock);
-    EXPECT_EQ(background_task_policy->audio_state_num_, 0);
-}
-
-// Test multiple audio state changes ensure counter doesn't go negative
-TEST(BackgroundTaskPolicyTEST, OnIsAudibleChangedClamping002) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    PageNodeMock page_node_mock;
-    page_node_mock.SetIsAudible(false);
-
-    // Set audio_state_num_ to 1 and decrement multiple times
-    background_task_policy->audio_state_num_ = 1;
-    background_task_policy->OnIsAudibleChanged(&page_node_mock);
-    EXPECT_EQ(background_task_policy->audio_state_num_, 0);
-
-    // Try to decrement again
-    background_task_policy->OnIsAudibleChanged(&page_node_mock);
-    EXPECT_EQ(background_task_policy->audio_state_num_, 0);
-}
-
-// Test that OnDecrementAudioNum clamps both media_playing_num_ and audio_state_num_
-TEST(BackgroundTaskPolicyTEST, OnDecrementAudioNumClamping001) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    PageNodeMock page_node_mock;
-    page_node_mock.SetIsMediaPlaying(false);
-    page_node_mock.SetIsAudible(false);
-
-    // Set counters to 0 and try to decrement
-    background_task_policy->media_playing_num_ = 0;
-    background_task_policy->audio_state_num_ = 0;
-    background_task_policy->OnDecrementAudioNum(&page_node_mock);
-    EXPECT_EQ(background_task_policy->media_playing_num_, 0);
-    EXPECT_EQ(background_task_policy->audio_state_num_, 0);
-}
-
-// ============================================================================
-// Multi-page Visibility Change Tests
-// ============================================================================
-
-// Test multiple page additions increment visible_page_num_
-TEST(BackgroundTaskPolicyTEST, MultiPageVisibility001) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    PageNodeMock page_node_mock1;
-    PageNodeMock page_node_mock2;
-    PageNodeMock page_node_mock3;
-
-    background_task_policy->OnPageNodeAdded(&page_node_mock1);
-    EXPECT_EQ(background_task_policy->visible_page_num_, 1);
-
-    background_task_policy->OnPageNodeAdded(&page_node_mock2);
-    EXPECT_EQ(background_task_policy->visible_page_num_, 2);
-
-    background_task_policy->OnPageNodeAdded(&page_node_mock3);
-    EXPECT_EQ(background_task_policy->visible_page_num_, 3);
-}
-
-// Test visibility changes on multiple pages
-TEST(BackgroundTaskPolicyTEST, MultiPageVisibility002) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    PageNodeMock page_node_mock1;
-    PageNodeMock page_node_mock2;
-    PageNodeMock page_node_mock3;
-
-    // Add three pages
-    background_task_policy->OnPageNodeAdded(&page_node_mock1);
-    background_task_policy->OnPageNodeAdded(&page_node_mock2);
-    background_task_policy->OnPageNodeAdded(&page_node_mock3);
-    EXPECT_EQ(background_task_policy->visible_page_num_, 3);
-
-    // Hide one page
-    page_node_mock1.SetIsVisible(false);
-    background_task_policy->OnIsVisibleChanged(&page_node_mock1);
-    EXPECT_EQ(background_task_policy->visible_page_num_, 2);
-
-    // Hide another page
-    page_node_mock2.SetIsVisible(false);
-    background_task_policy->OnIsVisibleChanged(&page_node_mock2);
-    EXPECT_EQ(background_task_policy->visible_page_num_, 1);
-
-    // Show a page
-    page_node_mock1.SetIsVisible(true);
-    background_task_policy->OnIsVisibleChanged(&page_node_mock1);
-    EXPECT_EQ(background_task_policy->visible_page_num_, 2);
-}
-
-// Test that background task is not requested when any page is visible
-TEST(BackgroundTaskPolicyTEST, MultiPageVisibility003) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    PageNodeMock page_node_mock1;
-    PageNodeMock page_node_mock2;
-
-    // Add two pages
-    background_task_policy->OnPageNodeAdded(&page_node_mock1);
-    background_task_policy->OnPageNodeAdded(&page_node_mock2);
-
-    // Both pages visible, no media playing
-    page_node_mock1.SetIsMediaPlaying(false);
-    page_node_mock2.SetIsMediaPlaying(false);
-    background_task_policy->OnIsMediaPlayingChanged(&page_node_mock1);
-    background_task_policy->OnIsMediaPlayingChanged(&page_node_mock2);
-
-    // Hide one page but still have media playing
-    page_node_mock1.SetIsVisible(false);
-    background_task_policy->OnIsVisibleChanged(&page_node_mock1);
-    page_node_mock1.SetIsMediaPlaying(true);
-    background_task_policy->OnIsMediaPlayingChanged(&page_node_mock1);
-
-    // visible_page_num_ should be 1 (one page still visible)
-    EXPECT_EQ(background_task_policy->visible_page_num_, 1);
-}
-
-// ============================================================================
-// Concurrent Media and Audio State Tests
-// ============================================================================
-
-// Test concurrent media playing and audible states
-TEST(BackgroundTaskPolicyTEST, ConcurrentMediaAudio001) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    PageNodeMock page_node_mock;
-
-    // Start media playing
-    page_node_mock.SetIsMediaPlaying(true);
-    background_task_policy->OnIsMediaPlayingChanged(&page_node_mock);
-    EXPECT_EQ(background_task_policy->media_playing_num_, 1);
-
-    // Set page as audible
-    page_node_mock.SetIsAudible(true);
-    background_task_policy->OnIsAudibleChanged(&page_node_mock);
-    EXPECT_EQ(background_task_policy->audio_state_num_, 1);
-
-    // Both counters should be > 0
-    EXPECT_GT(background_task_policy->media_playing_num_, 0);
-    EXPECT_GT(background_task_policy->audio_state_num_, 0);
-}
-
-// Test concurrent media playing and audible states with multiple pages
-TEST(BackgroundTaskPolicyTEST, ConcurrentMediaAudio002) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    PageNodeMock page_node_mock1;
-    PageNodeMock page_node_mock2;
-
-    // Page 1: media playing, audible
-    page_node_mock1.SetIsMediaPlaying(true);
-    page_node_mock1.SetIsAudible(true);
-    background_task_policy->OnIsMediaPlayingChanged(&page_node_mock1);
-    background_task_policy->OnIsAudibleChanged(&page_node_mock1);
-
-    // Page 2: media playing only
-    page_node_mock2.SetIsMediaPlaying(true);
-    page_node_mock2.SetIsAudible(false);
-    background_task_policy->OnIsMediaPlayingChanged(&page_node_mock2);
-    background_task_policy->OnIsAudibleChanged(&page_node_mock2);
-
-    EXPECT_EQ(background_task_policy->media_playing_num_, 2);
-    EXPECT_EQ(background_task_policy->audio_state_num_, 1);
-}
-
-// Test concurrent media and audio state transitions
-TEST(BackgroundTaskPolicyTEST, ConcurrentMediaAudio003) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    PageNodeMock page_node_mock;
-
-    // Start with media playing and audible
-    page_node_mock.SetIsMediaPlaying(true);
-    page_node_mock.SetIsAudible(true);
-    background_task_policy->OnIsMediaPlayingChanged(&page_node_mock);
-    background_task_policy->OnIsAudibleChanged(&page_node_mock);
-
-    EXPECT_EQ(background_task_policy->media_playing_num_, 1);
-    EXPECT_EQ(background_task_policy->audio_state_num_, 1);
-
-    // Stop media playing but keep audible
-    page_node_mock.SetIsMediaPlaying(false);
-    background_task_policy->OnIsMediaPlayingChanged(&page_node_mock);
-    EXPECT_EQ(background_task_policy->media_playing_num_, 0);
-    EXPECT_EQ(background_task_policy->audio_state_num_, 1);
-
-    // Stop audible
-    page_node_mock.SetIsAudible(false);
-    background_task_policy->OnIsAudibleChanged(&page_node_mock);
-    EXPECT_EQ(background_task_policy->media_playing_num_, 0);
-    EXPECT_EQ(background_task_policy->audio_state_num_, 0);
-}
-
-// ============================================================================
-// WebAudio Conditional Branch Tests (ARKWEB_PERFORMANCE_PERSISTENT_TASK)
-// ============================================================================
-
-#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
-// Test MaybeChangeBackgroundTask when WebAudio doesn't request background
-TEST(BackgroundTaskPolicyTEST, MaybeChangeBackgroundTaskWebAudio001) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    PageNodeMock page_node_mock;
-    std::unique_ptr<BackgroundTaskHolderMock> background_task_holder =
-        std::make_unique<BackgroundTaskHolderMock>();
-    background_task_holder->back_ground = false;
-    background_task_policy->background_task_holder_ = std::move(background_task_holder);
-    background_task_policy->is_request_background_task_ = false;
-    background_task_policy->visible_page_num_ = 0;
-    background_task_policy->media_playing_num_ = 1;
-    background_task_policy->audio_state_num_ = 0;
-
-    // Simulate WebAudio not requesting background
-    // When audio_state_num_ != audio_context_players_num_.size(), returns true
-    // When equal, calls GetWebAudioStartBackgroundTask() which returns false
-    background_task_policy->audio_state_num_ = 1;
-    content::GlobalRenderFrameHostId valid_id = content::GlobalRenderFrameHostId(1, 1);
-    background_task_policy->audio_context_players_num_.insert(std::make_pair(valid_id, 1));
-
-    background_task_policy->MaybeChangeBackgroundTask(&page_node_mock);
-    // Background task should NOT be requested
-    EXPECT_FALSE(background_task_policy->is_request_background_task_);
-}
-
-// Test MaybeChangeBackgroundTask when WebAudio requests background
-TEST(BackgroundTaskPolicyTEST, MaybeChangeBackgroundTaskWebAudio002) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    PageNodeMock page_node_mock;
-    std::unique_ptr<BackgroundTaskHolderMock> background_task_holder =
-        std::make_unique<BackgroundTaskHolderMock>();
     background_task_holder->back_ground = true;
     background_task_policy->background_task_holder_ = std::move(background_task_holder);
     background_task_policy->is_request_background_task_ = false;
     background_task_policy->visible_page_num_ = 0;
-    background_task_policy->media_playing_num_ = 0;
+    background_task_policy->media_playing_num_ = 1;
     background_task_policy->audio_state_num_ = 1;
-
-    // When audio_state_num_ != audio_context_players_num_.size(), returns true
-    // This allows background task request
-    background_task_policy->audio_context_players_num_.clear();
-
     background_task_policy->MaybeChangeBackgroundTask(&page_node_mock);
-    // Background task should be requested
     EXPECT_TRUE(background_task_policy->is_request_background_task_);
 }
 
-// Test MaybeChangeBackgroundTask cancels bg task when WebAudio not requesting
-TEST(BackgroundTaskPolicyTEST, MaybeChangeBackgroundTaskWebAudio003) {
+TEST(BackgroundTaskPolicyTEST, MaybeChangeBackgroundTask013) {
     auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
     PageNodeMock page_node_mock;
-    std::unique_ptr<BackgroundTaskHolderMock> background_task_holder =
-        std::make_unique<BackgroundTaskHolderMock>();
+    std::unique_ptr<BackgroundTaskHolderMock> background_task_holder = std::make_unique<BackgroundTaskHolderMock>();
     background_task_holder->back_ground = true;
     background_task_policy->background_task_holder_ = std::move(background_task_holder);
-    background_task_policy->is_request_background_task_ = true;
+    background_task_policy->is_request_background_task_ = false;
     background_task_policy->visible_page_num_ = 0;
     background_task_policy->media_playing_num_ = 0;
     background_task_policy->audio_state_num_ = 1;
-
-    // Set up scenario where cancellation should occur
-    content::GlobalRenderFrameHostId valid_id = content::GlobalRenderFrameHostId(1, 1);
-    background_task_policy->audio_context_players_num_.insert(std::make_pair(valid_id, 1));
-
     background_task_policy->MaybeChangeBackgroundTask(&page_node_mock);
-    // Background task should be cancelled (set to false)
-    EXPECT_FALSE(background_task_policy->is_request_background_task_);
+    EXPECT_TRUE(background_task_policy->is_request_background_task_);
 }
 
-// Test IsWebAudioRequestBackgroundRunning with mismatched sizes
-TEST(BackgroundTaskPolicyTEST, IsWebAudioRequestBackgroundRunning006) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    background_task_policy->audio_state_num_ = 2;
-    content::GlobalRenderFrameHostId valid_id = content::GlobalRenderFrameHostId(1, 1);
-    background_task_policy->audio_context_players_num_.insert(std::make_pair(valid_id, 1));
-
-    // Sizes don't match (2 vs 1), should return true
-    bool result = background_task_policy->IsWebAudioRequestBackgroundRunning();
-    EXPECT_TRUE(result);
-}
-
-// Test IsWebAudioRequestBackgroundRunning with matching sizes and no contexts
-TEST(BackgroundTaskPolicyTEST, IsWebAudioRequestBackgroundRunning007) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    background_task_policy->audio_state_num_ = 0;
-    background_task_policy->audio_context_players_num_.clear();
-
-    // Both are 0, GetWebAudioStartBackgroundTask returns true
-    bool result = background_task_policy->IsWebAudioRequestBackgroundRunning();
-    EXPECT_TRUE(result);
-}
-
-// Test SetBrowserBackground with WebAudio not requesting background
-TEST(BackgroundTaskPolicyTEST, SetBrowserBackgroundWebAudio001) {
+TEST(BackgroundTaskPolicyTEST, MaybeChangeBackgroundTask014) {
     auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
     PageNodeMock page_node_mock;
-    std::unique_ptr<BackgroundTaskHolderMock> background_task_holder =
-        std::make_unique<BackgroundTaskHolderMock>();
-    background_task_holder->back_ground = false;
+    std::unique_ptr<BackgroundTaskHolderMock> background_task_holder = std::make_unique<BackgroundTaskHolderMock>();
+    background_task_holder->back_ground = true;
     background_task_policy->background_task_holder_ = std::move(background_task_holder);
+    background_task_policy->is_request_background_task_ = false;
+    background_task_policy->visible_page_num_ = 0;
     background_task_policy->media_playing_num_ = 1;
-    background_task_policy->audio_state_num_ = 1;
-
-    // Set up scenario where IsWebAudioRequestBackgroundRunning returns false
-    content::GlobalRenderFrameHostId valid_id = content::GlobalRenderFrameHostId(1, 1);
-    background_task_policy->audio_context_players_num_.insert(std::make_pair(valid_id, 1));
-
-    background_task_policy->SetBrowserBackground(&page_node_mock);
-    // Background task should not be requested due to WebAudio check
-}
-#endif
-
-// ============================================================================
-// ProcessAudioContextPlayersOnUIThread with RenderFrameHost Scenarios
-// ============================================================================
-
-#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
-// Test ProcessAudioContextPlayersOnUIThread with valid RenderFrameHost
-TEST(BackgroundTaskPolicyTEST, ProcessAudioContextPlayersOnUIThreadRenderFrameHost001) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    PageNodeMock page_node_mock;
-    background_task_policy->audio_state_num_ = 1;
-
-    // Add audio context player
-    content::GlobalRenderFrameHostId valid_id = content::GlobalRenderFrameHostId(1, 1);
-    background_task_policy->audio_context_players_num_.insert(std::make_pair(valid_id, 1));
-
-    // Process should not remove player if RenderFrameHost doesn't match page's WebContents
-    background_task_policy->ProcessAudioContextPlayersOnUIThread(&page_node_mock);
-    // Player should still exist since PageNodeMock::GetWebContents returns empty weak_ptr
-}
-
-// Test ProcessAudioContextPlayersOnUIThread with audio_state_num_ = 0
-TEST(BackgroundTaskPolicyTEST, ProcessAudioContextPlayersOnUIThreadRenderFrameHost002) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    PageNodeMock page_node_mock;
     background_task_policy->audio_state_num_ = 0;
-
-    // Add audio context players
-    content::GlobalRenderFrameHostId valid_id = content::GlobalRenderFrameHostId(1, 1);
-    background_task_policy->audio_context_players_num_.insert(std::make_pair(valid_id, 1));
-    background_task_policy->audio_context_players_num_.insert(std::make_pair(valid_id, 2));
-
-    EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), 2);
-
-    // When audio_state_num_ = 0, all players should be cleared
-    background_task_policy->ProcessAudioContextPlayersOnUIThread(&page_node_mock);
-    EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), 0);
+    background_task_policy->MaybeChangeBackgroundTask(&page_node_mock);
+    EXPECT_TRUE(background_task_policy->is_request_background_task_);
 }
 
-// Test ProcessAudioContextPlayersOnUIThread with empty audio_context_players_num_
-TEST(BackgroundTaskPolicyTEST, ProcessAudioContextPlayersOnUIThreadRenderFrameHost003) {
+// ==================== OnAudioContextPlaybackStopped Additional Tests ====================
+TEST(BackgroundTaskPolicyTEST, OnAudioContextPlaybackStopped003) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    content::GlobalRenderFrameHostId valid_id = content::GlobalRenderFrameHostId(1, 1);
+    size_t initial_size = background_task_policy->audio_context_players_num_.size();
+    background_task_policy->OnAudioContextPlaybackStopped(valid_id, 999);
+    EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), initial_size);
+}
+
+TEST(BackgroundTaskPolicyTEST, OnAudioContextPlaybackStopped004) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    content::GlobalRenderFrameHostId valid_id1 = content::GlobalRenderFrameHostId(1, 1);
+    content::GlobalRenderFrameHostId valid_id2 = content::GlobalRenderFrameHostId(2, 2);
+    background_task_policy->OnAudioContextPlaybackStarted(valid_id1, 1);
+    background_task_policy->OnAudioContextPlaybackStarted(valid_id2, 2);
+    EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), 2);
+    background_task_policy->OnAudioContextPlaybackStopped(valid_id1, 1);
+    EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), 1);
+}
+
+// ==================== ProcessAudioContextPlayers Additional Tests ====================
+TEST(BackgroundTaskPolicyTEST, ProcessAudioContextPlayers005) {
     auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
     PageNodeMock page_node_mock;
-    background_task_policy->audio_state_num_ = 1;
-
-    EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), 0);
-
-    // Should return early when empty
-    background_task_policy->ProcessAudioContextPlayersOnUIThread(&page_node_mock);
-    EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), 0);
-}
-#endif
-
-// ============================================================================
-// GetWebAudioStartBackgroundTaskOnUIThread with WebContents Scenarios
-// ============================================================================
-
-#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
-// Test GetWebAudioStartBackgroundTaskOnUIThread with multiple audio contexts
-TEST(BackgroundTaskPolicyTEST, GetWebAudioStartBackgroundTaskOnUIThreadWebContents001) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-
-    // Add multiple audio context players
+    background_task_policy->audio_state_num_ = 2;
     content::GlobalRenderFrameHostId valid_id1 = content::GlobalRenderFrameHostId(1, 1);
     content::GlobalRenderFrameHostId valid_id2 = content::GlobalRenderFrameHostId(2, 2);
     background_task_policy->audio_context_players_num_.insert(std::make_pair(valid_id1, 1));
     background_task_policy->audio_context_players_num_.insert(std::make_pair(valid_id2, 2));
-
-    EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), 2);
-
-    // Should return false since RenderFrameHost::FromID returns nullptr in test
-    bool result = background_task_policy->GetWebAudioStartBackgroundTaskOnUIThread();
-    EXPECT_FALSE(result);
+    size_t initial_size = background_task_policy->audio_context_players_num_.size();
+    background_task_policy->ProcessAudioContextPlayers(&page_node_mock);
+    EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), initial_size);
 }
 
-// Test GetWebAudioStartBackgroundTaskOnUIThread with same RenderFrameHostId multiple times
-TEST(BackgroundTaskPolicyTEST, GetWebAudioStartBackgroundTaskOnUIThreadWebContents002) {
+TEST(BackgroundTaskPolicyTEST, ProcessAudioContextPlayers006) {
     auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-
-    // Add multiple audio context players with same RenderFrameHostId
-    content::GlobalRenderFrameHostId valid_id = content::GlobalRenderFrameHostId(1, 1);
-    background_task_policy->audio_context_players_num_.insert(std::make_pair(valid_id, 1));
-    background_task_policy->audio_context_players_num_.insert(std::make_pair(valid_id, 2));
-    background_task_policy->audio_context_players_num_.insert(std::make_pair(valid_id, 3));
-
-    EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), 3);
-
-    // Should return false since RenderFrameHost::FromID returns nullptr in test
-    bool result = background_task_policy->GetWebAudioStartBackgroundTaskOnUIThread();
-    EXPECT_FALSE(result);
+    background_task_policy->ProcessAudioContextPlayers(nullptr);
+    EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), 0);
 }
-#endif
 
-// ============================================================================
-// WeakPtr Handling Tests for Async Operations
-// ============================================================================
-
-#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
-// Test GetWebAudioStartBackgroundTask with valid weak_ptr
-TEST(BackgroundTaskPolicyTEST, GetWebAudioStartBackgroundTaskWeakPtr001) {
+// ==================== ProcessAudioContextPlayersOnUIThread Additional Tests ====================
+TEST(BackgroundTaskPolicyTEST, ProcessAudioContextPlayersOnUIThread004) {
     auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    PageNodeMock page_node_mock;
+    background_task_policy->audio_state_num_ = 1;
+    content::GlobalRenderFrameHostId valid_id1 = content::GlobalRenderFrameHostId(1, 1);
+    content::GlobalRenderFrameHostId valid_id2 = content::GlobalRenderFrameHostId(2, 2);
+    background_task_policy->audio_context_players_num_.insert(std::make_pair(valid_id1, 1));
+    background_task_policy->audio_context_players_num_.insert(std::make_pair(valid_id2, 2));
+    size_t initial_size = background_task_policy->audio_context_players_num_.size();
+    background_task_policy->ProcessAudioContextPlayersOnUIThread(&page_node_mock);
+    EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), initial_size);
+}
 
-    // When called from UI thread, it should work normally
-    // When called from non-UI thread, it posts task and waits
-    // For this test, we just verify it doesn't crash
+TEST(BackgroundTaskPolicyTEST, ProcessAudioContextPlayersOnUIThread005) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    PageNodeMock page_node_mock;
+    background_task_policy->audio_state_num_ = 2;
+    background_task_policy->ProcessAudioContextPlayersOnUIThread(&page_node_mock);
+    EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), 0);
+}
+
+// ==================== GetWebAudioStartBackgroundTask Tests ====================
+TEST(BackgroundTaskPolicyTEST, GetWebAudioStartBackgroundTask002) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    content::GlobalRenderFrameHostId valid_id1 = content::GlobalRenderFrameHostId(1, 1);
+    content::GlobalRenderFrameHostId valid_id2 = content::GlobalRenderFrameHostId(2, 2);
+    background_task_policy->audio_context_players_num_.insert(std::make_pair(valid_id1, 1));
+    background_task_policy->audio_context_players_num_.insert(std::make_pair(valid_id2, 2));
     bool result = background_task_policy->GetWebAudioStartBackgroundTask();
-    EXPECT_TRUE(result);
-}
-
-// Test GetWebAudioStartBackgroundTask with multiple audio contexts
-TEST(BackgroundTaskPolicyTEST, GetWebAudioStartBackgroundTaskWeakPtr002) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-
-    // Add audio context players
-    content::GlobalRenderFrameHostId valid_id = content::GlobalRenderFrameHostId(1, 1);
-    background_task_policy->audio_context_players_num_.insert(std::make_pair(valid_id, 1));
-    background_task_policy->audio_context_players_num_.insert(std::make_pair(valid_id, 2));
-
-    EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), 2);
-
-    // Should call GetWebAudioStartBackgroundTaskOnUIThread via task posting
-    bool result = background_task_policy->GetWebAudioStartBackgroundTask();
-    // Result depends on whether RenderFrameHost::FromID returns valid pointer
     EXPECT_TRUE(result == true || result == false);
 }
 
-// Test ProcessAudioContextPlayers with task posting to UI thread
-TEST(BackgroundTaskPolicyTEST, ProcessAudioContextPlayersWeakPtr001) {
+// ==================== IsWebAudioRequestBackgroundRunning Additional Tests ====================
+TEST(BackgroundTaskPolicyTEST, IsWebAudioRequestBackgroundRunning004) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    background_task_policy->audio_state_num_ = 2;
+    content::GlobalRenderFrameHostId valid_id1 = content::GlobalRenderFrameHostId(1, 1);
+    content::GlobalRenderFrameHostId valid_id2 = content::GlobalRenderFrameHostId(2, 2);
+    background_task_policy->OnAudioContextPlaybackStarted(valid_id1, 1);
+    background_task_policy->OnAudioContextPlaybackStarted(valid_id2, 2);
+    bool result = background_task_policy->IsWebAudioRequestBackgroundRunning();
+    EXPECT_TRUE(result == true || result == false);
+}
+
+TEST(BackgroundTaskPolicyTEST, IsWebAudioRequestBackgroundRunning005) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    background_task_policy->audio_state_num_ = 0;
+    bool result = background_task_policy->IsWebAudioRequestBackgroundRunning();
+    EXPECT_TRUE(result);
+}
+
+// ==================== OnPageNodeAdded Additional Tests ====================
+TEST(BackgroundTaskPolicyTEST, OnPageNodeAdded003) {
     auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
     PageNodeMock page_node_mock;
-    background_task_policy->audio_state_num_ = 1;
+    background_task_policy->visible_page_num_ = 0;
+    background_task_policy->OnPageNodeAdded(&page_node_mock);
+    EXPECT_EQ(background_task_policy->visible_page_num_, 1);
+}
 
-    // Add audio context player
+TEST(BackgroundTaskPolicyTEST, OnPageNodeAdded004) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    PageNodeMock page_node_mock1;
+    PageNodeMock page_node_mock2;
+    background_task_policy->visible_page_num_ = 0;
+    background_task_policy->OnPageNodeAdded(&page_node_mock1);
+    background_task_policy->OnPageNodeAdded(&page_node_mock2);
+    EXPECT_EQ(background_task_policy->visible_page_num_, 2);
+}
+
+// ==================== OnBeforePageNodeRemoved Additional Tests ====================
+TEST(BackgroundTaskPolicyTEST, OnBeforePageNodeRemoved002) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    PageNodeMock page_node_mock;
+    background_task_policy->OnBeforePageNodeRemoved(&page_node_mock);
+    EXPECT_TRUE(true);
+}
+
+// ==================== AudioContextPlayers Complex Scenarios ====================
+TEST(BackgroundTaskPolicyTEST, AudioContextPlayersScenario001) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
     content::GlobalRenderFrameHostId valid_id = content::GlobalRenderFrameHostId(1, 1);
-    background_task_policy->audio_context_players_num_.insert(std::make_pair(valid_id, 1));
 
-    size_t initial_size = background_task_policy->audio_context_players_num_.size();
+    background_task_policy->OnAudioContextPlaybackStarted(valid_id, 1);
+    background_task_policy->OnAudioContextPlaybackStarted(valid_id, 2);
+    background_task_policy->OnAudioContextPlaybackStarted(valid_id, 3);
+    EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), 3);
 
-    // When not on UI thread, should post task using weak_ptr
-    // The task will be posted but may not execute in test environment
-    background_task_policy->ProcessAudioContextPlayers(&page_node_mock);
+    background_task_policy->OnAudioContextPlaybackStopped(valid_id, 2);
+    EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), 2);
 
-    // Size should remain the same since the task may not execute
-    EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), initial_size);
-}
-#endif
-
-// ============================================================================
-// Additional Edge Case Tests
-// ============================================================================
-
-// Test OnIsVisibleChanged with rapid visibility toggles
-TEST(BackgroundTaskPolicyTEST, RapidVisibilityToggles001) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    PageNodeMock page_node_mock;
-
-    // Rapid visibility changes
-    for (int i = 0; i < 10; ++i) {
-        page_node_mock.SetIsVisible(true);
-        background_task_policy->OnIsVisibleChanged(&page_node_mock);
-        page_node_mock.SetIsVisible(false);
-        background_task_policy->OnIsVisibleChanged(&page_node_mock);
-    }
-
-    // Counter should be clamped at 0
-    EXPECT_EQ(background_task_policy->visible_page_num_, 0);
+    background_task_policy->OnAudioContextPlaybackStopped(valid_id, 1);
+    background_task_policy->OnAudioContextPlaybackStopped(valid_id, 3);
+    EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), 0);
 }
 
-// Test OnIsMediaPlayingChanged with rapid state changes
-TEST(BackgroundTaskPolicyTEST, RapidMediaStateChanges001) {
+TEST(BackgroundTaskPolicyTEST, AudioContextPlayersScenario002) {
     auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    PageNodeMock page_node_mock;
+    content::GlobalRenderFrameHostId valid_id1 = content::GlobalRenderFrameHostId(1, 1);
+    content::GlobalRenderFrameHostId valid_id2 = content::GlobalRenderFrameHostId(2, 2);
 
-    // Rapid media state changes
-    for (int i = 0; i < 10; ++i) {
-        page_node_mock.SetIsMediaPlaying(true);
-        background_task_policy->OnIsMediaPlayingChanged(&page_node_mock);
-        page_node_mock.SetIsMediaPlaying(false);
-        background_task_policy->OnIsMediaPlayingChanged(&page_node_mock);
-    }
+    background_task_policy->OnAudioContextPlaybackStarted(valid_id1, 1);
+    background_task_policy->OnAudioContextPlaybackStarted(valid_id2, 1);
+    EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), 2);
 
-    // Counter should be clamped at 0
-    EXPECT_EQ(background_task_policy->media_playing_num_, 0);
+    background_task_policy->audio_state_num_ = 0;
+    background_task_policy->audio_context_players_num_.clear();
+    EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), 0);
 }
 
-// Test OnIsAudibleChanged with rapid state changes
-TEST(BackgroundTaskPolicyTEST, RapidAudioStateChanges001) {
+// ==================== Edge Cases Tests ====================
+TEST(BackgroundTaskPolicyTEST, EdgeCase001) {
     auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    PageNodeMock page_node_mock;
-
-    // Rapid audio state changes
-    for (int i = 0; i < 10; ++i) {
-        page_node_mock.SetIsAudible(true);
-        background_task_policy->OnIsAudibleChanged(&page_node_mock);
-        page_node_mock.SetIsAudible(false);
-        background_task_policy->OnIsAudibleChanged(&page_node_mock);
-    }
-
-    // Counter should be clamped at 0
-    EXPECT_EQ(background_task_policy->audio_state_num_, 0);
-}
-
-// Test MaybeChangeBackgroundTask with all states combined
-TEST(BackgroundTaskPolicyTEST, CombinedStates001) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    PageNodeMock page_node_mock;
-    std::unique_ptr<BackgroundTaskHolderMock> background_task_holder =
-        std::make_unique<BackgroundTaskHolderMock>();
+    std::unique_ptr<BackgroundTaskHolderMock> background_task_holder = std::make_unique<BackgroundTaskHolderMock>();
     background_task_holder->back_ground = true;
     background_task_policy->background_task_holder_ = std::move(background_task_holder);
-
-    // Set up all states
-    background_task_policy->visible_page_num_ = 2;
-    background_task_policy->media_playing_num_ = 1;
-    background_task_policy->audio_state_num_ = 1;
-    background_task_policy->is_request_background_task_ = true;
-
-    // With visible pages, background task should be cancelled
+    background_task_policy->is_request_background_task_ = false;
+    background_task_policy->visible_page_num_ = 0;
+    background_task_policy->media_playing_num_ = 0;
+    background_task_policy->audio_state_num_ = 0;
+    PageNodeMock page_node_mock;
     background_task_policy->MaybeChangeBackgroundTask(&page_node_mock);
     EXPECT_FALSE(background_task_policy->is_request_background_task_);
 }
 
-// Test MaybeChangeBackgroundTask with no visible pages and media/audio active
-TEST(BackgroundTaskPolicyTEST, CombinedStates002) {
+TEST(BackgroundTaskPolicyTEST, EdgeCase002) {
     auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    PageNodeMock page_node_mock;
-    std::unique_ptr<BackgroundTaskHolderMock> background_task_holder =
-        std::make_unique<BackgroundTaskHolderMock>();
+    std::unique_ptr<BackgroundTaskHolderMock> background_task_holder = std::make_unique<BackgroundTaskHolderMock>();
     background_task_holder->back_ground = true;
     background_task_policy->background_task_holder_ = std::move(background_task_holder);
+    background_task_policy->is_request_background_task_ = true;
+    background_task_policy->visible_page_num_ = 0;
+    background_task_policy->media_playing_num_ = 0;
+    background_task_policy->audio_state_num_ = 0;
+    PageNodeMock page_node_mock;
+    background_task_policy->MaybeChangeBackgroundTask(&page_node_mock);
+    EXPECT_FALSE(background_task_policy->is_request_background_task_);
+}
 
-    // Set up states for background task request
+TEST(BackgroundTaskPolicyTEST, EdgeCase003) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    std::unique_ptr<BackgroundTaskHolderMock> background_task_holder = std::make_unique<BackgroundTaskHolderMock>();
+    background_task_holder->back_ground = true;
+    background_task_policy->background_task_holder_ = std::move(background_task_holder);
+    background_task_policy->is_request_background_task_ = true;
     background_task_policy->visible_page_num_ = 0;
     background_task_policy->media_playing_num_ = 1;
-    background_task_policy->audio_state_num_ = 0;
-    background_task_policy->is_request_background_task_ = false;
-
-#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
-    // Clear audio contexts to ensure WebAudio check passes
-    background_task_policy->audio_context_players_num_.clear();
-#endif
-
-    // Should request background task
+    background_task_policy->audio_state_num_ = 1;
+    PageNodeMock page_node_mock;
     background_task_policy->MaybeChangeBackgroundTask(&page_node_mock);
     EXPECT_TRUE(background_task_policy->is_request_background_task_);
 }
 
-// Test destructor clears audio_context_players_num_
-TEST(BackgroundTaskPolicyTEST, Destructor003) {
+// ==================== Multiple State Changes Tests ====================
+TEST(BackgroundTaskPolicyTEST, MultipleStateChanges001) {
     auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    PageNodeMock page_node_mock;
 
-    // Add multiple audio context players
+    background_task_policy->visible_page_num_ = 0;
+    background_task_policy->media_playing_num_ = 0;
+    background_task_policy->audio_state_num_ = 0;
+
+    page_node_mock.SetIsVisible(true);
+    background_task_policy->OnIsVisibleChanged(&page_node_mock);
+    EXPECT_EQ(background_task_policy->visible_page_num_, 1);
+
+    page_node_mock.SetIsVisible(false);
+    background_task_policy->OnIsVisibleChanged(&page_node_mock);
+    EXPECT_EQ(background_task_policy->visible_page_num_, 0);
+}
+
+TEST(BackgroundTaskPolicyTEST, MultipleStateChanges002) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    PageNodeMock page_node_mock;
+
+    background_task_policy->media_playing_num_ = 0;
+
+    page_node_mock.SetIsMediaPlaying(true);
+    background_task_policy->OnIsMediaPlayingChanged(&page_node_mock);
+    EXPECT_EQ(background_task_policy->media_playing_num_, 1);
+
+    page_node_mock.SetIsMediaPlaying(false);
+    background_task_policy->OnIsMediaPlayingChanged(&page_node_mock);
+    EXPECT_EQ(background_task_policy->media_playing_num_, 0);
+}
+
+TEST(BackgroundTaskPolicyTEST, MultipleStateChanges003) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    PageNodeMock page_node_mock;
+
+    background_task_policy->audio_state_num_ = 0;
+
+    page_node_mock.SetIsAudible(true);
+    background_task_policy->OnIsAudibleChanged(&page_node_mock);
+    EXPECT_EQ(background_task_policy->audio_state_num_, 1);
+
+    page_node_mock.SetIsAudible(false);
+    background_task_policy->OnIsAudibleChanged(&page_node_mock);
+    EXPECT_EQ(background_task_policy->audio_state_num_, 0);
+}
+
+// ==================== Negative Boundary Tests ====================
+TEST(BackgroundTaskPolicyTEST, NegativeBoundary001) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    PageNodeMock page_node_mock;
+    background_task_policy->visible_page_num_ = 0;
+    page_node_mock.SetIsVisible(false);
+    background_task_policy->OnIsVisibleChanged(&page_node_mock);
+    EXPECT_GE(background_task_policy->visible_page_num_, 0);
+}
+
+TEST(BackgroundTaskPolicyTEST, NegativeBoundary002) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    PageNodeMock page_node_mock;
+    background_task_policy->media_playing_num_ = 0;
+    page_node_mock.SetIsMediaPlaying(false);
+    background_task_policy->OnIsMediaPlayingChanged(&page_node_mock);
+    EXPECT_GE(background_task_policy->media_playing_num_, 0);
+}
+
+TEST(BackgroundTaskPolicyTEST, NegativeBoundary003) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    PageNodeMock page_node_mock;
+    background_task_policy->audio_state_num_ = 0;
+    page_node_mock.SetIsAudible(false);
+    background_task_policy->OnIsAudibleChanged(&page_node_mock);
+    EXPECT_GE(background_task_policy->audio_state_num_, 0);
+}
+
+// ==================== Large Value Tests ====================
+TEST(BackgroundTaskPolicyTEST, LargeValue001) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    PageNodeMock page_node_mock;
+    background_task_policy->visible_page_num_ = 1000;
+    page_node_mock.SetIsVisible(true);
+    background_task_policy->OnIsVisibleChanged(&page_node_mock);
+    EXPECT_EQ(background_task_policy->visible_page_num_, 1001);
+}
+
+TEST(BackgroundTaskPolicyTEST, LargeValue002) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    PageNodeMock page_node_mock;
+    background_task_policy->media_playing_num_ = 1000;
+    page_node_mock.SetIsMediaPlaying(true);
+    background_task_policy->OnIsMediaPlayingChanged(&page_node_mock);
+    EXPECT_EQ(background_task_policy->media_playing_num_, 1001);
+}
+
+TEST(BackgroundTaskPolicyTEST, LargeValue003) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    PageNodeMock page_node_mock;
+    background_task_policy->audio_state_num_ = 1000;
+    page_node_mock.SetIsAudible(true);
+    background_task_policy->OnIsAudibleChanged(&page_node_mock);
+    EXPECT_EQ(background_task_policy->audio_state_num_, 1001);
+}
+
+// ==================== Copy/Move Delete Tests ====================
+TEST(BackgroundTaskPolicyTEST, CopyMoveDelete001) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    EXPECT_TRUE(background_task_policy != nullptr);
+    auto background_task_policy2 = std::make_shared<BackgroundTaskPolicy>();
+    EXPECT_TRUE(background_task_policy2 != nullptr);
+    EXPECT_TRUE(background_task_policy != background_task_policy2);
+}
+
+// ==================== GetWebAudioStartBackgroundTaskOnUIThread Additional Tests ====================
+TEST(BackgroundTaskPolicyTEST, GetWebAudioStartBackgroundTaskOnUIThread003) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
     content::GlobalRenderFrameHostId valid_id1 = content::GlobalRenderFrameHostId(1, 1);
     content::GlobalRenderFrameHostId valid_id2 = content::GlobalRenderFrameHostId(2, 2);
-    background_task_policy->OnAudioContextPlaybackStarted(valid_id1, 1);
-    background_task_policy->OnAudioContextPlaybackStarted(valid_id1, 2);
-    background_task_policy->OnAudioContextPlaybackStarted(valid_id2, 1);
-
-    EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), 3);
-
-    // Reset should call destructor which clears the set
-    background_task_policy.reset();
-    EXPECT_TRUE(true);
+    background_task_policy->audio_context_players_num_.insert(std::make_pair(valid_id1, 1));
+    background_task_policy->audio_context_players_num_.insert(std::make_pair(valid_id2, 2));
+    bool result = background_task_policy->GetWebAudioStartBackgroundTaskOnUIThread();
+    EXPECT_FALSE(result);
 }

@@ -648,6 +648,21 @@ std::string ExtensionHost::GetTitleForMediaControls(
   return extension() ? extension()->name() : std::string();
 }
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+bool ExtensionHost::DidAddMessageToConsole(
+    content::WebContents* source,
+    blink::mojom::ConsoleMessageLevel log_level,
+#if BUILDFLAG(ARKWEB_CONSOLE_LOGGING)
+    blink::mojom::ConsoleMessageSource log_source,
+#endif
+    const std::u16string& message,
+    int32_t line_no,
+    const std::u16string& source_id) {
+  // 扩展默认关闭consolelog
+  return true;
+}
+#endif // ARKWEB_ARKWEB_EXTENSIONS
+
 void ExtensionHost::RecordStopLoadingUMA() {
   CHECK(load_start_.get());
   if (extension_host_type_ == mojom::ViewType::kExtensionBackgroundPage) {

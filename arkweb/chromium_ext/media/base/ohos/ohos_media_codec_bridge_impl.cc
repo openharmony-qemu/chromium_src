@@ -37,15 +37,9 @@ struct YUVMemcpyData {
   size_t src_size[MAXPLANES];
 };
 
-CodecCodeAdapter FillSurfaceBufferDataCheck(
+void FillSurfaceBufferData(
     scoped_refptr<VideoFrame> frame, std::shared_ptr<BufferRequestConfigAdapterImpl> configAdapter, YUVMemcpyData &data)
 {
-  LOG(DEBUG) << __FUNCTION__ << " enter";
-  std::vector<size_t> frame_planes_size = frame->GetPlaneSize();
-  if (frame_planes_size.size() < MAXPLANES) {
-    LOG(ERROR) << "frame planes cnt < " << MAXPLANES;
-    return CodecCodeAdapter::ERROR;
-  }
   data.width = configAdapter->GetWidth();
   data.height = configAdapter->GetHeight();
   data.planes_cnt[VideoFrame::kYPlane] = data.height;
@@ -57,9 +51,21 @@ CodecCodeAdapter FillSurfaceBufferDataCheck(
   data.src_addr[VideoFrame::kYPlane] = frame->data(VideoFrame::kYPlane);
   data.src_addr[VideoFrame::kUPlane] = frame->data(VideoFrame::kUPlane);
   data.src_addr[VideoFrame::kVPlane] = frame->data(VideoFrame::kVPlane);
-  data.src_size[VideoFrame::kYPlane] = frame_planes_size[VideoFrame::kYPlane];
-  data.src_size[VideoFrame::kUPlane] = frame_planes_size[VideoFrame::kUPlane];
-  data.src_size[VideoFrame::kVPlane] = frame_planes_size[VideoFrame::kVPlane];
+  data.src_size[VideoFrame::kYPlane] = frame-GetPlaneSize()[VideoFrame::kYPlane];
+  data.src_size[VideoFrame::kUPlane] = frame-GetPlaneSize()[VideoFrame::kUPlane];
+  data.src_size[VideoFrame::kVPlane] = frame-GetPlaneSize()[VideoFrame::kVPlane];
+}
+
+CodecCodeAdapter FillSurfaceBufferDataCheck(
+    scoped_refptr<VideoFrame> frame, std::shared_ptr<BufferRequestConfigAdapterImpl> configAdapter, YUVMemcpyData &data)
+{
+  LOG(DEBUG) << __FUNCTION__ << " enter";
+  std::vector<size_t> frame_planes_size = frame->GetPlaneSize();
+  if (frame_planes_size.size() < MAXPLANES) {
+    LOG(ERROR) << "frame planes cnt < " << MAXPLANES;
+    return CodecCodeAdapter::ERROR;
+  }
+  FillSurfaceBufferData(frame, configAdapter, data);
   // check addr.
   if (data.dst_addr == nullptr || nullptr == data.src_addr[VideoFrame::kYPlane] ||
       nullptr == data.src_addr[VideoFrame::kUPlane] || nullptr == data.src_addr[VideoFrame::kVPlane]) {
@@ -86,12 +92,16 @@ CodecCodeAdapter FillSurfaceBufferDataCheck(
     LOG(ERROR) << __FUNCTION__ << "failed, plane size error";
     return CodecCodeAdapter::ERROR;
   }
-  auto offset = std::abs(data.src_addr[VideoFrame::kVPlane] - data.src_addr[VideoFrame::kYPlane]);
-  uint64_t required_all_plane_space = data.src_size[VideoFrame::kVPlane] + offset;
+  auto u_offset = std::abs(data.src_addr[VideoFrame::kUPlane] - data.src_addr[VideoFrame::kYPlane]);
+  auto v_offset = std::abs(data.src_addr[VideoFrame::kVPlane] - data.src_addr[VideoFrame::kYPlane]);
+  uint64_t y_required_plane_space = data.src_size[VideoFrame::kYPlane];
+  uint64_t u_required_plane_space = data.src_size[VideoFrame::kUPlane] + u_offset;
+  uint64_t v_required_plane_space = data.src_size[VideoFrame::kVPlane] + v_offset;
   uint64_t real_all_plane_space = frame->layout().planes()[VideoFrame::kYPlane].size + 
       frame->layout().planes()[VideoFrame::kUPlane].size + frame->layout().planes()[VideoFrame::kVPlane].size;
-  if (required_all_plane_space > real_all_plane_space) {
-    LOG(ERROR) << "plane size error, required_all_plane_space > real_all_plane_space!";
+  if (y_required_plane_space > real_all_plane_space || u_required_plane_space > real_all_plane_space ||
+      v_required_plane_space > real_all_plane_space) {
+    LOG(ERROR) << "plane size error, required plane space > real plane space!";
     return CodecCodeAdapter::ERROR; 
   }
   return CodecCodeAdapter::OK;

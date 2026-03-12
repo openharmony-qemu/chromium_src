@@ -615,6 +615,7 @@ buildflag_header("features") {
     "ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION=false",
     "ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING=$arkweb_ext_http_dns_fallback_on_dns_hijacking",
     "ARKWEB_EXT_RECEIVE_RESPONSE=$arkweb_ext_receive_response",
+    "ARKWEB_EXT_EXTENSIONS_HEADER_CLIENT=false",
   ]
 
   public_configs = [ ":arkweb_global_config" ]

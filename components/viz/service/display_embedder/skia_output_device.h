@@ -173,6 +173,13 @@ class VIZ_SERVICE_EXPORT SkiaOutputDevice {
   virtual void SetNativeInnerWeb(bool isInnerWeb) {}
 #endif
 
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+  virtual gfx::Rect GetLastBufferDamageRect() { return gfx::Rect(); }
+  virtual int GetLastBufferAge() { return 0; }
+  virtual int GetLastBufferSameCnt() { return 0; }
+  virtual bool SetPresentBufferDamageRect(gfx::Rect damage_rect, gfx::Rect curr_rect) { return true; }
+#endif
+
 #if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
   virtual void SetBypassVsyncCondition(int32_t condition) {}
 #endif

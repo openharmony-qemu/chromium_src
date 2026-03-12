@@ -12,6 +12,9 @@
 #include "build/build_config.h"
 #include "ui/gfx/frame_data.h"
 #include "ui/gfx/geometry/size.h"
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+#include "ui/gfx/geometry/rect.h"
+#endif
 #include "ui/gfx/presentation_feedback.h"
 #include "ui/gfx/surface_origin.h"
 #include "ui/gfx/swap_result.h"
@@ -107,6 +110,13 @@ class GL_EXPORT GLSurface : public base::RefCounted<GLSurface> {
 
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
   virtual void SetNativeInnerWeb(bool isInnerWeb) {}
+#endif
+
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+  virtual bool SetPresentBufferDamage(gfx::Rect damage_rect, gfx::Rect curr_rect) { return false; };
+  virtual int GetPresentBufferAge() { return 0; };
+  virtual gfx::Rect GetLastBufferDamageRect() { return gfx::Rect(); };
+  virtual int GetSameBufferDamageCnt() { return 0; };
 #endif
 
 #if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)

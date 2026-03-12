@@ -195,6 +195,7 @@ declare_args() {
   arkweb_dss = true
   arkweb_gpu_service = true
   arkweb_same_layer = true
+  arkweb_partial_draw = true
   arkweb_js_on_document_end = true
   arkweb_touchpad_fling = true
   arkweb_media_codec = true

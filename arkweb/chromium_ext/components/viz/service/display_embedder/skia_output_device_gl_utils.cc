@@ -40,11 +40,19 @@ gfx::SwapResult SkiaOutputDeviceGLUtils::SwapBuffers(
   gfx::SwapResult result;
   auto data = frame.data;
   if (!base::ohos::IsPageScale() && supports_damage_region_) {
+    std::vector<int> damage_rect(4);
+    if (skiaOutPutDeviceGl_->gl_surface_->SupportsPostSubBuffer()) {
+      damage_rect = {update_rect->x(), update_rect->y(),
+        update_rect->width(), update_rect->height()};
+    } else {
+      damage_rect = {update_rect->x(),
+        skiaOutPutDeviceGl_->gl_surface_->GetSize().height() -
+          update_rect->y() - update_rect->height(),
+        update_rect->width(), update_rect->height()};        
+    }
+
     result = skiaOutPutDeviceGl_->gl_surface_->SwapBuffersWithDamage(
-        {update_rect->x(),
-         skiaOutPutDeviceGl_->gl_surface_->GetSize().height() -
-             update_rect->y() - update_rect->height(),
-         update_rect->width(), update_rect->height()},
+        damage_rect,
         std::move(feedback), std::move(data));
     LOG(DEBUG) << "Present calling SwapBuffersWithDamage [" << update_rect->x()
                << ", "

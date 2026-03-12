@@ -250,6 +250,10 @@ EGLBoolean eglReleaseThreadFn(void) override;
 void eglSetBlobCacheFuncsANDROIDFn(EGLDisplay dpy,
                                    EGLSetBlobFuncANDROID set,
                                    EGLGetBlobFuncANDROID get) override;
+EGLBoolean eglSetDamageRegionKHRFn(EGLDisplay dpy,
+                                   EGLSurface surface,
+                                   EGLint* rects,
+                                   EGLint n_rects) override;
 void eglSetValidationEnabledANGLEFn(EGLBoolean validationState) override;
 EGLBoolean eglStreamAttribKHRFn(EGLDisplay dpy,
                                 EGLStreamKHR stream,

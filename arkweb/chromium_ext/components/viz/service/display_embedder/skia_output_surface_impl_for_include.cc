@@ -32,4 +32,35 @@ void SkiaOutputSurfaceImpl::SetBypassVsyncCondition(int32_t condition) {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+bool SkiaOutputSurfaceImpl::SetPresentBufferDamageRect(gfx::Rect damage_rect, gfx::Rect curr_rect) {
+  auto task = base::BindOnce(&SkiaOutputSurfaceImplOnGpu::SetPresentBufferDamageRect,
+                            base::Unretained(impl_on_gpu_.get()), damage_rect, curr_rect);
+  EnqueueGpuTask(std::move(task), {}, /*make_current=*/true,
+                 /*need_framebuffer=*/!dependency_->IsOffscreen());
+  return true;                        
+}
+
+gfx::Rect SkiaOutputSurfaceImpl::GetLastBufferDamageRect() {
+  if (impl_on_gpu_) {
+    return impl_on_gpu_->GetLastBufferDamageRect();
+  }
+  return gfx::Rect();
+}
+
+int SkiaOutputSurfaceImpl::GetLastBufferAge() {
+  if (impl_on_gpu_) {
+    return impl_on_gpu_->GetLastBufferAge();
+  }
+  return 0;
+}
+
+int SkiaOutputSurfaceImpl::GetLastBufferSameCnt() {
+  if (impl_on_gpu_) {
+    return impl_on_gpu_->GetLastBufferSameCnt();
+  }
+  return 0;
+}
+#endif
+
 } // namespace viz

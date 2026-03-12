@@ -66,6 +66,13 @@ class SkiaOutputDeviceGL final : public SkiaOutputDevice {
   void SetBypassVsyncCondition(int32_t condition) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+  gfx::Rect GetLastBufferDamageRect() override;
+  int GetLastBufferAge() override;
+  int GetLastBufferSameCnt() override;
+  bool SetPresentBufferDamageRect(gfx::Rect damage_rect, gfx::Rect curr_rect) override;
+#endif
+
  private:
   class MultiSurfaceSwapBuffersTracker;
 

@@ -4474,3 +4474,7 @@ bool SkiaRenderer::OverlayLockKeyEqual::operator()(
 #endif
 
 }  // namespace viz
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/components/viz/service/display/skia_renderer_for_include.cc"
+#endif

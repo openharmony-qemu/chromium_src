@@ -29,4 +29,33 @@ void SkiaOutputDeviceGL::SetBypassVsyncCondition(int32_t condition) {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+gfx::Rect SkiaOutputDeviceGL::GetLastBufferDamageRect() {
+  if (gl_surface_) {
+    return gl_surface_->GetLastBufferDamageRect();
+  }
+  return gfx::Rect();
+}
+
+int SkiaOutputDeviceGL::GetLastBufferAge() {
+  if (gl_surface_) {
+    return gl_surface_->GetPresentBufferAge();
+  }
+  return 0;
+}
+
+int SkiaOutputDeviceGL::GetLastBufferSameCnt() {
+  if (gl_surface_) {
+    return gl_surface_->GetSameBufferDamageCnt();
+  }
+  return 0;
+}
+
+bool SkiaOutputDeviceGL::SetPresentBufferDamageRect(gfx::Rect damage_rect, gfx::Rect curr_rect) {
+  if (gl_surface_) {
+    return gl_surface_->SetPresentBufferDamage(damage_rect, curr_rect);
+  }
+  return false;
+}
+#endif
 } // namespace viz

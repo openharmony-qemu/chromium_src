@@ -24,6 +24,9 @@
 #include "base/time/time.h"
 #include "ui/gfx/frame_data.h"
 #include "ui/gfx/geometry/size.h"
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+#include "ui/gfx/geometry/rect.h"
+#endif
 #include "ui/gfx/vsync_provider.h"
 #include "ui/gl/egl_timestamps.h"
 #include "ui/gl/gl_display.h"
@@ -155,6 +158,13 @@ class GL_EXPORT NativeViewGLSurfaceEGL : public GLSurfaceEGL,
                                         gfx::FrameData data);
 #endif
 
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+  virtual bool SetPresentBufferDamage(gfx::Rect damage_rect, gfx::Rect curr_rect) override;
+  virtual int GetPresentBufferAge() override;
+  virtual gfx::Rect GetLastBufferDamageRect() override;
+  virtual int GetSameBufferDamageCnt() override;
+#endif
+
  private:
   struct SwapInfo {
     bool frame_id_is_valid;
@@ -194,6 +204,13 @@ class GL_EXPORT NativeViewGLSurfaceEGL : public GLSurfaceEGL,
 
 #if BUILDFLAG(ARKWEB_DRDC)
   static std::string gpu_version_;
+#endif
+
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+  std::vector<int> damage_rect_{0, 0, 0, 0};
+  std::atomic<int> present_buffer_age_ = 0;
+  std::atomic<int> same_damage_count_ = 0;
+  std::atomic<gfx::Rect> last_damage_rects_;
 #endif
 
   raw_ptr<ArkwebGlSurfaceEglUtils> arkweb_surface_utils_;

@@ -2524,6 +2524,10 @@ EGL_FUNCTIONS = [
                  'extensions': ['EGL_ANDROID_blob_cache'] }],
   'arguments':
       'EGLDisplay dpy, EGLSetBlobFuncANDROID set, EGLGetBlobFuncANDROID get' },
+{ 'return_type': 'EGLBoolean',
+  'names' : ['eglSetDamageRegionKHR'],
+  'arguments':
+      'EGLDisplay dpy, EGLSurface surface, EGLint* rects, EGLint n_rects' },
 { 'return_type': 'void',
   'versions': [{ 'name': 'eglSetValidationEnabledANGLE',
                  'extensions': ['EGL_ANGLE_no_error'] }],

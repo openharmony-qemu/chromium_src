@@ -147,6 +147,9 @@ class VIZ_SERVICE_EXPORT DirectRenderer {
     int64_t swap_trace_id = -1;
   };
   virtual void SwapBuffers(SwapFrameData swap_frame_data) = 0;
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+  virtual bool IsPresentBuffersFullDamage(gfx::Rect damage_rect) { return true; };
+#endif
   virtual void SwapBuffersSkipped() {}
   virtual void SwapBuffersComplete(const gpu::SwapBuffersCompleteParams& params,
                                    gfx::GpuFenceHandle release_fence) {}
@@ -493,6 +496,10 @@ class VIZ_SERVICE_EXPORT DirectRenderer {
   uint64_t total_pixels_rendered_this_frame_ = 0;
 #if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
   bool next_frame_skips_draw_render_passes_ = false;
+#endif
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+  bool partial_draw_debug_ = false;
+  bool skip_partial_paint_ = true;
 #endif
 };
 

@@ -51,9 +51,9 @@ void FillSurfaceBufferData(
   data.src_addr[VideoFrame::kYPlane] = frame->data(VideoFrame::kYPlane);
   data.src_addr[VideoFrame::kUPlane] = frame->data(VideoFrame::kUPlane);
   data.src_addr[VideoFrame::kVPlane] = frame->data(VideoFrame::kVPlane);
-  data.src_size[VideoFrame::kYPlane] = frame-GetPlaneSize()[VideoFrame::kYPlane];
-  data.src_size[VideoFrame::kUPlane] = frame-GetPlaneSize()[VideoFrame::kUPlane];
-  data.src_size[VideoFrame::kVPlane] = frame-GetPlaneSize()[VideoFrame::kVPlane];
+  data.src_size[VideoFrame::kYPlane] = frame->GetPlaneSize()[VideoFrame::kYPlane];
+  data.src_size[VideoFrame::kUPlane] = frame->GetPlaneSize()[VideoFrame::kUPlane];
+  data.src_size[VideoFrame::kVPlane] = frame->GetPlaneSize()[VideoFrame::kVPlane];
 }
 
 CodecCodeAdapter FillSurfaceBufferDataCheck(

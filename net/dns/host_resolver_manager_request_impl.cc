@@ -529,7 +529,6 @@ void HostResolverManager::RequestImpl::set_resolve_info(
 }
 
 net::ResolveInfo HostResolverManager::RequestImpl::GetResolveInfo() const {
-  DCHECK(complete_);
   return resolve_info_;
 }
 #endif

@@ -161,12 +161,17 @@ bool NativeViewGLSurfaceEGLOhos::SetBackbufferAllocation(bool allocated) {
 #if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
     if (!condition_) {
 #endif
-    if (NativeViewGLSurfaceEGL::Recreate()) {
+    GLContext* context = GLContext::GetCurrent();
+    if (context) {
+      if (NativeViewGLSurfaceEGL::Recreate()) {
       // Notify the bufferqueue associated with the OHNativeWindow to clean
       // cache
       OHOS::NWeb::OhosAdapterHelper::GetInstance()
           .GetWindowAdapterInstance()
           .NativeWindowSurfaceCleanCache(reinterpret_cast<void*>(window_));
+      }
+    } else {
+      LOG(WARNING) << "GLContext::GetCurrent() returned null, skipping surface recreation";
     }
 #if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
     }

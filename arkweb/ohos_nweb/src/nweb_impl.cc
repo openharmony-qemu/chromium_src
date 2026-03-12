@@ -5762,6 +5762,18 @@ std::string NWebImpl::GetInitiatorByGuid(const std::string& guid) {
   return NWebDownloadItem::GetNWebInitiator(download_item);
 }
 
+std::string NWebImpl::GetContextTypeByGuid(const std::string& guid) {
+  WVLOG_D("NWebImpl::GetContextTypeByGuid guid %{public}s", guid.c_str());
+
+  CefRefPtr<CefDownloadItem> download_item = CefGetDownloadItem(guid);
+  if (!download_item) {
+    LOG(ERROR) << "GetContextTypeByGuid failed, for download_item is nullptr.";
+    return "";
+  }
+
+  return NWebDownloadItem::GetNWebContextType(download_item);
+}
+
 bool NWebImpl::GetCanResumeByGuid(const std::string& guid) {
   WVLOG_D("NWebImpl::GetCanResumeByGuid guid %{public}s", guid.c_str());
 

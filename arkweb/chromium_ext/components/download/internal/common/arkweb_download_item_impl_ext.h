@@ -172,9 +172,11 @@ class COMPONENTS_DOWNLOAD_EXPORT ArkWebDownloadItemImplExt : public DownloadItem
   void SetByExtensionId(const std::string& extension_id);
   void SetByExtensionName(const std::string& extension_name);
   void SetConflictAction(int conflict_action);
+  void SetContextType(const std::string& context_type);
   std::string GetByExtensionId() const;
   std::string GetByExtensionName() const;
   int GetConflictAction() const;
+  std::string GetContextType() const;
 #endif  //  BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
 
  private:
@@ -204,6 +206,7 @@ class COMPONENTS_DOWNLOAD_EXPORT ArkWebDownloadItemImplExt : public DownloadItem
   uint32_t read_download_size_;
   std::string extension_id_;
   std::string extension_name_;
+  std::string context_type_;
   int conflict_action_{0};
 #endif
 

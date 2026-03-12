@@ -790,6 +790,7 @@ class NWebImpl : public NWeb {
   static std::string GetOriginUrlByGuid(const std::string& guid);
   static std::string GetReferrerByGuid(const std::string& guid);
   static std::string GetInitiatorByGuid(const std::string& guid);
+  static std::string GetContextTypeByGuid(const std::string& guid);
   static bool GetCanResumeByGuid(const std::string& guid);
   static bool GetTransientByGuid(const std::string& guid);
   static NWebDownloadSource GetDownloadSourceByGuid(const std::string& guid);

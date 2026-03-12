@@ -1293,7 +1293,7 @@ TEST(SlidingObserverTest, GetPreferedFrameRateTest031) {
 
 TEST(SlidingObserverTest, GetPreferedFrameRateTest032) {
   SlidingObserver observer;
-  std::vector<OHOS::NWeb::FrameRateSetting> settings = {0.0f, 10.0f, 24},
+  std::vector<OHOS::NWeb::FrameRateSetting> settings = {{0.0f, 10.0f, 24},
                                                         {10.0f, 30.0f, 30},
                                                         {30.0f, 60.0f, 60},
                                                         {60.0f, -1.0f, 120}};

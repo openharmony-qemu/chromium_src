@@ -9,7 +9,7 @@
 
 #include "build/build_config.h"
 #include "media/base/media_export.h"
-
+#include "arkweb/build/features/features.h"
 namespace media {
 
 // This struct specifies software audio processing effects to be applied by
@@ -50,6 +50,9 @@ struct MEDIA_EXPORT AudioProcessingSettings {
     if (echo_cancellation || automatic_gain_control) {
       return true;
     }
+#endif
+#if BUILDFLAG(ARKWEB_WEBRTC)
+    return true;
 #endif
 
     return noise_suppression || high_pass_filter || transient_noise_suppression;

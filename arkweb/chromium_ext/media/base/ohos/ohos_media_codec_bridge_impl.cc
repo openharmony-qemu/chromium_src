@@ -59,7 +59,7 @@ void AcquireYUVMemcpyData(YUVMemcpyData &data, scoped_refptr<VideoFrame> frame, 
   data.dst_size = buffer_adapter->GetSize();
 }
 
-CodecCodeAdapter CheckYUVMemcpyData(YUVMemcpyData &data, scoped_refptr<VideoFrame> frame)
+CodecCodeAdapter CheckYUVMemcpyData(const YUVMemcpyData &data, scoped_refptr<VideoFrame> frame)
 {
   // check addr.
   if (data.dst_addr == nullptr || nullptr == data.src_addr[VideoFrame::kYPlane] ||
@@ -106,13 +106,12 @@ CodecCodeAdapter CheckYUVMemcpyData(YUVMemcpyData &data, scoped_refptr<VideoFram
   return CodecCodeAdapter::OK;
 }
 
-CodecCodeAdapter CopyYUVData(const YUVMemcpyData &data, int32_t plane) {
+CodecCodeAdapter CopyYUVData(const YUVMemcpyData &data, int32_t plane, uint8_t **dst) {
   LOG(DEBUG) << "CopyYUVData enter";
   if (plane < 0 || plane >= MAXPLANES) {
       LOG(ERROR) << "Invalid plane index: " << plane;
       return CodecCodeAdapter::ERROR;
   }
-  uint8_t *dst = data.dst_addr;
   int32_t width = data.dst_width;
   int32_t stride = data.dst_stride;
   const uint8_t *src = data.src_addr[plane];
@@ -122,11 +121,11 @@ CodecCodeAdapter CopyYUVData(const YUVMemcpyData &data, int32_t plane) {
   }
 
   for (int32_t i = 0; i < data.planes_cnt[plane]; i++) {
-    if (stride < width || (memcpy_s(dst, stride, src, width) != EOK)) {
+    if (stride < width || (memcpy_s(*dst, stride, src, width) != EOK)) {
       LOG(ERROR) << "memcpy_s failed";
       return CodecCodeAdapter::ERROR;
     }
-    dst += stride;
+    *dst += stride;
     src += data.src_planes_stride[plane];
   }
 
@@ -147,9 +146,10 @@ CodecCodeAdapter FillSurfaceBufferData(YUVMemcpyData &data, scoped_refptr<VideoF
     return CodecCodeAdapter::ERROR; 
   }
 
-  if ((CopyYUVData(data, VideoFrame::kYPlane) != CodecCodeAdapter::OK) ||
-      (CopyYUVData(data, VideoFrame::kUPlane) != CodecCodeAdapter::OK) ||
-      (CopyYUVData(data, VideoFrame::kVPlane) != CodecCodeAdapter::OK)) {
+  uint8_t *dst = data.dst_addr.get();
+  if ((CopyYUVData(data, VideoFrame::kYPlane, &dst) != CodecCodeAdapter::OK) ||
+      (CopyYUVData(data, VideoFrame::kUPlane, &dst) != CodecCodeAdapter::OK) ||
+      (CopyYUVData(data, VideoFrame::kVPlane, &dst) != CodecCodeAdapter::OK)) {
     return CodecCodeAdapter::ERROR;
   }
 

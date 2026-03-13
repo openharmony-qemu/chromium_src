@@ -53,6 +53,15 @@ void HostFrameSinkManagerUtils::EvictFrameBackBuffers(
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+void HostFrameSinkManagerUtils::SetIfNeedCleanBuffers(const FrameSinkId& frame_sink_id, bool need_clean_buffers)
+{
+  if (hostFrameSinkManager && hostFrameSinkManager->frame_sink_manager_) {
+    hostFrameSinkManager->frame_sink_manager_->SetIfNeedCleanBuffers(frame_sink_id, need_clean_buffers);
+  }
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
 void HostFrameSinkManagerUtils::SetIsOfflineWebComponentInactive(
     bool is_inactive,

@@ -109,6 +109,12 @@ class MockFrameSinkManager : public mojom::FrameSinkManager {
               EvictFrameBackBuffers,
               (const ::viz::FrameSinkId& frame_sink_id),
               (override));
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+  MOCK_METHOD(void,
+              SetIfNeedCleanBuffers,
+              (const ::viz::FrameSinkId& frame_sink_id, bool need_clean_buffers),
+              (override));
+#endif
   MOCK_METHOD(void,
               SetIsOfflineWebComponentInactive,
               (bool is_inactive, const ::viz::FrameSinkId& frame_sink_id),

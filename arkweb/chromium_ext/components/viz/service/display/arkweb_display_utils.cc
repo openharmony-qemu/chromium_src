@@ -438,6 +438,16 @@ void ArkwebDisplayUtils::DiscardBackbuffer() {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+void ArkwebDisplayUtils::SetIfNeedCleanBuffers(bool need_clean_buffers)
+{
+  TRACE_EVENT1("viz", "ArkwebDisplayUtils::SetIfNeedCleanBuffers ", "need_clean_buffers:", need_clean_buffers);
+  if (display_ && display_->output_surface_) {
+    display_->output_surface_->SetIfNeedCleanBuffers(need_clean_buffers);
+  }
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
 void ArkwebDisplayUtils::CleanBufferAfterSwapBuffer(bool delay_clean) {
   if (display_->output_surface_) {

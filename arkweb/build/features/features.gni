@@ -272,6 +272,7 @@ declare_args() {
   arkweb_ext_navigation = false
   arkweb_jsheap_dump = false
   arkweb_ext_extensions_header_client = false
+  arkweb_clean_buffers_when_invisible = true
 }
 
 # Features enabled in mojom bindings.

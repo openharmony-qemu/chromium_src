@@ -173,7 +173,7 @@ SkiaOutputDeviceGL::SkiaOutputDeviceGL(
   // scRGB linear
   capabilities_.sk_color_type_map[SinglePlaneFormat::kRGBA_F16] =
       kRGBA_F16_SkColorType;
-#if BUILDFLAG(ARKWEB_SUPPORTS_DAMAGE_REGION)
+#if (BUILDFLAG(ARKWEB_SUPPORTS_DAMAGE_REGION) || BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE))
   implUtils_ = std::make_unique<SkiaOutputDeviceGLUtils>(this);
 #endif
   if (features::UseGpuVsync()) {
@@ -311,6 +311,11 @@ void SkiaOutputDeviceGL::Present(const std::optional<gfx::Rect>& update_rect,
     }
     DoFinishSwapBuffers(surface_size, std::move(frame),
                         gfx::SwapCompletionResult(result));
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+    if (implUtils_) {
+      implUtils_->CleanBuffersIfNeed();
+    }
+#endif
   }
 }
 
@@ -336,6 +341,15 @@ void SkiaOutputDeviceGL::DiscardBackbuffer() {
 #if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
 void SkiaOutputDeviceGL::CleanBufferAfterSwapBuffer(bool delay_clean) {
   implUtils_->SetDelayClean(delay_clean);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+void SkiaOutputDeviceGL::SetIfNeedCleanBuffers(bool need_clean_buffers)
+{
+  if (implUtils_) {
+    implUtils_->SetIfNeedCleanBuffers(need_clean_buffers);
+  }
 }
 #endif
 

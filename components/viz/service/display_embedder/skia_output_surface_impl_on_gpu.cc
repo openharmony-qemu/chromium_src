@@ -2633,6 +2633,15 @@ void SkiaOutputSurfaceImplOnGpu::DiscardBackbuffer() {
   output_device_->DiscardBackbuffer();
 }
 
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+void SkiaOutputSurfaceImplOnGpu::SetIfNeedCleanBuffers(bool need_clean_buffers)
+{
+  if (output_device_) {
+    output_device_->SetIfNeedCleanBuffers(need_clean_buffers);
+  }
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
 void SkiaOutputSurfaceImplOnGpu::CleanBufferAfterSwapBuffer(bool delay_clean) {
   output_device_->CleanBufferAfterSwapBuffer(delay_clean);

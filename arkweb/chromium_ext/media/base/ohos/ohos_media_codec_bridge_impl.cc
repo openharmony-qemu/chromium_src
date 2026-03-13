@@ -60,10 +60,13 @@ CodecCodeAdapter FillSurfaceBufferDataCheck(
     scoped_refptr<VideoFrame> frame, std::shared_ptr<BufferRequestConfigAdapterImpl> configAdapter, YUVMemcpyData &data)
 {
   LOG(DEBUG) << __FUNCTION__ << " enter";
-  if (frame->GetPlaneSize().size() < MAXPLANES) {
-    LOG(ERROR) << "frame planes cnt < " << MAXPLANES;
-    return CodecCodeAdapter::ERROR;
+  LOG(DEBUG) << __FUNCTION__ << " enter"; 
+  std::vector<size_t> frame_planes_size = frame->GetPlaneSize(); 
+  if (frame_planes_size.size() < MAXPLANES) { 
+    LOG(ERROR) << "frame planes cnt < " << MAXPLANES; 
+    return CodecCodeAdapter::ERROR; 
   }
+
   FillSurfaceBufferData(frame, configAdapter, data);
   // check addr.
   if (data.dst_addr == nullptr || nullptr == data.src_addr[VideoFrame::kYPlane] ||
@@ -91,13 +94,11 @@ CodecCodeAdapter FillSurfaceBufferDataCheck(
     LOG(ERROR) << __FUNCTION__ << "failed, plane size error";
     return CodecCodeAdapter::ERROR;
   }
-  auto u_offset = std::abs(data.src_addr[VideoFrame::kUPlane] - data.src_addr[VideoFrame::kYPlane]);
-  auto v_offset = std::abs(data.src_addr[VideoFrame::kVPlane] - data.src_addr[VideoFrame::kYPlane]);
-  uint64_t y_required_plane_space = data.src_size[VideoFrame::kYPlane];
-  uint64_t u_required_plane_space = data.src_size[VideoFrame::kUPlane] + u_offset;
-  uint64_t v_required_plane_space = data.src_size[VideoFrame::kVPlane] + v_offset;
-  uint64_t real_all_plane_space = frame->layout().planes()[VideoFrame::kYPlane].size + 
-      frame->layout().planes()[VideoFrame::kUPlane].size + frame->layout().planes()[VideoFrame::kVPlane].size;
+
+  uint64_t real_all_plane_space = frame->shm_region()->Map().size();
+  uint64_t y_required_plane_space = frame->layout().planes()[VideoFrame::kYPlane].offset + frame_planes_size[VideoFrame::kYPlane];
+  uint64_t u_required_plane_space = frame->layout().planes()[VideoFrame::kUPlane].offset + frame_planes_size[VideoFrame::kUPlane];
+  uint64_t v_required_plane_space = frame->layout().planes()[VideoFrame::kVPlane].offset + frame_planes_size[VideoFrame::kVPlane];
   if (y_required_plane_space > real_all_plane_space || u_required_plane_space > real_all_plane_space ||
       v_required_plane_space > real_all_plane_space) {
     LOG(ERROR) << "plane size error, required plane space > real plane space!";

@@ -15,4 +15,5 @@ arkweb_content_renderer_media_ohos_custom_media_player_sources = [
 arkweb_content_renderer_media_ohos_unittests_sources = [
     "//arkweb/chromium_ext/content/renderer/media/ohos/native_texture_factory_unittest.cc",
     "//arkweb/chromium_ext/content/renderer/media/ohos/native_texture_wrapper_impl_unittest.cc",
+    "//arkweb/chromium_ext/content/renderer/media/ohos/ohos_custom_media_player_renderer_client_unittest.cc",
 ]

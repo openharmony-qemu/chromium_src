@@ -1007,7 +1007,6 @@ TEST(BackgroundTaskPolicyTEST, ProcessAudioContextPlayersOnUIThread004) {
     background_task_policy->audio_context_players_num_.insert(std::make_pair(valid_id1, 1));
     background_task_policy->audio_context_players_num_.insert(std::make_pair(valid_id2, 2));
     EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), 2);
-    // 由于 RenderFrameHost::FromID 返回 nullptr，元素会被清空
     background_task_policy->ProcessAudioContextPlayersOnUIThread(&page_node_mock);
     EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), 0);
 }

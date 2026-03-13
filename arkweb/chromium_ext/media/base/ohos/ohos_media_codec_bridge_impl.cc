@@ -60,7 +60,6 @@ CodecCodeAdapter FillSurfaceBufferDataCheck(
     scoped_refptr<VideoFrame> frame, std::shared_ptr<BufferRequestConfigAdapterImpl> configAdapter, YUVMemcpyData &data)
 {
   LOG(DEBUG) << __FUNCTION__ << " enter";
-  LOG(DEBUG) << __FUNCTION__ << " enter"; 
   std::vector<size_t> frame_planes_size = frame->GetPlaneSize(); 
   if (frame_planes_size.size() < MAXPLANES) { 
     LOG(ERROR) << "frame planes cnt < " << MAXPLANES; 

@@ -782,18 +782,27 @@ TEST_F(NWebImplTest, GetCanResumeByGuid001) {
 #if BUILDFLAG(ARKWEB_SAVE_PAGE)
 TEST_F(NWebImplTest, SavePage001) {
   int32_t type = 1;
+  int32_t callback_id = 1;
+  auto savePageResultCallback = [](int32_t nweb_id, int32_t callback_id,
+                                   bool result) {};
   std::string filePath = "/data/test.html";
   nweb_impl_->nweb_delegate_ = nullptr;
-  bool result = nweb_impl_->SavePage(type, filePath);
+  bool result =
+      nweb_impl_->SavePage(type, filePath, callback_id, savePageResultCallback);
   EXPECT_EQ(result, false);
 }
 
 TEST_F(NWebImplTest, SavePage002) {
   int32_t type = 1;
+  int32_t callback_id = 1;
+  auto savePageResultCallback = [](int32_t nweb_id, int32_t callback_id,
+                                   bool result) {};
   std::string filePath = "/data/test.html";
   nweb_impl_->nweb_delegate_ = mock_delegate_;
-  EXPECT_CALL(*mock_delegate_, SavePage(type, filePath)).WillOnce(testing::Return(true));
-  bool result = nweb_impl_->SavePage(type, filePath);
+  EXPECT_CALL(*mock_delegate_, SavePage(testing::_, testing::_, testing::_))
+      .WillOnce(testing::Return(true));
+  bool result =
+      nweb_impl_->SavePage(type, filePath, callback_id, savePageResultCallback);
   EXPECT_EQ(result, true);
 }
 #endif //ARKWEB_SAVE_PAGE

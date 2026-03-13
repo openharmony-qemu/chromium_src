@@ -962,8 +962,13 @@ class MockNWebDelegate : public NWebDelegateInterface {
   MOCK_METHOD(void, WebExtensionContextMenuReloadFocusedFrame, (), (override));
 #endif
 #if BUILDFLAG(ARKWEB_SAVE_PAGE)
-  MOCK_METHOD(bool, SavePage, (int32_t type, const std::string& filePath), (override));
-#endif // ARKWEB_SAVE_PAGE
+  MOCK_METHOD(bool,
+              SavePage,
+              (int32_t type,
+              const std::string& filePath,
+              CefRefPtr<CefSavePageResultCallback> callback),
+              (override));
+#endif  // ARKWEB_SAVE_PAGE
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   MOCK_METHOD(void,
               WebExtensionContextMenuGetFocusedFrameInfo,

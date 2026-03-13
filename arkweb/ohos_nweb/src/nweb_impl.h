@@ -1216,7 +1216,13 @@ class NWebImpl : public NWeb {
 #endif  // ARKWEB_DISATCH_BEFORE_UNLOAD
 
 #if BUILDFLAG(ARKWEB_SAVE_PAGE)
-  bool SavePage(int32_t type, const std::string& filePath);
+  typedef void (*SavePageResultCallback)(int32_t nweb_id,
+                                         int32_t callback_id,
+                                         bool result);
+  bool SavePage(int32_t type,
+                const std::string& filePath,
+                int32_t callback_id,
+                SavePageResultCallback callback);
 #endif // ARKWEB_SAVE_PAGE
 
 #if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)

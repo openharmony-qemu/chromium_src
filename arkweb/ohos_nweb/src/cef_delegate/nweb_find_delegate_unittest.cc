@@ -796,7 +796,11 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
 #endif
 
 #if BUILDFLAG(ARKWEB_SAVE_PAGE)
-  bool SavePage(int type, CefString& filePath) override { return false; }
+  bool SavePage(int type,
+                CefString& filePath,
+                CefRefPtr<CefSavePageResultCallback> callback) override {
+    return false;
+  }
 #endif // ARKWEB_SAVE_PAGE
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)

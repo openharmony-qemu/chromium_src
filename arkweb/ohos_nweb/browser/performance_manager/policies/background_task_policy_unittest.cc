@@ -995,6 +995,9 @@ TEST(BackgroundTaskPolicyTEST, ProcessAudioContextPlayers006) {
 }
 
 // ==================== ProcessAudioContextPlayersOnUIThread Additional Tests ====================
+// ProcessAudioContextPlayersOnUIThread004: 测试 audio_state_num_ > 0 时，
+// 由于单元测试环境中 RenderFrameHost::FromID 返回 nullptr，
+// 所以所有 audio_context_players_num_ 中的元素都会被删除
 TEST(BackgroundTaskPolicyTEST, ProcessAudioContextPlayersOnUIThread004) {
     auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
     PageNodeMock page_node_mock;
@@ -1003,9 +1006,10 @@ TEST(BackgroundTaskPolicyTEST, ProcessAudioContextPlayersOnUIThread004) {
     content::GlobalRenderFrameHostId valid_id2 = content::GlobalRenderFrameHostId(2, 2);
     background_task_policy->audio_context_players_num_.insert(std::make_pair(valid_id1, 1));
     background_task_policy->audio_context_players_num_.insert(std::make_pair(valid_id2, 2));
-    size_t initial_size = background_task_policy->audio_context_players_num_.size();
+    EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), 2);
+    // 由于 RenderFrameHost::FromID 返回 nullptr，元素会被清空
     background_task_policy->ProcessAudioContextPlayersOnUIThread(&page_node_mock);
-    EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), initial_size);
+    EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), 0);
 }
 
 TEST(BackgroundTaskPolicyTEST, ProcessAudioContextPlayersOnUIThread005) {
@@ -1014,17 +1018,6 @@ TEST(BackgroundTaskPolicyTEST, ProcessAudioContextPlayersOnUIThread005) {
     background_task_policy->audio_state_num_ = 2;
     background_task_policy->ProcessAudioContextPlayersOnUIThread(&page_node_mock);
     EXPECT_EQ(background_task_policy->audio_context_players_num_.size(), 0);
-}
-
-// ==================== GetWebAudioStartBackgroundTask Tests ====================
-TEST(BackgroundTaskPolicyTEST, GetWebAudioStartBackgroundTask002) {
-    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    content::GlobalRenderFrameHostId valid_id1 = content::GlobalRenderFrameHostId(1, 1);
-    content::GlobalRenderFrameHostId valid_id2 = content::GlobalRenderFrameHostId(2, 2);
-    background_task_policy->audio_context_players_num_.insert(std::make_pair(valid_id1, 1));
-    background_task_policy->audio_context_players_num_.insert(std::make_pair(valid_id2, 2));
-    bool result = background_task_policy->GetWebAudioStartBackgroundTask();
-    EXPECT_TRUE(result == true || result == false);
 }
 
 // ==================== IsWebAudioRequestBackgroundRunning Additional Tests ====================

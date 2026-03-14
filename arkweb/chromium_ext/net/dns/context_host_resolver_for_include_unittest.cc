@@ -13,12 +13,6 @@
  * limitations under the License.
  */
 
-// 本测试文件测试 context_host_resolver_for_include.cc 中的扩展方法
-// 编译标志说明:
-// - ARKWEB_EX_HTTP_DNS_FALLBACK: 启用 CanUseSecureDnsFallback 和 GetLocalAddress
-// - ARKWEB_EXT_NAVIGATION: 启用 GetDnsServersString
-// - ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING: 启用 NeedRetryDnsOnDnsHijack
-
 #include <memory>
 #include <string>
 
@@ -42,20 +36,6 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "url/gurl.h"
 
-// ============================================================================
-// 私有成员访问处理
-// ============================================================================
-// 使用预处理器宏来访问 ContextHostResolver 和 HostResolverManager 的私有成员
-// 这样可以在测试中验证内部状态
-//
-// ContextHostResolver 私有成员 (context_host_resolver.h:110-121):
-// - owned_manager_: std::unique_ptr<HostResolverManager>
-// - manager_: const raw_ptr<HostResolverManager>
-// - resolve_context_: std::unique_ptr<ResolveContext>
-// - shutting_down_: bool
-//
-// HostResolverManager 私有成员通过 friend 声明允许 ContextHostResolver 访问
-// ============================================================================
 #define private public
 #define protected public
 #include "net/dns/context_host_resolver.h"
@@ -67,19 +47,10 @@ namespace net {
 
 namespace {
 
-// ============================================================================
-// Helper 函数
-// ============================================================================
-
-// 创建测试用的 URLRequestContext
-// 来源: net/url_request/url_request_context_builder.h
-// 用途: 为 ResolveContext 提供必需的 URLRequestContext
 std::unique_ptr<URLRequestContext> CreateTestURLRequestContext() {
   URLRequestContextBuilder builder;
-  // ProxyConfigWithAnnotation 来源: net/proxy_resolution/proxy_config_with_annotation.h
   net::ProxyConfigWithAnnotation pcwa(net::ProxyConfig::CreateDirect(),
                                       TRAFFIC_ANNOTATION_FOR_TESTS);
-  // ProxyConfigServiceFixed 来源: net/proxy_resolution/proxy_config_service_fixed.h
   auto fixed = std::make_unique<net::ProxyConfigServiceFixed>(pcwa);
   builder.set_proxy_config_service(std::move(fixed));
   return builder.Build();
@@ -87,122 +58,65 @@ std::unique_ptr<URLRequestContext> CreateTestURLRequestContext() {
 
 }  // namespace
 
-// ============================================================================
-// 测试 Fixture
-// ============================================================================
 class ContextHostResolverForIncludeTest : public testing::Test {
  public:
   void SetUp() override {
-    // 创建 URLRequestContext - 用于 ResolveContext 构造
     url_request_context_ = CreateTestURLRequestContext();
-    // 创建 ResolveContext - 来源: net/dns/resolve_context.h
-    // 构造函数参数: URLRequestContext*, bool is_for_network_service
     resolve_context_ =
         std::make_unique<ResolveContext>(url_request_context_.get(), true);
   }
 
   void TearDown() override {
-    // 按相反顺序销毁，避免依赖问题
     resolve_context_.reset();
     url_request_context_.reset();
   }
 
  protected:
-  // TaskEnvironment 用于消息循环 - 来源: base/test/task_environment.h
   base::test::TaskEnvironment task_env_;
-  // URLRequestContext - 来源: net/url_request/url_request_context.h
   std::unique_ptr<URLRequestContext> url_request_context_;
-  // ResolveContext - 来源: net/dns/resolve_context.h
   std::unique_ptr<ResolveContext> resolve_context_;
 };
 
-// ============================================================================
-// Tests for ContextHostResolver - ARKWEB_EX_HTTP_DNS_FALLBACK
-// ============================================================================
-
 #if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
 
-TEST_F(ContextHostResolverForIncludeTest, CanUseSecureDnsFallback_NullManager) {
-  // Create a ContextHostResolver with null manager
-  auto resolver = std::make_unique<ContextHostResolver>(
-      static_cast<HostResolverManager*>(nullptr),
-      std::move(resolve_context_));
-
-  // When manager_ is null, should return false
-  EXPECT_FALSE(resolver->CanUseSecureDnsFallback());
-}
-
 TEST_F(ContextHostResolverForIncludeTest, CanUseSecureDnsFallback_WithManager) {
-  // Create a HostResolverManager
   HostResolver::ManagerOptions options;
   auto manager = std::make_unique<HostResolverManager>(
       options, nullptr, nullptr);
 
-  // Create resolve context for the manager
   auto context = std::make_unique<ResolveContext>(url_request_context_.get(), true);
 
-  // Create ContextHostResolver with manager
   auto resolver = std::make_unique<ContextHostResolver>(
       manager.get(), std::move(context));
 
-  // Register the resolve context with the manager
   manager->RegisterResolveContext(resolver->resolve_context_.get());
 
-  // Call CanUseSecureDnsFallback - should forward to manager
-  // Since no DoH fallback is configured, should return false
   bool result = resolver->CanUseSecureDnsFallback();
+  EXPECT_FALSE(result);
 
-  // The actual result depends on manager's internal state
-  // We're testing that the forwarding works correctly
-  EXPECT_FALSE(result);  // No DoH fallback configured
-
-  // Cleanup
   manager->DeregisterResolveContext(resolver->resolve_context_.get());
 }
 
-TEST_F(ContextHostResolverForIncludeTest, GetLocalAddress_NullManager) {
-  // Create a ContextHostResolver with null manager
-  auto resolver = std::make_unique<ContextHostResolver>(
-      static_cast<HostResolverManager*>(nullptr),
-      std::move(resolve_context_));
-
-  // When manager_ is null, GetLocalAddress should not crash
-  IPEndPoint address;
-  EXPECT_NO_FATAL_FAILURE(resolver->GetLocalAddress(&address));
-
-  // Address should remain unchanged (default constructed)
-  EXPECT_EQ(address.port(), 0);
-}
-
 TEST_F(ContextHostResolverForIncludeTest, GetLocalAddress_WithManager) {
-  // Create a HostResolverManager
   HostResolver::ManagerOptions options;
   auto manager = std::make_unique<HostResolverManager>(
       options, nullptr, nullptr);
 
-  // Create resolve context for the manager
   auto context = std::make_unique<ResolveContext>(url_request_context_.get(), true);
 
-  // Create ContextHostResolver with manager
   auto resolver = std::make_unique<ContextHostResolver>(
       manager.get(), std::move(context));
 
-  // Register the resolve context with the manager
   manager->RegisterResolveContext(resolver->resolve_context_.get());
 
-  // Call GetLocalAddress - should forward to manager
   IPEndPoint address;
   EXPECT_NO_FATAL_FAILURE(resolver->GetLocalAddress(&address));
 
-  // Cleanup
   manager->DeregisterResolveContext(resolver->resolve_context_.get());
 }
 
 TEST_F(ContextHostResolverForIncludeTest,
        CanUseSecureDnsFallback_ManagerForwarding) {
-  // This test verifies that CanUseSecureDnsFallback correctly forwards
-  // to the manager's CanUseSecureDnsFallback method
-
   HostResolver::ManagerOptions options;
   auto owned_manager = std::make_unique<HostResolverManager>(
       options, nullptr, nullptr);
@@ -210,26 +124,18 @@ TEST_F(ContextHostResolverForIncludeTest,
 
   auto context = std::make_unique<ResolveContext>(url_request_context_.get(), true);
 
-  // Create ContextHostResolver that owns its manager
   auto resolver = std::make_unique<ContextHostResolver>(
       std::move(owned_manager), std::move(context));
 
-  // Verify manager is set
   EXPECT_EQ(resolver->manager_, manager_ptr);
 
-  // The forwarding behavior is tested by ensuring no crash and consistent return
   bool result1 = resolver->CanUseSecureDnsFallback();
   bool result2 = resolver->CanUseSecureDnsFallback();
 
-  // Results should be consistent
   EXPECT_EQ(result1, result2);
 }
 
-TEST_F(ContextHostResolverForIncludeTest,
-       GetLocalAddress_ManagerForwarding) {
-  // This test verifies that GetLocalAddress correctly forwards
-  // to the manager's GetLocalAddress method
-
+TEST_F(ContextHostResolverForIncludeTest, GetLocalAddress_ManagerForwarding) {
   HostResolver::ManagerOptions options;
   auto owned_manager = std::make_unique<HostResolverManager>(
       options, nullptr, nullptr);
@@ -237,85 +143,52 @@ TEST_F(ContextHostResolverForIncludeTest,
 
   auto context = std::make_unique<ResolveContext>(url_request_context_.get(), true);
 
-  // Create ContextHostResolver that owns its manager
   auto resolver = std::make_unique<ContextHostResolver>(
       std::move(owned_manager), std::move(context));
 
-  // Verify manager is set
   EXPECT_EQ(resolver->manager_, manager_ptr);
 
-  // Call GetLocalAddress - should not crash
   IPEndPoint address1;
   IPEndPoint address2;
   EXPECT_NO_FATAL_FAILURE(resolver->GetLocalAddress(&address1));
   EXPECT_NO_FATAL_FAILURE(resolver->GetLocalAddress(&address2));
 
-  // Results should be consistent
   EXPECT_EQ(address1.ToString(), address2.ToString());
 }
 
 #endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
 
-// ============================================================================
-// Tests for ContextHostResolver - ARKWEB_EXT_NAVIGATION
-// ============================================================================
-
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
 
-TEST_F(ContextHostResolverForIncludeTest, GetDnsServersString_NullManager) {
-  // Create a ContextHostResolver with null manager
-  auto resolver = std::make_unique<ContextHostResolver>(
-      static_cast<HostResolverManager*>(nullptr),
-      std::move(resolve_context_));
-
-  // When manager_ is null, should return empty string
-  std::string result = resolver->GetDnsServersString();
-  EXPECT_TRUE(result.empty());
-}
-
 TEST_F(ContextHostResolverForIncludeTest, GetDnsServersString_WithManager) {
-  // Create a HostResolverManager
   HostResolver::ManagerOptions options;
   auto manager = std::make_unique<HostResolverManager>(
       options, nullptr, nullptr);
 
-  // Create resolve context for the manager
   auto context = std::make_unique<ResolveContext>(url_request_context_.get(), true);
 
-  // Create ContextHostResolver with manager
   auto resolver = std::make_unique<ContextHostResolver>(
       manager.get(), std::move(context));
 
-  // Register the resolve context with the manager
   manager->RegisterResolveContext(resolver->resolve_context_.get());
 
-  // Call GetDnsServersString - should forward to manager
   std::string result = resolver->GetDnsServersString();
-
-  // The actual content depends on system DNS configuration
-  // We're testing that the forwarding works correctly
   EXPECT_NO_FATAL_FAILURE(resolver->GetDnsServersString());
 
-  // Cleanup
   manager->DeregisterResolveContext(resolver->resolve_context_.get());
 }
 
 TEST_F(ContextHostResolverForIncludeTest,
        GetDnsServersString_ManagerForwarding) {
-  // This test verifies that GetDnsServersString correctly forwards
-  // to the manager's GetDnsServersString method
-
   HostResolver::ManagerOptions options;
   auto owned_manager = std::make_unique<HostResolverManager>(
       options, nullptr, nullptr);
 
   auto context = std::make_unique<ResolveContext>(url_request_context_.get(), true);
 
-  // Create ContextHostResolver that owns its manager
   auto resolver = std::make_unique<ContextHostResolver>(
       std::move(owned_manager), std::move(context));
 
-  // Multiple calls should return consistent results
   std::string result1 = resolver->GetDnsServersString();
   std::string result2 = resolver->GetDnsServersString();
 
@@ -324,132 +197,85 @@ TEST_F(ContextHostResolverForIncludeTest,
 
 #endif  // BUILDFLAG(ARKWEB_EXT_NAVIGATION)
 
-// ============================================================================
-// Tests for ContextHostResolver - ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING
-// ============================================================================
-
 #if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING)
 
-TEST_F(ContextHostResolverForIncludeTest,
-       NeedRetryDnsOnDnsHijack_NullManager) {
-  // Create a ContextHostResolver with null manager
-  auto resolver = std::make_unique<ContextHostResolver>(
-      static_cast<HostResolverManager*>(nullptr),
-      std::move(resolve_context_));
-
-  // When manager_ is null, should return false
-  GURL url("http://example.com");
-  std::string error_code = "ERR_NAME_NOT_RESOLVED";
-
-  bool result = resolver->NeedRetryDnsOnDnsHijack(url, error_code);
-  EXPECT_FALSE(result);
-}
-
-TEST_F(ContextHostResolverForIncludeTest,
-       NeedRetryDnsOnDnsHijack_EmptyUrl) {
-  // Create a HostResolverManager
+TEST_F(ContextHostResolverForIncludeTest, NeedRetryDnsOnDnsHijack_EmptyUrl) {
   HostResolver::ManagerOptions options;
   auto manager = std::make_unique<HostResolverManager>(
       options, nullptr, nullptr);
 
-  // Create resolve context for the manager
   auto context = std::make_unique<ResolveContext>(url_request_context_.get(), true);
 
-  // Create ContextHostResolver with manager
   auto resolver = std::make_unique<ContextHostResolver>(
       manager.get(), std::move(context));
 
-  // Register the resolve context with the manager
   manager->RegisterResolveContext(resolver->resolve_context_.get());
 
-  // Test with empty URL
   GURL empty_url;
   std::string error_code = "ERR_NAME_NOT_RESOLVED";
 
   bool result = resolver->NeedRetryDnsOnDnsHijack(empty_url, error_code);
   EXPECT_FALSE(result);
 
-  // Cleanup
   manager->DeregisterResolveContext(resolver->resolve_context_.get());
 }
 
-TEST_F(ContextHostResolverForIncludeTest,
-       NeedRetryDnsOnDnsHijack_EmptyErrorCode) {
-  // Create a HostResolverManager
+TEST_F(ContextHostResolverForIncludeTest, NeedRetryDnsOnDnsHijack_EmptyErrorCode) {
   HostResolver::ManagerOptions options;
   auto manager = std::make_unique<HostResolverManager>(
       options, nullptr, nullptr);
 
-  // Create resolve context for the manager
   auto context = std::make_unique<ResolveContext>(url_request_context_.get(), true);
 
-  // Create ContextHostResolver with manager
   auto resolver = std::make_unique<ContextHostResolver>(
       manager.get(), std::move(context));
 
-  // Register the resolve context with the manager
   manager->RegisterResolveContext(resolver->resolve_context_.get());
 
-  // Test with empty error code
   GURL url("http://example.com");
   std::string empty_error_code;
 
   bool result = resolver->NeedRetryDnsOnDnsHijack(url, empty_error_code);
-  // Result depends on manager's internal logic
   EXPECT_NO_FATAL_FAILURE(resolver->NeedRetryDnsOnDnsHijack(url, empty_error_code));
 
-  // Cleanup
   manager->DeregisterResolveContext(resolver->resolve_context_.get());
 }
 
-TEST_F(ContextHostResolverForIncludeTest,
-       NeedRetryDnsOnDnsHijack_WithManager) {
-  // Create a HostResolverManager
+TEST_F(ContextHostResolverForIncludeTest, NeedRetryDnsOnDnsHijack_WithManager) {
   HostResolver::ManagerOptions options;
   auto manager = std::make_unique<HostResolverManager>(
       options, nullptr, nullptr);
 
-  // Create resolve context for the manager
   auto context = std::make_unique<ResolveContext>(url_request_context_.get(), true);
 
-  // Create ContextHostResolver with manager
   auto resolver = std::make_unique<ContextHostResolver>(
       manager.get(), std::move(context));
 
-  // Register the resolve context with the manager
   manager->RegisterResolveContext(resolver->resolve_context_.get());
 
-  // Test with valid URL and error code
   GURL url("http://example.com");
   std::string error_code = "ERR_NAME_NOT_RESOLVED";
 
-  // Without configuring protect list, should return false
   bool result = resolver->NeedRetryDnsOnDnsHijack(url, error_code);
   EXPECT_FALSE(result);
 
-  // Cleanup
   manager->DeregisterResolveContext(resolver->resolve_context_.get());
 }
 
 TEST_F(ContextHostResolverForIncludeTest,
        NeedRetryDnsOnDnsHijack_ManagerForwarding) {
-  // This test verifies that NeedRetryDnsOnDnsHijack correctly forwards
-  // to the manager's NeedRetryDnsOnDnsHijack method
-
   HostResolver::ManagerOptions options;
   auto owned_manager = std::make_unique<HostResolverManager>(
       options, nullptr, nullptr);
 
   auto context = std::make_unique<ResolveContext>(url_request_context_.get(), true);
 
-  // Create ContextHostResolver that owns its manager
   auto resolver = std::make_unique<ContextHostResolver>(
       std::move(owned_manager), std::move(context));
 
   GURL url("http://example.com");
   std::string error_code = "ERR_NAME_NOT_RESOLVED";
 
-  // Multiple calls should return consistent results
   bool result1 = resolver->NeedRetryDnsOnDnsHijack(url, error_code);
   bool result2 = resolver->NeedRetryDnsOnDnsHijack(url, error_code);
 
@@ -458,24 +284,19 @@ TEST_F(ContextHostResolverForIncludeTest,
 
 TEST_F(ContextHostResolverForIncludeTest,
        NeedRetryDnsOnDnsHijack_VariousErrorCodes) {
-  // Create a HostResolverManager
   HostResolver::ManagerOptions options;
   auto manager = std::make_unique<HostResolverManager>(
       options, nullptr, nullptr);
 
-  // Create resolve context for the manager
   auto context = std::make_unique<ResolveContext>(url_request_context_.get(), true);
 
-  // Create ContextHostResolver with manager
   auto resolver = std::make_unique<ContextHostResolver>(
       manager.get(), std::move(context));
 
-  // Register the resolve context with the manager
   manager->RegisterResolveContext(resolver->resolve_context_.get());
 
   GURL url("http://example.com");
 
-  // Test various error codes
   std::vector<std::string> error_codes = {
       "ERR_NAME_NOT_RESOLVED",
       "ERR_CONNECTION_TIMED_OUT",
@@ -486,23 +307,15 @@ TEST_F(ContextHostResolverForIncludeTest,
 
   for (const auto& error_code : error_codes) {
     bool result = resolver->NeedRetryDnsOnDnsHijack(url, error_code);
-    // Without protect list configured, all should return false
     EXPECT_FALSE(result) << "Error code: " << error_code;
   }
 
-  // Cleanup
   manager->DeregisterResolveContext(resolver->resolve_context_.get());
 }
 
 #endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING)
 
-// ============================================================================
-// Tests for ContextHostResolver - General Behavior
-// ============================================================================
-
 TEST_F(ContextHostResolverForIncludeTest, ManagerOwnership) {
-  // Test that ContextHostResolver correctly owns and manages its manager
-
   HostResolver::ManagerOptions options;
   auto owned_manager = std::make_unique<HostResolverManager>(
       options, nullptr, nullptr);
@@ -510,21 +323,15 @@ TEST_F(ContextHostResolverForIncludeTest, ManagerOwnership) {
 
   auto context = std::make_unique<ResolveContext>(url_request_context_.get(), true);
 
-  // Create ContextHostResolver that owns its manager
   auto resolver = std::make_unique<ContextHostResolver>(
       std::move(owned_manager), std::move(context));
 
-  // Verify manager is set correctly
   EXPECT_EQ(resolver->manager_, manager_ptr);
   EXPECT_NE(resolver->owned_manager_, nullptr);
-
-  // Verify resolve_context is set
   EXPECT_NE(resolver->resolve_context_, nullptr);
 }
 
 TEST_F(ContextHostResolverForIncludeTest, NonOwnedManager) {
-  // Test that ContextHostResolver correctly uses a non-owned manager
-
   HostResolver::ManagerOptions options;
   auto manager = std::make_unique<HostResolverManager>(
       options, nullptr, nullptr);
@@ -532,18 +339,14 @@ TEST_F(ContextHostResolverForIncludeTest, NonOwnedManager) {
 
   auto context = std::make_unique<ResolveContext>(url_request_context_.get(), true);
 
-  // Create ContextHostResolver with a non-owned manager
   auto resolver = std::make_unique<ContextHostResolver>(
       manager.get(), std::move(context));
 
-  // Verify manager is set correctly
   EXPECT_EQ(resolver->manager_, manager_ptr);
   EXPECT_EQ(resolver->owned_manager_, nullptr);
 }
 
 TEST_F(ContextHostResolverForIncludeTest, ShutdownBehavior) {
-  // Test that ContextHostResolver handles shutdown correctly
-
   HostResolver::ManagerOptions options;
   auto owned_manager = std::make_unique<HostResolverManager>(
       options, nullptr, nullptr);
@@ -553,14 +356,565 @@ TEST_F(ContextHostResolverForIncludeTest, ShutdownBehavior) {
   auto resolver = std::make_unique<ContextHostResolver>(
       std::move(owned_manager), std::move(context));
 
-  // Initially not shutting down
   EXPECT_FALSE(resolver->shutting_down_);
 
-  // Call OnShutdown
   resolver->OnShutdown();
 
-  // Should be marked as shutting down
   EXPECT_TRUE(resolver->shutting_down_);
+}
+
+TEST_F(ContextHostResolverForIncludeTest, MultipleResolvers_SharedManager) {
+  HostResolver::ManagerOptions options;
+  auto manager = std::make_unique<HostResolverManager>(
+      options, nullptr, nullptr);
+
+  auto context1 = std::make_unique<ResolveContext>(url_request_context_.get(), true);
+  auto context2 = std::make_unique<ResolveContext>(url_request_context_.get(), true);
+
+  auto resolver1 = std::make_unique<ContextHostResolver>(
+      manager.get(), std::move(context1));
+  auto resolver2 = std::make_unique<ContextHostResolver>(
+      manager.get(), std::move(context2));
+
+  manager->RegisterResolveContext(resolver1->resolve_context_.get());
+  manager->RegisterResolveContext(resolver2->resolve_context_.get());
+
+  EXPECT_EQ(resolver1->manager_, manager.get());
+  EXPECT_EQ(resolver2->manager_, manager.get());
+
+  manager->DeregisterResolveContext(resolver1->resolve_context_.get());
+  manager->DeregisterResolveContext(resolver2->resolve_context_.get());
+}
+
+TEST_F(ContextHostResolverForIncludeTest, MultipleResolvers_OwnedManagers) {
+  HostResolver::ManagerOptions options;
+
+  auto owned_manager1 = std::make_unique<HostResolverManager>(
+      options, nullptr, nullptr);
+  auto owned_manager2 = std::make_unique<HostResolverManager>(
+      options, nullptr, nullptr);
+
+  auto context1 = std::make_unique<ResolveContext>(url_request_context_.get(), true);
+  auto context2 = std::make_unique<ResolveContext>(url_request_context_.get(), true);
+
+  auto resolver1 = std::make_unique<ContextHostResolver>(
+      std::move(owned_manager1), std::move(context1));
+  auto resolver2 = std::make_unique<ContextHostResolver>(
+      std::move(owned_manager2), std::move(context2));
+
+  EXPECT_NE(resolver1->manager_, resolver2->manager_);
+  EXPECT_NE(resolver1->owned_manager_, nullptr);
+  EXPECT_NE(resolver2->owned_manager_, nullptr);
+}
+
+TEST_F(ContextHostResolverForIncludeTest, Lifecycle_DestroyResolverFirst) {
+  HostResolver::ManagerOptions options;
+  auto manager = std::make_unique<HostResolverManager>(
+      options, nullptr, nullptr);
+
+  auto context = std::make_unique<ResolveContext>(url_request_context_.get(), true);
+  auto resolver = std::make_unique<ContextHostResolver>(
+      manager.get(), std::move(context));
+
+  manager->RegisterResolveContext(resolver->resolve_context_.get());
+
+  manager->DeregisterResolveContext(resolver->resolve_context_.get());
+  resolver.reset();
+
+  EXPECT_NE(manager.get(), nullptr);
+}
+
+TEST_F(ContextHostResolverForIncludeTest, Lifecycle_OwnedManagerDestruction) {
+  HostResolver::ManagerOptions options;
+  auto owned_manager = std::make_unique<HostResolverManager>(
+      options, nullptr, nullptr);
+  HostResolverManager* manager_ptr = owned_manager.get();
+
+  auto context = std::make_unique<ResolveContext>(url_request_context_.get(), true);
+
+  auto resolver = std::make_unique<ContextHostResolver>(
+      std::move(owned_manager), std::move(context));
+
+  EXPECT_EQ(resolver->manager_, manager_ptr);
+
+  resolver.reset();
+}
+
+TEST_F(ContextHostResolverForIncludeTest, Lifecycle_MultipleShutdowns) {
+  HostResolver::ManagerOptions options;
+  auto owned_manager = std::make_unique<HostResolverManager>(
+      options, nullptr, nullptr);
+
+  auto context = std::make_unique<ResolveContext>(url_request_context_.get(), true);
+
+  auto resolver = std::make_unique<ContextHostResolver>(
+      std::move(owned_manager), std::move(context));
+
+  EXPECT_FALSE(resolver->shutting_down_);
+
+  resolver->OnShutdown();
+  EXPECT_TRUE(resolver->shutting_down_);
+
+  EXPECT_NO_FATAL_FAILURE(resolver->OnShutdown());
+  EXPECT_TRUE(resolver->shutting_down_);
+}
+
+TEST_F(ContextHostResolverForIncludeTest, ResolveContext_NotNull) {
+  HostResolver::ManagerOptions options;
+  auto owned_manager = std::make_unique<HostResolverManager>(
+      options, nullptr, nullptr);
+
+  auto context = std::make_unique<ResolveContext>(url_request_context_.get(), true);
+  ResolveContext* context_ptr = context.get();
+
+  auto resolver = std::make_unique<ContextHostResolver>(
+      std::move(owned_manager), std::move(context));
+
+  EXPECT_NE(resolver->resolve_context_, nullptr);
+  EXPECT_EQ(resolver->resolve_context_.get(), context_ptr);
+}
+
+TEST_F(ContextHostResolverForIncludeTest, ResolveContext_ForTestingAccessor) {
+  HostResolver::ManagerOptions options;
+  auto owned_manager = std::make_unique<HostResolverManager>(
+      options, nullptr, nullptr);
+
+  auto context = std::make_unique<ResolveContext>(url_request_context_.get(), true);
+
+  auto resolver = std::make_unique<ContextHostResolver>(
+      std::move(owned_manager), std::move(context));
+
+  EXPECT_NE(resolver->resolve_context_for_testing(), nullptr);
+}
+
+TEST_F(ContextHostResolverForIncludeTest, ManagerOptions_DefaultOptions) {
+  HostResolver::ManagerOptions options;
+  auto manager = std::make_unique<HostResolverManager>(
+      options, nullptr, nullptr);
+
+  auto context = std::make_unique<ResolveContext>(url_request_context_.get(), true);
+
+  auto resolver = std::make_unique<ContextHostResolver>(
+      manager.get(), std::move(context));
+
+  manager->RegisterResolveContext(resolver->resolve_context_.get());
+
+  EXPECT_EQ(resolver->manager_, manager.get());
+
+  manager->DeregisterResolveContext(resolver->resolve_context_.get());
+}
+
+TEST_F(ContextHostResolverForIncludeTest, ManagerOptions_MaxThreads) {
+  HostResolver::ManagerOptions options;
+  options.max_system_resolver_threads = 4;
+
+  auto manager = std::make_unique<HostResolverManager>(
+      options, nullptr, nullptr);
+
+  auto context = std::make_unique<ResolveContext>(url_request_context_.get(), true);
+
+  auto resolver = std::make_unique<ContextHostResolver>(
+      manager.get(), std::move(context));
+
+  manager->RegisterResolveContext(resolver->resolve_context_.get());
+
+  EXPECT_EQ(resolver->manager_, manager.get());
+
+  manager->DeregisterResolveContext(resolver->resolve_context_.get());
+}
+
+TEST_F(ContextHostResolverForIncludeTest, GetManagerForTesting_ReturnsCorrectManager) {
+  HostResolver::ManagerOptions options;
+  auto owned_manager = std::make_unique<HostResolverManager>(
+      options, nullptr, nullptr);
+  HostResolverManager* manager_ptr = owned_manager.get();
+
+  auto context = std::make_unique<ResolveContext>(url_request_context_.get(), true);
+
+  auto resolver = std::make_unique<ContextHostResolver>(
+      std::move(owned_manager), std::move(context));
+
+  EXPECT_EQ(resolver->GetManagerForTesting(), manager_ptr);
+}
+
+TEST_F(ContextHostResolverForIncludeTest, GetContextForTesting_ReturnsValidContext) {
+  HostResolver::ManagerOptions options;
+  auto owned_manager = std::make_unique<HostResolverManager>(
+      options, nullptr, nullptr);
+
+  auto context = std::make_unique<ResolveContext>(url_request_context_.get(), true);
+
+  auto resolver = std::make_unique<ContextHostResolver>(
+      std::move(owned_manager), std::move(context));
+
+  EXPECT_NE(resolver->GetContextForTesting(), nullptr);
+}
+
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+
+TEST_F(ContextHostResolverForIncludeTest,
+       CanUseSecureDnsFallback_MultipleCallsConsistency) {
+  HostResolver::ManagerOptions options;
+  auto owned_manager = std::make_unique<HostResolverManager>(
+      options, nullptr, nullptr);
+
+  auto context = std::make_unique<ResolveContext>(url_request_context_.get(), true);
+
+  auto resolver = std::make_unique<ContextHostResolver>(
+      std::move(owned_manager), std::move(context));
+
+  for (int i = 0; i < 10; ++i) {
+    bool result = resolver->CanUseSecureDnsFallback();
+    EXPECT_FALSE(result);
+  }
+}
+
+TEST_F(ContextHostResolverForIncludeTest, GetLocalAddress_MultipleCallsConsistency) {
+  HostResolver::ManagerOptions options;
+  auto owned_manager = std::make_unique<HostResolverManager>(
+      options, nullptr, nullptr);
+
+  auto context = std::make_unique<ResolveContext>(url_request_context_.get(), true);
+
+  auto resolver = std::make_unique<ContextHostResolver>(
+      std::move(owned_manager), std::move(context));
+
+  IPEndPoint first_address;
+  resolver->GetLocalAddress(&first_address);
+
+  for (int i = 0; i < 5; ++i) {
+    IPEndPoint address;
+    EXPECT_NO_FATAL_FAILURE(resolver->GetLocalAddress(&address));
+    EXPECT_EQ(address.ToString(), first_address.ToString());
+  }
+}
+
+TEST_F(ContextHostResolverForIncludeTest, CanUseSecureDnsFallback_AfterShutdown) {
+  HostResolver::ManagerOptions options;
+  auto owned_manager = std::make_unique<HostResolverManager>(
+      options, nullptr, nullptr);
+
+  auto context = std::make_unique<ResolveContext>(url_request_context_.get(), true);
+
+  auto resolver = std::make_unique<ContextHostResolver>(
+      std::move(owned_manager), std::move(context));
+
+  bool result_before = resolver->CanUseSecureDnsFallback();
+
+  resolver->OnShutdown();
+
+  bool result_after = resolver->CanUseSecureDnsFallback();
+
+  EXPECT_EQ(result_before, result_after);
+}
+
+#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+
+TEST_F(ContextHostResolverForIncludeTest, GetDnsServersString_MultipleCallsConsistency) {
+  HostResolver::ManagerOptions options;
+  auto owned_manager = std::make_unique<HostResolverManager>(
+      options, nullptr, nullptr);
+
+  auto context = std::make_unique<ResolveContext>(url_request_context_.get(), true);
+
+  auto resolver = std::make_unique<ContextHostResolver>(
+      std::move(owned_manager), std::move(context));
+
+  std::string first_result = resolver->GetDnsServersString();
+
+  for (int i = 0; i < 10; ++i) {
+    std::string result = resolver->GetDnsServersString();
+    EXPECT_EQ(result, first_result);
+  }
+}
+
+TEST_F(ContextHostResolverForIncludeTest, GetDnsServersString_AfterShutdown) {
+  HostResolver::ManagerOptions options;
+  auto owned_manager = std::make_unique<HostResolverManager>(
+      options, nullptr, nullptr);
+
+  auto context = std::make_unique<ResolveContext>(url_request_context_.get(), true);
+
+  auto resolver = std::make_unique<ContextHostResolver>(
+      std::move(owned_manager), std::move(context));
+
+  std::string result_before = resolver->GetDnsServersString();
+
+  resolver->OnShutdown();
+
+  std::string result_after = resolver->GetDnsServersString();
+
+  EXPECT_EQ(result_before, result_after);
+}
+
+TEST_F(ContextHostResolverForIncludeTest, GetDnsServersString_EmptyResult) {
+  HostResolver::ManagerOptions options;
+  auto owned_manager = std::make_unique<HostResolverManager>(
+      options, nullptr, nullptr);
+
+  auto context = std::make_unique<ResolveContext>(url_request_context_.get(), true);
+
+  auto resolver = std::make_unique<ContextHostResolver>(
+      std::move(owned_manager), std::move(context));
+
+  std::string result = resolver->GetDnsServersString();
+  EXPECT_NO_FATAL_FAILURE(resolver->GetDnsServersString());
+}
+
+#endif  // BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING)
+
+TEST_F(ContextHostResolverForIncludeTest, NeedRetryDnsOnDnsHijack_HttpsUrl) {
+  HostResolver::ManagerOptions options;
+  auto owned_manager = std::make_unique<HostResolverManager>(
+      options, nullptr, nullptr);
+
+  auto context = std::make_unique<ResolveContext>(url_request_context_.get(), true);
+
+  auto resolver = std::make_unique<ContextHostResolver>(
+      std::move(owned_manager), std::move(context));
+
+  GURL https_url("https://example.com/path?query=value");
+  std::string error_code = "ERR_NAME_NOT_RESOLVED";
+
+  bool result = resolver->NeedRetryDnsOnDnsHijack(https_url, error_code);
+  EXPECT_FALSE(result);
+}
+
+TEST_F(ContextHostResolverForIncludeTest,
+       NeedRetryDnsOnDnsHijack_FtpUrl) {
+  HostResolver::ManagerOptions options;
+  auto owned_manager = std::make_unique<HostResolverManager>(
+      options, nullptr, nullptr);
+
+  auto context = std::make_unique<ResolveContext>(url_request_context_.get(), true);
+
+  auto resolver = std::make_unique<ContextHostResolver>(
+      std::move(owned_manager), std::move(context));
+
+  GURL ftp_url("ftp://ftp.example.com/file.txt");
+  std::string error_code = "ERR_NAME_NOT_RESOLVED";
+
+  bool result = resolver->NeedRetryDnsOnDnsHijack(ftp_url, error_code);
+  EXPECT_FALSE(result);
+}
+
+TEST_F(ContextHostResolverForIncludeTest,
+       NeedRetryDnsOnDnsHijack_UrlWithPort) {
+  HostResolver::ManagerOptions options;
+  auto owned_manager = std::make_unique<HostResolverManager>(
+      options, nullptr, nullptr);
+
+  auto context = std::make_unique<ResolveContext>(url_request_context_.get(), true);
+
+  auto resolver = std::make_unique<ContextHostResolver>(
+      std::move(owned_manager), std::move(context));
+
+  GURL url_with_port("http://example.com:8080/path");
+  std::string error_code = "ERR_NAME_NOT_RESOLVED";
+
+  bool result = resolver->NeedRetryDnsOnDnsHijack(url_with_port, error_code);
+  EXPECT_FALSE(result);
+}
+
+TEST_F(ContextHostResolverForIncludeTest,
+       NeedRetryDnsOnDnsHijack_UrlWithUserInfo) {
+  HostResolver::ManagerOptions options;
+  auto owned_manager = std::make_unique<HostResolverManager>(
+      options, nullptr, nullptr);
+
+  auto context = std::make_unique<ResolveContext>(url_request_context_.get(), true);
+
+  auto resolver = std::make_unique<ContextHostResolver>(
+      std::move(owned_manager), std::move(context));
+
+  GURL url_with_user("http://user:pass@example.com/path");
+  std::string error_code = "ERR_NAME_NOT_RESOLVED";
+
+  bool result = resolver->NeedRetryDnsOnDnsHijack(url_with_user, error_code);
+  EXPECT_FALSE(result);
+}
+
+TEST_F(ContextHostResolverForIncludeTest,
+       NeedRetryDnsOnDnsHijack_IpAddressUrl) {
+  HostResolver::ManagerOptions options;
+  auto owned_manager = std::make_unique<HostResolverManager>(
+      options, nullptr, nullptr);
+
+  auto context = std::make_unique<ResolveContext>(url_request_context_.get(), true);
+
+  auto resolver = std::make_unique<ContextHostResolver>(
+      std::move(owned_manager), std::move(context));
+
+  GURL ip_url("http://192.168.1.1/path");
+  std::string error_code = "ERR_NAME_NOT_RESOLVED";
+
+  bool result = resolver->NeedRetryDnsOnDnsHijack(ip_url, error_code);
+  EXPECT_FALSE(result);
+}
+
+TEST_F(ContextHostResolverForIncludeTest, NeedRetryDnsOnDnsHijack_AllDnsErrorCodes) {
+  HostResolver::ManagerOptions options;
+  auto owned_manager = std::make_unique<HostResolverManager>(
+      options, nullptr, nullptr);
+
+  auto context = std::make_unique<ResolveContext>(url_request_context_.get(), true);
+
+  auto resolver = std::make_unique<ContextHostResolver>(
+      std::move(owned_manager), std::move(context));
+
+  GURL url("http://example.com");
+
+  std::vector<std::string> dns_error_codes = {
+      "ERR_NAME_NOT_RESOLVED",
+      "ERR_DNS_TIMED_OUT",
+      "ERR_DNS_SERVER_REQUIRES_TCP",
+      "ERR_DNS_MALFORMED_RESPONSE",
+      "ERR_DNS_INVALID_RESPONSE",
+      "ERR_DNS_SERVER_FAILED",
+      "ERR_DNS_SECURE_RESOLVER_HOSTNAME_RESOLUTION_FAILED",
+  };
+
+  for (const auto& error_code : dns_error_codes) {
+    bool result = resolver->NeedRetryDnsOnDnsHijack(url, error_code);
+    EXPECT_FALSE(result) << "Error code: " << error_code;
+  }
+}
+
+TEST_F(ContextHostResolverForIncludeTest, NeedRetryDnsOnDnsHijack_AllNetworkErrorCodes) {
+  HostResolver::ManagerOptions options;
+  auto owned_manager = std::make_unique<HostResolverManager>(
+      options, nullptr, nullptr);
+
+  auto context = std::make_unique<ResolveContext>(url_request_context_.get(), true);
+
+  auto resolver = std::make_unique<ContextHostResolver>(
+      std::move(owned_manager), std::move(context));
+
+  GURL url("http://example.com");
+
+  std::vector<std::string> network_error_codes = {
+      "ERR_CONNECTION_TIMED_OUT",
+      "ERR_CONNECTION_RESET",
+      "ERR_CONNECTION_REFUSED",
+      "ERR_CONNECTION_ABORTED",
+      "ERR_CONNECTION_FAILED",
+      "ERR_NETWORK_CHANGED",
+      "ERR_INTERNET_DISCONNECTED",
+  };
+
+  for (const auto& error_code : network_error_codes) {
+    bool result = resolver->NeedRetryDnsOnDnsHijack(url, error_code);
+    EXPECT_FALSE(result) << "Error code: " << error_code;
+  }
+}
+
+TEST_F(ContextHostResolverForIncludeTest, NeedRetryDnsOnDnsHijack_AfterShutdown) {
+  HostResolver::ManagerOptions options;
+  auto owned_manager = std::make_unique<HostResolverManager>(
+      options, nullptr, nullptr);
+
+  auto context = std::make_unique<ResolveContext>(url_request_context_.get(), true);
+
+  auto resolver = std::make_unique<ContextHostResolver>(
+      std::move(owned_manager), std::move(context));
+
+  GURL url("http://example.com");
+  std::string error_code = "ERR_NAME_NOT_RESOLVED";
+
+  bool result_before = resolver->NeedRetryDnsOnDnsHijack(url, error_code);
+
+  resolver->OnShutdown();
+
+  bool result_after = resolver->NeedRetryDnsOnDnsHijack(url, error_code);
+
+  EXPECT_EQ(result_before, result_after);
+}
+
+TEST_F(ContextHostResolverForIncludeTest, NeedRetryDnsOnDnsHijack_MultipleCallsConsistency) {
+  HostResolver::ManagerOptions options;
+  auto owned_manager = std::make_unique<HostResolverManager>(
+      options, nullptr, nullptr);
+
+  auto context = std::make_unique<ResolveContext>(url_request_context_.get(), true);
+
+  auto resolver = std::make_unique<ContextHostResolver>(
+      std::move(owned_manager), std::move(context));
+
+  GURL url("http://example.com");
+  std::string error_code = "ERR_NAME_NOT_RESOLVED";
+
+  for (int i = 0; i < 10; ++i) {
+    bool result = resolver->NeedRetryDnsOnDnsHijack(url, error_code);
+    EXPECT_FALSE(result);
+  }
+}
+
+TEST_F(ContextHostResolverForIncludeTest, NeedRetryDnsOnDnsHijack_VeryLongUrl) {
+  HostResolver::ManagerOptions options;
+  auto owned_manager = std::make_unique<HostResolverManager>(
+      options, nullptr, nullptr);
+
+  auto context = std::make_unique<ResolveContext>(url_request_context_.get(), true);
+
+  auto resolver = std::make_unique<ContextHostResolver>(
+      std::move(owned_manager), std::move(context));
+
+  std::string long_path(1000, 'a');
+  GURL long_url("http://example.com/" + long_path);
+  std::string error_code = "ERR_NAME_NOT_RESOLVED";
+
+  bool result = resolver->NeedRetryDnsOnDnsHijack(long_url, error_code);
+  EXPECT_FALSE(result);
+}
+
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING)
+
+TEST_F(ContextHostResolverForIncludeTest, HostResolverInterface_Compliance) {
+  HostResolver::ManagerOptions options;
+  auto owned_manager = std::make_unique<HostResolverManager>(
+      options, nullptr, nullptr);
+
+  auto context = std::make_unique<ResolveContext>(url_request_context_.get(), true);
+
+  auto resolver = std::make_unique<ContextHostResolver>(
+      std::move(owned_manager), std::move(context));
+
+  HostResolver* base_ptr = resolver.get();
+  EXPECT_NE(base_ptr, nullptr);
+
+  EXPECT_NO_FATAL_FAILURE(base_ptr->GetHostCache());
+}
+
+TEST_F(ContextHostResolverForIncludeTest, HostResolverInterface_GetHostCache) {
+  HostResolver::ManagerOptions options;
+  auto owned_manager = std::make_unique<HostResolverManager>(
+      options, nullptr, nullptr);
+
+  auto context = std::make_unique<ResolveContext>(url_request_context_.get(), true);
+
+  auto resolver = std::make_unique<ContextHostResolver>(
+      std::move(owned_manager), std::move(context));
+
+  HostCache* cache = resolver->GetHostCache();
+  EXPECT_NO_FATAL_FAILURE(resolver->GetHostCache());
+}
+
+TEST_F(ContextHostResolverForIncludeTest, HostResolverInterface_GetDnsConfigAsValue) {
+  HostResolver::ManagerOptions options;
+  auto owned_manager = std::make_unique<HostResolverManager>(
+      options, nullptr, nullptr);
+
+  auto context = std::make_unique<ResolveContext>(url_request_context_.get(), true);
+
+  auto resolver = std::make_unique<ContextHostResolver>(
+      std::move(owned_manager), std::move(context));
+
+  base::Value::Dict config = resolver->GetDnsConfigAsValue();
+  EXPECT_NO_FATAL_FAILURE(resolver->GetDnsConfigAsValue());
 }
 
 }  // namespace net

@@ -542,7 +542,7 @@ std::shared_ptr<SurfaceBufferAdapter> ScreenCaptureAdapterImpl::AcquireVideoBuff
         return nullptr;
     }
 
-    std::shared_lock<std::shared_mutex> lock(surface_map_lock_);
+    std::unique_lock<std::shared_mutex> lock(surface_map_lock_);
     auto video = bufferAvailableQueueMap_.find(nweb_id_);
     if (video == bufferAvailableQueueMap_.end()) {
         WVLOG_E("bufferAvailableQueue is not found, nwebId=%{public}d", nweb_id_);
@@ -581,7 +581,7 @@ int32_t ScreenCaptureAdapterImpl::AcquireAudioBuffer(
         return -1;
     }
 
-    std::shared_lock<std::shared_mutex> lock(audio_map_lock_);
+    std::unique_lock<std::shared_mutex> lock(audio_map_lock_);
     auto audio = audioBufferAvailableQueueMap_.find(nweb_id_);
     if (audio == audioBufferAvailableQueueMap_.end()) {
         WVLOG_E("audioBufferAvailableQueue is not found, nwebId=%{public}d", nweb_id_);

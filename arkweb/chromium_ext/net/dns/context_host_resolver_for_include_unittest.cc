@@ -16,8 +16,6 @@
 #include <memory>
 #include <string>
 
-#include "arkweb/build/features/features.h"
-
 #include "base/functional/callback.h"
 #include "base/test/task_environment.h"
 #include "net/base/ip_address.h"
@@ -35,6 +33,8 @@
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "url/gurl.h"
+
+#include "arkweb/build/features/features.h"
 
 #define private public
 #define protected public
@@ -504,9 +504,9 @@ TEST_F(ContextHostResolverForIncludeTest, ManagerOptions_DefaultOptions) {
   manager->DeregisterResolveContext(resolver->resolve_context_.get());
 }
 
-TEST_F(ContextHostResolverForIncludeTest, ManagerOptions_MaxThreads) {
+TEST_F(ContextHostResolverForIncludeTest, ManagerOptions_MaxConcurrentResolves) {
   HostResolver::ManagerOptions options;
-  options.max_system_resolver_threads = 4;
+  options.max_concurrent_resolves = 4;
 
   auto manager = std::make_unique<HostResolverManager>(
       options, nullptr, nullptr);

@@ -23,8 +23,8 @@
 #include "net/base/ip_endpoint.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
-#include "arkweb/chromium_ext/net/dns/secure_dns_fallback_utils.h"
 #include "arkweb/build/features/features.h"
+#include "arkweb/chromium_ext/net/dns/secure_dns_fallback_utils.h"
 
 namespace net {
 #if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)

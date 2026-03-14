@@ -1007,6 +1007,6 @@ TEST_F(SecureDnsFallbackUtilsTest, DuplicateLegacyAddresses) {
   EXPECT_EQ(out_addresses.size(), 1u);
 }
 
-}  // namespace net
-
 #endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+
+}  // namespace net

@@ -166,8 +166,9 @@ SameLayerNativeBufferGLOwner::GetNativeBuffer() {
   }
 
   OHOSNativeBuffer buffer;
-  loader_->GetNativeBuffer(current_image_ref_->image()->rawbuffer, &buffer);
-  if (!buffer) {
+  int32_t return_code = 0;
+  return_code = loader_->GetNativeBuffer(current_image_ref_->image()->rawbuffer, &buffer);
+  if (return_code != 0 || !buffer) {
     LOG(ERROR) << "GetNativeBuffer returned nullptr: ";
     return nullptr;
   }

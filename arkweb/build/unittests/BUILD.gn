@@ -17,6 +17,7 @@ group("oh_base_unittests") {
   deps = [
     "//arkweb/chromium_ext/services/network/prp_preload/tests:prp_preload_unittests",
     "//arkweb/chromium_ext/sandbox:arkweb_sandbox_unittests",
+    "//chrome/test:arkweb_password_manager_client_ext_unittests",
     "//base:base_unittests",
     "//cc:cc_unittests",
     "//content/test:content_unittests",

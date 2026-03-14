@@ -180,6 +180,11 @@ void SkiaOutputDeviceVulkan::Present(
         base::TimeTicks::Now(), vulkan_surface_->GetDisplayRefreshInterval(),
         0));
   }
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+  if (implUtils) {
+    implUtils->CleanBuffersIfNeed();
+  }
+#endif
 }
 
 SkSurface* SkiaOutputDeviceVulkan::BeginPaint(
@@ -398,6 +403,15 @@ void SkiaOutputDeviceVulkan::DiscardBackbuffer() {
   implUtils->DiscardBackbuffer();
 #endif
 }
+
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+void SkiaOutputDeviceVulkan::SetIfNeedCleanBuffers(bool need_clean_buffers)
+{
+  if (implUtils) {
+    implUtils->SetIfNeedCleanBuffers(need_clean_buffers);
+  }
+}
+#endif
 
 SkiaOutputDeviceVulkan::SkSurfaceSizePair::SkSurfaceSizePair() = default;
 SkiaOutputDeviceVulkan::SkSurfaceSizePair::SkSurfaceSizePair(

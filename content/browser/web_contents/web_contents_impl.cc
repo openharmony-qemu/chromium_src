@@ -4621,7 +4621,10 @@ void WebContentsImpl::UpdateVisibilityAndNotifyPageAndView(
 #if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
     implUtils_->SetIsOfflineWebComponentInactive(new_visibility);
 #endif
-
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+  bool clean_buffers_when_invisible_enabled = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+    .GetSystemPropertiesInstance().GetBoolParameter("const.web.clean_buffers_when_invisible.enabled", false);
+#endif
   // |GetRenderWidgetHostView()| can be null if the user middle clicks a link to
   // open a tab in the background, then closes the tab before selecting it.
   // This is because closing the tab calls WebContentsImpl::Destroy(), which
@@ -4630,12 +4633,24 @@ void WebContentsImpl::UpdateVisibilityAndNotifyPageAndView(
   // calls us).
   if (auto* view = GetRenderWidgetHostView()) {
     if (view_is_visible) {
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+      // When web is visible, no need to clean buffers after SwapBuffers
+      if (clean_buffers_when_invisible_enabled) {
+        view->SetIfNeedCleanBuffers(false);
+      }
+#endif
       static_cast<RenderWidgetHostViewBase*>(view)->ShowWithVisibility(
           page_visibility);
     } else if (new_visibility == Visibility::HIDDEN) {
       view->Hide();
 #if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
       view->EvictFrameBackBuffers();
+#endif
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+      // When web is invisible, need to clean buffers after SwapBuffers
+      if (clean_buffers_when_invisible_enabled) {
+        view->SetIfNeedCleanBuffers(true);
+      }
 #endif
     } else {
       view->WasOccluded();

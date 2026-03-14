@@ -39,7 +39,8 @@ PA_ALWAYS_INLINE size_t GetCachedPageSize() {
 }  // namespace
 
 #if PA_BUILDFLAG(IS_OHOS)
-extern "C" __attribute__((weak)) void memtrace(void* addr, size_t size, const char* tag, bool is_using);
+extern "C" __attribute__((weak)) void restrace(unsigned long long mask, void* addr, size_t size, const char* tag,
+  bool is_using);
 #endif
 
 // The Shim* functions below are the entry-points into the shim-layer and
@@ -50,13 +51,16 @@ extern "C" __attribute__((weak)) void memtrace(void* addr, size_t size, const ch
 extern "C" {
 
 #if PA_BUILDFLAG(IS_OHOS)
-void OhosMemtrace(void* addr, size_t size, const char* tag, bool is_using)
+const char* TAG_RES_VMA_ARKWEB = "RES_VMA_ARKWEB";
+const unsigned long long RES_VMA_ARKWEB = 1 << 26;
+
+void OhosRestrace(unsigned long long mask, void* addr, size_t size, const char* tag, bool is_using)
 {
-#if defined(OS_OHOS)
-  if (addr != nullptr && tag != nullptr) {
-    (void)memtrace(addr, size, tag, is_using);
+  if (restrace) {
+    if (addr != nullptr && tag != nullptr) {
+      (void)restrace(mask, addr, size, tag, is_using);
+    }
   }
-#endif
 }
 #endif
 
@@ -88,7 +92,7 @@ PA_ALWAYS_INLINE void* ShimCppNew(size_t size) {
     ptr = chain_head->alloc_function(size, context);
   }
 #if PA_BUILDFLAG(IS_OHOS)
-  OhosMemtrace(ptr, size, "ShimCppNew", true);
+  OhosRestrace(RES_VMA_ARKWEB, ptr, size, TAG_RES_VMA_ARKWEB, true);
 #endif
   return ptr;
 }
@@ -102,7 +106,7 @@ PA_ALWAYS_INLINE void* ShimCppNewNoThrow(size_t size) {
 #endif
   void* ptr = chain_head->alloc_unchecked_function(size, context);
 #if PA_BUILDFLAG(IS_OHOS)
-  OhosMemtrace(ptr, size, "ShimCppNewNoThrow", true);
+  OhosRestrace(RES_VMA_ARKWEB, ptr, size, TAG_RES_VMA_ARKWEB, true);
 #endif
   return ptr; // chain_head->alloc_unchecked_function(size, context);
 }
@@ -120,7 +124,7 @@ PA_ALWAYS_INLINE void* ShimCppAlignedNew(size_t size, size_t alignment) {
     ptr = chain_head->alloc_aligned_function(alignment, size, context);
   }
 #if PA_BUILDFLAG(IS_OHOS)
-  OhosMemtrace(ptr, size, "ShimCppAlignedNew", true);
+  OhosRestrace(RES_VMA_ARKWEB, ptr, size, TAG_RES_VMA_ARKWEB, true);
 #endif
   return ptr;
 }
@@ -133,7 +137,7 @@ PA_ALWAYS_INLINE void ShimCppDelete(void* address) {
   context = malloc_default_zone();
 #endif
 #if PA_BUILDFLAG(IS_OHOS)
-  OhosMemtrace(address, 0, "ShimCppDelete", false);
+  OhosRestrace(RES_VMA_ARKWEB, address, 0, TAG_RES_VMA_ARKWEB, false);
 #endif
   return chain_head->free_function(address, context);
 }
@@ -149,7 +153,7 @@ PA_ALWAYS_INLINE void* ShimMalloc(size_t size, void* context) {
     ptr = chain_head->alloc_function(size, context);
   }
 #if PA_BUILDFLAG(IS_OHOS)
-  OhosMemtrace(ptr, size, "ShimMalloc", true);
+  OhosRestrace(RES_VMA_ARKWEB, ptr, size, TAG_RES_VMA_ARKWEB, true);
 #endif
   return ptr;
 }
@@ -165,7 +169,7 @@ PA_ALWAYS_INLINE void* ShimCalloc(size_t n, size_t size, void* context) {
     ptr = chain_head->alloc_zero_initialized_function(n, size, context);
   }
 #if PA_BUILDFLAG(IS_OHOS)
-  OhosMemtrace(ptr, size, "ShimCalloc", true);
+  OhosRestrace(RES_VMA_ARKWEB, ptr, size, TAG_RES_VMA_ARKWEB, true);
 #endif
   return ptr;
 }
@@ -183,7 +187,10 @@ PA_ALWAYS_INLINE void* ShimRealloc(void* address, size_t size, void* context) {
     ptr = chain_head->realloc_function(address, size, context);
   }
 #if PA_BUILDFLAG(IS_OHOS)
-  OhosMemtrace(ptr, size, "ShimRealloc", true);
+  if (address != ptr) {
+    OhosRestrace(RES_VMA_ARKWEB, address, 0, TAG_RES_VMA_ARKWEB, false);
+    OhosRestrace(RES_VMA_ARKWEB, ptr, size, TAG_RES_VMA_ARKWEB, true);
+  }
 #endif
   return ptr;
 }
@@ -201,7 +208,7 @@ PA_ALWAYS_INLINE void* ShimMemalign(size_t alignment,
     ptr = chain_head->alloc_aligned_function(alignment, size, context);
   }
 #if PA_BUILDFLAG(IS_OHOS)
-  OhosMemtrace(ptr, size, "ShimMemalign", true);
+  OhosRestrace(RES_VMA_ARKWEB, ptr, size, TAG_RES_VMA_ARKWEB, true);
 #endif
   return ptr;
 }
@@ -245,7 +252,7 @@ PA_ALWAYS_INLINE void ShimFree(void* address, void* context) {
   const allocator_shim::AllocatorDispatch* const chain_head =
       allocator_shim::internal::GetChainHead();
 #if PA_BUILDFLAG(IS_OHOS)
-  OhosMemtrace(address, 0, "ShimFree", false);
+  OhosRestrace(RES_VMA_ARKWEB, address, 0, TAG_RES_VMA_ARKWEB, false);
 #endif
   return chain_head->free_function(address, context);
 }
@@ -280,7 +287,7 @@ PA_ALWAYS_INLINE unsigned ShimBatchMalloc(size_t size,
   unsigned const num_allocated = chain_head->batch_malloc_function(size, results,
     num_requested, context);
   for (unsigned i = 0; i < num_allocated; ++i) {
-    OhosMemtrace(results[i], size, "ShimBatchMalloc", true);
+    OhosRestrace(RES_VMA_ARKWEB, results[i], size, TAG_RES_VMA_ARKWEB, true);
   }
   return num_allocated;
 #else
@@ -296,7 +303,7 @@ PA_ALWAYS_INLINE void ShimBatchFree(void** to_be_freed,
       allocator_shim::internal::GetChainHead();
 #if PA_BUILDFLAG(IS_OHOS)
   for (unsigned i = 0; i < num_to_be_freed; ++i) {
-    OhosMemtrace(to_be_freed[i], 0, "ShimBatchFree", false);
+    OhosRestrace(RES_VMA_ARKWEB, to_be_freed[i], 0, TAG_RES_VMA_ARKWEB, false);
   }
 #endif
   return chain_head->batch_free_function(to_be_freed, num_to_be_freed, context);
@@ -308,7 +315,7 @@ PA_ALWAYS_INLINE void ShimFreeDefiniteSize(void* ptr,
   const allocator_shim::AllocatorDispatch* const chain_head =
       allocator_shim::internal::GetChainHead();
 #if PA_BUILDFLAG(IS_OHOS)
-  OhosMemtrace(ptr, 0, "ShimFreeDefiniteSize", false);
+  OhosRestrace(RES_VMA_ARKWEB, ptr, 0, TAG_RES_VMA_ARKWEB, false);
 #endif
   return chain_head->free_definite_size_function(ptr, size, context);
 }
@@ -317,7 +324,7 @@ PA_ALWAYS_INLINE void ShimTryFreeDefault(void* ptr, void* context) {
   const allocator_shim::AllocatorDispatch* const chain_head =
       allocator_shim::internal::GetChainHead();
 #if PA_BUILDFLAG(IS_OHOS)
-  OhosMemtrace(ptr, 0, "ShimTryFreeDefault", false);
+  OhosRestrace(RES_VMA_ARKWEB, ptr, 0, TAG_RES_VMA_ARKWEB, false);
 #endif
   return chain_head->try_free_default_function(ptr, context);
 }
@@ -335,7 +342,7 @@ PA_ALWAYS_INLINE void* ShimAlignedMalloc(size_t size,
     ptr = chain_head->aligned_malloc_function(size, alignment, context);
   }
 #if PA_BUILDFLAG(IS_OHOS)
-  OhosMemtrace(ptr, size, "ShimAlignedMalloc", true);
+  OhosRestrace(RES_VMA_ARKWEB, ptr, size, TAG_RES_VMA_ARKWEB, true);
 #endif
   return ptr;
 }
@@ -358,7 +365,10 @@ PA_ALWAYS_INLINE void* ShimAlignedRealloc(void* address,
         chain_head->aligned_realloc_function(address, size, alignment, context);
   }
 #if PA_BUILDFLAG(IS_OHOS)
-  OhosMemtrace(ptr, size, "ShimAlignedRealloc", true);
+  if (address != ptr) {
+    OhosRestrace(RES_VMA_ARKWEB, address, 0, TAG_RES_VMA_ARKWEB, false);
+    OhosRestrace(RES_VMA_ARKWEB, ptr, size, TAG_RES_VMA_ARKWEB, true);
+  }
 #endif
   return ptr;
 }
@@ -367,7 +377,7 @@ PA_ALWAYS_INLINE void ShimAlignedFree(void* address, void* context) {
   const allocator_shim::AllocatorDispatch* const chain_head =
       allocator_shim::internal::GetChainHead();
 #if PA_BUILDFLAG(IS_OHOS)
-  OhosMemtrace(address, 0, "ShimAlignedFree", false);
+  OhosRestrace(RES_VMA_ARKWEB, address, 0, TAG_RES_VMA_ARKWEB, false);
 #endif
   return chain_head->aligned_free_function(address, context);
 }

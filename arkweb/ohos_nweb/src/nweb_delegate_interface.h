@@ -884,8 +884,10 @@ class NWebDelegateInterface
 #endif
 
 #if BUILDFLAG(ARKWEB_SAVE_PAGE)
-  virtual bool SavePage(int32_t type, const std::string& filePath) = 0;
-#endif // ARKWEB_SAVE_PAGE
+  virtual bool SavePage(int32_t type,
+                        const std::string& filePath,
+                        CefRefPtr<CefSavePageResultCallback> callback) = 0;
+#endif  // ARKWEB_SAVE_PAGE
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   virtual void WebExtensionContextMenuGetFocusedFrameInfo(

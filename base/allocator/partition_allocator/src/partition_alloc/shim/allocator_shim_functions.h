@@ -58,38 +58,91 @@ const allocator_shim::AllocatorDispatch* GetChainHead() {
 
 }  // namespace internal
 
+#if PA_BUILDFLAG(IS_OHOS)
+const char* TAG_RES_VMA_ARKWEB_ALLOCATOR = "RES_VMA_ARKWEB";
+const unsigned long long RES_VMA_ARKWEB_ALLOCATOR = 1 << 26;
+
+extern "C" __attribute__((weak)) void restrace(unsigned long long mask, void* addr, size_t size, const char* tag,
+  bool is_using);
+
+void AllocatorRestrace(unsigned long long mask, void* addr, size_t size, const char* tag, bool is_using)
+{
+  if (restrace) {
+    if (addr != nullptr && tag != nullptr) {
+      (void)restrace(mask, addr, size, tag, is_using);
+    }
+  }
+}
+#endif
+
 void SetCallNewHandlerOnMallocFailure(bool value) {
   internal::g_call_new_handler_on_malloc_failure = value;
 }
 
 void* UncheckedAlloc(size_t size) {
   const AllocatorDispatch* const chain_head = internal::GetChainHead();
+#if PA_BUILDFLAG(IS_OHOS)
+  void* ptr = chain_head->alloc_unchecked_function(size, nullptr);
+  AllocatorRestrace(RES_VMA_ARKWEB_ALLOCATOR, ptr, size, TAG_RES_VMA_ARKWEB_ALLOCATOR, true);
+  return ptr;
+#else
   return chain_head->alloc_unchecked_function(size, nullptr);
+#endif
 }
 
 void* UncheckedRealloc(void* ptr, size_t size) {
   const AllocatorDispatch* const chain_head = internal::GetChainHead();
+#if PA_BUILDFLAG(IS_OHOS)
+  void* newAddr = chain_head->realloc_unchecked_function(ptr, size, nullptr);
+  if (newAddr != ptr) {
+    AllocatorRestrace(RES_VMA_ARKWEB_ALLOCATOR, ptr, 0, TAG_RES_VMA_ARKWEB_ALLOCATOR, false);
+    AllocatorRestrace(RES_VMA_ARKWEB_ALLOCATOR, newAddr, size, TAG_RES_VMA_ARKWEB_ALLOCATOR, true);
+  }
+  return newAddr;
+#else
   return chain_head->realloc_unchecked_function(ptr, size, nullptr);
+#endif
 }
 
 void UncheckedFree(void* ptr) {
   const AllocatorDispatch* const chain_head = internal::GetChainHead();
+#if PA_BUILDFLAG(IS_OHOS)
+    AllocatorRestrace(RES_VMA_ARKWEB_ALLOCATOR, ptr, 0, TAG_RES_VMA_ARKWEB_ALLOCATOR, false);
+#endif
   return chain_head->free_function(ptr, nullptr);
 }
 
 void* UncheckedAlignedAlloc(size_t size, size_t align) {
   const AllocatorDispatch* const chain_head = internal::GetChainHead();
+#if PA_BUILDFLAG(IS_OHOS)
+  void* ptr = chain_head->aligned_malloc_unchecked_function(size, align, nullptr);
+  AllocatorRestrace(RES_VMA_ARKWEB_ALLOCATOR, ptr, size, TAG_RES_VMA_ARKWEB_ALLOCATOR, true);
+  return ptr;
+#else
   return chain_head->aligned_malloc_unchecked_function(size, align, nullptr);
+#endif
 }
 
 void* UncheckedAlignedRealloc(void* ptr, size_t size, size_t align) {
   const AllocatorDispatch* const chain_head = internal::GetChainHead();
+#if PA_BUILDFLAG(IS_OHOS)
+  void* newAddr = chain_head->aligned_realloc_unchecked_function(ptr, size, align, nullptr);
+  if (newAddr != ptr) {
+    AllocatorRestrace(RES_VMA_ARKWEB_ALLOCATOR, ptr, 0, TAG_RES_VMA_ARKWEB_ALLOCATOR, false);
+    AllocatorRestrace(RES_VMA_ARKWEB_ALLOCATOR, newAddr, size, TAG_RES_VMA_ARKWEB_ALLOCATOR, true);
+  }
+  return newAddr;
+#else
   return chain_head->aligned_realloc_unchecked_function(ptr, size, align,
                                                         nullptr);
+#endif
 }
 
 void UncheckedAlignedFree(void* ptr) {
   const AllocatorDispatch* const chain_head = internal::GetChainHead();
+#if PA_BUILDFLAG(IS_OHOS)
+  AllocatorRestrace(RES_VMA_ARKWEB_ALLOCATOR, ptr, 0, TAG_RES_VMA_ARKWEB_ALLOCATOR, false);
+#endif
   return chain_head->aligned_free_function(ptr, nullptr);
 }
 

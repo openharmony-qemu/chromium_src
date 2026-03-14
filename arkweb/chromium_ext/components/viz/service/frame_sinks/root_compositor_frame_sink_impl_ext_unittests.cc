@@ -85,6 +85,9 @@ TEST_F(RootCompositorFrameSinkImplExtTest, RootCompositorFrameSinkImplExtTest01)
     EXPECT_EQ(dealed, true);
 
     ASSERT_NO_FATAL_FAILURE(sinkImplExt->EvictFrameBackBuffers());
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+    ASSERT_NO_FATAL_FAILURE(sinkImplExt->SetIfNeedCleanBuffers(false));
+#endif
     ASSERT_NO_FATAL_FAILURE(sinkImplExt->SetIsOfflineWebComponentInactive(false));
     ASSERT_NO_FATAL_FAILURE(sinkImplExt->SetIsOfflineWebComponentInactive(true));
     ASSERT_NO_FATAL_FAILURE(sinkImplExt->DisableSwapUntilMaximized());

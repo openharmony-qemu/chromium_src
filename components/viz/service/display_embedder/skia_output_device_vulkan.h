@@ -62,6 +62,9 @@ class SkiaOutputDeviceVulkan final : public SkiaOutputDevice {
       std::vector<GrBackendSemaphore>* end_semaphores) override;
   void EndPaint() override;
   void DiscardBackbuffer() override;
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+  void SetIfNeedCleanBuffers(bool need_clean_buffers) override;
+#endif
 
  private:
   struct SkSurfaceSizePair {

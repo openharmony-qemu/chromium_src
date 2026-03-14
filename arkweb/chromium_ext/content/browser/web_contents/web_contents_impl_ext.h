@@ -456,10 +456,12 @@ private:
 #endif
 
 #if BUILDFLAG(ARKWEB_SAVE_PAGE)
-  bool SavePageEx(const base::FilePath& main_file, SavePageType save_type) override;
-#endif // ARKWEB_SAVE_PAGE
+  bool SavePageEx(const base::FilePath& main_file,
+                  SavePageType save_type,
+                  SavePageExCallback callback) override;
+#endif  // ARKWEB_SAVE_PAGE
 
-private:
+ private:
 #if BUILDFLAG(ARKWEB_TEST)
   friend class WebContentsImplUtilsTest;
 #endif

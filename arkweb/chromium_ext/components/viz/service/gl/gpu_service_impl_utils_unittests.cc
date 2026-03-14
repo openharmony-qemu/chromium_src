@@ -44,8 +44,9 @@ public:
     init_params.io_runner = io_thread_.task_runner();
     init_params.exit_callback = base::DoNothing();
     gpu_service_ = std::make_unique<GpuServiceImpl>(
-        gpu::GpuPreferences(), gpu_info, gpu::GpuFeatureInfo(), gpu::GPUInfo(),
-        gpu::GpuFeatureInfo(), gfx::GpuExtraInfo(), std::move(init_params));
+        gpu::GpuPreferences(), gpu_info, gpu::GpuFeatureInfo(),
+        std::optional<gpu::GPUInfo>(), std::optional<gpu::GpuFeatureInfo>(),
+        gfx::GpuExtraInfo(), std::move(init_params));
   }
 
   void TearDown() {
@@ -151,5 +152,301 @@ TEST_F(GpuServiceImplUtilsTest, OnFrameSnapshotCopyOutputResult) {
   gpu_service_remote.FlushForTesting();
   ASSERT_NO_FATAL_FAILURE(gpu_service()->OnFrameSnapshotCopyOutputResult(std::move(result2)));
 }
+
+TEST_F(GpuServiceImplUtilsTest, OnFrameSnapshotCopyOutputResultWithEmptyRect) {
+  mojo::Remote<mojom::GpuService> gpu_service_remote;
+  ASSERT_NE(gpu_service(), nullptr);
+  gpu_service()->Bind(gpu_service_remote.BindNewPipeAndPassReceiver());
+
+  auto result = std::make_unique<CopyOutputResult>(CopyOutputResult::Format::RGBA,
+    CopyOutputResult::Destination::kSystemMemory, gfx::Rect(), false);
+  result->copy_output_result_utils()->info_.blankless_key = 22;
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->OnFrameSnapshotCopyOutputResult(std::move(result)));
+  gpu_service_remote.FlushForTesting();
+}
+
+TEST_F(GpuServiceImplUtilsTest, OnFrameSnapshotCopyOutputResultWithLargeRect) {
+  mojo::Remote<mojom::GpuService> gpu_service_remote;
+  ASSERT_NE(gpu_service(), nullptr);
+  gpu_service()->Bind(gpu_service_remote.BindNewPipeAndPassReceiver());
+
+  auto result = std::make_unique<CopyOutputResult>(CopyOutputResult::Format::RGBA,
+    CopyOutputResult::Destination::kSystemMemory, gfx::Rect(0, 0, 1920, 1080), false);
+  result->copy_output_result_utils()->info_.blankless_key = 33;
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->OnFrameSnapshotCopyOutputResult(std::move(result)));
+  gpu_service_remote.FlushForTesting();
+}
+
+TEST_F(GpuServiceImplUtilsTest, OnFrameSnapshotCopyOutputResultWithDifferentFormats) {
+  mojo::Remote<mojom::GpuService> gpu_service_remote;
+  ASSERT_NE(gpu_service(), nullptr);
+  gpu_service()->Bind(gpu_service_remote.BindNewPipeAndPassReceiver());
+
+  auto result_rgba = std::make_unique<CopyOutputResult>(CopyOutputResult::Format::RGBA,
+    CopyOutputResult::Destination::kSystemMemory, gfx::Rect(0, 0, 50, 50), false);
+  result_rgba->copy_output_result_utils()->info_.blankless_key = 44;
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->OnFrameSnapshotCopyOutputResult(std::move(result_rgba)));
+
+  auto result_i420 = std::make_unique<CopyOutputResult>(CopyOutputResult::Format::I420_PLANES,
+    CopyOutputResult::Destination::kSystemMemory, gfx::Rect(0, 0, 50, 50), false);
+  result_i420->copy_output_result_utils()->info_.blankless_key = 55;
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->OnFrameSnapshotCopyOutputResult(std::move(result_i420)));
+
+  gpu_service_remote.FlushForTesting();
+}
+
+TEST_F(GpuServiceImplUtilsTest, OnFrameSnapshotCopyOutputResultMultipleCalls) {
+  mojo::Remote<mojom::GpuService> gpu_service_remote;
+  ASSERT_NE(gpu_service(), nullptr);
+  gpu_service()->Bind(gpu_service_remote.BindNewPipeAndPassReceiver());
+
+  for (int i = 0; i < 5; ++i) {
+    auto result = std::make_unique<CopyOutputResult>(CopyOutputResult::Format::RGBA,
+      CopyOutputResult::Destination::kSystemMemory, gfx::Rect(0, 0, 10, 10), false);
+    result->copy_output_result_utils()->info_.blankless_key = static_cast<uint64_t>(i + 100);
+    ASSERT_NO_FATAL_FAILURE(gpu_service()->OnFrameSnapshotCopyOutputResult(std::move(result)));
+  }
+  gpu_service_remote.FlushForTesting();
+}
 #endif
+
+#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
+TEST_F(GpuServiceImplUtilsTest, SetTransformHintWithZeroRotation) {
+  mojo::Remote<mojom::GpuService> gpu_service_remote;
+  ASSERT_NE(gpu_service(), nullptr);
+  gpu_service()->Bind(gpu_service_remote.BindNewPipeAndPassReceiver());
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->SetTransformHint(0, 1));
+}
+
+TEST_F(GpuServiceImplUtilsTest, SetTransformHintWithDifferentRotations) {
+  mojo::Remote<mojom::GpuService> gpu_service_remote;
+  ASSERT_NE(gpu_service(), nullptr);
+  gpu_service()->Bind(gpu_service_remote.BindNewPipeAndPassReceiver());
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->SetTransformHint(0, 1));
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->SetTransformHint(90, 2));
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->SetTransformHint(180, 3));
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->SetTransformHint(270, 4));
+}
+
+TEST_F(GpuServiceImplUtilsTest, SetTransformHintWithZeroWindowId) {
+  mojo::Remote<mojom::GpuService> gpu_service_remote;
+  ASSERT_NE(gpu_service(), nullptr);
+  gpu_service()->Bind(gpu_service_remote.BindNewPipeAndPassReceiver());
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->SetTransformHint(90, 0));
+}
+
+TEST_F(GpuServiceImplUtilsTest, SetTransformHintWithMaxValues) {
+  mojo::Remote<mojom::GpuService> gpu_service_remote;
+  ASSERT_NE(gpu_service(), nullptr);
+  gpu_service()->Bind(gpu_service_remote.BindNewPipeAndPassReceiver());
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->SetTransformHint(UINT32_MAX, UINT32_MAX));
+}
+
+TEST_F(GpuServiceImplUtilsTest, SetTransformHintMultipleCalls) {
+  mojo::Remote<mojom::GpuService> gpu_service_remote;
+  ASSERT_NE(gpu_service(), nullptr);
+  gpu_service()->Bind(gpu_service_remote.BindNewPipeAndPassReceiver());
+  for (uint32_t i = 0; i < 5; ++i) {
+    ASSERT_NO_FATAL_FAILURE(gpu_service()->SetTransformHint(i * 90, i + 1));
+  }
+}
+
+TEST_F(GpuServiceImplUtilsTest, DiscardWithZero) {
+  mojo::Remote<mojom::GpuService> gpu_service_remote;
+  ASSERT_NE(gpu_service(), nullptr);
+  gpu_service()->Bind(gpu_service_remote.BindNewPipeAndPassReceiver());
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->Discard(0));
+}
+
+TEST_F(GpuServiceImplUtilsTest, DiscardWithDifferentIds) {
+  mojo::Remote<mojom::GpuService> gpu_service_remote;
+  ASSERT_NE(gpu_service(), nullptr);
+  gpu_service()->Bind(gpu_service_remote.BindNewPipeAndPassReceiver());
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->Discard(1));
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->Discard(456));
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->Discard(789));
+}
+
+TEST_F(GpuServiceImplUtilsTest, DiscardWithMaxId) {
+  mojo::Remote<mojom::GpuService> gpu_service_remote;
+  ASSERT_NE(gpu_service(), nullptr);
+  gpu_service()->Bind(gpu_service_remote.BindNewPipeAndPassReceiver());
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->Discard(UINT32_MAX));
+}
+
+TEST_F(GpuServiceImplUtilsTest, DiscardMultipleCalls) {
+  mojo::Remote<mojom::GpuService> gpu_service_remote;
+  ASSERT_NE(gpu_service(), nullptr);
+  gpu_service()->Bind(gpu_service_remote.BindNewPipeAndPassReceiver());
+  for (uint32_t i = 0; i < 10; ++i) {
+    ASSERT_NO_FATAL_FAILURE(gpu_service()->Discard(i * 100));
+  }
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_SLIDE_LTPO)
+TEST_F(GpuServiceImplUtilsTest, SetVisibleWithVisibleTrue) {
+  mojo::Remote<mojom::GpuService> gpu_service_remote;
+  ASSERT_NE(gpu_service(), nullptr);
+  gpu_service()->Bind(gpu_service_remote.BindNewPipeAndPassReceiver());
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->SetVisible(1, true));
+}
+
+TEST_F(GpuServiceImplUtilsTest, SetVisibleWithVisibleFalse) {
+  mojo::Remote<mojom::GpuService> gpu_service_remote;
+  ASSERT_NE(gpu_service(), nullptr);
+  gpu_service()->Bind(gpu_service_remote.BindNewPipeAndPassReceiver());
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->SetVisible(1, false));
+}
+
+TEST_F(GpuServiceImplUtilsTest, SetVisibleWithDifferentNwebIds) {
+  mojo::Remote<mojom::GpuService> gpu_service_remote;
+  ASSERT_NE(gpu_service(), nullptr);
+  gpu_service()->Bind(gpu_service_remote.BindNewPipeAndPassReceiver());
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->SetVisible(0, true));
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->SetVisible(100, false));
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->SetVisible(INT32_MAX, true));
+}
+
+TEST_F(GpuServiceImplUtilsTest, SetVisibleMultipleCalls) {
+  mojo::Remote<mojom::GpuService> gpu_service_remote;
+  ASSERT_NE(gpu_service(), nullptr);
+  gpu_service()->Bind(gpu_service_remote.BindNewPipeAndPassReceiver());
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->SetVisible(1, true));
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->SetVisible(1, false));
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->SetVisible(2, true));
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->SetVisible(2, false));
+}
+
+TEST_F(GpuServiceImplUtilsTest, SetHasTouchPointTrue) {
+  mojo::Remote<mojom::GpuService> gpu_service_remote;
+  ASSERT_NE(gpu_service(), nullptr);
+  gpu_service()->Bind(gpu_service_remote.BindNewPipeAndPassReceiver());
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->SetHasTouchPoint(true));
+}
+
+TEST_F(GpuServiceImplUtilsTest, SetHasTouchPointFalse) {
+  mojo::Remote<mojom::GpuService> gpu_service_remote;
+  ASSERT_NE(gpu_service(), nullptr);
+  gpu_service()->Bind(gpu_service_remote.BindNewPipeAndPassReceiver());
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->SetHasTouchPoint(false));
+}
+
+TEST_F(GpuServiceImplUtilsTest, SetHasTouchPointMultipleCalls) {
+  mojo::Remote<mojom::GpuService> gpu_service_remote;
+  ASSERT_NE(gpu_service(), nullptr);
+  gpu_service()->Bind(gpu_service_remote.BindNewPipeAndPassReceiver());
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->SetHasTouchPoint(true));
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->SetHasTouchPoint(false));
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->SetHasTouchPoint(true));
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->SetHasTouchPoint(false));
+}
+
+TEST_F(GpuServiceImplUtilsTest, ReportSlidingFrameRateWithZero) {
+  mojo::Remote<mojom::GpuService> gpu_service_remote;
+  ASSERT_NE(gpu_service(), nullptr);
+  gpu_service()->Bind(gpu_service_remote.BindNewPipeAndPassReceiver());
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->ReportSlidingFrameRate(0));
+}
+
+TEST_F(GpuServiceImplUtilsTest, ReportSlidingFrameRateWithCommonValues) {
+  mojo::Remote<mojom::GpuService> gpu_service_remote;
+  ASSERT_NE(gpu_service(), nullptr);
+  gpu_service()->Bind(gpu_service_remote.BindNewPipeAndPassReceiver());
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->ReportSlidingFrameRate(30));
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->ReportSlidingFrameRate(60));
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->ReportSlidingFrameRate(90));
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->ReportSlidingFrameRate(120));
+}
+
+TEST_F(GpuServiceImplUtilsTest, ReportSlidingFrameRateWithMaxValue) {
+  mojo::Remote<mojom::GpuService> gpu_service_remote;
+  ASSERT_NE(gpu_service(), nullptr);
+  gpu_service()->Bind(gpu_service_remote.BindNewPipeAndPassReceiver());
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->ReportSlidingFrameRate(INT32_MAX));
+}
+
+TEST_F(GpuServiceImplUtilsTest, SetLTPOStrategyWithZero) {
+  mojo::Remote<mojom::GpuService> gpu_service_remote;
+  ASSERT_NE(gpu_service(), nullptr);
+  gpu_service()->Bind(gpu_service_remote.BindNewPipeAndPassReceiver());
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->SetLTPOStrategy(0));
+}
+
+TEST_F(GpuServiceImplUtilsTest, SetLTPOStrategyWithDifferentValues) {
+  mojo::Remote<mojom::GpuService> gpu_service_remote;
+  ASSERT_NE(gpu_service(), nullptr);
+  gpu_service()->Bind(gpu_service_remote.BindNewPipeAndPassReceiver());
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->SetLTPOStrategy(1));
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->SetLTPOStrategy(2));
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->SetLTPOStrategy(3));
+}
+
+TEST_F(GpuServiceImplUtilsTest, SetLTPOStrategyWithNegativeValue) {
+  mojo::Remote<mojom::GpuService> gpu_service_remote;
+  ASSERT_NE(gpu_service(), nullptr);
+  gpu_service()->Bind(gpu_service_remote.BindNewPipeAndPassReceiver());
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->SetLTPOStrategy(-1));
+}
+
+TEST_F(GpuServiceImplUtilsTest, SetLTPOStrategyWithMaxValue) {
+  mojo::Remote<mojom::GpuService> gpu_service_remote;
+  ASSERT_NE(gpu_service(), nullptr);
+  gpu_service()->Bind(gpu_service_remote.BindNewPipeAndPassReceiver());
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->SetLTPOStrategy(INT32_MAX));
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+TEST_F(GpuServiceImplUtilsTest, StartMonitorWithZero) {
+  mojo::Remote<mojom::GpuService> gpu_service_remote;
+  ASSERT_NE(gpu_service(), nullptr);
+  gpu_service()->Bind(gpu_service_remote.BindNewPipeAndPassReceiver());
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->StartMonitor(0));
+}
+
+TEST_F(GpuServiceImplUtilsTest, StartMonitorWithPositiveId) {
+  mojo::Remote<mojom::GpuService> gpu_service_remote;
+  ASSERT_NE(gpu_service(), nullptr);
+  gpu_service()->Bind(gpu_service_remote.BindNewPipeAndPassReceiver());
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->StartMonitor(1));
+}
+
+TEST_F(GpuServiceImplUtilsTest, StartMonitorWithDifferentNwebIds) {
+  mojo::Remote<mojom::GpuService> gpu_service_remote;
+  ASSERT_NE(gpu_service(), nullptr);
+  gpu_service()->Bind(gpu_service_remote.BindNewPipeAndPassReceiver());
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->StartMonitor(1));
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->StartMonitor(100));
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->StartMonitor(INT32_MAX));
+}
+
+TEST_F(GpuServiceImplUtilsTest, StopMonitorBasic) {
+  mojo::Remote<mojom::GpuService> gpu_service_remote;
+  ASSERT_NE(gpu_service(), nullptr);
+  gpu_service()->Bind(gpu_service_remote.BindNewPipeAndPassReceiver());
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->StopMonitor());
+}
+
+TEST_F(GpuServiceImplUtilsTest, StartAndStopMonitor) {
+  mojo::Remote<mojom::GpuService> gpu_service_remote;
+  ASSERT_NE(gpu_service(), nullptr);
+  gpu_service()->Bind(gpu_service_remote.BindNewPipeAndPassReceiver());
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->StartMonitor(1));
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->StopMonitor());
+}
+
+TEST_F(GpuServiceImplUtilsTest, MultipleStartAndStopMonitor) {
+  mojo::Remote<mojom::GpuService> gpu_service_remote;
+  ASSERT_NE(gpu_service(), nullptr);
+  gpu_service()->Bind(gpu_service_remote.BindNewPipeAndPassReceiver());
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->StartMonitor(1));
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->StopMonitor());
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->StartMonitor(2));
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->StopMonitor());
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->StartMonitor(3));
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->StopMonitor());
+}
+#endif
+
 } //namespace viz

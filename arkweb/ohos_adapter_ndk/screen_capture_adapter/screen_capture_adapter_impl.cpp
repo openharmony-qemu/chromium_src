@@ -335,7 +335,7 @@ void ScreenCaptureAdapterImpl::ScreenCaptureCallbackOnBufferAvailable(OH_AVScree
         callbackInfo->callback->OnVideoBufferAvailableV2(true, callbackInfo->nweb_id);
     } else if (bufferType == OH_SCREEN_CAPTURE_BUFFERTYPE_AUDIO_INNER) {
         auto audioBufferImpl = std::make_shared<OH_AudioBufferAdapterImpl>(
-            buffer, timestamp, OH_AudioCaptureSourceType::OH_ALL_PLAYBACK);   
+            buffer, timestamp, OH_AudioCaptureSourceType::OH_ALL_PLAYBACK);
         {
             std::unique_lock<std::shared_mutex> lock(audio_map_lock_);
             auto it = audioBufferAvailableQueueMap_.find(callbackInfo->nweb_id);	

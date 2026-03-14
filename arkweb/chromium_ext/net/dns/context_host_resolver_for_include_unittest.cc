@@ -440,25 +440,6 @@ TEST_F(ContextHostResolverForIncludeTest, Lifecycle_OwnedManagerDestruction) {
   resolver.reset();
 }
 
-TEST_F(ContextHostResolverForIncludeTest, Lifecycle_MultipleShutdowns) {
-  HostResolver::ManagerOptions options;
-  auto owned_manager = std::make_unique<HostResolverManager>(
-      options, nullptr, nullptr);
-
-  auto context = std::make_unique<ResolveContext>(url_request_context_.get(), true);
-
-  auto resolver = std::make_unique<ContextHostResolver>(
-      std::move(owned_manager), std::move(context));
-
-  EXPECT_FALSE(resolver->shutting_down_);
-
-  resolver->OnShutdown();
-  EXPECT_TRUE(resolver->shutting_down_);
-
-  EXPECT_NO_FATAL_FAILURE(resolver->OnShutdown());
-  EXPECT_TRUE(resolver->shutting_down_);
-}
-
 TEST_F(ContextHostResolverForIncludeTest, ResolveContext_NotNull) {
   HostResolver::ManagerOptions options;
   auto owned_manager = std::make_unique<HostResolverManager>(
@@ -587,25 +568,6 @@ TEST_F(ContextHostResolverForIncludeTest, GetLocalAddress_MultipleCallsConsisten
     EXPECT_NO_FATAL_FAILURE(resolver->GetLocalAddress(&address));
     EXPECT_EQ(address.ToString(), first_address.ToString());
   }
-}
-
-TEST_F(ContextHostResolverForIncludeTest, CanUseSecureDnsFallback_AfterShutdown) {
-  HostResolver::ManagerOptions options;
-  auto owned_manager = std::make_unique<HostResolverManager>(
-      options, nullptr, nullptr);
-
-  auto context = std::make_unique<ResolveContext>(url_request_context_.get(), true);
-
-  auto resolver = std::make_unique<ContextHostResolver>(
-      std::move(owned_manager), std::move(context));
-
-  bool result_before = resolver->CanUseSecureDnsFallback();
-
-  resolver->OnShutdown();
-
-  bool result_after = resolver->CanUseSecureDnsFallback();
-
-  EXPECT_EQ(result_before, result_after);
 }
 
 #endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)

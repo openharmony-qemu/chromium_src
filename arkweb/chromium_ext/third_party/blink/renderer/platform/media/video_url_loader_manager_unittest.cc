@@ -288,8 +288,10 @@ TEST_F(VideoUrlLoaderManagerTest,
   MockWebAssociatedURLLoaderClient loader_client;
   MockVideoURLLoaderImpl url_loader;
 
-  int64_t start1 = 0, start2 = 0;
-  std::string video_id1 = "video1", video_id2 = "video2";
+  int64_t start1 = 0;
+  int64_t start2 = 0;
+  std::string video_id1 = "video1";
+  std::string video_id2 = "video2";
   std::string url_str = "http://www.test.com/video.mp4";
   KURL url = ToKURL(url_str);
   WebURLRequest request1(url);
@@ -312,8 +314,10 @@ TEST_F(VideoUrlLoaderManagerTest,
   MockWebAssociatedURLLoaderClient loader_client;
   MockVideoURLLoaderImpl url_loader;
 
-  int64_t start1 = 0, start2 = 0;
-  std::string video_id1 = "video1", video_id2 = "video2";
+  int64_t start1 = 0;
+  int64_t start2 = 0;
+  std::string video_id1 = "video1";
+  std::string video_id2 = "video2";
   std::string url_str = "http://www.test.com/video.mp4";
   KURL url = ToKURL(url_str);
   WebURLRequest request1(url);
@@ -336,7 +340,8 @@ TEST_F(VideoUrlLoaderManagerTest,
   MockWebAssociatedURLLoaderClient loader_client;
   MockVideoURLLoaderImpl url_loader;
 
-  int64_t start1 = 500, start2 = 1000;
+  int64_t start1 = 500;
+  int64_t start2 = 1000;
   std::string video_id = "same_video";
   std::string url_str = "http://www.test.com/video.mp4";
   KURL url = ToKURL(url_str);

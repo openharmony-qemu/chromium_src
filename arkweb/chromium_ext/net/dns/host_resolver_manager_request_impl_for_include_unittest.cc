@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include "arkweb/build/features/features.h"
 #if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 
 #include <memory>

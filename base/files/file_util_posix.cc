@@ -82,7 +82,6 @@
 
 #if BUILDFLAG(IS_OHOS)
 #include "base/command_line.h"
-#include "content/public/common/content_switches.h"
 #include "ohos/adapter/context_path/context_path_adapter.h"
 #endif
 
@@ -811,7 +810,7 @@ bool ExecutableExistsInPath(Environment* env,
 
 #if BUILDFLAG(IS_OHOS)
 bool IsBrowserProcess(const base::CommandLine& command_line) {
-  return command_line.GetSwitchValueASCII(switches::kProcessType).empty();
+  return command_line.GetSwitchValueASCII(switches::kOhosProcessType).empty();
 }
 #endif
 

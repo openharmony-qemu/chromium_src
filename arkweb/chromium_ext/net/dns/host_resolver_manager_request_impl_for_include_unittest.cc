@@ -844,14 +844,15 @@ TEST_F(HostResolverManagerRequestImplTest,
       MakeHostCacheEntry(OK, {"192.168.1.1", "10.0.0.1"});
   request_->MaybeModifyResolveLocallyResultsAndUpdateResolveInfo(
       entry1, kDnsResolvedByLocalDns);
+  EXPECT_EQ(request_->resolve_info_.dns_status, kDnsResolvedByLocalDns);
+  EXPECT_EQ(request_->resolve_info_.ip_endpoints.size(), 1u);
 
   HostCache::Entry entry2 = MakeHostCacheEntry(OK, {"10.0.0.2", "10.0.0.3"});
   request_->MaybeModifyResolveLocallyResultsAndUpdateResolveInfo(
       entry2, kDnsResolvedByHttpsDns);
-  const auto& info2 = request_->resolve_info_;
-
-  EXPECT_EQ(info2.dns_status, kDnsResolvedByHttpsDns);
-  EXPECT_EQ(info2.ip_endpoints.size(), 2u);
+  EXPECT_EQ(request_->resolve_info_.dns_status, kDnsResolvedByHttpsDns);
+  // ip_endpoints is appended (emplace_back), so total is 1 + 2 = 3
+  EXPECT_EQ(request_->resolve_info_.ip_endpoints.size(), 3u);
 }
 
 TEST_F(HostResolverManagerRequestImplTest,

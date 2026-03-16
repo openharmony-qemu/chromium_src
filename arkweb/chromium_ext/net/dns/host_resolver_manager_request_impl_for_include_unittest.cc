@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,481 +13,894 @@
  * limitations under the License.
  */
 
-#include "arkweb/build/features/features.h"
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
-
 #include <memory>
 #include <set>
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+
+#include "arkweb/chromium_ext/net/dns/public/resolve_info.h"
+#include "arkweb/chromium_ext/net/dns/secure_dns_fallback_utils.h"
+#include "base/functional/callback.h"
 #include "base/test/task_environment.h"
+#include "base/time/time.h"
+#include "build/build_config.h"
+#include "net/base/host_port_pair.h"
 #include "net/base/ip_address.h"
 #include "net/base/ip_endpoint.h"
-#include "net/test/test_with_task_environment.h"
+#include "net/base/net_errors.h"
+#include "net/base/network_anonymization_key.h"
+#include "net/dns/host_cache.h"
+#include "net/dns/host_resolver.h"
+#include "net/dns/public/host_resolver_results.h"
+#include "net/dns/public/resolve_error_info.h"
+#include "net/dns/resolve_context.h"
+#include "net/log/net_log_with_source.h"
+#include "net/proxy_resolution/proxy_config_service_fixed.h"
+#include "net/proxy_resolution/proxy_config_with_annotation.h"
+#include "net/traffic_annotation/network_traffic_annotation_test_helper.h"
+#include "net/url_request/url_request_context.h"
+#include "net/url_request/url_request_context_builder.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "url/scheme_host_port.h"
 
-#include "arkweb/chromium_ext/net/dns/secure_dns_fallback_utils.h"
+#define private public
+#define protected public
+#include "net/dns/host_resolver_manager.h"
+#include "net/dns/host_resolver_manager_request_impl.h"
+#undef protected
+#undef private
 
 namespace net {
 
 namespace {
 
-IPEndPoint MakeEndPoint(const std::string& ip, uint16_t port = 0) {
-  IPAddress address;
-  CHECK(address.AssignFromIPLiteral(ip));
-  return IPEndPoint(address, port);
+IPEndPoint MakeIPEndPoint(const std::string& ip_str, uint16_t port) {
+  auto addr = IPAddress::FromIPLiteral(ip_str);
+  CHECK(addr.has_value()) << "Invalid IP address: " << ip_str;
+  return IPEndPoint(addr.value(), port);
+}
+
+std::vector<IPEndPoint> MakeIPEndPoints(
+    const std::vector<std::string>& ip_strs, uint16_t port = 0) {
+  std::vector<IPEndPoint> endpoints;
+  for (const auto& ip_str : ip_strs) {
+    endpoints.push_back(MakeIPEndPoint(ip_str, port));
+  }
+  return endpoints;
+}
+
+HostCache::Entry MakeHostCacheEntry(int error,
+                                    const std::vector<std::string>& ip_literals,
+                                    uint16_t port = 0) {
+  std::vector<IPEndPoint> endpoints;
+  for (const auto& ip : ip_literals) {
+    auto addr = IPAddress::FromIPLiteral(ip);
+    if (addr.has_value()) {
+      endpoints.emplace_back(*addr, port);
+    }
+  }
+  constexpr base::TimeDelta kTtl = base::Seconds(3600);
+  return HostCache::Entry(error, endpoints, std::set<std::string>(),
+                          HostCache::Entry::Source::SOURCE_DNS, kTtl);
+}
+
+void SetSuspectData(const std::vector<std::string>& hosts,
+                    const std::vector<std::string>& ips) {
+  StoreSuspectIPListAndSourceHostList(ips, hosts);
+}
+
+void ClearSuspectData() { StoreSuspectIPListAndSourceHostList({}, {}); }
+
+HostResolver::Host MakeHost(const std::string& host, uint16_t port) {
+  return HostResolver::Host(HostPortPair(host, port));
 }
 
 }  // namespace
 
-class SecureDnsFallbackUtilsTest : public TestWithTaskEnvironment {
- protected:
-  SecureDnsFallbackUtilsTest() = default;
-  ~SecureDnsFallbackUtilsTest() override = default;
-
+class HostResolverManagerRequestImplTest : public testing::Test {
+ public:
   void SetUp() override {
-    // Initialize with empty lists
-    StoreSuspectIPListAndSourceHostList({}, {});
+    URLRequestContextBuilder builder;
+    net::ProxyConfigWithAnnotation pcwa(net::ProxyConfig::CreateDirect(),
+                                        TRAFFIC_ANNOTATION_FOR_TESTS);
+    auto fixed = std::make_unique<net::ProxyConfigServiceFixed>(pcwa);
+    builder.set_proxy_config_service(std::move(fixed));
+    url_request_context_ = builder.Build();
+
+    resolve_context_ =
+        std::make_unique<ResolveContext>(url_request_context_.get(), true);
+
+    request_ = std::make_unique<HostResolverManager::RequestImpl>(
+        NetLogWithSource(), MakeHost("example.com", 443),
+        NetworkAnonymizationKey(), HostResolver::ResolveHostParameters(),
+        resolve_context_->GetWeakPtr(),
+        base::WeakPtr<HostResolverManager>(),
+        base::DefaultTickClock::GetInstance());
   }
 
   void TearDown() override {
-    // Clean up after each test
-    StoreSuspectIPListAndSourceHostList({}, {});
+    request_.reset();
+    resolve_context_.reset();
+    url_request_context_.reset();
+    ClearSuspectData();
   }
+
+ protected:
+  base::test::TaskEnvironment task_env_;
+  std::unique_ptr<URLRequestContext> url_request_context_;
+  std::unique_ptr<ResolveContext> resolve_context_;
+  std::unique_ptr<HostResolverManager::RequestImpl> request_;
 };
 
-// ==================== StoreSuspectIPListAndSourceHostList Tests ====================
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResults_EmptyEndpoints_ReturnsEarly) {
+  ClearSuspectData();
+  HostCache::Entry entry = MakeHostCacheEntry(OK, {});
+  std::vector<IPEndPoint> truncation_results;
+  size_t initial_truncation_size = truncation_results.size();
 
-TEST_F(SecureDnsFallbackUtilsTest, StoreEmptyLists) {
-  StoreSuspectIPListAndSourceHostList({}, {});
+  request_->MaybeModifyResolveLocallyResults(entry, truncation_results);
 
-  std::vector<IPEndPoint> legacy_addresses = {MakeEndPoint("192.168.1.1")};
-  std::vector<IPEndPoint> out_addresses;
-  std::vector<IPEndPoint> truncation_address;
-  bool need_to_modify_result = false;
-
-  bool result = MaybeNeedToProcessAddressList(
-      "example.com", legacy_addresses, true, out_addresses,
-      need_to_modify_result, truncation_address);
-
-  EXPECT_FALSE(result);
+  EXPECT_EQ(truncation_results.size(), initial_truncation_size);
+  EXPECT_EQ(entry.error(), OK);
+  EXPECT_TRUE(entry.ip_endpoints().empty());
 }
 
-TEST_F(SecureDnsFallbackUtilsTest, StoreSuspectIPListOnly) {
-  StoreSuspectIPListAndSourceHostList({"10.0.0.1", "10.0.0.2"}, {});
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResults_HasError_ReturnsEarly) {
+  ClearSuspectData();
+  HostCache::Entry entry =
+      MakeHostCacheEntry(ERR_NAME_NOT_RESOLVED, {"192.168.1.1", "10.0.0.1"});
+  std::vector<IPEndPoint> truncation_results;
+  size_t initial_truncation_size = truncation_results.size();
+  auto original_endpoints = entry.ip_endpoints();
 
-  std::vector<IPEndPoint> legacy_addresses = {MakeEndPoint("10.0.0.1")};
-  std::vector<IPEndPoint> out_addresses;
-  std::vector<IPEndPoint> truncation_address;
-  bool need_to_modify_result = false;
+  request_->MaybeModifyResolveLocallyResults(entry, truncation_results);
 
-  bool result = MaybeNeedToProcessAddressList(
-      "example.com", legacy_addresses, true, out_addresses,
-      need_to_modify_result, truncation_address);
-
-  // Should return false because host is not in source host list
-  EXPECT_FALSE(result);
+  EXPECT_EQ(truncation_results.size(), initial_truncation_size);
+  EXPECT_EQ(entry.error(), ERR_NAME_NOT_RESOLVED);
+  EXPECT_EQ(entry.ip_endpoints().size(), original_endpoints.size());
 }
 
-TEST_F(SecureDnsFallbackUtilsTest, StoreSourceHostListOnly) {
-  StoreSuspectIPListAndSourceHostList({}, {"example.com"});
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResults_HostNotInList_ReturnsEarly) {
+  ClearSuspectData();
 
-  std::vector<IPEndPoint> legacy_addresses = {MakeEndPoint("192.168.1.1")};
-  std::vector<IPEndPoint> out_addresses;
-  std::vector<IPEndPoint> truncation_address;
-  bool need_to_modify_result = false;
+  HostCache::Entry entry = MakeHostCacheEntry(OK, {"192.168.1.1", "10.0.0.1"});
+  std::vector<IPEndPoint> truncation_results;
+  auto original_endpoints = entry.ip_endpoints();
 
-  bool result = MaybeNeedToProcessAddressList(
-      "example.com", legacy_addresses, true, out_addresses,
-      need_to_modify_result, truncation_address);
+  request_->MaybeModifyResolveLocallyResults(entry, truncation_results);
 
-  // Should return false because no suspect IP matched
-  EXPECT_FALSE(result);
+  EXPECT_TRUE(truncation_results.empty());
+  EXPECT_EQ(entry.ip_endpoints().size(), original_endpoints.size());
 }
 
-TEST_F(SecureDnsFallbackUtilsTest, StoreBothLists) {
-  StoreSuspectIPListAndSourceHostList(
-      {"10.0.0.1", "10.0.0.2"}, {"example.com", "test.com"});
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResults_NoSuspectIp_NoModification) {
+  SetSuspectData({"example.com"}, {"1.2.3.4"});
 
-  std::vector<IPEndPoint> legacy_addresses = {
-      MakeEndPoint("10.0.0.1"), MakeEndPoint("192.168.1.1")};
-  std::vector<IPEndPoint> out_addresses;
-  std::vector<IPEndPoint> truncation_address;
-  bool need_to_modify_result = false;
+  HostCache::Entry entry = MakeHostCacheEntry(OK, {"192.168.1.1", "10.0.0.1"});
+  std::vector<IPEndPoint> truncation_results;
 
-  bool result = MaybeNeedToProcessAddressList(
-      "example.com", legacy_addresses, true, out_addresses,
-      need_to_modify_result, truncation_address);
+  request_->MaybeModifyResolveLocallyResults(entry, truncation_results);
 
-  EXPECT_TRUE(result);
-  EXPECT_EQ(out_addresses.size(), 1u);
-  EXPECT_EQ(truncation_address.size(), 1u);
+  EXPECT_TRUE(truncation_results.empty());
+  EXPECT_EQ(entry.ip_endpoints().size(), 2u);
 }
 
-// ==================== MaybeNeedToProcessAddressList Tests ====================
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResults_HasSuspectIp_UpdatesResults) {
+  SetSuspectData({"example.com"}, {"192.168.1.1"});
 
-TEST_F(SecureDnsFallbackUtilsTest, EmptyLegacyAddresses) {
-  StoreSuspectIPListAndSourceHostList({"10.0.0.1"}, {"example.com"});
+  HostCache::Entry entry = MakeHostCacheEntry(OK, {"192.168.1.1", "10.0.0.1"});
+  std::vector<IPEndPoint> truncation_results;
+
+  request_->MaybeModifyResolveLocallyResults(entry, truncation_results);
+
+  EXPECT_EQ(truncation_results.size(), 1u);
+  EXPECT_EQ(entry.ip_endpoints().size(), 1u);
+  EXPECT_EQ(entry.ip_endpoints()[0].ToStringWithoutPort(), "10.0.0.1");
+  EXPECT_EQ(truncation_results[0].ToStringWithoutPort(), "192.168.1.1");
+}
+
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResults_PartialSuspectIps_UpdatesResults) {
+  SetSuspectData({"example.com"}, {"192.168.1.1", "192.168.1.2"});
+
+  HostCache::Entry entry = MakeHostCacheEntry(
+      OK, {"192.168.1.1", "10.0.0.1", "192.168.1.2", "10.0.0.2"});
+  std::vector<IPEndPoint> truncation_results;
+
+  request_->MaybeModifyResolveLocallyResults(entry, truncation_results);
+
+  EXPECT_EQ(truncation_results.size(), 2u);
+  EXPECT_EQ(entry.ip_endpoints().size(), 2u);
+}
+
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResults_AllSuspectIps_NoFallback) {
+  SetSuspectData({"example.com"}, {"192.168.1.1", "192.168.1.2"});
+
+  HostCache::Entry entry =
+      MakeHostCacheEntry(OK, {"192.168.1.1", "192.168.1.2"});
+  std::vector<IPEndPoint> truncation_results;
+  auto original_endpoints = entry.ip_endpoints();
+
+  request_->MaybeModifyResolveLocallyResults(entry, truncation_results);
+
+  EXPECT_EQ(entry.error(), OK);
+  EXPECT_EQ(entry.ip_endpoints().size(), original_endpoints.size());
+}
+
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResults_AllSuspectIps_NeedModifyError) {
+  SetSuspectData({"example.com"}, {"192.168.1.1"});
+
+  HostCache::Entry entry = MakeHostCacheEntry(OK, {"192.168.1.1"});
+  std::vector<IPEndPoint> truncation_results;
+
+  request_->MaybeModifyResolveLocallyResults(entry, truncation_results);
+
+  EXPECT_EQ(entry.error(), OK);
+  EXPECT_EQ(truncation_results.size(), 1u);
+}
+
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResults_IPv6Addresses) {
+  SetSuspectData({"example.com"}, {"::1", "2001:db8::1"});
+
+  HostCache::Entry entry =
+      MakeHostCacheEntry(OK, {"::1", "2001:db8::1", "::2"});
+  std::vector<IPEndPoint> truncation_results;
+
+  request_->MaybeModifyResolveLocallyResults(entry, truncation_results);
+
+  EXPECT_EQ(truncation_results.size(), 2u);
+  EXPECT_EQ(entry.ip_endpoints().size(), 1u);
+  EXPECT_EQ(entry.ip_endpoints()[0].ToStringWithoutPort(), "::2");
+}
+
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResults_MixedIPv4AndIPv6) {
+  SetSuspectData({"example.com"}, {"192.168.1.1", "::1"});
+
+  HostCache::Entry entry =
+      MakeHostCacheEntry(OK, {"192.168.1.1", "10.0.0.1", "::1", "::2"});
+  std::vector<IPEndPoint> truncation_results;
+
+  request_->MaybeModifyResolveLocallyResults(entry, truncation_results);
+
+  EXPECT_EQ(truncation_results.size(), 2u);
+  EXPECT_EQ(entry.ip_endpoints().size(), 2u);
+}
+
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResults_PreservePortNumbers) {
+  SetSuspectData({"example.com"}, {"192.168.1.1"});
 
   std::vector<IPEndPoint> legacy_addresses;
-  std::vector<IPEndPoint> out_addresses;
-  std::vector<IPEndPoint> truncation_address;
-  bool need_to_modify_result = false;
+  legacy_addresses.push_back(MakeIPEndPoint("192.168.1.1", 80));
+  legacy_addresses.push_back(MakeIPEndPoint("10.0.0.1", 443));
 
-  bool result = MaybeNeedToProcessAddressList(
-      "example.com", legacy_addresses, true, out_addresses,
-      need_to_modify_result, truncation_address);
+  constexpr base::TimeDelta kTtl = base::Seconds(3600);
+  HostCache::Entry entry(OK, legacy_addresses, std::set<std::string>(),
+                         HostCache::Entry::Source::SOURCE_DNS, kTtl);
+  std::vector<IPEndPoint> truncation_results;
 
-  EXPECT_FALSE(result);
+  request_->MaybeModifyResolveLocallyResults(entry, truncation_results);
+
+  EXPECT_EQ(truncation_results.size(), 1u);
+  EXPECT_EQ(entry.ip_endpoints().size(), 1u);
+  EXPECT_EQ(truncation_results[0].port(), 80);
+  EXPECT_EQ(entry.ip_endpoints()[0].port(), 443);
 }
 
-TEST_F(SecureDnsFallbackUtilsTest, HostNotInSourceList) {
-  StoreSuspectIPListAndSourceHostList({"10.0.0.1"}, {"example.com"});
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResults_SingleAddress) {
+  SetSuspectData({"example.com"}, {"192.168.1.1"});
 
-  std::vector<IPEndPoint> legacy_addresses = {MakeEndPoint("10.0.0.1")};
-  std::vector<IPEndPoint> out_addresses;
-  std::vector<IPEndPoint> truncation_address;
-  bool need_to_modify_result = false;
+  HostCache::Entry entry = MakeHostCacheEntry(OK, {"192.168.1.1"});
+  std::vector<IPEndPoint> truncation_results;
 
-  bool result = MaybeNeedToProcessAddressList(
-      "not-in-list.com", legacy_addresses, true, out_addresses,
-      need_to_modify_result, truncation_address);
+  request_->MaybeModifyResolveLocallyResults(entry, truncation_results);
 
-  EXPECT_FALSE(result);
+  EXPECT_EQ(truncation_results.size(), 1u);
+  EXPECT_EQ(entry.ip_endpoints().size(), 1u);
 }
 
-TEST_F(SecureDnsFallbackUtilsTest, NoSuspectIPMatched) {
-  StoreSuspectIPListAndSourceHostList({"10.0.0.1"}, {"example.com"});
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResults_EmptyHost) {
+  SetSuspectData({""}, {"192.168.1.1"});
 
-  std::vector<IPEndPoint> legacy_addresses = {
-      MakeEndPoint("192.168.1.1"), MakeEndPoint("192.168.1.2")};
-  std::vector<IPEndPoint> out_addresses;
-  std::vector<IPEndPoint> truncation_address;
-  bool need_to_modify_result = false;
+  auto request_empty = std::make_unique<HostResolverManager::RequestImpl>(
+      NetLogWithSource(), MakeHost("", 443), NetworkAnonymizationKey(),
+      HostResolver::ResolveHostParameters(), resolve_context_->GetWeakPtr(),
+      base::WeakPtr<HostResolverManager>(),
+      base::DefaultTickClock::GetInstance());
 
-  bool result = MaybeNeedToProcessAddressList(
-      "example.com", legacy_addresses, true, out_addresses,
-      need_to_modify_result, truncation_address);
+  HostCache::Entry entry = MakeHostCacheEntry(OK, {"192.168.1.1", "10.0.0.1"});
+  std::vector<IPEndPoint> truncation_results;
 
-  // No suspect IP matched, should return false
-  EXPECT_FALSE(result);
+  request_empty->MaybeModifyResolveLocallyResults(entry, truncation_results);
+
+  EXPECT_EQ(truncation_results.size(), 1u);
 }
 
-TEST_F(SecureDnsFallbackUtilsTest, PartialSuspectIPMatch) {
-  StoreSuspectIPListAndSourceHostList({"10.0.0.1"}, {"example.com"});
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResults_SubdomainNotMatch) {
+  SetSuspectData({"example.com"}, {"192.168.1.1"});
 
-  std::vector<IPEndPoint> legacy_addresses = {
-      MakeEndPoint("10.0.0.1"), MakeEndPoint("192.168.1.1")};
-  std::vector<IPEndPoint> out_addresses;
-  std::vector<IPEndPoint> truncation_address;
-  bool need_to_modify_result = false;
+  auto request_subdomain = std::make_unique<HostResolverManager::RequestImpl>(
+      NetLogWithSource(), MakeHost("sub.example.com", 443),
+      NetworkAnonymizationKey(), HostResolver::ResolveHostParameters(),
+      resolve_context_->GetWeakPtr(), base::WeakPtr<HostResolverManager>(),
+      base::DefaultTickClock::GetInstance());
 
-  bool result = MaybeNeedToProcessAddressList(
-      "example.com", legacy_addresses, true, out_addresses,
-      need_to_modify_result, truncation_address);
+  HostCache::Entry entry = MakeHostCacheEntry(OK, {"192.168.1.1", "10.0.0.1"});
+  std::vector<IPEndPoint> truncation_results;
 
-  EXPECT_TRUE(result);
-  EXPECT_EQ(out_addresses.size(), 1u);
-  EXPECT_EQ(truncation_address.size(), 1u);
-  EXPECT_FALSE(need_to_modify_result);
+  request_subdomain->MaybeModifyResolveLocallyResults(entry, truncation_results);
+
+  EXPECT_TRUE(truncation_results.empty());
 }
 
-TEST_F(SecureDnsFallbackUtilsTest, AllIPsAreSuspectWithDohFallback) {
-  StoreSuspectIPListAndSourceHostList({"10.0.0.1", "10.0.0.2"}, {"example.com"});
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResults_CaseSensitive) {
+  SetSuspectData({"Example.com"}, {"192.168.1.1"});
 
-  std::vector<IPEndPoint> legacy_addresses = {
-      MakeEndPoint("10.0.0.1"), MakeEndPoint("10.0.0.2")};
-  std::vector<IPEndPoint> out_addresses;
-  std::vector<IPEndPoint> truncation_address;
-  bool need_to_modify_result = false;
+  HostCache::Entry entry = MakeHostCacheEntry(OK, {"192.168.1.1", "10.0.0.1"});
+  std::vector<IPEndPoint> truncation_results;
 
-  bool result = MaybeNeedToProcessAddressList(
-      "example.com", legacy_addresses, true, out_addresses,
-      need_to_modify_result, truncation_address);
+  request_->MaybeModifyResolveLocallyResults(entry, truncation_results);
 
-  EXPECT_TRUE(result);
-  EXPECT_TRUE(out_addresses.empty());
-  EXPECT_EQ(truncation_address.size(), 2u);
-  EXPECT_TRUE(need_to_modify_result);
+  EXPECT_TRUE(truncation_results.empty());
 }
 
-TEST_F(SecureDnsFallbackUtilsTest, AllIPsAreSuspectWithoutDohFallback) {
-  StoreSuspectIPListAndSourceHostList({"10.0.0.1", "10.0.0.2"}, {"example.com"});
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResults_MultipleHostsAndIps) {
+  SetSuspectData({"example.com", "test.org"}, {"192.168.1.1", "10.0.0.1"});
 
-  std::vector<IPEndPoint> legacy_addresses = {
-      MakeEndPoint("10.0.0.1"), MakeEndPoint("10.0.0.2")};
-  std::vector<IPEndPoint> out_addresses;
-  std::vector<IPEndPoint> truncation_address;
-  bool need_to_modify_result = false;
+  HostCache::Entry entry =
+      MakeHostCacheEntry(OK, {"192.168.1.1", "10.0.0.1", "172.16.0.1"});
+  std::vector<IPEndPoint> truncation_results;
 
-  bool result = MaybeNeedToProcessAddressList(
-      "example.com", legacy_addresses, false, out_addresses,
-      need_to_modify_result, truncation_address);
+  request_->MaybeModifyResolveLocallyResults(entry, truncation_results);
 
-  EXPECT_TRUE(result);
-  // When no DoH fallback available, should restore original addresses
-  EXPECT_EQ(out_addresses.size(), 2u);
-  EXPECT_EQ(truncation_address.size(), 2u);
-  EXPECT_FALSE(need_to_modify_result);
+  EXPECT_EQ(truncation_results.size(), 2u);
+  EXPECT_EQ(entry.ip_endpoints().size(), 1u);
 }
 
-TEST_F(SecureDnsFallbackUtilsTest, MultipleSuspectIPsAndMixedAddresses) {
-  StoreSuspectIPListAndSourceHostList(
-      {"10.0.0.1", "10.0.0.2", "10.0.0.3"}, {"example.com"});
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResults_LocalhostAddresses) {
+  SetSuspectData({"example.com"}, {"127.0.0.1", "::1"});
 
-  std::vector<IPEndPoint> legacy_addresses = {
-      MakeEndPoint("192.168.1.1"), MakeEndPoint("10.0.0.1"),
-      MakeEndPoint("192.168.1.2"), MakeEndPoint("10.0.0.2"),
-      MakeEndPoint("192.168.1.3")};
-  std::vector<IPEndPoint> out_addresses;
-  std::vector<IPEndPoint> truncation_address;
-  bool need_to_modify_result = false;
+  HostCache::Entry entry =
+      MakeHostCacheEntry(OK, {"127.0.0.1", "::1", "10.0.0.1"});
+  std::vector<IPEndPoint> truncation_results;
 
-  bool result = MaybeNeedToProcessAddressList(
-      "example.com", legacy_addresses, true, out_addresses,
-      need_to_modify_result, truncation_address);
+  request_->MaybeModifyResolveLocallyResults(entry, truncation_results);
 
-  EXPECT_TRUE(result);
-  EXPECT_EQ(out_addresses.size(), 3u);
-  EXPECT_EQ(truncation_address.size(), 2u);
-  EXPECT_FALSE(need_to_modify_result);
+  EXPECT_EQ(truncation_results.size(), 2u);
+  EXPECT_EQ(entry.ip_endpoints().size(), 1u);
 }
 
-TEST_F(SecureDnsFallbackUtilsTest, IPv6Addresses) {
-  StoreSuspectIPListAndSourceHostList({"::1", "2001:db8::1"}, {"example.com"});
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResults_BroadcastAddress) {
+  SetSuspectData({"example.com"}, {"255.255.255.255"});
 
-  std::vector<IPEndPoint> legacy_addresses = {
-      MakeEndPoint("::1"), MakeEndPoint("2001:db8::2")};
-  std::vector<IPEndPoint> out_addresses;
-  std::vector<IPEndPoint> truncation_address;
-  bool need_to_modify_result = false;
+  HostCache::Entry entry =
+      MakeHostCacheEntry(OK, {"255.255.255.255", "10.0.0.1"});
+  std::vector<IPEndPoint> truncation_results;
 
-  bool result = MaybeNeedToProcessAddressList(
-      "example.com", legacy_addresses, true, out_addresses,
-      need_to_modify_result, truncation_address);
+  request_->MaybeModifyResolveLocallyResults(entry, truncation_results);
 
-  EXPECT_TRUE(result);
-  EXPECT_EQ(out_addresses.size(), 1u);
-  EXPECT_EQ(truncation_address.size(), 1u);
+  EXPECT_EQ(truncation_results.size(), 1u);
+  EXPECT_EQ(truncation_results[0].ToStringWithoutPort(), "255.255.255.255");
 }
 
-TEST_F(SecureDnsFallbackUtilsTest, MixedIPv4AndIPv6) {
-  StoreSuspectIPListAndSourceHostList(
-      {"10.0.0.1", "2001:db8::1"}, {"example.com"});
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResults_MulticastAddress) {
+  SetSuspectData({"example.com"}, {"224.0.0.1", "ff02::1"});
 
-  std::vector<IPEndPoint> legacy_addresses = {
-      MakeEndPoint("10.0.0.1"), MakeEndPoint("2001:db8::1"),
-      MakeEndPoint("192.168.1.1"), MakeEndPoint("2001:db8::2")};
-  std::vector<IPEndPoint> out_addresses;
-  std::vector<IPEndPoint> truncation_address;
-  bool need_to_modify_result = false;
+  HostCache::Entry entry =
+      MakeHostCacheEntry(OK, {"224.0.0.1", "ff02::1", "10.0.0.1"});
+  std::vector<IPEndPoint> truncation_results;
 
-  bool result = MaybeNeedToProcessAddressList(
-      "example.com", legacy_addresses, true, out_addresses,
-      need_to_modify_result, truncation_address);
+  request_->MaybeModifyResolveLocallyResults(entry, truncation_results);
 
-  EXPECT_TRUE(result);
-  EXPECT_EQ(out_addresses.size(), 2u);
-  EXPECT_EQ(truncation_address.size(), 2u);
+  EXPECT_EQ(truncation_results.size(), 2u);
 }
 
-TEST_F(SecureDnsFallbackUtilsTest, InvalidIPInSuspectList) {
-  // Store with one invalid IP (should be ignored)
-  StoreSuspectIPListAndSourceHostList({"10.0.0.1", "invalid-ip"}, {"example.com"});
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResults_LinkLocalAddress) {
+  SetSuspectData({"example.com"}, {"169.254.1.1", "fe80::1"});
 
-  std::vector<IPEndPoint> legacy_addresses = {MakeEndPoint("10.0.0.1")};
-  std::vector<IPEndPoint> out_addresses;
-  std::vector<IPEndPoint> truncation_address;
-  bool need_to_modify_result = false;
+  HostCache::Entry entry =
+      MakeHostCacheEntry(OK, {"169.254.1.1", "fe80::1", "10.0.0.1"});
+  std::vector<IPEndPoint> truncation_results;
 
-  bool result = MaybeNeedToProcessAddressList(
-      "example.com", legacy_addresses, true, out_addresses,
-      need_to_modify_result, truncation_address);
+  request_->MaybeModifyResolveLocallyResults(entry, truncation_results);
 
-  EXPECT_TRUE(result);
-  EXPECT_TRUE(out_addresses.empty());
-  EXPECT_EQ(truncation_address.size(), 1u);
-  EXPECT_TRUE(need_to_modify_result);
+  EXPECT_EQ(truncation_results.size(), 2u);
+  EXPECT_EQ(entry.ip_endpoints().size(), 1u);
 }
 
-TEST_F(SecureDnsFallbackUtilsTest, MultipleHostsInSourceList) {
-  StoreSuspectIPListAndSourceHostList(
-      {"10.0.0.1"}, {"example.com", "test.com", "demo.com"});
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResults_PublicDnsServers) {
+  SetSuspectData({"example.com"}, {"8.8.8.8", "8.8.4.4", "1.1.1.1"});
 
-  std::vector<IPEndPoint> legacy_addresses = {MakeEndPoint("10.0.0.1")};
+  HostCache::Entry entry =
+      MakeHostCacheEntry(OK, {"8.8.8.8", "8.8.4.4", "1.1.1.1", "192.168.1.1"});
+  std::vector<IPEndPoint> truncation_results;
 
-  // Test each host
-  for (const auto& host : {"example.com", "test.com", "demo.com"}) {
-    std::vector<IPEndPoint> out_addresses;
-    std::vector<IPEndPoint> truncation_address;
-    bool need_to_modify_result = false;
+  request_->MaybeModifyResolveLocallyResults(entry, truncation_results);
 
-    bool result = MaybeNeedToProcessAddressList(
-        host, legacy_addresses, true, out_addresses,
-        need_to_modify_result, truncation_address);
-
-    EXPECT_TRUE(result) << "Host: " << host;
-  }
+  EXPECT_EQ(truncation_results.size(), 3u);
+  EXPECT_EQ(entry.ip_endpoints().size(), 1u);
 }
 
-TEST_F(SecureDnsFallbackUtilsTest, SingleSuspectIPMatch) {
-  StoreSuspectIPListAndSourceHostList({"10.0.0.1"}, {"example.com"});
-
-  std::vector<IPEndPoint> legacy_addresses = {MakeEndPoint("10.0.0.1")};
-  std::vector<IPEndPoint> out_addresses;
-  std::vector<IPEndPoint> truncation_address;
-  bool need_to_modify_result = false;
-
-  bool result = MaybeNeedToProcessAddressList(
-      "example.com", legacy_addresses, true, out_addresses,
-      need_to_modify_result, truncation_address);
-
-  EXPECT_TRUE(result);
-  EXPECT_TRUE(out_addresses.empty());
-  EXPECT_EQ(truncation_address.size(), 1u);
-  EXPECT_TRUE(need_to_modify_result);
-}
-
-TEST_F(SecureDnsFallbackUtilsTest, RepeatedCallsWithDifferentData) {
-  // First call with initial data
-  StoreSuspectIPListAndSourceHostList({"10.0.0.1"}, {"example.com"});
-
-  std::vector<IPEndPoint> legacy_addresses1 = {MakeEndPoint("10.0.0.1")};
-  std::vector<IPEndPoint> out_addresses1;
-  std::vector<IPEndPoint> truncation_address1;
-  bool need_to_modify_result1 = false;
-
-  bool result1 = MaybeNeedToProcessAddressList(
-      "example.com", legacy_addresses1, true, out_addresses1,
-      need_to_modify_result1, truncation_address1);
-
-  EXPECT_TRUE(result1);
-
-  // Update with different data
-  StoreSuspectIPListAndSourceHostList({"192.168.1.1"}, {"test.com"});
-
-  std::vector<IPEndPoint> legacy_addresses2 = {MakeEndPoint("192.168.1.1")};
-  std::vector<IPEndPoint> out_addresses2;
-  std::vector<IPEndPoint> truncation_address2;
-  bool need_to_modify_result2 = false;
-
-  bool result2 = MaybeNeedToProcessAddressList(
-      "test.com", legacy_addresses2, true, out_addresses2,
-      need_to_modify_result2, truncation_address2);
-
-  EXPECT_TRUE(result2);
-
-  // Old host should no longer work
-  std::vector<IPEndPoint> legacy_addresses3 = {MakeEndPoint("10.0.0.1")};
-  std::vector<IPEndPoint> out_addresses3;
-  std::vector<IPEndPoint> truncation_address3;
-  bool need_to_modify_result3 = false;
-
-  bool result3 = MaybeNeedToProcessAddressList(
-      "example.com", legacy_addresses3, true, out_addresses3,
-      need_to_modify_result3, truncation_address3);
-
-  EXPECT_FALSE(result3);  // example.com is no longer in the list
-}
-
-TEST_F(SecureDnsFallbackUtilsTest, LargeSuspectList) {
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResults_LargeSuspectIPList) {
   std::vector<std::string> suspect_ips;
-  for (int i = 0; i < 100; ++i) {
-    suspect_ips.push_back("10.0." + std::to_string(i / 256) + "." +
-                          std::to_string(i % 256));
+  for (int i = 1; i <= 100; ++i) {
+    suspect_ips.push_back("192.168.1." + std::to_string(i));
   }
+  SetSuspectData({"example.com"}, suspect_ips);
 
-  StoreSuspectIPListAndSourceHostList(suspect_ips, {"example.com"});
+  std::vector<std::string> legacy_ip_strs;
+  for (int i = 1; i <= 50; ++i) {
+    legacy_ip_strs.push_back("192.168.1." + std::to_string(i));
+  }
+  legacy_ip_strs.push_back("10.0.0.1");
+  legacy_ip_strs.push_back("10.0.0.2");
+
+  HostCache::Entry entry = MakeHostCacheEntry(OK, legacy_ip_strs);
+  std::vector<IPEndPoint> truncation_results;
+
+  request_->MaybeModifyResolveLocallyResults(entry, truncation_results);
+
+  EXPECT_EQ(truncation_results.size(), 50u);
+  EXPECT_EQ(entry.ip_endpoints().size(), 2u);
+}
+
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResults_LargeHostList) {
+  std::vector<std::string> hosts;
+  for (int i = 1; i <= 100; ++i) {
+    hosts.push_back("host" + std::to_string(i) + ".example.com");
+  }
+  hosts.push_back("example.com");
+  SetSuspectData(hosts, {"192.168.1.1"});
+
+  HostCache::Entry entry = MakeHostCacheEntry(OK, {"192.168.1.1", "10.0.0.1"});
+  std::vector<IPEndPoint> truncation_results;
+
+  request_->MaybeModifyResolveLocallyResults(entry, truncation_results);
+
+  EXPECT_EQ(truncation_results.size(), 1u);
+}
+
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResults_LargeLegacyAddressList) {
+  SetSuspectData({"example.com"}, {"192.168.1.1"});
+
+  std::vector<std::string> legacy_ip_strs;
+  for (int i = 1; i <= 100; ++i) {
+    legacy_ip_strs.push_back("10.0.0." + std::to_string(i));
+  }
+  legacy_ip_strs.push_back("192.168.1.1");
+
+  HostCache::Entry entry = MakeHostCacheEntry(OK, legacy_ip_strs);
+  std::vector<IPEndPoint> truncation_results;
+
+  request_->MaybeModifyResolveLocallyResults(entry, truncation_results);
+
+  EXPECT_EQ(truncation_results.size(), 1u);
+  EXPECT_EQ(entry.ip_endpoints().size(), 100u);
+}
+
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResults_DuplicateSuspectIPs) {
+  SetSuspectData({"example.com"},
+                 {"192.168.1.1", "192.168.1.1", "10.0.0.1"});
+
+  HostCache::Entry entry =
+      MakeHostCacheEntry(OK, {"192.168.1.1", "10.0.0.1", "172.16.0.1"});
+  std::vector<IPEndPoint> truncation_results;
+
+  request_->MaybeModifyResolveLocallyResults(entry, truncation_results);
+
+  EXPECT_EQ(truncation_results.size(), 2u);
+}
+
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResults_DuplicateHosts) {
+  SetSuspectData({"example.com", "example.com", "test.org"}, {"192.168.1.1"});
+
+  HostCache::Entry entry = MakeHostCacheEntry(OK, {"192.168.1.1", "10.0.0.1"});
+  std::vector<IPEndPoint> truncation_results;
+
+  request_->MaybeModifyResolveLocallyResults(entry, truncation_results);
+
+  EXPECT_EQ(truncation_results.size(), 1u);
+}
+
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResults_DuplicateLegacyAddresses) {
+  SetSuspectData({"example.com"}, {"192.168.1.1"});
+
+  HostCache::Entry entry =
+      MakeHostCacheEntry(OK, {"192.168.1.1", "192.168.1.1", "10.0.0.1"});
+  std::vector<IPEndPoint> truncation_results;
+
+  request_->MaybeModifyResolveLocallyResults(entry, truncation_results);
+
+  EXPECT_EQ(truncation_results.size(), 2u);
+  EXPECT_EQ(entry.ip_endpoints().size(), 1u);
+}
+
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResults_HostNameWithUnderscore) {
+  SetSuspectData({"example_test.com"}, {"192.168.1.1"});
+
+  auto request_underscore = std::make_unique<HostResolverManager::RequestImpl>(
+      NetLogWithSource(), MakeHost("example_test.com", 443),
+      NetworkAnonymizationKey(), HostResolver::ResolveHostParameters(),
+      resolve_context_->GetWeakPtr(), base::WeakPtr<HostResolverManager>(),
+      base::DefaultTickClock::GetInstance());
+
+  HostCache::Entry entry = MakeHostCacheEntry(OK, {"192.168.1.1", "10.0.0.1"});
+  std::vector<IPEndPoint> truncation_results;
+
+  request_underscore->MaybeModifyResolveLocallyResults(entry, truncation_results);
+
+  EXPECT_EQ(truncation_results.size(), 1u);
+}
+
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResults_HostNameWithDash) {
+  SetSuspectData({"example-test.com"}, {"192.168.1.1"});
+
+  auto request_dash = std::make_unique<HostResolverManager::RequestImpl>(
+      NetLogWithSource(), MakeHost("example-test.com", 443),
+      NetworkAnonymizationKey(), HostResolver::ResolveHostParameters(),
+      resolve_context_->GetWeakPtr(), base::WeakPtr<HostResolverManager>(),
+      base::DefaultTickClock::GetInstance());
+
+  HostCache::Entry entry = MakeHostCacheEntry(OK, {"192.168.1.1", "10.0.0.1"});
+  std::vector<IPEndPoint> truncation_results;
+
+  request_dash->MaybeModifyResolveLocallyResults(entry, truncation_results);
+
+  EXPECT_EQ(truncation_results.size(), 1u);
+}
+
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResults_LongHostName) {
+  std::string long_host(200, 'a');
+  SetSuspectData({long_host}, {"192.168.1.1"});
+
+  auto request_long = std::make_unique<HostResolverManager::RequestImpl>(
+      NetLogWithSource(), MakeHost(long_host, 443), NetworkAnonymizationKey(),
+      HostResolver::ResolveHostParameters(), resolve_context_->GetWeakPtr(),
+      base::WeakPtr<HostResolverManager>(),
+      base::DefaultTickClock::GetInstance());
+
+  HostCache::Entry entry = MakeHostCacheEntry(OK, {"192.168.1.1", "10.0.0.1"});
+  std::vector<IPEndPoint> truncation_results;
+
+  request_long->MaybeModifyResolveLocallyResults(entry, truncation_results);
+
+  EXPECT_EQ(truncation_results.size(), 1u);
+}
+
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResultsAndUpdateResolveInfo_UpdatesResolveInfo) {
+  SetSuspectData({"example.com"}, {"192.168.1.1"});
+
+  HostCache::Entry entry = MakeHostCacheEntry(OK, {"192.168.1.1", "10.0.0.1"});
+
+  request_->MaybeModifyResolveLocallyResultsAndUpdateResolveInfo(
+      entry, kDnsResolvedByLocalDns);
+
+  const auto& info = request_->resolve_info_;
+  EXPECT_EQ(info.error_code, OK);
+  EXPECT_EQ(info.dns_status, kDnsResolvedByLocalDns);
+  EXPECT_EQ(info.truncation_ips.size(), 1u);
+  EXPECT_EQ(info.ip_endpoints.size(), 1u);
+}
+
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResultsAndUpdateResolveInfo_EmptyResults) {
+  ClearSuspectData();
+
+  HostCache::Entry entry = MakeHostCacheEntry(OK, {});
+
+  request_->MaybeModifyResolveLocallyResultsAndUpdateResolveInfo(
+      entry, kDnsResolvedUndefined);
+
+  const auto& info = request_->resolve_info_;
+  EXPECT_EQ(info.error_code, OK);
+  EXPECT_EQ(info.dns_status, kDnsResolvedUndefined);
+  EXPECT_TRUE(info.truncation_ips.empty());
+  EXPECT_TRUE(info.ip_endpoints.empty());
+}
+
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResultsAndUpdateResolveInfo_WithError) {
+  ClearSuspectData();
+
+  HostCache::Entry entry =
+      MakeHostCacheEntry(ERR_NAME_NOT_RESOLVED, {"192.168.1.1"});
+
+  request_->MaybeModifyResolveLocallyResultsAndUpdateResolveInfo(
+      entry, kDnsResolvedBySystemDns);
+
+  const auto& info = request_->resolve_info_;
+  EXPECT_EQ(info.error_code, ERR_NAME_NOT_RESOLVED);
+  EXPECT_EQ(info.dns_status, kDnsResolvedBySystemDns);
+}
+
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResultsAndUpdateResolveInfo_NoSuspectIps) {
+  SetSuspectData({"example.com"}, {"1.2.3.4"});
+
+  HostCache::Entry entry = MakeHostCacheEntry(OK, {"192.168.1.1", "10.0.0.1"});
+
+  request_->MaybeModifyResolveLocallyResultsAndUpdateResolveInfo(
+      entry, kDnsResolvedByHttpsDns);
+
+  const auto& info = request_->resolve_info_;
+  EXPECT_EQ(info.error_code, OK);
+  EXPECT_EQ(info.dns_status, kDnsResolvedByHttpsDns);
+  EXPECT_TRUE(info.truncation_ips.empty());
+  EXPECT_EQ(info.ip_endpoints.size(), 2u);
+}
+
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResultsAndUpdateResolveInfo_MultipleTruncationIps) {
+  SetSuspectData({"example.com"}, {"192.168.1.1", "10.0.0.1"});
+
+  HostCache::Entry entry =
+      MakeHostCacheEntry(OK, {"192.168.1.1", "10.0.0.1", "172.16.0.1"});
+
+  request_->MaybeModifyResolveLocallyResultsAndUpdateResolveInfo(
+      entry, kDnsResolvedByLocalDns);
+
+  const auto& info = request_->resolve_info_;
+  EXPECT_EQ(info.truncation_ips.size(), 2u);
+  EXPECT_EQ(info.ip_endpoints.size(), 1u);
+}
+
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResultsAndUpdateResolveInfo_AllTruncated) {
+  SetSuspectData({"example.com"}, {"192.168.1.1", "10.0.0.1"});
+
+  HostCache::Entry entry = MakeHostCacheEntry(OK, {"192.168.1.1", "10.0.0.1"});
+
+  request_->MaybeModifyResolveLocallyResultsAndUpdateResolveInfo(
+      entry, kDnsResolvedByLocalDns);
+
+  const auto& info = request_->resolve_info_;
+  EXPECT_EQ(info.truncation_ips.size(), 2u);
+  EXPECT_EQ(info.ip_endpoints.size(), 2u);
+}
+
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResultsAndUpdateResolveInfo_VariousDnsStatus) {
+  ClearSuspectData();
+
+  HostCache::Entry entry = MakeHostCacheEntry(OK, {"192.168.1.1"});
+
+  request_->MaybeModifyResolveLocallyResultsAndUpdateResolveInfo(
+      entry, kDnsResolvedFromHosts);
+  EXPECT_EQ(request_->resolve_info_.dns_status, kDnsResolvedFromHosts);
+
+  request_->MaybeModifyResolveLocallyResultsAndUpdateResolveInfo(
+      entry, kDnsResolvedFromInsecureCache);
+  EXPECT_EQ(request_->resolve_info_.dns_status, kDnsResolvedFromInsecureCache);
+
+  request_->MaybeModifyResolveLocallyResultsAndUpdateResolveInfo(
+      entry, kDnsResolvedFromSecureCache);
+  EXPECT_EQ(request_->resolve_info_.dns_status, kDnsResolvedFromSecureCache);
+
+  request_->MaybeModifyResolveLocallyResultsAndUpdateResolveInfo(
+      entry, kDnsResolvedBySystemDns);
+  EXPECT_EQ(request_->resolve_info_.dns_status, kDnsResolvedBySystemDns);
+
+  request_->MaybeModifyResolveLocallyResultsAndUpdateResolveInfo(
+      entry, kDnsResolvedByHttpsDns);
+  EXPECT_EQ(request_->resolve_info_.dns_status, kDnsResolvedByHttpsDns);
+}
+
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResultsAndUpdateResolveInfo_VariousErrorCodes) {
+  ClearSuspectData();
+
+  std::vector<int> error_codes = {OK,
+                                  ERR_NAME_NOT_RESOLVED,
+                                  ERR_DNS_CACHE_MISS,
+                                  ERR_CONNECTION_RESET,
+                                  ERR_TIMED_OUT,
+                                  ERR_INTERNET_DISCONNECTED};
+
+  for (int error : error_codes) {
+    HostCache::Entry entry = MakeHostCacheEntry(error, {"192.168.1.1"});
+
+    request_->MaybeModifyResolveLocallyResultsAndUpdateResolveInfo(
+        entry, kDnsResolvedByLocalDns);
+
+    EXPECT_EQ(request_->resolve_info_.error_code, error);
+  }
+}
+
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResultsAndUpdateResolveInfo_IPv6Endpoints) {
+  SetSuspectData({"example.com"}, {"::1", "2001:db8::1"});
+
+  HostCache::Entry entry =
+      MakeHostCacheEntry(OK, {"::1", "2001:db8::1", "::2"});
+
+  request_->MaybeModifyResolveLocallyResultsAndUpdateResolveInfo(
+      entry, kDnsResolvedByLocalDns);
+
+  const auto& info = request_->resolve_info_;
+  EXPECT_EQ(info.truncation_ips.size(), 2u);
+  EXPECT_EQ(info.ip_endpoints.size(), 1u);
+}
+
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResultsAndUpdateResolveInfo_MixedIPv4IPv6) {
+  SetSuspectData({"example.com"}, {"192.168.1.1", "::1"});
+
+  HostCache::Entry entry =
+      MakeHostCacheEntry(OK, {"192.168.1.1", "10.0.0.1", "::1", "::2"});
+
+  request_->MaybeModifyResolveLocallyResultsAndUpdateResolveInfo(
+      entry, kDnsResolvedByLocalDns);
+
+  const auto& info = request_->resolve_info_;
+  EXPECT_EQ(info.truncation_ips.size(), 2u);
+  EXPECT_EQ(info.ip_endpoints.size(), 2u);
+}
+
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResultsAndUpdateResolveInfo_PreservePortInEndpoints) {
+  SetSuspectData({"example.com"}, {"192.168.1.1"});
 
   std::vector<IPEndPoint> legacy_addresses;
-  legacy_addresses.push_back(MakeEndPoint("10.0.0.50"));
-  legacy_addresses.push_back(MakeEndPoint("192.168.1.1"));
+  legacy_addresses.push_back(MakeIPEndPoint("192.168.1.1", 80));
+  legacy_addresses.push_back(MakeIPEndPoint("10.0.0.1", 443));
 
-  std::vector<IPEndPoint> out_addresses;
-  std::vector<IPEndPoint> truncation_address;
-  bool need_to_modify_result = false;
+  constexpr base::TimeDelta kTtl = base::Seconds(3600);
+  HostCache::Entry entry(OK, legacy_addresses, std::set<std::string>(),
+                         HostCache::Entry::Source::SOURCE_DNS, kTtl);
 
-  bool result = MaybeNeedToProcessAddressList(
-      "example.com", legacy_addresses, true, out_addresses,
-      need_to_modify_result, truncation_address);
+  request_->MaybeModifyResolveLocallyResultsAndUpdateResolveInfo(
+      entry, kDnsResolvedByLocalDns);
 
-  EXPECT_TRUE(result);
-  EXPECT_EQ(out_addresses.size(), 1u);
-  EXPECT_EQ(truncation_address.size(), 1u);
+  const auto& info = request_->resolve_info_;
+  EXPECT_EQ(info.ip_endpoints.size(), 1u);
+  EXPECT_EQ(info.ip_endpoints[0], "10.0.0.1");
 }
 
-// ==================== Edge Cases Tests ====================
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResultsAndUpdateResolveInfo_HostNotInList) {
+  ClearSuspectData();
 
-TEST_F(SecureDnsFallbackUtilsTest, EmptyHostInSourceList) {
-  StoreSuspectIPListAndSourceHostList({"10.0.0.1"}, {""});
+  HostCache::Entry entry = MakeHostCacheEntry(OK, {"192.168.1.1", "10.0.0.1"});
 
-  std::vector<IPEndPoint> legacy_addresses = {MakeEndPoint("10.0.0.1")};
-  std::vector<IPEndPoint> out_addresses;
-  std::vector<IPEndPoint> truncation_address;
-  bool need_to_modify_result = false;
+  request_->MaybeModifyResolveLocallyResultsAndUpdateResolveInfo(
+      entry, kDnsResolvedByLocalDns);
 
-  bool result = MaybeNeedToProcessAddressList(
-      "", legacy_addresses, true, out_addresses,
-      need_to_modify_result, truncation_address);
-
-  EXPECT_TRUE(result);
+  const auto& info = request_->resolve_info_;
+  EXPECT_TRUE(info.truncation_ips.empty());
+  EXPECT_EQ(info.ip_endpoints.size(), 2u);
 }
 
-TEST_F(SecureDnsFallbackUtilsTest, SameIPMultipleTimesInLegacyAddresses) {
-  StoreSuspectIPListAndSourceHostList({"10.0.0.1"}, {"example.com"});
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResultsAndUpdateResolveInfo_LargeEndpointList) {
+  ClearSuspectData();
 
-  std::vector<IPEndPoint> legacy_addresses = {
-      MakeEndPoint("10.0.0.1"), MakeEndPoint("10.0.0.1")};
-  std::vector<IPEndPoint> out_addresses;
-  std::vector<IPEndPoint> truncation_address;
-  bool need_to_modify_result = false;
-
-  bool result = MaybeNeedToProcessAddressList(
-      "example.com", legacy_addresses, true, out_addresses,
-      need_to_modify_result, truncation_address);
-
-  EXPECT_TRUE(result);
-  EXPECT_TRUE(out_addresses.empty());
-  EXPECT_EQ(truncation_address.size(), 2u);
-  EXPECT_TRUE(need_to_modify_result);
-}
-
-TEST_F(SecureDnsFallbackUtilsTest, DohFallbackAvailableBoundary) {
-  StoreSuspectIPListAndSourceHostList({"10.0.0.1"}, {"example.com"});
-
-  std::vector<IPEndPoint> legacy_addresses = {MakeEndPoint("10.0.0.1")};
-
-  // Test with doh_fallback_available = true
-  {
-    std::vector<IPEndPoint> out_addresses;
-    std::vector<IPEndPoint> truncation_address;
-    bool need_to_modify_result = false;
-
-    bool result = MaybeNeedToProcessAddressList(
-        "example.com", legacy_addresses, true, out_addresses,
-        need_to_modify_result, truncation_address);
-
-    EXPECT_TRUE(result);
-    EXPECT_TRUE(need_to_modify_result);
+  std::vector<std::string> ip_strs;
+  for (int i = 1; i <= 100; ++i) {
+    ip_strs.push_back("10.0.0." + std::to_string(i));
   }
 
-  // Test with doh_fallback_available = false
-  {
-    std::vector<IPEndPoint> out_addresses;
-    std::vector<IPEndPoint> truncation_address;
-    bool need_to_modify_result = false;
+  HostCache::Entry entry = MakeHostCacheEntry(OK, ip_strs);
 
-    bool result = MaybeNeedToProcessAddressList(
-        "example.com", legacy_addresses, false, out_addresses,
-        need_to_modify_result, truncation_address);
+  request_->MaybeModifyResolveLocallyResultsAndUpdateResolveInfo(
+      entry, kDnsResolvedByLocalDns);
 
-    EXPECT_TRUE(result);
-    EXPECT_FALSE(need_to_modify_result);
-    EXPECT_EQ(out_addresses.size(), 1u);
-  }
+  const auto& info = request_->resolve_info_;
+  EXPECT_EQ(info.ip_endpoints.size(), 100u);
 }
 
-}  // namespace net
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResultsAndUpdateResolveInfo_EmptyEntryError) {
+  ClearSuspectData();
+
+  HostCache::Entry entry(ERR_NAME_NOT_RESOLVED, {}, std::set<std::string>(),
+                         HostCache::Entry::Source::SOURCE_DNS,
+                         base::Seconds(3600));
+
+  request_->MaybeModifyResolveLocallyResultsAndUpdateResolveInfo(
+      entry, kDnsResolvedUndefined);
+
+  const auto& info = request_->resolve_info_;
+  EXPECT_EQ(info.error_code, ERR_NAME_NOT_RESOLVED);
+  EXPECT_TRUE(info.ip_endpoints.empty());
+  EXPECT_TRUE(info.truncation_ips.empty());
+}
+
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResultsAndUpdateResolveInfo_MultipleCalls) {
+  SetSuspectData({"example.com"}, {"192.168.1.1"});
+
+  HostCache::Entry entry1 =
+      MakeHostCacheEntry(OK, {"192.168.1.1", "10.0.0.1"});
+  request_->MaybeModifyResolveLocallyResultsAndUpdateResolveInfo(
+      entry1, kDnsResolvedByLocalDns);
+
+  HostCache::Entry entry2 = MakeHostCacheEntry(OK, {"10.0.0.2", "10.0.0.3"});
+  request_->MaybeModifyResolveLocallyResultsAndUpdateResolveInfo(
+      entry2, kDnsResolvedByHttpsDns);
+  const auto& info2 = request_->resolve_info_;
+
+  EXPECT_EQ(info2.dns_status, kDnsResolvedByHttpsDns);
+  EXPECT_EQ(info2.ip_endpoints.size(), 2u);
+}
+
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResultsAndUpdateResolveInfo_TruncationIpString) {
+  SetSuspectData({"example.com"}, {"192.168.1.1", "10.0.0.1"});
+
+  HostCache::Entry entry =
+      MakeHostCacheEntry(OK, {"192.168.1.1", "10.0.0.1", "172.16.0.1"});
+
+  request_->MaybeModifyResolveLocallyResultsAndUpdateResolveInfo(
+      entry, kDnsResolvedByLocalDns);
+
+  const auto& info = request_->resolve_info_;
+  EXPECT_EQ(info.truncation_ips.size(), 2u);
+  EXPECT_EQ(info.truncation_ips[0], "192.168.1.1");
+  EXPECT_EQ(info.truncation_ips[1], "10.0.0.1");
+}
+
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResultsAndUpdateResolveInfo_IPv6TruncationString) {
+  SetSuspectData({"example.com"}, {"::1", "2001:db8::1"});
+
+  HostCache::Entry entry =
+      MakeHostCacheEntry(OK, {"::1", "2001:db8::1", "::2"});
+
+  request_->MaybeModifyResolveLocallyResultsAndUpdateResolveInfo(
+      entry, kDnsResolvedByLocalDns);
+
+  const auto& info = request_->resolve_info_;
+  EXPECT_EQ(info.truncation_ips.size(), 2u);
+  EXPECT_EQ(info.truncation_ips[0], "::1");
+  EXPECT_EQ(info.truncation_ips[1], "2001:db8::1");
+}
+
+TEST_F(HostResolverManagerRequestImplTest,
+       MaybeModifyResolveLocallyResultsAndUpdateResolveInfo_DnsCacheMissError) {
+  SetSuspectData({"example.com"}, {"192.168.1.1", "10.0.0.1"});
+
+  HostCache::Entry entry = MakeHostCacheEntry(OK, {"192.168.1.1", "10.0.0.1"});
+
+  request_->MaybeModifyResolveLocallyResultsAndUpdateResolveInfo(
+      entry, kDnsResolvedByLocalDns);
+
+  const auto& info = request_->resolve_info_;
+  EXPECT_EQ(info.error_code, OK);
+}
 
 #endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+
+}  // namespace net

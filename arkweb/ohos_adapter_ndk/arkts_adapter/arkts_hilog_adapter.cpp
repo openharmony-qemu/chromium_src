@@ -84,16 +84,6 @@ napi_env ArktsHilogAdapter::GetEnv()
     return env;
 }
 
-napi_value ArktsHilogAdapter::GetHilogModule()
-{
-    static napi_value hilogModule = nullptr;
-    napi_env env = GetEnv();
-    if (!hilogModule) {
-        napi_load_module_with_info(env, "@ohos.hilog", nullptr, &hilogModule);
-    }
-    return hilogModule;
-}
-
 int ArktsHilogAdapter::LogInternal(LogLevel level, const char* fmt, ...)
 {
     napi_env env = GetEnv();
@@ -107,7 +97,8 @@ int ArktsHilogAdapter::LogInternal(LogLevel level, const char* fmt, ...)
         return -1;
     }
 
-    napi_value hilogModule = GetHilogModule();
+    napi_value hilogModule;
+    napi_load_module_with_info(env, "@ohos.hilog", nullptr, &hilogModule);
     if (!hilogModule) {
         napi_close_handle_scope(env, scope);
         return -1;

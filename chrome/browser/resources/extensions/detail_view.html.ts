@@ -241,7 +241,7 @@ this text can be found by Ctrl + F because it isn't hidden. -->
       <div class="section-content">${this.data.id}</div>
     </div>
     ${this.inDevMode ? html`
-      <div class="section hr" id="inspectable-views" hidden = true>
+      <div class="section hr" id="inspectable-views">
         <div class="section-title" role="heading" aria-level="2">
           $i18n{itemInspectViews}
         </div>

@@ -397,8 +397,13 @@ url::Origin WebUIDataSourceImpl::GetOrigin() {
   } else {
     // |source_name_| must be of the form "some-host", which means it serves
     // URLs of the form "chrome://some-host/".
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+    result = url::Origin::CreateFromNormalizedTuple(kArkWebUIScheme,
+                                                    source_name_, 0);
+#else
     result = url::Origin::CreateFromNormalizedTuple(kChromeUIScheme,
                                                     source_name_, 0);
+#endif // ARKWEB_DEVTOOLS
   }
   CHECK(!result.opaque());
   return result;

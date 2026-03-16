@@ -105,9 +105,15 @@ void PopulateLocalResourceMap(
 bool ShouldIncludeDataSource(const url::Origin& origin,
                              const url::Origin& current_origin) {
   // We only support data sources that serve URLs of the form: chrome://*
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  if (origin.scheme() != kArkWebUIScheme && origin.scheme() != kChromeUIScheme) {
+    return false;
+  }
+#else
   if (origin.scheme() != kChromeUIScheme) {
     return false;
   }
+#endif // ARKWEB_DEVTOOLS
 
   if (!base::FeatureList::IsEnabled(
           features::kWebUIInProcessResourceLoadingV2)) {

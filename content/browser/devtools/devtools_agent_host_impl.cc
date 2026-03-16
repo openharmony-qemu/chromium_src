@@ -151,7 +151,9 @@ const char DevToolsAgentHost::kTypeAssistiveTechnology[] =
     "assistive_technology";
 const char DevToolsAgentHost::kTypeBrowserUI[] = "browser_ui";
 int DevToolsAgentHostImpl::s_force_creation_count_ = 0;
-
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+const char DevToolsAgentHost::kTypeExtensions[] = "extensions";
+#endif // ARKWEB_DEVTOOLS
 // static
 std::string DevToolsAgentHost::GetProtocolVersion() {
   // TODO(dgozman): generate this.

@@ -234,7 +234,12 @@ void RegisterChromeWebUIConfigs() {
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   map.AddWebUIConfig(std::make_unique<NetExportUIConfig>());
 #endif
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  map.AddWebUIConfig(std::make_unique<InspectUIConfig>());
+#endif // ARKWEB_DEVTOOLS
+#if BUILDFLAG(IS_ARKWEB)
   return;
+#endif // IS_ARKWEB
   map.AddWebUIConfig(std::make_unique<AccessibilityUIConfig>());
   map.AddWebUIConfig(std::make_unique<AutofillInternalsUIConfig>());
   map.AddWebUIConfig(std::make_unique<BluetoothInternalsUIConfig>());

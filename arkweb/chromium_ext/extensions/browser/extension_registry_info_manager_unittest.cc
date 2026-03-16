@@ -715,4 +715,27 @@ TEST_F(ExtensionRegistryInfoManagerTest, ContextListToStrVector_Test) {
   extensions::MenuItem::ContextList contextList0(extensions::MenuItem::Context::IMAGE);
   EXPECT_EQ(ContextListToStrVector(contextList0).size(), 1);
 }
+
+TEST_F(ExtensionRegistryInfoManagerTest, UnloadedReasonToState_Test) {
+  EXPECT_EQ(UnloadedReasonToState(UnloadedExtensionReason::DISABLE),
+            NWebExtensionState::DISABLED);
+  EXPECT_EQ(UnloadedReasonToState(UnloadedExtensionReason::TERMINATE),
+            NWebExtensionState::TERMINATED);
+  EXPECT_EQ(UnloadedReasonToState(UnloadedExtensionReason::BLOCKLIST),
+            NWebExtensionState::BLOCKLISTED);
+
+  EXPECT_EQ(UnloadedReasonToState(UnloadedExtensionReason::UNDEFINED),
+            NWebExtensionState::DISABLED);
+  EXPECT_EQ(UnloadedReasonToState(UnloadedExtensionReason::UPDATE),
+            NWebExtensionState::DISABLED);
+  EXPECT_EQ(UnloadedReasonToState(UnloadedExtensionReason::UNINSTALL),
+            NWebExtensionState::DISABLED);
+  EXPECT_EQ(UnloadedReasonToState(UnloadedExtensionReason::PROFILE_SHUTDOWN),
+            NWebExtensionState::DISABLED);
+  EXPECT_EQ(UnloadedReasonToState(UnloadedExtensionReason::LOCK_ALL),
+            NWebExtensionState::DISABLED);
+  EXPECT_EQ(
+      UnloadedReasonToState(UnloadedExtensionReason::MIGRATED_TO_COMPONENT),
+      NWebExtensionState::DISABLED);
+}
 }  // namespace extensions

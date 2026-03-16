@@ -920,8 +920,8 @@ void ChromeMainDelegate::CreateThreadPool(std::string_view name) {
       std::make_unique<ChromeThreadProfilerClient>());
 
 // `ChromeMainDelegateAndroid::PreSandboxStartup` creates the profiler a little
-// later. Same with CEF.
-#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(ENABLE_CEF)
+// later.
+#if !BUILDFLAG(IS_ANDROID)
   // Start the sampling profiler as early as possible - namely, once the thread
   // pool has been created.
   sampling_profiler_ = std::make_unique<MainThreadStackSamplingProfiler>();

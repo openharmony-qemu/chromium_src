@@ -70,6 +70,8 @@ extern const char KDisableOcclusionFeature[];
 extern const char KDisablePartialSwap[];
 extern const char kDisablePagePolicy[];
 extern const char kOhosTrace[];
+extern const char kOhosTempDir[];
+extern const char kOhosProcessType[];
 #endif
 }  // namespace switches
 

@@ -18,13 +18,6 @@
 #include <string>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
-
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
-
-#include "arkweb/chromium_ext/net/dns/public/resolve_info.h"
-#include "arkweb/chromium_ext/net/dns/secure_dns_fallback_utils.h"
-#include "base/functional/callback.h"
 #include "base/test/task_environment.h"
 #include "base/time/time.h"
 #include "build/build_config.h"
@@ -47,6 +40,10 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "url/scheme_host_port.h"
 
+#include "arkweb/build/features/features.h"
+#include "arkweb/chromium_ext/net/dns/public/resolve_info.h"
+#include "arkweb/chromium_ext/net/dns/secure_dns_fallback_utils.h"
+
 #define private public
 #define protected public
 #include "net/dns/host_resolver_manager.h"
@@ -55,6 +52,7 @@
 #undef private
 
 namespace net {
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 
 namespace {
 

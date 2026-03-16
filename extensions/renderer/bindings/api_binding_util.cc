@@ -132,9 +132,8 @@ void InitializeContext(v8::Local<v8::Context> context) {
 
 void InvalidateContext(v8::Local<v8::Context> context) {
   ContextInvalidationData* data =
-      GetPerContextData<ContextInvalidationData>(context, kCreateIfMissing);
-  if (!data)
-    return;
+      GetPerContextData<ContextInvalidationData>(context, kDontCreateIfMissing);
+  CHECK(data);
 
   data->Invalidate();
 }

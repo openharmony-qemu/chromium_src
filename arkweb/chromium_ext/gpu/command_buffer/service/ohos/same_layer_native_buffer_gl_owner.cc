@@ -161,7 +161,7 @@ std::unique_ptr<ScopedNativeBufferFenceSync>
 SameLayerNativeBufferGLOwner::GetNativeBuffer() {
   TRACE_EVENT0("gpu", "SameLayerNativeBufferGLOwner::GetNativeBuffer");
   base::AutoLock auto_lock(lock_);
-  if (!current_image_ref_) {
+  if (!current_image_ref_ || !loader_) {
     return nullptr;
   }
 

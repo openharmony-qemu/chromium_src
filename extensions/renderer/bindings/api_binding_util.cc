@@ -118,9 +118,9 @@ bool IsContextValidOrThrowError(v8::Local<v8::Context> context) {
 
 void InvalidateContext(v8::Local<v8::Context> context) {
   ContextInvalidationData* data =
-      GetPerContextData<ContextInvalidationData>(context, kCreateIfMissing);	 
-   if (!data)	 
-     return;
+      GetPerContextData<ContextInvalidationData>(context, kCreateIfMissing);
+  if (!data)
+    return;
 
   data->Invalidate();
 }

@@ -402,7 +402,7 @@ HTMLMediaElement::CollectMediaInfoAttributesForVAST() {
   mediaInfoAttr->isPlaying = !media_player->Paused();
   mediaInfoAttr->isShowPlaybackSpeed = true;
   mediaInfoAttr->show_download_button = !controls_list_->ShouldHideDownload();
-  mediaInfoAttr->supports_save = SupportsSave();
+  mediaInfoAttr->supports_save = SupportVideoAssistantDownload();
   mediaInfoAttr->fullscreen_overlay = true;
   mediaInfoAttr->icon_url = html_media_element_utils_.GetIconUrl();
   mediaInfoAttr->poster_url = GetUrlString(PosterImageURL());
@@ -515,6 +515,44 @@ void HTMLMediaElement::RequestExitFullscreenIfNeeded() {
     Fullscreen::ExitFullscreen(GetDocument());
   }
 }
+
+bool HTMLMediaElement::SupportVideoAssistantDownload() const {
+  // Check if download is disabled per settings.
+  if (GetDocument().GetSettings() &&
+      GetDocument().GetSettings()->GetHideDownloadUI()) {
+    return false;
+  }
+
+  // Get the URL that we'll use for downloading.
+  const KURL url = downloadURL();
+
+  // URLs that lead to nowhere are ignored.
+  if (url.IsNull() || url.IsEmpty())
+    return false;
+
+  // If we have no source, we can't download.
+  if (network_state_ == kNetworkEmpty || network_state_ == kNetworkNoSource)
+    return false;
+
+  // It is not useful to offer a save feature on local files.
+  if (url.IsLocalFile())
+    return false;
+
+  // MediaStream can't be downloaded.
+  if (GetLoadType() == WebMediaPlayer::kLoadTypeMediaStream)
+    return false;
+
+  // MediaSource can't be downloaded.
+  if (HasMediaSource())
+    return false;
+
+  // Infinite streams don't have a clear end at which to finish the download.
+  if (duration() == std::numeric_limits<double>::infinity())
+    return false;
+
+  return true;
+}
+
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
 #if BUILDFLAG(ARKWEB_PIP)

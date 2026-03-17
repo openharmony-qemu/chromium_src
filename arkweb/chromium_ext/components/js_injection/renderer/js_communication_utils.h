@@ -93,7 +93,7 @@ class JsCommunicationUtils {
   std::vector<std::unique_ptr<DocumentJavaScriptRegexRules>> swap_start_scripts_regex_rules_;
   std::vector<std::unique_ptr<DocumentJavaScriptRegexRules>> start_scripts_regex_rules_;
 
-  base::WeakPtrFactory<JsCommunication> weak_ptr_factory_{this}
+  base::WeakPtrFactory<JsCommunication> weak_ptr_factory_{this};
 };
 
 }  // namespace js_injection

@@ -39,14 +39,10 @@ class JsCommunicationUtils {
   void RemoveDocumentEndScript(int32_t script_id);
   void AddDocumentEndScriptRegexRules(mojom::DocumentJavaScriptRegexRulesPtr& script_regex_rules_ptr);
   void RunScriptsAtDocumentEnd();
-  static void RunScriptsAtDocumentEndInternal(
-      base::WeakPtr<JsCommunicationUtils> js_communication_utils);
 
   void AddHeadReadyScript(mojom::DocumentStartJavaScriptPtr& script_ptr);
   void RemoveHeadReadyScript(int32_t script_id);
   void RunScriptsAtHeadReady();
-  static void RunScriptsAtHeadReadyInternal(
-      base::WeakPtr<JsCommunicationUtils> js_communication_utils);
 
   void AddHeadReadyScriptRegexRules(mojom::DocumentJavaScriptRegexRulesPtr& script_regex_rules_ptr);
   void AddDocumentStartScriptRegexRules(mojom::DocumentJavaScriptRegexRulesPtr& script_regex_rules_ptr);
@@ -79,6 +75,12 @@ class JsCommunicationUtils {
     blink::WebString script;
     int32_t script_id;
   };
+
+  static void RunScriptsAtDocumentEndInternal(
+      base::WeakPtr<JsCommunicationUtils> js_communication_utils);
+  static void RunScriptsAtHeadReadyInternal(
+      base::WeakPtr<JsCommunicationUtils> js_communication_utils);
+
   raw_ptr<JsCommunication> jsCommunication_;
   std::vector<std::unique_ptr<DocumentEndJavaScript>> document_end_scripts_;
   std::vector<std::unique_ptr<DocumentStartJavaScript>> head_ready_scripts_;

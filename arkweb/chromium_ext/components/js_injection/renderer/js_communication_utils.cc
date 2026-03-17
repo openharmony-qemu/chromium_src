@@ -134,6 +134,7 @@ void JsCommunicationUtils::RunScriptsAtDocumentEnd() {
   // Careful 'this' may be destroyed.
 }
 
+// static
 void JsCommunicationUtils::RunScriptsAtDocumentEndInternal(
     base::WeakPtr<JsCommunicationUtils> js_communication_utils) {
   CHECK(js_communication_utils);
@@ -198,13 +199,13 @@ void JsCommunicationUtils::AddDocumentStartScriptRegexRules(
   start_scripts_regex_rules_.push_back(std::move(script_regex_rules));
 }
 
-void JsCommunicationUtils::RunScriptsAtHeadReadyInternal() {
+void JsCommunicationUtils::RunScriptsAtHeadReady() {
   RunScriptsAtHeadReadyInternal(weak_ptr_factory_.GetWeakPtr());
   // Careful 'this' may be destroyed.
 }
 
 // static
-static void JsCommunicationUtils::RunScriptsAtHeadReadyInternal(
+void JsCommunicationUtils::RunScriptsAtHeadReadyInternal(
     base::WeakPtr<JsCommunicationUtils> js_communication_utils) {
   CHECK(js_communication_utils);
   url::Origin frame_origin = url::Origin(

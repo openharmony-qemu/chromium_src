@@ -129,26 +129,39 @@ void JsCommunicationUtils::AddDocumentEndScriptRegexRules(
   end_scripts_regex_rules_.push_back(std::move(script_regex_rules));
 }
 
-void JsCommunicationUtils::RunScriptsAtDocumentEnd()
-{
+void JsCommunicationUtils::RunScriptsAtDocumentEnd() {
+  RunScriptsAtDocumentEndInternal(weak_ptr_factory_.GetWeakPtr());
+  // Careful 'this' may be destroyed.
+}
+
+void JsCommunicationUtils::RunScriptsAtDocumentEndInternal(
+    base::WeakPtr<JsCommunicationUtils> js_communication_utils) {
+  CHECK(js_communication_utils);
   url::Origin frame_origin = url::Origin(
-      jsCommunication_->render_frame()->GetWebFrame()->GetSecurityOrigin());
-  for (const auto& script : document_end_scripts_) {
+      js_communication_utils->jsCommunication_->render_frame()->
+      GetWebFrame()->GetSecurityOrigin());
+  for (const auto& script : js_communication_utils->document_end_scripts_) {
     if (!script->origin_matcher.rules().empty()) {
       if (!script->origin_matcher.Matches(frame_origin)) {
         continue;
       }
     } else {
-      if (!MatchUrlRegexRules(script->script, end_scripts_regex_rules_)) {
+      if (!js_communication_utils->MatchUrlRegexRules(script->script,
+          js_communication_utils->end_scripts_regex_rules_)) {
         continue;
       }
     }
 
-    jsCommunication_->render_frame()->GetWebFrame()->ExecuteScript(
+    js_communication_utils->jsCommunication_->render_frame()->GetWebFrame()->ExecuteScript(
         blink::WebScriptSource(script->script));
+    // Careful, executing a script may cause JsCommunicationUtils object to be
+    // destroyed.
+    if (!js_communication_utils) {
+      return;
+    }
   }
 
-  jsCommunication_->render_frame()->OnDocumentEndReady();
+  js_communication_utils->jsCommunication_->render_frame()->OnDocumentEndReady();
 }
 
 void JsCommunicationUtils::AddHeadReadyScript(
@@ -185,24 +198,37 @@ void JsCommunicationUtils::AddDocumentStartScriptRegexRules(
   start_scripts_regex_rules_.push_back(std::move(script_regex_rules));
 }
 
-void JsCommunicationUtils::RunScriptsAtHeadReady()
-{
-  url::Origin frame_origin = url::Origin(
-      jsCommunication_->render_frame()->GetWebFrame()->GetSecurityOrigin());
+void JsCommunicationUtils::RunScriptsAtHeadReadyInternal() {
+  RunScriptsAtHeadReadyInternal(weak_ptr_factory_.GetWeakPtr());
+  // Careful 'this' may be destroyed.
+}
 
-  for (const auto& script : head_ready_scripts_) {
+// static
+static void JsCommunicationUtils::RunScriptsAtHeadReadyInternal(
+    base::WeakPtr<JsCommunicationUtils> js_communication_utils) {
+  CHECK(js_communication_utils);
+  url::Origin frame_origin = url::Origin(
+      js_communication_utils->jsCommunication_->render_frame()->GetWebFrame()->GetSecurityOrigin());
+
+  for (const auto& script : js_communication_utils->head_ready_scripts_) {
     if (!script->origin_matcher.rules().empty()) {
       if (!script->origin_matcher.Matches(frame_origin)) {
         continue;
       }
     } else {
-      if (!MatchUrlRegexRules(script->script, head_ready_regex_rules_)) {
+      if (!js_communication_utils->MatchUrlRegexRules(script->script,
+          js_communication_utils->head_ready_regex_rules_)) {
         continue;
       }
     }
 
-    jsCommunication_->render_frame()->GetWebFrame()->ExecuteScript(
+    js_communication_utils->jsCommunication_->render_frame()->GetWebFrame()->ExecuteScript(
         blink::WebScriptSource(script->script));
+    // Careful, executing a script may cause JsCommunicationUtils object to be
+    // destroyed.
+    if (!js_communication_utils) {
+      return;
+    }
   }
 }
 

@@ -39,9 +39,15 @@ class JsCommunicationUtils {
   void RemoveDocumentEndScript(int32_t script_id);
   void AddDocumentEndScriptRegexRules(mojom::DocumentJavaScriptRegexRulesPtr& script_regex_rules_ptr);
   void RunScriptsAtDocumentEnd();
+
+  static void RunScriptsAtDocumentEndInternal(
+      base::WeakPtr<JsCommunicationUtils> js_communication_utils);
   void AddHeadReadyScript(mojom::DocumentStartJavaScriptPtr& script_ptr);
   void RemoveHeadReadyScript(int32_t script_id);
   void RunScriptsAtHeadReady();
+
+  static void RunScriptsAtHeadReadyInternal(
+      base::WeakPtr<JsCommunicationUtils> js_communication_utils);
   void AddHeadReadyScriptRegexRules(mojom::DocumentJavaScriptRegexRulesPtr& script_regex_rules_ptr);
   void AddDocumentStartScriptRegexRules(mojom::DocumentJavaScriptRegexRulesPtr& script_regex_rules_ptr);
 
@@ -84,6 +90,8 @@ class JsCommunicationUtils {
   std::vector<std::unique_ptr<DocumentJavaScriptRegexRules>> head_ready_regex_rules_;
   std::vector<std::unique_ptr<DocumentJavaScriptRegexRules>> swap_start_scripts_regex_rules_;
   std::vector<std::unique_ptr<DocumentJavaScriptRegexRules>> start_scripts_regex_rules_;
+
+  base::WeakPtrFactory<JsCommunication> weak_ptr_factory_{this}
 };
 
 }  // namespace js_injection

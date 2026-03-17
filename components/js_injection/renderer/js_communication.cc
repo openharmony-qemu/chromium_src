@@ -270,7 +270,8 @@ void JsCommunication::RunScriptsInternal(
         continue;
       }
     } else {
-      if (!implUtils_->RunScriptsAtDocumentStartRegexRules(script->script)) {
+      if (!js_communication->implUtils_->RunScriptsAtDocumentStartRegexRules(
+          script->script)) {
         continue;
       }
     }

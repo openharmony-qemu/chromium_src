@@ -39,15 +39,15 @@ class JsCommunicationUtils {
   void RemoveDocumentEndScript(int32_t script_id);
   void AddDocumentEndScriptRegexRules(mojom::DocumentJavaScriptRegexRulesPtr& script_regex_rules_ptr);
   void RunScriptsAtDocumentEnd();
-
   static void RunScriptsAtDocumentEndInternal(
       base::WeakPtr<JsCommunicationUtils> js_communication_utils);
+
   void AddHeadReadyScript(mojom::DocumentStartJavaScriptPtr& script_ptr);
   void RemoveHeadReadyScript(int32_t script_id);
   void RunScriptsAtHeadReady();
-
   static void RunScriptsAtHeadReadyInternal(
       base::WeakPtr<JsCommunicationUtils> js_communication_utils);
+
   void AddHeadReadyScriptRegexRules(mojom::DocumentJavaScriptRegexRulesPtr& script_regex_rules_ptr);
   void AddDocumentStartScriptRegexRules(mojom::DocumentJavaScriptRegexRulesPtr& script_regex_rules_ptr);
 

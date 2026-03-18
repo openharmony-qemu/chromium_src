@@ -274,6 +274,27 @@ bool HttpResponseInfo::InitFromPickle(const base::Pickle& pickle,
     remote_endpoint = IPEndPoint(ip_address, socket_address_port);
   }
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  // Read socket_local_address.
+  std::string socket_local_address_host;
+  if (!iter.ReadString(&socket_local_address_host)) {
+    return false;
+  }
+  // If the host was written, we always expect the port to follow.
+  uint16_t socket_local_address_port;
+  if (!iter.ReadUInt16(&socket_local_address_port)) {
+    return false;
+  }
+
+  IPAddress local_ip_address;
+  if (local_ip_address.AssignFromIPLiteral(socket_local_address_host)) {
+    local_endpoint = IPEndPoint(local_ip_address, socket_local_address_port);
+  } else if (ParseURLHostnameToAddress(socket_local_address_host,
+                                       &local_ip_address)) {
+    local_endpoint = IPEndPoint(local_ip_address, socket_local_address_port);
+  }
+#endif
+
   // Read protocol-version.
   if (flags & RESPONSE_INFO_HAS_ALPN_NEGOTIATED_PROTOCOL) {
     if (!iter.ReadString(&alpn_negotiated_protocol))
@@ -466,6 +487,11 @@ void HttpResponseInfo::Persist(base::Pickle* pickle,
 
   pickle->WriteString(remote_endpoint.ToStringWithoutPort());
   pickle->WriteUInt16(remote_endpoint.port());
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  pickle->WriteString(local_endpoint.ToStringWithoutPort());
+  pickle->WriteUInt16(local_endpoint.port());
+#endif
 
   if (was_alpn_negotiated)
     pickle->WriteString(alpn_negotiated_protocol);

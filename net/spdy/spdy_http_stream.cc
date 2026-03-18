@@ -232,6 +232,14 @@ int SpdyHttpStream::SendRequest(const HttpRequestHeaders& request_headers,
 
   response_info_ = response;
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  IPEndPoint local_ip_endpoint;
+  int rv = stream_->GetLocalAddress(&local_ip_endpoint);
+  if (rv == OK) {
+    response_info_->local_endpoint = local_ip_endpoint;
+  }
+#endif
+
   // Put the peer's IP address and port into the response.
   IPEndPoint address;
   int result = stream_->GetPeerAddress(&address);

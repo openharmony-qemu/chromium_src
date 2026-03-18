@@ -186,6 +186,7 @@ class NET_EXPORT HttpResponseInfo {
 
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   ResolveInfo resolve_info;
+  IPEndPoint local_endpoint;
 #endif
 
   // If the response headers indicate a 401 or 407 failure, then this structure

@@ -1447,6 +1447,7 @@ void URLRequestHttpJob::OnStartCompleted(int result) {
     case RetryState::DOH_FALLBACK:
 #if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING)
       if (is_retrying_secure_dns_only_) {
+        ReportSecureFallbackDnsRetryResult(result);
         if (is_retry_dns_on_dns_hijacking_) {
           ReportDnsFallbackOnDnsHijacking(std::string(request_->url().host()),
                                           original_net_error_, result);

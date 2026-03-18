@@ -159,4 +159,14 @@ void DnsUdpTracker::SaveIdMismatch(uint16_t id) {
   }
 }
 
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+void DnsUdpTracker::RecordLocalAddress(const IPEndPoint& address) {
+  local_address_ = address;
+}
+
+void DnsUdpTracker::GetLocalAddress(IPEndPoint* address) {
+  *address = local_address_;
+}
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+
 }  // namespace net

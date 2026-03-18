@@ -94,6 +94,7 @@ class NET_EXPORT ContextHostResolver : public HostResolver {
   }
 
 #if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  void GetLocalAddress(IPEndPoint* address) override;
   bool CanUseSecureDnsFallback() const override;
 #endif
 

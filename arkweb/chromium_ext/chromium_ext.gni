@@ -766,6 +766,7 @@ arkweb_media_gpu_unittest_sources = [
   "//arkweb/chromium_ext/media/gpu/ohos/shared_image_video_provider_unittest.cc",
   "//arkweb/chromium_ext/media/mojo/clients/mojo_renderer_wrapper_for_include_unittest.cc",
   "//arkweb/chromium_ext/media/gpu/ohos/codec_wrapper_unittest.cc",
+  "//arkweb/chromium_ext/media/gpu/ohos/frame_info_helper_unittest.cc",
 ]
 
 arkweb_content_browser_media_sources = [

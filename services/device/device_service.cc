@@ -44,6 +44,10 @@
 #include "services/device/compute_pressure/pressure_manager_impl.h"
 #endif
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/service/device/vibration/vibration_manager_ohos.h"
+#endif
+
 #if (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)) && defined(USE_UDEV)
 #include "services/device/hid/input_service_linux.h"
 #endif
@@ -206,6 +210,8 @@ void DeviceService::BindVibrationManager(
     mojo::PendingRemote<mojom::VibrationManagerListener> listener) {
 #if BUILDFLAG(IS_ANDROID)
   VibrationManagerAndroid::Create(std::move(receiver), std::move(listener));
+#elif BUILDFLAG(IS_ARKWEB)
+  VibrationManagerOhos::Create(std::move(receiver), std::move(listener));
 #else
   VibrationManagerImpl::Create(std::move(receiver), std::move(listener));
 #endif

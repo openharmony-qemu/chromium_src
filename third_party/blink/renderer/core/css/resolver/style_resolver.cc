@@ -2768,7 +2768,12 @@ StyleResolver::CacheSuccess StyleResolver::ApplyMatchedCache(
     InitStyle(element, style_request, *style_to_clone, style_to_clone,
               style_to_clone, state);
 
+#if BUILDFLAG(IS_ARKWEB)
+    if (cached_matched_properties->computed_style &&
+        cached_matched_properties->computed_style->CanAffectAnimations()) {
+#else
     if (cached_matched_properties->computed_style->CanAffectAnimations()) {
+#endif
       // Need to set this flag from the cached ComputedStyle to make
       // ShouldStoreOldStyle() correctly return true. We do not collect matching
       // rules when the cache is hit, and the flag is set as part of that

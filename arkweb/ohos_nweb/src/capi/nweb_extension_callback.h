@@ -25,6 +25,7 @@ struct NWebExtensionCallback {
   int nweb_id{0};
   void (*OnGetImageFromContextNode)(uint8_t* data, size_t size, int nweb_id);
   void (*OnGetImageFromCache)(uint8_t* data, size_t size, int nweb_id);
+  void (*OnClosedNWebID)(uint32_t nweb_id);
 };
 
 #endif  // OHOS_NWEB_SRC_NWEB_APP_CLIENT_EXTENSION_CALLBACK_H_

@@ -302,6 +302,7 @@ extern bool g_siteIsolationMode;
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
 #include "ohos_nweb_ex/core/static/nweb_static_dispatcher.h"
+#include "ohos_nweb_ex/core/web_extension/web_extension_dispatcher.h"
 #endif
 #if BUILDFLAG(ARKWEB_SLIDE_LTPO)
 #include "base/ohos/ltpo/include/sliding_observer.h"
@@ -1480,6 +1481,10 @@ NWebImpl::~NWebImpl() {
 #endif
   base::AutoLock lock_scope(nweb_map_lock_);
   g_nweb_map.Get().erase(nweb_id_);
+
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  NWebExtensionDispatcher::GetInstance().CheckDevtoolsNwebClosed(nweb_id_);
+#endif
 }
 
 bool NWebImpl::Init(std::shared_ptr<NWebCreateInfo> create_info) {

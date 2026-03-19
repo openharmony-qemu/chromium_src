@@ -214,7 +214,7 @@ std::string NWebDownloadHandlerDelegate::GenerateSuggestedFilename(
             << ", generated_filename: " << DesensitizeStr(generated_filename.AsUTF8Unsafe());
 
 #if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
-  // We don't replace the file extension if sfafe browsing consider the file
+  // We don't replace the file extension if safe browsing consider the file
   // extension to be unsafe. Just let safe browsing scan the generated file.
   if (safe_browsing::FileTypePolicies::GetInstance()->IsCheckedBinaryFile(
           generated_filename)) {

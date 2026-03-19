@@ -37,7 +37,8 @@ struct YUVMemcpyData {
   int32_t planes_cnt[MAXPLANES];
 };
 
-void AcquireYUVMemcpyData(YUVMemcpyData &data, scoped_refptr<VideoFrame> frame, std::shared_ptr<BufferRequestConfigAdapterImpl> configAdapter, 
+void AcquireYUVMemcpyData(YUVMemcpyData &data,
+    scoped_refptr<VideoFrame> frame, std::shared_ptr<BufferRequestConfigAdapterImpl> configAdapter,
     std::shared_ptr<SurfaceBufferAdapter> buffer_adapter,  const std::vector<size_t>& frame_planes_size)
 {
   data.dst_stride = buffer_adapter->GetStride();
@@ -67,7 +68,7 @@ CodecCodeAdapter CheckYUVMemcpyData(const YUVMemcpyData &data, scoped_refptr<Vid
     LOG(ERROR) << "addr is nullptr";
     return CodecCodeAdapter::ERROR;
   }
-  // check dst width and src stride 
+  // check dst width and src stride
   if (data.dst_width > data.src_planes_stride[VideoFrame::kYPlane] ||
       data.dst_width / SAMPLE_RATIO > data.src_planes_stride[VideoFrame::kUPlane] ||
       data.dst_width / SAMPLE_RATIO > data.src_planes_stride[VideoFrame::kVPlane]) {
@@ -80,22 +81,32 @@ CodecCodeAdapter CheckYUVMemcpyData(const YUVMemcpyData &data, scoped_refptr<Vid
     return CodecCodeAdapter::ERROR;
   }
   // Check the space of src to prevent data from being read out of bounds
+  if (!frame || !frame->shm_region()) {
+    LOG(ERROR) << "frame or shm_region is nullptr";
+    return CodecCodeAdapter::ERROR;
+  }
   uint64_t real_all_plane_space = frame->shm_region()->Map().size();
-  uint64_t y_required_plane_space = static_cast<uint64_t>(frame->layout().planes()[VideoFrame::kYPlane].offset) + data.src_size[VideoFrame::kYPlane];
-  uint64_t u_required_plane_space = static_cast<uint64_t>(frame->layout().planes()[VideoFrame::kUPlane].offset) + data.src_size[VideoFrame::kUPlane];
-  uint64_t v_required_plane_space = static_cast<uint64_t>(frame->layout().planes()[VideoFrame::kVPlane].offset) + data.src_size[VideoFrame::kVPlane];
+  uint64_t y_required_plane_space =
+      static_cast<uint64_t>(frame->layout().planes()[VideoFrame::kYPlane].offset) + data.src_size[VideoFrame::kYPlane];
+  uint64_t u_required_plane_space =
+      static_cast<uint64_t>(frame->layout().planes()[VideoFrame::kUPlane].offset) + data.src_size[VideoFrame::kUPlane];
+  uint64_t v_required_plane_space =
+      static_cast<uint64_t>(frame->layout().planes()[VideoFrame::kVPlane].offset) + data.src_size[VideoFrame::kVPlane];
   if (y_required_plane_space > real_all_plane_space || u_required_plane_space > real_all_plane_space ||
       v_required_plane_space > real_all_plane_space) {
     LOG(ERROR) << "plane size error, required plane space > real plane space!";
-    return CodecCodeAdapter::ERROR; 
+    return CodecCodeAdapter::ERROR;
   }
   // Check the src space and dst space to ensure that the dst space can accommodate all yuv data
   uint64_t required_dst_space = static_cast<uint64_t>(data.planes_cnt[VideoFrame::kYPlane]) * data.dst_stride +
       static_cast<uint64_t>(data.planes_cnt[VideoFrame::kUPlane]) * data.dst_stride / SAMPLE_RATIO +
       static_cast<uint64_t>(data.planes_cnt[VideoFrame::kVPlane]) * data.dst_stride / SAMPLE_RATIO;
-  uint64_t required_y_src_space = static_cast<uint64_t>(data.planes_cnt[VideoFrame::kYPlane]) * data.src_planes_stride[VideoFrame::kYPlane];
-  uint64_t required_u_src_space = static_cast<uint64_t>(data.planes_cnt[VideoFrame::kUPlane]) * data.src_planes_stride[VideoFrame::kUPlane];
-  uint64_t required_v_src_space = static_cast<uint64_t>(data.planes_cnt[VideoFrame::kVPlane]) * data.src_planes_stride[VideoFrame::kVPlane];
+  uint64_t required_y_src_space =
+      static_cast<uint64_t>(data.planes_cnt[VideoFrame::kYPlane]) * data.src_planes_stride[VideoFrame::kYPlane];
+  uint64_t required_u_src_space =
+      static_cast<uint64_t>(data.planes_cnt[VideoFrame::kUPlane]) * data.src_planes_stride[VideoFrame::kUPlane];
+  uint64_t required_v_src_space =
+      static_cast<uint64_t>(data.planes_cnt[VideoFrame::kVPlane]) * data.src_planes_stride[VideoFrame::kVPlane];
   if (required_dst_space > data.dst_size || required_y_src_space > data.src_size[VideoFrame::kYPlane] ||
       required_u_src_space > data.src_size[VideoFrame::kUPlane] ||
       required_v_src_space > data.src_size[VideoFrame::kVPlane]) {
@@ -132,18 +143,19 @@ CodecCodeAdapter CopyYUVData(const YUVMemcpyData &data, int32_t plane, uint8_t *
   return CodecCodeAdapter::OK;
 }
 
-CodecCodeAdapter FillSurfaceBufferData(YUVMemcpyData &data, scoped_refptr<VideoFrame> frame, std::shared_ptr<BufferRequestConfigAdapterImpl> configAdapter,
+CodecCodeAdapter FillSurfaceBufferData(YUVMemcpyData &data, scoped_refptr<VideoFrame> frame,
+    std::shared_ptr<BufferRequestConfigAdapterImpl> configAdapter,
     std::shared_ptr<SurfaceBufferAdapter> buffer_adapter)
 {
   LOG(DEBUG) << __FUNCTION__ << " enter";
-  std::vector<size_t> frame_planes_size = frame->GetPlaneSize(); 
-  if (frame_planes_size.size() < MAXPLANES) { 
-    LOG(ERROR) << "frame planes cnt < " << MAXPLANES; 
-    return CodecCodeAdapter::ERROR; 
+  std::vector<size_t> frame_planes_size = frame->GetPlaneSize();
+  if (frame_planes_size.size() < MAXPLANES) {
+    LOG(ERROR) << "frame planes cnt < " << MAXPLANES;
+    return CodecCodeAdapter::ERROR;
   }
   AcquireYUVMemcpyData(data, frame, configAdapter, buffer_adapter, frame_planes_size);
   if (CheckYUVMemcpyData(data, frame) != CodecCodeAdapter::OK) {
-    return CodecCodeAdapter::ERROR; 
+    return CodecCodeAdapter::ERROR;
   }
 
   uint8_t *dst = data.dst_addr.get();
@@ -344,7 +356,7 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::FillSurfaceBuffer(
     return CodecCodeAdapter::ERROR;
   }
   YUVMemcpyData data;
-  (void)memset_s(&data, sizeof(data), 0, sizeof(data)); 
+  (void)memset_s(&data, sizeof(data), 0, sizeof(data));
   int32_t fence;
   std::shared_ptr<BufferRequestConfigAdapterImpl> configAdapter = std::make_shared<BufferRequestConfigAdapterImpl>();
   configAdapter->SetWidth(frame->coded_size().width());

@@ -116,9 +116,13 @@ void FileTypePolicies::PopulateFromResourceBundle() {
 }
 
 void FileTypePolicies::PopulateFromDynamicUpdate(const std::string& binary_pb) {
+#if !BUILDFLAG(ARKWEB_EX_DOWNLOAD)
   AutoLock lock(lock_);
   UpdateResult result = PopulateFromBinaryPb(binary_pb);
   RecordUpdateMetrics(result, "DynamicUpdate");
+#else
+  return;
+#endif
 }
 
 FileTypePolicies::UpdateResult FileTypePolicies::PopulateFromBinaryPb(
@@ -242,6 +246,7 @@ const DownloadFileType& FileTypePolicies::PolicyForExtension(
   }
   auto itr = file_type_by_ext_.find(ascii_ext);
 
+#if !BUILDFLAG(ARKWEB_EX_DOWNLOAD)
   if (safe_browsing::IsInNotDangerousOverrideList(ascii_ext, source_url,
                                                   prefs)) {
     if (itr != file_type_by_ext_.end()) {
@@ -251,6 +256,7 @@ const DownloadFileType& FileTypePolicies::PolicyForExtension(
     return policy::GetOrCreatePolicyForExtensionOverrideNotDangerous(
         ascii_ext, config_->default_file_type());
   }
+#endif
 
   if (itr != file_type_by_ext_.end())
     return *itr->second;

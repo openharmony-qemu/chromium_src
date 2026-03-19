@@ -832,6 +832,7 @@ void OhosVideoDecoder::RecycleDmaBuffer() {
     LOG(INFO) << "DMABUF::OhosVideoDecoder, RecycleDmaBuffer";
     codec_->RecycleDmaBuffer();
   }
+  CancelPendingDecodes(DecoderStatus::Codes::kAborted);
 }
 
 void OhosVideoDecoder::ResumeDmaBuffer() {

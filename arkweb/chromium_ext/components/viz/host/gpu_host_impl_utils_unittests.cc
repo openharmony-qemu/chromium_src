@@ -212,12 +212,12 @@ class GpuHostImplTest : public testing::Test {
     auto env = std::make_unique<TestEnvironment>();
     ASSERT_NO_FATAL_FAILURE(env->gpu_host->DestroyNativeWindow(123));
   }
-#endif
 
   void TestDiscard() {
     auto env = std::make_unique<TestEnvironment>();
     ASSERT_NO_FATAL_FAILURE(env->gpu_host->Discard(123));
   }
+#endif
 };
 
 #if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
@@ -232,11 +232,11 @@ TEST_F(GpuHostImplTest, SetTransformHint) {
 TEST_F(GpuHostImplTest, DestroyNativeWindow) {
   TestDestroyNativeWindow();
 }
-#endif
 
 TEST_F(GpuHostImplTest, Discard) {
   TestDiscard();
 }
+#endif
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
     mojom::BlanklessSendInfoPtr CreateInfoPtr() {
@@ -400,6 +400,261 @@ TEST_F(GpuHostImplTest, SendBlanklessSnapshotInfo) {
 TEST_F(GpuHostImplTest, DumpBlanklessSnapshot) {
   TestDumpBlanklessSnapshot01();
   TestDumpBlanklessSnapshot02();
+}
+
+TEST_F(GpuHostImplTest, ClearBlanklessSnapshotInfo) {
+  DelegateMock delegate;
+  mojo::PendingRemote<viz::mojom::VizMain> viz_main_pending_remote;
+  auto viz_main_receiver = viz_main_pending_remote.InitWithNewPipeAndPassReceiver();
+  VizMainMock viz_main_mock;
+  mojo::Receiver<viz::mojom::VizMain> viz_main_receiver_impl(&viz_main_mock, std::move(viz_main_receiver));
+  GpuHostImpl::InitParams params;
+  GpuHostImpl gpu_host(&delegate, std::move(viz_main_pending_remote), std::move(params));
+
+  ASSERT_NO_FATAL_FAILURE(gpu_host.ClearBlanklessSnapshotInfo(0));
+  ASSERT_NO_FATAL_FAILURE(gpu_host.ClearBlanklessSnapshotInfo(123456789));
+  ASSERT_NO_FATAL_FAILURE(gpu_host.ClearBlanklessSnapshotInfo(UINT64_MAX));
+}
+
+TEST_F(GpuHostImplTest, ClearBlanklessSnapshotInfoWithDifferentKeys) {
+  DelegateMock delegate;
+  mojo::PendingRemote<viz::mojom::VizMain> viz_main_pending_remote;
+  auto viz_main_receiver = viz_main_pending_remote.InitWithNewPipeAndPassReceiver();
+  VizMainMock viz_main_mock;
+  mojo::Receiver<viz::mojom::VizMain> viz_main_receiver_impl(&viz_main_mock, std::move(viz_main_receiver));
+  GpuHostImpl::InitParams params;
+  GpuHostImpl gpu_host(&delegate, std::move(viz_main_pending_remote), std::move(params));
+
+  for (uint64_t key = 1; key <= 5; ++key) {
+    ASSERT_NO_FATAL_FAILURE(gpu_host.ClearBlanklessSnapshotInfo(key * 1000));
+  }
+}
+#endif
+
+#if BUILDFLAG(IS_ARKWEB)
+TEST_F(GpuHostImplTest, SetVisibleWithVisibleTrue) {
+  auto env = std::make_unique<TestEnvironment>();
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->SetVisible(static_cast<int>(1), true));
+}
+
+TEST_F(GpuHostImplTest, SetVisibleWithVisibleFalse) {
+  auto env = std::make_unique<TestEnvironment>();
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->SetVisible(static_cast<int>(1), false));
+}
+
+TEST_F(GpuHostImplTest, SetVisibleWithDifferentNwebIds) {
+  auto env = std::make_unique<TestEnvironment>();
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->SetVisible(static_cast<int>(0), true));
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->SetVisible(static_cast<int>(100), false));
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->SetVisible(static_cast<int>(INT32_MAX), true));
+}
+
+TEST_F(GpuHostImplTest, SetVisibleMultipleCalls) {
+  auto env = std::make_unique<TestEnvironment>();
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->SetVisible(static_cast<int>(1), true));
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->SetVisible(static_cast<int>(1), false));
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->SetVisible(static_cast<int>(1), true));
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->SetVisible(static_cast<int>(2), false));
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->SetVisible(static_cast<int>(2), true));
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_SLIDE_LTPO)
+TEST_F(GpuHostImplTest, SetHasTouchPointTrue) {
+  auto env = std::make_unique<TestEnvironment>();
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->SetHasTouchPoint(true));
+}
+
+TEST_F(GpuHostImplTest, SetHasTouchPointFalse) {
+  auto env = std::make_unique<TestEnvironment>();
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->SetHasTouchPoint(false));
+}
+
+TEST_F(GpuHostImplTest, SetHasTouchPointMultipleCalls) {
+  auto env = std::make_unique<TestEnvironment>();
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->SetHasTouchPoint(true));
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->SetHasTouchPoint(false));
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->SetHasTouchPoint(true));
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->SetHasTouchPoint(false));
+}
+
+TEST_F(GpuHostImplTest, ReportSlidingFrameRateWithZero) {
+  auto env = std::make_unique<TestEnvironment>();
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->ReportSlidingFrameRate(0));
+}
+
+TEST_F(GpuHostImplTest, ReportSlidingFrameRateWithCommonValues) {
+  auto env = std::make_unique<TestEnvironment>();
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->ReportSlidingFrameRate(30));
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->ReportSlidingFrameRate(60));
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->ReportSlidingFrameRate(90));
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->ReportSlidingFrameRate(120));
+}
+
+TEST_F(GpuHostImplTest, ReportSlidingFrameRateWithMaxValue) {
+  auto env = std::make_unique<TestEnvironment>();
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->ReportSlidingFrameRate(INT32_MAX));
+}
+
+TEST_F(GpuHostImplTest, SetLTPOStrategyWithZero) {
+  auto env = std::make_unique<TestEnvironment>();
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->SetLTPOStrategy(0));
+}
+
+TEST_F(GpuHostImplTest, SetLTPOStrategyWithDifferentValues) {
+  auto env = std::make_unique<TestEnvironment>();
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->SetLTPOStrategy(1));
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->SetLTPOStrategy(2));
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->SetLTPOStrategy(3));
+}
+
+TEST_F(GpuHostImplTest, SetLTPOStrategyWithNegativeValue) {
+  auto env = std::make_unique<TestEnvironment>();
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->SetLTPOStrategy(-1));
+}
+
+TEST_F(GpuHostImplTest, SetLTPOStrategyWithMaxValue) {
+  auto env = std::make_unique<TestEnvironment>();
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->SetLTPOStrategy(INT32_MAX));
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+TEST_F(GpuHostImplTest, StartMonitorWithZero) {
+  auto env = std::make_unique<TestEnvironment>();
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->StartMonitor(0));
+}
+
+TEST_F(GpuHostImplTest, StartMonitorWithPositiveId) {
+  auto env = std::make_unique<TestEnvironment>();
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->StartMonitor(1));
+}
+
+TEST_F(GpuHostImplTest, StartMonitorWithDifferentNwebIds) {
+  auto env = std::make_unique<TestEnvironment>();
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->StartMonitor(1));
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->StartMonitor(100));
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->StartMonitor(INT32_MAX));
+}
+
+TEST_F(GpuHostImplTest, StopMonitorBasic) {
+  auto env = std::make_unique<TestEnvironment>();
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->StopMonitor());
+}
+
+TEST_F(GpuHostImplTest, StartAndStopMonitor) {
+  auto env = std::make_unique<TestEnvironment>();
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->StartMonitor(1));
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->StopMonitor());
+}
+
+TEST_F(GpuHostImplTest, MultipleStartAndStopMonitor) {
+  auto env = std::make_unique<TestEnvironment>();
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->StartMonitor(1));
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->StopMonitor());
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->StartMonitor(2));
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->StopMonitor());
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->StartMonitor(3));
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->StopMonitor());
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
+TEST_F(GpuHostImplTest, GetSurfaceIdWithZero) {
+  auto env = std::make_unique<TestEnvironment>();
+  std::string surface_id = env->gpu_host->GetSurfaceId(0);
+  EXPECT_EQ(surface_id, "");
+}
+
+TEST_F(GpuHostImplTest, GetSurfaceIdWithNegativeId) {
+  auto env = std::make_unique<TestEnvironment>();
+  std::string surface_id = env->gpu_host->GetSurfaceId(-1);
+  EXPECT_EQ(surface_id, "");
+}
+
+TEST_F(GpuHostImplTest, GetSurfaceIdWithMaxId) {
+  auto env = std::make_unique<TestEnvironment>();
+  std::string surface_id = env->gpu_host->GetSurfaceId(INT32_MAX);
+  EXPECT_EQ(surface_id, "");
+}
+
+TEST_F(GpuHostImplTest, GetSurfaceIdWithDifferentIds) {
+  auto env = std::make_unique<TestEnvironment>();
+  for (int32_t i = 1; i <= 5; ++i) {
+    std::string surface_id = env->gpu_host->GetSurfaceId(i * 100);
+    EXPECT_EQ(surface_id, "");
+  }
+}
+
+TEST_F(GpuHostImplTest, SetTransformHintWithZeroRotation) {
+  auto env = std::make_unique<TestEnvironment>();
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->SetTransformHint(0, 1));
+}
+
+TEST_F(GpuHostImplTest, SetTransformHintWithDifferentRotations) {
+  auto env = std::make_unique<TestEnvironment>();
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->SetTransformHint(0, 1));
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->SetTransformHint(90, 2));
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->SetTransformHint(180, 3));
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->SetTransformHint(270, 4));
+}
+
+TEST_F(GpuHostImplTest, SetTransformHintWithZeroWindowId) {
+  auto env = std::make_unique<TestEnvironment>();
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->SetTransformHint(0, 0));
+}
+
+TEST_F(GpuHostImplTest, SetTransformHintWithMaxValues) {
+  auto env = std::make_unique<TestEnvironment>();
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->SetTransformHint(UINT32_MAX, UINT32_MAX));
+}
+
+TEST_F(GpuHostImplTest, SetTransformHintMultipleCalls) {
+  auto env = std::make_unique<TestEnvironment>();
+  for (uint32_t i = 0; i < 5; ++i) {
+    ASSERT_NO_FATAL_FAILURE(env->gpu_host->SetTransformHint(i * 90, i + 1));
+  }
+}
+
+TEST_F(GpuHostImplTest, DestroyNativeWindowWithZero) {
+  auto env = std::make_unique<TestEnvironment>();
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->DestroyNativeWindow(0));
+}
+
+TEST_F(GpuHostImplTest, DestroyNativeWindowWithDifferentIds) {
+  auto env = std::make_unique<TestEnvironment>();
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->DestroyNativeWindow(1));
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->DestroyNativeWindow(456));
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->DestroyNativeWindow(789));
+}
+
+TEST_F(GpuHostImplTest, DestroyNativeWindowWithMaxId) {
+  auto env = std::make_unique<TestEnvironment>();
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->DestroyNativeWindow(UINT32_MAX));
+}
+
+TEST_F(GpuHostImplTest, DiscardWithZero) {
+  auto env = std::make_unique<TestEnvironment>();
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->Discard(0));
+}
+
+TEST_F(GpuHostImplTest, DiscardWithDifferentIds) {
+  auto env = std::make_unique<TestEnvironment>();
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->Discard(1));
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->Discard(456));
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->Discard(789));
+}
+
+TEST_F(GpuHostImplTest, DiscardWithMaxId) {
+  auto env = std::make_unique<TestEnvironment>();
+  ASSERT_NO_FATAL_FAILURE(env->gpu_host->Discard(UINT32_MAX));
+}
+
+TEST_F(GpuHostImplTest, DiscardMultipleCalls) {
+  auto env = std::make_unique<TestEnvironment>();
+  for (uint32_t i = 0; i < 10; ++i) {
+    ASSERT_NO_FATAL_FAILURE(env->gpu_host->Discard(i * 100));
+  }
 }
 #endif
 } // namespace viz

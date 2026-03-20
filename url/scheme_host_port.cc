@@ -75,6 +75,12 @@ bool IsValidInput(std::string_view scheme,
   if (base::Contains(GetNoAccessSchemes(), scheme))
     return false;
 
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  if (scheme == url::kChromeUIScheme && host == url::kChromeUIInspectHost) {
+    return false;
+  }
+#endif // ARKWEB_DEVTOOLS
+
   SchemeType scheme_type = SCHEME_WITH_HOST_PORT_AND_USER_INFORMATION;
   bool is_standard = GetStandardSchemeType(
       scheme.data(),

@@ -839,6 +839,11 @@ arkweb_base_unittest_sources = [
   "//arkweb/chromium_ext/base/debug/arkweb_dump_info_unittest.cc",
 ]
 
+arkweb_base_allcator_partition_alloc_unittest_sources = [
+  "//arkweb/chromium_ext/base/allocator/partition_allocator/src/partition_alloc/partition_bucket_ohos_unittest.cc",
+  "//arkweb/chromium_ext/base/allocator/partition_allocator/src/partition_alloc/partition_root_ohos_unittest.cc",
+]
+
 arkweb_base_trace_event_sources = [
   "//arkweb/chromium_ext/base/trace_event/trace_event_ohos.cc",
   "//arkweb/chromium_ext/base/trace_event/trace_event_ohos.h",

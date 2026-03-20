@@ -85,12 +85,11 @@ CodecCodeAdapter CheckYUVMemcpyData(const YUVMemcpyData &data, scoped_refptr<Vid
     LOG(ERROR) << "frame or shm_region is nullptr";
     return CodecCodeAdapter::ERROR;
   }
-
-  uint64_t y_space_till_real_all_plane = frame->shm_region()->Map().size() - frame->layout().planes()[VideoFrame::kYPlane].offset;
-  uint64_t u_space_till_real_all_plane = frame->shm_region()->Map().size() - frame->layout().planes()[VideoFrame::kUPlane].offset;
-  uint64_t v_space_till_real_all_plane = frame->shm_region()->Map().size() - frame->layout().planes()[VideoFrame::kVPlane].offset;
-  if (y_space_till_real_all_plane < data.src_size[VideoFrame::kYPlane] || u_space_till_real_all_plane < data.src_size[VideoFrame::kUPlane] ||
-      v_space_till_real_all_plane < data.src_size[VideoFrame::kVPlane]) {
+  uint64_t y_space_till = frame->shm_region()->Map().size() - frame->layout().planes()[VideoFrame::kYPlane].offset;
+  uint64_t u_space_till = frame->shm_region()->Map().size() - frame->layout().planes()[VideoFrame::kUPlane].offset;
+  uint64_t v_space_till = frame->shm_region()->Map().size() - frame->layout().planes()[VideoFrame::kVPlane].offset;
+  if (y_space_till < data.src_size[VideoFrame::kYPlane] || u_space_till < data.src_size[VideoFrame::kUPlane] ||
+      v_space_till < data.src_size[VideoFrame::kVPlane]) {
     LOG(ERROR) << "plane size error, required plane space > real plane space!";
     return CodecCodeAdapter::ERROR;
   }

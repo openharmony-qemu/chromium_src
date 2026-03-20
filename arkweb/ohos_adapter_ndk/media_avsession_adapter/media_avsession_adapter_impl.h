@@ -29,7 +29,7 @@
 #include <multimedia/av_session/native_avsession.h>
 #include <multimedia/av_session/native_avsession_errors.h>
 
-#include "media_avsession_adapter.h"
+#include "arkweb/ohos_adapter_ndk/interfaces/media_avsession_adapter.h"
 #include "arkweb/ohos_adapter_ndk/ndk_callback_wrapper/callback_shared_wrapper.h"
 #include <multimedia/av_session/native_avqueueitem.h>
 #include <multimedia/av_session/native_avcastcontroller.h>

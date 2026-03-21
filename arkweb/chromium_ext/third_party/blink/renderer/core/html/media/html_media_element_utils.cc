@@ -332,6 +332,7 @@ media::mojom::blink::VideoAttributesForVASTPtr HTMLMediaElementUtils::CollectVid
   attributes->duration = htmlMediaElement_->duration();
   attributes->visible = htmlMediaElement_->video_visible_ && IsMediaPlayerShown() &&
       !htmlMediaElement_->video_rect_.IsEmpty();
+  attributes->is_hls = htmlMediaElement_->IsHLSURL(htmlMediaElement_->downloadURL());
   LOG(INFO) << "attributes->visible:" << attributes->visible;
   return attributes;
 }

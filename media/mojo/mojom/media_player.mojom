@@ -36,6 +36,7 @@ struct VideoAttributesForVAST {
   double duration;
   bool visible;
   bool show_cast_button;
+  bool is_hls;
 };
 
 [EnableIf=arkweb_video_assistant]
@@ -55,6 +56,7 @@ struct MediaInfoForVAST {
   bool show_download_button;
   bool supports_save;
   bool fullscreen_overlay;
+  bool is_hls;
 
   string poster_url;
   string icon_url;

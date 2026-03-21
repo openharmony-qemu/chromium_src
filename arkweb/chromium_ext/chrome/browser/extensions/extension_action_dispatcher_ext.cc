@@ -92,6 +92,10 @@ void ExtensionActionDispatcher::DispatchExtensionActionClickedWithCustomArgs(
     event_name = "action.onClicked";
   }
 
+  if (!custom_tab) {
+    LOG(ERROR) << "custom_tab is null, cannot dispatch event";
+    return;
+  }
   base::Value::List args;
   GURL gurl(custom_tab->url.value_or(""));
   constexpr mojom::ContextType context_type =

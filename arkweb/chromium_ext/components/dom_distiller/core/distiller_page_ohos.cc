@@ -157,13 +157,19 @@ bool DistillerPageOhos::DistillPageOhos(
     const GURL& gurl,
     dom_distiller::proto::DomDistillerOptions& options) {
   bool is_distill_catalog = false;
-  if (const auto* distill_options = GetDistillOptions()) {
+  const auto* distill_options = GetDistillOptions();
+  if (distill_options) {
     is_distill_catalog =
         distill_options->distill_type == DistillType::NOVEL_BOOKDETAIL;
+    if (!distill_options->distill_ext_info.empty()) {
+      options.set_distill_ext_info(distill_options->distill_ext_info);
+    }
   }
 
-  options.clear_xpath_config();
-  SetOptionsXpath(gurl, options);
+  if (!distill_options || distill_options->distill_type_ext != DistillTypeExt::ARTICLE) {
+    options.clear_xpath_config();
+    SetOptionsXpath(gurl, options);
+  }
   return is_distill_catalog;
 }
 #endif  // ARKWEB_READER_MODE

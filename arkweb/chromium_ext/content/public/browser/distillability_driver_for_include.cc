@@ -58,6 +58,13 @@ class DistillabilityServiceImplExt : public DistillabilityServiceImpl {
 
     std::move(callback).Run(std::move(distiller_info));
   }
+
+  void NotifyDidMeaningfulLayout(const std::string& url) override {
+    if (!distillability_driver_) {
+      return;
+    }
+    distillability_driver_->OnDidMeaningfulLayout(url);
+  }
 #endif
 };
 

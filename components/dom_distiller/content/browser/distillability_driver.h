@@ -52,6 +52,7 @@ class DistillabilityDriver
 #if BUILDFLAG(ARKWEB_READER_MODE)
   void DidStartNavigation(content::NavigationHandle* navigation_handle) override;
   void DidRedirectNavigation(content::NavigationHandle* navigation_handle) override;
+  void OnDidMeaningfulLayout(const std::string& url);
 #endif // ARKWEB_READER_MODE
 
  private:

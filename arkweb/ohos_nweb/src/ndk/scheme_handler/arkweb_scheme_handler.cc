@@ -16,6 +16,9 @@
 #include "ohos_nweb/src/capi/arkweb_scheme_handler.h"
 
 #include "base/logging.h"
+#include "base/task/sequenced_task_runner.h"
+#include "base/task/task_runner.h"
+#include "content/public/browser/browser_thread.h"
 #include "ohos_nweb/src/cef_delegate/nweb_application.h"
 #include "ohos_nweb/src/cef_delegate/nweb_scheme_handler_factory.h"
 #include "ohos_nweb/src/ndk/scheme_handler/http_body_stream.h"
@@ -512,7 +515,17 @@ ARKWEB_EXPORT void OH_ArkWeb_DestroySchemeHandler(
     return;
   }
 
-  delete scheme_handler;
+  LOG(INFO) << "destroy scheme handler. scheme_handler->fromEts is "
+            << scheme_handler->fromEts;
+  OHOS::NWeb::NWebSchemeHandlerFactory::ClearAllSchemeHandlers(scheme_handler);
+  if (!scheme_handler->fromEts) {
+    content::GetIOThreadTaskRunner({})->PostTask(
+        FROM_HERE,
+        base::BindOnce([](ArkWeb_SchemeHandler* handler) { delete handler; },
+                       scheme_handler));
+  } else {
+    delete scheme_handler;
+  }
 }
 
 ARKWEB_EXPORT int32_t

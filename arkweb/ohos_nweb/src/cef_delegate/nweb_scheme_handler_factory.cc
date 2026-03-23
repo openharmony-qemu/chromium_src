@@ -27,13 +27,14 @@ namespace {
 typedef std::map<std::string, CefRefPtr<OHOS::NWeb::NWebSchemeHandlerFactory>>
     SchemeHandlerFactoryMap;
 SchemeHandlerFactoryMap g_scheme_handler_factory_map;
-
+base::Lock g_scheme_handler_factory_map_lock;
 }  // namespace
 
 namespace OHOS::NWeb {
 
 CefRefPtr<NWebSchemeHandlerFactory>
 NWebSchemeHandlerFactory::GetOrCreateForScheme(const std::string& scheme) {
+  base::AutoLock scoped_lock(g_scheme_handler_factory_map_lock);
   if (!g_scheme_handler_factory_map.count(scheme)) {
     CefRefPtr<NWebSchemeHandlerFactory> factory =
         new NWebSchemeHandlerFactory();
@@ -46,6 +47,8 @@ NWebSchemeHandlerFactory::GetOrCreateForScheme(const std::string& scheme) {
 }
 
 void NWebSchemeHandlerFactory::ClearSchemeHandlers(const std::string& web_tag) {
+  LOG(DEBUG) << "ClearSchemeHandlers web_tag: " << web_tag;
+  base::AutoLock scoped_lock(g_scheme_handler_factory_map_lock);
   for (auto& factory : g_scheme_handler_factory_map) {
     if (factory.second) {
       factory.second->RemoveSchemeHandler(web_tag);
@@ -53,7 +56,32 @@ void NWebSchemeHandlerFactory::ClearSchemeHandlers(const std::string& web_tag) {
   }
 }
 
+void NWebSchemeHandlerFactory::ClearAllSchemeHandlers(ArkWeb_SchemeHandler* scheme_handler) {
+  LOG(DEBUG) << "ClearAllSchemeHandlers";
+  base::AutoLock scoped_lock(g_scheme_handler_factory_map_lock);
+  for (auto& factory : g_scheme_handler_factory_map) {
+    if (factory.second) {
+        factory.second->RemoveSchemeHandler(scheme_handler);
+        factory.second->RemoveServiceWorkerSchemeHandlerIfMatches(scheme_handler);
+    }
+  }
+}
+
+void NWebSchemeHandlerFactory::RemoveSchemeHandler(ArkWeb_SchemeHandler* scheme_handler) {
+    base::AutoLock scoped_lock(lock_);
+    for (auto it = scheme_handler_map_.begin(); it != scheme_handler_map_.end();) {
+        if (it->second == scheme_handler) {
+            LOG(ERROR) << "Destroy a not cleared schemehandler! ";
+            it = scheme_handler_map_.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
+
+
 void NWebSchemeHandlerFactory::ClearServiceWorkerSchemeHandler() {
+  base::AutoLock scoped_lock(g_scheme_handler_factory_map_lock);
   for (auto& factory : g_scheme_handler_factory_map) {
     if (factory.second) {
       factory.second->RemoveServiceWorkerSchemeHandler();
@@ -149,14 +177,13 @@ CefRefPtr<CefResourceHandler> NWebSchemeHandlerFactory::Create(
       new ArkWeb_ResourceHandler(resource_request, this, web_tag, false);
   handler->on_request_start(handler, resource_request, resource_handler,
                             &intercept);
-
+  LOG(INFO) << "scheme_handler on_request_start intercept: " << intercept
+            << " webTag: " << web_tag;
   if (!intercept) {
-    LOG(INFO) << "scheme_handler not intercept the request.";
     delete resource_request;
     delete resource_handler;
     return nullptr;
   }
-  LOG(DEBUG) << "scheme_handler will intercept the request.";
   return resource_handler->pipe_resource_handler_;
 }
 
@@ -195,6 +222,14 @@ void NWebSchemeHandlerFactory::RemoveSchemeHandler(const std::string& web_tag) {
 void NWebSchemeHandlerFactory::RemoveServiceWorkerSchemeHandler() {
   base::AutoLock scoped_lock(lock_);
   scheme_handler_for_sw_ = nullptr;
+}
+
+void NWebSchemeHandlerFactory::RemoveServiceWorkerSchemeHandlerIfMatches(
+    ArkWeb_SchemeHandler* scheme_handler) {
+  base::AutoLock scoped_lock(lock_);
+  if (scheme_handler_for_sw_ == scheme_handler) {
+    scheme_handler_for_sw_ = nullptr;
+  }
 }
 
 ArkWeb_SchemeHandler* NWebSchemeHandlerFactory::FromTag(

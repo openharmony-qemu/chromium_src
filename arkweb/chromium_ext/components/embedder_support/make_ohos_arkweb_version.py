@@ -15,24 +15,28 @@ def _ParseOptions():
 
 def ReadHeader(options):
     arkwebVersion = "4.1.6.1"
+    arkwebVersionFull = "4.1.6.1"
     with open(options.input_file, 'r') as f:
         data = json.load(f)
         if data is None:
-            return arkwebVersion
+            return arkwebVersion, arkwebVersionFull
         if "app" in data and "versionName" in data["app"]:
-            arkwebVersion = data["app"]["versionName"].split("sp")[0]
-    return arkwebVersion
+            versionName = data["app"]["versionName"]
+            arkwebVersion = versionName.split("sp")[0]
+            arkwebVersionFull = versionName
+    return arkwebVersion, arkwebVersionFull
 
-def WriteHeader(options, version):
+def WriteHeader(options, version, version_full):
     header_macros = "ARKWEB_VERSION_H"
     with open(options.output_file, "w") as output_file:
         output_file.write('#ifndef %s\n' % header_macros)
         output_file.write('#define %s\n\n' % header_macros)
         output_file.write('\n#define ARKWEB_VERSION \"%s\"\n' % version)
+        output_file.write('\n#define ARKWEB_VERSION_FULL \"%s"\n' % version_full)
         output_file.write('\n#endif  // %s\n' % header_macros)
 
 
 if '__main__' == __name__:
     options = _ParseOptions()
-    WriteHeader(options, ReadHeader(options))
-    
+    version, version_full = ReadHeader(options)
+    WriteHeader(options, version, version_full)

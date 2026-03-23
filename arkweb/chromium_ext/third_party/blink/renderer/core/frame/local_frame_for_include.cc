@@ -27,6 +27,9 @@
 #include "arkweb/chromium_ext/third_party/blink/renderer/core/editing/frame_selection_ext.h"
 #include "base/ohos/sys_info_utils_ext.h"
 #endif
+#if BUILDFLAG(ARKWEB_AI)
+#include "third_party/blink/renderer/core/fragment_directive/fragment_directive.h"
+#endif
 
 namespace blink {
   
@@ -278,21 +281,36 @@ void LocalFrame::StartHighlightFadeTimer(base::TimeDelta delay) {
       GetTaskRunner(TaskType::kInternalFindInPage));
 
   if (delay.is_zero()) {
-    ClearHighlight();
+    ClearHighlight(true);
   } else {
-    highlight_fade_timer_.Start(FROM_HERE, delay,
-                                WTF::BindOnce(&LocalFrame::ClearHighlight,
-                                              weak_local_frame_.GetWeakPtr()));
+    highlight_fade_timer_.Start(
+        FROM_HERE, delay,
+        WTF::BindOnce(base::IgnoreResult(&LocalFrame::ClearHighlight),
+                      weak_local_frame_.GetWeakPtr(), true));
   }
 }
 
-void LocalFrame::ClearHighlight() {
-  if (GetTextFragmentHandler() && GetSettings() &&
-      GetSettings()->GetArkwebAgentEnabled()) {
+bool LocalFrame::ClearHighlight(const bool ignoreSetting) {
+  if (GetTextFragmentHandler() &&
+      (ignoreSetting ||
+       (GetSettings() && GetSettings()->GetArkwebAgentEnabled()))) {
     GetTextFragmentHandler()->RemoveFragments();
-    return;
+    return true;
   }
   LOG(ERROR) << "LocalFrame::ClearHighlight failed, no handler.";
+  return false;
+}
+
+bool LocalFrame::ProcessFragment(const KURL& url) {
+  if (View() && GetDocument() && GetSettings() &&
+      GetSettings()->GetArkwebAgentEnabled()) {
+    GetDocument()->fragmentDirective().ConsumeFragmentDirective(url);
+    View()->ProcessUrlFragment(url, true, true);
+    return true;
+  }
+  LOG(ERROR)
+      << "HighlightSpecifiedContent ProcessFragment when using dataUrl failed";
+  return false;
 }
 #endif
 }  // namespace blink

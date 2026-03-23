@@ -152,6 +152,10 @@ void NWebPipeResourceHandler::GetResponseHeaders(
     int64_t& response_length,
     CefString& redirectUrl) {
   base::AutoLock scoped_lock_(lock_);
+  if (!response_) {
+    LOG_FEEDBACK(ERROR, kNetwork) << __func__ << " message:responseIsNull";
+  }
+
   LOG(DEBUG) << "scheme_handler get response headers url: "
              << url::LogUtils::ConvertUrlWithMask(response_->GetURL().ToString())
              << " status: " << response_->GetStatus()

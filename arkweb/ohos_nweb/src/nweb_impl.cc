@@ -1336,6 +1336,7 @@ void NWebImpl::UpdateAdblockEasyListRules(long adBlockEasyListVersion) {
 bool NWebImpl::InitializeICUStatic(
     std::shared_ptr<NWebEngineInitArgs> init_args) {
   if (NWebApplication::GetDefault()->HasInitializedCef()) {
+    WVLOG_I("cef already initialized, skip icu init.");
     return true;
   }
   WVLOG_I("will initialize icu.");

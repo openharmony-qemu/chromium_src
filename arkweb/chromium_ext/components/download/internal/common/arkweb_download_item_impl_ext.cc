@@ -273,6 +273,20 @@ void ArkWebDownloadItemImplExt::Cancel(bool user_cancel) {
   ReadDataFromDownloadFileDone(std::vector<uint8_t>());
 }
 
+void ArkWebDownloadItemImplExt::UpdateFullPath(
+    const base::FilePath& new_path) {
+  destination_info_.current_path = new_path;
+}
+
+void ArkWebDownloadItemImplExt::UpdateFullPathOverWriteState(
+    bool overwrite_state) {
+  is_full_path_overwrite = overwrite_state;
+}
+
+bool ArkWebDownloadItemImplExt::IsFullPathOverWrite() const {
+  return is_full_path_overwrite;
+}
+
 void ArkWebDownloadItemImplExt::SetByExtensionId(
     const std::string& extension_id) {
   extension_id_ = extension_id;

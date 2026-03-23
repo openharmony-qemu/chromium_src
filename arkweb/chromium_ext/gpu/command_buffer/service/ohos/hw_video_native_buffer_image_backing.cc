@@ -581,12 +581,28 @@ class HwVideoNativeBufferImageBacking::SkiaVkNBRepresentation
 gpu::ScopedNativeBufferHandle HwVideoNativeBufferImageBacking::GetNativeBufferHandle() const
 {
   TRACE_EVENT0("gpu", __PRETTY_FUNCTION__);
+  
+  if (!stream_texture_sii_) {
+    LOG(ERROR) << "stream_texture_sii_ is null.";
+    return gpu::ScopedNativeBufferHandle();
+  }
+  
   // Get the raw native buffer from the stream texture.
   // Retrieve the unique_ptr holding the native buffer fence sync.
   auto native_buffer_sync = stream_texture_sii_->GetNativeBuffer();
 
+  if (!native_buffer_sync) {
+    LOG(ERROR) << "Failed to get native buffer sync.";
+    return gpu::ScopedNativeBufferHandle();
+  }
+
   // Extract the raw native buffer pointer from the unique_ptr.
   OHOSNativeBuffer raw_native_buffer = native_buffer_sync->buffer();
+
+  if (!raw_native_buffer) {
+    LOG(ERROR) << "Native buffer is null.";
+    return gpu::ScopedNativeBufferHandle();
+  }
 
   // Adopt the raw pointer into a ScopedNativeBufferHandle.
   return gpu::ScopedNativeBufferHandle::Create(raw_native_buffer);

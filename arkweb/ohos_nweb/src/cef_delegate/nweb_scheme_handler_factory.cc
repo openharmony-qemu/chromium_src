@@ -62,6 +62,7 @@ void NWebSchemeHandlerFactory::ClearAllSchemeHandlers(ArkWeb_SchemeHandler* sche
   for (auto& factory : g_scheme_handler_factory_map) {
     if (factory.second) {
         factory.second->RemoveSchemeHandler(scheme_handler);
+        factory.second->RemoveServiceWorkerSchemeHandlerIfMatches(scheme_handler);
     }
   }
 }
@@ -221,6 +222,14 @@ void NWebSchemeHandlerFactory::RemoveSchemeHandler(const std::string& web_tag) {
 void NWebSchemeHandlerFactory::RemoveServiceWorkerSchemeHandler() {
   base::AutoLock scoped_lock(lock_);
   scheme_handler_for_sw_ = nullptr;
+}
+
+void NWebSchemeHandlerFactory::RemoveServiceWorkerSchemeHandlerIfMatches(
+    ArkWeb_SchemeHandler* scheme_handler) {
+  base::AutoLock scoped_lock(lock_);
+  if (scheme_handler_for_sw_ == scheme_handler) {
+    scheme_handler_for_sw_ = nullptr;
+  }
 }
 
 ArkWeb_SchemeHandler* NWebSchemeHandlerFactory::FromTag(

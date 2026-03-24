@@ -37,10 +37,13 @@
 #include "base/functional/callback_helpers.h"
 #include "base/logging.h"
 #include "base/ohos/task_scheduler/task_runner_ohos.h"
+#include "ohos/adapter/common/native_api/ui_input_event.h"
+#include "ohos/adapter/cursor/cursor.h"
 #include "ohos/adapter/task_runner/main_thread_task_runner.h"
 #include "ohos/adapter/xcomponent/adapter/window_adapter.h"
 #include "ohos/adapter/xcomponent/event/window_event_filter_adapter.h"
 #include "ohos/adapter/xcomponent/xcomponent_manager.h"
+#include "ui/display/screen.h"
 #include "ui/events/base_event_utils.h"
 #include "ui/events/event.h"
 #include "ui/events/event_constants.h"
@@ -98,10 +101,10 @@ void NodeHandleDragMoveEventCallback(const int32_t widget_id,
                                      const float window_y);
 
 void InitInputTouchEvent(const ArkUI_UIInputEvent* touch_event,
-                         ArkUI_TouchEventData& input_touch_event,
+                         NodeHandleTouchEventData& input_touch_event,
                          int index);
 
-bool CheckTouchEventData(ArkUI_TouchEventData& input_touch_event);
+bool CheckTouchEventData(NodeHandleTouchEventData& input_touch_event);
 
 void NodeHandlePanEventCallback(const ArkUI_GestureEventActionType action_type,
                                 const int32_t widget_id,
@@ -115,6 +118,10 @@ void NodeHandlePinchEventCallback(
 void NodeHandleSendWindowMouseEventForTabDragCallback(
     const int32_t widget_id,
     Input_MouseEvent* window_mouse_event);
+
+void NodeHandleSendWindowTouchEventForTabDragCallback(
+    const int32_t widget_id,
+    Input_TouchEvent* window_touch_event);
 
 OhosEventSourceNodeHandle::OhosEventSourceNodeHandle(
     OhosWindowManager* window_manager,
@@ -134,6 +141,8 @@ OhosEventSourceNodeHandle::OhosEventSourceNodeHandle(
   event_callback_->pinchEventCallback = &NodeHandlePinchEventCallback;
   event_callback_->sendWindowMouseEventForTabDragCallback =
       &NodeHandleSendWindowMouseEventForTabDragCallback;
+  event_callback_->sendWindowTouchEventForTabDragCallback =
+      &NodeHandleSendWindowTouchEventForTabDragCallback;
 }
 
 void OhosEventSourceNodeHandle::OnWindowAdded(OhosWindow* window) {
@@ -151,7 +160,8 @@ void OhosEventSourceNodeHandle::OnWindowRemoved(OhosWindow* window) {
 
 void OhosEventSourceNodeHandle::OnTouchEvent(
     const gfx::AcceleratedWidget widget_id,
-    const ArkUI_TouchEventData& touch_event_data) {
+    const NodeHandleTouchEventData& touch_event_data,
+    const int32_t display_id) {
   EventType type = GetTouchAction(touch_event_data.touch_action);
   gfx::Point touch_location(touch_event_data.x, touch_event_data.y);
   cursor_screen_point_.SetPoint(touch_event_data.display_x,
@@ -161,6 +171,7 @@ void OhosEventSourceNodeHandle::OnTouchEvent(
       pointer_type, touch_event_data.id, 0.0, 0.0, touch_event_data.force, 0.0,
       touch_event_data.tilt_x, touch_event_data.tilt_y);
   TouchEvent event(type, touch_location, EventTimeForNow(), pointer_details);
+  event.set_display_id(display_id);
   SetTargetAndDispatchEvent(widget_id, event);
 }
 
@@ -211,7 +222,7 @@ EventPointerType OhosEventSourceNodeHandle::GetPointType(
 
 void OhosEventSourceNodeHandle::OnMouseMoveEvent(
     const gfx::AcceleratedWidget widget_id,
-    const ArkUI_MouseEventData& mouse_event_data,
+    const NodeHandleMouseEventData& mouse_event_data,
     const gfx::PointF& original_location,
     const int32_t display_id) {
   OhosWindow* ohos_window =
@@ -220,10 +231,19 @@ void OhosEventSourceNodeHandle::OnMouseMoveEvent(
     LOG(WARNING) << "[multiinput]mouse move target window nullptr";
     return;
   }
-
-  if (pointer_location_.IsWithinDistance(original_location,
-                                         kMouseMoveLimitDistance)) {
-    return;
+  // At cursor locked state, the cursor position remains fixed,
+  // IsWithinDistance can not be used in this case.
+  if (ohos::adapter::common::SupportsGetRawDeltaFunc()) {
+    // An offset of 0 is considered as no movement
+    if (mouse_event_data.raw_delta_x == 0
+     && mouse_event_data.raw_delta_y == 0) {
+      return;
+    }
+  } else {
+    if (pointer_location_.IsWithinDistance(original_location,
+                                           kMouseMoveLimitDistance)) {
+      return;
+    }
   }
   if (mouse_event_data.screenX != 0 || mouse_event_data.screenY != 0) {
     // xcomponent BUG may send error data: screenX and screenY both 0
@@ -234,6 +254,12 @@ void OhosEventSourceNodeHandle::OnMouseMoveEvent(
   MouseEvent event(EventType::kMouseMoved, pointer_location_, pointer_location_,
                    EventTimeForNow(), flags, 0);
   event.set_display_id(display_id);
+  // Need to set movement data when cursor is locked
+  if (ohos::adapter::Cursor::GetInstance().IsCursorLocked()) {
+    gfx::Vector2dF raw_delta(mouse_event_data.raw_delta_x,
+                             mouse_event_data.raw_delta_y);
+    ui::MouseEvent::DispatcherApi(&event).set_movement(raw_delta);
+  }
   SetTargetAndDispatchEvent(widget_id, event);
 
   // Determine if the drag event needs to be ended if needed
@@ -242,7 +268,7 @@ void OhosEventSourceNodeHandle::OnMouseMoveEvent(
 
 void OhosEventSourceNodeHandle::OnMouseEvent(
     const gfx::AcceleratedWidget widget_id,
-    const ArkUI_MouseEventData& mouse_event_data,
+    const NodeHandleMouseEventData& mouse_event_data,
     const int32_t display_id,
     const EventFlags key_flags) {
   EventType type = EventType::kMousePressed;
@@ -250,7 +276,8 @@ void OhosEventSourceNodeHandle::OnMouseEvent(
   pointer_location_.SetPoint(mouse_event_data.x, mouse_event_data.y);
   if (mouse_event_data.action == UI_MOUSE_EVENT_ACTION_PRESS) {
     type = EventType::kMousePressed;
-  } else if (mouse_event_data.action == UI_MOUSE_EVENT_ACTION_RELEASE) {
+  } else if (mouse_event_data.action == UI_MOUSE_EVENT_ACTION_RELEASE ||
+             mouse_event_data.action == UI_MOUSE_EVENT_ACTION_CANCEL) {
     type = EventType::kMouseReleased;
   } else if (mouse_event_data.action == UI_MOUSE_EVENT_ACTION_MOVE) {
     OnMouseMoveEvent(widget_id, mouse_event_data, original_pointer_location,
@@ -294,13 +321,13 @@ void OhosEventSourceNodeHandle::OnMouseEvent(
 
 void OhosEventSourceNodeHandle::SimulateTouchUp(
     const gfx::AcceleratedWidget widget_id) {
-  ArkUI_TouchEventData touch_event_data;
+  NodeHandleTouchEventData touch_event_data;
   touch_event_data.id = kSimulateTouchEventId;
   touch_event_data.display_x = cursor_screen_point_.x();
   touch_event_data.display_y = cursor_screen_point_.y();
   touch_event_data.touch_action = UI_TOUCH_EVENT_ACTION_UP;
   touch_event_data.tool_type = UI_INPUT_EVENT_TOOL_TYPE_FINGER;
-  OnTouchEvent(widget_id, touch_event_data);
+  OnTouchEvent(widget_id, touch_event_data, display::kInvalidDisplayId);
 }
 
 void NodeHandleTouchEventCallback(const int32_t widget_id,
@@ -308,12 +335,12 @@ void NodeHandleTouchEventCallback(const int32_t widget_id,
   int32_t point_num = 0;
   point_num = OH_ArkUI_PointerEvent_GetPointerCount(touch_event);
   for (int index = 0; index < point_num; index++) {
-    ArkUI_TouchEventData input_touch_event;
+    NodeHandleTouchEventData input_touch_event;
     InitInputTouchEvent(touch_event, input_touch_event, index);
-
+    int32_t display_id = OH_ArkUI_UIInputEvent_GetTargetDisplayId(touch_event);
     auto task = base::BindOnce(
         [](const int32_t widget_id,
-           const ArkUI_TouchEventData& input_touch_event) {
+           const NodeHandleTouchEventData& input_touch_event, int32_t display_id) {
           auto* event_source = PlatformEventSource::GetInstance();
           if (event_source == nullptr) {
             LOG(WARNING) << "[multiinput]register touch event callback before "
@@ -321,16 +348,16 @@ void NodeHandleTouchEventCallback(const int32_t widget_id,
             return;
           }
           static_cast<OhosEventSourceNodeHandle*>(event_source)
-              ->OnTouchEvent(widget_id, input_touch_event);
+              ->OnTouchEvent(widget_id, input_touch_event, display_id);
         },
-        widget_id, std::move(input_touch_event));
+        widget_id, std::move(input_touch_event), display_id);
     base::TaskRunnerOHOS::GetUIThreadTaskRunner()->PostTask(FROM_HERE,
                                                             std::move(task));
   }
 }
 
 void InitInputTouchEvent(const ArkUI_UIInputEvent* touch_event,
-                         ArkUI_TouchEventData& input_touch_event,
+                         NodeHandleTouchEventData& input_touch_event,
                          int index) {
   input_touch_event.tool_type = OH_ArkUI_UIInputEvent_GetToolType(touch_event);
   input_touch_event.tilt_x = OH_ArkUI_PointerEvent_GetTiltX(touch_event, index);
@@ -407,26 +434,24 @@ void OhosEventSourceNodeHandle::OnPinchEvent(
 
 void OhosEventSourceNodeHandle::SendWindowMouseEventForTabDragNodeHandle(
     const gfx::AcceleratedWidget widget_id,
-    std::shared_ptr<ArkUI_MouseEventData> mouse_event_data,
+    std::shared_ptr<NodeHandleMouseEventData> mouse_event_data,
     const int32_t display_id,
     const EventFlags key_flags) {
   if (mouse_event_data == nullptr) {
-    LOG(ERROR) << "[OhosTabDrag] " << __FUNCTION__
+    LOG(ERROR) << "[OhosTabDragNodeHandle] " << __FUNCTION__
                << ", mouse_event_data is null";
     return;
   }
-  if (window_drag_manager_->NeedSendWindowMouseEventToUi(
-          widget_id, mouse_event_data->action)) {
-    OhosWindow* ohos_window = window_manager_->GetWindow(widget_id);
-    if (ohos_window) {
-      gfx::Rect window_bounds = ohos_window->GetBoundsInPixels();
-      mouse_event_data->x = mouse_event_data->screenX - window_bounds.x();
-      mouse_event_data->y = mouse_event_data->screenY - window_bounds.y();
-    }
+  if (window_drag_manager_->NeedSendWindowEventToUi(widget_id,
+                                                    mouse_event_data->action)) {
+    // Initialize internal coordinates of the component
+    PrepareXcomponentPointForMouseEvent(widget_id, mouse_event_data,
+                                        mouse_event_data->screenX,
+                                        mouse_event_data->screenY);
     // When the tab page drag is complete, the tab page drag parameter is
     // cleared
     if (mouse_event_data->action == UI_MOUSE_EVENT_ACTION_RELEASE) {
-      LOG(WARNING) << "[OhosTabDrag] " << __FUNCTION__
+      LOG(WARNING) << "[OhosTabDragNodeHandle] " << __FUNCTION__
                    << " tab dragging is ended"
                       ", widget_id:"
                    << widget_id;
@@ -434,6 +459,64 @@ void OhosEventSourceNodeHandle::SendWindowMouseEventForTabDragNodeHandle(
     }
     OnMouseEvent(widget_id, *mouse_event_data, display_id, key_flags);
   }
+}
+
+void OhosEventSourceNodeHandle::SendWindowTouchEventForTabDragNodeHandle(
+    const gfx::AcceleratedWidget widget_id,
+    std::shared_ptr<NodeHandleTouchEventData> touch_event_data,
+    const int32_t display_id) {
+  if (touch_event_data == nullptr) {
+    LOG(ERROR) << "[OhosTabDragNodeHandle] " << __FUNCTION__
+               << ", touch_event_data is null";
+    return;
+  }
+  if (window_drag_manager_->NeedSendWindowEventToUi(
+          widget_id, touch_event_data->touch_action, touch_event_data->id)) {
+    // Initialize internal coordinates of the component
+    PrepareXcomponentPointForTouchEvent(widget_id, touch_event_data,
+                                        touch_event_data->display_x,
+                                        touch_event_data->display_y);
+    // When the tab page drag is complete, the tab page drag parameter is
+    // cleared
+    if (touch_event_data->touch_action == UI_TOUCH_EVENT_ACTION_UP) {
+      LOG(WARNING) << "[OhosTabDragNodeHandle] " << __FUNCTION__
+                   << " tab dragging is ended"
+                      ", widget_id:"
+                   << widget_id;
+      EndTabDragging();
+    }
+    OnTouchEvent(widget_id, *touch_event_data, display_id);
+  }
+}
+
+void OhosEventSourceNodeHandle::PrepareXcomponentPointForTouchEvent(
+    const gfx::AcceleratedWidget widget_id,
+    std::shared_ptr<NodeHandleTouchEventData> touch_event_data,
+    const float display_x,
+    const float display_y) {
+  OhosWindow* ohos_window = window_manager_->GetWindow(widget_id);
+  if (ohos_window) {
+    gfx::Rect window_bounds = ohos_window->GetBoundsInPixels();
+    touch_event_data->x = touch_event_data->display_x - window_bounds.x();
+    touch_event_data->y = touch_event_data->display_y - window_bounds.y();
+  }
+}
+
+void OhosEventSourceNodeHandle::PrepareXcomponentPointForMouseEvent(
+    const gfx::AcceleratedWidget widget_id,
+    std::shared_ptr<NodeHandleMouseEventData> mouse_event_data,
+    const float display_x,
+    const float display_y) {
+  OhosWindow* ohos_window = window_manager_->GetWindow(widget_id);
+  if (ohos_window) {
+    gfx::Rect window_bounds = ohos_window->GetBoundsInPixels();
+    mouse_event_data->x = mouse_event_data->screenX - window_bounds.x();
+    mouse_event_data->y = mouse_event_data->screenY - window_bounds.y();
+  }
+  mouse_event_data->raw_delta_x =
+      mouse_event_data->screenX - cursor_screen_point_.x();
+  mouse_event_data->raw_delta_y =
+      mouse_event_data->screenY - cursor_screen_point_.y();
 }
 
 void NodeHandleMouseEventCallback(const int32_t widget_id,
@@ -452,7 +535,7 @@ void NodeHandleMouseEventCallback(const int32_t widget_id,
     OhosEventSourceBase::UpdateKeyFlagsByOhKeyState(key_flags);
   }
 
-  ArkUI_MouseEventData mouse_event_data;
+  NodeHandleMouseEventData mouse_event_data;
   mouse_event_data.x = OH_ArkUI_PointerEvent_GetX(mouse_event);
   mouse_event_data.y = OH_ArkUI_PointerEvent_GetY(mouse_event);
   mouse_event_data.screenX = OH_ArkUI_PointerEvent_GetDisplayX(mouse_event);
@@ -460,10 +543,16 @@ void NodeHandleMouseEventCallback(const int32_t widget_id,
   mouse_event_data.button = OH_ArkUI_MouseEvent_GetMouseButton(mouse_event);
   mouse_event_data.timestamp = timestamp;
   mouse_event_data.action = action;
+  if (ohos::adapter::common::SupportsGetRawDeltaFunc()) {
+      mouse_event_data.raw_delta_x =
+        ohos::adapter::common::MouseEventGetRawDeltaX(mouse_event);
+      mouse_event_data.raw_delta_y =
+        ohos::adapter::common::MouseEventGetRawDeltaY(mouse_event);
+  }
 
   int32_t display_id = OH_ArkUI_UIInputEvent_GetTargetDisplayId(mouse_event);
   auto task = base::BindOnce(
-      [](const int32_t widget_id, const ArkUI_MouseEventData mouse_event_data,
+      [](const int32_t widget_id, const NodeHandleMouseEventData mouse_event_data,
          int32_t display_id, const EventFlags key_flags) {
         auto* event_source = PlatformEventSource::GetInstance();
         if (event_source == nullptr) {
@@ -770,7 +859,7 @@ int32_t ConvertInputEventButtonFromWindowMouseEvent(
 
 void ConvertWindowMouseEventToInputEvent(
     Input_MouseEvent* window_mouse_event,
-    std::shared_ptr<ArkUI_MouseEventData> mouse_event_data) {
+    std::shared_ptr<NodeHandleMouseEventData> mouse_event_data) {
   WindowEventFilterAdapter& window_event_filter_adapter =
       WindowEventFilterAdapter::GetInstance();
   int32_t window_mouse_action =
@@ -802,16 +891,17 @@ void NodeHandleSendWindowMouseEventForTabDragCallback(
     Input_MouseEvent* window_mouse_event) {
   if (window_mouse_event == nullptr) {
     LOG(ERROR) << __FUNCTION__
-               << "[OhosTabDrag]mouse event is null,widget_id:" << widget_id;
+               << "[OhosTabDragNodeHandle]mouse event is null,widget_id:"
+               << widget_id;
     return;
   }
-  std::shared_ptr<ArkUI_MouseEventData> mouse_event_data =
-      std::make_shared<ArkUI_MouseEventData>();
+  std::shared_ptr<NodeHandleMouseEventData> mouse_event_data =
+      std::make_shared<NodeHandleMouseEventData>();
   ConvertWindowMouseEventToInputEvent(window_mouse_event, mouse_event_data);
   if (OhosEventFilter::GetInstance().CheckFilterMouseEvent(
           widget_id, mouse_event_data->timestamp, mouse_event_data->action)) {
     DLOG(ERROR) << __FUNCTION__
-                << "[OhosTabDrag]mouse event is filtered,widget_id:"
+                << "[OhosTabDragNodeHandle]mouse event is filtered,widget_id:"
                 << widget_id << ", action:" << mouse_event_data->action;
     return;
   }
@@ -827,12 +917,12 @@ void NodeHandleSendWindowMouseEventForTabDragCallback(
   }
   auto task = base::BindOnce(
       [](const int32_t widget_id,
-         const std::shared_ptr<ArkUI_MouseEventData> mouse_event_data,
+         const std::shared_ptr<NodeHandleMouseEventData> mouse_event_data,
          int32_t display_id, EventFlags key_flags) {
         auto* event_source = PlatformEventSource::GetInstance();
         if (event_source == nullptr) {
           LOG(WARNING) << __FUNCTION__
-                       << "[OhosTabDrag]send window mouse event fail,"
+                       << "[OhosTabDragNodeHandle]send window mouse event fail,"
                           " event_source is null";
           return;
         }
@@ -841,6 +931,102 @@ void NodeHandleSendWindowMouseEventForTabDragCallback(
                 widget_id, mouse_event_data, display_id, key_flags);
       },
       widget_id, std::move(mouse_event_data), display_id, key_flags);
+  base::TaskRunnerOHOS::GetUIThreadTaskRunner()->PostTask(FROM_HERE,
+                                                          std::move(task));
+}
+
+int32_t ConvertTouchEventActionFromWindowTouchEvent(int32_t window_touch_action) {
+  int32_t touch_event_action = UI_TOUCH_EVENT_ACTION_CANCEL;
+  switch (window_touch_action) {
+    case TOUCH_ACTION_MOVE:
+      touch_event_action = UI_TOUCH_EVENT_ACTION_MOVE;
+      break;
+    case TOUCH_ACTION_DOWN:
+      touch_event_action = UI_TOUCH_EVENT_ACTION_DOWN;
+      break;
+    case TOUCH_ACTION_UP:
+      touch_event_action = UI_TOUCH_EVENT_ACTION_UP;
+      break;
+    case TOUCH_ACTION_CANCEL:
+      touch_event_action = UI_TOUCH_EVENT_ACTION_CANCEL;
+      break;
+    default:
+      DLOG(INFO) << __FUNCTION__
+                 << "touch_event_action is not useful:"
+                 << window_touch_action;
+      break;
+  }
+  return touch_event_action;
+}
+
+void ConvertWindowTouchEventToInputEvent(
+    Input_TouchEvent* window_touch_event,
+    std::shared_ptr<NodeHandleTouchEventData> touch_event_data) {
+  WindowEventFilterAdapter& window_event_filter_adapter =
+      WindowEventFilterAdapter::GetInstance();
+  int32_t window_touch_action =
+      window_event_filter_adapter.GetWindowTouchEventAction(window_touch_event);
+  int32_t display_x = window_event_filter_adapter.GetWindowTouchEventDisplayX(
+      window_touch_event);
+  int32_t display_y = window_event_filter_adapter.GetWindowTouchEventDisplayY(
+      window_touch_event);
+  int32_t window_touch_finger_id =
+      window_event_filter_adapter.GetWindowTouchEventFingerId(
+          window_touch_event);
+  int64_t action_time =
+      window_event_filter_adapter.GetWindowTouchEventActionTime(
+          window_touch_event);
+  touch_event_data->id = window_touch_finger_id;
+  touch_event_data->touch_action =
+      ConvertTouchEventActionFromWindowTouchEvent(window_touch_action);
+  touch_event_data->display_x = display_x;
+  touch_event_data->display_y = display_y;
+  // The unit of the touch event timestamp from the window is millisecond.
+  // The unit of the touch event in the xcomponent is microsecond.
+  touch_event_data->timestamp =
+      action_time * OhosEventSourceBase::kMicrosecondsUnit;
+}
+
+void NodeHandleSendWindowTouchEventForTabDragCallback(
+    const int32_t widget_id,
+    Input_TouchEvent* window_touch_event) {
+  if (window_touch_event == nullptr) {
+    LOG(ERROR) << __FUNCTION__ << " touch event is null,widget_id:"
+               << widget_id;
+    return;
+  }
+  std::shared_ptr<NodeHandleTouchEventData> touch_event_data =
+      std::make_shared<NodeHandleTouchEventData>();
+  ConvertWindowTouchEventToInputEvent(window_touch_event, touch_event_data);
+  if (OhosEventFilter::GetInstance().CheckFilterTouchEvent(
+      widget_id, touch_event_data->timestamp,
+      touch_event_data->touch_action, touch_event_data->id)) {
+    DLOG(ERROR) << __FUNCTION__
+                << " mouse event is filtered, widget_id:" << widget_id
+                << ", action:" << touch_event_data->touch_action;
+    return;
+  }
+  OhosEventFilter::GetInstance().RefreshTouchEvent(
+      widget_id, touch_event_data->timestamp, touch_event_data->touch_action,
+      touch_event_data->id);
+  int32_t display_id =
+      WindowEventFilterAdapter::GetInstance().GetWindowTouchEventDisplayId(
+          window_touch_event);
+  auto task = base::BindOnce(
+      [](const int32_t widget_id,
+         const std::shared_ptr<NodeHandleTouchEventData> touch_event_data,
+         int32_t display_id) {
+        auto* event_source = PlatformEventSource::GetInstance();
+        if (event_source == nullptr) {
+          LOG(WARNING) << "[OhosTabDragNodeHandle]register " << __FUNCTION__
+                       << " before event source created";
+          return;
+        }
+        reinterpret_cast<OhosEventSourceNodeHandle*>(event_source)
+            ->SendWindowTouchEventForTabDragNodeHandle(
+            widget_id, touch_event_data, display_id);
+      },
+      widget_id, std::move(touch_event_data), display_id);
   base::TaskRunnerOHOS::GetUIThreadTaskRunner()->PostTask(FROM_HERE,
                                                           std::move(task));
 }

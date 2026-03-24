@@ -81,9 +81,9 @@ function restore(id: number) {
   implAppWindowAdapter().restore(id);
 }
 
-function shiftWindowEvent(sourceId: number, targetId: number,
+function shiftWindowMouseEvent(sourceId: number, targetId: number,
                           callback: (result: boolean) => void) {
-  implAppWindowAdapter().shiftWindowEvent(sourceId, targetId, callback);
+  implAppWindowAdapter().shiftWindowMouseEvent(sourceId, targetId, callback);
 }
 
 function startWindowMovingWithOffset(id: number, offsetX: number, offsetY: number) {
@@ -96,6 +96,15 @@ function getOriginWindowIds(windowIds: Array<number>): Array<number> {
 
 function bind(id: string, callback: (nodeContent: NodeContent | undefined) => void) {
   implAppWindowAdapter().bind(id, callback);
+}
+
+function unbind(id: string, callback: (nodeContent: NodeContent | undefined) => void) {
+  implAppWindowAdapter().unbind(id, callback);
+}
+
+function shiftWindowTouchEvent(sourceId: number, targetId: number,
+  fingerId: number, callback: (result: boolean) => void) {
+  implAppWindowAdapter().shiftWindowTouchEvent(sourceId, targetId, fingerId, callback);
 }
 
 export class AppWindowAdapterBind {
@@ -116,9 +125,11 @@ export class AppWindowAdapterBind {
     JsBindingUtils.bindFunction("AppWindow.StartWindowMoving", startWindowMoving);
     JsBindingUtils.bindFunction("AppWindow.GetWindowsByCoordinate", getWindowsByCoordinate);
     JsBindingUtils.bindFunction("AppWindow.Restore", restore);
-    JsBindingUtils.bindFunction("AppWindow.ShiftWindowEvent", shiftWindowEvent);
+    JsBindingUtils.bindFunction("AppWindow.ShiftWindowMouseEvent", shiftWindowMouseEvent);
     JsBindingUtils.bindFunction("AppWindow.StartWindowMovingWithOffset", startWindowMovingWithOffset);
     JsBindingUtils.bindFunction("AppWindow.GetOriginWindowIds", getOriginWindowIds);
     JsBindingUtils.bindFunction("AppWindow.Bind", bind);
+    JsBindingUtils.bindFunction("AppWindow.UnBind", unbind);
+    JsBindingUtils.bindFunction("AppWindow.ShiftWindowTouchEvent", shiftWindowTouchEvent);
   }
 }

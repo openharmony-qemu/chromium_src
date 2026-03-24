@@ -44,6 +44,7 @@ const std::string kBookmarkFormatString = "chromium/x-bookmark-entries";
 const std::string kWebCustomFormatString = "chromium/x-web-custom-data";
 const std::string kWebImageDragFolder = "dragdrop";
 constexpr int kHalfDivisor = 2;
+constexpr base::TimeDelta kDragOverInterval = base::Milliseconds(65);
 }
 
 OhosDragManager::OhosDragManager(PlatformWindowDelegate* delegate,
@@ -54,6 +55,7 @@ OhosDragManager::OhosDragManager(PlatformWindowDelegate* delegate,
   SetWmMoveLoopHandler(platform_window_, this);
   ohos_window_move_client_ =
       std::make_unique<OhosDesktopWindowMoveClient>(this);
+  drag_over_timer_ = std::make_unique<base::RepeatingTimer>();
 }
 
 OhosDragManager::~OhosDragManager() {
@@ -151,6 +153,7 @@ bool OhosDragManager::StartDrag(
 }
 
 void OhosDragManager::CancelDrag() {
+  StopDragOverTimer();
   if (!quit_closure_.is_null()) {
     std::move(quit_closure_).Run();
   }
@@ -193,10 +196,15 @@ void OhosDragManager::UpdateDrag(const gfx::Point& window_point) {
     drop_handler->OnDragDataAvailable(std::move(data));
     notified_enter_ = true;
   }
+  drag_move_point_ = local_point_in_dip;
+  drag_move_operations_ = suggested_operations;
+
+  if (drag_over_timer_->IsRunning()) {
+    drag_over_timer_->Reset();
+  }
   drop_handler->OnDragMotion(local_point_in_dip, suggested_operations,
                              current_modifier_);
 }
-
 
 void OhosDragManager::DragEnter(const OhosDropData& drop_data,
                                 gfx::PointF screen_point) {
@@ -215,10 +223,18 @@ void OhosDragManager::DragEnter(const OhosDropData& drop_data,
   HandleDropData(drop_data, data_->provider());
   source_provider_ =
       static_cast<const OSExchangeDataProviderNonBacked*>(&data_->provider());
+
+  if (!drag_over_timer_->IsRunning()) {
+    drag_over_timer_->Start(
+        FROM_HERE, kDragOverInterval,
+        base::BindRepeating(&OhosDragManager::SendDragOverEvent,
+                            weak_factory_.GetWeakPtr()));
+  }
 }
 
 void OhosDragManager::OnDrop(const OhosDropData& drop_data,
                              gfx::PointF screen_point) {
+  StopDragOverTimer();
   WmDropHandler* drop_handler = ui::GetWmDropHandler(*platform_window_);
   if (!drop_handler) {
     LOG(ERROR) << "[OhosDrag] execute drop fail,no drop handler";
@@ -241,6 +257,7 @@ void OhosDragManager::OnDrop(const OhosDropData& drop_data,
 }
 
 void OhosDragManager::DragLeave() {
+  StopDragOverTimer();
   WmDropHandler* drop_handler = ui::GetWmDropHandler(*platform_window_);
   if (!drop_handler) {
     LOG(ERROR) << "[OhosDrag] drag leave fail,no drop handler";
@@ -323,10 +340,10 @@ void OhosDragManager::HandleDropData(
         ui::ClipboardFormatType::GetType(kBookmarkFormatString),
         std::move(pickle));
   }
-  if (drop_data.basic_data.bookmark_data.size() > 0) {
+  if (drop_data.basic_data.web_custom_data.size() > 0) {
     base::Pickle pickle = base::Pickle::WithData((
-        base::span(reinterpret_cast<const uint8_t*>(drop_data.basic_data.bookmark_data.data()),
-                   drop_data.basic_data.bookmark_data.size())));
+        base::span(reinterpret_cast<const uint8_t*>(drop_data.basic_data.web_custom_data.data()),
+                   drop_data.basic_data.web_custom_data.size())));
     provider.SetPickledData(
         ui::ClipboardFormatType::GetType(kWebCustomFormatString),
         std::move(pickle));
@@ -467,6 +484,21 @@ void OhosDragManager::HandlePixelMapData(
   }
   drag_param->pixelmap_touch_x = image_offset_x;
   drag_param->pixelmap_touch_y = image_offset_y;
+}
+
+void OhosDragManager::SendDragOverEvent() {
+  WmDropHandler* drop_handler = ui::GetWmDropHandler(*platform_window_);
+  if (!drop_handler) {
+    LOG(ERROR) << "[OhosDrag] " << __FUNCTION__ << " fail,no drop handler";
+    return;
+  }
+  drop_handler->OnDragMotion(drag_move_point_, drag_move_operations_,
+                             current_modifier_);
+}
+
+void OhosDragManager::StopDragOverTimer() {
+  LOG(INFO) << "[OhosDrag] " << __FUNCTION__ << " stop drag over timer";
+  drag_over_timer_->Stop();
 }
 
 }  // namespace ui

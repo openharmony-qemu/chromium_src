@@ -59,7 +59,14 @@ bool OhosWindow::Initialize(PlatformWindowInitProperties properties) {
   TRACE_EVENT0("gpu", "OhosWindow::Initialize");
 
   type_ = properties.type;
-  bounds_in_pixels_ = ConvertDipToPixelForNewWindow(properties.bounds);
+  display::Display current_display = PrepareDisplayForNewWindow();
+  bounds_in_pixels_ = display::ohos::ScreenOhos::ConvertDipToPixel(
+      current_display, properties.bounds);
+  if (ohos::adapter::nodeHandle::NodeHandleImpl::GetInstance()
+          .IsSupportNodeHandle() &&
+      current_display.is_valid()) {
+    SetCurrentDisplayId(current_display.id());
+  }
 
   OnInitialize(std::move(properties));
 
@@ -120,20 +127,24 @@ void OhosWindow::UnRegistWindowEvent() {
 }
 
 void OhosWindow::OnSurfaceCreated() {
+  LOG(INFO) << "[ohoswindow] in OhosWindow OnSurfaceCreated.";
   auto task = base::BindOnce([](base::WeakPtr<OhosWindow> window,
                                 gfx::AcceleratedWidget widget) {
-        if (window) {
-          window->delegate()->OnAcceleratedWidgetAvailable(widget);
+        if (!window) {
+          LOG(WARNING) << "[ohoswindow] window is nullptr.";
+          return;
         }
+        window->delegate()->OnAcceleratedWidgetAvailable(widget);
       },
       AsWeakPtr(), GetWidget());
   ui_task_runner_->PostTask(FROM_HERE, std::move(task));
 }
 
 void OhosWindow::OnSurfaceDestoryed() {
+  LOG(INFO) << "[ohoswindow] in OhosWindow OnSurfaceDestoryed.";
   auto task = base::BindOnce([](base::WeakPtr<OhosWindow> window) {
         if (window) {
-          LOG(INFO) << "OhosWindow on surface destroyed call window on close request";
+          LOG(INFO) << "[ohoswindow] OhosWindow on surface destroyed call window on close request";
           window->delegate()->OnCloseRequest();
         }
       },
@@ -151,6 +162,8 @@ void OhosWindow::Applied(const gfx::Rect& origin_bounds,
 }
 
 void OhosWindow::Show(bool inactive) {
+  LOG(INFO) << "[ohoswindow] in OhosWindow Show, visible is "
+            << is_visible_;
   if (is_visible_) {
     return;
   }
@@ -158,6 +171,8 @@ void OhosWindow::Show(bool inactive) {
 }
 
 void OhosWindow::Hide() {
+  LOG(INFO) << "[ohoswindow] in OhosWindow Hide, visible is "
+            << is_visible_;
   if (!is_visible_) {
     return;
   }
@@ -276,7 +291,12 @@ void OhosWindow::UpdateCursorShape(
     return;
   }
   if (platform_cursor->type() == mojom::CursorType::kCustom) {
-    auto bitmap = platform_cursor->bitmap();
+    auto bitmaps = platform_cursor->bitmaps();
+    if (bitmaps.empty()) {
+      LOG(ERROR) << "bitmaps is empty";
+      return;
+    }
+    const SkBitmap& bitmap = bitmaps[0];
     auto pixmap = bitmap.pixmap();
     size_t buff_size = bitmap.computeByteSize();
     std::shared_ptr<char[]> buff = std::make_shared<char[]>(buff_size);
@@ -290,13 +310,13 @@ void OhosWindow::UpdateCursorShape(
                                                  hotspot.x(),
                                                  hotspot.y(),
                                                  buff};
-      ohos::adapter::SetCustomCursor(cursor_info);
+      ohos::adapter::Cursor::GetInstance().SetCustomCursor(cursor_info);
     } else {
       LOG(ERROR) << "read pixels failed";
     }
   } else {
     auto ohos_cursor_type = ConvertToOhosCursorType(platform_cursor->type());
-    ohos::adapter::SetCursor(GetWidget(), ohos_cursor_type);
+    ohos::adapter::Cursor::GetInstance().SetCursor(GetWidget(), ohos_cursor_type);
   }
   cursor_ = platform_cursor;
 }
@@ -411,7 +431,7 @@ void OhosWindow::OnPointerFocusChanged(const bool focused) {
     UpdateCursorShape(cursor_);
   } else if (cursor_->type() == mojom::CursorType::kNone) {
     // invisible cursor blur need to set visible
-    ohos::adapter::SetCursorVisible(true);
+    ohos::adapter::Cursor::GetInstance().SetCursorVisible(true);
   }
 }
 
@@ -456,8 +476,7 @@ int32_t OhosWindow::GetOriginWindowId() {
   return origin_window_ids.front();
 }
 
-gfx::Rect OhosWindow::ConvertDipToPixelForNewWindow(
-    const gfx::Rect& rect_in_dip) {
+display::Display OhosWindow::PrepareDisplayForNewWindow() {
   int32_t target_widget_id = gfx::kNullAcceleratedWidget;
   if (parent_window()) {
     target_widget_id = parent_window()->GetWidget();
@@ -474,8 +493,7 @@ gfx::Rect OhosWindow::ConvertDipToPixelForNewWindow(
   if (target_window != nullptr) {
     current_display = target_window->GetCurrentDisplay();
   }
-  return display::ohos::ScreenOhos::ConvertDipToPixel(current_display,
-                                                      rect_in_dip);
+  return current_display;
 }
 
 display::Display OhosWindow::GetCurrentDisplay() {
@@ -490,6 +508,15 @@ void OhosWindow::BindNodeHandle() {
       !is_ability_bound_) {
     is_ability_bound_ =
         AppWindowAdapter::GetInstance().Bind(GetWindowUniqueId());
+  }
+}
+
+void OhosWindow::UnBindNodeHandle() {
+  if (ohos::adapter::nodeHandle::NodeHandleImpl::GetInstance()
+          .IsSupportNodeHandle() &&
+      is_ability_bound_) {
+    is_ability_bound_ =
+        !AppWindowAdapter::GetInstance().UnBind(GetWindowUniqueId());
   }
 }
 

@@ -8,6 +8,8 @@
 #include <sstream>
 #include <string>
 
+#include "ohos/adapter/window/window_common.h"
+
 namespace ohos::adapter::xcomponent {
 std::string WithEnumValue(int value) {
   std::string tmp = "(";
@@ -35,6 +37,7 @@ std::string EventTypeName(EventType type) {
       CASE_TYPE(ET_WINDOW_RECT_CHANGE);
       CASE_TYPE(ET_WINDOW_STATUS_CHANGE);
       CASE_TYPE(ET_WINDOW_CAPTION_BUTTON_RECT_CHANGE);
+      CASE_TYPE(ET_BACK_TO_LAST_PAGE);
 
 #undef CASE_TYPE
       default:
@@ -204,6 +207,12 @@ std::string DeviceInfoChangeEvent::ToString() {
 std::string WindowDisplayIdChangeEvent::ToString() {
   std::ostringstream oss;
   oss << GetName() << "(display_id: " << display_id << ")";
+  return oss.str();
+}
+
+std::string BackToLastPageEvent::ToString() {
+  std::ostringstream oss;
+  oss << GetName();
   return oss.str();
 }
 }  // namespace ohos::adapter::xcomponent

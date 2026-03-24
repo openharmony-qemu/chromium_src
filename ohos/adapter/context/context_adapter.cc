@@ -23,8 +23,13 @@ void UpdateWindowDeviceModeSwitchCB(DeviceMode device_mode) {
   ContextAdapter::GetInstance().SetDeviceMode(
       device_mode);
 }
+
+uint32_t GetLastActiveWidgetId() {
+  return ContextAdapter::GetInstance().GetLastActiveWidgetId();
+}
  
 JSBIND_GLOBAL() {
   JSBIND_FUNCTION(UpdateWindowDeviceModeSwitchCB);
+  JSBIND_FUNCTION(GetLastActiveWidgetId);
 }
 }  // namespace ohos::adapter::ContextPathAdapter

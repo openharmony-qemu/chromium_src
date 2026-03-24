@@ -534,7 +534,7 @@ export class CertificateManagerV2Element extends
     ];
   }
 
-  // <if expr="is_win or is_macosx">
+  // <if expr="is_win or is_macosx or is_ohos">
   private onManageCertsExternal_() {
     const proxy = CertificatesV2BrowserProxy.getInstance();
     proxy.handler.showNativeManageCertificates();

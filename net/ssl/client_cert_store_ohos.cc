@@ -37,12 +37,12 @@ namespace net {
 
 namespace {
 
-class ClientCertIdentityOHOS : public ClientCertIdentity {
+class ClientCertIdentityOhos : public ClientCertIdentity {
  public:
-  ClientCertIdentityOHOS(scoped_refptr<net::X509Certificate> cert,
+  ClientCertIdentityOhos(scoped_refptr<net::X509Certificate> cert,
                          bssl::UniquePtr<X509> bssl_cert)
       : ClientCertIdentity(std::move(cert)), bssl_cert_(std::move(bssl_cert)) {}
-  ~ClientCertIdentityOHOS() override = default;
+  ~ClientCertIdentityOhos() override = default;
 
   void AcquirePrivateKey(base::OnceCallback<void(scoped_refptr<SSLPrivateKey>)>
                              private_key_callback) override {
@@ -62,7 +62,7 @@ class ClientCertIdentityOHOS : public ClientCertIdentity {
 
 }  // namespace
 
-bool GetIssuerAndSubjectOHOS(X509* cert,
+bool GetIssuerAndSubjectOhos(X509* cert,
                              std::string& issuer,
                              std::string& subject) {
   uint8_t* issuer_buf = nullptr;
@@ -84,9 +84,9 @@ bool GetIssuerAndSubjectOHOS(X509* cert,
   return true;
 }
 
-bool MatchClientCertsIssuersOHOS(
+bool MatchClientCertsIssuersOhos(
     X509* cert,
-    ClientCertStoreOHOS::CertificateStore& store,
+    ClientCertStoreOhos::CertificateStore& store,
     const std::vector<std::string>& cert_authorities,
     std::vector<bssl::UniquePtr<X509>>* intermediates) {
   // Bound how many iterations to try.
@@ -102,7 +102,7 @@ bool MatchClientCertsIssuersOHOS(
   // DER encoded issuer and subject name of current certificate.
   std::string issuer;
   std::string subject;
-  if (!cert || !GetIssuerAndSubjectOHOS(cert, issuer, subject)) {
+  if (!cert || !GetIssuerAndSubjectOhos(cert, issuer, subject)) {
     return false;
   }
 
@@ -135,11 +135,11 @@ bool MatchClientCertsIssuersOHOS(
   return false;
 }
 
-std::vector<bssl::UniquePtr<X509>> FindSSLCertsOHOS(bool only_client) {
+std::vector<bssl::UniquePtr<X509>> FindSSLCertsOhos(bool only_client) {
   std::vector<bssl::UniquePtr<X509>> certs;
 
   CertManagerAdapter::CertInfoList ohos_cert_info_list =
-      CertManagerAdapter::GetInstance().ListCertsInfo();
+      CertManagerAdapter::GetInstance().GetAllUserTrustedCertificates();
   for (auto& ohos_cert : ohos_cert_info_list) {
     std::string pem_cert = ohos_cert.cert;
     // pem cert file
@@ -171,15 +171,15 @@ std::vector<bssl::UniquePtr<X509>> FindSSLCertsOHOS(bool only_client) {
   return certs;
 }
 
-ClientCertStoreOHOS::CertificateStore GetSSLCertStoreOHOS(
+ClientCertStoreOhos::CertificateStore GetSSLCertStoreOhos(
     const std::vector<std::string>& cert_files) {
-  ClientCertStoreOHOS::CertificateStore cert_store;
-  auto found_certs = FindSSLCertsOHOS(false);
+  ClientCertStoreOhos::CertificateStore cert_store;
+  auto found_certs = FindSSLCertsOhos(false);
   for (auto& bssl_cert : found_certs) {
     // get DER encoded issuer and subject of current certificate
     std::string issuer;
     std::string subject;
-    if (!GetIssuerAndSubjectOHOS(bssl_cert.get(), issuer, subject)) {
+    if (!GetIssuerAndSubjectOhos(bssl_cert.get(), issuer, subject)) {
       return {};
     }
 
@@ -190,32 +190,32 @@ ClientCertStoreOHOS::CertificateStore GetSSLCertStoreOHOS(
   return cert_store;
 }
 
-ClientCertStoreOHOS::ClientCertStoreOHOS() = default;
+ClientCertStoreOhos::ClientCertStoreOhos() = default;
 
-ClientCertStoreOHOS::~ClientCertStoreOHOS() = default;
+ClientCertStoreOhos::~ClientCertStoreOhos() = default;
 
-void ClientCertStoreOHOS::GetClientCerts(
+void ClientCertStoreOhos::GetClientCerts(
     scoped_refptr<const SSLCertRequestInfo> request,
     ClientCertListCallback callback) {
   base::ThreadPool::PostTaskAndReplyWithResult(
       FROM_HERE,
       {base::MayBlock(), base::TaskShutdownBehavior::CONTINUE_ON_SHUTDOWN},
-      base::BindOnce(&ClientCertStoreOHOS::GetAndFilterCertsOnWorkerThread,
+      base::BindOnce(&ClientCertStoreOhos::GetAndFilterCertsOnWorkerThread,
                      // Caller is responsible for keeping the ClientCertStore
                      // alive until the callback is run.
                      base::Unretained(this), std::move(request)),
-      base::BindOnce(&ClientCertStoreOHOS::OnClientCertsResponse,
+      base::BindOnce(&ClientCertStoreOhos::OnClientCertsResponse,
                      weak_factory_.GetWeakPtr(), std::move(callback)));
 }
 
-void ClientCertStoreOHOS::OnClientCertsResponse(
+void ClientCertStoreOhos::OnClientCertsResponse(
     ClientCertListCallback callback,
     ClientCertIdentityList identities) {
   std::move(callback).Run(std::move(identities));
 }
 
 // static
-void ClientCertStoreOHOS::FilterCertsOnWorkerThread(
+void ClientCertStoreOhos::FilterCertsOnWorkerThread(
     ClientCertIdentityList* identities,
     const SSLCertRequestInfo& request) {
   DCHECK(identities);
@@ -244,7 +244,7 @@ void ClientCertStoreOHOS::FilterCertsOnWorkerThread(
         nullptr, &cert_der_buf, CRYPTO_BUFFER_len(cert->cert_buffer())));
 
     std::vector<bssl::UniquePtr<X509>> bssl_intermediates;
-    if (!MatchClientCertsIssuersOHOS(bssl_cert.get(), bssl_cert_store,
+    if (!MatchClientCertsIssuersOhos(bssl_cert.get(), bssl_cert_store,
                                      request.cert_authorities,
                                      &bssl_intermediates)) {
       continue;
@@ -284,13 +284,13 @@ void ClientCertStoreOHOS::FilterCertsOnWorkerThread(
 }
 
 // static
-void ClientCertStoreOHOS::GetPlatformCertsOnWorkerThread(
+void ClientCertStoreOhos::GetPlatformCertsOnWorkerThread(
     ClientCertIdentityList* identities) {
   if (identities == nullptr) {
     LOG(ERROR) << "identities is nullptr.";
     return;
   }
-  auto found_certs = FindSSLCertsOHOS(true);
+  auto found_certs = FindSSLCertsOhos(true);
   if (found_certs.empty()) {
     LOG(ERROR) << "No client certs found.";
     return;
@@ -318,11 +318,11 @@ void ClientCertStoreOHOS::GetPlatformCertsOnWorkerThread(
       continue;
     }
     identities->push_back(
-        std::make_unique<ClientCertIdentityOHOS>(cert, std::move(*itr)));
+        std::make_unique<ClientCertIdentityOhos>(cert, std::move(*itr)));
   }
 }
 
-ClientCertIdentityList ClientCertStoreOHOS::GetAndFilterCertsOnWorkerThread(
+ClientCertIdentityList ClientCertStoreOhos::GetAndFilterCertsOnWorkerThread(
     scoped_refptr<const SSLCertRequestInfo> request) {
   // This method may acquire the BoringSSL lock or reenter this code via
   // extension hooks (such as smart card UI). To ensure threads are not starved

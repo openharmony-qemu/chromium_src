@@ -77,7 +77,7 @@ const std::vector<std::string> ChromeMainLoader::GetEntryArgs() {
       "--no-zygote",
       "--user-data-dir=/data/storage/el2/base/files/",
       "--disable-gpu-watchdog",
-      "--force-renderer-accessibility=basic",
+      "--force-renderer-accessibility=complete",
   };
   ohos::adapter::device_info::DeviceType device_type =
       ohos::adapter::device_info::DeviceInfo::GetInstance().GetDeviceType();

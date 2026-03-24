@@ -11487,7 +11487,7 @@ void WebContentsImpl::DidChangeScreenOrientation() {
 void WebContentsImpl::SetHaveEncryptedMedia(bool have_encrypted_media) {
   if (!have_encrypted_media_ && have_encrypted_media) {
     have_encrypted_media_ = have_encrypted_media;
-    LOG(INFO) << __func__ << " [WiseplayDRM] browser window enter privacy mode due to load encrypted media.";
+    LOG(INFO) << __func__ << " [WebContent] browser window enter privacy mode due to load encrypted media.";
     delegate_->SetPrivacyMode(have_encrypted_media);
   }
 }

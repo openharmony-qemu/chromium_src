@@ -53,7 +53,9 @@ void OnNewOutputBuffer(OH_AVCodec* codec,
     OH_AVCodecBufferAttr attr;
     OH_AVErrCode ret = OH_AVBuffer_GetBufferAttr(buffer, &attr);
     if (ret != AV_ERR_OK) {
-      LOG(ERROR) << "OnNewOutputBuffer:OH_AVBuffer_GetBufferAttr ERROR.";
+      LOG(ERROR) << __func__
+                 << " [VideoEncoder] OH_AVBuffer_GetBufferAttr ERROR. ret "
+                 << static_cast<int>(ret);
       return;
     }
     BufferInfo info;
@@ -75,20 +77,20 @@ void ClearOutputCache(std::queue<EncodeOutputBuffer>& q) {
 }
 // static
 std::unique_ptr<OHOSMediaCodecBridge> OHOSMediaCodecBridgeImpl::CreateVideoEncoder(std::string& mime) {
-  LOG(INFO) << "OHOSMediaCodecBridgeImpl::CreateVideoEncoder.";
+  LOG(INFO) << __func__ << " [VideoEncoder] mime: "<< mime;
   return absl::WrapUnique(new OHOSMediaCodecBridgeImpl(mime));
 }
 
 OHOSMediaCodecBridgeImpl::OHOSMediaCodecBridgeImpl(std::string& mime) {
   CodecCodeAdapter ret = CreateVideoCodecByMime(mime.c_str());
   if (ret == CodecCodeAdapter::ENCODER_ERROR) {
-    LOG(ERROR) << "create VideoCodec failed.";
+    LOG(ERROR) << __func__ << " [VideoEncoder] create VideoCodec failed.";
     return;
   }
 }
 
 OHOSMediaCodecBridgeImpl::~OHOSMediaCodecBridgeImpl() {
-  LOG(INFO) << "~OHOSMediaCodecBridgeImpl.";
+  LOG(INFO) << __func__ << " [VideoEncoder]";
   is_running_.store(false);
   OH_VideoEncoder_Destroy(video_encoder_);
   video_encoder_ = nullptr;
@@ -96,13 +98,13 @@ OHOSMediaCodecBridgeImpl::~OHOSMediaCodecBridgeImpl() {
 
 CodecCodeAdapter OHOSMediaCodecBridgeImpl::CreateVideoCodecByMime(
     const std::string mime_type) {
-  LOG(INFO) << "OHOSMediaCodecBridgeImpl::CreateVideoCodecByMime.";
+  LOG(INFO) << __func__ << " [VideoEncoder]";
   if (mime_type == "video/avc") {
-    LOG(INFO) << "create video codec by mime, type : " << mime_type;
+    LOG(INFO) << __func__ << " [VideoEncoder] create video codec by mime, type : " << mime_type;
   }
   video_encoder_ = OH_VideoEncoder_CreateByMime(mime_type.c_str());
   if (video_encoder_ == nullptr) {
-    LOG(ERROR) << "create codec failed.";
+    LOG(ERROR) << __func__ << " [VideoEncoder] create codec failed.";
     return CodecCodeAdapter::ENCODER_ERROR;
   }
 
@@ -118,16 +120,21 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::CreateVideoCodecByMime(
                               &OnNewOutputBuffer};
   OH_AVErrCode ret =
       OH_VideoEncoder_RegisterCallback(video_encoder_, oh_cb, cb_.get());
-  return ret == AV_ERR_OK ? CodecCodeAdapter::ENCODER_OK
-                          : CodecCodeAdapter::ENCODER_ERROR;
+  if (ret != AV_ERR_OK) {
+    LOG(ERROR) << __func__
+               << " [VideoEncoder] OH_VideoEncoder_RegisterCallback ERROR. ret "
+               << static_cast<int>(ret);
+    return CodecCodeAdapter::ENCODER_ERROR;
+  }
+  return CodecCodeAdapter::ENCODER_OK;
 }
 
 CodecCodeAdapter OHOSMediaCodecBridgeImpl::CreateVideoCodecByName(
     const std::string name) {
-  LOG(INFO) << "create video codec by name, type : " << name.c_str();
+  LOG(INFO) << __func__ << " [VideoEncoder] create video codec by name, type : " << name.c_str();
   video_encoder_ = OH_VideoEncoder_CreateByName(name.c_str());
   if (video_encoder_ == nullptr) {
-    LOG(ERROR) << "create codec failed.";
+    LOG(ERROR) << __func__ << " [VideoEncoder] create codec failed.";
     return CodecCodeAdapter::ENCODER_ERROR;
   }
 
@@ -148,9 +155,9 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::CreateVideoCodecByName(
 }
 
 void OHOSMediaCodecBridgeImpl::UpdateStatusAndClearCache(bool is_running) {
-  LOG(INFO) << "current encode status is " << is_running;
+  LOG(INFO) << __func__ << " [VideoEncoder] current encode status is " << is_running;
   if (is_running_.load() == is_running) {
-    LOG(INFO) << "status not change, do nothing.";
+    LOG(INFO) << __func__ << " [VideoEncoder] status not change, do nothing.";
     return;
   }
   is_running_.store(is_running);
@@ -170,9 +177,9 @@ void OHOSMediaCodecBridgeImpl::UpdateStatusAndClearCache(bool is_running) {
 CodecCodeAdapter OHOSMediaCodecBridgeImpl::Configure(
     OH_AVFormat& config_format,
     scoped_refptr<base::SequencedTaskRunner> codec_task_runner) {
-  LOG(INFO) << "configure codec.";
+  LOG(INFO) << __func__ << " [VideoEncoder] configure codec.";
   if ((video_encoder_ == nullptr) || (cb_ == nullptr)) {
-    LOG(ERROR) << "codec or callback is NULL.";
+    LOG(ERROR) << __func__ << " [VideoEncoder] codec or callback is NULL.";
     return CodecCodeAdapter::ENCODER_ERROR;
   }
   codec_task_runner_ = codec_task_runner;
@@ -183,9 +190,9 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::Configure(
 }
 
 CodecCodeAdapter OHOSMediaCodecBridgeImpl::Prepare() {
-  LOG(INFO) << "prepare codec.";
+  LOG(INFO) << __func__ << " [VideoEncoder] prepare codec.";
   if (video_encoder_ == nullptr) {
-    LOG(ERROR) << "codec is NULL.";
+    LOG(ERROR) << __func__ << " [VideoEncoder] codec is NULL.";
     return CodecCodeAdapter::ENCODER_ERROR;
   }
   OH_AVErrCode ret = OH_VideoEncoder_Prepare(video_encoder_);
@@ -194,16 +201,16 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::Prepare() {
 }
 
 CodecCodeAdapter OHOSMediaCodecBridgeImpl::Start() {
-  LOG(INFO) << "start.";
+  LOG(INFO) << __func__ << " [VideoEncoder] start.";
   UpdateStatusAndClearCache(true);
   if (video_encoder_ == nullptr) {
-    LOG(ERROR) << "codec is NULL.";
+    LOG(ERROR) << __func__ << " [VideoEncoder] codec is NULL.";
     return CodecCodeAdapter::ENCODER_ERROR;
   }
 
   OH_AVErrCode ret = OH_VideoEncoder_Start(video_encoder_);
   if (ret != AV_ERR_OK) {
-    LOG(ERROR) << "OH_VideoEncoder_Start error.";
+    LOG(ERROR) << __func__ << " [VideoEncoder] OH_VideoEncoder_Start error.";
     return CodecCodeAdapter::ENCODER_ERROR;
   }
   return CodecCodeAdapter::ENCODER_OK;
@@ -211,14 +218,14 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::Start() {
 
 CodecCodeAdapter OHOSMediaCodecBridgeImpl::Stop() {
   UpdateStatusAndClearCache(false);
-  LOG(INFO) << "stop codec.";
+  LOG(INFO) << __func__ << " [VideoEncoder] stop codec.";
   if (video_encoder_ == nullptr) {
-    LOG(ERROR) << "codec is NULL.";
+    LOG(ERROR) << __func__ << " [VideoEncoder] codec is NULL.";
     return CodecCodeAdapter::ENCODER_ERROR;
   }
   OH_AVErrCode ret = OH_VideoEncoder_NotifyEndOfStream(video_encoder_);
   if (ret != AV_ERR_OK) {
-    LOG(ERROR) << "OH_VideoEncoder_NotifyEndOfStream error.";
+    LOG(ERROR) << __func__ << " [VideoEncoder] OH_VideoEncoder_NotifyEndOfStream error.";
     return CodecCodeAdapter::ENCODER_ERROR;
   }
   ret = OH_VideoEncoder_Stop(video_encoder_);
@@ -227,10 +234,10 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::Stop() {
 }
 
 CodecCodeAdapter OHOSMediaCodecBridgeImpl::Reset() {
-  LOG(INFO) << "Reset codec.";
+  LOG(INFO) << __func__ << " [VideoEncoder] Reset codec.";
   UpdateStatusAndClearCache(false);
   if (video_encoder_ == nullptr) {
-    LOG(ERROR) << "codec is NULL.";
+    LOG(ERROR) << __func__ << " [VideoEncoder] codec is NULL.";
     return CodecCodeAdapter::ENCODER_ERROR;
   }
   OH_AVErrCode ret = OH_VideoEncoder_Reset(video_encoder_);
@@ -239,15 +246,15 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::Reset() {
 }
 
 CodecCodeAdapter OHOSMediaCodecBridgeImpl::Release() {
-  LOG(INFO) << "Release codec.";
+  LOG(INFO) << __func__ << " [VideoEncoder] Release codec.";
   UpdateStatusAndClearCache(false);
   if (video_encoder_ == nullptr) {
-    LOG(ERROR) << "codec is NULL.";
+    LOG(ERROR) << __func__ << " [VideoEncoder] codec is NULL.";
     return CodecCodeAdapter::ENCODER_ERROR;
   }
   OH_AVErrCode ret = OH_VideoEncoder_Destroy(video_encoder_);
   if (ret != AV_ERR_OK) {
-    LOG(ERROR) << "OH_VideoEncoder_Destroy error.";
+    LOG(ERROR) << __func__ << " [VideoEncoder] OH_VideoEncoder_Destroy error.";
     return CodecCodeAdapter::ENCODER_ERROR;
   }
   video_encoder_ = nullptr;
@@ -256,9 +263,9 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::Release() {
 }
 
 CodecCodeAdapter OHOSMediaCodecBridgeImpl::CreateInputSurface() {
-  LOG(INFO) << "CreateInputSurface.";
+  LOG(INFO) << __func__ << " [VideoEncoder] CreateInputSurface.";
   if (video_encoder_ == nullptr) {
-    LOG(ERROR) << "codec is NULL.";
+    LOG(ERROR) << __func__ << " [VideoEncoder] codec is NULL.";
     return CodecCodeAdapter::ENCODER_ERROR;
   }
 
@@ -267,7 +274,7 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::CreateInputSurface() {
     ret = OH_VideoEncoder_GetSurface(video_encoder_, &native_window_);
   }
   if (ret != AV_ERR_OK) {
-    LOG(ERROR) << "OH_VideoEncoder_GetSurface failed." << ret;
+    LOG(ERROR) << __func__ << " [VideoEncoder] OH_VideoEncoder_GetSurface failed." << ret;
     return CodecCodeAdapter::ENCODER_ERROR;
   }
   return CodecCodeAdapter::ENCODER_OK;
@@ -277,37 +284,62 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::FillSurfaceBuffer(
     scoped_refptr<VideoFrame> frame,
     const int64_t timestamp_ms) {
   if (native_window_ == nullptr) {
-    LOG(ERROR) << "native_window_ is null when QueueInput";
+    LOG(ERROR) << __func__ << " [VideoEncoder] native_window_ is null when QueueInput";
     return CodecCodeAdapter::ENCODER_ERROR;
   }
   if (frame == nullptr) {
-    LOG(ERROR) << "frame is null when QueueInput";
+    LOG(ERROR) << __func__ << " [VideoEncoder] frame is null when QueueInput";
     return CodecCodeAdapter::ENCODER_ERROR;
   }
 
   int fenceFd;
   int32_t height = frame->coded_size().height();
   int32_t width = frame->coded_size().width();
-  constexpr int32_t SAMPLE_RATIO = 2;
-  constexpr int32_t DEFAULT_STRIDE = 16;
+  constexpr int32_t kSampleRatio = 2;
+  constexpr int32_t kDefaultStride = 16;
   OHNativeWindowBuffer* window_buffer = nullptr;
-  OH_NativeWindow_NativeWindowHandleOpt(native_window_, SET_BUFFER_GEOMETRY,
-                                        width, height);
-  OH_NativeWindow_NativeWindowHandleOpt(native_window_, SET_STRIDE,
-                                        DEFAULT_STRIDE);
-  OH_NativeWindow_NativeWindowHandleOpt(native_window_, SET_UI_TIMESTAMP,
-                                        timestamp_ms);
-  OH_NativeWindow_NativeWindowHandleOpt(native_window_, SET_FORMAT,
-                                        NATIVEBUFFER_PIXEL_FMT_YCBCR_420_P);
-  if (OH_NativeWindow_NativeWindowRequestBuffer(native_window_, &window_buffer,
-                                                &fenceFd) != AV_ERR_OK) {
-    LOG(ERROR) << "OH_NativeWindow_NativeWindowRequestBuffer failed";
+  int32_t result = OH_NativeWindow_NativeWindowHandleOpt(
+      native_window_, SET_BUFFER_GEOMETRY, width, height);
+  if (result != AV_ERR_OK) {
+    LOG(ERROR)
+        << __func__
+        << " [VideoEncoder] OH_NativeWindow SET_BUFFER_GEOMETRY failed. ret: "
+        << result;
+    return CodecCodeAdapter::ENCODER_ERROR;
+  }
+  result = OH_NativeWindow_NativeWindowHandleOpt(native_window_, SET_STRIDE,
+                                                 kDefaultStride);
+  if (result != AV_ERR_OK) {
+    LOG(ERROR) << __func__
+               << " [VideoEncoder] OH_NativeWindow SET_STRIDE failed. ret: "
+               << result;
+    return CodecCodeAdapter::ENCODER_ERROR;
+  }
+  result = OH_NativeWindow_NativeWindowHandleOpt(
+      native_window_, SET_UI_TIMESTAMP, timestamp_ms);
+  if (result != AV_ERR_OK) {
+    LOG(ERROR)
+        << __func__
+        << " [VideoEncoder] OH_NativeWindow SET_UI_TIMESTAMP failed. ret: "
+        << result;
+    return CodecCodeAdapter::ENCODER_ERROR;
+  }
+  result = OH_NativeWindow_NativeWindowHandleOpt(
+      native_window_, SET_FORMAT, NATIVEBUFFER_PIXEL_FMT_YCBCR_420_P);
+  result = OH_NativeWindow_NativeWindowRequestBuffer(native_window_,
+                                                     &window_buffer, &fenceFd);
+  if (result != AV_ERR_OK) {
+    LOG(ERROR) << __func__
+               << " [VideoEncoder] OH_NativeWindow_NativeWindowRequestBuffer "
+                  "failed. ret: "
+               << result;
+    return CodecCodeAdapter::ENCODER_ERROR;
   }
 
   BufferHandle* bufferHandle =
       OH_NativeWindow_GetBufferHandleFromNative(window_buffer);
   if (bufferHandle == nullptr) {
-    LOG(ERROR) << "fail to RequestBuffer";
+    LOG(ERROR) << __func__ << " [VideoEncoder] fail to RequestBuffer";
     return CodecCodeAdapter::ENCODER_ERROR;
   }
 
@@ -316,26 +348,26 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::FillSurfaceBuffer(
       mmap(bufferHandle->virAddr, bufferHandle->size, PROT_READ | PROT_WRITE,
            MAP_SHARED, bufferHandle->fd, 0);
   if (mappedAddr == MAP_FAILED) {
-    LOG(ERROR) << "mmap failed";
+    LOG(ERROR) << __func__ << " [VideoEncoder] mmap failed";
     return CodecCodeAdapter::ENCODER_ERROR;
   }
   // mappedAddr is created refer to the size of original bufferHandle, so memcpy
   // should not have problem
   uint8_t* dst = reinterpret_cast<uint8_t*>(mappedAddr);
-  const uint8_t* y_src = frame->data(VideoFrame::kYPlane);
-  const uint8_t* u_src = frame->data(VideoFrame::kUPlane);
-  const uint8_t* v_src = frame->data(VideoFrame::kVPlane);
-  const int32_t src_y_stride = frame->stride(VideoFrame::kYPlane);
-  const int32_t src_u_stride = frame->stride(VideoFrame::kUPlane);
-  const int32_t src_v_stride = frame->stride(VideoFrame::kVPlane);
+  const uint8_t* y_src = frame->data(VideoFrame::kY);
+  const uint8_t* u_src = frame->data(VideoFrame::kU);
+  const uint8_t* v_src = frame->data(VideoFrame::kV);
+  const int32_t src_y_stride = frame->stride(VideoFrame::kY);
+  const int32_t src_u_stride = frame->stride(VideoFrame::kU);
+  const int32_t src_v_stride = frame->stride(VideoFrame::kV);
 
   if ((y_src == nullptr) || (u_src == nullptr) || (v_src == nullptr)) {
     LOG(ERROR) << "src is nullptr";
     return CodecCodeAdapter::ENCODER_ERROR;
   }
   int32_t y_cnt = height;
-  int32_t u_cnt = height / SAMPLE_RATIO;
-  int32_t v_cnt = height / SAMPLE_RATIO;
+  int32_t u_cnt = height / kSampleRatio;
+  int32_t v_cnt = height / kSampleRatio;
   // copy Y
   for (int32_t i = 0; i < y_cnt; i++) {
     memcpy(dst, y_src, width);
@@ -344,39 +376,43 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::FillSurfaceBuffer(
   }
   // copy U
   for (int32_t i = 0; i < u_cnt; i++) {
-    memcpy(dst, u_src, width / SAMPLE_RATIO);
-    dst += stride / SAMPLE_RATIO;
+    memcpy(dst, u_src, width / kSampleRatio);
+    dst += stride / kSampleRatio;
     u_src += src_u_stride;
   }
   // copy V
   for (int32_t i = 0; i < v_cnt; i++) {
-    memcpy(dst, v_src, width / SAMPLE_RATIO);
-    dst += stride / SAMPLE_RATIO;
+    memcpy(dst, v_src, width / kSampleRatio);
+    dst += stride / kSampleRatio;
     v_src += src_v_stride;
   }
 
   Region region{nullptr, 0};
-  if (OH_NativeWindow_NativeWindowFlushBuffer(native_window_, window_buffer,
-                                              fenceFd, region) != AV_ERR_OK) {
-    LOG(ERROR) << "fail to FlushBuffer";
+  result = OH_NativeWindow_NativeWindowFlushBuffer(
+      native_window_, window_buffer, fenceFd, region);
+  if (result != AV_ERR_OK) {
+    LOG(ERROR) << __func__
+               << " [VideoEncoder] fail to FlushBuffe. ret: "
+               << result;
     return CodecCodeAdapter::ENCODER_ERROR;
   }
 
   if (munmap(mappedAddr, bufferHandle->size) < 0) {
-    LOG(ERROR) << "munmap failed";
+    LOG(WARNING) << __func__ << " [VideoEncoder] munmap failed";
   }
   return CodecCodeAdapter::ENCODER_OK;
 }
 
 CodecCodeAdapter OHOSMediaCodecBridgeImpl::RequestKeyFrameSoon() {
-  LOG(INFO) << "RequestKeyFrameSoon.";
   if (video_encoder_ == nullptr) {
-    LOG(ERROR) << "codec is NULL.";
+    LOG(ERROR) << __func__ << " [VideoEncoder] codec is NULL.";
     return CodecCodeAdapter::ENCODER_ERROR;
   }
   OH_AVFormat* format = OH_AVFormat_Create();
   OH_AVFormat_SetIntValue(format, OH_MD_KEY_REQUEST_I_FRAME, true);
   if (OH_VideoEncoder_SetParameter(video_encoder_, format) != 0) {
+    LOG(INFO) << __func__
+              << " [VideoEncoder] OH_VideoEncoder_SetParameter failed.";
     return CodecCodeAdapter::ENCODER_ERROR;
   }
   return CodecCodeAdapter::ENCODER_OK;
@@ -392,7 +428,7 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::DequeueOutputBuffer(
     OH_AVCodecBufferFlags& flag,
     OhosBuffer& buffer) {
   if (signal_->isOnError_) {
-    LOG(WARNING) << "OHOSMediaCodecBridgeImpl::DequeueOutputBuffer error";
+    LOG(WARNING) << __func__ << " [VideoEncoder] signal is on error";
     return CodecCodeAdapter::ENCODER_ERROR;
   }
 
@@ -407,47 +443,101 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::DequeueOutputBuffer(
   buffer = ouput_buffer.buffer_data;
   bool is_key_frame =
       (flag == OH_AVCodecBufferFlags::AVCODEC_BUFFER_FLAGS_SYNC_FRAME);
-  if (is_key_frame && ouput_buffer.is_contain_config_data) {
-    EncodeConfigData config_data = ouput_buffer.config_data;
+  if (is_key_frame) {
+    if (ouput_buffer.contains_config_data) {
+      LOG(INFO) << __func__ << " [VideoEncoder] update config data cache for keyframe";
+      ClearConfigDataCache();
+      EncodeConfigData config_data = ouput_buffer.config_data;
+      config_data_cache_.config_info_size = config_data.buffer_info.size;
+      config_data_cache_.config_data_size = config_data.buffer_data.buffer_size;
+      config_data_cache_.config_data_addr =
+          new uint8_t[config_data_cache_.config_data_size];
+      if (config_data_cache_.config_data_addr == nullptr) {
+        LOG(ERROR) << __func__ << " [VideoEncoder] new config data failed";
+        ReleaseOutputBuffer(config_data.index, false);
+        return CodecCodeAdapter::ENCODER_ERROR;
+      }
+      if (config_data_cache_.config_data_size <
+          config_data.buffer_data.buffer_size) {
+        LOG(ERROR) << __func__
+                   << " [VideoEncoder] config data memcpy "
+                      "failed,config_data_cache_.config_data_size: "
+                   << &config_data_cache_.config_data_size
+                   << " config_data.buffer_data.buffer_size: "
+                   << config_data.buffer_data.buffer_size;
+        ReleaseOutputBuffer(config_data.index, false);
+        return CodecCodeAdapter::ENCODER_ERROR;
+      } else {
+        memcpy(config_data_cache_.config_data_addr,
+               config_data.buffer_data.addr,
+               config_data.buffer_data.buffer_size);
+      }
+      ReleaseOutputBuffer(config_data.index, false);
+    }
+    uint32_t config_data_size = config_data_cache_.config_data_size;
+    uint32_t config_info_size = config_data_cache_.config_info_size;
+    uint8_t* config_data_addr = config_data_cache_.config_data_addr;
+    if ((config_data_addr == nullptr) || (config_data_size == 0)) {
+      LOG(ERROR)
+          << __func__
+          << " [VideoEncoder] config data is invalid when handle key frame";
+      PopOutQueue();
+      return CodecCodeAdapter::ENCODER_ERROR;
+    }
     BufferInfo merge_frame_info;
     OhosBuffer merge_frame_data;
     merge_frame_info.presentation_time_us = info.presentation_time_us;
-    merge_frame_info.size = info.size + config_data.buffer_info.size;
-    merge_frame_data.buffer_size =
-        config_data.buffer_data.buffer_size + buffer.buffer_size;
+    merge_frame_info.size = info.size + config_info_size;
+    merge_frame_data.buffer_size = config_data_size + buffer.buffer_size;
     merge_frame_info.offset = 0;
     keyframe_addr_ = new uint8_t[merge_frame_data.buffer_size];
-    if (keyframe_addr_ == nullptr) {
-      LOG(ERROR) << "DequeueOutputBuffer malloc failed";
+    if (!keyframe_addr_) {
+      LOG(ERROR) << __func__ << " [VideoEncoder]  new key frame failed";
+      ClearConfigDataCache();
+      PopOutQueue();
       return CodecCodeAdapter::ENCODER_ERROR;
     }
-    // size of keyframe_addr_ is defined as config_data.buffer_data.buffer_size
-    // + buffer.buffer_size, so two memcpy should no have problem
-    memcpy(keyframe_addr_, config_data.buffer_data.addr,
-           config_data.buffer_data.buffer_size);
-
-    memcpy(keyframe_addr_ + config_data.buffer_data.buffer_size, buffer.addr,
-           buffer.buffer_size);
+    if (merge_frame_data.buffer_size < config_data_size) {
+      LOG(ERROR) << __func__
+                 << " [VideoEncoder] keyframe_addr_ memcpy failed, "
+                    "merge_frame_data.buffer_size: "
+                 << merge_frame_data.buffer_size
+                 << " config_data_size: " << config_data_size;
+      ClearKeyFrameCache();
+      ClearConfigDataCache();
+      PopOutQueue();
+      return CodecCodeAdapter::ENCODER_ERROR;
+    } else {
+      memcpy(keyframe_addr_, config_data_addr, config_data_size);
+    }
+    memcpy(keyframe_addr_ + config_data_size, buffer.addr, buffer.buffer_size);
     merge_frame_data.addr = keyframe_addr_;
     info = merge_frame_info;
     buffer = merge_frame_data;
-    ReleaseOutputBuffer(config_data.index, false);
   }
 
   PopOutQueue();
   return CodecCodeAdapter::ENCODER_OK;
 }
 
+void OHOSMediaCodecBridgeImpl::ClearConfigDataCache() {
+  if (config_data_cache_.config_data_addr) {
+    LOG(INFO) << __func__ << " [VideoEncoder] clear config first";
+    delete[] config_data_cache_.config_data_addr;
+    config_data_cache_.config_data_addr = nullptr;
+  }
+  config_data_cache_.config_data_size = 0;
+  config_data_cache_.config_info_size = 0;
+}
+
 CodecCodeAdapter OHOSMediaCodecBridgeImpl::ReleaseOutputBuffer(uint32_t index,
                                                                bool render) {
   if (video_encoder_ == nullptr) {
-    LOG(ERROR) << "OHOSMediaCodecBridgeImpl::ReleaseOutputBuffer "
-                  "video_encoder_ is NULL.";
+    LOG(ERROR) << __func__ << " [VideoEncoder] video_encoder_ is NULL.";
     return CodecCodeAdapter::ENCODER_ERROR;
   }
   if (OH_VideoEncoder_FreeOutputBuffer(video_encoder_, index) != AV_ERR_OK) {
-    LOG(ERROR)
-        << "OHOSMediaCodecBridgeImpl::OH_VideoEncoder_FreeOutputBuffer error";
+    LOG(ERROR) << __func__ << " [VideoEncoder] OH_VideoEncoder_FreeOutputBuffer error";
     return CodecCodeAdapter::ENCODER_ERROR;
   }
   return CodecCodeAdapter::ENCODER_OK;
@@ -465,18 +555,18 @@ CodecEncodeBridgeCallback::CodecEncodeBridgeCallback(
     : signal_(signal) {}
 
 void CodecEncodeBridgeCallback::OnError(int32_t error_code) {
-  LOG(ERROR) << "Error errorCode=" << error_code;
+  LOG(ERROR) << __func__ << " [VideoEncoder] Error errorCode=" << error_code;
   signal_->isOnError_ = true;
   ClearOutputCache(signal_->out_buffer_queue_);
 }
 
 void CodecEncodeBridgeCallback::OnStreamChanged(OH_AVFormat* format) {
-  LOG(INFO) << "Output Format Changed.";
+  LOG(INFO) << __func__ << " [VideoEncoder] Output Format Changed.";
 }
 
 void CodecEncodeBridgeCallback::OnNeedInputData(uint32_t index,
                                                 OhosBuffer buffer) {
-  LOG(INFO) << "CodecBridgeCallback::OnNeedInputData";
+  LOG(INFO) << __func__ << " [VideoEncoder] CodecBridgeCallback::OnNeedInputData";
 }
 
 void CodecEncodeBridgeCallback::ClearBufferInfoCache(BufferInfo& buffer_info) {
@@ -498,7 +588,7 @@ void CodecEncodeBridgeCallback::ClearConfigCache() {
 
 void CodecEncodeBridgeCallback::InitEncodeOuputBuffer(
     EncodeOutputBuffer& output_buffer) {
-  output_buffer.is_contain_config_data = false;
+  output_buffer.contains_config_data = false;
   output_buffer.config_data.buffer_info.presentation_time_us = 0;
   output_buffer.config_data.buffer_info.size = 0;
   output_buffer.config_data.buffer_info.offset = 0;
@@ -522,7 +612,7 @@ void CodecEncodeBridgeCallback::OnNeedOutputData(uint32_t index,
                                                  uint32_t flag,
                                                  OhosBuffer buffer) {
   if (!is_running_.load()) {
-    LOG(WARNING) << "encoder is not running";
+    LOG(WARNING) << __func__ << " [VideoEncoder] encoder is not running";
     return;
   }
   if (!codec_callback_task_runner_->RunsTasksInCurrentSequence()) {
@@ -545,7 +635,7 @@ void CodecEncodeBridgeCallback::OnNeedOutputData(uint32_t index,
   bool is_key_frame =
       (flag == OH_AVCodecBufferFlags::AVCODEC_BUFFER_FLAGS_SYNC_FRAME);
   if (is_key_frame && (config_data_.buffer_data.buffer_size > 0)) {
-    output_buffer.is_contain_config_data = true;
+    output_buffer.contains_config_data = true;
     output_buffer.config_data = config_data_;
   }
 

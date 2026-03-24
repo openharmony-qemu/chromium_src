@@ -81,6 +81,10 @@ class CertVerifierServiceFactoryImpl
   void GetPlatformRootStoreInfo(
       GetPlatformRootStoreInfoCallback callback) override;
 #endif
+
+#if BUILDFLAG(IS_OHOS)
+  void PlatformCertRefresh() override;
+#endif
 #endif
 #if BUILDFLAG(CHROME_ROOT_STORE_OPTIONAL)
   void SetUseChromeRootStore(bool use_crs,

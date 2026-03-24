@@ -23,12 +23,23 @@ class AXPlatformNodeOHOS : public AXPlatformNodeBase,
   // AXPlatformNodeBase.
   void Destroy() override;
   bool IsPlatformCheckable() const override;
+
   bool IsChecked() const;
   bool IsClickable() const;
+  bool IsLongClickable() const;
   bool ISelectionItemProviderIsSelected() const;
   bool IsEnabled() const;
+  std::string GetHint() const;
+  bool IsHint() const;
+  bool IsSelected() const;
+  bool IsCheckable() const;
+  float GetOpacity() const;
   std::string GetText() const;
   std::string GetComponentType() const;
+  std::string GetDescription() const;
+  std::string GetRoleString() const;
+  std::string GetBackgroundColor() const;
+  std::string GetBackgroundImage() const;
 
   // AXPlatformNode overrides.
   // This has a side effect of creating the AccessibilityNodeInfo if one does
@@ -43,6 +54,8 @@ class AXPlatformNodeOHOS : public AXPlatformNodeBase,
   void Init(AXPlatformNodeDelegate& delegate) override;
 
  private:
+  bool ShouldExposeValueAsName() const;
+
   friend AXPlatformNode::Pointer AXPlatformNode::Create(
       AXPlatformNodeDelegate& delegate);
 };

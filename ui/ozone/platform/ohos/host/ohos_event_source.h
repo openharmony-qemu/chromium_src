@@ -39,7 +39,8 @@ class OhosEventSource : public OhosEventSourceBase {
   void OnTouchEvent(const gfx::AcceleratedWidget widget_id,
                     const OH_NativeXComponent_TouchEvent& ohos_touch_event,
                     const OH_NativeXComponent_TouchPointToolType ohos_touch_point_tool_type,
-                    const TouchPointCoordinate& coordinate);
+                    const TouchPointCoordinate& coordinate,
+                    const int32_t display_id);
   void OnPinchEvent(const std::string& pinch_step,
                     const gfx::AcceleratedWidget widget_id,
                     const PinchEvent& gesture_event);
@@ -55,6 +56,11 @@ class OhosEventSource : public OhosEventSourceBase {
       std::shared_ptr<OH_NativeXComponent_MouseEvent> window_mouse_event,
       const int32_t display_id,
       const EventFlags key_flags);
+  void SendWindowTouchEventForTabDrag(
+      const gfx::AcceleratedWidget widget_id,
+      std::shared_ptr<OH_NativeXComponent_TouchEvent> window_touch_event,
+      const TouchPointCoordinate& coordinate,
+      const int32_t display_id);
 
  protected:
   void OnMouseMoveEvent(const gfx::AcceleratedWidget widget_id,
@@ -70,6 +76,16 @@ class OhosEventSource : public OhosEventSourceBase {
   std::shared_ptr<InputEventCallBack> event_callback_;
   EventPointerType ConvertOHToolTypeToEventPointerType(
       OH_NativeXComponent_TouchPointToolType ohos_touch_point_tool_type);
+  void PrepareXcomponentPointForTouchEvent(
+      const gfx::AcceleratedWidget widget_id,
+      std::shared_ptr<OH_NativeXComponent_TouchEvent> xcomponent_touch_event,
+      const float display_x,
+      const float display_y);
+  void PrepareXcomponentPointForMouseEvent(
+      const gfx::AcceleratedWidget widget_id,
+      std::shared_ptr<OH_NativeXComponent_MouseEvent> xcomponent_mouse_event,
+      const float display_x,
+      const float display_y);
 };
 }  // namespace ui
 #endif  // UI_OZONE_PLATFORM_OHOS_HOST_OHOS_EVENT_SOURCE_H_

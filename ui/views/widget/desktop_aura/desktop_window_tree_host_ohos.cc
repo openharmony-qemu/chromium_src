@@ -5,12 +5,14 @@
 #include "ui/views/widget/desktop_aura/desktop_window_tree_host_ohos.h"
 
 #include "base/logging.h"
+#include "ohos/adapter/cursor/cursor.h"
 #include "ohos/adapter/xcomponent/adapter/window_adapter.h"
 #include "ui/aura/window_delegate.h"
 #include "ui/display/screen_ohos.h"
 #include "ui/platform_window/platform_window.h"
 #include "ui/platform_window/platform_window_init_properties.h"
 #include "ui/platform_window/wm/wm_move_resize_handler.h"
+#include "ui/views/scoped_enable_unadjusted_mouse_events_ohos.h"
 #include "ui/views/widget/desktop_aura/window_event_filter_ohos.h"
 
 using WindowAdapter = ohos::adapter::xcomponent::WindowAdapter;
@@ -27,6 +29,8 @@ DesktopWindowTreeHostOhos::~DesktopWindowTreeHostOhos() = default;
 
 void DesktopWindowTreeHostOhos::OnNativeWidgetCreated(
     const Widget::InitParams& params) {
+  LOG(INFO) << "[ohoswindow] in DesktopWindowTreeHostOhos OnNativeWidgetCreated, "
+            << "type is " << params.type;
   CreateNonClientEventFilter();
   DesktopWindowTreeHostPlatform::OnNativeWidgetCreated(params);
 }
@@ -34,16 +38,6 @@ void DesktopWindowTreeHostOhos::OnNativeWidgetCreated(
 void DesktopWindowTreeHostOhos::OnClosed() {
   DestroyNonClientEventFilter();
   DesktopWindowTreeHostPlatform::OnClosed();
-}
-
-void DesktopWindowTreeHostOhos::Show(ui::mojom::WindowShowState show_state,
-                                     const gfx::Rect& restore_bounds) {
-  if (show_state == ui::mojom::WindowShowState::kMaximized) {
-    display::Display display = AccessDisplayNearestRootWindow();
-    gfx::Rect work_area = display.work_area();
-    platform_window()->SetBoundsInDIP(work_area);
-  }
-  DesktopWindowTreeHostPlatform::Show(show_state, restore_bounds);
 }
 
 void DesktopWindowTreeHostOhos::AddAdditionalInitProperties(
@@ -79,7 +73,8 @@ void DesktopWindowTreeHostOhos::AddAdditionalInitProperties(
         params.pip_parent->GetHost()->GetAcceleratedWidget();
   }
 
-  if (params.name == "ScreenCaptureNotificationUIViews") {
+  if (params.name == "ScreenCaptureNotificationUIViews" ||
+      params.name == "MessageBoxView") {
     properties->ability_type = AbilityType::kStatelessAbility;
   } else if (params.name == "TaskManagerView") {
     properties->ability_type = AbilityType::kTaskManagerAbility;
@@ -160,10 +155,68 @@ Widget::MoveLoopResult DesktopWindowTreeHostOhos::RunMoveLoop(
   return result;
 }
 
+std::unique_ptr<aura::ScopedEnableUnadjustedMouseEvents>
+DesktopWindowTreeHostOhos::RequestUnadjustedMovement() {
+  return ScopedEnableUnadjustedMouseEventsOhos::Create();
+}
+
+bool DesktopWindowTreeHostOhos::SupportsMouseLock() {
+  return ohos::adapter::Cursor::GetInstance().SupportsCursorLock();
+}
+
+void DesktopWindowTreeHostOhos::LockMouse(aura::Window* window) {
+  if (window == nullptr || window->GetHost() == nullptr) {
+    LOG(ERROR)
+    << " [OhosCursorLock] " << __FUNCTION__
+    << " null window or invalid host";
+    WindowTreeHost::LockMouse(window);
+    return;
+  }
+  if (SupportsMouseLock()) {
+    auto widget = window->GetHost()->GetAcceleratedWidget();
+    if (ohos::adapter::Cursor::GetInstance().LockCursor(widget)) {
+      WindowTreeHost::LockMouse(window);
+      LOG(INFO)
+        << " [OhosCursorLock] " << __FUNCTION__
+        << " LockCursor success at window: " << window->GetId();
+    } else {
+      LOG(ERROR) << "[OhosCursorLock] LockCursor failed ";
+    }
+  } else {
+    LOG(ERROR) << "[OhosCursorLock] LockCursor not support";
+    WindowTreeHost::LockMouse(window);
+  }
+}
+
+void DesktopWindowTreeHostOhos::UnlockMouse(aura::Window* window) {
+  if (window == nullptr || window->GetHost() == nullptr) {
+    LOG(ERROR)
+    << " [OhosCursorLock] " << __FUNCTION__
+    << " null window or invalid host";
+    WindowTreeHost::UnlockMouse(window);
+    return;
+  }
+  if (SupportsMouseLock()) {
+    auto widget = window->GetHost()->GetAcceleratedWidget();
+    if (ohos::adapter::Cursor::GetInstance().UnlockCursor(widget)) {
+      WindowTreeHost::UnlockMouse(window);
+      LOG(INFO)
+        << " [OhosCursorLock] " << __FUNCTION__
+        << " UnlockCursor success at window: " << window->GetId();
+    } else {
+      LOG(ERROR) << "[OhosCursorLock] UnlockCursor failed ";
+    }
+  } else {
+    LOG(ERROR) << "[OhosCursorLock] LockCursor not support";
+    WindowTreeHost::UnlockMouse(window);
+  }
+}
+
 // static
 DesktopWindowTreeHost* DesktopWindowTreeHost::Create(
     internal::NativeWidgetDelegate* native_widget_delegate,
     DesktopNativeWidgetAura* desktop_native_widget_aura) {
+  LOG(INFO) << "[ohoswindow] in DesktopWindowTreeHost Create.";
   return new DesktopWindowTreeHostOhos(native_widget_delegate,
                                        desktop_native_widget_aura);
 }

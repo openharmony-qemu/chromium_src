@@ -45,9 +45,9 @@ class OhosDesktopWindowMoveClient
 
   // Overridden from OhosMoveLoopDelegate:
   void OnMoveLoopEnded() override;
-  void OnMouseMove() override;
   void OnTouchMove() override;
   void OnMoveEnd() override;
+  void OnTabMoveForStartMoving() override;
 
   bool RunMoveLoop(bool can_grab_pointer, const gfx::Vector2d& drag_offset);
   void EndMoveLoop();

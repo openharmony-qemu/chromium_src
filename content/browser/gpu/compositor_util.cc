@@ -145,6 +145,14 @@ std::vector<GpuFeatureData> GetGpuFeatureData(
           "Accelerated video decode has been disabled, either via blocklist, "
           "about:flags or the command line."),
       true},
+    {"video_encode",
+     SafeGetFeatureStatus(
+         gpu_feature_info, gpu::GPU_FEATURE_TYPE_ACCELERATED_VIDEO_ENCODE,
+         command_line.HasSwitch(switches::kDisableAcceleratedVideoEncode)),
+     DisableInfo::Problem(
+         "Accelerated video encode has been disabled, either via blocklist, "
+         "about:flags or the command line."),
+     true},
     {"rasterization",
       SafeGetFeatureStatus(gpu_feature_info,
                            gpu::GPU_FEATURE_TYPE_GPU_TILE_RASTERIZATION),

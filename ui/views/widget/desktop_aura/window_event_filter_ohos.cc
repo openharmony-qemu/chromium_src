@@ -202,7 +202,13 @@ void WindowEventFilterOhos::OnGestureEvent(ui::GestureEvent* event) {
       window->delegate()
           ? window->delegate()->GetNonClientComponent(event->location())
           : HTNOWHERE;
-
+  // Cosuming long press event, the shortcut menu is displayed
+  // via a long tab event in root_view.cc.
+  if (event->type() == ui::EventType::kGestureLongPress &&
+      hit_test_code == HTCAPTION) {
+    event->SetHandled();
+    return;
+  }
   // Double tap to maximize.
   if (event->type() == ui::EventType::kGestureTap) {
     int previous_click_component = click_component_;

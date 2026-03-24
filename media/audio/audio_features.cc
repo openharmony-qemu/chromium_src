@@ -79,7 +79,7 @@ bool IsMacSckSystemAudioLoopbackCaptureEnabled() {
 #endif
 
 bool IsSystemLoopbackCaptureSupported() {
-#if BUILDFLAG(IS_WIN) || BUILDFLAG(USE_CRAS)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(USE_CRAS) || BUILDFLAG(IS_OHOS)
   return true;
 #elif BUILDFLAG(IS_MAC)
   // For system audio loopback to be enabled in getDisplayMedia(), the feature
@@ -92,7 +92,7 @@ bool IsSystemLoopbackCaptureSupported() {
   return true;
 #else
   return false;
-#endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(USE_CRAS)
+#endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(USE_CRAS) || || BUILDFLAG(IS_OHOS)
 }
 
 }  // namespace media

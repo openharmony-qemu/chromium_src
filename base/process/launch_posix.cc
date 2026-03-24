@@ -47,6 +47,7 @@
 
 #if BUILDFLAG(IS_OHOS)
 #include "ohos/adapter/multiprocess/child_process_manager.h"
+#include "ohos/adapter/native_messaging/native_messaging_adapter.h"
 #endif
 
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_AIX)
@@ -237,6 +238,20 @@ Process LaunchProcessWithNativeSpawn(const CommandLine& cmdline,
 
   return Process(pid);
 }
+
+Process LaunchProcessWithNativeMessage(const std::vector<std::string>& argv,
+                                       const LaunchOptions& options) {
+  ohos::adapter::nativemessaging::NativeMessagingAdapter& native_messaging_adapter =
+      ohos::adapter::nativemessaging::NativeMessagingAdapter::GetInstance();
+ 
+  int pid = native_messaging_adapter.ConnectNative(argv, options.fds_to_remap);
+  if (pid < 0) {
+    RAW_LOG(ERROR, "connect NativeMessageHost process failed");
+    return Process();
+  }
+ 
+  return Process(pid);
+}
 #endif  // BUILDFLAG(IS_OHOS)
 }  // anonymous namespace
 
@@ -341,6 +356,10 @@ Process LaunchProcess(const CommandLine& cmdline,
   if (options.enable_native_spawn) {
     // Creating a process with native spawn and specified the process startup entry point
     return LaunchProcessWithNativeSpawn(cmdline, options);
+  }
+  if (options.is_native_message) {
+    // Connect NativeMessagingHost
+    return LaunchProcessWithNativeMessage(cmdline.argv(), options);
   }
 #endif
   return LaunchProcess(cmdline.argv(), options);

@@ -71,6 +71,8 @@ class OzonePlatformOhos : public OzonePlatform {
   std::unique_ptr<PlatformWindow> CreatePlatformWindow(
       PlatformWindowDelegate* delegate,
       PlatformWindowInitProperties properties) override {
+    LOG(INFO) << "[ohoswindow] CreatePlatformWindow enter, type is "
+              << static_cast<int>(properties.type);
     return OhosWindow::Create(delegate, window_manager_.get(),
                               std::move(properties));
   }
@@ -86,7 +88,7 @@ class OzonePlatformOhos : public OzonePlatform {
   std::unique_ptr<InputMethod> CreateInputMethod(
       ImeKeyEventDispatcher* ime_key_event_dispatcher,
       gfx::AcceleratedWidget widget) override {
-    return std::make_unique<InputMethodOHOS>(ime_key_event_dispatcher, widget);
+    return CreateInputMethodOHOS(ime_key_event_dispatcher, widget);
   }
 
   bool InitializeUI(const InitParams& params) override {

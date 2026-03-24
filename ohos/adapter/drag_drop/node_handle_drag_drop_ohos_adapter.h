@@ -126,6 +126,13 @@ class ADAPTER_EXPORT_API NodeHandleDragDropOhosAdapter {
 
   bool ExecuteDrag(std::shared_ptr<OhosStartDragParam> drag_param,
                    const std::string& window_id);
+  void SetDraggingStarted(bool dragging_start) {
+    is_dragging_started_.store(dragging_start, std::memory_order_release);
+  }
+  bool IsDraggingStarted() {
+    return is_dragging_started_.load(std::memory_order_acquire);
+  }
+
  private:
   NodeHandleDragDropOhosAdapter() = default;
   void HandlePlainTextRecord(std::shared_ptr<OhosStartDragParam> drag_param);
@@ -167,6 +174,7 @@ class ADAPTER_EXPORT_API NodeHandleDragDropOhosAdapter {
   std::string dragged_extension_file_name_;
   static std::string window_id_;
   std::vector<OH_UdmfRecord*> drag_records_;
+  std::atomic<bool> is_dragging_started_ = false;
 
   ArkUI_DragAction* drag_action_ = nullptr;
   ArkUI_DragPreviewOption* preview_options_ = nullptr;

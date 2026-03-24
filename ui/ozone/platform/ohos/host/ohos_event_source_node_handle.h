@@ -41,7 +41,7 @@ namespace ui {
 
 using namespace ohos::adapter::xcomponent;
 
-struct ArkUI_TouchEventData {
+struct NodeHandleTouchEventData {
   float x = 0.0f;
   float y = 0.0f;
   float tilt_x = 0.0f;
@@ -52,13 +52,16 @@ struct ArkUI_TouchEventData {
   float force = 0.0f;
   int32_t touch_action = 0;
   int32_t tool_type = 0;
+  int64_t timestamp;
 };
 
-struct ArkUI_MouseEventData {
+struct NodeHandleMouseEventData {
   float x;
   float y;
   float screenX;
   float screenY;
+  float raw_delta_x;
+  float raw_delta_y;
   int64_t timestamp;
   int32_t action;
   int32_t button;
@@ -76,9 +79,10 @@ class OhosEventSourceNodeHandle : public OhosEventSourceBase {
   ~OhosEventSourceNodeHandle() override = default;
 
   void OnTouchEvent(const gfx::AcceleratedWidget widget_id,
-                    const ArkUI_TouchEventData& touch_event_data);
+                    const NodeHandleTouchEventData& touch_event_data,
+                    const int32_t display_id);
   void OnMouseEvent(const gfx::AcceleratedWidget widget_id,
-                    const ArkUI_MouseEventData& mouse_event_data,
+                    const NodeHandleMouseEventData& mouse_event_data,
                     const int32_t display_id,
                     const EventFlags key_flags);
   void SimulateTouchUp(const gfx::AcceleratedWidget widget_id) override;
@@ -100,19 +104,33 @@ class OhosEventSourceNodeHandle : public OhosEventSourceBase {
 
   void SendWindowMouseEventForTabDragNodeHandle(
       const gfx::AcceleratedWidget widget_id,
-      std::shared_ptr<ArkUI_MouseEventData> mouse_event_data,
+      std::shared_ptr<NodeHandleMouseEventData> mouse_event_data,
       const int32_t display_id,
       const EventFlags key_flags);
+  void SendWindowTouchEventForTabDragNodeHandle(
+      const gfx::AcceleratedWidget widget_id,
+      std::shared_ptr<NodeHandleTouchEventData> touch_event_data,
+      const int32_t display_id);
 
  private:
   void OnMouseMoveEvent(const gfx::AcceleratedWidget widget_id,
-                        const ArkUI_MouseEventData& mouse_event_data,
+                        const NodeHandleMouseEventData& mouse_event_data,
                         const gfx::PointF& original_location,
                         const int32_t display_id);
   void CreateAndDispatchFlingEvent(const gfx::AcceleratedWidget widget_id,
                                    const NodeHandlePanEvent& ohos_event,
                                    const EventFlags& event_flags,
                                    const bool is_stop);
+  void PrepareXcomponentPointForTouchEvent(
+      const gfx::AcceleratedWidget widget_id,
+      std::shared_ptr<NodeHandleTouchEventData> touch_event_data,
+      const float display_x,
+      const float display_y);
+  void PrepareXcomponentPointForMouseEvent(
+      const gfx::AcceleratedWidget widget_id,
+      std::shared_ptr<NodeHandleMouseEventData> mouse_event_data,
+      const float display_x,
+      const float display_y);
 
   std::shared_ptr<NodeHandleInputEventCallBack> event_callback_;
 };

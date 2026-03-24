@@ -53,6 +53,7 @@ class ADAPTER_EXPORT_API XComponentManager final : public XComponentDelegate {
   std::shared_ptr<XComponentImpl> GetXComponent(const std::string& id);
   std::shared_ptr<XComponentBase> GetXComponentBase(const std::string& id);
   void RemoveXComponent(const std::string& id);
+  void RemoveNodeHandleXComponent(const std::string& id);
   void RegisterInputEventCallBack(int32_t widget_id,
                                   std::shared_ptr<InputEventCallBack> callback);
   std::string CreateWindow(const WindowInitParameter& param);
@@ -65,7 +66,7 @@ class ADAPTER_EXPORT_API XComponentManager final : public XComponentDelegate {
   void OnWidgetDestroyed(const std::string& id) override;
 
   // XComponent For NodeHandle
-  std::shared_ptr<NodeHandleXComponentImpl> GetOrCreateNodeHandleXComponent(
+  std::shared_ptr<NodeHandleXComponentImpl> CreateNodeHandleXComponent(
                                                       const std::string& id,
                                                       XComponentType type);
   std::shared_ptr<NodeHandleXComponentImpl> GetNodeHandleXComponent(const std::string& id);
@@ -74,6 +75,11 @@ class ADAPTER_EXPORT_API XComponentManager final : public XComponentDelegate {
   bool BindNativeXComponentNode(const std::string& id, ArkUI_NodeContentHandle node_content_handle);
   bool UnBindNativeXComponentNode(const std::string& id, ArkUI_NodeContentHandle node_content_handle);
   void OnAbilityAvailable(const std::string& id);
+  void OnXcomponentAvailable(const std::string& id);
+  std::string GetCreatedAbility();
+  void CreateAndShowAbility(const WindowInitParameter& param,
+                            std::string create_id);
+  void AddCreatingAbility(const std::string& create_id);
 
  private:
   XComponentManager() = default;
@@ -87,9 +93,7 @@ class ADAPTER_EXPORT_API XComponentManager final : public XComponentDelegate {
   std::string CreateSubWindowViaNodeHandle(const NewWindowParam& param);
   void CreateXComponentViaNodeHandle(const std::string& create_id,
                                      XComponentType type);
-  void CreateAbilityViaNodeHandle(const NewWindowParam& param,
-                                  std::string& create_id);
-  void CreateWindowViaAdapter(const NewWindowParam& param);
+  void CreateAbility(const NewWindowParam& param);
   void WaitForXComponentCreated(std::string& create_id);
   void WaitForAbilityCreated(std::string& create_id);
 

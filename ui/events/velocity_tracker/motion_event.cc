@@ -80,6 +80,13 @@ std::unique_ptr<MotionEvent> MotionEvent::Cancel() const {
   return MotionEventGeneric::CancelEvent(*this);
 }
 
+#if BUILDFLAG(IS_OHOS)
+int GetDisplayId(size_t pointer_index) {
+  NOTIMPLEMENTED();
+  return 0;
+}
+#endif
+
 std::ostream& operator<<(std::ostream& stream,
                          const MotionEvent::Action action) {
   return stream << static_cast<int>(action);

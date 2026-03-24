@@ -45,6 +45,14 @@ class ADAPTER_EXPORT_API ContextAdapter {
     return device_mode_.load(std::memory_order_acquire) ==
            DeviceMode::kFreeWindowsMode;
   }
+
+  void SetLastActiveWidgetId(uint32_t last_active_widget_id) {
+    last_active_widget_id_.store(last_active_widget_id, std::memory_order_relaxed);
+  }
+
+  uint32_t GetLastActiveWidgetId() {
+    return last_active_widget_id_.load(std::memory_order_relaxed);
+  }
  
  
  private:
@@ -52,6 +60,7 @@ class ADAPTER_EXPORT_API ContextAdapter {
   // Indicates whether the device is free-windows mode, normal-window mode, or
   // PC mode.
   std::atomic<DeviceMode> device_mode_{DeviceMode::kPcMode};
+  std::atomic<uint32_t> last_active_widget_id_{0};
 };
 }  // namespace ohos::adapter
  

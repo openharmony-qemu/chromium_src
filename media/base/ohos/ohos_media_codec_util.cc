@@ -13,12 +13,12 @@
 namespace media {
 
 OH_AVCapability* OhosMediaCodecUtil::GetCodecCapability(const std::string& mime,
-                                                        bool is_codec) {
+                                                        bool is_encoder) {
   std::vector<char> mimeCStr(mime.size() + 1);
   // since mimeCStr.size is defined by mime.size, so strcpy should not have
   // problem
   strcpy(mimeCStr.data(), mime.c_str());
-  return OH_AVCodec_GetCapability(mimeCStr.data(), is_codec);
+  return OH_AVCodec_GetCapability(mimeCStr.data(), is_encoder);
 }
 
 /**
@@ -176,6 +176,85 @@ std::optional<SupportedVideoDecoderConfig> OhosMediaCodecUtil::GetVVCSupportedCo
   return vvc_supported_video_decoder_config;
 }
 
+std::vector<VideoEncodeAccelerator::SupportedProfile> OhosMediaCodecUtil::GetSupportedAVCEncodeProfiles() {
+  std::vector<VideoEncodeAccelerator::SupportedProfile> avc_supported_profiles;
+
+  // check if avc capability is supported
+  OH_AVCapability* avc_capability = OhosMediaCodecUtil::GetCodecCapability(
+      OH_AVCODEC_MIMETYPE_VIDEO_AVC, true);
+  if (avc_capability == nullptr) {
+      LOG(WARNING) << __func__
+                   << " [VideoEncoder] AVC/H264 encode acceleration not supportted";
+      return avc_supported_profiles;
+  }
+
+  // get supported range
+  OH_AVRange width_range = {-1, -1};
+  OH_AVRange height_range = {-1, -1};
+  bool range_ret = OhosMediaCodecUtil::GetCodecSupportedRange(
+      avc_capability, &width_range, &height_range);
+  if (!range_ret) {
+      LOG(ERROR) << __func__
+                 << " [VideoEncoder] AVC/H264 encode failed to get supported range";
+      return avc_supported_profiles;
+  }
+
+  OH_AVRange frame_rate_range;
+  OH_AVErrCode frameRate_error_code =
+      OH_AVCapability_GetVideoFrameRateRange(avc_capability, &frame_rate_range);
+  if (frameRate_error_code != AV_ERR_OK) {
+      LOG(WARNING) << __func__
+                   << " [VideoEncoder] AVC/H264 encodefailed to get frame rate range";
+      return avc_supported_profiles;
+  }
+
+  // get supported profile and convert to chromium video decoder profile
+  const int32_t* avc_profiles = nullptr;
+  uint32_t avc_profile_num = 0;
+  int32_t ret = OH_AVCapability_GetSupportedProfiles(
+      avc_capability, &avc_profiles, &avc_profile_num);
+  if (avc_profile_num == 0 || ret != AV_ERR_OK || avc_profiles == nullptr) {
+      LOG(WARNING) << __func__
+                   << " [VideoEncoder] AVC/H264 encode acceleration not supportted";
+      return avc_supported_profiles;
+  }
+
+  VideoEncodeAccelerator::SupportedRateControlMode bitrate_mode =
+      VideoEncodeAccelerator::kNoMode;
+  bool BITRATE_MODE_CBR_supported =
+      OH_AVCapability_IsEncoderBitrateModeSupported(avc_capability,
+                                                    BITRATE_MODE_CBR);
+  if (BITRATE_MODE_CBR_supported) {
+      bitrate_mode = bitrate_mode | VideoEncodeAccelerator::kConstantMode;
+  }
+  bool BITRATE_MODE_VBR_supported =
+      OH_AVCapability_IsEncoderBitrateModeSupported(avc_capability,
+                                                    BITRATE_MODE_VBR);
+  if (BITRATE_MODE_VBR_supported) {
+      bitrate_mode = bitrate_mode | VideoEncodeAccelerator::kVariableMode;
+  }
+
+  // all supported profile should be added separatly
+  for (uint32_t i = 0; i < avc_profile_num; i++) {
+      OH_AVCProfile oh_profile = static_cast<OH_AVCProfile>(avc_profiles[i]);
+      VideoCodecProfile avc_profile =
+          OhosMediaCodecUtil::OhosToCodecAVCProfileType(oh_profile);
+      VideoEncodeAccelerator::SupportedProfile supported_H264_profile;
+      supported_H264_profile.profile = avc_profile;
+      supported_H264_profile.max_resolution.SetSize(width_range.maxVal,
+                                                    height_range.maxVal);
+      supported_H264_profile.min_resolution.SetSize(width_range.minVal,
+                                                    height_range.minVal);
+      supported_H264_profile.max_framerate_numerator = frame_rate_range.maxVal;
+      supported_H264_profile.max_framerate_denominator = 1u;
+
+      supported_H264_profile.rate_control_modes = bitrate_mode;
+
+      avc_supported_profiles.push_back(supported_H264_profile);
+  }
+  return avc_supported_profiles;
+}
+
 VideoCodecProfile OhosMediaCodecUtil::OhosToCodecAVCProfileType(OH_AVCProfile avc_profile) {
   switch (avc_profile) {
       case AVC_PROFILE_BASELINE:
@@ -322,7 +401,7 @@ std::string OhosMediaCodecUtil::CodecToOHOSMimeType(
     case AudioCodec::kDTSXP2:
       return K_DTSX_P2_MIME_TYPE;
     default:
-      LOG(WARNING) << __func__ << " [VideoDecoder] not supported audio mime type: "
+      LOG(ERROR) << __func__ << " [AudioDecoder] not supported audio mime type: "
                  << static_cast<int>(codec);
       return std::string();
   }
@@ -344,7 +423,7 @@ std::string OhosMediaCodecUtil::CodecToOHOSMimeType(VideoCodec codec) {
     case VideoCodec::kAV1:
       return K_AV1_MIME_TYPE;
     default:
-      LOG(ERROR) << __func__ << " [WiseplayDRM] not supported video mime type: "
+      LOG(ERROR) << __func__ << " [VideoDecoder] not supported video mime type: "
                  << static_cast<int>(codec);
       return std::string();
   }
@@ -360,7 +439,7 @@ bool OhosMediaCodecUtil::IsPassthroughAudioFormat(AudioCodec codec) {
     case AudioCodec::kMpegHAudio:
       return true;
     default:
-      LOG(ERROR) << __func__ << " [WiseplayDRM] not supported audio format: "
+      LOG(ERROR) << __func__ << " [AudioDecoder] not supported audio format: "
                  << static_cast<int>(codec);
       return false;
   }

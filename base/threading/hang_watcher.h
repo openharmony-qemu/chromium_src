@@ -196,6 +196,10 @@ class BASE_EXPORT HangWatcher : public DelegateSimpleThread::Delegate {
   // Marks the current process as "shutting down". This changes the histograms
   // emitted every interval for all threads.
   static void SetShuttingDown();
+ 
+#if BUILDFLAG(IS_OHOS)
+  static bool IsBrowserProcess();
+#endif
 
   // Sets up the calling thread to be monitored for threads. Returns a
   // ScopedClosureRunner that unregisters the thread. This closure has to be

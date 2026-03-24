@@ -265,7 +265,7 @@ CodecWrapperImpl::DequeueStatus CodecWrapperImpl::DequeueOutputBuffer(
     switch (status) {
       case DecoderAdapterCode::DECODER_OK: {
         if (eos) {
-          LOG(WARNING) << __FUNCTION__ << " [WiseplayDRM] End of stream. eos: " << eos;
+          LOG(WARNING) << __FUNCTION__ << " [VideoDecoder] End of stream. eos: " << eos;
           state_ = State::kDrained;
           codec_->ReleaseOutputBuffer(index, false);
           if (end_of_stream) {
@@ -288,8 +288,8 @@ CodecWrapperImpl::DequeueStatus CodecWrapperImpl::DequeueOutputBuffer(
         if (result == DecoderAdapterCode::DECODER_OK) {
           size_ = gfx::Size(format.width, format.height);
         } else {
-          LOG(ERROR) << "CodecWrapperImpl::GetOutputFormatBridgeDecoder "
-                        "failed.";
+          LOG(ERROR) << __FUNCTION__ << " [VideoDecoder] failed. ret: "
+                     << static_cast<int>(result);
           size_ =
               gfx::Size(codec_->GetConfigWidth(), codec_->GetConfigHeight());
         }
@@ -307,7 +307,7 @@ CodecWrapperImpl::DequeueStatus CodecWrapperImpl::DequeueOutputBuffer(
       }
       case DecoderAdapterCode::DECODER_DECRYPT_FAILED_NO_KEY:
         LOG(ERROR) << __func__
-                   << " [WiseplayDRM] Status should not exit in "
+                   << " [WiseplayDRM] Status should not exist in "
                       "DequeueOutputBuffer, status: "
                    << static_cast<int>(status);
         state_ = State::kError;
@@ -360,7 +360,7 @@ bool CodecWrapperImpl::ReleaseCodecOutputBuffer(int64_t id, bool render) {
   DVLOG(3) << __func__ << " id=" << id << " render=" << render
            << " valid=" << valid;
   if (!valid) {
-    LOG(WARNING) << __FUNCTION__ << " [WiseplayDRM] buffer id not found.";
+    LOG(WARNING) << __FUNCTION__ << " [VideoDecoder] buffer id not found.";
     return false;
   }
 

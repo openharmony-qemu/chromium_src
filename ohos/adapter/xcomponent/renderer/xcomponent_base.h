@@ -48,6 +48,8 @@ class XComponentBase {
 
   virtual void SendWindowMouseEventForTabDrag(
       Input_MouseEvent* window_mouse_event) {}  // NOT_IMPLEMENTED
+  virtual void SendWindowTouchEventForTabDrag(
+      Input_TouchEvent* window_touch_event) {}  // NOT_IMPLEMENTED
 
  protected:
   XComponentDelegate* delegate_ = nullptr;

@@ -165,6 +165,7 @@ export class DragDropAdapter extends BaseAdapter {
         if (dragAction) {
           dragAction.off('statusChange');
         }
+        LogUtil.info(TAG, 'drag action listener, drag ended.');
         this.nativeContext.OnDragEndCB(this.dragSourceWindowId);
         this.clearDragParam();
       }

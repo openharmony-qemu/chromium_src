@@ -155,6 +155,8 @@ class COMPONENT_EXPORT(PLATFORM_WINDOW) PlatformWindowDelegate {
   virtual void OnFullscreenStateChanged();
 
   virtual void OnFullscreenSwitched(bool is_enter_fullscreen);
+
+  virtual bool OnBackToLastPage();
 #endif
 
   enum RotateDirection {

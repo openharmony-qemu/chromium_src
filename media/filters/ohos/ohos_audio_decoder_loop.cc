@@ -142,7 +142,7 @@ bool OhosAudioDecoderLoop::TryFlush() {
   // Here the input queue is obviously empty and is handled by the caller.
   // Flush is not allowed in kError state, but is allowed in other states.
   if (state_ == kError) {
-    LOG(WARNING) << " [WiseplayDRM] OhosAudioDecoderLoop::TryFlush state: "
+    LOG(WARNING) << " [AudioDecoder] OhosAudioDecoderLoop::TryFlush state: "
                  << static_cast<int32_t>(state_);
     return false;
   }
@@ -244,7 +244,7 @@ bool OhosAudioDecoderLoop::ProcessOneInputBuffer() {
   bool ret = EnqueueInputBuffer(input_buffer);
   if (!ret) {
     LOG(WARNING)
-        << " [WiseplayDRM] OhosAudioDecoderLoop::ProcessOneInputBuffer write "
+        << " [AudioDecoder] OhosAudioDecoderLoop::ProcessOneInputBuffer write "
            "fail, add buffer index to queue";
     client_->EnqueueInputBuffer(input_buffer.index);
   }
@@ -256,7 +256,7 @@ OhosAudioDecoderLoop::InputBuffer OhosAudioDecoderLoop::DequeueInputBuffer() {
   int64_t input_buf_index = K_INVALID_BUFFER_INDEX;
   int32_t ret = client_->DequeueInputBuffer(input_buf_index);
   if (ret < 0) {
-    LOG(INFO) << " [WiseplayDRM] OhosAudioDecoderLoop::DequeueInputBuffer "
+    LOG(INFO) << " [AudioDecoder] OhosAudioDecoderLoop::DequeueInputBuffer "
                  "cannot get empty input buffer index";
   }
   return InputBuffer(input_buf_index);
@@ -266,7 +266,7 @@ bool OhosAudioDecoderLoop::EnqueueInputBuffer(const InputBuffer& input_buffer) {
   InputData input_data = client_->ProvideInputData();
   if (!input_data.is_valid) {
     // decoder buffer is null, skip write buffer to oh audio decoder
-    LOG(INFO) << "[WiseplayDRM] OhosAudioDecoderLoop::EnqueueInputBuffer "
+    LOG(INFO) << "[AudioDecoder] OhosAudioDecoderLoop::EnqueueInputBuffer "
                  "input data is invalid";
     return false;
   }
@@ -294,7 +294,7 @@ bool OhosAudioDecoderLoop::EnqueueInputBuffer(const InputBuffer& input_buffer) {
       break;
     case OhosAudioDecoderCode::kDecoderError:
     default:
-      LOG(ERROR) << "[WiseplayDRM] kDecoderError from QueueInputBuffer";
+      LOG(ERROR) << "[AudioDecoder] kDecoderError from QueueInputBuffer";
       client_->OnInputDataQueued(false);
       SetState(kError);
       break;
@@ -318,7 +318,7 @@ bool OhosAudioDecoderLoop::ProcessOneOutputBuffer() {
     // completely decoded and there is no more data to be processed. At this
     // time, the decoder state should be set to kDrained.
     LOG(WARNING)
-        << " [WiseplayDRM] OhosAudioDecoderLoop::ProcessOneOutputBuffer set "
+        << " [AudioDecoder] OhosAudioDecoderLoop::ProcessOneOutputBuffer set "
            "state kDrained";
     SetState(kDrained);
 

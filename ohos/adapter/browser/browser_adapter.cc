@@ -34,13 +34,15 @@ CommandResult BrowserAdapter::ExecuteCommand(const int opt_type,
   param.user_data = opt_value["user_data"].As<std::string>();
   param.is_sync = opt_value["is_sync"].As<bool>();
   param.is_webapp = opt_value["is_webapp"].As<bool>();
-  LOGI("BrowserAdapter::ExecuteCommand param: %{public}s", param.ToString().c_str());
+  LOGI("[ohoswindow] BrowserAdapter::ExecuteCommand param: %{public}s",
+       param.ToString().c_str());
 
   auto result = std::make_shared<CommandResult>();
   if (param.type == CommandType::kGetWidget) {
     result->ret_code = 0;
     result->widget_Id =
         xcomponent::WindowAdapter::GetInstance().NextWindowWidgetId();
+    LOGI("[ohoswindow] BrowserAdapter::ExecuteCommand GetWidget return.");
     return *result;
   }
   
@@ -53,7 +55,7 @@ CommandResult BrowserAdapter::ExecuteCommand(const int opt_type,
 
   auto callback = GetBrowserCallback();
   if (!callback) {
-    LOGW("BrowserAdapter::ExecuteCommand no callback register.");
+    LOGW("[ohoswindow] BrowserAdapter::ExecuteCommand no callback register.");
     return *result;
   }
 
@@ -68,12 +70,12 @@ CommandResult BrowserAdapter::ExecuteCommand(const int opt_type,
     callback(param, result);
     auto status = future.wait_for(std::chrono::seconds(3));
     if (status == std::future_status::timeout) {
-      LOGE("BrowserAdapter::ExecuteCommand Wait timeout");
+      LOGE("[ohoswindow] BrowserAdapter::ExecuteCommand Wait timeout");
       return CommandResult{.ret_code = -1};
     }
     future.get();
   }
-
+  LOGI("[ohoswindow] BrowserAdapter::ExecuteCommand GetWindow return.");
   return *result;
 }
 

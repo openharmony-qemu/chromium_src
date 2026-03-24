@@ -41,7 +41,7 @@
           hidden$="[[!showViewOsCertsLinkRow_]]">
       </cr-link-row>
 
-      <if expr="is_win or is_macosx">
+      <if expr="is_win or is_macosx or is_ohos">
         <cr-link-row external id="manageOsImportedCerts" class="hr"
             label="[[i18n('certificateManagerV2PlatformCertsManageLink')]]"
             on-click="onManageCertsExternal_"

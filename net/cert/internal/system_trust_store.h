@@ -114,6 +114,12 @@ NET_EXPORT void InitializeTrustStoreWinSystem();
 NET_EXPORT void InitializeTrustStoreAndroid();
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+// Initializes ohos system trust store on a worker thread, if the builtin
+// verifier is enabled.
+NET_EXPORT void InitializeTrustStoreOhosSystem();
+#endif
+
 }  // namespace net
 
 #endif  // NET_CERT_INTERNAL_SYSTEM_TRUST_STORE_H_

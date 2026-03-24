@@ -23,7 +23,7 @@ void OhosDesktopWindowMoveClient::OnMoveEnd() {
   EndMoveLoop();
 }
 
-void OhosDesktopWindowMoveClient::OnMouseMove() {
+void OhosDesktopWindowMoveClient::OnTabMoveForStartMoving() {
   if (!tab_start_moving_) {
     LOG(INFO) << "[OhosTabDrag] " << __FUNCTION__
               << ", tab startMoving, offset_x:" << window_offset_.x()

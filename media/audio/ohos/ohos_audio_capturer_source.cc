@@ -87,6 +87,14 @@ int32_t AudioCapturerOnReadData(OH_AudioCapturer* capturer,
   return 0;
 }
 
+int32_t AudioCapturerOnInterruptEvent(OH_AudioCapturer* capturer,
+                                      void* userData,
+                                      OH_AudioInterrupt_ForceType type,
+                                      OH_AudioInterrupt_Hint hint) {
+  LOG(INFO) << "audioCapturer OnInterrupt,type:" << type << " hint:" << hint;
+  return 0;
+}
+
 void OHOSAudioCapturerSource::InitializeOnCapturerThread() {
   DCHECK(capturer_task_runner_->BelongsToCurrentThread());
   // create builder
@@ -100,8 +108,21 @@ void OHOSAudioCapturerSource::InitializeOnCapturerThread() {
   // set callbacks
   OH_AudioCapturer_Callbacks callbacks;
   callbacks.OH_AudioCapturer_OnReadData = AudioCapturerOnReadData;
+  callbacks.OH_AudioCapturer_OnInterruptEvent = AudioCapturerOnInterruptEvent;
+  callbacks.OH_AudioCapturer_OnStreamEvent = nullptr;
+  callbacks.OH_AudioCapturer_OnError = nullptr;
   OH_AudioStreamBuilder_SetCapturerCallback(audio_stream_builder_, callbacks,
                                             this);
+  if ((params_.effects() &
+       AudioParameters::PlatformEffectsMask::ECHO_CANCELLER) &&
+      (params_.effects() &
+       AudioParameters::PlatformEffectsMask::NOISE_SUPPRESSION) &&
+      (params_.effects() &
+       AudioParameters::PlatformEffectsMask::AUTOMATIC_GAIN_CONTROL)) {
+    // AUDIOSTREAM_SOURCE_TYPE_VOICE_COMMUNICATION Offers AEC, ANS, AGC
+    OH_AudioStreamBuilder_SetCapturerInfo(
+        audio_stream_builder_, AUDIOSTREAM_SOURCE_TYPE_VOICE_COMMUNICATION);
+  }
   // create audio capturer
   OH_AudioStream_Result ret =
       OH_AudioStreamBuilder_GenerateCapturer(
@@ -166,16 +187,16 @@ void OHOSAudioCapturerSource::ReadDataOnCapturerThread(void* buffer,
 }
 
 void OHOSAudioCapturerSource::SetVolume(double volume) {
-  NOTREACHED();
+  NOTIMPLEMENTED();
 }
 
 void OHOSAudioCapturerSource::SetAutomaticGainControl(bool enable) {
-  NOTREACHED();
+  NOTIMPLEMENTED();
 }
 
 void OHOSAudioCapturerSource::SetOutputDeviceForAec(
     const std::string& output_device_id) {
-  NOTREACHED();
+  NOTIMPLEMENTED();
 }
 
 void OHOSAudioCapturerSource::NotifyCaptureError(const std::string& message) {

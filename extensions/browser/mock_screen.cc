@@ -45,6 +45,10 @@ gfx::NativeWindow MockScreen::GetLocalProcessWindowAtPoint(
     const int32_t display_id) {
   return nullptr;
 }
+
+gfx::Point MockScreen::GetCursorScreenPoint(const int32_t display_id) {
+  return gfx::Point();
+}
 #endif
 
 int MockScreen::GetNumDisplays() const {

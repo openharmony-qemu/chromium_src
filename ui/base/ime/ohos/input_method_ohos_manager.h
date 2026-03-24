@@ -24,14 +24,12 @@ class COMPONENT_EXPORT(UI_BASE_IME_OHOS) InputMethodOHOSManager
   void DeleteForward(int32_t length) override;
   void SendEnterKeyEvent() override;
   void MoveCursor(int direction) override;
-  void ExitFullscreenEvent() override;
 
   void InsertTextOnUIThread(const std::string& text);
   void DeleteBackwardOnUIThread(int32_t length);
   void DeleteForwardOnUIThread(int32_t length);
   void SendEnterKeyEventOnUIThread();
   void MoveCursorOnUIThread(int direction);
-  void ExitFullscreenEventOnUIThread();
 
   scoped_refptr<base::SingleThreadTaskRunner>& GetTaskRunner();
 

@@ -17,7 +17,7 @@ source_set("system_cpu") {
 
   libs = []
 
-  if (is_linux || is_chromeos) {
+  if (is_linux || is_chromeos || is_ohos) {
     sources += [
       "core_times.cc",
       "core_times.h",

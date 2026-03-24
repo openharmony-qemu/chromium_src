@@ -182,7 +182,7 @@ bool OhosWindowManager::HitWindowAtPoint(
 void OhosWindowManager::SetPointerFocusedWindow(
     base::WeakPtr<OhosWindow> window) {
   if (!window) {
-      ohos::adapter::SetCursorVisible(true);
+      ohos::adapter::Cursor::GetInstance().SetCursorVisible(true);
       return;
   }
   auto old_focused_window = GetCurrentPointerFocusedWindow();

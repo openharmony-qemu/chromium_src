@@ -30,7 +30,6 @@
 #include "ui/ozone/platform/ohos/host/ohos_toplevel_pad_window.h"
  
 #include "ohos/adapter/context/context_adapter.h"
-#include "ohos/adapter/ime_adapter/input_method_ohos_adapter.h"
  
 namespace ui {
 OhosToplevelPadWindow::OhosToplevelPadWindow(PlatformWindowDelegate* delegate,

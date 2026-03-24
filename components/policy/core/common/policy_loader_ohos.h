@@ -28,6 +28,9 @@ class POLICY_EXPORT PolicyLoaderOhos : public AsyncPolicyLoader {
 
  private:
   void LoadOhosPolicy(const std::string& json, PolicyBundle* bundle);
+
+  void ApplyFallbackPolicies(policy::PolicyBundle* bundle);
+
   base::Value::Dict GetDictValue(const std::string& json);
 };
 

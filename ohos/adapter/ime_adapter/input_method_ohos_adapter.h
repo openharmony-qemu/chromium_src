@@ -80,7 +80,6 @@ class ADAPTER_EXPORT_API InputMethodOHOSAdapter {
       virtual void DeleteForward(int32_t length) = 0;
       virtual void SendEnterKeyEvent() = 0;
       virtual void MoveCursor(int direction) = 0;
-      virtual void ExitFullscreenEvent() = 0;
   };
   static InputMethodOHOSAdapter& GetInstance();
   virtual ~InputMethodOHOSAdapter() = default;
@@ -90,7 +89,6 @@ class ADAPTER_EXPORT_API InputMethodOHOSAdapter {
   void OffListenIME();
   void UpdateAttribute(IMFAdapterInputAttribute inputAttribute);
   void ShowTextInput(int32_t requestKeyboardReason);
-  void ExitFullscreenEvent();
   void NotifyCursorUpdate(const IMFAdapterCursorInfo cursorInfo);
   void InsertTextCallback(const std::string& text);
   void DeleteBackCallback(int32_t length);

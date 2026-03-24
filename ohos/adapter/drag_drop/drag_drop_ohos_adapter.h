@@ -46,10 +46,17 @@ class ADAPTER_EXPORT_API DragDropOhosAdapter {
 
   std::string GetDraggedExtensionFileName();
   void SetDraggedExtensionFileName(const std::string& file_name);
+  void SetDraggingStarted(bool dragging_start) {
+    is_dragging_started_.store(dragging_start, std::memory_order_release);
+  }
+  bool IsDraggingStarted() {
+    return is_dragging_started_.load(std::memory_order_acquire);
+  }
 
  private:
   DragDropOhosAdapter();
   std::string dragged_extension_file_name_;
+  std::atomic<bool> is_dragging_started_ = false;
 };
 
 }  // namespace adapter

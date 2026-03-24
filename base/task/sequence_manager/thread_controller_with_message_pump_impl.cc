@@ -275,7 +275,16 @@ void ThreadControllerWithMessagePumpImpl::OnBeginWorkItem() {
 
 void ThreadControllerWithMessagePumpImpl::OnBeginWorkItemImpl(
     LazyNow& lazy_now) {
+#if BUILDFLAG(IS_OHOS)
+  if (HangWatcher::IsBrowserProcess()) {
+    base::TimeDelta OhosThreadHangWatchTime = base::Seconds(3);
+    hang_watch_scope_.emplace(OhosThreadHangWatchTime);
+  } else {
+    hang_watch_scope_.emplace();
+  }
+#else
   hang_watch_scope_.emplace();
+#endif
   work_id_provider_->IncrementWorkId();
   run_level_tracker_.OnWorkStarted(lazy_now);
   main_thread_only().task_source->OnBeginWork();

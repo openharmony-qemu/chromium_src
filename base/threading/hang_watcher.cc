@@ -371,12 +371,6 @@ WatchHangsInScope::WatchHangsInScope(TimeDelta timeout) {
 
   previous_deadline_ = old_deadline;
 
-#if BUILDFLAG(IS_OHOS) && defined(FREEZE_DETECTION_MODE)
-    if (g_hang_watcher_process_type == HangWatcher::ProcessType::kBrowserProcess) {
-      timeout = kUIHangWatchTime;
-    }
-#endif //BUILDFLAG(IS_OHOS) && defined(FREEZE_DETECTION_MODE)
-
   TimeTicks deadline = TimeTicks::Now() + timeout;
   current_hang_watch_state->SetDeadline(deadline);
   current_hang_watch_state->IncrementNestingLevel();
@@ -852,6 +846,14 @@ base::TimeTicks HangWatcher::WatchStateSnapShot::GetHighestDeadline() const {
   // one.
   return hung_watch_state_copies_.back().deadline;
 }
+
+#if BUILDFLAG(IS_OHOS)
+// static
+bool HangWatcher::IsBrowserProcess() {
+  return g_hang_watcher_process_type.load(std::memory_order_relaxed) ==
+         HangWatcher::ProcessType::kBrowserProcess;
+}
+#endif
 
 HangWatcher::WatchStateSnapShot::WatchStateSnapShot() = default;
 

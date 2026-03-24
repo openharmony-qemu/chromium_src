@@ -52,6 +52,12 @@ class PlatformSensorProviderOhos : public PlatformSensorProvider {
                             CreateSensorCallback callback) override;
 
  private:
+  bool IsFusionSensorType(mojom::SensorType type) const;
+  void CreateFusionSensor(mojom::SensorType type,
+                          CreateSensorCallback callback);
+  void CreateBaseSensor(mojom::SensorType type, CreateSensorCallback callback);
+  Sensor_Info* GetSenorInfo(mojom::SensorType type);
+
   std::unordered_map <Sensor_Type, Sensor_Info*> sensor_map_;
   RAW_PTR_EXCLUSION Sensor_Info** sensors_;
   uint32_t count_;

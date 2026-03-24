@@ -11,6 +11,9 @@
 #include <string>
 
 #include "ohos/adapter/export.h"
+#include "ohos/adapter/window/window_common.h"
+
+using WindowStatusType = ohos::adapter::window::WindowStatusType;
 
 namespace ohos::adapter::xcomponent {
 
@@ -25,7 +28,8 @@ enum EventType : int32_t {
   ET_WINDOW_STATUS_CHANGE = 6,
   ET_WINDOW_CAPTION_BUTTON_RECT_CHANGE = 7,
   ET_DEVICE_MODE_CHANGED = 8,
-  ET_WINDOW_DISPLAY_ID_CHANGE = 9
+  ET_WINDOW_DISPLAY_ID_CHANGE = 9,
+  ET_BACK_TO_LAST_PAGE = 10
 };
 
 enum class WindowEventType {
@@ -37,15 +41,6 @@ enum class WindowEventType {
   WINDOW_VISIBLE = 6,
   WINDOW_DESTROYED = 7,
   WINDOW_CLOSE= 1000
-};
-
-enum class WindowStatusType {
-  UNDEFINED = 0,
-  FULL_SCREEN,
-  MAXIMIZE,
-  MINIMIZE,
-  FLOATING,
-  SPLIT_SCREEN
 };
 
 enum class RectChangeReason {
@@ -149,6 +144,13 @@ class ADAPTER_EXPORT_API WindowDisplayIdChangeEvent : public Event {
     : Event(EventType::ET_WINDOW_DISPLAY_ID_CHANGE) {}
   std::string ToString() override;
   int64_t display_id = 0;
+};
+
+class ADAPTER_EXPORT_API BackToLastPageEvent : public Event {
+ public:
+  explicit BackToLastPageEvent()
+    : Event(EventType::ET_BACK_TO_LAST_PAGE) {}
+  std::string ToString() override;
 };
 
 std::string EventTypeName(EventType type);

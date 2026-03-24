@@ -6,6 +6,7 @@
 #define OHOS_ADAPTER_CURSOR_CURSOR_H_
 
 #include <string>
+
 #include "ohos/adapter/export.h"
 
 namespace ohos::adapter {
@@ -69,9 +70,25 @@ struct CustomCusorInfo {
   std::shared_ptr<char[]> buff;
 };
 
-void ADAPTER_EXPORT_API SetCursorVisible(const bool visiable);
-void ADAPTER_EXPORT_API SetCursor(int32_t id, const OhosCursorType cursor_type);
-void ADAPTER_EXPORT_API SetCustomCursor(CustomCusorInfo& cursor_info);
+class ADAPTER_EXPORT_API Cursor {
+ public:
+  static Cursor& GetInstance();
+  Cursor(const Cursor&) = delete;
+  Cursor(Cursor&) = delete;
+  Cursor& operator=(const Cursor&) = delete;
 
+  void SetCursorVisible(const bool visible);
+  void SetCursor(int32_t id, const OhosCursorType cursor_type);
+  void SetCustomCursor(CustomCusorInfo& cursor_info);
+  bool IsCursorLocked();
+  bool SupportsCursorLock();
+  bool LockCursor(int32_t widget_id);
+  bool UnlockCursor(int32_t widget_id);
+
+ private:
+  Cursor() = default;
+  ~Cursor() = default;
+  bool cursor_locked_ = false;
+};
 }  // namespace ohos::adapter
 #endif  // OHOS_ADAPTER_CURSOR_CURSOR_H_

@@ -42,6 +42,10 @@
 
 namespace features {
 
+#if BUILDFLAG(IS_OHOS)
+AX_BASE_EXPORT BASE_DECLARE_FEATURE(kUseInputMethodJSApi);
+#endif
+
 // Enable PDF OCR for Select-to-Speak. It will be disabled by default on
 // platforms other than ChromeOS as STS is available only on ChromeOS.
 AX_BASE_EXPORT BASE_DECLARE_FEATURE(kAccessibilityPdfOcrForSelectToSpeak);

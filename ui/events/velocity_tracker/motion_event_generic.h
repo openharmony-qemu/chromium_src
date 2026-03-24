@@ -47,6 +47,9 @@ struct COMPONENT_EXPORT(VELOCITY_TRACKER) PointerProperties {
   float tangential_pressure;
   // source_device_id is only used on Aura.
   int source_device_id;
+#if BUILDFLAG(IS_OHOS)
+  int display_id;
+#endif
 };
 
 // A generic MotionEvent implementation.
@@ -93,6 +96,10 @@ class COMPONENT_EXPORT(VELOCITY_TRACKER) MotionEventGeneric
                        size_t historical_index) const override;
 
   int32_t GetSourceDeviceId(size_t pointer_index) const override;
+
+#if BUILDFLAG(IS_OHOS)
+  int GetDisplayId(size_t pointer_index) const override;
+#endif
 
   // Adds |pointer| to the set of pointers returning the index it was added at.
   size_t PushPointer(const PointerProperties& pointer);

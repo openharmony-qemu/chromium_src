@@ -143,6 +143,7 @@ class WebContentsViewAuraTest : public RenderViewHostTestHarness {
     root_window()->SetBounds(kBounds);
     GetNativeView()->SetBounds(kBounds);
     GetNativeView()->Show();
+    GetView()->GetContentNativeView()->Show();
     root_window()->AddChild(GetNativeView());
 
     occluding_window_.reset(aura::test::CreateTestWindowWithDelegateAndType(
@@ -871,6 +872,83 @@ TEST_F(WebContentsViewAuraTest, StartDragFromPrivilegedWebContents) {
   EXPECT_TRUE(exchange_data->IsFromPrivileged());
 }
 
+TEST_F(WebContentsViewAuraTest, RejectDragFromHiddenWebContents) {
+  const char kGoogleUrl[] = "https://google.com/";
+ 
+  std::u16string url_string = u"https://google.com/";
+ 
+  NavigateAndCommit(GURL(kGoogleUrl));
+ 
+  TestDragDropClient drag_drop_client;
+  aura::client::SetDragDropClient(root_window(), &drag_drop_client);
+ 
+  // Mark the Web Contents as native UI.
+  WebContentsViewAura* view = GetView();
+ 
+  DropData drop_data;
+  drop_data.url = GURL(kGoogleUrl);
+ 
+  view->GetContentNativeView()->Hide();
+  view->StartDragging(drop_data, url::Origin::Create(GURL(kGoogleUrl)),
+                      blink::DragOperationsMask::kDragOperationNone,
+                      gfx::ImageSkia(), gfx::Vector2d(), gfx::Rect(),
+                      blink::mojom::DragEventSourceInfo(),
+                      RenderWidgetHostImpl::From(rvh()->GetWidget()));
+ 
+  ui::OSExchangeData* exchange_data = drag_drop_client.GetDragDropData();
+  EXPECT_FALSE(exchange_data);
+}
+ 
+// If the event location is not in the WebContentsViewAura, the drag will not be
+// started.
+TEST_F(WebContentsViewAuraTest, RejectDragFromOutsideView) {
+  const char kGoogleUrl[] = "https://google.com/";
+ 
+  std::u16string url_string = u"https://google.com/";
+ 
+  NavigateAndCommit(GURL(kGoogleUrl));
+ 
+  TestDragDropClient drag_drop_client;
+  aura::client::SetDragDropClient(root_window(), &drag_drop_client);
+ 
+  // Mark the Web Contents as native UI.
+  WebContentsViewAura* view = GetView();
+ 
+  const auto view_bounds_on_screen =
+      view->GetContentNativeView()->GetBoundsInScreen();
+ 
+  DropData drop_data;
+  drop_data.url = GURL(kGoogleUrl);
+ 
+#if BUILDFLAG(IS_CHROMEOS)
+  // This condition is needed to avoid calling WebContentsViewAura::EndDrag
+  // which will result NOTREACHED being called in
+  // `RenderWidgetHostViewBase::TransformPointToCoordSpaceForView`.
+  view->drag_in_progress_ = true;
+#endif  //  BUILDFLAG(IS_CHROMEOS)
+ 
+  view->StartDragging(
+      drop_data, url::Origin::Create(GURL(kGoogleUrl)),
+      blink::DragOperationsMask::kDragOperationNone, gfx::ImageSkia(),
+      gfx::Vector2d(), gfx::Rect(),
+      blink::mojom::DragEventSourceInfo(
+          {view_bounds_on_screen.x() + view_bounds_on_screen.width() + 1,
+           view_bounds_on_screen.y() + 1},
+          ui::mojom::DragEventSource::kMouse),
+      RenderWidgetHostImpl::From(rvh()->GetWidget()));
+ 
+  ui::OSExchangeData* exchange_data = drag_drop_client.GetDragDropData();
+#if BUILDFLAG(IS_CHROMEOS)
+  // TODO(https://crbug.com/454552204): Remove #if when either ChromeOS
+  // fixes split screen mode web ui tab strip drag, or web ui tab strip is
+  // fully deprecated.
+  EXPECT_TRUE(exchange_data);
+#else
+  EXPECT_FALSE(exchange_data);
+#endif  //  BUILDFLAG(IS_CHROMEOS)
+}
+ 
+// Test that a drag from an event located outside the source view doesn't start.
 TEST_F(WebContentsViewAuraTest, EmptyTextInDropDataIsNonNullInOSExchangeData) {
   const char kGoogleUrl[] = "https://google.com/";
 

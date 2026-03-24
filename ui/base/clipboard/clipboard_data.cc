@@ -198,6 +198,12 @@ std::string ClipboardData::GetCustomData(
   return it != custom_data_.end() ? it->second : std::string();
 }
 
+#if BUILDFLAG(IS_OHOS)
+const std::map<ClipboardFormatType, std::string>& ClipboardData::GetAllCustomData() const {
+  return custom_data_;
+}
+#endif  // BUILDFLAG(IS_OHOS)
+
 std::string ClipboardData::GetDataTransferCustomData() const {
   return GetCustomData(ClipboardFormatType::DataTransferCustomType());
 }

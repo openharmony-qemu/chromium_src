@@ -46,6 +46,9 @@ class CONTENT_EXPORT MotionEventWeb : public ui::MotionEvent {
   ToolType GetToolType(size_t pointer_index) const override;
   int GetButtonState() const override;
   int GetFlags() const override;
+#if BUILDFLAG(IS_OHOS)
+  int GetDisplayId(size_t pointer_index) const override;
+#endif
 
  private:
   blink::WebTouchEvent event_;

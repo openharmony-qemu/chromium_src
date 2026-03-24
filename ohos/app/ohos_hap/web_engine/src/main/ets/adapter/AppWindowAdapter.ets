@@ -13,12 +13,15 @@ import LogUtil from '../utils/LogUtil';
 import { AbilityManager } from '../common/AbilityManager';
 import LogMethod from '../common/LogDecorator';
 import { StartOptions } from '@kit.AbilityKit';
-import { NewWindowParam, PointCoordinate, WindowBound, kAbilityMap } from '../interface/CommonInterface';
+import { NewWindowParam, PointCoordinate, WindowBound, kAbilityMap,
+  AbilityType } from '../interface/CommonInterface';
 import LaunchHelper from '../utils/LaunchHelper';
 import { ContextAdapter } from './ContextAdapter';
 import { DeviceInfoAdapter } from "../adapter/DeviceInfoAdapter";
 import { NativeThemeAdapter } from './NativeThemeAdapter';
 import { NodeHandleManager } from '../common/NodeHandleManager';
+import { kTitleBarHeightVP } from '../common/Constants';
+import CheckEmptyUtils from '../utils/CheckEmptyUtils';
 
 const TAG: string = 'AppWindow';
 
@@ -73,6 +76,7 @@ export class AppWindowAdapter extends BaseAdapter {
 
   @LogMethod
   createWindow(param: NewWindowParam) {
+    LogUtil.info(TAG, `[ohoswindow] in AppWindowAdapter createWindow, param is ${JSON.stringify(param)}`);
     let abilityName: string = kAbilityMap.get(param.ability_type) ?? 'EntryAbility';
     const want: Want = {
       bundleName: this.bundleName,
@@ -83,7 +87,8 @@ export class AppWindowAdapter extends BaseAdapter {
         'useDarkMode': param.use_dark_mode,
         'titleButtonVisible': param.caption_button_visible,
         instanceKey: param.window_id,
-        'webappWindow': param.app_id
+        'webappWindow': param.app_id,
+        'initStatus': param.status
       }
     };
 
@@ -91,11 +96,34 @@ export class AppWindowAdapter extends BaseAdapter {
     const windowProp = windowClass?.getWindowProperties();
     let xComBorder: number = windowProp?.drawableRect.left || 0;
     let xComTop: number = windowProp?.drawableRect.top || 0;
+    let uiContext = windowClass?.getUIContext();
+
+    if (this.nativeContext.IsSupportNodeHandleFeature() &&
+      param.ability_type === AbilityType.kTaskManagerAbility &&
+      !CheckEmptyUtils.isWindowBoundsEmpty(param.bounds) &&
+      !param.hide_title_bar) {
+      // Keep the bounds saved in Chromium consistent with the bounds in windowRectChange,
+      // otherwise the window will shift downwards the next time it is created.
+      xComTop = uiContext ? uiContext.vp2px(kTitleBarHeightVP.kDefault) : xComTop;
+    }
+
     let options: StartOptions = {
       windowLeft: param.bounds.left - xComBorder,
       windowTop: param.bounds.top - xComTop,
       windowWidth: param.bounds.width + xComBorder + xComBorder,
       windowHeight: param.bounds.height + xComBorder + xComTop,
+      minWindowWidth: uiContext ?
+        uiContext.px2vp(param.window_limit.min_width === 0 ? 0 :
+          param.window_limit.min_width + xComBorder + xComBorder) : 0,
+      minWindowHeight: uiContext ?
+        uiContext.px2vp(param.window_limit.min_height === 0 ? 0 :
+          param.window_limit.min_height + xComBorder + xComTop) : 0,
+      maxWindowWidth: uiContext ?
+        uiContext.px2vp(param.window_limit.max_width === 0 ? 0 :
+          param.window_limit.max_width + xComBorder + xComBorder) : 0,
+      maxWindowHeight: uiContext ?
+        uiContext.px2vp(param.window_limit.max_height === 0 ? 0 :
+          param.window_limit.max_height + xComBorder + xComTop) : 0,
       startWindowBackgroundColor: this.backgroundColor(param.use_dark_mode),
     }
     LaunchHelper.LaunchWithOptions(this.ctxAdapter.getActiveContext(), want, options);
@@ -109,20 +137,22 @@ export class AppWindowAdapter extends BaseAdapter {
 
   @LogMethod
   showWindow(id: number) {
+    LogUtil.info(TAG, `[ohoswindow] in AppWindowAdapter showWindow, id is ${id}`);
     let windowClass = this.getWindow(id);
     if (!windowClass) {
-      LogUtil.error(TAG, 'Failed to obtain the main window.');
+      LogUtil.error(TAG, '[ohoswindow] Failed to obtain the main window.');
       return;
     }
 
     windowClass.showWindow()
       .catch((err: BusinessError) => {
-        LogUtil.error(TAG, 'Failed to show the window. Cause:' + JSON.stringify(err));
+        LogUtil.error(TAG, '[ohoswindow] Failed to show the window. Cause:' + JSON.stringify(err));
       });
   }
 
   @LogMethod
   activateWindow(id: number) {
+    LogUtil.info(TAG, `[ohoswindow] in AppWindowAdapter activateWindow, id is ${id}`);
     this.showWindow(id);
   }
 
@@ -404,7 +434,7 @@ export class AppWindowAdapter extends BaseAdapter {
   }
 
   @LogMethod
-  shiftWindowEvent(sourceId: number, targetId: number,
+  shiftWindowMouseEvent(sourceId: number, targetId: number,
     callback: (result: boolean) => void): void {
     if (deviceInfo.sdkApiVersion >= 15) {
       try {
@@ -437,5 +467,41 @@ export class AppWindowAdapter extends BaseAdapter {
       return;
     }
     callback(nodeContent);
+  }
+
+  @LogMethod
+  unbind(id: string, callback: (nodeContent: NodeContent | undefined) => void) {
+    let nodeContent = this.nodeHandleManager.getNodeContent(id);
+    if (!nodeContent) {
+      LogUtil.warn(TAG, 'unbind node handle with node content failed, not find node content for id' + id);
+      callback(undefined);
+      return;
+    }
+    callback(nodeContent);
+  }
+
+  @LogMethod
+  shiftWindowTouchEvent(sourceId: number, targetId: number,
+    fingerId: number, callback: (result: boolean) => void): void {
+    if (deviceInfo.sdkApiVersion >= 20) {
+      try {
+        let sourceOriginWindowId = this.abilityManager.getProxy(sourceId)?.getOriginWindowId();
+        let targetOriginWindowId = this.abilityManager.getProxy(targetId)?.getOriginWindowId();
+        window.shiftAppWindowTouchEvent(sourceOriginWindowId, targetOriginWindowId, fingerId).then(() => {
+          LogUtil.info(TAG, 'shiftWindowTouchEvent success.');
+          callback(true);
+        }).catch((err: BusinessError) => {
+          LogUtil.error(TAG, 'Failed to shiftWindowTouchEvent. Cause: ' + JSON.stringify(err));
+          callback(false);
+        })
+      } catch (err) {
+        let message = (err as BusinessError).message;
+        LogUtil.error(TAG, `shiftWindowTouchEvent failed.: ${message}`);
+        callback(false);
+      }
+    } else {
+      LogUtil.error(TAG, 'shiftWindowTouchEvent fail, sdkApiVersion is less than 20');
+      callback(false);
+    }
   }
 };

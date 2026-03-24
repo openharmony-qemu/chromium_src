@@ -379,7 +379,7 @@ std::string LocatedEvent::ToString() const {
 MouseEvent::MouseEvent(const PlatformEvent& native_event)
     : LocatedEvent(native_event),
       changed_button_flags_(GetChangedMouseButtonFlagsFromNative(native_event)),
-#if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_LINUX)
+#if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
       movement_(GetMouseMovementFromNative(native_event)),
 #endif
       pointer_details_(GetMousePointerDetailsFromNative(native_event)) {
@@ -1280,6 +1280,21 @@ GestureEvent::GestureEvent(float x,
       details_(details),
       unique_touch_event_id_(unique_touch_event_id) {
 }
+
+#if BUILDFLAG(IS_OHOS)
+GestureEvent::GestureEvent(float x,
+                           float y,
+                           int flags,
+                           base::TimeTicks time_stamp,
+                           const GestureEventDetails& details,
+                           int32_t display_id,
+                           int pointer_id,
+                           uint32_t unique_touch_event_id)
+    : GestureEvent(x, y, flags, time_stamp, details, unique_touch_event_id) {
+  set_display_id(display_id);
+  set_pointer_id(pointer_id);
+}
+#endif
 
 GestureEvent::GestureEvent(const GestureEvent& other) = default;
 

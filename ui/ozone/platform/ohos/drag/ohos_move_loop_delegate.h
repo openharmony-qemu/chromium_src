@@ -15,10 +15,10 @@ class OhosMoveLoopDelegate {
   virtual ~OhosMoveLoopDelegate() = default;
   // callback event at the end of moveLoop during tab drag
   virtual void OnMoveLoopEnded() = 0;
-  // callback event of the mouse move event during tab drag
-  virtual void OnMouseMove() = 0;
   // callback event of the touch move event during tab drag
   virtual void OnTouchMove() = 0;
+  // start drag tab using startmoving when touch event
+  virtual void OnTabMoveForStartMoving() = 0;
   // callback event when tab dragging ended
   virtual void OnMoveEnd() = 0;
 };

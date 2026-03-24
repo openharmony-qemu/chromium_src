@@ -12,6 +12,7 @@
 #include "ohos/adapter/window/window_common.h"
 #include "ohos/adapter/xcomponent/adapter/window_adapter.h"
 
+using WindowStatusType = ohos::adapter::window::WindowStatusType;
 namespace ohos::adapter::xcomponent {
 
 void OnWindowInitSize(const aki::Value window_rect,
@@ -154,10 +155,10 @@ void OnCaptionButtonRectChange(const std::string& xcomponent_id,
 
 void SetSystemWindowLimits(const aki::Value window_limits) {
   WindowLimits limits;
-  limits.max_width = window_limits["maxWidth"].As<int>();
-  limits.max_height = window_limits["maxHeight"].As<int>();
-  limits.min_width = window_limits["minWidth"].As<int>();
-  limits.min_height = window_limits["minHeight"].As<int>();
+  limits.max_width = window_limits["max_width"].As<int>();
+  limits.max_height = window_limits["max_height"].As<int>();
+  limits.min_width = window_limits["min_width"].As<int>();
+  limits.min_height = window_limits["min_height"].As<int>();
   WindowAdapter::GetInstance().SetSystemWindowLimits(limits);
 }
 
@@ -180,6 +181,12 @@ void OnWindowDisplayIdChange(const std::string& xcomponent_id,
   WindowAdapter::GetInstance().NotifyWindowEvent(xcomponent_id, event);
 }
 
+void OnBackToLastPage(const std::string& xcomponent_id) {
+  TRACE_EVENT_1("OnBackToLastPage", "widget_id", xcomponent_id);
+  auto event = std::make_shared<BackToLastPageEvent>();
+  WindowAdapter::GetInstance().NotifyWindowEvent(xcomponent_id, event);
+}
+
 JSBIND_GLOBAL() {
   JSBIND_FUNCTION(OnWindowInitSize);
   JSBIND_FUNCTION(OnWindowStatusChange);
@@ -193,6 +200,7 @@ JSBIND_GLOBAL() {
   JSBIND_FUNCTION(SetSystemWindowLimits);
   JSBIND_FUNCTION(OnDeviceModeChange);
   JSBIND_FUNCTION(OnWindowDisplayIdChange);
+  JSBIND_FUNCTION(OnBackToLastPage);
 }
 
 }  // namespace ohos::adapter::xcomponent

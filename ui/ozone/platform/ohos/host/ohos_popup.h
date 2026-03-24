@@ -40,6 +40,8 @@ class OhosPopup : public OhosWindow {
   WindowInitParameter BuildWindowInitParameter() override;
   display::Display GetCurrentDisplay() override;
 
+  bool ShouldWindowContentsBeTransparent() const override;
+
  private:
   void OnFocusEvent();
   void OnBlurEvent();

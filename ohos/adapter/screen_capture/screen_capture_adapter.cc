@@ -88,6 +88,21 @@ bool ScreenCaptureAdapter::LoadAllFunctions() {
     return false;
   }
 
+  if (!native_screen_capture_lib_.LoadFunction(
+          &show_cursor_func_, "OH_AVScreenCapture_ShowCursor")) {
+    LOGE("load function OH_AVScreenCapture_ShowCursor failed");
+    return false;
+  }
+
+  if (!native_screen_capture_lib_.LoadFunction(
+          &set_capture_content_changed_func_,
+          "OH_AVScreenCapture_SetCaptureContentChangedCallback")) {
+    LOGE(
+        "load function OH_AVScreenCapture_SetCaptureContentChangedCallback "
+        "failed");
+    return false;
+  }
+
   return true;
 }
 
@@ -151,6 +166,26 @@ __attribute__((no_sanitize("cfi", "cfi-icall")))
 OH_AVSCREEN_CAPTURE_ErrCode ScreenCaptureAdapter::ReleaseCaptureStrategy(
     OH_AVScreenCapture_CaptureStrategy* strategy) {
   return release_capture_strategy_func_(strategy);
+}
+
+__attribute__((no_sanitize("cfi", "cfi-icall")))
+OH_AVSCREEN_CAPTURE_ErrCode ScreenCaptureAdapter::ShowCursor(
+    OH_AVScreenCapture* screen_capture) {
+  if (!is_support_native_screen_capture_) {
+    return AV_SCREEN_CAPTURE_ERR_INVALID_STATE;
+  }
+  return show_cursor_func_(screen_capture, true);
+}
+
+__attribute__((no_sanitize("cfi", "cfi-icall")))
+OH_AVSCREEN_CAPTURE_ErrCode ScreenCaptureAdapter::SetCaptureContentChanged(
+    OH_AVScreenCapture* screen_capture,
+    OnCaptureContentChangedFunc callback,
+    void* user_data) {
+  if (!is_support_native_screen_capture_) {
+    return AV_SCREEN_CAPTURE_ERR_INVALID_STATE;
+  }
+  return set_capture_content_changed_func_(screen_capture, callback, user_data);
 }
 
 }  // namespace ohos::adapter

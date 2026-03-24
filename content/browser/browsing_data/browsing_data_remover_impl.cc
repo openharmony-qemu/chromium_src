@@ -303,6 +303,11 @@ void BrowsingDataRemoverImpl::RunNextTask() {
   DCHECK(!task_queue_.empty());
   RemovalTask& removal_task = task_queue_.front();
   removal_task.task_started = base::TimeTicks::Now();
+#if BUILDFLAG(IS_OHOS)
+  LOG(INFO) << "[browsing_data] RunNextTask start, task_started= "
+            << removal_task.task_started
+            << ", task queue size= " << task_queue_.size();
+#endif
 
   // To detect tasks that are causing slow deletions, record running sub tasks
   // after a delay.
@@ -892,6 +897,15 @@ void BrowsingDataRemoverImpl::Notify() {
   }
 
   base::TimeDelta delta = base::TimeTicks::Now() - task.task_started;
+
+#if BUILDFLAG(IS_OHOS)
+  LOG(INFO) << "[browsing_data] Task finished, task cost= "
+            << delta.InMilliseconds() << "ms"
+            << ", remove_mask=" << task.remove_mask
+            << ", origin_mask=" << task.origin_type_mask
+            << ", begin=" << task.delete_begin << ", end=" << task.delete_end
+            << ", task queue size=" << task_queue_.size();
+#endif
   if (task.filter_builder->MatchesMostOriginsAndDomains()) {
     // Full, and time based and filtered deletions are often implemented
     // differently, so we track them in separate metrics.

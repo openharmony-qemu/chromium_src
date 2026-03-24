@@ -310,8 +310,11 @@ void UtilityProcessHost::MaybeBindMojoInterfaces() {
 bool UtilityProcessHost::StartProcess() {
   process_->SetName(options_.name_);
   process_->SetMetricsName(options_.metrics_name_);
-
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  if (true) {
+#else
   if (RenderProcessHost::run_renderer_in_process()) {
+#endif
     DCHECK(g_utility_main_thread_factory);
     // See comment in RenderProcessHostImpl::Init() for the background on why we
     // support single process mode this way.

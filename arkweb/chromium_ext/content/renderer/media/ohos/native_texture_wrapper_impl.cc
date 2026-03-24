@@ -111,8 +111,11 @@ void NativeTextureWrapperImpl::CreateVideoFrame(
           coded_size, visible_rect, visible_rect.size(), base::TimeDelta());
 
   if (new_frame) {
-    new_frame->set_ycbcr_info(ycbcr_info);
+    LOG(ERROR) << "NativeTextureWrapperImpl::CreateVideoFrame frame is null";
+    return;
   }
+  new_frame->set_ycbcr_info(ycbcr_info);
+
   if (enable_texture_copy_) {
     new_frame->metadata().copy_required = true;
   }

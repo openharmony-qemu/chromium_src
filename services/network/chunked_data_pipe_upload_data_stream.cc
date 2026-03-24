@@ -106,10 +106,10 @@ int ChunkedDataPipeUploadDataStream::InitInternal(
     return net::ERR_INSUFFICIENT_RESOURCES;
 #if BUILDFLAG(ARKWEB_SCHEME_HANDLER)
   if (!chunked_data_pipe_getter_.is_connected()) {
-    LOG(ERROR) << "chunked_data_pipe_getter is not connected.";
+    LOG(ERROR) << "chunked_data_pipe_getter is not connected";
   }
   if (!chunked_data_pipe_getter_.is_bound()) {
-    LOG(ERROR) << "chunked_data_pipe_getter is not bound.";
+    LOG(ERROR) << "chunked_data_pipe_getter is not bound";
   }
 #endif
   chunked_data_pipe_getter_->StartReading(std::move(data_pipe_producer));
@@ -246,7 +246,7 @@ void ChunkedDataPipeUploadDataStream::OnSizeReceived(int32_t status,
     chunked_data_pipe_getter_.reset();
 
 #if BUILDFLAG(ARKWEB_SCHEME_HANDLER)
-    LOG(INFO) << "chunked_data_pipe_getter was reseted.";
+    LOG(INFO) << "chunked_data_pipe_getter was reset";
 #endif
     if (status_ < net::ERR_IO_PENDING) {
       LOG(ERROR) << "OnSizeReceived failed with Error: " << status_;

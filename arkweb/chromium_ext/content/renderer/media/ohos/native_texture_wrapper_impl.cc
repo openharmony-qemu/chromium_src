@@ -116,7 +116,7 @@ void NativeTextureWrapperImpl::CreateVideoFrame(
   }
   new_frame->set_ycbcr_info(ycbcr_info);
 
-  if (enable_texture_copy_) {         
+  if (enable_texture_copy_) {
     new_frame->metadata().copy_required = true;
   }
 

@@ -6680,6 +6680,15 @@ void NWebDelegate::GetLastJavaScriptProxyCallingFrameInfo(
 #endif
 
 #if BUILDFLAG(ARKWEB_READER_MODE)
+void NWebDelegate::EnableReaderMode(bool enabled) {
+  LOG(INFO) << "NWebDelegate::EnableReaderMode: " << enabled;
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "NWebDelegate::EnableReaderMode failed, can not get browser";
+    return;
+  }
+  GetBrowser()->GetHost()->EnableReaderMode(enabled);
+}
+
 void NWebDelegate::Distill(const std::string& guid, const DistillOptions& distill_options, DistillCallback callback) {
   if (!CEF_CURRENTLY_ON_UIT()) {
     CEF_POST_TASK(

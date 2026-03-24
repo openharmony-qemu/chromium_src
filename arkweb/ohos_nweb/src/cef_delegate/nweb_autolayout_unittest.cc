@@ -441,6 +441,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void RunJavaScriptInFrames(const std::string&, FrameInfos, bool,
     IsolatedWorld, CefRefPtr<CefJavaScriptResultCallback>) override {}
 #if BUILDFLAG(ARKWEB_READER_MODE)
+  void EnableReaderMode(bool enabled) override {}
   void Distill(uint64_t, const DistillOptions&, CefRefPtr<CefDistillCallback>) override {}
   void AbortDistill() override {}
 #endif

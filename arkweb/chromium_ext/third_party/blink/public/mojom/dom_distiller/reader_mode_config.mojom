@@ -33,6 +33,7 @@ enum ContentFeatureIndex {
 };
 
 struct ReaderModeConfig {
+  bool is_v2;
   bool reader_mode_enabled;
   map<int32, array<string>> detail_templates;
   map<int32, array<string>> content_templates;

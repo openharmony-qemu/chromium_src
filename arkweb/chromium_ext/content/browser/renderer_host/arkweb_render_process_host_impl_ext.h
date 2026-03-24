@@ -22,6 +22,7 @@
 #include "content/public/browser/browser_context.h"
 
 #if BUILDFLAG(ARKWEB_READER_MODE)
+#include "arkweb/chromium_ext/base/arkweb_report_statistics.h"
 #include "ohos_nweb_ex/overrides/cef/libcef/browser/alloy/alloy_browser_reader_mode_config_utils.h"
 #include "ohos_nweb_ex/overrides/cef/libcef/browser/alloy/alloy_browser_reader_mode_config.h"
 #endif
@@ -85,6 +86,15 @@ class CONTENT_EXPORT ArkwebRenderProcessHostImplExt : public RenderProcessHostIm
       const nweb_ex::BrowserReaderModeConfigData* data);
   void UpdateReaderModeConfig(
       const nweb_ex::BrowserReaderModeConfigData* data) override;
+  void SetMojomReaderModeConfigV1(
+      blink::mojom::ReaderModeConfig* config,
+      const nweb_ex::BrowserReaderModeConfigData* config_data);
+  void SetMojomReaderModeConfigV2(
+      blink::mojom::ReaderModeConfig* config,
+      const nweb_ex::BrowserReaderModeConfigData* config_data);
+  void ReportDistillableResult(
+      const std::string& event_type,
+      const std::string& value) override;
 #endif  // ARKWEB_READER_MODE
 
 #if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)

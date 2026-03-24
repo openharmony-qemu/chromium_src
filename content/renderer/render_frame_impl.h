@@ -1364,6 +1364,12 @@ class CONTENT_EXPORT RenderFrameImpl
   bool GetGlobalAdblockEnabled() override;
 #endif
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  bool IsReaderModeEnabled() override;
+  void ReportDistillableResult(const std::string& event_type,
+                               const std::string& value) override;
+#endif
+
   // Stores the WebLocalFrame we are associated with.  This is null from the
   // constructor until BindToFrame() is called, and it is null after
   // FrameDetached() is called until destruction (which is asynchronous in the

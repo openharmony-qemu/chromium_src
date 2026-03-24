@@ -71,6 +71,7 @@ std::string GetDistillerScriptWithOptions(
   script = script.replace(stringify_offset, strlen(kStringifyPlaceholder),
                           stringify);
 #if BUILDFLAG(ARKWEB_READER_MODE)
+  LOG(DEBUG) << "[Distiller] distill options_json: " << options_json;
   ModifyDistillerScriptOhos(script, is_distill_catalog);
 #endif // ARKWEB_READER_MODE
   return script;
@@ -97,8 +98,10 @@ void DistillerPage::DistillPage(
 #if BUILDFLAG(ARKWEB_READER_MODE)
   dom_distiller::proto::DomDistillerOptions new_options = options;
   bool is_distill_catalog = DistillPageOhos(gurl, new_options);
+  bool is_article = GetDistillOptions() && GetDistillOptions()->distill_type_ext == DistillTypeExt::ARTICLE;
+  auto custom_options = GetCustomDomDistillerOptions(is_article, gurl, new_options);
   DistillPageImpl(gurl,
-                  GetDistillerScriptWithOptions(new_options, StringifyOutput(),
+                  GetDistillerScriptWithOptions(custom_options, StringifyOutput(),
                                                 is_distill_catalog));
 #else
   DistillPageImpl(gurl,

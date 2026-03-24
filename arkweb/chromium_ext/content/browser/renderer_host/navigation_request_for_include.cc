@@ -30,7 +30,7 @@ void NavigationRequest::StartNavigationExt() {
              << " is_browser_initiated_: "
              << commit_params_->is_browser_initiated
              << " was_redirected_: " << was_redirected_
-	           << " arkweb_version: " << ARKWEB_VERSION_FULL;
+             << " arkweb_version: " << ARKWEB_VERSION_FULL;
   }
 }
 #endif

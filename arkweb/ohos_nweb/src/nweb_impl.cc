@@ -3646,6 +3646,22 @@ void NWebImpl::WebSendMouseEvent(
 #endif
   input_handler_->WebSendMouseEvent(mouseEvent);
 }
+
+void NWebImpl::SetScrollbarLayoutPolicy(int policy) {
+  if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "SetScrollbarLayoutPolicy nweb_delegate_ is nullptr";
+    return;
+  }
+  nweb_delegate_->SetScrollbarLayoutPolicy(policy);
+}
+
+void NWebImpl::SetIsSystemRtlEnable(bool enable) {
+  if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "SetIsSystemRtlEnable nweb_delegate_ is nullptr";
+    return;
+  }
+  nweb_delegate_->SetIsSystemRtlEnable(enable);
+}
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
 bool NWebImpl::GetCertChainDerData(std::vector<std::string>& certChainData,

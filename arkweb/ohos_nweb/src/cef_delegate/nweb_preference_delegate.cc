@@ -225,6 +225,9 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
       !IsVerticalScrollBarAccess() ? STATE_ENABLED : STATE_DISABLED;
   browser_settings.scroll_enabled = setting_scroll_enabled_;
   browser_settings.blur_enabled = GetBlurEnable();
+  browser_settings.scrollbar_layout_policy =
+      scrollbar_layout_policy_;
+  browser_settings.is_system_rtl_enabled = is_system_rtl_enabled_;
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
   browser_settings.native_embed_mode_enabled =
@@ -920,8 +923,25 @@ void NWebPreferenceDelegate::SetScrollable(bool enable, int32_t scrollType) {
 bool NWebPreferenceDelegate::GetScrollable() {
   return scroll_enabled_;
 }
-#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
+void NWebPreferenceDelegate::SetScrollbarLayoutPolicy(int policy) {
+  scrollbar_layout_policy_ = policy;
+  WebPreferencesChanged();
+}
+
+int NWebPreferenceDelegate::GetScrollbarLayoutPolicy() const {
+  return scrollbar_layout_policy_;
+}
+
+void NWebPreferenceDelegate::SetIsSystemRtlEnable(bool enable) {
+  is_system_rtl_enabled_ = enable;
+  WebPreferencesChanged();
+}
+
+bool NWebPreferenceDelegate::GetIsSystemRtlEnabled() const {
+  return is_system_rtl_enabled_;
+}
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
 void NWebPreferenceDelegate::SetNativeEmbedMode(bool flag) {
   // Native Embed is not supported on pc device.

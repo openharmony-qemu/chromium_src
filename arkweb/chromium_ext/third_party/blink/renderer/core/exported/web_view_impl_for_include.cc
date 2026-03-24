@@ -101,6 +101,12 @@ void ApplyOhosWebPreferences(const web_pref::WebPreferences& prefs,
   settings->SetViewportScaleState(prefs.viewport_scale);
 #endif  // BUILDFLAG(ARKWEB_MENU)
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  settings->SetScrollbarLayoutPolicy(
+      static_cast<int>(prefs.scrollbar_layout_policy));
+  settings->SetIsSystemRtlEnable(prefs.is_system_rtl_enabled);
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+
 #if BUILDFLAG(ARKWEB_COPY_OPTION)
   settings->SetCopyOption(prefs.copy_option);
 #endif  // BUILDFLAG(ARKWEB_COPY_OPTION)

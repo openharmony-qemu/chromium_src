@@ -532,6 +532,11 @@ class NWebImpl : public NWeb {
       const std::shared_ptr<OHOS::NWeb::NWebMouseEvent>& mouseEvent) override;
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  void SetScrollbarLayoutPolicy(int policy) override;
+  void SetIsSystemRtlEnable(bool enable) override;
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+
   bool GetCertChainDerData(std::vector<std::string>& certChainData,
                            bool isSingleCert) override;
   void SetScreenOffSet(double x, double y) override;

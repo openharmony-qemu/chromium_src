@@ -979,6 +979,8 @@ class MockNWebDelegate : public NWebDelegateInterface {
   MOCK_METHOD(bool, SetFocusByPosition, (float x, float y), (override));
   MOCK_METHOD(bool, IsElementExist, (std::string& xPath), (override));
   MOCK_METHOD((std::pair<double, double>), GetLastTouchMousePosition, (), (override));
+  MOCK_METHOD(void,SetScrollbarLayoutPolicy,(int policy),(override));
+  MOCK_METHOD(void,SetIsSystemRtlEnable,(bool enable),(override));
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
 #if BUILDFLAG(ARKWEB_ACTIVE_POLICY)

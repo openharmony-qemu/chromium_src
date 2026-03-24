@@ -110,13 +110,13 @@ void NativeTextureWrapperImpl::CreateVideoFrame(
                                             std::move(shared_image))),
           coded_size, visible_rect, visible_rect.size(), base::TimeDelta());
 
-  if (new_frame) {
+  if (!new_frame) {
     LOG(ERROR) << "NativeTextureWrapperImpl::CreateVideoFrame frame is null";
     return;
   }
   new_frame->set_ycbcr_info(ycbcr_info);
 
-  if (enable_texture_copy_) {
+  if (enable_texture_copy_) {         
     new_frame->metadata().copy_required = true;
   }
 

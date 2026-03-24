@@ -153,9 +153,6 @@ void PaintTiming::MarkFirstContentfulPaint() {
   }
   if (IgnorePaintTimingScope::IgnoreDepth() > 0)
     return;
-#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
-  LOG(INFO) << "event_message: MarkFirstContentfulPaint";
-#endif  // BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
   LOG_FEEDBACK(INFO) << "event_message: MarkFirstContentfulPaint";
 #endif

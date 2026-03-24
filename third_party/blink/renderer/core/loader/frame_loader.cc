@@ -236,6 +236,10 @@ FrameLoader::FrameLoader(LocalFrame* frame)
 
   TRACE_EVENT_OBJECT_CREATED_WITH_ID("loading", "FrameLoader", this);
   TakeObjectSnapshot();
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  InitFrameLoader();
+#endif
 }
 
 FrameLoader::~FrameLoader() {
@@ -785,6 +789,13 @@ void FrameLoader::StartNavigation(FrameLoadRequest& request,
         /*has_ua_visual_transition*/ false,
         /*soft_navigation_heuristics_task_id=*/std::nullopt,
         /*should_skip_screenshot=*/false);
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT) && BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+    if (enable_logger_report_) {
+      StartNavigationLoggerReport(
+          request, resource_request, frame_load_type, true, is_triggered_by_js,
+          WebNavigationType::kWebNavigationTypeOther, url);
+    }
+#endif
     return;
   }
 
@@ -802,6 +813,14 @@ void FrameLoader::StartNavigation(FrameLoadRequest& request,
           mojom::blink::TriggeringEventInfo::kNotFromEvent);
   mojom::blink::RequestContextType request_context_type =
       DetermineRequestContextFromNavigationType(navigation_type);
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT) && BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+  if (enable_logger_report_) {
+    StartNavigationLoggerReport(request, resource_request, frame_load_type,
+                                false, is_triggered_by_js, navigation_type,
+                                url);
+  }
+#endif
 
   // TODO(lyf): handle `frame` context type. https://crbug.com/1019716
   if (mojom::blink::RequestContextType::LOCATION == request_context_type &&
@@ -988,12 +1007,10 @@ void FrameLoader::StartNavigation(FrameLoadRequest& request,
       request.TakeInitiatorNavigationStateKeepAliveHandle(),
       request.IsContainerInitiated(),
 #if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
-      request.GetWindowFeatures().explicit_opener,
-      is_triggered_by_js);
-#else      
+      request.GetWindowFeatures().explicit_opener, is_triggered_by_js);
+#else
       request.GetWindowFeatures().explicit_opener);
 #endif
-  
 }
 
 static void FillStaticResponseIfNeeded(WebNavigationParams* params,
@@ -1225,9 +1242,6 @@ void FrameLoader::CommitNavigation(
     // document.
     if (commit_reason == CommitReason::kXSLT && document_loader_)
       document_loader_->SetSentDidFinishLoad();
-#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
-    LOG(INFO) << "Frame loader CommitNavigation, url: ***";
-#endif
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
     LOG_FEEDBACK(INFO) << "Frame loader CommitNavigation, url: "
                        << url::LogUtils::ConvertUrlWithMask(
@@ -1367,7 +1381,6 @@ void FrameLoader::StopAllLoaders(bool abort_client) {
 
 #if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
   if (document_loader_) {
-    LOG(INFO) << "Frame loader StopAllLoaders, url: ***";
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
     LOG_FEEDBACK(INFO) << "Frame loader StopAllLoaders, url: "
                        << url::LogUtils::ConvertUrlWithMask(

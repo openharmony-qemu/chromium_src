@@ -568,15 +568,16 @@ void WidgetBaseInputHandler::HandleInputEvent(
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   if (processed != WebInputEventResult::kNotHandled) {
-    LOG(INFO) << "input event handled by webkit: "
-              << InputEventOhos::GetWebEventName(input_event)
-              << ", processed:" << static_cast<int32_t>(processed);
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
     if (base::CommandLine::ForCurrentProcess()->HasSwitch(
             ::switches::kEnableLoggerReport)) {
       LOG_FEEDBACK(INFO) << "input event not handled by webkit: "
                          << WebInputEvent::GetName(input_event.GetType())
                          << ", processed:" << static_cast<int32_t>(processed);
+    } else {
+      LOG(INFO) << "input event handled by webkit: "
+                << InputEventOhos::GetWebEventName(input_event)
+                << ", processed:" << static_cast<int32_t>(processed);
     }
 #endif
   }

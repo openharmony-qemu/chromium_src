@@ -328,6 +328,10 @@ class CORE_EXPORT LocalFrameClientImpl final : public LocalFrameClient {
   void NotifyLcpForBlankless() override;
 #endif
 
+#if BUILDFLAG(ARKWEB_NWEB_EX) && BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  void DispatchHistoryGoEvent(LocalFrame* frame, int delta) override;
+#endif
+
  private:
   bool IsLocalFrameClientImpl() const override { return true; }
   WebDevToolsAgentImpl* DevToolsAgent(bool create_if_necessary);

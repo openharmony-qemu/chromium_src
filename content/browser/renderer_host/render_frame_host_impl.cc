@@ -6471,8 +6471,7 @@ NavigationRequest* RenderFrameHostImpl::GetSameDocumentNavigationRequest(
 void RenderFrameHostImpl::ResetOwnedNavigationRequests(
     NavigationDiscardReason reason) {
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-  LOG_FEEDBACK(INFO) << "current lifecycle state: "
-                     << static_cast<int>(lifecycle_state_);
+  OnResetOwnedNavigationRequests(reason);
 #endif
   if (lifecycle_state_ == LifecycleStateImpl::kPendingCommit) {
     // Pending commit RenderFrameHosts should never have same document
@@ -12476,29 +12475,6 @@ void RenderFrameHostImpl::CommitNavigation(
     uint64_t addr_web_handle
 #endif
     ) {
-#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
-  if (frame_tree_node()->IsMainFrame()) {
-    LOG(INFO) << "event_message: commit navigation in main frame, routing_id: "
-              << routing_id_ << ", url: ***, " << devtools_navigation_token.ToString();
-#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-    LOG_FEEDBACK(INFO)
-        << "event_message: commit navigation in main frame, routing_id: "
-        << routing_id_ << ", url: "
-        << url::LogUtils::ConvertUrlWithMask(
-               common_params->url.possibly_invalid_spec())
-        << ", " << devtools_navigation_token.ToString();
-    if (!GetProcess()->GetBrowserContext()->IsOffTheRecord()) {
-      int32_t usage_scenario = WebContents::FromFrameTreeNodeId(
-                                   frame_tree_node()->frame_tree_node_id())
-                                   ->GetOrCreateWebPreferences()
-                                   .usage_scenario;
-      LOG(URL) << "event_message: commit navigation in main frame, routing_id: "
-               << routing_id_ << ", url: " << common_params->url.possibly_invalid_spec();
-    }
-#endif
-  }
-#endif
-
   TRACE_EVENT2("navigation", "RenderFrameHostImpl::CommitNavigation",
                "navigation_request", navigation_request, "url",
                common_params->url);
@@ -12517,6 +12493,11 @@ void RenderFrameHostImpl::CommitNavigation(
          IsDocumentLoadedWithoutUrlLoaderClient(
              navigation_request, common_params->url, is_same_document,
              is_mhtml_subframe));
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  OnCommitNavigation(common_params->url, is_same_document,
+                     devtools_navigation_token);
+#endif
 
   // All children of MHTML documents must be MHTML documents.
   // As a defensive measure, crash the browser if something went wrong.
@@ -15664,6 +15645,12 @@ bool RenderFrameHostImpl::DidCommitNavigationInternal(
                                 navigation_request.get());
     base::debug::DumpWithoutCrashing();
   }
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  OnDidCommitNavigationInternal(params->url, is_same_document_navigation,
+                                navigation_request.get(),
+                                params->navigation_token);
+#endif
 
   // For same-document navigations, the committed origin and insecure-request
   // policy must be identical to the values that were already present in the

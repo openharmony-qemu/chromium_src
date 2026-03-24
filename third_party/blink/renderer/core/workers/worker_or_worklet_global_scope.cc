@@ -530,9 +530,6 @@ void WorkerOrWorkletGlobalScope::Dispose() {
 
 #if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
   if (resource_fetchers_.size()) {
-    LOG(INFO) << "Worker or WorkletGlobalScope Dispose, the size of "
-                 "resource_fetchers_: "
-              << resource_fetchers_.size();
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
     LOG_FEEDBACK(INFO) << "Worker or WorkletGlobalScope Dispose, the size of "
                           "resource_fetchers_: "

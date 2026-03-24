@@ -1342,16 +1342,11 @@ void URLLoader::ContinueOnResponseStarted() {
     CompleteBlockedResponse(net::ERR_BLOCKED_BY_RESPONSE, false,
                             blocked_reason);
 
-#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
-    LOG(INFO)
-        << "ContinueOnResponseStarted blocked by response, blocked_reason "
-        << static_cast<int>(*blocked_reason) << ", url: ***";
-#endif
-
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-    LOG_FEEDBACK(INFO)
-        << "ContinueOnResponseStarted blocked by response, blocked_reason "
-        << static_cast<int>(*blocked_reason) << ", url: "
+    LOG_FEEDBACK(INFO, kNetwork)
+        << "ContinueOnResponseStartedBlocked blockedReason:"
+        << static_cast<int>(*blocked_reason)
+        << " isStrictLogMode:" << is_strict_log_mode_ << " url:"
         << url::LogUtils::ConvertUrlWithMask(url_request_->url().spec());
     if (base::CommandLine::ForCurrentProcess()->HasSwitch(
             ::switches::kEnableLoggerReport)) {
@@ -1420,15 +1415,10 @@ void URLLoader::ContinueOnResponseStarted() {
         orb_analyzer_->Init(url_request_->url(), url_request_->initiator(),
                             request_mode_, request_destination_, *response_);
     if (MaybeBlockResponseForOrb(decision)) {
-#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
-      LOG(INFO) << "ContinueOnResponseStarted blocked the request for "
-                   "ORB blocked origin "
-                   "response, url: ***";
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-      LOG_FEEDBACK(INFO)
-          << "ContinueOnResponseStarted blocked the request for "
-             "Cross-Origin Read Blocking (CORB) blocked cross-origin "
-             "response, url: "
+      LOG_FEEDBACK(INFO, kNetwork)
+          << "ContinueOnResponseStartedBlockedForOrb isStrictLogMode:"
+          << is_strict_log_mode_ << " url:"
           << url::LogUtils::ConvertUrlWithMask(url_request_->url().spec());
       if (!is_strict_log_mode_) {
         LOG(URL) << "ContinueOnResponseStarted blocked the request for "
@@ -1436,7 +1426,6 @@ void URLLoader::ContinueOnResponseStarted() {
                     "response, url: "
                  << url_request_->url().spec();
       }
-#endif
 #endif
       return;
     }
@@ -1847,24 +1836,19 @@ void URLLoader::DidRead(int num_bytes,
         }
 
         if (MaybeBlockResponseForOrb(orb_decision)) {
-#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
-      LOG(INFO) << "ContinueOnResponseStarted blocked the request for "
-                   "ORB blocked origin "
-                   "response, url: ***";
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-      LOG_FEEDBACK(INFO)
-          << "DidRead blocked the request for Cross-Origin Read "
-             "Blocking (CORB) blocked cross-origin response, url: "
-          << url::LogUtils::ConvertUrlWithMask(url_request_->url().spec());
-      if (base::CommandLine::ForCurrentProcess()->HasSwitch(
-              ::switches::kEnableLoggerReport)) {
+          LOG_FEEDBACK(INFO, kNetwork)
+              << "DidReadBlockedForOrb isStrictLogMode:" << is_strict_log_mode_
+              << " url:"
+              << url::LogUtils::ConvertUrlWithMask(url_request_->url().spec());
+          if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+                  ::switches::kEnableLoggerReport)) {
             if (!is_strict_log_mode_) {
               LOG(URL) << "DidRead blocked the request for Cross-Origin Read "
                           "Blocking (CORB) blocked cross-origin response, url: "
                        << url_request_->url().spec();
             }
-      }
-#endif
+          }
 #endif
           return;
         }
@@ -2094,7 +2078,7 @@ void URLLoader::NotifyCompleted(int error_code) {
 #if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
   if (url_request_->isolation_info().request_type() ==
                         net::IsolationInfo::RequestType::kMainFrame) {
-    ReportUrlQuicInfo(url_request_.get(), error_code);
+    ReportMainResourceMetrics(url_request_.get(), error_code);
   }
 #endif // BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
   // Ensure sending the final upload progress message here, since

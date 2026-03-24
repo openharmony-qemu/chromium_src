@@ -3457,6 +3457,18 @@ class CONTENT_EXPORT RenderFrameHostImpl
   // existence of the MockRenderProcessHost.
   void SetPrerenderStateChangedCallback(
       PrerenderStateChangedCallback prerender_state_callback);
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  void OnCommitNavigation(
+      const GURL& url,
+      bool is_same_document,
+      const base::UnguessableToken& devtools_navigation_token);
+  void OnDidCommitNavigationInternal(
+      const GURL& url,
+      bool is_same_document,
+      NavigationRequest* navigation_request,
+      const base::UnguessableToken& devtools_navigation_token);
+  void OnResetOwnedNavigationRequests(NavigationDiscardReason reason);
+#endif
 
  protected:
   friend class RenderFrameHostFactory;

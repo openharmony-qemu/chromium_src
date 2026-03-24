@@ -1275,16 +1275,10 @@ void RenderFrameHostManager::UnloadOldFrame(
                 bfcache_eligibility.flattened_reasons.ToString());
 
 #if BUILDFLAG(ARKWEB_BFCACHE) || BUILDFLAG(ARKWEB_LOGGER_REPORT)
-    ArkWebUnloadOldFrame(back_forward_cache,
+    ArkWebUnloadOldFrame(old_render_frame_host.get(), back_forward_cache,
                          bfcache_eligibility.flattened_reasons.ToString(),
                          can_store);
 #endif  // BUILDFLAG(ARKWEB_BFCACHE) || BUILDFLAG(ARKWEB_LOGGER_REPORT)
-#if BUILDFLAG(ARKWEB_USERAGENT)
-    if (old_render_frame_host->GetUserAgentDifferentFromNavigatingFrame()) {
-      can_store = false;
-      old_render_frame_host->SetUserAgentDifferentFromNavigatingFrame(false);
-    }
-#endif  // BUILDFLAG(ARKWEB_USERAGENT)
     if (view_transition_commit_info.has_view_transition_resources) {
       base::UmaHistogramBoolean("Navigation.ViewTransition.PerformsUnload",
                                 !can_store);
@@ -1854,18 +1848,6 @@ RenderFrameHostManager::GetFrameHostForNavigation(
   // Now compute the SiteInstance to use for the navigation.
   IsSameSiteGetter is_same_site_getter(is_same_site);
   std::string site_instance_reason;
-#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-  std::string valid_reason;
-  scoped_refptr<SiteInstanceImpl> dest_site_instance =
-      GetSiteInstanceForNavigationRequest(request, is_same_site_getter,
-                                          browsing_context_group_swap,
-                                          &valid_reason);
-  if (!valid_reason.empty()) {
-    LOG_FEEDBACK(INFO)
-        << "OHBFCACHE: GetSiteInstanceForNavigationRequest reason="
-        << valid_reason;
-  }
-#else
   std::string* reason_output =
       (base::FeatureList::IsEnabled(
            features::kHoldbackDebugReasonStringRemoval) ||
@@ -1876,7 +1858,7 @@ RenderFrameHostManager::GetFrameHostForNavigation(
       GetSiteInstanceForNavigationRequest(request, is_same_site_getter,
                                           browsing_context_group_swap,
                                           reason_output);
-#endif
+
   if (reason && (base::FeatureList::IsEnabled(
                      features::kHoldbackDebugReasonStringRemoval) ||
                  request->IsInitialWebUINavigation())) {
@@ -2279,7 +2261,6 @@ RenderFrameHostManager::GetFrameHostForNavigation(
                    << request->GetUrlInfo().is_sandboxed;
     }
   }
-
   TRACE_EVENT_INSTANT("navigation",
                       "RenderFrameHostManager::GetFrameHostForNavigation",
                       "reason", reason);

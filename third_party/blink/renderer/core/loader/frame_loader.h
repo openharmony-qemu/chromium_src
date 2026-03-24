@@ -356,6 +356,18 @@ class CORE_EXPORT FrameLoader final {
 
   WebScopedVirtualTimePauser virtual_time_pauser_;
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  void InitFrameLoader();
+  void StartNavigationLoggerReport(FrameLoadRequest& request,
+                                   ResourceRequest& resource_request,
+                                   WebFrameLoadType frame_load_type,
+                                   bool same_document_navigation,
+                                   bool is_triggered_by_js,
+                                   WebNavigationType navigation_type,
+                                   const KURL& url);
+  bool enable_logger_report_{false};
+#endif
+
   // The origins for which a legacy TLS version warning has been printed. The
   // size of this set is capped, after which no more warnings are printed.
   HashSet<String> tls_version_warning_origins_;

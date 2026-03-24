@@ -187,6 +187,10 @@ if (defined(enable_arkweb_ext) && enable_arkweb_ext) {
   blink_core_sources_loader += arkweb_third_patry_blink_renderer_core_video_loader_sources
 }
 
+if (is_arkweb) {
+  blink_core_sources_loader += arkweb_third_party_blink_renderer_core_loader_sources
+}
+
 blink_core_tests_loader = [
   "alternate_signed_exchange_resource_info_test.cc",
   "anchor_element_interaction_test.cc",

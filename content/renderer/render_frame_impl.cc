@@ -2635,7 +2635,6 @@ void RenderFrameImpl::CommitNavigation(
     mojom::CookieManagerInfoPtr cookie_manager_info,
     mojom::StorageInfoPtr storage_info,
     mojom::NavigationClient::CommitNavigationCallback commit_callback) {
-  LOG(INFO) << "RenderFrameImpl::CommitNavigation " << devtools_navigation_token.ToString();
   RendererNavigationMetricsManager::Instance().MarkCommitStart(
       commit_params->navigation_metrics_token);
   if (!response_head->client_side_content_decoding_types.empty()) {
@@ -2766,6 +2765,12 @@ void RenderFrameImpl::CommitNavigation(
 
 #if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
   navigation_params->custom_viewport_width = commit_params->custom_viewport_width;
+#endif
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  OnCommitNavigation(common_params->url, is_client_redirect,
+                     common_params->navigation_type, devtools_navigation_token,
+                     commit_params->navigation_delivery_type);
 #endif
 
   if (frame_->IsOutermostMainFrame() && permissions_policy) {
@@ -3977,7 +3982,7 @@ void RenderFrameImpl::DidCommitNavigation(
     LOG(WARNING) << "event_message: page load start, routing_id: "
                  <<  ", url: ***";
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-    PageLoadStartLoggerReport(document_loader);
+    OnDidCommitNavigation(document_loader, commit_type);
 #endif
 
 #if BUILDFLAG(ARKWEB_CRASHPAD)
@@ -4250,7 +4255,9 @@ void RenderFrameImpl::DidDispatchDOMContentLoadedEvent() {
   }
 #endif
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-  ContentLoadFailedLoggerReport();
+  if (IsMainFrame()) {
+    OnDidDispatchDOMContentLoadedEvent();
+  }
 #endif  // ARKWEB_LOGGER_REPORT
 
   // Check whether we have new encoding name.
@@ -4275,7 +4282,7 @@ void RenderFrameImpl::DidHandleOnloadEvents() {
     LOG(WARNING) << "event_message: page load finished, routing_id: "
                  <<  ", url: ***";
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-    PageLoadFinishedLoggerReport();
+    OnDidHandleOnloadEvents();
 #endif
   }
 #endif

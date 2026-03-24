@@ -302,11 +302,12 @@ void HTMLMediaElementUtils::Recorder::Reset() {
 
 
 #if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
-bool HTMLMediaElementUtils::IsFeedsPage() const {
+bool HTMLMediaElementUtils::IsFeedsPage() {
   if (!htmlMediaElement_->GetDocument().GetSettings()) {
-    return false;
+    return local_scenario_ == static_cast<int32_t>(ScenarioType::SCENARIO_FEEDSPAGE_TYPE);
   }
   int32_t usage_scenario = htmlMediaElement_->GetDocument().GetSettings()->GetUsageScenario();
+  local_scenario_ = usage_scenario;
   return usage_scenario ==
          static_cast<int32_t>(ScenarioType::SCENARIO_FEEDSPAGE_TYPE);
 }

@@ -23,6 +23,10 @@
 #include "base/strings/string_util.h"
 #include "base/strings/stringprintf.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "ohos/adapter/multiprocess/child_process_manager.h"
+#endif
+
 namespace {
 
 using base::debug::MappedMemoryRegion;
@@ -59,7 +63,11 @@ class ScopedPtracer {
     // ptrace(PTRACE_ATTACH) sends a SISTOP signal to the process, need to wait
     // for it.
     int status;
+#if BUILDFLAG(IS_OHOS)
+    pid_t ret = ohos::adapter::multiprocess::Waitpid(pid, &status, false);
+#else
     pid_t ret = HANDLE_EINTR(waitpid(pid, &status, 0));
+#endif
     if (ret != pid) {
       PLOG(ERROR) << "Waiting for the process failed";
       return;

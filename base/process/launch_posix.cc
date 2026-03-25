@@ -600,7 +600,11 @@ Process LaunchProcess(const std::vector<std::string>& argv,
       // finish is the sort of thing ThreadRestrictions is trying to prevent.
       ScopedBlockingCall scoped_blocking_call(FROM_HERE,
                                               BlockingType::MAY_BLOCK);
+#if BUILDFLAG(IS_OHOS)
+      pid_t ret = ohos::adapter::multiprocess::Waitpid(pid, nullptr, false);
+#else
       pid_t ret = HANDLE_EINTR(waitpid(pid, nullptr, 0));
+#endif
       DPCHECK(ret > 0);
     }
   }

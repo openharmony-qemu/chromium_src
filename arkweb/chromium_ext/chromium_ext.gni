@@ -668,6 +668,10 @@ arkweb_components_content_settings_renderer_sources = [
   "//arkweb/chromium_ext/components/content_settings/renderer/arkweb_content_settings_agent_impl_ext.h",
 ]
 
+arkweb_components_pdf_browser_test_sources = [
+  "//arkweb/chromium_ext/components/pdf/browser/pdf_document_helper_for_include_unittest.cpp"
+]
+
 arkweb_components_subresource_filter_content_renderer_sources = [
   "//arkweb/chromium_ext/components/subresource_filter/content/renderer/arkweb_subresource_filter_agent_ext.cc",
   "//arkweb/chromium_ext/components/subresource_filter/content/renderer/arkweb_subresource_filter_agent_ext.h",

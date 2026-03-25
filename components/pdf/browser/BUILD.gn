@@ -4,6 +4,7 @@
 
 import("//build/config/features.gni")
 import("//pdf/features.gni")
+import("//arkweb/chromium_ext/chromium_ext.gni")
 
 assert(enable_pdf)
 
@@ -82,6 +83,10 @@ source_set("unit_tests") {
     "pdf_url_loader_request_interceptor_unittest.cc",
     "plugin_response_writer_unittest.cc",
   ]
+
+  if (is_arkweb) {
+    sources += arkweb_components_pdf_browser_test_sources
+  }
 
   deps = [
     ":interceptors",

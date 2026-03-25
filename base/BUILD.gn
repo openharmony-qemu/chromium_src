@@ -3744,6 +3744,11 @@ test("base_unittests") {
       "//components/subresource_filter/content/browser",
       "//components/js_injection/browser",
     ]
+
+    if (use_partition_alloc && is_clang_or_gcc && is_ohos) {
+      sources += arkweb_base_allcator_partition_alloc_unittest_sources
+      public_deps += [ "//base/allocator/partition_allocator/src/partition_alloc:partition_alloc" ]
+    }
   }
 
   if (!is_cronet_build) {

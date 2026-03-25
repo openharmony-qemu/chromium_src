@@ -152,6 +152,10 @@ class NWebPreferenceDelegate : public NWebPreference {
   void SetEnableAutoFill(bool enable) override;
 #endif  // BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
 
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  void SetEnableDrag(bool enable) override;
+#endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
+
 #if BUILDFLAG(ARKWEB_MENU)
   void SetTouchHandleExistState(bool touchHandleExist);
   void SetViewportScaleState(bool viewportScale);
@@ -390,6 +394,9 @@ class NWebPreferenceDelegate : public NWebPreference {
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
   bool is_autofill_enabled_{true};
 #endif  // BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  bool is_drag_enabled_{true};
+#endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
 #if BUILDFLAG(ARKWEB_MENU)
   bool touch_handle_exist_{false};
   bool viewport_scale_{false};

@@ -167,6 +167,13 @@
   bool GetEnableAutoFill() { return is_autofill_enabled_; }
 #endif  // BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
 
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  void SetEnableDrag(bool enable) {
+    is_drag_enabled_ = enable;
+  }
+  bool GetEnableDrag() { return is_drag_enabled_; }
+#endif  // BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+
 #if BUILDFLAG(ARKWEB_MENU)
   void SetTouchHandleExistState(bool touchHandleExist) {
     touch_handle_exist_ = touchHandleExist;

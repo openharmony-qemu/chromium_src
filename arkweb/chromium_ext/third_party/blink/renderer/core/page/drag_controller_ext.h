@@ -18,6 +18,7 @@
 
 #include "arkweb/build/features/features.h"
 #include "third_party/blink/renderer/core/dom/element.h"
+#include "third_party/blink/renderer/core/exported/web_settings_impl_ext.h"
 #include "third_party/blink/renderer/core/execution_context/execution_context_lifecycle_observer.h"
 #include "third_party/blink/renderer/core/page/drag_controller.h"
 #include "third_party/blink/renderer/platform/heap/garbage_collected.h"
@@ -46,6 +47,7 @@ class DragControllerExt final : public DragController {
   DragControllerExt* AsDragControllerExt() override { return this; }
 
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
+  bool IsDragEnabled() const override;
   bool IsHyperLinkDragging();
   bool DragLinkCheckSrcAndType();
   void UpdateLinkStyle(Node* node);

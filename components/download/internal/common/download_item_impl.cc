@@ -1923,9 +1923,6 @@ void DownloadItemImpl::OnDownloadRenamedToIntermediateName(
 
   if (DOWNLOAD_INTERRUPT_REASON_NONE == reason) {
     SetFullPath(full_path);
-#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
-    destination_info_.target_path = full_path;
-#endif
   } else {
     // TODO(asanka): Even though the rename failed, it may still be possible to
     // recover the partial state from the 'before' name.

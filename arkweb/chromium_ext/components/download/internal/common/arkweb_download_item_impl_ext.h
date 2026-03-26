@@ -169,9 +169,6 @@ class COMPONENTS_DOWNLOAD_EXPORT ArkWebDownloadItemImplExt : public DownloadItem
   };
   void Cancel(bool user_cancel) override;
 
-  void UpdateFullPath(const base::FilePath& new_path);
-  void UpdateFullPathOverWriteState(bool overwrite_state);
-  bool IsFullPathOverWrite() const;
   void SetByExtensionId(const std::string& extension_id);
   void SetByExtensionName(const std::string& extension_name);
   void SetConflictAction(int conflict_action);
@@ -208,7 +205,6 @@ class COMPONENTS_DOWNLOAD_EXPORT ArkWebDownloadItemImplExt : public DownloadItem
   std::string extension_id_;
   std::string extension_name_;
   int conflict_action_{0};
-  bool is_full_path_overwrite = false;
 #endif
 
   base::WeakPtrFactory<ArkWebDownloadItemImplExt> weak_ptr_factory_{this};

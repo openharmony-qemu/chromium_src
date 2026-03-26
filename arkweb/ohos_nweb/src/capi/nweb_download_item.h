@@ -58,6 +58,8 @@ struct NWebDownloadItem {
   char* by_extension_id = nullptr;
   char* by_extension_name = nullptr;
   NWebFilenameConflictAction conflict_action; 
+  char** url_chain = nullptr;
+  int64_t url_chain_size = 0;
 
   NWebDownloadItem() { WVLOG_I("NWebDownloadItem() is called"); }
 
@@ -123,6 +125,7 @@ struct NWebDownloadItem {
       free(by_extension_name);
       by_extension_name = nullptr;
     }
+    ClearUrlChain();
   }
 
   NWebDownloadItem(CefRefPtr<CefDownloadItem> download_item) {
@@ -178,6 +181,14 @@ struct NWebDownloadItem {
         download_item->AsArkDownloadItem()->GetByExtensionName().ToString();
     by_extension_name = strdup(by_extension_name_.c_str());
     conflict_action = GetNWebConflictAction(download_item);
+    auto url_chain_vec = download_item->AsArkDownloadItem()->GetUrlChain();
+    url_chain_size = url_chain_vec.size();
+    if (url_chain_size > 0) {
+      url_chain = (char**)malloc(url_chain_size * sizeof(char*));
+      for (int i = 0; i < url_chain_size; i++) {
+        url_chain[i] = strdup(url_chain_vec[i].ToString().c_str());
+      }
+    }
   }
 
   static NWebDownloadItemState GetNWebState(
@@ -322,6 +333,19 @@ struct NWebDownloadItem {
       default:
         return NWebFilenameConflictAction::CONFLICT_ACTION_NONE;
     }
+  }
+
+  void ClearUrlChain() {
+    if (url_chain) {
+      for (int i = 0; i < url_chain_size; i++) {
+        if (url_chain[i]) {
+          free(url_chain[i]);
+        }
+      }
+      free(url_chain);
+      url_chain = nullptr;
+    }
+    url_chain_size = 0;
   }
 };
 

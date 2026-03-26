@@ -4533,6 +4533,56 @@ TEST_F(NWebImplTest, RunJavaScriptInFrames002) {
   EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
 }
 
+TEST_F(NWebImplTest, GetAllFrameInfos001) {
+  OnReceiveFrameInfosCallback callback = nullptr;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  nweb_impl_->GetAllFrameInfos(callback);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, GetAllFrameInfos002) {
+  OnReceiveFrameInfosCallback callback = nullptr;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, GetAllFrameInfos(::testing::_))
+      .Times(0);
+  nweb_impl_->GetAllFrameInfos(callback);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, mock_delegate_);
+}
+
+TEST_F(NWebImplTest, GetAllFrameInfos003) {
+  auto callback = [](int32_t nwebId, const ArkWebPbBuffer* pb_result_buffer) {};
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, GetAllFrameInfos(::testing::_))
+      .Times(1);
+  nweb_impl_->GetAllFrameInfos(callback);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, mock_delegate_);
+}
+
+TEST_F(NWebImplTest, GetLastJavaScriptProxyCallingFrameInfo001) {
+  OnLastJavaScriptProxyCallingFrameInfoCallback callback = nullptr;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  nweb_impl_->GetLastJavaScriptProxyCallingFrameInfo(callback);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, GetLastJavaScriptProxyCallingFrameInfo002) {
+  OnLastJavaScriptProxyCallingFrameInfoCallback callback = nullptr;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, GetLastJavaScriptProxyCallingFrameInfo(::testing::_))
+      .Times(0);
+  nweb_impl_->GetLastJavaScriptProxyCallingFrameInfo(callback);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, mock_delegate_);
+}
+
+TEST_F(NWebImplTest, GetLastJavaScriptProxyCallingFrameInfo003) {
+ auto callback = [](int32_t nwebId, const ArkWebPbBuffer* pb_result_buffer) {};
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, GetLastJavaScriptProxyCallingFrameInfo(::testing::_))
+      .Times(1);
+  nweb_impl_->GetLastJavaScriptProxyCallingFrameInfo(callback);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, mock_delegate_);
+}
+
 TEST_F(NWebImplTest, OpenDevtools001) {
   std::unique_ptr<OpenDevToolsParam> param = std::make_unique<OpenDevToolsParam>();
   param->nweb_id = -1;

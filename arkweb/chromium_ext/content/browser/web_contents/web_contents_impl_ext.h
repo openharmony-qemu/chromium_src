@@ -138,6 +138,10 @@ class WebContentsImplExt : public WebContentsImpl {
   bool GetAdblockEnabledForSite() override;
 #endif
 
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  void GetAllFrameInfos(std::map<std::string, std::string>& frameinfos);
+#endif
+
 #if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
   void NotifyContextMenuWillShow() override;
   void ShowFreeCopyMenu() override;

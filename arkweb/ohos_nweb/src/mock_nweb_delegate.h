@@ -1279,6 +1279,14 @@ class MockNWebDelegate : public NWebDelegateInterface {
               (RunJavaScriptParam,
                OnReceiveValueCallback callback),
               (override));
+  MOCK_METHOD(void,
+              GetAllFrameInfos,
+              (OnReceiveFrameInfosCallback callback),
+              (override));
+  MOCK_METHOD(void,
+              GetLastJavaScriptProxyCallingFrameInfo,
+              (OnLastJavaScriptProxyCallingFrameInfoCallback callback),
+              (override));
 #endif
 
 #if BUILDFLAG(ARKWEB_READER_MODE)

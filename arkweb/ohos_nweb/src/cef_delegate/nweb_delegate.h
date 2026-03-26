@@ -903,6 +903,9 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #if BUILDFLAG(ARKWEB_NWEB_EX)
   void RunJavaScriptInFrames(RunJavaScriptParam param,
                              OnReceiveValueCallback callback) override;
+  void GetAllFrameInfos(OnReceiveFrameInfosCallback callback) override;
+  void GetLastJavaScriptProxyCallingFrameInfo(
+      OnLastJavaScriptProxyCallingFrameInfoCallback callback) override;
 #endif
 
 #if BUILDFLAG(ARKWEB_READER_MODE)

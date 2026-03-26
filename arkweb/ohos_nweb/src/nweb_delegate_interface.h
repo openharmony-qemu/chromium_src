@@ -945,6 +945,9 @@ class NWebDelegateInterface
 #if BUILDFLAG(ARKWEB_NWEB_EX)
   virtual void RunJavaScriptInFrames(RunJavaScriptParam param,
                                      OnReceiveValueCallback callback) = 0;
+  virtual void GetAllFrameInfos(OnReceiveFrameInfosCallback callback) = 0;
+  virtual void GetLastJavaScriptProxyCallingFrameInfo(
+      OnLastJavaScriptProxyCallingFrameInfoCallback callback) = 0;
 #endif
 
 #if BUILDFLAG(ARKWEB_READER_MODE)

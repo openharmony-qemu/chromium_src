@@ -63,6 +63,8 @@ NWebCookieManagerImpl::NWebCookieManagerImpl() {
   delegate_ = std::make_shared<NWebCookieManagerDelegate>();
 #endif
 #if BUILDFLAG(ARKWEB_COOKIE)
+  WVLOG_I("NWebCookieManagerImpl NWebCookieManagerImpl, and LazyInit: %d",
+          NWebImpl::ShouldLazyInitWebEngine());
   std::shared_ptr<NWebEngineInitArgs> init_args =
       std::make_shared<NWebDefaultEngineInitArgsImpl>();
   if (NWebImpl::ShouldLazyInitWebEngine()) {

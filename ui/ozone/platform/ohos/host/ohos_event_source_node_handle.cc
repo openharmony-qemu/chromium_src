@@ -160,7 +160,7 @@ void OhosEventSourceNodeHandle::OnWindowRemoved(OhosWindow* window) {
 
 void OhosEventSourceNodeHandle::OnTouchEvent(
     const gfx::AcceleratedWidget widget_id,
-    const NodeHandleTouchEventData & touch_event_data,
+    const NodeHandleTouchEventData& touch_event_data,
     const int32_t display_id) {
   EventType type = GetTouchAction(touch_event_data.touch_action);
   if (type == EventType::kUnknown) {

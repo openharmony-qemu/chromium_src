@@ -442,4 +442,194 @@ TEST_F(TypeConversionsTest, InitializeGetAssertionTest_002)
     Initialize(data_holder, request, request_options, &options);
     EXPECT_FALSE(data_holder.descriptor_list.empty());
 }
-} // namespace base
+
+TEST_F(TypeConversionsTest, CredentialOptionsDataHolderMakeCredential_001)
+{
+    PublicKeyCredentialRpEntity rp("test_id", "test_name");
+    PublicKeyCredentialUserEntity user;
+    PublicKeyCredentialParams::CredentialInfo info = {CredentialType::kPublicKey, -7};
+    std::vector<PublicKeyCredentialParams::CredentialInfo> credential_params;
+    credential_params.emplace_back(info);
+    PublicKeyCredentialParams params(credential_params);
+    CtapMakeCredentialRequest request("client_data_json", rp, user, params);
+
+    std::vector<uint8_t> challenge = {1, 2, 3, 4};
+    base::TimeDelta timeout = base::Seconds(30);
+    std::vector<CredentialHint> hints;
+    hints.emplace_back(CredentialHint::kSecurityKey);
+    CtapRequestExtraCommon common = {"origin", challenge, CredentialMediationRequirement::kOptional,
+        timeout, hints, "extensions"};
+    std::vector<std::string> attestation_formats;
+    attestation_formats.emplace_back("packed");
+    attestation_formats.emplace_back("tpm");
+    CtapMakeCredentialRequestExtra extra = {common, attestation_formats};
+    request.extra = extra;
+
+    CredentialOptionsDataHolder data_holder(request);
+
+    EXPECT_EQ(data_holder.public_keys.size(), 1u);
+    EXPECT_EQ(data_holder.formats_c_ptrs.size(), 2u);
+    EXPECT_EQ(data_holder.hint_list.size(), 1u);
+}
+
+TEST_F(TypeConversionsTest, CredentialOptionsDataHolderGetAssertion_001)
+{
+    CtapGetAssertionRequest request("in_rp_id", "in_client_data_json");
+    PublicKeyCredentialDescriptor descriptor(CredentialType::kPublicKey, {1, 2, 3});
+    request.allow_list.push_back(descriptor);
+
+    std::vector<uint8_t> challenge = {1, 2, 3, 4};
+    base::TimeDelta timeout = base::Seconds(30);
+    std::vector<CredentialHint> hints;
+    hints.emplace_back(CredentialHint::kClientDevice);
+    CtapRequestExtraCommon common = {"origin", challenge, CredentialMediationRequirement::kConditional,
+        timeout, hints, "extensions"};
+    CtapGetAssertionRequestExtra extra = {common};
+    request.extra = extra;
+
+    CredentialOptionsDataHolder data_holder(request);
+
+    EXPECT_EQ(data_holder.descriptor_list.size(), 1u);
+    EXPECT_EQ(data_holder.hint_list.size(), 1u);
+    EXPECT_EQ(data_holder.id_list.size(), 1u);
+    EXPECT_EQ(data_holder.transports_list.size(), 1u);
+}
+
+TEST_F(TypeConversionsTest, ConvertHexStringToBytes_001)
+{
+    // Test with bytestring prefix
+    auto ret = ConvertHexStringToBytes("(bytestring)48656c6c6f");
+    EXPECT_FALSE(ret.empty());
+    EXPECT_EQ(ret.size(), 5u);
+    EXPECT_EQ(ret[0], 'H');
+    EXPECT_EQ(ret[1], 'e');
+}
+
+TEST_F(TypeConversionsTest, ConvertHexStringToBytes_002)
+{
+    // Test empty string
+    auto ret = ConvertHexStringToBytes("");
+    EXPECT_TRUE(ret.empty());
+}
+
+TEST_F(TypeConversionsTest, ConvertHexStringToBytes_003)
+{
+    // Test invalid hex string
+    auto ret = ConvertHexStringToBytes("GGGG");
+    EXPECT_TRUE(ret.empty());
+}
+
+TEST_F(TypeConversionsTest, PublicKeyCredentialParamsConvert_001)
+{
+    // Test with multiple algorithms
+    std::vector<PublicKeyCredentialParams::CredentialInfo> credential_params;
+    credential_params.emplace_back(CredentialType::kPublicKey, -7);  // ES256
+    credential_params.emplace_back(CredentialType::kPublicKey, -257); // RS256
+    PublicKeyCredentialParams params(credential_params);
+
+    auto ret = Convert<std::vector<FIDO2_PublicKeyCredentialParameters>>(params);
+
+    EXPECT_EQ(ret.size(), 2u);
+    EXPECT_EQ(ret[0].alg, FIDO2_ES256);
+    EXPECT_EQ(ret[1].alg, FIDO2_RS256);
+}
+
+TEST_F(TypeConversionsTest, AuthenticatorAttachmentEdgeCases_001)
+{
+    // Test edge cases for attachment conversion
+    auto ret1 = Convert<FIDO2_AuthenticatorAttachment>(static_cast<AuthenticatorAttachment>(-1));
+    EXPECT_EQ(ret1, FIDO2_PLATFORM);
+
+    auto ret2 = Convert<AuthenticatorAttachment>(static_cast<FIDO2_AuthenticatorAttachment>(10));
+    EXPECT_EQ(ret2, AuthenticatorAttachment::kAny);
+}
+
+TEST_F(TypeConversionsTest, AttestationConveyancePreferenceEdgeCases_001)
+{
+    // Test all attestation conveyance preferences
+    auto ret1 = Convert<FIDO2_AttestationConveyancePreference>(AttestationConveyancePreference::kNone);
+    EXPECT_EQ(ret1, FIDO2_NONE);
+
+    auto ret2 = Convert<FIDO2_AttestationConveyancePreference>(AttestationConveyancePreference::kIndirect);
+    EXPECT_EQ(ret2, FIDO2_INDIRECT);
+
+    auto ret3 = Convert<FIDO2_AttestationConveyancePreference>(AttestationConveyancePreference::kDirect);
+    EXPECT_EQ(ret3, FIDO2_DIRECT);
+
+    auto ret4 = Convert<FIDO2_AttestationConveyancePreference>(
+        AttestationConveyancePreference::kEnterpriseIfRPListedOnAuthenticator);
+    EXPECT_EQ(ret4, FIDO2_ENTERPRISE);
+}
+
+TEST_F(TypeConversionsTest, TransportConversionEdgeCases_001)
+{
+    // Test edge cases for transport conversion
+    auto ret1 = Convert<FIDO2_AuthenticatorTransport>(static_cast<FidoTransportProtocol>(99));
+    EXPECT_EQ(ret1, FIDO2_INTERNAL);
+
+    auto ret2 = Convert<FidoTransportProtocol>(static_cast<FIDO2_AuthenticatorTransport>(99));
+    EXPECT_EQ(ret2, FidoTransportProtocol::kInternal);
+}
+
+TEST_F(TypeConversionsTest, InitializeFIDO2TokenBindingTest_001)
+{
+    FIDO2_TokenBinding token_binding;
+    token_binding.status = FIDO2_TokenBindingStatus::FIDO2_SUPPORTED;
+    token_binding.id = const_cast<char*>("test_id");
+
+    Initialize(&token_binding);
+
+    EXPECT_EQ(token_binding.status, FIDO2_PRESENT);
+    EXPECT_EQ(token_binding.id, nullptr);
+}
+
+TEST_F(TypeConversionsTest, InitializeFIDO2CredentialCreationOptionsTest_001)
+{
+    FIDO2_CredentialCreationOptions options;
+    Initialize(&options);
+
+    EXPECT_EQ(options.mediation, FIDO2_SILENT);
+    EXPECT_EQ(options.publicKey.rp.id, nullptr);
+    EXPECT_EQ(options.publicKey.rp.name, nullptr);
+    EXPECT_EQ(options.publicKey.user.id.length, 0u);
+    EXPECT_EQ(options.publicKey.user.id.val, nullptr);
+    EXPECT_EQ(options.publicKey.user.displayName, nullptr);
+    EXPECT_EQ(options.publicKey.user.name, nullptr);
+    EXPECT_EQ(options.publicKey.challenge.length, 0u);
+    EXPECT_EQ(options.publicKey.challenge.val, nullptr);
+    EXPECT_EQ(options.publicKey.pubKeyCredParams.pubKeyCredParamNum, 0u);
+    EXPECT_EQ(options.publicKey.pubKeyCredParams.pubKeyCredParams, nullptr);
+    EXPECT_EQ(options.publicKey.timeout, 0u);
+    EXPECT_EQ(options.publicKey.excludeCredentials.allowCredentiallNum, 0u);
+    EXPECT_EQ(options.publicKey.excludeCredentials.allowCredentials, nullptr);
+    EXPECT_EQ(options.publicKey.authenticatorSelection.authenticatorAttachment, FIDO2_PLATFORM);
+    EXPECT_EQ(options.publicKey.authenticatorSelection.residentKey, nullptr);
+    EXPECT_EQ(options.publicKey.authenticatorSelection.requireResidentKey, false);
+    EXPECT_EQ(options.publicKey.authenticatorSelection.userVerification, FIDO2_DISCOURAGED);
+    EXPECT_EQ(options.publicKey.hints.hintNum, 0);
+    EXPECT_EQ(options.publicKey.hints.hints, nullptr);
+    EXPECT_EQ(options.publicKey.attestation, FIDO2_NONE);
+    EXPECT_EQ(options.publicKey.attestationFormats.attestationFormatsNum, 0);
+    EXPECT_EQ(options.publicKey.attestationFormats.attestationFormats, nullptr);
+    EXPECT_EQ(options.publicKey.extensions, nullptr);
+}
+
+TEST_F(TypeConversionsTest, InitializeFIDO2CredentialRequestOptionsTest_001)
+{
+    FIDO2_CredentialRequestOptions options;
+    Initialize(&options);
+
+    EXPECT_EQ(options.mediation, FIDO2_SILENT);
+    EXPECT_EQ(options.publicKey.challenge.length, 0u);
+    EXPECT_EQ(options.publicKey.challenge.val, nullptr);
+    EXPECT_EQ(options.publicKey.timeout, 0u);
+    EXPECT_EQ(options.publicKey.rpId, nullptr);
+    EXPECT_EQ(options.publicKey.allowCredentials.allowCredentiallNum, 0u);
+    EXPECT_EQ(options.publicKey.allowCredentials.allowCredentials, nullptr);
+    EXPECT_EQ(options.publicKey.userVerification, FIDO2_DISCOURAGED);
+    EXPECT_EQ(options.publicKey.hints.hintNum, 0u);
+    EXPECT_EQ(options.publicKey.hints.hints, nullptr);
+    EXPECT_EQ(options.publicKey.extensions, nullptr);
+}
+
+} // namespace device

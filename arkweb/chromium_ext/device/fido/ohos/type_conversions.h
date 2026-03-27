@@ -125,14 +125,17 @@ struct CredentialOptionsDataHolder {
     std::vector<char*> formats_c_ptrs;
 };
 
+void Initialize(FIDO2_CredentialCreationOptions* options);
 void Initialize(CredentialOptionsDataHolder& data_holder,
                 CtapMakeCredentialRequest& request,
                 MakeCredentialOptions& request_options,
                 FIDO2_CredentialCreationOptions* options);
+void Initialize(FIDO2_CredentialRequestOptions* options);
 void Initialize(CredentialOptionsDataHolder& data_holder,
                 CtapGetAssertionRequest& request,
                 CtapGetAssertionOptions& request_options,
                 FIDO2_CredentialRequestOptions* options);
+void Initialize(FIDO2_TokenBinding* token_binding);
 
 } // namespace device
 

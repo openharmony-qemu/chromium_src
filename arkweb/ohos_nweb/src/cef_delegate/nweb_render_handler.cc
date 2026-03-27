@@ -61,24 +61,48 @@ constexpr int32_t APPLICATION_API_20 = 20;
 #endif  // #if BUILDFLAG(ARKWEB_SCREEN_SIZE)
 
 cef_screen_orientation_type_t ConvertOrientationType(
-    OHOS::NWeb::DisplayOrientation type,
-    bool default_portrait) {
+    OHOS::NWeb::DisplayOrientation type) {
   switch (type) {
     case OHOS::NWeb::DisplayOrientation::PORTRAIT:
-      return default_portrait
-                 ? cef_screen_orientation_type_t::PORTRAIT_PRIMARY
-                 : cef_screen_orientation_type_t::LANDSCAPE_PRIMARY;
+      return cef_screen_orientation_type_t::PORTRAIT_PRIMARY;
     case OHOS::NWeb::DisplayOrientation::LANDSCAPE:
-      return default_portrait ? cef_screen_orientation_type_t::LANDSCAPE_PRIMARY
-                              : cef_screen_orientation_type_t::PORTRAIT_PRIMARY;
+      return cef_screen_orientation_type_t::LANDSCAPE_PRIMARY;
     case OHOS::NWeb::DisplayOrientation::PORTRAIT_INVERTED:
-      return default_portrait
-                 ? cef_screen_orientation_type_t::PORTRAIT_SECONDARY
-                 : cef_screen_orientation_type_t::LANDSCAPE_SECONDARY;
+      return cef_screen_orientation_type_t::PORTRAIT_SECONDARY;
     case OHOS::NWeb::DisplayOrientation::LANDSCAPE_INVERTED:
-      return default_portrait
-                 ? cef_screen_orientation_type_t::LANDSCAPE_SECONDARY
-                 : cef_screen_orientation_type_t::PORTRAIT_SECONDARY;
+      return cef_screen_orientation_type_t::LANDSCAPE_SECONDARY;
+    default:
+      return cef_screen_orientation_type_t::UNDEFINED;
+  }
+}
+
+cef_screen_orientation_type_t SwapPortraitAndLandscape(
+    cef_screen_orientation_type_t type) {
+  switch (type) {
+    case cef_screen_orientation_type_t::PORTRAIT_PRIMARY:
+      return cef_screen_orientation_type_t::LANDSCAPE_PRIMARY;
+    case cef_screen_orientation_type_t::PORTRAIT_SECONDARY:
+      return cef_screen_orientation_type_t::LANDSCAPE_SECONDARY;
+    case cef_screen_orientation_type_t::LANDSCAPE_PRIMARY:
+      return cef_screen_orientation_type_t::PORTRAIT_PRIMARY;
+    case cef_screen_orientation_type_t::LANDSCAPE_SECONDARY:
+      return cef_screen_orientation_type_t::PORTRAIT_SECONDARY;
+    default:
+      return cef_screen_orientation_type_t::UNDEFINED;
+  }
+}
+
+cef_screen_orientation_type_t SwapPrimaryAndSecondary(
+    cef_screen_orientation_type_t type) {
+  switch (type) {
+    case cef_screen_orientation_type_t::PORTRAIT_PRIMARY:
+      return cef_screen_orientation_type_t::PORTRAIT_SECONDARY;
+    case cef_screen_orientation_type_t::PORTRAIT_SECONDARY:
+      return cef_screen_orientation_type_t::PORTRAIT_PRIMARY;
+    case cef_screen_orientation_type_t::LANDSCAPE_PRIMARY:
+      return cef_screen_orientation_type_t::LANDSCAPE_SECONDARY;
+    case cef_screen_orientation_type_t::LANDSCAPE_SECONDARY:
+      return cef_screen_orientation_type_t::LANDSCAPE_PRIMARY;
     default:
       return cef_screen_orientation_type_t::UNDEFINED;
   }
@@ -93,16 +117,20 @@ enum RotationAngels {
 
 uint16_t ConvertRotationAngel(OHOS::NWeb::RotationType type) {
   // Notice: 90 and 270 is reverse.
-
+  // The DMS system returns angles in a clockwise direction,
+  // while the W3C standard uses a counterclockwise direction.
+  bool use_counter_clockwise = true;
   switch (type) {
     case OHOS::NWeb::RotationType::ROTATION_0:
       return RotationAngels::ROTATION_0;
     case OHOS::NWeb::RotationType::ROTATION_90:
-      return RotationAngels::ROTATION_90;
+      return use_counter_clockwise ? RotationAngels::ROTATION_270
+                                   : RotationAngels::ROTATION_90;
     case OHOS::NWeb::RotationType::ROTATION_180:
       return RotationAngels::ROTATION_180;
     case OHOS::NWeb::RotationType::ROTATION_270:
-      return RotationAngels::ROTATION_270;
+      return use_counter_clockwise ? RotationAngels::ROTATION_90
+                                   : RotationAngels::ROTATION_270;
     default:
       return RotationAngels::ROTATION_0;
   }
@@ -715,8 +743,18 @@ void NWebRenderHandler::SetScreenInfo(const NWebScreenInfo& screen_info) {
 
 bool NWebRenderHandler::GetScreenInfo(CefRefPtr<CefBrowser> browser,
                                       CefScreenInfo& screen_info) {
-  screen_info.orientation = ConvertOrientationType(
-      screen_info_.orientation, screen_info_.default_portrait);
+  screen_info.orientation = ConvertOrientationType(screen_info_.orientation);
+  bool is_portrait = screen_info_.orientation == OHOS::NWeb::DisplayOrientation::PORTRAIT
+                     || screen_info_.orientation == OHOS::NWeb::DisplayOrientation::PORTRAIT_INVERTED;
+  bool need_swap_portrait_and_landscape = (is_portrait && screen_info_.width > screen_info_.height)
+                                          || (!is_portrait && screen_info_.width <= screen_info_.height);
+  if (need_swap_portrait_and_landscape) {
+    screen_info.orientation = SwapPortraitAndLandscape(screen_info.orientation);
+  }
+  if (screen_info_.rotation == OHOS::NWeb::RotationType::ROTATION_90
+        || screen_info_.rotation == OHOS::NWeb::RotationType::ROTATION_270) {
+    screen_info.orientation = SwapPrimaryAndSecondary(screen_info.orientation);
+  }
   screen_info.angle = ConvertRotationAngel(screen_info_.rotation);
   screen_info.rect.width = screen_info_.width;
   screen_info.rect.height = screen_info_.height;

@@ -1320,6 +1320,11 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
     RecordFrameTypes(has_interactive_frame, has_animated_frame);
 
     renderer_->SwapBuffers(std::move(swap_frame_data));
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+    if (display_utils_) {
+      display_utils_->ReallocatedFrameBuffersIfNeed();
+    }
+#endif
   } else {
     TRACE_EVENT_INSTANT0("viz", "Swap skipped.", TRACE_EVENT_SCOPE_THREAD);
 

@@ -336,7 +336,7 @@ SelectionInFlatTree SelectionControllerUtils::HandleArkWebAISelectionExt(Selecti
   TextControlElement* text_control =
       EnclosingTextControl(obj->Selection().GetSelectionInDOMTree().Anchor());
   if (pos.IsNotNull()) {
-    if (select.at(0) != -1 && select.at(1) != -1 &&
+    if (IsValidAISelection(select) &&
         (!text_control ||
          text_control->type() != input_type_names::kPassword)) {
       temp_selection =
@@ -457,5 +457,9 @@ Node* SelectionControllerUtils::UpdateAnchorIfWhiteSpace(Node* inner_node,
     }
   }
   return pos.AnchorNode();
+}
+
+bool SelectionControllerUtils::IsValidAISelection(const WTF::Vector<int8_t>& select) {
+  return select.at(0) != -1 && select.at(1) != -1 && select.at(0) != select.at(1);
 }
 } // namespace blink

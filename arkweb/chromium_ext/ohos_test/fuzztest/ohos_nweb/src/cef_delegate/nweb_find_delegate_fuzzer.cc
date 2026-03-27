@@ -749,6 +749,7 @@ void GetLastJavaScriptProxyCallingFrameInfo(
   void OnBrowserForeground() override {}
   void OnBrowserBackground() override {}
 #if BUILDFLAG(ARKWEB_READER_MODE)
+  void EnableReaderMode(bool enabled) override {}
   void Distill(const std::string& guid, const DistillOptions& distill_options,
     CefRefPtr<CefDistillCallback> callback) override {}
   void AbortDistill() override {}

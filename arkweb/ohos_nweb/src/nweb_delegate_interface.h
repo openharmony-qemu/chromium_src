@@ -971,6 +971,7 @@ class NWebDelegateInterface
 #endif
 
 #if BUILDFLAG(ARKWEB_READER_MODE)
+  virtual void EnableReaderMode(bool enabled) = 0;
   virtual void Distill(const std::string& guid, const DistillOptions& distill_options, DistillCallback callback) = 0;
   virtual void AbortDistill() = 0;
 #endif // ARKWEB_READER_MODE

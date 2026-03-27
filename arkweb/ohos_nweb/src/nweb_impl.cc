@@ -1336,6 +1336,7 @@ void NWebImpl::UpdateAdblockEasyListRules(long adBlockEasyListVersion) {
 bool NWebImpl::InitializeICUStatic(
     std::shared_ptr<NWebEngineInitArgs> init_args) {
   if (NWebApplication::GetDefault()->HasInitializedCef()) {
+    WVLOG_I("cef already initialized, skip icu init.");
     return true;
   }
   WVLOG_I("will initialize icu.");
@@ -5168,6 +5169,15 @@ void NWebImpl::UpdateReaderModeConfig(const std::string& file_path,
 // static
 void NWebImpl::SetJsFilePath(const std::string& js_type, const std::string& file_path, const std::string& version) {
   nweb_ex::AlloyBrowserReaderModeConfig::GetInstance()->SetJsFilePath(js_type, file_path, version);
+}
+
+void NWebImpl::EnableReaderMode(bool enabled) {
+  if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "NWebImpl::EnableReaderMode delegate_ is nullptr";
+    return;
+  }
+
+  nweb_delegate_->EnableReaderMode(enabled);
 }
 
 void NWebImpl::Distill(char** guid, const DistillOptions& distill_options, DistillCallback callback) {

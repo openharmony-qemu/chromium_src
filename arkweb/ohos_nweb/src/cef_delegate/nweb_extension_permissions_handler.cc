@@ -75,4 +75,19 @@ int NWebExtensionPermissionsHandler::GetExtensionSiteInteraction(
   return static_cast<int>(SitePermissionsHelper::SiteInteraction::kNone);
 }
 
+// static
+bool NWebExtensionPermissionsHandler::HasApiPermission(
+    const std::string& extension_id,
+    const std::string& permission) {
+  content::BrowserContext* global_context = GetBrowserContext();
+
+  const Extension* extension = FindExtensionById(global_context, extension_id);
+  if (!extension) {
+    LOG(ERROR) << "failed to get extension";
+    return false;
+  }
+
+  return extension->permissions_data()->HasAPIPermission(permission);
+}
+
 }  // namespace OHOS::NWeb

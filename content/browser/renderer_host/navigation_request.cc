@@ -3656,6 +3656,16 @@ void NavigationRequest::OnRequestRedirected(
   }
 #endif
 
+#if BUILDFLAG(ARKWEB_MENU)
+  if (!IsSameDocument() && response_should_be_rendered_) {
+    RenderFrameHostImpl* render_frame_host = frame_tree_node_->current_frame_host();
+    if (render_frame_host && render_frame_host->GetRenderWidgetHost() &&
+        render_frame_host->GetRenderWidgetHost()->GetFrameWidgetInputHandler()) {
+      render_frame_host->GetRenderWidgetHost()->GetFrameWidgetInputHandler()->CollapseSelection();
+    }
+  }
+#endif
+
   WillRedirectRequest(common_params_->referrer->url, expected_process);
 }
 

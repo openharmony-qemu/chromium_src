@@ -444,7 +444,21 @@ void ArkwebDisplayUtils::SetIfNeedCleanBuffers(bool need_clean_buffers)
   TRACE_EVENT1("viz", "ArkwebDisplayUtils::SetIfNeedCleanBuffers ", "need_clean_buffers:", need_clean_buffers);
   if (display_ && display_->output_surface_) {
     display_->output_surface_->SetIfNeedCleanBuffers(need_clean_buffers);
+    need_clean_buffers_ = need_clean_buffers;
   }
+}
+
+void ArkwebDisplayUtils::ReallocatedFrameBuffersIfNeed()
+{
+  if (!need_clean_buffers_) {
+    return;
+  }
+
+#if BUILDFLAG(ARKWEB_VULKAN)
+  if (display_ && display_->renderer_) {
+    display_->renderer_->ReallocatedFrameBuffers();
+  }
+#endif
 }
 #endif
 

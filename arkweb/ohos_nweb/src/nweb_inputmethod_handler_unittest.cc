@@ -565,6 +565,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
     CefRefPtr<CefLastJavaScriptProxyCallingFrameInfoCallback> callback) override {}
 #endif
 #if BUILDFLAG(ARKWEB_READER_MODE)
+  void EnableReaderMode(bool enabled) override {}
   void Distill(const std::string& guid, const DistillOptions& distill_options,
     CefRefPtr<CefDistillCallback> callback) override {}
   void AbortDistill() override {}
@@ -3436,6 +3437,159 @@ TEST_F(NWebInputMethodHandlerTest, TestSetPreviewText_002) {
   handler->browser_ = mock_browser.release();
   int32_t result = handler->SetPreviewText(text, start, end);
   EXPECT_EQ(result, inputmethod_handler_->ERROR);
+}
+
+TEST_F(NWebInputMethodHandlerTest, SendKeyEventFromInputMethod) {
+  auto listener = std::make_unique<OnTextChangedListenerImpl>(handler_);
+  listener->SendKeyEventFromInputMethod();
+}
+
+TEST_F(NWebInputMethodHandlerTest, SendKeyboardStatusShow) {
+  auto listener = std::make_unique<OnTextChangedListenerImpl>(handler_);
+  EXPECT_CALL(*handler_, SetIMEStatus(true)).Times(1);
+  listener->SendKeyboardStatus(IMFAdapterKeyboardStatus::SHOW);
+}
+
+TEST_F(NWebInputMethodHandlerTest, SendKeyboardStatusHide) {
+  auto listener = std::make_unique<OnTextChangedListenerImpl>(handler_);
+  EXPECT_CALL(*handler_, SetIMEStatus(false)).Times(1);
+  listener->SendKeyboardStatus(IMFAdapterKeyboardStatus::HIDE);
+}
+
+TEST_F(NWebInputMethodHandlerTest, SendKeyboardStatusNone) {
+  auto listener = std::make_unique<OnTextChangedListenerImpl>(handler_);
+  EXPECT_CALL(*handler_, SetIMEStatus(testing::_)).Times(0);
+  listener->SendKeyboardStatus(IMFAdapterKeyboardStatus::NONE);
+}
+
+TEST_F(NWebInputMethodHandlerTest, SetKeyboardStatusTrue) {
+  auto listener = std::make_unique<OnTextChangedListenerImpl>(handler_);
+  EXPECT_CALL(*handler_, SetIMEStatus(true)).Times(1);
+  listener->SetKeyboardStatus(true);
+}
+
+TEST_F(NWebInputMethodHandlerTest, SetKeyboardStatusFalse) {
+  auto listener = std::make_unique<OnTextChangedListenerImpl>(handler_);
+  EXPECT_CALL(*handler_, SetIMEStatus(false)).Times(1);
+  listener->SetKeyboardStatus(false);
+}
+
+TEST_F(NWebInputMethodHandlerTest, HandleSetSelection) {
+  auto listener = std::make_unique<OnTextChangedListenerImpl>(handler_);
+  listener->HandleSetSelection(10, 20);
+}
+
+TEST_F(NWebInputMethodHandlerTest, HandleSelect) {
+  auto listener = std::make_unique<OnTextChangedListenerImpl>(handler_);
+  listener->HandleSelect(100, 5);
+}
+
+TEST_F(NWebInputMethodHandlerTest, Listener_GetTextIndexAtCursor) {
+  auto listener = std::make_unique<OnTextChangedListenerImpl>(handler_);
+  int32_t result = listener->GetTextIndexAtCursor();
+  (void)result;
+}
+
+TEST_F(NWebInputMethodHandlerTest, Listener_GetLeftTextOfCursor) {
+  auto listener = std::make_unique<OnTextChangedListenerImpl>(handler_);
+  std::u16string result = listener->GetLeftTextOfCursor(5);
+  (void)result;
+}
+
+TEST_F(NWebInputMethodHandlerTest, Listener_GetRightTextOfCursor) {
+  auto listener = std::make_unique<OnTextChangedListenerImpl>(handler_);
+  std::u16string result = listener->GetRightTextOfCursor(5);
+  (void)result;
+}
+
+TEST_F(NWebInputMethodHandlerTest, Listener_SetPreviewText) {
+  auto listener = std::make_unique<OnTextChangedListenerImpl>(handler_);
+  std::u16string text = u"test";
+  int32_t result = listener->SetPreviewText(text, 0, 4);
+  (void)result;
+}
+
+TEST_F(NWebInputMethodHandlerTest, Listener_FinishTextPreview) {
+  auto listener = std::make_unique<OnTextChangedListenerImpl>(handler_);
+  listener->FinishTextPreview();
+}
+
+TEST_F(NWebInputMethodHandlerTest, Listener_HandleExtendAction) {
+  auto listener = std::make_unique<OnTextChangedListenerImpl>(handler_);
+  listener->HandleExtendAction(0);  // SELECT_ALL
+  listener->HandleExtendAction(3);  // CUT
+  listener->HandleExtendAction(4);  // COPY
+  listener->HandleExtendAction(5);  // PASTE
+}
+
+TEST_F(NWebInputMethodHandlerTest, Listener_InsertText_Normal) {
+  auto listener = std::make_unique<OnTextChangedListenerImpl>(handler_);
+  std::u16string text = u"hello";
+  listener->InsertText(text);
+}
+
+TEST_F(NWebInputMethodHandlerTest, Listener_InsertText_Newline) {
+  auto listener = std::make_unique<OnTextChangedListenerImpl>(handler_);
+  std::u16string text = u"\n";
+  listener->InsertText(text);
+}
+
+TEST_F(NWebInputMethodHandlerTest, Listener_InsertText_Empty) {
+  auto listener = std::make_unique<OnTextChangedListenerImpl>(handler_);
+  std::u16string text = u"";
+  listener->InsertText(text);
+}
+
+TEST_F(NWebInputMethodHandlerTest, Listener_DeleteForward) {
+  auto listener = std::make_unique<OnTextChangedListenerImpl>(handler_);
+  listener->DeleteForward(5);
+}
+
+TEST_F(NWebInputMethodHandlerTest, Listener_DeleteBackward) {
+  auto listener = std::make_unique<OnTextChangedListenerImpl>(handler_);
+  listener->DeleteBackward(5);
+}
+
+TEST_F(NWebInputMethodHandlerTest, Listener_SendKeyEventFromInputMethod) {
+  auto listener = std::make_unique<OnTextChangedListenerImpl>(handler_);
+  listener->SendKeyEventFromInputMethod();
+}
+
+TEST_F(NWebInputMethodHandlerTest, Listener_SendFunctionKey) {
+  auto listener = std::make_unique<OnTextChangedListenerImpl>(handler_);
+  auto functionKey = std::make_shared<MockIMFAdapterFunctionKeyAdapter>();
+  listener->SendFunctionKey(functionKey);
+}
+
+TEST_F(NWebInputMethodHandlerTest, Listener_KeyboardUpperRightCornerHide) {
+  auto listener = std::make_unique<OnTextChangedListenerImpl>(handler_);
+  listener->KeyboardUpperRightCornerHide();
+}
+
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+TEST_F(NWebInputMethodHandlerTest, Listener_AutoFillWithIMFEvent) {
+  auto listener = std::make_unique<OnTextChangedListenerImpl>(handler_);
+  listener->AutoFillWithIMFEvent(true, false, false, "test_content");
+  listener->AutoFillWithIMFEvent(false, true, true, "test_content2");
+}
+#endif
+
+TEST_F(NWebInputMethodHandlerTest, Listener_SendFunctionKey_Null) {
+  auto listener = std::make_unique<OnTextChangedListenerImpl>(handler_);
+  listener->SendFunctionKey(nullptr);
+}
+
+TEST_F(NWebInputMethodHandlerTest, Listener_MoveCursor_AllDirections) {
+  auto listener = std::make_unique<OnTextChangedListenerImpl>(handler_);
+  listener->MoveCursor(IMFAdapterDirection::UP);
+  listener->MoveCursor(IMFAdapterDirection::DOWN);
+  listener->MoveCursor(IMFAdapterDirection::LEFT);
+  listener->MoveCursor(IMFAdapterDirection::RIGHT);
+}
+
+TEST_F(NWebInputMethodHandlerTest, Listener_MoveCursor_None) {
+  auto listener = std::make_unique<OnTextChangedListenerImpl>(handler_);
+  listener->MoveCursor(IMFAdapterDirection::NONE);
 }
 
 }  // namespace OHOS::NWeb

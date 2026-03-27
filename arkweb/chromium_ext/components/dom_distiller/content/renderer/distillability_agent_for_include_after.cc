@@ -25,7 +25,7 @@ if (!distiller_info || !distiller_info->is_distillable) {
 }
 
 blink::WebDistillabilityMatchResult match_type =
-    DetermineDistillableMatchResult(doc, distiller_info);
+    DetermineDistillableMatchResult(render_frame(), doc, distiller_info);
 mojom::PageDistillableInfoPtr page_info =
     mojom::PageDistillableInfo::New(mojom::PageType::kPageOthers,
                                     "",

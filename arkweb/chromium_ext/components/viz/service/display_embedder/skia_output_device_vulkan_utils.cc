@@ -89,6 +89,7 @@ void SkiaOutputDeviceVulkanUtils::DoCleanBuffers()
     return;
   }
   TRACE_EVENT0("base", "SkiaOutputDeviceVulkanUtils::DoCleanBuffers");
+  deviceVulkan->vulkan_surface_->Finish();
 #if BUILDFLAG(ARKWEB_VULKAN)
   DiscardBackbuffer();
 #endif

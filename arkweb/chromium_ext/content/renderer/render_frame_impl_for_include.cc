@@ -217,4 +217,28 @@ void RenderFrameImpl::OnDocumentEndReady() {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+bool RenderFrameImpl::IsReaderModeEnabled() {
+  return GetRendererPreferences().is_reader_mode_enabled;
+}
+
+void RenderFrameImpl::ReportDistillableResult(
+    const std::string& event_type,
+    const std::string& value) {
+  RenderThreadImpl* render_thread_impl = RenderThreadImpl::current();
+  if (!render_thread_impl) {
+    LOG(ERROR) << "[Distiller] Get current render thread failed.";
+    return;
+  }
+
+  mojom::RendererHost* renderer_host = render_thread_impl->GetRendererHost();
+  if (!renderer_host) {
+    LOG(ERROR) << "[Distiller] Get current render thread's render host failed.";
+    return;
+  }
+
+  renderer_host->ReportDistillableResult(event_type, value);
+}
+#endif
+
 // LCOV_EXCL_STOP

@@ -247,6 +247,13 @@ class MockRenderFrame : public content::RenderFrame {
 #if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
   void OnDocumentEndReady() override {}
 #endif
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  bool IsReaderModeEnabled() override { return false; }
+  void ReportDistillableResult(const std::string& event_type,
+                               const std::string& value) override {};
+#endif
+
  private:
   TestRenderFrameCondition condition_;
   MockWebLocalFrame* web_local_frame_;

@@ -33,6 +33,7 @@ NWebAdsBlockManagerImpl::NWebAdsBlockManagerImpl() {
 #if defined(USE_CEF)
   delegate_ = std::make_shared<NWebAdsBlockManagerDelegate>();
 #endif
+  WVLOG_I("NWebAdsBlockManagerImpl NWebAdsBlockManagerImpl");
 
   std::shared_ptr<NWebEngineInitArgs> init_args =
       std::make_shared<NWebDefaultEngineInitArgsImpl>();

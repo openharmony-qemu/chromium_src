@@ -774,6 +774,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void GetFocusedFrameInfo(int32_t& frame_id, CefString& frame_url) override {}
 #endif  // ARKWEB_ARKWEB_EXTENSIONS
 #if BUILDFLAG(ARKWEB_READER_MODE)
+  void EnableReaderMode(bool enabled) override {}
   void Distill(uint64_t request_id, const DistillOptions& distill_options,
     CefRefPtr<CefDistillCallback> callback) override {}
   void AbortDistill() override {}
@@ -1054,4 +1055,62 @@ TEST_F(NWebRenderHandlerTest, GetScreenOffset) {
   g_nweb_render_handler->GetScreenOffset(mock_browser, x, y);
 }
 #endif
+
+TEST_F(NWebRenderHandlerTest, GetScreenInfo_PortraitWithLandscapeDimensions) {
+  NWebScreenInfo screen_info;
+  screen_info.rotation = RotationType::ROTATION_0;
+  screen_info.orientation = DisplayOrientation::PORTRAIT;
+  screen_info.width = 1920;
+  screen_info.height = 1080;
+  screen_info.display_ratio = 1.0;
+  g_nweb_render_handler->SetScreenInfo(screen_info);
+
+  CefScreenInfo cef_screen_info;
+  bool result = g_nweb_render_handler->GetScreenInfo(mock_browser, cef_screen_info);
+  ASSERT_TRUE(result);
+  ASSERT_EQ(cef_screen_info.orientation, cef_screen_orientation_type_t::LANDSCAPE_PRIMARY);
+  ASSERT_EQ(cef_screen_info.angle, 0);
+}
+
+TEST_F(NWebRenderHandlerTest, GetScreenInfo_LandscapeWithPortraitDimensions) {
+  NWebScreenInfo screen_info;
+  screen_info.rotation = RotationType::ROTATION_0;
+  screen_info.orientation = DisplayOrientation::LANDSCAPE;
+  screen_info.width = 1080;
+  screen_info.height = 1920;
+  screen_info.display_ratio = 1.0;
+  g_nweb_render_handler->SetScreenInfo(screen_info);
+
+  CefScreenInfo cef_screen_info;
+  bool result = g_nweb_render_handler->GetScreenInfo(mock_browser, cef_screen_info);
+  ASSERT_TRUE(result);
+  ASSERT_EQ(cef_screen_info.orientation, cef_screen_orientation_type_t::PORTRAIT_PRIMARY);
+  ASSERT_EQ(cef_screen_info.angle, 0);
+}
+
+TEST_F(NWebRenderHandlerTest, GetScreenInfo_Rotation90Landscape) {
+  NWebScreenInfo screen_info;
+  screen_info.rotation = RotationType::ROTATION_90;
+  screen_info.orientation = DisplayOrientation::LANDSCAPE;
+  g_nweb_render_handler->SetScreenInfo(screen_info);
+
+  CefScreenInfo cef_screen_info;
+  bool result = g_nweb_render_handler->GetScreenInfo(mock_browser, cef_screen_info);
+  ASSERT_TRUE(result);
+  ASSERT_EQ(cef_screen_info.orientation, cef_screen_orientation_type_t::LANDSCAPE_SECONDARY);
+  ASSERT_EQ(cef_screen_info.angle, 270);
+}
+
+TEST_F(NWebRenderHandlerTest, GetScreenInfo_Rotation270LandscapeInverted) {
+  NWebScreenInfo screen_info;
+  screen_info.rotation = RotationType::ROTATION_270;
+  screen_info.orientation = DisplayOrientation::LANDSCAPE_INVERTED;
+  g_nweb_render_handler->SetScreenInfo(screen_info);
+
+  CefScreenInfo cef_screen_info;
+  bool result = g_nweb_render_handler->GetScreenInfo(mock_browser, cef_screen_info);
+  ASSERT_TRUE(result);
+  ASSERT_EQ(cef_screen_info.orientation, cef_screen_orientation_type_t::LANDSCAPE_PRIMARY);
+  ASSERT_EQ(cef_screen_info.angle, 90);
+}
 }  // namespace OHOS::NWeb

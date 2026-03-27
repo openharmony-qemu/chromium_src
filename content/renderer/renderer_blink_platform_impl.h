@@ -178,6 +178,18 @@ class CONTENT_EXPORT RendererBlinkPlatformImpl : public BlinkPlatformImpl {
   bool IsWebRtcHWDecodingEnabled() override;
   bool AllowsLoopbackInPeerConnection() override;
   blink::WebVideoCaptureImplManager* GetVideoCaptureImplManager() override;
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+  bool DecodeHeifOnGpuSync(
+    base::span<const uint8_t> heif_data,
+    std::vector<uint8_t>* out_pixels,
+    gfx::Size* out_size,
+    std::string* out_error) override;
+  bool DecodeHeifOnGpuSyncInternal(
+    base::span<const uint8_t> heif_data,
+    std::vector<uint8_t>* out_pixels,
+    gfx::Size* out_size,
+    std::string* out_error);
+#endif
   std::unique_ptr<blink::WebGraphicsContext3DProvider>
   CreateWebGLGraphicsContextProvider(
       bool prefer_low_power_gpu,

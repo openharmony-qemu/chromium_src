@@ -1208,3 +1208,7 @@ void RendererBlinkPlatformImpl::OnV8HeapLastResortGC() {
 }
 
 }  // namespace content
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/content/renderer/renderer_blink_platform_impl_for_include.cc"
+#endif

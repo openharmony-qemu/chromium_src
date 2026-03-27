@@ -84,6 +84,7 @@ class RasterDarkModeFilter;
 
 namespace gfx {
 class ColorSpace;
+class Size;
 }
 
 namespace gpu {
@@ -891,6 +892,14 @@ class BLINK_PLATFORM_EXPORT Platform {
   virtual const blink::mojom::ReaderModeConfig* GetReaderModeConfig() {
     return nullptr;
   }
+#endif
+
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+  virtual bool DecodeHeifOnGpuSync(
+      base::span<const uint8_t> heif_data,
+      std::vector<uint8_t>* out_pixels,
+      gfx::Size* out_size,
+      std::string* out_error) { return false; }
 #endif
 
  private:

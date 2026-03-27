@@ -160,6 +160,10 @@ class GPU_IPC_SERVICE_EXPORT GpuChannelMessageFilter
       CreateCommandBufferCallback callback) override;
   void DestroyCommandBuffer(int32_t routing_id,
                             DestroyCommandBufferCallback callback) override;
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+  void DecodeHeif(mojo_base::BigBuffer heif_data,
+                  DecodeHeifCallback callback) override;
+#endif
   void FlushDeferredRequests(std::vector<mojom::DeferredRequestPtr> requests,
                              uint32_t flushed_deferred_message_id) override;
 
@@ -689,12 +693,17 @@ GpuChannel::GpuChannel(
   DCHECK(gpu_channel_manager_);
   DCHECK(client_id_);
   DCHECK(!(is_gpu_host_ && enable_extra_handles_validation_));
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+  heif_decoder_ = std::make_unique<HeifDecoderService>();
+#endif
 }
 
 GpuChannel::~GpuChannel() {
   // Clear stubs first because of dependencies.
   stubs_.clear();
-
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+  heif_decoder_.reset();
+#endif
 #if BUILDFLAG(IS_WIN)
   // Release any references to this channel held by DCOMPTexture.
   for (auto& dcomp_texture : dcomp_textures_) {

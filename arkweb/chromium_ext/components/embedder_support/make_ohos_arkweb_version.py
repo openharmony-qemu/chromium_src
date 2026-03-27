@@ -24,7 +24,7 @@ def ReadHeader(options):
         if "app" in data and "versionName" in data["app"]:
             arkwebVersion = data["app"]["versionName"].split("sp")[0]
             arkwebVersionCode = data["app"]["versionCode"]
-            arkwebVersionFull = versionName
+            arkwebVersionFull = data["app"]["versionName"]
     return [arkwebVersion, arkwebVersionCode, arkwebVersionFull]
 
 def WriteHeader(options, version):

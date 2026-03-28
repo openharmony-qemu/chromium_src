@@ -429,7 +429,7 @@ void ResourceBundle::AddDataPackFromFileRegion(
   }
 }
 
-#if !BUILDFLAG(IS_APPLE)
+#if !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_ARKWEB)
 // static
 base::FilePath ResourceBundle::GetLocaleFilePath(
     const std::string& app_locale) {
@@ -1233,6 +1233,7 @@ std::u16string ResourceBundle::GetLocalizedStringImpl(int resource_id) const {
       // Fall back on the main data pack (shouldn't be any strings here except
       // in unittests).
       data = GetRawDataResource(resource_id);
+      LOG(WARNING) << "Unable to find resource: " << resource_id;
       CHECK(!data->empty())
           << "Unable to find resource: " << resource_id
           << ". If this happens in a browser test running on Windows, it may "

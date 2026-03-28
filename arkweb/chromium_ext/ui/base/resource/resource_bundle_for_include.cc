@@ -121,6 +121,7 @@ bool LocaleDataPakExistsExt(const std::string& locale) {
   if (path.empty() || !base::PathExists(path)) {
     std::string pakLocale;
     if (!l10n_util::CheckAndResolveLocale(locale, &pakLocale, false)) {
+      LOG(ERROR) << "CheckAndResolveLocale false, locale:" << locale;
       return false;
     }
     return supportLocaleList.count(pakLocale) > 0;
@@ -130,7 +131,6 @@ bool LocaleDataPakExistsExt(const std::string& locale) {
 }
 #endif
 
-#if !BUILDFLAG(IS_APPLE)
 // static
 base::FilePath ResourceBundle::GetLocaleFilePath(
     const std::string& locale) {
@@ -139,6 +139,7 @@ base::FilePath ResourceBundle::GetLocaleFilePath(
   }
   std::string pakLocale;
   if (!l10n_util::CheckAndResolveLocale(locale, &pakLocale, false)) {
+    LOG(ERROR) << "CheckAndResolveLocale false, locale:" << locale;
     return base::FilePath();
   }
 
@@ -158,10 +159,9 @@ base::FilePath ResourceBundle::GetLocaleFilePath(
         locale_file_path, pakLocale);
   }
 
-  LOG(DEBUG) << "GetLocaleFilePath pakLocale:" << pakLocale;
+  LOG(INFO) << "GetLocaleFilePath pakLocale:" << pakLocale;
   // Don't try to load from paths that are not absolute.
   return locale_file_path.IsAbsolute() ? locale_file_path : base::FilePath();
 }
-#endif
 
 }  // namespace ui

@@ -5,6 +5,9 @@
 if (is_arkweb) {
   import("//arkweb/chromium_ext/chromium_ext.gni")
 }
+if (is_arkweb_ext) {
+  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
+}
 
 static_library("core") {
   sources = [
@@ -151,6 +154,10 @@ source_set("unit_tests") {
     "//ui/base",
     "//url",
   ]
+
+  if (defined(arkweb_reader_mode) && arkweb_reader_mode) {
+    sources += arkweb_components_dom_distiller_core_unittest_sources
+  }
 }
 
 if (is_android) {

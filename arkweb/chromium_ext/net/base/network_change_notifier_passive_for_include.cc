@@ -179,7 +179,7 @@ void NetConnCallbackImpl::ConnectionTypeChangedTo(
 base::NoDestructor<std::shared_ptr<NetConnCallbackImpl>> g_net_connect_callback(nullptr);
 int32_t g_callback_id = -1;
 #endif
-
+ 
 }  // namespace
 
 namespace net {

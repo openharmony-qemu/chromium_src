@@ -4,6 +4,7 @@
 
 #include "extensions/browser/api/declarative/rules_registry.h"
 
+#include <algorithm>
 #include <memory>
 #include <utility>
 

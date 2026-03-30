@@ -21,7 +21,7 @@ NativePixmapDmaBuf::NativePixmapDmaBuf(const gfx::Size& size,
     : size_(size), format_(format), handle_(std::move(handle)), native_window_buffer_(window_buffer) {
   if (native_window_buffer_) {
     int32_t errorCode = OH_NativeWindow_NativeObjectReference(native_window_buffer_);
-    if (errorCode != Image_ErrorCode::IMAGE_SUCCESS) {
+    if (errorCode != 0) {
       LOG(INFO) << "NativePixmapDmaBuf, OH_NativeWindow_NativeObjectReference failed";
     }
   }
@@ -35,7 +35,7 @@ NativePixmapDmaBuf::~NativePixmapDmaBuf() {
 #if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
   if (native_window_buffer_) {
     int32_t errorCode = OH_NativeWindow_NativeObjectUnreference(native_window_buffer_);
-    if (errorCode != Image_ErrorCode::IMAGE_SUCCESS) {
+    if (errorCode != 0) {
       LOG(INFO) << "NativePixmapDmaBuf, OH_NativeWindow_NativeObjectUnreference failed";
     }
     native_window_buffer_ = nullptr;

@@ -114,7 +114,7 @@ NativePixmapEGLBinding::~NativePixmapEGLBinding() {
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
   if (native_window_buffer_) {
     int32_t errorCode = OH_NativeWindow_NativeObjectUnreference(native_window_buffer_);
-    if (errorCode != Image_ErrorCode::IMAGE_SUCCESS) {
+    if (errorCode != 0) {
       LOG(INFO) << "NativePixmapEGLBinding, OH_NativeWindow_NativeObjectUnreference failed";
     }
     native_window_buffer_ = nullptr;
@@ -174,8 +174,9 @@ bool NativePixmapEGLBinding::InitializeFromNativePixmap(
     return false;
   }
   int32_t errorCode = OH_NativeWindow_NativeObjectReference(native_window_buffer_);
-  if (errorCode != Image_ErrorCode::IMAGE_SUCCESS) {
+  if (errorCode != 0) {
     LOG(INFO) << "InitializeFromNativePixmap, OH_NativeWindow_NativeObjectReference failed";
+    return false;
   }
   egl_image_ = gl::ohos::CreateEGLImage(
       static_cast<EGLClientBuffer>(native_window_buffer_));

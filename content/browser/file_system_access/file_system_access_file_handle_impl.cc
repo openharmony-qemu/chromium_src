@@ -59,6 +59,10 @@
 #include "base/files/file.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "ohos/adapter/context_path/context_path_adapter.h"
+#endif
+
 using blink::mojom::FileSystemAccessStatus;
 using storage::BlobDataHandle;
 using storage::BlobImpl;
@@ -638,6 +642,13 @@ void FileSystemAccessFileHandleImpl::StartCreateSwapFile(
     } else {
       swap_url = url().CreateSibling(*opt_swap_name);
     }
+#elif BUILDFLAG(IS_OHOS)
+    std::string file_name = opt_swap_name->value();
+    base::FilePath private_swap_path =
+        base::FilePath(::ohos::adapter::ContextPathAdapter::GetAppDownloadDir())
+            .Append(base::FilePath::FromUTF8Unsafe(file_name));
+    storage::FileSystemURL swap_url =
+        manager()->CreateFileSystemURLFromPath(PathInfo(private_swap_path));
 #else
     storage::FileSystemURL swap_url = url().CreateSibling(*opt_swap_name);
 #endif

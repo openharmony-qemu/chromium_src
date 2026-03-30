@@ -37,22 +37,6 @@ namespace ohos::adapter::multiprocess {
 
 constexpr size_t kFdNameSize = 16;
 
-namespace {
-int ParseFdName(const char* fd_name) {
-  int result = -1;
-  if (fd_name) {
-    char* end_ptr = nullptr;
-    long value = std::strtol(fd_name, &end_ptr, 10);
-
-    if (*end_ptr == '\0' && value > 0 &&
-        value <= std::numeric_limits<int>::max()) {
-      result = static_cast<int>(value);
-    }
-  }
-  return result;
-}
-} // namespace
-
 void NodeDeleter::operator()(NativeChildProcess_Fd* node) const noexcept {
   while (node) {
     NativeChildProcess_Fd* next = node->next;
@@ -105,7 +89,6 @@ void NativeChildProcessArgsWrapper::Parse(
     std::vector<std::string>& commands,
     std::vector<std::pair<int32_t, int32_t>>& fds_to_remap) {
   commands.clear();
-  fds_to_remap.clear();
   if (args.entryParams == nullptr) {
     return;
   }
@@ -115,13 +98,9 @@ void NativeChildProcessArgsWrapper::Parse(
 
   auto current = args.fdList.head;
   while (current != nullptr) {
-    int fd_to = ParseFdName(current->fdName);
-    if (fd_to > 0) {
-      fds_to_remap.emplace_back(fd_to, current->fd);
-    } else {
-      LOGE("[ChildProcess] Invalid fd name: %{public}s", current->fdName);
-    }
-
+    int fd = current->fd;
+    LOGD("Parse %{public}d => %{public}s", fd, current->fdName);
+    fds_to_remap.push_back({std::stoi(current->fdName), fd});
     current = current->next;
   }
 }

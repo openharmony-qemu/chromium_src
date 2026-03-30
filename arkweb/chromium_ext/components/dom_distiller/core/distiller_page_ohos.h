@@ -38,6 +38,13 @@ class TaskTracker;
 void ModifyDistillerScriptOhos(std::string& script, bool is_distill_catalog);
 
 #if BUILDFLAG(ARKWEB_READER_MODE)
+std::string GetPathWithGURL(const GURL& gurl);
+bool ParserXpathAndUpdateConfig(
+    const std::string& xpath_content,
+    dom_distiller::proto::DistillOptionsConfig* distill_config);
+bool ParserJavascriptAndUpdateConfig(
+    const std::string& javascript_content,
+    dom_distiller::proto::DistillOptionsConfig* distill_config);
 dom_distiller::proto::DomDistillerOptions GetCustomDomDistillerOptions(
     bool is_article,
     const GURL& gurl,

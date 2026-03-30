@@ -645,6 +645,10 @@ arkweb_components_url_formatter_contexts_unittest_sources = [
   "//arkweb/chromium_ext/components/url_formatter/arkweb_elide_url_ext_unittest.cc",
 ]
 
+arkweb_components_dom_distiller_core_unittest_sources = [
+  "//arkweb/chromium_ext/components/dom_distiller/core/distiller_page_ohos_unittest.cc",
+]
+
 arkweb_components_download_internal_common_sources = [
   "//arkweb/chromium_ext/components/download/internal/common/arkweb_download_item_impl_ext.cc",
   "//arkweb/chromium_ext/components/download/internal/common/arkweb_download_item_impl_ext.h",

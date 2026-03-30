@@ -68,7 +68,6 @@ void ModifyDistillerScriptOhos(std::string& script, bool is_distill_catalog) {
   script = script.replace(dom_distiller_js_offset, strlen(kDomDistillerJsPlaceholder), *dom_distiller_js);
 }
 
-namespace {
 void ParserXpathAndSetConfig(
     const std::string& xpath_str, dom_distiller::proto::DomDistillerOptions& distiller_options) {
   if (xpath_str.empty()) {
@@ -252,20 +251,20 @@ bool ParserJavascriptAndUpdateConfig(
   }
   return has_value;
 }
-}  // namespace
 
 dom_distiller::proto::DomDistillerOptions GetCustomDomDistillerOptions(
     bool is_article, const GURL& gurl, const dom_distiller::proto::DomDistillerOptions& source_options) {
   if (is_article) {
     return source_options;
   }
+
   dom_distiller::proto::DomDistillerOptions result_options = source_options;
   const auto* config_data = nweb_ex::AlloyBrowserReaderModeConfig::GetInstance()->GetReaderModeConfigData();
   if (!config_data) {
     return result_options;
   }
 
-  if (!nweb_ex::AlloyBrowserReaderModeConfig::GetInstance()->isV2Config()) {
+  if (!nweb_ex::AlloyBrowserReaderModeConfig::GetInstance()->IsV2Config()) {
     SetOptionsXpath(gurl, result_options);
     return result_options;
   }

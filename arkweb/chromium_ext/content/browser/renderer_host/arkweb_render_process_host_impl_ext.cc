@@ -297,8 +297,7 @@ void ArkwebRenderProcessHostImplExt::SetMojomReaderModeConfigV2(
 
 void ArkwebRenderProcessHostImplExt::UpdateReaderModeConfig(
     const nweb_ex::BrowserReaderModeConfigData* reader_mode_config_data) {
-  if (!reader_mode_config_data
-      || (!reader_mode_config_data->enabled && !reader_mode_config_data->is_v2)) {
+  if (!reader_mode_config_data) {
     LOG(WARNING) << "[Distiller] param reader_mode_config_data is null";
     return;
   }

@@ -302,6 +302,10 @@
 #include "base/files/file_path.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+#include "ohos_nweb_ex/overrides/cef/libcef/browser/alloy/alloy_video_load_optimization_config.h"
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
 // VLOG additional statements in Fuchsia release builds.
 #if BUILDFLAG(IS_FUCHSIA)
 #define MAYBEVLOG VLOG

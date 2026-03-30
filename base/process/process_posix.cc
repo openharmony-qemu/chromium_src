@@ -41,7 +41,20 @@
 #include "TargetConditionals.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include <AbilityKit/native_child_process.h>
+#include <deviceinfo.h>
+
+#include "ohos/adapter/device_info/device_info.h"
+#endif
+
 namespace {
+#if BUILDFLAG(IS_OHOS)
+extern "C" {
+Ability_NativeChildProcess_ErrCode OH_Ability_KillChildProcess(
+    int32_t pid) __attribute__((weak));
+}
+#endif
 
 #if !BUILDFLAG(IS_IOS) || (BUILDFLAG(IS_IOS) && TARGET_OS_SIMULATOR)
 bool WaitpidWithTimeout(base::ProcessHandle handle,
@@ -343,11 +356,30 @@ bool Process::TerminateInternal(int exit_code, bool wait) const {
     return was_killed;
   }
 
+#if BUILDFLAG(IS_OHOS)
+  // if SDK version>=22 && The linker can find the implementation of the
+  // OH_Ability_KillChildProcess function
+  if (OH_GetSdkApiVersion() >= ohos::adapter::device_info::SDK_VERSION_22 &&
+      OH_Ability_KillChildProcess) {
+    Ability_NativeChildProcess_ErrCode errCode =
+        OH_Ability_KillChildProcess(process_);
+    if (errCode != 0) {
+      LOG(ERROR) << "OH_Ability_KillChildProcess failed, errcode:" << errCode
+                 << "process: " << process_;
+      return false;
+    }
+  } else if (kill(process_, SIGTERM) != 0) {
+    // or Running the kill command to terminate the process
+    DPLOG(ERROR) << "Unable to terminate process " << process_;
+    return false;
+  }
+#else
   // Terminate process giving it a chance to clean up.
   if (kill(process_, SIGTERM) != 0) {
     DPLOG(ERROR) << "Unable to terminate process " << process_;
     return false;
   }
+#endif
 
 #if BUILDFLAG(IS_CHROMEOS)
   CleanUpProcessAsync();

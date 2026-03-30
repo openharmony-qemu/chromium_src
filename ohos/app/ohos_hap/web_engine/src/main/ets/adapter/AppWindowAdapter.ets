@@ -99,7 +99,6 @@ export class AppWindowAdapter extends BaseAdapter {
     let uiContext = windowClass?.getUIContext();
 
     if (this.nativeContext.IsSupportNodeHandleFeature() &&
-      param.ability_type === AbilityType.kTaskManagerAbility &&
       !CheckEmptyUtils.isWindowBoundsEmpty(param.bounds) &&
       !param.hide_title_bar) {
       // Keep the bounds saved in Chromium consistent with the bounds in windowRectChange,

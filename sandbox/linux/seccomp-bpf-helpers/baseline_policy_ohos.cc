@@ -241,6 +241,29 @@ ResultExpr BaselinePolicyOhos::EvaluateSyscall(int sysno) const {
   if (sysno == __NR_clock_getres) {
     return RestrictClockID();
   }
+
+  // Image hardware decoding is required
+  if (sysno == __NR_timerfd_create) {
+#define TFD_CLOEXEC 02000000
+#define TFD_NONBLOCK 00004000
+    const Arg<int> clockid(0);
+    const Arg<int> flags(1);
+
+    return Switch(clockid)
+        .Cases({CLOCK_MONOTONIC},
+               If(flags == (TFD_CLOEXEC | TFD_NONBLOCK), Allow())
+                   .Else(CrashSIGSYS()))
+        .Default(BaselinePolicy::EvaluateSyscall(sysno));
+  }
+
+  if (sysno == __NR_timerfd_settime) {
+#define TFD_TIMER_ABSTIME (1 << 0)
+    const Arg<int> option(1);
+
+    return Switch(option)
+        .Cases({TFD_TIMER_ABSTIME, 0}, Error(EPERM))
+        .Default(BaselinePolicy::EvaluateSyscall(sysno));
+  }
 #endif
 
   switch (sysno) {

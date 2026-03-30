@@ -54,7 +54,6 @@ void ScrollableAreaUtils::SetOverlayScrollbarColor() {
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
 // LCOV_EXCL_START
 bool ScrollableAreaUtils::GetScrollable() {
-  DCHECK(scrollable_area_->GetLayoutBox());
   if (scrollable_area_->GetLayoutBox() &&
       scrollable_area_->GetLayoutBox()->GetFrame()) {
     if (!scrollable_area_->GetLayoutBox()

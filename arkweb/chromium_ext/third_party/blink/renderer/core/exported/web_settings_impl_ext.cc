@@ -209,6 +209,18 @@ bool  WebSettingsImplExt::GetEnableAutoFill()
 }
 #endif  // BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
 
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+void WebSettingsImplExt::SetEnableDrag(bool enable)
+{
+  settings_->SetEnableDrag(enable);
+}
+
+bool  WebSettingsImplExt::GetEnableDrag()
+{
+  return settings_->GetEnableDrag();
+}
+ #endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
+
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
 void WebSettingsImplExt::SetClipboardSitePermissionEnabled(bool enable)
 {

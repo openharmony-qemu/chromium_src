@@ -206,6 +206,9 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
   browser_settings.is_autofill_enabled = is_autofill_enabled_;
 #endif  // BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  browser_settings.is_drag_enabled = is_drag_enabled_;
+#endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
 #if BUILDFLAG(ARKWEB_MENU)
   browser_settings.touch_handle_exist = touch_handle_exist_;
   browser_settings.viewport_scale = viewport_scale_;
@@ -421,6 +424,13 @@ void NWebPreferenceDelegate::SetEnableAutoFill(bool enable) {
   WebPreferencesChanged();
 }
 #endif  // BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+void NWebPreferenceDelegate::SetEnableDrag(bool enable) {
+  is_drag_enabled_ = enable;
+  WebPreferencesChanged();
+}
+#endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
 
 #if BUILDFLAG(ARKWEB_MENU)
 void NWebPreferenceDelegate::SetTouchHandleExistState(bool touchHandleExist) {

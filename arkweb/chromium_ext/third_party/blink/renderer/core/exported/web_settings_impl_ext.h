@@ -123,6 +123,11 @@ class CORE_EXPORT WebSettingsImplExt final : public WebSettingsImpl {
   bool GetEnableAutoFill() override;
 #endif  // BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
 
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  void SetEnableDrag(bool enable) override;
+  bool GetEnableDrag() override;
+#endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
+
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
   void SetClipboardSitePermissionEnabled(bool enable) override;
 #endif  // BUILDFLAG(ARKWEB_CLIPBOARD)

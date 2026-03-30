@@ -96,6 +96,10 @@ void ApplyOhosWebPreferences(const web_pref::WebPreferences& prefs,
   settings->SetEnableAutoFill(prefs.is_autofill_enabled);
 #endif  // BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
 
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  settings->SetEnableDrag(prefs.is_drag_enabled);
+#endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
+
 #if BUILDFLAG(ARKWEB_MENU)
   settings->SetTouchHandleExistState(prefs.touch_handle_exist);
   settings->SetViewportScaleState(prefs.viewport_scale);

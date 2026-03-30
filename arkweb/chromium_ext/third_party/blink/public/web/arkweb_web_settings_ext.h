@@ -121,6 +121,11 @@ public:
   virtual bool GetEnableAutoFill() = 0;
 #endif  // BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
 
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  virtual void SetEnableDrag(bool) = 0;
+  virtual bool GetEnableDrag() = 0;
+#endif  // BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
   virtual void SetClipboardSitePermissionEnabled(bool) = 0;
 #endif  // BUILDFLAG(ARKWEB_CLIPBOARD)

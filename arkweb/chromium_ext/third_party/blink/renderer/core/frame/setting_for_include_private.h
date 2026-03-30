@@ -74,6 +74,10 @@
   bool is_autofill_enabled_ = true;
 #endif  // BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
 
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  bool is_drag_enabled_ = true;
+#endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
+
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
   bool clipboard_site_permission_enabled_ = false;
 #endif  // BUILDFLAG(ARKWEB_CLIPBOARD)

@@ -12,6 +12,8 @@
 
 #include <algorithm>
 #include <array>
+#include <algorithm>
+#include <array>
 #include <cstdint>
 
 #include "partition_alloc/bucket_lookup.h"

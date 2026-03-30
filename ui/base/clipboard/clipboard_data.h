@@ -176,6 +176,12 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) ClipboardData {
   }
 #endif  // BUILDFLAG(IS_CHROMEOS)
 
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  std::map<ClipboardFormatType, std::string> GetCustomData() const {
+    return custom_data_;
+  }
+#endif
+
  private:
   // Unique identifier for the clipboard state at the time of data creation.
   ClipboardSequenceNumberToken sequence_number_token_;

@@ -373,8 +373,7 @@ class ProfileMenuViewExtensionsTest : public ProfileMenuViewTestBase,
  public:
   ProfileMenuViewExtensionsTest()
       : InteractiveFeaturePromoTestMixin(UseDefaultTrackerAllowingPromos(
-            {feature_engagement::kIPHProfileSwitchFeature,
-             feature_engagement::kIPHSupervisedUserProfileSigninFeature})) {}
+            {feature_engagement::kIPHProfileSwitchFeature})) {}
 
   // InteractiveFeaturePromoTestMixin:
   void SetUpOnMainThread() override {
@@ -507,9 +506,7 @@ INSTANTIATE_TEST_SUITE_P(
     All,
     ProfileMenuViewExtensionsIphDismissTest,
     testing::Values(
-        base::test::FeatureRef(feature_engagement::kIPHProfileSwitchFeature),
-        base::test::FeatureRef(
-            feature_engagement::kIPHSupervisedUserProfileSigninFeature)),
+        base::test::FeatureRef(feature_engagement::kIPHProfileSwitchFeature)),
     [](const auto& info) {
       return info.param == feature_engagement::kIPHProfileSwitchFeature
                  ? "_ProfileSwitch"

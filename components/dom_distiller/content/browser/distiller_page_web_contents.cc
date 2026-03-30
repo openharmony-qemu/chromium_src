@@ -29,6 +29,8 @@
 #include "ui/display/screen.h"
 #include "url/gurl.h"
 
+#include "arkweb/chromium_ext/components/dom_distiller/content/browser/distiller_page_web_contents_ext.h"
+
 namespace dom_distiller {
 
 namespace {
@@ -81,7 +83,7 @@ std::unique_ptr<DistillerPage>
 DistillerPageWebContentsFactory::CreateDistillerPage(
     const gfx::Size& render_view_size) const {
   DCHECK(browser_context_);
-  return std::unique_ptr<DistillerPage>(new DistillerPageWebContents(
+  return std::unique_ptr<DistillerPage>(new DistillerPageWebContentsExt(
       browser_context_, render_view_size,
       std::unique_ptr<SourcePageHandleWebContents>()));
 }
@@ -93,7 +95,7 @@ DistillerPageWebContentsFactory::CreateDistillerPageWithHandle(
   std::unique_ptr<SourcePageHandleWebContents> web_contents_handle =
       std::unique_ptr<SourcePageHandleWebContents>(
           static_cast<SourcePageHandleWebContents*>(handle.release()));
-  return std::unique_ptr<DistillerPage>(new DistillerPageWebContents(
+  return std::unique_ptr<DistillerPage>(new DistillerPageWebContentsExt(
       browser_context_, gfx::Size(), std::move(web_contents_handle)));
 }
 
@@ -141,6 +143,9 @@ void DistillerPageWebContents::DistillPageImpl(const GURL& url,
   state_ = LOADING_PAGE;
   script_ = script;
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  if (AsExt()) AsExt()->DistillPageImplExt(url);
+#endif
   if (source_page_handle_ && source_page_handle_->web_contents() &&
       TargetRenderFrameHost().GetLastCommittedURL() == url) {
     if (TargetRenderFrameHost().IsDOMContentLoaded()) {
@@ -157,12 +162,19 @@ void DistillerPageWebContents::DistillPageImpl(const GURL& url,
   } else {
     CreateNewWebContents(url);
   }
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  if (AsExt()) AsExt()->DistillPageImplEndExt();
+#endif // ARKWEB_READER_MODE
 }
 
 void DistillerPageWebContents::CreateNewWebContents(const GURL& url) {
   // Create new WebContents to use for distilling the content.
   content::WebContents::CreateParams create_params(browser_context_);
   create_params.initially_hidden = true;
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  if (AsExt()) AsExt()->UpdateWebContentCreateParam(create_params);
+#endif // ARKWEB_READER_MODE
   std::unique_ptr<content::WebContents> web_contents =
       content::WebContents::Create(create_params);
   DCHECK(web_contents);
@@ -181,7 +193,12 @@ void DistillerPageWebContents::CreateNewWebContents(const GURL& url) {
 
   // SourcePageHandleWebContents takes ownership of |web_contents|.
   source_page_handle_ = std::make_unique<SourcePageHandleWebContents>(
-      web_contents.release(), true);
+      web_contents.release(), 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+      !!DistillerPageWebContentsExt::resident_web_contents_);
+#else
+      true);
+#endif // ARKWEB_READER_MODE
 }
 
 gfx::Size DistillerPageWebContents::GetSizeForNewRenderView(
@@ -201,6 +218,10 @@ gfx::Size DistillerPageWebContents::GetSizeForNewRenderView(
 void DistillerPageWebContents::DOMContentLoaded(
     content::RenderFrameHost* render_frame_host) {
   if (render_frame_host == &TargetRenderFrameHost()) {
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+    if (AsExt() && AsExt()->DOMContentLoadedExt(render_frame_host)) return;
+#endif // ARKWEB_READER_MODE
     ExecuteJavaScript();
   }
 }
@@ -211,17 +232,25 @@ void DistillerPageWebContents::DidFinishNavigation(
     content::WebContentsObserver::Observe(nullptr);
     DCHECK(state_ == LOADING_PAGE || state_ == EXECUTING_JAVASCRIPT);
     state_ = PAGELOAD_FAILED;
+  #if BUILDFLAG(ARKWEB_READER_MODE)
+    if (AsExt()) AsExt()->OnWebContentsDistillationFailed(net::ErrorToShortString(navigation_handle->GetNetErrorCode()));
+#else
     OnWebContentsDistillationDone(GURL(), base::TimeTicks(), base::Value());
+#endif // ARKWEB_READER_MODE
   }
 }
 
 void DistillerPageWebContents::ExecuteJavaScript() {
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  if (AsExt() && AsExt()->ExecuteJavaScriptExt()) return;
+#else
   DCHECK_EQ(LOADING_PAGE, state_);
   state_ = EXECUTING_JAVASCRIPT;
   content::WebContentsObserver::Observe(nullptr);
   // Stop any pending navigation since the intent is to distill the current
   // page.
   source_page_handle_->web_contents()->Stop();
+#endif // ARKWEB_READER_MODE
   RunIsolatedJavaScript(
       &TargetRenderFrameHost(), script_,
       base::BindOnce(&DistillerPageWebContents::OnWebContentsDistillationDone,
@@ -236,6 +265,11 @@ void DistillerPageWebContents::OnWebContentsDistillationDone(
     base::Value value) {
   DCHECK(state_ == IDLE || state_ == LOADING_PAGE ||  // TODO(nyquist): 493795.
          state_ == PAGELOAD_FAILED || state_ == EXECUTING_JAVASCRIPT);
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  if (AsExt() && AsExt()->OnWebContentsDistillationDoneExt()) return;
+#endif // ARKWEB_READER_MODE
+
   state_ = IDLE;
 
   if (!javascript_start.is_null()) {

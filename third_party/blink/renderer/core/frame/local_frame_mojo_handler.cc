@@ -82,6 +82,12 @@
 #include "ui/base/mojom/attributed_string.mojom-blink.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/script/classic_script_utils.h"
+#include "gin/converter.h"
+#endif
+
+
 namespace blink {
 
 namespace {
@@ -861,10 +867,16 @@ void LocalFrameMojoHandler::JavaScriptExecuteRequest(
                        TRACE_EVENT_SCOPE_THREAD);
 
   v8::HandleScope handle_scope(ToIsolate(frame_));
+#if BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)
+  ScriptEvaluationResult script_result =
+      ClassicScriptUtils::CreateUnparkScript(javascript)
+          ->RunScriptAndReturnValue(DomWindow());
+#else
   v8::Local<v8::Value> result =
       ClassicScript::CreateUnspecifiedScript(javascript)
           ->RunScriptAndReturnValue(DomWindow())
           .GetSuccessValueOrEmpty();
+#endif
 
   if (wants_result) {
     std::unique_ptr<WebV8ValueConverter> converter =
@@ -873,8 +885,28 @@ void LocalFrameMojoHandler::JavaScriptExecuteRequest(
     converter->SetRegExpAllowed(true);
 
     v8::Local<v8::Context> context = MainWorldScriptContext(frame_);
+#if BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)
+    base::Value::Dict dict_result;
+    if (script_result.GetResultType() == ScriptEvaluationResult::ResultType::kException) {
+      v8::Local<v8::Value> result = script_result.GetExceptionForWorklet();
+      v8::Local<v8::Value> exception = v8::TryCatch::StackTrace(context, result).FromMaybe(result);
+      v8::Local<v8::String> value_string;
+      if (exception->ToString(context).ToLocal(&value_string)) {
+        dict_result.Set("exception", gin::V8ToString(ToIsolate(frame_), value_string));
+      }
+      dict_result.Set("result", GetJavaScriptExecutionResult(v8::Local<v8::Value>(), context, converter.get()));
+    } else {
+      v8::Local<v8::Value> result = script_result.GetSuccessValueOrEmpty();
+      if (!result.IsEmpty()) {
+        dict_result.Set("isObject", base::Value(result->IsObject()));
+      }
+      dict_result.Set("result", GetJavaScriptExecutionResult(result, context, converter.get()));
+    }
+    std::move(callback).Run(base::Value(std::move(dict_result)));
+#else
     std::move(callback).Run(
         GetJavaScriptExecutionResult(result, context, converter.get()));
+#endif
   } else {
     std::move(callback).Run({});
   }

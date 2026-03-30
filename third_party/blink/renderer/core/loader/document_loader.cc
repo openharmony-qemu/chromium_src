@@ -33,6 +33,9 @@
 #include <optional>
 #include <utility>
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "base/auto_reset.h"
 #include "base/containers/flat_map.h"
 #include "base/containers/to_vector.h"
@@ -190,6 +193,16 @@
 #include "third_party/blink/renderer/platform/wtf/text/string_view.h"
 #include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
 #include "third_party/blink/renderer/platform/wtf/vector.h"
+
+#if BUILDFLAG(ARKWEB_MENU)
+#include "base/logging.h"
+#include "third_party/blink/renderer/core/html/html_image_element.h"
+#include "third_party/blink/renderer/core/html/image_document.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "url/ohos/log_utils.h"
+#endif
 
 namespace blink {
 namespace {
@@ -365,6 +378,9 @@ struct SameSizeAsDocumentLoader
   Member<HistoryItem> history_item;
   Member<DocumentParser> parser;
   Member<SubresourceFilter> subresource_filter;
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  Member<SubresourceFilter> user_subresource_filter;
+#endif
   AtomicString original_referrer;
   ResourceResponse response;
   mutable WrappedResourceResponse response_wrapper;
@@ -449,6 +465,9 @@ struct SameSizeAsDocumentLoader
       modified_runtime_features;
   mojom::RendererContentSettingsPtr content_settings;
   int64_t body_size_from_service_worker;
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+  int32_t custom_viewport_width_;
+#endif
   const std::optional<
       HashMap<mojom::blink::PermissionName, mojom::blink::PermissionStatus>>
       initial_permission_statuses;
@@ -615,6 +634,9 @@ DocumentLoader::DocumentLoader(
       browsing_context_group_token_(params_->browsing_context_group_token),
       modified_runtime_features_(std::move(params_->modified_runtime_features)),
       content_settings_(std::move(params_->content_settings)),
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+      custom_viewport_width_(params_->custom_viewport_width),
+#endif
       initial_permission_statuses_(ConvertPermissionStatusFlatMapToHashMap(
           params_->initial_permission_statuses)),
       force_new_document_sequence_number_(
@@ -828,6 +850,9 @@ void DocumentLoader::Trace(Visitor* visitor) const {
   visitor->Trace(history_item_);
   visitor->Trace(parser_);
   visitor->Trace(subresource_filter_);
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  visitor->Trace(user_subresource_filter_);
+#endif
   visitor->Trace(content_security_notifier_);
   visitor->Trace(document_load_timing_);
   visitor->Trace(prefetched_signed_exchange_manager_);
@@ -1023,6 +1048,10 @@ void DocumentLoader::UpdateForSameDocumentNavigation(
   CHECK_EQ(IsBackForwardOrRestore(type), !!history_item);
   TRACE_EVENT1("blink", "FrameLoader::updateForSameDocumentNavigation", "url",
                new_url.GetString().Ascii());
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  AsArkWebDocumentLoaderExt()->UpdateAllowPreloadRecord();
+#endif
 
   bool same_item_sequence_number =
       history_item_ && history_item &&
@@ -1904,6 +1933,14 @@ void DocumentLoader::SetDefersLoading(LoaderFreezeMode mode) {
 
 void DocumentLoader::DetachFromFrame(bool flush_microtask_queue) {
   DCHECK(frame_);
+#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+  LOG(INFO) << "Document loader DetachFromFrame, url: ***";
+#endif
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(INFO) << "Document loader DetachFromFrame, url: "
+                     << url::LogUtils::ConvertUrlWithMask(
+                            url_.GetString().Utf8());
+#endif
   StopLoading();
   DCHECK(!body_loader_);
 
@@ -2127,6 +2164,14 @@ void DocumentLoader::StartLoadingResponse() {
   // always be a frame here.
   if (frame_ && frame_->GetDocument()->IsMediaDocument()) {
     parser_->Finish();
+#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+    LOG(INFO) << "Document loader StartLoadingResponse, url: ***";
+#endif
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(INFO) << "Document loader StartLoadingResponse, url: "
+                       << url::LogUtils::ConvertUrlWithMask(
+                              url_.GetString().Utf8());
+#endif
     StopLoading();
     return;
   }
@@ -3068,6 +3113,9 @@ void DocumentLoader::CommitNavigation() {
 
   DidInstallNewDocument(document);
 
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+  document->SetCustomViewportWidth(static_cast<float>(custom_viewport_width_));
+#endif
   // This must be called before the document is opened, otherwise HTML parser
   // will use stale values from HTMLParserOption.
   DidCommitNavigation();
@@ -3183,6 +3231,10 @@ void DocumentLoader::CommitNavigation() {
         ".OutermostMainFrame.NewNavigation.IsHTTPOrHTTPS",
         timer.Elapsed());
   }
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  AsArkWebDocumentLoaderExt()->UpdateAllowPreloadRecord();
+#endif
 
   // Load the document if needed.
   StartLoadingResponse();

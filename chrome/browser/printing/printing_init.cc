@@ -24,6 +24,10 @@
 #include "chrome/browser/printing/print_view_manager_basic.h"
 #endif  // BUILDFLAG(ENABLE_PRINT_PREVIEW)
 
+#if BUILDFLAG(ARKWEB_PRINT)
+#include "cef/ohos_cef_ext/libcef/browser/printing/ohos_print_manager.h"
+#endif  // BUILDFLAG(ARKWEB_PRINT)
+
 namespace printing {
 
 #if BUILDFLAG(ENABLE_OOP_PRINTING)
@@ -47,6 +51,9 @@ void InitializePrintingForWebContents(content::WebContents* web_contents) {
 #else
     PrintViewManagerBasic::CreateForWebContents(web_contents);
 #endif  // BUILDFLAG(ENABLE_PRINT_PREVIEW)
+#if BUILDFLAG(ARKWEB_PRINT)
+    OhosPrintManager::CreateForWebContents(web_contents);
+#endif  // BUILDFLAG(ARKWEB_PRINT)
   }
   CreateCompositeClientIfNeeded(web_contents, embedder_support::GetUserAgent());
 }

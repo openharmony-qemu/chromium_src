@@ -21,6 +21,7 @@
 #include "components/download/public/common/mock_input_stream.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "arkweb/build/features/features.h"
 
 using ::testing::_;
 using ::testing::NiceMock;
@@ -68,9 +69,9 @@ class ParallelDownloadJobForTest : public ParallelDownloadJob {
         min_slice_size_(min_slice_size),
         min_remaining_time_(min_remaining_time) {}
 
-  ParallelDownloadJobForTest(const ParallelDownloadJobForTest&) = delete;
-  ParallelDownloadJobForTest& operator=(const ParallelDownloadJobForTest&) =
-      delete;
+  //ParallelDownloadJobForTest(const ParallelDownloadJobForTest&) = delete;
+  //ParallelDownloadJobForTest& operator=(const ParallelDownloadJobForTest&) =
+  //    delete;
 
   void CreateRequest(int64_t offset) override {
     auto worker = std::make_unique<DownloadWorker>(this, offset);
@@ -154,7 +155,11 @@ class ParallelDownloadJobTest : public testing::Test {
 
   bool IsJobCanceled() const { return job_->is_canceled_; }
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  void CancelRequest(bool user_cancel, std::optional<std::string> guid) { canceled_ = true; }
+#else
   void CancelRequest(bool user_cancel) { canceled_ = true; }
+#endif
 
   void VerifyWorker(int64_t offset, int64_t length) const {
     EXPECT_TRUE(job_->workers_.find(offset) != job_->workers_.end());
@@ -416,7 +421,11 @@ TEST_F(ParallelDownloadJobTest, ParallelRequestNotCreatedUntilFileInitialized) {
       std::make_unique<StrictMock<MockDownloadDestinationObserver>>();
   base::WeakPtrFactory<DownloadDestinationObserver> observer_factory(
       observer.get());
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+  auto download_file = std::make_unique<ArkWebDownloadFileImplExt>(
+#else
   auto download_file = std::make_unique<DownloadFileImpl>(
+#endif
       std::move(save_info), base::FilePath(),
       std::unique_ptr<MockInputStream>(input_stream), DownloadItem::kInvalidId,
       observer_factory.GetWeakPtr());

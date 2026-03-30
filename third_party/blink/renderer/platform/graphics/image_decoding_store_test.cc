@@ -26,6 +26,8 @@
 #include "third_party/blink/renderer/platform/graphics/image_decoding_store.h"
 
 #include <memory>
+
+#include "arkweb/build/features/features.h"
 #include "base/memory/memory_pressure_listener.h"
 #include "base/run_loop.h"
 #include "testing/gtest/include/gtest/gtest.h"
@@ -42,7 +44,10 @@ class ImageDecodingStoreTest : public testing::Test,
     image_decoding_store_.SetCacheLimitInBytes(1024 * 1024);
     generator_ = ImageFrameGenerator::Create(SkISize::Make(100, 100), true,
                                              ColorBehavior::kIgnore,
-                                             cc::AuxImage::kDefault, {});
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+                                             cc::AuxImage::kDefault,
+#endif
+                                             {});
     decoders_destroyed_ = 0;
   }
 

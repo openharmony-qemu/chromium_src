@@ -242,6 +242,16 @@ export class ExtensionsManagerElement extends ExtensionsManagerElementBase {
       service.getItemStateChangedTarget().addListener(
           this.onItemStateChanged_.bind(this));
     });
+
+    // ARKWEB_ARKWEB_EXTENSIONS start
+    // For some situation, drag is too fast to generate drag over events.
+    // So prevent drag enter event as fallback.
+    if (this.shadowRoot) {
+      for (let child of this.shadowRoot.children) {
+        child.addEventListener('dragenter', (e)=>{e.preventDefault();});
+      }
+    }
+    // ARKWEB_ARKWEB_EXTENSIONS end
   }
 
   override updated(changedProperties: PropertyValues<this>) {

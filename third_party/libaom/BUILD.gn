@@ -11,6 +11,7 @@ import("//third_party/libaom/libaom_srcs.gni")
 import("//third_party/libaom/libaom_test_srcs.gni")
 import("//third_party/libaom/options.gni")
 import("//third_party/nasm/nasm_assemble.gni")
+import("//arkweb/build/config/sanitizers/sanitizers.gni")
 
 # Sets the architecture name for building libaom.
 if (current_cpu == "x86") {
@@ -236,7 +237,12 @@ if (current_cpu == "arm64" || current_cpu == "arm64e") {
     configs += [ ":libaom_config" ]
     configs -= [ "//build/config/compiler:default_init_stack_vars" ]
     if (!is_win || is_clang) {
+      if (!enable_cfi_protection) {
       cflags = [ "-march=armv8-a+crc" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8-a+pauth-hint-only+crc" ] 
+      }
     }
     sources = aom_av1_encoder_intrin_arm_crc32
   }
@@ -248,7 +254,12 @@ if (current_cpu == "arm64" || current_cpu == "arm64e") {
     configs += [ ":libaom_config" ]
     configs -= [ "//build/config/compiler:default_init_stack_vars" ]
     if (!is_win || is_clang) {
+      if (!enable_cfi_protection) {
       cflags = [ "-march=armv8.2-a+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+dotprod" ]
+      }
     }
     sources = aom_av1_common_intrin_neon_dotprod
     sources += aom_dsp_common_intrin_neon_dotprod
@@ -262,7 +273,12 @@ if (current_cpu == "arm64" || current_cpu == "arm64e") {
     configs += [ ":libaom_config" ]
     configs -= [ "//build/config/compiler:default_init_stack_vars" ]
     if (!is_win || is_clang) {
+      if (!enable_cfi_protection) {
       cflags = [ "-march=armv8.2-a+dotprod+i8mm" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+dotprod+i8mm" ]
+      }
     }
     sources = aom_av1_common_intrin_neon_i8mm
     sources += aom_dsp_common_intrin_neon_i8mm
@@ -279,7 +295,12 @@ if (current_cpu == "arm64" || current_cpu == "arm64e") {
       configs += [ ":libaom_config" ]
       configs -= [ "//build/config/compiler:default_init_stack_vars" ]
       if (!is_win || is_clang) {
+        if (!enable_cfi_protection) {
         cflags = [ "-march=armv8.2-a+dotprod+i8mm+sve" ]
+        } else {
+          configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+          cflags = [ "-march=armv8.2-a+pauth-hint-only+dotprod+i8mm+sve" ]
+        }
       }
       sources = aom_av1_encoder_intrin_sve
       sources += aom_dsp_encoder_intrin_sve
@@ -292,7 +313,12 @@ if (current_cpu == "arm64" || current_cpu == "arm64e") {
       configs += [ ":libaom_config" ]
       configs -= [ "//build/config/compiler:default_init_stack_vars" ]
       if (!is_win || is_clang) {
+        if (!enable_cfi_protection) {
         cflags = [ "-march=armv9-a+i8mm+sve2" ]
+        } else {
+          configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+          cflags = [ "-march=armv9-a+pauth-hint-only+i8mm+sve2" ]
+        }
       }
       sources = aom_av1_common_intrin_sve2
     }

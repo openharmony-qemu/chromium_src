@@ -128,7 +128,7 @@ source_set("signin") {
     ]
   }
 
-  if (is_win || is_mac || is_linux) {
+  if (is_win || is_mac || is_linux || is_ohos) {
     sources += [
       "history_sync_optin/history_sync_optin_handler.h",
       "history_sync_optin/history_sync_optin_ui.h",
@@ -210,7 +210,7 @@ source_set("signin_impl") {
     ]
   }
 
-  if (is_win || is_mac || is_linux) {
+  if (is_win || is_mac || is_linux || is_ohos) {
     sources += [
       "history_sync_optin/history_sync_optin_handler.cc",
       "history_sync_optin/history_sync_optin_ui.cc",

@@ -112,6 +112,7 @@ bool OpenPopupInBrowser(Browser& browser,
 ActionOpenPopupFunction::ActionOpenPopupFunction() = default;
 ActionOpenPopupFunction::~ActionOpenPopupFunction() = default;
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 ExtensionFunction::ResponseAction ActionOpenPopupFunction::Run() {
   // TODO(crbug.com/360916928): Unfortunately, the action API types aren't
   // compiled. However, the bindings should still valid the form of the
@@ -175,6 +176,7 @@ ExtensionFunction::ResponseAction ActionOpenPopupFunction::Run() {
   // kept alive by the ref-count owned by the ShowPopupCallback.
   return RespondLater();
 }
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 
 void ActionOpenPopupFunction::OnShowPopupComplete(ExtensionHost* popup_host) {
   DCHECK(!did_respond());
@@ -198,6 +200,9 @@ BrowserActionOpenPopupFunction::BrowserActionOpenPopupFunction() = default;
 BrowserActionOpenPopupFunction::~BrowserActionOpenPopupFunction() = default;
 
 ExtensionFunction::ResponseAction BrowserActionOpenPopupFunction::Run() {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  return RespondNow(NoArguments());
+#else
   // We only allow the popup in the active window.
   Profile* profile = Profile::FromBrowserContext(browser_context());
   Browser* browser =
@@ -233,6 +238,7 @@ ExtensionFunction::ResponseAction BrowserActionOpenPopupFunction::Run() {
       base::BindOnce(&BrowserActionOpenPopupFunction::OpenPopupTimedOut, this),
       base::Seconds(10));
   return RespondLater();
+#endif
 }
 
 void BrowserActionOpenPopupFunction::OnBrowserContextShutdown() {

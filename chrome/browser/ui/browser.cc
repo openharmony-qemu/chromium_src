@@ -346,7 +346,11 @@ const extensions::Extension* GetExtensionForOrigin(
     Profile* profile,
     const GURL& security_origin) {
 #if BUILDFLAG(ENABLE_EXTENSIONS)
-  if (!security_origin.SchemeIs(extensions::kExtensionScheme)) {
+  if (!security_origin.SchemeIs(extensions::kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      && !security_origin.SchemeIs(extensions::kArkwebExtensionScheme)
+#endif
+  ) {
     return nullptr;
   }
 
@@ -1910,10 +1914,9 @@ content::KeyboardEventProcessingResult Browser::PreHandleKeyboardEvent(
 #if BUILDFLAG(ENABLE_CEF)
   if (cef_browser_delegate_) {
     auto result = cef_browser_delegate_->PreHandleKeyboardEvent(source, event);
-    if (result != content::KeyboardEventProcessingResult::NOT_HANDLED) {
+    if (result != content::KeyboardEventProcessingResult::NOT_HANDLED)
       return result;
     }
-  }
 #endif
 
   return window()->PreHandleKeyboardEvent(event);
@@ -2029,14 +2032,9 @@ bool Browser::IsBackForwardCacheSupported(content::WebContents& web_contents) {
 content::PreloadingEligibility Browser::IsPrerender2Supported(
     content::WebContents& web_contents,
     content::PreloadingTriggerType trigger_type) {
-#if BUILDFLAG(ENABLE_CEF)
-  // Prerender is not supported in CEF. See issue #3664.
-  return content::PreloadingEligibility::kPreloadingDisabled;
-#else
   Profile* profile =
       Profile::FromBrowserContext(web_contents.GetBrowserContext());
   return prefetch::IsSomePreloadingEnabled(*profile->GetPrefs());
-#endif
 }
 
 bool Browser::ShouldShowStaleContentOnEviction(content::WebContents* source) {
@@ -2390,11 +2388,19 @@ void Browser::CanDownload(const GURL& url,
 bool Browser::DidAddMessageToConsole(
     content::WebContents* source,
     blink::mojom::ConsoleMessageLevel log_level,
+#if BUILDFLAG(ARKWEB_CONSOLE_LOGGING)
+    blink::mojom::ConsoleMessageSource log_source,
+#endif    
     const std::u16string& message,
     int32_t line_no,
     const std::u16string& source_id) {
+#if BUILDFLAG(ARKWEB_CONSOLE_LOGGING)
+  CALL_CEF_DELEGATE_RETURN(DidAddMessageToConsole, source, log_level, log_source, message,
+                           line_no, source_id);
+#else      
   CALL_CEF_DELEGATE_RETURN(DidAddMessageToConsole, source, log_level, message,
                            line_no, source_id);
+#endif                           
   static bool is_headless_mode = headless::IsHeadlessMode();
   if (is_headless_mode) {
     const bool is_builtin_component = !!source->GetWebUI();
@@ -2557,7 +2563,12 @@ void Browser::WebContentsCreated(WebContents* source_contents,
 void Browser::RendererUnresponsive(
     WebContents* source,
     content::RenderWidgetHost* render_widget_host,
-    base::RepeatingClosure hang_monitor_restarter) {
+    base::RepeatingClosure hang_monitor_restarter
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+    ,
+    content::RendererIsUnresponsiveReason
+#endif
+) {
 #if BUILDFLAG(ENABLE_CEF)
   if (cef_browser_delegate_ &&
       cef_browser_delegate_->RendererUnresponsiveEx(source, render_widget_host,
@@ -3005,10 +3016,9 @@ void Browser::RequestMediaAccessPermission(
   if (cef_browser_delegate_) {
     callback = cef_browser_delegate_->RequestMediaAccessPermissionEx(
         web_contents, request, std::move(callback));
-    if (callback.is_null()) {
+    if (callback.is_null())
       return;
     }
-  }
 #endif
 
   const extensions::Extension* extension =

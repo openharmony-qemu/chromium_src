@@ -37,6 +37,7 @@
 #include "services/metrics/public/cpp/ukm_recorder.h"
 #include "services/metrics/public/cpp/ukm_source_id.h"
 #include "third_party/blink/public/mojom/devtools/console_message.mojom.h"
+#include "arkweb/build/features/features.h"
 
 namespace content {
 
@@ -113,7 +114,13 @@ void SSLManager::OnSSLCertificateError(
     NavigationOrDocumentHandle* navigation_or_document,
     int net_error,
     const net::SSLInfo& ssl_info,
-    bool fatal) {
+    bool fatal
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    ,
+    const GURL& origin_url,
+    const std::string& referrer
+#endif
+    ) {
   DCHECK(delegate.get());
   DVLOG(1) << "OnSSLCertificateError() cert_error: " << net_error
            << " url: " << url.spec() << " cert_status: " << std::hex
@@ -128,9 +135,15 @@ void SSLManager::OnSSLCertificateError(
     frame_tree_node = navigation_or_document->GetFrameTreeNode();
   }
 
-  std::unique_ptr<SSLErrorHandler> handler(
-      new SSLErrorHandler(web_contents, delegate, is_primary_main_frame_request,
-                          url, net_error, ssl_info, fatal));
+  auto handler = std::make_unique<SSLErrorHandler>(
+      web_contents, delegate, is_primary_main_frame_request, url, net_error,
+      ssl_info, fatal
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+                          ,
+                          origin_url,
+                          referrer
+#endif
+      );
 
   if (!web_contents || !frame_tree_node) {
     // Check if the DevTools Browser target is set to ignore certificate errors.
@@ -353,6 +366,10 @@ void SSLManager::OnCertErrorInternal(std::unique_ptr<SSLErrorHandler> handler) {
   const GURL& request_url = handler->request_url();
   bool is_primary_main_frame_request = handler->is_primary_main_frame_request();
   bool fatal = handler->fatal();
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  const GURL& origin_url = handler->origin_url();
+  const std::string& referrer = handler->referrer();
+#endif
 
   base::RepeatingCallback<void(bool, content::CertificateRequestResultType)>
       callback = base::BindRepeating(
@@ -369,6 +386,10 @@ void SSLManager::OnCertErrorInternal(std::unique_ptr<SSLErrorHandler> handler) {
   GetContentClient()->browser()->AllowCertificateError(
       web_contents, cert_error, ssl_info, request_url,
       is_primary_main_frame_request, fatal,
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+      origin_url,
+      referrer,
+#endif
       base::BindOnce(std::move(callback), true));
 }
 

@@ -7,6 +7,7 @@
 
 #include "build/build_config.h"
 #include "build/chromeos_buildflags.h"
+#include "arkweb/build/features/features.h"
 
 namespace extensions {
 
@@ -212,6 +213,10 @@ inline constexpr char kCannotAccessAboutUrl[] =
     "access the frame's origin, and matchAboutBlank must be true.";
 inline constexpr char kCannotAccessChromeUrl[] =
     "Cannot access a chrome:// URL";
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+inline constexpr char kCannotAccessArkWebUrl[] =
+    "Cannot access a arkweb:// URL";
+#endif
 inline constexpr char kCannotAccessExtensionUrl[] =
     "Cannot access a chrome-extension:// URL of different extension";
 // This deliberately does not contain a URL. Otherwise an extension can parse
@@ -659,12 +664,17 @@ inline constexpr char kLocalesTreeMissing[] =
 inline constexpr char kManifestParseError[] = "Manifest is not valid JSON.";
 inline constexpr char kManifestUnreadable[] =
     "Manifest file is missing or unreadable";
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+inline constexpr char kManifestV2IsDeprecatedWarning[] =
+    "Manifest version 2 is deprecated, and support will be removed soon.";
+#else
 inline constexpr char kManifestV2IsDeprecatedWarning[] =
     "Manifest version 2 is deprecated, and support will be removed in 2025. "
     "See "
     "https://developer.chrome.com/docs/extensions/develop/migrate/"
     "mv2-deprecation-timeline"
     " for details.";
+#endif
 inline constexpr char kManifestVersionTooHighWarning[] =
     "The maximum currently-supported manifest version is *, but this is *.  "
     "Certain features may not work as expected.";

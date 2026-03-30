@@ -9,6 +9,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/chromium_ext/components/viz/host/host_frame_sink_manager_utils.h"
 #include "base/containers/contains.h"
 #include "base/debug/crash_logging.h"
 #include "base/functional/bind.h"
@@ -28,11 +29,14 @@
 #include "services/viz/privileged/mojom/compositing/frame_sink_manager_test_api.mojom-forward.h"
 #include "services/viz/privileged/mojom/compositing/frame_sinks_metrics_recorder.mojom.h"
 #include "services/viz/privileged/mojom/compositing/renderer_settings.mojom.h"
+#include "arkweb/build/features/features.h"
 
 namespace viz {
 
 HostFrameSinkManager::HostFrameSinkManager()
-    : debug_renderer_settings_(CreateDefaultDebugRendererSettings()) {}
+    : debug_renderer_settings_(CreateDefaultDebugRendererSettings()) {
+      managerUtils = std::make_unique<HostFrameSinkManagerUtils>(this);
+}
 
 HostFrameSinkManager::~HostFrameSinkManager() {
   viz_touch_state_ro_mapping_ = base::ReadOnlySharedMemoryMapping();
@@ -560,6 +564,21 @@ void HostFrameSinkManager::OnVizTouchStateAvailable(
     return;
   }
 }
+
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+void HostFrameSinkManager::RestoreRenderFit(uint32_t client_id,
+                                            uint32_t sink_id) {
+  managerUtils->UtilsRestoreRenderFit(client_id, sink_id);
+}
+#endif // ARKWEB_MAXIMIZE_RESIZE
+
+#if BUILDFLAG(ARKWEB_ROTATE_RESIZE)
+void HostFrameSinkManager::ModifyRenderFit(int32_t fitType,
+                                           uint32_t client_id,
+                                           uint32_t sink_id) {
+  managerUtils->UtilsModifyRenderFit(fitType, client_id, sink_id);
+}
+#endif // ARKWEB_ROTATE_RESIZE
 
 #if BUILDFLAG(IS_ANDROID)
 uint32_t HostFrameSinkManager::CacheBackBufferForRootSink(

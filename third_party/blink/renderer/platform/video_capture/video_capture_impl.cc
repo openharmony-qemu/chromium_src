@@ -18,6 +18,7 @@
 #include <memory>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/span.h"
 #include "base/feature_list.h"
 #include "base/functional/bind.h"
@@ -684,7 +685,8 @@ void VideoCaptureImpl::StartCapture(
     int client_id,
     const media::VideoCaptureParams& params,
     VideoCaptureCallbacks video_capture_callbacks) {
-  DVLOG(1) << __func__ << " |device_id_| = " << device_id_;
+  LOG(INFO) << __func__ << " |device_id_| = " << device_id_
+            << ", format: " << params.requested_format.pixel_format;
   DCHECK_CALLED_ON_VALID_THREAD(io_thread_checker_);
   OnLog("VideoCaptureImpl got request to start capture.");
 
@@ -759,13 +761,15 @@ void VideoCaptureImpl::StopCapture(int client_id) {
   // A client ID can be in only one client list.
   // If this ID is in any client list, we can just remove it from
   // that client list and don't have to run the other following RemoveClient().
+  LOG(ERROR) << "VideoCaptureImpl::StopCapture client_id " << client_id;
   if (!RemoveClient(client_id, &clients_pending_on_restart_)) {
+    LOG(ERROR) << "Remove Client failed";
     RemoveClient(client_id, &clients_);
   }
 
   if (!clients_.empty())
     return;
-  DVLOG(1) << "StopCapture: No more client, stopping ...";
+  LOG(ERROR) << "StopCapture: No more client, stopping ...";
   StopDevice();
   client_buffers_.clear();
   weak_factory_.InvalidateWeakPtrs();
@@ -795,13 +799,14 @@ void VideoCaptureImpl::GetDeviceFormatsInUse(
 }
 
 void VideoCaptureImpl::OnLog(const String& message) {
+  LOG(INFO) << "VideoCaptureImpl::OnLog message: " << message;
   GetVideoCaptureHost()->OnLog(device_id_, message);
 }
 
 void VideoCaptureImpl::OnStateChanged(
     media::mojom::blink::VideoCaptureResultPtr result) {
   DCHECK_CALLED_ON_VALID_THREAD(io_thread_checker_);
-
+  LOG(INFO) << "VideoCaptureImpl::OnStateChanged";
   // Stop the startup deadline timer as something has happened.
   startup_timeout_.Stop();
 
@@ -1105,9 +1110,11 @@ void VideoCaptureImpl::StartCaptureInternal() {
   state_ = VIDEO_CAPTURE_STATE_STARTING;
   OnLog("VideoCaptureImpl changing state to VIDEO_CAPTURE_STATE_STARTING");
 
+#if !BUILDFLAG(ARKWEB_WEBRTC)
   startup_timeout_.Start(FROM_HERE, kCaptureStartTimeout,
                          base::BindOnce(&VideoCaptureImpl::OnStartTimedout,
                                         base::Unretained(this)));
+#endif // Disable timeout in ARKWEB
   start_outcome_reported_ = false;
   base::UmaHistogramBoolean("Media.VideoCapture.Start", true);
 

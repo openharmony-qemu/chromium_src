@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//arkweb/build/features/features.gni")
 import("//build/config/ui.gni")
 import("//components/viz/viz.gni")
 
@@ -23,12 +24,23 @@ viz_component("host") {
     "host_frame_sink_client.h",
     "host_frame_sink_manager.cc",
     "host_frame_sink_manager.h",
+    "//arkweb/chromium_ext/components/viz/host/host_frame_sink_manager_utils.cc",
+    "//arkweb/chromium_ext/components/viz/host/host_frame_sink_manager_utils.h",
+    "//arkweb/chromium_ext/components/viz/host/cancelable_delayed_task_manager.cc",
+    "//arkweb/chromium_ext/components/viz/host/cancelable_delayed_task_manager.h",
     "persistent_cache_sandboxed_file_factory.cc",
     "persistent_cache_sandboxed_file_factory.h",
     "renderer_settings_creation.cc",
     "renderer_settings_creation.h",
     "viz_host_export.h",
   ]
+
+  if (arkweb_blank_optimize) {
+    sources += [
+      "//arkweb/chromium_ext/components/viz/host/blankless_data_controller.cc",
+      "//arkweb/chromium_ext/components/viz/host/blankless_data_controller.h",
+    ]
+  }
 
   if (is_win) {
     sources += [
@@ -46,6 +58,7 @@ viz_component("host") {
     "//gpu/ipc/common",
     "//gpu/webgpu:common",
     "//services/viz/privileged/mojom",
+    "//services/viz/privileged/mojom/compositing",
     "//services/webnn/host",
     "//services/webnn/public/mojom",
     "//ui/base",
@@ -57,7 +70,6 @@ viz_component("host") {
     "//components/viz/common",
     "//gpu/command_buffer/client",
     "//gpu/ipc/host",
-    "//services/viz/privileged/mojom/compositing",
     "//services/viz/public/mojom",
     "//ui/gfx/geometry",
   ]
@@ -68,6 +80,13 @@ viz_component("host") {
 
   if (use_ozone) {
     deps += [ "//ui/ozone" ]
+  }
+
+  if (arkweb_oop_gpu_process) {
+    deps += [ "//arkweb/build/features" ]
+  }
+  if (is_ohos) {
+    deps += [ "//components/discardable_memory/service", "//components/viz/service" ]
   }
 }
 
@@ -97,4 +116,9 @@ viz_source_set("unit_tests") {
   if (use_ozone) {
     deps += [ "//ui/ozone" ]
   }
+
+  import("//arkweb/chromium_ext/components/viz/host/arkweb_viz_host_ext.gni")
+  sources += components_viz_host_unittests_ext.sources
+  sources -= components_viz_host_unittests_ext.sources_del
+  deps += components_viz_host_unittests_ext.deps
 }

@@ -9,6 +9,10 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "base/memory/scoped_refptr.h"
 #include "base/memory/weak_ptr.h"
 #include "base/sequence_checker.h"
@@ -81,6 +85,9 @@ class PasswordStoreBuiltInBackend : public PasswordStoreBackend,
                      PasswordChangesOrErrorReply callback) override;
   void UpdateLoginAsync(const PasswordForm& form,
                         PasswordChangesOrErrorReply callback) override;
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+  void UpdateLoginDisplayNameAsync(const PasswordForm& form) override;
+#endif
   void RemoveLoginAsync(const base::Location& location,
                         const PasswordForm& form,
                         PasswordChangesOrErrorReply callback) override;

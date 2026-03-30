@@ -118,7 +118,7 @@ export function getHtml(this: ItemElement) {
           <!--Note: We wrap inspect-views in a div so that the outer div
               doesn't shrink (because it's not display: flex).-->
           <div>
-            <div id="inspect-views" class="cr-secondary-text">
+            <div id="inspect-views" class="cr-secondary-text" hidden = true>
               <span aria-describedby="a11yAssociation">
                 $i18n{itemInspectViews}
               </span>

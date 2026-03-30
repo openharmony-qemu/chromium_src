@@ -131,7 +131,12 @@ void EmptyLocalFrameClient::BeginNavigation(
     SourceLocation*,
     mojo::PendingRemote<mojom::blink::NavigationStateKeepAliveHandle>,
     bool is_container_initiated,
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+    bool has_rel_opener,
+    bool is_triggered_by_js) {}
+#else    
     bool has_rel_opener) {}
+#endif
 
 void EmptyLocalFrameClient::DispatchWillSendSubmitEvent(HTMLFormElement*) {}
 

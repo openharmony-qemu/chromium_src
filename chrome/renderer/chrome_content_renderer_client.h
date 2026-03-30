@@ -13,6 +13,10 @@
 #include <string_view>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "base/gtest_prod_util.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/task/single_thread_task_runner.h"
@@ -65,9 +69,12 @@ namespace chrome {
 class WebRtcLoggingAgentImpl;
 }  // namespace chrome
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
 namespace subresource_filter {
 class UnverifiedRulesetDealer;
+class UserUnverifiedRulesetDealer;
 }
+#endif
 
 namespace url {
 class Origin;
@@ -76,6 +83,8 @@ class Origin;
 namespace web_cache {
 class WebCacheImpl;
 }
+
+class ArkWebChromeContentRendererClientExt;
 
 class ChromeContentRendererClient
     : public content::ContentRendererClient,
@@ -88,6 +97,14 @@ class ChromeContentRendererClient
       delete;
 
   ~ChromeContentRendererClient() override;
+
+#if BUILDFLAG(IS_ARKWEB)
+  friend class ArkWebChromeContentRendererClientExt;
+  virtual ArkWebChromeContentRendererClientExt*
+  AsArkWebChromeContentRendererClientExt() {
+    return nullptr;
+  }
+#endif
 
   void RenderThreadStarted() override;
   void ExposeInterfacesToBrowser(mojo::BinderMap* binders) override;
@@ -264,8 +281,12 @@ class ChromeContentRendererClient
 #if BUILDFLAG(ENABLE_SPELLCHECK)
   std::unique_ptr<SpellCheck> spellcheck_;
 #endif
+#if BUILDFLAG(ARKWEB_ADBLOCK)
   std::unique_ptr<subresource_filter::UnverifiedRulesetDealer>
       subresource_filter_ruleset_dealer_;
+  std::unique_ptr<subresource_filter::UserUnverifiedRulesetDealer>
+      subresource_filter_user_ruleset_dealer_;
+#endif      
 #if BUILDFLAG(SAFE_BROWSING_AVAILABLE)
   std::unique_ptr<safe_browsing::PhishingModelSetterImpl>
       phishing_model_setter_;
@@ -274,5 +295,10 @@ class ChromeContentRendererClient
   scoped_refptr<blink::ThreadSafeBrowserInterfaceBrokerProxy>
       browser_interface_broker_;
 };
+
+#if BUILDFLAG(ARKWEB_ADBLOCK) || BUILDFLAG(ARKWEB_NETWORK_BASE) || \
+    BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
+#include "arkweb/chromium_ext/chrome/renderer/arkweb_chrome_content_renderer_client_ext.h"
+#endif
 
 #endif  // CHROME_RENDERER_CHROME_CONTENT_RENDERER_CLIENT_H_

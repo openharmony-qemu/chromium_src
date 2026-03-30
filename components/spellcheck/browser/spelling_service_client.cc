@@ -11,6 +11,7 @@
 #include <optional>
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/bind.h"
 #include "base/json/json_reader.h"
 #include "base/json/string_escape.h"
@@ -39,7 +40,11 @@ namespace {
 
 // The REST endpoint for requesting spell checking and sending user feedback.
 const char kSpellingServiceRestURL[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://xxx%dxxx%s";
+#else
     "https://www.googleapis.com/spelling/v%d/spelling/check?key=%s";
+#endif
 
 // The spellcheck suggestions object key in the JSON response from the spelling
 // service.

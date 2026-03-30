@@ -9,6 +9,7 @@
 
 #include "base/functional/callback.h"
 #include "base/time/time.h"
+#include "arkweb/build/features/features.h"
 #include "media/base/picture_in_picture_events_info.h"
 
 namespace media {
@@ -91,6 +92,28 @@ class MediaSessionPlayerObserver {
 
   // Returns true if the |player_id| has video tracks.
   virtual bool HasVideo(int player_id) const = 0;
+
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  // Set to use the given |player_id| to control the HTML play of the media
+  virtual void OnSetHtmlPlayEnabled(int player_id, bool enabled) {}
+#endif // BUILDFLAG(ARKWEB_MEDIA_POLICY)
+#if BUILDFLAG(ARKWEB_MEDIA_MEMORY_PRESSURE)
+  virtual void OnNotifyMemoryLevel(int player_id, int32_t level) {}
+#endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+  virtual int32_t GetMediaCastCurrentTime(int player_id) {}
+
+  virtual void PullUpCastBackGround(int player_id, const std::string& device_name) {}
+
+  virtual void UpdateUiPlayState(int player_id, bool is_playing) {}
+
+  virtual void UpdateUiPlayPosition(int player_id, int64_t position) {}
+
+  virtual void MediaCastStopped(int player_id) {}
+
+  virtual void NotifyCastControlShow(int player_id, bool is_show) {}
+#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
 
   // Returns true if `player_id` is paused.
   virtual bool IsPaused(int player_id) const = 0;

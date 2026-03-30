@@ -18,6 +18,11 @@
 #include "components/performance_manager/public/mojom/lifecycle.mojom.h"
 #include "services/metrics/public/cpp/ukm_source_id.h"
 #include "third_party/blink/public/common/permissions/permission_utils.h"
+#include "arkweb/build/features/features.h"
+#include "components/performance_manager/public/resource_attribution/page_context.h"
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+#include "content/public/browser/global_routing_id.h"
+#endif
 
 class GURL;
 
@@ -138,6 +143,10 @@ class PageNode : public TypedNode<PageNode> {
   // Returns true if this page is off the record, false otherwise.
   // A tab is off the record when it is open in incognito or guest mode.
   virtual bool IsOffTheRecord() const = 0;
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+  virtual bool IsMediaPlaying() const = 0;
+#endif
 
   // Returns the page's loading state.
   virtual LoadingState GetLoadingState() const = 0;
@@ -311,6 +320,13 @@ class PageNodeObserver : public base::CheckedObserver {
   // Invoked when the HasPictureInPicture property changes.
   virtual void OnHasPictureInPictureChanged(const PageNode* page_node) {}
 
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+  virtual void OnIsMediaPlayingChanged(const PageNode* page_node) {}
+  virtual void OnDecrementAudioNum(const PageNode* page_node) {}
+  virtual void OnAudioContextPlaybackStarted(content::GlobalRenderFrameHostId rfh_id, int audio_context_id) {}
+  virtual void OnAudioContextPlaybackStopped(content::GlobalRenderFrameHostId rfh_id, int audio_context_id) {}
+#endif
+
   // Invoked when the HasFreezingOriginTrialOptOut() property changes.
   virtual void OnPageHasFreezingOriginTrialOptOutChanged(
       const PageNode* page_node) {}
@@ -369,6 +385,14 @@ class PageNodeObserver : public base::CheckedObserver {
   // for more detail.
   virtual void OnAboutToBeDiscarded(const PageNode* page_node,
                                     const PageNode* new_page_node) {}
+
+#if BUILDFLAG(ARKWEB_BGTASK)
+  // Invoked when the Browser is foreground.
+  virtual void SetBrowserForeground(const PageNode* page_node) = 0;
+
+  // Invoked when the Browser is background.
+  virtual void SetBrowserBackground(const PageNode* page_node) = 0;
+#endif
 };
 
 }  // namespace performance_manager

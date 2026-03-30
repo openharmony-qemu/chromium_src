@@ -35,6 +35,10 @@
 
 #include "third_party/blink/public/platform/web_common.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif // IS_ARKWEB_EXT
+
 namespace base {
 class SingleThreadTaskRunner;
 }
@@ -54,6 +58,14 @@ class BLINK_EXPORT WebAssociatedURLLoader {
   virtual void Cancel() = 0;
   virtual void SetDefersLoading(bool) = 0;
   virtual void SetLoadingTaskRunner(base::SingleThreadTaskRunner*) = 0;
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  virtual void Load(const WebURLRequest&,
+                    base::WeakPtr<WebAssociatedURLLoaderClient>,
+                    std::string id,
+                    int64_t start) {}
+  virtual void NotifyFinished() {}
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 };
 
 }  // namespace blink

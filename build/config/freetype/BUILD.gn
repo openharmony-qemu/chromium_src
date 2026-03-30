@@ -19,6 +19,7 @@ group("freetype") {
   # Therefore no new entries should be added to this list.
   visibility = [
     "//chrome/test:*",
+    "//content/browser:browser",
     "//content/test:*",
     "//skia",
     "//third_party/fontconfig",

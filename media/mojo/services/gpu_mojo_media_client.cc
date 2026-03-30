@@ -109,9 +109,13 @@ std::unique_ptr<GpuMojoMediaClient> GpuMojoMediaClient::Create(
   DCHECK(!traits.gpu_task_runner ||
          traits.gpu_task_runner->BelongsToCurrentThread());
 
+#if defined(COMPONENT_BUILD) // FIXME
+  return nullptr;
+#else
   auto client = CreateGpuMediaService(traits);
   DCHECK(client);
   return client;
+#endif
 }
 
 GpuMojoMediaClient::GpuMojoMediaClient(GpuMojoMediaClientTraits& traits)

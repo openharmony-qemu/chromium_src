@@ -36,6 +36,7 @@
 #include "net/http/http_util.h"
 #include "third_party/blink/public/common/features.h"
 #include "third_party/blink/public/common/user_agent/user_agent_metadata.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_WIN)
 #include <windows.h>
@@ -56,8 +57,18 @@
 #include <sys/utsname.h>
 #endif
 
+#if BUILDFLAG(ARKWEB_USERAGENT)
+#include "arkweb/chromium_ext/content/common/arkweb_user_agent_ext.h"
+#endif
+
 #if BUILDFLAG(ENABLE_CEF)
 constexpr char kUserAgentProductAndVersion[] = "user-agent-product";
+#endif
+
+#if BUILDFLAG(ARKWEB_USERAGENT)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#include "arkweb/chromium_ext/content/common/arkweb_user_agent_ext.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 #endif
 
 namespace embedder_support {
@@ -162,6 +173,7 @@ const std::string& GetWindowsPlatformVersion() {
 
 // Returns true if the user agent reduction should be forced (or prevented).
 // TODO(crbug.com/1330890): Remove this method along with policy.
+#if !BUILDFLAG(ARKWEB_USERAGENT)
 bool ShouldReduceUserAgentMinorVersion(
     UserAgentReductionEnterprisePolicyState user_agent_reduction) {
   return ((user_agent_reduction !=
@@ -171,6 +183,7 @@ bool ShouldReduceUserAgentMinorVersion(
           user_agent_reduction ==
               UserAgentReductionEnterprisePolicyState::kForceEnabled);
 }
+#endif
 
 // For desktop:
 // Returns true if both kReduceUserAgentMinorVersionName and
@@ -191,6 +204,8 @@ bool ShouldSendUserAgentUnifiedPlatform(
   return ShouldReduceUserAgentMinorVersion(user_agent_reduction) &&
          base::FeatureList::IsEnabled(
              blink::features::kReduceUserAgentAndroidVersionDeviceModel);
+#elif BUILDFLAG(ARKWEB_USERAGENT)
+  return false;
 #else
   return ShouldReduceUserAgentMinorVersion(user_agent_reduction) &&
          base::FeatureList::IsEnabled(
@@ -304,6 +319,12 @@ std::vector<size_t> GetRandomOrder(int seed, size_t size) {
 blink::UserAgentBrandList ShuffleBrandList(
     blink::UserAgentBrandList brand_version_list,
     int seed) {
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  const size_t min_shuffle_size = 2;
+  if (brand_version_list.size() < min_shuffle_size) {
+    return brand_version_list;
+  }
+#endif
   const std::vector<size_t> order =
       GetRandomOrder(seed, brand_version_list.size());
   CHECK_EQ(brand_version_list.size(), order.size());
@@ -332,6 +353,8 @@ std::string GetUserAgentPlatform() {
   return ui::GetDeviceFormFactor() == ui::DEVICE_FORM_FACTOR_TABLET
              ? "iPad; "
              : "iPhone; ";
+#elif BUILDFLAG(ARKWEB_USERAGENT)
+  return "";
 #else
 #error Unsupported platform
 #endif
@@ -360,6 +383,8 @@ std::string GetUnifiedPlatform() {
   return "Fuchsia";
 #elif BUILDFLAG(IS_LINUX)
   return kUnifiedPlatformLinuxX64;
+#elif BUILDFLAG(IS_OHOS)
+  return "OHOS; OHOS x86_64";
 #elif BUILDFLAG(IS_IOS)
   if (ui::GetDeviceFormFactor() == ui::DEVICE_FORM_FACTOR_TABLET) {
     return "iPad; CPU iPad OS 14_0 like Mac OS X";
@@ -381,6 +406,8 @@ std::string BuildCpuInfo() {
   cpuinfo = ui::GetDeviceFormFactor() == ui::DEVICE_FORM_FACTOR_TABLET
                 ? "iPad"
                 : "iPhone";
+#elif BUILDFLAG(ARKWEB_USERAGENT)
+  cpuinfo = "";
 #elif BUILDFLAG(IS_WIN)
   base::win::OSInfo* os_info = base::win::OSInfo::GetInstance();
   if (os_info->IsWowX86OnAMD64()) {
@@ -437,6 +464,10 @@ std::string GetOSVersion(IncludeAndroidBuildNumber include_android_build_number,
 
 #endif
 
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  std::string ohos_fullname_str = content::GetOhosFullname();
+#endif
+
 #if BUILDFLAG(IS_ANDROID)
   std::string android_version_str = base::SysInfo::OperatingSystemVersion();
   std::string android_info_str =
@@ -457,6 +488,8 @@ std::string GetOSVersion(IncludeAndroidBuildNumber include_android_build_number,
 #elif BUILDFLAG(IS_ANDROID)
                       "%s%s", android_version_str.c_str(),
                       android_info_str.c_str()
+#elif BUILDFLAG(ARKWEB_USERAGENT)
+                      "%s", ohos_fullname_str.c_str()
 #else
                       ""
 #endif
@@ -477,24 +510,38 @@ std::string BuildOSCpuInfo(
 
 }  // namespace
 
+// todo: check
 std::string GetProductAndVersion(
     UserAgentReductionEnterprisePolicyState user_agent_reduction) {
 #if BUILDFLAG(ENABLE_CEF)
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  if (command_line != nullptr) {
   if (command_line->HasSwitch(kUserAgentProductAndVersion)) {
     return command_line->GetSwitchValueASCII(kUserAgentProductAndVersion);
   }
+  }
+#endif
 #endif
 
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  std::string version_str = "Chrome/";
+  version_str.append(version_info::GetMajorVersionNumber());
+  version_str.append(".0.0.0");
+  return version_str;
+#else
   return ShouldReduceUserAgentMinorVersion(user_agent_reduction)
              ? version_info::GetProductNameAndVersionForReducedUserAgent(
                    blink::features::kUserAgentFrozenBuildVersion.Get())
              : std::string(
                    version_info::GetProductNameAndVersionForUserAgent());
+#endif
 }
 
 std::optional<std::string> GetUserAgentFromCommandLine() {
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  if (command_line != nullptr) {
   if (command_line->HasSwitch(kUserAgent)) {
     std::string ua = command_line->GetSwitchValueASCII(kUserAgent);
     if (net::HttpUtil::IsValidHeaderValue(ua)) {
@@ -502,6 +549,8 @@ std::optional<std::string> GetUserAgentFromCommandLine() {
     }
     LOG(WARNING) << "Ignored invalid value for flag --" << kUserAgent;
   }
+  }
+#endif
   return std::nullopt;
 }
 
@@ -544,8 +593,12 @@ blink::UserAgentBrandList GenerateBrandVersionList(
       GetGreasedUserAgentBrandVersion(seed, output_version_type);
   blink::UserAgentBrandVersion chromium_bv = {"Chromium", version};
 
-  blink::UserAgentBrandList brand_version_list = {std::move(greasey_bv),
-                                                  std::move(chromium_bv)};
+  blink::UserAgentBrandList brand_version_list = {
+#if !BUILDFLAG(ARKWEB_USERAGENT)
+    std::move(greasey_bv),
+#endif
+    std::move(chromium_bv)
+  };
   if (brand) {
     brand_version_list.emplace_back(brand.value(), version);
   }
@@ -701,7 +754,9 @@ blink::UserAgentMetadata GetUserAgentMetadata(bool only_low_entropy_ch) {
                ? blink::UserAgentMetadata()
                : metadata;
   }
-
+#if BUILDFLAG(ARKWEB_USERAGENT) && !defined(COMPONENT_BUILD)
+  content::UpdateLowEntropyCh(metadata);
+#endif
   if (only_low_entropy_ch) {
     return metadata;
   }
@@ -710,12 +765,16 @@ blink::UserAgentMetadata GetUserAgentMetadata(bool only_low_entropy_ch) {
   metadata.brand_full_version_list =
       GetUserAgentBrandFullVersionListInternal(std::nullopt);
   metadata.full_version = std::string(version_info::GetVersionNumber());
+#if BUILDFLAG(ARKWEB_USERAGENT) && !defined(COMPONENT_BUILD)
+  content::UpdateHighEntropyCh(metadata);
+#else
   metadata.architecture = GetCpuArchitecture();
   metadata.model = BuildModelInfo();
   metadata.form_factors = GetFormFactorsClientHint(metadata, metadata.mobile);
   metadata.bitness = GetCpuBitness();
   metadata.wow64 = IsWoW64();
   metadata.platform_version = GetPlatformVersion();
+#endif
   return metadata;
 }
 
@@ -882,6 +941,10 @@ std::string BuildOSCpuInfoFromOSVersionAndCpuType(const std::string& os_version,
                       "Android %s", os_version.c_str()
 #elif BUILDFLAG(IS_FUCHSIA)
                       "Fuchsia"
+#elif BUILDFLAG(ARKWEB_USERAGENT)
+                      "%s%s",
+                      os_version.c_str(),  // e.g. 4
+                      cpu_type.c_str()     // e.g. ""
 #elif BUILDFLAG(IS_IOS)
                       "CPU %s OS %s like Mac OS X", cpu_type.c_str(),
                       os_version.c_str()
@@ -986,8 +1049,15 @@ std::string BuildUserAgentFromOSAndProduct(const std::string& os_info,
   std::string user_agent;
   base::StringAppendF(&user_agent,
                       "Mozilla/5.0 (%s) AppleWebKit/537.36 (KHTML, like Gecko) "
+#if BUILDFLAG(ARKWEB_USERAGENT)
+                      "%s Safari/537.36 ",
+#else
                       "%s Safari/537.36",
+#endif
                       os_info.c_str(), product.c_str());
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  content::SetProductString(user_agent);
+#endif
   return user_agent;
 }
 

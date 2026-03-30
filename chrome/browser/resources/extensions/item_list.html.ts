@@ -32,7 +32,7 @@ export function getHtml(this: ExtensionsItemListElement) {
 
     <div id="no-items" class="empty-list-message"
         ?hidden="${!this.shouldShowEmptyItemsMessage_()}">
-      <span @click="${this.onNoExtensionsClick_}">
+      <span hidden=true @click="${this.onNoExtensionsClick_}">
         $i18nRaw{noExtensionsOrApps}
       </span>
     </div>

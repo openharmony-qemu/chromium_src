@@ -201,7 +201,7 @@ uint64_t TestRenderWidgetHostView::GetNSViewId() const {
 }
 #endif
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 bool TestRenderWidgetHostView::IsTouchSequencePotentiallyActiveOnViz() {
   return false;
 }
@@ -362,6 +362,12 @@ TestRenderWidgetHostViewChildFrame::TestRenderWidgetHostViewChildFrame(
           display::ScreenInfos(display::ScreenInfo())) {
   Init();
 }
+
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+bool TestRenderWidgetHostViewChildFrame::IsTouchSequencePotentiallyActiveOnViz() {
+  return false;
+}
+#endif
 
 void TestRenderWidgetHostViewChildFrame::Reset() {
   last_gesture_seen_ = blink::WebInputEvent::Type::kUndefined;

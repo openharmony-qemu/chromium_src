@@ -58,4 +58,10 @@ source_set("headless") {
     ]
     deps += [ "//gpu/vulkan" ]
   }
+
+  if (is_arkweb) {
+    import("//arkweb/chromium_ext/chromium_ext.gni")
+    sources += arkweb_ui_ozone_platform_headless_sources
+    deps += [ "//ohos_glue:ohos_adapter_glue_source", ]
+  }
 }

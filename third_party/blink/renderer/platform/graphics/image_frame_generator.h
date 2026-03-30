@@ -29,6 +29,7 @@
 #include <memory>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/span.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/synchronization/lock.h"
@@ -69,10 +70,15 @@ class PLATFORM_EXPORT ImageFrameGenerator final
       const SkISize& full_size,
       bool is_multi_frame,
       ColorBehavior color_behavior,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
       cc::AuxImage aux_image,
+#endif
       Vector<SkISize> supported_sizes) {
     return base::AdoptRef(new ImageFrameGenerator(full_size, is_multi_frame,
-                                                  color_behavior, aux_image,
+                                                  color_behavior,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+                                                  aux_image,
+#endif
                                                   std::move(supported_sizes)));
   }
 
@@ -143,7 +149,9 @@ class PLATFORM_EXPORT ImageFrameGenerator final
   ImageFrameGenerator(const SkISize& full_size,
                       bool is_multi_frame,
                       ColorBehavior,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
                       cc::AuxImage,
+#endif
                       Vector<SkISize> supported_sizes);
 
   friend class ImageFrameGeneratorTest;
@@ -163,7 +171,9 @@ class PLATFORM_EXPORT ImageFrameGenerator final
   const SkISize full_size_;
   // Parameters used to create internal ImageDecoder objects.
   const ColorBehavior decoder_color_behavior_;
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
   const cc::AuxImage aux_image_;
+#endif
   const bool is_multi_frame_;
   const Vector<SkISize> supported_sizes_;
 

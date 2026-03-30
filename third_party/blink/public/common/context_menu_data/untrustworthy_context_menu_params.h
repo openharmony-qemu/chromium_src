@@ -12,6 +12,10 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "build/build_config.h"
 #include "services/network/public/mojom/referrer_policy.mojom.h"
 #include "third_party/blink/public/common/navigation/impression.h"
@@ -19,6 +23,7 @@
 #include "third_party/blink/public/mojom/context_menu/context_menu.mojom-forward.h"
 #include "third_party/blink/public/mojom/forms/form_control_type.mojom-shared.h"
 #include "ui/base/mojom/menu_source_type.mojom-forward.h"
+#include "ui/base/ui_base_types.h"
 #include "ui/gfx/geometry/rect.h"
 #include "url/gurl.h"
 
@@ -109,6 +114,16 @@ struct BLINK_COMMON_EXPORT UntrustworthyContextMenuParams {
 
   // Whether context is editable.
   bool is_editable;
+
+  // Whether inner can selectable.
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+  bool is_selectable;
+#endif
+
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  gfx::Rect image_rect;
+  bool is_ai_link;
+#endif
 
   // Writing direction menu items.
   int writing_direction_default;

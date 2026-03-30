@@ -282,6 +282,10 @@ class MEDIA_EXPORT AudioParameters {
 
   ~AudioParameters();
 
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  bool operator==(const AudioParameters& other) const;
+#endif
+
   // Re-initializes all members except for |hardware_capabilities_|.
   void Reset(Format format,
              ChannelLayoutConfig channel_layout_config,
@@ -360,7 +364,13 @@ class MEDIA_EXPORT AudioParameters {
 
   void set_effects(int effects) { effects_ = effects; }
   int effects() const { return effects_; }
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  void set_render_process_id(int render_process_id) { render_process_id_ = render_process_id; }
+  int render_process_id() const { return render_process_id_; }
 
+  void set_render_frame_id(int render_frame_id) { render_frame_id_ = render_frame_id; }
+  int render_frame_id() const { return render_frame_id_; }
+#endif
   void set_mic_positions(const std::vector<Point>& mic_positions) {
     mic_positions_ = mic_positions;
   }
@@ -384,7 +394,10 @@ class MEDIA_EXPORT AudioParameters {
   int sample_rate_;                            // Sampling frequency/rate.
   int frames_per_buffer_;                      // Number of frames in a buffer.
   int effects_;  // Bitmask using PlatformEffectsMask.
-
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  int render_process_id_;
+  int render_frame_id_;
+#endif // defined(OHOS_MEDIA_POLICY)
   // Microphone positions using Cartesian coordinates:
   // x: the horizontal dimension, with positive to the right from the camera's
   //    perspective.

@@ -6,6 +6,9 @@
 
 #include "base/allocator/dispatcher/dispatcher.h"
 #include "base/allocator/dispatcher/initializer.h"
+#if BUILDFLAG(ARKWEB_GWP_ASAN)
+#include "base/command_line.h"
+#endif
 #include "base/debug/crash_logging.h"
 #include "base/debug/debugging_buildflags.h"
 #include "build/build_config.h"
@@ -56,6 +59,10 @@
 #include "components/memory_system/allocation_trace_recorder_statistics_reporter.h"
 #endif  // BUILDFLAG(ENABLE_ALLOCATION_TRACE_RECORDER_FULL_REPORTING)
 #endif  // BUILDFLAG(ENABLE_ALLOCATION_STACK_TRACE_RECORDER)
+
+#if BUILDFLAG(ARKWEB_GWP_ASAN)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#endif
 
 namespace memory_system {
 namespace {
@@ -226,6 +233,20 @@ bool MemorySystem::Impl::IsAllocatorShimInitialized() {
 void MemorySystem::Impl::InitializeGwpASan(
     const GwpAsanParameters& gwp_asan_parameters,
     InitializationData& initialization_data) {
+#if BUILDFLAG(ARKWEB_GWP_ASAN)
+  const base::CommandLine* const command_line =
+      base::CommandLine::ForCurrentProcess();
+  const std::string enable_type = command_line->GetSwitchValueASCII("ohos-enable-gwp-asan-type");
+  if (enable_type.empty()) {
+    LOG(INFO) << "gwp-asan Not supported.";
+    return;
+  }
+  if (enable_type != "all" && enable_type != gwp_asan_parameters.process_type) {
+    LOG(INFO) << "gwp-asan is off for this process, enable_type = "
+      << enable_type << ", process_type = " << gwp_asan_parameters.process_type;
+    return;
+  }
+#endif
 #if BUILDFLAG(ENABLE_GWP_ASAN)
   // LUD has the highest priority and the Extreme LUD has the lowest priority.
   // An allocator shim later installed has priority over the already-installed

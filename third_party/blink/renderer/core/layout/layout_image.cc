@@ -50,6 +50,12 @@
 #include "third_party/blink/renderer/platform/runtime_enabled_features.h"
 #include "ui/gfx/geometry/size_conversions.h"
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+#include "base/logging.h"
+#include "third_party/blink/renderer/core/html/html_plugin_element.h"
+#endif  // BUILDFLAG(ARKWEB_SAME_LAYER)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/html/html_plugin_element_utils.h"
+
 namespace blink {
 
 LayoutImage::LayoutImage(Element* element) : LayoutReplaced(element) {}
@@ -89,6 +95,15 @@ void LayoutImage::StyleDidChange(
     const StyleChangeContext& style_change_context) {
   NOT_DESTROYED();
   LayoutReplaced::StyleDidChange(diff, old_style, style_change_context);
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  auto* html_plugin_element = DynamicTo<HTMLPlugInElement>(GetNode());
+  if (html_plugin_element && html_plugin_element->IsNativeType()
+      && html_plugin_element->Utils()->CheckIntrinsicSizeEnable()) {
+    LayoutReplaced::NaturalSizeChanged();
+    LOG(DEBUG) << "LayoutImage::StyleDidChange set intrinsic size: " << ComputeNaturalSizingInfo().size.ToString().Utf8();
+  }
+#endif  // BUILDFLAG(ARKWEB_SAME_LAYER)
 
   RespectImageOrientationEnum old_orientation =
       old_style ? old_style->ImageOrientation()

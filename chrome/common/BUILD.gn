@@ -20,6 +20,7 @@ import("//printing/buildflags/buildflags.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
 import("//third_party/widevine/cdm/widevine.gni")
 import("//tools/grit/grit_rule.gni")
+import("//arkweb/build/features/features.gni")
 
 assert(enable_supervised_users)
 assert(!is_fuchsia, "Fuchsia shouldn't use anything in //chrome")
@@ -272,6 +273,10 @@ static_library("common_lib") {
     public_deps += [ "//components/cdm/common" ]
   }
 
+  if (is_arkweb && arkweb_enable_cdm) {
+    public_deps += [ "//components/cdm/common" ]
+  }
+
   if (enable_extensions_core) {
     public_deps += [
       "//chrome/common/extensions",
@@ -360,6 +365,11 @@ static_library("common_lib") {
     ]
   }
 
+  if (is_arkweb && arkweb_enable_cdm) {
+    import("//arkweb/chromium_ext/chrome/common/media/arkweb_chrome_browser_media_ohos_ext.gni")
+    sources += arkweb_chrome_common_media_ohos_sources
+  }
+
   if (is_win) {
     sources += [
       "conflicts/module_watcher_win.cc",
@@ -408,7 +418,7 @@ static_library("common_lib") {
     public_deps += [ "//chrome/common/safe_browsing" ]
   }
 
-  if (is_linux || is_chromeos) {
+  if (is_linux || is_chromeos || arkweb_asan) {
     sources += [
       "auto_start_linux.cc",
       "auto_start_linux.h",
@@ -593,9 +603,11 @@ static_library("constants") {
     # implemented in //ui/base, so we need that dependency.
     deps += [ "//ui/base" ]
   }
-  if (is_linux || is_chromeos) {
+  if (is_linux || is_chromeos || arkweb_asan) {
     sources += [ "chrome_paths_linux.cc" ]
     deps += [ ":channel_info" ]
+  } else if (is_ohos) {
+    sources += [ "//arkweb/chromium_ext/chrome/common/chrome_paths_ohos.cc" ]
   }
   if (is_mac) {
     sources += [ "chrome_paths_mac.mm" ]
@@ -780,6 +792,9 @@ mojom("mojo_bindings") {
 
   if (enable_bound_session_credentials) {
     enabled_features += [ "enable_bound_session_credentials" ]
+  }
+  if (enable_arkweb_ext) {
+    enabled_features += [ "arkweb_ext_exception_list" ]
   }
 }
 

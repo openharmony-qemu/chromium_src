@@ -460,6 +460,30 @@ void SkiaOutputSurfaceImpl::DiscardBackbuffer() {
   gpu_task_scheduler_->ScheduleOrRetainGpuTask(std::move(callback), {});
 }
 
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+void SkiaOutputSurfaceImpl::SetIfNeedCleanBuffers(bool need_clean_buffers)
+{
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  // impl_on_gpu_ is released on the GPU thread by a posted task from
+  // SkiaOutputSurfaceImpl::dtor. So it is safe to use base::Unretained.
+  TRACE_EVENT1("viz", "SkiaOutputSurfaceImpl::SetIfNeedCleanBuffers ", "need_clean_buffers:", need_clean_buffers);
+  auto callback = base::BindOnce(&SkiaOutputSurfaceImplOnGpu::SetIfNeedCleanBuffers,
+                                 base::Unretained(impl_on_gpu_.get()), need_clean_buffers);
+  gpu_task_scheduler_->ScheduleOrRetainGpuTask(std::move(callback), {});
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+void SkiaOutputSurfaceImpl::CleanBufferAfterSwapBuffer(bool delay_clean) {
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  // impl_on_gpu_ is released on the GPU thread by a posted task from
+  // SkiaOutputSurfaceImpl::dtor. So it is safe to use base::Unretained.
+  auto callback = base::BindOnce(&SkiaOutputSurfaceImplOnGpu::CleanBufferAfterSwapBuffer,
+                                 base::Unretained(impl_on_gpu_.get()), delay_clean);
+  gpu_task_scheduler_->ScheduleOrRetainGpuTask(std::move(callback), {});
+}
+#endif
+
 void SkiaOutputSurfaceImpl::RecreateRootDDLRecorder() {
   if (graphite_recorder_) {
     return;
@@ -528,6 +552,15 @@ void SkiaOutputSurfaceImpl::Reshape(const ReshapeParams& params) {
 
   RecreateRootDDLRecorder();
 }
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+void SkiaOutputSurfaceImpl::SetNativeInnerWeb(bool isInnerWeb) {
+  auto task = base::BindOnce(&SkiaOutputSurfaceImplOnGpu::SetNativeInnerWeb,
+                             base::Unretained(impl_on_gpu_.get()), isInnerWeb);
+  EnqueueGpuTask(std::move(task), {}, /*make_current=*/true,
+                 /*need_framebuffer=*/!dependency_->IsOffscreen());
+}
+#endif
 
 void SkiaOutputSurfaceImpl::SetUpdateVSyncParametersCallback(
     UpdateVSyncParametersCallback callback) {
@@ -1365,6 +1398,9 @@ void SkiaOutputSurfaceImpl::DidSwapBuffersComplete(
     client_->DidReceiveReleasedOverlays(params.released_overlays);
   if (needs_swap_size_notifications_)
     client_->DidSwapWithSize(pixel_size);
+#if BUILDFLAG(ARKWEB_ROTATE_RESIZE) && !defined(COMPONENT_BUILD)
+  client_->DidSwapWithRotate(pixel_size);
+#endif // ARKWEB_ROTATE_RESIZE
 }
 
 void SkiaOutputSurfaceImpl::ReleaseOverlays(
@@ -1773,3 +1809,7 @@ void SkiaOutputSurfaceImpl::ReadbackForTesting(
 }
 
 }  // namespace viz
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/components/viz/service/display_embedder/skia_output_surface_impl_for_include.cc"
+#endif

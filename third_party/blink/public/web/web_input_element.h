@@ -54,6 +54,8 @@ class BLINK_EXPORT WebInputElement final : public WebFormControlElement {
     WebFormControlElement::Assign(element);
   }
 
+  bool IsPasswordFieldForAutofill() const;
+
   // Returns true for all of textfield-looking types such as text, password,
   // search, email, url, and number.
   bool IsTextField() const;

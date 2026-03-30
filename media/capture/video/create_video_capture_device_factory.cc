@@ -13,7 +13,9 @@
 #include "media/capture/video/fake_video_capture_device_factory.h"
 #include "media/capture/video/file_video_capture_device_factory.h"
 
-#if BUILDFLAG(IS_LINUX)
+#if BUILDFLAG(IS_ARKWEB)
+#include "media/capture/video/ohos/video_capture_device_factory_ohos.h"
+#elif BUILDFLAG(IS_LINUX)
 #include "media/capture/video/linux/video_capture_device_factory_linux.h"
 #elif BUILDFLAG(IS_CHROMEOS)
 #include "media/capture/video/chromeos/public/cros_features.h"
@@ -23,6 +25,8 @@
 #include "media/capture/video/win/video_capture_device_factory_win.h"
 #elif BUILDFLAG(IS_APPLE)
 #include "media/capture/video/apple/video_capture_device_factory_apple.h"
+#elif BUILDFLAG(IS_OHOS)
+#include "media/capture/video/ohos/video_capture_device_factory_ohos.h"
 #elif BUILDFLAG(IS_ANDROID)
 #include "media/capture/video/android/video_capture_device_factory_android.h"
 #elif BUILDFLAG(IS_FUCHSIA)
@@ -56,7 +60,9 @@ CreateFakeVideoCaptureDeviceFactory() {
 std::unique_ptr<VideoCaptureDeviceFactory>
 CreatePlatformSpecificVideoCaptureDeviceFactory(
     scoped_refptr<base::SingleThreadTaskRunner> ui_task_runner) {
-#if BUILDFLAG(IS_LINUX)
+#if BUILDFLAG(IS_ARKWEB)
+  return std::make_unique<VideoCaptureDeviceFactoryOHOS>(ui_task_runner);
+#elif BUILDFLAG(IS_LINUX)
   return std::make_unique<VideoCaptureDeviceFactoryLinux>(ui_task_runner);
 #elif BUILDFLAG(IS_CHROMEOS)
   if (base::SysInfo::IsRunningOnChromeOS())
@@ -70,6 +76,8 @@ CreatePlatformSpecificVideoCaptureDeviceFactory(
 #else
   return std::make_unique<VideoCaptureDeviceFactoryApple>();
 #endif  // BUILDFLAG(IS_IOS_TVOS)
+#elif BUILDFLAG(IS_OHOS)
+  return std::make_unique<VideoCaptureDeviceFactoryOHOS>();
 #elif BUILDFLAG(IS_ANDROID)
   return std::make_unique<VideoCaptureDeviceFactoryAndroid>();
 #elif BUILDFLAG(IS_FUCHSIA)
@@ -97,6 +105,7 @@ std::unique_ptr<VideoCaptureDeviceFactory> CreateVideoCaptureDeviceFactory(
   } else {
     // |ui_task_runner| is needed for the Linux ChromeOS factory to retrieve
     // screen rotations.
+    LOG(INFO) << "CreateVideoCaptureDeviceFactory";
     return CreatePlatformSpecificVideoCaptureDeviceFactory(ui_task_runner);
   }
 }

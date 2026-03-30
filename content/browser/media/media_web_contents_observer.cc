@@ -31,7 +31,7 @@
 #include "third_party/blink/public/common/mediastream/media_devices.h"
 #include "third_party/blink/public/platform/web_fullscreen_video_status.h"
 #include "ui/gfx/geometry/size.h"
-
+#include "arkweb/build/features/features.h"
 namespace content {
 
 namespace {
@@ -103,6 +103,12 @@ class MediaWebContentsObserver::PlayerInfo {
 
   bool IsAudible() const { return has_audio_ && is_playing_ && !muted_; }
 
+#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
+  void SetIsPlayerGone() {
+    NotifyPlayerGone();
+  }
+#endif
+
   GlobalRenderFrameHostId GetHostId() { return id_.frame_routing_id; }
 
  private:
@@ -135,6 +141,15 @@ class MediaWebContentsObserver::PlayerInfo {
                                                           notification_mode);
     }
   }
+
+#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
+  void NotifyPlayerGone() {
+    if (observer_ && observer_->web_contents_impl()) {
+      observer_->web_contents_impl()->AsWebContentsImplExt()->MediaPlayerGone(
+          WebContentsObserver::MediaPlayerInfo(has_video_, has_audio_), id_);
+    }
+  }
+#endif
 
   const MediaPlayerId id_;
   const raw_ptr<MediaWebContentsObserver> observer_;
@@ -387,7 +402,16 @@ MediaWebContentsObserver::MediaPlayerHostImpl::MediaPlayerHostImpl(
     : frame_routing_id_(frame_routing_id),
       media_web_contents_observer_(media_web_contents_observer) {}
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+MediaWebContentsObserver::MediaPlayerHostImpl::~MediaPlayerHostImpl() {
+  if (media_web_contents_observer_ && media_web_contents_observer_->web_contents_impl() &&
+    media_web_contents_observer_->web_contents_impl()->AsWebContentsImplExt()) {
+    media_web_contents_observer_->web_contents_impl()->AsWebContentsImplExt()->DelVideoAssistant();
+  }
+}
+#else
 MediaWebContentsObserver::MediaPlayerHostImpl::~MediaPlayerHostImpl() = default;
+#endif // ARKWEB_VIDEO_ASSISTANT
 
 void MediaWebContentsObserver::MediaPlayerHostImpl::AddMediaPlayerHostReceiver(
     mojo::PendingAssociatedReceiver<media::mojom::MediaPlayerHost> receiver) {
@@ -434,12 +458,20 @@ void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
   media_web_contents_observer_->web_contents_impl()->MediaMutedStatusChanged(
       media_player_id_, muted);
 
+#if !BUILDFLAG(ARKWEB_MEDIA)
   media_web_contents_observer_->session_controllers_manager()
       ->OnMediaMutedStatusChanged(media_player_id_, muted);
+#endif // !BUILDFLAG(ARKWEB_MEDIA)
 
   PlayerInfo* player_info = GetPlayerInfo();
   if (!player_info)
     return;
+
+#if BUILDFLAG(ARKWEB_MEDIA)
+  media_web_contents_observer_->session_controllers_manager()
+      ->OnMediaMutedStatusChanged(media_player_id_, muted);
+  LOG(INFO) << "OhMedia::" << __func__ << ", muted=" << muted;
+#endif // BUILDFLAG(ARKWEB_MEDIA)
 
   player_info->set_muted(muted);
   NotifyAudioStreamMonitorIfNeeded();
@@ -682,6 +714,9 @@ void MediaWebContentsObserver::OnMediaPlayerObserverDisconnected(
     const MediaPlayerId& player_id) {
   DCHECK(media_player_observer_hosts_.contains(player_id));
   media_player_observer_hosts_.erase(player_id);
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  web_contents_impl()->AsWebContentsImplExt()->OnVideoDestroyed(player_id);
+#endif  // ARKWEB_VIDEO_ASSISTANT
 }
 
 device::mojom::WakeLock* MediaWebContentsObserver::GetAudioWakeLock() {
@@ -771,6 +806,10 @@ void MediaWebContentsObserver::OnMediaPlayerAdded(
           observer->fullscreen_player_.reset();
         }
         observer->web_contents_impl()->MediaDestroyed(player_id);
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+        if (!observer->web_contents_impl()->IsHtmlPlayEnabled())
+          observer->web_contents_impl()->SetHtmlPlayEnabled(true);
+#endif
       },
       base::Unretained(this), player_id));
 
@@ -806,5 +845,8 @@ MediaWebContentsObserver::GetWeakPtrForFrame(
       std::make_unique<base::WeakPtrFactory<MediaWebContentsObserver>>(this)));
   return result.first->second->GetWeakPtr();
 }
-
 }  // namespace content
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/content/browser/media/media_web_contents_observer_for_include.cc"
+#endif

@@ -175,6 +175,10 @@ void ExtensionRegistrar::AddExtension(
   CHECK(delegate_);
   delegate_->PreAddExtension(extension.get(), old);
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(INFO) << "add extension " << extension->id();
+#endif
+
   if (was_reloading) {
     failed_to_reload_unpacked_extensions_.erase(extension->path());
     ReplaceReloadedExtension(extension);
@@ -289,6 +293,10 @@ void ExtensionRegistrar::RemoveExtension(const ExtensionId& extension_id,
   // Stop tracking whether the extension was meant to be enabled after a reload.
   reloading_extensions_.erase(extension->id());
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(INFO) << "remove extension " << extension_id;
+#endif
+
   if (registry_->enabled_extensions().Contains(extension_id)) {
     // Put the pending removal extension in disabled set because underlying
     // code of `DeactivateExtension` needs to access it.
@@ -333,6 +341,10 @@ void ExtensionRegistrar::EnableExtension(const ExtensionId& extension_id) {
   // This can happen if sync enables an extension that is not installed yet.
   if (!extension)
     return;
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(INFO) << "enable extension " << extension_id;
+#endif
 
   // Actually enable the extension.
   registry_->AddEnabled(extension);
@@ -409,6 +421,10 @@ void ExtensionRegistrar::DisableExtensionWithRawReasons(
   // The extension is either enabled or terminated.
   DCHECK(registry_->enabled_extensions().Contains(extension->id()) ||
          registry_->terminated_extensions().Contains(extension->id()));
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(INFO) << "disable extension " << extension_id;
+#endif
 
   // Move the extension to the disabled list.
   registry_->AddDisabled(extension);
@@ -686,6 +702,10 @@ bool ExtensionRegistrar::UninstallExtension(
   extension_prefs_->OnExtensionUninstalled(
       extension->id(), extension->location(), external_uninstall);
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  extension_prefs_->pref_service()->CommitPendingWrite();
+#endif // ARKWEB_ARKWEB_EXTENSIONS
+
   return true;
 }
 
@@ -732,6 +752,10 @@ void ExtensionRegistrar::FinishInstallation(const Extension* extension) {
   if (SharedModuleInfo::IsSharedModule(extension)) {
     delayed_install_manager_->MaybeFinishDelayedInstallations();
   }
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  extension_prefs_->pref_service()->CommitPendingWrite();
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 }
 
 bool ExtensionRegistrar::CanBlockExtension(const Extension* extension) const {
@@ -1092,6 +1116,10 @@ void ExtensionRegistrar::DoReloadExtension(
 
   const Extension* enabled_extension =
       registry_->enabled_extensions().GetByID(extension_id);
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(INFO) << "reload extension " << extension_id;
+#endif
 
   // Disable the extension if it's loaded. It might not be loaded if it crashed.
   if (enabled_extension) {

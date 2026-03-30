@@ -10,6 +10,13 @@
 #include "base/functional/callback_forward.h"
 #include "base/memory/raw_ptr.h"
 #include "base/thread_annotations.h"
+
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_TEST)
+#include "content/public/browser/browser_thread.h"
+#include "testing/gtest/include/gtest/gtest.h"
+#endif // BUILDFLAG(ARKWEB_TEST)
+
 #include "components/omnibox/browser/autocomplete_controller.h"
 #include "components/omnibox/browser/autocomplete_input.h"
 #include "net/test/embedded_test_server/embedded_test_server.h"
@@ -104,7 +111,47 @@ class SearchPreloadResponseController {
   // A DelayedResponseTask instance is created on the thread that server is
   // running on, and be destroyed on the main thread. A lock is guarding the
   // access to created instances.
-  class DelayedResponseTask;
+#if !BUILDFLAG(ARKWEB_TEST) 
+class DelayedResponseTask;
+#else
+class DelayedResponseTask {
+ public:
+  DelayedResponseTask(
+      const scoped_refptr<base::SingleThreadTaskRunner>& task_runner,
+      base::OnceClosure response_closure)
+      : task_runner_(task_runner),
+        response_closure_(std::move(response_closure)) {}
+
+  ~DelayedResponseTask() = default;
+
+  // Makes this movable to run the task out of lock's scope.
+  DelayedResponseTask(DelayedResponseTask&& task)
+      : task_runner_(task.task_runner_),
+        response_closure_(std::move(task.response_closure_)) {}
+  DelayedResponseTask& operator=(DelayedResponseTask&& task) {
+    if (this != &task) {
+      task_runner_ = task.task_runner_;
+      response_closure_ = std::move(task.response_closure_);
+    }
+    return *this;
+  }
+
+  void Run() {
+    ASSERT_TRUE(
+        content::BrowserThread::CurrentlyOn(content::BrowserThread::UI));
+    task_runner_->PostTask(FROM_HERE, std::move(response_closure_));
+  }
+
+ private:
+  // Task runner of the thread on which a service server is running.
+  scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
+
+  // Closure for making response dispatching controllable. The closure should
+  // be executed on the thread that the server is running on, as it sends
+  // network response.
+  base::OnceClosure response_closure_;
+};
+#endif
 
   SearchPreloadTestResponseDeferralType service_deferral_type_ =
       SearchPreloadTestResponseDeferralType::kNoDeferral;

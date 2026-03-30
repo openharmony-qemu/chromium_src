@@ -38,6 +38,9 @@
 #include "base/strings/string_util.h"  // For EqualsCaseInsensitiveASCII.
 #include "base/task/single_thread_task_runner.h"
 #include "base/time/clock.h"
+#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
+#include "base/trace_event/trace_event.h"
+#endif
 #include "base/time/time.h"
 #include "base/trace_event/common/trace_event_common.h"
 #include "base/trace_event/trace_event.h"
@@ -69,6 +72,18 @@
 #include "net/log/net_log_event_type.h"
 #include "net/ssl/ssl_cert_request_info.h"
 #include "net/ssl/ssl_config_service.h"
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#endif
+
+#include "arkweb/chromium_ext/net/http/http_cache_transaction_utils.h"
+#include "arkweb/chromium_ext/net/http/http_cache_transaction_for_include.cc"
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#include "base/command_line.h"
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#endif
 
 using base::Time;
 using base::TimeTicks;
@@ -135,6 +150,11 @@ HttpCache::Transaction::Transaction(RequestPriority priority, HttpCache* cache)
       priority_(priority),
       cache_(cache->GetWeakPtr()),
       read_no_vary_search_cache_(cache->no_vary_search_cache_) {
+#if !defined(COMPONENT_BUILD) // FIXME
+#if BUILDFLAG(IS_ARKWEB)
+  http_transation_utils_ = std::make_unique<HttpTransactionUtils>(this);
+#endif
+#endif
   io_callback_ = base::BindRepeating(&Transaction::OnIOComplete,
                                      weak_factory_.GetWeakPtr());
   cache_io_callback_ = base::BindRepeating(&Transaction::OnCacheIOComplete,
@@ -207,6 +227,13 @@ int HttpCache::Transaction::Start(const HttpRequestInfo* request,
 
   // We have to wait until the backend is initialized so we start the SM.
   next_state_ = STATE_GET_BACKEND;
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  if (!update_res_request_info_callback_.is_null() && request_ && preload_info_) {
+    update_res_request_info_callback_.Run(request_->main_url.spec(), preload_info_);
+  }
+#endif
+
   int rv = DoLoop(OK);
 
   // Setting this here allows us to check for the existence of a callback_ to
@@ -217,6 +244,13 @@ int HttpCache::Transaction::Start(const HttpRequestInfo* request,
 
   return rv;
 }
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+int HttpCache::Transaction::RestartWithSecureDnsOnly(
+    CompletionOnceCallback callback) {
+  return http_transation_utils_->RestartWithSecureDnsOnly(callback);
+}
+#endif
 
 int HttpCache::Transaction::RestartIgnoringLastError(
     CompletionOnceCallback callback) {
@@ -1176,6 +1210,10 @@ int HttpCache::Transaction::DoOpenOrCreateEntry() {
   cache_pending_ = true;
   net_log_.BeginEvent(NetLogEventType::HTTP_CACHE_OPEN_OR_CREATE_ENTRY);
   first_cache_access_since_ = TimeTicks::Now();
+#if BUILDFLAG(ARKWEB_NETWORK_DFX)
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
+               "requestStart", first_cache_access_since_);
+#endif
   const bool has_opened_or_created_entry = has_opened_or_created_entry_;
   has_opened_or_created_entry_ = true;
   record_entry_open_or_creation_time_ = false;
@@ -1660,6 +1698,10 @@ int HttpCache::Transaction::DoCacheReadResponseComplete(int result) {
 
   // Record the time immediately before the cached response is parsed.
   read_headers_since_ = TimeTicks::Now();
+#if BUILDFLAG(ARKWEB_NETWORK_DFX)
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
+               "responseStart", read_headers_since_);
+#endif
 
   if (result != read_buf_->size() ||
       !HttpCache::ParseResponseInfo(read_buf_->span(), &response_,
@@ -1960,6 +2002,14 @@ int HttpCache::Transaction::DoSendRequestComplete(int result) {
   response_.proxy_chain = response->proxy_chain;
   response_.restricted_prefetch = response->restricted_prefetch;
   response_.resolve_error_info = response->resolve_error_info;
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableNwebEx)) {
+    response_.used_fallback_proxy = response->used_fallback_proxy;
+    response_.fallback_proxy_response_code =
+        response->fallback_proxy_response_code;
+  }
+#endif
 
   // Do not record requests that have network errors or restarts.
   UpdateCacheEntryStatusToOther(OtherStatusReason::kNetworkError);
@@ -2022,6 +2072,13 @@ int HttpCache::Transaction::DoSuccessfulSendRequest() {
     TransitionToState(STATE_FINISH_HEADERS);
     return ERR_CACHE_AUTH_FAILURE_AFTER_READ;
   }
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD) && BUILDFLAG(IS_OHOS)
+  if (request_ && request_->allow_preload_record && preload_info_ &&
+      !UpdateAndReportCacheability(*new_response->headers)) {
+    http_transation_utils_->UpdateCacheInfo(*new_response);
+  }
+#endif
 
   new_response_ = new_response;
   if (!ValidatePartialResponse() && !auth_response_.headers.get()) {
@@ -2521,6 +2578,11 @@ int HttpCache::Transaction::DoCacheReadData() {
     DCHECK(InWriters() || entry_->TransactionInReaders(this));
   }
 
+#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
+  TRACE_EVENT1("net", "HttpCache::Transaction::DoCacheReadData",
+               "url", request_ ? request_->url.spec() : "");
+#endif
+
   TRACE_EVENT_INSTANT(TRACE_DISABLED_BY_DEFAULT("net"), "DoCacheReadData",
                       track_for_state_change_, "read_offset", read_offset_,
                       "read_buf_len", read_buf_len_);
@@ -2755,6 +2817,12 @@ int HttpCache::Transaction::BeginCacheValidation() {
         RestartCacheEntryAction::kErase,
         NoVarySearchUseResult::kIncompleteBody);
   }
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD) && BUILDFLAG(IS_OHOS)
+  if (request_ && request_->allow_preload_record && preload_info_ && skip_validation) {
+    http_transation_utils_->UpdateCacheInfo(response_);
+  }
+#endif
 
   // Handle Stale-While-Revalidate if the client supports it.
   // This is not done for truncated entries since they need validation in order
@@ -4108,13 +4176,16 @@ void HttpCache::Transaction::TransitionToState(State state) {
 bool HttpCache::Transaction::UpdateAndReportCacheability(
     const HttpResponseHeaders& headers) {
   // Do not cache no-store content.
-  if (headers.HasHeaderValue("cache-control", "no-store")) {
+  if (headers.HasHeaderValue("cache-control", "no-store") 
+#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+   && !(effective_load_flags_ & LOAD_IGNORE_CACHE_CONTROL)
+#endif
+   ) {
     if (base::FeatureList::IsEnabled(features::kAvoidEntryCreationForNoStore)) {
       cache_->MarkKeyNoStore(cache_key_);
     }
     return true;
   }
-
   return false;
 }
 

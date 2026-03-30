@@ -7,6 +7,7 @@
 #include <memory>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/numerics/checked_math.h"
 #include "base/numerics/clamped_math.h"
@@ -303,7 +304,10 @@ ImageBitmap::ImageBitmap(ImageElementBase* image,
             : ImageDecoder::kDefaultBitDepth,
         parsed_options.has_color_space_conversion ? ColorBehavior::kTag
                                                   : ColorBehavior::kIgnore,
-        cc::AuxImage::kDefault, Platform::GetMaxDecodedImageBytes()));
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+        cc::AuxImage::kDefault,
+#endif
+        Platform::GetMaxDecodedImageBytes()));
     auto skia_image = ImageBitmap::GetSkImageFromDecoder(std::move(decoder));
     if (!skia_image)
       return;

@@ -5,6 +5,10 @@
 #ifndef THIRD_PARTY_BLINK_RENDERER_MODULES_IMAGE_DOWNLOADER_IMAGE_DOWNLOADER_IMPL_H_
 #define THIRD_PARTY_BLINK_RENDERER_MODULES_IMAGE_DOWNLOADER_IMAGE_DOWNLOADER_IMPL_H_
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "third_party/blink/public/mojom/image_downloader/image_downloader.mojom-blink.h"
 #include "third_party/blink/renderer/core/execution_context/execution_context_lifecycle_observer.h"
 #include "third_party/blink/renderer/platform/mojo/heap_mojo_receiver.h"
@@ -92,6 +96,9 @@ class ImageDownloaderImpl final : public GarbageCollected<ImageDownloaderImpl>,
   // details.
   void DidFetchImage(DownloadCallback callback,
                      const gfx::Size& preferred_size,
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+                     bool is_favicon,
+#endif
                      MultiResolutionImageResourceFetcher* fetcher,
                      const std::string& image_data,
                      const WebString& mime_type);

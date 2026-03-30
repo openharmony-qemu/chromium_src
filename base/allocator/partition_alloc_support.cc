@@ -781,6 +781,9 @@ void UnretainedDanglingRawPtrDetectedDumpWithoutCrashing(uintptr_t id) {
 }
 
 void UnretainedDanglingRawPtrDetectedCrash(uintptr_t id) {
+#if BUILDFLAG(EXCLUDE_UNWIND_TABLES)
+  abort();
+#else
   static const char unretained_dangling_ptr_footer[] =
       "\n"
       "\n"
@@ -794,6 +797,7 @@ void UnretainedDanglingRawPtrDetectedCrash(uintptr_t id) {
              << task_trace << '\n'
              << "Stack trace:\n"
              << stack_trace << unretained_dangling_ptr_footer;
+#endif
 }
 
 void InstallUnretainedDanglingRawPtrChecks() {

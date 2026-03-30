@@ -29,10 +29,15 @@
 #include "third_party/blink/renderer/core/html/html_frame_owner_element.h"
 #include "third_party/blink/renderer/core/html/html_plugin_element.h"
 #include "third_party/blink/renderer/core/html_names.h"
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+#include "third_party/blink/renderer/core/frame/settings.h"
+#endif
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/html/html_plugin_element_utils.h"
 
 namespace blink {
 
 class HTMLFormElement;
+class HTMLPlugInElementUtils;
 
 // Inheritance of ListedElement was used for NPAPI form association, but
 // is still kept here so that legacy APIs such as form attribute can keep
@@ -84,6 +89,20 @@ class CORE_EXPORT HTMLObjectElement final : public HTMLPlugInElement,
 
   FormAssociated* ToFormAssociatedOrNull() override { return this; }
   void AssociateWith(HTMLFormElement*) override;
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  ParamMap ParamList() override;
+
+  bool IsNativeType() const override {
+    return Utils()->CheckNativeType(web_pref::kObjectTag);
+  }
+
+  void NativeEmbedOverlay(const AttributeModificationParams& params);
+  void AddParamChange(Vector<ParamChangeInfo>& param_changes, Node* node,
+                      ParamChangeInfo::Status status);
+  void HandleParamAlterations(const ChildrenChange& change);
+  void ProcessParamChanges(const Vector<ParamChangeInfo>& changes);
+#endif
 
   // Returns true if this object started to load something, and finished
   // the loading regardless of success or failure.

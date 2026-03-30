@@ -82,6 +82,10 @@ MediaGalleriesPermissionController::MediaGalleriesPermissionController(
 }
 
 void MediaGalleriesPermissionController::OnPreferencesInitialized() {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (!StorageMonitor::GetInstance())
+    return;
+#endif
   DCHECK(StorageMonitor::GetInstance());
   StorageMonitor::GetInstance()->AddObserver(this);
 
@@ -108,8 +112,15 @@ MediaGalleriesPermissionController::MediaGalleriesPermissionController(
 }
 
 MediaGalleriesPermissionController::~MediaGalleriesPermissionController() {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (StorageMonitor::GetInstance()) {
   DCHECK(StorageMonitor::GetInstance());
   StorageMonitor::GetInstance()->RemoveObserver(this);
+  }
+#else
+  DCHECK(StorageMonitor::GetInstance());
+  StorageMonitor::GetInstance()->RemoveObserver(this);
+#endif
 
   // |preferences_| may be NULL in tests.
   if (preferences_)

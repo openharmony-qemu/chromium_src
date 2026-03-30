@@ -55,6 +55,7 @@
 #include "third_party/blink/renderer/platform/wtf/deque.h"
 #include "third_party/blink/renderer/platform/wtf/sequence_bound.h"
 #include "third_party/blink/renderer/platform/wtf/text/text_position.h"
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/html/parser/html_document_parser_ext.h"
 
 namespace blink {
 

@@ -6,6 +6,7 @@
 #define MEDIA_BASE_MEDIA_CONTENT_TYPE_H_
 
 #include "media/base/media_export.h"
+#include "arkweb/build/features/features.h"
 
 namespace base {
 class TimeDelta;
@@ -33,6 +34,9 @@ enum class MediaContentType {
   kAmbient,
   // The maximum number of media content types.
   kMax = kAmbient,
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  kInvalid,
+#endif
 };
 
 // Utility function for deciding the MediaContentType of a player based on its

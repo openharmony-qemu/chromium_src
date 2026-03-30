@@ -50,6 +50,8 @@
 #include "media/gpu/chromeos/vulkan_overlay_adaptor.h"
 #endif
 
+#include "arkweb/chromium_ext/components/viz/service/display_embedder/skia_output_surface_impl_on_gpu_utils.h"
+
 #if BUILDFLAG(IS_ANDROID)
 #include "ui/gfx/android/surface_control_frame_rate.h"
 #endif
@@ -89,6 +91,7 @@ class AsyncReadResultLock;
 class ImageContextImpl;
 class SkiaOutputSurfaceDependency;
 class VulkanContextProvider;
+class SkiaOutputSurfaceImplOnGpuUtils;
 
 namespace copy_output {
 struct RenderPassGeometry;
@@ -99,6 +102,7 @@ struct RenderPassGeometry;
 class SkiaOutputSurfaceImplOnGpu
     : public gpu::SharedContextState::ContextLostObserver {
  public:
+   friend class SkiaOutputSurfaceImplOnGpuUtils;
   using DidSwapBufferCompleteCallback =
       base::RepeatingCallback<void(gpu::SwapBuffersCompleteParams,
                                    const gfx::Size& pixel_size,
@@ -175,6 +179,12 @@ class SkiaOutputSurfaceImplOnGpu
   void SwapBuffersSkipped();
   void EnsureBackbuffer();
   void DiscardBackbuffer();
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+  void SetIfNeedCleanBuffers(bool need_clean_buffers);
+#endif
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+  void CleanBufferAfterSwapBuffer(bool delay_clean);
+#endif
   // |update_rect| is in buffer space.
   // If is |is_overlay| is true, the ScopedWriteAccess will be saved and kept
   // open until PostSubmit().
@@ -306,6 +316,26 @@ class SkiaOutputSurfaceImplOnGpu
 
   void ReadbackForTesting(
       CopyOutputRequest::CopyOutputRequestCallback result_callback);
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  void SetNativeInnerWeb(bool isInnerWeb);
+#endif
+
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+  gfx::Rect GetLastBufferDamageRect();
+  int GetLastBufferAge();
+  int GetLastBufferSameCnt();
+  void SetPresentBufferDamageRect(gfx::Rect damage_rect, gfx::Rect curr_rect);
+  void ClosePostSubBuffer();
+#endif
+
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  void SetBypassVsyncCondition(int32_t condition);
+#endif
+
+  std::shared_ptr<SkiaOutputSurfaceImplOnGpuUtils> impl_utils() {	
+    return impl_utils_;	
+  }
 
  private:
   struct MailboxAccessData {
@@ -628,6 +658,8 @@ class SkiaOutputSurfaceImplOnGpu
   std::unique_ptr<media::VulkanOverlayAdaptor> vulkan_overlay_adaptor_ =
       nullptr;
 #endif
+
+  std::shared_ptr<SkiaOutputSurfaceImplOnGpuUtils> impl_utils_ = nullptr;
 
   base::WeakPtr<SkiaOutputSurfaceImplOnGpu> weak_ptr_;
   base::WeakPtrFactory<SkiaOutputSurfaceImplOnGpu> weak_ptr_factory_{this};

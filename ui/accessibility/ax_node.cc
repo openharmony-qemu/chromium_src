@@ -996,6 +996,17 @@ bool AXNode::CanComputeStringAttribute(
   }
 }
 
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+bool AXNode::GetStringAttribute(ax::mojom::StringAttribute attribute,
+                                std::string* value) const {
+  if (GetComputedNodeData().HasOrCanComputeAttribute(attribute)) {
+    *value = GetComputedNodeData().GetOrComputeAttributeUTF8(attribute);
+    return true;
+  }
+  return false;
+}
+#endif
+
 const std::string& AXNode::GetStringAttribute(
     ax::mojom::StringAttribute attribute) const {
   if (data().HasStringAttribute(attribute)) {

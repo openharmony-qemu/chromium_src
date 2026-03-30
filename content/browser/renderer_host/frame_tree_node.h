@@ -749,6 +749,22 @@ class CONTENT_EXPORT FrameTreeNode : public RenderFrameHostOwner {
   bool Credentialless() const override;
   FrameType GetCurrentFrameType() const override;
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  void set_adblock_enabled(bool is_adblock_enabled) {
+    is_adblock_enabled_ = is_adblock_enabled;
+  }
+
+  void set_adblock_enabled_last_committed(bool is_adblock_enabled) {
+    is_adblock_enabled_last_committed_ = is_adblock_enabled;
+  }
+
+  bool is_adblock_enabled() { return is_adblock_enabled_; }
+
+  bool is_adblock_enabled_last_committed() {
+    return is_adblock_enabled_last_committed_;
+  }
+#endif
+
   // Restart the navigation restoring the page from the back-forward cache
   // as a regular non-BFCached history navigation.
   //
@@ -992,7 +1008,13 @@ class CONTENT_EXPORT FrameTreeNode : public RenderFrameHostOwner {
   // https://crbug.com/1157988.
   RenderFrameHostManager render_manager_;
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  bool is_adblock_enabled_ = false;
+  bool is_adblock_enabled_last_committed_ = false;
+#endif
+
   base::WeakPtrFactory<FrameTreeNode> weak_factory_{this};
+
 };
 
 }  // namespace content

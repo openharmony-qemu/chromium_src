@@ -30,6 +30,12 @@
 #include "content/public/browser/web_contents.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "base/functional/callback.h"
+#include "base/task/thread_pool.h"
+#include "components/permissions/permission_request_id.h"
+#endif
+
 namespace {
 
 network::mojom::PermissionsPolicyFeature GetPermissionsPolicyFeature(
@@ -108,6 +114,22 @@ MediaStreamDevicePermissionContext::GetContentSettingStatusInternal(
   }
 
   return setting;
+}
+
+void MediaStreamDevicePermissionContext::RequestReply(
+    permissions::PermissionRequestData request_data,
+    permissions::BrowserPermissionCallback callback,
+    bool reply_success) {
+  if (!reply_success) {
+    std::move(callback).Run(content::PermissionResult(
+      content::PermissionStatus::ASK,
+      content::PermissionStatusSource::UNSPECIFIED));
+    return;
+  }
+
+  permissions::PermissionContextBase::RequestPermission(
+    std::make_unique<permissions::PermissionRequestData>(std::move(request_data)),
+    std::move(callback));
 }
 
 #if BUILDFLAG(IS_ANDROID)

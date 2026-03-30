@@ -450,3 +450,10 @@ bool AssertPageLoadMetricsObserver::IsPrerendered() const {
   return (GetDelegate().GetPrerenderingState() !=
           PrerenderingState::kNoPrerendering);
 }
+
+#if BUILDFLAG(ARKWEB_BFCACHE)
+void AssertPageLoadMetricsObserver::
+    OnFirstContentfulPaintAfterBackForwardCacheRestoreInPage(
+        const page_load_metrics::mojom::BackForwardCacheTiming& timing,
+        size_t index) {}
+#endif

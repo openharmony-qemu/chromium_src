@@ -18,12 +18,17 @@
 
 namespace gpu {
 class SharedContextState;
+class OzoneImageBackingFactoryExt;
 
 // Implementation of SharedImageBackingFactory that produces NativePixmap
 // backed SharedImages.
 class GPU_GLES2_EXPORT OzoneImageBackingFactory
     : public SharedImageBackingFactory {
  public:
+  friend class OzoneImageBackingFactoryExt;
+  virtual gpu::OzoneImageBackingFactoryExt* AsOzoneImageBackingFactoryExt() {
+    return nullptr;
+  }
   explicit OzoneImageBackingFactory(
       scoped_refptr<SharedContextState> shared_context_state,
       const GpuDriverBugWorkarounds& workarounds);

@@ -5,9 +5,17 @@
 import("//build/config/cast.gni")
 import("//build/config/features.gni")
 
+if (is_arkweb) {
+  import("//arkweb/build/features/features.gni")
+}
+
 declare_args() {
   # Whether or not to use external popup menu.
-  use_external_popup_menu = is_android || (is_apple && use_blink)
+  if (is_arkweb) {
+    use_external_popup_menu = is_android || (is_apple && use_blink) || arkweb_html_select
+  } else {
+    use_external_popup_menu = is_android || (is_apple && use_blink)
+  }
 
   # Enables basic plugin support. This enables support for registering and
   # looking up plugins.
@@ -20,4 +28,4 @@ declare_args() {
 # is only enabled for desktop Android, but should be enabled on all Android
 # at some point once the feature is stable. See crbug.com/40418135.
 enable_screen_capture = is_linux || is_chromeos || (is_apple && use_blink) ||
-                        is_win || is_android || is_fuchsia
+                        is_win || is_android || is_fuchsia || is_ohos

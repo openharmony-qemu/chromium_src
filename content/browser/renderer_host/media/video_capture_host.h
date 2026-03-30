@@ -7,7 +7,7 @@
 
 #include <map>
 #include <string>
-
+#include "arkweb/chromium_ext/content/browser/renderer_host/media/video_capture_host_utils.h"
 #include "base/gtest_prod_util.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
@@ -24,6 +24,7 @@
 
 namespace content {
 class MediaStreamManager;
+class VideoCaptureHostUtils;
 
 // VideoCaptureHost is the IO thread browser process communication endpoint
 // between a render frame (which can initiate and receive a video capture
@@ -50,6 +51,8 @@ class CONTENT_EXPORT VideoCaptureHost
       MediaStreamManager* media_stream_manager,
       mojo::PendingReceiver<media::mojom::VideoCaptureHost> receiver);
 
+  friend class VideoCaptureHostUtils;
+
   // Interface for notifying RenderFrameHost instance about active video
   // capture stream changes.
   class CONTENT_EXPORT RenderFrameHostDelegate {
@@ -58,6 +61,10 @@ class CONTENT_EXPORT VideoCaptureHost
     virtual void NotifyStreamAdded() = 0;
     virtual void NotifyStreamRemoved() = 0;
   };
+
+#if BUILDFLAG(ARKWEB_WEBRTC)
+  void OnCameraCaptureStateChanged(CameraCaptureState new_state) override;
+#endif
 
  private:
   friend class VideoCaptureTest;
@@ -135,6 +142,8 @@ class CONTENT_EXPORT VideoCaptureHost
                      const media::VideoCaptureParams& params,
                      VideoCaptureControllerID controller_id,
                      VideoCaptureManager::DoneCB done_cb);
+
+  raw_ptr<VideoCaptureHostUtils> implUtils = nullptr;
 
   class RenderFrameHostDelegateImpl;
   std::unique_ptr<RenderFrameHostDelegate> render_frame_host_delegate_;

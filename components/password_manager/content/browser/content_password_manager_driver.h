@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
 #include "components/autofill/content/common/mojom/autofill_agent.mojom.h"
@@ -32,11 +33,18 @@ class RenderFrameHost;
 }
 
 namespace password_manager {
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+class ContentPasswordManagerDriverExt;
+#endif
 
 // There is one ContentPasswordManagerDriver per RenderFrameHost.
 // The lifetime is managed by the ContentPasswordManagerDriverFactory.
-class ContentPasswordManagerDriver final
+class ContentPasswordManagerDriver
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+    : public PasswordManagerDriverExt,
+#else
     : public PasswordManagerDriver,
+#endif
       public autofill::mojom::PasswordManagerDriver {
  public:
   ContentPasswordManagerDriver(content::RenderFrameHost* render_frame_host,
@@ -47,6 +55,12 @@ class ContentPasswordManagerDriver final
       delete;
 
   ~ContentPasswordManagerDriver() override;
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  friend class ContentPasswordManagerDriverExt;
+  virtual ContentPasswordManagerDriverExt* AsContentPasswordManagerDriverExt() {
+    return nullptr;
+  }
+#endif
 
   // Gets the driver for `render_frame_host`.
   static ContentPasswordManagerDriver* GetForRenderFrameHost(
@@ -214,7 +228,11 @@ class ContentPasswordManagerDriver final
   const raw_ptr<content::RenderFrameHost> render_frame_host_;
   const raw_ptr<PasswordManagerClient> client_;
   PasswordGenerationFrameHelper password_generation_helper_;
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  PasswordAutofillManagerExt password_autofill_manager_;
+#else
   PasswordAutofillManager password_autofill_manager_;
+#endif
 
   int id_;
 
@@ -234,4 +252,7 @@ class ContentPasswordManagerDriver final
 
 }  // namespace password_manager
 
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+#include "arkweb/chromium_ext/components/password_manager/content/browser/content_password_manager_driver_ext.h"
+#endif
 #endif  // COMPONENTS_PASSWORD_MANAGER_CONTENT_BROWSER_CONTENT_PASSWORD_MANAGER_DRIVER_H_

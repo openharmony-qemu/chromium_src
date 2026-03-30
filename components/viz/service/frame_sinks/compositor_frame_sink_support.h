@@ -47,6 +47,7 @@ class LatestLocalSurfaceIdLookupDelegate;
 class LayerContextImpl;
 class Surface;
 class SurfaceManager;
+class CompositorFrameSinkSupportUtils;
 
 // Possible outcomes of MaybeSubmitCompositorFrame().
 // These values are persisted to logs. Entries should not be renumbered and
@@ -68,6 +69,8 @@ class VIZ_SERVICE_EXPORT CompositorFrameSinkSupport
       public SurfaceClient,
       public CapturableFrameSink {
  public:
+  friend class CompositorFrameSinkSupportUtils;
+  std::unique_ptr<CompositorFrameSinkSupportUtils> supportUtils;
   using AggregatedDamageCallback =
       base::RepeatingCallback<void(const LocalSurfaceId& local_surface_id,
                                    const gfx::Size& frame_size_in_pixels,
@@ -559,8 +562,17 @@ class VIZ_SERVICE_EXPORT CompositorFrameSinkSupport
   // SurfaceAnimationManager.
   base::OnceCallback<void()> surface_animation_manager_callback_;
 
-  base::WeakPtrFactory<CompositorFrameSinkSupport> weak_factory_{this};
-};
+  #if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+    // Track consecutive no-damage frames for throttling
+    int consecutive_no_damage_frames_ = 0;
+    static constexpr int kNoDamageThrottleThreshold = 4;
+    // Track whether frame throttling is currently active
+    bool is_throttled_ = false;
+    bool is_throttle_enabled = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                                      .GetSystemPropertiesInstance()
+                                      .GetBoolParameter("web.throttle.enabled", false);
+  #endif
+  base::WeakPtrFactory<CompositorFrameSinkSupport> weak_factory_{this};};
 
 }  // namespace viz
 

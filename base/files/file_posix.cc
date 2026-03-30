@@ -193,14 +193,14 @@ void File::Info::FromStat(const stat_wrapper_t& stat_info) {
   // creation time. However, other than on Mac & iOS where the actual file
   // creation time is included as st_birthtime, the rest of POSIX platforms have
   // no portable way to get the creation time.
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA) || defined(__MUSL__)
   time_t last_modified_sec = stat_info.st_mtim.tv_sec;
   int64_t last_modified_nsec = stat_info.st_mtim.tv_nsec;
   time_t last_accessed_sec = stat_info.st_atim.tv_sec;
   int64_t last_accessed_nsec = stat_info.st_atim.tv_nsec;
   time_t creation_time_sec = stat_info.st_ctim.tv_sec;
   int64_t creation_time_nsec = stat_info.st_ctim.tv_nsec;
-#elif BUILDFLAG(IS_ANDROID)
+#elif BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
   time_t last_modified_sec = stat_info.st_mtime;
   int64_t last_modified_nsec = stat_info.st_mtime_nsec;
   time_t last_accessed_sec = stat_info.st_atime;
@@ -663,7 +663,7 @@ bool File::Flush() {
   SCOPED_FILE_TRACE("Flush");
 
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_CHROMEOS) || \
-    BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_LINUX)
+    BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ARKWEB)
   return !HANDLE_EINTR(fdatasync(file_.get()));
 #elif BUILDFLAG(IS_APPLE)
   // On macOS and iOS, fsync() is guaranteed to send the file's data to the

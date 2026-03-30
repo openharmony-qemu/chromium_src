@@ -13,6 +13,9 @@
 #include "extensions/browser/extension_host_registry.h"
 #include "extensions/buildflags/buildflags.h"
 #include "extensions/common/extension_id.h"
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "ohos_nweb/src/capi/web_extension_tab_items.h"
+#endif
 
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 
@@ -58,7 +61,6 @@ class ExtensionActionFunction : public ExtensionFunction {
 
   // WebContents for `tab_id_` if one exists.
   raw_ptr<content::WebContents> contents_;
-
   // The extension action for the current extension.
   raw_ptr<ExtensionAction> extension_action_;
 };

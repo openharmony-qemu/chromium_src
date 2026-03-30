@@ -30,6 +30,7 @@
 #ifndef THIRD_PARTY_BLINK_RENDERER_CORE_HTML_FORMS_FILE_CHOOSER_H_
 #define THIRD_PARTY_BLINK_RENDERER_CORE_HTML_FORMS_FILE_CHOOSER_H_
 
+#include "arkweb/build/features/features.h"
 #include "mojo/public/cpp/bindings/remote.h"
 #include "third_party/blink/public/mojom/choosers/file_chooser.mojom-blink.h"
 #include "third_party/blink/renderer/core/core_export.h"
@@ -40,7 +41,6 @@
 #include "third_party/blink/renderer/platform/wtf/ref_counted.h"
 #include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
 #include "third_party/blink/renderer/platform/wtf/vector.h"
-
 namespace blink {
 
 class ChromeClientImpl;
@@ -82,6 +82,11 @@ class FileChooser : public RefCounted<FileChooser> {
   LocalFrame* FrameOrNull() const {
     return client_ ? client_->FrameOrNull() : nullptr;
   }
+#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
+  void CloseChooser() {
+    DidCloseChooser();
+  }
+#endif
   void DisconnectClient() { client_ = nullptr; }
 
   const mojom::blink::FileChooserParams& Params() const { return *params_; }

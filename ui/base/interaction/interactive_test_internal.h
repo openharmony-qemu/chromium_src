@@ -268,7 +268,11 @@ class InteractiveTestPrivate {
   // Adds `state_observer` and associates it with an element with identifier
   // `id` and context `context`. Must be unique in its context.
   // Returns true on success.
+#if defined(__clang__) && (__clang_major__ < 17)
+  template <typename Observer, typename V = typename Observer::ValueType>
+#else
   template <typename Observer, typename V = Observer::ValueType>
+#endif
   bool AddStateObserver(ElementIdentifier id,
                         ElementContext context,
                         std::unique_ptr<Observer> state_observer);

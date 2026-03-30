@@ -9,6 +9,7 @@ import("//testing/test.gni")
 import("//third_party/libvpx/libvpx_srcs.gni")
 import("//third_party/libvpx/libvpx_test_srcs.gni")
 import("//third_party/nasm/nasm_assemble.gni")
+import("//arkweb/build/config/sanitizers/sanitizers.gni")
 
 # Sets the architecture name for building libvpx.
 if (current_cpu == "x86") {
@@ -347,7 +348,12 @@ if (current_cpu == "arm64" || current_cpu == "arm64e") {
     configs += [ "//build/config/compiler:no_chromium_code" ]
     configs += [ ":libvpx_config" ]
     if (!is_win || is_clang) {
+      if (!enable_cfi_protection) {
       cflags = [ "-march=armv8.2-a+dotprod" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+dotprod" ]
+      }
     }
     if (cpu_arch_full == "arm64") {
       sources = libvpx_srcs_arm64_neon_dotprod
@@ -364,7 +370,12 @@ if (current_cpu == "arm64" || current_cpu == "arm64e") {
     configs += [ "//build/config/compiler:no_chromium_code" ]
     configs += [ ":libvpx_config" ]
     if (!is_win || is_clang) {
+      if (!enable_cfi_protection) {
       cflags = [ "-march=armv8.2-a+i8mm" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+i8mm" ]
+      }
     }
     if (cpu_arch_full == "arm64") {
       sources = libvpx_srcs_arm64_neon_i8mm
@@ -378,13 +389,19 @@ if (current_cpu == "arm64" || current_cpu == "arm64e") {
   # SVE is disabled for Windows due to a limitation with clang-cl-18:
   # third_party\llvm-build\Release+Asserts\lib\clang\18\include\arm_sve.h(271,1):
   # error: cannot mangle this built-in __SVInt8_t type yet
-  if (!is_win) {
+  # FIXME: ARM64 is not supported in ohos
+  if (!is_win && !is_ohos) {
     source_set("libvpx_intrinsics_sve") {
       check_includes = false
       configs -= [ "//build/config/compiler:chromium_code" ]
       configs += [ "//build/config/compiler:no_chromium_code" ]
       configs += [ ":libvpx_config" ]
+      if (!enable_cfi_protection) {
       cflags = [ "-march=armv8.2-a+dotprod+i8mm+sve" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv8.2-a+pauth-hint-only+dotprod+i8mm+sve" ]
+      }
       if (cpu_arch_full == "arm64") {
         sources = libvpx_srcs_arm64_sve
         deps = [ ":libvpx_arm64_headers" ]
@@ -399,7 +416,12 @@ if (current_cpu == "arm64" || current_cpu == "arm64e") {
       configs -= [ "//build/config/compiler:chromium_code" ]
       configs += [ "//build/config/compiler:no_chromium_code" ]
       configs += [ ":libvpx_config" ]
+      if (!enable_cfi_protection) {
       cflags = [ "-march=armv9-a+sve2" ]
+      } else {
+        configs -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+        cflags = [ "-march=armv9-a+pauth-hint-only+sve2" ]
+      }
       if (cpu_arch_full == "arm64") {
         sources = libvpx_srcs_arm64_sve2
         deps = [ ":libvpx_arm64_headers" ]
@@ -591,7 +613,8 @@ static_library("libvpx") {
   if (current_cpu == "arm64" || current_cpu == "arm64e") {
     deps += [ ":libvpx_intrinsics_neon_dotprod" ]
     deps += [ ":libvpx_intrinsics_neon_i8mm" ]
-    if (!is_win) {
+    # FIXME: ARM64 is not supported in ohos
+    if (!is_win && !is_ohos) {
       deps += [
         ":libvpx_intrinsics_sve",
         ":libvpx_intrinsics_sve2",

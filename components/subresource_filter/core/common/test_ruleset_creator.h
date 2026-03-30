@@ -51,6 +51,11 @@ struct TestRulesetPair {
 
   TestRuleset unindexed;
   TestRuleset indexed;
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  TestRuleset unindexedCss;
+  TestRuleset indexedCss;
+#endif
 };
 
 // Helper class to create subresource filtering rulesets for testing.
@@ -107,6 +112,27 @@ class TestRulesetCreator {
   // No file at |path| will be automatically created.
   void GetUniqueTemporaryPath(base::FilePath* path);
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  url_pattern_index::proto::CssRule MakeCssRule(std::string_view suffix,
+                             bool is_allowlist = false);
+  void CreateCssRulesetWithPathSuffix(std::string_view suffix,
+                                   TestRulesetPair* test_ruleset_pair);
+  // Same as above, but only creates an unindexed ruleset.
+  void CreateUnindexedRulesetWithPathSuffix(
+      std::string_view suffix,
+      TestRuleset* test_unindexed_ruleset);
+  void CreateCssRulesetWithSubstrings(std::vector<std::string_view> substrings,
+                                   TestRulesetPair* test_ruleset_pair);
+  void CreateCssRulesetWithManySuffixes(std::string_view suffix,
+                                     int num_of_suffixes,
+                                     TestRulesetPair* test_ruleset_pair);
+  void CreateRulesetWithCssRules(
+      const std::vector<url_pattern_index::proto::CssRule>& rules,
+      TestRulesetPair* test_ruleset_pair);
+  void CreateUnindexedRulesetWithCssRules(
+      const std::vector<url_pattern_index::proto::CssRule>& rules,
+      TestRuleset* test_unindexed_ruleset);
+#endif
  private:
   // Writes the |ruleset_contents| to a temporary file, and initializes
   // |ruleset| to have the same |contents|, and the |path| to this file.

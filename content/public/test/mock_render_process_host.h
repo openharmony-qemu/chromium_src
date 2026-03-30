@@ -163,6 +163,8 @@ class MockRenderProcessHost : public RenderProcessHost {
   std::unique_ptr<base::PersistentMemoryAllocator> TakeMetricsAllocator()
       override;
   const base::TimeTicks& GetLastInitTime() override;
+  base::TimeTicks timeTicksForMock = base::TimeTicks::Now();
+  const base::TimeTicks& ProcessBackgroundTime() override {return timeTicksForMock;}
   base::Process::Priority GetPriority() const override;
   size_t GetWorkerRefCount() const;
   std::string GetKeepAliveDurations() const override;
@@ -312,6 +314,15 @@ class MockRenderProcessHost : public RenderProcessHost {
   int foreground_service_worker_count() const {
     return foreground_service_worker_count_;
   }
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  void UpdateReaderModeConfig(
+      const nweb_ex::BrowserReaderModeConfigData*) override {}
+#endif
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  void UpdateVideoLoadOptimizationConfig(
+      nweb_ex::AlloyVideoLoadOptimizationData&) override {}
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 
  private:
   // Stores IPC messages that would have been sent to the renderer.

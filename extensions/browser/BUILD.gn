@@ -9,6 +9,7 @@ import("//extensions/buildflags/buildflags.gni")
 import("//pdf/features.gni")
 import("//rlz/buildflags/buildflags.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
+import("//arkweb/build/features/features.gni")
 
 if (enable_desktop_android_extensions) {
   import("//build/config/android/rules.gni")
@@ -571,6 +572,16 @@ source_set("browser_sources") {
     "zipfile_installer.h",
   ]
 
+  #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (defined(arkweb_arkweb_extensions) && arkweb_arkweb_extensions) {
+    sources += [
+      "//arkweb/chromium_ext/extensions/browser/extension_registry_info_manager.h",
+      "//arkweb/chromium_ext/extensions/browser/extension_registry_info_manager.cc",
+      "//arkweb/chromium_ext/extensions/browser/ui_util_ext.cc",
+    ]
+  }
+  #endif
+
   deps = [
     "//base",
     "//base:i18n",
@@ -1074,7 +1085,13 @@ source_set("unit_tests") {
     "//third_party/zlib/google:zip",
     "//ui/display:test_support",
   ]
-
+  #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (defined(arkweb_arkweb_extensions) && arkweb_arkweb_extensions) {
+    sources += [
+      #"//arkweb/chromium_ext/extensions/browser/extension_registry_info_manager_unittest.cc",
+    ]
+  }
+  #endif
   # TODO(https://crbug.com/356905053): Gradually include more of these sources
   # in the desktop-android build when the related APIs are enabled.
   if (enable_extensions) {

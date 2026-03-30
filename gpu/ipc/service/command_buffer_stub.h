@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/callback.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/stack_allocated.h"
@@ -136,6 +137,10 @@ class GPU_IPC_SERVICE_EXPORT CommandBufferStub
                                int32_t start,
                                int32_t end,
                                WaitForStateCallback callback);
+
+#if BUILDFLAG(ARKWEB_BUGFIX_CRASH)
+  void WaitForGetOffsetInRangeTimeout();
+#endif
 
   // CommandBufferServiceClient implementation:
   CommandBatchProcessedResult OnCommandBatchProcessed() override;

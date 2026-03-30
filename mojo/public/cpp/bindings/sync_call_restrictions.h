@@ -28,6 +28,9 @@ class AndroidOverlaySyncHelper;
 #if BUILDFLAG(IS_WIN)
 class DCOMPTextureFactory;
 #endif
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+class NativeTextureFactory;
+#endif
 }  // namespace content
 
 namespace gpu {
@@ -38,6 +41,7 @@ class SharedImageInterfaceProxy;
 
 namespace ui {
 class Compositor;
+class CompositorUtils;
 }  // namespace ui
 
 namespace viz {
@@ -122,6 +126,7 @@ class COMPONENT_EXPORT(MOJO_CPP_BINDINGS) SyncCallRestrictions {
   // For preventing frame swaps of wrong size during resize on Windows.
   // (https://crbug.com/811945)
   friend class ui::Compositor;
+  friend class ui::CompositorUtils;
   // For calling sync mojo API to get cdm origin in the ChromeOS GPU process.
   // Migrating to async is non-trivial and has not been prioritized.
   // (http://crbug.com/368792274)
@@ -140,6 +145,9 @@ class COMPONENT_EXPORT(MOJO_CPP_BINDINGS) SyncCallRestrictions {
   friend class gpu::SharedImageInterfaceProxy;
 #if BUILDFLAG(IS_WIN)
   friend class content::DCOMPTextureFactory;
+#endif
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  friend class content::NativeTextureFactory;
 #endif
 #if BUILDFLAG(IS_MAC)
   friend class web_app::WebAppShortcutCopierSyncCallHelper;

@@ -5,6 +5,7 @@
 #include "gpu/vulkan/init/vulkan_factory.h"
 #include "build/build_config.h"
 
+#include "arkweb/build/features/features.h"
 #include <memory>
 #include <ostream>
 
@@ -25,11 +26,18 @@
 #include "gpu/vulkan/mac/vulkan_implementation_mac.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_VULKAN)
+#include "gpu/vulkan/ohos/vulkan_implementation_ohos.h"
+#endif
+
 namespace gpu {
 
 std::unique_ptr<VulkanImplementation> CreateVulkanImplementation(
     bool use_swiftshader,
     bool allow_protected_memory) {
+#if BUILDFLAG(ARKWEB_VULKAN)
+  return std::make_unique<gpu::VulkanImplementationOhos>();
+#else
 #if BUILDFLAG(IS_OZONE)
   return ui::OzonePlatform::GetInstance()
       ->GetSurfaceFactoryOzone()
@@ -56,6 +64,7 @@ std::unique_ptr<VulkanImplementation> CreateVulkanImplementation(
   return std::make_unique<VulkanImplementationMac>(use_swiftshader);
 #else
   NOTREACHED();
+#endif
 #endif
 #endif
 }

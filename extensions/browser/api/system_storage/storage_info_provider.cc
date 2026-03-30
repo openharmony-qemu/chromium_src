@@ -42,8 +42,15 @@ void StorageInfoProvider::InitializeProvider(
   // Register the |do_query_info_callback| callback to StorageMonitor.
   // See the comments of StorageMonitor::EnsureInitialized about when the
   // callback gets run.
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (StorageMonitor::GetInstance()) {
+    StorageMonitor::GetInstance()->EnsureInitialized(
+      std::move(do_query_info_callback));
+ }
+#else
   StorageMonitor::GetInstance()->EnsureInitialized(
       std::move(do_query_info_callback));
+#endif
 }
 
 bool StorageInfoProvider::QueryInfo() {
@@ -54,8 +61,15 @@ bool StorageInfoProvider::QueryInfo() {
 
 void StorageInfoProvider::GetAllStoragesIntoInfoList() {
   info_.clear();
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  std::vector<StorageInfo> storage_list;
+  if (StorageMonitor::GetInstance()) {
+    storage_list = StorageMonitor::GetInstance()->GetAllAvailableStorages();
+  }
+#else
   std::vector<StorageInfo> storage_list =
       StorageMonitor::GetInstance()->GetAllAvailableStorages();
+#endif
 
   for (const auto& info : storage_list) {
     StorageUnitInfo unit;
@@ -66,11 +80,20 @@ void StorageInfoProvider::GetAllStoragesIntoInfoList() {
 
 double StorageInfoProvider::GetStorageFreeSpaceFromTransientIdAsync(
     const std::string& transient_id) {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  std::string device_id;
+  std::vector<StorageInfo> storage_list;
+  if (StorageMonitor::GetInstance()) {
+    storage_list = StorageMonitor::GetInstance()->GetAllAvailableStorages();
+    device_id = StorageMonitor::GetInstance()->GetDeviceIdForTransientId(transient_id);
+  }
+#else
   std::vector<StorageInfo> storage_list =
       StorageMonitor::GetInstance()->GetAllAvailableStorages();
 
   std::string device_id =
       StorageMonitor::GetInstance()->GetDeviceIdForTransientId(transient_id);
+#endif
 
   // Lookup the matched storage info by |device_id|.
   for (const auto& info : storage_list) {

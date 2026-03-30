@@ -257,7 +257,11 @@ void Location::reload() {
   // local.
   To<LocalDOMWindow>(dom_window_.Get())
       ->GetFrame()
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+      ->Reload(WebFrameLoadType::kReload, /*is_triggered_by_js=*/true);
+#else
       ->Reload(WebFrameLoadType::kReload);
+#endif
 }
 
 void Location::SetLocation(const String& url,

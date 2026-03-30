@@ -8,6 +8,8 @@
 #include "build/build_config.h"
 #include "ui/gfx/mojom/native_handle_types.mojom-shared.h"
 
+#include "arkweb/build/features/features.h"
+
 namespace mojo {
 
 // static

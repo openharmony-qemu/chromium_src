@@ -13,6 +13,7 @@
 #include <arm_neon.h>
 #endif
 
+#include "arkweb/build/features/features.h"
 #include "base/compiler_specific.h"
 #include "base/containers/span.h"
 #include "build/build_config.h"
@@ -43,6 +44,9 @@
 #include "third_party/blink/renderer/platform/runtime_enabled_features.h"
 #include "third_party/blink/renderer/platform/wtf/text/character_visitor.h"
 #include "third_party/blink/renderer/platform/wtf/text/string_to_number.h"
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+  #include "arkweb/chromium_ext/third_party/blink/renderer/core/css/css_utils.h"
+#endif
 
 namespace blink {
 
@@ -1425,6 +1429,13 @@ bool CSSParserFastPaths::IsValidKeywordPropertyAndValue(
              value_id == CSSValueID::kOptimizelegibility ||
              value_id == CSSValueID::kGeometricprecision;
     case CSSPropertyID::kTextTransform:
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+      if (Cssutils::IsMathFormulaDisabledMode()) {
+        return (value_id >= CSSValueID::kCapitalize &&
+                value_id <= CSSValueID::kLowercase) ||
+               value_id == CSSValueID::kNone;
+      }
+#endif
       return value_id == CSSValueID::kCapitalize ||
              value_id == CSSValueID::kUppercase ||
              value_id == CSSValueID::kLowercase ||

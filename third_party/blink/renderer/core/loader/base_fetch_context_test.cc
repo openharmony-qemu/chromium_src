@@ -32,6 +32,7 @@
 
 #include <optional>
 
+#include "arkweb/build/features/features.h"
 #include "base/test/scoped_command_line.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
@@ -119,6 +120,10 @@ class MockBaseFetchContext final : public BaseFetchContext {
   ExecutionContext* GetExecutionContext() const override {
     return execution_context_.Get();
   }
+
+#if BUILDFLAG(ARKWEB_UNITTESTS) && BUILDFLAG(ARKWEB_ADBLOCK)
+  SubresourceFilter* GetUserSubresourceFilter() const override{};
+#endif
 
  private:
   Member<ExecutionContext> execution_context_;

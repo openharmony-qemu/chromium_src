@@ -39,12 +39,16 @@ bool RectIntersectsCircle(const gfx::RectF& rect,
   DCHECK_GT(circle_radius, 0.f);
   // An intersection occurs if the closest point between the rect and the
   // circle's center is less than the circle's radius.
+#if BUILDFLAG(ARKWEB_MENU)
+  return rect.Contains(circle_center);
+#else
   gfx::PointF closest_point_in_rect(circle_center);
   closest_point_in_rect.SetToMax(rect.origin());
   closest_point_in_rect.SetToMin(rect.bottom_right());
 
   gfx::Vector2dF distance = circle_center - closest_point_in_rect;
   return distance.LengthSquared() < (circle_radius * circle_radius);
+#endif
 }
 
 }  // namespace
@@ -134,7 +138,10 @@ void TouchHandle::SetFocus(const gfx::PointF& top, const gfx::PointF& bottom) {
   DCHECK(enabled_);
   if (focus_top_ == top && focus_bottom_ == bottom)
     return;
-
+#if BUILDFLAG(ARKWEB_MENU)
+  if (AsTouchHandleExt()->SetFocus(top, bottom))
+    return;
+#endif
   focus_top_ = top;
   focus_bottom_ = bottom;
   SetUpdateLayoutRequired();
@@ -181,17 +188,30 @@ bool TouchHandle::WillHandleTouchEvent(const MotionEvent& event) {
                      kMaxTouchMajorForHitTesting) *
           0.5f;
       const gfx::RectF drawable_bounds = drawable_->GetVisibleBounds();
+#if BUILDFLAG(ARKWEB_MENU)
+      is_show_handle_ = client_ && client_->IsShowHandle();
+#endif
       // Only use the touch radius for targeting if the touch is at or below
       // the drawable area. This makes it easier to interact with the line of
       // text above the drawable.
       if (touch_point.y() < drawable_bounds.y() ||
+#if BUILDFLAG(ARKWEB_MENU)
+          !RectIntersectsCircle(drawable_bounds, touch_point, touch_radius) ||
+          !(event.FromOverlay() || !is_show_handle_) || (continuous_touch_nums_ > 1)) {
+#else
           !RectIntersectsCircle(drawable_bounds, touch_point, touch_radius)) {
+#endif  // #if BUILDFLAG(ARKWEB_MENU)
         EndDrag();
         return false;
       }
       touch_down_position_ = touch_point;
       touch_drag_offset_ = focus_bottom_ - touch_down_position_;
       touch_down_time_ = event.GetEventTime();
+#if BUILDFLAG(ARKWEB_MENU)
+      if (orientation_ == TouchHandleOrientation::LEFT) {
+        touch_drag_offset_ = focus_top_ - touch_down_position_;
+      }
+#endif // BUILDFLAG(ARKWEB_MENU)
       BeginDrag();
     } break;
 
@@ -200,9 +220,13 @@ bool TouchHandle::WillHandleTouchEvent(const MotionEvent& event) {
       is_drag_within_tap_region_ &=
           client_->IsWithinTapSlop(touch_down_position_ - touch_move_position);
 
+#if BUILDFLAG(ARKWEB_MENU)
+      client_->OnDragUpdate(*this, touch_move_position);
+#else
       // Note that we signal drag update even if we're inside the tap region,
       // as there are cases where characters are narrower than the slop length.
       client_->OnDragUpdate(*this, touch_move_position + touch_drag_offset_);
+#endif // BUILDFLAG(ARKWEB_MENU)
     } break;
 
     case MotionEvent::Action::UP: {
@@ -306,6 +330,9 @@ void TouchHandle::UpdateHandleLayout() {
   }
 
   drawable_->SetOrientation(orientation_, mirror_vertical_, mirror_horizontal_);
+#if BUILDFLAG(ARKWEB_MENU)
+  drawable_->SetEdge(focus_top_, focus_bottom_);
+#endif
   drawable_->SetOrigin(ComputeHandleOrigin());
 }
 
@@ -331,10 +358,17 @@ gfx::PointF TouchHandle::ComputeHandleOrigin() const {
   int focal_offset_y = mirror_vertical_ ? drawable_bounds.height() : 0;
   switch (orientation_) {
     case TouchHandleOrientation::LEFT:
+#if BUILDFLAG(ARKWEB_MENU)
+      focal_offset_x =
+          mirror_horizontal_
+              ? drawable_width * (1.0f - handle_horizontal_padding_)
+              : drawable_width * handle_horizontal_padding_;
+#else
       focal_offset_x =
           mirror_horizontal_
               ? drawable_width * handle_horizontal_padding_
               : drawable_width * (1.0f - handle_horizontal_padding_);
+#endif
       break;
     case TouchHandleOrientation::RIGHT:
       focal_offset_x =
@@ -343,7 +377,14 @@ gfx::PointF TouchHandle::ComputeHandleOrigin() const {
               : drawable_width * handle_horizontal_padding_;
       break;
     case TouchHandleOrientation::CENTER:
+#if BUILDFLAG(ARKWEB_MENU)
+      focal_offset_x =
+          mirror_horizontal_
+              ? drawable_width * (1.0f - handle_horizontal_padding_)
+              : drawable_width * handle_horizontal_padding_;
+#else
       focal_offset_x = drawable_width * 0.5f;
+#endif
       break;
     case TouchHandleOrientation::UNDEFINED:
       NOTREACHED() << "Invalid touch handle orientation.";

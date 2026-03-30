@@ -378,6 +378,10 @@
 #include "chrome/browser/ui/views/frame/webui_tab_strip_container_view.h"
 #endif  // BUILDFLAG(ENABLE_WEBUI_TAB_STRIP)
 
+#if BUILDFLAG(IS_OHOS)
+#include "ui/base/layout.h"
+#endif
+
 using base::UserMetricsAction;
 using content::WebContents;
 using input::NativeWebKeyboardEvent;
@@ -397,6 +401,11 @@ constexpr char kTabLoadingSmoothnessHistogramName[] =
 void RecordTabLoadingSmoothness(int smoothness) {
   UMA_HISTOGRAM_PERCENTAGE(kTabLoadingSmoothnessHistogramName, smoothness);
 }
+#endif
+
+#if BUILDFLAG(IS_OHOS)
+// Width of the window control button in the upper right corner
+const int kWindowControlButtonsWidth = 100;
 #endif
 
 // See SetDisableRevealerDelayForTesting().
@@ -5884,11 +5893,14 @@ void BrowserView::ProcessFullscreen(bool fullscreen, const int64_t display_id) {
   // TODO(b/40276379): Move this out from ProcessFullscreen.
   RequestFullscreen(fullscreen, display_id);
 
-#if !BUILDFLAG(IS_MAC)
+#if !BUILDFLAG(IS_MAC) && !BUILDFLAG(IS_OHOS)
   // On Mac platforms, FullscreenStateChanged() is invoked from
   // BrowserNativeWidgetMac::OnWindowFullscreenTransitionComplete when the
   // asynchronous fullscreen transition is complete. On other platforms, there
   // is no asynchronous transition so we synchronously invoke the function.
+  // On Ohos,FullscreenStateChanged() is invoked from
+  // BrowserDesktopWindowTreeHostOhos::OnFullscreenModeChanged when the
+  // fullscreen state is updated after.
   FullscreenStateChanged();
 #endif
 

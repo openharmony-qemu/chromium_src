@@ -40,6 +40,8 @@
 #include "net/shared_dictionary/shared_dictionary_isolation_key.h"
 #include "net/ssl/ssl_private_key.h"
 
+#include "arkweb/chromium_ext/net/shared_dictionary/shared_dictionary_network_transaction_for_include.cc"
+
 namespace net {
 
 namespace {
@@ -279,6 +281,16 @@ void SharedDictionaryNetworkTransaction::OnReadSharedDictionary(
     }
   }
 }
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+int SharedDictionaryNetworkTransaction::RestartWithSecureDnsOnly(
+    CompletionOnceCallback callback) {
+  shared_dictionary_used_response_info_.reset();
+  return network_transaction_->RestartWithSecureDnsOnly(
+      base::BindOnce(&SharedDictionaryNetworkTransaction::OnStartCompleted,
+                     base::Unretained(this), std::move(callback)));
+}
+#endif
 
 int SharedDictionaryNetworkTransaction::RestartIgnoringLastError(
     CompletionOnceCallback callback) {

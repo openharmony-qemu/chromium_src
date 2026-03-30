@@ -103,6 +103,12 @@ bool CheckSecurityForAccessingCodeCacheData(const GURL& resource_url,
     return true;
   }
 
+#if BUILDFLAG(IS_OHOS)
+  if (resource_url.SchemeIsCodeCacheEnabled()) {
+    return true;
+  }
+#endif
+
   if (operation == Operation::kWrite) {
     mojo::ReportBadMessage("Invalid URL scheme for code cache.");
   }

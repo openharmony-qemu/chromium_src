@@ -119,6 +119,7 @@
 /qemu-linux-arm64
 /qemu-linux-x64
 /qemu-mac-x64
+/readability
 /rust-src
 /rust-toolchain-intermediate
 /rust-toolchain/
@@ -146,6 +147,7 @@
 /syzygy
 /syzygy/binaries
 /tint/src
+/usb_ids
 /v8-i18n
 /vulkan-headers/src
 /vulkan-loader/src

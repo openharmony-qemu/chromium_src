@@ -31,6 +31,7 @@
 #include "third_party/perfetto/include/perfetto/tracing/track.h"
 #include "url/gurl.h"
 #include "url/origin.h"
+#include "arkweb/build/features/features.h"
 
 namespace performance_manager {
 
@@ -93,6 +94,9 @@ class FrameNodeImpl
       mojom::WebMemoryMeasurement::Mode mode,
       OnWebMemoryMeasurementRequestedCallback callback) override;
   void OnFreezingOriginTrialOptOut() override;
+#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
+  void OnFormEditingStateChanged(uint64_t form_id, bool did_submit) override;
+#endif
 
   // Partial FrameNode implementation:
   const blink::LocalFrameToken& GetFrameToken() const override;

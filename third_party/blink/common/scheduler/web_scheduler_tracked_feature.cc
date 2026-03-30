@@ -147,6 +147,12 @@ FeatureNames FeatureToNames(WebSchedulerTrackedFeature feature) {
               "page contains unload handler"};
     case WebSchedulerTrackedFeature::kParserAborted:
       return {"parser-aborted", "parser was aborted"};
+#if BUILDFLAG(ARKWEB_BFCACHE)
+    case WebSchedulerTrackedFeature::kEnableCacheNativeEmbed:
+      return {"EnableCacheNativeEmbed", "enable native embed to bfcache"};
+    case WebSchedulerTrackedFeature::kEnableCacheMediaTakeOver:
+      return {"EnableCacheMediaTakeOver", "enable media take over to bfcache"};
+#endif
     case WebSchedulerTrackedFeature::kWebBluetooth:
       return {"webbluetooth", "Active Bluetooth connection"};
     case WebSchedulerTrackedFeature::kWebAuthentication:
@@ -243,7 +249,13 @@ WebSchedulerTrackedFeatures StickyFeatures() {
           WebSchedulerTrackedFeature::kWebRTCSticky,
           WebSchedulerTrackedFeature::kWebSocketSticky,
           WebSchedulerTrackedFeature::kWebTransportSticky,
-          WebSchedulerTrackedFeature::kParserAborted};
+          WebSchedulerTrackedFeature::kParserAborted
+#if BUILDFLAG(ARKWEB_BFCACHE)
+          ,
+          WebSchedulerTrackedFeature::kEnableCacheNativeEmbed,
+          WebSchedulerTrackedFeature::kEnableCacheMediaTakeOver
+#endif
+  };
 }
 
 // static

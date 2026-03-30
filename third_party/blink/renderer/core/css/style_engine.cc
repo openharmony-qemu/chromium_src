@@ -2669,6 +2669,18 @@ void StyleEngine::EnsureUAStyleForForcedColors() {
   }
 }
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+void StyleEngine::EnsureUAStyleForMediaElement() {
+  LOG(INFO) << "StyleEngine, EnsureUAStyleForMediaElement start";
+  if (CSSDefaultStyleSheets::Instance().EnsureDefaultStyleSheetsForMediaElement()) {
+    global_rule_set_->MarkDirty();
+    if (GetDocument().IsActive()) {
+      UpdateActiveStyle();
+    }
+  }
+}
+#endif
+
 RuleSet* StyleEngine::DefaultViewTransitionStyle(const Element& element) const {
   auto* transition = ViewTransitionUtils::GetTransition(element);
   if (!transition) {

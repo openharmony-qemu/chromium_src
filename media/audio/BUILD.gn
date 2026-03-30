@@ -6,6 +6,12 @@ import("//build/config/linux/pkg_config.gni")
 import("//media/media_options.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
 import("//tools/generate_stubs/rules.gni")
+import("//arkweb/build/features/features.gni")
+
+if (is_arkweb) {
+  import("//build/config/ohos/config.gni")
+  import("//arkweb/build/features/features.gni")
+}
 
 # When libpulse is not directly linked, use stubs to allow for dlopening of the
 # binary.
@@ -294,6 +300,18 @@ source_set("audio") {
   if (is_linux || is_chromeos) {
     sources += [ "linux/audio_manager_linux.cc" ]
   }
+  if (arkweb_media_audio) {
+    import("//arkweb/chromium_ext/media/audio/ohos/arkweb_media_audio_ohos_ext.gni")
+    sources += arkweb_media_audio_ohos_sources
+    libs += [
+      "ohaudio",
+    ]
+  }
+
+  if (is_ohos) {
+    deps += [ "//ohos_glue:ohos_adapter_glue_source",
+    ]
+  }
 
   if (use_alsa) {
     libs += [ "asound" ]
@@ -366,6 +384,10 @@ source_set("audio") {
       "//third_party/fuchsia-sdk/sdk/fidl/fuchsia.media:fuchsia.media_hlcpp",
       "//third_party/fuchsia-sdk/sdk/pkg/sys_cpp",
     ]
+  }
+
+  if (enable_arkweb) {
+    deps += [ "//arkweb/build/features" ]
   }
 }
 
@@ -470,6 +492,24 @@ source_set("unit_tests") {
     "//url",
   ]
 
+  if (arkweb_media_audio) {
+    import("//arkweb/chromium_ext/chromium_ext.gni")
+    include_dirs = ohos_src_includes
+    sources += [
+      "//arkweb/ohos_nweb/src/sysevent/event_reporter.cc",
+      "//arkweb/ohos_nweb/src/sysevent/event_reporter.h",
+    ]
+    sources += arkweb_content_renderer_sources
+    import("//arkweb/chromium_ext/content/renderer/media/ohos/arkweb_content_renderer_media_ohos.gni")
+    sources += arkweb_content_renderer_media_ohos_unittests_sources
+  
+    deps += [
+      "//content/public/browser:browser",
+      "//cef:libcef_static",
+      "//gpu/ipc/common:test_support"
+    ]
+  }
+
   configs += [
     ":platform_config",
     "//media:media_config",
@@ -558,6 +598,15 @@ source_set("unit_tests") {
       "alsa/alsa_util_unittest.cc",
       "audio_low_latency_input_output_unittest.cc",
     ]
+  }
+
+  if (enable_arkweb) {
+    deps += [ "//arkweb/build/features" ]
+  }
+
+  if (arkweb_unittests) {
+    import("//arkweb/chromium_ext/chromium_ext.gni")
+    sources += arkweb_media_audio_unittest_sources
   }
 
   # TODO(crbug.com/40031409): Fix code that adds exit-time destructors and

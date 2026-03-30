@@ -2035,11 +2035,12 @@
         "default": "test",
       },
     },
+    // ARKWEB_PIP not support DocumentPictureInPictureAPI yet.
     {
       name: "DocumentPictureInPictureAPI",
       status: {
         "Android": "",
-        "default": "stable",
+        "default": "test",
       },
     },
     // Enables `preferInitialWindowPlacement` Document PiP option to skip
@@ -3011,7 +3012,8 @@
       name: "InputMultipleFieldsUI",
       // No plan to support complex UI for date/time INPUT types on Android and
       // iOS.
-      status: {"Android": "test", "iOS": "test", "default": "stable"},
+      // status: {"Android": "test", "iOS": "test", "default": "stable"},
+      status: "stable",
     },
     // Insert a blockquote before a outer block after creating the blockquote
     // when indenting a node whose outer block is a blockquote. See
@@ -3254,6 +3256,11 @@
       status: "stable",
     },
     {
+      name: "NonAdvancedSecurityMode",
+      status: "stable",
+      base_feature: "none",
+    },
+    {
       name: "ManualText",
       public: true,
       status: "test",
@@ -3406,7 +3413,7 @@
     // "experimental" is the support on other platforms.
     {
       name: "MiddleClickAutoscroll",
-      status: "test",
+      status: "stable",
     },
     // Killswitch for crbug.com/40062462 fix.
     {
@@ -3501,11 +3508,11 @@
     {
       name: "NetInfoDownlinkMax",
       public: true,
-      // Only Android, ChromeOS support NetInfo downlinkMax, type and ontypechange now
+      // Only Android, ChromeOS support NetInfo downlinkMax, type and ontypechange now,add ohos
       status: {
         "Android": "stable",
         "ChromeOS": "stable",
-        "default": "experimental",
+        "default": "stable",
       },
       base_feature: "none",
     },
@@ -3599,7 +3606,9 @@
     },
     {
       name: "OrientationEvent",
-      status: {"Android": "stable"},
+      // BUILDFLAG(ARKWEB_WPT)
+      // status: {"Android": "stable"},
+      status: "stable",
     },
     {
       name: "OriginAPI",
@@ -3800,9 +3809,11 @@
       name: "PartialCompletionNotAllowedInMoveParagraphs",
       status: "stable",
     },
+    // Changed ArkWeb from stable to experimental instead of following the community change, 
+    // to resolve the issue where the link is not marked as visited.
     {
       name: "PartitionVisitedLinkDatabaseWithSelfLinks",
-      status: {"iOS": "", "default": "stable"},
+      status: {"iOS": "", "default": "experimental"},
     },
     // This is to add an option to enable the Reveal button on password inputs while waiting ::reveal gets standardized.
     {
@@ -4214,7 +4225,7 @@
         "Win": "stable",
         "Mac": "stable",
         "Linux": "stable",
-        "default": "experimental"},
+        "default": "stable"}, // arkweb_media_cast need RemotePlaybackBackend
     },
     {
       // This feature acts as a kill switch for ISO-2022-JP auto-detection.
@@ -4456,12 +4467,14 @@
     {
       name: "ScriptedSpeechRecognition",
       public: true,
+      depends_on: ["NonAdvancedSecurityMode"],
       status: "stable",
       base_feature: "none",
     },
     {
       name: "ScriptedSpeechSynthesis",
       public: true,
+      depends_on: ["NonAdvancedSecurityMode"],
       status: "stable",
       base_feature: "none",
     },
@@ -4674,6 +4687,11 @@
       public: true,
       status: "stable",
       base_feature: "none",
+    },
+    {
+      // arkweb set this feature not enabled
+      name: "SendMouseEventsDisabledFormControls",
+      public: true,
     },
     {
       name: "SensorExtraClasses",
@@ -5530,6 +5548,10 @@
       public: true,
     },
     {
+      name: "VideoAspectRatioNaturalDimension",
+      status: "experimental",
+    },
+    {
       // Whether a video element should automatically play fullscreen unless
       // 'playsinline' is set.
       name: "VideoAutoFullscreen",
@@ -6138,6 +6160,12 @@
       // If enabled, the `getDisplayMedia()` family of APIs will ask for NV12
       // frames, which should trigger a zero-copy path in the tab capture code.
       name: "ZeroCopyTabCapture",
-    }
+    },
+    {
+      // js API `window.arkWeb.scrollbarAvoidAreaTop` and `window.arkWeb.scrollbarAvoidAreaBottom`
+      // for setting the margin of vertical scrollbar avoid area in browser
+      name:  "ArkWeb",
+      status: "experimental",
+    },
   ],
 }

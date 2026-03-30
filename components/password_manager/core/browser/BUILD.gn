@@ -11,6 +11,10 @@ if (is_android) {
   import("//build/config/android/config.gni")
 }
 
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
+
 config("password_reuse_detection_config") {
   defines = []
   if (!is_ios) {
@@ -170,6 +174,9 @@ static_library("browser") {
   all_dependent_configs = [ ":password_reuse_detection_config" ]
   configs += [ "//build/config/compiler:wexit_time_destructors" ]
 
+  if (arkweb_autofill) {
+    sources += arkweb_components_password_manager_core_browser_sources
+  }
   public_deps = [
     ":metrics_util",
     ":passkey_credential",
@@ -546,7 +553,7 @@ source_set("unit_tests") {
     sources += [ "http_credentials_cleaner_unittest.cc" ]
   }
 
-  if (is_win || is_mac || is_linux || is_chromeos) {
+  if (is_win || is_mac || is_linux || is_chromeos || is_ohos) {
     sources += [ "hash_password_manager_unittest.cc" ]
   }
 

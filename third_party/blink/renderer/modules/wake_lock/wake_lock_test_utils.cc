@@ -256,6 +256,15 @@ void MockPermissionService::RequestPermission(
       mojom::blink::PermissionStatus::DENIED));
 }
 
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+void MockPermissionService::RequestPermissionSync(
+    PermissionDescriptorPtr permission,
+    bool user_gesture,
+    RequestPermissionCallback callback) {
+  RequestPermission(std::move(permission), user_gesture, std::move(callback));
+}
+#endif  // ARKWEB_CLIPBOARD
+
 void MockPermissionService::RequestPermissions(
     Vector<PermissionDescriptorPtr> permissions,
     bool user_gesture,

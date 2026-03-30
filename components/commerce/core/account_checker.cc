@@ -4,6 +4,7 @@
 
 #include "components/commerce/core/account_checker.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/json/json_reader.h"
 #include "base/json/json_writer.h"
 #include "base/time/time.h"
@@ -41,7 +42,11 @@ const char kPreferencesKey[] = "preferences";
 namespace commerce {
 
 const char kNotificationsPrefUrl[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://x.x.x";
+#else
     "https://memex-pa.googleapis.com/v1/notifications/preferences";
+#endif
 
 AccountChecker::AccountChecker(
     std::string country,
@@ -150,6 +155,9 @@ PrefService* AccountChecker::GetPrefs() {
 }
 
 void AccountChecker::FetchPriceEmailPref() {
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+  return;
+#else
   if (!IsSignedIn()) {
     return;
   }
@@ -193,6 +201,7 @@ void AccountChecker::FetchPriceEmailPref() {
   endpoint_fetcher.get()->Fetch(base::BindOnce(
       &AccountChecker::HandleFetchPriceEmailPrefResponse,
       weak_ptr_factory_.GetWeakPtr(), std::move(endpoint_fetcher)));
+#endif
 }
 
 void AccountChecker::HandleFetchPriceEmailPrefResponse(
@@ -232,6 +241,9 @@ void AccountChecker::OnPriceEmailPrefChanged() {
     return;
   }
 
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+  return;
+#else
   if (!IsSignedIn() || !pref_service_) {
     return;
   }
@@ -281,6 +293,7 @@ void AccountChecker::OnPriceEmailPrefChanged() {
   endpoint_fetcher.get()->Fetch(base::BindOnce(
       &AccountChecker::HandleSendPriceEmailPrefResponse,
       weak_ptr_factory_.GetWeakPtr(), std::move(endpoint_fetcher)));
+#endif
 }
 
 void AccountChecker::HandleSendPriceEmailPrefResponse(

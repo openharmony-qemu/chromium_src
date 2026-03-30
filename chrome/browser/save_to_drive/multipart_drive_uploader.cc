@@ -33,8 +33,13 @@ using extensions::api::pdf_viewer_private::SaveToDriveStatus;
 
 constexpr char kContentTypeKey[] = "Content-Type";
 constexpr char kDataContentType[] = "Content-Type: application/octet-stream";
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+constexpr char kDriveUploadUrl[] =
+    "https://x.x.x.x";
+#else
 constexpr char kDriveUploadUrl[] =
     "https://www.googleapis.com/upload/drive/v3beta/files";
+#endif
 constexpr char kMetadataContentType[] =
     "Content-Type: application/json; charset=UTF-8";
 constexpr char kMultiPartUploadType[] = "multipart";

@@ -205,7 +205,7 @@ void GamepadProvider::Initialize(std::unique_ptr<GamepadDataFetcher> fetcher) {
   // On Linux, the data fetcher needs to watch file descriptors, so the message
   // loop needs to be a libevent loop.
   const base::MessagePumpType kMessageLoopType = base::MessagePumpType::IO;
-#elif BUILDFLAG(IS_ANDROID)
+#elif BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
   // On Android, keeping a message loop of default type.
   const base::MessagePumpType kMessageLoopType = base::MessagePumpType::DEFAULT;
 #else

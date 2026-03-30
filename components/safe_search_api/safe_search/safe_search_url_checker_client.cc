@@ -8,6 +8,7 @@
 #include <string>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/callback.h"
 #include "base/json/json_reader.h"
 #include "base/metrics/histogram_functions.h"
@@ -28,7 +29,11 @@ namespace safe_search_api {
 namespace {
 
 const char kSafeSearchApiUrl[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://xxx";
+#else
     "https://safesearch.googleapis.com/v1:classify";
+#endif
 const char kDataContentType[] = "application/x-www-form-urlencoded";
 const char kDataFormat[] = "key=%s&urls=%s";
 

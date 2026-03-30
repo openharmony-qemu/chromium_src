@@ -5,6 +5,10 @@
 #ifndef THIRD_PARTY_BLINK_RENDERER_PLATFORM_WIDGET_INPUT_FRAME_WIDGET_INPUT_HANDLER_IMPL_H_
 #define THIRD_PARTY_BLINK_RENDERER_PLATFORM_WIDGET_INPUT_FRAME_WIDGET_INPUT_HANDLER_IMPL_H_
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "third_party/blink/public/mojom/input/input_handler.mojom-blink.h"
 #include "third_party/blink/public/mojom/input/stylus_writing_gesture.mojom-blink.h"
 #include "third_party/blink/renderer/platform/platform_export.h"
@@ -87,6 +91,9 @@ class PLATFORM_EXPORT FrameWidgetInputHandlerImpl
   void SelectAll() override;
   void CollapseSelection() override;
   void SelectRange(const gfx::Point& base, const gfx::Point& extent) override;
+#if BUILDFLAG(ARKWEB_MENU)
+  void SelectRangeV2(const gfx::Point& position, bool is_base) override;
+#endif
   void SelectAroundCaret(mojom::blink::SelectionGranularity granularity,
                          bool should_show_handle,
                          bool should_show_context_menu,
@@ -100,6 +107,14 @@ class PLATFORM_EXPORT FrameWidgetInputHandlerImpl
   void WaitForPageScaleAnimationForTesting(
       WaitForPageScaleAnimationForTestingCallback callback) override;
   void MoveCaret(const gfx::Point& point) override;
+
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+  void ShowFreeCopyMenu() override;
+#endif
+
+#if BUILDFLAG(ARKWEB_AI)
+  void OnDataDetectorSelectText() override;
+#endif  // BUILDFLAG(ARKWEB_AI)
 
 #if BUILDFLAG(IS_IOS)
   void StartAutoscrollForSelectionToPoint(const gfx::PointF& point) override;

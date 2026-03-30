@@ -20,6 +20,9 @@ LongPressDragSelector::LongPressDragSelector(
     : client_(client),
       state_(INACTIVE),
       has_longpress_drag_start_anchor_(false) {
+#if BUILDFLAG(IS_ARKWEB)
+  utils_ = std::make_unique<LongPressDragSelectorUtils>(this);
+#endif
 }
 
 LongPressDragSelector::~LongPressDragSelector() {
@@ -37,6 +40,9 @@ bool LongPressDragSelector::WillHandleTouchEvent(const MotionEvent& event) {
     case MotionEvent::Action::UP:
     case MotionEvent::Action::CANCEL:
       SetState(INACTIVE);
+#if BUILDFLAG(ARKWEB_MENU)
+      client_->UpdateSelectionChanged(*this);
+#endif
       return false;
 
     case MotionEvent::Action::MOVE:
@@ -52,6 +58,9 @@ bool LongPressDragSelector::WillHandleTouchEvent(const MotionEvent& event) {
   gfx::PointF position(event.GetX(), event.GetY());
   if (state_ == DRAGGING) {
     gfx::PointF drag_position = position + longpress_drag_selection_offset_;
+#if BUILDFLAG(ARKWEB_MENU)
+    drag_position = position;
+#endif
     client_->OnDragUpdate(*this, drag_position);
     return true;
   }
@@ -63,6 +72,11 @@ bool LongPressDragSelector::WillHandleTouchEvent(const MotionEvent& event) {
     longpress_drag_start_anchor_ = position;
     return true;
   }
+#if BUILDFLAG(ARKWEB_MENU)
+  if (utils_ && utils_->PositionInSelection(position, client_->GetSelectionTop(), client_->GetSelectionEnd())) {
+    return true;
+  }
+#endif
 
   // Allow an additional slop affordance after the longpress occurs.
   gfx::Vector2dF delta = position - longpress_drag_start_anchor_;

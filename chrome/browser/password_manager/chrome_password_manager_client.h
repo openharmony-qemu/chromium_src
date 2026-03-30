@@ -107,9 +107,17 @@ class WebAuthnCredManDelegate;
 #endif  // BUILDFLAG(IS_ANDROID)
 }  // namespace webauthn
 
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+class ChromePasswordManagerClientExt;
+#endif
+
 // ChromePasswordManagerClient implements the PasswordManagerClient interface.
 class ChromePasswordManagerClient
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+    : public password_manager::PasswordManagerClientExt,
+#else
     : public password_manager::PasswordManagerClient,
+#endif
       public content::WebContentsObserver,
       public content::WebContentsUserData<ChromePasswordManagerClient>,
       public autofill::mojom::PasswordGenerationDriver,
@@ -135,6 +143,11 @@ class ChromePasswordManagerClient
       delete;
 
   ~ChromePasswordManagerClient() override;
+
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  friend class ChromePasswordManagerClientExt;
+  virtual ChromePasswordManagerClientExt* AsChromePasswordManagerClientExt() { return nullptr; }
+#endif
 
   // PasswordManagerClient implementation.
   bool IsSavingAndFillingEnabled(const GURL& url) const override;
@@ -622,5 +635,8 @@ class ChromePasswordManagerClient
 
   WEB_CONTENTS_USER_DATA_KEY_DECL();
 };
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+#include "arkweb/chromium_ext/chrome/browser/password_manager/chrome_password_manager_client_ext.h"
+#endif
 
 #endif  // CHROME_BROWSER_PASSWORD_MANAGER_CHROME_PASSWORD_MANAGER_CLIENT_H_

@@ -316,7 +316,16 @@ bool UnpackedInstaller::IsLoadingUnpackedAllowed() const {
 }
 
 void UnpackedInstaller::GetAbsolutePathOnFileThread() {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  base::FilePath temp = base::MakeAbsoluteFilePath(extension_path_);
+  if (temp.empty()) {
+    LOG(ERROR) << "GetAbsolutePath error";
+  } else {
+    extension_path_ = temp;
+  }
+#else
   extension_path_ = base::MakeAbsoluteFilePath(extension_path_);
+#endif
 
   // Set priority explicitly to avoid unwanted task priority inheritance.
   content::GetUIThreadTaskRunner({base::TaskPriority::USER_BLOCKING})

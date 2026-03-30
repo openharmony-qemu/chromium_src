@@ -2,6 +2,9 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//arkweb/build/features/features.gni")
+import("//arkweb/chromium_ext/chromium_ext.gni")
+
 static_library("renderer") {
   sources = [
     "subresource_filter_agent.cc",
@@ -31,6 +34,12 @@ static_library("renderer") {
     "//third_party/blink/public:blink_headers",
     "//third_party/blink/public/common",
   ]
+
+  #if BUILDFLAG(ARKWEB_ADBLOCK)
+  if (defined(arkweb_adblock) && arkweb_adblock) {
+    sources += arkweb_components_subresource_filter_content_renderer_sources
+    deps += [ "//components/subresource_filter/core/browser" ]
+  }  #endif  // BUILDFLAG(ARKWEB_ADBLOCK)
 }
 
 source_set("unit_tests") {
@@ -50,5 +59,9 @@ source_set("unit_tests") {
   ]
   if (is_ios) {
     deps += [ "//components/test:subresource_filter_test_bundle_data" ]
+  }
+  if (defined(arkweb_adblock) && arkweb_adblock) {
+    sources += arkweb_components_subresource_filter_content_renderer_unittest_sources
+    deps += [ "//components/subresource_filter/core/browser" ]
   }
 }

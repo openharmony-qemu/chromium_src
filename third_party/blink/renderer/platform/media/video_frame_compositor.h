@@ -73,6 +73,8 @@ class PLATFORM_EXPORT VideoFrameCompositor : public media::VideoRendererSink,
 
   using OnNewFramePresentedCB = base::OnceClosure;
 
+  using FinishPaintCallback = base::RepeatingClosure;
+
   enum UpdateType {
     kNormal,
     kBypassClient,  // Disregards whether |client| is driving frame updates, and
@@ -126,6 +128,10 @@ class PLATFORM_EXPORT VideoFrameCompositor : public media::VideoRendererSink,
   void PaintSingleFrame(scoped_refptr<media::VideoFrame> frame,
                         bool repaint_duplicate_frame = false) override;
 
+#if BUILDFLAG(ARKWEB_MEDIA)
+  void SetFinishPaintCallback(FinishPaintCallback callback) override;
+#endif
+
   // If |client_| is not set, |callback_| is set, and |is_background_rendering_|
   // is true, it requests a new frame from |callback_|. Uses the elapsed time
   // between calls to this function as the render interval, defaulting to 16.6ms
@@ -159,6 +165,11 @@ class PLATFORM_EXPORT VideoFrameCompositor : public media::VideoRendererSink,
   // Notifies the |submitter_| that the frames must be submitted.
   void SetForceSubmit(bool force_submit);
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+  void SetStartTime(int64_t start_time);
+  int64_t GetFreezeTime();
+#endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+
   void set_tick_clock_for_testing(const base::TickClock* tick_clock) {
     tick_clock_ = tick_clock;
   }
@@ -175,6 +186,18 @@ class PLATFORM_EXPORT VideoFrameCompositor : public media::VideoRendererSink,
       std::unique_ptr<WebVideoFrameSubmitter> submitter) {
     submitter_ = std::move(submitter);
   }
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  base::WeakPtr<VideoFrameCompositor> GetWeakPtr() {
+    return weak_ptr_factory_.GetWeakPtr();
+  }
+
+  void UpdateDeviceScaleFactor(float device_scale_factor) {
+    if (submitter_) {
+      submitter_->SetDeviceScaleFactor(device_scale_factor);
+    }
+  }
+#endif
 
  private:
   // TracingCategory name for |auto_open_close_|.
@@ -258,6 +281,7 @@ class PLATFORM_EXPORT VideoFrameCompositor : public media::VideoRendererSink,
 
   base::TimeTicks last_background_render_;
   OnNewProcessedFrameCB new_processed_frame_cb_;
+  FinishPaintCallback finish_paint_cb_;
   cc::UpdateSubmissionStateCB update_submission_state_callback_;
 
   // Callback used to satisfy video.rVFC requests.
@@ -291,6 +315,11 @@ class PLATFORM_EXPORT VideoFrameCompositor : public media::VideoRendererSink,
       auto_open_close_;
   std::unique_ptr<WebVideoFrameSubmitter> submitter_;
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+  int64_t last_frame_time_ = 0;
+  int64_t total_freeze_time_ = 0;
+  bool is_playing_ = false;
+#endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
   base::WeakPtrFactory<VideoFrameCompositor> weak_ptr_factory_{this};
 };
 

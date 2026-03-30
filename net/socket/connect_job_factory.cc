@@ -75,13 +75,23 @@ std::unique_ptr<ConnectJob> ConnectJobFactory::CreateConnectJob(
     SecureDnsPolicy secure_dns_policy,
     bool disable_cert_network_fetches,
     const CommonConnectJobParams* common_connect_job_params,
-    ConnectJob::Delegate* delegate) const {
+    ConnectJob::Delegate* delegate
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+    ,
+    bool secure_dns_only
+#endif
+) const {
   return CreateConnectJob(
       Endpoint(std::move(endpoint)), proxy_chain, proxy_annotation_tag,
       allowed_bad_certs, alpn_mode, force_tunnel, privacy_mode,
       resolution_callback, request_priority, socket_tag,
       network_anonymization_key, secure_dns_policy,
-      disable_cert_network_fetches, common_connect_job_params, delegate);
+      disable_cert_network_fetches, common_connect_job_params, delegate
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+      ,
+      secure_dns_only
+#endif
+  );
 }
 
 std::unique_ptr<ConnectJob> ConnectJobFactory::CreateConnectJob(
@@ -123,13 +133,23 @@ std::unique_ptr<ConnectJob> ConnectJobFactory::CreateConnectJob(
     SecureDnsPolicy secure_dns_policy,
     bool disable_cert_network_fetches,
     const CommonConnectJobParams* common_connect_job_params,
-    ConnectJob::Delegate* delegate) const {
+    ConnectJob::Delegate* delegate
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+    ,
+    bool secure_dns_only
+#endif
+) const {
   ConnectJobParams connect_job_params = ConstructConnectJobParams(
       endpoint, proxy_chain, proxy_annotation_tag, allowed_bad_certs, alpn_mode,
       force_tunnel, privacy_mode, resolution_callback,
       network_anonymization_key, secure_dns_policy,
       disable_cert_network_fetches, common_connect_job_params,
-      proxy_dns_network_anonymization_key_);
+      proxy_dns_network_anonymization_key_
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+      ,
+      secure_dns_only
+#endif
+  );
 
   if (connect_job_params.is_ssl()) {
     return ssl_connect_job_factory_->Create(

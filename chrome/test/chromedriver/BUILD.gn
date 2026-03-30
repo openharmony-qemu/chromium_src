@@ -455,6 +455,7 @@ if (is_linux) {
       "//net",
       "//net/traffic_annotation:test_support",
       "//services/network/public/mojom",
+      "//content/public/common:static_switches",
     ]
 
     if (is_mac && is_component_ffmpeg) {

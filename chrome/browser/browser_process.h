@@ -25,6 +25,7 @@
 #include <memory>
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/callback_forward.h"
 #include "base/memory/scoped_refptr.h"
 #include "build/build_config.h"
@@ -125,6 +126,10 @@ class ResourceCoordinatorParts;
 class TabManager;
 }
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+class BrowserProcessImplExt;
+#endif
+
 namespace ui {
 class UnownedUserDataHost;
 }  // namespace ui
@@ -139,6 +144,10 @@ class BrowserProcess {
   BrowserProcess& operator=(const BrowserProcess&) = delete;
 
   virtual ~BrowserProcess();
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  virtual BrowserProcessImplExt* AsBrowserProcessImplExt() { return nullptr; }
+#endif
 
   // Returns the UnownedUserDataHost associated with this browser process. This
   // is used to retrieve arbitrary features from the browser process without

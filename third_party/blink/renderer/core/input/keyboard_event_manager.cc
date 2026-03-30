@@ -476,6 +476,13 @@ void KeyboardEventManager::DefaultSpaceEventHandler(
   if (event->ctrlKey() || event->metaKey() || event->altKey())
     return;
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  if (!frame_->GetSettings()->GetScrollable()) {
+    LOG(INFO) << "Space button can not scroll page, scroll is disabled";
+    return;
+  }
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+
   mojom::blink::ScrollDirection direction =
       event->shiftKey()
           ? mojom::blink::ScrollDirection::kScrollBlockDirectionBackward
@@ -530,6 +537,14 @@ void KeyboardEventManager::DefaultArrowEventHandler(
 
   if (event->KeyEvent() && event->KeyEvent()->is_system_key)
     return;
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  if (!frame_->GetSettings()->GetScrollable()) {
+    LOG(INFO) << "Arrow buttons, page buttons can not scroll page, scroll is "
+                 "disabled";
+    return;
+  }
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
   mojom::blink::ScrollDirection scroll_direction;
   ui::ScrollGranularity scroll_granularity;

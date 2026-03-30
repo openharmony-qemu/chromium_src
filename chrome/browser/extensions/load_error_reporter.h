@@ -66,6 +66,12 @@ class LoadErrorReporter {
   // cause a noisy alert box.
   void ReportError(const std::u16string& message, bool be_noisy);
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+  void ReportError(const std::u16string& message,
+                   bool be_noisy,
+                   content::BrowserContext* browser_context);
+#endif
+
   // Get the errors that have been reported so far.
   const std::vector<std::u16string>* GetErrors();
 

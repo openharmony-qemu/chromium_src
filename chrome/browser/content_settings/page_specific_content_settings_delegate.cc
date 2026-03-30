@@ -152,6 +152,11 @@ void PageSpecificContentSettingsDelegate::UpdateLocationBar() {
     auto* permission_tracker =
         permissions::PermissionRecoverySuccessRateTracker::FromWebContents(
             web_contents());
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    if (!permission_tracker) {
+      return;
+    }
+#endif
 
     if (state.Has(PageSpecificContentSettings::kMicrophoneAccessed)) {
       permission_tracker->TrackUsage(ContentSettingsType::MEDIASTREAM_MIC);

@@ -27,6 +27,9 @@
 #include "media/base/media_switches.h"
 #include "media/base/video_aspect_ratio.h"
 #include "media/filters/ffmpeg_video_decoder.h"
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+#include "ohos_nweb/src/sysevent/event_reporter.h"
+#endif
 #include "third_party/libvpx/source/libvpx/vpx/vp8dx.h"
 #include "third_party/libvpx/source/libvpx/vpx/vpx_decoder.h"
 #include "third_party/libvpx/source/libvpx/vpx/vpx_frame_buffer.h"
@@ -163,8 +166,43 @@ void VpxVideoDecoder::Initialize(const VideoDecoderConfig& config,
   config_ = config;
   state_ = DecoderState::kNormal;
   output_cb_ = output_cb;
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+  std::string format = VideoCodecToString(config.codec());
+  if (format == "kVP8" || format == "kVP9") {
+    ReportFfmpegCodecOperation("decode", format);
+  }
+#endif
   std::move(bound_init_cb).Run(DecoderStatus::Codes::kOk);
 }
+
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+std::string VpxVideoDecoder::VideoCodecToString(VideoCodec videoCodec) {
+    switch (videoCodec) {
+    case VideoCodec::kH264:
+      return "kH264";
+    case VideoCodec::kVC1:
+      return "kVC1";
+    case VideoCodec::kMPEG2:
+      return "kMPEG2";
+    case VideoCodec::kMPEG4:
+      return "kMPEG4";
+    case VideoCodec::kTheora:
+      return "kTheora";
+    case VideoCodec::kVP8:
+      return "kVP8";
+    case VideoCodec::kVP9:
+      return "kVP9";
+    case VideoCodec::kHEVC:
+      return "kHEVC";
+    case VideoCodec::kDolbyVision:
+      return "kDolbyVision";
+    case VideoCodec::kAV1:
+      return "kAV1";
+    default:
+      return "kUnknown";
+  }
+}
+#endif
 
 void VpxVideoDecoder::Decode(scoped_refptr<DecoderBuffer> buffer,
                              DecodeCB decode_cb) {

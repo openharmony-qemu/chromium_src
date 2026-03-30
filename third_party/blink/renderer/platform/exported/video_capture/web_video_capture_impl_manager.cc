@@ -126,7 +126,8 @@ base::OnceClosure WebVideoCaptureImplManager::StartCapture(
   const auto it = std::ranges::find(devices_, id, &DeviceEntry::session_id);
   if (it == devices_.end())
     return base::OnceClosure();
-
+  LOG(INFO) << "WebVideoCaptureImplManager::StartCapture "
+            << params.requested_format.pixel_format;
   // This ID is used to identify a client of VideoCaptureImpl.
   const int client_id = ++next_client_id_;
 
@@ -142,6 +143,8 @@ base::OnceClosure WebVideoCaptureImplManager::StartCapture(
 void WebVideoCaptureImplManager::RequestRefreshFrame(
     const media::VideoCaptureSessionId& id) {
   DCHECK(render_main_task_runner_->BelongsToCurrentThread());
+  LOG(INFO) << "WebVideoCaptureImplManager::StopCapture id " << id
+            << ", session ID: " << &DeviceEntry::session_id;
   const auto it = std::ranges::find(devices_, id, &DeviceEntry::session_id);
   if (it == devices_.end())
     return;

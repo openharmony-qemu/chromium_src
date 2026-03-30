@@ -193,7 +193,7 @@
     "channel": "stable",
     "extension_types": ["extension", "legacy_packaged_app"],
     // "desktop_android" is not supported.
-    "platforms": ["chromeos", "linux", "mac", "win"]
+    "platforms": ["chromeos", "linux", "mac", "win", "ohos"]
   },
   "contextMenus": {
     "channel": "stable",
@@ -781,7 +781,7 @@
     "channel": "stable",
     "extension_types": ["extension"],
     // "desktop_android" is not supported.
-    "platforms": ["chromeos", "linux", "mac", "win"],
+    "platforms": ["chromeos", "linux", "mac", "win", "ohos"],
     "allowlist": [
       "CBCC42ABED43A4B58FE3810E62AFFA010EB0349F"  // PDF Viewer
     ]
@@ -882,7 +882,7 @@
     ],
     "location": "component",
     // "desktop_android" is not supported.
-    "platforms": ["chromeos", "linux", "mac", "win"]
+    "platforms": ["chromeos", "linux", "mac", "win", "ohos"]
   },
   "safeBrowsingPrivate": {
     "channel": "stable",
@@ -908,7 +908,7 @@
     "channel": "stable",
     "extension_types": ["extension", "legacy_packaged_app"],
     // "desktop_android" is not supported.
-    "platforms": ["chromeos", "linux", "mac", "win"]
+    "platforms": ["chromeos", "linux", "mac", "win", "ohos"]
   },
   "settingsPrivate": [{
     "channel": "trunk",
@@ -952,7 +952,7 @@
     "extension_types": ["extension"],
     "min_manifest_version": 3,
     // "desktop_android" is not supported.
-    "platforms": ["chromeos", "linux", "mac", "win"]
+    "platforms": ["chromeos", "linux", "mac", "win", "ohos"]
   },
   "smartCardProviderPrivate": {
     "channel": "stable",
@@ -1002,7 +1002,7 @@
     "extension_types": ["extension"],
     "min_manifest_version": 3,
     // "desktop_android" is not supported.
-    "platforms": ["chromeos", "linux", "mac", "win"]
+    "platforms": ["chromeos", "linux", "mac", "win", "ohos"]
   },
   "tabs": [
     {
@@ -1070,7 +1070,7 @@
     "channel": "stable",
     "extension_types": ["extension"],
     "min_manifest_version": 3,
-    "platforms": ["desktop_android", "linux", "mac", "win"]
+    "platforms": ["desktop_android", "linux", "mac", "win", "ohos"]
   },
   "webNavigation": {
     "channel": "stable",

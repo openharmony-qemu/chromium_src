@@ -159,6 +159,9 @@ void MultiBufferDataSource::CreateResourceLoader(int64_t first_byte_position,
   SetReader(std::make_unique<MultiBufferReader>(
       url_data_->multibuffer(), first_byte_position, last_byte_position,
       is_client_audio_element_,
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+      preload_cache_, max_cache_, byte_rate_, video_id_,
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
       blink::BindRepeating(&MultiBufferDataSource::ProgressCallback, weak_ptr_),
       render_task_runner_));
   UpdateBufferSizes();
@@ -173,6 +176,9 @@ void MultiBufferDataSource::CreateResourceLoader_Locked(
   reader_ = std::make_unique<MultiBufferReader>(
       url_data_->multibuffer(), first_byte_position, last_byte_position,
       is_client_audio_element_,
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+      preload_cache_, max_cache_, byte_rate_, video_id_,
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
       blink::BindRepeating(&MultiBufferDataSource::ProgressCallback, weak_ptr_),
       render_task_runner_);
   UpdateBufferSizes();
@@ -709,6 +715,12 @@ void MultiBufferDataSource::UpdateBufferSizes() {
   if (!reader_)
     return;
 
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  if (url_data_ && url_data_->IsCreateSegmentationProvider()) {
+    return VLOUpdateBufferSizes();
+  }
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
   buffer_size_update_counter_ = kUpdateBufferSizeFrequency;
 
   // Use a default bit rate if unknown and clamp to prevent overflow.
@@ -781,4 +793,16 @@ void MultiBufferDataSource::UpdateBufferSizes() {
   reader_->SetPreload(preload_high, preload);
 }
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+void MultiBufferDataSource::SetMediaWebURLErrorCB(MediaWebURLErrorCB callback) {
+  if (url_data_) {
+    url_data_->SetMediaWebURLErrorCB(callback);
+  }
+}
+#endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+
 }  // namespace blink
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/media/multi_buffer_data_source_for_include.cc"
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION

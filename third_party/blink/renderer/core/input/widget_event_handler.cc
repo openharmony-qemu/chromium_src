@@ -109,6 +109,12 @@ WebInputEventResult WidgetEventHandler::HandleInputEvent(
     case WebInputEvent::Type::kGestureShortPress:
     case WebInputEvent::Type::kGestureLongPress:
     case WebInputEvent::Type::kGestureLongTap:
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+    case WebInputEvent::Type::kGestureDragLongPress:
+#endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
+#if BUILDFLAG(ARKWEB_AI)
+    case WebInputEvent::Type::kGestureCreateOverlay:
+#endif
       return HandleGestureEvent(static_cast<const WebGestureEvent&>(event));
 
     case WebInputEvent::Type::kPointerDown:

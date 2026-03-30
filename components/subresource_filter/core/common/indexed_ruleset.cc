@@ -99,8 +99,12 @@ void RulesetIndexer::Finish() {
   auto allowlist_offset = allowlist_.Finish();
   auto deactivation_offset = deactivation_.Finish();
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  auto url_rules_index_offset = AsArkWebRulesetIndexerExt()->CallCreateIndexedRuleset();
+#else
   auto url_rules_index_offset = flat::CreateIndexedRuleset(
       builder_, blocklist_offset, allowlist_offset, deactivation_offset);
+#endif
   builder_.Finish(url_rules_index_offset);
 }
 

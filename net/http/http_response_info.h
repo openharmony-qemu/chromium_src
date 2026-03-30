@@ -171,6 +171,11 @@ class NET_EXPORT HttpResponseInfo {
   // Host resolution error info.
   ResolveErrorInfo resolve_error_info;
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  bool used_fallback_proxy{false};
+  int fallback_proxy_response_code{0};
+#endif
+
   // If the response headers indicate a 401 or 407 failure, then this structure
   // will contain additional information about the authentication challenge.
   std::optional<AuthChallengeInfo> auth_challenge;

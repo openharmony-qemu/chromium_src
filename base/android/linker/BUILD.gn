@@ -5,8 +5,19 @@
 import("//build/config/android/config.gni")
 import("//build/config/sysroot.gni")
 
-assert(is_android)
+assert(is_android || is_ohos)
 
+if (is_ohos) {
+  source_set("ashmem") {
+    sources = [
+      "//arkweb/chromium_ext/third_party/ashmem/ohos_ashmem.cc",
+      "ashmem.h",
+    ]
+    include_dirs = [
+      "//base/android/linker"
+    ]
+  }
+} else {
 source_set("ashmem") {
   sources = [
     "ashmem.cc",
@@ -58,4 +69,5 @@ shared_library("chromium_android_linker") {
     "-Wl,--hash-style=sysv",
     "-llog",
   ]
+}
 }

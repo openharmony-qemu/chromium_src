@@ -9,6 +9,7 @@
 
 #include <optional>
 
+#include "arkweb/build/features/features.h"
 #include "base/component_export.h"
 #include "base/time/time.h"
 #include "net/dns/public/resolve_error_info.h"
@@ -101,6 +102,15 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE) URLLoaderCompletionStatus {
 
   // Whether the initiator of this request should be collapsed.
   bool should_collapse_initiator = false;
+
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+  bool abort_due_to_cef_browser_destroyed = false;
+#endif
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  bool used_fallback_proxy = false;
+  bool needs_reload_with_fallback_proxy = false;
+#endif
 
   // Write a representation of this struct into a trace.
   void WriteIntoTrace(perfetto::TracedValue context) const;

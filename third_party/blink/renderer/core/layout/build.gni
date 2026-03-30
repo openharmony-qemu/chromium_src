@@ -15,6 +15,10 @@
 # -O2 optimization. If there is common inlined implementations, put this in
 # foo-inl.h and include that in both foo.cc and foo-hot.cc.
 
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
+
 blink_core_hot_sources_layout = [
   "layout_block_flow_hot.cc",
   "layout_box_hot.cc",
@@ -670,6 +674,10 @@ blink_core_sources_layout = [
   "unpositioned_float.h",
 ]
 
+if (arkweb_same_layer) {
+  blink_core_sources_layout += arkweb_third_patry_blink_renderer_core_layout_resources
+}
+
 if (is_mac) {
   blink_core_sources_layout += [
     "layout_theme_mac.h",
@@ -681,6 +689,13 @@ if (is_ios) {
   blink_core_sources_layout += [
     "layout_theme_ios.h",
     "layout_theme_ios.mm",
+  ]
+}
+
+if (is_ohos) {
+  blink_core_sources_layout += [
+    "//arkweb/chromium_ext/third_party/blink/renderer/core/layout/layout_theme_ohos.cc",
+    "//arkweb/chromium_ext/third_party/blink/renderer/core/layout/layout_theme_ohos.h",
   ]
 }
 

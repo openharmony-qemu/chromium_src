@@ -294,7 +294,11 @@ Manifest::Type Extension::GetType() const {
 // static
 GURL Extension::ResolveExtensionURL(const GURL& extension_url,
                                     std::string_view relative_url) {
-  DCHECK(extension_url.SchemeIs(kExtensionScheme));
+  DCHECK(extension_url.SchemeIs(kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+         || extension_url.SchemeIs(kArkwebExtensionScheme)
+#endif
+  );
   GURL resolved = extension_url.Resolve(relative_url);
   if (!url::IsSameOriginWith(resolved, extension_url)) {
     return GURL();

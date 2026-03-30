@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//arkweb/build/features/features.gni")
 import("//components/guest_view/buildflags/buildflags.gni")
 
 static_library("browser") {
@@ -61,7 +62,11 @@ source_set("unit_tests") {
     "no_state_prefetch_processor_impl_unittest.cc",
     "no_state_prefetch_utils_unittest.cc",
   ]
-
+  if (defined(arkweb_no_state_prefetch) && arkweb_no_state_prefetch) {
+    sources += [
+      "//arkweb/chromium_ext/components/no_state_prefetch/browser/ark_web_no_state_prefetch_manager_for_include_unittest.cc"
+    ]
+  }
   deps = [
     "//base",
     "//base/test:test_support",

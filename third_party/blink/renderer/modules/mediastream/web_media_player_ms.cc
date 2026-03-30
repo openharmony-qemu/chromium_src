@@ -1177,7 +1177,11 @@ bool WebMediaPlayerMS::HasReadableVideoFrame() const {
   return has_first_frame_;
 }
 
+#if !BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
 void WebMediaPlayerMS::OnPageHidden() {
+#else
+void WebMediaPlayerMS::OnPageHidden(bool storing_in_bfcache) {
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
 
   bool in_picture_in_picture =
@@ -1233,7 +1237,11 @@ void WebMediaPlayerMS::SuspendForFrameClosed() {
   }
 }
 
+#if !BUILDFLAG(ARKWEB_BFCACHE)
 void WebMediaPlayerMS::OnPageShown() {
+#else
+void WebMediaPlayerMS::OnPageShown(bool restoring_in_bfcache) {
+#endif // BUILDFLAG(ARKWEB_BFCACHE)
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
 
   if (watch_time_reporter_)
@@ -1264,12 +1272,20 @@ void WebMediaPlayerMS::OnIdleTimeout() {}
 
 void WebMediaPlayerMS::OnFrameShown() {
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
+#if !BUILDFLAG(ARKWEB_BFCACHE)
   OnPageShown();
+#else
+  OnPageShown(false);
+#endif // ARKWEB_BFCACHE
 }
 
 void WebMediaPlayerMS::OnFrameHidden() {
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
+#if !BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   OnPageHidden();
+#else
+  OnPageHidden(false);
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 }
 
 void WebMediaPlayerMS::SetVolumeMultiplier(double multiplier) {

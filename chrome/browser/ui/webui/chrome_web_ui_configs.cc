@@ -228,6 +228,13 @@ void RegisterChromeWebUIConfigs() {
 #endif  // BUILDFLAG(IS_CHROMEOS)
 
   auto& map = content::WebUIConfigMap::GetInstance();
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  map.AddWebUIConfig(std::make_unique<extensions::ExtensionsUIConfig>());
+#endif
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  map.AddWebUIConfig(std::make_unique<NetExportUIConfig>());
+#endif
+  return;
   map.AddWebUIConfig(std::make_unique<AccessibilityUIConfig>());
   map.AddWebUIConfig(std::make_unique<AutofillInternalsUIConfig>());
   map.AddWebUIConfig(std::make_unique<BluetoothInternalsUIConfig>());

@@ -6,6 +6,7 @@
 
 #include <utility>
 
+#include "arkweb/chromium_ext/base/process/process_handle_posix_ex.h"
 #include "base/containers/map_util.h"
 #include "base/feature_list.h"
 #include "base/metrics/histogram_functions.h"
@@ -210,10 +211,18 @@ void AgentSchedulingGroup::DidUnloadRenderFrame(
 }
 
 void AgentSchedulingGroup::CreateView(mojom::CreateViewParamsPtr params) {
+  LOG(DEBUG) << "AgentSchedulingGroup::CreateView";
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+  host_remote_->ReportCreateView(base::GetCurrentRealPid());
+#endif
   base::ElapsedTimer timer;
   RenderThreadImpl& renderer = ToImpl(*render_thread_);
   renderer.SetScrollAnimatorEnabled(
       params->web_preferences.enable_scroll_animator, PassKey());
+#if BUILDFLAG(ARKWEB_SYNC_RENDER)
+  renderer.SetDrawMode(
+      params->web_preferences.draw_mode, PassKey());
+#endif
 
   const auto navigation_metrics_token = params->navigation_metrics_token;
   CreateWebView(std::move(params),
@@ -279,7 +288,11 @@ blink::WebView* AgentSchedulingGroup::CreateWebView(
               mojom::ViewWidgetType::kFencedFrame,
           std::move(params->replication_state),
           params->devtools_main_frame_token,
-          std::move(params->main_frame->get_local_params()), base_url);
+          std::move(params->main_frame->get_local_params()),
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+          params->is_offscreen,
+#endif
+          base_url);
       break;
     }
     case mojom::CreateMainFrameUnion::Tag::kProvisionalLocalParams: {

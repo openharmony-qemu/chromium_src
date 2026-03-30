@@ -225,6 +225,9 @@ inline constexpr AcceleratedWidget kNullAcceleratedWidget = 0;
 #elif BUILDFLAG(IS_ANDROID)
 using AcceleratedWidget = ANativeWindow*;
 constexpr AcceleratedWidget kNullAcceleratedWidget = nullptr;
+#elif BUILDFLAG(IS_ARKWEB)
+typedef uint32_t AcceleratedWidget;
+constexpr AcceleratedWidget kNullAcceleratedWidget = 0;
 #elif BUILDFLAG(IS_OZONE)
 using AcceleratedWidget = uint32_t;
 inline constexpr AcceleratedWidget kNullAcceleratedWidget = 0;

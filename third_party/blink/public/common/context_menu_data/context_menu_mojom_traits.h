@@ -7,6 +7,10 @@
 
 #include <optional>
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "build/build_config.h"
 #include "mojo/public/cpp/bindings/struct_traits.h"
 #include "third_party/blink/public/common/common_export.h"
@@ -15,6 +19,9 @@
 #include "third_party/blink/public/mojom/forms/form_control_type.mojom-shared.h"
 #include "ui/base/mojom/menu_source_type.mojom-forward.h"
 #include "url/mojom/url_gurl_mojom_traits.h"
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+#include "base/logging.h"
+#endif
 
 namespace mojo {
 
@@ -122,6 +129,24 @@ struct BLINK_COMMON_EXPORT
   static bool is_editable(const blink::UntrustworthyContextMenuParams& r) {
     return r.is_editable;
   }
+
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+  static bool is_selectable(const blink::UntrustworthyContextMenuParams& r) {
+    return r.is_selectable;
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  static const gfx::Rect& image_rect(
+      const blink::UntrustworthyContextMenuParams& r) {
+    return r.image_rect;
+  }
+
+  static bool is_ai_link(const blink::UntrustworthyContextMenuParams& r) {
+    LOG(INFO)<<"is_ai_link = " << r.is_ai_link;
+    return r.is_ai_link;
+  }
+#endif
 
   static int writing_direction_default(
       const blink::UntrustworthyContextMenuParams& r) {

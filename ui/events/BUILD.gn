@@ -7,6 +7,8 @@ import("//build/config/ozone.gni")
 import("//build/config/ui.gni")
 import("//testing/test.gni")
 import("//ui/base/ui_features.gni")
+import("//arkweb/chromium_ext/chromium_ext.gni")
+import("//arkweb/build/features/features.gni")
 
 if (is_android) {
   import("//build/config/android/rules.gni")
@@ -156,6 +158,10 @@ component("events_base") {
     "pointer_details.h",
   ]
 
+  if (arkweb_fling){
+    sources += arkweb_native_scroller_sources
+  }
+
   if (is_android) {
     sources += [
       "keycodes/keyboard_code_conversion_android.cc",
@@ -229,6 +235,10 @@ component("events_base") {
       "AppKit.framework",
       "Carbon.framework",
     ]
+  }
+
+  if (is_ohos) {
+    deps += [ "//ohos_glue:ohos_adapter_glue_source",]
   }
 }
 
@@ -588,6 +598,10 @@ component("velocity_tracker") {
     "velocity_tracker/velocity_tracker_state.h",
   ]
 
+  if (arkweb_drag_drop) {
+    sources += arkweb_ui_events_velocity_tracker_sources
+  }
+
   defines = [ "IS_VELOCITY_TRACKER_IMPL" ]
 
   deps = [
@@ -770,6 +784,19 @@ if (use_blink) {
       "//ui/gfx/geometry/mojom:mojom_traits",
       "//ui/gfx/ipc/geometry",
     ]
+
+    if (arkweb_pdf) {
+      import("//arkweb/chromium_ext/base/arkweb_base_ext.gni")
+      sources += arkweb_base_ohos_ltpo_sources
+    }
+
+    if (arkweb_test) {
+      deps += [ "//arkweb/ohos_adapter_ndk/mock_ndk_api:mock_base_ohos" ]
+      configs += [ "//content:content_implementation" ]
+      import("//arkweb/chromium_ext/ui/events/build.gni")
+      sources += events_unittests_sources
+      sources += arkweb_native_scroller_test_source
+    }
 
     if (is_android) {
       sources += [

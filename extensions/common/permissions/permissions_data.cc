@@ -161,7 +161,20 @@ bool PermissionsData::IsRestrictedUrl(const GURL& document_url,
 
   bool allow_on_extension_urls =
       switches::AreExtensionsOnExtensionURLsAllowed();
-  if (document_url.SchemeIs(kExtensionScheme) &&
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)                                
+  if (document_url.SchemeIs(content::kArkWebUIScheme)
+      && !allow_on_chrome_urls) {
+    if (error)
+      *error = manifest_errors::kCannotAccessArkWebUrl;
+    return true;
+  }
+#endif
+
+  if ((document_url.SchemeIs(kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+       || document_url.SchemeIs(kArkwebExtensionScheme)
+#endif
+           ) &&
       document_url.GetHost() != extension_id_ && !allow_on_extension_urls) {
     if (error)
       *error = manifest_errors::kCannotAccessExtensionUrl;
@@ -567,6 +580,10 @@ bool PermissionsData::CanCaptureVisiblePage(
   // - The Chrome Web Store.
   bool allowed_with_active_tab =
       origin_url.SchemeIs(content::kChromeUIScheme) ||
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      origin_url.SchemeIs(content::kArkWebUIScheme) ||
+      origin_url.SchemeIs(kArkwebExtensionScheme) ||
+#endif
       origin_url.SchemeIs(kExtensionScheme) ||
       // Note: The origin of a data: url is empty, so check the url itself.
       document_url.SchemeIs(url::kDataScheme) ||

@@ -13,6 +13,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/check.h"
 #include "base/compiler_specific.h"
 #include "base/containers/flat_map.h"
@@ -42,6 +43,7 @@
 #include "services/viz/privileged/mojom/compositing/frame_sink_manager_test_api.mojom.h"
 #include "services/viz/privileged/mojom/compositing/frame_sinks_metrics_recorder.mojom.h"
 #include "services/viz/public/mojom/compositing/frame_sink_bundle.mojom.h"
+#include "arkweb/build/features/features.h"
 
 namespace base {
 class SingleThreadTaskRunner;
@@ -51,6 +53,7 @@ namespace viz {
 
 class CopyOutputResult;
 class SurfaceInfo;
+class HostFrameSinkManagerUtils;
 struct VizTouchState;
 
 enum class ReportFirstSurfaceActivation { kYes, kNo };
@@ -62,6 +65,10 @@ class VIZ_HOST_EXPORT HostFrameSinkManager
     : public mojom::FrameSinkManagerClient,
       public HitTestDataProvider {
  public:
+  friend class HostFrameSinkManagerUtils;
+
+  std::unique_ptr<HostFrameSinkManagerUtils> managerUtils;
+
   HostFrameSinkManager();
 
   HostFrameSinkManager(const HostFrameSinkManager&) = delete;
@@ -309,6 +316,9 @@ class VIZ_HOST_EXPORT HostFrameSinkManager
  private:
   friend class HostFrameSinkManagerTest;
   friend class HostFrameSinkManagerTestApi;
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  friend class HostFrameSinkManagerUtilsTest;
+#endif
   FRIEND_TEST_ALL_PREFIXES(HostFrameSinkManagerTest,
                            InvalidateFrameSinkIdCallbackOnConnectionError);
 
@@ -391,6 +401,13 @@ class VIZ_HOST_EXPORT HostFrameSinkManager
       std::unique_ptr<CopyOutputResult> copy_output_result) override;
   void OnVizTouchStateAvailable(
       base::ReadOnlySharedMemoryRegion region) override;
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+  void RestoreRenderFit(uint32_t client_id, uint32_t sink_id) override;
+#endif // ARKWEB_MAXIMIZE_RESIZE
+
+#if BUILDFLAG(ARKWEB_ROTATE_RESIZE)
+  void ModifyRenderFit(int32_t fitType, uint32_t client_id, uint32_t sink_id) override;
+#endif // ARKWEB_ROTATE_RESIZE
 
   mojo::Remote<mojom::RendererInputRouterDelegateRegistry>
       rir_delegate_registry_;

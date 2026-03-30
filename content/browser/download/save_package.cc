@@ -134,7 +134,12 @@ bool CanSaveAsComplete(const std::string& contents_mime_type) {
 }
 
 void CancelSavePackage(base::WeakPtr<SavePackage> save_package,
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+                       bool user_cancel,
+                       std::optional<std::string> guid) {
+#else
                        bool user_cancel) {
+#endif
   if (save_package.get() && !save_package->canceled())
     save_package->Cancel(user_cancel, false);
 }
@@ -322,8 +327,14 @@ bool SavePackage::Init(
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
   DCHECK(page_url_.is_valid());
   // Set proper running state.
-  if (wait_state_ != INITIALIZE || !page_)
+  if (wait_state_ != INITIALIZE || !page_) {
+#if BUILDFLAG(ARKWEB_SAVE_PAGE)
+    if (callback_) {
+      std::move(callback_).Run(false);
+    }
+#endif // ARKWEB_SAVE_PAGE
     return false;
+  }
 
   wait_state_ = START_PROCESS;
 
@@ -762,7 +773,11 @@ void SavePackage::Stop(bool cancel_download_item) {
 
   finished_ = true;
   wait_state_ = FAILED;
-
+#if BUILDFLAG(ARKWEB_SAVE_PAGE)
+  if (callback_) {
+    std::move(callback_).Run(false);
+  }
+#endif // ARKWEB_SAVE_PAGE
   // Inform the download::DownloadItem we have canceled whole save page job.
   if (download_) {
     if (cancel_download_item)
@@ -841,7 +856,11 @@ void SavePackage::Finish() {
 
   wait_state_ = SUCCESSFUL;
   finished_ = true;
-
+#if BUILDFLAG(ARKWEB_SAVE_PAGE)
+  if (callback_) {
+    std::move(callback_).Run(true);
+  }
+#endif // ARKWEB_SAVE_PAGE
 #if BUILDFLAG(IS_MAC)
   // Always set tags on the main HTML file, and if there is an associated
   // "_files" directory, set the tags on it, too.
@@ -1596,3 +1615,7 @@ void SavePackage::FinalizeDownloadEntry() {
 }
 
 }  // namespace content
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/content/browser/download/save_package_for_include.cc"
+#endif // IS_ARKWEB

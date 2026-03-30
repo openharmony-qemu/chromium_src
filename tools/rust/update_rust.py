@@ -126,7 +126,6 @@ def main():
     platform_prefix = GetPlatformUrlPrefix(GetDefaultHostOs())
 
     version = GetRustClangRevision()
-
     # Exit early if the existing package is up-to-date. Note that we cannot
     # simply call DownloadAndUnpack() every time: aside from unnecessarily
     # downloading the toolchain if it hasn't changed, it also leads to multiple

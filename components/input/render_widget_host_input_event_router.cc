@@ -1098,7 +1098,12 @@ void RenderWidgetHostInputEventRouter::SendMouseEnterOrLeaveEvents(
   // The ancestor might need to trigger MouseOut handlers.
   if (common_ancestor && (include_target_view || common_ancestor != target)) {
     blink::WebMouseEvent mouse_move(event);
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+    mouse_move.SetModifiers(mouse_move.GetModifiers() | extra_modifiers |
+      blink::WebInputEvent::Modifiers::kMoveCrossFrameTransition);
+#else
     mouse_move.SetModifiers(mouse_move.GetModifiers() | extra_modifiers);
+#endif
     mouse_move.SetType(blink::WebInputEvent::Type::kMouseMove);
     if (!root_view->TransformPointToCoordSpaceForView(
             event.PositionInWidget(), common_ancestor, &transformed_point)) {
@@ -1114,7 +1119,12 @@ void RenderWidgetHostInputEventRouter::SendMouseEnterOrLeaveEvents(
     if (view == target && !include_target_view)
       continue;
     blink::WebMouseEvent mouse_enter(event);
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+    mouse_enter.SetModifiers(mouse_enter.GetModifiers() | extra_modifiers |
+      blink::WebInputEvent::Modifiers::kMoveCrossFrameTransition);
+#else
     mouse_enter.SetModifiers(mouse_enter.GetModifiers() | extra_modifiers);
+#endif
     mouse_enter.SetType(blink::WebInputEvent::Type::kMouseMove);
     if (!root_view->TransformPointToCoordSpaceForView(
             event.PositionInWidget(), view, &transformed_point)) {

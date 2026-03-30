@@ -9,6 +9,10 @@
 #include "base/memory/raw_ptr.h"
 #include "base/types/pass_key.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "services/network/public/mojom/cors_origin_pattern.mojom.h"
+#endif
+
 namespace content {
 class BrowserContext;
 }  // namespace content
@@ -82,6 +86,15 @@ class NetworkPermissionsUpdater {
   // `completion_callback_`.
   static void OnOriginAccessUpdated(
       std::unique_ptr<NetworkPermissionsUpdater> updater);
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  static void SetCorsOriginAccessListForExtensionHelper(
+      const std::vector<content::BrowserContext*>& browser_contexts,
+      const Extension& extension,
+      std::vector<network::mojom::CorsOriginPatternPtr> allow_patterns,
+      std::vector<network::mojom::CorsOriginPatternPtr> block_patterns,
+      base::OnceClosure closure);
+#endif
 
   // The associated BrowserContext.
   raw_ptr<content::BrowserContext, DanglingUntriaged> const browser_context_;

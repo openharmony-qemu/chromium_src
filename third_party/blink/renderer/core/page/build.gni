@@ -2,6 +2,10 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
+
 blink_core_sources_page = [
   "autoscroll_controller.cc",
   "autoscroll_controller.h",
@@ -94,6 +98,19 @@ blink_core_sources_page = [
   "viewport_description.cc",
   "viewport_description.h",
 ]
+
+if (is_arkweb) {
+  blink_core_sources_page += arkweb_third_patry_blink_renderer_core_page_sources
+}
+
+if (arkweb_menu) {
+  blink_core_sources_page += arkweb_third_patry_blink_renderer_core_page_context_menu_sources
+}
+
+if (arkweb_drag_drop) {
+  blink_core_sources_page += arkweb_third_patry_blink_renderer_core_page_drag_sources
+  blink_core_sources_page += arkweb_third_patry_blink_public_platform_graphics_sources
+}
 
 blink_core_tests_page = [
   "autoscroll_controller_test.cc",

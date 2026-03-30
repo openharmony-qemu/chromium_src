@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//arkweb/build/features/features.gni")
 import("//build/config/features.gni")
 import("//build/config/ui.gni")
 import("//mojo/public/tools/bindings/mojom.gni")
@@ -11,6 +12,14 @@ import("//third_party/blink/renderer/config.gni")
 
 if (is_android) {
   import("//build/config/android/config.gni")
+}
+
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
+
+if (defined(is_arkweb_ext) && is_arkweb_ext) {
+  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
 }
 
 # This target includes all mojom interfaces which can be used from
@@ -268,6 +277,18 @@ mojom("mojom_platform") {
     "worker/worklet_global_scope_creation_params.mojom",
   ]
 
+  if (arkweb_software_compositor) {
+    sources += [ "//arkweb/chromium_ext/third_party/blink/public/mojom/input/software_compositor_ohos.mojom" ]
+  }
+
+  if (arkweb_copy_option) {
+    sources += arkweb_copy_option_mojom_sources
+  }
+
+  if (defined(arkweb_reader_mode) && arkweb_reader_mode) {
+    sources += [ "//arkweb/chromium_ext/third_party/blink/public/mojom/dom_distiller/reader_mode_config.mojom" ]
+  }
+
   if (is_android) {
     sources += [ "input/synchronous_compositor.mojom" ]
   }
@@ -391,6 +412,13 @@ mojom("mojom_platform") {
   enabled_features = []
   if (use_ozone) {
     enabled_features += [ "is_selection_clipboard_buffer_possible" ]
+  }
+  if (is_arkweb) {
+    import("//arkweb/chromium_ext/third_party/blink/public/mojom/arkweb_features_include.gni")
+    enabled_features += mojom_platform_enabled_features
+  }
+  if (defined(arkweb_ext_free_copy) && arkweb_ext_free_copy) {
+    enabled_features += [ "arkweb_ext_free_copy" ]
   }
 
   shared_cpp_typemaps = [
@@ -1344,6 +1372,7 @@ mojom("mojom_core") {
     "page/page.mojom",
     "page/page_visibility_state.mojom",
     "page/prerender_page_param.mojom",
+    "//arkweb/chromium_ext/third_party/blink/public/mojom/page/text_recognize_result.mojom",
     "page/widget.mojom",
     "page_state/page_state.mojom",
 
@@ -1450,6 +1479,15 @@ mojom("mojom_core") {
   enabled_features = []
   if (use_aura) {
     enabled_features += [ "use_aura" ]
+  }
+
+  if (is_arkweb) {
+    import("//arkweb/chromium_ext/third_party/blink/public/mojom/arkweb_features_include.gni")
+    enabled_features += mojom_core_enabled_features
+  }
+
+  if (defined(arkweb_ext_free_copy) && arkweb_ext_free_copy) {
+    enabled_features += [ "arkweb_ext_free_copy" ]
   }
 
   shared_cpp_typemaps = [

@@ -77,6 +77,14 @@ class MockClipboardHost : public blink::mojom::ClipboardHost {
   void GetPlatformPermissionState(
       GetPlatformPermissionStateCallback callback) override;
 #endif
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  void OnClipboardDataGuard(bool status,
+                            OnClipboardDataGuardCallback callback) override;
+  void UpdateClipboardData(UpdateClipboardDataCallback) override {}
+#endif
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  void HandlePasswordVault(HandlePasswordVaultCallback callback) override;
+#endif
  private:
   std::vector<std::u16string> ReadStandardFormatNames();
   void OnClipboardDataChanged();

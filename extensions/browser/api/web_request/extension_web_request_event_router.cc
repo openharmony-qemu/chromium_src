@@ -97,6 +97,10 @@ constexpr char kEventMessage[] = "webViewInternal.onMessage";
 constexpr char kWebRequestEventPrefix[] = "webRequest.";
 constexpr char kWebViewEventPrefix[] = "webViewInternal.";
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+const char kWebRequestApiLogTag[] = "[WebRequestAPI]";
+#endif
+
 constexpr size_t kWebRequestEventPrefixLen =
     std::char_traits<char>::length(kWebRequestEventPrefix);
 constexpr size_t kWebViewEventPrefixLen =
@@ -1487,6 +1491,10 @@ WebRequestEventRouter::OnAuthRequired(content::BrowserContext* browser_context,
     blocked_request.request = request;
     blocked_request.auth_callback = std::move(callback);
     blocked_request.auth_credentials = credentials;
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    LOG(INFO) << kWebRequestApiLogTag
+              << " webRequest.onAuthRequired dispatched";
+#endif
     return AuthRequiredResponse::AUTH_REQUIRED_RESPONSE_IO_PENDING;
   }
   return AuthRequiredResponse::AUTH_REQUIRED_RESPONSE_NO_ACTION;
@@ -1538,6 +1546,10 @@ void WebRequestEventRouter::OnResponseStarted(
 
   // OnResponseStarted is even triggered, when the request was cancelled.
   if (net_error != net::OK) {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    LOG(INFO) << kWebRequestApiLogTag
+              << " OnResponseStarted, net_error=" << net_error;
+#endif
     return;
   }
 
@@ -1881,6 +1893,11 @@ void WebRequestEventRouter::OnEventHandled(
   // blocking listeners have responded. See crbug.com/412695438.
   if (listener->IsBlocking()) {
     listener->blocked_requests.erase(request_id);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    LOG(INFO) << kWebRequestApiLogTag
+              << " webRequest.OnEventHandled:" << event_name << " by extension:"
+              << extension_id;
+#endif
     DecrementBlockCount(browser_context, extension_id, event_name, request_id,
                         std::move(response), listener->extra_info_spec);
   }
@@ -1960,6 +1977,11 @@ bool WebRequestEventRouter::AddEventListener(
   if (!is_reactivated && listener->HasExtraHeaders()) {
     IncrementExtraHeadersListenerCount(browser_context);
   }
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  LOG(INFO) << kWebRequestApiLogTag << " webRequest.AddListener for "
+            << event_name;
+#endif
 
   // If this is a new listener, add it to the list of persisted listeners.
   if (is_service_worker_listener && !is_reactivated) {

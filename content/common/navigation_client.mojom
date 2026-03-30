@@ -182,6 +182,10 @@ struct DidCommitProvisionalLoadParams {
   mojo_base.mojom.TimeTicks commit_navigation_start;
   mojo_base.mojom.TimeTicks? commit_navigation_end;
 
+  // Additional HTTP request headers.
+  [EnableIf=arkweb_network_base]
+  string headers;
+
   // The timestamp at which the renderer responded to the browser's
   // CommitNavigation IPC.
   // TODO(alexmos): replace `commit_navigation_end` with this timestamp.

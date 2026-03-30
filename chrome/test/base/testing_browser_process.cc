@@ -330,7 +330,7 @@ StartupData* TestingBrowserProcess::startup_data() {
 policy::ChromeBrowserPolicyConnector*
 TestingBrowserProcess::browser_policy_connector() {
   if (!browser_policy_connector_) {
-#if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_MAC)
+#if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_MAC) && !BUILDFLAG(ENABLE_CEF)
     // Make sure that the machine policy directory does not exist so that
     // machine-wide policies do not affect tests.
     // Note that passing false as last argument to OverrideAndCreateIfNeeded

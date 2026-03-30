@@ -71,7 +71,11 @@ bool ShouldBlockNavigationToPlatformAppResource(
     if (navigation_handle.IsPdf()) {
       const url::Origin& initiator_origin =
           navigation_handle.GetInitiatorOrigin().value();
-      CHECK_EQ(initiator_origin.scheme(), kExtensionScheme);
+      CHECK(initiator_origin.scheme() == kExtensionScheme
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+            || initiator_origin.scheme() == kArkwebExtensionScheme
+#endif
+      );
       CHECK_EQ(initiator_origin.host(), extension_misc::kPdfExtensionId);
       return false;
     }
@@ -176,11 +180,18 @@ ExtensionNavigationThrottle::WillStartOrRedirectRequest() {
   bool url_has_extension_scheme = url.SchemeIs(kExtensionScheme);
   url::Origin target_origin = url::Origin::Create(url);
   const Extension* target_extension = nullptr;
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  url_has_extension_scheme |= url.SchemeIs(kArkwebExtensionScheme);
+#endif
   if (url_has_extension_scheme) {
     // "chrome-extension://" URL.
     target_extension = registry->enabled_extensions().GetExtensionOrAppByURL(
         url, /*include_guid=*/true);
-  } else if (target_origin.scheme() == kExtensionScheme) {
+  } else if (target_origin.scheme() == kExtensionScheme
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+             || target_origin.scheme() == kArkwebExtensionScheme
+#endif
+  ) {
     // "blob:chrome-extension://" or "filesystem:chrome-extension://" URL.
     DCHECK(url.SchemeIsFileSystem() || url.SchemeIsBlob());
     target_extension =
@@ -355,7 +366,11 @@ ExtensionNavigationThrottle::WillStartOrRedirectRequest() {
   //   navigated, but the page that contains the PDF can be.
   const url::Origin& initiator_origin =
       navigation_handle()->GetInitiatorOrigin().value();
-  if (initiator_origin.scheme() == kExtensionScheme &&
+  if ((initiator_origin.scheme() == kExtensionScheme
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+       || initiator_origin.scheme() == kArkwebExtensionScheme
+#endif
+       ) &&
       base::Contains(MimeTypesHandler::GetMIMETypeAllowlist(),
                      initiator_origin.host())) {
     return content::NavigationThrottle::PROCEED;
@@ -366,6 +381,9 @@ ExtensionNavigationThrottle::WillStartOrRedirectRequest() {
   // - https://crbug.com/662602
   // - similar checks in extensions::ResourceRequestPolicy::CanRequestResource
   if (initiator_origin.scheme() == content::kChromeUIScheme ||
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      initiator_origin.scheme() == content::kArkWebUIScheme ||
+#endif
       initiator_origin.scheme() == content::kChromeDevToolsScheme ||
       ExtensionsBrowserClient::Get()->ShouldSchemeBypassNavigationChecks(
           initiator_origin.scheme())) {

@@ -57,6 +57,7 @@ namespace sidePanel {
     long? tabId;
   };
 
+  // #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   // Options for opening the side panel.
   // At least one of `tabId` or `windowId` must be specified.
   dictionary OpenOptions {
@@ -76,6 +77,7 @@ namespace sidePanel {
     // or <code>windowId</code> must be provided.
     long? tabId;
   };
+  // #endif ARKWEB_ARKWEB_EXTENSIONS
 
   // Options for closing the side panel.
   // At least one of `tabId` or `windowId` must be specified.

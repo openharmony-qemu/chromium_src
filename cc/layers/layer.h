@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/auto_reset.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/ref_counted.h"
@@ -39,6 +40,9 @@
 #include "ui/gfx/geometry/rrect_f.h"
 #include "ui/gfx/geometry/transform.h"
 
+#include "arkweb/chromium_ext/cc/layer/layer_ext.h"
+#include "arkweb/chromium_ext/cc/layer/layer_utils.h"
+
 namespace viz {
 class CopyOutputRequest;
 }
@@ -51,6 +55,8 @@ class LayerTreeHostCommon;
 class LayerTreeImpl;
 class MicroBenchmark;
 class PictureLayer;
+class LayerExt;
+class LayerUtils;
 class PropertyTrees;
 
 struct CommitState;
@@ -87,7 +93,8 @@ struct CC_EXPORT LayerDebugInfo {
 // parent (or none at the root). Layers within the tree, other than the root
 // layer, are kept alive by that tree relationship, with refpointer ownership
 // from parents to children.
-class CC_EXPORT Layer : public base::RefCounted<Layer>,
+class CC_EXPORT Layer : public LayerExt,
+                        public base::RefCounted<Layer>,
                         public ProtectedSequenceSynchronizer {
  public:
   // An invalid layer id, as all layer ids are positive.
@@ -874,6 +881,10 @@ class CC_EXPORT Layer : public base::RefCounted<Layer>,
   // surface, returns the ID of that resource.
   virtual viz::ViewTransitionElementResourceId ViewTransitionResourceId() const;
 
+  LayerUtils* layer_utils() {
+    return layer_utils_.get();
+  }
+
 #if BUILDFLAG(IS_CHROMEOS)
   bool is_valid_to_destroy() const { return is_valid_to_destroy_; }
 
@@ -883,6 +894,7 @@ class CC_EXPORT Layer : public base::RefCounted<Layer>,
  protected:
   friend class LayerImpl;
   friend class TreeSynchronizer;
+  friend class LayerUtils;
 
   Layer();
   ~Layer() override;
@@ -1245,6 +1257,8 @@ class CC_EXPORT Layer : public base::RefCounted<Layer>,
 
   static constexpr gfx::Transform kIdentityTransform{};
   static constexpr gfx::RoundedCornersF kNoRoundedCornersF{};
+
+  std::unique_ptr<LayerUtils> layer_utils_;
 };
 
 }  // namespace cc

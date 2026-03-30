@@ -461,6 +461,10 @@ void TouchSelectionControllerClientAura::OnSelectionEvent(
       quick_menu_requested_ = !quick_menu_requested_;
       UpdateQuickMenu();
       break;
+#if BUILDFLAG(ARKWEB_MENU)
+    case ui::SELECTION_HANDLES_UPDATEMENU:
+      break;
+#endif
   }
 }
 

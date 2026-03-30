@@ -191,6 +191,10 @@
 #include "chrome/browser/ui/browser.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+#include "libcef/browser/autofill/oh_autofill_client.h"
+#endif
+
 #if BUILDFLAG(IS_ANDROID)
 using password_manager::CredentialCache;
 using password_manager::PasswordCredentialFillerImpl;
@@ -239,7 +243,11 @@ void ChromePasswordManagerClient::CreateForWebContents(
 
   contents->SetUserData(
       UserDataKey(),
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+      base::WrapUnique(new ChromePasswordManagerClientExt(contents)));
+#else
       base::WrapUnique(new ChromePasswordManagerClient(contents)));
+#endif
 }
 
 // static
@@ -376,6 +384,8 @@ bool ChromePasswordManagerClient::PromptUserToSaveOrUpdatePassword(
 
   save_update_password_message_delegate_.DisplaySaveUpdatePasswordPrompt(
       web_contents(), std::move(form_to_save), update_password, this);
+#elif BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  AsChromePasswordManagerClientExt()->ArkPromptUserToSaveOrUpdatePassword(std::move(form_to_save));
 #else
   PasswordsClientUIDelegate* manage_passwords_ui_controller =
       PasswordsClientUIDelegateFromWebContents(web_contents());
@@ -586,7 +596,11 @@ void ChromePasswordManagerClient::ShowKeyboardReplacingSurface(
     password_manager::PasswordManagerDriver* driver,
     const autofill::PasswordSuggestionRequest& request) {
   password_manager::ContentPasswordManagerDriver* content_driver =
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+      static_cast<password_manager::ContentPasswordManagerDriverExt*>(driver);
+#else
       static_cast<password_manager::ContentPasswordManagerDriver*>(driver);
+#endif
 
   if (keyboard_replacing_surface_visibility_controller_ &&
       !keyboard_replacing_surface_visibility_controller_->CanBeShown()) {
@@ -701,7 +715,7 @@ void ChromePasswordManagerClient::ContinueShowKeyboardReplacingSurface(
 bool ChromePasswordManagerClient::IsReauthBeforeFillingRequired(
     device_reauth::DeviceAuthenticator* authenticator) {
 #if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX) || \
-    BUILDFLAG(IS_CHROMEOS)
+    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
   if (!GetLocalStatePrefs() || !GetPrefs() || !authenticator) {
     return false;
   }
@@ -919,7 +933,8 @@ void ChromePasswordManagerClient::PasswordWasAutofilled(
   manage_passwords_ui_controller->OnPasswordAutofilled(best_matches, origin,
                                                        federated_matches);
 #endif
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS_ASH) || \
+    BUILDFLAG(IS_OHOS)
   if (was_autofilled_on_pageload &&
       !IsAuthenticatorRequestWindowUrl(GetLastCommittedURL()) &&
       password_manager_util::
@@ -993,7 +1008,7 @@ void ChromePasswordManagerClient::NotifyUserCredentialsWereLeaked(
 }
 
 void ChromePasswordManagerClient::NotifyKeychainError() {
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
   PasswordsClientUIDelegate* manage_passwords_ui_controller =
       PasswordsClientUIDelegateFromWebContents(web_contents());
   if (manage_passwords_ui_controller) {
@@ -1384,7 +1399,11 @@ password_manager::WebAuthnCredentialsDelegate*
 ChromePasswordManagerClient::GetWebAuthnCredentialsDelegateForDriver(
     PasswordManagerDriver* driver) {
   auto* frame_host =
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+      static_cast<password_manager::ContentPasswordManagerDriverExt*>(driver)
+#else
       static_cast<password_manager::ContentPasswordManagerDriver*>(driver)
+#endif
           ->render_frame_host();
   return ChromeWebAuthnCredentialsDelegateFactory::GetFactory(web_contents())
       ->GetDelegateForFrame(frame_host);
@@ -1741,6 +1760,9 @@ bool ChromePasswordManagerClient::CanShowBubbleOnURL(const GURL& url) {
               scheme) &&
 #if BUILDFLAG(ENABLE_EXTENSIONS)
           scheme != extensions::kExtensionScheme &&
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+          scheme != extensions::kArkwebExtensionScheme &&
+#endif
 #endif
           scheme != content::kChromeDevToolsScheme);
 }

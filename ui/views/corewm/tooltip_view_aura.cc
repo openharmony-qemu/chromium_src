@@ -24,7 +24,6 @@ namespace {
 
 constexpr int kTooltipBorderThickness = 1;
 constexpr gfx::Insets kBorderInset = gfx::Insets::TLBR(4, 8, 5, 8);
-
 }  // namespace
 
 TooltipViewAura::TooltipViewAura()

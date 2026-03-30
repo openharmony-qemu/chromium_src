@@ -45,9 +45,15 @@
 
 #define HAVE_ASM 1
 
+#if defined(__clang__) && (__clang_major__ < 17)
+#define HAVE_AS_ARCHEXT_DOTPROD_DIRECTIVE 0
+
+#define HAVE_AS_ARCHEXT_I8MM_DIRECTIVE 0
+#else
 #define HAVE_AS_ARCHEXT_DOTPROD_DIRECTIVE 1
 
 #define HAVE_AS_ARCHEXT_I8MM_DIRECTIVE 1
+#endif
 
 #define HAVE_AS_ARCHEXT_SVE2_DIRECTIVE 1
 

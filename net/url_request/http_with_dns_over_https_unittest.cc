@@ -256,7 +256,14 @@ class TestHttpDelegate : public HttpStreamRequest::Delegate {
                       const ProxyInfo& used_proxy_info,
                       ResolveErrorInfo resolve_eror_info) override {}
 
-  void OnCertificateError(int status, const SSLInfo& ssl_info) override {}
+  void OnCertificateError(int status,
+                          const SSLInfo& ssl_info
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+                          ,
+                          bool used_fallback_proxy
+#endif
+                          ) override {
+  }
 
   void OnNeedsProxyAuth(const HttpResponseInfo& proxy_response,
                         const ProxyInfo& used_proxy_info,

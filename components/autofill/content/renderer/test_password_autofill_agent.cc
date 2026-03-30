@@ -9,7 +9,11 @@ namespace autofill {
 TestPasswordAutofillAgent::TestPasswordAutofillAgent(
     content::RenderFrame* render_frame,
     blink::AssociatedInterfaceRegistry* registry)
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+    : PasswordAutofillAgentExt(render_frame, registry) {}
+#else
     : PasswordAutofillAgent(render_frame, registry) {}
+#endif
 
 TestPasswordAutofillAgent::~TestPasswordAutofillAgent() = default;
 

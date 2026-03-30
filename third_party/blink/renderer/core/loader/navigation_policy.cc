@@ -68,7 +68,10 @@ NavigationPolicy NavigationPolicyFromEventModifiers(
     return shift ? kNavigationPolicyNewForegroundTab
                  : kNavigationPolicyNewBackgroundTab;
   }
-  return shift ? kNavigationPolicyNewWindow : kNavigationPolicyDownload;
+#if BUILDFLAG(IS_ARKWEB)
+  LOG(INFO) << "navigation policy from event modifiers " << shift;
+#endif
+  return shift ? kNavigationPolicyNewWindow : kNavigationPolicyCurrentTab;
 }
 
 NavigationPolicy NavigationPolicyFromEventInternal(

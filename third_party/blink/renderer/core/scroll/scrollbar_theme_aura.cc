@@ -30,6 +30,9 @@
 
 #include "third_party/blink/renderer/core/scroll/scrollbar_theme_aura.h"
 
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#endif
 #include "base/numerics/safe_conversions.h"
 #include "build/build_config.h"
 #include "cc/input/scrollbar.h"
@@ -54,6 +57,10 @@ namespace {
 // TODO(crbug.com/953847): Adapt testharness tests to native themes and remove
 // this.
 constexpr int kScrollbarThicknessForWebTests = 15;
+
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+constexpr int kScrollbarForceThicknessForWeb = 16;
+#endif
 
 // While the theme does not have specific values for scrollbar-width: thin
 // we just use a fixed 2/3 ratio of the default value.
@@ -144,6 +151,13 @@ int ScrollbarThemeAura::ScrollbarThickness(
   gfx::Size scrollbar_size =
       WebThemeEngineHelper::GetNativeThemeEngine()->GetSize(
           WebThemeEngine::kPartScrollbarVerticalTrack);
+
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  float ratio = base::ohos::GetPixelRatio();
+  if (!OverlayScrollbarsEnabled()) {
+    return kScrollbarForceThicknessForWeb * ratio;
+  }
+#endif
 
   return scrollbar_size.width() * Proportion(scrollbar_width) * scale_from_dip;
 }
@@ -366,6 +380,9 @@ ScrollbarThemeAura::BuildScrollbarThumbExtraParams(
     scrollbar_thumb.thumb_color =
         scrollbar.ScrollbarThumbColor().value().toSkColor4f().toSkColor();
   }
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  scrollbar_thumb.scrollbar_color = scrollbar.GetScrollBarColor();
+#endif // ARKWEB_SCROLLBAR
   if (scrollbar.ScrollbarTrackColor().has_value()) {
     scrollbar_thumb.track_color =
         scrollbar.ScrollbarTrackColor().value().toSkColor4f().toSkColor();

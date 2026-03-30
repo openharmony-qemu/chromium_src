@@ -80,7 +80,9 @@ EnterpriseManaged g_is_enterprise_managed_for_testing =
 // CaptivePortalBlockingPage to be invoked when the user has pressed the
 // connect button.
 void OpenLoginPage(content::WebContents* web_contents) {
+#if !BUILDFLAG(IS_OHOS)
 #if !BUILDFLAG(ENABLE_CAPTIVE_PORTAL_DETECTION)
+#if !BUILDFLAG(IS_OHOS)
   // OpenLoginTabForWebContents() is not available on Android (the only
   // platform on which captive portal detection is not enabled). Simply open
   // the platform's portal detection URL in a new tab.
@@ -91,9 +93,15 @@ void OpenLoginPage(content::WebContents* web_contents) {
                                 ui::PAGE_TRANSITION_LINK, false);
   web_contents->OpenURL(params, /*navigation_handle_callback=*/{});
 #else
+  LOG(ERROR) << "OpenLoginPage TODO for OS_OHOS";
+#endif
+#else
   ChromeSecurityBlockingPageFactory::OpenLoginTabForWebContents(web_contents,
                                                                 true);
 #endif  // !BUILDFLAG(ENABLE_CAPTIVE_PORTAL_DETECTION)
+#else
+  LOG(ERROR) << "OpenLoginPage TODO for OS_OHOS";
+#endif
 }
 
 std::unique_ptr<ContentMetricsHelper> CreateMetricsHelperAndStartRecording(
@@ -345,6 +353,9 @@ void OpenLoginTab(Browser* browser,
   content::WebContents* new_contents = params.navigated_or_inserted_contents;
   captive_portal::CaptivePortalTabHelper* captive_portal_tab_helper =
       captive_portal::CaptivePortalTabHelper::FromWebContents(new_contents);
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  if (captive_portal_tab_helper)
+#endif
   captive_portal_tab_helper->SetIsLoginTab();
 }
 
@@ -366,7 +377,12 @@ void ChromeSecurityBlockingPageFactory::OpenLoginPageForBrowser(
       content::WebContents* const contents = tab->GetContents();
       captive_portal::CaptivePortalTabHelper* const captive_portal_tab_helper =
           captive_portal::CaptivePortalTabHelper::FromWebContents(contents);
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+      if (captive_portal_tab_helper &&
+          captive_portal_tab_helper->IsLoginTab()) {
+#else          
       if (captive_portal_tab_helper->IsLoginTab()) {
+#endif        
         BrowserWindowInterface* const browser_with_login_tab =
             tab->GetBrowserWindowInterface();
         browser_with_login_tab->GetWindow()->Show();
@@ -402,7 +418,11 @@ void ChromeSecurityBlockingPageFactory::OpenLoginPageForBrowser(
         browser->tab_strip_model()->GetWebContentsAt(i);
     captive_portal::CaptivePortalTabHelper* captive_portal_tab_helper =
         captive_portal::CaptivePortalTabHelper::FromWebContents(contents);
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+    if (captive_portal_tab_helper && captive_portal_tab_helper->IsLoginTab()) {
+#else
     if (captive_portal_tab_helper->IsLoginTab()) {
+#endif      
       if (focus_tab) {
         browser->tab_strip_model()->ActivateTabAt(i);
       }

@@ -87,7 +87,8 @@
 #include "components/signin/public/identity_manager/identity_manager.h"
 #endif
 
-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || \
+    BUILDFLAG(IS_OHOS)
 #include "chrome/browser/web_applications/web_app_utils.h"
 #endif
 
@@ -253,6 +254,9 @@ bool SiteGURLIsValid(const GURL& url) {
   // when this bug is fixed, so add it to the allowlist when that happens.
   return !site_origin.opaque() && (url.SchemeIsHTTPOrHTTPS() ||
                                    url.SchemeIs(extensions::kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+                                   || url.SchemeIs(extensions::kArkwebExtensionScheme)
+#endif
 #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || \
     BUILDFLAG(IS_CHROMEOS)
                                    || url.SchemeIs(webapps::kIsolatedAppScheme)
@@ -760,7 +764,8 @@ void ShowShortcutCustomizationApp(Profile* profile,
 }
 #endif  // BUILDFLAG(IS_CHROMEOS)
 
-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || \
+    BUILDFLAG(IS_OHOS)
 void ShowWebAppSettingsImpl(Browser* browser,
                             Profile* profile,
                             const std::string& app_id,

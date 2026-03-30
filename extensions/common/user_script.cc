@@ -70,6 +70,9 @@ enum {
                             URLPattern::SCHEME_HTTP | URLPattern::SCHEME_HTTPS |
                             URLPattern::SCHEME_FILE | URLPattern::SCHEME_FTP |
                             URLPattern::SCHEME_UUID_IN_PACKAGE
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+                            | URLPattern::SCHEME_ARKWEBUI
+#endif                            
 };
 
 // static
@@ -121,6 +124,9 @@ int UserScript::ValidUserScriptSchemes(bool can_execute_script_everywhere) {
   int valid_schemes = kValidUserScriptSchemes;
   if (!switches::AreExtensionsOnChromeURLsAllowed()) {
     valid_schemes &= ~URLPattern::SCHEME_CHROMEUI;
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    valid_schemes &= ~URLPattern::SCHEME_ARKWEBUI;
+#endif
   }
   return valid_schemes;
 }

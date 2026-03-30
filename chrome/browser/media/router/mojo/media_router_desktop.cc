@@ -967,6 +967,9 @@ void MediaRouterDesktop::RecordPresentationRequestUrlBySink(
 #if BUILDFLAG(ENABLE_EXTENSIONS)
                        source.url().SchemeIs(extensions::kExtensionScheme) ||
 #endif  // BUILDFLAG(ENABLE_EXTENSIONS)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+                       source.url().SchemeIs(extensions::kArkwebExtensionScheme) ||
+#endif
                        source.url().SchemeIs(url::kFileScheme);
   switch (provider_id) {
     case mojom::MediaRouteProviderId::WIRED_DISPLAY:

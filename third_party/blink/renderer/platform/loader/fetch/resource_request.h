@@ -685,6 +685,14 @@ class PLATFORM_EXPORT ResourceRequestHead {
 #endif
   }
 
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  bool GetAllowPreloadRecord() const { return allow_preload_record_; }
+  void SetAllowPreloadRecord(bool allow) { allow_preload_record_ = allow; }
+
+  const KURL& GetMainUrl() const { return main_url_; }
+  void SetMainUrl(const KURL& url) { main_url_ = url; }
+#endif
+
   bool AllowsDeviceBoundSessionRegistration() const {
     return allows_device_bound_session_registration_;
   }
@@ -850,6 +858,11 @@ class PLATFORM_EXPORT ResourceRequestHead {
 
 #if DCHECK_IS_ON()
   bool is_set_url_allowed_ = true;
+#endif
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  bool allow_preload_record_ = false;
+  KURL main_url_;
 #endif
 
   // Whether this request is allowed to register new device bound

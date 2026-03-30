@@ -94,6 +94,8 @@ LocationProviderManager::LocationProviderManager(
 #elif BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_LINUX)
   // On Ash / Lacros / Linux, default to using the network location provider.
   provider_manager_mode_ = kNetworkOnly;
+#elif BUILDFLAG(IS_ARKWEB)
+  provider_manager_mode_ = kPlatformOnly;
 #else
   // On macOS / Windows platforms, use the mode specified by the feature flag.
   provider_manager_mode_ = features::kLocationProviderManagerParam.Get();
@@ -300,7 +302,16 @@ void LocationProviderManager::OnLocationUpdate(
     } else if (provider == custom_location_provider_.get()) {
       source = LocationProviderManagerSource::kCustomProvider;
     } else {
+#if BUILDFLAG(IS_ARKWEB)
+      GEOLOCATION_LOG(ERROR) << "OnLocationUpdate provider match error: "
+                                "provider_manager_mode_="
+                             << LocationProviderManagerModeAsString(
+                                    provider_manager_mode_)
+                             << " set source to kPlatformProvider";
+      source = LocationProviderManagerSource::kPlatformProvider;
+#else
       NOTREACHED();
+#endif
     }
     base::UmaHistogramEnumeration("Geolocation.LocationProviderManager.Source",
                                   source);
@@ -385,7 +396,7 @@ LocationProviderManager::NewSystemLocationProvider() {
   CHECK(geolocation_system_permission_manager_);
   return device::NewSystemLocationProvider(
       geolocation_system_permission_manager_->GetSystemGeolocationSource());
-#elif BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ANDROID)
+#elif BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
   return device::NewSystemLocationProvider();
 #else
   return nullptr;

@@ -37,6 +37,11 @@ class NET_EXPORT ParsedCookie {
   // The CookieInclusionStatus will not be altered if the resulting ParsedCookie
   // is valid.
   explicit ParsedCookie(std::string_view cookie_line,
+#if BUILDFLAG(ARKWEB_COOKIE)
+  // `block_truncated` indicates whether cookies containing '\00', '\r', or '\n'
+  // characters should be treated as invalid.
+                        bool block_truncated = true,
+#endif // BUILDFLAG(ARKWEB_COOKIE)
                         CookieInclusionStatus* status_out = nullptr);
 
   ParsedCookie(const ParsedCookie&) = delete;
@@ -179,6 +184,9 @@ class NET_EXPORT ParsedCookie {
 
  private:
   void ParseTokenValuePairs(std::string_view cookie_line,
+#if BUILDFLAG(ARKWEB_COOKIE)
+                            bool block_truncated,
+#endif // BUILDFLAG(ARKWEB_COOKIE)
                             CookieInclusionStatus& status_out);
   void SetupAttributes();
 

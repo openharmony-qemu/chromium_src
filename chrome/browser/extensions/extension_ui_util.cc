@@ -59,7 +59,11 @@ bool ShouldDisplayInNewTabPage(const Extension* extension,
 
 std::u16string GetEnabledExtensionNameForUrl(const GURL& url,
                                              content::BrowserContext* context) {
-  if (!url.SchemeIs(extensions::kExtensionScheme))
+  if (!url.SchemeIs(extensions::kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      && !url.SchemeIs(extensions::kArkwebExtensionScheme)
+#endif
+  )
     return std::u16string();
 
   extensions::ExtensionRegistry* extension_registry =

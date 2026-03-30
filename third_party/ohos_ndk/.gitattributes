@@ -1,0 +1,12 @@
+toolchains/llvm/lib/libLTO.so.15 filter=lfs diff=lfs merge=lfs -text
+toolchains/llvm/lib/libclang-cpp.so.15 filter=lfs diff=lfs merge=lfs -text
+toolchains/llvm/lib/liblldb.so.15.0.4 filter=lfs diff=lfs merge=lfs -text
+toolchains/llvm/lib/libLLVM-15.so filter=lfs diff=lfs merge=lfs -text
+toolchains/llvm/lib/LLVMgold.so filter=lfs diff=lfs merge=lfs -text
+toolchains/llvm/lib/libclang.so.15.0.4 filter=lfs diff=lfs merge=lfs -text
+toolchains/llvm/bin/clang-15 filter=lfs diff=lfs merge=lfs -text
+toolchains/llvm/bin/llc filter=lfs diff=lfs merge=lfs -text
+toolchains/llvm/bin/lld filter=lfs diff=lfs merge=lfs -text
+toolchains/llvm/bin/opt filter=lfs diff=lfs merge=lfs -text
+toolchains/llvm/bin/clang-tidy filter=lfs diff=lfs merge=lfs -text
+toolchains/llvm/bin/clang-check filter=lfs diff=lfs merge=lfs -text

@@ -2,6 +2,12 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//arkweb/build/features/features.gni")
+
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
+
 blink_core_sources_html = [
   "anchor_element_metrics.cc",
   "anchor_element_metrics.h",
@@ -474,6 +480,10 @@ blink_core_sources_html = [
   "media/html_audio_element.h",
   "media/html_media_element.cc",
   "media/html_media_element.h",
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/html/media/html_media_element_utils.cc",
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/html/media/html_media_element_utils.h",
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/html/media/media_remoting_interstitial_listener.cc",
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/html/media/media_remoting_interstitial_listener.h",
   "media/html_media_element_controls_list.cc",
   "media/html_media_element_controls_list.h",
   "media/html_video_element.cc",
@@ -602,6 +612,8 @@ blink_core_hot_sources_html = [
   "parser/html_construction_site.h",
   "parser/html_document_parser.cc",
   "parser/html_document_parser.h",
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/html/parser/html_document_parser_ext.h",
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/html/parser/html_document_parser_ext.cc",
   "parser/html_document_parser_fastpath.cc",
   "parser/html_document_parser_fastpath.h",
   "parser/html_document_parser_state.h",

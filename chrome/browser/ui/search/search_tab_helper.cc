@@ -115,8 +115,12 @@ void RecordConcreteNtp(content::NavigationHandle* navigation_handle) {
     concrete_page = NewTabPageConcretePage::k3PWebUiNtp;
   } else if (search::IsInstantNTP(navigation_handle->GetWebContents())) {
     concrete_page = NewTabPageConcretePage::k3PRemoteNtp;
-  } else if (navigation_handle->GetURL().SchemeIs(
-                 extensions::kExtensionScheme)) {
+  } else if (navigation_handle->GetURL().SchemeIs(extensions::kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+             || navigation_handle->GetURL().SchemeIs(
+                    extensions::kArkwebExtensionScheme)
+#endif
+  ) {
     concrete_page = NewTabPageConcretePage::kExtensionNtp;
   } else if (Profile::FromBrowserContext(
                  navigation_handle->GetWebContents()->GetBrowserContext())

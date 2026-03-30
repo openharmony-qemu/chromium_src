@@ -81,6 +81,12 @@
 #include <grp.h>
 #endif
 
+#include "arkweb/build/features/features.h"
+
+#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_FILE_UPLOAD)
+#include "base/datashare_uri_utils.h"
+#endif
+
 // We need to do this on AIX due to some inconsistencies in how AIX
 // handles XOPEN_SOURCE and ALL_SOURCE.
 #if BUILDFLAG(IS_AIX)
@@ -474,6 +480,13 @@ FilePath MakeAbsoluteFilePath(const FilePath& input) {
     return input;
   }
 #endif
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (input.IsDataShareUri()) {
+    return input;
+  }
+#endif
+
   ScopedBlockingCall scoped_blocking_call(FROM_HERE, BlockingType::MAY_BLOCK);
   char full_path[PATH_MAX];
   if (realpath(input.value().c_str(), full_path) == nullptr) {
@@ -644,6 +657,14 @@ bool PathExists(const FilePath& path) {
     return content_uri && internal::ContentUriExists(*content_uri);
   }
 #endif
+
+#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_FILE_UPLOAD)
+  if (path.IsDataShareUri()) {
+    File file = OpenDatashareUriForRead(path);
+    return file.IsValid();
+  }
+#endif
+
   return access(path.value().c_str(), F_OK) == 0;
 }
 
@@ -814,14 +835,25 @@ bool ExecutableExistsInPath(Environment* env,
 #if !BUILDFLAG(IS_APPLE)
 // This is implemented in file_util_apple.mm for Mac.
 bool GetTempDir(FilePath* path) {
+#if !BUILDFLAG(IS_ARKWEB)
   const char* tmp = getenv("TMPDIR");
   if (tmp) {
     *path = FilePath(tmp);
     return true;
   }
+#endif  // BUILDFLAG(IS_ARKWEB)
 
-#if BUILDFLAG(IS_ANDROID)
-  return PathService::Get(DIR_CACHE, path);
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
+  if (PathService::Get(DIR_CACHE, path) && path != nullptr) {
+    *path = path->Append("Temp");
+    if (!base::PathExists(*path)) {
+      return base::CreateDirectory(*path);
+    }
+
+    return true;
+  } else {
+    return false;
+  }
 #else
   *path = FilePath("/tmp");
   return true;
@@ -1047,9 +1079,22 @@ bool IsLink(const FilePath& file_path) {
 
 bool GetFileInfo(const FilePath& file_path, File::Info* results) {
   stat_wrapper_t file_info;
+
+#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_FILE_UPLOAD)
+    if (file_path.IsDataShareUri()) {
+      File file = OpenDatashareUriForRead(file_path);
+      if (!file.IsValid()) {
+        return false;
+      }
+      return file.GetInfo(results);
+    } else {
+#endif  // #ifdef ARKWEB_FILE_UPLOAD
   if (File::Stat(file_path, &file_info) != 0) {
     return false;
   }
+#if BUILDFLAG(IS_OHOS) && BUILDFLAG(ARKWEB_FILE_UPLOAD)
+    }
+#endif  // #ifdef ARKWEB_FILE_UPLOAD
 
   results->FromStat(file_info);
   return true;
@@ -1418,7 +1463,17 @@ bool GetShmemTempDir(bool executable, FilePath* path) {
 // Mac has its own implementation, this is for all other Posix systems.
 bool CopyFile(const FilePath& from_path, const FilePath& to_path) {
   ScopedBlockingCall scoped_blocking_call(FROM_HERE, BlockingType::MAY_BLOCK);
-  File infile(from_path, File::FLAG_OPEN | File::FLAG_READ);
+  File infile;
+#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_FILE_UPLOAD)
+  if (from_path.IsDataShareUri()) {
+    infile = OpenDatashareUriForRead(from_path);
+  } else {
+    infile = File(from_path, File::FLAG_OPEN | File::FLAG_READ);
+  }
+#else
+  infile = File(from_path, File::FLAG_OPEN | File::FLAG_READ);
+#endif
+
   if (!infile.IsValid()) {
     return false;
   }
@@ -1569,7 +1624,8 @@ bool CopyFileContentsWithSendfile(File& infile,
 
 }  // namespace internal
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_AIX)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_AIX) || \
+    BUILDFLAG(IS_ARKWEB)
 BASE_EXPORT bool IsPathExecutable(const FilePath& path) {
   bool result = false;
   FilePath tmp_file_path;

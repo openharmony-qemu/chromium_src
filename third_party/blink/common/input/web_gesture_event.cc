@@ -170,6 +170,9 @@ gfx::SizeF WebGestureEvent::TapAreaInRootFrame() const {
                       data.two_finger_tap.first_finger_height / frame_scale_);
   } else if (type_ == WebInputEvent::Type::kGestureShortPress ||
              type_ == WebInputEvent::Type::kGestureLongPress ||
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+             type_ == WebInputEvent::Type::kGestureDragLongPress ||
+#endif
              type_ == WebInputEvent::Type::kGestureLongTap) {
     return gfx::SizeF(data.long_press.width / frame_scale_,
                       data.long_press.height / frame_scale_);
@@ -233,6 +236,9 @@ void WebGestureEvent::FlattenTransform() {
         break;
       case WebInputEvent::Type::kGestureShortPress:
       case WebInputEvent::Type::kGestureLongPress:
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+      case WebInputEvent::Type::kGestureDragLongPress:
+#endif
       case WebInputEvent::Type::kGestureLongTap:
         data.long_press.width /= frame_scale_;
         data.long_press.height /= frame_scale_;

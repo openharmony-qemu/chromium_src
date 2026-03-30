@@ -14,6 +14,7 @@
 
 #include "util/linux/exception_handler_protocol.h"
 
+#include "arkweb/build/features/features.h"
 #include "build/build_config.h"
 
 namespace crashpad {
@@ -21,7 +22,7 @@ namespace crashpad {
 ExceptionHandlerProtocol::ClientInformation::ClientInformation()
     : exception_information_address(0),
       sanitization_information_address(0)
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(ARKWEB_CRASHPAD)
       ,
       crash_loop_before_time(0)
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)

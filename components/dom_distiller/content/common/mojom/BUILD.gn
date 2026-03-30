@@ -4,10 +4,23 @@
 
 import("//mojo/public/tools/bindings/mojom.gni")
 
+if (defined(is_arkweb_ext) && is_arkweb_ext) {
+  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
+}
+
 mojom("mojom") {
   sources = [
     "distillability_service.mojom",
     "distiller_javascript_service.mojom",
   ]
   deps = [ "//components/dom_distiller/core/mojom" ]
+
+  if (defined(arkweb_reader_mode) && arkweb_reader_mode) {
+    enabled_features = [ "arkweb_reader_mode" ]
+  }
+
+  #if BUILDFLAG(ARKWEB_READER_MODE)
+  #if (arkweb_reader_mode) {
+    deps += [ "//third_party/blink/public/mojom:mojom_core" ]
+  #}
 }

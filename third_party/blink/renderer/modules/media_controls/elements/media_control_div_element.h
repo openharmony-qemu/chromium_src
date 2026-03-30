@@ -6,6 +6,10 @@
 #define THIRD_PARTY_BLINK_RENDERER_MODULES_MEDIA_CONTROLS_ELEMENTS_MEDIA_CONTROL_DIV_ELEMENT_H_
 
 #include "third_party/blink/renderer/core/html/html_div_element.h"
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+#include "third_party/blink/renderer/core/html/html_span_element.h"
+#include "third_party/blink/renderer/core/html/html_progress_element.h"
+#endif
 #include "third_party/blink/renderer/modules/media_controls/elements/media_control_element_base.h"
 
 namespace blink {
@@ -26,6 +30,10 @@ class MODULES_EXPORT MediaControlDivElement : public HTMLDivElement,
   gfx::Size GetSizeOrDefault() const override;
 
   bool IsDisabled() const override;
+
+#if BUILDFLAG(ARKWEB_MEDIA)
+  void SetClass(const AtomicString& class_name, bool should_have_class);
+#endif  // BUILDFLAG(ARKWEB_MEDIA)
 
   void Trace(Visitor*) const override;
 

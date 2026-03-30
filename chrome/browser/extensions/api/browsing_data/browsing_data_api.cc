@@ -264,6 +264,9 @@ ExtensionFunction::ResponseAction BrowsingDataRemoverFunction::Run() {
   EXTENSION_FUNCTION_VALIDATE(args().size() >= 1);
   EXTENSION_FUNCTION_VALIDATE(args()[0].is_dict());
   const base::Value::Dict& options = args()[0].GetDict();
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  options_ = options.Clone();
+#endif
 
   EXTENSION_FUNCTION_VALIDATE(ParseOriginTypeMask(options, &origin_type_mask_));
 
@@ -342,6 +345,7 @@ bool BrowsingDataRemoverFunction::IsRemovalDeprecated() {
   return false;
 }
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 void BrowsingDataRemoverFunction::StartRemoving() {
   Profile* profile = Profile::FromBrowserContext(browser_context());
   content::BrowsingDataRemover* remover = profile->GetBrowsingDataRemover();
@@ -390,6 +394,7 @@ void BrowsingDataRemoverFunction::StartRemoving() {
   }
   OnTaskFinished();
 }
+#endif
 
 bool BrowsingDataRemoverFunction::ParseOriginTypeMask(
     const base::Value::Dict& options,

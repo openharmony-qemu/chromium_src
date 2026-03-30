@@ -123,15 +123,33 @@ template("buildflag_header") {
       "--definitions",
       "{{response_file_name}}",
     ]
+    if (defined(invoker.for_arkweb) && invoker.for_arkweb) {
+      args += [ "--for-arkweb" ]
+    }
 
     forward_variables_from(invoker,
                            [
                              "deps",
                              "public_deps",
+                             "public_configs",
                              "testonly",
                              "visibility",
                            ])
 
-    public_deps = [ "//build:buildflag_header_h" ]
+    if (defined(public_deps)) {
+      public_deps += [ "//build:buildflag_header_h" ]
+    } else {
+      public_deps = [ "//build:buildflag_header_h" ]
+    }
+  }
+  if (target_os == "ohos") {
+    build_metadata_filename = "$target_gen_dir/${target_name}.build_metadata"
+    build_metadata = {
+      target_name = target_name
+      label = get_label_info(":$target_name", "label_with_toolchain")
+      template_type = "buildflag_header"
+    }
+
+    write_file(build_metadata_filename, build_metadata, "json")
   }
 }

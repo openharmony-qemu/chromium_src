@@ -9,7 +9,7 @@
 #include "build/build_config.h"
 
 // Hide this function on platforms where the dialog does not exist.
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
 
 namespace first_run {
 
@@ -30,6 +30,6 @@ base::OnceClosure& GetBeforeShowFirstRunDialogHookForTesting();
 
 }  // namespace first_run
 
-#endif  // BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
+#endif  // BUILDFLAG(IS_MAC) || (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS_LACROS)) || BUILDFLAG(IS_OHOS)
 
 #endif  // CHROME_BROWSER_FIRST_RUN_FIRST_RUN_DIALOG_H_

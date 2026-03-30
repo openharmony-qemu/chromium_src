@@ -300,11 +300,13 @@ void PermissionsRequestFunction::ResolvePendingDialogForTests(
   pending_function->Release();  // Balanced in Run().
 }
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 // static
 void PermissionsRequestFunction::SetIgnoreUserGestureForTests(
     bool ignore) {
   ignore_user_gesture_for_tests = ignore;
 }
+#endif
 
 PermissionsRequestFunction::PermissionsRequestFunction() = default;
 
@@ -313,6 +315,7 @@ PermissionsRequestFunction::~PermissionsRequestFunction() {
       << "Pending request function was never resolved!";
 }
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 ExtensionFunction::ResponseAction PermissionsRequestFunction::Run() {
   if (!user_gesture() && !ignore_user_gesture_for_tests &&
       extension_->location() != mojom::ManifestLocation::kComponent) {
@@ -486,6 +489,7 @@ ExtensionFunction::ResponseAction PermissionsRequestFunction::Run() {
   // ExtensionInstallPrompt::ShowDialog() can call the response synchronously.
   return did_respond() ? AlreadyResponded() : RespondLater();
 }
+#endif
 
 bool PermissionsRequestFunction::ShouldKeepWorkerAliveIndefinitely() {
   // `permissions.request()` may trigger a user prompt. In this case, we allow

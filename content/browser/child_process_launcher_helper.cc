@@ -6,6 +6,7 @@
 
 #include <optional>
 
+#include "arkweb/chromium_ext/content/browser/arkweb_child_process_launcher_helper_utils.h"
 #include "base/base_switches.h"
 #include "base/command_line.h"
 #include "base/functional/bind.h"
@@ -303,6 +304,9 @@ ChildProcessLauncherHelper::ChildProcessLauncherHelper(
       tracing_config_memory_region_(std::move(tracing_config_memory_region)),
       tracing_output_memory_region_(std::move(tracing_output_memory_region)),
       init_start_time_(base::TimeTicks::Now()) {
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
+  arkweb_child_process_launcher_helper_utils_ = std::make_unique<ArkwebChildProcessLauncherHelperUtils>(this);
+#endif
   if (!mojo::core::GetConfiguration().is_broker_process &&
       !command_line_->HasSwitch(switches::kDisableMojoBroker)) {
     command_line_->AppendSwitch(switches::kDisableMojoBroker);

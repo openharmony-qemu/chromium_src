@@ -83,6 +83,12 @@ class CORE_EXPORT Scrollbar : public GarbageCollected<Scrollbar>,
   void SetFrameRect(const gfx::Rect&);
   const gfx::Rect& FrameRect() const { return frame_rect_; }
 
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  SkColor GetScrollBarColor() const;
+#endif  // ARKWEB_SCROLLBAR
+#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_AREA)
+  double GetScrollbarAvoidAreaTop() const;
+#endif // ARKWEB_SCROLLBAR_AVOID_AREA
   bool HasTickmarks() const;
   Vector<gfx::Rect> GetTickmarks() const;
   bool IsScrollableAreaActive() const;

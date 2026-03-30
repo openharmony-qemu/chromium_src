@@ -64,6 +64,10 @@ sync_pb::SyncEnums_PageTransition ToSyncPageTransition(
     case ui::PAGE_TRANSITION_SERVER_REDIRECT:
     case ui::PAGE_TRANSITION_IS_REDIRECT_MASK:
     case ui::PAGE_TRANSITION_QUALIFIER_MASK:
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+    case ui::PAGE_TRANSITION_FROM_JAVASCRIPT:
+    case ui::PAGE_TRANSITION_FROM_PULL_DOWN:
+#endif
       break;
   }
   NOTREACHED();

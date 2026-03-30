@@ -19,7 +19,9 @@ NetworkContextService::NetworkContextService(Profile* profile) {
                           // This is safe because `this` owns
                           // `network_context_`.
                           base::Unretained(this)));
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   proxy_config_monitor_ = std::make_unique<ProxyConfigMonitor>(profile);
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 }
 
 NetworkContextService::~NetworkContextService() = default;
@@ -49,7 +51,9 @@ network::mojom::NetworkContextParamsPtr
 NetworkContextService::CreateNetworkContextParams() {
   auto params = SystemNetworkContextManager::GetInstance()
                     ->CreateDefaultNetworkContextParams();
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   proxy_config_monitor_->AddToNetworkContextParams(params.get());
+#endif // ARKWEB_ARKWEB_EXTENSIONS
   return params;
 }
 

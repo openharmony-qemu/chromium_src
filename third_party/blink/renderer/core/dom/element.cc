@@ -8158,7 +8158,12 @@ void Element::LoseInterestInAllElements(Document& document) {
 
 bool Element::IsKeyboardFocusableSlow(UpdateBehavior update_behavior) const {
   FocusableState focusable_state = Element::IsFocusableState(update_behavior);
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+  if (focusable_state == FocusableState::kNotFocusable || 
+      focusable_state == FocusableState::kKeyboardFocusableScroller) {
+#else
   if (focusable_state == FocusableState::kNotFocusable) {
+#endif
     return false;
   }
 
@@ -8180,7 +8185,12 @@ bool Element::IsKeyboardFocusableSlow(UpdateBehavior update_behavior) const {
 
 bool Element::IsMouseFocusable(UpdateBehavior update_behavior) const {
   FocusableState focusable_state = Element::IsFocusableState(update_behavior);
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+  if (focusable_state == FocusableState::kNotFocusable || 
+      focusable_state == FocusableState::kKeyboardFocusableScroller) {
+#else
   if (focusable_state == FocusableState::kNotFocusable) {
+#endif
     return false;
   }
   // Any element with tabindex (regardless of its value) is mouse focusable.

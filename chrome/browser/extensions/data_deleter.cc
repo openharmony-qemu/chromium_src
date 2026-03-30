@@ -50,7 +50,11 @@ void DeleteOrigin(Profile* profile,
   DCHECK(profile);
   DCHECK(partition);
 
-  if (origin.SchemeIs(kExtensionScheme)) {
+  if (origin.SchemeIs(kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      || origin.SchemeIs(kArkwebExtensionScheme)
+#endif
+  ) {
     auto subtask_done_callback =
         base::BarrierClosure(2, std::move(done_callback));
 

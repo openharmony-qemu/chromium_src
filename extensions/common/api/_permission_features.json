@@ -142,7 +142,8 @@
     {
       "channel": "stable",
       "extension_types": ["platform_app"],
-      "platforms": ["chromeos", "win", "mac", "linux"],
+      // todo:check
+      "platforms": ["chromeos", "win", "mac", "linux"],//[], "ohos"],
       "allowlist": [
         "1C93BD3CF875F4A73C0B2A163BB8FBDA8B8B3D80",  // http://crbug.com/387169
         "A3BC37E2148AC4E99BE4B16AF9D42DD1E592BBBE",  // http://crbug.com/387169
@@ -217,7 +218,7 @@
     "extension_types": ["extension", "legacy_packaged_app"],
     "max_manifest_version": 2,
     // "desktop_android" is not supported.
-    "platforms": ["chromeos", "linux", "mac", "win"]
+    "platforms": ["chromeos", "linux", "mac", "win", "ohos"]
   },
   "devtools": {
     "channel": "stable",
@@ -288,12 +289,12 @@
     "extension_types": ["platform_app"],
     "default_parent": true,
     // "desktop_android" is not supported.
-    "platforms": ["chromeos", "linux", "mac", "win"]
+    "platforms": ["chromeos", "linux", "mac", "win", "ohos"]
   },{
     "channel": "stable",
     "extension_types": ["extension"],
     // "desktop_android" is not supported.
-    "platforms": ["chromeos", "linux", "mac", "win"],
+    "platforms": ["chromeos", "linux", "mac", "win", "ohos"],
     "allowlist": [
       "2FC374607C2DF285634B67C64A2E356C607091C3",  // Quickoffice
       "3727DD3E564B6055387425027AD74C58784ACC15",  // Quickoffice internal
@@ -485,7 +486,8 @@
     "channel": "stable",
     "extension_types": ["extension", "legacy_packaged_app", "platform_app"],
     // "desktop_android" is not supported.
-    "platforms": ["chromeos", "mac", "win", "linux"],
+    // todo:check
+    "platforms": ["chromeos", "mac", "win", "linux"],//[], "ohos"],
     "allowlist": [
       // DO NOT ADD ANY MORE ENTRIES HERE.
       // networkingPrivate is being migrated to networking.onc.
@@ -565,7 +567,7 @@
     "channel": "stable",
     "extension_types": ["extension", "platform_app" ],
     // "desktop_android" is not supported.
-    "platforms": ["chromeos", "linux", "mac", "win"]
+    "platforms": ["chromeos", "linux", "mac", "win", "ohos"]
   },
   // Note: runtime is not actually a permission, but some systems check these
   // values to verify restrictions.

@@ -60,7 +60,13 @@ class NET_EXPORT HostCache {
         DnsQueryType dns_query_type,
         HostResolverFlags host_resolver_flags,
         HostResolverSource host_resolver_source,
-        const NetworkAnonymizationKey& network_anonymization_key);
+        const NetworkAnonymizationKey& network_anonymization_key
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+        ,
+        bool secure = false,
+        bool external_added = false
+#endif
+        );
     Key();
     Key(const Key& key);
     Key(Key&& key);
@@ -76,11 +82,28 @@ class NET_EXPORT HostCache {
                       key->secure);
     }
 
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+    static auto GetTuple2(const Key* key) {
+      return std::tie(key->dns_query_type, key->host_resolver_flags, key->host,
+                      key->host_resolver_source);
+    }
+#endif
+
     bool operator==(const Key& other) const {
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+      if (external_added || other.external_added) {
+        return GetTuple2(this) == GetTuple2(&other);
+      }
+#endif
       return GetTuple(this) == GetTuple(&other);
     }
 
     bool operator<(const Key& other) const {
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+      if (external_added || other.external_added) {
+        return GetTuple2(this) < GetTuple2(&other);
+      }
+#endif
       return GetTuple(this) < GetTuple(&other);
     }
 
@@ -90,6 +113,9 @@ class NET_EXPORT HostCache {
     HostResolverSource host_resolver_source = HostResolverSource::ANY;
     NetworkAnonymizationKey network_anonymization_key;
     bool secure = false;
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+    bool external_added = false;
+#endif
   };
 
   struct NET_EXPORT EntryStaleness {
@@ -451,6 +477,10 @@ class NET_EXPORT HostCache {
   size_t max_entries() const;
   int network_changes() const { return network_changes_; }
   const EntryMap& entries() const { return entries_; }
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  std::vector<IPEndPoint> LookupByHost(url::SchemeHostPort destination);
+#endif  // ARKWEB_LOGGER_REPORT
 
  private:
   FRIEND_TEST_ALL_PREFIXES(HostCacheTest, NoCache);

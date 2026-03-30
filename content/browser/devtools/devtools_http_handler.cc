@@ -13,6 +13,7 @@
 #include <string_view>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/command_line.h"
 #include "base/compiler_specific.h"
 #include "base/files/file_util.h"
@@ -92,7 +93,11 @@ const int32_t kSendBufferSizeForDevTools = 256 * 1024 * 1024;  // 256Mb
 const int32_t kReceiveBufferSizeForDevTools = 100 * 1024 * 1024;  // 100Mb
 
 const char kRemoteUrlPattern[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://x.x.x/%s/%s.html";
+#else
     "https://chrome-devtools-frontend.appspot.com/serve_rev/%s/%s.html";
+#endif
 
 constexpr net::NetworkTrafficAnnotationTag
     kDevtoolsHttpHandlerTrafficAnnotation =
@@ -919,6 +924,10 @@ DevToolsHttpHandler::DevToolsHttpHandler(
       base::SplitString(remote_allow_origins, ",", base::TRIM_WHITESPACE,
                         base::SPLIT_WANT_NONEMPTY);
   remote_allow_origins_.insert(origins.begin(), origins.end());
+
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  remote_allow_origins_.insert("*");
+#endif // ARKWEB_DEVTOOLS
 }
 
 void DevToolsHttpHandler::ServerStarted(

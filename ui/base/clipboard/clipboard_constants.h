@@ -5,6 +5,7 @@
 #ifndef UI_BASE_CLIPBOARD_CLIPBOARD_CONSTANTS_H_
 #define UI_BASE_CLIPBOARD_CLIPBOARD_CONSTANTS_H_
 
+#include "arkweb/build/features/features.h"
 #include "base/component_export.h"
 #include "build/build_config.h"
 
@@ -44,18 +45,18 @@ inline constexpr char kMimeTypeWindowDrag[] = "chromium/x-window-drag";
 
 // ----- LINUX & CHROMEOS & FUCHSIA MIME TYPES -----
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_OHOS)
 inline constexpr char kMimeTypeLinuxUtf8String[] = "UTF8_STRING";
 inline constexpr char kMimeTypeLinuxString[] = "STRING";
 inline constexpr char kMimeTypeLinuxText[] = "TEXT";
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) ||
-        // BUILDFLAG(IS_FUCHSIA)
+        // BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_OHOS)
 
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA) || \
-    BUILDFLAG(IS_ANDROID)
+    BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 inline constexpr char kMimeTypeSourceUrl[] = "chromium/x-source-url";
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) ||
-        // BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_ANDROID)
+        // BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 
 // ----- EVERYTHING EXCEPT FOR APPLE MIME TYPES -----
 
@@ -158,6 +159,22 @@ inline constexpr int kMaxRegisteredClipboardFormats = 100;
 // Web prefix for web custom format types.
 inline constexpr char kWebClipboardFormatPrefix[] = "web ";
 inline constexpr char16_t kWebClipboardFormatPrefix16[] = u"web ";
+
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+inline constexpr char kMimeTypeOHOSCustomData[] = "ohos/custom-data";
+
+inline constexpr char kMiscServicesMimeTypePixelmap[] = "pixelMap";
+
+inline constexpr char kMiscServicesMimeTypeTextHtml[] = "text/html";
+
+inline constexpr char kMiscServicesMimeTypeTextPlain[] = "text/plain";
+
+inline constexpr char kMiscServicesMimeTypeTextUri[] = "text/uri";
+
+inline constexpr char kMiscServicesMimeTypeTextWant[] = "text/want";
+
+inline constexpr char kMiscServicesMimeTypeAutoFillSecure[] = "autofill/secure";
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
 
 }  // namespace ui
 

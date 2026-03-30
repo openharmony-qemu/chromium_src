@@ -7,6 +7,13 @@ import("//tools/grit/grit_rule.gni")
 
 grit_strings("strings") {
   source = "blink_strings.grd"
+
+#ifdef arkweb_i18n
+  if (arkweb_i18n) {
+    locales = all_chrome_locales + extra_locales
+  }
+
+#endif
   outputs = [ "grit/blink_strings.h" ]
   output_prefix = "blink_strings_"
 }
@@ -15,6 +22,12 @@ grit_strings("strings") {
 grit_strings("permission_element_strings") {
   source = "permission_element_strings.grd"
   outputs = [ "grit/permission_element_strings.h" ]
+#ifdef arkweb_i18n
+  if (arkweb_i18n) {
+    locales = all_chrome_locales + extra_locales
+  }
+
+#endif
 }
 
 action("generate_permission_element_strings_mono_grd") {

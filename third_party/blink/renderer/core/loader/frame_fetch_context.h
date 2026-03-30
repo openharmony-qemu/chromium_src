@@ -177,6 +177,9 @@ class CORE_EXPORT FrameFetchContext final : public BaseFetchContext,
   // BaseFetchContext overrides:
   net::SiteForCookies GetSiteForCookies() const override;
   SubresourceFilter* GetSubresourceFilter() const override;
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  SubresourceFilter* GetUserSubresourceFilter() const override;
+#endif
   bool AllowScript() const override;
   bool ShouldBlockRequestByInspector(const KURL&) const override;
   void DispatchDidBlockRequest(const ResourceRequest&,

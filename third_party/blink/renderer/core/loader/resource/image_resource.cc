@@ -30,6 +30,7 @@
 #include <utility>
 #include <variant>
 
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/loader/resource/image_resource_utils.h"
 #include "base/compiler_specific.h"
 #include "base/containers/span.h"
 #include "base/memory/scoped_refptr.h"
@@ -358,6 +359,9 @@ ImageResource::ImageResource(const ResourceRequest& resource_request,
       << "MakeGarbageCollected<ImageResource>(ResourceRequest) " << this;
   GetContent()->SetImageResourceInfo(
       MakeGarbageCollected<ImageResourceInfoImpl>(this));
+#if BUILDFLAG(ARKWEB_INJECT_OFFLINE_RESOURCE)
+  imageResourceUtils = MakeGarbageCollected<ImageResourceUtils>(this);
+#endif
 }
 
 ImageResource::~ImageResource() {
@@ -381,6 +385,9 @@ void ImageResource::OnMemoryDump(WebMemoryDumpLevelOfDetail level_of_detail,
 void ImageResource::Trace(Visitor* visitor) const {
   visitor->Trace(multipart_parser_);
   visitor->Trace(content_);
+#if BUILDFLAG(ARKWEB_INJECT_OFFLINE_RESOURCE)
+  visitor->Trace(imageResourceUtils);
+#endif
   Resource::Trace(visitor);
   MultipartImageResourceParser::Client::Trace(visitor);
 }

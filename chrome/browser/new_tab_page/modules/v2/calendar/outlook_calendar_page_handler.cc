@@ -31,7 +31,11 @@
 namespace {
 
 const char kBaseAttachmentResourceUrl[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://***/";
+#else
     "https://outlook.office.com/mail/deeplink/attachment/";
+#endif
 
 const char kRequestUrl[] =
     "https://graph.microsoft.com/v1.0/me/calendar/"

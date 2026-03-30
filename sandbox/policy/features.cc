@@ -19,7 +19,7 @@ namespace sandbox::policy::features {
 // (Only causes an effect when feature kNetworkServiceInProcess is disabled.)
 BASE_FEATURE(kNetworkServiceSandbox, base::FEATURE_DISABLED_BY_DEFAULT);
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 // Enables a fine-grained seccomp-BPF syscall filter for the network service.
 // Only has an effect if IsNetworkSandboxEnabled() returns true.
 // If the network service sandbox is enabled and |kNetworkServiceSyscallFilter|
@@ -32,7 +32,7 @@ BASE_FEATURE(kNetworkServiceSyscallFilter, base::FEATURE_ENABLED_BY_DEFAULT);
 // is disabled, a file path allowlist will still be applied, but the policy will
 // allow everything.
 BASE_FEATURE(kNetworkServiceFileAllowlist, base::FEATURE_ENABLED_BY_DEFAULT);
-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 #endif  // !BUILDFLAG(IS_MAC) && !BUILDFLAG(IS_FUCHSIA)
 
 #if BUILDFLAG(IS_WIN)
@@ -99,7 +99,7 @@ BASE_FEATURE(kWinSboxStrictHandleChecks, base::FEATURE_DISABLED_BY_DEFAULT);
 BASE_FEATURE(kSpectreVariant2Mitigation, base::FEATURE_ENABLED_BY_DEFAULT);
 #endif  // BUILDFLAG(IS_CHROMEOS)
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 // Increase the renderer sandbox memory limit. As of 2023, there are no limits
 // on macOS, and a 1TiB limit on Windows. There are reports of users bumping
 // into the limit. This increases the limit by 2x compared to the default
@@ -108,7 +108,7 @@ BASE_FEATURE(kSpectreVariant2Mitigation, base::FEATURE_ENABLED_BY_DEFAULT);
 // from egregious cases as on Windows.
 BASE_FEATURE(kHigherRendererMemoryLimit, base::FEATURE_DISABLED_BY_DEFAULT);
 
-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 
 #if BUILDFLAG(IS_ANDROID)
 // Enables the experimental Android GPU sandbox using Landlock.

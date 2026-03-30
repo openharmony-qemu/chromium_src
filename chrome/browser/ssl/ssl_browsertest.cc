@@ -735,7 +735,7 @@ class SSLUITest : public SSLUITestBase {
  public:
   SSLUITest() : SSLUITestBase() {
     scoped_feature_list_.InitWithFeatures(
-        /*enabled_features=*/{net::features::kVerifyQWACs},
+        /*enabled_features=*/{},
         /*disabled_features=*/{blink::features::kMixedContentAutoupgrade});
   }
 

@@ -2567,7 +2567,11 @@ LayoutUnit ComputedStyle::ComputedLineHeightAsFixed(const Font& font) const {
   }
 
   DCHECK(lh.IsFixed());
+#if BUILDFLAG(IS_ARKWEB)
+  return LayoutUnit::FromFloatFloor(lh.Pixels());
+#else
   return LayoutUnit::FromFloatRound(lh.Pixels());
+#endif
 }
 
 LayoutUnit ComputedStyle::ComputedLineHeightAsFixed() const {

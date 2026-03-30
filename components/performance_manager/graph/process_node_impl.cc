@@ -97,6 +97,9 @@ ProcessNodeImpl::~ProcessNodeImpl() {
   // Crash if this process node is destroyed while still hosting a worker node.
   // TODO(crbug.com/40051698): Turn this into a DCHECK once the issue is
   //                                  resolved.
+#if BUILDFLAG(IS_ARKWEB)
+  CHECK(frame_nodes_.empty());
+#endif
   CHECK(worker_nodes_.empty());
 }
 
@@ -122,7 +125,11 @@ void ProcessNodeImpl::SetMainThreadTaskLoadIsLow(
     bool main_thread_task_load_is_low) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   DCHECK_EQ(process_type_, content::PROCESS_TYPE_RENDERER);
-
+#if BUILDFLAG(IS_ARKWEB)
+  if (!weak_factory_.HasWeakPtrs()) {
+    return;
+  }
+#endif
   main_thread_task_load_is_low_.SetAndMaybeNotify(this,
                                                   main_thread_task_load_is_low);
 }

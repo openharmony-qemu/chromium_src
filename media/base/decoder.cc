@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 #include "media/base/decoder.h"
-
+#include "arkweb/build/features/features.h"
 #include "base/notreached.h"
 
 namespace media {
@@ -56,6 +56,10 @@ std::string GetDecoderName(VideoDecoderType type) {
       return "OOPVideoDecoder";
     case VideoDecoderType::kVideoToolbox:
       return "VideoToolboxVideoDecoder";
+#if BUILDFLAG(ARKWEB_MEDIA_CODEC)
+    case VideoDecoderType::kOHOS:
+      return "OHOSVideoDecoder";
+#endif
   }
 }
 
@@ -81,6 +85,10 @@ std::string GetDecoderName(AudioDecoderType type) {
       return "AudioToolboxAudioDecoder";
     case AudioDecoderType::kMediaFoundation:
       return "MediaFoundationAudioDecoder";
+#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ENABLE_CDM)
+    case AudioDecoderType::kOhos:
+      return "OHOSAudioDecoder";
+#endif
     case AudioDecoderType::kSymphonia:
       return "SymphoniaAudioDecoder";
   }

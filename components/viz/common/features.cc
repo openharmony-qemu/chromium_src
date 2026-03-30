@@ -32,6 +32,16 @@
 #endif  // BUILDFLAG(IS_WIN)
 
 namespace features {
+#if BUILDFLAG(IS_ARKWEB)
+BASE_FEATURE(kExtremeThrottle,
+            "kExtremeThrottle",
+            base::FEATURE_DISABLED_BY_DEFAULT);
+BASE_FEATURE_PARAM(double,
+                   kExtremeThrottleFrameRate,
+                   &kExtremeThrottle,
+                   "kExtremeThrottleFrameRate",
+                   2);
+#endif
 
 #if BUILDFLAG(IS_ANDROID)
 // If this flag is enabled, only the composited progress bar will be visible,

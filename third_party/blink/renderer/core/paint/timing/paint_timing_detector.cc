@@ -50,6 +50,7 @@
 #include "third_party/blink/renderer/platform/wtf/std_lib_extras.h"
 #include "ui/gfx/geometry/rect.h"
 
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/paint_timing_detector_utils.h"
 namespace blink {
 
 namespace {
@@ -150,12 +151,26 @@ const char* ScrollTypeToString(mojom::blink::ScrollType scroll_type) {
 
 }  // namespace
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+PaintTimingDetector::PaintTimingDetector(LocalFrameView* frame_view, bool need_supplement_for_bl /* = true */)
+#else
 PaintTimingDetector::PaintTimingDetector(LocalFrameView* frame_view)
+#endif
     : frame_view_(frame_view),
       text_paint_timing_detector_(
           MakeGarbageCollected<TextPaintTimingDetector>(frame_view, this)),
       image_paint_timing_detector_(
+#if BUILDFLAG(IS_ARKWEB)
+          MakeGarbageCollected<ImagePaintTimingDetector>(frame_view)),
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+      paint_timing_detector_utils_(this,
+                                   need_supplement_for_bl) {
+#else
+      paint_timing_detector_utils_(this) {
+#endif
+#else
           MakeGarbageCollected<ImagePaintTimingDetector>(frame_view)) {
+#endif
   if (PaintTimingVisualizer::IsTracingEnabled()) {
     visualizer_.emplace();
   }
@@ -283,6 +298,9 @@ void PaintTimingDetector::NotifyInteractionTriggeredVideoSrcChange(
 void PaintTimingDetector::NotifyImageFinished(const LayoutObject& object,
                                               const MediaTiming* media_timing) {
   if (IgnorePaintTimingScope::ShouldIgnore()) {
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  paint_timing_detector_utils_.ForwardNotifyImageFinished(object, media_timing);
+#endif
     return;
   }
   image_paint_timing_detector_->NotifyImageFinished(object, media_timing);
@@ -291,6 +309,9 @@ void PaintTimingDetector::NotifyImageFinished(const LayoutObject& object,
 void PaintTimingDetector::LayoutObjectWillBeDestroyed(
     const LayoutObject& object) {
   text_paint_timing_detector_->LayoutObjectWillBeDestroyed(object);
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  paint_timing_detector_utils_.ForwardLayoutObjectWillBeDestroyed(object);
+#endif
 }
 
 void PaintTimingDetector::NotifyImageRemoved(
@@ -300,6 +321,9 @@ void PaintTimingDetector::NotifyImageRemoved(
 }
 
 void PaintTimingDetector::OnInputOrScroll() {
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  paint_timing_detector_utils_.ForwardOnInputOrScroll();
+#endif
   if (LocalDOMWindow* window = DomWindow()) {
     if (auto* heuristics = window->GetSoftNavigationHeuristics()) {
       heuristics->OnInputOrScroll();
@@ -320,6 +344,9 @@ void PaintTimingDetector::OnInputOrScroll() {
   // LargestContentfulPaint.
   image_paint_timing_detector_->StopRecordEntries();
   image_paint_timing_detector_->StopRecordingLargestImagePaint();
+#if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT) || BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  paint_timing_detector_utils_.OnUserScroll();
+#endif
   largest_contentful_paint_calculator_ = nullptr;
 
   DidChangePerformanceTiming();
@@ -382,9 +409,17 @@ void PaintTimingDetector::UpdateMetricsLcp() {
       GetLargestContentfulPaintCalculator()->LatestLcpDetails();
 
   DidChangePerformanceTiming();
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  paint_timing_detector_utils_.NotifyLcpForBlankless();
+#endif
 }
 
 void PaintTimingDetector::DidChangePerformanceTiming() {
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  if (!paint_timing_detector_utils_.HaveSupplementForBL()) {
+    return;
+  }
+#endif
   Document* document = frame_view_->GetFrame().GetDocument();
   if (!document) {
     return;
@@ -468,6 +503,13 @@ void PaintTimingDetector::UpdateLcpCandidate() {
   if (image_update_result.second || text_update_result.second) {
     UpdateMetricsLcp();
   }
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  else {
+    // Follow-up Processing. The White Screen Detection feature caused a crash
+    // in the renderer process and has been temporarily commented out.
+    // paint_timing_detector_utils_.CheckNotifyLcpForBlankless();
+  }
+#endif
 
   lcp_calculator->UpdateWebExposedLargestContentfulPaintIfNeeded(
       text_update_result.first, image_update_result.first);
@@ -475,7 +517,11 @@ void PaintTimingDetector::UpdateLcpCandidate() {
 
 void PaintTimingDetector::ReportIgnoredContent() {
   text_paint_timing_detector_->ReportLargestIgnoredText();
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  paint_timing_detector_utils_.ForwardReportIgnoredContent();
+#else
   image_paint_timing_detector_->ReportLargestIgnoredImage();
+#endif
 }
 
 const LargestContentfulPaintDetails&
@@ -552,6 +598,9 @@ void PaintTimingDetector::Trace(Visitor* visitor) const {
   visitor->Trace(image_paint_timing_detector_);
   visitor->Trace(frame_view_);
   visitor->Trace(largest_contentful_paint_calculator_);
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  visitor->Trace(paint_timing_detector_utils_);
+#endif
 }
 
 LocalDOMWindow* PaintTimingDetector::DomWindow() const {

@@ -45,6 +45,10 @@ class LocalFrame;
 enum class EditingTriState;
 enum class EditorCommandSource;
 
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+enum class EditingCommandType;
+#endif  // ARKWEB_CLIPBOARD
+
 class CORE_EXPORT EditorCommand {
   STACK_ALLOCATED();
 
@@ -68,6 +72,10 @@ class CORE_EXPORT EditorCommand {
 
   // Returns 0 if this EditorCommand is not supported.
   int IdForHistogram() const;
+
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  EditingCommandType GetCommandType() const;
+#endif  // ARKWEB_CLIPBOARD
 
  private:
   LocalFrame& GetFrame() const;

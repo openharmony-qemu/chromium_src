@@ -206,7 +206,7 @@ class QwacWebContentsObserverDisabledBrowserTest
     : public QwacWebContentsObserverTestBase {
  public:
   QwacWebContentsObserverDisabledBrowserTest() {
-    scoped_feature_list_.InitAndDisableFeature(net::features::kVerifyQWACs);
+    scoped_feature_list_.InitAndDisableFeature(net::features::kSelfSignedLocalNetworkInterstitial);
   }
 
  private:
@@ -267,15 +267,17 @@ class QwacWebContentsObserverBrowserTest
     additional_cert->set_eutl(true);
 
     base::RunLoop update_run_loop;
+#if BUILDFLAG(CHROME_ROOT_STORE_SUPPORTED)
     content::GetCertVerifierServiceFactory()->UpdateChromeRootStore(
         mojo_base::ProtoWrapper(root_store_proto),
         update_run_loop.QuitClosure());
     update_run_loop.Run();
+#endif  // BUILDFLAG(CHROME_ROOT_STORE_SUPPORTED)
   }
 
  private:
   base::test::ScopedFeatureList scoped_feature_list_{
-      net::features::kVerifyQWACs};
+      net::features::kSelfSignedLocalNetworkInterstitial};
 
   int64_t crs_version_ = net::CompiledChromeRootStoreVersion();
 };

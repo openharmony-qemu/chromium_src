@@ -14,7 +14,9 @@
 #include "media/base/overlay_info.h"
 #include "media/base/renderer.h"
 #include "ui/gfx/color_space.h"
-
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+#include "arkweb/chromium_ext/media/base/media_player_url_params.h"
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 namespace base {
 class TaskRunner;
 }
@@ -46,6 +48,18 @@ class MEDIA_EXPORT RendererFactory {
       VideoRendererSink* video_renderer_sink,
       RequestOverlayInfoCB request_overlay_info_cb,
       const gfx::ColorSpace& target_color_space) = 0;
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  virtual std::unique_ptr<Renderer> CreateCustomRenderer(
+      const scoped_refptr<base::SequencedTaskRunner>& media_task_runner,
+      const scoped_refptr<base::TaskRunner>& worker_task_runner,
+      media::AudioRendererSink* audio_renderer_sink,
+      media::VideoRendererSink* video_renderer_sink,
+      media::RequestOverlayInfoCB request_overlay_info_cb,
+      const gfx::ColorSpace& target_color_space,
+      int player_id,
+      const media::MediaPlayerUrlParams& params);
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 };
 
 }  // namespace media

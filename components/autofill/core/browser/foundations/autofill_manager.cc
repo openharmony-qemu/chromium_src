@@ -305,15 +305,17 @@ void AutofillManager::OnFormsParsed(const std::vector<FormData>& forms) {
   }
 
   // Query the server if at least one of the forms was parsed.
-  if (!queryable_forms.empty()) {
-    NotifyObservers(&Observer::OnBeforeLoadedServerPredictions);
-    // If language detection is currently reparsing the form, wait until the
-    // server response is processed, to ensure server predictions are not lost.
-    client().GetCrowdsourcingManager().StartQueryRequest(
-        queryable_forms, driver().GetIsolationInfo(),
-        AfterParsingFinishesDeprecated(base::BindOnce(
-            &AutofillManager::OnLoadedServerPredictions, GetWeakPtr())));
-  }
+  // Follow-up Processing. This block of code resulted in a
+  // crash and has been temporarily commented out.
+  // if (!queryable_forms.empty()) {
+  //   NotifyObservers(&Observer::OnBeforeLoadedServerPredictions);
+  //   // If language detection is currently reparsing the form, wait until the
+  //   // server response is processed, to ensure server predictions are not lost.
+  //   client().GetCrowdsourcingManager().StartQueryRequest(
+  //       queryable_forms, driver().GetIsolationInfo(),
+  //       AfterParsingFinishesDeprecated(base::BindOnce(
+  //           &AutofillManager::OnLoadedServerPredictions, GetWeakPtr())));
+ // }
 }
 
 void AutofillManager::OnCaretMovedInFormField(const FormData& form,

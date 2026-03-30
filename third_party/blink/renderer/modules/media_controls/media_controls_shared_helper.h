@@ -43,6 +43,9 @@ class MediaControlsSharedHelpers final {
       HTMLMediaElement& media_element);
 
   static String FormatTime(double time);
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT) && !defined(COMPONENT_BUILD)
+  static String FormatTimeHM(double time);
+#endif
   static bool ShouldShowFullscreenButton(const HTMLMediaElement& media_element);
 };
 

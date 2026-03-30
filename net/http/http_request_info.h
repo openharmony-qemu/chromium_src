@@ -25,6 +25,9 @@
 #include "net/traffic_annotation/network_traffic_annotation.h"
 #include "url/gurl.h"
 #include "url/origin.h"
+#if BUILDFLAG(ENABLE_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace net {
 
@@ -83,6 +86,14 @@ struct NET_EXPORT HttpRequestInfo {
   // Secure DNS Tag for the request.
   SecureDnsPolicy secure_dns_policy = SecureDnsPolicy::kAllow;
 
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK) \
+  || BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  bool secure_dns_only = false;
+#endif
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  bool retry_with_fallback_proxy = false;
+#endif
   // Tag applied to all sockets used to service request.
   SocketTag socket_tag;
 
@@ -135,6 +146,15 @@ struct NET_EXPORT HttpRequestInfo {
   // Used to get a shared dictionary for the request. This may be null if the
   // request does not use a shared dictionary.
   SharedDictionaryGetter dictionary_getter;
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  bool allow_preload_record = true;
+  GURL main_url;
+#endif
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  int32_t usage_scenario_ = 99;
+#endif
 
   // Used to notify when a reconnect-attempt may be invoked (e.g. when a
   // connection was closed, or when the connection could not be established).

@@ -448,6 +448,9 @@ class PLATFORM_EXPORT FontDescription {
     fields_.variant_emoji_ = variant_emoji;
   }
   void SetWordSpacing(const Length& s) { word_spacing_ = s; }
+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+  void SetFixedFontSize(int s) { fixed_font_size_ = s; }
+#endif
   void SetLetterSpacing(const Length& s) {
     letter_spacing_ = s;
     UpdateTypesettingFeatures();
@@ -531,6 +534,10 @@ class PLATFORM_EXPORT FontDescription {
 
   Length letter_spacing_;
   Length word_spacing_;
+
+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+  int fixed_font_size_;
+#endif
 
   FontSizeAdjust size_adjust_;
   ResolvedFontFeatures resolved_font_features_;

@@ -20,6 +20,10 @@
 #include "third_party/blink/public/platform/web_common.h"
 #include "third_party/blink/public/platform/web_media_player.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif // IS_ARKWEB_EXT
+
 namespace base {
 class SingleThreadTaskRunner;
 class SequencedTaskRunner;
@@ -100,6 +104,9 @@ class BLINK_PLATFORM_EXPORT WebMediaPlayerBuilder {
       std::unique_ptr<media::Demuxer> demuxer_override,
       scoped_refptr<ThreadSafeBrowserInterfaceBrokerProxy> remote_interfaces);
 
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  void SetNewsFeedPageFitted(bool val);
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
  private:
   // Media resource cache.
   std::unique_ptr<ResourceFetchContext> fetch_context_;

@@ -8,6 +8,7 @@
 #include <memory>
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "base/compiler_specific.h"
 #include "base/test/metrics/histogram_tester.h"
 #include "testing/gtest/include/gtest/gtest.h"
@@ -26,7 +27,10 @@ namespace {
 std::unique_ptr<JPEGImageDecoder> CreateJPEGDecoder(size_t max_decoded_bytes) {
   return std::make_unique<JPEGImageDecoder>(
       ImageDecoder::kAlphaNotPremultiplied, ColorBehavior::kTransformToSRGB,
-      cc::AuxImage::kDefault, max_decoded_bytes);
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+      cc::AuxImage::kDefault,
+#endif
+      max_decoded_bytes);
 }
 
 std::unique_ptr<ImageDecoder> CreateJPEGDecoder() {
@@ -588,7 +592,10 @@ TEST(JPEGImageDecoderTest, Gainmap) {
   // image.
   auto gainmap_decoder = std::make_unique<JPEGImageDecoder>(
       ImageDecoder::kAlphaNotPremultiplied, ColorBehavior::kTransformToSRGB,
-      cc::AuxImage::kGainmap, ImageDecoder::kNoDecodedImageByteLimit);
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+      cc::AuxImage::kGainmap,
+#endif
+      ImageDecoder::kNoDecodedImageByteLimit);
 
   gainmap_decoder->SetData(gainmap_data.get(), true);
   ASSERT_TRUE(gainmap_decoder->IsSizeAvailable());

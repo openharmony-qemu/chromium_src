@@ -36,6 +36,10 @@
 #include "mojo/public/cpp/system/handle.h"
 #include "third_party/perfetto/include/perfetto/tracing/track.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/media/mojo/services/mojo_video_decoder_service_for_include.cc"
+#endif
+
 namespace media {
 
 namespace {
@@ -527,5 +531,13 @@ void MojoVideoDecoderService::OnDecoderRequestedOverlayInfo(
   provide_overlay_info_cb_ = std::move(provide_overlay_info_cb);
   client_->RequestOverlayInfo();
 }
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+void MojoVideoDecoderService::SetVideoSurface(int32_t widget_id) {
+  if (decoder_) {
+    decoder_->SetVideoSurface(widget_id);
+  }
+}
+#endif // ARKWEB_VIDEO_ASSISTANT
 
 }  // namespace media

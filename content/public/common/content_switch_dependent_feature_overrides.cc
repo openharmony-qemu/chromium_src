@@ -4,6 +4,10 @@
 
 #include "content/public/common/content_switch_dependent_feature_overrides.h"
 
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#endif
+
 #include "components/attribution_reporting/features.h"
 #include "content/common/features.h"
 #include "content/public/common/content_features.h"
@@ -163,6 +167,7 @@ GetSwitchDependentFeatureOverrides(const base::CommandLine& command_line) {
     if (command_line.HasSwitch(info.switch_name))
       overrides.emplace_back(std::make_pair(info.feature, info.override_state));
   }
+
   return overrides;
 }
 

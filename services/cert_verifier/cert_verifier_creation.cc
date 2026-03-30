@@ -196,7 +196,7 @@ ConvertMojoListToInternalList(
 
 bool IsUsingCertNetFetcher() {
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_FUCHSIA) ||      \
-    BUILDFLAG(CHROME_ROOT_STORE_SUPPORTED)
+    BUILDFLAG(CHROME_ROOT_STORE_SUPPORTED) || BUILDFLAG(IS_ARKWEB)
   return true;
 #else
   return false;

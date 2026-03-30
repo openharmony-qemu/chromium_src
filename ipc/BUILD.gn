@@ -10,6 +10,8 @@ import("//testing/test.gni")
 import("//third_party/protobuf/proto_library.gni")
 import("//tools/ipc_fuzzer/ipc_fuzzer.gni")
 
+import("//arkweb/build/features/features.gni")
+
 component("ipc") {
   sources = [
     # These are the param_traits sources needed by all platforms,
@@ -63,6 +65,9 @@ component("ipc") {
 
   if (enable_ipc_fuzzer) {
     public_configs = [ "//tools/ipc_fuzzer:ipc_fuzzer_config" ]
+  }
+  if (arkweb_javascript_bridge) {
+    deps += [ "//arkweb/build/features" ]
   }
 }
 

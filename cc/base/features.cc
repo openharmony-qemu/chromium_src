@@ -7,6 +7,7 @@
 #include <atomic>
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "base/feature_list.h"
 #include "build/build_config.h"
 
@@ -42,7 +43,7 @@ const base::FeatureParam<int> kDeferImplInvalidationFrames{
 // Note that kUseDMSAAForTiles only controls vulkan launch on android. We will
 // be using a separate flag to control the launch on GL.
 BASE_FEATURE(kUseDMSAAForTiles,
-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_VULKAN)
              base::FEATURE_ENABLED_BY_DEFAULT
 #else
              base::FEATURE_DISABLED_BY_DEFAULT
@@ -203,7 +204,7 @@ PROGRAMMATIC_SCROLL_ANIMATION_CURVE(0.4, 0.0, 0.0, 1.0, 1500);
 BASE_FEATURE(kSlimDirectReceiverIpc, base::FEATURE_ENABLED_BY_DEFAULT);
 
 BASE_FEATURE(kOverscrollBehaviorRespectedOnAllScrollContainers,
-             base::FEATURE_ENABLED_BY_DEFAULT);
+             base::FEATURE_DISABLED_BY_DEFAULT);
 
 BASE_FEATURE(kOverscrollEffectOnNonRootScrollers,
              base::FEATURE_DISABLED_BY_DEFAULT);

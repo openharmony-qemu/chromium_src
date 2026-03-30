@@ -80,7 +80,11 @@ CookieSettingsFactory::BuildServiceInstanceFor(
 
   const char* extension_scheme =
 #if BUILDFLAG(ENABLE_EXTENSIONS)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      extensions::kArkwebExtensionScheme;
+#else
       extensions::kExtensionScheme;
+#endif
 #else
       content_settings::kDummyExtensionScheme;
 #endif

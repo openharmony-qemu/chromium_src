@@ -200,15 +200,15 @@ struct RawOSMemDump {
 
   // How many memory mappings exist in the process. 0 is an invalid value, ie
   // that collection failed.
-  [EnableIf=is_android|is_chromeos|is_linux]
+  [EnableIf=is_android|is_chromeos|is_linux|is_ohos]
   uint32 mappings_count = 0;
 
   // PSS for the process. 0 indicates that collection failed.
-  [EnableIf=is_android|is_chromeos|is_linux]
+  [EnableIf=is_android|is_chromeos|is_linux|is_ohos]
   uint32 pss_kb = 0;
 
   // Swap PSS for the process. 0 indicates that collection failed.
-  [EnableIf=is_android|is_chromeos|is_linux]
+  [EnableIf=is_android|is_chromeos|is_linux|is_ohos]
   uint32 swap_pss_kb = 0;
 };
 

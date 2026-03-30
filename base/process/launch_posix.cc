@@ -210,7 +210,8 @@ struct ScopedDIRClose {
 // Automatically closes |DIR*|s.
 typedef std::unique_ptr<DIR, ScopedDIRClose> ScopedDIR;
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_AIX)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_AIX) || \
+    BUILDFLAG(IS_OHOS)
 static const char kFDDir[] = "/proc/self/fd";
 #elif BUILDFLAG(IS_SOLARIS)
 static const char kFDDir[] = "/dev/fd";
@@ -333,7 +334,8 @@ Process LaunchProcess(const std::vector<std::string>& argv,
   }
 
   pid_t pid;
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_AIX)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_AIX) || \
+    BUILDFLAG(IS_OHOS)
   if (options.clone_flags) {
     // Signal handling in this function assumes the creation of a new
     // process, so we check that a thread is not being created by mistake
@@ -723,7 +725,8 @@ bool GetAppOutputWithExitCode(const std::vector<std::string>& argv,
   return GetAppOutputInternal(argv, nullptr, false, output, true, exit_code);
 }
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_AIX)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_AIX) || \
+    BUILDFLAG(IS_OHOS)
 namespace {
 
 // This function runs on the stack specified on the clone call. It uses longjmp

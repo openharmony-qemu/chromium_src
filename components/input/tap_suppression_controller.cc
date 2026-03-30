@@ -14,6 +14,9 @@ TapSuppressionController::Config::Config()
 
 TapSuppressionController::TapSuppressionController(const Config& config)
     : state_(config.enabled ? NOTHING : DISABLED),
+#if BUILDFLAG(IS_ARKWEB)
+      tapSuppressionEnabled_(config.enabled),
+#endif
       max_cancel_to_down_time_(config.max_cancel_to_down_time) {}
 
 TapSuppressionController::~TapSuppressionController() = default;

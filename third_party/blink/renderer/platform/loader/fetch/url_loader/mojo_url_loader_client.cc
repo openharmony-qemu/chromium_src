@@ -345,6 +345,15 @@ void MojoURLLoaderClient::OnReceiveResponse(
       response_ipc_arrival_time));
 }
 
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+void MojoURLLoaderClient::OnTransferDataWithSharedMemory(
+    base::ReadOnlySharedMemoryRegion region,
+    uint64_t buffer_size) {
+  resource_request_sender_->OnTransferDataWithSharedMemory(std::move(region),
+                                                           buffer_size);
+}
+#endif
+
 void MojoURLLoaderClient::EvictFromBackForwardCache(
     mojom::blink::RendererEvictionReason reason) {
   DCHECK_EQ(freeze_mode_, LoaderFreezeMode::kBufferIncoming);

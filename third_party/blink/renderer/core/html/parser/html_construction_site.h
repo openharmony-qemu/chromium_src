@@ -256,6 +256,10 @@ class HTMLConstructionSite final {
     bool was_redirecting_before_;
   };
 
+#if BUILDFLAG(ARKWEB_JSPROXY)
+  void RunScriptsAtHeadElementAvailable();
+#endif
+
  private:
   // In the common case, this queue will have only one task because most tokens
   // produce only one DOM mutation.

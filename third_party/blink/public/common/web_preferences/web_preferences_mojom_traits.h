@@ -7,6 +7,10 @@
 
 #include <optional>
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "build/build_config.h"
 #include "mojo/public/cpp/bindings/struct_traits.h"
 #include "net/nqe/effective_connection_type.h"
@@ -395,7 +399,12 @@ struct BLINK_COMMON_EXPORT StructTraits<blink::mojom::WebPreferencesDataView,
       const blink::web_pref::WebPreferences& r) {
     return r.auto_zoom_focused_editable_to_legible_scale;
   }
-
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+  static bool is_desktop(
+      const blink::web_pref::WebPreferences& r) {
+    return r.is_desktop;
+  }
+#endif
   static bool shrinks_viewport_contents_to_fit(
       const blink::web_pref::WebPreferences& r) {
     return r.shrinks_viewport_contents_to_fit;
@@ -539,6 +548,85 @@ struct BLINK_COMMON_EXPORT StructTraits<blink::mojom::WebPreferencesDataView,
   static const GURL& web_app_scope(const ::blink::web_pref::WebPreferences& r) {
     return r.web_app_scope;
   }
+
+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+  static float font_scale_factor(const blink::web_pref::WebPreferences& r) {
+    return r.font_scale_factor;
+  }
+
+  static int font_weight_adjustment(const blink::web_pref::WebPreferences& r) {
+    return r.font_weight_adjustment;
+  }
+
+  static int text_size_contrast_factor(
+      const blink::web_pref::WebPreferences& r) {
+    return r.text_size_contrast_factor;
+  }
+
+  static float device_scale_adjustment(
+      const blink::web_pref::WebPreferences& r) {
+    return r.device_scale_adjustment;
+  }
+
+  static bool support_deprecated_target_density_dpi(
+      const blink::web_pref::WebPreferences& r) {
+    return r.support_deprecated_target_density_dpi;
+  }
+
+  static bool wide_viewport_quirk(const blink::web_pref::WebPreferences& r) {
+    return r.wide_viewport_quirk;
+  }
+
+  static bool use_wide_viewport(const blink::web_pref::WebPreferences& r) {
+    return r.use_wide_viewport;
+  }
+
+  static bool force_zero_layout_height(
+      const blink::web_pref::WebPreferences& r) {
+    return r.force_zero_layout_height;
+  }
+
+  static bool viewport_meta_merge_content_quirk(
+      const blink::web_pref::WebPreferences& r) {
+    return r.viewport_meta_merge_content_quirk;
+  }
+
+  static bool viewport_meta_non_user_scalable_quirk(
+      const blink::web_pref::WebPreferences& r) {
+    return r.viewport_meta_non_user_scalable_quirk;
+  }
+
+  static bool viewport_meta_zero_values_quirk(
+      const blink::web_pref::WebPreferences& r) {
+    return r.viewport_meta_zero_values_quirk;
+  }
+
+  static bool ignore_main_frame_overflow_hidden_quirk(
+      const blink::web_pref::WebPreferences& r) {
+    return r.ignore_main_frame_overflow_hidden_quirk;
+  }
+
+  static bool report_screen_size_in_physical_pixels_quirk(
+      const blink::web_pref::WebPreferences& r) {
+    return r.report_screen_size_in_physical_pixels_quirk;
+  }
+
+  static bool reuse_global_for_unowned_main_frame(
+      const blink::web_pref::WebPreferences& r) {
+    return r.reuse_global_for_unowned_main_frame;
+  }
+
+  static bool css_hex_alpha_color_enabled(
+      const blink::web_pref::WebPreferences& r) {
+    return r.css_hex_alpha_color_enabled;
+  }
+
+  static bool disable_accelerated_small_canvases(
+      const blink::web_pref::WebPreferences& r) {
+    return r.disable_accelerated_small_canvases;
+  }
+
+#endif
 
 #if BUILDFLAG(IS_ANDROID)
   static float font_scale_factor(const blink::web_pref::WebPreferences& r) {
@@ -813,6 +901,163 @@ struct BLINK_COMMON_EXPORT StructTraits<blink::mojom::WebPreferencesDataView,
   static bool modal_context_menu(const blink::web_pref::WebPreferences& r) {
     return r.modal_context_menu;
   }
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  static bool native_embed_mode_enabled(
+      const blink::web_pref::WebPreferences& r) {
+    return r.native_embed_mode_enabled;
+  }
+
+  static bool intrinsic_size_enabled(
+      const blink::web_pref::WebPreferences& r) {
+    return r.intrinsic_size_enabled;
+  }
+
+  static bool css_display_change_enabled(
+      const blink::web_pref::WebPreferences& r) {
+    return r.css_display_change_enabled;
+  }
+
+  static const std::string& embed_tag(
+      const blink::web_pref::WebPreferences& r) {
+    return r.embed_tag;
+  }
+
+  static const std::string& embed_tag_type(
+      const blink::web_pref::WebPreferences& r) {
+    return r.embed_tag_type;
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_CORNER)
+  static double border_radius_top_left(
+      const blink::web_pref::WebPreferences& r) {
+    return r.border_radius_top_left;
+  }
+
+  static double border_radius_top_right(
+      const blink::web_pref::WebPreferences& r) {
+    return r.border_radius_top_right;
+  }
+
+  static double border_radius_bottom_left(
+      const blink::web_pref::WebPreferences& r) {
+    return r.border_radius_bottom_left;
+  }
+
+  static double border_radius_bottom_right(
+      const blink::web_pref::WebPreferences& r) {
+    return r.border_radius_bottom_right;
+  }
+#endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
+
+#if BUILDFLAG(ARKWEB_AUTOFILL)
+  static bool is_autofill_enabled(
+      const blink::web_pref::WebPreferences& r) {
+    return r.is_autofill_enabled;
+  }
+#endif  // BUILDFLAG(ARKWEB_AUTOFILL)
+
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  static bool is_drag_enabled(
+      const blink::web_pref::WebPreferences& r) {
+    return r.is_drag_enabled;
+  }
+#endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
+
+#if BUILDFLAG(ARKWEB_MENU)
+  static bool touch_handle_exist(
+      const blink::web_pref::WebPreferences &r) {
+    return r.touch_handle_exist;
+  }
+
+  static bool viewport_scale(
+      const blink::web_pref::WebPreferences &r) {
+    return r.viewport_scale;
+  }
+#endif  // BUILDFLAG(ARKWEB_MENU)
+
+#if BUILDFLAG(ARKWEB_AI)
+  static bool image_analyzer_enabled(
+      const blink::web_pref::WebPreferences& r) {
+    return r.image_analyzer_enabled;
+  }
+
+  static bool arkweb_agent_enabled(
+      const blink::web_pref::WebPreferences& r) {
+    return r.arkweb_agent_enabled;
+  }
+
+  static bool agent_need_highlight(
+      const blink::web_pref::WebPreferences& r) {
+    return r.agent_need_highlight;
+  }
+#endif  // BUILDFLAG(ARKWEB_AI)
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  static bool hide_vertical_scrollbars(
+      const blink::web_pref::WebPreferences& r) {
+    return r.hide_vertical_scrollbars;
+  }
+
+  static bool hide_horizontal_scrollbars(
+      const blink::web_pref::WebPreferences& r) {
+    return r.hide_horizontal_scrollbars;
+  }
+
+  static blink::mojom::ScrollbarLayoutPolicy
+  scrollbar_layout_policy(
+      const blink::web_pref::WebPreferences& r) {
+    return static_cast<blink::mojom::ScrollbarLayoutPolicy>(
+        r.scrollbar_layout_policy);
+  }
+
+  static bool is_system_rtl_enabled(
+      const blink::web_pref::WebPreferences& r) {
+    return r.is_system_rtl_enabled;
+  }
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+
+#if BUILDFLAG(ARKWEB_ZOOM)
+  static float text_zoom_factor(const blink::web_pref::WebPreferences& r) {
+    return r.text_zoom_factor;
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_PINCH_SMOOTH)
+  static bool pinch_smooth_mode(const blink::web_pref::WebPreferences& r) {
+    return r.pinch_smooth_mode;
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_SYNC_RENDER)
+  static uint32_t draw_mode(const blink::web_pref::WebPreferences& r) {
+    return r.draw_mode;
+  }
+#endif  // BUILDFLAG(IS_OHOS)
+
+#if BUILDFLAG(ARKWEB_CSS_FONT)
+  static float font_weight_scale(const blink::web_pref::WebPreferences& r) {
+    return r.font_weight_scale;
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  static bool scroll_enabled(const blink::web_pref::WebPreferences& r) {
+    return r.scroll_enabled;
+  }
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  static uint32_t scrollbar_color(const blink::web_pref::WebPreferences& r) {
+    return r.scrollbar_color;
+  }
+#endif  // defined(ARKWEB_SCROLLBAR)
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+  static bool cast_enabled(const blink::web_pref::WebPreferences& r) {
+    return r.cast_enabled;
+  }
+#endif  // BUILDFLAG(ARKWEB_MEDIA_CAST)
 
   static bool dynamic_safe_area_insets_enabled(
       const blink::web_pref::WebPreferences& r) {
@@ -824,6 +1069,86 @@ struct BLINK_COMMON_EXPORT StructTraits<blink::mojom::WebPreferencesDataView,
       const blink::web_pref::WebPreferences& r) {
     return r.subapps_apis_require_user_gesture_and_authorization;
   }
+
+#if BUILDFLAG(ARKWEB_ACTIVE_POLICY)
+  static int64_t delay_for_background_tab_freezing(
+      const blink::web_pref::WebPreferences& r) {
+    return r.delay_for_background_tab_freezing;
+  }
+#endif  // ARKWEB_ACTIVE_POLICY
+
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+  static bool contextmenu_customization_enabled(
+      const blink::web_pref::WebPreferences& r) {
+    return r.contextmenu_customization_enabled;
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_COPY_OPTION)
+  static blink::mojom::CopyOptionMode copy_option(
+      const blink::web_pref::WebPreferences& r) {
+    return r.copy_option;
+  }
+#endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
+
+#if BUILDFLAG(ARKWEB_FOCUS)
+  static int gesture_focus_mode(const blink::web_pref::WebPreferences& r) {
+    return r.gesture_focus_mode;
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  static bool custom_video_player_enable(
+      const blink::web_pref::WebPreferences& r) {
+    return r.custom_video_player_enable;
+  }
+  static bool custom_video_player_overlay(
+      const blink::web_pref::WebPreferences& r) {
+    return r.custom_video_player_overlay;
+  }
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+  static int32_t usage_scenario(const blink::web_pref::WebPreferences& r) {
+    return r.usage_scenario;
+  }
+#endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  static bool video_assistant_enabled(
+      const blink::web_pref::WebPreferences& r) {
+    return r.video_assistant_enabled;
+  }
+  static bool custom_media_player_enabled(
+      const blink::web_pref::WebPreferences& r) {
+    return r.custom_media_player_enabled;
+  }
+#endif // ARKWEB_VIDEO_ASSISTANT
+
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM) || BUILDFLAG(ARKWEB_ZOOM)
+  static bool force_enable_zoom(const blink::web_pref::WebPreferences& r) {
+    return r.force_enable_zoom;
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+  static bool error_page_enabled(const blink::web_pref::WebPreferences& r) {
+    return r.error_page_enabled;
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  static bool media_resume_from_bfcache_page(const blink::web_pref::WebPreferences& r) {
+    return r.media_resume_from_bfcache_page;
+  }
+#endif // BUILDFLAG(ARKWEB_BFCACHE)
+
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  static bool clipboard_site_permission_enabled(const blink::web_pref::WebPreferences& r) {
+    return r.clipboard_site_permission_enabled;
+  }
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
+
 
   static bool payment_request_enabled(
       const blink::web_pref::WebPreferences& r) {

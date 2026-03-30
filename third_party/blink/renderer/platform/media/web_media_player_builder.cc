@@ -33,6 +33,7 @@
 #include "third_party/blink/renderer/platform/media/url_index.h"
 #include "third_party/blink/renderer/platform/media/video_frame_compositor.h"
 #include "third_party/blink/renderer/platform/media/web_media_player_impl.h"
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/media/web_media_player_impl_ext.h"
 
 namespace blink {
 
@@ -53,6 +54,12 @@ class FrameFetchContext : public ResourceFetchContext {
     return frame_->CreateAssociatedURLLoader(options);
   }
 
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  std::unique_ptr<blink::WebAssociatedURLLoader> CreateVideoUrlLoader(
+      const blink::WebAssociatedURLLoaderOptions& options) override {
+    return frame_->CreateVideoURLLoader(options);
+  }
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
  private:
   const raw_ref<WebLocalFrame> frame_;
 };
@@ -102,7 +109,7 @@ std::unique_ptr<WebMediaPlayer> WebMediaPlayerBuilder::Build(
            frame);
   auto video_frame_compositor = std::make_unique<VideoFrameCompositor>(
       video_frame_compositor_task_runner, std::move(video_frame_submitter));
-  return std::make_unique<WebMediaPlayerImpl>(
+  return std::make_unique<WebMediaPlayerImplExt>(
       frame, static_cast<MediaPlayerClient*>(client), encrypted_client,
       delegate, std::move(factory_selector), url_index_.get(),
       std::move(video_frame_compositor), std::move(media_log), player_id,
@@ -118,5 +125,14 @@ std::unique_ptr<WebMediaPlayer> WebMediaPlayerBuilder::Build(
       is_background_video_track_optimization_supported,
       std::move(demuxer_override), std::move(remote_interfaces));
 }
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+void WebMediaPlayerBuilder::SetNewsFeedPageFitted(bool val) {
+  LOG(INFO) << "VideoOpt: SetNewsFeedPageFitted:" << val;
+  if (url_index_) {
+    url_index_->SetNewsFeedPageFitted(val);
+  }
+}
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 
 }  // namespace blink

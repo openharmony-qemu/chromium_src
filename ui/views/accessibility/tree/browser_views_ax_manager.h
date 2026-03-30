@@ -89,6 +89,13 @@ class VIEWS_EXPORT BrowserViewsAXManager
   // ui::AXModeObserver:
   void OnAXModeAdded(ui::AXMode mode) override;
 
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+  content::RenderFrameHostImpl* AccessibilityRenderFrameHost() override {
+    CHECK(false) << "Temporary stub for Chromium 141 adaptation. Internal implementation pending.";
+    return nullptr;
+  }
+#endif
+
  private:
   void Reset(bool reset_serializer) override;
 

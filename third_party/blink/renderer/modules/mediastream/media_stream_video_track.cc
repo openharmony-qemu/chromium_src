@@ -933,7 +933,7 @@ MediaStreamVideoTrack::~MediaStreamVideoTrack() {
   DCHECK(sinks_.empty());
   DCHECK(encoded_sinks_.empty());
   Stop();
-  DVLOG(3) << "~MediaStreamVideoTrack()";
+  LOG(INFO) << "~MediaStreamVideoTrack()";
 }
 
 std::unique_ptr<MediaStreamTrackPlatform>

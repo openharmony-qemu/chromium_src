@@ -405,6 +405,12 @@
 #include "third_party/blink/renderer/platform/wtf/text/strcat.h"
 #include "third_party/blink/renderer/platform/wtf/text/string_buffer.h"
 #include "third_party/blink/renderer/platform/wtf/text/text_encoding_registry.h"
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/dom/document_for_include.cc"
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/dom/document_utils.h"
+#endif
+
 #include "third_party/blink/renderer/platform/wtf/text/utf16.h"
 
 namespace blink {
@@ -530,7 +536,6 @@ bool IsSyntheticSelect(Element& element) {
 
 // The sampling rate for UKM.
 constexpr double kUkmSamplingRate = 0.001;
-
 }  // namespace
 
 static const unsigned kCMaxWriteRecursionDepth = 21;
@@ -3316,6 +3321,10 @@ void Document::Initialize() {
 
   if (View())
     View()->DidAttachDocument();
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  MakeGarbageCollected<DocumentUtils>()->DocumentInitializeUtils(fetcher_, base_url_);
+#endif
 }
 
 void Document::Shutdown() {
@@ -4420,6 +4429,9 @@ bool Document::CheckCompletedInternal() {
   }
 
   // OK, completed. Fire load completion events as needed.
+#if BUILDFLAG(IS_ARKWEB)
+  TRACE_EVENT1("blink", "Document::CheckCompletedInternal", "node_count", node_count_);
+#endif
   SetReadyState(kComplete);
   const bool load_event_needed = LoadEventStillNeeded();
   if (load_event_needed) {
@@ -4975,6 +4987,10 @@ void Document::SetURL(const KURL& url) {
   TRACE_EVENT_WITH_FLOW1("blink", "Document::SetURL", TRACE_ID_LOCAL(this),
                          TRACE_EVENT_FLAG_FLOW_IN | TRACE_EVENT_FLAG_FLOW_OUT,
                          "url", new_url.GetString().Utf8());
+
+#if BUILDFLAG(ARKWEB_SLIDE_LTPO)
+  MakeGarbageCollected<DocumentUtils>()->SetURLUtils();
+#endif
 
   // Strip the fragment directive from the URL fragment. E.g. "#id:~:text=a"
   // --> "#id". See https://github.com/WICG/scroll-to-text-fragment.
@@ -7982,6 +7998,17 @@ void Document::OnPrepareToStopParsing() {
   MaybeExecuteDelayedAsyncScripts(
       MilestoneForDelayedAsyncScript::kFinishedParsing);
 }
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+void Document::SetCustomViewportWidth(float width) {
+  LOG(INFO) << "[ViewportWidth] SetCustomViewportWidth width is " << width;
+  custom_viewport_width_ = width;
+}
+
+float Document::GetCustomViewportWidth() const {
+  return custom_viewport_width_;
+}
+#endif
 
 void Document::FinishedParsing() {
   TRACE_EVENT_WITH_FLOW0("blink", "Document::FinishedParsing",

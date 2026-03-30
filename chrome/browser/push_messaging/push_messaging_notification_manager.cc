@@ -286,7 +286,11 @@ bool PushMessagingNotificationManager::ShouldBypassUserVisibleOnlyRequirement(
     const GURL& origin,
     bool requested_user_visible_only) {
 #if BUILDFLAG(ENABLE_EXTENSIONS)
-  if (origin.SchemeIs(extensions::kExtensionScheme)) {
+  if (origin.SchemeIs(extensions::kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      || origin.SchemeIs(extensions::kArkwebExtensionScheme)
+#endif
+  ) {
     return ShouldExtensionsBypassUserVisibleOnlyRequirement(
         origin, requested_user_visible_only);
   }

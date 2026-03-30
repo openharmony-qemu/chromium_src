@@ -5,6 +5,10 @@
 import("//build/buildflag_header.gni")
 import("//components/captive_portal/core/features.gni")
 
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
+
 component("core") {
   # Avoid clashes with other targets named "core".
   output_name = "captive_portal_core"
@@ -18,6 +22,10 @@ component("core") {
     "captive_portal_types.cc",
     "captive_portal_types.h",
   ]
+
+  if (defined(arkweb_ext_https_upgrades) && arkweb_ext_https_upgrades) {
+    sources += arkweb_components_captive_portal_core_sources
+  }
 
   defines = [ "CAPTIVE_PORTAL_IMPLEMENTATION" ]
 

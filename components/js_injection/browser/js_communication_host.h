@@ -14,6 +14,7 @@
 #include "components/origin_matcher/origin_matcher.h"
 #include "content/public/browser/global_routing_id.h"
 #include "content/public/browser/web_contents_observer.h"
+#include "arkweb/build/features/features.h"
 
 namespace content {
 class RenderFrameHost;
@@ -23,6 +24,7 @@ namespace js_injection {
 
 struct JsObject;
 class WebMessageHostFactory;
+class JsCommunicationHostUtils;
 
 struct DocumentStartJavaScript {
   DocumentStartJavaScript(std::u16string script,
@@ -53,6 +55,8 @@ class JsCommunicationHost : public content::WebContentsObserver {
 
   ~JsCommunicationHost() override;
 
+  friend class JsCommunicationHostUtils;
+  std::unique_ptr<JsCommunicationHostUtils> js_communication_host_utils_;
   // Captures the result of adding script. There are two possibilities when
   // adding script: there was an error, in which case |error_message| is set,
   // otherwise the add was successful and |script_id| is set.

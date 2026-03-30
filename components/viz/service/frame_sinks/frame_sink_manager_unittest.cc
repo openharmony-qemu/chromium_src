@@ -33,6 +33,11 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/perfetto/include/perfetto/tracing/tracing.h"
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#include "components/viz/common/features.h"
+#include "arkweb/chromium_ext/components/viz/service/frame_sinks/frame_sink_manager_unittest_ext.h"
+#endif
+
 namespace viz {
 namespace {
 
@@ -154,6 +159,11 @@ class FrameSinkManagerTest : public testing::Test {
     config->grouping_id = grouping_id;
     return config;
   }
+
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  ARKWEB_UNITTESTS_MY_EVICT_SURFACES_PART1();
+  ARKWEB_UNITTESTS_MY_EVICT_SURFACES_PART2()
+#endif
 
   base::flat_set<FrameSinkId> GetEmbeddedRenderInputRouters(
       const FrameSinkId& frame_sink_id) {
@@ -610,7 +620,11 @@ TEST_F(FrameSinkManagerTest, EvictSurfaces) {
   EXPECT_TRUE(manager_->surface_manager()->GetSurfaceForId(surface_id2));
 
   // Call EvictSurfaces. Now the garbage collector can destroy the surfaces.
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  MyEvictSurfaces({surface_id1, surface_id2});
+#else
   manager_->EvictSurfaces({surface_id1, surface_id2});
+#endif
   // Garbage collection is synchronous.
   EXPECT_FALSE(manager_->surface_manager()->GetSurfaceForId(surface_id1));
   EXPECT_FALSE(manager_->surface_manager()->GetSurfaceForId(surface_id1));
@@ -886,7 +900,11 @@ TEST_F(FrameSinkManagerTest, EvictRootSurfaceId) {
   GetRootCompositorFrameSinkImpl()->SubmitCompositorFrame(
       local_surface_id, MakeDefaultCompositorFrame(), std::nullopt, 0);
   EXPECT_EQ(surface_id, GetRootCompositorFrameSinkImpl()->CurrentSurfaceId());
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  MyEvictSurfaces({surface_id});
+#else
   manager_->EvictSurfaces({surface_id});
+#endif
   EXPECT_FALSE(GetRootCompositorFrameSinkImpl()->CurrentSurfaceId().is_valid());
   manager_->InvalidateFrameSinkId(kFrameSinkIdRoot, {});
 }
@@ -911,7 +929,11 @@ TEST_F(FrameSinkManagerTest, EvictNewerRootSurfaceId) {
   allocator.GenerateId();
   const LocalSurfaceId next_local_surface_id =
       allocator.GetCurrentLocalSurfaceId();
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  MyEvictSurfaces({{kFrameSinkIdRoot, next_local_surface_id}});
+#else
   manager_->EvictSurfaces({{kFrameSinkIdRoot, next_local_surface_id}});
+#endif
   EXPECT_FALSE(GetRootCompositorFrameSinkImpl()->CurrentSurfaceId().is_valid());
   manager_->InvalidateFrameSinkId(kFrameSinkIdRoot, {});
 }
@@ -933,10 +955,18 @@ TEST_F(FrameSinkManagerTest, SubmitCompositorFrameWithEvictedSurfaceId) {
   allocator.GenerateId();
   const LocalSurfaceId local_surface_id2 = allocator.GetCurrentLocalSurfaceId();
   const SurfaceId surface_id2(kFrameSinkIdRoot, local_surface_id2);
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  ARKWEB_UNITTESTS_SUBMIT_COMPOSITOR_GRAME_SYNC();
+#else
   GetRootCompositorFrameSinkImpl()->SubmitCompositorFrame(
       local_surface_id, MakeDefaultCompositorFrame(), std::nullopt, 0);
+#endif
   EXPECT_EQ(surface_id, GetRootCompositorFrameSinkImpl()->CurrentSurfaceId());
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  MyEvictSurfaces({surface_id, surface_id2});
+#else
   manager_->EvictSurfaces({surface_id, surface_id2});
+#endif
   EXPECT_FALSE(GetRootCompositorFrameSinkImpl()->CurrentSurfaceId().is_valid());
   GetRootCompositorFrameSinkImpl()->SubmitCompositorFrame(
       local_surface_id2, MakeDefaultCompositorFrame(), std::nullopt, 0);

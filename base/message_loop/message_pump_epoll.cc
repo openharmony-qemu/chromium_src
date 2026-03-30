@@ -562,6 +562,12 @@ bool MessagePumpEpoll::GetEventsPoll(int epoll_timeout,
 void MessagePumpEpoll::OnEpollEvent(EpollEventEntry& entry, uint32_t events) {
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
   DCHECK(!entry.stopped);
+#if BUILDFLAG(IS_OHOS)
+  if (entry.stopped) {
+    LOG(ERROR) << "entry has been stopped";
+    return;
+  }
+#endif
 
   const bool readable = (events & EPOLLIN) != 0;
   const bool writable = (events & EPOLLOUT) != 0;
@@ -762,6 +768,12 @@ void MessagePumpEpoll::FdWatchController::OnFdReadable() {
 
 void MessagePumpEpoll::FdWatchController::OnFdWritable() {
   DCHECK(watcher_);
+#if BUILDFLAG(IS_OHOS)
+  if (!watcher_) {
+    LOG(ERROR) << "OnFdWritable(), watcher_ is nullptr";
+    return;
+  }
+#endif
   watcher_->OnFileCanWriteWithoutBlocking(interest_->params().fd);
 }
 

@@ -44,6 +44,14 @@ import("//third_party/webrtc/webrtc.gni")
 import("//third_party/widevine/cdm/widevine.gni")
 import("//tools/grit/grit_rule.gni")
 import("//ui/base/ui_features.gni")
+import("//arkweb/build/features/features.gni")
+if (is_arkweb_ext) {
+  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
+}
+
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
 
 assert(enable_supervised_users)
 
@@ -106,7 +114,7 @@ buildflag_header("buildflags") {
 
   # Android and ChromeOS don't support multiple browser processes, so they don't
   # employ ProcessSingleton.
-  if (is_android || is_chromeos) {
+  if (is_android || is_chromeos || is_ohos) {
     flags += [ "ENABLE_PROCESS_SINGLETON=false" ]
   } else {
     flags += [ "ENABLE_PROCESS_SINGLETON=true" ]
@@ -129,6 +137,10 @@ source_set("browser_process") {
     "//media:media_buildflags",
     "//ui/base/unowned_user_data",
   ]
+
+  if (arkweb_adblock) {
+    sources += arkweb_browser_process_sources
+  }
 }
 
 source_set("main_extra_parts") {
@@ -1583,6 +1595,18 @@ static_library("browser") {
     "webauthn/webauthn_switches.cc",
     "webdata_services/web_data_service_factory.cc",
   ]
+
+  if (arkweb_password_autofill) {
+    sources += arkweb_chrome_browser_password_manager_sources
+  }
+
+  if (is_arkweb_ext && arkweb_ext_https_upgrades) {
+    sources += arkweb_chrome_browser_ssl_https_upgrades
+  }
+
+  if (arkweb_adblock) {
+    sources += arkweb_browser_process_impl_sources
+  }
 
   configs += [
     "//build/config/compiler:wexit_time_destructors",
@@ -4330,6 +4354,20 @@ static_library("browser") {
     public_deps += [ "//ui/base/mojom:ui_base_types" ]
 
     #!is_android
+    if (is_arkweb && arkweb_enable_cdm) {
+      import("//arkweb/chromium_ext/chrome/browser/media/ohos/cdm/arkweb_chrome_browser_media_ohos_ext.gni")
+      sources += arkweb_chrome_browser_media_ohos_sources
+      deps += [
+        "//components/cdm/browser",
+      ]
+    }
+    if (is_arkweb && defined(arkweb_media_capabilities_enhance) && arkweb_media_capabilities_enhance) {
+      import("//arkweb/chromium_ext/content/browser/media/ohos/arkweb_content_browser_media_ohos_ext.gni")
+      sources += arkweb_content_browser_media_ohos_video_experience
+      deps += [
+        "//arkweb/chromium_ext/third_party/blink/public/mojom/media:mojom"
+      ]
+    }
     deps += [
       "//chrome/app:command_ids",
       "//chrome/app/theme:chrome_unscaled_resources_grit",
@@ -6751,10 +6789,6 @@ static_library("browser") {
   }
 
   if (enterprise_watermark) {
-    sources += [
-      "enterprise/watermark/settings.cc",
-      "enterprise/watermark/settings.h",
-    ]
     deps += [
       "//chrome/browser/enterprise/watermark:watermark_view_lib",
       "//chrome/browser/ui/webui/watermark",
@@ -6815,7 +6849,7 @@ static_library("browser") {
     deps += [ "//chrome/browser/enterprise/connectors/device_trust/common" ]
   }
 
-  if (is_linux || is_win || is_mac || is_chromeos) {
+  if (is_linux || is_win || is_mac || is_chromeos || arkweb_asan) {
     sources += [
       "enterprise/connectors/device_trust/device_trust_connector_service.cc",
       "enterprise/connectors/device_trust/device_trust_connector_service.h",
@@ -6898,6 +6932,25 @@ static_library("browser") {
       "enterprise/connectors/reporting/reporting_event_router_factory.cc",
       "enterprise/connectors/reporting/reporting_event_router_factory.h",
     ]
+    if (is_ohos && safe_browsing_mode == 0) {
+      if (arkweb_asan) {
+        sources -= [
+          "enterprise/connectors/analysis/page_print_analysis_request.cc",
+          "enterprise/connectors/analysis/page_print_analysis_request.h",
+          "enterprise/connectors/analysis/files_request_handler.cc",
+          "enterprise/connectors/analysis/files_request_handler.h",
+          "enterprise/connectors/analysis/content_analysis_delegate.cc",
+          "enterprise/connectors/analysis/content_analysis_delegate.h",
+        ]
+        sources += [
+          arkweb_chrome_enterprise_connectors_analysis
+        ]
+      }
+      sources -= [
+        "safe_browsing/generated_safe_browsing_pref.cc",
+        "safe_browsing/generated_safe_browsing_pref.h",
+      ]
+    }
     deps += [
       "//components/enterprise/common/proto:chrome_reporting_entity",
       "//components/enterprise/connectors/core",
@@ -6965,7 +7018,7 @@ static_library("browser") {
         [ "//chrome/browser/enterprise/connectors/analysis:sdk_manager" ]
   }
 
-  if (is_linux || is_win || is_mac) {
+  if (is_linux || is_win || is_mac || arkweb_asan) {
     sources += [
       "browser_switcher/alternative_browser_driver.h",
       "browser_switcher/browser_switcher_navigation_throttle.cc",
@@ -7029,10 +7082,6 @@ static_library("browser") {
       "enterprise/signin/oidc_managed_profile_creation_delegate.h",
       "enterprise/signin/oidc_metrics_utils.cc",
       "enterprise/signin/oidc_metrics_utils.h",
-      "enterprise/signin/profile_management_disclaimer_service.cc",
-      "enterprise/signin/profile_management_disclaimer_service.h",
-      "enterprise/signin/profile_management_disclaimer_service_factory.cc",
-      "enterprise/signin/profile_management_disclaimer_service_factory.h",
       "enterprise/signin/profile_token_web_signin_interceptor.cc",
       "enterprise/signin/profile_token_web_signin_interceptor.h",
       "enterprise/signin/profile_token_web_signin_interceptor_factory.cc",
@@ -7088,6 +7137,62 @@ static_library("browser") {
       "//components/supervised_user/core/common:features",
       "//components/themes:policy",
     ]
+  }
+
+  if (is_ohos) {
+    sources += [
+      "first_run/first_run_internal_linux.cc",
+      "memory_details_linux.cc",
+      "enterprise/signals/signals_aggregator_factory.cc",
+      "enterprise/signals/signals_aggregator_factory.h",
+      "enterprise/signals/system_signals_service_host_factory.cc",
+      "enterprise/signals/system_signals_service_host_factory.h",
+      "enterprise/signals/user_permission_service_factory.cc",
+      "enterprise/signals/user_permission_service_factory.h",
+      "enterprise/signals/user_delegate_impl.cc",
+      "enterprise/signals/user_delegate_impl.h",
+      "enterprise/signin/managed_profile_creation_controller.cc",
+      "enterprise/signin/managed_profile_creation_controller.h",
+      "obsolete_system/obsolete_system_stub.cc",
+      "policy/browser_dm_token_storage_linux.cc",
+      "policy/browser_dm_token_storage_linux.h",
+      "supervised_user/linux_mac_windows/supervised_user_web_content_handler_impl.cc",
+      "supervised_user/linux_mac_windows/supervised_user_web_content_handler_impl.h",
+      "supervised_user/linux_mac_windows/parent_access_view.cc",
+      "supervised_user/linux_mac_windows/parent_access_view.h",
+      "supervised_user/linux_mac_windows/parent_access_dialog_result_observer.cc",
+      "supervised_user/linux_mac_windows/parent_access_dialog_result_observer.h",
+      "enterprise/profile_management/profile_management_features.cc",
+      "enterprise/profile_management/profile_management_features.h",
+      "supervised_user/supervised_user_verification_page.cc",
+      "supervised_user/supervised_user_verification_page.h",
+      "supervised_user/supervised_user_verification_page_youtube.cc",
+      "supervised_user/supervised_user_verification_page_youtube.h",
+    ]
+
+    if (arkweb_test) {
+      sources += [
+        "enterprise/signin/managed_profile_required_navigation_throttle.cc",
+        "enterprise/signin/managed_profile_required_navigation_throttle.h",
+      ]
+    }
+
+    if (arkweb_asan) {
+      sources += [
+        "enterprise/connectors/device_trust/attestation/browser/attestation_switches.cc",
+        "enterprise/connectors/device_trust/attestation/browser/attestation_switches.h",
+        "enterprise/connectors/device_trust/attestation/browser/browser_attestation_service.cc",
+        "enterprise/connectors/device_trust/attestation/browser/browser_attestation_service.h",
+        "enterprise/connectors/device_trust/attestation/browser/crypto_utility.cc",
+        "enterprise/connectors/device_trust/attestation/browser/crypto_utility.h",
+        "enterprise/connectors/device_trust/attestation/browser/google_keys.cc",
+        "enterprise/connectors/device_trust/attestation/browser/google_keys.h",
+        "enterprise/connectors/device_trust/attestation/browser/device_attester.cc",
+        "enterprise/connectors/device_trust/attestation/browser/device_attester.h",
+        "enterprise/connectors/device_trust/attestation/browser/profile_attester.cc",
+        "enterprise/connectors/device_trust/attestation/browser/profile_attester.h",
+      ]
+    }
   }
 
   if (is_linux || is_chromeos) {
@@ -7153,6 +7258,43 @@ static_library("browser") {
     }
   }
 
+  if (is_ohos) {
+    sources += [
+      "first_run/upgrade_util_linux.cc",
+      "first_run/upgrade_util_linux.h",
+      "//arkweb/chromium_ext/chrome/browser/shell_integration_ohos.cc",
+      "//arkweb/chromium_ext/chrome/browser/platform_util_ohos.cc",
+      "//arkweb/chromium_ext/chrome/browser/icon_loader_ohos.cc",
+    ]
+    if (arkweb_asan) {
+      sources += [
+        "shell_integration_linux.cc",
+        "shell_integration_linux.h",
+      ]
+    }
+    deps += [
+      "//chrome/app/theme:chrome_unscaled_resources_grit"
+    ]
+  }
+
+    if (arkweb_asan) {
+    sources -= []
+  }
+
+  if (is_arkweb) {
+    sources += [
+      "media/webrtc/window_icon_util_ozone.cc",
+    ]
+    sources += arkweb_chrome_browser_notifications_sources
+    deps += [
+      "//ohos/adapter:adapter",
+    ]
+  }
+
+  if (is_arkweb) {
+    sources += [ "fullscreen_linux.cc" ]
+  }
+
   if (is_posix) {
     sources += [
       "download/trusted_sources_manager_posix.cc",
@@ -7166,7 +7308,7 @@ static_library("browser") {
     }
   }
 
-  if (is_win || is_linux || is_chromeos) {
+  if (is_win || is_linux || is_chromeos || is_ohos) {
     sources += [
       "policy/messaging_layer/util/manual_test_heartbeat_event.cc",
       "policy/messaging_layer/util/manual_test_heartbeat_event.h",
@@ -7370,7 +7512,7 @@ static_library("browser") {
         "//chromeos/printing",
       ]
     }
-    if (is_linux) {
+    if (is_linux ||arkweb_asan) {
       sources += [ "printing/printer_manager_dialog_linux.cc" ]
     }
     if (enable_oop_printing) {
@@ -7514,6 +7656,10 @@ static_library("browser") {
       "signin/process_dice_header_delegate_impl.h",
       "signin/signin_ui_delegate_impl_dice.cc",
       "signin/signin_ui_delegate_impl_dice.h",
+      "enterprise/signin/profile_management_disclaimer_service.cc",
+      "enterprise/signin/profile_management_disclaimer_service.h",
+      "enterprise/signin/profile_management_disclaimer_service_factory.cc",
+      "enterprise/signin/profile_management_disclaimer_service_factory.h",
     ]
     if (is_win) {
       sources += [
@@ -8376,12 +8522,19 @@ static_library("browser") {
     ]
   }
 
-  if (chrome_root_store_cert_management_ui) {
+  if (chrome_root_store_cert_management_ui || is_ohos) {
     sources += [
       "net/server_certificate_database_service_factory.cc",
       "net/server_certificate_database_service_factory.h",
     ]
     deps += [ "//components/server_certificate_database" ]
+  }
+
+  if (is_ohos) {
+    sources += [
+      #"//arkweb/chromium_ext/chrome/browser/certificate_manager_model_ohos.cc",
+      #"//arkweb/chromium_ext/chrome/browser/certificate_manager_model_ohos.h"
+    ]
   }
 
   if (use_udev) {
@@ -8426,6 +8579,14 @@ static_library("browser") {
 
   if (enable_reporting) {
     deps += [ "//components/tpcd/enterprise_reporting" ]
+  }
+
+  if (enable_arkweb) {
+    deps += [ "//arkweb/build/features" ]
+  }
+
+  if (enable_arkweb) {
+    public_deps += [ "//arkweb/build/features" ]
   }
 
   if (enable_builtin_search_provider_assets) {
@@ -8744,7 +8905,7 @@ static_library("browser_generated_files") {
     arflags = [ "/llvmlibempty" ]
     public_deps += [ "//chrome/browser/ui/startup:buildflags" ]
   }
-  if (is_win || is_mac || is_linux) {
+  if (is_win || is_mac || is_linux || is_ohos) {
     public_deps += [
       "//chrome/browser/enterprise/connectors/device_trust/attestation/common/proto:attestation_ca_proto",
       "//chrome/browser/enterprise/connectors/device_trust/attestation/common/proto:google_key_proto",
@@ -8754,7 +8915,7 @@ static_library("browser_generated_files") {
       "//chrome/browser/ui/webui/whats_new:mojo_bindings",
     ]
   }
-  if (is_win || is_mac || is_linux || is_chromeos) {
+  if (is_win || is_mac || is_linux || is_chromeos || is_ohos) {
     public_deps +=
         [ "//ui/webui/resources/cr_components/help_bubble:mojo_bindings" ]
   }
@@ -9338,7 +9499,7 @@ if (!is_android) {
       "//ui/webui/resources/cr_components/app_management:mojo_bindings",
     ]
 
-    if (is_win || is_mac || is_linux) {
+    if (is_win || is_mac || is_linux || is_ohos) {
       public_deps += [ "//chrome/browser/ui/webui/app_home:mojo_bindings" ]
     }
   }

@@ -95,8 +95,11 @@ bool IsDevicePermissionAutoGranted(
 #if BUILDFLAG(ENABLE_EXTENSIONS)
   // Note: The `DeviceHasInterfaceWithClass()` call is made after checking the
   // origin, since that method call is expensive.
-  if (origin.scheme() == extensions::kExtensionScheme &&
-      base::Contains(kSmartCardPrivilegedExtensionIds, origin.host()) &&
+  if ((origin.scheme() == extensions::kExtensionScheme
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      || origin.scheme() == extensions::kArkwebExtensionScheme
+#endif
+      ) && base::Contains(kSmartCardPrivilegedExtensionIds, origin.host()) &&
       DeviceHasInterfaceWithClass(device_info,
                                   device::mojom::kUsbSmartCardClass)) {
     return true;
@@ -187,7 +190,11 @@ void ChromeUsbDelegate::AdjustProtectedInterfaceClasses(
     std::vector<uint8_t>& classes) {
 #if BUILDFLAG(ENABLE_EXTENSIONS)
   // We only adjust interfaces for extensions here.
-  if (origin.scheme() != extensions::kExtensionScheme) {
+  if (origin.scheme() != extensions::kExtensionScheme
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      && origin.scheme() != extensions::kArkwebExtensionScheme
+#endif
+    ) {
     return;
   }
   // Don't enforce protected interface classes for Chrome Apps since the
@@ -404,7 +411,11 @@ bool ChromeUsbDelegate::IsServiceWorkerAllowedForOrigin(
     const url::Origin& origin) {
 #if BUILDFLAG(ENABLE_EXTENSIONS)
   // WebUSB is only available on extension service workers for now.
-  if (origin.scheme() == extensions::kExtensionScheme) {
+  if (origin.scheme() == extensions::kExtensionScheme
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      || origin.scheme() == extensions::kArkwebExtensionScheme
+#endif
+    ) {
     return true;
   }
 #endif  // BUILDFLAG(ENABLE_EXTENSIONS)
@@ -417,7 +428,11 @@ void ChromeUsbDelegate::IncrementConnectionCount(
 // Don't track connection when the feature isn't enabled or the connection
 // isn't made by an extension origin.
 #if !BUILDFLAG(IS_ANDROID)
-  if (origin.scheme() != extensions::kExtensionScheme) {
+  if (origin.scheme() != extensions::kExtensionScheme
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      && origin.scheme() != extensions::kArkwebExtensionScheme
+#endif
+    ) {
     return;
   }
 
@@ -435,7 +450,11 @@ void ChromeUsbDelegate::DecrementConnectionCount(
   // Don't track connection when the feature isn't enabled or the connection
   // isn't made by an extension origin.
 #if !BUILDFLAG(IS_ANDROID)
-  if (origin.scheme() != extensions::kExtensionScheme) {
+  if (origin.scheme() != extensions::kExtensionScheme
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      && origin.scheme() != extensions::kArkwebExtensionScheme
+#endif
+    ) {
     return;
   }
   auto* usb_connection_tracker =

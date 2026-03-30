@@ -2,6 +2,10 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//arkweb/build/features/features.gni")
+if (is_arkweb_ext) {
+  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
+}
 import("//build/config/dcheck_always_on.gni")
 import("//mojo/public/tools/bindings/mojom.gni")
 import("//net/features.gni")
@@ -1815,6 +1819,28 @@ mojom("mojom") {
     sources += [ "ct_log_info.mojom" ]
   }
 
+  if (arkweb_ext_http_dns_fallback) {
+    public_deps += [ "//arkweb/chromium_ext/servieces/network/public/mojom" ]
+    enabled_features += [ "arkweb_ext_http_dns_fallback" ]
+  }
+
+  if (arkweb_ext_http_dns_fallback_on_dns_hijacking) {
+    enabled_features += [ "arkweb_ext_http_dns_fallback_on_dns_hijacking" ]
+  }
+
+  if (arkweb_ex_fallback_proxy) {
+    public_deps += [ "//arkweb/chromium_ext/servieces/network/public/mojom" ]
+    enabled_features += [ "arkweb_ex_fallback_proxy" ]
+  }
+
+  if (arkweb_resource_interception) {
+    enabled_features += [ "arkweb_resource_interception" ]
+  }
+
+  if (arkweb_ext_network_connection) {
+    enabled_features += [ "arkweb_ext_network_connection" ]
+  }
+
   if (is_p2p_enabled) {
     enabled_features += [ "is_p2p_enabled" ]
     sources += [
@@ -1841,6 +1867,11 @@ mojom("mojom") {
     # TODO(crbug.com/40263697): Remove this once is_linux in the mojom IDL does
     # not include lacros.
     enabled_features += [ "use_network_interface_change_listener" ]
+  }
+
+  if (arkweb_ssl_auth_algo) { 
+    # enable arkweb_ssl_auth_algo to add tlsv1 and tlsv1.1 
+    enabled_features += [ "arkweb_ssl_auth_algo" ] 
   }
 
   # Typemaps which apply to both Blink and non-Blink bindings.

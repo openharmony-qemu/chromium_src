@@ -119,7 +119,11 @@ bool PageCaptureSaveAsMHTMLFunction::CanCaptureCurrentPage(
     // url::Origin directly, as it converts the GURL to an origin itself anyway.
     can_capture_page = extension()->permissions_data()->CanCaptureVisiblePage(
         origin.GetURL(),
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+        params_->details.tab_id, &unused_error,
+#else
         sessions::SessionTabHelper::IdForTab(&web_contents).id(), &unused_error,
+#endif
         extensions::CaptureRequirement::kPageCapture);
   }
 

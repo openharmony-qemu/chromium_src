@@ -208,6 +208,18 @@ void DelayedCookieMonster::SetCookieableSchemes(
   ADD_FAILURE();
 }
 
+void DelayedCookieMonster::AddCookieableSchemes(
+    const std::vector<std::string>& schemes,
+    SetCookieableSchemesCallback callback) {
+  ADD_FAILURE();
+}
+
+void DelayedCookieMonster::RemoveCookieableSchemes(
+    const std::vector<std::string> &schemes,
+    SetCookieableSchemesCallback callback) {
+  ADD_FAILURE();
+}
+
 //
 // CookieURLHelper
 //

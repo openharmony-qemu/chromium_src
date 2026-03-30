@@ -7,6 +7,10 @@
 
 #include "content/public/browser/invalidate_type.h"
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+#include "content/public/browser/web_contents.h"
+#endif
+
 #if BUILDFLAG(IS_ANDROID)
 namespace gfx {
 class ColorSpace;
@@ -23,6 +27,10 @@ namespace content {
 struct EntryChangedDetails;
 struct LoadCommittedDetails;
 struct PrunedDetails;
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+class WebContents;
+#endif
 
 // Interface for objects embedding a NavigationController to provide the
 // functionality NavigationController needs.
@@ -51,6 +59,14 @@ class NavigationControllerDelegate {
   virtual bool ShouldPreserveAbortedURLs() = 0;
 
   virtual void UpdateOverridingUserAgent() = 0;
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  virtual std::string NotifyNavigationRewriteUrl(
+        const std::string& original_url,
+        const std::string& referrer,
+        int transition_type,
+        bool is_key_request) = 0;
+#endif
 
 #if BUILDFLAG(IS_ANDROID)
   virtual scoped_refptr<viz::RasterContextProvider>

@@ -44,6 +44,10 @@
 #ifndef THIRD_PARTY_BLINK_RENDERER_CORE_PAINT_PAINT_LAYER_SCROLLABLE_AREA_H_
 #define THIRD_PARTY_BLINK_RENDERER_CORE_PAINT_PAINT_LAYER_SCROLLABLE_AREA_H_
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "base/check_op.h"
 #include "base/task/single_thread_task_runner.h"
 #include "cc/input/snap_selection_strategy.h"
@@ -58,6 +62,7 @@
 #include "third_party/blink/renderer/platform/heap/collection_support/heap_vector.h"
 #include "third_party/blink/renderer/platform/heap/garbage_collected.h"
 #include "third_party/blink/renderer/platform/heap/persistent.h"
+
 #include "ui/gfx/geometry/transform.h"
 
 namespace blink {
@@ -75,6 +80,10 @@ class ScrollingCoordinator;
 class ScrollMarkerGroupPseudoElement;
 class SnappedQueryScrollSnapshot;
 class ScrollMarkerGroupData;
+#if BUILDFLAG(IS_ARKWEB)
+class PaintLayerScrollableAreaExt;
+class PaintLayerScrollableAreaUtils;
+#endif
 
 struct CORE_EXPORT PaintLayerScrollableAreaRareData final
     : public GarbageCollected<PaintLayerScrollableAreaRareData> {
@@ -142,7 +151,7 @@ struct CORE_EXPORT PaintLayerScrollableAreaRareData final
 // controls are painted by
 // |PaintLayerPainter::PaintOverlayOverflowControlsForFragments| after all
 // scrolling contents.
-class CORE_EXPORT PaintLayerScrollableArea final
+class CORE_EXPORT PaintLayerScrollableArea
     : public GarbageCollected<PaintLayerScrollableArea>,
       public ScrollableArea {
   friend class Internals;
@@ -268,6 +277,12 @@ class CORE_EXPORT PaintLayerScrollableArea final
   // for crashers during PaintLayer setup (see crbug.com/368062).
   explicit PaintLayerScrollableArea(PaintLayer&);
   ~PaintLayerScrollableArea() override;
+
+#if BUILDFLAG(IS_ARKWEB)
+  friend class PaintLayerScrollableAreaExt;
+  friend class PaintLayerScrollableAreaUtils;
+  virtual PaintLayerScrollableAreaExt* AsPaintLayerScrollableAreaExt() { return nullptr; }
+#endif
 
   // Return the PaintLayerScrollableArea (if any) associated with the Node.
   static PaintLayerScrollableArea* FromNode(const Node&);
@@ -482,8 +497,13 @@ class CORE_EXPORT PaintLayerScrollableArea final
 
   LayoutCustomScrollbarPart* Resizer() const { return resizer_.Get(); }
 
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  virtual gfx::Rect RectForHorizontalScrollbar() const;
+  virtual gfx::Rect RectForVerticalScrollbar() const;
+#else
   gfx::Rect RectForHorizontalScrollbar() const;
   gfx::Rect RectForVerticalScrollbar() const;
+#endif  // ARKWEB_SCROLLBAR
 
   bool ScheduleAnimation() override;
   bool ShouldPerformScrollAnchoring() const override;
@@ -718,6 +738,9 @@ class CORE_EXPORT PaintLayerScrollableArea final
                                    bool is_vertical_scrollbar_frozen = false);
 
   // Update the proportions used for thumb rect dimensions.
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  virtual
+#endif  // ARKWEB_SCROLLBAR
   void UpdateScrollbarProportions();
 
   void UpdateScrollOffset(const ScrollOffset&,
@@ -747,6 +770,9 @@ class CORE_EXPORT PaintLayerScrollableArea final
     kDependsOnOverflow,
     kOverflowIndependent
   };
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  virtual
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
   void ComputeScrollbarExistence(
       bool& needs_horizontal_scrollbar,
       bool& needs_vertical_scrollbar,
@@ -790,6 +816,7 @@ class CORE_EXPORT PaintLayerScrollableArea final
                                           bool& previously_was_overlay,
                                           bool& previously_might_be_composited,
                                           gfx::Rect& visual_rect);
+
 
   void DelayableClampScrollOffsetAfterOverflowChange();
   void ClampScrollOffsetAfterOverflowChangeInternal();
@@ -896,6 +923,9 @@ class CORE_EXPORT PaintLayerScrollableArea final
 
   ContainerScrolled last_scrolled_horizontal_ = ContainerScrolled::kNone;
   ContainerScrolled last_scrolled_vertical_ = ContainerScrolled::kNone;
+#if BUILDFLAG(IS_ARKWEB)
+  Member<PaintLayerScrollableAreaUtils> utils_;
+#endif  // ARKWEB_SCROLLBAR
 
   class ScrollingBackgroundDisplayItemClient final
       : public GarbageCollected<ScrollingBackgroundDisplayItemClient>,
@@ -967,5 +997,8 @@ struct DowncastTraits<PaintLayerScrollableArea> {
 };
 
 }  // namespace blink
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/paint/paint_layer_scrollable_area_ext.h"
+#endif
 
 #endif  // THIRD_PARTY_BLINK_RENDERER_CORE_PAINT_PAINT_LAYER_SCROLLABLE_AREA_H_

@@ -4,6 +4,7 @@
 
 #include "third_party/blink/renderer/core/mathml/mathml_element.h"
 
+#include "arkweb/build/features/features.h"
 #include "third_party/blink/renderer/bindings/core/v8/js_event_handler_for_content_attribute.h"
 #include "third_party/blink/renderer/core/css/css_property_name.h"
 #include "third_party/blink/renderer/core/css/css_to_length_conversion_data.h"
@@ -14,6 +15,9 @@
 #include "third_party/blink/renderer/core/html/html_element.h"
 #include "third_party/blink/renderer/platform/wtf/text/character_visitor.h"
 #include "third_party/blink/renderer/platform/wtf/text/string_to_number.h"
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/css/css_utils.h"
+#endif
 
 namespace blink {
 
@@ -40,6 +44,11 @@ static inline bool IsDisallowedMathSizeAttribute(const AtomicString& value) {
 }
 
 bool MathMLElement::IsPresentationAttribute(const QualifiedName& name) const {
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+  if (Cssutils::IsMathFormulaDisabledMode()) {
+    return Element::IsPresentationAttribute(name);
+  }
+#endif
   if (name == html_names::kDirAttr || name == mathml_names::kMathsizeAttr ||
       name == mathml_names::kMathcolorAttr ||
       name == mathml_names::kMathbackgroundAttr ||
@@ -76,6 +85,12 @@ void MathMLElement::CollectStyleForPresentationAttribute(
     const QualifiedName& name,
     const AtomicString& value,
     HeapVector<CSSPropertyValue, 8>& style) {
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+  if (Cssutils::IsMathFormulaDisabledMode()) {
+    Element::CollectStyleForPresentationAttribute(name, value, style);
+    return;
+  }
+#endif
   if (name == html_names::kDirAttr) {
     if (IsValidDirAttribute(value)) {
       AddPropertyToPresentationAttributeStyle(style, CSSPropertyID::kDirection,
@@ -119,6 +134,12 @@ void MathMLElement::CollectStyleForPresentationAttribute(
 }
 
 void MathMLElement::ParseAttribute(const AttributeModificationParams& param) {
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+  if (Cssutils::IsMathFormulaDisabledMode()) {
+    Element::ParseAttribute(param);
+    return;
+  }
+#endif
   const AtomicString& event_name =
       HTMLElement::EventNameForAttributeName(param.name);
   if (!event_name.IsNull()) {

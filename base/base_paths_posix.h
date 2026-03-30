@@ -20,6 +20,10 @@ enum {
               // is $XDG_CACHE_HOME on Linux and
               // ~/Library/Caches on Mac.
 
+#if BUILDFLAG(IS_ARKWEB)
+  DIR_USER_DATA,
+#endif
+
   PATH_POSIX_END
 };
 

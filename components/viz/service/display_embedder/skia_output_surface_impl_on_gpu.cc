@@ -99,6 +99,14 @@
 #include "ui/gl/presenter.h"
 #include "ui/gl/progress_reporter.h"
 #include "url/gurl.h"
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+#include "arkweb/chromium_ext/base/report_loss_frame_ext.h"
+#include "arkweb/chromium_ext/base/ohos/dynamic_frame_loss_monitor.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_SWAP_BUFFER_TRACE)
+#include "base/trace_event/typed_macros.h"
+#endif
 
 #if BUILDFLAG(IS_WIN)
 #include "components/viz/service/display/dc_layer_overlay.h"
@@ -341,6 +349,7 @@ SkiaOutputSurfaceImplOnGpu::SkiaOutputSurfaceImplOnGpu(
   weak_ptr_ = weak_ptr_factory_.GetWeakPtr();
   buffer_presented_callback_ = CreateSafeRepeatingCallback(
       weak_ptr_, std::move(buffer_presented_callback));
+  impl_utils_ =  std::make_shared<SkiaOutputSurfaceImplOnGpuUtils>(this);
 }
 
 void SkiaOutputSurfaceImplOnGpu::ReleaseAsyncReadResultHelpers() {
@@ -438,6 +447,14 @@ void SkiaOutputSurfaceImplOnGpu::Reshape(
     MarkContextLost(CONTEXT_LOST_RESHAPE_FAILED);
   }
 }
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+void SkiaOutputSurfaceImplOnGpu::SetNativeInnerWeb(bool isInnerWeb) {
+  if (output_device_) {
+    output_device_->SetNativeInnerWeb(isInnerWeb);
+  }
+}
+#endif
 
 void SkiaOutputSurfaceImplOnGpu::DrawOverdraw(
     sk_sp<GrDeferredDisplayList> overdraw_ddl,
@@ -593,7 +610,13 @@ void SkiaOutputSurfaceImplOnGpu::SwapBuffers(OutputSurfaceFrame frame) {
   TRACE_EVENT0("viz", "SkiaOutputSurfaceImplOnGpu::SwapBuffers");
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
 
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+  ReportLossFrame::GetInstance()->Record();
+#endif
   SwapBuffersInternal(std::move(frame));
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+  base::ohos::DynamicFrameLossMonitor::GetInstance().OnSwapBuffer();
+#endif
 }
 
 void SkiaOutputSurfaceImplOnGpu::SetDependenciesResolvedTimings(
@@ -2441,8 +2464,13 @@ bool SkiaOutputSurfaceImplOnGpu::PresentFrame(OutputSurfaceFrame frame) {
         base::TimeTicks::Now() - start_time, kHistogramMinTime,
         kHistogramMaxTime, kHistogramTimeBuckets);
   }
-
+#if !BUILDFLAG(ARKWEB_SUPPORTS_DAMAGE_REGION)
   DCHECK(!frame.sub_buffer_rect || capabilities().supports_post_sub_buffer);
+#endif
+#if BUILDFLAG(ARKWEB_SWAP_BUFFER_TRACE)
+  OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
+      std::to_string(frame.data.swap_trace_id), "step", "FinishBufferSwap");
+#endif
   output_device_->Present(frame.sub_buffer_rect, buffer_presented_callback_,
                           std::move(frame));
 
@@ -2630,6 +2658,21 @@ void SkiaOutputSurfaceImplOnGpu::DiscardBackbuffer() {
   MakeCurrent(/*need_framebuffer=*/true);
   output_device_->DiscardBackbuffer();
 }
+
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+void SkiaOutputSurfaceImplOnGpu::SetIfNeedCleanBuffers(bool need_clean_buffers)
+{
+  if (output_device_) {
+    output_device_->SetIfNeedCleanBuffers(need_clean_buffers);
+  }
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+void SkiaOutputSurfaceImplOnGpu::CleanBufferAfterSwapBuffer(bool delay_clean) {
+  output_device_->CleanBufferAfterSwapBuffer(delay_clean);
+}
+#endif
 
 #if BUILDFLAG(ENABLE_VULKAN)
 gfx::GpuFenceHandle SkiaOutputSurfaceImplOnGpu::CreateReleaseFenceForVulkan(
@@ -2892,3 +2935,7 @@ void SkiaOutputSurfaceImplOnGpu::ReadbackForTesting(
 }
 
 }  // namespace viz
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/components/viz/service/display_embedder/skia_output_surface_impl_on_gpu_for_include.cc"
+#endif

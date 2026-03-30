@@ -362,6 +362,8 @@ bool ChromeRuntimeAPIDelegate::GetPlatformInfo(PlatformInfo* info) {
     info->os = extensions::api::runtime::PlatformOs::kLinux;
   } else if (os == "openbsd") {
     info->os = extensions::api::runtime::PlatformOs::kOpenbsd;
+  } else if (os == "ohos") {
+    info->os = extensions::api::runtime::PlatformOs::kOhos;
   } else if (os == "android") {
     info->os = extensions::api::runtime::PlatformOs::kAndroid;
   } else {

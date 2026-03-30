@@ -564,9 +564,13 @@ void DownloadRequestLimiter::OnCanDownloadDecided(
     return;
   }
 
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+  std::move(orig_callback).Run(allow);
+#else
   CanDownloadImpl(
       url, originating_contents, request_method, std::move(request_initiator),
       from_download_cross_origin_redirect, std::move(orig_callback));
+#endif
 }
 
 HostContentSettingsMap* DownloadRequestLimiter::GetContentSettings(

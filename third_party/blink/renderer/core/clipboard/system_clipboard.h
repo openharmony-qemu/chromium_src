@@ -27,6 +27,9 @@ class Image;
 class KURL;
 class LocalFrame;
 class ScopedSystemClipboardSnapshot;
+#if BUILDFLAG(ARKWEB_COPY_OPTION)
+class SystemClipboardUtils;
+#endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
 
 // SystemClipboard:
 // - is a LocalFrame bounded object.
@@ -125,6 +128,10 @@ class CORE_EXPORT SystemClipboard final
                                     mojo_base::BigBuffer data);
 
   void Trace(Visitor*) const override;
+
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  bool HandlePasswordVault();
+#endif
 
  private:
   friend class ScopedSystemClipboardSnapshot;
@@ -253,6 +260,10 @@ class CORE_EXPORT SystemClipboard final
   // of this class as we need to use clipboard_ and buffer_ for unbound remote
   // tests.
   friend class SystemClipboardTest;
+
+#if BUILDFLAG(ARKWEB_COPY_OPTION)
+  Member<SystemClipboardUtils> utils_;
+#endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
 };
 
 // When in scope, forces the specified system clipboard to take a snapshot

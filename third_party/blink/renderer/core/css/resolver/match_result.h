@@ -254,6 +254,22 @@ class CORE_EXPORT MatchResult {
     return *tree_scopes_[tree_order];
   }
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  void SetDisplayNoneFromAdblock(bool has_display_none_from_adblock) {
+    has_display_none_from_adblock_ = has_display_none_from_adblock;
+  }
+
+  bool GetDisplayNoneFromAdblock() { return has_display_none_from_adblock_; }
+
+  void SetDisplayNoneFromUserAdblock(bool has_display_none_from_user_adblock) {
+    has_display_none_from_user_adblock_ = has_display_none_from_user_adblock;
+  }
+
+  bool GetDisplayNoneFromUserAdblock() {
+    return has_display_none_from_user_adblock_;
+  }
+#endif
+
  private:
   MatchedPropertiesVector matched_properties_;
   // Same size as matched_properties_; kept separate so that it is
@@ -280,6 +296,10 @@ class CORE_EXPORT MatchResult {
 #endif
   uint16_t current_tree_order_{0};
   PseudoIdFlags pseudo_element_styles_;
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  bool has_display_none_from_adblock_{false};
+  bool has_display_none_from_user_adblock_{false};
+#endif
 };
 
 inline bool operator==(const MatchedProperties& a, const MatchedProperties& b) {

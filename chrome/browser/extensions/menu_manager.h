@@ -301,6 +301,14 @@ class MenuManager : public ProfileObserver,
     virtual void WillWriteToStorage(const std::string& extension_id) {}
   };
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  class LoadObserver {
+   public:
+    virtual ~LoadObserver() = default;
+    virtual void Loaded(const std::string& extension_id) {}
+  };
+#endif // ARKWEB_ARKWEB_EXTENSIONS
+
   MenuManager(content::BrowserContext* context, StateStore* store_);
 
   MenuManager(const MenuManager&) = delete;
@@ -412,6 +420,11 @@ class MenuManager : public ProfileObserver,
   void AddObserver(TestObserver* observer);
   void RemoveObserver(TestObserver* observer);
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  void AddLoadObserver(LoadObserver* observer);
+  void RemoveLoadObserver(LoadObserver* observer);
+#endif // ARKWEB_ARKWEB_EXTENSIONS
+
  private:
   FRIEND_TEST_ALL_PREFIXES(MenuManagerTest, DeleteParent);
   FRIEND_TEST_ALL_PREFIXES(MenuManagerTest, RemoveOneByOne);
@@ -463,6 +476,10 @@ class MenuManager : public ProfileObserver,
   raw_ptr<StateStore> store_;
 
   base::ObserverList<TestObserver> observers_;
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  base::ObserverList<LoadObserver>::Unchecked load_observers_;
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 
   base::WeakPtrFactory<MenuManager> weak_ptr_factory_{this};
 };

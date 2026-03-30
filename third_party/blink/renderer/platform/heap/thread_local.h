@@ -9,7 +9,7 @@
 #include "build/build_config.h"
 #include "third_party/blink/renderer/platform/heap/heap_buildflags.h"
 #include "third_party/blink/renderer/platform/platform_export.h"
-
+#include "arkweb/build/features/features.h"
 // On component builds, always hide the thread_local variable behind a call.
 // This avoids complexity with "global-dyn" and allows to use "local-dyn"
 // instead, across all platforms. On non-component (release) builds, don't hide
@@ -37,7 +37,9 @@
 #if BLINK_HEAP_HIDE_THREAD_LOCAL_IN_LIBRARY
 #define BLINK_HEAP_THREAD_LOCAL_MODEL "local-dynamic"
 #else
-#if BUILDFLAG(IS_WIN)
+#if BUILDFLAG(ARKWEB_HWASAN)
+#define BLINK_HEAP_THREAD_LOCAL_MODEL "local-dynamic"
+#elif BUILDFLAG(IS_WIN)
 #define BLINK_HEAP_THREAD_LOCAL_MODEL "initial-exec"
 #elif BUILDFLAG(IS_ANDROID)
 #define BLINK_HEAP_THREAD_LOCAL_MODEL "local-dynamic"

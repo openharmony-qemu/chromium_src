@@ -54,6 +54,9 @@ class ChromeProcessManagerDelegate : public ProcessManagerDelegate,
   void OnOffTheRecordProfileCreated(Profile* off_the_record_profile) override;
   void OnProfileWillBeDestroyed(Profile* profile) override;
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  void OnOtrProfileAdded(Profile* profile) override;
+#endif // ARKWEB_ARKWEB_EXTENSIONS
  private:
   base::ScopedObservation<ProfileManager, ProfileManagerObserver>
       profile_manager_observation_{this};

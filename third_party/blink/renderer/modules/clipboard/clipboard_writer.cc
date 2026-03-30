@@ -4,6 +4,7 @@
 
 #include "third_party/blink/renderer/modules/clipboard/clipboard_writer.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/task/single_thread_task_runner.h"
 #include "third_party/blink/public/common/features.h"
 #include "third_party/blink/public/mojom/clipboard/clipboard.mojom-blink.h"
@@ -69,7 +70,10 @@ class ClipboardImageWriter final : public ClipboardWriter {
             SkData::MakeWithoutCopy(png_data.Data(), png_data.DataLength())),
         /*data_complete=*/true, ImageDecoder::kAlphaPremultiplied,
         ImageDecoder::kDefaultBitDepth, ColorBehavior::kTag,
-        cc::AuxImage::kDefault, Platform::GetMaxDecodedImageBytes());
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+        cc::AuxImage::kDefault,
+#endif
+        Platform::GetMaxDecodedImageBytes());
     sk_sp<SkImage> image = nullptr;
     // `decoder` is nullptr if `png_data` doesn't begin with the PNG signature.
     if (decoder) {

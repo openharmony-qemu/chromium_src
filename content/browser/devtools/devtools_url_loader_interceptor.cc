@@ -466,6 +466,10 @@ class InterceptionJob : public network::mojom::URLLoaderClient,
   void SetPriority(net::RequestPriority priority,
                    int32_t intra_priority_value) override;
 
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+  void OnTransferDataWithSharedMemory(base::ReadOnlySharedMemoryRegion region, uint64_t buffer_size) override {}
+#endif
+
   // network::mojom::URLLoaderClient methods
   void OnReceiveEarlyHints(network::mojom::EarlyHintsPtr early_hints) override;
   void OnReceiveResponse(

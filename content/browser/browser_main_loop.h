@@ -365,7 +365,7 @@ class CONTENT_EXPORT BrowserMainLoop {
   scoped_refptr<SaveFileManager> save_file_manager_;
   std::unique_ptr<content::TracingControllerImpl> tracing_controller_;
   std::unique_ptr<BackgroundTracingManager> background_tracing_manager_;
-#if !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
   std::unique_ptr<viz::HostFrameSinkManager> host_frame_sink_manager_;
 
   // Reports on the compositing mode in the system for clients to submit

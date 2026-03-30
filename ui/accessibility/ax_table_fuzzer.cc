@@ -184,6 +184,9 @@ extern "C" int LLVMFuzzerTestOneInput(const unsigned char* data, size_t size) {
       for (int j = 0; j < attr_count && i + 1 < size; j++) {
         unsigned char attr = UNSAFE_TODO(data[i++]);
         int32_t value = static_cast<int32_t>(UNSAFE_TODO(data[i++])) - 2;
+        if (value < 0) {
+          continue;
+        }
         node.AddIntAttribute(GetInterestingTableAttribute(attr), value);
       }
     }

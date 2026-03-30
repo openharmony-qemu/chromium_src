@@ -37,6 +37,7 @@ default: 0
 supported_on:
 - chrome.win:137-
 - chrome.mac:137-
+- chrome.ohos:137-
 - ios:139-
 - chrome_os:144-
 tags: []

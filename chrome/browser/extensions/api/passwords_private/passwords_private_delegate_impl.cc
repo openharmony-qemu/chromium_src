@@ -92,12 +92,17 @@
 #include "url/gurl.h"
 #include "url/scheme_host_port.h"
 
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(IS_OHOS)
 #include "chrome/browser/device_reauth/chrome_device_authenticator_factory.h"
 #endif
 
 #if BUILDFLAG(IS_CHROMEOS)
 #include "chrome/browser/extensions/api/passwords_private/passwords_private_utils_chromeos.h"
+#endif
+
+#if BUILDFLAG(IS_OHOS)
+#include "chrome/browser/password_manager/password_manager_util_ohos.h"
 #endif
 
 namespace {
@@ -180,6 +185,20 @@ std::u16string GetReauthPurpose(
     case extensions::api::passwords_private::PlaintextReason::kNone:
       NOTREACHED();
   }
+#elif BUILDFLAG(IS_OHOS)
+  switch (reason) {
+    case extensions::api::passwords_private::PlaintextReason::kView:
+      return l10n_util::GetStringUTF16(
+          IDS_PASSWORDS_PAGE_AUTHENTICATION_PROMPT_BIOMETRIC_SUFFIX);
+    case extensions::api::passwords_private::PlaintextReason::kCopy:
+      return l10n_util::GetStringUTF16(
+          IDS_PASSWORDS_PAGE_COPY_AUTHENTICATION_PROMPT_BIOMETRIC_SUFFIX);
+    case extensions::api::passwords_private::PlaintextReason::kEdit:
+      return l10n_util::GetStringUTF16(
+          IDS_PASSWORDS_PAGE_EDIT_AUTHENTICATION_PROMPT_BIOMETRIC_SUFFIX);
+    case extensions::api::passwords_private::PlaintextReason::kNone:
+      NOTREACHED();
+  }
 #else
   return std::u16string();
 #endif
@@ -250,7 +269,8 @@ extensions::api::passwords_private::ImportResults ConvertImportResults(
   return private_results;
 }
 
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(IS_OHOS)
 
 using password_manager::prefs::kBiometricAuthenticationBeforeFilling;
 
@@ -794,6 +814,9 @@ void PasswordsPrivateDelegateImpl::ContinueImport(
 #elif BUILDFLAG(IS_WIN)
   message = l10n_util::GetStringUTF16(
       IDS_PASSWORDS_PAGE_IMPORT_AUTHENTICATION_PROMPT);
+#elif BUILDFLAG(IS_OHOS)
+  message = l10n_util::GetStringUTF16(
+      IDS_PASSWORDS_PAGE_IMPORT_AUTHENTICATION_PROMPT_BIOMETRIC_SUFFIX);
 #endif
 
   AuthenticateUser(
@@ -817,6 +840,9 @@ void PasswordsPrivateDelegateImpl::ExportPasswords(
 #elif BUILDFLAG(IS_WIN)
   message = l10n_util::GetStringUTF16(
       IDS_PASSWORDS_PAGE_EXPORT_AUTHENTICATION_PROMPT);
+#elif BUILDFLAG(IS_OHOS)
+  message = l10n_util::GetStringUTF16(
+      IDS_PASSWORDS_PAGE_IMPORT_AUTHENTICATION_PROMPT_BIOMETRIC_SUFFIX);
 #endif
 
   AuthenticateUser(
@@ -897,7 +923,8 @@ void PasswordsPrivateDelegateImpl::SwitchBiometricAuthBeforeFillingState(
 
     content::WebContents* web_contents,
     AuthenticationCallback authentication_callback) {
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || \
+    BUILDFLAG(IS_CHROMEOS) && !BUILDFLAG(IS_OHOS)
   AuthResultCallback callback =
       base::BindOnce(&ChangeBiometricAuthenticationBeforeFillingSetting,
                      profile_->GetPrefs(), std::move(authentication_callback));

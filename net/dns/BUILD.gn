@@ -5,6 +5,13 @@
 import("//net/features.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
 import("//third_party/protobuf/proto_library.gni")
+if (enable_arkweb_ext) {
+  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
+}
+
+#if BUILDFLAG(IS_ARKWEB)
+import("//arkweb/chromium_ext/chromium_ext.gni")
+#endif
 
 enable_built_in_dns = use_blink
 
@@ -28,6 +35,13 @@ source_set("dns") {
     "//net/*",
     "//services/network/*",
   ]
+
+  if (arkweb_ext_network_connection) {
+    defines = []
+    if (target_cpu == "arm64") {
+      defines += [ "ARKWEB_ARM64" ]
+    }
+  }
 
   public = []
   sources = [
@@ -149,10 +163,18 @@ source_set("dns") {
       "dns_config_service_linux.cc",
       "dns_config_service_linux.h",
     ]
+  } else if ((arkweb_ext_http_dns_fallback) || is_ohos) {
+    sources += arkweb_net_dns_sources
   } else if (is_posix) {
     sources += [
       "dns_config_service_posix.cc",
       "dns_config_service_posix.h",
+    ]
+  }
+
+  if (is_ohos) {
+    libs = [
+      "net_connection"
     ]
   }
 
@@ -465,6 +487,8 @@ source_set("tests") {
     ]
   } else if (is_linux) {
     sources += [ "dns_config_service_linux_unittest.cc" ]
+  } else if ((arkweb_ext_http_dns_fallback) || is_ohos) {
+    sources += arkweb_net_dns_unittest_sources
   } else if (is_posix) {
     sources += [ "dns_config_service_posix_unittest.cc" ]
   }
@@ -493,6 +517,12 @@ source_set("tests") {
     "//testing/gmock",
     "//testing/gtest",
   ]
+
+  if (is_ohos) {
+    deps += [
+      "//third_party:huawei_securec",
+    ]
+  }
 
   # TODO(crbug.com/40031409): Fix code that adds exit-time destructors and
   # enable the diagnostic by removing this line.
@@ -565,10 +595,10 @@ fuzzer_test("net_dns_host_cache_fuzzer") {
     ":host_cache_fuzzer_proto",
     "//base",
     "//net",
-    "//net:net_fuzzer_test_support",
     "//testing/libfuzzer/proto:json_proto",
     "//testing/libfuzzer/proto:json_proto_converter",
     "//third_party/libprotobuf-mutator",
+    "//cef:libcef_static",
   ]
   dict = "//testing/libfuzzer/fuzzers/dicts/json.dict"
 }
@@ -579,6 +609,7 @@ fuzzer_test("net_dns_hosts_parse_fuzzer") {
     "//base",
     "//net",
     "//net:net_fuzzer_test_support",
+    "//cef:libcef_static",
   ]
   dict = "//net/data/fuzzer_dictionaries/net_dns_hosts_parse_fuzzer.dict"
 }
@@ -600,7 +631,7 @@ fuzzer_test("net_dns_https_record_rdata_fuzzer") {
   deps = [
     "//base",
     "//net",
-    "//net:net_fuzzer_test_support",
+    "//cef:libcef_static",
   ]
   dict = "//net/data/fuzzer_dictionaries/net_dns_record_fuzzer.dict"
 }
@@ -610,7 +641,7 @@ fuzzer_test("net_dns_nsswitch_reader_fuzzer") {
   deps = [
     "//base",
     "//net",
-    "//net:net_fuzzer_test_support",
+    "//cef:libcef_static",
   ]
   dict = "//net/data/fuzzer_dictionaries/net_dns_nsswitch_reader_fuzzer.dict"
 }
@@ -620,7 +651,7 @@ fuzzer_test("net_dns_record_fuzzer") {
   deps = [
     "//base",
     "//net",
-    "//net:net_fuzzer_test_support",
+    "//cef:libcef_static",
   ]
   dict = "//net/data/fuzzer_dictionaries/net_dns_record_fuzzer.dict"
 }
@@ -630,7 +661,7 @@ fuzzer_test("net_dns_query_parse_fuzzer") {
   deps = [
     "//base",
     "//net",
-    "//net:net_fuzzer_test_support",
+    "//cef:libcef_static",
   ]
   dict = "//net/data/fuzzer_dictionaries/net_dns_record_fuzzer.dict"
 }
@@ -640,7 +671,7 @@ fuzzer_test("net_dns_response_fuzzer") {
   deps = [
     "//base",
     "//net",
-    "//net:net_fuzzer_test_support",
+    "//cef:libcef_static",
   ]
   dict = "//net/data/fuzzer_dictionaries/net_dns_record_fuzzer.dict"
 }
@@ -652,6 +683,7 @@ fuzzer_test("net_host_resolver_manager_fuzzer") {
     "//net",
     "//net:net_fuzzer_test_support",
     "//net:test_support",
+    "//cef:libcef_static",
   ]
   dict = "//net/data/fuzzer_dictionaries/net_host_resolver_manager_fuzzer.dict"
   libfuzzer_options = [ "max_len=4096" ]

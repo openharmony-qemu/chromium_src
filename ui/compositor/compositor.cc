@@ -12,6 +12,8 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
+#include "arkweb/chromium_ext/components/viz/host/host_frame_sink_manager_utils.h"
 #include "base/check.h"
 #include "base/command_line.h"
 #include "base/containers/contains.h"
@@ -72,10 +74,13 @@
 #include "ui/gfx/presentation_feedback.h"
 #include "ui/gfx/switches.h"
 #include "ui/gl/gl_switches.h"
+#include "arkweb/build/features/features.h"
 
-#if BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ARKWEB)
 #include "mojo/public/cpp/bindings/sync_call_restrictions.h"
 #endif
+
+#include "arkweb/chromium_ext/ui/compositor/compositor_utils.h"
 
 namespace ui {
 
@@ -111,6 +116,7 @@ Compositor::Compositor(const viz::FrameSinkId& frame_sink_id,
       frame_sink_id_, this, viz::ReportFirstSurfaceActivation::kYes);
   host_frame_sink_manager->SetFrameSinkDebugLabel(frame_sink_id_, "Compositor");
   root_cc_layer_ = cc::Layer::Create();
+  compositor_utils_ = std::make_unique<CompositorUtils>(this);
 
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
 
@@ -352,6 +358,15 @@ void Compositor::SetLayerTreeFrameSink(
     mojo::AssociatedRemote<viz::mojom::DisplayPrivate> display_private) {
   layer_tree_frame_sink_requested_ = false;
   display_private_ = std::move(display_private);
+#if BUILDFLAG(ARKWEB_SYNC_RENDER)
+  compositor_utils_->SetDrawMode(compositor_utils_->drawMode_);
+#endif
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  compositor_utils_->SetNativeInnerWeb(compositor_utils_->isInnerWeb_);
+#endif
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  compositor_utils_->SetBypassVsyncCondition(compositor_utils_->condition_);
+#endif
   host_->SetLayerTreeFrameSink(std::move(layer_tree_frame_sink));
   // Display properties are reset when the output surface is lost, so update it
   // to match the Compositor's.
@@ -1137,5 +1152,21 @@ void Compositor::CheckPropertyTrees() const {
   }
 #endif
 }
+
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+void Compositor::RestoreRenderFit() {
+  if (delegate_) {
+    delegate_->RestoreRenderFit();
+  }
+}
+#endif // ARKWEB_MAXIMIZE_RESIZE
+
+#if BUILDFLAG(ARKWEB_ROTATE_RESIZE)
+void Compositor::ModifyRenderFit(int32_t fitType) {
+  if (delegate_) {
+    delegate_->ModifyRenderFit(fitType);
+  }
+}
+#endif // ARKWEB_ROTATE_RESIZE
 
 }  // namespace ui

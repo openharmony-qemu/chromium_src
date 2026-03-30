@@ -61,7 +61,9 @@ bool FrameViewAutoSizeInfo::AutoSizeIfNeeded() {
     }
   }
 
+#if !BUILDFLAG(ARKWEB_NWEB_EX)
   PaintLayerScrollableArea* layout_viewport = frame_view_->LayoutViewport();
+#endif  // defined(ARKWEB_NWEB_EX)
 
   // Do the resizing twice. The first time is basically a rough calculation
   // using the preferred width which may result in a height change during the
@@ -85,6 +87,7 @@ bool FrameViewAutoSizeInfo::AutoSizeIfNeeded() {
   int height = document_layout_box->ScrollHeight().ToInt();
   gfx::Size new_size(width, height);
 
+#if !BUILDFLAG(ARKWEB_NWEB_EX)
   // Check to see if a scrollbar is needed for a given dimension and
   // if so, increase the other dimension to account for the scrollbar.
   // Since the dimensions are only for the view rectangle, once a
@@ -103,6 +106,7 @@ bool FrameViewAutoSizeInfo::AutoSizeIfNeeded() {
     // Don't bother checking for a horizontal scrollbar because the height is
     // already greater the maximum.
   }
+#endif  // defined(ARKWEB_NWEB_EX)
 
   // Ensure the size is at least the min bounds.
   new_size.SetToMax(min_auto_size_);

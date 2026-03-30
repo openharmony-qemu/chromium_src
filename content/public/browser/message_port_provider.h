@@ -45,6 +45,14 @@ class CONTENT_EXPORT MessagePortProvider {
                                  const url::Origin* target_origin,
                                  const blink::WebMessagePayload& data);
 
+#if BUILDFLAG(IS_ARKWEB)
+  static void OhosPostMessageToFrame(Page& page,
+                                     const std::u16string& source_origin,
+                                     const std::u16string& target_origin,
+                                     const std::u16string& data,
+                                     std::vector<blink::WebMessagePort>& ports);
+#endif
+
 #if BUILDFLAG(IS_ANDROID)
   // TODO(449581913): Rather than processing serialized strings here, we should
   // to teach the Android side of the house to use `org.chromium.url.Origin`

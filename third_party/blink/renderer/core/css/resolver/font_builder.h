@@ -24,6 +24,9 @@
 #ifndef THIRD_PARTY_BLINK_RENDERER_CORE_CSS_RESOLVER_FONT_BUILDER_H_
 #define THIRD_PARTY_BLINK_RENDERER_CORE_CSS_RESOLVER_FONT_BUILDER_H_
 
+#include <memory>
+
+#include "arkweb/build/features/features.h"
 #include "base/memory/scoped_refptr.h"
 #include "third_party/blink/renderer/core/core_export.h"
 #include "third_party/blink/renderer/core/css/font_size_functions.h"
@@ -35,10 +38,13 @@
 #include "third_party/blink/renderer/platform/fonts/font_variant_numeric.h"
 #include "third_party/blink/renderer/platform/wtf/allocator/allocator.h"
 
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/css/resolver/font_builder_utils.h"
+
 namespace blink {
 
 class ComputedStyle;
 class ComputedStyleBuilder;
+class FontBuilderUtils;
 class FontSelector;
 class TreeScope;
 
@@ -168,6 +174,7 @@ class CORE_EXPORT FontBuilder {
   static FontVariantEmoji InitialVariantEmoji() { return kNormalVariantEmoji; }
 
  private:
+  friend class FontBuilderUtils;
   void SetFamilyDescription(FontDescription&,
                             const FontDescription::FamilyDescription&);
   void SetSize(FontDescription&, const FontDescription::Size&);
@@ -235,6 +242,8 @@ class CORE_EXPORT FontBuilder {
   unsigned flags_{0};
   static_assert(static_cast<int>(PropertySetFlag::kNumFlags) <=
                 sizeof(flags_) * 8);
+
+  std::unique_ptr<FontBuilderUtils> font_builder_utils_;
 };
 
 }  // namespace blink

@@ -196,6 +196,10 @@ const char kAlwaysOnVpnPreConnectUrlAllowlist[] =
 const char kFloatingWorkspaceEnabled[] = "ash.floating_workspace_enabled";
 #endif
 
+#if BUILDFLAG(ARKWEB_EDM_POLICY)
+const char kBrowserPolicyVersion[] = "policy.browser_policy_version";
+#endif
+
 // A boolean value indicating whether the built-in AI APIs are enabled.
 const char kBuiltInAIAPIsEnabled[] = "policy.built_in_ai_apis_enabled";
 

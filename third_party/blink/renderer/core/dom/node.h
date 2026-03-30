@@ -711,6 +711,16 @@ class CORE_EXPORT Node : public EventTarget {
   // except in the case of a Document node.
   Document* ownerDocument() const;
 
+#if BUILDFLAG(ARKWEB_MEDIA)
+  bool IsDocumentInactive() {
+    if (!tree_scope_) {
+      return true;
+    }
+
+    return GetTreeScope().IsDocumentInactive();
+  }
+#endif
+
   // Returns the document associated with this node. A Document node returns
   // itself.
   Document& GetDocument() const { return GetTreeScope().GetDocument(); }
@@ -1105,6 +1115,10 @@ class CORE_EXPORT Node : public EventTarget {
   // Called when a node changes its flat tree parent, either because slot
   // assignments changed, or the node got reparented by a moveBefore().
   void FlatTreeParentChanged();
+
+#if BUILDFLAG(ARKWEB_AI)
+  int getArkWebDomNodeId() { return GetDomNodeId(); }
+#endif
 
  private:
   enum NodeFlags : uint32_t {

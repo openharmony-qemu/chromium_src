@@ -10,11 +10,19 @@ namespace blink {
 namespace {
 // The following constants are determined experimentally.
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+// Used to determine how far the scroller is allowed to stretch.
+constexpr double kOverscrollBoundaryMultiplier = 0.57f;
+
+// Maximum duration for the bounce back animation.
+constexpr double kBounceBackMaxDurationMilliseconds = 500.0;
+#else
 // Used to determine how far the scroller is allowed to stretch.
 constexpr double kOverscrollBoundaryMultiplier = 0.1f;
 
 // Maximum duration for the bounce back animation.
 constexpr double kBounceBackMaxDurationMilliseconds = 300.0;
+#endif
 
 // Time taken by the bounce back animation (in milliseconds) to scroll 1 px.
 constexpr double kBounceBackMillisecondsPerPixel = 15.0;
@@ -27,7 +35,11 @@ constexpr double kIgnoreForwardBounceVelocityThreshold = 200;
 
 constexpr double kOverbounceMaxDurationMilliseconds = 150.0;
 constexpr double kOverbounceMillisecondsPerPixel = 2.5;
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+constexpr double kOverbounceDistanceMultiplier = 55.f;
+#else
 constexpr double kOverbounceDistanceMultiplier = 35.f;
+#endif
 
 // Control points for the bounce forward Cubic Bezier curve.
 constexpr double kBounceForwardsX1 = 0.25;
@@ -268,7 +280,10 @@ ElasticOverscrollControllerBezier::StretchAmountForAccumulatedOverscroll(
         tanh(2 * accumulated_overscroll.y() / element_scroll_bounds.height()) *
         overscroll_boundary.y());
   }
-
+  LOG(DEBUG) << "OverScroll width hand scroll x is "
+             << (overbounce_distance.x());
+  LOG(DEBUG) << "OverScroll width hand scroll y is "
+             << (overbounce_distance.y());
   return overbounce_distance;
 }
 
@@ -299,7 +314,10 @@ ElasticOverscrollControllerBezier::AccumulatedOverscrollForStretchAmount(
     overscrolled_amount.set_y((atanh_value / 2) *
                               element_scroll_bounds.height());
   }
-
+  LOG(DEBUG) << "OverScroll leave hand scroll x is "
+             << (overscrolled_amount.x());
+  LOG(DEBUG) << "OverScroll leave hand scroll y is "
+             << (overscrolled_amount.y());
   return overscrolled_amount;
 }
 

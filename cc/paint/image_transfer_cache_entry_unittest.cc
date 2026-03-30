@@ -272,7 +272,7 @@ TEST_P(ImageTransferCacheEntryTest, MAYBE_Deserialize) {
   entry.reset();
 }
 
-TEST_P(ImageTransferCacheEntryTest, HardwareDecodedNoMipsAtCreation) {
+TEST_P(ImageTransferCacheEntryTest, HardwareDecodedMipsAfterCreation) {
   base::HeapArray<bool> release_flags;
   std::vector<sk_sp<SkImage>> plane_images = CreateTestYUVImage(release_flags);
   const size_t plane_images_size = plane_images.size();
@@ -330,7 +330,11 @@ TEST_P(ImageTransferCacheEntryTest, HardwareDecodedMipsAtCreation) {
       CheckImageIsSolidColor(entry->image(), SkColorSetRGB(255, 121, 255)));
 }
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+TEST_P(ImageTransferCacheEntryTest, HardwareDecodedMipsAfterCreation_ext) {
+#else
 TEST_P(ImageTransferCacheEntryTest, HardwareDecodedMipsAfterCreation) {
+#endif
   base::HeapArray<bool> release_flags;
   std::vector<sk_sp<SkImage>> plane_images = CreateTestYUVImage(release_flags);
   const size_t plane_images_size = plane_images.size();

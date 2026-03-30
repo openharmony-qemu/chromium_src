@@ -109,6 +109,17 @@
 #include "gin/public/v8_snapshot_file_type.h"
 #endif
 
+#if defined(OHOS_MEM_USAGE_REPORT)
+#include "content/public/browser/browser_context.h"
+#include "third_party/boringssl/src/include/openssl/evp.h"
+#include "crypto/aead.h"
+#include "crypto/random.h"
+#include "base/base64.h"
+#include "base/command_line.h"
+#include <regex>
+#include "third_party/blink/renderer/core/render_mojom/render_mojom_client.h"
+#endif // OHOS_MEM_USAGE_REPORT
+
 namespace blink {
 
 #if BUILDFLAG(IS_WIN)
@@ -117,6 +128,114 @@ v8::FilterETWSessionByURLResult FilterETWSessionByURLCallback(
     v8::Local<v8::Context> context,
     const std::string& json_payload);
 #endif  // BUILDFLAG(IS_WIN)
+
+#if defined(OHOS_MEM_USAGE_REPORT)
+static const unsigned char pub_data[32] = {
+    0x46, 0x4a, 0xe7, 0xaa, 0xb6, 0xd9, 0xb4, 0x12, 0x67, 0xf3, 0x82, 0xf4, 0x04, 0x3f, 0xe9, 0xa5,
+    0xfd, 0x45, 0xa3, 0x28, 0xd6, 0xeb, 0x6c, 0x59, 0x46, 0x65, 0x44, 0x3a, 0xfa, 0x3a, 0x73, 0x24
+};
+static unsigned char my_pub[32] = {};
+static unsigned char derived_key[32] = {};
+
+static bool MURPubInit() {
+  EVP_PKEY *pkey = NULL;
+  bssl::UniquePtr<EVP_PKEY_CTX> pctx(
+    EVP_PKEY_CTX_new_id(EVP_PKEY_X25519, nullptr));
+  EVP_PKEY_keygen_init(pctx.get());
+  EVP_PKEY_keygen(pctx.get(), &pkey);
+  bssl::UniquePtr<EVP_PKEY_CTX> ctx(
+    EVP_PKEY_CTX_new(pkey, nullptr));
+  if (!EVP_PKEY_derive_init(ctx.get())) {
+    return false;
+  }
+  EVP_PKEY *peer_key = EVP_PKEY_new_raw_public_key(EVP_PKEY_X25519, 0, pub_data, 32);
+  if (!EVP_PKEY_derive_set_peer(ctx.get(), peer_key)) {
+    return false;
+  }
+  size_t derived_len = 32;
+  if (!EVP_PKEY_derive(ctx.get(), derived_key, &derived_len)) {
+    return false;
+  }
+  size_t pub_len = 32;
+  EVP_PKEY_get_raw_public_key(pkey, my_pub, &pub_len);
+  return true;
+}
+
+static std::string MURSeal(std::string& msg, int32_t id) {
+  std::vector<uint8_t> plaintext(msg.begin(), msg.end());
+  std::vector<uint8_t> id_data((uint8_t*)&id, (uint8_t*)&(id) + sizeof(id));
+  plaintext.insert(plaintext.begin(), id_data.begin(), id_data.end());
+  crypto::Aead aead(crypto::Aead::AES_256_GCM);
+  aead.Init(derived_key);
+  uint8_t nonce[12];
+  crypto::RandBytes(nonce);
+  std::vector<uint8_t> ciphertext = aead.Seal(plaintext, nonce, base::span<uint8_t>());
+  ciphertext.insert(ciphertext.begin(), std::begin(nonce), std::end(nonce));
+  ciphertext.insert(ciphertext.begin(), std::begin(my_pub), std::end(my_pub));
+  std::string res = base::Base64Encode(ciphertext);
+  return res;
+}
+
+static int MURParseFromCL() {
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch("mur")) {
+    return std::atoi(base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII("mur").c_str());
+  }
+  return 0;
+}
+
+std::string remove_params(const std::string& msg) {
+  size_t pos = msg.find('?');
+  if (pos == std::string::npos) return msg;
+  std::string base = msg.substr(0, pos);
+  std::string query = msg.substr(pos + 1);
+
+  std::regex param_regex("([^&=]+)=([^&]*)");
+  std::sregex_iterator it(query.begin(), query.end(), param_regex);
+  std::sregex_iterator end;
+
+  std::ostringstream oss;
+  oss << "?";
+  for (; it != end; ++it) {
+    std::smatch match = *it;
+    std::string key = match[1].str();
+    std::string value = match[2].str();
+    oss << "&" << key << "|" << value.length();
+  }
+  std::string new_query = oss.str();
+  return base + new_query;
+}
+
+static void MURUpload(const std::string& msg, int id) {
+  std::string encoded("XXXX");
+  if (msg.length() != 0) {
+    encoded = remove_params(msg);
+  }
+  std::string res = MURSeal(encoded, id);
+  blink::ResSchedReportClient report_client;
+  report_client.ReportMemoryUsage(res.c_str());
+}
+
+static bool MURCallback(v8::Local<v8::Context> context, int id) {
+  static std::atomic<int> count { 0 };
+  static int murcount = MURParseFromCL();
+  if (count >= murcount) return false;
+  count ++;
+
+  std::string msg1("");
+  if (!context.IsEmpty()) {
+    ExecutionContext* execution_context = ToExecutionContext(context);
+    if (execution_context != nullptr) {
+      msg1 = execution_context->Url().GetString().Utf8();
+    }
+  }
+  MURUpload(msg1, id);
+  
+  std::string msg2 = CaptureCurrentScriptUrl(v8::Isolate::GetCurrent()).Utf8();
+  MURUpload(msg2, id);
+
+  return true;
+}
+#endif  // OHOS_MEM_USAGE_REPORT
 
 namespace {
 
@@ -885,6 +1004,11 @@ void V8Initializer::InitializeV8Common(v8::Isolate* isolate) {
   isolate->SetFilterETWSessionByURL2Callback(FilterETWSessionByURLCallback);
 #endif  // BUILDFLAG(IS_WIN)
 
+#if defined(OHOS_MEM_USAGE_REPORT)
+  static bool _mur_pub_init_result = MURPubInit();
+  (void)_mur_pub_init_result;
+  isolate->SetMURCallback(MURCallback);
+#endif  // OHOS_MEM_USAGE_REPORT
   V8ContextSnapshot::EnsureInterfaceTemplates(isolate);
 
   WasmResponseExtensions::Initialize(isolate);

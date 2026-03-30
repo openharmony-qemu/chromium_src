@@ -2,6 +2,10 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
+
 source_set("prefs") {
   sources = [ "pref_names.h" ]
 }
@@ -65,6 +69,8 @@ static_library("core") {
     "viewer.cc",
     "viewer.h",
   ]
+
+  sources += arkweb_components_dom_distiller_core_sources
 
   public_deps = [
     ":prefs",

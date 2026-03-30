@@ -84,6 +84,75 @@ constexpr net::NetworkTrafficAnnotationTag traffic_annotation =
 
 const int kNumberOfDaysPerWeek = 7;
 
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+const char kFakeTrendingData[] =
+    R"({
+  "value": [
+      {
+        "id": "1",
+        "resourceVisualization": {
+            "title": "Spreadsheet",
+            "type": "Excel",
+            "mediaType": "application/vnd.)"
+    R"(openxmlformats-officedocument.spreadsheetml.sheet"
+        },
+        "resourceReference": {
+            "webUrl": "https://***",
+            "id": "1-abc"
+        }
+      },
+      {
+        "id": "2",
+        "resourceVisualization": {
+            "title": "Ppt",
+            "type": "PowerPoint",
+            "mediaType": "application/vnd.)"
+    R"(openxmlformats-officedocument.presentationml.presentation"
+        },
+        "resourceReference": {
+            "webUrl": "https://***",
+            "id": "2-abc"
+        }
+      },
+      {
+        "id": "3",
+        "resourceVisualization": {
+            "title": "Document 2",
+            "type": "Word",
+            "mediaType": "application/vnd.)"
+    R"(openxmlformats-officedocument.wordprocessingml.document"
+        },
+        "resourceReference": {
+            "webUrl": "https://***",
+            "id": "3-abc"
+        }
+      },
+      {
+        "id": "4",
+        "resourceVisualization": {
+            "title": "Numbers",
+            "type": "Csv",
+            "mediaType": "text/csv"
+        },
+        "resourceReference": {
+            "webUrl": "https://***",
+            "id": "4-abc"
+        }
+      },
+      {
+        "id": "5",
+        "resourceVisualization": {
+            "title": "Some pdf",
+            "type": "Pdf",
+            "mediaType": "application/pdf"
+        },
+        "resourceReference": {
+            "webUrl": "https://***",
+            "id": "5-abc"
+        }
+      }
+  ]})";
+#else
 const char kFakeTrendingData[] =
     R"({
   "value": [
@@ -151,6 +220,7 @@ const char kFakeTrendingData[] =
         }
       }
   ]})";
+#endif
 
 constexpr base::TimeDelta kModuleDismissalDuration = base::Hours(12);
 
@@ -171,6 +241,128 @@ const char kNonInsightsRequestBody[] =
     R"(remoteItem&$orderBy=lastModifiedDateTime+desc"
   }]})";
 
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+const char kNonInsightsFakeData[] =
+    R"({
+  "responses" : [
+    {
+      "id": "recent",
+      "status": "200",
+      "body": {
+        "value": [
+          {
+            "id": "1",
+            "name": "Document 1.docx",
+            "webUrl": "https://***",
+            "file": {
+              "mimeType": "application/vnd.)"
+    R"(openxmlformats-officedocument.wordprocessingml.document"
+            },
+            "fileSystemInfo": {
+              "lastAccessedDateTime": "%s"
+            },
+            "lastModifiedDateTime": "%s"
+          },
+          {
+            "id": "2",
+            "name": "Presentation.pptx",
+            "webUrl": "https://***",
+            "file": {
+              "mimeType": "application/vnd.)"
+    R"(openxmlformats-officedocument.presentationml.presentation"
+            },
+            "fileSystemInfo": {
+              "lastAccessedDateTime": "%s"
+            },
+            "lastModifiedDateTime": "%s"
+          },
+          {
+            "id": "3",
+            "name": "Document xyz.docx",
+            "webUrl": "https://***",
+            "file": {
+              "mimeType": "application/vnd.)"
+    R"(openxmlformats-officedocument.wordprocessingml.document"
+            },
+            "fileSystemInfo": {
+              "lastAccessedDateTime": "%s"
+            },
+            "lastModifiedDateTime": "%s"
+          }
+        ]
+      }
+    },
+    {
+      "id": "shared",
+      "status": "200",
+      "body": {
+        "value": [
+          {
+            "id": "4",
+            "name": "Shared Spreadsheet.xlsx",
+            "webUrl": "https://***",
+            "file": {
+              "mimeType": "application/vnd.)"
+    R"(openxmlformats-officedocument.spreadsheetml.sheet"
+            },
+            "lastModifiedDateTime": "%s",
+            "remoteItem": {
+              "shared": {
+                "sharedDateTime": "%s",
+                "sharedBy": {
+                  "user": {
+                    "displayName": "User 1"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "5",
+            "name": "Shared Document.docx",
+            "webUrl": "https://***",
+            "file": {
+              "mimeType": "application/vnd.)"
+    R"(openxmlformats-officedocument.wordprocessingml.document"
+            },
+            "lastModifiedDateTime": "%s",
+            "remoteItem": {
+              "shared": {
+                "sharedDateTime": "%s",
+                "sharedBy": {
+                  "user": {
+                    "displayName": "User 2"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "6",
+            "name": "Roadmap.pptx",
+            "webUrl": "https://***",
+            "file": {
+              "mimeType": "application/vnd.)"
+    R"(openxmlformats-officedocument.presentationml.presentation"
+            },
+            "lastModifiedDateTime": "%s",
+            "remoteItem": {
+              "shared": {
+                "sharedDateTime": "%s",
+                "sharedBy": {
+                  "user": {
+                    "displayName": "User 1"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+})";
+#else
 const char kNonInsightsFakeData[] =
     R"({
   "responses" : [
@@ -291,6 +483,7 @@ const char kNonInsightsFakeData[] =
     }
   ]
 })";
+#endif
 
 const char kCombinedRequestBody[] =
     R"({

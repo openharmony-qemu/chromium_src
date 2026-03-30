@@ -328,7 +328,11 @@ bool DoWebViewScriptsMatch(const Extension& extension,
   // Return true if `extension` is an owner of `guest` and it registered
   // content scripts using the `webview.addContentScripts` API.
   GURL owner_site_url = guest->GetOwnerSiteURL();
-  if (owner_site_url.SchemeIs(kExtensionScheme) &&
+  if ((owner_site_url.SchemeIs(kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+       || owner_site_url.SchemeIs(kArkwebExtensionScheme)
+#endif
+           ) &&
       owner_site_url.host() == extension.id()) {
     WebViewContentScriptManager* script_manager =
         WebViewContentScriptManager::Get(frame.GetBrowserContext());

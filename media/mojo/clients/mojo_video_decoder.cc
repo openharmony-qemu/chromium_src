@@ -34,6 +34,15 @@
 #include "mojo/public/cpp/bindings/pending_remote.h"
 #include "mojo/public/cpp/bindings/self_owned_receiver.h"
 #include "mojo/public/cpp/bindings/shared_remote.h"
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+#include "gpu/ipc/common/nweb_native_window_tracker.h"
+#endif // ARKWEB_VIDEO_ASSISTANT
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/media/mojo/clients/mojo_video_decoder_for_include.cc"
+#endif
+
 #include "third_party/perfetto/include/perfetto/tracing/track.h"
 
 namespace media {
@@ -122,6 +131,8 @@ bool MojoVideoDecoder::SupportsDecryption() const {
   // Currently only the Android backends and specific ChromeOS configurations
   // support decryption.
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(USE_CHROMEOS_PROTECTED_MEDIA)
+  return true;
+#elif BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ENABLE_CDM)
   return true;
 #else
   return false;
@@ -484,5 +495,14 @@ void MojoVideoDecoder::Stop() {
   // Drop any outstanding callbacks.
   weak_factory_.InvalidateWeakPtrs();
 }
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+void MojoVideoDecoder::SetVideoSurface(int32_t widget_id) {
+  if (has_connection_error_) {
+    return;
+  }
+  remote_decoder_->SetVideoSurface(widget_id);
+}
+#endif // ARKWEB_VIDEO_ASSISTANT
 
 }  // namespace media

@@ -236,7 +236,8 @@ TEST_F(FirstRunTest, CreateSentinelIfNeeded_SkippedIfSuppressed) {
   EXPECT_FALSE(IsChromeFirstRun());
 }
 
-#if BUILDFLAG(IS_POSIX)  // This test relies on Posix file permissions.
+#if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_OHOS)
+// This test relies on Posix file permissions.
 TEST_F(FirstRunTest, CreateSentinelIfNeeded_FileSystemError) {
   base::HistogramTester histogram_tester;
 

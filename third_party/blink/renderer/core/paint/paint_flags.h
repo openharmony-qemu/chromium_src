@@ -5,6 +5,8 @@
 #ifndef THIRD_PARTY_BLINK_RENDERER_CORE_PAINT_PAINT_FLAGS_H_
 #define THIRD_PARTY_BLINK_RENDERER_CORE_PAINT_PAINT_FLAGS_H_
 
+#include "arkweb/build/features/features.h"
+
 namespace blink {
 
 // Using an anonymous enum under a namespace instead of an enum class to allow
@@ -38,6 +40,10 @@ enum : unsigned {
   // Used to suppress painting of PII and other sensitive content, allowing
   // the result to be used in WebGL, WebGPU and 2D Canvas.
   kPrivacyPreserving = 1 << 6,
+
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  kGlobalPaintDragSelection = 1 << 7,
+#endif
 };
 }  // namespace PaintFlag
 

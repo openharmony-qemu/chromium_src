@@ -19,8 +19,16 @@
 #include <sys/prctl.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_CRASHPAD_FORK)
+#include <sys/syscall.h>
+#endif
 
-#include "base/check_op.h"
+#include "arkweb/chromium_ext/base/process/process_handle_posix_ex.h"
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+#include "arkweb/chromium_ext/third_party/crashpad/crashpad/util/linux/crashpad_dfx.h"
+#include "info/fatal_message.h"
+#endif
 #include "base/logging.h"
 #include "base/posix/eintr_wrapper.h"
 #include "build/build_config.h"
@@ -30,6 +38,9 @@
 #include "util/linux/socket.h"
 #include "util/misc/from_pointer_cast.h"
 #include "util/posix/signals.h"
+#if BUILDFLAG(ARKWEB_CRASHPAD_FORK)
+#include "base/process/process_handle.h"
+#endif
 
 #if BUILDFLAG(IS_ANDROID)
 #include <android/api-level.h>
@@ -153,6 +164,14 @@ int ExceptionHandlerClient::SendCrashDumpRequest(
       ExceptionHandlerProtocol::ClientToServerMessage::kTypeCrashDumpRequest;
   message.requesting_thread_stack_address = stack_pointer;
   message.client_info = info;
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+  message.real_pid = base::GetCurrentRealPid();
+  fatal_msg_t* msg_t = get_fatal_message();
+  if (msg_t && strstr(msg_t->msg, "OutOfMemoryError")) {
+    message.crash_reason = (int32_t)CrashpadDfx::CrashReason::kOutOfMemory;
+  }
+  message.process_type_id = CrashpadDfx::GetProcessType();
+#endif  // BUILDFLAG(ARKWEB_CRASHPAD)
   return UnixCredentialSocket::SendMsg(server_sock_, &message, sizeof(message));
 }
 
@@ -165,9 +184,19 @@ int ExceptionHandlerClient::WaitForCrashDumpComplete() {
   while (ReadFileExactly(server_sock_, &message, sizeof(message))) {
     switch (message.type) {
       case ExceptionHandlerProtocol::ServerToClientMessage::kTypeForkBroker: {
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+        pid_t real_pid = base::GetCurrentRealPid();
+        LOG(INFO) << "crashpad ExceptionHandlerClient::WaitForCrashDumpComplete"
+                     ", received message.type = kTypeForkBroker, use broker "
+                     "process to dump, real pid = "
+                  << real_pid;
+#endif
         Signals::InstallDefaultHandler(SIGCHLD);
-
+#if BUILDFLAG(ARKWEB_CRASHPAD_FORK)
+        pid_t pid = syscall(SYS_clone, SIGCHLD, nullptr);
+#else
         pid_t pid = fork();
+#endif
         if (pid <= 0) {
           ExceptionHandlerProtocol::Errno error = pid < 0 ? errno : 0;
           if (!WriteFile(server_sock_, &error, sizeof(error))) {
@@ -186,12 +215,23 @@ int ExceptionHandlerClient::WaitForCrashDumpComplete() {
           constexpr bool am_64_bit = false;
 #endif  // ARCH_CPU_64_BITS
 
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+          PtraceBroker broker(server_sock_, real_pid, am_64_bit);
+#else
           PtraceBroker broker(server_sock_, getppid(), am_64_bit);
+#endif  // BUILDFLAG(ARKWEB_CRASHPAD)
           _exit(broker.Run());
         }
 
         int status = 0;
         pid_t child = HANDLE_EINTR(waitpid(pid, &status, 0));
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+        LOG(INFO)
+            << "crashpad ExceptionHandlerClient::WaitForCrashDumpComplete, "
+               "waitpid child process exit, status = "
+            << status << ", child process pid = " << pid
+            << ", waitpid ret = " << child << ", real pid = " << real_pid;
+#endif
         DCHECK_EQ(child, pid);
 
         if (child == pid && status != 0) {
@@ -201,6 +241,11 @@ int ExceptionHandlerClient::WaitForCrashDumpComplete() {
       }
 
       case ExceptionHandlerProtocol::ServerToClientMessage::kTypeSetPtracer: {
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+        LOG(INFO) << "crashpad ExceptionHandlerClient::WaitForCrashDumpComplete"
+                     ", received message.type = kTypeSetPtracer, message pid = "
+                  << message.pid;
+#endif
         ExceptionHandlerProtocol::Errno result = SetPtracer(message.pid);
         if (!WriteFile(server_sock_, &result, sizeof(result))) {
           return errno;

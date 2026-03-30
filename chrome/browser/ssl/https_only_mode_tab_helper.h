@@ -56,6 +56,12 @@ class HttpsOnlyModeTabHelper
   }
   bool is_exempt_error() const { return is_exempt_error_; }
 
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  void set_is_ssl_error(bool is_ssl_error) { is_ssl_error_ = is_ssl_error; }
+
+  bool is_ssl_error() const { return is_ssl_error_; }
+#endif
+
  private:
   explicit HttpsOnlyModeTabHelper(content::WebContents* web_contents);
   friend class content::WebContentsUserData<HttpsOnlyModeTabHelper>;
@@ -92,6 +98,10 @@ class HttpsOnlyModeTabHelper
   // the automatic net error reload) and continue the upgrade attempt
   // post-reload.
   bool is_exempt_error_ = false;
+
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  bool is_ssl_error_ = false;
+#endif
 
   WEB_CONTENTS_USER_DATA_KEY_DECL();
 };

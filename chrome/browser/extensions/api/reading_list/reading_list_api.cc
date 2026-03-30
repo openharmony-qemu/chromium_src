@@ -19,6 +19,7 @@
 
 namespace extensions {
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 //////////////////////////////////////////////////////////////////////////////
 /////////////////////// ReadingListAddEntryFunction //////////////////////////
 //////////////////////////////////////////////////////////////////////////////
@@ -264,5 +265,6 @@ ExtensionFunction::ResponseValue ReadingListQueryFunction::MatchEntries() {
   return ArgumentList(
       api::reading_list::Query::Results::Create(std::move(matching_entries)));
 }
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 
 }  // namespace extensions

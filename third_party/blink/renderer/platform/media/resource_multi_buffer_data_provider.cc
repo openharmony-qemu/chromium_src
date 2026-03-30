@@ -35,6 +35,10 @@
 #include "third_party/blink/renderer/platform/weborigin/security_origin.h"
 #include "third_party/blink/renderer/platform/wtf/functional.h"
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+#include "base/hash/hash.h"
+#endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+
 namespace blink {
 
 // The number of milliseconds to wait before retrying a failed load.
@@ -233,6 +237,10 @@ void ResourceMultiBufferDataProvider::DidReceiveResponse(
   DVLOG(1) << "didReceiveResponse: HTTP/" << version << " "
            << response.HttpStatusCode();
 #endif
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+  LOG(INFO) << "OhMedia, DidReceiveResponse httpStatusCode:" << response.HttpStatusCode()
+            << "(hash" << std::hex << base::FastHash(base::byte_span_from_ref(this)) << ")";
+#endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
   DCHECK(active_loader_);
 
   if (!url_data_->url_index()) {
@@ -328,6 +336,10 @@ void ResourceMultiBufferDataProvider::DidReceiveResponse(
   destination_url_data->set_is_cors_cross_origin(
       network::cors::IsCorsCrossOriginResponseType(response_type));
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+  destination_url_data->SetMediaWebURLErrorCB(
+      url_data_->GetMediaWebURLErrorCB());
+#endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
   // Only used for metrics.
   {
     WebString access_control =
@@ -444,6 +456,10 @@ void ResourceMultiBufferDataProvider::DidDownloadData(uint64_t dataLength) {
 
 void ResourceMultiBufferDataProvider::DidFinishLoading() {
   DVLOG(1) << "didFinishLoading";
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+  LOG(INFO) << "OhMedia, DidFinishLoading"
+            << "(hash" << std::hex << base::FastHash(base::byte_span_from_ref(this)) << ")";
+#endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
   DCHECK(active_loader_.get());
   DCHECK(!Available());
 
@@ -494,6 +510,10 @@ void ResourceMultiBufferDataProvider::DidFail(const WebURLError& error) {
 
   if (url_data_->url_index() && retries_ < kMaxRetries && pos_ != 0) {
     retries_++;
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+  LOG(INFO) << "OhMedia, DidFail reason=" << error.reason() << ", retry time is:" << retries_
+            << "(hash" << std::hex << base::FastHash(base::byte_span_from_ref(this)) << ")";
+#endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
     task_runner_->PostDelayedTask(
         FROM_HERE,
         blink::BindOnce(&ResourceMultiBufferDataProvider::Start,
@@ -503,6 +523,11 @@ void ResourceMultiBufferDataProvider::DidFail(const WebURLError& error) {
   } else {
     // We don't need to continue loading after failure.
     // Note that calling Fail() will most likely delete this object.
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+  LOG(INFO) << "OhMedia, DidFail reason=" << error.reason()
+            << ", over retry time(hash" << std::hex << base::FastHash(base::byte_span_from_ref(this)) << ")";
+    url_data_->NotifyMediaWebURLError(error.reason());
+#endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
     url_data_->Fail();
   }
 }

@@ -408,6 +408,12 @@ class MockDnsClient : public DnsClient {
 
   // DnsClient interface:
   bool CanUseSecureDnsTransactions() const override;
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  bool CanUseSecureDnsFallbackTransactions(
+    ResolveContext* context) const override {
+      return false;
+  };
+#endif
   bool CanUseInsecureDnsTransactions() const override;
   bool CanQueryAdditionalTypesViaInsecureDns() const override;
   void SetInsecureEnabled(bool enabled, bool additional_types_enabled) override;

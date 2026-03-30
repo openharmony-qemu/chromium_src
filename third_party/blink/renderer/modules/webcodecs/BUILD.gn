@@ -8,6 +8,7 @@ import("//third_party/libaom/options.gni")
 import("//third_party/libgav1/options.gni")
 import("//third_party/libprotobuf-mutator/fuzzable_proto_library.gni")
 import("//third_party/protobuf/proto_library.gni")
+import("//arkweb/build/features/features.gni")
 
 blink_modules_sources("webcodecs") {
   sources = [
@@ -172,6 +173,10 @@ source_set("unit_tests") {
   ]
 
   data = [ "//third_party/blink/web_tests/images/resources/" ]
+
+  if (enable_arkweb) {
+    deps += [ "//arkweb/build/features" ]
+  }
 
   # TODO(crbug.com/40031409): Fix code that adds exit-time destructors and
   # enable the diagnostic by removing this line.

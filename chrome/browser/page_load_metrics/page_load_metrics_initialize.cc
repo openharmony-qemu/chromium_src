@@ -321,7 +321,11 @@ bool PageLoadMetricsEmbedder::IsNoStatePrefetch(
 
 bool PageLoadMetricsEmbedder::IsExtensionUrl(const GURL& url) {
 #if BUILDFLAG(ENABLE_EXTENSIONS)
-  return url.SchemeIs(extensions::kExtensionScheme);
+  return url.SchemeIs(extensions::kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+         || url.SchemeIs(extensions::kArkwebExtensionScheme)
+#endif
+      ;
 #else
   return false;
 #endif

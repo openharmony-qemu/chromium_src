@@ -64,7 +64,9 @@ void RulesetPublisher::PublishNewRulesetVersion(RulesetFilePtr ruleset_data) {
     // validate the ruleset on its task runner.
     VerifiedRuleset::Handle ruleset_handle(GetRulesetDealer());
   }
-
+  if (!ruleset_data->IsValid()) {
+    LOG(INFO) << "initialize PublishNewRulesetVersion not valid";
+  }
   ruleset_data_ = std::move(ruleset_data);
   for (auto it = content::RenderProcessHost::AllHostsIterator(); !it.IsAtEnd();
        it.Advance()) {

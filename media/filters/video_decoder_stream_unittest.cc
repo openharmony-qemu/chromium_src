@@ -22,9 +22,16 @@
 #include "media/base/mock_media_log.h"
 #include "media/base/test_helpers.h"
 #include "media/base/timestamp_constants.h"
-#include "media/filters/decoder_stream.h"
 #include "media/filters/fake_video_decoder.h"
 #include "testing/gtest/include/gtest/gtest.h"
+
+#if BUILDFLAG(ARKWEB_TEST)
+#define private public
+#include "media/filters/decoder_stream.h"
+#undef private
+#else
+#include "media/filters/decoder_stream.h"
+#endif
 
 #if !BUILDFLAG(IS_ANDROID)
 #include "media/filters/decrypting_video_decoder.h"
@@ -300,7 +307,11 @@ class VideoDecoderStreamTest
     num_decoded_bytes_unreported_ -= statistics.video_bytes_decoded;
   }
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void OnInitialized(bool success, bool, std::string) {
+#else
   void OnInitialized(bool success) {
+#endif // ARKWEB_VIDEO_ASSISTANT
     DCHECK(!pending_read_);
     DCHECK(!pending_reset_);
     DCHECK(pending_initialize_);
@@ -322,6 +333,9 @@ class VideoDecoderStreamTest
         demuxer_stream_.get(),
         base::BindOnce(&VideoDecoderStreamTest::OnInitialized,
                        base::Unretained(this)),
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+        VideoDecoderChangedCB(),
+#endif // ARKWEB_VIDEO_ASSISTANT
         cdm_context_.get(),
         base::BindRepeating(&VideoDecoderStreamTest::OnStatistics,
                             base::Unretained(this)),
@@ -1656,4 +1670,7 @@ TEST_P(VideoDecoderStreamTest, Destroy_DuringFallbackDecoderSelection) {
   SatisfyPendingCallback(DECODER_REINIT);
 }
 
+#if BUILDFLAG(ARKWEB_TEST)
+#include "arkweb/chromium_ext/media/filters/decoder_stream_for_include_unittest.cc"
+#endif  // ARKWEB_TEST
 }  // namespace media

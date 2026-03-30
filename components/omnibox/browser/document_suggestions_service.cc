@@ -7,6 +7,7 @@
 #include <memory>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/bind.h"
 #include "base/i18n/rtl.h"
 #include "base/json/json_writer.h"
@@ -109,7 +110,11 @@ void DocumentSuggestionsService::CreateDocumentSuggestionsRequest(
   std::string endpoint = base::GetFieldTrialParamValueByFeature(
       omnibox::kDocumentProvider, "DocumentProviderEndpoint");
   if (endpoint.empty())
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    endpoint = "https://xxx";
+#else
     endpoint = "https://cloudsearch.googleapis.com/v1/query/search";
+#endif
   const GURL suggest_url = GURL(endpoint);
   DCHECK(suggest_url.is_valid());
 

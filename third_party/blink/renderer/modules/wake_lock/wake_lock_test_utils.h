@@ -132,6 +132,12 @@ class MockPermissionService final : public mojom::blink::PermissionService {
       Vector<mojom::blink::PermissionDescriptorPtr> permissions,
       bool user_gesture,
       RequestPermissionsCallback) override;
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  void RequestPermissionSync(
+      mojom::blink::PermissionDescriptorPtr permission,
+      bool user_gesture,
+      RequestPermissionCallback) override;
+#endif  // ARKWEB_CLIPBOARD
   void RevokePermission(mojom::blink::PermissionDescriptorPtr permission,
                         RevokePermissionCallback) override;
   void AddPermissionObserver(

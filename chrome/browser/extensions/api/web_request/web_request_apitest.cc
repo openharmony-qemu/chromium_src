@@ -7661,6 +7661,7 @@ class ManifestV3WebRequestApiTestWithBypassRedirectChecksPerRequest
       : WithFeatureOverride(features::kBypassRedirectChecksPerRequest) {}
 };
 
+#if !BUILDFLAG(ARKWEB_TEST)
 // Tests service workers can't redirect to unsafe URLs when WebRequest
 // extensions are proxying requests. Regression test for crbug.com/379337758.
 IN_PROC_BROWSER_TEST_P(
@@ -7711,6 +7712,7 @@ IN_PROC_BROWSER_TEST_P(
     EXPECT_EQ(net::OK, nav_observer.last_net_error_code());
   }
 }
+#endif // !BUILDFLAG(ARKWEB_TEST)
 
 // Toggle `features::BypassRedirectChecksPerRequest`.
 INSTANTIATE_FEATURE_OVERRIDE_TEST_SUITE(

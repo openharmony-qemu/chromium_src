@@ -62,6 +62,11 @@
 #include "services/screen_ai/public/mojom/screen_ai_service.mojom-forward.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_PDF)
+#include "base/task/delayed_task_handle.h"
+#include "base/task/sequenced_task_runner.h"
+#endif
+
 namespace blink {
 class WebAssociatedURLLoader;
 class WebInputEvent;
@@ -226,6 +231,14 @@ class PdfViewWebPlugin final : public PDFiumEngineClient,
 
     // Notifies the frame's client that the plugin stopped loading.
     virtual void DidStopLoading() = 0;
+
+#if BUILDFLAG(ARKWEB_PDF)
+    // Notifies the frame's client that the pdf plugin scroll at bottom.
+    virtual void OnPdfScrollAtBottom(const std::string& url) = 0;
+
+    // Notifies the frame's client that the pdf plugin load status.
+    virtual void OnPdfLoadEvent(int32_t result, const std::string& url) = 0;
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
     // Prints the plugin element.
     virtual void Print() {}
@@ -393,6 +406,10 @@ class PdfViewWebPlugin final : public PDFiumEngineClient,
   std::vector<SearchStringResult> SearchString(const std::u16string& needle,
                                                const std::u16string& haystack,
                                                bool case_sensitive) override;
+#if BUILDFLAG(ARKWEB_PDF)
+  void NotifyPdfScrollAtBottom(float scroll_position_y, float max_y);
+  static int32_t CastFpdfErrorToPdfLoadEvent(int pdf_error);
+#endif  // BUILDFLAG(ARKWEB_PDF)
   void DocumentLoadComplete() override;
   void DocumentLoadFailed() override;
   void DocumentHasUnsupportedFeature(const std::string& feature) override;
@@ -424,6 +441,10 @@ class PdfViewWebPlugin final : public PDFiumEngineClient,
                           const gfx::PointF& extent) override;
   void GetPdfBytes(uint32_t size_limit, GetPdfBytesCallback callback) override;
   void GetPageText(int32_t page_index, GetPageTextCallback callback) override;
+#if BUILDFLAG(ARKWEB_PDF)
+  void ClearTextSelection() override;
+  void OnScaleChanged() override;
+#endif  // BUILDFLAG(ARKWEB_PDF)
   void GetMostVisiblePageIndex(
       GetMostVisiblePageIndexCallback callback) override;
 #if BUILDFLAG(ENABLE_PDF_SAVE_TO_DRIVE)
@@ -453,6 +474,16 @@ class PdfViewWebPlugin final : public PDFiumEngineClient,
   void UpdateScale(float scale) override;
   void UpdateLayerTransform(float scale,
                             const gfx::Vector2dF& translate) override;
+
+#if BUILDFLAG(ARKWEB_PDF)
+  gfx::Rect GetAvailableArea() override;
+  void ConvertAndUpdateSelectionBounds(gfx::Rect& clipped_selection_bounds) override;
+  void SetIsTouching(bool is_touching) override;
+  void ResetResponsePendingInputEvent() override;
+  void SetIsSelectionVisible(bool visible) override;
+  void SetIsLeftHandleVisible(bool visible) override;
+  void SetIsRightHandleVisible(bool visible) override;
+#endif
 
   // PdfAccessibilityActionHandler:
   void EnableAccessibility() override;
@@ -645,6 +676,9 @@ class PdfViewWebPlugin final : public PDFiumEngineClient,
   void HandleSetTwoUpViewMessage(const base::Value::Dict& message);
   void HandleStopScrollingMessage(const base::Value::Dict& message);
   void HandleViewportMessage(const base::Value::Dict& message);
+#if BUILDFLAG(ARKWEB_PDF)
+  void HandleClickBookmarkMessage(const base::Value::Dict& message);
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   void SaveToBuffer(pdf::mojom::SaveRequestType request_type,
                     const std::string& token);
@@ -816,6 +850,24 @@ class PdfViewWebPlugin final : public PDFiumEngineClient,
 #if BUILDFLAG(ENABLE_SCREEN_AI_SERVICE)
   // Triggered to show/hide Searchify progress indicator.
   void SetShowSearchifyInProgress(bool show);
+#endif
+
+#if BUILDFLAG(ARKWEB_PDF)
+  void SetIsScrolling(bool is_scrolling);
+  void SetIsPinching(bool is_pinching);
+  bool ShouldHideMenu();
+
+  void SelectionChangedAtScrollStopped();
+  void DoPaintAtScrollStopped();
+  void HideHandleAndQuickMenu(bool hide);
+
+  void SetScrollStoppedAfterDelay();
+  void SelectionChangedAfterDelay();
+  void DoPaintAfterDelay();
+  void HideOrShowMenuAfterDelay();
+
+  // Used for cancelable delayed task in `UpdateScroll()`.
+  scoped_refptr<base::SequencedTaskRunner> GetTaskRunner();
 #endif
 
   bool initialized_ = false;
@@ -1076,6 +1128,31 @@ class PdfViewWebPlugin final : public PDFiumEngineClient,
 
   SearchifyState searchify_state_ = SearchifyState::kNotStarted;
 #endif
+
+#if BUILDFLAG(ARKWEB_PDF)
+  bool scroll_at_bottom_status_ = false;
+  std::atomic<bool> is_touching_{false};
+  std::atomic<bool> is_scrolling_{false};
+  std::atomic<bool> is_pinching_{false};
+  std::atomic<bool> is_selection_visible_{true};
+  std::atomic<bool> is_left_visible_{true};
+  std::atomic<bool> is_right_visible_{true};
+  std::atomic<bool> is_menu_hidden_{false};
+
+  // Used for cancelable delayed task.
+  const scoped_refptr<base::SequencedTaskRunner> task_runner_;
+  SEQUENCE_CHECKER(sequence_checker_);
+
+  // Cancelable delayed task for scroll stopped.
+  base::DelayedTaskHandle cancelable_scroll_delayed_task_ GUARDED_BY_CONTEXT(sequence_checker_);
+  // Cancelable delayed task for selection changed.
+  base::DelayedTaskHandle cancelable_selection_delayed_task_ GUARDED_BY_CONTEXT(sequence_checker_);
+  // Cancelable delayed task for paint after scroll.
+  base::DelayedTaskHandle cancelable_paint_delayed_task_ GUARDED_BY_CONTEXT(sequence_checker_);
+  //  Cancelable delayed task for hiding and showing menu.
+  base::DelayedTaskHandle cancelable_menu_delayed_task_ GUARDED_BY_CONTEXT(sequence_checker_);
+
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   base::WeakPtrFactory<PdfViewWebPlugin> weak_factory_{this};
 };

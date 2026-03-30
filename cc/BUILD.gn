@@ -9,6 +9,10 @@ import("//ui/gl/features.gni")
 
 import("//cc/cc.gni")
 
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
+
 if (is_android) {
   import("//build/config/android/rules.gni")
 }
@@ -546,6 +550,14 @@ cc_component("cc") {
     deps += [ ":cc_jni_headers" ]
   }
 
+  if (is_arkweb) {
+    sources += arkweb_cc_layer_source
+    sources += arkweb_cc_scheduler_sources
+    sources += arkweb_cc_input_source
+    sources += arkweb_cc_trees_source
+    deps += [ "//arkweb/build/features" ]
+  }
+
   defines = [ "CC_IMPLEMENTATION=1" ]
 }
 
@@ -761,6 +773,14 @@ cc_test_static_library("test_support") {
       "//third_party/dawn/src/dawn/native",
     ]
   }
+  if (arkweb_unittests) {
+    deps += [
+      "//base/test:test_trace_processor",
+      "//cef:libcef_static",
+      "//content/public/browser",
+      "//ohos_nweb:nweb_sources",
+    ]
+  }
 }
 
 if (is_ios) {
@@ -968,6 +988,13 @@ cc_test("cc_unittests") {
     "test/cc_test_suite.h",
     "test/run_all_unittests.cc",
   ]
+
+  if (arkweb_unittests) {
+    sources += arkweb_cc_input_unittest_sources
+    sources += arkweb_cc_layer_unittest_sources
+    sources += arkweb_cc_trees_unittest_sources
+    sources += arkweb_cc_mojo_embedder_unittest_sources
+  }
 
   if (skia_support_skottie) {
     sources += [

@@ -5,12 +5,13 @@
 #include "components/download/public/common/download_features.h"
 
 #include "build/build_config.h"
+#include "arkweb/build/features/features.h"
 
 namespace download {
 namespace features {
 
 BASE_FEATURE(kParallelDownloading,
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
              base::FEATURE_ENABLED_BY_DEFAULT
 #else
              base::FEATURE_DISABLED_BY_DEFAULT

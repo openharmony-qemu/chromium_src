@@ -125,6 +125,10 @@ class GPU_GLES2_EXPORT SharedImageRepresentation {
     backing_->SetClearedRect(cleared_rect);
   }
 
+#if BUILDFLAG(ARKWEB_VULKAN)
+  const char* GetName() const { return backing_->GetName(); }
+#endif
+
   // Indicates that the underlying graphics context has been lost, and the
   // backing should be treated as destroyed.
   void OnContextLost() {

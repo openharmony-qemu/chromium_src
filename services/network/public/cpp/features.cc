@@ -4,6 +4,7 @@
 
 #include "services/network/public/cpp/features.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/feature_list.h"
 #include "base/metrics/field_trial_params.h"
 #include "base/no_destructor.h"
@@ -93,7 +94,7 @@ BASE_FEATURE(kSplitAuthCacheByNetworkIsolationKey,
 // Enable usage of hardcoded DoH upgrade mapping for use in automatic mode.
 BASE_FEATURE(kDnsOverHttpsUpgrade,
 #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_MAC) || \
-    BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX)
+    BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
              base::FEATURE_ENABLED_BY_DEFAULT
 #else
              base::FEATURE_DISABLED_BY_DEFAULT
@@ -128,6 +129,22 @@ BASE_FEATURE_PARAM(bool,
 // mDNS names (random UUIDs) in the TXT record data.
 BASE_FEATURE(kMdnsResponderGeneratedNameListing,
              base::FEATURE_DISABLED_BY_DEFAULT);
+
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+// Enables ORB blocked responses being treated as errors (according to the spec)
+// rather than the current, CORB-style handling of injecting an empty response.
+// This is ORB v0.2.
+// This should only be enabled when ORB v0.1 is, too.
+BASE_FEATURE(kOpaqueResponseBlockingV02,
+             "OpaqueResponseBlockingV02",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+#endif
+
+#if BUILDFLAG(IS_ARKWEB)
+BASE_FEATURE(kDeleteHistoryServiceDB,
+             "DeleteHistoryServiceDB",
+             base::FEATURE_ENABLED_BY_DEFAULT);
+#endif
 
 // Treat ORB blocked responses to script-initiated fetches as errors too.
 // Complements ORB v0.2, which exempts script-initiated fetches.

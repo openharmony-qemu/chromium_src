@@ -14,6 +14,7 @@
 #include "content/common/buildflags.h"
 #include "content/public/common/btm_utils.h"
 #include "content/public/common/buildflags.h"
+#include "arkweb/build/features/features.h"
 
 namespace features {
 
@@ -200,6 +201,17 @@ BASE_FEATURE(kBlockInsecurePrivateNetworkRequestsFromPrivate,
 // This is no-op if the network service is hosted in the browser process.
 BASE_FEATURE(kBrokerFileOperationsOnDiskCacheInNetworkService,
              base::FEATURE_DISABLED_BY_DEFAULT);
+
+// If Canvas2D Image Chromium is allowed, this feature controls whether it is
+// enabled.
+BASE_FEATURE(kCanvas2DImageChromium,
+             "Canvas2DImageChromium",
+#if BUILDFLAG(IS_APPLE) || (BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SCROLL_PERFORMANCE))
+             base::FEATURE_ENABLED_BY_DEFAULT
+#else
+             base::FEATURE_DISABLED_BY_DEFAULT
+#endif
+);
 
 // Allows the decision to bypass redirect checks to be made based on the
 // specific request.
@@ -675,7 +687,7 @@ BASE_FEATURE(kNavigationNetworkResponseQueue,
 // If the network service is enabled, runs it in process.
 BASE_FEATURE(kNetworkServiceInProcess,
              "NetworkServiceInProcess2",
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
              base::FEATURE_ENABLED_BY_DEFAULT
 #else
              base::FEATURE_DISABLED_BY_DEFAULT
@@ -981,7 +993,7 @@ BASE_FEATURE(kDefaultSiteInstanceGroups, base::FEATURE_ENABLED_BY_DEFAULT);
 // https://crbug.com/1018656.
 BASE_FEATURE(kSiteIsolationForCrossOriginOpenerPolicy,
 // Enabled by default on Android only; see https://crbug.com/1206770.
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
              base::FEATURE_ENABLED_BY_DEFAULT
 #else
              base::FEATURE_DISABLED_BY_DEFAULT
@@ -1013,7 +1025,13 @@ BASE_FEATURE(kDisableProcessReuse, base::FEATURE_DISABLED_BY_DEFAULT);
 // Controls whether SpareRenderProcessHostManager tries to always have a warm
 // spare renderer process around for the most recently requested BrowserContext.
 // This feature is only consulted in site-per-process mode.
-BASE_FEATURE(kSpareRendererForSitePerProcess, base::FEATURE_ENABLED_BY_DEFAULT);
+BASE_FEATURE(kSpareRendererForSitePerProcess,
+#if BUILDFLAG(ARKWEB_SITE_ISOLATION)
+             base::FEATURE_ENABLED_BY_DEFAULT
+#else
+             base::FEATURE_DISABLED_BY_DEFAULT
+#endif
+);
 
 // Controls whether site isolation should use origins instead of scheme and
 // eTLD+1.
@@ -1409,7 +1427,7 @@ enum class VideoCaptureServiceConfiguration {
 };
 
 VideoCaptureServiceConfiguration GetVideoCaptureServiceConfiguration() {
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS) || BUILDFLAG(IS_OHOS)
   return VideoCaptureServiceConfiguration::kEnabledForBrowserProcess;
 #else
   return base::FeatureList::IsEnabled(

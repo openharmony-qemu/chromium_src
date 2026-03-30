@@ -54,6 +54,11 @@ class NotificationPlatformBridgeDelegator {
   // expected to return a valid bridge, either the system or message center one.
   NotificationPlatformBridge* GetBridgeForType(NotificationHandler::Type type);
 
+#if BUILDFLAG(ARKWEB_NOTIFICATION)
+  NotificationPlatformBridge* GetBridgeForType(NotificationHandler::Type type,
+                                               const std::string& id);
+#endif
+
   // Called when the |system_bridge_| may have been initialized.
   void OnSystemNotificationPlatformBridgeReady(bool success);
 

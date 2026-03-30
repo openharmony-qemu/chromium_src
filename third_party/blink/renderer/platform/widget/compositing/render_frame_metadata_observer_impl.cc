@@ -86,7 +86,7 @@ void RenderFrameMetadataObserverImpl::OnRenderFrameSubmission(
   // value to all the observers.
   if (send_metadata && render_frame_metadata_observer_client_) {
     auto metadata_copy = render_frame_metadata;
-#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_IOS)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_IOS) && !BUILDFLAG(IS_ARKWEB)
     // On non-Android, sending |root_scroll_offset| outside of tests would
     // leave the browser process with out of date information. It is an
     // optional parameter which we clear here.
@@ -192,6 +192,13 @@ bool RenderFrameMetadataObserverImpl::ShouldSendRenderFrameMetadata(
       rfm1.local_surface_id != rfm2.local_surface_id ||
       rfm2.new_vertical_scroll_direction !=
           viz::VerticalScrollDirection::kNull ||
+#if BUILDFLAG(IS_ARKWEB)
+      rfm1.root_layer_size != rfm2.root_layer_size ||
+      rfm1.root_scroll_offset != rfm2.root_scroll_offset ||
+#endif
+#if BUILDFLAG(ARKWEB_MENU)
+      rfm1.clipped_selection_bounds != rfm2.clipped_selection_bounds ||
+#endif
       (rfm2.primary_main_frame_item_sequence_number !=
            cc::RenderFrameMetadata::kInvalidItemSequenceNumber &&
        rfm1.primary_main_frame_item_sequence_number !=

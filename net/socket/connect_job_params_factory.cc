@@ -167,7 +167,12 @@ ConnectJobParams CreateProxyParams(
     const NetworkAnonymizationKey& endpoint_network_anonymization_key,
     SecureDnsPolicy secure_dns_policy,
     const CommonConnectJobParams* common_connect_job_params,
-    const NetworkAnonymizationKey& proxy_dns_network_anonymization_key) {
+    const NetworkAnonymizationKey& proxy_dns_network_anonymization_key
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+    ,
+    bool secure_dns_only
+#endif
+) {
   const ProxyServer& proxy_server =
       proxy_chain.GetProxyServer(proxy_chain_index);
 
@@ -234,13 +239,23 @@ ConnectJobParams CreateProxyParams(
     params = ConnectJobParams(base::MakeRefCounted<TransportSocketParams>(
         proxy_server.host_port_pair(), proxy_dns_network_anonymization_key,
         secure_dns_policy, resolution_callback,
-        SupportedProtocolsFromSSLConfig(proxy_server_ssl_config)));
+        SupportedProtocolsFromSSLConfig(proxy_server_ssl_config)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+            ,
+        secure_dns_only
+#endif
+        ));
   } else {
     params = CreateProxyParams(
         proxy_server.host_port_pair(), true, endpoint, proxy_chain,
         proxy_chain_index - 1, proxy_annotation_tag, resolution_callback,
         endpoint_network_anonymization_key, secure_dns_policy,
-        common_connect_job_params, proxy_dns_network_anonymization_key);
+        common_connect_job_params, proxy_dns_network_anonymization_key
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+        ,
+        secure_dns_only
+#endif
+    );
   }
 
   // For secure connections, wrap the underlying connection params in SSL
@@ -288,7 +303,12 @@ ConnectJobParams ConstructConnectJobParams(
     SecureDnsPolicy secure_dns_policy,
     bool disable_cert_network_fetches,
     const CommonConnectJobParams* common_connect_job_params,
-    const NetworkAnonymizationKey& proxy_dns_network_anonymization_key) {
+    const NetworkAnonymizationKey& proxy_dns_network_anonymization_key
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+    ,
+    bool secure_dns_only
+#endif
+) {
   DCHECK(proxy_chain.IsValid());
 
   // Set up `ssl_config` if using SSL to the endpoint.
@@ -320,7 +340,12 @@ ConnectJobParams ConstructConnectJobParams(
     params = ConnectJobParams(base::MakeRefCounted<TransportSocketParams>(
         ToTransportEndpoint(endpoint), endpoint_network_anonymization_key,
         secure_dns_policy, resolution_callback,
-        SupportedProtocolsFromSSLConfig(ssl_config)));
+        SupportedProtocolsFromSSLConfig(ssl_config)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+            ,
+        secure_dns_only
+#endif
+        ));
   } else {
     bool should_tunnel = force_tunnel || UsingSsl(endpoint) ||
                          !proxy_chain.is_get_to_proxy_allowed();
@@ -331,7 +356,12 @@ ConnectJobParams ConstructConnectJobParams(
         /*proxy_chain_index=*/proxy_chain.length() - 1, proxy_annotation_tag,
         resolution_callback, endpoint_network_anonymization_key,
         secure_dns_policy, common_connect_job_params,
-        proxy_dns_network_anonymization_key);
+        proxy_dns_network_anonymization_key
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+        ,
+        secure_dns_only
+#endif
+    );
   }
 
   if (UsingSsl(endpoint)) {

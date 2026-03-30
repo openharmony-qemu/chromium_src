@@ -31,6 +31,7 @@
 #include <memory>
 #include <optional>
 
+#include "arkweb/build/features/features.h"
 #include "base/check_op.h"
 #include "base/containers/heap_array.h"
 #include "base/memory/raw_ptr.h"
@@ -211,7 +212,9 @@ class PLATFORM_EXPORT ImageDecoder {
       AlphaOption,
       HighBitDepthDecodingOption,
       ColorBehavior,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
       cc::AuxImage aux_image,
+#endif
       const size_t platform_max_decoded_bytes,
       const SkISize& desired_size = SkISize::MakeEmpty(),
       AnimationOption animation_option = AnimationOption::kUnspecified);
@@ -221,14 +224,19 @@ class PLATFORM_EXPORT ImageDecoder {
       AlphaOption alpha_option,
       HighBitDepthDecodingOption high_bit_depth_decoding_option,
       ColorBehavior color_behavior,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
       cc::AuxImage aux_image,
+#endif
       size_t platform_max_decoded_bytes,
       const SkISize& desired_size = SkISize::MakeEmpty(),
       AnimationOption animation_option = AnimationOption::kUnspecified) {
     return Create(SegmentReader::CreateFromSharedBuffer(std::move(data)),
                   data_complete, alpha_option, high_bit_depth_decoding_option,
-                  color_behavior, aux_image, platform_max_decoded_bytes,
-                  desired_size, animation_option);
+                  color_behavior,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+                  aux_image,
+#endif
+                  platform_max_decoded_bytes, desired_size, animation_option);
   }
 
   // Similar to above, but does not allow mime sniffing. Creates explicitly
@@ -240,7 +248,9 @@ class PLATFORM_EXPORT ImageDecoder {
       AlphaOption alpha_option,
       HighBitDepthDecodingOption high_bit_depth_decoding_option,
       ColorBehavior color_behavior,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
       cc::AuxImage aux_image,
+#endif
       size_t platform_max_decoded_bytes,
       const SkISize& desired_size = SkISize::MakeEmpty(),
       AnimationOption animation_option = AnimationOption::kUnspecified);
@@ -290,6 +300,8 @@ class PLATFORM_EXPORT ImageDecoder {
   }
 
   virtual void OnSetData(scoped_refptr<SegmentReader> data) {}
+
+  virtual void OnSetData(SegmentReader* data) {}
 
   bool IsSizeAvailable();
 
@@ -422,9 +434,9 @@ class PLATFORM_EXPORT ImageDecoder {
   AlphaOption GetAlphaOption() const {
     return premultiply_alpha_ ? kAlphaPremultiplied : kAlphaNotPremultiplied;
   }
-
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
   cc::AuxImage GetAuxImage() const { return aux_image_; }
-
+#endif
   wtf_size_t GetMaxDecodedBytes() const { return max_decoded_bytes_; }
 
   // Sets the "decode failure" flag.  For caller convenience (since so
@@ -467,7 +479,9 @@ class PLATFORM_EXPORT ImageDecoder {
   ImageDecoder(AlphaOption alpha_option,
                HighBitDepthDecodingOption high_bit_depth_decoding_option,
                ColorBehavior color_behavior,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
                cc::AuxImage aux_image,
+#endif
                wtf_size_t max_decoded_bytes);
 
   // Calculates the most recent frame whose image data may be needed in
@@ -559,7 +573,9 @@ class PLATFORM_EXPORT ImageDecoder {
   const bool premultiply_alpha_;
   const HighBitDepthDecodingOption high_bit_depth_decoding_option_;
   const ColorBehavior color_behavior_;
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
   const cc::AuxImage aux_image_;
+#endif
   ImageOrientationEnum orientation_ = ImageOrientationEnum::kDefault;
   gfx::Size density_corrected_size_;
 

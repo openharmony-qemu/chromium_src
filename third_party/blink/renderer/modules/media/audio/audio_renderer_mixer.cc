@@ -6,6 +6,7 @@
 
 #include <cmath>
 
+#include "arkweb/build/features/features.h"
 #include "base/check_op.h"
 #include "base/memory/ptr_util.h"
 #include "base/time/time.h"
@@ -14,9 +15,17 @@
 #include "media/base/audio_timestamp_helper.h"
 #include "third_party/blink/renderer/modules/media/audio/audio_renderer_mixer_input.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/renderer/modules/media/audio/audio_renderer_mixer_utils.h"
+#endif
+
 namespace blink {
 
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+constexpr base::TimeDelta kPauseDelay = base::Seconds(0);
+#else
 constexpr base::TimeDelta kPauseDelay = base::Seconds(10);
+#endif
 
 AudioRendererMixer::AudioRendererMixer(
     const media::AudioParameters& output_params,
@@ -35,11 +44,20 @@ AudioRendererMixer::AudioRendererMixer(
   RenderCallback* callback = this;
   audio_sink_->Initialize(output_params, callback);
   audio_sink_->Start();
+  implUtils = new AudioRendererMixerUtils(this);
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+  media_tid_ = base::PlatformThread::CurrentRealId();
+  implUtils->AudioRendererMixerShareInit(media_tid_);
+#endif
 }
 
 AudioRendererMixer::~AudioRendererMixer() {
   // AudioRendererSink must be stopped before mixer is destructed.
   audio_sink_->Stop();
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+  implUtils->AudioRendererMixerShareDestroy(audio_output_tid_, media_tid_);
+#endif
+  delete implUtils;
 
   // Ensure that all mixer inputs have removed themselves prior to destruction.
   DCHECK(aggregate_converter_.empty());
@@ -55,6 +73,9 @@ void AudioRendererMixer::AddMixerInput(
     playing_ = true;
     last_play_time_ = base::TimeTicks::Now();
     audio_sink_->Play();
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+    implUtils->AddMixerInputShareInit(audio_output_tid_, media_tid_);
+#endif
   }
 
   int input_sample_rate = input_params.sample_rate();
@@ -136,11 +157,17 @@ int AudioRendererMixer::Render(base::TimeDelta delay,
   // sink to avoid wasting resources when media elements are present but remain
   // in the pause state.
   const base::TimeTicks now = base::TimeTicks::Now();
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+  audio_output_tid_ = base::PlatformThread::CurrentRealId();
+#endif
   if (!aggregate_converter_.empty()) {
     last_play_time_ = now;
   } else if (now - last_play_time_ >= pause_delay_ && playing_) {
     audio_sink_->Pause();
     playing_ = false;
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+    implUtils->AddMixerInputShareRender(audio_output_tid_, media_tid_);
+#endif
   }
 
   // Since AudioConverter uses uint32_t for delay calculations, we must drop

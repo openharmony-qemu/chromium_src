@@ -19,6 +19,17 @@ namespace content {
 inline constexpr base::ByteCount kMaxLengthOfDataURLString = base::MiB(20);
 
 // Accept header used for frame requests.
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+#if BUILDFLAG(ENABLE_AV1_DECODER)
+inline constexpr char kFrameAcceptHeaderValue[] =
+    "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,"
+    "image/heif,image/webp,image/apng,*/*;q=0.8";
+#else
+inline constexpr char kFrameAcceptHeaderValue[] =
+    "text/html,application/xhtml+xml,application/xml;q=0.9,image/heif,"
+    "image/webp,image/apng,*/*;q=0.8";
+#endif  // BUILDFLAG(ENABLE_AV1_DECODER)
+#else
 #if BUILDFLAG(ENABLE_AV1_DECODER)
 inline constexpr char kFrameAcceptHeaderValue[] =
     "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,"
@@ -28,6 +39,7 @@ inline constexpr char kFrameAcceptHeaderValue[] =
     "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,"
     "image/apng,*/*;q=0.8";
 #endif
+#endif  // BUILDFLAG(ARKWEB_HEIF_SUPPORT)
 
 // Constants for attaching message pipes to the mojo invitation used to
 // initialize child processes.

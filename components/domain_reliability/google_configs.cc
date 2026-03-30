@@ -6,6 +6,7 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/fixed_flat_map.h"
 #include "base/strings/strcat.h"
 #include "base/strings/string_util.h"
@@ -503,7 +504,11 @@ const auto kGoogleConfigs = base::MakeFixedFlatMap<std::string_view,
     {"gmail.google.com", {false, true, false}},
     {"mail-attachment.googleusercontent.com", {false, true, false}},
     {"mail.google.com", {false, true, false}},
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    {"xxx", {false, true, false}},
+#else
     {"www.gmail.com", {false, true, false}},
+#endif
 
     // Origins without subdomains or same-origin collectors.
     {"ad.doubleclick.net", {false, false, false}},
@@ -512,6 +517,15 @@ const auto kGoogleConfigs = base::MakeFixedFlatMap<std::string_view,
 });
 
 const char* const kGoogleStandardCollectors[] = {
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://xxx",
+    "https://xxx",
+    "https://xxx",
+    "https://xxx",
+    "https://xxx",
+    "https://xxx",
+    "https://xxx",
+#else
     "https://beacons.gcp.gvt2.com/domainreliability/upload",
     "https://beacons.gvt2.com/domainreliability/upload",
     "https://beacons2.gvt2.com/domainreliability/upload",
@@ -519,6 +533,7 @@ const char* const kGoogleStandardCollectors[] = {
     "https://beacons4.gvt2.com/domainreliability/upload",
     "https://beacons5.gvt2.com/domainreliability/upload",
     "https://beacons5.gvt3.com/domainreliability/upload",
+#endif
     "https://clients2.google.com/domainreliability/upload",
 };
 

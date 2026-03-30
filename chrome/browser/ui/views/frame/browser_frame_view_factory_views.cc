@@ -13,7 +13,7 @@
 #include "chrome/browser/ui/views/frame/opaque_browser_frame_view_layout.h"
 #include "chrome/browser/ui/views/frame/picture_in_picture_browser_frame_view.h"
 
-#if BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
 #include "chrome/browser/ui/views/frame/browser_frame_view_win.h"
 #endif
 
@@ -91,7 +91,7 @@ std::unique_ptr<BrowserFrameView> CreateBrowserFrameViewLinux(
 }
 #endif  // BUILDFLAG(IS_LINUX)
 
-#if BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
 std::unique_ptr<BrowserFrameView> CreateBrowserFrameViewWin(
     BrowserWidget* widget,
     BrowserView* browser_view) {
@@ -100,11 +100,17 @@ std::unique_ptr<BrowserFrameView> CreateBrowserFrameViewWin(
                                                               browser_view);
   }
 
+#if BUILDFLAG(IS_WIN)
   if (widget->ShouldUseNativeFrame()) {
     return std::make_unique<BrowserFrameViewWin>(widget, browser_view);
   }
+#endif
 
+#if BUILDFLAG(IS_OHOS)
+  auto opaque_browser_view = std::make_unique<OpaqueBrowserFrameView>(
+#else
   auto opaque_browser_view = std::make_unique<OpaqueBrowserFrameViewWin>(
+#endif
       widget, browser_view, new OpaqueBrowserFrameViewLayout());
   opaque_browser_view->InitViews();
 
@@ -117,7 +123,7 @@ std::unique_ptr<BrowserFrameView> CreateBrowserFrameViewWin(
 std::unique_ptr<BrowserFrameView> CreateBrowserFrameView(
     BrowserWidget* widget,
     BrowserView* browser_view) {
-#if BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
   return CreateBrowserFrameViewWin(widget, browser_view);
 #else
   return CreateBrowserFrameViewLinux(widget, browser_view);

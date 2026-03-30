@@ -124,9 +124,15 @@ VisitedLinkID VisitedLinkDatabase::AddVisitedLink(URLID link_url_id,
   statement.BindInt(3, visit_count);
 
   if (!statement.Run()) {
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+    VLOG(0) << "Failed to add visited link " << link_url_id
+            << " top_level_url: *** frame_url: ***"
+            << " to table history.visited_links.";
+#else
     VLOG(0) << "Failed to add visited link " << link_url_id << " "
             << top_level_url << " " << frame_url
             << " to table history.visited_links.";
+#endif
     return 0;
   }
   return GetDB().GetLastInsertRowId();

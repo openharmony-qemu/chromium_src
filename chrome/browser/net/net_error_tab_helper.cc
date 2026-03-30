@@ -256,7 +256,11 @@ bool NetErrorTabHelper::ProbesAllowed() const {
     return testing_state_ == TESTING_FORCE_ENABLED;
 
   // TODO(juliatuttle): Disable on mobile?
+#if BUILDFLAG(IS_ARKWEB)
+  return false;
+#else
   return *resolve_errors_with_web_service_;
+#endif
 }
 
 void NetErrorTabHelper::SendInfo() {

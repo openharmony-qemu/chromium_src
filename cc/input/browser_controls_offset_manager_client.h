@@ -5,6 +5,10 @@
 #ifndef CC_INPUT_BROWSER_CONTROLS_OFFSET_MANAGER_CLIENT_H_
 #define CC_INPUT_BROWSER_CONTROLS_OFFSET_MANAGER_CLIENT_H_
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 namespace gfx {
 class PointF;
 }
@@ -26,6 +30,9 @@ class CC_EXPORT BrowserControlsOffsetManagerClient {
   virtual bool OnlyExpandTopControlsAtPageTop() const = 0;
   virtual bool HaveRootScrollNode() const = 0;
   virtual void SetNeedsCommit() = 0;
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS) && BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SLIDE)
+  virtual void SetupScrollBy() = 0;
+#endif
 
  protected:
   virtual ~BrowserControlsOffsetManagerClient() {}

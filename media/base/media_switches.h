@@ -16,6 +16,7 @@
 #include "media/gpu/buildflags.h"
 #include "media/media_buildflags.h"
 #include "ui/gl/angle_implementation.h"
+#include "arkweb/build/features/features.h"
 
 namespace base {
 class CommandLine;
@@ -46,7 +47,11 @@ MEDIA_EXPORT extern const char kCastStreamingForceEnableHardwareVp8[];
 MEDIA_EXPORT extern const char kCastStreamingForceEnableHardwareVp9[];
 MEDIA_EXPORT extern const char kClearKeyCdmPathForTesting[];
 MEDIA_EXPORT extern const char kDisableAcceleratedMjpegDecode[];
+
+#if BUILDFLAG(ARKWEB_WEBRTC)
 MEDIA_EXPORT extern const char kDisableAudioInput[];
+#endif // BUILDFLAG(ARKWEB_WEBRTC)
+
 MEDIA_EXPORT extern const char kDisableAudioOutput[];
 MEDIA_EXPORT extern const char kDisableBackgroundMediaSuspend[];
 MEDIA_EXPORT extern const char kDisableRTCSmoothnessAlgorithm[];
@@ -361,6 +366,10 @@ MEDIA_EXPORT BASE_DECLARE_FEATURE(kUseSecurityLevelWhenCheckingMediaDrmVersion);
 MEDIA_EXPORT BASE_DECLARE_FEATURE(kAllowMediaCodecSoftwareDecoder);
 MEDIA_EXPORT BASE_DECLARE_FEATURE(kUseAudioManagerMaxChannelLayout);
 #endif  // BUILDFLAG(IS_ANDROID)
+
+#if BUILDFLAG(ARKWEB_MEDIA)
+MEDIA_EXPORT BASE_DECLARE_FEATURE(kCanPlayHls);
+#endif
 
 #if BUILDFLAG(ENABLE_HLS_DEMUXER)
 // This feature enables chrome's built-in HLS parser and demuxer instead of

@@ -374,6 +374,12 @@ bool HTMLScriptElement::DeferAttributeValue() const {
   return FastHasAttribute(html_names::kDeferAttr);
 }
 
+#if BUILDFLAG(ARKWEB_V8_COMPILE)
+String HTMLScriptElement::ArkWebCompileAttributeValue() const {
+  return FastGetAttribute(html_names::kArkwebcompileAttr);
+}
+#endif
+
 bool HTMLScriptElement::HasSourceAttribute() const {
   return FastHasAttribute(html_names::kSrcAttr);
 }

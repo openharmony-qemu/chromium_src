@@ -387,6 +387,17 @@ class TestNetworkContext : public mojom::NetworkContext {
                     traffic_annotation) override {}
   void GetBoundNetworkForTesting(
       GetBoundNetworkForTestingCallback callback) override {}
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  void SetHostIP(const std::string& HostName,
+    const std::vector<std::string>& Address,
+    uint32_t AliveTime) override {}
+  void ClearHostIP(const std::string& HostName) override {}
+  void InitPRParallelPreloadMgr() override {}
+  void StartPage(const std::string &url, const ::net::NetworkAnonymizationKey &networkAnonymizationKey,
+                 uint64_t addr_web_handle, StartPageCallback callback) override {}
+  void StopPage(uint64_t addr_web_handle) override {}
+  void SetURLLoaderFactoryParam(mojom::URLLoaderFactoryParamsPtr params) override {}
+#endif  // BUILDFLAG(ARKWEB_UNITTESTS)
   void GetDeviceBoundSessionManager(
       mojo::PendingReceiver<network::mojom::DeviceBoundSessionManager>
           device_bound_session_manager) override {}

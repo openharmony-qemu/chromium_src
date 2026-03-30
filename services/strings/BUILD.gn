@@ -10,6 +10,11 @@ import("//tools/grit/repack.gni")
 grit_strings("strings") {
   source = "../services_strings.grd"
   defines = [ "enable_screen_ai_service=$enable_screen_ai_service" ]
+  #ifdef arkweb_i18n
+  if (arkweb_i18n) {
+    locales = all_chrome_locales + extra_locales
+  }
+  #endif
   outputs = [ "grit/services_strings.h" ]
   output_prefix = "services_strings_"
 }

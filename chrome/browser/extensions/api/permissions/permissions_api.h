@@ -13,6 +13,10 @@
 #include "extensions/common/permissions/permission_set.h"
 #include "ui/gfx/native_ui_types.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "ohos_nweb/src/capi/browser_service/nweb_extension_prompt_types.h"
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
+
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 
 namespace extensions {
@@ -54,6 +58,9 @@ class PermissionsRemoveFunction : public ExtensionFunction {
 };
 
 // chrome.permissions.request
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "cef/ohos_cef_ext/libcef/browser/extensions/api/permissions/permissions_api_for_include_file.cc"
+#else
 class PermissionsRequestFunction : public ExtensionFunction {
  public:
   // An action to take for a permissions prompt, if any. This allows tests to
@@ -122,6 +129,7 @@ class PermissionsRequestFunction : public ExtensionFunction {
   // also SetAutoConfirmForTests()).
   std::unique_ptr<const PermissionSet> prompted_permissions_for_testing_;
 };
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 
 // chrome.permissions.addHostAccessRequest
 class PermissionsAddHostAccessRequestFunction : public ExtensionFunction {

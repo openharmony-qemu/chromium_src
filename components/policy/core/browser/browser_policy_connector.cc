@@ -12,6 +12,7 @@
 #include <string_view>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/check_is_test.h"
 #include "base/command_line.h"
 #include "base/functional/bind.h"
@@ -38,11 +39,19 @@ const char kDefaultDeviceManagementServerUrl[] =
     "https://m.google.com/devicemanagement/data/api";
 
 const char kDefaultEncryptedReportingServerUrl[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://x.x.x";
+#else
     "https://chromereporting-pa.googleapis.com/v1/record";
+#endif
 
 // The URL for the realtime reporting server.
 const char kDefaultRealtimeReportingServerUrl[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://x.x.x";
+#else
     "https://chromereporting-pa.googleapis.com/v1/events";
+#endif
 
 // The URL suffix for the File Storage Server endpoint in DMServer. File Storage
 // Server receives the requests on this URL.

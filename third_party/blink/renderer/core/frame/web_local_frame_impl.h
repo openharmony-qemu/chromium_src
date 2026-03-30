@@ -38,6 +38,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/dcheck_is_on.h"
 #include "base/observer_list.h"
 #include "base/task/single_thread_task_runner.h"
@@ -235,6 +236,9 @@ class CORE_EXPORT WebLocalFrameImpl final
                          bool should_show_context_menu);
   EphemeralRange GetWordSelectionRangeAroundCaret() const;
   void SelectRange(const gfx::Point& base, const gfx::Point& extent) override;
+#if BUILDFLAG(ARKWEB_MENU)
+  void SelectRangeV2(const gfx::Point& position, bool is_base) override;
+#endif
   void SelectRange(const WebRange&,
                    HandleVisibilityBehavior,
                    blink::mojom::SelectionMenuBehavior,
@@ -316,6 +320,10 @@ class CORE_EXPORT WebLocalFrameImpl final
   WebInputMethodController* GetInputMethodController() override;
   std::unique_ptr<WebAssociatedURLLoader> CreateAssociatedURLLoader(
       const WebAssociatedURLLoaderOptions&) override;
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  std::unique_ptr<WebAssociatedURLLoader> CreateVideoURLLoader(
+      const WebAssociatedURLLoaderOptions&) override;
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
   void DeprecatedStopLoading() override;
   void RequestNetworkIdleCallback(base::OnceClosure callback) override;
   gfx::PointF GetScrollOffset() const override;
@@ -500,6 +508,9 @@ class CORE_EXPORT WebLocalFrameImpl final
   void PaintDevToolsOverlays(GraphicsContext&);
 
   void CreateFrameView();
+#if BUILDFLAG(IS_OHOS)
+  void CreateOverlay();
+#endif
 
   // Sometimes Blink makes Page/Frame for internal purposes like for SVGImage
   // (see comments in third_party/blink/renderer/core/page/page.h). In that
@@ -586,7 +597,39 @@ class CORE_EXPORT WebLocalFrameImpl final
 
   void WillSendSubmitEvent(const WebFormElement& form);
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  void DidSubresourceFiltered() override;
+
+  bool GetGlobalAdblockEnabled();
+
+  bool GetAdBlockEnabled() override {
+    return frame_->GetAdBlockEnableForSite();
+  }
+
+  void SetHasElemHideTypeOption(bool has_elemhide_type_option) override;
+
+  bool GetHasElemHideTypeOption() const override {
+    return frame_->GetHasElemHideTypeOption();
+  }
+
+  void SetHasDocumentTypeOption(bool has_document_type_option) override;
+
+  bool GetHasDocumentTypeOption() const override {
+    return frame_->GetHasDocumentTypeOption();
+  }
+
+  void SetHasGenericHideTypeOption(bool has_generichide_type_option) override;
+
+  bool GetHasGenericHideTypeOption() const override {
+    return frame_->GetHasGenericHideTypeOption();
+  }
+
+#endif
+
  protected:
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class WebLocalFrameImplTest;
+#endif
   // WebLocalFrame protected overrides:
   void AddMessageToConsoleImpl(const WebConsoleMessage&,
                                bool discard_duplicates) override;
@@ -600,6 +643,19 @@ class CORE_EXPORT WebLocalFrameImpl final
   void AddGenericIssueImpl(mojom::blink::GenericIssueErrorType error_type,
                            int violating_node_id,
                            const WebString& violating_node_attribute) override;
+
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+  void SelectClosetWordAndShowSelectionMenu() override;
+#endif
+
+#ifdef BUILDFLAG(ARKWEB_AI)
+  void OnDataDetectorSelectText() override;
+#endif
+#if BUILDFLAG(ARKWEB_TEST)
+  mutable bool loader_test_mode = false;
+  WebDocumentLoader* loader_test = nullptr;
+  void SetDocumentLoaderForTest(WebDocumentLoader* loader) override;
+#endif
 
  private:
   friend LocalFrameClientImpl;

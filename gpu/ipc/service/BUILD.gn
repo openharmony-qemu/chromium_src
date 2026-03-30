@@ -11,6 +11,7 @@ if (is_mac) {
 }
 import("//third_party/dawn/scripts/dawn_features.gni")
 import("//ui/gl/features.gni")
+import("//arkweb/build/features/features.gni")
 
 declare_args() {
   subpixel_font_rendering_disabled = false
@@ -35,6 +36,7 @@ component("service") {
     "gpu_config.h",
     "gpu_init.cc",
     "gpu_init.h",
+    "//arkweb/chromium_ext/gpu/ipc/service/gpu_init_ext.h",
     "gpu_watchdog_thread.cc",
     "gpu_watchdog_thread.h",
     "image_transport_surface.h",
@@ -130,6 +132,13 @@ component("service") {
   }
   if (is_linux || is_chromeos) {
     sources += [ "image_transport_surface_linux.cc" ]
+  }
+  if (is_arkweb) {
+    import("//arkweb/chromium_ext/gpu/ipc/service/arkweb_gpu_ipc_service_ext.gni")
+    sources += arkweb_gpu_ipc_service_sources
+  }
+  if (arkweb_bugfix_crash) {
+    deps += [ "//arkweb/build/features" ]
   }
   if (is_chromeos) {
     sources += [

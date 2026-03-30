@@ -78,6 +78,11 @@ class URLSchemesRegistry final {
     }
     for (auto& scheme : url::GetEmptyDocumentSchemes())
       empty_document_schemes.insert(scheme.c_str());
+#if BUILDFLAG(ARKWEB_CUSTOM_SCHEME_CODECACHE)
+    for (auto& scheme : url::GetCodeCacheEnabledSchemes()) {
+      code_cache_with_response_time_schemes.insert(scheme.c_str());
+    }
+#endif
   }
   ~URLSchemesRegistry() = default;
 
@@ -105,6 +110,9 @@ class URLSchemesRegistry final {
   URLSchemesSet allowing_shared_array_buffer_schemes;
   URLSchemesSet web_ui_schemes;
   URLSchemesSet code_cache_with_hashing_schemes;
+#if BUILDFLAG(ARKWEB_CUSTOM_SCHEME_CODECACHE)
+  URLSchemesSet code_cache_with_response_time_schemes;
+#endif
   URLSchemesSet webui_bundled_bytecode_schemes;
 
  private:
@@ -505,3 +513,4 @@ bool SchemeRegistry::SchemeSupportsWebUIBundledBytecode(const String& scheme) {
 }
 
 }  // namespace blink
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/weborigin/scheme_registry_utils.cc"

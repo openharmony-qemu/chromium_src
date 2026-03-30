@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("//third_party/abseil-cpp/absl.gni")
+import("//arkweb/build/features/features.gni")
 
 absl_source_set("graphcycles_internal") {
   sources = [ "internal/graphcycles.cc" ]
@@ -90,6 +91,7 @@ absl_source_set("synchronization") {
     "//third_party/abseil-cpp/absl/meta:type_traits",
     "//third_party/abseil-cpp/absl/time",
   ]
+  deps +=["//arkweb/build/features"]
 }
 
 absl_test("barrier_test") {

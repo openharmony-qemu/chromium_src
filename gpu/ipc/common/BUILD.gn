@@ -2,9 +2,11 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//arkweb/build/features/features.gni")
 import("//build/config/ui.gni")
 import("//gpu/vulkan/features.gni")
 import("//mojo/public/tools/bindings/mojom.gni")
+import("//arkweb/build/features/features.gni")
 
 if (is_ios) {
   import("//build/config/apple/mobile_config.gni")  # For `target_platform`
@@ -173,6 +175,16 @@ source_set("ipc_common_sources") {
     deps += [ "//ui/gl:surface_jni_headers" ]
   }
 
+  if (use_libfuzzer) {
+    configs -= [ "//build/config/gcc:symbol_visibility_hidden" ]
+    configs += [ "//build/config/gcc:symbol_visibility_default" ]
+  }
+
+  if (is_arkweb) {
+    import("//arkweb/chromium_ext/gpu/ipc/common/arkweb_gpu_ipc_common_ext.gni")
+    sources += arkweb_gpu_ipc_common_sources
+  }
+
   if (use_ozone) {
     deps += [ "//ui/ozone" ]
   }
@@ -273,6 +285,11 @@ mojom("gpu_channel_mojom") {
   export_class_attribute = "GPU_EXPORT"
   export_header = "gpu/gpu_export.h"
   cpp_configs = [ "//gpu:gpu_implementation" ]
+
+  enabled_features = []
+  if (arkweb_blank_optimize) {
+    enabled_features += [ "arkweb_blank_optimize" ]
+  }
 }
 
 mojom("shared_image_pool_client_interface") {
@@ -346,6 +363,9 @@ mojom("interfaces") {
   if (enable_vulkan) {
     public_deps += [ ":vulkan_interface" ]
     enabled_features += [ "supports_vulkan" ]
+  }
+  if (arkweb_heif_support) {
+    enabled_features += [ "arkweb_heif_support" ]
   }
 
   cpp_typemaps = [

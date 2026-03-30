@@ -398,7 +398,9 @@ class BASE_EXPORT FieldTrial : public RefCounted<FieldTrial> {
   // set of users are included).
   const bool is_low_anonymity_ = false;
 };
-
+#if BUILDFLAG(IS_ARKWEB)
+class FieldTrialListUtils;
+#endif
 //------------------------------------------------------------------------------
 // Class with a list of all active field trials.  A trial is active if it has
 // been registered, which includes evaluating its state based on its
@@ -434,6 +436,9 @@ class BASE_EXPORT FieldTrialList {
   // Destructor Release()'s references to all registered FieldTrial instances.
   ~FieldTrialList();
 
+#if BUILDFLAG(IS_ARKWEB)
+  friend class FieldTrialListUtils;
+#endif
   // Gets a FieldTrial instance from the factory.
   //
   // |trial_name| (a) is used to register the instance with the FieldTrialList
@@ -818,5 +823,7 @@ class BASE_EXPORT FieldTrialList {
 };
 
 }  // namespace base
-
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/base/metrics/field_trial_utils.h"
+#endif
 #endif  // BASE_METRICS_FIELD_TRIAL_H_

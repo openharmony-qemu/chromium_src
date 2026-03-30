@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/feature_list.h"
 #include "base/metrics/histogram_functions.h"
 #include "base/notreached.h"
@@ -67,6 +68,10 @@
 #include "third_party/blink/renderer/platform/scheduler/public/event_loop.h"
 #include "third_party/blink/renderer/platform/weborigin/security_origin.h"
 #include "third_party/blink/renderer/platform/wtf/functional.h"
+
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+#include "ohos_nweb/src/nweb_advanced_security.h"
+#endif
 
 namespace blink {
 
@@ -484,6 +489,18 @@ ScriptPromise<MediaStream> MediaDevices::getUserMedia(
       script_state, "Media.MediaDevices.GetUserMedia", base::Seconds(8));
   resolver->SetResultSuffix("Result2");
   const auto promise = resolver->Promise();
+
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+  bool isAdvancedSecurityMode = OHOS::NWeb::NWebAdvancedSecurityHelper::Inst().
+        IsSecFeatureEnabled(OHOS::NWeb::NWebAdvancedSecurityHelper::Feature::ENABLE_GETUSERMEDIA);
+  if (isAdvancedSecurityMode) {
+    resolver->RecordAndThrowDOMException(
+        exception_state, DOMExceptionCode::kNotSupportedError,
+        "can't use getUserMedia on advancedSecurityMode!",
+        UserMediaRequestResult::kNotSupportedError);
+    return promise;
+  }
+#endif
 
   DCHECK(options);  // Guaranteed by the default value in the IDL.
   DCHECK(!exception_state.HadException());

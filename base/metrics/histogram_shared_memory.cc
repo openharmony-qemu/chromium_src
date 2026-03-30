@@ -148,6 +148,10 @@ void HistogramSharedMemory::AddToLaunchParameters(
 #endif
     CommandLine* command_line,
     LaunchOptions* launch_options) {
+  // Follow-up Processing. On build 132, the kMetricsSharedMemoryHandle 
+  // feature was disabled. Enabling it on build 141 caused a crash, so 
+  // it has been temporarily bypassed with a return statement.
+  return;
   CHECK(histogram_shmem_region.IsValid());
   CHECK(command_line);
   shared_memory::AddToLaunchParameters(::switches::kMetricsSharedMemoryHandle,

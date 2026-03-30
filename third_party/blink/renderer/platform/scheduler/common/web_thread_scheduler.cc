@@ -77,5 +77,15 @@ void WebThreadScheduler::OnUrgentMessageProcessed() {
   NOTREACHED();
 }
 
+#if BUILDFLAG(ARKWEB_SUSPEND_ALL_TIMERS)
+void WebThreadScheduler::PauseTimersForOHOSWebView() {
+  NOTREACHED();
+}
+
+void WebThreadScheduler::ResumeTimersForOHOSWebView() {
+  NOTREACHED();
+}
+#endif  // BUILDFLAG(IS_OHOS)
+
 }  // namespace scheduler
 }  // namespace blink

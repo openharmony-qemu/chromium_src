@@ -111,6 +111,12 @@ class LaunchContext
       const base::CommandLine& command_line,
       bool native_hosts_executables_launch_directly);
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  static std::optional<ProcessState> LaunchConnectNative(
+      const std::string& native_host_name, 
+                                                        const GURL& origin);
+#endif
+
   // The result of a background process launch.
   struct BackgroundLaunchResult {
     explicit BackgroundLaunchResult(NativeProcessLauncher::LaunchResult result);

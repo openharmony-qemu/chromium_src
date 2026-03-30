@@ -31,6 +31,7 @@
     [CEReactions, Reflect] attribute DOMString type;
     [CEReactions, Reflect] attribute DOMString width;
     [CEReactions, Reflect] attribute DOMString height;
+    [CEReactions, Reflect] attribute DOMString arkwebnativestyle;
     [CheckSecurity=ReturnValue] Document? getSVGDocument();
 
     // obsolete members

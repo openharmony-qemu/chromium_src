@@ -61,11 +61,46 @@ class CC_EXPORT SurfaceLayer : public Layer {
 
   void SetOverrideChildPaintFlags(bool override_child_paint_flags);
 
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  using RectChangeCallback = base::RepeatingCallback<void(const gfx::Rect&)>;
+  void SetVideoRectChangeCallback(RectChangeCallback callback);
+  void OnLayerRectUpdate(const gfx::Rect& rect) override;
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  using LayerBoundsChangeCallback =
+      base::RepeatingCallback<void(const gfx::Rect&)>;
+  void SetLayerBoundsChangeCallback(LayerBoundsChangeCallback callback);
+#endif // ARKWEB_VIDEO_ASSISTANT
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  using RectVisibilityChangeCallback = base::RepeatingCallback<void(bool)>;
+  static scoped_refptr<SurfaceLayer> Create(UpdateSubmissionStateCB update_submission_state_callback,
+                                          RectChangeCallback callback,
+                                          RectVisibilityChangeCallback visibilitycallback);
+  using LayerRemovedVisibilityCallback = base::RepeatingCallback<void(bool)>;
+  static scoped_refptr<SurfaceLayer> Create(
+      UpdateSubmissionStateCB update_submission_state_callback,
+      RectChangeCallback callback,
+      RectVisibilityChangeCallback visibilitycallback,
+      LayerRemovedVisibilityCallback layerRemovedCallback);
+#endif
+
   // Layer overrides.
   std::unique_ptr<LayerImpl> CreateLayerImpl(
       LayerTreeImpl* tree_impl) const override;
   bool RequiresSetNeedsDisplayOnHdrHeadroomChange() const override;
   void SetLayerTreeHost(LayerTreeHost* host) override;
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void OnLayerBoundsUpdate(const gfx::Rect& bounds) override;
+#endif // ARKWEB_VIDEO_ASSISTANT
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  void OnLayerRectVisibilityChange(bool visibility) override;
+  void ResetLayerRectUpdateCallback();
+  void ResetLayerRectVisibilityChangeCallback();
+  void CleanupVisibilityForRemovedLayer(bool visibility) override;
+#endif
 
   const viz::SurfaceId& surface_id() const {
     return surface_range_.Read(*this).end();
@@ -81,6 +116,12 @@ class CC_EXPORT SurfaceLayer : public Layer {
 
  protected:
   SurfaceLayer();
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  SurfaceLayer(UpdateSubmissionStateCB updateSubmissionStateCB,
+                                          RectChangeCallback callback,
+                                          RectVisibilityChangeCallback visibilitycallback,
+                                          LayerRemovedVisibilityCallback layerRemovedCallback);
+#endif
   explicit SurfaceLayer(UpdateSubmissionStateCB);
   bool HasDrawableContent() const override;
 
@@ -125,6 +166,21 @@ class CC_EXPORT SurfaceLayer : public Layer {
   // Keep track when we change LayerTreeHosts as SurfaceLayerImpl needs to know
   // in order to keep the visibility callback state consistent.
   ProtectedSequenceWritable<bool> callback_layer_tree_host_changed_;
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  RectChangeCallback video_rect_change_callback_;
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  LayerBoundsChangeCallback layer_bounds_change_callback_;
+#endif // ARKWEB_VIDEO_ASSISTANT
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  base::RepeatingCallback<void(const gfx::Rect&)> rect_change_callback_;
+  base::RepeatingCallback<void(bool)> rect_visibility_change_callback_;
+  base::RepeatingCallback<void(bool)> layer_removed_visibility_callback_;
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class SurfaceLayerForIncludeTest;
+#endif
+#endif // ARKWEB_SAME_LAYER
 };
 
 }  // namespace cc

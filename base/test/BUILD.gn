@@ -8,6 +8,7 @@ import("//build/config/ui.gni")
 import("//build/rust/rust_static_library.gni")
 import("//build_overrides/build.gni")
 import("//third_party/protobuf/proto_library.gni")
+import("//arkweb/build/features/features.gni")
 
 if (is_android) {
   import("//build/config/android/rules.gni")
@@ -299,6 +300,13 @@ static_library("test_support") {
     deps += [
       ":base_unittests_jni_headers",
       ":test_support_jni_headers",
+    ]
+  }
+
+  if (is_ohos) {
+    sources += [
+      "//arkweb/chromium_ext/base/test/test_support_ohos.h",
+      "//arkweb/chromium_ext/base/test/test_support_ohos.cc",
     ]
   }
 
@@ -638,6 +646,12 @@ target(_target_type, "test_trace_processor") {
     info_plist = "test_trace_processor_impl.plist"
     output_name = "TestTraceProcessor"
     bundle_deps_filter = [ "//third_party/icu:icudata" ]
+  }
+
+  if (arkweb_unittests){
+    deps += [
+      "//base:base"
+    ]
   }
 }
 

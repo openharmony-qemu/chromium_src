@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/auto_reset.h"
 #include "base/check_is_test.h"
 #include "base/command_line.h"
@@ -226,6 +227,13 @@
 #include "ui/compositor/compositor_lock.h"
 #include "url/origin.h"
 #include "url/url_constants.h"
+
+#include "arkweb/chromium_ext/content/browser/renderer_host/navigation_request_utils.h"
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "content/browser/web_contents/web_contents_impl.h"
+#include "content/public/browser/web_contents.h"
+#include "url/ohos/log_utils.h"
+#endif
 
 #if BUILDFLAG(IS_ANDROID)
 #include "content/browser/renderer_host/navigation_transitions/navigation_entry_screenshot_cache.h"
@@ -1411,7 +1419,7 @@ std::unique_ptr<NavigationRequest> NavigationRequest::CreateRendererInitiated(
           /*navigation_token=*/base::UnguessableToken::Create(),
           /*prefetched_signed_exchanges=*/
           std::vector<blink::mojom::PrefetchedSignedExchangeInfoPtr>(),
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_BASE)
           /*data_url_as_string=*/std::string(),
 #endif
           /*is_browser_initiated=*/false,
@@ -1448,6 +1456,12 @@ std::unique_ptr<NavigationRequest> NavigationRequest::CreateRendererInitiated(
           /*lcpp_hint=*/nullptr, blink::CreateDefaultRendererContentSettings(),
           /*visited_link_salt=*/std::nullopt,
           /*local_surface_id=*/std::nullopt,
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+          false, /* site_adblock_enabled */
+#endif
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+          0, /* custom_viewport_width */
+#endif
           frame_tree_node->current_frame_host()->GetCachedPermissionStatuses(),
           /*should_skip_screenshot=*/false,
           /*force_new_document_sequence_number=*/false,
@@ -1528,7 +1542,15 @@ NavigationRequest::CreateForSynchronousRendererCommit(
           std::string() /* href_translate */,
           false /* is_history_navigation_in_new_child_frame */,
           base::TimeTicks::Now() /* input_start */,
-          network::mojom::RequestDestination::kEmpty);
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+          network::mojom::RequestDestination::kEmpty, ""
+#else
+          network::mojom::RequestDestination::kEmpty
+#endif
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+          , false
+#endif
+          );
   // Note that some params are set to default values (e.g. page_state set to
   // the default blink::PageState()) even if the DidCommit message that came
   // from the renderer contained relevant info that can be used to fill the
@@ -1563,7 +1585,7 @@ NavigationRequest::CreateForSynchronousRendererCommit(
           /*navigation_token=*/base::UnguessableToken::Create(),
           /*prefetched_signed_exchanges=*/
           std::vector<blink::mojom::PrefetchedSignedExchangeInfoPtr>(),
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_BASE)
           /*data_url_as_string=*/std::string(),
 #endif
           /*is_browser_initiated=*/false,
@@ -1600,7 +1622,13 @@ NavigationRequest::CreateForSynchronousRendererCommit(
           /*lcpp_hint=*/nullptr, blink::CreateDefaultRendererContentSettings(),
           /*visited_link_salt=*/std::nullopt,
           /*local_surface_id=*/std::nullopt,
-          render_frame_host->GetCachedPermissionStatuses(),
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+          false, /* site_adblock_enabled */
+#endif
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+          0, /* custom_viewport_width */
+#endif
+          frame_tree_node->current_frame_host()->GetCachedPermissionStatuses(),
           /*should_skip_screenshot=*/false,
           /*force_new_document_sequence_number=*/false,
           /*navigation_metrics_token=*/base::UnguessableToken::Create(),
@@ -1743,6 +1771,7 @@ NavigationRequest::NavigationRequest(
       prerender_host_id_(
           GetPrerenderHostRegistry().GetPrerenderHostIdForNavigation(this)),
       network_restrictions_id_(std::nullopt) {
+  nav_request_utils_ = std::make_unique<NavigationRequestUtils>(this);
   TRACE_EVENT("navigation", "NavigationRequest::NavigationRequest",
               perfetto::Flow::FromPointer(this), "navigation_request", this);
   CHECK(!common_params_->initiator_base_url ||
@@ -1954,6 +1983,17 @@ NavigationRequest::NavigationRequest(
     // have |from_begin_navigation_| or |entry| set.
     DCHECK(!RequiresInitiatorBasedSourceSiteInstance() ||
            source_site_instance_);
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+    if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+            ::switches::kEnableNwebEx)) {
+      current_reload_reason_ = entry->GetCurrentReloadReason();
+      reload_reason_list_ = entry->GetReloadReasonList();
+      if (current_reload_reason_ >= ErrorPageReloadReason ::FALLBACK_PROXY) {
+        original_error_code_ = entry->GetErrorCode();
+      }
+    }
+#endif
   }
 
   // Let the NTP override the navigation params and pretend that this is a
@@ -2481,7 +2521,11 @@ void NavigationRequest::BeginNavigation() {
             "Protected Audience/selectURL will deprecate supporting iframes to "
             "render the winning ad/selected URL. "
             "Please use fenced frames instead. See "
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+            "https://x.x.x"
+#else
             "https://developer.chrome.com/en/docs/privacy-sandbox/fenced-frame/"
+#endif
             "#examples");
       }
     }
@@ -2587,8 +2631,14 @@ bool NavigationRequest::MaybeStartPrerenderingActivationChecks() {
   FrameTreeNodeId candidate_prerender_frame_tree_node_id =
       GetPrerenderHostRegistry().FindPotentialHostToActivate(*this);
   if (candidate_prerender_frame_tree_node_id.is_null()) {
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    LOG(DEBUG) << "No matching Prerendered host found.";
+#endif
     return false;
   }
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  LOG(DEBUG) << "Found a matching Prerendered host.";
+#endif
 
   // Run CommitDeferringConditions before activating the prerendered page. See
   // the comemnt on RunCommitDeferringConditions() for details.
@@ -2778,12 +2828,29 @@ void NavigationRequest::OnFencedFrameURLMappingComplete(
                           // destroyed `this`.
 }
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/content/browser/renderer_host/navigation_request_for_include.cc"
+#endif
+
 void NavigationRequest::BeginNavigationImpl() {
   TRACE_EVENT("navigation", "NavigationRequest::BeginNavigationImpl",
               perfetto::Flow::FromPointer(this));
   base::ElapsedTimer timer;
   SetState(WILL_START_NAVIGATION);
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+  if (frame_tree_node_->IsMainFrame()) {
+    LOG(INFO) << "event_message: "
+              << " is_browser_initiated_: "
+              << commit_params_->is_browser_initiated
+              << " was_redirected_: " << was_redirected_
+              << " " << devtools_navigation_token_;
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    StartNavigationExt();
+#endif
+  }
+#endif
+
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_LOAD)
   base::WeakPtr<NavigationRequest> this_ptr(weak_factory_.GetWeakPtr());
   bool should_override_url_loading = false;
 
@@ -2817,6 +2884,10 @@ void NavigationRequest::BeginNavigationImpl() {
   // See https://crbug.com/770157.
   if (!this_ptr)
     return;
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  nav_request_utils_->BeginNavigationImpl(should_override_url_loading);
+#endif
 
   if (should_override_url_loading) {
     // Don't create a NavigationHandle here to simulate what happened with the
@@ -3540,7 +3611,7 @@ void NavigationRequest::OnRequestRedirected(
   // a reason or another.
   RecordAddressSpaceFeature();
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_LOAD)
   base::WeakPtr<NavigationRequest> this_ptr(weak_factory_.GetWeakPtr());
 
   bool should_override_url_loading = false;
@@ -3672,8 +3743,19 @@ void NavigationRequest::OnRequestRedirected(
     commit_params_->navigation_timing->redirect_start =
         commit_params_->navigation_timing->fetch_start;
   }
+#if BUILDFLAG(ARKWEB_NETWORK_DFX)
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
+               "redirectStart", commit_params_->navigation_timing->redirect_start);
+#endif
+
   commit_params_->navigation_timing->redirect_end = base::TimeTicks::Now();
   commit_params_->navigation_timing->fetch_start = base::TimeTicks::Now();
+#if BUILDFLAG(ARKWEB_NETWORK_DFX)
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
+               "redirectEnd", commit_params_->navigation_timing->redirect_end);
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
+               "fetchStart", commit_params_->navigation_timing->fetch_start);
+#endif
 
   commit_params_->redirect_response.push_back(response_head_.Clone());
   commit_params_->redirect_infos.push_back(redirect_info);
@@ -3706,6 +3788,15 @@ void NavigationRequest::OnRequestRedirected(
   common_params_->referrer->url = GURL(redirect_info.new_referrer);
   common_params_->referrer = Referrer::SanitizeForRequest(
       common_params_->url, *common_params_->referrer);
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          ::switches::kEnableNwebEx)) {
+    current_reload_reason_ = ErrorPageReloadReason ::INVALID;
+    reload_reason_list_.clear();
+    original_error_code_ = net::OK;
+  }
+#endif
 
   // On redirects, the initial referrer is no longer correct, so it must
   // be updated.  (A parallel process updates the outgoing referrer in the
@@ -3797,6 +3888,16 @@ void NavigationRequest::OnRequestRedirected(
   // on a SiteInstance that already has a process.
   RenderProcessHost* expected_process =
       site_instance->HasProcess() ? site_instance->GetProcess() : nullptr;
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  if (frame_tree_node_->IsMainFrame() &&
+      common_params_->url.SchemeIsHTTPOrHTTPS()) {
+    LOG(INFO) << "[AdBlock] Redirect to ***"
+              << ", try to get adblock switch from UI.";
+    GetContentClient()->browser()->UpdateAdBlockEnabledForSite(
+        frame_tree_node_->current_frame_host(), common_params_->url);
+  }
+#endif
 
   WillRedirectRequest(common_params_->referrer->url, expected_process);
 }
@@ -5259,6 +5360,12 @@ void NavigationRequest::OnRequestFailedInternal(
   SetState(WILL_FAIL_REQUEST);
   processing_navigation_throttle_ = false;
 
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+  if (common_params_ && begin_params_) {
+    common_params_->headers = begin_params_->headers;
+  }
+#endif
+
   // Ensure the pending entry also gets discarded if it has no other active
   // requests.
   pending_entry_ref_.reset();
@@ -5294,13 +5401,20 @@ void NavigationRequest::OnRequestFailedInternal(
       policy_container_builder_->FinalPolicies().cross_origin_opener_policy,
       origin, net::NetworkAnonymizationKey::CreateTransient());
 
-  SelectFrameHostForOnRequestFailedInternal(status.exists_in_cache,
-                                            skip_throttles, error_page_content);
+  SelectFrameHostForOnRequestFailedInternal(
+      status.exists_in_cache, skip_throttles,
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+      status.needs_reload_with_fallback_proxy,
+#endif
+      error_page_content);
 }
 
 void NavigationRequest::SelectFrameHostForOnRequestFailedInternal(
     bool exists_in_cache,
     bool skip_throttles,
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+    bool needs_reload_with_fallback_proxy,
+#endif    
     const std::optional<std::string>& error_page_content) {
   CHECK(!HasRenderFrameHost())
       << "`render_frame_host_` should not be set before the "
@@ -5357,6 +5471,9 @@ void NavigationRequest::SelectFrameHostForOnRequestFailedInternal(
         resume_commit_closure_ = base::BindOnce(
             &NavigationRequest::SelectFrameHostForOnRequestFailedInternal,
             weak_factory_.GetWeakPtr(), exists_in_cache, skip_throttles,
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+            needs_reload_with_fallback_proxy,
+#endif
             error_page_content);
         frame_tree_node_->render_manager()
             ->speculative_frame_host()
@@ -5399,6 +5516,16 @@ void NavigationRequest::SelectFrameHostForOnRequestFailedInternal(
     // They will be handled by the renderer process.
     PrepareToCommitErrorPage(error_page_content);
   } else {
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+    if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+            switches::kEnableNwebEx)) {
+      if (needs_reload_with_fallback_proxy &&
+          !HasBeenReloadedForThisReason(
+              ErrorPageReloadReason ::FALLBACK_PROXY)) {
+        needs_reload_with_fallback_proxy_ = true;
+      }
+    }
+#endif    
     // Check if the navigation should be allowed to proceed.
     WillFailRequest();
   }
@@ -5539,6 +5666,10 @@ void NavigationRequest::OnStartChecksComplete(
 
   // Mark the fetch_start (Navigation Timing API).
   commit_params_->navigation_timing->fetch_start = base::TimeTicks::Now();
+#if BUILDFLAG(ARKWEB_NETWORK_DFX)
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
+               "fetchStart", commit_params_->navigation_timing->fetch_start);
+#endif
 
   // Ensure that normal history navigations can dispatch the Navigation API's
   // navigate event as the navigation is starting. Cases without a UrlLoader
@@ -5573,6 +5704,9 @@ void NavigationRequest::OnStartChecksComplete(
   // Merge headers with embedder's headers.
   net::HttpRequestHeaders headers;
   headers.AddHeadersFromString(begin_params_->headers);
+#if BUILDFLAG(ARKWEB_EXT_UA)
+  nav_request_utils_->RemoveUserAgentHeaderForDevTools(devtools_user_agent_override_);
+#endif
   headers.MergeFrom(TakeModifiedRequestHeaders());
   begin_params_->headers = headers.ToString();
 
@@ -5654,7 +5788,13 @@ void NavigationRequest::OnStartChecksComplete(
           std::move(serving_page_metrics_container),
           allow_cookies_from_browser_, navigation_id_,
           shared_storage_writable_eligible_, is_ad_tagged_,
-          force_no_https_upgrade_),
+          force_no_https_upgrade_
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+          ,
+          current_reload_reason_ == ErrorPageReloadReason ::FALLBACK_PROXY,
+          original_error_code_
+#endif
+          ),
       std::move(navigation_ui_data), service_worker_handle_.get(),
       std::move(prefetched_signed_exchange_cache_), this, loader_type,
       CreateCookieAccessObserver(), CreateTrustTokenAccessObserver(),
@@ -6064,6 +6204,13 @@ void NavigationRequest::OnWillProcessResponseChecksComplete(
           frame_tree_node_->navigator().controller().GetBrowserContext();
       DownloadManagerImpl* download_manager = static_cast<DownloadManagerImpl*>(
           browser_context->GetDownloadManager());
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+      // Download maybe start request in the same frame_tree_node and will not
+      // commit navigation, restore the last committed adblock switch here.
+
+      frame_tree_node_->set_adblock_enabled(
+          frame_tree_node_->is_adblock_enabled_last_committed());
+#endif
       if (!response_head_->client_side_content_decoding_types.empty()) {
         CHECK(base::FeatureList::IsEnabled(
             network::features::kRendererSideContentDecoding));
@@ -6402,9 +6549,31 @@ void NavigationRequest::CommitErrorPage(
   // Use a separate cache shard, and no cookies, for error pages.
   isolation_info_for_subresources_ =
       net::IsolationInfo::CreateTransient(/*nonce=*/std::nullopt);
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  int net_error = net_error_;
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableNwebEx) &&
+      current_reload_reason_ == ErrorPageReloadReason ::FALLBACK_PROXY) {
+    net_error = original_error_code_;
+    if (net_error == net::OK) {
+      LOG(ERROR) << "CommitErrorPage with fallback proxy, url "
+                 << url::LogUtils::ConvertUrl(
+                        common_params_->url.possibly_invalid_spec(), true)
+                 << ", net_error " << net_error_;
+      SCOPED_CRASH_KEY_STRING256("ErrorPageProxy", "url",
+                                 common_params_->url.possibly_invalid_spec());
+      SCOPED_CRASH_KEY_NUMBER("ErrorPageProxy", "error_code", net_error_);
+      base::debug::DumpWithoutCrashing();
+    }
+  }
+  GetRenderFrameHost()->FailedNavigation(
+      this, *common_params_, *commit_params_, has_stale_copy_in_cache_,
+      net_error, extended_error_code_, error_page_content, *document_token_);
+#else      
   GetRenderFrameHost()->FailedNavigation(
       this, *common_params_, *commit_params_, has_stale_copy_in_cache_,
       net_error_, extended_error_code_, error_page_content, *document_token_);
+#endif      
   UpdateNavigationHandleTimingsOnCommitSent();
 
   SendDeferredConsoleMessages();
@@ -6841,6 +7010,10 @@ void NavigationRequest::CommitNavigation() {
         std::move(subresource_loader_params_.prefetched_signed_exchanges);
   }
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  nav_request_utils_->SetAdblockEnabledStatus(commit_params.get());
+#endif
+
   // TODO(https://crbug.com/40095391): Convert to CHECK if it proves to be
   // consistently upheld condition.
   DUMP_WILL_BE_CHECK(commit_params->redirect_response.size() ==
@@ -6857,7 +7030,12 @@ void NavigationRequest::CommitNavigation() {
       std::move(url_loader_client_endpoints_), std::move(controller),
       std::move(subresource_overrides_),
       std::move(service_worker_container_info), document_token_,
-      devtools_navigation_token_);
+      devtools_navigation_token_
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+      ,
+      nav_request_utils_->addr_web_handle_
+#endif
+      );
   if (service_worker_handle_ &&
       service_worker_handle_->service_worker_client()) {
     service_worker_handle_->service_worker_client()->SetContainerReady();
@@ -7435,11 +7613,21 @@ NavigationRequest::CheckCredentialedSubresource() const {
   }
 
   // Warn the user about the request being blocked.
+#if !BUILDFLAG(ARKWEB_DEVTOOLS)
   const char* console_message =
       "Subresource requests whose URLs contain embedded credentials (e.g. "
       "`https://user:pass@host/`) are blocked. See "
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+      "https://x.x.x"
+#else
       "https://www.chromestatus.com/feature/5669008342777856 for more "
+#endif
       "details.";
+#else
+  const char* console_message =
+      "Subresource requests whose URLs contain embedded credentials (e.g. "
+      "`https://user:pass@host/`) are blocked.";
+#endif // ARKWEB_DEVTOOLS
   parent->AddMessageToConsole(blink::mojom::ConsoleMessageLevel::kWarning,
                               console_message);
   return CredentialedSubresourceCheckResult::BLOCK_REQUEST;
@@ -7824,7 +8012,11 @@ void NavigationRequest::RecordDownloadUseCountersPrePolicyCheck() {
         base::StringPrintf(
             "Navigating a cross-origin opener to a download (%s) is "
             "deprecated, see "
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+            "https://x.x.x",
+#else
             "https://www.chromestatus.com/feature/5742188281462784.",
+#endif
             common_params_->url.spec().c_str()));
     GetContentClient()->browser()->LogWebFeatureForCurrentPage(
         rfh, blink::mojom::WebFeature::kOpenerNavigationDownloadCrossOrigin);
@@ -7929,6 +8121,9 @@ void NavigationRequest::OnWillRedirectRequestProcessed(
 #if DCHECK_IS_ON()
       DCHECK(is_safe_to_delete_);
       base::AutoReset<bool> resetter(&is_safe_to_delete_, false);
+#endif
+#if BUILDFLAG(ARKWEB_EXT_UA)
+      base::AutoReset<bool> resetter2(&ua_change_requires_reload_, false);
 #endif
       GetDelegate()->DidRedirectNavigation(this);
     }
@@ -8145,6 +8340,25 @@ void NavigationRequest::WillStartRequest() {
   EnterChildTraceEvent("WillStartRequest", this);
   DCHECK_EQ(state_, WILL_START_REQUEST);
   will_start_request_time_ = base::TimeTicks::Now();
+#if BUILDFLAG(ARKWEB_NOT_LOAD_IFRAME)
+  if(!IsInMainFrame()) {
+    RenderFrameHostImpl* rfh = frame_tree_node_->current_frame_host();
+    bool flag = false;
+    if (rfh) {
+      WebContentsImpl* web_contents = static_cast<WebContentsImpl*>(
+        WebContents::FromRenderFrameHost(rfh));
+      if (web_contents) {
+        LOG(INFO) << "start GetIframeLoadingFlag iframe";
+        flag = web_contents->GetIframeLoadingFlag();
+      }
+    }
+    if (flag) {
+      LOG(INFO) << "stop load iframe";
+      OnWillProcessResponseChecksComplete(NavigationThrottle::CANCEL);
+      return;
+    }
+  }
+#endif  // ARKWEB_NOT_LOAD_IFRAME
 
   if (IsSelfReferentialURL()) {
     SetState(CANCELING);
@@ -8586,6 +8800,10 @@ void NavigationRequest::UpdatePrivateNetworkRequestPolicy() {
       ContentBrowserClient::PrivateNetworkRequestPolicyOverride::kForceAllow) {
     private_network_request_policy_ =
         network::mojom::PrivateNetworkRequestPolicy::kAllow;
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+    LOG(INFO) << "NavigationRequest::UpdatePrivateNetworkRequestPolicy PrivateNetwork_network_request_policy_ "
+          << static_cast<int>(private_network_request_policy_);
+#endif
     return;
   }
 
@@ -8618,6 +8836,10 @@ void NavigationRequest::UpdatePrivateNetworkRequestPolicy() {
           kBlockInsteadOfWarn) {
     private_network_request_policy_ =
         OverrideToBlockInsteadOfWarn(private_network_request_policy_);
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+    LOG(INFO) << "NavigationRequest::UpdatePrivateNetworkRequestPolicy private_network_request_policy_ "
+          << static_cast<int>(private_network_request_policy_);
+#endif
   }
 
   if (policy_override ==
@@ -8858,7 +9080,13 @@ url::Origin NavigationRequest::GetOriginForURLLoaderFactoryBeforeResponse(
       (sandbox_flags & network::mojom::WebSandboxFlags::kOrigin) ==
       network::mojom::WebSandboxFlags::kOrigin;
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  bool find_custom_scheme = nav_request_utils_->GetCustomScheme(origin);
+  if (!origin.GetURL().IsStandard() &&
+      !find_custom_scheme) {
+#else
   if (!origin.GetURL().IsStandard()) {
+#endif
     // Always return an opaque origin for non-standard URLs. Otherwise, the
     // CanAccessDataForOrigin() check may fail for unregistered custom
     // scheme requests in CEF.
@@ -9121,7 +9349,11 @@ void NavigationRequest::OnCommitTimeout() {
   render_process_blocked_state_changed_subscription_ = {};
 
   GetRenderFrameHost()->GetRenderWidgetHost()->RendererIsUnresponsive(
+#if !BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
       RenderWidgetHostImpl::RendererIsUnresponsiveReason::
+#else
+      RendererIsUnresponsiveReason::
+#endif
           kNavigationRequestCommitTimeout,
       base::BindRepeating(&NavigationRequest::RestartCommitTimeout,
                           weak_factory_.GetWeakPtr()));
@@ -11391,6 +11623,12 @@ void NavigationRequest::CreateWebUIIfNeeded(RenderFrameHostImpl* frame_host) {
 
   web_ui_->SetController(std::move(controller));
 }
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+void NavigationRequest::SetCustomViewportWidth(int32_t width) {
+  commit_params_->custom_viewport_width = width;
+}
+#endif
 
 bool NavigationRequest::IsDeferred() {
   return !throttle_registry_->GetDeferringThrottles().empty();

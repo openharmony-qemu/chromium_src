@@ -387,17 +387,18 @@ using flags_ui::kOsCrOS;
 using flags_ui::kOsCrOSOwnerOnly;
 using flags_ui::kOsLinux;
 using flags_ui::kOsMac;
+using flags_ui::kOsOhOS;
 using flags_ui::kOsWin;
 
 namespace about_flags {
 
 namespace {
 
-const unsigned kOsAll = kOsMac | kOsWin | kOsLinux | kOsCrOS | kOsAndroid;
-const unsigned kOsDesktop = kOsMac | kOsWin | kOsLinux | kOsCrOS;
+const unsigned kOsAll = kOsMac | kOsWin | kOsLinux | kOsCrOS | kOsAndroid | kOsOhOS;
+const unsigned kOsDesktop = kOsMac | kOsWin | kOsLinux | kOsCrOS | kOsOhOS;
 
 #if defined(USE_AURA)
-const unsigned kOsAura = kOsWin | kOsLinux | kOsCrOS;
+const unsigned kOsAura = kOsWin | kOsLinux | kOsCrOS | kOsOhOS;
 #endif  // USE_AURA
 
 #if defined(USE_AURA)
@@ -1278,7 +1279,7 @@ const FeatureEntry::FeatureVariation kRemotePageMetadataVariations[] = {
 };
 
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_MAC) || \
-    BUILDFLAG(IS_WIN)
+    BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
 
 // A limited number of combinations of the rich autocompletion params.
 const FeatureEntry::FeatureParam kOmniboxRichAutocompletionAggressive1[] = {
@@ -1862,7 +1863,7 @@ const FeatureEntry::FeatureVariation
 };
 
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_MAC) ||
-        // BUILDFLAG(IS_WIN)
+        // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
 
 const FeatureEntry::FeatureParam kOmniboxMlUrlScoringEnabledWithFixes[] = {
     {"enable_scoring_signals_annotators_for_ml_scoring", "true"},
@@ -10800,7 +10801,7 @@ const FeatureEntry kFeatureEntries[] = {
 #if BUILDFLAG(ENABLE_HLS_DEMUXER)
     {"enable-hls-playback", flag_descriptions::kEnableHlsPlaybackName,
      flag_descriptions::kEnableHlsPlaybackDescription,
-     kOsMac | kOsWin | kOsLinux | kOsCrOS,
+     kOsMac | kOsWin | kOsLinux | kOsCrOS | kOsOhOS,
      FEATURE_VALUE_TYPE(media::kBuiltInHlsPlayer)},
 #endif
 
@@ -13262,9 +13263,11 @@ const FeatureEntry kFeatureEntries[] = {
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) ||
         // BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN)
 
+#if BUILDFLAG(CHROME_ROOT_STORE_SUPPORTED)
     {"verify-qwacs", flag_descriptions::kVerifyQWACsName,
      flag_descriptions::kVerifyQWACsDescription, kOsAll,
      FEATURE_VALUE_TYPE(net::features::kVerifyQWACs)},
+#endif  // BUILDFLAG(CHROME_ROOT_STORE_SUPPORTED)
 
     {"autofill-prefer-buy-now-pay-later-blocklists",
      flag_descriptions::kAutofillPreferBuyNowPayLaterBlocklistsName,
@@ -14116,7 +14119,10 @@ base::span<const FeatureEntry> GetFeatureEntries() {
       !entries_for_testing->empty()) {
     return *entries_for_testing;
   }
-  return kFeatureEntries;
+  // Workaround for OHOS SDK libcxx-ohos not supporting array-to-span conversion.
+  // Use base::span's array constructor explicitly.
+  constexpr base::span<const FeatureEntry> kFeatureEntriesSpan(kFeatureEntries);
+  return kFeatureEntriesSpan;
 }
 
 }  // namespace testing

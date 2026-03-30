@@ -21,6 +21,7 @@
 #include "ui/gfx/color_space.h"
 #include "ui/gfx/geometry/size.h"
 #include "ui/gfx/hdr_metadata.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include "gpu/vulkan/vulkan_ycbcr_info.h"
@@ -200,6 +201,10 @@ struct VIZ_COMMON_EXPORT TransferableResource {
   // A gpu resource may be possible to use directly in an overlay if this is
   // true.
   bool is_overlay_candidate = false;
+
+#if BUILDFLAG(ARKWEB_WEBGL)
+  bool enable_defer_impl_invalidation_workaround = false;
+#endif
 
   // Indicates if the resource uses low latency rendering.
   bool is_low_latency_rendering = false;

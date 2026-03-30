@@ -121,6 +121,10 @@ export default function plugin(
         origin = normalizeSlashes(origin);
       }
 
+      if (source === 'chrome://resources/lit/v3_0/lit.rollup.js') {
+        source = 'arkweb://resources/lit/v3_0/lit.rollup.js';
+      }
+
       for (const [url, path] of urlsToPaths) {
         const resultPath = getPathForUrl(source, origin, url, path, excludes);
         if (resultPath.includes('://') || resultPath.startsWith('//')) {

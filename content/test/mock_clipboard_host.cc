@@ -248,4 +248,17 @@ void MockClipboardHost::GetPlatformPermissionState(
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+void MockClipboardHost::OnClipboardDataGuard(
+    bool status,
+    OnClipboardDataGuardCallback callback) {
+  std::move(callback).Run();
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+void MockClipboardHost::HandlePasswordVault(HandlePasswordVaultCallback callback) {
+  std::move(callback).Run(false);
+}
+#endif
 }  // namespace content

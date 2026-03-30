@@ -212,7 +212,23 @@ void LatencyInfo::AddLatencyNumberWithTimestampImpl(
   auto it = latency_components_.find(component);
   DCHECK(it == latency_components_.end());
   latency_components_[component] = time;
-
+#if BUILDFLAG(ARKWEB_PERFORMANCE_TRACE)
+  if (component == INPUT_EVENT_GPU_SWAP_BUFFER_COMPONENT) {
+    base::TimeTicks first_scroll_start_timestamp;
+    base::TimeTicks original_scroll_start_timestamp;
+    if (FindLatency(INPUT_EVENT_LATENCY_FIRST_SCROLL_UPDATE_ORIGINAL_COMPONENT,
+                    &first_scroll_start_timestamp)) {
+      TRACE_EVENT1("input", "OnGpuSwapBuffersCompleted::FirstScrollUpdate",
+                   "time",
+                   (time - first_scroll_start_timestamp).InMillisecondsF());
+    } else if (FindLatency(INPUT_EVENT_LATENCY_SCROLL_UPDATE_ORIGINAL_COMPONENT,
+                           &original_scroll_start_timestamp)) {
+      TRACE_EVENT1("input", "OnGpuSwapBuffersCompleted::OriginalScrollUpdate",
+                   "time",
+                   (time - original_scroll_start_timestamp).InMillisecondsF());
+    }
+  }
+#endif
   if (component == INPUT_EVENT_LATENCY_FRAME_SWAP_COMPONENT)
     Terminate();
 }

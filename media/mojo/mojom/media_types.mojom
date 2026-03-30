@@ -663,6 +663,12 @@ enum RendererType {
   kCastStreaming = 9,    // CastStreamingRendererFactory
   kContentEmbedderDefined = 10,  // Defined by the content embedder
   kTest= 11,             // Renderer implementations used in tests
+  [EnableIf=arkweb_media]
+  kNative = 12,
+  [EnableIf=arkweb_custom_video_player]
+  kOHOSCustomMediaPlayer = 13,
+  [EnableIf=arkweb_media]
+  kOHOSMediaPlayer = 14,  // OHOSMediaPlayerRendererFactory
 };
 
 // See media/base/demuxer.h for description.
@@ -675,6 +681,8 @@ enum DemuxerType {
   kFrameInjectingDemuxer = 5,
   kStreamProviderDemuxer = 6,
   kManifestDemuxer = 7,
+  [EnableIf=arkweb_custom_video_player]
+  kOhosMediaPlayerDemuxer,
 };
 
 // See media::CreateCdmStatus

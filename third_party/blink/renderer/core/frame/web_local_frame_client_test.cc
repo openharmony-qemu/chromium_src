@@ -64,6 +64,13 @@ class CallTrackingTestWebLocalFrameClient
     TestWebFrameClient::RunScriptsAtDocumentReady();
   }
 
+#if BUILDFLAG(ARKWEB_JSPROXY)
+  void RunScriptsAtHeadReady() override {
+    calls_.push_back("RunScriptsAtHeadReady");
+    TestWebFrameClient::RunScriptsAtHeadReady();
+  }
+#endif
+
   void RunScriptsAtDocumentIdle() override {
     calls_.push_back("RunScriptsAtDocumentIdle");
     TestWebFrameClient::RunScriptsAtDocumentIdle();

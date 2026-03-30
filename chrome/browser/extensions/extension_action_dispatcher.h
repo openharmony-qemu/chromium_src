@@ -15,6 +15,10 @@
 #include "extensions/buildflags/buildflags.h"
 #include "extensions/common/extension_id.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "ohos_nweb/src/capi/web_extension_tab_items.h"
+#endif // ARKWEB_ARKWEB_EXTENSIONS
+
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 
 namespace content {
@@ -92,6 +96,10 @@ class ExtensionActionDispatcher : public BrowserContextKeyedAPI {
   void set_prefs_for_testing(ExtensionPrefs* prefs) {
     extension_prefs_ = prefs;
   }
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/chrome/browser/extensions/extension_action_dispatcher_for_include_file.cc"
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 
  private:
   friend class BrowserContextKeyedAPIFactory<ExtensionActionDispatcher>;

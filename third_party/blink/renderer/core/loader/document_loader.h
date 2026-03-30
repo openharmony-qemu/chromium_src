@@ -33,6 +33,10 @@
 #include <memory>
 #include <optional>
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "base/memory/scoped_refptr.h"
 #include "base/time/time.h"
 #include "base/unguessable_token.h"
@@ -97,7 +101,6 @@
 #include "third_party/blink/renderer/platform/weborigin/referrer.h"
 #include "third_party/blink/renderer/platform/wtf/hash_set.h"
 #include "third_party/blink/renderer/platform/wtf/shared_buffer.h"
-
 namespace base {
 class TickClock;
 }
@@ -121,6 +124,7 @@ class PrefetchedSignedExchangeManager;
 class SerializedScriptValue;
 class SubresourceFilter;
 class WebServiceWorkerNetworkProvider;
+class ArkWebDocumentLoaderExt;
 struct JavaScriptFrameworkDetectionResult;
 
 namespace mojom {
@@ -148,6 +152,9 @@ class CORE_EXPORT DocumentLoader : public GarbageCollected<DocumentLoader>,
                  std::unique_ptr<PolicyContainer> policy_container,
                  std::unique_ptr<ExtraData> extra_data);
   ~DocumentLoader() override;
+
+  friend class ArkWebDocumentLoaderExt;
+  virtual ArkWebDocumentLoaderExt *AsArkWebDocumentLoaderExt() { return nullptr; }
 
   // Returns WebNavigationParams that can be used to clone DocumentLoader. Used
   // for javascript: URL and XSLT commits, where we want to create a new
@@ -673,6 +680,10 @@ class CORE_EXPORT DocumentLoader : public GarbageCollected<DocumentLoader>,
 
   Member<SubresourceFilter> subresource_filter_;
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  Member<SubresourceFilter> user_subresource_filter_;
+#endif
+
   const AtomicString original_referrer_;
 
   ResourceResponse response_;
@@ -862,6 +873,10 @@ class CORE_EXPORT DocumentLoader : public GarbageCollected<DocumentLoader>,
   // size for reporting in Navigation Timing encodedBodySize/decodedBodySize.
   int64_t total_body_size_from_service_worker_ = 0;
 
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+  int32_t custom_viewport_width_ = 0;
+#endif
+
   // Map of permission statuses, snapshotting and propagated from browser before
   // committing a navigation.
   // Note: the permission statues will be only used as initial states of
@@ -884,5 +899,6 @@ class CORE_EXPORT DocumentLoader : public GarbageCollected<DocumentLoader>,
 DECLARE_WEAK_IDENTIFIER_MAP(DocumentLoader);
 
 }  // namespace blink
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/loader/arkweb_document_loader_ext.h"
 
 #endif  // THIRD_PARTY_BLINK_RENDERER_CORE_LOADER_DOCUMENT_LOADER_H_

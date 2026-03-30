@@ -11,6 +11,9 @@ function getExpectedFontFamily(expectingSystemFont: boolean): string {
   }
 
   const fontFamily =
+      // <if expr="is_ohos">
+        '"HarmonyOS Sans"';
+      // </if>
       // <if expr="is_linux">
       '"DejaVu Sans"';
       // </if>

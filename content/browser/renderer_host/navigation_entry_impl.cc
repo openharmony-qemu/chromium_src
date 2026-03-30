@@ -46,9 +46,23 @@
 #include "base/android/content_uri_utils.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)
+#include <locale>
+#include <codecvt>
+#endif
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#include "base/command_line.h"
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#endif
+
 using base::UTF16ToUTF8;
 
 namespace content {
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#include "arkweb/chromium_ext/content/browser/renderer_host/navigation_entry_impl_for_include.cc"
+#endif
 
 namespace {
 
@@ -507,7 +521,7 @@ const GURL& NavigationEntryImpl::GetBaseURLForDataURL() const {
   return base_url_for_data_url_;
 }
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_BASE)
 void NavigationEntryImpl::SetDataURLAsString(
     scoped_refptr<base::RefCountedString> data_url) {
   if (data_url) {
@@ -535,6 +549,13 @@ const Referrer& NavigationEntryImpl::GetReferrer() const {
 void NavigationEntryImpl::SetVirtualURL(const GURL& url) {
   virtual_url_ = (url == GetURL()) ? GURL() : url;
   cached_display_title_.clear();
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          ::switches::kEnableNwebEx)) {
+    current_reload_reason_ = ErrorPageReloadReason ::INVALID;
+    reload_reason_list_.clear();
+  }
+#endif  
 }
 
 const GURL& NavigationEntryImpl::GetVirtualURL() const {
@@ -548,6 +569,10 @@ void NavigationEntryImpl::SetTitle(std::u16string title) {
 
 const std::u16string& NavigationEntryImpl::GetTitle() const {
   return title_;
+}
+
+bool NavigationEntryImpl::GetIsRealTitle() {
+  return !title_.empty();
 }
 
 void NavigationEntryImpl::SetApplicationTitle(
@@ -675,6 +700,17 @@ const std::u16string& NavigationEntryImpl::GetTitleForDisplay() const {
   }
 #endif
 
+#if BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)
+  if (GetURL().SchemeIs(url::kResourcesScheme)) {
+    std::string fileName = GetURL().ExtractFileName();
+    if (fileName == "") {
+      title = u"";
+    } else {
+      std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> converter;
+      title = converter.from_bytes(fileName);
+    }
+  }
+#endif
   gfx::ElideString(title, blink::mojom::kMaxTitleChars, &cached_display_title_);
   return cached_display_title_;
 }
@@ -873,7 +909,7 @@ NavigationEntryImpl::CloneAndReplaceInternal(
   // ResetForCommit: post_data_
   copy->extra_headers_ = extra_headers_;
   copy->base_url_for_data_url_ = base_url_for_data_url_;
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_BASE)
   copy->data_url_as_string_ = data_url_as_string_;
 #endif
   // ResetForCommit: is_renderer_initiated_
@@ -941,7 +977,15 @@ NavigationEntryImpl::ConstructCommonNavigationParams(
       false /* has_text_fragment_token */,
       network::mojom::CSPDisposition::CHECK, std::vector<int>(), std::string(),
       false /* is_history_navigation_in_new_child_frame */, input_start,
-      network::mojom::RequestDestination::kEmpty);
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+      network::mojom::RequestDestination::kEmpty, ""
+#else
+      network::mojom::RequestDestination::kEmpty
+#endif
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+      , false
+#endif
+      );
 }
 
 blink::mojom::CommitNavigationParamsPtr
@@ -999,7 +1043,7 @@ NavigationEntryImpl::ConstructCommitNavigationParams(
           blink::mojom::WasActivatedOption::kUnknown,
           base::UnguessableToken::Create(),
           std::vector<blink::mojom::PrefetchedSignedExchangeInfoPtr>(),
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_BASE)
           std::string(),
 #endif
           false /* is_browser_initiated */, false /*has_ua_visual_transition*/,
@@ -1032,6 +1076,12 @@ NavigationEntryImpl::ConstructCommitNavigationParams(
           /*lcpp_hint=*/nullptr, blink::CreateDefaultRendererContentSettings(),
           /*visited_link_salt=*/std::nullopt,
           /*local_surface_id=*/std::nullopt,
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+          false, /* site_adblock_enabled */
+#endif
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+          0, /* ustom_viewport_width */
+#endif
           /*initial_permission_statuses=*/std::nullopt,
           /*should_skip_screenshot*/ false,
           /*force_new_document_sequence_number=*/false,

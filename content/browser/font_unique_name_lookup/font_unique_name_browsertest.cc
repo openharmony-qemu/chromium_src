@@ -5,6 +5,7 @@
 #include <array>
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "base/test/scoped_feature_list.h"
 #include "base/threading/thread_restrictions.h"
 #include "build/build_config.h"
@@ -86,6 +87,8 @@ constexpr auto kExpectedFontFamilyNames = std::to_array({
     "NSimSun",
     "Calibri",
 });
+#elif BUILDFLAG(ARKWEB_TEST)
+constexpr std::array<const char*, 0> kExpectedFontFamilyNames = {};
 #endif
 
 }  // namespace

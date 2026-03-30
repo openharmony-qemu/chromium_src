@@ -20,7 +20,7 @@
 #include <sys/ptrace.h>
 #include <sys/uio.h>
 
-#include "base/check_op.h"
+#include "arkweb/build/features/features.h"
 #include "base/logging.h"
 #include "build/build_config.h"
 #include "util/misc/from_pointer_cast.h"
@@ -70,9 +70,7 @@ bool GetThreadArea32(pid_t tid,
                      bool can_log) {
   size_t index = (context.t32.xgs & 0xffff) >> 3;
   user_desc desc;
-  if (ptrace(
-          PTRACE_GET_THREAD_AREA, tid, reinterpret_cast<void*>(index), &desc) !=
-      0) {
+  if (ptrace(tid, reinterpret_cast<void*>(index), &desc) != 0) {
     PLOG_IF(ERROR, can_log) << "ptrace";
     return false;
   }
@@ -259,6 +257,10 @@ bool GetThreadArea64(pid_t tid,
                      const ThreadContext& context,
                      LinuxVMAddress* address,
                      bool can_log) {
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+  // todo: don't support NT_ARM_TLS option
+  return true;
+#else
   iovec iov;
   iov.iov_base = address;
   iov.iov_len = sizeof(*address);
@@ -273,6 +275,7 @@ bool GetThreadArea64(pid_t tid,
     return false;
   }
   return true;
+#endif  // BUILDFLAG(ARKWEB_CRASHPAD)
 }
 #elif defined(ARCH_CPU_MIPS_FAMILY)
 // PTRACE_GETREGSET, introduced in Linux 2.6.34 (2225a122ae26), requires kernel

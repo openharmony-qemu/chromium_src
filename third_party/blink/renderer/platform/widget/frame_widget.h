@@ -8,6 +8,7 @@
 #include <optional>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/time/time.h"
 #include "base/types/optional_ref.h"
 #include "cc/input/browser_controls_offset_tag_modifications.h"
@@ -209,6 +210,12 @@ class PLATFORM_EXPORT FrameWidget {
   // This message inserts the ongoing composition.
   virtual void FinishComposingText(bool keep_selection) = 0;
 
+#if BUILDFLAG(ARKWEB_MENU)
+  virtual void RegisterClippedVisualViewportSelectionBounds(
+      gfx::Rect clipped_selection_bounds) = 0;
+
+  virtual void CleanFocusCache() = 0;
+#endif
   virtual bool IsProvisional() = 0;
   virtual cc::ElementId GetScrollableContainerIdAt(
       const gfx::PointF& point) = 0;
@@ -280,6 +287,16 @@ class PLATFORM_EXPORT FrameWidget {
       const Vector<ui::ImeTextSpan>& ime_text_spans,
       const gfx::Range& replacement_range,
       int relative_cursor_pos) = 0;
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  virtual void TouchHitTest(const WebPointerEvent& event, size_t i) = 0;
+  virtual void MouseHitTest(const WebMouseEvent& event, int32_t button) = 0;
+#endif
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  virtual void GetInputElementAttributes(
+      HashMap<String, String>& attributes) const = 0;
+#endif
 
   // Indicate composition is complete to plugin.
   virtual void ImeFinishComposingTextForPlugin(bool keep_selection) = 0;

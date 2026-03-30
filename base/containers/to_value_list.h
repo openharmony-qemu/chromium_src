@@ -36,7 +36,16 @@ Value::List ToValueList(Range&& range, Proj proj = {}) {
   auto container = Value::List::with_capacity(std::ranges::size(range));
   std::ranges::for_each(
       std::forward<Range>(range),
-      [&]<typename T>(T&& value) { container.Append(std::forward<T>(value)); },
+      [&]<typename T>(T&& value) {
+	        if constexpr (std::is_same_v<std::decay_t<T>, base::DictValue> ||
+ 	                      std::is_same_v<std::decay_t<T>, base::ListValue>) {
+ 	          container.Append(std::move(const_cast<std::decay_t<T>&>(value)));
+ 	        } else if constexpr (std::is_same_v<std::decay_t<T>, base::Value>) {
+ 	          container.Append(std::move(const_cast<std::decay_t<T>&>(value)));
+ 	        } else {
+ 	          container.Append(base::Value(std::forward<T>(value)));
+ 	        }
+ 	      },
       std::move(proj));
   return container;
 }

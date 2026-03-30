@@ -6,6 +6,7 @@
 #include <atomic>
 #include <optional>
 
+#include "arkweb/build/features/features.h"
 #include "base/check.h"
 #include "base/feature_list.h"
 #include "base/no_destructor.h"
@@ -36,6 +37,11 @@ constinit std::atomic<bool> g_partition_by_default_locked = false;
 
 NetworkAnonymizationKey::NetworkAnonymizationKey()
     : data_(Data::GetEmptyData()) {}
+
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+NetworkAnonymizationKey::NetworkAnonymizationKey(bool should_check_top_frame_site)
+    : data_(Data::GetEmptyData()) {}
+#endif
 
 NetworkAnonymizationKey::NetworkAnonymizationKey(
     const NetworkAnonymizationKey& network_anonymization_key) = default;

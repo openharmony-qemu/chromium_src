@@ -128,6 +128,15 @@ class ForwardingURLLoaderClient : public network::mojom::URLLoaderClient {
     url_loader_client_->OnReceiveEarlyHints(std::move(early_hints));
   }
 
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+  void OnTransferDataWithSharedMemory(
+      base::ReadOnlySharedMemoryRegion region,
+      uint64_t buffer_size) override {
+    DCHECK(url_loader_client_.is_bound());
+    url_loader_client_->OnTransferDataWithSharedMemory(std::move(region), buffer_size);
+  }
+#endif
+
   void OnReceiveRedirect(
       const net::RedirectInfo& redirect_info,
       network::mojom::URLResponseHeadPtr response_head) override {

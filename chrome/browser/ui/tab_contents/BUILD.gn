@@ -5,7 +5,7 @@
 import("//components/enterprise/buildflags/buildflags.gni")
 import("//extensions/buildflags/buildflags.gni")
 
-assert(is_win || is_mac || is_linux || is_chromeos || is_android)
+assert(is_win || is_mac || is_linux || is_chromeos || is_android || is_ohos)
 
 source_set("tab_contents") {
   sources = [
@@ -48,7 +48,7 @@ source_set("impl") {
     sources += [ "tab_contents_iterator.cc" ]
   }
 
-  if (is_win || is_mac || is_linux || is_chromeos) {
+  if (is_win || is_mac || is_linux || is_chromeos || is_ohos) {
     sources += [
       "chrome_web_contents_menu_helper.cc",
       "chrome_web_contents_view_handle_drop.cc",

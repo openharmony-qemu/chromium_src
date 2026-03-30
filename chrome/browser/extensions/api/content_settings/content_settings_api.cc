@@ -76,6 +76,7 @@ constexpr char kInvalidUrlError[] = "The URL \"*\" is invalid.";
 }  // namespace
 
 namespace extensions {
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 
 ExtensionFunction::ResponseAction
 ContentSettingsContentSettingClearFunction::Run() {
@@ -323,6 +324,7 @@ ContentSettingsContentSettingSetFunction::Run() {
 
   return RespondNow(NoArguments());
 }
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 
 ExtensionFunction::ResponseAction
 ContentSettingsContentSettingGetResourceIdentifiersFunction::Run() {

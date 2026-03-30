@@ -13,6 +13,9 @@
 #include "third_party/blink/renderer/core/page/focus_changed_observer.h"
 #include "third_party/blink/renderer/platform/heap/garbage_collected.h"
 #include "third_party/blink/renderer/platform/wtf/deque.h"
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/input/gesture_manager_utils.h"
+#endif
 #include "ui/base/dragdrop/mojom/drag_drop_types.mojom-blink.h"
 
 namespace gfx {
@@ -26,6 +29,9 @@ class ScrollManager;
 class SelectionController;
 class PointerEventManager;
 class MouseEventManager;
+#if BUILDFLAG(IS_ARKWEB)
+class GestureManagerUtils;
+#endif
 enum class DragHandlingResult;
 
 // This class takes care of gestures and delegating the action based on the
@@ -138,6 +144,10 @@ class CORE_EXPORT GestureManager final
   bool lost_focus_during_drag_ = false;
 
   const Member<SelectionController> selection_controller_;
+#if BUILDFLAG(IS_ARKWEB)
+  friend class GestureManagerUtils;
+  Member<GestureManagerUtils> utils_;
+#endif
 };
 
 }  // namespace blink

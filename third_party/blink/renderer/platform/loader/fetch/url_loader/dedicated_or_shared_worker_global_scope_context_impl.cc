@@ -438,6 +438,22 @@ DedicatedOrSharedWorkerGlobalScopeContextImpl::TakeSubresourceFilter() {
   return std::move(subresource_filter_builder_)->Build();
 }
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+void DedicatedOrSharedWorkerGlobalScopeContextImpl::SetUserSubresourceFilterBuilder(
+    std::unique_ptr<WebDocumentSubresourceFilter::Builder>
+        user_subresource_filter_builder) {
+  user_subresource_filter_builder_ = std::move(user_subresource_filter_builder);
+}
+
+std::unique_ptr<WebDocumentSubresourceFilter>
+DedicatedOrSharedWorkerGlobalScopeContextImpl::TakeUserSubresourceFilter() {
+  if (!user_subresource_filter_builder_) {
+    return nullptr;
+  }
+  return std::move(user_subresource_filter_builder_)->Build();
+}
+#endif
+
 std::unique_ptr<WebSocketHandshakeThrottle>
 DedicatedOrSharedWorkerGlobalScopeContextImpl::CreateWebSocketHandshakeThrottle(
     scoped_refptr<base::SingleThreadTaskRunner> task_runner) {

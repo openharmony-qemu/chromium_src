@@ -251,6 +251,13 @@ AudioParameters::~AudioParameters() = default;
 AudioParameters::AudioParameters(const AudioParameters&) = default;
 AudioParameters& AudioParameters::operator=(const AudioParameters&) = default;
 
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+bool AudioParameters::operator==(const AudioParameters& other) const {
+  return render_process_id_ == other.render_process_id() &&
+         render_frame_id_ == other.render_frame_id();
+}
+#endif
+
 void AudioParameters::Reset(Format format,
                             ChannelLayoutConfig channel_layout_config,
                             int sample_rate,
@@ -330,7 +337,13 @@ bool AudioParameters::Equals(const AudioParameters& other) const {
          channel_layout() == other.channel_layout() &&
          channels() == other.channels() &&
          frames_per_buffer_ == other.frames_per_buffer() &&
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+         effects_ == other.effects() && mic_positions_ == other.mic_positions_ &&
+         render_process_id_ == other.render_process_id() &&
+         render_frame_id_ == other.render_frame_id();
+#else
          effects_ == other.effects() && mic_positions_ == other.mic_positions_;
+#endif // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 }
 
 bool AudioParameters::IsBitstreamFormat() const {

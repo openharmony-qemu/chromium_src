@@ -7,6 +7,8 @@ blink_core_sources_script = [
   "classic_pending_script.h",
   "classic_script.cc",
   "classic_script.h",
+  "../../../../../arkweb/chromium_ext/third_party/blink/renderer/core/script/classic_script_utils.h",
+  "../../../../../arkweb/chromium_ext/third_party/blink/renderer/core/script/classic_script_utils.cc",
   "detect_javascript_frameworks.cc",
   "detect_javascript_frameworks.h",
   "document_modulator_impl.cc",

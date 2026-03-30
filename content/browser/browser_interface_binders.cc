@@ -254,6 +254,18 @@
 #include "media/mojo/mojom/fuchsia_media.mojom.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_CSS_INPUT_TIME)
+#include "content/browser/ohos/date_time_chooser_ohos.h"
+#endif  // BUILDFLAG(ARKWEB_CSS_INPUT_TIME)
+
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+#include "arkweb/chromium_ext/content/browser/dfx/dfx_reporter_browser_impl.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_JSHEAP_DUMP)
+#include "arkweb/chromium_ext/v8/heap_dump/mojom_impl/chunk_writer_browser_impl.h"
+#endif
+
 namespace blink {
 class StorageKey;
 }  // namespace blink
@@ -366,6 +378,18 @@ void BindTextSuggestionHostForFrame(
   view->text_suggestion_host()->BindTextSuggestionHost(std::move(receiver));
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_CSS_INPUT_TIME)
+void BindDateTimeChooserForFrame(
+    RenderFrameHost* host,
+    mojo::PendingReceiver<blink::mojom::DateTimeChooser> receiver) {
+  auto* date_time_chooser = DateTimeChooserOHOS::FromWebContents(
+      WebContents::FromRenderFrameHost(host));
+  if (date_time_chooser) {
+    date_time_chooser->OnDateTimeChooserReceiver(std::move(receiver));
+  }
+}
+#endif  // ARKWEB_CSS_INPUT_TIME
 
 // Get the service worker's worker process ID and post a task to bind the
 // receiver on a USER_VISIBLE task runner.
@@ -851,7 +875,8 @@ void PopulateFrameBinders(RenderFrameHostImpl* host, mojo::BinderMap* map) {
       &RenderFrameHostImpl::BindMediaInterfaceFactoryReceiver,
       base::Unretained(host)));
 
-#if BUILDFLAG(ENABLE_LIBRARY_CDMS) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(ENABLE_LIBRARY_CDMS) || BUILDFLAG(IS_WIN) || \
+    BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_ENABLE_CDM)
   map->Add<media::mojom::KeySystemSupport>(
       base::BindRepeating(&RenderFrameHostImpl::BindKeySystemSupportReceiver,
                           base::Unretained(host)));
@@ -1011,6 +1036,15 @@ void PopulateFrameBinders(RenderFrameHostImpl* host, mojo::BinderMap* map) {
             },
             base::Unretained(host)));
   }
+
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+  map->Add<dfx::mojom::DfxReporter>(base::BindRepeating(
+      [](RenderFrameHostImpl *host,
+         mojo::PendingReceiver<dfx::mojom::DfxReporter> receiver) {
+        DfxReporterImpl::ProcessPendingReceiver(receiver);
+      },
+      host));
+#endif
 }
 
 void PopulateBinderMapWithContext(
@@ -1188,6 +1222,11 @@ void PopulateBinderMapWithContext(
   map->Add<blink::mojom::TextSuggestionHost>(
       &EmptyBinderForFrame<blink::mojom::TextSuggestionHost>);
 #endif  // BUILDFLAG(IS_ANDROID)
+
+#if BUILDFLAG(ARKWEB_CSS_INPUT_TIME)
+  map->Add<blink::mojom::DateTimeChooser>(
+      base::BindRepeating(&BindDateTimeChooserForFrame));
+#endif
 
   map->Add<blink::mojom::Authenticator>(
       &BindRenderFrameHostImpl<

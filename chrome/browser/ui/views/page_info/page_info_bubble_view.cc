@@ -77,7 +77,11 @@ InternalPageInfoBubbleView::InternalPageInfoBubbleView(
                              PageInfoBubbleViewBase::BUBBLE_INTERNAL_PAGE,
                              web_contents) {
   int text = IDS_PAGE_INFO_INTERNAL_PAGE;
-  if (url.SchemeIs(extensions::kExtensionScheme)) {
+  if (url.SchemeIs(extensions::kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      || url.SchemeIs(extensions::kArkwebExtensionScheme)
+#endif
+  ) {
     text = IDS_PAGE_INFO_EXTENSION_PAGE;
   } else if (url.SchemeIs(content::kViewSourceScheme)) {
     text = IDS_PAGE_INFO_VIEW_SOURCE_PAGE;
@@ -203,6 +207,9 @@ views::BubbleDialogDelegateView* PageInfoBubbleView::CreatePageInfoBubble(
 
   if (PageInfo::IsFileOrInternalPage(url) ||
       url.SchemeIs(extensions::kExtensionScheme) ||
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      url.SchemeIs(extensions::kArkwebExtensionScheme) ||
+#endif
       url.SchemeIs(dom_distiller::kDomDistillerScheme)) {
     return new InternalPageInfoBubbleView(anchor, anchor_rect, parent_view,
                                           web_contents, url);

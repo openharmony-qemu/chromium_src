@@ -146,7 +146,11 @@ bool Document::execCommand(const String& command_name,
 
   base::UmaHistogramSparse("WebCore.Document.execCommand",
                            editor_command.IdForHistogram());
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  return ValidateClipboardPreconditions(editor_command, checked_value);
+#else
   return editor_command.Execute(checked_value);
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
 }
 
 bool Document::queryCommandEnabled(const String& command_name,
@@ -210,3 +214,7 @@ String Document::queryCommandValue(const String& command_name,
 }
 
 }  // namespace blink
+
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/editing/commands/document_exec_command_for_include.cc"
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)

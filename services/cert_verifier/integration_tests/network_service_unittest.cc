@@ -83,7 +83,11 @@ class NetworkServiceIntegrationTest : public testing::Test {
   }
 
   void CreateNetworkContext(network::mojom::NetworkContextParamsPtr params) {
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+    network_context_ = std::make_unique<network::ArkWebNetworkContextExt>(
+#else
     network_context_ = std::make_unique<network::NetworkContext>(
+#endif
         service_.get(), network_context_remote_.BindNewPipeAndPassReceiver(),
         std::move(params));
   }

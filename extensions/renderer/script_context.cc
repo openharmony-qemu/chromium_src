@@ -171,7 +171,11 @@ ScriptContext::~ScriptContext() {
 bool ScriptContext::IsSandboxedPage(const GURL& url) {
   // TODO(kalman): This is checking the wrong thing. See comment in
   // HasAccessOrThrowError.
-  if (url.SchemeIs(kExtensionScheme)) {
+  if (url.SchemeIs(kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      || url.SchemeIs(kArkwebExtensionScheme)
+#endif
+  ) {
     const Extension* extension =
         RendererExtensionRegistry::Get()->GetByID(url.GetHost());
     if (extension) {
@@ -541,7 +545,11 @@ std::optional<StackTrace> ScriptContext::GetStackTrace(int frame_limit) {
     std::string source =
         ToStringOrDefault(isolate(), v8_frame->GetScriptName(), "<anonymous>");
     GURL source_url(source);
-    if (source_url.SchemeIs(kExtensionScheme)) {
+    if (source_url.SchemeIs(kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+        || source_url.SchemeIs(kArkwebExtensionScheme)
+#endif
+    ) {
       source = source_url.PathForRequest();
     }
     StackFrame frame;

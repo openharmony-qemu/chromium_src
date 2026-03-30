@@ -50,6 +50,7 @@
 #include "components/viz/service/transitions/surface_animation_manager.h"
 #include "media/filters/video_cadence_estimator.h"
 #include "mojo/public/cpp/system/platform_handle.h"
+#include "arkweb/chromium_ext/components/viz/service/frame_sinks/compositor_frame_sink_support_utils.h"
 
 // This determines whether the provided time since last interval corresponds
 // to a cadence frame that needs to be rendered.
@@ -140,6 +141,7 @@ CompositorFrameSinkSupport::CompositorFrameSinkSupport(
       allow_copy_output_requests_(is_root) {
   // This may result in SetBeginFrameSource() being called.
   frame_sink_manager_->RegisterCompositorFrameSinkSupport(frame_sink_id_, this);
+  supportUtils = std::make_unique<CompositorFrameSinkSupportUtils>(this);
 }
 
 CompositorFrameSinkSupport::~CompositorFrameSinkSupport() {
@@ -443,6 +445,14 @@ void CompositorFrameSinkSupport::OnSurfacePresented(
     base::TimeTicks draw_start_timestamp,
     const gfx::SwapTimings& swap_timings,
     const gfx::PresentationFeedback& feedback) {
+#if BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SLIDE)
+  if (g_firstScrollingFrame == frame_token) {
+    TRACE_EVENT1("viz", "CompositorFrameSinkSupport::OnSurfacePresented",
+      "sliding response end frame", frame_token);
+    LOG(DEBUG) << "CompositorFrameSinkSupport::OnSurfacePresented "
+      "sliding response end";
+  }
+#endif
   // If the frame was submitted locally (from inside viz), do not tell the
   // client about it, since the client did not send it.
   if (frame_token != kLocalFrameToken) {
@@ -667,6 +677,25 @@ void CompositorFrameSinkSupport::DidNotProduceFrame(const BeginFrameAck& ack) {
   BeginFrameAck modified_ack(ack);
   modified_ack.has_damage = false;
 
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+  // Track consecutive no-damage frames and throttle if needed
+  if (!ack.has_damage) {
+    consecutive_no_damage_frames_++;
+    if (consecutive_no_damage_frames_ >= kNoDamageThrottleThreshold && !is_throttled_ && is_throttle_enabled) {
+      // Throttle to 30fps when consecutive no-damage threshold is exceeded
+      base::TimeDelta preferred_frame_interval = viz::BeginFrameArgs::DefaultInterval() * 2;
+      TRACE_EVENT0("viz", "CompositorFrameSinkSupport::UpdateThrottleMode Start");
+      TRACE_EVENT_INSTANT2("viz", "Set sink framerate (no-damage)",
+                           TRACE_EVENT_SCOPE_THREAD, "interval",
+                           preferred_frame_interval, "sourceid",
+                           ack.frame_id.source_id);
+      is_throttled_ = true;
+      ThrottleBeginFrame(preferred_frame_interval,
+                         /*simple_cadence_only=*/true);
+    }
+  }
+#endif
+
   // If the client doesn't produce a frame, we assume it's no longer interactive
   // for scheduling.
   if (last_activated_surface_id_.is_valid()) {
@@ -696,6 +725,19 @@ SubmitResult CompositorFrameSinkSupport::MaybeSubmitCompositorFrame(
     CompositorFrame frame,
     std::optional<HitTestRegionList> hit_test_region_list,
     uint64_t submit_time) {
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+  if (consecutive_no_damage_frames_ > 0 || is_throttled_) {
+    consecutive_no_damage_frames_ = 0;
+    if (is_throttled_ && is_throttle_enabled) {
+      is_throttled_ = false;
+      TRACE_EVENT0("viz", "CompositorFrameSinkSupport::UpdateThrottleMode End");
+      base::TimeDelta preferred_frame_interval = base::TimeDelta::FromInternalValue(0);
+      ThrottleBeginFrame(preferred_frame_interval,
+                         /*simple_cadence_only=*/true);
+    }
+  }
+#endif
+
   if (!client_needs_begin_frame_ && auto_needs_begin_frame_) {
     // SetNeedsBeginFrame(true) below may cause `last_begin_frame_args_` to be
     // updated.
@@ -732,12 +774,27 @@ SubmitResult CompositorFrameSinkSupport::MaybeSubmitCompositorFrame(
             frame.metadata.begin_frame_ack.trace_id);
       });
 
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
+                    std::to_string(frame.metadata.begin_frame_ack.trace_id), "step", "ReceiveCompositorFrame");
+  TRACE_EVENT1("viz", "CompositorFrameSinkSupport::MaybeSubmitCompositorFrame",
+      "root_scroll_offset", frame.metadata.root_scroll_offset.ToString());
+#endif
+
   DCHECK(local_surface_id.is_valid());
   DCHECK(!frame.render_pass_list.empty());
   DCHECK(!frame.size_in_pixels().IsEmpty());
 
   CHECK(callback_received_begin_frame_);
   CHECK(callback_received_receive_ack_);
+
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+  auto frame_size = frame.size_in_pixels();
+#endif // ARKWEB_MAXIMIZE_RESIZE
+
+#if BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SLIDE)
+  supportUtils->flingSlideMaybeSubmitCompositorFrame(frame);
+#endif
 
   begin_frame_tracker_.ReceivedAck(frame.metadata.begin_frame_ack);
   pending_frames_++;
@@ -765,6 +822,10 @@ SubmitResult CompositorFrameSinkSupport::MaybeSubmitCompositorFrame(
     if (latency.latency_components().size() > 0) {
       latency.AddLatencyNumberWithTimestamp(
           ui::DISPLAY_COMPOSITOR_RECEIVED_FRAME_COMPONENT, now_time);
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+      OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow", "trace_id",
+                        std::to_string(latency.trace_id()), "step", "DISPLAY_COMPOSITOR_RECEIVED_FRAME_COMPONENT");
+#endif
     }
   }
 
@@ -833,7 +894,10 @@ SubmitResult CompositorFrameSinkSupport::MaybeSubmitCompositorFrame(
     SurfaceId surface_id(frame_sink_id_, local_surface_id);
     SurfaceInfo surface_info(surface_id, frame.device_scale_factor(),
                              frame.size_in_pixels());
-
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+    surface_info.set_stretch_content_none_device_scale_factor(
+        frame.stretch_content_none_device_scale_factor());
+#endif
     // LocalSurfaceIds should be monotonically increasing. This ID is used
     // to determine the freshness of a surface at aggregation time.
     const LocalSurfaceId& last_created_local_surface_id =
@@ -994,10 +1058,18 @@ SubmitResult CompositorFrameSinkSupport::MaybeSubmitCompositorFrame(
       break;
   }
 
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+  supportUtils->maximizeResizeCompositorFrame(current_surface, frame_size);
+#endif
+
   if (begin_frame_source_) {
     begin_frame_source_->DidFinishFrame(this);
     frame_sink_manager_->DidFinishFrame(frame_sink_id_, last_begin_frame_args_);
   }
+
+#if BUILDFLAG(ARKWEB_VIDEO_LTPO)
+  supportUtils->videoLtpoMaybeSubmitCompositorFrame();
+#endif
 
   return SubmitResult::ACCEPTED;
 }
@@ -1188,6 +1260,10 @@ void CompositorFrameSinkSupport::OnBeginFrame(const BeginFrameArgs& args) {
     }
 
     adjusted_args.trace_id = trace_id;
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+    OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
+                      std::to_string(adjusted_args.trace_id), "step", "IssueBeginFrame");
+#endif
     adjusted_args.frames_throttled_since_last = frames_throttled_since_last_;
     frames_throttled_since_last_ = 0;
 

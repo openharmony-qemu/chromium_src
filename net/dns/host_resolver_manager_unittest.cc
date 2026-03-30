@@ -3,8 +3,6 @@
 // found in the LICENSE file.
 
 
-#include "net/dns/host_resolver_manager_unittest.h"
-
 #include <algorithm>
 #include <array>
 #include <iterator>
@@ -103,6 +101,14 @@
 #include "url/gurl.h"
 #include "url/scheme_host_port.h"
 #include "url/url_constants.h"
+
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#define private public
+#include "net/dns/host_resolver_manager_unittest.h"
+#undef private
+#else
+#include "net/dns/host_resolver_manager_unittest.h"
+#endif
 
 #if BUILDFLAG(ENABLE_MDNS)
 #include "net/dns/mdns_client_impl.h"
@@ -14371,5 +14377,9 @@ TEST_F(HostResolverManagerTest,
        IPv4AddressLiteralInIPv6OnlyNetworkBadAddressSync) {
   IPv4AddressLiteralInIPv6OnlyNetworkBadAddressTest(false);
 }
+
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#include "arkweb/chromium_ext/net/dns/host_resolver_manager_for_include_unittest.cc"
+#endif  // ARKWEB_UNITTESTS
 
 }  // namespace net

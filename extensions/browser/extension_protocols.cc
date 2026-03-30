@@ -252,7 +252,11 @@ bool AllowExtensionResourceLoad(const network::ResourceRequest& request,
 
 // Returns true if the given URL references an icon in the given extension.
 bool URLIsForExtensionIcon(const GURL& url, const Extension* extension) {
-  DCHECK(url.SchemeIs(extensions::kExtensionScheme));
+  DCHECK(url.SchemeIs(extensions::kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+         || url.SchemeIs(extensions::kArkwebExtensionScheme)
+#endif
+  );
   if (!extension) {
     return false;
   }
@@ -324,7 +328,11 @@ void GetSecurityPolicyForURL(const network::ResourceRequest& request,
   const auto origin = extension.origin();
   should_pdf_resource_send_cors_header =
       chrome_pdf::features::IsOopifPdfEnabled() &&
-      origin.scheme() == extensions::kExtensionScheme &&
+      (origin.scheme() == extensions::kExtensionScheme
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+         || origin.scheme() == extensions::kArkwebExtensionScheme
+#endif
+      ) &&
       origin.host() == extension_misc::kPdfExtensionId &&
       resource_path == "/index.html";
 #endif  // BUILDFLAG(ENABLE_PDF)
@@ -608,6 +616,9 @@ class ExtensionURLLoader : public network::mojom::URLLoader {
     bool incognito_enabled =
         extensions::util::IsIncognitoEnabled(extension_id, browser_context_);
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    LOG(INFO) << "ExtensionURLLoader Start(): extension_id: " << extension_id;
+#endif
     // Redirect guid to id.
     if (extension && request_.url.GetHost() == extension->guid()) {
       GURL::Replacements replace_host;
@@ -963,7 +974,11 @@ class ExtensionURLLoaderFactory : public network::SelfDeletingURLLoaderFactory {
       const net::MutableNetworkTrafficAnnotationTag& traffic_annotation)
       override {
     DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
-    DCHECK_EQ(kExtensionScheme, request.url.GetScheme());
+    DCHECK(kExtensionScheme == request.url.GetScheme()
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+           || kArkwebExtensionScheme == request.url.GetScheme()
+#endif
+    );
     ExtensionURLLoader::CreateAndStart(std::move(loader), std::move(client),
                                        request, is_web_view_request_,
                                        render_process_id_, browser_context_);

@@ -17,12 +17,12 @@
 //  Operating System:
 //    IS_AIX / IS_ANDROID / IS_ASMJS / IS_CHROMEOS / IS_FREEBSD / IS_FUCHSIA /
 //    IS_IOS / IS_IOS_MACCATALYST / IS_IOS_TVOS / IS_LINUX / IS_MAC /
-//    IS_NETBSD / IS_OPENBSD / IS_QNX / IS_SOLARIS / IS_WATCHOS / IS_WIN
+//    IS_NETBSD / IS_OPENBSD / IS_QNX / IS_SOLARIS / IS_WATCHOS / IS_WIN / IS_OHOS
 //  Operating System family:
 //    IS_APPLE: IOS or MAC or IOS_MACCATALYST or IOS_TVOS or WATCHOS
 //    IS_BSD: FREEBSD or NETBSD or OPENBSD
 //    IS_POSIX: AIX or ANDROID or ASMJS or CHROMEOS or FREEBSD or IOS or LINUX
-//              or MAC or NETBSD or OPENBSD or QNX or SOLARIS
+//              or MAC or NETBSD or OPENBSD or QNX or SOLARIS or OHOS
 
 // This file also adds defines specific to the platform, architecture etc.
 //
@@ -66,6 +66,8 @@
 // A set of macros to use for platform detection.
 #if defined(ANDROID)
 #define OS_ANDROID 1
+#elif defined(OSOHOS)
+#define OS_OHOS 1
 #elif defined(__APPLE__)
 // Only include TargetConditionals after testing ANDROID as some Android builds
 // on the Mac have this header available and it's not needed unless the target
@@ -141,7 +143,7 @@
     defined(OS_FREEBSD) || defined(OS_IOS) || defined(OS_LINUX) ||   \
     defined(OS_CHROMEOS) || defined(OS_MAC) || defined(OS_NETBSD) || \
     defined(OS_OPENBSD) || defined(OS_QNX) || defined(OS_SOLARIS) || \
-    defined(OS_ZOS)
+    defined(OS_ZOS) || defined(OS_OHOS)
 #define OS_POSIX 1
 #endif
 
@@ -272,6 +274,30 @@
 #define BUILDFLAG_INTERNAL_IS_OZONE() (0)
 #endif
 
+#if defined(OS_OHOS)
+#define BUILDFLAG_INTERNAL_IS_OHOS() (1)
+#else
+#define BUILDFLAG_INTERNAL_IS_OHOS() (0)
+#endif
+
+#if defined(IS_ARKWEB_TRUE)
+#define BUILDFLAG_INTERNAL_IS_ARKWEB() (1)
+#else
+#define BUILDFLAG_INTERNAL_IS_ARKWEB() (0)
+#endif
+
+#if defined(ENABLE_ARKWEB_EXT_TRUE)
+#define BUILDFLAG_INTERNAL_ENABLE_ARKWEB_EXT() (1)
+#else
+#define BUILDFLAG_INTERNAL_ENABLE_ARKWEB_EXT() (0)
+#endif
+
+#if defined(IS_ARKWEB_EXT_TRUE)
+#define BUILDFLAG_INTERNAL_IS_ARKWEB_EXT() (1)
+#else
+#define BUILDFLAG_INTERNAL_IS_ARKWEB_EXT() (0)
+#endif
+
 // Compiler detection. Note: clang masquerades as GCC on POSIX and as MSVC on
 // Windows.
 #if defined(__GNUC__)
@@ -391,7 +417,7 @@
 #error Please add support for your compiler in build/build_config.h
 #endif
 
-#if defined(OS_ANDROID)
+#if defined(OS_ANDROID) || defined(OS_OHOS)
 // The compiler thinks std::string::const_iterator and "const char*" are
 // equivalent types.
 #define STD_STRING_ITERATOR_IS_CHAR_POINTER

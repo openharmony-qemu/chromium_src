@@ -290,7 +290,8 @@ void ShellMainDelegate::PreSandboxStartup() {
 // Disable platform crash handling and initialize the crash reporter, if
 // requested.
 // TODO(crbug.com/40188745): Implement crash reporter integration for Fuchsia.
-#if !BUILDFLAG(IS_FUCHSIA)
+// FIXME: Deleted after adapting to the ohos.
+#if !BUILDFLAG(IS_FUCHSIA) && !BUILDFLAG(IS_OHOS)
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
           switches::kEnableCrashReporter)) {
     std::string process_type =

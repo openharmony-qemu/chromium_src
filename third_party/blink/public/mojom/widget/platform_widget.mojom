@@ -25,6 +25,81 @@ interface WidgetCompositor {
   VisualStateRequest() => ();
 };
 
+[EnableIf=arkweb_same_layer]
+// Touch types
+enum NativeTouchType{
+    DOWN,
+    UP,
+    MOVE,
+    CANCEL,
+    PULL_DOWN,
+    PULL_UP,
+    PULL_MOVE,
+    PULL_IN_WINDOW,
+    PULL_OUT_WINDOW,
+    UNKNOWN,
+};
+ 
+[EnableIf=arkweb_same_layer]
+// Touch event data
+struct NativeEmbedTouchEvent {
+    string embedId;
+    int32 id = 0;
+    float x;
+    float y;
+    float screenX;
+    float screenY;
+    NativeTouchType type;
+    float offsetX = 0.0;
+    float offsetY = 0.0;
+};
+
+[EnableIf=arkweb_same_layer]
+enum NativeMouseType{
+    NONE,
+    PRESS,
+    RELEASE,
+    MOVE,
+    WINDOW_ENTER,
+    WINDOW_LEAVE,
+    HOVER,
+    HOVER_ENTER,
+    HOVER_MOVE,
+    HOVER_EXIT,
+    PULL_DOWN,
+    PULL_MOVE,
+    PULL_UP,
+    CANCEL,
+};
+
+[EnableIf=arkweb_same_layer]
+enum NativeMouseButton{
+    NONE_BUTTON = 0,
+    LEFT_BUTTON = 1,
+    RIGHT_BUTTON = 2,
+    MIDDLE_BUTTON = 4,
+    BACK_BUTTON = 8,
+    FORWARD_BUTTON = 16,
+    SIDE_BUTTON = 32,
+    EXTRA_BUTTON = 64,
+    TASK_BUTTON = 128,
+};
+
+[EnableIf=arkweb_same_layer]
+// Mouse event data
+struct NativeEmbedMouseEvent {
+    string embedId;
+    float x;
+    float y;
+    float screenX;
+    float screenY;
+    NativeMouseType type;
+    NativeMouseButton button;
+    bool isHitNativeArea;
+    float offsetX = 0.0;
+    float offsetY = 0.0;
+};
+ 
 // Implemented in Browser, this interface defines widget-specific methods that
 // will be invoked from the render process (e.g. content::RenderWidgetHostImpl).
 interface WidgetHost {
@@ -86,6 +161,10 @@ interface WidgetHost {
         render_frame_metadata_observer_client_receiver,
       pending_remote<cc.mojom.RenderFrameMetadataObserver>
         render_frame_metadata_observer);
+  [EnableIf=arkweb_same_layer]
+  DidNativeEmbedEvent(NativeEmbedTouchEvent event);
+  [EnableIf=arkweb_same_layer]
+  DidNativeEmbedMouseEvent(NativeEmbedMouseEvent event);
 };
 
 // Implemented in Blink, this interface defines widget-specific methods that

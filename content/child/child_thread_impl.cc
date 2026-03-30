@@ -89,6 +89,10 @@
 #endif  // !BUILDFLAG(IS_ANDROID)
 #endif  // BUILDFLAG(IS_POSIX)
 
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+#include "arkweb/chromium_ext/content/child/child_thread_impl_for_include.cc"
+#endif
+
 #if BUILDFLAG(IS_APPLE)
 #include "base/apple/mach_port_rendezvous.h"
 #endif
@@ -103,10 +107,21 @@
 #if BUILDFLAG(IS_WIN)
 #include <io.h>
 #endif
+
 // Function provided by libclang_rt.profile-*.a, declared and documented at:
 // https://github.com/llvm/llvm-project/blob/master/compiler-rt/lib/profile/InstrProfiling.h
 extern "C" void __llvm_profile_set_file_object(FILE* File, int EnableMerge);
 #endif
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "third_party/blink/public/web/web_view.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+#if defined(OS_OHOS)
+#include "arkweb/chromium_ext/content/common/hicollie_freeze_reporter/hicollie_freeze_reporter.h"
+#endif  //  defined(OS_OHOS)
+#endif  //  BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
 
 namespace content {
 namespace {
@@ -333,6 +348,9 @@ class ChildThreadImpl::IOThreadState
     for (auto& receiver : pending_requests)
       BindReceiver(std::move(receiver));
   }
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+  void SetWebkitInited() { webkit_inited_ = true; }
+#endif
 
  private:
   friend class base::RefCountedThreadSafe<IOThreadState>;
@@ -482,6 +500,10 @@ class ChildThreadImpl::IOThreadState
         base::BindOnce(&ChildThreadImpl::SetBatterySaverMode, weak_main_thread_,
                        battery_saver_mode_enabled));
   }
+
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+#include "arkweb/chromium_ext/content/child/child_thread_impl_public_for_include.cc"
+#endif
 
   const scoped_refptr<base::SequencedTaskRunner> main_thread_task_runner_;
   const base::WeakPtr<ChildThreadImpl> weak_main_thread_;
@@ -886,7 +908,7 @@ void ChildThreadImpl::DisconnectChildProcessHost() {
 
 void ChildThreadImpl::BindServiceInterface(
     mojo::GenericPendingReceiver receiver) {
-  DLOG(ERROR) << "Ignoring unhandled request to bind service interface: "
+  LOG(ERROR) << "Ignoring unhandled request to bind service interface: "
               << *receiver.interface_name();
 }
 
@@ -929,4 +951,13 @@ void ChildThreadImpl::OnMemoryPressureFromBrowserReceived(
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+void ChildThreadImpl::SetWebkitInited() {
+  ChildThreadImpl::GetIOTaskRunner()->PostTask(
+      FROM_HERE,
+      base::BindOnce(&IOThreadState::SetWebkitInited, io_thread_state_));
+}
+#endif
+
 }  // namespace content
+

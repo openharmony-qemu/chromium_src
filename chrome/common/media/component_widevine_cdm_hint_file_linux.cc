@@ -37,11 +37,12 @@ const char kLastBundledVersion[] = "LastBundledVersion";
 // base::PathService::Override.
 bool GetHintFilePath(base::FilePath* hint_file_path) {
   base::FilePath user_data_dir;
-  if (!base::PathService::Get(chrome::DIR_USER_DATA, &user_data_dir))
+  if (!base::PathService::Get(chrome::DIR_USER_DATA, &user_data_dir)) {
     return false;
+  }
   // Match the file name in chrome/common/chrome_paths.cc
-  *hint_file_path = user_data_dir
-      .AppendASCII(kWidevineCdmBaseDirectory)
+  *hint_file_path =
+      user_data_dir.AppendASCII(kWidevineCdmBaseDirectory)
       .Append(FILE_PATH_LITERAL("latest-component-updated-widevine-cdm"));
   return true;
 }

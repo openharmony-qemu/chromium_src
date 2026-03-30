@@ -107,6 +107,11 @@ source_set("browser") {
     "//services/service_manager/public/cpp",
     "//ui/base",
   ]
+
+  #if BUILDFLAG(ARKWEB_BFCACHE)
+  if (defined(is_arkweb) && is_arkweb) {
+    sources += [ "//arkweb/chromium_ext/components/page_load_metrics/browser/ark_web_page_load_metrics_forward_observer.cc" ]
+  }  #endif  // BUILDFLAG(ARKWEB_BFCACHE)
 }
 
 source_set("test_support") {

@@ -80,7 +80,11 @@ class CONTENT_EXPORT AudioOutputStreamBroker final
 
   const GlobalRenderFrameHostToken main_frame_token_;
   std::string output_device_id_;
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  media::AudioParameters params_;
+#else
   const media::AudioParameters params_;
+#endif // defined(OHOS_MEDIA_POLICY)
   const base::UnguessableToken group_id_;
 
   // Set while CreateStream() has been called, but not StreamCreated().

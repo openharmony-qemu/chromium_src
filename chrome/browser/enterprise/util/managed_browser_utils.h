@@ -20,6 +20,10 @@
 #include "ui/gfx/image/image.h"
 #include "url/gurl.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "base/values.h"
+#endif  // BUILDFLAG(IS_OHOS)
+
 struct AccountInfo;
 struct CoreAccountId;
 class GURL;
@@ -133,6 +137,10 @@ void GetManagementIcon(const GURL& url,
                        Profile* profile,
                        EnterpriseLogoUrlScope url_scope,
                        base::OnceCallback<void(const gfx::Image&)> callback);
+
+#if BUILDFLAG(IS_OHOS)
+void SetTemplistForOhosTest(base::Value::List list, GURL url);
+#endif  // BUILDFLAG(IS_OHOS)
 
 // Returns the default enterprise label "Work"/"School" or the
 // `EnterpriseCustomLabel` set by policy if present.

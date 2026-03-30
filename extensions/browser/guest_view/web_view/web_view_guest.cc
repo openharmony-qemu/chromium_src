@@ -989,7 +989,12 @@ void WebViewGuest::RendererResponsive(
 void WebViewGuest::RendererUnresponsive(
     WebContents* source,
     content::RenderWidgetHost* render_widget_host,
-    base::RepeatingClosure hang_monitor_restarter) {
+    base::RepeatingClosure hang_monitor_restarter
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+    ,
+    content::RendererIsUnresponsiveReason reason
+#endif
+) {
   CHECK(!base::FeatureList::IsEnabled(features::kGuestViewMPArch));
 
   base::Value::Dict args;
@@ -2222,6 +2227,7 @@ GURL WebViewGuest::ResolveURL(const std::string& src) {
 
   GURL default_url(
       base::StringPrintf("%s://%s/", kExtensionScheme, owner_host().c_str()));
+
   return default_url.Resolve(src);
 }
 

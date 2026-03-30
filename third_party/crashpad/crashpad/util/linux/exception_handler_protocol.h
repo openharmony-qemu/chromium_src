@@ -20,6 +20,7 @@
 #include <stdint.h>
 #include <sys/types.h>
 
+#include "arkweb/build/features/features.h"
 #include "build/build_config.h"
 #include "util/file/file_io.h"
 #include "util/misc/address_types.h"
@@ -51,11 +52,15 @@ class ExceptionHandlerProtocol {
     //!     SanitizationInformation struct, or 0 if there is no such struct.
     VMAddress sanitization_information_address;
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || defined(__MUSL__)
     //! \brief Indicates that the client is likely in a crash loop if a crash
     //!     occurs before this timestamp. This value is only used by ChromeOS's
     //!     `/sbin/crash_reporter`.
     uint64_t crash_loop_before_time;
+#endif
+
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+    int signo = 0;
 #endif
   };
 
@@ -93,6 +98,13 @@ class ExceptionHandlerProtocol {
       //! \brief Valid for type == kCrashDumpRequest
       ClientInformation client_info;
     };
+
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+    // todo: need to delete this when hm kernel fix it
+    pid_t real_pid = -1;
+    int32_t process_type_id = -1;
+    int32_t crash_reason = -1;
+#endif  // BUILDFLAG(ARKWEB_CRASHPAD)
   };
 
   //! \brief The message passed from server to client.

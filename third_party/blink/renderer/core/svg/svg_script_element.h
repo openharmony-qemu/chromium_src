@@ -74,6 +74,9 @@ class SVGScriptElement final : public SVGElement,
   bool HaveLoadedRequiredResources() override;
 
   // ScriptElementBase overrides:
+#if BUILDFLAG(ARKWEB_V8_COMPILE)
+  String ArkWebCompileAttributeValue() const override { return String(); }
+#endif  
   String CharsetAttributeValue() const override { return String(); }
   String CrossOriginAttributeValue() const override { return String(); }
   bool DeferAttributeValue() const override { return false; }

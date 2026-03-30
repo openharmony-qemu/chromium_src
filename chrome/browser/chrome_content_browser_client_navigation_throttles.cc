@@ -168,6 +168,10 @@
 #include "extensions/browser/extensions_browser_client.h"
 #endif  // BUILDFLAG(ENABLE_EXTENSIONS_CORE)
 
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+#include "arkweb/chromium_ext/chrome/browser/ssl/ohos_https_upgrades_navigation_throttle.h"
+#endif
+
 namespace {
 
 // Wrapper for SSLErrorHandler::HandleSSLError() that supplies //chrome-level
@@ -396,6 +400,7 @@ void CreateAndAddChromeThrottlesForNavigation(
 
   // Before setting up SSL error detection, configure SSLErrorHandler to invoke
   // the relevant extension API whenever an SSL interstitial is shown.
+#if !BUILDFLAG(ARKWEB_NETWORK_LOAD)
   SSLErrorHandler::SetClientCallbackOnInterstitialsShown(
       base::BindRepeating(&MaybeTriggerSecurityInterstitialShownEvent));
   registry.AddThrottle(std::make_unique<SSLErrorNavigationThrottle>(
@@ -403,7 +408,7 @@ void CreateAndAddChromeThrottlesForNavigation(
       base::BindOnce(&IsInHostedApp),
       base::BindOnce(
           &ShouldIgnoreSslInterstitialBecauseNavigationDefaultedToHttps)));
-
+#endif
   registry.AddThrottle(std::make_unique<LoginNavigationThrottle>(registry));
 
   if (base::FeatureList::IsEnabled(omnibox::kDefaultTypedNavigationsToHttps)) {
@@ -482,11 +487,13 @@ void CreateAndAddChromeThrottlesForNavigation(
   MaybeCreateAndAddAuthSessionNavigationThrottle(registry);
 #endif
 
+#if !BUILDFLAG(ARKWEB_NETWORK_LOAD)
   if (profile && profile->GetPrefs()) {
     security_interstitials::InsecureFormNavigationThrottle::MaybeCreateAndAdd(
         registry, std::make_unique<ChromeSecurityBlockingPageFactory>(),
         profile->GetPrefs());
   }
+#endif
 
   if (IsErrorPageAutoReloadEnabled()) {
     error_page::NetErrorAutoReloader::MaybeCreateAndAddNavigationThrottle(
@@ -518,11 +525,13 @@ void CreateAndAddChromeThrottlesForNavigation(
   offline_pages::OfflinePageNavigationThrottle::MaybeCreateAndAdd(registry);
 #endif
 
+#if !BUILDFLAG(ARKWEB_NETWORK_LOAD)
   if (profile) {
     HttpsUpgradesNavigationThrottle::MaybeCreateAndAdd(
         registry, std::make_unique<ChromeSecurityBlockingPageFactory>(),
         profile);
   }
+#endif
 
 #if !BUILDFLAG(IS_ANDROID)
   MaybeCreateAndAddWebViewSidePanelThrottle(registry);
@@ -575,6 +584,10 @@ void CreateAndAddChromeThrottlesForNavigation(
 
   actor::ActorNavigationThrottle::MaybeCreateAndAdd(registry);
 #endif  // !BUILDFLAG(IS_ANDROID)
+
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  OhosHttpsUpgradesNavigationThrottle::MaybeCreateAndAdd(registry);
+#endif
 
   dom_distiller::DistillerPageWebContents::MaybeCreateAndAddNavigationThrottle(
       registry);

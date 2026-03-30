@@ -21,6 +21,9 @@
 #include "services/network/public/mojom/fetch_api.mojom-forward.h"
 #include "services/network/public/mojom/network_context.mojom-forward.h"
 #include "services/network/public/mojom/url_response_head.mojom-forward.h"
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD) || BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
+#include "arkweb/chromium_ext/services/network/url_loader_utils.h"
+#endif
 
 namespace base {
 class SequencedTaskRunner;
@@ -149,7 +152,14 @@ mojom::URLResponseHeadPtr BuildResponseHead(
     bool include_load_timing_internal_info_with_response,
     base::TimeTicks response_start,
     const raw_ptr<mojom::DevToolsObserver> devtools_observer,
-    const std::string& devtools_request_id);
+    const std::string& devtools_request_id
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD) || BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
+    , URLLoaderUtils* url_loader_utils
+#endif
+#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
+    , int32_t request_id
+#endif
+    );
 
 }  // namespace url_loader_util
 }  // namespace network

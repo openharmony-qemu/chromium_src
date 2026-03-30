@@ -83,7 +83,7 @@ class TestRenderFrameHost : public RenderFrameHostImpl,
   TestPage& GetPage() override;
   MockRenderProcessHost* GetProcess() const override;
   MockAgentSchedulingGroupHost& GetAgentSchedulingGroup() override;
-  TestRenderWidgetHost* GetRenderWidgetHost() override;
+  TestRenderWidgetHost* GetRenderWidgetHost();
   void AddMessageToConsole(blink::mojom::ConsoleMessageLevel level,
                            const std::string& message) override;
   void ReportInspectorIssue(blink::mojom::InspectorIssueInfoPtr issue) override;

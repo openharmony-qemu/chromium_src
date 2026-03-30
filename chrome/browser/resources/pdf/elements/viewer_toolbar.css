@@ -82,28 +82,43 @@
   background-color: var(--viewer-text-input-selection-color);
 }
 
+/* arkweb_pdf this element repersents the ellipsis displayed when the title is obscured */
 @media(max-width: 600px) {
   #title,
   #zoom-controls input {
-    display: none;
+    display: block;
   }
 }
 
+/* arkweb_pdf vertical screen only display viewer-page-selector without showing fit */
 @media(max-width: 500px) {
-  #start,
+  #start {
+    display: flex;
+  }
+}
+
+/* arkweb_pdf vertical screen also display center to show viewer-page-selector */
+@media(max-width: 420px) {
+  #end {
+    padding-inline-start: initial;
+    text-align: center;
+  }
+}
+
+/* arkweb_pdf vertical screen only display viewer-page-selector without showing rotate or zoom options */
+@media(max-width: 500px) {
+  .vertical-separator,
+  #zoom-controls,
+  #rotate,
   #fit {
     display: none;
   }
 }
 
-@media(max-width: 420px) {
-  #center {
-    display: none;
-  }
-
-  #end {
-    padding-inline-start: initial;
-    text-align: center;
+/* arkweb_pdf vertical screen also display viewer-page-selector */
+@media(max-width: 500px) {
+  viewer-page-selector {
+    position: absolute;
   }
 }
 
@@ -182,7 +197,7 @@ cr-progress,
 <if expr="enable_pdf_ink2">
 #annotate-controls {
   align-items: center;
-  display: flex;
+  display: none;
   margin-inline-start: 6px;
 }
 
@@ -220,4 +235,18 @@ viewer-download-controls::part(button),
 cr-action-menu hr {
   border: none;
   border-top: var(--cr-separator-line);
+}
+
+/* arkweb_pdf display print button none */
+@media(max-width: 500px) {
+  #print {
+    display: none;
+  }
+}
+
+/* arkweb_pdf display more button none */
+@media(max-width: 500px) {
+  #more {
+    display: none;
+  }
 }

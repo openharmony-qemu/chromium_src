@@ -24,6 +24,7 @@
 
 #include "third_party/blink/renderer/core/html/forms/text_control_element.h"
 
+#include "arkweb/build/features/features.h"
 #include "third_party/blink/public/mojom/input/focus_type.mojom-blink.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_selection_mode.h"
 #include "third_party/blink/renderer/core/accessibility/ax_object_cache.h"
@@ -71,6 +72,10 @@
 #include "third_party/blink/renderer/platform/wtf/text/string_buffer.h"
 #include "third_party/blink/renderer/platform/wtf/text/string_builder.h"
 
+#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/instrumentation/resource_coordinator/document_resource_coordinator_utils.h"
+#include "third_party/blink/renderer/core/html/forms/html_form_element.h"
+#endif
 namespace blink {
 
 namespace {
@@ -371,6 +376,14 @@ void TextControlElement::DispatchFormControlChangeEvent() {
       !EqualIgnoringNullity(value_before_first_user_edit_, Value())) {
     ClearValueBeforeFirstUserEdit();
     DispatchChangeEvent();
+#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
+    if (auto* rc = GetDocument().GetResourceCoordinator()) {
+      if (Form()) {
+        uint64_t form_id = Form()->UniqueRendererFormId();
+        rc->coordinator_utils_->OnFormEditingStateChanged(form_id, false);
+      }
+    }
+#endif
   } else {
     ClearValueBeforeFirstUserEdit();
   }

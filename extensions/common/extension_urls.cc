@@ -6,6 +6,7 @@
 
 #include <string_view>
 
+#include "arkweb/build/features/features.h"
 #include "base/auto_reset.h"
 #include "base/strings/escape.h"
 #include "base/strings/string_util.h"
@@ -24,6 +25,9 @@ namespace extensions {
 
 bool IsSourceFromAnExtension(const std::u16string& source) {
   return GURL(source).SchemeIs(kExtensionScheme) ||
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+         GURL(source).SchemeIs(kArkwebExtensionScheme) ||
+#endif
          base::StartsWith(source, u"extensions::",
                           base::CompareCase::SENSITIVE);
 }
@@ -101,9 +105,13 @@ GURL GetWebstoreItemSnippetURL(const extensions::ExtensionId& extension_id) {
   }
 
   // Return `<base URL><extension_id><suffix>`.
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+  return GURL("https://x.x.x");
+#else
   return GURL(kChromeWebstoreApiURL)
       .Resolve(base::StringPrintf("v2/items/%s:fetchItemSnippet",
                                   extension_id.c_str()));
+#endif
 }
 
 GURL GetWebstoreBlockStatusURL() {

@@ -62,6 +62,12 @@
 #include "ui/gfx/geometry/rect_f.h"
 #include "ui/gl/gpu_preference.h"
 
+#include "arkweb/build/features/features.h"
+
+#if BUILDFLAG(ARKWEB_WEBGL)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#endif
+
 #if defined(GPU_CLIENT_DEBUG)
 #define GPU_CLIENT_SINGLE_THREAD_CHECK() \
   DeferErrorCallbacks deferrer(this);    \
@@ -591,6 +597,11 @@ void GLES2Implementation::FailGLError(GLenum error) {
 }
 // NOTE: Calling GetGLError overwrites data in the result buffer.
 void GLES2Implementation::CheckGLError() {
+#if BUILDFLAG(ARKWEB_WEBGL)
+  if(!base::ohos::IsEmulator()) {
+    return;
+  }
+#endif
   FailGLError(GetGLError());
 }
 #endif  // defined(GPU_CLIENT_FAIL_GL_ERRORS)

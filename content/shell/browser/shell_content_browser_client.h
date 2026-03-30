@@ -54,7 +54,11 @@ class ShellContentBrowserClient : public ContentBrowserClient {
       const base::RepeatingCallback<WebContents*()>& wc_getter,
       NavigationUIData* navigation_ui_data,
       FrameTreeNodeId frame_tree_node_id,
-      std::optional<int64_t> navigation_id) override;
+      std::optional<int64_t> navigation_id
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+      , bool is_prerendering
+#endif
+) override;
   bool AreIsolatedWebAppsEnabled(BrowserContext* browser_context) override;
   void AppendExtraCommandLineSwitches(base::CommandLine* command_line,
                                       int child_process_id) override;

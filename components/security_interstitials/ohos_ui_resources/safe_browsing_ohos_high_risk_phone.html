@@ -1,0 +1,120 @@
+<!doctype html>
+<html>
+  <head>
+    <meta name="color-scheme" content="light dark">
+    <meta charset="utf-8">
+    <meta name="theme-color" content="#fff">
+    <meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <link rel="stylesheet" href="safe_browsing_ohos.css">
+    <title>$i18n{title}</title>
+    <script type="text/javascript">
+      var policy = parseInt('$i18n{policy}')
+      var FORBIDDEN_POLICY = 3;
+      var MIN_GAP = 32;
+      var MIN_PADDING_GAP = 48;
+      var MIN_WIDTH = 188;
+
+      const SecurityInterstitialCommandId = {
+        CMD_DONT_PROCEED: 0,
+        CMD_PROCEED: 1
+      };
+
+      function sendCommand(cmd) {
+        if (window.certificateErrorPageController) {
+          switch (cmd) {
+            case SecurityInterstitialCommandId.CMD_DONT_PROCEED:
+              certificateErrorPageController.dontProceed();
+              break;
+            case SecurityInterstitialCommandId.CMD_PROCEED:
+              certificateErrorPageController.proceed();
+              break;
+          }
+          return;
+        }
+        window.domAutomationController?.send(cmd);
+      }
+
+      if (policy === FORBIDDEN_POLICY) {
+        document.documentElement.className += ' forbidden-policy';
+      }
+ 
+      function onFillErrorPageHtml() {
+        if (policy == FORBIDDEN_POLICY) {
+          document.getElementById("hw-proceed").style.display = 'none';
+        }
+ 
+        document.body.addEventListener('mousemove', function (event) {
+          if (event.sourceCapabilities && event.sourceCapabilities.firesTouchEvents) {
+            return;
+          }
+          document.body.classList.add('using-mouse');
+        });
+ 
+        document.body.addEventListener('touchstart', function () {
+          document.body.classList.remove('using-mouse');
+        });
+ 
+        calcViewportSize();
+      }
+ 
+      window.addEventListener("resize", () => {
+            calcViewportSize();   
+      }, false)
+ 
+      window.onload = function() {
+        onFillErrorPageHtml()
+        if (document.fonts && document.fonts.ready) {
+          document.fonts.ready.then(calcViewportSize);
+        }
+      }
+ 
+      function calcViewportSize() {
+        let vh = window.innerHeight * 0.09 > MIN_GAP ? window.innerHeight * 0.09 : MIN_GAP;
+        document.documentElement.style.setProperty('--vh', vh + 'px');
+        let ph = window.innerHeight * 0.2 > MIN_PADDING_GAP ? window.innerHeight * 0.2 : MIN_PADDING_GAP;
+        document.documentElement.style.setProperty('--ph', ph + 'px');
+        let vw = ((window.innerWidth - 24 * 13) / 6 + 24)  >  MIN_WIDTH ? ((window.innerWidth - 24 * 13) / 6 + 24) : MIN_WIDTH;
+        document.documentElement.style.setProperty('--vw', vw + 'px');
+        const bottomBar = document.querySelector('.hw-block-link-sb');
+        const bottomBarHeight = bottomBar ? Math.ceil(bottomBar.getBoundingClientRect().height) : 126;
+        document.documentElement.style.setProperty('--hw-bottom-bar-height', bottomBarHeight + 'px');
+        const blockInfo = document.querySelector('.hw-block-info');
+        const blockInfoHeight = blockInfo ? Math.ceil(blockInfo.getBoundingClientRect().height) : 0;
+        document.documentElement.style.setProperty('--hw-block-info-height', blockInfoHeight + 'px');
+      }
+ 
+      function onDontProceed() {
+        sendCommand(SecurityInterstitialCommandId.CMD_DONT_PROCEED);
+      }
+ 
+      function onProceed() {
+        sendCommand(SecurityInterstitialCommandId.CMD_PROCEED);
+      }
+    </script>
+  </head>
+  <body>
+    <div id="main"></div>
+    <div class="hw_block_page" style="direction: $i18n{page_direction};">
+      <div class="hw-content--wrap">
+        <div class="hw-block-img">
+          <img src="ic_safe_browsing_error.svg" id="hw_block_img" aria-label="$i18n{block_info_title}"/>
+        </div>
+ 
+        <div class="hw-block-info">
+          <div class="hw-block-info__title"><p>$i18n{block_info_title}</p></div>
+          <div class="hw-block-info__body">
+            <p>$i18n{block_info_body}</p>
+          </div>
+        </div>
+      </div>
+       
+      <div class="hw-block-link-sb">
+        <div class="hw-link-sb">
+          <a id="hw-not-proceed" href="#" onclick="onDontProceed()">$i18n{dontproceed}</a>
+          <a id="hw-proceed" href="#" onclick="onProceed()">$i18n{proceed}</a>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

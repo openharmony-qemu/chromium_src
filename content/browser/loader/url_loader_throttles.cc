@@ -44,11 +44,21 @@ CreateContentBrowserURLLoaderThrottles(
     const base::RepeatingCallback<WebContents*()>& wc_getter,
     NavigationUIData* navigation_ui_data,
     FrameTreeNodeId frame_tree_node_id,
-    std::optional<int64_t> navigation_id) {
+    std::optional<int64_t> navigation_id
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+,
+    bool is_prerendering
+#endif
+    ) {
   std::vector<std::unique_ptr<blink::URLLoaderThrottle>> throttles =
       GetContentClient()->browser()->CreateURLLoaderThrottles(
           request, browser_context, wc_getter, navigation_ui_data,
-          frame_tree_node_id, navigation_id);
+          frame_tree_node_id, navigation_id
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+,
+          is_prerendering
+#endif
+          );
   variations::OmniboxAutofocusURLLoaderThrottle::AppendThrottleIfNeeded(
       &throttles);
   // TODO(crbug.com/40135370): Consider whether we want to use the WebContents

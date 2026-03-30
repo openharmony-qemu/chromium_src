@@ -67,7 +67,11 @@ class WebSocketFactoryTest : public testing::Test {
   WebSocketFactoryTest()
       : task_environment_(base::test::TaskEnvironment::MainThreadType::IO),
         network_service_(NetworkService::CreateForTesting()) {
+#if BUILDFLAG(ARKWEB_TEST)
+    network_context_ = std::make_unique<ArkWebNetworkContextExt>(
+#else
     network_context_ = std::make_unique<NetworkContext>(
+#endif
         network_service_.get(),
         network_context_remote_.BindNewPipeAndPassReceiver(),
         CreateNetworkContextParams(), base::DoNothing());

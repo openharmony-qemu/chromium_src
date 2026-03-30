@@ -73,12 +73,24 @@ class CONTENT_EXPORT DocumentState
     return std::move(navigation_state_);
   }
 
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  bool must_reset_scroll_and_scale_state() {
+    return must_reset_scroll_and_scale_state_;
+  }
+  void set_must_reset_scroll_and_scale_state(bool state) {
+    must_reset_scroll_and_scale_state_ = state;
+  }
+#endif
+
  private:
   bool was_load_data_with_base_url_request_ = false;
   GURL data_url_;
   bool is_overriding_user_agent_ = false;
   int request_id_ = -1;
   std::unique_ptr<NavigationState> navigation_state_;
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  bool must_reset_scroll_and_scale_state_{false};
+#endif
 };
 
 }  // namespace content

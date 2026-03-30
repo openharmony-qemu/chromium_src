@@ -40,6 +40,7 @@
 #include <string_view>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/check.h"
 #include "base/check_op.h"
 #include "base/feature_list.h"
@@ -1020,6 +1021,12 @@ void CanvasRenderingContext2D::PageVisibilityChanged() {
       GetHibernationHandler()->InitiateHibernationIfNecessary();
     }
   }
+
+#if BUILDFLAG(ARKWEB_CANVAS_COMMIT)
+  if (page_is_visible) {
+    element->SetNeedsCompositingUpdate();
+  }
+#endif
 
   // The impl tree may have dropped the transferable resource for this canvas
   // while it wasn't visible. Make sure that it gets pushed there again, now

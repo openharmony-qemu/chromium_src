@@ -371,6 +371,15 @@ class ProfileManager : public Profile::Delegate {
   // Public so that `ProfileManagerAndroid` can call it.
   void SetProfileAsLastUsed(Profile* last_active);
 
+#if BUILDFLAG(ARKWEB_COOKIE)
+  bool GetPersistSessionCookies();
+  void SetPersistSessionCookies(bool persist_session_cookies);
+#endif
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  void OnOtrProfileAdded(Profile* profile);
+#endif // ARKWEB_ARKWEB_EXTENSIONS
+
  protected:
   // Creates a new profile by calling into the profile's profile creation
   // method. Virtual so that unittests can return a TestingProfile instead
@@ -620,6 +629,10 @@ class ProfileManager : public Profile::Delegate {
 
   // Controls whether to initialize some services. Only disabled for testing.
   bool do_final_services_init_ = true;
+
+#if BUILDFLAG(ARKWEB_COOKIE)
+  bool persist_session_cookies_ = false;
+#endif
 
   // TODO(chrome/browser/profiles/OWNERS): Usage of this in profile_manager.cc
   // should likely be turned into DCHECK_CURRENTLY_ON(BrowserThread::UI) for

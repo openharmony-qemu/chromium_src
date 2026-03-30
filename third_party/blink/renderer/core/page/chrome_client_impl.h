@@ -34,6 +34,8 @@
 
 #include <memory>
 
+#include "absl/types/optional.h"
+#include "arkweb/build/features/features.h"
 #include "base/gtest_prod_util.h"
 #include "cc/input/overscroll_behavior.h"
 #include "third_party/blink/public/common/widget/constants.h"
@@ -56,14 +58,25 @@ class PagePopup;
 class PagePopupClient;
 class WebAutofillClient;
 class WebViewImpl;
+#if BUILDFLAG(IS_ARKWEB)
+class ChromeClientImplExt;
+#endif  // IS_ARKWEB
 
 // Handles window-level notifications from core on behalf of a WebView.
-class CORE_EXPORT ChromeClientImpl final : public ChromeClient {
+#if BUILDFLAG(IS_ARKWEB)
+class CORE_EXPORT ChromeClientImpl : public ChromeClientExt {
+#else
+class CORE_EXPORT ChromeClientImpl : public ChromeClient {
+#endif
  public:
   explicit ChromeClientImpl(WebViewImpl*);
   ~ChromeClientImpl() override;
   void Trace(Visitor* visitor) const override;
 
+#if BUILDFLAG(IS_ARKWEB)
+  friend class ChromeClientImplExt;
+  virtual ChromeClientImplExt* AsChromeClientImplExt() { return nullptr; }
+#endif  // IS_ARKWEB
   // ChromeClient methods:
   WebViewImpl* GetWebView() const override;
   void ChromeDestroyed() override;
@@ -220,7 +233,15 @@ class CORE_EXPORT ChromeClientImpl final : public ChromeClient {
 
   void EnterFullscreen(LocalFrame&,
                        const FullscreenOptions*,
-                       FullscreenRequestType) override;
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                       bool overlay_fullscreen,
+#endif // ARKWEB_VIDEO_ASSISTANT
+                       FullscreenRequestType
+#if BUILDFLAG(ARKWEB_FULLSCREEN)
+                       ,
+                       const absl::optional<gfx::Size>&
+#endif  // BUILDFLAG(ARKWEB_FULLSCREEN)
+                       ) override;
   void ExitFullscreen(LocalFrame&) override;
   void FullscreenElementChanged(Element* old_element,
                                 Element* new_element,
@@ -386,4 +407,7 @@ struct DowncastTraits<ChromeClientImpl> {
 
 }  // namespace blink
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/page/chrome_client_impl_ext.h"
+#endif  // IS_ARKWEB
 #endif  // THIRD_PARTY_BLINK_RENDERER_CORE_PAGE_CHROME_CLIENT_IMPL_H_

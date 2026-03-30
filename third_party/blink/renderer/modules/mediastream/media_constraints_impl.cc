@@ -30,6 +30,7 @@
 
 #include "third_party/blink/renderer/modules/mediastream/media_constraints_impl.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/notreached.h"
 #include "build/build_config.h"
 #include "third_party/blink/public/platform/web_string.h"
@@ -591,6 +592,7 @@ bool ValidateAndCopyConstraintSet(
                        constraint_buffer.sample_size);
   }
 
+#if !BUILDFLAG(ARKWEB_WEBRTC)
   if (constraints_in->hasEchoCancellation()) {
     CopyBooleanOrStringConstraint(constraints_in->echoCancellation(),
                                   naked_treatment,
@@ -606,7 +608,7 @@ bool ValidateAndCopyConstraintSet(
     CopyBooleanConstraint(constraints_in->noiseSuppression(), naked_treatment,
                           constraint_buffer.noise_suppression);
   }
-
+#endif  // BUILDFLAG(ARKWEB_WEBRTC)
   if (constraints_in->hasVoiceIsolation()) {
     CopyBooleanConstraint(constraints_in->voiceIsolation(), naked_treatment,
                           constraint_buffer.voice_isolation);

@@ -151,7 +151,6 @@ constinit const FeatureParam<
 
 BASE_FEATURE(kPartitionAllocEventuallyZeroFreedMemory,
              FEATURE_DISABLED_BY_DEFAULT);
-
 #endif  // PA_BUILDFLAG(USE_PARTITION_ALLOC_AS_MALLOC)
 
 BASE_FEATURE(kPartitionAllocBackupRefPtr,

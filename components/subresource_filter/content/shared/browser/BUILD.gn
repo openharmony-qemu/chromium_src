@@ -1,6 +1,8 @@
 # Copyright 2024 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+import("//arkweb/build/features/features.gni")
+import("//arkweb/chromium_ext/chromium_ext.gni")
 
 static_library("browser") {
   sources = [
@@ -19,6 +21,7 @@ static_library("browser") {
     "utils.cc",
     "utils.h",
   ]
+  sources += arkweb_components_subresource_filter_content_shared_browser
   configs += [ "//build/config/compiler:wexit_time_destructors" ]
   public_deps = [
     "//base",
@@ -36,6 +39,10 @@ static_library("browser") {
     "//third_party/protobuf:protobuf_lite",
     "//ui/base",
   ]
+
+  if (arkweb_adblock) {
+    sources += arkweb_page_load_statistics_sources
+  }
 }
 
 static_library("test_support") {
@@ -68,6 +75,10 @@ source_set("unit_tests") {
     "ruleset_publisher_unittest.cc",
     "ruleset_service_unittest.cc",
   ]
+  sources += arkweb_components_subresource_filter_content_shared_browser_unittest
+  if (arkweb_adblock) {
+    sources += arkweb_page_load_statistics_unittest_sources
+  }
   deps = [
     ":test_support",
     "//base",

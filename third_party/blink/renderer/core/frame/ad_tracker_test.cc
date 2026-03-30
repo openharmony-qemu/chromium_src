@@ -108,7 +108,8 @@ subresource_filter::WebDocumentSubresourceFilterImpl* CreateSubresourceFilter(
       /*filtering_disabled_for_document=*/false,
       /*generic_blocking_rules_disabled=*/false,
       /*measure_performance=*/false,
-      /*enable_logging=*/false);
+      /*enable_logging=*/false,
+      /*user_subresource_filter_replace=*/false);
 
   return new subresource_filter::WebDocumentSubresourceFilterImpl(
       url::Origin::Create(GURL("https://example.com")), activation_state,

@@ -25,6 +25,7 @@
 #include "content/public/browser/browser_thread.h"
 #include "content/public/browser/render_frame_host.h"
 #include "content/public/browser/web_contents.h"
+#include "arkweb/chromium_ext/components/performance_manager/graph/page_node_impl_for_include.cc"
 #include "third_party/perfetto/include/perfetto/tracing/tracing.h"
 #include "third_party/perfetto/include/perfetto/tracing/track.h"
 #include "third_party/perfetto/include/perfetto/tracing/track_event_args.h"
@@ -661,6 +662,20 @@ void PageNodeImpl::SetHadUserEdits(bool had_user_edits) {
   had_user_edits_.SetAndMaybeNotify(this, had_user_edits);
 }
 
+#if BUILDFLAG(ARKWEB_BGTASK)
+void PageNodeImpl::SetBrowserForeground()
+{
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  browser_foreground_.SetAndNotify(this, false);
+}
+
+void PageNodeImpl::SetBrowserBackground()
+{
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  browser_background_.SetAndNotify(this, false);
+}
+#endif
+
 void PageNodeImpl::SetHasFreezingOriginTrialOptOut(
     bool has_freezing_origin_trial_opt_out) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
@@ -681,5 +696,4 @@ void PageNodeImpl::EmitMainFrameUrlChangedEvent(
                         }
                       });
 }
-
 }  // namespace performance_manager

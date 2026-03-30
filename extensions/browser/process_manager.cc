@@ -321,7 +321,7 @@ bool ProcessManager::CreateBackgroundHost(const Extension* extension,
     return false;
   }
 
-  DVLOG(1) << "CreateBackgroundHost " << extension->id();
+  LOG(INFO) << "Create background host for " << extension->id();
 
   // If the extension is spanning mode, we use the original (on-the-record)
   // BrowserContext.

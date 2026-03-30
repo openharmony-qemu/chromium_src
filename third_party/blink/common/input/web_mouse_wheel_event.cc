@@ -4,6 +4,7 @@
 
 #include "third_party/blink/public/common/input/web_mouse_wheel_event.h"
 
+#include "arkweb/build/features/features.h"
 #include "build/build_config.h"
 
 namespace blink {
@@ -119,8 +120,12 @@ WebMouseWheelEvent::GetPlatformSpecificDefaultEventAction(
 #if defined(USE_AURA) || BUILDFLAG(IS_ANDROID)
   // Scroll events generated from the mouse wheel when the control key is held
   // don't trigger scrolling. Instead, they may cause zooming.
+#if !BUILDFLAG(ARKWEB_INPUT_EVENTS)
   if (event.delta_units != ui::ScrollGranularity::kScrollByPrecisePixel &&
       (event.GetModifiers() & WebInputEvent::kControlKey)) {
+#else
+  if (event.GetModifiers() & WebInputEvent::kControlKey) {
+#endif
     return blink::WebMouseWheelEvent::EventAction::kPageZoom;
   }
 

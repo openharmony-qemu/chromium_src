@@ -10,7 +10,9 @@ export function getHtml(this: ExtensionsDropOverlayElement) {
   // clang-format off
   return html`<!--_html_template_start_-->
 <div id="container">
-  <cr-icon icon="cr:extension"></cr-icon>
+  <div class="icon-container">
+    <cr-icon icon="cr:extension-outline"></cr-icon>
+  </div>
   <div id="text">$i18n{dropToInstall}</div>
 </div>
 <!--_html_template_end_-->`;

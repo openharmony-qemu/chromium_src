@@ -2833,5 +2833,7 @@ void MainThreadSchedulerImpl::OnWidgetSchedulerWillShutdown(
   }
 }
 
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/scheduler/main_thread/main_thread_scheduler_impl_for_include.cc"
+
 }  // namespace scheduler
 }  // namespace blink

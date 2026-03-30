@@ -10,6 +10,8 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <stdlib.h>
+#include <stdio.h>
 
 #include "base/at_exit.h"
 #include "base/command_line.h"
@@ -141,7 +143,10 @@ InitGlobals* init_globals = new InitGlobals();
 class DiskCacheLPMFuzzer {
  public:
   DiskCacheLPMFuzzer() {
-    CHECK(temp_dir_.CreateUniqueTempDir());
+        char template_name[] = "temp.XXXXXX";
+    char* temp_dir = mkdtemp(template_name);
+    base::FilePath file_path(temp_dir);
+    CHECK(temp_dir_.Set(file_path));
     cache_path_ = temp_dir_.GetPath();
   }
 

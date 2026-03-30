@@ -685,7 +685,16 @@ MockEGLInterface::Mock_eglSetBlobCacheFuncsANDROID(EGLDisplay dpy,
   MakeEglMockFunctionUnique("eglSetBlobCacheFuncsANDROID");
   interface_->SetBlobCacheFuncsANDROID(dpy, set, get);
 }
-
+#if BUILDFLAG(IS_ARKWEB)
+EGLBoolean GL_BINDING_CALL
+MockEGLInterface::Mock_eglSetDamageRegionKHR(EGLDisplay dpy,
+                                             EGLSurface surface,
+                                             EGLint* rects,
+                                             EGLint n_rects) {
+  MakeEglMockFunctionUnique("eglSetDamageRegionKHR");
+  return interface_->SetDamageRegionKHR(dpy, surface, rects, n_rects);
+}
+#endif
 void GL_BINDING_CALL MockEGLInterface::Mock_eglSetValidationEnabledANGLE(
     EGLBoolean validationState) {
   MakeEglMockFunctionUnique("eglSetValidationEnabledANGLE");
@@ -1022,6 +1031,10 @@ MockEGLInterface::GetGLProcAddress(const char* name) {
   if (strcmp(name, "eglSetBlobCacheFuncsANDROID") == 0)
     return reinterpret_cast<GLFunctionPointerType>(
         Mock_eglSetBlobCacheFuncsANDROID);
+#if BUILDFLAG(IS_ARKWEB)
+  if (strcmp(name, "eglSetDamageRegionKHR") == 0)
+    return reinterpret_cast<GLFunctionPointerType>(Mock_eglSetDamageRegionKHR);
+#endif
   if (strcmp(name, "eglSetValidationEnabledANGLE") == 0)
     return reinterpret_cast<GLFunctionPointerType>(
         Mock_eglSetValidationEnabledANGLE);

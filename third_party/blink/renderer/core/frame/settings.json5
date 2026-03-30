@@ -79,6 +79,16 @@
       initial: 1,
       type: "double",
     },
+    {
+      name: "drawMode",
+      initial: 0,
+      type: "int",
+    },
+    {
+      name: "textZoomFactor",
+      initial: 1,
+      type: "float",
+    },
 
     // Sets the magnification value for validation message timer.  If the
     // magnification value is N, a validation message disappears automatically after
@@ -1269,12 +1279,43 @@
       name: "requireTransientActivationAndAuthorizationForSubAppsAPI",
       initial: true,
     },
+    {
+      // Used for OHOS Native Embed feature.
+      name: "nativeEmbedModeEnabled",
+      initial: false,
+      type: "bool",
+    },
+    {
+      // Set the scale of the font weight in OHOS.
+      name: "fontWeightScale",
+      initial: 1,
+      invalidate: ["Style"],
+      type: "float",
+    },
     // Enable the features to change the safe-area-inset* CSS environment
     // variables based on the browser controls's shown ration.
     {
       name: "dynamicSafeAreaInsetsEnabled",
       initial: false,
       type: "bool"
+    },
+    {
+      // Used for OHOS Native Embed intrinsic size.
+      name: "intrinsicSizeEnabled",
+      initial: false,
+      type: "bool",
+    },
+    {
+      // Used for OHOS Native Embed visbility.
+      name: "cssDisplayChangeEnabled",
+      initial: false,
+      type: "bool",
+    },
+    {
+      // Used for OHOS Media cast.
+      name: "castEnabled",
+      initial: false,
+      type: "bool",
     },
   ],
 }

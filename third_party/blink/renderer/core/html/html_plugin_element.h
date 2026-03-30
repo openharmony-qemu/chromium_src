@@ -38,7 +38,10 @@ class LayoutEmbeddedContent;
 class LayoutEmbeddedObject;
 enum class NamedPropertySetterResult;
 class WebPluginContainerImpl;
-
+class HTMLPlugInElementUtils;
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+class HTMLNativeLoader;
+#endif
 class PluginParameters {
  public:
   PluginParameters() {}
@@ -61,6 +64,7 @@ class CORE_EXPORT HTMLPlugInElement
       public ActiveScriptWrappable<HTMLPlugInElement> {
  public:
   ~HTMLPlugInElement() override;
+  friend class HTMLPlugInElementUtils;
   void Trace(Visitor*) const override;
 
   bool IsPlugin() const final { return true; }
@@ -92,7 +96,22 @@ class CORE_EXPORT HTMLPlugInElement
   NamedPropertySetterResult AnonymousNamedSetter(const AtomicString&,
                                                  const ScriptValue&);
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  const String SrcAttribute() override { return Url(); }
+  const String TypeAttribute() override { return service_type_; }
+  const String IdAttribute() override { return GetIdAttribute().GetString(); }
+  HTMLNativeLoader* NativeLoader() const { return native_loader_.Get(); }
+#endif
+
+
+  HTMLPlugInElementUtils* Utils() const {
+    return utils_.Get();
+  }
+
  protected:
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class HTMLPlugInElementUtilsTest;
+#endif
   HTMLPlugInElement(const QualifiedName& tag_name,
                     Document&,
                     const CreateElementFlags);
@@ -146,7 +165,9 @@ class CORE_EXPORT HTMLPlugInElement
   KURL loaded_url_;
   Member<HTMLImageLoader> image_loader_;
   bool is_delaying_load_event_;
-
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  Member<HTMLNativeLoader> native_loader_;
+#endif
  private:
   // EventTarget overrides:
   void RemoveAllEventListeners() final;
@@ -238,6 +259,8 @@ class CORE_EXPORT HTMLPlugInElement
   // True when the element has changed in such a way (new URL, for instance)
   // that we cannot re-use the old view when re-attaching.
   bool dispose_view_ = false;
+
+  Member<HTMLPlugInElementUtils> utils_;
 };
 
 template <>

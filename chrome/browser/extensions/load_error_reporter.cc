@@ -19,6 +19,10 @@
 #include "extensions/buildflags/buildflags.h"
 #include "ui/base/l10n/l10n_util.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/chromium_ext/chrome/browser/extensions/extension_load_error_reporter_for_include.cc"
+#endif
+
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 
 namespace extensions {
@@ -54,7 +58,11 @@ void LoadErrorReporter::ReportLoadError(
   std::u16string message =
       l10n_util::GetStringUTF16(IDS_EXTENSIONS_LOAD_ERROR_MESSAGE) + u" " +
       extension_path.LossyDisplayName() + u". " + error;
+#if BUILDFLAG(IS_ARKWEB_EXT)
+  ReportError(message, be_noisy, browser_context);
+#else      
   ReportError(message, be_noisy);
+#endif  
   for (auto& observer : observers_)
     observer.OnLoadFailure(browser_context, extension_path, error);
 }

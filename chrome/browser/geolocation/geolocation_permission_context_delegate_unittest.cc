@@ -26,6 +26,11 @@
 #include "components/permissions/contexts/geolocation_permission_context_android.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "chrome/browser/geolocation/geolocation_permission_context_delegate.h"
+#include "components/permissions/contexts/geolocation_permission_context.h"
+#endif
+
 #if BUILDFLAG(IS_ANDROID)
 namespace {
 constexpr char kDSETestUrl[] = "https://www.dsetest.com";
@@ -40,6 +45,48 @@ class TestSearchEngineDelegate
   }
 };
 }  // namespace
+#endif
+
+#if BUILDFLAG(IS_OHOS)
+class MockGeolocationPermissionContextOHOS
+    : public permissions::GeolocationPermissionContext {
+ public:
+  MockGeolocationPermissionContextOHOS(content::BrowserContext* browser_context,
+                                       std::unique_ptr<Delegate> delegate)
+      : permissions::GeolocationPermissionContext(browser_context,
+                                                  std::move(delegate)) {}
+
+  MockGeolocationPermissionContextOHOS(
+      const MockGeolocationPermissionContextOHOS&) = delete;
+  MockGeolocationPermissionContextOHOS& operator=(
+      const MockGeolocationPermissionContextOHOS&) = delete;
+
+  ~MockGeolocationPermissionContextOHOS() override = default;
+};
+
+permissions::PermissionManager::PermissionContextMap
+CreatePermissionContextsOHOS(Profile* profile) {
+  permissions::PermissionManager::PermissionContextMap permission_contexts;
+  permission_contexts[ContentSettingsType::GEOLOCATION] =
+      std::make_unique<MockGeolocationPermissionContextOHOS>(
+          profile,
+          std::make_unique<GeolocationPermissionContextDelegate>(profile));
+  return permission_contexts;
+}
+
+class MockPermissionMangerOHOS : public permissions::PermissionManager {
+ public:
+  explicit MockPermissionMangerOHOS(Profile* profile)
+      : permissions::PermissionManager(profile,
+                                       CreatePermissionContextsOHOS(profile)) {}
+  ~MockPermissionMangerOHOS() override = default;
+};
+
+std::unique_ptr<KeyedService> CreateTestingPermissionManagerOHOS(
+    content::BrowserContext* context) {
+  Profile* profile = Profile::FromBrowserContext(context);
+  return std::make_unique<MockPermissionMangerOHOS>(profile);
+}
 #endif
 
 class GeolocationPermissionContextDelegateTests
@@ -67,6 +114,11 @@ class GeolocationPermissionContextDelegateTests
     MockLocationSettings::SetLocationSettingsDialogStatus(false /* enabled */,
                                                           GRANTED);
     MockLocationSettings::ClearHasShownLocationSettingsDialog();
+#endif
+
+#if BUILDFLAG(IS_OHOS)
+    PermissionManagerFactory::GetInstance()->SetTestingFactory(
+        profile(), base::BindRepeating(&CreateTestingPermissionManagerOHOS));
 #endif
   }
 

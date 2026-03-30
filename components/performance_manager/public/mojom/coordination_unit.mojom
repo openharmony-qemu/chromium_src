@@ -66,6 +66,10 @@ interface DocumentCoordinationUnit {
   OnWebMemoryMeasurementRequested(WebMemoryMeasurement.Mode mode) =>
       (WebMemoryMeasurement measurement);
 
+  // Called when form editing state is changed
+  [EnableIf=arkweb_activity_state]
+  OnFormEditingStateChanged(uint64 form_id, bool did_submit);
+
   // Called when the document is opted-out from freezing via origin trial.
   OnFreezingOriginTrialOptOut();
 };

@@ -104,6 +104,9 @@ MotionEventGeneric::MotionEventGeneric(Action action,
       action_index_(0),
       button_state_(0),
       flags_(0) {
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  motion_event_generic_utils_ = std::make_shared<MotionEventGenericUtils>(this);
+#endif
   PushPointer(pointer);
 }
 
@@ -115,6 +118,9 @@ MotionEventGeneric::MotionEventGeneric(const MotionEventGeneric& other)
       button_state_(other.button_state_),
       flags_(other.flags_),
       pointers_(other.pointers_) {
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  motion_event_generic_utils_ = std::make_shared<MotionEventGenericUtils>(this);
+#endif
   const size_t history_size = other.GetHistorySize();
   for (size_t h = 0; h < history_size; ++h)
     PushHistoricalEvent(other.historical_events_[h]->Clone());
@@ -375,5 +381,4 @@ void MotionEventGeneric::PopPointer() {
   DCHECK_GT(pointers_.size(), 0U);
   pointers_.pop_back();
 }
-
 }  // namespace ui

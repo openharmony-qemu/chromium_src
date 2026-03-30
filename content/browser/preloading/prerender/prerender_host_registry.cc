@@ -80,6 +80,8 @@ bool DeviceHasEnoughMemoryForPrerender() {
   static constexpr int kDefaultMemoryThresholdMb =
 #if BUILDFLAG(IS_ANDROID)
       1700;
+#elif BUILDFLAG(ARKWEB_NETWORK_LOAD)
+      1700;
 #else
       0;
 #endif
@@ -538,6 +540,18 @@ void PrerenderHostRegistry::RemoveObserver(Observer* observer) {
 FrameTreeNodeId PrerenderHostRegistry::CreateAndStartHost(
     const PrerenderAttributes& attributes,
     PreloadingAttempt* attempt) {
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (attributes.trigger_type != PreloadingTriggerType::kEmbedder) {
+    RecordFailedPrerenderFinalStatus(
+        PrerenderCancellationReason(PrerenderFinalStatus::kPreloadingDisabled),
+        attributes);
+    if (attempt) {
+      attempt->SetEligibility(PreloadingEligibility::kPreloadingDisabled);
+    }
+    return FrameTreeNodeId();
+  }
+#endif
+
   std::string recorded_url =
       attributes.initiator_origin.has_value()
           ? attributes.initiator_origin.value().GetURL().spec()
@@ -990,6 +1004,11 @@ std::set<FrameTreeNodeId> PrerenderHostRegistry::CancelHosts(
   // Cancel must not be requested during activation.
   CHECK(!reserved_prerender_host_);
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  LOG(DEBUG) << "Cancel Prerendered host, reason = "
+             << static_cast<int>(reason.final_status());
+#endif
+
   std::set<FrameTreeNodeId> cancelled_ids;
 
   for (FrameTreeNodeId host_id : frame_tree_node_ids) {
@@ -1188,6 +1207,9 @@ FrameTreeNodeId PrerenderHostRegistry::FindPotentialHostToActivate(
   // Use the first match. This prioritizes the exact match or No-Vary-Search
   // header match than No-Vary-Search hint match.
   PrerenderHost* host = *matchable_hosts.begin();
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  LOG(DEBUG) << "Found a Prerender host.";
+#endif
 
   base::UmaHistogramCounts100(
       "Prerender.Experimental.MatchableHostCountOnActivation",

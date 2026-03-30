@@ -37,6 +37,16 @@
 #include "util/linux/proc_task_reader.h"
 #include "util/linux/socket.h"
 
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+#include "third_party/crashpad/crashpad/util/linux/crashpad_dfx.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+uid_t g_process_uid = 0;
+extern std::string g_happen_time;
+extern std::string g_bundle_name;
+#endif
+
 namespace crashpad {
 
 namespace {
@@ -417,6 +427,11 @@ bool ExceptionHandlerServer::ReceiveClientMessage(Event* event) {
   ucred creds;
   if (!UnixCredentialSocket::RecvMsg(
           event->fd.get(), &message, sizeof(message), &creds)) {
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+    LOG(WARNING) << "crashpad ExceptionHandlerServer::ReceiveClientMessage, "
+                    "received message failed, errno = "
+                 << errno << ", event fd = " << event->fd.get();
+#endif
     return false;
   }
 
@@ -425,12 +440,26 @@ bool ExceptionHandlerServer::ReceiveClientMessage(Event* event) {
       return SendCredentials(event->fd.get());
 
     case ExceptionHandlerProtocol::ClientToServerMessage::kTypeCrashDumpRequest:
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+    {
+      LOG(INFO) << "crashpad ExceptionHandlerServer::ReceiveClientMessage, "
+                   "message type = kTypeCrashDumpRequest";
+      return HandleCrashDumpRequest(
+          creds,
+          message.client_info,
+          message.requesting_thread_stack_address,
+          event->fd.get(),
+          event->type == Event::Type::kSharedSocketMessage,
+          message);
+    }
+#else
       return HandleCrashDumpRequest(
           creds,
           message.client_info,
           message.requesting_thread_stack_address,
           event->fd.get(),
           event->type == Event::Type::kSharedSocketMessage);
+#endif  // BUILDFLAG(ARKWEB_CRASHPAD)
   }
 
   DCHECK(false);
@@ -438,25 +467,57 @@ bool ExceptionHandlerServer::ReceiveClientMessage(Event* event) {
   return false;
 }
 
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+bool ExceptionHandlerServer::HandleCrashDumpRequest(
+    const ucred& creds,
+    const ExceptionHandlerProtocol::ClientInformation& client_info,
+    VMAddress requesting_thread_stack_address,
+    int client_sock,
+    bool multiple_clients,
+    const ExceptionHandlerProtocol::ClientToServerMessage& message) {
+#else
 bool ExceptionHandlerServer::HandleCrashDumpRequest(
     const ucred& creds,
     const ExceptionHandlerProtocol::ClientInformation& client_info,
     VMAddress requesting_thread_stack_address,
     int client_sock,
     bool multiple_clients) {
+#endif  // BUILDFLAG(ARKWEB_CRASHPAD)
+
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+  pid_t client_process_id = message.real_pid;
+#else
   pid_t client_process_id = creds.pid;
+#endif  // BUILDFLAG(ARKWEB_CRASHPAD)
+
   pid_t requesting_thread_id = -1;
   uid_t client_uid = creds.uid;
+
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+  LOG(INFO) << "crashpad ExceptionHandlerServer::HandleCrashDumpRequest, "
+               "client process id = "
+            << client_process_id << ", client uid = " << client_uid
+            << ", multi client = " << multiple_clients;
+  g_process_uid = client_uid;
+#endif  // BUILDFLAG(ARKWEB_CRASHPAD)
 
   switch (
       strategy_decider_->ChooseStrategy(client_sock, multiple_clients, creds)) {
     case PtraceStrategyDecider::Strategy::kError:
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+      LOG(INFO) << "crashpad ExceptionHandlerServer::HandleCrashDumpRequest \
+        PtraceStrategyDecider::Strategy::kError";
+#endif  // BUILDFLAG(ARKWEB_CRASHPAD)
       if (multiple_clients) {
         SendSIGCONT(client_process_id, requesting_thread_id);
       }
       return false;
 
     case PtraceStrategyDecider::Strategy::kNoPtrace:
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+      LOG(INFO) << "crashpad ExceptionHandlerServer::HandleCrashDumpRequest"
+                   " PtraceStrategyDecider::Strategy::kNoPtrace";
+#endif  // BUILDFLAG(ARKWEB_CRASHPAD)
       if (multiple_clients) {
         SendSIGCONT(client_process_id, requesting_thread_id);
         return true;
@@ -467,6 +528,10 @@ bool ExceptionHandlerServer::HandleCrashDumpRequest(
               kTypeCrashDumpFailed);
 
     case PtraceStrategyDecider::Strategy::kDirectPtrace: {
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+      LOG(INFO) << "crashpad ExceptionHandlerServer::HandleCrashDumpRequest"
+                   " PtraceStrategyDecider::Strategy::kDirectPtrace";
+#endif  // BUILDFLAG(ARKWEB_CRASHPAD)
       delegate_->HandleException(client_process_id,
                                  client_uid,
                                  client_info,
@@ -480,12 +545,37 @@ bool ExceptionHandlerServer::HandleCrashDumpRequest(
     }
 
     case PtraceStrategyDecider::Strategy::kUseBroker:
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+      LOG(INFO) << "crashpad ExceptionHandlerServer::HandleCrashDumpRequest"
+                   " PtraceStrategyDecider::Strategy::kUseBroker";
+#endif  // BUILDFLAG(ARKWEB_CRASHPAD)
       DCHECK(!multiple_clients);
       delegate_->HandleExceptionWithBroker(
           client_process_id, client_uid, client_info, client_sock);
       break;
   }
 
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+  std::string process_type;
+  std::string error_reason;
+  if (message.process_type_id == static_cast<int32_t>(CrashpadDfx::ProcessType::kRender)) {
+    process_type = "render";
+    error_reason = "render exited";
+  } else if (message.process_type_id == static_cast<int32_t>(CrashpadDfx::ProcessType::kGpu)) {
+    process_type = "gpu";
+    error_reason = "gpu exited";
+  } else {
+    process_type = "unknown";
+    error_reason = "unknown exited";
+  }
+  if (message.crash_reason == (int32_t)CrashpadDfx::CrashReason::kOutOfMemory) {
+    error_reason += ": out of memory";
+  }
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+  CrashpadDfx::ProcessCrashReport(
+      process_type, g_happen_time, g_bundle_name, error_reason);
+#endif
+#endif
   return SendMessageToClient(
       client_sock,
       ExceptionHandlerProtocol::ServerToClientMessage::kTypeCrashDumpComplete);

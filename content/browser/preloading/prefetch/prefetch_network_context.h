@@ -15,6 +15,10 @@
 #include "services/network/public/mojom/network_context.mojom.h"
 #include "url/origin.h"
 
+#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+#include "content/public/browser/render_frame_host.h"
+#endif
+
 namespace content {
 
 class BrowserContext;
@@ -45,6 +49,12 @@ class CONTENT_EXPORT PrefetchNetworkContext {
   // Get a reference to |cookie_manager_|. If it is null, then it is bound to
   // the cookie manager of |network_context_|.
   network::mojom::CookieManager* GetCookieManager();
+
+#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+  bool IsReferringRenderFrameHostValid() {
+    return RenderFrameHost::FromID(referring_render_frame_host_id_) != nullptr;
+  }
+#endif
 
   // Close any idle connections with |network_context_|.
   void CloseIdleConnections();

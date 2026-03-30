@@ -28,6 +28,9 @@
 #include "net/socket/ssl_client_socket.h"
 #include "net/ssl/ssl_cert_request_info.h"
 #include "net/ssl/ssl_config_service.h"
+#if BUILDFLAG(ENABLE_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace net {
 
@@ -141,6 +144,10 @@ class NET_EXPORT_PRIVATE SSLConnectJob : public ConnectJob,
   // connections regardless of whether or not there is a proxy in use.
   static base::TimeDelta HandshakeTimeoutForTesting();
 
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+  void SetConnectTimeout(int timeout_override) override;
+#endif
+
  private:
   enum State {
     STATE_TRANSPORT_CONNECT,
@@ -220,6 +227,11 @@ class NET_EXPORT_PRIVATE SSLConnectJob : public ConnectJob,
   // If not `std::nullopt`, the ECH retry configs to use in the ECH recovery
   // flow. `endpoint_result_` will then contain the endpoint to reconnect to.
   std::optional<std::vector<uint8_t>> ech_retry_configs_;
+
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+  // Only for transport_connect_job
+  int timeout_override_for_nested_job_{0};
+#endif
 
   // If not empty, the intersection of the client's trusted TLS Trust Anchor IDs
   // with those advertised by the server during the handshake, in wire format.

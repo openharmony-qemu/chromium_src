@@ -29,6 +29,10 @@
 #include "base/win/scoped_com_initializer.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
+#include "third_party/ohos_ndk/includes/ohos_adapter/res_sched_client_adapter.h"
+#endif
+using namespace OHOS::NWeb;
 namespace content {
 
 BrowserProcessIOThread::BrowserProcessIOThread()
@@ -38,6 +42,11 @@ BrowserProcessIOThread::BrowserProcessIOThread()
 }
 
 BrowserProcessIOThread::~BrowserProcessIOThread() {
+#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
+  ResSchedClientAdapter::ReportKeyThread(
+      ResSchedStatusAdapter::THREAD_DESTROYED, base::GetCurrentProcId(),
+      GetThreadId().raw(), ResSchedRoleAdapter::USER_INTERACT);
+#endif
   Stop();
 }
 
@@ -76,6 +85,12 @@ void BrowserProcessIOThread::Run(base::RunLoop* run_loop) {
   if (!thread_name().empty()) {
     base::android::AttachCurrentThreadWithName(thread_name());
   }
+#endif
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
+  ResSchedClientAdapter::ReportKeyThread(
+      ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentProcId(),
+      GetThreadId().raw(), ResSchedRoleAdapter::USER_INTERACT);
 #endif
 
   IOThreadRun(run_loop);

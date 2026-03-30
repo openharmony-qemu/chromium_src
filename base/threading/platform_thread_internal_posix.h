@@ -53,7 +53,7 @@ int GetThreadNiceValue(PlatformThreadId id);
 
 bool SetThreadNiceFromType(PlatformThreadId thread_id, ThreadType thread_type);
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 void SetThreadTypeLinux(ProcessId process_id,
                         PlatformThreadId thread_id,
                         ThreadType thread_type,
@@ -67,7 +67,7 @@ void SetThreadTypeChromeOS(ProcessId process_id,
 #endif
 #if BUILDFLAG(IS_CHROMEOS)
 inline constexpr auto SetThreadType = SetThreadTypeChromeOS;
-#elif BUILDFLAG(IS_LINUX)
+#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
 inline constexpr auto SetThreadType = SetThreadTypeLinux;
 #endif
 

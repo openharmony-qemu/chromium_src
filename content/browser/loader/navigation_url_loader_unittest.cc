@@ -137,7 +137,12 @@ class NavigationURLLoaderTest : public testing::Test {
             nullptr /* serving_page_metrics_container */,
             false /* allow_cookies_from_browser */, 0 /* navigation_id */,
             false /* shared_storage_writable */, false /* is_ad_tagged */,
-            false /* force_no_https_upgrade */));
+            false /* force_no_https_upgrade */
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+            ,
+            false /*retry_with_fallback_proxy*/, 0 /*orginal_error_code*/
+#endif
+            ));
     return NavigationURLLoader::Create(
         browser_context_.get(), storage_partition, std::move(request_info),
         nullptr, nullptr, nullptr, delegate,

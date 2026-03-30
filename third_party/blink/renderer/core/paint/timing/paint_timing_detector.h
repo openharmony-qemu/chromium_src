@@ -18,6 +18,12 @@
 #include "third_party/blink/renderer/platform/heap/member.h"
 #include "third_party/blink/renderer/platform/instrumentation/tracing/trace_event.h"
 #include "ui/gfx/geometry/rect.h"
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/first_screen_calculator.h"
+#endif
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/paint_timing_detector_utils.h"
+#endif
 
 namespace blink {
 
@@ -32,6 +38,8 @@ class PropertyTreeStateOrAlias;
 class MediaTiming;
 class TextPaintTimingDetector;
 class StyleImage;
+class PaintTimingDetectorUtils;
+class PTDSupplementForBL;
 
 // PaintTimingDetector receives signals regarding text and image paints and
 // orchestrates the functionality of more specific paint detectors
@@ -50,7 +58,21 @@ class CORE_EXPORT PaintTimingDetector
   friend class TextPaintTimingDetectorTest;
 
  public:
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  PaintTimingDetector(LocalFrameView*, bool need_supplement_for_bl = true);
+#else
   PaintTimingDetector(LocalFrameView*);
+#endif
+
+#if BUILDFLAG(IS_ARKWEB)
+  friend class PaintTimingDetectorUtils;
+#endif
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  friend class PTDSupplementForBL;
+  void RestartRecordingForBlankless();
+  void SyncIPTDFrameIdxToBLIPTD(unsigned frame_index);
+  void SyncTPTDFrameIdxToBLTPTD(unsigned frame_index);
+#endif
 
   // Returns true if the image might ultimately be a candidate for largest
   // paint, otherwise false. When this method is called we do not know the
@@ -140,6 +162,11 @@ class CORE_EXPORT PaintTimingDetector
 
   std::optional<PaintTimingVisualizer>& Visualizer() { return visualizer_; }
 
+#if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT) || BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  FirstScreenCalculator* GetFirstScreenCalculator() {
+    return paint_timing_detector_utils_.GetFirstScreenCalculator();
+  }
+#endif
  private:
   FRIEND_TEST_ALL_PREFIXES(ImagePaintTimingDetectorTest,
                            LargestImagePaint_Detached_Frame);
@@ -172,6 +199,10 @@ class CORE_EXPORT PaintTimingDetector
 
   // The LCP details reported to metrics (UKM).
   LargestContentfulPaintDetails lcp_details_for_metrics_;
+
+#if BUILDFLAG(IS_ARKWEB)
+  PaintTimingDetectorUtils paint_timing_detector_utils_;
+#endif
 };
 
 // Largest Text Paint and Text Element Timing aggregate text nodes by these

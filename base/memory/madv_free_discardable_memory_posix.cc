@@ -31,7 +31,7 @@
 #include "base/tracing_buildflags.h"
 #include "build/build_config.h"
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
 #include <sys/prctl.h>
 #endif
 
@@ -45,7 +45,7 @@ void* AllocatePages(size_t size_in_pages) {
                     MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
   PCHECK(data != MAP_FAILED);
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
   prctl(PR_SET_VMA, PR_SET_VMA_ANON_NAME, data, length,
         "madv-free-discardable");
 #endif

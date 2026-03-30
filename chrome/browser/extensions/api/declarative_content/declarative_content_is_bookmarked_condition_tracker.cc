@@ -15,6 +15,10 @@
 #include "extensions/common/api/declarative/declarative_constants.h"
 #include "extensions/common/permissions/permissions_data.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/chrome/browser/extensions/api/declarative_content/declarative_content_is_bookmarked_condition_tracker_for_include.cc"
+#endif
+
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 
 namespace extensions {
@@ -115,6 +119,7 @@ BookmarkRemovedForUrls(const std::set<GURL>& urls) {
   }
 }
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 void DeclarativeContentIsBookmarkedConditionTracker::PerWebContentsTracker::
 UpdateState(bool request_evaluation_if_unchanged) {
   bool state_changed =
@@ -124,6 +129,7 @@ UpdateState(bool request_evaluation_if_unchanged) {
   if (state_changed || request_evaluation_if_unchanged)
     request_evaluation_.Run(web_contents());
 }
+#endif
 
 bool DeclarativeContentIsBookmarkedConditionTracker::PerWebContentsTracker::
 IsCurrentUrlBookmarked() {
@@ -154,10 +160,22 @@ DeclarativeContentIsBookmarkedConditionTracker::
   // Can be null during unit test execution.
   if (bookmark_model)
     scoped_bookmarks_observation_.Observe(bookmark_model);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  DeclarativeContentIsBookmarkedConditionDelegate::GetInstance().AddObserver(
+      context, this);
+#endif
 }
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+DeclarativeContentIsBookmarkedConditionTracker::
+    ~DeclarativeContentIsBookmarkedConditionTracker() {
+  DeclarativeContentIsBookmarkedConditionDelegate::GetInstance().RemoveObserver(
+      this);
+}
+#else
 DeclarativeContentIsBookmarkedConditionTracker::
     ~DeclarativeContentIsBookmarkedConditionTracker() = default;
+#endif
 
 std::string DeclarativeContentIsBookmarkedConditionTracker::
 GetPredicateApiAttributeName() const {

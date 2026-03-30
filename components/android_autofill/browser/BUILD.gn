@@ -5,6 +5,7 @@
 import("//build/config/android/rules.gni")
 import("//build/config/locales.gni")
 import("//third_party/jni_zero/jni_zero.gni")
+import("//arkweb/build/features/features.gni")
 
 android_aidl("autofill_aidl") {
   import_include = [ "java/src" ]
@@ -129,6 +130,10 @@ static_library("android") {
     "//third_party/jni_zero",
     "//ui/android",
   ]
+  if (use_libfuzzer) {
+    configs -= [ "//build/config/gcc:symbol_visibility_hidden" ]
+    configs += [ "//build/config/gcc:symbol_visibility_default" ]
+  }
 }
 
 static_library("browser") {
@@ -147,6 +152,11 @@ static_library("browser") {
     "//components/autofill/content/browser",
     "//content/public/browser",
   ]
+
+  if (use_libfuzzer) {
+    configs -= [ "//build/config/gcc:symbol_visibility_hidden" ]
+    configs += [ "//build/config/gcc:symbol_visibility_default" ]
+  }
 }
 
 source_set("unit_tests") {

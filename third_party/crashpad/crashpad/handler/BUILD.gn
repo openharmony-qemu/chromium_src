@@ -14,7 +14,10 @@
 
 import("//cef/libcef/features/features.gni")
 import("../build/crashpad_buildconfig.gni")
-
+import("//arkweb/build/features/features.gni")
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
 static_library("handler") {
   sources = [
     "handler_main.cc",
@@ -32,7 +35,7 @@ static_library("handler") {
     ]
   }
 
-  if (crashpad_is_linux || crashpad_is_android) {
+  if (crashpad_is_linux || crashpad_is_android || crashpad_is_ohos) {
     sources += [
       "linux/capture_snapshot.cc",
       "linux/capture_snapshot.h",
@@ -41,6 +44,7 @@ static_library("handler") {
       "linux/exception_handler_server.cc",
       "linux/exception_handler_server.h",
     ]
+    sources += arkweb_crashpad_sources
   }
 
   if (crashpad_is_linux) {
@@ -75,6 +79,7 @@ static_library("handler") {
     "../snapshot",
     "../tools:tool_support",
     "//cef/libcef/features:buildflags",
+    "//third_party:huawei_securec",
   ]
 
   if (crashpad_is_win) {

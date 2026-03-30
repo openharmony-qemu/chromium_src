@@ -94,6 +94,18 @@ class FakeFrameWidget : public blink::mojom::FrameWidget {
       blink::mojom::ViewportIntersectionStatePtr intersection_state,
       const std::optional<blink::VisualProperties>& visual_properties) override;
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  void OnTextRecognized(
+      std::vector<::blink::mojom::TextRecognizeResultPtr> res, float scale) override {
+  }
+  void GetImageRect(GetImageRectCallback callback) override {}
+  void OnTextSelected(bool flag) override {}
+  void OnDestroyImageAnalyzerOverlay() override {}
+  void OnFoldStatusChanged(uint32_t foldstatus) override {}
+  void NotifyOverlayStateChanged() override {}
+  void ReSendLanguage() override {}
+#endif
+
   mojo::AssociatedReceiver<blink::mojom::FrameWidget> receiver_;
   base::i18n::TextDirection text_direction_ =
       base::i18n::TextDirection::UNKNOWN_DIRECTION;

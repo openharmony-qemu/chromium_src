@@ -132,6 +132,9 @@
 #include "third_party/blink/renderer/platform/wtf/text/atomic_string.h"
 #include "third_party/blink/renderer/platform/wtf/text/string_builder.h"
 #include "third_party/blink/renderer/platform/wtf/vector.h"
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/loader/frame_fetch_context_for_include.cc"
+#endif
 
 namespace blink {
 

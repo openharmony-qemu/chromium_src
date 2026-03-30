@@ -28,14 +28,23 @@
   <message name="IDS_EXTENSIONS_ENABLE_TOGGLE_TOOLTIP_DISABLED" desc="The tooltip for the enable extension toggle when the extension is disabled.">
     This extension cannot read and change site information or run in the background
   </message>
+  <message name="IDS_EXTENSIONS_ENABLE_TOGGLE_TOOLTIP_DISABLED_V2" desc="The tooltip for the enable extension toggle when the extension is disabled.">
+    This extension cannot read and modify site information or run in the background
+  </message>
   <message name="IDS_EXTENSIONS_ENABLE_TOGGLE_TOOLTIP_ENABLED" desc="The tooltip for the enable extension toggle when the extension is enabled but does not have host permissions.">
     This extension may run in the background
   </message>
   <message name="IDS_EXTENSIONS_ENABLE_TOGGLE_TOOLTIP_ENABLED_WITH_SITE_ACCESS" desc="The tooltip for the enable extension toggle when the extension is enabled and has host permissions.">
     This extension may read and change site information or run in the background
   </message>
+  <message name="IDS_EXTENSIONS_ENABLE_TOGGLE_TOOLTIP_ENABLED_WITH_SITE_ACCESS_V2" desc="The tooltip for the enable extension toggle when the extension is enabled and has host permissions.">
+    This extension may read and modify site information or run in the background
+  </message>
   <message name="IDS_EXTENSIONS_ERROR_NO_ERRORS_CODE_MESSAGE" desc="The text displayed in the 'code' section when an extension has no errors.">
     Nothing to see here, move along.
+  </message>
+  <message name="IDS_EXTENSIONS_ERROR_NO_ERRORS_CODE_MESSAGE_V2" desc="The text displayed in the 'code' section when an extension has no errors.">
+    Nothing here
   </message>
   <message name="IDS_EXTENSIONS_INSTALL_DROP_TARGET" desc="Text on drop target for installing extensions.">
     Drop to install
@@ -139,6 +148,9 @@
   <message name="IDS_EXTENSIONS_ERROR_STACK_TRACE" desc="The label for the stack trace of an extension's error.">
     Stack Trace
   </message>
+  <message name="IDS_EXTENSIONS_ERROR_STACK_TRACE_V2" desc="The label for the stack trace of an extension's error.">
+    Stack trace
+  </message>
   <message name="IDS_EXTENSIONS_ERROR_LINES_NOT_SHOWN" desc="The label displayed to the users indicating that some lines of code are truncated.">
     {LINE_COUNT, plural,
       =1 {&lt;1 line not shown&gt;}
@@ -149,6 +161,15 @@
   </message>
   <message name="IDS_EXTENSIONS_PERMISSIONS_LEARN_MORE_A11Y_LABEL" desc="Accessibility label for a 'Learn more' link that links to an external help article about Extension permissions.">
     Learn more about extension permissions
+  </message>
+  <message name="IDS_EXTENSIONS_DEVELOPER_MODE_CONFIRMATION" desc="The confirmation message displayed in the popup when enabling developer mode.">
+    Enabling Developer mode allows you to install and manage third-party extensions. These extensions have not been verified and may pose security risks. Enable Developer mode?
+  </message>
+  <message name="IDS_EXTENSIONS_DEVELOPER_MODE_CONFIRM" desc="The label for the 'Confirm' button in the developer mode confirmation popup.">
+    OK
+  </message>
+  <message name="IDS_EXTENSIONS_DEVELOPER_MODE_CANCEL" desc="The label for the 'Cancel' button in the developer mode confirmation popup.">
+    Cancel
   </message>
   <!-- TODO(devlin): Unify this with IDS_SETTINGS_EDIT. -->
   <message name="IDS_EXTENSIONS_HOST_PERMISSIONS_EDIT" desc="The label of the button used to edit an extension's access to a given website.">
@@ -162,6 +183,9 @@
   </message>
   <message name="IDS_EXTENSIONS_ITEM_HOST_PERMISSIONS_HEADING" desc="The heading above the details of which websites an extension is allowed to run on.">
     Allow this extension to read and change all your data on websites you visit:
+  </message>
+  <message name="IDS_EXTENSIONS_ITEM_HOST_PERMISSIONS_HEADING_V2" desc="The heading above the details of which websites an extension is allowed to run on.">
+    Allow this extension to read and modify your data on websites you visit:
   </message>
   <message name="IDS_EXTENSIONS_NEW_HOST_PERMISSIONS_HEADING" desc="The heading above the details of which websites an extension is allowed to run on, for the new site access settings.">
     Choose when this extension can read and change your site data
@@ -265,6 +289,9 @@
   <message name="IDS_EXTENSIONS_ITEM_ALLOW_INCOGNITO" desc="The text next to the checkbox to enable an extension in Incognito mode.">
     Allow in Incognito
   </message>
+  <message name="IDS_EXTENSIONS_ITEM_ALLOW_INCOGNITO_V2" desc="The text next to the checkbox to enable an extension in Incognito mode.">
+    Allow in Private mode
+  </message>
   <message name="IDS_EXTENSIONS_ITEM_ALLOW_USER_SCRIPTS" desc="The text next to the checkbox to enable an extension to run user scripts.">
     Allow User Scripts
   </message>
@@ -331,8 +358,14 @@
   <message name="IDS_EXTENSIONS_ITEM_PERMISSIONS_EMPTY" desc="The text to indicate that an extension does not have any special permissions.">
     This extension requires no special permissions
   </message>
+  <message name="IDS_EXTENSIONS_ITEM_PERMISSIONS_EMPTY_V2" desc="The text to indicate that an extension does not have any special permissions." meaning="Extension has no special permissions.">
+    This extension requires no special permissions.
+  </message>
   <message name="IDS_EXTENSIONS_ITEM_PERMISSIONS_AND_SITE_ACCESS_EMPTY" desc="The text to indicate that an extension does not have any special permissions or any site access.">
     This extension requires no special permissions and has no additional site access
+  </message>
+  <message name="IDS_EXTENSIONS_ITEM_OPTIONAL_PERMISSIONS" desc="The label above the list of an extension's optional permissions.">
+    Optional permissions
   </message>
   <message name="IDS_EXTENSIONS_ITEM_PIN_TO_TOOLBAR" desc="The text next to the toggle to pin an extension to the toolbar.">
     Pin to toolbar
@@ -348,6 +381,9 @@
   </message>
   <message name="IDS_EXTENSIONS_ITEM_SITE_ACCESS_EMPTY" desc="The text to indicate that an extension does not have any site access.">
     This extension has no additional site access
+  </message>
+  <message name="IDS_EXTENSIONS_ITEM_SITE_ACCESS_EMPTY_V2" desc="The text to indicate that an extension does not have any site access.">
+    This extension cannot access other sites.
   </message>
   <message name="IDS_EXTENSIONS_REMOVE_SITES_DIALOG_TITLE" desc="The title for the dialog to warn the user when changing site access settings will clear the list of specific sites added.">
     Remove the specific sites you added?
@@ -408,6 +444,9 @@
   </message>
   <message name="IDS_EXTENSIONS_NO_DESCRIPTION" desc="The message shown to the user when an extension does not have any description.">
     No description provided
+  </message>
+  <message name="IDS_EXTENSIONS_NO_DESCRIPTION_V2" desc="The message shown to the user when an extension does not have any description.">
+    No description available
   </message>
   <message name="IDS_EXTENSIONS_OPENS_IN_NEW_TAB" desc="ARIA (accessibility) label describing a link which opens in a new tab.">
     Opens in new tab
@@ -532,8 +571,14 @@
   <message name="IDS_EXTENSIONS_RUNTIME_HOSTS_DIALOG_TITLE" desc="The title of the dialog used to allow a user to add a new site that an extension is allowed to run on.">
     Add a site
   </message>
+  <message name="IDS_EXTENSIONS_RUNTIME_HOSTS_DIALOG_TITLE_V2" desc="The title of the dialog used to allow a user to add a new site that an extension is allowed to run on." meaning="Add site for extension">
+    Add site
+  </message>
   <message name="IDS_EXTENSIONS_RUNTIME_HOSTS_DIALOG_INPUT_ERROR" desc="The error message shown to the user when they entered an invalid site address into the input field.">
     Not a valid web address
+  </message>
+  <message name="IDS_EXTENSIONS_RUNTIME_HOSTS_DIALOG_INPUT_ERROR_V2" desc="The error message shown to the user when they entered an invalid site address into the input field." meaning="Invalid site address">
+    Invalid URL
   </message>
   <message name="IDS_EXTENSIONS_RUNTIME_HOSTS_DIALOG_INPUT_LABEL" desc="The label for the input field where a user enters a new site for an extension to run on.">
     Site
@@ -552,6 +597,9 @@
   </message>
   <message name="IDS_EXTENSIONS_TOOLBAR_LOAD_UNPACKED" desc="The text displayed in the toolbar to load an unpacked extension.">
     Load unpacked
+  </message>
+  <message name="IDS_EXTENSIONS_TOOLBAR_LOAD_UNPACKED_V2" desc="The text displayed in the toolbar to load an unpacked extension.">
+    Load decompressed
   </message>
   <message name="IDS_EXTENSIONS_TOOLBAR_LOAD_UNPACKED_DONE" desc="Text displayed in a toast popup message when extension has been loaded.">
     Extension loaded
@@ -576,6 +624,9 @@
   </message>
   <message name="IDS_EXTENSIONS_SECTION_HEADER" desc="The label for the extensions section in chrome://extensions.">
     All Extensions
+  </message>
+  <message name="IDS_EXTENSIONS_SECTION_HEADER_V2" desc="The label for the extensions section in hwbrowser://extensions.">
+    All extensions
   </message>
   <!-- Extension Safety Check Review Panel strings -->
   <message name="IDS_EXTENSIONS_SAFETY_HUB_HEADER" desc="Name of a section in chrome://extensions that gives users an overview over their safety status and where users can take action to improve their safety.">
@@ -636,6 +687,12 @@
     {NUM_EXTENSIONS, plural,
       =1 {This extension may soon no longer be supported}
       other {These extensions may soon no longer be supported}
+    }
+  </message>
+  <message name="IDS_EXTENSIONS_MV2_DEPRECATION_PANEL_WARNING_HEADER_V2" desc="Header text displayed in the manifest v2 deprecation panel for the warning stage.">
+    {NUM_EXTENSIONS, plural,
+      =1 {This extension may be unsupported soon}
+      other {These extensions may be unsupported soon}
     }
   </message>
   <message name="IDS_EXTENSIONS_MV2_DEPRECATION_PANEL_WARNING_SUBTITLE" desc="Subtitle text displayed in the manifest v2 deprecation panel for the warning stage.">

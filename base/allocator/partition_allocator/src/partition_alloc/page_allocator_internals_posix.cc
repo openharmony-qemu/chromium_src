@@ -156,9 +156,10 @@ void NameRegion(void* start, size_t length, PageTag page_tag) {
   }
 
   // No error checking on purpose, used for debugging only.
+  // todo
+  // prctl(PR_SET_VMA, PR_SET_VMA_ANON_NAME, start, length, name);
   prctl(PR_SET_VMA, PR_SET_VMA_ANON_NAME, start, length, name);
 }
-
 #endif  // defined(LINUX_NAME_REGION)
 
 #if PA_BUILDFLAG(IS_MAC)

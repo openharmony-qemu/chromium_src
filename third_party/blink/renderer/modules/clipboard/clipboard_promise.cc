@@ -44,6 +44,10 @@
 #include "third_party/blink/renderer/platform/wtf/text/strcat.h"
 #include "ui/base/clipboard/clipboard_constants.h"
 
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+#include "third_party/blink/renderer/core/frame/settings.h"
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
+
 // There are 2 clipboard permissions defined in the spec:
 // * clipboard-read
 // * clipboard-write
@@ -715,6 +719,25 @@ void ClipboardPromise::ValidatePreconditions(
                                    mojom::blink::PermissionStatus::GRANTED));
     return;
   }
+
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  // `will_be_sanitized` is false only when we are trying to read/write
+  // web custom formats.
+  // TODO(ansollan): Remove this block as custom formats don't need both a user
+  // gesture and a permission grant to use custom clipboard.
+  if (!will_be_sanitized && !LocalFrame::HasTransientUserActivation(GetLocalFrame())) {
+    // Skipping user activation status limitation after clipboard site permission is enabled.
+    if (!GetLocalFrame()->GetSettings() ||
+        !GetLocalFrame()->GetSettings()->GetClipboardSitePermissionEnabled()) {
+      script_promise_resolver_->RejectWithDOMException(
+        DOMExceptionCode::kSecurityError,
+        "Must be handling a user gesture to use custom clipboard");
+      return;
+    } else {
+      LOG(INFO) << "clipboard site permission enabled.";
+    }
+  }
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
 
   if (!GetPermissionService()) {
     script_promise_resolver_->RejectWithDOMException(

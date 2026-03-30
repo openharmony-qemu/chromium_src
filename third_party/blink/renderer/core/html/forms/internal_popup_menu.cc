@@ -48,6 +48,10 @@
 #include "ui/base/ui_base_features.h"
 #include "ui/gfx/geometry/rect.h"
 
+#if BUILDFLAG(ARKWEB_HTML_SELECT)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#endif
+
 namespace blink {
 
 namespace {
@@ -397,6 +401,9 @@ void InternalPopupMenu::WriteDocument(SegmentedBuffer& data) {
   PagePopupClient::AddString("],\n", data);
 
   AddProperty("anchorRectInScreen", anchor_rect_in_screen, data);
+#if BUILDFLAG(ARKWEB_HTML_SELECT)
+  PopupUtils::AddAvailRectInWebToData(owner_element_->GetDocument().GetFrame(), data);
+#endif
   AddProperty("zoomFactor", 1, data);
   AddProperty("scaleFactor", scale_factor, data);
   bool is_rtl = !owner_style.IsLeftToRightDirection();
@@ -717,6 +724,9 @@ void InternalPopupMenu::Update(bool force_update) {
       owner_element_->VisibleBoundsInLocalRoot(),
       OwnerElement().GetDocument().View());
   AddProperty("anchorRectInScreen", anchor_rect_in_screen, data);
+#if BUILDFLAG(ARKWEB_HTML_SELECT)
+  PopupUtils::AddAvailRectInWebToData(owner_element_->GetDocument().GetFrame(), data);
+#endif
   PagePopupClient::AddString("}\n", data);
   Vector<char> flatten_data = std::move(data).CopyAs<Vector<char>>();
   popup_->PostMessageToPopup(

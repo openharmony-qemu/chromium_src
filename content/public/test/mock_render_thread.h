@@ -102,6 +102,10 @@ class MockRenderThread : public RenderThread {
   TakeInitialBrowserInterfaceBrokerReceiverForFrame(
       const blink::LocalFrameToken& frame_token);
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  const blink::mojom::ReaderModeConfig* GetReaderModeConfig() override {}
+#endif
+
  protected:
   scoped_refptr<base::SingleThreadTaskRunner> io_task_runner_;
 

@@ -102,4 +102,7 @@
 <translation id="8901569739625249689"><ph name="QUANTITY" /> KB</translation>
 <translation id="9132465097189459683">အခြား...</translation>
 <translation id="916607977885256133">နှစ်ခုထပ်၍ကြည့်ခြင်း</translation>
+<translation id="IDS_MEDIA_REMOTING_CAST_CASTING">ထုတ်လွှင့်ပြသနေဆဲ…</translation>
+<translation id="IDS_MEDIA_REMOTING_CAST_STOP_CAST">အဆုံးသတ်ရန်</translation>
+<translation id="IDS_MEDIA_REMOTING_CAST_SWITCH_DEVICE">စက်များ ပြောင်းရန်</translation>
 </translationbundle>

@@ -19,12 +19,16 @@ import type {Destination, RecentDestination} from '../data/destination.js';
 import {createRecentDestinationKey, isPdfPrinter, makeRecentDestination, PrinterType} from '../data/destination.js';
 import {DestinationErrorType, DestinationStore, DestinationStoreEventType} from '../data/destination_store.js';
 import {Error, State} from '../data/state.js';
+// <if expr="is_ohos">
+import {NativeLayerImpl} from '../native_layer.js';
 
 import type {PrintPreviewDestinationDialogElement} from './destination_dialog.js';
 import type {PrintPreviewDestinationSelectElement} from './destination_select.js';
 import {getHtml} from './destination_settings.html.js';
 import {getCss as getPrintPreviewSharedCss} from './print_preview_shared.css.js';
 import {SettingsMixin} from './settings_mixin.js';
+
+// </if>
 
 export enum DestinationState {
   INIT = 0,
@@ -382,6 +386,10 @@ export class PrintPreviewDestinationSettingsElement extends
       this.destinationStore_!.startLoadAllDestinations();
       this.$.destinationDialog.get().show();
       this.isDialogOpen_ = true;
+      // <if expr="is_ohos">
+    } else if (value === 'systemPrint') {
+      NativeLayerImpl.getInstance().systemPrint();
+      // </if>
     } else {
       this.destinationStore_!.selectDestinationByKey(value);
     }

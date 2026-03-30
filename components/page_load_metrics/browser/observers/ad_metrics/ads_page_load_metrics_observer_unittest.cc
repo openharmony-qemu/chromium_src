@@ -436,6 +436,16 @@ class FrameRemoteTester : public content::FakeLocalFrame {
     return last_message;
   }
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  void GetImageFromCache(const std::string& url, GetImageFromCacheCallback callback) override {}
+
+  void JavaScriptExecuteRequestExt(
+      ::mojo::ScopedHandle fd_handle, uint64_t scriptLength, bool wants_result,
+      JavaScriptExecuteRequestExtCallback callback) override {}
+  void GenerateCodeCache(const std::string& url, const std::string& script,
+      blink::mojom::CacheOptionsPtr cache_options, GenerateCodeCacheCallback callback) override {}
+#endif
+
  private:
   bool had_message_ = false;
 

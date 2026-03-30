@@ -8,6 +8,7 @@
 #include <optional>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/callback.h"
 #include "base/memory/memory_pressure_listener.h"
 #include "base/memory/raw_ptr.h"
@@ -61,6 +62,9 @@ class MEDIA_EXPORT DemuxerManager {
     // Used for controlling the client when a demuxer swap happens.
     virtual void StopForDemuxerReset() = 0;
     virtual void RestartForHls() = 0;
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+    virtual void RestartForPrimitive() = 0;
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 
 #if BUILDFLAG(ENABLE_FFMPEG) || BUILDFLAG(ENABLE_HLS_DEMUXER)
     virtual void AddTrack(const MediaTrack&) = 0;
@@ -107,7 +111,7 @@ class MEDIA_EXPORT DemuxerManager {
   void OnPipelineError(PipelineStatus error);
   void SetLoadedUrl(GURL url);
   const GURL& LoadedUrl() const;
-#if BUILDFLAG(ENABLE_HLS_DEMUXER)
+#if BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(ARKWEB_MEDIA_HLS)
   PipelineStatus SelectHlsFallbackMechanism(bool cryptographic_url);
 #endif  // BUILDFLAG(ENABLE_HLS_DEMUXER)
   void DisallowFallback();
@@ -125,6 +129,9 @@ class MEDIA_EXPORT DemuxerManager {
       bool load_media_source,
       DataSource::Preload preload,
       bool needs_first_frame,
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+      bool should_create_custom_renderer,
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
       DemuxerCreatedCB on_demuxer_created,
       base::flat_map<std::string, std::string> headers);
 
@@ -149,7 +156,9 @@ class MEDIA_EXPORT DemuxerManager {
   bool DataSourceFullyBuffered() const;
   bool IsStreaming() const;
   bool IsLiveContent() const;
-
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+  const std::string GetMimeType() const;
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
  private:
   // Demuxer creation and helper methods
   std::unique_ptr<Demuxer> CreateChunkDemuxer();
@@ -176,6 +185,9 @@ class MEDIA_EXPORT DemuxerManager {
   void OnChunkDemuxerOpened();
   void OnProgress();
   void RestartClientForHLS();
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  void RestartClientForPrimitive();
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
   void FreeResourcesAfterMediaThreadWait(base::OnceClosure cb);
 
 #if BUILDFLAG(ENABLE_FFMPEG)

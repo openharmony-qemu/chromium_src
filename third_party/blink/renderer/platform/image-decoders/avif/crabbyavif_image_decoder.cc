@@ -15,6 +15,7 @@
 #include <optional>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/bits.h"
 #include "base/compiler_specific.h"
 #include "base/containers/adapters.h"
@@ -214,9 +215,13 @@ CrabbyAVIFImageDecoder::CrabbyAVIFImageDecoder(
     : ImageDecoder(alpha_option,
                    hbd_option,
                    color_behavior,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+                   cc::AuxImage::kDefault,
+#endif
                    aux_image,
                    max_decoded_bytes),
-      animation_option_(animation_option) {}
+      animation_option_(animation_option) {
+}
 
 CrabbyAVIFImageDecoder::~CrabbyAVIFImageDecoder() = default;
 

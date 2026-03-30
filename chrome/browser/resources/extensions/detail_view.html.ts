@@ -70,7 +70,7 @@ this text can be found by Ctrl + F because it isn't hidden. -->
           <span class="section-title" aria-level="2">
             ${this.getMv2DeprecationMessageHeader_()}
           </span>
-          <div class="section-content"
+          <div hidden=true class="section-content"
               .innerHTML="${this.getMv2DeprecationMessageSubtitle_()}">
           </div>
         </div>
@@ -241,7 +241,7 @@ this text can be found by Ctrl + F because it isn't hidden. -->
       <div class="section-content">${this.data.id}</div>
     </div>
     ${this.inDevMode ? html`
-      <div class="section hr" id="inspectable-views">
+      <div class="section hr" id="inspectable-views" hidden = true>
         <div class="section-title" role="heading" aria-level="2">
           $i18n{itemInspectViews}
         </div>
@@ -314,7 +314,7 @@ this text can be found by Ctrl + F because it isn't hidden. -->
                 class="hr" @change="${this.onShowAccessRequestsChange_}">
               <div id="access-toggle-and-link">
                 <span>$i18n{itemShowAccessRequestsInToolbar}</span>
-                <a class="link-icon-button"
+                <a hidden=true class="link-icon-button"
                     aria-label="$i18n{itemShowAccessRequestsLearnMore}"
                     href="$i18n{showAccessRequestsInToolbarLearnMoreLink}"
                     target="_blank">
@@ -324,6 +324,32 @@ this text can be found by Ctrl + F because it isn't hidden. -->
             </extensions-toggle-row>` : ''}
         </div>
       </div>` : ''}
+    <div class="section hr">
+      <div class="section-title" role="heading" aria-level="2">
+        $i18n{itemOptionalPermissions}
+      </div>
+      <div class="section-content">
+        <ul id="optional-permissions-list"
+            ?hidden="${!this.data.permissions.optionalSimplePermissions?.length}">
+          ${(this.data.permissions.optionalSimplePermissions || []).map(item => html`
+            <li>
+              <extensions-toggle-row
+                class="optional-permissions-toggle"
+                data-name="${item.name}"
+                ?checked="${item.granted}"
+                @change="${this.onOptionalPermissionChange_}">
+                <div>
+                  ${item.message}
+                  <ul ?hidden="${!item.submessages.length}">
+                    ${item.submessages.map(submessage => html`
+                      <li>${submessage}</li>`)}
+                  </ul>
+                </div>
+              </extensions-toggle-row>
+            </li>`)}
+        </ul>
+      </div>
+    </div>
       ${this.showUserScriptSectionToggle_() ? html`
         <extensions-toggle-row id="allow-user-scripts"
         ?checked="${this.data.userScriptsAccess.isActive}" class="hr"
@@ -402,11 +428,11 @@ this text can be found by Ctrl + F because it isn't hidden. -->
         id="extensionWebsite" label="$i18n{extensionWebsite}"
         @click="${this.onExtensionWebSiteClick_}" external>
     </cr-link-row>
-    <cr-link-row class="hr" ?hidden="${!this.data.webStoreUrl.length}"
+    <cr-link-row class="hr" hidden=true
         id="viewInStore" label="$i18n{viewInStore}"
         @click="${this.onViewInStoreClick_}" external>
     </cr-link-row>
-    <div class="section hr">
+    <div hidden=true class="section hr">
       <div class="section-title" role="heading" aria-level="2">
         $i18n{itemSource}
       </div>

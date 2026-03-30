@@ -40,6 +40,7 @@
 #include "services/network/public/mojom/network_context.mojom.h"
 #include "services/network/public/mojom/shared_storage.mojom.h"
 #include "third_party/blink/public/mojom/use_counter/metrics/web_feature.mojom.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include "base/android/content_uri_utils.h"
@@ -276,6 +277,10 @@ void NetworkServiceClient::OnSSLCertificateError(
     int net_error,
     const net::SSLInfo& ssl_info,
     bool fatal,
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    const GURL& origin_url,
+    const std::string& referrer,
+#endif
     OnSSLCertificateErrorCallback response) {
   std::move(response).Run(net_error);
 }

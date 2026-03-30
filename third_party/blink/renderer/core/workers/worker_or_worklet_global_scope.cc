@@ -6,6 +6,9 @@
 
 #include <utility>
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "base/metrics/histogram_functions.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/threading/thread_checker.h"
@@ -365,6 +368,9 @@ void WorkerOrWorkletGlobalScope::InitializeWebFetchContextIfNeeded() {
     return;
 
   DCHECK(!subresource_filter_);
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  DCHECK(!user_subresource_filter_);
+#endif
   web_worker_fetch_context_->InitializeOnWorkerThread(navigator());
   std::unique_ptr<blink::WebDocumentSubresourceFilter> web_filter =
       web_worker_fetch_context_->TakeSubresourceFilter();
@@ -372,6 +378,15 @@ void WorkerOrWorkletGlobalScope::InitializeWebFetchContextIfNeeded() {
     subresource_filter_ =
         MakeGarbageCollected<SubresourceFilter>(this, std::move(web_filter));
   }
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  std::unique_ptr<blink::WebDocumentSubresourceFilter> user_web_filter =
+      web_worker_fetch_context_->TakeUserSubresourceFilter();
+  if (user_web_filter) {
+    user_subresource_filter_ = MakeGarbageCollected<SubresourceFilter>(
+        this, std::move(user_web_filter));
+  }
+#endif
 }
 
 ResourceFetcher* WorkerOrWorkletGlobalScope::Fetcher() {
@@ -411,6 +426,9 @@ ResourceFetcher* WorkerOrWorkletGlobalScope::CreateFetcherInternal(
                 web_worker_fetch_context_));
     auto* worker_fetch_context = MakeGarbageCollected<WorkerFetchContext>(
         properties, *this, web_worker_fetch_context_, subresource_filter_,
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+        user_subresource_filter_,
+#endif
         content_security_policy, resource_timing_notifier);
     ResourceFetcherInit init(
         properties, worker_fetch_context, GetTaskRunner(TaskType::kNetworking),
@@ -509,6 +527,19 @@ void WorkerOrWorkletGlobalScope::Dispose() {
 
   script_controller_->Dispose();
   script_controller_.Clear();
+
+#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+  if (resource_fetchers_.size()) {
+    LOG(INFO) << "Worker or WorkletGlobalScope Dispose, the size of "
+                 "resource_fetchers_: "
+              << resource_fetchers_.size();
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(INFO) << "Worker or WorkletGlobalScope Dispose, the size of "
+                          "resource_fetchers_: "
+                       << resource_fetchers_.size();
+#endif
+  }
+#endif
 
   for (ResourceFetcher* resource_fetcher : resource_fetchers_) {
     resource_fetcher->StopFetching();
@@ -637,6 +668,9 @@ void WorkerOrWorkletGlobalScope::Trace(Visitor* visitor) const {
   visitor->Trace(inside_settings_resource_fetcher_);
   visitor->Trace(resource_fetchers_);
   visitor->Trace(subresource_filter_);
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  visitor->Trace(user_subresource_filter_);
+#endif
   visitor->Trace(script_controller_);
   EventTarget::Trace(visitor);
   ExecutionContext::Trace(visitor);

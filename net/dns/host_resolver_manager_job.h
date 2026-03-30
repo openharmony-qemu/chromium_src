@@ -36,6 +36,9 @@ class ResolveContext;
 class HostResolverInternalResult;
 class HostResolverMdnsTask;
 class HostResolverNat64Task;
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+class ArkWebHostResolverManagerJobExt;
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 
 // Key used to identify a HostResolverManager::Job.
 struct HostResolverManager::JobKey {
@@ -79,6 +82,12 @@ class HostResolverManager::Job : public PrioritizedDispatcher::Job,
       const base::TickClock* tick_clock,
       const HostResolver::HttpsSvcbOptions& https_svcb_options);
   ~Job() override;
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  virtual ArkWebHostResolverManagerJobExt* AsArkWebHostResolverManagerJobExt() {
+    return nullptr;
+  }
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 
   // Add this job to the dispatcher.  If "at_head" is true, adds at the front
   // of the queue.
@@ -151,6 +160,10 @@ class HostResolverManager::Job : public PrioritizedDispatcher::Job,
   }
 
  private:
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  friend class ArkWebHostResolverManagerJobExt;
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+
   // Explains why a Job didn't attempt HTTPS query.
   // These values are persisted to logs. Entries should not be renumbered and
   // numeric values should never be reused.
@@ -411,5 +424,9 @@ class HostResolverManager::Job : public PrioritizedDispatcher::Job,
 };
 
 }  // namespace net
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#include "arkweb/chromium_ext/net/dns/arkweb_host_resolver_manager_job_ext.h"
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 
 #endif  // NET_DNS_HOST_RESOLVER_MANAGER_JOB_H_

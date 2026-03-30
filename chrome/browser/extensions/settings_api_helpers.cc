@@ -95,7 +95,11 @@ const Extension* GetExtensionOverridingNewTabPage(
   GURL ntp_url(chrome::kChromeUINewTabURL);
   content::BrowserURLHandler::GetInstance()->RewriteURLIfNecessary(
       &ntp_url, browser_context);
-  if (ntp_url.SchemeIs(kExtensionScheme)) {
+  if (ntp_url.SchemeIs(kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      || ntp_url.SchemeIs(kArkwebExtensionScheme)
+#endif
+  ) {
     return ExtensionRegistry::Get(browser_context)
         ->enabled_extensions()
         .GetByID(ntp_url.GetHost());

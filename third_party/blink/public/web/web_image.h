@@ -32,7 +32,10 @@
 #define THIRD_PARTY_BLINK_PUBLIC_WEB_WEB_IMAGE_H_
 
 #include <vector>
-
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "base/time/time.h"
 #include "third_party/blink/public/platform/web_common.h"
 #include "third_party/skia/include/core/SkBitmap.h"
@@ -69,7 +72,11 @@ class BLINK_EXPORT WebImage {
   // image - matching the sizing behavior of an <img> with 'width' and 'height'
   // specified to |desired_size| pixels. If empty, the intrinsic size (if any)
   // of the image will be used.
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  static SkBitmap DecodeSVG(const WebData&, const gfx::Size& desired_size, bool is_favicon = false);
+#else
   static SkBitmap DecodeSVG(const WebData&, const gfx::Size& desired_size);
+#endif
 
   // Returns a list of all frames in the image. Only the first frame at each
   // pixel size will be returned.

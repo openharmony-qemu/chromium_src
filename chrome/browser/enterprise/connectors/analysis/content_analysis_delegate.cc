@@ -663,6 +663,11 @@ ContentAnalysisDelegate::UploadData() {
         base::BindOnce(&ContentAnalysisDelegate::FilesRequestCallback,
                        GetWeakPtr()));
     files_request_complete_ = !files_request_handler_->UploadData();
+    // todo tasks is not defined
+    // #if BUILDFLAG(FULL_SAFE_BROWSING)
+    //     file_opening_job_ =
+    //         std::make_unique<safe_browsing::FileOpeningJob>(std::move(tasks));
+    // #endif
   } else {
     // If no files should be uploaded, the file request is complete.
     files_request_complete_ = true;

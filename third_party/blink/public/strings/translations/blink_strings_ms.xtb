@@ -102,4 +102,7 @@
 <translation id="8901569739625249689"><ph name="QUANTITY" /> KB</translation>
 <translation id="9132465097189459683">Lain-lain...</translation>
 <translation id="916607977885256133">Gambar dalam Gambar</translation>
+<translation id="IDS_MEDIA_REMOTING_CAST_CASTING">Menayangkan…</translation>
+<translation id="IDS_MEDIA_REMOTING_CAST_STOP_CAST">Tamatkan</translation>
+<translation id="IDS_MEDIA_REMOTING_CAST_SWITCH_DEVICE">Tukar peranti</translation>
 </translationbundle>

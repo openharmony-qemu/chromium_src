@@ -30,6 +30,11 @@
 #include "net/third_party/quiche/src/quiche/quic/core/quic_utils.h"
 #include "net/third_party/quiche/src/quiche/quic/core/quic_write_blocked_list.h"
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "base/base_switches.h"
+#include "base/command_line.h"
+#endif
+
 namespace net {
 namespace {
 // Sets a boolean to a value, and restores it to the previous value once
@@ -169,15 +174,46 @@ void QuicChromiumClientStream::Handle::InvokeCallbacksOnClose(int error) {
   // there is no ongoing asynchronous read that could write to the buffer.
   read_body_buffer_ = nullptr;
   read_body_buffer_len_ = 0;
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  size_t i = 0;
+  bool has_called_read_body_callback = false;
+#endif
 
   auto guard(weak_factory_.GetWeakPtr());
   for (auto* callback :
        {&read_headers_callback_, &read_body_callback_, &write_callback_}) {
     if (*callback)
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    {
+#endif
       ResetAndRun(std::move(*callback), error);
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+      // i equals 1 when read_body_callback_ is called.
+      if (i == 1) {
+        has_called_read_body_callback = true;
+      }
+    }
+#endif
     if (!guard.get())
       return;
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    i++;
+#endif
   }
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableLoggerReport) &&
+      guard.get() && has_called_read_body_callback &&
+      error == ERR_QUIC_PROTOCOL_ERROR) {
+    LOG(INFO) << "InvokeCallbacksOnClose will ret " << ERR_QUIC_PROTOCOL_ERROR
+              << ", stream_error " << static_cast<int>(stream_error())
+              << ", connection_error " << static_cast<int>(connection_error())
+              << ", fin_sent " << fin_sent() << ", fin_received "
+              << fin_received() << ", IsDoneReading " << IsDoneReading()
+              << ", stream_id " << id();
+  }
+#endif
 }
 
 int QuicChromiumClientStream::Handle::ReadInitialHeaders(

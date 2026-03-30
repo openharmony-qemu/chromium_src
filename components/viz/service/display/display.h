@@ -40,6 +40,8 @@
 #include "ui/gfx/swap_result.h"
 #include "ui/latency/latency_info.h"
 
+#include "arkweb/chromium_ext/components/viz/service/display/arkweb_display_utils.h"
+
 #if BUILDFLAG(IS_ANDROID)
 #include "ui/gfx/android/surface_control_frame_rate.h"
 #endif
@@ -64,7 +66,13 @@ class OutputSurface;
 class RendererSettings;
 class SkiaOutputSurface;
 class SoftwareRenderer;
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+class DumpFrameObserver;
+#endif
 class OcclusionCuller;
+#if !defined(COMPONENT_BUILD) // FIXME
+class ArkwebDisplayUtils;
+#endif
 
 class VIZ_SERVICE_EXPORT DisplayObserver {
  public:
@@ -158,6 +166,9 @@ class VIZ_SERVICE_EXPORT Display : public DisplaySchedulerClient,
   // DisplaySchedulerClient implementation.
   bool DrawAndSwap(const DrawAndSwapParams& params) override;
   void DidFinishFrame(const BeginFrameAck& ack) override;
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+  void ReenableSwapCheck(const SurfaceId& surface_id, int width, int height) override;
+#endif // ARKWEB_MAXIMIZE_RESIZE
 
   // OutputSurfaceClient implementation.
   void DidReceiveSwapBuffersAck(const gpu::SwapBuffersCompleteParams& params,
@@ -165,6 +176,9 @@ class VIZ_SERVICE_EXPORT Display : public DisplaySchedulerClient,
   void DidReceiveCALayerParams(
       const gfx::CALayerParams& ca_layer_params) override;
   void DidSwapWithSize(const gfx::Size& pixel_size) override;
+#if BUILDFLAG(ARKWEB_ROTATE_RESIZE) && !defined(COMPONENT_BUILD)
+  void DidSwapWithRotate(const gfx::Size& pixel_size) override;
+#endif // ARKWEB_ROTATE_RESIZE
   void DidReceivePresentationFeedback(
       const gfx::PresentationFeedback& feedback) override;
   void DidReceiveReleasedOverlays(
@@ -231,8 +245,23 @@ class VIZ_SERVICE_EXPORT Display : public DisplaySchedulerClient,
   // calls.
   OverdrawTracker::OverdrawTimeSeries StopTrackingOverdraw();
 
+#if !defined(COMPONENT_BUILD) // FIXME
+  ArkwebDisplayUtils* display_utils() {
+    return display_utils_.get();
+  }
+#endif
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  void SetClientId(const uint32_t client_id) override;
+#endif
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+  void SetRendererDrawMode(bool flag);
+#endif
+
  protected:
   friend class DisplayTest;
+#if !defined(COMPONENT_BUILD) // FIXME
+  friend class ArkwebDisplayUtils;
+#endif
   // PresentationGroupTiming stores rendering pipeline stage timings associated
   // with a call to Display::DrawAndSwap along with a list of
   // Surface::PresentationHelper's for each aggregated Surface that will be
@@ -297,6 +326,11 @@ class VIZ_SERVICE_EXPORT Display : public DisplaySchedulerClient,
   bool swapped_since_resize_ = false;
   bool output_is_secure_ = false;
 
+#if BUILDFLAG(ARKWEB_ROTATE_RESIZE)
+  int oldWidth_ = 0;
+  int oldHeight_ = 0;
+#endif // ARKWEB_ROTATE_RESIZE
+
 #if DCHECK_IS_ON()
   std::unique_ptr<gpu::ScopedAllowScheduleGpuTask>
       allow_schedule_gpu_task_during_destruction_;
@@ -354,6 +388,10 @@ class VIZ_SERVICE_EXPORT Display : public DisplaySchedulerClient,
 
   // A subsampler for potential quad information logging.
   base::MetricsSubSampler metrics_subsampler_;
+
+#if !defined(COMPONENT_BUILD) // FIXME
+  std::unique_ptr<ArkwebDisplayUtils> display_utils_;
+#endif
 };
 
 }  // namespace viz

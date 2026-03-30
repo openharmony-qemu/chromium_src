@@ -660,6 +660,13 @@ void ThrottlingURLLoader::OnReceiveResponse(
     base::UmaHistogramBoolean("FetchKeepAlive.Renderer.Total.ReceivedResponse",
                               true);
   }
+#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
+  if (start_info_) {
+    TRACE_EVENT2("loading", "ThrottlingURLLoader::OnReceiveResponse", "url",
+                 response_url_.possibly_invalid_spec(), "id",
+                 start_info_->request_id);
+  }
+#endif
   base::ElapsedTimer timer;
   did_receive_response_ = true;
   body_ = std::move(body);
@@ -721,6 +728,19 @@ void ThrottlingURLLoader::OnReceiveResponse(
   base::UmaHistogramTimes("Net.URLLoaderThrottle.OnReceiveResponseTime",
                           timer.Elapsed());
 }
+
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+void ThrottlingURLLoader::OnTransferDataWithSharedMemory(
+    base::ReadOnlySharedMemoryRegion region,
+    uint64_t buffer_size) {
+  LOG(DEBUG)
+      << "shared-memory ThrottlingURLLoader::OnTransferDataWithSharedMemory "
+         "buffer_size="
+      << buffer_size;
+  forwarding_client_->OnTransferDataWithSharedMemory(std::move(region),
+                                                     buffer_size);
+}
+#endif
 
 void ThrottlingURLLoader::OnReceiveRedirect(
     const net::RedirectInfo& redirect_info,

@@ -44,13 +44,21 @@ constexpr base::TimeDelta kTimeout = base::Milliseconds(5000);
 // Content type for network request.
 constexpr char kContentType[] = "application/json; charset=UTF-8";
 
+#if BUILDFLAG(IS_ARKWEB)
+constexpr char kDefaultServiceBaseUrl[] = "https://***/";
+#else
 // Server addresses to get preview data.
 constexpr char kDefaultServiceBaseUrl[] =
     "https://staging-chromesyncsharedentities-pa.googleapis.com/v1";
+#endif
 constexpr char kAutopushServiceBaseUrl[] =
     "https://autopush-chromesyncsharedentities-pa.sandbox.googleapis.com/v1";
 constexpr char kStableAndBetaServiceBaseUrl[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://***";
+#else
     "https://chromesyncsharedentities-pa.googleapis.com/v1";
+#endif
 
 // How many share entities to retrieve for preview.
 constexpr int kDefaultPreviewDataSize = 550;

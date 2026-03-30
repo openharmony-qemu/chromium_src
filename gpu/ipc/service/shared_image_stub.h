@@ -17,6 +17,8 @@
 #include "gpu/ipc/service/gpu_ipc_service_export.h"
 #include "ui/gfx/gpu_extra_info.h"
 
+#include "arkweb/build/features/features.h"
+
 #if BUILDFLAG(IS_WIN)
 #include "third_party/abseil-cpp/absl/container/flat_hash_map.h"
 #endif
@@ -34,11 +36,17 @@ class SharedContextState;
 struct Mailbox;
 class GpuChannel;
 class GpuChannelSharedImageInterface;
+class SharedImageStubExt;
 class SharedImageFactory;
 
 class GPU_IPC_SERVICE_EXPORT SharedImageStub {
  public:
-  ~SharedImageStub();
+  friend class SharedImageStubExt;
+  virtual gpu::SharedImageStubExt* AsSharedImageStubExt() {
+    return nullptr;
+  }
+
+  virtual ~SharedImageStub();
 
   using SharedImageDestructionCallback =
       base::OnceCallback<void(const gpu::SyncToken&)>;
@@ -153,6 +161,9 @@ class GPU_IPC_SERVICE_EXPORT SharedImageStub {
   // Holds shared memory used in initial data uploads.
   base::ReadOnlySharedMemoryRegion upload_memory_;
   base::ReadOnlySharedMemoryMapping upload_memory_mapping_;
+
+  bool create_shared_image_;
+  bool gl_color_space_;
 
 #if BUILDFLAG(IS_WIN)
   // Fences held by external processes. Registered and signaled from ipc

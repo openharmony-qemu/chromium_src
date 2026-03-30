@@ -18,6 +18,10 @@
 #include "components/sync/model/client_tag_based_data_type_processor.h"
 #include "components/sync/model/data_type_controller_delegate.h"
 
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+#include "arkweb/chromium_ext/components/password_manager/core/browser/password_store/login_database_async_helper_for_include.cc"
+#endif
+
 namespace password_manager {
 
 namespace {

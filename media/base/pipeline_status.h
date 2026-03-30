@@ -18,6 +18,13 @@
 #include "media/base/media_export.h"
 #include "media/base/status.h"
 #include "media/base/timestamp_constants.h"
+#include "arkweb/build/features/features.h"
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+namespace gfx {
+class Rect;
+}
+#endif
 
 namespace media {
 
@@ -78,8 +85,14 @@ enum PipelineStatusCodes : StatusCodeType {
   // rather than it being unsupported.
   DEMUXER_ERROR_PROGRESSIVE_DISABLED = 27,
 
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  PIPELINE_ERROR_INITIALIZATION_FAILED_CUSTOM_PLAYER = 28,
+  // Must be equal to the largest value ever logged.
+  PIPELINE_STATUS_MAX = PIPELINE_ERROR_INITIALIZATION_FAILED_CUSTOM_PLAYER,
+#else
   // Must be equal to the largest value ever logged.
   PIPELINE_STATUS_MAX = DEMUXER_ERROR_PROGRESSIVE_DISABLED,
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 };
 
 MEDIA_EXPORT std::string_view PipelineStatusCodeToString(
@@ -120,6 +133,9 @@ struct PipelineStatusTraits {
       STRINGIFY_STATUS_CASE(CHUNK_DEMUXER_ERROR_EOS_STATUS_DECODE_ERROR);
       STRINGIFY_STATUS_CASE(CHUNK_DEMUXER_ERROR_EOS_STATUS_NETWORK_ERROR);
       STRINGIFY_STATUS_CASE(AUDIO_RENDERER_ERROR);
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+      STRINGIFY_STATUS_CASE(PIPELINE_ERROR_INITIALIZATION_FAILED_CUSTOM_PLAYER);
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
     }
 
 #undef STRINGIFY_STATUS_CASE
@@ -241,6 +257,21 @@ MEDIA_EXPORT bool operator!=(const PipelineStatistics& first,
 // Used for updating pipeline statistics; the passed value should be a delta
 // of all attributes since the last update.
 using StatisticsCB = base::RepeatingCallback<void(const PipelineStatistics&)>;
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+using RectChangedCB = base::RepeatingCallback<void(const gfx::Rect&)>;
+using RectVisibilityChangedCB = base::RepeatingCallback<void(bool)>;
+using LayerRemovedVisibilityChangedCB = base::RepeatingCallback<void(bool)>;
+using CreateTextureCB = base::OnceCallback<void(RectChangedCB, int)>;
+using DestroyTextureCB = base::OnceCallback<void()>;
+#endif
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+using SurfaceCreatedCB = base::RepeatingCallback<void(int)>;
+using RequestSurfaceCB =
+    base::OnceCallback<void(SurfaceCreatedCB, bool, std::string)>;
+using VideoDecoderChangedCB = base::RepeatingCallback<void(bool, std::string)>;
+#endif // ARKWEB_VIDEO_ASSISTANT
 
 }  // namespace media
 

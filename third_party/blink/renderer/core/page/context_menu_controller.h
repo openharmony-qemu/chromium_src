@@ -26,6 +26,7 @@
 #ifndef THIRD_PARTY_BLINK_RENDERER_CORE_PAGE_CONTEXT_MENU_CONTROLLER_H_
 #define THIRD_PARTY_BLINK_RENDERER_CORE_PAGE_CONTEXT_MENU_CONTROLLER_H_
 
+#include "arkweb/build/features/features.h"
 #include "third_party/blink/public/common/input/web_menu_source_type.h"
 #include "third_party/blink/public/mojom/context_menu/context_menu.mojom-blink.h"
 #include "third_party/blink/renderer/core/core_export.h"
@@ -42,6 +43,9 @@ class MouseEvent;
 class Page;
 struct ContextMenuData;
 struct Impression;
+#if BUILDFLAG(IS_ARKWEB)
+class ContextMenuControllerExt;
+#endif
 
 // This class is not final to allow customization by embedders
 class CORE_EXPORT ContextMenuController
@@ -54,6 +58,10 @@ class CORE_EXPORT ContextMenuController
   ~ContextMenuController() override;
   void Trace(Visitor*) const;
 
+#if BUILDFLAG(IS_ARKWEB)
+  friend class ContextMenuControllerExt;
+  virtual ContextMenuControllerExt* AsContextMenuControllerExt() { return nullptr; }
+#endif
   void ClearContextMenu();
 
   void DocumentDetached(Document*);
@@ -144,5 +152,7 @@ class CORE_EXPORT ContextMenuController
 };
 
 }  // namespace blink
-
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/page/context_menu_controller_ext.h"
+#endif
 #endif  // THIRD_PARTY_BLINK_RENDERER_CORE_PAGE_CONTEXT_MENU_CONTROLLER_H_

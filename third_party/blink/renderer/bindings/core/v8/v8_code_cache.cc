@@ -6,6 +6,7 @@
 
 #include <optional>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/span_reader.h"
 #include "base/metrics/histogram_functions.h"
 #include "build/build_config.h"
@@ -740,4 +741,16 @@ void V8CodeCache::RecordCacheSetStatistics(
   base::UmaHistogramEnumeration(kCacheSetHistogram, metadata_type);
 }
 
+void V8CodeCache::ProduceCacheUtils(v8::Isolate* isolate,
+                                    CodeCacheHost* code_cache_host,
+                                    v8::Local<v8::UnboundScript> unbound_script,
+                                    ScriptCachedMetadataHandler* cache_handler,
+                                    size_t source_text_length,
+                                    const KURL& source_url,
+                                    const TextPosition& source_start_position,
+                                    const char* trace_name,
+                                    V8CodeCache::ProduceCacheOptions produce_cache_options) {
+  ProduceCacheInternal(isolate, code_cache_host, unbound_script, cache_handler, source_text_length,
+                       source_url, source_start_position, trace_name, produce_cache_options);
+}
 }  // namespace blink

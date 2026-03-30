@@ -81,6 +81,10 @@ struct CONTENT_EXPORT DropData {
   // if no sanitized name could be synthesized.
   std::optional<base::FilePath> GetSafeFilenameForImageFileContents() const;
 
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  bool IsImageFileContents() const;
+#endif
+
   int view_id = IPC::mojom::kRoutingIdNone;
 
   // Whether this drag originated from a renderer.

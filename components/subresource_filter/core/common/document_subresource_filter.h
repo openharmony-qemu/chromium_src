@@ -28,6 +28,10 @@ namespace subresource_filter {
 class FirstPartyOrigin;
 class MemoryMappedRuleset;
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+class DocumentSubresourceFilterExt;
+#endif
+
 // Performs filtering of subresource loads in the scope of a given document.
 class DocumentSubresourceFilter {
  public:
@@ -45,7 +49,17 @@ class DocumentSubresourceFilter {
   DocumentSubresourceFilter& operator=(const DocumentSubresourceFilter&) =
       delete;
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  virtual ~DocumentSubresourceFilter();
+
+  virtual DocumentSubresourceFilterExt* AsDocumentSubresourceFilterExt() {
+    return nullptr;
+  }
+
+  friend class DocumentSubresourceFilterExt;
+#else
   ~DocumentSubresourceFilter();
+#endif
 
   const mojom::ActivationState& activation_state() const {
     return activation_state_;
@@ -79,7 +93,11 @@ class DocumentSubresourceFilter {
  private:
   mojom::ActivationState activation_state_;
   const scoped_refptr<const MemoryMappedRuleset> ruleset_;
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  const ArkWebIndexedRulesetMatcherExt ruleset_matcher_;
+#else
   const IndexedRulesetMatcher ruleset_matcher_;
+#endif
 
   // Equals nullptr iff |activation_state_.filtering_disabled_for_document|.
   std::unique_ptr<FirstPartyOrigin> document_origin_;
@@ -90,5 +108,9 @@ class DocumentSubresourceFilter {
 };
 
 }  // namespace subresource_filter
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+#include "arkweb/chromium_ext/components/subresource_filter/core/common/document_subresource_filter_ext.h"
+#endif
 
 #endif  // COMPONENTS_SUBRESOURCE_FILTER_CORE_COMMON_DOCUMENT_SUBRESOURCE_FILTER_H_

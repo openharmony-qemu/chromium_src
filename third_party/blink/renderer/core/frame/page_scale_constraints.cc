@@ -27,7 +27,10 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_VIEWPORT)
+#include "base/logging.h"
+#endif
 #include "third_party/blink/renderer/core/frame/page_scale_constraints.h"
 
 #include <algorithm>
@@ -81,6 +84,11 @@ void PageScaleConstraints::FitToContentsWidth(
 
   // Clamp the minimum scale so that the viewport can't exceed the document
   // width.
+#if BUILDFLAG(ARKWEB_VIEWPORT)
+  LOG(INFO) << "FitToContentsWidth: compare the minimum_scale(" << minimum_scale
+            << ") and (" << view_width_not_including_scrollbars << "/"
+            << contents_width << ")";
+#endif
   minimum_scale = std::max(
       minimum_scale, view_width_not_including_scrollbars / contents_width);
 

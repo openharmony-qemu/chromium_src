@@ -15,6 +15,8 @@
 #include "services/network/public/mojom/url_response_head.mojom.h"
 #include "url/gurl.h"
 
+#include "arkweb/build/features/features.h"
+
 namespace metrics::private_metrics {
 
 namespace {
@@ -76,8 +78,13 @@ constexpr net::NetworkTrafficAnnotationTag kPrivateMetricsKeyNetworkTag =
         }
         })");
 
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+inline constexpr char kDataUploadConfigGstaticUrl[] =
+    "https://x.x.x.x";
+#else
 inline constexpr char kDataUploadConfigGstaticUrl[] =
     "https://www.gstatic.com/chrome/private-metrics/data-upload-config";
+#endif
 }  // namespace
 
 std::unique_ptr<network::SimpleURLLoader> CreateSimpleURLLoader(

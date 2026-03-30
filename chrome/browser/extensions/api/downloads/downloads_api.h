@@ -23,6 +23,11 @@
 #include "extensions/browser/extension_registry.h"
 #include "extensions/browser/extension_registry_observer.h"
 #include "extensions/browser/warning_set.h"
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "ohos_nweb/src/capi/browser_service/nweb_extension_downloads_types.h"
+#endif // ARKWEB_ARKWEB_EXTENSIONS
+
 #include "extensions/buildflags/buildflags.h"
 
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
@@ -35,6 +40,9 @@ class Profile;
 // https://docs.google.com/document/d/12rNimeeGaA8jEV60PPKtT4pmJYmY9ae_edl3hJyoXYE/
 
 namespace extensions {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "cef/ohos_cef_ext/libcef/browser/extensions/api/downloads/downloads_api_for_include_file.cc"
+#endif
 
 class DownloadedByExtension : public base::SupportsUserData::Data {
  public:
@@ -67,6 +75,16 @@ class DownloadsDownloadFunction : public ExtensionFunction {
       delete;
 
   ResponseAction Run() override;
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  static void GetDownloadIdCallback(
+          const base::WeakPtr<DownloadsDownloadFunction>& function,
+          download::DownloadItem* item,
+          const base::FilePath& creator_suggested_filename,
+          api::downloads::FilenameConflictAction creator_conflict_action,
+          const std::optional<std::string>& error,
+          int downloadId);
+  bool call_downloads_download_ = false;
+#endif
 
  protected:
   ~DownloadsDownloadFunction() override;
@@ -77,8 +95,12 @@ class DownloadsDownloadFunction : public ExtensionFunction {
                      creator_conflict_action,
                  download::DownloadItem* item,
                  download::DownloadInterruptReason interrupt_reason);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  base::WeakPtrFactory<DownloadsDownloadFunction> weak_ptr_factory_{this};
+#endif
 };
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 class DownloadsSearchFunction : public ExtensionFunction {
  public:
   DECLARE_EXTENSION_FUNCTION("downloads.search", DOWNLOADS_SEARCH)
@@ -214,6 +236,7 @@ class DownloadsShowDefaultFolderFunction : public ExtensionFunction {
  public:
   DECLARE_EXTENSION_FUNCTION(
       "downloads.showDefaultFolder", DOWNLOADS_SHOWDEFAULTFOLDER)
+                             
   DownloadsShowDefaultFolderFunction();
 
   DownloadsShowDefaultFolderFunction(
@@ -299,6 +322,7 @@ class DownloadsGetFileIconFunction : public ExtensionFunction {
   base::FilePath path_;
   std::unique_ptr<DownloadFileIconExtractor> icon_extractor_;
 };
+#endif
 
 // Observes a single DownloadManager and many DownloadItems and dispatches
 // onCreated and onErased events.

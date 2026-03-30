@@ -116,11 +116,11 @@ group("resources") {
     ]
   }
 
-  if (is_win || is_mac || is_linux || is_chromeos || is_desktop_android) {
+  if (is_win || is_mac || is_linux || is_chromeos || is_desktop_android || is_ohos) {
     public_deps += [ "discards:resources" ]
   }
 
-  if (is_win || is_mac || is_linux) {
+  if (is_win || is_mac || is_linux || is_ohos) {
     public_deps += [
       "app_home:resources",
       "app_settings:resources",

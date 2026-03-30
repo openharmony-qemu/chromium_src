@@ -99,7 +99,7 @@ source_set("utility") {
     }
   }
 
-  if (is_linux || is_chromeos) {
+  if (!is_component_build && (is_linux || is_chromeos || is_ohos)) { # FIXME is_component_build
     deps += [
       "//content/utility/speech:speech_recognition_sandbox_hook",
       "//media/gpu/sandbox",
@@ -129,7 +129,8 @@ source_set("utility") {
     deps += [ "//services/proxy_resolver:lib" ]
   }
 
-  if (enable_screen_ai_service && (is_linux || is_chromeos)) {
+  # FIXME is_component_build
+  if (!is_component_build && enable_screen_ai_service && (is_linux || is_chromeos || is_ohos)) {
     deps += [ "//services/screen_ai:screen_ai_sandbox_hook" ]
   }
 

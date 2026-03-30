@@ -10,9 +10,11 @@
 
 #include "base/compiler_specific.h"
 #include "base/hash/hash.h"
+#include "base/logging.h"
 #include "base/json/string_escape.h"
 #include "base/trace_event/trace_event.h"
 #include "base/trace_event/traced_value.h"
+#include "build/build_config.h"
 #include "third_party/perfetto/include/perfetto/protozero/message_handle.h"
 #include "third_party/perfetto/include/perfetto/protozero/root_message.h"
 #include "third_party/perfetto/include/perfetto/protozero/scattered_heap_buffer.h"
@@ -84,7 +86,16 @@ class ProtoWriter final : public TracedValue::Writer {
   }
 
   void SetString(const char* name, std::string_view value) override {
+  #if BUILDFLAG(IS_ARKWEB)
+    auto protoValue = AddDictEntry(name);
+    if (protoValue != nullptr) {
+      protoValue->set_string_value(value.data(), value.size());
+    } else {
+      LOG(ERROR) << "AddDictEntry protoValue is nullptr";
+    } 
+  #else
     AddDictEntry(name)->set_string_value(value.data(), value.size());
+  #endif
   }
 
   void SetStringWithCopiedName(std::string_view name,

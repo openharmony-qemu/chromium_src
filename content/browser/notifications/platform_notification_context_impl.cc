@@ -2,6 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "arkweb/chromium_ext/content/browser/notifications/blink_notification_service_impl_ext.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "content/browser/notifications/platform_notification_context_impl.h"
 
 #include <set>
@@ -292,7 +296,11 @@ void PlatformNotificationContextImpl::CreateService(
     RenderProcessHost::NotificationServiceCreatorType creator_type,
     mojo::PendingReceiver<blink::mojom::NotificationService> receiver) {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
+#if BUILDFLAG(ARKWEB_NOTIFICATION)
+  services_.push_back(std::make_unique<BlinkNotificationServiceImplExt>(
+#else
   services_.push_back(std::make_unique<BlinkNotificationServiceImpl>(
+#endif
       this, browser_context_, service_worker_context_, render_process_host,
       storage_key, document_url, weak_document_ptr, creator_type,
       std::move(receiver)));

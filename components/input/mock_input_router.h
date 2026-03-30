@@ -7,6 +7,7 @@
 
 #include <optional>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/task/sequenced_task_runner.h"
 #include "cc/input/touch_action.h"
@@ -44,6 +45,9 @@ class MockInputRouter : public InputRouter {
                       DispatchToRendererCallback& dispatch_callback) override;
   void NotifySiteIsMobileOptimized(bool is_mobile_optimized) override {}
   bool HasPendingEvents() const override;
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+  void DynamicFrameLossEvent(const std::string& sceneId, bool isStart) override;
+#endif
   void SetDeviceScaleFactor(float device_scale_factor) override {}
   std::optional<cc::TouchAction> AllowedTouchAction() override;
   std::optional<cc::TouchAction> ActiveTouchAction() override;
@@ -55,6 +59,28 @@ class MockInputRouter : public InputRouter {
   void OnHasTouchEventConsumers(
       blink::mojom::TouchEventConsumersPtr consumers) override;
   void WaitForInputProcessed(base::OnceClosure callback) override {}
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  void SetGestureEventResult(bool result, bool stopPropagation, int32_t fingerId) override {}
+  void SetNativeEmbedMode(bool flag) override {}
+  void SetMouseEventResult(bool result, bool stopPropagation) override {}
+  void SetEnableCustomVideoPlayer(bool flag) override {}
+#endif
+
+#if BUILDFLAG(ARKWEB_FLING)
+  void UpdateFlingVelocityLimit(const gfx::Vector2dF& velocity) override {}
+#endif
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  void ScrollBy(float delta_x, float delta_y) override {}
+  void SetBypassVsyncCondition(int32_t condition) override {}
+#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+  void SetFocusWebId(int32_t nweb_id) override {}
+ 
+  void SetScrollable(bool enable) override {}
+#endif
 
   bool sent_mouse_event_ = false;
   bool sent_wheel_event_ = false;

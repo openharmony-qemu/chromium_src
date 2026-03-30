@@ -1885,6 +1885,12 @@ AuthenticationCredentialsContainer::create(
     mojo_options->relying_party->id =
         resolver->GetExecutionContext()->GetSecurityOrigin()->Domain();
   }
+#if BUILDFLAG(ARKWEB_FIDO)
+    using PublicKeyCredentialMediationRequirement =
+        blink::mojom::blink::PublicKeyCredentialMediationRequirement;
+    mojo_options->mediation =
+        PublicKeyCredentialMediationRequirement::OPTIONAL;
+#endif  // BUILDFLAG(ARKWEB_FIDO)
 
   auto* authenticator =
       CredentialManagerProxy::From(script_state)->Authenticator();

@@ -11,6 +11,9 @@
 #include <set>
 #include <utility>
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "base/containers/contains.h"
 #include "base/debug/crash_logging.h"
 #include "base/debug/dump_without_crashing.h"
@@ -657,6 +660,12 @@ void FrameTree::SetFocusedFrame(FrameTreeNode* node,
                                         ->GetRenderFrameProxyHost(group);
 
       if (proxy) {
+      #if BUILDFLAG(ARKWEB_FOCUS)
+        if (focused_frame_tree_node_id_.is_null()) {
+          LOG(INFO) << "first time not clear the focus frame.";
+          break;
+        }
+      #endif
         proxy->SetFocusedFrame();
       } else {
         base::debug::DumpWithoutCrashing();
@@ -1002,7 +1011,12 @@ void FrameTree::NodeLoadingStateChanged(
                                          LoadingState::NONE);
   delegate_->LoadingStateChanged(new_frame_tree_loading_state);
   if (previous_frame_tree_loading_state == LoadingState::NONE) {
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
+    delegate_->DidStartLoading(&node, new_frame_tree_loading_state ==
+                                          LoadingState::LOADING_UI_REQUESTED);
+#else
     delegate_->DidStartLoading(&node);
+#endif
   } else if (new_frame_tree_loading_state == LoadingState::NONE) {
     delegate_->DidStopLoading();
   }

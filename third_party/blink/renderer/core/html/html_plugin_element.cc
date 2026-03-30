@@ -67,6 +67,12 @@
 #include "third_party/blink/renderer/platform/network/mime/mime_type_registry.h"
 #include "third_party/blink/renderer/platform/scheduler/public/frame_scheduler.h"
 #include "third_party/blink/renderer/platform/scheduler/public/scheduling_policy.h"
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+#include "third_party/blink/renderer/core/layout/layout_native.h"
+#include "third_party/blink/renderer/core/html/html_native_loader.h"
+#endif
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/html/html_plugin_element_utils.h"
 #include "third_party/blink/renderer/platform/wtf/text/strcat.h"
 
 namespace blink {
@@ -139,6 +145,7 @@ HTMLPlugInElement::HTMLPlugInElement(const QualifiedName& tag_name,
       // simpler to make both classes share the same codepath in this class.
       needs_plugin_update_(!flags.IsCreatedByParser()) {
   SetHasCustomStyleCallbacks();
+  utils_ = MakeGarbageCollected<HTMLPlugInElementUtils>(this);
 }
 
 HTMLPlugInElement::~HTMLPlugInElement() {
@@ -149,6 +156,10 @@ HTMLPlugInElement::~HTMLPlugInElement() {
 void HTMLPlugInElement::Trace(Visitor* visitor) const {
   visitor->Trace(image_loader_);
   visitor->Trace(persisted_plugin_);
+  visitor->Trace(utils_);
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  visitor->Trace(native_loader_);
+#endif
   HTMLFrameOwnerElement::Trace(visitor);
 }
 
@@ -236,6 +247,9 @@ void HTMLPlugInElement::AttachLayoutTree(AttachContext& context) {
     if (layout_object->IsLayoutEmbeddedContent())
       SetEmbeddedContentView(content_frame->View());
   } else if (!IsImageType() && NeedsPluginUpdate() &&
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+             !IsNativeType() &&
+#endif
              GetLayoutEmbeddedObject() &&
              !GetLayoutEmbeddedObject()->ShowsUnavailablePluginIndicator() &&
              GetObjectContentType() != ObjectContentType::kPlugin &&
@@ -256,6 +270,14 @@ void HTMLPlugInElement::AttachLayoutTree(AttachContext& context) {
   if (image_loader_ && IsA<LayoutImage>(*layout_object)) {
     image_loader_->OnAttachLayoutTree();
   }
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  if (!native_loader_ && IsNativeType() && layout_object->IsLayoutNative()) {
+    native_loader_ = MakeGarbageCollected<HTMLNativeLoader>(this);
+    native_loader_->ScheduleLoadResource();
+    Utils()->ProcessBufferedParamChanges();
+    Utils()->ProcessStretchContentToFillBounds();
+  }
+#endif
   if (layout_object->AffectsWhitespaceSiblings())
     context.previous_in_flow = layout_object;
 
@@ -286,7 +308,12 @@ void HTMLPlugInElement::RemovedFrom(ContainerNode& insertion_point) {
   // Plugins can persist only through reattachment during a lifecycle
   // update. This method shouldn't be called in that lifecycle phase.
   DCHECK(!persisted_plugin_);
-
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  if (native_loader_) {
+    native_loader_->Dispose();
+    native_loader_ = nullptr;
+  }
+#endif
   HTMLFrameOwnerElement::RemovedFrom(insertion_point);
 }
 
@@ -342,6 +369,12 @@ void HTMLPlugInElement::DetachLayoutTree(bool performing_reattach) {
   RemovePluginFromFrameView(plugin);
   ResetInstance();
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  if (native_loader_ && !performing_reattach) {
+    native_loader_->Dispose();
+    native_loader_ = nullptr;
+  }
+#endif
   HTMLFrameOwnerElement::DetachLayoutTree(performing_reattach);
 }
 
@@ -358,7 +391,12 @@ LayoutObject* HTMLPlugInElement::CreateLayoutObject(
     image->SetImageResource(MakeGarbageCollected<LayoutImageResource>());
     return image;
   }
-
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  if (IsNativeType()) {
+    LayoutNative* native = MakeGarbageCollected<LayoutNative>(this);
+    return native;
+  }
+#endif
   plugin_is_available_ = true;
   return MakeGarbageCollected<LayoutEmbeddedObject>(this);
 }

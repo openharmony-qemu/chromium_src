@@ -49,6 +49,10 @@
 #include "ui/gfx/geometry/point_conversions.h"
 #include "ui/gfx/geometry/rect_f.h"
 
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/scroll/scrollable_area_utils.h"
+#endif
+
 namespace blink {
 bool ButtonInteractsWithScrollbar(const WebPointerProperties::Button button) {
   if (button == WebPointerProperties::Button::kMiddle) {
@@ -122,6 +126,18 @@ void Scrollbar::SetFrameRect(const gfx::Rect& frame_rect) {
   if (scrollable_area_)
     scrollable_area_->ScrollbarFrameRectChanged();
 }
+
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+SkColor Scrollbar::GetScrollBarColor() const {
+  return scrollable_area_ ? scrollable_area_->GetUtils()->GetScrollBarColor() : 0;
+}
+#endif  // ARKWEB_SCROLLBAR
+
+#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_AREA)
+double Scrollbar::GetScrollbarAvoidAreaTop() const {
+  return scrollable_area_->GetScrollbarAvoidAreaTop();
+}
+#endif // ARKWEB_SCROLLBAR_AVOID_AREA
 
 bool Scrollbar::HasTickmarks() const {
   return orientation_ == kVerticalScrollbar && scrollable_area_ &&
@@ -450,6 +466,9 @@ bool Scrollbar::HandleGestureTapOrPress(const WebGestureEvent& evt) {
       return true;
     case WebInputEvent::Type::kGestureShortPress:
     case WebInputEvent::Type::kGestureLongPress:
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+    case WebInputEvent::Type::kGestureDragLongPress:
+#endif
       scroll_pos_ = 0;
       pressed_pos_ = 0;
       SetPressedPart(kNoPart, evt.GetType());

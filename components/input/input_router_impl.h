@@ -9,6 +9,7 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "base/component_export.h"
 #include "base/containers/flat_map.h"
 #include "base/gtest_prod_util.h"
@@ -43,6 +44,8 @@ class SitePerProcessBrowserTouchActionTest;
 
 namespace input {
 
+class ArkwebInputRouterImplUtils;
+class ArkwebInputRouterImplExt;
 class InputDispositionHandler;
 
 // A default implementation for browser input event routing.
@@ -59,6 +62,11 @@ class COMPONENT_EXPORT(INPUT) InputRouterImpl
   ADVANCED_MEMORY_SAFETY_CHECKS();
 
  public:
+  friend class ArkwebInputRouterImplUtils;
+  friend class ArkwebInputRouterImplExt;
+  virtual ArkwebInputRouterImplExt* AsArkwebInputRouterImplExt() {
+    return nullptr;
+  }
   InputRouterImpl(InputRouterClient* client,
                   InputDispositionHandler* disposition_handler,
                   FlingControllerSchedulerClient* fling_scheduler_client,
@@ -98,6 +106,10 @@ class COMPONENT_EXPORT(INPUT) InputRouterImpl
   void SetTouchActionFromMain(cc::TouchAction touch_action) override;
   void SetPanAction(blink::mojom::PanAction pan_action) override;
   void DidOverscroll(blink::mojom::DidOverscrollParamsPtr params) override;
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  bool GetNativeResult() { return native_result_; }
+  bool GetMouseNativeResult() { return mouse_native_result_; }
+#endif
   void ImeCancelComposition() override;
   void DidStartScrollingViewport() override;
   void ImeCompositionRangeChanged(
@@ -122,9 +134,19 @@ class COMPONENT_EXPORT(INPUT) InputRouterImpl
     return host_receiver_;
   }
 
+#if BUILDFLAG(ARKWEB_FLING)
+  void UpdateFlingVelocityLimit(const gfx::Vector2dF& velocity) override;
+#endif
+
   void ForceResetTouchActionForTest();
 
   bool IsFlingActiveForTest();
+
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+  void SetFocusWebId(int32_t nweb_id) override {}
+
+  void SetScrollable(bool enable) override {}
+#endif
 
   // TouchActionFilterClient
   void OnUnconfirmedTapConvertedToTap() override;
@@ -184,6 +206,27 @@ class COMPONENT_EXPORT(INPUT) InputRouterImpl
       const ui::LatencyInfo& latency_info) override;
   bool IsWheelScrollInProgress() override;
   bool IsAutoscrollInProgress() override;
+
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+  void DynamicFrameLossEvent(const std::string& sceneId, bool isStart) override {}
+#endif
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  void SetGestureEventResult(bool result,
+    bool stopPropagation, int32_t fingerId) override {}
+
+  void SetNativeEmbedMode(bool flag) override {}
+  void SetMouseEventResult(bool result, bool stopPropagation) override {}
+  void SetEnableCustomVideoPlayer(bool flag) override {}
+#endif
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  void ScrollBy(float delta_x, float delta_y) override {}
+#endif
+
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  void SetBypassVsyncCondition(int32_t condition) override {}
+#endif
 
   // TouchpadPinchEventQueueClient
   void SendMouseWheelEventForPinchImmediately(
@@ -255,6 +298,12 @@ class COMPONENT_EXPORT(INPUT) InputRouterImpl
   void ProcessDeferredGestureEventQueue();
   void OnSetCompositorAllowedTouchAction(cc::TouchAction touch_action);
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  bool native_result_ = false;
+  bool mouse_native_result_ = false;
+  std::unique_ptr<ArkwebInputRouterImplUtils> arkweb_input_router_impl_utils_;
+#endif
+
   raw_ptr<InputRouterClient> client_;
   raw_ptr<InputDispositionHandler> disposition_handler_;
 
@@ -285,7 +334,6 @@ class COMPONENT_EXPORT(INPUT) InputRouterImpl
   // The host receiver associated with the widget input handler from
   // the widget.
   mojo::Receiver<blink::mojom::WidgetInputHandlerHost> host_receiver_{this};
-
   // The last touch move event that was received. If the
   // kSendEmptyGestureScrollUpdate flag is enabled, `last_touch_move_event_` is
   // stored until a gesture scroll update event is received and the two are sent

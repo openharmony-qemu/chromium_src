@@ -12,6 +12,9 @@ import("//testing/test.gni")
 import("//third_party/angle/gni/angle.gni")
 import("//third_party/dawn/scripts/dawn_features.gni")
 import("//ui/gl/features.gni")
+if (is_arkweb) {
+  import("//arkweb/build/features/features.gni")
+}
 
 declare_args() {
   # Whether service side logging (actual calls into the GL driver) is enabled
@@ -193,6 +196,12 @@ component("gl") {
       "//third_party/swiftshader/src/Vulkan:icd_file",
       "//third_party/swiftshader/src/Vulkan:swiftshader_libvulkan",
     ]
+  }
+
+  if (is_arkweb) {
+    import("//arkweb/chromium_ext/ui/gl/arkweb_ui_gl_ext.gni")
+    sources += arkweb_ui_gl_ext_sources
+    deps += arkweb_ui_gl_ext_deps
   }
 
   if (enable_vulkan) {
@@ -573,6 +582,15 @@ test("gl_unittests") {
     "//ui/platform_window",
     "//ui/platform_window:platform_impls",
   ]
+
+  if (arkweb_test) {
+    include_dirs = ohos_src_includes
+    import("//arkweb/chromium_ext/ui/gl/arkweb_ui_gl_unittests_ext.gni")
+    deps += arkweb_unittests_deps
+    deps += [ "//components/performance_manager/scenario_api" ]
+    sources += arkweb_unittests_sources
+    configs += [ "//content:content_implementation" ]
+  }
 
   data_deps = [ "//testing/buildbot/filters:gl_unittests_filters" ]
 

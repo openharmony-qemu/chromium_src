@@ -6,6 +6,7 @@
 
 #include "base/auto_reset.h"
 #include "base/feature_list.h"
+#include "base/logging.h"
 #include "base/sequence_checker.h"
 #include "third_party/abseil-cpp/absl/container/flat_hash_map.h"
 
@@ -43,8 +44,17 @@ SupportsUserData::Data* SupportsUserData::GetUserData(const void* key) const {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   // Avoid null keys; they are too vulnerable to collision.
   DCHECK(key);
+  if (impl_ == nullptr) {
+    LOG(ERROR) << "impl_ is " << (impl_ != nullptr);
+    return nullptr;
+  }
   auto found = impl_->user_data_.find(key);
   if (found != impl_->user_data_.end()) {
+#if BUILDFLAG(ARKWEB_WEBSTORAGE)
+  if (!found->second.get()) {
+    LOG(ERROR) << "GetUserData called, key : " << key << ", value nullptr";
+  }
+#endif  // BUILDFLAG(ARKWEB_WEBSTORAGE)
     return found->second.get();
   }
   return nullptr;

@@ -95,7 +95,7 @@ class KeywordTable : public WebDatabaseTable {
   enum OperationType {
     ADD,
     REMOVE,
-    UPDATE,
+    UPDATE_OP,
   };
 
   typedef std::pair<OperationType, TemplateURLData> Operation;

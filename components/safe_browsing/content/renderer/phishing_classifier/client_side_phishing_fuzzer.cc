@@ -34,8 +34,7 @@ DEFINE_PROTO_FUZZER(
     return;
   }
 
-  if (!safe_browsing::ClientSidePhishingModel::
-          VerifyCSDFlatBufferIndicesAndFields(model)) {
+  if (!safe_browsing::ClientSidePhishingModel::VerifyCSDFlatBufferIndicesAndFields(model)) {
     return;
   }
 

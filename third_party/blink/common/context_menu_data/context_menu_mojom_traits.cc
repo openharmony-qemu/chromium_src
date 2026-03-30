@@ -4,6 +4,9 @@
 
 #include "third_party/blink/public/common/context_menu_data/context_menu_mojom_traits.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "build/build_config.h"
 #include "third_party/blink/public/common/context_menu_data/menu_item_info.h"
 
@@ -54,6 +57,13 @@ bool StructTraits<blink::mojom::UntrustworthyContextMenuParamsDataView,
     return false;
   }
 
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  out->is_ai_link = data.is_ai_link();
+  if (!data.ReadImageRect(&out->image_rect)) {
+    return false;
+  }
+#endif
+
   out->x = data.x();
   out->y = data.y();
   out->has_image_contents = data.has_image_contents();
@@ -61,6 +71,9 @@ bool StructTraits<blink::mojom::UntrustworthyContextMenuParamsDataView,
   out->media_flags = data.media_flags();
   out->spellcheck_enabled = data.spellcheck_enabled();
   out->is_editable = data.is_editable();
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+  out->is_selectable = data.is_selectable();
+#endif
   out->writing_direction_default = data.writing_direction_default();
   out->writing_direction_left_to_right = data.writing_direction_left_to_right();
   out->writing_direction_right_to_left = data.writing_direction_right_to_left();

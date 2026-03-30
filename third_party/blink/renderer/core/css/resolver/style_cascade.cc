@@ -77,6 +77,10 @@
 #include "third_party/blink/renderer/platform/wtf/text/string_view.h"
 #include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/css/resolver/style_cascade_for_include.cc"
+#endif
+
 namespace blink {
 
 namespace {
@@ -961,7 +965,16 @@ void StyleCascade::LookupAndApplyDeclaration(const CSSProperty& property,
   DCHECK(IsA<CustomProperty>(property) || !value->IsUnparsedDeclaration());
   DCHECK(!value->IsPendingSubstitutionValue());
   value = &value->EnsureScopedValue(tree_scope);
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  blink::EDisplay tmp = state_.StyleBuilder().Display();
+#endif
+
   StyleBuilder::ApplyPhysicalProperty(property, state_, *value);
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  StyleCascadeUtil::LookupAndApplyDeclarationExt(this, property, tmp);
+#endif
 }
 
 void StyleCascade::LookupAndApplyInterpolation(const CSSProperty& property,
@@ -2823,10 +2836,15 @@ CSSVariableData* StyleCascade::GetEnvironmentVariable(
   auto* shadow_root = DynamicTo<ShadowRoot>(&scope_root);
   bool is_ua_scope = shadow_root && shadow_root->IsUserAgent();
 
+#if BUILDFLAG(ARKWEB_DISPLAY_CUTOUT) && BUILDFLAG(ARKWEB_ADBLOCK)
+  return StyleCascadeUtil::GetEnvironmentVariableExt(this, name, indices,
+                                                     is_ua_scope);
+#else
   return state_.GetDocument()
       .GetStyleEngine()
       .EnsureEnvironmentVariables()
       .ResolveVariable(name, std::move(indices), !is_ua_scope);
+#endif
 }
 
 const CSSParserContext* StyleCascade::GetParserContext(

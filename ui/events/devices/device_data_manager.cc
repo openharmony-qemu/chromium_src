@@ -4,6 +4,7 @@
 
 #include "ui/events/devices/device_data_manager.h"
 
+#include "arkweb/chromium_ext/ui/events/devices/arkweb_device_data_manager_utils.h"
 #include <algorithm>
 
 #include "base/at_exit.h"
@@ -42,11 +43,24 @@ bool InputDeviceEquals(const ui::InputDevice& a, const ui::InputDevice& b) {
 DeviceDataManager* DeviceDataManager::instance_ = nullptr;
 
 DeviceDataManager::DeviceDataManager() {
+#if !BUILDFLAG(ARKWEB_TEST)
+  arkweb_device_data_manager_utils_ = std::make_unique<ArkWebDeviceDataManagerUtils>(this);
+#endif
   DCHECK(!instance_);
   instance_ = this;
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS) && !BUILDFLAG(ARKWEB_TEST)
+  arkweb_device_data_manager_utils_->SetupDeviceListeners();
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+}
+
+ArkWebDeviceDataManagerUtils* DeviceDataManager::GetArkWebDeviceDataManagerUtils() {
+    return arkweb_device_data_manager_utils_.get();
 }
 
 DeviceDataManager::~DeviceDataManager() {
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS) && !BUILDFLAG(ARKWEB_TEST)
+  arkweb_device_data_manager_utils_->CleanupDeviceListeners();
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
   instance_ = nullptr;
 }
 

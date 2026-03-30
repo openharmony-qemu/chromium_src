@@ -67,6 +67,20 @@
 #include "url/gurl.h"
 #include "url/origin.h"
 
+#if BUILDFLAG(ENABLE_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+#include "arkweb/chromium_ext/net/base/page_res_request_info.h"
+#include "net/http/http_transaction.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#include "arkweb/chromium_ext/net/base/fallback_proxy_constants.h"
+#include "net/base/proxy_delegate.h"
+#endif
+
 namespace net {
 
 class CookieOptions;
@@ -767,6 +781,10 @@ class NET_EXPORT URLRequest : public base::SupportsUserData {
   // Returns context()->network_delegate().
   NetworkDelegate* network_delegate() const;
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  ProxyDelegate* proxy_delegate() const;
+#endif
+
   const NetLogWithSource& net_log() const { return net_log_; }
 
   // Returns the expected content size if available
@@ -932,7 +950,59 @@ class NET_EXPORT URLRequest : public base::SupportsUserData {
     return storage_access_status_;
   }
 
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  void set_update_res_request_info_callback(HttpTransaction::UpdateResRequestInfoCallback callback) {
+    update_res_request_info_callback_ = callback;
+  }
+  HttpTransaction::UpdateResRequestInfoCallback update_res_request_info_callback() {
+    return update_res_request_info_callback_;
+  }
+
+  void set_allow_preload_record(bool allow) { allow_preload_record_ = allow; }
+  bool allow_preload_record() const { return allow_preload_record_; }
+
+  void set_main_url(const GURL& url) { main_url_ = url; }
+  const GURL& main_url() const { return main_url_; }
+
+  void set_preload_info(const std::shared_ptr<ohos_prp_preload::PRRequestInfo>& preload_info) {
+    preload_info_ = preload_info;
+  }
+  std::shared_ptr<ohos_prp_preload::PRRequestInfo> preload_info() const { return preload_info_; }
+
+  bool CanReadFromURLRequestJob() { return job_.get() != nullptr; }
+#endif
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  int32_t usage_scenario_ = 99;
+  void set_usage_scenario(int32_t usage_scenario) {
+    usage_scenario_ = usage_scenario;
+  }
+  int32_t usage_scenario() { return usage_scenario_; }
+#endif
+
   static bool DefaultCanUseCookies();
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  void set_fallback_proxy_error_code(int error_code) {
+    fallback_proxy_error_code_ = error_code;
+  }
+  int fallback_proxy_error_code() const { return fallback_proxy_error_code_; }
+
+  void set_used_fallback_proxy(bool value) { used_fallback_proxy_ = value; }
+  bool used_fallback_proxy() { return used_fallback_proxy_; }
+
+  void set_needs_reload_with_fallback_proxy(bool value) {
+    needs_reload_with_fallback_proxy_ = value;
+  }
+  bool needs_reload_with_fallback_proxy() {
+    return needs_reload_with_fallback_proxy_;
+  }
+
+  void SetRetryWithFallbackProxy(bool value) {
+    retry_with_fallback_proxy_ = value;
+  }
+  bool IsRetryingWithFallbackProxy() { return retry_with_fallback_proxy_; }
+#endif
 
   // Calculates the StorageAccessStatus for this request, according to the
   // NetworkDelegate. Also records metrics. When calling this method during a
@@ -1086,6 +1156,10 @@ class NET_EXPORT URLRequest : public base::SupportsUserData {
   // NetworkAnonymizationKey.
   net::IsolationInfo CreateIsolationInfoFromNetworkAnonymizationKey(
       const NetworkAnonymizationKey& network_anonymization_key);
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  void HandleFallbackProxyResult();
+#endif
 
   // Contextual information used for this request. Cannot be NULL. This contains
   // most of the dependencies which are shared between requests (disk cache,
@@ -1262,6 +1336,15 @@ class NET_EXPORT URLRequest : public base::SupportsUserData {
   // Idempotency of the request.
   Idempotency idempotency_ = DEFAULT_IDEMPOTENCY;
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  int fallback_proxy_error_code_ = 0;
+  bool used_fallback_proxy_ = false;
+  // 通知navigation_request需要使用代理重试
+  bool needs_reload_with_fallback_proxy_ = false;
+  // navigation_request通知本次需要使用代理加载
+  bool retry_with_fallback_proxy_ = false;
+#endif
+
   SharedDictionaryGetter shared_dictionary_getter_;
 
   // The storage access status for this request.
@@ -1269,6 +1352,12 @@ class NET_EXPORT URLRequest : public base::SupportsUserData {
 
   base::RepeatingCallback<void(const device_bound_sessions::SessionAccess&)>
       device_bound_session_access_callback_;
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  HttpTransaction::UpdateResRequestInfoCallback update_res_request_info_callback_;
+  bool allow_preload_record_ = false;
+  GURL main_url_;
+  std::shared_ptr<ohos_prp_preload::PRRequestInfo> preload_info_;
+#endif
 
   // Whether the request is allowed to register new device-bound sessions
   bool allows_device_bound_session_registration_ = false;

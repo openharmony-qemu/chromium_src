@@ -59,6 +59,7 @@
 #include "url/gurl.h"
 #include "url/origin.h"
 #include "url/url_util.h"
+#include "arkweb/build/features/features.h"
 
 using base::UserMetricsAction;
 
@@ -193,6 +194,10 @@ void BrowsingDataRemoverImpl::Remove(const base::Time& delete_begin,
                                      uint64_t origin_type_mask) {
   RemoveInternal(delete_begin, delete_end, remove_mask, origin_type_mask,
                  std::unique_ptr<BrowsingDataFilterBuilder>(), nullptr);
+
+#if BUILDFLAG(ARKWEB_PRECOMPILE)
+    oh_code_cache::ResponseCache::ClearAllCache();
+#endif
 }
 
 void BrowsingDataRemoverImpl::RemoveWithFilter(

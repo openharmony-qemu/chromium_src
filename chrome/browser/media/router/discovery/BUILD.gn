@@ -81,7 +81,7 @@ static_library("discovery") {
   ]
   configs += [ "//build/config/compiler:wexit_time_destructors" ]
 
-  if (is_linux || is_chromeos) {
+  if (is_linux || is_chromeos || is_ohos) {
     sources += [ "discovery_network_list_wifi_linux.cc" ]
   }
 

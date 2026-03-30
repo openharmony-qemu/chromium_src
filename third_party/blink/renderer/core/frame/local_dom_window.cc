@@ -184,7 +184,13 @@
 #include "third_party/blink/renderer/platform/wtf/uuid.h"
 #include "ui/display/screen_info.h"
 #include "v8/include/v8.h"
+#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_AREA)
+#include "third_party/blink/renderer/core/frame/ark_web.h"
+#endif // ARKWEB_SCROLLBAR_AVOID_AREA
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "third_party/blink/renderer/core/frame/detect_simulated_click_risk_enhanced_impl.h"
+#endif // IS_ARKWEB
 namespace blink {
 
 namespace {
@@ -1138,6 +1144,12 @@ void LocalDOMWindow::Reset() {
   media_ = nullptr;
   custom_elements_ = nullptr;
   trusted_types_map_.clear();
+#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_AREA)
+  arkWeb_ = nullptr;
+#endif // ARKWEB_SCROLLBAR_AVOID_AREA
+#if BUILDFLAG(IS_ARKWEB)
+  detect_simulated_click_risk_enhanced_impl_ = nullptr;
+#endif // IS_ARKWEB
 }
 
 void LocalDOMWindow::SendOrientationChangeEvent() {
@@ -2558,6 +2570,9 @@ void LocalDOMWindow::Trace(Visitor* visitor) const {
   visitor->Trace(fence_);
   visitor->Trace(crash_report_storage_);
   visitor->Trace(closewatcher_stack_);
+#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_AREA)
+  visitor->Trace(arkWeb_);
+#endif // ARKWEB_SCROLLBAR_AVOID_AREA
   visitor->Trace(soft_navigation_heuristics_);
   visitor->Trace(global_fetch_impl_);
   visitor->Trace(global_cache_storage_impl_);
@@ -2604,6 +2619,9 @@ void LocalDOMWindow::Trace(Visitor* visitor) const {
   visitor->Trace(web_launch_service_impl_);
   visitor->Trace(window_screen_details_);
   visitor->Trace(window_shared_storage_impl_);
+#if BUILDFLAG(IS_ARKWEB)
+  visitor->Trace(detect_simulated_click_risk_enhanced_impl_);
+#endif // IS_ARKWEB
   DOMWindow::Trace(visitor);
   ExecutionContext::Trace(visitor);
   WindowOrWorkerGlobalScope::Trace(visitor);
@@ -2792,5 +2810,42 @@ void LocalDOMWindow::requestResize(ExceptionState& state) {
     document_->RequestResizeResponsiveIframe(&state);
   }
 }
+
+#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_AREA)
+ArkWeb* LocalDOMWindow::arkWeb() {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  if (!arkWeb_)
+    arkWeb_ = MakeGarbageCollected<ArkWeb>(this);
+  return arkWeb_.Get();
+}
+#endif // ARKWEB_SCROLLBAR_AVOID_AREA
+
+#if BUILDFLAG(IS_ARKWEB)
+ScriptPromise<IDLString> LocalDOMWindow::detectSimulatedClickRiskEnhanced(
+    ScriptState* script_state,
+    int32_t algorithm,
+    const Vector<int32_t>& nonce,
+    int32_t version,
+    ExceptionState& exception_state) {
+  if (!detect_simulated_click_risk_enhanced_impl_) {
+    detect_simulated_click_risk_enhanced_impl_ =
+        MakeGarbageCollected<DetectSimulatedClickRiskEnhancedImpl>(this);
+  }
+
+  if (!detect_simulated_click_risk_enhanced_impl_) {
+    LOG(ERROR) << "DetectSimulatedClickRiskEnhancedImpl init failed!";
+    exception_state.ThrowDOMException(DOMExceptionCode::kUnknownError,
+                                      "Interface initialization failed.");
+    return ScriptPromise<IDLString>();
+  }
+
+  return detect_simulated_click_risk_enhanced_impl_->DetectSimulatedClickRiskEnhanced(
+      script_state,
+      algorithm,
+      nonce,
+      version,
+      exception_state);
+}
+#endif // IS_ARKWEB
 
 }  // namespace blink

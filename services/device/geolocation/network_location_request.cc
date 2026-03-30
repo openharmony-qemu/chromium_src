@@ -45,8 +45,13 @@
 namespace device {
 namespace {
 
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+const char kNetworkLocationBaseUrl[] =
+    "https://x.x.x.x";
+#else
 const char kNetworkLocationBaseUrl[] =
     "https://www.googleapis.com/geolocation/v1/geolocate";
+#endif
 
 const char kLocationString[] = "location";
 const char kLatitudeString[] = "lat";

@@ -7,6 +7,7 @@
 #include "base/check.h"
 #include "base/check_op.h"
 #include "base/numerics/safe_conversions.h"
+#include "arkweb/chromium_ext/components/subresource_filter/core/common/unindexed_ruleset_for_include.cc"
 #include "components/url_pattern_index/proto/rules.pb.h"
 #include "third_party/protobuf/src/google/protobuf/io/coded_stream.h"
 #include "third_party/protobuf/src/google/protobuf/io/zero_copy_stream.h"
@@ -60,7 +61,13 @@ bool UnindexedRulesetWriter::AddUrlRule(const proto::UrlRule& rule) {
 
 bool UnindexedRulesetWriter::Finish() {
   CHECK(!had_error());
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  const bool success =
+      (!pending_chunk_.url_rules_size() && !pending_chunk_.css_rules_size()) ||
+      WritePendingChunk();
+#else
   const bool success = !pending_chunk_.url_rules_size() || WritePendingChunk();
+#endif
   if (success) {
     coded_stream_.Trim();
   }
@@ -69,7 +76,11 @@ bool UnindexedRulesetWriter::Finish() {
 
 bool UnindexedRulesetWriter::WritePendingChunk() {
   CHECK(!had_error());
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  DCHECK_GT(pending_chunk_.url_rules_size() || pending_chunk_.css_rules_size(), 0);
+#else
   CHECK_GT(pending_chunk_.url_rules_size(), 0);
+#endif
 
   proto::FilteringRules chunk;
   chunk.Swap(&pending_chunk_);

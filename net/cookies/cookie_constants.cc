@@ -296,7 +296,11 @@ CookieSourceSchemeName GetSchemeNameEnum(const GURL& url) {
     return CookieSourceSchemeName::kWssScheme;
   } else if (url.SchemeIs(url::kWsScheme)) {
     return CookieSourceSchemeName::kWsScheme;
-  } else if (url.SchemeIs("chrome-extension")) {
+  } else if (url.SchemeIs("chrome-extension")
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+             || url.SchemeIs("arkweb-extension")
+#endif
+  ) {
     return CookieSourceSchemeName::kChromeExtensionScheme;
   } else if (url.SchemeIs(url::kFileScheme)) {
     return CookieSourceSchemeName::kFileScheme;

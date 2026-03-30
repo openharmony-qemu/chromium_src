@@ -80,6 +80,16 @@ void ShowExtensionInstallDialogImpl(
     std::unique_ptr<ExtensionInstallPrompt::Prompt> prompt) {
   DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  LOG(INFO) << "Extension install aborted: not support";
+  if (done_callback) {
+    std::move(done_callback)
+        .Run(ExtensionInstallPrompt::DoneCallbackPayload(
+            ExtensionInstallPrompt::Result::ABORTED));
+  }
+  return;
+#endif  // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+
   // If the dialog has to be parented to WebContents, force activate the
   // contents. See crbug.com/40059470.
   content::WebContents* web_contents = show_params->GetParentWebContents();

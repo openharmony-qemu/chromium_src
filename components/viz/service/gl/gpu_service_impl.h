@@ -8,6 +8,7 @@
 #include <memory>
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "base/clang_profiling_buildflags.h"
 #include "base/compiler_specific.h"
 #include "base/functional/callback.h"
@@ -54,6 +55,14 @@
 #if BUILDFLAG(IS_WIN)
 #include "ui/gl/direct_composition_support.h"
 #endif  // BUILDFLAG(IS_WIN)
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+#include "third_party/skia/include/core/SkPixmap.h"
+#include "ui/gfx/geometry/rect.h"
+#endif
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE) || BUILDFLAG(ARKWEB_SAFEBROWSING)
+#include "components/viz/common/frame_sinks/copy_output_result.h"
+#endif
 
 namespace gpu {
 class DawnContextProvider;
@@ -166,6 +175,13 @@ class VIZ_SERVICE_EXPORT GpuServiceImpl
                            EstablishGpuChannelCallback callback) override;
   void SetChannelClientPid(int32_t client_id,
                            base::ProcessId client_pid) override;
+#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
+  void GetSurfaceId(int32_t native_embed_id,
+                    GetSurfaceIdCallback callback) override;
+  void SetTransformHint(uint32_t rotation, uint32_t window_id) override;
+  void DestroyNativeWindow(uint32_t native_window_id) override;
+  void Discard(uint32_t native_window_id) override;
+#endif
   void SetChannelDiskCacheHandle(
       int32_t client_id,
       const gpu::GpuDiskCacheHandle& handle) override;
@@ -376,6 +392,41 @@ class VIZ_SERVICE_EXPORT GpuServiceImpl
   using VisibilityChangedCallback =
       base::RepeatingCallback<void(bool /*visible*/)>;
   void SetVisibilityChangedCallback(VisibilityChangedCallback);
+#if BUILDFLAG(ARKWEB_SLIDE_LTPO)
+  void SetVisible(int32_t nweb_id, bool visible) override;
+  void SetHasTouchPoint(bool has_touch_point) override;
+  void ReportSlidingFrameRate(int32_t frame_rate) override;
+  void SetLTPOStrategy(int32_t strategy) override;
+#endif
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+  void DumpGpuInfo(DumpGpuInfoCallback callback) override;
+#endif
+
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+  void StartMonitor(int32_t nweb_id) override;
+  void StopMonitor() override;
+#endif
+
+#if BUILDFLAG(ARKWEB_D_VSYNC)
+  void SetIsFling(bool is_fling_enabled) override;
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  void SendBlanklessSnapshotInfo(mojom::BlanklessSendInfoPtr infoPtr,
+                                 mojo::ScopedSharedBufferHandle buffer,
+                                 mojom::BlanklessBitmapMetadataPtr metadata);
+
+  void ClearBlanklessSnapshotInfo(uint64_t blankless_key);
+  void OnFrameSnapshotCopyOutputResult(std::unique_ptr<CopyOutputResult> result);
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE) || BUILDFLAG(ARKWEB_SAFEBROWSING)
+  base::WeakPtr<GpuServiceImpl> GetWeakPtr() const;
+#endif
+
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+  void OnAdfFrameSnapshotCopyOutputResult(std::unique_ptr<CopyOutputResult> result);
+#endif
 
  private:
   void InitializeWithHostInternal(

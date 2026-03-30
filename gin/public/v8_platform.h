@@ -14,6 +14,12 @@
 #include "partition_alloc/buildflags.h"
 #include "v8/include/v8-platform.h"
 
+#if BUILDFLAG(ARKWEB_JSHEAP_DUMP)
+namespace dfx  {
+class BinaryWriterBase;
+}
+#endif
+
 namespace gin {
 
 // A v8::Platform implementation to use with gin.
@@ -64,6 +70,9 @@ class GIN_EXPORT V8Platform : public v8::Platform {
   StackTracePrinter GetStackTracePrinter() override;
   v8::TracingController* GetTracingController() override;
   void DumpWithoutCrashing() override;
+#if BUILDFLAG(ARKWEB_JSHEAP_DUMP)
+  std::shared_ptr<dfx::BinaryWriterBase> GetBinaryWriter() override;
+#endif
 
  private:
   friend struct base::LazyInstanceTraitsBase<V8Platform>;

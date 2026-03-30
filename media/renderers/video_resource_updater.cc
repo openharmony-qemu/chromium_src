@@ -58,6 +58,9 @@
 #include "ui/gfx/video_types.h"
 #include "ui/gl/gl_enums.h"
 #include "ui/gl/trace_util.h"
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+#include "base/ohos/sys_info_utils_ext.h"
+#endif
 
 namespace media {
 namespace {
@@ -720,6 +723,9 @@ VideoResourceUpdater::FrameResource* VideoResourceUpdater::AllocateResource(
 
 VideoFrameExternalResource VideoResourceUpdater::CopyHardwareResource(
     VideoFrame* video_frame) {
+#if BUILDFLAG(IS_ARKWEB)
+  TRACE_EVENT0("cc", "VideoResourceUpdater::CopyHardwareResource");
+#endif
   VideoFrameExternalResource external_resource;
   external_resource.type = VideoFrameResourceType::RGBA_PREMULTIPLIED;
 
@@ -789,6 +795,9 @@ VideoFrameExternalResource VideoResourceUpdater::CreateForHardwareFrame(
   if (!context_provider_) {
     return VideoFrameExternalResource();
   }
+
+  TRACE_EVENT2("media", "VideoResourceUpdater::CreateForHardwarePlanes",
+      "copy_required", video_frame->metadata().copy_required, "format", VideoPixelFormatToString(video_frame->format()));
 
   if (video_frame->metadata().copy_required) {
     return CopyHardwareResource(video_frame.get());

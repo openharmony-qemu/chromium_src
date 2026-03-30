@@ -11,13 +11,21 @@
 #include "extensions/browser/extension_function.h"
 #include "ui/gfx/range/range.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "ohos_nweb/src/capi/browser_service/nweb_extension_tab_groups_types.h"
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
+
 class Browser;
 namespace tab_groups {
 class TabGroupId;
 }
 
 namespace extensions {
-
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "cef/ohos_cef_ext/libcef/browser/extensions/api/tabGroups/tab_groups_api_for_include_file.cc"
+#endif
+ 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 class TabGroupsGetFunction : public ExtensionFunction {
  public:
   DECLARE_EXTENSION_FUNCTION("tabGroups.get", TAB_GROUPS_GET)
@@ -94,7 +102,7 @@ class TabGroupsMoveFunction : public ExtensionFunction {
       int new_index,
       std::string* error);
 };
-
+#endif
 }  // namespace extensions
 
 #endif  // CHROME_BROWSER_EXTENSIONS_API_TAB_GROUPS_TAB_GROUPS_API_H_

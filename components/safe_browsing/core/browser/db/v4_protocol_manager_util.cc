@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <string_view>
 
+#include "arkweb/build/features/features.h"
 #include "base/base64.h"
 #include "base/hash/hash.h"
 #include "base/hash/sha1.h"
@@ -33,7 +34,12 @@ namespace safe_browsing {
 // Can be overriden by tests.
 const char* g_sbv4_url_prefix_for_testing = nullptr;
 
-const char kSbV4UrlPrefix[] = "https://safebrowsing.googleapis.com/v4";
+const char kSbV4UrlPrefix[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://x.x.x";
+#else
+    "https://safebrowsing.googleapis.com/v4";
+#endif
 
 const base::FilePath::CharType kStoreSuffix[] = FILE_PATH_LITERAL(".store");
 

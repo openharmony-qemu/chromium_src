@@ -436,7 +436,7 @@ FPDF_PAGE PDFiumPage::GetPage() {
     ScopedUnloadPreventer scoped_unload_preventer(this);
     page_.reset(FPDF_LoadPage(engine_->doc(), index_));
     if (page_) {
-#if BUILDFLAG(ENABLE_SCREEN_AI_SERVICE)
+#if BUILDFLAG(ENABLE_SCREEN_AI_SERVICE) && !BUILDFLAG(ARKWEB_PDF)
       engine_->ScheduleSearchifyIfNeeded(this);
 #endif
       if (engine_->form()) {

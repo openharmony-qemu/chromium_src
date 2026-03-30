@@ -317,9 +317,15 @@ api::developer_private::SafetyCheckStrings GetSafetyCheckWarningStrings(
       break;
     case developer::SafetyCheckWarningReason::kOffstore:
       detail_string_id = IDS_EXTENSIONS_SAFETY_CHECK_OFFSTORE;
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      panel_string_id = state == developer::ExtensionState::kEnabled
+                            ? IDS_EXTENSIONS_SAFETY_CHECK_OFFSTORE_ON_V2
+                            : IDS_EXTENSIONS_SAFETY_CHECK_OFFSTORE_OFF_V2;
+#else
       panel_string_id = state == developer::ExtensionState::kEnabled
                             ? IDS_EXTENSIONS_SAFETY_CHECK_OFFSTORE_ON
                             : IDS_EXTENSIONS_SAFETY_CHECK_OFFSTORE_OFF;
+#endif
       break;
     case developer::SafetyCheckWarningReason::kUnpublished:
       detail_string_id = IDS_SAFETY_CHECK_EXTENSIONS_UNPUBLISHED;

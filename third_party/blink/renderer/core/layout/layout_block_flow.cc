@@ -875,6 +875,11 @@ PositionWithAffinity LayoutBlockFlow::PositionForPoint(
 bool LayoutBlockFlow::ShouldMoveCaretToHorizontalBoundaryWhenPastTopOrBottom()
     const {
   NOT_DESTROYED();
+#if BUILDFLAG(ARKWEB_MENU)
+  if (IsGetPostionForSelection()) {
+    return true;
+  }
+#endif
   return GetDocument()
       .GetFrame()
       ->GetEditor()

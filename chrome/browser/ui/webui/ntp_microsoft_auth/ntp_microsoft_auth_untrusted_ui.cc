@@ -68,10 +68,18 @@ NtpMicrosoftAuthUntrustedUI::NtpMicrosoftAuthUntrustedUI(content::WebUI* web_ui)
                          chrome::kChromeUINewTabPageURL));
   untrusted_source->OverrideContentSecurityPolicy(
       network::mojom::CSPDirectiveName::ConnectSrc,
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+      "connect-src https://***;");
+#else
       "connect-src https://login.microsoftonline.com;");
+#endif
   untrusted_source->OverrideContentSecurityPolicy(
       network::mojom::CSPDirectiveName::ChildSrc,
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+      "child-src https://*** "
+#else
       "child-src https://login.microsoftonline.com "
+#endif
       "https://chromeenterprise.google;");
 }
 

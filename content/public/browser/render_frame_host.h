@@ -44,7 +44,14 @@
 #include "third_party/blink/public/mojom/page/page_visibility_state.mojom-forward.h"
 #include "third_party/perfetto/include/perfetto/tracing/traced_value_forward.h"
 #include "ui/accessibility/ax_node_id_forward.h"
+#include "ui/gfx/geometry/vector2d_f.h"
 #include "ui/gfx/native_ui_types.h"
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_PRECOMPILE)
+#include "content/browser/code_cache/oh_code_cache.h"
+#endif
+
+#include "arkweb/chromium_ext/content/public/browser/render_frame_host_ohos.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include "third_party/jni_zero/jni_zero.h"
@@ -142,7 +149,8 @@ class Page;
 // higher-level dependencies. In short: code that uses RenderFrameHost must be
 // back-forward cache aware, and code that does not use RenderFrameHost should
 // not have to be back-forward cache aware.
-class CONTENT_EXPORT RenderFrameHost : public IPC::Listener {
+class CONTENT_EXPORT RenderFrameHost : public RenderFrameHostOhos,
+                                       public IPC::Listener {
   // Do not remove this macro!
   // The macro is maintained by the memory safety team.
   ADVANCED_MEMORY_SAFETY_CHECKS();
@@ -586,6 +594,18 @@ class CONTENT_EXPORT RenderFrameHost : public IPC::Listener {
   virtual void ExecuteJavaScript(const std::u16string& javascript,
                                  JavaScriptResultCallback callback) = 0;
 
+#if BUILDFLAG(IS_ARKWEB)
+  // This is the default API to run JavaScript in this frame. This API can only
+  // be called on chrome:// or devtools:// URLs.
+  virtual void ExecuteJavaScriptExt(const int fd,
+                                    const uint64_t scriptLength,
+                                    JavaScriptResultCallback callback) = 0;
+#endif
+
+#if BUILDFLAG(ARKWEB_FLING)
+  virtual void UpdateFlingVelocityLimit(const gfx::Vector2dF& velocity) = 0;
+#endif
+
   // This runs the JavaScript in an isolated world of the top of this frame's
   // context. It is invalid to specify a `world_id` of
   // `ISOLATED_WORLD_ID_GLOBAL`.
@@ -593,6 +613,13 @@ class CONTENT_EXPORT RenderFrameHost : public IPC::Listener {
       const std::u16string& javascript,
       JavaScriptResultCallback callback,
       int32_t world_id) = 0;
+
+  // This can run the JavaScript in all of frames.
+  virtual void ExecuteJavaScriptInFrames(
+      const std::u16string& javascript,
+      bool recursive,
+      const std::string& worldName,
+      JavaScriptResultCallback callback) = 0;
 
   // This runs the JavaScript, but without restrictions. Specify a `world_id` of
   // `ISOLATED_WORLD_ID_GLOBAL` to run the code in the global world. THIS IS
@@ -643,6 +670,28 @@ class CONTENT_EXPORT RenderFrameHost : public IPC::Listener {
   // save UI.  Nothing gets done if there is no image at that location (or if
   // the image has a non-data URL).
   virtual void SaveImageAt(int x, int y) = 0;
+
+#if BUILDFLAG(ARKWEB_MENU) || BUILDFLAG(IS_ARKWEB_EXT)
+  using ImageCacheCallback =
+      base::OnceCallback<void(uint32_t, base::ReadOnlySharedMemoryRegion)>;
+  virtual void GetImageFromCache(const std::string& url,
+                                 ImageCacheCallback callback) = 0;
+
+  using AllImageCallback =
+        base::OnceCallback<void(uint32_t, base::ReadOnlySharedMemoryRegion)>;
+  virtual void GetAllImage(int32_t taskid, const std::string& url, AllImageCallback callback) = 0;
+  using ImageByXPathCallback =
+        base::OnceCallback<void(uint32_t, base::ReadOnlySharedMemoryRegion, uint32_t width, uint32_t height)>;
+  virtual void GetImageByXPath(int32_t taskid, const std::string& xpath, ImageByXPathCallback callback) = 0;
+#endif
+
+#if BUILDFLAG(ARKWEB_PRECOMPILE)
+  using CodeCacheCallback = base::OnceCallback<void(int32_t)>;
+  virtual void GenerateCodeCache(const std::string& url,
+                                 const std::string& script,
+                                 const std::shared_ptr<oh_code_cache::CacheOptions>& cacheOptions,
+                                 CodeCacheCallback) = 0;
+#endif
 
   // RenderViewHost for this frame.
   virtual RenderViewHost* GetRenderViewHost() const = 0;
@@ -1171,6 +1220,10 @@ class CONTENT_EXPORT RenderFrameHost : public IPC::Listener {
   // TODO(crbug.com/346386726): Delete this method once we have solidified the
   //   lifetime expectations of the PolicyContainerHost object.
   virtual bool HasPolicyContainerHost() const = 0;
+
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  virtual void OnClearContextMenu() = 0;
+#endif // BUILDFLAG(ARKWEB_DRAG_DROP)
 
   // Returns the cross origin embedder policy for this frame. Must have a
   // non-null PolicyContainerHost, otherwise a crash will occur.

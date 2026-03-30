@@ -16,7 +16,7 @@ ${!this.enableEnhancedSiteControls ? html`
         <span id="section-heading-text">
           $i18n{hostPermissionsHeading}
         </span>
-        <a class="link-icon-button"
+        <a hidden=true class="link-icon-button"
             aria-label="$i18n{permissionsLearnMoreLabel}"
             href="$i18n{hostPermissionsLearnMoreLink}" target="_blank"
             @click="${this.onLearnMoreClick_}">
@@ -53,7 +53,7 @@ ${!this.enableEnhancedSiteControls ? html`
         <span id="new-section-heading-text">
             $i18n{newHostPermissionsHeading}
         </span>
-        <a class="link-icon-button"
+        <a hidden=true class="link-icon-button"
             aria-label="$i18n{permissionsLearnMoreLabel}"
             href="$i18n{hostPermissionsLearnMoreLink}" target="_blank"
             @click="${this.onLearnMoreClick_}">

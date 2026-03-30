@@ -20,6 +20,7 @@
 #include "base/logging/log_severity.h"
 #include "base/strings/utf_ostream_operators.h"
 #include "build/build_config.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_CHROMEOS)
 #include <cstdio>
@@ -304,30 +305,53 @@ typedef bool (*LogMessageHandlerFunction)(int severity,
 BASE_EXPORT void SetLogMessageHandler(LogMessageHandlerFunction handler);
 BASE_EXPORT LogMessageHandlerFunction GetLogMessageHandler();
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "arkweb/chromium_ext/base/logging_for_include.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_DFX_LOGGING)
+#if !defined(LOGGING_TAG)
+#define LOGGING_TAG "chromium#"
+#endif
+#else
+#define LOGGING_TAG
+#endif
 // A few definitions of macros that don't generate much code. These are used
 // by LOG() and LOG_IF, etc. Since these are used all over our code, it's
 // better to have compact code for these operations.
+// #if BUILDFLAG(ARKWEB_DFX_LOGGING).
+#define COMPACT_GOOGLE_LOG_EX_DEBUG(ClassName, ...)                  \
+  ::logging::ClassName(LOGGING_TAG __FILE__, __LINE__, ::logging::LOGGING_DEBUG, \
+                       ##__VA_ARGS__)
+// #endif
 #define COMPACT_GOOGLE_LOG_EX_INFO(ClassName, ...)                  \
-  ::logging::ClassName(__FILE__, __LINE__, ::logging::LOGGING_INFO, \
+  ::logging::ClassName(LOGGING_TAG __FILE__, __LINE__, ::logging::LOGGING_INFO, \
                        ##__VA_ARGS__)
 #define COMPACT_GOOGLE_LOG_EX_WARNING(ClassName, ...)                  \
-  ::logging::ClassName(__FILE__, __LINE__, ::logging::LOGGING_WARNING, \
+  ::logging::ClassName(LOGGING_TAG __FILE__, __LINE__, ::logging::LOGGING_WARNING, \
                        ##__VA_ARGS__)
 #define COMPACT_GOOGLE_LOG_EX_ERROR(ClassName, ...)                  \
-  ::logging::ClassName(__FILE__, __LINE__, ::logging::LOGGING_ERROR, \
+  ::logging::ClassName(LOGGING_TAG __FILE__, __LINE__, ::logging::LOGGING_ERROR, \
                        ##__VA_ARGS__)
 #define COMPACT_GOOGLE_LOG_EX_FATAL(ClassName, ...)                         \
-  ::logging::ClassName##Fatal(__FILE__, __LINE__, ::logging::LOGGING_FATAL, \
+  ::logging::ClassName(LOGGING_TAG __FILE__, __LINE__, ::logging::LOGGING_FATAL, \
                               ##__VA_ARGS__)
 #define COMPACT_GOOGLE_LOG_EX_DFATAL(ClassName, ...)                  \
-  ::logging::ClassName(__FILE__, __LINE__, ::logging::LOGGING_DFATAL, \
+  ::logging::ClassName(LOGGING_TAG __FILE__, __LINE__, ::logging::LOGGING_DFATAL, \
+                       ##__VA_ARGS__)
+#define COMPACT_GOOGLE_LOG_EX_DCHECK(ClassName, ...)                  \
+  ::logging::ClassName(LOGGING_TAG __FILE__, __LINE__, ::logging::LOGGING_DCHECK, \
                        ##__VA_ARGS__)
 
+// #if BUILDFLAG(ARKWEB_DFX_LOGGING).
+#define COMPACT_GOOGLE_LOG_DEBUG COMPACT_GOOGLE_LOG_EX_DEBUG(LogMessage)
+// #endif
 #define COMPACT_GOOGLE_LOG_INFO COMPACT_GOOGLE_LOG_EX_INFO(LogMessage)
 #define COMPACT_GOOGLE_LOG_WARNING COMPACT_GOOGLE_LOG_EX_WARNING(LogMessage)
 #define COMPACT_GOOGLE_LOG_ERROR COMPACT_GOOGLE_LOG_EX_ERROR(LogMessage)
 #define COMPACT_GOOGLE_LOG_FATAL COMPACT_GOOGLE_LOG_EX_FATAL(LogMessage)
 #define COMPACT_GOOGLE_LOG_DFATAL COMPACT_GOOGLE_LOG_EX_DFATAL(LogMessage)
+#define COMPACT_GOOGLE_LOG_DCHECK COMPACT_GOOGLE_LOG_EX_DCHECK(LogMessage)
 
 #if BUILDFLAG(IS_WIN)
 // wingdi.h defines ERROR to be 0. When we call LOG(ERROR), it gets
@@ -382,7 +406,11 @@ constexpr LogSeverity LOGGING_0 = LOGGING_ERROR;
 // impossible to stream something like a string directly to an unnamed
 // ostream. We employ a neat hack by calling the stream() member
 // function of LogMessage which seems to avoid the problem.
-#define LOG_STREAM(severity) COMPACT_GOOGLE_LOG_##severity.stream()
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#define LOG_STREAM(severity) COMPACT_ARKWEB_LOG_ ## severity.stream()
+#else
+#define LOG_STREAM(severity) COMPACT_GOOGLE_LOG_ ## severity.stream()
+#endif // BUILDFLAG(ARKWEB_LOGGER_REPORT)
 
 #define LOG(severity) LAZY_STREAM(LOG_STREAM(severity), LOG_IS_ON(severity))
 #define LOG_IF(severity, condition) \
@@ -429,6 +457,10 @@ constexpr LogSeverity LOGGING_0 = LOGGING_ERROR;
   COMPACT_GOOGLE_LOG_EX_##severity(Win32ErrorLogMessage,                \
                                    ::logging::GetLastSystemErrorCode()) \
       .stream()
+#elif BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#define PLOG_STREAM(severity) \
+  COMPACT_ARKWEB_LOG_EX_ ## severity(ErrnoLogMessage, \
+      ::logging::GetLastSystemErrorCode()).stream()
 #elif BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
 #define PLOG_STREAM(severity)                                           \
   COMPACT_GOOGLE_LOG_EX_##severity(ErrnoLogMessage,                     \
@@ -527,6 +559,15 @@ class BASE_EXPORT LogMessage {
  public:
   LogMessage(const char* file, int line, LogSeverity severity);
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  // Used for LOG(severity, level).
+  LogMessage(const char* file,
+             int line,
+             LogSeverity severity,
+             LogPriority priority);
+  void ArkWebLoggingSeverity(const std::string& str_newline);
+#endif
+
   LogMessage(const LogMessage&) = delete;
   LogMessage& operator=(const LogMessage&) = delete;
   virtual ~LogMessage();
@@ -557,6 +598,14 @@ class BASE_EXPORT LogMessage {
   // The file and line information passed in to the constructor.
   const char* const file_;
   const int line_;
+#if BUILDFLAG(ARKWEB_DFX_LOGGING)
+  std::string tag_;
+#endif
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LogPriority priority_ = PRIORITY_INFO;
+  std::string ohos_tag_;
+#endif
 
 #if BUILDFLAG(IS_CHROMEOS)
   void InitWithSyslogPrefix(std::string_view filename,

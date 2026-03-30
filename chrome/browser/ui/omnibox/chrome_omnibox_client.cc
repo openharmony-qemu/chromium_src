@@ -925,7 +925,11 @@ void ChromeOmniboxClient::DoPrerender(const AutocompleteMatch& match) {
 }
 
 void ChromeOmniboxClient::DoPreconnect(const AutocompleteMatch& match) {
-  if (match.destination_url.SchemeIs(extensions::kExtensionScheme)) {
+  if (match.destination_url.SchemeIs(extensions::kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      || match.destination_url.SchemeIs(extensions::kArkwebExtensionScheme)
+#endif
+  ) {
     return;
   }
 

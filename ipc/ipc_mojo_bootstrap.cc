@@ -975,8 +975,7 @@ class ChannelAssociatedGroupController
           endpoint->disconnect_reason());
 
       base::AutoUnlock unlocker(lock_);
-      // TODO(cef): Route the actual Connector error if/when needed.
-      client->NotifyError(reason, MOJO_RESULT_OK);
+      client->NotifyError(reason);
     } else {
       endpoint->task_runner()->PostTask(
           FROM_HERE,

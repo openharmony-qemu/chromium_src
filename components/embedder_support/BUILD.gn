@@ -2,6 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+# arkweb_useragent
+import("//build/config/python.gni")
 import("//device/vr/buildflags/buildflags.gni")
 
 static_library("embedder_support") {
@@ -11,6 +13,21 @@ static_library("embedder_support") {
     "switches.h",
   ]
 }
+
+# arkweb_useragent
+action("make_ohos_arkweb_version") {
+  script = "//arkweb/chromium_ext/components/embedder_support/make_ohos_arkweb_version.py"
+  args = [
+    "--input_file",
+    rebase_path("//third_party/ohos_nweb_hap/AppScope/app.json5.template"),
+    "--output_file",
+    rebase_path("$target_gen_dir/arkweb_version.h", root_build_dir),
+  ]
+  outputs = [ "$target_gen_dir/arkweb_version.h" ]
+  deps = [ "//third_party/ohos_nweb_hap:arkwebcore_hap_app_json5" ]
+}
+
+import("//arkweb/build/features/features.gni")
 
 static_library("content_settings") {
   sources = [
@@ -27,6 +44,10 @@ static_library("content_settings") {
     "//third_party/blink/public/mojom:mojom_platform_headers",
     "//url",
   ]
+
+  if (arkweb_useragent) {
+    deps += [ ":make_ohos_arkweb_version" ]
+  }
 }
 
 static_library("permissions") {
@@ -66,6 +87,10 @@ static_library("user_agent") {
     "//third_party/blink/public/common:headers",
     "//ui/base",
   ]
+
+  if (arkweb_useragent) {
+    deps += [ ":make_ohos_arkweb_version" ]
+  }
 }
 
 source_set("unit_tests") {

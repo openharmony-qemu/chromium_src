@@ -29,8 +29,12 @@ void EnableCommandLineSupportForTesting() {
 constexpr char kGetMethod[] = "GET";
 constexpr char kContentType[] = "application/json; charset=UTF-8";
 
+#if BUILDFLAG(IS_ARKWEB)
+constexpr char kDefaultDiscoveryEndpoint[] = "https://x.x.x.x";
+#else
 constexpr char kDefaultDiscoveryEndpoint[] =
     "https://castedumessaging-pa.googleapis.com";
+#endif // BUILDFLAG(IS_ARKWEB)
 
 constexpr char kDiscoveryServicePath[] = "/v1/receivers";
 constexpr char kEmptyPostData[] = "";

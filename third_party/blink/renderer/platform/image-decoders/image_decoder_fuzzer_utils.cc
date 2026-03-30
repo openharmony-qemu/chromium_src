@@ -4,6 +4,7 @@
 
 #include "third_party/blink/renderer/platform/image-decoders/image_decoder_fuzzer_utils.h"
 
+#include "arkweb/chromium_ext/blink/renderer/platform/image_decoders/heif/heif_image_decoder.h"
 #include "third_party/blink/renderer/platform/graphics/color_behavior.h"
 #include "third_party/blink/renderer/platform/image-decoders/avif/crabbyavif_image_decoder.h"
 #include "third_party/blink/renderer/platform/image-decoders/bmp/bmp_image_decoder.h"
@@ -62,10 +63,26 @@ std::unique_ptr<ImageDecoder> CreateImageDecoder(DecoderType decoder_type,
           /*max_decoded_bytes=*/fdp.ConsumeIntegral<uint32_t>());
     case DecoderType::kJpegDecoder: {
       return std::make_unique<JPEGImageDecoder>(
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+          GetAlphaOption(fdp), GetColorBehavior(fdp),
+#else
           GetAlphaOption(fdp), GetColorBehavior(fdp), GetAuxImageType(fdp),
+#endif
           /*max_decoded_bytes=*/fdp.ConsumeIntegral<uint32_t>(),
           /*offset=*/fdp.ConsumeIntegral<uint32_t>());
     }
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+    case DecoderType::kHeifDecoder: {
+      ImageDecoder::HighBitDepthDecodingOption decoding_option =
+          fdp.ConsumeBool() ? ImageDecoder::kDefaultBitDepth
+                            : ImageDecoder::kHighBitDepthToHalfFloat;
+      auto rawValue = fdp.ConsumeIntegralInRange(0, 2);
+      ImageDecoder::AnimationOption animation_option = static_cast<ImageDecoder::AnimationOption>(rawValue);
+      return std::make_unique<HEIFImageDecoder>(
+          GetAlphaOption(fdp), decoding_option, GetColorBehavior(fdp),
+          /*max_decoded_bytes=*/fdp.ConsumeIntegral<uint32_t>(), animation_option);
+    }
+#endif
     case DecoderType::kPngDecoder: {
       return std::make_unique<PngImageDecoder>(
           GetAlphaOption(fdp), GetColorBehavior(fdp),

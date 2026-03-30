@@ -253,6 +253,15 @@ void ChildProcessHostImpl::BindHostReceiver(
   delegate_->BindHostReceiver(std::move(receiver));
 }
 
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+void ChildProcessHostImpl::ReportKeyThread(
+  int32_t status, int32_t process_id, int32_t thread_id, int32_t role) {}
+
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+void ChildProcessHostImpl::ReportHisyevent(int64_t block_time, const std::string& mode) {}
+#endif
+#endif
+
 void ChildProcessHostImpl::OnChannelConnected(int32_t peer_pid) {
   // Propagate the pseudonymization salt to all the child processes.
   //

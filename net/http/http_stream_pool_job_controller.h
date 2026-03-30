@@ -176,7 +176,11 @@ class HttpStreamPool::JobController : public HttpStreamPool::Job::Delegate,
                           ResolveErrorInfo resolve_error_info);
 
   // Calls the request's certificate error callback.
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  void CallOnCertificateError(int status, const SSLInfo& ssl_info, bool used_fallback_proxy);
+#else
   void CallOnCertificateError(int status, const SSLInfo& ssl_info);
+#endif
 
   // Calls the request's client auth callback.
   void CallOnNeedsClientAuth(SSLCertRequestInfo* cert_info);

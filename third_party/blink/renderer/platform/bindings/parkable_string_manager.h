@@ -126,6 +126,7 @@ class PLATFORM_EXPORT ParkableStringManager
  private:
   friend class ParkableString;
   friend class ParkableStringImpl;
+  friend class ParkableStringUtils;
 
   scoped_refptr<ParkableStringImpl> Add(
       scoped_refptr<StringImpl>&&,

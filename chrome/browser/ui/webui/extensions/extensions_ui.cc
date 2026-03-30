@@ -8,6 +8,7 @@
 #include <string>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/command_line.h"
 #include "base/functional/bind.h"
 #include "base/metrics/field_trial_params.h"
@@ -56,6 +57,10 @@
 #if BUILDFLAG(IS_ANDROID)
 #include "chrome/browser/ui/webui/current_channel_logo.h"
 #endif  // BUILDFLAG(IS_ANDROID)
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "chrome/browser/ui/webui/extensions/extensions_ui_ext.h"
+#endif
 
 namespace extensions {
 
@@ -110,7 +115,11 @@ content::WebUIDataSource* CreateAndAddExtensionsSource(Profile* profile,
       {"sidebarExtensions", IDS_EXTENSIONS_SIDEBAR_EXTENSIONS},
       {"appsTitle", IDS_EXTENSIONS_APPS_TITLE},
       {"noExtensionsOrApps", IDS_EXTENSIONS_NO_INSTALLED_ITEMS},
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      {"noDescription", IDS_EXTENSIONS_NO_DESCRIPTION_V2},
+#else
       {"noDescription", IDS_EXTENSIONS_NO_DESCRIPTION},
+#endif
       {"viewInStore", IDS_EXTENSIONS_ITEM_CHROME_WEB_STORE},
       {"extensionWebsite", IDS_EXTENSIONS_ITEM_EXTENSION_WEBSITE},
       {"dropToInstall", IDS_EXTENSIONS_INSTALL_DROP_TARGET},
@@ -120,12 +129,22 @@ content::WebUIDataSource* CreateAndAddExtensionsSource(Profile* profile,
        IDS_EXTENSIONS_EDIT_SITE_PERMISSIONS_CUSTOMIZE_PER_EXTENSION},
       {"editSitePermissionsRestrictExtensions",
        IDS_EXTENSIONS_EDIT_SITE_PERMISSIONS_RESTRICT_EXTENSIONS},
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      {"enableToggleTooltipDisabled",
+       IDS_EXTENSIONS_ENABLE_TOGGLE_TOOLTIP_DISABLED_V2},
+#else
       {"enableToggleTooltipDisabled",
        IDS_EXTENSIONS_ENABLE_TOGGLE_TOOLTIP_DISABLED},
+#endif
       {"enableToggleTooltipEnabled",
        IDS_EXTENSIONS_ENABLE_TOGGLE_TOOLTIP_ENABLED},
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      {"enableToggleTooltipEnabledWithSiteAccess",
+       IDS_EXTENSIONS_ENABLE_TOGGLE_TOOLTIP_ENABLED_WITH_SITE_ACCESS_V2},
+#else
       {"enableToggleTooltipEnabledWithSiteAccess",
        IDS_EXTENSIONS_ENABLE_TOGGLE_TOOLTIP_ENABLED_WITH_SITE_ACCESS},
+#endif
       {"errorsPageHeading", IDS_EXTENSIONS_ERROR_PAGE_HEADING},
       {"clearActivities", IDS_EXTENSIONS_CLEAR_ACTIVITIES},
       {"clearAll", IDS_EXTENSIONS_ERROR_CLEAR_ALL},
@@ -139,18 +158,30 @@ content::WebUIDataSource* CreateAndAddExtensionsSource(Profile* profile,
       {"safetyCheckExtensionsDetailPagePrimaryLabel",
        IDS_EXTENSIONS_SAFETY_CHECK_PRIMARY_LABEL},
       {"safetyCheckExtensionsKeep", IDS_CONFIRM_DOWNLOAD},
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      {"stackTrace", IDS_EXTENSIONS_ERROR_STACK_TRACE_V2},
+#else
       {"stackTrace", IDS_EXTENSIONS_ERROR_STACK_TRACE},
+#endif
       {"sidebarDiscoverMore", IDS_EXTENSIONS_SIDEBAR_DISCOVER_MORE},
       {"sidebarDocsPromo", IDS_EXTENSIONS_WHATS_NEW_SIDEBAR_PROMO},
       {"keyboardShortcuts", IDS_EXTENSIONS_SIDEBAR_KEYBOARD_SHORTCUTS},
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      {"incognitoInfoWarning", IDS_EXTENSIONS_INCOGNITO_WARNING_V2},
+#else
       {"incognitoInfoWarning", IDS_EXTENSIONS_INCOGNITO_WARNING},
+#endif
       {"userScriptInfoWarning", IDS_EXTENSIONS_ALLOW_USER_SCRIPTS_WARNING},
       {"hostPermissionsDescription",
        IDS_EXTENSIONS_HOST_PERMISSIONS_DESCRIPTION},
       {"permissionsLearnMoreLabel",
        IDS_EXTENSIONS_PERMISSIONS_LEARN_MORE_A11Y_LABEL},
       {"hostPermissionsEdit", IDS_EXTENSIONS_HOST_PERMISSIONS_EDIT},
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      {"hostPermissionsHeading", IDS_EXTENSIONS_ITEM_HOST_PERMISSIONS_HEADING_V2},
+#else
       {"hostPermissionsHeading", IDS_EXTENSIONS_ITEM_HOST_PERMISSIONS_HEADING},
+#endif
       {"newHostPermissionsHeading",
        IDS_EXTENSIONS_NEW_HOST_PERMISSIONS_HEADING},
       {"hostPermissionsSubHeading",
@@ -174,7 +205,11 @@ content::WebUIDataSource* CreateAndAddExtensionsSource(Profile* profile,
       // problem, use a simple placeholder for now.
       {"itemInspectViewsExtra", IDS_EXTENSIONS_ITEM_INSPECT_VIEWS_EXTRA},
       {"noActiveViews", IDS_EXTENSIONS_ITEM_NO_ACTIVE_VIEWS},
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      {"itemAllowIncognito", IDS_EXTENSIONS_ITEM_ALLOW_INCOGNITO_V2},
+#else
       {"itemAllowIncognito", IDS_EXTENSIONS_ITEM_ALLOW_INCOGNITO},
+#endif
       {"itemAllowUserScripts", IDS_EXTENSIONS_ITEM_ALLOW_USER_SCRIPTS},
       {"itemDescriptionLabel", IDS_EXTENSIONS_ITEM_DESCRIPTION},
       {"itemDependencies", IDS_EXTENSIONS_ITEM_DEPENDENCIES},
@@ -214,7 +249,11 @@ content::WebUIDataSource* CreateAndAddExtensionsSource(Profile* profile,
       {"appIcon", IDS_EXTENSIONS_APP_ICON},
       {"extensionIcon", IDS_EXTENSIONS_EXTENSION_ICON},
       {"extensionA11yAssociation", IDS_EXTENSIONS_EXTENSION_A11Y_ASSOCIATION},
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      {"extensionsSectionHeader", IDS_EXTENSIONS_SECTION_HEADER_V2},
+#else
       {"extensionsSectionHeader", IDS_EXTENSIONS_SECTION_HEADER},
+#endif
       {"itemIdHeading", IDS_EXTENSIONS_ITEM_ID_HEADING},
       {"extensionEnabled", IDS_EXTENSIONS_EXTENSION_ENABLED},
       {"appEnabled", IDS_EXTENSIONS_APP_ENABLED},
@@ -224,7 +263,12 @@ content::WebUIDataSource* CreateAndAddExtensionsSource(Profile* profile,
       {"itemOn", IDS_EXTENSIONS_ITEM_ON},
       {"itemOptions", IDS_EXTENSIONS_ITEM_OPTIONS},
       {"itemPermissions", IDS_EXTENSIONS_ITEM_PERMISSIONS},
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      {"itemPermissionsEmpty", IDS_EXTENSIONS_ITEM_PERMISSIONS_EMPTY_V2},
+      {"itemOptionalPermissions", IDS_EXTENSIONS_ITEM_OPTIONAL_PERMISSIONS},
+#else
       {"itemPermissionsEmpty", IDS_EXTENSIONS_ITEM_PERMISSIONS_EMPTY},
+#endif
       {"itemPermissionsAndSiteAccessEmpty",
        IDS_EXTENSIONS_ITEM_PERMISSIONS_AND_SITE_ACCESS_EMPTY},
       {"itemPinToToolbar", IDS_EXTENSIONS_ITEM_PIN_TO_TOOLBAR},
@@ -235,7 +279,11 @@ content::WebUIDataSource* CreateAndAddExtensionsSource(Profile* profile,
        IDS_EXTENSIONS_ACCESS_REQUESTS_LEARN_MORE},
       {"itemSiteAccess", IDS_EXTENSIONS_ITEM_SITE_ACCESS},
       {"itemSiteAccessAddHost", IDS_EXTENSIONS_ITEM_SITE_ACCESS_ADD_HOST},
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      {"itemSiteAccessEmpty", IDS_EXTENSIONS_ITEM_SITE_ACCESS_EMPTY_V2},
+#else
       {"itemSiteAccessEmpty", IDS_EXTENSIONS_ITEM_SITE_ACCESS_EMPTY},
+#endif
       {"itemSource", IDS_EXTENSIONS_ITEM_SOURCE},
       {"itemSourceInstalledByDefault",
        IDS_EXTENSIONS_ITEM_SOURCE_INSTALLED_BY_DEFAULT},
@@ -281,14 +329,27 @@ content::WebUIDataSource* CreateAndAddExtensionsSource(Profile* profile,
        IDS_EXTENSIONS_MATCHING_RESTRICTED_SITES_WARNING},
       {"missingOrUninstalledExtension", IDS_MISSING_OR_UNINSTALLED_EXTENSION},
       {"noActivities", IDS_EXTENSIONS_NO_ACTIVITIES},
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      {"noErrorsToShow", IDS_EXTENSIONS_ERROR_NO_ERRORS_CODE_MESSAGE_V2},
+#else
       {"noErrorsToShow", IDS_EXTENSIONS_ERROR_NO_ERRORS_CODE_MESSAGE},
+#endif
       {"opensInNewTab", IDS_EXTENSIONS_OPENS_IN_NEW_TAB},
       {"removeSitesDialogTitle", IDS_EXTENSIONS_REMOVE_SITES_DIALOG_TITLE},
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      {"runtimeHostsDialogInputError",
+       IDS_EXTENSIONS_RUNTIME_HOSTS_DIALOG_INPUT_ERROR_V2},
+#else
       {"runtimeHostsDialogInputError",
        IDS_EXTENSIONS_RUNTIME_HOSTS_DIALOG_INPUT_ERROR},
+#endif
       {"runtimeHostsDialogInputLabel",
        IDS_EXTENSIONS_RUNTIME_HOSTS_DIALOG_INPUT_LABEL},
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      {"runtimeHostsDialogTitle", IDS_EXTENSIONS_RUNTIME_HOSTS_DIALOG_TITLE_V2},
+#else
       {"runtimeHostsDialogTitle", IDS_EXTENSIONS_RUNTIME_HOSTS_DIALOG_TITLE},
+#endif
       {"packDialogTitle", IDS_EXTENSIONS_PACK_DIALOG_TITLE},
       {"packDialogWarningTitle", IDS_EXTENSIONS_PACK_DIALOG_WARNING_TITLE},
       {"packDialogErrorTitle", IDS_EXTENSIONS_PACK_DIALOG_ERROR_TITLE},
@@ -381,7 +442,11 @@ content::WebUIDataSource* CreateAndAddExtensionsSource(Profile* profile,
       {"itemSuspiciousInstallLearnMore",
        IDS_EXTENSIONS_ADDED_WITHOUT_KNOWLEDGE_LEARN_MORE},
       {"toolbarDevMode", IDS_EXTENSIONS_DEVELOPER_MODE},
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      {"toolbarLoadUnpacked", IDS_EXTENSIONS_TOOLBAR_LOAD_UNPACKED_V2},
+#else
       {"toolbarLoadUnpacked", IDS_EXTENSIONS_TOOLBAR_LOAD_UNPACKED},
+#endif
       {"toolbarLoadUnpackedDone", IDS_EXTENSIONS_TOOLBAR_LOAD_UNPACKED_DONE},
       {"toolbarPack", IDS_EXTENSIONS_TOOLBAR_PACK},
       {"toolbarUpdateNow", IDS_EXTENSIONS_TOOLBAR_UPDATE_NOW},
@@ -401,7 +466,11 @@ content::WebUIDataSource* CreateAndAddExtensionsSource(Profile* profile,
       {"safetyCheckExtensionThreeDotDetails",
        IDS_EXTENSIONS_SC_THREEDOT_DETAILS},
       {"safetyCheckRemoveAll", IDS_EXTENSIONS_SC_REMOVE_ALL},
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      {"safetyHubHeader", IDS_SETTINGS_SAFETY_HUB_V2},
+#else
       {"safetyHubHeader", IDS_EXTENSIONS_SAFETY_HUB_HEADER},
+#endif
       {"safetyCheckRemoveButtonA11yLabel",
        IDS_EXTENSIONS_SC_REMOVE_BUTTON_A11Y_LABEL},
       {"safetyCheckOptionMenuA11yLabel",
@@ -419,6 +488,11 @@ content::WebUIDataSource* CreateAndAddExtensionsSource(Profile* profile,
       {"kioskDisableBailoutWarningTitle",
        IDS_EXTENSIONS_KIOSK_DISABLE_BAILOUT_SHORTCUT_WARNING_TITLE},
 #endif  // BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      {"toolbarDevModeConfirmation", IDS_EXTENSIONS_DEVELOPER_MODE_CONFIRMATION},
+      {"toolbarDevModeConfirm", IDS_EXTENSIONS_DEVELOPER_MODE_CONFIRM},
+      {"toolbarDevModeCancel", IDS_EXTENSIONS_DEVELOPER_MODE_CANCEL},
+#endif
       {"pendingChangeWarning", IDS_PENDING_CHANGE_WARNING},
   };
   source->AddLocalizedStrings(kLocalizedStrings);
@@ -513,8 +587,13 @@ content::WebUIDataSource* CreateAndAddExtensionsSource(Profile* profile,
 
 }  // namespace
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+ExtensionsUIConfig::ExtensionsUIConfig()
+    : WebUIConfig(content::kArkWebUIScheme, chrome::kChromeUIExtensionsHost) {}
+#else
 ExtensionsUIConfig::ExtensionsUIConfig()
     : WebUIConfig(content::kChromeUIScheme, chrome::kChromeUIExtensionsHost) {}
+#endif
 
 ExtensionsUIConfig::~ExtensionsUIConfig() = default;
 
@@ -545,6 +624,11 @@ ExtensionsUI::ExtensionsUI(content::WebUI* web_ui) : WebUIController(web_ui) {
   source->OverrideContentSecurityPolicy(
       network::mojom::CSPDirectiveName::ObjectSrc, "object-src 'self';");
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  // TODO: If chrome:// -> arkweb:// replaced completely, remove it
+  ArkWebExtensionsWebUIOverrideContentSecurityPolicies(source);
+#endif
+
   content::URLDataSource::Add(
       profile, std::make_unique<FaviconSource>(
                    profile, chrome::FaviconUrlFormat::kFavicon2));
@@ -559,7 +643,12 @@ ExtensionsUI::ExtensionsUI(content::WebUI* web_ui) : WebUIController(web_ui) {
                                             IDS_EXTENSIONS_SC_ALL_DONE_FOR_NOW);
   plural_string_handler->AddLocalizedString(
       "mv2DeprecationPanelWarningHeader",
-      IDS_EXTENSIONS_MV2_DEPRECATION_PANEL_WARNING_HEADER);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      IDS_EXTENSIONS_MV2_DEPRECATION_PANEL_WARNING_HEADER_V2
+#else
+      IDS_EXTENSIONS_MV2_DEPRECATION_PANEL_WARNING_HEADER
+#endif
+      );
   plural_string_handler->AddLocalizedString(
       "mv2DeprecationPanelWarningSubtitle",
       IDS_EXTENSIONS_MV2_DEPRECATION_PANEL_WARNING_SUBTITLE);

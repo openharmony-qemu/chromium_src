@@ -340,6 +340,10 @@ class CORE_EXPORT EventTarget : public ScriptWrappable {
 
   void Trace(Visitor*) const override;
 
+#if BUILDFLAG(ARKWEB_AI)
+  Vector<String> getArkWebEventListenerTypes(ScriptState* script_state);
+#endif
+
  protected:
   EventTarget();
 

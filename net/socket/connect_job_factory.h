@@ -98,7 +98,12 @@ class NET_EXPORT_PRIVATE ConnectJobFactory {
       SecureDnsPolicy secure_dns_policy,
       bool disable_cert_network_fetches,
       const CommonConnectJobParams* common_connect_job_params,
-      ConnectJob::Delegate* delegate) const;
+      ConnectJob::Delegate* delegate
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+      ,
+      bool secure_dns_only = false
+#endif
+  ) const;
 
   // TODO(crbug.com/40181080): Rename to discourage use except in cases where
   // the scheme is non-standard or unknown.
@@ -133,7 +138,12 @@ class NET_EXPORT_PRIVATE ConnectJobFactory {
       SecureDnsPolicy secure_dns_policy,
       bool disable_cert_network_fetches,
       const CommonConnectJobParams* common_connect_job_params,
-      ConnectJob::Delegate* delegate) const;
+      ConnectJob::Delegate* delegate
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+      ,
+      bool secure_dns_only = false
+#endif
+  ) const;
 
   std::unique_ptr<HttpProxyConnectJob::Factory> http_proxy_connect_job_factory_;
   std::unique_ptr<SOCKSConnectJob::Factory> socks_connect_job_factory_;

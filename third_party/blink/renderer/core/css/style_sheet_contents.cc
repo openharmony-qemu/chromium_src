@@ -83,7 +83,14 @@ StyleSheetContents::StyleSheetContents(const CSSParserContext* context,
       has_single_owner_document_(true),
       is_used_from_text_cache_(false),
       is_used_from_resource_cache_(false),
-      parser_context_(context) {}
+      parser_context_(context)
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+      ,
+      is_for_adblock_(false),
+      is_for_user_adblock_(false)
+#endif
+{
+}
 
 StyleSheetContents::StyleSheetContents(const StyleSheetContents& o)
     : owner_rule_(nullptr),
@@ -104,7 +111,13 @@ StyleSheetContents::StyleSheetContents(const StyleSheetContents& o)
       has_single_owner_document_(true),
       is_used_from_text_cache_(false),
       is_used_from_resource_cache_(false),
-      parser_context_(o.parser_context_) {
+      parser_context_(o.parser_context_)
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+      ,
+      is_for_adblock_(false),
+      is_for_user_adblock_(false)
+#endif
+{
   for (unsigned i = 0; i < pre_import_layer_statement_rules_.size(); ++i) {
     pre_import_layer_statement_rules_[i] = To<StyleRuleLayerStatement>(
         o.pre_import_layer_statement_rules_[i]->Clone(
@@ -212,6 +225,13 @@ void StyleSheetContents::ParserAppendRule(StyleRuleBase* rule) {
     namespace_rules_.push_back(namespace_rule);
     return;
   }
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  if (rule) {
+    rule->SetForAdBlock(is_for_adblock_);
+    rule->SetForUserAdBlock(is_for_user_adblock_);
+  }
+#endif
 
   child_rules_.push_back(rule);
 }

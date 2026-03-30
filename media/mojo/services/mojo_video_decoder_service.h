@@ -67,6 +67,17 @@ class MEDIA_MOJO_EXPORT MojoVideoDecoderService final
   void Reset(ResetCallback callback) final;
   void OnOverlayInfoChanged(const OverlayInfo& overlay_info) final;
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void SetVideoSurface(int32_t widget_id) final;
+  void SetPreciseSeekTarget(int64_t target_timestamp) final;
+#endif // ARKWEB_VIDEO_ASSISTANT
+#if BUILDFLAG(ARKWEB_PIP)
+  void PipEnable(bool enable) final;
+#endif
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+  void RecycleDmaBuffer() final;
+  void ResumeDmaBuffer() final;
+#endif  // ARKWEB_MEDIA_DMABUF
  private:
   // Helper methods so that we can bind them with a weak pointer to avoid
   // running mojom::VideoDecoder callbacks after connection error happens and

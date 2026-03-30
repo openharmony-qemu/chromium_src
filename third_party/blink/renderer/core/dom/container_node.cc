@@ -1220,6 +1220,13 @@ void ContainerNode::ParserAppendChild(Node* new_child) {
   while (ContainerNode* parent = new_child->parentNode())
     parent->ParserRemoveChild(*new_child);
 
+#if BUILDFLAG(ARKWEB_MEDIA)
+  if (IsDocumentInactive()) {
+    LOG(ERROR) << "Document is inactive.";
+    return;
+  }
+#endif
+
   if (GetDocument() != new_child->GetDocument())
     GetDocument().adoptNode(new_child, ASSERT_NO_EXCEPTION);
 

@@ -66,8 +66,33 @@ FilterGestureEventResult TouchActionFilter::FilterGestureEvent(
 
   if (has_deferred_events_) {
     TRACE_EVENT_INSTANT0("input", "Has Deferred", TRACE_EVENT_SCOPE_THREAD);
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+    { OHOS_TRACE_EVENT0("input", "Has Deferred"); }
+#endif
     return FilterGestureEventResult::kDelayed;
   }
+
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  {
+    OHOS_TRACE_EVENT1(
+        "input", "active_action", "action",
+        (active_touch_action_.has_value()
+             ? cc::TouchActionToString(active_touch_action_.value())
+             : "n/a"));
+  }
+  {
+    OHOS_TRACE_EVENT1(
+        "input", "allowed_action", "action",
+        (allowed_touch_action_.has_value()
+             ? cc::TouchActionToString(allowed_touch_action_.value())
+             : "n/a"));
+  }
+  {
+    OHOS_TRACE_EVENT1(
+        "input", "compositor_allowed_action", "action",
+        cc::TouchActionToString(compositor_allowed_touch_action_));
+  }
+#endif
 
   TRACE_EVENT_INSTANT1(
       "input", "active_action", TRACE_EVENT_SCOPE_THREAD, "action",
@@ -102,6 +127,9 @@ FilterGestureEventResult TouchActionFilter::FilterGestureEvent(
       if (!gesture_sequence_in_progress_) {
         TRACE_EVENT_INSTANT0("input", "No Sequence at GSB!",
                              TRACE_EVENT_SCOPE_THREAD);
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+        { OHOS_TRACE_EVENT0("input", "No Sequence at GSB"); }
+#endif
         gesture_sequence_in_progress_ = true;
         if (allowed_touch_action_.has_value()) {
           active_touch_action_ = allowed_touch_action_;
@@ -123,6 +151,9 @@ FilterGestureEventResult TouchActionFilter::FilterGestureEvent(
       } else {
         TRACE_EVENT_INSTANT0("input", "Deferring Events",
                              TRACE_EVENT_SCOPE_THREAD);
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+        { OHOS_TRACE_EVENT0("input", "Deferring Events"); }
+#endif
         has_deferred_events_ = true;
         res = FilterGestureEventResult::kDelayed;
       }
@@ -132,6 +163,9 @@ FilterGestureEventResult TouchActionFilter::FilterGestureEvent(
     case WebInputEvent::Type::kGestureScrollUpdate: {
       if (drop_scroll_events_) {
         TRACE_EVENT_INSTANT0("input", "Drop Events", TRACE_EVENT_SCOPE_THREAD);
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+        { OHOS_TRACE_EVENT0("input", "Drop Events"); }
+#endif
         return FilterGestureEventResult::kFiltered;
       }
 
@@ -148,6 +182,9 @@ FilterGestureEventResult TouchActionFilter::FilterGestureEvent(
             gesture_event->data.scroll_update.delta_y != 0) {
           TRACE_EVENT_INSTANT0("input", "Defer Due to YAxis",
                                TRACE_EVENT_SCOPE_THREAD);
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+          { OHOS_TRACE_EVENT0("input", "Defer Due to YAxis"); }
+#endif
           has_deferred_events_ = true;
           return FilterGestureEventResult::kDelayed;
         }
@@ -157,6 +194,9 @@ FilterGestureEventResult TouchActionFilter::FilterGestureEvent(
             gesture_event->data.scroll_update.delta_x != 0) {
           TRACE_EVENT_INSTANT0("input", "Defer Due to XAxis",
                                TRACE_EVENT_SCOPE_THREAD);
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+          { OHOS_TRACE_EVENT0("input", "Defer Due to XAxis"); }
+#endif
           has_deferred_events_ = true;
           return FilterGestureEventResult::kDelayed;
         }

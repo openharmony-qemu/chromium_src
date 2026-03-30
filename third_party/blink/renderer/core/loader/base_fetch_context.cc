@@ -31,6 +31,10 @@
 #include "third_party/blink/renderer/platform/runtime_enabled_features.h"
 #include "third_party/blink/renderer/platform/weborigin/scheme_registry.h"
 #include "third_party/blink/renderer/platform/weborigin/security_policy.h"
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/loader/base_fetch_context_for_include.cc"
+#endif
 #include "third_party/blink/renderer/platform/wtf/text/strcat.h"
 
 namespace blink {
@@ -75,7 +79,12 @@ BaseFetchContext::CanRequestBasedOnSubresourceFilterOnly(
     return ResourceRequestBlockedReason::kSubresourceFilter;
   }
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  return BaseFetchContextUtil::CanRequestBasedOnSubresourceFilterOnlyForInclude(
+      this, type, resource_request, url, options, reporting_disposition);
+#else
   return std::nullopt;
+#endif
 }
 
 bool BaseFetchContext::CalculateIfAdSubresource(
@@ -89,9 +98,18 @@ bool BaseFetchContext::CalculateIfAdSubresource(
   SubresourceFilter* filter = GetSubresourceFilter();
   const KURL& url = alias_url.has_value() ? alias_url.value() : request.Url();
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  SubresourceFilter* user_filter = GetUserSubresourceFilter();
+  return request.IsAdResource() ||
+         (filter &&
+          filter->IsAdResource(url, request.GetRequestDestination(), out_rule)) ||
+         (user_filter &&
+          user_filter->IsAdResource(url, request.GetRequestDestination(), out_rule));
+#else
   return request.IsAdResource() ||
          (filter &&
           filter->IsAdResource(url, request.GetRequestDestination(), out_rule));
+#endif
 }
 
 void BaseFetchContext::PrintAccessDeniedMessage(const KURL& url) const {
@@ -335,6 +353,14 @@ BaseFetchContext::CanRequestInternal(
       return ResourceRequestBlockedReason::kSubresourceFilter;
     }
   }
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  if ((GetUserSubresourceFilter() &&
+       !GetUserSubresourceFilter()->AllowLoad(url, request_destination,
+                                              reporting_disposition))) {
+    return ResourceRequestBlockedReason::kSubresourceFilter;
+  }
+#endif
 
   return std::nullopt;
 }

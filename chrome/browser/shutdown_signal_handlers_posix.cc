@@ -41,6 +41,7 @@ void GracefulShutdownHandler(int signal) {
   RAW_CHECK(g_pipe_pid != -1);
   RAW_CHECK(g_shutdown_pipe_write_fd != -1);
   RAW_CHECK(g_shutdown_pipe_read_fd != -1);
+  LOG(INFO) << "GracefulShutdownHandler g_pipe_pid:" << g_pipe_pid << " getpid:" << getpid();
   RAW_CHECK(g_pipe_pid == getpid());
   size_t bytes_written = 0;
   do {
@@ -166,6 +167,7 @@ void InstallShutdownSignalHandlers(
     return;
   }
   g_pipe_pid = getpid();
+  LOG(INFO) << "InstallShutdownSignalHandlers g_pipe_pid:" << g_pipe_pid;
   g_shutdown_pipe_read_fd = pipefd[0];
   g_shutdown_pipe_write_fd = pipefd[1];
   ShutdownDetector* detector = new ShutdownDetector(

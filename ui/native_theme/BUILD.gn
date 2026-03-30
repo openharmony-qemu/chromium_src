@@ -4,6 +4,9 @@
 
 import("//build/config/ui.gni")
 import("//testing/test.gni")
+if(is_arkweb){
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
 
 component("native_theme") {
   sources = [
@@ -107,6 +110,9 @@ component("native_theme") {
       "native_theme_aura.cc",
       "native_theme_aura.h",
     ]
+    if (is_arkweb) {
+      sources += arkweb_ui_native_theme_sources
+    }
   }
 }
 
@@ -143,12 +149,17 @@ test("native_theme_unittests") {
     "//base/test:run_all_unittests",
     "//base/test:test_support",
     "//skia",
+    "//testing/gmock",
     "//testing/gtest",
     "//ui/color",
     "//ui/gfx:test_support",
     "//ui/gfx/geometry",
   ]
 
+  if (arkweb_test) {
+  #  sources += [ "//arkweb/chromium_ext/ui/native_theme/native_theme_aura_utils_unittest.cc" ]
+    deps += [ "//arkweb/ohos_adapter_ndk/mock_ndk_api:mock_base_ohos" ]
+  }
   if (is_mac) {
     sources += [
       "native_theme_mac_unittest.mm",
@@ -160,4 +171,5 @@ test("native_theme_unittests") {
   if (is_win) {
     sources += [ "caption_style_win_unittest.cc" ]
   }
+
 }

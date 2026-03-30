@@ -21,6 +21,12 @@
 #include "ui/gfx/geometry/point_f.h"
 #include "ui/touch_selection/touch_editing_controller.h"
 
+#if BUILDFLAG(ARKWEB_PDF)
+#include "base/logging.h"
+#include "content/browser/renderer_host/render_frame_host_impl.h"
+#include "arkweb/chromium_ext/components/pdf/browser/pdf_document_helper_for_include.cc"
+#endif  // BUILDFLAG(ARKWEB_PDF)
+
 namespace pdf {
 
 // static
@@ -60,12 +66,24 @@ PDFDocumentHelper* PDFDocumentHelper::MaybeGetForWebContents(
   return pdf_helper;
 }
 
+#if !BUILDFLAG(ARKWEB_PDF)
 PDFDocumentHelper::PDFDocumentHelper(
     content::RenderFrameHost* rfh,
     std::unique_ptr<PDFDocumentHelperClient> client)
     : content::DocumentUserData<PDFDocumentHelper>(rfh),
       pdf_host_receivers_(content::WebContents::FromRenderFrameHost(rfh), this),
       client_(std::move(client)) {}
+#else
+PDFDocumentHelper::PDFDocumentHelper(
+    content::RenderFrameHost* rfh,
+    std::unique_ptr<PDFDocumentHelperClient> client)
+    : content::DocumentUserData<PDFDocumentHelper>(rfh),
+      pdf_host_receivers_(content::WebContents::FromRenderFrameHost(rfh), this),
+      client_(std::move(client)) {
+    SetIsPdfDocument(true);
+    UpdateScaleFactor();
+}
+#endif  // !BUILDFLAG(ARKWEB_PDF)
 
 PDFDocumentHelper::~PDFDocumentHelper() {
   if (pdf_rwh_) {
@@ -76,6 +94,9 @@ PDFDocumentHelper::~PDFDocumentHelper() {
     return;
   }
 
+#if BUILDFLAG(ARKWEB_PDF)
+  SetIsPdfDocument(false);
+#endif  // BUILDFLAG(ARKWEB_PDF)
   ui::TouchSelectionController* touch_selection_controller =
       touch_selection_controller_client_manager_->GetTouchSelectionController();
   touch_selection_controller->HideAndDisallowShowingAutomatically();
@@ -142,7 +163,14 @@ void PDFDocumentHelper::SelectionChanged(const gfx::PointF& left,
   selection_left_height_ = left_height;
   selection_right_ = right;
   selection_right_height_ = right_height;
-
+#if BUILDFLAG(ARKWEB_PDF)
+  UpdateScaleFactor();
+  selection_left_.Scale(page_scale_factor_);
+  selection_right_.Scale(page_scale_factor_);
+  selection_left_height_ = SafeScale(selection_left_height_, page_scale_factor_);
+  selection_right_height_ = SafeScale(selection_right_height_, page_scale_factor_);
+#endif  // BUILDFLAG(ARKWEB_PDF)
+  
   DidScroll();
 }
 
@@ -187,8 +215,12 @@ void PDFDocumentHelper::DidScroll() {
   // TODO(wjmaclean): When PDFium supports editing, we'll need to detect
   // start == end as *either* no selection, or an insertion point.
   has_selection_ = start != end;
+#if !BUILDFLAG(ARKWEB_PDF)
   start.set_visible(has_selection_);
   end.set_visible(has_selection_);
+#else
+  SetSelectionBoundsVisibility(start, end);
+#endif  // !BUILDFLAG(ARKWEB_PDF)
   start.set_type(has_selection_ ? gfx::SelectionBound::LEFT
                                 : gfx::SelectionBound::EMPTY);
   end.set_type(has_selection_ ? gfx::SelectionBound::RIGHT
@@ -216,14 +248,28 @@ void PDFDocumentHelper::MoveCaret(const gfx::PointF& position) {
   if (!remote_pdf_client_) {
     return;
   }
+#if BUILDFLAG(ARKWEB_PDF)
+  UpdateScaleFactor();
+  gfx::PointF convert_position = ConvertFromRoot(position);
+  convert_position.InvScale(page_scale_factor_);
+  remote_pdf_client_->SetCaretPosition(convert_position);
+#else
   remote_pdf_client_->SetCaretPosition(ConvertFromRoot(position));
+#endif  // BUILDFLAG(ARKWEB_PDF)
 }
 
 void PDFDocumentHelper::MoveRangeSelectionExtent(const gfx::PointF& extent) {
   if (!remote_pdf_client_) {
     return;
   }
+#if BUILDFLAG(ARKWEB_PDF)
+  UpdateScaleFactor();
+  gfx::PointF convert_extent = ConvertFromRoot(extent);
+  convert_extent.InvScale(page_scale_factor_);
+  remote_pdf_client_->MoveRangeSelectionExtent(convert_extent);
+#else
   remote_pdf_client_->MoveRangeSelectionExtent(ConvertFromRoot(extent));
+#endif  // BUILDFLAG(ARKWEB_PDF)
 }
 
 void PDFDocumentHelper::SelectBetweenCoordinates(const gfx::PointF& base,
@@ -231,8 +277,17 @@ void PDFDocumentHelper::SelectBetweenCoordinates(const gfx::PointF& base,
   if (!remote_pdf_client_) {
     return;
   }
+#if BUILDFLAG(ARKWEB_PDF)
+  UpdateScaleFactor();
+  gfx::PointF convert_base = ConvertFromRoot(base);
+  convert_base.InvScale(page_scale_factor_);
+  gfx::PointF convert_extent = ConvertFromRoot(extent);
+  convert_extent.InvScale(page_scale_factor_);
+  remote_pdf_client_->SetSelectionBounds(convert_base, convert_extent);
+#else
   remote_pdf_client_->SetSelectionBounds(ConvertFromRoot(base),
                                          ConvertFromRoot(extent));
+#endif  // BUILDFLAG(ARKWEB_PDF)
 }
 
 void PDFDocumentHelper::GetPdfBytes(
@@ -317,6 +372,24 @@ bool PDFDocumentHelper::IsCommandIdEnabled(int command_id) const {
   // selection changed message?
   bool readable = true;
 
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  switch (command_id) {
+    case ui::TouchEditable::QM_EDITFLAG_CAN_CUT:
+      command_id = ui::TouchEditable::kCut;
+      break;
+    case ui::TouchEditable::QM_EDITFLAG_CAN_COPY:
+      command_id = ui::TouchEditable::kCopy;
+      break;
+    case ui::TouchEditable::QM_EDITFLAG_CAN_PASTE:
+      command_id = ui::TouchEditable::kPaste;
+      break;
+    case ui::TouchEditable::QM_EDITFLAG_CAN_SELECT_ALL:
+      command_id = ui::TouchEditable::kSelectAll;
+      break;
+    default:
+      command_id = ui::TouchEditable::QM_EDITFLAG_NONE;
+  }
+#endif
   switch (command_id) {
     case ui::TouchEditable::kCopy:
       return readable && has_selection_;

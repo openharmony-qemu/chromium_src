@@ -32,6 +32,10 @@
 #include "services/network/tpcd/metadata/manager.h"
 #include "url/gurl.h"
 
+#if BUILDFLAG(ARKWEB_COOKIE)
+#include "arkweb/chromium_ext/services/network/cookie_manager_for_include.cc"
+#endif
+
 using CookieDeletionInfo = net::CookieDeletionInfo;
 using CookieDeleteSessionControl = net::CookieDeletionInfo::SessionControl;
 

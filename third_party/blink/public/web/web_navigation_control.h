@@ -93,6 +93,10 @@ class WebNavigationControl : public WebLocalFrame {
   // dropped.
   virtual void DidDropNavigation() = 0;
 
+#if BUILDFLAG(ARKWEB_TEST)
+  virtual void SetDocumentLoaderForTest(WebDocumentLoader* loader) = 0;
+#endif
+
  protected:
   explicit WebNavigationControl(mojom::TreeScopeType scope,
                                 const LocalFrameToken& frame_token)

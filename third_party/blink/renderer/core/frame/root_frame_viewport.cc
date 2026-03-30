@@ -380,10 +380,18 @@ PhysicalRect RootFrameViewport::ScrollIntoView(
     const PhysicalRect& rect_in_absolute,
     const PhysicalBoxStrut& scroll_margin,
     const mojom::blink::ScrollIntoViewParamsPtr& params) {
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  ScrollOffset new_scroll_offset =
+      ClampScrollOffset(scroll_into_view_util::GetScrollOffsetToExpose(
+          *this, rect_in_absolute, scroll_margin, *params->align_x.get(),
+          *params->align_y.get(), params->scroll_offset_limit));
+#else
   ScrollOffset new_scroll_offset =
       ClampScrollOffset(scroll_into_view_util::GetScrollOffsetToExpose(
           *this, rect_in_absolute, scroll_margin, *params->align_x.get(),
           *params->align_y.get()));
+#endif
+
   if (params->type == mojom::blink::ScrollType::kUser)
     new_scroll_offset = ClampToUserScrollableOffset(new_scroll_offset);
 

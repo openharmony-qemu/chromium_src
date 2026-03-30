@@ -15,6 +15,9 @@ declare_args() {
   # `gclient runhooks` is run as well.
   llvm_force_head_revision = false
 
+  # If this arg is set to true, we use the ohos Mainline LLVM.
+  llvm_ohos_mainline = false
+
   # Equivalent to llvm_force_head_revision, but for rust. When true, we expect
   # to find a locally-build version of rust rather than the version specified
   # in //tools/clang/scripts/update.py.
@@ -41,7 +44,11 @@ declare_args() {
 }
 
 declare_args() {
-  clang_version = "22"
+  if (llvm_ohos_mainline) {
+    clang_version = "22"
+  } else {
+    clang_version = "22"
+  }
 }
 
 # Extension for shared library files (including leading dot).

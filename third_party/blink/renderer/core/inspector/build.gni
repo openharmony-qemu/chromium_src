@@ -160,3 +160,10 @@ blink_core_tests_inspector = [
   "protocol_parser_test.cc",
   "protocol_unittest.cc",
 ]
+
+if (is_arkweb) {
+  blink_core_sources_inspector += [
+    "//arkweb/chromium_ext/third_party/blink/renderer/core/inspector/ark_web_main_thread_debugger.cc",
+    "//arkweb/chromium_ext/third_party/blink/renderer/core/inspector/ark_web_main_thread_debugger.h",
+  ]
+}

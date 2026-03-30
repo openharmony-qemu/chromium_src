@@ -6,6 +6,7 @@ import("//build/buildflag_header.gni")
 import("//build/config/ui.gni")
 import("//components/optimization_guide/features.gni")
 import("//extensions/buildflags/buildflags.gni")
+import("//arkweb/build/features/features.gni")
 
 assert(!is_fuchsia, "Fuchsia shouldn't use anything in //chrome")
 
@@ -208,6 +209,11 @@ source_set("browser_tests") {
       "autofill_server_browsertest.cc",
       "form_structure_browsertest.cc",
     ]
+    
+    if (arkweb_test) {
+      sources -= [ "form_structure_browsertest.cc", ]
+    }
+    
   }
 
   defines = [ "HAS_OUT_OF_PROC_TEST_RUNNER" ]

@@ -39,6 +39,7 @@
 #include "ui/gfx/geometry/point_f.h"
 #include "ui/gfx/geometry/quad_f.h"
 #include "ui/gfx/geometry/vector2d_f.h"
+#include "cc/input/input_handler_utils.h"
 
 namespace cc {
 
@@ -106,7 +107,9 @@ base::WeakPtr<InputHandler> InputHandler::Create(
 InputHandler::InputHandler(CompositorDelegateForInput& compositor_delegate)
     : compositor_delegate_(compositor_delegate),
       scrollbar_controller_(std::make_unique<ScrollbarController>(
-          &compositor_delegate_->GetImplDeprecated())) {}
+          &compositor_delegate_->GetImplDeprecated())) {
+  handler_utils_ = std::make_unique<InputHandlerUtils>(this);
+}
 
 InputHandler::~InputHandler() = default;
 
@@ -340,8 +343,12 @@ InputHandlerScrollResult InputHandler::ScrollUpdate(
     base::TimeDelta delayed_by) {
   // The current_native_scrolling_element should only be set for ScrollBegin.
   DCHECK(!scroll_state.data()->current_native_scrolling_element());
-  TRACE_EVENT2("cc", "InputHandler::ScrollUpdate", "dx", scroll_state.delta_x(),
+  OHOS_TRACE_EVENT2("cc", "InputHandler::ScrollUpdate", "dx", scroll_state.delta_x(),
                "dy", scroll_state.delta_y());
+#if BUILDFLAG(ARKWEB_PDF)
+  InputHandlerUtils::pdf_delta_x_ = scroll_state.delta_x();
+  InputHandlerUtils::pdf_delta_y_ = scroll_state.delta_y();
+#endif
 
   if (!CurrentlyScrollingNode())
     return InputHandlerScrollResult();
@@ -771,8 +778,19 @@ void InputHandler::SetSynchronousInputHandlerRootScrollOffset(
                "offset_x", root_content_offset.x(), "offset_y",
                root_content_offset.y());
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  gfx::Vector2dF physical_delta =
+      gfx::Vector2dF(root_content_offset.x(), root_content_offset.y());
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+      float page_scroll_offset = 0.0;
+      if (condition_) {
+        page_scroll_offset = GetViewport().TotalScrollOffset().y();
+      }
+#endif
+#else
   gfx::Vector2dF physical_delta =
       root_content_offset - GetViewport().TotalScrollOffset();
+#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
   physical_delta.Scale(ActiveTree().page_scale_factor_for_scroll());
 
   gfx::Vector2dF consumed_delta =
@@ -795,9 +813,27 @@ void InputHandler::SetSynchronousInputHandlerRootScrollOffset(
   // After applying the synchronous input handler's scroll offset, tell it what
   // we ended up with.
   UpdateRootLayerStateForSynchronousInputHandler();
-
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  TRACE_EVENT2("cc", "InputHandler::SetSynchronousInputHandlerRootScrollOffset",
+               "page_scroll_offset", page_scroll_offset, "condition", condition_);
+  if (page_scroll_offset < 1e-6 && condition_) {
+    compositor_delegate_->ScheduledActionDraw();
+  } else {
+#endif
   compositor_delegate_->SetNeedsFullViewportRedraw();
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  }
+#endif
 }
+
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+void InputHandler::SetBypassVsyncCondition(int32_t condition) {
+  condition_ = condition;
+  LOG(INFO) << "InputHandler::SetBypassVsyncCondition condition:"
+            << condition;
+  compositor_delegate_->GetImplDeprecated().OnSetBypassVsyncCondition(condition);
+}
+#endif
 
 void InputHandler::PinchGestureBegin(const gfx::Point& anchor,
                                      ui::ScrollInputType source) {
@@ -925,6 +961,11 @@ InputHandler::EventListenerTypeForTouchStartOrMoveAt(
   if (layer_impl_with_touch_handler == nullptr) {
     if (out_touch_action)
       *out_touch_action = TouchAction::kAuto;
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+    if (handler_utils_->IsNativeLayer(device_viewport_touch_rect.origin())) {
+      return InputHandler::TouchStartOrMoveEventListenerType::kHandler;
+    }
+#endif
     return InputHandler::TouchStartOrMoveEventListenerType::kNoHandler;
   }
 
@@ -1500,6 +1541,13 @@ ActivelyScrollingType InputHandler::GetActivelyScrollingType() const {
 bool InputHandler::IsHandlingTouchSequence() const {
   return is_handling_touch_sequence_;
 }
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+void InputHandler::HandleScrollUpdateForInternalBeginFrame(
+    const viz::BeginFrameArgs& args) {
+  handler_utils_->HandleScrollUpdateForInternalBeginFrame(args);
+}
+#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
 bool InputHandler::IsCurrentScrollMainRepainted() const {
   const ScrollNode* scroll_node = CurrentlyScrollingNode();

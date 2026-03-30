@@ -56,6 +56,13 @@ class NET_EXPORT SharedDictionaryNetworkTransaction : public HttpTransaction {
   int Start(const HttpRequestInfo* request,
             CompletionOnceCallback callback,
             const NetLogWithSource& net_log) override;
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  int RestartWithSecureDnsOnly(CompletionOnceCallback callback) override;
+#endif
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  int RestartWithFallbackProxy(CompletionOnceCallback callback) override;
+  int RestartWithDirect(CompletionOnceCallback callback) override;
+#endif
   int RestartIgnoringLastError(CompletionOnceCallback callback) override;
   int RestartWithCertificate(scoped_refptr<X509Certificate> client_cert,
                              scoped_refptr<SSLPrivateKey> client_private_key,

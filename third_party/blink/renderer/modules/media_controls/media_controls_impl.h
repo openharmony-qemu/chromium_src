@@ -34,6 +34,10 @@
 #include "third_party/blink/renderer/modules/media_controls/elements/media_control_track_selector_list_element.h"
 #include "third_party/blink/renderer/modules/modules_export.h"
 #include "third_party/blink/renderer/platform/timer.h"
+#if BUILDFLAG(ARKWEB_MEDIA)
+#include "third_party/blink/renderer/modules/media_controls/elements/media_control_playback_speed_button_element.h"
+#include "arkweb/chromium_ext/third_party/blink/renderer/modules/media_controls/media_controls_impl_utils.h"
+#endif  // BUILDFLAG(ARKWEB_MEDIA)
 
 namespace blink {
 
@@ -74,12 +78,24 @@ class MediaControlVolumeControlContainerElement;
 class MediaControlVolumeSliderElement;
 class ShadowRoot;
 class TextTrack;
+#if BUILDFLAG(ARKWEB_MEDIA)
+class MediaControlEnteredFullscreenPanelElement;
+class MediaControlEnteredFullscreenTitleDisplayElement;
+class MediaControlScrubbingPanelElement;
+#endif  // BUILDFLAG(ARKWEB_MEDIA)
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+class HTMLStyleElement;
+class MediaControlTopRowPanelElement;
+class MediaControlTimelineRowPanelElement;
+#endif  // ARKWEB_VIDEO_ASSISTANT
 
 // Default implementation of the core/ MediaControls interface used by
 // HTMLMediaElement.
 class MODULES_EXPORT MediaControlsImpl final : public HTMLDivElement,
                                                public MediaControls {
  public:
+  friend class MediaControlsImplUtils;
+
   static MediaControlsImpl* Create(HTMLMediaElement&, ShadowRoot&);
 
   explicit MediaControlsImpl(HTMLMediaElement&);
@@ -139,6 +155,11 @@ class MODULES_EXPORT MediaControlsImpl final : public HTMLDivElement,
   // Methods related to the playback speed menu.
   void TogglePlaybackSpeedList();
   bool PlaybackSpeedListIsWanted();
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  bool PictureInPictureButtonIsWanted() const;
+  bool DownloadButtonIsWanted() const;
+  bool ShouldShowVideoControlsHM() const;
+#endif
 
   // Methods related to the track selection menu.
   void ToggleTrackSelectionList(WebMediaPlayer::TrackType);
@@ -302,6 +323,9 @@ class MODULES_EXPORT MediaControlsImpl final : public HTMLDivElement,
   void ComputeWhichControlsFit();
 
   void HidePopupMenu();
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void HidePlaybackSpeedList() override;
+#endif // ARKWEB_VIDEO_ASSISTANT
   void UpdateOverflowMenuWanted() const;
   void UpdateOverflowMenuItemCSSClass() const;
   void UpdateScrubbingMessageFits() const;
@@ -326,6 +350,14 @@ class MODULES_EXPORT MediaControlsImpl final : public HTMLDivElement,
   // Returns true/false based on whether this player is showing live content,
   // and should have no seek bar or timestamp.
   bool IsLivePlayback() const;
+
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  bool IsHLSLive() const;
+#endif // BUILDFLAG(ARKWEB_MEDIA_POLICY)
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST) && !defined(COMPONENT_BUILD)
+  void NotifyCastControlShow() override;
+#endif // ARKWEB_MEDIA_CAST
 
   // Node
   bool IsMediaControls() const override { return true; }
@@ -378,6 +410,9 @@ class MODULES_EXPORT MediaControlsImpl final : public HTMLDivElement,
   Member<MediaControlPanelElement> panel_;
   Member<MediaControlPlayButtonElement> play_button_;
   Member<MediaControlTimelineElement> timeline_;
+#if BUILDFLAG(ARKWEB_MEDIA)
+  Member<MediaControlScrubbingPanelElement> scrubbing_panel_;
+#endif
   Member<MediaControlScrubbingMessageElement> scrubbing_message_;
   Member<MediaControlCurrentTimeDisplayElement> current_time_display_;
   Member<MediaControlRemainingTimeDisplayElement> duration_display_;
@@ -410,12 +445,28 @@ class MODULES_EXPORT MediaControlsImpl final : public HTMLDivElement,
       display_cutout_fullscreen_button_;
   Member<MediaControlDownloadButtonElement> download_button_;
 
+#if BUILDFLAG(ARKWEB_MEDIA)
+  Member<MediaControlEnteredFullscreenPanelElement> entered_fullscreen_panel_;
+  Member<MediaControlEnteredFullscreenTitleDisplayElement>
+      entered_fullscreen_title_display_;
+#endif  // BUILDFLAG(ARKWEB_MEDIA)
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  Member<HTMLStyleElement> style_element_;
+  Member<MediaControlTopRowPanelElement> top_row_panel_;
+  Member<MediaControlTimelineRowPanelElement> timeline_row_panel_;
+#endif  // ARKWEB_VIDEO_ASSISTANT
+
   Member<MediaControlsMediaEventListener> media_event_listener_;
   Member<MediaControlsOrientationLockDelegate> orientation_lock_delegate_;
   Member<MediaControlsRotateToFullscreenDelegate>
       rotate_to_fullscreen_delegate_;
   Member<MediaControlsDisplayCutoutDelegate> display_cutout_delegate_;
 
+ public:
+  MediaControlsImplUtils mediaControlsImplUtils_;
+
+ private:
   HeapTaskRunnerTimer<MediaControlsImpl> hide_media_controls_timer_;
   unsigned hide_timer_behavior_flags_;
   bool is_mouse_over_controls_ : 1;
@@ -460,6 +511,11 @@ class MODULES_EXPORT MediaControlsImpl final : public HTMLDivElement,
   Member<MediaControlsTextTrackManager> text_track_manager_;
 
   bool is_test_mode_ = false;
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  bool is_begin_scrubbing = false;
+  HeapTaskRunnerTimer<MediaControlsImpl> scrubbing_timer_;
+  void ScrubbingTimerFired(TimerBase*);
+#endif
 };
 }  // namespace blink
 

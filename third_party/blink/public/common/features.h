@@ -9,6 +9,7 @@
 
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "base/feature_list.h"
 #include "base/metrics/field_trial_params.h"
 #include "base/time/time.h"
@@ -665,6 +666,16 @@ BLINK_COMMON_EXPORT BASE_DECLARE_FEATURE(kGMSCoreEmoji);
 BLINK_COMMON_EXPORT BASE_DECLARE_FEATURE(
     kGetDisplayMediaIgnoreAudioPermissionFailures);
 
+#if BUILDFLAG(IS_OHOS)
+BLINK_COMMON_EXPORT BASE_DECLARE_FEATURE(kEnableOcrTextRecognition);
+BLINK_COMMON_EXPORT bool IsEnableOcrTextRecognition();
+#endif  // BUILDFLAG(IS_OHOS)
+
+#if BUILDFLAG(ARKWEB_OHOS_MEM_USAGE_REPORT)
+BLINK_COMMON_EXPORT BASE_DECLARE_FEATURE(kMemUsageReport);
+BLINK_COMMON_EXPORT BASE_DECLARE_FEATURE_PARAM(int, kMemUsageReportCount);
+#endif // ARKWEB_OHOS_MEM_USAGE_REPORT
+
 BLINK_COMMON_EXPORT BASE_DECLARE_FEATURE_PARAM(
     std::string,
     kHTMLParserYieldEventNameForPause);
@@ -679,6 +690,11 @@ BLINK_COMMON_EXPORT BASE_DECLARE_FEATURE_PARAM(size_t,
 // is an attached Dev Tools session, during which input will be dispatched even
 // if we are hidden.
 BLINK_COMMON_EXPORT BASE_DECLARE_FEATURE(kIgnoreInputWhileHidden);
+
+#if BUILDFLAG(ARKWEB_NOT_LOAD_IFRAME)
+BLINK_COMMON_EXPORT BASE_DECLARE_FEATURE(kNotLoadIframe);
+BLINK_COMMON_EXPORT BASE_DECLARE_FEATURE_PARAM(int, kCrashesFrequencyPerUnitTime);
+#endif  // BUILDFLAG(ARKWEB_NOT_LOAD_IFRAME)
 
 // If enabled, a fix for image loading prioritization based on visibility is
 // applied. See https://crbug.com/1369823.
@@ -1416,7 +1432,7 @@ BLINK_COMMON_EXPORT BASE_DECLARE_FEATURE(kPrecompileInlineScripts);
 
 BLINK_COMMON_EXPORT BASE_DECLARE_FEATURE(kPreferCompositingToLCDText);
 
-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 // If enabled, font lookup tables will be prefetched on renderer startup.
 BLINK_COMMON_EXPORT BASE_DECLARE_FEATURE(kPrefetchFontLookupTables);
 #endif

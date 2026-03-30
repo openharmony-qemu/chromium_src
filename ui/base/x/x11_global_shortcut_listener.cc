@@ -86,7 +86,11 @@ bool XGlobalShortcutListener::RegisterAccelerator(KeyboardCode key_code,
                                                   bool is_ctrl_down,
                                                   bool is_shift_down) {
   auto modifiers = GetNativeModifiers(is_alt_down, is_ctrl_down, is_shift_down);
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  auto keysym = XKeysymForWindowsKeyCode(key_code, false, false);
+#else
   auto keysym = XKeysymForWindowsKeyCode(key_code, false);
+#endif
   auto keycode = connection_->KeysymToKeycode(keysym);
 
   // Because XGrabKey only works on the exact modifiers mask, we should register
@@ -120,7 +124,11 @@ void XGlobalShortcutListener::UnregisterAccelerator(KeyboardCode key_code,
                                                     bool is_ctrl_down,
                                                     bool is_shift_down) {
   auto modifiers = GetNativeModifiers(is_alt_down, is_ctrl_down, is_shift_down);
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  auto keysym = XKeysymForWindowsKeyCode(key_code, false, false);
+#else
   auto keysym = XKeysymForWindowsKeyCode(key_code, false);
+#endif
   auto keycode = connection_->KeysymToKeycode(keysym);
 
   for (auto mask : kModifiersMasks)

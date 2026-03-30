@@ -187,8 +187,16 @@ class BLINK_MODULES_EXPORT WebMediaPlayerMS
   // WebMediaPlayerDelegate::Observer implementation.
   void OnFrameHidden() override;
   void OnFrameShown() override;
+#if !BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   void OnPageHidden() override;
+#else
+  void OnPageHidden(bool storing_in_bfcache) override;
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+#if !BUILDFLAG(ARKWEB_BFCACHE)
   void OnPageShown() override;
+#else
+  void OnPageShown(bool restoring_in_bfcache) override;
+#endif // BUILDFLAG(ARKWEB_BFCACHE)
   void OnIdleTimeout() override;
 
   void OnFirstFrameReceived(media::VideoTransformation video_transform,

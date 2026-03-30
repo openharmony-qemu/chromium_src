@@ -34,6 +34,10 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "base/memory/scoped_refptr.h"
 #include "base/time/time.h"
 #include "base/unguessable_token.h"
@@ -48,17 +52,21 @@
 #include "third_party/blink/renderer/platform/heap/garbage_collected.h"
 #include "third_party/blink/renderer/platform/weborigin/kurl.h"
 #include "third_party/blink/renderer/platform/wtf/casting.h"
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/frame/local_frame_client_impl_utils.h"
 
 namespace blink {
 
 class WebDevToolsAgentImpl;
 class WebLocalFrameImpl;
 class WebSpellCheckPanelHostClient;
+class LocalFrameClientImplUtils;
 
 class CORE_EXPORT LocalFrameClientImpl final : public LocalFrameClient {
  public:
   explicit LocalFrameClientImpl(WebLocalFrameImpl*);
   ~LocalFrameClientImpl() override;
+
+  friend class LocalFrameClientImplUtils;
 
   void Trace(Visitor*) const override;
 
@@ -77,6 +85,10 @@ class CORE_EXPORT LocalFrameClientImpl final : public LocalFrameClient {
   void RunScriptsAtDocumentElementAvailable() override;
   void RunScriptsAtDocumentReady(bool document_is_empty) override;
   void RunScriptsAtDocumentIdle() override;
+
+#if BUILDFLAG(ARKWEB_JSPROXY)
+  void RunScriptsAtHeadElementAvailable() override;
+#endif
 
   void DidCreateScriptContext(v8::Local<v8::Context>,
                               int32_t world_id) override;
@@ -122,6 +134,11 @@ class CORE_EXPORT LocalFrameClientImpl final : public LocalFrameClient {
   void DispatchDidFinishLoad() override;
   void DispatchDidFinishLoadForPrinting() override;
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  void DispatchDidSubresourceFiltered() override;
+  bool GetGlobalAdblockEnabled() override;
+#endif
+
   void BeginNavigation(
       const ResourceRequest&,
       const KURL& requestor_base_url,
@@ -148,7 +165,12 @@ class CORE_EXPORT LocalFrameClientImpl final : public LocalFrameClient {
       mojo::PendingRemote<mojom::blink::NavigationStateKeepAliveHandle>
           initiator_navigation_state_keep_alive_handle,
       bool is_container_initiated,
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+      bool has_rel_opener,
+      bool is_triggered_by_js = false) override;
+#else
       bool has_rel_opener) override;
+#endif
   void DispatchWillSendSubmitEvent(HTMLFormElement*) override;
   void DidStartLoading() override;
   void DidStopLoading() override;
@@ -202,6 +224,13 @@ class CORE_EXPORT LocalFrameClientImpl final : public LocalFrameClient {
       HTMLMediaElement&,
       const WebMediaPlayerSource&,
       WebMediaPlayerClient*) override;
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  std::unique_ptr<WebNativeBridge> CreateWebNativeBridge(
+      NativeLoader&,
+      WebNativeClient*) override;
+
+  float GetDeviceScaleFactor(NativeLoader& native_loader) override;
+#endif
   RemotePlaybackClient* CreateRemotePlaybackClient(HTMLMediaElement&) override;
   void DidChangeScrollOffset() override;
   void NotifyCurrentHistoryItemChanged() override;
@@ -295,6 +324,10 @@ class CORE_EXPORT LocalFrameClientImpl final : public LocalFrameClient {
 
   bool IsDomStorageDisabled() const override;
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  void NotifyLcpForBlankless() override;
+#endif
+
  private:
   bool IsLocalFrameClientImpl() const override { return true; }
   WebDevToolsAgentImpl* DevToolsAgent(bool create_if_necessary);
@@ -304,6 +337,7 @@ class CORE_EXPORT LocalFrameClientImpl final : public LocalFrameClient {
   Member<WebLocalFrameImpl> web_frame_;
 
   String user_agent_;
+  Member<LocalFrameClientImplUtils> impl_utils_;
 };
 
 template <>

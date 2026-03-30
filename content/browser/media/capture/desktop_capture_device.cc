@@ -56,6 +56,7 @@
 #include "third_party/webrtc/modules/desktop_capture/mouse_cursor_monitor.h"
 #include "third_party/webrtc_overrides/rtc_base/diagnostic_logging.h"
 #include "ui/gfx/icc_profile.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_WIN)
 #include "base/win/windows_version.h"
@@ -280,6 +281,9 @@ class DesktopCaptureDevice::Core : public webrtc::DesktopCapturer::Callback {
   base::WeakPtr<Core> GetWeakPtr() { return weak_factory_.GetWeakPtr(); }
 
  private:
+#if BUILDFLAG(ARKWEB_WEBRTC)
+  void OnFrameCaptureStart() override;
+#endif
   // webrtc::DesktopCapturer::Callback interface.
   // A side-effect of this method is to schedule the next frame.
   void OnCaptureResult(
@@ -479,9 +483,11 @@ void DesktopCaptureDevice::Core::AllocateAndStart(
 
   desktop_capturer_->Start(this);
   // Assume it will be always started successfully for now.
+#if !BUILDFLAG(ARKWEB_WEBRTC)
   client_->OnStarted();
 
   CaptureFrame(/*is_refresh_frame=*/false);
+#endif
 }
 
 void DesktopCaptureDevice::Core::RequestRefreshFrame() {
@@ -606,6 +612,9 @@ void DesktopCaptureDevice::Core::OnCaptureResult(
   webrtc::DesktopSize output_size(
       resolution_chooser_.capture_size().width() & ~1,
       resolution_chooser_.capture_size().height() & ~1);
+  LOG(DEBUG) << "screen capture output_size: " << output_size.width() << ", "
+             << output_size.height();
+
   if (output_size.is_empty()) {
     // Even RESOLUTION_POLICY_ANY_WITHIN_LIMIT is used, a non-empty size should
     // be guaranteed.
@@ -931,9 +940,15 @@ base::TimeTicks DesktopCaptureDevice::Core::NowTicks() const {
 }
 
 // static
+#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
+std::unique_ptr<media::VideoCaptureDevice> DesktopCaptureDevice::Create(
+    const DesktopMediaID& source, bool is_picker_show, int nweb_id) {
+  Client* device_client = nullptr;
+#else
 std::unique_ptr<media::VideoCaptureDevice> DesktopCaptureDevice::Create(
     const DesktopMediaID& source,
     Client* device_client) {
+#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
   ScopedWebrtcDebugLogging enable_webrtc_logging(device_client);
   CHECK(source.type == DesktopMediaID::TYPE_WINDOW ||
         source.type == DesktopMediaID::TYPE_SCREEN);
@@ -1007,6 +1022,10 @@ std::unique_ptr<media::VideoCaptureDevice> DesktopCaptureDevice::Create(
 
   switch (source.type) {
     case DesktopMediaID::TYPE_SCREEN: {
+#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
+      options.set_picker_show(is_picker_show);
+      options.set_nweb_id(nweb_id);
+#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
       std::unique_ptr<webrtc::DesktopCapturer> screen_capturer(
           desktop_capture::CreateScreenCapturer(options,
                                                 /*for_snapshot=*/false));
@@ -1138,3 +1157,6 @@ void DesktopCaptureDevice::SetMockTimeForTesting(
 }
 
 }  // namespace content
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/content/browser/media/capture/desktop_capture_device_for_include.cc"
+#endif

@@ -7,6 +7,7 @@
 #include <utility>
 #include <variant>
 
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/widget/input/arkweb_widget_input_handler_impl_ext.h"
 #include "base/check.h"
 #include "base/feature_list.h"
 #include "base/functional/bind.h"
@@ -177,6 +178,12 @@ void WidgetInputHandlerImpl::DispatchEvent(
     std::optional<std::unique_ptr<blink::WebCoalescedInputEvent>>
         original_event_for_gesture,
     DispatchEventCallback callback) {
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  if (InputEventOhos::FilterLogEvent(event->Event())) {
+    LOG(INFO) << "WidgetInputHandlerImpl::DispatchEvent type:"
+              << InputEventOhos::GetWebEventName(event->Event());
+  }
+#endif
   TRACE_EVENT("input,input.scrolling", "WidgetInputHandlerImpl::DispatchEvent");
   if (original_event_for_gesture.has_value()) {
     input_handler_manager_->DispatchEvent(
@@ -187,6 +194,12 @@ void WidgetInputHandlerImpl::DispatchEvent(
 
 void WidgetInputHandlerImpl::DispatchNonBlockingEvent(
     std::unique_ptr<WebCoalescedInputEvent> event) {
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  if (InputEventOhos::FilterLogEvent(event->Event())) {
+    LOG(INFO) << "WidgetInputHandlerImpl::DispatchNonBlockingEvent type:"
+              << InputEventOhos::GetWebEventName(event->Event());
+  }
+#endif
   TRACE_EVENT0("input,input.scrolling",
                "WidgetInputHandlerImpl::DispatchNonBlockingEvent");
   input_handler_manager_->DispatchEvent(std::move(event),

@@ -11,6 +11,7 @@
 #include <memory>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/check.h"
 #include "base/containers/flat_set.h"
 #include "base/memory/raw_ptr.h"
@@ -20,6 +21,7 @@
 #include "components/viz/common/display/update_vsync_parameters_callback.h"
 #include "components/viz/common/frame_sinks/begin_frame_args.h"
 #include "components/viz/common/frame_sinks/delay_based_time_source.h"
+#include "components/viz/common/surfaces/frame_sink_id.h"
 
 namespace perfetto {
 class EventContext;
@@ -211,6 +213,10 @@ class VIZ_COMMON_EXPORT BeginFrameSource {
   // only one frame is pending at a time.
   virtual void DidFinishFrame(BeginFrameObserver* obs) = 0;
 
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  virtual void OnSetBypassVsyncCondition(int32_t condition) {}
+#endif
+
   // Add/Remove an observer from the source. When no observers are added the BFS
   // should shut down its timers, disable vsync, etc.
   virtual void AddObserver(BeginFrameObserver* obs) = 0;
@@ -226,6 +232,10 @@ class VIZ_COMMON_EXPORT BeginFrameSource {
 
   virtual void SetUpdateVSyncParametersCallback(
       UpdateVSyncParametersCallback callback) {}
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  virtual void SendInternalBeginFrame() {}
+#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
  protected:
   // Returns whether begin-frames to clients should be withheld (because the gpu
@@ -444,6 +454,30 @@ class VIZ_COMMON_EXPORT ExternalBeginFrameSource : public BeginFrameSource {
   virtual void UpdateRefreshRate(float refresh_rate) {}
 #endif
 
+#if BUILDFLAG(ARKWEB_SYNC_RENDER) && BUILDFLAG(ARKWEB_PERFORMANCE_JITTER)
+  // Set Current display client Frame sink ID.
+  virtual void SetDrawRect(const gfx::Rect& new_rect) {}
+#endif
+
+#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_PERFORMANCE_JITTER)
+  // Set Current display client Frame sink ID.
+  virtual void SetCurrentFrameSinkId(const FrameSinkId& frame_sink_id) {}
+#endif
+
+#if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
+  virtual void SetEnableLowerFrameRate(bool enabled) {}
+  virtual void SetEnableHalfFrameRate(bool enabled) {}
+#endif
+
+#if BUILDFLAG(ARKWEB_SLIDE_LTPO)
+  virtual void UpdateVSyncFrequency(int frame_rate) {}
+  virtual void ResetVSyncFrequency() {}
+#endif
+
+#if BUILDFLAG(ARKWEB_PIP)
+  virtual void SetPipActive(bool active) {}
+#endif
+
   // Notifies the begin frame source of the desired frame interval for the
   // observers.
   virtual void SetPreferredInterval(base::TimeDelta interval) {}
@@ -465,6 +499,9 @@ class VIZ_COMMON_EXPORT ExternalBeginFrameSource : public BeginFrameSource {
   base::flat_set<raw_ptr<BeginFrameObserver, CtnExperimental>> observers_;
   raw_ptr<ExternalBeginFrameSourceClient> client_;
   bool paused_ = false;
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  int32_t condition_ = 0;
+#endif
 
  private:
   BeginFrameArgs pending_begin_frame_args_;

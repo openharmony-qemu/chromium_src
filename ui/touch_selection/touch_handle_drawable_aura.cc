@@ -173,4 +173,8 @@ void TouchHandleDrawableAura::OnNativeThemeUpdated(
   window_->SchedulePaintInRect(gfx::Rect(window_->bounds().size()));
 }
 
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+void TouchHandleDrawableAura::SetEdge(const gfx::PointF& top,
+                                      const gfx::PointF& bottom) {}
+#endif
 }  // namespace ui

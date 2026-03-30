@@ -825,10 +825,8 @@ option:-internal-spatial-navigation-focus {
     outline-offset: -1px;
 }
 
-input:not([type="image" i], [type="range" i], [type="checkbox" i], [type="radio" i]) {
-  overflow: clip !important;
-  overflow-clip-margin: 0px !important;
-}
+/* ArkWeb not use Chromium's input element default CSS style about "overflow:clip". */
+/* https://chromium-review.googlesource.com/c/chromium/src/+/5777174 */
 
 /* https://html.spec.whatwg.org/multipage/rendering.html#hidden-elements */
 /* TODO(crbug.com/1231263): <area> should be display:none. */

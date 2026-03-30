@@ -33,14 +33,25 @@ namespace {
 
 using blink::Vector;
 
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+Vector<SkBitmap> DecodeImageData(const std::string& data,
+                                      const std::string& mime_type,
+                                      const gfx::Size& preferred_size,
+                                      bool is_favicon = false) {
+#else
 Vector<SkBitmap> DecodeImageData(const std::string& data,
                                  const std::string& mime_type,
                                  const gfx::Size& preferred_size) {
+#endif
   // Decode the image using Blink's image decoder.
   blink::WebData buffer(base::as_byte_span(data));
   Vector<SkBitmap> bitmaps;
   if (mime_type == "image/svg+xml") {
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+    SkBitmap bitmap = blink::WebImage::DecodeSVG(buffer, preferred_size, is_favicon);
+#else
     SkBitmap bitmap = blink::WebImage::DecodeSVG(buffer, preferred_size);
+#endif
     if (!bitmap.drawsNothing()) {
       bitmaps.push_back(bitmap);
     }
@@ -285,19 +296,30 @@ void ImageDownloaderImpl::FetchImage(const KURL& image_url,
                        : blink::mojom::FetchCacheMode::kDefault,
           blink::BindOnce(&ImageDownloaderImpl::DidFetchImage,
                           WrapPersistent(this), std::move(callback),
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+                          preferred_size, is_favicon)));
+#else
                           preferred_size)));
+#endif
 }
 
 void ImageDownloaderImpl::DidFetchImage(
     DownloadCallback callback,
     const gfx::Size& preferred_size,
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+    bool is_favicon,
+#endif
     MultiResolutionImageResourceFetcher* fetcher,
     const std::string& image_data,
     const WebString& mime_type) {
   int32_t http_status_code = fetcher->http_status_code();
 
   Vector<SkBitmap> images =
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+      DecodeImageData(image_data, mime_type.Utf8(), preferred_size, is_favicon);
+#else
       DecodeImageData(image_data, mime_type.Utf8(), preferred_size);
+#endif
 
   // Remove the image fetcher from our pending list. We're in the callback from
   // MultiResolutionImageResourceFetcher, best to delay deletion.

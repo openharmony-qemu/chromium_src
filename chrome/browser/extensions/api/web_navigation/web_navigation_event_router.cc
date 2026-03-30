@@ -224,6 +224,10 @@ void WebNavigationEventRouter::RecordNewWebContents(
       ExtensionApiFrameIdMap::GetFrameId(frame_host);
   int source_tab_id = ExtensionTabUtil::GetTabId(source_web_contents);
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  not_yet_in_tabstrip = false;
+#endif // ARKWEB_ARKWEB_EXTENSIONS
+
   // If the WebContents isn't yet inserted into a tab strip, we need to delay
   // the extension event until the WebContents is fully initialized.
   if (not_yet_in_tabstrip) {

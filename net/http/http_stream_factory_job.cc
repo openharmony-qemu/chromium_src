@@ -807,7 +807,13 @@ int HttpStreamFactory::Job::DoInitConnectionImpl() {
         proxy_info_, allowed_bad_certs_, request_info_.privacy_mode,
         request_info_.network_anonymization_key,
         request_info_.secure_dns_policy, net_log_, num_streams_,
-        /*fail_if_alias_requires_proxy_override_=*/false, std::move(callback));
+        /*fail_if_alias_requires_proxy_override_=*/false, 
+        std::move(callback)
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+,
+        from_preload_
+#endif
+        );
   }
 
   // TODO(crbug.com/383134117): Check proxy info for did try IPP proxy to
@@ -832,7 +838,16 @@ int HttpStreamFactory::Job::DoInitConnectionImpl() {
       allowed_bad_certs_, request_info_.privacy_mode,
       request_info_.network_anonymization_key, request_info_.secure_dns_policy,
       request_info_.socket_tag, net_log_, connection_.get(), io_callback_,
-      proxy_auth_callback, /*fail_if_alias_requires_proxy_override_=*/false);
+      proxy_auth_callback, /*fail_if_alias_requires_proxy_override_=*/false
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+      ,
+      request_info_.secure_dns_only
+#endif
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+      ,
+      from_preload_
+#endif
+      );
 }
 
 int HttpStreamFactory::Job::DoInitConnectionImplQuic() {

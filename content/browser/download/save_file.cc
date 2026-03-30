@@ -9,6 +9,10 @@
 #include "base/notreached.h"
 #include "components/download/public/common/download_item.h"
 #include "components/download/public/common/download_task_runner.h"
+#if BUILDFLAG(IS_OHOS)
+#include "base/path_service.h"
+#include "chrome/common/chrome_paths.h"
+#endif
 
 namespace content {
 
@@ -31,11 +35,19 @@ SaveFile::~SaveFile() {
 
 download::DownloadInterruptReason SaveFile::Initialize() {
   int64_t bytes_wasted = 0;
+#if BUILDFLAG(IS_OHOS)
+  base::FilePath path;
+  base::PathService::Get(chrome::DIR_DEFAULT_DOWNLOADS, &path);
+  download::DownloadInterruptReason reason = file_.Initialize(
+      base::FilePath(), path, base::File(), 0, std::string(),
+      nullptr, false, &bytes_wasted);
+#else
   download::DownloadInterruptReason reason = file_.Initialize(
       /*full_path=*/base::FilePath(), /*default_directory=*/base::FilePath(),
       /*file=*/base::File(), /*bytes_so_far=*/0, /*hash_so_far=*/std::string(),
       /*hash_state=*/nullptr, /*is_sparse_file=*/false,
       /*bytes_wasted*/ &bytes_wasted);
+#endif
   info_->path = FullPath();
   return reason;
 }

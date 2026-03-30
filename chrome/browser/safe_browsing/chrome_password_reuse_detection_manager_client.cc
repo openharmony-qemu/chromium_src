@@ -282,7 +282,11 @@ void ChromePasswordReuseDetectionManagerClient::CheckProtectedPasswordEntry(
   // Converts the url_string to GURL to avoid constructing it twice.
   GURL domain_gurl(domain);
   // If the webpage is not an extension page, do nothing.
-  if (!domain_gurl.SchemeIs(extensions::kExtensionScheme)) {
+  if (!domain_gurl.SchemeIs(extensions::kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      && !domain_gurl.SchemeIs(extensions::kArkwebExtensionScheme)
+#endif
+  ) {
     return;
   }
   content::BrowserContext* browser_context =
@@ -373,9 +377,11 @@ void ChromePasswordReuseDetectionManagerClient::OnPaste() {
   // policy.
   ui::DataTransferEndpoint data_dst = ui::DataTransferEndpoint(
       ui::EndpointType::kDefault, {.notify_if_restricted = false});
+#if !BUILDFLAG(ARKWEB_CLIPBOARD)
   clipboard->ReadText(ui::ClipboardBuffer::kCopyPaste, &data_dst, &text);
 
   password_reuse_detection_manager_.OnPaste(std::move(text));
+#endif // BUILDFLAG(ARKWEB_CLIPBOARD)
   phishy_interaction_tracker_.HandlePasteEvent();
 }
 

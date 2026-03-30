@@ -15,6 +15,9 @@
 #include <string_view>
 #include <utility>
 
+#include "build/build_config.h"
+#include "arkweb/build/features/features.h"
+#include "arkweb/chromium_ext/base/process/process_handle_posix_ex.h"
 #include "base/containers/contains.h"
 #include "base/debug/leak_annotations.h"
 #include "base/format_macros.h"
@@ -364,7 +367,11 @@ void TraceLog::ResetForTesting() {
 }
 
 TraceLog::TraceLog() : process_id_(base::kNullProcessId) {
+#if BUILDFLAG(ARKWEB_USE_UNIQUE_RENDERER_PROCESS_ID)
+  SetProcessID(GetCurrentRealPid());
+#else
   SetProcessID(GetCurrentProcId());
+#endif
   TrackEvent::AddSessionObserver(this);
   g_trace_log_for_testing = this;
 }

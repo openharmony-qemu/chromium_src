@@ -30,6 +30,10 @@
 #include "third_party/blink/public/common/origin_trials/trial_token_validator.h"
 #include "ui/base/resource/resource_bundle.h"
 
+#if BUILDFLAG(ARKWEB_WEBSTORAGE)
+#include "base/logging.h"
+#endif  // BUILDFLAG(ARKWEB_WEBSTORAGE)
+
 #if defined(HEADLESS_USE_POLICY)
 #include "components/user_prefs/user_prefs.h"  // nogncheck
 #endif                                         // defined(HEADLESS_USE_POLICY)
@@ -78,6 +82,13 @@ HeadlessBrowserContextImpl::HeadlessBrowserContextImpl(
           : path_;
   request_context_manager_ = std::make_unique<HeadlessRequestContextManager>(
       context_options_.get(), user_data_path, browser->os_crypt_async());
+
+#if BUILDFLAG(ARKWEB_WEBSTORAGE)
+  LOG(INFO) << "HeadlessBrowserContextImpl SetBrowserProfileType, context : "
+      << reinterpret_cast<uintptr_t>(this) % 100000000
+      << " IsOffTheRecord : " << IsOffTheRecord();
+#endif  // BUILDFLAG(ARKWEB_WEBSTORAGE)
+
   profile_metrics::SetBrowserProfileType(
       this, IsOffTheRecord() ? profile_metrics::BrowserProfileType::kIncognito
                              : profile_metrics::BrowserProfileType::kRegular);

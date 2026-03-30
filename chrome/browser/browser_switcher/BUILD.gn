@@ -3,8 +3,9 @@
 # found in the LICENSE file.
 
 import("//testing/libfuzzer/fuzzer_test.gni")
+import("//arkweb/build/features/features.gni")
 
-assert(is_win || is_mac || is_linux)
+assert(is_win || is_mac || is_linux || is_ohos)
 
 source_set("browser_switcher") {
   sources = []
@@ -77,7 +78,7 @@ source_set("impl") {
     sources += [ "alternative_browser_driver_win.cc" ]
   }
 
-  if (is_mac || is_linux) {
+  if (is_mac || is_linux || arkweb_asan) {
     sources += [ "alternative_browser_driver_posix.cc" ]
   }
 

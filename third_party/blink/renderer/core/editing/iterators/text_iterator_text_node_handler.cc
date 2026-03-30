@@ -185,6 +185,10 @@ void TextIteratorTextNodeHandler::HandleTextNodeInRange(const Text* node,
   const OffsetMapping* const mapping =
       OffsetMapping::ForceGetFor(Position(node, offset_));
   if (!mapping) [[unlikely]] {
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(ERROR) << "We have LayoutText outside LayoutBlockFlow "
+                        << text_node_;
+#endif
     DUMP_WILL_BE_NOTREACHED()
         << "We have LayoutText outside LayoutBlockFlow " << text_node_;
     return;

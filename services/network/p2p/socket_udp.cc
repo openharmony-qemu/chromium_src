@@ -29,6 +29,7 @@
 #include "third_party/perfetto/include/perfetto/tracing/track.h"
 #include "third_party/webrtc/media/base/rtp_utils.h"
 #include "third_party/webrtc/rtc_base/time_utils.h"
+#include "arkweb/build/features/features.h"
 
 namespace {
 
@@ -367,9 +368,11 @@ bool P2PSocketUdp::HandleReadResult(int result) {
       if ((stun && IsRequestOrResponse(type))) {
         connected_peers_.insert(recv_address_);
       } else if (!stun || type == STUN_DATA_INDICATION) {
+#if !BUILDFLAG(ARKWEB_NETWORK_BASE)
         LOG(ERROR) << "Received unexpected data packet from "
                    << recv_address_.ToString()
                    << " before STUN binding is finished.";
+#endif
         return true;
       }
     }

@@ -9,6 +9,10 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "build/build_config.h"
 #include "net/nqe/effective_connection_type.h"
 #include "third_party/blink/public/common/common_export.h"
@@ -34,6 +38,12 @@ typedef std::map<std::string, std::u16string> ScriptFontFamilyMap;
 // default used on WebKit's side to get/set a font setting when no script is
 // specified.
 BLINK_COMMON_EXPORT extern const char kCommonScript[];
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+BLINK_COMMON_EXPORT extern const char kObjectTag[];
+BLINK_COMMON_EXPORT extern const char kEmbedTag[];
+BLINK_COMMON_EXPORT extern const char kNativeType[];
+#endif
 
 // A struct for managing blink's settings.
 //
@@ -86,9 +96,47 @@ struct BLINK_COMMON_EXPORT WebPreferences {
   bool privileged_webgl_extensions_enabled = false;
   bool webgl_errors_to_console_enabled = true;
   bool hide_scrollbars = false;
+#if BUILDFLAG(ARKWEB_COPY_OPTION)
+  mojom::CopyOptionMode copy_option;
+#endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+  bool contextmenu_customization_enabled;
+#endif
+#if BUILDFLAG(ARKWEB_FOCUS)
+  int gesture_focus_mode = 0;
+#endif
   // If true, ignore ::-webkit-scrollbar-* CSS pseudo-elements in stylesheets
   // and use default values for `ScrollbarWidth` and `ScrollbarColor`
   // CSS properties.
+#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_CORNER)
+  double border_radius_top_left = 0.0;
+  double border_radius_top_right = 0.0;
+  double border_radius_bottom_left = 0.0;
+  double border_radius_bottom_right = 0.0;
+#endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
+#if BUILDFLAG(ARKWEB_AUTOFILL)
+  bool is_autofill_enabled = true;
+#endif  // BUILDFLAG(ARKWEB_AUTOFILL)
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  bool is_drag_enabled = true;
+#endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
+#if BUILDFLAG(ARKWEB_MENU)
+  bool touch_handle_exist = false;
+  bool viewport_scale = false;
+#endif  // BUILDFLAG(ARKWEB_MENU)
+#if BUILDFLAG(ARKWEB_AI)
+  bool image_analyzer_enabled = true;
+  bool arkweb_agent_enabled = false;
+  bool agent_need_highlight = true;
+#endif
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  bool hide_vertical_scrollbars = false;
+  bool hide_horizontal_scrollbars = false;
+  bool scroll_enabled = true;
+  mojom::ScrollbarLayoutPolicy scrollbar_layout_policy =
+      mojom::ScrollbarLayoutPolicy::kContent;
+  bool is_system_rtl_enabled = false;
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
   bool prefers_default_scrollbar_styles = false;
   bool accelerated_2d_canvas_enabled = false;
   bool canvas_2d_layers_enabled = false;
@@ -122,6 +170,21 @@ struct BLINK_COMMON_EXPORT WebPreferences {
   bool prefers_reduced_transparency = false;
   bool inverted_colors = false;
   bool touch_event_feature_detection_enabled = false;
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  bool native_embed_mode_enabled;
+  bool intrinsic_size_enabled;
+  bool css_display_change_enabled;
+  std::string embed_tag;
+  std::string embed_tag_type;
+#endif
+
+#if BUILDFLAG(ARKWEB_SYNC_RENDER)
+  int draw_mode = 0;
+#endif  // BUILDFLAG(IS_OHOS)
+
+#if BUILDFLAG(ARKWEB_CSS_FONT)
+  float font_weight_scale;
+#endif
   int pointer_events_max_touch_points = 0;
   int available_pointer_types = 0;
   blink::mojom::PointerType primary_pointer_type =
@@ -157,28 +220,31 @@ struct BLINK_COMMON_EXPORT WebPreferences {
 
   bool supports_multiple_windows = true;
   bool viewport_enabled = false;
-  bool viewport_meta_enabled = BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS);
+  bool viewport_meta_enabled =
+      BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS) || BUILDFLAG(IS_ARKWEB);
   bool auto_zoom_focused_editable_to_legible_scale =
-      BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS);
-
+      BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS) || BUILDFLAG(IS_ARKWEB);
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+  bool is_desktop = false;
+#endif
   // If true - Blink will clamp the minimum scale factor to the content width,
   // preventing zoom beyond the visible content. This is really only needed if
   // `viewport_enabled` is on.
   bool shrinks_viewport_contents_to_fit =
-      BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS);
+      BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS) || BUILDFLAG(IS_ARKWEB);
 
   blink::mojom::ViewportStyle viewport_style =
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS) || BUILDFLAG(IS_ARKWEB)
       mojom::ViewportStyle::kMobile;
 #else
       mojom::ViewportStyle::kDefault;
 #endif
   bool always_show_context_menu_on_touch =
-      !(BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS));
+      !(BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS) || BUILDFLAG(IS_ARKWEB));
   bool smooth_scroll_for_find_enabled =
-      BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS);
+      BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS) || BUILDFLAG(IS_ARKWEB);
   bool main_frame_resizes_are_orientation_changes =
-      BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS);
+      BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS) || BUILDFLAG(IS_ARKWEB);
   bool initialize_at_minimum_page_scale = true;
   bool smart_insert_delete_enabled = BUILDFLAG(IS_MAC);
   bool spatial_navigation_enabled = false;
@@ -237,17 +303,19 @@ struct BLINK_COMMON_EXPORT WebPreferences {
 
   bool immersive_mode_enabled = false;
 
-  bool double_tap_to_zoom_enabled =
-      BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_APPLE);
+  bool double_tap_to_zoom_enabled = BUILDFLAG(IS_ANDROID) ||
+                                    BUILDFLAG(IS_APPLE) ||
+                                    BUILDFLAG(ARKWEB_INPUT_EVENTS);
 
   bool fullscreen_supported = true;
 
-  bool text_autosizing_enabled = BUILDFLAG(IS_ANDROID);
+  bool text_autosizing_enabled = BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB);
 
   // Representation of the Web App Manifest scope if any.
   GURL web_app_scope;
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
+  float text_zoom_factor = 1.0f;
   float font_scale_factor = 1.0f;
   int font_weight_adjustment = 0;
   int text_size_contrast_factor = 0;
@@ -292,6 +360,13 @@ struct BLINK_COMMON_EXPORT WebPreferences {
   bool long_press_link_select_text = false;
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  uint32_t scrollbar_color;
+#endif  // BUILDFLAG(ARKWEB_SCROLLBAR)
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+  bool cast_enabled = false;
+#endif
+
 // TODO(crbug.com/1284805): Remove IS_ANDROID once WebView supports WebAuthn.
 // TODO(crbug.com/1382970): Remove IS_FUCHSIA and merge with the block above
 // once all Content embedders on Fuchsia support WebAuthn.
@@ -307,7 +382,7 @@ struct BLINK_COMMON_EXPORT WebPreferences {
   // Default (used if the page or UA doesn't override these) values for page
   // scale limits. These are set directly on the WebView so there's no analogue
   // in WebSettings.
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS) || BUILDFLAG(IS_ARKWEB)
   float default_minimum_page_scale_factor = 0.25f;
   float default_maximum_page_scale_factor = 5.f;
 #elif BUILDFLAG(IS_MAC)
@@ -443,9 +518,43 @@ struct BLINK_COMMON_EXPORT WebPreferences {
   // blocking user's access to the background web content.
   bool modal_context_menu = true;
 
+#if BUILDFLAG(ARKWEB_ACTIVE_POLICY)
+  int64_t delay_for_background_tab_freezing = -1;
+#endif
+
+#if BUILDFLAG(ARKWEB_PINCH_SMOOTH)
+  bool pinch_smooth_mode = false;
+#endif
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  bool custom_video_player_enable = false;
+  bool custom_video_player_overlay = false;
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+  int32_t usage_scenario = 1;
+#endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+
   // Whether the safe-area-insets should be changed dynamically based on
   // browser controls shown ratio on Android.
   bool dynamic_safe_area_insets_enabled = false;
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  bool video_assistant_enabled = false;
+  bool custom_media_player_enabled = false;
+#endif // ARKWEB_VIDEO_ASSISTANT
+
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+  bool error_page_enabled = false;
+#endif
+
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  bool media_resume_from_bfcache_page = true;
+#endif // BUILDFLAG(ARKWEB_BFCACHE)
+
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  bool clipboard_site_permission_enabled = false;
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
 
   // Whether PaymentRequest is enabled. Controlled by WebView settings on
   // WebView and by `kWebPayments` feature flag everywhere.

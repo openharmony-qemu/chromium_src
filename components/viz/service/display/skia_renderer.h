@@ -66,6 +66,11 @@ class VIZ_SERVICE_EXPORT SkiaRenderer : public DirectRenderer {
   void DidReceiveReleasedOverlays(
       const std::vector<gpu::Mailbox>& released_overlays) override;
 
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+  bool IsPresentBuffersFullDamage(gfx::Rect damage_rect) override;
+  void ClosePostSubBuffer() override;
+#endif
+
   DelegatedInkPointRendererBase* GetDelegatedInkPointRenderer(
       bool create_if_necessary) override;
   void SetDelegatedInkMetadata(
@@ -549,6 +554,11 @@ class VIZ_SERVICE_EXPORT SkiaRenderer : public DirectRenderer {
   // Used to get mailboxes for the root render pass when
   // capabilities().renderer_allocates_images = true.
   std::unique_ptr<BufferQueue> buffer_queue_;
+
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+  bool is_partial_damage_ = false;
+  gfx::Rect skia_last_damage_rect_;
+#endif
 
 #if BUILDFLAG(ENABLE_VULKAN) && BUILDFLAG(IS_CHROMEOS) && \
     BUILDFLAG(USE_V4L2_CODEC)

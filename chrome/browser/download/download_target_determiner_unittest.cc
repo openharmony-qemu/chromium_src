@@ -494,6 +494,11 @@ void DownloadTargetDeterminerTest::EnableAutoOpenByUserBasedOnExtension(
 
 void DownloadTargetDeterminerTest::SetManagedDownloadPath(
     const base::FilePath& path) {
+#if BUILDFLAG(IS_OHOS)
+  profile()->GetTestingPrefService()->SetManagedPref(
+      prefs::kDownloadDefaultDirectoryOhos,
+      base::Value::ToUniquePtrValue(base::FilePathToValue(path)));
+#endif
   profile()->GetTestingPrefService()->SetManagedPref(
       prefs::kDownloadDefaultDirectory,
       base::Value::ToUniquePtrValue(base::FilePathToValue(path)));

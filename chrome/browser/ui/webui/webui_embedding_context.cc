@@ -85,10 +85,22 @@ class EmbeddingTabTracker {
     if (tab_interface) {
       tab_will_detach_subscription_ =
           tab_interface_->RegisterWillDetach(base::BindRepeating(
-              &EmbeddingTabTracker::OnTabWillDetach, base::Unretained(this)));
+              &EmbeddingTabTracker::OnTabWillDetach, 
+#if BUILDFLAG(IS_ARKWEB)
+              weak_ptr_factory_.GetWeakPtr()
+#else
+              base::Unretained(this)
+#endif
+              ));
       tab_did_insert_subscription_ =
           tab_interface_->RegisterDidInsert(base::BindRepeating(
-              &EmbeddingTabTracker::OnTabDidInsert, base::Unretained(this)));
+              &EmbeddingTabTracker::OnTabDidInsert,
+#if BUILDFLAG(IS_ARKWEB)
+              weak_ptr_factory_.GetWeakPtr()
+#else
+              base::Unretained(this)
+#endif
+              ));
     }
 
     // Both browser and tab changes should be propagated.
@@ -128,6 +140,10 @@ class EmbeddingTabTracker {
 
   // Notifies clients of changes to the `tab_interface_`'s browser.
   base::RepeatingClosure browser_change_cb_;
+
+#if BUILDFLAG(IS_ARKWEB)
+  base::WeakPtrFactory<EmbeddingTabTracker> weak_ptr_factory_{this};
+#endif
 };
 
 // Responsible for managing embedding interface changes for the hosted

@@ -255,7 +255,11 @@ bool LinkCapturingNavigationThrottle::ShouldOverrideUrlIfRedirected(
     const GURL& current_url) {
   // Check the scheme for both |previous_url| and |current_url| since an
   // extension could have referred us (e.g. Google Docs).
-  if (previous_url.SchemeIs(extensions::kExtensionScheme)) {
+  if (previous_url.SchemeIs(extensions::kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      || previous_url.SchemeIs(extensions::kArkwebExtensionScheme)
+#endif
+  ) {
     return false;
   }
 

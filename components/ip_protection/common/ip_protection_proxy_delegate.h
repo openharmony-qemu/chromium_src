@@ -69,6 +69,46 @@ class IpProtectionProxyDelegate : public net::ProxyDelegate {
       net::CompletionOnceCallback callback) override;
   void SetProxyResolutionService(
       net::ProxyResolutionService* proxy_resolution_service) override;
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  void OnTunnelConnectResult(
+      const net::ProxyChain& proxy_chain,
+      const std::string& host,
+      const net::HttpResponseHeaders& response_headers,
+      const net::HttpRequestHeaders& request_headers) override{};
+  void OnProxyConnectResult(const net::ProxyChain& proxy_chain,
+                            int error_code) override{};
+  void AddSuccessMainFrameHosts(const std::string& host) override{};
+  bool IsFallbackProxyFailedHost(const std::string& host) override {
+    return false;
+  };
+  bool IsFallbackProxySuccessMainFrameHost(const std::string& host) override {
+    return false;
+  };
+  void AddByPassRuleWithHost(const std::string& host) override{};
+  bool GetUrlMaliciousTypeAndHwCode(const std::vector<GURL>& url_chain,
+                                    int* malicious_type,
+                                    int* hw_code) override {
+    return false;
+  };
+  bool IsFallbackProxyMaliciousType(int malicious_type) override {
+    return false;
+  };
+  bool IsFallbackProxyHwCode(int hw_code) override { return false; };
+  bool IsFallbackProxyRetryErrorCode(int net_error) override { return false; };
+  bool IsFallbackProxyBlockHost(const std::string& host) override {
+    return false;
+  };
+  int GetMaliciousUrlCheckWaitTime() override { return 0; };
+  int GetProxyConnectTimeout() override { return 0; };
+  int GetProxyTunnelTimeout() override { return 0; };
+  net::FallbackProxyStatus GetFallbackProxyStatus() override {
+    return net::FallbackProxyStatus::NONE;
+  };
+  bool IsFallbackProxyServer(const net::ProxyChain& proxy_chain) override {
+    return false;
+  };
+#endif
+
   bool AliasRequiresProxyOverride(
       const std::string scheme,
       const std::vector<std::string>& dns_aliases,

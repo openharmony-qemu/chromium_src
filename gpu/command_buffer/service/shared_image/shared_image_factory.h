@@ -30,6 +30,8 @@
 #include "ui/gfx/gpu_memory_buffer_handle.h"
 #include "ui/gl/gl_bindings.h"
 
+#include "arkweb/build/features/features.h"
+
 namespace gpu {
 class MemoryTracker;
 class SharedContextState;
@@ -38,6 +40,7 @@ class SharedImageCopyManager;
 class D3DImageBackingFactory;
 struct GpuFeatureInfo;
 struct GpuPreferences;
+class SharedImageFactoryExt;
 
 #if BUILDFLAG(IS_ANDROID)
 class AHardwareBufferImageBackingFactory;
@@ -45,6 +48,12 @@ class AHardwareBufferImageBackingFactory;
 
 class GPU_GLES2_EXPORT SharedImageFactory {
  public:
+  friend class SharedImageFactoryExt;
+
+  virtual gpu::SharedImageFactoryExt* AsSharedImageFactoryExt() {
+      return nullptr;
+  }
+
   // All objects passed are expected to outlive this class.
   SharedImageFactory(const GpuPreferences& gpu_preferences,
                      const GpuDriverBugWorkarounds& workarounds,
@@ -53,7 +62,7 @@ class GPU_GLES2_EXPORT SharedImageFactory {
                      SharedImageManager* manager,
                      scoped_refptr<MemoryTracker> memory_tracker,
                      bool is_for_display_compositor);
-  ~SharedImageFactory();
+  virtual ~SharedImageFactory();
 
   bool CreateSharedImage(
       const Mailbox& mailbox,

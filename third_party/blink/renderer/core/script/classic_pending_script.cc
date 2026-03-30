@@ -105,6 +105,9 @@ ClassicPendingScript* ClassicPendingScript::Fetch(
     compile_hints_consumer = &page->GetV8CrowdsourcedCompileHintsConsumer();
   }
 
+#if BUILDFLAG(ARKWEB_V8_COMPILE)
+  pending_script->SetArkWebCompile(element->ArkWebCompileAttributeValue());
+#endif
   ScriptResource::Fetch(params, element_document.Fetcher(), pending_script,
                         context->GetIsolate(), ScriptResource::kAllowStreaming,
                         compile_hints_producer, compile_hints_consumer,

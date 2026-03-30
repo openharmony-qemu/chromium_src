@@ -81,6 +81,16 @@ class CONTENT_EXPORT ClipboardHostImpl
                             ClipboardPasteData clipboard_paste_data,
                             IsClipboardPasteAllowedCallback callback);
 
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  void OnClipboardDataGuard(bool status,
+                            OnClipboardDataGuardCallback callback) override;
+  void UpdateClipboardData(UpdateClipboardDataCallback callback) override;
+#endif
+
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  void HandlePasswordVault(HandlePasswordVaultCallback callback) override;
+#endif
+
  private:
   friend class ClipboardHostImplTest;
   friend class ClipboardHostImplWriteTest;

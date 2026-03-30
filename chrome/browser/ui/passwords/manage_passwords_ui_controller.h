@@ -428,7 +428,8 @@ class ManagePasswordsUIController
   // is cached when the bubble is requested to be shown.
   bool user_action_ = false;
 
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(IS_OHOS)
   bool was_biometric_authentication_for_filling_promo_shown_ = false;
 #endif
 

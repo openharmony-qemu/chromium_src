@@ -226,3 +226,6 @@ TEST_F(TapSuppressionControllerTest, NoSuppressionIfDisabled) {
 }
 
 }  // namespace input
+#if BUILDFLAG(ARKWEB_TEST)
+#include "arkweb/chromium_ext/components/input/tap_suppression_controller_for_include_unittest.cc"
+#endif

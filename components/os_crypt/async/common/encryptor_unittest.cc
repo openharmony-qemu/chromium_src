@@ -149,7 +149,7 @@ class EncryptorTestBase : public ::testing::Test {
     OSCrypt::SetKeychainForTesting(OSCrypt::MockLockedKeychain());
     return base::ScopedClosureRunner(
         base::BindOnce([]() { OSCrypt::SetKeychainForTesting(nullptr); }));
-#elif BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
+#elif (BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_OHOS)) || BUILDFLAG(IS_FUCHSIA)
     OSCrypt::SetEncryptionAvailableForTesting(/*available=*/false);
     return base::ScopedClosureRunner(base::BindOnce([]() {
       OSCrypt::SetEncryptionAvailableForTesting(/*available=*/std::nullopt);

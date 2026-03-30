@@ -66,6 +66,10 @@ const char* BackingTypeToString(SharedImageBackingType type) {
       return "WrappedGraphiteTexture";
     case SharedImageBackingType::kDawn:
       return "DawnImageBacking";
+#if BUILDFLAG(ARKWEB_VULKAN)
+    case SharedImageBackingType::kOHOSNativeBuffer:
+      return "OHOSNativeBuffer";
+#endif
   }
   NOTREACHED();
 }

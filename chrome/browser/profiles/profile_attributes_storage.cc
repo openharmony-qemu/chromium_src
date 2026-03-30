@@ -962,6 +962,9 @@ void ProfileAttributesStorage::DownloadHighResAvatarIfNeeded(
 #if BUILDFLAG(IS_ANDROID)
   return;
 #endif
+#if BUILDFLAG(IS_ARKWEB)
+  return;
+#endif
   DCHECK(!disable_avatar_download_for_testing_);
 
   // If this is the placeholder avatar, it is already included in the

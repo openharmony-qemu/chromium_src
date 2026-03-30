@@ -291,6 +291,9 @@ void BrowserChildProcessHostImpl::LaunchWithoutExtraCommandLineSwitches(
       switches::kIPCConnectionTimeout,
       switches::kLogBestEffortTasks,
       switches::kPerfettoDisableInterning,
+#if BUILDFLAG(IS_OHOS)
+      switches::kBundleInstallationDir,
+#endif
   };
   cmd_line->CopySwitchesFrom(browser_command_line, kForwardSwitches);
 

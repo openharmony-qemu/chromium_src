@@ -39,6 +39,9 @@ import("//tools/ipc_fuzzer/ipc_fuzzer.gni")
 import("//ui/base/ui_features.gni")
 import("//ui/gl/features.gni")
 import("//v8/gni/v8.gni")
+if (is_arkweb_ext) {
+  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
+}
 
 if (is_android) {
   import("//build/config/android/config.gni")
@@ -96,11 +99,13 @@ group("gn_all") {
     }
   } else {
     deps = [
+      "//arkweb/build:arkweb_test_targets",
       "//base:base_perftests",
       "//base:base_unittests",
       "//build/modules",
       "//codelabs",
       "//components:components_unittests",
+      "//ohos_nweb/test:ohos_nweb_unittests",
       "//components/gwp_asan:gwp_asan_unittests",
       "//infra/orchestrator:orchestrator_all",
       "//net:net_unittests",
@@ -120,10 +125,28 @@ group("gn_all") {
       "//tools/binary_size:binary_size_trybot_py",
       "//tools/metrics:metrics_metadata",
       "//ui/base:ui_base_unittests",
+      "//ui/color:color_unittests",
       "//ui/gfx:gfx_unittests",
       "//ui/tests:ui_unittests",
       "//url:url_unittests",
     ]
+
+    #if BUILDFLAG(ARKWEB_NWEB_EX)
+    if (defined(arkweb_nweb_ex) && arkweb_nweb_ex) {
+      deps += [
+        "//ohos_browser_shell",
+        "//ohos_nweb_ex/browser_service",
+        "//ohos_nweb_ex/test:ohos_nweb_ex_unittests",
+        "//third_party/ohos_nweb_hap",
+      ]
+    deps += [
+      "//arkweb/chromium_ext/ohos_test",
+    ]
+    }  # endif // ARKWEB_NWEB_EX
+
+    if (defined(enable_ohos_nweb_hap) && enable_ohos_nweb_hap) {
+      deps += [ "//third_party/ohos_nweb_hap" ]
+    }
 
     if (current_cpu == "arm64" && is_android && host_os == "linux") {
       deps += [
@@ -249,6 +272,7 @@ group("gn_all") {
     }
 
     if (!is_ios) {
+      if (!is_ohos) {
       deps += [
         "//google_apis/gcm:mcs_probe",
         "//third_party/catapult/telemetry:bitmaptools($host_toolchain)",
@@ -262,6 +286,7 @@ group("gn_all") {
         foreach(_target_suffix, telemetry_android_browser_target_suffixes) {
           deps += [ "//chrome/test:telemetry_perf_unittests${_target_suffix}" ]
         }
+      }
       }
     } else {
       deps += [
@@ -286,7 +311,7 @@ group("gn_all") {
     deps += root_extra_deps
 
     if (enable_cef) {
-      deps += [ "//cef" ]
+      deps += [ "//cef:libarkweb_engine" ]
     }
 
     if (enable_printing || enable_printing_tests) {
@@ -717,6 +742,14 @@ group("gn_all") {
       # and how cross-platform this is.
       deps +=
           [ "//components/services/filesystem:filesystem_service_unittests" ]
+    }
+
+    if (is_ohos) {
+      deps += [
+        "//third_party/angle:libANGLE",
+        "//third_party/angle:libEGL",
+        "//third_party/angle:libGLESv2",
+      ]
     }
 
     if (is_linux && !is_castos) {

@@ -7319,6 +7319,10 @@ class TestAccessInitialDocumentLocalFrameHost
       Vector<mojom::blink::DraggableRegionPtr> regions) override {}
   void OnFirstContentfulPaint(base::TimeDelta duration) override {}
 
+#if BUILDFLAG(ARKWEB_FLING)
+  void UpdateFlingVelocityLimit(const gfx::Vector2dF& velocity) override {}
+#endif
+
   // !!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!
   // If the actual counts in the tests below increase, this could be an
   // indicator of a bug that causes DidAccessInitialMainDocument() to always be

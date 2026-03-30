@@ -29,6 +29,7 @@
 #include "third_party/blink/public/web/web_navigation_policy.h"
 #include "ui/accessibility/ax_mode.h"
 #include "ui/accessibility/ax_tree_update.h"
+#include "arkweb/build/features/features.h"
 
 class GURL;
 
@@ -42,6 +43,7 @@ struct WebPreferences;
 class AssociatedInterfaceProvider;
 class AssociatedInterfaceRegistry;
 class BrowserInterfaceBrokerProxy;
+class WebElement;
 class WebFrame;
 class WebLocalFrame;
 class WebView;
@@ -94,6 +96,17 @@ class CONTENT_EXPORT RenderFrame :
 
   // Visit all live RenderFrames.
   static void ForEach(RenderFrameVisitor* visitor);
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  virtual void SetZoomLevel(float magnify_delta, const gfx::Point& anchor) {}
+  virtual void SetOverscrollMode(int mode) {}
+  virtual bool IsElementExist(std::string xPath) {
+    return false;
+  }
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+  virtual gfx::Vector2dF GetOverScrollOffset() = 0;
+#endif
+#endif  // defined(ARKWEB_INPUT_EVENTS)
 
   // Returns the RenderFrame associated with the main frame of the WebView.
   // See `blink::WebView::MainFrame()`. Note that this will be null when
@@ -209,6 +222,15 @@ class CONTENT_EXPORT RenderFrame :
   // Sets that cross browsing instance frame lookup is allowed.
   virtual void SetAllowsCrossBrowsingInstanceFrameLookup() = 0;
 
+  //TODO:ARKWEB_PASSWORD_AUTOFILL
+  //The "ElementBoundsInWindow" has changed "ConvertViewportToWindow" in base 132.
+  // Returns the bounds of |element| in Window coordinates which are device
+  // scale independent. The bounds have been adjusted to include any
+  // transformations, including page scale. This function will update the layout
+  // if required.
+  virtual gfx::RectF ElementBoundsInWindow(
+      const blink::WebElement& element) = 0;
+
   // Converts the |rect| to Window coordinates which are device scale
   // independent. The bounds have been adjusted to include any transformations,
   // including page scale.
@@ -222,6 +244,25 @@ class CONTENT_EXPORT RenderFrame :
   // this RenderFrame.
   virtual blink::scheduler::WebAgentGroupScheduler&
   GetAgentGroupScheduler() = 0;
+
+#if BUILDFLAG(ARKWEB_PDF)
+  // NotifyPdfScrollAtBottom
+  virtual void OnPdfScrollAtBottom(const std::string& url) = 0;
+
+  // NotifyPdfLoadEvent
+  virtual void OnPdfLoadEvent(int32_t result, const std::string& url) = 0;
+#endif  // BUILDFLAG(ARKWEB_PDF)
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  virtual bool GetGlobalAdblockEnabled() = 0;
+  virtual base::WeakPtr<RenderFrame> GetRenderFrameWeakPtr() {
+    return base::WeakPtr<RenderFrame>();
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+  virtual void OnDocumentEndReady() = 0;
+#endif
 
   // Sets the callback which is called when the renderer observes a new use
   // counter usage. This is used for UseCounter metrics.

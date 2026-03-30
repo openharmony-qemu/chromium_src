@@ -24,6 +24,7 @@
 #include "third_party/skia/include/private/SkGainmapInfo.h"
 #include "ui/gfx/color_space.h"
 #include "ui/gfx/hdr_metadata.h"
+#include "arkweb/build/features/features.h"
 
 class GrDirectContext;
 class SkColorSpace;
@@ -154,6 +155,12 @@ class CC_PAINT_EXPORT ServiceImageTransferCacheEntry final
                                      SkYUVColorSpace yuv_color_space,
                                      size_t buffer_byte_size,
                                      bool needs_mips);
+
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+  bool BuildFromRGBAHardwareDecodedImage(GrDirectContext* context,
+                                         std::vector<sk_sp<SkImage>> plane_images,
+                                         size_t buffer_byte_size);
+#endif
 
   // ServiceTransferCacheEntry implementation:
   size_t CachedSize() const final;

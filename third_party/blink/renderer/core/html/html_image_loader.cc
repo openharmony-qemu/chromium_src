@@ -123,5 +123,4 @@ void HTMLImageLoader::ImageNotifyFinished(ImageResourceContent*) {
         HTMLObjectElement::ErrorEventPolicy::kDoNotDispatch);
   }
 }
-
 }  // namespace blink

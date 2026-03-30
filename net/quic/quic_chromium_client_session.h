@@ -781,6 +781,11 @@ class NET_EXPORT_PRIVATE QuicChromiumClientSession
       override;
   void MigrateToMultiPortPath(
       std::unique_ptr<quic::QuicPathValidationContext> context) override;
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  std::string GetServerHostForQuicBroken() const override {
+    return server_id().host();
+  }
+#endif
 
   // QuicChromiumPacketReader::Visitor methods:
   bool OnReadError(int result, const DatagramClientSocket* socket) override;

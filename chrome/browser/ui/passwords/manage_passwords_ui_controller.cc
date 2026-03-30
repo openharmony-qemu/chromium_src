@@ -108,6 +108,8 @@
 #include "chrome/browser/password_manager/password_manager_util_win.h"
 #elif BUILDFLAG(IS_MAC)
 #include "chrome/browser/password_manager/password_manager_util_mac.h"
+#elif BUILDFLAG(IS_OHOS)
+#include "chrome/browser/password_manager/password_manager_util_ohos.h"
 #endif
 
 using password_manager::MovePasswordToAccountStoreHelper;
@@ -576,7 +578,8 @@ void ManagePasswordsUIController::OnBiometricAuthenticationForFilling(
       GetState() == password_manager::ui::INACTIVE_STATE) {
     return;
   }
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(IS_OHOS)
   const std::string promo_shown_counter =
       password_manager::prefs::kBiometricAuthBeforeFillingPromoShownCounter;
   // Checking GetIfBiometricAuthenticationPromoWasShown() prevents from
@@ -1187,7 +1190,8 @@ void ManagePasswordsUIController::AuthenticateUserWithMessage(
     std::move(callback).Run(true);
     return;
   }
-#if !BUILDFLAG(IS_MAC) && !BUILDFLAG(IS_WIN) && !BUILDFLAG(IS_CHROMEOS)
+#if !BUILDFLAG(IS_MAC) && !BUILDFLAG(IS_WIN) && !BUILDFLAG(IS_CHROMEOS) && \
+    !BUILDFLAG(IS_OHOS)
   std::move(callback).Run(true);
   return;
 #else
@@ -1199,7 +1203,7 @@ void ManagePasswordsUIController::AuthenticateUserWithMessage(
   biometric_authenticator_ = passwords_data_.client()->GetDeviceAuthenticator();
   biometric_authenticator_->AuthenticateWithMessage(
       message, std::move(callback).Then(std::move(on_reauth_completed)));
-#endif  // !BUILDFLAG(IS_MAC) && !BUILDFLAG(IS_WIN)
+#endif  // !BUILDFLAG(IS_MAC) && !BUILDFLAG(IS_WIN) && !BUILDFLAG(IS_OHOS)
 }
 
 void ManagePasswordsUIController::MaybeShowIOSPasswordPromo() {

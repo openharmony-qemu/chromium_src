@@ -26,7 +26,7 @@
 #include "util/misc/scoped_forbid_return.h"
 #include "util/posix/close_multiple.h"
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ARKWEB)
 #include <stdio_ext.h>
 #endif
 
@@ -90,7 +90,7 @@ void MultiprocessExec::MultiprocessChild() {
 
   int rv;
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ARKWEB)
   __fpurge(stdin);
 #else
   rv = fpurge(stdin);

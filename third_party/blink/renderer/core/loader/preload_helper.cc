@@ -236,17 +236,17 @@ bool IsCompressionDictionaryLoadAllowed(
   // memory cache.
   switch (mode) {
     case PreloadHelper::LoadLinksFromHeaderMode::kDocumentBeforeCommit:
-      return false;
+      return false;    
     case PreloadHelper::LoadLinksFromHeaderMode::
         kDocumentAfterCommitWithoutViewport:
-      return false;
+      return false;        
     case PreloadHelper::LoadLinksFromHeaderMode::
         kDocumentAfterCommitWithViewport:
       return false;
     case PreloadHelper::LoadLinksFromHeaderMode::kDocumentAfterLoadCompleted:
-      return true;
+      return true;      
     case PreloadHelper::LoadLinksFromHeaderMode::kSubresourceFromMemoryCache:
-      return false;
+      return false;    
     case PreloadHelper::LoadLinksFromHeaderMode::kSubresourceNotFromMemoryCache:
       return true;
   }
@@ -259,13 +259,13 @@ bool IsSubresourceLoad(PreloadHelper::LoadLinksFromHeaderMode mode) {
         kDocumentAfterCommitWithoutViewport:
     case PreloadHelper::LoadLinksFromHeaderMode::
         kDocumentAfterCommitWithViewport:
-    case PreloadHelper::LoadLinksFromHeaderMode::kDocumentAfterLoadCompleted:
+    case PreloadHelper::LoadLinksFromHeaderMode::kDocumentAfterLoadCompleted:    
       return false;
-    case PreloadHelper::LoadLinksFromHeaderMode::kSubresourceFromMemoryCache:
+    case PreloadHelper::LoadLinksFromHeaderMode::kSubresourceFromMemoryCache:      
     case PreloadHelper::LoadLinksFromHeaderMode::kSubresourceNotFromMemoryCache:
       return true;
     default:
-      NOTREACHED();
+      NOTREACHED();      
   }
 }
 

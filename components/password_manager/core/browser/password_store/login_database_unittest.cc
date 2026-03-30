@@ -3412,4 +3412,8 @@ TEST_F(LoginDatabaseForAccountStoreTest, AddLogins) {
   EXPECT_EQ(PasswordForm::Store::kAccountStore, changes[0].form().in_store);
 }
 
+// #if BUILDFLAG(ARKWEB_TEST)
+// #include "arkweb/chromium_ext/components/password_manager/core/browser/password_store/login_database_for_include_unittest.cc"
+// #endif
+
 }  // namespace password_manager

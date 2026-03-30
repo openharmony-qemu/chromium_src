@@ -149,8 +149,13 @@ void CheckSafetyCheckDisplayString(
       break;
     case api::developer_private::SafetyCheckWarningReason::kOffstore:
       detail_page_string = IDS_EXTENSIONS_SAFETY_CHECK_OFFSTORE;
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      panel_string = extension_state ? IDS_EXTENSIONS_SAFETY_CHECK_OFFSTORE_ON_V2
+                                     : IDS_EXTENSIONS_SAFETY_CHECK_OFFSTORE_OFF_V2;
+#else
       panel_string = extension_state ? IDS_EXTENSIONS_SAFETY_CHECK_OFFSTORE_ON
                                      : IDS_EXTENSIONS_SAFETY_CHECK_OFFSTORE_OFF;
+#endif
       break;
     case api::developer_private::SafetyCheckWarningReason::kUnwanted:
       detail_page_string = IDS_SAFETY_CHECK_EXTENSIONS_POLICY_VIOLATION;

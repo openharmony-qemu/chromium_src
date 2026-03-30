@@ -27,6 +27,11 @@ namespace net {
 static const char kFileURLPrefix[] = "file:///";
 
 GURL FilePathToFileURL(const base::FilePath& path) {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (path.IsDataShareUri()) {
+    return GURL(path.value());
+  }
+#endif
   // Produce a URL like "file:///C:/foo" for a regular file, or
   // "file://///server/path" for UNC. The URL canonicalizer will fix up the
   // latter case to be the canonical UNC form: "file://server/path"
@@ -59,6 +64,13 @@ bool FileURLToFilePath(const GURL& url, base::FilePath* file_path) {
   base::FilePath::StringType& file_path_str =
       const_cast<base::FilePath::StringType&>(file_path->value());
   file_path_str.clear();
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (base::FilePath::IsDataShareUrl(url.possibly_invalid_spec())) {
+    file_path_str.assign(url.possibly_invalid_spec());
+    return !file_path_str.empty();
+  }
+#endif
 
   if (!url.is_valid())
     return false;

@@ -27,22 +27,13 @@ ${this.showDrawer_ ? html`
       align="$i18n{textdirection}" @close="${this.onDrawerClose_}">
     <div slot="body">
       <extensions-sidebar @close-drawer="${this.onCloseDrawer_}"
-          ?in-dev-mode="${this.inDevMode}"
-          ?enable-enhanced-site-controls="${this.enableEnhancedSiteControls}">
+          enable-enhanced-site-controls="${this.enableEnhancedSiteControls}">
       </extensions-sidebar>
     </div>
-    <if expr="is_android">
-      <picture slot="header-icon">
-        <source media="(prefers-color-scheme: dark)"
-            srcset="//resources/images/chrome_logo_dark.svg">
-        <img srcset="images/product_logo.png" role="presentation">
-      </picture>
-    </if>
   </cr-drawer>` : ''}
 <div id="container">
-  <div id="left" ?hidden="${this.narrow_}">
+  <div id="left" hidden=true>
     <extensions-sidebar @close-drawer="${this.onCloseDrawer_}"
-        ?in-dev-mode="${this.inDevMode}"
         ?enable-enhanced-site-controls="${this.enableEnhancedSiteControls}">
     </extensions-sidebar>
   </div>
@@ -92,7 +83,7 @@ ${this.showDrawer_ ? html`
         </extensions-error-page>`}">
     </cr-lazy-render-lit>
   </cr-view-manager>
-  <div id="right" ?hidden="${this.narrow_}"></div>
+  <div id="right" hidden=true></div>
 </div>
 ${this.showOptionsDialog_ ? html`
   <extensions-options-dialog id="options-dialog"

@@ -9,11 +9,61 @@ import "mojo/public/mojom/base/time.mojom";
 import "services/media_session/public/mojom/media_session.mojom";
 import "ui/gfx/geometry/mojom/geometry.mojom";
 
+[EnableIf=arkweb_video_assistant]
+enum VideoAssistantDownloadButton {
+  kDownloadPerPage,
+  kDownloadForceShow,
+  kDownloadForceHide,
+};
+ 
+[EnableIf=arkweb_video_assistant]
+struct VideoAssistantConfig {
+  bool video_assistant;
+  bool playback_rate;
+  VideoAssistantDownloadButton download_button;
+};
+ 
+[EnableIf=arkweb_video_assistant]
+struct VideoAttributesForVAST {
+  bool show_fullscreen_button;
+  bool show_download_button;
+  bool show_playback_rate_menu;
+  double current_playback_rate;
+  gfx.mojom.RectF rect;
+ 
+  bool supports_save;
+  double duration;
+  bool visible;
+};
+
+[EnableIf=arkweb_video_assistant]
+struct MediaInfoForVAST {
+  string id;
+  string title;
+  double duration;
+  double volume;
+  double current_time;
+  double playback_rate;
+  int32 video_width;
+  int32 video_height;
+  int32 isMuted;
+  bool isPlaying;
+  bool isShowPlaybackSpeed;
+
+  bool show_download_button;
+  bool supports_save;
+  bool fullscreen_overlay;
+};
+
 // Implemented by HTMLMediaElement in the renderer process to allow the
 // browser to control media playback.
 interface MediaPlayer {
   // Requests the media player to start or resume media playback.
   RequestPlay();
+
+  // Suspend the html play.
+  [EnableIf=is_arkweb]
+  SetHtmlPlayEnabled(bool enabled);
 
   // Requests the media player to pause media playback.
   RequestPause(bool triggered_by_user);
@@ -64,10 +114,76 @@ interface MediaPlayer {
   // always takes precedence. Previous ones are immediately run with `false`.
   RequestVisibility() => (bool has_sufficiently_visible_video);
 
+  [EnableIf=arkweb_custom_video_player]
+  RequestEnterFullscreen();
+
+  [EnableIf=arkweb_custom_video_player]
+  RequestExitFullscreen();
+
+  [EnableIf=arkweb_video_assistant]
+  SetPlaybackRate(double playback_rate);
+
+  [EnableIf=arkweb_video_assistant]
+  RequestDownloadUrl();
+
+  [EnableIf=arkweb_video_assistant]
+  HidePlaybackSpeedList();
+
+  [EnableIf=arkweb_video_assistant]
+  SetVideoSurface(int32 widget_id);
+
+  [EnableIf=arkweb_pip]
+  PipEnable(bool enable);
+
+  [EnableIf=arkweb_pip]
+  PipDown(bool enable);
+
+  [EnableIf=arkweb_pip]
+  RequestExitPictureInPicture();
+
+  [EnableIf=arkweb_pip]
+  NotifyPipResize();
+
+  [EnableIf=arkweb_pip]
+  PipRequestPlay();
+
+  [EnableIf=arkweb_video_assistant]
+  SetVolume(double volume);
+
+  [Sync, EnableIf=arkweb_video_assistant]
+  GetVolume() => (double volume);
+
+  [EnableIf=arkweb_media_memory_pressure]
+  NotifyMemoryLevel(int32 level);
+
   // Request the media player to record auto picture in picture related
   // information. This information helps identify why a request to enter
   // picture in picture automatically is denied/accepted.
   RecordAutoPictureInPictureInfo (AutoPipInfo auto_picture_in_picture_info);
+
+  [EnableIf=arkweb_media_cast]
+  PullUpCastBackGround(string device_name);
+
+  [EnableIf=arkweb_media_cast]
+  UpdateUiPlayState(bool is_playing);
+
+  [EnableIf=arkweb_media_cast]
+  UpdateUiPlayPosition(int64 position);
+
+  [EnableIf=arkweb_media_cast]
+  MediaCastStopped();
+
+  [EnableIf=arkweb_media_cast]
+  MediaCastStopByNavigation();
+
+  [Sync, EnableIf=arkweb_media_cast]
+  GetMediaCastCurrentTime() => (double time);
+
+  [EnableIf=arkweb_media_cast]
+  NotifyRemoteExitFullScreen();
+
+  [EnableIf=arkweb_media_cast]
+  NotifyCastControlShow(bool is_show);
 };
 
 // Implemented by the MediaWebContentsObserver. The remote lives in the renderer
@@ -86,6 +202,14 @@ interface MediaPlayerObserver {
   // Notifies that the media player stopped playing content,
   // indicating in |stream_ended| if playback has reached the end of the stream.
   OnMediaPaused(bool stream_ended);
+
+  // Notifies that avsession is over.
+  [EnableIf=arkweb_media_avsession]
+  OnEndAVSession(bool is_hidden);
+
+  // Notifies that the media player gone.
+  [EnableIf=arkweb_activity_state]
+  OnMediaPlayerGone();
 
   // Notifies that the muted status of the media player has changed.
   OnMutedStatusChanged(bool muted);
@@ -127,6 +251,103 @@ interface MediaPlayerObserver {
 
   // Notifies that the video visibility has changed.
   OnVideoVisibilityChanged(bool meets_visibility_threshold);
+
+  [EnableIf=arkweb_custom_video_player]
+  UpdateLayerRect(gfx.mojom.Rect rect);
+
+  [EnableIf=arkweb_custom_video_player]
+  FullscreenChanged(bool is_fullscreen);
+
+  [EnableIf=arkweb_video_assistant]
+  OnVideoPlaying(VideoAttributesForVAST video_attributes);
+
+  [EnableIf=arkweb_video_assistant]
+  OnUpdateVideoAttributes(VideoAttributesForVAST video_attributes);
+
+  [EnableIf=arkweb_video_assistant]
+  OnVideoDestroyed();
+
+  // Notifies that the title of playing content.
+  [EnableIf=arkweb_media_avsession]
+  OnGetMediaTitle(string data);
+
+  // Notifies that the video poster of playing content.
+  [EnableIf=arkweb_media_avsession]
+  OnGetVideoPoster(string data);
+
+  // Notifies that the title of playing content initialized.
+  [EnableIf=arkweb_media_avsession]
+  OnInitMediaTitle();
+
+  // Notifies that the video poster of playing content initialized.
+  [EnableIf=arkweb_media_avsession]
+  OnInitVideoPoster();
+
+  [EnableIf=arkweb_video_assistant]
+  OnFullScreenOverlayEnter(MediaInfoForVAST media_info);
+
+  [EnableIf=arkweb_video_assistant]
+  UpdatePlayStateOverlay(uint32 playState);
+
+  [EnableIf=arkweb_video_assistant]
+  MutedChangedOverlay(bool muted);
+
+  [EnableIf=arkweb_video_assistant]
+  PlaybackRateChangedOverlay(double playback_rate);
+
+  [EnableIf=arkweb_video_assistant]
+  DurationChangedOverlay(double duration);
+
+  [EnableIf=arkweb_video_assistant]
+  TimeUpdateOverlay(double current_time);
+
+  [EnableIf=arkweb_video_assistant]
+  BufferedEndTimeChangedOverlay(double buffered_end_time);
+
+  [EnableIf=arkweb_video_assistant]
+  EndedOverlay();
+
+  [EnableIf=arkweb_video_assistant]
+  FullscreenChangedOverlay(bool fullscreen);
+
+  [EnableIf=arkweb_video_assistant]
+  SeekingOverlay();
+
+  [EnableIf=arkweb_video_assistant]
+  SeekingFinishedOverlay();
+
+  [EnableIf=arkweb_video_assistant]
+  ErrorOverlay(int32 error_code, string error_msg);
+
+  [EnableIf=arkweb_video_assistant]
+  VideoSizeChangedOverlay(int32 width, int32 height);
+
+  [EnableIf=arkweb_video_assistant]
+  FullscreenOverlayChanged(bool fullscreen_overlay, string decoder_name);
+
+  [EnableIf=arkweb_video_assistant]
+  OnVolumeChanged(double volume);
+
+  [EnableIf=arkweb_pip]
+  OnPictureInPictureStateChanged(uint32 state, int32 width, int32 height);
+
+  [EnableIf=arkweb_media_cast]
+  OnMediaCastEnter();
+ 
+  [EnableIf=arkweb_media_cast]
+  OnNotifyMeidaCastUri(string media_uri);
+ 
+  [EnableIf=arkweb_media_cast]
+  HandleStopMediaCast();
+ 
+  [EnableIf=arkweb_media_cast]
+  UpdateRemotePlayState(bool is_playing);
+ 
+  [EnableIf=arkweb_media_cast]
+  UpdateRemotePlayPosition(int64 position);
+ 
+  [EnableIf=arkweb_media_cast]
+  SetPauseByAvcast(bool pause_avcast);
 };
 
 // Implemented by MediaWebContentsObserver::MediaPlayerHostImpl in the browser
@@ -142,4 +363,7 @@ interface MediaPlayerHost {
   OnMediaPlayerAdded(pending_associated_remote<MediaPlayer> player_remote,
                      pending_associated_receiver<MediaPlayerObserver> observer,
                      int32 player_id);
+
+  [EnableIf=arkweb_video_assistant]
+  RequestVideoAssistantConfig() => (VideoAssistantConfig config);
 };

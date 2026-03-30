@@ -79,7 +79,11 @@ const char kMessageTypeDeletedMessagesKey[] = "deleted_messages";
 const char kMessageTypeKey[] = "message_type";
 const char kMessageTypeSendErrorKey[] = "send_error";
 const char kSubtypeKey[] = "subtype";
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+const char kSendMessageFromValue[] = "https://x.x.x.x";
+#else
 const char kSendMessageFromValue[] = "gcm@chrome.com";
+#endif
 const int64_t kDefaultUserSerialNumber = 0LL;
 const int kDestroyGCMStoreDelayMS = 5 * 60 * 1000;  // 5 minutes.
 

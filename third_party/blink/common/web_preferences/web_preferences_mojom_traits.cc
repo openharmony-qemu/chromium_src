@@ -4,10 +4,14 @@
 
 #include "third_party/blink/public/common/web_preferences/web_preferences_mojom_traits.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/strings/string_util.h"
 #include "build/build_config.h"
 #include "mojo/public/cpp/base/string16_mojom_traits.h"
 #include "url/mojom/url_gurl_mojom_traits.h"
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/common/web_preferences_mojom_traits_for_include.cc"
+#endif
 
 namespace mojo {
 
@@ -48,6 +52,7 @@ bool StructTraits<blink::mojom::WebPreferencesDataView,
 #if BUILDFLAG(IS_ANDROID)
       || !data.ReadDefaultVideoPosterUrl(&out->default_video_poster_url)
 #endif
+      || WebPreferenceMojomBoolExt(data, out)
   )
     return false;
 
@@ -139,6 +144,9 @@ bool StructTraits<blink::mojom::WebPreferencesDataView,
   out->viewport_meta_enabled = data.viewport_meta_enabled();
   out->auto_zoom_focused_editable_to_legible_scale =
       data.auto_zoom_focused_editable_to_legible_scale();
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+  out->is_desktop = data.is_desktop();
+#endif
   out->shrinks_viewport_contents_to_fit =
       data.shrinks_viewport_contents_to_fit();
   out->smooth_scroll_for_find_enabled = data.smooth_scroll_for_find_enabled();
@@ -202,6 +210,24 @@ bool StructTraits<blink::mojom::WebPreferencesDataView,
       data.dynamic_safe_area_insets_enabled();
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_CORNER)
+  out->border_radius_top_left = data.border_radius_top_left();
+  out->border_radius_top_right = data.border_radius_top_right();
+  out->border_radius_bottom_left = data.border_radius_bottom_left();
+  out->border_radius_bottom_right = data.border_radius_bottom_right();
+#endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
+
+#if BUILDFLAG(ARKWEB_MENU)
+  out->touch_handle_exist = data.touch_handle_exist();
+  out->viewport_scale = data.viewport_scale();
+#endif  // BUILDFLAG(ARKWEB_MENU)
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  out->scrollbar_layout_policy =
+      data.scrollbar_layout_policy();
+  out->is_system_rtl_enabled = data.is_system_rtl_enabled();
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_FUCHSIA)
   out->disable_webauthn = data.disable_webauthn();
 #endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_FUCHSIA)
@@ -240,6 +266,7 @@ bool StructTraits<blink::mojom::WebPreferencesDataView,
   out->modal_context_menu = data.modal_context_menu();
   out->subapps_apis_require_user_gesture_and_authorization =
       data.require_transient_activation_and_user_confirmation_for_subapps_api();
+  WebPreferenceMojomExt(data, out);
   out->payment_request_enabled = data.payment_request_enabled();
   out->ai_prompt_api_enabled = data.ai_prompt_api_enabled();
 

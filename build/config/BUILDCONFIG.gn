@@ -46,6 +46,34 @@
 # When writing build files, to do something only for the host:
 #   if (current_toolchain == host_toolchain) { ...
 
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+declare_args() {
+  ohos_nweb_ex_config_name = ""
+}
+
+if (ohos_nweb_ex_config_name != "") {
+  import("$ohos_nweb_ex_config_name")
+}  #endif  // ARKWEB_NWEB_EX
+
+#
+# ArkWeb extended global features
+#
+declare_args() {
+  # Enable ArkWeb features
+  enable_arkweb = true
+
+  # ISV manufacture may extend ArkWeb features by setting their source code
+  # If arkweb_ext_dir is configed, ArkWeb will load $arkweb_ext_dir/build/features automatically
+  arkweb_ext_dir = ""
+
+  # Enable ArkWeb extended features
+  enable_arkweb_ext = false
+}
+
+if (arkweb_ext_dir != "") {
+  enable_arkweb_ext = true
+}
+
 if (target_os == "") {
   target_os = host_os
 }
@@ -156,6 +184,10 @@ declare_args() {
 }
 
 declare_args() {
+  use_musl = false
+}
+
+declare_args() {
   # Debug build. Enabling official builds automatically sets is_debug to false.
   is_debug = !is_official_build
 }
@@ -243,6 +275,8 @@ if (target_os == "android") {
   # Targeting android on Mac is best-effort and not guaranteed to work.
   assert(host_os == "linux", "Android builds are only supported on Linux.")
   _default_toolchain = "//build/toolchain/android:android_clang_$target_cpu"
+} else if (target_os == "ohos") {
+  _default_toolchain = "//build/toolchain/ohos:ohos_clang_$target_cpu"
 } else if (target_os == "chromeos" || target_os == "linux") {
   # See comments in build/toolchain/cros/BUILD.gn about board compiles.
   if (is_clang) {
@@ -320,6 +354,10 @@ is_mac = current_os == "mac"
 is_wasm = current_os == "emscripten"
 is_watchos = current_os == "watchos"
 is_win = current_os == "win" || current_os == "winuwp"
+is_ohos = current_os == "ohos"
+
+is_arkweb = is_ohos && enable_arkweb
+is_arkweb_ext = is_arkweb && enable_arkweb_ext
 
 is_apple = is_ios || is_mac || is_watchos
 is_posix = !is_win && !is_fuchsia
@@ -370,6 +408,11 @@ default_compiler_configs = [
   "//build/config:feature_flags",
 ]
 
+if (is_arkweb) {
+  import("//arkweb/build/config/configs.gni")
+  default_compiler_configs += arkweb_configs
+}
+
 if (is_win) {
   default_compiler_configs += [
     "//build/config/win:default_cfg_compiler",
@@ -415,6 +458,12 @@ if (is_debug) {
 } else {
   default_compiler_configs += [ "//build/config:release" ]
 }
+
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+if (ohos_nweb_ex_config_name != "") {
+  default_compiler_configs += [ "//build/config:ohos_nweb_ex_def_main" ]
+  default_compiler_configs += [ "//build/config/clang:raw_ptr_check" ]
+} #endif //ARKWEB_NWEB_EX
 
 # Static libraries and source sets use only the compiler ones.
 set_defaults("static_library") {
@@ -774,9 +823,15 @@ foreach(_target_type,
 # case by setting static_component_type to either "source_set" or
 # "static_library". If unset, the default will be used.
 template("component") {
-  if (is_component_build) {
+  # FIXME(AR20250313353352): Remove this exception logic after the re-architecture
+  if (
+      invoker.target_name == "adapter_ndk" ||
+      invoker.target_name == "ohos_base_glue_source" ||
+      invoker.target_name == "ohos_nweb_glue_source" ||
+      invoker.target_name == "ohos_adapter_glue_source") {
+    _component_mode = "static_library"
+  } else if (is_component_build) {
     _component_mode = "shared_library"
-
     # Generate a unique output_name for a shared library if not set by invoker.
     if (!defined(invoker.output_name)) {
       _output_name = get_label_info(":$target_name", "label_no_toolchain")

@@ -28,6 +28,10 @@ class FakeOutputSurfaceClient : public viz::OutputSurfaceClient {
 
   int swap_count() { return swap_count_; }
 
+#if BUILDFLAG(ARKWEB_ROTATE_RESIZE) && !defined(COMPONENT_BUILD)
+  void DidSwapWithRotate(const gfx::Size& pixel_size) override {}
+#endif  // ARKWEB_ROTATE_RESIZE
+
  private:
   int swap_count_ = 0;
 };

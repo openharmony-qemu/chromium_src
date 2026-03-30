@@ -30,6 +30,12 @@ if (!is_android) {
       "//third_party/icu:icui18n_hidden_visibility",
       "//third_party/icu:icuuc_public",
     ]
+
+    if (is_ohos) {
+      deps -= [
+        "//third_party/icu:icui18n_hidden_visibility",
+      ]
+    }
   }
 
   source_set("unit_tests") {

@@ -13,6 +13,7 @@
 #include "components/content_settings/core/common/content_settings_types.h"
 #include "mojo/public/cpp/bindings/remote.h"
 #include "services/network/public/mojom/cookie_manager.mojom.h"
+#include "arkweb/build/features/features.h"
 
 namespace network {
 
@@ -66,6 +67,25 @@ class TestCookieManager : public network::mojom::CookieManager {
   void SetMitigationsEnabledFor3pcd(bool enable) override {}
   void SetTrackingProtectionEnabledFor3pcd(bool enable) override {}
   void SetPreCommitCallbackDelayForTesting(base::TimeDelta delay) override {}
+
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  void SetCanonicalCookieSync(
+      const ::net::CanonicalCookie& cookie,
+      const ::GURL& source_url,
+      const ::net::CookieOptions& cookie_options,
+      SetCanonicalCookieSyncCallback callback) override {}
+  void GetCookieListSync(
+      const ::GURL& url,
+      const ::net::CookieOptions& cookie_options,
+      const ::net::CookiePartitionKeyCollection& cookie_partition_key_collection,
+      GetCookieListSyncCallback callback) override {}
+  void DeleteCookiesSync(
+      network::mojom::CookieDeletionFilterPtr filter,
+      DeleteCookiesSyncCallback callback) override {}
+  void GetAllCookiesSync(GetAllCookiesSyncCallback callback) override {}
+  void SetAllCookies(const net::CookieList& list,
+                     SetAllCookiesCallback callback) override {}
+#endif
 
   virtual void DispatchCookieChange(const net::CookieChangeInfo& change);
 

@@ -251,6 +251,10 @@ class COMPONENT_EXPORT(INPUT) RenderWidgetHostViewInput
       const blink::WebGestureEvent& event,
       blink::mojom::InputEventResultState ack_result);
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  virtual constexpr std::string_view GetViewType() { return ""; }
+#endif
+
  protected:
   RenderWidgetHostViewInput();
   ~RenderWidgetHostViewInput() override;

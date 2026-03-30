@@ -23,6 +23,10 @@
 #include "net/cookies/cookie_options.h"
 #include "net/cookies/cookie_partition_key_collection.h"
 
+#if BUILDFLAG(ARKWEB_COOKIE)
+#include "base/functional/callback.h"
+#endif
+
 class GURL;
 
 namespace net {
@@ -194,6 +198,11 @@ class NET_EXPORT CookieStore {
   virtual std::optional<bool> SiteHasCookieInOtherPartition(
       const net::SchemefulSite& site,
       const CookiePartitionKey& cookie_partition_key) const;
+
+#if BUILDFLAG(ARKWEB_COOKIE)
+  virtual void SetAllCookiesAsync(const CookieList& list,
+                                  SetCookiesCallback callback) {}
+#endif
 
  private:
   // Used to determine whether a particular cookie should be subject to legacy

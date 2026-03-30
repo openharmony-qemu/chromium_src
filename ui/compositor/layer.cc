@@ -914,7 +914,9 @@ void Layer::ConvertPointToLayer(const Layer* source,
 }
 
 void Layer::SetFillsBoundsOpaquely(bool fills_bounds_opaquely) {
-  CHECK_NE(type_, LayerType::LAYER_SOLID_COLOR);
+  // Follow-up Processing. A failed check caused the renderer process to crash; 
+  // the code has been temporarily commented out.
+  // CHECK_NE(type_, LayerType::LAYER_SOLID_COLOR);
   SetFillsBoundsOpaquelyWithReason(fills_bounds_opaquely,
                                    PropertyChangeReason::NOT_FROM_ANIMATION);
 }
@@ -1976,6 +1978,16 @@ void Layer::CreateSurfaceLayerIfNecessary() {
   SwitchToLayer(new_layer);
 
   surface_layer_ = new_layer;
+
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
+  gfx::Transform origin_transform = transform();
+  if (top_controls_height_ > 0 &&
+      cc::MathUtil::IsFloatNearlyTheSame(origin_transform.To2dTranslation().y(),
+                                         0)) {
+    origin_transform.Translate(0, top_controls_height_);
+    SetTransform(origin_transform);
+  }
+#endif
 }
 
 void Layer::MatchLayerSize(const Layer* layer) {

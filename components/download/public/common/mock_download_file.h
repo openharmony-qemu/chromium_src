@@ -17,6 +17,9 @@
 #include "components/download/public/common/download_file.h"
 #include "components/download/public/common/input_stream.h"
 #include "testing/gmock/include/gmock/gmock.h"
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+#include "arkweb/chromium_ext/components/download/public/common/arkweb_download_file_ext.h"
+#endif
 
 namespace download {
 
@@ -70,6 +73,17 @@ class MockDownloadFile : public DownloadFile {
   MOCK_CONST_METHOD0(DebugString, std::string());
   MOCK_METHOD0(Pause, void());
   MOCK_METHOD0(Resume, void());
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+  MOCK_METHOD0(RunCallbackIfDataReady, void());
+  MOCK_METHOD2(RegisterReadDownloadCallback,
+               void(ArkWebDownloadFileExt::ReadDownloadDataCallback, int32_t));
+  MOCK_METHOD3(ReadDownloadDataFromFile,
+               bool(int64_t,
+                    char*,
+                    size_t));
+  MOCK_METHOD0(GetNoHoleDownloadDataSize, uint32_t());
+  MOCK_METHOD0(ReadDownloadDataAndRunCallback, int32_t());
+#endif
 #if BUILDFLAG(IS_ANDROID)
   MOCK_METHOD6(RenameToIntermediateUri,
                void(const GURL& original_url,

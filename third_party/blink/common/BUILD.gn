@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//arkweb/build/features/features.gni")
 import("//build/config/features.gni")
 import("//build/config/rust.gni")
 import("//build/nocompile.gni")
@@ -13,6 +14,7 @@ import("//third_party/protobuf/proto_library.gni")
 if (is_ios) {
   import("//build/config/ios/bundle_data_from_filelist.gni")
 }
+import("//arkweb/chromium_ext/chromium_ext.gni")
 
 blink_python_runner("make_generated_document_policy_features") {
   script = "../renderer/build/scripts/make_document_policy_features.py"
@@ -328,12 +330,28 @@ source_set("common") {
     "//ui/latency/mojom:shared_mojom_traits",
   ]
 
+  if (arkweb_input_events) {
+    sources += arkweb_third_party_blink_common_event_sources
+  }
+
+  if (arkweb_msgport) {
+    sources += arkweb_string_message_codec_cc_sources
+  }
+
+  if (is_arkweb) {
+    sources += arkweb_context_memu_params_builder_cc_sources
+  }
+
+  if (arkweb_pinch_smooth) {
+    deps += [ "//arkweb/build/features" ]
+  }
+
   # If use_blink is used then it needs to depend on //media
   if (use_blink) {
     deps += [ "//media" ]
   }
 
-  if (is_android || is_win) {
+  if (is_android || is_win || (is_arkweb && arkweb_wpt)) {
     sources += [
       "font_unique_name_lookup/font_table_matcher.cc",
       "font_unique_name_lookup/font_table_persistence.cc",
@@ -376,6 +394,11 @@ test("blink_common_unittests") {
   if (is_fuchsia) {
     additional_manifest_fragments =
         [ "//build/config/fuchsia/test/mark_vmo_executable.shard.test-cml" ]
+  }
+  if (arkweb_unittests) {
+    deps += [
+      "//content/public/common:static_switches",
+    ]
   }
 
   data_deps = [ ":common_unittests_data" ]
@@ -487,6 +510,11 @@ source_set("common_unittests_sources") {
       "messaging/string_message_codec_unittest.cc",
       "messaging/web_message_port_unittest.cc",
     ]
+  }
+
+  if (arkweb_unittests) {
+    sources += arkweb_string_message_codec_test_sources
+    sources += arkweb_third_party_blink_common_event_test_sources
   }
 
   if (is_android || is_win) {

@@ -60,6 +60,12 @@ class MediaStreamDevicePermissionContext
       bool permission_granted);
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+  void RequestReply(permissions::PermissionRequestData request_data,
+                    permissions::BrowserPermissionCallback callback,
+                    bool reply_success);
+#endif
+
   ContentSettingsType content_settings_type_;
 
   // Must be the last member.

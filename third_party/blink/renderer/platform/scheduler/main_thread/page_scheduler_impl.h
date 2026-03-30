@@ -130,6 +130,10 @@ class PLATFORM_EXPORT PageSchedulerImpl : public PageScheduler {
 
   void WriteIntoTrace(perfetto::TracedValue context, base::TimeTicks now) const;
 
+#if BUILDFLAG(ARKWEB_ACTIVE_POLICY)
+  void SetDelayDurationForBackgroundTabFreezing(int64_t millisecond) override;
+#endif
+
   base::WeakPtr<PageSchedulerImpl> GetWeakPtr() {
     return weak_factory_.GetWeakPtr();
   }
@@ -285,7 +289,12 @@ class PLATFORM_EXPORT PageSchedulerImpl : public PageScheduler {
   CancelableClosureHolder reset_had_recent_title_or_favicon_update_;
   CancelableClosureHolder on_audio_silent_closure_;
   base::OneShotDelayedBackgroundTimer update_frozen_state_timer_;
+#if BUILDFLAG(ARKWEB_ACTIVE_POLICY)
+  base::TimeDelta delay_for_background_tab_freezing_;
+  bool is_tab_freezing_enable_force = false;
+#else
   const base::TimeDelta delay_for_background_tab_freezing_;
+#endif
 
   // Interval between throttled wake ups for unimportant frames (visible, small
   // and non user activated cross origin frames) on a foreground page.

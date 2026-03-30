@@ -14,9 +14,14 @@
 
 import("../build/crashpad_buildconfig.gni")
 import("net/tls.gni")
+import("//arkweb/build/features/features.gni")
 
 if (crashpad_is_in_chromium) {
   import("//build/config/sanitizers/sanitizers.gni")
+}
+
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
 }
 
 if (crashpad_is_apple && !crashpad_is_tvos) {
@@ -325,7 +330,7 @@ crashpad_static_library("util") {
         "posix/symbolic_constants_posix.h",
       ]
 
-      if (crashpad_is_android || crashpad_is_linux || crashpad_is_mac) {
+      if (crashpad_is_android || crashpad_is_linux || crashpad_is_mac || crashpad_is_ohos) {
         sources += [
           "posix/spawn_subprocess.cc",
           "posix/spawn_subprocess.h",
@@ -440,12 +445,15 @@ crashpad_static_library("util") {
     ]
   }
 
-  if (crashpad_is_linux || crashpad_is_android) {
+  if (crashpad_is_linux || crashpad_is_android || crashpad_is_ohos) {
     sources += [
       "linux/address_types.h",
       "linux/auxiliary_vector.cc",
       "linux/auxiliary_vector.h",
       "linux/checked_linux_address_range.h",
+      "//arkweb/chromium_ext/third_party/crashpad/crashpad/util/linux/crashpad_dfx.cc",
+      "//arkweb/chromium_ext/third_party/crashpad/crashpad/util/linux/crashpad_dfx.h",
+      "//arkweb/chromium_ext/third_party/crashpad/crashpad/util/linux/crashpad_dfx_elf_define.h",
       "linux/direct_ptrace_connection.cc",
       "linux/direct_ptrace_connection.h",
       "linux/exception_handler_client.cc",
@@ -487,6 +495,14 @@ crashpad_static_library("util") {
       "process/process_memory_linux.h",
       "process/process_memory_sanitized.cc",
       "process/process_memory_sanitized.h",
+    ]
+    sources += arkweb_ptrace_sources
+  }
+
+  if (arkweb_crashpad) {
+    sources += [
+      "//arkweb/chromium_ext/third_party/crashpad/crashpad/util/linux/proc_info_ohos.cc",
+      "//arkweb/chromium_ext/third_party/crashpad/crashpad/util/linux/proc_info_ohos.h",
     ]
   }
 
@@ -603,7 +619,15 @@ crashpad_static_library("util") {
 
   deps = [ "$mini_chromium_source_parent:base" ]
 
+  deps += ["//third_party:huawei_securec" ]
+
   configs = [ "../build:flock_always_supported_defines" ]
+
+  if (is_arkweb) {
+    deps += [
+      "//content/public/common:buildflags",
+    ]
+  }
 
   if (crashpad_is_apple) {
     include_dirs += [ "$root_gen_dir" ]
@@ -649,8 +673,15 @@ crashpad_static_library("util") {
     public_deps += [ "../third_party/fuchsia" ]
   }
 
-  if (crashpad_is_android || crashpad_is_linux) {
+  if (crashpad_is_android || crashpad_is_linux || crashpad_is_ohos) {
     deps += [ "../third_party/lss" ]
+  }
+  if (crashpad_is_ohos) {
+    deps += [
+      "//media:media_buildflags",
+      "//tools/v8_context_snapshot:buildflags",
+      "//content/public/common:buildflags",
+      ]
   }
 }
 
@@ -977,7 +1008,10 @@ source_set("util_test") {
   if (crashpad_is_in_chromium && (crashpad_is_linux || crashpad_is_android)) {
     # TODO(crbug.com/1163794): Disabling MemoryMap tests if PartitionAlloc is
     # used for malloc.
-    deps += [ "//base/allocator:buildflags" ]
+    deps += [
+      "//base/allocator:buildflags",
+      "//third_party:huawei_securec",
+    ]
   }
 
   if (crashpad_is_win) {

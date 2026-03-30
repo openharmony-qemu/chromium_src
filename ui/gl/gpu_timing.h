@@ -9,6 +9,7 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/callback.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/ref_counted.h"
@@ -142,6 +143,10 @@ class GL_EXPORT GPUTimingClient
   // If the returned value is true, all the previous timers should be
   // discarded.
   bool CheckAndResetTimerErrors();
+
+#if BUILDFLAG(IS_ARKWEB)
+  void ClearQuery();
+#endif
 
   int64_t GetCurrentCPUTime();
   void SetCpuTimeForTesting(base::RepeatingCallback<int64_t(void)> cpu_time);

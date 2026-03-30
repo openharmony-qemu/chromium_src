@@ -14,7 +14,7 @@
 namespace login_detection {
 
 BASE_FEATURE(kLoginDetection,
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
              base::FEATURE_ENABLED_BY_DEFAULT
 #else
              base::FEATURE_ENABLED_BY_DEFAULT

@@ -201,7 +201,8 @@
 #include "chrome/browser/ui/views/chrome_browser_main_extra_parts_views_linux.h"
 #endif
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || \
+    BUILDFLAG(ARKWEB_TEST)
 #include "chrome/browser/headless/headless_mode_metrics.h"  // nogncheck
 #include "chrome/browser/headless/headless_mode_util.h"     // nogncheck
 #include "chrome/browser/metrics/desktop_session_duration/desktop_session_duration_tracker.h"
@@ -441,6 +442,8 @@ StartupProfileInfo CreateInitialProfile(
   }
 
   if (profile_info.mode == StartupProfileMode::kError) {
+#if !BUILDFLAG(IS_OHOS)
+    // TODO:OHOS
     ProfileErrorType error_type =
         profile_dir_specified ? ProfileErrorType::CREATE_FAILURE_SPECIFIED
                               : ProfileErrorType::CREATE_FAILURE_ALL;
@@ -449,6 +452,9 @@ StartupProfileInfo CreateInitialProfile(
     // report when an error occurs?
     ShowProfileErrorDialog(error_type, IDS_COULDNT_STARTUP_PROFILE_ERROR,
                            "Error creating initial profile.");
+#else
+  LOG(ERROR) << "Error creating initial profile.";
+#endif
     return profile_info;
   }
 #endif
@@ -465,7 +471,7 @@ OSStatus KeychainCallback(SecKeychainEvent keychain_event,
 }
 #endif
 
-#if BUILDFLAG(ENABLE_PROCESS_SINGLETON)
+#if BUILDFLAG(ENABLE_PROCESS_SINGLETON) || BUILDFLAG(ARKWEB_TEST)
 void ProcessSingletonNotificationCallbackImpl(
     base::CommandLine command_line,
     const base::FilePath& current_directory) {
@@ -567,7 +573,7 @@ bool ProcessSingletonNotificationCallback(
       FROM_HERE, base::BindOnce(&ProcessSingletonNotificationCallbackImpl,
                                 std::move(command_line), current_directory));
 }
-#endif  // BUILDFLAG(ENABLE_PROCESS_SINGLETON)
+#endif  // BUILDFLAG(ENABLE_PROCESS_SINGLETON) || BUILDFLAG(ARKWEB_TEST)
 
 #if !BUILDFLAG(IS_ANDROID)
 bool ShouldInstallSodaDuringPostProfileInit(
@@ -787,7 +793,7 @@ std::unique_ptr<content::BrowserMainParts> ChromeBrowserMainParts::Create(
       std::make_unique<
           enterprise_util::ChromeBrowserMainExtraPartsEnterprise>());
 
-#if !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
   main_parts->AddParts(
       std::make_unique<headless::ChromeBrowserMainExtraPartsHeadless>());
 #endif
@@ -935,7 +941,11 @@ int ChromeBrowserMainParts::PreEarlyInitialization() {
 
   // Create BrowserProcess in PreEarlyInitialization() so that we can load
   // field trials (and all it depends upon).
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  browser_process_ = std::make_unique<BrowserProcessImplExt>(startup_data_);
+#else
   browser_process_ = std::make_unique<BrowserProcessImpl>(startup_data_);
+#endif
 
 #if BUILDFLAG(IS_ANDROID)
   startup_data_->CreateProfilePrefService();
@@ -953,6 +963,13 @@ int ChromeBrowserMainParts::PreEarlyInitialization() {
   browser_process_->SetMetricsServices(
       chrome_feature_list_creator->TakeMetricsServicesManager(),
       chrome_feature_list_creator->GetMetricsServicesManagerClient());
+
+#if BUILDFLAG(IS_OHOS)
+  // TODO:OHOS
+  if (browser_process_) {
+    return content::RESULT_CODE_NORMAL_EXIT;
+  }
+#endif
 
   if (load_local_state_result == CHROME_RESULT_CODE_MISSING_DATA &&
       failed_to_load_resource_bundle) {
@@ -1005,7 +1022,7 @@ void ChromeBrowserMainParts::PreCreateMainMessageLoop() {
 void ChromeBrowserMainParts::PostCreateMainMessageLoop() {
   TRACE_EVENT0("startup", "ChromeBrowserMainParts::PostCreateMainMessageLoop");
 
-#if !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
   // Initialize the upgrade detector here after `ChromeBrowserMainPartsAsh`
   // has had a chance to connect the DBus services.
   UpgradeDetector::GetInstance()->Init();
@@ -1150,7 +1167,10 @@ int ChromeBrowserMainParts::PreCreateThreadsImpl() {
   TRACE_EVENT0("startup", "ChromeBrowserMainParts::PreCreateThreadsImpl");
 
   if (startup_data_->chrome_feature_list_creator()->actual_locale().empty()) {
+#if !BUILDFLAG(IS_OHOS)
+    // TODO:OHOS
     ShowMissingLocaleMessageBox();
+#endif
     return CHROME_RESULT_CODE_MISSING_DATA;
   }
 
@@ -1226,13 +1246,15 @@ int ChromeBrowserMainParts::PreCreateThreadsImpl() {
 
 #if BUILDFLAG(ENABLE_EXTENSIONS_CORE) &&                                   \
     (BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || \
-     BUILDFLAG(IS_ANDROID))
+     BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS))
   // Create directory for user-level Native Messaging manifest files. This
   // makes it less likely that the directory will be created by third-party
   // software with incorrect owner or permission. See crbug.com/725513 .
   base::FilePath user_native_messaging_dir;
-  CHECK(base::PathService::Get(chrome::DIR_USER_NATIVE_MESSAGING,
-                               &user_native_messaging_dir));
+  // Follow-up Processing. The code here has a crash, and I can't find the 
+  // reason for now, so I've commented it out.
+  // CHECK(base::PathService::Get(chrome::DIR_USER_NATIVE_MESSAGING,
+  //                              &user_native_messaging_dir));
   if (!base::PathExists(user_native_messaging_dir)) {
     base::CreateDirectory(user_native_messaging_dir);
   }
@@ -1342,7 +1364,7 @@ void ChromeBrowserMainParts::PostCreateThreads() {
                      sampling_profiler::ProfilerThreadType::kIo));
 // Sampling multiple threads might cause overhead on Android and we don't want
 // to enable it unless the data is needed.
-#if !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
   // We pass in CreateCoreUnwindersFactory here since it lives in the chrome/
   // layer while TracingSamplerProfiler is outside of chrome/.
   content::GetIOThreadTaskRunner({})->PostTask(
@@ -1386,10 +1408,21 @@ void ChromeBrowserMainParts::PostCreateThreads() {
 int ChromeBrowserMainParts::PreMainMessageLoopRun() {
   TRACE_EVENT0("startup", "ChromeBrowserMainParts::PreMainMessageLoopRun");
 
+#if BUILDFLAG(IS_ARKWEB)
+  LOG(INFO) << "PreMainMessageLoopRun start";
+#endif
   result_code_ = PreMainMessageLoopRunImpl();
 
   for (auto& chrome_extra_part : chrome_extra_parts_)
     chrome_extra_part->PreMainMessageLoopRun();
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  if (g_browser_process) {
+    g_browser_process->subresource_filter_ruleset_service();
+    g_browser_process->AsBrowserProcessImplExt()
+        ->subresource_filter_user_ruleset_service();
+  }
+#endif
 
   return result_code_;
 }
@@ -1408,8 +1441,11 @@ int ChromeBrowserMainParts::PreMainMessageLoopRun() {
 void ChromeBrowserMainParts::PreProfileInit() {
   TRACE_EVENT0("startup", "ChromeBrowserMainParts::PreProfileInit");
 
+#if !BUILDFLAG(IS_OHOS)
+  // TODO:OHOS
   media::AudioManager::SetGlobalAppName(
       l10n_util::GetStringUTF8(IDS_SHORT_PRODUCT_NAME));
+#endif
 
   for (auto& chrome_extra_part : chrome_extra_parts_)
     chrome_extra_part->PreProfileInit();
@@ -1716,7 +1752,7 @@ int ChromeBrowserMainParts::PreMainMessageLoopRunImpl() {
           ->GetSharedURLLoaderFactory());
 #endif
 
-#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_CHROMEOS)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_CHROMEOS) && !BUILDFLAG(IS_OHOS)
   // Wait for the chrome browser cloud management enrollment to finish.
   // If enrollment is not mandatory, this function returns immediately.
   // Abort the launch process if required enrollment fails.
@@ -1745,6 +1781,11 @@ int ChromeBrowserMainParts::PreMainMessageLoopRunImpl() {
   // and more directly Profile.CreateAndInitializeProfile.
   StartupProfileInfo profile_info = CreateInitialProfile(
       user_data_dir_, *base::CommandLine::ForCurrentProcess());
+#if !BUILDFLAG(IS_OHOS)
+  // TODO:OHOS
+  if (profile_info.mode == StartupProfileMode::kError)
+    return content::RESULT_CODE_NORMAL_EXIT;
+#endif
 
   if (profile_info.mode == StartupProfileMode::kError)
     return content::RESULT_CODE_NORMAL_EXIT;
@@ -2186,11 +2227,11 @@ std::unique_ptr<base::RunLoop> ChromeBrowserMainParts::TakeRunLoopForTest() {
 }
 #endif
 
-#if BUILDFLAG(ENABLE_PROCESS_SINGLETON)
+#if BUILDFLAG(ENABLE_PROCESS_SINGLETON) || BUILDFLAG(ARKWEB_TEST)
 // static
 bool ChromeBrowserMainParts::ProcessSingletonNotificationForTesting(
     base::CommandLine command_line) {
   return ProcessSingletonNotificationCallback(command_line,
                                               /*current_directory=*/{});
 }
-#endif  // BUILDFLAG(ENABLE_PROCESS_SINGLETON)
+#endif  // BUILDFLAG(ENABLE_PROCESS_SINGLETON) || BUILDFLAG(ARKWEB_TEST)

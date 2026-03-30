@@ -4,6 +4,7 @@
 
 #include "services/network/public/cpp/url_loader_completion_status_mojom_traits.h"
 
+#include "arkweb/build/features/features.h"
 #include "mojo/public/cpp/base/time_mojom_traits.h"
 #include "services/network/public/cpp/network_param_mojom_traits.h"
 
@@ -38,6 +39,14 @@ bool StructTraits<network::mojom::URLLoaderCompletionStatusDataView,
   out->decoded_body_length = data.decoded_body_length();
   out->should_report_orb_blocking = data.should_report_orb_blocking();
   out->should_collapse_initiator = data.should_collapse_initiator();
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+  out->abort_due_to_cef_browser_destroyed = data.abort_due_to_cef_browser_destroyed();
+#endif  //  ARKWEB_EX_DOWNLOAD
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  out->used_fallback_proxy = data.used_fallback_proxy();
+  out->needs_reload_with_fallback_proxy =
+      data.needs_reload_with_fallback_proxy();
+#endif
   return true;
 }
 

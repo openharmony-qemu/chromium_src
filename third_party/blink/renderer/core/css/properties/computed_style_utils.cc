@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 #include "third_party/blink/renderer/core/css/properties/computed_style_utils.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/values_equivalent.h"
 #include "third_party/blink/renderer/core/css/basic_shape_functions.h"
 #include "third_party/blink/renderer/core/css/css_alternate_value.h"
@@ -83,6 +84,9 @@
 #include "third_party/blink/renderer/platform/transforms/matrix_transform_operation.h"
 #include "third_party/blink/renderer/platform/transforms/perspective_transform_operation.h"
 #include "third_party/blink/renderer/platform/transforms/skew_transform_operation.h"
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/css/css_utils.h"
+#endif
 
 namespace blink {
 
@@ -401,6 +405,7 @@ void AppendValuesForMaskClipAndOrigin(CSSValueList* result_list,
   }
 }
 
+#if !BUILDFLAG(IS_ARKWEB)
 // Returns a list for a <gap-rule>. A <gap-rule> is defined as:
 // [ <line-width> || <line-style> || <color> ]. The computed value serialization
 // should follow the shortest serialization principle, making it consistent with
@@ -435,6 +440,7 @@ CSSValueList* GetValueListForGapRule(const CSSValue& width_value,
   }
   return result_list;
 }
+#endif
 
 }  // namespace
 
@@ -1005,7 +1011,11 @@ CSSValueID IdentifierForFamily(const AtomicString& family) {
   if (family == font_family_names::kSystemUi) {
     return CSSValueID::kSystemUi;
   }
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+  if (family == font_family_names::kMath && !Cssutils::IsMathFormulaDisabledMode()) {
+#else
   if (family == font_family_names::kMath) {
+#endif
     return CSSValueID::kMath;
   }
   // If family does not correspond to any of the above, then it was actually
@@ -4111,6 +4121,11 @@ CSSValueList* ComputedStyleUtils::ValueForGapDecorationRuleShorthand(
   // behavior of handling the shorthand since values are stored as single
   // values and not lists.
   if (!RuntimeEnabledFeatures::CSSGapDecorationEnabled()) {
+#if BUILDFLAG(IS_ARKWEB)
+    // revert pr 6576943
+    return ValuesForShorthandProperty(shorthand, style, layout_object,
+                                      allow_visited_style, value_phase);
+#else
     const CSSValue* width_value =
         shorthand.properties()[0]->CSSValueFromComputedStyle(
             style, layout_object, allow_visited_style, value_phase);
@@ -4122,6 +4137,7 @@ CSSValueList* ComputedStyleUtils::ValueForGapDecorationRuleShorthand(
             style, layout_object, allow_visited_style, value_phase);
 
     return GetValueListForGapRule(*width_value, *style_value, *color_value);
+#endif
   }
 
   CHECK_EQ(shorthand.length(), 3u);
@@ -4222,10 +4238,18 @@ CSSValueList* ComputedStyleUtils::ValueForGapDecorationRuleShorthand(
       }
 
       for (size_t j = 0; j < rules_count; ++j) {
+#if BUILDFLAG(IS_ARKWEB)
+        // revert pr 6576943
+        CSSValueList* gap_rule = CSSValueList::CreateSpaceSeparated();
+        gap_rule->Append(width_repeat_value->Values().Item(j));
+        gap_rule->Append(style_repeat_value->Values().Item(j));
+        gap_rule->Append(color_repeat_value->Values().Item(j));
+#else
         CSSValueList* gap_rule =
             GetValueListForGapRule(width_repeat_value->Values().Item(j),
                                    style_repeat_value->Values().Item(j),
                                    color_repeat_value->Values().Item(j));
+#endif
         repeated_gap_rules->Append(*gap_rule);
       }
 
@@ -4245,8 +4269,16 @@ CSSValueList* ComputedStyleUtils::ValueForGapDecorationRuleShorthand(
         return nullptr;
       }
 
+#if BUILDFLAG(IS_ARKWEB)
+      // revert pr 6576943
+      CSSValueList* gap_rule = CSSValueList::CreateSpaceSeparated();
+      gap_rule->Append(width_values->Item(i));
+      gap_rule->Append(style_values->Item(i));
+      gap_rule->Append(color_values->Item(i));
+#else
       CSSValueList* gap_rule = GetValueListForGapRule(
           width_values->Item(i), style_values->Item(i), color_values->Item(i));
+#endif
       result->Append(*gap_rule);
     }
   }

@@ -3508,4 +3508,21 @@ ui::Compositor* RenderWidgetHostViewAura::GetCompositor() {
   return window_->GetHost()->compositor();
 }
 
+#if BUILDFLAG(IS_OHOS)
+bool RenderWidgetHostViewAura::IsTouchSequencePotentiallyActiveOnViz() {
+  return false;
+}
+
+void RenderWidgetHostViewAura::RequestInputBackForDragAndDrop(
+    blink::mojom::DragDataPtr drag_data,
+    const url::Origin& source_origin,
+    blink::DragOperationsMask drag_operations_mask,
+    SkBitmap bitmap,
+    gfx::Vector2d cursor_offset_in_dip,
+    gfx::Rect drag_obj_rect_in_dip,
+    blink::mojom::DragEventSourceInfoPtr event_info) {
+}
+
+#endif  // BUILDFLAG(IS_OHOS)
+
 }  // namespace content

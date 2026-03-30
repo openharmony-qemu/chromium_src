@@ -72,6 +72,10 @@
 #include "third_party/blink/renderer/core/probe/core_probes.h"
 #include "third_party/blink/renderer/core/style/computed_style.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/css/element_rule_collector_for_include.cc"
+#endif
+
 namespace blink {
 namespace {
 
@@ -700,6 +704,11 @@ bool ElementRuleCollector::CollectMatchingRulesForListInternal(
     }
 
     matched++;
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+    DidMatchCssRuleForInclude(rule_data, context_, result_);
+#endif
+
     if (perf_trace_enabled) {
       selector_statistics_collector.SetDidMatch();
     }

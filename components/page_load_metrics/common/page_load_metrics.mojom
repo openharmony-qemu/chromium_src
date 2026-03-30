@@ -15,11 +15,23 @@ import "mojo/public/mojom/base/unguessable_token.mojom";
 
 // TimeDeltas below relative to navigation start.
 struct DocumentTiming {
+  // Time to finish parsing the DOM tree.
+  [EnableIf=arkweb_network_dfx]
+  mojo_base.mojom.TimeDelta? dom_interactive;
+
   // Time immediately before the DOMContentLoaded event is fired.
   mojo_base.mojom.TimeDelta? dom_content_loaded_event_start;
 
+  // Time when the DOMContentLoaded event is finished.
+  [EnableIf=arkweb_network_dfx]
+  mojo_base.mojom.TimeDelta? dom_content_loaded_event_end;
+
   // Time immediately before the load event is fired.
   mojo_base.mojom.TimeDelta? load_event_start;
+
+  // Time when the load event is finished.
+  [EnableIf=arkweb_network_dfx]
+  mojo_base.mojom.TimeDelta? load_event_end;
 };
 
 struct LcpResourceLoadTimings {
@@ -36,6 +48,12 @@ struct LcpResourceLoadTimings {
 struct LargestContentfulPaintTiming {
   // Time when the page's largest image is painted.
   mojo_base.mojom.TimeDelta? largest_image_paint;
+
+  // Time when the page's largest image starts loading.
+  mojo_base.mojom.TimeDelta? largest_image_load_start;
+
+  // Time when the page's largest image finishes loading.
+  mojo_base.mojom.TimeDelta? largest_image_load_end;
 
   // Size of the largest image of the largest image paint, by
   // Size = Height * Width. Removed images are excluded.
@@ -192,6 +210,18 @@ struct PageLoadTiming {
   // future.
   mojo_base.mojom.Time navigation_start;
 
+  // Time when the redirection start.
+  [EnableIf=arkweb_network_dfx]
+  mojo_base.mojom.TimeDelta? redirect_start;
+ 
+  // Time when the redirection end.
+  [EnableIf=arkweb_network_dfx]
+  mojo_base.mojom.TimeDelta? redirect_end;
+ 
+  // Time when the browser is ready to fetch the document.
+  [EnableIf=arkweb_network_dfx]
+  mojo_base.mojom.TimeDelta? fetch_start;
+
   // Time relative to navigation_start that the network connection is going to
   // be established.
   mojo_base.mojom.TimeDelta? connect_start;
@@ -203,6 +233,13 @@ struct PageLoadTiming {
   // Time relative to navigation_start that the first byte of the response is
   // received.
   mojo_base.mojom.TimeDelta? response_start;
+
+
+  // Time relative to navigation_start that the last byte of the response is
+  // received.
+  [EnableIf=arkweb_network_dfx]
+  mojo_base.mojom.TimeDelta? response_end;
+  
   DocumentTiming document_timing;
   InteractiveTiming interactive_timing;
   PaintTiming paint_timing;

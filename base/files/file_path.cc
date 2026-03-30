@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "base/files/file_path.h"
+#include "arkweb/build/features/features.h"
 
 #include <string.h>
 
@@ -10,6 +11,7 @@
 #include <atomic>
 #include <string_view>
 
+#include "base/logging.h"
 #include "base/check_op.h"
 #include "base/containers/contains.h"
 #include "base/containers/span.h"
@@ -726,7 +728,6 @@ FilePath FilePath::Append(StringViewType component) const {
     // component.
     return FilePath(appended);
   }
-
   FilePath new_path(path_);
   new_path.StripTrailingSeparatorsInternal();
 
@@ -743,7 +744,6 @@ FilePath FilePath::Append(StringViewType component) const {
       }
     }
   }
-
   new_path.path_.append(appended);
   return new_path;
 }
@@ -771,6 +771,11 @@ FilePath FilePath::AppendUTF8(std::string_view component) const {
 }
 
 bool FilePath::IsAbsolute() const {
+#if BUILDFLAG(ARKWEB_FILE_UPLOAD) || BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (IsDataShareUri()) {
+    return true;
+  }
+#endif
   return IsPathAbsolute(path_);
 }
 
@@ -1645,5 +1650,13 @@ bool FilePath::IsVirtualDocumentPath() const {
 }
 
 #endif  // BUILDFLAG(IS_ANDROID)
+
+#if BUILDFLAG(ARKWEB_FILE_UPLOAD) || BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/base/files/file_path_ext.cc"
+#endif
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/base/files/file_path_sta_ext.cc"
+#endif
 
 }  // namespace base

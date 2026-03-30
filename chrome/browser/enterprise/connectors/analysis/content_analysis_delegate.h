@@ -21,6 +21,8 @@
 #include "components/enterprise/connectors/core/common.h"
 #include "components/enterprise/connectors/core/content_analysis_delegate_base.h"
 #include "url/gurl.h"
+#include "chrome/browser/safe_browsing/cloud_content_scanning/file_opening_job.h"
+#include "components/safe_browsing/buildflags.h"
 
 class Profile;
 
@@ -506,6 +508,10 @@ class ContentAnalysisDelegate : public ContentAnalysisDelegateBase,
   // `callback_running_` to handle race conditions where non-blocking scans
   // should wait before deleting `this`.
   bool all_work_done_ = false;
+
+#if BUILDFLAG(FULL_SAFE_BROWSING)
+  std::unique_ptr<safe_browsing::FileOpeningJob> file_opening_job_;
+#endif
 
   // Content type of the page that triggered the action.
   std::string page_content_type_;

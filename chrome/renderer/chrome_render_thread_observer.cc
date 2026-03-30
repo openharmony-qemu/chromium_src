@@ -259,3 +259,5 @@ void ChromeRenderThreadObserver::OnRendererConfigurationAssociatedRequest(
         receiver) {
   renderer_configuration_receivers_.Add(this, std::move(receiver));
 }
+
+#include "arkweb/chromium_ext/chrome/renderer/chrome_render_thread_observer_for_include.cc"

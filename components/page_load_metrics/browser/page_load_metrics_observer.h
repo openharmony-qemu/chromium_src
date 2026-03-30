@@ -170,6 +170,7 @@ class PageLoadMetricsObserver : public PageLoadMetricsObserverInterface {
   void OnDomContentLoadedEventStart(
       const mojom::PageLoadTiming& timing) override {}
   void OnLoadEventStart(const mojom::PageLoadTiming& timing) override {}
+  void OnLoadEventEnd(const mojom::PageLoadTiming& timing) override {}
   void OnParseStart(const mojom::PageLoadTiming& timing) override {}
   void OnParseStop(const mojom::PageLoadTiming& timing) override {}
   void OnConnectStart(const mojom::PageLoadTiming& timing) override {}
@@ -273,6 +274,12 @@ class PageLoadMetricsObserver : public PageLoadMetricsObserverInterface {
                            bool is_on_device_auction,
                            content::AuctionResult result) override {}
   void OnPrimaryPageRenderProcessGone() override {}
+
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  void OnFirstContentfulPaintAfterBackForwardCacheRestoreInPage(
+      const mojom::BackForwardCacheTiming& timing,
+      size_t index) override {}
+#endif
 
  private:
   raw_ptr<PageLoadMetricsObserverDelegate> delegate_ = nullptr;

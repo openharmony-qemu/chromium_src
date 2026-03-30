@@ -11,10 +11,16 @@ namespace blink {
 
 class Event;
 class MediaControlsImpl;
+class MediaControlPlaybackSpeedListElementExt;
 
-class MediaControlPlaybackSpeedListElement final
+class MediaControlPlaybackSpeedListElement
     : public MediaControlPopupMenuElement {
  public:
+  friend class MediaControlPlaybackSpeedListElementExt;
+  virtual blink::MediaControlPlaybackSpeedListElementExt* AsMediaControlPlaybackSpeedListElementExt() {
+    return nullptr;
+  }
+  
   explicit MediaControlPlaybackSpeedListElement(MediaControlsImpl&);
 
   // Node interface.
@@ -41,6 +47,8 @@ class MediaControlPlaybackSpeedListElement final
   // Centers vertically the checked item in the playback speed list.
   void CenterCheckedItem();
 
+  virtual void DefaultEventHandlerExt(Event& event) {}
+  
   Member<Element> checked_item_;
 };
 

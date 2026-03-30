@@ -10,9 +10,14 @@
 #include <optional>
 #include <set>
 
+#include "arkweb/build/features/features.h"
 #include "content/common/content_export.h"
 #include "content/public/browser/global_routing_id.h"
 #include "services/metrics/public/cpp/ukm_source_id.h"
+
+#if BUILDFLAG(ARKWEB_BFCACHE)
+#include "base/time/time.h"
+#endif
 
 namespace content {
 
@@ -292,6 +297,15 @@ class CONTENT_EXPORT BackForwardCache {
   // you actually should have 2 tests, one with the document cached
   // (BackForwardCache enabled), and one without.
   virtual void DisableForTesting(DisableForTestingReason reason) = 0;
+
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  virtual size_t GetStoredEntriesNumber() = 0;
+  virtual void SetCacheSize(int size) = 0;
+  virtual int ArkWebGetCacheSize() const = 0;
+  virtual void SetTimeToLive(int timeToLive) = 0;
+  virtual int ArkWebGetTimeToLive() const = 0;
+  virtual base::TimeDelta ArkWebGetTimeToLiveInBackForwardCache() = 0;
+#endif
 
  protected:
   BackForwardCache() = default;

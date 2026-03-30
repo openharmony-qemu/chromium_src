@@ -121,6 +121,19 @@ class PLATFORM_EXPORT MultiBufferDataSource
 
   bool cancel_on_defer_for_testing() const { return cancel_on_defer_; }
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+  void SetMediaWebURLErrorCB(MediaWebURLErrorCB callback);
+#endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  void SetVLOParams(uint16_t preload,
+                    uint16_t max,
+                    uint16_t min,
+                    uint16_t bitrate,
+                    uint16_t moov_size,
+                    std::string video_id);
+  void VLOUpdateBufferSizes();
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
  protected:
   void OnRedirected(const scoped_refptr<UrlData>& new_destination);
 
@@ -246,6 +259,14 @@ class PLATFORM_EXPORT MultiBufferDataSource
   // This variable holds the value of the preload attribute for the video
   // element.
   media::DataSource::Preload preload_ = AUTO;
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  std::string video_id_;
+  uint16_t byte_rate_ = 0;
+  uint64_t max_cache_ = 0; // bytes
+  uint64_t min_cache_ = 0; // bytes
+  uint64_t preload_cache_ = 0; // bytes
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 
   // Bitrate of the content, 0 if unknown.
   int bitrate_ = 0;

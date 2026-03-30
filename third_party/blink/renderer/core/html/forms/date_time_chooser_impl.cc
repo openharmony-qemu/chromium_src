@@ -156,6 +156,9 @@ void DateTimeChooserImpl::WriteDocument(SegmentedBuffer& data) {
       "window.dialogArguments = {\n",
       data);
   AddProperty("anchorRectInScreen", parameters_->anchor_rect_in_screen, data);
+#if BUILDFLAG(IS_ARKWEB)
+  PopupUtils::AddAvailRectInWebToData(frame_, data);
+#endif
   AddProperty("zoomFactor", ScaledZoomFactor(), data);
   AddProperty("min",
               ValueToDateTimeString(parameters_->minimum, parameters_->type),

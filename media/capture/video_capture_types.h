@@ -14,6 +14,7 @@
 #include "media/base/video_types.h"
 #include "media/capture/capture_export.h"
 #include "ui/gfx/geometry/size.h"
+#include "arkweb/build/features/features.h"
 
 namespace media {
 
@@ -295,6 +296,9 @@ struct CAPTURE_EXPORT VideoCaptureFormat {
   }
 
   gfx::Size frame_size;
+#if BUILDFLAG(ARKWEB_WEBRTC)
+  int stride = 0;
+#endif
   float frame_rate;
   VideoPixelFormat pixel_format;
 };
@@ -365,6 +369,12 @@ struct CAPTURE_EXPORT VideoCaptureParams {
   // of the capture is dynamically changed, as for example when using
   // share-this-tab-instead.
   uint32_t capture_version_source = 0;
+
+#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
+  bool is_picker_show = false;
+
+  int nweb_id = 0;
+#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
 };
 
 CAPTURE_EXPORT std::ostream& operator<<(

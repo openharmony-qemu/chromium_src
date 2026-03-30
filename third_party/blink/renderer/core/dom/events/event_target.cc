@@ -1162,4 +1162,23 @@ void EventTarget::Trace(Visitor* visitor) const {
   visitor->Trace(data_);
 }
 
+#if BUILDFLAG(ARKWEB_AI)
+Vector<String> EventTarget::getArkWebEventListenerTypes(ScriptState* script_state) {
+  Vector<String> result_list;
+  EventTargetData* data = GetEventTargetData();
+  if (!data) {
+    return result_list;
+  }
+  const EventListenerMap& map = data->event_listener_map;
+  if (map.IsEmpty()) {
+    return result_list;
+  }
+  Vector<AtomicString> event_types = map.EventTypes();
+  for (const AtomicString& event_type : event_types) {
+    result_list.push_back(event_type.GetString());
+  }
+  return result_list;
+}
+#endif
+
 }  // namespace blink

@@ -29,6 +29,11 @@ typedef (HTMLScriptElement or SVGScriptElement) HTMLOrSVGScriptElement;
 // https://dom.spec.whatwg.org/#interface-document
 // https://html.spec.whatwg.org/C/#documents
 
+dictionary VideoPriority {
+    required DOMString id;
+    required unsigned short priority;
+};
+
 [
     Exposed=Window
 ] interface Document : Node {
@@ -147,6 +152,10 @@ typedef (HTMLScriptElement or SVGScriptElement) HTMLOrSVGScriptElement;
     [RaisesException] boolean queryCommandState(DOMString commandId);
     [RaisesException] boolean queryCommandSupported(DOMString commandId);
     [RaisesException] DOMString queryCommandValue(DOMString commandId);
+
+    // arkweb_ext_video_load_optimization
+    boolean isVideoPrioritySupported();
+    void setVideoPriority(sequence<VideoPriority> priorities);
 
     [LegacyLenientThis] attribute EventHandler onreadystatechange;
 

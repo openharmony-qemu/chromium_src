@@ -167,6 +167,10 @@ struct CONTENT_EXPORT PrerenderAttributes {
 
   // Serialises this struct into a trace.
   void WriteIntoTrace(perfetto::TracedValue trace_context) const;
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  std::string extra_headers;
+#endif
 };
 
 }  // namespace content

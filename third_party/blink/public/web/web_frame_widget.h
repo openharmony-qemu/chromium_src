@@ -33,6 +33,7 @@
 
 #include <stdint.h>
 
+#include "arkweb/build/features/features.h"
 #include <vector>
 
 #include "base/functional/callback_forward.h"
@@ -91,6 +92,17 @@ class WebFrameWidget : public WebWidget {
       const display::ScreenInfos& screen_info,
       const cc::LayerTreeSettings* settings,
       WebFrameWidget& previous_widget) = 0;
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  virtual void SetZoomLevel(float magnify_delta, const gfx::Point& anchor) {}
+  virtual void SetOverscrollMode(int mode) {}
+  virtual bool IsElementExist(std::string xPath) {
+    return false;
+  }
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+  virtual gfx::Vector2dF GetOverScrollOffset() = 0;
+#endif
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
   // Returns the local root of this WebFrameWidget.
   virtual WebLocalFrame* LocalRoot() const = 0;

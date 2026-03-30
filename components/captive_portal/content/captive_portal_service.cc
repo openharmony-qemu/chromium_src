@@ -25,11 +25,37 @@
 #include "base/win/windows_version.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+#include <random>
+#endif
+
 namespace captive_portal {
 
 CaptivePortalService::TestingState CaptivePortalService::testing_state_ =
     NOT_TESTING;
 
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+namespace {
+uint64_t GenRandomNumber() {
+  static std::random_device rd;
+  static std::uniform_int_distribution<uint64_t> dist(0ULL, UINT64_MAX);
+  uint64_t num = dist(rd);
+  return num;
+}
+}  // namespace
+
+CaptivePortalService::RecheckPolicy::RecheckPolicy()
+    : initial_backoff_no_portal_ms(4 * 1000),
+      initial_backoff_portal_ms(2 * 1000) {
+  backoff_policy.num_errors_to_ignore = 6;
+  backoff_policy.initial_delay_ms = initial_backoff_portal_ms;
+  backoff_policy.multiply_factor = 1.1;
+  backoff_policy.jitter_factor = 0.2;
+  backoff_policy.maximum_backoff_ms = 6 * 1000;
+  backoff_policy.entry_lifetime_ms = -1;
+  backoff_policy.always_use_initial_delay = true;
+}
+#else
 CaptivePortalService::RecheckPolicy::RecheckPolicy()
     : initial_backoff_no_portal_ms(600 * 1000),
       initial_backoff_portal_ms(20 * 1000) {
@@ -56,6 +82,7 @@ CaptivePortalService::RecheckPolicy::RecheckPolicy()
 
   backoff_policy.always_use_initial_delay = true;
 }
+#endif
 
 CaptivePortalService::CaptivePortalService(
     content::BrowserContext* browser_context,
@@ -161,6 +188,14 @@ void CaptivePortalService::DetectCaptivePortalInternal() {
             }
           }
         })");
+
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  static std::string primary_probe_url =
+      "http://connectivitycheck.platform.hicloud.com/generate_204";
+  GURL probe_url(primary_probe_url + std::string("_") +
+                 std::to_string(GenRandomNumber()));
+  test_url_ = probe_url;
+#endif
 
   captive_portal_detector_->DetectCaptivePortal(
       test_url_,

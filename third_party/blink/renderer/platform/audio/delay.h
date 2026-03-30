@@ -30,6 +30,7 @@
 #include "third_party/blink/renderer/platform/platform_export.h"
 
 namespace blink {
+class DelayUtils;
 
 // Implementation of a generic delay line with no dependencies.  It does not
 // have any thread affinity and there is no consideration on thread safety.
@@ -38,6 +39,8 @@ class PLATFORM_EXPORT Delay final {
   Delay(double max_delay_time,
         float sample_rate,
         unsigned render_quantum_frames);
+
+  friend class DelayUtils;
 
   // Handles k-rate processing.  Call `SetDelayFrames()` or `SetDelayTime()` to
   // set the delay before calling this function.
@@ -109,8 +112,11 @@ class PLATFORM_EXPORT Delay final {
   AudioFloatArray temp_buffer_;
 
   float sample_rate_;
+
+  raw_ptr<DelayUtils> delayUtils_;
 };
 
 }  // namespace blink
 
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/audio/delay_utils.h"
 #endif  // THIRD_PARTY_BLINK_RENDERER_PLATFORM_AUDIO_DELAY_H_

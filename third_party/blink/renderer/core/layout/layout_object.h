@@ -92,7 +92,9 @@ struct PaintInfo;
 struct PaintInvalidatorContext;
 struct SVGLayoutInfo;
 struct SVGLayoutResult;
-
+#if BUILDFLAG(ARKWEB_MENU)
+class LayoutObjectUtils;
+#endif
 enum CursorDirective { kSetCursorBasedOnStyle, kSetCursor, kDoNotSetCursor };
 
 enum MarkingBehavior {
@@ -272,6 +274,10 @@ class CORE_EXPORT LayoutObject : public GarbageCollected<LayoutObject>,
                                  public ImageResourceObserver,
                                  public DisplayItemClient {
   friend class LayoutObjectChildList;
+#if BUILDFLAG(ARKWEB_MENU)
+  friend class LayoutObjectUtils;
+  Member<LayoutObjectUtils> imp_utils_ = nullptr;
+#endif
   FRIEND_TEST_ALL_PREFIXES(LayoutObjectTest, MutableForPaintingClearPaintFlags);
   FRIEND_TEST_ALL_PREFIXES(
       LayoutObjectTest,
@@ -929,6 +935,12 @@ class CORE_EXPORT LayoutObject : public GarbageCollected<LayoutObject>,
     NOT_DESTROYED();
     return false;
   }
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  virtual bool IsLayoutNative() const {
+    NOT_DESTROYED();
+    return false;
+  }
+#endif
   virtual bool IsLayoutReplaced() const {
     NOT_DESTROYED();
     return false;
@@ -2621,13 +2633,18 @@ class CORE_EXPORT LayoutObject : public GarbageCollected<LayoutObject>,
     if (Parent())
       Parent()->RemoveChild(this);
   }
-
+#if BUILDFLAG(ARKWEB_MENU)
+  bool VisibleToHitTestRequest(const HitTestRequest& request) const;
+  void SetPositionMode(bool mode);
+  bool IsGetPostionForSelection() const;
+#else
   bool VisibleToHitTestRequest(const HitTestRequest& request) const {
     NOT_DESTROYED();
     return StyleRef().Visibility() == EVisibility::kVisible &&
            (request.IgnorePointerEventsNone() ||
             StyleRef().UsedPointerEvents() != EPointerEvents::kNone);
   }
+#endif  // BUILDFLAG(ARKWEB_MENU)
 
   bool VisibleToHitTesting() const {
     NOT_DESTROYED();
@@ -4401,5 +4418,7 @@ struct SpaceTrait<
   using Space = blink::LayoutObjectSpace;
 };
 }  // namespace cppgc
-
+#if BUILDFLAG(ARKWEB_MENU)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/layout/layout_object_utils.h"
+#endif
 #endif  // THIRD_PARTY_BLINK_RENDERER_CORE_LAYOUT_LAYOUT_OBJECT_H_

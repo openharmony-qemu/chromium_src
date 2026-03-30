@@ -16,6 +16,10 @@
 #include "ui/base/models/dialog_model.h"
 #include "ui/gfx/image/image_skia_operations.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/chrome/browser/extensions/extension_uninstall_dialog_ohos.h"
+#endif // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+
 namespace {
 
 DEFINE_LOCAL_ELEMENT_IDENTIFIER_VALUE(kCheckboxId);
@@ -159,6 +163,11 @@ std::unique_ptr<extensions::ExtensionUninstallDialog>
 extensions::ExtensionUninstallDialog::Create(Profile* profile,
                                              gfx::NativeWindow parent,
                                              Delegate* delegate) {
-  return std::make_unique<ExtensionUninstallDialogImpl>(profile, parent,
-                                                        delegate);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  return std::make_unique<ohos::ExtensionUninstallDialogOhos>(
+      profile, parent, delegate);
+#else
+  return std::make_unique<ExtensionUninstallDialogViews>(profile, parent,
+                                                         delegate);
+#endif // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 }

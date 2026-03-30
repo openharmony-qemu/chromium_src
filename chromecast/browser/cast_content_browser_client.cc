@@ -753,7 +753,6 @@ scoped_refptr<net::X509Certificate> CastContentBrowserClient::DeviceCert() {
 scoped_refptr<net::SSLPrivateKey> CastContentBrowserClient::DeviceKey() {
   return nullptr;
 }
-
 #if BUILDFLAG(IS_ANDROID)
 int CastContentBrowserClient::GetCrashSignalFD(
     const base::CommandLine& command_line) {

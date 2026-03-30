@@ -11,6 +11,10 @@
 #include "ui/base/clipboard/clipboard_non_backed.h"
 #include "ui/base/clipboard/clipboard_sequence_number_token.h"
 
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+#include "arkweb/chromium_ext/ui/base/clipboard/ohos/clipboard_ohos.h"
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
+
 namespace headless {
 
 namespace {
@@ -20,7 +24,11 @@ int g_sequence_number_request_counter_for_testing = 0;
 // Headless clipboard that is independent of any platform clipboard.
 // It's required as a friend target for ui::ClipboardNonBacked whose
 // ctor and dtor are private.
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+class HeadlessClipboard : public ui::ClipboardOHOS {
+#else
 class HeadlessClipboard : public ui::ClipboardNonBacked {
+#endif
  public:
   HeadlessClipboard() = default;
 
@@ -36,7 +44,11 @@ class HeadlessClipboard : public ui::ClipboardNonBacked {
     // Count the sequence number requests so that we can verify that the
     // headless keboard is indeed installed in tests.
     ++g_sequence_number_request_counter_for_testing;
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+    return ui::ClipboardOHOS::GetSequenceNumber(buffer);
+#else
     return ui::ClipboardNonBacked::GetSequenceNumber(buffer);
+#endif
   }
 };
 

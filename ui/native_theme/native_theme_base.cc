@@ -10,6 +10,8 @@
 #include <utility>
 #include <variant>
 
+#include "arkweb/build/features/features.h"
+
 #include "base/check.h"
 #include "base/containers/fixed_flat_map.h"
 #include "base/containers/span.h"
@@ -44,6 +46,12 @@ namespace ui {
 namespace {
 
 static constexpr gfx::Size kCheckboxSize(13, 13);
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+// This matches Windows, same with FluentScrollbarThickness in native_theme_fluent.cc
+const int kInnerSpinButtonWidth = 15;
+#endif
+
 static constexpr int kSliderTrackThickness = 8;
 static constexpr int kSliderThumbThickness = 16;
 static constexpr float kBorderWidth = 1.0f;
@@ -105,6 +113,11 @@ gfx::Size NativeThemeBase::GetPartSize(Part part,
       part == kScrollbarVerticalTrack) {
     size.set_height(0);
   }
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  if (part == kInnerSpinButton) {
+    size.set_width(kInnerSpinButtonWidth);
+  }
+#endif
   if (part == kScrollbarLeftArrow || part == kScrollbarRightArrow ||
       part == kScrollbarHorizontalThumb || part == kScrollbarHorizontalTrack) {
     size.Transpose();
@@ -226,7 +239,11 @@ void NativeThemeBase::PaintImpl(cc::PaintCanvas* canvas,
     case kScrollbarHorizontalThumb:
     case kScrollbarVerticalThumb:
       PaintScrollbarThumb(canvas, color_provider, part, state, rect,
-                          std::get<ScrollbarThumbExtraParams>(extra_params));
+                          std::get<ScrollbarThumbExtraParams>(extra_params)
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+                          , std::get<ScrollbarThumbExtraParams>(extra_params).scrollbar_color
+#endif // ARKWEB_SCROLLBAR
+);
       break;
     case kScrollbarHorizontalTrack:
     case kScrollbarVerticalTrack:
@@ -416,7 +433,11 @@ void NativeThemeBase::PaintScrollbarThumb(
     Part part,
     State state,
     const gfx::Rect& rect,
-    const ScrollbarThumbExtraParams& extra_params) const {
+    const ScrollbarThumbExtraParams& extra_params
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+    , SkColor scrollbar_color
+#endif // ARKWEB_SCROLLBAR
+    ) const {
   NOTIMPLEMENTED();
 }
 

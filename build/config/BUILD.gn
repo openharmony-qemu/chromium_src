@@ -79,6 +79,9 @@ config("feature_flags") {
   if (is_asan) {
     defines += [ "ADDRESS_SANITIZER" ]
   }
+  if (is_hwasan) {
+    defines += [ "HWADDRESS_SANITIZER" ]
+  }
   if (is_lsan) {
     defines += [ "LEAK_SANITIZER" ]
   }
@@ -106,6 +109,25 @@ config("feature_flags") {
 }
 
 # Debug/release ----------------------------------------------------------------
+
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+config("ohos_nweb_ex_def_main") {
+  if (defined(ohos_nweb_ex_config_name) && ohos_nweb_ex_config_name != "") {
+    defines = ohos_nweb_ex_defines_main
+  }
+}
+
+config("ohos_nweb_ex_def_blink") {
+  if (defined(ohos_nweb_ex_config_name) && ohos_nweb_ex_config_name != "") {
+    defines = ohos_nweb_ex_defines_blink_core
+  }
+}
+
+config("ohos_nweb_ex_def_other") {
+  if (defined(ohos_nweb_ex_config_name) && ohos_nweb_ex_config_name != "") {
+    defines = ohos_nweb_ex_defines_other
+  }
+}  #endif  // arkweb_nweb_ex
 
 config("debug") {
   defines = [

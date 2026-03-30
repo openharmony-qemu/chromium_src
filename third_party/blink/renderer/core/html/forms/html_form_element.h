@@ -152,6 +152,9 @@ class CORE_EXPORT HTMLFormElement final : public HTMLElement {
   FormData* ConstructEntryList(HTMLFormControlElement* submit_button,
                                const TextEncoding& encoding);
 
+#if BUILDFLAG(ARKWEB_ACTIVITY_STATE) || BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  uint64_t UniqueRendererFormId() const { return unique_renderer_form_id_; }
+#endif
   void InvalidateListedElementsForAutofill();
   void UseCountPropertyAccess(v8::Local<v8::Name>&,
                               const v8::PropertyCallbackInfo<v8::Value>&);
@@ -226,7 +229,9 @@ class CORE_EXPORT HTMLFormElement final : public HTMLElement {
   ListedElement::List listed_elements_for_autofill_;
   // Do not access image_elements_ directly. Use ImageElements() instead.
   HeapVector<Member<HTMLImageElement>> image_elements_;
-
+#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
+  uint64_t unique_renderer_form_id_;
+#endif
   base::OnceClosure cancel_last_submission_;
 
   bool is_submitting_ = false;

@@ -67,6 +67,10 @@
 #include "third_party/abseil-cpp/absl/functional/overload.h"
 #include "url/gurl.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "cef/ohos_cef_ext/libcef/browser/chrome/extensions/arkweb_chrome_extension_util_ext.h"
+#endif // ARKWEB_ARKWEB_EXTENSIONS
+
 #if BUILDFLAG(ENABLE_GUEST_VIEW)
 #include "extensions/browser/guest_view/web_view/web_view_guest.h"
 #endif
@@ -83,7 +87,7 @@ namespace {
 const char kReceivingEndDoesntExistError[] =
     "Could not establish connection. Receiving end does not exist.";
 #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || \
-    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 const char kMissingPermissionError[] =
     "Access to native messaging requires nativeMessaging permission.";
 const char kProhibitedByPoliciesError[] =
@@ -676,7 +680,7 @@ void MessageService::OpenChannelToNativeAppImpl(
     return;
 
 #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || \
-    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   bool has_permission = extension->permissions_data()->HasAPIPermission(
       mojom::APIPermissionID::kNativeMessaging);
   if (!has_permission) {
@@ -770,7 +774,11 @@ void MessageService::OpenChannelToTabImpl(
   DCHECK(
       ExtensionsBrowserClient::Get()->IsSameContext(source_context, context_));
   content::WebContents* receiver_contents =
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      cef::GetWebContentByTabId(tab_id);
+#else
       messaging_delegate_->GetWebContentsByTabId(source_context, tab_id);
+#endif // ARKWEB_ARKWEB_EXTENSIONS
   if (!receiver_contents || receiver_contents->GetController().NeedsReload()) {
     // The tab isn't loaded yet. Don't attempt to connect.
     opener_port->DispatchOnDisconnect(kReceivingEndDoesntExistError);

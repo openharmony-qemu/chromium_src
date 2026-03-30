@@ -118,7 +118,9 @@ base::Value::Dict ManagedUIHandler::GetDataSourceUpdate() const {
 #endif
   update.Set("managedByIcon", GetManagedUiWebUIIcon(profile_));
   update.Set("managementPageUrl", GetManagedUiUrl(profile_).spec());
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)  
   update.Set("browserManagedByOrg", GetManagedUiWebUILabel(profile_));
+#endif  
   update.Set("isManaged", managed_);
   return update;
 }

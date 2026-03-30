@@ -22,6 +22,10 @@
 
 namespace blink {
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/media/video_frame_compositor_for_include.cc"
+#endif
+
 using RenderingMode = ::media::VideoRendererSink::RenderCallback::RenderingMode;
 
 // Amount of time to wait between UpdateCurrentFrame() callbacks before starting
@@ -262,6 +266,11 @@ void VideoFrameCompositor::PaintSingleFrame(
       IsClientSinkAvailable()) {
     client_->DidReceiveFrame();
   }
+#if BUILDFLAG(ARKWEB_MEDIA)
+  if (finish_paint_cb_) {
+    finish_paint_cb_.Run();
+  }
+#endif
 }
 
 void VideoFrameCompositor::UpdateCurrentFrameIfStale(UpdateType type) {
@@ -379,6 +388,10 @@ bool VideoFrameCompositor::ProcessNewFrame(
                  frame->unique_id() == GetCurrentFrame()->unique_id())) {
     return false;
   }
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+  StatisticsTotalFreeTime(is_playing_, last_frame_time_, total_freeze_time_);
+#endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
   // TODO(crbug.com/40064689): Add other cases where the frame is not readable.
   bool is_frame_readable = !frame->metadata().dcomp_surface;

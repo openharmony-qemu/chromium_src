@@ -1,0 +1,16 @@
+<?xml version="1.0" ?>
+<!DOCTYPE translationbundle>
+<translationbundle lang="ms">
+<translation id="IDS_OHOS_BLOCK_PAGE_TITLE">Nota</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_INFO_TITLE">Tapak web disekat</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_FRAUD_INFO_TITLE">Berhati-hati terhadap penipuan</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_RISK_INFO_TITLE">Kandungan berbahaya di hadapan</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_URL_TRUST_LIST_TITLE">Akses disekat</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_ILLEGAL_INFO_BODY">Tapak ini tidak boleh diakses kerana ia mengandungi kandungan tidak sah atau dilarang.</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_FRAUD_INFO_BODY">Tapak ini mungkin cuba menipu anda. Sila lindungi maklumat peribadi anda.</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_RISK_INFO_BODY">Tapak ini tidak selamat. Sila lindungi maklumat peribadi anda.</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_DONT_PROCEED">Kembali</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_PROCEED">Teruskan</translation>
+<translation id="IDS_OHOS_MINOR_PROTECTION_NOTE">Mod pemuda dihidupkan. Tapak ini tidak boleh diakses.</translation>
+<translation id="IDS_OHOS_MINOR_PROTECTION_SETING_BUTTON">Tetapan</translation>
+</translationbundle>

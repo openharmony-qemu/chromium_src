@@ -94,6 +94,11 @@
 #include "chrome/browser/media/android/cdm/media_drm_storage_factory.h"
 #endif
 
+#if BUILDFLAG(ENABLE_MOJO_CDM) && \
+    BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ENABLE_CDM)
+#include "chrome/browser/media/ohos/cdm/media_drm_storage_factory.h"
+#endif
+
 #if BUILDFLAG(ENABLE_SPELLCHECK)
 #include "chrome/browser/spellchecker/spell_check_initialization_host_impl.h"
 #include "components/spellcheck/common/spellcheck.mojom.h"
@@ -128,6 +133,20 @@
 #if BUILDFLAG(ENABLE_OFFLINE_PAGES)
 #include "chrome/browser/offline_pages/offline_page_tab_helper.h"
 #endif
+
+#if BUILDFLAG(ARKWEB_PRINT)
+#include "cef/ohos_cef_ext/libcef/browser/printing/ohos_print_manager.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+#include "components/subresource_filter/content/browser/content_subresource_filter_throttle_manager.h"
+#include "libcef/browser/subresource_filter/adblock_content_subresource_filter_web_contents_helper_factory.h"
+#include "arkweb/chromium_ext/components/subresource_filter/content/browser/arkweb_content_subresource_filter_throttle_manager_ext.h"
+#endif  // ARKWEB_ADBLOCK
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+#include "arkweb/chromium_ext/content/browser/media/ohos/ohos_video_experience_reporter.h"
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
 namespace {
 
@@ -209,6 +228,9 @@ void BindBadgeServiceForServiceWorker(
 
 }  // namespace
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+#include "arkweb/chromium_ext/chrome/browser/chrome_content_browser_client_receiver_bindings_for_include.cc"
+#endif
 void ChromeContentBrowserClient::ExposeInterfacesToRenderer(
     service_manager::BinderRegistry* registry,
     blink::AssociatedInterfaceRegistry* associated_registry,
@@ -321,7 +343,8 @@ void ChromeContentBrowserClient::BindMediaServiceReceiver(
   }
 #endif  // BUILDFLAG(ENABLE_LIBRARY_CDMS) || BUILDFLAG(IS_WIN)
 
-#if BUILDFLAG(ENABLE_MOJO_CDM) && BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(ENABLE_MOJO_CDM) && (BUILDFLAG(IS_ANDROID) || \
+    (BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ENABLE_CDM)))
   if (auto r = receiver.As<media::mojom::MediaDrmStorage>()) {
     CreateMediaDrmStorage(render_frame_host, std::move(r));
     return;
@@ -335,9 +358,23 @@ void ChromeContentBrowserClient::RegisterBrowserInterfaceBindersForFrame(
   chrome::internal::PopulateChromeFrameBinders(map, render_frame_host);
   chrome::internal::PopulateChromeWebUIFrameBinders(map, render_frame_host);
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  map->Add<dom_distiller::mojom::DistillabilityService>(
+      base::BindRepeating(&BindDistillabilityService));
+#endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+  map->Add<blink::mojom::VideoExperienceReporter>(base::BindRepeating(
+      &content::OHOSVideoExperienceReporter::CreateForFrameHost));
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+
 #if BUILDFLAG(ENABLE_EXTENSIONS_CORE)
   const GURL& site = render_frame_host->GetSiteInstance()->GetSiteURL();
-  if (!site.SchemeIs(extensions::kExtensionScheme))
+  if (!site.SchemeIs(extensions::kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      && !site.SchemeIs(extensions::kArkwebExtensionScheme)
+#endif
+  )
     return;
 
   content::BrowserContext* browser_context =
@@ -562,6 +599,18 @@ void ChromeContentBrowserClient::
           },
           &render_frame_host));
 #endif  //  !BUILDFLAG(IS_ANDROID)
+
+#if BUILDFLAG(ARKWEB_PRINT)
+  associated_registry.AddInterface<printing::mojom::PrintManagerHost>(
+      base::BindRepeating(
+          [](content::RenderFrameHost* render_frame_host,
+             mojo::PendingAssociatedReceiver<printing::mojom::PrintManagerHost>
+                 receiver) {
+            printing::OhosPrintManager::BindPrintManagerHost(
+                std::move(receiver), render_frame_host);
+          },
+          &render_frame_host));
+#else
 #if BUILDFLAG(ENABLE_PRINTING)
   associated_registry.AddInterface<printing::mojom::PrintManagerHost>(
       base::BindRepeating(
@@ -597,6 +646,7 @@ void ChromeContentBrowserClient::
           },
           &render_frame_host));
 #endif  // BUILDFLAG(ENABLE_PRINTING)
+#endif  // BUILDFLAG(ARKWEB_PRINT)
   associated_registry.AddInterface<
       security_interstitials::mojom::InterstitialCommands>(base::BindRepeating(
       [](content::RenderFrameHost* render_frame_host,
@@ -615,6 +665,18 @@ void ChromeContentBrowserClient::
             BindReceiver(std::move(receiver), render_frame_host);
       },
       &render_frame_host));
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  associated_registry.AddInterface<
+      subresource_filter::mojom::UserSubresourceFilterHost>(base::BindRepeating(
+      [](content::RenderFrameHost* render_frame_host,
+         mojo::PendingAssociatedReceiver<
+             subresource_filter::mojom::UserSubresourceFilterHost> receiver) {
+        subresource_filter::ArkWebContentSubresourceFilterThrottleManagerExt::
+            BindUserReceiver(std::move(receiver), render_frame_host);
+      },
+      &render_frame_host));
+#endif
 
   associated_registry
       .AddInterface<supervised_user::mojom::SupervisedUserCommands>(

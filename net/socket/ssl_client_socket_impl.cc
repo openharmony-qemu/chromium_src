@@ -83,6 +83,11 @@ const int kCertVerifyPending = 1;
 // Default size of the internal BoringSSL buffers.
 const int kDefaultOpenSSLBufferSize = 17 * 1024;
 
+#if BUILDFLAG(ARKWEB_SSL_AUTH_ALGO)
+constexpr uint16_t kDefaultSSLVersionMinWarn = SSL_PROTOCOL_VERSION_TLS1_2;
+constexpr uint16_t k3DESCipher = 0x000a;
+#endif
+
 base::Value::Dict NetLogPrivateKeyOperationParams(uint16_t algorithm,
                                                   SSLPrivateKey* key) {
   return base::Value::Dict()
@@ -726,10 +731,13 @@ int SSLClientSocketImpl::Init() {
       ssl_config_.version_min_override.value_or(context_->config().version_min);
   uint16_t version_max =
       ssl_config_.version_max_override.value_or(context_->config().version_max);
+
+#if !BUILDFLAG(ARKWEB_SSL_AUTH_ALGO)
   if (version_min < TLS1_2_VERSION || version_max < TLS1_2_VERSION) {
     // TLS versions before TLS 1.2 are no longer supported.
     return ERR_UNEXPECTED;
   }
+#endif
 
   if (!SSL_set_min_proto_version(ssl_.get(), version_min) ||
       !SSL_set_max_proto_version(ssl_.get(), version_max)) {
@@ -745,9 +753,18 @@ int SSLClientSocketImpl::Init() {
   SSL_set_mode(ssl_.get(),
                SSL_MODE_CBC_RECORD_SPLITTING | SSL_MODE_ENABLE_FALSE_START);
 
+#if BUILDFLAG(ARKWEB_SSL_AUTH_ALGO)
+  // Use BoringSSL defaults, but disable HMAC-SHA1 ciphers in ECDSA.
+  // These are the remaining CBC-mode ECDSA ciphers.
+  std::string command("ALL:!aPSK:!ECDSA+SHA1");
+
+  if (ssl_config_.disable_sha1_server_signatures)
+    command.append(":!3DES");
+#else
   // Use BoringSSL defaults, but disable 3DES and HMAC-SHA1 ciphers in ECDSA.
   // These are the remaining CBC-mode ECDSA ciphers.
   std::string command("ALL:!aPSK:!ECDSA+SHA1:!3DES");
+#endif
 
   if (ssl_config_.require_ecdhe)
     command.append(":!kRSA");
@@ -763,23 +780,30 @@ int SSLClientSocketImpl::Init() {
 
   if (!SSL_set_strict_cipher_list(ssl_.get(), command.c_str())) {
     LOG(ERROR) << "SSL_set_cipher_list('" << command << "') failed";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(ERROR) << "SSL_set_cipher_list('" << command << "') failed";
+#endif
     return ERR_UNEXPECTED;
   }
-
   // Disable SHA-1 server signatures.
   // TODO(crbug.com/boringssl/699): Once the default is flipped in BoringSSL, we
   // no longer need to override it.
-  static const uint16_t kVerifyPrefs[] = {
-      SSL_SIGN_ECDSA_SECP256R1_SHA256, SSL_SIGN_RSA_PSS_RSAE_SHA256,
-      SSL_SIGN_RSA_PKCS1_SHA256,       SSL_SIGN_ECDSA_SECP384R1_SHA384,
-      SSL_SIGN_RSA_PSS_RSAE_SHA384,    SSL_SIGN_RSA_PKCS1_SHA384,
-      SSL_SIGN_RSA_PSS_RSAE_SHA512,    SSL_SIGN_RSA_PKCS1_SHA512,
-  };
-  if (!SSL_set_verify_algorithm_prefs(ssl_.get(), kVerifyPrefs,
-                                      std::size(kVerifyPrefs))) {
-    return ERR_UNEXPECTED;
+#if BUILDFLAG(ARKWEB_SSL_AUTH_ALGO)
+  if (ssl_config_.disable_sha1_server_signatures) {
+#endif
+    static const uint16_t kVerifyPrefs[] = {
+        SSL_SIGN_ECDSA_SECP256R1_SHA256, SSL_SIGN_RSA_PSS_RSAE_SHA256,
+        SSL_SIGN_RSA_PKCS1_SHA256,       SSL_SIGN_ECDSA_SECP384R1_SHA384,
+        SSL_SIGN_RSA_PSS_RSAE_SHA384,    SSL_SIGN_RSA_PKCS1_SHA384,
+        SSL_SIGN_RSA_PSS_RSAE_SHA512,    SSL_SIGN_RSA_PKCS1_SHA512,
+    };
+    if (!SSL_set_verify_algorithm_prefs(ssl_.get(), kVerifyPrefs,
+                                        std::size(kVerifyPrefs))) {
+      return ERR_UNEXPECTED;
+    }
+#if BUILDFLAG(ARKWEB_SSL_AUTH_ALGO)
   }
-
+#endif
   SSL_set_alps_use_new_codepoint(
       ssl_.get(),
       base::FeatureList::IsEnabled(features::kUseNewAlpsCodepointHttp2));
@@ -915,6 +939,18 @@ int SSLClientSocketImpl::DoHandshake() {
 
     LOG(ERROR) << "handshake failed; returned " << rv << ", SSL error code "
                << ssl_error << ", net_error " << net_error;
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(ERROR) << "handshake failed; returned " << rv
+                        << ", SSL error code " << ssl_error << ", net_error "
+                        << net_error;
+    if (stream_socket_) {
+      IPEndPoint peer_address;
+      if (stream_socket_->GetPeerAddress(&peer_address) == OK) {
+        LOG_FEEDBACK(INFO) << "handshake failed, peer_address "
+                           << peer_address.ToString();
+      }
+    }
+#endif
     NetLogOpenSSLError(net_log_, NetLogEventType::SSL_HANDSHAKE_ERROR,
                        net_error, ssl_error, error_info);
   }
@@ -1159,6 +1195,10 @@ ssl_verify_result_t SSLClientSocketImpl::HandleVerifyResult() {
 
   cert_verifier_request_.reset();
 
+#if BUILDFLAG(ARKWEB_SSL_AUTH_ALGO)
+  SSL_set_enforce_rsa_key_usage(
+      ssl_.get(), server_cert_verify_result_.is_issued_by_known_root);
+#endif
   // If the connection was good, check HPKP and CT status simultaneously,
   // but prefer to treat the HPKP error as more serious, if there was one.
   if (result == OK || result == ERR_CERTIFICATE_TRANSPARENCY_REQUIRED) {
@@ -1188,9 +1228,36 @@ ssl_verify_result_t SSLClientSocketImpl::HandleVerifyResult() {
     }
   }
 
+#if BUILDFLAG(IS_ARKWEB)
+  // If no other errors occurred, check whether the connection used a legacy
+  SSLInfo ssl_info;
+  bool has_ssl_info = GetSSLInfo(&ssl_info);
+  DCHECK(has_ssl_info);
+  uint16_t cipher_suite =
+      SSLConnectionStatusToCipherSuite(ssl_info.connection_status);
+  if (result == OK &&
+      (SSL_version(ssl_.get()) < kDefaultSSLVersionMinWarn ||
+        cipher_suite == k3DESCipher)) {
+    server_cert_verify_result_.cert_status |= CERT_STATUS_LEGACY_TLS;
+
+    // Only set the resulting net error if it hasn't been previously bypassed.
+    if (!IsAllowedBadCert(server_cert_.get(), nullptr))
+#if BUILDFLAG(ARKWEB_SSL_AUTH_ALGO)
+      result = ERR_SSL_OBSOLETE_VERSION_OR_CIPHER;
+#else
+      result = ERR_SSL_VERSION_OR_CIPHER_MISMATCH;
+#endif
+  }
+#endif
+
   is_fatal_cert_error_ =
       IsCertStatusError(server_cert_verify_result_.cert_status) &&
       result != ERR_CERT_KNOWN_INTERCEPTION_BLOCKED &&
+#if BUILDFLAG(ARKWEB_SSL_AUTH_ALGO)
+      result != ERR_SSL_OBSOLETE_VERSION_OR_CIPHER &&
+#elif BUILDFLAG(IS_OHOS)
+      result != ERR_SSL_VERSION_OR_CIPHER_MISMATCH &&
+#endif
       context_->transport_security_state()->ShouldSSLErrorsBeFatal(
           host_and_port_.host());
 

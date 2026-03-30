@@ -9,6 +9,7 @@
 #include <utility>
 #include <variant>
 
+#include "arkweb/build/features/features.h"
 #include "base/check_op.h"
 #include "base/containers/heap_array.h"
 #include "base/containers/span.h"
@@ -706,13 +707,31 @@ bool ResourceScriptStreamer::TryStartStreamingTask() {
     return false;
   }
 
+#if BUILDFLAG(ARKWEB_V8_COMPILE)
+  v8::ScriptCompiler::CompileOptions compile_option = compile_hints_->compile_options();
+  String arkWebCompile = script_resource_->GetArkWebCompile();
+    if (arkWebCompile) {
+      if (compile_option != v8::ScriptCompiler::CompileOptions::kNoCompileOptions) {
+        LOG(INFO) << "arkWebCompile no need to set " << arkWebCompile << " in V8.";
+      } else if (arkWebCompile != "eager") {
+        LOG(INFO) << "arkWebCompile failed to set " << arkWebCompile << " in V8.";
+      } else {
+        LOG(INFO) << "arkWebCompile success to set " << arkWebCompile << " in V8.";
+        compile_option = v8::ScriptCompiler::CompileOptions::kEagerCompile;
+      }
+    }
+#endif
   // Isolate is valid to pass to another thread because it is the main thread
   // isolate that is never destroyed.
   std::unique_ptr<v8::ScriptCompiler::ScriptStreamingTask>
       script_streaming_task =
           base::WrapUnique(v8::ScriptCompiler::StartStreaming(
               isolate, source_.get(), script_type_,
+#if BUILDFLAG(ARKWEB_V8_COMPILE)
+              compile_option,
+#else
               compile_hints_->compile_options(),
+#endif
               compile_hints_->GetCompileHintCallback(),
               compile_hints_->GetCompileHintCallbackData()));
 

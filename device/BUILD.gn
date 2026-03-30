@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//arkweb/build/features/features.gni")
 import("//build/config/features.gni")
 import("//device/vr/buildflags/buildflags.gni")
 import("//testing/test.gni")
@@ -118,6 +119,10 @@ test("device_unittests") {
     ]
   }
 
+  if (is_ohos) {
+    sources += [ "//arkweb/chromium_ext/device/bluetooth/test/bluetooth_test_ohos.cc" ]
+  }
+
   deps = [
     "//base",
     "//base/test:test_support",
@@ -150,6 +155,10 @@ test("device_unittests") {
     "//url",
   ]
 
+  if (arkweb_resource_interception) {
+    deps += ["//content/public/renderer:renderer_sources"]
+  }
+
   data_deps = [
     "bluetooth/strings:bluetooth_test_strings",
     "//testing/buildbot/filters:device_unittests_filters",
@@ -168,7 +177,7 @@ test("device_unittests") {
   }
 
   # Most of the FIDO implementation is not compiled in for Android.
-  if (!is_android && !is_ios) {
+  if (!is_android && !is_ios && !is_ohos) {
     sources += [
       "fido/attestation_statement_formats_unittest.cc",
       "fido/auth_token_requester_unittest.cc",
@@ -247,7 +256,7 @@ test("device_unittests") {
   # FIDO HID:
   # Android doesn't compile.
   # Linux, requires udev.
-  if (!is_linux_without_udev && !is_android && !is_ios) {
+  if (!is_linux_without_udev && !is_android && !is_ios && !is_ohos) {
     sources += [
       "fido/hid/fido_hid_device_unittest.cc",
       "fido/hid/fido_hid_discovery_unittest.cc",
@@ -471,7 +480,7 @@ test("device_unittests") {
 
   # Some gamepad tests require the HID service. Only build these tests on
   # platforms where the HID service is enabled.
-  if (!is_android && !is_fuchsia && !is_ios) {
+  if (!is_android && !is_fuchsia && !is_ios && !is_ohos) {
     sources += [ "gamepad/nintendo_data_fetcher_unittest.cc" ]
 
     deps += [
@@ -483,6 +492,12 @@ test("device_unittests") {
 
   if (is_chromeos) {
     deps += [ "//chromeos/dbus/u2f" ]
+  }
+
+  if (arkweb_test) {
+    import("//arkweb/chromium_ext/device/device_ext.gni")
+    sources += device_unittests_ext.sources
+    configs += [ "//arkweb/chromium_ext:arkweb_device_unittest_config" ]
   }
 
   # TODO(crbug.com/40031409): Fix code that adds exit-time destructors and

@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//arkweb/build/features/features.gni")
 import("//build/config/chromebox_for_meetings/buildflags.gni")
 import("//build/config/chromeos/ui_mode.gni")
 import("//build/config/features.gni")
@@ -19,6 +20,7 @@ import("//rlz/buildflags/buildflags.gni")
 import("//services/screen_ai/buildflags/features.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
 import("//third_party/protobuf/proto_library.gni")
+import("//arkweb/chromium_ext/chrome/browser/extensions/arkweb_ui_views_extension.gni")
 
 assert(enable_extensions_core)
 assert(enable_supervised_users)
@@ -488,6 +490,11 @@ source_set("extensions") {
     "window_controller_list.h",
     "window_controller_list_observer.h",
   ]
+
+  include_dirs = [
+      "//cef",
+  ]
+
   configs += [
     "//build/config:precompiled_headers",
     "//build/config/compiler:wexit_time_destructors",
@@ -1100,6 +1107,12 @@ source_set("extensions") {
       "//url",
     ]
 
+    if (arkweb_arkweb_extensions) {
+      deps += [
+        "//components/services/unzip:in_process",
+      ]
+    }
+
     if (is_chromeos) {
       sources += [
         "api/certificate_provider/certificate_provider_api.cc",
@@ -1500,11 +1513,22 @@ source_set("extensions") {
         "propsys.lib",
       ]
     } else if (use_aura && !is_chromeos) {
+    if (is_arkweb) {
+      import("//arkweb/chromium_ext/chromium_ext.gni")
+      sources += arkweb_chrome_browser_extensions_system_display_sources
+    } else {
       sources += [
         "system_display/display_info_provider_aura.cc",
         "system_display/display_info_provider_aura.h",
       ]
     }
+  }
+
+  if (is_ohos) {
+    sources += [
+      "//arkweb/chromium_ext/chrome/browser/extensions/api/image_writer_private/removable_storage_provider_ohos.cc",
+    ]
+  }
 
     if (enable_plugins) {
       sources += [
@@ -1549,6 +1573,17 @@ source_set("extensions") {
         "//components/enterprise/buildflags",
         "//components/enterprise/data_controls/core/browser",
       ]
+    }
+
+    if (arkweb_arkweb_extensions) {
+      sources += arkweb_ui_views_extension_sources
+    }
+
+    if (arkweb_arkweb_extensions) {
+      import("//arkweb/chromium_ext/chrome/browser/extensions/api/declarative_content/arkweb_extension_declarative_content_ext.gni")
+      sources += arkweb_extensions_declarative_content_ext.sources
+      sources -= arkweb_extensions_declarative_content_ext.sources_del
+      deps += arkweb_extensions_declarative_content_ext.deps
     }
 
     if (enable_glic) {

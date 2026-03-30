@@ -206,10 +206,16 @@ std::string ReplaceHtmlTemplateValues(const mojom::Theme theme,
     csp << "default-src 'none'; ";
     csp << "script-src 'nonce-" << csp_nonce << "'; ";
     // YouTube videos are embedded as an iframe.
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    csp << "frame-src https://x.x.x.x; ";
+    csp << "style-src 'unsafe-inline' https://x.x.x.x; ";
+    // Allows the fallback font-face from the main stylesheet.
+    csp << "font-src https://x.x.x.x; ";
+#else
     csp << "frame-src http://www.youtube.com; ";
     csp << "style-src 'unsafe-inline' https://fonts.googleapis.com; ";
-    // Allows the fallback font-face from the main stylesheet.
     csp << "font-src https://fonts.gstatic.com; ";
+#endif
     // Images will be inlined as data-uri if they are valid.
     csp << "img-src data:; ";
     csp << "form-action 'none'; ";

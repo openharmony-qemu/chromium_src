@@ -22,6 +22,11 @@
 #include "third_party/blink/renderer/platform/loader/fetch/url_loader/resource_request_client.h"
 #include "third_party/blink/renderer/platform/loader/fetch/url_loader/resource_request_sender.h"
 
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+#include "cef/libcef/common/mojom/cef.mojom.h"
+#include "content/public/renderer/render_thread.h"
+#endif
+
 namespace base {
 class WaitableEvent;
 }
@@ -73,7 +78,14 @@ class BLINK_PLATFORM_EXPORT SyncLoadContext : public ResourceRequestClient {
       mojo::PendingRemote<mojom::blink::BlobRegistry> download_to_blob_registry,
       const Vector<String>& cors_exempt_header_list,
       std::unique_ptr<ResourceLoadInfoNotifierWrapper>
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+          resource_load_info_notifier_wrapper,
+      content::RenderThread* render_thread);
+
+  void BindRemote(content::RenderThread* render_thread);
+#else
           resource_load_info_notifier_wrapper);
+#endif
 
   SyncLoadContext(const SyncLoadContext&) = delete;
   SyncLoadContext& operator=(const SyncLoadContext&) = delete;
@@ -96,7 +108,12 @@ class BLINK_PLATFORM_EXPORT SyncLoadContext : public ResourceRequestClient {
       base::WaitableEvent* abort_event,
       base::TimeDelta timeout,
       mojo::PendingRemote<mojom::blink::BlobRegistry> download_to_blob_registry,
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+      scoped_refptr<base::SingleThreadTaskRunner> task_runner,
+      content::RenderThread* render_thread);
+#else
       scoped_refptr<base::SingleThreadTaskRunner> task_runner);
+#endif
   // ResourceRequestClient implementation:
   void OnUploadProgress(uint64_t position, uint64_t size) override;
   void OnReceivedRedirect(
@@ -107,6 +124,10 @@ class BLINK_PLATFORM_EXPORT SyncLoadContext : public ResourceRequestClient {
       network::mojom::URLResponseHeadPtr head,
       mojo::ScopedDataPipeConsumerHandle body,
       std::optional<mojo_base::BigBuffer> cached_metadata) override;
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+  void OnTransferDataWithSharedMemory(base::ReadOnlySharedMemoryRegion region,
+                                      uint64_t buffer_size) override;
+#endif
   void OnTransferSizeUpdated(int transfer_size_diff) override;
   void OnCompletedRequest(
       const network::URLLoaderCompletionStatus& status) override;
@@ -161,6 +182,10 @@ class BLINK_PLATFORM_EXPORT SyncLoadContext : public ResourceRequestClient {
 
   class SignalHelper;
   std::unique_ptr<SignalHelper> signals_;
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+public:
+  mojo::Remote<cef::mojom::ReportManager> report_manager_;
+#endif
 };
 
 }  // namespace blink

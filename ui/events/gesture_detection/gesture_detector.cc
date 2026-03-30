@@ -11,6 +11,7 @@
 #include <cmath>
 #include <vector>
 
+#include "base/logging.h"
 #include "base/debug/dump_without_crashing.h"
 #include "base/memory/raw_ptr.h"
 #include "base/numerics/angle_conversions.h"
@@ -21,9 +22,14 @@
 #include "ui/events/features.h"
 #include "ui/events/gesture_detection/gesture_listeners.h"
 #include "ui/events/velocity_tracker/motion_event.h"
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+#include "arkweb/chromium_ext/ui/events/gesture_detection/gesture_detector_utils.h"
+#endif
 
 namespace ui {
+#if !BUILDFLAG(IS_ARKWEB)
 namespace {
+#endif
 
 // Minimum distance a scroll must have traveled from the last scroll/focal point
 // to trigger an |OnScroll| callback.
@@ -39,10 +45,18 @@ enum TimeoutEvent {
   SHORT_PRESS,
   LONG_PRESS,
   TAP,
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  DRAG_LONG_PRESS,
+#endif
+#if BUILDFLAG(ARKWEB_AI)
+  CREATE_OVERLAY,
+#endif
   TIMEOUT_EVENT_COUNT
 };
 
+#if !BUILDFLAG(IS_ARKWEB)
 }  // namespace
+#endif
 
 GestureDetector::Config::Config() = default;
 GestureDetector::Config::Config(const Config& other) = default;
@@ -68,10 +82,31 @@ class GestureDetector::TimeoutGestureHandler {
     timeout_callbacks_[TAP] = &GestureDetector::OnTapTimeout;
     timeout_delays_[TAP] = config.double_tap_timeout;
 
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+    timeout_callbacks_[DRAG_LONG_PRESS] =
+        &GestureDetector::OnDragLongPressTimeout;
+    timeout_delays_[DRAG_LONG_PRESS] =
+        config.draglongpress_timeout + config.showpress_timeout;
+    timeout_gesture_handler_utils_ = new TimeoutGestureHandlerUtils(this);
+#endif
+
+#if BUILDFLAG(ARKWEB_AI)
+    timeout_callbacks_[CREATE_OVERLAY] =
+        &GestureDetector::OnCreateOverlayTimeout;
+    timeout_delays_[CREATE_OVERLAY] =
+        config.createoverlay_timeout + config.showpress_timeout;
+#endif
+
     if (config.task_runner) {
       timeout_timers_[SHOW_PRESS].SetTaskRunner(config.task_runner);
       timeout_timers_[LONG_PRESS].SetTaskRunner(config.task_runner);
       timeout_timers_[TAP].SetTaskRunner(config.task_runner);
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+      timeout_timers_[DRAG_LONG_PRESS].SetTaskRunner(config.task_runner);
+#endif
+#if BUILDFLAG(ARKWEB_AI)
+      timeout_timers_[CREATE_OVERLAY].SetTaskRunner(config.task_runner);
+#endif
     }
   }
 
@@ -119,6 +154,12 @@ class GestureDetector::TimeoutGestureHandler {
   }
 
   void StopTimeout(TimeoutEvent event) { timeout_timers_[event].Stop(); }
+
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  friend class TimeoutGestureHandlerUtils;
+  raw_ptr<TimeoutGestureHandlerUtils> timeout_gesture_handler_utils_;
+  TimeoutGestureHandlerUtils* GetUtils() { return timeout_gesture_handler_utils_; }
+#endif
 
   void Stop() {
     for (size_t i = SHOW_PRESS; i < TIMEOUT_EVENT_COUNT; ++i)
@@ -191,6 +232,12 @@ bool GestureDetector::OnTouchEvent(const MotionEvent& ev,
       down_focus_y_ = last_focus_y_ = focus_y;
       // Cancel long press and taps.
       CancelTaps();
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+      timeout_handler_->StopTimeout(DRAG_LONG_PRESS);
+#endif
+#if BUILDFLAG(ARKWEB_AI)
+      timeout_handler_->StopTimeout(CREATE_OVERLAY);
+#endif
       maximum_pointer_count_ = std::max(maximum_pointer_count_,
                                         static_cast<int>(ev.GetPointerCount()));
 
@@ -297,7 +344,15 @@ bool GestureDetector::OnTouchEvent(const MotionEvent& ev,
       if (press_and_hold_enabled_) {
         timeout_handler_->AddTimeoutToStart(SHORT_PRESS);
         timeout_handler_->AddTimeoutToStart(LONG_PRESS);
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+        if (draglongpress_enabled_) {
+          timeout_handler_->AddTimeoutToStart(DRAG_LONG_PRESS);
+        }
+#endif
       }
+#if BUILDFLAG(ARKWEB_AI)
+      timeout_handler_->AddTimeoutToStart(CREATE_OVERLAY);
+#endif
       const base::TimeDelta event_processing_delay =
           base::TimeTicks::Now() - ev.GetEventTime();
       timeout_handler_->Start(event_processing_delay);
@@ -357,7 +412,11 @@ bool GestureDetector::OnTouchEvent(const MotionEvent& ev,
           // This will generate a EventType::kGestureLongPress event with
           // EF_LEFT_MOUSE_BUTTON.
           ActivateShortPressGesture(ev);
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+          AsGestureDetectorExt()->ActivateLongPressKeepDragTimeout(ev);
+#else
           ActivateLongPressGesture(ev);
+#endif
         } else if (ev.GetToolType(0) == MotionEvent::ToolType::FINGER &&
                    deep_press_accelerated_longpress_enabled_ &&
                    ev.GetClassification() ==
@@ -416,6 +475,10 @@ bool GestureDetector::OnTouchEvent(const MotionEvent& ev,
               (std::abs(velocity_x) > min_fling_velocity_)) {
             handled = listener_->OnFling(*current_down_event_, ev, velocity_x,
                                          velocity_y);
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+            LOG(INFO) << "GestureDetector::OnTouchEvent: OnFling vx:" << velocity_x
+                      << ", vy:" << velocity_y << ", handled: " << handled;
+#endif
           }
 
           handled |= HandleSwipeIfNeeded(ev, velocity_x, velocity_y);
@@ -429,12 +492,22 @@ bool GestureDetector::OnTouchEvent(const MotionEvent& ev,
         timeout_handler_->StopTimeout(SHOW_PRESS);
         timeout_handler_->StopTimeout(SHORT_PRESS);
         timeout_handler_->StopTimeout(LONG_PRESS);
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+        timeout_handler_->StopTimeout(DRAG_LONG_PRESS);
+#endif
+#if BUILDFLAG(ARKWEB_AI)
+        timeout_handler_->StopTimeout(CREATE_OVERLAY);
+#endif
       }
       maximum_pointer_count_ = 0;
       break;
 
     case MotionEvent::Action::CANCEL:
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+      AsGestureDetectorExt()->Cancel(ev.IsCancelByLostFocus());
+#else
       Cancel();
+#endif
       break;
   }
 
@@ -513,8 +586,26 @@ void GestureDetector::OnShortPressTimeout() {
 }
 
 void GestureDetector::OnLongPressTimeout() {
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  AsGestureDetectorExt()->ActivateLongPressKeepDragTimeout(*current_down_event_);
+#else
   ActivateLongPressGesture(*current_down_event_);
+#endif
 }
+
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+void GestureDetector::OnDragLongPressTimeout() {
+  LOG(INFO) << "DragDrop GestureDetector::OnDragLongPressTimeout";
+  listener_->OnDragLongPress(*current_down_event_);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_AI)
+void GestureDetector::OnCreateOverlayTimeout() {
+  LOG(INFO) << "GestureDetector::OnCreateOverlayTimeout";
+  listener_->OnCreateOverlay(*current_down_event_);
+}
+#endif
 
 void GestureDetector::OnTapTimeout() {
   if (!double_tap_listener_)
@@ -683,3 +774,8 @@ bool GestureDetector::HasPendingTapTimeoutForTesting() const {
 }
 
 }  // namespace ui
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/ui/events/gesture_detection/gesture_detector_ext.cc"
+#include "arkweb/chromium_ext/ui/events/gesture_detection/gesture_detector_utils.cc"
+#endif

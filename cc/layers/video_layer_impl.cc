@@ -50,6 +50,7 @@ VideoLayerImpl::VideoLayerImpl(
     : LayerImpl(tree_impl, id),
       provider_client_impl_(std::move(provider_client_impl)),
       video_transform_(video_transform) {
+  videoImplUtils_ = new VideoLayerImplUtils(this);
 }
 
 VideoLayerImpl::~VideoLayerImpl() {
@@ -79,8 +80,16 @@ bool VideoLayerImpl::WillDraw(DrawMode draw_mode,
   if (draw_mode == DRAW_MODE_RESOURCELESS_SOFTWARE)
     return false;
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  videoImplUtils_->VisibilityChange();
+#endif
+
   if (!LayerImpl::WillDraw(draw_mode, resource_provider))
     return false;
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  videoImplUtils_->LayerRectUpdate();
+#endif
 
   // Explicitly acquire and release the provider mutex so it can be held from
   // WillDraw to DidDraw. Since the compositor thread is in the middle of

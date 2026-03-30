@@ -17,6 +17,7 @@
 #include <variant>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/allocator/allocator_check.h"
 #include "base/allocator/partition_alloc_support.h"
 #include "base/at_exit.h"
@@ -205,6 +206,10 @@
 
 #if defined(ADDRESS_SANITIZER)
 #include "base/debug/asan_service.h"
+#endif
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "content/renderer/render_remote_proxy_ohos.h"
 #endif
 
 namespace content {
@@ -534,6 +539,14 @@ class ContentClientInitializer {
   static void Set(const std::string& process_type,
                   ContentMainDelegate* delegate) {
     ContentClient* content_client = GetContentClient();
+
+  // TODO(ARKWEB_DFX_TRACING): waiting to confirm the impact
+#if !BUILDFLAG(ARKWEB_DFX_TRACING)
+    if (process_type == switches::kUtilityProcess ||
+        cmd->HasSwitch(switches::kSingleProcess))
+#endif
+      content_client->utility_ = delegate->CreateContentUtilityClient();
+
     if (process_type.empty())
       content_client->browser_ = delegate->CreateContentBrowserClient();
 
@@ -546,10 +559,6 @@ class ContentClientInitializer {
     if (process_type == switches::kRendererProcess ||
         cmd->HasSwitch(switches::kSingleProcess))
       content_client->renderer_ = delegate->CreateContentRendererClient();
-
-    if (process_type == switches::kUtilityProcess ||
-        cmd->HasSwitch(switches::kSingleProcess))
-      content_client->utility_ = delegate->CreateContentUtilityClient();
   }
 };
 
@@ -838,7 +847,7 @@ int ContentMainRunnerImpl::Initialize(ContentMainParams params) {
 // On Android, the shared descriptors are passed through the Java service,
 // which takes care of updating these mappings; otherwise, we need to update
 // the mappings explicitly.
-#if !BUILDFLAG(IS_ANDROID)
+#if (!BUILDFLAG(IS_ANDROID)  && !BUILDFLAG(IS_OHOS))
   g_fds->Set(kMojoIPCChannel,
              kMojoIPCChannel + base::GlobalDescriptors::kBaseDescriptor);
   g_fds->Set(kFieldTrialDescriptor,
@@ -853,6 +862,13 @@ int ContentMainRunnerImpl::Initialize(ContentMainParams params) {
              kTraceOutputSharedMemoryDescriptor +
                  base::GlobalDescriptors::kBaseDescriptor);
 #endif  // !BUILDFLAG(IS_ANDROID)
+
+#if BUILDFLAG(IS_OHOS)
+  g_fds->Set(kTraceConfigSharedMemoryDescriptor,
+             kTraceConfigSharedMemoryDescriptor +
+                 base::GlobalDescriptors::kBaseDescriptor);
+  LOG(INFO) << "ContentMainRunnerImpl::Initialize::kTraceConfigSharedMemoryDescriptor is registered.";
+#endif  // BUILDFLAG(IS_OHOS)
 
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OPENBSD)
   g_fds->Set(kCrashDumpSignal,
@@ -1070,6 +1086,13 @@ NO_STACK_PROTECTOR int ContentMainRunnerImpl::Run() {
   bool needs_startup_tracing_after_sandbox_init = false;
   if (!process_type.empty()) {
     if (process_type != switches::kZygoteProcess) {
+      // Zygotes will run this at a later point in time when the command line
+      // has been updated.
+#if BUILDFLAG(IS_ARKWEB)
+      if (!RunRenderRemoteProxy(*command_line)) {
+        return -1;
+      }
+#endif
       if (delegate_->ShouldCreateFeatureList(
               ContentMainDelegate::InvokedInChildProcess())) {
         InitializeFieldTrialAndFeatureList();
@@ -1290,6 +1313,24 @@ int ContentMainRunnerImpl::RunBrowser(MainFunctionParams main_params,
   main_params.startup_data = mojo_ipc_support_->CreateBrowserStartupData();
   return RunBrowserProcessMain(std::move(main_params), delegate_);
 }
+
+#if BUILDFLAG(IS_ARKWEB)
+bool ContentMainRunnerImpl::RunRenderRemoteProxy(
+    const base::CommandLine& command_line) {
+  std::string process_type =
+      command_line.GetSwitchValueASCII(switches::kProcessType);
+  if (process_type != switches::kRendererProcess &&
+      process_type != switches::kGpuProcess) {
+    return true;
+  }
+  RenderRemoteProxy::CreateAndRegist(command_line, process_type);
+  if (process_type == switches::kGpuProcess ||
+      !RenderRemoteProxy::IsFdsChannelReady()) {
+    return RenderRemoteProxy::WaitForBrowserFd();
+  }
+  return true;
+}
+#endif
 
 void ContentMainRunnerImpl::Shutdown() {
   DCHECK(is_initialized_);

@@ -30,6 +30,13 @@ class HiddenTargetManager : public content::WebContentsDelegate {
   // Implements `WebContentsDelegate::CloseContents` for hidden web contents.
   void CloseContents(content::WebContents* source) override;
 
+ #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  // WebContentsDelegate implementation for extension support.
+  void WebExtensionUpdateTab(
+      int32_t tab_id,
+      const struct NWebExtensionTabUpdateProperties* update_properties);
+#endif
+
  private:
   // The map of hidden web contents created for hidden targets.
   // HiddenTargetManager owns them and disposes when session is closed or when

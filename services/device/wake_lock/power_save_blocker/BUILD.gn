@@ -4,6 +4,7 @@
 
 import("//build/config/features.gni")
 import("//build/config/ui.gni")
+import("//arkweb/chromium_ext/chromium_ext.gni")
 
 if (is_android) {
   import("//build/config/android/rules.gni")
@@ -69,6 +70,17 @@ source_set("power_save_blocker") {
     ]
   } else if (is_win) {
     sources += [ "power_save_blocker_win.cc" ]
+  } else if (is_ohos) {
+    sources += arkweb_power_save_blocker_source
+    if (arkweb_screen_lock) {
+      sources += arkweb_screen_lock_sources
+    }
+
+    import("//build/config/ohos/config.gni")
+    include_dirs = ohos_src_includes
+    deps += [
+      "//ohos_glue:ohos_adapter_glue_source",
+    ]
   } else {
     # Fuchsia and non-DBus Linux.
     sources += [ "power_save_blocker_stub.cc" ]

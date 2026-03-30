@@ -57,7 +57,8 @@
 #include "chrome/browser/ui/webui/settings/settings_security_key_handler.h"
 #endif
 
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(IS_OHOS)
 #include "chrome/browser/browser_process.h"
 #include "chrome/browser/browser_process_platform_part.h"
 #include "components/password_manager/core/browser/password_manager_util.h"
@@ -313,6 +314,9 @@ content::WebUIDataSource* CreateAndAddPasswordsUIHTMLSource(
 #elif BUILDFLAG(IS_MAC)
       {"managePasskeysLabel",
        IDS_PASSWORD_MANAGER_UI_MANAGE_PASSKEYS_FROM_PROFILE_LABEL},
+#elif BUILDFLAG(IS_OHOS)
+      {"managePasskeysLabel",
+       IDS_PASSWORD_MANAGER_UI_MANAGE_PASSKEYS_FROM_PROFILE_LABEL},
 #endif
       {"menu", IDS_MENU},
       {"menuButtonLabel", IDS_SETTINGS_MENU_BUTTON_LABEL},
@@ -506,6 +510,11 @@ content::WebUIDataSource* CreateAndAddPasswordsUIHTMLSource(
        IDS_PASSWORD_MANAGER_UI_BIOMETRIC_AUTHENTICATION_FOR_FILLING_TOGGLE_LABEL_CHROMEOS},
       {"biometricAuthenticationForFillingSubLabel",
        IDS_PASSWORD_MANAGER_UI_BIOMETRIC_AUTHENTICATION_FOR_FILLING_TOGGLE_SUBLABEL_CHROMEOS},
+#elif BUILDFLAG(IS_OHOS)
+      {"biometricAuthenticaionForFillingLabel",
+       IDS_PASSWORD_MANAGER_UI_BIOMETRIC_AUTHENTICATION_FOR_FILLING_TOGGLE_LABEL_OHOS},
+      {"biometricAuthenticaionForFillingSublabel",
+       IDS_PASSWORD_MANAGER_UI_BIOMETRIC_AUTHENTICATION_FOR_FILLING_TOGGLE_SUBLABEL_OHOS},
 #endif
   };
   for (const auto& str : kStrings) {
@@ -543,7 +552,8 @@ content::WebUIDataSource* CreateAndAddPasswordsUIHTMLSource(
               password_manager::PasswordCheckupReferrer::kPasswordCheck)
               .spec()));
 
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(IS_OHOS)
   source->AddBoolean("biometricAuthenticationForFillingToggleVisible",
                      password_manager_util::
                          ShouldBiometricAuthenticationForFillingToggleBeVisible(

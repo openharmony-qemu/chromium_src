@@ -1049,7 +1049,13 @@ void ServiceWorkerTaskQueue::OnRegistrationStoredSync(int64_t registration_id,
 
   // The only registrations we track are the ones for root-scope extension
   // service workers.
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  DCHECK(kExtensionScheme == scope.GetScheme() ||
+         kArkwebExtensionScheme == scope.GetScheme());
+#else
   DCHECK_EQ(kExtensionScheme, scope.GetScheme());
+#endif
+
   DCHECK_EQ("/", scope.GetPath());
 
   base::UnguessableToken activation_token = iter->second;

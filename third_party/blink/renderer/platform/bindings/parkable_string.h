@@ -9,6 +9,7 @@
 #include <memory>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/check_op.h"
 #include "base/dcheck_is_on.h"
 #include "base/gtest_prod_util.h"
@@ -25,6 +26,9 @@
 #include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
 #include "third_party/blink/renderer/platform/wtf/thread_safe_ref_counted.h"
 #include "third_party/blink/renderer/platform/wtf/threading.h"
+#if BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/bindings/parkable_string_utils.h"
+#endif
 
 // ParkableString represents a string that may be parked in memory, that it its
 // underlying memory address may change. Its content can be retrieved with the
@@ -40,6 +44,7 @@ class Digestor;
 class DiskDataAllocator;
 class WebProcessMemoryDump;
 struct BackgroundTaskParams;
+class ParkableStringUtils;
 
 // A parked string is parked by calling |Park()|, and unparked by calling
 // |ToString()| on a parked string.
@@ -364,6 +369,9 @@ class PLATFORM_EXPORT ParkableString final {
 
  public:
   ParkableString() : impl_(nullptr) {}
+#if BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)
+  explicit ParkableString(scoped_refptr<StringImpl>&& impl, bool is_parkable);
+#endif
   explicit ParkableString(scoped_refptr<StringImpl>&& impl);
   ParkableString(scoped_refptr<StringImpl>&& impl,
                  std::unique_ptr<ParkableStringImpl::SecureDigest> digest);

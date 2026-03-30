@@ -167,6 +167,7 @@
 #include "third_party/blink/public/mojom/devtools/inspector_issue.mojom-shared.h"
 #include "third_party/blink/public/mojom/use_counter/metrics/web_feature.mojom.h"
 #include "url/scheme_host_port.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include "content/public/browser/android/java_interfaces.h"
@@ -2463,6 +2464,10 @@ void StoragePartitionImpl::OnSSLCertificateError(
     int net_error,
     const net::SSLInfo& ssl_info,
     bool fatal,
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    const GURL& origin_url,
+    const std::string& referrer,
+#endif
     OnSSLCertificateErrorCallback response) {
   URLLoaderNetworkContext context =
       url_loader_network_observers_.current_context();
@@ -2481,7 +2486,13 @@ void StoragePartitionImpl::OnSSLCertificateError(
   bool is_primary_main_frame_request = context.IsPrimaryMainFrameRequest();
   SSLManager::OnSSLCertificateError(
       delegate->GetWeakPtr(), is_primary_main_frame_request, url,
-      context.navigation_or_document(), net_error, ssl_info, fatal);
+      context.navigation_or_document(), net_error, ssl_info, fatal
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+      ,
+      origin_url,
+      referrer
+#endif
+      );
 }
 
 void StoragePartitionImpl::OnLoadingStateUpdate(

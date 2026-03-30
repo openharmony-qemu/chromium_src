@@ -6,6 +6,7 @@ import("//build/config/locales.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
 import("//testing/test.gni")
 import("//tools/grit/grit_rule.gni")
+import("//arkweb/build/features/features.gni")
 
 config("internal_config") {
   if (is_clang) {
@@ -29,13 +30,25 @@ grit_strings("strings") {
     "messages.h",
     "en_messages.cc",
   ]
+
+  #ifdef arkweb_i18n
+  if (arkweb_i18n) {
+    locales = all_chrome_locales + extra_locales
+  }
+
+  #endif
+
   output_prefix = "address_input_strings_"
 
   configs = [ ":internal_config" ]
 }
 
 config("libaddressinput_config") {
+  if (arkweb_privacy_compliance) {
+    defines = [ "I18N_ADDRESS_VALIDATION_DATA_URL=\"https://x.x.x.x/\"" ]
+  } else {
   defines = [ "I18N_ADDRESS_VALIDATION_DATA_URL=\"https://chromium-i18n.appspot.com/ssl-aggregate-address/\"" ]
+  }
   include_dirs = [ "src/cpp/include" ]
 }
 

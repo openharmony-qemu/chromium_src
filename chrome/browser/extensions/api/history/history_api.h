@@ -20,6 +20,10 @@
 #include "extensions/browser/event_router.h"
 #include "extensions/browser/extension_function.h"
 #include "extensions/buildflags/buildflags.h"
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "ohos_nweb/src/capi/browser_service/nweb_extension_history_types.h"
+#include "ohos_nweb/src/cef_delegate/nweb_extension_history_cef_delegate.h"
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 
@@ -115,6 +119,9 @@ class HistoryFunctionWithCallback : public HistoryFunction {
   base::CancelableTaskTracker task_tracker_;
 };
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "cef/ohos_cef_ext/libcef/browser/extensions/api/history/history_api_for_include_file.cc"
+#else
 class HistoryGetVisitsFunction : public HistoryFunctionWithCallback {
  public:
   DECLARE_EXTENSION_FUNCTION("history.getVisits", HISTORY_GETVISITS)
@@ -192,6 +199,7 @@ class HistoryDeleteRangeFunction : public HistoryFunctionWithCallback {
   // Callback for the history service to acknowledge deletion.
   void DeleteComplete();
 };
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 
 }  // namespace extensions
 

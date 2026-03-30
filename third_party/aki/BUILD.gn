@@ -1,0 +1,98 @@
+
+
+assert(is_ohos)
+
+declare_args() {
+  aki_enable_napi = true
+  aki_enable_install_ohos = false
+  aki_enable_declaration = false
+  aki_enable_tracing = false
+  aki_enable_unittest = false
+}
+
+config("aki_config") {
+  include_dirs = ["include"]
+  if (aki_enable_napi) {
+    defines = [
+      "JSBIND_USING_NAPI=1"
+    ]
+  }
+  cflags = [
+    "-Wno-error=extra-semi",
+    "-Wno-error=unused-variable",
+    "-Wno-error=ignored-qualifiers",
+  ]
+}
+
+component("aki_jsbind") {
+  sources = [
+    "src/binding.cpp",
+    "src/function.cpp",
+    "src/jsbind.cpp",
+    "src/version.cpp",
+    "src/value.cpp",
+
+    # class
+    "src/class/class_base.cpp",
+    "src/class/class_wrapper.cpp",
+
+    # invoker
+    "src/invoker/invoker.cpp",
+
+    # logging
+    "src/logging/log_setting.cpp",
+    "src/logging/log_setting.h",
+    "src/logging/logging.cpp",
+
+    # value
+    "src/value/array_buffer.cpp",
+    "src/value/promise.cpp",
+    "src/value/napi/napi_value_base.cpp",
+
+    # status
+    "src/status/status.cpp",
+    "src/status/status.h",
+
+    # task_runner
+    "src/task_runner/task_runner.cpp",
+
+    # persistent
+    "src/persistent/persistent.cpp",
+  ]
+
+  public_configs = [ ":aki_config" ]
+
+  cflags = [
+    "-Wno-error=sometimes-uninitialized",
+    "-Wno-error=shadow",
+    "-Wno-error=pessimizing-move"
+  ]
+
+  defines = []
+
+  if (is_component_build) {
+    defines += [
+      "AKI_BUILDING_SHARED=1"
+    ]
+  }
+
+  if (aki_enable_napi) {
+    sources += [
+      "src/napi/napi_init.cpp",
+      "src/overloader/napi/napi_overloader.cpp"
+    ]
+  }
+
+  # TODO other default false args
+
+  libs = [
+    "ace_napi.z", "hilog_ndk.z", "uv"
+  ]
+
+  include_dirs = [ "src" ]
+}
+
+
+if (aki_enable_unittest) {
+  # TODO aki unittest
+}

@@ -1272,10 +1272,16 @@ void AXObject::PopulateAXRelativeBounds(ui::AXRelativeBounds& bounds,
 
   if (AXShouldIncludePageScaleFactorInRoot() && IsRoot()) {
     const Page* page = GetDocument()->GetPage();
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+    if (static_cast<Frame*>(GetDocument()->GetFrame()) == page->MainFrame()) {
+#endif
     container_transform.Scale(page->PageScaleFactor(), page->PageScaleFactor());
     container_transform.Translate(
         -page->GetVisualViewport().VisibleRect().origin().OffsetFromOrigin());
   }
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+  }
+#endif
 
   if (!container_transform.IsIdentity())
     bounds.transform = std::make_unique<gfx::Transform>(container_transform);
@@ -7448,6 +7454,12 @@ bool AXObject::OnNativeClickAction() {
   if (IsTextField())
     return OnNativeFocusAction();
 
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+  if (RoleValue() == ax::mojom::blink::Role::kVideo) {
+    OnNativeFocusAction();
+  }
+#endif
+
   Element* element = GetClosestElement();
 
   if (element) {
@@ -8029,10 +8041,20 @@ bool AXObject::SupportsNameFromContents(bool recursive,
         //   forwarded somewhere else.
         return false;
       }
-      // Don't repair name from contents to focusable elements unless
-      // focused, because providing a repaired accessible name
-      // often leads to redundant verbalizations.
-      bool result = consider_focus && IsFocused();
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+        // Don't repair name from contents to focusable elements unless
+        // tabbable or focused, because providing a repaired accessible name
+        // often leads to redundant verbalizations.
+        int tab_index = GetElement()->tabIndex();
+        bool is_focused = GetElement() == GetDocument()->FocusedElement();
+        bool is_in_tab_order_or_focused = tab_index >= 0 || is_focused;
+        bool result = is_in_tab_order_or_focused && CanSetFocusAttribute();
+#else
+        // Don't repair name from contents to focusable elements unless
+        // focused, because providing a repaired accessible name
+        // often leads to redundant verbalizations.
+        bool result = consider_focus && IsFocused();
+#endif
 #if DCHECK_IS_ON()
       // TODO(crbug.com/350528330): Add this check and address focusable
       // UI elements that are missing a role, or using an improper role.

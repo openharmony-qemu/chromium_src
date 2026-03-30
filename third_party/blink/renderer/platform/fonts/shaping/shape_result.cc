@@ -57,6 +57,10 @@ namespace blink {
 constexpr unsigned HarfBuzzRunGlyphData::kMaxCharacterIndex;
 constexpr unsigned HarfBuzzRunGlyphData::kMaxGlyphs;
 
+#if BUILDFLAG(IS_OHOS)
+static constexpr double SEGMENTATION_THREDHOLD = 0.6;
+#endif
+
 struct SameSizeAsHarfBuzzRunGlyphData {
   unsigned glyph : 16;
   unsigned char_index_and_bit_field : 16;
@@ -650,7 +654,13 @@ unsigned ShapeResult::CaretOffsetForHitTest(float x,
   GlyphIndexResult result;
   OffsetForPosition(x, BreakGlyphsOption(true), &result);
 
+  #if BUILDFLAG(IS_OHOS)
+  LOG(DEBUG) << "ShapeResult::CaretOffsetForHitTest, x - result.origin_x: "
+             << (x - result.origin_x) << ", result.advance: " << result.advance;
+  if (x - result.origin_x <= result.advance * SEGMENTATION_THREDHOLD)
+#else
   if (x - result.origin_x <= result.advance / 2)
+#endif
     return result.left_character_index;
   return result.right_character_index;
 }

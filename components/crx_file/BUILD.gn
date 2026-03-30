@@ -11,6 +11,8 @@ static_library("crx_file") {
     "crx_verifier.h",
     "id_util.cc",
     "id_util.h",
+    "//arkweb/chromium_ext/components/crx_file/crx_key_service.h",
+    "//arkweb/chromium_ext/components/crx_file/crx_key_service.cc",
   ]
 
   deps = [

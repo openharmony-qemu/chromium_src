@@ -7,6 +7,7 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "build/build_config.h"
 #include "media/media_buildflags.h"
 #include "testing/gtest/include/gtest/gtest.h"
@@ -25,8 +26,11 @@ class TestImageDecoder : public ImageDecoder {
       : ImageDecoder(kAlphaNotPremultiplied,
                      high_bit_depth_decoding_option,
                      ColorBehavior::kTransformToSRGB,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
                      cc::AuxImage::kDefault,
-                     max_decoded_bytes) {}
+#endif
+                     max_decoded_bytes) {
+  }
 
   TestImageDecoder() : TestImageDecoder(ImageDecoder::kDefaultBitDepth) {}
 

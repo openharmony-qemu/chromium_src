@@ -1,0 +1,12 @@
+{
+  "license": "ISC",
+  "devDependencies": {
+    "@types/libnapi_call_function_exception.so": "file:./entry/src/main/cpp/types/libnapi_call_function_exception"
+  },
+  "author": "",
+  "name": "napi_call_function_exception",
+  "description": "example description",
+  "main": "",
+  "version": "1.0.0",
+  "dependencies": {}
+}

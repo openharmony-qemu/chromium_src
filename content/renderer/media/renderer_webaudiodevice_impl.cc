@@ -43,6 +43,7 @@
 #include "third_party/blink/public/web/web_local_frame.h"
 #include "third_party/blink/public/web/web_local_frame_client.h"
 #include "third_party/blink/public/web/web_view.h"
+#include "arkweb/build/features/features.h"
 
 using blink::AudioDeviceFactory;
 using blink::WebAudioDevice;
@@ -448,9 +449,15 @@ void RendererWebAudioDeviceImpl::CreateAudioRendererSink() {
       // Use a task runner instead of the render thread for fake Render() calls
       // since it has special connotations for Blink and garbage collection.
       // Timeout value chosen to be highly unlikely in the normal case.
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+      silent_sink_suspender_ = std::make_unique<media::SilentSinkSuspender>(
+          this, base::Seconds(0), current_sink_params_, sink_,
+          GetSilentSinkTaskRunner());
+#else
       silent_sink_suspender_ = std::make_unique<media::SilentSinkSuspender>(
           this, base::Seconds(30), current_sink_params_, sink_,
           GetSilentSinkTaskRunner());
+#endif
       sink_->Initialize(current_sink_params_, silent_sink_suspender_.get());
       break;
     case blink::WebAudioSinkDescriptor::kSilent:

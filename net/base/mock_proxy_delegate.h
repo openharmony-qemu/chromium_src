@@ -74,6 +74,78 @@ class MockProxyDelegate : public ProxyDelegate {
                const std::vector<std::string>& dns_aliases,
                const net::NetworkAnonymizationKey& network_anonymization_key),
               (override));
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  MOCK_METHOD(void,
+              OnTunnelConnectResult,
+              (const net::ProxyChain &proxy_chain,
+              const std::string &host,
+              const net::HttpResponseHeaders &response_headers,
+              const net::HttpRequestHeaders &request_headers),
+              (override));
+  MOCK_METHOD(void,
+              AddSuccessMainFrameHosts,
+              (const std::string& host),
+              (override));
+  MOCK_METHOD(bool,
+              IsFallbackProxyFailedHost,
+              (const std::string& host),
+              (override));
+  MOCK_METHOD(bool,
+              IsFallbackProxySuccessMainFrameHost,
+              (const std::string& host),
+              (override));
+  MOCK_METHOD(void,
+              AddByPassRuleWithHost,
+              (const std::string& host),
+              (override));
+  MOCK_METHOD(void,
+              OnProxyConnectResult,
+              (const net::ProxyChain& proxy_chain,
+              int net_error),
+              (override));
+  MOCK_METHOD(bool,
+              GetUrlMaliciousTypeAndHwCode,
+              (const std::vector<GURL>& url_chain,
+              int* malicious_type,
+              int* hw_code),
+              (override));
+  MOCK_METHOD(bool,
+              IsFallbackProxyMaliciousType,
+              (int malicious_type),
+              (override));
+  MOCK_METHOD(bool,
+              IsFallbackProxyHwCode,
+              (int hw_code),
+              (override));
+  MOCK_METHOD(bool,
+              IsFallbackProxyRetryErrorCode,
+              (int net_error),
+              (override));
+  MOCK_METHOD(bool,
+              IsFallbackProxyBlockHost,
+              (const std::string& host),
+              (override));
+  MOCK_METHOD(int,
+              GetMaliciousUrlCheckWaitTime,
+              (),
+              (override));
+  MOCK_METHOD(int,
+              GetProxyConnectTimeout,
+              (),
+              (override));
+  MOCK_METHOD(int,
+              GetProxyTunnelTimeout,
+              (),
+              (override));
+  MOCK_METHOD(net::FallbackProxyStatus,
+              GetFallbackProxyStatus,
+              (),
+              (override));
+  MOCK_METHOD(bool,
+              IsFallbackProxyServer,
+              (const net::ProxyChain& proxy_chain),
+              (override));
+#endif
 };
 
 }  // namespace net

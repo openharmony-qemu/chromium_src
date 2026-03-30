@@ -107,6 +107,10 @@ TEST_F(DecryptingRendererTest, ClearStreams_NoCdm) {
   EXPECT_CALL(renderer_init_cb_, Run(HasStatusCode(PIPELINE_OK)));
 
   decrypting_renderer_->Initialize(&media_resource_, &renderer_client_,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                                   RequestSurfaceCB(),
+                                   VideoDecoderChangedCB(),
+#endif // ARKWEB_VIDEO_ASSISTANT
                                    renderer_init_cb_.Get());
   task_environment_.RunUntilIdle();
 
@@ -125,6 +129,10 @@ TEST_F(DecryptingRendererTest, ClearStreams_AesDecryptor) {
 
   decrypting_renderer_->SetCdm(&cdm_context_, set_cdm_cb_.Get());
   decrypting_renderer_->Initialize(&media_resource_, &renderer_client_,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                                   RequestSurfaceCB(),
+                                   VideoDecoderChangedCB(),
+#endif // ARKWEB_VIDEO_ASSISTANT
                                    renderer_init_cb_.Get());
   task_environment_.RunUntilIdle();
 
@@ -142,6 +150,10 @@ TEST_F(DecryptingRendererTest, ClearStreams_OtherCdm) {
   EXPECT_CALL(set_cdm_cb_, Run(true));
 
   decrypting_renderer_->Initialize(&media_resource_, &renderer_client_,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                                   RequestSurfaceCB(),
+                                   VideoDecoderChangedCB(),
+#endif // ARKWEB_VIDEO_ASSISTANT
                                    renderer_init_cb_.Get());
   decrypting_renderer_->SetCdm(&cdm_context_, set_cdm_cb_.Get());
   task_environment_.RunUntilIdle();
@@ -154,6 +166,10 @@ TEST_F(DecryptingRendererTest, EncryptedStreams_NoCdm) {
   AddStream(DemuxerStream::VIDEO, /* encrypted = */ true);
 
   decrypting_renderer_->Initialize(&media_resource_, &renderer_client_,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                                   RequestSurfaceCB(),
+                                   VideoDecoderChangedCB(),
+#endif // ARKWEB_VIDEO_ASSISTANT
                                    renderer_init_cb_.Get());
   task_environment_.RunUntilIdle();
 
@@ -171,6 +187,10 @@ TEST_F(DecryptingRendererTest, EncryptedStreams_AesDecryptor) {
   EXPECT_CALL(set_cdm_cb_, Run(true));
 
   decrypting_renderer_->Initialize(&media_resource_, &renderer_client_,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                                   RequestSurfaceCB(),
+                                   VideoDecoderChangedCB(),
+#endif // ARKWEB_VIDEO_ASSISTANT
                                    renderer_init_cb_.Get());
   decrypting_renderer_->SetCdm(&cdm_context_, set_cdm_cb_.Get());
   task_environment_.RunUntilIdle();
@@ -189,6 +209,10 @@ TEST_F(DecryptingRendererTest, EncryptedStreams_OtherCdm) {
   EXPECT_CALL(set_cdm_cb_, Run(true));
 
   decrypting_renderer_->Initialize(&media_resource_, &renderer_client_,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                                   RequestSurfaceCB(),
+                                   VideoDecoderChangedCB(),
+#endif // ARKWEB_VIDEO_ASSISTANT
                                    renderer_init_cb_.Get());
   decrypting_renderer_->SetCdm(&cdm_context_, set_cdm_cb_.Get());
   task_environment_.RunUntilIdle();
@@ -208,6 +232,10 @@ TEST_F(DecryptingRendererTest, EncryptedStreams_AesDecryptor_CdmSetBeforeInit) {
 
   decrypting_renderer_->SetCdm(&cdm_context_, set_cdm_cb_.Get());
   decrypting_renderer_->Initialize(&media_resource_, &renderer_client_,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                                   RequestSurfaceCB(),
+                                   VideoDecoderChangedCB(),
+#endif // ARKWEB_VIDEO_ASSISTANT
                                    renderer_init_cb_.Get());
   task_environment_.RunUntilIdle();
 
@@ -226,6 +254,10 @@ TEST_F(DecryptingRendererTest, EncryptedStreams_OtherCdm_CdmSetBeforeInit) {
 
   decrypting_renderer_->SetCdm(&cdm_context_, set_cdm_cb_.Get());
   decrypting_renderer_->Initialize(&media_resource_, &renderer_client_,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                                   RequestSurfaceCB(),
+                                   VideoDecoderChangedCB(),
+#endif // ARKWEB_VIDEO_ASSISTANT
                                    renderer_init_cb_.Get());
   task_environment_.RunUntilIdle();
 
@@ -243,6 +275,10 @@ TEST_F(DecryptingRendererTest, EncryptedAndClearStream_OtherCdm) {
   EXPECT_CALL(set_cdm_cb_, Run(true));
 
   decrypting_renderer_->Initialize(&media_resource_, &renderer_client_,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                                   RequestSurfaceCB(),
+                                   VideoDecoderChangedCB(),
+#endif // ARKWEB_VIDEO_ASSISTANT
                                    renderer_init_cb_.Get());
   decrypting_renderer_->SetCdm(&cdm_context_, set_cdm_cb_.Get());
   task_environment_.RunUntilIdle();
@@ -259,6 +295,10 @@ TEST_F(DecryptingRendererTest, DecryptingMediaResourceInitFails) {
               Run(HasStatusCode(PIPELINE_ERROR_INITIALIZATION_FAILED)));
 
   decrypting_renderer_->Initialize(&media_resource_, &renderer_client_,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                                   RequestSurfaceCB(),
+                                   VideoDecoderChangedCB(),
+#endif // ARKWEB_VIDEO_ASSISTANT
                                    renderer_init_cb_.Get());
   task_environment_.RunUntilIdle();
 

@@ -273,12 +273,14 @@ void LeakDetectionCheckImpl::DoLeakRequest(
     return;
   }
   request_ = network_request_factory_->CreateNetworkRequest();
+#if !BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
   request_->LookupSingleLeak(
       url_loader_factory.get(), access_token, api_key, std::move(data.payload),
       TimeCallback(
           base::BindOnce(&LeakDetectionCheckImpl::OnLookupSingleLeakResponse,
                          weak_ptr_factory_.GetWeakPtr()),
           "PasswordManager.LeakDetection.ReceiveSingleLeakResponseTime"));
+#endif
 }
 
 void LeakDetectionCheckImpl::OnLookupSingleLeakResponse(

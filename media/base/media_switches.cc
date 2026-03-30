@@ -19,6 +19,7 @@
 #include "media/media_buildflags.h"
 #include "ui/gl/gl_features.h"
 #include "ui/gl/gl_utils.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_LINUX)
 #include "base/cpu.h"
@@ -115,8 +116,10 @@ const char kDisableAcceleratedMjpegDecode[] =
     "disable-accelerated-mjpeg-decode";
 
 // Forces input and output stream creation to use fake audio streams.
-const char kDisableAudioInput[] = "disable-audio-input";
 const char kDisableAudioOutput[] = "disable-audio-output";
+#if BUILDFLAG(ARKWEB_WEBRTC)
+const char kDisableAudioInput[] = "disable-audio-input";
+#endif // BUILDFLAG(ARKWEB_WEBRTC)
 
 // Do not immediately suspend media in background tabs.
 const char kDisableBackgroundMediaSuspend[] =
@@ -376,7 +379,7 @@ BASE_FEATURE(kMediaRecorderHEVCSupport, base::FEATURE_ENABLED_BY_DEFAULT);
 // when in background.
 BASE_FEATURE(kResumeBackgroundVideo,
              "resume-background-video",
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA_POLICY)
              base::FEATURE_ENABLED_BY_DEFAULT
 #else
              base::FEATURE_DISABLED_BY_DEFAULT
@@ -676,6 +679,14 @@ BASE_FEATURE(kGlobalMediaControlsSeamlessTransfer,
 
 // CanPlayThrough issued according to standard.
 BASE_FEATURE(kSpecCompliantCanPlayThrough, base::FEATURE_ENABLED_BY_DEFAULT);
+
+#if BUILDFLAG(ARKWEB_WEBRTC)
+// Disables the real audio output stream after silent audio has been delivered
+// for too long. Should save quite a bit of power in the muted video case.
+BASE_FEATURE(kSuspendMutedAudio,
+             "SuspendMutedAudio",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+#endif
 
 // Suspends WebMediaPlayerImpl instances when the containing RenderFrame is
 // frozen. TODO(crbug.com/41161335): Remove in M143 after it goes stable.
@@ -1079,6 +1090,10 @@ BASE_FEATURE(kUseAudioManagerMaxChannelLayout,
              base::FEATURE_DISABLED_BY_DEFAULT);
 
 #endif  // BUILDFLAG(IS_ANDROID)
+
+#if BUILDFLAG(ARKWEB_MEDIA)
+BASE_FEATURE(kCanPlayHls, "CanPlayHls", base::FEATURE_ENABLED_BY_DEFAULT);
+#endif
 
 #if BUILDFLAG(ENABLE_HLS_DEMUXER)
 BASE_FEATURE(kBuiltInHlsPlayer, base::FEATURE_ENABLED_BY_DEFAULT);

@@ -799,4 +799,8 @@ class DeveloperPrivateUploadExtensionToAccountFunction
 
 }  // namespace extensions::api
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/chrome/browser/extensions/api/developer_private_api_for_include.h"
+#endif  // BUILDFLAG(IS_ARKWEB)
+
 #endif  // CHROME_BROWSER_EXTENSIONS_API_DEVELOPER_PRIVATE_DEVELOPER_PRIVATE_FUNCTIONS_SHARED_H_

@@ -210,7 +210,11 @@ void ServiceWorkerHost::DidStartServiceWorkerContext(
     // We can legitimately get here if the extension was already unloaded.
     return;
   }
-  CHECK(service_worker_scope.SchemeIs(kExtensionScheme) &&
+  CHECK((service_worker_scope.SchemeIs(kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+         || service_worker_scope.SchemeIs(kArkwebExtensionScheme)
+#endif
+             ) &&
         extension_id == service_worker_scope.host());
 
   ServiceWorkerTaskQueue::Get(browser_context)
@@ -238,7 +242,11 @@ void ServiceWorkerHost::DidStopServiceWorkerContext(
     // We can legitimately get here if the extension was already unloaded.
     return;
   }
-  CHECK(service_worker_scope.SchemeIs(kExtensionScheme) &&
+  CHECK((service_worker_scope.SchemeIs(kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+        || service_worker_scope.SchemeIs(kArkwebExtensionScheme)
+#endif
+  ) &&
         extension_id == service_worker_scope.host());
   CHECK_NE(blink::mojom::kInvalidServiceWorkerVersionId,
            service_worker_version_id);

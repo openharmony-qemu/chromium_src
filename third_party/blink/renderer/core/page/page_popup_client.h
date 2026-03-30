@@ -40,6 +40,10 @@
 #include "third_party/blink/renderer/platform/wtf/vector.h"
 #include "ui/gfx/geometry/rect.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/html/forms/popup_utils.h"
+#endif
+
 namespace blink {
 
 class CSSFontSelector;

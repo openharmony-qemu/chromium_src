@@ -82,7 +82,7 @@ class ConsoleMessageStorage;
 class ContextMenuController;
 class Document;
 class DragCaret;
-class DragController;
+class DragControllerExt;
 class FocusController;
 class Frame;
 class InternalSettings;
@@ -108,6 +108,7 @@ class SVGDocumentResourceTracker;
 class TopDocumentRootScrollerController;
 class ValidationMessageClient;
 class VisualViewport;
+class PageUtils;
 #if BUILDFLAG(IS_ANDROID)
 class SuspendCaptureObserver;
 #endif
@@ -122,6 +123,7 @@ class CORE_EXPORT Page final : public GarbageCollected<Page>,
                                public SettingsDelegate,
                                public PageScheduler::Delegate {
   friend class Settings;
+  friend class PageUtils;
 
  public:
   // Any pages not owned by a web view should be created using this method.
@@ -195,7 +197,6 @@ class CORE_EXPORT Page final : public GarbageCollected<Page>,
 
   void InitialStyleChanged();
   void UpdateAcceleratedCompositingSettings();
-
   ViewportDescription GetViewportDescription() const;
 
   // Returns the plugin data.
@@ -252,7 +253,7 @@ class CORE_EXPORT Page final : public GarbageCollected<Page>,
     return *autoscroll_controller_;
   }
   DragCaret& GetDragCaret() const { return *drag_caret_; }
-  DragController& GetDragController() const { return *drag_controller_; }
+  DragControllerExt& GetDragController() const { return *drag_controller_; }
   FocusController& GetFocusController() const { return *focus_controller_; }
   SpatialNavigationController& GetSpatialNavigationController();
   SVGDocumentResourceTracker& GetSVGDocumentResourceTracker();
@@ -597,6 +598,10 @@ class CORE_EXPORT Page final : public GarbageCollected<Page>,
 
 #endif
 
+  PageUtils* page_utils() {
+    return page_utils_.Get();
+  }
+
  private:
   friend class ScopedPagePauser;
   class CloseTaskHandler;
@@ -644,7 +649,7 @@ class CORE_EXPORT Page final : public GarbageCollected<Page>,
   const Member<AutoscrollController> autoscroll_controller_;
   Member<ChromeClient> chrome_client_;
   const Member<DragCaret> drag_caret_;
-  const Member<DragController> drag_controller_;
+  const Member<DragControllerExt> drag_controller_;
   const Member<FocusController> focus_controller_;
   const Member<ContextMenuController> context_menu_controller_;
   const Member<PageScaleConstraintsSet> page_scale_constraints_set_;
@@ -795,6 +800,7 @@ class CORE_EXPORT Page final : public GarbageCollected<Page>,
   ForwardDeclaredMember<NoStatePrefetchClient> no_state_prefetch_client_;
   ForwardDeclaredMember<AudioGraphTracer> audio_graph_tracer_;
   ForwardDeclaredMember<InternalSettings> internal_settings_;
+  Member<PageUtils> page_utils_;
 #if BUILDFLAG(IS_ANDROID)
   ForwardDeclaredMember<SuspendCaptureObserver> suspend_capture_observer_;
 #endif

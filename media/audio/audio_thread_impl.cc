@@ -12,6 +12,11 @@
 #include "build/build_config.h"
 #include "media/audio/audio_thread_hang_monitor.h"
 
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+#include "arkweb/chromium_ext/base/process/process_handle_posix_ex.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/res_sched_client_adapter.h"
+#endif
+
 namespace media {
 
 AudioThreadImpl::AudioThreadImpl()
@@ -36,6 +41,13 @@ AudioThreadImpl::AudioThreadImpl()
 #endif
   worker_task_runner_ = thread_.task_runner();
 
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+  OHOS::NWeb::ResSchedClientAdapter::ReportKeyThread(
+      OHOS::NWeb::ResSchedStatusAdapter::THREAD_CREATED,
+      base::GetCurrentRealPid(), thread_.GetThreadRealId().raw(),
+      OHOS::NWeb::ResSchedRoleAdapter::IMPORTANT_AUDIO);
+#endif
+
 #if !BUILDFLAG(IS_MAC) && !BUILDFLAG(IS_ANDROID)
   // Since we run on the main thread on Mac, we don't need a hang monitor.
   // https://crbug.com/946968: The hang monitor possibly causes crashes on
@@ -54,6 +66,13 @@ void AudioThreadImpl::Stop() {
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
 
   hang_monitor_.reset();
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+  OHOS::NWeb::ResSchedClientAdapter::ReportKeyThread(
+      OHOS::NWeb::ResSchedStatusAdapter::THREAD_DESTROYED,
+      base::GetCurrentRealPid(), thread_.GetThreadRealId().raw(),
+      OHOS::NWeb::ResSchedRoleAdapter::IMPORTANT_AUDIO);
+#endif
 
   // Note that on MACOSX, we can still have tasks posted on the |task_runner_|,
   // since it is the main thread task runner and we do not stop the main thread.

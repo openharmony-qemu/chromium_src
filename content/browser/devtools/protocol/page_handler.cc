@@ -88,6 +88,7 @@
 #if BUILDFLAG(IS_ANDROID)
 #include "content/browser/renderer_host/compositor_impl_android.h"
 #endif
+#include "arkweb/build/features/features.h"
 
 namespace content {
 namespace protocol {
@@ -524,6 +525,8 @@ PageHandler::PageHandler(
       browser_handler_(browser_handler),
       prepare_for_reload_callback_(std::move(prepare_for_reload_callback)) {
 #if BUILDFLAG(IS_ANDROID)
+  constexpr auto kScreencastPixelFormat = media::PIXEL_FORMAT_I420;
+#elif (BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_DEVTOOLS))
   constexpr auto kScreencastPixelFormat = media::PIXEL_FORMAT_I420;
 #else
   constexpr auto kScreencastPixelFormat = media::PIXEL_FORMAT_ARGB;
@@ -2108,6 +2111,12 @@ Page::BackForwardCacheNotRestoredReason BlocklistedFeatureToProtocol(
       return Page::BackForwardCacheNotRestoredReasonEnum::UnloadHandler;
     case WebSchedulerTrackedFeature::kParserAborted:
       return Page::BackForwardCacheNotRestoredReasonEnum::ParserAborted;
+#if BUILDFLAG(ARKWEB_BFCACHE)
+    case WebSchedulerTrackedFeature::kEnableCacheNativeEmbed:
+      return "EnableCacheNativeEmbed";
+    case WebSchedulerTrackedFeature::kEnableCacheMediaTakeOver:
+      return "EnableCacheMediaTakeOver";
+#endif
     case WebSchedulerTrackedFeature::kWebAuthentication:
       return Page::BackForwardCacheNotRestoredReasonEnum::
           ContentWebAuthenticationAPI;
@@ -2323,6 +2332,10 @@ Page::BackForwardCacheNotRestoredReasonType MapBlocklistedFeatureToType(
     case WebSchedulerTrackedFeature::kLiveMediaStreamTrack:
     case WebSchedulerTrackedFeature::kUnloadHandler:
     case WebSchedulerTrackedFeature::kParserAborted:
+#if BUILDFLAG(ARKWEB_BFCACHE)
+    case WebSchedulerTrackedFeature::kEnableCacheNativeEmbed:
+    case WebSchedulerTrackedFeature::kEnableCacheMediaTakeOver:
+#endif
       return Page::BackForwardCacheNotRestoredReasonTypeEnum::PageSupportNeeded;
     case WebSchedulerTrackedFeature::kWebNfc:
     case WebSchedulerTrackedFeature::kRequestedStorageAccessGrant:

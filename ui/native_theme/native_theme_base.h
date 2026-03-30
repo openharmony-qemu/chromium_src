@@ -185,7 +185,11 @@ class COMPONENT_EXPORT(NATIVE_THEME) NativeThemeBase : public NativeTheme {
       Part part,
       State state,
       const gfx::Rect& rect,
-      const ScrollbarThumbExtraParams& extra_params) const;
+      const ScrollbarThumbExtraParams& extra_params
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+      , SkColor scrollbar_color
+#endif // ARKWEB_SCROLLBAR
+      ) const;
 
   virtual void PaintScrollbarTrack(
       cc::PaintCanvas* canvas,

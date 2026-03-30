@@ -183,6 +183,9 @@ class WebThemeEngine {
     std::optional<SkColor> track_color;
     bool is_thumb_minimal_mode = false;
     bool is_web_test = false;
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+    SkColor scrollbar_color;
+#endif  // ARKWEB_SCROLLBAR
   };
 
   struct ScrollbarButtonExtraParams {

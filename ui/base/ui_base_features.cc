@@ -187,12 +187,12 @@ BASE_FEATURE(kExperimentalFlingAnimation,
 #endif
 );
 
-#if !BUILDFLAG(IS_APPLE)
+#if !BUILDFLAG(IS_APPLE)|| BUILDFLAG(ARKWEB_INPUT_EVENTS)
 // Cached in Java as well, make sure defaults are updated together.
 BASE_FEATURE(kElasticOverscroll,
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_INPUT_EVENTS)
              base::FEATURE_ENABLED_BY_DEFAULT
-#else  // BUILDFLAG(IS_ANDROID)
+#else  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_INPUT_EVENTS)
              base::FEATURE_DISABLED_BY_DEFAULT
 #endif
 );
@@ -242,7 +242,7 @@ bool IsTouchTextEditingRedesignEnabled() {
 
 // This feature enables drag and drop using touch input devices.
 BASE_FEATURE(kTouchDragAndDrop,
-#if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_WIN) || BUILDFLAG(ARKWEB_DRAG_DROP)
              base::FEATURE_ENABLED_BY_DEFAULT
 #else
              base::FEATURE_DISABLED_BY_DEFAULT
@@ -269,7 +269,7 @@ bool IsForcedColorsEnabled() {
 // milestones.
 BASE_FEATURE(kEyeDropper,
 #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || \
-    BUILDFLAG(IS_CHROMEOS)
+    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ARKWEB)
              base::FEATURE_ENABLED_BY_DEFAULT
 #else
              base::FEATURE_DISABLED_BY_DEFAULT

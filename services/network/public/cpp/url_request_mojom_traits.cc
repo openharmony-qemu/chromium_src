@@ -6,6 +6,7 @@
 
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/debug/dump_without_crashing.h"
 #include "base/metrics/histogram_macros.h"
 #include "base/notreached.h"
@@ -133,6 +134,12 @@ bool StructTraits<
     network::debug::SetDeserializationCrashKeyString("referrer");
     return false;
   }
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  if (!data.ReadMainUrl(&out->main_url)) {
+    network::debug::SetDeserializationCrashKeyString("main_url");
+    return false;
+  }
+#endif  //  ARKWEB_PRP_PRELOAD
   if (!data.ReadReferrerPolicy(&out->referrer_policy) ||
       !data.ReadHeaders(&out->headers) ||
       !data.ReadCorsExemptHeaders(&out->cors_exempt_headers) ||
@@ -181,6 +188,9 @@ bool StructTraits<
   out->priority_incremental = data.priority_incremental();
   out->originated_from_service_worker = data.originated_from_service_worker();
   out->skip_service_worker = data.skip_service_worker();
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+  out->corb_detachable = data.corb_detachable();
+#endif
   out->destination = data.destination();
   out->keepalive = data.keepalive();
   out->browsing_topics = data.browsing_topics();
@@ -203,12 +213,33 @@ bool StructTraits<
   out->attribution_reporting_support = data.attribution_reporting_support();
   out->attribution_reporting_eligibility =
       data.attribution_reporting_eligibility();
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+  out->is_sync_mode = data.is_sync_mode();
+#endif
   out->is_ad_tagged = data.is_ad_tagged();
   out->shared_dictionary_writer_enabled =
       data.shared_dictionary_writer_enabled();
   out->client_side_content_decoding_enabled =
       data.client_side_content_decoding_enabled();
   out->required_ip_address_space = data.required_ip_address_space();
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  out->allow_preload_record = data.allow_preload_record();
+  out->is_preflight = data.is_preflight();
+#endif  //  ARKWEB_PRP_PRELOAD
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+  out->is_download_request = data.is_download_request();
+  out->is_triggered_by_download = data.is_triggered_by_download();
+#endif  //  ARKWEB_EX_DOWNLOAD
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  out->usage_scenario_ = data.usage_scenario_();
+#endif
+#if BUILDFLAG(ARKWEB_COOKIE)
+  out->disable_web_security = data.disable_web_security_();
+#endif
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  out->retry_with_fallback_proxy = data.retry_with_fallback_proxy();
+  out->original_error_code = data.original_error_code();
+#endif
   out->allows_device_bound_session_registration =
       data.allows_device_bound_session_registration();
   return true;

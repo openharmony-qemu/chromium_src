@@ -180,8 +180,13 @@ void AutoscrollController::UpdateDragAndDrop(Node* drop_target_node,
 
   if (autoscroll_layout_object_ &&
       autoscroll_layout_object_->GetFrame() !=
-          drop_target_node->GetLayoutObject()->GetFrame())
+          drop_target_node->GetLayoutObject()->GetFrame()) {
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+    LOG(INFO) << "AutoscrollController::UpdateDragAndDrop "
+                 "autoscroll_layout_object_ null";
+#endif
     return;
+  }
 
   drop_target_node->GetLayoutObject()
       ->GetFrameView()
@@ -192,12 +197,19 @@ void AutoscrollController::UpdateDragAndDrop(Node* drop_target_node,
                                     /*is_middle_click_autoscroll*/ false);
   if (!scrollable) {
     StopAutoscroll();
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+    LOG(DEBUG) << "AutoscrollController::UpdateDragAndDrop FindAutoscrollable "
+                  "false just return";
+#endif
     return;
   }
 
   Page* page =
       scrollable->GetFrame() ? scrollable->GetFrame()->GetPage() : nullptr;
   if (!page) {
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+    LOG(DEBUG) << "AutoscrollController::UpdateDragAndDrop just return";
+#endif
     StopAutoscroll();
     return;
   }
@@ -206,6 +218,9 @@ void AutoscrollController::UpdateDragAndDrop(Node* drop_target_node,
       scrollable->CalculateAutoscrollDirection(event_position);
   if (offset.IsZero()) {
     StopAutoscroll();
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+    LOG(DEBUG) << "AutoscrollController::UpdateDragAndDrop IsZero just return";
+#endif
     return;
   }
 
@@ -213,6 +228,17 @@ void AutoscrollController::UpdateDragAndDrop(Node* drop_target_node,
       PhysicalOffset::FromPointFRound(event_position) + offset;
 
   if (autoscroll_type_ == kNoAutoscroll) {
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+    LOG(DEBUG) << "AutoscrollController::UpdateDragAndDrop start "
+                  "======ScheduleMainThreadAnimation======";
+    LOG(DEBUG) << "AutoscrollController::UpdateDragAndDrop autoscroll_type_:"
+               << autoscroll_type_
+               << ", event_position:" << event_position.ToString();
+    LOG(DEBUG) << "AutoscrollController::UpdateDragAndDrop PhysicalOffset:"
+               << offset.ToString();
+    LOG(DEBUG) << "AutoscrollController::UpdateDragAndDrop position:"
+               << drag_and_drop_autoscroll_reference_position_.ToString();
+#endif
     autoscroll_type_ = kAutoscrollForDragAndDrop;
     autoscroll_layout_object_ = scrollable;
     drag_and_drop_autoscroll_start_time_ = event_time;
@@ -220,8 +246,18 @@ void AutoscrollController::UpdateDragAndDrop(Node* drop_target_node,
                       WebFeature::kDragAndDropScrollStart);
     ScheduleMainThreadAnimation();
   } else if (autoscroll_layout_object_ != scrollable) {
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+    LOG(DEBUG)
+        << "AutoscrollController::UpdateDragAndDrop ======not scrollable======";
+#endif
     drag_and_drop_autoscroll_start_time_ = event_time;
     autoscroll_layout_object_ = scrollable;
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  } else {
+    LOG(DEBUG) << "AutoscrollController::UpdateDragAndDrop autoscroll_type_:"
+               << autoscroll_type_
+               << ", event_position:" << event_position.ToString();
+#endif
   }
 }
 
@@ -268,7 +304,10 @@ bool CanScrollDirection(LayoutBox* layout_box,
                            ? maximum_scroll_offset.x() > 0
                            : maximum_scroll_offset.y() > 0);
   }
-
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  LOG(DEBUG) << "AutoscrollController::CanScrollDirection can_scroll:"
+             << can_scroll;
+#endif
   return can_scroll;
 }
 
@@ -457,10 +496,19 @@ void AutoscrollController::StartMiddleClickAutoscroll(
 
 void AutoscrollController::Animate() {
   // Middle-click autoscroll isn't handled on the main thread.
-  if (MiddleClickAutoscrollInProgress())
+  if (MiddleClickAutoscrollInProgress()) {
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+    LOG(DEBUG) << "AutoscrollController::Animate "
+                  "MiddleClickAutoscrollInProgress false";
+#endif
     return;
+  }
 
   if (!autoscroll_layout_object_ || !autoscroll_layout_object_->GetFrame()) {
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+    // TODO(arkweb): frequent log, delete it.
+    // LOG(INFO) << "AutoscrollController::Animate StopAutoscroll";
+#endif
     StopAutoscroll();
     return;
   }
@@ -478,9 +526,20 @@ void AutoscrollController::Animate() {
     case kAutoscrollForDragAndDrop:
       ScheduleMainThreadAnimation();
       if ((base::TimeTicks::Now() - drag_and_drop_autoscroll_start_time_) >
-          kAutoscrollDelay)
+          kAutoscrollDelay) {
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+        LOG(DEBUG) << "AutoscrollController kAutoscrollForDragAndDrop "
+                      "Autoscroll start, position:"
+                   << drag_and_drop_autoscroll_reference_position_.ToString();
         autoscroll_layout_object_->Autoscroll(
             drag_and_drop_autoscroll_reference_position_);
+        LOG(DEBUG)
+            << "AutoscrollController kAutoscrollForDragAndDrop Autoscroll end";
+#else
+        autoscroll_layout_object_->Autoscroll(
+            drag_and_drop_autoscroll_reference_position_);
+#endif
+      }
       break;
     case kAutoscrollForSelection:
       if (!event_handler.MousePressed()) {

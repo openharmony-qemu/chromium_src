@@ -27,6 +27,11 @@
 #include "absl/base/internal/spinlock.h"
 #include "absl/base/internal/thread_identity.h"
 #include "absl/synchronization/internal/per_thread_sem.h"
+#include "arkweb/build/features/features.h"
+
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+#include "build/build_config.h"
+#endif
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
@@ -37,6 +42,9 @@ namespace synchronization_internal {
 ABSL_CONST_INIT static base_internal::SpinLock freelist_lock(
     base_internal::SCHEDULE_KERNEL_ONLY);
 ABSL_CONST_INIT static base_internal::ThreadIdentity* thread_identity_freelist;
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+static constexpr uintptr_t kInvalidPointer = 0x1000;
+#endif
 
 // A per-thread destructor for reclaiming associated ThreadIdentity objects.
 // Since we must preserve their storage, we cache them for re-use instead of
@@ -44,6 +52,11 @@ ABSL_CONST_INIT static base_internal::ThreadIdentity* thread_identity_freelist;
 static void ReclaimThreadIdentity(void* v) {
   base_internal::ThreadIdentity* identity =
       static_cast<base_internal::ThreadIdentity*>(v);
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+  if (reinterpret_cast<uintptr_t>(identity) < kInvalidPointer) {
+    return;
+  }
+#endif
 
   // all_locks might have been allocated by the Mutex implementation.
   // We free it here when we are notified that our thread is dying.

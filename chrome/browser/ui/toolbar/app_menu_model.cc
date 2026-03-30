@@ -260,7 +260,11 @@ std::u16string GetInstallPWALabel(const Browser* browser) {
     return std::u16string();
   }
   // Don't allow apps created from chrome-extension urls.
-  if (web_contents->GetLastCommittedURL().SchemeIs("chrome-extension")) {
+  if (web_contents->GetLastCommittedURL().SchemeIs("chrome-extension")
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      || web_contents->GetLastCommittedURL().SchemeIs("arkweb-extension")
+#endif
+) {
     return std::u16string();
   }
 
@@ -817,7 +821,8 @@ FindAndEditSubMenuModel::FindAndEditSubMenuModel(
   AddSeparator(ui::NORMAL_SEPARATOR);
   AddItemWithStringIdAndVectorIcon(this, IDC_CUT, IDS_CUT, kCutMenuIcon);
   AddItemWithStringIdAndVectorIcon(this, IDC_COPY, IDS_COPY, kCopyMenuIcon);
-  AddItemWithStringIdAndVectorIcon(this, IDC_PASTE, IDS_PASTE, kPasteMenuIcon);
+    AddItemWithStringIdAndVectorIcon(this, IDC_PASTE, IDS_PASTE,
+                                     kPasteMenuIcon);
   }
 }
 

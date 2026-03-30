@@ -13,6 +13,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/check_op.h"
 #include "base/command_line.h"
 #include "base/containers/adapters.h"
@@ -20,11 +21,13 @@
 #include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"
 #include "base/location.h"
+#include "base/logging.h"
 #include "base/memory/ptr_util.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
 #include "base/metrics/field_trial.h"
 #include "base/notreached.h"
+#include "base/ohos/sys_info_utils_ext.h"
 #include "base/strings/string_util.h"
 #include "base/system/sys_info.h"
 #include "base/task/single_thread_task_runner.h"
@@ -514,7 +517,12 @@ NoStatePrefetchManager::StartPrefetchingWithPreconnectFallback(
     const std::optional<url::Origin>& initiator_origin,
     const gfx::Rect& bounds,
     SessionStorageNamespace* session_storage_namespace,
-    base::WeakPtr<content::PreloadingAttempt> attempt) {
+    base::WeakPtr<content::PreloadingAttempt> attempt
+#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+    ,
+    const std::string& extra_headers
+#endif  // ARKWEB_NO_STATE_PREFETCH
+) {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
 
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
@@ -537,7 +545,11 @@ NoStatePrefetchManager::StartPrefetchingWithPreconnectFallback(
   }
 
   // Disallow prerendering on low end devices.
-  if (IsLowEndDevice()) {
+  if (IsLowEndDevice()
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+      && !base::ohos::IsWearableDevice()
+#endif
+) {
     SkipNoStatePrefetchContentsAndMaybePreconnect(url_arg, origin,
                                                   FINAL_STATUS_LOW_END_DEVICE);
     SetPreloadingEligibility(attempt.get(), PreloadingEligibility::kLowMemory);
@@ -660,7 +672,17 @@ NoStatePrefetchManager::StartPrefetchingWithPreconnectFallback(
   // available on Android. If not, kill an existing renderers so that we can
   // create a new one.
   if (content::RenderProcessHost::IsProcessLimitReached() &&
-      !content::RenderProcessHost::run_renderer_in_process()) {
+      !content::RenderProcessHost::run_renderer_in_process()
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+      && !base::ohos::IsWearableDevice()
+#endif
+    ) {
+    
+#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+    if (!MayHitOmniboxUrl(url, origin, attempt)) {
+      return nullptr;
+    }
+#else
     SkipNoStatePrefetchContentsAndMaybePreconnect(
         url, origin, FINAL_STATUS_TOO_MANY_PROCESSES);
     // Since it is possible that the NSP enabled group uses more processes, we
@@ -672,6 +694,7 @@ NoStatePrefetchManager::StartPrefetchingWithPreconnectFallback(
           ToPreloadingFailureReason(FINAL_STATUS_TOO_MANY_PROCESSES));
     }
     return nullptr;
+#endif
   }
 
   // Record the URL in the prefetch list, even when in full prerender mode, to
@@ -693,7 +716,14 @@ NoStatePrefetchManager::StartPrefetchingWithPreconnectFallback(
   }
 
   DCHECK(!no_state_prefetch_contents_ptr->prefetching_has_started());
-
+#if BUILDFLAG(IS_ARKWEB)
+  no_state_prefetch_contents_ptr->SetOhStartPrerenderingExtraHeaders(
+      extra_headers);
+#endif
+#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+   no_state_prefetch_contents_ptr->SetIgnoreCacheControlNoStore(
+      ignore_cache_control_no_store_);
+#endif
   std::unique_ptr<NoStatePrefetchHandle> no_state_prefetch_handle =
       base::WrapUnique(
           new NoStatePrefetchHandle(active_prefetches_.back().get()));
@@ -876,7 +906,11 @@ bool NoStatePrefetchManager::DoesRateLimitAllowPrefetch(Origin origin) const {
   if (!config_.rate_limit_enabled) {
     return true;
   }
+  #if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+  return elapsed_time >= base::Milliseconds(min_time_between_prefetches_);
+#else
   return elapsed_time >= base::Milliseconds(kMinTimeBetweenPrefetchesMs);
+#endif  // BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
 }
 
 void NoStatePrefetchManager::DeleteOldWebContents() {
@@ -1069,5 +1103,9 @@ void NoStatePrefetchManager::SetNoStatePrefetchContentsFactoryForTest(
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
   no_state_prefetch_contents_factory_.reset(no_state_prefetch_contents_factory);
 }
+
+#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+#include "arkweb/chromium_ext/components/no_state_prefetch/browser/ark_web_no_state_prefetch_manager_for_include.cc"
+#endif  // BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
 
 }  // namespace prerender

@@ -276,3 +276,7 @@ line9</div>
 }
 
 }  // namespace blink
+
+#if BUILDFLAG(ARKWEB_TEST)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/layout/hit_test_result_utils_unittest.cc"
+#endif

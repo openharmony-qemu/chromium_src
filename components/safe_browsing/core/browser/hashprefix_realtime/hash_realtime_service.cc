@@ -4,6 +4,7 @@
 
 #include "components/safe_browsing/core/browser/hashprefix_realtime/hash_realtime_service.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/base64url.h"
 #include "base/containers/contains.h"
 #include "base/metrics/histogram_functions.h"
@@ -306,6 +307,13 @@ void HashRealTimeService::StartLookupInternal(
     return;
   }
 
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    lookup_completer->CompleteLookup(/*is_lookup_successful=*/false,
+                                     /*sb_threat_type=*/std::nullopt,
+                                     OperationOutcome::kHttpError);
+    return;
+#endif
+
   // If the service is in backoff mode, don't send a request.
   bool in_backoff = backoff_operator_->IsInBackoffMode();
   base::UmaHistogramBoolean("SafeBrowsing.HPRT.BackoffState", in_backoff);
@@ -573,10 +581,15 @@ std::string HashRealTimeService::GetResourceUrl(
                         &request_base64);
 
   auto resource_request = std::make_unique<network::ResourceRequest>();
-  std::string url = base::StringPrintf(
+  std::string url =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+      "https://x.x.x";
+#else
+      base::StringPrintf(
       "https://safebrowsing.googleapis.com/v5/hashes:search"
       "?$req=%s&$ct=application/x-protobuf",
       request_base64.c_str());
+#endif
   auto api_key = google_apis::GetAPIKey();
   if (!api_key.empty()) {
     base::StringAppendF(&url, "&key=%s",

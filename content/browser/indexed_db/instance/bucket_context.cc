@@ -612,7 +612,7 @@ void BucketContext::Open(
   } else {
     database_ptr = it->second.get();
   }
-
+   
   database_ptr->ScheduleOpenConnection(std::move(connection));
 }
 

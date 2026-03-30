@@ -22,6 +22,7 @@
 #include "pdf/buildflags.h"
 #include "printing/buildflags/buildflags.h"
 #include "rlz/buildflags/buildflags.h"
+#include "arkweb/build/features/features.h"
 
 namespace prefs {
 
@@ -2134,13 +2135,13 @@ inline constexpr char kPinInfoBarTimesShown[] =
     "browser.pin_infobar_times_shown";
 #endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC)
 
-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
 
 // How many times the session restore infobar has been shown.
 inline constexpr char kSessionRestoreInfoBarTimesShown[] =
     "browser.session_restore_infobar_times_shown";
 
-#endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
+#endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
 
 // A collection of position, size, and other data relating to the browser
 // window to restore on startup.
@@ -2172,6 +2173,15 @@ inline constexpr char kTaskManagerEndProcessEnabled[] =
 // restore on startup.
 inline constexpr char kAppWindowPlacement[] = "browser.app_window_placement";
 
+#if BUILDFLAG(IS_OHOS)
+inline const char kPromptForDownloadOhos[] =
+    "download.prompt_for_download_ohos";
+inline const char kDownloadDefaultDirectoryOhos[] =
+    "download.default_directory_ohos";
+inline const char kDownloadDefaultDirectoryOhosConfirmed[] =
+    "download.default_directory_ohos_confirmed";
+#endif
+
 // String which specifies where to download files to by default.
 inline constexpr char kDownloadDefaultDirectory[] =
     "download.default_directory";
@@ -2181,7 +2191,7 @@ inline constexpr char kDownloadDefaultDirectory[] =
 inline constexpr char kDownloadDirUpgraded[] = "download.directory_upgrade";
 
 #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
-    BUILDFLAG(IS_MAC)
+    BUILDFLAG(IS_MAC) || BUILDFLAG(IS_OHOS)
 inline constexpr char kOpenPdfDownloadInSystemReader[] =
     "download.open_pdf_in_system_reader";
 #endif
@@ -4042,7 +4052,8 @@ inline constexpr char kLensDesktopNTPSearchEnabled[] =
     "policy.lens_desktop_ntp_search_enabled";
 #endif
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || \
+    BUILDFLAG(ARKWEB_ASAN) || BUILDFLAG(ARKWEB_TEST)
 // A dict mapping the edition name with the major version it was shown.
 inline constexpr char kWhatsNewEditionUsed[] = "browser.whats_new.edition_used";
 // A list containing the features of each module in order of when they

@@ -27,7 +27,11 @@ namespace {
 bool IsWebUIScheme(std::string_view scheme) {
   return scheme == content::kChromeUIScheme ||
          scheme == content::kChromeUIUntrustedScheme ||
-         scheme == content::kChromeDevToolsScheme;
+         scheme == content::kChromeDevToolsScheme
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+         || scheme == content::kArkWebUIScheme
+#endif
+      ;
 }
 
 }  // namespace

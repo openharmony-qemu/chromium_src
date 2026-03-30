@@ -9,7 +9,8 @@
 #include <set>
 #include <utility>
 #include <vector>
-
+#include "base/command_line.h"
+#include "arkweb/build/features/features.h"
 #include "base/base64url.h"
 #include "base/compiler_specific.h"
 #include "base/feature_list.h"
@@ -24,6 +25,9 @@
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/string_util.h"
 #include "base/time/time.h"
+#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
+#include "base/trace_event/trace_event.h"
+#endif
 #include "base/timer/timer.h"
 #include "base/trace_event/trace_event.h"
 #include "base/tracing/protos/chrome_track_event.pbzero.h"
@@ -92,6 +96,15 @@
 #include "net/reporting/reporting_header_parser.h"
 #include "net/reporting/reporting_service.h"
 #endif  // BUILDFLAG(ENABLE_REPORTING)
+
+#if BUILDFLAG(ENABLE_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+#include "arkweb/chromium_ext/net/http/arkweb_http_network_transaction_ext.h"
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#endif
 
 namespace net {
 
@@ -330,6 +343,7 @@ HttpNetworkTransaction::HttpNetworkTransaction(RequestPriority priority,
       priority_(priority) {}
 
 HttpNetworkTransaction::~HttpNetworkTransaction() {
+
 #if BUILDFLAG(ENABLE_REPORTING)
   // If no error or success report has been generated yet at this point, then
   // this network transaction was prematurely cancelled.
@@ -378,6 +392,10 @@ int HttpNetworkTransaction::Start(const HttpRequestInfo* request_info,
   if (request_info->load_flags & LOAD_ONLY_FROM_CACHE) {
     return ERR_CACHE_MISS;
   }
+
+#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+  AsArkWebHttpNetworkTransactionExt()->StartRecording();
+#endif
 
   DCHECK(request_info->traffic_annotation.is_valid());
   DCHECK(request_info->IsConsistent());
@@ -601,6 +619,9 @@ void HttpNetworkTransaction::DidDrainBodyForAuthRestart(bool keep_alive) {
       next_state_ = STATE_CONNECTED_CALLBACK;
     }
     stream_ = std::move(new_stream);
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+    stream_created_ = true;
+#endif
   }
 
   // Reset the other member variables.
@@ -765,6 +786,11 @@ bool HttpNetworkTransaction::GetRemoteEndpoint(IPEndPoint* endpoint) const {
 void HttpNetworkTransaction::PopulateNetErrorDetails(
     NetErrorDetails* details) const {
   *details = net_error_details_;
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  if (stream_ || next_state_ != STATE_NONE || stream_created_) {
+    details->stream_created = true;
+  }
+#endif
   if (stream_)
     stream_->PopulateNetErrorDetails(details);
 }
@@ -872,6 +898,9 @@ void HttpNetworkTransaction::OnStreamReady(const ProxyInfo& used_proxy_info,
       stream_request_->dns_resolution_end_time_override();
 
   SetProxyInfoInResponse(used_proxy_info, &response_);
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  stream_created_ = true;
+#endif
   OnIOComplete(OK);
 }
 
@@ -905,7 +934,12 @@ void HttpNetworkTransaction::OnStreamFailed(
 }
 
 void HttpNetworkTransaction::OnCertificateError(int result,
-                                                const SSLInfo& ssl_info) {
+                                                const SSLInfo& ssl_info
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+                                                ,
+                                                bool used_fallback_proxy
+#endif
+) {
   DCHECK_EQ(STATE_CREATE_STREAM_COMPLETE, next_state_);
   DCHECK_NE(OK, result);
   DCHECK(stream_request_.get());
@@ -915,6 +949,15 @@ void HttpNetworkTransaction::OnCertificateError(int result,
   if (ssl_info.cert) {
     observed_bad_certs_.emplace_back(ssl_info.cert, ssl_info.cert_status);
   }
+
+#if BUILDFLAG(IS_ARKWEB)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableNwebEx)) {
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+    response_.used_fallback_proxy = used_fallback_proxy;
+#endif
+  }
+#endif
 
   // TODO(mbelshe):  For now, we're going to pass the error through, and that
   // will close the stream_request in all cases.  This means that we're always
@@ -1010,6 +1053,24 @@ int HttpNetworkTransaction::DoLoop(int result) {
       case STATE_CREATE_STREAM_COMPLETE:
         rv = DoCreateStreamComplete(rv);
         break;
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+      case STATE_CREATE_FALLBACK_STREAM_WITH_SECURE_DNS_ONLY:
+        rv = AsArkWebHttpNetworkTransactionExt()->DoCreateFallbackStreamWithSecureDnsOnly();
+        break;
+      case STATE_CREATE_FALLBACK_STREAM_WITH_SECURE_DNS_ONLY_COMPLETE:
+        rv = AsArkWebHttpNetworkTransactionExt()->DoCreateFallbackStreamWithSecureDnsOnlyComplete(rv);
+        break;
+#endif
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+      case STATE_CREATE_FALLBACK_STREAM_WITH_FALLBACK_PROXY:
+        rv = AsArkWebHttpNetworkTransactionExt()
+                 ->DoCreateStreamWithFallbackProxy();
+        break;
+      case STATE_CREATE_FALLBACK_STREAM_WITH_FALLBACK_PROXY_COMPLETE:
+        rv = AsArkWebHttpNetworkTransactionExt()
+                 ->DoCreateStreamWithFallbackProxyComplete(rv);
+        break;
+#endif
       case STATE_CONNECTED_CALLBACK:
         rv = DoConnectedCallback();
         break;
@@ -1101,6 +1162,11 @@ int HttpNetworkTransaction::DoLoop(int result) {
 }
 
 int HttpNetworkTransaction::DoCreateStream() {
+#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
+  if (request_) {
+    TRACE_EVENT1("net", "HttpNetworkTransaction::DoCreateStream", "url", request_->url.spec());
+  }
+#endif
   TRACE_EVENT("net", "HttpNetworkTransaction::CreateStream",
               NetLogWithSourceToFlow(net_log_), "retry_attempts",
               retry_attempts_, "num_restarts", num_restarts_);
@@ -1142,6 +1208,11 @@ int HttpNetworkTransaction::DoCreateStream() {
 }
 
 int HttpNetworkTransaction::DoCreateStreamComplete(int result) {
+#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
+  if (request_) {
+    TRACE_EVENT1("net", "HttpNetworkTransaction::DoCreateStreamComplete", "url", request_->url.spec());
+  }
+#endif
   CHECK(stream_request_);
   TRACE_EVENT("net", "HttpNetworkTransaction::CreateStreamComplete",
               NetLogWithSourceToFlow(net_log_),
@@ -1507,6 +1578,10 @@ int HttpNetworkTransaction::DoSendRequest() {
   TRACE_EVENT("net", "HttpNetworkTransaction::SendRequest",
               NetLogWithSourceToFlow(net_log_));
   send_start_time_ = base::TimeTicks::Now();
+#if BUILDFLAG(ARKWEB_NETWORK_DFX)
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
+               "requestStart", send_start_time_);
+#endif
   next_state_ = STATE_SEND_REQUEST_COMPLETE;
 
   if (base::FeatureList::IsEnabled(kLogDuplicateRequests) &&
@@ -1519,6 +1594,11 @@ int HttpNetworkTransaction::DoSendRequest() {
 }
 
 int HttpNetworkTransaction::DoSendRequestComplete(int result) {
+#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
+  if (request_) {
+    TRACE_EVENT1("net", "HttpNetworkTransaction::DoSendRequestComplete", "url", request_->url.spec());
+  }
+#endif
   TRACE_EVENT("net", "HttpNetworkTransaction::SendRequestComplete",
               NetLogWithSourceToFlow(net_log_), "result", result);
   send_end_time_ = base::TimeTicks::Now();
@@ -1549,6 +1629,14 @@ int HttpNetworkTransaction::DoReadHeadersComplete(int result) {
   // We can get a ERR_SSL_CLIENT_AUTH_CERT_NEEDED here due to SSL renegotiation.
   // Server certificate errors are impossible. Rather than reverify the new
   // server certificate, BoringSSL forbids server certificates from changing.
+#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
+  if (request_) {
+    TRACE_EVENT1("net", "HttpNetworkTransaction::DoReadHeadersComplete", "url", request_->url.spec());
+  }
+#endif
+#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+  AsArkWebHttpNetworkTransactionExt()->StopRecording();
+#endif
   DCHECK(!IsCertificateError(result));
   if (result == ERR_SSL_CLIENT_AUTH_CERT_NEEDED) {
     DCHECK(stream_.get());
@@ -1750,6 +1838,11 @@ int HttpNetworkTransaction::DoReadBody() {
   DCHECK_GT(read_buf_len_, 0);
   DCHECK(stream_ != nullptr);
 
+#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+  // This only cost several ns.
+  AsArkWebHttpNetworkTransactionExt()->StartRecording();
+#endif
+
   next_state_ = STATE_READ_BODY_COMPLETE;
   return stream_->ReadResponseBody(
       read_buf_.get(), read_buf_len_, io_callback_);
@@ -1757,6 +1850,13 @@ int HttpNetworkTransaction::DoReadBody() {
 
 int HttpNetworkTransaction::DoReadBodyComplete(int result) {
   // We are done with the Read call.
+#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
+  TRACE_EVENT1("net", "HttpNetworkTransaction::DoReadBodyComplete", "url", url_.spec());
+#endif
+#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+  // This only cost several ns.
+  AsArkWebHttpNetworkTransactionExt()->StopRecording();
+#endif
   bool done = false;
   if (result <= 0) {
     DCHECK_NE(ERR_IO_PENDING, result);
@@ -2578,6 +2678,10 @@ void HttpNetworkTransaction::SetProxyInfoInResponse(
   } else {
     response_info->proxy_chain = proxy_info.proxy_chain();
   }
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  response_info->used_fallback_proxy = proxy_info.used_fallback_proxy();
+#endif
 }
 
 }  // namespace net

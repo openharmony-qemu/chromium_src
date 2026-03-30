@@ -22,6 +22,12 @@ class MockResourceFetchContext : public ResourceFetchContext {
   MOCK_METHOD1(CreateUrlLoader,
                std::unique_ptr<WebAssociatedURLLoader>(
                    const WebAssociatedURLLoaderOptions&));
+
+#if BUILDFLAG(ARKWEB_TEST) && BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  MOCK_METHOD1(CreateVideoUrlLoader,
+                std::unique_ptr<WebAssociatedURLLoader>(
+                    const WebAssociatedURLLoaderOptions&));
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 };
 
 }  // namespace blink

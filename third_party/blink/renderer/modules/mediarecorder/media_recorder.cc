@@ -8,6 +8,9 @@
 #include <limits>
 
 #include "base/time/time.h"
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+#include "ohos_nweb/src/sysevent/event_reporter.h"
+#endif
 #include "third_party/blink/public/platform/platform.h"
 #include "third_party/blink/public/platform/task_type.h"
 #include "third_party/blink/renderer/bindings/core/v8/dictionary.h"
@@ -229,6 +232,18 @@ MediaRecorder::MediaRecorder(ExecutionContext* context,
                                      content_type.GetType(),
                                      content_type.Parameter("codecs"),
                                      GetBitrateModeFromOptions(options))) {
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+    std::string mime_info = mime_type_.Utf8();
+    size_t codecs_pos = mime_info.find("codecs=");
+
+    if (codecs_pos != std::string::npos) {
+      size_t value_start = codecs_pos + 7;
+      std::string codec_value = mime_info.substr(value_start);
+      if (codec_value != "h264") {
+        ReportVideoEncodeFormat(codec_value);
+      }
+    }
+#endif
     exception_state.ThrowDOMException(
         DOMExceptionCode::kNotSupportedError,
         StrCat({"Failed to initialize native MediaRecorder the type provided (",

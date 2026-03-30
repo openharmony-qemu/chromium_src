@@ -8,6 +8,10 @@
 #include "extensions/browser/extension_function.h"
 #include "extensions/browser/extension_function_histogram_value.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "chrome/common/extensions/api/side_panel.h"
+#endif
+
 namespace extensions {
 
 class SidePanelService;
@@ -22,6 +26,10 @@ class SidePanelApiFunction : public ExtensionFunction {
   SidePanelService* GetService();
 };
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "cef/ohos_cef_ext/libcef/browser/extensions/api/side_panel/side_panel_api_for_include_file.cc"
+#endif // ARKWEB_ARKWEB_EXTENSIONS
+
 class SidePanelGetOptionsFunction : public SidePanelApiFunction {
  public:
   DECLARE_EXTENSION_FUNCTION("sidePanel.getOptions", SIDEPANEL_GETOPTIONS)
@@ -35,6 +43,7 @@ class SidePanelGetOptionsFunction : public SidePanelApiFunction {
   ResponseAction RunFunction() override;
 };
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 class SidePanelSetOptionsFunction : public SidePanelApiFunction {
  public:
   DECLARE_EXTENSION_FUNCTION("sidePanel.setOptions", SIDEPANEL_SETOPTIONS)
@@ -47,6 +56,7 @@ class SidePanelSetOptionsFunction : public SidePanelApiFunction {
   ~SidePanelSetOptionsFunction() override = default;
   ResponseAction RunFunction() override;
 };
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 
 class SidePanelSetPanelBehaviorFunction : public SidePanelApiFunction {
  public:
@@ -78,6 +88,7 @@ class SidePanelGetPanelBehaviorFunction : public SidePanelApiFunction {
   ResponseAction RunFunction() override;
 };
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 class SidePanelOpenFunction : public SidePanelApiFunction {
  public:
   DECLARE_EXTENSION_FUNCTION("sidePanel.open", SIDEPANEL_OPEN)
@@ -89,6 +100,7 @@ class SidePanelOpenFunction : public SidePanelApiFunction {
   ~SidePanelOpenFunction() override = default;
   ResponseAction RunFunction() override;
 };
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 
 class SidePanelGetLayoutFunction : public SidePanelApiFunction {
  public:

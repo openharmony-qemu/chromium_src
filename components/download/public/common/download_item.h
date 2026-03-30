@@ -24,6 +24,10 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "base/functional/callback_forward.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/observer_list_types.h"
@@ -578,6 +582,13 @@ class COMPONENTS_DOWNLOAD_EXPORT DownloadItem : public base::SupportsUserData {
   // Debug/testing -------------------------------------------------------------
   virtual std::string DebugString(bool verbose) const = 0;
   virtual void SimulateErrorForTesting(DownloadInterruptReason reason) = 0;
+
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+  virtual void ReadDownloadData(
+      const std::string& guid,
+      const int32_t read_size,
+      base::OnceCallback<void(const std::vector<uint8_t>&)> callback) = 0;
+#endif  //  ARKWEB_EXT_DOWNLOAD
 };
 
 }  // namespace download

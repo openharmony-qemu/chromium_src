@@ -235,6 +235,10 @@ int TransportConnectSubJob::DoEndpointLockComplete() {
 
   transport_socket_->ApplySocketTag(parent_job_->socket_tag());
 
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  transport_socket_->SetFromPreload(IsFromPreload());
+#endif
+
   // This use of base::Unretained() is safe because transport_socket_ is
   // destroyed in the destructor.
   return transport_socket_->Connect(base::BindOnce(

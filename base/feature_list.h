@@ -25,6 +25,7 @@
 #include "base/memory/raw_ptr.h"
 #include "base/synchronization/lock.h"
 #include "build/build_config.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(ENABLE_BANNED_BASE_FEATURE_PREFIX)
 #include "base/logging.h"
@@ -36,6 +37,9 @@ class FieldTrial;
 class FieldTrialList;
 class PersistentMemoryAllocator;
 class FeatureVisitor;
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+class FeatureListUtils;
+#endif
 
 // Specifies whether a given feature is enabled or disabled by default.
 // NOTE: The actual runtime state may be different, due to a field trial or a
@@ -335,6 +339,12 @@ class BASE_EXPORT FeatureList {
   FeatureList(const FeatureList&) = delete;
   FeatureList& operator=(const FeatureList&) = delete;
   ~FeatureList();
+
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  friend class FeatureListUtils;
+  std::shared_ptr<FeatureListUtils> feature_list_utils_ = nullptr;
+  std::shared_ptr<FeatureListUtils> GetUtils() { return feature_list_utils_; }
+#endif
 
   // Used by common test fixture classes to prevent abuse of ScopedFeatureList
   // after multiple threads have started.
@@ -663,6 +673,18 @@ class BASE_EXPORT FeatureList {
                            StoreAndRetrieveFeaturesFromSharedMemory);
   FRIEND_TEST_ALL_PREFIXES(FeatureListTest,
                            StoreAndRetrieveAssociatedFeaturesFromSharedMemory);
+
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  FRIEND_TEST_ALL_PREFIXES(FeatureListTest, ModifyFeaturesToAllocator);
+  FRIEND_TEST_ALL_PREFIXES(FeatureListTest, AddFeaturesToAllocator);
+  FRIEND_TEST_ALL_PREFIXES(FeatureListTest, AddFeatureToField);
+  FRIEND_TEST_ALL_PREFIXES(FeatureListTest, SetScrollbarEnableTest002);
+  FRIEND_TEST_ALL_PREFIXES(FeatureListTest, SetScrollbarEnableTest003);
+  FRIEND_TEST_ALL_PREFIXES(FeatureListTest, IsFeatureEnabled001);
+  FRIEND_TEST_ALL_PREFIXES(FeatureListTest, IsFeatureEnabled002);
+  FRIEND_TEST_ALL_PREFIXES(FeatureListTest, IsFeatureEnabled003);
+#endif
+
   // Allow Accessor to access GetOverrideStateByFeatureName().
   friend class Accessor;
 

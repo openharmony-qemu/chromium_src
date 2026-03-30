@@ -122,6 +122,12 @@ class CORE_EXPORT TextPaintTimingDetector final
   void ReportLargestIgnoredText();
   void Trace(Visitor*) const;
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  void SetForBlankless();
+  uint32_t GetFrameIndex() const;
+  void SetFrameIndex(uint32_t frame_index);
+#endif
+
  private:
   friend class LargestContentfulPaintCalculatorTest;
 
@@ -167,6 +173,9 @@ class CORE_EXPORT TextPaintTimingDetector final
   // Used to decide which frame a record belongs to, monotonically increasing.
   uint32_t frame_index_ = 1;
   bool added_entry_in_latest_frame_ = false;
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  bool is_for_blankless_only_ = false;
+#endif
 };
 
 }  // namespace blink

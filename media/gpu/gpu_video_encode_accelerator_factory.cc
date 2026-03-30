@@ -11,7 +11,7 @@
 
 #include <utility>
 #include <vector>
-
+#include "base/logging.h"
 #include "base/command_line.h"
 #include "base/feature_list.h"
 #include "base/functional/bind.h"
@@ -49,6 +49,11 @@
 #endif
 #if BUILDFLAG(IS_FUCHSIA)
 #include "media/fuchsia/video/fuchsia_video_encode_accelerator.h"
+#endif
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "media/base/ohos/ohos_media_codec_util.h"
+#include "media/gpu/ohos/ohos_video_encode_accelerator.h"
 #endif
 
 namespace media {
@@ -141,6 +146,12 @@ std::unique_ptr<VideoEncodeAccelerator> CreateFuchsiaVEA() {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+std::unique_ptr<VideoEncodeAccelerator> CreateOHOSVEA() {
+  return base::WrapUnique<VideoEncodeAccelerator>(
+      new OHOSVideoEncodeAccelerator());
+}
+#endif
 using VEAFactoryFunction =
     base::RepeatingCallback<std::unique_ptr<VideoEncodeAccelerator>()>;
 
@@ -199,6 +210,9 @@ std::vector<VEAFactoryFunction> GetVEAFactoryFunctions(
   if (base::FeatureList::IsEnabled(kFuchsiaMediacodecVideoEncoder)) {
     vea_factory_functions->push_back(base::BindRepeating(&CreateFuchsiaVEA));
   }
+#endif
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+  vea_factory_functions->push_back(base::BindRepeating(&CreateOHOSVEA));
 #endif
   return *vea_factory_functions;
 }

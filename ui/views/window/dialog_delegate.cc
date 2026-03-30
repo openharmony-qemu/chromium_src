@@ -104,8 +104,7 @@ Widget* DialogDelegate::CreateDialogWidget(WidgetDelegate* delegate,
                                            gfx::AcceleratedWidget parent_widget) {
   views::Widget* widget = new DialogWidget;
   views::Widget::InitParams params =
-      GetDialogWidgetInitParams(delegate, context, parent, gfx::Rect(),
-                                parent_widget);
+      GetDialogWidgetInitParams(delegate, context, parent, gfx::Rect());
   widget->Init(std::move(params));
   return widget;
 }

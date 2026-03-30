@@ -199,6 +199,31 @@ enum ButtonTitleType {
   SPAN = 7                         // e.g. <span name='btn'>
 };
 
+[EnableIf=arkweb_password_autofill]
+enum OhosPasswordFormAutofillState {
+    kNotRequested,
+    kHasBeenRequested,
+    kTextChanged,
+};
+ 
+[EnableIf=arkweb_password_autofill]
+enum OhosInputElementType {
+    kInvalid,
+    kUsernameType,
+    kPasswordType,
+};
+ 
+// autofill::InputFillRequestData
+struct InputFillRequestData {
+    FieldRendererId field_renderer_id;
+    bool is_focused;
+    OhosInputElementType type;
+    gfx.mojom.RectF bounds;
+    mojo_base.mojom.String16 value;
+    mojo_base.mojom.String16 placeholder;
+    string autocomplete_attr;
+};
+
 // Describes various criteria (e.g. there are empty fields in the form) that
 // affect whether a form is ready for submission. Don't change IDs as they are
 // used for metrics.
@@ -544,6 +569,10 @@ enum FieldActionType {
   kReplaceAll,        // Replace the field's current value.
   kReplaceSelection,  // Replace only the currently selected text.
   kSelectAll,         // Selects all the text within this field.
+  [EnableIf=arkweb_password_autofill]
+  kNotSmartReplaceSelection,  // For PASTER_REQUEST_TRIGGER_TYPE
+  [EnableIf=arkweb_password_autofill]
+  kManualReplaceSelection,    // For MANUAL_REQUEST_TRIGGER_TYPE
 };
 
 // Describes which action triggered Autofill suggestions. This has implications

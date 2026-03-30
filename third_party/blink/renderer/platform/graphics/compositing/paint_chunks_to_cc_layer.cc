@@ -1522,7 +1522,12 @@ LayerPropertiesUpdater::PaintedSelectionBoundToLayerSelectionBound(
   // This is similar to ComputeViewportSelectionBound(). Use the end point
   // moved 1 pixel towards the start point and expanded by 1 as the sample
   // rect to check visibility.
+#if BUILDFLAG(ARKWEB_MENU)
+  gfx::Rect sample(gfx::ScaleToCeiledPoint(bound.edge_start + bound.edge_end.OffsetFromOrigin(), 0.5),
+                   gfx::Size());
+#else
   gfx::Rect sample(bound.edge_end, gfx::Size());
+#endif
   if (RuntimeEnabledFeatures::SelectionHandleWithBottomClippedEnabled()) {
     auto offset = [](int start, int end) {
       return start < end ? -1 : start > end ? 1 : 0;

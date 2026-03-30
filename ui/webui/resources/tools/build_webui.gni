@@ -25,6 +25,12 @@ if (use_blink) {
   import("//chrome/common/features.gni")
 }
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+if (arkweb_arkweb_extensions) {
+  import("//arkweb/chromium_ext/ui/webui/resources/tools/arkweb_replace_scheme.gni")
+}
+#endif
+
 if (is_chromeos) {
   # Folders hosting Ash-only WebUIs. Should be kept in sync with
   # //tools/typescript/path_utils.py. This is used later in this file to choose
@@ -48,6 +54,14 @@ template("build_webui") {
   not_needed([ "target_name" ])
 
   forward_variables_from(invoker, [ "grd_prefix" ])
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (arkweb_arkweb_extensions) {
+    if (invoker.grd_prefix == "extensions") {
+      scheme_replaced_dir = "${target_gen_dir}/scheme_replaced"
+    }
+  }
+#endif
 
   preprocess_dir = "${target_gen_dir}/preprocessed"
 
@@ -188,6 +202,29 @@ template("build_webui") {
   #   9) generate_grd()
   #  10) grit()
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  #  0) extra preprocess replace_scheme() for arkweb extension webUI:
+  #     chrome:// -> arkweb://.
+  if (arkweb_arkweb_extensions) {
+    if (invoker.grd_prefix == "extensions") {
+      arkweb_replace_scheme("replace_scheme_in_resources_files") {
+        visibility = [
+          ":preprocess_html_css_files",
+          ":preprocess_static_files",
+          ":preprocess_ts_files",
+        ]
+
+        # defines = preprocessor_defines
+
+        in_folder = "."
+        out_folder = scheme_replaced_dir
+        in_files = invoker.static_files + invoker.ts_files +
+                   invoker.css_files + invoker.icons_html_files
+      }
+    }
+  }
+#endif
+
   if (defined(invoker.static_files)) {
     preprocess_if_expr("preprocess_static_files") {
       visibility = [ ":$generate_grd_target_name" ]
@@ -195,9 +232,24 @@ template("build_webui") {
       defines = preprocessor_defines
 
       in_folder = "."
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      if (arkweb_arkweb_extensions) {
+        if (invoker.grd_prefix == "extensions") {
+          in_folder = scheme_replaced_dir
+        }
+      }
+#endif
       out_folder = preprocess_dir
       in_files = static_preprocessed_files
       out_manifest = "${target_gen_dir}/preprocess_static_files_manifest.json"
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      if (arkweb_arkweb_extensions) {
+        if (invoker.grd_prefix == "extensions") {
+          deps = [ ":replace_scheme_in_resources_files" ]
+        }
+      }
+#endif
     }
   }
 
@@ -215,12 +267,27 @@ template("build_webui") {
       defines = preprocessor_defines
 
       in_folder = "."
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      if (arkweb_arkweb_extensions) {
+        if (invoker.grd_prefix == "extensions") {
+          in_folder = scheme_replaced_dir
+        }
+      }
+#endif
       out_folder = preprocess_dir
       if (enable_source_maps) {
         out_folder = "${preprocess_dir}/_tmp"
         enable_removal_comments = enable_source_maps
       }
       in_files = all_ts_files
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      if (arkweb_arkweb_extensions) {
+        if (invoker.grd_prefix == "extensions") {
+          deps = [ ":replace_scheme_in_resources_files" ]
+        }
+      }
+#endif
     }
   }
 
@@ -261,6 +328,13 @@ template("build_webui") {
       defines = preprocessor_defines
 
       in_folder = "."
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      if (arkweb_arkweb_extensions) {
+        if (invoker.grd_prefix == "extensions") {
+          in_folder = scheme_replaced_dir
+        }
+      }
+#endif
       out_folder = preprocess_dir
 
       in_files = []
@@ -271,6 +345,14 @@ template("build_webui") {
       if (defined(invoker.css_files)) {
         in_files += invoker.css_files
       }
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      if (arkweb_arkweb_extensions) {
+        if (invoker.grd_prefix == "extensions") {
+          deps = [ ":replace_scheme_in_resources_files" ]
+        }
+      }
+#endif
     }
   }
 

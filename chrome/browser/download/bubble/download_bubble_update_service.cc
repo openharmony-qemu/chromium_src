@@ -755,6 +755,12 @@ void DownloadBubbleUpdateService::OnDownloadCreated(
   if (IsShutDown()) {
     return;
   }
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+  if (!download_item_notifier_ || !original_download_item_notifier_) {
+    LOG(INFO) << "download_item_notifier_ or original_download_item_notifier_ is null";
+    return;
+  }
+#endif
   CHECK(download_item_notifier_ || original_download_item_notifier_);
   if (!download_item_notifier_) {
     return;

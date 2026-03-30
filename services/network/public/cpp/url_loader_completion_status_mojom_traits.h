@@ -7,6 +7,7 @@
 
 #include <optional>
 
+#include "arkweb/build/features/features.h"
 #include "base/component_export.h"
 #include "base/time/time.h"
 #include "mojo/public/cpp/bindings/struct_traits.h"
@@ -53,6 +54,12 @@ class COMPONENT_EXPORT(NETWORK_CPP_BASE)
       const network::URLLoaderCompletionStatus& status) {
     return status.exists_in_cache;
   }
+
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+  static bool abort_due_to_cef_browser_destroyed(const network::URLLoaderCompletionStatus& status) {
+    return status.abort_due_to_cef_browser_destroyed;
+  }
+#endif  //  ARKWEB_EX_DOWNLOAD
 
   static const base::TimeTicks& completion_time(
       const network::URLLoaderCompletionStatus& status) {
@@ -108,6 +115,18 @@ class COMPONENT_EXPORT(NETWORK_CPP_BASE)
       const network::URLLoaderCompletionStatus& status) {
     return status.should_collapse_initiator;
   }
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  static bool used_fallback_proxy(
+      const network::URLLoaderCompletionStatus& status) {
+    return status.used_fallback_proxy;
+  }
+
+  static bool needs_reload_with_fallback_proxy(
+      const network::URLLoaderCompletionStatus& status) {
+    return status.needs_reload_with_fallback_proxy;
+  }
+#endif
 
   static bool Read(network::mojom::URLLoaderCompletionStatusDataView data,
                    network::URLLoaderCompletionStatus* out);

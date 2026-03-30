@@ -241,8 +241,12 @@ void PluginInfoHostImpl::Context::DecidePluginStatus(
   // If an app has explicitly made internal resources available by listing them
   // in |accessible_resources| in the manifest, then allow them to be loaded by
   // plugins inside a guest-view.
-  if (url.SchemeIs(extensions::kExtensionScheme) && !is_managed &&
-      plugin_setting == CONTENT_SETTING_BLOCK &&
+  if ((url.SchemeIs(extensions::kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+       || url.SchemeIs(extensions::kArkwebExtensionScheme)
+#endif
+           ) &&
+      !is_managed && plugin_setting == CONTENT_SETTING_BLOCK &&
       IsPluginLoadingAccessibleResourceInWebView(extension_registry_,
                                                  render_process_id_, url)) {
     plugin_setting = CONTENT_SETTING_ALLOW;

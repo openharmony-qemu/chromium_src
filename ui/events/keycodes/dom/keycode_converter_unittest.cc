@@ -30,6 +30,7 @@ constexpr auto expected_mapped_key_count = std::to_array<size_t>({
     225,  // xkb
     157,  // windows
     119,  // mac
+    185,  // ohos
 });
 
 const size_t kNativeColumns = std::size(expected_mapped_key_count);
@@ -43,7 +44,9 @@ struct KeycodeConverterData {
 
 #define DOM_CODE(usb, evdev, xkb, win, mac, code, id) \
   {                                                   \
-    usb, code, #id, { evdev, xkb, win, mac }          \
+    usb, code, #id, {                                       \
+      evdev, xkb, win, mac                                  \
+    }                                                       \
   }
 #define DOM_CODE_DECLARATION \
   const KeycodeConverterData kKeycodeConverterData[] =

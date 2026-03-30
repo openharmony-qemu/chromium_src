@@ -8,6 +8,7 @@
 #include <memory>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/memory/weak_ptr.h"
@@ -27,9 +28,11 @@ class FeatureInfo;
 }  // namespace gpu
 
 namespace viz {
+class SkiaOutputDeviceGLUtils;
 
 class SkiaOutputDeviceGL final : public SkiaOutputDevice {
  public:
+ friend class SkiaOutputDeviceGLUtils;
   SkiaOutputDeviceGL(
       gpu::SharedContextState* context_state,
       scoped_refptr<gl::GLSurface> gl_surface,
@@ -47,9 +50,32 @@ class SkiaOutputDeviceGL final : public SkiaOutputDevice {
   void Present(const std::optional<gfx::Rect>& update_rect,
                BufferPresentedCallback feedback,
                OutputSurfaceFrame frame) override;
+  void DiscardBackbuffer() override;
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+  void SetIfNeedCleanBuffers(bool need_clean_buffers) override;
+#endif
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+  void CleanBufferAfterSwapBuffer(bool delay_clean) override;
+#endif
   SkSurface* BeginPaint(
       std::vector<GrBackendSemaphore>* end_semaphores) override;
   void EndPaint() override;
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  void SetNativeInnerWeb(bool isInnerWeb) override;
+#endif
+
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  void SetBypassVsyncCondition(int32_t condition) override;
+#endif
+
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+  gfx::Rect GetLastBufferDamageRect() override;
+  int GetLastBufferAge() override;
+  int GetLastBufferSameCnt() override;
+  bool SetPresentBufferDamageRect(gfx::Rect damage_rect, gfx::Rect curr_rect) override;
+  void ClosePostSubBuffer() override;
+#endif
 
  private:
   class MultiSurfaceSwapBuffersTracker;
@@ -76,6 +102,8 @@ class SkiaOutputDeviceGL final : public SkiaOutputDevice {
 
   std::unique_ptr<MultiSurfaceSwapBuffersTracker>
       multisurface_swapbuffers_tracker_;
+
+  std::unique_ptr<SkiaOutputDeviceGLUtils> implUtils_;
 
   base::WeakPtrFactory<SkiaOutputDeviceGL> weak_ptr_factory_{this};
 };

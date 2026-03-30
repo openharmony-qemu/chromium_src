@@ -2,7 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_TEST)
+#include "ohos_sdk/openharmony/native/llvm/bin/../include/libcxx-ohos/include/c++/v1/__ranges/lazy_split_view.h"
+#define private public
 #include "media/renderers/renderer_impl.h"
+#undef private
+#else
+#include "media/renderers/renderer_impl.h"
+#endif // ARKWEB_TEST
 
 #include <stdint.h>
 
@@ -140,6 +148,10 @@ class RendererImplTest : public ::testing::Test {
     }
 
     renderer_impl_->Initialize(demuxer_.get(), &callbacks_,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                               RequestSurfaceCB(),
+                               VideoDecoderChangedCB(),
+#endif // ARKWEB_VIDEO_ASSISTANT
                                base::BindOnce(&CallbackHelper::OnInitialize,
                                               base::Unretained(&callbacks_)));
     base::RunLoop().RunUntilIdle();
@@ -1100,5 +1112,9 @@ TEST_F(RendererImplTest, SuppressAudioTracks) {
   Play(/*expect_audio=*/false);
   Mock::VerifyAndClearExpectations(&time_source_);
 }
+
+#if BUILDFLAG(ARKWEB_TEST)
+#include "media/renderers/renderer_impl_for_include_unitttest.cc"
+#endif // ARKWEB_TEST
 
 }  // namespace media

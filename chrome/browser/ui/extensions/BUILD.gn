@@ -131,7 +131,7 @@ source_set("impl") {
       "//components/vector_icons",
     ]
 
-    if (is_win || is_mac || is_linux || is_chromeos) {
+    if (is_win || is_mac || is_linux || is_chromeos || is_ohos) {
       sources += [ "extension_install_ui_desktop.cc" ]
       deps += [
         "//chrome/app:generated_resources",

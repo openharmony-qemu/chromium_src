@@ -86,6 +86,9 @@ class ChromeExtensionSystem : public ExtensionSystem {
   void PerformActionBasedOnOmahaAttributes(
       const std::string& extension_id,
       const base::Value::Dict& attributes) override;
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    ExtensionRegistryInfoManager* GetExtensionRegistryInfoManager() override;
+#endif
 
  private:
   friend class ChromeExtensionSystemSharedFactory;
@@ -162,6 +165,10 @@ class ChromeExtensionSystem : public ExtensionSystem {
   raw_ptr<Profile> profile_;
 
   raw_ptr<Shared> shared_;
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  std::unique_ptr<ExtensionRegistryInfoManager> extension_registry_info_manager_;
+#endif
 };
 
 }  // namespace extensions

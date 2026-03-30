@@ -12,6 +12,10 @@
 #include "third_party/blink/renderer/platform/text/platform_locale.h"
 #include "ui/gfx/geometry/size.h"
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+#include "arkweb/chromium_ext/third_party/blink/renderer/modules/media_controls/elements/media_control_time_display_element_for_include.cc"
+#endif
+
 namespace {
 
 // These constants are used to estimate the size of time display element
@@ -58,7 +62,15 @@ int MediaControlTimeDisplayElement::EstimateElementWidth() const {
 }
 
 String MediaControlTimeDisplayElement::FormatTime() const {
-  return MediaControlsSharedHelpers::FormatTime(CurrentValue());
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  if (GetMediaControls().ShouldShowVideoControlsHM()) {
+    return MediaControlsSharedHelpers::FormatTimeHM(current_value_.value_or(0));
+  } else {
+#endif
+    return MediaControlsSharedHelpers::FormatTime(current_value_.value_or(0));
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  }
+#endif
 }
 
 }  // namespace blink

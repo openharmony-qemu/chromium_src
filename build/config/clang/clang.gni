@@ -29,6 +29,11 @@ if (is_chromeos || is_android) {
 
 default_clang_base_path = "//third_party/llvm-build/Release+Asserts"
 
+if (is_arkweb) {
+  import("//build/config/ohos/config.gni")
+  default_clang_base_path = ohos_toolchain_root
+}
+
 # These platforms have been well-tested with clang modules.
 # Platforms not in this list *may* work with clang modules, but we don't
 # guarantee it, and we don't test them on CI/CQ with modules, so breakages may
@@ -90,13 +95,7 @@ declare_args() {
   #
   # TODO(https://crbug.com/440260716): Enable for Cronet in AOSP once gn2bp
   # supports copy targets.
-  use_clang_modules =
-      # Clang modules doesn't work with translation_unit used in codesearch
-      # pipeline http://b/436082487.
-      !enable_kythe_annotations && is_clang &&
-      clang_modules_platform_supported && using_tested_sysroot &&
-      # reclient and icecc don't handle headers in modulemap config.
-      !use_reclient && !is_cronet_for_aosp_build && cc_wrapper != "icecc"
+    use_clang_modules = false
 }
 
 # We don't really need to collect a corpus for the host tools, just for the target.

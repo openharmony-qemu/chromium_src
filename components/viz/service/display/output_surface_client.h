@@ -45,6 +45,10 @@ class VIZ_SERVICE_EXPORT OutputSurfaceClient {
   // Android and Linux.
   virtual void DidSwapWithSize(const gfx::Size& pixel_size) = 0;
 
+#if BUILDFLAG(ARKWEB_ROTATE_RESIZE) && !defined(COMPONENT_BUILD)
+  virtual void DidSwapWithRotate(const gfx::Size& pixel_size) = 0;
+#endif // ARKWEB_ROTATE_RESIZE
+
   // See |gfx::PresentationFeedback| for detail.
   virtual void DidReceivePresentationFeedback(
       const gfx::PresentationFeedback& feedback) = 0;

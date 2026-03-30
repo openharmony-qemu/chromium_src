@@ -34,6 +34,9 @@
 #include <string_view>
 #include <utility>
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "base/auto_reset.h"
 #include "base/containers/contains.h"
 #include "base/feature_list.h"
@@ -63,6 +66,7 @@
 #include "third_party/blink/public/platform/scheduler/web_scoped_virtual_time_pauser.h"
 #include "third_party/blink/public/platform/web_url.h"
 #include "third_party/blink/public/platform/web_url_request.h"
+#include "third_party/blink/public/platform/web_url_request_util.h"
 #include "third_party/blink/renderer/platform/bindings/script_forbidden_scope.h"
 #include "third_party/blink/renderer/platform/heap/garbage_collected.h"
 #include "third_party/blink/renderer/platform/heap/persistent.h"
@@ -109,6 +113,7 @@
 #include "third_party/blink/renderer/platform/wtf/text/string_builder.h"
 #include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
 #include "third_party/blink/renderer/platform/wtf/wtf.h"
+
 #include "third_party/perfetto/include/perfetto/tracing/track.h"
 
 namespace blink {
@@ -1391,8 +1396,12 @@ Resource* ResourceFetcher::RequestResource(FetchParameters& params,
           "Blink.Fetch.RequestResourceTime2.Preload", elapsed);
     }
   };
-  TRACE_EVENT1("blink,blink.resource", "ResourceFetcher::requestResource",
-               "url", params.Url().ElidedString().Utf8());
+  int request_id_perf_stat = GenerateRequestId();
+  TRACE_EVENT2(
+      "blink,blink.resource", "ResourceFetcher::requestResource", "url",
+      params.Url().ElidedString().Utf8() +
+          " | method=" + params.GetResourceRequest().HttpMethod().Utf8(),
+      "id", request_id_perf_stat);
 
   // |resource_request|'s origin can be null here, corresponding to the "client"
   // value in the spec. In that case client's origin is used.
@@ -1406,6 +1415,10 @@ Resource* ResourceFetcher::RequestResource(FetchParameters& params,
   WebScopedVirtualTimePauser pauser;
 
   ResourcePrepareHelper prepare_helper(*this, params, factory);
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  resource_request.SetAllowPreloadRecord(allow_preload_record_);
+  resource_request.SetMainUrl(main_url_);
+#endif
   std::optional<ResourceRequestBlockedReason> blocked_reason =
       prepare_helper.PrepareRequestForCacheAccess(pauser);
   if (blocked_reason) {
@@ -1612,6 +1625,10 @@ Resource* ResourceFetcher::RequestResource(FetchParameters& params,
         resource_request.HttpHeaderField(AtomicString("sec-ch-width")));
   }
 
+#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
+  resource->request_id_perf_stat_ = request_id_perf_stat;
+#endif
+
   if (needs_load) {
     if (!StartLoad(resource,
                    std::move(params.MutableResourceRequest().MutableBody()),
@@ -1742,6 +1759,10 @@ bool UseRenderBlockingTaskPriority(
 }
 
 }  // namespace
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/loader/fetch/resource_fetcher_for_include.cc"
+#endif
 
 std::unique_ptr<URLLoader> ResourceFetcher::CreateURLLoader(
     const network::ResourceRequest& network_request,
@@ -3057,10 +3078,19 @@ void ResourceFetcher::EmulateLoadStartedForInspector(
   options.initiator_info.name = initiator_name;
   FetchParameters params(std::move(resource_request), options);
   ResourceRequest last_resource_request(resource->LastResourceRequest());
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  if (ResourceFinishAsError(Context(), resource, last_resource_request, params,
+                            freezable_task_runner_)) {
+    return;
+  }
+#else
   Context().CanRequest(resource->GetType(), last_resource_request,
                        last_resource_request.Url(), params.Options(),
                        ReportingDisposition::kReport,
                        last_resource_request.GetRedirectInfo());
+#endif
+
   if (resource->GetStatus() == ResourceStatus::kNotStarted ||
       resource->GetStatus() == ResourceStatus::kPending) {
     // If the loading has not started, then we return here because loading
@@ -3098,6 +3128,10 @@ void ResourceFetcher::StopFetchingInternal(StopFetchingTarget target) {
       loaders_to_cancel.push_back(loader);
     }
   }
+
+#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+  PrintLoadersToCancel(loaders_to_cancel, static_cast<int>(target));
+#endif
 
   for (const auto& loader : loaders_to_cancel) {
     if (loaders_.Contains(loader) || non_blocking_loaders_.Contains(loader)) {

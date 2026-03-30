@@ -65,6 +65,10 @@
 #include "url/origin.h"
 #include "url/url_constants.h"
 
+#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+#include "base/debug/dump_without_crashing.h"
+#endif
+
 namespace content {
 
 namespace {
@@ -1657,6 +1661,17 @@ bool PrefetchService::StartSinglePrefetch(
 void PrefetchService::SendPrefetchRequest(
     base::WeakPtr<PrefetchContainer> prefetch_container) {
   TRACE_EVENT("loading", "PrefetchService::SendPrefetchRequest");
+
+#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+  if (prefetch_container &&
+      prefetch_container->GetOrCreateNetworkContextForCurrentPrefetch() &&
+      !prefetch_container->GetOrCreateNetworkContextForCurrentPrefetch()
+          ->IsReferringRenderFrameHostValid()) {
+    base::debug::DumpWithoutCrashing();
+    return;
+  }
+#endif
+
   net::NetworkTrafficAnnotationTag traffic_annotation =
       net::DefineNetworkTrafficAnnotation("speculation_rules_prefetch",
                                           R"(

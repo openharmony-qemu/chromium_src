@@ -53,6 +53,21 @@ class FakeLocalFrameHost : public mojom::blink::LocalFrameHost {
   void DidChangeThemeColor(std::optional<::SkColor> theme_color) override;
   void DidChangeBackgroundColor(const SkColor4f& background_color,
                                 bool color_adjust) override;
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+  void NotifyContextMenuWillShow() override {}
+#endif
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  void OnDetectedBlankScreen(const String &url,
+                             int32_t blankScreenReason,
+                             int32_t detectedContentfulNodesCount) override {}
+#endif
+#if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT)
+  void OnFirstScreenPaint(
+      const String &url, int64_t navigation_start_time, int64_t first_screen_paint_time) override {}
+#endif
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+  void OnOverScrollOffsetChanged(float offset_x, float offset_y) override {}
+#endif
   void DidFailLoadWithError(const ::blink::KURL& url,
                             int32_t error_code) override;
   void DidFocusFrame() override;
@@ -169,6 +184,15 @@ class FakeLocalFrameHost : public mojom::blink::LocalFrameHost {
                               uint32_t line_no,
                               const String& source_id,
                               const String& untrusted_stack_trace) override;
+#if BUILDFLAG(ARKWEB_CONSOLE_LOGGING)
+  void DidAddMessageToConsoleV2(
+      mojom::blink::ConsoleMessageLevel log_level,
+      mojom::blink::ConsoleMessageSource log_source,
+      const String& message,
+      uint32_t line_no,
+      const String& source_id,
+      const String& untrusted_stack_trace) override;
+#endif                              
   void FrameSizeChanged(const gfx::Size& frame_size) override;
   void DidInferColorScheme(
       blink::mojom::PreferredColorScheme preferred_color_scheme) override;

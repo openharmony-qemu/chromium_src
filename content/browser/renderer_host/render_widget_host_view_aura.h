@@ -49,6 +49,7 @@
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/selection_bound.h"
 #include "ui/wm/public/activation_delegate.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_WIN)
 #include "content/browser/renderer_host/virtual_keyboard_controller_win.h"
@@ -137,6 +138,9 @@ class CONTENT_EXPORT RenderWidgetHostViewAura
   bool IsShowing() override;
   void WasUnOccluded() override;
   void WasOccluded() override;
+#if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
+  bool GetScrollable() override { return true; }
+#endif
   gfx::Rect GetViewBounds() override;
   bool IsPointerLocked() override;
   gfx::Size GetVisibleViewportSize() override;
@@ -498,6 +502,18 @@ class CONTENT_EXPORT RenderWidgetHostViewAura
 
   // May be overridden in tests.
   virtual bool ShouldSkipCursorUpdate() const;
+
+#if BUILDFLAG(IS_OHOS)
+  bool IsTouchSequencePotentiallyActiveOnViz() override;
+  void RequestInputBackForDragAndDrop(
+      blink::mojom::DragDataPtr drag_data,
+      const url::Origin& source_origin,
+      blink::DragOperationsMask drag_operations_mask,
+      SkBitmap bitmap,
+      gfx::Vector2d cursor_offset_in_dip,
+      gfx::Rect drag_obj_rect_in_dip,
+      blink::mojom::DragEventSourceInfoPtr event_info) override;
+#endif
 
  private:
   friend class DelegatedFrameHostClientAura;

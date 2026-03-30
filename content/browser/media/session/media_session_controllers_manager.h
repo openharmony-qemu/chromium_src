@@ -13,6 +13,7 @@
 #include "content/common/content_export.h"
 #include "content/public/browser/web_contents_observer.h"  // For MediaPlayerId.
 #include "services/media_session/public/mojom/media_session.mojom.h"
+#include "arkweb/build/features/features.h"
 
 namespace media {
 enum class MediaContentType;
@@ -59,6 +60,11 @@ class CONTENT_EXPORT MediaSessionControllersManager {
   // Called when the given player |id| has paused.
   void OnPause(const MediaPlayerId& id, bool reached_end_of_stream);
 
+#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
+  // Called when the given player |id| has destroyed media AVSession.
+  void OnEndAVSession(const MediaPlayerId& id, bool is_hidden);
+#endif // ARKWEB_MEDIA_AVSESSION
+
   // Called when the given player |id| has been destroyed.
   void OnEnd(const MediaPlayerId& id);
 
@@ -73,6 +79,11 @@ class CONTENT_EXPORT MediaSessionControllersManager {
 
   // Called when the WebContents was muted or unmuted.
   void WebContentsMutedStateChanged(bool muted);
+
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  // Set whether to the HTML play can be used to control media
+  void SetHtmlPlayEnabled(bool enabled);
+#endif // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
   // Called when the player's mute status changed.
   void OnMediaMutedStatusChanged(const MediaPlayerId& id, bool mute);
@@ -98,6 +109,22 @@ class CONTENT_EXPORT MediaSessionControllersManager {
   // Called when video visibility for the player |id| has changed.
   void OnVideoVisibilityChanged(const MediaPlayerId& id,
                                 bool meets_visibility_threshold);
+
+#if BUILDFLAG(ARKWEB_PIP)
+  void OnPictureInPictureStateChanged(
+      const MediaPlayerId& id, uint32_t state, int32_t width, int32_t height);
+#endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+  void OnNotifyMeidaCastUri(const MediaPlayerId& id, const std::string& media_url);
+  void CreateAVCastAdapter(const MediaPlayerId& id);
+  void HandleStopMediaCast(const MediaPlayerId& id);
+  void UpdateRemotePlayState(const MediaPlayerId& id, bool is_playing);
+  void UpdateRemotePlayPosition(const MediaPlayerId& id, int64_t position);
+  void SetPauseByAvcast(const MediaPlayerId& id, bool pause_avcast);
+  void MediaCastStopByNavigation();
+  void NotifyRemoteExitFullScreen();
+#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
 
  private:
   using ControllersMap =

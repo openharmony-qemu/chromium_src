@@ -69,6 +69,11 @@ class PermissionElementTestPermissionService : public PermissionService {
   void RequestPermissions(Vector<PermissionDescriptorPtr> permissions,
                           bool user_gesture,
                           RequestPermissionsCallback) override;
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  void RequestPermissionSync(PermissionDescriptorPtr permission,
+                             bool user_gesture,
+                             RequestPermissionCallback) override {}
+#endif  // ARKWEB_CLIPBOARD
   void RevokePermission(PermissionDescriptorPtr permission,
                         RevokePermissionCallback) override;
   void AddPermissionObserver(

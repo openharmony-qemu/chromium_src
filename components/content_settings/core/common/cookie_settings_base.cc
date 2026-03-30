@@ -331,7 +331,7 @@ bool CookieSettingsBase::ShouldDeleteCookieOnExit(
   // Cookies with an unknown (kUnset) scheme will be treated as having a not
   // secure scheme.
   GURL origin = net::cookie_util::CookieOriginToURL(
-      domain, scheme == net::CookieSourceScheme::kSecure);
+      std::string(domain), scheme == net::CookieSourceScheme::kSecure);
   // Pass GURL() as first_party_url since we don't know the context and
   // don't want to match against (*, exception) pattern.
   SettingInfo setting_info;
@@ -860,7 +860,7 @@ ContentSetting CookieSettingsBase::GetSettingForLegacyCookieAccess(
   // The content setting patterns are treated as domains, not URLs, so the
   // scheme is irrelevant (so we can just arbitrarily pass false).
   GURL cookie_domain_url = net::cookie_util::CookieOriginToURL(
-      cookie_domain, false /* secure scheme */);
+      std::string(cookie_domain), false /* secure scheme */);
 
   return GetContentSetting(cookie_domain_url, GURL(),
                            ContentSettingsType::LEGACY_COOKIE_ACCESS,
@@ -872,7 +872,7 @@ ContentSetting CookieSettingsBase::GetSettingForLegacyCookieScope(
   // The content setting patterns are treated as registrable domains, not URLs,
   // so the scheme is irrelevant (so we can just arbitrarily pass false).
   net::SchemefulSite registrable_domain(net::cookie_util::CookieOriginToURL(
-      cookie_domain, false /*secure_scheme=*/));
+      std::string(cookie_domain), false /*secure_scheme=*/));
 
   return GetContentSetting(registrable_domain.GetURL(), GURL(),
                            ContentSettingsType::LEGACY_COOKIE_SCOPE,

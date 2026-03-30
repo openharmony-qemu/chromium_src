@@ -718,6 +718,33 @@ MetricsRenderFrameObserver::Timing MetricsRenderFrameObserver::GetTiming()
         CreateTimeDeltaFromTimestampsInSeconds(
             (*perf.FirstScrollTimestamp()).InSecondsF(), start);
   }
+#if BUILDFLAG(ARKWEB_NETWORK_DFX)
+  if (perf.RedirectStart() > 0.0)
+    timing->redirect_start =
+        CreateTimeDeltaFromTimestampsInSeconds(perf.RedirectStart(), start);
+  if (perf.RedirectEnd() > 0.0)
+    timing->redirect_end =
+        CreateTimeDeltaFromTimestampsInSeconds(perf.RedirectEnd(), start);
+  if (perf.FetchStart() > 0.0)
+    timing->fetch_start =
+        CreateTimeDeltaFromTimestampsInSeconds(perf.FetchStart(), start);
+  if (perf.ResponseEnd() > 0.0)
+    timing->response_end =
+        CreateTimeDeltaFromTimestampsInSeconds(perf.ResponseEnd(), start);
+  if (perf.DomInteractive() > 0.0) {
+    timing->document_timing->dom_interactive =
+        CreateTimeDeltaFromTimestampsInSeconds(perf.DomInteractive(), start);
+  }
+  if (perf.DomContentLoadedEventEnd() > 0.0) {
+    timing->document_timing->dom_content_loaded_event_end =
+        CreateTimeDeltaFromTimestampsInSeconds(
+            perf.DomContentLoadedEventEnd(), start);
+  }
+  if (perf.LoadEventEnd() > 0.0) {
+    timing->document_timing->load_event_end =
+        CreateTimeDeltaFromTimestampsInSeconds(perf.LoadEventEnd(), start);
+  }
+#endif
   if (perf.DomainLookupStart() > 0.0) {
     timing->domain_lookup_timing->domain_lookup_start =
         CreateTimeDeltaFromTimestampsInSeconds(perf.DomainLookupStart(), start);

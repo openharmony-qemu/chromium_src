@@ -12,6 +12,7 @@
 #include "base/feature_list.h"
 #include "base/functional/bind.h"
 #include "base/metrics/histogram_macros.h"
+#include "base/strings/stringprintf.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/time/time.h"
 #include "base/trace_event/trace_event.h"
@@ -615,6 +616,8 @@ void MainThreadEventQueue::DispatchEvents() {
     base::AutoLock lock(shared_state_lock_);
     shared_state_.sent_post_task_ = false;
     events_to_process = shared_state_.events_.size();
+    TRACE_EVENT0("input", "MainThreadEventQueue::DispatchEvents");
+    LOG(INFO) << "MainThreadEventQueue::DispatchEvents";
 
     // Don't process rAF aligned events at tail of queue.
     while (events_to_process > 0 &&
@@ -759,6 +762,8 @@ void MainThreadEventQueue::DispatchRafAlignedInput(base::TimeTicks frame_time) {
 }
 
 void MainThreadEventQueue::PostTaskToMainThread() {
+  TRACE_EVENT0("input", "MainThreadEventQueue::PostTaskToMainThread will post task");
+  LOG(INFO) << "MainThreadEventQueue::PostTaskToMainThread will post task";
   main_task_runner_->PostTask(
       FROM_HERE, base::BindOnce(&MainThreadEventQueue::DispatchEvents, this));
 }
@@ -818,6 +823,14 @@ void MainThreadEventQueue::QueueEvent(
         widget_scheduler_->WillPostInputEventToMainThread(input_event_type,
                                                           attribution);
       }
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+      std::string debug_info = base::StringPrintf(
+          "is_raf_aligned:%d,needs_main_frame:%d, needs_post_task:%d",
+          is_raf_aligned, needs_main_frame, needs_post_task);
+      TRACE_EVENT2("input", "MainThreadEventQueue::QueueEvent kEnqueued",
+                   "event_type", WebInputEvent::GetName(input_event_type),
+                   "debug_info", debug_info);
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
     }
   }
 
@@ -934,9 +947,16 @@ void MainThreadEventQueue::SetNeedsMainFrame(bool urgent) {
           FROM_HERE, kMaxRafDelay,
           base::BindOnce(&MainThreadEventQueue::RafFallbackTimerFired, this));
     }
+  #if BUILDFLAG(ARKWEB_DFX_TRACING)
     if (client_) {
       client_->SetNeedsMainFrame(urgent);
+    } else {
+      TRACE_EVENT0("input", "MainThreadEventQueue::SetNeedsMainFrame failed");
     }
+#else
+    if (client_)
+      client_->SetNeedsMainFrame(urgent);
+#endif
     return;
   }
 
@@ -952,6 +972,10 @@ void MainThreadEventQueue::ClearClient() {
 }
 
 void MainThreadEventQueue::SetNeedsLowLatency(bool low_latency) {
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  TRACE_EVENT1("input", "MainThreadEventQueue::SetNeedsLowLatency",
+    "low_latency", low_latency);
+#endif
   needs_low_latency_.store(low_latency, std::memory_order_relaxed);
 }
 
@@ -966,6 +990,9 @@ void MainThreadEventQueue::SetHasPointerRawUpdateEventHandlers(
 }
 
 void MainThreadEventQueue::RequestUnbufferedInputEvents() {
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  TRACE_EVENT0("input", "MainThreadEventQueue::RequestUnbufferedInputEvents");
+#endif
   needs_low_latency_until_pointer_up_.store(true, std::memory_order_relaxed);
 }
 

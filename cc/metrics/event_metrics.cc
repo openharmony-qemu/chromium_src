@@ -78,6 +78,9 @@ constexpr auto kInterestingEvents = std::to_array<InterestingEvents>({
                                         .version_suffix = "2"}}),
     EVENT_TYPE(GestureDoubleTap, ui::EventType::kGestureDoubleTap),
     EVENT_TYPE(GestureLongPress, ui::EventType::kGestureLongPress),
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+    EVENT_TYPE(GestureDragLongPress, ui::EventType::kGestureDragLongPress),
+#endif
     EVENT_TYPE(GestureLongTap, ui::EventType::kGestureLongTap),
     EVENT_TYPE(GestureShowPress, ui::EventType::kGestureShowPress),
     EVENT_TYPE(GestureTap, ui::EventType::kGestureTap),

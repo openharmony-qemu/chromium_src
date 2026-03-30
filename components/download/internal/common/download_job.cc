@@ -21,7 +21,12 @@ DownloadJob::~DownloadJob() = default;
 
 void DownloadJob::Cancel(bool user_cancel) {
   if (cancel_request_callback_)
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+    std::move(cancel_request_callback_)
+        .Run(user_cancel, download_item_->GetGuid());
+#else
     std::move(cancel_request_callback_).Run(user_cancel);
+#endif
 }
 
 void DownloadJob::Pause() {

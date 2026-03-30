@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/chromium_ext/cc/scheduler/scheduler_utils.h"
 #include "base/cancelable_callback.h"
 #include "base/memory/raw_ptr.h"
 #include "base/time/time.h"
@@ -44,6 +45,7 @@ namespace cc {
 struct BeginMainFrameMetrics;
 class CompositorTimingHistory;
 class CompositorFrameReportingController;
+class SchedulerUtils;
 
 enum class FrameSkippedReason {
   kRecoverLatency,
@@ -90,6 +92,10 @@ class SchedulerClient {
       base::TimeTicks time) = 0;
   virtual void FrameIntervalUpdated(base::TimeDelta interval) = 0;
   virtual void OnBeginImplFrameDeadline() = 0;
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  virtual void HandleScrollUpdateForInternalBeginFrame(
+      const viz::BeginFrameArgs& args) {}
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
  protected:
   virtual ~SchedulerClient() {}
@@ -97,6 +103,7 @@ class SchedulerClient {
 
 class CC_EXPORT Scheduler : public viz::BeginFrameObserverBase {
  public:
+  friend class SchedulerUtils;
   Scheduler(SchedulerClient* client,
             const SchedulerSettings& scheduler_settings,
             int layer_tree_host_id,
@@ -247,6 +254,12 @@ class CC_EXPORT Scheduler : public viz::BeginFrameObserverBase {
   // Deferring begin main frame prevents all document lkifecycle updates and
   // updates of new layer tree state.
   void SetDeferBeginMainFrame(bool defer_begin_main_frame);
+
+#if BUILDFLAG(ARKWEB_WEBGL)
+  SchedulerUtils* GetSchedulerUtils() const {
+    return scheduler_utils_.get();
+  }
+#endif
 
   // Pausing rendering prevents new main frames and impl-side invalidations from
   // being triggered. Impl frames are drawn until any in-flight updates from the
@@ -411,6 +424,7 @@ class CC_EXPORT Scheduler : public viz::BeginFrameObserverBase {
   bool IsInsideAction(SchedulerStateMachine::Action action) {
     return inside_action_ == action;
   }
+  std::unique_ptr<SchedulerUtils> scheduler_utils_;
 };
 
 }  // namespace cc

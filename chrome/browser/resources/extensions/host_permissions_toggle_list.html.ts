@@ -11,7 +11,7 @@ export function getHtml(this: ExtensionsHostPermissionsToggleListElement) {
   return html`<!--_html_template_start_-->
 <div id="section-heading" ?hidden="${this.enableEnhancedSiteControls}">
   <span>$i18n{hostPermissionsDescription}</span>
-  <a id="linkIconButton" aria-label="$i18n{permissionsLearnMoreLabel}"
+  <a hidden=true id="linkIconButton" aria-label="$i18n{permissionsLearnMoreLabel}"
       href="$i18n{hostPermissionsLearnMoreLink}" target="_blank"
       @click="${this.onLearnMoreClick_}">
     <cr-icon icon="cr:help-outline"></cr-icon>
@@ -23,7 +23,7 @@ export function getHtml(this: ExtensionsHostPermissionsToggleListElement) {
     <span class="${this.getAllHostsToggleLabelClass_()}">
       $i18n{itemAllowOnFollowingSites}
     </span>
-    <a id="linkIconButton" aria-label="$i18n{permissionsLearnMoreLabel}"
+    <a hidden=true id="linkIconButton" aria-label="$i18n{permissionsLearnMoreLabel}"
         href="$i18n{hostPermissionsLearnMoreLink}" target="_blank"
         @click="${this.onLearnMoreClick_}"
         ?hidden="${!this.enableEnhancedSiteControls}">

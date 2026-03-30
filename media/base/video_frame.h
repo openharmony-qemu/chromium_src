@@ -45,7 +45,7 @@
 #include "base/files/scoped_file.h"
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 #include "gpu/vulkan/vulkan_ycbcr_info.h"
 #endif
 
@@ -70,7 +70,17 @@ class MEDIA_EXPORT VideoFrame : public base::RefCountedThreadSafe<VideoFrame> {
   static constexpr size_t kFrameAddressAlignment =
       VideoFrameLayout::kBufferAddressAlignment;
 
-  static constexpr size_t kMaxPlanes = 4;
+  enum {
+    kMaxPlanes = 4,
+
+    kYPlane = 0,
+    kARGBPlane = kYPlane,
+    kUPlane = 1,
+    kUVPlane = kUPlane,
+    kVPlane = 2,
+    kAPlaneTriPlanar = kVPlane,
+    kAPlane = 3,
+  };
 
   enum Plane : uint8_t {
     kY = 0,
@@ -660,7 +670,7 @@ class MEDIA_EXPORT VideoFrame : public base::RefCountedThreadSafe<VideoFrame> {
                           : is_mappable_si_enabled_;
   }
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   const std::optional<gpu::VulkanYCbCrInfo>& ycbcr_info() const {
     return wrapped_frame_ ? wrapped_frame_->ycbcr_info() : ycbcr_info_;
   }
@@ -669,6 +679,10 @@ class MEDIA_EXPORT VideoFrame : public base::RefCountedThreadSafe<VideoFrame> {
   void set_ycbcr_info(const std::optional<gpu::VulkanYCbCrInfo>& ycbcr_info) {
     ycbcr_info_ = ycbcr_info;
   }
+#endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_CODEC)
+  std::vector<size_t> GetPlaneSize() { return CalculatePlaneSize(); }
 #endif
 
   // Returns pointer to the data in the visible region of the frame, for
@@ -933,13 +947,19 @@ class MEDIA_EXPORT VideoFrame : public base::RefCountedThreadSafe<VideoFrame> {
   gfx::ColorSpace color_space_;
   std::optional<gfx::HDRMetadata> hdr_metadata_;
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   // Sampler conversion information which is used in vulkan context for android.
   std::optional<gpu::VulkanYCbCrInfo> ycbcr_info_;
 #endif
 
   // Allocation which makes up |data_| planes for self-allocated frames.
   std::unique_ptr<uint8_t, base::UncheckedFreeDeleter> private_data_;
+
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  friend class ConvertAndScaleFrameTest;
+  friend class OHOSMediaCodecBridgeImplTest;
+#endif
+
 };
 
 }  // namespace media

@@ -73,6 +73,11 @@
 #endif  // BUILDFLAG(ENTERPRISE_LOCAL_CONTENT_ANALYSIS)
 #endif  // BUILDFLAG(ENTERPRISE_CONTENT_ANALYSIS)
 
+#if BUILDFLAG(ARKWEB_TEST)
+#include "chrome/browser/task_manager/task_manager_browsertest_util.h"
+#include "chrome/browser/task_manager/task_manager_interface.h"
+#endif
+
 #if BUILDFLAG(IS_CHROMEOS)
 // TODO(crbug.com/40567307)  ChromeOS uses different testing setup that isn't
 // hooked up to make use of `TestPrintingContext` yet.
@@ -825,11 +830,13 @@ class SystemAccessProcessPrintBrowserTestBase
     CheckForQuit();
   }
 
+#if !BUILDFLAG(ARKWEB_TEST)
   void OnRenderFrameDeleted() override {
     if (check_for_render_frame_deleted_) {
       CheckForQuit();
     }
   }
+#endif
 
   // PrintJob::Observer:
   void OnDestruction() override {
@@ -1317,10 +1324,12 @@ class SystemAccessProcessPrintBrowserTestBase
         /*cause_errors=*/false);
   }
 
+#if BUILDFLAG(ENABLE_OOP_PRINTING)
   void ResetService() {
     print_backend_service_.reset();
     test_remote_.reset();
   }
+#endif
 
   base::test::ScopedFeatureList feature_list_;
 #if BUILDFLAG(IS_WIN)
@@ -3261,7 +3270,7 @@ IN_PROC_BROWSER_TEST_P(SystemAccessProcessPrintBrowserTest, OpenPdfInPreview) {
 
 #endif  // BUILDFLAG(ENABLE_OOP_PRINTING)
 
-#if BUILDFLAG(ENTERPRISE_CONTENT_ANALYSIS)
+#if BUILDFLAG(ENTERPRISE_CONTENT_ANALYSIS) && !BUILDFLAG(ARKWEB_TEST)
 class TestPrintViewManagerForContentAnalysis : public TestPrintViewManager {
  public:
   class Observer : public PrintViewManagerBase::TestObserver {
@@ -4060,6 +4069,6 @@ INSTANTIATE_TEST_SUITE_P(
 
 #endif  // BUILDFLAG(ENABLE_BASIC_PRINT_DIALOG)
 
-#endif  // BUILDFLAG(ENTERPRISE_CONTENT_ANALYSIS)
+#endif  // BUILDFLAG(ENTERPRISE_CONTENT_ANALYSIS) && !BUILDFLAG(ARKWEB_TEST)
 
 }  // namespace printing

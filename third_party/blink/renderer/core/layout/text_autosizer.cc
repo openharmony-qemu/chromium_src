@@ -655,9 +655,14 @@ void TextAutosizer::UpdatePageInfo() {
     return;
 
   PageInfo previous_page_info(page_info_);
+#if BUILDFLAG(ARKWEB_CSS_FONT)
+  page_info_.setting_enabled_ =
+      document_->GetSettings()->GetTextAutosizingEnabled();
+#else
   page_info_.setting_enabled_ =
       document_->GetSettings()->GetTextAutosizingEnabled() &&
       !base::FeatureList::IsEnabled(blink::features::kForceOffTextAutosizing);
+#endif
 
   if (!page_info_.setting_enabled_ || document_->Printing()) {
     page_info_.page_needs_autosizing_ = false;

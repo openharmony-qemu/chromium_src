@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("//chrome/browser/buildflags.gni")
+import("//arkweb/build/features/features.gni")
 
 assert(!is_android)
 
@@ -76,13 +77,18 @@ source_set("shortcuts") {
     ]
   }
 
-  if (is_linux) {
+  if (is_linux || arkweb_asan) {
     sources += [
       "linux_xdg_wrapper.h",
       "linux_xdg_wrapper_impl.cc",
       "linux_xdg_wrapper_impl.h",
       "shortcut_creator_linux.cc",
       "shortcut_creator_linux.h",
+    ]
+  }
+  if (arkweb_test) {
+    sources -= [
+      "create_shortcut_for_current_web_contents_task.cc"
     ]
   }
 }
@@ -104,7 +110,7 @@ source_set("test_support") {
   ]
   deps = [ "//ui/gfx/codec" ]
 
-  if (is_linux) {
+  if (is_linux || arkweb_asan) {
     public += [
       "fake_linux_xdg_wrapper.h",
       "shortcut_creation_test_support_linux.h",
@@ -155,6 +161,10 @@ if (!is_chromeos) {
       "//ui/gfx:test_support",
       "//url",
     ]
+
+    if (arkweb_test) {
+      sources -= [ "shortcut_creation_browsertest.cc" ]
+    }
   }
 }
 
@@ -194,7 +204,7 @@ source_set("unit_tests") {
     ]
   }
 
-  if (is_linux) {
+  if (is_linux || arkweb_asan) {
     sources += [
       "shortcut_creation_test_support_linux_unittest.cc",
       "shortcut_creator_linux_unittest.cc",

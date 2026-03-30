@@ -7,6 +7,7 @@
 
 #include <optional>
 
+#include "arkweb/build/features/features.h"
 #include "base/feature_list.h"
 #include "base/gtest_prod_util.h"
 #include "base/scoped_observation.h"
@@ -28,6 +29,14 @@ class PrefRegistrySyncable;
 namespace blocked_content {
 BASE_DECLARE_FEATURE(kAbusiveExperienceEnforce);
 
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+constexpr char kAbusiveEnforceMessage[] =
+    "Chrome prevented this site from opening a new tab or window. Learn more "
+    "at https://x.x.x";
+constexpr char kAbusiveWarnMessage[] =
+    "Chrome might start preventing this site from opening new tabs or "
+    "windows in the future. Learn more at https://x.x.x";
+#else
 constexpr char kAbusiveEnforceMessage[] =
     "Chrome prevented this site from opening a new tab or window. Learn more "
     "at https://www.chromestatus.com/feature/5243055179300864";
@@ -35,6 +44,7 @@ constexpr char kAbusiveWarnMessage[] =
     "Chrome might start preventing this site from opening new tabs or "
     "windows in the future. Learn more at "
     "https://www.chromestatus.com/feature/5243055179300864";
+#endif
 
 // This class observes main frame navigation checks incoming from safe browsing
 // (currently implemented by the subresource_filter component). For navigations

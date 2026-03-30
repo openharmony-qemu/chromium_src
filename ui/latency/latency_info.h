@@ -176,7 +176,10 @@ class LatencyInfo {
   void set_gesture_scroll_id(int64_t id) { gesture_scroll_id_ = id; }
   int64_t touch_trace_id() const { return touch_trace_id_; }
   void set_touch_trace_id(int64_t id) { touch_trace_id_ = id; }
-
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  bool is_stop_propagation() const { return is_stop_propagation_; }
+  void set_stop_propagation(bool is_stop_propagation) { is_stop_propagation_ = is_stop_propagation; }  
+#endif
  private:
   void AddLatencyNumberWithTimestampImpl(LatencyComponentType component,
                                          base::TimeTicks time,
@@ -209,6 +212,9 @@ class LatencyInfo {
   friend struct IPC::ParamTraits<ui::LatencyInfo>;
   friend struct mojo::StructTraits<ui::mojom::LatencyInfoDataView,
                                    ui::LatencyInfo>;
+#endif
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  bool is_stop_propagation_ = false;
 #endif
 };
 

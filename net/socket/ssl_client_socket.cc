@@ -303,9 +303,11 @@ void SSLClientContext::OnTrustStoreChanged() {
 void SSLClientContext::OnClientCertStoreChanged() {
   base::flat_set<HostPortPair> servers =
       ssl_client_auth_cache_.GetCachedServers();
+#if !BUILDFLAG(ARKWEB_NETWORK_BASE)
   if (servers.empty()) {
     return;
   }
+#endif // ARKWEB_NETWORK_BASE
   ssl_client_auth_cache_.Clear();
   if (ssl_client_session_cache_) {
     ssl_client_session_cache_->FlushForServers(servers);

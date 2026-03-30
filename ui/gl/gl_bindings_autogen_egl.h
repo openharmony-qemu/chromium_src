@@ -313,6 +313,13 @@ typedef void(GL_BINDING_CALL* eglSetBlobCacheFuncsANDROIDProc)(
     EGLDisplay dpy,
     EGLSetBlobFuncANDROID set,
     EGLGetBlobFuncANDROID get);
+#if BUILDFLAG(IS_ARKWEB)
+typedef EGLBoolean(GL_BINDING_CALL* eglSetDamageRegionKHRProc)(
+    EGLDisplay dpy,
+    EGLSurface surface,
+    EGLint* rects,
+    EGLint n_rects);
+#endif
 typedef void(GL_BINDING_CALL* eglSetValidationEnabledANGLEProc)(
     EGLBoolean validationState);
 typedef EGLBoolean(GL_BINDING_CALL* eglStreamAttribKHRProc)(EGLDisplay dpy,
@@ -444,6 +451,9 @@ struct GL_EXPORT DisplayExtensionsEGL {
   bool b_EGL_KHR_image;
   bool b_EGL_KHR_image_base;
   bool b_EGL_KHR_no_config_context;
+#if BUILDFLAG(IS_ARKWEB)
+  bool b_EGL_KHR_partial_update;
+#endif
   bool b_EGL_KHR_stream;
   bool b_EGL_KHR_stream_consumer_gltexture;
   bool b_EGL_KHR_surfaceless_context;
@@ -549,6 +559,9 @@ struct ProcsEGL {
   eglReleaseTexImageProc eglReleaseTexImageFn;
   eglReleaseThreadProc eglReleaseThreadFn;
   eglSetBlobCacheFuncsANDROIDProc eglSetBlobCacheFuncsANDROIDFn;
+#if BUILDFLAG(IS_ARKWEB)
+  eglSetDamageRegionKHRProc eglSetDamageRegionKHRFn;
+#endif
   eglSetValidationEnabledANGLEProc eglSetValidationEnabledANGLEFn;
   eglStreamAttribKHRProc eglStreamAttribKHRFn;
   eglStreamConsumerAcquireKHRProc eglStreamConsumerAcquireKHRFn;
@@ -834,6 +847,12 @@ class GL_EXPORT EGLApi {
   virtual void eglSetBlobCacheFuncsANDROIDFn(EGLDisplay dpy,
                                              EGLSetBlobFuncANDROID set,
                                              EGLGetBlobFuncANDROID get) = 0;
+#if BUILDFLAG(IS_ARKWEB)
+  virtual EGLBoolean eglSetDamageRegionKHRFn(EGLDisplay dpy,
+                                             EGLSurface surface,
+                                             EGLint* rects,
+                                             EGLint n_rects) = 0;
+#endif
   virtual void eglSetValidationEnabledANGLEFn(EGLBoolean validationState) = 0;
   virtual EGLBoolean eglStreamAttribKHRFn(EGLDisplay dpy,
                                           EGLStreamKHR stream,
@@ -999,6 +1018,10 @@ class GL_EXPORT EGLApi {
 #define eglReleaseThread ::gl::g_current_egl_context->eglReleaseThreadFn
 #define eglSetBlobCacheFuncsANDROID \
   ::gl::g_current_egl_context->eglSetBlobCacheFuncsANDROIDFn
+#if BUILDFLAG(IS_ARKWEB)
+#define eglSetDamageRegionKHR \
+  ::gl::g_current_egl_context->eglSetDamageRegionKHRFn
+#endif
 #define eglSetValidationEnabledANGLE \
   ::gl::g_current_egl_context->eglSetValidationEnabledANGLEFn
 #define eglStreamAttribKHR ::gl::g_current_egl_context->eglStreamAttribKHRFn

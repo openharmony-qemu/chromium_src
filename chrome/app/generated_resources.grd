@@ -100,7 +100,10 @@ are declared in tools/grit/grit_args.gni.
     <!-- Pseudolocales -->
     <output filename="generated_resources_ar-XB.pak" type="data_package" lang="ar-XB" />
     <output filename="generated_resources_en-XA.pak" type="data_package" lang="en-XA" />
-
+    <!-- <if expr="pp_ifdef('arkweb_i18n')"> -->
+      <output filename="generated_resources_bo-CN.pak" type="data_package" lang="bo-CN" />
+      <output filename="generated_resources_ug.pak" type="data_package" lang="ug" />
+    <!-- </if> -->
     <!-- On Android, output some strings into Android's xml string format.
          These strings are tagged with formatter_data="android_java" -->
     <if expr="is_android">
@@ -273,6 +276,10 @@ are declared in tools/grit/grit_args.gni.
     <file path="resources/generated_resources_zh-HK.xtb" lang="zh-HK" />
     <file path="resources/generated_resources_zh-TW.xtb" lang="zh-TW" />
     <file path="resources/generated_resources_zu.xtb" lang="zu" />
+    <!-- <if expr="pp_ifdef('arkweb_i18n')"> -->
+    <file path="resources/generated_resources_bo-CN.xtb" lang="bo-CN" />
+    <file path="resources/generated_resources_ug.xtb" lang="ug" />
+    <!-- </if> -->
   </translations>
   <release seq="1">
     <!-- IMPORTANT: .grdp files must be in the same directory as this file -->
@@ -381,6 +388,9 @@ are declared in tools/grit/grit_args.gni.
       </message>
       <message name="IDS_BACKGROUND_CRASHED_EXTENSION_BALLOON_MESSAGE" desc="The contents of the balloon that is displayed when an extension crashes">
         <ph name="APP_NAME">$1<ex>Extension</ex></ph> has crashed. Click this balloon to reload the extension.
+      </message>
+      <message name="IDS_BACKGROUND_CRASHED_EXTENSION_BALLOON_TITLE" desc="The title of the balloon that is displayed when an extension crashes" meaning="Title for the extension crash notification balloon">
+        Extensions
       </message>
       <if expr="use_titlecase">
         <message name="IDS_BACKGROUND_APP_NOT_INSTALLED" desc="In Title Case: Label displayed in the status icon context menu when a profile does not have any background apps running.">
@@ -3838,7 +3848,7 @@ are declared in tools/grit/grit_args.gni.
       </if>
 
       <!-- Bluetooth Device Credentials (i.e. PIN/Passkey) dialog -->
-      <if expr="is_win or is_linux or is_chromeos">
+      <if expr="is_win or is_linux or is_chromeos or is_ohos">
         <message name="IDS_BLUETOOTH_DEVICE_CREDENTIALS_TITLE" desc="Title of the Bluetooth device credentials prompt dialog.">
           Device Credentials
         </message>
@@ -5479,10 +5489,10 @@ are declared in tools/grit/grit_args.gni.
           Read your browsing history
         </message>
         <message name="IDS_EXTENSION_PROMPT_WARNING_HISTORY_READ_ON_ALL_DEVICES" desc="Permission string for access to browsing history on all signed-in devices.">
-          Read your browsing history on all your signed-in devices
+          Read your browsing history on all your logged-in devices
         </message>
         <message name="IDS_EXTENSION_PROMPT_WARNING_HISTORY_WRITE_ON_ALL_DEVICES" desc="Permission string for access to modify browsing history on all signed-in devices.">
-          Read and change your browsing history on all your signed-in devices
+          Read and change your browsing history on all logged-in devices
         </message>
         <message name="IDS_EXTENSION_PROMPT_WARNING_HOME_PAGE_SETTING_OVERRIDE" desc="Permission string for home page override.">
           Change your home page to: <ph name="HOME_PAGE">$1<ex>home.page.com/home.html</ex></ph>
@@ -5506,7 +5516,7 @@ are declared in tools/grit/grit_args.gni.
           Read your data on <ph name="WEBSITE_1">$1<ex>www.google.com</ex></ph>, <ph name="WEBSITE_2">$2<ex>www.reddit.com</ex></ph>, and <ph name="WEBSITE_3">$3<ex>news.ycombinator.com</ex></ph>
         </message>
         <message name="IDS_EXTENSION_PROMPT_WARNING_HOSTS_LIST" desc="Permission string for access to data for an arbitrary list of websites.">
-          Read and change your data on a number of websites
+          Read and change your data on certain websites
         </message>
         <message name="IDS_EXTENSION_PROMPT_WARNING_HOSTS_LIST_READ_ONLY" desc="Permission string for read-only access to data for an arbitrary list of websites.">
           Read your data on a number of websites
@@ -5536,7 +5546,7 @@ are declared in tools/grit/grit_args.gni.
           Manage your apps, extensions, and themes
         </message>
         <message name="IDS_EXTENSION_PROMPT_WARNING_MDNS" desc="Permisson string for access to list of mDNS services on a network.">
-          Discover devices on your local network, like printers
+          Find devices on your local network, such as printers
         </message>
         <message name="IDS_EXTENSION_PROMPT_WARNING_NETWORK_STATE" desc="Permission string for network list access.">
           Access list of network connections
@@ -5630,7 +5640,7 @@ are declared in tools/grit/grit_args.gni.
           Open downloaded files
         </message>
         <message name="IDS_EXTENSION_PROMPT_WARNING_IDENTITY_EMAIL" desc="Permission string for access to profile email address.">
-          Know your email address
+          Obtain your email address
         </message>
         <message name="IDS_EXTENSION_PROMPT_WARNING_WALLPAPER" desc="Permission string for access to wallpaper.">
           Change your wallpaper
@@ -5657,7 +5667,7 @@ are declared in tools/grit/grit_args.gni.
           Store data in your Google Drive account
         </message>
         <message name="IDS_EXTENSION_PROMPT_WARNING_NATIVE_MESSAGING" desc="Permission string for Native Messaging API.">
-          Communicate with cooperating native applications
+          Communicate with cooperating native apps
         </message>
         <message name="IDS_EXTENSION_PROMPT_WARNING_SCREENLOCK_PRIVATE" desc="Permission string for locking an unlocking the screen.">
           Lock and unlock the screen
@@ -5666,7 +5676,7 @@ are declared in tools/grit/grit_args.gni.
           Monitor the behavior of other extensions, including visited URLs
         </message>
         <message name="IDS_EXTENSION_PROMPT_WARNING_DESKTOP_CAPTURE" desc="Permission string for Desktop Capture API.">
-          Capture content of your screen
+          Capture the content of your screen
         </message>
         <message name="IDS_EXTENSION_PROMPT_WARNING_ACCESSIBILITY_FEATURES_MODIFY" desc="Permission string for modifying acccessibility settings via extension API shown when an extension utilizing the API is installed.">
           Change your accessibility settings
@@ -5699,7 +5709,7 @@ are declared in tools/grit/grit_args.gni.
           Replace the page you see when opening a new tab
         </message>
         <message name="IDS_EXTENSION_PROMPT_WARNING_TRANSIENT_BACKGROUND" desc="Permission string for transient background permission.">
-          Run in the background when requested by a cooperating native application
+          Run in the background when requested by a cooperating native app
         </message>
         <message name="IDS_EXTENSION_PROMPT_WARNING_ENTERPRISE_DEVICE_ATTRIBUTES" desc="Permission string for enterprise device attributes permission.">
           See device information, such as its serial number or asset ID
@@ -5728,6 +5738,12 @@ are declared in tools/grit/grit_args.gni.
         </message>
         <message name="IDS_EXTENSION_PROMPT_WARNING_ENTERPRISE_REMOTE_APPS" desc="Permission string for access to the Remote Apps Enterprise API.">
           Add remote apps to the ChromeOS launcher
+        </message>
+        <message name="IDS_EXTENSION_PROMPT_WARNING_BROWSING_DATA" desc="Permission string for accessing and controlling user browsing data, including browsing history, download history, cookies, form data, passwords, etc.">
+          Access and manage your browsing data, including browsing history, download history, cookies, form data, passwords, and more
+        </message>
+        <message name="IDS_EXTENSION_PROMPT_WARNING_COOKIES" desc="Permission string for accessing and managing cookies in user's browser.">
+          Access and manage cookies in your browser
         </message>
         <if expr="reven">
           <message name="IDS_EXTENSION_PROMPT_WARNING_CHROMEOS_ATTACHED_DEVICE_INFO" desc="Permission string for accessing information of attached devices.">
@@ -6498,6 +6514,11 @@ Keep your key file in a safe place. You will need it to create new versions of y
           Old versions of Chrome Apps won't open on Linux devices after December 2022. Contact your administrator to update to a new version or remove this app.
         </message>
       </if>
+      <if expr="is_ohos">
+        <message name="IDS_FORCE_INSTALLED_DEPRECATED_APPS_CONTENT" desc="Content of the force installed deprecated app dialog">
+          Old versions of Chrome Apps won't open on Ohos devices after December 2022. Contact your administrator to update to a new version or remove this app.
+        </message>
+      </if>
       <if expr="is_fuchsia">
         <message name="IDS_FORCE_INSTALLED_DEPRECATED_APPS_CONTENT" desc="Content of the force installed deprecated app dialog">
           Old versions of Chrome Apps won't open after December 2022. Contact your administrator to update to a new version or remove this app.
@@ -6542,6 +6563,11 @@ Keep your key file in a safe place. You will need it to create new versions of y
       <if expr="is_linux">
         <message name="IDS_DEPRECATED_APPS_MONITOR_RENDERER" desc="Dialog content that educates users that Chrome Apps will soon no longer launch.">
           Old versions of Chrome apps won't open on Linux devices after December 2022. You can check if there's a new version available.
+        </message>
+      </if>
+      <if expr="is_ohos">
+        <message name="IDS_DEPRECATED_APPS_MONITOR_RENDERER" desc="Dialog content that educates users that Chrome Apps will soon no longer launch.">
+          Old versions of Chrome apps won't open on Ohos devices after December 2022. You can check if there's a new version available.
         </message>
       </if>
       <if expr="is_fuchsia">

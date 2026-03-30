@@ -356,6 +356,12 @@ interface PrintRenderFrame {
   // Tells the RenderFrame to initiate printing or print preview for a
   // particular node, depending on which mode the RenderFrame is in.
   PrintNodeUnderContextMenu();
+
+  [EnableIf=arkweb_print]
+  DidDispatchPrintEvent(bool isBefore);
+
+  [EnableIf=arkweb_print]
+  ApplicationPrintRequestedPages();
 };
 
 // Browser process interface exposed to the renderer to handle the general
@@ -424,4 +430,13 @@ interface PrintManagerHost {
   [EnableIf=enable_print_preview]
   SetAccessibilityTree(
       int32 cookie, ax.mojom.AXTreeUpdate accessibility_tree);
+
+  [EnableIf=arkweb_print]
+  PrintRequested() => ();
+
+  [EnableIf=arkweb_print, Sync]
+  CheckCancel() => (bool cancel);
+
+  [EnableIf=arkweb_print]
+  PrintPdfRequested();
 };

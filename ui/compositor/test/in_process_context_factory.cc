@@ -55,6 +55,10 @@
 #include "ui/accelerated_widget_mac/ca_transaction_observer.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#include "arkweb/chromium_ext/ui/compositor/test/in_process_context_factory_ext.h"
+#endif
+
 namespace ui {
 namespace {
 
@@ -150,6 +154,9 @@ class InProcessContextFactory::PerCompositorData
     vsync_interval_ = interval;
   }
   void SetOutputIsSecure(bool secure) override {}
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  ARKWEB_UNITTESTS_IN_PRPCESS_CONTEXT_FACTORY()
+#endif
 #if BUILDFLAG(IS_MAC)
   void SetVSyncDisplayID(int64_t display_id) override {}
 #endif

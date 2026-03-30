@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "components/viz/service/frame_sinks/frame_sink_manager_impl.h"
+#include "arkweb/chromium_ext/components/viz/service/frame_sinks/frame_sink_manager_impl_utils.h"
 
 #include <stddef.h>
 #include <stdint.h>
@@ -13,6 +14,8 @@
 #include <utility>
 #include <variant>
 
+#include "arkweb/build/features/features.h"
+#include "arkweb/chromium_ext/components/viz/service/frame_sinks/root_compositor_frame_sink_impl_ext.h"
 #include "base/check.h"
 #include "base/check_op.h"
 #include "base/containers/contains.h"
@@ -44,6 +47,7 @@
 #include "components/viz/service/surfaces/pending_copy_output_request.h"
 #include "components/viz/service/surfaces/surface.h"
 #include "services/viz/privileged/mojom/compositing/frame_sink_manager.mojom.h"
+#include "arkweb/build/features/features.h"
 #include "third_party/abseil-cpp/absl/functional/overload.h"
 
 namespace viz {
@@ -96,6 +100,7 @@ FrameSinkManagerImpl::FrameSinkManagerImpl(const InitParams& params)
       host_process_id_(params.host_process_id),
       hint_session_factory_(params.hint_session_factory),
       frame_sink_manager_receiver_(std::in_place_type<Receiver>, this) {
+  managerImplUtils = std::make_unique<FrameSinkManagerImplUtils>(this);
   if (mojo::IsDirectReceiverSupported() &&
       features::IsVizDirectCompositorThreadIpcFrameSinkManagerEnabled()) {
     frame_sink_manager_receiver_.emplace<DirectReceiver>(
@@ -264,6 +269,14 @@ void FrameSinkManagerImpl::CreateRootCompositorFrameSink(
           /*render_input_router_config=*/nullptr, create_input_receiver,
           widget);
     }
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+    managerImplUtils->SetRootCompositorFrameSink(frame_sink_id);
+#endif
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+  if (managerImplUtils) {
+    managerImplUtils->UpdateIfNeedCleanBuffers(frame_sink_id);
+  }
+#endif
   }
 
   MaybeAddHitTestQuery(frame_sink_id);
@@ -274,9 +287,16 @@ void FrameSinkManagerImpl::CreateFrameSinkBundle(
     mojo::PendingReceiver<mojom::FrameSinkBundle> receiver,
     mojo::PendingRemote<mojom::FrameSinkBundleClient> client) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  LOG(INFO) << "CreateFrameSinkBundle client_id " << bundle_id.client_id()
+            << " bundle_id " << bundle_id.bundle_id();
+#endif
   if (base::Contains(bundle_map_, bundle_id)) {
     uint32_t client_id = bundle_id.client_id();
     uint32_t bundle_id_value = bundle_id.bundle_id();
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+    LOG(ERROR) << "ReportBadMessage Duplicate FrameSinkBundle ID";
+#endif
     std::visit(
         [](auto& receiver) {
           receiver.ReportBadMessage("Duplicate FrameSinkBundle ID");
@@ -300,7 +320,13 @@ void FrameSinkManagerImpl::CreateCompositorFrameSink(
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   TRACE_EVENT("viz", "FrameSinkManagerImpl::CreateCompositorFrameSink",
               "frame_sink_id", frame_sink_id);
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  LOG(INFO) << "CreateCompositorFrameSink, frame_sink_id info: " << frame_sink_id.ToString();
+#endif
   if (base::Contains(sink_map_, frame_sink_id)) {
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+    LOG(ERROR) << "ReportBadMessage Duplicate FrameSinkId";
+#endif
     std::visit(
         [](auto& receiver) {
           receiver.ReportBadMessage("Duplicate FrameSinkId");
@@ -334,8 +360,16 @@ void FrameSinkManagerImpl::CreateCompositorFrameSink(
 void FrameSinkManagerImpl::DestroyCompositorFrameSink(
     const FrameSinkId& frame_sink_id,
     DestroyCompositorFrameSinkCallback callback) {
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  LOG(INFO) << "DestroyCompositorFrameSink, frame_sink_id info: " << frame_sink_id.ToString();
+#endif
   sink_map_.erase(frame_sink_id);
   root_sink_map_.erase(frame_sink_id);
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+  if (managerImplUtils) {
+    managerImplUtils->EraseIfNeedCleanBuffers(frame_sink_id);
+  }
+#endif
   std::move(callback).Run();
 }
 
@@ -538,6 +572,10 @@ void FrameSinkManagerImpl::RequestCopyOfOutput(
 }
 
 void FrameSinkManagerImpl::DestroyFrameSinkBundle(const FrameSinkBundleId& id) {
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  LOG(INFO) << "DestroyFrameSinkBundle client_id " << id.client_id()
+            << " bundle_id " << id.bundle_id();
+#endif
   bundle_map_.erase(id);
 }
 
@@ -1055,6 +1093,34 @@ void FrameSinkManagerImpl::StopThrottlingAllFrameSinks() {
   UpdateThrottling();
 }
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+void FrameSinkManagerImpl::SendInternalBeginFrame(const FrameSinkId& id) {
+  root_sink_map_[id]->AsExt()->SendInternalBeginFrame();
+}
+#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
+void FrameSinkManagerImpl::EvictFrameBackBuffers(
+    const FrameSinkId& root_frame_sink_id) {
+    managerImplUtils->EvictFrameBackBuffers(root_frame_sink_id);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+void FrameSinkManagerImpl::SetIfNeedCleanBuffers(const FrameSinkId& frame_sink_id, bool need_clean_buffers)
+{
+  if (managerImplUtils) {
+    managerImplUtils->SetIfNeedCleanBuffers(frame_sink_id, need_clean_buffers);
+  }
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+void FrameSinkManagerImpl::SetIsOfflineWebComponentInactive(bool is_inactive,
+    const FrameSinkId& frame_sink_id) {
+    managerImplUtils->SetIsOfflineWebComponentInactive(is_inactive, frame_sink_id);
+}
+#endif
+
 void FrameSinkManagerImpl::UpdateThrottling() {
   // Clear previous throttling effect on all frame sinks.
   for (auto& support_map_item : support_map_) {
@@ -1306,4 +1372,43 @@ GpuServiceImpl* FrameSinkManagerImpl::GetGpuService() {
   return gpu_service_;
 }
 
+#if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
+void FrameSinkManagerImpl::SetEnableLowerFrameRate(
+    bool enabled,
+    const FrameSinkId& frame_sink_id) {
+    managerImplUtils->SetEnableLowerFrameRate(enabled, frame_sink_id);
+}
+
+void FrameSinkManagerImpl::SetEnableHalfFrameRate(
+    bool enabled,
+    const FrameSinkId& frame_sink_id) {
+    managerImplUtils->SetEnableHalfFrameRate(enabled, frame_sink_id);
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_VIDEO_LTPO)
+void FrameSinkManagerImpl::UpdateVSyncFrequency(
+    const FrameSinkId& frame_sink_id,
+    uint32_t client_id) {
+    managerImplUtils->UpdateVSyncFrequency(frame_sink_id, client_id);
+}
+void FrameSinkManagerImpl::ResetVSyncFrequency(
+    const FrameSinkId& frame_sink_id) {
+    managerImplUtils->ResetVSyncFrequency(frame_sink_id);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_PIP)
+void FrameSinkManagerImpl::SetPipActive(
+    bool active,
+    const FrameSinkId& frame_sink_id) {
+    managerImplUtils->SetPipActive(active, frame_sink_id);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+void FrameSinkManagerImpl::ClearBlanklessSnapshotInfo(uint64_t blankless_key) {
+  managerImplUtils->ClearBlanklessSnapshotInfo(blankless_key);
+}
+#endif
 }  // namespace viz

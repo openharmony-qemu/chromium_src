@@ -7,9 +7,26 @@ assert(!is_fuchsia)
 
 import("//base/debug/debug.gni")
 import("//components/gwp_asan/buildflags/buildflags.gni")
+import("//arkweb/build/features/features.gni")
 
 if (is_android) {
   import("//build/config/android/config.gni")
+}
+
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
+
+static_library("url_constants") {
+  sources = [ "url_constants.h" ]
+
+  if (is_chrome_branded && is_official_build) {
+    sources += [ "internal/url_constants.cc" ]
+  } else {
+    sources += [ "url_constants.cc" ]
+  }
+
+  deps = [ "//build:branding_buildflags" ]
 }
 
 source_set("lib") {
@@ -34,10 +51,6 @@ source_set("crashpad_handler_main") {
     "//components/gwp_asan/buildflags",
     "//third_party/crashpad/crashpad/handler",
   ]
-
-  if (is_linux || is_chromeos || is_mac) {
-    deps += [ "//components/stability_report" ]
-  }
 
   if (enable_gwp_asan) {
     deps += [ "//components/gwp_asan/crash_handler" ]
@@ -68,6 +81,10 @@ static_library("app") {
       "breakpad_linux_impl.cc",
       "breakpad_linux_impl.h",
     ]
+  }
+
+  if (defined(arkweb_crashpad) && arkweb_crashpad) {
+    sources += arkweb_components_crash_core_app_sources
   }
 
   defines = [ "CRASH_IMPLEMENTATION" ]
@@ -105,7 +122,7 @@ static_library("app") {
     libs = [ "log" ]
   }
 
-  if (is_android || is_linux || is_chromeos) {
+  if (is_android || is_linux || is_chromeos || is_ohos) {
     deps += [
       "//base:base_static",
       "//components/crash/core/common",
@@ -113,7 +130,7 @@ static_library("app") {
     ]
   }
 
-  if (is_castos) {
+  if (is_castos || is_ohos) {
     deps += [ "//third_party/breakpad:client" ]
   }
 
@@ -273,6 +290,14 @@ if (is_mac || is_android || is_linux || is_chromeos) {
   }
 }
 
+if (defined(arkweb_crashpad) && arkweb_crashpad) {
+  shared_library("arkweb_crashpad_handler") {
+    deps = [
+      ":crashpad_handler_main",
+    ]
+  }
+}
+
 if (is_android) {
   # There is not any normal way to package native executables in an Android APK.
   # It is normal to package native code as a loadable module but Android's APK
@@ -310,6 +335,13 @@ source_set("unit_tests") {
     "//testing/gtest",
   ]
 
+  if (defined(arkweb_crashpad) && arkweb_crashpad) {
+    sources += arkweb_components_crashpad_ohos_unittest
+    deps += [
+      "//third_party/crashpad/crashpad/util",
+    ]
+    defines = [ "CRASH_IMPLEMENTATION" ]
+  }
   if (is_win) {
     sources += [
       "fallback_crash_handler_launcher_win_unittest.cc",

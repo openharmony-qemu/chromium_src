@@ -787,6 +787,12 @@ void UserMediaProcessor::ProcessRequest(UserMediaRequest* request,
                          current_request_info_->request()->Audio(),
                          current_request_info_->request()->Video()));
   // TODO(guidou): Set up audio and video in parallel.
+  LOG(INFO) << base::StringPrintf(
+      "ProcessRequest({request_id=%d}, {audio=%d}, "
+      "{video=%d})",
+      current_request_info_->request_id(),
+      current_request_info_->request()->Audio(),
+      current_request_info_->request()->Video());
   if (current_request_info_->request()->Audio()) {
     SetupAudioInput();
     return;
@@ -2005,7 +2011,7 @@ UserMediaProcessor::CreateVideoSource(
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
   DCHECK(current_request_info_);
   DCHECK(current_request_info_->video_capture_settings().HasValue());
-
+  LOG(INFO) << "UserMediaProcessor::CreateVideoSource ";
   return std::make_unique<blink::MediaStreamVideoCapturerSource>(
       frame_->GetTaskRunner(TaskType::kInternalMediaRealTime), frame_,
       std::move(stop_callback), device,

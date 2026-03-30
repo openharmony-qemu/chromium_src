@@ -6,6 +6,8 @@
 
 #include "partition_alloc/shim/allocator_shim.h"
 
+#include "partition_alloc/shim/allocator_shim.h"
+
 #if PA_BUILDFLAG(USE_PARTITION_ALLOC_AS_MALLOC)
 
 #include "base/test/multiprocess_test.h"

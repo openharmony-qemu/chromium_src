@@ -45,6 +45,20 @@ class PLATFORM_EXPORT MultiBufferReader : public MultiBuffer::Reader {
       base::RepeatingCallback<void(int64_t, int64_t)> progress_callback,
       scoped_refptr<base::SingleThreadTaskRunner> task_runner);
 
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  MultiBufferReader(
+      MultiBuffer* multibuffer,
+      int64_t start,
+      int64_t end,
+      bool is_client_audio_element,
+      uint64_t preload_size,
+      uint64_t request_size,
+      uint16_t byte_rate,
+      std::string id,
+      base::RepeatingCallback<void(int64_t, int64_t)> progress_callback,
+      scoped_refptr<base::SingleThreadTaskRunner> task_runner);
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
   ~MultiBufferReader() override;
 
   // Returns number of bytes available for reading. At position |pos|
@@ -174,6 +188,13 @@ class PLATFORM_EXPORT MultiBufferReader : public MultiBuffer::Reader {
   // This is a pointer to a slot in the cache, so the unit is
   // blocks.
   MultiBufferBlockId preload_pos_;
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  int32_t preload_size_ = -1;  // preload size (unit:32k)
+  int32_t request_size_ = -1;  // segment request size (unit:32k)
+  uint16_t byte_rate_;
+  std::string id_;
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 
   // True if we've requested data from the cache by calling WaitFor().
   bool loading_;

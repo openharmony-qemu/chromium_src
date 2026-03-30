@@ -2,6 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+#include <stdlib.h>
+#include <unistd.h>
+#endif
+
 #ifdef UNSAFE_BUFFERS_BUILD
 // TODO(crbug.com/40284755): Remove this and spanify to fix the errors.
 #pragma allow_unsafe_buffers
@@ -23,6 +29,10 @@
 #include <limits>
 #endif  // PA_BUILDFLAG(IS_WIN)
 
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+#include "ohos_sdk/openharmony/native/sysroot/usr/include/info/fatal_message.h"
+#endif
+
 namespace partition_alloc {
 
 size_t g_oom_size = 0U;
@@ -37,7 +47,10 @@ namespace internal {
   g_oom_size = size;
   size_t tmp_size = size;
   internal::base::debug::Alias(&tmp_size);
-
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+  set_fatal_message("OutOfMemoryError");
+  abort();
+#endif
 #if PA_BUILDFLAG(IS_WIN)
   // Create an exception vector with:
   // [0] the size of the allocation, in bytes

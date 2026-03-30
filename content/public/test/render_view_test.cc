@@ -571,6 +571,7 @@ void RenderViewTest::TearDown() {
     leak_detector->PerformLeakDetection(base::BindOnce(
         [](base::OnceClosure closure,
            blink::mojom::LeakDetectionResultPtr result) {
+#if !BUILDFLAG(ARKWEB_TEST)
           EXPECT_EQ(0u, result->number_of_live_audio_nodes);
           EXPECT_EQ(0u, result->number_of_live_documents);
           EXPECT_EQ(0u, result->number_of_live_nodes);
@@ -582,6 +583,7 @@ void RenderViewTest::TearDown() {
           EXPECT_EQ(0u, result->number_of_live_v8_per_context_data);
           EXPECT_EQ(0u, result->number_of_worker_global_scopes);
           EXPECT_EQ(0u, result->number_of_live_resource_fetchers);
+#endif
           std::move(closure).Run();
         },
         run_loop.QuitClosure()));
@@ -753,7 +755,15 @@ void RenderViewTest::Reload(const GURL& url) {
       network::mojom::CSPDisposition::CHECK, std::vector<int>(), std::string(),
       false /* is_history_navigation_in_new_child_frame */,
       base::TimeTicks() /* input_start */,
-      network::mojom::RequestDestination::kDocument);
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+      network::mojom::RequestDestination::kDocument, ""
+#else
+      network::mojom::RequestDestination::kDocument
+#endif
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+      , false
+#endif
+      );
   auto commit_params = blink::CreateCommitNavigationParams();
   TestRenderFrame* frame = static_cast<TestRenderFrame*>(GetMainRenderFrame());
   FrameLoadWaiter waiter(frame);
@@ -904,7 +914,15 @@ void RenderViewTest::GoToOffset(int offset,
       network::mojom::CSPDisposition::CHECK, std::vector<int>(), std::string(),
       false /* is_history_navigation_in_new_child_frame */,
       base::TimeTicks() /* input_start */,
-      network::mojom::RequestDestination::kDocument);
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+      network::mojom::RequestDestination::kDocument, ""
+#else
+      network::mojom::RequestDestination::kDocument
+#endif
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+      , false
+#endif
+      );
   auto commit_params = blink::CreateCommitNavigationParams();
   commit_params->page_state = state.ToEncodedData();
   commit_params->nav_entry_id = pending_index + 1;

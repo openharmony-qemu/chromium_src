@@ -121,6 +121,9 @@ class CONTENT_EXPORT RendererBlinkPlatformImpl : public BlinkPlatformImpl {
   bool IsLockedToSite() const override;
   bool IsThreadedAnimationEnabled() override;
   bool IsGpuCompositingDisabled() const override;
+#if BUILDFLAG(ARKWEB_SYNC_RENDER)
+  int32_t GetDrawMode() override;
+#endif
 #if BUILDFLAG(IS_ANDROID)
   bool IsSynchronousCompositingEnabledForAndroidWebView() override;
   bool IsZeroCopySynchronousSwDrawEnabledForAndroidWebView() override;
@@ -270,6 +273,9 @@ class CONTENT_EXPORT RendererBlinkPlatformImpl : public BlinkPlatformImpl {
   // Tells this platform that the renderer is locked to a site (i.e., a scheme
   // plus eTLD+1, such as https://google.com), or to a more specific origin.
   void SetIsLockedToSite();
+#if BUILDFLAG(ARKWEB_SYNC_RENDER)
+  void SetDrawMode(int mode);
+#endif
 
   void set_webui_resource_to_code_cache_id_map(
       const base::flat_map<GURL, int>& resource_map) {
@@ -292,6 +298,9 @@ class CONTENT_EXPORT RendererBlinkPlatformImpl : public BlinkPlatformImpl {
 
   // If true, the renderer process is locked to a site.
   bool is_locked_to_site_;
+#if BUILDFLAG(ARKWEB_SYNC_RENDER)
+  int32_t draw_mode_;
+#endif
 
   // NOT OWNED
   raw_ptr<blink::scheduler::WebThreadScheduler> main_thread_scheduler_;

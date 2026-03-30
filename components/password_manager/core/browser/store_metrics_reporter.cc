@@ -682,7 +682,8 @@ StoreMetricsReporter::CredentialsCount ReportAllMetrics(
 }
 
 void ReportBiometricAuthenticationBeforeFillingMetrics(PrefService* prefs) {
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(IS_OHOS)
   base::UmaHistogramBoolean(
       base::StrCat({kPasswordManager, ".BiometricAuthBeforeFillingEnabled2"}),
       prefs->GetBoolean(

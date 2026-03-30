@@ -10,6 +10,7 @@
 #include "base/metrics/field_trial_params.h"
 #include "build/build_config.h"
 #include "ui/base/buildflags.h"
+#include "arkweb/build/features/features.h"
 
 namespace features {
 
@@ -36,7 +37,7 @@ BASE_DECLARE_FEATURE(kUiCompositorUsesLayerLists);
 
 COMPONENT_EXPORT(UI_BASE_FEATURES) bool IsUiGpuRasterizationEnabled();
 
-#if !BUILDFLAG(IS_APPLE)
+#if !BUILDFLAG(IS_APPLE) || BUILDFLAG(ARKWEB_INPUT_EVENTS)
 COMPONENT_EXPORT(UI_BASE_FEATURES) BASE_DECLARE_FEATURE(kElasticOverscroll);
 #endif
 

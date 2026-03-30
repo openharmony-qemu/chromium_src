@@ -294,7 +294,12 @@ base::FilePath GetBundleResourcePath(
   // |chrome_resources_path| corresponds to src/chrome/browser/resources in
   // source tree.
   base::FilePath chrome_resources_path;
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (!base::PathService::Get(base::DIR_OHOS_APP_INSTALLATION,
+                              &chrome_resources_path))
+#else
   if (!base::PathService::Get(chrome::DIR_RESOURCES, &chrome_resources_path))
+#endif
     return base::FilePath();
 
   // Since component extension resources are included in

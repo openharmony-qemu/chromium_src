@@ -88,6 +88,7 @@
 #include "ui/base/mojom/menu_source_type.mojom-blink-forward.h"
 #include "ui/base/mojom/window_show_state.mojom-blink-forward.h"
 #include "ui/gfx/ca_layer_result.h"
+#include "arkweb/build/features/features.h"
 
 namespace gfx {
 class Point;
@@ -107,6 +108,10 @@ class WebViewImpl;
 class WidgetBase;
 class WidgetEventHandler;
 class ScreenMetricsEmulator;
+#if BUILDFLAG(IS_ARKWEB)
+class WebFrameWidgetImplExt;
+#endif // BUILDFLAG(IS_ARKWEB)
+
 
 // Implements WebFrameWidget for both main frames and child local root frame
 // (OOPIF).
@@ -158,6 +163,10 @@ class CORE_EXPORT WebFrameWidgetImpl
   ~WebFrameWidgetImpl() override;
 
   virtual void Trace(Visitor*) const;
+  #if BUILDFLAG(IS_ARKWEB)
+  friend class WebFrameWidgetImplExt;
+  virtual WebFrameWidgetImplExt* AsWebFrameWidgetImplExt() { return nullptr; }
+  #endif // BUILDFLAG(IS_ARKWEB)
 
   // Shutdown the widget.
   void Close(DetachReason detach_reason);
@@ -333,7 +342,6 @@ class CORE_EXPORT WebFrameWidgetImpl
   void SetMayThrottleIfUndrawnFrames(
       bool may_throttle_if_undrawn_frames) override;
   int GetVirtualKeyboardResizeHeight() const override;
-
   void OnTaskCompletedForFrame(base::TimeTicks start_time,
                                base::TimeTicks end_time,
                                LocalFrame*) override;
@@ -757,6 +765,9 @@ class CORE_EXPORT WebFrameWidgetImpl
   // Request a new `viz::LocalSurfaceId` on the compositor thread.
   void RequestNewLocalSurfaceId();
 
+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+  void ReSendLanguage() override;
+#endif // ARKWEB_COMPOSITE_RENDER
   void OnDevToolsSessionConnectionChanged(bool attached);
 
   void OnFirstContentfulPaint(const base::TimeTicks& first_paint_time) override;
@@ -946,6 +957,9 @@ class CORE_EXPORT WebFrameWidgetImpl
                          bool should_show_handle,
                          bool should_show_context_menu,
                          SelectAroundCaretCallback callback) override;
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  void SetZoomLevel(float magnify_delta, const gfx::Point& anchor) override {}
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
   // PageWidgetEventHandler overrides:
   WebInputEventResult HandleKeyEvent(const WebKeyboardEvent&) override;
@@ -1298,4 +1312,7 @@ class CORE_EXPORT WebFrameWidgetImpl
 
 }  // namespace blink
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/frame/web_frame_widget_impl_ext.h"
+#endif  // BUILDFLAG(IS_ARKWEB)
 #endif  // THIRD_PARTY_BLINK_RENDERER_CORE_FRAME_WEB_FRAME_WIDGET_IMPL_H_

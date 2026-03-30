@@ -1107,6 +1107,11 @@ void UpdateServiceImplImpl::UpdateImpl(
   VLOG(1) << __func__;
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+   std::move(callback).Run(Result::kUpdateCheckFailed);
+   return;
+#endif
+
   if (!config_->GetUpdaterPersistedData()
            ->GetProductVersion(app_id)
            .IsValid()) {

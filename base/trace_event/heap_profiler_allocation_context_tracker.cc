@@ -64,7 +64,13 @@ AllocationContextTracker::~AllocationContextTracker() = default;
 // static
 void AllocationContextTracker::SetCurrentThreadName(const char* name) {
   if (name && capture_mode() != CaptureMode::kDisabled) {
+#if BUILDFLAG(IS_OHOS)
+    if (GetInstanceForCurrentThread()) {
     GetInstanceForCurrentThread()->thread_name_ = name;
+  }
+#else
+    GetInstanceForCurrentThread()->thread_name_ = name;
+#endif
   }
 }
 

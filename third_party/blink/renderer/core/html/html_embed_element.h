@@ -25,8 +25,13 @@
 
 #include "third_party/blink/renderer/core/core_export.h"
 #include "third_party/blink/renderer/core/html/html_plugin_element.h"
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+#include "third_party/blink/renderer/core/frame/settings.h"
+#endif
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/html/html_plugin_element_utils.h"
 
 namespace blink {
+class HTMLPlugInElementUtils;
 
 class CORE_EXPORT HTMLEmbedElement final : public HTMLPlugInElement {
   DEFINE_WRAPPERTYPEINFO();
@@ -42,6 +47,13 @@ class CORE_EXPORT HTMLEmbedElement final : public HTMLPlugInElement {
   FrameOwnerElementType OwnerType() const final {
     return FrameOwnerElementType::kEmbed;
   }
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  bool IsNativeType() const override {
+    return Utils()->CheckNativeType(web_pref::kEmbedTag);
+  }
+  void NativeEmbedOverlay(const AttributeModificationParams& params);
+#endif
 
   const V8UnionTrustedScriptURLOrUSVString* src();
   void setSrc(const V8UnionTrustedScriptURLOrUSVString*, ExceptionState&);

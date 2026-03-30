@@ -63,6 +63,16 @@
 #include "media/mojo/mojom/fuchsia_media.mojom-forward.h"
 #endif
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/build/features/features.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_THEME_FONT)
+#include "base/files/file.h"
+#endif
+
+#include "arkweb/chromium_ext/content/public/browser/render_process_host_ohos.h"
+
 class GURL;
 
 namespace base {
@@ -124,10 +134,19 @@ namespace mojom {
 class Renderer;
 }  // namespace mojom
 
+#if BUILDFLAG(IS_ARKWEB)
+enum class RenderProcessMode {
+    SINGLE_MODE = 0,
+    MULTIPLE_MODE = 1,
+    DEFAULT_MODE = 2,
+};
+#endif
+
 // Interface that represents the browser side of the browser <-> renderer
 // communication channel. There will generally be one RenderProcessHost per
 // renderer process.
 class CONTENT_EXPORT RenderProcessHost : public IPC::Listener,
+                                         public RenderProcessHostOhos,
                                          public base::SupportsUserData {
   // Do not remove this macro!
   // The macro is maintained by the memory safety team.
@@ -493,6 +512,17 @@ class CONTENT_EXPORT RenderProcessHost : public IPC::Listener,
   // a crash.
   virtual const base::TimeTicks& GetLastInitTime() = 0;
 
+#if BUILDFLAG(IS_ARKWEB)
+  // Returns true if this process currently has backgrounded priority.
+  virtual bool IsProcessBackgrounded() { return false; }
+
+  virtual const base::TimeTicks& ProcessBackgroundTime() = 0;
+#endif
+
+#if BUILDFLAG(ARKWEB_THEME_FONT)
+  virtual void OnThemeFontChange() {}
+#endif
+
   // Returns the priority of this process.
   virtual base::Process::Priority GetPriority() const = 0;
 
@@ -790,6 +820,14 @@ class CONTENT_EXPORT RenderProcessHost : public IPC::Listener,
   // a cost on every call.
   virtual uint64_t GetPrivateMemoryFootprint() = 0;
 
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+  virtual void dumpCurrentJavaScriptStackInMainThread(
+      base::OnceCallback<void(const std::string&)> callback) {}
+
+  virtual void InvokeRenderCrashDump() {}
+
+  virtual void ReportRenderUnresponsive(int32_t pid) {}
+#endif
   // Static management functions -----------------------------------------------
 
   // Flag to run the renderer in process.  This is primarily
@@ -854,6 +892,10 @@ class CONTENT_EXPORT RenderProcessHost : public IPC::Listener,
   // Counts current RenderProcessHost(s), ignoring all spare processes.
   static int GetCurrentRenderProcessCountForTesting();
 
+#if BUILDFLAG(ARKWEB_I18N)
+  static void OnLocaleChangedToRenderer(const std::string& update_locale);
+#endif
+
   // Allows tests to override host interface binding behavior. Any interface
   // binding request which would normally pass through the RPH's internal
   // IOThreadHostImpl::BindHostReceiver() will pass through |callback| first if
@@ -863,6 +905,23 @@ class CONTENT_EXPORT RenderProcessHost : public IPC::Listener,
                                    mojo::GenericPendingReceiver* receiver)>;
   static void InterceptBindHostReceiverForTesting(
       BindHostReceiverInterceptor callback);
+
+#if BUILDFLAG(IS_ARKWEB)
+  static void SetRenderProcessMode(RenderProcessMode mode);
+  static RenderProcessMode render_process_mode();
+
+  enum class RenderType {
+    kExtension = 0,
+    kPdf = 1,
+    kWebUI = 2,
+  };
+
+  std::map<RenderType, unsigned> special_render_numbers_ {
+    {RenderType::kExtension, 0},
+    {RenderType::kPdf, 0},
+    {RenderType::kWebUI, 0},
+  };
+#endif
 };
 
 }  // namespace content

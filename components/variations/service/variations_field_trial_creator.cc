@@ -61,6 +61,10 @@
 #include "ui/base/l10n/l10n_util.h"
 #include "ui/base/resource/resource_bundle.h"
 
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+#include "content/public/common/content_switches.h"
+#endif
+
 namespace variations {
 namespace {
 
@@ -318,6 +322,12 @@ bool VariationsFieldTrialCreator::SetUpFieldTrials(
   feature_list->InitFromCommandLine(
       command_line->GetSwitchValueASCII(::switches::kEnableFeatures),
       command_line->GetSwitchValueASCII(::switches::kDisableFeatures));
+
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+  feature_list->InitFromCommandLine(
+      command_line->GetSwitchValueASCII(::switches::kEnableBlinkFeatures),
+      command_line->GetSwitchValueASCII(::switches::kDisableBlinkFeatures));
+#endif
 
   // This needs to happen here: After the InitFromCommandLine() call,
   // because the explicit cmdline --disable-features and --enable-features

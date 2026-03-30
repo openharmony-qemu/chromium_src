@@ -15,6 +15,10 @@
 #include "third_party/blink/renderer/core/layout/layout_object.h"
 #include "third_party/blink/renderer/core/testing/core_unit_test_helper.h"
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/editing/selection_controller_for_include.h"
+#endif
+
 namespace blink {
 
 class SelectionControllerTest : public EditingTestBase {
@@ -62,6 +66,9 @@ class SelectionControllerTest : public EditingTestBase {
   void SetCaretAtHitTestResult(const HitTestResult&);
   void SetNonDirectionalSelectionIfNeeded(const SelectionInFlatTree&,
                                           TextGranularity);
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  friend class SelectionControllerForIncludeTest;
+#endif
 };
 
 bool SelectionControllerTest::SelectClosestWordFromHitTestResult(
@@ -624,5 +631,9 @@ TEST_F(SelectionControllerTest, MAYBE_MiddleClickPasteToggle) {
                                  WebInputEvent::GetStaticTimeStampForTests());
   EXPECT_FALSE(Controller().HandlePasteGlobalSelection(mouse_event_down));
 }
+
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/editing/selection_controller_for_include_unittest.cc"
+#endif
 
 }  // namespace blink

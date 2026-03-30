@@ -13,7 +13,11 @@
 
 namespace translate {
 
+#if BUILDFLAG(IS_ARKWEB)
+const char kSecurityOrigin[] = "https://x.x.x.x";
+#else
 const char kSecurityOrigin[] = "https://translate.googleapis.com/";
+#endif // BUILDFLAG(IS_ARKWEB)
 
 // The feature is explicitly disabled on WebView.
 // TODO(crbug.com/40819484): Enable the feature on WebView.

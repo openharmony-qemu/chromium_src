@@ -248,6 +248,12 @@ struct IframeAttributes {
   string? src;
 };
 
+struct CacheOptions {
+  map<string, string> response_headers;
+  bool is_module;
+  bool is_top_level;
+};
+
 // Code location for an enterprise legacy technology event. The data will be
 // uploaded to the enterprise management server without being parsed by the
 // browser process.
@@ -338,6 +344,20 @@ interface LocalFrameHost {
   // background color. This will be called on main-frames only.
   // |color_adjust| is true if the background is forced by color adjustments.
   DidChangeBackgroundColor(skia.mojom.SkColor4f background_color, bool color_adjust);
+
+  // #if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+  [EnableIf=arkweb_ext_free_copy]
+  NotifyContextMenuWillShow();
+  // #endif
+
+  [EnableIf=arkweb_get_scroll_offset]
+  OnOverScrollOffsetChanged(float offset_x, float offset_y);
+
+  [EnableIf=arkweb_blank_screen_detection]
+  OnDetectedBlankScreen(string url, int32 blankScreenReason, int32 detectedContentfulNodesCount);
+
+  [EnableIf=arkweb_first_screen_paint]
+  OnFirstScreenPaint(string url, int64 navigation_start_time, int64 first_screen_paint_time);
 
   // Sent when the renderer fails to load with |error_code| which means a net
   // error code.
@@ -640,6 +660,17 @@ interface LocalFrameHost {
       uint32 line_number,
       mojo_base.mojom.String16? source_id,
       mojo_base.mojom.BigString16? untrusted_stack_trace);
+
+  // #if BUILDFLAG(ARKWEB_CONSOLE_LOGGING)
+  [EnableIf=arkweb_console_logging]
+  DidAddMessageToConsoleV2(
+      ConsoleMessageLevel log_level,
+      ConsoleMessageSource log_source,
+      mojo_base.mojom.BigString16 msg,
+      uint32 line_number,
+      mojo_base.mojom.String16? source_id,
+      mojo_base.mojom.BigString16? untrusted_stack_trace);
+  // #endif
 
   // The frame's size is replicated in the browser so that the browser can
   // correctly set the initial size of the frame in case of a cross-process
@@ -1124,6 +1155,12 @@ interface LocalFrame {
   // Content settings are a mechanism that allows users to disable various
   // functions of the browser. One content setting disables javascript. This bit
   // controls whether this content setting is ignored or honored.
+  [EnableIf=is_arkweb]
+  JavaScriptExecuteRequestExt(
+      handle fd_handle,
+      uint64 scriptLength,
+      bool wants_result) => (mojo_base.mojom.Value result);
+
   JavaScriptExecuteRequestForTests(
       mojo_base.mojom.BigString16 javascript,
       bool has_user_gesture,
@@ -1285,6 +1322,27 @@ interface LocalFrame {
     network.mojom.URLLoaderCompletionStatus completion_status
   );
 
+  // This passes a url of a img down to the renderer, in order to get img cache of
+  // this url
+  [EnableIf=arkweb_menu_or_nweb_ex]
+  GetImageFromCache(string url) => (uint32 buffer_size, mojo_base.mojom.ReadOnlySharedMemoryRegion? region);
+
+  [EnableIf=is_arkweb]
+  GetAllImage(int32 taskid, string url) => (uint32 buffer_size, mojo_base.mojom.ReadOnlySharedMemoryRegion? region);
+
+  [EnableIf=is_arkweb]
+  GetImageByXPath(int32 taskid, string xpath) => (uint32 buffer_size, mojo_base.mojom.ReadOnlySharedMemoryRegion? region, uint32 width, uint32 height);
+
+  [EnableIf=arkweb_blank_screen_detection]
+  DetectBlankScreen(string url,
+                    array<double> detection_timing,
+                    array<int32> detection_methods,
+                    int32 contentful_nodes_count_threshold);
+
+  // Request the renderer to generate code cache for the given javascript.
+  [EnableIf=arkweb_precompile]
+  GenerateCodeCache(string url, string script, CacheOptions cache_options) => (int32 result);
+
   // Retrieves the scroll position of the frame.
   GetScrollPosition() => (gfx.mojom.Point scroll_position);
 
@@ -1411,6 +1469,11 @@ interface LocalMainFrameHost {
   // Request close of the window. This corresponds to a window.close() javascript API call.
   // Frame unload handlers should have already been called before this method is called.
   RequestClose();
+
+  // #if BUILDFLAG(ARKWEB_FLING)
+  [EnableIf=arkweb_fling]
+  UpdateFlingVelocityLimit(gfx.mojom.Vector2dF velocity);
+  // #endif
 
   // Causes a window previously opened via content.mojom.FrameHost::CreateNewWindow
   // to be shown on the screen. This message contains the opener_frame_token

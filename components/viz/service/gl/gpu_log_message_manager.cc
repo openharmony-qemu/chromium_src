@@ -21,6 +21,7 @@ bool PreInitializeLogHandler(int severity,
   return false;
 }
 
+#if !BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
 bool PostInitializeLogHandler(int severity,
                               const char* file,
                               int line,
@@ -31,6 +32,7 @@ bool PostInitializeLogHandler(int severity,
       message.substr(message_start));
   return false;
 }
+#endif
 }  // namespace
 
 GpuLogMessageManager* GpuLogMessageManager::GetInstance() {
@@ -91,7 +93,11 @@ void GpuLogMessageManager::InstallPostInitializeLogHandler(
     scoped_refptr<base::SingleThreadTaskRunner> io_task_runner) {
   Bind(std::move(pending_remote), std::move(io_task_runner));
 
+#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
+  logging::SetLogMessageHandler(nullptr);
+#else
   logging::SetLogMessageHandler(PostInitializeLogHandler);
+#endif
 }
 
 void GpuLogMessageManager::ShutdownLogging() {

@@ -124,6 +124,11 @@ class PLATFORM_EXPORT WidgetBaseInputHandler {
   // latency classification.
   bool last_injected_gesture_was_begin_ = false;
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  // whether the last mouse event is mouse down event.
+  bool is_leftdown_last_mouse_ = false;
+#endif
+
   const bool supports_buffered_touch_ = false;
 
   base::WeakPtrFactory<WidgetBaseInputHandler> weak_ptr_factory_{this};

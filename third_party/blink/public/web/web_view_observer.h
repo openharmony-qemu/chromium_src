@@ -38,7 +38,14 @@ class BLINK_EXPORT WebViewObserver : public base::CheckedObserver {
 
   // Called when the View's visibility changes.
   virtual void OnPageVisibilityChanged(
-      blink::mojom::PageVisibilityState visibility_state) {}
+#if !BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+      blink::mojom::PageVisibilityState visibility_state) {
+  }
+#else
+      blink::mojom::PageVisibilityState visibility_state,
+      bool storing_in_bfcache) {
+  }
+#endif
 
   // Called when render preferences have updated.
   virtual void OnRendererPreferencesUpdated(

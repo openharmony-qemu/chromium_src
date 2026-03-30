@@ -28,6 +28,7 @@
 #include "net/dns/public/secure_dns_mode.h"
 #include "net/dns/resolve_context.h"
 #include "net/log/net_log_with_source.h"
+#include "arkweb/chromium_ext/net/dns/arkweb_host_resolver_dns_task_ext.h"
 
 namespace net {
 
@@ -43,6 +44,7 @@ class HostResolverInternalErrorResult;
 // transactions are scheduled separately and started separately.
 class NET_EXPORT_PRIVATE HostResolverDnsTask final {
  public:
+  friend class ArkWebHostResolverDnsTaskExt;
   using Results = std::set<std::unique_ptr<HostResolverInternalResult>>;
   using ResultRefs = std::set<const HostResolverInternalResult*>;
 
@@ -83,6 +85,12 @@ class NET_EXPORT_PRIVATE HostResolverDnsTask final {
 
     virtual void AddTransactionTimeQueued(base::TimeDelta time_queued) = 0;
 
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+    virtual void AddTransactionResultForReport(const DnsQueryType query_type,
+                                               int net_error) = 0;
+    virtual void InitReportInfoForDohFallback() = 0;
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+
    protected:
     Delegate() = default;
     virtual ~Delegate() = default;
@@ -114,6 +122,10 @@ class NET_EXPORT_PRIVATE HostResolverDnsTask final {
   }
 
   bool secure() const { return secure_; }
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  bool need_to_sniff_ip_result() { return need_to_sniff_ip_result_; }
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 
   bool https_disabled() const { return https_disabled_; }
 
@@ -264,6 +276,11 @@ class NET_EXPORT_PRIVATE HostResolverDnsTask final {
   // task completes unsuccessfully. Used as a signal that underlying
   // transactions should timeout more quickly.
   bool fallback_available_;
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  bool need_to_sniff_ip_result_ = false;
+  std::unique_ptr<ArkWebHostResolverDnsTaskExt> utils;
+#endif
 
   const HostResolver::HttpsSvcbOptions https_svcb_options_;
 

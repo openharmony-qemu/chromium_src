@@ -111,6 +111,13 @@ class VIEWS_EXPORT WidgetAXManager : public ui::AXModeObserver,
       override;
   bool AccessibilityIsWebContentSource() override;
 
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+  content::RenderFrameHostImpl* AccessibilityRenderFrameHost() override {
+    CHECK(false) << "Temporary stub for Chromium 141 adaptation. Internal implementation pending.";
+    return nullptr;
+  }
+#endif
+
  private:
   friend class WidgetAXManagerTestApi;
 

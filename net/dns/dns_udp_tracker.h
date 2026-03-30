@@ -7,6 +7,10 @@
 
 #include <stdint.h>
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(ENABLE_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "base/containers/circular_deque.h"
 #include "base/memory/raw_ptr.h"
 #include "base/time/default_tick_clock.h"

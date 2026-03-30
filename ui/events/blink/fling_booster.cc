@@ -6,6 +6,9 @@
 
 #include "base/trace_event/trace_event.h"
 
+#if BUILDFLAG(ARKWEB_FLING)
+#include "arkweb/chromium_ext/ui/events/blink/fling_booster_utils.h"
+#endif  // BUILDFLAG(ARKWEB_FLING)
 using blink::WebGestureEvent;
 using blink::WebInputEvent;
 
@@ -34,16 +37,26 @@ gfx::Vector2dF FlingBooster::GetVelocityForFlingStart(
   gfx::Vector2dF velocity(fling_start.data.fling_start.velocity_x,
                           fling_start.data.fling_start.velocity_y);
 
+#if BUILDFLAG(ARKWEB_FLING)
+    ScaleVelocity(fling_start, velocity);
+#endif  // BUILDFLAG(ARKWEB_FLING)
   TRACE_EVENT2("input", "FlingBooster::GetVelocityForFlingStart", "vx",
                velocity.x(), "vy", velocity.y());
 
   if (ShouldBoostFling(fling_start)) {
     velocity += previous_fling_starting_velocity_;
+#if BUILDFLAG(ARKWEB_FLING)
+    LimitVelocity(velocity, max_fling_velocity_);
+#endif
     TRACE_EVENT_INSTANT2("input", "Boosted", TRACE_EVENT_SCOPE_THREAD, "vx",
                          velocity.x(), "vy", velocity.y());
   }
 
   Reset();
+
+#if BUILDFLAG(ARKWEB_FLING)
+  ShouldLimitFlingVelocity(velocity, max_fling_velocity_);
+#endif
 
   previous_fling_starting_velocity_ = velocity;
   current_fling_velocity_ = velocity;
@@ -213,6 +226,17 @@ bool FlingBooster::ShouldBoostFling(const WebGestureEvent& fling_start_event) {
 
   return true;
 }
+
+#if BUILDFLAG(ARKWEB_FLING)
+void FlingBooster::UpdateFlingVelocityLimit(const gfx::Vector2dF& velocity) {
+  if (velocity == max_fling_velocity_)
+    return;
+ 
+  LOG(INFO) << "[flingTracker] update max fling velocity:"
+            << max_fling_velocity_.ToString() << " -> " << velocity.ToString();
+  max_fling_velocity_ = velocity;
+}
+#endif
 
 void FlingBooster::Reset() {
   TRACE_EVENT0("input", "FlingBooster::Reset");

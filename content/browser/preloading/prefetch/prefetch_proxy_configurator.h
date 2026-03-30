@@ -68,6 +68,16 @@ class CONTENT_EXPORT PrefetchProxyConfigurator
       uint64_t chain_index,
       const scoped_refptr<net::HttpResponseHeaders>& response_headers) override;
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  void OnTunnelHeadersReceivedWithToken(
+      const net::ProxyChain& proxy_chain,
+      const scoped_refptr<net::HttpResponseHeaders>& response_headers,
+      const std::string& token) override {}
+
+  void OnProxyConnectResult(const net::ProxyChain& proxy_chain,
+                            int error_code) override {}
+#endif
+
  private:
   // Called when an error is detected by the CustomProxyConnectionObserver
   // implementation so that we can throttle requests to the proxy.

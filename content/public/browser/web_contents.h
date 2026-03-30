@@ -66,6 +66,8 @@
 #include "third_party/jni_zero/jni_zero.h"
 #endif
 
+#include "arkweb/chromium_ext/content/public/browser/web_contents_for_include_file.cc"
+
 namespace base {
 class FilePath;
 }  // namespace base
@@ -340,6 +342,10 @@ class WebContents : public PageNavigator, public base::SupportsUserData {
     // default network will be used.
     net::handles::NetworkHandle target_network =
         net::handles::kInvalidNetworkHandle;
+
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_SHARE)
+    std::string shared_render_process_token;
+#endif
   };
 
   // Token that causes input to be blocked on this WebContents for at least as
@@ -656,7 +662,6 @@ class WebContents : public PageNavigator, public base::SupportsUserData {
   // other words, it must be a valid HTTP header value).
   virtual void SetUserAgentOverride(const blink::UserAgentOverride& ua_override,
                                     bool override_in_new_tabs) = 0;
-
   virtual const blink::UserAgentOverride& GetUserAgentOverride() = 0;
 
   // Updates all renderers to start sending subresource notifications since a
@@ -720,6 +725,8 @@ class WebContents : public PageNavigator, public base::SupportsUserData {
   // pending may be provisional (e.g., the navigation could result in a
   // download, in which case the URL would revert to what it was previously).
   virtual const std::u16string& GetTitle() = 0;
+
+  virtual bool GetIsRealTitle() = 0;
 
   // Saves the given title to the navigation entry and does associated work. It
   // will update history and the view with the new title, and also synthesize
@@ -1197,6 +1204,12 @@ class WebContents : public PageNavigator, public base::SupportsUserData {
   // Prepare for saving the current web page to disk.
   virtual void OnSavePage() = 0;
 
+#if BUILDFLAG(ARKWEB_SAVE_PAGE)
+  virtual bool SavePageEx(const base::FilePath& main_file,
+                          SavePageType save_type,
+                          SavePageExCallback callback) = 0;
+#endif // ARKWEB_SAVE_PAGE
+
   // Save page with the main HTML file path, the directory for saving resources,
   // and the save type: HTML only or complete web page. Returns true if the
   // saving process has been initiated successfully.
@@ -1445,7 +1458,15 @@ class WebContents : public PageNavigator, public base::SupportsUserData {
   //
   // This method must be called if any state that affects web preferences has
   // changed so that it can be recomputed and sent to the renderer.
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  virtual void OnWebPreferencesChanged(int32_t usage_scenario_type = 99) = 0;
+#else
   virtual void OnWebPreferencesChanged() = 0;
+#endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+  virtual void NotifyRemoteExitFullScreen() {}
+#endif // ARKWEB_MEDIA_CAST
 
   // Requests the renderer to exit fullscreen.
   // |will_cause_resize| indicates whether the fullscreen change causes a
@@ -1755,7 +1776,12 @@ class WebContents : public PageNavigator, public base::SupportsUserData {
           url_match_predicate,
       base::RepeatingCallback<void(NavigationHandle&)>
           prerender_navigation_handle_callback,
-      bool allow_reuse) = 0;
+      bool allow_reuse
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+,
+      const char* extra_headers = nullptr
+#endif
+          ) = 0;
 
   // Cancels all prerendering hosted on this WebContents.
   virtual void CancelAllPrerendering() = 0;
@@ -1809,6 +1835,15 @@ class WebContents : public PageNavigator, public base::SupportsUserData {
   // `kInvalidNetworkHandle` indicates that the current default network will
   // be bound.
   virtual net::handles::NetworkHandle GetTargetNetwork() = 0;
+  
+#if BUILDFLAG(ARKWEB_BGTASK)
+  virtual void OnBrowserForeground() = 0;
+  virtual void OnBrowserBackground() = 0;
+#endif
+
+#if BUILDFLAG(ARKWEB_PIP)
+  virtual void OnPipEvent(int event) = 0;
+#endif
 
   // Returns the window open disposition that was originally requested
   // when this WebContents was created.
@@ -1819,6 +1854,12 @@ class WebContents : public PageNavigator, public base::SupportsUserData {
   // creation, such as during a navigation that results in a new WebContents
   // (e.g., from a link click with `target="_blank"`, `window.open()`).
   virtual WindowOpenDisposition GetOriginalWindowOpenDisposition() const = 0;
+
+#include "arkweb/chromium_ext/content/public/browser/web_contents_for_include.cc"
+
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+  virtual void OnSafeBrowsingCheckDetail(int code, int policy, int threat) {}
+#endif
 
  private:
   // This interface should only be implemented inside content.

@@ -5,8 +5,13 @@
 #ifndef THIRD_PARTY_BLINK_PUBLIC_PLATFORM_WEB_DOCUMENT_SUBRESOURCE_FILTER_H_
 #define THIRD_PARTY_BLINK_PUBLIC_PLATFORM_WEB_DOCUMENT_SUBRESOURCE_FILTER_H_
 
+#include "arkweb/build/features/features.h"
 #include "components/subresource_filter/core/common/scoped_rule.h"
 #include "third_party/blink/public/mojom/fetch/fetch_api_request.mojom-shared.h"
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+#include "url/origin.h"
+#endif
 
 namespace blink {
 
@@ -31,6 +36,41 @@ class WebDocumentSubresourceFilter {
       subresource_filter::ScopedRule* out_rule) = 0;
   virtual LoadPolicy GetLoadPolicyForWebSocketConnect(const WebURL&) = 0;
   virtual LoadPolicy GetLoadPolicyForWebTransportConnect(const WebURL&) = 0;
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  virtual void ClearStatistics() = 0;
+
+  virtual std::unique_ptr<std::string> GetElementHidingSelectors(
+      const WebURL& document_url,
+      bool need_common_selectors) = 0;
+
+  virtual bool HasGenericHideTypeOption(
+      const WebURL& document_url,
+      const url::Origin& parent_document_origin) = 0;
+
+  virtual bool HasElemHideTypeOption(
+      const WebURL& document_url,
+      const url::Origin& parent_document_origin) = 0;
+
+  virtual bool HasDocumentTypeOption(
+      const WebURL& document_url,
+      const url::Origin& parent_document_origin) = 0;
+
+  virtual void DidMatchCssRule(const WebURL& document_url,
+                               const std::string& dom_path,
+                               //  unsigned rule_line_num = 0,
+                               bool is_for_report = false) = 0;
+
+  virtual void SetDidFinishLoad(bool did_load_finished) = 0;
+
+  virtual bool GetDidFinishLoad() = 0;
+
+  virtual std::unique_ptr<std::vector<std::string>> GetUserDomPathSelectors(
+      const blink::WebURL& document_url,
+      bool need_generic_selectors) = 0;
+
+  virtual void set_activation_state(bool enabled) = 0;
+#endif
 
   // Report that a resource loaded by the document (not a preload) was
   // disallowed.

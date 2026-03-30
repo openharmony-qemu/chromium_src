@@ -9,6 +9,9 @@ import("//third_party/blink/renderer/bindings/bindings.gni")
 import("//third_party/blink/renderer/config.gni")
 import("//third_party/blink/renderer/core/core.gni")
 import("//third_party/blink/renderer/modules/modules.gni")
+import("//arkweb/build/features/features.gni")
+import("//cef/ohos_cef_ext/cef_arkweb_extension.gni")
+import("//arkweb/chromium_ext/chromium_ext.gni")
 
 if (is_ios) {
   import("//build/config/ios/bundle_data_from_filelist.gni")
@@ -17,6 +20,7 @@ if (is_ios) {
 visibility = [
   "//:gn_all",
   "//third_party/blink/*",
+  "//arkweb/build/unittests:oh_core_unittests"
 ]
 
 component("controller") {
@@ -73,6 +77,10 @@ component("controller") {
     "performance_manager/v8_worker_memory_reporter.cc",
     "performance_manager/v8_worker_memory_reporter.h",
   ]
+
+  if (is_arkweb) {
+    sources += arkweb_libcef_render_sources
+  }
 
   if (enable_cef) {
     sources += [
@@ -156,6 +164,11 @@ group("blink_unittests_data") {
 
 test("blink_unittests") {
   deps = [ ":blink_unittests_sources" ]
+
+  if (arkweb_test){
+    deps += arkweb_blink_unittests_sources
+    deps += [ "//arkweb/ohos_adapter_ndk/mock_ndk_api:mock_base_ohos" ]
+  }
 
   if (is_ios) {
     bundle_deps = [
@@ -281,6 +294,11 @@ source_set("blink_unittests_sources") {
     "tests/run_all_tests.cc",
     "tests/thread_state_test_environment.h",
   ]
+  if (arkweb_unittests) {
+    sources += [
+      "//arkweb/chromium_ext/third_party/blink/renderer/core/frame/navigator_for_include_unittest.cc"
+    ]
+  }
   if (is_linux || is_chromeos) {
     sources += [ "memory_usage_monitor_posix_test.cc" ]
   }
@@ -327,6 +345,11 @@ source_set("blink_unittests_sources") {
     "//url",
     "//v8",
   ]
+
+  if (arkweb_unittests) {
+    sources += arkweb_third_party_blink_renderer_core_unittest_sources
+    sources += arkweb_third_party_blink_renderer_platform_unittest_sources
+  }
 
   configs += [
     "//third_party/blink/renderer:config",

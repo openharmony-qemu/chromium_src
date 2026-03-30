@@ -157,6 +157,9 @@ class CONTENT_EXPORT DownloadManagerDelegate {
       bool is_content_initiated,
       WebContents* web_contents);
 
+#if BUILDFLAG(IS_OHOS)
+  virtual void ResetDownloadPath() {}
+#endif
   // Retrieve the directories to save html pages and downloads to.
   virtual void GetSaveDir(BrowserContext* browser_context,
                           base::FilePath* website_save_dir,
@@ -170,6 +173,12 @@ class CONTENT_EXPORT DownloadManagerDelegate {
       const base::FilePath::StringType& default_extension,
       bool can_save_as_complete,
       SavePackagePathPickedCallback callback) {}
+
+#if BUILDFLAG(ARKWEB_SAVE_PAGE)
+  virtual void SafeBrowsingCallback(
+      const base::FilePath& suggested_path,
+      SavePackagePathPickedCallback callback) {}
+#endif // ARKWEB_SAVE_PAGE
 
   // Sanitize a filename that's going to be used for saving a subresource of a
   // SavePackage.

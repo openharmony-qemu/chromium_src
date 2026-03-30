@@ -6,7 +6,9 @@
 
 #include <memory>
 #include <string>
-
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "base/auto_reset.h"
 #include "base/feature_list.h"
 #include "base/functional/bind.h"
@@ -37,6 +39,11 @@
 #include "components/prefs/pref_service.h"
 #include "components/prefs/scoped_user_pref_update.h"
 #include "url/gurl.h"
+
+#if BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
+#include "arkweb/chromium_ext/components/content_settings/core/browser/content_settings_default_provider_for_include.cc"
+#endif
+
 
 namespace content_settings {
 
@@ -213,8 +220,16 @@ bool DefaultProvider::SetWebsiteSetting(
 
   // The default settings may not be directly modified for OTR sessions.
   // Instead, they are synced to the main profile's setting.
-  if (is_off_the_record_)
+  if (is_off_the_record_) {
+#if BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
+    if (ShouldSkipSettingForContentTypeExt(content_type)) {
     return true;
+    }
+#else
+    return true;
+#endif
+  }
+
 
   {
     base::AutoReset<bool> auto_reset(&updating_preferences_, true);

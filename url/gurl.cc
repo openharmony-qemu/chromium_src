@@ -502,6 +502,12 @@ void GURL::WriteIntoTrace(perfetto::TracedValue context) const {
   std::move(context).WriteString(possibly_invalid_spec());
 }
 
+#if BUILDFLAG(ARKWEB_CUSTOM_SCHEME_CODECACHE)
+bool GURL::SchemeIsCodeCacheEnabled() const {
+  return url::IsCodeCacheEnabledScheme(scheme());
+}
+#endif
+
 std::ostream& operator<<(std::ostream& out, const GURL& url) {
   return out << url.possibly_invalid_spec();
 }

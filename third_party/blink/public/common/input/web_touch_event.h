@@ -7,6 +7,7 @@
 
 #include <array>
 
+#include "arkweb/build/features/features.h"
 #include "third_party/blink/public/common/input/web_input_event.h"
 #include "third_party/blink/public/common/input/web_touch_point.h"
 
@@ -70,6 +71,10 @@ class BLINK_COMMON_EXPORT WebTouchEvent : public WebInputEvent {
   WebTouchPoint TouchPointInRootFrame(unsigned touch_point) const;
 
   bool IsCancelable() const { return dispatch_type == DispatchType::kBlocking; }
+
+#if BUILDFLAG(ARKWEB_FIT_CONTENT)
+  bool is_fit_content;
+#endif
 
   // Returns whether this event represents a transition from no active
   // touches to some active touches (the start of a new "touch sequence").

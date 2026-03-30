@@ -21,10 +21,13 @@
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "ui/gfx/color_space.h"
 #include "ui/gfx/geometry/rect.h"
+#include "arkweb/build/features/features.h"
 
 class SkBitmap;
 
 namespace viz {
+
+class ArkwebCopyOutputResultUtils;
 
 // Base class for providing the result of a CopyOutputRequest. Implementations
 // that execute CopyOutputRequests will use a subclass implementation to define
@@ -32,6 +35,7 @@ namespace viz {
 // CopyOutputResult instance.
 class VIZ_COMMON_EXPORT CopyOutputResult {
  public:
+  friend class ArkwebCopyOutputResultUtils;
   enum class Format : uint8_t {
     // A normal bitmap. When the results are returned in system memory, the
     // AsSkBitmap() will return a bitmap in "N32Premul" form. When the results
@@ -194,6 +198,28 @@ class VIZ_COMMON_EXPORT CopyOutputResult {
   // Returns the color space of the image data returned by ReadRGBAPlane().
   virtual gfx::ColorSpace GetRGBAColorSpace() const;
 
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+  void SetDumpFrameId(uint64_t id) {
+    dump_frame_id_ = id;
+  }
+
+  uint64_t DumpFrameId() const {
+    return dump_frame_id_;
+  }
+
+  void SetDumpFramePath(const std::string path) {
+    dump_frame_path_ = path;
+  }
+
+  std::string DumpFramePath() const {
+    return dump_frame_path_;
+  }
+#endif
+
+  ArkwebCopyOutputResultUtils* copy_output_result_utils() {
+    return copy_output_result_utils_.get();
+  }
+
  protected:
   // Lock the content of SkBitmap returned from AsSkBitmap() call.
   // Return true, if lock operation is successful, implementations should
@@ -220,6 +246,11 @@ class VIZ_COMMON_EXPORT CopyOutputResult {
 
   // Cached bitmap returned by the default implementation of AsSkBitmap().
   mutable SkBitmap cached_bitmap_;
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+  uint64_t dump_frame_id_ = 0;
+  std::string dump_frame_path_ = "";
+#endif
+  std::unique_ptr<ArkwebCopyOutputResultUtils> copy_output_result_utils_;
 };
 
 // Subclass of CopyOutputResult that provides a RGBA result from an

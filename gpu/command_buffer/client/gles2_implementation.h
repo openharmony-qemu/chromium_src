@@ -651,6 +651,10 @@ class GLES2_IMPL_EXPORT GLES2Implementation : public GLES2Interface,
 #endif
 #endif
 
+#if BUILDFLAG(ARKWEB_WEBGL)
+#define GL_CLIENT_FAIL_GL_ERRORS
+#endif
+
 #if defined(GL_CLIENT_FAIL_GL_ERRORS)
   void CheckGLError();
   void FailGLError(GLenum error);

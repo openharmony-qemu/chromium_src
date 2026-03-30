@@ -642,9 +642,12 @@ bool ChromePermissionsClient::CanBypassEmbeddingOriginCheck(
   // Extensions are excluded from origin checks as currently they can request
   // permission from iframes when embedded in non-secure contexts
   // (https://crbug.com/530507).
-  if (requesting_origin.SchemeIs(extensions::kExtensionScheme)) {
+  if (requesting_origin.SchemeIs(extensions::kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      || requesting_origin.SchemeIs(extensions::kArkwebExtensionScheme)
+#endif
+  )
     return true;
-  }
 #endif
 
   // The New Tab Page is excluded from origin checks as its effective
@@ -673,7 +676,11 @@ std::optional<GURL> ChromePermissionsClient::OverrideCanonicalOrigin(
   // when in embedded in non-secure contexts. This is unfortunate and we
   // should remove this at some point, but for now always use the requesting
   // origin for embedded extensions. https://crbug.com/530507.
-  if (requesting_origin.SchemeIs(extensions::kExtensionScheme)) {
+  if (requesting_origin.SchemeIs(extensions::kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      || requesting_origin.SchemeIs(extensions::kArkwebExtensionScheme)
+#endif
+  ) {
     return requesting_origin;
   }
 #endif

@@ -5,6 +5,7 @@
 #ifndef UI_GFX_NATIVE_PIXMAP_H_
 #define UI_GFX_NATIVE_PIXMAP_H_
 
+#include "arkweb/build/features/features.h"
 #include "base/component_export.h"
 #include "base/memory/ref_counted.h"
 #include "components/viz/common/resources/shared_image_format.h"
@@ -69,6 +70,10 @@ class COMPONENT_EXPORT(GFX) NativePixmap
   // Export the buffer for sharing across processes.
   // Any file descriptors in the exported handle are owned by the caller.
   virtual gfx::NativePixmapHandle ExportHandle() const = 0;
+
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+  virtual void* GetWindowBuffer() { return nullptr; }
+#endif
 
  protected:
   virtual ~NativePixmap() {}

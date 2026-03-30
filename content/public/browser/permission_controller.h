@@ -150,6 +150,24 @@ class CONTENT_EXPORT PermissionController
   virtual bool IsSubscribedToPermissionChangeEvent(
       blink::PermissionType permission,
       RenderFrameHost* render_frame_host) = 0;
+
+#if BUILDFLAG(ARKWEB_NOTIFICATION)
+  virtual void GetPermissionStatusAsync(
+      blink::PermissionType permission,
+      bool isFromDocument,
+      void* render_host,
+      const url::Origin& origin,
+      base::OnceCallback<void(blink::mojom::PermissionStatus)> callback) {}
+#endif // ARKWEB_NOTIFICATION
+
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  virtual void RequestPermissionsSkipPermissionsPolicy(
+      RenderFrameHost* render_frame_host,
+      PermissionRequestDescription request_description,
+      base::OnceCallback<void(const std::vector<PermissionResult>&)> callback) {}
+
+  virtual bool IsClipboardSitePermissionEnabled() { return false; }
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
 };
 
 }  // namespace content

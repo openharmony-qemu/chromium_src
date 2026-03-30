@@ -35,6 +35,7 @@
 #include <optional>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/debug/alias.h"
 #include "build/build_config.h"
 #include "cc/animation/animation_host.h"
@@ -121,9 +122,22 @@
 #include "third_party/blink/renderer/platform/wtf/text/string_concatenate.h"
 #include "ui/gfx/geometry/rect.h"
 
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+#include "base/command_line.h"
+#include "content/public/common/content_switches.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/instrumentation/resource_coordinator/document_resource_coordinator_utils.h"
+#endif
+
 namespace blink {
 
 namespace {
+
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+const int MAX_MESSAGE_LENGTH = 5000;
+#endif
 
 const char* UIElementTypeToString(ChromeClient::UIElementType ui_element_type) {
   switch (ui_element_type) {
@@ -468,17 +482,52 @@ void ChromeClientImpl::AddMessageToConsole(LocalFrame* local_frame,
                                            const String& source_id,
                                            const String& stack_trace) {
   if (!message.IsNull()) {
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+    if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+            switches::kEnableNwebEx) &&
+        message.length() > MAX_MESSAGE_LENGTH) {
+#if BUILDFLAG(ARKWEB_CONSOLE_LOGGING)
+      local_frame->GetLocalFrameHostRemote().DidAddMessageToConsoleV2(
+          level, source, message.Left(MAX_MESSAGE_LENGTH),
+#else
+      local_frame->GetLocalFrameHostRemote().DidAddMessageToConsole(
+          level, message.Left(MAX_MESSAGE_LENGTH),
+#endif
+          static_cast<int32_t>(line_number), source_id, stack_trace);
+    } else {
+#endif
+#if BUILDFLAG(ARKWEB_CONSOLE_LOGGING)
+    local_frame->GetLocalFrameHostRemote().DidAddMessageToConsoleV2(
+        level, source, message, static_cast<int32_t>(line_number), source_id,
+#else
     local_frame->GetLocalFrameHostRemote().DidAddMessageToConsole(
         level, message, static_cast<int32_t>(line_number), source_id,
+#endif
         stack_trace);
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+    }
+#endif
   }
 
   WebLocalFrameImpl* frame = WebLocalFrameImpl::FromFrame(local_frame);
   if (frame && frame->Client()) {
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+    if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+            switches::kEnableNwebEx) &&
+        message.length() > MAX_MESSAGE_LENGTH) {
+      frame->Client()->DidAddMessageToConsole(
+          WebConsoleMessage(static_cast<mojom::ConsoleMessageLevel>(level),
+                            message.Left(MAX_MESSAGE_LENGTH)),
+          source_id, line_number, stack_trace);
+    } else {
+#endif
     frame->Client()->DidAddMessageToConsole(
         WebConsoleMessage(static_cast<mojom::ConsoleMessageLevel>(level),
                           message),
         source_id, line_number, stack_trace);
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+    }
+#endif
   }
 }
 
@@ -854,6 +903,9 @@ void ChromeClientImpl::OpenFileChooser(
     // Choosing failed, so try the next chooser.
     DidCompleteFileChooser(*file_chooser);
   }
+#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
+  AsChromeClientImplExt()->DisconnectClient();
+#endif
 }
 
 void ChromeClientImpl::DidCompleteFileChooser(FileChooser& chooser) {
@@ -969,11 +1021,32 @@ cc::AnimationTimeline* ChromeClientImpl::GetScrollAnimationTimeline(
   return widget->ScrollAnimationTimeline();
 }
 
-void ChromeClientImpl::EnterFullscreen(LocalFrame& frame,
+void ChromeClientImpl::EnterFullscreen(
+    LocalFrame& frame,
                                        const FullscreenOptions* options,
-                                       FullscreenRequestType request_type) {
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+    bool overlay_fullscreen,
+#endif // ARKWEB_VIDEO_ASSISTANT
+    FullscreenRequestType request_type
+#if BUILDFLAG(ARKWEB_FULLSCREEN)
+    ,
+    const absl::optional<gfx::Size>& video_natural_size
+#endif  // BUILDFLAG(ARKWEB_FULLSCREEN)
+) {
   DCHECK(web_view_);
-  web_view_->EnterFullscreen(frame, options, request_type);
+#if BUILDFLAG(ARKWEB_FULLSCREEN)
+  LOG(INFO) << "ChromeClientImpl EnterFullscreen";
+#endif // BUILDFLAG(ARKWEB_FULLSCREEN)
+  web_view_->EnterFullscreen(frame, options,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                             overlay_fullscreen,
+#endif // ARKWEB_VIDEO_ASSISTANT
+                             request_type
+#if BUILDFLAG(ARKWEB_FULLSCREEN)
+                             ,
+                             video_natural_size
+#endif  // BUILDFLAG(ARKWEB_FULLSCREEN)
+  );
 }
 
 void ChromeClientImpl::ExitFullscreen(LocalFrame& frame) {
@@ -1329,8 +1402,15 @@ void ChromeClientImpl::DidChangeValueInTextField(
                                ? WebFeature::kFieldEditInSecureContext
                                : WebFeature::kFieldEditInNonSecureContext);
     // The resource coordinator is not available in some tests.
-    if (auto* rc = doc.GetResourceCoordinator())
+    if (auto* rc = doc.GetResourceCoordinator()) {
       rc->SetHadFormInteraction();
+#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
+      if (element.Form()) {
+        uint64_t form_id = element.Form()->UniqueRendererFormId();
+        rc->coordinator_utils_->OnFormEditingStateChanged(form_id, false);
+      }
+#endif
+    }
   }
 }
 
@@ -1410,6 +1490,15 @@ void ChromeClientImpl::JavaScriptChangedValue(HTMLFormControlElement& element,
   if (auto* fill_client = AutofillClientFromFrame(doc.GetFrame())) {
     fill_client->JavaScriptChangedValue(WebFormControlElement(&element),
                                         old_value, was_autofilled);
+#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
+  if (auto* rc = doc.GetResourceCoordinator()) {
+    rc->SetHadFormInteraction();
+    if (element.Form()) {
+      uint64_t form_id = element.Form()->UniqueRendererFormId();
+      rc->coordinator_utils_->OnFormEditingStateChanged(form_id, false);
+    }
+  }
+#endif
   }
 }
 
@@ -1421,6 +1510,17 @@ gfx::Transform ChromeClientImpl::GetDeviceEmulationTransform() const {
 void ChromeClientImpl::DidUpdateBrowserControls() const {
   DCHECK(web_view_);
   web_view_->DidUpdateBrowserControls();
+
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableNwebExTopControls) &&
+      web_view_->MainFrameImpl()) {
+    LocalFrame* local_frame = web_view_->MainFrameImpl()->GetFrame();
+    if (local_frame && local_frame->View()) {
+      local_frame->View()->LayoutViewport()->AsPaintLayerScrollableAreaExt()->UpdateScrollbar();
+    }
+  }
+#endif
 }
 
 void ChromeClientImpl::DidUpdateLoadProgress(float progress) {

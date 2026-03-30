@@ -63,7 +63,11 @@ constexpr char kRequestBody[] = R"({
 })";
 // Maximum accepted size of an ItemSuggest response. 1MB.
 constexpr int kMaxResponseSize = 1024 * 1024;
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+const char server_url[] = "https://***";
+#else
 const char server_url[] = "https://appsitemsuggest-pa.googleapis.com/v1/items";
+#endif
 constexpr net::NetworkTrafficAnnotationTag kTrafficAnnotation =
     net::DefineNetworkTrafficAnnotation("drive_service", R"(
       semantics {
@@ -229,7 +233,11 @@ constexpr char kFakeDataWithSixFiles[] = R"({
 })";
 
 const char kBaseFileIconUrl[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://***/";
+#else
     "https://drive-thirdparty.googleusercontent.com/32/type/";
+#endif
 }  // namespace
 
 // static

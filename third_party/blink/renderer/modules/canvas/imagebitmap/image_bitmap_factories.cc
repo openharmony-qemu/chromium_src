@@ -33,6 +33,7 @@
 #include <memory>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/location.h"
 #include "base/task/single_thread_task_runner.h"
 #include "third_party/blink/public/platform/platform.h"
@@ -413,7 +414,10 @@ void DecodeImageOnDecoderThread(
       SegmentReader::CreateFromSkData(
           SkData::MakeWithoutCopy(contents.Data(), contents.DataLength())),
       data_complete, alpha_option, ImageDecoder::kDefaultBitDepth,
-      color_behavior, cc::AuxImage::kDefault,
+      color_behavior,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+      cc::AuxImage::kDefault,
+#endif
       Platform::GetMaxDecodedImageBytes());
   sk_sp<SkImage> frame;
   ImageOrientationEnum orientation = ImageOrientationEnum::kDefault;

@@ -172,9 +172,14 @@ ChromeEnterpriseRealTimeUrlLookupService::GetDMTokenString() const {
 }
 
 GURL ChromeEnterpriseRealTimeUrlLookupService::GetRealTimeLookupUrl() const {
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+  return GetUrlOverride(is_command_line_switch_supported_)
+      .value_or(GURL("https://x.x.x"));
+#else
   return GetUrlOverride(is_command_line_switch_supported_)
       .value_or(GURL("https://enterprise-safebrowsing.googleapis.com/"
                      "safebrowsing/clientreport/realtime"));
+#endif
 }
 
 net::NetworkTrafficAnnotationTag

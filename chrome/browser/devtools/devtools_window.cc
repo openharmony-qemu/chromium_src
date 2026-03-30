@@ -1910,6 +1910,7 @@ void DevToolsWindow::RenderProcessGone(bool crashed) {
 }
 
 void DevToolsWindow::ShowCertificateViewer(const std::string& cert_chain) {
+#if BUILDFLAG(ENABLE_WEBUI_CERTIFICATE_VIEWER)
   std::optional<base::Value> value =
       base::JSONReader::Read(cert_chain, base::JSON_PARSE_CHROMIUM_EXTENSIONS);
   CHECK(value && value->is_list());
@@ -1944,6 +1945,7 @@ void DevToolsWindow::ShowCertificateViewer(const std::string& cert_chain) {
   gfx::NativeWindow parent = browser->window()->GetNativeWindow();
   ::ShowCertificateViewer(inspected_contents, parent, cert.get());
 #endif
+#endif  // BUILDFLAG(ENABLE_WEBUI_CERTIFICATE_VIEWER)
 }
 
 void DevToolsWindow::OnLoadCompleted() {
@@ -2159,6 +2161,10 @@ void DevToolsWindow::MaybeShowSharedProcessInfobar() {
       inspected_web_contents->GetPrimaryMainFrame()->GetSiteInstance();
   const GURL& site_url = site_instance->GetSiteURL();
   if (site_url.SchemeIs(extensions::kExtensionScheme) ||
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      site_url.SchemeIs(content::kArkWebUIScheme) ||
+      site_url.SchemeIs(extensions::kArkwebExtensionScheme) ||
+#endif
       site_url.SchemeIs(content::kChromeDevToolsScheme) ||
       site_url.SchemeIs(content::kChromeUIScheme)) {
     return;

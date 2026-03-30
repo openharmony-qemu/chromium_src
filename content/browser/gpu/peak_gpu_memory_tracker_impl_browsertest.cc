@@ -4,6 +4,7 @@
 
 #include "content/browser/gpu/peak_gpu_memory_tracker_impl.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/clang_profiling_buildflags.h"
 #include "base/functional/bind.h"
 #include "base/location.h"
@@ -57,6 +58,22 @@ class TestGpuService : public viz::StubGpuService {
         kPeakMemory;
     std::move(callback).Run(kPeakMemory, allocation_per_source);
   }
+
+#if BUILDFLAG(ARKWEB_TEST)
+  void GetSurfaceId(int32_t native_embed_id,
+                    GetSurfaceIdCallback callback) override {}
+  void SetTransformHint(uint32_t rotation, uint32_t window_id) override {}
+  void DestroyNativeWindow(uint32_t native_window_id) override {}
+  void Discard(uint32_t native_window_id) override {}
+  void SetVisible(int32_t nweb_id, bool visible) override {}
+  void SetHasTouchPoint(bool has_touch_point) override {}
+  void ReportSlidingFrameRate(int32_t frame_rate) override {}
+  void SetLTPOStrategy(int32_t strategy) override {}
+  void DumpGpuInfo(DumpGpuInfoCallback callback) override {}
+  void StartMonitor(int32_t nweb_id) override {}
+  void StopMonitor() override {}
+  void SetIsFling(bool is_fling_enabled) override {}
+#endif
 
  private:
   base::RepeatingClosure quit_closure_;

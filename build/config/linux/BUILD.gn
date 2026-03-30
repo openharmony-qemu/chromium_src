@@ -27,6 +27,20 @@ config("compiler") {
       asmflags += [ "-mbranch-protection=pac-ret" ]
     }
   }
+
+  defines = []
+  
+  if (is_arkweb) {
+    defines += [ "IS_ARKWEB_TRUE" ]
+  }
+
+  if (enable_arkweb_ext) {
+    defines += [ "ENABLE_ARKWEB_EXT_TRUE" ]
+  }
+
+  if (is_arkweb_ext) {
+    defines += [ "IS_ARKWEB_EXT_TRUE" ]
+  }
 }
 
 # This is included by reference in the //build/config/compiler:runtime_library

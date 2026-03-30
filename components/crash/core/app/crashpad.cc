@@ -102,7 +102,8 @@ bool InitializeCrashpadImpl(bool initial_client,
 #endif  // BUILDFLAG(GOOGLE_CHROME_BRANDING)
            process_type == "GCPW Installer" || process_type == "GCPW DLL" ||
            process_type == "elevated-tracing-service");
-#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
+      BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
     DCHECK(browser_process);
 #else
 #error Port.
@@ -116,6 +117,7 @@ bool InitializeCrashpadImpl(bool initial_client,
   if (!internal::PlatformCrashpadInitialization(
           initial_client, browser_process, embedded_handler, user_data_dir,
           exe_path, initial_arguments, attachments, &database_path)) {
+    LOG(ERROR) << "crashpad PlatformCrashpadInitialization failed";
     return false;
   }
 
@@ -176,7 +178,8 @@ bool InitializeCrashpadImpl(bool initial_client,
   // other "main, first process" to initialize things. There is no "relauncher"
   // on Windows, so this is synonymous with initial_client.
   const bool should_initialize_database_and_set_upload_policy = initial_client;
-#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
+      BUILDFLAG(IS_OHOS)
   const bool should_initialize_database_and_set_upload_policy = browser_process;
 #endif
   if (should_initialize_database_and_set_upload_policy) {
@@ -270,7 +273,7 @@ void SetUploadConsent(bool consent) {
 
 #endif  // !BUILDFLAG(IS_CHROMEOS)
 
-#if !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_ARKWEB)
 void DumpWithoutCrashing() {
   CRASHPAD_SIMULATE_CRASH();
 }
@@ -312,12 +315,13 @@ void SetIntermediateDumpExtraMemoryRanges(
 
 #endif
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
+    BUILDFLAG(IS_OHOS)
 void CrashWithoutDumping(const std::string& message) {
   crashpad::CrashpadClient::CrashWithoutDump(message);
 }
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) ||
-        // BUILDFLAG(IS_ANDROID)
+        // BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 
 void GetReports(std::vector<Report>* reports) {
 #if BUILDFLAG(IS_WIN)

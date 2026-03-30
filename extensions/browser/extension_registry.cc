@@ -8,11 +8,12 @@
 #include "base/strings/string_util.h"
 #include "extensions/browser/extension_registry_factory.h"
 #include "extensions/browser/extension_registry_observer.h"
-
 namespace extensions {
 
 ExtensionRegistry::ExtensionRegistry(content::BrowserContext* browser_context)
-    : browser_context_(browser_context) {}
+    : browser_context_(browser_context) {
+}
+
 ExtensionRegistry::~ExtensionRegistry() = default;
 
 // static

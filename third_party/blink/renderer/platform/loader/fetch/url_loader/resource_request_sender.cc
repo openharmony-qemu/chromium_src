@@ -70,6 +70,9 @@
 #include "third_party/blink/renderer/platform/wtf/cross_thread_functional.h"
 #include "third_party/blink/renderer/platform/wtf/ref_counted.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/loader/fetch/url_loader/resource_request_sender_ext.cc"
+#endif
 namespace blink {
 
 namespace {
@@ -155,6 +158,10 @@ void ResourceRequestSender::SendSync(
   // this thread may block on a waitable event. It is safe to pass raw
   // pointers to on-stack objects as this stack frame will
   // survive until the request is complete.
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+  content::RenderThread* render_thread = content::RenderThread::Get();
+#endif
+
   scoped_refptr<base::SingleThreadTaskRunner> task_runner =
       base::ThreadPool::CreateSingleThreadTaskRunner({});
   SyncLoadContext* context_for_redirect = nullptr;
@@ -169,7 +176,12 @@ void ResourceRequestSender::SendSync(
                           CrossThreadUnretained(terminate_sync_load_event),
                           timeout, std::move(download_to_blob_registry),
                           cors_exempt_header_list,
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+                          std::move(resource_load_info_notifier_wrapper),
+                          CrossThreadUnretained(render_thread)));
+#else
                           std::move(resource_load_info_notifier_wrapper)));
+#endif
 
   // `redirect_or_response_event` will signal when each redirect completes, and
   // when the final response is complete.
@@ -235,8 +247,14 @@ int ResourceRequestSender::SendAsync(
     CodeCacheHost* code_cache_host,
     base::OnceCallback<void(mojom::blink::RendererEvictionReason)>
         evict_from_bfcache_callback,
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+    base::RepeatingCallback<void(size_t)>
+        did_buffer_load_while_in_bfcache_callback,
+    bool is_sync_mode) {
+#else
     base::RepeatingCallback<void(size_t)>
         did_buffer_load_while_in_bfcache_callback) {
+#endif
   loading_task_runner_ = loading_task_runner;
   CheckSchemeForReferrerPolicy(*request);
 
@@ -277,9 +295,22 @@ int ResourceRequestSender::SendAsync(
 
   // Compute a unique request_id for this renderer process.
   int request_id = GenerateRequestId();
+#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
+  TRACE_EVENT2("loading", "ResourceRequestSender::SendAsync", "start_id",
+               request->request_id_perf_stat_, "request_id", request_id);
+#endif
+
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+  request->is_sync_mode = is_sync_mode;
+  LOG(DEBUG) << "intercept ResourceRequestSender::SendAsync, request->is_sync_mode=" << request->is_sync_mode;
+#endif
   request_info_ = std::make_unique<PendingRequestInfo>(
       std::move(client), request->destination, KURL(request->url),
       std::move(resource_load_info_notifier_wrapper));
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_TRACE)
+  request_info_->request_id_ = request_id;
+#endif
 
   request_info_->resource_load_info_notifier_wrapper
       ->NotifyResourceLoadInitiated(request_id, request->url, request->method,
@@ -588,11 +619,16 @@ void ResourceRequestSender::OnRequestComplete(
         status, complete_ipc_arrival_time));
     return;
   }
-  TRACE_EVENT0("loading", "ResourceRequestSender::OnRequestComplete");
 
   if (!request_info_) {
     return;
   }
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
+  TRACE_EVENT1("loading", "ResourceRequestSender::OnRequestComplete", "id",
+               request_info_->request_id_);
+#endif
+
   request_info_->net_error = status.error_code;
 
   request_info_->resource_load_info_notifier_wrapper

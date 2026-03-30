@@ -257,10 +257,14 @@ class WebViewGuest : public guest_view::GuestView<WebViewGuest> {
                              const blink::WebGestureEvent& event) final;
   void RendererResponsive(content::WebContents* source,
                           content::RenderWidgetHost* render_widget_host) final;
-  void RendererUnresponsive(
-      content::WebContents* source,
+  void RendererUnresponsive(content::WebContents* source,
       content::RenderWidgetHost* render_widget_host,
-      base::RepeatingClosure hang_monitor_restarter) final;
+                            base::RepeatingClosure hang_monitor_restarter
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+                            ,
+                            content::RendererIsUnresponsiveReason reason
+#endif
+                            ) final;
   void RequestMediaAccessPermission(
       content::WebContents* source,
       const content::MediaStreamRequest& request,

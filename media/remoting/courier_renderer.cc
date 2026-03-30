@@ -114,6 +114,10 @@ CourierRenderer::~CourierRenderer() {
 
 void CourierRenderer::Initialize(MediaResource* media_resource,
                                  RendererClient* client,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                                 RequestSurfaceCB request_surface_cb,
+                                 VideoDecoderChangedCB decoder_changed_cb,
+#endif // ARKWEB_VIDEO_ASSISTANT
                                  PipelineStatusCallback init_cb) {
   DCHECK(media_task_runner_->RunsTasksInCurrentSequence());
   DCHECK(media_resource);

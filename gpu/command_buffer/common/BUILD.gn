@@ -70,6 +70,8 @@ source_set("common_sources") {
     "discardable_handle.h",
     "gl2_types.h",
     "gpu_command_buffer_common_export.h",
+    "../../../arkweb/chromium_ext/gpu/command_buffer/common/gpu_memory_buffer_support_utils.cc",
+    "../../../arkweb/chromium_ext/gpu/command_buffer/common/gpu_memory_buffer_support_utils.h",
     "id_allocator.cc",
     "id_allocator.h",
     "mailbox_holder.cc",

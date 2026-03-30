@@ -31,6 +31,7 @@
 #include "services/viz/public/mojom/compositing/compositor_frame_sink.mojom.h"
 #include "ui/base/ozone_buildflags.h"
 #include "ui/gfx/ca_layer_params.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include "ui/gfx/android/surface_control_frame_rate.h"
@@ -45,6 +46,8 @@ class FrameSinkManagerImpl;
 class HintSessionFactory;
 class SyntheticBeginFrameSource;
 class VSyncParameterListener;
+class FrameSinkManagerImplUtils;
+class RootCompositorFrameSinkImplExt;
 
 // The viz portion of a root CompositorFrameSink. Holds the Binding/InterfacePtr
 // for the mojom::CompositorFrameSink interface and owns the Display.
@@ -53,6 +56,8 @@ class VIZ_SERVICE_EXPORT RootCompositorFrameSinkImpl
       public mojom::DisplayPrivate,
       public DisplayClient {
  public:
+  friend class FrameSinkManagerImplUtils;
+  friend class RootCompositorFrameSinkImplExt;
   // Creates a new RootCompositorFrameSinkImpl.
   static std::unique_ptr<RootCompositorFrameSinkImpl> Create(
       mojom::RootCompositorFrameSinkParamsPtr params,
@@ -124,6 +129,10 @@ class VIZ_SERVICE_EXPORT RootCompositorFrameSinkImpl
   void NotifyNewLocalSurfaceIdExpectedWhilePaused() override;
   void BindLayerContext(mojom::PendingLayerContextPtr context,
                         mojom::LayerContextSettingsPtr settings) override;
+
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  void OnSetBypassVsyncCondition(int32_t condition) override {}
+#endif
 #if BUILDFLAG(IS_ANDROID)
   void SetThreads(const std::vector<Thread>& threads) override;
 #endif
@@ -140,9 +149,13 @@ class VIZ_SERVICE_EXPORT RootCompositorFrameSinkImpl
   void StartOverdrawTracking(int interval_length_in_seconds);
   OverdrawTracker::OverdrawTimeSeries StopOverdrawTracking();
 
+  virtual RootCompositorFrameSinkImplExt* AsExt() {
+    return nullptr;
+  }
+
  private:
   class StandaloneBeginFrameObserver;
-
+  std::unique_ptr<FrameSinkManagerImplUtils> managerImplUtils;
   RootCompositorFrameSinkImpl(
       FrameSinkManagerImpl* frame_sink_manager,
       const FrameSinkId& frame_sink_id,
@@ -222,9 +235,9 @@ class VIZ_SERVICE_EXPORT RootCompositorFrameSinkImpl
   base::TimeDelta display_frame_interval_ = BeginFrameArgs::DefaultInterval();
   base::TimeDelta preferred_frame_interval_;
 
-#if BUILDFLAG(IS_LINUX) && BUILDFLAG(IS_OZONE_X11)
+#if BUILDFLAG(IS_LINUX) && BUILDFLAG(IS_OZONE_X11) || BUILDFLAG(IS_ARKWEB)
   gfx::Size last_swap_pixel_size_;
-#endif  // BUILDFLAG(IS_LINUX) && BUILDFLAG(IS_OZONE_X11)
+#endif  // BUILDFLAG(IS_LINUX) && BUILDFLAG(IS_OZONE_X11) || BUILDFLAG(IS_ARKWEB)
 
 #if BUILDFLAG(IS_APPLE)
   gfx::CALayerParams last_ca_layer_params_;

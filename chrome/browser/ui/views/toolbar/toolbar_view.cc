@@ -298,7 +298,8 @@ void ToolbarView::Init() {
 
   auto location_bar = std::make_unique<LocationBarView>(
       browser_, browser_->profile(), browser_->command_controller(), this,
-      display_mode_ != DisplayMode::kNormal && !browser_->toolbar_overridden());
+        display_mode_ != DisplayMode::kNormal &&
+            !browser_->toolbar_overridden());
   // Make sure the toolbar shows by default.
   size_animation_.Reset(1);
 

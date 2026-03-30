@@ -36,6 +36,10 @@
 #include <memory>
 #include <optional>
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "services/network/public/mojom/web_sandbox_flags.mojom-blink-forward.h"
 #include "third_party/blink/public/common/tokens/tokens.h"
 #include "third_party/blink/public/common/user_agent/user_agent_metadata.h"
@@ -102,8 +106,14 @@ class CORE_EXPORT FrameLoader final {
   // same-document navigation. For reloads, an appropriate WebFrameLoadType
   // should be given. Otherwise, kStandard should be used (and the final
   // WebFrameLoadType will be computed).
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+  void StartNavigation(FrameLoadRequest&,
+                       WebFrameLoadType = WebFrameLoadType::kStandard,
+                       bool = false);
+#else
   void StartNavigation(FrameLoadRequest&,
                        WebFrameLoadType = WebFrameLoadType::kStandard);
+#endif
 
   // Called when the browser process has asked this renderer process to commit
   // a navigation in this frame. This method skips most of the checks assuming
@@ -152,6 +162,10 @@ class CORE_EXPORT FrameLoader final {
   void DispatchDidClearDocumentOfWindowObject();
   void DispatchDocumentElementAvailable();
   void RunScriptsAtDocumentElementAvailable();
+
+#if BUILDFLAG(ARKWEB_JSPROXY)
+  void RunScriptsAtHeadElementAvailable();
+#endif
 
   // See content/browser/renderer_host/sandbox_flags.md
   // This contains the sandbox flags to commit for new documents.

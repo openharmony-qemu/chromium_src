@@ -8,7 +8,9 @@ files.
 """
 
 import collections
+import json
 import os
+import re
 import struct
 import sys
 
@@ -249,7 +251,8 @@ def RePack(output_file,
            input_files,
            allowlist_file=None,
            suppress_removed_key_output=False,
-           output_info_filepath=None):
+           output_info_filepath=None,
+           rejectlist_file=None):
   """Write a new data pack file by combining input pack files.
 
   Args:
@@ -261,6 +264,9 @@ def RePack(output_file,
       suppress_removed_key_output: allows the caller to suppress the output from
                                    RePackFromDataPackStrings.
       output_info_file: If not None, specify the output .info filepath.
+      rejectlist_file: path to the file that contains the list of resource IDs
+                      that should be del in the output file or None to include
+                      all resources.
 
   Raises:
       KeyError: if there are duplicate keys or resource encoding is
@@ -274,9 +280,15 @@ def RePack(output_file,
     if not lines:
       raise Exception('Allowlist file should not be empty')
     allowlist = {int(x) for x in lines}
+
+  # OHOS get rejectlist
+  rejectlist = None
+  if rejectlist_file:
+    rejectlist = GetRejectList(input_info_files, rejectlist_file)
+
   inputs = [(p.resources, p.encoding) for p in input_data_packs]
   resources, encoding = RePackFromDataPackStrings(inputs, allowlist,
-                                                  suppress_removed_key_output)
+                                                  suppress_removed_key_output, rejectlist)
   WriteDataPack(resources, output_file, encoding)
   if output_info_filepath is None:
     output_info_filepath = output_file + '.info'
@@ -288,7 +300,8 @@ def RePack(output_file,
 
 def RePackFromDataPackStrings(inputs,
                               allowlist,
-                              suppress_removed_key_output=False):
+                              suppress_removed_key_output=False,
+                              rejectlist=None):
   """Combines all inputs into one.
 
   Args:
@@ -296,6 +309,8 @@ def RePackFromDataPackStrings(inputs,
       allowlist: a list of resource IDs that should be kept in the output string
                  or None to include all resources.
       suppress_removed_key_output: Do not print removed keys.
+      rejectlist: a list of resource IDs that should be del in the output string
+                 or None to include all resources.
 
   Returns:
       Returns (resources_by_id, encoding).
@@ -335,11 +350,65 @@ def RePackFromDataPackStrings(inputs,
           print('RePackFromDataPackStrings Removed Key:', key)
     else:
       resources.update(input_resources)
+ 
+    # OHOS filter rejectlist
+    if rejectlist:
+      for key in rejectlist:
+        if key in resources.keys():
+          del resources[key]
 
   # Encoding is 0 for BINARY, 1 for UTF8 and 2 for UTF16
   if encoding is None:
     encoding = BINARY
   return resources, encoding
+
+
+def GetRejectList(input_info_files, rejectlist_file):
+  """Get reject id list.
+ 
+  Args:
+      input_files: a list of paths to the data pak.info files.
+      rejectlist_file: path to the file that contains the list of resource IDs
+                      that should be del in the output file or None to include
+                      all resources.
+  """
+  rejectlist = []
+ 
+  # get all pak.info list
+  input_info_all_list = []
+  for filename in input_info_files:
+    with open(filename) as info_file:
+      input_info_all_list += info_file.readlines()
+ 
+  # get all reject files and IDs
+  reject_file_list = []
+  reject_id_list = []
+  with open(rejectlist_file, 'r', encoding='utf-8') as f:
+    rejectlist_config = json.load(f)
+    reject_file_list = rejectlist_config['reject_file_list']
+    for config_reject_id in rejectlist_config['reject_id_list']:
+      reject_id_list += config_reject_id['id_list']
+    for config_reject_id_file in rejectlist_config['reject_id_file_list']:
+      id_file_path = os.path.join(os.path.dirname(rejectlist_file), config_reject_id_file)
+      lines = util.ReadFile(id_file_path, 'utf-8').strip().splitlines()
+      reject_id_list += [x for x in lines]
+ 
+  # filter id from pak.info by reject files and IDs
+  pattern = r',(\d+),'
+  for reject_file in reject_file_list:
+    for input_info in input_info_all_list:
+      if reject_file in input_info:
+        matches = re.findall(pattern, input_info)
+        if matches:
+          rejectlist.append(int(matches[0]))
+  for reject_id in reject_id_list:
+    for input_info in input_info_all_list:
+      if reject_id in input_info:
+        matches = re.findall(pattern, input_info)
+        if matches:
+          rejectlist.append(int(matches[0]))
+        break
+  return rejectlist
 
 
 def main():

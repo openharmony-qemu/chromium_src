@@ -242,6 +242,12 @@ syncer::SyncableService* PrefServiceSyncable::GetSyncableService(
   }
 }
 
+#if BUILDFLAG(ARKWEB_PREFS)
+user_prefs::PrefRegistrySyncable* PrefServiceSyncable::GetPrefRegistrySyncable() {
+  return pref_registry_.get();
+}
+#endif // ARKWEB_PREFS
+
 void PrefServiceSyncable::UpdateCommandLinePrefStore(
     PrefStore* cmd_line_store) {
   // If |pref_service_forked_| is true, then this PrefService and the forked

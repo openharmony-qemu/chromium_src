@@ -5,6 +5,7 @@
 import("//build/config/c++/c++.gni")
 import("//build/config/sanitizers/sanitizers.gni")
 import("//build/toolchain/toolchain.gni")
+import("//arkweb/build/config/sanitizers/sanitizers.gni")
 import("//buildtools/third_party/libc++/libcxx_headers.gni")
 import("//buildtools/third_party/libc++/modules.gni")
 
@@ -614,6 +615,13 @@ target(libcxx_target_type, "libc++") {
     ":libcxx_headers",
     "//third_party/llvm-libc:llvm-libc-shared",
   ]
+
+  if(use_custom_libcxx && enable_cfi_protection) {
+    configs -= [ 
+      "//arkweb/build/config/sanitizers:ptrauth_base",
+      "//arkweb/build/config/sanitizers:armv83a",
+    ]
+  }
 
   if (use_clang_modules) {
     # TODO(https://github.com/llvm/llvm-project/issues/127012): We don't enable

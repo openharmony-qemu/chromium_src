@@ -460,6 +460,12 @@ class COMPONENT_EXPORT(UI_BASE) ResourceBundle {
   }
 #endif
 
+#if BUILDFLAG(ARKWEB_TEST)
+  void SetLoadedLocaleForTesting(const std::string& locale) {
+    loaded_locale_ = locale;
+  }
+#endif
+
   const base::FilePath& GetOverriddenPakPath() const;
 
  private:

@@ -34,6 +34,7 @@
 #include <memory>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/compiler_specific.h"
 #include "base/feature_list.h"
 #include "base/logging.h"
@@ -508,6 +509,12 @@ bool DrawingBuffer::PrepareTransferableResource(
       SetBufferClearNeeded(true);
     }
   }
+
+#if BUILDFLAG(ARKWEB_WEBGL)
+  if (static_cast<int>(webgl_version_) > static_cast<int>(kWebGL1)) {
+    out_resource->enable_defer_impl_invalidation_workaround = want_depth_;
+  }
+#endif
 
   return true;
 }

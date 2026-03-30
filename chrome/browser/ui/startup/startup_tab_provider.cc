@@ -78,7 +78,9 @@ namespace {
 // `kGoogleChromeScheme` feature is enabled. Returns true if the prefix was
 // stripped.
 bool StripGoogleChromeScheme(base::FilePath::StringViewType& arg) {
-#if BUILDFLAG(CHROME_FOR_TESTING)
+#if BUILDFLAG(CHROME_FOR_TESTING) || \
+    !(BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || \
+    BUILDFLAG(IS_WIN))
   return false;
 #else
   const base::FilePath kFullPrefixPath = base::FilePath::FromASCII(

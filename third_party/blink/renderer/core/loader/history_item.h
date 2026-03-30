@@ -77,7 +77,11 @@ class CORE_EXPORT HistoryItem final : public GarbageCollected<HistoryItem> {
     DISALLOW_NEW();
 
    public:
+#if defined(__clang__) && (__clang_major__ < 17)
+    ViewState() {}
+#else
     ViewState() = default;
+#endif
     ViewState(const ViewState&) = default;
     ViewState& operator=(const ViewState&) = default;
 

@@ -393,9 +393,17 @@ class HTMLFastPathParser {
   using Span = base::span<const Char>;
   using USpan = base::span<const UChar>;
   // 32 matches that used by HTMLToken::Attribute.
+#if defined(__clang__) && (__clang_major__ < 17)
+typedef typename std::conditional<std::is_same_v<Char, UChar>,
+                                  UCharLiteralBuffer<32>,
+                                  LCharLiteralBuffer<32>>::type LiteralBufferType;
+ 
+#else
   typedef std::conditional<std::is_same_v<Char, UChar>,
                            UCharLiteralBuffer<32>,
                            LCharLiteralBuffer<32>>::type LiteralBufferType;
+#endif
+
   static_assert(std::is_same_v<Char, UChar> || std::is_same_v<Char, LChar>);
 
  public:

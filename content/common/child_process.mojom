@@ -35,6 +35,19 @@ interface ChildProcessHost {
   // Whether or not the interface type encapsulated by |receiver| is supported
   // depends on the process type and potentially on the Content embedder.
   BindHostReceiver(mojo_base.mojom.GenericPendingReceiver receiver);
+
+  // Report the key threads in render process. This is used on OHOS to
+  // dynamic resource scheduling.
+  [EnableIf=arkweb_performance_scheduling]
+  ReportKeyThread(int32 status, int32 process_id, int32 thread_id, int32 role);
+  
+  // Report the key threads in render process in batches. This is used on OHOS to
+  // dynamic resource scheduling.
+  [EnableIf=arkweb_performance_scheduling]
+  ReportKeyThreadIds(int32 status, int32 process_id, array<int32> thread_ids, int32 role);
+
+  [EnableIf=arkweb_dfx_tracing]
+  ReportHisyevent(int64 block_time, string mode);
 };
 
 // A control interface the browser uses to drive the behavior of all types of
@@ -127,4 +140,21 @@ interface ChildProcess {
   // energy efficiency because the embedder is in battery saver mode. The
   // default is `false`.
   SetBatterySaverMode(bool battery_saver_mode_enabled);
+  
+  [EnableIf=arkweb_renderer_anr_dump]
+  dumpCurrentJavaScriptStackInMainThread() => (string js_stack);
+
+  [EnableIf=arkweb_renderer_anr_dump]
+  InvokeRenderCrashDump();
+ 
+  [EnableIf=arkweb_renderer_anr_dump]
+  GetUid() => (int32 uid);
+
+  [EnableIf=arkweb_renderer_anr_dump]
+  ReportHicollie();
+ 
+  // #ifdef ARKWEB_LOGGER_REPORT
+  [EnableIf=arkweb_logger_report]
+  SetStrictLogMode(bool is_strict_log_mode);
+  // #endif
 };

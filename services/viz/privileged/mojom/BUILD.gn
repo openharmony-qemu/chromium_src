@@ -5,6 +5,7 @@
 import("//build/config/ozone.gni")
 import("//components/viz/common/debugger/viz_debugger.gni")
 import("//mojo/public/tools/bindings/mojom.gni")
+import("//arkweb/build/features/features.gni")
 
 mojom("mojom") {
   sources = [ "viz_main.mojom" ]
@@ -26,6 +27,18 @@ mojom("mojom") {
     "//services/viz/public/mojom",
     "//ui/gfx/mojom",
   ]
+
+  if (arkweb_occluded_opt) {
+    enabled_features += [ "arkweb_occluded_opt" ]
+  }
+
+  if (arkweb_offline_web_evict_back_buffers) {
+    enabled_features += [ "arkweb_offline_web_evict_back_buffers" ]
+  }
+
+  if (arkweb_clean_buffers_when_invisible) {
+    enabled_features += [ "arkweb_clean_buffers_when_invisible" ]
+  }
 }
 
 source_set("unit_tests") {

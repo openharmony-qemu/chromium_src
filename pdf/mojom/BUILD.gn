@@ -26,4 +26,8 @@ mojom("mojom") {
   if (enable_screen_ai_service) {
     enabled_features += [ "enable_screen_ai_service" ]
   }
+
+  if (arkweb_pdf) {
+    enabled_features += [ "arkweb_pdf" ]
+  }
 }

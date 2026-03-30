@@ -5311,10 +5311,16 @@ std::optional<DebugReportCooldown> DoGetDebugReportCooldownForOrigin(
       1, ignore_before.value_or(base::Time::Min()));
 
   if (cooldown_debugging_only_report.Step()) {
+#if BUILDFLAG(IS_OHOS)
+  return DebugReportCooldown{cooldown_debugging_only_report.ColumnTime(0),
+                             static_cast<DebugReportCooldownType>(
+                                 cooldown_debugging_only_report.ColumnInt(1))};
+#else
     return DebugReportCooldown(
         cooldown_debugging_only_report.ColumnTime(0),
         static_cast<DebugReportCooldownType>(
             cooldown_debugging_only_report.ColumnInt(1)));
+#endif
   }
 
   if (!cooldown_debugging_only_report.Succeeded()) {

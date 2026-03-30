@@ -44,6 +44,9 @@ NET_EXPORT base::Value::Dict NetLogURLRequestStartParams(
     const IsolationInfo& isolation_info,
     const SiteForCookies& site_for_cookies,
     const std::optional<url::Origin>& initiator,
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+    const bool retry_with_fallback_proxy,
+#endif
     int64_t upload_id,
     NetLogCaptureMode capture_mode);
 

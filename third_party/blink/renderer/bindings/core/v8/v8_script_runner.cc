@@ -25,6 +25,7 @@
 
 #include "third_party/blink/renderer/bindings/core/v8/v8_script_runner.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/feature_list.h"
 #include "base/metrics/histogram_functions.h"
 #include "build/build_config.h"
@@ -68,6 +69,10 @@
 #include "third_party/blink/renderer/platform/loader/fetch/url_loader/cached_metadata_handler.h"
 #include "third_party/blink/renderer/platform/scheduler/public/event_loop.h"
 #include "third_party/blink/renderer/platform/wtf/text/text_encoding.h"
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "cef/ohos_cef_ext/libcef/common/soc_perf_util.h"
+#endif
 
 namespace blink {
 
@@ -334,11 +339,31 @@ v8::MaybeLocal<v8::Script> V8ScriptRunner::CompileScript(
   probe::V8Compile probe(execution_context, file_name,
                          script_start_position.line_.ZeroBasedInt(),
                          script_start_position.column_.ZeroBasedInt());
-
+#if BUILDFLAG(ARKWEB_ENABLE_COMPILE_TRACE)
+  TRACE_EVENT_BEGIN2(kTraceEventCategoryGroup, "v8.compile location",
+                     "lineNumber", script_start_position.line_.OneBasedInt(),
+                     "columnNumber",
+                     script_start_position.column_.OneBasedInt());
+  TRACE_EVENT_END0(kTraceEventCategoryGroup, "v8.compile location");
+#endif
   if (!*TRACE_EVENT_API_GET_CATEGORY_GROUP_ENABLED(kTraceEventCategoryGroup)) {
+#if BUILDFLAG(IS_ARKWEB)
+    v8::MaybeLocal<v8::Script> script =  CompileScriptInternal(isolate, script_state, classic_script, origin,
+        compile_options, no_cache_reason, can_use_crowdsourced_compile_hints, nullptr);
+    TRACE_EVENT_END1(
+        kTraceEventCategoryGroup, "v8.compile", "data",
+        [&](perfetto::TracedValue context) {
+          inspector_compile_script_event::Data(
+              std::move(context), file_name, script_start_position, std::nullopt,
+              compile_options == v8::ScriptCompiler::kEagerCompile,
+              classic_script.Streamer(), classic_script.NotStreamingReason());
+        });
+    return script;
+#else
     return CompileScriptInternal(isolate, script_state, classic_script, origin,
                                  compile_options, no_cache_reason,
                                  can_use_crowdsourced_compile_hints, nullptr);
+#endif
   }
 
   std::optional<inspector_compile_script_event::V8ConsumeCacheResult>
@@ -621,12 +646,28 @@ ScriptEvaluationResult V8ScriptRunner::CompileAndRunScript(
             can_use_crowdsourced_compile_hints,
             v8_compile_hints::GetMagicCommentMode(execution_context));
 
+#if BUILDFLAG(ARKWEB_V8_COMPILE)
+    String arkWebCompile = classic_script->GetArkWebCompile();
+    if (arkWebCompile) {
+      if (compile_options != v8::ScriptCompiler::CompileOptions::kNoCompileOptions) {
+        LOG(INFO) << "arkWebCompile no need to set " << arkWebCompile << " in V8.";
+      } else if (arkWebCompile != "eager") {
+        LOG(INFO) << "arkWebCompile failed to set " << arkWebCompile << " in V8.";
+      } else {
+        LOG(INFO) << "arkWebCompile success to set " << arkWebCompile << " in V8.";
+        compile_options = v8::ScriptCompiler::CompileOptions::kEagerCompile;
+      }
+    }
+#endif
     v8::ScriptOrigin origin = classic_script->CreateScriptOrigin(isolate);
     v8::MaybeLocal<v8::Value> maybe_result;
     if (V8ScriptRunner::CompileScript(script_state, *classic_script, origin,
                                       compile_options, no_cache_reason,
                                       can_use_crowdsourced_compile_hints)
             .ToLocal(&script)) {
+#if BUILDFLAG(IS_ARKWEB) && !defined(COMPONENT_BUILD) // FIXME
+    soc_perf::SocPerUtil::StartBoost();
+#endif
       DEVTOOLS_TIMELINE_TRACE_EVENT_WITH_CATEGORIES(
           TRACE_DISABLED_BY_DEFAULT("devtools.target-rundown"),
           "ScriptCompiled", inspector_target_rundown_event::Data,
@@ -848,8 +889,27 @@ v8::MaybeLocal<v8::Value> V8ScriptRunner::CallFunction(
                          inspector_function_call_event::Data(
                              std::move(trace_context), context, function);
                        });
+#if BUILDFLAG(ARKWEB_ENABLE_COMPILE_TRACE)
+    v8::Local<v8::Function> original_function = GetBoundFunction(function);
+    v8::Local<v8::Value> function_name = original_function->GetDebugName();
+    if (!function_name.IsEmpty() && function_name->IsString()) {
+      TRACE_EVENT_BEGIN1(
+          "devtools.timeline", "FunctionName", "functionName",
+          ToCoreString(isolate, function_name.As<v8::String>()).Ascii().c_str());
+      TRACE_EVENT_END0("devtools.timeline", "FunctionName");
+    }
+    SourceLocation* location =
+        CaptureSourceLocation(isolate, original_function);
+    TRACE_EVENT_BEGIN2("devtools.timeline", "FunctionUrl", "url",
+                      location->Url().Ascii().c_str(), "scriptId",
+                      location->ScriptId());
+    TRACE_EVENT_END0("devtools.timeline", "FunctionUrl");
+    TRACE_EVENT_BEGIN2("devtools.timeline", "FunctionLocation", "lineNumber",
+                      location->LineNumber(), "columnNumber",
+                      location->ColumnNumber());
+    TRACE_EVENT_END0("devtools.timeline", "FunctionLocation");
+#endif
   }
-
   probe::CallFunction probe(context, isolate->GetCurrentContext(), function,
                             depth);
   v8::MaybeLocal<v8::Value> result = function->Call(

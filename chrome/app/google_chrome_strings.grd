@@ -306,6 +306,11 @@ chromium_strings.grd. -->
           Welcome to Google Chrome
         </message>
       </if>
+      <if expr="is_ohos">
+        <message name="IDS_FIRST_RUN_DIALOG_WINDOW_TITLE" desc="Window title of First Run dialog on Ohos, displayed in title bar">
+          Welcome to Google Chrome
+        </message>
+      </if>
       <if expr="is_chromeos">
         <if expr="reven">
           <message name="IDS_PRODUCT_OS_NAME" desc="The ChromeOS Flex application name">
@@ -606,7 +611,7 @@ Google Chrome is unable to recover your settings.
       <message name="IDS_PASSWORD_MANAGER_UPDATE_PASSWORD_SIGNED_OUT_MESSAGE_DESCRIPTION" desc="The description of the Google Password Manager's update password message when the user is signed out.">
         In Google Password Manager on this device
       </message>
-      <if expr="is_macosx">
+      <if expr="is_macosx or is_ohos">
         <message name="IDS_PASSWORDS_AUTHENTICATION_PROMPT_PREFIX" desc="Text shown in the beginning of the OS-level user authentication prompt before performing a seneitive operation such as show passwords in plain text.">
           Google Chrome is trying to <ph name="AUTHENTICATION_PURPOSE">$1<ex>show passwords</ex></ph>
         </message>

@@ -357,6 +357,9 @@ RenderProcessPriority::RenderProcessPriority(bool visible,
                                              bool is_spare_renderer,
                                              ChildProcessImportance importance
 #else
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+                                             base::TimeTicks background_time,
+#endif
                                              std::optional<
                                                  base::Process::Priority>
                                                  priority_override
@@ -374,6 +377,9 @@ RenderProcessPriority::RenderProcessPriority(bool visible,
 #if BUILDFLAG(IS_ANDROID)
       is_spare_renderer(is_spare_renderer),
       importance(importance)
+#endif
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+      background_time(background_time),
 #endif
 #if !BUILDFLAG(IS_ANDROID)
           priority_override(priority_override)

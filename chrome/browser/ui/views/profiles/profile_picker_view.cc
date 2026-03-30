@@ -85,6 +85,10 @@
 #include "chrome/browser/shell_integration_linux.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "ui/display/screen.h"
+#endif
+
 namespace {
 
 ProfilePickerView* g_profile_picker_view = nullptr;
@@ -107,6 +111,24 @@ class ProfilePickerWidget : public views::Widget {
     views::Widget::InitParams params(
         views::Widget::InitParams::NATIVE_WIDGET_OWNS_WIDGET);
     params.delegate = profile_picker_view_;
+#if BUILDFLAG(IS_OHOS)
+    // see ProfilePickerView::CalculatePreferredSize()
+    gfx::Size preferred_size = gfx::Size(kWindowWidth, kWindowHeight);
+    gfx::Point mouse_location =
+        display::Screen::Get()->GetCursorScreenPoint();
+    gfx::Size work_area_size = display::Screen::Get()
+                                   ->GetDisplayNearestPoint(mouse_location)
+                                   .work_area()
+                                   .size();
+    gfx::Size max_dialog_size = ScaleToFlooredSize(
+        work_area_size, kMaxRatioOfWorkArea, kMaxRatioOfWorkArea);
+    preferred_size.SetToMin(max_dialog_size);
+    gfx::Rect bounds =
+        gfx::Rect{(work_area_size.width() - preferred_size.width()) / 2,
+                  (work_area_size.height() - preferred_size.height()) / 2,
+                  preferred_size.width(), preferred_size.height()};
+    params.bounds = bounds;
+#endif
 #if BUILDFLAG(IS_LINUX)
     params.wm_class_name = shell_integration_linux::GetProgramClassName();
     params.wm_class_class = shell_integration_linux::GetProgramClassClass();

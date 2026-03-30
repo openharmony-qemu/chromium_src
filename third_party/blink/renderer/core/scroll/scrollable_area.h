@@ -79,6 +79,9 @@ class ScrollAnchor;
 class ScrollAnimatorBase;
 struct SerializedAnchor;
 class ScrollMarkerGroupPseudoElement;
+#if BUILDFLAG(IS_ARKWEB)
+  class ScrollableAreaUtils;
+#endif
 
 using MainThreadScrollingReasons = uint32_t;
 
@@ -185,6 +188,14 @@ class CORE_EXPORT ScrollableArea : public GarbageCollectedMixin {
   void SnapAfterScrollbarScrolling(ScrollbarOrientation, cc::ScrollSourceType);
   virtual void UpdateFocusDataForSnapAreas() {}
 
+#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_AREA)
+  virtual double GetScrollbarAvoidAreaTop() const { return 0.0f; }
+  virtual double GetScrollbarAvoidAreaBottom() const { return 0.0f; }
+#endif // ARKWEB_SCROLLBAR_AVOID_AREA
+#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_CORNER)
+  virtual bool HasScrollbarAvoidCorner() const { return false; }
+#endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
+
   // SnapAtCurrentPosition(), SnapForEndPosition(), SnapForDirection(), and
   // SnapForDisplacement() return true if snapping was performed, and false
   // otherwise. Note that this does not necessarily mean that any scrolling was
@@ -248,6 +259,7 @@ class CORE_EXPORT ScrollableArea : public GarbageCollectedMixin {
   // overflow:overlay might be deprecated soon.
   bool HasOverlayScrollbars() const;
   void SetOverlayScrollbarColorScheme(mojom::blink::ColorScheme);
+
   void RecalculateOverlayScrollbarColorScheme();
   mojom::blink::ColorScheme GetOverlayScrollbarColorScheme() const {
     return static_cast<mojom::blink::ColorScheme>(
@@ -627,6 +639,11 @@ class CORE_EXPORT ScrollableArea : public GarbageCollectedMixin {
 
   virtual void UpdateScrollMarkers() {}
 
+#if BUILDFLAG(IS_ARKWEB)
+  friend class ScrollableAreaUtils;
+  ScrollableAreaUtils* GetUtils() { return scrollable_area_utils_.Get(); }
+#endif
+
  protected:
   // Deduces the mojom::blink::ScrollBehavior based on the
   // element style and the parameter set by programmatic scroll into either
@@ -783,6 +800,10 @@ class CORE_EXPORT ScrollableArea : public GarbageCollectedMixin {
   unsigned scrollbar_captured_ : 1;
   unsigned mouse_over_scrollbar_ : 1;
   unsigned has_been_disposed_ : 1;
+
+#if BUILDFLAG(IS_ARKWEB)
+  Member<ScrollableAreaUtils> scrollable_area_utils_;
+#endif
 
   std::optional<mojom::blink::ScrollType> active_smooth_scroll_type_;
 

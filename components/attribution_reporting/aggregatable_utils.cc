@@ -34,7 +34,12 @@ std::vector<NullAggregatableReport> GetNullAggregatableReportsForLookback(
     }
 
     if (generate_func(i)) {
+#if defined(__clang__) && (__clang_major__ < 17)
+      NullAggregatableReport report{fake_source_time};
+      reports.emplace_back(report);
+#else
       reports.emplace_back(fake_source_time);
+#endif
     }
   }
   return reports;

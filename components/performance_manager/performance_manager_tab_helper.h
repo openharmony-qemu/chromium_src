@@ -108,6 +108,26 @@ class PerformanceManagerTabHelper
       content::RenderWidgetHost* render_widget_host) override;
   void AboutToBeDiscarded(content::WebContents* new_contents) override;
 
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+  void MediaStartedPlaying(const MediaPlayerInfo& video_type,
+                           const content::MediaPlayerId& id) override;
+  void MediaStoppedPlaying(
+      const MediaPlayerInfo& video_type,
+      const content::MediaPlayerId& id,
+      WebContentsObserver::MediaStoppedReason reason) override;
+
+  void OneShotMediaPlayerStopped() override;
+  void AudioContextPlaybackStarted(
+      const AudioContextId& audio_context_id) override;
+  void AudioContextPlaybackStopped(
+      const AudioContextId& audio_context_id) override;
+#endif  // ARKWEB_PERFORMANCE_PERSISTENT_TASK
+
+#if BUILDFLAG(ARKWEB_BGTASK)
+  void OnBrowserForeground() override;
+  void OnBrowserBackground() override;
+#endif
+
   void BindDocumentCoordinationUnit(
       content::RenderFrameHost* render_frame_host,
       mojo::PendingReceiver<mojom::DocumentCoordinationUnit> receiver);

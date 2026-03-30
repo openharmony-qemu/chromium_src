@@ -109,8 +109,13 @@ constexpr net::BackoffEntry::Policy kAutofillBackoffPolicy = {
     false,
 };
 
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+constexpr char kDefaultAutofillServerURL[] =
+    "https://x.x.x.x";
+#else
 constexpr char kDefaultAutofillServerURL[] =
     "https://content-autofill.googleapis.com/";
+#endif
 
 // Header to get base64 encoded serialized proto from API for safety.
 constexpr char kGoogEncodeResponseIfExecutable[] =

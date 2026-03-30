@@ -12,6 +12,7 @@
 #include <tuple>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/types/pass_key.h"
 #include "base/unguessable_token.h"
@@ -64,6 +65,10 @@ class NET_EXPORT NetworkAnonymizationKey {
  public:
   // Construct an empty key.
   NetworkAnonymizationKey();
+
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+  NetworkAnonymizationKey(bool should_check_top_frame_site);
+#endif
 
   NetworkAnonymizationKey(
       const NetworkAnonymizationKey& network_anonymization_key);
@@ -215,10 +220,24 @@ class NET_EXPORT NetworkAnonymizationKey {
     bool is_empty() const { return !top_frame_site_.has_value(); }
 
     friend bool operator==(const Data& a, const Data& b) {
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+      if (a.should_check_top_frame_site_ && b.should_check_top_frame_site_) {
+        return std::tie(a.top_frame_site_, a.is_cross_site_, a.nonce_,
+                        a.network_isolation_partition_) ==
+               std::tie(b.top_frame_site_, b.is_cross_site_, b.nonce_,
+                        b.network_isolation_partition_);
+      } else {
+        return std::tie(a.is_cross_site_, a.nonce_,
+                        a.network_isolation_partition_) ==
+               std::tie(b.is_cross_site_, b.nonce_,
+                        b.network_isolation_partition_);
+      }
+#else
       return std::tie(a.top_frame_site_, a.is_cross_site_, a.nonce_,
                       a.network_isolation_partition_) ==
              std::tie(b.top_frame_site_, b.is_cross_site_, b.nonce_,
                       b.network_isolation_partition_);
+#endif
     }
 
     friend auto operator<=>(const Data& a, const Data& b) {
@@ -241,6 +260,11 @@ class NET_EXPORT NetworkAnonymizationKey {
     const std::optional<SchemefulSite> top_frame_site_;
     const bool is_cross_site_;
     const std::optional<base::UnguessableToken> nonce_;
+
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+    bool should_check_top_frame_site_ = true;
+#endif
+
     const NetworkIsolationPartition network_isolation_partition_;
   };
 

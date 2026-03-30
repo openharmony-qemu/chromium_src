@@ -58,7 +58,13 @@ struct CONTENT_EXPORT NavigationRequestInfo {
       int64_t navigation_id,
       bool shared_storage_writable,
       bool is_ad_tagged,
-      bool force_no_https_upgrade);
+      bool force_no_https_upgrade
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+      ,
+      bool retry_with_fallback_proxy,
+      int orginal_error_code
+#endif
+  );
   NavigationRequestInfo(const NavigationRequestInfo& other) = delete;
   ~NavigationRequestInfo();
 
@@ -168,6 +174,11 @@ struct CONTENT_EXPORT NavigationRequestInfo {
 
   // If true, the navigation will not be upgraded to HTTPS.
   bool force_no_https_upgrade;
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  const bool retry_with_fallback_proxy;
+  const int original_error_code;
+#endif
 };
 
 }  // namespace content

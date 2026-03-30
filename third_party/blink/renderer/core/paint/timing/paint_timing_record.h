@@ -68,6 +68,9 @@ class CORE_EXPORT PaintTimingRecord
   void SetSoftNavigationContext(SoftNavigationContext* context) {
     soft_navigation_context_ = context;
   }
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  LCPRectInfo* GetLCPRectInfo() const { return lcp_rect_info_.get(); }
+#endif
 
   // Returns whether or not the corresponding image or text was removed from the
   // DOM after the record was created and before getting paint timing. Used to

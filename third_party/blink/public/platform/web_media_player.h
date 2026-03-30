@@ -33,6 +33,7 @@
 
 #include <optional>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/memory/weak_ptr.h"
 #include "base/time/time.h"
@@ -48,6 +49,16 @@
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/geometry/size.h"
 #include "url/gurl.h"
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+#include "arkweb/chromium_ext/media/base/action_reason.h"
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+#if BUILDFLAG(ARKWEB_MEDIA_MEMORY_PRESSURE)
+#include "base/memory/memory_pressure_listener.h"
+#endif
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+#include "media/base/pipeline_status.h"
+#endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
 namespace cc {
 class PaintCanvas;
@@ -438,10 +449,55 @@ class WebMediaPlayer {
   virtual void RegisterFrameSinkHierarchy() {}
   virtual void UnregisterFrameSinkHierarchy() {}
 
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  virtual bool IsFrameHidden() { return false; }
+#endif
   // Records the `MediaVideoVisibilityTracker` occlusion state, at the time that
   // HTMLVideoElement visibility is reported. The state is recorded using
   // `MediaLogEvent` s.
   virtual void RecordVideoOcclusionState(std::string_view occlusion_state) {}
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  virtual void PlayWithReason(media::ActionReason reason) {}
+  virtual void PauseWithReason(media::ActionReason reason) {}
+  virtual bool IsMediaPlayerShown() const { return false; }
+  virtual bool IsUsingCustomRenderer() const { return false; }
+  virtual void SetInitialPreload(uint32_t preload) {}
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+  virtual int64_t GetFreezeTime() const { return 0.0; }
+  virtual int64_t GetPlayedTime() { return 0.0; }
+  virtual media::PipelineStatusCodes GetPipelineStatus() const {
+    return media::PIPELINE_OK;
+  }
+  virtual int GetWebURLErrorReason() const { return 0; }
+  virtual WebString GetMimeType() const { return WebString(); }
+  virtual bool UsingMediaPlayer() const { return false; }
+  virtual void OnHiddenVideoReport(bool storing_in_bfcache) {}
+#endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  virtual void SetVideoSurface(int32_t widget_id) {}
+  virtual bool SupportVideoSurface() { return false; }
+#endif // ARKWEB_VIDEO_ASSISTANT
+#if BUILDFLAG(ARKWEB_PIP)
+  virtual void PipEnable(bool enable) {}
+  virtual void PipDown(bool enable) {}
+#endif
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+  virtual void RecycleDmaBuffer() {}
+  virtual void ResumeDmaBuffer() {}
+  virtual bool IsDmaBufferRecycleEnabled() { return false; }
+  virtual void SetDmaBufferSeekState(bool state) {}
+#endif
+#if BUILDFLAG(ARKWEB_MEDIA_MEMORY_PRESSURE)
+  virtual void NotifyMemoryLevel(
+    base::MemoryPressureListener::MemoryPressureLevel memory_pressure_level) {}
+#endif  // ARKWEB_MEDIA_DMABUF
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  virtual void MediaResumeFromBFCachePage(bool restoring_in_bfcache) {}
+#endif  // BUILDFLAG(ARKWEB_BFCACHE)
 
   // Request the media player to record auto picture in picture related
   // information. This information helps identify why a request to enter picture

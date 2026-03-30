@@ -29,6 +29,7 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "base/check_op.h"
 #include "base/dcheck_is_on.h"
 #include "third_party/blink/renderer/core/core_export.h"
@@ -68,6 +69,9 @@ enum class SelectionModifyDirection;
 enum class SelectionState;
 struct PaintInvalidatorContext;
 struct PhysicalRect;
+#if BUILDFLAG(ARKWEB_MENU)
+class FrameSelectionExt;
+#endif  // ARKWEB_MENU
 
 enum RevealExtentOption { kRevealExtent, kDoNotRevealExtent };
 
@@ -131,13 +135,18 @@ struct LayoutTextSelectionStatus {
   SelectionIncludeEnd include_end;
 };
 
-class CORE_EXPORT FrameSelection final
+class CORE_EXPORT FrameSelection
     : public GarbageCollected<FrameSelection> {
  public:
   explicit FrameSelection(LocalFrame&);
   FrameSelection(const FrameSelection&) = delete;
   FrameSelection& operator=(const FrameSelection&) = delete;
   ~FrameSelection();
+
+#if BUILDFLAG(ARKWEB_MENU)
+  friend class FrameSelectionExt;
+  virtual FrameSelectionExt* AsFrameSelectionExt() { return nullptr; }
+#endif  // ARKWEB_MENU
 
   bool IsAvailable() const;
   // You should not call |document()| when |!isAvailable()|.
@@ -168,6 +177,7 @@ class CORE_EXPORT FrameSelection final
   void Clear();
   bool IsHidden() const;
 
+
   // TODO(tkent): These two functions were added to fix crbug.com/695211 without
   // changing focus behavior. Once we fix crbug.com/690272, we can remove these
   // functions.
@@ -184,7 +194,11 @@ class CORE_EXPORT FrameSelection final
   // the frame you entirely selected.
   void SelectFrameElementInParentIfFullySelected();
 
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  bool Contains(const PhysicalOffset&, bool contains_boundaries = true);
+#else
   bool Contains(const PhysicalOffset&);
+#endif
 
   bool Modify(SelectionModifyAlteration,
               SelectionModifyDirection,
@@ -284,7 +298,11 @@ class CORE_EXPORT FrameSelection final
   void ShowTreeForThis() const;
 #endif
 
+#if BUILDFLAG(ARKWEB_FOCUS)
+  void SetFocusedNodeIfNeeded(bool = false);
+#else
   void SetFocusedNodeIfNeeded();
+#endif
   void NotifyTextControlOfSelectionChange(SetSelectionBy);
 
   String SelectedHTMLForClipboard() const;
@@ -396,10 +414,8 @@ class CORE_EXPORT FrameSelection final
   // Controls text granularity used to adjust the selection's extent in
   // moveRangeSelectionExtent.
   std::unique_ptr<GranularityStrategy> granularity_strategy_;
-
   const Member<FrameCaret> frame_caret_;
 };
-
 }  // namespace blink
 
 #if DCHECK_IS_ON()
@@ -408,4 +424,7 @@ void ShowTree(const blink::FrameSelection&);
 void ShowTree(const blink::FrameSelection*);
 #endif
 
+#if BUILDFLAG(ARKWEB_MENU)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/editing/frame_selection_ext.h"
+#endif  // ARKWEB_MENU
 #endif  // THIRD_PARTY_BLINK_RENDERER_CORE_EDITING_FRAME_SELECTION_H_

@@ -303,6 +303,10 @@ void SequenceManagerImpl::BindToMessagePump(std::unique_ptr<MessagePump> pump) {
       settings_.message_loop_type == MessagePumpType::JAVA) {
     controller_->AttachToMessagePump();
   }
+#elif BUILDFLAG(IS_ARKWEB) && !BUILDFLAG(ARKWEB_TEST)
+  if (settings_.message_loop_type == MessagePumpType::UI) {
+    controller_->AttachToMessagePump();
+  }
 #endif
 
   // On iOS attach to the native loop when there is one.

@@ -85,6 +85,10 @@
 #include "components/user_manager/user_manager.h"
 #endif
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/chrome/browser/extensions/extension_system_impl_for_include.cc"
+#endif
+
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 
 namespace extensions {
@@ -384,6 +388,12 @@ void ChromeExtensionSystem::InitForRegularProfile(bool extensions_enabled) {
   if (user_script_manager() || extension_service()) {
     return;  // Already initialized.
   }
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  extension_registry_info_manager_ = std::make_unique<ExtensionRegistryInfoManager>(profile_.get());
+  InitForRegularProfileForInclude(profile_.get(),
+                                  extension_registry_info_manager_.get());
+#endif
 
   shared_->Init(extensions_enabled);
 }

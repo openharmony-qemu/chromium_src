@@ -54,6 +54,9 @@ class NativePixmapEGLBinding : public NativePixmapGLBinding {
   gfx::BufferFormat format_;
   scoped_refptr<gfx::NativePixmap> pixmap_;
   gfx::BufferPlane plane_;
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+  raw_ptr<void> native_window_buffer_;
+#endif
 };
 
 }  // namespace ui

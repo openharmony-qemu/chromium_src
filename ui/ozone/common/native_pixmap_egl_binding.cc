@@ -21,6 +21,7 @@
 
 #if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
 #include "ui/gl/ohos/native_buffer_utils.h"
+#include <native_window/external_window.h>
 #endif
 
 namespace ui {
@@ -111,6 +112,13 @@ NativePixmapEGLBinding::NativePixmapEGLBinding(const gfx::Size& size,
 
 NativePixmapEGLBinding::~NativePixmapEGLBinding() {
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
+  if (native_window_buffer_) {
+    int32_t errorCode = OH_NativeWindow_NativeObjectUnreference(native_window_buffer_);
+    if (errorCode != Image_ErrorCode::IMAGE_SUCCESS) {
+      LOG(INFO) << "NativePixmapEGLBinding, OH_NativeWindow_NativeObjectUnreference failed";
+    }
+    native_window_buffer_ = nullptr;
+  }
 }
 
 bool NativePixmapEGLBinding::IsBufferFormatSupported(gfx::BufferFormat format) {
@@ -160,8 +168,17 @@ bool NativePixmapEGLBinding::InitializeFromNativePixmap(
   }
 
 #if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+  native_window_buffer_ = pixmap->GetWindowBuffer();
+  if (!native_window_buffer_) {
+    LOG(ERROR) << "Pixmap GetWindowBuffer is nullptr";
+    return false;
+  }
+  int32_t errorCode = OH_NativeWindow_NativeObjectReference(native_window_buffer_);
+  if (errorCode != Image_ErrorCode::IMAGE_SUCCESS) {
+    LOG(INFO) << "InitializeFromNativePixmap, OH_NativeWindow_NativeObjectReference failed";
+  }
   egl_image_ = gl::ohos::CreateEGLImage(
-      static_cast<EGLClientBuffer>(pixmap->GetWindowBuffer()));
+      static_cast<EGLClientBuffer>(native_window_buffer_));
   if (egl_image_ == EGL_NO_IMAGE_KHR) {
     LOG(ERROR) << "[HeifSupport] egl_image_ is EGL_NO_IMAGE_KHR.";
     return false;

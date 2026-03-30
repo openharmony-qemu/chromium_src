@@ -66,8 +66,10 @@ void PlatformSensorProviderOHOS::CreateSensorInternal(
                                                  std::move(callback));
       break;
     default: {
-      std::move(callback).Run(
-          PlatformSensorOHOS::Create(type, reading_buffer, AsWeakPtr()));
+      auto sensor = PlatformSensorOHOS::Create(type, reading_buffer, AsWeakPtr());
+      if (sensor) {
+        std::move(callback).Run(sensor);
+      }
       break;
     }
   }

@@ -3912,7 +3912,7 @@ void RenderProcessHostImpl::OnChannelConnected(int32_t peer_pid) {
   }
 #endif
 
-#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION) && !defined(COMPONENT_BUILD)
   if (AsArkwebRenderProcessHostImplExt()) {
     bool is_init = false;
     nweb_ex::AlloyVideoLoadOptimizationData config_data = 

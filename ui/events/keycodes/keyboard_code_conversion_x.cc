@@ -1474,6 +1474,14 @@ int XKeysymForWindowsKeyCode(KeyboardCode keycode, bool shift) {
       return XF86XK_KbdBrightnessDown;
     case VKEY_KBD_BRIGHTNESS_UP:
       return XF86XK_KbdBrightnessUp;
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+    case VKEY_CODE_COPY:
+      return XF86XK_Copy;
+    case VKEY_CODE_PASTE:
+      return XF86XK_Paste;
+    case VKEY_CODE_CUT:
+      return XF86XK_Cut;
+#endif
 
     default:
       LOG(WARNING) << "Unknown keycode:" << keycode;

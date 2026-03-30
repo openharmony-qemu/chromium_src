@@ -1362,8 +1362,8 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
     }
 #endif // ARKWEB_EX_SCREEN_CAPTURE
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-    if ((*base::CommandLine::ForCurrentProcess())
-            .HasSwitch(::switches::kEnableNwebEx)) {
+    if ((*base::CommandLine::ForCurrentProcess()).HasSwitch(
+        ::switches::kEnableNwebEx) && base::ohos::IsPcDevice()) {
       if (main_browser_ && main_browser_->GetHost()) {
         main_browser_->GetHost()->WebExtensionRegisterZoomObserver();
       }
@@ -1415,8 +1415,8 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
   }
 #endif  // ARKWEB_VIDEO_ASSISTANT
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  if ((*base::CommandLine::ForCurrentProcess())
-          .HasSwitch(::switches::kEnableNwebEx)) {
+  if ((*base::CommandLine::ForCurrentProcess()).HasSwitch(
+      ::switches::kEnableNwebEx) && base::ohos::IsPcDevice()) {
     if (main_browser_ && main_browser_->GetHost()) {
       main_browser_->GetHost()->WebExtensionRegisterZoomObserver();
     }
@@ -1443,8 +1443,8 @@ bool NWebHandlerDelegate::DoClose(CefRefPtr<CefBrowser> browser) {
     }
   }
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  if ((*base::CommandLine::ForCurrentProcess())
-          .HasSwitch(::switches::kEnableNwebEx)) {
+  if ((*base::CommandLine::ForCurrentProcess()).HasSwitch(
+      ::switches::kEnableNwebEx) && base::ohos::IsPcDevice()) {
     if (main_browser_ && main_browser_->GetHost()) {
       main_browser_->GetHost()->WebExtensionUnregisterZoomObserver();
     }

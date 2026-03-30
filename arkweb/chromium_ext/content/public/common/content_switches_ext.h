@@ -103,6 +103,10 @@ CONTENT_EXPORT extern const char kOhosEnableVulkan[];
 
 #if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
 CONTENT_EXPORT extern const char kAdSecValue[];
+CONTENT_EXPORT extern const char kDisableMathml[];
+CONTENT_EXPORT extern const char kDisablePdfViewer[];
+CONTENT_EXPORT extern const char kDisableServiceWorker[];
+CONTENT_EXPORT extern const char kDisableNonProxyUDP[];
 #endif
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)

@@ -302,6 +302,10 @@
 #include "base/files/file_path.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#endif
+
 // VLOG additional statements in Fuchsia release builds.
 #if BUILDFLAG(IS_FUCHSIA)
 #define MAYBEVLOG VLOG
@@ -3573,6 +3577,10 @@ void RenderProcessHostImpl::PropagateBrowserCommandLineToRenderer(
 #endif
 #if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
       switches::kAdSecValue,
+      switches::kDisableMathml,
+      switches::kDisablePdfExtension,
+      switches::kDisableServiceWorker,
+      switches::kDisableNonProxyUDP,
 #endif
 #if BUILDFLAG(ARKWEB_GWP_ASAN)
       switches::kOhosEnableGwpAsanType,

@@ -95,6 +95,10 @@ const char kOhosEnableVulkan[] = "ohos-enable-vulkan";
 
 #if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
 const char kAdSecValue[] = "advanced_sec_value";
+const char kDisableMathml[] = "disable-mathml";
+const char kDisablePdfViewer[] = "disable-pdf-viewer";
+const char kDisableServiceWorker[] = "disable-service-worker";
+const char kDisableNonProxyUDP[] = "disable-non-proxy-udp";
 #endif
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)

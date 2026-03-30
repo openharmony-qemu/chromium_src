@@ -112,6 +112,7 @@ NativePixmapEGLBinding::NativePixmapEGLBinding(const gfx::Size& size,
 
 NativePixmapEGLBinding::~NativePixmapEGLBinding() {
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
   if (native_window_buffer_) {
     int32_t errorCode = OH_NativeWindow_NativeObjectUnreference(native_window_buffer_);
     if (errorCode != 0) {
@@ -119,6 +120,7 @@ NativePixmapEGLBinding::~NativePixmapEGLBinding() {
     }
     native_window_buffer_ = nullptr;
   }
+#endif // ARKWEB_HEIF_SUPPORT
 }
 
 bool NativePixmapEGLBinding::IsBufferFormatSupported(gfx::BufferFormat format) {

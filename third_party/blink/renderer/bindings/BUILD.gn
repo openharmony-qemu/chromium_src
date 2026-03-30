@@ -517,4 +517,8 @@ buildflag_header("buildflags") {
   header_dir = "third_party/blink/renderer/bindings"
 
   flags = [ "PRODUCE_V8_COMPILE_HINTS=$produce_v8_compile_hints" ]
+
+  if (is_arkweb) {
+    visibility += [ "//arkweb/build:arkweb_prebuild_buildflags" ]
+  }
 }

@@ -49,6 +49,9 @@ constexpr int kMaxDescriptionLength = 64;
 // kept in sync with the extension length checks in the renderer.
 constexpr int kMaxExtensionLength = 16;
 
+#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
+using AcceptFileType = ui::SelectFileDialog::FileTypeInfo::AcceptFileType;
+#endif
 // Similar to base::FilePath::FinalExtension, but operates with the
 // understanding that the StringType passed in is an extension, not a path.
 // Returns the last extension without a leading ".".
@@ -104,15 +107,31 @@ std::vector<std::u16string> ConvertAcceptsToMimeTypesList(
 bool GetFileTypesFromAcceptsOption(
     const blink::mojom::ChooseFileSystemEntryAcceptsOption& option,
     std::vector<base::FilePath::StringType>* extensions,
+#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
+    std::vector<AcceptFileType>& accept,
+#endif
     std::u16string* description) {
   std::set<base::FilePath::StringType> extension_set;
 
+#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
+  int acceptCount = -1;
+  int mimeCount = 0;
+#endif
   for (const std::string& extension_string : option.extensions) {
     base::FilePath::StringType extension;
 #if BUILDFLAG(IS_WIN)
     extension = base::UTF8ToWide(extension_string);
 #else
     extension = extension_string;
+#endif
+#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
+    if (extension_string == ";") {
+      accept.emplace_back(AcceptFileType());
+      acceptCount++;
+      continue;
+    } else if (acceptCount >= 0) {
+      accept[acceptCount].accept_type.push_back(extension);
+    }
 #endif
     if (extension_set.insert(extension).second &&
         !IsInvalidExtension(extension)) {
@@ -121,6 +140,11 @@ bool GetFileTypesFromAcceptsOption(
   }
 
   for (const std::string& mime_type : option.mime_types) {
+#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
+    if (mimeCount <= acceptCount) {
+      accept[mimeCount++].mime_type = mime_type;
+    }
+#endif
     base::FilePath::StringType preferred_extension;
     if (net::GetPreferredExtensionForMimeType(mime_type,
                                               &preferred_extension)) {
@@ -166,10 +190,19 @@ ui::SelectFileDialog::FileTypeInfo ConvertAcceptsToFileTypeInfo(
   for (const auto& option : accepts_types_info->accepts) {
     std::vector<base::FilePath::StringType> extensions;
     std::u16string description;
+#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
+    std::vector<AcceptFileType> accept;
 
+    if (!GetFileTypesFromAcceptsOption(*option, &extensions, accept,
+                                       &description))
+#else
     if (!GetFileTypesFromAcceptsOption(*option, &extensions, &description))
+#endif
       continue;  // No extensions were found for this option, skip it.
 
+#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
+    file_types.accepts.push_back(accept);
+#endif
     file_types.extensions.push_back(extensions);
     // FileTypeInfo expects each set of extension to have a corresponding
     // description. A blank description will result in a system generated

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<grit current_release="1" latest_public_release="0">
+  <outputs>
+    <output filename="grit/dom_tree_extractor_resources.h" type="rc_header">
+      <emit emit_type='prepend'></emit>
+    </output>
+    <output filename="dom_tree_extractor_resources.pak" type="data_package" />
+  </outputs>
+  <release seq="1">
+    <includes>
+      <include name="IDR_DOM_TREE_EXTRACTOR_JS" file="dist/dom_tree_extractor.js" type="BINDATA" preprocess="false" compress="false"/>
+    </includes>
+  </release>
+</grit>

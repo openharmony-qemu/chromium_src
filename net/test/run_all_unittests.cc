@@ -45,8 +45,10 @@ bool VerifyBuildIsTimely() {
 }  // namespace
 
 int main(int argc, char** argv) {
+#if !BUILDFLAG(ARKWEB_TEST)
   if (!VerifyBuildIsTimely())
     return 1;
+#endif  // ARKWEB_TEST
 
   NetTestSuite test_suite(argc, argv);
   net::TransportClientSocketPool::set_connect_backup_jobs_enabled(false);

@@ -50,6 +50,7 @@
 #include "third_party/blink/renderer/core/css/invalidation/style_invalidator.h"
 #include "third_party/blink/renderer/core/css/layout_tree_rebuild_root.h"
 #include "third_party/blink/renderer/core/css/mixin_map.h"
+#include "third_party/blink/renderer/core/css/css_style_sheet.h"
 #include "third_party/blink/renderer/core/css/pending_sheet_type.h"
 #include "third_party/blink/renderer/core/css/random_caching_key.h"
 #include "third_party/blink/renderer/core/css/resolver/match_request.h"
@@ -84,7 +85,6 @@ class CounterStyleMap;
 class StyleContainmentScopeTree;
 class CSSFontSelector;
 class CSSPropertyValueSet;
-class CSSStyleSheet;
 class CSSValue;
 class Document;
 class ElementRuleCollector;
@@ -485,6 +485,9 @@ class CORE_EXPORT StyleEngine final : public GarbageCollected<StyleEngine>,
   void EnsureUAStyleForElement(const Element&);
   void EnsureUAStyleForPseudoElement(PseudoId);
   void EnsureUAStyleForForcedColors();
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void EnsureUAStyleForMediaElement();
+#endif
 
   void PlatformColorsChanged();
 

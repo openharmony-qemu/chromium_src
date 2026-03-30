@@ -27,7 +27,13 @@ std::u16string GetMessageLabel(DeviceConnectionTracker* connection_tracker,
 #if BUILDFLAG(ENABLE_EXTENSIONS)
   std::vector<std::u16string> extension_names;
   for (const auto& [origin, state] : connection_tracker->origins()) {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  DCHECK(extensions::kExtensionScheme == origin.scheme() ||
+         extensions::kArkwebExtensionScheme == origin.scheme());
+#else
     CHECK_EQ(origin.scheme(), extensions::kExtensionScheme);
+#endif
+    
     extension_names.push_back(base::UTF8ToUTF16(state.name));
   }
   CHECK(!extension_names.empty());

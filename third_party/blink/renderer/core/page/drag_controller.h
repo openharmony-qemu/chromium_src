@@ -29,6 +29,7 @@
 #include <optional>
 
 #include "third_party/blink/public/common/input/pointer_id.h"
+#include "arkweb/build/features/features.h"
 #include "third_party/blink/renderer/core/core_export.h"
 #include "third_party/blink/renderer/core/dom/events/event_target.h"
 #include "third_party/blink/renderer/core/execution_context/execution_context_lifecycle_observer.h"
@@ -57,14 +58,25 @@ class HTMLInputElement;
 class Node;
 class Page;
 class WebMouseEvent;
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+class DragControllerExt;
+class DragControllerUtils;
+#endif
 
-class CORE_EXPORT DragController final
+class CORE_EXPORT DragController
     : public GarbageCollected<DragController>,
       public ExecutionContextLifecycleObserver {
  public:
   explicit DragController(Page*);
   DragController(const DragController&) = delete;
   DragController& operator=(const DragController&) = delete;
+
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  friend class DragControllerExt;
+  friend class DragControllerUtils;
+  virtual DragControllerExt* AsDragControllerExt() { return nullptr; }
+  virtual bool IsDragEnabled() const { return true; }
+#endif
 
   // Holds the drag operation and whether the document is handling it.  Also see
   // DragTargetDragEnter() in widget.mojom for further details.
@@ -115,7 +127,13 @@ class CORE_EXPORT DragController final
 
   DragState& GetDragState();
 
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  static std::unique_ptr<DragImage> DragImageForSelection(LocalFrame&,
+                                                          float,
+                                                          const gfx::RectF&);
+#else
   static std::unique_ptr<DragImage> DragImageForSelection(LocalFrame&, float);
+#endif
 
   // Return the selection bounds in absolute coordinates for the frame, clipped
   // to the visual viewport.
@@ -170,11 +188,18 @@ class CORE_EXPORT DragController final
 
   DragDestinationAction drag_destination_action_;
   bool did_initiate_drag_;
+
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  Member<DragControllerUtils> utils_;
+#endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
   // Used to set the correct pointer id to synthetic events. Principally added
   // to track touch drag and drop when `TouchDragEndContextMenu` is enabled.
   std::optional<PointerId> drag_pointer_id_;
 };
 
 }  // namespace blink
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/page/drag_controller_ext.h"
+#endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
 
 #endif  // THIRD_PARTY_BLINK_RENDERER_CORE_PAGE_DRAG_CONTROLLER_H_

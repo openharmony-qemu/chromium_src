@@ -43,7 +43,6 @@ namespace blink {
 class CSSImportRule;
 class CSSRule;
 class CSSRuleList;
-class CSSStyleSheet;
 class CSSStyleSheetInit;
 class Document;
 class Element;

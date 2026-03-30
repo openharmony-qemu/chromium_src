@@ -12,8 +12,13 @@
 namespace {
 
 const char kBaseIconUrl[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://***/"
+    "***/";
+#else
     "https://res.cdn.office.net/files/fabric-cdn-prod_20240925.001/assets/"
     "item-types/16/";
+#endif
 
 // The following are used to create file icon urls.
 constexpr char kAudioIconPartialPath[] = "audio";

@@ -106,6 +106,7 @@ peranti Bluetooth. <ph name="IDS_SERIAL_DEVICE_CHOOSER_AUTHORIZE_BLUETOOTH_LINK"
 <translation id="2210502920229141283">Kekal lebih selamat semasa dalam perjalanan dengan Penyemakan Imbas Selamat Dipertingkat pada Chromium untuk iOS</translation>
 <translation id="2210682093923538346">Laman berbahaya. Chromium mengalih keluar pemberitahuan.</translation>
 <translation id="2236949375853147973">Aktiviti Saya</translation>
+<translation id="2238104961394611930">Dihidupkan • Sumber sambungan tidak dapat disahkan</translation>
 <translation id="2238130810669087193">Untuk mendapatkan alamat anda dan pelbagai lagi pada semua peranti anda, log masuk ke Chromium. Alamat ini akan disimpan dalam Google Account anda selepas anda log masuk.</translation>
 <translation id="2241627712206172106">Jika anda berkongsi komputer, rakan dan keluarga boleh menyemak imbas secara berasingan dan menyediakan Chromium sebagaimana yang mereka mahukan.</translation>
 <translation id="2283803047247799269">Cari tab ini dengan Carian Imej</translation>
@@ -515,6 +516,7 @@ Beberapa ciri mungkin tidak tersedia. Sila nyatakan direktori profil yang berbez
 <translation id="6862030660799253820">Cari imej ini dengan Carian Imej</translation>
 <translation id="6873893289264747459">Chromium mendapati bahawa "<ph name="EXTENSION_NAME" />" mengandungi perisian hasad</translation>
 <translation id="6877155553248388166">penjuru bawah sebelah kanan kawasan carian: kanan <ph name="RIGHT" />%, bawah <ph name="BOTTOM" />%</translation>
+<translation id="6885534934768077023">Nota: Pelayar tidak boleh menghalang sambungan daripada merekod sejarah pelayaran anda. Untuk menyahdayakan sambungan dalam Mod peribadi, matikan togol pilihan ini.</translation>
 <translation id="6896758677409633944">Salin</translation>
 <translation id="6901631050894301805">Tetapkan Chromium sebagai penyemak imbas lalai anda dan sematkan Chromium pada bar tugas anda</translation>
 <translation id="6909503629704372277">&amp;Urus profil Chromium</translation>
@@ -573,6 +575,7 @@ Chromium tidak dapat mengembalikan tetapan anda.</translation>
 <translation id="753534427205733210">{0,plural, =1{Chromium akan dilancarkan semula dalam masa seminit}other{Chromium akan dilancarkan semula dalam masa # minit}}</translation>
 <translation id="7565444033145385702">Untuk melindungi data anda, benarkan Chromium mengalih keluar kebenaran daripada laman yang belum anda lawati baru-baru ini.</translation>
 <translation id="7583399374488819119">Pemasang <ph name="COMPANY_NAME" /></translation>
+<translation id="7597668698051545254">Dimatikan • Sumber sambungan tidak dapat disahkan</translation>
 <translation id="761356813943268536">Chromium menggunakan kamera dan mikrofon anda.</translation>
 <translation id="7617377681829253106">Chromium kini lebih baik</translation>
 <translation id="7622753900276619808">Kini anda mempunyai lebih banyak ciri yang tersedia dalam Chromium</translation>

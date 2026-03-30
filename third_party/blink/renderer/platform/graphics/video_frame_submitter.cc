@@ -39,6 +39,10 @@
 #include "third_party/perfetto/include/perfetto/tracing/track.h"
 #include "ui/gfx/presentation_feedback.h"
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER) || BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+#include "arkweb/chromium_ext/blink/renderer/platform/graphics/video_frame_submitter_for_include.cc"
+#endif
+
 namespace blink {
 
 namespace {
@@ -146,6 +150,16 @@ class VideoFrameSubmitter::FrameSinkBundleProxy
   void SetThreads(const Vector<viz::Thread>& threads) override {
     bundle_->SetThreads(frame_sink_id_.sink_id(), threads);
   }
+#endif
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+  void ReportKeyThreadIds(const Vector<int32_t>& thread_ids,
+                          int32_t process_id,
+                          bool is_created) override {}
+#endif
+
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  void OnSetBypassVsyncCondition(int32_t condition) override {}
 #endif
 
  private:
@@ -364,6 +378,9 @@ void VideoFrameSubmitter::OnBeginFrame(
 
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
   TRACE_EVENT0("media", "VideoFrameSubmitter::OnBeginFrame");
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  StopRenderingForSameLayer();
+#endif
 
   last_begin_frame_args_ = args;
 
@@ -486,6 +503,10 @@ void VideoFrameSubmitter::OnBeginFrame(
         CreateFrameInfo(cc::FrameInfo::FrameFinalState::kNoUpdateDesired));
     return;
   }
+
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+  UpdateDroppedFrameMetrics(args);
+#endif
 
   // Update the current frame, even if we haven't gotten an ack for a previous
   // frame yet. That probably signals a dropped frame, and this will let the
@@ -685,10 +706,12 @@ void VideoFrameSubmitter::UpdateSubmissionState() {
     //
     // If there are any in-flight empty frame requests, this cancels them. We
     // want to wait until any group of state changes stabilizes.
+#if !BUILDFLAG(ARKWEB_MEDIA)
     empty_frame_timer_.Start(
         FROM_HERE, base::Milliseconds(500),
         base::BindOnce(&VideoFrameSubmitter::SubmitEmptyFrameIfNeeded,
                        base::Unretained(this)));
+#endif
   }
 }
 
@@ -802,6 +825,9 @@ bool VideoFrameSubmitter::SubmitFrame(
   NotifyOpacityIfNeeded(new_opacity);
 
   ++waiting_for_compositor_ack_;
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  StartRenderingForSameLayer();
+#endif
   return true;
 }
 
@@ -908,10 +934,20 @@ viz::CompositorFrame VideoFrameSubmitter::CreateCompositorFrame(
   // definitely emitting a CompositorFrame that damages the entire surface.
   compositor_frame.metadata.begin_frame_ack.has_damage = true;
   compositor_frame.metadata.device_scale_factor = 1;
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  if (has_native_layer_) {
+    compositor_frame.metadata.stretch_content_none_device_scale_factor = device_scale_factor_;
+  }
+#endif
   // If we're submitting frames even if we're not visible, then also turn off
   // throttling.  This is for picture in picture, which can be throttled if the
   // opener window is minimized without this.
   compositor_frame.metadata.may_throttle_if_undrawn_frames = force_submit_;
+#if BUILDFLAG(ARKWEB_PIP)
+  if (force_submit_) {
+    compositor_frame.metadata.may_throttle_if_undrawn_frames = !force_submit_;
+  }
+#endif
 
   // Specify size of shared quad state and quad lists so that RenderPass doesn't
   // allocate using the defaults of 32 and 128 since we only append one quad.
@@ -927,6 +963,9 @@ viz::CompositorFrame VideoFrameSubmitter::CreateCompositorFrame(
     const bool is_opaque = media::IsOpaque(video_frame->format());
     resource_provider_->AppendQuads(render_pass.get(), std::move(video_frame),
                                     transform, is_opaque);
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+    SubmitDroppedFrameMetricsToMetadata(compositor_frame);
+#endif
   }
 
   compositor_frame.render_pass_list.emplace_back(std::move(render_pass));
@@ -951,7 +990,6 @@ void VideoFrameSubmitter::NotifyOpacityIfNeeded(Opacity new_opacity) {
   opacity_ = new_opacity;
   surface_embedder_->OnOpacityChanged(new_opacity == Opacity::kIsOpaque);
 }
-
 void VideoFrameSubmitter::ClearFrameResources() {
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
 

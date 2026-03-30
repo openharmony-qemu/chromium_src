@@ -64,6 +64,9 @@ AuthenticatorCategory CategoryFromMechanism(const Mechanism& mechanism) {
       case AuthenticatorType::kChromeOS:
       case AuthenticatorType::kPhone:
       case AuthenticatorType::kOther:
+#if BUILDFLAG(ARKWEB_FIDO)
+      case AuthenticatorType::kOhosNative:
+#endif  // BUILDFLAG(ARKWEB_FIDO)
         return AuthenticatorCategory::kOther;
     }
   } else if (std::holds_alternative<Mechanism::Password>(mechanism.type)) {

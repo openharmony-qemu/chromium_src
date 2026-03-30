@@ -39,7 +39,15 @@
 #include "third_party/blink/renderer/platform/timer.h"
 #include "third_party/blink/renderer/platform/wtf/bit_field.h"
 
+#if BUILDFLAG(ARKWEB_MENU)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/editing/frame_caret_utils.h"
+#endif
+
 namespace blink {
+
+#if BUILDFLAG(ARKWEB_MENU)
+class FrameCaretUtils;
+#endif
 
 class CaretDisplayItemClient;
 class EffectPaintPropertyNode;
@@ -145,6 +153,10 @@ class CORE_EXPORT FrameCaret final : public GarbageCollected<FrameCaret> {
   BitField caret_status_bits_;
   // Controls visibility of caret with opacity when the caret is blinking.
   const Member<EffectPaintPropertyNode> effect_;
+
+#if BUILDFLAG(ARKWEB_MENU)
+  std::shared_ptr<FrameCaretUtils> frame_caret_utils_;
+#endif  // BUILDFLAG(ARKWEB_MENU)
 };
 
 }  // namespace blink

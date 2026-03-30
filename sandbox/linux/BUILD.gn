@@ -10,11 +10,11 @@ if (is_android) {
 }
 
 declare_args() {
-  compile_suid_client = is_linux || is_chromeos
+  compile_suid_client = is_linux || is_chromeos || is_ohos
 
-  compile_credentials = is_linux || is_chromeos
+  compile_credentials = is_linux || is_chromeos || is_ohos
 
-  compile_syscall_broker = is_linux || is_chromeos
+  compile_syscall_broker = is_linux || is_chromeos || is_ohos
 
   # On Android, use plain GTest.
   use_base_test_suite = is_linux || is_chromeos
@@ -35,6 +35,10 @@ group("sandbox") {
   }
   if (is_android) {
     public_deps += [ ":seccomp_starter_android" ]
+  }
+
+  if (is_ohos) {
+    public_deps += [ "//arkweb/chromium_ext/sandbox:seccomp_starter_ohos" ]
   }
 }
 
@@ -260,6 +264,12 @@ component("seccomp_bpf") {
     sources += [
       "seccomp-bpf-helpers/baseline_policy_android.cc",
       "seccomp-bpf-helpers/baseline_policy_android.h",
+    ]
+  }
+
+  if (is_ohos) {
+    deps += [
+      "//arkweb/chromium_ext/sandbox:arkweb_sandbox"
     ]
   }
 }

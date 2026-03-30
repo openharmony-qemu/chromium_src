@@ -260,6 +260,9 @@ class RenderFrameTestObserver : public RenderFrameObserver {
   bool visible() const { return visible_; }
   gfx::Rect last_intersection_rect() const { return last_intersection_rect_; }
   gfx::Rect last_viewport_rect() const { return last_viewport_rect_; }
+#if BUILDFLAG(ARKWEB_TEST)
+  MOCK_METHOD(void, DidSubresourceFiltered, (), (override));
+#endif
 
  private:
   bool visible_;
@@ -1530,3 +1533,6 @@ TEST_F(RenderFrameImplMojoJsDeathTest,
 #endif  //  BUILDFLAG(PROTECTED_MEMORY_ENABLED)
 
 }  // namespace content
+#if BUILDFLAG(ARKWEB_TEST)
+#include "arkweb/chromium_ext/content/renderer/ark_web_render_frame_impl_unittest.cc"
+#endif

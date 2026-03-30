@@ -45,7 +45,11 @@ std::u16string GetOriginConnectionCountLabel(Profile* profile,
                                              int connection_count,
                                              const std::string& name) {
 #if BUILDFLAG(ENABLE_EXTENSIONS)
-  if (origin.scheme() == extensions::kExtensionScheme) {
+  if (origin.scheme() == extensions::kExtensionScheme
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      || origin.scheme() == extensions::kArkwebExtensionScheme
+#endif
+  ) {
     return base::i18n::MessageFormatter::FormatWithNumberedArgs(
         l10n_util::GetStringUTF16(IDS_DEVICE_CONNECTED_BY_EXTENSION),
         connection_count, base::UTF8ToUTF16(name));

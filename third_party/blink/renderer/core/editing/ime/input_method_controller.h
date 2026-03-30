@@ -26,6 +26,7 @@
 #ifndef THIRD_PARTY_BLINK_RENDERER_CORE_EDITING_IME_INPUT_METHOD_CONTROLLER_H_
 #define THIRD_PARTY_BLINK_RENDERER_CORE_EDITING_IME_INPUT_METHOD_CONTROLLER_H_
 
+#include "arkweb/build/features/features.h"
 #include "base/gtest_prod_util.h"
 #include "third_party/blink/public/platform/web_text_input_info.h"
 #include "third_party/blink/public/platform/web_text_input_type.h"
@@ -50,11 +51,14 @@ class LocalDOMWindow;
 class LocalFrame;
 class Range;
 enum class TypingContinuation;
+class ArkwebInputMethodControllerUtils;
 
 class CORE_EXPORT InputMethodController final
     : public GarbageCollected<InputMethodController>,
       public ExecutionContextLifecycleObserver {
  public:
+  friend class ArkwebInputMethodControllerUtils;
+  ArkwebInputMethodControllerUtils& GetArkwebUtilsInstance();
   enum ConfirmCompositionBehavior {
     kDoNotKeepSelection,
     kKeepSelection,
@@ -192,6 +196,9 @@ class CORE_EXPORT InputMethodController final
   LocalFrame& GetFrame() const;
 
   String ComposingText() const;
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  Member<ArkwebInputMethodControllerUtils> arkweb_input_method_controller_utils_;
+#endif
   void SelectComposition() const;
 
   EphemeralRange EphemeralRangeForOffsets(const PlainTextRange&) const;

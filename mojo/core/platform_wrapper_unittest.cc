@@ -155,9 +155,12 @@ TEST_F(PlatformWrapperTest, MAYBE_WrapPlatformSharedMemoryRegion) {
 #elif BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_ANDROID)
     os_buffer.value =
         static_cast<uint64_t>(platform_region.PassPlatformHandle().release());
-#elif BUILDFLAG(IS_POSIX)
+#elif BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_OHOS)
     os_buffer.value = static_cast<uint64_t>(
         platform_region.PassPlatformHandle().fd.release());
+#elif BUILDFLAG(IS_OHOS)
+    os_buffer.value = static_cast<uint64_t>(
+        platform_region.PassPlatformHandle().release());
 #else
 #error Unsupported platform
 #endif

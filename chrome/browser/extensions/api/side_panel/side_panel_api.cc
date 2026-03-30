@@ -6,10 +6,21 @@
 
 #include <optional>
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "base/types/expected.h"
 #include "base/values.h"
 #include "chrome/browser/extensions/api/side_panel/side_panel_service.h"
+#if !BUILDFLAG(IS_ARKWEB)
 #include "chrome/common/extensions/api/side_panel.h"
+#endif
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/chrome/browser/extensions/api/side_panel/side_panel_api_for_include.cc"
+#include "arkweb/ohos_nweb/src/nweb_common.h"
+#endif
 
 namespace extensions {
 
@@ -24,6 +35,7 @@ ExtensionFunction::ResponseAction SidePanelApiFunction::Run() {
 }
 
 ExtensionFunction::ResponseAction SidePanelGetOptionsFunction::RunFunction() {
+  LOG(INFO) << "SidePanelGetOptionsFunction::RunFunction";
   std::optional<api::side_panel::GetOptions::Params> params =
       api::side_panel::GetOptions::Params::Create(args());
   EXTENSION_FUNCTION_VALIDATE(params);
@@ -39,6 +51,9 @@ ExtensionFunction::ResponseAction SidePanelSetOptionsFunction::RunFunction() {
   std::optional<api::side_panel::SetOptions::Params> params =
       api::side_panel::SetOptions::Params::Create(args());
   EXTENSION_FUNCTION_VALIDATE(params);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  RunFunctionForInclude(params);
+#endif
   // TODO(crbug.com/40226489): Validate the relative extension path exists.
   GetService()->SetOptions(*extension(), std::move(params->options));
   return RespondNow(NoArguments());
@@ -46,12 +61,22 @@ ExtensionFunction::ResponseAction SidePanelSetOptionsFunction::RunFunction() {
 
 ExtensionFunction::ResponseAction
 SidePanelSetPanelBehaviorFunction::RunFunction() {
+  LOG(INFO) << "SidePanelSetPanelBehaviorFunction::RunFunction";
   std::optional<api::side_panel::SetPanelBehavior::Params> params =
       api::side_panel::SetPanelBehavior::Params::Create(args());
   EXTENSION_FUNCTION_VALIDATE(params);
   if (params->behavior.open_panel_on_action_click.has_value()) {
     GetService()->SetOpenSidePanelOnIconClick(
         extension()->id(), *params->behavior.open_panel_on_action_click);
+#if BUILDFLAG(ARKWEB_NWEB_EX) && BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    if (IsNativeApiEnable()) {
+      NWebExtensionSidePanelDispatcher::OnSetPanelBehaviorNative(
+          extension()->id(), *params->behavior.open_panel_on_action_click);
+    } else {
+      NWebExtensionSidePanelDispatcher::OnSetPanelBehavior(
+          extension()->id(), *params->behavior.open_panel_on_action_click);
+    }
+#endif
   }
 
   return RespondNow(NoArguments());
@@ -59,6 +84,7 @@ SidePanelSetPanelBehaviorFunction::RunFunction() {
 
 ExtensionFunction::ResponseAction
 SidePanelGetPanelBehaviorFunction::RunFunction() {
+  LOG(INFO) << "SidePanelGetPanelBehaviorFunction::RunFunction";
   api::side_panel::PanelBehavior behavior;
   behavior.open_panel_on_action_click =
       GetService()->OpenSidePanelOnIconClick(extension()->id());
@@ -86,6 +112,11 @@ ExtensionFunction::ResponseAction SidePanelOpenFunction::RunFunction() {
         Error("At least one of `tabId` and `windowId` must be provided"));
   }
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  return RunOpenFunctionForInclude(params);
+#endif
+#else
   SidePanelService* service = GetService();
   base::expected<bool, std::string> open_panel_result;
   if (params->options.tab_id) {
@@ -109,6 +140,7 @@ ExtensionFunction::ResponseAction SidePanelOpenFunction::RunFunction() {
   // created and load? That would probably be nice.
 
   return RespondNow(NoArguments());
+#endif
 }
 
 ExtensionFunction::ResponseAction SidePanelGetLayoutFunction::RunFunction() {

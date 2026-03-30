@@ -20,6 +20,10 @@
 #include "components/viz/common/quads/surface_draw_quad.h"
 #include "ui/gfx/geometry/vector2d_conversions.h"
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+#include "arkweb/chromium_ext/cc/layer/surface_layer_impl_for_include.cc"
+#endif
+
 namespace cc {
 
 // static
@@ -48,7 +52,9 @@ SurfaceLayerImpl::SurfaceLayerImpl(
     UpdateSubmissionStateCB update_submission_state_callback)
     : LayerImpl(tree_impl, id),
       update_submission_state_callback_(
-          std::move(update_submission_state_callback)) {}
+          std::move(update_submission_state_callback)) {
+  surfaceLayerImplUtils_ = new SurfaceLayerImplUtils(this);
+}
 
 SurfaceLayerImpl::~SurfaceLayerImpl() {
   // Do not call `update_submission_state_callback_` here.  There is only very
@@ -162,7 +168,16 @@ void SurfaceLayerImpl::PushPropertiesTo(LayerImpl* layer) {
 bool SurfaceLayerImpl::WillDraw(
     DrawMode draw_mode,
     viz::ClientResourceProvider* resource_provider) {
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  surfaceLayerImplUtils_->VisbilityChange();
+#endif
   bool will_draw = LayerImpl::WillDraw(draw_mode, resource_provider);
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  if(will_draw) {
+    surfaceLayerImplUtils_->LayerRectUpdate();
+  }
+#endif
+
   // If we have a change in WillDraw (meaning that visibility has changed), we
   // want to inform the VideoFrameSubmitter to start or stop submitting
   // compositor frames.
@@ -242,7 +257,13 @@ void SurfaceLayerImpl::AppendQuads(const AppendQuadsContext& context,
   // Unless the client explicitly specifies otherwise, don't block on
   // |surface_range_| more than once.
   deadline_in_frames_ = 0u;
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  OnLayerBoundsUpdate(visible_quad_rect);
+#endif // ARKWEB_VIDEO_ASSISTANT
 
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER) && BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  OnLayerRectUpdate(visible_quad_rect);
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
   // Don't allow DrawQuads to align on non-pixel boundaries.
   gfx::Vector2dF quad_rect_offset = quad_rect.OffsetFromOrigin();
   gfx::PointF rect_offset_in_target =

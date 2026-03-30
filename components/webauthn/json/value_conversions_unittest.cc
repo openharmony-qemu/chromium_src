@@ -148,7 +148,10 @@ TEST(WebAuthenticationJSONConversionTest,
           device::AttestationConveyancePreference::kDirect,
           std::vector<std::string>({"a", "b", "c"})),
       /*payment_browser_bound_key_parameters=*/std::nullopt,
-      std::vector<std::string>{"attfmt1", "attfmt2"}, /*is_conditional=*/false);
+      std::vector<std::string>{"attfmt1", "attfmt2"},
+      blink::mojom::PublicKeyCredentialMediationRequirement::OPTIONAL,
+      /*is_conditional=*/false
+    );
 
   base::Value value = ToValue(options);
   std::string json;
@@ -189,6 +192,7 @@ TEST(WebAuthenticationJSONConversionTest,
       /*supplemental_pub_keys=*/nullptr,
       /*payment_browser_bound_key_parameters=*/std::nullopt,
       /*attestation_formats=*/std::vector<std::string>(),
+      /*mediation=*/ blink::mojom::PublicKeyCredentialMediationRequirement::OPTIONAL,
       /*is_conditional=*/false);
 
   {
@@ -253,7 +257,12 @@ TEST(WebAuthenticationJSONConversionTest,
               /*provider_scope_requested=*/true,
               device::AttestationConveyancePreference::kDirect,
               std::vector<std::string>({"a", "b", "c"})),
-          std::vector<device::PublicKeyCredentialParams::CredentialInfo>()));
+          std::vector<device::PublicKeyCredentialParams::CredentialInfo>())
+#if BUILDFLAG(ARKWEB_FIDO)
+          ,
+          blink::mojom::PublicKeyCredentialMediationRequirement::OPTIONAL
+#endif // BUILDFLAG(ARKWEB_FIDO)
+        );
 
   base::Value value = ToValue(options);
   std::string json;

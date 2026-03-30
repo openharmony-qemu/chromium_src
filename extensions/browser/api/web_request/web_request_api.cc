@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/fixed_flat_set.h"
 #include "base/functional/bind.h"
 #include "base/json/json_writer.h"
@@ -95,6 +96,10 @@ namespace extensions {
 namespace web_request = api::web_request;
 
 namespace {
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+const char kWebRequestApiLogTag[] = "[WebRequestAPI]";
+#endif
 
 WebRequestAPI::TestObserver* g_test_observer = nullptr;
 
@@ -386,6 +391,13 @@ void WebRequestAPI::OnListenerRemoved(const EventListenerInfo& details) {
   // Note that details.event_name includes the sub-event details (e.g. "/123").
   const std::string& sub_event_name = details.event_name;
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  LOG(INFO) << kWebRequestApiLogTag
+            << " Remove listener <sub_event_name:" << sub_event_name
+            << ", is_lazy:" << details.is_lazy
+            << "> for extension_id=" << details.extension_id;
+#endif
+
   // The way we handle the listener removal depends on whether this was a
   // lazy listener registration (indicated by a null browser context on
   // `details`).
@@ -583,6 +595,9 @@ bool WebRequestAPI::MaybeProxyAuthRequest(
     AuthRequestCallback callback,
     WebViewGuest* web_view_guest) {
   if (!MayHaveProxies()) {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    LOG(INFO) << kWebRequestApiLogTag << " May not be proxy auth request";
+#endif
     bool needed_for_webview = false;
 #if BUILDFLAG(ENABLE_GUEST_VIEW)
     needed_for_webview =
@@ -726,9 +741,11 @@ void WebRequestAPI::ResetURLLoaderFactories() {
 
 void WebRequestAPI::UpdateMayHaveProxies() {
   bool may_have_proxies = MayHaveProxies();
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   if (!may_have_proxies_ && may_have_proxies) {
     ResetURLLoaderFactories();
   }
+#endif
   may_have_proxies_ = may_have_proxies;
 }
 

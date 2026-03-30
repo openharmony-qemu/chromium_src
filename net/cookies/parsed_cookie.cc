@@ -135,6 +135,9 @@ std::string_view ValidStringPieceForValue(std::string_view value) {
 namespace net {
 
 ParsedCookie::ParsedCookie(std::string_view cookie_line,
+#if BUILDFLAG(ARKWEB_COOKIE)
+                           bool block_truncated,
+#endif // BUILDFLAG(ARKWEB_COOKIE)
                            CookieInclusionStatus* status_out) {
   // Put a pointer on the stack so the rest of the function can assign to it if
   // the default nullptr is passed in.
@@ -144,7 +147,12 @@ ParsedCookie::ParsedCookie(std::string_view cookie_line,
   }
   *status_out = CookieInclusionStatus();
 
+#if BUILDFLAG(ARKWEB_COOKIE)
+  ParseTokenValuePairs(cookie_line, block_truncated, *status_out);
+#else // BUILDFLAG(ARKWEB_COOKIE)
   ParseTokenValuePairs(cookie_line, *status_out);
+#endif // BUILDFLAG(ARKWEB_COOKIE)
+
   if (IsValid()) {
     SetupAttributes();
   } else {
@@ -515,6 +523,9 @@ bool ParsedCookie::ForEachAttribute(
 
 // Parse all token/value pairs and populate pairs_.
 void ParsedCookie::ParseTokenValuePairs(std::string_view cookie_line,
+#if BUILDFLAG(ARKWEB_COOKIE)
+                                        bool block_truncated,
+#endif // BUILDFLAG(ARKWEB_COOKIE)
                                         CookieInclusionStatus& status_out) {
   pairs_.clear();
 
@@ -527,12 +538,23 @@ void ParsedCookie::ParseTokenValuePairs(std::string_view cookie_line,
   // Then we can log any unexpected terminators.
   std::string_view::iterator end = FindFirstTerminator(cookie_line);
 
+#if BUILDFLAG(ARKWEB_COOKIE)
+  // Same logic with chromium 114.
+  // `block_truncated` is false if cookie was set by ArkWeb interface.
+  if(block_truncated && end < cookie_line.end()) {
+    status_out.AddExclusionReason(
+        CookieInclusionStatus::ExclusionReason::EXCLUDE_DISALLOWED_CHARACTER);
+    return;
+  }
+
+#else // BUILDFLAG(ARKWEB_COOKIE)
   // Block cookies that were truncated by control characters.
   if (end < cookie_line.end()) {
     status_out.AddExclusionReason(
         CookieInclusionStatus::ExclusionReason::EXCLUDE_DISALLOWED_CHARACTER);
     return;
   }
+#endif // BUILDFLAG(ARKWEB_COOKIE)
 
   // Exit early for an empty cookie string.
   if (it == end) {

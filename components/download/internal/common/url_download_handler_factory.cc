@@ -12,6 +12,7 @@
 #include "mojo/public/cpp/bindings/pending_remote.h"
 #include "services/device/public/mojom/wake_lock_provider.mojom.h"
 #include "services/network/public/cpp/shared_url_loader_factory.h"
+#include "arkweb/build/features/features.h"
 
 namespace download {
 
@@ -26,6 +27,9 @@ UrlDownloadHandlerFactory::Create(
     const scoped_refptr<base::SingleThreadTaskRunner>& task_runner) {
   std::unique_ptr<network::ResourceRequest> request =
       CreateResourceRequest(params.get());
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+  request->is_download_request = true;
+#endif  //  ARKWEB_EX_DOWNLOAD
   return UrlDownloadHandler::UniqueUrlDownloadHandlerPtr(
       download::ResourceDownloader::BeginDownload(
           delegate, std::move(params), std::move(request),

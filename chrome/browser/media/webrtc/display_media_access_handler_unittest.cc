@@ -810,6 +810,68 @@ TEST_F(DisplayMediaAccessHandlerTest,
       /*expected_number_of_devices=*/2u);
 }
 
+class DisplayMediaAccessHandlerActiveRfhTest
+    : public DisplayMediaAccessHandlerTest,
+      public testing::WithParamInterface<bool> {
+ public:
+  DisplayMediaAccessHandlerActiveRfhTest() : active_rfh_(GetParam()) {}
+  ~DisplayMediaAccessHandlerActiveRfhTest() override = default;
+
+  void SetUp() override {
+    DisplayMediaAccessHandlerTest::SetUp();
+    Navigate("https://a.com");
+  }
+
+  void Navigate(const std::string& url) {
+    std::unique_ptr<content::NavigationSimulator> navigation =
+        content::NavigationSimulator::CreateBrowserInitiated(GURL(url),
+                                                             web_contents());
+    navigation->Commit();
+  }
+
+  void DeactivateMainRfh() {
+    // Cross-origin navigation will deactivate the previous RFH.
+    Navigate("https://b.com");
+  }
+
+ protected:
+  const bool active_rfh_;
+};
+
+INSTANTIATE_TEST_SUITE_P(,
+                         DisplayMediaAccessHandlerActiveRfhTest,
+                         testing::Bool());
+
+TEST_P(DisplayMediaAccessHandlerActiveRfhTest, ProcessRequest) {
+  blink::mojom::MediaStreamRequestResult result;
+  blink::mojom::StreamDevices devices;
+  const content::DesktopMediaID media_id(
+      content::DesktopMediaID::TYPE_WEB_CONTENTS,
+      content::DesktopMediaID::kNullId, GetWebContentsMediaCaptureId());
+
+  // Lock in the RFH for use after deactivation. (If `!active_rfh_`; otherwise
+  // it stays active.)
+  const bool request_audio = false;
+  content::MediaStreamRequest request = MakeRequest(request_audio);
+  request.render_process_id =
+      web_contents()->GetPrimaryMainFrame()->GetProcess()->GetDeprecatedID();
+  request.render_frame_id =
+      web_contents()->GetPrimaryMainFrame()->GetRoutingID();
+
+  if (!active_rfh_) {
+    DeactivateMainRfh();
+  }
+
+  ProcessRequest(media_id, &result, devices, request_audio,
+                 /*expect_result=*/true, /*expect_picker=*/active_rfh_,
+                 request);
+
+  EXPECT_EQ(result,
+            active_rfh_
+                ? blink::mojom::MediaStreamRequestResult::OK
+                : blink::mojom::MediaStreamRequestResult::INVALID_STATE);
+}
+
 #if BUILDFLAG(IS_CHROMEOS)
 TEST_F(DisplayMediaAccessHandlerTest, ChangeSourceDlpRestricted) {
   const content::DesktopMediaID media_id(

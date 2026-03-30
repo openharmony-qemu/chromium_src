@@ -215,7 +215,10 @@ class MockCompositorFrameSink : public viz::mojom::CompositorFrameSink {
                     viz::mojom::LayerContextSettingsPtr));
   MOCK_METHOD1(SetThreads, void(const std::vector<viz::Thread>&));
   MOCK_METHOD0(NotifyNewLocalSurfaceIdExpectedWhilePaused, void(void));
-
+#if BUILDFLAG(ARKWEB_TEST)
+  MOCK_METHOD1(OnSetBypassVsyncCondition,void(int32_t));
+  MOCK_METHOD3(ReportKeyThreadIds,void(const std::vector<int32_t>&, int32_t, bool));
+#endif
  private:
   mojo::Receiver<viz::mojom::CompositorFrameSink> receiver_{this};
 };

@@ -34,6 +34,11 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "base/command_line.h"
 #include "base/debug/alias.h"
 #include "base/debug/crash_logging.h"
@@ -205,6 +210,24 @@
 
 #if BUILDFLAG(IS_WIN)
 #include "third_party/blink/public/web/win/web_font_rendering.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_VIEWPORT)
+#include "base/ohos/sys_info_utils_ext.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_DISPLAY_CUTOUT)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/frame/display_cutout_client_imp_utils.h"
+#include "third_party/blink/renderer/core/frame/display_cutout_client_impl.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+#include "third_party/blink/renderer/core/css/style_engine.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+#include "content/public/common/content_switches.h"
 #endif
 
 // Get rid of WTF's pow define so we can use std::pow.
@@ -483,6 +506,10 @@ void MaybePreloadSystemFonts(Page* page) {
 
 }  // namespace
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/exported/web_view_impl_for_include.cc"
+#endif
+
 // WebView ----------------------------------------------------------------
 
 WebView* WebView::Create(
@@ -606,7 +633,11 @@ WebViewImpl::WebViewImpl(
     int32_t history_length)
     : widgets_never_composited_(widgets_never_composited),
       web_view_client_(client),
+#if BUILDFLAG(IS_ARKWEB)
+      chrome_client_(MakeGarbageCollected<ChromeClientImplExt>(this)),
+#else
       chrome_client_(MakeGarbageCollected<ChromeClientImpl>(this)),
+#endif  // IS_ARKWEB
       minimum_zoom_level_(
           blink::ZoomFactorToZoomLevel(kMinimumBrowserZoomFactor)),
       maximum_zoom_level_(
@@ -1783,6 +1814,10 @@ void WebView::ApplyWebPreferences(const web_pref::WebPreferences& prefs,
       prefs.dont_send_key_events_to_javascript);
   settings->SetWebAppScope(WebString::FromASCII(prefs.web_app_scope.spec()));
 
+#if BUILDFLAG(IS_ARKWEB)
+  ApplyWebPreferencesForInclude(prefs, web_view);
+#endif
+
 #if BUILDFLAG(IS_ANDROID)
   settings->SetAllowCustomScrollbarInMainFrame(false);
   settings->SetAccessibilityFontScaleFactor(prefs.font_scale_factor);
@@ -1923,6 +1958,13 @@ void WebView::ApplyWebPreferences(const web_pref::WebPreferences& prefs,
     RuntimeEnabledFeatures::SetStrictMimeTypesForWorkersEnabled(false);
   }
 
+#if BUILDFLAG(IS_ARKWEB)
+  void ApplyOhosWebPreferences(const web_pref::WebPreferences& prefs,
+                               WebView* web_view, WebSettings* settings,
+                               WebViewImpl* web_view_impl);
+  ApplyOhosWebPreferences(prefs, web_view, settings, web_view_impl);
+#endif
+
   RuntimeEnabledFeatures::SetPaymentRequestEnabled(
       prefs.payment_request_enabled);
 
@@ -1948,11 +1990,13 @@ void WebViewImpl::ThemeChanged() {
     page->InvalidatePaint();
 }
 
+#if !BUILDFLAG(IS_ARKWEB)
 void WebViewImpl::EnterFullscreen(LocalFrame& frame,
                                   const FullscreenOptions* options,
                                   FullscreenRequestType request_type) {
   fullscreen_controller_->EnterFullscreen(frame, options, request_type);
 }
+#endif
 
 void WebViewImpl::ExitFullscreen(LocalFrame& frame) {
   fullscreen_controller_->ExitFullscreen(frame);
@@ -2035,7 +2079,11 @@ void WebViewImpl::SetPageFocus(bool enable) {
 
 WebSettingsImpl* WebViewImpl::SettingsImpl() {
   if (!web_settings_) {
+#if BUILDFLAG(ARKWEB_MENU)
+    web_settings_ = std::make_unique<WebSettingsImplExt>(
+#else
     web_settings_ = std::make_unique<WebSettingsImpl>(
+#endif
         &page_->GetSettings(), dev_tools_emulator_.Get());
   }
   DCHECK(web_settings_);
@@ -2396,6 +2444,9 @@ void WebViewImpl::UpdateInspectorDeviceScaleFactorOverride() {
   } else {
     page_->SetInspectorDeviceScaleFactorOverride(1.0f);
   }
+#if BUILDFLAG(ARKWEB_ZOOM)
+  UpdateStyleAndLayoutTreeForInclude(page_.Get());
+#endif  // BUILDFLAG(ARKWEB_ZOOM)
 }
 
 float WebViewImpl::PageScaleFactor() const {
@@ -2553,7 +2604,12 @@ void WebViewImpl::SetPageLifecycleStateInternal(
     DispatchPagehide(new_state->pagehide_dispatch);
   }
   if (hiding_page) {
+#if !BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
     SetVisibilityState(new_state->visibility, /*is_initial_state=*/false);
+#else
+    SetVisibilityState(new_state->visibility, /*is_initial_state=*/false,
+                       storing_in_bfcache);
+#endif
   }
   if (storing_in_bfcache) {
     // TODO(https://crbug.com/427130212): Consider moving this to happen earlier
@@ -2590,7 +2646,12 @@ void WebViewImpl::SetPageLifecycleStateInternal(
     SetPageFrozen(false);
   }
   if (showing_page) {
+#if !BUILDFLAG(ARKWEB_BFCACHE)
     SetVisibilityState(new_state->visibility, /*is_initial_state=*/false);
+#else
+    SetVisibilityState(new_state->visibility, /*is_initial_state=*/false,
+                      restoring_from_bfcache);
+#endif // !BUILDFLAG(ARKWEB_BFCACHE)
   }
   if (restoring_from_bfcache) {
     DCHECK(dispatching_pageshow);
@@ -2979,6 +3040,12 @@ void WebViewImpl::UpdatePageDefinedViewportConstraints(
              1.0f))
       SetInitialPageScaleOverride(-1);
   }
+
+#if BUILDFLAG(ARKWEB_FLING)
+  UpdateFlingVelocityLimit(
+      gfx::Vector2dF(std::abs(description.max_fling_velocity_x),
+                     std::abs(description.max_fling_velocity_y)));
+#endif
 
   Settings& page_settings = GetPage()->GetSettings();
   GetPageScaleConstraintsSet().AdjustForAndroidWebViewQuirks(
@@ -3681,7 +3748,28 @@ const web_pref::WebPreferences& WebViewImpl::GetWebPreferences() {
 
 void WebViewImpl::UpdateWebPreferences(
     const blink::web_pref::WebPreferences& preferences) {
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+  bool old_viewport_meta_enabled = web_preferences_.viewport_meta_enabled;
+  bool old_is_desktop = web_preferences_.is_desktop;
+#endif
   web_preferences_ = preferences;
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          ::switches::kEnableNwebEx) && 
+          old_is_desktop != web_preferences_.is_desktop) {
+    cached_viewport_meta_enabled_ = web_preferences_.viewport_meta_enabled;
+    web_preferences_.viewport_meta_enabled = old_viewport_meta_enabled;
+    LOG(INFO) << "[ARKWEB] Cached viewport_meta_enabled: "
+              << cached_viewport_meta_enabled_.value()
+              <<", old value: " << old_viewport_meta_enabled;
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  if (should_auto_resize_) {
+    web_preferences_.text_autosizing_enabled = false;
+  }
+#endif  // defined(ARKWEB_NWEB_EX)
 
   if (IsFencedFrameRoot()) {
     // The main frame of a fenced frame should not behave like a top level
@@ -3717,6 +3805,30 @@ void WebViewImpl::UpdateWebPreferences(
   ApplyWebPreferences(web_preferences_, this);
   ApplyCommandLineToSettings(SettingsImpl());
 }
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+bool WebViewImpl::ApplyCachedViewportMetaEnabled() {
+  bool is_apply_cache = false;
+  if (!base::CommandLine::ForCurrentProcess()->HasSwitch(
+            ::switches::kEnableNwebEx)) {
+    return is_apply_cache;
+  }
+  if (!cached_viewport_meta_enabled_.has_value()) {
+    return is_apply_cache;
+  }
+  if (web_preferences_.viewport_meta_enabled !=
+      cached_viewport_meta_enabled_.value()) {
+    web_preferences_.viewport_meta_enabled =
+        cached_viewport_meta_enabled_.value();
+    ApplyWebPreferences(web_preferences_, this);
+    LOG(INFO) << "[ARKWEB] Applied cached viewport_meta_enabled: "
+              << cached_viewport_meta_enabled_.value();
+    is_apply_cache = true;
+  }
+  cached_viewport_meta_enabled_.reset();
+  return is_apply_cache;
+}
+#endif
 
 void WebViewImpl::AddObserver(WebViewObserver* observer) {
   observers_.AddObserver(observer);
@@ -3845,6 +3957,12 @@ void WebViewImpl::PageScaleFactorChanged() {
       SetDeviceEmulationTransform(device_emulation_transform);
     }
   }
+
+#if BUILDFLAG(ARKWEB_DISPLAY_CUTOUT)
+  if (auto* local_frame = DynamicTo<LocalFrame>(GetPage()->MainFrame())) {
+    DisplayCutoutClientImplUtils::UpdateSafeArea(local_frame);
+  }
+#endif
 }
 
 void WebViewImpl::OutermostMainFrameScrollOffsetChanged() {
@@ -4022,7 +4140,12 @@ PageScheduler* WebViewImpl::Scheduler() const {
 
 void WebViewImpl::SetVisibilityState(
     mojom::blink::PageVisibilityState visibility_state,
+#if !BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
     bool is_initial_state) {
+#else
+    bool is_initial_state,
+    bool storing_in_bfcache) {
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
   DCHECK(GetPage());
   GetPage()->SetVisibilityState(visibility_state, is_initial_state);
   // Do not throttle if the page should be painting.
@@ -4038,7 +4161,11 @@ void WebViewImpl::SetVisibilityState(
   // Notify observers of the change.
   if (!is_initial_state) {
     for (auto& observer : observers_)
+#if !BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
       observer.OnPageVisibilityChanged(visibility_state);
+#else
+      observer.OnPageVisibilityChanged(visibility_state, storing_in_bfcache);
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
   }
 }
 

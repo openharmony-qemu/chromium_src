@@ -23,6 +23,7 @@
 #ifndef THIRD_PARTY_BLINK_RENDERER_CORE_LOADER_RESOURCE_IMAGE_RESOURCE_H_
 #define THIRD_PARTY_BLINK_RENDERER_CORE_LOADER_RESOURCE_IMAGE_RESOURCE_H_
 
+#include "arkweb/build/features/features.h"
 #include <variant>
 
 #include "base/containers/span.h"
@@ -41,6 +42,7 @@
 
 namespace blink {
 
+class ImageResourceUtils;
 class DOMWrapperWorld;
 class FetchParameters;
 class ImageResourceContent;
@@ -61,6 +63,7 @@ class CORE_EXPORT ImageResource final
     : public Resource,
       public MultipartImageResourceParser::Client {
  public:
+  friend class ImageResourceUtils;
   // Use ImageResourceContent::Fetch() unless ImageResource is required.
   // TODO(hiroshige): Make Fetch() private.
   static ImageResource* Fetch(FetchParameters&, ResourceFetcher*);
@@ -69,6 +72,9 @@ class CORE_EXPORT ImageResource final
   static ImageResource* Create(const ResourceRequest&,
                                const DOMWrapperWorld* world);
   static ImageResource* CreateForTest(const KURL&);
+#if BUILDFLAG(ARKWEB_INJECT_OFFLINE_RESOURCE)
+  Member<ImageResourceUtils> imageResourceUtils;
+#endif
 
   // This restricts speculative decoding to images that are relatively expensive
   // to decode.

@@ -106,6 +106,13 @@ class BLINK_EXPORT WebPerformanceMetricsForReporting {
   double NavigationStart() const;
   base::TimeTicks NavigationStartAsMonotonicTime() const;
   BackForwardCacheRestoreTimings BackForwardCacheRestore() const;
+#if BUILDFLAG(ARKWEB_NETWORK_DFX)
+  double RedirectStart() const;
+  double RedirectEnd() const;
+  double FetchStart() const;
+  double ResponseEnd() const;
+  double DomInteractive() const;
+#endif
   double DomainLookupStart() const;
   double DomainLookupEnd() const;
   double ConnectStart() const;

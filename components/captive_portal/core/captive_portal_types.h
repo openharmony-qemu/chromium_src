@@ -9,6 +9,15 @@
 
 #include "components/captive_portal/core/captive_portal_export.h"
 
+#include "arkweb/build/features/features.h"
+#include "build/build_config.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+#include "arkweb/chromium_ext/components/captive_portal/core/captive_portal_types_ohos.h"
+#endif
+
 namespace captive_portal {
 
 // Possible results of an attempt to detect a captive portal.
@@ -36,7 +45,6 @@ enum class CaptivePortalWindowType {
 
 CAPTIVE_PORTAL_EXPORT extern std::string CaptivePortalResultToString(
     CaptivePortalResult result);
-
 }  // namespace captive_portal
 
 #endif  // COMPONENTS_CAPTIVE_PORTAL_CORE_CAPTIVE_PORTAL_TYPES_H_

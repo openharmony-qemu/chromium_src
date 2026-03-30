@@ -8,4 +8,11 @@ import("//tools/grit/grit_rule.gni")
 grit_strings("omnibox_pedal_synonyms") {
   source = "omnibox_pedal_synonyms.grd"
   outputs = [ "grit/omnibox_pedal_synonyms.h" ]
+
+  #ifdef arkweb_i18n
+  if (arkweb_i18n) {
+    locales = all_chrome_locales + extra_locales
+  }
+
+  #endif
 }

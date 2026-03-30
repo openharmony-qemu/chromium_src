@@ -21,6 +21,9 @@
 #include "chrome/browser/metrics/usage_scenario/usage_scenario_data_store.h"
 #include "chrome/browser/metrics/usage_scenario/usage_scenario_tracker.h"
 #include "components/performance_manager/public/power/battery_level_provider_creator.h"
+#if BUILDFLAG(IS_ARKWEB)
+#include "base/memory/weak_ptr.h"
+#endif
 
 // Reports metrics related to power (battery discharge, cpu time, etc.).
 //
@@ -124,6 +127,9 @@ class PowerMetricsReporter : public ProcessMonitor::Observer {
   base::OneShotTimer interval_timer_;
 
   SEQUENCE_CHECKER(sequence_checker_);
+#if BUILDFLAG(IS_ARKWEB)
+  base::WeakPtrFactory<PowerMetricsReporter> weak_ptr_factory_{this};
+#endif
 };
 
 #endif  // CHROME_BROWSER_METRICS_POWER_POWER_METRICS_REPORTER_H_

@@ -2450,4 +2450,11 @@ TEST_F(InterestForTouchscreenTest, LinkWithInterestFor) {
   EXPECT_EQ(link->GetInterestState(), Element::InterestState::kFullInterest);
 }
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/page/context_menu_controller_ext_unittest.cc"
+#define private public
+#include "third_party/blink/renderer/core/layout/hit_test_result.h"
+#undef private
+#endif
+
 }  // namespace blink

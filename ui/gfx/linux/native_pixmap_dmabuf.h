@@ -9,7 +9,9 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "base/files/scoped_file.h"
+#include "base/memory/raw_ptr.h"
 #include "ui/gfx/client_native_pixmap.h"
 #include "ui/gfx/geometry/size.h"
 #include "ui/gfx/native_pixmap.h"
@@ -21,7 +23,12 @@ class COMPONENT_EXPORT(GFX) NativePixmapDmaBuf : public gfx::NativePixmap {
  public:
   NativePixmapDmaBuf(const gfx::Size& size,
                      viz::SharedImageFormat format,
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+                     gfx::NativePixmapHandle handle,
+                     void* window_buffer = nullptr);
+#else
                      gfx::NativePixmapHandle handle);
+#endif
 
   NativePixmapDmaBuf(const NativePixmapDmaBuf&) = delete;
   NativePixmapDmaBuf& operator=(const NativePixmapDmaBuf&) = delete;
@@ -44,6 +51,10 @@ class COMPONENT_EXPORT(GFX) NativePixmapDmaBuf : public gfx::NativePixmap {
                             std::vector<gfx::GpuFence> release_fences) override;
   gfx::NativePixmapHandle ExportHandle() const override;
 
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+  void* GetWindowBuffer() override { return native_window_buffer_; }
+#endif
+
  protected:
   ~NativePixmapDmaBuf() override;
 
@@ -51,6 +62,9 @@ class COMPONENT_EXPORT(GFX) NativePixmapDmaBuf : public gfx::NativePixmap {
   gfx::Size size_;
   viz::SharedImageFormat format_;
   gfx::NativePixmapHandle handle_;
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+  raw_ptr<void> native_window_buffer_;
+#endif
 };
 
 }  // namespace gfx

@@ -40,6 +40,10 @@
 #include <windows.h>
 #endif
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/gpu/ipc/service/gpu_hang_adapter.h"
+#endif
+
 namespace gpu {
 
 base::TimeDelta GetGpuWatchdogTimeout(bool software_rendering) {
@@ -99,7 +103,10 @@ GpuWatchdogThread::GpuWatchdogThread(base::TimeDelta timeout,
 
   watched_thread_id_str_ =
       base::NumberToString(base::PlatformThread::CurrentId().raw());
-
+#if BUILDFLAG(IS_ARKWEB) && !defined(COMPONENT_BUILD)
+  bool gpumain_test = gpu::IsHangTestEnabled("gpu_main");
+  hang_test_ = gpumain_test && thread_name == "GpuWatchdog";
+#endif
 #if BUILDFLAG(IS_WIN)
   // GetCurrentThread returns a pseudo-handle that cannot be used by one thread
   // to identify another. DuplicateHandle creates a "real" handle that can be
@@ -292,6 +299,11 @@ void GpuWatchdogThread::WillProcessTask(const base::PendingTask& pending_task,
     DCHECK(IsArmed());
   else
     Arm();
+
+#if BUILDFLAG(IS_ARKWEB)
+  static int32_t count = 0;
+  gpu::SimulateHangForTesting(count, hang_test_, "gpu_main");
+#endif
 }
 
 void GpuWatchdogThread::DidProcessTask(const base::PendingTask& pending_task) {
@@ -687,8 +699,15 @@ void GpuWatchdogThread::DeliberatelyTerminateToRecoverFromHang() {
   auto last_arm_disarm_counter = ReadArmDisarmCounter();
   base::debug::Alias(&last_arm_disarm_counter);
 
+#if BUILDFLAG(IS_ARKWEB)
+  LOG(ERROR) << "ArkWeb report gpu freeze";
+#if !defined(COMPONENT_BUILD)
+  gpu::ReportGpuFreeze();
+#endif
+#else
   // Create a crash dump first
   base::debug::DumpWithoutCrashing();
+#endif
 
   // A kKill event is triggered and DumpWithoutCrashing() is called in the
   // watchdog timeout routine OnWatchdogTimeout(). If it turns out

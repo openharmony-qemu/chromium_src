@@ -178,7 +178,12 @@ class NET_EXPORT CanonicalCookie : public CookieBase {
       std::optional<base::Time> server_time,
       std::optional<CookiePartitionKey> cookie_partition_key,
       CookieSourceType source_type,
-      CookieInclusionStatus* status);
+      CookieInclusionStatus* status
+#if BUILDFLAG(ARKWEB_COOKIE)
+      , bool block_truncated = true);
+#else // BUILDFLAG(ARKWEB_COOKIE)
+      );
+#endif // BUILDFLAG(ARKWEB_COOKIE)
 
   // Create a canonical cookie based on sanitizing the passed inputs in the
   // context of the passed URL.  Returns a null unique pointer if the inputs

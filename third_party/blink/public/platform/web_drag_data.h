@@ -34,6 +34,7 @@
 #include <variant>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/scoped_refptr.h"
 #include "services/network/public/mojom/referrer_policy.mojom-shared.h"
 #include "third_party/blink/public/mojom/file_system_access/file_system_access_data_transfer_token.mojom-shared.h"
@@ -43,6 +44,10 @@
 #include "third_party/blink/public/platform/web_data.h"
 #include "third_party/blink/public/platform/web_string.h"
 #include "third_party/blink/public/platform/web_url.h"
+
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+#include "ui/gfx/geometry/point_f.h"
+#endif
 
 namespace blink {
 
@@ -130,6 +135,20 @@ class BLINK_PLATFORM_EXPORT WebDragData {
   void SetReferrerPolicy(network::mojom::ReferrerPolicy referrer_policy) {
     referrer_policy_ = referrer_policy;
   }
+
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  bool IsSupportClippedDragImage() const { return support_clipped_drag_image_; }
+  void SetSupportClippedDragImage(bool support) {
+    support_clipped_drag_image_ = support;
+  }
+  gfx::PointF GetDragImageOrigin() const { return drag_image_origin_; }
+  void SetDragImageOrigin(const gfx::PointF& point) {
+    drag_image_origin_ = point;
+  }
+
+  bool support_clipped_drag_image_ = false;
+  gfx::PointF drag_image_origin_;
+#endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
 
  private:
   std::vector<Item> item_list_;

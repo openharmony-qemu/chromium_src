@@ -144,3 +144,7 @@ void ExtensionDevToolsInfoBarDelegate::MaybeStartAutocloseTimer() {
 }
 
 }  // namespace extensions
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/chrome/browser/extensions/api/debugger/extension_dev_tools_infobar_delegate_for_include.cc"
+#endif // ARKWEB_ARKWEB_EXTENSIONS

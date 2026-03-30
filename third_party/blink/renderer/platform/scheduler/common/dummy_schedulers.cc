@@ -196,6 +196,10 @@ class DummyPageScheduler : public PageScheduler {
     return base::MakeRefCounted<DummyWidgetScheduler>();
   }
 
+#if BUILDFLAG(ARKWEB_ACTIVE_POLICY)
+  void SetDelayDurationForBackgroundTabFreezing(int64_t) override {}
+#endif  // OHOS_ACTIVE_POLICY
+
  private:
   Persistent<AgentGroupScheduler> agent_group_scheduler_;
 };

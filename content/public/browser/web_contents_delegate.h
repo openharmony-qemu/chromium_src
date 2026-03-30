@@ -17,6 +17,7 @@
 #include "base/memory/scoped_refptr.h"
 #include "base/types/expected.h"
 #include "build/build_config.h"
+#include "components/autofill/core/browser/suggestions/suggestion.h"
 #include "content/common/content_export.h"
 #include "content/public/browser/eye_dropper.h"
 #include "content/public/browser/fullscreen_types.h"
@@ -43,6 +44,23 @@
 #include "ui/base/ui_base_types.h"
 #include "ui/base/window_open_disposition.h"
 #include "ui/gfx/native_ui_types.h"
+#include "arkweb/build/features/features.h"
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+#include "arkweb/chromium_ext/content/public/browser/native_embed_info.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+#include "media/mojo/mojom/media_player.mojom-forward.h"
+#endif // ARKWEB_VIDEO_ASSISTANT
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+#include "components/dom_distiller/content/common/mojom/distillability_service.mojom.h"
+#endif  // ARKWEB_READER_MODE
+
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+#include "arkweb/ohos_nweb/src/capi/nweb_extension_javascript_item.h"
+#endif
 
 #if BUILDFLAG(IS_ANDROID)
 #include "base/android/scoped_java_ref.h"
@@ -111,6 +129,11 @@ class FileSelectListener;
 class JavaScriptDialogManager;
 class RenderFrameHost;
 class RenderViewHostDelegateView;
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+// Forward declaration for ArkWeb extension tab update properties
+struct NWebExtensionTabUpdateProperties;
+#endif
 class RenderWidgetHost;
 class SessionStorageNamespace;
 class SiteInstance;
@@ -122,6 +145,19 @@ struct MediaStreamRequest;
 struct OpenURLParams;
 struct Referrer;
 
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+class CustomMediaPlayer;
+class CustomMediaPlayerListener;
+struct MediaInfo;
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+class MediaPlayerController;
+class MediaPlayerListener;
+class VideoAssistant;
+struct MediaPlayerId;
+#endif  // ARKWEB_VIDEO_ASSISTANT
+
 enum class KeyboardEventProcessingResult;
 
 // Result of an EnterPictureInPicture request.
@@ -132,6 +168,10 @@ enum class PictureInPictureResult {
   // Picture-in-Picture is not supported by the embedder.
   kNotSupported,
 };
+
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+enum class RendererIsUnresponsiveReason;
+#endif
 
 #if BUILDFLAG(IS_ANDROID)
 using HardwareBufferResultCallback =
@@ -272,6 +312,9 @@ class CONTENT_EXPORT WebContentsDelegate {
   virtual bool DidAddMessageToConsole(
       WebContents* source,
       blink::mojom::ConsoleMessageLevel log_level,
+#if BUILDFLAG(ARKWEB_CONSOLE_LOGGING)
+      blink::mojom::ConsoleMessageSource log_source,
+#endif
       const std::u16string& message,
       int32_t line_no,
       const std::u16string& source_id);
@@ -447,8 +490,13 @@ class CONTENT_EXPORT WebContentsDelegate {
   virtual void RendererUnresponsive(
       WebContents* source,
       RenderWidgetHost* render_widget_host,
-      base::RepeatingClosure hang_monitor_restarter) {}
-
+      base::RepeatingClosure hang_monitor_restarter
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+      ,
+      RendererIsUnresponsiveReason reason
+#endif
+  ) {
+  }
   // Notification that a process in the WebContents is no longer hung. |source|
   // is the WebContents that was hung, and |render_widget_host| is the
   // RenderWidgetHost that was passed in an earlier call to
@@ -917,6 +965,20 @@ class CONTENT_EXPORT WebContentsDelegate {
   GetBackForwardTransitionFallbackUXConfig();
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/content/public/browser/web_contents_delegate_for_include.h"
+#endif  // BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(ARKWEB_PIP)
+  virtual void OnPipEvent(int event) {}
+  virtual void OnPip(int status,
+                     int delegate_id,
+                     int child_id,
+                     int frame_routing_id,
+                     int width,
+                     int height) {}
+#endif
+
+
   // Returns the saved related_applications web app manifest field associated
   // with the given `web_contents`. The information is saved via the
   // installation of a web app, where the url of the `web_contents` is in-scope
@@ -930,6 +992,10 @@ class CONTENT_EXPORT WebContentsDelegate {
   // If this returns non-null, overrides the behavior of
   // WebContents::GetResponsibleWebContents.
   virtual WebContents* GetResponsibleWebContents(WebContents* web_contents);
+
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+  virtual void OnSafeBrowsingCheckDetail(int code, int policy, int threat) {};
+#endif
 
  protected:
   virtual ~WebContentsDelegate();

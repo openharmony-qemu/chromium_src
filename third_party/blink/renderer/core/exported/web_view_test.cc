@@ -36,6 +36,7 @@
 #include <optional>
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/callback_helpers.h"
 #include "base/test/metrics/histogram_tester.h"
 #include "base/test/scoped_feature_list.h"
@@ -243,11 +244,22 @@ class WebViewTest : public testing::Test {
       return t;
     }
 
-    // WebViewObserver
+    // // WebViewObserver
+    // void OnPageVisibilityChanged(
+    //     blink::mojom::PageVisibilityState page_visibility) override {
+    //   page_visibility_ = page_visibility;
+    // }
     void OnPageVisibilityChanged(
-        blink::mojom::PageVisibilityState page_visibility) override {
+#if BUILDFLAG(ARKWEB_UNITTESTS) && !BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+        blink::mojom::PageVisibilityState page_visibility) {
       page_visibility_ = page_visibility;
     }
+#else
+        blink::mojom::PageVisibilityState page_visibility,
+        bool storing_in_bfcache) {
+      page_visibility_ = page_visibility;
+    }
+#endif
 
     // We live on the stack, so do nothing here.
     void OnDestruct() override {}

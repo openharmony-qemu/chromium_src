@@ -6,8 +6,10 @@ import("//build/config/chrome_build.gni")
 import("//build/config/ui.gni")
 import("//components/compose/features.gni")
 import("//components/signin/features.gni")
+import("//cef/libcef/features/features.gni")
+import("//arkweb/build/features/features.gni")
 
-assert(is_win || is_mac || is_linux || is_chromeos || is_android)
+assert(is_win || is_mac || is_linux || is_chromeos || is_android || is_ohos)
 
 source_set("autofill") {
   sources = [
@@ -177,6 +179,16 @@ source_set("impl") {
     "//components/unified_consent",
     "//components/variations/service",
   ]
+
+#if BUILDFLAG(ARKWEB_AUTOFILL)
+  deps += [
+    "//cef/libcef/features:buildflags",
+  ]
+
+  if (enable_cef) {
+    configs += [ "//cef/libcef/features:config" ]
+  }
+#endif // BUILDFLAG(ARKWEB_AUTOFILL)
 
   if (is_android) {
     sources += [

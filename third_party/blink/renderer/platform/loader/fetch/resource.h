@@ -65,6 +65,10 @@
 #include "third_party/blink/renderer/platform/wtf/text/text_encoding.h"
 #include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
 
+#if BUILDFLAG(ARKWEB_INJECT_OFFLINE_RESOURCE)
+#include "third_party/blink/renderer/platform/heap/self_keep_alive.h"
+#endif
+
 namespace base {
 class Clock;
 }
@@ -159,6 +163,10 @@ class PLATFORM_EXPORT Resource : public GarbageCollected<Resource>,
   Resource(const Resource&) = delete;
   Resource& operator=(const Resource&) = delete;
   ~Resource() override;
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
+  int request_id_perf_stat_;
+#endif
 
   virtual void Trace(Visitor*) const;
 
@@ -462,6 +470,13 @@ class PLATFORM_EXPORT Resource : public GarbageCollected<Resource>,
 
   void DidRemoveClientOrObserver();
 
+#if BUILDFLAG(ARKWEB_INJECT_OFFLINE_RESOURCE)
+  void SetKeepAliveOn() { self_keep_alive_ = SelfKeepAlive<Resource>{this}; }
+  void SetKeepAliveOff() {
+    self_keep_alive_ = SelfKeepAlive<Resource>{nullptr};
+  }
+#endif
+
   void SetIsPreloadedByEarlyHints() { is_preloaded_by_early_hints_ = true; }
 
   bool IsPreloadedByEarlyHints() const { return is_preloaded_by_early_hints_; }
@@ -535,6 +550,11 @@ class PLATFORM_EXPORT Resource : public GarbageCollected<Resource>,
   void ClearData();
 
   virtual void SetEncoding(const String&) {}
+
+#if BUILDFLAG(ARKWEB_V8_COMPILE)
+  virtual String GetArkWebCompile() const { return String(); }
+  virtual void SetArkWebCompile(String arkWebCompile) {}
+#endif
 
   // Call this when the resource is successfully retrieved from MemoryCache.
   void IncrementMemoryCacheHitCount() { ++memory_cache_hit_count_; }
@@ -630,6 +650,10 @@ class PLATFORM_EXPORT Resource : public GarbageCollected<Resource>,
   scoped_refptr<SharedBuffer> data_;
 
   WebScopedVirtualTimePauser virtual_time_pauser_;
+
+#if BUILDFLAG(ARKWEB_INJECT_OFFLINE_RESOURCE)
+  SelfKeepAlive<Resource> self_keep_alive_;
+#endif
 
   MemoryPressureListenerRegistration memory_pressure_listener_registration_;
 };

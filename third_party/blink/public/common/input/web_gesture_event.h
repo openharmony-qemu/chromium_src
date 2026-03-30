@@ -280,6 +280,12 @@ class BLINK_COMMON_EXPORT WebGestureEvent : public WebInputEvent {
       case Type::kGestureTwoFingerTap:
       case Type::kGestureShortPress:
       case Type::kGestureLongPress:
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+      case Type::kGestureDragLongPress:
+#endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
+#if BUILDFLAG(ARKWEB_AI)
+      case Type::kGestureCreateOverlay:
+#endif
       case Type::kGestureLongTap:
       case Type::kGestureDoubleTap:
         return false;

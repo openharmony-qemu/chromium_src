@@ -61,6 +61,9 @@ class MockInputRouterClient : public input::InputRouterClient,
       const std::optional<std::vector<gfx::Rect>>& character_bounds) override {}
   input::StylusInterface* GetStylusInterface() override;
   void OnStartStylusWriting() override;
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+  void DynamicFrameLossEvent(const std::string& sceneId, bool isStart) override {}
+#endif
   void OnUnconfirmedTapConvertedToTap() override {}
   input::DispatchToRendererCallback GetDispatchToRendererCallback() override;
 

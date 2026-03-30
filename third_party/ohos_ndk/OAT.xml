@@ -1,0 +1,428 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- Copyright (c) 2021 Huawei Device Co., Ltd.
+
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+
+    This is the configuration file template for OpenHarmony OSS Audit Tool, please copy it to your
+project root dir and modify it refer to OpenHarmony/tools_oat/README.
+    All configurations in this file will be merged to OAT-Default.xml, if you have any questions or
+concerns, please create issue in OpenHarmony/tools_oat and @jalenchen or chenyaxun.
+
+    licensefile:
+    1.If the project don't have "LICENSE" in root dir, please define all the license files in this
+project in , OAT will check license files according to this rule.
+
+    policylist:
+    1. policy: If the OAT-Default.xml policies do not meet your requirements, please add policies here.
+    2. policyitem: The fields type, name, path, desc is required, and the fields rule, group,
+filefilter is optional,the default value is:
+    <policyitem type="" name="" path="" desc="" rule="may" group="defaultGroup"
+filefilter="defaultPolicyFilter"/>
+    3. policyitem type:
+        "license" is used to check license license in the specified path;
+        "license" is used to check source license header in the specified path;
+        "copyright" is used to check source copyright header in the specified path;
+        "import" is used to check source dependency in the specified path, such as import ... ,include ...
+        "filetype" is used to check file type in the specified path, supported file types: archive, binary
+        "filename" is used to check whether the specified file exists in the specified path(projectroot
+means the root dir of the project), supported file names: LICENSE, README, README.OpenSource
+    4. policyitem name: This field is used for define the license, copyright, "*" means match all, the
+"!" prefix means could not match this value. For example, "!GPL" means can not use GPL license.
+    5. policyitem path: This field is used for define the source file scope to apply this policyitem,
+the "!" prefix means exclude the files. For example, "!.*/lib/.*" means files in lib dir will be
+exclude while process this policyitem.
+    6. policyitem rule and group: These two fields are used together to merge policy results. "may"
+policyitems in the same group means any one in this group passed, the result will be passed.
+    7. policyitem filefilter: Used to bind filefilter which define filter rules.
+    7. policyitem desc: Used to describe the reason of this policy item, committers will check this
+while merging the code.
+    8. filefilter: Filter rules, the type filename is used to filter file name, the type filepath is
+used to filter file path.
+
+    Note:If the text contains special characters, please escape them according to the following rules:
+    " == &quot;
+    & == &amp;
+    ' == &apos;
+    < == &lt;
+    > == &gt;
+-->
+
+<configuration>
+    <oatconfig>
+        <licensefile>LICENSE</licensefile>
+        <policylist>
+            <policy name="projectPolicy" desc="">
+              <policyitem type="license" name="MIT" path="toolchains/llvm/.*" desc="经法务确认为宽松型许可证" />
+              <policyitem type="license" name="LGPLStyleLicense" path="toolchains/llvm/python3/lib/python3.10/site-packages/pip/_vendor/chardet/.*" desc="经法务确认,涉及文件在render进程进行了隔离" />
+              <policyitem type="license" name="LGPLStyleLicense" path="llvm/python3/lib/python3.10/site-packages/pip/_vendor/chardet/eucjpprober.py" desc="经法务确认,涉及文件在render进程进行了隔离" />
+              <policyitem type="license" name="Python-2.0" path="toolchains/llvm/python3/lib/python3.10/.*" desc="经法务确认为宽松型许可证" />
+              <policyitem type="license" name="GPLStyleLicense" path="toolchains/llvm/python3/lib/python3.10/LICENSE.txt" desc="经法务确认,涉及文件在render进程进行了隔离" />
+              <policyitem type="license" name="ApacheStyleLicense" path="toolchains/llvm/python3/lib/python3.10/site-packages/pip/_vendor/packaging/version.py" desc="经法务确认为宽松型许可证" />
+              <policyitem type="license" name="ApacheStyleLicense" path="toolchains/llvm/python3/lib/python3.10/site-packages/.*" desc="经法务确认为宽松型许可证" />
+              <policyitem type="license" name="BSD-3-Clause" path="sysroot/usr/include/arm-linux-ohos/sys/capability.h" desc="经法务确认为宽松型许可证" />
+              <policyitem type="license" name="BSD-3-Clause" path="sysroot/usr/include/aarch64-linux-ohos/sys/capability.h" desc="经法务确认为宽松型许可证" />
+              <policyitem type="license" name="BSD-3-Clause" path="toolchains/llvm/python3/lib/python3.10/site-packages/pip/_vendor/webencodings/x_user_defined.py" desc="经法务确认为宽松型许可证" />
+              <policyitem type="license" name="BSD-3-Clause" path="toolchains/llvm/python3/lib/python3.10/optparse.py" desc="经法务确认为宽松型许可证" />
+              <policyitem type="license" name="GPL-2.0+-with-LLVM-exception" path="toolchains/llvm/NOTICE" desc="经法务确认,涉及文件在render进程进行了隔离" />
+              <policyitem type="license" name="zlib-acknowledgement" path="toolchains/llvm/python3/lib/python3.10/sqlite3/dbapi2.py" desc="经法务确认为宽松型许可证" />
+              <policyitem type="license" name="BSDStyleLicense" path="toolchains/llvm/include/llvm/Support/xxhash.h" desc="经法务确认为宽松型许可证" />
+              <policyitem type="license" name="SPDX:CC0-1.0" path="toolchains/llvm/include/llvm-c/blake3.h" desc="经法务确认为宽松型许可证" />
+              <policyitem type="license" name="LicenseRef-scancode-python-cwi" path="toolchains/llvm/python3/lib/python3.10/uu.py" desc="经法务确认为宽松型许可证" />
+              <policyitem type="license" name="LicenseRef-scancode-secret-labs-2011" path="toolchains/llvm/python3/include/python3.10/unicodeobject.h" desc="经法务确认为宽松型许可证" />
+              <policyitem type="license" name="LicenseRef-scancode-secret-labs-2011" path="toolchains/llvm/python3/lib/python3.10/xmlrpc/client.py" desc="经法务确认为宽松型许可证" />
+              <policyitem type="license" name="CNRI-Python" path="toolchains/llvm/python3/lib/python3.10/re.py" desc="经法务确认为宽松型许可证" />
+              <policyitem type="license" name="HPND" path="toolchains/llvm/python3/lib/python3.10/logging/config.py" desc="经法务确认为宽松型许可证" />
+              <policyitem type="license" name="HPND" path="toolchains/llvm/python3/lib/python3.10/logging/handlers.py" desc="经法务确认为宽松型许可证" />
+              <policyitem type="license" name="ISC" path="toolchains/llvm/python3/lib/python3.10/site-packages/pip/_vendor/progress/.*" desc="经法务确认为宽松型许可证" />
+              <policyitem type="license" name="NCSA" path="toolchains/llvm/include/llvm/PARTS/.*" desc="经法务确认为宽松型许可证" />
+              <policyitem type="license" name="NCSA" path="toolchains/llvm/include/clang/Pac/PacDfi.h" desc="经法务确认为宽松型许可证" />
+              
+            </policy>
+        </policylist>
+        <filefilterlist>
+            <filefilter name="defaultPolicyFilter"
+                desc="Filters for compatibility,license header policies">
+                <filteritem type="filepath" name="toolchains/.*" desc="OHOS自研shell文件，默认不加license" />
+                <filteritem type="filepath" name="sysroot/.*" desc="OHOS自研shell文件,默认不加license" />
+                
+            </filefilter>
+
+            <filefilter name="defaultFilter">
+                <filteritem type="filepath" name="README.OpenSource"
+                    desc="Filter Readme.opensource files" />
+            </filefilter>
+
+            <filefilter name="binaryFileTypePolicyFilter">
+                <filteritem type="filename" name="*.a" desc="自研二进制文件" />
+                <filteritem type="filename" name="*.so" desc="自研二进制文件" /> 
+                <filteritem type="filename" name="*.o" desc="自研二进制文件" /> 
+                <filteritem type="filepath" name="toolchains/llvm/.*" desc="自研二进制文件" />
+                <filteritem type="filepath" name="toolchains/lib/.*" desc="自研二进制文件" />
+            </filefilter>
+
+            <filefilter name="copyrightPolicyFilter">
+                <filteritem type="filepath" name="toolchains/.*" desc="OHOS自研文件，默认不加版权信息" />
+                <filteritem type="filepath" name="sysroot/.*" desc="OHOS自研文件，默认不加版权信息" />
+            </filefilter>
+        </filefilterlist>
+         <licensematcherlist>
+            <licensematcher name="Python-2.0" desc="">
+                <licensetext name="
+                #  Licensed to PSF under a Contributor Agreement.
+                " desc="" />
+                <licensetext name="
+                    # Licensed to the Python Software Foundation under a contributor agreement.
+                    # See LICENSE.txt and CONTRIBUTORS.txt.
+                    #
+                " desc="" />
+                <licensetext name="
+                    # -*- coding: utf-8 -*-
+                    #
+                    # Copyright (C) 2012 The Python Software Foundation.
+                    # See LICENSE.txt and CONTRIBUTORS.txt.
+                    #
+                " desc="" />
+                <licensetext name="
+                    &quot;&quot;&quot; robotparser.py
+
+                        Copyright (C) 2000  Bastian Kleineidam
+
+                        You can choose between two licenses when using this package:
+                        1) GNU GPLv2
+                        2) PSF license for Python 2.2
+
+                        The robots.txt Exclusion Protocol is implemented as specified in
+                        http://www.robotstxt.org/norobots-rfc.txt
+                    &quot;&quot;&quot;
+                " desc="" />
+                <licensetext name="
+                    &quot;&quot;&quot;
+                    ast
+                    ~~~
+
+                    The `ast` module helps Python applications to process trees of the Python
+                    abstract syntax grammar.  The abstract syntax itself might change with
+                    each Python release; this module helps to find out programmatically what
+                    the current grammar looks like and allows modifications of it.
+
+                    An abstract syntax tree can be generated by passing `ast.PyCF_ONLY_AST` as
+                    a flag to the `compile()` builtin function or by using the `parse()`
+                    function from this module.  The result will be a tree of objects whose
+                    classes all inherit from `ast.AST`.
+
+                    A modified abstract syntax tree can be compiled into a Python code object
+                    using the built-in `compile()` function.
+
+                    Additionally various helper functions are provided that make working with
+                    the trees simpler.  The main intention of the helper functions and this
+                    module in general is to provide an easy to use interface for libraries
+                    that work tightly with the python syntax (template engines for example).
+
+
+                    :copyright: Copyright 2008 by Armin Ronacher.
+                    :license: Python License.
+                    &quot;&quot;&quot;
+                " desc="" />
+            </licensematcher>
+
+            <licensematcher name="CNRI-Python" desc="">
+                <licensetext name="
+                #
+                # Secret Labs' Regular Expression Engine
+                #
+                # re-compatible interface for the sre matching engine
+                #
+                # Copyright (c) 1998-2001 by Secret Labs AB.  All rights reserved.
+                #
+                # This version of the SRE library can be redistributed under CNRI's
+                # Python 1.6 license.  For any other use, please contact Secret Labs
+                # AB (info@pythonware.com).
+                #
+                # Portions of this engine have been developed in cooperation with
+                # CNRI.  Hewlett-Packard provided funding for 1.6 integration and
+                # other compatibility work.
+                #
+            " desc="" />
+            </licensematcher>
+
+            <licensematcher name="Apache-2.0" desc="">
+                <licensetext name="
+                &quot;&quot;&quot;
+                requests.api
+                ~~~~~~~~~~~~
+
+                This module implements the Requests API.
+
+                :copyright: (c) 2012 by Kenneth Reitz.
+                :license: Apache2, see LICENSE for more details.
+                &quot;&quot;&quot;
+            " desc="" />
+            </licensematcher>
+
+            <licensematcher name="BSD-3-Clause" desc="">
+                <licensetext name="
+                &quot;&quot;&quot;
+                    webencodings.x_user_defined
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+                    An implementation of the x-user-defined encoding.
+
+                    :copyright: Copyright 2012 by Simon Sapin
+                    :license: BSD, see LICENSE for details.
+                &quot;&quot;&quot;
+            " desc="" />
+            </licensematcher>
+
+            <licensematcher name="MIT" desc="">
+                <licensetext name="
+                Files in this directory come from Bob Ippolito's py2app.
+
+                License: Any components of the py2app suite may be distributed under
+                the MIT or PSF open source licenses.
+
+                This is version 1.0, SVN revision 789, from 2006/01/25.
+                The main repository is http://svn.red-bean.com/bob/macholib/trunk/macholib/
+            " desc="" />
+            </licensematcher>
+
+            <licensematcher name="HPND" desc="">
+                <licensetext name="
+                #                         All Rights Reserved
+                #
+                # Permission to use, copy, modify, and distribute this software and
+                # its documentation for any purpose and without fee is hereby
+                # granted, provided that the above copyright notice appear in all
+                # copies and that both that copyright notice and this permission
+                # notice appear in supporting documentation, and that the name of Sam
+                # Rushing not be used in advertising or publicity pertaining to
+                # distribution of the software without specific, written prior
+                # permission.
+                #
+                # SAM RUSHING DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE,
+                # INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN
+                # NO EVENT SHALL SAM RUSHING BE LIABLE FOR ANY SPECIAL, INDIRECT OR
+                # CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS
+                # OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
+                # NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+                # CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+                # ======================================================================
+                " desc="" />
+                <licensetext name="
+                # Permission to use, copy, modify, and distribute this software and its
+                # documentation for any purpose and without fee is hereby granted,
+                # provided that the above copyright notice appear in all copies and that
+                # both that copyright notice and this permission notice appear in
+                # supporting documentation, and that the name of Vinay Sajip
+                # not be used in advertising or publicity pertaining to distribution
+                # of the software without specific, written prior permission.
+                # VINAY SAJIP DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
+                # ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL
+                # VINAY SAJIP BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR
+                # ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER
+                # IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
+                # OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+            " desc="" />
+            </licensematcher>
+
+            <licensematcher name="NCSA" desc="">
+                <licensetext name="
+                //===----------------------------------------------------------------------===//
+                //
+                // This file is distributed under the University of Illinois Open Source
+                // License. See LICENSE.TXT for details.
+                //
+                //===----------------------------------------------------------------------===//
+                " desc="" />
+                <licensetext name="
+                //===----------------------------------------------------------------------===//
+                //
+                // This file is distributed under the University of Illinois Open Source
+                // License. See LICENSE.TXT for details.
+                //
+                //===----------------------------------------------------------------------===//
+                " desc="" />
+            </licensematcher>
+
+            <licensematcher name="ISC" desc="">
+                <licensetext name="
+                # Permission to use, copy, modify, and distribute this software for any
+                # purpose with or without fee is hereby granted, provided that the above
+                # copyright notice and this permission notice appear in all copies.
+                #
+                # THE SOFTWARE IS PROVIDED &quot;AS IS&quot; AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+                # WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+                # MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+                # ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+                # WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+                # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+                # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+            " desc="" />
+            </licensematcher>
+
+            <licensematcher name="BSD-Source-Code" desc="">
+                <licensetext name="
+                /*
+                * All rights reserved.
+                *
+                * Redistribution and use in source and binary forms, with or without
+                * modification, are permitted provided that the following conditions are
+                * met:
+                *
+                *     * Redistributions of source code must retain the above copyright
+                * notice, this list of conditions and the following disclaimer.
+                *     * Neither the name of Google Inc. nor the names of its
+                * contributors may be used to endorse or promote products derived from
+                * this software without specific prior written permission.
+                *
+                * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+                * &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+                * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+                * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+                * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+                * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+                * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+                * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+                * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+                * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+                * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+                *
+                * ---
+                * Author: Kostya Serebryany
+                * Copied to CPython by Jeffrey Yasskin, with all macros renamed to
+                * start with _Py_ to avoid colliding with users embedding Python, and
+                * with deprecated macros removed.
+                */
+
+                /* This file defines dynamic annotations for use with dynamic analysis
+                tool such as valgrind, PIN, etc.
+
+                Dynamic annotation is a source code annotation that affects
+                the generated code (that is, the annotation is not a comment).
+                Each such annotation is attached to a particular
+                instruction and/or to a particular object (address) in the program.
+
+                The annotations that should be used by users are macros in all upper-case
+                (e.g., _Py_ANNOTATE_NEW_MEMORY).
+
+                Actual implementation of these macros may differ depending on the
+                dynamic analysis tool being used.
+
+                See http://code.google.com/p/data-race-test/  for more information.
+
+                This file supports the following dynamic analysis tools:
+                - None (DYNAMIC_ANNOTATIONS_ENABLED is not defined or zero).
+                    Macros are defined empty.
+                - ThreadSanitizer, Helgrind, DRD (DYNAMIC_ANNOTATIONS_ENABLED is 1).
+                    Macros are defined as calls to non-inlinable empty functions
+                    that are intercepted by Valgrind. */
+            " desc="" />
+            </licensematcher>
+
+            <licensematcher name="LicenseRef-scancode-secret-labs-2011" desc="">
+                <licensetext name="
+                * By obtaining, using, and/or copying this software and/or its
+                * associated documentation, you agree that you have read, understood,
+                * and will comply with the following terms and conditions:
+                *
+                * Permission to use, copy, modify, and distribute this software and its
+                * associated documentation for any purpose and without fee is hereby
+                * granted, provided that the above copyright notice appears in all
+                * copies, and that both that copyright notice and this permission notice
+                * appear in supporting documentation, and that the name of Secret Labs
+                * AB or the author not be used in advertising or publicity pertaining to
+                * distribution of the software without specific, written prior
+                * permission.
+                *
+                * SECRET LABS AB AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD TO
+                * THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+                * FITNESS.  IN NO EVENT SHALL SECRET LABS AB OR THE AUTHOR BE LIABLE FOR
+                * ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+                * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+                * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
+                * OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+            " desc="" />
+            </licensematcher>
+
+            <licensematcher name="LicenseRef-scancode-python-cwi" desc="">
+                <licensetext name="
+                #! /usr/bin/env python3
+
+                # Copyright 1994 by Lance Ellinghouse
+                # Cathedral City, California Republic, United States of America.
+                #                        All Rights Reserved
+                # Permission to use, copy, modify, and distribute this software and its
+                # documentation for any purpose and without fee is hereby granted,
+                # provided that the above copyright notice appear in all copies and that
+                # both that copyright notice and this permission notice appear in
+                # supporting documentation, and that the name of Lance Ellinghouse
+                # not be used in advertising or publicity pertaining to distribution
+                # of the software without specific, written prior permission.
+                # LANCE ELLINGHOUSE DISCLAIMS ALL WARRANTIES WITH REGARD TO
+                # THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+                # FITNESS, IN NO EVENT SHALL LANCE ELLINGHOUSE CENTRUM BE LIABLE
+                # FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+                # WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+                # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
+                # OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+                #
+                # Modified by Jack Jansen, CWI, July 1995:
+                # - Use binascii module to do the actual line-by-line conversion
+                #   between ascii and binary. This results in a 1000-fold speedup. The C
+                #   version is still 5 times faster, though.
+                # - Arguments more compliant with python standard
+            " desc="" />
+            </licensematcher>
+        </licensematcherlist>
+    </oatconfig>
+</configuration>

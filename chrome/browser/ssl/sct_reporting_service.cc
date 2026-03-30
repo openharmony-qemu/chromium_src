@@ -6,6 +6,7 @@
 
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/feature_list.h"
 #include "base/metrics/histogram_functions.h"
 #include "base/no_destructor.h"
@@ -96,12 +97,20 @@ constexpr net::NetworkTrafficAnnotationTag kSCTHashdanceTrafficAnnotation =
         })");
 
 constexpr char kSBSCTAuditingReportURL[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://x.x.x";
+#else
     "https://safebrowsing.google.com/safebrowsing/clientreport/"
     "chrome-sct-auditing";
+#endif
 
 constexpr char kHashdanceLookupQueryURL[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://x.x.x";
+#else
     "https://sctauditing-pa.googleapis.com/v1/knownscts/"
     "length/$1/prefix/$2?key=";
+#endif
 
 // The maximum number of reports currently allowed to be sent by hashdance
 // clients, browser-wide. When this limit is reached, no more auditing reports
@@ -193,6 +202,10 @@ SCTReportingService::SCTReportingService(
   // need to subscribe to the prefs.
   if (profile_->IsOffTheRecord())
     return;
+
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+  return;
+#endif
 
   // Subscribe to SafeBrowsing preference change notifications. The initial Safe
   // Browsing state gets emitted to subscribers during Profile creation.

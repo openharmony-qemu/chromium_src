@@ -6,6 +6,7 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/heap_array.h"
 #include "base/functional/bind.h"
 #include "base/notreached.h"
@@ -142,6 +143,7 @@ class TestInterfaceFactory final : public media::mojom::InterfaceFactory {
       mojo::PendingReceiver<media::mojom::Renderer> receiver) override {
     NOTREACHED();
   }
+#else
 #endif  // BUILDFLAG(IS_ANDROID)
   void CreateCdm(const media::CdmConfig& cdm_config,
                  CreateCdmCallback callback) override {
@@ -156,6 +158,14 @@ class TestInterfaceFactory final : public media::mojom::InterfaceFactory {
     NOTREACHED();
   }
 #endif  // BUILDFLAG(IS_WIN)
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  void CreateCustomMediaPlayerRenderer(
+      mojo::PendingRemote<media::mojom::CustomMediaPlayerRendererClientExtension>
+          client_extension_ptr,
+      mojo::PendingReceiver<media::mojom::Renderer> receiver,
+      int player_id,
+      const media::MediaPlayerUrlParams& params) override {}
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 
  private:
   TestAudioEncoder audio_encoder_;

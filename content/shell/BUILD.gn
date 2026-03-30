@@ -20,6 +20,8 @@ import("//tools/grit/repack.gni")
 import("//tools/v8_context_snapshot/v8_context_snapshot.gni")
 if (is_android) {
   import("//build/config/android/config.gni")
+} else if (is_ohos) {
+  import("//build/config/ohos/config.gni")
 } else if (is_mac) {
   import("//build/apple/tweak_info_plist.gni")
   import("//build/config/mac/rules.gni")
@@ -167,6 +169,27 @@ inspector_protocol_generate("protocol_sources") {
     "protocol/browser.h",
     "protocol/protocol.h",
   ]
+}
+
+if (is_ohos) {
+  shared_library("content_shell_web") {
+    testonly = true
+    sources = [
+      "//arkweb/chromium_ext/content/shell/app/shell_main_ohos.cc",
+    ]
+    defines = []
+
+    deps = [
+      ":content_shell_app",
+      ":pak",
+      "//content/public/app",
+      "//ohos/adapter:adapter"
+    ]
+    data_deps = [
+      ":pak",
+      "//tools/v8_context_snapshot:v8_context_snapshot",
+    ]
+  }
 }
 
 static_library("content_shell_lib") {
@@ -759,6 +782,10 @@ if (is_android) {
       "//content/public/app",
       "//sandbox",
     ]
+
+    if (is_ohos) {
+      deps += [ "//cef:libcef_static" ]
+    }
 
     data_deps = [
       ":pak",

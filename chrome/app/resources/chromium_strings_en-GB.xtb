@@ -108,6 +108,7 @@ Some features may be unavailable and changes to preferences won't be saved.</tra
 <translation id="2210502920229141283">Stay safer on the go with Enhanced Safe Browsing on Chromium for iOS</translation>
 <translation id="2210682093923538346">Dangerous site. Chromium removed notifications.</translation>
 <translation id="2236949375853147973">My Activity</translation>
+<translation id="2238104961394611930">On • Extension source cannot be verified</translation>
 <translation id="2238130810669087193">To get your addresses and more on all your devices, sign in to Chromium. This address will be saved in your Google Account after you sign in.</translation>
 <translation id="2241627712206172106">If you share a computer, friends and family can browse separately and set up Chromium just the way they want.</translation>
 <translation id="2283803047247799269">Search this tab with image search</translation>
@@ -517,6 +518,7 @@ Some features may be unavailable. Please specify a different profile directory o
 <translation id="6862030660799253820">Search this image with image search</translation>
 <translation id="6873893289264747459">Chromium found that '<ph name="EXTENSION_NAME" />' contains malware</translation>
 <translation id="6877155553248388166">bottom-right corner of search area: right <ph name="RIGHT" />%, bottom <ph name="BOTTOM" />%</translation>
+<translation id="6885534934768077023">Note: Browser cannot prevent extensions from recording your browsing history. To disable this extension in Private mode, toggle off this option.</translation>
 <translation id="6896758677409633944">Copy</translation>
 <translation id="6901631050894301805">Set Chromium as your default browser and pin it to your taskbar</translation>
 <translation id="6909503629704372277">&amp;Manage Chromium profiles</translation>
@@ -575,6 +577,7 @@ Google Chrome is unable to recover your settings.</translation>
 <translation id="753534427205733210">{0,plural, =1{Chromium will relaunch in 1 minute}other{Chromium will relaunch in # minutes}}</translation>
 <translation id="7565444033145385702">To protect your data, let Chromium remove permissions from sites that you haven't visited recently.</translation>
 <translation id="7583399374488819119"><ph name="COMPANY_NAME" /> installer</translation>
+<translation id="7597668698051545254">Off • Extension source cannot be verified</translation>
 <translation id="761356813943268536">Chromium is using your camera and microphone.</translation>
 <translation id="7617377681829253106">Chromium just got better</translation>
 <translation id="7622753900276619808">You now have more features available in Chromium</translation>

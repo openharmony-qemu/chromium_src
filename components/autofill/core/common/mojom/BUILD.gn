@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("//mojo/public/tools/bindings/mojom.gni")
+import("//build/config/features.gni")
 
 mojom("mojo_types") {
   generate_java = true
@@ -14,6 +15,11 @@ mojom("mojo_types") {
     "//url/mojom:url_mojom_gurl",
     "//url/mojom:url_mojom_origin",
   ]
+
+  enabled_features = []
+  if (is_arkweb) {
+    enabled_features += [ "arkweb_password_autofill" ]
+  }
 
   cpp_typemaps = [
     {
@@ -72,6 +78,12 @@ mojom("mojo_types") {
           mojom = "autofill.mojom.PasswordSuggestionRequest"
           cpp = "::autofill::PasswordSuggestionRequest"
         },
+        # ARKWEB_PASSWORD_AUTOFILL begin
+        {
+          mojom = "autofill.mojom.InputFillRequestData"
+          cpp = "::autofill::InputFillRequestData"
+        },
+        # ARKWEB_PASSWORD_AUTOFILL end
       ]
       traits_headers = [ "autofill_types_mojom_traits.h" ]
       traits_sources = [ "autofill_types_mojom_traits.cc" ]

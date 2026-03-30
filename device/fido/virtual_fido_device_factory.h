@@ -65,6 +65,10 @@ class VirtualFidoDeviceFactory : public device::FidoDiscoveryFactory {
   MaybeCreateWinWebAuthnApiDiscovery() override;
 #endif
 
+#if BUILDFLAG(ARKWEB_FIDO)
+  std::unique_ptr<FidoDiscoveryBase> CreateOhosFidoDiscovery() override;
+#endif  // BUILDFLAG(ARKWEB_FIDO)
+
  protected:
   // device::FidoDiscoveryFactory:
   std::vector<std::unique_ptr<FidoDiscoveryBase>> Create(

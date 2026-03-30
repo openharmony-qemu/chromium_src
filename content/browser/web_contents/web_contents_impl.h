@@ -16,6 +16,11 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+#include "base/allocator/partition_allocator/src/partition_alloc/partition_alloc_buildflags.h"
 #include "base/auto_reset.h"
 #include "base/callback_list.h"
 #include "base/containers/flat_map.h"
@@ -167,6 +172,17 @@ class WebContentsView;
 enum class PictureInPictureResult;
 struct MHTMLGenerationParams;
 
+#if BUILDFLAG(ARKWEB_DISPLAY_CUTOUT)
+class DisplayCutoutHostOhos;
+#endif
+
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+enum class RendererIsUnresponsiveReason;
+#endif
+
+class WebContentsImplExt;
+class WebContentsImplUtils;
+
 namespace mojom {
 class CreateNewWindowParams;
 }  // namespace mojom
@@ -212,11 +228,21 @@ class CONTENT_EXPORT WebContentsImpl
       public input::RenderWidgetHostInputEventRouter::Delegate {
  public:
   class FriendWrapper;
+  friend class WebContentsImplExt;
+  friend class WebContentsImplUtils;
 
   WebContentsImpl(const WebContentsImpl&) = delete;
   WebContentsImpl& operator=(const WebContentsImpl&) = delete;
 
   ~WebContentsImpl() override;
+
+  virtual content::WebContentsImplExt* AsWebContentsImplExt() {
+    return nullptr;
+  }
+
+  virtual base::WeakPtr<content::WebContentsImplExt> AsWebContentsImplExtWeakThis() {
+    return nullptr;
+  }
 
   static std::unique_ptr<WebContentsImpl> CreateWithOpener(
       const WebContents::CreateParams& params,
@@ -422,6 +448,7 @@ class CONTENT_EXPORT WebContentsImpl
   bool IsWebContentsOnlyAccessibilityModeForTesting() override;
   bool IsFullAccessibilityModeForTesting() override;
   const std::u16string& GetTitle() override;
+  bool GetIsRealTitle() override;
   const std::optional<std::u16string>& GetApplicationTitle() override;
   void UpdateTitleForEntry(NavigationEntry* entry,
                            const std::u16string& title) override;
@@ -674,7 +701,11 @@ class CONTENT_EXPORT WebContentsImpl
   const blink::web_pref::WebPreferences& GetOrCreateWebPreferences() override;
   void NotifyPreferencesChanged() override;
   void SetWebPreferences(const blink::web_pref::WebPreferences& prefs) override;
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  void OnWebPreferencesChanged(int32_t usage_scenario_type = 99) override;
+#else
   void OnWebPreferencesChanged() override;
+#endif
 
   void AboutToBeDiscarded(WebContents* new_contents) override;
   void NotifyWasDiscarded() override;
@@ -683,6 +714,12 @@ class CONTENT_EXPORT WebContentsImpl
       int max_dimension_dips) override;
 
   void SetOverscrollNavigationEnabled(bool enabled) override;
+
+#if BUILDFLAG(ARKWEB_NOT_LOAD_IFRAME)
+  void NotifyFrameGoneReason(base::TerminationStatus status, int exit_code) override;
+
+  bool GetIframeLoadingFlag() override;
+#endif  // ARKWEB_NOT_LOAD_IFRAME
 
   // RenderFrameHostDelegate ---------------------------------------------------
   void OnDidBlockNavigation(
@@ -962,6 +999,9 @@ class CONTENT_EXPORT WebContentsImpl
   bool DidAddMessageToConsole(
       RenderFrameHostImpl* source_frame,
       blink::mojom::ConsoleMessageLevel log_level,
+#if BUILDFLAG(ARKWEB_CONSOLE_LOGGING)
+      blink::mojom::ConsoleMessageSource log_source,
+#endif
       const std::u16string& message,
       int32_t line_no,
       const std::u16string& source_id,
@@ -1025,7 +1065,12 @@ class CONTENT_EXPORT WebContentsImpl
       base::RepeatingCallback<bool(const GURL&,
                                    const std::optional<UrlMatchType>&)>,
       base::RepeatingCallback<void(NavigationHandle&)>,
-      bool allow_reuse) override;
+      bool allow_reuse
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+,
+      const char* extra_headers = nullptr
+#endif
+      ) override;
   void CancelAllPrerendering() override;
   bool IsAllowedToStartPrerendering() override;
   void BackNavigationLikely(PreloadingPredictor predictor,
@@ -1165,7 +1210,12 @@ class CONTENT_EXPORT WebContentsImpl
       RenderWidgetHostImpl* render_widget_host) override;
   void RendererUnresponsive(
       RenderWidgetHostImpl* render_widget_host,
-      base::RepeatingClosure hang_monitor_restarter) override;
+      base::RepeatingClosure hang_monitor_restarter
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+      ,
+      RendererIsUnresponsiveReason reason
+#endif
+     ) override;
   void RendererResponsive(RenderWidgetHostImpl* render_widget_host) override;
   void RequestToLockPointer(RenderWidgetHostImpl* render_widget_host,
                             bool user_gesture,
@@ -1261,6 +1311,10 @@ class CONTENT_EXPORT WebContentsImpl
 
   void LoadingStateChanged(LoadingState new_state) override;
   void DidStartLoading(FrameTreeNode* frame_tree_node) override;
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
+  void DidStartLoading(FrameTreeNode* frame_tree_node,
+                       bool should_show_loading_ui) override;
+#endif
   void DidStopLoading() override;
   bool IsHidden() override;
   FrameTreeNodeId GetOuterDelegateFrameTreeNodeId() override;
@@ -1481,7 +1535,7 @@ class CONTENT_EXPORT WebContentsImpl
                                  const gfx::RectF& active_rect);
 #endif
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(ARKWEB_DISPLAY_CUTOUT) || BUILDFLAG(IS_ANDROID)
   // Called by WebContentsAndroid to send the Display Cutout safe area to
   // DisplayCutoutHostImpl.
   void SetDisplayCutoutSafeArea(gfx::Insets insets);
@@ -1527,7 +1581,11 @@ class CONTENT_EXPORT WebContentsImpl
   bool has_persistent_video() { return has_persistent_video_; }
 
   // Returns the focused frame's input handler.
+#if BUILDFLAG(ARKWEB_TEST)
+  virtual blink::mojom::FrameWidgetInputHandler* GetFocusedFrameWidgetInputHandler();
+#else
   blink::mojom::FrameWidgetInputHandler* GetFocusedFrameWidgetInputHandler();
+#endif  // BUILDFLAG(ARKWEB_TEST)
 
   // A render view-originated drag has ended. Informs the render view host and
   // WebContentsDelegate.
@@ -1551,8 +1609,14 @@ class CONTENT_EXPORT WebContentsImpl
   // Recomputes only the "fast" preferences (those not requiring slow
   // platform/device polling); the remaining "slow" ones are recomputed only if
   // the preference cache is empty.
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  const blink::web_pref::WebPreferences ComputeWebPreferences(
+      RenderFrameHostImpl* main_frame, int32_t usage_scenario_type = 99);
+#else
   const blink::web_pref::WebPreferences ComputeWebPreferences(
       RenderFrameHostImpl* main_frame);
+#endif
 
   // Certain WebXr modes integrate with Viz as a compositor directly, and thus
   // have their own FrameSinkId that typically renders fullscreen, obscuring
@@ -1601,7 +1665,16 @@ class CONTENT_EXPORT WebContentsImpl
 
   WebContents* GetDocumentPictureInPictureOpener();
 
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+  void EvictFrameBackBuffersWhenNWebWasHidden();
+  void SetIsOfflineWebComponent();
+#endif
+
+#if BUILDFLAG(ARKWEB_TEST)
+ public:
+#else
  private:
+#endif  // ARKWEB_TEST
   using FrameTreeIterationCallback = base::FunctionRef<void(FrameTree&)>;
   using RenderViewHostIterationCallback =
       base::RepeatingCallback<void(RenderViewHostImpl*)>;
@@ -1614,6 +1687,9 @@ class CONTENT_EXPORT WebContentsImpl
   friend class TestWebContentsDestructionObserver;
   friend class BeforeUnloadBlockingDelegate;
   friend class TestWCDelegateForDialogsAndFullscreen;
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class WebContentsImplUtilsTest;
+#endif
 
   FRIEND_TEST_ALL_PREFIXES(WebContentsImplTest, CaptureHoldsWakeLock);
   FRIEND_TEST_ALL_PREFIXES(WebContentsImplTest, NoJSMessageOnInterstitials);
@@ -1712,6 +1788,10 @@ class CONTENT_EXPORT WebContentsImpl
 
   // TODO(brettw) TestWebContents shouldn't exist!
   friend class TestWebContents;
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class TestWebContentsImplExt;
+  friend class WebContentsImplExtTest;
+#endif
 
   class RenderWidgetHostDestructionObserver;
   class WebContentsDestructionObserver;
@@ -1827,7 +1907,7 @@ class CONTENT_EXPORT WebContentsImpl
     bool is_notifying_observers_ = false;
     base::ObserverList<WebContentsObserver> observers_;
   };
-
+  raw_ptr<WebContentsImplUtils> implUtils_;
   // See WebContents::Create for a description of these parameters.
   explicit WebContentsImpl(BrowserContext* browser_context);
 
@@ -2013,7 +2093,11 @@ class CONTENT_EXPORT WebContentsImpl
 
   // TODO(creis): This should take in a FrameTreeNode to know which node's
   // render manager to return.  For now, we just return the root's.
+#if BUILDFLAG(ARKWEB_TEST)
+  virtual RenderFrameHostManager* GetRenderManager();
+#else
   RenderFrameHostManager* GetRenderManager();
+#endif  // BUILDFLAG(ARKWEB_TEST)
 
   // Removes browser plugin embedder if there is one.
   void RemoveBrowserPluginEmbedder();
@@ -2591,7 +2675,11 @@ class CONTENT_EXPORT WebContentsImpl
   bool should_override_user_agent_in_new_tabs_ = false;
 
   // Gets notified about changes in viewport fit events.
+#if BUILDFLAG(ARKWEB_DISPLAY_CUTOUT)
+  std::unique_ptr<DisplayCutoutHostOhos> safe_area_insets_host_;
+#else
   std::unique_ptr<SafeAreaInsetsHost> safe_area_insets_host_;
+#endif
 
   // Stores a set of frames that are fullscreen.
   // See https://fullscreen.spec.whatwg.org.
@@ -2688,6 +2776,17 @@ class CONTENT_EXPORT WebContentsImpl
   // WebContents::CreateParams::picture_in_picture_options.
   std::optional<blink::mojom::PictureInPictureWindowOptions>
       picture_in_picture_options_;
+#if BUILDFLAG(ARKWEB_PIP)
+  bool picture_in_picture_active_ = false;
+#endif
+
+#if BUILDFLAG(ARKWEB_NOT_LOAD_IFRAME)
+  static const int CRASH_TIME_WINDOW_MS = 30000;  // 30s = 30*1000(ms)
+
+  std::deque<int64_t> crash_frameTimeStamp_list;
+
+  bool should_block_frame_loading = false;
+#endif  // ARKWEB_NOT_LOAD_IFRAME
 
   // Only set if this WebContents represents a document picture-in-picture
   // window. This points to the WebContents that originally opened this
@@ -2769,5 +2868,6 @@ class CONTENT_EXPORT WebContentsImpl::FriendWrapper {
 };
 
 }  // namespace content
+#include "arkweb/chromium_ext/content/browser/web_contents/web_contents_impl_ext.h"
 
 #endif  // CONTENT_BROWSER_WEB_CONTENTS_WEB_CONTENTS_IMPL_H_

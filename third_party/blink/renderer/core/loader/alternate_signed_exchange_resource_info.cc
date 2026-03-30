@@ -4,6 +4,7 @@
 
 #include "third_party/blink/renderer/core/loader/alternate_signed_exchange_resource_info.h"
 
+#include "arkweb/build/features/features.h"
 #include "media/media_buildflags.h"
 #include "net/http/http_request_headers.h"
 #include "services/network/public/cpp/constants.h"
@@ -25,6 +26,32 @@ namespace {
 
 constexpr char kAlternate[] = "alternate";
 constexpr char kAllowedAltSxg[] = "allowed-alt-sxg";
+
+// These accept header values are also defined in
+// blink/renderer/platform/loader/fetch/url_loader/fetch_conversion.cc and
+// services/network/loader_util.h.
+// TODO(horo): Move somewhere and use shared constant value.
+const char kDefaultAcceptHeader[] = "*/*";
+const char kStylesheetAcceptHeader[] = "text/css,*/*;q=0.1";
+
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+#if BUILDFLAG(ENABLE_AV1_DECODER)
+constexpr char kImageAcceptHeader[] =
+    "image/avif,image/heif,image/webp,image/apng,image/svg+xml,image/*,*/"
+    "*;q=0.8";
+#else
+constexpr char kImageAcceptHeader[] =
+    "image/heif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8";
+#endif  // BUILDFLAG(ENABLE_AV1_DECODER)
+#else
+#if BUILDFLAG(ENABLE_AV1_DECODER)
+constexpr char kImageAcceptHeader[] =
+    "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8";
+#else
+constexpr char kImageAcceptHeader[] =
+    "image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8";
+#endif  // BUILDFLAG(ENABLE_AV1_DECODER)
+#endif  // BUILDFLAG(ARKWEB_HEIF_SUPPORT)
 
 using AlternateSignedExchangeMachingKey =
     std::pair<String /* anchor */,

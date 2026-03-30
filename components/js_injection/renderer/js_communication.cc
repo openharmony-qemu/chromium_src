@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "components/js_injection/renderer/js_communication.h"
+#include "arkweb/chromium_ext/components/js_injection/renderer/js_communication_utils.h"
 
 #include "base/feature_list.h"
 #include "components/js_injection/renderer/js_binding.h"
@@ -79,6 +80,7 @@ JsCommunication::JsCommunication(content::RenderFrame* render_frame)
   render_frame->GetAssociatedInterfaceRegistry()
       ->AddInterface<mojom::JsCommunication>(base::BindRepeating(
           &JsCommunication::BindPendingReceiver, base::Unretained(this)));
+  implUtils_ = std::make_unique<JsCommunicationUtils>(this);
 }
 
 JsCommunication::~JsCommunication() = default;
@@ -113,6 +115,63 @@ void JsCommunication::RemoveDocumentStartScript(int32_t script_id) {
     }
   }
 }
+
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+void JsCommunication::AddDocumentEndScript(
+    mojom::DocumentEndJavaScriptPtr script_ptr) {
+  implUtils_->AddDocumentEndScript(script_ptr);
+}
+
+void JsCommunication::RemoveDocumentEndScript(int32_t script_id) {
+  implUtils_->RemoveDocumentEndScript(script_id);
+}
+
+void JsCommunication::AddDocumentEndScriptRegexRules(
+    mojom::DocumentJavaScriptRegexRulesPtr script_regex_rules_ptr) {
+  implUtils_->AddDocumentEndScriptRegexRules(script_regex_rules_ptr);
+}
+
+void JsCommunication::CommitPendingJavascriptsAtDocumentEnd() {
+  implUtils_->CommitPendingJavascriptsAtDocumentEnd();
+}
+
+void JsCommunication::AddPendingJavascriptAtDocumentEnd(
+    mojom::DocumentEndJavaScriptPtr script_ptr,
+    mojom::DocumentJavaScriptRegexRulesPtr script_regex_rules_ptr) {
+  implUtils_->AddPendingJavascriptAtDocumentEnd(script_ptr, script_regex_rules_ptr);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_JSPROXY)
+void JsCommunication::AddHeadReadyScript(
+    mojom::DocumentStartJavaScriptPtr script_ptr) {
+  implUtils_->AddHeadReadyScript(script_ptr);
+}
+
+void JsCommunication::RemoveHeadReadyScript(int32_t script_id) {
+  implUtils_->RemoveHeadReadyScript(script_id);
+}
+
+void JsCommunication::AddHeadReadyScriptRegexRules(
+      mojom::DocumentJavaScriptRegexRulesPtr script_regex_rules_ptr) {
+  implUtils_->AddHeadReadyScriptRegexRules(script_regex_rules_ptr);
+}
+ 
+void JsCommunication::AddDocumentStartScriptRegexRules(
+      mojom::DocumentJavaScriptRegexRulesPtr script_regex_rules_ptr) {
+  implUtils_->AddDocumentStartScriptRegexRules(script_regex_rules_ptr);
+}
+
+void JsCommunication::CommitPendingJavascriptsAtHeadReady() {
+  implUtils_->CommitPendingJavascriptsAtHeadReady();
+}
+
+void JsCommunication::AddPendingJavascriptAtHeadReady(
+    mojom::DocumentStartJavaScriptPtr script_ptr,
+    mojom::DocumentJavaScriptRegexRulesPtr script_regex_rules_ptr) {
+  implUtils_->AddPendingJavascriptAtHeadReady(script_ptr, script_regex_rules_ptr);
+}
+#endif
 
 void JsCommunication::DidClearWindowObject() {
   if (inside_did_clear_window_object_)
@@ -190,7 +249,8 @@ void JsCommunication::WillReleaseScriptContext(v8::Local<v8::Context> context,
   }
 }
 
-void JsCommunication::OnDestruct() {
+void JsCommunication::OnDestruct()
+{
   delete this;
 }
 
@@ -198,8 +258,21 @@ void JsCommunication::RunScriptsAtDocumentStart() {
   url::Origin frame_origin =
       url::Origin(render_frame()->GetWebFrame()->GetSecurityOrigin());
   for (const auto& script : scripts_) {
+#if BUILDFLAG(ARKWEB_JSPROXY)
+    if (!script->origin_matcher.rules().empty()) {
+      if (!script->origin_matcher.Matches(frame_origin)) {
+        continue;
+      }
+    } else {
+      if (!implUtils_->RunScriptsAtDocumentStartRegexRules(script->script)) {
+        continue;
+      }
+    }
+#else
     if (!script->origin_matcher.Matches(frame_origin))
       continue;
+#endif
+
     render_frame()->GetWebFrame()->ExecuteScript(
         blink::WebScriptSource(script->script));
   }
@@ -221,4 +294,26 @@ mojom::JsToBrowserMessaging* JsCommunication::GetJsToJavaMessage(
   return iterator->second->js_to_java_messaging();
 }
 
+#if BUILDFLAG(ARKWEB_JSPROXY)
+void JsCommunication::AddPendingJavascriptAtDocumentStart(
+    mojom::DocumentStartJavaScriptPtr script_ptr,
+    mojom::DocumentJavaScriptRegexRulesPtr script_regex_rules_ptr) {
+  DocumentStartJavaScript* script = new DocumentStartJavaScript{
+      script_ptr->origin_matcher,
+      blink::WebString::FromUTF16(script_ptr->script), script_ptr->script_id};
+  swap_scripts_.push_back(std::unique_ptr<DocumentStartJavaScript>(script));
+
+  implUtils_->AddPendingJavascriptAtDocumentStartRegexRules(script_regex_rules_ptr);
+}
+
+void JsCommunication::CommitPendingJavascriptsAtDocumentStart() {
+  scripts_.clear();
+  for (auto& item : swap_scripts_) {
+    scripts_.push_back(std::move(item));
+  }
+  swap_scripts_.clear();
+
+  implUtils_->CommitPendingJavascriptsAtDocumentStartRegexRules();
+}
+#endif
 }  // namespace js_injection

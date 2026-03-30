@@ -172,7 +172,11 @@ class ScriptPromiseProperty final
   template <typename T>
     requires std::derived_from<T, bindings::EnumerationBase>
   static T DefaultPromiseResultValue() {
+#if defined(__clang__) && (__clang_major__ < 17)
+    return T(static_cast<typename T::Enum>(0));
+#else
     return T(static_cast<T::Enum>(0));
+#endif
   }
 
   State state_ = kPending;

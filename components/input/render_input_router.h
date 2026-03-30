@@ -12,6 +12,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "components/input/fling_scheduler_base.h"
 #include "components/input/input_disposition_handler.h"
 #include "components/input/input_router_impl.h"
@@ -92,6 +93,9 @@ class COMPONENT_EXPORT(INPUT) RenderInputRouter
   void OnImeCancelComposition() override;
   StylusInterface* GetStylusInterface() override;
   void OnStartStylusWriting() override;
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+  void DynamicFrameLossEvent(const std::string& sceneId, bool isStart) override;
+#endif
   bool IsWheelScrollInProgress() override;
   bool IsAutoscrollInProgress() override;
   void SetMouseCapture(bool capture) override;
@@ -146,6 +150,9 @@ class COMPONENT_EXPORT(INPUT) RenderInputRouter
       const ui::LatencyInfo& latency);  // Virtual for testing
 
   void ForwardGestureEvent(const blink::WebGestureEvent& gesture_event);
+#if BUILDFLAG(ARKWEB_SLIDE_LTPO)
+  void ReportSlidingFrameRate(const blink::WebGestureEvent& gesture_event);
+#endif
 
   // Retrieve an iterator over any RenderInputRouters that are
   // immediately embedded within this one. This does not return
@@ -216,6 +223,12 @@ class COMPONENT_EXPORT(INPUT) RenderInputRouter
   void RestartInputEventAckTimeoutIfNecessary();
 
   void StartInputEventAckTimeoutForTesting() { StartInputEventAckTimeout(); }
+
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+  void SetFocusWebId(int32_t nweb_id);
+
+  void SetScrollable(bool enable);
+#endif
 
  private:
   friend content::MockRenderInputRouter;

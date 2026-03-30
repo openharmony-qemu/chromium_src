@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//arkweb/build/features/features.gni")
 import("//mojo/public/tools/bindings/mojom.gni")
 
 mojom("mojom") {
@@ -13,4 +14,9 @@ mojom("mojom") {
   ]
   overridden_deps = [ "//third_party/blink/public/mojom:mojom_platform" ]
   component_deps = [ "//third_party/blink/public/common" ]
+
+  enabled_features = []
+  if (defined(arkweb_adblock) && arkweb_adblock) {
+    enabled_features += [ "arkweb_adblock" ]
+  }
 }

@@ -7,6 +7,7 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "base/message_loop/message_pump.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/time/time.h"
@@ -87,7 +88,10 @@ class BLINK_PLATFORM_EXPORT WebThreadScheduler
   // IPC::Channel::UrgentMessageDelegate implementation:
   void OnUrgentMessageReceived() override;
   void OnUrgentMessageProcessed() override;
-
+#if BUILDFLAG(ARKWEB_SUSPEND_ALL_TIMERS)
+  virtual void PauseTimersForOHOSWebView();
+  virtual void ResumeTimersForOHOSWebView();
+#endif  // BUILDFLAG(IS_OHOS)
  protected:
   WebThreadScheduler() = default;
 };

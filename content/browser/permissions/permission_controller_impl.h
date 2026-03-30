@@ -154,6 +154,25 @@ class CONTENT_EXPORT PermissionControllerImpl : public PermissionController {
       const blink::mojom::PermissionDescriptorPtr& permission,
       const url::Origin& requesting_origin,
       const url::Origin& embedding_origin) override;
+
+#if BUILDFLAG(ARKWEB_NOTIFICATION)
+  void GetPermissionStatusAsync(
+      blink::PermissionType permission,
+      bool isFromDocument,
+      void* render_host,
+      const url::Origin& origin,
+      base::OnceCallback<void(blink::mojom::PermissionStatus)> callback) override;
+#endif // ARKWEB_NOTIFICATION
+
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  void RequestPermissionsSkipPermissionsPolicy(
+      RenderFrameHost* render_frame_host,
+      PermissionRequestDescription request_description,
+      base::OnceCallback<void(const std::vector<PermissionResult>&)> callback) override;
+
+  bool IsClipboardSitePermissionEnabled() override;
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
+
   // WARNING: Permission requests order is not guaranteed.
   // TODO(crbug.com/40864728): Migrate to `std::set`.
   // TODO(crbug.com/40275129): `RequestPermissions` and

@@ -72,6 +72,7 @@ std::unique_ptr<VulkanImage> VulkanImage::CreateWithExternalMemory(
 
 // static
 std::unique_ptr<VulkanImage> VulkanImage::CreateFromGpuMemoryBufferHandle(
+    scoped_refptr<gfx::NativePixmap> pixmap,
     VulkanDeviceQueue* device_queue,
     gfx::GpuMemoryBufferHandle gmb_handle,
     const gfx::Size& size,
@@ -82,6 +83,7 @@ std::unique_ptr<VulkanImage> VulkanImage::CreateFromGpuMemoryBufferHandle(
     uint32_t queue_family_index) {
   auto image = std::make_unique<VulkanImage>(base::PassKey<VulkanImage>());
   if (!image->InitializeFromGpuMemoryBufferHandle(
+          pixmap,
           device_queue, std::move(gmb_handle), size, format, usage, flags,
           image_tiling, queue_family_index)) {
     return nullptr;

@@ -150,12 +150,15 @@ api::sessions::Session CreateSessionModelHelper(
   return session_struct;
 }
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 bool is_window_entry(const sessions::tab_restore::Entry& entry) {
   return entry.type == sessions::tab_restore::Type::WINDOW;
 }
+#endif
 
 }  // namespace
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 api::tabs::Tab SessionsGetRecentlyClosedFunction::CreateTabModel(
     const sessions::tab_restore::Tab& tab,
     bool active) {
@@ -636,6 +639,7 @@ SessionsEventRouter::SessionsEventRouter(Profile* profile)
     tab_restore_service_->AddObserver(this);
   }
 }
+#endif  // !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 
 SessionsEventRouter::~SessionsEventRouter() {
   if (tab_restore_service_)

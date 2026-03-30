@@ -126,6 +126,10 @@
 #include "chrome/browser/upgrade_detector/upgrade_detector.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/chrome/browser/extensions/extension_service_for_include.cc"
+#endif
+
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 
 using content::BrowserContext;
@@ -349,9 +353,18 @@ void ExtensionService::Init() {
         switches::kLoadSigninProfileTestExtension));
   }
 #endif
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  ExtensionRegistryInfoManager::StartInitialLoad();
+#endif
+
   if (load_saved_extensions) {
     InstalledLoader(profile_).LoadAllExtensions();
   }
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  NotifyOnInstalledExtensionsLoaded();
+#endif
 
   CheckManagementPolicy();
   OnInstalledExtensionsLoaded();
@@ -384,6 +397,10 @@ void ExtensionService::Init() {
   if (corrupted_extension_reinstaller_->HasAnyReinstallForCorruption()) {
     CheckForUpdatesSoon();
   }
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  LoadForbidDisplayInSettingsExtensions();
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 }
 
 void ExtensionService::EnabledReloadableExtensions() {

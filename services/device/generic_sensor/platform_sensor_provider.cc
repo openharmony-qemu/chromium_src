@@ -26,6 +26,10 @@
 #include "services/device/generic_sensor/platform_sensor_provider_chromeos.h"
 #elif BUILDFLAG(IS_LINUX) && defined(USE_UDEV)
 #include "services/device/generic_sensor/platform_sensor_provider_linux.h"
+#elif BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(ARKWEB_SENSOR)
+#include "services/device/generic_sensor/platform_sensor_provider_ohos.h"
+#endif  // BUILDFLAG(ARKWEB_SENSOR)
 #endif
 
 namespace device {
@@ -74,6 +78,12 @@ std::unique_ptr<PlatformSensorProvider> PlatformSensorProvider::Create() {
   return std::make_unique<PlatformSensorProviderChromeOS>();
 #elif BUILDFLAG(IS_LINUX) && defined(USE_UDEV)
   return std::make_unique<PlatformSensorProviderLinux>();
+#elif BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(ARKWEB_SENSOR)
+  return std::make_unique<PlatformSensorProviderOHOS>();
+#else
+  return nullptr;
+#endif  // defined(ARKWEB_SENSOR)
 #else
   return nullptr;
 #endif

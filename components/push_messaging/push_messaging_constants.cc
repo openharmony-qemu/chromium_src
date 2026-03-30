@@ -4,15 +4,29 @@
 
 #include "components/push_messaging/push_messaging_constants.h"
 
-const char kPushMessagingGcmEndpoint[] = "https://fcm.googleapis.com/fcm/send/";
+const char kPushMessagingGcmEndpoint[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://x.x.x";
+#else
+    "https://fcm.googleapis.com/fcm/send/";
+#endif
 
 const char kPushMessagingStagingGcmEndpoint[] =
     "https://jmt17.google.com/fcm/send/";
 
-const char kPushMessagingWebpushEndpoint[] = "https://fcm.googleapis.com/wp/";
+const char kPushMessagingWebpushEndpoint[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://***/";
+#else
+    "https://fcm.googleapis.com/wp/";
+#endif
 
 const char kPushMessagingStagingWebpushEndpoint[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://***/";
+#else
     "https://fcm.googleapis.com/preprod/wp/";
+#endif
 
 const char kPushMessagingForcedNotificationTag[] =
     "user_visible_auto_notification";

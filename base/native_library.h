@@ -57,11 +57,21 @@ struct BASE_EXPORT NativeLibraryLoadError {
 #endif  // BUILDFLAG(IS_WIN)
 };
 
+#if BUILDFLAG(ARKWEB_TEST)
+#ifdef __cplusplus
+extern "C" {
+#endif
+#endif
 // Loads a native library from disk.  Release it with UnloadNativeLibrary when
 // you're done.  Returns NULL on failure.
 // If |error| is not NULL, it may be filled in on load error.
 BASE_EXPORT NativeLibrary LoadNativeLibrary(const FilePath& library_path,
                                             NativeLibraryLoadError* error);
+#if BUILDFLAG(ARKWEB_TEST)
+#ifdef __cplusplus
+}
+#endif
+#endif
 
 #if BUILDFLAG(IS_WIN)
 // Loads a native library from the system directory using the appropriate flags.

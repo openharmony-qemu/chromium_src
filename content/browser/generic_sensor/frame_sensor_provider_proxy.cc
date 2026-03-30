@@ -25,6 +25,10 @@ namespace {
 constexpr std::vector<network::mojom::PermissionsPolicyFeature>
 SensorTypeToPermissionsPolicyFeatures(SensorType type) {
   switch (type) {
+#if BUILDFLAG(ARKWEB_SENSOR)
+    case SensorType::PROXIMITY:
+    case SensorType::PRESSURE:
+#endif
     case SensorType::AMBIENT_LIGHT:
       return {network::mojom::PermissionsPolicyFeature::kAmbientLightSensor};
     case SensorType::ACCELEROMETER:

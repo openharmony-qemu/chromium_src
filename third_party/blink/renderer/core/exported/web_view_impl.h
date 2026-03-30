@@ -32,6 +32,9 @@
 #define THIRD_PARTY_BLINK_RENDERER_CORE_EXPORTED_WEB_VIEW_IMPL_H_
 
 #include <memory>
+
+#include "absl/types/optional.h"
+#include "arkweb/build/features/features.h"
 #include <vector>
 
 #include "base/debug/stack_trace.h"
@@ -339,6 +342,10 @@ class CORE_EXPORT WebViewImpl final : public WebView,
   void DispatchPagehide(mojom::blink::PagehideDispatch pagehide_dispatch);
   void HookBackForwardCacheEviction(bool hook);
 
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+  bool ApplyCachedViewportMetaEnabled() override;
+#endif
+
   float DefaultMinimumPageScaleFactor() const;
   float DefaultMaximumPageScaleFactor() const;
   float ClampPageScaleFactorToLimits(float) const;
@@ -446,6 +453,9 @@ class CORE_EXPORT WebViewImpl final : public WebView,
 
   void UpdateMainFrameLayoutSize();
   void UpdatePageDefinedViewportConstraints(const ViewportDescription&);
+#if BUILDFLAG(ARKWEB_FLING)
+  void UpdateFlingVelocityLimit(const gfx::Vector2dF& velocity);
+#endif
 
   WebPagePopupImpl* OpenPagePopup(PagePopupClient*);
   bool HasOpenedPopup() const { return page_popup_.get(); }
@@ -460,7 +470,12 @@ class CORE_EXPORT WebViewImpl final : public WebView,
 
   PageScheduler* Scheduler() const override;
   void SetVisibilityState(mojom::blink::PageVisibilityState visibility_state,
+#if !BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
                           bool is_initial_state) override;
+#else
+                          bool is_initial_state,
+                          bool storing_in_bfcache = false) override;
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
   mojom::blink::PageVisibilityState GetVisibilityState() override;
 
   void SetPageLifecycleStateFromNewPageCommit(
@@ -506,7 +521,15 @@ class CORE_EXPORT WebViewImpl final : public WebView,
 
   void EnterFullscreen(LocalFrame&,
                        const FullscreenOptions*,
-                       FullscreenRequestType);
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                       bool overlay_fullscreen,
+#endif // ARKWEB_VIDEO_ASSISTANT
+                       FullscreenRequestType
+#if BUILDFLAG(ARKWEB_FULLSCREEN)
+                       ,
+                       const absl::optional<gfx::Size>&
+#endif  // BUILDFLAG(ARKWEB_FULLSCREEN)
+  );
   void ExitFullscreen(LocalFrame&);
   void FullscreenElementChanged(Element* old_element,
                                 Element* new_element,
@@ -645,6 +668,9 @@ class CORE_EXPORT WebViewImpl final : public WebView,
   // words, after the frame has painted something.
   void DidFirstVisuallyNonEmptyPaint();
 
+#if BUILDFLAG(ARKWEB_ACTIVE_POLICY)
+  void SetDelayDurationForBackgroundTabFreezing(int64_t millisecond);
+#endif
   // Called once the first contentful paint happens on the main frame.
   void OnFirstContentfulPaint(const base::TimeDelta& duration);
 
@@ -657,6 +683,20 @@ class CORE_EXPORT WebViewImpl final : public WebView,
 
   double ClampZoomLevel(double zoom_level) const;
   double ZoomLevelToZoomFactor(double zoom_level) const;
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  void SetScrollOffset(const gfx::PointF point) override;
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  void OnSetAdBlockEnable(bool site_adblock_enabled) override;
+
+  bool GetAdBlockEnableForSite() override;
+#endif
+
+#if BUILDFLAG(ARKWEB_PAGE_UP_DOWN)
+  gfx::PointF GetScrollOffset() override;
+  float GetScrollBottom() override;
+#endif  // #if BUILDFLAG(ARKWEB_PAGE_UP_DOWN)
 
  private:
   FRIEND_TEST_ALL_PREFIXES(WebFrameTest, DivScrollIntoEditableTest);
@@ -676,6 +716,10 @@ class CORE_EXPORT WebViewImpl final : public WebView,
   friend class frame_test_helpers::WebViewHelper;
   friend class SimCompositor;
   friend class WebView;  // So WebView::Create can call our constructor
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class WebViewImplTest; // For testing purposes
+  friend class WebLocalFrameImplTest;
+#endif
 
   void AcceptLanguagesChanged();
   void ThemeChanged();
@@ -705,6 +749,9 @@ class CORE_EXPORT WebViewImpl final : public WebView,
 
   float MaximumLegiblePageScale() const;
   void RefreshPageScaleFactor();
+#if BUILDFLAG(ARKWEB_PINCH_SMOOTH)
+  void SetPinchSmoothMode(bool isEnable);
+#endif
   gfx::Size ContentsSize() const;
 
   void UpdateBrowserControlsConstraint(cc::BrowserControlsState constraint);
@@ -949,12 +996,22 @@ class CORE_EXPORT WebViewImpl final : public WebView,
 
   gfx::Vector2dF elastic_overscroll_;
 
+#if BUILDFLAG(ARKWEB_FLING)
+  gfx::Vector2dF limit_fling_velocity_ =
+      gfx::Vector2dF(std::numeric_limits<float>::max(),
+                     std::numeric_limits<float>::max());
+#endif
+
   // If true, we send IPC messages when |preferred_size_| changes.
   bool send_preferred_size_changes_ = false;
 
   // Whether the preferred size may have changed and |UpdatePreferredSize| needs
   // to be called.
   bool needs_preferred_size_update_ = true;
+
+#if BUILDFLAG(ARKWEB_PINCH_SMOOTH)
+  bool pinch_smooth_mode = false;
+#endif
 
   // Cache the preferred size of the page in order to prevent sending the IPC
   // when layout() recomputes but doesn't actually change sizes.
@@ -963,6 +1020,10 @@ class CORE_EXPORT WebViewImpl final : public WebView,
   Persistent<EventListener> popup_mouse_wheel_event_listener_;
 
   web_pref::WebPreferences web_preferences_;
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+  std::optional<bool> cached_viewport_meta_enabled_;
+#endif
 
   blink::RendererPreferences renderer_preferences_;
 

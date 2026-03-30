@@ -274,6 +274,18 @@ export class Service implements ServiceInterface {
     });
   }
 
+  // #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  setItemOptionalPermission(id: string, name: string, enabled: boolean): void {
+    chrome.developerPrivate.updateExtensionConfiguration({
+      extensionId: id,
+      optionalPermission: {
+        name,
+        enabled,
+      },
+    });
+  }
+  // #endif
+
   inspectItemView(id: string, view: chrome.developerPrivate.ExtensionView):
       void {
     chrome.developerPrivate.openDevTools({
@@ -308,6 +320,11 @@ export class Service implements ServiceInterface {
 
   openUrl(url: string): void {
     window.open(url);
+  }
+
+  // #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  openUrlEx(url: string, type: number): void {
+    chrome.developerPrivate.openUrl(url, type);
   }
 
   reloadItem(id: string): Promise<void> {

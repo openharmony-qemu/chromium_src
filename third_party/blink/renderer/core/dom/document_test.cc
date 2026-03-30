@@ -2340,4 +2340,8 @@ TEST_F(DocumentTest, PaymentLinkHandling_MultiplePaymentLink) {
 }
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#if BUILDFLAG(ARKWEB_TEST)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/dom/document_for_include_unittest.cc"
+#endif  // ARKWEB_TEST
+
 }  // namespace blink

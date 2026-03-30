@@ -13,6 +13,10 @@ import("//testing/test.gni")
 import("//third_party/libgav1/options.gni")
 import("//tools/generate_stubs/rules.gni")
 
+if (is_arkweb) {
+  import("//arkweb/build/features/features.gni")
+}
+
 buildflag_header("buildflags") {
   header = "buildflags.h"
 
@@ -190,6 +194,11 @@ component("gpu") {
     if (enable_vulkan) {
       deps += [ "//gpu/vulkan" ]
     }
+  }
+
+  if (arkweb_media_codec) {
+    import("//arkweb/chromium_ext/media/gpu/ohos/arkweb_media_gpu_ohos_ext.gni")
+    sources += arkweb_media_gpu_ohos_sources
   }
 
   if (use_v4l2_codec) {

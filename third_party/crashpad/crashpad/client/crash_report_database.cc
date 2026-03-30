@@ -16,11 +16,20 @@
 
 #include <sys/stat.h>
 
+#include "arkweb/build/features/features.h"
 #include "base/logging.h"
 #include "base/strings/utf_string_conversions.h"
 #include "build/build_config.h"
 #include "util/file/directory_reader.h"
 #include "util/file/filesystem.h"
+
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+#include "third_party/crashpad/crashpad/util/linux/crashpad_dfx.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+std::string g_crash_dump_path_suffix = "";
+#endif
 
 namespace crashpad {
 
@@ -74,7 +83,13 @@ bool CrashReportDatabase::NewReport::Initialize(
   const std::string uuid_string = uuid_.ToString();
 #endif
 
-  const base::FilePath path = directory.Append(uuid_string + extension);
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+  const base::FilePath path =
+      directory.Append(CrashpadDfx::UpdateCrashDumpPathSuffix() + extension);
+  g_crash_dump_path_suffix =
+      CrashpadDfx::UpdateCrashDumpPathSuffix() + extension;
+  LOG(INFO) << "crash dmp path : " << path;
+#endif
   if (!writer_->Open(
           path, FileWriteMode::kCreateOrFail, FilePermissions::kOwnerOnly)) {
     return false;

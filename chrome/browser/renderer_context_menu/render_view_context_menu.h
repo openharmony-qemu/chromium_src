@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/fixed_flat_set.h"
 #include "base/files/file_path.h"
 #include "base/functional/callback.h"
@@ -134,7 +135,9 @@ class RenderViewContextMenu
   void ExecuteCommand(int command_id, int event_flags) override;
   void AddSpellCheckServiceItem(bool is_checked) override;
   void AddAccessibilityLabelsServiceItem(bool is_checked) override;
-
+#if BUILDFLAG(ARKWEB_TEST)
+  bool IsRunning() override {}
+#endif
   // Registers a one-time callback that will be called the next time a context
   // menu is shown.
   static void RegisterMenuShownCallbackForTesting(

@@ -59,7 +59,11 @@ struct SameSizeAsFontDescription {
   scoped_refptr<FontPalette> palette_;
   scoped_refptr<FontVariantAlternates> font_variant_alternates_;
   AtomicString locale;
+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+  float sizes[4];
+#else
   float sizes[3];
+#endif
   Length letter_spacing;
   Length word_spacing;
   FontSizeAdjust size_adjust_;
@@ -92,6 +96,9 @@ FontDescription::FontDescription()
       adjusted_size_(0),
       letter_spacing_(Length(0, Length::kFixed)),
       word_spacing_(Length(0, Length::kFixed)),
+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+      fixed_font_size_(0),
+#endif
       font_selection_request_(kNormalWeightValue,
                               kNormalWidthValue,
                               kNormalSlopeValue) {
@@ -139,6 +146,9 @@ bool FontDescription::operator==(const FontDescription& other) const {
          size_adjust_ == other.size_adjust_ &&
          letter_spacing_ == other.letter_spacing_ &&
          word_spacing_ == other.word_spacing_ &&
+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+         fixed_font_size_ == other.fixed_font_size_ &&
+#endif
          font_selection_request_ == other.font_selection_request_ &&
          fields_as_unsigned_.parts[0] == other.fields_as_unsigned_.parts[0] &&
          fields_as_unsigned_.parts[1] == other.fields_as_unsigned_.parts[1] &&

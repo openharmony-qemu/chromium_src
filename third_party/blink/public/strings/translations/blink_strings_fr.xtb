@@ -102,4 +102,7 @@
 <translation id="8901569739625249689"><ph name="QUANTITY" /> Ko</translation>
 <translation id="9132465097189459683">Autre…</translation>
 <translation id="916607977885256133">Picture-in-picture</translation>
+<translation id="IDS_MEDIA_REMOTING_CAST_CASTING">Diffusion en cours.</translation>
+<translation id="IDS_MEDIA_REMOTING_CAST_STOP_CAST">Terminer</translation>
+<translation id="IDS_MEDIA_REMOTING_CAST_SWITCH_DEVICE">Changer d'appareil</translation>
 </translationbundle>

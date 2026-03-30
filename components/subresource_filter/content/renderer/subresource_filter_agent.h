@@ -26,6 +26,7 @@ namespace subresource_filter {
 
 class UnverifiedRulesetDealer;
 class WebDocumentSubresourceFilterImpl;
+class ArkWebSubresourceFilterAgentExt;
 
 // The renderer-side agent of ContentSubresourceFilterThrottleManager. There is
 // one instance per RenderFrame, responsible for setting up the subresource
@@ -45,6 +46,9 @@ class SubresourceFilterAgent
   SubresourceFilterAgent& operator=(const SubresourceFilterAgent&) = delete;
 
   ~SubresourceFilterAgent() override;
+
+  friend class ArkWebSubresourceFilterAgentExt;
+  virtual ArkWebSubresourceFilterAgentExt *AsArkWebSubresourceFilterAgentExt() { return nullptr; }
 
   // Unit tests don't have a RenderFrame so the construction relies on virtual
   // methods on this class instead to inject test behaviour. That can't happen
@@ -156,9 +160,14 @@ class SubresourceFilterAgent
 
   base::WeakPtr<WebDocumentSubresourceFilterImpl>
       filter_for_last_created_document_;
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  bool did_load_finished_ = false;
+#endif
   base::WeakPtrFactory<SubresourceFilterAgent> weak_ptr_factory_{this};
 };
 
 }  // namespace subresource_filter
+#include "arkweb/chromium_ext/components/subresource_filter/content/renderer/arkweb_subresource_filter_agent_ext.h"
 
 #endif  // COMPONENTS_SUBRESOURCE_FILTER_CONTENT_RENDERER_SUBRESOURCE_FILTER_AGENT_H_

@@ -16,6 +16,7 @@
 #include <variant>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/flat_map.h"
 #include "base/containers/flat_set.h"
 #include "base/functional/callback_forward.h"
@@ -109,6 +110,10 @@
 #if !BUILDFLAG(IS_ANDROID)
 #include "third_party/blink/public/mojom/installedapp/related_application.mojom-forward.h"
 #endif  // !BUILDFLAG(IS_ANDROID)
+
+#if BUILDFLAG(ARKWEB_MULTI_WINDOW)
+#include "content/common/frame.mojom.h"
+#endif // BUILDFLAG(ARKWEB_MULTI_WINDOW)
 
 namespace net {
 class SiteForCookies;
@@ -447,6 +452,11 @@ class CONTENT_EXPORT ContentBrowserClient {
   // debug URLs.
   virtual bool IsExplicitNavigation(ui::PageTransition transition);
 
+  // Returns whether gesture fling events should use the mobile-behavior gesture
+  // curve for scrolling.
+#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
+  virtual bool ShouldUseMobileFlingCurve();
+#endif
   // Returns whether all instances of the specified site URL should be
   // rendered by the same process, rather than using process-per-site-instance.
   virtual bool ShouldUseProcessPerSite(BrowserContext* browser_context,
@@ -1411,6 +1421,10 @@ class CONTENT_EXPORT ContentBrowserClient {
       const GURL& request_url,
       bool is_primary_main_frame_request,
       bool strict_enforcement,
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+      const GURL& origin_url,
+      const std::string& referrer,
+#endif
       base::OnceCallback<void(CertificateRequestResultType)> callback);
 
   // Returns true if all requests with certificate errors should be blocked
@@ -1465,6 +1479,16 @@ class CONTENT_EXPORT ContentBrowserClient {
       bool user_gesture,
       bool opener_suppressed,
       bool* no_javascript_access);
+
+#if BUILDFLAG(ARKWEB_MULTI_WINDOW)
+  virtual bool CanCreateWindow(
+      RenderFrameHost* opener,
+      const GURL& target_url,
+      WindowOpenDisposition disposition,
+      bool user_gesture,
+      const gfx::Rect& window_features,
+      content::mojom::FrameHost::GetCreateNewWindowCallback callback);
+#endif  // BUILDFLAG(ARKWEB_MULTI_WINDOW)
 
   // Called to report the result of new window creation after CanCreateWindow()
   // returns true. There are cases where the new window may still be canceled.
@@ -1923,7 +1947,12 @@ class CONTENT_EXPORT ContentBrowserClient {
       const base::RepeatingCallback<WebContents*()>& wc_getter,
       NavigationUIData* navigation_ui_data,
       FrameTreeNodeId frame_tree_node_id,
-      std::optional<int64_t> navigation_id);
+      std::optional<int64_t> navigation_id
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+,
+      bool is_prerendering
+#endif
+      );
 
   // Allows the embedder to register one or more URLLoaderThrottles for handling
   // a user-initiated `fetch(url, {keepalive: true})` request from documents or
@@ -2327,7 +2356,7 @@ class CONTENT_EXPORT ContentBrowserClient {
   // convention is to put new constants under a subdict at the key "clientInfo".
   virtual base::Value::Dict GetNetLogConstants();
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_LOAD)
   // Only used by Android WebView.
   // Returns:
   //   true  - The check was successfully performed without throwing a
@@ -2347,6 +2376,22 @@ class CONTENT_EXPORT ContentBrowserClient {
                                         bool is_prerendering,
                                         ui::PageTransition transition,
                                         bool* ignore_navigation);
+#endif
+
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+  virtual std::string OverrideErrorPage(
+    FrameTreeNodeId frame_tree_node_id,
+    bool browser_initiated,
+    const GURL& gurl,
+    const std::string& request_method,
+    bool has_user_gesture,
+    bool is_redirect,
+    bool is_outermost_main_frame,
+    int error_code,
+    const std::string& error_text,
+    bool is_prerendering,
+    ui::PageTransition transition,
+    std::string* html);
 #endif
 
   // Returns true if navigation can synchronously continue if the frame being
@@ -3116,6 +3161,11 @@ class CONTENT_EXPORT ContentBrowserClient {
   // extension origins.
   virtual bool ShouldUseFirstPartyStorageKey(const url::Origin& origin);
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  virtual void UpdateAdBlockEnabledForSite(RenderFrameHost* rfh,
+                                           const GURL& gurl) {}
+#endif
+
   // Checks if the BeforeUnload Dialog event should be skipped.
   virtual bool ShouldSkipBeforeUnloadDialog(content::RenderFrameHost* rfh);
 
@@ -3313,6 +3363,10 @@ class CONTENT_EXPORT ContentBrowserClient {
   virtual bool ShouldDispatchPagehideDuringCommit(
       BrowserContext* browser_context,
       const GURL& destination_url);
+
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  virtual std::string GetUAStringForHost(const std::string& host);
+#endif
 
   // Called when the tracing service is started.
   virtual void OnTracingServiceStarted() {}

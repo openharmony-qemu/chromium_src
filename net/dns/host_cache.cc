@@ -220,12 +220,24 @@ HostCache::Key::Key(std::variant<url::SchemeHostPort, std::string> host,
                     DnsQueryType dns_query_type,
                     HostResolverFlags host_resolver_flags,
                     HostResolverSource host_resolver_source,
-                    const NetworkAnonymizationKey& network_anonymization_key)
+                    const NetworkAnonymizationKey& network_anonymization_key
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+                    ,
+                    bool secure,
+                    bool external_added
+#endif
+                    )
     : host(std::move(host)),
       dns_query_type(dns_query_type),
       host_resolver_flags(host_resolver_flags),
       host_resolver_source(host_resolver_source),
-      network_anonymization_key(network_anonymization_key) {
+      network_anonymization_key(network_anonymization_key)
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+      ,
+      secure(secure),
+      external_added(external_added)
+#endif
+       {
   DCHECK(IsValidHostname(GetHostname(this->host)));
   if (std::holds_alternative<url::SchemeHostPort>(this->host)) {
     DCHECK(std::get<url::SchemeHostPort>(this->host).IsValid());
@@ -1310,6 +1322,10 @@ void HostCache::RecordEraseAll(EraseReason reason, base::TimeTicks now) {
     RecordErase(reason, now, it.first, it.second);
   }
 }
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/net/dns/host_cache_for_include.cc"
+#endif  // IS_ARKWEB
 
 }  // namespace net
 

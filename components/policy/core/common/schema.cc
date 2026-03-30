@@ -35,6 +35,11 @@
 #include "components/policy/core/common/json_schema_constants.h"
 #include "components/policy/core/common/schema_internal.h"
 #include "third_party/re2/src/re2/re2.h"
+#include "arkweb/build/features/features.h"
+
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+#include "base/logging.h"
+#endif
 
 namespace schema = json_schema_constants;
 
@@ -674,7 +679,13 @@ Schema::InternalStorage::ParseSchema(const base::Value::Dict& schema) {
       sizes.string_enums != storage->string_enums_.size()) {
     return base::unexpected(
         "Failed to parse the schema due to a Chrome bug. Please file a "
-        "new issue at http://crbug.com");
+        "new issue at "
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+        "https://x.x.x"
+#else
+        "http://crbug.com"
+#endif
+    );
   }
 
   std::string error;
@@ -1468,6 +1479,11 @@ bool CompareKeys(const PropertyNode& node, const std::string& key) {
 
 Schema Schema::GetKnownProperty(const std::string& key) const {
   CHECK(valid());
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+  if (base::Value::Type::DICT != type()) {
+    LOG(INFO) << "Schema::GetKnownProperty current-type is :" << type();
+  }
+#endif
   CHECK_EQ(base::Value::Type::DICT, type());
   const PropertiesNode* node = storage_->properties(node_->extra);
   if (node->begin == kInvalid || node->end == kInvalid)

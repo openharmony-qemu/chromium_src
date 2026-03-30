@@ -36,6 +36,10 @@
 #include "third_party/blink/public/mojom/navigation/navigation_params.mojom-forward.h"
 #include "url/origin.h"
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+#include "arkweb/chromium_ext/content/public/browser/error_page_reload_reason.h"
+#endif
+
 namespace blink {
 struct FramePolicy;
 namespace scheduler {
@@ -128,7 +132,7 @@ class CONTENT_EXPORT NavigationEntryImpl : public NavigationEntry {
   const GURL& GetURL() const override;
   void SetBaseURLForDataURL(const GURL& url) override;
   const GURL& GetBaseURLForDataURL() const override;
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_BASE)
   void SetDataURLAsString(
       scoped_refptr<base::RefCountedString> data_url) override;
   const scoped_refptr<const base::RefCountedString>& GetDataURLAsString()
@@ -140,6 +144,7 @@ class CONTENT_EXPORT NavigationEntryImpl : public NavigationEntry {
   const GURL& GetVirtualURL() const override;
   void SetTitle(std::u16string title) override;
   const std::u16string& GetTitle() const override;
+  bool GetIsRealTitle() override;
   void SetApplicationTitle(const std::u16string& application_title) override;
   const std::optional<std::u16string>& GetApplicationTitle() const override;
   void SetPageState(const blink::PageState& state,
@@ -532,6 +537,18 @@ class CONTENT_EXPORT NavigationEntryImpl : public NavigationEntry {
     return navigation_transition_data_;
   }
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  void SetReloadReason(ErrorPageReloadReason  reason);
+  ErrorPageReloadReason  GetCurrentReloadReason() {
+    return current_reload_reason_;
+  }
+  std::set<ErrorPageReloadReason > GetReloadReasonList() {
+    return reload_reason_list_;
+  }
+  int GetErrorCode() const override { return error_code_; }
+  void set_error_code(int error_code) { error_code_ = error_code; }
+#endif
+
  private:
   std::unique_ptr<NavigationEntryImpl> CloneAndReplaceInternal(
       scoped_refptr<FrameNavigationEntry> frame_entry,
@@ -588,7 +605,7 @@ class CONTENT_EXPORT NavigationEntryImpl : public NavigationEntry {
   // persisted by Android WebView.
   GURL base_url_for_data_url_;
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_BASE)
   // Used for passing really big data URLs from browser to renderers. Only used
   // and persisted by Android WebView.
   scoped_refptr<const base::RefCountedString> data_url_as_string_;
@@ -672,6 +689,15 @@ class CONTENT_EXPORT NavigationEntryImpl : public NavigationEntry {
   // Information about a navigation transition. See the comments on the class
   // for details.
   NavigationTransitionData navigation_transition_data_;
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  ErrorPageReloadReason  current_reload_reason_ = ErrorPageReloadReason ::INVALID;
+  std::set<ErrorPageReloadReason > reload_reason_list_;
+#endif
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  int error_code_;
+#endif
 };
 
 }  // namespace content

@@ -2,6 +2,13 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+if (defined(is_arkweb) && is_arkweb) {
+  import("//arkweb/build/features/features.gni")
+  if (defined(arkweb_adblock) && arkweb_adblock) {
+    import("//arkweb/chromium_ext/components/prefs/arkweb_pref_ext.gni")
+  }
+}
+
 component("prefs") {
   sources = [
     "command_line_pref_store.cc",
@@ -67,6 +74,10 @@ component("prefs") {
       "android/pref_service_android.h",
     ]
     deps += [ "android:jni_headers" ]
+  }
+
+  if (defined(arkweb_adblock) && arkweb_adblock) {
+    sources += arkweb_pref_ext_sources
   }
 }
 

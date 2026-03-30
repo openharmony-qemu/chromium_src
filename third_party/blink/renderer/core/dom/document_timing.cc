@@ -34,6 +34,9 @@ void DocumentTiming::NotifyDocumentTimingChanged() {
 
 void DocumentTiming::MarkDomLoading() {
   document_timing_values_->dom_loading = base::TimeTicks::Now();
+#if BUILDFLAG(ARKWEB_NETWORK_DFX)
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME", "domLoading", document_timing_values_->dom_loading);
+#endif
   TRACE_EVENT_MARK_WITH_TIMESTAMP1("blink.user_timing,rail", "domLoading",
                                    document_timing_values_->dom_loading,
                                    "frame", GetFrameIdForTracing(GetFrame()));
@@ -42,6 +45,9 @@ void DocumentTiming::MarkDomLoading() {
 
 void DocumentTiming::MarkDomInteractive() {
   document_timing_values_->dom_interactive = base::TimeTicks::Now();
+#if BUILDFLAG(ARKWEB_NETWORK_DFX)
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME", "domLoading", document_timing_values_->dom_loading);
+#endif
   TRACE_EVENT_MARK_WITH_TIMESTAMP1("blink.user_timing,rail", "domInteractive",
                                    document_timing_values_->dom_interactive,
                                    "frame", GetFrameIdForTracing(GetFrame()));
@@ -51,6 +57,9 @@ void DocumentTiming::MarkDomInteractive() {
 void DocumentTiming::MarkDomContentLoadedEventStart() {
   document_timing_values_->dom_content_loaded_event_start =
       base::TimeTicks::Now();
+#if BUILDFLAG(ARKWEB_NETWORK_DFX)
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME", "domLoading", document_timing_values_->dom_loading);
+#endif
   TRACE_EVENT_MARK_WITH_TIMESTAMP1(
       "blink.user_timing,rail", "domContentLoadedEventStart",
       document_timing_values_->dom_content_loaded_event_start, "frame",
@@ -61,6 +70,9 @@ void DocumentTiming::MarkDomContentLoadedEventStart() {
 void DocumentTiming::MarkDomContentLoadedEventEnd() {
   document_timing_values_->dom_content_loaded_event_end =
       base::TimeTicks::Now();
+#if BUILDFLAG(ARKWEB_NETWORK_DFX)
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME", "domLoading", document_timing_values_->dom_loading);
+#endif
   TRACE_EVENT_MARK_WITH_TIMESTAMP1(
       "blink.user_timing,rail", "domContentLoadedEventEnd",
       document_timing_values_->dom_content_loaded_event_end, "frame",

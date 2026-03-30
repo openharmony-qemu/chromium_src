@@ -39,6 +39,7 @@ namespace blink {
 
 FontBuilder::FontBuilder(Document* document) : document_(document) {
   DCHECK(!document || document->GetFrame());
+  font_builder_utils_ = std::make_unique<FontBuilderUtils>(this);
 }
 
 void FontBuilder::DidChangeEffectiveZoom() {
@@ -451,10 +452,14 @@ bool FontBuilder::UpdateFontDescription(FontDescription& description,
     }
   }
   if (IsSet(PropertySetFlag::kWeight)) {
+#if BUILDFLAG(ARKWEB_CSS_FONT)
+    font_builder_utils_->UpdateFontDescription(description, modified);
+#else
     if (description.Weight() != font_description_.Weight()) {
       modified = true;
       description.SetWeight(font_description_.Weight());
     }
+#endif  // BUILDFLAG(ARKWEB_CSS_FONT)
   }
   if (IsSet(PropertySetFlag::kStretch)) {
     if (description.Stretch() != font_description_.Stretch()) {
@@ -690,8 +695,14 @@ void FontBuilder::CreateInitialFont(ComputedStyleBuilder& builder) {
   SetSize(font_description,
           FontDescription::Size(FontSizeFunctions::InitialKeywordSize(), 0.0f,
                                 false));
+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+  font_builder_utils_->UpdateFixedFontSize(font_description);
+#endif
   UpdateSpecifiedSize(font_description, builder.GetFontDescription());
   UpdateComputedSize(font_description, builder);
+#if BUILDFLAG(ARKWEB_CSS_FONT)
+  font_builder_utils_->UpdateWeightScale(font_description);
+#endif
 
   font_description.SetOrientation(builder.ComputeFontOrientation());
 

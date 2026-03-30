@@ -204,6 +204,12 @@ export class SettingsMenuElement extends SettingsMenuElementBase {
     ];
     return visibilities.every(visibility => visibility === false);
   }
+
+  // <if expr="is_ohos">
+  private systemPageVisibility_(): boolean {
+    return loadTimeData.getBoolean('systemPageVisibility');
+  }
+  // </if>
 }
 
 declare global {

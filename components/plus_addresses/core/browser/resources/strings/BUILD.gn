@@ -23,6 +23,10 @@ grit_strings("strings") {
     create_android_resources = true
   }
 
+  if (arkweb_i18n) {
+    locales = all_chrome_locales + extra_locales
+  }
+
   output_prefix = "plus_addresses_strings_"
 }
 

@@ -831,7 +831,7 @@ void ParamTraits<base::subtle::PlatformSharedMemoryRegion>::Write(
       const_cast<param_type&>(p).PassPlatformHandle();
   MachPortMac mach_port_mac(h.get());
   WriteParam(m, mach_port_mac);
-#elif BUILDFLAG(IS_ANDROID)
+#elif BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   m->WriteAttachment(new internal::PlatformFileAttachment(
       base::ScopedFD(const_cast<param_type&>(p).PassPlatformHandle())));
 #elif BUILDFLAG(IS_POSIX)
@@ -901,7 +901,7 @@ bool ParamTraits<base::subtle::PlatformSharedMemoryRegion>::Read(
     return false;
   }
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   *r = base::subtle::PlatformSharedMemoryRegion::Take(
       base::ScopedFD(
           static_cast<internal::PlatformFileAttachment*>(attachment.get())
@@ -930,7 +930,7 @@ bool ParamTraits<base::subtle::PlatformSharedMemoryRegion>::Read(
                                    ->TakePlatformFile())
               : base::ScopedFD()),
       mode, size, guid);
-#endif  // BUILDFLAG(IS_ANDROID)
+#endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 
 #endif
 

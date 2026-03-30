@@ -121,6 +121,8 @@ std::string Command::CommandPlatform() {
 #elif BUILDFLAG(IS_DESKTOP_ANDROID)
   // For now, we use linux keybindings on desktop android.
   return ui::kKeybindingPlatformLinux;
+#elif BUILDFLAG(IS_ARKWEB)
+  return ui::kKeybindingPlatformOHOS;
 #else
 #error Unsupported platform
 #endif
@@ -232,6 +234,11 @@ bool Command::Parse(const base::Value::Dict& command,
   if (suggestions.find(key) == suggestions.end()) {
     key = ui::kKeybindingPlatformDefault;
   }
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (suggestions.find(key) == suggestions.end()) {
+    key = ui::kKeybindingPlatformWin;
+  }
+#endif
   if (suggestions.find(key) == suggestions.end()) {
     *error = ErrorUtils::FormatErrorMessageUTF16(
         errors::kInvalidKeyBindingMissingPlatform, base::NumberToString(index),

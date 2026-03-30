@@ -155,6 +155,19 @@ const char kJavaScriptFlags[] = "js-flags";
 // enterprise policy override.
 const char kWebAudioBypassOutputBufferingOptOut[] =
     "web-audio-bypass-output-buffering-opt-out";
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+// Used to communicate managed policy for the
+// SendMouseEventsDisabledFormControls feature. This feature is typically
+// controlled by base::Feature (see blink/common/features.*) but requires an
+// enterprise policy override. This is implicitly a tri-state, and can be either
+// unset, or set to "1" for force enable, or "0" for force disable.
+extern const char kSendMouseEventsDisabledFormControlsPolicy[] =
+    "send-mouse-events-disabled-form-controls-policy";
+extern const char kSendMouseEventsDisabledFormControlsPolicy_ForceDisable[] =
+    "0";
+extern const char kSendMouseEventsDisabledFormControlsPolicy_ForceEnable[] =
+    "1";
+#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
 // Override mechanism for ReduceAcceptLanguage. This feature is typically
 // controlled by base features, but requires an enterprise policy override.

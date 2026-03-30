@@ -42,6 +42,7 @@
 #include "third_party/blink/renderer/platform/instrumentation/memory_pressure_listener.h"
 #include "third_party/blink/renderer/platform/language.h"
 
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/frame/navigator_for_include.cc"
 namespace blink {
 
 Navigator::Navigator(ExecutionContext* context) : NavigatorBase(context) {}

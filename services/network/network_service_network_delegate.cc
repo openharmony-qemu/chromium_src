@@ -39,6 +39,17 @@
 #include "services/network/websocket.h"
 #endif
 
+#include "arkweb/chromium_ext/services/network/network_service_network_delegate_ext.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "base/base_switches.h"
+#include "base/command_line.h"
+#include "url/ohos/log_utils.h"
+#endif
+
 namespace network {
 
 namespace {
@@ -158,6 +169,24 @@ int NetworkServiceNetworkDelegate::OnHeadersReceived(
 
   chain->AddResult(HandleClearSiteDataHeader(request, chain->CreateCallback(),
                                              original_response_headers));
+#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+  if (original_response_headers &&
+      original_response_headers->response_code() >= 400) {
+    LOG(INFO) << "INFO: resource: ***"
+              << " error code: " << original_response_headers->response_code();
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(INFO) << "INFO: resource: "
+                       << url::LogUtils::ConvertUrlWithMask(
+                              request->url().spec())
+                       << " error code: "
+                       << original_response_headers->response_code();
+    if (!network_context_->AsArkWebNetworkContextExt()->IsStrictLogMode()) {
+      LOG(URL) << "resource : " << request->url().spec()
+               << " error code: " << original_response_headers->response_code();
+    }
+#endif
+  }
+#endif
 
   return chain->GetResult();
 }
@@ -186,6 +215,12 @@ void NetworkServiceNetworkDelegate::OnCompleted(net::URLRequest* request,
   }
 
   ForwardProxyErrors(net_error);
+
+#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+  if (net_error != net::OK) {
+    AsNetworkServiceNetworkDelegateExt()->RecordErrorInfo(request, net_error);
+  }
+#endif
 }
 
 void NetworkServiceNetworkDelegate::OnPACScriptError(

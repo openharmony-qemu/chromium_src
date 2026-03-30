@@ -31,6 +31,10 @@
 #include "third_party/blink/renderer/platform/wtf/shared_buffer.h"
 #include "url/origin.h"
 
+#if BUILDFLAG(IS_ARKWEB) && !defined(COMPONENT_BUILD) //FIXME
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/loader/fetch/url_loader/sync_load_context_for_include.cc"
+#endif
+
 namespace blink {
 
 // An inner helper class to manage the SyncLoadContext's events and timeouts,
@@ -114,11 +118,21 @@ void SyncLoadContext::StartAsyncWithWaitableEvent(
     mojo::PendingRemote<mojom::blink::BlobRegistry> download_to_blob_registry,
     const Vector<String>& cors_exempt_header_list,
     std::unique_ptr<ResourceLoadInfoNotifierWrapper>
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+        resource_load_info_notifier_wrapper,
+    content::RenderThread* render_thread) {
+#else
         resource_load_info_notifier_wrapper) {
+#endif
   scoped_refptr<SyncLoadContext> context(base::AdoptRef(new SyncLoadContext(
       request.get(), std::move(pending_url_loader_factory), response,
       context_for_redirect, redirect_or_response_event, abort_event, timeout,
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+      std::move(download_to_blob_registry), loading_task_runner,
+      render_thread)));
+#else
       std::move(download_to_blob_registry), loading_task_runner)));
+#endif
   context->resource_request_sender_->SendAsync(
       std::move(request), std::move(loading_task_runner), traffic_annotation,
       loader_options, cors_exempt_header_list, context,
@@ -128,7 +142,11 @@ void SyncLoadContext::StartAsyncWithWaitableEvent(
       /*evict_from_bfcache_callback=*/
       base::OnceCallback<void(mojom::blink::RendererEvictionReason)>(),
       /*did_buffer_load_while_in_bfcache_callback=*/
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+      base::RepeatingCallback<void(size_t)>(), true);
+#else
       base::RepeatingCallback<void(size_t)>());
+#endif
 }
 
 SyncLoadContext::SyncLoadContext(
@@ -140,7 +158,12 @@ SyncLoadContext::SyncLoadContext(
     base::WaitableEvent* abort_event,
     base::TimeDelta timeout,
     mojo::PendingRemote<mojom::blink::BlobRegistry> download_to_blob_registry,
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+    scoped_refptr<base::SingleThreadTaskRunner> task_runner,
+    content::RenderThread* render_thread)
+#else
     scoped_refptr<base::SingleThreadTaskRunner> task_runner)
+#endif
     : response_(response),
       context_for_redirect_(context_for_redirect),
       body_watcher_(FROM_HERE, mojo::SimpleWatcher::ArmingPolicy::MANUAL),
@@ -150,6 +173,10 @@ SyncLoadContext::SyncLoadContext(
                                               redirect_or_response_event,
                                               abort_event,
                                               timeout)) {
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+  SyncLoadContextExt(this, render_thread);
+#endif
+
   if (download_to_blob_registry_)
     mode_ = Mode::kBlob;
 
@@ -343,6 +370,11 @@ void SyncLoadContext::OnTimeout() {
 }
 
 void SyncLoadContext::CompleteRequest() {
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+  if (report_manager_) {
+    report_manager_->FetchEnd();
+  }
+#endif
   DCHECK(blob_finished_ || (mode_ != Mode::kBlob));
   DCHECK(!body_handle_.is_valid());
   body_watcher_.Cancel();

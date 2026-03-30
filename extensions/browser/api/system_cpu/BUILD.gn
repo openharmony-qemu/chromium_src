@@ -30,6 +30,10 @@ source_set("system_cpu") {
     deps = [ "//chromeos/system" ]
   }
 
+  if (is_ohos) {
+    sources += [ "//arkweb/chromium_ext/extensions/browser/api/system_cpu/cpu_info_provider_ohos.cc" ]
+  }
+
   if (is_mac) {
     sources += [ "cpu_info_provider_mac.cc" ]
   }

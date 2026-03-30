@@ -264,6 +264,11 @@ class CONTENT_EXPORT NavigationURLLoaderImpl
       network::mojom::URLResponseHeadPtr head,
       mojo::ScopedDataPipeConsumerHandle response_body,
       std::optional<mojo_base::BigBuffer> cached_metadata) override;
+
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+  void OnTransferDataWithSharedMemory(base::ReadOnlySharedMemoryRegion region, uint64_t buffer_size) override {}
+#endif
+
   void OnReceiveRedirect(const net::RedirectInfo& redirect_info,
                          network::mojom::URLResponseHeadPtr head) override;
   void OnUploadProgress(int64_t current_position,
@@ -302,6 +307,9 @@ class CONTENT_EXPORT NavigationURLLoaderImpl
   const GlobalRequestID global_request_id_;
   net::RedirectInfo redirect_info_;
   int redirect_limit_ = net::URLRequest::kMaxRedirects;
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  bool redirect_abort_cancel_ = false;
+#endif
   int accept_ch_restart_limit_ = net::URLRequest::kMaxRedirects;
   base::RepeatingCallback<WebContents*()> web_contents_getter_;
   std::unique_ptr<NavigationUIData> navigation_ui_data_;

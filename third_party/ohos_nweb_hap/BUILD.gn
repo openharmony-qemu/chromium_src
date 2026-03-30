@@ -1,0 +1,206 @@
+import("//build/config/ohos/config.gni")
+import("//build/ohos/jinja2.gni")
+import("//arkweb/build/hap/hap.gni")
+import("//ui/base/ui_features.gni")
+import("//arkweb/build/features/features.gni")
+
+assert(enable_ohos_nweb_hap)
+
+action("add_kernel_permission_symbol") {
+  script = "add_kernel_permission.py"
+  
+  inputs = [
+    "$root_out_dir/lib.unstripped/libarkweb_engine.so",
+    "encaps.json",
+  ]
+  
+  outputs = [
+    "$root_out_dir/lib.unstripped/libarkweb_engine.so.stamped",
+  ]
+  
+  args = [
+      "--llvm-objcopy",
+      rebase_path("llvm-objcopy", root_build_dir),
+      "--input",
+      rebase_path(inputs[0], root_build_dir),
+      "--encaps-json",
+      rebase_path(inputs[1], root_build_dir),
+      "--output",
+      rebase_path(inputs[0], root_build_dir),
+      "--stamp",
+      rebase_path(outputs[0], root_build_dir),
+  ]
+
+  deps = [ "//cef:libarkweb_engine" ]
+}
+
+action("add_kernel_permission_hap") {
+  script = "add_kernel_permission.py"
+  
+  inputs = [
+    "$root_out_dir/libarkweb_engine.so",
+    "encaps.json",
+  ]
+  
+  outputs = [
+    "$root_out_dir/libarkweb_engine.so.stamped",
+  ]
+  
+  args = [
+      "--llvm-objcopy",
+      rebase_path("llvm-objcopy", root_build_dir),
+      "--input",
+      rebase_path(inputs[0], root_build_dir),
+      "--encaps-json",
+      rebase_path(inputs[1], root_build_dir),
+      "--output",
+      rebase_path(inputs[0], root_build_dir),
+      "--stamp",
+      rebase_path(outputs[0], root_build_dir),
+  ]
+
+  deps = [ "//cef:libarkweb_engine" ]
+}
+
+ohos_hap("ohos_nweb_hap") {
+  output = "$root_out_dir/ohos_nweb.hap"
+
+  entry_libs = [
+    "libadapter_ndk_stub.so",
+    "libarkweb_render.so",
+    "libarkweb_engine.so",
+    "libarkweb_crashpad_handler.so",
+    "libffmpeg.so",
+    "libwebjs_dfx.so",
+  ]
+
+  if (is_arkweb_ext && build_watch) {
+    entry_libs += ["libohcamera.so"]
+  }
+
+  entry_raw_resources = [
+    "chrome_100_percent.pak",
+    "icudtl.dat",
+    "resources.pak",
+    "snapshot_blob.bin",
+    "locales/ar.pak",
+    "locales/de.pak",
+    "locales/en-GB.pak",
+    "locales/en-US.pak",
+    "locales/es.pak",
+    "locales/es-419.pak",
+    "locales/fr.pak",
+    "locales/id.pak",
+    "locales/it.pak",
+    "locales/ja.pak",
+    "locales/ko.pak",
+    "locales/ms.pak",
+    "locales/my.pak",
+    "locales/pl.pak",
+    "locales/pt-BR.pak",
+    "locales/pt-PT.pak",
+    "locales/ru.pak",
+    "locales/th.pak",
+    "locales/tr.pak",
+    "locales/vi.pak",
+    "locales/zh-CN.pak",
+    "locales/zh-TW.pak",
+    "locales/zh-HK.pak",
+  ]
+
+  if (is_arkweb_ext && is_hwasan){
+    entry_raw_resources -= [
+      "snapshot_blob.bin",
+    ]
+  }
+
+  if (build_watch) {
+    entry_raw_resources += [
+      "locales/be.pak",
+      "locales/bg.pak",
+      "locales/bn.pak",
+      "locales/cs.pak",
+      "locales/da.pak",
+      "locales/el.pak",
+      "locales/et.pak",
+      "locales/fa.pak",
+      "locales/fi.pak",
+      "locales/fil.pak",
+      "locales/he.pak",
+      "locales/hi.pak",
+      "locales/hr.pak",
+      "locales/hu.pak",
+      "locales/ka.pak",
+      "locales/kk.pak",
+      "locales/km.pak",
+      "locales/lt.pak",
+      "locales/lv.pak",
+      "locales/mk.pak",
+      "locales/nb.pak",
+      "locales/nl.pak",
+      "locales/ro.pak",
+      "locales/sk.pak",
+      "locales/sl.pak",
+      "locales/sr.pak",
+      "locales/sv.pak",
+      "locales/uk.pak",
+      "locales/uz.pak",
+    ]
+  } else {
+    entry_raw_resources += [
+      "locales/bo-CN.pak",
+      "locales/lo.pak",
+      "locales/ug.pak",
+    ]
+  }
+
+  if (enable_hidpi) {
+    entry_raw_resources += [ "chrome_200_percent.pak" ]
+  }
+
+  deps = [
+    "//arkweb/ohos_adapter_ndk:adapter_ndk_stub",
+    ":arkwebcore_hap_app_json5",
+    ":add_kernel_permission_symbol",
+    ":add_kernel_permission_hap",
+    "//cef:libarkweb_engine",
+    "//components/crash/core/app:arkweb_crashpad_handler",
+    "//ohos_nweb:libarkweb_render",
+    "//arkweb/chromium_ext/dfx:libwebjs_dfx",
+  ]
+
+  if (is_arkweb_ext) {
+    deps += [
+      "//arkweb/ohos_adapter_ndk:ohcamera_stub",
+    ]
+  }
+
+  if (is_arkweb_ext && is_component_build) {
+    is_component = true
+    deps -= [
+      "//components/crash/core/app:arkweb_crashpad_handler"
+    ]
+  }
+}
+
+action("arkwebcore_hap_app_json5") {
+  script = "//build/ohos/reverse_copy.py"
+
+  sources = [ "$target_gen_dir/app.json5" ]
+  outputs = [ "$target_gen_dir/dummy.txt" ]
+  public_deps = [ ":generate_app_json5" ]
+
+  target_ = rebase_path(root_build_dir +
+    "/../../third_party/ohos_nweb_hap/AppScope/app.json5")
+  args = [
+    "--source=" + rebase_path("$target_gen_dir/app.json5", root_build_dir),
+    "--target=" + target_,
+    "--dummy=" + rebase_path("$target_gen_dir/dummy.txt", root_build_dir)
+  ]
+}
+
+generate_file_with_jinja2("generate_app_json5") {
+  input = "AppScope/app.json5.template"
+  output = "$target_gen_dir/app.json5"
+  variables = [ "ohos_package_name=$ohos_package_name" ]
+}

@@ -108,6 +108,7 @@ Es posible que algunas funciones no estén disponibles y que no se guarden los c
 <translation id="2210502920229141283">Aumenta tu seguridad estés donde estés con Navegación segura mejorada en Chromium para iOS</translation>
 <translation id="2210682093923538346">Sitio peligroso. Chromium ha eliminado las notificaciones.</translation>
 <translation id="2236949375853147973">Mi Actividad</translation>
+<translation id="2238104961394611930">Activada • No se puede verificar el origen de la extensión</translation>
 <translation id="2238130810669087193">Para acceder a tus direcciones y más en todos tus dispositivos, inicia sesión en Chromium. Esta dirección se guardará en tu cuenta de Google cuando inicies sesión.</translation>
 <translation id="2241627712206172106">Si compartes un ordenador, tus amigos y familiares pueden navegar de forma independiente y configurar Chromium a su gusto.</translation>
 <translation id="2283803047247799269">Buscar en esta pestaña con la búsqueda por imágenes</translation>
@@ -517,6 +518,7 @@ Es posible que algunas funciones no estén disponibles. Especifica un directorio
 <translation id="6862030660799253820">Busca esta imagen con la búsqueda por imágenes</translation>
 <translation id="6873893289264747459">Chromium ha detectado que "<ph name="EXTENSION_NAME" />" contiene malware</translation>
 <translation id="6877155553248388166">esquina inferior derecha del área de búsqueda: un <ph name="RIGHT" /> % a la derecha y un <ph name="BOTTOM" /> % abajo</translation>
+<translation id="6885534934768077023">Nota: El navegador no puede evitar que las extensiones registren tu historial de navegación. Para deshabilitar esta extensión en modo Privado, desactiva esta opción.</translation>
 <translation id="6896758677409633944">Copiar</translation>
 <translation id="6901631050894301805">Establece Chromium como navegador predeterminado y fíjalo en la barra de tareas</translation>
 <translation id="6909503629704372277">&amp;Gestionar perfiles de Chromium</translation>
@@ -575,6 +577,7 @@ Chromium no puede recuperar tu configuración.</translation>
 <translation id="753534427205733210">{0,plural, =1{Chromium se reiniciará dentro de 1 minuto}other{Chromium se reiniciará dentro de # minutos}}</translation>
 <translation id="7565444033145385702">Para proteger tus datos, permite que Chromium quite los permisos de los sitios que no hayas visitado recientemente.</translation>
 <translation id="7583399374488819119">Instalador de <ph name="COMPANY_NAME" /></translation>
+<translation id="7597668698051545254">Desactivada • No se puede verificar el origen de la extensión</translation>
 <translation id="761356813943268536">Chromium está utilizando la cámara y el micrófono.</translation>
 <translation id="7617377681829253106">Chromium mejor que nunca</translation>
 <translation id="7622753900276619808">Ahora tienes más funciones disponibles en Chromium</translation>

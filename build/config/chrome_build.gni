@@ -47,6 +47,10 @@ declare_args() {
     # code for standalone WebView targets.
     enable_new_standalone_webview_settings = true
   }
+
+  if (is_ohos) {
+    ohos_build_target = "chromium"
+  }
 }
 
 # Use this for is_chrome_branded things that live in src-internal.

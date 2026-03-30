@@ -44,6 +44,45 @@ class TestMediaPlayer final : public media::mojom::MediaPlayer {
       const media::PictureInPictureEventsInfo::AutoPipInfo&
           auto_picture_in_picture_info) override {}
 
+  #if BUILDFLAG(ARKWEB_TEST)
+  void SetHtmlPlayEnabled(bool enabled) override {}
+
+  void RequestEnterFullscreen() override {}
+
+  void RequestExitFullscreen() override {}
+
+  void SetPlaybackRate(double playback_rate) override {}
+
+  void RequestDownloadUrl() override {}
+
+  void HidePlaybackSpeedList() override {}
+
+  void SetVideoSurface(int32_t widget_id) override {}
+
+  void PipEnable(bool enable) override {}
+
+  void PipDown(bool enable) override {}
+
+  void RequestExitPictureInPicture() override {}
+
+  void NotifyPipResize() override {}
+
+  void PipRequestPlay() override {}
+
+  void SetVolume(double volume) override {}
+
+  void GetVolume(GetVolumeCallback callback) override {}
+
+  void PullUpCastBackGround(const std::string& device_name) override {}
+  void UpdateUiPlayState(bool is_playing) override {}
+  void UpdateUiPlayPosition(int64_t position) override {}
+  void MediaCastStopped() override {}
+  void MediaCastStopByNavigation() override {}
+  void GetMediaCastCurrentTime(GetMediaCastCurrentTimeCallback callback) override {}
+  void NotifyRemoteExitFullScreen() override {}
+  void NotifyCastControlShow(bool is_show) override {}
+  #endif
+  
  private:
   mojo::AssociatedReceiver<media::mojom::MediaPlayer> receiver_{this};
 };
@@ -69,6 +108,7 @@ class MediaWebContentsObserverTest : public RenderViewHostImplTestHarness {
       mojo::AssociatedRemote<media::mojom::MediaPlayerHost>& player_host,
       int32_t player_id) -> PlayerSetup {
     PlayerSetup setup{.player = std::make_unique<TestMediaPlayer>(),
+                      .observer = mojo::AssociatedRemote<media::mojom::MediaPlayerObserver>(),
                       .player_id = player_id};
     player_host->OnMediaPlayerAdded(
         setup.player->receiver().BindNewEndpointAndPassRemote(),

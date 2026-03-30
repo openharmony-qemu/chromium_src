@@ -4,6 +4,7 @@
 
 #include "third_party/blink/renderer/core/input/gesture_manager.h"
 
+#include "arkweb/build/features/features.h"
 #include "third_party/blink/public/common/input/web_input_event.h"
 #include "third_party/blink/public/common/input/web_pointer_event.h"
 #include "third_party/blink/public/mojom/frame/user_activation_notification_type.mojom-blink.h"
@@ -68,6 +69,9 @@ GestureManager::GestureManager(LocalFrame& frame,
       pointer_event_manager_(pointer_event_manager),
       selection_controller_(selection_controller) {
   Clear();
+#if BUILDFLAG(IS_ARKWEB)
+  utils_ = MakeGarbageCollected<GestureManagerUtils>(this);
+#endif
 }
 
 void GestureManager::Clear() {
@@ -89,6 +93,9 @@ void GestureManager::Trace(Visitor* visitor) const {
   visitor->Trace(mouse_event_manager_);
   visitor->Trace(pointer_event_manager_);
   visitor->Trace(selection_controller_);
+#if BUILDFLAG(IS_ARKWEB)
+  visitor->Trace(utils_);
+#endif
 }
 
 HitTestRequest::HitTestRequestType GestureManager::GetHitTypeForGestureType(
@@ -109,6 +116,12 @@ HitTestRequest::HitTestRequestType GestureManager::GetHitTypeForGestureType(
     case WebInputEvent::Type::kGestureTapDown:
     case WebInputEvent::Type::kGestureShortPress:
     case WebInputEvent::Type::kGestureLongPress:
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+    case WebInputEvent::Type::kGestureDragLongPress:
+#endif
+#if BUILDFLAG(ARKWEB_AI)
+    case WebInputEvent::Type::kGestureCreateOverlay:
+#endif
     case WebInputEvent::Type::kGestureLongTap:
     case WebInputEvent::Type::kGestureTwoFingerTap:
       // FIXME: Shouldn't LongTap and TwoFingerTap clear the Active state?
@@ -165,11 +178,23 @@ WebInputEventResult GestureManager::HandleGestureEventInFrame(
       return HandleGestureShortPress(targeted_event);
     case WebInputEvent::Type::kGestureLongPress:
       return HandleGestureLongPress(targeted_event);
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+    case WebInputEvent::Type::kGestureDragLongPress:
+      return utils_->HandleGestureDragLongPress(targeted_event);
+#endif
+#if BUILDFLAG(ARKWEB_AI)
+    case WebInputEvent::Type::kGestureCreateOverlay:
+      return utils_->HandleGestureCreateOverlay(targeted_event);
+#endif
     case WebInputEvent::Type::kGestureLongTap:
       return HandleGestureLongTap(targeted_event);
     case WebInputEvent::Type::kGestureTwoFingerTap:
       return HandleGestureTwoFingerTap(targeted_event);
     case WebInputEvent::Type::kGestureTapCancel:
+#if BUILDFLAG(ARKWEB_AI)
+      mouse_event_manager_->AsMouseEventManagerExt()->SetOverlayCreatingStatus(false);
+#endif
+      [[fallthrough]];
     case WebInputEvent::Type::kGestureTapUnconfirmed:
       break;
     default:
@@ -189,6 +214,13 @@ WebInputEventResult GestureManager::HandleGestureTapDown(
   suppress_mouse_events_from_gestures_ =
       pointer_event_manager_->PrimaryPointerdownCanceled(
           gesture_event.unique_touch_event_id);
+
+#if BUILDFLAG(ARKWEB_AI)
+  if (selection_controller_) {
+    Node* tap_down_node = targeted_event.GetHitTestResult().InnerPossiblyPseudoNode();
+    selection_controller_->SetTapDownNode(tap_down_node);
+  }
+#endif
   lost_focus_during_drag_ = false;
 
   if (!RuntimeEnabledFeatures::TouchTextEditingRedesignEnabled() ||
@@ -228,6 +260,12 @@ WebInputEventResult GestureManager::HandleGestureTap(
   HitTestResult current_hit_test = targeted_event.GetHitTestResult();
   const HitTestLocation& current_hit_test_location =
       targeted_event.GetHitTestLocation();
+#if BUILDFLAG(ARKWEB_AI)
+  if (mouse_event_manager_->AsMouseEventManagerExt()->GetHitOverlayStatus(
+          current_hit_test) == HitOverlayStatus::kCreating) {
+    return WebInputEventResult::kNotHandled;
+  }
+#endif
 
   // We use the adjusted position so the application isn't surprised to see a
   // event with co-ordinates outside the target's bounds.
@@ -303,6 +341,14 @@ WebInputEventResult GestureManager::HandleGestureTap(
       WebInputEventResult::kHandledSuppressed;
   suppress_selection_on_repeated_tap_down_ = true;
   if (!suppress_mouse_events_from_gestures_) {
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+    if (selection_controller_->HandleGestureTapIfSelectionExist(
+            MouseEventWithHitTestResults(fake_mouse_down,
+                                         current_hit_test_location,
+                                         current_hit_test))) {
+      return WebInputEventResult::kHandledSystem;
+    }
+#endif  // ARKWEB_CLIPBOARD
     mouse_event_manager_->SetClickCount(gesture_event.TapCount());
 
     mouse_down_event_result =
@@ -420,6 +466,9 @@ WebInputEventResult GestureManager::HandleGestureTap(
 
 WebInputEventResult GestureManager::HandleGestureShortPress(
     const GestureEventWithHitTestResults& targeted_event) {
+#if BUILDFLAG(ARKWEB_AI)
+  utils_->CloseAIOverlay(targeted_event);
+#endif
   if (frame_->GetSettings() &&
       frame_->GetSettings()->GetTouchDragDropEnabled() &&
       RuntimeEnabledFeatures::TouchDragOnShortPressEnabled() &&
@@ -474,12 +523,19 @@ WebInputEventResult GestureManager::HandleGestureLongPress(
     }
   }
 
+#if BUILDFLAG(ARKWEB_AI)
+  utils_->UpdateContextMenuForAI(hit_test_result, location, gesture_event);
+#endif
   Node* inner_node = hit_test_result.InnerNode();
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+  utils_->UpdateContextMenuForFreeCopy(hit_test_result, location);
+#else
   if (!(drag_in_progress_ && TouchDragAndContextMenuEnabled(frame_)) &&
       inner_node && inner_node->GetLayoutObject() &&
       selection_controller_->HandleGestureLongPress(hit_test_result)) {
     mouse_event_manager_->FocusDocumentView();
   }
+#endif  // BUILDFLAG(ARKWEB_EXT_FREE_COPY)
 
   if (frame_->GetSettings() &&
       frame_->GetSettings()->GetShowContextMenuOnMouseUp()) {

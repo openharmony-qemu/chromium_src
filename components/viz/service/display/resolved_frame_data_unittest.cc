@@ -862,5 +862,27 @@ TEST_F(ResolvedFrameDataTest, OffsetTagMaskFilterTranslated) {
   }
 }
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+TEST_F(ResolvedFrameDataTest, StretchContentNoneDeviceScaleFactor) {
+  Surface* surface = SubmitCompositorFrame(MakeSimpleFrame());
+  ResolvedFrameData resolved_frame(&resource_provider_, surface, 0u,
+                                   AggregatedRenderPassId());
+
+  EXPECT_FALSE(resolved_frame.WasUsedInAggregation());
+
+  // First aggregation.
+  resolved_frame.UpdateForAggregation(render_pass_id_generator_);
+  EXPECT_TRUE(resolved_frame.WasUsedInAggregation());
+
+  // This is the first frame this aggregation.
+  EXPECT_EQ(resolved_frame.GetFrameDamageType(), FrameDamageType::kFull);
+  resolved_frame.stretch_content_none_device_scale_factor();
+
+  // Reset after aggregation.
+  resolved_frame.ResetAfterAggregation();
+  EXPECT_FALSE(resolved_frame.WasUsedInAggregation());
+}
+#endif
+
 }  // namespace
 }  // namespace viz

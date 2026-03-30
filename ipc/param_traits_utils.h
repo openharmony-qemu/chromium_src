@@ -170,10 +170,11 @@ struct ParamTraits<unsigned int> {
 //   2) We also need to keep it for Linux for two reasons: int64_t is typedef'd
 //      to long, and gfx::PluginWindow is long and is used in one GPU IPC.
 //   3) Android 64 bit and Fuchsia also have int64_t typedef'd to long.
+//   4) OHOS also has int64_t typedef'd to long.
 // Since we want to support Android 32<>64 bit IPC, as long as we don't have
 // these traits for 32 bit ARM then that'll catch any errors.
 #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
-    BUILDFLAG(IS_FUCHSIA) ||                                              \
+    BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_OHOS) ||                       \
     (BUILDFLAG(IS_ANDROID) && defined(ARCH_CPU_64_BITS))
 template <>
 struct ParamTraits<long> {

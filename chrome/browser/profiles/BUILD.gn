@@ -9,6 +9,7 @@ import("//components/enterprise/buildflags/buildflags.gni")
 import("//components/services/on_device_translation/buildflags/features.gni")
 import("//components/signin/features.gni")
 import("//extensions/buildflags/buildflags.gni")
+import("//arkweb/build/features/features.gni")
 
 # This target should be the default place for adding public interface things
 # (ie, non-factory, non-impl). There will likely need to be a :factory or :impl
@@ -328,6 +329,7 @@ source_set("profiles_extra_parts_impl") {
     "//chrome/browser/ui/prefs",
     "//chrome/browser/ui/safety_hub",
     "//chrome/browser/ui/startup",
+    "//chrome/browser/ui/startup:impl",
     "//chrome/browser/ui/toolbar",
     "//chrome/browser/ui/toolbar/pinned_toolbar",
     "//chrome/browser/updates/announcement_notification",
@@ -523,6 +525,9 @@ source_set("unit_tests") {
     "profile_downloader_unittest.cc",
     "profile_metrics_unittest.cc",
   ]
+  if (defined(arkweb_arkweb_extensions) && arkweb_arkweb_extensions) {
+    sources += [ "//arkweb/chromium_ext/chrome/browser/profiles/profile_for_include_unittest.cc" ]
+  }
   deps = [
     ":profile_downloader",
     ":profile_util",
@@ -537,6 +542,7 @@ source_set("unit_tests") {
     "//content/test:test_support",
     "//services/network:test_support",
     "//testing/gtest",
+    "//testing/gmock",
   ]
 
   if (is_chromeos) {

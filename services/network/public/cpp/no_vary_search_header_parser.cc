@@ -6,6 +6,7 @@
 
 #include <optional>
 
+#include "arkweb/build/features/features.h"
 #include "base/strings/stringprintf.h"
 #include "base/types/expected_macros.h"
 #include "net/http/http_no_vary_search_data.h"
@@ -17,7 +18,11 @@ const char kNoVarySearchSpecProposalUrl[] =
     "https://wicg.github.io/nav-speculation/no-vary-search.html";
 
 const char kRFC8941DictionaryDefinitionUrl[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://x.x.x";
+#else
     "https://www.rfc-editor.org/rfc/rfc8941.html#name-dictionaries";
+#endif
 }  // namespace
 
 mojom::NoVarySearchWithParseErrorPtr ParseNoVarySearch(

@@ -54,6 +54,10 @@ ChromeExtensionCookies::ChromeExtensionCookies(Profile* profile)
         content::GetUIThreadTaskRunner({}));
   }
   creation_config->cookieable_schemes.push_back(extensions::kExtensionScheme);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  creation_config->cookieable_schemes.push_back(
+      extensions::kArkwebExtensionScheme);
+#endif
 
   network::mojom::CookieManagerParamsPtr initial_settings =
       ProfileNetworkContextService::CreateCookieManagerParams(

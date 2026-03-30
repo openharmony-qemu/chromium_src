@@ -2,13 +2,21 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "media/renderers/video_renderer_impl.h"
-
 #include <stdint.h>
 
 #include <memory>
 #include <string_view>
 #include <utility>
+
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_TEST)
+#include "ohos_sdk/openharmony/native/llvm/bin/../include/libcxx-ohos/include/c++/v1/__ranges/lazy_split_view.h"
+#define private public
+#include "media/renderers/video_renderer_impl.h"
+#undef private
+#else
+#include "media/renderers/video_renderer_impl.h"
+#endif // ARKWEB_TEST
 
 #include "base/containers/circular_deque.h"
 #include "base/functional/bind.h"
@@ -154,6 +162,10 @@ class VideoRendererImplTest : public testing::Test {
     EXPECT_CALL(mock_cb_, OnStatisticsUpdate(_)).Times(AnyNumber());
     renderer_->Initialize(
         demuxer_stream, nullptr, &mock_cb_,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+        RequestSurfaceCB(),
+        VideoDecoderChangedCB(),
+#endif // ARKWEB_VIDEO_ASSISTANT
         base::BindRepeating(&WallClockTimeSource::GetWallClockTimes,
                             base::Unretained(&time_source_)),
         std::move(status_cb));
@@ -1931,5 +1943,9 @@ TEST_F(VideoRendererLatencyHintTest,
 
   Destroy();
 }
+
+#if BUILDFLAG(ARKWEB_TEST)
+#include "arkweb/chromium_ext/media/renderers/video_renderer_impl_for_include_unittest.cc"
+#endif // ARKWEB_TEST
 
 }  // namespace media

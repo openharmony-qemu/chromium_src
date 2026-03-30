@@ -76,7 +76,7 @@ if (is_chromeos) {
   }
 }
 
-if (is_linux || is_chromeos) {
+if ((is_linux || is_chromeos || is_ohos) && !is_component_build) { # FIXME is_component_build
   source_set("screen_ai_sandbox_hook") {
     sources = [
       "sandbox/screen_ai_sandbox_hook_linux.cc",

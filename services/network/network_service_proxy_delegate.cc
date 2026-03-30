@@ -24,8 +24,14 @@
 #include "services/network/url_loader.h"
 #include "url/url_constants.h"
 
+#include "arkweb/chromium_ext/services/network/network_service_proxy_delegate_for_include.cc"
+
 namespace network {
 namespace {
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+constexpr int kMaxUrlSafeBrowingInfoEntries = 10000;
+#endif
 
 bool ApplyProxyConfigToProxyInfo(const net::ProxyConfig::ProxyRules& rules,
                                  const net::ProxyRetryInfoMap& proxy_retry_info,
@@ -36,7 +42,19 @@ bool ApplyProxyConfigToProxyInfo(const net::ProxyConfig::ProxyRules& rules,
     return false;
   }
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  if (proxy_info->use_fallback_proxy_direct()) {
+    net::ProxyConfig::ProxyRules tmp_rules = rules;
+    tmp_rules.reverse_bypass = false;
+    tmp_rules.bypass_rules.Clear();
+    tmp_rules.Apply(url, proxy_info);
+  } else {
+#endif  // BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
   rules.Apply(url, proxy_info);
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  }
+#endif  // BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+
   proxy_info->DeprioritizeBadProxyChains(proxy_retry_info);
   return !proxy_info->is_empty() && !proxy_info->is_direct();
 }
@@ -111,7 +129,12 @@ NetworkServiceProxyDelegate::NetworkServiceProxyDelegate(
         config_client_receiver,
     mojo::PendingRemote<mojom::CustomProxyConnectionObserver> observer_remote)
     : proxy_config_(std::move(initial_config)),
-      receiver_(this, std::move(config_client_receiver)) {
+      receiver_(this, std::move(config_client_receiver))
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+      ,
+      url_sb_info_map_(kMaxUrlSafeBrowingInfoEntries)
+#endif
+{
   // Make sure there is always a valid proxy config so we don't need to null
   // check it.
   if (!proxy_config_) {
@@ -140,11 +163,35 @@ void NetworkServiceProxyDelegate::OnResolveProxy(
     return;
   }
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          ::switches::kEnableNwebEx)) {
+    if (fallback_proxy_status_ == net::FallbackProxyStatus::NORMAL &&
+        IsFallbackProxyFailedHost(std::string(url.host()))) {
+      return;
+    }
+  }
+#endif  // BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+
   net::ProxyInfo proxy_info;
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          ::switches::kEnableNwebEx) &&
+      result->use_fallback_proxy_direct()) {
+    proxy_info.set_use_fallback_proxy_direct(true);
+  }
+#endif
   if (ApplyProxyConfigToProxyInfo(proxy_config_->rules, proxy_retry_info, url,
                                   &proxy_info)) {
     DCHECK(!proxy_info.is_empty() && !proxy_info.is_direct());
     result->OverrideProxyList(proxy_info.proxy_list());
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+    if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          ::switches::kEnableNwebEx) &&
+        fallback_proxy_status_ == net::FallbackProxyStatus::NORMAL) {
+      result->set_used_fallback_proxy(true);
+    }
+#endif
   }
 }
 
@@ -204,6 +251,15 @@ void NetworkServiceProxyDelegate::OnCustomProxyConfigUpdated(
     OnCustomProxyConfigUpdatedCallback callback) {
   DCHECK(IsValidCustomProxyConfig(*proxy_config));
   proxy_config_ = std::move(proxy_config);
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          ::switches::kEnableNwebEx)) {
+    main_frame_using_proxy_success_list_.clear();
+    LOG(DEBUG) << "Network service proxy delegate: OnCustomProxyConfigUpdated, "
+                  "rules.empty "
+              << proxy_config_->rules.empty();
+  }
+#endif
   std::move(callback).Run();
 }
 

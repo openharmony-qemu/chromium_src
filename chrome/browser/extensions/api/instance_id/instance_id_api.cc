@@ -57,11 +57,15 @@ InstanceIDApiFunction::InstanceIDApiFunction() = default;
 InstanceIDApiFunction::~InstanceIDApiFunction() = default;
 
 ExtensionFunction::ResponseAction InstanceIDApiFunction::Run() {
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   if (Profile::FromBrowserContext(browser_context())->IsOffTheRecord()) {
     return RespondNow(Error(
         "chrome.instanceID not supported in incognito mode"));
   }
   return DoWork();
+#else
+  return RespondNow(NoArguments());
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 }
 
 instance_id::InstanceID* InstanceIDApiFunction::GetInstanceID() const {

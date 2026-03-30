@@ -97,6 +97,10 @@
 #include "services/service_manager/public/cpp/test/test_connector_factory.h"
 #include "ui/shell_dialogs/selected_file_info.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "ohos/adapter/drag_drop/drag_drop_ohos_adapter.h"
+#endif
+
 #if BUILDFLAG(IS_ANDROID)
 #include "base/test/android/content_uri_test_utils.h"
 #include "chrome/browser/ui/android/extensions/extension_util_bridge.h"
@@ -398,6 +402,14 @@ void ItemStatePrefsChangedObserver::OnWillDispatchEvent(const Event& event) {
     }
   }
 }
+
+#if BUILDFLAG(IS_OHOS)
+void SetDraggedExtensionFileName(const std::string& file_name) {
+  ohos::adapter::DragDropOhosAdapter::GetInstance().SetDraggedExtensionFileName(
+      file_name);
+}
+#endif
+
 
 // On Android, the returned FilePath points to a temporary file managed
 // by `temp_dir`. The caller MUST ensure `temp_dir` is not destroyed before
@@ -1873,6 +1885,9 @@ TEST_F(DeveloperPrivateApiUnitTest, InstallDroppedFileCrx) {
   std::unique_ptr<content::WebContents> web_contents(
       content::WebContentsTester::CreateTestWebContents(profile(), nullptr));
   SetDraggedFile(web_contents.get(), crx_path);
+#if BUILDFLAG(IS_OHOS)
+  SetDraggedExtensionFileName(crx_path.value());
+#endif
 
   auto function =
       base::MakeRefCounted<api::DeveloperPrivateInstallDroppedFileFunction>();
@@ -1897,6 +1912,9 @@ TEST_F(DeveloperPrivateApiUnitTest, InstallDroppedFileUserScript) {
   std::unique_ptr<content::WebContents> web_contents(
       content::WebContentsTester::CreateTestWebContents(profile(), nullptr));
   SetDraggedFile(web_contents.get(), script_path);
+#if BUILDFLAG(IS_OHOS)
+  SetDraggedExtensionFileName(script_path.value());
+#endif
 
   auto function =
       base::MakeRefCounted<api::DeveloperPrivateInstallDroppedFileFunction>();
@@ -2358,6 +2376,9 @@ TEST_F(DeveloperPrivateApiZipFileUnitTest, InstallDroppedFileZip) {
   std::unique_ptr<content::WebContents> web_contents(
       content::WebContentsTester::CreateTestWebContents(profile(), nullptr));
   SetDraggedFile(web_contents.get(), zip_path);
+#if BUILDFLAG(IS_OHOS)
+  SetDraggedExtensionFileName(zip_path.value());
+#endif
 
   auto function =
       base::MakeRefCounted<api::DeveloperPrivateInstallDroppedFileFunction>();
@@ -3986,5 +4007,9 @@ TEST_F(DeveloperPrivateApiTransportModeUnitTest,
   EXPECT_FALSE(CanUploadToAccount(*extension));
 }
 #endif  // !BUILDFLAG(IS_CHROMEOS)
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/chrome/browser/extensions/api/developer_private/developer_private_api_unittest_for_include.cc"
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 
 }  // namespace extensions

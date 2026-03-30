@@ -101,7 +101,7 @@ BrowserAccessibilityFindInPageInfo::BrowserAccessibilityFindInPageInfo()
       end_offset(-1),
       active_request_id(-1) {}
 
-#if !BUILDFLAG(HAS_PLATFORM_ACCESSIBILITY_SUPPORT)
+#if !BUILDFLAG(HAS_PLATFORM_ACCESSIBILITY_SUPPORT) && !BUILDFLAG(ARKWEB_ACCESSIBILITY)
 // static
 BrowserAccessibilityManager* BrowserAccessibilityManager::Create(
     const AXTreeUpdate& initial_tree,
@@ -563,6 +563,12 @@ bool BrowserAccessibilityManager::OnAccessibilityEvents(
                    GetBrowserAccessibilityRoot(), -1);
   }
 
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+  if (details.events.empty() && GetBrowserAccessibilityRoot()) {
+    FireGeneratedEvent(AXEventGenerator::Event::NONE,
+                       GetBrowserAccessibilityRoot()->node());
+  }
+#endif
   // Fire any events related to changes to the tree that come from ancestors of
   // the currently-focused node. We do this so that screen readers are made
   // aware of changes in the tree which might be relevant to subsequent events
@@ -2069,10 +2075,14 @@ bool BrowserAccessibilityManager::ShouldFireEventForNode(
 
 std::unique_ptr<BrowserAccessibility>
 BrowserAccessibilityManager::CreateBrowserAccessibility(AXNode* node) {
+#if defined(COMPONENT_BUILD) // FIXME
+  return nullptr;
+#else
 #if !BUILDFLAG(IS_ANDROID)
   return BrowserAccessibility::Create(this, node);
 #else
   NOTREACHED();
+#endif
 #endif
 }
 

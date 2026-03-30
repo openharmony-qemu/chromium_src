@@ -18,6 +18,9 @@
 #include "components/performance_manager/graph/worker_node_impl.h"
 #include "components/performance_manager/public/v8_memory/web_memory.h"
 #include "content/public/browser/browser_thread.h"
+#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
+#include "content/browser/web_contents/web_contents_impl.h"
+#endif
 #include "content/public/browser/render_frame_host.h"
 #include "mojo/public/cpp/bindings/message.h"
 #include "third_party/blink/public/common/tracing_support.h"
@@ -192,6 +195,22 @@ void FrameNodeImpl::OnWebMemoryMeasurementRequested(
       this, mode, v8_memory::WebMeasureMemorySecurityChecker::Create(),
       std::move(callback), mojo::GetBadMessageCallback());
 }
+#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
+void FrameNodeImpl::OnFormEditingStateChanged(uint64_t form_id, bool did_submit) {
+  if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
+    content::GetUIThreadTaskRunner({})->PostTask(
+        FROM_HERE, base::BindOnce(&FrameNodeImpl::OnFormEditingStateChanged,
+                                  GetWeakPtr(), form_id, did_submit));
+  } else {
+    LOG(INFO) << "FrameNodeImpl::OnFormEditingStateChanged id: " << form_id << "did submit: " << did_submit;
+    content::GlobalRenderFrameHostId global_frame_routing_id = GetRenderFrameHostProxy().global_frame_routing_id();
+    content::WebContents* web_contents = content::WebContentsImpl::FromRenderFrameHostID(global_frame_routing_id);
+    if (web_contents) {
+      web_contents->OnFormEditingStateChanged(form_id, did_submit);
+    }
+  }
+}
+#endif
 
 void FrameNodeImpl::OnFreezingOriginTrialOptOut() {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);

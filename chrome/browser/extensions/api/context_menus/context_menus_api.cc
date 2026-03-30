@@ -17,6 +17,7 @@
 #include "extensions/common/manifest_handlers/background_info.h"
 #include "extensions/common/url_pattern_set.h"
 
+
 using extensions::ErrorUtils;
 
 namespace {
@@ -112,6 +113,16 @@ ExtensionFunction::ResponseAction ContextMenusRemoveFunction::Run() {
 
   if (!manager->RemoveContextMenuItem(id))
     return RespondNow(Error("Cannot remove menu item."));
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  content::BrowserContext* ctx = browser_context();
+  if (params->menu_item_id.as_string) {
+    CefWebExtensionMenuManager::OnContextMenusRemove(
+        ctx, extension_id(), *params->menu_item_id.as_string);
+  } else {
+    CefWebExtensionMenuManager::OnContextMenusRemove(
+        ctx, extension_id(), *params->menu_item_id.as_integer);
+  }
+#endif // ARKWEB_ARKWEB_EXTENSIONS
   manager->WriteToStorage(extension(), id.extension_key);
   return RespondNow(NoArguments());
 }
@@ -119,6 +130,9 @@ ExtensionFunction::ResponseAction ContextMenusRemoveFunction::Run() {
 ExtensionFunction::ResponseAction ContextMenusRemoveAllFunction::Run() {
   MenuManager* manager = MenuManager::Get(browser_context());
   manager->RemoveAllContextItems(MenuItem::ExtensionKey(extension()->id()));
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  CefWebExtensionMenuManager::OnContextMenusRemoveAll(extension_id());
+#endif // ARKWEB_ARKWEB_EXTENSIONS
   manager->WriteToStorage(extension(),
                           MenuItem::ExtensionKey(extension()->id()));
   return RespondNow(NoArguments());

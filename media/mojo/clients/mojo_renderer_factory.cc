@@ -105,4 +105,8 @@ std::unique_ptr<MojoRenderer> MojoRendererFactory::CreateFlingingRenderer(
 }
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA)
+#include "arkweb/chromium_ext/media/mojo/clients/mojo_renderer_factory_for_include.cc"
+#endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA)
+
 }  // namespace media

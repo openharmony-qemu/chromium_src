@@ -32,6 +32,10 @@
     [MeasureAs=NavigatorProductSub] readonly attribute DOMString productSub;
     // https://www.w3.org/Bugs/Public/show_bug.cgi?id=27786
     [MeasureAs=NavigatorVendor] readonly attribute DOMString vendor;
+
+    // #if BUILDFLAG(ARKWEB_NETWORK_BASE)
+    readonly attribute DOMString appPackageName;
+    // #endif // BUILDFLAG(ARKWEB_NETWORK_BASE)    
 };
 
 Navigator includes NavigatorConcurrentHardware;

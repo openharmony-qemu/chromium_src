@@ -86,8 +86,11 @@ void ChromeExtensionsRendererClient::RecordMetricsForURLRequest(
     const blink::WebURL& target_url) {
   // TODO(crbug.com/41240557): Remove metrics after bug is fixed.
   GURL request_url(target_url);
-  if (target_url.ProtocolIs(extensions::kExtensionScheme) &&
-      request_url.host() == extension_misc::kDocsOfflineExtensionId) {
+  if ((target_url.ProtocolIs(extensions::kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      || target_url.ProtocolIs(extensions::kArkwebExtensionScheme)
+#endif
+  ) && request_url.host() == extension_misc::kDocsOfflineExtensionId) {
     if (!ukm_recorder_) {
       mojo::Remote<ukm::mojom::UkmRecorderFactory> factory;
       content::RenderThread::Get()->BindHostReceiver(

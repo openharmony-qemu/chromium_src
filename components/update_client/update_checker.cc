@@ -108,6 +108,12 @@ void UpdateCheckerImpl::CheckForUpdates(
 
   update_check_callback_ = std::move(update_check_callback);
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  UpdateCheckFailed(ErrorCategory::kUpdateCheck,
+                    static_cast<int>(ProtocolError::MISSING_URLS), 0);
+  return;
+#endif
+
   auto check_for_updates_invoker = base::BindOnce(
       &UpdateCheckerImpl::CheckForUpdatesHelper, weak_factory_.GetWeakPtr(),
       context, config_->UpdateUrl(), additional_attributes);

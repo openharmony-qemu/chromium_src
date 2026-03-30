@@ -49,8 +49,8 @@ enum class UrlScheme {
   kAndroidWebviewVideoPoster = 32,
   kChromeDistiller = 33,
   kChromeExtension = 34,
-
-  kMaxValue = 34
+  kArkwebExtensionScheme = 35,
+  kMaxValue = 35
 };
 
 // Logs the scheme of the |url| to the |enum_histogram_name| histogram. If the

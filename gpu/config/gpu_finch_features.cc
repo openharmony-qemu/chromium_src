@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "gpu/config/gpu_finch_features.h"
+#include "arkweb/build/features/features.h"
 
 #include <string_view>
 
@@ -32,6 +33,8 @@
 #include "base/mac/mac_util.h"
 #include "base/system/sys_info.h"
 #endif  // BUILDFLAG(IS_MAC)
+
+#include "arkweb/chromium_ext/gpu/config/gpu_finch_features_ext.h"
 
 namespace features {
 namespace {
@@ -122,7 +125,8 @@ BASE_FEATURE(kAllowHardwareBufferUsageFlagsFromVulkanForScanout,
 // Android and Linux.
 BASE_FEATURE(kDefaultEnableGpuRasterization,
 #if BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS) || \
-    BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_LINUX)
+    BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_LINUX) || \
+    BUILDFLAG(IS_OHOS)
              base::FEATURE_ENABLED_BY_DEFAULT
 #else
              base::FEATURE_DISABLED_BY_DEFAULT
@@ -173,7 +177,7 @@ bool IsShaderDiskCacheEnabled(const base::CommandLine* command_line) {
 // --use-vulkan will be followed.
 // Note Android WebView uses kWebViewDrawFunctorUsesVulkan instead of this.
 BASE_FEATURE(kVulkan,
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_VULKAN)
              base::FEATURE_ENABLED_BY_DEFAULT
 #else
              base::FEATURE_DISABLED_BY_DEFAULT
@@ -181,7 +185,7 @@ BASE_FEATURE(kVulkan,
 );
 
 BASE_FEATURE(kEnableDrDc,
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
              base::FEATURE_ENABLED_BY_DEFAULT
 #elif BUILDFLAG(IS_MAC)
              // DrDC will not be running if Graphite is disabled on Mac.
@@ -242,7 +246,7 @@ BASE_FEATURE(kWebGPUUseSpirv14, base::FEATURE_DISABLED_BY_DEFAULT);
 
 BASE_FEATURE(kWebGPUDecomposeUniformBuffers, base::FEATURE_ENABLED_BY_DEFAULT);
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) && !BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
 
 const base::FeatureParam<std::string> kVulkanBlockListByHardware{
     &kVulkan, "BlockListByHardware", ""};
@@ -437,7 +441,7 @@ const base::FeatureParam<int> kGPUDriverBugListTestGroupId{
     &kGPUDriverBugListTestGroup, "test_group", 0};
 
 bool IsUsingVulkan() {
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) && !BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
   // Force on if Vulkan feature is enabled from command line.
   base::FeatureList* feature_list = base::FeatureList::GetInstance();
   if (feature_list &&
@@ -497,7 +501,8 @@ bool IsUsingVulkan() {
   }
 
   return true;
-
+#elif BUILDFLAG(ARKWEB_VULKAN)
+  return features::IsEnableVulkan();
 #else
   return base::FeatureList::IsEnabled(kVulkan);
 #endif
@@ -598,6 +603,8 @@ bool IsSkiaGraphiteSupportedByDevice(const base::CommandLine* command_line) {
   // Graphite on ChromeOS uses the Dawn Vulkan backend. Only enable Graphite if
   // device would already be using Ganesh/Vulkan.
   return IsUsingVulkan();
+#elif BUILDFLAG(IS_OHOS)
+  return base::FeatureList::IsEnabled(kEnableDrDc);
 #elif BUILDFLAG(IS_WIN) && defined(ARCH_CPU_ARM64)
   // Graphite on Windows ARM requires further research.
   return false;
@@ -705,7 +712,11 @@ bool ShouldEnableDrDc() {
   }
 #endif
 
+#if BUILDFLAG(ARKWEB_DRDC)
+  return features::IsDrDcForVulkan();
+#else
   return base::FeatureList::IsEnabled(kEnableDrDc);
+#endif
 }
 
 bool IsSkiaGraphitePrecompilationEnabled(
@@ -740,6 +751,9 @@ bool EnablePruneOldTransferCacheEntries() {
 
 #if BUILDFLAG(IS_ANDROID)
 bool IsAndroidSurfaceControlEnabled() {
+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+  return false;
+#endif
   if (base::android::android_info::sdk_int() <=
           base::android::android_info::SDK_VERSION_S &&
       (IsDeviceBlocked(base::android::android_info::device(), "capri|caprip") ||

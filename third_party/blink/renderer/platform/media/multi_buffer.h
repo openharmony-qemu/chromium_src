@@ -28,6 +28,10 @@
 #include "third_party/blink/renderer/platform/wtf/hash_traits.h"
 #include "third_party/blink/renderer/platform/wtf/thread_safe_ref_counted.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif // IS_ARKWEB_EXT
+
 namespace blink {
 
 // Used to identify a block of data in the multibuffer.
@@ -227,7 +231,15 @@ class PLATFORM_EXPORT MultiBuffer {
   // from A to B where: A <= |pos|, B >= |pos| and all blocks in [A..B)
   // are present in the cache.  When this changes, we will call
   // NotifyAvailableRange() on the reader.
-  void AddReader(const BlockId& pos, Reader* reader);
+  void AddReader(const BlockId& pos, Reader* reader
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+                ,
+                int32_t preload_size,
+                int32_t request_size_,
+                uint16_t byte_rate,
+                std::string id
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+  );
 
   // Unregister a reader at block |pos|.
   // Often followed by a call to AddReader(pos + 1, ...);
@@ -302,12 +314,28 @@ class PLATFORM_EXPORT MultiBuffer {
   // for a provider in a deferred state to wake up.
   void OnDataProviderEvent(DataProvider* provider);
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+  void Fallback(DataProvider* provider_tmp);
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+
  protected:
   // Create a new writer at |pos| and return it.
   // Users needs to implemement this method.
   virtual std::unique_ptr<DataProvider> CreateWriter(
       const BlockId& pos,
       bool is_client_audio_element) = 0;
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+  virtual std::unique_ptr<DataProvider> CreateWriter(
+      const BlockId& pos,
+      bool is_client_audio_element,
+      int32_t preload_size,
+      int32_t request_size,
+      uint16_t byte_rate,
+      std::string id) {
+    return nullptr;
+  }
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
   virtual bool RangeSupported() const = 0;
 

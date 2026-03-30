@@ -4,6 +4,7 @@
 
 # Statically-defined (not build-time-generated) IDL files in 'core' component
 # for production.
+import("//arkweb/build/features/features.gni")
 static_idl_files_in_core = [
   "//third_party/blink/renderer/core/accessibility/aria_notification_options.idl",
   "//third_party/blink/renderer/core/animation/animatable.idl",
@@ -839,6 +840,13 @@ static_idl_files_in_core = [
   "//third_party/blink/renderer/core/xmlhttprequest/xml_http_request_event_target.idl",
   "//third_party/blink/renderer/core/xmlhttprequest/xml_http_request_upload.idl",
 ]
+
+if (arkweb_scrollbar_avoid_area) {
+   static_idl_files_in_core +=
+       get_path_info(
+           [ "//third_party/blink/renderer/core/frame/ark_web.idl" ],
+           "abspath")
+}
 
 # Statically-defined (not build-time-generated) IDL files in 'core' component.
 # These IDL definitions are used only for testing.

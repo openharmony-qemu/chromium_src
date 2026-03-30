@@ -149,7 +149,11 @@ class NetworkServiceSSLConfigServiceTest : public testing::Test {
     network_context_params->ssl_config_client_receiver =
         ssl_config_client_.BindNewPipeAndPassReceiver();
     network_context_remote_.reset();
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+    network_context_ = std::make_unique<ArkWebNetworkContextExt>(
+#else
     network_context_ = std::make_unique<NetworkContext>(
+#endif
         network_service_.get(),
         network_context_remote_.BindNewPipeAndPassReceiver(),
         std::move(network_context_params));

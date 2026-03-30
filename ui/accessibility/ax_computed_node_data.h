@@ -16,6 +16,7 @@
 #include "ui/accessibility/ax_export.h"
 #include "ui/accessibility/ax_node_data.h"
 #include "ui/accessibility/ax_node_id_forward.h"
+#include "arkweb/build/features/features.h"
 
 namespace ui {
 
@@ -57,6 +58,14 @@ class AX_EXPORT AXComputedNodeData final {
   // platform leaves are the lowest nodes that are exposed to the platform's
   // assistive software.
   bool GetOrComputeIsDescendantOfPlatformLeaf() const;
+
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+  bool HasOrCanComputeAttribute(
+    const ax::mojom::StringAttribute attribute) const;
+
+  const std::string& GetOrComputeAttributeUTF8(
+    const ax::mojom::StringAttribute attribute) const;
+#endif
 
   // Given an accessibility attribute, returns the attribute's value. The
   // attribute is computed if not provided by the tree's source, otherwise it is

@@ -290,12 +290,14 @@ void ChromePageInfoDelegate::OpenCookiesDialog() {
 
 void ChromePageInfoDelegate::OpenCertificateDialog(
     net::X509Certificate* certificate) {
+#if BUILDFLAG(ENABLE_WEBUI_CERTIFICATE_VIEWER)
   gfx::NativeWindow top_window = web_contents_->GetTopLevelNativeWindow();
   DCHECK(certificate);
   DCHECK(top_window);
 
   FocusWebContents();
   ShowCertificateViewer(web_contents_, top_window, certificate);
+#endif
 }
 
 void ChromePageInfoDelegate::OpenConnectionHelpCenterPage(

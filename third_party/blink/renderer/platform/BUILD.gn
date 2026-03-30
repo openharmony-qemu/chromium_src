@@ -20,6 +20,8 @@ import("//third_party/libgav1/options.gni")
 import("//third_party/webrtc/webrtc.gni")
 import("//ui/gl/features.gni")
 import("//v8/gni/v8.gni")
+import("//arkweb/build/features/features.gni")
+import("//arkweb/chromium_ext/chromium_ext.gni")
 
 if (is_ios) {
   import("//build/config/ios/bundle_data_from_filelist.gni")
@@ -29,6 +31,7 @@ if (is_ios) {
 visibility = [
   ":*",
   "//:gn_all",
+  "//arkweb/build/unittests:oh_base_unittests",
   "//third_party/blink/public:all_blink",
   "//third_party/blink/renderer/platform/heap:test_support",
 ]
@@ -275,6 +278,10 @@ buildflag_header("bindings_buildflags") {
     "BLINK_BINDINGS_TRACE_ENABLED=$enable_blink_bindings_tracing",
     "HAS_ZSTD_COMPRESSION=$has_zstd_compression",
   ]
+
+  if (target_os == "ohos") {
+    visibility += [ "//arkweb/build:arkweb_prebuild_buildflags" ]
+  }
 }
 
 config("blink_platform_implementation") {
@@ -348,6 +355,9 @@ source_set("image_headers") {
 component("platform") {
   visibility = []  # Allow re-assignment of list.
   visibility = [ "//third_party/blink/*" ]
+  if (is_arkweb && use_libfuzzer) {
+    visibility += [ "//arkweb/chromium_ext/ohos_test/*" ]
+  }
   output_name = "blink_platform"
 
   sources = [
@@ -1590,6 +1600,7 @@ component("platform") {
     "weborigin/reporting_disposition.h",
     "weborigin/scheme_registry.cc",
     "weborigin/scheme_registry.h",
+    "//arkweb/chromium_ext/third_party/blink/renderer/platform/weborigin/scheme_registry_utils.h",
     "weborigin/security_origin.cc",
     "weborigin/security_origin.h",
     "weborigin/security_policy.cc",
@@ -1669,7 +1680,34 @@ component("platform") {
     "windows_keyboard_codes.h",
   ]
 
+  sources += arkweb_third_patry_blink_renderer_platform_bindings
+  sources += arkweb_third_party_blink_renderer_platform_sources
+
   sources -= blink_platform_avx_files
+
+  if (is_arkweb) {
+    sources += arkweb_third_party_blink_renderer_platform_widget_input_sources
+  }
+
+  if (arkweb_software_compositor) {
+    sources += arkweb_third_party_blink_renderer_software_compositor_sources
+    sources += arkweb_third_patry_blink_renderer_platform_fonts_sources
+  }
+
+  if (arkweb_same_layer) {
+    sources += arkweb_native_event_queue_sources
+    sources += arkweb_third_patry_blink_renderer_platform_sources
+  }
+
+  if (arkweb_media_audio) {
+    sources += arkweb_third_patry_blink_renderer_platform_audio_sources
+  }
+
+  if (is_component_build) {
+    sources += [
+      "media/video_frame_compositor.cc",
+    ]
+  }
 
   # Add in the generated files.
   sources += get_target_outputs(":character_data") +
@@ -1728,6 +1766,19 @@ component("platform") {
       "fonts/linux/font_unique_name_lookup_linux.cc",
       "fonts/linux/font_unique_name_lookup_linux.h",
     ]
+  }
+
+  if (arkweb_theme_font) {
+    sources += [
+      "fonts/android/font_cache_android.cc",
+    ]
+    if (arkweb_wpt) {
+      sources += arkweb_third_patry_blink_renderer_platform_fonts_ohos_sources
+    }
+  }
+
+  if (!enable_arkweb && arkweb_wpt) {
+    sources += arkweb_third_patry_blink_renderer_platform_fonts_cache_sources
   }
 
   if (is_win) {
@@ -1857,6 +1908,15 @@ component("platform") {
     "//ui/native_theme",
   ]
 
+  if (enable_arkweb) {
+    deps += [ "//arkweb//build/features"]
+    deps += [ "//cc" ]
+  }
+
+  if (enable_arkweb) {
+    public_deps += [ "//arkweb/build/features" ]
+  }
+
   if (has_zstd_compression) {
     deps += [
       "//third_party/zstd:compress",
@@ -1948,6 +2008,11 @@ component("platform") {
     sources += [ "text/apple/hyphenation_apple.cc" ]
   } else {
     sources += [ "text/hyphenation/hyphenation_null.cc" ]
+  }
+
+  if (arkweb_heif_support) {
+    import("//arkweb/chromium_ext/blink/renderer/platform/image_decoders/heif/arkweb_blink_renderer_platform_image_decoders_heif_ext.gni")
+    sources += arkweb_blink_renderer_platform_image_decoders_heif_sources
   }
 
   if (current_cpu == "x86" || current_cpu == "x64") {
@@ -2070,8 +2135,15 @@ static_library("test_support") {
     "widget/compositing/test/stub_widget_base_client.h",
   ]
 
+  if (use_libfuzzer) {
+    sources += [
+      "testing/fuzzed_data_provider.cc",
+      "testing/fuzzed_data_provider.h",
+    ]
+  }
+
   # fuzzed_data_provider may not work with a custom toolchain.
-  if (custom_toolchain == "" && is_clang) {
+  if (custom_toolchain == "" && is_clang && !is_arkweb) {
     sources += [
       "testing/fuzzed_data_provider.cc",
       "testing/fuzzed_data_provider.h",
@@ -2124,6 +2196,14 @@ static_library("test_support") {
 
   if (is_win) {
     cflags = [ "/wd4267" ]  # Truncation from size_t to int.
+  }
+
+  if (enable_arkweb) {
+    deps += [ "//arkweb/build/features" ]
+  }
+
+  if (enable_arkweb) {
+    public_deps += [ "//arkweb/build/features" ]
   }
 }
 
@@ -2413,6 +2493,12 @@ source_set("blink_platform_unittests_sources") {
     "widget/input/widget_input_handler_manager_unittest.cc",
   ]
 
+  if (arkweb_unittests) {
+    sources += arkweb_native_event_queue_test_sources
+    sources += arkweb_third_party_blink_renderer_platform_widget_test_sources
+    sources += arkweb_third_party_blink_renderer_platform_media_unittest_sources
+  }
+
   if (use_dawn) {
     sources += [ "graphics/gpu/webgpu_swap_buffer_provider_test.cc" ]
   }
@@ -2500,6 +2586,13 @@ source_set("blink_platform_unittests_sources") {
     "//url:url_test_support",
     "//url/mojom:test_url_mojom_gurl_blink",
   ]
+
+  if (is_arkweb) {
+    deps += [
+      "//cef:libcef_static",
+      "//base:base_static",
+    ]
+  }
 
   deps += [ ":bridge_ice_controller_tests" ]
 
@@ -2716,6 +2809,7 @@ source_set("blink_image_decoder_fuzzer_test_support") {
 # Fuzzer for blink::unicode::MathVariant.
 fuzzer_test("math_transform_fuzzer") {
   sources = [ "math_transform_fuzzer.cc" ]
+  include_dirs = ["//third_party/blink/renderer/platform/testing"]
   deps = [
     ":blink_fuzzer_test_support",
     ":platform",
@@ -2889,6 +2983,19 @@ fuzzer_test("blink_jpeg_decoder_fuzzer") {
   additional_configs = [ "//third_party/blink/renderer:inside_blink" ]
 }
 
+if (is_arkweb) {
+  fuzzer_test("blink_heif_decoder_fuzzer") {
+    sources = [ "image-decoders/heif/heif_image_decoder_fuzzer.cc" ]
+    deps = [
+      ":blink_fuzzer_test_support",
+      ":blink_image_decoder_fuzzer_test_support",
+      ":platform",
+    ]
+    libfuzzer_options = [ "rss_limit_mb=8192" ]
+    additional_configs = [ "//third_party/blink/renderer:inside_blink" ]
+  }
+}
+
 fuzzer_test("blink_bmp_decoder_fuzzer") {
   sources = [ "image-decoders/bmp/bmp_image_decoder_fuzzer.cc" ]
   deps = [
@@ -3054,4 +3161,8 @@ source_set("unit_tests") {
     "//third_party/blink/public:test_headers",
   ]
   public_deps = [ "//gpu:raster" ]
+
+  if (is_arkweb) {
+    deps += arkweb_fuzzer_test_sources
+  }
 }

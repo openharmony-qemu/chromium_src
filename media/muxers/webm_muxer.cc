@@ -419,7 +419,6 @@ bool WebmMuxer::PutFrame(EncodedFrame frame,
 
     if (!video_track_index_) {
       CHECK(frame.data->is_key_frame());
-
       // |track_index_|, cannot be zero (!), initialize WebmMuxer in that case.
       // http://www.matroska.org/technical/specs/index.html#Tracks
       video_codec_ = video_params->codec;

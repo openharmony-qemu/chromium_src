@@ -151,6 +151,12 @@ class GlobalCookieStoreImpl;
 template <typename T, typename P>
 class GlobalPerformanceImpl;
 
+#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_AREA)
+class ArkWeb;
+#endif // ARKWEB_SCROLLBAR_AVOID_AREA
+#if BUILDFLAG(IS_ARKWEB)
+class DetectSimulatedClickRiskEnhancedImpl;
+#endif // IS_ARKWEB
 namespace scheduler {
 class TaskAttributionInfo;
 }
@@ -324,7 +330,9 @@ class CORE_EXPORT LocalDOMWindow final : public DOMWindow,
   BarProp* toolbar();
   Navigator* navigator();
   Navigator* clientInformation() { return navigator(); }
-
+#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_AREA)
+  ArkWeb* arkWeb();
+#endif // ARKWEB_SCROLLBAR_AVOID_AREA
   bool offscreenBuffering() const;
 
   int outerHeight() const;
@@ -998,6 +1006,15 @@ class CORE_EXPORT LocalDOMWindow final : public DOMWindow,
     window_shared_storage_impl_ = window_shared_storage_impl;
   }
 
+#if BUILDFLAG(IS_ARKWEB)
+  // Non-standard API for business risk intelligent detection
+  ScriptPromise<IDLString> detectSimulatedClickRiskEnhanced(
+      ScriptState* script_state,
+      int32_t algorithm,
+      const Vector<int32_t>& nonce,
+      int32_t version,
+      ExceptionState& exception_state);
+#endif // IS_ARKWEB
  protected:
   // EventTarget overrides.
   void AddedEventListener(const AtomicString& event_type,
@@ -1215,6 +1232,13 @@ class CORE_EXPORT LocalDOMWindow final : public DOMWindow,
 
   // Used to indicate if the DOM window is reused or not.
   bool is_dom_window_reused_ = false;
+#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_AREA)
+  mutable Member<ArkWeb> arkWeb_;
+#endif // ARKWEB_SCROLLBAR_AVOID_AREA
+
+#if BUILDFLAG(IS_ARKWEB)
+  Member<DetectSimulatedClickRiskEnhancedImpl> detect_simulated_click_risk_enhanced_impl_;
+#endif // IS_ARKWEB
 };
 
 template <>

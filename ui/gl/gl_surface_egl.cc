@@ -40,6 +40,15 @@
 #include "ui/gl/scoped_make_current.h"
 #include "ui/gl/sync_control_vsync_provider.h"
 
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+#include "base/system/sys_info.h"
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#endif
+
 using ui::GetLastEGLErrorString;
 
 namespace gl {
@@ -305,6 +314,7 @@ GLSurfaceEGL::~GLSurfaceEGL() {
   CHECK(!HasWeakPtrs());
 }
 
+
 #if BUILDFLAG(IS_ANDROID)
 NativeViewGLSurfaceEGL::NativeViewGLSurfaceEGL(
     GLDisplayEGL* display,
@@ -324,14 +334,37 @@ NativeViewGLSurfaceEGL::NativeViewGLSurfaceEGL(
     : GLSurfaceEGL(display),
       window_(window),
       vsync_provider_external_(std::move(vsync_provider)) {
+  arkweb_surface_utils_ = new ArkwebGlSurfaceEglUtils();
 #if BUILDFLAG(IS_WIN)
   RECT windowRect;
   if (GetClientRect(window_, &windowRect)) {
     size_ = gfx::Rect(windowRect).size();
   }
 #endif
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+  enable_replace_swap_buffer_output_ = arkweb_surface_utils_->CheckSwapBufferOutputFlag();
+#endif
+#if BUILDFLAG(ARKWEB_DRDC)
+  if (GetGpuVersion().empty()) {
+    const char* renderer = reinterpret_cast<const char*>(glGetString(GL_RENDERER));
+    GetGpuVersion() = renderer ? renderer : "Unknown";
+  }
+#endif
 }
 #endif  // BUILDFLAG(IS_ANDROID)
+
+#if BUILDFLAG(ARKWEB_DRDC)
+// static
+std::string& NativeViewGLSurfaceEGL::GetGpuVersion() {
+  static base::NoDestructor<std::string> gpu_version;
+  return *gpu_version;
+}
+
+// static
+std::string NativeViewGLSurfaceEGL::GetGLRenderer() {
+  return GetGpuVersion();
+}
+#endif
 
 #if BUILDFLAG(IS_ANDROID)
 EGLConfig NativeViewGLSurfaceEGL::GetConfig() {
@@ -344,9 +377,17 @@ EGLConfig NativeViewGLSurfaceEGL::GetConfig() {
 }
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+bool IsPartialDrawEnable();
+#endif
+
 bool NativeViewGLSurfaceEGL::Initialize(GLSurfaceFormat format) {
   DCHECK(!surface_);
   format_ = format;
+
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+  same_damage_count_ = 0;
+#endif
 
   if (display_->GetDisplay() == EGL_NO_DISPLAY) {
     LOG(ERROR) << "Trying to create NativeViewGLSurfaceEGL with invalid "
@@ -429,6 +470,19 @@ bool NativeViewGLSurfaceEGL::Initialize(GLSurfaceFormat format) {
                         EGL_POST_SUB_BUFFER_SUPPORTED_NV, &surfaceVal);
     supports_post_sub_buffer_ = (surfaceVal && retVal) == EGL_TRUE;
   }
+
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+  const char* extensions = eglQueryString(display_->GetDisplay(), EGL_EXTENSIONS);
+  if (extensions != nullptr && strstr(extensions, "EGL_KHR_partial_update") != nullptr) {
+    bool banned_device = base::ohos::IsEmulator() ||
+                         base::SysInfo::IsLowEndDevice() ||
+                         base::ohos::IsWearableDevice();
+    bool control_policy = IsPartialDrawEnable();
+    supports_post_sub_buffer_ = !banned_device && control_policy;
+  }
+
+  LOG(INFO) << "supports_post_sub_buffer = " << supports_post_sub_buffer_;
+#endif
 
   supports_swap_buffer_with_damage_ =
       display_->ext->b_EGL_KHR_swap_buffers_with_damage;
@@ -562,7 +616,7 @@ bool NativeViewGLSurfaceEGL::IsOffscreen() {
 gfx::SwapResult NativeViewGLSurfaceEGL::SwapBuffers(
     PresentationCallback callback,
     gfx::FrameData data) {
-  TRACE_EVENT2("gpu", "NativeViewGLSurfaceEGL:RealSwapBuffers",
+  OHOS_TRACE_EVENT2("gpu", "NativeViewGLSurfaceEGL:RealSwapBuffers",
       "width", GetSize().width(),
       "height", GetSize().height());
 
@@ -733,6 +787,7 @@ bool NativeViewGLSurfaceEGL::Resize(const gfx::Size& size,
   DCHECK(context);
   GLSurface* surface = GLSurface::GetCurrent();
   DCHECK(surface);
+
   // Current surface may not be |this| if it is wrapped, but it should point to
   // the same handle.
   DCHECK_EQ(surface->GetHandle(), GetHandle());
@@ -759,6 +814,7 @@ bool NativeViewGLSurfaceEGL::Recreate() {
   DCHECK(context);
   GLSurface* surface = GLSurface::GetCurrent();
   DCHECK(surface);
+
   // Current surface may not be |this| if it is wrapped, but it should point to
   // the same handle.
   DCHECK_EQ(surface->GetHandle(), GetHandle());
@@ -923,6 +979,15 @@ gfx::SwapResult NativeViewGLSurfaceEGL::SwapBuffersWithDamage(
     gfx::FrameData data) {
   DCHECK(supports_swap_buffer_with_damage_);
 
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+  OHOS_TRACE_EVENT2(
+    "gpu", "NativeViewGLSurfaceEGL::RealSwapBuffers SwapBuffersWithDamage",
+    "width", GetSize().width(), "height", GetSize().height());
+  is_first_swapbuffers_ = arkweb_surface_utils_->SwapBuffersSolution(
+    enable_replace_swap_buffer_output_, is_first_swapbuffers_, GetSize());
+  auto start = std::chrono::high_resolution_clock::now();
+#endif
+
   GLSurfacePresentationHelper::ScopedSwapBuffers scoped_swap_buffers(
       presentation_helper_.get(), std::move(callback));
   if (!eglSwapBuffersWithDamageKHR(display_->GetDisplay(), surface_,
@@ -932,6 +997,27 @@ gfx::SwapResult NativeViewGLSurfaceEGL::SwapBuffersWithDamage(
              << GetLastEGLErrorString();
     scoped_swap_buffers.set_result(gfx::SwapResult::SWAP_FAILED);
   }
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+  arkweb_surface_utils_->SwapBuffersWithDamageSolution(scoped_swap_buffers.result(), start, GetSize());
+#endif
+
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+  EGLint surfaceVal = 0;
+  EGLBoolean retVal;
+  if (supports_post_sub_buffer_) {
+    retVal = eglQuerySurface(display_->GetDisplay(), surface_,
+                  EGL_BUFFER_AGE_KHR, &surfaceVal);
+    if (!retVal) {
+      LOG(ERROR) << "eglQuerySurface fail " << " retVal " << retVal << " surfaceVal " << surfaceVal;
+      same_damage_count_ = 0;
+    }
+  }
+
+  present_buffer_age_ = surfaceVal;
+  if (!present_buffer_age_) {
+    same_damage_count_ = 0;
+  }
+#endif
   return scoped_swap_buffers.result();
 }
 
@@ -1192,3 +1278,7 @@ SurfacelessEGL::~SurfacelessEGL() {
 }
 
 }  // namespace gl
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/ui/gl/gl_surface_egl_for_include.cc"
+#endif

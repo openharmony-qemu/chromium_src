@@ -39,6 +39,9 @@
 #include <memory>
 #include <utility>
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "base/auto_reset.h"
 #include "base/notreached.h"
 #include "base/time/time.h"
@@ -138,6 +141,14 @@
 #include "third_party/blink/renderer/platform/wtf/text/string_utf8_adaptor.h"
 #include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
 #include "url/url_features.h"
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "url/ohos/log_utils.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_MENU)
+#include "third_party/blink/renderer/core/editing/frame_selection.h"
+#endif
 
 namespace blink {
 
@@ -257,7 +268,11 @@ void FrameLoader::Init(const DocumentToken& document_token,
       frame_->Owner() ? frame_->Owner()->GetFramePolicy() : FramePolicy();
   navigation_params->document_ukm_source_id = document_ukm_source_id;
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  DocumentLoader* new_document_loader = MakeGarbageCollected<ArkWebDocumentLoaderExt>(
+#else
   DocumentLoader* new_document_loader = MakeGarbageCollected<DocumentLoader>(
+#endif
       frame_, kWebNavigationTypeOther, std::move(navigation_params),
       std::move(policy_container), nullptr /* extra_data */);
 
@@ -639,8 +654,14 @@ DetermineRequestDestinationFromNavigationType(
   NOTREACHED();
 }
 
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+void FrameLoader::StartNavigation(FrameLoadRequest& request,
+                                  WebFrameLoadType frame_load_type,
+                                  bool is_triggered_by_js) {
+#else
 void FrameLoader::StartNavigation(FrameLoadRequest& request,
                                   WebFrameLoadType frame_load_type) {
+#endif
   CHECK(!IsBackForwardOrRestore(frame_load_type));
   DCHECK(request.GetTriggeringEventInfo() !=
          mojom::blink::TriggeringEventInfo::kUnknown);
@@ -697,6 +718,9 @@ void FrameLoader::StartNavigation(FrameLoadRequest& request,
             mojom::blink::ConsoleMessageLevel::kError,
             StrCat({"Not allowed to navigate top frame to ", url.Protocol(),
                     " URL: ", url.ElidedString()})));
+#if BUILDFLAG(ARKWEB_AI)
+    frame_->ProcessFragment(url);
+#endif
     return;
   }
 
@@ -944,6 +968,10 @@ void FrameLoader::StartNavigation(FrameLoadRequest& request,
           ? CSPDisposition::DO_NOT_CHECK
           : CSPDisposition::CHECK;
 
+#if BUILDFLAG(ARKWEB_MENU)
+  frame_->Selection().Clear();
+#endif
+
   Client()->BeginNavigation(
       resource_request, request.GetRequestorBaseURL(), request.GetFrameType(),
       origin_window, nullptr /* document_loader */, navigation_type,
@@ -959,7 +987,13 @@ void FrameLoader::StartNavigation(FrameLoadRequest& request,
       request.GetInitiatorFrameToken(), request.GetSourceLocation(),
       request.TakeInitiatorNavigationStateKeepAliveHandle(),
       request.IsContainerInitiated(),
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+      request.GetWindowFeatures().explicit_opener,
+      is_triggered_by_js);
+#else      
       request.GetWindowFeatures().explicit_opener);
+#endif
+  
 }
 
 static void FillStaticResponseIfNeeded(WebNavigationParams* params,
@@ -1191,6 +1225,15 @@ void FrameLoader::CommitNavigation(
     // document.
     if (commit_reason == CommitReason::kXSLT && document_loader_)
       document_loader_->SetSentDidFinishLoad();
+#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+    LOG(INFO) << "Frame loader CommitNavigation, url: ***";
+#endif
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(INFO) << "Frame loader CommitNavigation, url: "
+                       << url::LogUtils::ConvertUrlWithMask(
+                              navigation_params->url.GetString().Utf8());
+#endif
+
     if (!DetachDocument()) {
       DCHECK(!is_provisional);
       return;
@@ -1250,7 +1293,11 @@ void FrameLoader::CommitNavigation(
 
   // TODO(dgozman): get rid of provisional document loader and most of the code
   // below. We should probably call DocumentLoader::CommitNavigation directly.
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  DocumentLoader* new_document_loader = MakeGarbageCollected<ArkWebDocumentLoaderExt>(
+#else
   DocumentLoader* new_document_loader = MakeGarbageCollected<DocumentLoader>(
+#endif
       frame_, navigation_type, std::move(navigation_params),
       std::move(policy_container), std::move(extra_data));
 
@@ -1318,8 +1365,21 @@ void FrameLoader::StopAllLoaders(bool abort_client) {
     frame_->DomWindow()->navigation()->InformAboutCanceledNavigation();
   }
 
+#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+  if (document_loader_) {
+    LOG(INFO) << "Frame loader StopAllLoaders, url: ***";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(INFO) << "Frame loader StopAllLoaders, url: "
+                       << url::LogUtils::ConvertUrlWithMask(
+                              frame_->GetDocument()->Url().GetString().Utf8());
+#endif
+    document_loader_->StopLoading();
+  }
+#else
   if (document_loader_)
     document_loader_->StopLoading();
+#endif
+
   if (abort_client)
     CancelClientNavigation();
   else
@@ -1775,6 +1835,14 @@ void FrameLoader::RunScriptsAtDocumentElementAvailable() {
   Client()->RunScriptsAtDocumentElementAvailable();
   // The frame might be detached at this point.
 }
+
+#if BUILDFLAG(ARKWEB_JSPROXY)
+void FrameLoader::RunScriptsAtHeadElementAvailable() {
+  if (Client()) {
+    Client()->RunScriptsAtHeadElementAvailable();
+  }
+}
+#endif
 
 void FrameLoader::DispatchDidClearDocumentOfWindowObject() {
   if (state_ == State::kUninitialized)

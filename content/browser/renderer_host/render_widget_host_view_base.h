@@ -13,6 +13,10 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "base/functional/callback_forward.h"
 #include "base/gtest_prod_util.h"
 #include "base/i18n/rtl.h"
@@ -39,6 +43,7 @@
 #include "third_party/blink/public/mojom/frame/fullscreen.mojom.h"
 #include "third_party/blink/public/mojom/frame/intrinsic_sizing_info.mojom-forward.h"
 #include "third_party/blink/public/mojom/input/input_event_result.mojom-shared.h"
+#include "third_party/blink/public/mojom/widget/platform_widget.mojom-forward.h"
 #include "third_party/blink/public/mojom/widget/record_content_to_visible_time_request.mojom.h"
 #include "third_party/skia/include/core/SkImageInfo.h"
 #include "ui/accessibility/ax_action_handler_registry.h"
@@ -52,6 +57,11 @@
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/native_ui_types.h"
 #include "ui/gfx/range/range.h"
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/content/browser/renderer_host/render_widget_host_view_base_interface.h"
+#endif
+
 #include "url/origin.h"
 
 namespace ui {
@@ -91,6 +101,9 @@ class SyntheticGestureTarget;
 // Basic implementation shared by concrete RenderWidgetHostView subclasses.
 class CONTENT_EXPORT RenderWidgetHostViewBase
     : public RenderWidgetHostView,
+#if BUILDFLAG(IS_ARKWEB)
+      public RenderWidgetHostViewBaseInterface,
+#endif
       public input::RenderWidgetHostViewInput {
  public:
   // The TooltipObserver is used in browser tests only.
@@ -144,6 +157,9 @@ class CONTENT_EXPORT RenderWidgetHostViewBase
   display::ScreenInfo GetScreenInfo() const override;
   display::ScreenInfos GetScreenInfos() const override;
   virtual void ResetGestureDetection();
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  virtual void ResetGestureDetection(bool is_lost_focus) {}
+#endif
 
   // RenderWidgetHostViewInput implementation
   base::WeakPtr<input::RenderWidgetHostViewInput> GetInputWeakPtr() override;
@@ -187,7 +203,7 @@ class CONTENT_EXPORT RenderWidgetHostViewBase
   // For testing only.
   virtual ui::FilteredGestureProvider* GetFilteredGestureProviderForTesting();
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   virtual void CopyFromExactSurfaceWithIpcDelay(
       const gfx::Rect& src_rect,
       const gfx::Size& output_size,
@@ -229,6 +245,10 @@ class CONTENT_EXPORT RenderWidgetHostViewBase
       const gfx::Rect& keyboard_rect) override {}
   void ShowInterestInElement(int) override {}
   bool IsHTMLFormPopup() const override;
+
+#if BUILDFLAG(ARKWEB_EX_TOPCONTROLS)
+  int GetTopControlsOffset() const override;
+#endif
 
   // This only needs to be overridden by RenderWidgetHostViewBase subclasses
   // that handle content embedded within other RenderWidgetHostViews.
@@ -527,7 +547,6 @@ class CONTENT_EXPORT RenderWidgetHostViewBase
   TextInputManager* GetTextInputManager();
 
   virtual void DidNavigate();
-
   // Called when the RenderWidgetHostImpl establishes a connection to the
   // renderer process Widget.
   virtual void OnRendererWidgetCreated() {}

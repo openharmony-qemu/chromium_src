@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/component_export.h"
 #include "base/functional/callback.h"
 #include "base/memory/raw_ptr.h"
@@ -71,6 +72,11 @@
 #include "services/network/upload_progress_tracker.h"
 #include "services/network/url_loader_context.h"
 
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+#include "arkweb/chromium_ext/services/network/prp_preload/include/preload_runner/prpp_request_loader.h"
+#include "arkweb/chromium_ext/services/network/prp_preload/include/preload_runner/prpp_request_loader_factory.h"
+#endif
+
 namespace net {
 class HttpResponseHeaders;
 class IOBufferWithSize;
@@ -108,6 +114,7 @@ class ScopedThrottlingToken;
 class SharedDictionaryManager;
 class SharedResourceChecker;
 class SlopBucket;
+class URLLoaderUtils;
 class TrustTokenUrlLoaderInterceptor;
 
 class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
@@ -117,6 +124,7 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
       public mojom::ClientCertificateResponder {
  public:
   using DeleteCallback = base::OnceCallback<void(URLLoader* loader)>;
+  friend class URLLoaderUtils;
 
   // Holds a sync and async implementation of URLLoaderClient. The sync
   // implementation can be used if present to avoid posting a task to call back
@@ -184,6 +192,11 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
       mojo::PendingRemote<mojom::AcceptCHFrameObserver>
           accept_ch_frame_observer,
       bool shared_storage_writable_eligible,
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+      std::shared_ptr<ohos_prp_preload::PRPPRequestLoader> prpp_loader,
+      const std::string& org_main_url,
+      std::shared_ptr<ohos_prp_preload::PRRequestInfo> preload_info,
+#endif
       SharedResourceChecker& shared_resource_checker,
       base::WeakPtr<DevtoolsDurableMessage> devtools_durable_message);
 
@@ -281,6 +294,13 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
                    const GURL& url,
                    const net::SiteForCookies& site_for_cookies) const;
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  void SetStrictLogMode(bool value) { is_strict_log_mode_ = value; }
+  void SetUsageScenario(int32_t usage_scenario) {
+    usage_scenario_ = usage_scenario;
+  }
+#endif  // ARKWEB_LOGGER_REPORT
+
   const std::optional<GURL>& new_redirect_url() const {
     return new_redirect_url_;
   }
@@ -312,6 +332,7 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
   }
 
  private:
+  std::unique_ptr<URLLoaderUtils> url_loader_utils_;
   // This class is used to set the URLLoader as user data on a URLRequest. This
   // is used instead of URLLoader directly because SetUserData requires a
   // std::unique_ptr. This is safe because URLLoader owns the URLRequest, so is
@@ -573,7 +594,11 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
   // to the value from the URLLoaderFactory.
   const mojom::ClientSecurityStatePtr client_security_state_;
   const bool do_not_prompt_for_login_;
+  #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  std::shared_ptr<net::URLRequest> url_request_;
+#else
   std::unique_ptr<net::URLRequest> url_request_;
+#endif
   mojo::Receiver<mojom::URLLoader> receiver_;
   mojo::Receiver<mojom::AuthChallengeResponder>
       auth_challenge_responder_receiver_{this};
@@ -720,6 +745,11 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
   // Indicates |url_request_| is fetch upload request and that has streaming
   // body.
   const bool has_fetch_streaming_upload_body_;
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  bool is_strict_log_mode_ = false;
+  int32_t usage_scenario_ = 99;
+#endif  // ARKWEB_LOGGER_REPORT
 
   // Whether DevToolsObserver::OnRaw{Request,Response} should be emitted
   // (i.e. the request being loaded is monitored by DevTools).

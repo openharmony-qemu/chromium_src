@@ -15,12 +15,25 @@
 #include "third_party/blink/renderer/platform/text/platform_locale.h"
 #include "third_party/blink/renderer/platform/wtf/text/strcat.h"
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+#include "third_party/blink/renderer/modules/media_controls/media_controls_shared_helper.h"
+#include "third_party/blink/renderer/modules/media_controls/elements/media_control_elements_helper.h"
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/html/media/media_remoting_interstitial_listener.h"
+#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
+
 namespace {
 
 constexpr base::TimeDelta kStyleChangeTransitionDuration =
     base::Milliseconds(200);
 constexpr base::TimeDelta kHiddenAnimationDuration = base::Milliseconds(300);
 constexpr base::TimeDelta kShowToastDuration = base::Seconds(5);
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+constexpr double kLargestPercentage = 100.0;
+constexpr int kMillisecond = 1000;
+constexpr double kDurationEpsilon = 1e-9;
+constexpr int kTimeBaseRatio = 60;
+#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
 
 }  // namespace
 
@@ -34,6 +47,9 @@ MediaRemotingInterstitial::MediaRemotingInterstitial(
           this,
           &MediaRemotingInterstitial::ToggleInterstitialTimerFired),
       video_element_(&videoElement) {
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+  InitializeMediaRemotingInterstitial();
+#else // ARKWEB_MEDIA_CAST
   SetShadowPseudoId(AtomicString("-internal-media-interstitial"));
   background_image_ = MakeGarbageCollected<HTMLImageElement>(GetDocument());
   background_image_->SetShadowPseudoId(
@@ -57,6 +73,7 @@ MediaRemotingInterstitial::MediaRemotingInterstitial(
   toast_message_->SetShadowPseudoId(
       AtomicString("-internal-media-remoting-toast-message"));
   AppendChild(toast_message_);
+#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
 }
 
 void MediaRemotingInterstitial::Show(
@@ -70,6 +87,21 @@ void MediaRemotingInterstitial::Show(
     cast_text_message_->setInnerText(GetVideoElement().GetLocale().QueryString(
         IDS_MEDIA_REMOTING_CAST_TEXT, remote_device_friendly_name));
   }
+#if BUILDFLAG(ARKWEB_MEDIA_CAST) && !defined(COMPONENT_BUILD)
+  duration_ = GetVideoElement().duration();
+  if (duration_display_) {
+    duration_display_->setInnerText(FormatTime(duration_));
+  }
+  current_time_ = GetVideoElement().currentTime();
+  UpdateProgressUI();
+  if (fullscreen_button_) {
+    if (GetVideoElement().IsFullscreen()) {
+      UpdateRemoteFullScreenCss(true);
+    } else {
+      UpdateRemoteFullScreenCss(false);
+    }
+  }
+#endif // ARKWEB_MEDIA_CAST
   if (toggle_interstitial_timer_.IsActive())
     toggle_interstitial_timer_.Stop();
   state_ = kVisible;
@@ -97,6 +129,10 @@ void MediaRemotingInterstitial::Hide(int error_code) {
     toast_message_->setInnerText(stop_text);
     state_ = kToast;
   }
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+  current_time_ = 0;
+  UpdateProgressUI();
+#endif // ARKWEB_MEDIA_CAST
   SetInlineStyleProperty(CSSPropertyID::kOpacity, 0,
                          CSSPrimitiveValue::UnitType::kNumber);
   toggle_interstitial_timer_.StartOneShot(kHiddenAnimationDuration, FROM_HERE);
@@ -157,7 +193,29 @@ void MediaRemotingInterstitial::Trace(Visitor* visitor) const {
   visitor->Trace(cast_icon_);
   visitor->Trace(cast_text_message_);
   visitor->Trace(toast_message_);
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+  visitor->Trace(play_pause_button_);
+  visitor->Trace(fullscreen_button_);
+  visitor->Trace(current_time_display_);
+  visitor->Trace(duration_display_);
+  visitor->Trace(progress_fill_);
+  visitor->Trace(progress_bar_);
+  visitor->Trace(button_container_);
+  visitor->Trace(left_button_);
+  visitor->Trace(right_button_);
+  visitor->Trace(controls_container_);
+  visitor->Trace(left_group_);
+  visitor->Trace(right_group_);
+  visitor->Trace(progress_group_);
+  visitor->Trace(progress_thumb_);
+  visitor->Trace(video_casting_);
+  visitor->Trace(weak_this_);
+#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
   HTMLDivElement::Trace(visitor);
 }
 
 }  // namespace blink
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/html/media/media_remoting_interstitial_include.cc"
+#endif

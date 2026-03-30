@@ -15,6 +15,7 @@ import "media/mojo/mojom/renderer_extensions.mojom";
 import "media/mojo/mojom/video_decoder.mojom";
 import "mojo/public/mojom/base/token.mojom";
 import "mojo/public/mojom/base/unguessable_token.mojom";
+import "arkweb/chromium_ext/media/mojo/mojom/media_player_url_params.mojom";
 
 // A disconnection of this interface can be interpreted as the
 // VideoDecoder implementation created by
@@ -73,6 +74,13 @@ interface InterfaceFactory {
   // by the |overlay_plane_id| to set video geometry on.
   CreateCastRenderer(mojo_base.mojom.UnguessableToken overlay_plane_id,
                      pending_receiver<Renderer> renderer);
+
+  [EnableIf=arkweb_custom_video_player]
+  CreateCustomMediaPlayerRenderer(
+      pending_remote<CustomMediaPlayerRendererClientExtension> client_extension,
+      pending_receiver<Renderer> renderer,
+      int32 player_id,
+      MediaPlayerUrlParams params);
 
   [EnableIf=is_win]
   // Creates a MediaFoundationRenderer (MediaFoundationRendererClientFactory).

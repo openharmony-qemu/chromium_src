@@ -334,6 +334,9 @@ void MemoryCache::RemoveInternal(ResourceMap* resource_map,
 
   Update(resource, resource->size(), 0);
   resource_map->erase(it);
+#if BUILDFLAG(ARKWEB_INJECT_OFFLINE_RESOURCE)
+  resource->SetKeepAliveOff();
+#endif
   if (base::FeatureList::IsEnabled(features::kMemoryCacheIntelligentPruning)) {
     // If intelligent pruning is on, the resource can only be in the new
     // tiered vector. We perform a "lazy" remove for performance.

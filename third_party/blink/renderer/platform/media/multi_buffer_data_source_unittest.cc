@@ -489,6 +489,9 @@ class MultiBufferDataSourceTest : public testing::Test {
   void set_is_client_audio_element(bool value) {
     is_client_audio_element_ = value;
   }
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  uint16_t data_source_byte_rate() { return data_source_->byte_rate_; }
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 
  protected:
   base::test::SingleThreadTaskEnvironment task_environment_;
@@ -2098,5 +2101,9 @@ TEST_F(MultiBufferDataSourceTest, Http_Seek_Back) {
 
   Stop();
 }
+
+#if BUILDFLAG(ARKWEB_TEST)
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/media/multi_buffer_data_source_for_include_unittest.cc"
+#endif  // ARKWEB_TEST
 
 }  // namespace blink

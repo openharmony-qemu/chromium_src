@@ -49,6 +49,10 @@
 #include "components/subresource_filter/core/browser/verified_ruleset_dealer.h"
 #include "components/subresource_filter/core/common/ruleset_config.h"
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+#include "arkweb/chromium_ext/components/subresource_filter/content/shared/browser/ruleset_service_for_include.h"
+#endif
+
 namespace base {
 class SequencedTaskRunner;
 }  // namespace base
@@ -101,6 +105,10 @@ class IndexedRulesetLocator {
   // To be called on the |background_task_runner_|.
   static void DeleteObsoleteRulesets(
       const base::FilePath& indexed_ruleset_base_dir,
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+      const base::FilePath& unindexed_ruleset_base_dir,
+      RulesetServiceClient* client,
+#endif
       const IndexedRulesetVersion& most_recent_version);
 };
 
@@ -146,6 +154,9 @@ class RulesetService {
       const RulesetConfig& config,
       PrefService* local_state,
       const base::FilePath& user_data_dir,
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+      RulesetServiceClient* client,
+#endif
       const RulesetPublisher::Factory& publisher_factory);
 
   // Creates a new instance of a ruleset This is then assigned to a
@@ -163,6 +174,19 @@ class RulesetService {
       const RulesetPublisher::Factory& publisher_factory);
 
   RulesetService(const RulesetService&) = delete;
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  RulesetService(
+      const RulesetConfig& config,
+      PrefService* local_state,
+      scoped_refptr<base::SequencedTaskRunner> background_task_runner,
+      const base::FilePath& indexed_ruleset_base_dir,
+      const base::FilePath& unindexed_ruleset_base_dir,
+      RulesetServiceClient* client,
+      scoped_refptr<base::SequencedTaskRunner> blocking_task_runner,
+      const RulesetPublisher::Factory& publisher_factory);
+#endif
+
   RulesetService& operator=(const RulesetService&) = delete;
 
   virtual ~RulesetService();
@@ -278,6 +302,10 @@ class RulesetService {
 
   const base::FilePath indexed_ruleset_base_dir_;
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  const base::FilePath unindexed_ruleset_base_dir_;
+  const raw_ptr<RulesetServiceClient> ruleset_service_client_;
+#endif
   base::WeakPtrFactory<RulesetService> weak_ptr_factory_{this};
 };
 

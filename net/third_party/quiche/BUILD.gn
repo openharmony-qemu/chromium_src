@@ -84,6 +84,11 @@ component("quiche") {
     "//third_party/protobuf:protobuf_lite",
     "//third_party/zlib",
   ]
+  if (defined(is_arkweb) && is_arkweb) {
+    deps += [
+      "//base:base_static",
+    ]
+  }
 
   public_deps = [
     ":net_quic_proto",
@@ -731,6 +736,11 @@ source_set("quiche_tests") {
     "src/quiche/web_transport/test_tools/in_memory_stream_test.cc",
     "src/quiche/web_transport/web_transport_headers_test.cc",
   ]
+  if (defined(is_arkweb) && is_arkweb) {
+    sources += [
+      "//arkweb/chromium_ext/net/quiche/quic_stream_frame_detector_test.cc",
+    ]
+  }
 
   data = [ "src/quiche/common/platform/api/testdir/" ]
 
@@ -809,6 +819,7 @@ test("net_quiche_fuzzer") {
     "//net:quic_test_tools",
     "//net:test_support",
     "//third_party/fuzztest:fuzztest_gtest_main",
+    "//cef:libcef_static",
   ]
 
   configs += [

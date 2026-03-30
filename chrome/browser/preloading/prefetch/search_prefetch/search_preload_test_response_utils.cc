@@ -89,6 +89,7 @@ void SearchPreloadDeferrableResponse::SendResponse(
 SearchPreloadResponseController::SearchPreloadResponseController() = default;
 SearchPreloadResponseController::~SearchPreloadResponseController() = default;
 
+#if !BUILDFLAG(ARKWEB_TEST) 
 class SearchPreloadResponseController::DelayedResponseTask {
  public:
   DelayedResponseTask(
@@ -126,6 +127,7 @@ class SearchPreloadResponseController::DelayedResponseTask {
   // network response.
   base::OnceClosure response_closure_;
 };
+#endif
 
 void SearchPreloadResponseController::AddDelayedResponseTask(
     const scoped_refptr<base::SingleThreadTaskRunner>& task_runner,

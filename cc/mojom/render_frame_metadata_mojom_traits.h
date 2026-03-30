@@ -14,6 +14,7 @@
 #include "services/viz/public/cpp/compositing/local_surface_id_mojom_traits.h"
 #include "skia/public/mojom/skcolor4f_mojom_traits.h"
 #include "third_party/skia/include/core/SkColor.h"
+#include "arkweb/build/features/features.h"
 
 namespace mojo {
 
@@ -149,6 +150,29 @@ struct COMPONENT_EXPORT(CC_SHARED_MOJOM_TRAITS)
   static bool has_transparent_background(
       const cc::RenderFrameMetadata& metadata) {
     return metadata.has_transparent_background;
+  }
+#endif
+
+#if BUILDFLAG(IS_ARKWEB)
+  static const gfx::SizeF& scrollable_viewport_size(
+      const cc::RenderFrameMetadata& metadata) {
+    return metadata.scrollable_viewport_size;
+  }
+
+  static const gfx::SizeF& root_layer_size(
+      const cc::RenderFrameMetadata& metadata) {
+    return metadata.root_layer_size;
+  }
+
+  static bool root_overflow_y_hidden(const cc::RenderFrameMetadata& metadata) {
+    return metadata.root_overflow_y_hidden;
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_MENU)
+  static const gfx::Rect& clipped_selection_bounds(
+    const cc::RenderFrameMetadata& metadata) {
+    return metadata.clipped_selection_bounds;
   }
 #endif
 

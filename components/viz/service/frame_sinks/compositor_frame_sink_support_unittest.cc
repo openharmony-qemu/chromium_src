@@ -125,6 +125,10 @@ class MockFrameSinkManagerClient : public mojom::FrameSinkManagerClient {
       std::unique_ptr<CopyOutputResult> copy_output_result) override {}
   void OnVizTouchStateAvailable(
       base::ReadOnlySharedMemoryRegion region) override {}
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  MOCK_METHOD2(RestoreRenderFit, void(uint32_t client_id, uint32_t sink_id));
+  MOCK_METHOD3(ModifyRenderFit, void(int32_t fitType, uint32_t client_id, uint32_t sink_id));
+#endif // ARKWEB_UNITTESTS
 };
 
 class CompositorFrameSinkSupportTestBase : public testing::Test {

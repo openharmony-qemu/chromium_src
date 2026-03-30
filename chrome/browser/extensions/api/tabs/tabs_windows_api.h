@@ -13,6 +13,12 @@
 #include "extensions/browser/event_router.h"
 #include "extensions/buildflags/buildflags.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "ohos_nweb/src/capi/web_extension_tab_items.h"
+
+struct NWebExtensionTabChangeInfo;
+#endif // ARKWEB_ARKWEB_EXTENSIONS
+
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 
 namespace extensions {
@@ -51,6 +57,10 @@ class TabsWindowsAPI : public BrowserContextKeyedAPI,
 
   // EventRouter::Observer implementation.
   void OnListenerAdded(const extensions::EventListenerInfo& details) override;
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "cef/ohos_cef_ext/libcef/browser/extensions/api/tabs/tabs_windows_api_for_include_file.cc"
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 
  private:
   friend class BrowserContextKeyedAPIFactory<TabsWindowsAPI>;

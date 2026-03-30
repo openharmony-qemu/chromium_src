@@ -522,6 +522,9 @@ void EnsureSystemHostResolverCallReady() {
 }
 
 namespace {
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+base::Lock g_host_resolver_lock;
+#endif
 
 int AddressFamilyToAF(AddressFamily address_family) {
   switch (address_family) {
@@ -608,6 +611,10 @@ int SystemHostResolverCall(const std::string& host,
   base::ScopedBlockingCall scoped_blocking_call(FROM_HERE,
                                                 base::BlockingType::WILL_BLOCK);
   DnsReloaderMaybeReload();
+
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+  base::AutoLock lock_scope(g_host_resolver_lock);
+#endif
 
   auto [ai, err, os_error] = AddressInfo::Get(host, hints, nullptr, network);
   bool should_retry = false;

@@ -122,7 +122,7 @@ declare_args() {
   # the space overhead is too great. We should use some mixture of profiles and
   # optimization settings to better tune the size increase.
   thin_lto_enable_optimizations =
-      (is_chromeos || is_android || is_win || is_linux || is_mac ||
+      (is_chromeos || is_android || is_win || is_linux || is_mac || is_ohos ||
        (is_ios && use_lld)) && is_official_build
 
   # Whether to enable thin lto incremental builds.
@@ -301,7 +301,7 @@ config("default_include_dirs") {
 # the executable they are loaded into, so they are unresolved at link-time.
 config("no_unresolved_symbols") {
   if (!using_sanitizer &&
-      (is_linux || is_chromeos || is_android || is_fuchsia)) {
+      (is_linux || is_chromeos || is_android || is_fuchsia || is_ohos)) {
     ldflags = [
       "-Wl,-z,defs",
       "-Wl,--as-needed",
@@ -336,6 +336,8 @@ config("compiler") {
     configs += [ "//build/config/win:compiler" ]
   } else if (is_android) {
     configs += [ "//build/config/android:compiler" ]
+  } else if (is_ohos) {
+    configs += [ "//build/config/ohos:compiler" ]
   } else if (is_chromeos) {
     configs += [
       "//build/config/linux:compiler",
@@ -557,7 +559,7 @@ config("compiler") {
 
   # Linux/Android/Fuchsia common flags setup.
   # ---------------------------------
-  if (is_linux || is_chromeos || is_android || is_fuchsia) {
+  if (is_linux || is_chromeos || is_android || is_fuchsia || is_ohos) {
     asmflags += [ "-fPIC" ]
     cflags += [ "-fPIC" ]
     ldflags += [ "-fPIC" ]
@@ -685,6 +687,9 @@ config("compiler") {
       ]
     }
 
+    # remove flag split-threshold-for-reg-with-hint and instcombine-lower-dbg-declare
+    # it's not supported in clang <= 17 on ohos toolchain.
+    if (default_toolchain != "//build/toolchain/ohos:ohos_clang_arm64") {
     # TODO(hans): Remove this once Clang generates better optimized debug info
     # by default. https://crbug.com/765793
     cflags += [
@@ -714,6 +719,7 @@ config("compiler") {
         }
       }
     }
+    }
 
     # TODO(crbug.com/40192287): Investigate why/if this should be needed.
     if (is_win) {
@@ -726,14 +732,15 @@ config("compiler") {
     # TODO(crbug.com/376278218): This causes segfault on Linux ARM builds.
     # It also causes segfault on Linux s390x:
     # https://github.com/llvm/llvm-project/issues/149511
-    if (is_linux && use_lld && current_cpu != "arm" && current_cpu != "s390x") {
+    if (is_linux && use_lld && !llvm_ohos_mainline &&
+        current_cpu != "arm" && current_cpu != "s390x") {
       cflags += [ "-Wa,--crel,--allow-experimental-crel" ]
     }
   }
 
   # C11/C++11 compiler flags setup.
   # ---------------------------
-  if (is_linux || is_chromeos || is_android || current_os == "aix") {
+  if (is_linux || is_chromeos || is_android || is_ohos || current_os == "aix") {
     if (is_clang) {
       standard_prefix = "c"
 
@@ -915,7 +922,11 @@ config("compiler") {
 
       # We only use one version of LLVM within a build so there's no need to
       # upgrade debug info, which can be expensive since it runs the verifier.
+      if (!is_ohos) {
+        # We only use one version of LLVM within a build so there's no need to
+        # upgrade debug info, which can be expensive since it runs the verifier.
       ldflags += [ "-Wl,-mllvm,-disable-auto-upgrade-debug-info" ]
+    }
     }
 
     if (!optimize_for_size) {
@@ -1291,7 +1302,7 @@ config("compiler_cpu_abi") {
     # CPU architecture. We may or may not be doing a cross compile now, so for
     # simplicity we always explicitly set the architecture.
     if (current_cpu == "x64") {
-      if (is_clang && !is_android && !is_fuchsia && !is_chromeos_device) {
+      if (is_clang && !is_android && !is_fuchsia && !is_chromeos_device && !is_ohos) {
         cflags += [ "--target=x86_64-unknown-linux-gnu" ]
         ldflags += [ "--target=x86_64-unknown-linux-gnu" ]
       } else {
@@ -1312,7 +1323,8 @@ config("compiler_cpu_abi") {
         "-msse3",
       ]
     } else if (current_cpu == "arm") {
-      if (is_clang && !is_android && !is_chromeos_device) {
+      if (is_clang && !is_android && !is_ohos &&
+          !is_chromeos_device) {
         cflags += [ "--target=arm-linux-gnueabihf" ]
         ldflags += [ "--target=arm-linux-gnueabihf" ]
       }
@@ -1324,7 +1336,8 @@ config("compiler_cpu_abi") {
         cflags += [ "-mtune=$arm_tune" ]
       }
     } else if (current_cpu == "arm64") {
-      if (is_clang && !is_android && !is_fuchsia && !is_chromeos_device) {
+      if (is_clang && !is_android && !is_fuchsia && !is_ohos &&
+           !is_chromeos_device) {
         cflags += [ "--target=aarch64-linux-gnu" ]
         ldflags += [ "--target=aarch64-linux-gnu" ]
       }
@@ -1980,6 +1993,8 @@ config("runtime_library") {
     configs += [ "//build/config/mac:runtime_library" ]
   } else if (is_android) {
     configs += [ "//build/config/android:runtime_library" ]
+  } else if (is_ohos) {
+    configs += [ "//build/config/ohos:runtime_library" ]
   }
 
   if (is_component_build) {
@@ -2110,6 +2125,56 @@ config("default_warnings") {
     # warning).
     if (current_cpu == "arm" && !is_clang) {
       cflags += [ "-Wno-psabi" ]
+    }
+
+    if (use_musl) {
+      cflags += [
+        "-Wno-psabi",
+        "-Wno-unknown-pragmas",
+        "-Wno-cpp",
+        "-Wno-extra-tokens",
+        "-Wno-error=c99-designator",
+        "-Wno-error=anon-enum-enum-conversion",
+        "-Wno-error=implicit-fallthrough",
+        "-Wno-error=sizeof-array-div",
+        "-Wno-error=reorder-init-list",
+        "-Wno-error=range-loop-construct",
+        "-Wno-error=deprecated-copy",
+        "-Wno-error=implicit-int-float-conversion",
+        "-Wno-error=inconsistent-dllimport",
+        "-Wno-unknown-warning-option",
+        "-Wno-error=abstract-final-class",
+        "-Wno-error=sign-compare",
+        "-Wno-error=int-in-bool-context",
+        "-Wno-error=xor-used-as-pow",
+        "-Wno-error=implicit-function-declaration",
+        "-Wno-error=non-c-typedef-for-linkage",
+        "-Wno-c++11-narrowing",
+        "-Wno-builtin-assume-aligned-alignment",
+        "-Wno-deprecated-builtins",
+        "-Wno-deprecated-non-prototype",
+        "-Wno-array-parameter",
+        "-Wno-error=unused-but-set-variable",
+        "-Wno-unused-but-set-variable",
+        "-Wno-deprecated-declarations",
+        "-Wno-unqualified-std-cast-call",
+        "-Wno-error=invalid-offsetof",
+        "-Wno-error=unused-private-field",
+        "-Wno-error=sign-conversion",
+        "-Wno-unreachable-code",
+        "-Wno-absolute-value",
+        # Ignore warnings about explicitly defaulted three-way
+        # comparison operator is implicitly deleted.
+        "-Wno-defaulted-function-deleted",
+        # Ignore Compiler Unknown Attributes
+        "-Wno-ignored-attributes",
+        # Temporary use, to be removed in the future
+        "-Wno-unused-variable",
+        "-Wno-error=exit-time-destructors",
+        "-Wno-error=unused-function",
+        "-Wno-error=shorten-64-to-32",
+        "-Wno-error=extra-semi",
+      ]
     }
 
     if (!is_clang) {
@@ -2389,7 +2454,14 @@ config("chromium_code") {
       # Warn on unreachable code, including unreachable breaks and returns.
       # See https://crbug.com/346399#c148 for suppression strategies.
       "-Wunreachable-code-aggressive",
+    ]
 
+    if (is_component_build) {
+      # FIXME(AR20250313353352): Should be turn on after re-factoring
+      cflags += [ "-w" ]
+    }
+
+    cflags += [
       # Warn on GNU extensions.
       "-Wgnu",
 
@@ -2476,7 +2548,9 @@ config("no_chromium_code") {
 
 config("noshadowing") {
   if (is_clang) {
-    cflags = [ "-Wshadow" ]
+    cflags = [ "-Wshadow",
+               "-Wno-error=shadow"
+             ]
   }
 }
 
@@ -2822,7 +2896,7 @@ config("optimize") {
     # vectorization while otherwise optimizing for size.
     rustflags = [ "-Copt-level=s" ]
   } else {
-    cflags = [ "-O2" ] + common_optimize_on_cflags
+    cflags = [ "-Oz" ] + common_optimize_on_cflags
 
     # The `-O3` for clang turns on extra optimizations compared to the standard
     # `-O2`. But for rust, `-Copt-level=3` is the default and is thus reliable
@@ -2846,7 +2920,7 @@ config("no_optimize") {
       # traces on Windows ARM64 rely on it.
       cflags += [ "/Oy-" ]
     }
-  } else if (is_android && !android_full_debug) {
+  } else if (is_ohos || (is_android && !android_full_debug)) {
     # On Android we kind of optimize some things that don't affect debugging
     # much even when optimization is disabled to get the binary size down.
     cflags = [ "-Os" ] + common_optimize_on_cflags

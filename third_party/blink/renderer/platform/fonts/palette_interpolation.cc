@@ -30,8 +30,11 @@ Vector<FontPalette::FontPaletteOverride> PaletteInterpolation::MixColorRecords(
     Color result_color = Color::FromColorMix(
         color_interpolation_space, hue_interpolation_method, start_color,
         end_color, percentage, alpha_multiplier);
-
+#if defined(__clang__) && (__clang_major__ < 17)
+    FontPalette::FontPaletteOverride result_color_record({i, result_color});
+#else
     FontPalette::FontPaletteOverride result_color_record(i, result_color);
+#endif
     result_color_records.push_back(result_color_record);
   }
   return result_color_records;

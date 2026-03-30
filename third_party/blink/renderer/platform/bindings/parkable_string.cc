@@ -1041,6 +1041,13 @@ void ParkableStringImpl::OnWritingCompleteOnMainThread(
 ParkableString::ParkableString(scoped_refptr<StringImpl>&& impl)
     : ParkableString(std::move(impl), nullptr) {}
 
+#if BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)
+ParkableString::ParkableString(scoped_refptr<StringImpl>&& impl,
+                               bool is_parkable) {
+  impl_ = ParkableStringUtils::GetParkableString(std::move(impl), is_parkable);
+}
+#endif
+
 ParkableString::ParkableString(
     scoped_refptr<StringImpl>&& impl,
     std::unique_ptr<ParkableStringImpl::SecureDigest> digest) {

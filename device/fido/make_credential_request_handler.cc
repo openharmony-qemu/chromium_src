@@ -741,6 +741,19 @@ void MakeCredentialRequestHandler::HandleResponse(
     return;
   }
 #endif
+#if BUILDFLAG(ARKWEB_FIDO)
+  if (authenticator->GetType() == AuthenticatorType::kOhosNative) {
+    state_ = State::kFinished;
+    if (status != MakeCredentialStatus::kSuccess) {
+      std::move(completion_callback_).Run(status, std::nullopt, authenticator);
+      return;
+    }
+    CancelActiveAuthenticators(authenticator->GetId());
+    std::move(completion_callback_)
+        .Run(status, std::move(*response), authenticator);
+    return;
+  }
+#endif  // BUILDFLAG(ARKWEB_FIDO)
 
   // If we requested UV from an authenticator without uvToken support, UV
   // failed, and the authenticator supports PIN, fall back to that.

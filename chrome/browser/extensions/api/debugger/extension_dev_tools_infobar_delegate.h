@@ -37,6 +37,14 @@ class ExtensionDevToolsInfoBarDelegate : public ConfirmInfoBarDelegate {
       const std::string& extension_name,
       base::OnceClosure destroyed_callback);
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  static ExtensionDevToolsInfoBarDelegate* GetDelegateById(
+      const ExtensionId& extension_id);
+  static void CancelConfirmInfoBar(const std::string& extension_id);
+  static std::list<ExtensionId> GetDelegateIds();
+  bool Cancel() override;
+#endif // ARKWEB_ARKWEB_EXTENSIONS
+
   ExtensionDevToolsInfoBarDelegate(const ExtensionDevToolsInfoBarDelegate&) =
       delete;
   ExtensionDevToolsInfoBarDelegate& operator=(

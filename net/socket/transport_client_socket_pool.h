@@ -284,6 +284,7 @@ class NET_EXPORT_PRIVATE TransportClientSocketPool
       const base::flat_set<HostPortPair>& servers) override;
 
  private:
+  friend class TransportClientSocketPoolUtils;
   // Entry for a persistent socket which became idle at time |start_time|.
   struct IdleSocket;
 
@@ -491,6 +492,7 @@ class NET_EXPORT_PRIVATE TransportClientSocketPool
     }
 
    private:
+    friend class TransportClientSocketPoolUtils;
     // Returns the iterator's unbound request after removing it from
     // the queue. Expects the Group to pass SanityCheck() when called.
     std::unique_ptr<Request> RemoveUnboundRequest(
@@ -784,6 +786,10 @@ class NET_EXPORT_PRIVATE TransportClientSocketPool
   // this pool is stalled.
   void TryToCloseSocketsInLayeredPools();
 
+#if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
+  void SetSocketIdleTimeout(int32_t timeout) override;
+#endif
+
   // Closes all idle sockets and cancels all unbound ConnectJobs associated with
   // |it->second|. Also increments the group's generation number, ensuring any
   // currently existing handed out socket will be silently closed when it is
@@ -837,6 +843,10 @@ class NET_EXPORT_PRIVATE TransportClientSocketPool
   // Reentrancy guard for RequestSocketInternal().
   bool request_in_process_ = false;
 #endif  // DCHECK_IS_ON()
+
+#if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
+  base::TimeDelta arkweb_used_idle_socket_timeout_;
+#endif
 
   base::WeakPtrFactory<TransportClientSocketPool> weak_factory_{this};
 };

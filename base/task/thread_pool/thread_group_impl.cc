@@ -7,6 +7,7 @@
 #include <optional>
 #include <string_view>
 
+#include "base/logging.h"
 #include "base/metrics/histogram_macros.h"
 #include "base/profiler/thread_group_profiler.h"
 #include "base/sequence_token.h"
@@ -20,6 +21,12 @@
 #include "base/time/time_override.h"
 #include "base/trace_event/trace_event.h"
 #include "third_party/abseil-cpp/absl/container/inlined_vector.h"
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING) && !BUILDFLAG(ARKWEB_TEST)
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#include "base/command_line.h"
+#include "base/ohos/sys_info_utils_ext.h"
+#endif
 
 namespace base::internal {
 
@@ -223,6 +230,13 @@ ThreadGroupImpl::ThreadGroupImpl(std::string_view histogram_label,
       tracked_ref_factory_(this),
       monitor_worker_thread_priorities_(monitor_worker_thread_priorities) {
   DCHECK(!thread_group_label_.empty());
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING) && !BUILDFLAG(ARKWEB_TEST)
+  base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+  cmd_enable_report_thread_pool_ = false;
+  if (command_line) {
+    cmd_enable_report_thread_pool_ = command_line->HasSwitch(switches::kEnableReportThreadPoolForeg);
+  }
+#endif
 }
 
 void ThreadGroupImpl::Start(
@@ -626,6 +640,12 @@ void ThreadGroupImpl::WorkerDelegate::CleanupLockRequired(
   auto worker_iter = std::ranges::find(outer_->workers_, worker);
   CHECK(worker_iter != outer_->workers_.end());
   outer_->workers_.erase(worker_iter);
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING) && !BUILDFLAG(ARKWEB_TEST)
+  if (worker->GetRealTid() != kInvalidThreadId && base::ohos::IsPcDevice()) {
+    outer_->destroy_workers_ids_.push_back(worker->GetRealTid());
+  }
+#endif
 }
 
 void ThreadGroupImpl::WorkerDelegate::OnWorkerBecomesIdleLockRequired(
@@ -887,6 +907,11 @@ ThreadGroupImpl::CreateAndRegisterWorkerLockRequired(
       task_tracker_, worker_sequence_num_++, &lock_);
 
   workers_.push_back(worker);
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING) && !BUILDFLAG(ARKWEB_TEST)
+  if (worker && (base::ohos::IsPcDevice() || cmd_enable_report_thread_pool_)) {
+    create_workers_.push_back(worker);
+  }
+#endif
   executor->ScheduleStart(worker);
   DCHECK_LE(workers_.size(), max_tasks_);
 

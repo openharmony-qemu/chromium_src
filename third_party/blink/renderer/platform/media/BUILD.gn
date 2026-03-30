@@ -85,6 +85,16 @@ component("media") {
     "web_source_buffer_impl.h",
   ]
 
+  if (arkweb_media) {
+    import("//arkweb/chromium_ext/third_party/blink/renderer/platform/media/arkweb_blink_renderer_platform_media_ext.gni")
+    sources += arkweb_blink_renderer_platform_media_sources
+  }
+
+  if (defined(enable_arkweb_ext) && enable_arkweb_ext) {
+    import("//arkweb/chromium_ext/third_party/blink/renderer/platform/media/arkweb_blink_renderer_platform_media_ext.gni")
+    sources += arkweb_blink_renderer_platform_video_optimization_sources
+  }
+
   configs += [
     "//third_party/blink/renderer/platform:blink_platform_config",
     "//third_party/blink/renderer/platform:blink_platform_implementation",
@@ -166,6 +176,13 @@ source_set("unit_tests") {
   # TODO(crbug.com/40031409): Fix code that adds exit-time destructors and
   # enable the diagnostic by removing this line.
   configs += [ "//build/config/compiler:no_exit_time_destructors" ]
+
+  if (arkweb_test && defined(enable_arkweb_ext) && enable_arkweb_ext) {
+    sources += [
+      "//arkweb/chromium_ext/third_party/blink/renderer/platform/media/video_common_data_provider_unittest.cc",
+      "//arkweb/chromium_ext/third_party/blink/renderer/platform/media/segmentation_multibuffer_data_provider_unittest.cc",
+    ]
+  }
 }
 
 source_set("test_support") {

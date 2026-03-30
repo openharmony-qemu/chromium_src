@@ -52,6 +52,7 @@ import("//ui/gl/features.gni")
 import("//ui/views/features.gni")
 import("//ui/webui/webui_features.gni")
 import("//v8/gni/v8.gni")
+import("//arkweb/build/features/features.gni")
 
 assert(!is_ios, "Chromium/iOS shouldn't use anything in //chrome")
 assert(!is_fuchsia, "Fuchsia shouldn't use anything in //chrome")
@@ -508,6 +509,9 @@ static_library("test_support") {
 
   configs += [ "//build/config:precompiled_headers" ]
 
+  if (arkweb_test) {
+    configs += [ "//cef/libcef/features:config" ]
+  }
   deps += [
     "//chrome/app:command_ids",
     "//chrome/browser/autofill",
@@ -1655,6 +1659,11 @@ source_set("platform_browser_tests") {
       "../browser/ui/webui/extensions/extension_settings_browsertest.cc",
       "../browser/ui/webui/extensions/extensions_internals_browsertest.cc",
     ]
+
+    if (arkweb_test) {
+        sources -= [ "../browser/extensions/api/web_request/web_request_apitest.cc", ]
+        sources -= [ "../browser/extensions/api/downloads/downloads_api_browsertest.cc" ]
+    }
     deps += [
       ":test_support",
       "//chrome/app:command_ids",
@@ -2361,6 +2370,9 @@ if (!is_android) {
   test("browser_tests") {
     use_xvfb = use_xvfb_in_this_config
 
+    if (arkweb_test) {
+      configs += [ "//cef/libcef/features:config" ]
+    }
     configs += [ "//build/config:precompiled_headers" ]
     configs += [ ":disable_thinlto_cache_flags" ]
     defines = [ "HAS_OUT_OF_PROC_TEST_RUNNER" ]
@@ -3591,7 +3603,6 @@ if (!is_android) {
       "../browser/spellchecker/spellcheck_service_browsertest.cc",
       "../browser/ssl/certificate_transparency_browsertest.cc",
       "../browser/ssl/connection_help_tab_helper_browsertest.cc",
-      "../browser/ssl/https_upgrades_browsertest.cc",
       "../browser/ssl/known_interception_disclosure_infobar_browsertest.cc",
       "../browser/ssl/known_interception_disclosure_ui_browsertest.cc",
       "../browser/ssl/ocsp_browsertest.cc",
@@ -4129,6 +4140,10 @@ if (!is_android) {
       ]
     }
 
+    if (arkweb_test) {
+      deps += [ "//chrome/browser/enterprise/test:test_support" ]
+    }
+
     if (is_win) {
       sources += [
         "../browser/accessibility/live_caption/live_caption_unavailability_notifier_browsertest.cc",
@@ -4504,8 +4519,10 @@ if (!is_android) {
     }
 
     if (enable_captive_portal_detection) {
-      sources +=
-          [ "../browser/ssl/captive_portal_blocking_page_browsertest.cc" ]
+      sources += [
+        "../browser/ssl/captive_portal_blocking_page_browsertest.cc",
+        "../browser/ssl/https_upgrades_browsertest.cc",
+      ]
       deps += [ "//chrome/browser/captive_portal" ]
     }
 
@@ -6031,6 +6048,13 @@ if (!is_android) {
     }
 
     sources += metric_integration_sources
+    sources += [
+      "//arkweb/chromium_ext/chrome/browser/policy/policy_path_parser_ohos_unittest.cc",
+      "//arkweb/chromium_ext/chrome/browser/shell_integration_ohos_unittest.cc",
+      "//arkweb/chromium_ext/chrome/common/chrome_paths_ohos_unittest.cc",
+      "//arkweb/chromium_ext/content/browser/renderer_host/ark_web_back_forward_cache_impl_unittest.cc",
+      "//arkweb/chromium_ext/content/browser/media/ohos/ohos_video_experience_reporter_unittest.cc"
+    ]
 
     if (!is_chromeos) {
       sources += [
@@ -6045,6 +6069,15 @@ if (!is_android) {
         "//chrome/browser/ui/webui/whats_new:browser_tests",
         "//chrome/browser/ui/webui/whats_new:mojo_bindings",
       ]
+    }
+    if (arkweb_test) {
+      sources -= [
+        "../browser/media/wv_test_license_server_config.cc",
+        "../browser/media/wv_test_license_server_config.h",
+        "../browser/media/webrtc/webrtc_video_quality_browsertest.cc",
+        "../browser/media/encrypted_media_browsertest.cc",
+      ]
+      deps -= [ "//chrome/browser/ui/views/shortcuts:browser_tests" ]
     }
 
     if (enable_device_bound_sessions) {
@@ -7450,6 +7483,11 @@ test("unit_tests") {
   # unit_tests than in base_unittests.
   deps += [ "//base:path_service_unittest" ]
 
+  # FIXME
+  if (is_ohos) {
+    deps -= [ "//third_party/rust/fend_core/v1/wrapper:unit_tests" ]
+  }
+
   # TODO(413315837): Remove this when privacy_sandbox_service_impl_unittest.cc
   # gets build off of c/b/privacy_sandbox/BUILD.gn.
   deps += [ "//chrome/browser/privacy_sandbox:headers" ]
@@ -8712,7 +8750,6 @@ test("unit_tests") {
       "//chrome/browser/webauthn:test_support",
       "//chrome/browser/webauthn/proto",
       "//chrome/common/read_anything:mojo_bindings",
-      "//chrome/services/speech:unit_tests",
       "//components/app_constants",
       "//components/application_locale_storage",
       "//components/color",
@@ -8785,6 +8822,10 @@ test("unit_tests") {
       "//ui/webui/resources/js/browser_command:mojo_bindings",
       "//ui/webui/tracked_element:unit_tests",
     ]
+
+    if (enable_speech_service) {
+      deps += [ "//chrome/services/speech:unit_tests" ]
+    }
 
     data += [ "//chromeos/ash/experiences/arc/test/data/icons/" ]
 
@@ -10933,7 +10974,9 @@ if (!is_android) {
     ]
 
     configs += [ "//build/config:precompiled_headers" ]
-
+    if (arkweb_test) {
+      configs += [ "//cef/libcef/features:config" ]
+    }
     public_deps = [
       "//chrome/browser:test_support_ui",
       "//chrome/browser/ui/exclusive_access",

@@ -19,6 +19,10 @@
 #include "extensions/common/manifest_handlers/background_info.h"
 #include "extensions/common/utils/extension_utils.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "cef/ohos_cef_ext/libcef/browser/extensions/web_extension_menu_manager.h"
+#endif // ARKWEB_ARKWEB_EXTENSIONS
+
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 
 namespace content {
@@ -226,6 +230,10 @@ bool CreateMenuItem(const PropertyWithEnumT& create_properties,
   if (!success)
     return false;
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  CefWebExtensionMenuManager::OnContextMenusCreate(
+      item_id.extension_key.extension_id, menu_manager->GetItemById(item_id));
+#endif // ARKWEB_ARKWEB_EXTENSIONS
   menu_manager->WriteToStorage(extension, item_id.extension_key);
   return true;
 }
@@ -342,6 +350,10 @@ bool UpdateMenuItem(const PropertyWithEnumT& update_properties,
   if (radio_item_updated && !menu_manager->ItemUpdated(item->id()))
     return false;
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  CefWebExtensionMenuManager::OnContextMenusUpdate(
+      item_id.extension_key.extension_id, menu_manager->GetItemById(item_id));
+#endif // ARKWEB_ARKWEB_EXTENSIONS
   menu_manager->WriteToStorage(extension, item_id.extension_key);
   return true;
 }

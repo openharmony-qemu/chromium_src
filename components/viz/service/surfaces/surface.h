@@ -166,7 +166,11 @@ class VIZ_SERVICE_EXPORT Surface final : public FrameSinkObserver {
   float device_scale_factor() const {
     return surface_info_.device_scale_factor();
   }
-
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  float stretch_content_none_device_scale_factor() const {
+    return surface_info_.stretch_content_none_device_scale_factor();
+  }
+#endif
   base::WeakPtr<SurfaceClient> client() { return surface_client_; }
 
   bool has_deadline() const { return deadline_ && deadline_->has_deadline(); }
@@ -442,6 +446,9 @@ class VIZ_SERVICE_EXPORT Surface final : public FrameSinkObserver {
   base::flat_set<raw_ptr<SurfaceAllocationGroup, CtnExperimental>>
       blocking_allocation_groups_;
 
+#if BUILDFLAG(ARKWEB_SUPPORTS_DAMAGE_REGION)
+  float current_page_scale_factor_ = 0.f;
+#endif
   bool is_fallback_ = false;
 
   bool is_latency_info_taken_ = false;

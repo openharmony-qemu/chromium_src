@@ -124,7 +124,11 @@ std::unique_ptr<DragImage> DragImage::Create(
   if (!paint_image || !paint_image.GetSwSkImage()->asLegacyBitmap(&bm))
     return nullptr;
 
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  return base::WrapUnique(new DragImageExt(bm, interpolation_quality));
+#else
   return base::WrapUnique(new DragImage(bm, interpolation_quality));
+#endif
 }
 
 static Font* DeriveDragLabelFont(int size, FontSelectionValue font_weight) {
@@ -141,9 +145,16 @@ static Font* DeriveDragLabelFont(int size, FontSelectionValue font_weight) {
 }
 
 // static
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+std::unique_ptr<DragImage> DragImage::Create(const KURL& url,
+                                             const String& in_label,
+                                             float device_scale_factor,
+                                             bool is_force_dark_mode) {
+#else
 std::unique_ptr<DragImage> DragImage::Create(const KURL& url,
                                              const String& in_label,
                                              float device_scale_factor) {
+#endif
   const Font* label_font =
       DeriveDragLabelFont(kDragLinkLabelFontSize, kBoldWeightValue);
   const SimpleFontData* label_font_data = label_font->PrimaryFont();
@@ -166,6 +177,9 @@ std::unique_ptr<DragImage> DragImage::Create(const KURL& url,
 
   String url_string = url.GetString();
   String label = in_label.StripWhiteSpace();
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  label = DragImageExt::filterNonPrintable(label);
+#endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
   if (label.empty()) {
     draw_url_string = false;
     label = url_string;
@@ -224,7 +238,13 @@ std::unique_ptr<DragImage> DragImage::Create(const KURL& url,
 
   gfx::Rect rect(image_size);
   cc::PaintFlags background_paint;
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  background_paint.setStyle(cc::PaintFlags::Style::kFill_Style);
+  background_paint.setColor(0x00FFFFFF);  // transparent
+  background_paint.setBlendMode(SkBlendMode::kSrcOver);
+#else
   background_paint.setColor(SkColorSetRGB(140, 140, 140));
+#endif BUILDFLAG(ARKWEB_DRAG_DROP)
   background_paint.setAntiAlias(true);
   SkRRect rrect;
   rrect.setRectXY(SkRect::MakeWH(image_size.width(), image_size.height()),
@@ -233,6 +253,10 @@ std::unique_ptr<DragImage> DragImage::Create(const KURL& url,
 
   // Draw the text
   cc::PaintFlags text_paint;
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  if (is_force_dark_mode)
+    text_paint.setColor(0xFFFFFFFF);
+#endif
   if (draw_url_string) {
     if (clip_url_string) {
       url_string = StringTruncator::CenterTruncate(
@@ -288,5 +312,4 @@ void DragImage::Scale(float scale_x, float scale_y) {
   bitmap_ = skia::ImageOperations::Resize(bitmap_, resize_method, image_width,
                                           image_height);
 }
-
 }  // namespace blink

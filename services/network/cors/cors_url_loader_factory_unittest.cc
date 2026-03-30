@@ -77,7 +77,11 @@ class CorsURLLoaderFactoryTest : public testing::Test {
     context_params->initial_proxy_config =
         net::ProxyConfigWithAnnotation::CreateDirect();
 
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+    network_context_ = std::make_unique<ArkWebNetworkContextExt>(
+#else
     network_context_ = std::make_unique<NetworkContext>(
+#endif
         network_service_.get(),
         network_context_remote_.BindNewPipeAndPassReceiver(),
         std::move(context_params));

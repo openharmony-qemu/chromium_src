@@ -25,8 +25,12 @@
 */
 
 #include "third_party/blink/renderer/core/loader/resource/script_resource.h"
-
 #include <utility>
+
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/loader/resource/script_resource_utils.h"
+#if BUILDFLAG(ARKWEB_CUSTOM_SCHEME_CODECACHE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/weborigin/scheme_registry_utils.h"
+#endif
 
 #include "base/metrics/histogram_macros.h"
 #include "base/notreached.h"
@@ -117,6 +121,11 @@ ScriptResource* ScriptResource::Fetch(
                             v8_compile_hints_consumer, magic_comment_mode,
                             params.GetScriptType()),
       client));
+#if BUILDFLAG(ARKWEB_V8_COMPILE)
+  if (client) {
+    resource->SetArkWebCompile(client->GetArkWebCompile());
+  }
+#endif
   return resource;
 }
 
@@ -192,6 +201,9 @@ ScriptResource::ScriptResource(
     // If we have a null isolate disable off thread cache consumption.
     DisableOffThreadConsumeCache();
   }
+#if BUILDFLAG(IS_ARKWEB)
+  resourceUtils = MakeGarbageCollected<ScriptResourceUtils>(this);
+#endif
 }
 
 ScriptResource::~ScriptResource() = default;
@@ -203,6 +215,9 @@ void ScriptResource::Trace(Visitor* visitor) const {
   visitor->Trace(v8_compile_hints_producer_);
   visitor->Trace(v8_compile_hints_consumer_);
   visitor->Trace(background_streamer_);
+#if BUILDFLAG(IS_ARKWEB)
+  visitor->Trace(resourceUtils);
+#endif
   TextResource::Trace(visitor);
 }
 
@@ -430,6 +445,16 @@ void ScriptResource::ResponseReceived(const ResourceResponse& response) {
       Platform::Current()->ShouldUseCodeCacheWithHashing(
           WebURL(GetResourceRequest().Url()));
 
+#if BUILDFLAG(ARKWEB_CUSTOM_SCHEME_CODECACHE)
+  bool code_cache_with_response_time_supported =
+      SchemeRegistryUtils::SchemeSupportsCodeCacheWithResponseTime(
+          GetResourceRequest().Url().Protocol());
+  LOG(DEBUG) << "Script resource if scheme:"
+             << GetResourceRequest().Url().Protocol().Utf8().c_str()
+             << " supports code cache:"
+             << code_cache_with_response_time_supported;
+#endif
+
   bool webui_bundled_code_cache_supported =
       SchemeRegistry::SchemeSupportsWebUIBundledBytecode(
           GetResourceRequest().Url().Protocol()) &&
@@ -448,7 +473,12 @@ void ScriptResource::ResponseReceived(const ResourceResponse& response) {
     cached_metadata_handler_ =
         MakeGarbageCollected<ScriptCachedMetadataHandlerWithHashing>(
             Encoding(), std::move(sender));
+#if BUILDFLAG(ARKWEB_CUSTOM_SCHEME_CODECACHE)
+  } else if (http_family || code_cache_with_response_time_supported) {
+    LOG(DEBUG) << "Create CachedMetadataSender";
+#else
   } else if (http_family) {
+#endif
     std::unique_ptr<CachedMetadataSender> sender = CachedMetadataSender::Create(
         response, mojom::blink::CodeCacheType::kJavascript,
         GetResourceRequest().RequestorOrigin());

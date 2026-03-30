@@ -4,6 +4,12 @@
 
 import("//media/media_options.gni")
 import("//mojo/public/tools/bindings/mojom.gni")
+import("//arkweb/build/features/features.gni")
+
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+  enabled_features = [ "is_arkweb" ]
+}
 
 mojom("mojom") {
   generate_java = true
@@ -45,6 +51,14 @@ mojom("mojom") {
     "watch_time_recorder.mojom",
     "webrtc_video_perf.mojom",
   ]
+
+  if (arkweb_same_layer) {
+    sources += arkweb_media_mojo_mojom_sources
+  }
+
+  if (arkweb_custom_video_player) {
+    sources += arkweb_media_custom_media_player_mojom_sources
+  }
 
   if (enable_media_drm_storage) {
     sources += [ "media_drm_storage.mojom" ]
@@ -116,12 +130,54 @@ mojom("mojom") {
   }
 
   enabled_features = []
+
+  if (arkweb_enable_wiseplay) {
+    enabled_features += [ "arkweb_enable_wiseplay" ]
+  }
+
+  if (is_android || is_arkweb) {
+    enabled_features += [ "is_arkweb" ]
+    enabled_features += [ "is_android_or_arkweb" ]
+  }
+
+  if (arkweb_media) {
+    enabled_features += ["arkweb_media"]
+  }
+
+  if (arkweb_media_avsession) {
+    enabled_features += ["arkweb_media_avsession"]
+  }
+
+  if (arkweb_custom_video_player) {
+    enabled_features += ["arkweb_custom_video_player"]
+  }
+
+  if (arkweb_video_assistant) {
+    enabled_features += ["arkweb_video_assistant"]
+  }
+
   if (allow_oop_video_decoder) {
     enabled_features += [ "allow_oop_video_decoder" ]
   }
 
+  if (arkweb_pip) {
+    enabled_features += ["arkweb_pip"]
+  }
+
+  if (arkweb_media_dmabuf) {
+    enabled_features += ["arkweb_media_dmabuf"]
+  }
+
+  if (arkweb_media_memory_pressure) {
+    enabled_features += ["arkweb_media_memory_pressure"]
+  }
+
   if (use_linux_video_acceleration) {
     enabled_features += [ "allow_linux_video_acceleration" ]
+  }
+
+  if (arkweb_media_cast) {
+    enabled_features += ["arkweb_media_cast"]
   }
 
   # Help select ServiceSandbox for media_service.mojom.
@@ -139,6 +195,10 @@ mojom("mojom") {
     enabled_features += [ "enable_cast_renderer" ]
   }
 
+  if (is_arkweb) {
+    enabled_features += [ "is_arkweb" ]
+    enabled_features += [ "arkweb_activity_state" ]
+  }
   shared_typemaps = [
     {
       types = [
@@ -405,6 +465,29 @@ mojom("mojom") {
     ]
   }
 
+  if (arkweb_custom_video_player) {
+    cpp_typemaps += [
+      {
+        types = [
+          {
+            mojom = "media.mojom.MediaPlayerUrlParams"
+            cpp = "::media::MediaPlayerUrlParams"
+          },
+        ]
+        traits_headers = [
+          "//arkweb/chromium_ext/media/mojo/mojom/media_player_url_params_mojom_traits.h"
+        ]
+        traits_sources = [
+          "//arkweb/chromium_ext/media/mojo/mojom/media_player_url_params_mojom_traits.cc"
+        ]
+        traits_public_deps = [
+          "//base",
+          "//media",
+        ]
+      },
+    ]
+  }
+
   cpp_typemaps += shared_typemaps
   blink_cpp_typemaps = shared_typemaps
 
@@ -416,6 +499,14 @@ mojom("mojom") {
 mojom("media_types") {
   generate_java = true
   sources = [ "media_types.mojom" ]
+
+  enabled_features = []
+  if (arkweb_media) {
+    enabled_features += ["arkweb_media"]
+  }
+  if (arkweb_custom_video_player) {
+    enabled_features += ["arkweb_custom_video_player"]
+  }
 
   shared_typemaps = [
     {

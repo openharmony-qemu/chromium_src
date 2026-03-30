@@ -176,7 +176,8 @@ class WebDragSourceAura : public content::WebContentsObserver,
   raw_ptr<aura::Window> window_;
 };
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_WIN) || \
+    BUILDFLAG(IS_OHOS)
 // Fill out the OSExchangeData with a file contents, synthesizing a name if
 // necessary.
 void PrepareDragForFileContents(const DropData& drop_data,
@@ -261,7 +262,8 @@ void PrepareDragData(const DropData& drop_data,
   if (!drop_data.download_metadata.empty())
     PrepareDragForDownload(drop_data, provider, web_contents);
 #endif
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_WIN) || \
+    BUILDFLAG(IS_OHOS)
   // We set the file contents before the URL because the URL also sets file
   // contents (to a .URL shortcut).  We want to prefer file content data over
   // a shortcut so we add it first.
@@ -1870,7 +1872,11 @@ void WebContentsViewAura::OnGotVirtualFilesAsTempFiles(
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
+int WebContentsViewAura::GetTopControlsHeight() {
+#else
 int WebContentsViewAura::GetTopControlsHeight() const {
+#endif
   WebContentsDelegate* delegate = web_contents_->GetDelegate();
   if (!delegate)
     return 0;

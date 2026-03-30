@@ -9,6 +9,9 @@
 #include <algorithm>
 #include <utility>
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "base/check_op.h"
 #include "base/memory/ptr_util.h"
 #include "base/types/optional_ref.h"
@@ -21,6 +24,11 @@
 #include "ui/gfx/animation/tween.h"
 #include "ui/gfx/geometry/transform.h"
 #include "ui/gfx/geometry/vector2d_f.h"
+
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#include "base/command_line.h"
+#endif
 
 namespace cc {
 namespace {
@@ -241,6 +249,13 @@ void BrowserControlsOffsetManager::UpdateBrowserControlsState(
   else
     client_->SetCurrentBrowserControlsShownRatio(final_top_shown_ratio,
                                                  final_bottom_shown_ratio);
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS) && BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SLIDE)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableNwebExTopControls) &&
+      !animate) {
+    client_->SetupScrollBy();
+  }
+#endif
 }
 
 BrowserControlsState BrowserControlsOffsetManager::PullConstraintForMainThread(

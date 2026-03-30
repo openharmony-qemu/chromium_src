@@ -95,7 +95,10 @@ If you update this file, be sure also to update google_chrome_strings.grd. -->
     <!-- Pseudolocales -->
     <output filename="branded_strings_ar-XB.pak" type="data_package" lang="ar-XB" />
     <output filename="branded_strings_en-XA.pak" type="data_package" lang="en-XA" />
-
+     <!-- <if expr="pp_ifdef('arkweb_i18n')"> -->
+      <output filename="branded_strings_bo-CN.pak" type="data_package" lang="bo-CN" />
+      <output filename="branded_strings_ug.pak" type="data_package" lang="ug" />
+    <!-- </if>  -->
     <!-- On Android, output some strings into Android's xml string format.
          These strings are tagged with formatter_data="android_java" -->
     <if expr="is_android">
@@ -268,6 +271,10 @@ If you update this file, be sure also to update google_chrome_strings.grd. -->
     <file path="resources/chromium_strings_zh-HK.xtb" lang="zh-HK" />
     <file path="resources/chromium_strings_zh-TW.xtb" lang="zh-TW" />
     <file path="resources/chromium_strings_zu.xtb" lang="zu" />
+    <!-- <if expr="pp_ifdef('arkweb_i18n')"> -->
+       <file path="resources/chromium_strings_bo-CN.xtb" lang="bo-CN" />
+       <file path="resources/chromium_strings_ug.xtb" lang="ug" />
+    <!-- </if> -->
   </translations>
   <release seq="1">
     <messages fallback_to_english="true">
@@ -317,6 +324,11 @@ If you update this file, be sure also to update google_chrome_strings.grd. -->
       </if>
       <if expr="is_macosx or is_linux">
         <message name="IDS_FIRST_RUN_DIALOG_WINDOW_TITLE" desc="Window title of First Run dialog on Mac and Linux, displayed in title bar">
+          Welcome to Chromium
+        </message>
+      </if>
+      <if expr="is_ohos">
+        <message name="IDS_FIRST_RUN_DIALOG_WINDOW_TITLE" desc="Window title of First Run dialog on Ohos, displayed in title bar">
           Welcome to Chromium
         </message>
       </if>
@@ -628,7 +640,7 @@ Chromium is unable to recover your settings.
       <message name="IDS_PASSWORD_MANAGER_UPDATE_PASSWORD_SIGNED_OUT_MESSAGE_DESCRIPTION" desc="The description of the Password Manager's update password message when the user is signed out.">
         In Password Manager on this device
       </message>
-      <if expr="is_macosx">
+      <if expr="is_macosx or is_ohos">
       <message name="IDS_PASSWORDS_AUTHENTICATION_PROMPT_PREFIX" desc="Text shown in the beginning of the OS-level user authentication prompt before performing a seneitive operation such as show passwords in plain text.">
           Chromium is trying to <ph name="AUTHENTICATION_PURPOSE">$1<ex>show passwords</ex></ph>
         </message>
@@ -904,10 +916,16 @@ Chromium is unable to recover your settings.
         Chromium can't verify where this extension comes from, and it might be unsafe. Remove it from Chromium so it can no longer see and change your data on sites you visit, including personal info.
       </message>
       <message name="IDS_EXTENSIONS_SAFETY_CHECK_OFFSTORE_ON" desc="Alerts the user that the extension is not from the Chrome web store.">
-        On • Chromium can't verify where this extension comes from
+        On • The source of this extension could not be verified
       </message>
       <message name="IDS_EXTENSIONS_SAFETY_CHECK_OFFSTORE_OFF" desc="Alerts the user that the extension is not from the Chrome web store.">
-        Off • Chromium can't verify where this extension comes from
+        Off • The source of this extension could not be verified
+      </message>
+      <message name="IDS_EXTENSIONS_SAFETY_CHECK_OFFSTORE_ON_V2" desc="Alerts the user that the extension is not from the web store.">
+        On • Extension source cannot be verified
+      </message>
+      <message name="IDS_EXTENSIONS_SAFETY_CHECK_OFFSTORE_OFF_V2" desc="Alerts the user that the extension is not from the web store.">
+        Off • Extension source cannot be verified
       </message>
       <message name="IDS_EXTENSIONS_SAFETY_CHECK_NO_PRIVACY_PRACTICES" desc="Alerts the user that the extension has not disclosed its privacy practices.">
         This extension hasn't published privacy practices, such as how it collects and uses data. Chromium recommends that you remove it.
@@ -916,14 +934,17 @@ Chromium is unable to recover your settings.
       <!-- chrome://extensions page -->
   <message name="IDS_EXTENSIONS_SC_DESCRIPTION" desc="Detailed message displayed in the Safety Check description section.">
     {NUM_EXTENSIONS, plural,
-     =1 {Chromium recommends that you remove it}
-     other {Chromium recommends that you remove them}}
+     =1 {Browser recommends that you remove it}
+     other {Browser recommends that you remove them}}
   </message>
       <message name="IDS_EXTENSIONS_ITEM_SHOW_ACCESS_REQUESTS_IN_TOOLBAR" desc="The label on the toggle to allow the extension to show site access requests in the toolbar.">
         Allow extension to show access requests in the Chromium toolbar
       </message>
       <message name="IDS_EXTENSIONS_INCOGNITO_WARNING" desc="Warns the user that Chromium cannot prevent extensions from recording history in Incognito mode. Displayed in extensions management UI after an extension is selected to be run in Incognito mode.">
-        Warning: Chromium cannot prevent extensions from recording your browsing history. To disable this extension in Incognito mode, unselect this option.
+        Warning: Browser cannot prevent extensions from recording your browsing history. To disable this extension in Incognito mode, unselect this option.
+      </message>
+      <message name="IDS_EXTENSIONS_INCOGNITO_WARNING_V2" desc="Warns the user that Chromium cannot prevent extensions from recording history in Incognito mode. Displayed in extensions management UI after an extension is selected to be run in Incognito mode.">
+        Note: Browser cannot prevent extensions from recording your browsing history. To disable this extension in Private mode, toggle off this option.
       </message>
       <message name="IDS_EXTENSIONS_UNINSTALL" desc="The label for a control that triggers an extension uninstall.">
         Remove from Chromium

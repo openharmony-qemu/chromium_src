@@ -46,6 +46,10 @@
 #include "components/cdm/common/android_cdm_registration.h"
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
+#include "media/cdm/wiseplay_cdm_common.h"
+#endif
+
 #if BUILDFLAG(ENABLE_PLAYREADY)
 #include "base/file_version_info_win.h"
 #include "components/cdm/common/playready_cdm_common.h"
@@ -167,6 +171,12 @@ void AddSoftwareSecureWidevine(std::vector<content::CdmInfo>* cdms) {
       /*supports_sub_key_systems=*/false, kWidevineCdmDisplayName,
       kWidevineCdmType, base::FilePath());
 
+#elif BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ENABLE_CDM)
+  LOG(INFO) << "[DRM]" << __func__;
+  cdms->emplace_back(
+      kWidevineKeySystem, Robustness::kSoftwareSecure, std::nullopt,
+      /*supports_sub_key_systems=*/false, kWidevineCdmDisplayName,
+      kWidevineCdmType, base::Version(), base::FilePath());
 #elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
   // The Widevine CDM on Linux/ChromeOS needs to be registered (and loaded)
   // before the zygote is locked down. The CDM can be found from the version
@@ -254,7 +264,7 @@ void AddHardwareSecureWidevine(std::vector<content::CdmInfo>* cdms) {
   // checked the first time some page attempts to play protected content.
   cdms->emplace_back(
       kWidevineKeySystem, Robustness::kHardwareSecure, std::nullopt,
-      /*supports_sub_key_systems=*/false, kWidevineCdmDisplayName,
+      false, kWidevineCdmDisplayName,
       kWidevineCdmType, base::FilePath());
 
 #elif BUILDFLAG(USE_CHROMEOS_PROTECTED_MEDIA)
@@ -303,6 +313,21 @@ void AddWidevine(std::vector<content::CdmInfo>* cdms) {
   AddHardwareSecureWidevine(cdms);
 }
 #endif  // BUILDFLAG(ENABLE_WIDEVINE)
+
+#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
+void AddSoftwareSecureWiseplay(std::vector<content::CdmInfo>* cdms) {
+  LOG(INFO) << "[DRM]" << __func__;
+  cdms->emplace_back(
+      media::kWiseplayKeySystem, Robustness::kSoftwareSecure, std::nullopt,
+      false, media::kWiseplayCdmDisplayName,
+      media::kWiseplayCdmType, base::Version(), base::FilePath());
+}
+
+void AddWiseplay(std::vector<content::CdmInfo>* cdms) {
+  LOG(INFO) << "[DRM]" << __func__;
+  AddSoftwareSecureWiseplay(cdms);
+}
+#endif
 
 #if BUILDFLAG(ENABLE_LIBRARY_CDMS)
 void AddExternalClearKey(std::vector<content::CdmInfo>* cdms) {
@@ -413,6 +438,10 @@ void RegisterCdmInfo(std::vector<content::CdmInfo>* cdms) {
 
 #if BUILDFLAG(ENABLE_WIDEVINE)
   AddWidevine(cdms);
+#endif
+
+#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
+  AddWiseplay(cdms);
 #endif
 
 #if BUILDFLAG(ENABLE_LIBRARY_CDMS)

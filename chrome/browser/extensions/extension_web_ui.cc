@@ -495,7 +495,11 @@ const extensions::Extension* ExtensionWebUI::GetExtensionControllingURL(
     return nullptr;
 
   DCHECK_NE(url, mutable_url);
-  DCHECK(mutable_url.SchemeIs(extensions::kExtensionScheme));
+  DCHECK(mutable_url.SchemeIs(extensions::kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+         || mutable_url.SchemeIs(extensions::kArkwebExtensionScheme)
+#endif
+  );
 
   const extensions::Extension* extension =
       extensions::ExtensionRegistry::Get(browser_context)

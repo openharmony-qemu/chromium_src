@@ -105,6 +105,10 @@
 #include "third_party/blink/renderer/platform/mojo/heap_mojo_remote.h"
 #endif
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif // IS_ARKWEB_EXT
+
 namespace base {
 class SingleThreadTaskRunner;
 }
@@ -302,6 +306,10 @@ class InnerHtmlAgent;
 class InnerTextAgent;
 class RTCPeerConnectionController;
 
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+class EditorCommand;
+#endif  // ARKWEB_CLIPBOARD
+
 template <typename EventType>
 class EventWithHitTestResults;
 
@@ -312,6 +320,9 @@ struct FocusParams;
 struct IconURL;
 struct TextDiffRange;
 struct WebPrintPageDescription;
+
+// ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+class VideoPriority;
 
 using MouseEventWithHitTestResults = EventWithHitTestResults<WebMouseEvent>;
 
@@ -1443,12 +1454,30 @@ class CORE_EXPORT Document : public ContainerNode,
                    const String& value,
                    ExceptionState&);
 
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  bool ValidateClipboardPreconditions(const EditorCommand& command, const String& checked_value);
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
+
   bool IsRunningExecCommand() const { return is_running_exec_command_; }
   bool queryCommandEnabled(const String& command, ExceptionState&);
   bool queryCommandIndeterm(const String& command, ExceptionState&);
   bool queryCommandState(const String& command, ExceptionState&);
   bool queryCommandSupported(const String& command, ExceptionState&);
   String queryCommandValue(const String& command, ExceptionState&);
+
+  // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+  bool isVideoPrioritySupported();
+  void setVideoPriority(const HeapVector<Member<VideoPriority>>&);
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  void SetVideoIsPlaying(std::string id, bool playing);
+  bool IsUseVideoLoadOptimization();
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+  void SetCustomViewportWidth(float width);
+  float GetCustomViewportWidth() const;
+#endif
 
   KURL OpenSearchDescriptionURL();
 
@@ -1844,10 +1873,9 @@ class CORE_EXPORT Document : public ContainerNode,
   static void SetForceSynchronousParsingForTesting(bool);
   static bool ForceSynchronousParsingForTesting();
 
-#if DCHECK_IS_ON()
+#if DCHECK_IS_ON() || BUILDFLAG(IS_ARKWEB)
   void IncrementNodeCount() { node_count_++; }
   void DecrementNodeCount() {
-    DCHECK_GT(node_count_, 0);
     node_count_--;
   }
 #endif  // DCHECK_IS_ON()
@@ -3245,7 +3273,7 @@ class CORE_EXPORT Document : public ContainerNode,
 
   Member<IntersectionObserverController> intersection_observer_controller_;
 
-#if DCHECK_IS_ON()
+#if DCHECK_IS_ON() || BUILDFLAG(IS_ARKWEB)
   int node_count_ = 0;
 #endif
 
@@ -3487,6 +3515,14 @@ class CORE_EXPORT Document : public ContainerNode,
   //
   // If you need to add new data members to blink::Document and it requires new
   // #includes, add them to blink::DocumentData instead.
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+  float custom_viewport_width_ = 0.0f;
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  bool is_use_video_load_opt_ = false;
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION  
 };
 
 inline void Document::ScheduleLayoutTreeUpdateIfNeeded() {

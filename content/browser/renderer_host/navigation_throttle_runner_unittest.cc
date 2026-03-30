@@ -194,7 +194,7 @@ class NavigationThrottleRunnerTest : public RenderViewHostTestHarness,
   // NavigationThrottleRegistry:
   NavigationHandle& GetNavigationHandle() override { return handle_; }
   void AddThrottle(
-      std::unique_ptr<NavigationThrottle> navigation_throttle) override {
+      std::unique_ptr<NavigationThrottle> navigation_throttle, bool first = false) override {
     throttles_.push_back(std::move(navigation_throttle));
   }
   bool IsHTTPOrHTTPS() override {

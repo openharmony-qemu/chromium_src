@@ -20,6 +20,10 @@ namespace flat {
 struct UrlRule;  // The FlatBuffers version of UrlRule.
 }
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+class UrlPatternExt;
+#endif
+
 // The structure used to mirror a URL pattern regardless of the representation
 // of the UrlRule that owns it, and to match it against URLs.
 class UrlPattern {
@@ -92,6 +96,10 @@ class UrlPattern {
   // subpattern to a subtring of the spec.
   bool MatchesUrl(const UrlInfo& url) const;
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  friend class UrlPatternExt;
+#endif
+
  private:
   // TODO(pkalinnikov): Store flat:: types instead of proto::, in order to avoid
   // conversions in IndexedRuleset.
@@ -108,5 +116,9 @@ class UrlPattern {
 std::ostream& operator<<(std::ostream& out, const UrlPattern& pattern);
 
 }  // namespace url_pattern_index
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+#include "arkweb/chromium_ext/components/url_pattern_index/url_pattern_ext.h"
+#endif
 
 #endif  // COMPONENTS_URL_PATTERN_INDEX_URL_PATTERN_H_

@@ -26,6 +26,13 @@
 #include "chrome/browser/ui/browser_list_enumerator.h"
 #include "chrome/browser/ui/browser_list_observer.h"
 #include "chrome/browser/ui/browser_window.h"
+
+#if BUILDFLAG(IS_OHOS)
+#include "ui/aura/window.h"
+#include "ui/aura/window_tree_host.h"
+#include "ui/gfx/native_ui_types.h"
+#endif
+
 #include "chrome/browser/ui/browser_window/public/browser_window_interface.h"
 #include "chrome/browser/ui/browser_window/public/browser_window_interface_iterator.h"
 #include "components/keep_alive_registry/keep_alive_registry.h"
@@ -399,3 +406,18 @@ void BrowserList::RemoveBrowserFrom(Browser* browser,
     browser_list->erase(remove_browser);
   }
 }
+
+#if BUILDFLAG(IS_OHOS)
+gfx::AcceleratedWidget BrowserList::GetLastActiveAcceleratedWidget() const {
+  Browser* browser = browsers_ordered_by_activation_.empty()
+                         ? nullptr
+                         : *(browsers_ordered_by_activation_.rbegin());
+  if (browser && browser->window()) {
+    aura::Window* native_window = browser->window()->GetNativeWindow();
+    if (native_window && native_window->GetHost()) {
+      return native_window->GetHost()->GetAcceleratedWidget();
+    }
+  }
+  return 0;
+}
+#endif

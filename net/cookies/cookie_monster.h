@@ -204,7 +204,12 @@ class NET_EXPORT CookieMonster : public CookieStore {
   // TODO(rdsmith, mmenke): Do not use this function; it is deprecated
   // and should be removed.
   // See https://codereview.chromium.org/2882063002/#msg64.
+#if BUILDFLAG(ARKWEB_COOKIE)
+  void SetAllCookiesAsync(const CookieList& list,
+                          SetCookiesCallback callback) override;
+#else
   void SetAllCookiesAsync(const CookieList& list, SetCookiesCallback callback);
+#endif
 
   // CookieStore implementation.
   void SetCanonicalCookieAsync(

@@ -150,6 +150,7 @@
     "geometrychange",
     "gestureflingstart",
     "gesturelongpress",
+    "gesturedraglongpress",
     "gestureshowpress",
     "gesturetap",
     "gesturetapdown",
@@ -382,6 +383,7 @@
     "writeend",
     "writestart",
     "zoom",
+    "videofreeze",
     "zoomlevelchange",
   ],
 }

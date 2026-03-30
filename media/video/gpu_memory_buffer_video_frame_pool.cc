@@ -663,6 +663,10 @@ void GpuMemoryBufferVideoFramePool::PoolImpl::CreateHardwareFrame(
     scoped_refptr<VideoFrame> video_frame,
     FrameReadyCB frame_ready_cb) {
   DCHECK(media_task_runner_->RunsTasksInCurrentSequence());
+#if BUILDFLAG(IS_ARKWEB)
+  std::move(frame_ready_cb).Run(std::move(video_frame));
+  return;
+#else
   // Lazily initialize |output_format_| since VideoFrameOutputFormat() has to be
   // called on the media_thread while this object might be instantiated on any.
   const VideoPixelFormat pixel_format = video_frame->format();
@@ -772,6 +776,7 @@ void GpuMemoryBufferVideoFramePool::PoolImpl::CreateHardwareFrame(
   if (frame_copy_requests_.size() == 1u) {
     StartCopy();
   }
+#endif
 }
 
 bool GpuMemoryBufferVideoFramePool::PoolImpl::OnMemoryDump(

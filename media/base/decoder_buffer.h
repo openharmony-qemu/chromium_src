@@ -159,6 +159,12 @@ class MEDIA_EXPORT DecoderBuffer
     DCHECK(!external_memory_);
     return const_cast<uint8_t*>(data_.data());
   }
+#if BUILDFLAG(IS_ARKWEB)
+  size_t data_size() const {
+    DCHECK(!end_of_stream());
+    return size_;
+  }
+#endif
 
   // TODO(crbug.com/41383992): Remove writable_span().
   base::span<uint8_t> writable_span() const {
@@ -285,7 +291,9 @@ class MEDIA_EXPORT DecoderBuffer
   // must be added and can be optional, ensure it is heap allocated through the
   // usage of something like std::unique_ptr.
   // ***************************************************************************
-
+#if BUILDFLAG(IS_ARKWEB)
+  size_t size_;
+#endif
   // Presentation time of the frame.
   base::TimeDelta timestamp_;
 

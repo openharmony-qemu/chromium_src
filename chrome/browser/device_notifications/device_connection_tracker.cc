@@ -27,7 +27,11 @@ using base::TimeTicks;
 
 std::string GetOriginName(Profile* profile, const url::Origin& origin) {
 #if BUILDFLAG(ENABLE_EXTENSIONS)
-  if (origin.scheme() == extensions::kExtensionScheme) {
+  if (origin.scheme() == extensions::kExtensionScheme
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      || origin.scheme() == extensions::kArkwebExtensionScheme
+#endif
+  ) {
     const auto* extension_registry =
         extensions::ExtensionRegistry::Get(profile);
     CHECK(extension_registry);

@@ -77,6 +77,7 @@ bool IndexSupportsGroupMove(TabStripModel* tab_strip,
 
 }  // namespace
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 ExtensionFunction::ResponseAction TabGroupsGetFunction::Run() {
   std::optional<api::tab_groups::Get::Params> params =
       api::tab_groups::Get::Params::Create(args());
@@ -194,6 +195,7 @@ ExtensionFunction::ResponseAction TabGroupsQueryFunction::Run() {
 }
 
 ExtensionFunction::ResponseAction TabGroupsUpdateFunction::Run() {
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   std::optional<api::tab_groups::Update::Params> params =
       api::tab_groups::Update::Params::Create(args());
   EXTENSION_FUNCTION_VALIDATE(params);
@@ -377,6 +379,7 @@ bool TabGroupsMoveFunction::MoveGroup(int group_id,
 
   return true;
 }
+#endif
 
 bool TabGroupsMoveFunction::MoveTabGroupBetweenBrowsers(
     Browser* source_browser,
@@ -427,5 +430,5 @@ bool TabGroupsMoveFunction::MoveTabGroupBetweenBrowsers(
 
   return true;
 }
-
+#endif
 }  // namespace extensions

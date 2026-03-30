@@ -38,6 +38,7 @@
 #include "media/media_buildflags.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "arkweb/build/features/features.h"
 
 #if defined(USE_ALSA)
 #include "media/audio/alsa/audio_manager_alsa.h"
@@ -466,6 +467,17 @@ class TestAudioManager : public FakeAudioManager {
       return "output2";
     return std::string();
   }
+
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+ protected:
+  AudioParameters GetPreferredOutputStreamParameters(
+      const std::string& output_device_id,
+      const AudioParameters& input_params) override {}
+#if BUILDFLAG(ARKWEB_WEBRTC)
+  AudioParameters GetPreferredInputStreamParameters(
+      const std::string& input_device_id) override {}
+#endif // BUILDFLAG(ARKWEB_WEBRTC)
+#endif
 
  private:
   void GetAudioInputDeviceNames(AudioDeviceNames* device_names) override {

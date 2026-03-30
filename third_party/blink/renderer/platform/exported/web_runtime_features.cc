@@ -65,6 +65,12 @@ void WebRuntimeFeatures::EnableFluentScrollbars(bool enable) {
   ScrollbarThemeSettings::SetFluentScrollbarsEnabled(enable);
 }
 
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+void WebRuntimeFeatures::EnableNonAdvancedSecurityMode(bool enable) {
+  RuntimeEnabledFeatures::SetNonAdvancedSecurityModeEnabled(enable);
+}
+#endif
+
 void WebRuntimeFeatures::EnableFluentOverlayScrollbars(bool enable) {
   RuntimeEnabledFeatures::SetFluentOverlayScrollbarsEnabled(enable);
 }

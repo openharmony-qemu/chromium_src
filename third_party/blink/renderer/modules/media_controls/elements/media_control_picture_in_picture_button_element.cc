@@ -14,6 +14,14 @@
 #include "third_party/blink/renderer/modules/media_controls/media_controls_impl.h"
 #include "third_party/blink/renderer/platform/text/platform_locale.h"
 #include "ui/strings/grit/ax_strings.h"
+#if BUILDFLAG(IS_ARKWEB_EXT) && BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+#include "ohos_nweb_ex/overrides/ui/strings/grit/ohos_ex_ui_strings.h"
+#endif
+
+#if !BUILDFLAG(IS_ARKWEB_EXT)
+#define IDS_OHOS_MEDIA_OVERFLOW_MENU_EXIT_PICTURE_IN_PICTURE 62073
+#define IDS_OHOS_MEDIA_OVERFLOW_MENU_ENTER_PICTURE_IN_PICTURE 62074
+#endif
 
 namespace blink {
 
@@ -57,6 +65,14 @@ int MediaControlPictureInPictureButtonElement::GetOverflowStringId() const {
   bool isInPictureInPicture =
       PictureInPictureController::IsElementInPictureInPicture(
           &To<HTMLVideoElement>(MediaElement()));
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  if (GetMediaControls().ShouldShowVideoControlsHM()) {
+    return isInPictureInPicture
+              ? IDS_OHOS_MEDIA_OVERFLOW_MENU_EXIT_PICTURE_IN_PICTURE
+              : IDS_OHOS_MEDIA_OVERFLOW_MENU_ENTER_PICTURE_IN_PICTURE;
+  }
+#endif
 
   return isInPictureInPicture
              ? IDS_MEDIA_OVERFLOW_MENU_EXIT_PICTURE_IN_PICTURE
@@ -107,5 +123,4 @@ void MediaControlPictureInPictureButtonElement::UpdateAriaString(
   setAttribute(html_names::kAriaLabelAttr, AtomicString(aria_string));
   UpdateAriaLabel(aria_string);
 }
-
 }  // namespace blink

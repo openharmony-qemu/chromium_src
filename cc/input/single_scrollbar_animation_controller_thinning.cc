@@ -315,11 +315,13 @@ void SingleScrollbarAnimationControllerThinning::UpdateThumbThicknessScale() {
   ApplyThumbThicknessScale(CurrentForcedThumbThicknessScale());
 }
 
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
 void SingleScrollbarAnimationControllerThinning::DidRequestShow() {
   if (thickness_change_ == AnimationChange::kNone) {
     UpdateThumbThicknessScale();
   }
 }
+#endif
 
 void SingleScrollbarAnimationControllerThinning::ApplyThumbThicknessScale(
     float thumb_thickness_scale) {

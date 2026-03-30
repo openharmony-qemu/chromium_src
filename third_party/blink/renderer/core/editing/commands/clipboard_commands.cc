@@ -59,6 +59,10 @@
 #include "third_party/blink/renderer/platform/loader/fetch/resource_fetcher.h"
 #include "third_party/blink/renderer/platform/loader/fetch/resource_request.h"
 
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+#include "base/trace_event/trace_event.h"
+#endif
+
 namespace blink {
 
 // This class holds some state relevant to current clipboard event dispatch. It
@@ -312,6 +316,10 @@ bool ClipboardCommands::ExecuteCopy(LocalFrame& frame,
                                     Event*,
                                     EditorCommandSource source,
                                     const String&) {
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  TRACE_EVENT0("blink", "NWebCopy");
+  LOG(INFO) << "start to execute copy, source=" << static_cast<int32_t>(source);
+#endif
   if (!DispatchCopyOrCutEvent(frame, source, event_type_names::kCopy))
     return true;
   if (!frame.GetEditor().CanCopy())
@@ -525,6 +533,13 @@ void ClipboardCommands::Paste(LocalFrame& frame, EditorCommandSource source) {
   // SystemClipboard snapshotting tells SystemClipboard to cache results from
   // the ClipboardHost so that at most one IPC is made for each type.
   ScopedSystemClipboardSnapshot snapshot(*frame.GetSystemClipboard());
+
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  if (frame.GetSystemClipboard()->HandlePasswordVault()) {
+    LOG(INFO) << "skip this paste operation.";
+    return;
+  }
+#endif
 
   if (!DispatchPasteEvent(frame, PasteMode::kAllMimeTypes, source))
     return;
@@ -759,6 +774,11 @@ bool ClipboardCommands::ExecutePaste(LocalFrame& frame,
                                      Event*,
                                      EditorCommandSource source,
                                      const String&) {
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  TRACE_EVENT0("blink", "NWebPaste");
+  LOG(INFO) << "start to execute paste, source="
+            << static_cast<int32_t>(source);
+#endif
   Paste(frame, source);
   return true;
 }

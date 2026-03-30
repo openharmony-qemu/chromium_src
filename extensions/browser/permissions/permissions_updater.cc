@@ -44,6 +44,10 @@
 #include "extensions/common/permissions/permissions_data.h"
 #include "extensions/common/url_pattern_set.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/extensions/browser/permissions/permissions_updater_for_include.cc"
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
+
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 
 using content::RenderProcessHost;
@@ -240,6 +244,11 @@ void PermissionsUpdater::GrantOptionalPermissions(
             .Contains(permissions))
       << "Cannot add optional permissions that are not "
       << "specified in the manifest.";
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  ExtensionPrefs::Get(browser_context_)
+      ->RemoveRuntimeUserBlockedPermissions(extension.id(), permissions);
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 
   // Granted optional permissions are stored in both the granted permissions (so
   // we don't later disable the extension when we check the active permissions

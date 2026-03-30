@@ -45,6 +45,8 @@
 #include "third_party/skia/include/core/SkFontMgr.h"
 #include "third_party/skia/include/core/SkTypeface.h"
 
+#include "arkweb/build/features/features.h"
+
 namespace blink {
 
 namespace {
@@ -70,11 +72,27 @@ static AtomicString DefaultFontFamily() {
   return DefaultFontFamily(skia::DefaultFontMgr());
 }
 
-// static
-const AtomicString& FontCache::SystemFontFamily() {
+#if BUILDFLAG(ARKWEB_THEME_FONT)
+static AtomicString& MutableSystemFontFamily() {
   DEFINE_THREAD_SAFE_STATIC_LOCAL(AtomicString, system_font_family,
                                   (DefaultFontFamily()));
   return system_font_family;
+}
+
+void FontCache::InvalidateSystemFontFamily() {
+  MutableSystemFontFamily() = DefaultFontFamily();
+}
+#endif
+
+// static
+const AtomicString& FontCache::SystemFontFamily() {
+#if BUILDFLAG(ARKWEB_THEME_FONT)
+  return MutableSystemFontFamily();
+#else
+  DEFINE_THREAD_SAFE_STATIC_LOCAL(AtomicString, system_font_family,
+                                  (DefaultFontFamily()));
+  return system_font_family;
+#endif
 }
 
 // static
@@ -139,11 +157,13 @@ const SimpleFontData* FontCache::PlatformFallbackFontForCharacter(
 
   FontFallbackPriority fallback_priority_with_emoji_text = fallback_priority;
 
+#if !BUILDFLAG(IS_ARKWEB)
   if (RuntimeEnabledFeatures::SystemFallbackEmojiVSSupportEnabled() &&
       fallback_priority == FontFallbackPriority::kText &&
       Character::IsEmoji(c)) {
     fallback_priority_with_emoji_text = FontFallbackPriority::kEmojiText;
   }
+#endif
 
   const FontPlatformData* font_platform_data =
       CreateFontPlatformDataForCharacter(fm.get(), c, font_description,

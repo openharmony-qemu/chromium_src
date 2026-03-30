@@ -6,6 +6,13 @@ import("//content/browser/devtools/features.gni")
 import("//extensions/buildflags/buildflags.gni")
 import("//printing/buildflags/buildflags.gni")
 
+if (is_arkweb) {
+  import("//arkweb/build/features/features.gni")
+  if (defined(arkweb_devtools) && arkweb_devtools) {
+    import("//arkweb/chromium_ext/chrome/browser/devtools/arkweb_devtools_ext.gni")
+  }
+}
+
 if (enable_devtools_frontend) {
   import("//chrome/common/features.gni")
   import("//tools/grit/grit_rule.gni")
@@ -438,6 +445,10 @@ static_library("devtools") {
       "//chrome/common/extensions/api",
       "//extensions/browser",
     ]
+  }
+
+  if (defined(arkweb_devtools) && arkweb_devtools) {
+    sources += arkweb_devtools_manager_delegate
   }
 }
 

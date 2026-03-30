@@ -57,10 +57,15 @@ DistillerImpl::DistillerImpl(
     : distiller_url_fetcher_factory_(distiller_url_fetcher_factory),
       dom_distiller_options_(dom_distiller_options),
       max_pages_in_article_(kMaxPagesInArticle),
-      destruction_allowed_(true) {}
+      destruction_allowed_(true) {
+  impl_utils_ = std::make_unique<DistillerImplUtils>(this);
+}
 
 DistillerImpl::~DistillerImpl() {
   DCHECK(destruction_allowed_);
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  AbortDistill();
+#endif // ARKWEB_READER_MODE
 }
 
 void DistillerImpl::SetMaxNumPagesInArticle(size_t max_num_pages) {
@@ -107,6 +112,10 @@ void DistillerImpl::DistillPage(const GURL& url,
   finished_cb_ = std::move(finished_cb);
   update_cb_ = update_cb;
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  impl_utils_->DistillPage();
+#endif // ARKWEB_READER_MODE
+
   AddToDistillationQueue(0, url);
   DistillNextPage();
 }
@@ -125,12 +134,16 @@ void DistillerImpl::DistillNextPage() {
     pages_.push_back(std::make_unique<DistilledPageData>());
     started_pages_index_[page_num] = pages_.size() - 1;
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+    impl_utils_->DistillNextPage(page_num, url);
+#else
     // TODO(gilmanmh): Investigate whether this needs to be
     // base::BindRepeating() or if base::BindOnce() can be used instead.
     distiller_page_->DistillPage(
         url, dom_distiller_options_,
         base::BindRepeating(&DistillerImpl::OnPageDistillationFinished,
                             weak_factory_.GetWeakPtr(), page_num, url));
+#endif // ARKWEB_READER_MODE
   }
 }
 
@@ -238,6 +251,14 @@ void DistillerImpl::OnPageDistillationFinished(
   AddPageIfDone(page_num);
   DistillNextPage();
 }
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+void DistillerImpl::AbortDistill() {
+  if (distiller_page_) {
+    distiller_page_->AbortDistill();
+  }
+}
+#endif // ARKWEB_READER_MODE
 
 void DistillerImpl::MaybeFetchImage(int page_num,
                                     const std::string& image_id,

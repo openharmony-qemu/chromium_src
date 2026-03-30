@@ -16,6 +16,7 @@
 #include "ui/gfx/native_ui_types.h"
 #include "ui/shell_dialogs/base_shell_dialog.h"
 #include "ui/shell_dialogs/shell_dialogs_export.h"
+#include "arkweb/build/features/features.h"
 
 class GURL;
 
@@ -138,11 +139,27 @@ class SHELL_DIALOGS_EXPORT SelectFileDialog
     // Specifies whether there will be a filter added for all files (i.e. *.*).
     bool include_all_files = false;
 
+#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
+    std::u16string start_in = u"";
+
+    struct AcceptFileType {
+      std::string mime_type;
+      std::vector<std::string> accept_type;
+    };
+
+    std::vector<std::vector<AcceptFileType>> accepts;
+#endif
+
     // Some implementations by default hide the extension of a file, in
     // particular in a save file dialog. If this is set to true, where
     // supported, the save file dialog will instead keep the file extension
     // visible.
     bool keep_extension_visible = false;
+
+#if BUILDFLAG(IS_OHOS)
+    // Whether to persist read-write authorization
+    bool file_access_persist = false;
+#endif
 
     // Specifies which type of paths the caller can handle.
     enum AllowedPaths {
@@ -168,7 +185,7 @@ class SHELL_DIALOGS_EXPORT SelectFileDialog
   // selection dialog will fail to open if the file name exceeds 255 characters.
   static base::FilePath GetShortenedFilePath(const base::FilePath& path);
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_FILE_UPLOAD)
   // Set the list of acceptable MIME types for the file picker; this will apply
   // to any subsequent SelectFile() calls.
   virtual void SetAcceptTypes(std::vector<std::u16string> types);

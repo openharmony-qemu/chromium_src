@@ -46,6 +46,10 @@ using ::base::test::SingleThreadTaskEnvironment;
 using ::base::test::TaskEnvironment;
 using ::testing::ElementsAre;
 using ::testing::IsEmpty;
+
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+void ReportRenderFreeze(int32_t pid, const std::string& processName, const std::string& freezeMsg, int32_t uid) {}
+#endif
 using ::testing::Pair;
 using ::testing::TestWithParam;
 using ::testing::UnorderedElementsAre;

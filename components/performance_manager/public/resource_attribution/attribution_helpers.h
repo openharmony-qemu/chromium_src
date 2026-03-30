@@ -10,6 +10,10 @@
 #include "components/performance_manager/public/graph/process_node.h"
 #include "content/public/common/process_type.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "base/logging.h"
+#endif
+
 namespace performance_manager {
 class FrameNode;
 class WorkerNode;

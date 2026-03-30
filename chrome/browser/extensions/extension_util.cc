@@ -310,6 +310,9 @@ std::vector<content::BrowserContext*> GetAllRelatedProfiles(
 void SetDeveloperModeForProfile(Profile* profile, bool in_developer_mode) {
   profile->GetPrefs()->SetBoolean(prefs::kExtensionsUIDeveloperMode,
                                   in_developer_mode);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  profile->GetPrefs()->CommitPendingWrite();
+#endif // ARKWEB_ARKWEB_EXTENSIONS                                  
   SetCurrentDeveloperMode(util::GetBrowserContextId(profile),
                           in_developer_mode);
   RendererStartupHelperFactory::GetForBrowserContext(profile)

@@ -873,7 +873,7 @@ void PaintLayer::UpdateScrollableArea() {
     return;
 
   if (!scrollable_area_) {
-    scrollable_area_ = MakeGarbageCollected<PaintLayerScrollableArea>(*this);
+    scrollable_area_ = MakeGarbageCollected<PaintLayerScrollableAreaExt>(*this);
     const ComputedStyle& style = GetLayoutObject().StyleRef();
     // A newly created snap container may need to be made aware of snap areas
     // within it which are targeted or contain a targeted element. Such a
@@ -1445,6 +1445,22 @@ PaintLayer* PaintLayer::HitTestLayer(
     // See if the hit test pos is inside the overflow controls of current layer.
     // This should be done before walking child layers to avoid that the
     // overflow controls are obscured by the positive child layers.
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+    if (scrollable_area_ && layer_fragments[0].background_rect.Intersects(
+                                recursion_data.location)) {
+      HitTestLocation location = recursion_data.location;
+      if (layout_object.IsGlobalRootScroller()) {
+        gfx::Point point =
+            scrollable_area_->ConvertFromRootFrameToVisualViewport(
+                ToRoundedPoint(recursion_data.location.Point()));
+        location = HitTestLocation(point);
+      }
+      if (GetLayoutBox()->HitTestOverflowControl(
+              result, location, layer_fragments[0].layer_offset)) {
+        return this;
+      }
+    }
+#else    
     if (scrollable_area_ &&
         layer_fragments[0].background_rect.Intersects(
             recursion_data.location) &&
@@ -1455,6 +1471,7 @@ PaintLayer* PaintLayer::HitTestLayer(
       }
       return this;
     }
+#endif    
   }
 
   if (overflow_controls_only)

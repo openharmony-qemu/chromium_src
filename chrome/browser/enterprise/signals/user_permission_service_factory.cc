@@ -55,10 +55,10 @@ UserPermissionServiceFactory::UserPermissionServiceFactory()
               .Build()) {
   DependsOn(IdentityManagerFactory::GetInstance());
   DependsOn(policy::ManagementServiceFactory::GetInstance());
-#if !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_ARKWEB)
   DependsOn(
       enterprise_connectors::DeviceTrustConnectorServiceFactory::GetInstance());
-#endif  // !BUILDFLAG(IS_ANDROID)
+#endif  // !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_ARKWEB)
 }
 
 UserPermissionServiceFactory::~UserPermissionServiceFactory() = default;
@@ -70,7 +70,7 @@ UserPermissionServiceFactory::BuildServiceInstanceForBrowserContext(
 
   device_signals::UserDelegate::SignalsDependencyDelegate*
       signals_dependency_delegate = nullptr;
-#if !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_ARKWEB)
   signals_dependency_delegate =
       enterprise_connectors::DeviceTrustConnectorServiceFactory::GetForProfile(
           profile);
@@ -80,7 +80,7 @@ UserPermissionServiceFactory::BuildServiceInstanceForBrowserContext(
     // incognito).
     return nullptr;
   }
-#endif  // !BUILDFLAG(IS_ANDROID)
+#endif  // !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_ARKWEB)
 
   auto* management_service =
       policy::ManagementServiceFactory::GetForProfile(profile);

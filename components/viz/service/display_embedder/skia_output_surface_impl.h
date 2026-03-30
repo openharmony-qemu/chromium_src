@@ -101,6 +101,12 @@ class VIZ_SERVICE_EXPORT SkiaOutputSurfaceImpl : public SkiaOutputSurface {
   void BindToClient(OutputSurfaceClient* client) override;
   void EnsureBackbuffer() override;
   void DiscardBackbuffer() override;
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+  void SetIfNeedCleanBuffers(bool need_clean_buffers) override;
+#endif
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+  void CleanBufferAfterSwapBuffer(bool delay_clean) override;
+#endif
   void Reshape(const ReshapeParams& params) override;
   void SetUpdateVSyncParametersCallback(
       UpdateVSyncParametersCallback callback) override;
@@ -215,6 +221,22 @@ class VIZ_SERVICE_EXPORT SkiaOutputSurfaceImpl : public SkiaOutputSurface {
 
   void ReadbackForTesting(
       CopyOutputRequest::CopyOutputRequestCallback result_callback) override;
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  void SetNativeInnerWeb(bool isInnerWeb) override;
+#endif
+
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+  gfx::Rect GetLastBufferDamageRect() override;
+  int GetLastBufferAge() override;
+  int GetLastBufferSameCnt() override;
+  bool SetPresentBufferDamageRect(gfx::Rect damage_rect, gfx::Rect curr_rect) override;
+  void ClosePostSubBuffer() override;
+#endif
+
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  void SetBypassVsyncCondition(int32_t condition) override;
+#endif
 
  private:
   friend class SkiaOutputSurfaceSharedImageInterface;

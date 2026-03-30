@@ -15,6 +15,7 @@
 #include "build/build_config.h"
 #include "printing/mojom/print.mojom-forward.h"
 #include "printing/native_drawing_context.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_WIN)
 #include "base/win/windows_types.h"
@@ -60,6 +61,10 @@ class COMPONENT_EXPORT(PRINTING_METAFILE) MetafilePlayer {
                           bool autorotate,
                           bool fit_to_page) const = 0;
 #endif  // BUILDFLAG(IS_WIN)
+
+#if BUILDFLAG(ARKWEB_PRINT)
+  virtual bool OhosFinishDocument(std::function<bool()> checkCancel) = 0;
+#endif // BUILDFLAG(ARKWEB_PRINT)
 
   // Populates the buffer with the underlying data. This function should ONLY be
   // called after the metafile is closed. Returns true if writing succeeded.

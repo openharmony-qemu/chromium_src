@@ -6,6 +6,7 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "ash/constants/ash_pref_names.h"
 #include "base/feature_list.h"
 #include "build/branding_buildflags.h"
@@ -189,7 +190,7 @@ const PrefsUtil::TypedPrefMap& PrefsUtil::GetAllowlistedKeys() {
       settings_api::PrefType::kBoolean;
   (*s_allowlist)[autofill::prefs::kAutofillCreditCardEnabled] =
       settings_api::PrefType::kBoolean;
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
   (*s_allowlist)[autofill::prefs::kAutofillPaymentMethodsMandatoryReauth] =
       settings_api::PrefType::kBoolean;
 #endif
@@ -320,7 +321,8 @@ const PrefsUtil::TypedPrefMap& PrefsUtil::GetAllowlistedKeys() {
   (*s_allowlist)
       [password_manager::prefs::kPasswordDismissCompromisedAlertEnabled] =
           settings_api::PrefType::kBoolean;
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(IS_OHOS)
   (*s_allowlist)
       [password_manager::prefs::kBiometricAuthenticationBeforeFilling] =
           settings_api::PrefType::kBoolean;
@@ -1230,8 +1232,12 @@ const PrefsUtil::TypedPrefMap& PrefsUtil::GetAllowlistedKeys() {
 #endif  // BUILDFLAG(GOOGLE_CHROME_BRANDING)
 
   // Media Remoting settings.
-  (*s_allowlist)[media_router::prefs::kMediaRouterMediaRemotingEnabled] =
-      settings_api::PrefType::kBoolean;
+  // todo
+  // #if !(BUILDFLAG(IS_OHOS) && BUILDFLAG(ARKWEB_ASAN)) ||
+  // BUILDFLAG(OHOS_ENABLE_MEDIA_ROUTER)
+  //   (*s_allowlist)[media_router::prefs::kMediaRouterMediaRemotingEnabled] =
+  //       settings_api::PrefType::kBoolean;
+  // #endif
 
   // Performance settings.
   (*s_allowlist)

@@ -20,6 +20,7 @@
 
 #include <iterator>
 
+#include "arkweb/build/features/features.h"
 #include "base/check_op.h"
 #include "base/logging.h"
 #include "base/numerics/safe_conversions.h"
@@ -129,7 +130,7 @@ class SSLStream : public Stream {
         return false;
       }
     } else {
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(ARKWEB_CRASHPAD)
       if (SSL_CTX_load_verify_locations(
               ctx_.get(), nullptr, "/etc/ssl/certs") <= 0) {
         LOG(ERROR) << "SSL_CTX_load_verify_locations";

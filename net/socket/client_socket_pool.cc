@@ -32,6 +32,9 @@
 #include "url/gurl.h"
 #include "url/scheme_host_port.h"
 #include "url/url_constants.h"
+#if BUILDFLAG(ENABLE_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace net {
 
@@ -112,7 +115,12 @@ ClientSocketPool::GroupId::GroupId(
     PrivacyMode privacy_mode,
     NetworkAnonymizationKey network_anonymization_key,
     SecureDnsPolicy secure_dns_policy,
-    bool disable_cert_network_fetches)
+    bool disable_cert_network_fetches
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+    ,
+    bool secure_dns_only
+#endif
+    )
     : destination_(std::move(destination)),
       privacy_mode_(privacy_mode),
       network_anonymization_key_(
@@ -120,7 +128,12 @@ ClientSocketPool::GroupId::GroupId(
               ? std::move(network_anonymization_key)
               : NetworkAnonymizationKey()),
       secure_dns_policy_(secure_dns_policy),
-      disable_cert_network_fetches_(disable_cert_network_fetches) {
+      disable_cert_network_fetches_(disable_cert_network_fetches)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+      ,
+      secure_dns_only_(secure_dns_only)
+#endif
+{
   DCHECK(destination_.IsValid());
 
   // ClientSocketPool only expected to be used for HTTP/HTTPS/WS/WSS cases, and
@@ -147,7 +160,12 @@ std::string ClientSocketPool::GroupId::ToString() const {
        NetworkAnonymizationKey::IsPartitioningEnabled()
            ? base::StrCat(
                  {" <", network_anonymization_key_.ToDebugString(), ">"})
-           : ""});
+           : ""
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+        ,
+        secure_dns_only_ ? "sdo/" : ""
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  });
 }
 
 ClientSocketPool::~ClientSocketPool() = default;
@@ -175,7 +193,12 @@ ClientSocketPool::ClientSocketPool(
       proxy_chain_(proxy_chain),
       is_for_websockets_(is_for_websockets),
       common_connect_job_params_(common_connect_job_params),
-      connect_job_factory_(std::move(connect_job_factory)) {}
+      connect_job_factory_(std::move(connect_job_factory)) {
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION) || \
+    BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  utils = std::make_unique<ArkWebClientSocketPoolExt>(this);
+#endif
+}
 
 void ClientSocketPool::NetLogTcpClientSocketPoolRequestedSocket(
     const NetLogWithSource& net_log,
@@ -239,7 +262,12 @@ std::unique_ptr<ConnectJob> ClientSocketPool::CreateConnectJob(
       group_id.privacy_mode(), resolution_callback, request_priority,
       socket_tag, group_id.network_anonymization_key(),
       group_id.secure_dns_policy(), group_id.disable_cert_network_fetches(),
-      common_connect_job_params_, delegate);
+      common_connect_job_params_, delegate
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+      ,
+      group_id.secure_dns_only()
+#endif
+  );
 }
 
 void ClientSocketPool::UpdateStateBeforeAllocation() {

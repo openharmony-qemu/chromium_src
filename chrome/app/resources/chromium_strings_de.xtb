@@ -105,6 +105,7 @@
 <translation id="2210502920229141283">Mit dem erweiterten Safe Browsing in Chromium für iOS bist du unterwegs besser geschützt</translation>
 <translation id="2210682093923538346">Gefährliche Website. Chromium hat Berechtigungen für Benachrichtigungen entfernt.</translation>
 <translation id="2236949375853147973">Meine Aktivitäten</translation>
+<translation id="2238104961394611930">Ein • Die Quelle der Erweiterung kann nicht bestätigt werden</translation>
 <translation id="2238130810669087193">Wenn du auf allen deinen Geräten auf deine Adressen und andere Daten zugreifen möchtest, melde dich in Chromium an. Diese Adresse wird in deinem Google-Konto gespeichert, nachdem du dich angemeldet hast.</translation>
 <translation id="2241627712206172106">Bei gemeinsam genutzten Computern können die verschiedenen Personen separat surfen und Chromium jeweils nach ihren Wünschen einrichten.</translation>
 <translation id="2283803047247799269">Diesen Tab mit der Bildersuche durchsuchen</translation>
@@ -514,6 +515,7 @@ Einige Funktionen stehen möglicherweise nicht zur Verfügung. Gib bitte ein and
 <translation id="6862030660799253820">Dieses Bild mit der Bildersuche durchsuchen</translation>
 <translation id="6873893289264747459">Chromium hat festgestellt, dass „<ph name="EXTENSION_NAME" />“ Malware enthält</translation>
 <translation id="6877155553248388166">Rechte untere Ecke des Suchbereichs: rechts <ph name="RIGHT" /> %, unten <ph name="BOTTOM" /> %</translation>
+<translation id="6885534934768077023">Hinweis: Browser kann nicht verhindern, dass Erweiterungen Ihren Browserverlauf aufzeichnen. Schalten Sie diese Option aus, um diese Erweiterung im Privatmodus zu deaktivieren.</translation>
 <translation id="6896758677409633944">Kopieren</translation>
 <translation id="6901631050894301805">Chromium als Standardbrowser festlegen und an die Taskleiste anheften</translation>
 <translation id="6909503629704372277">&amp;Chromium-Profile verwalten</translation>
@@ -572,6 +574,7 @@ Chromium kann deine Einstellungen nicht wiederherstellen.</translation>
 <translation id="753534427205733210">{0,plural, =1{Chromium wird in einer Minute neu gestartet}other{Chromium wird in # Minuten neu gestartet}}</translation>
 <translation id="7565444033145385702">Erlaube Chromium zum Schutz deiner Daten, Berechtigungen von Websites zu entfernen, die du in letzter Zeit nicht besucht hast.</translation>
 <translation id="7583399374488819119"><ph name="COMPANY_NAME" />-Installationsprogramm</translation>
+<translation id="7597668698051545254">Aus • Die Quelle der Erweiterung kann nicht bestätigt werden</translation>
 <translation id="761356813943268536">Chromium verwendet deine Kamera und dein Mikrofon.</translation>
 <translation id="7617377681829253106">Chromium ist jetzt noch besser</translation>
 <translation id="7622753900276619808">Du hast jetzt Zugriff auf weitere Funktionen in Chromium</translation>

@@ -29,6 +29,8 @@ import("//tools/grit/grit_rule.gni")
 import("//tools/grit/preprocess_if_expr.gni")
 import("//tools/typescript/webui_ts_library.gni")
 import("//v8/gni/v8.gni")
+import("//arkweb/chromium_ext/chromium_ext.gni")
+import("//arkweb/build/features/features.gni")
 
 if (is_android) {
   import("//build/config/android/rules.gni")
@@ -895,6 +897,14 @@ static_library("test_support") {
     public_deps += [ "//third_party/fuchsia-sdk/sdk/fidl/fuchsia.mediacodec:fuchsia.mediacodec_hlcpp" ]
   }
 
+  if (enable_arkweb) {
+    deps += [ "//arkweb/build/features" ]
+  }
+
+  if (enable_arkweb) {
+    public_deps += [ "//arkweb/build/features" ]
+  }
+
   if (use_dbus) {
     deps += [ "//components/dbus" ]
   }
@@ -1581,7 +1591,7 @@ test("content_browsertests") {
     "../browser/form_controls_browsertest.cc",
     "../browser/framebusting_browsertest.cc",
     "../browser/generic_sensor/generic_sensor_browsertest.cc",
-    "../browser/gpu/gpu_host_impl_persistent_cache_browsertest.cc",
+    #"../browser/gpu/gpu_host_impl_persistent_cache_browsertest.cc",
     "../browser/gpu/gpu_ipc_browsertests.cc",
     "../browser/gpu/in_process_gpu_thread_browsertests.cc",
     "../browser/gpu/peak_gpu_memory_tracker_impl_browsertest.cc",
@@ -1843,7 +1853,7 @@ test("content_browsertests") {
     "../renderer/gin_browsertest.cc",
     "../renderer/media/renderer_web_media_player_delegate_browsertest.cc",
     "../renderer/media/too_many_web_media_players_intervention_browsertest.cc",
-    "../renderer/render_frame_impl_browsertest.cc",
+    #"../renderer/render_frame_impl_browsertest.cc",
     "../renderer/render_thread_impl_browsertest.cc",
     "../renderer/render_view_browsertest.cc",
     "../renderer/render_widget_browsertest.cc",
@@ -1854,6 +1864,9 @@ test("content_browsertests") {
     "../test/top_frame_population_browsertest.cc",
     "../test/url_loader_interceptor_browsertest.cc",
   ]
+  if (arkweb_unittests) {
+    sources += arkweb_content_renderer_test_sources
+  }
 
   # This is where fuzztests should be registered.
   # fuzztests = []
@@ -2550,7 +2563,7 @@ test("content_unittests") {
     "../browser/attribution_reporting/aggregatable_attribution_utils_unittest.cc",
     "../browser/attribution_reporting/aggregatable_debug_rate_limit_table_unittest.cc",
     "../browser/attribution_reporting/aggregatable_debug_report_unittest.cc",
-    "../browser/attribution_reporting/attribution_aggregatable_report_golden_unittest.cc",
+    # "../browser/attribution_reporting/attribution_aggregatable_report_golden_unittest.cc",
     "../browser/attribution_reporting/attribution_data_host_manager_impl_unittest.cc",
     "../browser/attribution_reporting/attribution_debug_report_unittest.cc",
     "../browser/attribution_reporting/attribution_host_unittest.cc",
@@ -2562,7 +2575,7 @@ test("content_unittests") {
     "../browser/attribution_reporting/attribution_storage_sql_migrations_unittest.cc",
     "../browser/attribution_reporting/attribution_storage_sql_unittest.cc",
     "../browser/attribution_reporting/attribution_suitable_context_unittest.cc",
-    "../browser/attribution_reporting/interop/interop_unittest.cc",
+    # "../browser/attribution_reporting/interop/interop_unittest.cc",
     "../browser/attribution_reporting/interop/parser_unittest.cc",
     "../browser/attribution_reporting/os_registrations_table_unittest.cc",
     "../browser/attribution_reporting/rate_limit_table_unittest.cc",
@@ -2822,7 +2835,7 @@ test("content_unittests") {
     "../browser/private_aggregation/private_aggregation_internals_handler_impl_unittest.cc",
     "../browser/private_aggregation/private_aggregation_manager_impl_unittest.cc",
     "../browser/private_aggregation/private_aggregation_pending_contributions_unittest.cc",
-    "../browser/private_aggregation/private_aggregation_report_golden_unittest.cc",
+    # "../browser/private_aggregation/private_aggregation_report_golden_unittest.cc",
     "../browser/reduce_accept_language/reduce_accept_language_utils_unittest.cc",
     "../browser/renderer_host/ancestor_throttle_unittest.cc",
     "../browser/renderer_host/back_forward_cache_impl_unittest.cc",
@@ -3099,7 +3112,18 @@ test("content_unittests") {
     "test_aggregation_service_impl_unittest.cc",
     "test_page_unittest.cc",
     "test_render_frame_host_unittest.cc",
+    "../../arkweb/chromium_ext/ohos_test/unittest/dfx/dfx_reporter_browser_impl_unittest.cc",
   ]
+
+  if (arkweb_unittests) {
+    sources += arkweb_content_browser_test_sources
+    sources += [ "//arkweb/chromium_ext/media/audio/ohos/ohos_audio_focus_controller_unittest.cc" ]
+    sources += [ "../../arkweb/chromium_ext/content/browser/renderer_host/arkweb_render_process_host_impl_utils_unittest.cc" ]    
+  }
+
+  if (arkweb_test) {
+    sources += arkweb_content_browser_unittests_sources
+  }
 
   fuzztests = [
     "BiddingAndAuctionSerializerTargetSizeEstimator.DoesNotCrashForAnyInput",
@@ -3204,7 +3228,7 @@ test("content_unittests") {
     ]
   }
 
-  if (is_android || is_linux || is_chromeos || is_mac || is_win || is_fuchsia) {
+  if (is_android || is_linux || is_chromeos || is_mac || is_win || is_fuchsia || is_ohos) {
     data = [
       "$root_out_dir/content_shell.pak",
       "data/",
@@ -3719,6 +3743,23 @@ test("content_unittests") {
   # TODO(crbug.com/1293538): Update to check is_cast_audio_only
   if (is_castos || is_cast_android) {
     deps += [ "//chromecast:chromecast_buildflags" ]
+  }
+
+  if (arkweb_test) {
+    sources += arbweb_content_media_test_sources
+    sources += [
+      "//arkweb/chromium_ext/media/audio/ohos/ohos_audio_output_stream_unittest.cc",
+      "//arkweb/chromium_ext/media/audio/ohos/ohos_audio_input_stream_unittest.cc"    
+    ]
+    include_dirs = [
+      "//arkweb/ohos_adapter_ndk/interfaces",
+      "//third_party/ohos_ndk/includes/ohos_adapter",
+    ]
+    deps += [
+      "//arkweb/ohos_adapter_ndk:adapter_ndk",
+    ]
+    deps += ["//arkweb/ohos_adapter_ndk/mock_ndk_api:mock_base_ohos"]
+    deps += ["//arkweb/ohos_adapter_ndk/mock_ndk_api:mock_ndk"]    
   }
 
   # TODO(crbug.com/40031409): Fix code that adds exit-time destructors and

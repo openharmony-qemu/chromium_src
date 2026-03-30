@@ -31,6 +31,17 @@
 #include "third_party/blink/public/common/input/web_input_event.h"
 #include "ui/base/mojom/menu_source_type.mojom.h"
 #include "ui/latency/latency_info.h"
+#include "arkweb/build/features/features.h"
+#include "arkweb/chromium_ext/components/input/arkweb_input_router_impl_ext.h"
+
+#if BUILDFLAG(ARKWEB_SLIDE_LTPO)
+#include "base/ohos/ltpo/include/sliding_observer.h"
+#include "content/browser/gpu/gpu_process_host.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+#include "base/ohos/sys_info_utils_ext.h"
+#endif
 
 using blink::WebGestureEvent;
 using blink::WebInputEvent;
@@ -87,6 +98,15 @@ class UnboundWidgetInputHandler : public blink::mojom::WidgetInputHandler {
       DispatchEventCallback callback) override {
     DLOG(WARNING) << "Input request on unbound interface";
   }
+  #if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
+  void TryStartFling() override {
+    DLOG(WARNING) << "Input request on unbound interface";
+  }
+
+  void TryFinishFling() override {
+    DLOG(WARNING) << "Input request on unbound interface";
+  }
+#endif
   void DispatchNonBlockingEvent(
       std::unique_ptr<blink::WebCoalescedInputEvent> event) override {
     DLOG(WARNING) << "Input request on unbound interface";
@@ -108,6 +128,15 @@ class UnboundWidgetInputHandler : public blink::mojom::WidgetInputHandler {
     NOTREACHED() << "Input request on unbound interface";
   }
 #endif
+
+#if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
+  void AttachSoftwareCompositorOhos(
+    mojo::PendingReceiver<blink::mojom::SoftwareCompositorOhos>
+        compositor_request) override {
+    NOTREACHED() << "Input request on unbound interface";
+  }
+#endif
+
   void GetFrameWidgetInputHandler(
       mojo::PendingAssociatedReceiver<blink::mojom::FrameWidgetInputHandler>
           request) override {
@@ -121,6 +150,35 @@ class UnboundWidgetInputHandler : public blink::mojom::WidgetInputHandler {
           offset_tag_modifications) override {
     NOTREACHED() << "Input request on unbound interface";
   }
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  void SetGestureEventResult(bool result,
+                             bool stopPropagation,
+                             int32_t fingerId) override {
+    DLOG(WARNING) << "Input request on unbound interface";
+  }
+
+  void SetMouseEventResult(bool result, bool stopPropagation) override {
+    DLOG(WARNING) << "Input request on unbound interface";
+  }
+
+  void SetNativeEmbedMode(bool flag) override {
+    DLOG(WARNING) << "Input request on unbound interface";
+  }
+
+  void SetEnableCustomVideoPlayer(bool flag) override {
+    DLOG(WARNING) << "Input request on unbound interface";
+  }
+#endif
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  void ScrollBy(float delta_x, float delta_y) override {
+    DLOG(WARNING) << "Input request on unbound interface";
+  }
+#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  void SetBypassVsyncCondition(int32_t condition) override {
+    DLOG(WARNING) << "Input request on unbound interface";
+  }
+#endif
 };
 
 }  // namespace
@@ -146,6 +204,12 @@ RenderInputRouter::RenderInputRouter(
       delegate_(delegate),
       task_runner_(std::move(task_runner)) {
   TRACE_EVENT("input", "RenderInputRouter::RenderInputRouter");
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+  // Timeout for pc is 15s, if mobileDevice, we keep it for 5s.
+  if (base::ohos::IsMobileDevice()) {
+    hung_renderer_delay_ = base::Seconds(5);
+  }
+#endif
   input_event_ack_timeout_.SetTaskRunner(task_runner_);
 }
 
@@ -158,7 +222,11 @@ void RenderInputRouter::SetupInputRouter(float device_scale_factor) {
 
   bool was_active = input_router_ && input_router_->IsActive();
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  input_router_ = std::make_unique<ArkwebInputRouterImplExt>(
+#else
   input_router_ = std::make_unique<InputRouterImpl>(
+#endif
       this, this, fling_scheduler_.get(),
       GetInputRouterConfigForPlatform(task_runner_));
 
@@ -264,6 +332,12 @@ StylusInterface* RenderInputRouter::GetStylusInterface() {
 void RenderInputRouter::OnStartStylusWriting() {
   render_input_router_client_->OnStartStylusWriting();
 }
+
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+void RenderInputRouter::DynamicFrameLossEvent(const std::string& sceneId, bool isStart) {
+  render_input_router_client_->DynamicFrameLossEvent(sceneId, isStart);
+}
+#endif
 
 bool RenderInputRouter::IsWheelScrollInProgress() {
   if (gsb_filtered_for_paint_holding_) {
@@ -495,6 +569,9 @@ void RenderInputRouter::ForwardGestureEventWithLatencyInfo(
   TRACE_EVENT1("input", "RenderInputRouter::ForwardGestureEvent", "type",
                WebInputEvent::GetName(gesture_event.GetType()));
 
+#if BUILDFLAG(ARKWEB_SLIDE_LTPO)
+  ReportSlidingFrameRate(gesture_event);
+#endif
   input::GestureEventWithLatencyInfo gesture_with_latency(gesture_event,
                                                           latency_info);
 
@@ -559,7 +636,37 @@ void RenderInputRouter::ForwardGestureEventWithLatencyInfo(
     SendGestureEventWithLatencyInfo(gesture_with_latency,
                                     dispatch_callback.callback);
   }
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+    OHOS_TRACE_EVENT2("input,benchmark,devtools.timeline,latencyInfo", "LatencyInfo.Flow", "trace_id",
+                      std::to_string(latency_info.trace_id()), "step", "START");
+#endif
 }
+
+#if BUILDFLAG(ARKWEB_SLIDE_LTPO)
+void RenderInputRouter::ReportSlidingFrameRate(const blink::WebGestureEvent& gesture_event) {
+  int32_t preferred_frame_rate = 0;
+  if (gesture_event.GetType() == WebInputEvent::Type::kGestureScrollBegin) {
+    base::ohos::SlidingObserver::GetInstance().StartSliding();
+  } else if (gesture_event.GetType() == WebInputEvent::Type::kGestureScrollEnd) {
+    preferred_frame_rate = base::ohos::SlidingObserver::GetInstance().StopSliding();
+  } else if (gesture_event.GetType() == WebInputEvent::Type::kGestureScrollUpdate) {
+    preferred_frame_rate = base::ohos::SlidingObserver::GetInstance().OnScrollUpdate(
+      gesture_event.data.scroll_update.delta_x, gesture_event.data.scroll_update.delta_y);
+  }
+  auto* host = content::GpuProcessHost::Get();
+  viz::GpuHostImpl* host_impl = nullptr;
+  if (host) {
+    host_impl = host->gpu_host();
+  }
+
+  if (host_impl && preferred_frame_rate >= 0) {
+    if (gesture_event.GetType() == WebInputEvent::Type::kGestureScrollEnd
+      || gesture_event.GetType() == WebInputEvent::Type::kGestureScrollUpdate) {
+      host_impl->ReportSlidingFrameRate(preferred_frame_rate);
+    }
+ }
+}
+#endif
 
 void RenderInputRouter::ForwardWheelEventWithLatencyInfo(
     const blink::WebMouseWheelEvent& wheel_event,
@@ -789,6 +896,24 @@ void RenderInputRouter::SetInputTargetClientForTesting(
     mojo::Remote<viz::mojom::InputTargetClient> input_target_client) {
   input_target_client_ = std::move(input_target_client);
 }
+
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+void RenderInputRouter::SetFocusWebId(int32_t nweb_id) {
+  if (input_router() == nullptr) {
+    LOG(ERROR) << "SetFocusWebId can not get input_router";
+    return;
+  }
+  input_router()->SetFocusWebId(nweb_id);
+}
+
+void RenderInputRouter::SetScrollable(bool enable) {
+  if (input_router() == nullptr) {
+    LOG(ERROR) << "SetScrollable can not get input_router";
+    return;
+  }
+  input_router()->SetScrollable(enable);
+}
+#endif
 
 void RenderInputRouter::SetWidgetInputHandlerForTesting(
     mojo::Remote<blink::mojom::WidgetInputHandler> widget_input_handler) {

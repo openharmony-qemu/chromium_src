@@ -584,6 +584,11 @@ FileManagerPrivateGetSizeStatsFunction::Run() {
     // Resolve storage_name.
     storage_monitor::StorageMonitor* storage_monitor =
         storage_monitor::StorageMonitor::GetInstance();
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    if (!storage_monitor) {
+      return RespondNow(Error("Cannot find StorageMonitor"));
+    }
+#endif
     storage_monitor::StorageInfo info;
     storage_monitor->GetStorageInfoForPath(volume->mount_path(), &info);
     std::string storage_name;

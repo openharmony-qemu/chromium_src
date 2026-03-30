@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/compiler_specific.h"
 #include "base/gtest_prod_util.h"
 #include "base/memory/raw_ptr.h"
@@ -30,6 +31,14 @@
 #include "net/http/http_request_info.h"
 #include "net/socket/connection_attempts.h"
 #include "net/url_request/url_request_job.h"
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#if BUILDFLAG(ENABLE_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/overrides/net/proxy_resolution/fallback_proxy_utils.h"
+#endif
+#include "arkweb/chromium_ext/net/proxy_resolution/fallback_proxy_config.h"
+#include "net/base/proxy_delegate.h"
+#endif
 
 #if BUILDFLAG(ENABLE_DEVICE_BOUND_SESSIONS)
 #include "net/device_bound_sessions/session_service.h"
@@ -127,6 +136,14 @@ class NET_EXPORT_PRIVATE URLRequestHttpJob : public URLRequestJob {
     kMaxValue = kSecureSetNonsecureRequest  // Keep as the last value.
   };
 
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  enum class RetryState {
+    INIT,
+    DOH_FALLBACK,
+    MAX,
+  };
+#endif
+
   typedef base::RefCountedData<bool> SharedBoolean;
 
   // Shadows URLRequestJob's version of this method so we can grab cookies.
@@ -214,6 +231,26 @@ class NET_EXPORT_PRIVATE URLRequestHttpJob : public URLRequestJob {
   IPEndPoint GetResponseRemoteEndpoint() const override;
   void NotifyURLRequestDestroyed() override;
 
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  bool CanRetryWithSecureDnsOnly(int net_error);
+  void RetryWithSecureDnsOnly();
+  void MaybeRetryWithSecureDnsOnly(int result);
+#endif
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  bool SupportedHostAndNotUsedSystemProxy(ProxyDelegate* proxy_delegate,
+                                          ProxyUnusedReason* unused_reason);
+  // If it returns true, the execution of the current function
+  // URLRequestHttpJob::OnStartCompleted will be terminated
+  // and will be re-executed later.
+  bool MaybeRetryWithFallbackProxy(int& result);
+  bool CanRetryWithFallbackProxy(int result, ProxyUnusedReason* unused_reason);
+  void RetryWithFallbackProxy();
+  SBThreatURLPolicy GetSafeBrowsingThreatUrlPolicy(int result,
+                                                   int* malicious_type,
+                                                   int* hw_code);
+  void RetryWithDirect();
+#endif
+
   void RecordTimer();
   void ResetTimer();
 
@@ -266,6 +303,19 @@ class NET_EXPORT_PRIVATE URLRequestHttpJob : public URLRequestJob {
   // Returns true if we should log how many partitioned cookies are included
   // in a request.
   bool ShouldRecordPartitionedCookieUsage() const;
+
+  // Applies the relevant Sec-Fetch-Storage-Access header if needed.
+  void MaybeSetSecFetchStorageAccessHeader();
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD) && BUILDFLAG(IS_OHOS)
+  void InitPreloadInfoAndSetToTransaction();
+#endif
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  void ContinueDespiteLastErrorInternal(
+      scoped_refptr<X509Certificate> client_cert,
+      scoped_refptr<SSLPrivateKey> client_private_key);
+#endif
 
   RequestPriority priority_ = DEFAULT_PRIORITY;
 
@@ -342,6 +392,27 @@ class NET_EXPORT_PRIVATE URLRequestHttpJob : public URLRequestJob {
   // The First-Party Set metadata associated with this job. Set when the job is
   // started.
   FirstPartySetMetadata first_party_set_metadata_;
+
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK) \
+  || BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  int original_net_error_ = 0;
+  bool is_retrying_secure_dns_only_{false};
+#endif
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  RetryState state_ = RetryState::INIT;
+#endif
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  bool wait_for_sb_threat_type_ = false;
+  bool did_use_fallback_proxy_ = false;
+#endif
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  size_t restarted_ = 0;
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING)
+  bool is_retry_dns_on_dns_hijacking_ = false;
+#endif
 
   // The number of times this request was deferred due to a Device Bound
   // Session.

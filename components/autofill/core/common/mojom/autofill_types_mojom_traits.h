@@ -28,6 +28,10 @@
 #include "mojo/public/mojom/base/unguessable_token.mojom-shared.h"
 #include "ui/gfx/geometry/rect_f.h"
 
+// #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+#include "arkweb/chromium_ext/components/autofill/core/common/arkweb_password_autofill_data.h"
+// #endif
+
 namespace mojo {
 
 template <>
@@ -605,6 +609,50 @@ struct StructTraits<autofill::mojom::PasswordFormGenerationDataDataView,
   static bool Read(autofill::mojom::PasswordFormGenerationDataDataView data,
                    autofill::PasswordFormGenerationData* out);
 };
+
+// #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+template <>
+struct StructTraits<autofill::mojom::InputFillRequestDataDataView,
+                    autofill::InputFillRequestData> {
+  static autofill::FieldRendererId field_renderer_id(
+      const autofill::InputFillRequestData& r) {
+    return r.field_renderer_id;
+  }
+
+  static bool is_focused(
+      const autofill::InputFillRequestData& r) {
+    return r.is_focused;
+  }
+
+  static autofill::mojom::OhosInputElementType type(
+      const autofill::InputFillRequestData& r) {
+    return r.type;
+  }
+
+  static const gfx::RectF& bounds(
+      const autofill::InputFillRequestData& r) {
+    return r.bounds;
+  }
+
+  static const std::u16string& value(
+      const autofill::InputFillRequestData& r) {
+    return r.value;
+  }
+
+  static const std::u16string& placeholder(
+      const autofill::InputFillRequestData& r) {
+    return r.placeholder;
+  }
+
+  static const std::string& autocomplete_attr(
+      const autofill::InputFillRequestData& r) {
+    return r.autocomplete_attr;
+  }
+
+  static bool Read(autofill::mojom::InputFillRequestDataDataView data,
+                   autofill::InputFillRequestData* out);
+};
+// #endif  ARKWEB_PASSWORD_AUTOFILL
 
 template <>
 struct StructTraits<autofill::mojom::PasswordGenerationUIDataDataView,

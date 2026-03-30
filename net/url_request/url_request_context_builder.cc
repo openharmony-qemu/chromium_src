@@ -10,6 +10,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/chromium_ext/net/url_request/url_request_context_ext.h"
 #include "base/check_op.h"
 #include "base/compiler_specific.h"
 #include "base/notimplemented.h"
@@ -74,6 +75,8 @@
 #include "net/device_bound_sessions/session_service.h"
 #include "net/device_bound_sessions/session_store.h"
 #endif  // BUILDFLAG(ENABLE_DEVICE_BOUND_SESSIONS)
+
+#include "arkweb/chromium_ext/net/url_request/url_request_context_ext.h"
 
 namespace net {
 
@@ -281,9 +284,13 @@ void URLRequestContextBuilder::BindToNetwork(
 }
 
 std::unique_ptr<URLRequestContext> URLRequestContextBuilder::Build() {
+#if !defined(COMPONENT_BUILD) // FIXME
+  auto context = std::make_unique<URLRequestContextExt>(
+      base::PassKey<URLRequestContextBuilder>());
+#else
   auto context = std::make_unique<URLRequestContext>(
       base::PassKey<URLRequestContextBuilder>());
-
+#endif
   context->set_enable_brotli(enable_brotli_);
   context->set_enable_zstd(enable_zstd_);
   context->set_check_cleartext_permitted(check_cleartext_permitted_);

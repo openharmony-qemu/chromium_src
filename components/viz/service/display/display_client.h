@@ -30,6 +30,12 @@ class DisplayClient {
   virtual void DisplayAddChildWindowToBrowser(
       gpu::SurfaceHandle child_window) = 0;
   virtual void SetWideColorEnabled(bool enabled) = 0;
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+  virtual void RestoreRenderFit(const FrameSinkId& frame_sink_id) = 0;
+#endif // ARKWEB_MAXIMIZE_RESIZE
+#if BUILDFLAG(ARKWEB_ROTATE_RESIZE)
+  virtual void ModifyRenderFit(int32_t fitType, const FrameSinkId& frame_sink_id) = 0;
+#endif // ARKWEB_ROTATE_RESIZE
 };
 
 }  // namespace viz

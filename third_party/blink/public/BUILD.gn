@@ -12,10 +12,18 @@ import("//third_party/blink/renderer/core/core.gni")
 import("//third_party/webrtc/webrtc.gni")
 import("//tools/grit/grit_rule.gni")
 import("//tools/grit/repack.gni")
+import("//arkweb/build/features/features.gni")
+if (is_arkweb_ext) {
+  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
+}
 
 if (is_android) {
   import("//build/config/android/config.gni")
   import("//build/config/android/rules.gni")
+}
+
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
 }
 
 blink_public_output_dir = "$root_gen_dir/third_party/blink/public"
@@ -393,6 +401,10 @@ source_set("blink_headers") {
     "web/web_window_features.h",
   ]
 
+  if (is_arkweb) {
+    sources += arkweb_third_party_blink_web_sources
+  }
+
   if (is_mac) {
     sources += [
       "platform/mac/web_sandbox_support.h",
@@ -412,6 +424,14 @@ source_set("blink_headers") {
       "web/win/web_font_family_names.h",
       "web/win/web_font_rendering.h",
     ]
+  }
+
+  if (arkweb_same_layer) {
+    sources += arkweb_third_patry_blink_public_platform_sources
+  }
+
+  if (defined(arkweb_reader_mode) && arkweb_reader_mode) {
+    sources += [ "//arkweb/chromium_ext/third_party/blink/platform/web_distillability_match.h" ]
   }
 
   public_configs = [
@@ -463,6 +483,22 @@ source_set("blink_headers") {
     "//ui/base",
     "//v8:v8_headers",
   ]
+
+  if (enable_arkweb) {
+    deps += [ "//arkweb/build/features" ]
+  }
+
+  if (enable_arkweb) {
+    public_deps += [ "//arkweb/build/features" ]
+  }
+
+  if (enable_arkweb_ext) {
+    deps += [ "//arkweb/ohos_nweb_ex/build/features" ]
+  }
+
+  if (enable_arkweb_ext) {
+    public_deps += [ "//arkweb/ohos_nweb_ex/build/features" ]
+  }
 }
 
 blink_python_runner("runtime_features_for_public") {

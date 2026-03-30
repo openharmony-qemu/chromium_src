@@ -39,10 +39,12 @@ bool ShouldDisplayInExtensionSettings(Manifest::Type type,
   return true;
 }
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 bool ShouldDisplayInExtensionSettings(const Extension& extension) {
   return ShouldDisplayInExtensionSettings(extension.GetType(),
                                           extension.location());
 }
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 
 }  // namespace ui_util
 }  // namespace extensions

@@ -16,6 +16,8 @@
  */
 export interface Bookmark {
   title: string;
+  // arkweb_pdf: The unique id for this bookmark.
+  id: string;
   children: Bookmark[];
   page?: number;
   x?: number;

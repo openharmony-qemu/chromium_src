@@ -4,6 +4,7 @@
 
 #include "media/filters/ffmpeg_glue.h"
 
+#include "base/logging.h"
 #include "base/check_op.h"
 #include "base/compiler_specific.h"
 #include "base/metrics/histogram_functions.h"
@@ -86,6 +87,9 @@ static const char* GetAllowedDemuxers() {
     // This should match the configured lists in //third_party/ffmpeg.
     std::vector<std::string> allowed_demuxers = {"ogg",  "matroska", "wav",
                                                  "flac", "mp3",      "mov"};
+#if BUILDFLAG(ARKWEB_MEDIA)
+    allowed_demuxers.insert(allowed_demuxers.end(), {"flv", "avi", "mpegts"});
+#endif
 #if BUILDFLAG(USE_PROPRIETARY_CODECS)
     allowed_demuxers.push_back("aac");
 #endif
@@ -192,6 +196,14 @@ bool FFmpegGlue::OpenContext(bool is_local_file) {
     return false;
   }
 
+#if BUILDFLAG(ARKWEB_MEDIA)
+  LOG(INFO) << "OhMedia::OpenContext format=" << format_context_->iformat->name;
+#endif // BUILDFLAG(ARKWEB)
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(INFO) << "OhMedia::OpenContext format="
+                     << format_context_->iformat->name;
+#endif
+
   // Rely on ffmpeg's parsing if we're able to successfully open the file.
   std::string_view format_name = format_context_->iformat->name;
   if (format_name == "mov,mp4,m4a,3gp,3g2,mj2") {
@@ -213,6 +225,12 @@ bool FFmpegGlue::OpenContext(bool is_local_file) {
   } else if (format_name == "avi") {
     container_ = container_names::MediaContainerName::kContainerAVI;
   }
+#if BUILDFLAG(ARKWEB_MEDIA)
+  else if (strcmp(format_context_->iformat->name, "flv") == 0)
+    container_ = container_names::MediaContainerName::kContainerFLV;
+  else if (strcmp(format_context_->iformat->name, "mpegts") == 0)
+    container_ = container_names::MediaContainerName::kContainerMPEG2TS;
+#endif
 
   // For a successfully opened file, we will get a container we've compiled in.
   CHECK_NE(container_, container_names::MediaContainerName::kContainerUnknown);

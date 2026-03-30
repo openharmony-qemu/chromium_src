@@ -47,6 +47,7 @@
 #include <optional>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/numerics/checked_math.h"
 #include "base/task/single_thread_task_runner.h"
 #include "cc/animation/animation_timeline.h"
@@ -130,6 +131,12 @@
 #include "ui/gfx/geometry/point_conversions.h"
 #include "ui/gfx/geometry/point_f.h"
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/paint/paint_layer_scrollable_area_utils.h"
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/scroll/scrollable_area_utils.h"
+#endif
+
 namespace blink {
 
 PaintLayerScrollableAreaRareData::PaintLayerScrollableAreaRareData() = default;
@@ -139,6 +146,10 @@ void PaintLayerScrollableAreaRareData::Trace(Visitor* visitor) const {
 }
 
 const int kResizerControlExpandRatioForTouch = 2;
+
+#if BUILDFLAG(IS_ARKWEB)
+const int kScrollbarMargin = 4;
+#endif
 
 PaintLayerScrollableArea::PaintLayerScrollableArea(PaintLayer& layer)
     : ScrollableArea(layer.GetLayoutBox()
@@ -175,6 +186,9 @@ PaintLayerScrollableArea::PaintLayerScrollableArea(PaintLayer& layer)
   if (LocalFrameView* frame_view = GetLayoutBox()->GetFrameView()) {
     frame_view->AddScrollableArea(*this);
   }
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  utils_ = MakeGarbageCollected<PaintLayerScrollableAreaUtils>(this);
+#endif  // ARKWEB_SCROLLBAR
 }
 
 PaintLayerScrollableArea::~PaintLayerScrollableArea() {
@@ -275,6 +289,9 @@ void PaintLayerScrollableArea::Trace(Visitor* visitor) const {
   visitor->Trace(scroll_corner_display_item_client_);
   visitor->Trace(layer_);
   visitor->Trace(rare_data_);
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  visitor->Trace(utils_);
+#endif  // ARKWEB_SCROLLBAR  
   visitor->Trace(scroll_marker_group_data_set_);
   ScrollableArea::Trace(visitor);
 }
@@ -347,6 +364,11 @@ gfx::Rect PaintLayerScrollableArea::ScrollCornerRect() const {
   bool has_resizer = GetLayoutBox()->CanResize();
   if ((has_horizontal_bar && has_vertical_bar) ||
       (has_resizer && (has_horizontal_bar || has_vertical_bar))) {
+#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_CORNER)
+    if ((has_horizontal_bar && has_vertical_bar) && HasScrollbarAvoidCorner()) {
+      return gfx::Rect();
+    }
+#endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
     return CornerRect();
   }
   return gfx::Rect();
@@ -657,6 +679,9 @@ gfx::Vector2d PaintLayerScrollableArea::MaximumScrollOffsetInt() const {
   gfx::Size visible_size;
   if (this == controller.RootScrollerArea()) {
     visible_size = controller.RootScrollerVisibleArea();
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+    utils_->ScaleSize(visible_size);
+#endif  // ARKWEB_SCROLLBAR
   } else {
     visible_size = ToRoundedSize(
         GetLayoutBox()
@@ -1399,17 +1424,25 @@ bool PaintLayerScrollableArea::HasHorizontalOverflow() const {
   // converse problem seems to happen much less frequently in practice, so we
   // bias the logic towards preventing unwanted horizontal scrollbars, which
   // are more common and annoying.
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  LayoutUnit client_width = utils_->ScaleWidth();
+#else
   LayoutUnit client_width = LayoutContentRect(kIncludeScrollbars).Width() -
                             VerticalScrollbarWidth(kIgnoreOverlayScrollbarSize);
+#endif
   if (NeedsRelayout() && !HadVerticalScrollbarBeforeRelayout())
     client_width += VerticalScrollbarWidth();
   return ScrollWidth().Round() > client_width.Round();
 }
 
 bool PaintLayerScrollableArea::HasVerticalOverflow() const {
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  LayoutUnit client_height = utils_->ScaleHeight();
+#else
   LayoutUnit client_height =
       LayoutContentRect(kIncludeScrollbars).Height() -
       HorizontalScrollbarHeight(kIgnoreOverlayScrollbarSize);
+#endif
   return ScrollHeight().Round() > client_height.Round();
 }
 
@@ -1542,11 +1575,16 @@ gfx::Rect PaintLayerScrollableArea::RectForVerticalScrollbar() const {
 }
 
 int PaintLayerScrollableArea::VerticalScrollbarStart() const {
+  int margin = 0;
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  if (VerticalScrollbar()->IsOverlayScrollbar())
+    margin = ScaleFromDIP() * kScrollbarMargin;
+#endif
   if (GetLayoutBox()->ShouldPlaceBlockDirectionScrollbarOnLogicalLeft())
-    return GetLayoutBox()->BorderLeft().ToInt();
+    return GetLayoutBox()->BorderLeft().ToInt() + margin;
   return PixelSnappedBorderBoxSize().width() -
          GetLayoutBox()->BorderRight().ToInt() -
-         VerticalScrollbar()->ScrollbarThickness();
+         VerticalScrollbar()->ScrollbarThickness() - margin;
 }
 
 int PaintLayerScrollableArea::HorizontalScrollbarStart() const {
@@ -1577,7 +1615,11 @@ gfx::Vector2d PaintLayerScrollableArea::ScrollbarOffset(
   NOTREACHED();
 }
 
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+inline const LayoutObject& ScrollbarStyleSource(
+#else
 static inline const LayoutObject& ScrollbarStyleSource(
+#endif
     const LayoutBox& layout_box) {
   if (IsA<LayoutView>(layout_box)) {
     Document& doc = layout_box.GetDocument();
@@ -1835,7 +1877,6 @@ void PaintLayerScrollableArea::ComputeScrollbarExistence(
     else if (v_mode == mojom::blink::ScrollbarMode::kAlwaysOff)
       needs_vertical_scrollbar = false;
   }
-
   // If this is being performed before layout, we want to only update scrollbar
   // existence if its based on purely style based reasons.
   if (option == kOverflowIndependent) {
@@ -2531,9 +2572,15 @@ PhysicalRect PaintLayerScrollableArea::ScrollIntoView(
 
   PhysicalRect local_expose_rect =
       GetLayoutBox()->AbsoluteToLocalRect(absolute_rect);
+
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  ScrollOffset target_offset =
+      utils_->GetScrollOffset(params, local_expose_rect, scroll_margin);
+#else
   ScrollOffset target_offset = scroll_into_view_util::GetScrollOffsetToExpose(
       *this, local_expose_rect, scroll_margin, *params->align_x.get(),
       *params->align_y.get());
+#endif
   ScrollOffset new_scroll_offset(
       ClampScrollOffset(gfx::ToRoundedVector2d(target_offset)));
 
@@ -2738,7 +2785,12 @@ bool PaintLayerScrollableArea::PrefersNonCompositedScrolling() const {
     return true;
   }
   if (Node* node = GetLayoutBox()->GetNode()) {
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+    bool will_be_overlay = GetPageScrollbarTheme().UsesOverlayScrollbars();
+    if (IsA<HTMLSelectElement>(node) && will_be_overlay) {
+#else
     if (IsA<HTMLSelectElement>(node)) {
+#endif
       return true;
     }
     if (TextControlElement* text_control = EnclosingTextControl(node)) {
@@ -2763,6 +2815,11 @@ bool PaintLayerScrollableArea::UsesCompositedScrolling() const {
 }
 
 bool PaintLayerScrollableArea::VisualViewportSuppliesScrollbars() const {
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  if (auto* layout_view = DynamicTo<LayoutView>(GetLayoutBox())) {
+    return false;
+  }
+#endif  // ARKWEB_SCROLLBAR
   LocalFrame* frame = GetLayoutBox()->GetFrame();
   if (!frame || !frame->GetSettings())
     return false;
@@ -2865,6 +2922,16 @@ Scrollbar* PaintLayerScrollableArea::ScrollbarManager::CreateScrollbar(
     scrollbar = MakeGarbageCollected<Scrollbar>(ScrollableArea(), orientation,
                                                 &style_source);
   }
+
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  uint32_t colorValue = ScrollableArea()
+                            ->GetLayoutBox()
+                            ->GetFrame()
+                            ->GetSettings()
+                            ->GetScrollBarColor();
+  ScrollableArea()->GetUtils()->SetScrollbarColor(colorValue);
+#endif  // ARKWEB_SCROLLBAR
+
   ScrollableArea()->GetLayoutBox()->GetDocument().View()->AddScrollbar(
       scrollbar);
   return scrollbar;
@@ -3250,6 +3317,16 @@ gfx::Size PaintLayerScrollableArea::PixelSnappedBorderBoxSize() const {
   // geometry. For now we ensure correct pixel snapping of overflow controls by
   // calling PositionOverflowControls() again when paint offset is updated.
   // TODO(crbug.com/962299): Only correct if the paint offset is correct.
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  const TopDocumentRootScrollerController& controller =
+      GetLayoutBox()->GetDocument().GetPage()->GlobalRootScrollerController();
+  if (!base::ohos::IsPcDevice() && DynamicTo<LayoutView>(GetLayoutBox())
+          && controller.RootScrollerArea() == this) {
+    const auto& visualViewportSize=
+        GetLayoutBox()->GetFrameView()->GetPage()->GetVisualViewport().Size();
+    return visualViewportSize;
+  }
+#endif // OHOS_SCROLLBAR
   return PhysicalRect(GetLayoutBox()->FirstFragment().PaintOffset(),
                       GetLayoutBox()->StitchedSize())
       .PixelSnappedSize();

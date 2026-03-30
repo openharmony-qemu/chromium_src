@@ -53,8 +53,14 @@ TypeConverter<HandwritingStrokePtr, blink::HandwritingStroke*>::Convert(
     return nullptr;
   }
   auto output = handwriting::mojom::blink::HandwritingStroke::New();
+  #if defined(__clang__) && (__clang_major__ < 17)
+  for (const auto& point : input->getPoints()) {
+    output->points.push_back(mojo::ConvertTo<HandwritingPointPtr>(point.Get()));
+  }
+#else
   output->points =
       mojo::ConvertTo<blink::Vector<HandwritingPointPtr>>(input->getPoints());
+#endif
   return output;
 }
 

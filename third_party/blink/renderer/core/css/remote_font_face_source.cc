@@ -402,9 +402,13 @@ void RemoteFontFaceSource::BeginLoadIfNeeded() {
       execution_context->AddConsoleMessage(MakeGarbageCollected<ConsoleMessage>(
           mojom::blink::ConsoleMessageSource::kIntervention,
           mojom::blink::ConsoleMessageLevel::kInfo,
+#if !BUILDFLAG(ARKWEB_DEVTOOLS)
           StrCat({"Slow network is detected. See "
                   "https://www.chromestatus.com/feature/5636954674692096 for "
                   "more details. Fallback font will be used while loading: ",
+#else
+          StrCat({"Slow network is detected. Fallback font will be used while loading: ",
+#endif // ARKWEB_DEVTOOLS
                   font->Url().ElidedString()})));
 
       // Set the loading priority to VeryLow only when all other clients agreed

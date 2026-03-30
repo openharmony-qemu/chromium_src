@@ -248,7 +248,11 @@ void NativeThemeFluent::PaintScrollbarThumb(
     Part part,
     State state,
     const gfx::Rect& rect,
-    const ScrollbarThumbExtraParams& extra_params) const {
+    const ScrollbarThumbExtraParams& extra_params
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+    , SkColor scrollbar_color
+#endif // ARKWEB_SCROLLBAR
+    ) const {
   cc::PaintFlags flags;
   flags.setAntiAlias(true);
   flags.setColor(GetScrollbarThumbColor(color_provider, state, extra_params));

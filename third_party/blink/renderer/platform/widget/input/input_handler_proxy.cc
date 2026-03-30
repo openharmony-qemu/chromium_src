@@ -8,6 +8,7 @@
 
 #include <algorithm>
 
+#include "arkweb/build/features/features.h"
 #include "base/check_op.h"
 #include "base/command_line.h"
 #include "base/functional/bind.h"
@@ -291,11 +292,21 @@ InputHandlerProxy::InputHandlerProxy(cc::InputHandler& input_handler,
 
   UpdateElasticOverscroll();
   compositor_event_queue_ = std::make_unique<CompositorThreadEventQueue>();
+  proxy_utils_ = std::make_unique<InputHandlerProxyUtils>(this);
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)   
+  if (proxy_utils_) {
+    proxy_utils_->SetClientForElasticOverScrollController();
+  }
+#endif
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  scroll_predictor_ = proxy_utils_->CreateScrollPredictor();
+#else
   scroll_predictor_ =
       (base::FeatureList::IsEnabled(blink::features::kResamplingScrollEvents) &&
        client->AllowsScrollResampling())
           ? std::make_unique<ScrollPredictor>()
           : nullptr;
+#endif  // defined(OHOS_INPUT_EVENTS)
 
   if (base::FeatureList::IsEnabled(blink::features::kSkipTouchEventFilter) &&
       GetFieldTrialParamValueByFeature(
@@ -336,6 +347,11 @@ void InputHandlerProxy::HandleInputEventWithLatencyInfo(
                     ctx, trace_id,
                     ChromeLatencyInfo2::Step::STEP_HANDLE_INPUT_EVENT_IMPL);
               });
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  TRACE_EVENT2("input", "InputHandlerProxy::HandleInputEventWithLatencyInfo",
+               "type", WebInputEvent::GetName(event->Event().GetType()),
+               "trace_id", trace_id);
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
   bool is_fling =
       (WebInputEvent::Type::kGestureScrollUpdate == event->Event().GetType() &&
@@ -354,6 +370,11 @@ void InputHandlerProxy::HandleInputEventWithLatencyInfo(
   if (handling_gesture_on_impl_thread_) {
     event->EventPointer()->SetPreventCountingAsInteractionTrue();
   }
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow",
+                    "trace_id", std::to_string(trace_id), "step",
+                    "STEP_HANDLE_INPUT_EVENT_IMPL");
+#endif
 
   auto event_with_callback = std::make_unique<EventWithCallback>(
       std::move(event), std::move(callback), std::move(metrics));
@@ -373,7 +394,11 @@ void InputHandlerProxy::HandleInputEventWithLatencyInfo(
     base::ScopedSampleMetadata metadata("Input.GestureScrollOrPinch",
                                         NO_SCROLL_PINCH,
                                         base::SampleMetadataScope::kProcess);
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+    proxy_utils_->NativeEventProcess(std::move(event_with_callback));
+#else
     DispatchSingleInputEvent(std::move(event_with_callback));
+#endif
     return;
   } else if (event_with_callback->event().IsGestureScroll() &&
              event_with_callback->metrics()) {
@@ -472,7 +497,9 @@ void InputHandlerProxy::HandleInputEventWithLatencyInfo(
 
     bool queue_was_empty = compositor_event_queue_->empty();
     compositor_event_queue_->Queue(std::move(event_with_callback));
-
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+    WebGestureEvent::Type gesture_event_type = gesture_event.GetType();
+#endif
     // |synchronous_input_handler_| is WebView only. WebView has different
     // mechanisms and we want to forward all events immediately. While we
     // normally end up here when `enqueue_scroll_events_` is true, these edge
@@ -484,6 +511,9 @@ void InputHandlerProxy::HandleInputEventWithLatencyInfo(
     if (queue_was_empty && !compositor_event_queue_->empty()) {
       input_handler_->SetNeedsAnimateInput();
     }
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+    proxy_utils_->NeedFlushScrollUpdateGesture(gesture_event);
+#endif
     return;
   }
 
@@ -559,8 +589,15 @@ void InputHandlerProxy::ContinueScrollBeginAfterMainThreadHitTest(
 }
 
 void InputHandlerProxy::DispatchSingleInputEvent(
-    std::unique_ptr<EventWithCallback> event_with_callback) {
+    std::unique_ptr<EventWithCallback> event_with_callback
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+    , bool isDrop, bool result
+#endif
+) {
   ui::LatencyInfo monitored_latency_info = event_with_callback->latency_info();
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  monitored_latency_info.set_stop_propagation(result);
+#endif
   std::unique_ptr<cc::LatencyInfoSwapPromiseMonitor>
       latency_info_swap_promise_monitor =
           input_handler_->CreateLatencyInfoSwapPromiseMonitor(
@@ -568,11 +605,27 @@ void InputHandlerProxy::DispatchSingleInputEvent(
 
   current_overscroll_params_.reset();
 
+  WebInputEventAttribution attribution =
+      PerformEventAttribution(event_with_callback->event());
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  event_with_callback = proxy_utils_->OverScrollRunCallback(
+      std::move(event_with_callback), monitored_latency_info, attribution);
+  if (!event_with_callback) {
+    return;
+  }
+#endif
+
   InputHandlerProxy::EventDisposition disposition =
       RouteToTypeSpecificHandler(event_with_callback.get());
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  if (isDrop) {
+    disposition = DID_HANDLE;
+  }
+#endif
+
   const WebInputEvent& event = event_with_callback->event();
-  WebInputEventAttribution attribution;
   switch (disposition) {
     case DID_NOT_HANDLE:
     case DID_NOT_HANDLE_NON_BLOCKING:
@@ -1250,7 +1303,9 @@ InputHandlerProxy::HandleGestureScrollUpdate(
               -gesture_event.data.scroll_update.delta_y);
   const float provided_delta_x = gesture_event.data.scroll_update.delta_x;
   const float provided_delta_y = gesture_event.data.scroll_update.delta_y;
-
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  proxy_utils_->ResetNeedFlushScrollUpdateGesture();
+#endif
   if (scroll_sequence_ignored_) {
     TRACE_EVENT_INSTANT0("input", "Scroll Sequence Ignored",
                          TRACE_EVENT_SCOPE_THREAD);
@@ -1333,6 +1388,11 @@ InputHandlerProxy::EventDisposition InputHandlerProxy::HandleGestureScrollEnd(
     const WebGestureEvent& gesture_event) {
   TRACE_EVENT0("input", "InputHandlerProxy::HandleGestureScrollEnd");
 
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  // After dragging the scrollbar by hand,
+  // we need to call MouseLeave() to make the scrollbar FADE_OUT.
+  input_handler_->MouseLeave();
+#endif  // ARKWEB_SCROLLBAR
   const cc::ElementId latched_element_id =
       input_handler_->LatchedScrollerElementId();
 
@@ -1521,6 +1581,10 @@ InputHandlerProxy::EventDisposition InputHandlerProxy::HandleTouchStart(
     cc::InputHandlerPointerResult pointer_result = HandlePointerDown(
         event_with_callback, touch_event.touches[0].PositionInWidget());
     if (pointer_result.type == cc::PointerResultType::kScrollbarScroll) {
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+      LOG(INFO)
+          << "InputHandlerProxy::HandleTouchStart TouchStart on Scrollbar";
+#endif  // ARKWEB_SCROLLBAR
       client_->SetAllowedTouchAction(allowed_touch_action);
       return DID_HANDLE;
     }
@@ -1879,6 +1943,12 @@ void InputHandlerProxy::SynchronouslySetRootScrollOffset(
   DCHECK(synchronous_input_handler_);
   input_handler_->SetSynchronousInputHandlerRootScrollOffset(root_offset);
 }
+
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+void InputHandlerProxy::SetBypassVsyncCondition(int32_t condition) {
+  input_handler_->SetBypassVsyncCondition(condition);
+}
+#endif
 
 void InputHandlerProxy::SynchronouslyZoomBy(float magnify_delta,
                                             const gfx::Point& anchor) {

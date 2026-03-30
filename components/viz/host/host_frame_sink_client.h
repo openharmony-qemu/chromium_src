@@ -8,6 +8,7 @@
 #include <stdint.h>
 
 #include "base/time/time.h"
+#include "arkweb/build/features/features.h"
 
 namespace viz {
 
@@ -22,6 +23,13 @@ class HostFrameSinkClient {
   // Called when a CompositorFrame with a new frame token is provided.
   virtual void OnFrameTokenChanged(uint32_t frame_token,
                                    base::TimeTicks activation_time) = 0;
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+  virtual void RestoreRenderFit() {}
+#endif  // ARKWEB_MAXIMIZE_RESIZE
+
+#if BUILDFLAG(ARKWEB_ROTATE_RESIZE)
+  virtual void ModifyRenderFit(int32_t fitType) {}
+#endif  // ARKWEB_ROTATE_RESIZE
 
  protected:
   virtual ~HostFrameSinkClient() = default;

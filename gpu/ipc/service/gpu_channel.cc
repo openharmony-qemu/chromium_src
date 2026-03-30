@@ -76,6 +76,8 @@
 #include "ui/ozone/public/ozone_platform.h"
 #endif  // BUILDFLAG(IS_OZONE)
 
+#include "arkweb/chromium_ext/gpu/ipc/service/gpu_channel_ext.h"
+
 namespace gpu {
 
 namespace {
@@ -187,6 +189,13 @@ class GPU_IPC_SERVICE_EXPORT GpuChannelMessageFilter
       base::UnsafeSharedMemoryRegion shared_memory,
       CopyNativeGmbToSharedMemoryAsyncCallback callback) override;
 #endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  void CreateNativeTexture(
+      int32_t native_id,
+      int32_t texture_owner_mode,
+      mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver,
+      CreateNativeTextureCallback callback) override;
+#endif
   void WaitForTokenInRange(int32_t routing_id,
                            int32_t start,
                            int32_t end,
@@ -216,6 +225,14 @@ class GPU_IPC_SERVICE_EXPORT GpuChannelMessageFilter
         std::vector<SyncToken>()));
   }
 #endif  // BUILDFLAG(IS_FUCHSIA)
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  void SetBlanklessDumpInfo(uint32_t nweb_id,
+                            uint64_t key,
+                            uint64_t frame_sink_id,
+                            int32_t lcp_time,
+                            int64_t pref_hash) override;
+#endif
 
   // Map of route id to scheduler sequence id.
   base::flat_map<int32_t, SequenceId> route_sequences_;
@@ -325,6 +342,12 @@ void GpuChannelMessageFilter::FlushDeferredRequests(
         routing_id = request->params->get_destroy_dcomp_texture();
         break;
 #endif  // BUILDFLAG(IS_WIN)
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+      case mojom::DeferredRequestParams::Tag::kDestroyNativeTexture:
+        routing_id = request->params->get_destroy_native_texture();
+        break;
+#endif  // BUILDFLAG(ARKWEB_SAME_LAYER)
 
       case mojom::DeferredRequestParams::Tag::kCommandBufferRequest:
         routing_id = request->params->get_command_buffer_request()->routing_id;
@@ -700,7 +723,7 @@ std::unique_ptr<GpuChannel> GpuChannel::Create(
     bool is_gpu_host,
     bool enable_extra_handles_validation,
     const gfx::GpuExtraInfo& gpu_extra_info) {
-  auto gpu_channel = base::WrapUnique(new GpuChannel(
+  auto gpu_channel = base::WrapUnique(new GpuChannelExt(
       gpu_channel_manager, channel_token, scheduler, sync_point_manager,
       std::move(share_group), std::move(task_runner), std::move(io_task_runner),
       client_id, client_tracing_id, is_gpu_host,
@@ -779,12 +802,23 @@ void GpuChannel::ExecuteDeferredRequest(
     mojom::DeferredRequestParamsPtr params,
     FenceSyncReleaseDelegate* release_delegate) {
   TRACE_EVENT0("gpu", "GpuChannel::ExecuteDeferredRequest");
+#if BUILDFLAG(IS_ARKWEB)
+  if (params.get() == nullptr) {
+    return;
+  }
+#endif  // BUILDFLAG(IS_ARKWEB)
   switch (params->which()) {
 #if BUILDFLAG(IS_WIN)
     case mojom::DeferredRequestParams::Tag::kDestroyDcompTexture:
       DestroyDCOMPTexture(params->get_destroy_dcomp_texture());
       break;
 #endif  // BUILDFLAG(IS_WIN)
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+    case mojom::DeferredRequestParams::Tag::kDestroyNativeTexture:
+      AsGpuChannelExt()->DestroyNativeTexture(params->get_destroy_native_texture());
+      break;
+#endif  // BUILDFLAG(ARKWEB_SAME_LAYER)
 
     case mojom::DeferredRequestParams::Tag::kCommandBufferRequest: {
       mojom::DeferredCommandBufferRequest& request =
@@ -1112,3 +1146,7 @@ uint64_t GpuChannel::GetMemoryUsage() const {
 }
 
 }  // namespace gpu
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/gpu/ipc/service/gpu_channel_for_include.cc"
+#endif

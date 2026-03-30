@@ -49,6 +49,11 @@
 #include "url/scheme_host_port.h"
 #include "url/url_constants.h"
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#include "base/command_line.h"
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#endif
+
 namespace net {
 
 namespace {
@@ -520,7 +525,20 @@ void HttpStreamFactory::JobController::OnCertificateError(
     BindJob(job);
   }
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableNwebEx)) {
+    bool used_fallback_proxy = false;
+    if (job) {
+      used_fallback_proxy = job->proxy_info().used_fallback_proxy();
+    }
+    delegate_->OnCertificateError(status, ssl_info, used_fallback_proxy);
+  } else {
+    delegate_->OnCertificateError(status, ssl_info, false);
+  }
+#else
   delegate_->OnCertificateError(status, ssl_info);
+#endif  // BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
 }
 
 void HttpStreamFactory::JobController::OnNeedsClientAuth(
@@ -826,6 +844,13 @@ int HttpStreamFactory::JobController::DoResolveProxy() {
 
   CompletionOnceCallback io_callback =
       base::BindOnce(&JobController::OnIOComplete, base::Unretained(this));
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          ::switches::kEnableNwebEx) &&
+      request_info_.retry_with_fallback_proxy) {
+    proxy_info_.set_use_fallback_proxy_direct(true);
+  }
+#endif
   return session_->proxy_resolution_service()->ResolveProxy(
       request_info_.url, request_info_.method,
       request_info_.network_anonymization_key, &proxy_info_,
@@ -950,8 +975,16 @@ int HttpStreamFactory::JobController::DoCreateJobs() {
             enable_ip_based_pooling_for_h2_, net_log_.net_log(),
             NextProto::kProtoUnknown, quic::ParsedQuicVersion::Unsupported(),
             management_config_);
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+        preconnect_backup_job_->SetFromPreload(from_preload_);
+#endif
       }
     }
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+    main_job_->SetFromPreload(from_preload_);
+#endif
+
     main_job_->Preconnect(num_streams_);
     return OK;
   }

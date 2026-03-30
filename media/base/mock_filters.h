@@ -89,6 +89,10 @@ class MockPipeline : public Pipeline {
   void Start(StartType start_type,
              Demuxer* demuxer,
              Client* client,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+             RequestSurfaceCB request_surface_cb,
+             VideoDecoderChangedCB decoder_changed_cb,
+#endif // ARKWEB_VIDEO_ASSISTANT
              PipelineStatusCallback seek_cb) override {
     OnStart(start_type, demuxer, client, seek_cb);
   }
@@ -101,7 +105,12 @@ class MockPipeline : public Pipeline {
   MOCK_METHOD2(OnSeek, void(base::TimeDelta, PipelineStatusCallback&));
   void Suspend(PipelineStatusCallback cb) override { OnSuspend(cb); }
   MOCK_METHOD1(OnSuspend, void(PipelineStatusCallback&));
-  void Resume(base::TimeDelta time, PipelineStatusCallback seek_cb) override {
+  void Resume(base::TimeDelta time,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+              RequestSurfaceCB request_surface_cb,
+              VideoDecoderChangedCB decoder_changed_cb,
+#endif // ARKWEB_VIDEO_ASSISTANT
+              PipelineStatusCallback seek_cb) override {
     OnResume(time, seek_cb);
   }
   MOCK_METHOD2(OnResume, void(base::TimeDelta, PipelineStatusCallback&));
@@ -164,7 +173,8 @@ class MockDemuxer : public Demuxer {
   std::string GetDisplayName() const override;
   DemuxerType GetDemuxerType() const override;
 
-  void Initialize(DemuxerHost* host, PipelineStatusCallback cb) override {
+  void Initialize(DemuxerHost* host,
+                  PipelineStatusCallback cb) override {
     OnInitialize(host, cb);
   }
   MOCK_METHOD(void,
@@ -285,7 +295,18 @@ class MockVideoDecoder : public VideoDecoder {
   MOCK_CONST_METHOD0(GetMaxDecodeRequests, int());
   MOCK_CONST_METHOD0(CanReadWithoutStalling, bool());
   MOCK_CONST_METHOD0(NeedsBitstreamConversion, bool());
-
+#if BUILDFLAG(ARKWEB_TEST)
+#if BUILDFLAG(ARKWEB_PIP)
+  MOCK_METHOD1(PipEnable, void(bool enable));
+#endif  // ARKWEB_PIP
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  MOCK_METHOD1(SetPreciseSeekTarget, void(int64_t target_timestamp));
+#endif // ARKWEB_VIDEO_ASSISTANT
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+  MOCK_METHOD0(RecycleDmaBuffer, void());
+  MOCK_METHOD0(ResumeDmaBuffer, void());
+#endif  // ARKWEB_MEDIA_DMABUF
+#endif  // ARKWEB_TEST
  private:
   const bool is_platform_decoder_;
   const bool supports_decryption_;
@@ -447,6 +468,10 @@ class MockVideoRenderer : public VideoRenderer {
   void Initialize(DemuxerStream* stream,
                   CdmContext* cdm_context,
                   RendererClient* client,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                  RequestSurfaceCB request_surface_cb,
+                  VideoDecoderChangedCB decoder_changed_cb,
+#endif // ARKWEB_VIDEO_ASSISTANT
                   const TimeSource::WallClockTimeCB& wall_clock_time_cb,
                   PipelineStatusCallback init_cb) override {
     OnInitialize(stream, cdm_context, client, wall_clock_time_cb, init_cb);
@@ -463,6 +488,16 @@ class MockVideoRenderer : public VideoRenderer {
   MOCK_METHOD0(OnTimeStopped, void());
   MOCK_METHOD1(SetLatencyHint,
                void(std::optional<base::TimeDelta> latency_hint));
+#if BUILDFLAG(ARKWEB_PIP)
+  MOCK_METHOD1(PipEnable, void(bool));
+#endif
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  MOCK_METHOD1(SetPreciseSeekTarget, void(int64_t target_timestamp));
+#endif // ARKWEB_VIDEO_ASSISTANT
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+  MOCK_METHOD0(RecycleDmaBuffer, void());
+  MOCK_METHOD0(ResumeDmaBuffer, void());
+#endif  // ARKWEB_MEDIA_DMABUF
 };
 
 class MockAudioRenderer : public AudioRenderer {
@@ -509,6 +544,10 @@ class MockRenderer : public Renderer {
   // Renderer implementation.
   void Initialize(MediaResource* media_resource,
                   RendererClient* client,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                  RequestSurfaceCB request_surface_cb,
+                  VideoDecoderChangedCB decoder_changed_cb,
+#endif // ARKWEB_VIDEO_ASSISTANT
                   PipelineStatusCallback init_cb) override {
     OnInitialize(media_resource, client, init_cb);
   }
@@ -538,6 +577,20 @@ class MockRenderer : public Renderer {
   MOCK_METHOD2(OnSelectedAudioTracksChanged,
                void(std::vector<DemuxerStream*>, base::OnceClosure));
   RendererType GetRendererType() override { return RendererType::kTest; }
+#if BUILDFLAG(ARKWEB_PIP)
+  MOCK_METHOD1(PipEnable, void(bool));
+#endif
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  MOCK_METHOD1(SetPreciseSeekTarget, void(int64_t target_timestamp));
+#endif // ARKWEB_VIDEO_ASSISTANT
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+  MOCK_METHOD0(RecycleDmaBuffer, void());
+  MOCK_METHOD0(ResumeDmaBuffer, void());
+#endif  // ARKWEB_MEDIA_DMABUF
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  MOCK_METHOD(void, SetMediaPlayerState, (bool, int), (override));
+  MOCK_METHOD(void, SetPlaybackRateWithReason, (double, ActionReason), (override));
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
   base::WeakPtr<MockRenderer> AsWeakPtr() {
     return weak_ptr_factory_.GetWeakPtr();

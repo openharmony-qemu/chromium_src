@@ -8,6 +8,8 @@ source_set("renderer") {
     "js_binding.h",
     "js_communication.cc",
     "js_communication.h",
+    "../../../arkweb/chromium_ext/components/js_injection/renderer/js_communication_utils.cc",
+    "../../../arkweb/chromium_ext/components/js_injection/renderer/js_communication_utils.h"
   ]
 
   deps = [
@@ -21,5 +23,6 @@ source_set("renderer") {
     "//third_party/blink/public:blink",
     "//url",
     "//v8",
+    "//third_party/re2",
   ]
 }

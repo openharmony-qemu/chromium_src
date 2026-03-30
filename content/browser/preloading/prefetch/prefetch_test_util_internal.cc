@@ -472,6 +472,14 @@ void PrefetchTestURLLoaderClient::OnDataComplete() {
   body_finished_ = true;
 }
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+void PrefetchTestURLLoaderClient::OnTransferDataWithSharedMemory(
+      ::base::ReadOnlySharedMemoryRegion region,
+      uint64_t buffer_size) {
+  NOTREACHED();
+}
+#endif
+
 ScopedMockContentBrowserClient::ScopedMockContentBrowserClient() {
   old_browser_client_ = SetBrowserClientForTesting(this);
 

@@ -64,6 +64,12 @@ void MojoRendererService::Initialize(
   state_ = STATE_INITIALIZING;
 
   DCHECK(streams.has_value());
+#if BUILDFLAG(ARKWEB_MEDIA)
+  if (!streams.has_value()) {
+    std::move(callback).Run(false);
+    return;
+  }
+#endif
   media_resource_ = std::make_unique<MediaResourceShim>(
       std::move(*streams),
       base::BindOnce(&MojoRendererService::OnAllStreamsReady, weak_this_,
@@ -218,6 +224,10 @@ void MojoRendererService::OnAllStreamsReady(
 
   renderer_->Initialize(
       media_resource_.get(), this,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+      media::RequestSurfaceCB(),
+      media::VideoDecoderChangedCB(),
+#endif // ARKWEB_VIDEO_ASSISTANT
       base::BindOnce(&MojoRendererService::OnRendererInitializeDone, weak_this_,
                      std::move(callback)));
 }
@@ -288,4 +298,9 @@ void MojoRendererService::OnCdmAttached(base::OnceCallback<void(bool)> callback,
 
   std::move(callback).Run(success);
 }
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/media/mojo/services/mojo_renderer_service_for_include.cc"
+#endif
+
 }  // namespace media

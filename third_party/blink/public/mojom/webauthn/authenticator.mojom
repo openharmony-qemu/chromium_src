@@ -78,6 +78,15 @@ enum Hint {
   HYBRID,
 };
 
+// OHOS Fido Api needs mediation param.
+[EnableIf=arkweb_fido]
+enum PublicKeyCredentialMediationRequirement {
+  SILENT,
+  OPTIONAL,
+  CONDITIONAL,
+  REQUIRED,
+};
+
 // Credential information returned by both Authenticator::MakeCredential
 // and Authenticator::GetAssertion.
 struct CommonCredentialInfo {
@@ -433,6 +442,10 @@ struct PublicKeyCredentialRequestOptions {
 
   // Webauthn extension related input parameters.
   AuthenticationExtensionsClientInputs extensions;
+
+  // Mediation for fido.
+  [EnableIf=arkweb_fido]
+  PublicKeyCredentialMediationRequirement mediation;
 };
 
 // Parameters for webauthn Extensions.
@@ -634,6 +647,10 @@ struct PublicKeyCredentialCreationOptions {
 
   // https://w3c.github.io/webauthn/#dom-publickeycredentialcreationoptionsjson-attestationformats
   array<string> attestation_formats;
+
+  // Mediation for fido.
+  [EnableIf=arkweb_fido]
+  PublicKeyCredentialMediationRequirement mediation;
 
   bool is_conditional = false;
 };

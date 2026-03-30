@@ -151,6 +151,9 @@ Vector<mojom::blink::ChooseFileSystemEntryAcceptsOptionPtr> ConvertAccepts(
           break;
         case V8UnionUSVStringOrUSVStringSequence::ContentType::
             kUSVStringSequence:
+#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
+          extensions.emplace_back(";");
+#endif
           for (const auto& extension : a.second->GetAsUSVStringSequence()) {
             if (!AddExtension(extension, extensions, exception_state)) {
               return {};

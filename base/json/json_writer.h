@@ -36,6 +36,9 @@ enum JsonOptions {
   // Return a slightly nicer formatted json string (pads with whitespace to
   // help with readability).
   OPTIONS_PRETTY_PRINT = 1 << 2,
+#if BUILDFLAG(IS_ARKWEB)
+  OPTIONS_DOUBLE_AS_LONG = 1 << 3,
+#endif
 };
 
 // Given a root node, generates and returns a JSON string.
@@ -63,7 +66,6 @@ BASE_EXPORT std::optional<std::string> WriteJsonWithOptions(
 class BASE_EXPORT JSONWriter {
  public:
   using enum JsonOptions;
-
   JSONWriter(const JSONWriter&) = delete;
   JSONWriter& operator=(const JSONWriter&) = delete;
 
@@ -109,6 +111,10 @@ class BASE_EXPORT JSONWriter {
 
   bool omit_binary_values_;
   bool omit_double_type_preservation_;
+#if BUILDFLAG(IS_ARKWEB)
+  bool omit_double_as_long_;
+#endif
+
   bool pretty_print_;
 
   // Where we write JSON data as we generate it.

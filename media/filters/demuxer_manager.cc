@@ -26,12 +26,14 @@
 #include "media/filters/hls_manifest_demuxer_engine.h"
 #include "media/filters/manifest_demuxer.h"
 #endif  // BUILDFLAG(ENABLE_HLS_DEMUXER)
-
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+#include "arkweb/chromium_ext/media/base/ohos_media_player_demuxer.h"
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 namespace media {
 
 namespace {
 
-#if BUILDFLAG(ENABLE_HLS_DEMUXER)
+#if BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(ARKWEB_MEDIA_HLS)
 
 // These values are persisted to logs. Entries should not be renumbered and
 // numeric values should never be reused.
@@ -102,6 +104,9 @@ bool IsLocalFile(const GURL& url) {
   return url.SchemeIsFile() || url.SchemeIsFileSystem() ||
          url.SchemeIs(url::kContentScheme) ||
          url.SchemeIs(url::kContentIDScheme) ||
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+         url.SchemeIs("arkweb-extension") ||
+#endif
          url.SchemeIs("chrome-extension");
 }
 #endif
@@ -138,8 +143,55 @@ void DemuxerManager::RestartClientForHLS() {
   }
 }
 
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+void DemuxerManager::RestartClientForPrimitive() {
+  if (client_) {
+    client_->RestartForPrimitive();
+  } else {
+    LOG(WARNING) << "RestartClientForPrimitive failed";
+  }
+}
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+const std::string DemuxerManager::GetMimeType() const {
+  std::string mime_type;
+  if (data_source_) {
+    auto* co_data_source = data_source_->GetAsCrossOriginDataSource();
+    if (co_data_source) {
+      mime_type = co_data_source->GetMimeType();
+    }
+  }
+  return mime_type;
+}
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+
 void DemuxerManager::OnPipelineError(PipelineStatus error) {
   DCHECK(client_);
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  if (error == PIPELINE_ERROR_INITIALIZATION_FAILED_CUSTOM_PLAYER) {
+    if (client_) {
+      client_->StopForDemuxerReset();
+    }
+    if (data_source_) {
+      data_source_->Stop();
+    }
+
+    FreeResourcesAfterMediaThreadWait(base::BindOnce(
+        &DemuxerManager::RestartClientForPrimitive, weak_factory_.GetWeakPtr()));
+    return;
+  }
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+
+#if BUILDFLAG(ARKWEB_MEDIA)
+  LOG(INFO) << "OhMedia::OnError PipelineStatus = " << (int)error.code();
+#endif // BUILDFLAG(ARKWEB_MEDIA)
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(INFO) << "OhMedia::OnError PipelineStatus = "
+                     << (int)error.code();
+#endif
 
   if (!fallback_allowed_) {
     return client_->OnError(std::move(error));
@@ -176,7 +228,7 @@ void DemuxerManager::OnPipelineError(PipelineStatus error) {
 
     return;
   }
-#endif  // BUILDFLAG(ENABLE_HLS_DEMUXER)
+#endif  // BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(ARKWEB_MEDIA_HLS)
 
   client_->OnError(std::move(error));
 }
@@ -279,13 +331,22 @@ PipelineStatus DemuxerManager::CreateDemuxer(
     bool load_media_source,
     DataSource::Preload preload,
     bool needs_first_frame,
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+    bool should_create_custom_renderer,
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
     DemuxerManager::DemuxerCreatedCB on_demuxer_created,
     base::flat_map<std::string, std::string> headers) {
   // TODO(crbug.com/40243452) return a better error
   if (!client_) {
     return DEMUXER_ERROR_COULD_NOT_OPEN;
   }
-
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  if (should_create_custom_renderer) {
+    SetDemuxer(std::make_unique<OhosMediaPlayerDemuxer>(media_task_runner_));
+    return std::move(on_demuxer_created)
+        .Run(demuxer_.get(), Pipeline::StartType::kNormal, false, false);
+  }
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
   // We can only do a universal suspend for posters, unless the flag is enabled.
   auto suspended_mode = Pipeline::StartType::kSuspendAfterMetadataForAudioOnly;
   if (!needs_first_frame) {

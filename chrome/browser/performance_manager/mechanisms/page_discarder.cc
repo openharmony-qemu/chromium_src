@@ -47,12 +47,16 @@ std::optional<base::ByteCount> PageDiscarder::DiscardPageNode(
 
   std::optional<DiscardPageOnUIThreadOutcome> outcome;
   absl::Cleanup record_discard_outcome = [&]() {
+#if !BUILDFLAG(IS_ARKWEB)
     CHECK(outcome.has_value(), base::NotFatalUntil::M140);
     base::UmaHistogramEnumeration("Discarding.DiscardPageOnUIThreadOutcome",
                                   outcome.value());
+#endif
   };
 
+#if !BUILDFLAG(IS_ARKWEB)
   CHECK(contents, base::NotFatalUntil::M140);
+#endif
   if (!contents) {
     outcome = DiscardPageOnUIThreadOutcome::kNoContents;
     return std::nullopt;

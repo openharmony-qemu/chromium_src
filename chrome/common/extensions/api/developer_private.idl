@@ -186,6 +186,20 @@ namespace developerPrivate {
     DOMString[] submessages;
   };
 
+  // #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  dictionary OptionalPermission {
+    DOMString name;
+    DOMString message;
+    DOMString[] submessages;
+    boolean granted;
+  };
+
+  dictionary OptionalPermissionUpdate {
+    DOMString name;
+    boolean enabled;
+  };
+  // #endif
+
   dictionary SiteControl {
     // The host pattern for the site.
     DOMString host;
@@ -214,6 +228,10 @@ namespace developerPrivate {
     // True if the extension can access site data through host permissions or
     // API permissions such as activeTab.
     boolean canAccessSiteData;
+
+    // #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    // Optional permissions that can be granted or revoked by the user.
+    OptionalPermission[]? optionalSimplePermissions;
   };
 
   dictionary ExtensionInfo {
@@ -291,6 +309,8 @@ namespace developerPrivate {
     SafetyCheckWarningReason? acknowledgeSafetyCheckWarningReason;
     boolean? acknowledgeSafetyCheckWarning;
     boolean? pinnedToToolbar;
+    // #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    OptionalPermissionUpdate? optionalPermission;
   };
 
   dictionary ProfileConfigurationUpdate {
@@ -650,6 +670,10 @@ namespace developerPrivate {
         DOMString extensionId,
         optional ReloadOptions options,
         optional LoadErrorCallback callback);
+
+    // ifdef ARKWEB_ARKWEB_EXTENSIONS
+    // open a extension url.
+    static void openUrl(DOMString url, long type);
 
     // Modifies an extension's current configuration.
     // |update| : The parameters for updating the extension's configuration.

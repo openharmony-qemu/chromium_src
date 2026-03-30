@@ -127,6 +127,12 @@ class TestURLLoaderClient : public network::mojom::URLLoaderClient {
   void OnTransferSizeUpdated(int32_t transfer_size_diff) override {}
   void OnComplete(const network::URLLoaderCompletionStatus& status) override {}
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  void OnTransferDataWithSharedMemory(
+    ::base::ReadOnlySharedMemoryRegion region,
+    uint64_t buffer_size) override {}
+#endif
+
   bool received_response() const { return received_response_; }
 
   bool received_ad_auction_signals_header() const {

@@ -378,6 +378,22 @@ void DelegatedFrameHost::OnFrameTokenChanged(uint32_t frame_token,
   client_->OnFrameTokenChanged(frame_token, activation_time);
 }
 
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+void DelegatedFrameHost::RestoreRenderFit() {
+  if (client_) {
+    client_->RestoreRenderFit();
+  }
+}
+#endif // ARKWEB_MAXIMIZE_RESIZE
+
+#if BUILDFLAG(ARKWEB_ROTATE_RESIZE)
+void DelegatedFrameHost::ModifyRenderFit(int32_t fitType) {
+  if (client_) {
+    client_->ModifyRenderFit(fitType);
+  }
+}
+#endif // ARKWEB_ROTATE_RESIZE
+
 // CommitPending without a target for TakeFallbackContentFrom. Since we cannot
 // guarantee that Navigation will complete, evict our surfaces which are from
 // a previous Navigation.

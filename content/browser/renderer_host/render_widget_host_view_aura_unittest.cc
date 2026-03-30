@@ -147,6 +147,10 @@
 #include "ui/ozone/public/ozone_platform.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#include "arkweb/chromium_ext/content/browser/renderer_host/render_widget_host_impl_ext.h"
+#endif
+
 using testing::_;
 
 using blink::WebGestureEvent;
@@ -361,10 +365,17 @@ class FullscreenLayoutManager : public aura::LayoutManager {
   raw_ptr<aura::Window> owner_;
 };
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+class MockRenderWidgetHostImpl : public RenderWidgetHostImplExt {
+#else
 class MockRenderWidgetHostImpl : public RenderWidgetHostImpl {
+#endif
  public:
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  using RenderWidgetHostImplExt::render_input_router_;
+#else
   using RenderWidgetHostImpl::render_input_router_;
-
+#endif
   ~MockRenderWidgetHostImpl() override = default;
 
   // Extracts |latency_info| for wheel event, and stores it in
@@ -372,7 +383,11 @@ class MockRenderWidgetHostImpl : public RenderWidgetHostImpl {
   void ForwardWheelEventWithLatencyInfo(
       const blink::WebMouseWheelEvent& wheel_event,
       const ui::LatencyInfo& ui_latency) override {
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+    RenderWidgetHostImplExt::ForwardWheelEventWithLatencyInfo(wheel_event,
+#else
     RenderWidgetHostImpl::ForwardWheelEventWithLatencyInfo(wheel_event,
+#endif
                                                            ui_latency);
     GetMockRenderInputRouter()->SetLastWheelOrTouchEventLatencyInfo(
         ui::LatencyInfo(ui_latency));
@@ -439,7 +454,11 @@ class MockRenderWidgetHostImpl : public RenderWidgetHostImpl {
                            base::SafeRef<SiteInstanceGroup> site_instance_group,
                            int32_t routing_id,
                            bool hidden)
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+      : RenderWidgetHostImplExt(
+#else
       : RenderWidgetHostImpl(
+#endif
             frame_tree,
             /*self_owned=*/true,
             DefaultFrameSinkId(*site_instance_group, routing_id),
@@ -711,7 +730,11 @@ class RenderWidgetHostViewAuraTest : public testing::Test {
   }
 
   TextInputManager* GetTextInputManager(RenderWidgetHostViewBase* view) const {
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+    return static_cast<RenderWidgetHostImplExt*>(view->GetRenderWidgetHost())
+#else
     return static_cast<RenderWidgetHostImpl*>(view->GetRenderWidgetHost())
+#endif
         ->delegate()
         ->GetTextInputManager();
   }
@@ -760,7 +783,11 @@ class RenderWidgetHostViewAuraTest : public testing::Test {
 
   // Tests should set these to nullptr if they've already triggered their
   // destruction.
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  raw_ptr<RenderWidgetHostImplExt> parent_host_ = nullptr;
+#else
   raw_ptr<RenderWidgetHostImpl> parent_host_ = nullptr;
+#endif
   // The `parent_view_` owns the object.
   // Note: It would be great turning this into a std::unique_ptr<>.
   raw_ptr<RenderWidgetHostViewAura> parent_view_ = nullptr;
@@ -3279,8 +3306,13 @@ TEST_F(RenderWidgetHostViewAuraTest, DiscardDelegatedFrames) {
   size_t renderer_count = max_renderer_frames + 1;
   gfx::Rect view_rect(100, 100);
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  std::unique_ptr<RenderWidgetHostImplExt* []> hosts(
+      new RenderWidgetHostImplExt*[renderer_count]);
+#else
   std::unique_ptr<RenderWidgetHostImpl* []> hosts(
       new RenderWidgetHostImpl*[renderer_count]);
+#endif
   std::unique_ptr<FakeRenderWidgetHostViewAura* []> views(
       new FakeRenderWidgetHostViewAura*[renderer_count]);
 
@@ -3400,8 +3432,13 @@ TEST_F(RenderWidgetHostViewAuraTest, DiscardDelegatedFramesWithMemoryPressure) {
   size_t renderer_count = kMaxRendererFrames;
   gfx::Rect view_rect(100, 100);
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  std::unique_ptr<RenderWidgetHostImplExt* []> hosts(
+      new RenderWidgetHostImplExt*[renderer_count]);
+#else
   std::unique_ptr<RenderWidgetHostImpl* []> hosts(
       new RenderWidgetHostImpl*[renderer_count]);
+#endif      
   std::unique_ptr<FakeRenderWidgetHostViewAura* []> views(
       new FakeRenderWidgetHostViewAura*[renderer_count]);
 
@@ -6490,7 +6527,11 @@ TEST_F(InputMethodResultAuraTest, ChangeTextDirectionAndLayoutAlignment) {
     mojo::PendingAssociatedReceiver<blink::mojom::FrameWidget>
         frame_widget_receiver =
             frame_widget_remote.BindNewEndpointAndPassDedicatedReceiver();
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+    static_cast<RenderWidgetHostImplExt*>(views_[index]->GetRenderWidgetHost())
+#else
     static_cast<RenderWidgetHostImpl*>(views_[index]->GetRenderWidgetHost())
+#endif
         ->BindFrameWidgetInterfaces(
             mojo::AssociatedRemote<blink::mojom::FrameWidgetHost>()
                 .BindNewEndpointAndPassDedicatedReceiver(),
@@ -6586,7 +6627,11 @@ TEST_F(InputMethodStateAuraTest, GetSelectedText) {
 
   for (auto index : active_view_sequence_) {
     render_widget_host_delegate()->set_focused_widget(
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+        RenderWidgetHostImplExt::From(views_[index]->GetRenderWidgetHost()));
+#else
         RenderWidgetHostImpl::From(views_[index]->GetRenderWidgetHost()));
+#endif
     views_[index]->SelectionChanged(text, offset, selection_range);
     std::u16string expected_text = text.substr(
         selection_range.GetMin() - offset, selection_range.length());
@@ -6697,7 +6742,11 @@ TEST_F(InputMethodStateAuraTest, SelectedTextCopiedToClipboard) {
 
     // Focus the corresponding widget.
     render_widget_host_delegate()->set_focused_widget(
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+        RenderWidgetHostImplExt::From(views_[index]->GetRenderWidgetHost()));
+#else
         RenderWidgetHostImpl::From(views_[index]->GetRenderWidgetHost()));
+#endif
 
     // Change the selection of the currently focused widget. It suffices to just
     // call the method on the view.

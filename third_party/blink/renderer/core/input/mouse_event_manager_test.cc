@@ -100,3 +100,7 @@ TEST_F(MouseEventManagerTest, HoverEffectAfterNav) {
 }
 
 }  // namespace blink
+
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/input/mouse_event_manager_ext_unittest_include.cc"
+#endif

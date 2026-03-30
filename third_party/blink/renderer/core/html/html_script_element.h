@@ -111,6 +111,9 @@ class CORE_EXPORT HTMLScriptElement final : public HTMLElement,
   // ScriptElementBase overrides:
   String SourceAttributeValue() const override;
   String CharsetAttributeValue() const override;
+#ifdef BUILDFLAG(ARKWEB_COMPILE)
+  String ArkWebCompileAttributeValue() const override;
+#endif
   String TypeAttributeValue() const override;
   String LanguageAttributeValue() const override;
   bool NomoduleAttributeValue() const override;

@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//arkweb/build/features/features.gni")
 import("//build/config/ui.gni")
 import("//device/vr/buildflags/buildflags.gni")
 import("//third_party/blink/public/public_features.gni")
@@ -41,6 +42,8 @@ target(link_target_type, "child") {
     "child_performance_coordinator.h",
     "child_process.cc",
     "child_process.h",
+    "//arkweb/chromium_ext/content/child/child_process_utils.cc",
+    "//arkweb/chromium_ext/content/child/child_process_utils.h",
     "child_process_synthetic_trial_syncer.cc",
     "child_process_synthetic_trial_syncer.h",
     "child_thread_impl.cc",
@@ -120,6 +123,14 @@ target(link_target_type, "child") {
     "//url",
     "//v8",
   ]
+
+  if (arkweb_renderer_anr_dump) {
+    deps += [ "//arkweb/chromium_ext/content/common/hicollie_freeze_reporter:hicollie_freeze_reporter", ]
+  }
+
+  if (arkweb_oop_gpu_process) {
+    deps += [ "//arkweb/build/features" ]
+  }
 
   if (is_linux || is_chromeos) {
     sources += [

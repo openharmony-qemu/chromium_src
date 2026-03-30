@@ -18,6 +18,7 @@
 #include "services/device/public/mojom/wake_lock.mojom.h"
 #include "services/device/wake_lock/power_save_blocker/power_save_blocker.h"
 #include "ui/gfx/native_ui_types.h"
+#include "arkweb/build/features/features.h"
 
 namespace device {
 
@@ -91,6 +92,8 @@ class WakeLock : public mojom::WakeLock {
 #if BUILDFLAG(IS_ANDROID)
   int context_id_;
   WakeLockContextCallback native_view_getter_;
+#elif BUILDFLAG(ARKWEB_SCREEN_LOCK)
+  int context_id_;
 #endif
 
   scoped_refptr<base::SequencedTaskRunner> main_task_runner_;

@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "components/subresource_filter/content/browser/content_subresource_filter_throttle_manager.h"
+#include "arkweb/chromium_ext/components/subresource_filter/content/browser/arkweb_content_subresource_filter_throttle_manager_ext.h"
 
 #include <utility>
 
@@ -51,6 +52,9 @@
 #include "third_party/blink/public/common/features.h"
 #include "third_party/blink/public/common/tokens/tokens.h"
 #include "third_party/blink/public/mojom/devtools/console_message.mojom.h"
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+#include "components/subresource_filter/content/browser/ohos_adblock_config.h"
+#endif
 
 namespace subresource_filter {
 
@@ -81,9 +85,15 @@ ContentSubresourceFilterThrottleManager::CreateForNewPage(
     return nullptr;
   }
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  return std::make_unique<ArkWebContentSubresourceFilterThrottleManagerExt>(
+      profile_context, database_manager, dealer_handle, web_contents_helper,
+      initiating_navigation_handle);
+#else
   return std::make_unique<ContentSubresourceFilterThrottleManager>(
       profile_context, database_manager, dealer_handle, web_contents_helper,
       initiating_navigation_handle);
+#endif
 }
 
 // static
@@ -109,6 +119,9 @@ ContentSubresourceFilterThrottleManager::
         ContentSubresourceFilterWebContentsHelper& web_contents_helper,
         content::NavigationHandle& initiating_navigation_handle)
     : receiver_(initiating_navigation_handle.GetWebContents(), this),
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+      user_receiver_(initiating_navigation_handle.GetWebContents(), this),
+#endif
       dealer_handle_(dealer_handle),
       database_manager_(std::move(database_manager)),
       profile_interaction_manager_(
@@ -178,11 +191,23 @@ void ContentSubresourceFilterThrottleManager::ReadyToCommitInFrameNavigation(
   mojo::AssociatedRemote<mojom::SubresourceFilterAgent> agent;
   frame_host->GetRemoteAssociatedInterfaces()->GetInterface(&agent);
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  LOG(DEBUG) << "[Adblock] ready to commit in frame navigation, url : ***"
+             << ", activation_level:" << activation_state.activation_level;
+#endif
+
   // We send `ad_evidence_for_navigation` even if the frame is not tagged as an
   // ad. This ensures the renderer's copy is up-to-date, including propagating
   // it on cross-process navigations.
   agent->ActivateForNextCommittedLoad(activation_state.Clone(),
                                       ad_evidence_for_navigation);
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  mojo::AssociatedRemote<mojom::UserSubresourceFilterAgent> user_agent;
+  frame_host->GetRemoteAssociatedInterfaces()->GetInterface(&user_agent);
+  user_agent->ActivateForNextCommittedLoad(activation_state.Clone(),
+                                           ad_evidence_for_navigation);
+#endif
 }
 
 mojom::ActivationState
@@ -215,6 +240,17 @@ ContentSubresourceFilterThrottleManager::ActivationStateForNextCommittedLoad(
   // Main frame throttles with disabled page-level activation will not have
   // associated filters.
   ActivationStateComputingNavigationThrottle* throttle = it->second;
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  if (navigation_handle && !navigation_handle->IsDownload() &&
+      navigation_handle->IsInMainFrame() &&
+      navigation_handle->GetURL().SchemeIsHTTPOrHTTPS() &&
+      navigation_handle->GetWebContents()) {
+    return AsArkWebContentSubresourceFilterThrottleManagerExt()->AdBlockActivationStateForNextCommittedLoad(
+        navigation_handle, throttle);
+  }
+#endif
+
   AsyncDocumentSubresourceFilter* filter = throttle->filter();
   if (!filter) {
     if (IsInSubresourceFilterRoot(navigation_handle)) {
@@ -347,8 +383,13 @@ void ContentSubresourceFilterThrottleManager::DidFinishInFrameNavigation(
     current_committed_load_has_notified_disallowed_load_ = false;
     statistics_.reset();
     if (filter) {
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+      statistics_ = std::make_unique<PageLoadStatisticsExt>(
+          filter->activation_state(), navigation_handle->GetWebContents());
+#else
       statistics_ = std::make_unique<PageLoadStatistics>(
           filter->activation_state(), kSafeBrowsingRulesetConfig.uma_tag);
+#endif // BUILDFLAG(ARKWEB_ADBLOCK)
       if (filter->activation_state().enable_logging) {
         CHECK(filter->activation_state().activation_level !=
               mojom::ActivationLevel::kDisabled);
@@ -357,6 +398,12 @@ void ContentSubresourceFilterThrottleManager::DidFinishInFrameNavigation(
             kActivationConsoleMessage);
       }
     }
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+    else {
+      AsArkWebContentSubresourceFilterThrottleManagerExt()->StatisticActivationState(navigation_handle);
+    }
+#endif
+
     RecordUmaHistogramsForRootNavigation(
         navigation_handle,
         filter ? filter->activation_state().activation_level
@@ -472,6 +519,10 @@ void ContentSubresourceFilterThrottleManager::DidFinishLoad(
     return;
   }
   statistics_->OnDidFinishLoad();
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  AsArkWebContentSubresourceFilterThrottleManagerExt()->ReportSubresourceMap(render_frame_host, validated_url);
+#endif  // BUILDFLAG(ARKWEB_ADBLOCK)
 }
 
 void ContentSubresourceFilterThrottleManager::DidBecomePrimaryPage() {
@@ -509,6 +560,15 @@ void ContentSubresourceFilterThrottleManager::OnPageActivationComputed(
     return;
   }
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  if (navigation_handle && !navigation_handle->IsDownload() &&
+      navigation_handle->IsInMainFrame() &&
+      navigation_handle->GetURL().SchemeIsHTTPOrHTTPS() &&
+      navigation_handle->GetWebContents()) {
+    return AsArkWebContentSubresourceFilterThrottleManagerExt()->OnPageAdBlockActivationState(navigation_handle);
+  }
+#endif
+
   // The subresource filter normally operates in DryRun mode, disabled
   // activation should only be supplied in cases where DryRun mode is not
   // otherwise preferable. If the activation level is disabled, we do not want
@@ -525,8 +585,10 @@ void ContentSubresourceFilterThrottleManager::OnPageActivationComputed(
     return;
   }
 
+#if !BUILDFLAG(ARKWEB_ADBLOCK)
   it->second->NotifyPageActivationWithRuleset(EnsureRulesetHandle(),
                                               activation_state);
+#endif
 }
 
 void ContentSubresourceFilterThrottleManager::OnChildFrameNavigationEvaluated(
@@ -661,6 +723,12 @@ ContentSubresourceFilterThrottleManager::
       throttle->NotifyPageActivationWithRuleset(EnsureRulesetHandle(),
                                                 ad_tagging_state);
     }
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+    AsArkWebContentSubresourceFilterThrottleManagerExt()->AdBlockMaybeCreateActivationState(
+        &navigation_handle, throttle);
+#endif
+
     return throttle;
   }
 

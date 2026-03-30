@@ -40,12 +40,13 @@ static_assert(sizeof(void*) == 8, "");
 static_assert(sizeof(void*) != 8, "");
 #endif  // PA_CONFIG(HAS_64_BITS_POINTERS)
 
-#if PA_BUILDFLAG(HAS_64_BIT_POINTERS) && PA_BUILDFLAG(IS_IOS)
+#if PA_BUILDFLAG(HAS_64_BIT_POINTERS) && (PA_BUILDFLAG(IS_IOS) || PA_BUILDFLAG(IS_OHOS))
 // Allow PA to select an alternate pool size at run-time before initialization,
 // rather than using a single constexpr value.
 //
 // This is needed on iOS because iOS test processes can't handle large pools
 // (see crbug.com/1250788).
+// This is needed on OHOS because OHOS tsan processes can't handle large pools
 //
 // This setting is specific to 64-bit, as 32-bit has a different implementation.
 #define PA_CONFIG_DYNAMICALLY_SELECT_POOL_SIZE() 1
@@ -142,7 +143,8 @@ static_assert(sizeof(void*) == 8);
 // - Not on Android due to bot failures
 #if PA_BUILDFLAG(DCHECKS_ARE_ON) &&                \
     PA_BUILDFLAG(USE_PARTITION_ALLOC_AS_MALLOC) && \
-    PA_CONFIG(THREAD_LOCAL_TLS) && !PA_BUILDFLAG(IS_ANDROID)
+    PA_CONFIG(THREAD_LOCAL_TLS) && !PA_BUILDFLAG(IS_ANDROID) && \
+    !PA_BUILDFLAG(IS_OHOS)
 #define PA_CONFIG_HAS_ALLOCATION_GUARD() 1
 #else
 #define PA_CONFIG_HAS_ALLOCATION_GUARD() 0
@@ -150,7 +152,8 @@ static_assert(sizeof(void*) == 8);
 
 // On Android, we have to go through emutls, since this is always a shared
 // library, so don't bother.
-#if PA_CONFIG(THREAD_LOCAL_TLS) && !PA_BUILDFLAG(IS_ANDROID)
+#if PA_CONFIG(THREAD_LOCAL_TLS) && !PA_BUILDFLAG(IS_ANDROID) && \
+    !PA_BUILDFLAG(IS_OHOS)
 #define PA_CONFIG_THREAD_CACHE_FAST_TLS() 1
 #else
 #define PA_CONFIG_THREAD_CACHE_FAST_TLS() 0
@@ -171,7 +174,7 @@ constexpr bool kUseLazyCommit = false;
 // macOS, where it yielded no beenefit (nor any real downside).
 constexpr bool kUseFewerMemoryRegions =
 #if PA_BUILDFLAG(IS_LINUX) || PA_BUILDFLAG(IS_ANDROID) || \
-    PA_BUILDFLAG(IS_CHROMEOS)
+    PA_BUILDFLAG(IS_CHROMEOS) || PA_BUILDFLAG(IS_OHOS)
     true;
 #else
     false;

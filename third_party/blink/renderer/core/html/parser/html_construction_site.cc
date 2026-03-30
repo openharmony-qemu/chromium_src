@@ -88,6 +88,10 @@
 #include "third_party/blink/renderer/platform/wtf/text/character_visitor.h"
 #include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
 
+#if BUILDFLAG(ARKWEB_JSPROXY)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/html/html_construction_site_for_include.cc"
+#endif
+
 namespace blink {
 
 void HTMLConstructionSite::SetAttributes(Element* element,

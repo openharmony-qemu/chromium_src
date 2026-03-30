@@ -9,6 +9,7 @@
 #include <set>
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/scoped_multi_source_observation.h"
 #include "base/scoped_observation.h"
@@ -101,6 +102,10 @@ class TabsEventRouter : public TabStripModelObserver,
   // performance_manager::PageLiveStateObserver:
   void OnIsAutoDiscardableChanged(
       const performance_manager::PageNode* page_node) override;
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "cef/ohos_cef_ext/libcef/browser/extensions/api/tabs/tabs_event_router_for_include_file.cc"
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 
  private:
   // Methods called from OnTabStripModelChanged.

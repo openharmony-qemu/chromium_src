@@ -13,6 +13,7 @@
 #include <string>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/bind.h"
 #include "base/memory/raw_ptr.h"
 #include "base/metrics/histogram_functions.h"
@@ -37,8 +38,13 @@ const char kTypeSubscribedForInvalidations[] =
 const char kActiveRegistrationTokens[] =
     "invalidation.per_sender_active_registration_tokens";
 
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+const char kInvalidationRegistrationScope[] =
+    "https://x.x.x";
+#else
 const char kInvalidationRegistrationScope[] =
     "https://firebaseperusertopics-pa.googleapis.com";
+#endif
 
 // Note: Taking |topic| and |private_topic_name| by value (rather than const
 // ref) because the caller (in practice, SubscriptionEntry) may be destroyed by

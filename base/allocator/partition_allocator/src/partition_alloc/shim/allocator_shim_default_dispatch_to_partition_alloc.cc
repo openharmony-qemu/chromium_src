@@ -404,14 +404,14 @@ void* PartitionAllocFunctionsInternal<base_alloc_flags, base_free_flags>::
           address, size, "");
 }
 
-#if PA_BUILDFLAG(IS_CAST_ANDROID)
+#if PA_BUILDFLAG(IS_CAST_ANDROID) || PA_BUILDFLAG(IS_OHOS)
 extern "C" {
 void __real_free(void*);
 }       // extern "C"
-#endif  // PA_BUILDFLAG(IS_CAST_ANDROID)
+#endif  // PA_BUILDFLAG(IS_CAST_ANDROID) || PA_BUILDFLAG(IS_OHOS)
 
 constexpr bool MightNeedToHandleSystemDeallocation() {
-#if PA_BUILDFLAG(IS_APPLE) || PA_BUILDFLAG(IS_CAST_ANDROID)
+#if PA_BUILDFLAG(IS_APPLE) || PA_BUILDFLAG(IS_CAST_ANDROID) || PA_BUILDFLAG(IS_OHOS)
   return true;
 #else
   return false;
@@ -436,7 +436,7 @@ PA_ALWAYS_INLINE bool MaybeHandleSystemDeallocation(void* object) {
   // malloc() pointer can be passed to PartitionAlloc's free(). If we don't own
   // the pointer, pass it along. This should not have a runtime cost vs regular
   // Android, since on Android we have a PA_CHECK() rather than the branch here.
-#if PA_BUILDFLAG(IS_CAST_ANDROID)
+#if PA_BUILDFLAG(IS_CAST_ANDROID) || PA_BUILDFLAG(IS_OHOS)
   if (!partition_alloc::IsManagedByPartitionAlloc(
           reinterpret_cast<uintptr_t>(object)) &&
       object) [[unlikely]] {
@@ -446,7 +446,7 @@ PA_ALWAYS_INLINE bool MaybeHandleSystemDeallocation(void* object) {
     __real_free(object);
     return true;
   }
-#endif  // PA_BUILDFLAG(IS_CAST_ANDROID)
+#endif  // PA_BUILDFLAG(IS_CAST_ANDROID) || PA_BUILDFLAG(IS_OHOS)
   return false;
 }
 
@@ -790,7 +790,7 @@ const AllocatorDispatch AllocatorDispatch::default_dispatch =
 
 extern "C" {
 
-#if !PA_BUILDFLAG(IS_APPLE) && !PA_BUILDFLAG(IS_ANDROID)
+#if !PA_BUILDFLAG(IS_APPLE) && !PA_BUILDFLAG(IS_ANDROID) && !PA_BUILDFLAG(IS_OHOS)
 
 SHIM_ALWAYS_EXPORT void malloc_stats(void) __THROW {}
 
@@ -798,7 +798,8 @@ SHIM_ALWAYS_EXPORT int mallopt(int cmd, int value) __THROW {
   return 0;
 }
 
-#endif  // !PA_BUILDFLAG(IS_APPLE) && !PA_BUILDFLAG(IS_ANDROID)
+#endif  // !PA_BUILDFLAG(IS_APPLE) && !PA_BUILDFLAG(IS_ANDROID) && \
+        // !PA_BUILDFLAG(IS_OHOS)
 
 #if PA_BUILDFLAG(IS_LINUX) || PA_BUILDFLAG(IS_CHROMEOS)
 SHIM_ALWAYS_EXPORT struct mallinfo mallinfo(void) __THROW {

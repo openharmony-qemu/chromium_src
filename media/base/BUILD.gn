@@ -14,6 +14,10 @@ if (is_android) {
   import("//build/config/android/rules.gni")
 }
 
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
+
 source_set("base") {
   # Do not expand the visibility here without double-checking with OWNERS, this
   # is a roll-up target which is part of the //media component. Most other DEPs
@@ -462,6 +466,10 @@ source_set("base") {
     deps += [ "//third_party/libaom" ]
   }
 
+  if (enable_arkweb) {
+    deps += [ "//arkweb//build/features" ]
+  }
+
   if (is_mac) {
     frameworks = [
       "CoreVideo.framework",
@@ -491,6 +499,10 @@ source_set("base") {
     ]
   }
 
+  if (arkweb_same_layer) {
+    sources += arkweb_media_base_sources
+  }
+
   if (is_android) {
     sources += [
       "android_overlay_config.cc",
@@ -517,6 +529,11 @@ source_set("base") {
       "media_drm_storage.cc",
       "media_drm_storage.h",
     ]
+  }
+
+  if (defined(arkweb_custom_video_player) && arkweb_custom_video_player) {
+    import("//arkweb/chromium_ext/media/base/arkweb_media_base.gni") 
+    sources += arkweb_media_base_custom_sources
   }
 }
 
@@ -721,6 +738,30 @@ source_set("unit_tests") {
 
   if (is_castos) {
     sources += [ "demuxer_memory_limit_cast_unittest.cc" ]
+  }
+
+  defines = []
+  if (arkweb_unittests) {
+    import("//arkweb/chromium_ext/chromium_ext.gni")
+    include_dirs = [
+      "//arkweb/ohos_adapter_ndk/interfaces",
+      "//third_party/ohos_ndk/includes/ohos_adapter"
+    ]
+    sources += arkweb_media_base_unittest_sources
+    sources += arkweb_media_adapter_unittest_sources
+    sources += arkweb_media_gpu_unittest_sources
+    sources += arkweb_components_cdm_render_unittest_sources
+    sources += arkweb_media_filters_ohos_unittest_sources
+    sources += arkweb_media_third_party_unittest_sources
+    if (arkweb_enable_cdm) {
+      sources += arkweb_cdm_unittest_sources
+    }
+    sources += arkweb_media_mojo_services_unittest_sources
+    deps += [
+      "//arkweb/ohos_adapter_ndk:adapter_ndk",
+      "//content/test:test_support"
+    ]
+    defines += [ "IS_MEDIA_IMPL" ]
   }
 
   # TODO(crbug.com/40031409): Fix code that adds exit-time destructors and

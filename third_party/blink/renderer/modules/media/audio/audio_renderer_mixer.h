@@ -14,6 +14,7 @@
 #include "base/memory/raw_ptr.h"
 #include "base/synchronization/lock.h"
 #include "base/thread_annotations.h"
+#include "base/threading/platform_thread.h"
 #include "base/time/time.h"
 #include "media/base/audio_converter.h"
 #include "media/base/audio_renderer_sink.h"
@@ -22,6 +23,7 @@
 
 namespace blink {
 class AudioRendererMixerInput;
+class AudioRendererMixerUtils;
 
 // Mixes a set of AudioConverter::InputCallbacks into a single output stream
 // which is funneled into a single shared AudioRendererSink; saving a bundle
@@ -29,6 +31,7 @@ class AudioRendererMixerInput;
 class BLINK_MODULES_EXPORT AudioRendererMixer
     : public media::AudioRendererSink::RenderCallback {
  public:
+  friend class AudioRendererMixerUtils;
   AudioRendererMixer(const media::AudioParameters& output_params,
                      scoped_refptr<media::AudioRendererSink> sink);
 
@@ -60,7 +63,10 @@ class BLINK_MODULES_EXPORT AudioRendererMixer
   bool HasSinkError();
 
  private:
+#if BUILDFLAG(ARKWEB_MEDIA)
+  raw_ptr<AudioRendererMixerUtils> implUtils = nullptr;
   // AudioRendererSink::RenderCallback implementation.
+#endif
   int Render(base::TimeDelta delay,
              base::TimeTicks delay_timestamp,
              const media::AudioGlitchInfo& glitch_info,
@@ -106,6 +112,10 @@ class BLINK_MODULES_EXPORT AudioRendererMixer
   // Set if the mixer receives an error from the sink. Indicates that this
   // mixer and sink should no longer be reused.
   bool sink_error_ GUARDED_BY(lock_) = false;
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+  base::PlatformThreadId audio_output_tid_ GUARDED_BY(lock_);
+  base::PlatformThreadId media_tid_ GUARDED_BY(lock_);
+#endif
 };
 
 }  // namespace blink

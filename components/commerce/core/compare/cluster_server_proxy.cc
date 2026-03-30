@@ -7,6 +7,7 @@
 #include <optional>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/json/json_reader.h"
 #include "base/json/values_util.h"
 #include "base/strings/string_number_conversions.h"
@@ -36,7 +37,11 @@ const int kTimeoutMs = 5000;
 
 // URL to get compare result.
 const char kDefaultServiceBaseUrl[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://x.x.x";
+#else
     "https://memex-pa.googleapis.com/v1/shopping/products:related";
+#endif
 const char kBaseUrlParam[] = "cluster_service_base_url";
 constexpr base::FeatureParam<std::string> kServiceBaseUrl{
     &commerce::kProductSpecifications, kBaseUrlParam, kDefaultServiceBaseUrl};

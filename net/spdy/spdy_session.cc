@@ -3069,6 +3069,12 @@ void SpdySession::OnHeaders(spdy::SpdyStreamId stream_id,
   if (it == active_streams_.end()) {
     // NOTE:  it may just be that the stream was cancelled.
     LOG(WARNING) << "Received HEADERS for invalid stream " << stream_id;
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(WARNING) << "Received HEADERS for invalid stream "
+                          << stream_id;
+#endif
+
     return;
   }
 

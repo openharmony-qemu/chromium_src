@@ -715,6 +715,11 @@ struct URLLoaderOptions {
         ObserverWrapper(std::move(devtools_observer)),
         ObserverWrapper(std::move(device_bound_session_observer)),
         std::move(accept_ch_frame_observer), shared_storage_writable_eligible,
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+        std::move(prpp_loader),
+        org_main_url,
+        std::move(preload_info),
+#endif
         *shared_resource_checker, std::move(maybe_durable_message));
   }
 
@@ -728,6 +733,11 @@ struct URLLoaderOptions {
   std::unique_ptr<TrustTokenRequestHelperFactory> trust_token_helper_factory;
   raw_ptr<SharedDictionaryManager> shared_dictionary_manager;
   std::unique_ptr<SharedDictionaryAccessChecker> shared_dictionary_checker;
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  std::shared_ptr<ohos_prp_preload::PRPPRequestLoader> prpp_loader = nullptr;
+  std::string org_main_url = "";
+  std::shared_ptr<ohos_prp_preload::PRRequestInfo> preload_info = nullptr;
+#endif
   mojo::PendingRemote<mojom::CookieAccessObserver> cookie_observer =
       mojo::NullRemote();
   mojo::PendingRemote<mojom::TrustTokenAccessObserver> trust_token_observer =

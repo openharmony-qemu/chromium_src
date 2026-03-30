@@ -106,6 +106,7 @@
 <translation id="2210502920229141283">An toàn hơn khi di chuyển nhờ tính năng Duyệt web an toàn có tăng cường bảo vệ trên Chromium cho iOS</translation>
 <translation id="2210682093923538346">Đây là trang web nguy hiểm. Chromium đã xoá quyền thông báo.</translation>
 <translation id="2236949375853147973">Hoạt động của tôi</translation>
+<translation id="2238104961394611930">Bật • Không thể xác minh nguồn của tiện ích mở rộng</translation>
 <translation id="2238130810669087193">Để sử dụng địa chỉ và các dữ liệu khác trên mọi thiết bị của bạn, hãy đăng nhập vào Chromium. Địa chỉ này sẽ được lưu trong Tài khoản Google của bạn sau khi bạn đăng nhập.</translation>
 <translation id="2241627712206172106">Nếu bạn chia sẻ máy tính, bạn bè và gia đình có thể duyệt web một cách riêng biệt và thiết lập Chromium theo ý của họ.</translation>
 <translation id="2283803047247799269">Tìm kiếm thẻ này bằng tính năng Tìm kiếm hình ảnh</translation>
@@ -515,6 +516,7 @@ Một số tính năng có thể không khả dụng. Hãy chỉ định thư m�
 <translation id="6862030660799253820">Sử dụng tính năng Tìm kiếm hình ảnh để tìm kiếm hình ảnh này</translation>
 <translation id="6873893289264747459">Chromium nhận thấy rằng "<ph name="EXTENSION_NAME" />" chứa phần mềm độc hại</translation>
 <translation id="6877155553248388166">góc dưới cùng bên phải của khu vực tìm kiếm: <ph name="RIGHT" />% từ bên phải sang, <ph name="BOTTOM" />% từ dưới cùng lên</translation>
+<translation id="6885534934768077023">Lưu ý: Trình duyệt không thể ngăn các tiện ích mở rộng ghi lại lịch sử duyệt web của bạn. Để tắt tiện ích mở rộng này ở Chế độ riêng tư, hãy tắt tùy chọn này.</translation>
 <translation id="6896758677409633944">Sao chép</translation>
 <translation id="6901631050894301805">Đặt Chromium làm trình duyệt mặc định và ghim Chromium vào thanh tác vụ</translation>
 <translation id="6909503629704372277">&amp;Quản lý hồ sơ trên Chromium</translation>
@@ -573,6 +575,7 @@ Chromium không thể khôi phục cài đặt của bạn.</translation>
 <translation id="753534427205733210">{0,plural, =1{Chromium sẽ khởi động lại sau 1 phút}other{Chromium sẽ khởi động lại sau # phút}}</translation>
 <translation id="7565444033145385702">Để bảo vệ dữ liệu của bạn, hãy cho phép Chromium loại bỏ quyền của các trang web mà gần đây bạn không truy cập.</translation>
 <translation id="7583399374488819119">Trình cài đặt <ph name="COMPANY_NAME" /></translation>
+<translation id="7597668698051545254">Tắt • Không thể xác minh nguồn của tiện ích mở rộng</translation>
 <translation id="761356813943268536">Chromium đang sử dụng máy ảnh và micrô của bạn.</translation>
 <translation id="7617377681829253106">Chromium được cải tiến hơn</translation>
 <translation id="7622753900276619808">Giờ đây, bạn có thể sử dụng nhiều tính năng hơn trong Chromium</translation>

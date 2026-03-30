@@ -114,6 +114,10 @@ class MockDownloadItemImpl : public DownloadItemImpl {
   MOCK_CONST_METHOD0(GetFileNameToReportUser, base::FilePath());
   MOCK_METHOD1(SetDisplayName, void(const base::FilePath&));
   MOCK_CONST_METHOD0(IsTransient, bool());
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+  MOCK_METHOD3(ReadDownloadData,
+    void(const std::string&, const int32_t, base::OnceCallback<void(const std::vector<uint8_t>&)>));
+#endif
   // May be called when vlog is on.
   std::string DebugString(bool verbose) const override { return std::string(); }
 };

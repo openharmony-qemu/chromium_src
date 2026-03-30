@@ -32,6 +32,11 @@
 #include "net/socket/stream_socket.h"
 #include "url/gurl.h"
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#include "base/command_line.h"
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#endif
+
 namespace net {
 
 const int HttpProxyClientSocket::kDrainBodyBufferSize;
@@ -490,6 +495,18 @@ int HttpProxyClientSocket::DoProcessResponseHeadersComplete(int result) {
   if (result != OK) {
     return result;
   }
+#if BUILDFLAG(IS_ARKWEB)
+  if (proxy_delegate_) {
+    if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+            ::switches::kEnableNwebEx)) {
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+      proxy_delegate_->OnTunnelConnectResult(proxy_chain_, endpoint_.host(),
+                                            *response_.headers,
+                                            request_headers_);
+#endif
+    }
+  }
+#endif
 
   next_state_ = STATE_PROCESS_RESPONSE_CODE;
   return OK;

@@ -115,7 +115,7 @@ LogMessage::~LogMessage() {
   // TODO(crbug.com/40213558): Enable a stack trace on a fatal on fuchsia.
 #if !defined(OFFICIAL_BUILD) &&                         \
     (PA_BUILDFLAG(IS_POSIX) || PA_BUILDFLAG(IS_WIN)) && \
-    !defined(__UCLIBC__) && !PA_BUILDFLAG(IS_AIX)
+    !defined(__UCLIBC__) && !PA_BUILDFLAG(IS_AIX) && !defined(OS_OHOS)
   // TODO(crbug.com/40213558): Show a stack trace on a fatal, unless a debugger
   // is attached.
   if (severity_ == LOGGING_FATAL) {

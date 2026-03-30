@@ -40,6 +40,10 @@ source_set("memory_system") {
     deps += [ "//components/gwp_asan/client" ]
   }
 
+  if (arkweb_gwp_asan) {
+    deps += [ "//base:base" ]
+  }
+
   # Regardless of `enable_gwp_asan`, we must depend directly
   # on the presence of the `base::Feature` that governs it. This is
   # because WebView depends on it, but support cannot be "compiled out"

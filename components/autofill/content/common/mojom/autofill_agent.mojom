@@ -90,6 +90,12 @@ interface AutofillAgent {
   AcceptDataListSuggestion(
       FieldRendererId field, mojo_base.mojom.String16 value);
 
+  // Tells the renderer to fill the username and password with with given
+  // values on openharmony system.
+  [EnableIf=arkweb_password_autofill]
+  FillAccountSuggestion(mojo_base.mojom.String16 username,
+                        mojo_base.mojom.String16 password);
+
   // Tells the renderer to preview the username and password with the given
   // values.
   PreviewPasswordSuggestion(
@@ -178,6 +184,10 @@ interface PasswordAutofillAgent {
   // logging the decisions made about saving the password.
   SetLoggingState(bool active);
 
+  // Called when autofill is cancelled, will try to pull up the IME soft keyboard.
+  [EnableIf=arkweb_password_autofill]
+  AutofillSurfaceClosed(bool show_virtual_keyboard);
+
   // Triggers a form submission on the last interacted element.
   [EnableIf=is_android]
   TriggerFormSubmission();
@@ -185,6 +195,10 @@ interface PasswordAutofillAgent {
   // Annotate password related (username, password) DOM input elements with
   // corresponding HTML attributes. It is used only for debugging.
   AnnotateFieldsWithParsingResult(ParsingResult parsing_result);
+
+  // Provides parsed/infered information for a password form, which
+  [EnableIf=arkweb_password_autofill]
+  SetParsedPasswordForm(PasswordFormFillData form_data);
 
   // Scrolls to the element if needed and checks if the view area of the field
   // is visible.

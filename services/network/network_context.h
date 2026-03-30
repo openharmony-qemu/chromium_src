@@ -139,6 +139,9 @@ class SharedDictionaryManager;
 class SharedResourceChecker;
 class WebSocketFactory;
 class WebTransport;
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS) || BUILDFLAG(ARKWEB_PRP_PRELOAD)
+class ArkWebNetworkContextExt;
+#endif
 class DeviceBoundSessionManager;
 
 struct ResourceRequest;
@@ -190,6 +193,22 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkContext
   NetworkContext& operator=(const NetworkContext&) = delete;
 
   ~NetworkContext() override;
+
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS) || BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  virtual ArkWebNetworkContextExt* AsArkWebNetworkContextExt() {
+    return nullptr;
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  void InitPRParallelPreloadMgr() override {}
+  void StartPage(const std::string& url,
+      const net::NetworkAnonymizationKey& networkAnonymizationKey, uint64_t addr_web_handle,
+      StartPageCallback page_origin_cb) override {}
+  void StopPage(uint64_t addr_web_handle) override {}
+  void SetURLLoaderFactoryParam(mojom::URLLoaderFactoryParamsPtr params) override {}
+#endif
+
 
   static std::unique_ptr<NetworkContext> CreateForTesting(
       NetworkService* network_service,
@@ -742,7 +761,19 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkContext
   bool IsNetworkForNonceAndUrlAllowed(const base::UnguessableToken& nonce,
                                       const GURL& url) const;
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  bool IsDestructing() const;
+#endif // BUILDFLAG(ARKWEB_LOGGER_REPORT)
+
+#if BUILDFLAG(ARKWEB_TEST)
+ public:
+#else
  private:
+#endif // ARKWEB_TEST
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS) || BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  friend class ArkWebNetworkContextExt;
+#endif
+
   class NetworkContextHttpAuthPreferences : public net::HttpAuthPreferences {
    public:
     explicit NetworkContextHttpAuthPreferences(NetworkService* network_service);
@@ -1118,5 +1149,9 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkContext
 };
 
 }  // namespace network
+
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS) || BUILDFLAG(ARKWEB_PRP_PRELOAD)
+#include "arkweb/chromium_ext/services/network/arkweb_network_context_ext.h"
+#endif
 
 #endif  // SERVICES_NETWORK_NETWORK_CONTEXT_H_

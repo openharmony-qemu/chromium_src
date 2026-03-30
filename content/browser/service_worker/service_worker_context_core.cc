@@ -1328,6 +1328,7 @@ void ServiceWorkerContextCore::OnReportConsoleMessage(
   BrowserContext* browser_context = wrapper_->browser_context();
   DCHECK(browser_context);
   DCHECK_EQ(this, version->context().get());
+#if !BUILDFLAG(IS_OHOS)
   const bool is_builtin_component =
       HasWebUIScheme(source_url) ||
       GetContentClient()->browser()->IsBuiltinComponent(
@@ -1336,6 +1337,7 @@ void ServiceWorkerContextCore::OnReportConsoleMessage(
   LogConsoleMessage(message_level, message, line_number, is_builtin_component,
                     wrapper_->is_incognito(),
                     base::UTF8ToUTF16(source_url.spec()));
+#endif
 
   ConsoleMessage console_message(source, message_level, message, line_number,
                                  source_url);

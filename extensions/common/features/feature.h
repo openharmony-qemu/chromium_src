@@ -42,6 +42,7 @@ class Feature {
     MACOSX_PLATFORM,
     WIN_PLATFORM,
     DESKTOP_ANDROID_PLATFORM,
+    OHOS_PLATFORM,
   };
 
   // Whether a feature is available in a given situation or not, and if not,

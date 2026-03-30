@@ -33,6 +33,7 @@
 #include <memory>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/check_op.h"
 #include "base/metrics/histogram_functions.h"
 #include "base/notreached.h"
@@ -61,8 +62,11 @@
 #error This file should not be used by MacOS.
 #endif
 
-namespace blink {
+#if BUILDFLAG(ARKWEB_THEME_FONT)
+constexpr SkFourByteTag kWghtTag = SkSetFourByteTag('w', 'g', 'h', 't');
+#endif
 
+namespace blink {
 AtomicString ToAtomicString(const SkString& str) {
   return AtomicString::FromUTF8(std::string_view(str.begin(), str.end()));
 }
@@ -93,7 +97,67 @@ const FontPlatformData* CreateFontPlatformDataForTypeface(
 }
 }  // namespace
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_WIN)
+#if BUILDFLAG(ARKWEB_CSS_FONT)
+base::Lock& GetCacheLock() {
+  DEFINE_STATIC_LOCAL(base::Lock, lock,());
+  return lock;
+}
+using FontVariantKey = std::pair<SkTypefaceID, int>;
+using TypefaceCache = HashMap<FontVariantKey, sk_sp<SkTypeface>>;
+TypefaceCache& GetTypefaceCache() {
+  DEFINE_STATIC_LOCAL(TypefaceCache, cache, ());
+  return cache;
+}
+
+sk_sp<SkTypeface> ApplyWeightToVariableTypeface(sk_sp<SkTypeface> typeface,
+    const FontDescription& font_description) {
+  if (!typeface) {
+    return nullptr;
+  }
+
+  int existing_axes = typeface->getVariationDesignPosition({});
+  if (existing_axes <= 0) {
+      return typeface;
+  }
+
+  Vector<SkFontArguments::VariationPosition::Coordinate> coordinates_to_set;
+  coordinates_to_set.resize(existing_axes);
+
+  if (typeface->getVariationDesignPosition(coordinates_to_set) != existing_axes) {
+      return typeface;
+  }
+  bool hasChanged = false;
+  for (auto& coordinate : coordinates_to_set) {
+    if (coordinate.axis == kWghtTag) {
+      coordinate.value =
+          SkFloatToScalar(font_description.SkiaFontStyle().weight());
+      hasChanged = true;
+    }
+  }
+  if (!hasChanged) {
+    SkFontArguments::VariationPosition::Coordinate coordinate;
+    coordinate.axis = kWghtTag;
+    coordinate.value =
+        SkFloatToScalar(font_description.SkiaFontStyle().weight());
+    coordinates_to_set.push_back(coordinate);
+  }
+  SkFontArguments::VariationPosition variation_design_position{
+      coordinates_to_set.data(), static_cast<int>(coordinates_to_set.size())};
+  SkFontArguments fontArgs;
+  fontArgs.setVariationDesignPosition(variation_design_position);
+  return typeface->makeClone(fontArgs);
+}
+
+void FontCache::TypefaceCacheClear() {
+  TypefaceCache tmp_map;
+  {
+    base::AutoLock auto_lock(GetCacheLock());
+    tmp_map.swap(GetTypefaceCache());
+  }
+}
+#endif
+
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
 // static
 const FontPlatformData* FontCache::CreateFontPlatformDataForCharacter(
     SkFontMgr* fm,
@@ -108,6 +172,29 @@ const FontPlatformData* FontCache::CreateFontPlatformDataForCharacter(
   sk_sp<SkTypeface> typeface(fm->matchFamilyStyleCharacter(
       family_name, font_description.SkiaFontStyle(), locales.data(),
       locales.size(), c));
+
+#if BUILDFLAG(ARKWEB_CSS_FONT)
+  if (!typeface) {
+    return nullptr;
+  }
+  
+  FontVariantKey key = {typeface->uniqueID(), font_description.SkiaFontStyle().weight()};
+  sk_sp<SkTypeface> result;
+  {
+    base::AutoLock auto_lock(GetCacheLock());
+    TypefaceCache& typefaceCache = GetTypefaceCache();
+    auto it = typefaceCache.find(key);
+    if (it != typefaceCache.end()) {
+      result = it->value;
+    }
+  }
+  if (!result) {
+    result = ApplyWeightToVariableTypeface(typeface, font_description);
+    base::AutoLock auto_lock(GetCacheLock());
+    GetTypefaceCache().insert(key, result);
+  }
+  typeface = result;
+#endif
 
   return CreateFontPlatformDataForTypeface(std::move(typeface),
                                            font_description);
@@ -226,6 +313,16 @@ const SimpleFontData* FontCache::GetLastResortFallbackFont(
   }
 #endif
 
+#if BUILDFLAG(IS_ARKWEB)
+  if (!font_platform_data) {
+    DEFINE_THREAD_SAFE_STATIC_LOCAL(const FontFaceCreationParams,
+                                    ohos_sans_creation_params,
+                                    (font_family_names::kHarmonyOSSans));
+    font_platform_data = GetFontPlatformData(
+        description, ohos_sans_creation_params, AlternateFontName::kLastResort);
+  }
+#endif
+
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_WIN)
   if (!font_platform_data) {
     // At least try to match locale.
@@ -291,8 +388,14 @@ sk_sp<SkTypeface> FontCache::CreateTypeface(
       return typeface;
   }
 #endif  // BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_OHOS)
+  auto typeface = sk_sp<SkTypeface>(skia::DefaultFontMgr()->matchFamilyStyle(
+      name.empty() ? nullptr : name.c_str(), font_description.SkiaFontStyle()));
+  return ApplyWeightToVariableTypeface(typeface, font_description);
+#else
   return sk_sp<SkTypeface>(skia::DefaultFontMgr()->matchFamilyStyle(
       name.empty() ? nullptr : name.c_str(), font_description.SkiaFontStyle()));
+#endif      
 }
 
 #if !BUILDFLAG(IS_WIN)
@@ -304,7 +407,7 @@ const FontPlatformData* FontCache::CreateFontPlatformData(
   std::string name;
 
   sk_sp<SkTypeface> typeface;
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(ARKWEB_WPT) 
   bool noto_color_emoji_from_gmscore = false;
 #if BUILDFLAG(IS_ANDROID)
   // Use the unique local matching pathway for fetching Noto Color Emoji Compat

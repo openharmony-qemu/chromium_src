@@ -46,6 +46,21 @@ class BLINK_PLATFORM_EXPORT WebSurfaceLayerBridge {
   virtual void ClearObserver() = 0;
   virtual void RegisterFrameSinkHierarchy() = 0;
   virtual void UnregisterFrameSinkHierarchy() = 0;
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  virtual void SetVideoRectChangeCallback(
+      cc::SurfaceLayer::RectChangeCallback callback) {}
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  virtual void SetLayerBoundsChangeCallback(
+      cc::SurfaceLayer::LayerBoundsChangeCallback callback) {}
+#endif  // ARKWEB_VIDEO_ASSISTANT
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  virtual scoped_refptr<cc::SurfaceLayer> CreateSurfaceLayer(cc::SurfaceLayer::RectChangeCallback callback,
+    cc::SurfaceLayer::RectVisibilityChangeCallback visibilitycallback,
+    cc::SurfaceLayer::LayerRemovedVisibilityCallback layerRemovedCallback) {}
+  virtual void SetStretchContentToFillBounds(bool stretch_content_to_fill_bounds) {}
+#endif
 };
 
 }  // namespace blink

@@ -1156,6 +1156,7 @@ ExtensionFunction::ResponseAction DownloadsDownloadFunction::Run() {
   return RespondLater();
 }
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 void DownloadsDownloadFunction::OnStarted(
     const base::FilePath& creator_suggested_filename,
     downloads::FilenameConflictAction creator_conflict_action,
@@ -1752,6 +1753,7 @@ void DownloadsGetFileIconFunction::OnIconURLExtracted(const std::string& url) {
   RecordApiFunctions(DownloadsFunctionName::kDownloadsFunctionGetFileIcon);
   Respond(WithArguments(url));
 }
+#endif
 
 ExtensionDownloadsEventRouter::ExtensionDownloadsEventRouter(
     Profile* profile,

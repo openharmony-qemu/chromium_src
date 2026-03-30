@@ -47,6 +47,10 @@
 #include "net/socket/datagram_client_socket.h"
 #include "url/scheme_host_port.h"
 
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#include "net/dns/host_resolver_dns_task.h"
+#endif
+
 namespace base {
 class TickClock;
 }  // namespace base
@@ -287,11 +291,16 @@ class NET_EXPORT HostResolverManager
     invalidation_in_progress_ = true;
   }
 
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#include "arkweb/chromium_ext/net/dns/host_resolver_manager_for_include.h"
+#endif
+
  protected:
   // Callback from HaveOnlyLoopbackAddresses probe.
   void SetHaveOnlyLoopbackAddresses(bool result);
 
  private:
+  friend class ArkWebHostResolverManagerJobExt;
   friend class HostResolverManagerTest;
   friend class HostResolverManagerDnsTest;
   class LoopbackProbeJob;
@@ -312,8 +321,12 @@ class NET_EXPORT HostResolverManager
     CONFIG_PRESET = 7,
     NAT64 = 8,
     HOSTS = 9,
-
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+    SECURE_DNS_FALLBACK = 10,
+    kMaxValue = SECURE_DNS_FALLBACK,
+#else
     kMaxValue = HOSTS,
+#endif
   };
 
   // Returns true if the task is local, synchronous, and instantaneous.

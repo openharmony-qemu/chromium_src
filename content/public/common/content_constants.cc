@@ -42,7 +42,7 @@ std::string GetCorsExemptRequestedWithHeaderName() {
   return base::JoinString(pieces, "-");
 }
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
 const int kLowestRendererOomScore = 300;
 const int kHighestRendererOomScore = 1000;
 
@@ -60,6 +60,10 @@ const int kPluginOomScore = kMiscOomScore - kOomScoreBump;
 
 static_assert(kMiscOomScore > 0, "kMiscOomScore should be greater than 0");
 static_assert(kPluginOomScore > 0, "kPluginOomScore should be greater than 0");
+#endif
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+constexpr base::ByteCount kMaxLengthOfDataURLStringPub = kMaxLengthOfDataURLString;
 #endif
 
 #if BUILDFLAG(IS_ANDROID)

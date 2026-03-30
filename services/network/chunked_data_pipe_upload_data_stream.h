@@ -40,7 +40,12 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) ChunkedDataPipeUploadDataStream
       scoped_refptr<ResourceRequestBody> resource_request_body,
       mojo::PendingRemote<mojom::ChunkedDataPipeGetter>
           chunked_data_pipe_getter,
+#if BUILDFLAG(ARKWEB_SCHEME_HANDLER)
+      bool has_null_source = false,
+      bool get_size_when_initialize = false);
+#else
       bool has_null_source = false);
+#endif
 
   ChunkedDataPipeUploadDataStream(const ChunkedDataPipeUploadDataStream&) =
       delete;
@@ -58,6 +63,12 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) ChunkedDataPipeUploadDataStream
   // InitInternal() doesn't reset the data pipe and this instance replays the
   // all cached chunks and continues datapipe withdrawing after that.
   void EnableCache(size_t dst_window_size = kDefaultDestinationWindowSize);
+
+#if BUILDFLAG(ARKWEB_SCHEME_HANDLER)
+  mojo::PendingRemote<mojom::ChunkedDataPipeGetter> ReleaseChunkedDataPipeGetter();
+
+  bool has_null_source() const { return has_null_source_; }
+#endif
 
  private:
   enum class CacheState {
@@ -112,6 +123,12 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) ChunkedDataPipeUploadDataStream
   CacheState cache_state_ = CacheState::kDisabled;
   size_t dst_window_size_ = kDefaultDestinationWindowSize;
   std::vector<char> cache_;
+
+#if BUILDFLAG(ARKWEB_SCHEME_HANDLER)
+  void ArkWebInitInternal();
+  bool has_null_source_{false};
+  bool get_size_when_initialize_{false};
+#endif
 };
 
 }  // namespace network

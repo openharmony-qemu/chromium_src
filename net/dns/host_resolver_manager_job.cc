@@ -454,6 +454,9 @@ void HostResolverManager::Job::RunNextTask() {
       StartDnsTask(false /* secure */);
       break;
     case TaskType::SECURE_DNS:
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+    case TaskType::SECURE_DNS_FALLBACK:
+#endif
       StartDnsTask(true /* secure */);
       break;
     case TaskType::MDNS:
@@ -667,6 +670,12 @@ void HostResolverManager::Job::OnSystemTaskComplete(
   auto aliases = std::set<std::string>(addr_list.dns_aliases().begin(),
                                        addr_list.dns_aliases().end());
 
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  if (AsArkWebHostResolverManagerJobExt()->CheckDnsFallBackTask(net_error)) {
+    return;
+  }
+#endif
+
   // Source unknown because the system resolver could have gotten it from a
   // hosts file, its own cache, a DNS lookup or somewhere else.
   // Don't store the |ttl| in cache since it's not obtained from the server.
@@ -793,6 +802,10 @@ void HostResolverManager::Job::OnDnsTaskComplete(
   }
 
   base::TimeDelta duration = tick_clock_->NowTicks() - start_time;
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  AsArkWebHostResolverManagerJobExt()->ReportDnsFallBackTaskResult(std::move(results),
+                                                                   duration);
+#endif
   if (legacy_results.error() != OK) {
     OnDnsTaskFailure(dns_task_->AsWeakPtr(), duration, allow_fallback,
                      legacy_results, secure);

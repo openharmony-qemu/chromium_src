@@ -1573,3 +1573,7 @@ TEST_F(FrameSelectionTest, PaintCaretRecordsSelectionWithNoSelectionHandles) {
 }
 
 }  // namespace blink
+
+#if BUILDFLAG(ARKWEB_MENU)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/editing/frame_selection_ext_unittest_for_include.cc"
+#endif

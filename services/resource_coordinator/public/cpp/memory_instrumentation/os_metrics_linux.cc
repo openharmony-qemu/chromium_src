@@ -345,6 +345,7 @@ bool OSMetrics::FillOSMemoryDump(base::ProcessHandle handle,
       base::saturated_cast<uint32_t>(info->resident_set_bytes / 1024);
   dump->peak_resident_set_kb = GetPeakResidentSetSize(handle);
   dump->is_peak_rss_resettable = ResetPeakRSSIfPossible(handle);
+  #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_LINUX) || defined(OS_OHOS)
   if (flags.Has(mojom::MemDumpFlags::MEM_DUMP_COUNT_MAPPINGS)) {
     dump->mappings_count = CountMappings(handle);
   }
@@ -354,6 +355,7 @@ bool OSMetrics::FillOSMemoryDump(base::ProcessHandle handle,
     dump->pss_kb = pss.InKiB();
     dump->swap_pss_kb = swap_pss.InKiB();
   }
+#endif
 
 #if BUILDFLAG(IS_ANDROID)
 #if BUILDFLAG(SUPPORTS_CODE_ORDERING)

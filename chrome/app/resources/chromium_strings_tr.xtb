@@ -105,6 +105,7 @@
 <translation id="2210502920229141283">iOS için Chromium'da Gelişmiş Güvenli Tarama ile hareket halindeyken güvende kalın</translation>
 <translation id="2210682093923538346">Tehlikeli site. Chromium, bildirimleri kaldırdı.</translation>
 <translation id="2236949375853147973">Etkinliğim</translation>
+<translation id="2238104961394611930">Açık • Uzantı kaynağı doğrulanamadı</translation>
 <translation id="2238130810669087193">Adreslerinizi ve diğer öğelerinizi tüm cihazlarınızda kullanmak için Chromium'da oturum açın. Bu adres, oturum açtıktan sonra Google Hesabınıza kaydedilir.</translation>
 <translation id="2241627712206172106">Bir bilgisayarı paylaşıyorsanız arkadaşlarınız ve aileniz ayrı olarak göz atabilir ve Chromium'u tam olarak istedikleri şekilde ayarlayabilir.</translation>
 <translation id="2283803047247799269">Bu sekmeyi Görsel Arama ile arayın</translation>
@@ -512,6 +513,7 @@ Bazı özellikler kullanılamayabilir. Lütfen farklı bir profil dizini belirti
 <translation id="6862030660799253820">Bu görseli görsel aramayla arayın</translation>
 <translation id="6873893289264747459">Chromium, "<ph name="EXTENSION_NAME" />" uzantısında kötü amaçlı yazılım tespit etti</translation>
 <translation id="6877155553248388166">arama alanının sağ alt köşesi: sağ %<ph name="RIGHT" />, alt %<ph name="BOTTOM" /></translation>
+<translation id="6885534934768077023">Not: Tarayıcı, uzantıların tarama geçmişinizi kaydetmesini engelleyemez. Bu uzantıyı Gizli modda devre dışı bırakmak için bu seçeneği kapatın.</translation>
 <translation id="6896758677409633944">Kopyala</translation>
 <translation id="6901631050894301805">Chromium'u varsayılan tarayıcınız olarak ayarlayın ve görev çubuğunuza sabitleyin</translation>
 <translation id="6909503629704372277">&amp;Chromium profillerini yönetin</translation>
@@ -570,6 +572,7 @@ Chromium ayarlarınızı kurtaramıyor.</translation>
 <translation id="753534427205733210">{0,plural, =1{Chromium 1 dakika içinde yeniden başlatılacak}other{Chromium # dakika içinde yeniden başlatılacak}}</translation>
 <translation id="7565444033145385702">Verilerinizin korunması için Chromium'un, yakın zamanda ziyaret etmediğiniz sitelerin izinlerini kaldırmasına izin verin.</translation>
 <translation id="7583399374488819119"><ph name="COMPANY_NAME" /> Yükleyici</translation>
+<translation id="7597668698051545254">Kapalı • Uzantı kaynağı doğrulanamadı</translation>
 <translation id="761356813943268536">Chromium kameranızı ve mikrofonunuzu kullanıyor.</translation>
 <translation id="7617377681829253106">Chromium daha da iyi bir hale geldi</translation>
 <translation id="7622753900276619808">Artık Chromium'da daha fazla özellik kullanabilirsiniz</translation>

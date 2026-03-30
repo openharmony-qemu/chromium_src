@@ -8,6 +8,7 @@
 
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/compiler_specific.h"
 #include "base/feature_list.h"
 #include "base/functional/bind.h"
@@ -164,7 +165,9 @@ WEBPImageDecoder::WEBPImageDecoder(AlphaOption alpha_option,
     : ImageDecoder(alpha_option,
                    ImageDecoder::kDefaultBitDepth,
                    color_behavior,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
                    cc::AuxImage::kDefault,
+#endif
                    max_decoded_bytes) {
   blend_function_ = (alpha_option == kAlphaPremultiplied)
                         ? alphaBlendPremultiplied

@@ -6,6 +6,7 @@
 
 #include <string_view>
 
+#include "arkweb/build/features/features.h"
 #include "base/command_line.h"
 #include "base/logging.h"
 #include "base/macros/concat.h"
@@ -25,18 +26,57 @@
 namespace {
 
 // Gaia service constants
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+const char kDefaultGoogleUrl[] = "https://x.x.x";
+#else
 const char kDefaultGoogleUrl[] = "http://google.com";
+#endif
+
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+const char kDefaultGaiaUrl[] = "https://x.x.x";
+#else
 const char kDefaultGaiaUrl[] = "https://accounts.google.com";
+#endif
+
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+const char kDefaultGoogleApisBaseUrl[] = "https://x.x.x";
+#else
 const char kDefaultGoogleApisBaseUrl[] = "https://www.googleapis.com";
+#endif
+
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+const char kDefaultOAuthAccountManagerBaseUrl[] = "https://x.x.x";
+#else
 const char kDefaultOAuthAccountManagerBaseUrl[] =
     "https://oauthaccountmanager.googleapis.com";
+#endif
+
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+const char kDefaultAccountCapabilitiesBaseUrl[] = "https://x.x.x";
+#else
 const char kDefaultAccountCapabilitiesBaseUrl[] =
     "https://accountcapabilities-pa.googleapis.com";
+#endif
+
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+constexpr char kDefaultClassroomApiBaseUrl[] = "https://x.x.x";
+#else
 constexpr char kDefaultClassroomApiBaseUrl[] =
     "https://classroom.googleapis.com";
+#endif
+
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+constexpr char kDefaultTasksApiBaseUrl[] = "https://x.x.x";
+#else
 constexpr char kDefaultTasksApiBaseUrl[] = "https://tasks.googleapis.com";
+#endif
+
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+constexpr std::string_view kDefaultPeopleApiBaseUrl = "https://x.x.x";
+#else
 constexpr std::string_view kDefaultPeopleApiBaseUrl =
     "https://people.googleapis.com";
+#endif
 
 // API calls from accounts.google.com
 const char kEmbeddedSetupChromeOsUrlSuffix[] = "embedded/setup/v2/chromeos";

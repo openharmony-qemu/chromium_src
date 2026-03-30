@@ -2,6 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//arkweb/build/features/features.gni")
+
 if (is_android) {
   import("//build/config/android/rules.gni")
   import("//third_party/jni_zero/jni_zero.gni")
@@ -49,6 +51,11 @@ source_set("time_zone_monitor") {
   if (is_chromeos) {
     sources += [ "time_zone_monitor_ash.cc" ]
     deps += [ "//chromeos/ash/components/settings" ]
+  }
+
+  if (arkweb_time_zone) {
+    import("//arkweb/chromium_ext/service/device/time_zone_monitor/arkweb_time_zone_monitor_ext.gni")
+    sources += arkweb_time_zone_monitor_sources
   }
 
   if (is_apple) {

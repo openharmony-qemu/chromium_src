@@ -15,6 +15,8 @@
 // expanded differently in some places (for example, to automatically
 // map a load flag value to its symbolic name).
 //
+#include "arkweb/build/features/features.h"
+//
 // Load flags can be provided by potentially compromised renderer processes.
 // If adding new behavior that does not need to be triggered by a renderer,
 // please prefer not to add a LoadFlag.
@@ -127,3 +129,8 @@ LOAD_FLAG(IS_MAIN_FRAME_ORIGIN_RECENTLY_ACCESSED, 1 << 19)
 LOAD_FLAG(DO_NOT_SEND_COOKIES, 1 << 19)
 
 // See note at top of file about why adding LoadFlags is often a bad idea.
+
+#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+// This load will ignoring Cache-Control: no-store
+LOAD_FLAG(IGNORE_CACHE_CONTROL, 1 << 20)
+#endif

@@ -141,12 +141,14 @@ void DocumentLoadTiming::SetNavigationStart(base::TimeTicks navigation_start) {
   // been set yet in order to have a valid reference time in both units.
   EnsureReferenceTimesSet();
   navigation_start_ = navigation_start;
+#if !BUILDFLAG(ARKWEB_NETWORK_DFX)
   TRACE_EVENT_MARK_WITH_TIMESTAMP2(
       "blink.user_timing", "navigationStart", navigation_start_, "frame",
       GetFrameIdForTracing(GetFrame()), "data",
       [&](perfetto::TracedValue context) {
         WriteNavigationStartDataIntoTracedValue(std::move(context));
       });
+#endif
 
   // The reference times are adjusted based on the embedder's navigationStart.
   DCHECK(!reference_monotonic_time_.is_null());
@@ -262,6 +264,10 @@ void DocumentLoadTiming::SetResponseEnd(base::TimeTicks response_end) {
 
 void DocumentLoadTiming::MarkLoadEventStart() {
   document_load_timing_values_->load_event_start = tick_clock_->NowTicks();
+#if BUILDFLAG(ARKWEB_NETWORK_DFX)
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME", "loadEventStart",
+               document_load_timing_values_->load_event_start);
+#endif
   TRACE_EVENT_MARK_WITH_TIMESTAMP1(
       "blink.user_timing", "loadEventStart",
       document_load_timing_values_->load_event_start, "frame",
@@ -271,6 +277,9 @@ void DocumentLoadTiming::MarkLoadEventStart() {
 
 void DocumentLoadTiming::MarkLoadEventEnd() {
   document_load_timing_values_->load_event_end = tick_clock_->NowTicks();
+#if BUILDFLAG(ARKWEB_NETWORK_DFX)
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME", "loadEventEnd", document_load_timing_values_->load_event_end);
+#endif
   TRACE_EVENT_MARK_WITH_TIMESTAMP1("blink.user_timing", "loadEventEnd",
                                    document_load_timing_values_->load_event_end,
                                    "frame", GetFrameIdForTracing(GetFrame()));

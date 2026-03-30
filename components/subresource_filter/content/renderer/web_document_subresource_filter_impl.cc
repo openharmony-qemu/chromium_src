@@ -23,6 +23,10 @@
 #include "url/gurl.h"
 #include "url/origin.h"
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+#include "arkweb/chromium_ext/components/subresource_filter/content/renderer/web_document_subresource_filter_impl_for_include.cc"
+#endif
+
 namespace subresource_filter {
 
 namespace proto = url_pattern_index::proto;

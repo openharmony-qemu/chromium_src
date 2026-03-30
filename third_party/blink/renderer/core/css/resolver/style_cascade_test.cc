@@ -4764,3 +4764,5 @@ TEST_F(StyleCascadeTest, CSSFunctionDoesNotExistInShorthand) {
 }
 
 }  // namespace blink
+
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/css/resolver/style_cascade_for_include_unittests.cc"

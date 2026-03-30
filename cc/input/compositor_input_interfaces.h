@@ -19,6 +19,7 @@
 #include "cc/trees/scroll_node.h"
 #include "ui/gfx/geometry/point_f.h"
 #include "ui/gfx/geometry/size.h"
+#include "arkweb/build/features/features.h"
 #include "ui/latency/latency_info.h"
 
 namespace viz {
@@ -114,6 +115,11 @@ class InputDelegateForCompositor {
   // IsCurrentScrollMainRepainted into a single method returning everything.
   virtual bool IsCurrentScrollMainRepainted() const = 0;
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  virtual void HandleScrollUpdateForInternalBeginFrame(
+      const viz::BeginFrameArgs& args) {}
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+
   // Returns true if there are input events queued to be dispatched at the start
   // of the next frame.
   virtual bool HasQueuedInput() const = 0;
@@ -201,6 +207,9 @@ class CompositorDelegateForInput {
   // eventually be removed.
   virtual LayerTreeHostImpl& GetImplDeprecated() = 0;
   virtual const LayerTreeHostImpl& GetImplDeprecated() const = 0;
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  virtual void ScheduledActionDraw() {}
+#endif
 };
 
 }  // namespace cc

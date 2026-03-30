@@ -756,8 +756,15 @@ void BackgroundContentsService::NotificationImageReady(
   // conflict. NotificationSystemObserver will cancel all notifications from
   // the same origin when OnExtensionUnloaded() is called.
   std::string id = kCrashedNotificationPrefix + extension_id;
+#if BUILDFLAG(ARKWEB_NOTIFICATION) && BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  const std::u16string title =
+      l10n_util::GetStringUTF16(IDS_BACKGROUND_CRASHED_EXTENSION_BALLOON_TITLE);
+  message_center::Notification notification(
+      message_center::NOTIFICATION_TYPE_SIMPLE, id, title, message,
+#else  
   message_center::Notification notification(
       message_center::NOTIFICATION_TYPE_SIMPLE, id, std::u16string(), message,
+#endif  // BUILDFLAG(ARKWEB_NOTIFICATION) && BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
       ui::ImageModel::FromImage(notification_icon), std::u16string(),
       GURL("chrome://extension-crash"),
 #if BUILDFLAG(IS_CHROMEOS)

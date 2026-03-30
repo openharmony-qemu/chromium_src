@@ -313,14 +313,14 @@ inline constexpr char kReadingModeGDocsHelperExtensionPath[] = "accessibility";
 inline constexpr base::FilePath::CharType
     kReadingModeGDocsHelperManifestFilename[] =
         FILE_PATH_LITERAL("reading_mode_gdocs_helper_manifest.json");
-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_OHOS)
 // The extension id of the google tts engine extension to use on-device natural
 // Google voices.
 inline constexpr char kTTSEngineExtensionId[] =
     "kfgdcmdikpmgdjhgfpbfgkomboamacbb";
 inline constexpr char kComponentUpdaterTTSEngineExtensionId[] =
     "gjjabgpgjpampikjhjpfhneeoapjbjaf";
-#endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC)
+#endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_OHOS)
 
 // The states that an app can be in, as reported by chrome.app.installState
 // and chrome.app.runningState.

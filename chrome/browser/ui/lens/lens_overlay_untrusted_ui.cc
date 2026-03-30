@@ -306,10 +306,17 @@ LensOverlayUntrustedUI::LensOverlayUntrustedUI(content::WebUI* web_ui)
 
   // Allow ImgSrc and StyleSrc from chrome-untrusted:// paths for searchbox use.
   // Allow data URLs to load in WebUI for full page screenshot.
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+  html_source->OverrideContentSecurityPolicy(
+      network::mojom::CSPDirectiveName::ImgSrc,
+      "img-src 'self' chrome-untrusted://resources "
+      "https://x.x.x.x data: blob:;");
+#else
   html_source->OverrideContentSecurityPolicy(
       network::mojom::CSPDirectiveName::ImgSrc,
       "img-src 'self' chrome-untrusted://resources "
       "https://www.gstatic.com data: blob:;");
+#endif
   html_source->OverrideContentSecurityPolicy(
       network::mojom::CSPDirectiveName::StyleSrc,
       "style-src 'self' chrome-untrusted://resources chrome-untrusted://theme");

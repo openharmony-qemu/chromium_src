@@ -13,9 +13,11 @@
 #include <chrono>
 #include <fstream>
 
+#include "arkweb/build/features/features.h"
 #include "base/command_line.h"
 #include "base/compiler_specific.h"
 #include "base/files/file_util.h"
+#include "base/logging.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/task/single_thread_task_executor.h"
 #include "mojo/core/embedder/embedder.h"
@@ -52,11 +54,13 @@ void DecodeFailure(ImageMeta* image) {
 
 void DecodeImageData(SharedBuffer* data, ImageMeta* image) {
   const bool all_data_received = true;
-
   std::unique_ptr<ImageDecoder> decoder = ImageDecoder::Create(
       data, all_data_received, ImageDecoder::kAlphaPremultiplied,
       ImageDecoder::kDefaultBitDepth, ColorBehavior::kIgnore,
-      cc::AuxImage::kDefault, Platform::GetMaxDecodedImageBytes());
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+      cc::AuxImage::kDefault,
+#endif
+      Platform::GetMaxDecodedImageBytes());
 
   auto start = std::chrono::steady_clock::now();
 

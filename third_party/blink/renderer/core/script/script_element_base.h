@@ -21,6 +21,7 @@
 #ifndef THIRD_PARTY_BLINK_RENDERER_CORE_SCRIPT_SCRIPT_ELEMENT_BASE_H_
 #define THIRD_PARTY_BLINK_RENDERER_CORE_SCRIPT_SCRIPT_ELEMENT_BASE_H_
 
+#include "arkweb/build/features/features.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_typedefs.h"
 #include "third_party/blink/renderer/core/core_export.h"
 #include "third_party/blink/renderer/core/dom/create_element_flags.h"
@@ -44,6 +45,9 @@ class CORE_EXPORT ScriptElementBase : public GarbageCollectedMixin {
  public:
   enum class Type { kHTMLScriptElement, kSVGScriptElement };
   virtual bool AsyncAttributeValue() const = 0;
+#if BUILDFLAG(ARKWEB_V8_COMPILE)
+  virtual String ArkWebCompileAttributeValue() const = 0;
+#endif
   virtual String CharsetAttributeValue() const = 0;
   virtual String CrossOriginAttributeValue() const = 0;
   virtual bool DeferAttributeValue() const = 0;

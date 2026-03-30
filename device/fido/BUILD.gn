@@ -4,6 +4,12 @@
 
 import("//build/config/features.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
+if (is_arkweb) {
+  import("//arkweb/build/features/features.gni")
+    if (defined(arkweb_fido) && arkweb_fido) {
+      import("//arkweb/chromium_ext/device/fido/device_fido_ext.gni")
+    }
+}
 
 component("fido") {
   # These source files represent the minimal subset of files used for passkey
@@ -323,6 +329,10 @@ component("fido") {
         "//chromeos/dbus/u2f:u2f_proto",
         "//dbus",
       ]
+    }
+
+    if (defined(arkweb_fido) && arkweb_fido) {
+      sources += arkweb_device_fido_ext_sources
     }
   }
 }

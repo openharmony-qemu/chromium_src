@@ -48,7 +48,7 @@ class TestDownloadsBrowserProxy extends TestBrowserProxy implements
     this.methodCalled('resetAutoOpenFileTypes');
   }
 
-  // <if expr="is_chromeos">
+  // <if expr="is_chromeos or is_ohos">
   getDownloadLocationText(path: string) {
     this.methodCalled('getDownloadLocationText', path);
     return Promise.resolve('downloads-text');

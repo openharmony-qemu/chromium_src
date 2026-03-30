@@ -63,12 +63,21 @@ class GESTURE_DETECTION_EXPORT FilteredGestureProvider final
   // Synthesizes and propagates gesture end events.
   void SendSynthesizedEndEvents();
 
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  void ResetDetection(bool is_lost_focus);
+#endif
+
   // Methods delegated to |gesture_provider_|.
   void ResetDetection();
   void SetMultiTouchZoomSupportEnabled(bool enabled);
   void SetDoubleTapSupportForPlatformEnabled(bool enabled);
   void SetDoubleTapSupportForPageEnabled(bool enabled);
   const ui::MotionEvent* GetCurrentDownEvent() const;
+
+#if BUILDFLAG(ARKWEB_AI)
+  void OnAITextSelected();
+#endif
+
   const ui::MotionEvent* GetLastEventWithoutHistory() const;
   void OnUnconfirmedTapConvertedToTap();
 

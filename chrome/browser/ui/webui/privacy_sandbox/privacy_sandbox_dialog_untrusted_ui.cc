@@ -4,6 +4,7 @@
 
 #include "chrome/browser/ui/webui/privacy_sandbox/privacy_sandbox_dialog_untrusted_ui.h"
 
+#include "arkweb/build/features/features.h"
 #include "chrome/browser/browser_process.h"
 #include "chrome/browser/privacy_sandbox/privacy_sandbox_service.h"
 #include "chrome/browser/privacy_sandbox/privacy_sandbox_service_factory.h"
@@ -54,9 +55,13 @@ PrivacySandboxDialogUntrustedUI::PrivacySandboxDialogUntrustedUI(
   bool should_use_china_domain =
       GetPrivacySandboxService(web_ui)->ShouldUsePrivacyPolicyChinaDomain();
 
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+  std::string privacy_policy_domain = "https://xxx.cn;";
+#else
   std::string privacy_policy_domain = should_use_china_domain
                                           ? "https://policies.google.cn;"
                                           : "https://policies.google.com;";
+#endif
 
   // Allows google pages to be embedded within the untrusted source.
   untrusted_source->OverrideContentSecurityPolicy(

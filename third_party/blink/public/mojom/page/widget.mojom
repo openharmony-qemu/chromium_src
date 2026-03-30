@@ -24,6 +24,9 @@ import "ui/gfx/range/mojom/range.mojom";
 [EnableIf=is_mac]
 import "ui/base/mojom/attributed_string.mojom";
 
+[EnableIf=is_ohos]
+import "arkweb/chromium_ext/third_party/blink/public/mojom/page/text_recognize_result.mojom";
+
 // This structure contains ime text span offset and its bounds used to support
 // Windows Text Services Framework GetTextExt and GetACPFromPoint APIs for
 // stylus writing gesture support.
@@ -187,6 +190,27 @@ interface FrameWidget {
   SetViewportIntersection(ViewportIntersectionState intersection_state,
                           VisualProperties? visual_properties);
 
+  [EnableIf=is_ohos]
+  OnTextRecognized(array<blink.mojom.TextRecognizeResult> res, float scale);
+
+  [EnableIf=arkweb_ai, Sync]
+  GetImageRect() => (gfx.mojom.Rect image_rect);
+  
+  [EnableIf=arkweb_ai]
+  OnTextSelected(bool flag);
+
+  [EnableIf=arkweb_ai]
+  OnDestroyImageAnalyzerOverlay();
+     
+  [EnableIf=arkweb_ai]
+  OnFoldStatusChanged(uint32 foldstatus);
+
+  [EnableIf=arkweb_ai]
+  NotifyOverlayStateChanged();
+
+  [EnableIf=arkweb_composite_render]
+  ReSendLanguage();
+
   // Sent to inform the renderer that fallback contents from the previous
   // Document, if any, have been cleared. This means that if the current
   // Document hasn't produced a frame yet we're likely displaying blank right
@@ -235,6 +259,22 @@ interface FrameWidgetHost {
 
   // Sent by a widget to the browser to notify the end of the autoscroll.
   AutoscrollEnd();
+
+  [EnableIf=arkweb_ai]
+  CreateOverlay(skia.mojom.BitmapN32? image,
+                gfx.mojom.Rect image_rect,
+                gfx.mojom.Point touch_point);
+
+  [EnableIf=arkweb_ai]
+  OnOverlayStateChanged(gfx.mojom.Rect image_rect);
+
+  [EnableIf=arkweb_drag_drop, Sync]
+  GetVisibleRectToWeb() => (gfx.mojom.Rect rect);
+
+  [EnableIf=arkweb_ai, Sync]
+  GetWordSelection(string text, int8 offset) => (array<int8> select);
+
+  SendCurrentLanguage(string ans);
 };
 
 // Implemented in Browser, this interface defines popup-widget-specific methods

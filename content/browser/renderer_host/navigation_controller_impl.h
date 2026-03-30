@@ -14,6 +14,10 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "base/functional/callback.h"
 #include "base/gtest_prod_util.h"
 #include "base/memory/raw_ptr.h"
@@ -49,6 +53,7 @@ class FrameTreeNode;
 class NavigationRequest;
 class RenderFrameHostImpl;
 class SiteInstance;
+class ArkWebNavigationControllerImplExt;
 struct LoadCommittedDetails;
 
 #if BUILDFLAG(IS_ANDROID)
@@ -155,6 +160,10 @@ class CONTENT_EXPORT NavigationControllerImpl : public NavigationController {
   bool IsInitialNavigation() override;
   bool IsInitialBlankNavigation() override;
   void Reload(ReloadType reload_type, bool check_for_repost) override;
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+  void ReloadEx(ReloadType reload_type, bool check_for_repost, int transition_type) override;
+  void Reload(ReloadType reload_type, bool check_for_repost, int transition_type) override;
+#endif
   void NotifyEntryChanged(NavigationEntry* entry) override;
   void CopyStateFrom(NavigationController* source, bool needs_reload) override;
   bool CanPruneAllButLastCommitted() override;
@@ -414,7 +423,7 @@ class CONTENT_EXPORT NavigationControllerImpl : public NavigationController {
 
 // Returns true if the string corresponds to a valid data URL, false
 // otherwise.
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_BASE)
   static bool ValidateDataURLAsString(
       const scoped_refptr<const base::RefCountedString>& data_url_as_string);
 #endif
@@ -451,7 +460,11 @@ class CONTENT_EXPORT NavigationControllerImpl : public NavigationController {
       const std::string& extra_headers,
       BrowserContext* browser_context,
       scoped_refptr<network::SharedURLLoaderFactory> blob_url_loader_factory,
-      bool rewrite_virtual_urls);
+      bool rewrite_virtual_urls
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+      , GURL* url_to_rewrite = nullptr, NavigationControllerDelegate* delegate = nullptr
+#endif
+      );
 
   // Called just before sending the commit to the renderer, or when restoring
   // from back/forward cache. Walks the session history entries for the relevant
@@ -515,6 +528,8 @@ class CONTENT_EXPORT NavigationControllerImpl : public NavigationController {
 
  private:
   friend class RestoreHelper;
+  friend class ArkWebNavigationControllerImplExt;
+  virtual ArkWebNavigationControllerImplExt *AsArkWebNavigationControllerImplExt() { return nullptr; }
 
   FRIEND_TEST_ALL_PREFIXES(TimeSmoother, Basic);
   FRIEND_TEST_ALL_PREFIXES(TimeSmoother, SingleDuplicate);
@@ -1160,10 +1175,15 @@ class CONTENT_EXPORT NavigationControllerImpl : public NavigationController {
   // go back into place after any subsequent commit.
   std::unique_ptr<NavigationEntryImpl> entry_replaced_by_post_commit_error_;
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  ErrorPageReloadReason  reload_reason_ = ErrorPageReloadReason ::INVALID;
+#endif
+
   // NOTE: This must be the last member.
   base::WeakPtrFactory<NavigationControllerImpl> weak_factory_{this};
 };
 
 }  // namespace content
+#include "arkweb/chromium_ext/content/browser/renderer_host/arkweb_navigation_controller_impl_ext.h"
 
 #endif  // CONTENT_BROWSER_RENDERER_HOST_NAVIGATION_CONTROLLER_IMPL_H_

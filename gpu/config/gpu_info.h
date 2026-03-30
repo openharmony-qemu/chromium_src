@@ -14,6 +14,7 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/clang_profiling_buildflags.h"
 #include "base/containers/flat_map.h"
 #include "base/containers/span.h"
@@ -195,7 +196,12 @@ using VideoEncodeAcceleratorSupportedProfiles =
 enum class ImageDecodeAcceleratorType {
   kUnknown = 0,
   kJpeg = 1,
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+  kHeif = 2,
+  kWebP = 3,
+#else
   kWebP = 2,
+#endif
   kMaxValue = kWebP,
 };
 

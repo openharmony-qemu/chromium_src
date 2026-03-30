@@ -139,3 +139,7 @@ TEST_F(LocalFrameTest, CharacterIndexAtPointWithPinchZoom) {
 }
 #endif
 }  // namespace blink
+
+#if BUILDFLAG(ARKWEB_TEST)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/frame/local_frame_for_include_unittest.cc"
+#endif

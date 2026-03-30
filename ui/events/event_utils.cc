@@ -282,6 +282,12 @@ std::string_view EventTypeName(EventType type) {
     CASE_TYPE(EventType::kGesturePinchUpdate);
     CASE_TYPE(EventType::kGestureShortPress);
     CASE_TYPE(EventType::kGestureLongPress);
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+    CASE_TYPE(EventType::kGestureDragLongPress);
+#endif
+#if BUILDFLAG(ARKWEB_AI)
+    CASE_TYPE(EventType::kGestureCreateOverlay);
+#endif
     CASE_TYPE(EventType::kGestureLongTap);
     CASE_TYPE(EventType::kGestureSwipe);
     CASE_TYPE(EventType::kGestureTapUnconfirmed);

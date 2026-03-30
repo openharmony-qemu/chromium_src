@@ -49,6 +49,33 @@
 #include "chromeos/ash/components/dbus/dbus_thread_manager.h"
 #endif  // BUILDFLAG(IS_CHROMEOS)
 
+#include "components/subresource_filter/content/browser/ohos_adblock_config.h"
+#include "components/subresource_filter/core/browser/ruleset_version.h"
+#include "components/subresource_filter/core/browser/user_ruleset_version.h"
+#include "components/subresource_filter/core/common/constants.h"
+
+#if BUILDFLAG(ARKWEB_EDM_POLICY)
+#include "cef/ohos_cef_ext/libcef/browser/policy/browser_policy_handler.h"
+#endif
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+#include "arkweb/chromium_ext/components/prefs/migration_filter.h"
+#endif // BUILDFLAG(ARKWEB_ADBLOCK)
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+#include "arkweb/ohos_nweb_ex/overrides/cef/libcef/browser/alloy/global_reader_mode_data_manager.h"
+#endif
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+#include "arkweb/chromium_ext/chrome/browser/metrics/chrome_feature_list_creator_for_include.cpp"
+#endif
+#endif
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#include "cef/ohos_cef_ext/libcef/browser/arkweb_global_list_config.h"
+#include "cef/ohos_cef_ext/libcef/browser/fallback_proxy/fallback_proxy_service.h"
+#endif
+
 namespace {
 
 // Returns a list of extra switch-dependent feature overrides to be applied
@@ -116,7 +143,20 @@ void ChromeFeatureListCreator::CreateFeatureList() {
   ConvertFlagsToSwitches();
   CreateMetricsServices();
   SetupInitialPrefs();
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+  DealGlobalConfig(local_state_.get());
+#endif
+#endif
   SetUpFieldTrials(command_line_variation_ids);
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          ::switches::kEnableNwebEx)) {
+    fallback_proxy::ArkwebGlobalListConfig::GetInstance()->Init(
+        local_state_.get());
+  }
+#endif
 }
 
 void ChromeFeatureListCreator::SetApplicationLocale(const std::string& locale) {
@@ -165,6 +205,19 @@ void ChromeFeatureListCreator::CreatePrefService() {
                             base::PathExists(local_state_file));
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#if BUILDFLAG(ARKWEB_EDM_POLICY)
+  base::FilePath new_policy_path;
+  if (base::PathService::Get(chrome::DIR_USER_DATA, &new_policy_path)) {
+    policy::BrowserPolicyHandler::GetInstance()->InitPolicyFromFile(
+        new_policy_path);
+  } else {
+  base::FilePath policy_path;
+  base::PathService::Get(base::DIR_CACHE, &policy_path);
+    policy::BrowserPolicyHandler::GetInstance()->InitPolicyFromFile(
+        policy_path);
+  }
+#endif
+
   auto pref_registry = base::MakeRefCounted<PrefRegistrySimple>();
   RegisterLocalState(pref_registry.get());
 
@@ -181,8 +234,14 @@ void ChromeFeatureListCreator::CreatePrefService() {
   // ManagementService needs Local State but creating local state needs
   // ManagementService, instantiate the underlying PrefStore early and share it
   // between both.
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  auto local_state_pref_store =
+      base::MakeRefCounted<JsonPrefStore>(local_state_file,
+          std::make_unique<MigrationFilter>());
+#else
   auto local_state_pref_store =
       base::MakeRefCounted<JsonPrefStore>(local_state_file);
+#endif // BUILDFLAG(ARKWEB_ADBLOCK)
 
   // Try and read the local state prefs, if it succeeds, use it as the
   // ManagementService's cache.
@@ -198,6 +257,14 @@ void ChromeFeatureListCreator::CreatePrefService() {
       browser_policy_connector_->GetPolicyService(), std::move(pref_registry),
       browser_policy_connector_.get());
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  OHOS::adblock::AdBlockConfig::GetInstance()->SetPrefService(
+      local_state_.get());
+#endif
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  nweb_ex::GlobalReaderModeDataManager::GetInstance()->Init(local_state_.get());
+#endif
   // Apply local test policies from the kLocalTestPoliciesForNextStartup pref if
   // there are any.
   browser_policy_connector_->MaybeApplyLocalTestPolicies(local_state_.get());

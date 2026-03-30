@@ -39,4 +39,13 @@ void HiddenTargetManager::Clear() {
   hidden_web_contents_.clear();
 }
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+void HiddenTargetManager::WebExtensionUpdateTab(
+    int32_t tab_id,
+    const struct NWebExtensionTabUpdateProperties* update_properties) {
+  // Hidden targets don't support extension updates.
+  // This is a no-op implementation to satisfy the abstract interface.
+}
+#endif
+
 }  // namespace content::protocol

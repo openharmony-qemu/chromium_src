@@ -4,6 +4,7 @@
 
 #include "third_party/blink/public/common/features.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/command_line.h"
 #include "base/feature_list.h"
 #include "base/features.h"
@@ -948,6 +949,16 @@ BASE_FEATURE(kGMSCoreEmoji, base::FEATURE_ENABLED_BY_DEFAULT);
 BASE_FEATURE(kGetDisplayMediaIgnoreAudioPermissionFailures,
              base::FEATURE_ENABLED_BY_DEFAULT);
 
+#if BUILDFLAG(IS_OHOS)
+BASE_FEATURE(kEnableOcrTextRecognition,
+             "EnableOcrTextRecognition",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+
+bool IsEnableOcrTextRecognition() {
+  return base::FeatureList::IsEnabled(kEnableOcrTextRecognition);
+}
+#endif  // BUILDFLAG(IS_OHOS)
+
 BASE_FEATURE_PARAM(std::string,
                    kHTMLParserYieldEventNameForPause,
                    &kHTMLParserYieldByUserTiming,
@@ -973,6 +984,17 @@ BASE_FEATURE(kIgnoreInputWhileHidden,
              base::FEATURE_DISABLED_BY_DEFAULT);
 
 BASE_FEATURE(kImageLoadingPrioritizationFix, base::FEATURE_DISABLED_BY_DEFAULT);
+
+#if BUILDFLAG(ARKWEB_OHOS_MEM_USAGE_REPORT)
+BASE_FEATURE(kMemUsageReport,
+             "kMemUsageReport",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+BASE_FEATURE_PARAM(int,
+                   kMemUsageReportCount,
+                   &kMemUsageReport,
+                   "mur_count",
+                   0);
+#endif // ARKWEB_OHOS_MEM_USAGE_REPORT
 
 #if !BUILDFLAG(IS_ANDROID)
 BASE_FEATURE(kInitialWebUIWithoutExtensions, base::FEATURE_DISABLED_BY_DEFAULT);
@@ -1844,7 +1866,11 @@ BASE_FEATURE_PARAM(size_t,
 
 BASE_FEATURE(kOriginAgentClusterDefaultEnabled,
              "OriginAgentClusterDefaultEnable",
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+             base::FEATURE_DISABLED_BY_DEFAULT);
+#else
              base::FEATURE_ENABLED_BY_DEFAULT);
+#endif
 
 // Enable defer commits to avoid flash of unstyled content, for all navigations.
 BASE_FEATURE(kPaintHolding, base::FEATURE_ENABLED_BY_DEFAULT);
@@ -1890,9 +1916,9 @@ BASE_FEATURE(kPreferCompositingToLCDText,
 #endif
 );
 
-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 BASE_FEATURE(kPrefetchFontLookupTables,
-#if BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
              base::FEATURE_DISABLED_BY_DEFAULT
 #else
              base::FEATURE_ENABLED_BY_DEFAULT
@@ -2154,7 +2180,11 @@ BASE_FEATURE(kSendCnameAliasesToSubresourceFilterFromRenderer,
 
 // If enabled, calling setInterval(..., 0) will not clamp to 1ms.
 // Tracking bug: https://crbug.com/402694.
+#if BUILDFLAG(IS_ARKWEB)
+BASE_FEATURE(kSetIntervalWithoutClamp, base::FEATURE_DISABLED_BY_DEFAULT);
+#else
 BASE_FEATURE(kSetIntervalWithoutClamp, base::FEATURE_ENABLED_BY_DEFAULT);
+#endif
 
 BASE_FEATURE(kSharedStorageWorkletSharedBackingThreadImplementation,
              base::FEATURE_DISABLED_BY_DEFAULT);
@@ -2463,6 +2493,18 @@ BASE_FEATURE_PARAM(int,
                    1);
 
 BASE_FEATURE(kVSyncDecoding, base::FEATURE_DISABLED_BY_DEFAULT);
+
+#if BUILDFLAG(ARKWEB_NOT_LOAD_IFRAME)
+BASE_FEATURE(kNotLoadIframe,
+                     "kNotLoadIframe",
+                     base::FEATURE_ENABLED_BY_DEFAULT);
+BASE_FEATURE_PARAM(int, 
+                           kCrashesFrequencyPerUnitTime,
+                           &kNotLoadIframe,
+                           "crashes_frequency_per_unit_time",
+                           16);
+#endif  // ARKWEB_NOT_LOAD_IFRAME
+
 BASE_FEATURE_PARAM(base::TimeDelta,
                    kVSyncDecodingHiddenOccludedTickDuration,
                    &kVSyncDecoding,
@@ -2521,7 +2563,7 @@ BASE_FEATURE(kWebAudioDeferPullStatusUpdate, base::FEATURE_DISABLED_BY_DEFAULT);
 // The feature is disabled on Android for WebView API issue discussed at
 // https://crbug.com/942440.
 BASE_FEATURE(kWebFontsCacheAwareTimeoutAdaption,
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_BASE)
              base::FEATURE_DISABLED_BY_DEFAULT
 #else
              base::FEATURE_ENABLED_BY_DEFAULT

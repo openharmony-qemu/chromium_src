@@ -600,6 +600,10 @@ class PageLoadTracker : public PageLoadMetricsUpdateDispatcher::Client,
   const bool is_origin_visit_;
   bool is_terminal_visit_ = true;
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  bool is_prerendered_page_activation_ = false;
+#endif
+
   page_load_metrics::LargestContentfulPaintHandler
       largest_contentful_paint_handler_;
   page_load_metrics::LargestContentfulPaintHandler

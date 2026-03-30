@@ -26,6 +26,27 @@ video::-internal-media-interstitial {
     transition: opacity .3s ease-in-out;
 }
 
+/* arkweb_media_cast top */
+video::-internal-media-interstitial-remote {
+    width: inherit;
+    height: inherit;
+    position: relative;
+    direction: ltr;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    /* The font size is set to be proportional to the viewport width.
+     * Specifically, it is 15px for 400px width, and 36px for 1920px width.
+     * The full math expression is:
+     * 15px + (36 - 15) * ((100vw - 400px) / (1920 - 400)).
+     */
+    font-size: calc(9.5px + 1.38vw);
+    background-color: transparent;
+    opacity: 0;
+    z-index: 9999; /* arkweb_media_cast top */
+}
+
 video::-internal-media-interstitial-background-image {
     display: flex;
     position: absolute;
@@ -72,6 +93,32 @@ video::-internal-picture-in-picture-interstitial-message {
     font-family: Roboto-Regular, Sans-serif, Segoe, Serif, Helvetica;
     padding: 0px;
     margin: 0px;
+}
+
+video::-internal-media-interstitial-message-remote {
+    color: rgba(255,255,255,.54);
+    text-align: center;
+    background-color: transparent;
+    font-family: Roboto-Regular, Sans-serif, Segoe, Serif, Helvetica;
+    font-size: 16px;
+    font-weight: 400;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+    margin-bottom: 8px;
+}
+
+video::-internal-media-interstitial-message-remote.sizing-small{
+    margin-bottom: 8px;
+}
+
+video::-internal-media-interstitial-message-remote.sizing-medium {
+    margin-bottom: 16px;
+}
+
+video::-internal-media-interstitial-message-remote.sizing-large {
+    margin-bottom: 16px;
 }
 
 video::-internal-media-interstitial-message {
@@ -126,4 +173,304 @@ video::-internal-picture-in-picture-interstitial-message.sizing-large {
     font-size: 40px;
     line-height: 47px;
     margin: 64px 96px;
+}
+
+/* The following are invasive modifications about arkweb_media_cast */
+/* button container */
+video::-internal-media-remoting-container-remote {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    width: auto;
+}
+
+video::-internal-media-remoting-container-remote.sizing-small {
+    gap: 8px;
+}
+
+video::-internal-media-remoting-container-remote.sizing-medium {
+    gap: 12px;
+}
+
+video::-internal-media-remoting-container-remote.sizing-large {
+    gap: 12px;
+}
+  
+/* Capsule button basic style */
+video::-internal-media-remoting-button-remote {
+    width: 120px;
+    max-width: 218px;
+    height: 40px;
+    border-radius: 20px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: white;
+    
+    display: block;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    
+    padding: 0;
+    margin: 0;
+    line-height: 40px;
+    box-sizing: border-box;
+    
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    flex-shrink: 0;
+    text-overflow: ellipsis;
+    padding-left: 10px;
+    padding-right: 10px;
+
+    transition: box-shadow 0.2s ease;
+}
+
+video::-internal-media-remoting-button-remote.sizing-small {
+    width: 120px;
+}
+
+video::-internal-media-remoting-button-remote.sizing-medium {
+    width: 218px;
+}
+
+video::-internal-media-remoting-button-remote.sizing-large {
+    width: 218px;
+}
+
+video::-internal-media-remoting-button-remote:active {
+    box-shadow: 0 0 0 2px rgb(31 107 233);
+}
+  
+/* Text Style in Casting */
+.internal-media-casting-text {
+    color: white;
+    font-size: 20px;
+    font-weight: 500;
+    background-color: transparent;
+    
+    /* Adaptive width, increasing the minimum width */
+    width: auto;
+    
+    /* Add inner margin */
+    padding: 0 12px;
+        
+    /* Prevent text line breaks */
+    white-space: normal;
+    margin-bottom: 2px;
+}
+
+
+/* Video player control container */
+video::-internal-video-controls-container-remote {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 48px;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 8px;
+    box-sizing: border-box;
+}
+
+video::-internal-video-controls-container-remote.sizing-small{
+    bottom: 0;
+    padding: 0 8px;
+}
+
+video::-internal-video-controls-container-remote.sizing-medium {
+    bottom: 8px;
+    padding: 0 32px;
+}
+
+video::-internal-video-controls-container-remote.sizing-large {
+    bottom: 8px;
+    padding: 0 32px;
+}
+
+/* Left button group */
+.remote-video-controls-left {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+/* Play/Pause button */
+.remote-play-pause-button {
+    will-change: background-image;  /* Prompt the browser that this property will change */
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: transparent;
+    border: none;
+    color: white;
+    
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    
+    padding: 0 !important;
+    margin: 0 !important;
+    line-height: 1 !important;
+    box-sizing: border-box !important;
+    
+    font-size: 16px;
+    flex-shrink: 0;
+
+    background-image: url(ic_play_fill_white.svg);
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 60%;
+}
+
+.remote-play-pause-button.playing {
+    background-image: url(ic_pause_new_white.svg);
+}
+
+/* Progress bar container */
+.remote-progress-container {
+    flex: 1;
+    display: flex !important;
+    align-items: center !important;
+    min-width: 0;
+    line-height: 48px;
+    height: 12px;
+}
+
+/* time display */
+.remote-time-display {
+    color: white;
+    font-size: 12px;
+    min-width: 40px;
+    text-align: center;
+    flex-shrink: 0;
+    height: inherit;
+    line-height: 12px;
+    font-family: Roboto-Regular, Roboto, sans-serif;
+}
+
+/* progress bar */
+.remote-progress-bar {
+    flex: 1;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+    cursor: pointer;
+    position: relative;
+    overflow: visible;
+}
+
+.remote-progress-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: white;
+    border-radius: 2px;
+    width: 0; /* Initial progress */
+    transition: width 0.1s linear;
+}
+
+.remote-progress-thumb {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%) translateX(-50%);
+  width: 10px;
+  height: 10px;
+  background-color: white;
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
+  cursor: pointer;
+  z-index: 2;
+  opacity: 1;
+  pointer-events: auto;
+  transition: left 0.1s linear;
+}
+
+/* Right button group */
+.remote-video-controls-right {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+/* Full screen button status */
+video::-internal-fullscreen-button-cast-remote {
+    /* Maintain the original basic style */
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 4px !important;
+    background-color: transparent !important;
+    border: none !important;
+    color: white !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    line-height: 1 !important;
+    box-sizing: border-box !important;
+    font-size: 18px !important;
+    cursor: pointer !important;
+    flex-shrink: 0 !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    background-size: 60% !important;
+    transition: opacity 0.3s, visibility 0.3s !important;
+    background-image: url(ic_arrow_up_left_and_arrow_down_right_white.svg);
+}
+
+/* Full screen mode: diagonal double arrows (exit full screen icon) */
+video::-internal-fullscreen-button-cast-remote.fullscreen {
+  background-image: url(ic_exit_fullscreen.svg);
+}
+
+video::-internal-video-casting-main-container-remote {
+    position: absolute;
+    top: calc((100% - 48px) * 0.5);
+    transform: translateY(-50%);
+    left: 16px;
+    right: 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+video::-internal-video-casting-main-container-remote.sizing-small{
+    top: calc((100% - 48px) * 0.5);
+}
+
+video::-internal-video-casting-main-container-remote.sizing-medium {
+    top: calc((100% - 56px) * 0.5);
+}
+
+video::-internal-video-casting-main-container-remote.sizing-large {
+    top: calc((100% - 56px) * 0.5);
+}
+
+video::-internal-media-interstitial-background-image-remote {
+    display: none;
+    position: absolute;
+    margin: 0;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-width: 0px;
+    background-color: transparent;
+    padding: 0;
+    filter: grayscale(100%) blur(5px) opacity(40%);
 }

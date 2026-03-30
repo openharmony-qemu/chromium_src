@@ -20,6 +20,9 @@
 #include "media/base/media_switches.h"
 #include "mojo/public/cpp/bindings/message.h"
 #endif  // BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+#include "arkweb/chromium_ext/content/browser/media/frameless_media_interface_proxy_for_include.cc"
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 
 namespace content {
 

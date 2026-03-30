@@ -22,6 +22,8 @@
 
 #if BUILDFLAG(IS_ANDROID)
 #include "base/android/scoped_hardware_buffer_handle.h"
+#elif BUILDFLAG(IS_OHOS)
+#include "base/ohos/scoped_native_buffer_handle.h"
 #endif
 
 namespace gfx {
@@ -120,6 +122,14 @@ class COMPONENT_EXPORT(VULKAN) VulkanImplementation {
   virtual bool GetSamplerYcbcrConversionInfo(
       const VkDevice& vk_device,
       base::android::ScopedHardwareBufferHandle ahb_handle,
+      VulkanYCbCrInfo* ycbcr_info) = 0;
+#endif
+
+#if BUILDFLAG(ARKWEB_VULKAN)
+  // Get the sampler ycbcr conversion information from the AHB.
+  virtual bool GetSamplerYcbcrConversionInfo(
+      const VkDevice& vk_device,
+      ScopedNativeBufferHandle ahb_handle,
       VulkanYCbCrInfo* ycbcr_info) = 0;
 #endif
 

@@ -5,6 +5,7 @@
 // Use this file to assert that *_list.h enums that are meant to do the bridge
 // from Blink are valid.
 
+#include "arkweb/build/features/features.h"
 #include "media/base/mime_util.h"
 #include "third_party/blink/public/common/input/web_menu_source_type.h"
 #include "third_party/blink/public/platform/web_text_input_mode.h"
@@ -79,5 +80,9 @@ STATIC_ASSERT_ENUM(blink::kMenuSourceAdjustSelection,
                    ui::mojom::MenuSourceType::kAdjustSelection);
 STATIC_ASSERT_ENUM(blink::kMenuSourceAdjustSelectionReset,
                    ui::mojom::MenuSourceType::kAdjustSelectionReset);
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+STATIC_ASSERT_ENUM(blink::kMenuSourceShowFreeCopyMenu,
+                   ui::mojom::MenuSourceType::kSelectAndCopy);
+#endif
 
 } // namespace content

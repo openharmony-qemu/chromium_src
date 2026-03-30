@@ -147,7 +147,12 @@ class ThrottleAllContentBrowserClient : public ChromeContentBrowserClient {
       const base::RepeatingCallback<content::WebContents*()>& wc_getter,
       content::NavigationUIData* navigation_ui_data,
       content::FrameTreeNodeId frame_tree_node_id,
-      std::optional<int64_t> navigation_id) override {
+      std::optional<int64_t> navigation_id
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+      ,
+      bool is_prerendering
+#endif
+      ) override {
     std::vector<std::unique_ptr<blink::URLLoaderThrottle>> throttles;
     throttles.push_back(std::make_unique<DeferringThrottle>());
     return throttles;
@@ -179,7 +184,12 @@ class CancelAllContentBrowserClient : public ChromeContentBrowserClient {
       const base::RepeatingCallback<content::WebContents*()>& wc_getter,
       content::NavigationUIData* navigation_ui_data,
       content::FrameTreeNodeId frame_tree_node_id,
-      std::optional<int64_t> navigation_id) override {
+      std::optional<int64_t> navigation_id
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+      ,
+      bool is_prerendering
+#endif
+      ) override {
     std::vector<std::unique_ptr<blink::URLLoaderThrottle>> throttles;
     throttles.push_back(std::make_unique<CancellingThrottle>());
     return throttles;
@@ -211,7 +221,12 @@ class AddHeaderContentBrowserClient : public ChromeContentBrowserClient {
       const base::RepeatingCallback<content::WebContents*()>& wc_getter,
       content::NavigationUIData* navigation_ui_data,
       content::FrameTreeNodeId frame_tree_node_id,
-      std::optional<int64_t> navigation_id) override {
+      std::optional<int64_t> navigation_id
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+      ,
+      bool is_prerendering
+#endif
+      ) override {
     std::vector<std::unique_ptr<blink::URLLoaderThrottle>> throttles;
     throttles.push_back(std::make_unique<AddHeaderModifyingThrottle>());
     return throttles;
@@ -244,7 +259,12 @@ class AddQueryParamContentBrowserClient : public ChromeContentBrowserClient {
       const base::RepeatingCallback<content::WebContents*()>& wc_getter,
       content::NavigationUIData* navigation_ui_data,
       content::FrameTreeNodeId frame_tree_node_id,
-      std::optional<int64_t> navigation_id) override {
+      std::optional<int64_t> navigation_id
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+      ,
+      bool is_prerendering
+#endif
+      ) override {
     std::vector<std::unique_ptr<blink::URLLoaderThrottle>> throttles;
     throttles.push_back(std::make_unique<AddQueryParamModifyingThrottle>());
     return throttles;
@@ -277,7 +297,12 @@ class ChangeQueryContentBrowserClient : public ChromeContentBrowserClient {
       const base::RepeatingCallback<content::WebContents*()>& wc_getter,
       content::NavigationUIData* navigation_ui_data,
       content::FrameTreeNodeId frame_tree_node_id,
-      std::optional<int64_t> navigation_id) override {
+      std::optional<int64_t> navigation_id
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+      ,
+      bool is_prerendering
+#endif
+      ) override {
     std::vector<std::unique_ptr<blink::URLLoaderThrottle>> throttles;
     throttles.push_back(std::make_unique<ChangeQueryModifyingThrottle>());
     return throttles;
@@ -824,7 +849,12 @@ class HeaderObserverContentBrowserClient : public ChromeContentBrowserClient {
       const base::RepeatingCallback<content::WebContents*()>& wc_getter,
       content::NavigationUIData* navigation_ui_data,
       content::FrameTreeNodeId frame_tree_node_id,
-      std::optional<int64_t> navigation_id) override;
+      std::optional<int64_t> navigation_id
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+      ,
+      bool is_prerendering
+#endif
+      ) override;
 
   bool had_raw_request_info() { return had_raw_request_info_; }
 
@@ -843,11 +873,20 @@ HeaderObserverContentBrowserClient::CreateURLLoaderThrottles(
     const base::RepeatingCallback<content::WebContents*()>& wc_getter,
     content::NavigationUIData* navigation_ui_data,
     content::FrameTreeNodeId frame_tree_node_id,
-    std::optional<int64_t> navigation_id) {
+    std::optional<int64_t> navigation_id
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    ,
+    bool is_prerendering
+#endif
+    ) {
   std::vector<std::unique_ptr<blink::URLLoaderThrottle>> throttles =
       ChromeContentBrowserClient::CreateURLLoaderThrottles(
           request, browser_context, wc_getter, navigation_ui_data,
-          frame_tree_node_id, navigation_id);
+          frame_tree_node_id, navigation_id
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+          ,is_prerendering
+#endif          
+          );
   return throttles;
 }
 

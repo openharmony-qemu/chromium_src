@@ -5,6 +5,7 @@
 #ifndef THIRD_PARTY_BLINK_RENDERER_PLATFORM_FONTS_FONT_UNIQUE_NAME_LOOKUP_H_
 #define THIRD_PARTY_BLINK_RENDERER_PLATFORM_FONTS_FONT_UNIQUE_NAME_LOOKUP_H_
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/callback.h"
 #include "base/notreached.h"
 #include "build/build_config.h"
@@ -13,7 +14,7 @@
 #include "third_party/skia/include/core/SkRefCnt.h"
 #include "third_party/skia/include/core/SkTypeface.h"
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_WIN) || BUILDFLAG(ARKWEB_WPT)
 #include "third_party/blink/public/common/font_unique_name_lookup/font_table_matcher.h"
 #endif
 
@@ -66,7 +67,7 @@ class FontUniqueNameLookup {
 
   // Windows and Android share the concept of connecting to a Mojo service for
   // retrieving a ReadOnlySharedMemoryRegion with the lookup table in it.
-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_WPT)
   std::unique_ptr<FontTableMatcher> font_table_matcher_;
 #endif
 };

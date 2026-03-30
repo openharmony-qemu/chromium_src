@@ -67,7 +67,11 @@ bool DevToolsUI::IsFrontendResourceURL(const GURL& url) {
 }
 
 DevToolsUI::DevToolsUI(content::WebUI* web_ui)
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+    : WebUIController(web_ui) {
+#else
     : WebUIController(web_ui), bindings_(web_ui->GetWebContents()) {
+#endif // BUILDFLAG(ARKWEB_DEVTOOLS)
   web_ui->SetBindings(content::BindingsPolicySet());
   content::BrowserContext* browser_context =
       web_ui->GetWebContents()->GetBrowserContext();

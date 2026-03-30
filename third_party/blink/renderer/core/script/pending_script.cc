@@ -236,6 +236,9 @@ void PendingScript::ExecuteScriptBlockInternal(
       UseCounter::Count(element_document,
                         WebFeature::kDuplicatedAttributeForExecutedScript);
     }
+#if BUILDFLAG(ARKWEB_V8_COMPILE)
+    script->SetArkWebCompile(element->ArkWebCompileAttributeValue());
+#endif
 
     const bool is_imported_script = context_document != &element_document;
 

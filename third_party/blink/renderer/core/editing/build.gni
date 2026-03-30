@@ -2,6 +2,10 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
+
 blink_core_sources_editing = [
   "bidi_adjustment.cc",
   "bidi_adjustment.h",
@@ -359,6 +363,14 @@ blink_core_sources_editing = [
   "visible_units_word.cc",
 ]
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  blink_core_sources_editing += arkweb_third_party_blink_renderer_core_ohos_adblock_util_sources
+#endif
+
+if (arkweb_menu) {
+  blink_core_sources_editing += arkweb_third_patry_blink_renderer_core_editing_frame_selection_sources
+}
+
 if (is_mac) {
   blink_core_sources_editing += [
     "commands/smart_replace_cf.cc",
@@ -477,4 +489,8 @@ blink_core_tests_editing = [
 
 if (is_mac) {
   blink_core_tests_editing += [ "substring_util_test.mm" ]
+}
+
+if (arkweb_unittests) {
+  blink_core_tests_editing += arkweb_third_party_blink_renderer_core_ohos_adblock_util_test_sources
 }

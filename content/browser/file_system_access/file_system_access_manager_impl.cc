@@ -421,6 +421,17 @@ void DidCheckIfDefaultDirectoryExists(
   }
 }
 
+#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
+const std::unordered_map<blink::mojom::WellKnownDirectory, std::u16string> wellKnownDirectoryConverter = {
+    {blink::mojom::WellKnownDirectory::kDirDesktop, u"desktop"},
+    {blink::mojom::WellKnownDirectory::kDirDocuments, u"documents"},
+    {blink::mojom::WellKnownDirectory::kDirDownloads, u"downloads"},
+    {blink::mojom::WellKnownDirectory::kDirMusic, u"music"},
+    {blink::mojom::WellKnownDirectory::kDirPictures, u"pictures"},
+    {blink::mojom::WellKnownDirectory::kDirVideos, u"videos"},
+};
+#endif
+
 }  // namespace
 
 FileSystemAccessManagerImpl::SharedHandleState::SharedHandleState(
@@ -742,6 +753,22 @@ void FileSystemAccessManagerImpl::SetDefaultPathAndShowPicker(
       GetAndMoveAcceptsTypesInfo(options->type_specific_options),
       std::move(title), std::move(default_directory),
       std::move(suggested_name_path));
+
+#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
+  if (!options->start_in_options.is_null()) {
+      if (options->start_in_options->is_well_known_directory()) {
+        auto start_in = options->start_in_options->get_well_known_directory();
+        std::u16string directory = u"";
+        auto it = wellKnownDirectoryConverter.find(start_in);
+        if (it != wellKnownDirectoryConverter.end()) {
+            directory = it->second;
+        }
+        file_system_chooser_options.set_start_in(directory);
+      } else if (options->start_in_options->is_directory_token()) {
+        file_system_chooser_options.set_start_in(default_directory.AsUTF16Unsafe());
+      }
+  }
+#endif
 
   if (auto_file_picker_result_for_test_) {
     DidChooseEntries(

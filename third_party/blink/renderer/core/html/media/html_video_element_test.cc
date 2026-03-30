@@ -2,7 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_TEST)
+#include "ohos_sdk/openharmony/native/llvm/bin/../include/libcxx-ohos/include/c++/v1/__ranges/lazy_split_view.h"
+#define private public
 #include "third_party/blink/renderer/core/html/media/html_video_element.h"
+#undef private
+#else
+#include "third_party/blink/renderer/core/html/media/html_video_element.h"
+#endif // ARKWEB_TEST
 
 #include "cc/layers/layer.h"
 #include "testing/gmock/include/gmock/gmock.h"
@@ -461,5 +469,9 @@ TEST_P(HTMLVideoElementTest, VideoVisibilityTrackerVideoElementRectDimensions) {
                                          occlusion_state.video_element_rect);
   EXPECT_EQ(occlusion_state.video_element_rect, intersection);
 }
+
+#if BUILDFLAG(ARKWEB_TEST)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/html/media/html_video_element_ext_unittest.cc"
+#endif //ARKWEB_TEST
 
 }  // namespace blink

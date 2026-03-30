@@ -8,6 +8,10 @@
 #include <string>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "base/containers/flat_map.h"
 #include "base/containers/flat_set.h"
 #include "base/functional/callback.h"
@@ -29,6 +33,8 @@ class WebURL;
 }  // namespace blink
 
 namespace content_settings {
+
+class ArkWebContentSettingsAgentImplExt;
 
 // This class serves as an agent of the browser-side content settings machinery
 // to implement browser-specified rules directly within the renderer process.
@@ -64,6 +70,9 @@ class ContentSettingsAgentImpl
   ContentSettingsAgentImpl& operator=(const ContentSettingsAgentImpl&) = delete;
 
   ~ContentSettingsAgentImpl() override;
+
+  friend class ArkWebContentSettingsAgentImplExt;
+  virtual ArkWebContentSettingsAgentImplExt *AsArkWebContentSettingsAgentImplExt() { return nullptr; }
 
   // Sends an IPC notification that the specified content type was blocked.
   void DidBlockContentType(ContentSettingsType settings_type);
@@ -146,5 +155,6 @@ class ContentSettingsAgentImpl
 };
 
 }  // namespace content_settings
+#include "arkweb/chromium_ext/components/content_settings/renderer/arkweb_content_settings_agent_impl_ext.h"
 
 #endif  // COMPONENTS_CONTENT_SETTINGS_RENDERER_CONTENT_SETTINGS_AGENT_IMPL_H_

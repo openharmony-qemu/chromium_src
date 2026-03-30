@@ -150,11 +150,14 @@ void BulkLeakCheckImpl::OnTokenReady(
 
   holder->token_fetcher.reset();
   holder->network_request_ = network_request_factory_->CreateNetworkRequest();
+
+#if !BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
   holder->network_request_->LookupSingleLeak(
       url_loader_factory_.get(), access_token_info.token,
       /*api_key=*/std::nullopt, std::move(holder->payload),
       base::BindOnce(&BulkLeakCheckImpl::OnLookupLeakResponse,
                      weak_ptr_factory_.GetWeakPtr(), holder.get()));
+#endif
   waiting_response_.push_back(std::move(holder));
 }
 

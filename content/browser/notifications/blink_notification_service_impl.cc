@@ -7,6 +7,10 @@
 #include <string>
 #include <utility>
 
+#include "arkweb/chromium_ext/content/browser/notifications/blink_notification_service_impl_ext.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "base/check_op.h"
 #include "base/feature_list.h"
 #include "base/functional/bind.h"
@@ -130,7 +134,12 @@ void BlinkNotificationServiceImpl::GetPermissionStatus(
     return;
   }
 
+#if BUILDFLAG(ARKWEB_NOTIFICATION)
+  AsBlinkNotificationServiceImplExt()->GetPermissionStatusExt(
+      std::move(callback));
+#else
   std::move(callback).Run(CheckPermissionStatus());
+#endif // ARKWEB_NOTIFICATION
 }
 
 void BlinkNotificationServiceImpl::OnConnectionError() {

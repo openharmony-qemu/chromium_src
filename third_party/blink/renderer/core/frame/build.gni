@@ -3,6 +3,10 @@
 # found in the LICENSE file.
 
 import("//third_party/blink/renderer/config.gni")
+import("//arkweb/build/features/features.gni")
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
 
 blink_core_sources_frame = [
   "ad_tracker.cc",
@@ -252,6 +256,9 @@ blink_core_sources_frame = [
   "window_or_worker_global_scope.cc",
   "window_or_worker_global_scope.h",
 ]
+if (is_arkweb) {
+  blink_core_sources_frame += arkweb_third_patry_blink_renderer_core_frame_resources
+}
 
 blink_core_tests_frame = [
   "ad_tracker_test.cc",
@@ -296,3 +303,16 @@ blink_core_tests_frame = [
   "web_frame_widget_test.cc",
   "web_local_frame_client_test.cc",
 ]
+
+if (arkweb_scrollbar_avoid_area) {
+  blink_core_sources_frame += [
+    "//arkweb/chromium_ext/third_party/blink/renderer/core/frame/ark_web.cc",
+    "//arkweb/chromium_ext/third_party/blink/renderer/core/frame/ark_web.h",
+  ]
+}
+
+if (arkweb_test && defined(enable_arkweb_ext) && enable_arkweb_ext) {
+  blink_core_tests_frame += [
+    "//arkweb/chromium_ext/third_party/blink/renderer/platform/media/video_url_loader_manager_unittest.cc",
+  ]
+}

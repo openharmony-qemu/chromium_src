@@ -65,6 +65,8 @@ GpuChannelHost::GpuChannelHost(
   for (int32_t i = 0;
        i <= static_cast<int32_t>(GpuChannelReservedRoutes::kMaxValue); ++i)
     next_route_id_.GetNext();
+
+  gpu_channel_host_utils_ = std::make_unique<GpuChannelHostUtils>(this);
 }
 
 mojom::GpuChannel& GpuChannelHost::GetGpuChannel() {

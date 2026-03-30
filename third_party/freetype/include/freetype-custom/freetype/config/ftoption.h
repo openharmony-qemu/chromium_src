@@ -21,7 +21,7 @@
 
 
 #include <ft2build.h>
-
+#include "arkweb/build/features/features.h"
 
 FT_BEGIN_HEADER
 
@@ -273,9 +273,12 @@ FT_BEGIN_HEADER
    *   options set by those programs have precedence, overwriting the value
    *   here with the configured one.
    */
+#if BUILDFLAG(ARKWEB_CSS_FONT)
+#define FT_CONFIG_OPTION_USE_PNG
+#else
 /* Not needed since PDFs do not support fonts with PNGs. */
 /* #define FT_CONFIG_OPTION_USE_PNG */
-
+#endif
 
   /**************************************************************************
    *
@@ -606,9 +609,12 @@ FT_BEGIN_HEADER
    * outlines (from the 'COLR'/'CPAL' tables) in all formats using the 'sfnt'
    * module (namely TrueType~& OpenType).
    */
+#if BUILDFLAG(ARKWEB_CSS_FONT)
+#define TT_CONFIG_OPTION_COLOR_LAYERS
+#else
 /* Not needed since PDFs do not support any of the color font formats. */
 /* #define TT_CONFIG_OPTION_COLOR_LAYERS */
-
+#endif
 
   /**************************************************************************
    *

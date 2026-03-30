@@ -397,6 +397,12 @@ void PopulateResourceRequest(const ResourceRequestHead& src,
 
   dest->original_destination = src.GetOriginalDestination();
 
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+  if (dest->load_flags & net::LOAD_PREFETCH) {
+    dest->corb_detachable = true;
+  }
+#endif
+
   if (src.GetURLRequestExtraData()) {
     src.GetURLRequestExtraData()->CopyToResourceRequest(dest);
   }
@@ -430,6 +436,11 @@ void PopulateResourceRequest(const ResourceRequestHead& src,
   dest->shared_dictionary_writer_enabled = src.SharedDictionaryWriterEnabled();
 
   dest->is_ad_tagged = src.IsAdResource();
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  dest->allow_preload_record = src.GetAllowPreloadRecord();
+  dest->main_url = GURL(src.GetMainUrl());
+#endif
 
   dest->allows_device_bound_session_registration =
       src.AllowsDeviceBoundSessionRegistration();

@@ -249,7 +249,6 @@ struct BLINK_COMMON_EXPORT AuctionConfig {
     struct BLINK_COMMON_EXPORT AuctionReportBuyerDebugModeConfig {
       bool is_enabled = false;
       std::optional<uint64_t> debug_key;
-
       friend BLINK_COMMON_EXPORT bool operator==(
           const AuctionReportBuyerDebugModeConfig&,
           const AuctionReportBuyerDebugModeConfig&);
@@ -490,7 +489,7 @@ struct BLINK_COMMON_EXPORT AuctionConfig {
   // will be sent to V1 trusted seller signals server.
   std::optional<bool> send_creative_scanning_metadata;
 
-  static_assert(__LINE__ == 493, R"(
+  static_assert(__LINE__ == 492, R"(
 If modifying AuctionConfig fields, please make sure to also modify:
 
 * third_party/blink/public/mojom/interest_group/interest_group_types.mojom

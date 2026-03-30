@@ -19,6 +19,11 @@
 #include "extensions/buildflags/buildflags.h"
 #include "extensions/common/extension.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/chrome/browser/extensions/api/declarative_content/declarative_content_is_bookmarked_condition_delegate.h"
+#include "base/memory/weak_ptr.h"
+#endif
+
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 
 namespace base {
@@ -67,6 +72,9 @@ class DeclarativeContentIsBookmarkedPredicate : public ContentPredicate {
 // and querying for the matching condition sets.
 class DeclarativeContentIsBookmarkedConditionTracker
     : public ContentPredicateEvaluator,
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      public NWebExtensionBookmarksObserver,
+#endif
       public bookmarks::BaseBookmarkModelObserver {
  public:
   DeclarativeContentIsBookmarkedConditionTracker(
@@ -101,6 +109,13 @@ class DeclarativeContentIsBookmarkedConditionTracker
   bool EvaluatePredicate(const ContentPredicate* predicate,
                          content::WebContents* tab) const override;
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  void OnBookmarksCreated(const GURL& url) override;
+  void OnBookmarksRemoved(const std::set<GURL>& urls) override;
+  void OnBookmarksImportBegin() override;
+  void OnBookmarksImportEnd() override;
+#endif
+
  private:
   class PerWebContentsTracker : public content::WebContentsObserver {
    public:
@@ -126,6 +141,16 @@ class DeclarativeContentIsBookmarkedConditionTracker
       return is_url_bookmarked_;
     }
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    void IsBookmarkedCallback(uint32_t bookmarkCount,
+                              const NWebExtensionBookmarkTreeNode* bookmarks,
+                              const char* error);
+    void IsBookmarkedForceEvaluationCallback(
+        uint32_t bookmarkCount,
+        const NWebExtensionBookmarkTreeNode* bookmarks,
+        const char* error);
+#endif
+
    private:
     bool IsCurrentUrlBookmarked();
 
@@ -135,6 +160,9 @@ class DeclarativeContentIsBookmarkedConditionTracker
     bool is_url_bookmarked_;
     const RequestEvaluationCallback request_evaluation_;
     WebContentsDestroyedCallback web_contents_destroyed_;
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    base::WeakPtrFactory<PerWebContentsTracker> weak_factory_{this};
+#endif
   };
 
   // bookmarks::BookmarkModelObserver implementation.

@@ -30,6 +30,7 @@
 #include "ui/base/page_transition_types.h"
 #include "ui/base/resource/resource_scale_factor.h"
 #include "ui/gfx/geometry/vector2d_f.h"
+#include "arkweb/build/features/features.h"
 
 #if defined(USE_AURA)
 #include "ui/aura/window.h"
@@ -94,7 +95,7 @@ class TestRenderWidgetHostView : public RenderWidgetHostViewBase,
   uint64_t GetNSViewId() const override;
 #endif  // BUILDFLAG(IS_MAC)
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   bool IsTouchSequencePotentiallyActiveOnViz() override;
 
   void RequestInputBackForDragAndDrop(
@@ -119,6 +120,12 @@ class TestRenderWidgetHostView : public RenderWidgetHostViewBase,
 
   void TakeFallbackContentFrom(RenderWidgetHostView* view) override;
   void EnsureSurfaceSynchronizedForWebTest() override;
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  void EvictFrameBackBuffers() override {}
+  void SetDoubleTapSupportEnabled(bool enabled) {}
+  void SetMultiTouchZoomSupportEnabled(bool enabled) {}
+  bool GetScrollable() {return false;}
+#endif
 
   // RenderWidgetHostViewBase:
   uint32_t GetCaptureSequenceNumber() const override;
@@ -229,6 +236,23 @@ class TestRenderWidgetHostViewChildFrame
   void Reset();
   void SetCompositor(ui::Compositor* compositor);
   ui::Compositor* GetCompositor() override;
+
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  bool GetScrollable() { return false; }
+#endif
+
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+  bool IsTouchSequencePotentiallyActiveOnViz() override;
+
+  void RequestInputBackForDragAndDrop(
+      blink::mojom::DragDataPtr drag_data,
+      const url::Origin& source_origin,
+      blink::DragOperationsMask drag_operations_mask,
+      SkBitmap bitmap,
+      gfx::Vector2d cursor_offset_in_dip,
+      gfx::Rect drag_obj_rect_in_dip,
+      blink::mojom::DragEventSourceInfoPtr event_info) override {}  
+#endif
 
  private:
   void SetBounds(const gfx::Rect& rect) override {}

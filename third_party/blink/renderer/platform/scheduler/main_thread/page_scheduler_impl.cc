@@ -843,7 +843,11 @@ void PageSchedulerImpl::UpdateFrozenState(
       // SetPageFrozen().
       freeze_time = now;
     } else if (base::FeatureList::IsEnabled(
-                   blink::features::kStopInBackground)) {
+                   blink::features::kStopInBackground)
+#if BUILDFLAG(ARKWEB_ACTIVE_POLICY)
+                   || is_tab_freezing_enable_force
+#endif
+                   ) {
       if (called_from == base::MemoryReductionTaskContext::kProactive) {
         // Special case: Freeze now if the timer has been fast-forwarded to
         // proactively reduce memory.
@@ -880,6 +884,20 @@ void PageSchedulerImpl::UpdateFrozenState(PolicyUpdater& policy_updater) {
   PageSchedulerImpl::UpdateFrozenState(
       policy_updater, base::MemoryReductionTaskContext::kDelayExpired);
 }
+
+#if BUILDFLAG(ARKWEB_ACTIVE_POLICY)
+void PageSchedulerImpl::SetDelayDurationForBackgroundTabFreezing(
+    int64_t millisecond) {
+  LOG(INFO) << "SetDelayDurationForBackgroundTabFreezing " << millisecond;
+  if (millisecond != -1) {
+    is_tab_freezing_enable_force = true;
+  } else {
+    is_tab_freezing_enable_force = false;
+  }
+  delay_for_background_tab_freezing_ = base::Milliseconds(millisecond);
+}
+
+#endif  // OHOS_ACTIVE_POLICY
 
 std::array<WakeUpBudgetPool*, PageSchedulerImpl::kNumWakeUpBudgetPools>
 PageSchedulerImpl::AllWakeUpBudgetPools() {

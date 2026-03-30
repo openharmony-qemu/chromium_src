@@ -178,4 +178,7 @@ bool IsContentDispositionAttachmentInHead(
 
 }  // namespace download
 
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+#include "arkweb/chromium_ext/components/download/public/common/arkweb_download_utils_ext.h"
+#endif
 #endif  // COMPONENTS_DOWNLOAD_PUBLIC_COMMON_DOWNLOAD_UTILS_H_

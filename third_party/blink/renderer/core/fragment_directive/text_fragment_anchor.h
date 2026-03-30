@@ -25,6 +25,9 @@ class DocumentLoader;
 class LocalFrame;
 class KURL;
 class TextDirective;
+#if BUILDFLAG(ARKWEB_AI)
+class TextFragmentAnchorUtils;
+#endif
 
 // TextFragmentAnchor is the coordinator class for applying text directives
 // from the URL (also known as "scroll-to-text") to a document. This class'
@@ -203,6 +206,10 @@ class CORE_EXPORT TextFragmentAnchor final
   // exclusive, if either is run it will stop the other.
   HeapTaskRunnerTimer<TextFragmentAnchor> post_load_timer_;
   HeapTaskRunnerTimer<TextFragmentAnchor> post_load_timeout_timer_;
+#if BUILDFLAG(ARKWEB_AI)
+  Member<TextFragmentAnchorUtils> utils_;
+#endif
+
 
   // Tracks which search attempt the anchor is currently on.
   enum SearchIteration {

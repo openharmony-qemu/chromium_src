@@ -36,6 +36,9 @@
 #include "net/spdy/spdy_session_pool.h"
 #include "net/ssl/ssl_client_session_cache.h"
 #include "net/third_party/quiche/src/quiche/http2/core/spdy_protocol.h"
+#if BUILDFLAG(ENABLE_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace net {
 
@@ -314,6 +317,21 @@ class NET_EXPORT HttpNetworkSession : public base::PowerSuspendObserver,
   CommonConnectJobParams CreateCommonConnectJobParams(
       bool for_websockets = false);
 
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+  void SetConnectTimeout(int seconds);
+#endif
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  void SetConnectJobWithSecureDnsOnlyTimeout(int seconds);
+#endif
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  bool is_strict_log_mode();
+#endif  // ARKWEB_LOGGER_REPORT
+
+#if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
+  void SetSocketIdleTimeout(int32_t timeout);
+#endif
+
   // Rewrite the port of `endpoint` when testing fixed port is specified.
   void ApplyTestingFixedPort(url::SchemeHostPort& endpoint) const;
 
@@ -340,6 +358,9 @@ class NET_EXPORT HttpNetworkSession : public base::PowerSuspendObserver,
 #endif
   const raw_ptr<ProxyResolutionService> proxy_resolution_service_;
   const raw_ptr<SSLConfigService> ssl_config_service_;
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  bool is_strict_log_mode_ = false;
+#endif  // ARKWEB_LOGGER_REPORT
 
   HttpAuthCache http_auth_cache_;
   SSLClientSessionCache ssl_client_session_cache_;

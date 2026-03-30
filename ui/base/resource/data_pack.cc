@@ -31,6 +31,10 @@
 #include "ui/base/resource/resource_scale_factor.h"
 #include "ui/base/resource/scoped_file_writer.h"
 
+#if BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)
+#include "arkweb/chromium_ext/ui/base/data_pack_for_include.h"
+#endif
+
 // For details of the file layout, see
 // http://dev.chromium.org/developers/design-documents/linuxresourcesandlocalizedstrings
 
@@ -235,6 +239,16 @@ bool DataPack::LoadFromPath(const base::FilePath& path) {
 
 base::expected<void, DataPack::ErrorState> DataPack::LoadFromPathWithError(
     const base::FilePath& path) {
+#if BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)
+  // If the hap package is not decompressed, the directory does not exist.
+  if (path.empty() || !base::PathExists(path)) {
+    auto result = DataPackUtil::LoadFromPathExt(this, path);
+    if (result) {
+      return base::ok();
+    }
+    return base::unexpected(ErrorState{FailureReason::kOpenFile});
+  }
+#endif
   std::unique_ptr<DataPack::DataSource> data_source;
   ASSIGN_OR_RETURN(data_source, LoadFromPathInternal(path));
   RETURN_IF_ERROR(LoadImpl(std::move(data_source)),
@@ -560,3 +574,7 @@ bool DataPack::WritePack(const base::FilePath& path,
 }
 
 }  // namespace ui
+
+#if BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)
+#include "arkweb/chromium_ext/ui/base/data_pack_for_include.cc"
+#endif

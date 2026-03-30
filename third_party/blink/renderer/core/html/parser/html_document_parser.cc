@@ -24,7 +24,7 @@
  */
 
 #include "third_party/blink/renderer/core/html/parser/html_document_parser.h"
-
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/html/parser/html_document_parser_ext.h"
 #include <memory>
 #include <utility>
 
@@ -409,6 +409,9 @@ HTMLDocumentParser::HTMLDocumentParser(Document& document,
           // cause UI flickering. To mitigate, use_infinite_budget will
           // parse all the way up to the mojo limit.
           (document.Url().ProtocolIs("chrome-extension") ||
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+            document.Url().ProtocolIs("arkweb-extension") ||
+#endif
            document.Url().IsLocalFile())
               ? kInfiniteTokenizationBudget
               : kDefaultMaxTokenizationBudget)),
@@ -724,6 +727,10 @@ bool HTMLDocumentParser::PumpTokenizer() {
           ? task_runner_state_->GetDefaultBudget()
           : kInfiniteTokenizationBudget;
 
+#if BUILDFLAG(IS_OHOS)
+  budget = GetOptimizeParserBudgetEnabled() ? kOptimizedMaxTokenizationBudget : budget;
+#endif
+
   if (RuntimeEnabledFeatures::HTMLParserYieldAndDelayOftenForTestingEnabled()) {
     budget = 2;
   }
@@ -801,6 +808,17 @@ bool HTMLDocumentParser::PumpTokenizer() {
           elapsed_time = chunk_parsing_timer.Elapsed();
         }
         should_yield = elapsed_time >= timed_budget;
+#if BUILDFLAG(IS_OHOS)
+        if (GetOptimizeParserBudgetEnabled()) {
+          should_yield = should_yield || budget <= 0;
+          if (should_yield) {
+            LOG(WARNING) << "OptimizeParserBudget in PumpTokenlizer. current "
+                            "parse tokens: "
+                         << tokens_parsed << ". left token budget: " << budget
+                         << ". elapsed time: " << elapsed_time;
+          }
+        }
+#endif
       } else {
         should_yield = budget <= 0;
       }

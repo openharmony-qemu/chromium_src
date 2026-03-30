@@ -47,6 +47,12 @@
 #include "base/unguessable_token.h"
 #include "base/values.h"
 #include "build/build_config.h"
+
+#if BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
+#include "base/command_line.h"
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#endif
+
 #include "mojo/public/cpp/bindings/self_owned_receiver.h"
 #include "mojo/public/cpp/system/message_pipe.h"
 #include "services/network/public/cpp/features.h"
@@ -249,6 +255,7 @@
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/geometry/rect_f.h"
 #include "ui/gfx/geometry/transform.h"
+#include "third_party/blink/renderer/core/page/page_utils.h"
 
 #if BUILDFLAG(IS_MAC)
 #include "third_party/blink/renderer/core/editing/ephemeral_range.h"
@@ -256,6 +263,10 @@
 #include "third_party/blink/renderer/platform/fonts/mac/attributed_string_type_converter.h"
 #include "ui/base/mojom/attributed_string.mojom-blink.h"
 #include "ui/gfx/range/range.h"
+#endif
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/frame/local_frame_for_include.cc"
 #endif
 
 namespace blink {
@@ -423,7 +434,11 @@ void LocalFrame::Init(Frame* opener,
   GetInterfaceRegistry()->AddInterface(BindRepeating(
       &LocalFrame::BindTextFragmentReceiver, WrapWeakPersistent(this)));
   DCHECK(!mojo_handler_);
+#if BUILDFLAG(IS_ARKWEB)
+  mojo_handler_ = MakeGarbageCollected<ArkWebLocalFrameMojoHandlerExt>(*this);
+#else
   mojo_handler_ = MakeGarbageCollected<LocalFrameMojoHandler>(*this);
+#endif
 
   SetOpenerDoNotNotify(opener);
   loader_.Init(document_token, std::move(policy_container), storage_key,
@@ -536,6 +551,9 @@ void LocalFrame::Trace(Visitor* visitor) const {
   visitor->Trace(remote_object_gateway_factory_impl_);
   visitor->Trace(remote_object_gateway_impl_);
   visitor->Trace(text_suggestion_backend_impl_);
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  visitor->Trace(blank_screen_detector_);
+#endif
   Frame::Trace(visitor);
   visitor->Trace(dev_tools_frontend_impl_);
 }
@@ -1067,7 +1085,11 @@ bool LocalFrame::CanAccessEvent(
   }
 }
 
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+void LocalFrame::Reload(WebFrameLoadType load_type, bool is_triggered_by_js) {
+#else
 void LocalFrame::Reload(WebFrameLoadType load_type) {
+#endif
   DCHECK(IsReloadLoadType(load_type));
   if (!loader_.GetDocumentLoader()->GetHistoryItem())
     return;
@@ -1081,7 +1103,11 @@ void LocalFrame::Reload(WebFrameLoadType load_type) {
   probe::FrameScheduledNavigation(this, request.GetResourceRequest().Url(),
                                   base::TimeDelta(),
                                   ClientNavigationReason::kReload);
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+  loader_.StartNavigation(request, load_type, is_triggered_by_js);
+#else
   loader_.StartNavigation(request, load_type);
+#endif
   probe::FrameClearedScheduledNavigation(this);
 }
 
@@ -1699,6 +1725,13 @@ void LocalFrame::SetCssZoomFactor(float factor) {
 void LocalFrame::SetZoomFactors(float layout_zoom_factor,
                                 float text_zoom_factor,
                                 float css_zoom_factor) {
+#if BUILDFLAG(ARKWEB_ZOOM)
+  Page* page = GetPage();
+  if (!LocalFrameUtil::SetLayoutAndTextZoomFactorsPage(
+          this, layout_zoom_factor, text_zoom_factor, page)) {
+    return;
+  }
+#else
   if (layout_zoom_factor_ == layout_zoom_factor &&
       text_zoom_factor_ == text_zoom_factor &&
       css_zoom_factor_ == css_zoom_factor) {
@@ -1708,6 +1741,7 @@ void LocalFrame::SetZoomFactors(float layout_zoom_factor,
   Page* page = GetPage();
   if (!page)
     return;
+#endif
 
   Document* document = GetDocument();
   if (!document)
@@ -1722,6 +1756,11 @@ void LocalFrame::SetZoomFactors(float layout_zoom_factor,
   }
 
   bool layout_zoom_changed = (layout_zoom_factor != layout_zoom_factor_);
+
+#if BUILDFLAG(IS_ARKWEB)
+  LocalFrameUtil::SetLayoutAndTextZoomFactorsExt(
+      this, layout_zoom_factor, text_zoom_factor, layout_zoom_changed, page);
+#endif
 
   layout_zoom_factor_ = layout_zoom_factor;
   text_zoom_factor_ = text_zoom_factor;
@@ -1739,6 +1778,10 @@ void LocalFrame::SetZoomFactors(float layout_zoom_factor,
         DynamicTo<RemoteFrame>(child)->ZoomFactorChanged(layout_zoom_factor);
       }
     }
+#if BUILDFLAG(ARKWEB_ZOOM)
+  } else {
+    LocalFrameUtil::SetTextZoomFactorsExt(this);
+#endif
   }
 
   if (layout_zoom_changed) {
@@ -1972,7 +2015,11 @@ LocalFrame::LocalFrame(
                         : FrameScheduler::FrameType::kSubframe)),
       loader_(this),
       editor_(MakeGarbageCollected<Editor>(*this)),
+      #if BUILDFLAG(ARKWEB_MENU)
+      selection_(MakeGarbageCollected<FrameSelectionExt>(*this)),
+      #else
       selection_(MakeGarbageCollected<FrameSelection>(*this)),
+      #endif  // ARKWEB_MENU
       event_handler_(MakeGarbageCollected<EventHandler>(*this)),
       console_(MakeGarbageCollected<FrameConsole>(*this)),
       navigation_disable_count_(0),
@@ -4164,6 +4211,14 @@ bool LocalFrame::ScriptEnabled() {
   bool allow_script_renderer = GetSettings()->GetScriptEnabled();
   bool allow_script_content_setting =
       loader_.GetDocumentLoader()->GetContentSettings()->allow_script;
+#if BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
+  const base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+  if (command_line && command_line->HasSwitch(switches::kEnableNwebExExceptionList)) {
+    if(GetDocument() && !GetDocument()->Url().IsNull()){
+    return allow_script_content_setting;
+  }
+  }
+#endif
   return allow_script_renderer && allow_script_content_setting;
 }
 

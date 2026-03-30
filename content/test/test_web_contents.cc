@@ -51,7 +51,7 @@ RenderProcessHostFactory* GetMockProcessFactory() {
 }  // namespace
 
 TestWebContents::TestWebContents(BrowserContext* browser_context)
-    : WebContentsImpl(browser_context),
+    : WebContentsImplExt(browser_context),
       delegate_view_override_(nullptr),
       web_preferences_changed_counter_(nullptr),
       pause_subresource_loading_called_(false),
@@ -172,7 +172,11 @@ bool TestWebContents::HasPendingDownloadImage(const GURL& url) {
   return !pending_image_downloads_[url].empty();
 }
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+void TestWebContents::OnWebPreferencesChanged(int32_t usage_scenario_type) {
+#else
 void TestWebContents::OnWebPreferencesChanged() {
+#endif
   WebContentsImpl::OnWebPreferencesChanged();
   if (web_preferences_changed_counter_)
     ++*web_preferences_changed_counter_;
@@ -210,7 +214,11 @@ bool TestWebContents::TestDidAddMessageToConsole(
     const std::u16string& source_id,
     const std::optional<std::u16string>& untrusted_stack_trace) {
   return WebContentsImpl::DidAddMessageToConsole(
-      /*source_frame=*/nullptr, log_level, message, line_no, source_id,
+      /*source_frame=*/nullptr, log_level,
+#if BUILDFLAG(ARKWEB_CONSOLE_LOGGING)
+      blink::mojom::ConsoleMessageSource::kJavaScript,
+#endif
+      message, line_no, source_id,
       untrusted_stack_trace);
 }
 
@@ -623,7 +631,6 @@ bool TestWebContents::GetOverscrollNavigationEnabled() {
 
 void TestWebContents::SetSafeAreaInsetsHost(
     std::unique_ptr<SafeAreaInsetsHost> safe_area_insets_host) {
-  safe_area_insets_host_ = std::move(safe_area_insets_host);
 }
 
 void TestWebContents::GetMediaCaptureRawDeviceIdsOpened(

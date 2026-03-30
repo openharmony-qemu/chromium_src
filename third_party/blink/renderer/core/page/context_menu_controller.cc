@@ -30,6 +30,7 @@
 #include <memory>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/to_vector.h"
 #include "base/feature_list.h"
 #include "base/metrics/field_trial_params.h"
@@ -454,6 +455,9 @@ bool ContextMenuController::ShowContextMenu(LocalFrame* frame,
 
   HitTestRequest::HitTestRequestType type =
       HitTestRequest::kReadOnly | HitTestRequest::kActive |
+#if BUILDFLAG(ARKWEB_MENU)
+      HitTestRequest::kOnDoHitTest |
+#endif  // BUILDFLAG(ARKWEB_MENU)
       HitTestRequest::kPenetratingList | HitTestRequest::kListBased;
 
   HitTestLocation location(point);
@@ -505,6 +509,10 @@ bool ContextMenuController::ShowContextMenu(LocalFrame* frame,
     }
   }
   data.link_url = GURL(result.AbsoluteLinkURL());
+#if BUILDFLAG(ARKWEB_MENU)
+  AsContextMenuControllerExt()->GetImgUrl(result, data, source_type);
+  AsContextMenuControllerExt()->IsAILink(data, result);
+#endif
 
   auto* html_element = DynamicTo<HTMLElement>(result.InnerNode());
   if (html_element) {
@@ -592,6 +600,10 @@ bool ContextMenuController::ShowContextMenu(LocalFrame* frame,
       data.media_flags |= ContextMenuData::kMediaCanToggleControls;
     if (media_element->ShouldShowAllControls())
       data.media_flags |= ContextMenuData::kMediaControls;
+#if BUILDFLAG(ARKWEB_MENU)
+  } else if (!result.AbsoluteImageURL().IsEmpty()) {
+    AsContextMenuControllerExt()->SetArkWebMenuData(data, result);
+#endif  // BUILDFLAG(ARKWEB_MENU)
   } else if (IsA<HTMLObjectElement>(*result.InnerNode()) ||
              IsA<HTMLEmbedElement>(*result.InnerNode())) {
     if (auto* embedded = DynamicTo<LayoutEmbeddedContent>(
@@ -673,6 +685,10 @@ bool ContextMenuController::ShowContextMenu(LocalFrame* frame,
       data.media_type = mojom::blink::ContextMenuDataMediaType::kImage;
       data.media_flags |= ContextMenuData::kMediaCanPrint;
       data.has_image_contents = HitTestResult::GetImage(potential_image_node);
+#if BUILDFLAG(ARKWEB_MENU)
+      AsContextMenuControllerExt()->SetImageRectFromPotentialImageNode(
+          data, potential_image_node);
+#endif  // BUILDFLAG(ARKWEB_MENU)    
     }
   }
   // If it's not a link, an image, a media element, or an image/media link,
@@ -839,6 +855,10 @@ bool ContextMenuController::ShowContextMenu(LocalFrame* frame,
     data.link_text = anchor->innerText().Utf8();
   }
 
+#if BUILDFLAG(IS_ARKWEB)
+  AsContextMenuControllerExt()->HandleArkWebContextMenu(data, frame, result, selected_frame, source_type);
+#endif
+
   data.selection_rect = ComputeSelectionRect(selected_frame);
   data.source_type = source_type;
 
@@ -866,6 +886,10 @@ bool ContextMenuController::ShowContextMenu(LocalFrame* frame,
     }
   }
 
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  AsContextMenuControllerExt()->FindImgUrl(data, result, point);
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
+
   selected_web_frame->ShowContextMenu(
       context_menu_client_receiver_.BindNewEndpointAndPassRemote(
           selected_web_frame->GetTaskRunner(TaskType::kInternalDefault)),
@@ -873,5 +897,4 @@ bool ContextMenuController::ShowContextMenu(LocalFrame* frame,
 
   return true;
 }
-
 }  // namespace blink

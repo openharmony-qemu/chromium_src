@@ -125,6 +125,12 @@ void SingleThreadProxy::SetVisible(bool visible) {
     scheduler_on_impl_thread_->SetVisible(host_impl_->visible());
 }
 
+#if BUILDFLAG(ARKWEB_PINCH_SMOOTH)
+void SingleThreadProxy::SetPinchSmoothMode(bool isEnable) {
+  return;
+}
+#endif
+
 void SingleThreadProxy::SetShouldWarmUp() {
   DCHECK(task_runner_provider_->IsMainThread());
   DebugScopedSetImplThread impl(task_runner_provider_);

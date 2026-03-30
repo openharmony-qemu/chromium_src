@@ -176,6 +176,10 @@ component("aura") {
     public += [ "screen_ozone.h" ]
     sources += [ "screen_ozone.cc" ]
   }
+
+  if (is_ohos) {
+    deps += [ "//services/viz/privileged/mojom" ]
+  }
 }
 
 static_library("test_support") {

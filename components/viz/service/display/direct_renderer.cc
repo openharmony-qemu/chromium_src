@@ -53,6 +53,11 @@
 #include "ui/gfx/geometry/transform.h"
 #include "ui/gfx/geometry/transform_util.h"
 
+#if BUILDFLAG(ARKWEB_VULKAN) || BUILDFLAG(ARKWEB_SUPPORTS_DAMAGE_REGION)
+#include "gpu/config/gpu_finch_features.h"
+#endif
+#include "arkweb/chromium_ext/components/viz/service/display/direct_renderer_ext.h"
+
 namespace viz {
 
 namespace {
@@ -101,8 +106,36 @@ DirectRenderer::DirectRenderer(const RendererSettings* settings,
 DirectRenderer::~DirectRenderer() = default;
 
 void DirectRenderer::Initialize() {
+#if BUILDFLAG(ARKWEB_VULKAN_INC_PRESENT)
+  TRACE_EVENT2("viz", "DirectRenderer::Initialize",
+               "partial_swap_enabled", settings_->partial_swap_enabled,
+               "CanPartialSwap()", CanPartialSwap());
+#endif
   use_partial_swap_ = settings_->partial_swap_enabled && CanPartialSwap();
   initialized_ = true;
+#if BUILDFLAG(ARKWEB_VULKAN_INC_PRESENT)
+  if (!features::IsUsingVulkan()) {
+    return;
+  }
+  int32_t getValue = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                 .GetSystemPropertiesInstance()
+                 .GetIntParameter("web.gpu.incpresent",
+                                  static_cast<int32_t>(VulkanIncPresent::kDisable));
+  switch (getValue) {
+    case static_cast<int32_t>(VulkanIncPresent::kDefault):
+      break;
+    case static_cast<int32_t>(VulkanIncPresent::kEnable):
+      use_partial_swap_ = true;
+      break;
+    case static_cast<int32_t>(VulkanIncPresent::kDisable):
+      use_partial_swap_ = false;
+      break;
+    default:
+      break;
+  }
+  init_partial_swap_ = use_partial_swap_;
+  LOG(INFO) << "DirectRenderer Initialize, use_partial_swap_: " << use_partial_swap_;
+#endif
 }
 
 gfx::AxisTransform2d DirectRenderer::CalculateTargetToDeviceTransform(
@@ -139,6 +172,10 @@ void DirectRenderer::SetVisible(bool visible) {
   if (visible_ == visible)
     return;
   visible_ = visible;
+#if BUILDFLAG(ARKWEB_VULKAN)
+  LOG(INFO) << "DirectRenderer::SetVisible status change, visible_ = " << visible_;
+  next_frame_needs_full_frame_redraw_ = true;
+#endif
   DidChangeVisibility();
 }
 
@@ -150,6 +187,22 @@ void DirectRenderer::Reshape(
     const OutputSurface::ReshapeParams& reshape_params) {
   output_surface_->Reshape(reshape_params);
 }
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+void DirectRenderer::SetNativeInnerWeb(bool isInnerWeb) {
+  if (output_surface_) {
+    output_surface_->SetNativeInnerWeb(isInnerWeb);
+  }
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+void DirectRenderer::SetBypassVsyncCondition(int32_t condition) {
+  if (output_surface_) {
+    output_surface_->SetBypassVsyncCondition(condition);
+  }
+}
+#endif
 
 void DirectRenderer::DecideRenderPassAllocationsForFrame(
     const AggregatedRenderPassList& render_passes_in_draw_order,
@@ -222,8 +275,13 @@ void DirectRenderer::DrawFrame(
   }
   AddInkDamageToRenderPass(current_frame()->root_render_pass,
                            current_frame()->root_damage_rect);
-
+#if BUILDFLAG(ARKWEB_VULKAN)
+  CHECK_DAMAGE_RECT_WHEN_VULKAN(device_viewport_size)
+#endif
   current_frame()->root_damage_rect.Intersect(gfx::Rect(device_viewport_size));
+#if BUILDFLAG(ARKWEB_VULKAN)
+  }
+#endif
   current_frame()->device_viewport_size = device_viewport_size;
   current_frame()->display_color_spaces = display_color_spaces;
 
@@ -401,8 +459,25 @@ void DirectRenderer::DrawFrame(
 
   // If we need to redraw the frame, the whole output should be considered
   // damaged.
+#if BUILDFLAG(ARKWEB_SUPPORTS_DAMAGE_REGION)
+  CHECK_DAMAGE_RECT_OHOS();
+#endif
   if (needs_full_frame_redraw)
     current_frame()->root_damage_rect = gfx::Rect(device_viewport_size);
+
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+  if (!features::IsUsingVulkan()) {
+    if (!(is_sync_draw_mode_ || is_blankless_mode_)) {
+      skip_partial_paint_ = IsPresentBuffersFullDamage(current_frame()->root_damage_rect);
+    }
+    if (skip_partial_paint_) {
+      current_frame()->root_damage_rect = gfx::Rect(device_viewport_size);
+    }
+  }
+  TRACE_EVENT2("viz", "DirectRenderer::DrawFrame PARTIAL_DRAW",
+               "skip_partial_paint_", skip_partial_paint_,
+               "root_damage_rect", current_frame()->root_damage_rect.ToString());
+#endif
 
   if (!skip_drawing_root_render_pass) {
     DrawRenderPassAndExecuteCopyRequests(root_render_pass);
@@ -760,6 +835,12 @@ void DirectRenderer::DrawRenderPass(const AggregatedRenderPass* render_pass) {
       continue;
     }
 
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+    if (is_root_render_pass && (quad.material == DrawQuad::Material::kDebugBorder) && partial_draw_debug_) {
+      continue;
+    }
+#endif
+
     if (last_sorting_context_id != quad.shared_quad_state->sorting_context_id) {
       last_sorting_context_id = quad.shared_quad_state->sorting_context_id;
       FlushPolygons(&poly_list, render_pass_scissor_in_draw_space,
@@ -788,6 +869,19 @@ void DirectRenderer::DrawRenderPass(const AggregatedRenderPass* render_pass) {
   }
   FlushPolygons(&poly_list, render_pass_scissor_in_draw_space,
                 render_pass_is_clipped);
+
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+  if (is_root_render_pass && !skip_partial_paint_) {
+    auto it = current_frame()->root_render_pass->quad_list.BackToFrontBegin();
+    if (it != current_frame()->root_render_pass->quad_list.BackToFrontEnd()) {
+      const DrawQuad& damage_quad = **it;
+      if (damage_quad.material == DrawQuad::Material::kDebugBorder) {
+        DoDrawQuad(&damage_quad, nullptr);
+      }
+    }
+  }
+#endif
+
   FinishDrawingRenderPass();
 
   if (!is_root_render_pass) {

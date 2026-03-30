@@ -90,7 +90,8 @@ class ToolbarView : public views::AccessiblePaneView,
   DECLARE_CLASS_ELEMENT_IDENTIFIER_VALUE(kToolbarElementId);
   DECLARE_CLASS_ELEMENT_IDENTIFIER_VALUE(kToolbarContainerElementId);
 
-  ToolbarView(Browser* browser, BrowserView* browser_view,
+  ToolbarView(Browser* browser,
+              BrowserView* browser_view,
               std::optional<DisplayMode> display_mode);
   ToolbarView(const ToolbarView&) = delete;
   ToolbarView& operator=(const ToolbarView&) = delete;

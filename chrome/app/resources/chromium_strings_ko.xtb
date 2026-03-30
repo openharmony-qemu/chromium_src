@@ -107,6 +107,7 @@
 <translation id="2210502920229141283">iOS용 Chromium의 향상된 세이프 브라우징으로 이동 중에도 더 안전하게 보호하세요.</translation>
 <translation id="2210682093923538346">위험한 사이트입니다. Chromium에서 알림을 삭제했습니다.</translation>
 <translation id="2236949375853147973">내 활동</translation>
+<translation id="2238104961394611930">켜짐 • 확장 프로그램 출처를 확인할 수 없음</translation>
 <translation id="2238130810669087193">모든 기기에서 내 주소 등을 가져오려면 Chromium에 로그인하세요. 로그인하면 이 주소가 Google 계정에 저장됩니다</translation>
 <translation id="2241627712206172106">컴퓨터를 공유하는 경우 친구와 가족이 개별적으로 탐색하고 원하는 대로 Chromium을 설정할 수 있습니다.</translation>
 <translation id="2283803047247799269">이미지 검색으로 이 탭 검색</translation>
@@ -516,6 +517,7 @@
 <translation id="6862030660799253820">이미지 검색으로 이 이미지 검색하기</translation>
 <translation id="6873893289264747459">Chromium에서 "<ph name="EXTENSION_NAME" />"에 멀웨어가 포함된 것을 발견했습니다.</translation>
 <translation id="6877155553248388166">검색 영역의 오른쪽 하단: 오른쪽 <ph name="RIGHT" />%, 하단 <ph name="BOTTOM" />%</translation>
+<translation id="6885534934768077023">참고: 브라우저는 확장 프로그램에서 검색 내역을 기록하는 것을 차단할 수 없습니다. 비공개 모드에서 이 확장 프로그램을 종료하려면 이 옵션을 끄십시오.</translation>
 <translation id="6896758677409633944">복사</translation>
 <translation id="6901631050894301805">Chromium을 기본 브라우저로 설정하고 태스크 바에 고정하세요.</translation>
 <translation id="6909503629704372277">Chromium 프로필 관리(&amp;M)</translation>
@@ -574,6 +576,7 @@ Chromium에서 설정을 복구할 수 없습니다.</translation>
 <translation id="753534427205733210">{0,plural, =1{1분 후 Chromium이 다시 시작됩니다}other{#분 후 Chromium이 다시 시작됩니다}}</translation>
 <translation id="7565444033145385702">데이터를 보호하려면 최근에 방문하지 않은 사이트의 권한을 Chromium에서 삭제하도록 허용하세요.</translation>
 <translation id="7583399374488819119"><ph name="COMPANY_NAME" /> 설치 프로그램</translation>
+<translation id="7597668698051545254">꺼짐 • 확장 프로그램 출처를 확인할 수 없음</translation>
 <translation id="761356813943268536">Chromium이 카메라와 마이크를 사용 중입니다.</translation>
 <translation id="7617377681829253106">더욱 업그레이드된 Chromium</translation>
 <translation id="7622753900276619808">이제 Chromium에서 더 많은 기능을 사용할 수 있습니다.</translation>

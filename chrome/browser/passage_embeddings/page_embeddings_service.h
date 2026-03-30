@@ -56,7 +56,7 @@ class PageEmbeddingsService
   // performance overhead.
   enum Priority {
     kUserBlocking,
-    kUrgent,
+    kHighPriority,
     kDefault,
     kBackground,
   };

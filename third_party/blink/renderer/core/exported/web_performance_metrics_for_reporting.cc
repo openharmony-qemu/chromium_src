@@ -34,6 +34,10 @@
 #include "third_party/blink/renderer/core/timing/performance_timing_for_reporting.h"
 #include "third_party/blink/renderer/core/timing/window_performance.h"
 
+#if BUILDFLAG(ARKWEB_NETWORK_DFX)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/exported/web_performance_metrics_for_reporting_for_include.cc"
+#endif
+
 namespace blink {
 
 void WebPerformanceMetricsForReporting::Reset() {

@@ -190,7 +190,14 @@ enum class LoadRulesetRequestSource {
 };
 
 // Schemes which can be used as part of url transforms.
-extern const char* const kAllowedTransformSchemes[4];
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+constexpr int ALLOWED_TRANSFORM_SCHEMES_NUMBER = 5;
+#else
+constexpr int ALLOWED_TRANSFORM_SCHEMES_NUMBER = 4;
+#endif
+
+extern const char* const
+    kAllowedTransformSchemes[ALLOWED_TRANSFORM_SCHEMES_NUMBER];
 
 // Rule parsing errors.
 extern const char kErrorRequestMethodDuplicated[];

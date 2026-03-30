@@ -160,6 +160,21 @@ class MockRootRenderWidgetHostView : public TestRenderWidgetHostView {
 
   void Reset() { last_gesture_seen_ = blink::WebInputEvent::Type::kUndefined; }
 
+  #if BUILDFLAG(ARKWEB_TEST)
+  bool IsTouchSequencePotentiallyActiveOnViz() override {
+    return false;
+  };
+
+  void RequestInputBackForDragAndDrop(
+      blink::mojom::DragDataPtr drag_data,
+      const url::Origin& source_origin,
+      blink::DragOperationsMask drag_operations_mask,
+      SkBitmap bitmap,
+      gfx::Vector2d cursor_offset_in_dip,
+      gfx::Rect drag_obj_rect_in_dip,
+      blink::mojom::DragEventSourceInfoPtr event_info) override {}  
+  #endif
+
  private:
   blink::WebInputEvent::Type last_gesture_seen_ =
       blink::WebInputEvent::Type::kUndefined;

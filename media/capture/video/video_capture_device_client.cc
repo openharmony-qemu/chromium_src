@@ -42,6 +42,7 @@
 #include "media/capture/video_capture_types.h"
 #include "third_party/abseil-cpp/absl/cleanup/cleanup.h"
 #include "third_party/libyuv/include/libyuv.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_CHROMEOS)
 #include "media/capture/video/chromeos/video_capture_jpeg_decoder.h"
@@ -448,11 +449,19 @@ void VideoCaptureDeviceClient::OnIncomingCapturedData(
   }
 #endif  // BUILDFLAG(IS_CHROMEOS)
 
+#if BUILDFLAG(ARKWEB_WEBRTC)
+  int stride = format.stride > format.frame_size.width() ? format.stride : format.frame_size.width();
+#endif
   // libyuv::ConvertToI420 uses Rec601 to convert RGB to YUV.
   if (libyuv::ConvertToI420(
           data, length, y_plane_data, yplane_stride, u_plane_data,
           uv_plane_stride, v_plane_data, uv_plane_stride, /*crop_x=*/0,
-          /*crop_y=*/0, format.frame_size.width(),
+          /*crop_y=*/0,
+#if BUILDFLAG(ARKWEB_WEBRTC)
+          stride,
+#else
+          format.frame_size.width(),
+#endif
           (flip ? -1 : 1) * format.frame_size.height(), new_unrotated_width,
           new_unrotated_height, rotation_mode, fourcc_format) != 0) {
     DLOG(WARNING) << "Failed to convert buffer's pixel format to I420 from "

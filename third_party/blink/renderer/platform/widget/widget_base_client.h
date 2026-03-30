@@ -238,6 +238,10 @@ class WidgetBaseClient {
                                const gfx::Point& location) {}
   virtual void BindInputTargetClient(
       mojo::PendingReceiver<viz::mojom::blink::InputTargetClient> receiver) {}
+
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+  virtual void OnOverScrollOffsetChanged(float offset_x, float offset_y) {}
+#endif
 };
 
 }  // namespace blink

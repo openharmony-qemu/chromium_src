@@ -227,8 +227,7 @@ CreatePermissionPromptFunctionPtr g_create_permission_prompt_ptr = nullptr;
 
 }  // namespace
 
-void SetCreatePermissionPromptFunction(
-    CreatePermissionPromptFunctionPtr ptr) {
+void SetCreatePermissionPromptFunction(CreatePermissionPromptFunctionPtr ptr) {
   g_create_permission_prompt_ptr = ptr;
 }
 
@@ -239,10 +238,12 @@ std::unique_ptr<permissions::PermissionPrompt> CreatePermissionPrompt(
     bool default_handling = true;
     auto prompt = g_create_permission_prompt_ptr(web_contents, delegate,
                                                  &default_handling);
-    if (prompt)
+    if (prompt) {
       return prompt;
-    if (!default_handling)
+    }
+    if (!default_handling) {
       return nullptr;
+  }
   }
 
   Browser* browser = chrome::FindBrowserWithTab(web_contents);

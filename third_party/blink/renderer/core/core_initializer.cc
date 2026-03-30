@@ -72,6 +72,10 @@
 #include "third_party/blink/renderer/platform/wtf/allocator/partitions.h"
 #include "third_party/blink/renderer/platform/wtf/text/atomic_string_table.h"
 
+#if BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
+#include "third_party/blink/renderer/core/render_mojom/render_mojom_client.h"
+#endif  // BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
+
 namespace blink {
 
 CoreInitializer* CoreInitializer::instance_ = nullptr;
@@ -171,6 +175,10 @@ void CoreInitializer::Initialize() {
   CSSDefaultStyleSheets::Init();
 
   element_locator::TokenStreamMatcher::InitSets();
+
+#if BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
+  SysPropRenderObserverClientRep::Init();
+#endif  // BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
 }
 
 }  // namespace blink

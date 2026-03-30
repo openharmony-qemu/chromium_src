@@ -72,6 +72,7 @@
 #include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
 #include "ui/gfx/geometry/rect_conversions.h"
 #include "ui/gfx/geometry/size.h"
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/exported/web_element_utils.h"
 #include "ui/gfx/geometry/vector2d_f.h"
 
 namespace blink {
@@ -134,20 +135,23 @@ void WebElement::SetAttribute(const WebString& attr_name,
 }
 
 unsigned WebElement::AttributeCount() const {
-  if (!ConstUnwrap<Element>()->hasAttributes())
+  if (!ConstUnwrap<Element>()->hasAttributes()) {
     return 0;
+  }
   return ConstUnwrap<Element>()->Attributes().size();
 }
 
 WebString WebElement::AttributeLocalName(unsigned index) const {
-  if (index >= AttributeCount())
+  if (index >= AttributeCount()) {
     return WebString();
+  }
   return ConstUnwrap<Element>()->Attributes().at(index).LocalName();
 }
 
 WebString WebElement::AttributeValue(unsigned index) const {
-  if (index >= AttributeCount())
+  if (index >= AttributeCount()) {
     return WebString();
+  }
   return ConstUnwrap<Element>()->Attributes().at(index).Value();
 }
 
@@ -239,7 +243,12 @@ void WebElement::SelectText(bool select_all) {
   }
 }
 
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+void WebElement::PasteText(const WebString& text, bool replace_all, bool should_smart_replace,
+                           bool suppress_paste_event) {
+#else
 void WebElement::PasteText(const WebString& text, bool replace_all) {
+#endif
   if (!IsEditable()) {
     return;
   }
@@ -273,7 +282,11 @@ void WebElement::PasteText(const WebString& text, bool replace_all) {
                                 DataObject::CreateFromString(text));
   };
   // Fires "paste" event.
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  if (!suppress_paste_event && target->DispatchEvent(*ClipboardEvent::Create(
+#else
   if (target->DispatchEvent(*ClipboardEvent::Create(
+#endif
           event_type_names::kPaste, create_data_transfer(text))) !=
       DispatchEventResult::kNotCanceled) {
     return;
@@ -291,7 +304,11 @@ void WebElement::PasteText(const WebString& text, bool replace_all) {
   // Fires "textInput" and "input".
   target->DispatchEvent(
       *TextEvent::CreateForPlainTextPaste(frame->DomWindow(), text,
+                                      #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+                                          should_smart_replace));
+                                      #else      
                                           /*should_smart_replace=*/true));
+                                      #endif
 }
 
 std::vector<WebLabelElement> WebElement::Labels() const {
@@ -540,7 +557,9 @@ WebString WebElement::GetComputedValue(const WebString& property_name) {
   return computed_style->GetPropertyCSSValue(property_id)->CssText();
 }
 
-WebElement::WebElement(Element* elem) : WebNode(elem) {}
+WebElement::WebElement(Element* elem) : WebNode(elem) {
+  utils_ = new WebElementUtils();
+}
 
 DEFINE_WEB_NODE_TYPE_CASTS(WebElement, IsElementNode())
 

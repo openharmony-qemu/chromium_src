@@ -2534,7 +2534,7 @@ Node::InsertionNotificationRequest Node::InsertedInto(
          IsContainerNode() || GetDOMParts());
   if (insertion_point.isConnected()) {
     SetFlag(kIsConnectedFlag);
-#if DCHECK_IS_ON()
+#if DCHECK_IS_ON() || BUILDFLAG(IS_ARKWEB)
     insertion_point.GetDocument().IncrementNodeCount();
 #endif
   }
@@ -2561,7 +2561,7 @@ void Node::RemovedFrom(ContainerNode& insertion_point) {
       ClearChildNeedsStyleInvalidation();
     }
     ClearFlag(kIsConnectedFlag);
-#if DCHECK_IS_ON()
+#if DCHECK_IS_ON() || BUILDFLAG(IS_ARKWEB)
     insertion_point.GetDocument().DecrementNodeCount();
 #endif
   }
@@ -3250,7 +3250,22 @@ void Node::HandleLocalEvents(Event& event) {
   if (!GetEventTargetData()) {
     return;
   }
-
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  if (IsDisabledFormControl(this) && IsA<MouseEvent>(event) &&
+      !RuntimeEnabledFeatures::SendMouseEventsDisabledFormControlsEnabled()) {
+    if (HasEventListeners(event.type())) {
+      UseCounter::Count(GetDocument(),
+                        WebFeature::kDispatchMouseEventOnDisabledFormControl);
+      if (event.type() == event_type_names::kMousedown ||
+          event.type() == event_type_names::kMouseup) {
+        UseCounter::Count(
+            GetDocument(),
+            WebFeature::kDispatchMouseUpDownEventOnDisabledFormControl);
+      }
+    }
+    return;
+  }
+#endif
   FireEventListeners(event);
 }
 

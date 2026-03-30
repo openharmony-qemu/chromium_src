@@ -23,6 +23,9 @@
 #include "media/base/mime_util.h"
 #include "media/cdm/clear_key_cdm_common.h"
 #include "media/media_buildflags.h"
+#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
+#include "media/cdm/wiseplay_cdm_common.h"
+#endif
 
 namespace media {
 
@@ -362,6 +365,8 @@ void KeySystemsImpl::ProcessSupportedKeySystems(KeySystemInfos key_systems) {
 
     const auto base_key_system_name = key_system->GetBaseKeySystemName();
     DVLOG(1) << __func__ << ": Adding key system " << base_key_system_name;
+    LOG(INFO) << "[DRM]" << __func__ << ": Adding key system "
+              << base_key_system_name;
     key_system_info_vector_.push_back(std::move(key_system));
   }
 }

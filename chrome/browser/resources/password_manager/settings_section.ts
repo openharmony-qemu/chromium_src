@@ -102,7 +102,7 @@ export class SettingsSectionElement extends SettingsSectionElementBase {
             'actorLoginPermissions_.length, isActorLoginPermissionsEnabled_)',
       },
 
-      // <if expr="is_win or is_macosx or is_chromeos">
+      // <if expr="is_win or is_macosx or is_chromeos or is_ohos">
       isBiometricAuthenticationForFillingToggleVisible_: {
         type: Boolean,
         value() {
@@ -215,7 +215,7 @@ export class SettingsSectionElement extends SettingsSectionElementBase {
   declare private actorLoginPermissions_: ActorLoginPermission[];
   declare private isActorLoginPermissionsEnabled_: boolean;
   declare private shouldShowActorLoginPermissions_: boolean;
-  // <if expr="is_win or is_macosx or is_chromeos">
+  // <if expr="is_win or is_macosx or is_chromeos or is_ohos">
   declare private isBiometricAuthenticationForFillingToggleVisible_: boolean;
   // </if>
   declare private hasPasskeys_: boolean;
@@ -419,7 +419,7 @@ export class SettingsSectionElement extends SettingsSectionElementBase {
     this.removeActorLoginPermissionSite_ = undefined;
   }
 
-  // <if expr="is_win or is_macosx or is_chromeos">
+  // <if expr="is_win or is_macosx or is_chromeos or is_ohos">
   private switchBiometricAuthBeforeFillingState_(e: Event) {
     const biometricAuthenticationForFillingToggle =
         e.target as PrefToggleButtonElement;

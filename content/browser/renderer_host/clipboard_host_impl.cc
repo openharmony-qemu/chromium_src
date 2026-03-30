@@ -61,6 +61,10 @@
 #include "content/public/common/url_constants.h"
 #endif  // BUILDFLAG(IS_CHROMEOS)
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/content/browser/renderer_host/clipboard_host_impl_for_include.cc"
+#endif  // BUILDFLAG(IS_ARKWEB)
+
 namespace content {
 
 namespace {
@@ -914,5 +918,4 @@ void ClipboardHostImpl::StopObservingClipboard() {
   }
   clipboard_listener_.reset();
 }
-
 }  // namespace content

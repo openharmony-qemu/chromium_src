@@ -60,17 +60,17 @@
 #include "sandbox/policy/linux/bpf_tts_policy_linux.h"
 #endif  // BUILDFLAG(IS_CHROMEOS)
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 #include "media/gpu/buildflags.h"    // nogncheck
 #include "media/media_buildflags.h"  // nogncheck
 #if BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
 #include "sandbox/policy/linux/bpf_hardware_video_decoding_policy_linux.h"
 #endif  // BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 #include "sandbox/policy/linux/bpf_on_device_translation_policy_linux.h"
-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 
 using sandbox::bpf_dsl::Allow;
 using sandbox::bpf_dsl::ResultExpr;
@@ -206,7 +206,7 @@ std::unique_ptr<BPFBasePolicy> SandboxSeccompBPF::PolicyForSandboxType(
       return std::make_unique<ServiceProcessPolicy>();
     case sandbox::mojom::Sandbox::kSpeechRecognition:
       return std::make_unique<SpeechRecognitionProcessPolicy>();
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
     case sandbox::mojom::Sandbox::kOnDeviceTranslation:
       return std::make_unique<OnDeviceTranslationProcessPolicy>();
     case sandbox::mojom::Sandbox::kScreenAI:
@@ -219,6 +219,7 @@ std::unique_ptr<BPFBasePolicy> SandboxSeccompBPF::PolicyForSandboxType(
           HardwareVideoDecodingProcessPolicy::ComputePolicyType(
               options.use_amd_specific_policies));
 #endif  // BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
+#if !BUILDFLAG(IS_OHOS)
 #if BUILDFLAG(USE_LINUX_VIDEO_ACCELERATION)
     case sandbox::mojom::Sandbox::kHardwareVideoEncoding:
       // TODO(b/255554267): we're using the GPU process sandbox policy for now
@@ -226,7 +227,8 @@ std::unique_ptr<BPFBasePolicy> SandboxSeccompBPF::PolicyForSandboxType(
       // just for hardware video encoding.
       return GetGpuProcessSandbox(options, MremapPolicy::kBlock);
 #endif  // BUILDFLAG(USE_LINUX_VIDEO_ACCELERATION)
-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#endif
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 #if BUILDFLAG(IS_CHROMEOS)
     case sandbox::mojom::Sandbox::kIme:
       return std::make_unique<ImeProcessPolicy>();
@@ -235,7 +237,9 @@ std::unique_ptr<BPFBasePolicy> SandboxSeccompBPF::PolicyForSandboxType(
     case sandbox::mojom::Sandbox::kNearby:
       return std::make_unique<NearbyProcessPolicy>();
 #endif  // BUILDFLAG(IS_CHROMEOS)
+#if !BUILDFLAG(IS_OHOS)
     case sandbox::mojom::Sandbox::kZygoteIntermediateSandbox:
+#endif
     case sandbox::mojom::Sandbox::kNoSandbox:
       NOTREACHED();
   }
@@ -257,10 +261,15 @@ void SandboxSeccompBPF::RunSandboxSanityChecks(
       // Without the sandbox, this would EBADF.
       syscall_ret = fchmod(-1, 07777);
       CHECK_EQ(-1, syscall_ret);
+#if !BUILDFLAG(IS_OHOS)
+      // in ohos EPERM is always 1, not equal to errno
       CHECK_EQ(EPERM, errno);
+#endif
 
 // Run most of the sanity checks only in DEBUG mode to avoid a perf.
 // impact.
+// On ohos, no such path for sanity checks
+#if !BUILDFLAG(IS_OHOS)
 #if !defined(NDEBUG)
       // open() must be restricted.
       syscall_ret = open("/etc/passwd", O_RDONLY);
@@ -277,20 +286,23 @@ void SandboxSeccompBPF::RunSandboxSanityChecks(
       CHECK_EQ(-1, syscall_ret);
       CHECK_EQ(EPERM, errno);
 #endif  // !defined(NDEBUG)
+#endif  // !BUILDFLAG(IS_OHOS)
       return;
     }
 #if BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
     case sandbox::mojom::Sandbox::kHardwareVideoDecoding:
 #endif  // BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
+#if !BUILDFLAG(IS_OHOS)
 #if BUILDFLAG(USE_LINUX_VIDEO_ACCELERATION)
     case sandbox::mojom::Sandbox::kHardwareVideoEncoding:
 #endif  // BUILDFLAG(USE_LINUX_VIDEO_ACCELERATION)
+#endif
 #if BUILDFLAG(IS_CHROMEOS)
     case sandbox::mojom::Sandbox::kIme:
     case sandbox::mojom::Sandbox::kTts:
     case sandbox::mojom::Sandbox::kNearby:
 #endif  // BUILDFLAG(IS_CHROMEOS)
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
     case sandbox::mojom::Sandbox::kShapeDetection:
     case sandbox::mojom::Sandbox::kScreenAI:
     case sandbox::mojom::Sandbox::kOnDeviceTranslation:
@@ -304,7 +316,9 @@ void SandboxSeccompBPF::RunSandboxSanityChecks(
     case sandbox::mojom::Sandbox::kOnDeviceModelExecution:
     case sandbox::mojom::Sandbox::kUtility:
     case sandbox::mojom::Sandbox::kNoSandbox:
+#if !BUILDFLAG(IS_OHOS)
     case sandbox::mojom::Sandbox::kZygoteIntermediateSandbox:
+#endif
       // Otherwise, no checks required.
       return;
   }

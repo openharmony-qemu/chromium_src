@@ -93,6 +93,11 @@ class ClosuresForMojoResponse
   void SetScriptedPrintPreviewQuitClosure(base::OnceClosure quit_print_preview);
   bool HasScriptedPrintPreviewQuitClosure() const;
   void RunScriptedPrintPreviewQuitClosure();
+#if BUILDFLAG(ARKWEB_PRINT)
+  void SetPrintRequestedPreviewQuitClosure(
+      base::OnceClosure quit_print_preview);
+  void RunPrintRequestedPreviewQuitClosure();
+#endif  // BUILDFLAG(ARKWEB_PRINT)
 
  private:
   friend class base::RefCounted<ClosuresForMojoResponse>;
@@ -100,6 +105,9 @@ class ClosuresForMojoResponse
 
   // Stores quit closure for the runloop that is waiting for a Mojo reply.
   base::OnceClosure scripted_print_preview_quit_closure_;
+#if BUILDFLAG(ARKWEB_PRINT)
+  base::OnceClosure print_requested_preview_quit_closure_;
+#endif  // BUILDFLAG(ARKWEB_PRINT)
 };
 
 // PrintRenderFrameHelper handles most of the printing grunt work for
@@ -278,6 +286,10 @@ class PrintRenderFrameHelper
   void PrintingDone(bool success) override;
   void ConnectToPdfRenderer() override;
   void PrintNodeUnderContextMenu() override;
+#if BUILDFLAG(ARKWEB_PRINT)
+  void DidDispatchPrintEvent(bool isBefore) override;
+  void ApplicationPrintRequestedPages() override;
+#endif  // BUILDFLAG(ARKWEB_PRINT)
 
   // Update |ignore_css_margins_| based on settings.
   void UpdateFrameMarginsCssInfo(const base::Value::Dict& settings);
@@ -422,6 +434,10 @@ class PrintRenderFrameHelper
   // Called when the connection with the |preview_ui_| goes away.
   void OnPreviewDisconnect();
 #endif  // BUILDFLAG(ENABLE_PRINT_PREVIEW)
+
+#if BUILDFLAG(ARKWEB_PRINT)
+  bool CheckCancel();
+#endif // BUILDFLAG(ARKWEB_PRINT)
 
   // `settings` must be valid.
   void SetPrintPagesParams(const mojom::PrintPagesParams& settings);
@@ -638,6 +654,11 @@ class PrintRenderFrameHelper
 
   void SetupOnStopLoadingTimeout();
   void PrintRequestedPagesInternal(bool already_notified_frame);
+  bool PrintQuitLoop(blink::WebLocalFrame* web_frame);
+  void ArkWebPrintNode(const blink::WebNode& node);
+#if BUILDFLAG(ARKWEB_PRINT)
+  blink::WebLocalFrame* ArkWebUpdateFrame(blink::WebLocalFrame* web_frame);
+#endif  // BUILDFLAG(ARKWEB_PRINT)
 
   ScriptingThrottler scripting_throttler_;
 
@@ -680,6 +701,10 @@ class PrintRenderFrameHelper
   PreviewDocumentTestCallback preview_document_test_callback_;
 
   base::WeakPtrFactory<PrintRenderFrameHelper> weak_ptr_factory_{this};
+
+#if BUILDFLAG(ARKWEB_PRINT)
+  static blink::WebLocalFrame* static_web_frame_;
+#endif  // BUILDFLAG(ARKWEB_PRINT)
 };
 
 }  // namespace printing

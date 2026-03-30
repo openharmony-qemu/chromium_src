@@ -103,4 +103,7 @@
 <translation id="8901569739625249689"><ph name="QUANTITY" /> كيلوبايت</translation>
 <translation id="9132465097189459683">آخر...</translation>
 <translation id="916607977885256133">نافذة ضمن النافذة</translation>
+<translation id="IDS_MEDIA_REMOTING_CAST_CASTING">جارٍ البث…</translation>
+<translation id="IDS_MEDIA_REMOTING_CAST_STOP_CAST">إنهاء</translation>
+<translation id="IDS_MEDIA_REMOTING_CAST_SWITCH_DEVICE">تبديل الأجهزة</translation>
 </translationbundle>

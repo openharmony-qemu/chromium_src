@@ -47,7 +47,9 @@ source_set("lib") {
     "//services/device/public/mojom:geolocation_internals",
     "//services/device/public/mojom:usb",
     "//services/device/public/mojom:usb_test",
+    "//services/device/res_sched_report",
     "//services/device/screen_orientation",
+    "//services/device/sysprop_render_observer",
     "//services/device/time_zone_monitor",
     "//services/device/usb/mojo",
     "//services/device/vibration",
@@ -79,6 +81,12 @@ source_set("lib") {
 
   if (is_chromeos && use_dbus) {
     deps += [ "//services/device/media_transfer_protocol" ]
+  }
+
+  if (is_arkweb) {
+    deps += [
+      "//arkweb/chromium_ext/services/device/business_risk_intelligent_detection",
+    ]
   }
 
   if (is_serial_enabled_platform) {

@@ -210,6 +210,10 @@ class BASE_EXPORT WorkerThread : public RefCountedThreadSafe<WorkerThread>,
 
   size_t sequence_num() const { return sequence_num_; }
 
+#if BUILDFLAG(IS_ARKWEB)
+  PlatformThreadId GetRealTid();
+#endif
+
  protected:
   friend class RefCountedThreadSafe<WorkerThread>;
   class Thread;
@@ -297,6 +301,10 @@ class BASE_EXPORT WorkerThread : public RefCountedThreadSafe<WorkerThread>,
 
   // Set once JoinForTesting() has been called.
   AtomicFlag join_called_for_testing_;
+
+#if BUILDFLAG(IS_ARKWEB)
+  PlatformThreadId realtid_ = kInvalidThreadId;
+#endif
 };
 
 }  // namespace internal

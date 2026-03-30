@@ -129,6 +129,12 @@
 #include "content/public/browser/plugin_service.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "base/base_switches.h"
+#include "content/browser/web_contents/web_contents_impl.h"
+#include "content/public/browser/web_contents.h"
+#endif
+
 namespace content {
 
 namespace {
@@ -291,6 +297,11 @@ std::unique_ptr<network::ResourceRequest> CreateResourceRequest(
   if (request_info.is_outermost_main_frame) {
     load_flags |= net::LOAD_MAIN_FRAME_DEPRECATED;
     load_flags |= net::LOAD_CAN_USE_RESTRICTED_PREFETCH_FOR_MAIN_FRAME;
+#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+    if(frame_tree_node->navigation_request()->load_ignore_cache_params){
+      load_flags |= net::LOAD_IGNORE_CACHE_CONTROL;
+    }
+#endif
   }
 
   if (URLLoaderFactoryParamsHelper::IsMainFrameOriginRecentlyAccessed(
@@ -341,9 +352,30 @@ std::unique_ptr<network::ResourceRequest> CreateResourceRequest(
           ? network::mojom::AttributionReportingEligibility::kNavigationSource
           : network::mojom::AttributionReportingEligibility::kUnset;
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableLoggerReport)) {
+    new_request->usage_scenario_ =
+        WebContents::FromFrameTreeNodeId(frame_tree_node->frame_tree_node_id())
+            ->GetOrCreateWebPreferences()
+            .usage_scenario;
+  } else {
+    new_request->usage_scenario_ = 1;
+  }
+#endif
+
   new_request->shared_storage_writable_eligible =
       request_info.shared_storage_writable_eligible;
   new_request->is_ad_tagged = request_info.is_ad_tagged;
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          ::switches::kEnableNwebEx)) {
+    new_request->retry_with_fallback_proxy =
+        request_info.retry_with_fallback_proxy;
+    new_request->original_error_code = request_info.original_error_code;
+  }
+#endif  
 
   new_request->skip_service_worker =
       request_info.begin_params->skip_service_worker;
@@ -1533,7 +1565,12 @@ void NavigationURLLoaderImpl::OnReceiveResponse(
   // When a plugin intercepted the response, we don't want to download it.
   bool is_download =
       !head->intercepted_by_plugin && (must_download || !known_mime_type);
-
+#if BUILDFLAG(IS_ARKWEB)
+  LOG(INFO) << "is_download " << is_download
+            << " must_download " << must_download
+            << " known_mime_type " << known_mime_type
+            << " mime_type " << head->mime_type;
+#endif
   CallOnReceivedResponse(std::move(head),
                          std::move(url_loader_client_endpoints), is_download);
 }
@@ -1969,10 +2006,26 @@ NavigationURLLoaderImpl::CreateURLLoaderThrottles() {
                          "NavigationURLLoaderImpl::CreateURLLoaderThrottles",
                          TRACE_ID_LOCAL(this),
                          TRACE_EVENT_FLAG_FLOW_IN | TRACE_EVENT_FLAG_FLOW_OUT);
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  bool is_prerendering = false;
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+      ::switches::kEnableNwebEx) &&
+      request_info_) {
+    is_prerendering =
+        request_info_->is_main_frame && !request_info_->is_primary_main_frame;
+  }
+#endif
+
   auto throttles = CreateContentBrowserURLLoaderThrottles(
       *resource_request_, browser_context_, web_contents_getter_,
       navigation_ui_data_.get(), frame_tree_node_id_,
-      request_info_->navigation_id);
+      request_info_->navigation_id
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+,
+      is_prerendering
+#endif
+      );
   throttles.push_back(std::make_unique<NavigationTimingThrottle>(
       resource_request_->is_outermost_main_frame, loader_creation_time_));
   return throttles;
@@ -2213,7 +2266,11 @@ NavigationURLLoaderImpl::CreateTerminalNonNetworkLoaderFactory(
     return DataURLLoaderFactory::Create();
   }
 
+#if BUILDFLAG(ARKWEB_RECOURCE_SCHEME)
+  if (url.GetScheme() == url::kFileScheme || url.GetScheme() == url::kResourcesScheme) {
+#else
   if (url.GetScheme() == url::kFileScheme) {
+#endif
     // USER_BLOCKING because this scenario is exactly one of the examples
     // given by the doc comment for USER_BLOCKING:
     // Loading and rendering a web page after the user clicks a link.
@@ -2386,6 +2443,14 @@ void NavigationURLLoaderImpl::FollowRedirect(
   loader_holder_.SetModifiedHeadersOnRedirect(
       std::move(removed_headers), std::move(modified_headers),
       std::move(modified_cors_exempt_headers));
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          ::switches::kEnableNwebEx)) {
+    resource_request_->retry_with_fallback_proxy = false;
+    resource_request_->original_error_code = net::OK;
+  }
+#endif
 
   Restart();
 }

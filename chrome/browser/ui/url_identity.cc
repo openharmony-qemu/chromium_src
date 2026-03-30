@@ -69,7 +69,11 @@ UrlIdentity CreateDefaultUrlIdentityFromUrl(const GURL& url,
 UrlIdentity CreateChromeExtensionIdentityFromUrl(Profile* profile,
                                                  const GURL& url,
                                                  const FormatOptions& options) {
-  DCHECK(url.SchemeIs(extensions::kExtensionScheme));
+  DCHECK(url.SchemeIs(extensions::kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+         || url.SchemeIs(extensions::kArkwebExtensionScheme)
+#endif
+  );
 
   DCHECK(profile) << "Profile cannot be null when type is Chrome Extensions.";
 
@@ -149,7 +153,11 @@ UrlIdentity UrlIdentity::CreateFromUrl(Profile* profile,
                                        const TypeSet& allowed_types,
                                        const FormatOptions& options) {
 #if BUILDFLAG(ENABLE_EXTENSIONS)
-  if (url.SchemeIs(extensions::kExtensionScheme)) {
+  if (url.SchemeIs(extensions::kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      || url.SchemeIs(extensions::kArkwebExtensionScheme)
+#endif
+  ) {
     DCHECK(allowed_types.Has(Type::kChromeExtension));
     return CreateChromeExtensionIdentityFromUrl(profile, url, options);
   }

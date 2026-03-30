@@ -22,6 +22,8 @@
 #include "third_party/blink/public/platform/web_string.h"
 #include "third_party/perfetto/include/perfetto/tracing/traced_proto.h"
 
+#include "arkweb/chromium_ext/content/public/renderer/render_thread_ohos.h"
+
 namespace base {
 class UnguessableToken;
 class WaitableEvent;
@@ -46,7 +48,8 @@ class SyncChannel;
 namespace content {
 class RenderThreadObserver;
 
-class CONTENT_EXPORT RenderThread : virtual public ChildThread {
+class CONTENT_EXPORT RenderThread : public RenderThreadOhos,
+                                    virtual public ChildThread {
  public:
   // Returns the one render thread for this process.  Note that this can only
   // be accessed when running on the render thread itself.

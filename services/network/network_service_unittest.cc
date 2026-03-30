@@ -180,7 +180,11 @@ TEST_F(NetworkServiceTest, CreateContextWithoutChannelID) {
 
 TEST_F(NetworkServiceTest, AuthDefaultParams) {
   mojo::Remote<mojom::NetworkContext> network_context_remote;
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+  ArkWebNetworkContextExt network_context(
+#else
   NetworkContext network_context(
+#endif
       service(), network_context_remote.BindNewPipeAndPassReceiver(),
       CreateContextParams());
   net::HttpAuthHandlerRegistryFactory* auth_handler_factory =
@@ -222,7 +226,11 @@ TEST_F(NetworkServiceTest, AuthSchemesDynamicallyChanging) {
   service()->SetUpHttpAuth(mojom::HttpAuthStaticParams::New());
 
   mojo::Remote<mojom::NetworkContext> network_context_remote;
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+  ArkWebNetworkContextExt network_context(
+#else
   NetworkContext network_context(
+#endif
       service(), network_context_remote.BindNewPipeAndPassReceiver(),
       CreateContextParams());
   net::HttpAuthHandlerRegistryFactory* auth_handler_factory =
@@ -299,7 +307,11 @@ TEST_F(NetworkServiceTest, AuthSchemesNone) {
   service()->SetUpHttpAuth(mojom::HttpAuthStaticParams::New());
 
   mojo::Remote<mojom::NetworkContext> network_context_remote;
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+  ArkWebNetworkContextExt network_context(
+#else
   NetworkContext network_context(
+#endif
       service(), network_context_remote.BindNewPipeAndPassReceiver(),
       CreateContextParams());
   net::HttpAuthHandlerRegistryFactory* auth_handler_factory =
@@ -336,7 +348,11 @@ TEST_F(NetworkServiceTest, AuthGssapiLibraryName) {
   service()->ConfigureHttpAuthPrefs(std::move(dynamic_auth_params));
 
   mojo::Remote<mojom::NetworkContext> network_context_remote;
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+  ArkWebNetworkContextExt network_context(
+#else
   NetworkContext network_context(
+#endif
       service(), network_context_remote.BindNewPipeAndPassReceiver(),
       CreateContextParams());
   net::HttpAuthHandlerRegistryFactory* auth_handler_factory =
@@ -358,7 +374,11 @@ TEST_F(NetworkServiceTest, AuthServerAllowlist) {
 
   // Create a network context, which should reflect the allowlist.
   mojo::Remote<mojom::NetworkContext> network_context_remote;
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+  ArkWebNetworkContextExt network_context(
+#else
   NetworkContext network_context(
+#endif
       service(), network_context_remote.BindNewPipeAndPassReceiver(),
       CreateContextParams());
   net::HttpAuthHandlerFactory* auth_handler_factory =
@@ -408,7 +428,11 @@ TEST_F(NetworkServiceTest, AuthDelegateAllowlist) {
 
   // Create a network context, which should reflect the allowlist.
   mojo::Remote<mojom::NetworkContext> network_context_remote;
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+  ArkWebNetworkContextExt network_context(
+#else
   NetworkContext network_context(
+#endif
       service(), network_context_remote.BindNewPipeAndPassReceiver(),
       CreateContextParams());
   net::HttpAuthHandlerFactory* auth_handler_factory =
@@ -452,7 +476,11 @@ TEST_F(NetworkServiceTest, AuthDelegateAllowlist) {
 TEST_F(NetworkServiceTest, DelegateByKdcPolicy) {
   // Create a network context, which should use default value.
   mojo::Remote<mojom::NetworkContext> network_context_remote;
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+  ArkWebNetworkContextExt network_context(
+#else
   NetworkContext network_context(
+#endif
       service(), network_context_remote.BindNewPipeAndPassReceiver(),
       CreateContextParams());
   net::HttpAuthHandlerFactory* auth_handler_factory =
@@ -482,7 +510,11 @@ TEST_F(NetworkServiceTest, AuthNegotiateCnameLookup) {
 
   // Create a network context, which should reflect the setting.
   mojo::Remote<mojom::NetworkContext> network_context_remote;
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+  ArkWebNetworkContextExt network_context(
+#else
   NetworkContext network_context(
+#endif
       service(), network_context_remote.BindNewPipeAndPassReceiver(),
       CreateContextParams());
   net::HttpAuthHandlerFactory* auth_handler_factory =
@@ -518,7 +550,11 @@ TEST_F(NetworkServiceTest, AuthEnableNegotiatePort) {
 
   // Create a network context, which should reflect the setting.
   mojo::Remote<mojom::NetworkContext> network_context_remote;
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+  ArkWebNetworkContextExt network_context(
+#else
   NetworkContext network_context(
+#endif
       service(), network_context_remote.BindNewPipeAndPassReceiver(),
       CreateContextParams());
   net::HttpAuthHandlerFactory* auth_handler_factory =
@@ -979,7 +1015,11 @@ TEST_F(NetworkServiceTest, AuthNtlmV2Enabled) {
 
   // Create a network context, which should reflect the setting.
   mojo::Remote<mojom::NetworkContext> network_context_remote;
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+  ArkWebNetworkContextExt network_context(
+#else
   NetworkContext network_context(
+#endif
       service(), network_context_remote.BindNewPipeAndPassReceiver(),
       CreateContextParams());
   net::HttpAuthHandlerFactory* auth_handler_factory =
@@ -1018,7 +1058,11 @@ TEST_F(NetworkServiceTest, AuthAndroidNegotiateAccountType) {
 
   // Create a network context, which should reflect the setting.
   mojo::Remote<mojom::NetworkContext> network_context_remote;
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+  ArkWebNetworkContextExt network_context(
+#else
   NetworkContext network_context(
+#endif
       service(), network_context_remote.BindNewPipeAndPassReceiver(),
       CreateContextParams());
   net::HttpAuthHandlerFactory* auth_handler_factory =
@@ -1075,7 +1119,11 @@ TEST_F(NetworkServiceTest, SetMaxConnectionsPerProxyChain) {
 // and new network contexts.
 TEST_F(NetworkServiceTest, DisableCTEnforcement) {
   mojo::Remote<mojom::NetworkContext> network_context_remote;
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+  ArkWebNetworkContextExt network_context(
+#else
   NetworkContext network_context(
+#endif
       service(), network_context_remote.BindNewPipeAndPassReceiver(),
       CreateContextParams());
   net::TransportSecurityState* transport_security_state =
@@ -1089,7 +1137,11 @@ TEST_F(NetworkServiceTest, DisableCTEnforcement) {
   EXPECT_TRUE(transport_security_state->is_ct_emergency_disabled_for_testing());
 
   mojo::Remote<mojom::NetworkContext> new_network_context_remote;
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+  ArkWebNetworkContextExt new_network_context(
+#else
   NetworkContext new_network_context(
+#endif
       service(), new_network_context_remote.BindNewPipeAndPassReceiver(),
       CreateContextParams());
   transport_security_state =
@@ -1256,7 +1308,11 @@ class NetworkServiceTestWithService : public testing::Test {
   void SetUp() override {
     test_server_.AddDefaultHandlers(base::FilePath(kServicesTestData));
     ASSERT_TRUE(test_server_.Start());
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+    service_ = std::make_unique<ArkWebNetworkServiceExt>(
+#else
     service_ = std::make_unique<NetworkService>(
+#endif
         nullptr, network_service_.BindNewPipeAndPassReceiver(),
         /*delay_initialization_until_set_client=*/true);
     service_->Initialize(GetParams());

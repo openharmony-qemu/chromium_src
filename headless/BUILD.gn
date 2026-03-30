@@ -597,7 +597,18 @@ test("headless_unittests") {
 
   defines = []
 
+  if (is_ohos) {
+    defines += [
+      "HEADLESS_UNITTESTS_OHOS_ENABLE",
+    ]
+
+    sources += [
+      "//components/embedder_support/user_agent_utils.cc",
+    ]
+  }
+
   deps = [
+    "//cef:libcef_static",
     ":headless_non_renderer",
     ":headless_shell_lib",
     "//base/test:run_all_unittests",

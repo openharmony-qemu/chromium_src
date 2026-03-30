@@ -791,6 +791,7 @@ class DocWriter(xml_formatted_writer.XMLFormattedWriter):
         'win7': 'Windows 7',
         'ios': 'iOS',
         'fuchsia': 'Fuchsia',
+        'ohos': 'OpenHarmony',
     }
     # Human-readable names of supported products.
     self._PRODUCT_MAP = {

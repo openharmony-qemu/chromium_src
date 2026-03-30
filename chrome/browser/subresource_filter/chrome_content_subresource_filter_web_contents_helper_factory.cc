@@ -39,6 +39,7 @@ void CreateSubresourceFilterWebContentsHelper(
       g_browser_process->subresource_filter_ruleset_service();
   subresource_filter::VerifiedRulesetDealer::Handle* dealer =
       ruleset_service ? ruleset_service->GetRulesetDealer() : nullptr;
+
   subresource_filter::ContentSubresourceFilterWebContentsHelper::
       CreateForWebContents(
           web_contents,

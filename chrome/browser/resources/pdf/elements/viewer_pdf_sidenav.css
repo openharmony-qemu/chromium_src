@@ -28,6 +28,12 @@
   min-width: 64px;
 }
 
+@media(max-width: 500px) {
+  #icons {
+    display: none;
+  }
+}
+
 /* These are dummy styles currently - replace with real content. */
 #content {
   color: white;

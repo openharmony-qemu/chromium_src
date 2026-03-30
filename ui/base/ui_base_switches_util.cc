@@ -12,6 +12,7 @@
 #if BUILDFLAG(IS_ANDROID)
 #include "base/android/android_info.h"
 #endif
+#include "arkweb/build/features/features.h"
 
 namespace switches {
 

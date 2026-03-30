@@ -25,11 +25,13 @@
  */
 
 #include "third_party/blink/renderer/modules/media_controls/media_controls_impl.h"
+#if BUILDFLAG(ARKWEB_MEDIA)
+#include "arkweb/chromium_ext/third_party/blink/renderer/modules/media_controls/media_controls_impl_utils.h"
+#endif  // BUILDFLAG(ARKWEB_MEDIA)
 
 #include <array>
 
 #include "base/auto_reset.h"
-#include "media/base/media_switches.h"
 #include "third_party/blink/public/platform/platform.h"
 #include "third_party/blink/public/platform/task_type.h"
 #include "third_party/blink/public/platform/user_metrics_action.h"
@@ -72,6 +74,12 @@
 #include "third_party/blink/renderer/modules/media_controls/elements/media_control_display_cutout_fullscreen_button_element.h"
 #include "third_party/blink/renderer/modules/media_controls/elements/media_control_download_button_element.h"
 #include "third_party/blink/renderer/modules/media_controls/elements/media_control_elements_helper.h"
+#if BUILDFLAG(ARKWEB_MEDIA)
+#include "arkweb/chromium_ext/third_party/blink/renderer/modules/media_controls/elements/media_control_entered_fullscreen_panel_element_ext.h"
+#include "arkweb/chromium_ext/third_party/blink/renderer/modules/media_controls/elements/media_control_entered_fullscreen_title_display_element_ext.h"
+#include "arkweb/chromium_ext/third_party/blink/renderer/modules/media_controls/elements/media_control_playback_speed_list_element_ext.h"
+#include "arkweb/chromium_ext/third_party/blink/renderer/modules/media_controls/elements/media_control_scrubbing_panel_element.h"
+#endif  // BUILDFLAG(ARKWEB_MEDIA)
 #include "third_party/blink/renderer/modules/media_controls/elements/media_control_fullscreen_button_element.h"
 #include "third_party/blink/renderer/modules/media_controls/elements/media_control_loading_panel_element.h"
 #include "third_party/blink/renderer/modules/media_controls/elements/media_control_mute_button_element.h"
@@ -109,6 +117,14 @@
 #include "third_party/blink/renderer/platform/web_test_support.h"
 #include "third_party/blink/renderer/platform/wtf/text/strcat.h"
 #include "ui/gfx/geometry/size.h"
+
+#if BUILDFLAG(ARKWEB_PIP) || BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+#include "base/ohos/sys_info_utils_ext.h"
+#endif // ARKWEB_PIP || ARKWEB_VIDEO_ASSISTANT
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+#include "arkweb/chromium_ext/third_party/blink/renderer/modules/media_controls/media_controls_impl_for_include.cc"
+#endif // ARKWEB_VIDEO_ASSISTANT
 
 namespace blink {
 
@@ -177,6 +193,9 @@ bool ShouldShowPlaybackSpeedButton(HTMLMediaElement& media_element) {
     return false;
   }
 
+  if (!MediaControlsImplUtils::ShouldShowPlaybackSpeedButtonExt(media_element)) {
+    return false;
+  }
   return true;
 }
 
@@ -220,6 +239,18 @@ bool ShouldShowCastButton(HTMLMediaElement& media_element) {
         WebFeature::kHTMLMediaElementControlsListNoRemotePlayback);
     return false;
   }
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+  if (document.GetSettings() &&
+      (!document.GetSettings()->GetCastEnabled())) {
+    LOG(INFO) << "MediaControlsImpl::ShouldShowCastButton cast disabled";
+    return false;
+  }
+  if (!media_element.MediaCastBottonShow()) {
+    LOG(INFO) << "MediaControlsImpl::ShouldShowCastButton need refresh";
+    return false;
+  }
+#endif
 
   return RemotePlayback::From(media_element).RemotePlaybackAvailable();
 }
@@ -405,6 +436,7 @@ MediaControlsImpl::MediaControlsImpl(HTMLMediaElement& media_element)
       orientation_lock_delegate_(nullptr),
       rotate_to_fullscreen_delegate_(nullptr),
       display_cutout_delegate_(nullptr),
+      mediaControlsImplUtils_(this, media_element),
       hide_media_controls_timer_(
           media_element.GetDocument().GetTaskRunner(TaskType::kInternalMedia),
           this,
@@ -429,7 +461,12 @@ MediaControlsImpl::MediaControlsImpl(HTMLMediaElement& media_element)
           this,
           &MediaControlsImpl::VolumeSliderWantedTimerFired),
       text_track_manager_(
-          MakeGarbageCollected<MediaControlsTextTrackManager>(media_element)) {
+          MakeGarbageCollected<MediaControlsTextTrackManager>(media_element))
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+      ,scrubbing_timer_(media_element.GetDocument().GetTaskRunner(TaskType::kInternalMedia),
+          this, &MediaControlsImpl::ScrubbingTimerFired)
+#endif
+{
   // On touch devices, start with the assumption that the user will interact via
   // touch events.
   Settings* settings = media_element.GetDocument().GetSettings();
@@ -445,6 +482,7 @@ MediaControlsImpl* MediaControlsImpl::Create(HTMLMediaElement& media_element,
   controls->SetShadowPseudoId(AtomicString("-webkit-media-controls"));
   controls->InitializeControls();
   controls->Reset();
+  MediaControlsImplUtils::CreateExt(controls, media_element);
 
   if (RuntimeEnabledFeatures::VideoFullscreenOrientationLockEnabled() &&
       IsA<HTMLVideoElement>(media_element)) {
@@ -539,6 +577,7 @@ MediaControlsImpl* MediaControlsImpl::Create(HTMLMediaElement& media_element,
 // +-MediaControlDisplayCutoutFullscreenElement
 //       (-internal-media-controls-display-cutout-fullscreen-button)
 void MediaControlsImpl::InitializeControls() {
+  mediaControlsImplUtils_.InitializeControlsExt();
   if (ShouldShowVideoControls()) {
     loading_panel_ =
         MakeGarbageCollected<MediaControlLoadingPanelElement>(*this);
@@ -570,6 +609,10 @@ void MediaControlsImpl::InitializeControls() {
   if (ShouldShowVideoControls()) {
     media_button_panel_ =
         MakeGarbageCollected<MediaControlButtonPanelElement>(*this);
+#if BUILDFLAG(ARKWEB_MEDIA)
+    scrubbing_panel_ =
+        MakeGarbageCollected<MediaControlScrubbingPanelElement>(*this);
+#endif
     scrubbing_message_ =
         MakeGarbageCollected<MediaControlScrubbingMessageElement>(*this);
   }
@@ -646,7 +689,7 @@ void MediaControlsImpl::InitializeControls() {
   ParserAppendChild(text_track_list_);
 
   playback_speed_list_ =
-      MakeGarbageCollected<MediaControlPlaybackSpeedListElement>(*this);
+      MakeGarbageCollected<MediaControlPlaybackSpeedListElementExt>(*this);
   ParserAppendChild(playback_speed_list_);
 
   video_track_selector_list_ =
@@ -668,6 +711,18 @@ void MediaControlsImpl::InitializeControls() {
       MakeGarbageCollected<MediaControlPlayButtonElement>(*this)));
   overflow_list_->ParserAppendChild(fullscreen_button_->CreateOverflowElement(
       MakeGarbageCollected<MediaControlFullscreenButtonElement>(*this)));
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  if (ShouldShowVideoControlsHM()) {
+    if (picture_in_picture_button_) {
+      overflow_list_->ParserAppendChild(
+          picture_in_picture_button_->CreateOverflowElement(
+              MakeGarbageCollected<MediaControlPictureInPictureButtonElement>(
+                  *this)));
+      overflow_list_->ParserAppendChild(
+          overflow_list_->CreateSplitLineItem());
+    }
+  }
+#endif
   overflow_list_->ParserAppendChild(download_button_->CreateOverflowElement(
       MakeGarbageCollected<MediaControlDownloadButtonElement>(*this)));
   overflow_list_->ParserAppendChild(mute_button_->CreateOverflowElement(
@@ -690,18 +745,32 @@ void MediaControlsImpl::InitializeControls() {
           MakeGarbageCollected<MediaControlTrackSelectorMenuButtonElement>(
               *this, WebMediaPlayer::TrackType::kAudioTrack)));
 
+  #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  if (!ShouldShowVideoControlsHM()) {
+#endif
   if (picture_in_picture_button_) {
     overflow_list_->ParserAppendChild(
         picture_in_picture_button_->CreateOverflowElement(
             MakeGarbageCollected<MediaControlPictureInPictureButtonElement>(
                 *this)));
   }
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  }
+#endif
 
   // Set the default CSS classes.
   UpdateCSSClassFromState();
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  if (ShouldShowVideoControlsHM()) {
+    mediaControlsImplUtils_.UpdateDeviceCSSClassExt();
+  }
+#endif // ARKWEB_VIDEO_ASSISTANT
 }
 
 void MediaControlsImpl::PopulatePanel() {
+  if (mediaControlsImplUtils_.PopulatePanelExtVideoAssistant()) {
+    return;
+  }
   // Clear the panels.
   panel_->SetInnerHTMLWithoutTrustedTypes("");
   if (media_button_panel_)
@@ -709,7 +778,11 @@ void MediaControlsImpl::PopulatePanel() {
 
   Element* button_panel = panel_;
   if (ShouldShowVideoControls()) {
+#if BUILDFLAG(ARKWEB_MEDIA)
+    mediaControlsImplUtils_.PopulatePanelExt();
+#else
     MaybeParserAppendChild(panel_, scrubbing_message_);
+#endif
     if (display_cutout_fullscreen_button_)
       panel_->ParserAppendChild(display_cutout_fullscreen_button_);
 
@@ -846,6 +919,9 @@ void MediaControlsImpl::UpdateCSSClassFromState() {
         overflow_menu_->setAttribute(html_names::kDisabledAttr, g_empty_atom);
         updated = true;
       }
+      if (mediaControlsImplUtils_.UpdateCSSClassFromStateEnablePlaybackSpeedButton()) {
+        updated = true;
+      }
     } else {
       if (play_button_->FastHasAttribute(html_names::kDisabledAttr)) {
         play_button_->removeAttribute(html_names::kDisabledAttr);
@@ -856,6 +932,9 @@ void MediaControlsImpl::UpdateCSSClassFromState() {
         overflow_menu_->removeAttribute(html_names::kDisabledAttr);
         updated = true;
       }
+      if (mediaControlsImplUtils_.UpdateCSSClassFromStateDisablePlaybackSpeedButton()) {
+        updated = true;
+      }
     }
 
     if (state == kNoSource || state == kNotLoaded) {
@@ -863,11 +942,13 @@ void MediaControlsImpl::UpdateCSSClassFromState() {
         timeline_->setAttribute(html_names::kDisabledAttr, g_empty_atom);
         updated = true;
       }
+      mediaControlsImplUtils_.UpdateCSSClassFromStateDisableCurrentTimeDisplay();
     } else {
       if (timeline_->FastHasAttribute(html_names::kDisabledAttr)) {
         timeline_->removeAttribute(html_names::kDisabledAttr);
         updated = true;
       }
+      mediaControlsImplUtils_.UpdateCSSClassFromStateEnableCurrentTimeDisplay();
     }
 
     if (updated)
@@ -1042,6 +1123,11 @@ void MediaControlsImpl::MaybeShow() {
   // Only make the controls visible if they won't get hidden by OnTimeUpdate.
   if (MediaElement().paused() || !ShouldHideMediaControls())
     MakeOpaque();
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  else {
+    mediaControlsImplUtils_.MakeTransparentImmediately();
+  }
+#endif // ARKWEB_VIDEO_ASSISTANT
   if (loading_panel_)
     loading_panel_->OnControlsShown();
 
@@ -1049,6 +1135,7 @@ void MediaControlsImpl::MaybeShow() {
   volume_slider_->OnControlsShown();
   UpdateCSSClassFromState();
   UpdateActingAsAudioControls();
+  mediaControlsImplUtils_.MaybeShowExt();
 }
 
 void MediaControlsImpl::Hide() {
@@ -1074,6 +1161,7 @@ void MediaControlsImpl::Hide() {
     is_paused_for_scrubbing_ = false;
     EndScrubbing();
   }
+  mediaControlsImplUtils_.HideExt();
   timeline_->OnControlsHidden();
   volume_slider_->OnControlsHidden();
 
@@ -1098,6 +1186,7 @@ void MediaControlsImpl::MaybeShowOverlayPlayButton() {
 
 void MediaControlsImpl::MakeOpaque() {
   ShowCursor();
+  mediaControlsImplUtils_.MakeOpaqueExt();
   panel_->MakeOpaque();
   MaybeShowOverlayPlayButton();
 }
@@ -1115,6 +1204,7 @@ void MediaControlsImpl::MakeOpaqueFromPointerEvent() {
 }
 
 void MediaControlsImpl::MakeTransparent() {
+  mediaControlsImplUtils_.MakeTransparentExt();
   // Only hide the cursor if the controls are enabled.
   if (MediaElement().ShouldShowControls())
     HideCursor();
@@ -1199,7 +1289,11 @@ bool MediaControlsImpl::ShouldHideMediaControls(unsigned behavior_flags) const {
 
 bool MediaControlsImpl::AreVideoControlsHovered() const {
   DCHECK(IsA<HTMLVideoElement>(MediaElement()));
-
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  if (mediaControlsImplUtils_.ShouldShowVideoControlsHM() && top_row_panel_) {
+    return media_button_panel_->IsHovered() || timeline_->IsHovered() || top_row_panel_->IsHovered();
+  }
+#endif
   return media_button_panel_->IsHovered() || timeline_->IsHovered();
 }
 
@@ -1226,6 +1320,9 @@ void MediaControlsImpl::BeginScrubbing(bool is_touch_event) {
     MediaElement().pause();
   }
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  mediaControlsImplUtils_.BeginScrubbingStopTimer();
+#else
   if (scrubbing_message_ && is_touch_event) {
     scrubbing_message_->SetIsWanted(true);
     if (scrubbing_message_->DoesFit()) {
@@ -1233,6 +1330,8 @@ void MediaControlsImpl::BeginScrubbing(bool is_touch_event) {
                            AtomicString(kScrubbingMessageCSSClass));
     }
   }
+  mediaControlsImplUtils_.BeginScrubbingExt(is_touch_event);
+#endif
 
   is_scrubbing_ = true;
   UpdateCSSClassFromState();
@@ -1246,7 +1345,18 @@ void MediaControlsImpl::EndScrubbing() {
   }
 
   if (scrubbing_message_) {
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+    if (mediaControlsImplUtils_.ShouldShowVideoControlsHM()) {
+      mediaControlsImplUtils_.BeginScrubbingStartTimer();
+    } else {
+#endif
     scrubbing_message_->SetIsWanted(false);
+    if (scrubbing_panel_) {
+      scrubbing_panel_->SetIsWanted(false);
+    }
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+    }
+#endif
     panel_->removeAttribute(html_names::kClassAttr);
   }
 
@@ -1254,10 +1364,26 @@ void MediaControlsImpl::EndScrubbing() {
   UpdateCSSClassFromState();
 }
 
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+bool MediaControlsImpl::IsHLSLive() const {
+  const KURL url = MediaElement().downloadURL();
+  return MediaElement().IsHLSURL(url) &&
+         (MediaElement().duration() == std::numeric_limits<double>::infinity());
+}
+#endif // BUILDFLAG(ARKWEB_MEDIA_POLICY)
+
 void MediaControlsImpl::UpdateCurrentTimeDisplay() {
   timeline_->SetIsWanted(!IsLivePlayback());
   if (panel_->IsWanted()) {
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+    if (IsHLSLive()) {
+      current_time_display_->SetCurrentValue(0);
+    } else {
+#endif // BUILDFLAG(ARKWEB_MEDIA_POLICY)
     current_time_display_->SetCurrentValue(MediaElement().currentTime());
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+    }
+#endif // BUILDFLAG(ARKWEB_MEDIA_POLICY)
   }
 }
 
@@ -1297,6 +1423,12 @@ void MediaControlsImpl::ToggleTrackSelectionList(
 bool MediaControlsImpl::PlaybackSpeedListIsWanted() {
   return playback_speed_list_->IsWanted();
 }
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+bool MediaControlsImpl::ShouldShowVideoControlsHM() const {
+  return MediaElement().IsCustomMediaPlayerEnabled() && ShouldShowVideoControls();
+}
+#endif
 
 MediaControlsTextTrackManager& MediaControlsImpl::GetTextTrackManager() {
   return *text_track_manager_;
@@ -1382,6 +1514,7 @@ void MediaControlsImpl::UpdateOverflowMenuWanted() const {
       std::make_pair(video_track_selector_button_.Get(), false),
       std::make_pair(audio_track_selector_button_.Get(), false),
   };
+  mediaControlsImplUtils_.UpdateOverflowMenuWantedExt(row_elements);
 
   // These are the elements in order of priority that take up vertical room.
   MediaControlElementBase* column_elements[] = {
@@ -1463,6 +1596,13 @@ void MediaControlsImpl::UpdateOverflowMenuWanted() const {
     if (!element->IsWanted())
       continue;
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+    if (mediaControlsImplUtils_.ShouldShowVideoControlsHM()) {
+      if (element == playback_speed_button_.Get()) {
+        add_elements = true;
+      }
+    }
+#endif
     // Get the size of the element and see if we should allocate space to it.
     gfx::Size element_size = element->GetSizeOrDefault();
     bool does_fit = add_elements && pair.second &&
@@ -1486,7 +1626,14 @@ void MediaControlsImpl::UpdateOverflowMenuWanted() const {
       }
     }
   }
-
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  if (mediaControlsImplUtils_.ShouldShowVideoControlsHM()) {
+    if ((picture_in_picture_button_ && picture_in_picture_button_->IsWanted()) ||
+        (download_button_ && download_button_->IsWanted())) {
+      overflow_wanted = true;
+    }
+  }
+#endif
   // The overflow menu is always wanted if it has the "disabled" attr set.
   overflow_wanted = overflow_wanted ||
                     overflow_menu_->FastHasAttribute(html_names::kDisabledAttr);
@@ -1537,10 +1684,26 @@ void MediaControlsImpl::UpdateScrubbingMessageFits() const {
     scrubbing_message_->SetDoesFit(size_.width() >= kMinScrubbingMessageWidth);
 }
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+void MediaControlsImpl::ScrubbingTimerFired(TimerBase*) {
+  mediaControlsImplUtils_.ScrubbingTimerFiredExt();
+}
+#endif
+
 void MediaControlsImpl::UpdateSizingCSSClass() {
   MediaControlsSizingClass sizing_class =
       MediaControls::GetSizingClass(size_.width());
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+  if (MediaElement().ShouldShowControls() && ShouldShowVideoControls()) {
+    VideoElement().NotifyRemoteInterstitial(sizing_class);
+  }
+#endif // ARKWEB_MEDIA_CAST
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  if (mediaControlsImplUtils_.ShouldShowVideoControlsHM()) {
+    mediaControlsImplUtils_.UpdateSizingCSSClassExt();
+  } else {
+#endif
   SetClass(kMediaControlsSizingSmallCSSClass,
            ShouldShowVideoControls() &&
                (sizing_class == MediaControlsSizingClass::kSmall ||
@@ -1548,11 +1711,23 @@ void MediaControlsImpl::UpdateSizingCSSClass() {
   SetClass(kMediaControlsSizingLargeCSSClass,
            ShouldShowVideoControls() &&
                sizing_class == MediaControlsSizingClass::kLarge);
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  }
+#endif
 }
 
 void MediaControlsImpl::MaybeToggleControlsFromTap() {
-  if (MediaElement().paused())
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  if (!ShouldShowVideoControlsHM()) {
+    if (MediaElement().paused()) {
     return;
+    }
+  }
+#else
+  if (MediaElement().paused()) {
+    return;
+  }
+#endif
 
   // If the controls are visible then hide them. If the controls are not visible
   // then show them and start the timer to automatically hide them.
@@ -1740,12 +1915,19 @@ void MediaControlsImpl::HandleTouchEvent(Event* event) {
     if (tap_timer_.IsActive()) {
       // Cancel the visibility toggle event.
       tap_timer_.Stop();
-
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  if (mediaControlsImplUtils_.ShouldShowVideoControlsHM()) {
+    MediaElement().TogglePlayState();
+  } else {
+#endif
       if (IsOnLeftSide(event)) {
         MaybeJump(kNumberOfSecondsToJump * -1);
       } else {
         MaybeJump(kNumberOfSecondsToJump);
       }
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  }
+#endif
     } else {
       tap_timer_.StartOneShot(kDoubleTapDelay, FROM_HERE);
     }
@@ -1941,6 +2123,7 @@ void MediaControlsImpl::OnDurationChange() {
     download_button_->SetIsWanted(
         download_button_->ShouldDisplayDownloadButton());
   }
+  mediaControlsImplUtils_.OnDurationChangeExt();
 }
 
 void MediaControlsImpl::OnPlay() {
@@ -1968,6 +2151,7 @@ void MediaControlsImpl::OnPause() {
 
 void MediaControlsImpl::OnSeeking() {
   UpdateTimeIndicators();
+  mediaControlsImplUtils_.OnSeekingExt();
   if (!is_scrubbing_) {
     is_scrubbing_ = true;
     UpdateCSSClassFromState();
@@ -2019,22 +2203,30 @@ void MediaControlsImpl::OnLoadedMetadata() {
 }
 
 void MediaControlsImpl::OnEnteredFullscreen() {
+  mediaControlsImplUtils_.OnEnteredFullscreenSetIswanted();
   fullscreen_button_->SetIsFullscreen(true);
+#if !BUILDFLAG(ARKWEB_DISPLAY_CUTOUT)
   if (display_cutout_fullscreen_button_)
     display_cutout_fullscreen_button_->SetIsWanted(true);
+#endif // !BUILDFLAG(ARKWEB_DISPLAY_CUTOUT)
 
   StopHideMediaControlsTimer();
   StartHideMediaControlsTimer();
+  mediaControlsImplUtils_.OnEnteredFullscreenAddStyleElement();
 }
 
 void MediaControlsImpl::OnExitedFullscreen() {
+  mediaControlsImplUtils_.OnExitedFullscreenSetIswanted();
   fullscreen_button_->SetIsFullscreen(false);
+#if !BUILDFLAG(ARKWEB_DISPLAY_CUTOUT)
   if (display_cutout_fullscreen_button_)
     display_cutout_fullscreen_button_->SetIsWanted(false);
+#endif // !BUILDFLAG(ARKWEB_DISPLAY_CUTOUT)
 
   HidePopupMenu();
   StopHideMediaControlsTimer();
   StartHideMediaControlsTimer();
+  mediaControlsImplUtils_.OnExitedFullscreenRemoveStyleElement();
 }
 
 void MediaControlsImpl::OnPictureInPictureChanged() {
@@ -2159,6 +2351,17 @@ void MediaControlsImpl::StartActingAsAudioControls() {
   SetClass(kActAsAudioControlsCSSClass, true);
   PopulatePanel();
   Reset();
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  if (MediaElement().IsCustomMediaPlayerEnabled()) {
+    if (duration_display_) {
+      duration_display_->UpdateInnerText();
+    }
+    if (current_time_display_) {
+      current_time_display_->UpdateInnerText();
+    }
+  }
+#endif
 }
 
 void MediaControlsImpl::StopActingAsAudioControls() {
@@ -2244,6 +2447,12 @@ void MediaControlsImpl::HidePopupMenu() {
   }
 }
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+void MediaControlsImpl::HidePlaybackSpeedList() {
+  playback_speed_list_->SetIsWanted(false);
+}
+#endif
+
 void MediaControlsImpl::VolumeSliderWantedTimerFired(TimerBase*) {
   volume_slider_->OpenSlider();
   volume_control_container_->OpenContainer();
@@ -2302,6 +2511,7 @@ const MediaControlOverflowMenuButtonElement& MediaControlsImpl::OverflowButton()
 MediaControlOverflowMenuButtonElement& MediaControlsImpl::OverflowButton() {
   return *overflow_menu_;
 }
+
 
 void MediaControlsImpl::OnWaiting() {
   timeline_->OnMediaStoppedPlaying();
@@ -2362,6 +2572,8 @@ void MediaControlsImpl::Trace(Visitor* visitor) const {
   visitor->Trace(display_cutout_fullscreen_button_);
   visitor->Trace(volume_control_container_);
   visitor->Trace(text_track_manager_);
+  mediaControlsImplUtils_.TraceExt(visitor);
+  visitor->Trace(mediaControlsImplUtils_);
   MediaControls::Trace(visitor);
   HTMLDivElement::Trace(visitor);
 }

@@ -9,6 +9,7 @@
 #include <memory>
 #include <optional>
 
+#include "arkweb/build/features/features.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/types/optional_ref.h"
 #include "base/types/pass_key.h"
@@ -25,6 +26,7 @@
 #include "third_party/blink/renderer/platform/widget/input/main_thread_event_queue.h"
 #include "third_party/blink/renderer/platform/widget/input/widget_input_handler_impl.h"
 #include "third_party/blink/renderer/platform/wtf/thread_safe_ref_counted.h"
+#include "third_party/blink/renderer/platform/widget/input/widget_input_handler_manager_utils.h"
 
 namespace cc {
 class EventMetrics;
@@ -44,6 +46,7 @@ class SynchronousCompositorRegistry;
 class SynchronousCompositorProxyRegistry;
 class WebInputEventAttribution;
 class WidgetBase;
+class WidgetInputHandlerManagerUtils;
 
 // This class maintains the compositor InputHandlerProxy and is
 // responsible for passing input events on the compositor and main threads.
@@ -83,6 +86,7 @@ class PLATFORM_EXPORT WidgetInputHandlerManager final
     kHidden = 1 << 3,
   };
 
+  friend class WidgetInputHandlerManagerUtils;
   // The `widget` and `frame_widget_input_handler` should be invalidated
   // at the same time.
   static scoped_refptr<WidgetInputHandlerManager> Create(
@@ -223,6 +227,27 @@ class PLATFORM_EXPORT WidgetInputHandlerManager final
 
   base::WeakPtr<WidgetInputHandlerManager> AsWeakPtr() {
     return weak_ptr_factory_.GetWeakPtr();
+  }
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  void DidNativeEmbedEvent(blink::WebInputEvent::Type type,
+                           std::string embedId,
+                           int32_t id,
+                           float x,
+                           float y) override;
+  void TouchHitTest(const WebPointerEvent& event, size_t fingerId) override;
+  void DidNativeEmbedMouseEvent(blink::WebInputEvent::Type type,
+                                  blink::WebInputEvent::Modifiers modifiers,
+                                  std::string embedId,
+                                  bool isHitNativeArea,
+                                  float x,
+                                  float y) override;
+  void MouseHitTest(const WebMouseEvent& event, int32_t button) override;
+#endif
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+  void OnOverScrollOffsetChanged(float offset_x, float offset_y) override;
+#endif
+  WidgetInputHandlerManagerUtils* manager_utils() {
+    return manager_utils_.get();
   }
 
   uint16_t suppressing_input_events_state() const {
@@ -456,6 +481,7 @@ class PLATFORM_EXPORT WidgetInputHandlerManager final
   const bool allow_scroll_resampling_ = true;
 
   std::atomic<bool> dev_tools_session_attached_ = false;
+  std::unique_ptr<WidgetInputHandlerManagerUtils> manager_utils_;
   const bool ignore_hidden_input_;
   // The timestamp when the widget was hidden. Used to track the duration of
   // hidden state.

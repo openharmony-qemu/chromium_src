@@ -335,6 +335,12 @@ void Resource::TriggerNotificationForFinishObservers(
   if (finish_observers_.empty())
     return;
 
+#if BUILDFLAG(ARKWEB_INJECT_OFFLINE_RESOURCE)
+  if (!task_runner) {
+    return;
+  }
+#endif
+
   auto* new_collections =
       MakeGarbageCollected<GCedHeapHashSet<WeakMember<ResourceFinishObserver>>>(
           std::move(finish_observers_));

@@ -8,6 +8,11 @@ import("//cef/libcef/features/features.gni")
 import("//extensions/buildflags/buildflags.gni")
 import("//tools/grit/repack.gni")
 
+import("//arkweb/build/features/features.gni")
+if (is_arkweb_ext) {
+  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
+}
+ 
 assert(!is_ios, "Chromium/iOS shouldn't use anything in //chrome")
 
 # Wraps repack_locales(), setting the source_patterns and deps required for
@@ -100,6 +105,16 @@ template("chrome_repack_locales") {
       }
       compress = true
     }
+
+    if (is_arkweb_ext && arkweb_nweb_ex) {
+      source_patterns += [ "${root_gen_dir}/ohos_nweb_ex/overrides/ui/strings/ohos_nweb_ex_strings_" ]
+      deps += [ "//ohos_nweb_ex/overrides/ui/strings" ]
+    }
+    if (arkweb_i18n) {
+      source_patterns += [ "${root_gen_dir}/ohos_resources/components/string/ohos_components_strings_" ]
+      deps += [ "//ohos_resources/components/string" ]
+    }
+
     if (enable_builtin_search_provider_assets && !is_android) {
       source_patterns += [ "${root_gen_dir}/third_party/search_engines_data/search_engine_descriptions_strings_" ]
       deps += [

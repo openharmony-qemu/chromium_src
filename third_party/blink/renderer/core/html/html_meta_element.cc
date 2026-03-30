@@ -433,6 +433,14 @@ void HTMLMetaElement::ProcessViewportKeyValuePair(
       ReportViewportWarning(document, kUnrecognizedViewportArgumentValueError,
                             value_string, key_string);
     }
+#if BUILDFLAG(ARKWEB_FLING)
+  } else if (key_string == "max-fling-speed-x") {
+    ParseFlingData(document, report_warnings, key_string, value_string,
+                   description);
+  } else if (key_string == "max-fling-speed-y") {
+    ParseFlingData(document, report_warnings, key_string, value_string,
+                   description);
+#endif
   } else if (report_warnings) {
     ReportViewportWarning(document, kUnrecognizedViewportArgumentKeyError,
                           key_string, String());
@@ -450,6 +458,10 @@ static const char* ViewportErrorMessageTemplate(ViewportErrorCode error_code) {
       "been clamped.",
       "The key \"target-densitydpi\" is not supported.",
       "The value \"%replacement1\" for key \"viewport-fit\" is not supported.",
+#if BUILDFLAG(ARKWEB_FLING)
+      "The speed value \"%replacement1\" for key \"%replacement2\" is not "
+      "supported.",
+#endif      
   });
   return kErrors[error_code];
 }
@@ -463,6 +475,9 @@ static mojom::ConsoleMessageLevel ViewportErrorMessageLevel(
     case kUnrecognizedViewportArgumentValueError:
     case kMaximumScaleTooLargeError:
     case kViewportFitUnsupported:
+#if BUILDFLAG(ARKWEB_FLING)
+    case kViewportLimitSpeedUnsupported:
+#endif
       return mojom::ConsoleMessageLevel::kWarning;
   }
 
@@ -815,5 +830,9 @@ void HTMLMetaElement::FinishParsingChildren() {
   is_sync_parser_ = false;
   HTMLElement::FinishParsingChildren();
 }
+
+#if BUILDFLAG(ARKWEB_FLING)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/html/html_meta_element_for_include.cc"
+#endif
 
 }  // namespace blink

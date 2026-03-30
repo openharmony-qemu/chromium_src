@@ -235,6 +235,16 @@ void FakeLocalFrameHost::DidAddMessageToConsole(
     const String& source_id,
     const String& untrusted_stack_trace) {}
 
+#if BUILDFLAG(ARKWEB_CONSOLE_LOGGING)
+void FakeLocalFrameHost::DidAddMessageToConsoleV2(
+    mojom::ConsoleMessageLevel log_level,
+    mojom::ConsoleMessageSource log_source,
+    const String& message,
+    uint32_t line_no,
+    const String& source_id,
+    const String& untrusted_stack_trace) {}
+#endif
+
 void FakeLocalFrameHost::FrameSizeChanged(const gfx::Size& frame_size) {}
 
 void FakeLocalFrameHost::DidInferColorScheme(

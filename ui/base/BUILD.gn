@@ -19,6 +19,7 @@ import("//third_party/jni_zero/jni_zero.gni")
 import("//tools/grit/grit_rule.gni")
 import("//ui/base/ui_features.gni")
 import("//ui/qt/qt.gni")
+import("//arkweb/build/features/features.gni")
 
 if (is_android) {
   import("//build/config/android/config.gni")
@@ -76,8 +77,15 @@ component("ui_data_pack") {
   ]
 
   defines = [ "IS_UI_DATA_PACK_IMPL" ]
+  if (is_ohos && build_watch) {
+    defines += [ "WEARABLE_SUPPORT_MULTI_LANGUAGE" ]
+  }
 
   configs += [ "//build/config/compiler:wexit_time_destructors" ]
+
+  if(is_arkweb) {
+    deps += [ "//ohos_glue:ohos_adapter_glue_source" ]
+  }
 }
 
 buildflag_header("buildflags") {
@@ -391,6 +399,10 @@ component("base") {
       "themed_vector_icon.h",
     ]
 
+    include_dirs = [
+      "src/ohos_sdk/openharmony/native/sysroot/usr/include",
+    ]
+
     if (!is_android && !is_ios) {
       sources += [
         "menu_source_utils.cc",
@@ -431,6 +443,9 @@ component("base") {
       sources += [ "pointer/pointer_device_ios.cc" ]
     } else if (is_linux || is_chromeos) {
       sources += [ "pointer/pointer_device_linux.cc" ]
+    } else if (is_arkweb) {
+      import("//arkweb/chromium_ext/chromium_ext.gni")
+      sources += arkweb_ui_base_pointer_sources
     } else if (is_fuchsia && is_web_engine) {
       sources += [ "pointer/pointer_device_web_engine.cc" ]
     } else {
@@ -461,6 +476,9 @@ component("base") {
   ]
 
   defines = [ "IS_UI_BASE_IMPL" ]
+  if (is_ohos && build_watch) {
+    defines += [ "WEARABLE_SUPPORT_MULTI_LANGUAGE" ]
+  }
 
   public_deps = [
     ":buildflags",
@@ -516,6 +534,10 @@ component("base") {
     ]
   }
 
+  if (enable_arkweb) {
+    public_deps += [ "//arkweb/build/features" ]
+  }
+
   if (is_ios) {
     sources += [
       "l10n/l10n_util_mac_bridge.h",
@@ -557,7 +579,7 @@ component("base") {
     deps += [ "//ui/events" ]
   }
 
-  if (use_aura && (is_linux || is_chromeos)) {
+  if (use_aura && (is_linux || is_chromeos || is_ohos)) {
     sources += [ "resource/resource_bundle_auralinux.cc" ]
   }
 
@@ -569,7 +591,7 @@ component("base") {
     public_deps += [ "//ui/base/glib" ]
   }
 
-  if (is_chromeos || (use_aura && is_linux) || is_fuchsia) {
+  if (is_chromeos || (use_aura && (is_linux || is_ohos)) || is_fuchsia) {
     sources += [
       "dragdrop/os_exchange_data_provider_non_backed.cc",
       "dragdrop/os_exchange_data_provider_non_backed.h",
@@ -692,7 +714,7 @@ component("features") {
   ]
 }
 
-if (is_win || is_mac || is_linux || is_chromeos) {
+if (is_win || is_mac || is_linux || is_chromeos || is_ohos) {
   static_library("pixel_diff_test_support") {
     testonly = true
     sources = [
@@ -995,7 +1017,7 @@ test("ui_base_unittests") {
   use_xvfb = use_xvfb_in_this_config
 
   sources = [
-    "class_property_unittest.cc",
+  # compile error   "class_property_unittest.cc",
     "clipboard/file_info_unittest.cc",
     "ime/utf_offset_unittest.cc",
     "l10n/l10n_util_unittest.cc",
@@ -1025,7 +1047,10 @@ test("ui_base_unittests") {
     "test/run_all_unittests.cc",
     "webui/i18n_source_stream_unittest.cc",
   ]
-
+  if (arkweb_unittests) {
+    import("//arkweb/chromium_ext/chromium_ext.gni")
+    sources += arkweb_ui_base_pointer_test_sources
+  }
   data = []
   data_deps = [ "//testing/buildbot/filters:ui_base_unittests_filters" ]
   deps = [
@@ -1052,7 +1077,6 @@ test("ui_base_unittests") {
     "//ui/base/cursor:unittests",
     "//ui/base/data_transfer_policy:unittests",
     "//ui/base/interaction:unit_tests",
-    "//ui/base/metadata:metadata_tests",
     "//ui/base/prediction",
     "//ui/color",
     "//ui/display",

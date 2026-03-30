@@ -289,7 +289,7 @@ RenderWidgetHostViewBase::GetFilteredGestureProviderForTesting() {
   return nullptr;
 }
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 void RenderWidgetHostViewBase::CopyFromExactSurfaceWithIpcDelay(
     const gfx::Rect& src_rect,
     const gfx::Size& output_size,
@@ -319,8 +319,13 @@ void RenderWidgetHostViewBase::SetBackgroundColor(SkColor color) {
   // TODO(danakj): OPAQUE colors only make sense for main frame widgets,
   // as child frames are always transparent background. We should move this to
   // `blink::WebView` instead.
+  #if BUILDFLAG(ARKWEB_BACKGROUND_COLOR)
+  DCHECK(SkColorGetA(color) == SK_AlphaOPAQUE ||
+        SkColorGetA(color) == SK_AlphaTRANSPARENT);
+  #else
   CHECK(SkColorGetA(color) == SK_AlphaOPAQUE ||
         SkColorGetA(color) == SK_AlphaTRANSPARENT);
+  #endif
   if (default_background_color_ == color)
     return;
 
@@ -990,5 +995,11 @@ void RenderWidgetHostViewBase::SetViewTransitionResources(
     std::unique_ptr<ScopedViewTransitionResources> resources) {
   view_transition_resources_ = std::move(resources);
 }
+
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS) || BUILDFLAG(ARKWEB_EX_TOPCONTROLS)
+int RenderWidgetHostViewBase::GetTopControlsOffset() const {
+  return 0;
+}
+#endif
 
 }  // namespace content

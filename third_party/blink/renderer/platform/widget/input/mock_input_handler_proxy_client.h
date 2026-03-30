@@ -31,7 +31,16 @@ class MockInputHandlerProxyClient : public InputHandlerProxyClient {
                void(const WebGestureEvent& update_event,
                     const WebInputEventAttribution&,
                     const cc::EventMetrics*));
-
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  MOCK_METHOD5(DidNativeEmbedEvent, void(blink::WebInputEvent::Type, std::string, int32_t, float, float));
+  MOCK_METHOD2(TouchHitTest, void(const WebPointerEvent& event, size_t i));
+  MOCK_METHOD6(DidNativeEmbedMouseEvent, void(blink::WebInputEvent::Type, blink::WebInputEvent::Modifiers modifiers,
+    std::string, bool, float, float));
+  MOCK_METHOD2(MouseHitTest, void(const WebMouseEvent& event, int32_t button));
+#endif  // ARKWEB_UNITTESTS
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+  void OnOverScrollOffsetChanged(float offset_x, float offset_y) override {}
+#endif
   MOCK_METHOD5(DidOverscroll,
                void(const gfx::Vector2dF& accumulated_overscroll,
                     const gfx::Vector2dF& latest_overscroll_delta,

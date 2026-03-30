@@ -89,7 +89,11 @@ class CONTENT_EXPORT TouchSelectionControllerClientAura
 
   bool IsQuickMenuAvailable() const;
   void ShowQuickMenu();
+#if BUILDFLAG(ARKWEB_PDF)
+  void UpdateQuickMenu() override;
+#else
   void UpdateQuickMenu();
+#endif  // BUILDFLAG(ARKWEB_PDF)
   void ShowMagnifier();
   void HideMagnifier();
 

@@ -264,6 +264,10 @@ void OnLocalStatePrefsLoaded();
 #include "components/password_manager/core/browser/password_manager_switches.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+#include "ohos_cef_ext/libcef/browser/subresource_filter/adblock_ruleset_manager.h"
+#endif
+
 #if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_MAC)
 #include "components/os_crypt/async/browser/posix_key_provider.h"
 #endif
@@ -956,7 +960,7 @@ GpuModeManager* BrowserProcessImpl::gpu_mode_manager() {
 
 void BrowserProcessImpl::CreateDevToolsProtocolHandler() {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-#if !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
   auto maybe_remote_debugging_server =
       RemoteDebuggingServer::GetInstance(local_state_.get());
   if (maybe_remote_debugging_server.has_value()) {
@@ -1316,6 +1320,10 @@ void BrowserProcessImpl::PreCreateThreads() {
   // commit (including in iframes) in extension processes.
   ChildProcessSecurityPolicy::GetInstance()->RegisterWebSafeIsolatedScheme(
       extensions::kExtensionScheme, true);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  ChildProcessSecurityPolicy::GetInstance()->RegisterWebSafeIsolatedScheme(
+      extensions::kArkwebExtensionScheme, true);
+#endif
 #endif
 
   battery_metrics_ = std::make_unique<BatteryMetrics>();
@@ -1593,13 +1601,24 @@ void BrowserProcessImpl::CreateSubresourceFilterRulesetService() {
   }
 
   base::FilePath user_data_dir;
-  base::PathService::Get(chrome::DIR_USER_DATA, &user_data_dir);
-
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  if (!base::PathService::Get(chrome::DIR_USER_DATA, &user_data_dir)) {
+    base::PathService::Get(base::DIR_CACHE, &user_data_dir);
+  }
+  subresource_filter_ruleset_service_ =
+      subresource_filter::RulesetService::Create(
+          subresource_filter::kSafeBrowsingRulesetConfig, local_state(),
+          user_data_dir,
+          subresource_filter::AdblockRulesetManager::GetInstance(),
+          subresource_filter::SafeBrowsingRulesetPublisher::Factory());
+#else
+  base::PathService::Get(base::DIR_CACHE, &user_data_dir);
   subresource_filter_ruleset_service_ =
       subresource_filter::RulesetService::Create(
           subresource_filter::kSafeBrowsingRulesetConfig, local_state(),
           user_data_dir,
           subresource_filter::SafeBrowsingRulesetPublisher::Factory());
+#endif
 }
 
 #if !BUILDFLAG(IS_ANDROID)

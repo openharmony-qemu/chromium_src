@@ -305,10 +305,20 @@ TabStripRegionView::TabStripRegionView(std::unique_ptr<TabStrip> tab_strip)
       product_specifications_button_ =
           AddChildView(std::move(product_specifications_button));
     }
+#if BUILDFLAG(IS_OHOS)
+    tab_search_container_ = AddChildViewAt(std::move(tab_search_container), 0);
+#else
     tab_search_container_ = AddChildView(std::move(tab_search_container));
+#endif
+#if BUILDFLAG(IS_OHOS)
+    tab_search_container_->SetProperty(
+        views::kMarginsKey,
+        gfx::Insets::TLBR(0, GetLayoutConstant(TAB_STRIP_PADDING), 0, 0));
+#else
     tab_search_container_->SetProperty(
         views::kMarginsKey,
         gfx::Insets::TLBR(0, 0, 0, GetLayoutConstant(TAB_STRIP_PADDING)));
+#endif
   }
   if (tab_strip_action_container) {
     tab_strip_action_container_ =

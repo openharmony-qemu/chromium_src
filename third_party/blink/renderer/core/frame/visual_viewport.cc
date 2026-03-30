@@ -518,6 +518,16 @@ void VisualViewport::SetScaleAndLocation(float scale,
     // constraints.
     DCHECK(IsActiveViewport());
     NotifyRootFrameViewport();
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+    if (is_pinch_gesture_active) {
+      LocalFrameView* view = LocalMainFrame().View();
+      if (view) {
+        view->LayoutViewport()
+            ->AsPaintLayerScrollableAreaExt()
+            ->UpdateScrollbarLengthOrCreateWidthScale();
+      }
+    }
+#endif  // ARKWEB_SCROLLBAR
   }
 }
 
@@ -657,7 +667,13 @@ void VisualViewport::InitializeScrollbars() {
   scrollbar_layer_vertical_ = nullptr;
   if (VisualViewportSuppliesScrollbars() &&
       !GetPage().GetSettings().GetHideScrollbars()) {
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+    if (!GetPage().GetSettings().GetHorizontalHideScrollbars())
+#endif
     UpdateScrollbarLayer(kHorizontalScrollbar);
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+    if (!GetPage().GetSettings().GetVerticalHideScrollbars())
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
     UpdateScrollbarLayer(kVerticalScrollbar);
   }
 
@@ -720,8 +736,10 @@ void VisualViewport::UpdateScrollbarLayer(ScrollbarOrientation orientation) {
         cc_orientation, thumb_thickness, scrollbar_margin,
         /*is_left_side_vertical_scrollbar*/ false);
     scrollbar_layer->SetElementId(GetScrollbarElementId(orientation));
+#if !BUILDFLAG(ARKWEB_SCROLLBAR)
     scrollbar_layer->SetScrollElementId(scroll_layer_->element_id());
     scrollbar_layer->SetIsDrawable(true);
+#endif  // ARKWEB_SCROLLBAR
   }
 
   scrollbar_layer->SetBounds(
@@ -1183,7 +1201,12 @@ void VisualViewport::Paint(GraphicsContext& context) const {
                        gfx::Point(), &state);
   }
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  if (scrollbar_layer_horizontal_ &&
+      !GetPage().GetSettings().GetHorizontalHideScrollbars()) {
+#else
   if (scrollbar_layer_horizontal_) {
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
     PropertyTreeStateOrAlias state(parent_property_tree_state_);
     state.SetEffect(*horizontal_scrollbar_effect_node_);
     DEFINE_STATIC_DISPLAY_ITEM_CLIENT(client,
@@ -1194,7 +1217,12 @@ void VisualViewport::Paint(GraphicsContext& context) const {
         gfx::Point(0, size_.height() - ScrollbarThickness()), &state);
   }
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  if (scrollbar_layer_vertical_ &&
+      !GetPage().GetSettings().GetVerticalHideScrollbars()) {
+#else
   if (scrollbar_layer_vertical_) {
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
     PropertyTreeStateOrAlias state(parent_property_tree_state_);
     state.SetEffect(*vertical_scrollbar_effect_node_);
     DEFINE_STATIC_DISPLAY_ITEM_CLIENT(client,
@@ -1214,11 +1242,18 @@ void VisualViewport::UsedColorSchemeChanged() {
 
 void VisualViewport::ScrollbarColorChanged() {
   DCHECK(IsActiveViewport());
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  if (scrollbar_layer_horizontal_)
+    UpdateScrollbarColor(*scrollbar_layer_horizontal_);
+  if (scrollbar_layer_vertical_)
+    UpdateScrollbarColor(*scrollbar_layer_vertical_);
+#else
   if (scrollbar_layer_horizontal_) {
     DCHECK(scrollbar_layer_vertical_);
     UpdateScrollbarColor(*scrollbar_layer_horizontal_);
     UpdateScrollbarColor(*scrollbar_layer_vertical_);
   }
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 }
 
 void VisualViewport::UpdateScrollbarColor(cc::SolidColorScrollbarLayer& layer) {

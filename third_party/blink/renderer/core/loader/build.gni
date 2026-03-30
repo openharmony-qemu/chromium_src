@@ -1,6 +1,11 @@
 # Copyright 2020 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+import("//arkweb/chromium_ext/chromium_ext.gni")
+import("//arkweb/build/features/features.gni")
+if (is_arkweb_ext) {
+  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
+}
 
 blink_core_sources_loader = [
   "alternate_signed_exchange_resource_info.cc",
@@ -127,6 +132,8 @@ blink_core_sources_loader = [
   "resource/multipart_image_resource_parser.h",
   "resource/script_resource.cc",
   "resource/script_resource.h",
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/loader/resource/script_resource_utils.cc",
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/loader/resource/script_resource_utils.h",
   "resource/speculation_rules_resource.cc",
   "resource/speculation_rules_resource.h",
   "resource/svg_document_resource.cc",
@@ -171,6 +178,15 @@ blink_core_sources_loader = [
   "worker_resource_timing_notifier_impl.h",
 ]
 
+if (arkweb_same_layer) {
+  blink_core_sources_loader += arkweb_third_patry_blink_renderer_core_loader_sources
+  blink_core_sources_loader += arkweb_third_party_blink_renderer_core_loader_resource_sources
+}
+
+if (defined(enable_arkweb_ext) && enable_arkweb_ext) {
+  blink_core_sources_loader += arkweb_third_patry_blink_renderer_core_video_loader_sources
+}
+
 blink_core_tests_loader = [
   "alternate_signed_exchange_resource_info_test.cc",
   "anchor_element_interaction_test.cc",
@@ -214,3 +230,15 @@ blink_core_tests_loader = [
   "web_associated_url_loader_impl_test.cc",
   "web_bundle/script_web_bundle_rule_test.cc",
 ]
+
+if (arkweb_test) {
+blink_core_tests_loader += [
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/loader/arkweb_document_loader_ext_unittest.cc"
+]
+}
+
+if (arkweb_test && defined(enable_arkweb_ext) && enable_arkweb_ext) {
+  blink_core_tests_loader += [
+    "//arkweb/chromium_ext/third_party/blink/renderer/platform/media/video_url_loader_impl_unittest.cc",
+  ]
+}

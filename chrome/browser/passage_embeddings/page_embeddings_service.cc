@@ -23,7 +23,7 @@ passage_embeddings::PassagePriority ConvertToPassagePriority(
     case PageEmbeddingsService::kUserBlocking:
       return passage_embeddings::kUserInitiated;
 
-    case PageEmbeddingsService::kUrgent:
+    case PageEmbeddingsService::kHighPriority:
       return passage_embeddings::kUrgent;
 
     case PageEmbeddingsService::kDefault:

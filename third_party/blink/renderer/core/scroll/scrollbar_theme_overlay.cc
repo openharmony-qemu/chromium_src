@@ -186,6 +186,9 @@ void ScrollbarThemeOverlay::PaintThumb(GraphicsContext& context,
     scrollbar_thumb.thumb_color =
         scrollbar.ScrollbarThumbColor().value().toSkColor4f().toSkColor();
   }
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  scrollbar_thumb.scrollbar_color = scrollbar.GetScrollBarColor();
+#endif  // ARKWEB_SCROLLBAR
   blink::WebThemeEngine::ExtraParams params(scrollbar_thumb);
 
   const mojom::blink::ColorScheme color_scheme = scrollbar.UsedColorScheme();

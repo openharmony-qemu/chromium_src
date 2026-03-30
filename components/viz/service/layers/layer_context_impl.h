@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
 #include "base/time/time.h"
@@ -146,7 +147,10 @@ class VIZ_SERVICE_EXPORT LayerContextImpl : public cc::LayerTreeHostImplClient,
   void DidNotProduceFrame(const BeginFrameAck& ack,
                           cc::FrameSkippedReason reason) override;
   void NotifyNewLocalSurfaceIdExpectedWhilePaused() override;
-
+#if BUILDFLAG(ARKWEB_WEBGL)
+  void SetDeferInvalidationForFastMainFrameFromImpl(
+           bool defer_invalidation_for_fast_main_frame) override {}
+#endif
   // mojom::LayerContext:
   void SetVisible(bool visible) override;
   void UpdateDisplayTree(mojom::LayerTreeUpdatePtr update) override;

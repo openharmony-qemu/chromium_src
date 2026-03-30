@@ -216,6 +216,10 @@ WebString GetAttribute(const WebElement& element) {
 
 // Indicates whether we want to extract forms on `url`.
 bool IsAdmissibleUrl(const blink::WebURL& url) {
+#if BUILDFLAG(ARKWEB_AUTOFILL)
+  // Intrusive mods for arkweb autofill compatibility
+  return true;
+#else
   if (url.ProtocolIs("https") || url.ProtocolIs("http") ||
       url.ProtocolIs("data")) {
     return true;
@@ -224,6 +228,7 @@ bool IsAdmissibleUrl(const blink::WebURL& url) {
     return true;
   }
   return false;
+#endif
 }
 
 // Returns the form's |name| attribute if non-empty; otherwise the form's |id|

@@ -45,6 +45,11 @@
 #include "url/scheme_host_port.h"
 #include "url/url_constants.h"
 
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+#include "base/command_line.h"
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#endif
+
 namespace net {
 
 HttpStreamPool::JobController::Alternative::Alternative(
@@ -419,13 +424,26 @@ void HttpStreamPool::JobController::OnCertificateError(
 
   stream_request_->AddConnectionAttempts(job->connection_attempts());
   CancelOtherJob(job);
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  bool used_fallback_proxy = false;
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          ::switches::kEnableNwebEx) &&
+      job) {
+    used_fallback_proxy = job->proxy_info().used_fallback_proxy();
+  }
+#endif
   // Use PostTask to align the behavior with HttpStreamFactory::Job, see
   // https://crrev.com/2827533002.
   // TODO(crbug.com/346835898): Avoid using PostTask here if possible.
   TaskRunner(priority_)->PostTask(
       FROM_HERE,
       base::BindOnce(&JobController::CallOnCertificateError,
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+                     weak_ptr_factory_.GetWeakPtr(), status, ssl_info, used_fallback_proxy));
+#else
                      weak_ptr_factory_.GetWeakPtr(), status, ssl_info));
+#endif
 }
 
 void HttpStreamPool::JobController::OnNeedsClientAuth(
@@ -681,8 +699,14 @@ void HttpStreamPool::JobController::CallOnStreamFailed(
 
 void HttpStreamPool::JobController::CallOnCertificateError(
     int status,
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+    const SSLInfo& ssl_info,
+    bool used_fallback_proxy) {
+  delegate_->OnCertificateError(status, ssl_info, used_fallback_proxy);
+#else
     const SSLInfo& ssl_info) {
   delegate_->OnCertificateError(status, ssl_info);
+#endif
 }
 
 void HttpStreamPool::JobController::CallOnNeedsClientAuth(

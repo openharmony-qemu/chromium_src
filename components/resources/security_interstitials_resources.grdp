@@ -18,4 +18,13 @@
   <if expr="use_blink">
     <include name="IDR_SSL_ERROR_ASSISTANT_PB" file="${root_gen_dir}/components/resources/ssl/ssl_error_assistant/ssl_error_assistant.pb" use_base_dir="false" type="BINDATA" compress="gzip" />
   </if>
+  <if expr="is_ohos">
+    <include name="IDR_BLOCK_ERROR_OHOS_HTML_PHONE" file="../security_interstitials/ohos_ui_resources/safe_browsing_ohos_phone.html" flattenhtml="true" type="BINDATA"/>
+    <include name="IDR_BLOCK_ERROR_OHOS_HTML_LARGE" file="../security_interstitials/ohos_ui_resources/safe_browsing_ohos_large.html" flattenhtml="true" type="BINDATA"/>
+    <include name="URL_TRUST_LIST_ERROR_OHOS_HTML" file="../security_interstitials/ohos_ui_resources/url_trust_list_error.html" flattenhtml="true" type="BINDATA"/>
+    <include name="IDR_MINOR_CONTROL_HTML_PHONE" file="../security_interstitials/ohos_ui_resources/minor_control_phone.html" flattenhtml="true" type="BINDATA"/>
+    <include name="IDR_MINOR_CONTROL_HTML_LARGE" file="../security_interstitials/ohos_ui_resources/minor_control_large.html" flattenhtml="true" type="BINDATA"/>
+    <include name="IDR_BLOCK_ERROR_OHOS_HTML_HIGH_RISK_PHONE" file="../security_interstitials/ohos_ui_resources/safe_browsing_ohos_high_risk_phone.html" flattenhtml="true" type="BINDATA"/>
+    <include name="IDR_BLOCK_ERROR_OHOS_HTML_HIGH_RISK_LARGE" file="../security_interstitials/ohos_ui_resources/safe_browsing_ohos_high_risk_large.html" flattenhtml="true" type="BINDATA"/>
+  </if>
 </grit-part>

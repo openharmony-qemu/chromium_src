@@ -336,6 +336,15 @@ class PLATFORM_EXPORT PaintArtifactCompositor final
   class OldPendingLayerMatcher;
   PendingLayers pending_layers_;
 
+  // #if BUILDFLAG(ARKWEB_MEDIA_NETWORK_TRAFFIC_PROMPT)
+  cc::LayerList overlay_cc_layers_;
+  // #endif // ARKWEB_MEDIA_NETWORK_TRAFFIC_PROMPT
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  cc::LayerList native_overlay_cc_layers_;
+  cc::LayerList native_infinity_cc_layers_;
+#endif
+
   class Layerizer;
 
   struct ScrollTranslationInfo {

@@ -340,6 +340,10 @@ if (!is_cronet_build || is_ios) {
       sources += [ "machine_id_provider_nonwin.cc" ]
     }
 
+    if (is_ohos) {
+      sources += [ "//arkweb/chromium_ext/components/metrics/drive_metrics_provider_ohos.cc" ]
+    }
+
     if (is_win || is_linux) {
       sources += [
         "motherboard.cc",

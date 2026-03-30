@@ -101,6 +101,12 @@ class NET_EXPORT HttpStreamFactory {
     PrivacyMode privacy_mode = PRIVACY_MODE_DISABLED;
     SecureDnsPolicy secure_dns_policy = SecureDnsPolicy::kAllow;
     SocketTag socket_tag;
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+    bool secure_dns_only = false;
+#endif
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+    bool retry_with_fallback_proxy = false;
+#endif
   };
 
   // Calculates an appropriate SPDY session key for the given parameters.
@@ -175,7 +181,12 @@ class NET_EXPORT HttpStreamFactory {
   // TransportClientSocketPool doesn't plumb errors correctly.
   void PreconnectStreams(int num_streams,
                          HttpRequestInfo& info,
-                         base::OnceClosure callback);
+                         base::OnceClosure callback
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+                         ,
+                         bool from_preload = false
+#endif
+);
 
  private:
   FRIEND_TEST_ALL_PREFIXES(HttpStreamRequestTest, SetPriority);

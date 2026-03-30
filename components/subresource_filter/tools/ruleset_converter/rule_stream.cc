@@ -275,9 +275,15 @@ class UnindexedRulesetRuleOutputStream : public RuleOutputStream {
     return ruleset_writer_.AddUrlRule(rule);
   }
 
+  #if BUILDFLAG(ARKWEB_ADBLOCK)
+  bool PutCssRule(const url_pattern_index::proto::CssRule& rule) override {
+    return ruleset_writer_.AddCssRule(rule);
+  }
+#else
   bool PutCssRule(const url_pattern_index::proto::CssRule& rule) override {
     return true;
   }
+#endif
 
   bool Finish() override {
     if (!ruleset_writer_.Finish()) {
@@ -381,6 +387,10 @@ bool TransferRules(RuleInputStream* input,
                    RuleOutputStream* url_rules_output,
                    RuleOutputStream* css_rules_output,
                    int chrome_version) {
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  int total_url_rule_counts = 0;
+  int total_css_rule_counts = 0;
+#endif
   while (true) {
     auto rule_type = input->FetchNextRule();
     if (rule_type == url_pattern_index::proto::RULE_TYPE_UNSPECIFIED) {
@@ -393,12 +403,18 @@ bool TransferRules(RuleInputStream* input,
         }
         url_pattern_index::proto::UrlRule url_rule = input->GetUrlRule();
         if (!DeleteUrlRuleOrAmend(&url_rule, chrome_version)) {
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+          total_url_rule_counts++;
+#endif
           url_rules_output->PutUrlRule(url_rule);
         }
         break;
       }
       case url_pattern_index::proto::RULE_TYPE_CSS:
         if (css_rules_output) {
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+          total_css_rule_counts++;
+#endif
           css_rules_output->PutCssRule(input->GetCssRule());
         }
         break;
@@ -409,6 +425,15 @@ bool TransferRules(RuleInputStream* input,
         return false;
     }
   }
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  // if (url_rules_output){
+  //   urlrules_output->SetEasylistVersion(input->GetEasylistversion()):
+  // }
+  LOG(INFO) << "[AdBlock] TransferRules finished, total_url_rule_counts:"
+            << total_url_rule_counts
+            << ", totalcss_rule_counts:" << total_css_rule_counts << std::endl;
+#endif
+
   return true;
 }
 
@@ -432,10 +457,19 @@ bool DeleteUrlRuleOrAmend(url_pattern_index::proto::UrlRule* rule,
                           ~url_pattern_index::proto::ELEMENT_TYPE_POPUP);
 
   // Only the following activation types are supported in Chrome.
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  rule->set_activation_types(
+      rule->activation_types() &
+      (url_pattern_index::proto::ACTIVATION_TYPE_DOCUMENT |
+      url_pattern_index::proto::ACTIVATION_TYPE_ELEMHIDE |
+      url_pattern_index::proto::ACTIVATION_TYPE_GENERICHIDE |
+      url_pattern_index::proto::ACTIVATION_TYPE_GENERICBLOCK));
+#else
   rule->set_activation_types(
       rule->activation_types() &
       (url_pattern_index::proto::ACTIVATION_TYPE_DOCUMENT |
        url_pattern_index::proto::ACTIVATION_TYPE_GENERICBLOCK));
+#endif
   if (!rule->activation_types()) {
     rule->clear_activation_types();
   }

@@ -185,6 +185,35 @@ class FakeLocalFrame : public blink::mojom::LocalFrame {
       const ::network::URLLoaderCompletionStatus& completion_status) override;
   void UpdatePrerenderURL(const ::GURL& matched_url,
                           UpdatePrerenderURLCallback callback) override;
+
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  void JavaScriptExecuteRequestExt(
+      ::mojo::ScopedHandle fd_handle,
+      uint64_t scriptLength,
+      bool wants_result,
+      JavaScriptExecuteRequestCallback callback) override {}
+
+  void GetImageFromCache(
+      const std::string& url,
+      GetImageFromCacheCallback callback) override {}
+  void GetAllImage(int32_t taskid, const std::string& url,
+                   GetAllImageCallback callback) override {}
+  void GetImageByXPath(int32_t taskid, const std::string& xpath,
+                   GetImageByXPathCallback callback) override {}
+  void GenerateCodeCache(
+      const std::string& url,
+      const std::string& script,
+      blink::mojom::CacheOptionsPtr cache_options,
+      GenerateCodeCacheCallback callback) override {}
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  void DetectBlankScreen(const std::string& url,
+                         const std::vector<double>& detection_timing,
+                         const std::vector<int32_t>& detection_methods,
+                         int32_t contentful_nodes_count_threshold) override {}
+#endif
+
   void GetScrollPosition(GetScrollPositionCallback callback) override;
 #if BUILDFLAG(IS_ANDROID)
   void PerformSpellCheck() override;

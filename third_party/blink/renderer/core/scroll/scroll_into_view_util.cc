@@ -580,7 +580,12 @@ ScrollOffset GetScrollOffsetToExpose(
     const PhysicalRect& local_expose_rect,
     const PhysicalBoxStrut& expose_scroll_margin,
     const mojom::blink::ScrollAlignment& align_x,
-    const mojom::blink::ScrollAlignment& align_y) {
+    const mojom::blink::ScrollAlignment& align_y
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+    ,
+    const int32_t scroll_offset_limit
+#endif
+) {
   // Represent the rect in the container's scroll-origin coordinate.
   PhysicalRect scroll_origin_to_expose_rect = local_expose_rect;
   scroll_origin_to_expose_rect.Move(scroll_area.LocalToScrollOriginOffset());
@@ -716,6 +721,12 @@ ScrollOffset GetScrollOffsetToExpose(
     y = (scroll_origin_to_expose_rect.Y() - non_zero_visible_rect.Y())
             .ToFloat();
   }
+
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  if (scroll_offset_limit != 0) {
+    y = current_scroll_offset.y() + scroll_offset_limit;
+  }
+#endif
 
   return ScrollOffset(x, y);
 }

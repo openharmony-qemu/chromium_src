@@ -174,7 +174,11 @@ void MaybeShowExtensionControlledNewTabPage(
     return;
   }
   GURL active_url = entry->GetURL();
-  if (!active_url.SchemeIs(extensions::kExtensionScheme)) {
+  if (!active_url.SchemeIs(extensions::kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      && !active_url.SchemeIs(extensions::kArkwebExtensionScheme)
+#endif
+  ) {
     return;  // Not a URL that we care about.
   }
 

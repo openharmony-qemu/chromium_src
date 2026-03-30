@@ -86,6 +86,22 @@
 #include "content/browser/hyphenation/hyphenation_impl.h"
 #endif
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_WPT)
+#include "content/browser/font_unique_name_lookup/font_unique_name_lookup_service.h"
+#include "third_party/blink/public/mojom/android_font_lookup/android_font_lookup.mojom.h"
+#endif  // BUILDFLAG(ARKWEB_WPT)
+
+#if BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
+#include "arkweb/chromium_ext/services/device/public/mojom/res_sched_report.mojom.h"
+#include "arkweb/chromium_ext/services/device/public/mojom/sysprop_render_observer.mojom.h"
+#endif  // BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
+#include "arkweb/chromium_ext/content/browser/renderer_host/arkweb_render_process_host_impl_utils.h"
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "services/device/business_risk_intelligent_detection/business_risk_intelligent_detection_host_impl.h"
+#endif
+
 namespace content {
 
 namespace {
@@ -130,6 +146,18 @@ void RenderProcessHostImpl::RegisterMojoInterfaces() {
             std::move(receiver));
       },
       GetDeprecatedID(), widget_helper_));
+
+#if BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
+  arkweb_render_process_host_impl_utils_->AddHostUIThreadInterface(registry.get());
+#endif  // BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+  arkweb_render_process_host_impl_utils_->AddDFXToUIThreadInterface(registry.get());
+#endif
+
+#if BUILDFLAG(IS_ARKWEB)
+  registry->AddInterface(
+      base::BindRepeating(&device::BusinessRiskIntelligentDetectionHostImpl::Create));
+#endif
 
   AddUIThreadInterface(
       registry.get(),
@@ -214,7 +242,7 @@ void RenderProcessHostImpl::RegisterMojoInterfaces() {
       base::BindRepeating(&hyphenation::HyphenationImpl::Create),
       hyphenation::HyphenationImpl::GetTaskRunner());
 #endif
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_WPT)
   if (base::FeatureList::IsEnabled(features::kFontSrcLocalMatching)) {
     registry->AddInterface(
         base::BindRepeating(&FontUniqueNameLookupService::Create),

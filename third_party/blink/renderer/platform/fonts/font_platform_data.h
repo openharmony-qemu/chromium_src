@@ -57,6 +57,7 @@ typedef const struct __CTFont* CTFontRef;
 namespace blink {
 
 class HarfBuzzFace;
+class FontPlatformDataUtils;
 
 class PLATFORM_EXPORT FontPlatformData
     : public GarbageCollected<FontPlatformData> {
@@ -172,9 +173,9 @@ class PLATFORM_EXPORT FontPlatformData
 #if !BUILDFLAG(IS_MAC)
   WebFontRenderStyle style_;
 #endif
-
   mutable Member<HarfBuzzFace> harfbuzz_face_;
   bool is_hash_table_deleted_value_ = false;
+  Member<FontPlatformDataUtils> data_utils_;
 };
 
 }  // namespace blink

@@ -38,6 +38,15 @@ NoStatePrefetchURLLoaderThrottle::NoStatePrefetchURLLoaderThrottle(
   DCHECK(canceler_);
 }
 
+NoStatePrefetchURLLoaderThrottle::NoStatePrefetchURLLoaderThrottle(
+    const std::string& histogram_prefix,
+    mojo::PendingRemote<prerender::mojom::NoStatePrefetchCanceler> canceler)
+    // todo:check
+    //: histogram_prefix_(histogram_prefix), canceler_(std::move(canceler)) {
+    : histogram_prefix_(histogram_prefix) {
+  DCHECK(canceler_);
+}
+
 NoStatePrefetchURLLoaderThrottle::~NoStatePrefetchURLLoaderThrottle() {
   if (destruction_closure_) {
     std::move(destruction_closure_).Run();
@@ -60,11 +69,13 @@ void NoStatePrefetchURLLoaderThrottle::WillStartRequest(
     network::ResourceRequest* request,
     bool* defer) {
   request->load_flags |= net::LOAD_PREFETCH;
+#if !BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
   if (!base::FeatureList::IsEnabled(
           blink::features::kRemovePurposeHeaderForPrefetch)) {
     request->cors_exempt_headers.SetHeader(
         blink::kPurposeHeaderName, blink::kSecPurposePrefetchHeaderValue);
   }
+#endif
 
   if (base::FeatureList::IsEnabled(
           blink::features::kSecPurposePrefetchHeaderNoStatePrefetch)) {

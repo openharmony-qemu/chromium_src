@@ -1021,7 +1021,11 @@ void PageInfo::ComputeUIInputs(const GURL& url) {
   DCHECK(!url.SchemeIs(content::kChromeUIScheme) &&
          !url.SchemeIs(content::kChromeDevToolsScheme) &&
          !url.SchemeIs(content::kViewSourceScheme) &&
-         !url.SchemeIs(content_settings::kExtensionScheme));
+         !url.SchemeIs(content_settings::kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+         && !url.SchemeIs(content_settings::kArkwebExtensionScheme)
+#endif
+  );
 #endif
 
   bool is_chrome_ui_native_scheme = false;

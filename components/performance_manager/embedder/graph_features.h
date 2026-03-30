@@ -8,6 +8,7 @@
 #include <cstdint>
 
 #include "components/performance_manager/public/features.h"
+#include "arkweb/build/features/features.h"
 #include "ui/base/device_form_factor.h"
 
 namespace performance_manager {

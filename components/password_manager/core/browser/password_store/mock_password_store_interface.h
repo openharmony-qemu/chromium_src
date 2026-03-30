@@ -6,6 +6,9 @@
 #define COMPONENTS_PASSWORD_MANAGER_CORE_BROWSER_PASSWORD_STORE_MOCK_PASSWORD_STORE_INTERFACE_H_
 
 #include "base/callback_list.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "components/password_manager/core/browser/password_store/password_store_interface.h"
 #include "components/sync/model/proxy_data_type_controller_delegate.h"
 #include "testing/gmock/include/gmock/gmock.h"
@@ -37,6 +40,9 @@ class MockPasswordStoreInterface : public PasswordStoreInterface {
               UpdateLoginWithPrimaryKey,
               (const PasswordForm&, const PasswordForm&, base::OnceClosure),
               (override));
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+  MOCK_METHOD(void, UpdateLoginDisplayName, (const PasswordForm&), (override));
+#endif
   MOCK_METHOD(void,
               RemoveLogin,
               (const base::Location&, const PasswordForm&),

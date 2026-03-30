@@ -47,6 +47,11 @@
 #include "ui/gfx/image/image_skia.h"
 #include "ui/gfx/image/image_skia_rep.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/chrome/browser/extensions/extension_install_prompt_ext.h"
+#include "arkweb/chromium_ext/chrome/browser/ui/extensions/installation_error_infobar_delegate_ohos.h"
+#endif // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 
 using extensions::Extension;
@@ -413,6 +418,14 @@ ExtensionInstallPrompt::DoneCallbackPayload::DoneCallbackPayload(
     std::string justification)
     : result(result), justification(std::move(justification)) {}
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+// static
+ExtensionInstallPrompt::ShowDialogCallback
+ExtensionInstallPrompt::GetOhosShowDialogCallback() {
+  return base::BindRepeating(&ohos::ShowExtensionInstallDialogImpl);
+}
+#endif
+
 // static
 ExtensionInstallPrompt::PromptType
 ExtensionInstallPrompt::GetReEnablePromptTypeForExtension(
@@ -533,6 +546,10 @@ void ExtensionInstallPrompt::OnInstallSuccess(
 void ExtensionInstallPrompt::OnInstallFailure(
     const extensions::CrxInstallError& error) {
   install_ui_->OnInstallFailure(error);
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  ohos::InstallationErrorInfoBarDelegate::ShowInfoBar(error);
+#endif // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 }
 
 std::unique_ptr<ExtensionInstallPrompt::Prompt>
@@ -615,6 +632,12 @@ void ExtensionInstallPrompt::ShowConfirmation() {
   // If true, auto confirm is enabled and already handled the result.
   if (AutoConfirmPromptIfEnabled())
     return;
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (show_dialog_callback_.is_null()) {
+    show_dialog_callback_ = BindRepeating(&ohos::ShowExtensionInstallDialogImpl);
+  }
+#endif // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 
   if (show_dialog_callback_.is_null())
     show_dialog_callback_ = GetDefaultShowDialogCallback();

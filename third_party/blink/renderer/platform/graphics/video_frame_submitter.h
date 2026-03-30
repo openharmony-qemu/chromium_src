@@ -8,6 +8,7 @@
 #include <memory>
 #include <optional>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/read_only_shared_memory_region.h"
 #include "base/memory/weak_ptr.h"
@@ -70,7 +71,10 @@ class PLATFORM_EXPORT VideoFrameSubmitter
   void SetIsPageVisible(bool is_visible) override;
   void SetForceBeginFrames(bool force_begin_frames) override;
   void SetForceSubmit(bool) override;
-
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  void SetHasNativeLayer(bool has_native_layer) override;
+  void SetDeviceScaleFactor(float device_scale_factor) override;
+#endif
   // viz::ContextLostObserver implementation.
   void OnContextLost() override;
 
@@ -161,6 +165,12 @@ class PLATFORM_EXPORT VideoFrameSubmitter
   // Notify `surface_embedder_` if the opacity of the most recent video frame
   // has changed.
   void NotifyOpacityIfNeeded(Opacity new_opacity);
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  void StartRenderingForSameLayer();
+  void StopRenderingForSameLayer();
+  void StopRenderingForSameLayerImpl();
+#endif
 
   void ClearFrameResources();
 
@@ -256,11 +266,28 @@ class PLATFORM_EXPORT VideoFrameSubmitter
 
   Opacity opacity_ = Opacity::kNotReported;
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  bool has_native_layer_ {false};
+  bool start_begin_frame_ {false};
+  int32_t vsync_period_cnt_without_submit_{0};
+  float device_scale_factor_ = 1.0f;
+#endif
+
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+  void UpdateDroppedFrameMetrics(const viz::BeginFrameArgs& args);
+  void SubmitDroppedFrameMetricsToMetadata(viz::CompositorFrame& compositor_frame);
+
+  std::atomic<bool> is_first_frame_{true};
+  std::atomic<bool> should_report_frame_dropped_{false};
+  std::atomic<int64_t> dropped_frame_count_{0};
+  std::atomic<int64_t> dropped_frame_duration_{0};
+  base::TimeTicks last_frame_time_ = base::TimeTicks();
+#endif
+
   THREAD_CHECKER(thread_checker_);
 
   base::WeakPtrFactory<VideoFrameSubmitter> weak_ptr_factory_{this};
 };
 
 }  // namespace blink
-
 #endif  // THIRD_PARTY_BLINK_RENDERER_PLATFORM_GRAPHICS_VIDEO_FRAME_SUBMITTER_H_

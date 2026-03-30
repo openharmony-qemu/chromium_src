@@ -75,6 +75,8 @@ declare_args() {
   # version as `rustc` (i.e. if it can understand the LLVM-IR from the
   # compilation artifacts produced by `rustc`).  For more context please see
   # older bugs like b/299483903, https://crbug.com/40281834, or b/300937673.
+  #
+  # Disable on OHOS due to LLVM version mismatch between Rust (LLVM 22) and Clang (LLVM 19).
   toolchain_supports_rust_thin_lto = true
 
   # Any extra std rlibs in your Rust toolchain, relative to the standard
@@ -112,7 +114,7 @@ use_chromium_rust_toolchain = rust_sysroot_absolute == ""
 # `rustc_nightly_capability = false` will make the build avoid the use of
 # Rust nightly features. There are no bots that test this and there is no
 # guarantee it will work, but we accept patches for this configuration.
-rustc_nightly_capability = use_chromium_rust_toolchain
+rustc_nightly_capability = use_chromium_rust_toolchain || is_ohos || is_linux
 
 # Platform support for the Rust toolchain.
 chromium_toolchain_supports_platform = !is_wasm
@@ -334,6 +336,19 @@ if (is_linux || is_chromeos) {
   } else {
     assert(false, "Architecture not supported")
   }
+} else if (is_ohos) {
+  if (current_cpu == "arm64") {
+    rust_abi_target = "aarch64-unknown-linux-ohos"
+    cargo_target_abi = ""
+  } else if (current_cpu == "arm") {
+    rust_abi_target = "armv7-unknown-linux-ohos"
+    cargo_target_abi = ""
+  } else if (current_cpu == "x64") {
+    rust_abi_target = "x86_64-unknown-linux-ohos"
+    cargo_target_abi = ""
+  } else {
+    toolchain_has_rust = false
+  }
 }
 
 if (toolchain_has_rust) {
@@ -404,4 +419,4 @@ if (toolchain_for_rust_host_build_tools) {
 # such as that the panic strategy (unwind, abort) must match how the stdlib is
 # compiled, which is typically as unwind.
 rust_prebuilt_stdlib =
-    !use_chromium_rust_toolchain || toolchain_for_rust_host_build_tools
+    (!use_chromium_rust_toolchain && !is_ohos) || toolchain_for_rust_host_build_tools

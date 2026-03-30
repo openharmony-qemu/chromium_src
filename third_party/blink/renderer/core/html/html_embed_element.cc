@@ -41,6 +41,10 @@
 #include "third_party/blink/renderer/core/layout/layout_embedded_object.h"
 #include "third_party/blink/renderer/core/layout/layout_object_inlines.h"
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/html/html_embed_element_for_include.cc"
+#endif
+
 namespace blink {
 
 HTMLEmbedElement::HTMLEmbedElement(Document& document,
@@ -103,6 +107,11 @@ void HTMLEmbedElement::ParseAttribute(
       SetNeedsPluginUpdate(true);
       GetLayoutObject()->SetNeedsLayoutAndFullPaintInvalidation(
           "Embed type changed");
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+      if (IsNativeType()) {
+        ReattachOnPluginChangeIfNeeded();
+      }
+#endif
     }
   } else if (params.name == html_names::kCodeAttr) {
     // TODO(rendering-core): Remove this branch? It's not in the spec and we're
@@ -130,7 +139,14 @@ void HTMLEmbedElement::ParseAttribute(
       SetNeedsPluginUpdate(true);
       ReattachOnPluginChangeIfNeeded();
     }
-  } else {
+  }
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  else if (IsNativeType() && params.name == html_names::kArkwebnativestyleAttr) {
+    NativeEmbedOverlay(params);
+    Utils()->AnalysisStretchContentToFillBounds(params);
+  }
+#endif
+  else {
     HTMLPlugInElement::ParseAttribute(params);
   }
 }

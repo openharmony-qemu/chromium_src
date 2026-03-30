@@ -12,6 +12,7 @@
 #include <variant>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/compiler_specific.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/raw_ref.h"
@@ -55,6 +56,9 @@ namespace autofill {
 
 class PasswordAutofillAgent;
 class PasswordGenerationAgent;
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+class AutofillAgentExt;
+#endif
 
 // AutofillAgent deals with Autofill related communications between Blink and
 // the browser.
@@ -85,6 +89,10 @@ class PasswordGenerationAgent;
 class AutofillAgent : public content::RenderFrameObserver,
                       public blink::WebAutofillClient,
                       public mojom::AutofillAgent {
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  friend class AutofillAgentExt;
+#endif
+
  public:
   static constexpr base::TimeDelta kFormsSeenThrottle = base::Milliseconds(100);
 
@@ -145,6 +153,11 @@ class AutofillAgent : public content::RenderFrameObserver,
   AutofillAgent& operator=(const AutofillAgent&) = delete;
 
   ~AutofillAgent() override;
+
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  virtual AutofillAgentExt* AsAutofillAgentExt() { return nullptr; }
+  void FillAccountSuggestion(const std::u16string& username, const std::u16string& password) override;
+#endif
 
   void BindPendingReceiver(
       mojo::PendingAssociatedReceiver<mojom::AutofillAgent> pending_receiver);
@@ -513,5 +526,5 @@ class AutofillAgent : public content::RenderFrameObserver,
 };
 
 }  // namespace autofill
-
+#include "arkweb/chromium_ext/components/autofill/content/render/autofill_agent_ext.h"
 #endif  // COMPONENTS_AUTOFILL_CONTENT_RENDERER_AUTOFILL_AGENT_H_

@@ -27,6 +27,10 @@
 #include "ui/gfx/gpu_fence_handle.h"
 #include "ui/gl/gl_implementation.h"
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#include "ui/gl/init/gl_factory.h"
+#endif
+
 namespace viz {
 namespace {
 
@@ -41,6 +45,10 @@ class SkiaOutputSurfaceImplTest : public testing::Test {
   ~SkiaOutputSurfaceImplTest() override;
 
   GpuServiceImpl* GetGpuService() {
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+   gl::init::InitializeGLNoExtensionsOneOff(
+      /*init_bindings=*/true, /*gpu_preference=*/gl::GpuPreference::kDefault);
+#endif
     return TestGpuServiceHolder::GetInstance()->gpu_service();
   }
 

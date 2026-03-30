@@ -75,6 +75,13 @@ enum ShouldIncludeScrollbarGutter {
   kIncludeScrollbarGutter
 };
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+enum class LayoutPolicy {
+  kContent,
+  kSystem
+};
+#endif
+
 struct LayoutBoxRareData final : public GarbageCollected<LayoutBoxRareData> {
  public:
   LayoutBoxRareData();
@@ -240,6 +247,11 @@ class CORE_EXPORT LayoutBox : public LayoutBoxModelObject {
   LayoutUnit LogicalHeightForEmptyLine() const {
     NOT_DESTROYED();
     return FirstLineHeight();
+  }
+
+  virtual PhysicalOffset Location() const {
+    NOT_DESTROYED();
+    return frame_location_;
   }
 
   // Return the size of all fragments stitched together in the block direction.
@@ -835,8 +847,17 @@ class CORE_EXPORT LayoutBox : public LayoutBoxModelObject {
   }
   virtual bool ShouldPlaceBlockDirectionScrollbarOnLogicalLeft() const {
     NOT_DESTROYED();
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+    if (ScrollbarLayoutPolicy() == LayoutPolicy::kSystem) {
+      return IsSystemRtlEnable();
+    }
+#endif
     return StyleRef().ShouldPlaceBlockDirectionScrollbarOnLogicalLeft();
   }
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  LayoutPolicy ScrollbarLayoutPolicy() const;
+  bool IsSystemRtlEnable() const;
+#endif
 
   bool HasScrollableOverflowX() const {
     NOT_DESTROYED();

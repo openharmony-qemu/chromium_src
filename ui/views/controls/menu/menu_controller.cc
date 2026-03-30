@@ -1555,6 +1555,16 @@ void MenuController::OnWidgetDestroying(Widget* widget) {
   ExitMenu();
 }
 
+#if BUILDFLAG(IS_OHOS)
+void MenuController::OnWidgetBoundsChanged(Widget* widget,
+                                           const gfx::Rect& new_bounds) {
+  DCHECK_EQ(owner_, widget);
+  if (widget->IsVisible()) {
+    Cancel(ExitType::kAll);
+  }
+}
+#endif
+
 bool MenuController::IsCancelAllTimerRunningForTest() {
   return cancel_all_timer_.IsRunning();
 }

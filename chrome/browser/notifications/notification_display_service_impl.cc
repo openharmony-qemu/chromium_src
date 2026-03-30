@@ -31,7 +31,7 @@
 #endif
 
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_MAC) || \
-    BUILDFLAG(IS_WIN)
+    BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
 #include "chrome/browser/send_tab_to_self/desktop_notification_handler.h"
 #include "chrome/browser/sharing/sharing_notification_handler.h"
 #endif
@@ -237,10 +237,11 @@ void NotificationDisplayServiceImpl::Display(
     bridge_delegator_->Display(notification_type, notification,
                                std::move(metadata));
   }
-
+#if !BUILDFLAG(ARKWEB_NOTIFICATION)
   NotificationHandler* handler = GetNotificationHandler(notification_type);
   if (handler)
     handler->OnShow(profile_, notification.id());
+#endif
 }
 
 void NotificationDisplayServiceImpl::Close(

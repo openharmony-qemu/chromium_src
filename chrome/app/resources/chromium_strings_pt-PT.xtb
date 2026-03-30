@@ -106,6 +106,7 @@
 <translation id="2210502920229141283">Mantenha-se em segurança quando estiver em viagem com a Navegação segura melhorada no Chromium para iOS</translation>
 <translation id="2210682093923538346">Site perigoso. O Chromium removeu notificações.</translation>
 <translation id="2236949375853147973">A minha atividade</translation>
+<translation id="2238104961394611930">Ativado • Não é possível verificar a fonte da extensão</translation>
 <translation id="2238130810669087193">Para aceder aos seus endereços e muito mais em todos os seus dispositivos, inicie sessão no Chromium. Este endereço é guardado na sua Conta Google depois de iniciar sessão.</translation>
 <translation id="2241627712206172106">Se partilhar um computador, os amigos e os familiares podem navegar separadamente e configurar o Chromium da forma que quiserem.</translation>
 <translation id="2283803047247799269">Pesquisar este separador com a pesquisa de imagens</translation>
@@ -515,6 +516,7 @@ Algumas funcionalidades podem não estar disponíveis. Especifique um diretório
 <translation id="6862030660799253820">Pesquise esta imagem com a pesquisa de imagens</translation>
 <translation id="6873893289264747459">O Chromium encontrou software malicioso na extensão "<ph name="EXTENSION_NAME" />"</translation>
 <translation id="6877155553248388166">canto inferior direito da área de pesquisa: direita <ph name="RIGHT" />%, parte inferior <ph name="BOTTOM" />%</translation>
+<translation id="6885534934768077023">Nota: o navegador não pode impedir que as extensões registem o histórico de navegação. Desative esta opção para desativar esta extensão no modo privado.</translation>
 <translation id="6896758677409633944">Copiar</translation>
 <translation id="6901631050894301805">Defina o Chromium como o navegador predefinido e afixe-o à barra de tarefas</translation>
 <translation id="6909503629704372277">&amp;Gerir perfis do Chromium</translation>
@@ -573,6 +575,7 @@ O Chromium não consegue recuperar as suas definições.</translation>
 <translation id="753534427205733210">{0,plural, =1{O Chromium será reiniciado dentro de 1 minuto}other{O Chromium será reiniciado dentro de # minutos}}</translation>
 <translation id="7565444033145385702">Para proteger os seus dados, permita que o Chromium remova as autorizações de sites que não visitou recentemente.</translation>
 <translation id="7583399374488819119">Instalador do <ph name="COMPANY_NAME" /></translation>
+<translation id="7597668698051545254">Desativado • Não é possível verificar a fonte da extensão</translation>
 <translation id="761356813943268536">O Chromium está a utilizar a câmara e o microfone.</translation>
 <translation id="7617377681829253106">O Chromium está ainda melhor</translation>
 <translation id="7622753900276619808">Agora, tem mais funcionalidades disponíveis no Chromium</translation>

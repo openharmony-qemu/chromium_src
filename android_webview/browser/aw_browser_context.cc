@@ -97,6 +97,10 @@
 #include "url/android/gurl_android.h"
 #include "url/gurl.h"
 
+#if BUILDFLAG(ARKWEB_WEBSTORAGE)
+#include "base/logging.h"
+#endif  // BUILDFLAG(ARKWEB_WEBSTORAGE)
+
 // Must come after all headers that specialize FromJniType() / ToJniType().
 #include "android_webview/browser_jni_headers/AwBrowserContext_jni.h"
 
@@ -206,6 +210,10 @@ AwBrowserContext::AwBrowserContext(std::string name,
   DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
   TRACE_EVENT("startup", "AwBrowserContext::AwBrowserContext", "name", name_);
 
+#if BUILDFLAG(ARKWEB_WEBSTORAGE)
+  LOG(INFO) << "AwBrowserContext SetBrowserProfileType, context : "
+      << reinterpret_cast<uintptr_t>(this) % 100000000;
+#endif  // BUILDFLAG(ARKWEB_WEBSTORAGE)
   profile_metrics::SetBrowserProfileType(
       this, profile_metrics::BrowserProfileType::kRegular);
 

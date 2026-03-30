@@ -20,6 +20,10 @@
 #include <string.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_CRASHPAD_FORK)
+#include <sys/syscall.h>
+#endif
 
 #include "base/check.h"
 #include "base/check_op.h"
@@ -140,7 +144,11 @@ bool SpawnSubprocess(const std::vector<std::string>& argv,
   // parent shouldn’t be concerned with reaping it. This approach means that
   // accidental early termination of the handler process will not result in a
   // zombie process.
+#if BUILDFLAG(ARKWEB_CRASHPAD_FORK)
+  pid_t pid = syscall(SYS_clone, SIGCHLD, nullptr);
+#else
   pid_t pid = fork();
+#endif
   if (pid < 0) {
     PLOG(ERROR) << "fork";
     return false;
@@ -199,9 +207,30 @@ bool SpawnSubprocess(const std::vector<std::string>& argv,
 
     auto execve_fp = use_path ? execvpe : execve;
     execve_fp(argv_for_spawn[0], argv_for_spawn, envp_for_spawn);
-    PLOG(FATAL) << (use_path ? "execvpe" : "execve") << " "
-                << argv_for_spawn[0];
+    PLOG(FATAL) << (use_path ? "execvpe" : "execve");
 #else
+
+#if BUILDFLAG(ARKWEB_CRASHPAD_FORK)
+    pid = syscall(SYS_clone, SIGCHLD, nullptr);
+    if (pid < 0) {
+      PLOG(FATAL) << "fork";
+    }
+
+    if (pid > 0) {
+      // Child process.
+
+      // _exit() instead of exit(), because fork() was called.
+      _exit(EXIT_SUCCESS);
+    }
+
+    // Grandchild process.
+
+    auto execve_fp = use_path ? execvpe : execve;
+    execve_fp(argv_for_spawn[0], argv_for_spawn, envp_for_spawn);
+    PLOG(ERROR) << (use_path ? "execvpe" : "execve");
+    _exit(EXIT_FAILURE);
+#else
+
 #if BUILDFLAG(IS_APPLE)
     PosixSpawnAttr attr;
     attr.SetFlags(POSIX_SPAWN_CLOEXEC_DEFAULT);
@@ -234,12 +263,17 @@ bool SpawnSubprocess(const std::vector<std::string>& argv,
                                 attr_p,
                                 argv_for_spawn,
                                 envp_for_spawn)) != 0) {
-      PLOG(FATAL) << (use_path ? "posix_spawnp" : "posix_spawn") << " "
-                  << argv_for_spawn[0];
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+      std::string use_func = use_path ? "posix_spawnp" : "posix_spawn";
+      LOG(ERROR) << "crashpad posix spawn child process failed, errno = "
+                 << errno << ", use posix function = " << use_func;
+#endif  // BUILDFLAG(ARKWEB_CRASHPAD)
+      PLOG(FATAL) << (use_path ? "posix_spawnp" : "posix_spawn");
     }
 
     // _exit() instead of exit(), because fork() was called.
     _exit(EXIT_SUCCESS);
+#endif  // BUILDFLAG(ARKWEB_CRASHPAD_FORK)
 #endif
   }
 
@@ -272,6 +306,10 @@ bool SpawnSubprocess(const std::vector<std::string>& argv,
                  << WEXITSTATUS(status);
   }
 
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+  LOG(INFO) << "crashpad wait child process exit, child process pid = " << pid
+            << ", status = " << status;
+#endif  // BUILDFLAG(ARKWEB_CRASHPAD)
   return true;
 }
 

@@ -214,7 +214,12 @@ void EmitFormControlIssues(const WebDocument& document,
   if (elements.size() == 0) {
     return;
   }
-
+  // TODO(arkweb): https://chromium-review.googlesource.com/c/chromium/src/+/7183576
+  // #if BUILDFLAG(IS_OHOS)
+  // std::erase_if(elements, [](const WebFormControlElement& e) {
+  //   return e.IsNull();
+  // });
+  // #endif
   const WebString label_attr = WebString::FromUTF8(kLabel);
   WebElementCollection labels =
       elements[0].GetDocument().GetElementsByHTMLTagName(label_attr);

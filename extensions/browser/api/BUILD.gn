@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//arkweb/build/features/features.gni")
 import("//build/config/chromeos/ui_mode.gni")
 import("//components/guest_view/buildflags/buildflags.gni")
 import("//extensions/buildflags/buildflags.gni")
@@ -141,6 +142,9 @@ source_set("api_provider") {
 # implementation.
 function_registration("api_registration") {
   sources = extensions_api_schema_files + extensions_api_uncompiled_sources
+  if (defined(arkweb_arkweb_extensions) && arkweb_arkweb_extensions) {
+    sources -= extensions_api_schema_files_ext
+  }
   impl_dir = "//extensions/browser/api"
   bundle_name = ""
   root_namespace = extensions_api_root_namespace

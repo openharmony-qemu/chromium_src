@@ -526,6 +526,9 @@ void GaiaCookieManagerService::TriggerListAccounts() {
   // called in `HandleNextRequest()`. Only if there are no other requests in the
   // queue that `HandleNextRequest()` won't be called before executing
   // /ListAccounts.
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  return;
+#else
   requests_.push_back(GaiaCookieRequest::CreateListAccountsRequest());
   if (requests_.size() == 1) {
     fetcher_retries_ = 0;
@@ -534,6 +537,7 @@ void GaiaCookieManagerService::TriggerListAccounts() {
         base::BindOnce(&GaiaCookieManagerService::StartFetchingListAccounts,
                        weak_ptr_factory_.GetWeakPtr()));
   }
+#endif
 }
 
 void GaiaCookieManagerService::ForceOnCookieChangeProcessing() {

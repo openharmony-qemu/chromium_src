@@ -30,7 +30,7 @@
 #include "partition_alloc/gwp_asan_support.h"
 #include "third_party/boringssl/src/include/openssl/rand.h"
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS) || BUILDFLAG(ARKWEB_GWP_ASAN)
 #include "components/crash/core/app/crashpad.h"  // nogncheck
 #endif
 
@@ -207,7 +207,7 @@ bool GuardedPageAllocator::Init(const AllocatorSettings& settings,
       std::make_unique<AllocatorState::SlotMetadata[]>(state_.num_metadata);
   state_.metadata_addr = reinterpret_cast<uintptr_t>(metadata_.get());
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_GWP_ASAN)
   // Explicitly allow memory ranges the crash_handler needs to read. This is
   // required for WebView because it has a stricter set of privacy constraints
   // on what it reads from the crashing process.
@@ -338,6 +338,9 @@ void GuardedPageAllocator::Deallocate(void* ptr) {
   // an outdated double free when the metadata has expired.
   if (metadata_idx == AllocatorState::kInvalidMetadataIdx ||
       addr != UNSAFE_TODO(metadata_[metadata_idx]).alloc_ptr) {
+#if BUILDFLAG(ARKWEB_GWP_ASAN)
+    LOG(INFO) << "gwp-asan detect invalid free, send trap signal.";
+#endif
     state_.free_invalid_address = addr;
     __builtin_trap();
   }
@@ -345,6 +348,9 @@ void GuardedPageAllocator::Deallocate(void* ptr) {
   // Check for double free.
   if (UNSAFE_TODO(metadata_[metadata_idx])
           .deallocation_occurred.exchange(true)) {
+#if BUILDFLAG(ARKWEB_GWP_ASAN)
+    LOG(INFO) << "gwp-asan detect double free, send trap signal.";
+#endif
     state_.double_free_address = addr;
     // TODO(crbug.com/40611148): The other thread may not be done writing
     // a stack trace so we could spin here until it's read; however, it's also

@@ -71,6 +71,13 @@ TestAXPlatformTreeManagerDelegate::AccessibilityGetWebContentsAccessibility() {
   return web_contents_accessibility_;
 }
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+content::RenderFrameHostImpl*
+TestAXPlatformTreeManagerDelegate::AccessibilityRenderFrameHost() {
+  return nullptr;
+}
+#endif
+
 bool TestAXPlatformTreeManagerDelegate::AccessibilityIsWebContentSource() {
   // Currently only used in web content tests.
   return true;

@@ -1330,6 +1330,9 @@ void QuicSessionPool::OnIPAddressChanged(
 
   set_has_quic_ever_worked_on_current_network(false);
   if (params_.close_sessions_on_ip_change) {
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    LOG(INFO) << "close quic sessions on ip change";
+#endif
     CloseAllSessions(ERR_NETWORK_CHANGED, quic::QUIC_IP_ADDRESS_CHANGED);
   } else {
     DCHECK(params_.goaway_sessions_on_ip_change);

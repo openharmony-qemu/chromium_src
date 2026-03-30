@@ -224,6 +224,11 @@ class ServiceWorkerSyntheticResponseManager::SyntheticResponseURLLoaderClient
     std::move(receive_response_callback_)
         .Run(std::move(response_head), std::move(body));
   }
+  void OnTransferDataWithSharedMemory(
+      base::ReadOnlySharedMemoryRegion region,
+      uint64_t buffer_size) override {
+    // Not used for synthetic responses.
+  }
   void OnReceiveRedirect(
       const net::RedirectInfo& redirect_info,
       network::mojom::URLResponseHeadPtr response_head) override {

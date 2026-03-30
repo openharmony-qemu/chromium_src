@@ -91,6 +91,8 @@ void UrlLoaderNetworkServiceObserver::OnSSLCertificateError(
     int net_error,
     const net::SSLInfo& ssl_info,
     bool fatal,
+    const GURL& origin_url,
+    const std::string& referrer,
     OnSSLCertificateErrorCallback response) {
   std::move(response).Run(net_error);
 }

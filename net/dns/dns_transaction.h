@@ -19,6 +19,9 @@
 #include "net/dns/opt_record_rdata.h"
 #include "net/dns/public/secure_dns_mode.h"
 #include "net/dns/record_rdata.h"
+#if BUILDFLAG(ENABLE_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace net {
 
@@ -57,6 +60,11 @@ class NET_EXPORT_PRIVATE DnsTransaction {
   virtual void Start(ResponseCallback callback) = 0;
 
   virtual void SetRequestPriority(RequestPriority priority) = 0;
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  virtual void SetNotNeedMoreAttemptIPQueryType(
+      uint16_t not_need_more_another_ip_query_type) = 0;
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 };
 
 // Startable/Cancellable object to represent a DNS probe sequence.

@@ -35,6 +35,10 @@ class HTMLParamElement final : public HTMLElement {
 
   const AtomicString& GetName() const;
   const AtomicString& Value() const;
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  void AttributeChanged(const AttributeModificationParams&) override;
+#endif
 };
 
 }  // namespace blink

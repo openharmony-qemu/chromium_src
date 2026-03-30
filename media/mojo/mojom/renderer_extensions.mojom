@@ -12,6 +12,29 @@ import "ui/gfx/geometry/mojom/geometry.mojom";
 [EnableIf=is_win]
 import "ui/gfx/mojom/buffer_types.mojom";
 
+[EnableIf=is_arkweb]
+struct OhosSurfaceBufferHandle {
+  uint32 buffer_size;
+  int32 fd_browser;
+  int32 coded_width;
+  int32 coded_height;
+  int32 visible_width;
+  int32 visible_height;
+  int32 format;
+  handle<platform> buffer_fd;
+};
+
+[EnableIf=arkweb_custom_video_player]
+interface CustomMediaPlayerRendererClientExtension {
+  OnVideoSizeChange(gfx.mojom.Size size);
+  OnDurationChange(mojo_base.mojom.TimeDelta duration);
+  UpdatePlaybackStatus(uint32 status);
+  UpdateVolume(double volume);
+  UpdateMuted(bool muted);
+  UpdatePlaybackRate(double rate);
+  UpdateBufferedEndTime(double buffered_time);
+};
+
 // Extension of the mojo::RendererClient communication layer for media flinging,
 // a.k.a RemotePlayback, when playing media on a remote Cast device.
 // This allows the Browser side to call back into the Renderer side.

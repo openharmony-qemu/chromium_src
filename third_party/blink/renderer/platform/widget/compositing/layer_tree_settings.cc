@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <tuple>
 
+#include "arkweb/build/features/features.h"
 #include "base/base_switches.h"
 #include "base/command_line.h"
 #include "base/logging.h"
@@ -32,6 +33,8 @@
 #include "ui/native_theme/features/native_theme_features.h"
 #include "ui/native_theme/native_theme.h"
 #include "ui/native_theme/overlay_scrollbar_constants.h"
+
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/widget/compositing/layer_tree_settings_utils.h"
 
 namespace blink {
 
@@ -69,7 +72,7 @@ void InitializeScrollbarFadeAndDelay(cc::LayerTreeSettings& settings) {
   }
 }
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_FLING)
 // With 32 bit pixels, this would mean less than 400kb per buffer. Much less
 // than required for, say, nHD.
 static const int kSmallScreenPixelThreshold = 1e5;
@@ -165,7 +168,7 @@ cc::ManagedMemoryPolicy GetGpuMemoryPolicy(
     return actual;
   }
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_PERFORMANCE_MEMORY_THRESHOLD)
   if (base::SysInfo::IsLowEndDevice() ||
       base::SysInfo::AmountOfPhysicalMemory().InMiB() < 2000) {
     actual.bytes_limit_when_visible = 96 * 1024 * 1024;
@@ -205,6 +208,10 @@ cc::ManagedMemoryPolicy GetGpuMemoryPolicy(
 
   actual.bytes_limit_when_visible = mb_limit_when_visible * 1024 * 1024;
 #endif
+#if BUILDFLAG(ARKWEB_SYNC_RENDER)
+  SetMaxVisibleBytes(actual);
+#endif
+
   return actual;
 }
 
@@ -234,7 +241,7 @@ cc::LayerTreeSettings GenerateLayerTreeSettings(
   settings.enable_checker_imaging =
       !cmd.HasSwitch(::switches::kDisableCheckerImaging) && is_threaded;
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_FLING)
   // We can use a more aggressive limit on Android since decodes tend to take
   // longer on these devices.
   settings.min_image_bytes_to_checker = 512 * 1024;  // 512kB
@@ -261,7 +268,7 @@ cc::LayerTreeSettings GenerateLayerTreeSettings(
   };
 
   int default_tile_size = 256;
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_FLING)
   const gfx::Size screen_size =
       gfx::ScaleToFlooredSize(initial_screen_size, initial_device_scale_factor);
   int display_width = screen_size.width();
@@ -344,7 +351,11 @@ cc::LayerTreeSettings GenerateLayerTreeSettings(
   settings.use_partial_raster = !cmd.HasSwitch(switches::kDisablePartialRaster);
   // Partial raster is not supported with RawDraw
   settings.use_partial_raster &= !::features::IsUsingRawDraw();
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  settings.enable_elastic_overscroll = true;
+#else
   settings.enable_elastic_overscroll = platform->IsElasticOverscrollEnabled();
+#endif
   settings.use_gpu_memory_buffer_resources =
       cmd.HasSwitch(switches::kEnableGpuMemoryBufferCompositorResources);
   settings.use_painted_device_scale_factor = true;
@@ -467,6 +478,17 @@ cc::LayerTreeSettings GenerateLayerTreeSettings(
     // raster-on-demand, and use 50% of the memory otherwise.
     settings.max_memory_for_prepaint_percentage = 50;
   }
+#if BUILDFLAG(ARKWEB_SCROLL_PERFORMANCE)
+  ConfigureOverlayScrollbarSettings(settings);
+#endif  // BUILDFLAG(ARKWEB_SCROLL_PERFORMANCE)
+
+#elif BUILDFLAG(ARKWEB_FLING)
+  bool using_low_memory_policy =
+      base::SysInfo::IsLowEndDevice() && !IsSmallScreen(screen_size);
+  AdjustGraphicsSettings(screen_size, settings, using_low_memory_policy);
+#if BUILDFLAG(IS_ARKWEB_EXT)
+  SetEnableDeleteUnusedResourcesDelay(settings);
+#endif
 
 #else   // BUILDFLAG(IS_ANDROID)
   const bool using_low_memory_policy = base::SysInfo::IsLowEndDevice();

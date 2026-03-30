@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "components/viz/service/display_embedder/skia_output_device_gl.h"
+#include "arkweb/chromium_ext/components/viz/service/display_embedder/skia_output_device_gl_utils.h"
 
 #include <tuple>
 #include <utility>
@@ -30,6 +31,9 @@
 #include "ui/gl/gl_features.h"
 #include "ui/gl/gl_implementation.h"
 #include "ui/gl/gl_surface.h"
+#if BUILDFLAG(ARKWEB_SUPPORTS_DAMAGE_REGION)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#endif
 
 namespace viz {
 
@@ -169,7 +173,9 @@ SkiaOutputDeviceGL::SkiaOutputDeviceGL(
   // scRGB linear
   capabilities_.sk_color_type_map[SinglePlaneFormat::kRGBA_F16] =
       kRGBA_F16_SkColorType;
-
+#if (BUILDFLAG(ARKWEB_SUPPORTS_DAMAGE_REGION) || BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE))
+  implUtils_ = std::make_unique<SkiaOutputDeviceGLUtils>(this);
+#endif
   if (features::UseGpuVsync()) {
     // Historically we never disabled vsync on Android and it's very rare
     // use-case to have multiple active windows there. On other platforms we
@@ -253,6 +259,14 @@ bool SkiaOutputDeviceGL::Reshape(const ReshapeParams& params) {
   return !!sk_surface_;
 }
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+void SkiaOutputDeviceGL::SetNativeInnerWeb(bool isInnerWeb) {
+  if (gl_surface_) {
+    gl_surface_->SetNativeInnerWeb(isInnerWeb);
+  }
+}
+#endif
+
 void SkiaOutputDeviceGL::Present(const std::optional<gfx::Rect>& update_rect,
                                  BufferPresentedCallback feedback,
                                  OutputSurfaceFrame frame) {
@@ -284,15 +298,24 @@ void SkiaOutputDeviceGL::Present(const std::optional<gfx::Rect>& update_rect,
     }
   } else {
     gfx::SwapResult result;
-    if (update_rect) {
+    if (update_rect && !base::ohos::IsEmulator()) {
+#if BUILDFLAG(ARKWEB_SUPPORTS_DAMAGE_REGION)
+      result = implUtils_->SwapBuffers(update_rect, feedback, frame);
+#else
       result = gl_surface_->PostSubBuffer(
           update_rect->x(), update_rect->y(), update_rect->width(),
           update_rect->height(), std::move(feedback), std::move(data));
+#endif
     } else {
       result = gl_surface_->SwapBuffers(std::move(feedback), std::move(data));
     }
     DoFinishSwapBuffers(surface_size, std::move(frame),
                         gfx::SwapCompletionResult(result));
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+    if (implUtils_) {
+      implUtils_->CleanBuffersIfNeed();
+    }
+#endif
   }
 }
 
@@ -311,6 +334,25 @@ void SkiaOutputDeviceGL::DoFinishSwapBuffers(const gfx::Size& size,
   FinishSwapBuffers(std::move(result), size, std::move(frame));
 }
 
+void SkiaOutputDeviceGL::DiscardBackbuffer() {
+  gl_surface_->SetBackbufferAllocation(false);
+}
+
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+void SkiaOutputDeviceGL::CleanBufferAfterSwapBuffer(bool delay_clean) {
+  implUtils_->SetDelayClean(delay_clean);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+void SkiaOutputDeviceGL::SetIfNeedCleanBuffers(bool need_clean_buffers)
+{
+  if (implUtils_) {
+    implUtils_->SetIfNeedCleanBuffers(need_clean_buffers);
+  }
+}
+#endif
+
 SkSurface* SkiaOutputDeviceGL::BeginPaint(
     std::vector<GrBackendSemaphore>* end_semaphores) {
   DCHECK(sk_surface_);
@@ -320,3 +362,7 @@ SkSurface* SkiaOutputDeviceGL::BeginPaint(
 void SkiaOutputDeviceGL::EndPaint() {}
 
 }  // namespace viz
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/components/viz/service/display_embedder/skia_output_device_gl_for_include.cc"
+#endif

@@ -20,6 +20,9 @@
 #include "third_party/blink/renderer/core/paint/timing/media_record_id.h"
 #include "third_party/blink/renderer/core/paint/timing/paint_timing_callback_manager.h"
 #include "third_party/blink/renderer/core/paint/timing/paint_timing_record.h"
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+#include "third_party/blink/renderer/core/paint/timing/paint_timing_detector.h"
+#endif
 #include "third_party/blink/renderer/core/timing/performance_entry.h"
 #include "third_party/blink/renderer/platform/allow_discouraged_type.h"
 #include "third_party/blink/renderer/platform/graphics/dom_node_id.h"
@@ -31,6 +34,9 @@
 #include "third_party/blink/renderer/platform/wtf/cross_thread_functional.h"
 #include "third_party/blink/renderer/platform/wtf/hash_set.h"
 #include "ui/gfx/geometry/rect_conversions.h"
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/image_paint_timing_detector_utils.h"
+#endif
 
 namespace blink {
 
@@ -55,11 +61,23 @@ class CORE_EXPORT ImageRecordsManager {
   DISALLOW_NEW();
   friend class ImagePaintTimingDetector;
   friend class ImagePaintTimingDetectorTest;
+
+#if BUILDFLAG(IS_ARKWEB)
+  friend class ImageRecordsManagerUtils;
+#endif
+
   FRIEND_TEST_ALL_PREFIXES(ImagePaintTimingDetectorTest,
                            LargestImagePaint_Detached_Frame);
 
   void Trace(Visitor* visitor) const;
-
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  bool TakeIfHasALCP();
+  void UpdateViewportSize(const std::optional<uint64_t>& size);
+  bool CheckALCPRecord(const MediaRecordIdHash& record_id_hash, const MediaTiming& media_timing,
+    const StyleImage* style_image, unsigned frame_index, bool new_lcp_record);
+  void ALCPProcessBeforeLcpRecord();
+  void SetForBlankless();
+#endif
  private:
   explicit ImageRecordsManager(LocalFrameView*);
   ImageRecordsManager(const ImageRecordsManager&) = delete;
@@ -80,6 +98,15 @@ class CORE_EXPORT ImageRecordsManager {
       // null record can be removed in
       // |AssignPaintTimeToRegisteredQueuedRecords|.
     }
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+    else {
+      image_record_manager_utils_->RemoveRecord(record_id_hash);
+    }
+#endif
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+    image_record_manager_utils_->RemoveRecordFromFirstScreenCalculator(
+        record_id_hash);
+#endif
   }
 
   inline void RecordImage(MediaRecordIdHash record_id_hash) {
@@ -191,6 +218,9 @@ class CORE_EXPORT ImageRecordsManager {
   // consider this an LCP candidate when the documentElement's opacity changes
   // from zero to nonzero.
   Member<ImageRecord> largest_ignored_image_;
+#if BUILDFLAG(IS_ARKWEB)
+  Member<ImageRecordsManagerUtils> image_record_manager_utils_;
+#endif
 };
 
 // ImagePaintTimingDetector contains Largest Image Paint.
@@ -266,7 +296,23 @@ class CORE_EXPORT ImagePaintTimingDetector final
   void StopRecordingLargestImagePaint() {
     recording_largest_image_paint_ = false;
   }
+
+#if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT) || BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  bool is_full_viewport_image() const {
+    return is_full_viewport_;
+  }
+
+  std::optional<uint64_t> GetViewportSize() const {
+    return viewport_size_;
+  }
+#endif
   void Trace(Visitor*) const;
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  bool TakeIfHasALCP();
+  void SetForBlankless();
+  unsigned GetFrameIndex() const;
+  void SetFrameIndex(unsigned frame_index);
+#endif
 
  private:
   friend class LargestContentfulPaintCalculatorTest;
@@ -291,6 +337,9 @@ class CORE_EXPORT ImagePaintTimingDetector final
   bool added_entry_in_latest_frame_ = false;
 
   bool contains_full_viewport_image_ = false;
+#if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT) || BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  bool is_full_viewport_ = false;
+#endif
 
   // We cache the viewport size computation to avoid performing it on every
   // image. This value is reset when paint is finished and is computed if unset
@@ -305,6 +354,9 @@ class CORE_EXPORT ImagePaintTimingDetector final
   ImageRecordsManager records_manager_;
   Member<LocalFrameView> frame_view_;
   Member<PaintTimingCallbackManager> callback_manager_;
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  bool is_for_blankless_only_ = false;
+#endif
 };
 }  // namespace blink
 

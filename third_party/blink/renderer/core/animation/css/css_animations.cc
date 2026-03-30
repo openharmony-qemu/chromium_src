@@ -2547,7 +2547,23 @@ void CSSAnimations::CalculateTransitionUpdateForPropertyHandle(
           active_transition_iter->value;
       if (ComputedValuesEqual(property, after_change_style,
                               *running_transition->to)) {
+#if BUILDFLAG(IS_ARKWEB)
+        // revert https://issues.chromium.org/issues/41442840 
+        if (!state.transition_data) {
+          if (!running_transition->animation->FinishedInternal()) {
+            UseCounter::Count(
+                state.animating_element.GetDocument(),
+                WebFeature::kCSSTransitionCancelledByRemovingStyle);
+          }
+          // TODO(crbug.com/934700): Add a return to this branch to correctly
+          // continue transitions under default settings (all 0s) in the absence
+          // of a change in base computed style.
+        } else {
+          return;
+        }
+#else
         return;
+#endif
       }
       state.update.CancelTransition(property);
       DCHECK(!state.animating_element.GetElementAnimations() ||

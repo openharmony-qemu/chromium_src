@@ -4,6 +4,9 @@
 
 import("//build/config/cast.gni")
 import("//build/config/features.gni")
+if (is_arkweb) {
+  import("//arkweb/build/features/features.gni")
+}
 
 declare_args() {
   # Whether to perform critical memory pressure handling when in foreground (if
@@ -13,5 +16,5 @@ declare_args() {
 
   # Whether or not MBI mode (Multiple Blink Isolates) should be enabled,
   # depending on the build argument.
-  mbi_mode = is_linux || is_chromeos || is_mac || is_win || is_android
+  mbi_mode = is_linux || is_chromeos || is_mac || is_win || is_android || is_arkweb
 }

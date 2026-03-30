@@ -39,15 +39,27 @@ ExtensionFunction::ResponseAction SystemStorageEjectDeviceFunction::Run() {
       EjectDevice::Params::Create(args());
   EXTENSION_FUNCTION_VALIDATE(params);
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (StorageMonitor::GetInstance()) {
   StorageMonitor::GetInstance()->EnsureInitialized(
       base::BindOnce(&SystemStorageEjectDeviceFunction::OnStorageMonitorInit,
                      this, params->id));
+  }
+#else
+  StorageMonitor::GetInstance()->EnsureInitialized(
+      base::BindOnce(&SystemStorageEjectDeviceFunction::OnStorageMonitorInit,
+                     this, params->id));
+#endif
   // EnsureInitialized() above can result in synchronous Respond().
   return did_respond() ? AlreadyResponded() : RespondLater();
 }
 
 void SystemStorageEjectDeviceFunction::OnStorageMonitorInit(
     const std::string& transient_device_id) {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (!StorageMonitor::GetInstance())
+    return;
+#endif
   DCHECK(StorageMonitor::GetInstance()->IsInitialized());
   StorageMonitor* monitor = StorageMonitor::GetInstance();
   std::string device_id_str =
@@ -102,9 +114,17 @@ SystemStorageGetAvailableCapacityFunction::Run() {
       GetAvailableCapacity::Params::Create(args());
   EXTENSION_FUNCTION_VALIDATE(params);
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (StorageMonitor::GetInstance()) {
+      StorageMonitor::GetInstance()->EnsureInitialized(base::BindOnce(
+          &SystemStorageGetAvailableCapacityFunction::OnStorageMonitorInit, this,
+          params->id));
+  }
+#else
   StorageMonitor::GetInstance()->EnsureInitialized(base::BindOnce(
       &SystemStorageGetAvailableCapacityFunction::OnStorageMonitorInit, this,
       params->id));
+#endif
   return RespondLater();
 }
 

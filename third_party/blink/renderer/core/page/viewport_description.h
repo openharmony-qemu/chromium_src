@@ -91,6 +91,10 @@ struct CORE_EXPORT ViewportDescription {
         user_zoom(true),
         orientation(kValueAuto),
         deprecated_target_density_dpi(kValueAuto),
+#if BUILDFLAG(ARKWEB_FLING)
+        max_fling_velocity_x(std::numeric_limits<float>::max()),
+        max_fling_velocity_y(std::numeric_limits<float>::max()),
+#endif
         zoom_is_explicit(false),
         min_zoom_is_explicit(false),
         max_zoom_is_explicit(false),
@@ -113,6 +117,11 @@ struct CORE_EXPORT ViewportDescription {
   bool user_zoom;
   float orientation;
   float deprecated_target_density_dpi;  // Only used for Android WebView
+
+#if BUILDFLAG(ARKWEB_FLING)
+  float max_fling_velocity_x;
+  float max_fling_velocity_y;
+#endif
 
   // Whether the computed value was explicitly specified rather than being
   // inferred.
@@ -141,7 +150,12 @@ struct CORE_EXPORT ViewportDescription {
            max_zoom_is_explicit == other.max_zoom_is_explicit &&
            user_zoom_is_explicit == other.user_zoom_is_explicit &&
            virtual_keyboard_mode == other.virtual_keyboard_mode &&
-           viewport_fit_ == other.viewport_fit_;
+           viewport_fit_ == other.viewport_fit_
+#if BUILDFLAG(ARKWEB_FLING)
+           && max_fling_velocity_x == other.max_fling_velocity_x &&
+           max_fling_velocity_y == other.max_fling_velocity_y
+#endif
+        ;
   }
 
   bool IsLegacyViewportType() const {

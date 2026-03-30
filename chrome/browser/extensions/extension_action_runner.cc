@@ -50,6 +50,10 @@
 #include "extensions/common/permissions/permissions_data.h"
 #include "url/origin.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "chrome/browser/extensions/extension_tab_util.h"
+#endif
+
 #if BUILDFLAG(ENABLE_EXTENSIONS)
 #include "chrome/browser/extensions/api/side_panel/side_panel_service.h"
 #include "chrome/browser/ui/browser_finder.h"
@@ -418,6 +422,11 @@ void ExtensionActionRunner::RunBlockedActions(const Extension* extension) {
 
 void ExtensionActionRunner::DidFinishNavigation(
     content::NavigationHandle* navigation_handle) {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (!web_contents() || ExtensionTabUtil::GetTabId(web_contents()) < 0) {
+    return;
+  }
+#endif
   declarative_net_request::RulesMonitorService* rules_monitor_service =
       declarative_net_request::RulesMonitorService::Get(browser_context_);
 
@@ -460,6 +469,11 @@ void ExtensionActionRunner::DidFinishNavigation(
 }
 
 void ExtensionActionRunner::WebContentsDestroyed() {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (!web_contents() || ExtensionTabUtil::GetTabId(web_contents()) < 0) {
+    return;
+  }
+#endif
   ExtensionActionDispatcher::Get(browser_context_)
       ->ClearAllValuesForTab(web_contents());
 

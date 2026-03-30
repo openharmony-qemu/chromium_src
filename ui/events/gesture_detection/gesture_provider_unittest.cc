@@ -55,6 +55,11 @@ GestureProvider::Config CreateDefaultConfig() {
   // the second tap at microsecond intervals.
   sConfig.gesture_detector_config.double_tap_timeout = kOneMicrosecond * 4;
   sConfig.gesture_detector_config.double_tap_min_time = kOneMicrosecond * 2;
+
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  sConfig.gesture_detector_config.draglongpress_timeout = kOneSecond;
+#endif
+
   return sConfig;
 }
 
@@ -68,8 +73,13 @@ gfx::RectF BoundsForSingleMockTouchAtLocation(float x, float y) {
 class GestureProviderTest : public testing::Test, public GestureProviderClient {
  public:
   GestureProviderTest()
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+      : task_environment_(
+            base::test::SingleThreadTaskEnvironment::MainThreadType::DEFAULT) {}
+#else
       : task_environment_(
             base::test::SingleThreadTaskEnvironment::MainThreadType::UI) {}
+#endif
   ~GestureProviderTest() override = default;
 
   static MockMotionEvent ObtainMotionEvent(base::TimeTicks event_time,
@@ -156,7 +166,11 @@ class GestureProviderTest : public testing::Test, public GestureProviderClient {
   }
 
   void SetUpWithConfig(const GestureProvider::Config& config) {
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+    gesture_provider_ = std::make_unique<GestureProviderExt>(config, this);
+#else
     gesture_provider_ = std::make_unique<GestureProvider>(config, this);
+#endif
     gesture_provider_->SetMultiTouchZoomSupportEnabled(false);
   }
 
@@ -164,6 +178,13 @@ class GestureProviderTest : public testing::Test, public GestureProviderClient {
     gesture_provider_->ResetDetection();
     gestures_.clear();
   }
+
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  void ResetGestureDetection(bool is_lost_focus) {
+    gesture_provider_->AsGestureProviderExt()->ResetDetection(is_lost_focus);
+    gestures_.clear();
+  }
+#endif
 
   bool CancelActiveTouchSequence() {
     if (!gesture_provider_->current_down_event())
@@ -235,6 +256,12 @@ class GestureProviderTest : public testing::Test, public GestureProviderClient {
     return GetDefaultConfig().gesture_detector_config.longpress_timeout;
   }
 
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  base::TimeDelta GetDragLongpressTimeout() const {
+    return GetDefaultConfig().gesture_detector_config.draglongpress_timeout;
+  }
+#endif
+
   base::TimeDelta GetShowPressTimeout() const {
     return GetDefaultConfig().gesture_detector_config.showpress_timeout;
   }
@@ -298,6 +325,14 @@ class GestureProviderTest : public testing::Test, public GestureProviderClient {
     config.gesture_detector_config.longpress_timeout = longpress_timeout;
     SetUpWithConfig(config);
   }
+
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  void SetDragLongPressTimeout(base::TimeDelta draglongpress_timeout) {
+    GestureProvider::Config config = GetDefaultConfig();
+    config.gesture_detector_config.longpress_timeout = draglongpress_timeout;
+    SetUpWithConfig(config);
+   }
+#endif
 
   void SetSingleTapRepeatInterval(int repeat_interval) {
     GestureProvider::Config config = GetDefaultConfig();
@@ -3584,4 +3619,73 @@ TEST_F(GestureProviderTest, MaxDragDistanceHistogramsWithDrag) {
   histograms_tester.ExpectTotalCount("Event.MaxDragDistance.STYLUS", 0);
 }
 
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+//Verify that DRAGLONGPRES is triggered after LONG_PRESS event.
+TEST_F(GestureProviderTest, GestureDragLongpressCreateDetection) {
+  base::TimeTicks event_time = base::TimeTicks::Now();
+
+  MockMotionEvent event =
+      ObtainMotionEvent(event_time, MotionEvent::Action::DOWN);
+  EXPECT_TRUE(gesture_provider_->OnTouchEvent(event));
+
+  const base::TimeDelta drag_long_press_timeout =
+      GetDragLongpressTimeout() + GetLongPressTimeout() + GetShowPressTimeout() + kOneMicrosecond;
+  RunTasksAndWait(drag_long_press_timeout);
+
+  // will be receive longpress
+  EXPECT_TRUE(HasReceivedGesture(EventType::kGestureLongPress));
+  EXPECT_EQ(EventType::kGestureDragLongPress, GetMostRecentGestureEventType());
+  EXPECT_EQ(1, GetMostRecentGestureEvent().details.touch_points());
+
+  EXPECT_TRUE(CancelActiveTouchSequence());
+  EXPECT_FALSE(HasDownEvent());
+}
+
+// Verify that triggered ResetGestureDetection(true) due to loss of foucs will not interrupt generation of drag events;
+TEST_F(GestureProviderTest, GesutreDragLongpressCancelAndReset) {
+  base::TimeTicks event_time = base::TimeTicks::Now();
+
+  MockMotionEvent event =
+      ObtainMotionEvent(event_time, MotionEvent::Action::DOWN);
+  EXPECT_TRUE(gesture_provider_->OnTouchEvent(event));
+
+  const base::TimeDelta drag_long_press_timeout =
+      GetDragLongpressTimeout() + GetLongPressTimeout() + GetShowPressTimeout() + kOneMicrosecond;
+
+  ResetGestureDetection(true);
+  RunTasksAndWait(drag_long_press_timeout);
+
+  EXPECT_FALSE(HasReceivedGesture(EventType::kGestureLongPress));
+  EXPECT_EQ(EventType::kGestureDragLongPress, GetMostRecentGestureEventType());
+
+  // verify ResetGestureDetection(false) can cancel generation of drag events
+  EXPECT_TRUE(gesture_provider_->OnTouchEvent(event));
+  ResetGestureDetection(false);
+  RunTasksAndWait(drag_long_press_timeout);
+
+  EXPECT_FALSE(HasReceivedGesture(EventType::kGestureLongPress));
+  EXPECT_FALSE(HasReceivedGesture(EventType::kGestureDragLongPress));
+
+  // verify Action::Up also can cancel generation of drag events
+  MockMotionEvent up_event =
+      ObtainMotionEvent(event_time + kOneMicrosecond, MotionEvent::Action::UP);
+  EXPECT_TRUE(gesture_provider_->OnTouchEvent(event));
+  EXPECT_TRUE(gesture_provider_->OnTouchEvent(up_event));
+  RunTasksAndWait(drag_long_press_timeout);
+  EXPECT_FALSE(HasReceivedGesture(EventType::kGestureDragLongPress));
+
+  // verify Action::POINT_DOWN also can cancel generation of drag events
+  MockMotionEvent point_down_event =
+      ObtainMotionEvent(event_time + kOneMicrosecond, MotionEvent::Action::POINTER_DOWN);
+  EXPECT_TRUE(gesture_provider_->OnTouchEvent(event));
+  EXPECT_TRUE(gesture_provider_->OnTouchEvent(point_down_event));
+  RunTasksAndWait(drag_long_press_timeout);
+  EXPECT_FALSE(HasReceivedGesture(EventType::kGestureDragLongPress));
+}
+#endif
+
 }  // namespace ui
+
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#include "arkweb/chromium_ext/ui/events/gesture_detection/gesture_provider_ext_unittest.cc"
+#endif

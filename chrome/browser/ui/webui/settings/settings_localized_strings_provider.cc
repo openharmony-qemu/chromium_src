@@ -1529,7 +1529,7 @@ void AddAutofillStrings(content::WebUIDataSource* html_source,
        IDS_AUTOFILL_VIRTUAL_CARD_UNENROLL_DIALOG_TITLE},
       {"unenrollVirtualCardDialogConfirm",
        IDS_AUTOFILL_VIRTUAL_CARD_UNENROLL_DIALOG_CONFIRM_BUTTON_LABEL},
-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_OHOS)
       {"managePasskeysLabel", IDS_AUTOFILL_MANAGE_PASSKEYS_LABEL},
       {"managePasskeysTitle", IDS_AUTOFILL_MANAGE_PASSKEYS_TITLE},
       {"managePasskeysSearch", IDS_AUTOFILL_MANAGE_PASSKEYS_SEARCH},

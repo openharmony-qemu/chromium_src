@@ -191,6 +191,20 @@ declare global {
         submessages: string[];
       }
 
+      // #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      export interface OptionalPermission {
+        name: string;
+        message: string;
+        submessages: string[];
+        granted: boolean;
+      }
+
+      export interface OptionalPermissionUpdate {
+        name: string;
+        enabled: boolean;
+      }
+      // #endif
+
       export interface SiteControl {
         host: string;
         granted: boolean;
@@ -206,6 +220,10 @@ declare global {
         simplePermissions: chrome.developerPrivate.Permission[];
         runtimeHostPermissions?: RuntimeHostPermissions;
         canAccessSiteData: boolean;
+        // #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+        optionalSimplePermissions?:
+            chrome.developerPrivate.OptionalPermission[];
+        // #endif
       }
 
       export interface ExtensionInfo {
@@ -277,6 +295,9 @@ declare global {
         showAccessRequestsInToolbar?: boolean;
         acknowledgeSafetyCheckWarningReason?: SafetyCheckWarningReason;
         pinnedToToolbar?: boolean;
+        // #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+        optionalPermission?: OptionalPermissionUpdate;
+        // #endif
       }
 
       export interface ProfileConfigurationUpdate {
@@ -492,6 +513,8 @@ declare global {
           Promise<MatchingExtensionInfo[]>;
       export function updateSiteAccess(
           site: string, updates: ExtensionSiteAccessUpdate[]): Promise<void>;
+      // ifdef ARKWEB_ARKWEB_EXTENSIONS
+      export function openUrl(url: string, type: number): void;
       export function dismissSafetyHubExtensionsMenuNotification(): void;
       export function dismissMv2DeprecationPanel(): void;
       export function dismissMv2DeprecationNoticeForExtension(

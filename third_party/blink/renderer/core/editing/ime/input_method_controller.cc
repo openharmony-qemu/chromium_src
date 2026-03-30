@@ -28,6 +28,7 @@
 
 #include <tuple>
 
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/editing/ime/arkweb_input_method_controller_utils.h"
 #include "base/feature_list.h"
 #include "third_party/blink/public/common/features.h"
 #include "third_party/blink/public/mojom/input/focus_type.mojom-blink.h"
@@ -352,7 +353,17 @@ InputMethodController::InputMethodController(LocalDOMWindow& window,
       frame_(frame),
       has_composition_(false),
       last_vk_visibility_request_(
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+          ui::mojom::VirtualKeyboardVisibilityRequest::NONE) {
+  arkweb_input_method_controller_utils_ =
+      MakeGarbageCollected<ArkwebInputMethodControllerUtils>(this);
+}
+ArkwebInputMethodControllerUtils& InputMethodController::GetArkwebUtilsInstance() {
+    return *arkweb_input_method_controller_utils_;
+}
+#else
           ui::mojom::VirtualKeyboardVisibilityRequest::NONE) {}
+#endif
 
 InputMethodController::~InputMethodController() = default;
 
@@ -634,7 +645,11 @@ bool InputMethodController::FinishComposingText(
     RevealSelectionScope reveal_selection_scope(GetFrame());
 
     if (is_too_long) {
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+      std::ignore = arkweb_input_method_controller_utils_->ReplaceCompositionEx(ComposingText(), true);
+#else
       std::ignore = ReplaceComposition(ComposingText());
+#endif
     } else {
       Clear();
       DispatchCompositionEndEvent(GetFrame(), composing);
@@ -1957,6 +1972,7 @@ void InputMethodController::Trace(Visitor* visitor) const {
   visitor->Trace(frame_);
   visitor->Trace(composition_range_);
   visitor->Trace(active_edit_context_);
+  visitor->Trace(arkweb_input_method_controller_utils_);
   ExecutionContextLifecycleObserver::Trace(visitor);
 }
 

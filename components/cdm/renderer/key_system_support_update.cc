@@ -42,6 +42,11 @@
 #include "components/cdm/renderer/android_key_system_info.h"
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
+#include "components/cdm/renderer/wiseplay_key_system_info.h"
+#include "media/cdm/wiseplay_cdm_common.h"
+#endif
+
 #if BUILDFLAG(ENABLE_PLAYREADY)
 #include "components/cdm/common/playready_cdm_common.h"
 #include "components/cdm/renderer/playready_key_system_info.h"
@@ -275,6 +280,9 @@ bool CanSupportPersistentLicense() {
   // persistence-based features are supported or not.
   return true;
 
+#elif BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ENABLE_CDM)
+  LOG(INFO) << "[DRM]" << __func__;
+  return true;
 #elif BUILDFLAG(ENABLE_CDM_HOST_VERIFICATION) && \
     BUILDFLAG(ENABLE_CDM_STORAGE_ID)
   // On other platforms, persistent licenses are only supported if CDM host
@@ -337,12 +345,14 @@ void AddWidevine(const media::KeySystemCapability& capability,
         can_persist_data, sw_secure_capability.session_types);
     if (!base::Contains(session_types, CdmSessionType::kTemporary)) {
       DVLOG(1) << "Temporary sessions must be supported.";
+      LOG(INFO) << "[DRM]" << __func__;
       return;
     }
     DVLOG(2) << "Software secure Widevine supported";
   } else {
     DVLOG(2) << "Software secure Widevine NOT supported";
   }
+  LOG(INFO) << "[DRM]" << __func__;
 
   if (capability.hw_cdm_capability_or_status.has_value()) {
     const auto& hw_secure_capability =
@@ -356,6 +366,7 @@ void AddWidevine(const media::KeySystemCapability& capability,
         GetSupportedCodecs(hw_secure_capability,
                            /*requires_clear_lead_support=*/false);
 #endif  // BUILDFLAG(IS_WIN)
+    LOG(INFO) << "[DRM]" << __func__;
 
     hw_secure_encryption_schemes = hw_secure_capability.encryption_schemes;
     hw_secure_session_types = UpdatePersistentLicenseSupport(
@@ -366,6 +377,7 @@ void AddWidevine(const media::KeySystemCapability& capability,
     }
     DVLOG(2) << "Hardware secure Widevine supported";
   } else {
+    LOG(INFO) << "[DRM]" << __func__;
     DVLOG(2) << "Hardware secure Widevine NOT supported";
   }
 
@@ -396,6 +408,10 @@ void AddWidevine(const media::KeySystemCapability& capability,
   // On Android we support hardware secure if possible.
   max_audio_robustness = Robustness::HW_SECURE_CRYPTO;
   max_video_robustness = Robustness::HW_SECURE_ALL;
+#elif BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ENABLE_CDM)
+  max_audio_robustness = Robustness::SW_SECURE_DECODE;
+  max_video_robustness = Robustness::SW_SECURE_DECODE;
+  LOG(INFO) << "[DRM]" << __func__;
 #elif BUILDFLAG(IS_WIN)
   if (base::FeatureList::IsEnabled(
           media::kHardwareSecureDecryptionExperiment)) {
@@ -415,8 +431,12 @@ void AddWidevine(const media::KeySystemCapability& capability,
   // persistence-based features are supported or not.
   persistent_state_support = EmeFeatureSupport::ALWAYS_ENABLED;
   distinctive_identifier_support = EmeFeatureSupport::ALWAYS_ENABLED;
+#elif BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ENABLE_CDM)
+  persistent_state_support = EmeFeatureSupport::REQUESTABLE;
+  distinctive_identifier_support = EmeFeatureSupport::NOT_SUPPORTED;
+  LOG(INFO) << "[DRM]" << __func__;
 #endif
-
+  LOG(INFO) << "[DRM]" << __func__;
   key_systems->emplace_back(std::make_unique<WidevineKeySystemInfo>(
       codecs, encryption_schemes, session_types, hw_secure_codecs,
       hw_secure_encryption_schemes, hw_secure_session_types,
@@ -444,6 +464,8 @@ void AddWidevine(const media::KeySystemCapability& capability,
 #endif  // BUILDFLAG(IS_WIN)
 }
 #endif  // BUILDFLAG(ENABLE_WIDEVINE)
+
+#include "arkweb/chromium_ext/components/cdm/renderer/key_system_support_update_for_include.cc"
 
 void AddExternalClearKey(const media::KeySystemCapability& /*capability*/,
                          KeySystemInfos* key_systems) {
@@ -603,6 +625,14 @@ void OnKeySystemSupportUpdated(
     }
 #endif  // BUILDFLAG(ENABLE_WIDEVINE)
 
+#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
+    if (key_system == media::kWiseplayKeySystem) {
+      LOG(INFO) << "[DRM]" << __func__ << ", add wiseplay.";
+      AddWiseplay(capability, can_persist_data, &key_systems);
+      continue;
+    }
+#endif
+
     if (key_system == media::kExternalClearKeyKeySystem) {
       AddExternalClearKey(capability, &key_systems);
       continue;
@@ -629,7 +659,7 @@ void OnKeySystemSupportUpdated(
     DLOG(ERROR) << "Unrecognized key system: " << key_system;
 #endif  // BUILDFLAG(IS_ANDROID)
   }
-
+  LOG(INFO) << "[DRM]" << __func__;
   cb.Run(std::move(key_systems));
 }
 
@@ -639,9 +669,18 @@ std::unique_ptr<media::KeySystemSupportRegistration>
 GetSupportedKeySystemsUpdates(content::RenderFrame* render_frame,
                               bool can_persist_data,
                               media::GetSupportedKeySystemsCB cb) {
+  LOG(INFO) << "[DRM]" << __func__;
   return content::ObserveKeySystemSupportUpdate(
       render_frame, base::BindRepeating(&OnKeySystemSupportUpdated,
                                         can_persist_data, std::move(cb)));
 }
+
+#if BUILDFLAG(ARKWEB_TEST)
+void TestAddWiseplay(const media::KeySystemCapability& capability,
+                     bool can_persist_data,
+                     media::KeySystemInfos* key_systems) {
+  AddWiseplay(capability, can_persist_data, key_systems);
+}
+#endif  // ARKWEB_TEST
 
 }  // namespace cdm

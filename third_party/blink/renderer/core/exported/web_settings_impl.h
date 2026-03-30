@@ -31,6 +31,7 @@
 #ifndef THIRD_PARTY_BLINK_RENDERER_CORE_EXPORTED_WEB_SETTINGS_IMPL_H_
 #define THIRD_PARTY_BLINK_RENDERER_CORE_EXPORTED_WEB_SETTINGS_IMPL_H_
 
+#include "arkweb/build/features/features.h"
 #include "third_party/blink/public/mojom/v8_cache_options.mojom-blink.h"
 #include "third_party/blink/public/mojom/webpreferences/web_preferences.mojom-blink.h"
 #include "third_party/blink/public/web/web_settings.h"
@@ -41,11 +42,18 @@ namespace blink {
 
 class DevToolsEmulator;
 class Settings;
+#if BUILDFLAG(IS_ARKWEB)
+class WebSettingsImplExt;
+#endif
 
-class CORE_EXPORT WebSettingsImpl final : public WebSettings {
+class CORE_EXPORT WebSettingsImpl : public WebSettings {
  public:
   WebSettingsImpl(Settings*, DevToolsEmulator*);
   ~WebSettingsImpl() = default;
+#if BUILDFLAG(IS_ARKWEB)
+  friend class WebSettingsImplExt;
+  virtual WebSettingsImplExt* AsWebSettingsImplExt() { return nullptr; }
+#endif
 
   void SetFromStrings(const WebString& name, const WebString& value) override;
 
@@ -280,4 +288,8 @@ class CORE_EXPORT WebSettingsImpl final : public WebSettings {
 
 }  // namespace blink
 
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/exported/web_settings_impl_ext.h"
+#endif
 #endif  // THIRD_PARTY_BLINK_RENDERER_CORE_EXPORTED_WEB_SETTINGS_IMPL_H_

@@ -105,6 +105,7 @@
 <translation id="2210502920229141283">Zwiększ swoje bezpieczeństwo w dowolnym miejscu dzięki Ulepszonemu bezpiecznemu przeglądaniu w Chromium na iOS</translation>
 <translation id="2210682093923538346">Niebezpieczna witryna. Przeglądarka Chromium usunęła powiadomienia.</translation>
 <translation id="2236949375853147973">Moja aktywność</translation>
+<translation id="2238104961394611930">Włączone • Nie można zweryfikować źródła rozszerzenia</translation>
 <translation id="2238130810669087193">Aby mieć dostęp do adresów oraz innych ustawień i danych na wszystkich swoich urządzeniach, zaloguj się w Chromium. Ten adres zostanie zapisany na Twoim koncie Google, gdy się zalogujesz.</translation>
 <translation id="2241627712206172106">Jeśli dzielisz się komputerem ze znajomymi lub rodziną, wszyscy możecie niezależnie przeglądać internet i po swojemu skonfigurować Chromium.</translation>
 <translation id="2283803047247799269">Wyszukaj na tej karcie za pomocą wyszukiwania obrazów</translation>
@@ -512,6 +513,7 @@ Niektóre funkcje mogą być niedostępne. Podaj inny katalog z profilem lub uż
 <translation id="6862030660799253820">Wyszukaj na tym obrazie za pomocą wyszukiwania obrazów</translation>
 <translation id="6873893289264747459">Przeglądarka Chromium wykryła, że rozszerzenie „<ph name="EXTENSION_NAME" />” zawiera złośliwe oprogramowanie</translation>
 <translation id="6877155553248388166">prawy dolny róg obszaru wyszukiwania: po prawej stronie <ph name="RIGHT" />%, u dołu <ph name="BOTTOM" />%</translation>
+<translation id="6885534934768077023">Uwaga: Przeglądarka nie może zapobiegać rejestrowaniu historii przeglądania przez zainstalowane rozszerzenia. Aby wyłączyć to rozszerzenie w Trybie prywatnym, wyłącz tę opcję.</translation>
 <translation id="6896758677409633944">Kopiuj</translation>
 <translation id="6901631050894301805">Ustaw Chromium jako przeglądarkę domyślną i przypnij ją do paska zadań</translation>
 <translation id="6909503629704372277">Zarządzaj profila&amp;mi Chromium</translation>
@@ -570,6 +572,7 @@ Chromium nie może odzyskać ustawień.</translation>
 <translation id="753534427205733210">{0,plural, =1{Chromium uruchomi się ponownie za 1 minutę}few{Chromium uruchomi się ponownie za # minuty}many{Chromium uruchomi się ponownie za # minut}other{Chromium uruchomi się ponownie za # minuty}}</translation>
 <translation id="7565444033145385702">Aby chronić swoje dane, zezwól Chromium na usunięcie uprawnień witryn, których ostatnio nie odwiedzasz.</translation>
 <translation id="7583399374488819119">Instalator <ph name="COMPANY_NAME" /></translation>
+<translation id="7597668698051545254">Wyłączone • Nie można zweryfikować źródła rozszerzenia</translation>
 <translation id="761356813943268536">Chromium używa Twojej kamery i mikrofonu.</translation>
 <translation id="7617377681829253106">Przeglądarka Chromium jest jeszcze lepsza</translation>
 <translation id="7622753900276619808">Teraz masz do dyspozycji więcej funkcji w Chromium</translation>

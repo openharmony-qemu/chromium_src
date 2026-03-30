@@ -33,6 +33,7 @@
 
 #include <unicode/uscript.h>
 
+#include "arkweb/chromium_ext/third_party/blink/public/web/arkweb_web_settings_ext.h"
 #include "third_party/blink/public/common/css/navigation_controls.h"
 #include "third_party/blink/public/common/web_preferences/web_preferences.h"
 #include "third_party/blink/public/mojom/v8_cache_options.mojom-forward.h"
@@ -49,7 +50,11 @@ class WebString;
 // for the WebView's page without any knowledge of WebCore itself.  For the most
 // part, these functions have a 1:1 mapping with the methods in
 // WebCore/page/Settings.h.
+#if BUILDFLAG(IS_ARKWEB)
+class WebSettings : public WebSettingsArkwebInterface {
+#else
 class WebSettings {
+#endif
  public:
   // Selection strategy defines how the selection granularity changes when the
   // selection extent is moved.

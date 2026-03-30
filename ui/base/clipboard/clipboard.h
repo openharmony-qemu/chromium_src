@@ -37,6 +37,12 @@
 
 class GURL;
 
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+namespace OHOS::NWeb {
+class NWebVaultPlainTextCallback;
+}
+#endif
+
 namespace ui {
 class TestClipboard;
 class ScopedClipboardWriter;
@@ -51,6 +57,9 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) Clipboard
  public:
   using ReadAvailableTypesCallback =
       base::OnceCallback<void(std::vector<std::u16string> result)>;
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  using UpdateClipboardDataCallback = base::OnceCallback<void()>;
+#endif
   using ReadTextCallback = base::OnceCallback<void(std::u16string result)>;
   using ReadAsciiTextCallback = base::OnceCallback<void(std::string result)>;
   using ReadHtmlCallback = base::OnceCallback<void(std::u16string markup,
@@ -315,6 +324,18 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) Clipboard
                          const GURL& frame,
                          const GURL& main_frame);
 
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  virtual bool HasPasteData() const { return false; }
+
+  virtual void OnClipboardDataGuard(bool status) {}
+
+  virtual void UpdateClipboardData(UpdateClipboardDataCallback) {}
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
+
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  virtual bool HandlePasswordVault(
+      const std::shared_ptr<OHOS::NWeb::NWebVaultPlainTextCallback>& callback) { return false; }
+#endif  // BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
  protected:
   struct BitmapData {
     SkBitmap bitmap;

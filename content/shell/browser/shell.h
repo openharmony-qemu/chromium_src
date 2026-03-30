@@ -19,6 +19,9 @@
 #include "content/shell/browser/shell_platform_delegate.h"
 #include "ui/gfx/geometry/size.h"
 #include "ui/gfx/native_ui_types.h"
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+enum class RendererIsUnresponsiveReason;
+#endif
 
 class GURL;
 
@@ -160,13 +163,21 @@ class Shell : public WebContentsDelegate, public WebContentsObserver {
 #endif
   bool DidAddMessageToConsole(WebContents* source,
                               blink::mojom::ConsoleMessageLevel log_level,
+#if BUILDFLAG(ARKWEB_CONSOLE_LOGGING)
+                              blink::mojom::ConsoleMessageSource log_source,
+#endif
                               const std::u16string& message,
                               int32_t line_no,
                               const std::u16string& source_id) override;
-  void RendererUnresponsive(
-      WebContents* source,
+  void RendererUnresponsive(WebContents* source,
       RenderWidgetHost* render_widget_host,
-      base::RepeatingClosure hang_monitor_restarter) override;
+                            base::RepeatingClosure hang_monitor_restarter
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+                            ,
+                            RendererIsUnresponsiveReason reason
+#endif
+                            ) override;
+
   void ActivateContents(WebContents* contents) override;
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS)
   std::unique_ptr<ColorChooser> OpenColorChooser(

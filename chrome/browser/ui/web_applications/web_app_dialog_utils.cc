@@ -103,19 +103,22 @@ void OnWebAppInstallShowInstallDialog(
             iph_state, show_initiating_origin);
         return;
       }
+#if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+    case WebAppInstallFlow::kCreateShortcut: 
 #if BUILDFLAG(IS_CHROMEOS)
-    case WebAppInstallFlow::kCreateShortcut: {
+    {
       webapps::AppId app_id =
           web_app::GenerateAppIdFromManifestId(web_app_info->manifest_id());
       metrics::structured::StructuredMetricsClient::Record(
           cros_events::AppDiscovery_Browser_CreateShortcut().SetAppId(app_id));
     }
+#endif  // BUILDFLAG(IS_CHROMEOS)
 
       ShowCreateShortcutDialog(initiator_web_contents, std::move(web_app_info),
                                std::move(install_tracker),
                                std::move(web_app_acceptance_callback));
       return;
-#endif
+#endif  // BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
     case WebAppInstallFlow::kUnknown:
       NOTREACHED();
   }

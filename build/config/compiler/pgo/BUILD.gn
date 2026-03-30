@@ -136,7 +136,7 @@ config("pgo_optimization_flags") {
     inputs += [ pgo_data_path ]
 
     cflags = [
-      "-fprofile-use=" + rebase_path(pgo_data_path, root_build_dir),
+      #"-fprofile-use=" + rebase_path(pgo_data_path, root_build_dir),
 
       # It's possible to have some profile data legitimately missing,
       # and at least some profile data always ends up being considered

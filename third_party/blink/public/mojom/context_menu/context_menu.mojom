@@ -166,6 +166,16 @@ struct UntrustworthyContextMenuParams {
   // Whether context is editable.
   bool is_editable;
 
+  // Whether inner node can selectable.
+  [EnableIf=arkweb_ext_free_copy]
+  bool is_selectable;
+
+  [EnableIf=arkweb_drag_drop]
+  gfx.mojom.Rect image_rect;
+
+  [EnableIf=arkweb_drag_drop]
+  bool is_ai_link;
+
   // Writing direction menu items.
   int32 writing_direction_default;
   int32 writing_direction_left_to_right;

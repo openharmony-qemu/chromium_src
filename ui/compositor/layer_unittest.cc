@@ -119,9 +119,15 @@ class ColoredLayer : public Layer, public LayerDelegate {
 class LayerWithRealCompositorTest
     : public ::testing::TestWithParam<UiCompositorUsesLayerLists> {
  public:
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  LayerWithRealCompositorTest()
+      : task_environment_(),
+        default_font_desc_setter_("Segoe UI, 15px") {}
+#else
   LayerWithRealCompositorTest()
       : task_environment_(base::test::TaskEnvironment::MainThreadType::UI),
         default_font_desc_setter_("Segoe UI, 15px") {}
+#endif
 
   LayerWithRealCompositorTest(const LayerWithRealCompositorTest&) = delete;
   LayerWithRealCompositorTest& operator=(const LayerWithRealCompositorTest&) =
@@ -536,8 +542,13 @@ TEST_P(LayerWithRealCompositorTest, Hierarchy) {
 class LayerWithDelegateTest
     : public testing::TestWithParam<UiCompositorUsesLayerLists> {
  public:
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  LayerWithDelegateTest()
+      : task_environment_() {}
+#else
   LayerWithDelegateTest()
       : task_environment_(base::test::TaskEnvironment::MainThreadType::UI) {}
+#endif
 
   LayerWithDelegateTest(const LayerWithDelegateTest&) = delete;
   LayerWithDelegateTest& operator=(const LayerWithDelegateTest&) = delete;
@@ -624,7 +635,11 @@ class LayerWithDelegateTest
   }
 
  private:
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  base::test::TaskEnvironment task_environment_{};
+#else
   base::test::TaskEnvironment task_environment_;
+#endif
   std::unique_ptr<TestContextFactories> context_factories_;
   std::unique_ptr<TestCompositorHost> compositor_host_;
   base::test::ScopedFeatureList feature_list_;

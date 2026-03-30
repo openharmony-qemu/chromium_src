@@ -125,6 +125,13 @@ class PLATFORM_EXPORT DrawingBuffer : public cc::TextureLayerClient,
     kDiscard,
   };
 
+#if BUILDFLAG(ARKWEB_WEBGL)
+  enum WebGLVersion {
+    kWebGL1,
+    kWebGL2,
+  };
+#endif
+
   enum ChromiumImageUsage {
     kAllowChromiumImage,
     kDisallowChromiumImage,

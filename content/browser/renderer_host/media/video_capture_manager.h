@@ -34,6 +34,7 @@
 #include "media/capture/video/video_capture_device.h"
 #include "media/capture/video/video_capture_device_info.h"
 #include "media/capture/video_capture_types.h"
+#include "arkweb/build/features/features.h"
 #include "ui/gfx/native_ui_types.h"
 
 #if BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_DESKTOP_ANDROID)
@@ -43,6 +44,7 @@
 namespace content {
 class VideoCaptureController;
 class VideoCaptureControllerEventHandler;
+class VideoCaptureManagerExt;
 
 // VideoCaptureManager is used to open/close, start/stop, enumerate available
 // video capture devices, and manage VideoCaptureController's.
@@ -54,6 +56,8 @@ class CONTENT_EXPORT VideoCaptureManager
       public VideoCaptureDeviceLaunchObserver,
       public ScreenlockObserver {
  public:
+  friend class VideoCaptureManagerExt;
+
   using VideoCaptureDevice = media::VideoCaptureDevice;
 
   // Callback used to signal the completion of a controller lookup.
@@ -254,7 +258,15 @@ class CONTENT_EXPORT VideoCaptureManager
     set_desktop_capture_window_id_callback_for_testing_ = callback;
   }
 
+  virtual VideoCaptureManagerExt* AsVideoCaptureManagerExt() {
+    return nullptr;
+  }
+
+#if BUILDFLAG(ARKWEB_TEST)
+ public:
+#else
  private:
+#endif // ARKWEB_TEST
   class CaptureDeviceStartRequest;
 
   using SessionMap =
@@ -262,6 +274,9 @@ class CONTENT_EXPORT VideoCaptureManager
   using DeviceStartQueue = base::circular_deque<CaptureDeviceStartRequest>;
   using VideoCaptureDeviceDescriptor = media::VideoCaptureDeviceDescriptor;
   using VideoCaptureDeviceDescriptors = media::VideoCaptureDeviceDescriptors;
+#if BUILDFLAG(ARKWEB_WEBRTC)
+  using NWebIdMap = std::map<media::VideoCaptureSessionId, int>;
+#endif  // BUILDFLAG(ARKWEB_WEBRTC)
 
   ~VideoCaptureManager() override;
 
@@ -385,8 +400,19 @@ class CONTENT_EXPORT VideoCaptureManager
 
   SetDesktopCaptureWindowIdCallback
       set_desktop_capture_window_id_callback_for_testing_;
+
+#if BUILDFLAG(ARKWEB_WEBRTC)
+  NWebIdMap nWebId_;
+  mutable std::mutex NWebIdMutex_;
+#endif  // BUILDFLAG(ARKWEB_WEBRTC)
+
+#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
+  bool is_picker_show_ = false;
+  bool is_session_reuse_ = true;
+#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
 };
 
 }  // namespace content
+#include "arkweb/chromium_ext/content/browser/renderer_host/media/video_capture_manager_ext.h"
 
 #endif  // CONTENT_BROWSER_RENDERER_HOST_MEDIA_VIDEO_CAPTURE_MANAGER_H_

@@ -80,7 +80,11 @@ class COMPONENT_EXPORT(NATIVE_THEME) NativeThemeFluent
       Part part,
       State state,
       const gfx::Rect& rect,
-      const ScrollbarThumbExtraParams& extra_params) const override;
+      const ScrollbarThumbExtraParams& extra_params
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+      , SkColor scrollbar_color
+#endif // ARKWEB_SCROLLBAR
+      ) const override;
   void PaintScrollbarTrack(cc::PaintCanvas* canvas,
                            const ColorProvider* color_provider,
                            Part part,

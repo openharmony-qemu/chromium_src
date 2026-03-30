@@ -4,6 +4,7 @@
 
 #include "services/network/public/cpp/url_loader_completion_status.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/trace_event/trace_event.h"
 #include "net/base/net_errors.h"
 
@@ -42,6 +43,9 @@ bool URLLoaderCompletionStatus::operator==(
          cors_error_status == rhs.cors_error_status &&
          blocked_by_response_reason == rhs.blocked_by_response_reason &&
          should_report_orb_blocking == rhs.should_report_orb_blocking &&
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+         abort_due_to_cef_browser_destroyed == rhs.abort_due_to_cef_browser_destroyed &&
+#endif  //  ARKWEB_EX_DOWNLOAD
          should_collapse_initiator == rhs.should_collapse_initiator;
 }
 

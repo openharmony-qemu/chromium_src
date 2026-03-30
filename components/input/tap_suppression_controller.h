@@ -47,7 +47,9 @@ class COMPONENT_EXPORT(INPUT) TapSuppressionController {
   // Should be called whenever a tap ending event is received. Returns true if
   // the tap event should be suppressed.
   bool ShouldSuppressTapEnd();
-
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/components/input/tap_suppression_controller_for_include.h"
+#endif
  protected:
   virtual base::TimeTicks Now();
 
@@ -66,7 +68,10 @@ class COMPONENT_EXPORT(INPUT) TapSuppressionController {
   };
 
   State state_;
-
+#if BUILDFLAG(IS_ARKWEB)
+  bool scroll_enabled_ = true;
+  bool tapSuppressionEnabled_;
+#endif
   base::TimeDelta max_cancel_to_down_time_;
 
   // TODO(rjkroege): During debugging, the event times did not prove reliable.

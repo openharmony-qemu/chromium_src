@@ -109,6 +109,12 @@ class CORE_EXPORT TreeScope : public GarbageCollectedMixin {
   void AddElementById(const AtomicString& element_id, Element&);
   void RemoveElementById(const AtomicString& element_id, Element&);
 
+#if BUILDFLAG(ARKWEB_MEDIA)
+  bool IsDocumentInactive() {
+    return !document_;
+  }
+#endif
+
   Document& GetDocument() const {
     DCHECK(document_);
     return *document_;

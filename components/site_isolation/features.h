@@ -13,11 +13,11 @@ namespace features {
 BASE_DECLARE_FEATURE(kSiteIsolationForPasswordSites);
 BASE_DECLARE_FEATURE(kSiteIsolationForOAuthSites);
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_SITE_ISOLATION)
 BASE_DECLARE_FEATURE(kSiteIsolationMemoryThresholdsAndroid);
 extern const char kStrictSiteIsolationMemoryThresholdParamName[];
 extern const char kPartialSiteIsolationMemoryThresholdParamName[];
-#endif  // BUIDLFLAG(IS_ANDROID)
+#endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_SITE_ISOLATION)
 
 BASE_DECLARE_FEATURE(kOriginIsolationForJsOptExceptions);
 BASE_DECLARE_FEATURE(kOriginIsolationMemoryThreshold);

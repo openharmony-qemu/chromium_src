@@ -76,11 +76,11 @@ namespace blink {
 const char kColorEmojiLocale[] = "und-Zsye";
 const char kMonoEmojiLocale[] = "und-Zsym";
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_THEME_FONT)
 extern const char kNotoColorEmojiCompat[] = "Noto Color Emoji Compat";
 #endif
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 float FontCache::device_scale_factor_ = 1.0;
 #endif
 
@@ -113,7 +113,7 @@ const FontPlatformData* FontCache::SystemFontPlatformData(
     const FontDescription& font_description) {
   const AtomicString& family = FontCache::SystemFontFamily();
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA) || \
-    BUILDFLAG(IS_IOS)
+    BUILDFLAG(IS_IOS) || BUILDFLAG(IS_OHOS)
   if (family.empty() || family == font_family_names::kSystemUi)
     return nullptr;
 #else
@@ -275,7 +275,9 @@ void FontCache::Invalidate() {
   for (const auto& client : font_cache_clients_) {
     client->FontCacheInvalidated();
   }
-
+#if BUILDFLAG(ARKWEB_CSS_FONT)
+  TypefaceCacheClear();
+#endif
   Purge();
 }
 

@@ -63,6 +63,51 @@ class WebTestWebFrameWidgetImpl : public WebFrameWidgetImpl,
                      base::OnceCallback<void(bool)>,
                      bool speculative) override;
 
+#if BUILDFLAG(ARKWEB_AI)
+    void OnTextSelected(bool flag) override {}
+    void OnDestroyImageAnalyzerOverlay() override {}
+    void OnFoldStatusChanged(uint32_t foldStatus) override {}    
+    void OnDataDetectorSelectText() override {}
+
+  void OnTextRecognized(Vector<mojom::blink::TextRecognizeResultPtr> res,
+                        float scale) override {}
+  using GetImageRectCallback = base::OnceCallback<void(const gfx::Rect&)>;
+  void GetImageRect(GetImageRectCallback callback) override {}
+  void NotifyOverlayStateChanged() override {}
+#endif
+
+#if BUILDFLAG(ARKWEB_MENU)
+  void RegisterClippedVisualViewportSelectionBounds(
+       gfx::Rect clipped_selection_bounds) override {}    
+    void CleanFocusCache() override {}
+  void SelectRangeV2(const gfx::Point& position, bool is_base) override {}
+#endif
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+  void ShowFreeCopyMenu() override {}
+#endif
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)    
+    void TouchHitTest(const WebPointerEvent& event, size_t i) override {}
+    void MouseHitTest(const WebMouseEvent& event, int32_t button) override {}
+#endif
+
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+  gfx::Vector2dF GetOverScrollOffset() override {
+    gfx::Vector2dF overscroll_offset;
+    overscroll_offset.set_x(0.0f);
+    overscroll_offset.set_y(0.0f);
+    return overscroll_offset;
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  void SetZoomLevel(float magnify_delta, const gfx::Point& anchor) override {}
+  void SetOverscrollMode(int mode) override {}
+
+    void GetInputElementAttributes(
+        HashMap<String, String>& attributes) const override {}
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+
  private:
   // WebFrameWidgetImpl overrides.
   void BindLocalRoot(WebLocalFrame&) override;

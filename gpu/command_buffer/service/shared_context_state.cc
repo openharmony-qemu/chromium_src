@@ -61,7 +61,8 @@
 #include "gpu/vulkan/vulkan_implementation.h"
 #include "gpu/vulkan/vulkan_util.h"
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_WIN) || \
+    BUILDFLAG(IS_OHOS)
 #include "gpu/command_buffer/service/external_semaphore_pool.h"
 #endif
 
@@ -83,6 +84,10 @@
 #include "ui/gl/gl_angle_util_win.h"
 #endif
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+#include "arkweb/ohos_nweb/src/sysevent/event_reporter.h"
+#endif
 namespace gpu {
 namespace {
 
@@ -304,7 +309,8 @@ SharedContextState::SharedContextState(
   ) {
     if (vk_context_provider_) {
 #if BUILDFLAG(ENABLE_VULKAN) && \
-    (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_WIN))
+    (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_WIN) || \
+     BUILDFLAG(IS_OHOS))
       external_semaphore_pool_ = std::make_unique<ExternalSemaphorePool>(this);
 #endif
     }
@@ -344,7 +350,8 @@ SharedContextState::~SharedContextState() {
   }
 
 #if BUILDFLAG(ENABLE_VULKAN) && \
-    (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_WIN))
+    (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_WIN) || \
+     BUILDFLAG(IS_OHOS))
   external_semaphore_pool_.reset();
 #endif
 
@@ -579,7 +586,7 @@ bool SharedContextState::InitializeGanesh(
   }
 
   gr_context_->setResourceCacheLimit(max_resource_cache_bytes);
-  transfer_cache_ = std::make_unique<ServiceTransferCache>(
+  transfer_cache_ = std::make_unique<ServiceTransferCacheExt>(
       gpu_preferences,
       base::BindRepeating(&SharedContextState::ScheduleSkiaCleanup,
                           base::Unretained(this)));
@@ -682,7 +689,7 @@ bool SharedContextState::InitializeGraphite(
         /*require_ordered_recordings=*/false);
   }
 
-  transfer_cache_ = std::make_unique<ServiceTransferCache>(
+  transfer_cache_ = std::make_unique<ServiceTransferCacheExt>(
       gpu_preferences,
       base::BindRepeating(&SharedContextState::ScheduleSkiaCleanup,
                           base::Unretained(this)));
@@ -1301,6 +1308,9 @@ std::optional<error::ContextLostReason> SharedContextState::GetResetStatus(
     }
 
     if (gr_context_->oomed()) {
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+      ReportSkiaOOMError("SKIA_OOM_ERROR.");
+#endif
       LOG(ERROR) << "SharedContextState context lost via Skia OOM.";
       return error::kOutOfMemory;
     }

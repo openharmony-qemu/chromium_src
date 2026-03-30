@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 import("//build/config/ui.gni")
 import("//mojo/public/tools/bindings/mojom.gni")
+import("//arkweb/build/features/features.gni")
 mojom("mojom") {
   generate_java = true
   sources = [
@@ -53,6 +54,21 @@ mojom("mojom") {
 
   # Used in thread.mojom
   enabled_features = []
+  if (arkweb_slide && !is_component_build) { # FIXME is_component_build
+    enabled_features += [ "arkweb_slide" ]
+  }
+  if (arkweb_same_layer) {
+    enabled_features += ["arkweb_same_layer"]
+  }
+  if (arkweb_performance_scheduling) {
+    enabled_features += ["arkweb_performance_scheduling"]
+  }
+  if (arkweb_vsync_schedule) {
+    enabled_features += ["arkweb_vsync_schedule"]
+  }
+  if (arkweb_report_sys_event) {
+    enabled_features += ["arkweb_report_sys_event"]
+  }
   if (is_fuchsia || is_apple) {
     enabled_features += [ "thread_id_is_64_bit" ]
   } else {

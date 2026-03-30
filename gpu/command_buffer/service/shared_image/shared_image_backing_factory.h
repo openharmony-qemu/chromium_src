@@ -20,6 +20,7 @@
 #include "third_party/skia/include/gpu/ganesh/GrTypes.h"
 #include "ui/gfx/buffer_types.h"
 #include "ui/gfx/gpu_memory_buffer_handle.h"
+#include "arkweb/chromium_ext/gpu/command_buffer/service/shared_image/shared_image_backing_factory_ext.h"
 
 namespace gfx {
 class Size;
@@ -30,8 +31,11 @@ namespace gpu {
 class SharedImageBacking;
 struct Mailbox;
 
-class GPU_GLES2_EXPORT SharedImageBackingFactory {
+class GPU_GLES2_EXPORT SharedImageBackingFactory : public SharedImageBackingFactoryExt {
  public:
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+  using SharedImageBackingFactoryExt::CreateSharedImage;
+#endif
   // Mask for all valid usage flags.
   static constexpr SharedImageUsageSet kUsageAll =
       SharedImageUsageSet((LAST_SHARED_IMAGE_USAGE << 1) - 1);

@@ -43,6 +43,8 @@ export interface ItemDelegate {
   inspectItemView(id: string, view: chrome.developerPrivate.ExtensionView):
       void;
   openUrl(url: string): void;
+  // #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  openUrlEx(url: string, type: Number): void;
   reloadItem(id: string): Promise<void>;
   repairItem(id: string): void;
   showItemOptionsPage(extension: chrome.developerPrivate.ExtensionInfo): void;
@@ -55,6 +57,9 @@ export interface ItemDelegate {
       reason: chrome.developerPrivate.SafetyCheckWarningReason): void;
   setShowAccessRequestsInToolbar(id: string, showRequests: boolean): void;
   setItemPinnedToToolbar(id: string, pinnedToToolbar: boolean): void;
+  // #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  setItemOptionalPermission(id: string, name: string, enabled: boolean): void;
+  // #endif
   uploadItemToAccount(id: string): Promise<boolean>;
 
   // TODO(tjudkins): This function is not specific to items, so should be pulled
@@ -90,6 +95,8 @@ export class DummyItemDelegate {
   setItemCollectsErrors(_id: string, _collectsErrors: boolean) {}
   inspectItemView(_id: string, _view: chrome.developerPrivate.ExtensionView) {}
   openUrl(_url: string) {}
+  // #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  openUrlEx(_url: string, _type: Number) {}
   reloadItem(_id: string) {
     return Promise.resolve();
   }
@@ -109,6 +116,10 @@ export class DummyItemDelegate {
       _id: string, _reason: chrome.developerPrivate.SafetyCheckWarningReason) {}
   setShowAccessRequestsInToolbar(_id: string, _showRequests: boolean) {}
   setItemPinnedToToolbar(_id: string, _pinnedToToolbar: boolean) {}
+  // #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  setItemOptionalPermission(_id: string, _name: string, _enabled: boolean):
+      void {}
+  // #endif
   uploadItemToAccount(_id: string) {
     return Promise.resolve(false);
   }

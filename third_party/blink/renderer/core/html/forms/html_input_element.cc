@@ -93,6 +93,10 @@
 #include "third_party/blink/renderer/platform/bindings/exception_state.h"
 #include "third_party/blink/renderer/platform/heap/garbage_collected.h"
 #include "third_party/blink/renderer/platform/instrumentation/use_counter.h"
+#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/instrumentation/resource_coordinator/document_resource_coordinator_utils.h"
+#include "third_party/blink/renderer/platform/instrumentation/resource_coordinator/document_resource_coordinator.h"
+#endif
 #include "third_party/blink/renderer/platform/language.h"
 #include "third_party/blink/renderer/platform/runtime_enabled_features.h"
 #include "third_party/blink/renderer/platform/text/platform_locale.h"
@@ -1094,6 +1098,14 @@ void HTMLInputElement::DispatchInputAndChangeEventIfNeeded() {
       input_type_->ShouldSendChangeEventAfterCheckedChanged()) {
     DispatchInputEvent();
     DispatchChangeEvent();
+#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
+    if (auto* rc = GetDocument().GetResourceCoordinator()) {
+      if (Form()) {
+        uint64_t form_id = Form()->UniqueRendererFormId();
+        rc->coordinator_utils_->OnFormEditingStateChanged(form_id, false);
+      }
+    }
+#endif
   }
 }
 

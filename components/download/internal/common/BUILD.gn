@@ -11,6 +11,10 @@ if (is_android) {
   import("//third_party/jni_zero/jni_zero.gni")
 }
 
+#if BUILDFLAG(IS_ARKWEB)
+import("//arkweb/chromium_ext/chromium_ext.gni")
+#endif
+
 source_set("internal") {
   visibility = [
     ":for_tests",
@@ -89,6 +93,11 @@ source_set("internal") {
     "//services/network/public/cpp",
     "//services/service_manager/public/cpp",
   ]
+
+  if (is_arkweb) {
+    sources += arkweb_components_download_internal_common_sources
+    deps += [ "//third_party:huawei_securec" ]
+  }
 
   configs += [ "//build/config/compiler:wexit_time_destructors" ]
 
@@ -180,6 +189,9 @@ source_set("unit_tests") {
     "parallel_download_utils_unittest.cc",
     "rate_estimator_unittest.cc",
   ]
+  if (is_arkweb) {
+    sources += arkweb_components_download_internal_common_test_sources
+  }
 
   deps = [
     ":for_tests",

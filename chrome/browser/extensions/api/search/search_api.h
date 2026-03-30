@@ -20,6 +20,12 @@ class SearchQueryFunction : public ExtensionFunction {
  private:
   ~SearchQueryFunction() override = default;
   ResponseAction Run() override;
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  static void OnQuery(const base::WeakPtr<SearchQueryFunction>& function,
+                      const std::optional<std::string>& error);
+  bool call_query_ = false;
+  base::WeakPtrFactory<SearchQueryFunction> weak_ptr_factory_{this};
+#endif
 };
 
 }  // namespace extensions

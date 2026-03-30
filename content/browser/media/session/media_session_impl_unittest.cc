@@ -23,6 +23,8 @@
 #include "content/test/test_content_browser_client.h"
 #include "content/test/test_web_contents.h"
 #include "media/base/media_content_type.h"
+#include "media/base/media_switches.h"
+#include "media/base/picture_in_picture_events_info.h"
 #include "services/media_session/public/cpp/features.h"
 #include "services/media_session/public/cpp/test/audio_focus_test_util.h"
 #include "services/media_session/public/cpp/test/mock_media_session.h"
@@ -380,6 +382,29 @@ TEST_F(MediaSessionImplTest, SessionInfo_PlaybackState) {
     GetMediaSession()->OnPlayerPaused(player_observer_.get(), player_id);
     observer.WaitForPlaybackState(MediaPlaybackState::kPaused);
   }
+}
+
+TEST_F(MediaSessionImplTest, OnPlayerPaused_MultipleNormalPlayers) {
+  MediaSessionImpl* session = GetMediaSession();
+  static const base::UnguessableToken test_token =
+      base::UnguessableToken::Create();
+  auto mock_delegate = std::make_unique<MockAudioFocusDelegate>();
+  EXPECT_CALL(*mock_delegate, request_id())
+      .WillRepeatedly(testing::ReturnRef(test_token));
+  EXPECT_CALL(*mock_delegate, ReleaseRequestId()).Times(testing::AnyNumber());
+  SetDelegateForTests(session, std::move(mock_delegate));
+  int player1 = StartNewPlayer();
+  int player2 = StartNewPlayer();
+  ASSERT_TRUE(session->IsActive());
+  ASSERT_TRUE(session->IsControllable());
+  session->OnPlayerPaused(player_observer(), player1);
+  EXPECT_TRUE(session->IsActive());
+  EXPECT_TRUE(session->IsControllable());
+  player_observer()->SetPlaying(player2, false);
+  session->OnPlayerPaused(player_observer(), player2);
+  EXPECT_TRUE(session->IsSuspended());
+  session->Resume(MediaSession::SuspendType::kUI);
+  EXPECT_TRUE(session->IsActive());
 }
 
 TEST_F(MediaSessionImplTest, SuspendUI) {

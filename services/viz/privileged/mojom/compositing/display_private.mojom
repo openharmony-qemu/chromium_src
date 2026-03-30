@@ -18,6 +18,7 @@ import "ui/latency/mojom/latency_info.mojom";
 import "services/viz/privileged/mojom/compositing/begin_frame_observer.mojom";
 import "services/viz/privileged/mojom/compositing/layered_window_updater.mojom";
 import "services/viz/privileged/mojom/compositing/vsync_parameter_observer.mojom";
+import "services/viz/public/mojom/compositing/frame_sink_id.mojom";
 
 // The DisplayPrivate is used by privileged clients to talk to Display.
 [DirectReceiver]
@@ -28,6 +29,15 @@ interface DisplayPrivate {
   // then will no longer swap until Resize() is called with a non-empty size.
   [EnableIf=is_win, Sync]
   DisableSwapUntilResize() => ();
+
+  [EnableIf=is_ohos, Sync]
+  SetShouldFrameSubmissionBeforeDraw(bool should) => ();
+
+  [EnableIf=is_ohos]
+  SetDrawRect(gfx.mojom.Rect rect);
+
+  [EnableIf=is_ohos]
+  SetDrawMode(int32 mode);
 
   // Resizes the display.
   Resize(gfx.mojom.Size size);
@@ -110,6 +120,19 @@ interface DisplayPrivate {
   SetMaxVSyncAndVrr(
     mojo_base.mojom.TimeDelta? max_vsync_interval,
     display.mojom.VariableRefreshRateState vrr_state);
+
+  // Set Current Display client Frame sink ID.
+  [EnableIf=arkweb_performance_jitter]
+  SetCurrentFrameSinkId(FrameSinkId frame_sink_id);
+
+  [EnableIf=arkweb_maximize_resize]
+  DisableSwapUntilMaximized();
+
+  [EnableIf=arkweb_same_layer]
+  SetNativeInnerWeb(bool isInnerWeb);
+
+  [EnableIf=arkweb_vsync_schedule]
+  SetBypassVsyncCondition(int32 condition);
 };
 
 // DisplayClient allows privileged clients to receive events from the Display.
@@ -135,6 +158,10 @@ interface DisplayClient {
   // Notifies that a swap has occurred with a new size.
   [EnableIf=linux_x11]
   DidCompleteSwapWithNewSize(gfx.mojom.Size size);
+
+  // Notifies that a swap has occurred with a new size in OHOS.
+  [EnableIf=arkweb_composite_render]
+  DidCompleteSwapWithNewSizeOHOS(gfx.mojom.Size size);
 
   // Notifies the client of the result of context creation attempt. On Android we can't
   // fall back to SW in failure cases, so we need to handle this specifically.

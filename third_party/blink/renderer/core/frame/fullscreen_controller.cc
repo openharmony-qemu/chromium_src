@@ -30,6 +30,7 @@
 
 #include "third_party/blink/renderer/core/frame/fullscreen_controller.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/ptr_util.h"
 #include "third_party/blink/public/mojom/frame/fullscreen.mojom-blink.h"
 #include "third_party/blink/public/web/web_local_frame_client.h"
@@ -56,7 +57,15 @@ namespace {
 mojom::blink::FullscreenOptionsPtr ToMojoOptions(
     LocalFrame* frame,
     const FullscreenOptions* options,
-    FullscreenRequestType request_type) {
+    FullscreenRequestType request_type
+#if BUILDFLAG(ARKWEB_FULLSCREEN)
+    ,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+    bool overlay_fullscreen = false,
+#endif // ARKWEB_VIDEO_ASSISTANT
+    const absl::optional<gfx::Size>& video_natural_size = absl::nullopt
+#endif  // BUILDFLAG(ARKWEB_FULLSCREEN)
+) {
   auto fullscreen_options = mojom::blink::FullscreenOptions::New();
   fullscreen_options->prefers_navigation_bar =
       options->navigationUI() == V8FullscreenNavigationUI::Enum::kShow;
@@ -74,6 +83,26 @@ mojom::blink::FullscreenOptionsPtr ToMojoOptions(
       request_type & FullscreenRequestType::kForXrOverlay;
   fullscreen_options->prefers_status_bar =
       request_type & FullscreenRequestType::kForXrArWithCamera;
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  fullscreen_options->is_custom_media_player =
+      request_type & FullscreenRequestType::kForCustomMediaPlayer;
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  fullscreen_options->is_custom_media_player =
+      request_type & FullscreenRequestType::kForCustomMediaPlayer;
+#endif  // BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+
+#if BUILDFLAG(ARKWEB_FULLSCREEN)
+  if (video_natural_size.has_value()) {
+    fullscreen_options->video_natural_size = video_natural_size.value();
+  }
+#endif  // BUILDFLAG(ARKWEB_FULLSCREEN)
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+   fullscreen_options->overlay_fullscreen = overlay_fullscreen;
+#endif // ARKWEB_VIDEO_ASSISTANT
 
   return fullscreen_options;
 }
@@ -143,9 +172,18 @@ void FullscreenController::DidExitFullscreen() {
   }
 }
 
-void FullscreenController::EnterFullscreen(LocalFrame& frame,
+void FullscreenController::EnterFullscreen(
+    LocalFrame& frame,
                                            const FullscreenOptions* options,
-                                           FullscreenRequestType request_type) {
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+    bool overlay_fullscreen,
+#endif // ARKWEB_VIDEO_ASSISTANT
+    FullscreenRequestType request_type
+#if BUILDFLAG(ARKWEB_FULLSCREEN)
+    ,
+    const absl::optional<gfx::Size>& video_natural_size
+#endif  // BUILDFLAG(ARKWEB_FULLSCREEN)
+) {
   const auto& screen_info = frame.GetChromeClient().GetScreenInfo(frame);
 
   const bool requesting_other_screen =
@@ -185,7 +223,16 @@ void FullscreenController::EnterFullscreen(LocalFrame& frame,
   }
 
   DCHECK(state_ == State::kInitial || requesting_fullscreen_screen_change);
-  auto fullscreen_options = ToMojoOptions(&frame, options, request_type);
+  auto fullscreen_options = ToMojoOptions(&frame, options,
+                                          request_type
+#if BUILDFLAG(ARKWEB_FULLSCREEN)
+                                          ,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                                          overlay_fullscreen,
+#endif // ARKWEB_VIDEO_ASSISTANT
+                                          video_natural_size
+#endif  // BUILDFLAG(ARKWEB_FULLSCREEN)
+  );
 
   // We want to disallow entering fullscreen with status and navigation bars
   // both visible, as this would translate into "no fullscreen at all".
@@ -246,7 +293,10 @@ void FullscreenController::FullscreenElementChanged(
 
   if (new_element) {
     DCHECK(Fullscreen::IsFullscreenElement(*new_element));
-
+#if BUILDFLAG(ARKWEB_FULLSCREEN)
+    LOG(WARNING) << "OhMedia::FullscreenElementChanged new_element = "
+                 << new_element->localName();
+#endif // BUILDFLAG(ARKWEB_FULLSCREEN)
     if (auto* video_element = DynamicTo<HTMLVideoElement>(*new_element)) {
       video_element->DidEnterFullscreen();
     }

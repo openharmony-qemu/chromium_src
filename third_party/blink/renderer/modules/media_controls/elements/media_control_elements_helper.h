@@ -5,6 +5,7 @@
 #ifndef THIRD_PARTY_BLINK_RENDERER_MODULES_MEDIA_CONTROLS_ELEMENTS_MEDIA_CONTROL_ELEMENTS_HELPER_H_
 #define THIRD_PARTY_BLINK_RENDERER_MODULES_MEDIA_CONTROLS_ELEMENTS_MEDIA_CONTROL_ELEMENTS_HELPER_H_
 
+#include "arkweb/build/features/features.h"
 #include "third_party/blink/renderer/modules/modules_export.h"
 #include "third_party/blink/renderer/platform/wtf/allocator/allocator.h"
 #include "third_party/blink/renderer/platform/wtf/forward.h"
@@ -19,6 +20,10 @@ class ContainerNode;
 class Element;
 class Event;
 class HTMLDivElement;
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+class HTMLSpanElement;
+class HTMLProgressElement;
+#endif
 class HTMLMediaElement;
 class LayoutObject;
 class Node;
@@ -54,6 +59,13 @@ class MediaControlElementsHelper final {
   // element ID.
   static HTMLDivElement* CreateDivWithId(const AtomicString& id,
                                          ContainerNode* parent);
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  static HTMLSpanElement* CreateSpanWithId(const AtomicString& id,
+                                           ContainerNode* parent);
+  static HTMLProgressElement* CreateProgressWithId(const AtomicString& id,
+                                                   ContainerNode* parent);
+#endif
 
   // Utility function that notifies the media controls in which the element is
   // that it was focused by an accessibility tool.

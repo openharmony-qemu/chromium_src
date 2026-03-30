@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//arkweb/build/features/features.gni")
 import("//build/config/ui.gni")
 
 config("gpu_ipc_client_implementation") {
@@ -24,6 +25,12 @@ component("client") {
     "shared_image_interface_proxy.cc",
     "shared_image_interface_proxy.h",
   ]
+
+  if (is_arkweb) {
+    import("//arkweb/chromium_ext/gpu/ipc/client/arkweb_gpu_ipc_client_ext.gni")
+    sources += arkweb_gpu_ipc_client_sources
+  }
+
   deps = [
     "//base",
     "//cc/paint",

@@ -18,6 +18,7 @@
 #include "ui/gfx/mojom/display_color_spaces_mojom_traits.h"
 #include "ui/gfx/mojom/selection_bound_mojom_traits.h"
 #include "ui/latency/mojom/latency_info_mojom_traits.h"
+#include "arkweb/build/features/features.h"
 
 namespace mojo {
 
@@ -31,6 +32,10 @@ bool StructTraits<viz::mojom::CompositorFrameMetadataDataView,
     return false;
   }
   out->device_scale_factor = data.device_scale_factor();
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  out->stretch_content_none_device_scale_factor =
+      data.stretch_content_none_device_scale_factor();
+#endif
   if (!data.ReadRootScrollOffset(&out->root_scroll_offset)) {
     return false;
   }
@@ -51,6 +56,15 @@ bool StructTraits<viz::mojom::CompositorFrameMetadataDataView,
 
   if (!data.ReadRootBackgroundColor(&out->root_background_color))
     return false;
+
+#if BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SLIDE)
+  out->is_scrolling = data.is_scrolling();
+#endif
+
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+  out->dropped_frame_count = data.dropped_frame_count();
+  out->dropped_frame_duration = data.dropped_frame_duration();
+#endif
 
   out->may_contain_video = data.may_contain_video();
   out->may_throttle_if_undrawn_frames = data.may_throttle_if_undrawn_frames();

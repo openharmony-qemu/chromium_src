@@ -17,6 +17,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/auto_reset.h"
 #include "base/cancelable_callback.h"
 #include "base/containers/flat_map.h"
@@ -88,6 +89,9 @@ class RenderingStatsInstrumentation;
 class TaskGraphRunner;
 class UIResourceManager;
 class UkmRecorderFactory;
+#if BUILDFLAG(IS_ARKWEB)
+class LayerTreeHostExt;
+#endif
 
 struct CommitState;
 struct CompositorCommitData;
@@ -178,6 +182,10 @@ class CC_EXPORT LayerTreeHost : public MutatorHostClient {
   ~LayerTreeHost() override;
 
   LayerTreeHost& operator=(const LayerTreeHost&) = delete;
+#if BUILDFLAG(IS_ARKWEB)
+  friend class LayerTreeHostExt;
+  virtual LayerTreeHostExt* AsLayerTreeHostExt() { return nullptr; }
+#endif
 
   // Returns the process global unique identifier for this LayerTreeHost.
   int GetId() const;
@@ -1164,4 +1172,7 @@ class CC_EXPORT LayerTreeHost : public MutatorHostClient {
 
 }  // namespace cc
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/cc/trees/layer_tree_host_ext.h"
+#endif
 #endif  // CC_TREES_LAYER_TREE_HOST_H_

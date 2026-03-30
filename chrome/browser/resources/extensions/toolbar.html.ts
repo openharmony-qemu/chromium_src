@@ -13,7 +13,7 @@ export function getHtml(this: ToolbarElement) {
     search-prompt="$i18n{search}" clear-label="$i18n{clearSearch}" autofocus
     menu-label="$i18n{mainMenu}" ?narrow="${this.narrow}"
     @narrow-changed="${this.onNarrowChanged_}" narrow-threshold="1000"
-    ?show-menu="${this.narrow}">
+    ?show-menu=false>
   <div class="more-actions">
     <span id="devModeLabel">$i18n{toolbarDevMode}</span>
     <cr-tooltip-icon ?hidden="${!this.shouldDisableDevMode_()}"
@@ -25,13 +25,6 @@ export function getHtml(this: ToolbarElement) {
         aria-labelledby="devModeLabel">
     </cr-toggle>
   </div>
-  <if expr="is_android">
-    <picture slot="product-logo">
-      <source media="(prefers-color-scheme: dark)"
-          srcset="//resources/images/chrome_logo_dark.svg">
-      <img srcset="images/product_logo.png" role="presentation">
-    </picture>
-  </if>
 </cr-toolbar>
 ${this.showPackDialog_ ? html`
   <extensions-pack-dialog .delegate="${this.delegate}"
@@ -43,15 +36,26 @@ ${this.showPackDialog_ ? html`
         @click="${this.onLoadUnpackedClick_}">
       $i18n{toolbarLoadUnpacked}
     </cr-button>
-    <cr-button id="packExtensions" @click="${this.onPackClick_}">
+    <cr-button id="packExtensions" hidden=true @click="${this.onPackClick_}">
       $i18n{toolbarPack}
     </cr-button>
-    <cr-button id="updateNow" @click="${this.onUpdateNowClick_}"
+    <cr-button id="updateNow" hidden=true @click="${this.onUpdateNowClick_}"
         title="$i18n{toolbarUpdateNowTooltip}">
       $i18n{toolbarUpdateNow}
     </cr-button>
   </div>
 </div>
+<cr-dialog id="devModeConfirmationDialog" @cancel="${this.onDevModeDialogCancel_}">
+  <div slot="body">$i18n{toolbarDevModeConfirmation}</div>
+  <div slot="button-container">
+    <cr-button class="cancel-button" @click="${this.onDevModeDialogCancel_}">
+      $i18n{toolbarDevModeCancel}
+    </cr-button>
+    <cr-button class="action-button" @click="${this.onDevModeDialogConfirm_}">
+      $i18n{toolbarDevModeConfirm}
+    </cr-button>
+  </div>
+</cr-dialog>
 <!--_html_template_end_-->`;
   // clang-format on
 }

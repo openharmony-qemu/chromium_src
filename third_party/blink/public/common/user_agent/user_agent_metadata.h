@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "third_party/blink/public/common/common_export.h"
 
 namespace blink {
@@ -89,6 +90,10 @@ struct BLINK_COMMON_EXPORT UserAgentMetadata {
 struct BLINK_COMMON_EXPORT UserAgentOverride {
   // Helper which sets only UA with blank client hints.
   static UserAgentOverride UserAgentOnly(const std::string& ua);
+
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  bool from_app = false;
+#endif
 
   // Empty |ua_string_override| means no override;
   // |ua_metadata_override| must also be null in that case.

@@ -53,6 +53,11 @@ class CC_EXPORT ResourcePool : public base::trace_event::MemoryDumpProvider,
   // Max delay before an evicted resource is flushed.
   static constexpr base::TimeDelta kDefaultMaxFlushDelay = base::Seconds(1);
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+  static constexpr base::TimeDelta kDefaultMaxExpirationDelay = base::Seconds(60);
+  static constexpr size_t kUnusedResourcesToKeep = 12;
+#endif
+
   // A class to hold ownership of PoolResources.
   class CC_EXPORT Backing {
    public:
@@ -305,6 +310,10 @@ class CC_EXPORT ResourcePool : public base::trace_event::MemoryDumpProvider,
   void SetClockForTesting(const base::TickClock* clock) { clock_ = clock; }
   int tracing_id() const { return tracing_id_; }
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+  void EnableDeleteUnusedResourcesDelay(bool enable);
+#endif
+
  private:
   FRIEND_TEST_ALL_PREFIXES(ResourcePoolTest, ReuseResource);
   FRIEND_TEST_ALL_PREFIXES(ResourcePoolTest, ExactRequestsRespected);
@@ -488,6 +497,10 @@ class CC_EXPORT ResourcePool : public base::trace_event::MemoryDumpProvider,
   base::TimeTicks flush_evicted_resources_deadline_;
 
   raw_ptr<const base::TickClock> clock_;
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+  bool delete_unused_resources_delay_enabled_ = false;
+#endif
 
   base::WeakPtrFactory<ResourcePool> weak_ptr_factory_{this};
 };

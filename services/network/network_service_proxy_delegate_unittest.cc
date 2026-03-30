@@ -2,14 +2,21 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "services/network/network_service_proxy_delegate.h"
-
 #include <optional>
 #include <string>
+#include <ranges>
 
 #include "base/functional/callback_helpers.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/scoped_refptr.h"
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#define private public
+#include "net/http/http_response_headers.h"
+#include "services/network/network_service_proxy_delegate.h"
+#undef private
+#else
+#include "services/network/network_service_proxy_delegate.h"
+#endif
 #include "base/test/bind.h"
 #include "base/test/scoped_feature_list.h"
 #include "base/test/task_environment.h"
@@ -78,6 +85,15 @@ class TestCustomProxyConnectionObserver
     headers_received_ =
         HeadersReceived{proxy_chain, chain_index, response_headers};
   }
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  void OnTunnelHeadersReceivedWithToken(
+      const net::ProxyChain& proxy_chain,
+      const scoped_refptr<net::HttpResponseHeaders>& response_headers,
+      const std::string& token) override {}
+  void OnProxyConnectResult(const net::ProxyChain& proxy_chain,
+                            int error_code) override {}
+#endif
 
  private:
   std::optional<std::pair<net::ProxyChain, int>> fallback_;
@@ -506,4 +522,7 @@ TEST_F(NetworkServiceProxyDelegateTest, OnTunnelHeadersReceivedObserved) {
       headers->raw_headers());
 }
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#include "arkweb/chromium_ext/services/network/network_service_proxy_delegate_for_include_unittest.cc"
+#endif  // ARKWEB_UNITTESTS
 }  // namespace network

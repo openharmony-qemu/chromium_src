@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/auto_reset.h"
 #include "base/build_time.h"
 #include "base/check_is_test.h"
@@ -864,8 +865,10 @@ void SystemNetworkContextManager::OnNetworkServiceCreated(
 #endif  // !BUILDFLAG(IS_WIN)
   }
 
+#if !BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
   // Configure SCT Auditing in the NetworkService.
   SCTReportingService::ReconfigureAfterNetworkRestart();
+#endif
 
   component_updater::PKIMetadataComponentInstallerService::GetInstance()
       ->ReconfigureAfterNetworkRestart();
@@ -920,8 +923,10 @@ void SystemNetworkContextManager::
         std::make_unique<CookieEncryptionProviderImpl>(
             g_browser_process->os_crypt_async());
   }
+#if !BUILDFLAG(ARKWEB_NETWORK_BASE)
   network_context_params->cookie_encryption_provider =
       cookie_encryption_provider_->BindNewRemote();
+#endif
 }
 
 void SystemNetworkContextManager::AddSSLConfigToNetworkContextParams(

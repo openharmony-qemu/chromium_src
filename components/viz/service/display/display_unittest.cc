@@ -138,6 +138,10 @@ class StubDisplayClient : public DisplayClient {
   void DisplayAddChildWindowToBrowser(
       gpu::SurfaceHandle child_window) override {}
   void SetWideColorEnabled(bool enabled) override {}
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  void RestoreRenderFit(const FrameSinkId& frame_sink_id) override {}
+  void ModifyRenderFit(int32_t fitType, const FrameSinkId& frame_sink_id) override {}
+#endif // ARKWEB_UNITTESTS
 };
 
 void CopyCallback(bool* called,

@@ -5,5 +5,9 @@
 import("//third_party/flatbuffers/flatbuffer.gni")
 
 flatbuffer("url_pattern_index") {
-  sources = [ "url_pattern_index.fbs" ]
+  sources = [ "url_pattern_index.fbs"
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+    , "//arkweb/chromium_ext/components/url_pattern_index/flat/css_pattern_index.fbs",
+#endif
+  ]
 }

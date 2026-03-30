@@ -202,6 +202,7 @@ PKIMetadataComponentInstallerService::GetInstance() {
   return instance.get();
 }
 
+#if BUILDFLAG(CHROME_ROOT_STORE_SUPPORTED)
 PKIMetadataComponentInstallerService::PKIMetadataComponentInstallerService() {
   // UpdateTrustAnchorIDsImpl() depends on TAI info from both the Chrome Root
   // Store and MTC Metadata protos. Since they are updated separately, we need
@@ -217,6 +218,9 @@ PKIMetadataComponentInstallerService::PKIMetadataComponentInstallerService() {
   // updater is supplying the trusted subtrees, so the current MTC
   // implementation just depends on both components being loaded, for simplity.)
 }
+#else
+PKIMetadataComponentInstallerService::PKIMetadataComponentInstallerService() = default;
+#endif
 
 PKIMetadataComponentInstallerService::MtcLogIdAndLandmarkTrustAnchorId::
     MtcLogIdAndLandmarkTrustAnchorId() = default;

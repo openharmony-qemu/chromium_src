@@ -30,6 +30,7 @@
 #include <algorithm>
 #include <string_view>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/metrics/histogram_functions.h"
 #include "base/numerics/checked_math.h"
@@ -168,7 +169,11 @@ bool KURL::IsLocalFile() const {
   // and including feed would allow feeds to potentially let someone's blog
   // read the contents of the clipboard on a drag, even without a drop.
   // Likewise with using the FrameLoader::shouldTreatURLAsLocal() function.
+#if BUILDFLAG(ARKWEB_RECOURCE_SCHEME)
+  return ProtocolIs(url::kFileScheme) || ProtocolIs(url::kResourcesScheme);
+#else
   return ProtocolIs(url::kFileScheme);
+#endif
 }
 
 bool ProtocolIsJavaScript(const String& url) {

@@ -13,6 +13,10 @@
 #include <string_view>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+#include "arkweb/chromium_ext/media/base/media_player_url_params.h"
+#endif
 #include "base/cancelable_callback.h"
 #include "base/compiler_specific.h"
 #include "base/memory/raw_ptr.h"
@@ -104,6 +108,8 @@ class WebAudioSourceProviderImpl;
 class WebContentDecryptionModule;
 class WebLocalFrame;
 class WebMediaPlayerEncryptedMediaClient;
+class WebMediaPlayerImplExt;
+class WebMediaPlayerImplUtils;
 
 // The set of split histograms that are supported. Keeping them in an enum
 // helps prevent raw strings from being scattered throughout the source, and
@@ -128,6 +134,17 @@ class PLATFORM_EXPORT WebMediaPlayerImpl
       public media::DemuxerManager::Client,
       public WebSurfaceLayerBridgeObserver {
  public:
+  friend class WebMediaPlayerImplExt;
+  friend class WebMediaPlayerImplUtils;
+
+  virtual blink::WebMediaPlayerImplExt* AsWebMediaPlayerImplExt() {
+    return nullptr;
+  }
+  virtual base::WeakPtr<WebMediaPlayerImplExt> WebMediaPlayerImplExtWeakThis() {
+    return nullptr;
+  }
+  std::unique_ptr<WebMediaPlayerImplUtils> webMediaPlayerImplUtils_;
+
   // Constructs a WebMediaPlayer implementation using Chromium's media stack.
   // |delegate| and |renderer_factory_selector| must not be null.
   WebMediaPlayerImpl(
@@ -276,8 +293,17 @@ class PLATFORM_EXPORT WebMediaPlayerImpl
   void OnDisplayTypeChanged(WebMediaPlayer::DisplayType display_type) override;
 
   // WebMediaPlayerDelegate::Observer implementation.
+#if !BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   void OnPageHidden() override;
+#else
+  void OnPageHidden(bool storing_in_bfcache) override;
+#endif
+
+#if !BUILDFLAG(ARKWEB_BFCACHE)
   void OnPageShown() override;
+#else
+  void OnPageShown(bool restoring_in_bfcache) override;
+#endif // BUILDFLAG(ARKWEB_BFCACHE)
   void OnFrameHidden() override;
   void OnFrameShown() override;
   void OnIdleTimeout() override;
@@ -342,6 +368,12 @@ class PLATFORM_EXPORT WebMediaPlayerImpl
     return is_background_suspend_enabled_;
   }
 
+#if BUILDFLAG(ARKWEB_PIP)
+  void PipEnable(bool enable) override;
+#endif
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+  enum DmaBufferState { kHaveExist, kHaveRecycled };
+#endif
   // Distinct states that |delegate_| can be in. (Public for testing.)
   enum class DelegateState {
     GONE,
@@ -593,7 +625,7 @@ class PLATFORM_EXPORT WebMediaPlayerImpl
 
   // Returns true if the player's host frame is hidden or closed in the host
   // page.
-  bool IsFrameHidden() const;
+  bool IsHidden() const;
 
   bool IsPausedBecausePageHidden() const;
   bool IsPausedBecauseFrameHidden() const;
@@ -1126,6 +1158,32 @@ class PLATFORM_EXPORT WebMediaPlayerImpl
 
   // Count the number of times a video frame is being readback.
   unsigned video_frame_readback_count_ = 0;
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  bool should_create_custom_renderer_ = false;
+  bool should_overlay_ = false;
+  media::RendererType primitive_renderer_type_ =
+      media::RendererType::kRendererImpl;
+  std::string poster_url_;
+  int native_texture_id_ = 0;
+  uint32_t initial_preload_ =
+      static_cast<uint32_t>(media::DataSource::METADATA);
+  media::Renderer::OnGetRectCallback on_get_rect_cb_;
+  media::ActionReason action_reason_ = media::ActionReason::kNormal;
+  media::MediaPlayerUrlParams custom_media_player_url_params_;
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  media::SurfaceCreatedCB surface_created_cb_;
+  int32_t video_surface_id_ = -1;
+  bool support_video_surface_ = true;
+  bool has_page_hidden_when_paused_ = false;
+  int64_t last_frame_timestamp_ = -1;
+#endif // ARKWEB_VIDEO_ASSISTANT
+
+#if BUILDFLAG(ARKWEB_PIP)
+  bool skip_surface_recover_ = false;
+#endif // ARKWEB_PIP
 
   base::WeakPtr<WebMediaPlayerImpl> weak_this_;
   base::WeakPtrFactory<WebMediaPlayerImpl> weak_factory_{this};

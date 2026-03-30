@@ -7,6 +7,7 @@
 
 #include <optional>
 
+#include "arkweb/build/features/features.h"
 #include "base/auto_reset.h"
 #include "base/base_export.h"
 #include "base/compiler_specific.h"
@@ -136,9 +137,18 @@ class PartnerBookmarksReader;
 class Profile;
 class ProfileImpl;
 class ScopedAllowBlockingForProfile;
+#if BUILDFLAG(ARKWEB_COOKIE)
+class CefCookieManagerImplExt;
+#endif // BUILDFLAG(ARKWEB_COOKIE)
 class StartupTabProviderImpl;
 class WebEngineBrowserMainParts;
 struct StartupProfilePathInfo;
+#if BUILDFLAG(ARKWEB_MSGPORT)
+class ArkWebBrowserHostExtImpl;
+#endif
+#if BUILDFLAG(ARKWEB_API_INIT_WEB_ENGINE)
+class ScopedAllowBlockingForNwebInit;
+#endif
 
 namespace base {
 class Environment;
@@ -432,6 +442,9 @@ class DrmThreadProxy;
 class DrmDisplayHostManager;
 class ScopedAllowBlockingForGbmSurface;
 class SelectFileDialogLinux;
+#if BUILDFLAG(IS_OHOS)
+class SelectFileDialogOHOS;
+#endif
 class WindowResizeHelperMac;
 }  // namespace ui
 namespace updater {
@@ -645,6 +658,9 @@ class BASE_EXPORT ScopedAllowBlocking {
   friend class ui::DrmDisplayHostManager;
   friend class ui::ScopedAllowBlockingForGbmSurface;
   friend class ui::SelectFileDialogLinux;
+#if BUILDFLAG(IS_OHOS)
+  friend class ui::SelectFileDialogOHOS;
+#endif
 #if BUILDFLAG(IS_MAC)
   friend class printing::PrintBackendServiceImpl;
 #endif
@@ -656,6 +672,12 @@ class BASE_EXPORT ScopedAllowBlocking {
 #endif
 #if BUILDFLAG(IS_IOS)
   friend class ::BrowserStateDirectoryBuilder;
+#endif
+#if BUILDFLAG(ARKWEB_MSGPORT)
+  friend class ::ArkWebBrowserHostExtImpl;
+#endif
+#if BUILDFLAG(ARKWEB_API_INIT_WEB_ENGINE)
+  friend class ::ScopedAllowBlockingForNwebInit;
 #endif
 
   // Sorted by function name (with namespace), ignoring the return type.
@@ -833,6 +855,9 @@ class BASE_EXPORT
   friend class ::NativeDesktopMediaList;
   friend class android::JavaHandlerThread;
   friend class android_webview::CookieManager;
+#if BUILDFLAG(ARKWEB_COOKIE)
+  friend class ::CefCookieManagerImplExt;
+#endif // BUILDFLAG(ARKWEB_COOKIE)
   friend class android_webview::VizCompositorThreadRunnerWebView;
   friend class audio::OutputDevice;
   friend class base::FileDescriptorWatcher;

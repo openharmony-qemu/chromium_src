@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/check_op.h"
 #include "base/containers/adapters.h"
 #include "base/functional/bind.h"
@@ -53,7 +54,6 @@
 #include "ui/gfx/geometry/transform.h"
 #include "ui/gfx/geometry/vector2d.h"
 #include "ui/gfx/overlay_transform_utils.h"
-
 namespace viz {
 
 struct MaskFilterInfoExt {
@@ -856,8 +856,20 @@ void SurfaceAggregator::EmitSurfaceContent(
         surface_quad_rect.height() /
         static_cast<float>(resolved_frame.size_in_pixels().height());
   } else {
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+    float stretch_factor = resolved_frame.stretch_content_none_device_scale_factor();
+    constexpr float kEpsilon = 0.001;
+    if (stretch_factor > kEpsilon) {
+      extra_content_scale_x = extra_content_scale_y =
+          parent_device_scale_factor / stretch_factor;
+    } else {
+      extra_content_scale_x = extra_content_scale_y =
+          parent_device_scale_factor / resolved_frame.device_scale_factor();
+    }
+#else
     extra_content_scale_x = extra_content_scale_y =
         parent_device_scale_factor / resolved_frame.device_scale_factor();
+#endif
   }
   float inverse_extra_content_scale_x = SK_Scalar1 / extra_content_scale_x;
   float inverse_extra_content_scale_y = SK_Scalar1 / extra_content_scale_y;
@@ -867,7 +879,10 @@ void SurfaceAggregator::EmitSurfaceContent(
       surface_quad_sqs->quad_to_target_transform);
   scaled_quad_to_target_transform.Scale(extra_content_scale_x,
                                         extra_content_scale_y);
-
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
+                    std::to_string(resolved_frame.GetMetadata().begin_frame_ack.trace_id), "step", "SurfaceAggregation");
+#endif
   // A map keyed by RenderPass id.
   Surface::CopyRequestsMap copy_requests;
   if (take_copy_requests_) {
@@ -1115,6 +1130,14 @@ void SurfaceAggregator::EmitDefaultBackgroundColorQuad(
   // No matching surface was found so create a SolidColorDrawQuad with the
   // SurfaceDrawQuad default background color.
   SkColor4f background_color = surface_quad->default_background_color;
+
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  LOG(INFO) << "SurfaceAggregator::EmitDefaultBackgroundColorQuad, background_color: "
+            << background_color.toBytes_RGBA();
+  TRACE_EVENT1("viz", "SurfaceAggregator::EmitDefaultBackgroundColorQuad",
+               "background_color(RGBA)", background_color.toBytes_RGBA());
+#endif
+
   auto* shared_quad_state = CopySharedQuadState(
       surface_quad->shared_quad_state, embedder_client_namespace_id,
       target_transform, clip_rect, mask_filter_info, dest_pass);
@@ -2214,7 +2237,10 @@ AggregatedFrame SurfaceAggregator::Aggregate(
     // `absl::Cleanup` is run after `ResetAfterAggregate`.
     flow_ids_for_resolved_frames_.clear();
   };
-
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
+                    std::to_string(resolved_frame->GetMetadata().begin_frame_ack.trace_id), "step", "SurfaceAggregation");
+#endif
   CheckFrameSinksChanged(resolved_frame->surface_id());
 
   AggregatedFrame frame;
@@ -2403,6 +2429,7 @@ void SurfaceAggregator::SetMaxRenderTargetSize(int max_size) {
 bool SurfaceAggregator::CheckForDisplayDamage(const SurfaceId& surface_id) {
   auto it = damage_ranges_.find(surface_id.frame_sink_id());
   if (it == damage_ranges_.end()) {
+    TRACE_EVENT0("viz", "damage_ranges_.end() not find");
     return false;
   }
 
@@ -2411,7 +2438,7 @@ bool SurfaceAggregator::CheckForDisplayDamage(const SurfaceId& surface_id) {
       return true;
     }
   }
-
+  TRACE_EVENT0("viz", "damage_ranges_.end() not find");
   return false;
 }
 

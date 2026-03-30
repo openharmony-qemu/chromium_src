@@ -5,6 +5,7 @@
 #ifndef THIRD_PARTY_BLINK_RENDERER_MODULES_CLIPBOARD_MOCK_CLIPBOARD_PERMISSION_SERVICE_H_
 #define THIRD_PARTY_BLINK_RENDERER_MODULES_CLIPBOARD_MOCK_CLIPBOARD_PERMISSION_SERVICE_H_
 
+#include "arkweb/build/features/features.h"
 #include "mojo/public/cpp/bindings/pending_remote.h"
 #include "mojo/public/cpp/bindings/receiver.h"
 #include "testing/gmock/include/gmock/gmock.h"
@@ -58,6 +59,15 @@ class MockClipboardPermissionService final
                bool user_gesture,
                RequestPermissionsCallback),
               (override));
+
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  MOCK_METHOD(void,
+              RequestPermissionSync,
+              (mojom::blink::PermissionDescriptorPtr permission,
+               bool user_gesture,
+               RequestPermissionCallback),
+              (override));
+#endif  // ARKWEB_CLIPBOARD
 
   MOCK_METHOD(void,
               RevokePermission,

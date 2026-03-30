@@ -802,6 +802,10 @@ base::WeakPtr<content::NavigationHandle> Navigate(NavigateParams* params) {
                                    contents_to_navigate_or_insert,
                                    params->app_id);
 #if BUILDFLAG(ENABLE_CAPTIVE_PORTAL_DETECTION)
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  if (captive_portal::CaptivePortalTabHelper::FromWebContents(
+      contents_to_navigate_or_insert))
+#endif
       captive_portal::CaptivePortalTabHelper::FromWebContents(
           contents_to_navigate_or_insert)
           ->set_window_type(params->captive_portal_window_type);

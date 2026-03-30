@@ -1009,7 +1009,9 @@ class SSLClientSocketCertRequestInfoTest : public SSLClientSocketVersionTest {
   }
 };
 
-class SSLClientSocketFalseStartTest : public SSLClientSocketTest {
+class SSLClientSocketFalseStartTest
+    : public SSLClientSocketTest, 
+      public ::testing::WithParamInterface<uint16_t>{
  protected:
   // Creates an SSLClientSocket with |client_config| attached to a
   // FakeBlockingStreamSocket, returning both in |*out_raw_transport| and
@@ -1115,6 +1117,7 @@ class SSLClientSocketFalseStartTest : public SSLClientSocketTest {
       EXPECT_FALSE(callback.have_result());
     }
   }
+  uint16_t version() const { return GetParam(); }
 };
 
 // Sends an HTTP request on the socket and reads the response. This may be used
@@ -3553,7 +3556,11 @@ TEST_F(SSLClientSocketTest, 3DES) {
   // 3DES is always disabled.
   int rv;
   ASSERT_TRUE(CreateAndConnectSSLClientSocket(SSLConfig(), &rv));
+#if BUILDFLAG(ARKWEB_SSL_AUTH_ALGO)
+  EXPECT_THAT(rv, IsError(ERR_SSL_OBSOLETE_VERSION_OR_CIPHER));
+#else
   EXPECT_THAT(rv, IsError(ERR_SSL_VERSION_OR_CIPHER_MISMATCH));
+#endif
 }
 
 TEST_F(SSLClientSocketTest, SHA1) {
@@ -3631,7 +3638,16 @@ TEST_F(SSLClientSocketFalseStartTest, SessionResumption) {
   // Make a second connection.
   int rv;
   ASSERT_TRUE(CreateAndConnectSSLClientSocket(client_config, &rv));
+#if BUILDFLAG(ARKWEB_SSL_AUTH_ALGO)
+  if (version() < SSL_CONNECTION_VERSION_TLS1_2) {
+    EXPECT_THAT(rv, IsError(ERR_SSL_OBSOLETE_VERSION_OR_CIPHER));
+    return;
+  } else {
+    EXPECT_THAT(rv, IsOk());
+  }
+#else
   EXPECT_THAT(rv, IsOk());
+#endif
 
   // It should resume the session.
   SSLInfo ssl_info;

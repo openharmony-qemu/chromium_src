@@ -217,8 +217,12 @@ void RenderAccessibilityImpl::FireLayoutComplete() {
 #endif  // BUILDFLAG(IS_CHROMEOS)
 
 void RenderAccessibilityImpl::FireLoadCompleteIfLoaded() {
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+  if (GetMainDocument().GetFrame()->GetEmbeddingToken()) {
+#else
   if (GetMainDocument().IsLoaded() &&
       GetMainDocument().GetFrame()->GetEmbeddingToken()) {
+#endif
     DCHECK(ax_context_);
     ax_context_->FireLoadCompleteIfLoaded();
   }
@@ -349,6 +353,37 @@ void RenderAccessibilityImpl::PerformAction(const ui::AXActionData& data) {
   std::unique_ptr<ui::AXActionTarget> focus =
       AXActionTargetFactory::CreateFromNodeIdOrRole(
           document, plugin_action_target_adapter_, data.focus_node_id);
+
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  if (target->GetType() == ui::AXActionTarget::Type::kNull) {
+    blink::WebFrame* curFrame = render_frame_->GetWebFrame()->FirstChild();
+    blink::WebFrame* middleFrame = nullptr;
+    int ilayers = 1;
+    // Child document layers max value for limit count
+    const int kLayersMax = 10;
+    while (curFrame && ilayers < kLayersMax) {
+      middleFrame = curFrame;
+      if (middleFrame->ToWebLocalFrame()) {
+        document = middleFrame->ToWebLocalFrame()->GetDocument();
+        target = AXActionTargetFactory::CreateFromNodeIdOrRole(
+            document, plugin_action_target_adapter_, data.target_node_id);
+        anchor = AXActionTargetFactory::CreateFromNodeIdOrRole(
+            document, plugin_action_target_adapter_, data.anchor_node_id);
+        focus = AXActionTargetFactory::CreateFromNodeIdOrRole(
+            document, plugin_action_target_adapter_, data.focus_node_id);
+      } else {
+        break;
+      }
+
+      if (target->GetType() == ui::AXActionTarget::Type::kNull) {
+        curFrame = middleFrame->FirstChild();
+      } else {
+        break;
+      }
+      ilayers = ilayers + 1;
+    }
+  }
+#endif
 
   ax_annotators_manager_->PerformAction(data.action);
 

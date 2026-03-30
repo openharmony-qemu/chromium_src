@@ -4,7 +4,8 @@
       "mac",
       "win",
       "linux",
-      "android"
+      "android",
+      "ohos"
     ],
     "policy_pref_mapping_tests": [
       {

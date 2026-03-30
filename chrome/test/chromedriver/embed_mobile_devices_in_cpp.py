@@ -16,6 +16,9 @@ import json
 import optparse
 import os
 import sys
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+import re
+#endif BUILDFLAG(ARKWEB_DEVTOOLS)
 
 import chrome_paths
 import cpp_source
@@ -88,6 +91,9 @@ def main():
     # Do a bunch of substitutions to get something parseable by Python.
     list_string = list_string.replace('true', 'True')
     list_string = list_string.replace('false', 'False')
+    #if BUILDFLAG(ARKWEB_DEVTOOLS)
+    list_string = re.sub(r'^\s*//.*?\n', '', list_string, flags=re.MULTILINE)
+    #endif BUILDFLAG(ARKWEB_DEVTOOLS)
     emulated_devices = ast.literal_eval(list_string)
   for device in emulated_devices:
     title = device['title']

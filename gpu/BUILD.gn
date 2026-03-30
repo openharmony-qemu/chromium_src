@@ -654,8 +654,6 @@ test("gpu_unittests") {
     "//url",
   ]
 
-  deps += [ "//third_party/angle:translator" ]
-
   if (is_android) {
     deps += [ "//ui/android:ui_java" ]
   }
@@ -678,6 +676,11 @@ test("gpu_unittests") {
     bundle_deps =
         [ "//testing/buildbot/filters:gpu_unittests_filters_bundle_data" ]
   }
+
+  import("//arkweb/chromium_ext/gpu/gpu_ext.gni")
+  sources += gpu_unittests_ext.sources
+  sources -= gpu_unittests_ext.sources_del
+  deps += gpu_unittests_ext.deps
 
   if (is_apple) {
     deps += [ "//ui/accelerated_widget_mac" ]

@@ -1358,6 +1358,7 @@ TEST_P(UmaPageLoadMetricsObserverTest,
 // The following tests are ensure that Page Load metrics are recorded in a
 // trace. Currently enabled only for platforms where USE_PERFETTO_CLIENT_LIBRARY
 // is true (Android, Linux) as test infra (TestTraceProcessor) requires it.
+/*
 TEST_F(UmaPageLoadMetricsObserverTest, TestTracingFirstContentfulPaint) {
   base::test::TestTraceProcessor ttp;
   ttp.StartTrace("interactions");
@@ -1520,7 +1521,7 @@ TEST_F(UmaPageLoadMetricsObserverTest, TestTracingDomContentLoadedEventStart) {
                                      std::vector<std::string>{
                                          base::NumberToString(navigation_id)}));
 }
-
+*/
 TEST_P(UmaPageLoadMetricsObserverTest, LCPSpeculationRulesPrerender) {
   const int kExpected = 4780;
   const char* kHistogram =

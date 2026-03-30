@@ -12,6 +12,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/android/device_info.h"
 #include "base/command_line.h"
 #include "base/containers/span.h"
@@ -310,6 +311,10 @@ class FakePasswordAutofillAgent
       FillChangePasswordFormCallback callback) override {}
   void AnnotateFieldsWithParsingResult(
       const autofill::ParsingResult& parsing_result) override {}
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  void SetParsedPasswordForm(
+      const autofill::PasswordFormFillData& form_data) override {}
+#endif
   void CheckViewAreaVisible(FieldRendererId field_id,
                             CheckViewAreaVisibleCallback callback) override {}
   void SetLoggingState(bool active) override {

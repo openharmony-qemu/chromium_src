@@ -30,6 +30,8 @@
 #include "ui/base/resource/resource_bundle.h"
 #include "url/gurl.h"
 
+#include "arkweb/chromium_ext/components/dom_distiller/core/distiller_page_ohos.h"
+
 namespace dom_distiller {
 
 namespace {
@@ -130,8 +132,14 @@ void DistillerPage::DistillPage(
       script = GetDistillerScriptWithOptions(options);
       break;
   }
-
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  dom_distiller::proto::DomDistillerOptions new_options = options;
+  bool is_distill_catalog = DistillPageOhos(gurl, new_options);
+  DistillPageImpl(gurl,
+                  GetDistillerScriptWithOptions(new_options));
+#else
   DistillPageImpl(gurl, script);
+#endif // ARKWEB_READER_MODE
 }
 
 void DistillerPage::OnDistillationDone(const GURL& page_url,

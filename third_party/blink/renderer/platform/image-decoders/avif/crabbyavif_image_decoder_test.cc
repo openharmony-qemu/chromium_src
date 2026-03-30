@@ -12,6 +12,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/barrier_closure.h"
 #include "base/bit_cast.h"
 #include "base/compiler_specific.h"
@@ -1275,7 +1276,10 @@ TEST(CrabbyStaticAVIFTests, SizeAvailableBeforeAllDataReceived) {
   std::unique_ptr<ImageDecoder> decoder = ImageDecoder::CreateByMimeType(
       "image/avif", segment_reader, /*data_complete=*/false,
       ImageDecoder::kAlphaPremultiplied, ImageDecoder::kDefaultBitDepth,
-      ColorBehavior::kTag, cc::AuxImage::kDefault,
+      ColorBehavior::kTag,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+      cc::AuxImage::kDefault,
+#endif
       Platform::GetMaxDecodedImageBytes(), SkISize::MakeEmpty(),
       ImageDecoder::AnimationOption::kUnspecified);
   EXPECT_FALSE(decoder->IsSizeAvailable());
@@ -1301,7 +1305,10 @@ TEST(CrabbyStaticAVIFTests, ProgressiveDecoding) {
   std::unique_ptr<ImageDecoder> decoder = ImageDecoder::CreateByMimeType(
       "image/avif", segment_reader, /*data_complete=*/false,
       ImageDecoder::kAlphaPremultiplied, ImageDecoder::kDefaultBitDepth,
-      ColorBehavior::kTag, cc::AuxImage::kDefault,
+      ColorBehavior::kTag,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+      cc::AuxImage::kDefault,
+#endif
       Platform::GetMaxDecodedImageBytes(), SkISize::MakeEmpty(),
       ImageDecoder::AnimationOption::kUnspecified);
 
@@ -1368,7 +1375,10 @@ TEST(CrabbyStaticAVIFTests, IncrementalDecoding) {
   std::unique_ptr<ImageDecoder> decoder = ImageDecoder::CreateByMimeType(
       "image/avif", segment_reader, /*data_complete=*/false,
       ImageDecoder::kAlphaPremultiplied, ImageDecoder::kDefaultBitDepth,
-      ColorBehavior::kTag, cc::AuxImage::kDefault,
+      ColorBehavior::kTag,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+      cc::AuxImage::kDefault,
+#endif
       Platform::GetMaxDecodedImageBytes(), SkISize::MakeEmpty(),
       ImageDecoder::AnimationOption::kUnspecified);
 

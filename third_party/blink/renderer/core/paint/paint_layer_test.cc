@@ -2652,3 +2652,7 @@ TEST_P(PaintLayerTest, HitTestScrollMarkerPseudoElement) {
 }
 
 }  // namespace blink
+
+#if BUILDFLAG(ARKWEB_TEST)
+#include "third_party/blink/renderer/core/paint/paint_layer_scrollable_area_ext_unittest.cc"
+#endif

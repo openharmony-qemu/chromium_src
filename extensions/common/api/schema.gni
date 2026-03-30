@@ -34,6 +34,8 @@ extensions_api_schema_files_ = [
   "web_request.json",
 ]
 
+extensions_api_schema_files_ext_ = []
+
 # Schemas that should be used only to auto-generate the C++ types.
 # In many cases, this includes schemas used to generate types used in manifest
 # parsing.
@@ -91,6 +93,24 @@ if (enable_extensions) {
     "web_view_internal.json",
   ]
 
+  extensions_api_schema_files_ext_ = [
+    "app_runtime.webidl",
+    "app_window.idl",
+    "bluetooth_low_energy.webidl",
+    "bluetooth_socket.webidl",
+    "clipboard.idl",
+    "file_system.idl",
+    "hid.idl",
+    "serial.idl",
+    "socket.idl",
+    "sockets_tcp.idl",
+    "sockets_tcp_server.idl",
+    "sockets_udp.idl",
+    "system_network.webidl",
+    "system_storage.webidl",
+    "usb.idl",
+    "virtual_keyboard.webidl",
+  ]
   if (is_chromeos) {
     extensions_api_schema_files_ += [
       "diagnostics.webidl",
@@ -117,6 +137,9 @@ if (enable_desktop_android_extensions) {
 
 extensions_api_schema_files =
     get_path_info(extensions_api_schema_files_, "abspath")
+
+extensions_api_schema_files_ext =
+    get_path_info(extensions_api_schema_files_ext_, "abspath")
 
 extensions_types_only_schema_files =
     get_path_info(extensions_types_only_schema_files_, "abspath")

@@ -208,4 +208,8 @@ TEST_F(UrlIndexTest, DestructionWithOrphanedUrlData) {
   EXPECT_FALSE(b->url_index());
 }
 
+#if BUILDFLAG(ARKWEB_TEST)
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/media/url_index_ext_unittest.cc"
+#endif  // ARKWEB_TEST
+
 }  // namespace blink

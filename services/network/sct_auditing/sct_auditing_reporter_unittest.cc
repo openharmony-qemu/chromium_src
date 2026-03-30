@@ -87,7 +87,11 @@ class SCTAuditingReporterTest : public testing::Test {
         FakeTestCertVerifierParamsFactory::GetCertVerifierParams();
     context_params->sct_auditing_mode =
         mojom::SCTAuditingMode::kEnhancedSafeBrowsingReporting;
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+    network_context_ = std::make_unique<ArkWebNetworkContextExt>(
+#else
     network_context_ = std::make_unique<NetworkContext>(
+#endif
         network_service_.get(),
         network_context_remote_.BindNewPipeAndPassReceiver(),
         std::move(context_params));

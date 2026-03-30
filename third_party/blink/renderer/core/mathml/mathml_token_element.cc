@@ -4,9 +4,13 @@
 
 #include "third_party/blink/renderer/core/mathml/mathml_token_element.h"
 
+#include "arkweb/build/features/features.h"
 #include "third_party/blink/renderer/core/dom/character_data.h"
 #include "third_party/blink/renderer/core/layout/mathml/layout_mathml_block_flow.h"
 #include "third_party/blink/renderer/platform/wtf/text/string_builder.h"
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/css/css_utils.h"
+#endif
 
 namespace blink {
 
@@ -91,6 +95,11 @@ void MathMLTokenElement::ChildrenChanged(
 
 LayoutObject* MathMLTokenElement::CreateLayoutObject(
     const ComputedStyle& style) {
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+  if (Cssutils::IsMathFormulaDisabledMode()) {
+    return MathMLElement::CreateLayoutObject(style);
+  }
+#endif
   if (!style.IsDisplayMathType()) {
     return MathMLElement::CreateLayoutObject(style);
   }

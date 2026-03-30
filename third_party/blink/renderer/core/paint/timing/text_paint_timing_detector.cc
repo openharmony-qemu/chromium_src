@@ -328,6 +328,12 @@ void TextPaintTimingDetector::AssignPaintTimeToQueuedRecords(
 
     if (is_needed_for_lcp && record->RecordedSize() > 0u) {
       ltp_manager_.MaybeUpdateLargestText(record);
+#if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT) || BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+      auto first_screen_calculator = frame_view_->GetPaintTimingDetector().GetFirstScreenCalculator();
+      if (first_screen_calculator) {
+        first_screen_calculator->NotifyTextPaint(record, timestamp);
+      }
+#endif
     }
   }
   texts_queued_for_paint_time_.RemoveAll(keys_to_be_removed);

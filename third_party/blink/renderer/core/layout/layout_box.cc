@@ -1603,15 +1603,27 @@ PhysicalBoxStrut LayoutBox::ComputeScrollbarsInternal(
 void LayoutBox::Autoscroll(const PhysicalOffset& position_in_root_frame) {
   NOT_DESTROYED();
   LocalFrame* frame = GetFrame();
-  if (!frame)
+  if (!frame) {
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+    LOG(ERROR) << "LayoutBox::Autoscroll frame null";
+#endif
     return;
+  }
 
   LocalFrameView* frame_view = frame->View();
-  if (!frame_view)
+  if (!frame_view) {
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+    LOG(ERROR) << "LayoutBox::Autoscroll frame_view null";
+#endif
     return;
+  }
 
   PhysicalOffset absolute_position =
       frame_view->ConvertFromRootFrame(position_in_root_frame);
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  LOG(DEBUG) << "LayoutBox::Autoscroll reference_position_ absolute_position:"
+             << absolute_position.ToString();
+#endif
   mojom::blink::ScrollIntoViewParamsPtr params =
       scroll_into_view_util::CreateScrollIntoViewParams(
           ScrollAlignment::ToEdgeIfNeeded(), ScrollAlignment::ToEdgeIfNeeded(),
@@ -1687,6 +1699,9 @@ LayoutBox* LayoutBox::FindAutoscrollable(LayoutObject* layout_object,
     // fixed-position element.
     if (!is_middle_click_autoscroll && layout_object->IsBox() &&
         To<LayoutBox>(layout_object)->IsFixedToView()) {
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+      LOG(DEBUG) << "LayoutBox::FindAutoscrollable failed nullptr";
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
       return nullptr;
     }
 
@@ -4668,5 +4683,16 @@ const GCedHeapVector<Member<Node>>& LayoutBox::ReadingFlowNodes() const {
                       (MakeGarbageCollected<GCedHeapVector<Member<Node>>>()));
   return *empty_vector.Get();
 }
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+LayoutPolicy LayoutBox::ScrollbarLayoutPolicy() const {
+  return static_cast<LayoutPolicy>(
+    GetDocument().GetSettings()->GetScrollbarLayoutPolicy());
+}
+ 	 
+bool LayoutBox::IsSystemRtlEnable() const {
+  return GetDocument().GetSettings()->GetIsSystemRtlEnabled();
+}
+#endif
 
 }  // namespace blink

@@ -10,6 +10,10 @@ import "gpu/ipc/common/gpu_info.mojom";
 import "gpu/ipc/common/surface_handle.mojom";
 import "mojo/public/mojom/base/byte_string.mojom";
 import "services/viz/privileged/mojom/gl/context_lost_reason.mojom";
+[EnableIf=arkweb_blank_optimize]
+import "ui/gfx/geometry/mojom/geometry.mojom";
+[EnableIf=arkweb_blank_optimize]
+import "skia/public/mojom/bitmap.mojom";
 import "third_party/blink/public/mojom/tokens/tokens.mojom";
 import "ui/gfx/mojom/gpu_extra_info.mojom";
 import "url/mojom/url.mojom";
@@ -19,6 +23,26 @@ import "services/webnn/public/mojom/ep_package_info.mojom";
 
 [EnableIf=is_win]
 import "ui/gfx/mojom/dxgi_info.mojom";
+
+[EnableIf=arkweb_blank_optimize]
+struct BlanklessSendInfo {
+  uint64 blankless_key;
+  uint32 nweb_id;
+  int32 lcp_time;
+  uint64 system_time;
+  int64 pref_hash;
+  int64 width;
+  int64 height;
+};
+
+[EnableIf=arkweb_blank_optimize]
+struct BlanklessBitmapMetadata {
+  int32 width;
+  int32 height;
+  int32 color_type;
+  int32 alpha_type;
+  uint64 size;
+};
 
 // Communication channel from the gpu process to the gpu host. This interface
 // should never have any sync function calls.
@@ -79,6 +103,14 @@ interface GpuHost {
 
   // Tells the GPU host to clear the shader disk cache.
   ClearGrShaderDiskCache();
+
+  // send snapshot to save
+  [EnableIf=arkweb_blank_optimize]
+  SendBlanklessSnapshotInfo(BlanklessSendInfo info, handle<shared_buffer> buffer, BlanklessBitmapMetadata metadata);
+
+  // clear snapshot
+  [EnableIf=arkweb_blank_optimize]
+  ClearBlanklessSnapshotInfo(uint64 blankless_key);
 
   // Tells the GPU host to ensure the execution providers used by WebNN are
   // ready. Returns the package info of available execution providers.

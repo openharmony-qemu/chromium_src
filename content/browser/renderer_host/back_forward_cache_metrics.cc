@@ -4,6 +4,7 @@
 
 #include "content/browser/renderer_host/back_forward_cache_metrics.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/debug/crash_logging.h"
 #include "base/debug/dump_without_crashing.h"
 #include "base/metrics/histogram_functions.h"
@@ -398,7 +399,11 @@ void BackForwardCacheMetrics::RecordHistoryNavigationUKM(
             "while the page was cached. This behavior will change shortly "
             "which may break the extension. If you are the developer of the "
             "extension, see "
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+            "https://x.x.x"
+#else
             "https://developer.chrome.com/blog/"
+#endif
             "bfcache-extension-messaging-changes.",
             blocking_extension_id.c_str()));
   }

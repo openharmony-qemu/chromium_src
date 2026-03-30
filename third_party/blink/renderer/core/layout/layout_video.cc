@@ -31,11 +31,34 @@
 #include "third_party/blink/renderer/core/paint/paint_layer.h"
 #include "third_party/blink/renderer/core/paint/video_painter.h"
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/layout/layout_video_for_include.cc"
+#endif
+
 namespace blink {
 
-LayoutVideo::LayoutVideo(HTMLVideoElement* video) : LayoutMedia(video) {}
+LayoutVideo::LayoutVideo(HTMLVideoElement* video)
+    : LayoutMedia(video)
+#if BUILDFLAG(ARKWEB_MEDIA)
+      ,
+      natural_dimensions_(
+          RuntimeEnabledFeatures::VideoAspectRatioNaturalDimensionEnabled()
+              ? PhysicalNaturalSizingInfo::None()
+              : PhysicalNaturalSizingInfo::MakeFixed(DefaultSize()))
+#endif  // ARKWEB_MEDIA
+{
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  MediaElement()->html_media_element_utils_.NotifyVideoVisible(true);
+#endif  // ARKWEB_VIDEO_ASSISTANT
+}
 
 LayoutVideo::~LayoutVideo() = default;
+
+#if BUILDFLAG(ARKWEB_MEDIA)
+PhysicalSize LayoutVideo::DefaultSize() {
+  return PhysicalSize(LayoutUnit(kDefaultWidth), LayoutUnit(kDefaultHeight));
+}
+#endif  // ARKWEB_MEDIA
 
 void LayoutVideo::NaturalSizeChanged() {
   NOT_DESTROYED();
@@ -99,7 +122,20 @@ PhysicalNaturalSizingInfo LayoutVideo::GetNaturalDimensions() const {
       break;
   }
 
-  return PhysicalNaturalSizingInfo::None();
+#if BUILDFLAG(ARKWEB_MEDIA)
+  if (RuntimeEnabledFeatures::VideoAspectRatioNaturalDimensionEnabled()) {
+#endif  // ARKWEB_MEDIA
+    return PhysicalNaturalSizingInfo::None();
+#if BUILDFLAG(ARKWEB_MEDIA)
+  }
+#endif  // ARKWEB_MEDIA
+
+#if BUILDFLAG(ARKWEB_MEDIA)
+  // Natural dimensions are missing.
+  PhysicalSize default_size(DefaultSize());
+  default_size.Scale(StyleRef().EffectiveZoom());
+  return PhysicalNaturalSizingInfo::MakeFixed(default_size);
+#endif  // ARKWEB_MEDIA
 }
 
 void LayoutVideo::ImageChanged(WrappedImagePtr new_image,
@@ -182,6 +218,17 @@ PhysicalRect LayoutVideo::ReplacedContentRectFrom(
   PhysicalRect replaced_content_rect =
       LayoutMedia::ReplacedContentRectFrom(base_content_rect);
   if (GetDisplayMode() == kVideo) {
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+    if (const auto* player = MediaElement()->GetWebMediaPlayer()) {
+      if (player->IsUsingCustomRenderer()) {
+        auto base_content_size = base_content_rect.size;
+        PhysicalNaturalSizingInfo sizing_info = PhysicalNaturalSizingInfo::MakeFixed(base_content_size);
+
+        return PreSnappedRectForPersistentSizing(
+            ComputeReplacedContentRect(base_content_rect, sizing_info));
+      }
+    }
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
     // Video codecs may need to restart from an I-frame when the output is
     // resized. Round size in advance to avoid 1px snap difference.
     replaced_content_rect =

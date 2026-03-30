@@ -10,6 +10,7 @@
 #include <limits>
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "base/auto_reset.h"
 #include "base/command_line.h"
 #include "base/containers/contains.h"
@@ -61,6 +62,9 @@
 #include "ui/gfx/skia_span_util.h"
 #include "ui/gl/trace_util.h"
 
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+static const int kMaxRenderTargetSize = 8192;
+#endif
 namespace cc {
 
 namespace {
@@ -1642,6 +1646,15 @@ int GpuImageDecodeCache::CalculateUploadScaleMipLevel(
     if (is_clipped)
       return 0;
   }
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+  // Heif uses hardware-accelerated decode, scaling is not currently supported
+  // for hardware-accelerated decodes
+  const auto* image_metadata =
+      draw_image.paint_image().GetImageHeaderMetadata();
+  if (image_metadata && image_metadata->image_type == ImageType::kHEIF) {
+    return 0;
+  }
+#endif
 
   gfx::Size base_size = draw_image.paint_image().GetSize(aux_image);
   // Ceil our scaled size so that the mip map generated is guaranteed to be

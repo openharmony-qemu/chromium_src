@@ -10,6 +10,7 @@ import("//testing/libfuzzer/fuzzer_test.gni")
 import("//third_party/blink/renderer/bindings/bindings.gni")
 import("//third_party/blink/renderer/build/scripts/scripts.gni")
 import("//third_party/blink/renderer/modules/modules.gni")
+import("//arkweb/build/features/features.gni")
 
 if (is_android) {
   import("//build/config/android/rules.gni")
@@ -754,6 +755,10 @@ source_set("unit_tests") {
     ":mediastream_unittests_data",
   ]
 
+  if (enable_arkweb) {
+    deps += [ "//arkweb/build/features" ]
+  }
+
   # TODO(crbug.com/40031409): Fix code that adds exit-time destructors and
   # enable the diagnostic by removing this line.
   configs += [ "//build/config/compiler:no_exit_time_destructors" ]
@@ -783,6 +788,9 @@ fuzzer_test("web_app_manifest_fuzzer") {
   deps = [
     ":modules",
     "//third_party/blink/renderer/platform:blink_fuzzer_test_support",
+    "//cef:libcef_static",
+    "//ohos_nweb:cef_nweb",
+    "//ohos_nweb:nweb_sources",
   ]
 }
 

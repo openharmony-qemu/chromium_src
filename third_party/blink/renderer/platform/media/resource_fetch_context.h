@@ -18,6 +18,13 @@ class ResourceFetchContext {
 
   virtual std::unique_ptr<WebAssociatedURLLoader> CreateUrlLoader(
       const WebAssociatedURLLoaderOptions& options) = 0;
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  virtual std::unique_ptr<WebAssociatedURLLoader> CreateVideoUrlLoader(
+      const WebAssociatedURLLoaderOptions& options) {
+    return nullptr;
+  }
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 };
 
 }  // namespace blink

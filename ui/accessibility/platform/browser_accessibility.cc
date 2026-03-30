@@ -31,6 +31,7 @@
 #include "ui/gfx/geometry/rect_conversions.h"
 #include "ui/gfx/geometry/rect_f.h"
 #include "ui/strings/grit/auto_image_annotation_strings.h"
+#include "arkweb/build/features/features.h"
 
 // Fuchsia WebEngine doesn't use these strings, so they are excluded to save
 // space.
@@ -49,7 +50,7 @@ static int browser_accessibility_count = 0;
 constexpr int kDumpBrowserAccessibilityLeakNumObjects = 10000000;
 #endif
 
-#if !BUILDFLAG(HAS_PLATFORM_ACCESSIBILITY_SUPPORT)
+#if !BUILDFLAG(HAS_PLATFORM_ACCESSIBILITY_SUPPORT) && !BUILDFLAG(ARKWEB_ACCESSIBILITY)
 // static
 std::unique_ptr<BrowserAccessibility> BrowserAccessibility::Create(
     BrowserAccessibilityManager* manager,

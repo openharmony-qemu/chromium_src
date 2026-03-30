@@ -201,7 +201,11 @@ bool IsPdfPluginLoaded(content::WebContents* web_contents) {
   }
 
   GURL url = plugin_frame->GetLastCommittedURL();
-  if (!url.SchemeIs("chrome-extension")) {
+  if (!url.SchemeIs("chrome-extension")
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+             && !url.SchemeIs("arkweb-extension")
+#endif
+  ) {
     VLOG(1) << "Plugin frame URL not loaded yet.";
     return false;
   }

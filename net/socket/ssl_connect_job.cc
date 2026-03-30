@@ -36,6 +36,10 @@
 #include "third_party/boringssl/src/include/openssl/pool.h"
 #include "third_party/boringssl/src/include/openssl/ssl.h"
 
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+#include "arkweb/chromium_ext/net/socket/ssl_connect_job_for_include.cc"
+#endif
+
 namespace net {
 
 namespace {
@@ -43,6 +47,9 @@ namespace {
 // Timeout for the SSL handshake portion of the connect.
 constexpr base::TimeDelta kSSLHandshakeTimeout(base::Seconds(30));
 
+#if BUILDFLAG(ARKWEB_SSL_AUTH_ALGO)
+constexpr uint16_t k3DESCipher = 0x000a;
+#endif
 }  // namespace
 
 SSLSocketParams::SSLSocketParams(
@@ -263,10 +270,20 @@ int SSLConnectJob::DoTransportConnect() {
     DCHECK(endpoint_result_);
     endpoint_result_override.emplace(*endpoint_result_, dns_aliases_);
   }
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION) && BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  nested_connect_job_ = std::make_unique<ArkWebTransportConnectJobExt>(
+#else
   nested_connect_job_ = std::make_unique<TransportConnectJob>(
+#endif
       priority(), socket_tag(), common_connect_job_params(),
       params_->GetDirectConnectionParams(), this, &net_log(),
       std::move(endpoint_result_override));
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  nested_connect_job_->SetFromPreload(IsFromPreload());
+#endif
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+  nested_connect_job_->SetConnectTimeout(timeout_override_for_nested_job_);
+#endif
   return nested_connect_job_->Connect();
 }
 
@@ -296,6 +313,9 @@ int SSLConnectJob::DoSOCKSConnect() {
   nested_connect_job_ = std::make_unique<SOCKSConnectJob>(
       priority(), socket_tag(), common_connect_job_params(),
       params_->GetSocksProxyConnectionParams(), this, &net_log());
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+  nested_connect_job_->SetConnectTimeout(timeout_override_for_nested_job_);
+#endif
   return nested_connect_job_->Connect();
 }
 
@@ -318,6 +338,9 @@ int SSLConnectJob::DoTunnelConnect() {
   nested_connect_job_ = std::make_unique<HttpProxyConnectJob>(
       priority(), socket_tag(), common_connect_job_params(),
       params_->GetHttpProxyConnectionParams(), this, &net_log());
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+  nested_connect_job_->SetConnectTimeout(timeout_override_for_nested_job_);
+#endif
   return nested_connect_job_->Connect();
 }
 
@@ -371,6 +394,10 @@ int SSLConnectJob::DoSSLConnect() {
   ssl_config.ignore_certificate_errors =
       *common_connect_job_params()->ignore_certificate_errors;
   ssl_config.network_anonymization_key = params_->network_anonymization_key();
+
+#if BUILDFLAG(ARKWEB_SSL_AUTH_ALGO)
+  ssl_config.disable_sha1_server_signatures = disable_legacy_crypto_with_fallback_;
+#endif
 
   if (ssl_client_context()->config().ech_enabled) {
     if (ech_retry_configs_) {

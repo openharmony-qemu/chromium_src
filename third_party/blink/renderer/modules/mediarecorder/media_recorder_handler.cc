@@ -286,7 +286,9 @@ bool MediaRecorderHandler::CanSupportMimeTypeForCodec(const String& type,
   // "audio", supports opus or pcm (little-endian 32-bit float).
   // http://www.webmproject.org/docs/container Sec:"HTML5 Video Type Parameters"
   static const char* const kVideoCodecs[] = {
+#if BUILDFLAG(ENABLE_LIBVPX)
       "vp8", "vp9",
+#endif
 #if BUILDFLAG(USE_PROPRIETARY_CODECS)
       "h264", "avc1", "avc3",
 #endif
@@ -316,7 +318,10 @@ bool MediaRecorderHandler::CanSupportMimeTypeForCodec(const String& type,
 #if BUILDFLAG(ENABLE_HEVC_PARSER_AND_HW_DECODER)
         "hvc1", "hev1",
 #endif
-        "vp9",  "av01", "opus",
+#if BUILDFLAG(ENABLE_LIBVPX)
+        "vp9",
+#endif
+        "av01",      "opus",
     };
     static const char* const kAudioCodecsForMp4[] = {
 #if BUILDFLAG(USE_PROPRIETARY_CODECS)

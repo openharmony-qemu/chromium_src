@@ -82,6 +82,8 @@ RankerModelStatus ValidateModel(const RankerModel& model) {
 const char kDefaultTranslateRankerModelURL[] =
     "https://www.gstatic.com/chrome/intelligence/assist/ranker/models/"
     "translate/android/translate_ranker_model_android_20170918.pb.bin";
+#elif BUILDFLAG(IS_ARKWEB)
+const char kDefaultTranslateRankerModelURL[] = "https://x.x.x.x";
 #elif defined(USE_AURA)
 const char kDefaultTranslateRankerModelURL[] =
     "https://www.gstatic.com/chrome/intelligence/assist/ranker/models/"

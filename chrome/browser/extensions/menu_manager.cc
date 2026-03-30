@@ -933,6 +933,7 @@ void MenuManager::WriteToStorageInternal(
 
 void MenuManager::ReadFromStorage(const std::string& extension_id,
                                   std::optional<base::Value> value) {
+  LOG(DEBUG) << "MenuManager::ReadFromStorage";
   const Extension* extension = ExtensionRegistry::Get(browser_context_)
                                    ->enabled_extensions()
                                    .GetByID(extension_id);
@@ -963,16 +964,27 @@ void MenuManager::ReadFromStorage(const std::string& extension_id,
 
   for (TestObserver& observer : observers_)
     observer.DidReadFromStorage(extension_id);
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  for (LoadObserver& observer : load_observers_)
+    observer.Loaded(extension_id);
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 }
 
 void MenuManager::OnExtensionLoaded(content::BrowserContext* browser_context,
                                     const Extension* extension) {
+  LOG(DEBUG) << "MenuManager::OnExtensionLoaded";
   if (store_ && BackgroundInfo::HasLazyContext(extension)) {
     store_->GetExtensionValue(
         extension->id(), kContextMenusKey,
         base::BindOnce(&MenuManager::ReadFromStorage,
                        weak_ptr_factory_.GetWeakPtr(), extension->id()));
+    return;
   }
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  for (LoadObserver& observer : load_observers_)
+    observer.Loaded(extension->id());
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 }
 
 void MenuManager::OnExtensionUnloaded(content::BrowserContext* browser_context,
@@ -1035,6 +1047,16 @@ MenuIconLoader* MenuManager::GetMenuIconLoader(
 void MenuManager::RemoveObserver(TestObserver* observer) {
   observers_.RemoveObserver(observer);
 }
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+void MenuManager::AddLoadObserver(LoadObserver* observer) {
+  load_observers_.AddObserver(observer);
+}
+
+void MenuManager::RemoveLoadObserver(LoadObserver* observer) {
+  load_observers_.RemoveObserver(observer);
+}
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 
 MenuItem::ExtensionKey::ExtensionKey()
     : webview_embedder_process_id(ChildProcessHost::kInvalidUniqueID),

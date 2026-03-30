@@ -129,6 +129,9 @@ void OnDoLookupComplete(
 
 bool SkipUrl(const GURL& url) {
   return !url.is_valid() || url.SchemeIs(content::kChromeUIScheme) ||
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+         url.SchemeIs(extensions::kArkwebExtensionScheme) ||
+#endif
          url.SchemeIs(extensions::kExtensionScheme);
 }
 

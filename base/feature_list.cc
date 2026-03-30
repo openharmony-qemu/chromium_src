@@ -102,7 +102,8 @@ class EarlyFeatureAccessTracker {
  private:
   void Fail(const Feature* feature, bool with_feature_allow_list) {
     // TODO(crbug.com/40237050): Enable this check on all platforms.
-#if !BUILDFLAG(IS_IOS) && !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_CHROMEOS)
+#if !BUILDFLAG(IS_IOS) && !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_CHROMEOS) && \
+    !BUILDFLAG(IS_ARKWEB)
     // Create a crash key with the name of the feature accessed too early, to
     // facilitate crash triage.
     SCOPED_CRASH_KEY_STRING256("FeatureList", "feature-accessed-too-early",
@@ -747,6 +748,10 @@ void FeatureList::FinalizeInitialization() {
 bool FeatureList::IsFeatureEnabled(const Feature& feature) const {
   OverrideState overridden_state = GetOverrideState(feature);
 
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  if (std::string(feature.name) == "ForceScrollbar")
+    return overridden_state == OVERRIDE_DISABLE_FEATURE;
+#endif
   // If marked as OVERRIDE_USE_DEFAULT, simply return the default state below.
   if (overridden_state != OVERRIDE_USE_DEFAULT) {
     return overridden_state == OVERRIDE_ENABLE_FEATURE;
@@ -1049,3 +1054,7 @@ bool FeatureList::Accessor::GetParamsByFeatureName(
 }
 
 }  // namespace base
+
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+#include "arkweb/chromium_ext/base/feature_list_utils.cc"
+#endif

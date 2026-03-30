@@ -22,6 +22,7 @@
 #include "media/audio/audio_device_name.h"
 #include "media/audio/audio_manager.h"
 #include "media/audio/audio_output_dispatcher.h"
+#include "arkweb/build/features/features.h"
 #include "third_party/abseil-cpp/absl/container/flat_hash_set.h"
 
 namespace media {
@@ -99,6 +100,16 @@ class MEDIA_EXPORT AudioManagerBase : public AudioManager {
   }
   int output_stream_count() const { return num_output_streams_; }
 
+#if BUILDFLAG(ARKWEB_WEBRTC)
+  absl::flat_hash_set<raw_ptr<AudioInputStream, CtnExperimental>>
+  GetInputStream() override {
+    if (input_streams_.size()) {
+      return input_streams_;
+    }
+    return {};
+  }
+#endif
+
  protected:
   AudioManagerBase(std::unique_ptr<AudioThread> audio_thread,
                    AudioLogFactory* audio_log_factory);
@@ -139,6 +150,11 @@ class MEDIA_EXPORT AudioManagerBase : public AudioManager {
   virtual AudioParameters GetPreferredOutputStreamParameters(
       const std::string& output_device_id,
       const AudioParameters& input_params) = 0;
+
+#if BUILDFLAG(ARKWEB_WEBRTC)
+  virtual AudioParameters GetPreferredInputStreamParameters(
+      const std::string& input_device_id) = 0;
+#endif // BUILDFLAG(ARKWEB_WEBRTC)
 
   // Appends a list of available input devices to |device_names|,
   // which must initially be empty.

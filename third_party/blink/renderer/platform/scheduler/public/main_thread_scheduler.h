@@ -13,6 +13,12 @@
 #include "third_party/blink/renderer/platform/scheduler/public/thread_scheduler.h"
 #include "third_party/blink/renderer/platform/wtf/vector.h"
 
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+namespace content {
+class AnrDumper;
+}  // namespace content
+#endif
+
 namespace blink {
 class AgentGroupScheduler;
 
@@ -111,6 +117,9 @@ class PLATFORM_EXPORT MainThreadScheduler : public ThreadScheduler {
   // For `Isolate`.
   friend class ScopedMainThreadOverrider;
   friend class test::TaskEnvironment;
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+  friend class content::AnrDumper;
+#endif
 
   // Get the isolate previously set with `SetV8Isolate`. This method is scoped
   // private so only friends can use it. Other users should use

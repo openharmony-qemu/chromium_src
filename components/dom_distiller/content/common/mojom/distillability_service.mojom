@@ -4,6 +4,24 @@
 
 module dom_distiller.mojom;
 
+[EnableIf=arkweb_reader_mode]
+import "arkweb/chromium_ext/third_party/blink/public/mojom/dom_distiller/reader_mode_config.mojom";
+
+[EnableIf=arkweb_reader_mode]
+enum PageType {
+  kPageNovelDetails,
+  kPageNovelContent,
+  kPageOthers,
+};
+
+[EnableIf=arkweb_reader_mode]
+struct PageDistillableInfo {
+  PageType pageType;
+  string distillablePageUrl;
+  bool pageDistillable;
+  string title;
+};
+
 // This service is implemented in the browser process and is used by the
 // renderer to notify the Reader Mode UI whether a page is distillable.
 interface DistillabilityService {
@@ -14,6 +32,11 @@ interface DistillabilityService {
   // article.
   // |is_mobile_friendly| indicates whether the page is mobile friendly and is
   // only valid when the heuristic is ADABOOST_MODEL or ALL_ARTICLES.
-  NotifyIsDistillable(bool page_is_distillable, bool is_last_update,
-      bool is_long_article, bool is_mobile_friendly);
+  NotifyIsDistillable(bool page_is_distillable, bool is_last_update, bool is_long_article, bool is_mobile_friendly);
+
+  [EnableIf=arkweb_reader_mode]
+  NotifyIsPageDistillable(PageDistillableInfo page_info, bool is_last_update, bool is_mobile_friendly);
+
+  [Sync, EnableIf=arkweb_reader_mode]
+  GetHostDistillerInfo(string host) => (blink.mojom.UrlHostDistillerInfo distiller_info);
 };

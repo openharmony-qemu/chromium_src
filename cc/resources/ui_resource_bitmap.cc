@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "cc/resources/ui_resource_bitmap.h"
+#include "arkweb/build/features/features.h"
 
 #include <stdint.h>
 
@@ -93,7 +94,7 @@ UIResourceBitmap::UIResourceBitmap(const SkBitmap& skbitmap) {
   DCHECK(skbitmap.isImmutable());
 
   const SkBitmap* target = &skbitmap;
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_DRDC)
   SkBitmap copy;
   if (features::ShouldEnableDrDc()) {
     // If GpuFeatureInfo is available, replace ShouldEnableDrDc() with

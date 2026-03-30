@@ -77,6 +77,7 @@
 #include "base/compiler_specific.h"
 #include "base/numerics/clamped_math.h"
 #include "build/build_config.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_FUCHSIA)
 #include <zircon/types.h>

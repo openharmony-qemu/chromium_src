@@ -19,8 +19,12 @@
 #include "net/base/net_export.h"
 #include "net/base/network_handle.h"
 #include "third_party/perfetto/include/perfetto/tracing/track.h"
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(ENABLE_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 #include "net/base/address_map_linux.h"
 #endif
 
@@ -349,6 +353,7 @@ class NET_EXPORT NetworkChangeNotifier {
   NetworkChangeNotifier& operator=(const NetworkChangeNotifier&) = delete;
   virtual ~NetworkChangeNotifier();
 
+
   // Returns the factory or nullptr if it is not set.
   static NetworkChangeNotifierFactory* GetFactory();
 
@@ -459,7 +464,7 @@ class NET_EXPORT NetworkChangeNotifier {
   // packets sent lazily.
   static bool IsDefaultNetworkActive();
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
   // Returns the AddressTrackerLinux if present.
   static AddressMapOwnerLinux* GetAddressMapOwner();
 #endif
@@ -573,6 +578,14 @@ class NET_EXPORT NetworkChangeNotifier {
   static base::cstring_view IPAddressChangeTypeToString(
       IPAddressChangeType type);
 
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  static const std::vector<std::string> GetDnsServers();
+  static const char* ConnectionTypeToLowerString(ConnectionType type);
+#endif
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+  static void BindToNetwork(int32_t network_for_dns);
+#endif
+
   // Allows a second NetworkChangeNotifier to be created for unit testing, so
   // the test suite can create a MockNetworkChangeNotifier, but platform
   // specific NetworkChangeNotifiers can also be created for testing.  To use,
@@ -634,7 +647,7 @@ class NET_EXPORT NetworkChangeNotifier {
       SystemDnsConfigChangeNotifier* system_dns_config_notifier = nullptr,
       bool omit_observers_in_constructor_for_testing = false);
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
   // Returns the AddressMapOwnerLinux if present.
   virtual AddressMapOwnerLinux* GetAddressMapOwnerInternal();
 #endif
@@ -662,6 +675,18 @@ class NET_EXPORT NetworkChangeNotifier {
   virtual SystemDnsConfigChangeNotifier* GetCurrentSystemDnsConfigNotifier();
 
   virtual bool IsDefaultNetworkActiveInternal();
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  virtual const std::vector<std::string> GetCurrentDnsServers();
+#endif
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+  virtual void BindDnsToNetwork(int32_t network_for_dns);
+#if BUILDFLAG(ENABLE_ARKWEB_EXT)
+  virtual const std::vector<std::string> GetCurrentNetAddrList();
+  virtual const std::vector<std::string> GetNetAddrListByNetId(int32_t netId);
+  virtual void SetNetAddrList(std::vector<std::string> new_addr_list);
+#endif
+#endif
 
   // Broadcasts a notification to all registered observers.  Note that this
   // happens asynchronously, even for observers on the current thread, even in

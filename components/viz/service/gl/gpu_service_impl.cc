@@ -9,6 +9,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/allocator/partition_alloc_support.h"
 #include "base/android/android_info.h"
 #include "base/command_line.h"
@@ -131,6 +132,12 @@
 #include "ui/ozone/public/surface_factory_ozone.h"
 #endif  // BUILDFLAG(IS_OZONE)
 
+// Follow-up Processing, 141统一删除了image_decode_相关文件/功能，为解决编译错误，删除arkweb对应的相关逻辑
+// #if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+// #include "media/gpu/ohos/ohos_image_decode_accelerator_worker.h"
+// #endif  // BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+
+#include "arkweb/chromium_ext/components/viz/service/gl/gpu_service_impl_utils.cc"
 namespace viz {
 
 namespace {
@@ -262,6 +269,12 @@ GpuServiceImpl::GpuServiceImpl(
     }
 #endif  // BUILDFLAG(SKIA_USE_METAL)
   }
+
+// Follow-up Processing, 141统一删除了image_decode_相关文件/功能，为解决编译错误，删除arkweb对应的相关逻辑
+// #if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+//   image_decode_accelerator_worker_ =
+//       media::OhosImageDecodeAcceleratorWorker::Create();
+// #endif
 
 #if BUILDFLAG(IS_WIN)
   if (media::SupportMediaFoundationClearPlayback()) {

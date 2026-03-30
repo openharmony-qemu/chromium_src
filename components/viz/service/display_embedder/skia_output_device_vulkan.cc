@@ -43,8 +43,9 @@
 #include "ui/gl/android/scoped_java_surface.h"
 #endif
 
-namespace viz {
+#include "arkweb/chromium_ext/components/viz/service/display_embedder/skia_output_device_vulkan_utils.h"
 
+namespace viz {
 // static
 std::unique_ptr<SkiaOutputDeviceVulkan> SkiaOutputDeviceVulkan::Create(
     VulkanContextProvider* context_provider,
@@ -71,7 +72,9 @@ SkiaOutputDeviceVulkan::SkiaOutputDeviceVulkan(
                        memory_tracker,
                        did_swap_buffer_complete_callback),
       context_provider_(context_provider),
-      surface_handle_(surface_handle) {}
+      surface_handle_(surface_handle) {
+        implUtils = std::make_unique<SkiaOutputDeviceVulkanUtils>(this);
+      }
 
 SkiaOutputDeviceVulkan::~SkiaOutputDeviceVulkan() {
   DCHECK(!scoped_write_);
@@ -181,6 +184,11 @@ void SkiaOutputDeviceVulkan::Present(
         base::TimeTicks::Now(), vulkan_surface_->GetDisplayRefreshInterval(),
         0));
   }
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+  if (implUtils) {
+    implUtils->CleanBuffersIfNeed();
+  }
+#endif
 }
 
 SkSurface* SkiaOutputDeviceVulkan::BeginPaint(
@@ -316,7 +324,7 @@ bool SkiaOutputDeviceVulkan::Initialize() {
   capabilities_.supports_post_sub_buffer = true;
   capabilities_.supports_target_damage = true;
   capabilities_.orientation_mode = OutputSurface::OrientationMode::kHardware;
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_VULKAN)
   // With vulkan, if the chrome is launched in landscape mode, the chrome is
   // always blank until chrome window is rotated once. Workaround this problem
   // by using logic rotation mode.
@@ -393,6 +401,21 @@ void SkiaOutputDeviceVulkan::OnPostSubBufferFinished(OutputSurfaceFrame frame,
                       gfx::Rect(vulkan_surface_->image_size()));
   }
 }
+
+void SkiaOutputDeviceVulkan::DiscardBackbuffer() {
+#if BUILDFLAG(ARKWEB_VULKAN)
+  implUtils->DiscardBackbuffer();
+#endif
+}
+
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+void SkiaOutputDeviceVulkan::SetIfNeedCleanBuffers(bool need_clean_buffers)
+{
+  if (implUtils) {
+    implUtils->SetIfNeedCleanBuffers(need_clean_buffers);
+  }
+}
+#endif
 
 SkiaOutputDeviceVulkan::SkSurfaceSizePair::SkSurfaceSizePair() = default;
 SkiaOutputDeviceVulkan::SkSurfaceSizePair::SkSurfaceSizePair(

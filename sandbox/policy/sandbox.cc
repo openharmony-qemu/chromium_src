@@ -14,9 +14,11 @@
 #include "base/android/jni_android.h"
 #endif  // BUILDFLAG(IS_ANDROID)
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+#if !defined(COMPONENT_BUILD) // FIXME
 #include "sandbox/policy/linux/sandbox_linux.h"
-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#endif
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 
 #if BUILDFLAG(IS_MAC)
 #include "sandbox/mac/seatbelt.h"
@@ -34,14 +36,16 @@
 namespace sandbox {
 namespace policy {
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+#if !defined(COMPONENT_BUILD) // FIXME
 bool Sandbox::Initialize(sandbox::mojom::Sandbox sandbox_type,
                          SandboxLinux::PreSandboxHook hook,
                          const SandboxLinux::Options& options) {
   return SandboxLinux::GetInstance()->InitializeSandbox(
       sandbox_type, std::move(hook), options);
 }
-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#endif
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 
 #if BUILDFLAG(IS_WIN)
 bool Sandbox::Initialize(sandbox::mojom::Sandbox sandbox_type,
@@ -101,7 +105,8 @@ bool Sandbox::IsProcessSandboxed() {
   // launching controls the sandbox and there are no ambient capabilities, so
   // basically everything but the browser is considered sandboxed.
   return !is_browser;
-#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+#if !defined(COMPONENT_BUILD) // FIXME
   int status = SandboxLinux::GetInstance()->GetStatus();
   constexpr int kLayer1Flags = SandboxLinux::Status::kSUID |
                                SandboxLinux::Status::kPIDNS |
@@ -109,6 +114,7 @@ bool Sandbox::IsProcessSandboxed() {
   constexpr int kLayer2Flags =
       SandboxLinux::Status::kSeccompBPF | SandboxLinux::Status::kSeccompTSYNC;
   return (status & kLayer1Flags) != 0 && (status & kLayer2Flags) != 0;
+#endif
 #elif BUILDFLAG(IS_MAC)
   return Seatbelt::IsSandboxed();
 #elif BUILDFLAG(IS_IOS)

@@ -107,6 +107,10 @@ LoadPolicy DocumentSubresourceFilter::GetLoadPolicy(
     ++statistics_.num_loads_matching_rules;
     if (activation_state_.activation_level ==
         mojom::ActivationLevel::kEnabled) {
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+      statistics_.loads_disallowed_url_map.insert(
+          std::make_pair(subresource_url.spec(), subresource_type));
+#endif
       ++statistics_.num_loads_disallowed;
       return LoadPolicy::DISALLOW;
     } else if (activation_state_.activation_level ==

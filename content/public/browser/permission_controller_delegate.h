@@ -142,6 +142,17 @@ class CONTENT_EXPORT PermissionControllerDelegate {
       base::optional_ref<const url::Origin> requesting_origin,
       base::optional_ref<const url::Origin> embedding_origin);
 
+#if BUILDFLAG(ARKWEB_NOTIFICATION)
+  virtual void GetPermissionStatusAsync(
+      blink::PermissionType permission,
+      const GURL& requesting_origin,
+      base::OnceCallback<void(blink::mojom::PermissionStatus)> callback) {}
+#endif // ARKWEB_NOTIFICATION
+
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  virtual bool IsClipboardSitePermissionEnabled() { return false; }
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
+
   void SetSubscriptions(
       content::PermissionController::SubscriptionsMap* subscriptions);
   content::PermissionController::SubscriptionsMap* subscriptions();

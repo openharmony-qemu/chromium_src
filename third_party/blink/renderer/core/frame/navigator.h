@@ -20,6 +20,7 @@
 #ifndef THIRD_PARTY_BLINK_RENDERER_CORE_FRAME_NAVIGATOR_H_
 #define THIRD_PARTY_BLINK_RENDERER_CORE_FRAME_NAVIGATOR_H_
 
+#include "arkweb/build/features/features.h"
 #include "third_party/blink/public/common/user_agent/user_agent_metadata.h"
 #include "third_party/blink/renderer/core/core_export.h"
 #include "third_party/blink/renderer/core/execution_context/navigator_base.h"
@@ -87,6 +88,10 @@ class CORE_EXPORT Navigator final : public NavigatorBase {
   void SetUserAgentMetadataForTesting(UserAgentMetadata);
 
   void Trace(Visitor*) const override;
+
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+  String appPackageName() const;
+#endif  // BUILDFLAG(ARKWEB_NETWORK_BASE)
 
   Geolocation* GetGeolocation() const { return geolocation_; }
   void SetGeolocation(Geolocation* geolocation) { geolocation_ = geolocation; }

@@ -22,6 +22,11 @@
 #include "chrome/browser/autofill/android/jni_headers/AutofillClientProviderUtils_jni.h"
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_AUTOFILL)
+#include "cef/ohos_cef_ext/libcef/browser/autofill/oh_autofill_client.h"
+#endif
+
 namespace autofill {
 namespace {
 
@@ -110,7 +115,11 @@ void AutofillClientProvider::CreateClientForWebContents(
     NOTREACHED();
 #endif
   } else {
+#if BUILDFLAG(ARKWEB_AUTOFILL)
+    autofill::OhAutofillClient::CreateForWebContents(web_contents);
+#else
     ChromeAutofillClient::CreateForWebContents(web_contents);
+#endif
   }
 }
 

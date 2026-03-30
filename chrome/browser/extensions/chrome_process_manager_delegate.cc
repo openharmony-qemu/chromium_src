@@ -29,6 +29,10 @@
 #include "chrome/browser/extensions/component_extensions_allowlist/allowlist.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/chrome/browser/extensions/chrome_process_manager_delegate_for_include.cc"
+#endif
+
 namespace extensions {
 
 ChromeProcessManagerDelegate::ChromeProcessManagerDelegate() {

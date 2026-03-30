@@ -30,6 +30,11 @@
 #include "base/android/task_scheduler/task_traits_android.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "base/ohos/task_scheduler/task_runner_ohos.h"
+#include "base/ohos/task_scheduler/task_traits_ohos.h"
+#endif
+
 using QueueType = content::BrowserTaskQueues::QueueType;
 
 namespace content {
@@ -62,6 +67,28 @@ scoped_refptr<base::SingleThreadTaskRunner> GetTaskRunnerForAndroidMainThread(
   return g_browser_task_executor->GetUIThreadTaskRunner(traits);
 }
 #endif
+
+#if BUILDFLAG(IS_OHOS)
+scoped_refptr<base::SingleThreadTaskRunner> GetTaskRunnerForOHOSMainThread(
+    ::TaskTraits ohos_traits) {
+  BrowserTaskTraits traits;
+  switch (ohos_traits) {
+    case ::TaskTraits::UI_BEST_EFFORT:
+      traits = {base::TaskPriority::BEST_EFFORT};
+      break;
+    case ::TaskTraits::UI_USER_VISIBLE:
+      traits = {base::TaskPriority::USER_VISIBLE};
+      break;
+    case ::TaskTraits::UI_USER_BLOCKING:
+      traits = {base::TaskPriority::USER_BLOCKING};
+      break;
+    default:
+      traits = {};
+  }
+  return g_browser_task_executor->GetUIThreadTaskRunner(traits);
+}
+#endif
+
 
 }  // namespace
 
@@ -189,6 +216,11 @@ void BrowserTaskExecutor::CreateInternal(
   base::TaskRunnerAndroid::SetUiThreadTaskRunnerCallback(
       base::BindRepeating(&GetTaskRunnerForAndroidMainThread));
   base::PostTaskAndroid::SignalNativeSchedulerReady();
+#endif
+
+#if BUILDFLAG(IS_OHOS)
+  base::TaskRunnerOHOS::SetUiThreadTaskRunnerCallback(
+      base::BindRepeating(&GetTaskRunnerForOHOSMainThread));
 #endif
 }
 

@@ -78,6 +78,10 @@
 #undef LoadBitmap
 #endif
 
+#if BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)
+#include "arkweb/chromium_ext/ui/base/resource/resource_bundle_for_include.cc"
+#endif
+
 namespace ui {
 
 namespace {
@@ -398,6 +402,9 @@ void ResourceBundle::LoadAdditionalLocaleDataWithPakFileRegion(
 // static
 bool ResourceBundle::LocaleDataPakExists(std::string_view locale,
                                          Gender gender) {
+#if BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)
+  return LocaleDataPakExistsExt(locale);
+#else
   // TODO: Support gender translations on non-Android platforms.
   const auto path = GetLocaleFilePath(locale);
   if (path.empty()) {
@@ -444,6 +451,7 @@ bool ResourceBundle::LocaleDataPakExists(std::string_view locale,
 #else
   return base::PathExists(path);
 #endif
+#endif
 }
 #endif  // !BUILDFLAG(IS_ANDROID)
 
@@ -489,10 +497,19 @@ base::FilePath ResourceBundle::GetLocaleFilePath(std::string_view app_locale) {
 
   base::FilePath locale_file_path;
 
+  #if !BUILDFLAG(IS_ARKWEB)
   if (base::PathService::Get(ui::DIR_LOCALES, &locale_file_path)) {
     locale_file_path = locale_file_path.AppendASCII(
         base::StrCat({app_locale, kPakFileExtension}));
   }
+#else
+  if (base::PathService::Get(base::DIR_ASSETS, &locale_file_path)) {
+    std::string locale_path = "locales/";
+    locale_path += app_locale;
+    locale_path += kPakFileExtension;
+    locale_file_path = locale_file_path.AppendASCII(locale_path);
+  }
+#endif
 
   // Don't try to load from paths that are not absolute.
   return locale_file_path.IsAbsolute() ? locale_file_path : base::FilePath();

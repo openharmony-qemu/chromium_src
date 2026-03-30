@@ -122,7 +122,11 @@ std::unique_ptr<LayerTreeHost> LayerTreeHost::CreateThreaded(
   DCHECK(main_task_runner);
   DCHECK(impl_task_runner);
   auto layer_tree_host = base::WrapUnique(
+#if BUILDFLAG(IS_ARKWEB)
+      new LayerTreeHostExt(std::move(params), CompositorMode::THREADED));
+#else
       new LayerTreeHost(std::move(params), CompositorMode::THREADED));
+#endif
   layer_tree_host->InitializeThreaded(std::move(main_task_runner),
                                       std::move(impl_task_runner));
   return layer_tree_host;
@@ -135,7 +139,11 @@ std::unique_ptr<LayerTreeHost> LayerTreeHost::CreateSingleThreaded(
   scoped_refptr<base::SingleThreadTaskRunner> main_task_runner =
       params.main_task_runner;
   auto layer_tree_host = base::WrapUnique(
+#if BUILDFLAG(IS_ARKWEB)
+      new LayerTreeHostExt(std::move(params), CompositorMode::SINGLE_THREADED));
+#else
       new LayerTreeHost(std::move(params), CompositorMode::SINGLE_THREADED));
+#endif
   layer_tree_host->InitializeSingleThreaded(single_thread_client,
                                             std::move(main_task_runner));
   return layer_tree_host;
@@ -1727,6 +1735,11 @@ void LayerTreeHost::UnregisterLayer(Layer* layer) {
   DCHECK(IsMainThread());
   DCHECK(LayerById(layer->id()));
   DCHECK(!in_paint_layer_contents_);
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  if (auto* ext = AsLayerTreeHostExt()) {
+    ext->CleanupVisibilityForRemovedLayer(layer);
+  }
+#endif
   pending_commit_state()->layers_that_should_push_properties.erase(layer);
   layer_id_map_.erase(layer->id());
 }

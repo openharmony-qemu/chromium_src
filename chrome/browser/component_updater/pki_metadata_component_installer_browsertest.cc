@@ -61,11 +61,10 @@
 #include "net/test/test_doh_server.h"
 #include "testing/gmock/include/gmock/gmock-matchers.h"
 #include "testing/gtest/include/gtest/gtest.h"
-
+#include "net/base/features.h"
 #if BUILDFLAG(CHROME_ROOT_STORE_SUPPORTED)
 #include "base/test/bind.h"
 #include "chrome/browser/ssl/ssl_browsertest_util.h"
-#include "net/base/features.h"
 #include "net/cert/internal/trust_store_chrome.h"
 #include "net/cert/root_store_proto_lite/root_store.pb.h"
 #include "net/cert/x509_util.h"

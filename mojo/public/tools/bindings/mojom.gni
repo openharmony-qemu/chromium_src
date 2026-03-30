@@ -16,6 +16,7 @@ import("//build/config/cast.gni")
 # consistent across toolchains and which is affected by branded vs non-branded
 # Chrome builds. Ideally we could create some generic knobs here that could be
 # flipped elsewhere though.
+import("//arkweb/build/features/features.gni")
 import("//build/config/chrome_build.gni")
 import("//build/config/features.gni")
 import("//build/config/sanitizers/sanitizers.gni")
@@ -672,6 +673,11 @@ template("mojom") {
   build_metadata_filename = "$target_gen_dir/$target_name.build_metadata"
   build_metadata = {
   }
+  if (target_os == "ohos") {
+    target_label = get_label_info(":${target_name}", "label_with_toolchain")
+  build_metadata.target_name = target_name
+  build_metadata.label = target_label
+  }
   build_metadata.sources = rebase_path(sources_list, target_gen_dir)
   build_metadata.deps = []
   foreach(dep, all_deps) {
@@ -745,10 +751,20 @@ template("mojom") {
       enabled_features += [ "is_mac" ]
     } else if (is_win) {
       enabled_features += [ "is_win" ]
+    } else if (is_ohos) {
+      enabled_features += [ "is_ohos" ]
     }
 
     if (is_apple) {
       enabled_features += [ "is_apple" ]
+    }
+
+    if (is_arkweb) {
+      if (defined(arkweb_mojo_features)) {
+        foreach(feature, arkweb_mojo_features) {
+          enabled_features += [ feature ]
+        }
+      }
     }
 
     action_outputs = []
@@ -1629,6 +1645,9 @@ template("mojom") {
                      ":$output_target_name",
                      ":${target_name}_mojolpm",
                    ]
+      if (is_arkweb) {
+        visibility += [ "//arkweb/build:arkweb_prebuild_mojom" ]
+      }
       if (defined(invoker.testonly)) {
         testonly = invoker.testonly
       }

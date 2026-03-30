@@ -33,6 +33,18 @@ class COMPONENT_EXPORT(UI_BASE) TouchEditable
     kLastTouchEditableCommandId = kSelectWord,
   };
 
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  enum OhosMenuCommands{
+    QM_EDITFLAG_NONE = 0,
+    QM_EDITFLAG_CAN_ELLIPSIS = 1 << 0,
+    QM_EDITFLAG_CAN_CUT = 1 << 1,
+    QM_EDITFLAG_CAN_COPY = 1 << 2,
+    QM_EDITFLAG_CAN_PASTE = 1 << 3,
+    QM_EDITFLAG_CAN_SELECT_ALL = 1 << 4,
+  };
+
+#endif
+
   // TODO(b/266345972): Consider switching from local coordinates to screen
   // coordinates in this interface and see if it will simplify things.
 

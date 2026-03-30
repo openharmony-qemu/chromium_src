@@ -134,7 +134,13 @@ ResourceRequestHead::ResourceRequestHead(const KURL& url)
       referrer_policy_(network::mojom::ReferrerPolicy::kDefault),
       cors_preflight_policy_(
           network::mojom::CorsPreflightPolicy::kConsiderPreflight),
-      target_address_space_(network::mojom::IPAddressSpace::kUnknown) {}
+      target_address_space_(network::mojom::IPAddressSpace::kUnknown)
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+      ,
+      allow_preload_record_(false),
+      main_url_(KURL())
+#endif
+      {}
 
 ResourceRequestHead::ResourceRequestHead(const ResourceRequestHead&) = default;
 

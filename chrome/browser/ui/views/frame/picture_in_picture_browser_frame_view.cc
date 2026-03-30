@@ -578,7 +578,11 @@ PictureInPictureBrowserFrameView::PictureInPictureBrowserFrameView(
   // important to elide.
 #if BUILDFLAG(ENABLE_EXTENSIONS)
   if (location_bar_model_->GetURL().SchemeIs(extensions::kExtensionScheme) ||
-      location_bar_model_->GetURL().SchemeIs(webapps::kIsolatedAppScheme)) {
+      location_bar_model_->GetURL().SchemeIs(webapps::kIsolatedAppScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      || location_bar_model_->GetURL().SchemeIs(extensions::kArkwebExtensionScheme)
+#endif
+  ) {
     elide_behavior = gfx::ELIDE_TAIL;
   }
 #endif  // BUILDFLAG(ENABLE_EXTENSIONS)

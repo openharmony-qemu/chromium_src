@@ -769,7 +769,17 @@ ChromePermissionMessageRule::GetAllRules() {
        {}},
       {IDS_EXTENSION_PROMPT_WARNING_CHROMEOS_TELEMETRY_NETWORK_INFORMATION,
        {APIPermissionID::kChromeOSTelemetryNetworkInformation},
-       {}}};
+       {}}
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+       ,
+      {IDS_EXTENSION_PROMPT_WARNING_BROWSING_DATA,
+       {APIPermissionID::kBrowsingData},
+       {}},
+      {IDS_EXTENSION_PROMPT_WARNING_COOKIES,
+       {APIPermissionID::kCookie},
+       {}}
+#endif
+       };
 
   return std::vector<ChromePermissionMessageRule>(
       std::make_move_iterator(std::begin(rules_arr)),

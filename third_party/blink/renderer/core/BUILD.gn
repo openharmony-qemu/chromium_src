@@ -63,6 +63,7 @@ import("//third_party/blink/renderer/core/paint/build.gni")
 import("//third_party/blink/renderer/core/patching/build.gni")
 import("//third_party/blink/renderer/core/permissions_policy/build.gni")
 import("//third_party/blink/renderer/core/preferences/build.gni")
+import("//third_party/blink/renderer/core/render_mojom/build.gni")
 import("//third_party/blink/renderer/core/resize_observer/build.gni")
 import("//third_party/blink/renderer/core/route_matching/build.gni")
 import("//third_party/blink/renderer/core/sanitizer/build.gni")
@@ -90,9 +91,18 @@ import("//third_party/blink/renderer/core/xml/build.gni")
 import("//third_party/blink/renderer/core/xmlhttprequest/build.gni")
 import("//third_party/blink/renderer/platform/platform_generated.gni")
 import("//third_party/protobuf/proto_library.gni")
+import("//arkweb/build/features/features.gni")
 
 if (is_ios) {
   import("//build/config/ios/bundle_data_from_filelist.gni")
+}
+
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
+
+if (defined(is_arkweb_ext) && is_arkweb_ext) {
+  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
 }
 
 visibility = [
@@ -148,6 +158,9 @@ buildflag_header("buildflags") {
     "TARGET_OS_IS_ANDROID=$target_os_is_android",
     "USE_EXTERNAL_POPUP_MENU=$use_external_popup_menu",
   ]
+  if (is_arkweb) {
+    visibility += [ "//arkweb/build:arkweb_prebuild_buildflags" ]
+  }  
 }
 
 import("//build/config/pch.gni")
@@ -335,6 +348,7 @@ component("core") {
   sources += rebase_path(blink_core_sources_overscroll, "", "overscroll")
   sources += rebase_path(blink_core_sources_page, "", "page")
   sources += rebase_path(blink_core_sources_paint, "", "paint")
+  sources += rebase_path(blink_core_sources_rendermojom, "", "render_mojom")
   sources +=
       rebase_path(blink_core_sources_resize_observer, "", "resize_observer")
   sources +=
@@ -360,10 +374,27 @@ component("core") {
       rebase_path(blink_core_sources_xmlhttprequest, "", "xmlhttprequest")
   sources += rebase_path(blink_core_sources_speech, "", "speech")
   sources += rebase_path(blink_core_sources_preferences, "", "preferences")
+  sources += arkweb_third_patry_blink_renderer_core_exported_sources
+  sources += arkweb_third_patry_blink_renderer_core_frame_sources
+  sources += arkweb_third_patry_blink_renderer_core_html_sources
+  sources += arkweb_third_patry_blink_renderer_core_v8_sources
+  sources += arkweb_third_patry_blink_renderer_core_sources
+  if (defined(arkweb_ai) && arkweb_ai) {
+    sources += arkweb_third_patry_blink_renderer_core_fragment_directive_sources
+  }
 
   configs -= core_config_remove
   configs += core_config_add
   configs += [ "//v8:external_startup_data" ]
+
+  if (defined(arkweb_reader_mode) && arkweb_reader_mode) {
+    import("//arkweb/chromium_ext/third_party/blink/renderer/core/dom/arkweb_blink_renderer_core_dom_ext.gni")
+    sources += arkweb_third_party_blink_renderer_core_dom_sources
+  }
+
+  if (defined(is_arkweb) && is_arkweb) {
+    sources += arkweb_third_patry_blink_renderer_core_html_forms_sources
+  }
 
   public_deps = [
     ":buildflags",
@@ -459,6 +490,24 @@ component("core") {
     deps += [ "//printing:metafile" ]
   }
 
+  if (enable_arkweb) {
+    deps += [ "//arkweb//build/features" ]
+  }
+
+  if (enable_arkweb) {
+    public_deps += [ "//arkweb/build/features" ]
+  }
+
+  if (enable_arkweb && defined(arkweb_media_capabilities_enhance) && arkweb_media_capabilities_enhance) {
+    public_deps += [
+      "//arkweb/chromium_ext/third_party/blink/public/mojom/media:mojom_blink"
+    ]
+  }
+
+  if (is_arkweb_ext && enable_arkweb) {
+    deps += [ "//arkweb/ohos_nweb_ex/build/features"]
+  }
+
   allow_circular_includes_from = [
     ":core_generated",
     ":core_hot",
@@ -477,6 +526,18 @@ component("core") {
       "Carbon.framework",
     ]
   }
+
+  if (arkweb_javascript_bridge) {
+    deps += [ "//arkweb/build/features" ]
+  }
+
+  if (is_ohos) {
+    deps += [
+       "//ohos_glue:ohos_adapter_glue_source",
+       "//components/translate/core/language_detection",
+       "//base:base_static",
+    ]
+  }
 }
 
 # Certain sources should be compiled with heavy optimization enabled.
@@ -485,6 +546,10 @@ component("core") {
 blink_core_sources("core_hot") {
   sources = []
   sources += rebase_path(blink_core_hot_sources_dom, "", "dom")
+  if (is_arkweb) {
+    import("//arkweb/chromium_ext/chromium_ext.gni")
+    sources += arkweb_third_party_blink_renderer_core_dom_document_sources
+  }
   sources += rebase_path(blink_core_hot_sources_html, "", "html")
   sources += rebase_path(blink_core_hot_sources_layout, "", "layout")
   sources += rebase_path(blink_core_hot_sources_css, "", "css")
@@ -518,6 +583,12 @@ blink_core_sources("core_hot") {
     "//third_party/blink/renderer/core/exported",
     "//third_party/blink/renderer/core/probe",
   ]
+
+  if (enable_arkweb && defined(arkweb_media_capabilities_enhance) && arkweb_media_capabilities_enhance) {
+    deps += [
+      "//arkweb/chromium_ext/third_party/blink/public/mojom/media:mojom_blink"
+    ]
+  }
 
   if (enable_vectorized_html_scanning) {
     deps += [ "//third_party/highway:libhwy" ]
@@ -1615,6 +1686,20 @@ source_set("unit_tests") {
     ]
   }
 
+  if (arkweb_unittests){
+    deps += [
+      "//base/test:test_trace_processor"
+    ]
+  }
+
+  if (enable_arkweb) {
+    deps += [ "//arkweb/build/features" ]
+  }
+
+  if (is_arkweb) {
+    deps += arkweb_fuzzer_test_sources
+  }
+
   # TODO(crbug.com/40031409): Fix code that adds exit-time destructors and
   # enable the diagnostic by removing this line.
   configs += [ "//build/config/compiler:no_exit_time_destructors" ]
@@ -1740,6 +1825,15 @@ source_set("unit_test_support") {
     "//third_party/blink/renderer/platform/testing/data/third_party/Noto/NotoNaskhArabic-regular.woff2",
     "//third_party/blink/web_tests/external/wpt/fonts/mplus-1p-regular.woff",
   ]
+
+  if (enable_arkweb) {
+    deps += [ "//arkweb/build/features" ]
+  }
+
+  if (arkweb_unittests) {
+    import("//arkweb/chromium_ext/chromium_ext.gni")
+    sources += arkweb_third_party_blink_renderer_core_unittests_sources
+  }
 }
 
 source_set("fuzztest_utils") {
@@ -1784,7 +1878,8 @@ fuzzer_test("stylesheet_contents_fuzzer") {
   sources = [ "css/style_sheet_contents_fuzzer.cc" ]
   deps = [
     ":core",
-    "../platform:blink_fuzzer_test_support",
+    "//third_party/blink/renderer/core:testing",
+    "//third_party/blink/renderer/platform:blink_fuzzer_test_support",
   ]
   dict = "//third_party/blink/renderer/core/css/css.dict"
   seed_corpus = "//third_party/blink/web_tests/fast/css/resources"
@@ -1796,7 +1891,8 @@ fuzzer_test("css_parser_fast_paths_fuzzer") {
   sources = [ "css/parser/css_parser_fast_paths_fuzzer.cc" ]
   deps = [
     ":core",
-    "../platform:blink_fuzzer_test_support",
+    "//third_party/blink/renderer/core:testing",
+    "//third_party/blink/renderer/platform:blink_fuzzer_test_support",
   ]
   dict = "//third_party/blink/renderer/core/css/css.dict"
   libfuzzer_options = [ "max_len=128" ]
@@ -1811,8 +1907,8 @@ fuzzer_test("html_preload_scanner_fuzzer") {
   seed_corpus = "//third_party/blink/web_tests/fast/parser"
   deps = [
     ":core",
-    ":element_locator_proto",
-    "../platform:blink_fuzzer_test_support",
+    "//third_party/blink/renderer/core:testing",
+    "//third_party/blink/renderer/platform:blink_fuzzer_test_support",
   ]
 }
 
@@ -1851,6 +1947,7 @@ fuzzer_test("css_parser_proto_fuzzer") {
     ":css_proto",
     "//third_party/blink/renderer/platform:blink_fuzzer_test_support",
     "//third_party/libprotobuf-mutator",
+    "//cef:libcef_static",
   ]
   dict = "//third_party/blink/renderer/core/css/css.dict"
 }
@@ -1935,6 +2032,7 @@ fuzzer_test("blink_html_tokenizer_fuzzer") {
   sources = [ "html/parser/html_tokenizer_fuzzer.cc" ]
   deps = [
     ":core",
+    "//third_party/blink/renderer/core:testing",
     "//third_party/blink/renderer/platform:blink_fuzzer_test_support",
   ]
 }
@@ -1981,6 +2079,7 @@ fuzzer_test("document_policy_fuzzer") {
     "//third_party/blink/renderer/core",
     "//third_party/blink/renderer/platform:blink_fuzzer_test_support",
     "//third_party/icu",
+    "//cef:libcef_static",
   ]
   dict = "//third_party/blink/renderer/core/permissions_policy/document_policy.dict"
   seed_corpus = "//third_party/blink/renderer/core/permissions_policy/document_policy_corpus"

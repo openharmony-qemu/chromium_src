@@ -156,6 +156,9 @@ struct ContextMenuData;
 struct WebPictureInPictureWindowOptions;
 struct WebPluginParams;
 struct WebWindowFeatures;
+#if BUILDFLAG(IS_ARKWEB)
+class WebLocalFrameClientExt;
+#endif
 
 enum class SyncCondition {
   kNotForced,  // Sync only if the value has changed since the last call.
@@ -183,6 +186,10 @@ enum class BFCacheStateChange {
 class BLINK_EXPORT WebLocalFrameClient {
  public:
   virtual ~WebLocalFrameClient() = default;
+#if BUILDFLAG(IS_ARKWEB)
+  friend class WebLocalFrameClientExt;
+  virtual WebLocalFrameClientExt* AsWebLocalFrameClientExt() { return nullptr; }
+#endif
 
   // Initialization ------------------------------------------------------
   // Called exactly once during construction to notify the client about the
@@ -888,6 +895,10 @@ class BLINK_EXPORT WebLocalFrameClient {
   virtual void SetLinkPreviewTriggererForTesting(
       std::unique_ptr<WebLinkPreviewTriggerer> trigger);
 
+#if BUILDFLAG(ARKWEB_PDF) 
+  virtual bool IsPDF() { return false; }
+#endif
+
   virtual base::ScopedClosureRunner CreateScopedClientNavigationThrottler() {
     return {};
   }
@@ -898,4 +909,7 @@ class BLINK_EXPORT WebLocalFrameClient {
 
 }  // namespace blink
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/public/web/web_local_frame_client_ext.h"
+#endif
 #endif  // THIRD_PARTY_BLINK_PUBLIC_WEB_WEB_LOCAL_FRAME_CLIENT_H_

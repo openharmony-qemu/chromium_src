@@ -67,6 +67,15 @@
 #include "third_party/blink/public/platform/web_connection_type.h"
 #include "ui/gfx/native_ui_types.h"
 
+#ifdef IS_ARKWEB
+#include "arkweb/build/features/features.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+#include "arkweb/chromium_ext/third_party/blink/public/mojom/dom_distiller/reader_mode_config.mojom-forward.h"
+#include "arkweb/chromium_ext/third_party/blink/public/mojom/dom_distiller/reader_mode_config.mojom.h"
+#endif
+
 namespace blink {
 class WebVideoCaptureImplManager;
 }
@@ -111,6 +120,10 @@ class VariationsRenderThreadObserver;
 class DCOMPTextureFactory;
 class OverlayStateServiceProvider;
 class OverlayStateServiceProviderImpl;
+#endif
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+class NativeTextureFactory;
 #endif
 
 // The RenderThreadImpl class represents the main thread, where `blink::WebView`
@@ -250,6 +263,10 @@ class CONTENT_EXPORT RenderThreadImpl
   scoped_refptr<OverlayStateServiceProvider> GetOverlayStateServiceProvider();
 #endif
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  scoped_refptr<NativeTextureFactory> GetNativeTexureFactory();
+#endif
+
   blink::WebVideoCaptureImplManager* video_capture_impl_manager() const {
     return vc_manager_.get();
   }
@@ -359,11 +376,45 @@ class CONTENT_EXPORT RenderThreadImpl
   void SetPrivateMemoryFootprint(uint64_t private_memory_footprint_bytes);
 #endif
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  void SetBlanklessDumpInfo(uint32_t nweb_id,
+                            uint64_t blankless_key,
+                            uint64_t frame_sink_id,
+                            int32_t lcp_time,
+                            int64_t pref_hash);
+#endif
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  void UpdateReaderModeConfig(
+      blink::mojom::ReaderModeConfigPtr config) override;
+  const blink::mojom::ReaderModeConfig* GetReaderModeConfig() override;
+#endif
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  void UpdateVideoLoadOptimizationConfigData(const bool enable,
+                                             const int preload_video_time,
+                                             const int min_cache_time,
+                                             const int max_cache_time,
+                                             const int moov_size,
+                                             const int bit_rate,
+                                             const std::vector<std::string>& support_domains) override;
+  bool IsVideoLoadOptimizationEnabled(const std::string& url) const;
+  bool IsVideoLoadOptSupportDomainMatch(const std::string& url) const;
+  int GetVideoPreloadTimeDefault() const;
+  int GetVideoMinCacheTimeDefault() const;
+  int GetVideoMaxCacheTimeDefault() const;
+  int GetVideoMoovSizeDefault() const;
+  int GetVideoBitrateDefault() const;
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
  private:
   FRIEND_TEST_ALL_PREFIXES(RenderThreadImplBrowserTest,
                            TransferSharedLastForegroundTime);
+
   friend class RenderThreadImplBrowserTest;
   friend class AgentSchedulingGroup;
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class RenderThreadImplExtUnittest;
+#endif
 
   void OnProcessFinalRelease() override;
   // IPC::Listener
@@ -372,6 +423,14 @@ class CONTENT_EXPORT RenderThreadImpl
   // ChildThread
   void RecordAction(const base::UserMetricsAction& action) override;
   void RecordComputedAction(const std::string& action) override;
+
+#if BUILDFLAG(ARKWEB_I18N)
+  void NotifyLocaleChanged(const std::string& update_locale) override;
+#endif
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  void OnChannelConnected(int32_t peer_pid) override;
+#endif
 
 #if BUILDFLAG(IS_ANDROID)
   // ChildThreadImpl
@@ -426,6 +485,13 @@ class CONTENT_EXPORT RenderThreadImpl
   void SetIsCrossOriginIsolated(bool value) override;
   void SetIsWebSecurityDisabled(bool value) override;
   void SetIsIsolatedContext(bool value) override;
+#if BUILDFLAG(ARKWEB_SYNC_RENDER)
+  void SetDrawMode(int mode, base::PassKey<AgentSchedulingGroup>);
+#endif
+
+#if BUILDFLAG(ARKWEB_THEME_FONT)
+  void UpdateThemeFontFile(const std::vector<base::File> theme_fonts) override;
+#endif
   void SetWebUIResourceUrlToCodeCacheMap(
       const base::flat_map<GURL, int>& resource_map) override;
   void OnMemoryPressure(
@@ -516,6 +582,25 @@ class CONTENT_EXPORT RenderThreadImpl
   scoped_refptr<OverlayStateServiceProviderImpl>
       overlay_state_service_provider_;
 #endif
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  scoped_refptr<NativeTextureFactory> native_texture_factory_;
+#endif
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  blink::mojom::ReaderModeConfigPtr reader_mode_config_;
+#endif  // ARKWEB_READER_MODE
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  std::atomic<bool> video_load_opt_enable_{false};
+  std::atomic<int> preload_video_time_{4};
+  std::atomic<int> min_cache_time_{2};
+  std::atomic<int> max_cache_time_{6};
+  std::atomic<int> moov_size_{512};
+  std::atomic<int> bit_rate_{2000};
+  std::vector<std::string> support_domains_;
+  mutable std::mutex cloud_control_config_mutex;
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 
   scoped_refptr<viz::ContextProviderCommandBuffer> shared_main_thread_contexts_;
 

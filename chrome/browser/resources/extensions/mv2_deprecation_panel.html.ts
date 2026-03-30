@@ -20,7 +20,7 @@ export function getHtml(this: ExtensionsMv2DeprecationPanelElement) {
     </cr-icon>
     <div class="panel-header-text">
       <h3 id="headingText">${this.headerString_}</h3>
-      <div class="cr-secondary-text" .innerHTML="${this.getSubtitleString_()}">
+      <div class="cr-secondary-text" hidden=true .innerHTML="${this.getSubtitleString_()}">
       </div>
     </div>
     <cr-button class="header-button" @click="${this.onDismissButtonClick_}">
@@ -62,7 +62,7 @@ export function getHtml(this: ExtensionsMv2DeprecationPanelElement) {
     <cr-action-menu id="actionMenu">
       <button class="dropdown-item" id="findAlternativeAction"
           @click="${this.onFindAlternativeExtensionActionClick_}"
-          ?hidden="${!this.showExtensionFindAlternativeAction_()}">
+          hidden=true>
         Find alternatives
       </button>
       <button class="dropdown-item" id="keepAction"
@@ -72,7 +72,7 @@ export function getHtml(this: ExtensionsMv2DeprecationPanelElement) {
       </button>
       <button class="dropdown-item" id="removeAction"
           @click="${this.onRemoveExtensionActionClicked_}"
-          ?hidden="${!this.showExtensionRemoveAction_()}">
+          hidden=true>
         $i18n{mv2DeprecationPanelRemoveExtensionButton}
       </button>
     </cr-action-menu>

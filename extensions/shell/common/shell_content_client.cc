@@ -26,6 +26,13 @@ void ShellContentClient::AddAdditionalSchemes(Schemes* schemes) {
   schemes->secure_schemes.push_back(kExtensionScheme);
   schemes->cors_enabled_schemes.push_back(kExtensionScheme);
   schemes->csp_bypassing_schemes.push_back(kExtensionScheme);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  schemes->standard_schemes.push_back(extensions::kArkwebExtensionScheme);
+  schemes->savable_schemes.push_back(kArkwebExtensionScheme);
+  schemes->secure_schemes.push_back(kArkwebExtensionScheme);
+  schemes->cors_enabled_schemes.push_back(kArkwebExtensionScheme);
+  schemes->csp_bypassing_schemes.push_back(kArkwebExtensionScheme);
+#endif
 }
 
 std::u16string ShellContentClient::GetLocalizedString(int message_id) {

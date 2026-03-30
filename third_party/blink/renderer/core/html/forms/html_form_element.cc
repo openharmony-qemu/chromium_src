@@ -73,6 +73,10 @@
 #include "third_party/blink/renderer/platform/bindings/exception_state.h"
 #include "third_party/blink/renderer/platform/heap/garbage_collected.h"
 #include "third_party/blink/renderer/platform/instrumentation/use_counter.h"
+#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/instrumentation/resource_coordinator/document_resource_coordinator_utils.h"
+#include "third_party/blink/renderer/platform/instrumentation/resource_coordinator/document_resource_coordinator.h"
+#endif
 #include "third_party/blink/renderer/platform/wtf/text/atomic_string.h"
 #include "third_party/blink/renderer/platform/wtf/text/strcat.h"
 
@@ -105,6 +109,10 @@ HTMLFormElement::HTMLFormElement(Document& document)
       did_finish_parsing_children_(false),
       is_in_reset_function_(false),
       rel_list_(MakeGarbageCollected<RelList>(this)) {
+#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
+  static uint64_t next_unique_renderer_form_id = 1;
+  unique_renderer_form_id_ = next_unique_renderer_form_id++;
+#endif
   UseCounter::Count(document, WebFeature::kFormElement);
 }
 
@@ -584,6 +592,11 @@ void HTMLFormElement::ScheduleFormSubmission(
 
   cancel_last_submission_ =
       target_frame->ScheduleFormSubmission(scheduler, form_submission);
+#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
+  if (auto* rc = GetDocument().GetResourceCoordinator()) {
+    rc->coordinator_utils_->OnFormEditingStateChanged(UniqueRendererFormId(), true);
+  }
+#endif
 }
 
 FormData* HTMLFormElement::ConstructEntryList(

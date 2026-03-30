@@ -49,6 +49,8 @@ IN_PROC_BROWSER_TEST_F(CrashClientUploadInfoTest, GetClientProductInfo) {
 #else
   constexpr char kProductName[] = "Chromium";
 #endif
+#elif BUILDFLAG(IS_OHOS)
+  constexpr char kProductName[] = "ohos";
 #endif
 
   crash_reporter::ProductInfo product_info;

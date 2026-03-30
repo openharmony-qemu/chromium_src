@@ -4,6 +4,7 @@
 
 #include "components/page_info/core/about_this_site_service.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/feature_list.h"
 #include "base/metrics/histogram_functions.h"
 #include "components/optimization_guide/core/hints/hints_processing_util.h"
@@ -120,7 +121,11 @@ std::optional<proto::SiteInfo> AboutThisSiteService::GetAboutThisSiteInfo(
       return site_info;
     }
 
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    if (url == GURL("https://xxx")) {
+#else
     if (url == GURL("https://permission.site")) {
+#endif
       auto* description = site_info.mutable_description();
       description->set_name("Permission Site");
       description->set_subtitle("Testing site");
@@ -128,7 +133,11 @@ std::optional<proto::SiteInfo> AboutThisSiteService::GetAboutThisSiteInfo(
           "A site containing test buttons for various browser APIs, in order"
           " to trigger permission dialogues and similar UI in modern "
           "browsers.");
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+      description->mutable_source()->set_url("https://xxx");
+#else
       description->mutable_source()->set_url("https://permission.site.com");
+#endif
       description->mutable_source()->set_label("Permission Site");
       return site_info;
     }

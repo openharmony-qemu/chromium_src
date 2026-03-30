@@ -4,7 +4,11 @@
 
 #include "third_party/blink/renderer/core/mathml/mathml_radical_element.h"
 
+#include "arkweb/build/features/features.h"
 #include "third_party/blink/renderer/core/layout/mathml/layout_mathml_block_with_anonymous_mrow.h"
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/css/css_utils.h"
+#endif
 
 namespace blink {
 
@@ -18,6 +22,11 @@ bool MathMLRadicalElement::HasIndex() const {
 
 LayoutObject* MathMLRadicalElement::CreateLayoutObject(
     const ComputedStyle& style) {
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+  if (Cssutils::IsMathFormulaDisabledMode()) {
+    return MathMLElement::CreateLayoutObject(style);
+  }
+#endif
   if (!style.IsDisplayMathType()) {
     return MathMLElement::CreateLayoutObject(style);
   }

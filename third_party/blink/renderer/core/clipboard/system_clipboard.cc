@@ -26,6 +26,12 @@
 #include "third_party/blink/renderer/platform/weborigin/kurl.h"
 #include "third_party/blink/renderer/platform/wtf/std_lib_extras.h"
 #include "third_party/skia/include/core/SkBitmap.h"
+#if BUILDFLAG(ARKWEB_COPY_OPTION)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/clipboard/system_clipboard_utils.h"
+#endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/clipboard/system_clipboard_for_include.cc"
+#endif  // BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
 #include "ui/base/clipboard/clipboard_constants.h"
 #include "ui/base/ui_base_features.h"
 
@@ -70,6 +76,10 @@ SystemClipboard::SystemClipboard(LocalFrame* frame)
   is_selection_buffer_available_ =
       frame->GetSettings()->GetSelectionClipboardBufferAvailable();
 #endif  // BUILDFLAG(IS_OZONE)
+
+#if BUILDFLAG(ARKWEB_COPY_OPTION)
+  utils_ = MakeGarbageCollected<SystemClipboardUtils>(this, frame);
+#endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
 }
 
 bool SystemClipboard::IsSelectionMode() const {
@@ -101,6 +111,9 @@ Vector<String> SystemClipboard::ReadAvailableTypes() {
   if (!IsValidBufferType(buffer_) || !clipboard_.is_bound())
     return {};
   Vector<String> types;
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  clipboard_->UpdateClipboardData();
+#endif
   clipboard_->ReadAvailableTypes(buffer_, &types);
   return types;
 }
@@ -142,6 +155,13 @@ void SystemClipboard::WritePlainText(const String& plain_text,
 
   if (!clipboard_.is_bound())
     return;
+
+#if BUILDFLAG(ARKWEB_COPY_OPTION)
+  if (!utils_->IsCopyAllowed()) {
+    LOG(ERROR) << "WritePlainText failed, copy option mode is 'NONE'";
+    return;
+  }
+#endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
   // TODO(https://crbug.com/106449): add support for smart replace, which is
   // currently under-specified.
   String text = plain_text;
@@ -207,6 +227,14 @@ void SystemClipboard::WriteHTML(const String& markup,
 
   if (!clipboard_.is_bound())
     return;
+
+#if BUILDFLAG(ARKWEB_COPY_OPTION)
+  if (!utils_->IsCopyAllowed()) {
+    LOG(ERROR) << "WriteHTML failed, copy option mode is 'NONE'";
+    return;
+  }
+#endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
+
   clipboard_->WriteHtml(NonNullString(markup), document_url);
   if (smart_replace_option == kCanSmartReplace)
     clipboard_->WriteSmartPasteMarker();
@@ -226,6 +254,13 @@ void SystemClipboard::WriteSvg(const String& markup) {
 
   if (!clipboard_.is_bound())
     return;
+
+#if BUILDFLAG(ARKWEB_COPY_OPTION)
+  if (!utils_->IsCopyAllowed()) {
+    LOG(ERROR) << "WriteSvg failed, copy option mode is 'NONE'";
+    return;
+  }
+#endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
   clipboard_->WriteSvg(NonNullString(markup));
 }
 
@@ -280,6 +315,13 @@ void SystemClipboard::WriteImageWithTag(Image* image,
   if (!clipboard_.is_bound())
     return;
 
+#if BUILDFLAG(ARKWEB_COPY_OPTION)
+  if (!utils_->IsCopyAllowed()) {
+    LOG(ERROR) << "WriteImage failed, copy option mode is 'NONE'";
+    return;
+  }
+#endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
+
   PaintImage paint_image = image->PaintImageForCurrentFrame();
   // Orient the data.
   if (!image->HasDefaultOrientation()) {
@@ -323,6 +365,14 @@ void SystemClipboard::WriteImage(const SkBitmap& bitmap) {
 
   if (!clipboard_.is_bound())
     return;
+
+#if BUILDFLAG(ARKWEB_COPY_OPTION)
+  if (!utils_->IsCopyAllowed()) {
+    LOG(ERROR) << "WriteImage failed, copy option mode is 'NONE'";
+    return;
+  }
+#endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
+
   clipboard_->WriteImage(bitmap);
 }
 
@@ -366,6 +416,13 @@ void SystemClipboard::WriteDataObject(DataObject* data_object) {
   DCHECK(data_object);
   if (!clipboard_.is_bound())
     return;
+
+#if BUILDFLAG(ARKWEB_COPY_OPTION)
+  if (!utils_->IsCopyAllowed()) {
+    LOG(ERROR) << "WriteData failed, copy option mode is 'NONE'";
+    return;
+  }
+#endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
   // This plagiarizes the logic in DropDataBuilder::Build, but only extracts the
   // data needed for the implementation of WriteDataObject.
   //
@@ -427,6 +484,9 @@ void SystemClipboard::ReadAvailableCustomAndStandardFormats(
         callback) {
   if (!clipboard_.is_bound())
     return;
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  clipboard_->UpdateClipboardData();
+#endif
   clipboard_->ReadAvailableCustomAndStandardFormats(std::move(callback));
 }
 
@@ -451,6 +511,13 @@ void SystemClipboard::WriteUnsanitizedCustomFormat(const String& type,
       data.size() >= mojom::blink::ClipboardHost::kMaxDataSize) {
     return;
   }
+
+#if BUILDFLAG(ARKWEB_COPY_OPTION)
+  if (!utils_->IsCopyAllowed()) {
+    LOG(ERROR) << "WriteCustomFormat failed, copy option mode is 'NONE'";
+    return;
+  }
+#endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
   // The format size restriction is added in `ClipboardItem::supports`.
   DCHECK_LT(type.length(), mojom::blink::ClipboardHost::kMaxFormatSize);
   clipboard_->WriteUnsanitizedCustomFormat(type, std::move(data));
@@ -459,6 +526,9 @@ void SystemClipboard::WriteUnsanitizedCustomFormat(const String& type,
 void SystemClipboard::Trace(Visitor* visitor) const {
   PlatformEventDispatcher::Trace(visitor);
   visitor->Trace(clipboard_);
+#if BUILDFLAG(ARKWEB_COPY_OPTION)
+  visitor->Trace(utils_);
+#endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
   visitor->Trace(clipboard_listener_receiver_);
 }
 
@@ -477,6 +547,9 @@ void SystemClipboard::TakeSnapshot() {
   if (snapshot_count_ == 1) {
     DCHECK(!snapshot_);
     snapshot_ = std::make_unique<Snapshot>();
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+    clipboard_->OnClipboardDataGuard(true);
+#endif
   }
 }
 
@@ -485,6 +558,9 @@ void SystemClipboard::DropSnapshot() {
   --snapshot_count_;
   if (snapshot_count_ == 0) {
     snapshot_.reset();
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+    clipboard_->OnClipboardDataGuard(false);
+#endif
   }
 }
 

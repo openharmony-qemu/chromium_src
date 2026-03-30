@@ -886,11 +886,17 @@ bool SchedulerStateMachine::ShouldDeferInvalidatingForMainFrame() const {
 }
 
 void SchedulerStateMachine::WillPerformImplSideInvalidation() {
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  TRACE_EVENT0("cc", "SchedulerStateMachine::WillPerformImplSideInvalidation");
+#endif
   current_pending_tree_is_impl_side_ = true;
   WillPerformImplSideInvalidationInternal();
 }
 
 void SchedulerStateMachine::WillPerformImplSideInvalidationInternal() {
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  TRACE_EVENT0("cc", "SchedulerStateMachine::WillPerformImplSideInvalidationInternal");
+#endif
   DCHECK(needs_impl_side_invalidation_);
   DCHECK(!has_pending_tree_);
 
@@ -972,6 +978,9 @@ void SchedulerStateMachine::WillNotifyBeginMainFrameNotExpectedSoon() {
 }
 
 void SchedulerStateMachine::WillCommit(bool commit_has_no_updates) {
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  TRACE_EVENT0("cc", "SchedulerStateMachine::WillCommit");
+#endif
   bool can_have_pending_tree =
       commit_has_no_updates &&
       (settings_.main_frame_before_activation_enabled ||
@@ -1042,6 +1051,9 @@ void SchedulerStateMachine::WillActivate() {
   // We cannot activate the pending tree while paint worklets are still being
   // processed; the pending tree *must* be fully painted before it can ever be
   // activated because we cannot paint the active tree.
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  TRACE_EVENT0("cc", "SchedulerStateMachine::WillActivate");
+#endif
   DCHECK(!processing_paint_worklets_for_pending_tree_);
 
   if (layer_tree_frame_sink_state_ ==
@@ -1229,8 +1241,16 @@ bool SchedulerStateMachine::BeginFrameNeeded() const {
 bool SchedulerStateMachine::ShouldSubscribeToBeginFrames() const {
   // We can't handle BeginFrames when output surface isn't initialized.
   // TODO(brianderson): Support output surface creation inside a BeginFrame.
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  if (!HasInitializedLayerTreeFrameSink()) {
+    TRACE_EVENT0("cc", "SchedulerStateMachine::ShouldSubscribeToBeginFrames"
+      "not HasInitializedLayerTreeFrameSink");
+    return false;
+  }
+#else
   if (!HasInitializedLayerTreeFrameSink())
     return false;
+#endif
 
   // The propagation of the needsBeginFrame signal to viz is inherently racy
   // with issuing the next BeginFrame. In full-pipe mode, it is important we
@@ -1241,8 +1261,16 @@ bool SchedulerStateMachine::ShouldSubscribeToBeginFrames() const {
     return true;
 
   // If we are not visible, we don't need BeginFrame messages.
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  if (!visible_) {
+    TRACE_EVENT0("cc", "SchedulerStateMachine::ShouldSubscribeToBeginFrames"
+      "visible_ false");
+    return false;
+  }
+#else
   if (!visible_)
     return false;
+#endif
 
   return BeginFrameRequiredForAction() || BeginFrameNeededForVideo() ||
          ProactiveBeginFrameWanted();

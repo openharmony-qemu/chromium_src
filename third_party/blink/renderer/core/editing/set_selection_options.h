@@ -5,10 +5,10 @@
 #ifndef THIRD_PARTY_BLINK_RENDERER_CORE_EDITING_SET_SELECTION_OPTIONS_H_
 #define THIRD_PARTY_BLINK_RENDERER_CORE_EDITING_SET_SELECTION_OPTIONS_H_
 
+#include "arkweb/build/features/features.h"
 #include "third_party/blink/renderer/core/core_export.h"
 #include "third_party/blink/renderer/core/editing/text_granularity.h"
 #include "third_party/blink/renderer/platform/wtf/allocator/allocator.h"
-
 namespace blink {
 
 enum class CursorAlignOnScroll { kIfNeeded, kAlways };
@@ -39,6 +39,14 @@ class CORE_EXPORT SetSelectionOptions final {
   bool ShouldShrinkNextTap() const { return should_shrink_next_tap_; }
   bool IsDirectional() const { return is_directional_; }
 
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  bool IsSelectAll() const { return is_select_all_; }
+#endif  // ARKWEB_CLIPBOARD
+
+#if BUILDFLAG(ARKWEB_FOCUS)
+  bool IsSkipFocusCheck() const { return is_skip_focus_check_; }
+#endif
+
  private:
   CursorAlignOnScroll cursor_align_on_scroll_ = CursorAlignOnScroll::kIfNeeded;
   bool do_not_clear_strategy_ = false;
@@ -50,6 +58,14 @@ class CORE_EXPORT SetSelectionOptions final {
   bool should_show_handle_ = false;
   bool should_shrink_next_tap_ = false;
   bool is_directional_ = false;
+
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  bool is_select_all_ = false;
+#endif  // ARKWEB_CLIPBOARD
+
+#if BUILDFLAG(ARKWEB_FOCUS)
+  bool is_skip_focus_check_ = false;
+#endif
 };
 
 // This class is used for building |SelectionData| object.
@@ -74,6 +90,13 @@ class CORE_EXPORT SetSelectionOptions::Builder final {
   Builder& SetShouldShowHandle(bool);
   Builder& SetShouldShrinkNextTap(bool);
   Builder& SetIsDirectional(bool);
+
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  Builder& SetIsSelectAll(bool);
+#endif  // ARKWEB_CLIPBOARD
+#if BUILDFLAG(ARKWEB_FOCUS)
+  Builder& SetSkipFocusCheck(bool);
+#endif
 
  private:
   SetSelectionOptions data_;

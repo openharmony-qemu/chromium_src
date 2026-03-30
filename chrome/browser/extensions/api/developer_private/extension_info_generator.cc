@@ -82,6 +82,10 @@
 #include "ui/base/accelerators/global_accelerator_listener/global_accelerator_listener.h"  // nogncheck
 #endif  // BUILDFLAG(ENABLE_EXTENSIONS)
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/chrome/browser/extensions/api/developer_private/extension_info_generator_for_include.cc"
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
+
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 
 namespace extensions {
@@ -771,7 +775,9 @@ void ExtensionInfoGenerator::FillExtensionInfo(const Extension& extension,
   // Location text.
   int location_text = -1;
   if (info.location == developer::Location::kUnknown) {
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
     location_text = IDS_EXTENSIONS_INSTALL_LOCATION_UNKNOWN;
+#endif
   } else if (extension.location() ==
              mojom::ManifestLocation::kExternalRegistry) {
     location_text = IDS_EXTENSIONS_INSTALL_LOCATION_3RD_PARTY;
@@ -828,6 +834,10 @@ void ExtensionInfoGenerator::FillExtensionInfo(const Extension& extension,
   }
 
   AddPermissionsInfo(browser_context_, extension, &info.permissions);
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  AddOptionalPermissionsInfo(browser_context_, extension, &info.permissions);
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 
   // Runtime warnings.
   std::vector<std::string> warnings =

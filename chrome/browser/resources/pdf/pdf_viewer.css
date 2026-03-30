@@ -20,6 +20,18 @@
   width: 100%;
 }
 
+@media(max-width: 500px) {
+  :host {
+    --viewer-pdf-sidenav-width: 110px;
+  }
+}
+
+@media(min-width: 500px) and (max-width: 1000px) {
+  :host {
+    --viewer-pdf-sidenav-width: 250px;
+  }
+}
+
 viewer-pdf-sidenav,
 viewer-toolbar {
   --pdf-toolbar-text-color: rgb(241, 241, 241);
@@ -38,8 +50,12 @@ viewer-toolbar {
 
 @media(max-width: 200px),
 (max-height: 250px) {
-  viewer-toolbar {
+  viewer-toolbar:not(:focus-within):not(:active) {
     display: none;
+  }
+  viewer-toolbar:focus-within,
+  viewer-toolbar:active {
+    display: block !important;
   }
 }
 
@@ -78,7 +94,7 @@ viewer-toolbar {
 @media(max-width: 500px),
 (max-height: 250px) {
   #sidenav-container {
-    display: none;
+    display: flex;
   }
 }
 

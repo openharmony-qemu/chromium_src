@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//arkweb/build/features/features.gni")
 import("//build/buildflag_header.gni")
 import("//build/config/avx512.gni")
 import("//build/config/compiler/compiler.gni")
@@ -17,6 +18,10 @@ import("//third_party/skia/gn/shared_sources.gni")
 import("//third_party/skia/modules/pathops/pathops.gni")
 import("//third_party/skia/modules/skcms/skcms.gni")
 import("features.gni")
+
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
 
 if (current_cpu == "arm") {
   import("//build/config/arm.gni")
@@ -60,6 +65,7 @@ rust_static_library("bridge_rust_side") {
 config("skia_config") {
   defines = [
     "SK_ENABLE_SKSL",
+    "SK_HAS_HEIF_LIBRARY",
     "SK_UNTIL_CRBUG_1187654_IS_FIXED",
     "SK_USER_CONFIG_HEADER=\"../../skia/config/SkUserConfig.h\"",
     "SK_WIN_FONTMGR_NO_SIMULATIONS",
@@ -78,6 +84,11 @@ config("skia_config") {
     "//third_party/skia",
     "$root_gen_dir/third_party/skia",
   ]
+  if(arkweb_heif_support) {
+    defines += [
+      "SK_HAS_HEIF_LIBRARY",
+    ]
+  }
 
   if (use_blink) {
     # TODO(kjlubick) make these not necessary
@@ -99,7 +110,7 @@ config("skia_config") {
       "SK_GAMMA_EXPONENT=1.2",
       "SK_GAMMA_CONTRAST=0.2",
     ]
-  } else if (is_android) {
+  } else if (is_android || is_ohos) {
     defines += [
       "SK_BUILD_FOR_ANDROID",
       "USE_CHROMIUM_SKIA",
@@ -107,7 +118,24 @@ config("skia_config") {
       "SK_GAMMA_EXPONENT=1.4",
       "SK_GAMMA_CONTRAST=0.0",
     ]
-  } else if (is_mac) {
+
+    defines -= [ "SK_BUILD_FOR_ANDROID" ]
+  }
+
+  # TODO: ohos use skia to be adapted
+  if (is_arkweb) {
+    defines += [
+      "USE_CHROMIUM_SKIA",
+      "OHOS_SKIA_CACHE",
+      "SK_BUILD_FOR_OHOS",
+    ]
+
+    if (enable_ohos_bytrace) {
+      defines += [ "ENABLE_ARKWEB_SKIA_TRACE" ]
+    }
+  }
+
+  if (is_mac) {
     defines += [
       "SK_BUILD_FOR_MAC",
       "SK_GAMMA_SRGB",
@@ -297,6 +325,10 @@ component("skia") {
     public += [ "ext/skia_utils_win.h" ]
     sources += [ "ext/skia_utils_win.cc" ]
   }
+  if (arkweb_dfx_dump) {
+    public += [ "//arkweb/chromium_ext/skia/ext/skia_memory_tracer.h" ]
+    sources += [ "//arkweb/chromium_ext/skia/ext/skia_memory_tracer.cc" ]
+  }
 
   if (use_blink) {
     public += [ "ext/platform_canvas.h" ]
@@ -478,6 +510,21 @@ component("skia") {
       "//third_party/fuchsia-sdk/sdk/pkg/zx",
       "//third_party/icu:icuuc",
     ]
+  }
+
+  if (is_ohos) {
+    if (is_arkweb) {
+      sources += arkweb_third_patry_skia_src_ports_sources
+      include_dirs = [ "//third_party/jsoncpp/source/include" ]
+    } else {
+      sources += [
+        "//third_party/skia/src/ports/SkFontConfig_ohos.cpp",
+        "//third_party/skia/src/ports/SkFontMgr_ohos.cpp",
+        "//third_party/skia/src/ports/SkTypeface_ohos.cpp",
+      ]
+      include_dirs = [ "//third_party/jsoncpp/source/include" ]
+    }
+    deps += [ "//third_party:huawei_securec", "//ohos_glue:ohos_adapter_glue_source", "//third_party/jsoncpp"]
   }
 
   configs -= [ "//build/config/compiler:chromium_code" ]
@@ -1174,6 +1221,17 @@ test("skia_unittests") {
 
   if (skia_support_skottie) {
     sources += [ "ext/skottie_unittest.cc" ]
+  }
+
+  if (arkweb_unittests) {
+    import("//arkweb/chromium_ext/chromium_ext.gni")
+    deps += [
+      "//third_party/jsoncpp:jsoncpp"
+    ]
+    include_dirs = [
+      "//third_party/ohos_ndk/includes/ohos_adapter",
+    ]
+    sources += ark_third_party_skia_src_ports_unittest_sources
   }
 }
 

@@ -102,4 +102,7 @@
 <translation id="8901569739625249689"><ph name="QUANTITY" /> kB</translation>
 <translation id="9132465097189459683">Inny...</translation>
 <translation id="916607977885256133">Obraz w obrazie</translation>
+<translation id="IDS_MEDIA_REMOTING_CAST_CASTING">Emitowanie…</translation>
+<translation id="IDS_MEDIA_REMOTING_CAST_STOP_CAST">Zakończ</translation>
+<translation id="IDS_MEDIA_REMOTING_CAST_SWITCH_DEVICE">Przełącz urządzenia</translation>
 </translationbundle>

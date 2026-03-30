@@ -75,7 +75,7 @@ class NavigationEntry : public base::SupportsUserData {
   virtual void SetBaseURLForDataURL(const GURL& url) = 0;
   virtual const GURL& GetBaseURLForDataURL() const = 0;
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_BASE)
   // The real data: URL when it is received via WebView.loadDataWithBaseUrl
   // method. Represented as a string to circumvent the size restriction
   // of GURLs for compatibility with legacy Android WebView apps.
@@ -109,6 +109,7 @@ class NavigationEntry : public base::SupportsUserData {
   // be visible.
   virtual void SetTitle(std::u16string title) = 0;
   virtual const std::u16string& GetTitle() const = 0;
+  virtual bool GetIsRealTitle() = 0;
 
   // The application title as set by the page. SetApplicationTitle gets called
   // only if page has an app-title meta tag. For all other pages, the
@@ -258,6 +259,10 @@ class NavigationEntry : public base::SupportsUserData {
   // This persists across same-document navigations and stays the same after
   // a history navigation to an already visited document.
   virtual int64_t GetMainFrameDocumentSequenceNumber() const = 0;
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  virtual int GetErrorCode() const = 0;
+#endif
 };
 
 }  // namespace content

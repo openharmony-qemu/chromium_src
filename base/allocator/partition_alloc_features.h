@@ -109,7 +109,6 @@ BASE_EXPORT BASE_DECLARE_FEATURE_PARAM(
 // security guarantee, but to increase the compression ratio of PartitionAlloc's
 // fragmented super pages.
 BASE_EXPORT BASE_DECLARE_FEATURE(kPartitionAllocEventuallyZeroFreedMemory);
-
 #endif  // PA_BUILDFLAG(USE_PARTITION_ALLOC_AS_MALLOC)
 
 using BackupRefPtrEnabledProcesses = internal::PAFeatureEnabledProcesses;

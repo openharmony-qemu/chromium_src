@@ -37,12 +37,17 @@ DomDistillerService::DomDistillerService(
     std::unique_ptr<DistillerPageFactory> distiller_page_factory,
     std::unique_ptr<DistilledPagePrefs> distilled_page_prefs,
     std::unique_ptr<DistillerUIHandle> distiller_ui_handle)
-    : content_store_(new InMemoryContentStore(kDefaultMaxNumCachedEntries)),
+    :
+#if !BUILDFLAG(ARKWEB_READER_MODE)
+    content_store_(new InMemoryContentStore(kDefaultMaxNumCachedEntries)),
+#endif // ARKWEB_READER_MODE
       distiller_factory_(std::move(distiller_factory)),
       distiller_page_factory_(std::move(distiller_page_factory)),
       distilled_page_prefs_(std::move(distilled_page_prefs)),
       distiller_ui_handle_(std::move(distiller_ui_handle)),
-      weak_ptr_factory_(this) {}
+      weak_ptr_factory_(this) {
+  service_utils_ = std::make_unique<DomDistillerServiceUtils>(this);
+      }
 
 DomDistillerService::~DomDistillerService() {
   // There shouldn't be any tasks pending at this point.
@@ -68,9 +73,15 @@ std::unique_ptr<ViewerHandle> DomDistillerService::ViewUrl(
   if (!url.is_valid()) {
     return nullptr;
   }
-
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  if (service_utils_->ShouldViewUrl(url, distiller_page)) return nullptr;
+#endif // ARKWEB_READER_MODE
   TaskTracker* task_tracker = nullptr;
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  bool was_created = service_utils_->ViewUrl(task_tracker, distiller_page);
+#else
   bool was_created = GetOrCreateTaskTrackerForUrl(url, &task_tracker);
+#endif // ARKWEB_READER_MODE
   std::unique_ptr<ViewerHandle> viewer_handle =
       task_tracker->AddViewer(delegate);
   // If a distiller is already running for one URL, don't start another.

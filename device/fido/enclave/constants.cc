@@ -142,9 +142,17 @@ const char kRecoveryKeyStoreCreateNewVault[] = "create_new_vault";
 
 const char kRecoveryKeyStoreURL[] =
     "https://cryptauthvault.googleapis.com/v1/vaults/0";
+
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+const char kRecoveryKeyStoreCertFileURL[] =
+    "https://x.x.x.x";
+const char kRecoveryKeyStoreSigFileURL[] =
+    "https://x.x.x.x";
+#else
 const char kRecoveryKeyStoreCertFileURL[] =
     "https://www.gstatic.com/cryptauthvault/v0/cert.xml";
 const char kRecoveryKeyStoreSigFileURL[] =
     "https://www.gstatic.com/cryptauthvault/v0/cert.sig.xml";
+#endif
 
 }  // namespace device::enclave

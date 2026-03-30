@@ -83,6 +83,14 @@
 #include "chrome/browser/defaults.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "base/base_switches.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_PDF) && !defined(COMPONENT_BUILD)
+#include "arkweb/ohos_nweb/src/nweb_advanced_security.h"
+#endif
+
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 
 using content::BrowserThread;
@@ -159,7 +167,14 @@ ComponentLoader::ComponentExtensionInfo::ComponentExtensionInfo(
     const base::FilePath& directory)
     : manifest(std::move(manifest_param)), root_directory(directory) {
   if (!root_directory.IsAbsolute()) {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    const base::CommandLine* command_line =
+        base::CommandLine::ForCurrentProcess();
+    root_directory =
+        command_line->GetSwitchValuePath(::switches::kBundleInstallationDir);
+#else
     CHECK(base::PathService::Get(chrome::DIR_RESOURCES, &root_directory));
+#endif
     root_directory = root_directory.Append(directory);
   }
   extension_id = GenerateId(manifest, root_directory);
@@ -424,6 +439,11 @@ void ComponentLoader::AddWebStoreApp() {
   }
 #endif
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  LOG(INFO) << "name is " << IDS_WEBSTORE_NAME_STORE << ",description is "
+            << IDS_WEBSTORE_APP_DESCRIPTION;
+#endif
+
   AddWithNameAndDescription(
       IDR_WEBSTORE_MANIFEST, base::FilePath(FILE_PATH_LITERAL("web_store")),
       l10n_util::GetStringUTF8(IDS_WEBSTORE_NAME_STORE),
@@ -511,8 +531,18 @@ void ComponentLoader::AddDefaultComponentExtensions(
     AddChromeApp();
 #endif  // BUILDFLAG(IS_CHROMEOS)
 #if BUILDFLAG(ENABLE_PDF)
+#if BUILDFLAG(ARKWEB_PDF) && !defined(COMPONENT_BUILD)
+    using ASHelper = OHOS::NWeb::NWebAdvancedSecurityHelper;
+    // If in advanced security mode, PDF preview is prohibited
+    bool isAdvancedSecurityMode = ASHelper::Inst().IsSecFeatureEnabled(ASHelper::Feature::ENABLE_PDFVIEWER);
+    LOG(DEBUG) << "pdf in advanced security mode: " << isAdvancedSecurityMode;
+    if (!isAdvancedSecurityMode) {
+#endif  // BUILDFLAG(ARKWEB_PDF) && !defined(COMPONENT_BUILD)
     Add(pdf_extension_util::GetManifest(),
         base::FilePath(FILE_PATH_LITERAL("pdf")));
+#if BUILDFLAG(ARKWEB_PDF) && !defined(COMPONENT_BUILD)
+    }
+#endif  // BUILDFLAG(ARKWEB_PDF) && !defined(COMPONENT_BUILD)        
 #endif  // BUILDFLAG(ENABLE_PDF)
   }
 

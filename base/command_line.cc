@@ -25,6 +25,10 @@
 #include "base/strings/utf_string_conversions.h"
 #include "build/build_config.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#endif
+
 #if BUILDFLAG(IS_WIN)
 #include <windows.h>
 
@@ -277,6 +281,17 @@ bool CommandLine::Init(int argc, const char* const* argv) {
 #error Unsupported platform
 #endif
 
+#if BUILDFLAG(IS_ARKWEB)
+  static bool enable_js_stack = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                      .GetSystemPropertiesInstance()
+                      .GetBoolParameter("web.debug.js.stack", false);
+
+  if (enable_js_stack) {
+    current_process_commandline_->AppendSwitchASCII("js-flags",
+                                  "--perf-prof --interpreted-frames-native-stack");
+  }
+#endif
+
   return true;
 }
 
@@ -290,6 +305,7 @@ bool CommandLine::Init(const StringVector& argv) {
   }
 
   current_process_commandline_ = new CommandLine(argv);
+
   return true;
 }
 

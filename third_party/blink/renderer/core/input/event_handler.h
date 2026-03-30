@@ -73,6 +73,9 @@ class TextEvent;
 class WebGestureEvent;
 class WebMouseEvent;
 class WebMouseWheelEvent;
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+class SimTestExt;
+#endif
 
 // Handles events for Pointers (Mouse/Touch), HitTests, DragAndDrop, etc.
 class CORE_EXPORT EventHandler final : public GarbageCollected<EventHandler> {
@@ -81,6 +84,9 @@ class CORE_EXPORT EventHandler final : public GarbageCollected<EventHandler> {
   EventHandler(const EventHandler&) = delete;
   EventHandler& operator=(const EventHandler&) = delete;
   void Trace(Visitor*) const;
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  friend class SimTestExt;
+#endif
 
   void Clear();
 
@@ -309,6 +315,9 @@ class CORE_EXPORT EventHandler final : public GarbageCollected<EventHandler> {
   static LocalFrame* LocalFrameFromTargetNodeForTesting(Node* target);
 
  private:
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class WebLocalFrameImplTest;
+#endif
   WebInputEventResult HandleMouseMoveOrLeaveEvent(
       const WebMouseEvent&,
       const Vector<WebMouseEvent>& coalesced_events,

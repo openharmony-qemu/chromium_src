@@ -52,6 +52,9 @@ class MediaControlTimelineElement : public MediaControlSliderElement {
   struct LiveAnchorTime {
     base::TimeTicks clock_time_;
     double media_time_ = 0;
+#if defined(__clang__) && (__clang_major__ < 17)
+    LiveAnchorTime() {}
+#endif
   };
 
   void DefaultEventHandler(Event&) override;
@@ -76,6 +79,10 @@ class MediaControlTimelineElement : public MediaControlSliderElement {
   bool is_scrubbing_ = false;
 
   bool is_live_ = false;
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  double seek_time_ = -1.0;
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
   std::optional<LiveAnchorTime> live_anchor_time_;
 

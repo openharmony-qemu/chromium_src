@@ -242,7 +242,7 @@ class CONTENT_EXPORT ContentRendererClient {
   virtual blink::ProtocolHandlerSecurityLevel GetProtocolHandlerSecurityLevel(
       const url::Origin& origin);
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_LOAD)
   // TODO(sgurun) This callback is deprecated and will be removed as soon
   // as android webview completes implementation of a resource throttle based
   // shouldoverrideurl implementation. See crbug.com/325351
@@ -355,9 +355,22 @@ class CONTENT_EXPORT ContentRendererClient {
   // invalidate the frame.
   virtual void RunScriptsAtDocumentStart(RenderFrame* render_frame) {}
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  virtual void TriggerElementHidingInFrame(
+      base::WeakPtr<RenderFrame> render_frame){};
+
+  virtual void TriggerUserElementHidingInFrame(
+      base::WeakPtr<RenderFrame> render_frame){};
+#endif
+
   // Notifies that the DOM is ready in the frame's document.
   // This method may invalidate the frame.
   virtual void RunScriptsAtDocumentEnd(RenderFrame* render_frame) {}
+
+#if BUILDFLAG(ARKWEB_JSPROXY)
+  // Notifies that the head element is ready in the frame's document.
+  virtual void RunScriptsAtHeadReady(RenderFrame* render_frame) {}
+#endif
 
   // Notifies that the window.onload event is about to fire.
   // This method may invalidate the frame.

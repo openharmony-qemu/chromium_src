@@ -102,4 +102,7 @@
 <translation id="8901569739625249689"><ph name="QUANTITY" /> KB</translation>
 <translation id="9132465097189459683">อื่นๆ...</translation>
 <translation id="916607977885256133">การแสดงภาพซ้อนภาพ</translation>
+<translation id="IDS_MEDIA_REMOTING_CAST_CASTING">กำลังแพร่ภาพ…</translation>
+<translation id="IDS_MEDIA_REMOTING_CAST_STOP_CAST">สิ้นสุด</translation>
+<translation id="IDS_MEDIA_REMOTING_CAST_SWITCH_DEVICE">เปลี่ยนอุปกรณ์</translation>
 </translationbundle>

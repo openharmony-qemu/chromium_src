@@ -384,7 +384,12 @@ void BidirectionalStream::OnStreamFailed(
 }
 
 void BidirectionalStream::OnCertificateError(int result,
-                                             const SSLInfo& ssl_info) {
+                                             const SSLInfo& ssl_info
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+                                             ,
+                                             bool used_fallback_proxy
+#endif
+) {
   DCHECK_LT(result, 0);
   DCHECK_NE(result, ERR_IO_PENDING);
   DCHECK(stream_request_);

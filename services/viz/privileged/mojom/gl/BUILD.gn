@@ -5,6 +5,7 @@
 import("//build/config/sanitizers/sanitizers.gni")
 import("//media/gpu/args.gni")
 import("//mojo/public/tools/bindings/mojom.gni")
+import("//arkweb/build/features/features.gni")
 
 mojom("gl") {
   sources = [
@@ -41,8 +42,33 @@ mojom("gl") {
   }
 
   enabled_features = []
+  if (is_arkweb) {
+    enabled_features += [ "is_arkweb" ]
+  }
+
+  if (arkweb_report_loss_frame) {
+    enabled_features += [ "arkweb_report_loss_frame" ]
+  }
+
+  if (arkweb_dfx_dump) {
+    enabled_features += [ "arkweb_dfx_dump" ]
+  }
+    
+  if (arkweb_slide_ltpo) {
+    enabled_features += [ "arkweb_slide_ltpo" ]
+  }
+
+  if (arkweb_d_vsync) {
+    enabled_features += [ "arkweb_d_vsync" ]
+  }
+
   if (use_clang_profiling_inside_sandbox) {
     enabled_features += [ "use_clang_profiling_inside_sandbox" ]
+  }
+
+  if (arkweb_blank_optimize) {
+    enabled_features += [ "arkweb_blank_optimize" ]
+    public_deps += [ "//skia/public/mojom:mojom" ]
   }
 
   if (is_chromeos && use_linux_video_acceleration) {

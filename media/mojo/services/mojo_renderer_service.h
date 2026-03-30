@@ -72,6 +72,36 @@ class MEDIA_MOJO_EXPORT MojoRendererService final : public mojom::Renderer,
               SetCdmCallback callback) final;
   void SetLatencyHint(std::optional<base::TimeDelta> latency_hint) final;
 
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  void SetMuted(bool muted) override;
+  void SetSurfaceId(int surface_id, const gfx::Rect& rect) override;
+  void SetMediaPlayerState(bool is_suspend, int suspend_type) override;
+  void SetMediaSourceList(
+      std::vector<mojom::MediaSourceInfoPtr> source_infos) override;
+  void SetMediaControls(bool show_media_controls,
+      const std::vector<std::string>& controls_list) override;
+  void SetPoster(const std::string& poster_url) override;
+  void SetAttributes(
+      const base::flat_map<std::string, std::string>& attributes) override;
+  void SetReferrer(const std::string& referrer) override;
+  void SetIsAudio(bool is_audio) override;
+  void SetPlaybackRateWithReason(double playback_rate,
+                                 mojom::ActionReason reason) override;
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void SetVideoSurface(int32_t surface_id) override;
+  void SetPreciseSeekTarget(int64_t target_timestamp) override;
+#endif  // ARKWEB_VIDEO_ASSISTANT
+#if BUILDFLAG(ARKWEB_MEDIA)
+  void SetNativeWindowSurface(int32_t native_window_id) override;
+#endif // ARKWEB_MEDIA
+#if BUILDFLAG(ARKWEB_PIP)
+  void PipEnable(bool enable) override;
+#endif
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+  void RecycleDmaBuffer() override;
+  void ResumeDmaBuffer() override;
+#endif  // ARKWEB_MEDIA_DMABUF
  private:
   enum State {
     STATE_UNINITIALIZED,

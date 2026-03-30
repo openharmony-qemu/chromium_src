@@ -93,6 +93,9 @@ source_set("content_main_runner_app") {
   if (build_tflite_with_xnnpack) {
     deps += [ "//third_party/cpuinfo" ]
   }
+  if(is_ohos) {
+    deps += [ "//ohos//adapter:adapter", "//arkweb/chromium_ext/content/renderer:ohos_render_remote_proxy"]
+  }
 }
 
 if (is_android && enable_javaless_renderers) {
@@ -130,6 +133,7 @@ source_set("app") {
 
   configs += extra_configs
   deps = content_app_deps + [ "//ipc" ]
+  deps += [ "//third_party:huawei_securec" ]
 
   public_deps = [ ":content_main_runner_app" ]
 

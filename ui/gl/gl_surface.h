@@ -5,12 +5,16 @@
 #ifndef UI_GL_GL_SURFACE_H_
 #define UI_GL_GL_SURFACE_H_
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/callback.h"
 #include "base/memory/ref_counted.h"
 #include "base/memory/weak_ptr.h"
 #include "build/build_config.h"
 #include "ui/gfx/frame_data.h"
 #include "ui/gfx/geometry/size.h"
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+#include "ui/gfx/geometry/rect.h"
+#endif
 #include "ui/gfx/presentation_feedback.h"
 #include "ui/gfx/surface_origin.h"
 #include "ui/gfx/swap_result.h"
@@ -98,6 +102,28 @@ class GL_EXPORT GLSurface : public base::RefCounted<GLSurface> {
   // Get the underlying platform specific surface "handle".
   virtual void* GetHandle() = 0;
 
+#if BUILDFLAG(ARKWEB_SUPPORTS_DAMAGE_REGION)
+  virtual gfx::SwapResult SwapBuffersWithDamage(const std::vector<int>& rects,
+      PresentationCallback callback,
+      gfx::FrameData data);
+#endif
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  virtual void SetNativeInnerWeb(bool isInnerWeb) {}
+#endif
+
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+  virtual bool SetPresentBufferDamage(gfx::Rect damage_rect, gfx::Rect curr_rect) { return false; }
+  virtual int GetPresentBufferAge() { return 0; }
+  virtual gfx::Rect GetLastBufferDamageRect() { return gfx::Rect(); }
+  virtual int GetSameBufferDamageCnt() { return 0; }
+  virtual void ClosePostSubBuffer() {}
+#endif
+
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  virtual void SetBypassVsyncCondition(int32_t condition) {}
+#endif
+
   // Returns whether or not the surface supports PostSubBuffer.
   virtual bool SupportsPostSubBuffer();
 
@@ -156,6 +182,8 @@ class GL_EXPORT GLSurface : public base::RefCounted<GLSurface> {
   // Get a handle used to share the surface with another process. Returns null
   // if this is not possible.
   virtual void* GetShareHandle();
+
+  virtual bool SetBackbufferAllocation(bool allocated);
 
   // Get the platform specific display on which this surface resides, if
   // available.
@@ -240,6 +268,10 @@ class GL_EXPORT GLSurface : public base::RefCounted<GLSurface> {
 // initialization fails.
 GL_EXPORT scoped_refptr<GLSurface> InitializeGLSurface(
     scoped_refptr<GLSurface> surface);
+
+GL_EXPORT scoped_refptr<GLSurface> InitializeGLSurfaceWithFormat(
+    scoped_refptr<GLSurface> surface,
+    GLSurfaceFormat format);
 
 }  // namespace gl
 

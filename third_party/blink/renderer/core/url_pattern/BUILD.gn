@@ -34,6 +34,9 @@ fuzzer_test("url_pattern_fuzzer") {
   deps = [
     "//third_party/blink/renderer/modules",
     "//third_party/blink/renderer/platform:blink_fuzzer_test_support",
+    "//cef:libcef_static",
+    "//ohos_nweb:cef_nweb",
+    "//ohos_nweb:nweb_sources",
   ]
   seed_corpus = "fuzzer_seed_corpus"
   libfuzzer_options = [ "max_len=4096" ]

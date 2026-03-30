@@ -84,7 +84,7 @@ declare_args() {
   # use_debug_fission: whether to use split DWARF debug info files. This can
   # reduce link time significantly.
   use_debug_fission =
-      !is_android && !is_fuchsia && !is_apple && !is_win && use_lld
+      !is_android && !is_fuchsia && !is_apple && !is_win && use_lld && !is_ohos
 
   # Enables support for ThinLTO, which links 3x-10x faster than full LTO. See
   # also http://blog.llvm.org/2016/06/thinlto-scalable-and-incremental-lto.html
@@ -93,7 +93,8 @@ declare_args() {
   # Chrome's clang. crbug.com/1033839
   use_thin_lto =
       is_cfi || (is_clang && is_official_build && chrome_pgo_phase != 1 &&
-                 (is_linux || is_win || is_mac || (is_ios && use_lld) ||
+                 (is_linux || is_win || is_mac || is_ohos ||
+                  (is_ios && use_lld) ||
                   (is_android && target_os != "chromeos") ||
                   (is_chromeos && is_chromeos_device)))
 
@@ -209,11 +210,11 @@ if (is_chromeos || (enable_cast_receiver && is_linux)) {
   } else {
     enable_frame_pointers = true
   }
-} else if (is_android) {
+} else if (is_android || is_ohos) {
   enable_frame_pointers =
       enable_profiling ||
       # Ensure that stacks from arm64 crash dumps are usable (crbug.com/391706).
-      current_cpu == "arm64" ||
+      (current_cpu == "arm64" || current_cpu == "arm") ||
       # For x86 Android, unwind tables are huge without frame pointers
       # (crbug.com/762629). Enabling frame pointers grows the code size slightly
       # but overall shrinks binaries considerably by avoiding huge unwind
@@ -267,7 +268,7 @@ enable_arm_cfi_table = is_android && !is_component_build && current_cpu == "arm"
 # official builders.
 strip_absolute_paths_from_debug_symbols_default =
     is_android || is_fuchsia || (is_win && use_lld) || is_linux ||
-    is_chromeos || (is_apple && !enable_dsyms)
+    is_chromeos || (is_apple && !enable_dsyms) || is_ohos
 
 # If the platform uses stripped absolute paths by default, then we don't expose
 # it as a configuration option. If this is causing problems, please file a bug.

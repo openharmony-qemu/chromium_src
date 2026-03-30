@@ -5,6 +5,7 @@
 import("//components/services/on_device_translation/buildflags/features.gni")
 import("//components/signin/features.gni")
 import("//extensions/buildflags/buildflags.gni")
+import("//arkweb/build/features/features.gni")
 
 assert(!is_fuchsia, "Fuchsia shouldn't use anything in //chrome")
 
@@ -17,6 +18,8 @@ source_set("path_parser") {
     sources += [ "policy_path_parser_mac.mm" ]
   } else if (is_win) {
     sources += [ "policy_path_parser_win.cc" ]
+  } else if (is_ohos) {
+    sources += [ "//arkweb/chromium_ext/chrome/browser/policy/policy_path_parser_ohos.cc" ]
   }
 
   deps = [
@@ -372,6 +375,10 @@ source_set("policy_specific_browser_tests") {
   if (enable_on_device_translation) {
     sources += [ "test/translator_api_policy_browsertest.cc" ]
     deps += [ "//chrome/browser/on_device_translation:test_support" ]
+  }
+
+  if (arkweb_test) {
+    sources -= [ "test/autoplay_policy_browsertest.cc" ]
   }
 }
 

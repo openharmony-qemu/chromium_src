@@ -42,6 +42,9 @@
 #include "content/public/browser/navigation_controller.h"
 #include "content/public/browser/preloading_trigger_type.h"
 #include "content/public/browser/web_contents_delegate.h"
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+#include "content/public/common/content_switches.h"
+#endif
 #include "content/public/common/referrer.h"
 #include "net/base/load_flags.h"
 #include "net/http/http_request_headers.h"
@@ -594,6 +597,9 @@ bool PrerenderHost::StartPrerendering() {
   load_url_params.is_renderer_initiated = !attributes_.IsBrowserInitiated();
   load_url_params.transition_type =
       ui::PageTransitionFromInt(attributes_.transition_type);
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  load_url_params.extra_headers = attributes_.extra_headers;
+#endif
 
   // Just use the referrer from attributes, as NoStatePrefetch does.
   load_url_params.referrer = attributes_.referrer;
@@ -659,6 +665,16 @@ bool PrerenderHost::StartPrerendering() {
 
   CHECK_GE(navigation_request->state(),
            NavigationRequest::WAITING_FOR_RENDERER_RESPONSE);
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  // Update headers in begin_params_,
+  // which is used to be compared before prerenderring page is activated.
+  if (begin_params_ &&
+    base::CommandLine::ForCurrentProcess()->HasSwitch(::switches::kEnableNwebEx)) {
+    begin_params_->headers = navigation_request->begin_params().headers;
+  }
+#endif
+
   return true;
 }
 
@@ -1015,6 +1031,17 @@ bool PrerenderHost::AreInitialPrerenderNavigationParamsCompatibleWithNavigation(
   bool allow_partial_mismatch =
       web_contents_->GetDelegate()->ShouldAllowPartialParamMismatchOfPrerender2(
           navigation_request);
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  // Allow prerender page by API(embedder) and activate the page by the address
+  // bar. Relaxes checks in this situation.
+  allow_partial_mismatch =
+      (allow_partial_mismatch ||
+       (((navigation_request.common_params().transition &
+          ~ui::PAGE_TRANSITION_CLIENT_REDIRECT) ==
+         (ui::PAGE_TRANSITION_TYPED | ui::PAGE_TRANSITION_FROM_ADDRESS_BAR)) &&
+        common_params_->transition ==
+            (ui::PAGE_TRANSITION_TYPED | ui::PAGE_TRANSITION_FROM_API)));
+#endif
   // Compare BeginNavigationParams.
   ActivationNavigationParamsMatch result =
       AreBeginNavigationParamsCompatibleWithNavigation(

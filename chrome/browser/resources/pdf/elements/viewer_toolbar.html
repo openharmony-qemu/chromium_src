@@ -144,7 +144,8 @@ import {AnnotationMode} from '../constants.js';
 
   <hr>
 
-  <button id="present-button" class="dropdown-item"
+  <!-- arkweb_pdf hide present -->
+  <button id="present-button" hidden=true class="dropdown-item"
       @click="${this.onPresentClick_}"
       ?disabled="${!this.presentationModeAvailable_()}">
     <span class="check-container" aria-hidden="true"></span>

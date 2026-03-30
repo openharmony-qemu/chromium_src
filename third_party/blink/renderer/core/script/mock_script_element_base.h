@@ -22,6 +22,9 @@ class MockScriptElementBase : public GarbageCollected<MockScriptElementBase>,
   MOCK_METHOD0(DispatchLoadEvent, void());
   MOCK_METHOD0(DispatchErrorEvent, void());
   MOCK_CONST_METHOD0(AsyncAttributeValue, bool());
+#if BUILDFLAG(ARKWEB_V8_COMPILE)
+  MOCK_CONST_METHOD0(ArkWebCompileAttributeValue, String());
+#endif
   MOCK_CONST_METHOD0(CharsetAttributeValue, String());
   MOCK_CONST_METHOD0(CrossOriginAttributeValue, String());
   MOCK_CONST_METHOD0(DeferAttributeValue, bool());

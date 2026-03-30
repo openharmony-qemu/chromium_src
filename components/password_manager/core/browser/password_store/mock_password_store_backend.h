@@ -8,6 +8,10 @@
 #include <memory>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "base/functional/callback_forward.h"
 #include "base/memory/weak_ptr.h"
 #include "base/time/time.h"
@@ -59,6 +63,12 @@ class MockPasswordStoreBackend : public PasswordStoreBackend {
               AddLoginAsync,
               (const PasswordForm& form, PasswordChangesOrErrorReply callback),
               (override));
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+  MOCK_METHOD(void,
+              UpdateLoginDisplayNameAsync,
+              (const PasswordForm& form),
+              (override));
+#endif
   MOCK_METHOD(void,
               UpdateLoginAsync,
               (const PasswordForm& form, PasswordChangesOrErrorReply callback),

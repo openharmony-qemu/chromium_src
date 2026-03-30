@@ -7,6 +7,7 @@
 
 #include <optional>
 
+#include "arkweb/build/features/features.h"
 #include "build/build_config.h"
 #include "cc/cc_export.h"
 #include "components/viz/common/quads/selection.h"
@@ -18,6 +19,9 @@
 #include "ui/gfx/geometry/vector2d_f.h"
 #include "ui/gfx/selection_bound.h"
 
+#if BUILDFLAG(ARKWEB_MENU)
+#include "ui/gfx/geometry/rect_f.h"
+#endif
 namespace cc {
 
 // Contains information to assist in making a decision about forwarding
@@ -73,6 +77,10 @@ class CC_EXPORT RenderFrameMetadata {
   // empty or otherwise unused, the bound types will indicate such.
   viz::Selection<gfx::SelectionBound> selection;
 
+#if BUILDFLAG(ARKWEB_MENU)
+  gfx::Rect clipped_selection_bounds;
+#endif
+
   // Determines whether the page is mobile optimized or not, which means at
   // least one of the following has to be true:
   // - page has a width=device-width or narrower viewport.
@@ -120,6 +128,12 @@ class CC_EXPORT RenderFrameMetadata {
   // number.
   static constexpr int64_t kInvalidItemSequenceNumber = -1;
   int64_t primary_main_frame_item_sequence_number = kInvalidItemSequenceNumber;
+
+#if BUILDFLAG(IS_ARKWEB)
+  gfx::SizeF scrollable_viewport_size;
+  gfx::SizeF root_layer_size;
+  bool root_overflow_y_hidden = false;
+#endif
 
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS)
   // Used to position Android bottom bar, whose position is computed by the

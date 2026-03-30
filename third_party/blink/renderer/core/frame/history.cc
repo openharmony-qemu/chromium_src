@@ -27,6 +27,10 @@
 
 #include <optional>
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 #include "base/metrics/histogram_functions.h"
 #include "base/time/time.h"
 #include "services/metrics/public/cpp/ukm_builders.h"
@@ -231,6 +235,10 @@ void History::go(ScriptState* script_state,
         "fully active");
     return;
   }
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(INFO) << "WebViewBackForward history::go[offset]" << delta;
+#endif
   LocalFrame* frame = window->GetFrame();
   DCHECK(frame);
 
@@ -267,7 +275,11 @@ void History::go(ScriptState* script_state,
     // Otherwise, navigation happens on the root frame.
     // This behavior is designed in the following spec.
     // https://html.spec.whatwg.org/C/#dom-history-go
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+    frame->Reload(WebFrameLoadType::kReload, /*is_triggered_by_js=*/true);
+#else
     frame->Reload(WebFrameLoadType::kReload);
+#endif
   }
 }
 

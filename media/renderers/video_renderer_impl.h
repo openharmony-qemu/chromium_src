@@ -74,6 +74,10 @@ class MEDIA_EXPORT VideoRendererImpl
   void Initialize(DemuxerStream* stream,
                   CdmContext* cdm_context,
                   RendererClient* client,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                  RequestSurfaceCB request_surface_cb,
+                  VideoDecoderChangedCB decoder_changed_cb,
+#endif // ARKWEB_VIDEO_ASSISTANT
                   const TimeSource::WallClockTimeCB& wall_clock_time_cb,
                   PipelineStatusCallback init_cb) override;
   void Flush(base::OnceClosure callback) override;
@@ -98,10 +102,25 @@ class MEDIA_EXPORT VideoRendererImpl
                                    RenderingMode rendering_mode) override;
   void OnFrameDropped() override;
   base::TimeDelta GetPreferredRenderInterval() override;
-
+#if BUILDFLAG(ARKWEB_PIP)
+  void PipEnable(bool enable) override;
+#endif
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void SetPreciseSeekTarget(int64_t target_timestamp) override;
+#endif // ARKWEB_VIDEO_ASSISTANT
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+  void RecycleDmaBuffer() override;
+  void ResumeDmaBuffer() override;
+#endif  // ARKWEB_MEDIA_DMABUF
  private:
   // Callback for |video_decoder_stream_| initialization.
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void OnVideoDecoderStreamInitialized(bool success,
+                                       bool support_video_suface,
+                                       std::string decoder_name);
+#else
   void OnVideoDecoderStreamInitialized(bool success);
+#endif // ARKWEB_VIDEO_ASSISTANT
 
   void FinishInitialization(PipelineStatus status);
   void FinishFlush();
@@ -218,6 +237,10 @@ class MEDIA_EXPORT VideoRendererImpl
   // `painted_first_frame_` is false.
   void PaintFirstFrame();
   void PaintFirstFrame_Locked();
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void OnRequestVideoSurfaceDone(int surface_id);
+#endif // ARKWEB_VIDEO_ASSISTANT
 
   scoped_refptr<base::SequencedTaskRunner> task_runner_;
 
@@ -377,6 +400,11 @@ class MEDIA_EXPORT VideoRendererImpl
   // |algorithm_->average_frame_duration()| fluctuates, but we only want to emit
   // one MEDIA_LOG.
   bool is_latency_hint_media_logged_ = false;
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  RequestSurfaceCB request_surface_cb_;
+  VideoDecoderChangedCB decoder_changed_cb_;
+#endif // ARKWEB_VIDEO_ASSISTANT
 
   // NOTE: Weak pointers must be invalidated before all other member variables.
   base::WeakPtrFactory<VideoRendererImpl> weak_factory_{this};

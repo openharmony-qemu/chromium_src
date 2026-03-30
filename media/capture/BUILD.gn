@@ -8,6 +8,10 @@ import("//media/media_options.gni")
 import("//testing/test.gni")
 import("//third_party/webrtc/webrtc.gni")
 
+if(is_arkweb) {
+  import("//arkweb/build/features/features.gni")
+}
+
 group("capture") {
   public_deps = [
     ":capture_lib",
@@ -382,6 +386,27 @@ component("capture_lib") {
     ]
   }
 
+  if(is_arkweb) {
+    deps += [ "//arkweb/build/features" ]
+  }
+
+  if (enable_arkweb) {
+    deps += [ "//arkweb/build/features" ]
+  }
+
+  if (enable_arkweb) {
+    public_deps += [ "//arkweb/build/features" ]
+  }
+
+  if (arkweb_media_capture) {
+    import("//arkweb/chromium_ext/media/capture/video/ohos/arkweb_media_capture_video_ohos_ext.gni")
+    sources += arkweb_media_capture_video_ohos_sources
+
+    include_dirs = ohos_src_includes
+    #libs = ["ohcamera"]
+    deps += [ "//ohos_glue:ohos_adapter_glue_source", ]
+  }
+
   # TODO(crbug.com/40031409): Fix code that adds exit-time destructors and
   # enable the diagnostic by removing this line.
   configs += [ "//build/config/compiler:no_exit_time_destructors" ]
@@ -496,6 +521,14 @@ test("capture_unittests") {
     "//third_party/libyuv",
     "//ui/gfx:test_support",
   ]
+
+  if (arkweb_unittests) {
+    import("//arkweb/chromium_ext/media/capture/video/ohos/arkweb_media_capture_video_ohos_ext.gni")
+
+    include_dirs = ohos_src_includes
+    deps += [ "//content/public/common:static_switches" ]
+    sources += arkweb_media_capture_video_ohos_unittests
+  }
 
   if (is_linux) {
     sources += [

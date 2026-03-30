@@ -829,7 +829,10 @@ class BASE_EXPORT GSL_OWNER Value {
   Dict TakeDict() &&;
   List TakeList() &&;
 
-
+#if BUILDFLAG(IS_ARKWEB)
+  Value* FindPath(std::string_view path);
+  const Value* FindPath(std::string_view path) const;
+#endif
 
   // Note: Do not add more types. See the file-level comment above for why.
 

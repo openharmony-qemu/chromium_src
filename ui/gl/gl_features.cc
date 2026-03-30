@@ -6,6 +6,7 @@
 
 #include "base/command_line.h"
 #include "base/feature_list.h"
+#include "base/logging.h"
 #include "base/strings/string_split.h"
 #include "base/system/sys_info.h"
 #include "build/build_config.h"
@@ -151,8 +152,10 @@ bool UsePassthroughCommandDecoder() {
   return true;
 #else
 
-  if (!base::FeatureList::IsEnabled(kDefaultPassthroughCommandDecoder))
+  if (!base::FeatureList::IsEnabled(kDefaultPassthroughCommandDecoder)) {
+    LOG(INFO) << "hmz1106, kDefaultPassthroughCommandDecoder, DISABLE";
     return false;
+  }
 
 #if BUILDFLAG(IS_ANDROID)
   // Check block list against build info.

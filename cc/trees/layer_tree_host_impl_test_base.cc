@@ -180,6 +180,10 @@ void LayerTreeHostImplTestBase::SetVideoNeedsBeginFrames(
 void LayerTreeHostImplTestBase::DidChangeBeginFrameSourcePaused(bool paused) {}
 void LayerTreeHostImplTestBase::SetDeferBeginMainFrameFromImpl(
     bool defer_begin_main_frame) {}
+#if BUILDFLAG(ARKWEB_WEBGL)
+void LayerTreeHostImplTestBase::SetDeferInvalidationForFastMainFrameFromImpl(
+    bool defer_invalidation_for_fast_main_frame) {}
+#endif
 bool LayerTreeHostImplTestBase::IsInsideDraw() {
   return false;
 }

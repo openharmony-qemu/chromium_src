@@ -82,6 +82,10 @@ class CourierRenderer final : public Renderer {
   // media::Renderer implementation.
   void Initialize(MediaResource* media_resource,
                   RendererClient* client,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                  RequestSurfaceCB request_surface_cb,
+                  VideoDecoderChangedCB decoder_changed_cb,
+#endif // ARKWEB_VIDEO_ASSISTANT
                   PipelineStatusCallback init_cb) final;
   void SetLatencyHint(std::optional<base::TimeDelta> latency_hint) final;
   void Flush(base::OnceClosure flush_cb) final;

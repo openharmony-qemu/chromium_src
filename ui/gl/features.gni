@@ -7,7 +7,7 @@ import("//build/config/chrome_build.gni")
 
 declare_args() {
   # Should ANGLE be linked statically?
-  use_static_angle = is_android || is_ios
+  use_static_angle = is_android || is_ios || is_ohos
 
   # Should Dawn support be compiled to back the WebGPU implementation?
   # Also controls linking Dawn dependencies in such as SPIRV-Tools or
@@ -20,7 +20,7 @@ declare_args() {
   # Independent of use_dawn, which controls whether Dawn is used in Chromium.
   build_dawn_tests = is_mac || is_win || is_linux || is_chromeos || is_android
 
-  enable_validating_command_decoder = is_android
+  enable_validating_command_decoder = is_android || is_ohos
 }
 
 declare_args() {

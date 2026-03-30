@@ -578,6 +578,7 @@ RequestResult RuntimeHooksDelegate::HandleGetPackageDirectoryEntryCallback(
 RequestResult RuntimeHooksDelegate::HandleRequestUpdateCheck(
     ScriptContext* script_context,
     const APISignature::V8ParseResult& parse_result) {
+  LOG(INFO) << "RuntimeHooksDelegate API called: runtime.requestUpdateCheck";
   return RequestResult(RequestResult::NOT_HANDLED,
                        v8::Local<v8::Function>() /*custom_callback*/,
                        base::BindOnce(MassageRequestUpdateCheckResults));

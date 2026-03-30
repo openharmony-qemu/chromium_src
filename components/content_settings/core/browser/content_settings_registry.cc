@@ -103,6 +103,9 @@ void ContentSettingsRegistry::Init() {
            WebsiteSettingsInfo::SYNCABLE,
            /*allowlisted_primary_schemes=*/
            {kChromeUIScheme, kChromeDevToolsScheme, kExtensionScheme,
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+        kArkwebExtensionScheme,
+#endif
             kChromeUIUntrustedScheme},
            /*valid_settings=*/{CONTENT_SETTING_ALLOW, CONTENT_SETTING_BLOCK},
            WebsiteSettingsInfo::TOP_ORIGIN_ONLY_SCOPE,
@@ -115,6 +118,9 @@ void ContentSettingsRegistry::Init() {
            WebsiteSettingsInfo::SYNCABLE,
            /*allowlisted_primary_schemes=*/
            {kChromeUIScheme, kChromeDevToolsScheme, kExtensionScheme,
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+        kArkwebExtensionScheme,
+#endif
             kChromeUIUntrustedScheme},
            /*valid_settings=*/{CONTENT_SETTING_ALLOW, CONTENT_SETTING_BLOCK},
            WebsiteSettingsInfo::TOP_ORIGIN_ONLY_SCOPE,
@@ -139,7 +145,12 @@ void ContentSettingsRegistry::Init() {
   Register(ContentSettingsType::POPUPS, "popups", CONTENT_SETTING_BLOCK,
            WebsiteSettingsInfo::SYNCABLE,
            /*allowlisted_primary_schemes=*/
-           {kChromeUIScheme, kChromeDevToolsScheme, kExtensionScheme},
+      {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+        kArkwebExtensionScheme,
+#endif
+           kChromeUIScheme, kChromeDevToolsScheme, kExtensionScheme
+      },
            /*valid_settings=*/{CONTENT_SETTING_ALLOW, CONTENT_SETTING_BLOCK},
            WebsiteSettingsInfo::TOP_ORIGIN_ONLY_SCOPE,
            WebsiteSettingsRegistry::ALL_PLATFORMS,
@@ -198,7 +209,12 @@ void ContentSettingsRegistry::Init() {
   Register(ContentSettingsType::AUTOMATIC_DOWNLOADS, "automatic-downloads",
            CONTENT_SETTING_ASK, WebsiteSettingsInfo::SYNCABLE,
            /*allowlisted_primary_schemes=*/
-           {kChromeUIScheme, kChromeDevToolsScheme, kExtensionScheme},
+      {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+        kArkwebExtensionScheme,
+#endif
+           kChromeUIScheme, kChromeDevToolsScheme, kExtensionScheme
+      },
            /*valid_settings=*/
            {CONTENT_SETTING_ALLOW, CONTENT_SETTING_BLOCK, CONTENT_SETTING_ASK},
            WebsiteSettingsInfo::REQUESTING_ORIGIN_ONLY_SCOPE,
@@ -890,7 +906,11 @@ void ContentSettingsRegistry::Register(
 
   if (type == ContentSettingsType::COOKIES) {
     info->set_third_party_cookie_allowed_secondary_schemes(
-        {kChromeDevToolsScheme, kExtensionScheme});
+        {kChromeDevToolsScheme, kExtensionScheme
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+        , kArkwebExtensionScheme
+#endif
+        });
   }
 }
 

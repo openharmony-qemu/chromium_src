@@ -84,6 +84,9 @@ void InkDropEventHandler::OnGestureEvent(ui::GestureEvent* event) {
       ink_drop_state = InkDropState::ACTION_PENDING;
       break;
     case ui::EventType::kGestureLongPress:
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+    case ui::EventType::kGestureDragLongPress:
+#endif
       if (current_ink_drop_state == InkDropState::ACTIVATED) {
         return;
       }

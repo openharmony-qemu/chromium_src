@@ -28,6 +28,9 @@
 #include "net/socket/stream_socket_handle.h"
 #include "net/socket/websocket_endpoint_lock_manager.h"
 #include "net/traffic_annotation/network_traffic_annotation.h"
+#if BUILDFLAG(ENABLE_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace net {
 
@@ -43,6 +46,9 @@ WebSocketTransportClientSocketPool::WebSocketTransportClientSocketPool(
                        common_connect_job_params,
                        std::make_unique<ConnectJobFactory>()) {
   DCHECK(common_connect_job_params->websocket_endpoint_lock_manager);
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+  utils->SetConnectTimeout(0);
+#endif
 }
 
 WebSocketTransportClientSocketPool::~WebSocketTransportClientSocketPool() {
@@ -113,6 +119,9 @@ int WebSocketTransportClientSocketPool::RequestSocket(
       CreateConnectJob(group_id, params, proxy_annotation_tag, priority,
                        SocketTag(), connect_job_delegate.get());
 
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+  connect_job->SetConnectTimeout(utils->GetConnectTimeout());
+#endif
   int result = connect_job_delegate->Connect(std::move(connect_job));
 
   // Regardless of the outcome of |connect_job|, it will always be bound to

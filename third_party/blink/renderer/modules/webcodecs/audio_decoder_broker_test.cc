@@ -8,6 +8,7 @@
 #include <optional>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/files/file_util.h"
 #include "base/run_loop.h"
 #include "build/build_config.h"
@@ -170,6 +171,14 @@ class FakeInterfaceFactory : public media::mojom::InterfaceFactory {
       mojo::PendingReceiver<media::mojom::MediaFoundationRendererExtension>
           renderer_extension_receiver) override {}
 #endif  // BUILDFLAG(IS_WIN)
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  void CreateCustomMediaPlayerRenderer(
+      mojo::PendingRemote<media::mojom::CustomMediaPlayerRendererClientExtension>
+          client_extension_ptr,
+      mojo::PendingReceiver<media::mojom::Renderer> receiver,
+      int player_id,
+      const media::MediaPlayerUrlParams& params) override {}
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 
  private:
   FakeMojoMediaClient mojo_media_client_;

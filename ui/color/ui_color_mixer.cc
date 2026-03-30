@@ -278,6 +278,14 @@ void AddUiColorMixer(ColorProvider* provider, const ColorProviderKey& key) {
   mixer[kColorTreeNodeForegroundSelectedUnfocused] = {
       kColorTreeNodeForegroundSelectedFocused};
   mixer[kColorWindowBackground] = {kColorPrimaryBackground};
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  mixer[kColorWebNativeControlScrollbarCorner] = {
+      dark_mode ? SkColorSetARGB(0xFF, 0x0D, 0x0D, 0x0D)
+                : SkColorSetARGB(0xFF, 0xFC, 0xFC, 0xFC)};
+  mixer[kColorWebNativeControlScrollbarTrack] = {
+      dark_mode ? SkColorSetARGB(0xFF, 0x0D, 0x0D, 0x0D)
+                : SkColorSetARGB(0xFF, 0xFC, 0xFC, 0xFC)};
+#endif
   CompleteDefaultWebNativeRendererColorIdsDefinition(
       mixer, dark_mode,
       key.contrast_mode == ColorProviderKey::ContrastMode::kHigh);

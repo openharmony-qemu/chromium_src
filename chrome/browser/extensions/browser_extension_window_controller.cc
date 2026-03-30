@@ -43,6 +43,10 @@
 #include "chrome/browser/ui/singleton_tabs.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+#include "ohos_nweb_ex/core/extension/nweb_extension_manager_dispatcher.h"
+#endif
+
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 
 namespace extensions {
@@ -337,12 +341,17 @@ bool BrowserExtensionWindowController::OpenOptionsPage(
   // However, if the options page opens inside the chrome://extensions page, we
   // can override an existing page.
   // Note: ref behavior is to ignore.
+  // Follow-up Processing
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+    NWebExtensionManagerDispatcher::OnExtensionOpenUrlCallBack(
+      url.spec(), URL_TYPE_OPTIONS);
+#else  
   ShowSingletonTabOverwritingNTP(browser_to_use, url,
                                  open_in_tab
                                      ? NavigateParams::RESPECT
                                      : NavigateParams::IGNORE_AND_NAVIGATE);
 #endif
-
+#endif
   return true;
 }
 

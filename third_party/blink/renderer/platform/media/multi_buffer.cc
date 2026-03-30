@@ -192,7 +192,15 @@ MultiBuffer::~MultiBuffer() {
   lru_->IncrementMaxSize(-max_size_);
 }
 
-void MultiBuffer::AddReader(const BlockId& pos, Reader* reader) {
+void MultiBuffer::AddReader(const BlockId& pos, Reader* reader
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+                            ,
+                            int32_t preload_size,
+                            int32_t request_size,
+                            uint16_t byte_rate,
+                            std::string id
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+) {
   std::set<raw_ptr<Reader, SetExperimental>>* set_of_readers = &readers_[pos];
   bool already_waited_for = !set_of_readers->empty();
   set_of_readers->insert(reader);
@@ -227,9 +235,20 @@ void MultiBuffer::AddReader(const BlockId& pos, Reader* reader) {
   }
   if (!provider) {
     DCHECK(!base::Contains(writer_index_, pos));
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+    writer_index_[pos] =
+        CreateWriter(pos, is_client_audio_element_, preload_size, request_size,
+                     byte_rate, id);
+#else
     writer_index_[pos] = CreateWriter(pos, is_client_audio_element_);
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
     provider = writer_index_[pos].get();
   }
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  if (!provider) {
+    LOG_FEEDBACK(INFO) << "VLO AddReader error: provider=null";
+  }
+#endif
   provider->SetDeferred(false);
 }
 
@@ -582,5 +601,18 @@ int64_t MultiBuffer::UncommittedBytesAt(const MultiBuffer::BlockId& block) {
     return 0;
   return i->second->AvailableBytes();
 }
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+void MultiBuffer::Fallback(DataProvider* provider_tmp) {
+  std::unique_ptr<DataProvider> provider(RemoveProvider(provider_tmp));
+  if (!provider) {
+    LOG(ERROR) << "VideoOpt: Fallback provider is null";
+    return;
+  }
+  BlockId pos = provider->Tell();
+  DCHECK(writer_index_.find(pos) == writer_index_.end());
+  writer_index_[pos] = CreateWriter(pos, is_client_audio_element_);
+}
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 
 }  // namespace blink

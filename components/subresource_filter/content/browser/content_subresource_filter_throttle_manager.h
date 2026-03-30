@@ -42,6 +42,7 @@ class ContentSubresourceFilterWebContentsHelper;
 class PageLoadStatistics;
 class ProfileInteractionManager;
 class SubresourceFilterProfileContext;
+class ArkWebContentSubresourceFilterThrottleManagerExt;
 
 // This enum backs a histogram. Make sure new elements are only added to the
 // end. Keep histograms.xml up to date with any changes.
@@ -108,7 +109,12 @@ enum class SubresourceFilterAction {
 // https://docs.google.com/document/d/1p-IXk8hI5ucWRf5vJEi9K_YvJXsTr8kbvzGrjMcALDE/edit?usp=sharing
 class ContentSubresourceFilterThrottleManager
     : public base::SupportsUserData::Data,
-      public mojom::SubresourceFilterHost {
+      public mojom::SubresourceFilterHost
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+      ,
+      public mojom::UserSubresourceFilterHost
+#endif
+{
  public:
   static const int kUserDataKey = 0;
 
@@ -167,6 +173,10 @@ class ContentSubresourceFilterThrottleManager
       const ContentSubresourceFilterThrottleManager&) = delete;
   ContentSubresourceFilterThrottleManager& operator=(
       const ContentSubresourceFilterThrottleManager&) = delete;
+
+  virtual ArkWebContentSubresourceFilterThrottleManagerExt *AsArkWebContentSubresourceFilterThrottleManagerExt() {
+    return nullptr;
+  }
 
   // This method inspects `navigation_handle` and attaches navigation throttles
   // appropriately, based on the current state of frame activation.
@@ -258,6 +268,7 @@ class ContentSubresourceFilterThrottleManager
 
  private:
   friend ContentSubresourceFilterWebContentsHelper;
+  friend ArkWebContentSubresourceFilterThrottleManagerExt;
 
   FRIEND_TEST_ALL_PREFIXES(ContentSubresourceFilterThrottleManagerTest,
                            SubframeNavigationTaggedAsAdByRenderer);
@@ -390,6 +401,11 @@ class ContentSubresourceFilterThrottleManager
 
   // Receiver set for all RenderFrames in this throttle manager's page.
   content::RenderFrameHostReceiverSet<mojom::SubresourceFilterHost> receiver_;
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  content::RenderFrameHostReceiverSet<mojom::UserSubresourceFilterHost>
+      user_receiver_;
+#endif
 
   // Lazily instantiated in EnsureRulesetHandle when the first page level
   // activation is triggered. Will go away when there are no more activated

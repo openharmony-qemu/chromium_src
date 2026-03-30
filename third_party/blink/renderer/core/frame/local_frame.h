@@ -32,6 +32,10 @@
 #include <memory>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "base/gtest_prod_util.h"
 #include "base/time/default_tick_clock.h"
 #include "base/time/time.h"
@@ -98,6 +102,10 @@
 #include "third_party/perfetto/include/perfetto/tracing/traced_value_forward.h"
 #include "ui/gfx/geometry/transform.h"
 #include "ui/gfx/image/image_skia.h"
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/media/video_url_loader_manager.h"
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 
 namespace base {
 class SingleThreadTaskRunner;
@@ -168,6 +176,9 @@ class WebPrescientNetworking;
 class URLLoader;
 struct BlinkTransferableMessage;
 struct WebScriptSource;
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+class BlankScreenDetector;
+#endif
 class WindowControlsOverlayChangedDelegate;
 class ImageDownloaderImpl;
 class RemoteObjectGatewayFactoryImpl;
@@ -197,6 +208,9 @@ class CORE_EXPORT LocalFrame final
       public FrameScheduler::Delegate,
       public BackForwardCacheLoaderHelperImpl::Delegate {
  public:
+#if BUILDFLAG(IS_ARKWEB)
+  friend class LocalFrameUtil;
+#endif
   // Returns the LocalFrame instance for the given |frame_token|.
   static LocalFrame* FromFrameToken(const LocalFrameToken& frame_token);
 
@@ -273,13 +287,44 @@ class CORE_EXPORT LocalFrame final
   void DidChangeThemeColor(bool update_theme_color_cache);
   void DidChangeBackgroundColor(SkColor4f background_color, bool color_adjust);
 
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  void OnDetectedBlankScreen(const String &url,
+                             int32_t blankScreenReason,
+                             int32_t detectedContentfulNodesCount);
+
+  BlankScreenDetector* GetBlankScreenDetector(bool force = false);
+#endif
+
+#if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT)
+  void OnFirstScreenPaint(const String &url,
+                          const base::TimeTicks &navigation_start,
+                          const base::TimeTicks &first_screen_paint);
+#endif
+#if BUILDFLAG(ARKWEB_AI)
+  void StartHighlightFadeTimer(base::TimeDelta delay);
+  bool ClearHighlight(const bool ignoreSetting);
+  bool ProcessFragment(const KURL& url);
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+  void NotifyContextMenuWillShow();
+#endif
+
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+  void OnOverScrollOffsetChanged(float offset_x, float offset_y);
+#endif
+
   // Returns false if detaching child frames reentrantly detached `this`.
   bool DetachChildren();
   // After Document is attached, resets state related to document, and sets
   // context to the current document.
   void DidAttachDocument();
 
-  void Reload(WebFrameLoadType);
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+  void Reload(WebFrameLoadType load_type, bool is_triggered_by_js = false);
+#else
+   void Reload(WebFrameLoadType);
+#endif
 
   // Note: these three functions are not virtual but intentionally shadow the
   // corresponding method in the Frame base class to return the
@@ -440,6 +485,43 @@ class CORE_EXPORT LocalFrame final
   void SetZoomFactors(float layout_zoom_factor,
                       float text_zoom_factor,
                       float css_zoom_factor);
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  void DidSubresourceFiltered();
+
+  bool GetGlobalAdblockEnabled();
+
+  void SetAdBlockEnableForSite(bool site_adblock_enabled);
+
+  bool GetAdBlockEnableForSite() const { return adblock_enabled_for_site_; }
+
+  void SetHasElemHideTypeOption(bool has_elemhide_type_option);
+
+  bool GetHasElemHideTypeOption() const { return has_elemhide_type_option_; }
+
+  void SetHasDocumentTypeOption(bool has_document_type_option);
+
+  bool GetHasDocumentTypeOption() const { return has_document_type_option_; }
+
+  void SetHasGenericHideTypeOption(bool has_generichide_type_option);
+
+  bool GetHasGenericHideTypeOption() const {
+    return has_generichide_type_option_;
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  bool IsVideoPrioritySupported();
+  bool SetNewsFeedPageFitted();
+  void SetVideoIsPlaying(std::string id, bool playing);
+  void SetVideoPriority(const HeapVector<Member<VideoPriority>>&);
+  void RegisterUrlLoader(base::WeakPtr<VideoURLLoaderImpl> loader,
+                         std::string id,
+                         int64_t start,
+                         WebURLRequest request,
+                         base::WeakPtr<WebAssociatedURLLoaderClient> client);
+  void NotifyFinished(base::WeakPtr<VideoURLLoaderImpl>);
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 
   double DevicePixelRatio() const;
 
@@ -633,6 +715,15 @@ class CORE_EXPORT LocalFrame final
   // This is used to check if a script tagged as an ad is currently on the v8
   // stack.
   bool IsAdScriptInStack() const;
+
+#if BUILDFLAG(IS_ARKWEB)
+  bool scale_limits_max_changed_ = false;
+  bool scale_limits_min_changed_ = false;
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  Member<BlankScreenDetector> blank_screen_detector_;
+#endif
 
   // The evidence for or against a frame being an ad. `std::nullopt` if not yet
   // set or if the frame is a subfiltering root frame (outermost main frame) as
@@ -1024,7 +1115,14 @@ class CORE_EXPORT LocalFrame final
     dev_tools_frontend_impl_ = dev_tools_frontend_impl;
   }
 
+#if BUILDFLAG(ARKWEB_PDF)
+  bool IsPDF();
+#endif
+
  private:
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class LocalFrameUtilTest;
+#endif
   friend class FrameNavigationDisabler;
   // LocalFrameMojoHandler is a part of LocalFrame.
   friend class LocalFrameMojoHandler;
@@ -1145,6 +1243,16 @@ class CORE_EXPORT LocalFrame final
   float layout_zoom_factor_;
   float text_zoom_factor_;
   float css_zoom_factor_;
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  bool adblock_enabled_for_site_ = false;
+  bool has_elemhide_type_option_ = false;
+  bool has_document_type_option_ = false;
+  bool has_generichide_type_option_ = false;
+#endif
+#if BUILDFLAG(ARKWEB_AI)
+  base::OneShotTimer highlight_fade_timer_;
+#endif
 
   Member<CoreProbeSink> probe_sink_;
   scoped_refptr<InspectorTaskRunner> inspector_task_runner_;
@@ -1311,6 +1419,14 @@ class CORE_EXPORT LocalFrame final
   void OnStorageAccessCallback(base::OnceCallback<void(bool)> callback,
                                mojom::blink::StorageTypeAccessed storage_type,
                                bool isAllowed);
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  VideoUrlLoaderManager loader_manager_;
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+  base::WeakPtrFactory<LocalFrame> weak_local_frame_{this};
+#endif
 };
 
 inline FrameLoader& LocalFrame::Loader() const {

@@ -35,8 +35,12 @@ class PresentationTimeRecorderTest : public testing::Test {
     context_factories_.reset();
   }
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  base::test::TaskEnvironment task_environment_{};
+#else
   base::test::TaskEnvironment task_environment_{
       base::test::TaskEnvironment::MainThreadType::UI};
+#endif
 
   Layer root_;
   std::unique_ptr<TestContextFactories> context_factories_;

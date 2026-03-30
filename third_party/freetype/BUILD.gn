@@ -6,6 +6,7 @@ import("//build/config/cast.gni")
 import("//build/config/freetype/freetype.gni")
 import("//build/config/sanitizers/sanitizers.gni")
 import("//third_party/harfbuzz-ng/harfbuzz.gni")
+import("//arkweb/build/features/features.gni")
 
 assert(enable_freetype)
 assert(!use_system_freetype, "Not used when using system freetype.")
@@ -169,4 +170,8 @@ component("freetype") {
   public_configs = [ ":freetype_config" ]
 
   deps = [ "//third_party/zlib" ]
+
+  if (arkweb_css_font) {
+    deps += [ "//third_party/libpng" ]
+  }
 }

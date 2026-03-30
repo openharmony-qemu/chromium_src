@@ -38,7 +38,7 @@
 #include "services/on_device_model/public/mojom/on_device_model_service.mojom.h"
 #include "services/tracing/public/cpp/trace_startup.h"
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || USE_VAAPI
 #include "base/file_descriptor_store.h"
 #include "base/files/file_util.h"
 #include "base/pickle.h"
@@ -76,7 +76,8 @@
 #include "printing/sandbox/print_backend_sandbox_hook_linux.h"
 #endif
 
-#if BUILDFLAG(ENABLE_SCREEN_AI_SERVICE)
+#if (BUILDFLAG(ENABLE_SCREEN_AI_SERVICE) && !defined(COMPONENT_BUILD) && \
+     (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)))
 #include "services/screen_ai/public/cpp/utilities.h"  // nogncheck
 #include "services/screen_ai/sandbox/screen_ai_sandbox_hook_linux.h"  // nogncheck
 #endif
@@ -107,6 +108,18 @@
 #include "sandbox/win/src/sandbox.h"
 #endif  // BUILDFLAG(IS_WIN)
 
+#if BUILDFLAG(IS_OHOS)
+#include "base/file_descriptor_store.h"
+#include "base/files/file_util.h"
+#include "base/pickle.h"
+#include "content/common/gpu_pre_sandbox_hook_linux.h"
+#include "content/public/common/content_descriptor_keys.h"
+#include "content/utility/speech/speech_recognition_sandbox_hook_linux.h"
+#include "sandbox/policy/linux/sandbox_linux.h"
+#include "services/audio/audio_sandbox_hook_linux.h"
+#include "services/network/network_sandbox_hook_linux.h"
+#endif
+
 #if BUILDFLAG(IS_WIN)
 sandbox::TargetServices* g_utility_target_services = nullptr;
 #endif  // BUILDFLAG(IS_WIN)
@@ -121,7 +134,8 @@ namespace content {
 
 namespace {
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if !defined(COMPONENT_BUILD) && \
+    (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)) // FIXME
 std::vector<std::string> GetNetworkContextsParentDirectories() {
   base::MemoryMappedFile::Region region;
   base::ScopedFD read_pipe_fd = base::FileDescriptorStore::GetInstance().TakeFD(
@@ -149,6 +163,8 @@ std::vector<std::string> GetNetworkContextsParentDirectories() {
 }
 
 bool ShouldUseAmdGpuPolicy(sandbox::mojom::Sandbox sandbox_type) {
+// Amd gpu is not supported on ohos
+#if !BUILDFLAG(IS_OHOS)
 #if BUILDFLAG(USE_LINUX_VIDEO_ACCELERATION) || \
     BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
   const bool obtain_gpu_info =
@@ -164,9 +180,11 @@ bool ShouldUseAmdGpuPolicy(sandbox::mojom::Sandbox sandbox_type) {
   }
 #endif  // BUILDFLAG(USE_LINUX_VIDEO_ACCELERATION) ||
         // BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
+#endif  // !BUILDFLAG(IS_OHOS)
+
   return false;
 }
-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 
 #if BUILDFLAG(IS_WIN)
 // Handle pre-lockdown sandbox hooks
@@ -277,7 +295,8 @@ int UtilityMain(MainFunctionParams parameters) {
     CHECK(on_device_model::PreSandboxInit());
   }
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if !defined(COMPONENT_BUILD) && \
+    (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || defined(IS_OHOS) && USE_VAAPI)
 
 #if BUILDFLAG(USE_LINUX_VIDEO_ACCELERATION) && BUILDFLAG(USE_VAAPI)
   // Regardless of the sandbox status, the VaapiWrapper needs to be initialized
@@ -316,10 +335,12 @@ int UtilityMain(MainFunctionParams parameters) {
     case sandbox::mojom::Sandbox::kAudio:
       pre_sandbox_hook = base::BindOnce(&audio::AudioPreSandboxHook);
       break;
+#if !BUILDFLAG(IS_OHOS)
     case sandbox::mojom::Sandbox::kOnDeviceModelExecution:
       on_device_model::AddSandboxLinuxOptions(sandbox_options);
       pre_sandbox_hook = base::BindOnce(&on_device_model::PreSandboxHook);
       break;
+#endif  // !BUILDFLAG(IS_OHOS)
     case sandbox::mojom::Sandbox::kSpeechRecognition:
       pre_sandbox_hook =
           base::BindOnce(&speech::SpeechRecognitionPreSandboxHook);
@@ -333,7 +354,8 @@ int UtilityMain(MainFunctionParams parameters) {
 #endif  // BUILDFLAG(ENABLE_ON_DEVICE_TRANSLATION) && (BUILDFLAG(IS_LINUX) ||
         // BUILDFLAG(IS_CHROMEOS))
     case sandbox::mojom::Sandbox::kScreenAI:
-#if BUILDFLAG(ENABLE_SCREEN_AI_SERVICE)
+#if defined(ENABLE_SCREEN_AI_SERVICE) && ENABLE_SCREEN_AI_SERVICE && \
+    !defined(COMPONENT_BUILD)
       pre_sandbox_hook =
           base::BindOnce(&screen_ai::ScreenAIPreSandboxHook,
                          parameters.command_line->GetSwitchValuePath(
@@ -353,12 +375,14 @@ int UtilityMain(MainFunctionParams parameters) {
           base::BindOnce(&media::HardwareVideoDecodingPreSandboxHook);
       break;
 #endif  // BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
+#if !BUILDFLAG(IS_OHOS)
 #if BUILDFLAG(USE_LINUX_VIDEO_ACCELERATION)
     case sandbox::mojom::Sandbox::kHardwareVideoEncoding:
       pre_sandbox_hook =
           base::BindOnce(&media::HardwareVideoEncodingPreSandboxHook);
       break;
 #endif  // BUILDFLAG(USE_LINUX_VIDEO_ACCELERATION)
+#endif
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 #if BUILDFLAG(IS_CHROMEOS)
     case sandbox::mojom::Sandbox::kIme:

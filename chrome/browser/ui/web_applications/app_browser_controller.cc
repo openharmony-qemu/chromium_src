@@ -292,6 +292,9 @@ bool AppBrowserController::ShouldShowCustomTabBar() const {
   std::string_view start_url_scheme = start_url.scheme();
 
   bool is_internal_start_url_scheme =
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      start_url_scheme == extensions::kArkwebExtensionScheme ||
+#endif
       start_url_scheme == extensions::kExtensionScheme ||
       start_url_scheme == content::kChromeUIScheme ||
       start_url_scheme == content::kChromeUIUntrustedScheme;

@@ -12,6 +12,9 @@
 #include "third_party/blink/renderer/platform/loader/fetch/url_loader/isolated_code_cache_fetcher.h"
 #include "third_party/blink/renderer/platform/loader/fetch/url_loader/webui_bundled_code_cache_fetcher.h"
 #include "third_party/blink/renderer/platform/weborigin/scheme_registry.h"
+#if BUILDFLAG(ARKWEB_CUSTOM_SCHEME_CODECACHE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/weborigin/scheme_registry_utils.h"
+#endif
 
 namespace blink {
 
@@ -41,7 +44,18 @@ bool ShouldFetchCodeCache(const network::ResourceRequest& request) {
           String(request.url.GetScheme())) &&
       Platform::Current()->ShouldUseCodeCacheWithHashing(
           WebURL(KURL(request.url)));
-  if (!request.url.SchemeIsHTTPOrHTTPS() && !should_use_source_hash) {
+#if BUILDFLAG(ARKWEB_CUSTOM_SCHEME_CODECACHE)
+  auto protocol = KURL(request.url).Protocol();
+  bool is_protocal_support_code_cache =
+      SchemeRegistryUtils::SchemeSupportsCodeCacheWithResponseTime(protocol);
+  LOG(DEBUG) << "Resource loader if scheme:" << protocol.Utf8().c_str()
+             << " supports code cache:" << is_protocal_support_code_cache;
+#endif
+  if (!request.url.SchemeIsHTTPOrHTTPS() && !should_use_source_hash
+#if BUILDFLAG(ARKWEB_CUSTOM_SCHEME_CODECACHE)
+      && !is_protocal_support_code_cache
+#endif
+  ) {
     return false;
   }
 

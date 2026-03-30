@@ -31,6 +31,9 @@ import "ui/latency/mojom/latency_info.mojom";
 [EnableIf=is_android]
 import "third_party/blink/public/mojom/input/synchronous_compositor.mojom";
 
+[EnableIf=is_ohos]
+import "arkweb/chromium_ext/third_party/blink/public/mojom/input/software_compositor_ohos.mojom";
+
 // These structs are purposely duplicated from ui/events/mojom/event.mojom.
 // They map WebInputEvent <-> WebInputEvent across mojo.
 // We have to work at unifying them. The current problem is that the browser
@@ -161,6 +164,10 @@ struct TouchData {
   bool moved_beyond_slop_region;
   bool touch_start_or_first_move;
   bool hovering;
+  
+  [EnableIf=is_ohos]
+  bool is_fit_content;
+  
   uint32 unique_touch_event_id;
   array<TouchPoint> touches;
 };
@@ -197,6 +204,35 @@ struct TouchActionOptional {
 struct EditCommand {
   string name;
   string value;
+};
+
+[EnableIf=arkweb_same_layer]
+// Touch types
+enum TouchType{
+    DOWN,
+    UP,
+    MOVE,
+    CANCEL,
+    PULL_DOWN,
+    PULL_UP,
+    PULL_MOVE,
+    PULL_IN_WINDOW,
+    PULL_OUT_WINDOW,
+    UNKNOWN,
+};
+ 
+[EnableIf=arkweb_same_layer]
+// Touch event data
+struct EmbedTouchEvent {
+    string embedId;
+    int32 id = 0;
+    float x;
+    float y;
+    float screenX;
+    float screenY;
+    TouchType type;
+    float offsetX = 0.0;
+    float offsetY = 0.0;
 };
 
 // A structure that indicates selection offsets if the selection could be
@@ -381,6 +417,9 @@ interface FrameWidgetInputHandler {
   // Expects a SelectRange_ACK message when finished.
   SelectRange(gfx.mojom.Point base, gfx.mojom.Point extent);
 
+  [EnableIf=arkweb_menu]
+  SelectRangeV2(gfx.mojom.Point position, bool is_base);
+
   // Sent by the browser to ask the renderer to adjust the selection start and
   // end points by the given amounts. A negative amount moves the selection
   // towards the beginning of the document, a positive amount moves the
@@ -418,6 +457,14 @@ interface FrameWidgetInputHandler {
   // may not be the one to have called ScrollFocusedEditableNodeIntoView; for
   // example, a test that simulates tapping an input box.
   WaitForPageScaleAnimationForTesting() => ();
+
+  // #if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+  [EnableIf=arkweb_ext_free_copy]
+  ShowFreeCopyMenu();
+  // #endif
+
+  [EnableIf=arkweb_ai]
+  OnDataDetectorSelectText();
 
   // Requests the renderer to move the caret selection toward the point.
   MoveCaret(gfx.mojom.Point point);
@@ -520,6 +567,13 @@ interface WidgetInputHandler {
           blink.mojom.InputEventResultState state,
           DidOverscrollParams? overscroll,
           TouchActionOptional? touch_action);
+//#if defined(ARKWEB_PERFORMANCE_INC_FREQ)
+  [EnableIf=arkweb_performance_inc_freq]
+  TryStartFling();
+
+  [EnableIf=arkweb_performance_inc_freq]
+  TryFinishFling();
+//#endif
 
   // Sends a non-blocking input event to the render widget. The behaviour
   // of this API is the same as DispatchEvent just that there is no callback
@@ -546,6 +600,11 @@ interface WidgetInputHandler {
       pending_associated_remote<SynchronousCompositorHost> host,
       pending_associated_receiver<SynchronousCompositor> compositor_request);
 
+  // Attch the software compositor in ohos.
+  [EnableIf=is_ohos]
+  AttachSoftwareCompositorOhos(
+      pending_receiver<SoftwareCompositorOhos> compositor_request);
+
   // Return an associated FrameWidgetInputHandler interface so that input
   // messages to the frame associated with this widget can be sent
   // serially.
@@ -559,4 +618,20 @@ interface WidgetInputHandler {
       cc.mojom.BrowserControlsState current,
       bool animate,
       cc.mojom.BrowserControlsOffsetTagModifications? offset_tag_modifications);
+  [EnableIf=arkweb_same_layer]
+  SetGestureEventResult(bool result, bool stopPropagation, int32 fingerId);
+
+  [EnableIf=arkweb_same_layer]
+  SetMouseEventResult(bool result, bool stopPropagation);
+
+  [EnableIf=arkweb_same_layer]
+  SetNativeEmbedMode(bool flag);
+
+  [EnableIf=arkweb_same_layer]
+  SetEnableCustomVideoPlayer(bool flag);
+
+  [EnableIf=arkweb_input_events]
+  ScrollBy(float delta_x, float delta_y);
+
+  SetBypassVsyncCondition(int32 condition);
 };

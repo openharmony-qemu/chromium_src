@@ -73,7 +73,11 @@ class NativeThemeFluentTest : public ::testing::Test,
     ColorProvider color_provider;
     theme_.PaintScrollbarThumb(canvas, &color_provider,
                                NativeTheme::kScrollbarVerticalThumb,
-                               NativeTheme::kNormal, gfx::Rect(15, 100), {});
+                               NativeTheme::kNormal, gfx::Rect(15, 100), {}
+                            #if BUILDFLAG(ARKWEB_UNITTESTS)
+                               , SK_ColorLTGRAY
+                            #endif
+                              );
   }
 
  private:

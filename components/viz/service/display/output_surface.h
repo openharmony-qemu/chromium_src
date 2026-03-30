@@ -203,6 +203,14 @@ class VIZ_SERVICE_EXPORT OutputSurface {
   virtual void EnsureBackbuffer() = 0;
   virtual void DiscardBackbuffer() = 0;
 
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+  virtual void SetIfNeedCleanBuffers(bool need_clean_buffers) {}
+#endif
+
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+  virtual void CleanBufferAfterSwapBuffer(bool delay_clean) {}
+#endif
+
   // Reshape the output surface.
   struct ReshapeParams {
     gfx::Size size;
@@ -215,6 +223,22 @@ class VIZ_SERVICE_EXPORT OutputSurface {
                            const ReshapeParams&) = default;
   };
   virtual void Reshape(const ReshapeParams& params) = 0;
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  virtual void SetNativeInnerWeb(bool isInnerWeb) {}
+#endif
+
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+  virtual gfx::Rect GetLastBufferDamageRect() { return gfx::Rect(); }
+  virtual int GetLastBufferAge() { return 0; }
+  virtual int GetLastBufferSameCnt() { return 0; }
+  virtual bool SetPresentBufferDamageRect(gfx::Rect damage_rect, gfx::Rect curr_rect) { return false; }
+  virtual void ClosePostSubBuffer() {}
+#endif
+
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  virtual void SetBypassVsyncCondition(int32_t condition) {}
+#endif
 
   // Swaps the current backbuffer to the screen. For successful swaps, the
   // implementation must call OutputSurfaceClient::DidReceiveSwapBuffersAck()

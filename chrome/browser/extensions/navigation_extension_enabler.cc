@@ -46,7 +46,11 @@ void NavigationExtensionEnabler::PromptToEnableExtensionIfNecessary(
   // the item enabled, we won't show anything.
   // TODO(devlin): While true, I still wonder how useful this is. We should get
   // metrics.
-  if (!url.SchemeIs(kExtensionScheme)) {
+  if (!url.SchemeIs(kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      && !url.SchemeIs(kArkwebExtensionScheme)
+#endif
+  ) {
     return;
   }
 

@@ -45,6 +45,11 @@ constexpr auto kSupportedImageTypes = base::MakeFixedFlatSet<std::string_view>({
 #if BUILDFLAG(ENABLE_AV1_DECODER)
     "image/avif",
 #endif
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+"image/heif",
+"image/heic",
+"image/hevc",
+#endif
 });
 
 //  Support every script type mentioned in the spec, as it notes that "User

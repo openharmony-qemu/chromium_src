@@ -75,7 +75,7 @@ BASE_FEATURE(kTraceSiteInstanceGetProcessCreation,
 
 // Whether to crash if GetProcess is called on a SiteInstance without a process.
 const base::FeatureParam<bool> kCrashOnGetProcessCreation{
-    &kTraceSiteInstanceGetProcessCreation, "crash_on_creation", true};
+    &kTraceSiteInstanceGetProcessCreation, "crash_on_creation", false};
 
 }  // namespace
 
@@ -915,8 +915,6 @@ bool SandboxConfigurationsMatch(const SiteInfo& site_info,
 }  // namespace
 
 bool SiteInstanceImpl::IsSuitableForUrlInfo(const UrlInfo& url_info) {
-  TRACE_EVENT2("navigation", "SiteInstanceImpl::IsSuitableForUrlInfo",
-               ChromeTrackEvent::kSiteInstance, this, "url_info", url_info);
   const GURL& url = url_info.url;
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
   // If the URL to navigate to can be associated with any site instance,

@@ -102,4 +102,7 @@
 <translation id="8901569739625249689"><ph name="QUANTITY" /> KB</translation>
 <translation id="9132465097189459683">Diğer...</translation>
 <translation id="916607977885256133">Pencere İçinde Pencere</translation>
+<translation id="IDS_MEDIA_REMOTING_CAST_CASTING">Yayınlanıyor…</translation>
+<translation id="IDS_MEDIA_REMOTING_CAST_STOP_CAST">Bitir</translation>
+<translation id="IDS_MEDIA_REMOTING_CAST_SWITCH_DEVICE">Cihaz değiştir</translation>
 </translationbundle>

@@ -340,7 +340,11 @@ inline constexpr char kClickToCallDescription[] =
 inline constexpr char kClipboardChangeEventName[] = "ClipboardChangeEvent";
 inline constexpr char kClipboardChangeEventDescription[] =
     "Enables the `clipboardchange` event API. See: "
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://***";
+#else
     "https://chromestatus.com/feature/5085102657503232";
+#endif
 
 inline constexpr char kClipboardMaximumAgeName[] = "Clipboard maximum age";
 inline constexpr char kClipboardMaximumAgeDescription[] =
@@ -8325,28 +8329,44 @@ inline constexpr char kLocalNetworkAccessChecksName[] =
     "Local Network Access Checks";
 inline constexpr char kLocalNetworkAccessChecksDescription[] =
     "Enables Local Network Access checks. "
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "See: https://***";
+#else
     "See: https://chromestatus.com/feature/5152728072060928";
+#endif
 
 inline constexpr char kLocalNetworkAccessChecksWebRTCName[] =
     "Local Network Access Checks for WebRTC";
 inline constexpr char kLocalNetworkAccessChecksWebRTCDescription[] =
     "Enable Local Network Access checks for WebRTC. Requires the "
     "#local-network-access-check flag to also be enabled "
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "See: https://***";
+#else
     "See: https://chromestatus.com/feature/5065884686876672";
+#endif
 
 inline constexpr char kLocalNetworkAccessChecksWebSocketsName[] =
     "Local Network Access Checks for WebSockets";
 inline constexpr char kLocalNetworkAccessChecksWebSocketsDescription[] =
     "Enable Local Network Access checks for WebSockets. Requires the "
     "#local-network-access-check flag to also be enabled "
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "See: https://***";
+#else
     "See: https://chromestatus.com/feature/5197681148428288";
+#endif
 
 inline constexpr char kLocalNetworkAccessChecksWebTransportName[] =
     "Local Network Access Checks for WebTransport";
 inline constexpr char kLocalNetworkAccessChecksWebTransportDescription[] =
     "Enable Local Network Access checks for WebTransport. Requires the "
     "#local-network-access-check flag to also be enabled "
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "See: https://***";
+#else
     "See: https://chromestatus.com/feature/5126430912544768";
+#endif
 
 inline constexpr char kTaskManagerDesktopRefreshName[] =
     "Task Manager Desktop Refresh";

@@ -6,6 +6,11 @@
 
 #include "base/feature_list.h"
 #include "build/build_config.h"
+
+#if BUILDFLAG(IS_OHOS)
+#include "ui/base/layout.h"
+#endif
+
 #include "chrome/browser/ui/find_bar/find_bar.h"
 #include "chrome/browser/ui/find_bar/find_bar_controller.h"
 #include "chrome/browser/ui/tabs/features.h"
@@ -20,6 +25,13 @@
 #include "chrome/common/buildflags.h"
 #include "ui/gfx/geometry/rect.h"
 #include "ui/views/view.h"
+
+#if BUILDFLAG(IS_OHOS)
+namespace {
+// Width of the window control button in the upper right corner
+const int kWindowControlButtonsWidth = 100;
+}  // namespace
+#endif
 
 #if BUILDFLAG(ENABLE_WEBUI_TAB_STRIP)
 #include "chrome/browser/ui/views/frame/webui_tab_strip_container_view.h"
@@ -256,6 +268,12 @@ BrowserViewLayoutDelegateImpl::GetBoundsForTabStripRegionInBrowserView() const {
                    layout.trailing_exclusion.horizontal_padding - tab_margin)));
   views::View::ConvertRectToTarget(browser_view().parent(), &browser_view(),
                                    &bounds_f);
+#if BUILDFLAG(IS_OHOS)
+  float device_scale_factor =
+      ui::GetScaleFactorForNativeView(browser_view().GetNativeWindow());
+  bounds_f.set_width(bounds_f.width() -
+                     kWindowControlButtonsWidth * device_scale_factor);
+#endif
   return gfx::ToEnclosingRect(bounds_f);
 }
 

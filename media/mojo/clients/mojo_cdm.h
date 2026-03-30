@@ -84,6 +84,12 @@ class MojoCdm final : public ContentDecryptionModule,
   std::unique_ptr<CallbackRegistration> RegisterEventCB(EventCB event_cb) final;
   Decryptor* GetDecryptor() final;
   std::optional<base::UnguessableToken> GetCdmId() const final;
+
+#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
+  void SuspendCdmSession() final;
+  void ResumeCdmSession() final;
+#endif
+
 #if BUILDFLAG(IS_WIN)
   bool RequiresMediaFoundationRenderer() final;
 #endif  // BUILDFLAG(IS_WIN)

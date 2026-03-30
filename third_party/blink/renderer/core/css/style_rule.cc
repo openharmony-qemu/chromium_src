@@ -85,6 +85,10 @@ namespace blink {
 
 struct SameSizeAsStyleRuleBase final
     : public GarbageCollected<SameSizeAsStyleRuleBase> {
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  bool is_for_adblock_ : 1;
+  bool is_for_user_adblock_ : 1;
+#endif
   uint8_t field;
 };
 

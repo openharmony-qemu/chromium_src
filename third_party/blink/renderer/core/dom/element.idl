@@ -187,6 +187,9 @@ dictionary SetHTMLUnsafeOptions {
 
     // Declarative document updates
     [RuntimeEnabled=DocumentPatching] readonly attribute Patch? currentPatch;
+
+    // arkweb_ai
+    boolean hasArkWebShadowRoot();
 };
 
 Element includes ParentNode;

@@ -40,6 +40,7 @@
 #include <limits>
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "base/compiler_specific.h"
 #include "base/logging.h"
 #include "base/memory/raw_ptr.h"
@@ -822,15 +823,20 @@ void term_source(j_decompress_ptr jd) {
 
 JPEGImageDecoder::JPEGImageDecoder(AlphaOption alpha_option,
                                    ColorBehavior color_behavior,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
                                    cc::AuxImage aux_image,
+#endif
                                    wtf_size_t max_decoded_bytes,
                                    wtf_size_t offset)
     : ImageDecoder(alpha_option,
                    ImageDecoder::kDefaultBitDepth,
                    color_behavior,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
                    aux_image,
+#endif
                    max_decoded_bytes),
-      offset_(offset) {}
+      offset_(offset) {
+}
 
 JPEGImageDecoder::~JPEGImageDecoder() = default;
 
@@ -863,6 +869,7 @@ void JPEGImageDecoder::OnSetData(scoped_refptr<SegmentReader> data) {
   // because the gainmap image itself is is a self-contained JPEG image (see
   // multi-picture format, also known as CIPA DC-007). This is in contrast with
   // other decoders (e.g AVIF), which are aware of gainmap metadata.
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
   if (data && aux_image_ == cc::AuxImage::kGainmap) {
     sk_sp<SkData> base_image_data = data->GetAsSkData();
     DCHECK(base_image_data);
@@ -877,7 +884,7 @@ void JPEGImageDecoder::OnSetData(scoped_refptr<SegmentReader> data) {
     data = SegmentReader::CreateFromSkData(std::move(gainmap_image_data));
     data_ = data;
   }
-
+#endif
   if (reader_) {
     reader_->SetData(std::move(data));
 

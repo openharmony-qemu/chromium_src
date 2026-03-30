@@ -10,6 +10,7 @@
 #include <string>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/feature_list.h"
 #include "base/logging.h"
 #include "base/memory/ptr_util.h"
@@ -22,6 +23,7 @@
 #include "base/strings/string_util.h"
 #include "base/strings/stringprintf.h"
 #include "base/time/time.h"
+#include "base/trace_event/trace_event.h"
 #include "base/types/cxx23_to_underlying.h"
 #include "build/build_config.h"
 #include "ui/events/base_event_utils.h"
@@ -381,6 +383,10 @@ MouseEvent::MouseEvent(const PlatformEvent& native_event)
       pointer_details_(GetMousePointerDetailsFromNative(native_event)) {
   latency()->AddLatencyNumberWithTimestamp(
       INPUT_EVENT_LATENCY_ORIGINAL_COMPONENT, time_stamp());
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow", "trace_id",
+                    std::to_string(latency()->trace_id()), "step", "INPUT_EVENT_LATENCY_ORIGINAL_COMPONENT");
+#endif
   latency()->AddLatencyNumber(INPUT_EVENT_LATENCY_UI_COMPONENT);
   InitializeNative();
 }
@@ -399,6 +405,10 @@ MouseEvent::MouseEvent(EventType type,
   DCHECK_EQ(changed_button_flags_,
             changed_button_flags_ & kChangedButtonFlagMask);
   latency()->AddLatencyNumber(INPUT_EVENT_LATENCY_UI_COMPONENT);
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow", "trace_id",
+                    std::to_string(latency()->trace_id()), "step", "INPUT_EVENT_LATENCY_UI_COMPONENT");
+#endif
   if (this->type() == EventType::kMouseMoved && IsAnyButton()) {
     SetType(EventType::kMouseDragged);
   }

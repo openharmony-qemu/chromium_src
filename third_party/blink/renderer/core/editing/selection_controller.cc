@@ -29,6 +29,7 @@
 
 #include "third_party/blink/renderer/core/editing/selection_controller.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/auto_reset.h"
 #include "base/trace_event/trace_event.h"
 #include "third_party/blink/public/common/input/web_menu_source_type.h"
@@ -65,6 +66,10 @@
 #include "third_party/blink/renderer/platform/runtime_enabled_features.h"
 #include "ui/gfx/geometry/point_conversions.h"
 
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/editing/selection_controller_header_for_include.cc"
+#endif
+
 namespace blink {
 
 SelectionController::SelectionController(LocalFrame& frame)
@@ -78,6 +83,14 @@ SelectionController::SelectionController(LocalFrame& frame)
 void SelectionController::Trace(Visitor* visitor) const {
   visitor->Trace(frame_);
   visitor->Trace(original_anchor_in_flat_tree_);
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+  visitor->Trace(last_long_press_hit_test_result_);
+#endif
+#if BUILDFLAG(ARKWEB_AI)
+  visitor->Trace(image_overlay_hit_test_result_);
+  visitor->Trace(last_link_hit_test_result_);
+  visitor->Trace(tap_down_node_);
+#endif
   ExecutionContextLifecycleObserver::Trace(visitor);
 }
 
@@ -721,7 +734,12 @@ bool SelectionController::UpdateSelectionForMouseDownDispatchingSelectStart(
 bool SelectionController::SelectClosestWordFromHitTestResult(
     const HitTestResult& result,
     AppendTrailingWhitespace append_trailing_whitespace,
-    SelectInputEventType select_input_event_type) {
+    SelectInputEventType select_input_event_type
+#if BUILDFLAG(ARKWEB_AI)
+    ,
+    bool is_double_click
+#endif
+    ) {
   Node* const inner_node = result.InnerPossiblyPseudoNode();
 
   if (!inner_node || !inner_node->GetLayoutObject() ||
@@ -738,17 +756,29 @@ bool SelectionController::SelectClosestWordFromHitTestResult(
     adjusted_hit_test_result.SetNodeAndPosition(
         result.InnerPossiblyPseudoNode(), PhysicalOffset());
   }
+#if BUILDFLAG(ARKWEB_AI)
+  inner_node->GetLayoutObject()->SetPositionMode(is_double_click);
+#endif
 
   const PositionInFlatTreeWithAffinity pos =
       CreateVisiblePosition(
           PositionWithAffinityOfHitTestResult(adjusted_hit_test_result))
           .ToPositionWithAffinity();
+
+#if BUILDFLAG(ARKWEB_AI)
+  inner_node->GetLayoutObject()->SetPositionMode(false);
+  bool layout_change = (tap_down_node_ != inner_node);
+  const SelectionInFlatTree new_selection =
+      SelectionControllerUtils::HandleArkWebAISelectionExt(
+        this, result, inner_node, pos, is_double_click, layout_change);
+#else
   const SelectionInFlatTree new_selection =
       pos.IsNotNull()
           ? ExpandWithGranularity(
                 SelectionInFlatTree::Builder().Collapse(pos).Build(),
                 TextGranularity::kWord)
           : SelectionInFlatTree();
+#endif
 
   // TODO(editing-dev): Fix CreateVisibleSelectionWithGranularity() to not
   // return invalid ranges. Until we do that, we need this check here to avoid a
@@ -774,12 +804,18 @@ bool SelectionController::SelectClosestWordFromHitTestResult(
     if (word.SimplifyWhiteSpace().ContainsOnlyWhitespaceOrEmpty())
       return false;
 
+#if BUILDFLAG(ARKWEB_AI)
+    if (!is_double_click) {
+#endif
     Element* const editable =
         RootEditableElementOf(new_selection.ComputeStartPosition());
     if (editable && pos.GetPosition() ==
                         VisiblePositionInFlatTree::LastPositionInNode(*editable)
                             .DeepEquivalent())
       return false;
+#if BUILDFLAG(ARKWEB_AI)
+    }
+#endif
   }
 
   const SelectionInFlatTree& adjusted_selection =
@@ -853,7 +889,12 @@ void SelectionController::SelectClosestMisspellingFromHitTestResult(
 template <typename MouseEventObject>
 bool SelectionController::SelectClosestWordFromMouseEvent(
     const MouseEventObject* mouse_event,
-    const HitTestResult& result) {
+    const HitTestResult& result
+#if BUILDFLAG(ARKWEB_AI)
+    ,
+    bool is_double_click
+#endif
+    ) {
   if (!mouse_down_may_start_select_)
     return false;
 
@@ -868,7 +909,12 @@ bool SelectionController::SelectClosestWordFromMouseEvent(
   return SelectClosestWordFromHitTestResult(result, append_trailing_whitespace,
                                             mouse_event->FromTouch()
                                                 ? SelectInputEventType::kTouch
-                                                : SelectInputEventType::kMouse);
+                                                : SelectInputEventType::kMouse
+#if BUILDFLAG(ARKWEB_AI)
+                                            ,
+                                            is_double_click
+#endif
+                                            );
 }
 
 template <typename MouseEventObject>
@@ -996,7 +1042,12 @@ void SelectionController::SetNonDirectionalSelectionIfNeeded(
 }
 
 void SelectionController::SetCaretAtHitTestResult(
+#if BUILDFLAG(ARKWEB_FOCUS)
+    const HitTestResult& hit_test_result,
+    bool is_skip_focus_check) {
+#else
     const HitTestResult& hit_test_result) {
+#endif
   Node* inner_node = hit_test_result.InnerPossiblyPseudoNode();
   DCHECK(inner_node);
   const PositionInFlatTreeWithAffinity visible_hit_pos =
@@ -1021,7 +1072,14 @@ void SelectionController::SetCaretAtHitTestResult(
       ExpandSelectionToRespectUserSelectAll(
           inner_node,
           SelectionInFlatTree::Builder().Collapse(visible_pos).Build()),
+#if BUILDFLAG(ARKWEB_FOCUS)
+      SetSelectionOptions::Builder()
+          .SetShouldShowHandle(true)
+          .SetSkipFocusCheck(is_skip_focus_check)
+          .Build());
+#else
       SetSelectionOptions::Builder().SetShouldShowHandle(true).Build());
+#endif
 }
 
 bool SelectionController::HandleDoubleClick(
@@ -1048,7 +1106,12 @@ bool SelectionController::HandleDoubleClick(
     return true;
   }
   if (!SelectClosestWordFromMouseEvent(&event.Event(),
-                                       event.GetHitTestResult()))
+                                       event.GetHitTestResult()
+#if BUILDFLAG(ARKWEB_AI)
+                                       ,
+                                       true
+#endif
+                                       ))
     return true;
   if (!Selection().IsHandleVisible())
     return true;
@@ -1122,6 +1185,9 @@ bool SelectionController::HandleMousePressEvent(
                                  !event.GetScrollbar();
   mouse_down_was_single_click_on_caret_ = false;
   mouse_down_was_single_click_in_selection_ = false;
+#if BUILDFLAG(ARKWEB_MENU)
+  mouse_click_down_allows_ = !event.Event().FromTouch();
+#endif
   if (!Selection().IsAvailable()) {
     // "gesture-tap-frame-removed.html" reaches here.
     mouse_down_allows_multi_click_ = !event.Event().FromTouch();
@@ -1187,6 +1253,14 @@ bool SelectionController::HandleMouseReleaseEvent(
 
   if (!Selection().IsAvailable())
     return false;
+
+#if BUILDFLAG(ARKWEB_AI)
+  SelectionControllerUtils::HandleMouseReleaseEventWithAIExt(this, event);
+#endif
+
+#if BUILDFLAG(ARKWEB_MENU)
+  SelectionControllerUtils::HandleMouseReleaseEventWithMenuExt(this, event);
+#endif
 
   bool handled = false;
   mouse_down_may_start_select_ = false;
@@ -1280,7 +1354,12 @@ bool SelectionController::HandlePasteGlobalSelection(
 }
 
 bool SelectionController::HandleGestureLongPress(
+#if BUILDFLAG(ARKWEB_FOCUS)
+    const HitTestResult& hit_test_result,
+    bool is_skip_focus_check) {
+#else
     const HitTestResult& hit_test_result) {
+#endif
   TRACE_EVENT0("blink", "SelectionController::handleGestureLongPress");
 
   if (!Selection().IsAvailable())
@@ -1292,9 +1371,15 @@ bool SelectionController::HandleGestureLongPress(
 
   Node* inner_node = hit_test_result.InnerPossiblyPseudoNode();
   inner_node->GetDocument().UpdateStyleAndLayoutTree();
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  bool inner_node_is_selectable =
+      IsEditable(*inner_node) || inner_node->IsTextNode() ||
+      inner_node->CanStartSelection() || IsEditable(*inner_node->parentNode());
+#else
   bool inner_node_is_selectable = IsEditable(*inner_node) ||
                                   inner_node->IsTextNode() ||
                                   inner_node->CanStartSelection();
+#endif
   if (!inner_node_is_selectable)
     return false;
 
@@ -1305,7 +1390,11 @@ bool SelectionController::HandleGestureLongPress(
 
   if (!inner_node->isConnected() || !inner_node->GetLayoutObject())
     return false;
+#if BUILDFLAG(ARKWEB_FOCUS)
+  SetCaretAtHitTestResult(hit_test_result, is_skip_focus_check);
+#else
   SetCaretAtHitTestResult(hit_test_result);
+#endif
   return false;
 }
 
@@ -1482,3 +1571,7 @@ template void SelectionController::UpdateSelectionForContextMenuEvent<
     MouseEvent>(const MouseEvent*, const HitTestResult&, const PhysicalOffset&);
 
 }  // namespace blink
+
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/editing/selection_controller_for_include.cc"
+#endif

@@ -93,6 +93,20 @@ class PLATFORM_EXPORT SurfaceLayerBridge
   // It is okay to call this without a surface layer.
   void UpdateSurfaceLayerOpacity();
 
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  void SetVideoRectChangeCallback(
+      cc::SurfaceLayer::RectChangeCallback callback) override;
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void SetLayerBoundsChangeCallback(
+      cc::SurfaceLayer::LayerBoundsChangeCallback callback) override;
+#endif  // ARKWEB_VIDEO_ASSISTANT
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+ scoped_refptr<cc::SurfaceLayer> CreateSurfaceLayer(cc::SurfaceLayer::RectChangeCallback callback,
+    cc::SurfaceLayer::RectVisibilityChangeCallback visibilitycallback,
+    cc::SurfaceLayer::LayerRemovedVisibilityCallback layerRemovedCallback) override;
+  void SetStretchContentToFillBounds(bool stretch_content_to_fill_bounds) override;
+#endif  // ARKWEB_SAME_LAYER
  private:
   scoped_refptr<cc::SurfaceLayer> surface_layer_;
   scoped_refptr<cc::SolidColorLayer> solid_color_layer_;
@@ -115,6 +129,9 @@ class PLATFORM_EXPORT SurfaceLayerBridge
   bool embedder_expects_opaque_ = false;
   // Has the embedee submitted opaque frames without later non-opaque ones?
   bool frames_are_opaque_ = false;
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  bool stretch_content_to_fill_bounds_ = true;
+#endif  // ARKWEB_SAME_LAYER
 };
 
 }  // namespace blink

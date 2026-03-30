@@ -13,6 +13,7 @@
 #include <utility>
 #include <variant>
 
+#include "arkweb/build/features/features.h"
 #include "base/check.h"
 #include "base/containers/lru_cache.h"
 #include "base/debug/crash_logging.h"
@@ -66,6 +67,10 @@
 #if BUILDFLAG(IS_ANDROID)
 #include "components/webauthn/android/webauthn_cred_man_delegate.h"
 #endif  // BUILDFLAG(IS_ANDROID)
+
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+#include "arkweb/chromium_ext/components/password_manager/core/browser/password_autofill_manager_ext.h"
+#endif
 
 using autofill::FieldDataManager;
 using autofill::FieldRendererId;
@@ -1223,6 +1228,11 @@ void PasswordFormManager::FillNow() {
   }
   metrics_recorder_->CacheParsingResultInFillingMode(
       *parsed_observed_form_.get());
+
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  driver_->AsPasswordManagerDriverExt()->SendParsedPasswordFormToRenderer(
+      CreatePasswordFormFillDataWithoutPasswordInfo(*parsed_observed_form_.get()));
+#endif
 
   if (form_parsing_result.is_new_password_reliable && !IsBlocklisted()) {
     driver_->FormEligibleForGenerationFound({

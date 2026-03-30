@@ -31,11 +31,19 @@ class BLINK_PLATFORM_EXPORT WebMediaPlayerDelegate {
     // switching or by minimizing the current browser window). Note:
     // OnPageHidden() is not called when the frame is closed, even though
     // IsPageHidden() will start returning true.
+#if !BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
     virtual void OnPageHidden() = 0;
+#else
+    virtual void OnPageHidden(bool storing_in_bfcache) = 0;
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
     // Called when the page containing the host frame is shown (usually by tab
     // switching).
+#if !BUILDFLAG(ARKWEB_BFCACHE)
     virtual void OnPageShown() = 0;
+#else
+	virtual void OnPageShown(bool restoring_in_bfcache) = 0;
+#endif // BUILDFLAG(ARKWEB_BFCACHE)
 
     // Called when the host frame is not rendered on the host page. This should
     // be called whenever the host frame's:

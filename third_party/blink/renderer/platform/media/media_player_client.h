@@ -208,6 +208,9 @@ class PLATFORM_EXPORT MediaPlayerClient : public WebMediaPlayerClient {
   // Notify the client that the RemotePlayback has been disabled/enabled.
   virtual void OnRemotePlaybackDisabled(bool disabled) = 0;
 
+#if BUILDFLAG(ARKWEB_PIP)
+  virtual void UpdatePictureInPictureSurface() = 0;
+#endif
  protected:
   ~MediaPlayerClient() = default;
 };

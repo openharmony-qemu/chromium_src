@@ -28,6 +28,8 @@ bool IsBackgroundMediaSuspendEnabled() {
   } else {
     return true;
   }
+#elif BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  return true;
 #else
   // For non-Android devices, always allow background media to play
   return false;

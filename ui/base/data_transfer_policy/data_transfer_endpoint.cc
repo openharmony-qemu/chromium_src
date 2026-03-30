@@ -30,6 +30,16 @@ DataTransferEndpoint::DataTransferEndpoint(EndpointType type,
   DCHECK_NE(type, EndpointType::kUrl);
 }
 
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+DataTransferEndpoint::DataTransferEndpoint(EndpointType type,
+                                           bool notify_if_restricted)
+    : type_(type),
+      url_(std::nullopt),
+      notify_if_restricted_(notify_if_restricted) {
+  DCHECK_NE(type, EndpointType::kUrl);
+}
+#endif
+
 DataTransferEndpoint::DataTransferEndpoint(const DataTransferEndpoint& other) =
     default;
 

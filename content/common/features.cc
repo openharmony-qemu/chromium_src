@@ -4,6 +4,7 @@
 
 #include "content/common/features.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/feature_list.h"
 #include "base/metrics/field_trial_params.h"
 #include "base/time/time.h"
@@ -324,7 +325,11 @@ BASE_FEATURE(kGroupNIKByJoiningOrigin, base::FEATURE_DISABLED_BY_DEFAULT);
 
 // A feature to experiment with removing the soft process limit. See
 // https://crbug.com/369342694.
+#if !BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
 BASE_FEATURE(kRemoveRendererProcessLimit, base::FEATURE_ENABLED_BY_DEFAULT);
+#else
+BASE_FEATURE(kRemoveRendererProcessLimit, base::FEATURE_DISABLED_BY_DEFAULT);
+#endif
 
 // Purge PartitionAlloc's Scheduler-Loop quarantine when the UI thread is done
 // executing a task. This allow purging memory without scanning the stack. See:

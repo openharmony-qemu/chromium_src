@@ -256,6 +256,21 @@ class TestView : public TestRenderWidgetHostView {
     return TestRenderWidgetHostView::GetCompositorViewportPixelSize();
   }
 
+  #if BUILDFLAG(ARKWEB_TEST)
+  bool IsTouchSequencePotentiallyActiveOnViz() override {
+    return false;
+  };
+
+  void RequestInputBackForDragAndDrop(
+      blink::mojom::DragDataPtr drag_data,
+      const url::Origin& source_origin,
+      blink::DragOperationsMask drag_operations_mask,
+      SkBitmap bitmap,
+      gfx::Vector2d cursor_offset_in_dip,
+      gfx::Rect drag_obj_rect_in_dip,
+      blink::mojom::DragEventSourceInfoPtr event_info) override {}  
+  #endif
+
  protected:
   WebMouseWheelEvent unhandled_wheel_event_;
   int unhandled_wheel_event_count_;
@@ -487,7 +502,12 @@ class MockRenderWidgetHostDelegate : public RenderWidgetHostDelegate {
 
   void RendererUnresponsive(
       RenderWidgetHostImpl* render_widget_host,
-      base::RepeatingClosure hang_monitor_restarter) override {
+      base::RepeatingClosure hang_monitor_restarter
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+      ,
+      content::RendererIsUnresponsiveReason reason
+#endif
+    ) override {
     unresponsive_timer_fired_ = true;
   }
 

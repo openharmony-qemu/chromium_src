@@ -207,16 +207,28 @@ PdfViewWebPluginClient::CreateAssociatedURLLoader(
 #if BUILDFLAG(ENABLE_SCREEN_AI_SERVICE)
 void PdfViewWebPluginClient::GetOcrMaxImageDimension(
     base::OnceCallback<void(uint32_t)> callback) {
+#if BUILDFLAG(ARKWEB_PDF)
+  // Due to the absence of Chromium's closed-source plugin, screen_ai may cause
+  // the render process to crash, so return before using screen_ai_annotator_.
+  return;
+#else
   ConnectOcrIfNeeded();
   return screen_ai_annotator_->GetMaxImageDimension(std::move(callback));
+#endif  // BUILDFLAG(ARKWEB_PDF)
 }
 
 void PdfViewWebPluginClient::PerformOcr(
     const SkBitmap& image,
     base::OnceCallback<void(screen_ai::mojom::VisualAnnotationPtr)> callback) {
+#if BUILDFLAG(ARKWEB_PDF)
+  // Due to the absence of Chromium's closed-source plugin, screen_ai may cause
+  // the render process to crash, so return before using screen_ai_annotator_.
+  return;
+#else
   ConnectOcrIfNeeded();
   screen_ai_annotator_->PerformOcrAndReturnAnnotation(image,
                                                       std::move(callback));
+#endif  // BUILDFLAG(ARKWEB_PDF)
 }
 
 void PdfViewWebPluginClient::SetOcrDisconnectedCallback(
@@ -294,6 +306,22 @@ void PdfViewWebPluginClient::DidStopLoading() {
 
   frame_client->DidStopLoading();
 }
+
+#if BUILDFLAG(ARKWEB_PDF)
+void PdfViewWebPluginClient::OnPdfScrollAtBottom(const std::string& url) {
+  if (!render_frame_)
+    return;
+
+  render_frame_->OnPdfScrollAtBottom(url);
+}
+
+void PdfViewWebPluginClient::OnPdfLoadEvent(int32_t result, const std::string& url) {
+  if (!render_frame_)
+    return;
+
+  render_frame_->OnPdfLoadEvent(result, url);
+}
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
 void PdfViewWebPluginClient::Print() {
   blink::WebElement element = plugin_container_->GetElement();

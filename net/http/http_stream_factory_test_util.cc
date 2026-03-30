@@ -59,12 +59,6 @@ void MockHttpStreamRequestDelegate::OnStreamFailed(
   done_run_loop_.Quit();
 }
 
-void MockHttpStreamRequestDelegate::OnCertificateError(
-    int status,
-    const SSLInfo& ssl_info) {
-  NOTREACHED();
-}
-
 void MockHttpStreamRequestDelegate::OnNeedsProxyAuth(
     const HttpResponseInfo& proxy_response,
     const ProxyInfo& used_proxy_info,

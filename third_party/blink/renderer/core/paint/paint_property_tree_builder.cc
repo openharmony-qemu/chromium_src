@@ -2086,7 +2086,7 @@ void FragmentPaintPropertyTreeBuilder::UpdateViewTransitionEffect() {
 
       EffectPaintPropertyNode::State state;
       state.direct_compositing_reasons =
-          CompositingReason::kViewTransitionElement;
+          CompositingReason::kViewTransitionElement;      
       state.local_transform_space = context_.current.transform;
       state.output_clip = context_.current.clip;
       state.compositor_element_id = CompositorElementIdFromUniqueObjectId(

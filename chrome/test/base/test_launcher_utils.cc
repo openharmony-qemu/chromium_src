@@ -113,7 +113,7 @@ bool OverrideUserDataDir(const base::FilePath& user_data_dir) {
   VLOG(1) << "chrome::DIR_USER_DATA is overridden to: "
           << user_data_dir.value();
 
-#if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_MAC)
+#if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_MAC) && !BUILDFLAG(ENABLE_CEF)
   // Make sure the cache directory is inside our clear profile. Otherwise
   // the cache may contain data from earlier tests that could break the
   // current test.

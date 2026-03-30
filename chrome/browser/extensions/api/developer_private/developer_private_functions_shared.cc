@@ -67,6 +67,11 @@
 #include "ui/base/clipboard/file_info.h"
 #include "ui/base/l10n/l10n_util.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/chrome/browser/extensions/api/developer_private_api_ext.cc"
+#include "arkweb/chromium_ext/chrome/browser/extensions/extension_multiple_uninstall_dialog_ohos.h"
+#endif // ARKWEB_ARKWEB_EXTENSIONS
+
 #if BUILDFLAG(ENABLE_EXTENSIONS)
 #include "chrome/browser/ui/browser.h"
 #include "chrome/browser/ui/browser_finder.h"
@@ -631,6 +636,13 @@ DeveloperPrivateUpdateExtensionConfigurationFunction::Run() {
     }
   }
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (update.optional_permission) {
+    UpdateOptionalPermissions(browser_context(), *extension,
+                              *update.optional_permission);
+  }
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
+
   return RespondNow(NoArguments());
 }
 
@@ -867,10 +879,18 @@ void DeveloperPrivateLoadUnpackedFunction::StartFileLoad(
   installer->set_be_noisy_on_failure(!fail_quietly_);
   installer->set_completion_callback(base::BindOnce(
       &DeveloperPrivateLoadUnpackedFunction::OnLoadComplete, this));
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  base::FilePath real_path = base::FilePath(base::GetRealPath(file_path));
+  installer->Load(real_path);
+
+  retry_guid_ = DeveloperPrivateAPI::Get(browser_context())
+                    ->AddUnpackedPath(GetSenderWebContents(), real_path);
+#else
   installer->Load(file_path);
 
   retry_guid_ = DeveloperPrivateAPI::Get(browser_context())
                     ->AddUnpackedPath(GetSenderWebContents(), file_path);
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 }
 
 void DeveloperPrivateLoadUnpackedFunction::OnLoadComplete(
@@ -917,6 +937,9 @@ DeveloperPrivateInstallDroppedFileFunction::
 
 ExtensionFunction::ResponseAction
 DeveloperPrivateInstallDroppedFileFunction::Run() {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  LOG(INFO) << "DeveloperPrivateInstallDroppedFileFunction::Run";
+#endif // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   content::WebContents* web_contents = GetSenderWebContents();
   if (!web_contents) {
     return RespondNow(Error(kCouldNotFindWebContentsError));
@@ -932,6 +955,25 @@ DeveloperPrivateInstallDroppedFileFunction::Run() {
 
   DeveloperPrivateAPI* api = DeveloperPrivateAPI::Get(browser_context());
   ui::FileInfo file = api->GetDraggedFile(web_contents);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  LOG(INFO) << "path[" << file.path << "]";
+  if (file.path.empty()) {
+    auto* web_contents_delegate = web_contents->GetDelegate();
+    content::DropData* drop_data = nullptr;
+    if (web_contents_delegate) {
+      drop_data = web_contents_delegate->GetDropData();
+    }
+    if (drop_data && !drop_data->filenames.empty()) {
+      file.path = drop_data->filenames.front().path;
+      if (!file.path.IsAbsolute()
+            || !base::PathExists(file.path)
+            || !base::DirectoryExists(file.path.DirName())) {
+        return RespondNow(Error("Invalid path"));
+      }
+    }
+  }
+  LOG(INFO) << "fixed_path[" << file.path << "]";
+#endif // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   if (file.path.empty()) {
     return RespondNow(Error("No dragged path"));
   }
@@ -1030,6 +1072,7 @@ DeveloperPrivateDeleteExtensionErrorsFunction::Run() {
 DeveloperPrivateShowOptionsFunction::~DeveloperPrivateShowOptionsFunction() =
     default;
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 ExtensionFunction::ResponseAction DeveloperPrivateShowOptionsFunction::Run() {
   std::optional<developer::ShowOptions::Params> params =
       developer::ShowOptions::Params::Create(args());
@@ -1051,6 +1094,7 @@ ExtensionFunction::ResponseAction DeveloperPrivateShowOptionsFunction::Run() {
   ExtensionTabUtil::OpenOptionsPageFromWebContents(extension, web_contents);
   return RespondNow(NoArguments());
 }
+#endif // !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 
 DeveloperPrivateShowPathFunction::~DeveloperPrivateShowPathFunction() = default;
 
@@ -1607,6 +1651,16 @@ DeveloperPrivateRemoveMultipleExtensionsFunction::Run() {
         platform_util::GetTopLevel(GetSenderWebContents()->GetNativeView());
   }
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  ohos::ShowExtensionMultipleUninstallDialog(
+      extension_ids_,
+      base::BindOnce(
+          &DeveloperPrivateRemoveMultipleExtensionsFunction::OnDialogAccepted,
+          this),
+      base::BindOnce(
+          &DeveloperPrivateRemoveMultipleExtensionsFunction::OnDialogCancelled,
+          this));
+#else
   ShowExtensionMultipleUninstallDialog(
       profile_, parent, extension_ids_,
       base::BindOnce(
@@ -1615,15 +1669,22 @@ DeveloperPrivateRemoveMultipleExtensionsFunction::Run() {
       base::BindOnce(
           &DeveloperPrivateRemoveMultipleExtensionsFunction::OnDialogCancelled,
           this));
+#endif // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   return RespondLater();
 }
 
 void DeveloperPrivateRemoveMultipleExtensionsFunction::OnDialogCancelled() {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  LOG(INFO) << "DeveloperPrivateRemoveMultipleExtensionsFunction::OnDialogCancelled";
+#endif // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   // Let the consumer end know that the Close button was clicked.
   Respond(Error(kUserCancelledError));
 }
 
 void DeveloperPrivateRemoveMultipleExtensionsFunction::OnDialogAccepted() {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  LOG(INFO) << "DeveloperPrivateRemoveMultipleExtensionsFunction::OnDialogAccepted";
+#endif // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   for (const auto& extension_id : extension_ids_) {
     if (!browser_context()) {
       return;

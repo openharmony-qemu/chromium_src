@@ -42,7 +42,8 @@ void GetFilePaths(const base::FilePath& profile_path,
                   std::u16string* exec_path_out,
                   std::u16string* profile_path_out
 #if BUILDFLAG(ENABLE_CEF)
-                  , std::u16string* module_path_out,
+                  ,
+                  std::u16string* module_path_out,
                   std::u16string* user_data_path_out
 #endif
                   ) {
@@ -157,17 +158,18 @@ void VersionHandler::HandleRequestPathInfo(const base::Value::List& args) {
                      base::Unretained(exec_path_buffer),
                      base::Unretained(profile_path_buffer)
 #if BUILDFLAG(ENABLE_CEF)
-                     , base::Unretained(module_path_buffer),
+                         ,
+                     base::Unretained(module_path_buffer),
                      base::Unretained(user_data_path_buffer)
 #endif
                      ),
-      base::BindOnce(&VersionHandler::OnGotFilePaths,
-                     weak_ptr_factory_.GetWeakPtr(), callback_id,
-                     base::Owned(exec_path_buffer),
+      base::BindOnce(
+          &VersionHandler::OnGotFilePaths, weak_ptr_factory_.GetWeakPtr(),
+          callback_id, base::Owned(exec_path_buffer),
                      base::Owned(profile_path_buffer)
 #if BUILDFLAG(ENABLE_CEF)
-                     , base::Owned(module_path_buffer),
-                     base::Owned(user_data_path_buffer)
+              ,
+          base::Owned(module_path_buffer), base::Owned(user_data_path_buffer)
 #endif
                      ));
 }
@@ -176,7 +178,8 @@ void VersionHandler::OnGotFilePaths(std::string callback_id,
                                     std::u16string* executable_path_data,
                                     std::u16string* profile_path_data
 #if BUILDFLAG(ENABLE_CEF)
-                                    , std::u16string* module_path_data,
+                                    ,
+                                    std::u16string* module_path_data,
                                     std::u16string* user_data_path_data
 #endif
                                     ) {

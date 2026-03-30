@@ -50,7 +50,12 @@
 
 using base::Time;
 using base::TimeTicks;
-
+#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
+#include "third_party/ohos_ndk/includes/ohos_adapter/res_sched_client_adapter.h"
+#if !defined(COMPONENT_BUILD) // FIXME
+using namespace OHOS::NWeb;
+#endif
+#endif
 namespace {
 
 const char kIndexName[] = "index";
@@ -131,11 +136,22 @@ class CacheThread : public base::Thread {
   CacheThread() : base::Thread("CacheThread_BlockFile") {
     CHECK(
         StartWithOptions(base::Thread::Options(base::MessagePumpType::IO, 0)));
+#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
+    ResSchedClientAdapter::ReportKeyThread(
+        ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentProcId(),
+        GetThreadId().raw(), ResSchedRoleAdapter::USER_INTERACT);
+#endif
   }
 
   ~CacheThread() override {
     // We don't expect to be deleted, but call Stop() in dtor 'cause docs
     // say we should.
+#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
+    ResSchedClientAdapter::ReportKeyThread(
+        ResSchedStatusAdapter::THREAD_DESTROYED, base::GetCurrentProcId(),
+        GetThreadId().raw(), ResSchedRoleAdapter::USER_INTERACT);
+#endif
+
     Stop();
   }
 };

@@ -4,6 +4,7 @@
 
 #include "ui/ozone/common/native_pixmap_egl_binding.h"
 
+#include "arkweb/build/features/features.h"
 #include <array>
 
 #include "base/logging.h"
@@ -12,8 +13,13 @@
 #include "ui/gfx/buffer_format_util.h"
 #include "ui/gfx/linux/drm_util_linux.h"
 #include "ui/gl/gl_bindings.h"
+#include "ui/gl/buffer_format_utils.h"
 #include "ui/gl/gl_surface_egl.h"
 #include "ui/gl/scoped_binders.h"
+
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+#include "ui/gl/ohos/native_buffer_utils.h"
+#endif
 
 namespace ui {
 
@@ -40,6 +46,24 @@ namespace {
 #define DRM_FORMAT_P010 FOURCC('P', '0', '1', '0')
 /* Reserve 0 for the invalid format specifier */
 #define DRM_FORMAT_INVALID 0
+
+// Returns corresponding internalformat if supported, and GL_NONE otherwise.
+unsigned GLInternalFormat(viz::SharedImageFormat shared_format) {
+  if (!shared_format.is_single_plane()) {
+    return GL_NONE;
+  }
+
+  gfx::BufferFormat format = viz::SinglePlaneSharedImageFormatToBufferFormat(shared_format);
+  switch (format) {
+    case gfx::BufferFormat::RGBA_4444:
+    case gfx::BufferFormat::RGBA_F16:
+    case gfx::BufferFormat::P010:
+      return GL_RGB_YCBCR_P010_CHROMIUM;
+    default:
+      break;
+  }
+  return gl::BufferFormatToGLInternalFormat(format);
+}
 
 }  // namespace
 
@@ -85,6 +109,10 @@ bool NativePixmapEGLBinding::InitializeFromNativePixmap(
     GLenum target,
     GLuint texture_id) {
   DCHECK(!pixmap_);
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+  LOG(DEBUG) << "[HeifSupport] InitializeFromNativePixmap GLInternalFormat " <<  (int)GLInternalFormat(format_)
+    << ", format_ " << format_.ToString() <<   ", plane_ " << (int)plane_ << ", WindowBuffer " << pixmap->GetWindowBuffer();
+#endif
   if (GetFourCCFormatFromSharedImageFormat(format_) == DRM_FORMAT_INVALID) {
     LOG(ERROR) << "Unsupported format: " << format_.ToString();
     return false;
@@ -95,6 +123,14 @@ bool NativePixmapEGLBinding::InitializeFromNativePixmap(
     return false;
   }
 
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+  egl_image_ = gl::ohos::CreateEGLImage(
+      static_cast<EGLClientBuffer>(pixmap->GetWindowBuffer()));
+  if (egl_image_ == EGL_NO_IMAGE_KHR) {
+    LOG(ERROR) << "[HeifSupport] egl_image_ is EGL_NO_IMAGE_KHR.";
+    return false;
+  }
+#else
   // Note: If eglCreateImageKHR is successful for a EGL_LINUX_DMA_BUF_EXT
   // target, the EGL will take a reference to the dma_buf.
   std::vector<EGLint> attrs;
@@ -218,6 +254,7 @@ bool NativePixmapEGLBinding::InitializeFromNativePixmap(
   egl_image_ =
       gl::MakeScopedEGLImage(EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT,
                              static_cast<EGLClientBuffer>(nullptr), &attrs[0]);
+#endif
   if (!egl_image_.get()) {
     return false;
   }

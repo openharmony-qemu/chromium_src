@@ -37,6 +37,7 @@
 #include <memory>
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/callback_helpers.h"
 #include "base/functional/function_ref.h"
 #include "base/memory/weak_ptr.h"
@@ -224,6 +225,25 @@ class TestWebFrameWidgetHost : public mojom::blink::WidgetHost,
       mojo::PendingRemote<mojom::blink::WidgetInputHandlerHost> host,
       bool from_viz);
 
+#if BUILDFLAG(IS_OHOS)
+  void CreateOverlay(const ::SkBitmap& image,
+                     const ::gfx::Rect& image_rect,
+                     const ::gfx::Point& touch_point) override {}
+  void OnOverlayStateChanged(const ::gfx::Rect& image_rect) override {};
+  void GetVisibleRectToWeb(GetVisibleRectToWebCallback callback) override {}
+#endif
+
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  void DidNativeEmbedEvent(
+      mojom::blink::NativeEmbedTouchEventPtr event) override {}
+  void DidNativeEmbedMouseEvent(
+      mojom::blink::NativeEmbedMouseEventPtr event) override {}
+  void GetWordSelection(const String& text,
+                        int8_t offset,
+                        GetWordSelectionCallback callback) override {}
+  void SendCurrentLanguage(const String& ans) override {}
+#endif  // ARKWEB_UNITTESTS
+
  private:
   size_t cursor_set_count_ = 0;
   size_t virtual_keyboard_request_count_ = 0;
@@ -232,11 +252,19 @@ class TestWebFrameWidgetHost : public mojom::blink::WidgetHost,
   mojo::AssociatedReceiver<mojom::blink::FrameWidgetHost> frame_receiver_{this};
 };
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+class TestWebFrameWidget : public WebFrameWidgetImplExt {
+#else
 class TestWebFrameWidget : public WebFrameWidgetImpl {
+#endif
  public:
   template <typename... Args>
   explicit TestWebFrameWidget(Args&&... args)
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+      : WebFrameWidgetImplExt(std::forward<Args>(args)...) {}
+#else
       : WebFrameWidgetImpl(std::forward<Args>(args)...) {}
+#endif
   ~TestWebFrameWidget() override = default;
 
   TestWebFrameWidgetHost& WidgetHost() { return *widget_host_; }
@@ -284,7 +312,25 @@ class TestWebFrameWidget : public WebFrameWidgetImpl {
   void RequestDecode(const cc::DrawImage&,
                      base::OnceCallback<void(bool)>,
                      bool speculative) override;
-
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  gfx::Vector2dF GetOverScrollOffset() override {};
+  void OnTextRecognized(Vector<::blink::mojom::blink::TextRecognizeResultPtr> res, float scale)  override {};
+  void GetImageRect(GetImageRectCallback callback) override {};
+  void OnTextSelected(bool flag) override {};
+  void OnDestroyImageAnalyzerOverlay() override {};
+  void OnFoldStatusChanged(uint32_t foldstatus) override {};
+  void NotifyOverlayStateChanged() override {};
+  void OnDataDetectorSelectText() override {};
+  void SelectRangeV2(const ::gfx::Point& position, bool is_base) override {};
+  void ShowFreeCopyMenu() override {};
+  void RegisterClippedVisualViewportSelectionBounds(
+      gfx::Rect clipped_selection_bounds) override {};
+  void CleanFocusCache() override {};
+  void TouchHitTest(const WebPointerEvent& event, size_t i) override {};
+  void MouseHitTest(const WebMouseEvent& event, int32_t button) override {};
+  void GetInputElementAttributes(
+      HashMap<String, String>& attributes) const override {};
+#endif
   using WebFrameWidgetImpl::GetOriginalScreenInfo;
 
  protected:
@@ -513,7 +559,11 @@ class WebViewHelper : public ScopedMockOverlayScrollbars {
 // Minimal implementation of WebLocalFrameClient needed for unit tests that load
 // frames. Tests that load frames and need further specialization of
 // WebLocalFrameClient behavior should subclass this.
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+class TestWebFrameClient : public WebLocalFrameClientExt {
+#else
 class TestWebFrameClient : public WebLocalFrameClient {
+#endif
  public:
   TestWebFrameClient();
   ~TestWebFrameClient() override;

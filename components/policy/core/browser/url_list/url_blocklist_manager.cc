@@ -55,7 +55,9 @@ constexpr const char* kBypassBlocklistWildcardForSchemes[] = {
     // For internal extension URLs e.g. the Bookmark Manager and the File
     // Manager on Chrome OS.
     "chrome-extension",
-
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    "arkweb-extension",
+#endif
     // NTP on Android.
     "chrome-native",
 

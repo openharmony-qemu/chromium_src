@@ -6,6 +6,7 @@ import("//build/config/clang/clang.gni")
 import("//build/config/rust.gni")
 import("//build/config/sysroot.gni")
 import("//build/rust/rust_static_library.gni")
+import("//arkweb/build/config/sanitizers/sanitizers.gni")
 
 if (is_win) {
   import("//build/toolchain/win/win_toolchain_data.gni")
@@ -305,8 +306,17 @@ template("rust_bindgen_generator") {
       # option is to tell bindgen to ignore all CFI ignorelists.
       args += [ "-fno-sanitize-ignorelist" ]
     }
+
+    if (enable_cfi_protection) {
+      import("//arkweb/build/config/configs.gni")
+      configs -= arkweb_configs
+    }
+
     if (!defined(_library_name)) {
       not_needed([ _bindgen_target_name ])
+    }
+    if (is_hwasan && current_cpu=="arm64") {
+      args += [ "-fno-sanitize=hwaddress" ]
     }
   }
 

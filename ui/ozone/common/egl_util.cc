@@ -33,6 +33,11 @@ const base::FilePath::CharType kDefaultEglSoname[] =
     FILE_PATH_LITERAL("libEGL.so");
 const base::FilePath::CharType kDefaultGlesSoname[] =
     FILE_PATH_LITERAL("libGLESv2.so");
+#elif BUILDFLAG(IS_OHOS)
+const base::FilePath::CharType kDefaultEglSoname[] =
+    FILE_PATH_LITERAL("libEGL.so");
+const base::FilePath::CharType kDefaultGlesSoname[] =
+    FILE_PATH_LITERAL("libGLESv3.so");
 #else  // BUILDFLAG(IS_FUCHSIA)
 const base::FilePath::CharType kDefaultEglSoname[] =
     FILE_PATH_LITERAL("libEGL.so.1");
@@ -148,7 +153,7 @@ bool LoadDefaultEGLGLES2Bindings(
     return true;
 #else
     base::FilePath module_path;
-#if !BUILDFLAG(IS_FUCHSIA)
+#if !BUILDFLAG(IS_FUCHSIA) && !BUILDFLAG(IS_OHOS)
     if (!base::PathService::Get(base::DIR_ASSETS, &module_path))
       return false;
 #endif

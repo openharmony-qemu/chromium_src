@@ -17,7 +17,9 @@
 #include "media/mojo/mojom/renderer.mojom.h"
 #include "mojo/public/cpp/bindings/pending_receiver.h"
 #include "mojo/public/cpp/bindings/pending_remote.h"
-
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+#include "arkweb/chromium_ext/media/base/media_player_url_params.h"
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 namespace media {
 
 class MojoRenderer;
@@ -72,6 +74,22 @@ class MojoRendererFactory final : public RendererFactory {
       const scoped_refptr<base::SequencedTaskRunner>& media_task_runner,
       VideoRendererSink* video_renderer_sink);
 #endif  // defined (OS_ANDROID)
+
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA)
+  std::unique_ptr<MojoRenderer> CreateMediaPlayerRenderer(
+      const scoped_refptr<base::SequencedTaskRunner>& media_task_runner,
+      VideoRendererSink* video_renderer_sink);
+#endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA)
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  std::unique_ptr<MojoRenderer> CreateCustomMediaPlayerRenderer(
+      mojo::PendingRemote<mojom::CustomMediaPlayerRendererClientExtension>
+          client_extension_remote,
+      const scoped_refptr<base::SequencedTaskRunner>& media_task_runner,
+      VideoRendererSink* video_renderer_sink,
+      int player_id,
+      const media::MediaPlayerUrlParams& params);
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 
  private:
   // InterfaceFactory or InterfaceProvider used to create or connect to remote

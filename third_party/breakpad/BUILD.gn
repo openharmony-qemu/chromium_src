@@ -652,7 +652,7 @@ if (is_ios) {
   }
 }
 
-if (is_linux || is_chromeos || is_android) {
+if (is_linux || is_chromeos || is_android || is_ohos) {
   if (current_toolchain == host_system_allocator_toolchain ||
       current_toolchain == default_system_allocator_toolchain) {
     executable("symupload") {

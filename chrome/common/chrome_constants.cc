@@ -101,7 +101,11 @@ const base::FilePath::CharType kStatusTrayWindowClass[] =
     FPL("Chrome_StatusTrayWindow");
 #endif  // BUILDFLAG(IS_WIN)
 
+#if BUILDFLAG(IS_ARKWEB)
+const char kInitialProfile[] = ".";
+#else
 const char kInitialProfile[] = "Default";
+#endif
 const char kMultiProfileDirPrefix[] = "Profile ";
 const base::FilePath::CharType kGuestProfileDir[] = FPL("Guest Profile");
 const base::FilePath::CharType kSystemProfileDir[] = FPL("System Profile");
@@ -142,7 +146,11 @@ const base::FilePath::CharType kOfflinePagePrefetchStoreDirname[] =
     FPL("Offline Pages/prefech_store");
 const base::FilePath::CharType kOfflinePageRequestQueueDirname[] =
     FPL("Offline Pages/request_queue");
+#if BUILDFLAG(IS_ARKWEB)
+const base::FilePath::CharType kPreferencesFilename[] = FPL("UserPrefs.json");
+#else
 const base::FilePath::CharType kPreferencesFilename[] = FPL("Preferences");
+#endif
 const base::FilePath::CharType kPreviewsOptOutDBFilename[] =
     FPL("previews_opt_out.db");
 const base::FilePath::CharType kQueryTileStorageDirname[] = FPL("Query Tiles");

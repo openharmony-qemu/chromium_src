@@ -29,7 +29,9 @@ SkiaOutputSurfaceDependencyImpl::SkiaOutputSurfaceDependencyImpl(
     : gpu_service_impl_(gpu_service_impl),
       surface_handle_(surface_handle),
       client_thread_task_runner_(
-          base::SingleThreadTaskRunner::GetCurrentDefault()) {}
+          base::SingleThreadTaskRunner::GetCurrentDefault()) {
+  impl_utils_ = std::make_unique<SkiaOutputSurfaceDependencyImplUtils>(this);
+}
 
 SkiaOutputSurfaceDependencyImpl::~SkiaOutputSurfaceDependencyImpl() = default;
 

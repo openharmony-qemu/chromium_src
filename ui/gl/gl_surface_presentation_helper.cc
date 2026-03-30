@@ -15,6 +15,7 @@
 #include "ui/gl/gl_context.h"
 #include "ui/gl/gl_fence.h"
 #include "ui/gl/gpu_timing.h"
+#include "arkweb/build/features/features.h"
 
 namespace gl {
 
@@ -96,7 +97,11 @@ bool GLSurfacePresentationHelper::GetFrameTimestampInfoIfAvailable(
     int64_t start = 0;
     int64_t end = 0;
     frame.timer->GetStartEndTimestamps(&start, &end);
+#if DCHECK_IS_ON() && BUILDFLAG(ARKWEB_PER_DFX)
+    *timestamp = base::TimeTicks::Now();
+#else
     *timestamp = base::TimeTicks() + base::Microseconds(start);
+#endif
   } else {
     if (!frame.fence->HasCompleted())
       return false;
@@ -298,6 +303,11 @@ void GLSurfacePresentationHelper::CheckPendingFrames() {
       else
         std::move(frame.callback).Run(gfx::PresentationFeedback::Failure());
     }
+#if BUILDFLAG(IS_ARKWEB)
+    if (gpu_timing_client_) {
+      gpu_timing_client_->ClearQuery();
+    }
+#endif
     pending_frames_.clear();
   }
 

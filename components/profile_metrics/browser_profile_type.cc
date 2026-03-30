@@ -8,6 +8,8 @@
 
 #include "base/supports_user_data.h"
 
+#include "base/logging.h"
+
 namespace profile_metrics {
 
 namespace {
@@ -38,6 +40,9 @@ void SetBrowserProfileType(base::SupportsUserData* browser_context,
                            BrowserProfileType type) {
   browser_context->SetUserData(ProfileTypeUserData::kKey,
                                std::make_unique<ProfileTypeUserData>(type));
+  LOG(INFO) << "SetBrowserProfileType called, context : "
+      << reinterpret_cast<uintptr_t>(browser_context) % 100000000
+      << " type : " << static_cast<int>(type);
 }
 
 BrowserProfileType GetBrowserProfileType(
@@ -47,6 +52,10 @@ BrowserProfileType GetBrowserProfileType(
   // We deliberately don't want to gracefully handle this data missing as all
   // `browser_context`s are supposed to be assigned a type as soon as they are
   // created.
+  if (!profile_type_user_data) {
+    LOG(INFO) << "GetBrowserProfileType data is null, context : "
+      << reinterpret_cast<uintptr_t>(browser_context) % 100000000;
+  }
   CHECK(profile_type_user_data);
   return profile_type_user_data->browser_context_type();
 }

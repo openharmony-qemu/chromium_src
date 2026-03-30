@@ -32,6 +32,10 @@ class StartupBrowserCreator;
 class ShutdownWatcherHelper;
 class WebUsbDetector;
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+class BrowserProcessImplExt;
+#endif
+
 namespace apps {
 class PublisherHostFactory;
 }  // namespace apps
@@ -66,11 +70,11 @@ class ChromeBrowserMainParts : public content::BrowserMainParts {
   static std::unique_ptr<base::RunLoop> TakeRunLoopForTest();
 #endif  // !BUILDFLAG(IS_ANDROID)
 
-#if BUILDFLAG(ENABLE_PROCESS_SINGLETON)
+#if BUILDFLAG(ENABLE_PROCESS_SINGLETON) || BUILDFLAG(ARKWEB_TEST)
   // See ProcessSingletonNotificationCallback() for details.
   static bool ProcessSingletonNotificationForTesting(
       base::CommandLine command_line);
-#endif  // BUILDFLAG(ENABLE_PROCESS_SINGLETON)
+#endif  // BUILDFLAG(ENABLE_PROCESS_SINGLETON) || BUILDFLAG(ARKWEB_TEST)
 
  protected:
   ChromeBrowserMainParts(bool is_integration_test, StartupData* startup_data);
@@ -179,7 +183,11 @@ class ChromeBrowserMainParts : public content::BrowserMainParts {
 
   // Members initialized after / released before main_message_loop_ ------------
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  std::unique_ptr<BrowserProcessImplExt> browser_process_;
+#else
   std::unique_ptr<BrowserProcessImpl> browser_process_;
+#endif
 
 #if !BUILDFLAG(IS_ANDROID)
   // Browser creation happens on the Java side in Android.

@@ -12,6 +12,7 @@
 #include <optional>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/fixed_flat_set.h"
 #include "base/hash/hash.h"
 #include "base/metrics/histogram_functions.h"
@@ -91,7 +92,12 @@
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 
 #if BUILDFLAG(ENABLE_CEF)
+#include "cef/ohos_cef_ext/libcef/browser/chrome/extensions/arkweb_chrome_extension_util_ext.h"
 #include "cef/libcef/browser/chrome/extensions/chrome_extension_util.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/chrome/browser/extensions/extension_tab_util_for_include.cc"
 #endif
 
 using content::NavigationEntry;
@@ -170,7 +176,11 @@ int GetTabIdForExtensions(const WebContents* web_contents) {
     return -1;
   }
 #endif
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  return cef::GetTabIdForWebContents(web_contents);
+#else
   return sessions::SessionTabHelper::IdForTab(web_contents).id();
+#endif 
 }
 
 bool IsFileUrl(const GURL& url) {
@@ -265,7 +275,11 @@ std::optional<GURL> GetOptionsPageUrlToNavigate(const Extension* extension) {
     GURL::Replacements replacements;
     const std::string query = base::StringPrintf("options=%s", extension->id());
     replacements.SetQueryStr(query);
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+    return GURL("hwbrowser://extensions/").ReplaceComponents(replacements);
+#else
     return GURL(chrome::kChromeUIExtensionsURL).ReplaceComponents(replacements);
+#endif
   }
 }
 
@@ -352,7 +366,11 @@ base::expected<base::Value::Dict, std::string> ExtensionTabUtil::OpenTab(
 
   // We can't load extension URLs into incognito windows unless the extension
   // uses split mode. Special case to fall back to a tabbed window.
-  if (url.SchemeIs(kExtensionScheme) &&
+  if ((url.SchemeIs(kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+       || url.SchemeIs(kArkwebExtensionScheme)
+#endif
+           ) &&
       (!extension || !IncognitoInfo::IsSplitMode(extension)) &&
       browser->GetProfile()->IsOffTheRecord()) {
     Profile* original_profile = browser->GetProfile()->GetOriginalProfile();
@@ -506,7 +524,11 @@ int ExtensionTabUtil::GetWindowId(BrowserWindowInterface* browser) {
 }
 
 int ExtensionTabUtil::GetTabId(const WebContents* web_contents) {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  return cef::GetTabIdForWebContents(web_contents);
+#else
   return sessions::SessionTabHelper::IdForTab(web_contents).id();
+#endif
 }
 
 int ExtensionTabUtil::GetWindowIdOfTab(const WebContents* web_contents) {
@@ -629,6 +651,10 @@ api::tabs::Tab ExtensionTabUtil::CreateTabObject(
       tab_object.opener_tab_id = GetTabIdForExtensions(opener->GetContents());
     }
   }
+#endif
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  UpdateWithNWebExtensionTabInfo(tab_object);
 #endif
 
   ScrubTabForExtension(extension, contents, &tab_object, scrub_tab_behavior);

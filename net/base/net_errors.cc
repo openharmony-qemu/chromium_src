@@ -46,9 +46,11 @@ std::string ErrorToShortString(int error) {
 #include "net/base/net_error_list.h"
 #undef NET_ERROR
   default:
-    // TODO(crbug.com/40909121): Figure out why this is firing, fix and upgrade
-    // this to be fatal.
-    DUMP_WILL_BE_NOTREACHED() << error;
+#if !BUILDFLAG(IS_ARKWEB)
+    NOTREACHED();
+#else
+    LOG(ERROR) << "event_message: not support error code " << error;
+#endif
     error_string = "<unknown>";
   }
   return std::string("ERR_") + error_string;

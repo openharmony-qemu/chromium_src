@@ -76,10 +76,10 @@
 #include "url/origin.h"
 
 #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || \
-    BUILDFLAG(IS_CHROMEOS)
+    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 #include "components/webapps/isolated_web_apps/scheme.h"
 #endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) ||
-        // BUILDFLAG(IS_CHROMEOS)
+        // BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 
 namespace web_app {
 
@@ -752,13 +752,16 @@ void WebApp::SetCurrentOsIntegrationStates(
 }
 
 void WebApp::SetIsolationData(IsolationData isolation_data) {
-  CHECK(manifest_id_.is_valid()
-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || \
+#if BUILDFLAG(IS_OHOS)
+  CHECK(manifest_id_.is_valid() &&
+        manifest_id_.SchemeIs(webapps::kIsolatedAppScheme));
+#elif BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || \
     BUILDFLAG(IS_CHROMEOS)
-        && manifest_id_.SchemeIs(webapps::kIsolatedAppScheme))
-#endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) ||
-        // BUILDFLAG(IS_CHROMEOS)
-      ;
+  CHECK(manifest_id_.is_valid() &&
+        manifest_id_.SchemeIs(webapps::kIsolatedAppScheme));
+#else
+  CHECK(manifest_id_.is_valid());
+#endif  // BUILDFLAG(IS_OHOS)
   if (isolation_data.pending_update_info().has_value()) {
     DCHECK_EQ(isolation_data.location().dev_mode(),
               isolation_data.pending_update_info()->location.dev_mode())

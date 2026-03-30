@@ -7,6 +7,7 @@
 #include <limits>
 #include <stack>
 
+#include "arkweb/build/features/features.h"
 #include "base/numerics/checked_math.h"
 #include "third_party/blink/renderer/platform/image-decoders/skia/segment_stream.h"
 #include "third_party/skia/include/codec/SkCodec.h"
@@ -57,9 +58,12 @@ SkiaImageDecoderBase::SkiaImageDecoderBase(
     : ImageDecoder(alpha_option,
                    high_bit_depth_decoding_option,
                    color_behavior,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
                    cc::AuxImage::kDefault,
+#endif
                    max_decoded_bytes),
-      reading_offset_(reading_offset) {}
+      reading_offset_(reading_offset) {
+}
 
 SkiaImageDecoderBase::~SkiaImageDecoderBase() = default;
 

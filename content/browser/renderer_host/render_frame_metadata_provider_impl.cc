@@ -10,6 +10,9 @@
 #include "base/task/single_thread_task_runner.h"
 #include "build/build_config.h"
 #include "content/browser/renderer_host/frame_token_message_queue.h"
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#endif
 
 namespace content {
 
@@ -137,7 +140,11 @@ void RenderFrameMetadataProviderImpl::OnRenderFrameMetadataChanged(
     }
   }
 
+#if BUILDFLAG(IS_ARKWEB)
+  if (base::ohos::IsMobileDevice() || metadata.local_surface_id != last_local_surface_id_) {
+#else
   if (metadata.local_surface_id != last_local_surface_id_) {
+#endif
     last_local_surface_id_ = metadata.local_surface_id;
     for (Observer& observer : observers_) {
       observer.OnLocalSurfaceIdChanged(metadata);

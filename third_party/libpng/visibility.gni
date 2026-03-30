@@ -5,9 +5,19 @@
 # list.
 
 import("//build/config/gclient_args.gni")
+import("//arkweb/build/features/features.gni")
 
 # Chrome does not (and should not) depend on `libpng`.
 visibility = []
+if (arkweb_css_font) {
+  visibility += [
+    # Chrome => ... => freetype => libpng dependency.
+    #
+    # TODO(https://crbug.com/42271123): Remove this once `freetype` has been
+    # replaced with Fontations in PDFium and in other Chrome dependencies.
+    "//third_party/freetype:*",
+  ]
+}
 
 # Dependency edges that are used in projects outside of Chromium that pull in
 # this directory (e.g. ones only needed in standalone PDFium builds).

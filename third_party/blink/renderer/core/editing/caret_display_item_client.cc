@@ -45,15 +45,30 @@
 #include "third_party/blink/renderer/platform/graphics/graphics_context.h"
 #include "third_party/blink/renderer/platform/graphics/paint/drawing_recorder.h"
 
+#if BUILDFLAG(ARKWEB_MENU)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/editing/caret_display_item_client_utils.h"
+#include "third_party/blink/renderer/core/exported/web_view_impl.h"
+#endif
+
 namespace blink {
 
+#if BUILDFLAG(ARKWEB_MENU)
+CaretDisplayItemClient::CaretDisplayItemClient() {
+  caret_display_item_client_utils_ =
+      MakeGarbageCollected<CaretDisplayItemClientUtils>(this);
+}
+#else
 CaretDisplayItemClient::CaretDisplayItemClient() = default;
+#endif  // BUILDFLAG(ARKWEB_MENU)
 CaretDisplayItemClient::~CaretDisplayItemClient() = default;
 void CaretDisplayItemClient::Trace(Visitor* visitor) const {
   visitor->Trace(layout_block_);
   visitor->Trace(previous_layout_block_);
   visitor->Trace(box_fragment_);
   DisplayItemClient::Trace(visitor);
+#if BUILDFLAG(ARKWEB_MENU)
+  visitor->Trace(caret_display_item_client_utils_);
+#endif  // BUILDFLAG(ARKWEB_MENU)
 }
 
 namespace {
@@ -205,6 +220,13 @@ void CaretDisplayItemClient::UpdateStyleAndLayoutIfNeeded(
     return;
   }
 
+#if BUILDFLAG(ARKWEB_MENU)
+  if (caret_display_item_client_utils_ &&
+      caret_display_item_client_utils_->IsViewportScale(new_layout_block)) {
+    needs_paint_invalidation_ = true;
+  }
+#endif
+
   const PhysicalBoxFragment* const new_box_fragment =
       rect_and_block.box_fragment;
   if (new_box_fragment != box_fragment_) {
@@ -339,6 +361,12 @@ void CaretDisplayItemClient::PaintCaret(
   }
 
   gfx::Rect paint_rect = ToPixelSnappedRect(drawing_rect);
+#if BUILDFLAG(ARKWEB_MENU)
+  if (caret_display_item_client_utils_->GetBlinkCaretRect(
+          context, paint_rect, layout_block_, color_)) {
+    return;
+  }
+#endif  // BUILDFLAG(ARKWEB_MENU)
   context.FillRect(paint_rect, color_,
                    PaintAutoDarkMode(layout_block_->StyleRef(),
                                      DarkModeFilter::ElementRole::kForeground));
@@ -372,3 +400,7 @@ String CaretDisplayItemClient::DebugName() const {
 }
 
 }  // namespace blink
+
+#if BUILDFLAG(ARKWEB_MENU)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/editing/caret_display_item_client_utils.cc"
+#endif // BUILDFLAG(ARKWEB_MENU)

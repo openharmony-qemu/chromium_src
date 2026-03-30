@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("//cc/cc.gni")
+import("//arkweb/build/features/features.gni")
 
 cc_component("mojo_embedder") {
   output_name = "cc_mojo_embedder"
@@ -27,4 +28,19 @@ cc_component("mojo_embedder") {
     "//ui/gfx/animation",
     "//ui/gfx/animation/keyframe",
   ]
+
+  if (arkweb_software_compositor) {
+    deps += [
+      "//components/viz/service",
+    ]
+
+    sources += [
+      "//arkweb/chromium_ext/cc/mojo_embedder/software_compositor_registry_ohos.h",
+      "//arkweb/chromium_ext/cc/mojo_embedder/software_compositor_renderer_ohos.cc",
+      "//arkweb/chromium_ext/cc/mojo_embedder/software_compositor_renderer_ohos.h",
+      "//arkweb/chromium_ext/cc/mojo_embedder/async_layer_tree_frame_sink_utils.h",
+      "//arkweb/chromium_ext/cc/mojo_embedder/async_layer_tree_frame_sink_utils.cc",
+    ]
+  }
+
 }

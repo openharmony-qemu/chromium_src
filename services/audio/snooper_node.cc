@@ -108,11 +108,17 @@ void SnooperNode::OnData(const media::AudioBus& input_bus,
   DCHECK_EQ(input_bus.channels(), input_params_.channels());
   DCHECK_EQ(input_bus.frames(), input_params_.frames_per_buffer());
 
+  int64_t write_position_for_trace;
+  {
+    base::AutoLock scoped_lock(lock_);
+    write_position_for_trace = write_position_;
+  }
+
   TRACE_EVENT_WITH_FLOW2("audio", "SnooperNode::OnData", this,
                          TRACE_EVENT_FLAG_FLOW_IN | TRACE_EVENT_FLAG_FLOW_OUT,
                          "reference_time (bogo-μs)",
                          reference_time.since_origin().InMicroseconds(),
-                         "write_position", write_position_);
+                         "write_position", write_position_for_trace);
 
   base::AutoLock scoped_lock(lock_);
 

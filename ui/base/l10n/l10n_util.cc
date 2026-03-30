@@ -468,6 +468,11 @@ std::optional<std::string> CheckAndResolveLocale(std::string_view locale,
         tmp_locale.append("-GB");
       }
     }
+#if BUILDFLAG(ARKWEB_I18N)
+      else if (base::EqualsCaseInsensitiveASCII(lang, "bo")) {
+        tmp_locale.append("-CN");
+      }
+#endif
     if (HasStringsForLocale(tmp_locale, mode)) {
       return tmp_locale;
     }

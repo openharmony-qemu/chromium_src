@@ -9,6 +9,7 @@
 #include <optional>
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "components/password_manager/core/browser/leak_detection/leak_detection_request_factory.h"
 #include "components/password_manager/core/browser/leak_detection/leak_detection_request_utils.h"
 
@@ -36,8 +37,13 @@ class LeakDetectionRequest : public LeakDetectionRequestInterface {
     kMaxValue = kParseError
   };
 
+  #if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+  static constexpr char kLookupSingleLeakEndpoint[] =
+      "https://x.x.x.x";
+#else
   inline static constexpr char kLookupSingleLeakEndpoint[] =
       "https://passwordsleakcheck-pa.googleapis.com/v1/leaks:lookupSingle";
+#endif
   // The header key used to set the criticality of a request.
   // 174067345 represents the extension tag number of
   // `frameworks.client.data.QosExtension`

@@ -26,11 +26,13 @@
 #include "third_party/blink/renderer/core/style/computed_style.h"
 #include "third_party/blink/renderer/platform/graphics/color.h"
 #include "third_party/blink/renderer/platform/runtime_enabled_features.h"
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/hilight/arkweb_highlight_style_utils.h"
+#endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
 
 namespace blink {
 
 namespace {
-
 bool NodeIsReplaced(Node* node) {
   return node && node->GetLayoutObject() &&
          node->GetLayoutObject()->IsLayoutReplaced();
@@ -130,6 +132,11 @@ std::optional<Color> DefaultForegroundColor(
     PseudoId pseudo,
     mojom::blink::ColorScheme color_scheme,
     SearchTextIsActiveMatch search_text_is_active_match) {
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  if (ArkWebHighlightStyleUtils::InSelectionDragging(document)) {
+    return Color::kLightGray;
+  }
+#endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
   switch (pseudo) {
     case kPseudoIdSelection:
       if (!LayoutTheme::GetTheme().SupportsSelectionForegroundColors()) {
@@ -148,10 +155,14 @@ std::optional<Color> DefaultForegroundColor(
           document.GetColorProviderForPainting(color_scheme),
           document.IsInWebAppScope());
     case kPseudoIdTargetText:
+#if BUILDFLAG(ARKWEB_AI)
+      return ArkWebHighlightStyleUtils::GetTargetTextForegroundColor(document, color_scheme);
+#else
       return LayoutTheme::GetTheme().PlatformTextSearchColor(
           false /* active match */, document.InForcedColorsMode(), color_scheme,
           document.GetColorProviderForPainting(color_scheme),
           document.IsInWebAppScope());
+#endif
     case kPseudoIdSpellingError:
     case kPseudoIdGrammarError:
     case kPseudoIdHighlight:
@@ -181,8 +192,12 @@ Color DefaultBackgroundColor(
           document.GetColorProviderForPainting(color_scheme),
           document.IsInWebAppScope());
     case kPseudoIdTargetText:
+#if BUILDFLAG(ARKWEB_AI)
+      return ArkWebHighlightStyleUtils::GetTargetTextBackgroundColor(document, color_scheme);
+#else
       return Color::FromRGBA32(
           shared_highlighting::kFragmentTextBackgroundColorARGB);
+#endif
     case kPseudoIdSpellingError:
     case kPseudoIdGrammarError:
     case kPseudoIdHighlight:
@@ -359,6 +374,11 @@ Color HighlightStyleUtils::HighlightBackgroundColor(
       }
     }
   }
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  if (ArkWebHighlightStyleUtils::InSelectionDragging(document)) {
+    return Color::FromRGBA32(ArkWebHighlightStyleUtils::kBackgroundColorInDragging);
+  }
+#endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
   return result;
 }
 
@@ -424,7 +444,11 @@ HighlightStyleUtils::HighlightPaintingStyle(
     } else {
       colors_from_previous_layer.Put(HighlightColorProperty::kCurrentColor);
     }
-
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+    if (ArkWebHighlightStyleUtils::InSelectionDragging(document)) {
+      highlight_style.fill_color = Color::kLightGray;
+    } else {
+#endif
     maybe_color = MaybeResolveColor(document, originating_style, pseudo_style,
                                     pseudo, GetCSSPropertyWebkitTextFillColor(),
                                     search_text_is_active_match);
@@ -433,7 +457,9 @@ HighlightStyleUtils::HighlightPaintingStyle(
     } else {
       colors_from_previous_layer.Put(HighlightColorProperty::kFillColor);
     }
-
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+    }
+#endif
     // TODO(crbug.com/1147859) ignore highlight ‘text-emphasis-color’
     // https://github.com/w3c/csswg-drafts/issues/7101
     maybe_color = MaybeResolveColor(document, originating_style, pseudo_style,

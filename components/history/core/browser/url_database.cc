@@ -193,8 +193,12 @@ URLID URLDatabase::AddURLInternal(const URLRow& info, bool is_temporary) {
   statement.BindInt(5, info.hidden() ? 1 : 0);
 
   if (!statement.Run()) {
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+    VLOG(0) << "Failed to add url: *** to table history.urls.";
+#else
     VLOG(0) << "Failed to add url " << info.url().possibly_invalid_spec()
             << " to table history.urls.";
+#endif
     return 0;
   }
   return GetDB().GetLastInsertRowId();

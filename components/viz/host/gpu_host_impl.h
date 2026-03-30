@@ -11,6 +11,8 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
+#include "arkweb/ohos_adapter_ndk/distributeddatamgr_adapter/ohos_web_snapshot_data_base.h"
 #include "base/containers/flat_map.h"
 #include "base/functional/callback.h"
 #include "base/memory/raw_ptr.h"
@@ -48,6 +50,12 @@
 #if BUILDFLAG(IS_WIN)
 #include "services/viz/privileged/mojom/gl/info_collection_gpu_service.mojom.h"
 #include "ui/gfx/mojom/dxgi_info.mojom.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+#include "arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h"
+#include "third_party/skia/include/core/SkPixmap.h"
+#include "ui/gfx/geometry/rect.h"
 #endif
 
 namespace gfx {
@@ -196,6 +204,12 @@ class VIZ_HOST_EXPORT GpuHostImpl : public mojom::GpuHost,
                            bool sync,
                            EstablishChannelCallback callback);
   void SetChannelClientPid(int client_id, base::ProcessId client_pid);
+#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
+  std::string GetSurfaceId(int32_t native_embed_id);
+  void SetTransformHint(uint32_t rotation, uint32_t window_id);
+  void DestroyNativeWindow(uint32_t native_window_id);
+  void Discard(uint32_t native_window_id);
+#endif
   void SetChannelDiskCacheHandle(int client_id,
                                  const gpu::GpuDiskCacheHandle& handle);
   void RemoveChannelDiskCacheHandles(int client_id);
@@ -229,6 +243,35 @@ class VIZ_HOST_EXPORT GpuHostImpl : public mojom::GpuHost,
 
   void MaybeSendFontRenderParams();
   gpu::GpuProcessHostShmCount* GetShaderCacheShmCountForTesting();
+
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+  void StartMonitor(int32_t nweb_id);
+  void StopMonitor();
+#endif
+
+#if BUILDFLAG(IS_ARKWEB)
+  void SetVisible(int nweb_id, bool visible);
+#endif
+
+#if BUILDFLAG(ARKWEB_SLIDE_LTPO)
+  void SetHasTouchPoint(bool has_touch_point);
+  void ReportSlidingFrameRate(int32_t frame_rate);
+  void SetLTPOStrategy(int32_t strategy);
+#endif
+
+#if BUILDFLAG(ARKWEB_D_VSYNC)
+  void SetIsFling(bool is_fling_enabled);
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  void SendBlanklessSnapshotInfo(mojom::BlanklessSendInfoPtr infoPtr,
+                                 mojo::ScopedSharedBufferHandle buffer,
+                                 mojom::BlanklessBitmapMetadataPtr metadata) override;
+  static void DumpBlanklessSnapshot(mojom::BlanklessSendInfoPtr blankless_info,
+                                    mojo::ScopedSharedBufferHandle buffer,
+                                    mojom::BlanklessBitmapMetadataPtr metadata);
+  void ClearBlanklessSnapshotInfo(uint64_t blankless_key) override;
+#endif
 
  private:
   friend class GpuHostImplTestApi;

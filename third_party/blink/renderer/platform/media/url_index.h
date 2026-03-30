@@ -28,6 +28,10 @@
 #include "third_party/blink/renderer/platform/wtf/ref_counted.h"
 #include "third_party/blink/renderer/platform/wtf/vector.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif // IS_ARKWEB_EXT
+
 namespace base {
 class SingleThreadTaskRunner;
 }
@@ -39,6 +43,10 @@ const int64_t kPositionNotSpecified = -1;
 class ResourceFetchContext;
 class UrlData;
 class UrlIndexTest;
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+using MediaWebURLErrorCB = base::RepeatingCallback<void(int)>;
+#endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
 // A multibuffer for loading media resources which knows
 // how to create MultiBufferDataProviders to load data
@@ -54,6 +62,16 @@ class PLATFORM_EXPORT ResourceMultiBuffer : public MultiBuffer {
   std::unique_ptr<MultiBuffer::DataProvider> CreateWriter(
       const BlockId& pos,
       bool is_client_audio_element) override;
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  std::unique_ptr<DataProvider> CreateWriter(const BlockId& pos,
+                                             bool is_client_audio_element,
+                                             int32_t preload_size,
+                                             int32_t request_size,
+                                             uint16_t byte_rate,
+                                             std::string id) override;
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
   bool RangeSupported() const override;
   void OnEmpty() override;
 
@@ -172,6 +190,19 @@ class PLATFORM_EXPORT UrlData : public RefCounted<UrlData> {
   // Fail, tell all clients that a failure has occurred.
   void Fail();
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+  MediaWebURLErrorCB& GetMediaWebURLErrorCB();
+  void SetMediaWebURLErrorCB(MediaWebURLErrorCB cb);
+  void NotifyMediaWebURLError(int reason);
+#endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  bool IsNeedFallback();
+  void SetNeedFallback();
+  bool IsCreateSegmentationProvider();  // see commnets in definition
+  std::string CreateWriterInfo();
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
   // Callback for receiving notifications when a redirect occurs.
   using RedirectCB = base::OnceCallback<void(const scoped_refptr<UrlData>&)>;
 
@@ -268,6 +299,15 @@ class PLATFORM_EXPORT UrlData : public RefCounted<UrlData> {
   ResourceMultiBuffer multibuffer_;
   Vector<RedirectCB> redirect_callbacks_;
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+  MediaWebURLErrorCB media_url_error_cb_;
+#endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  bool use_video_load_opt_ = false;
+  bool need_fall_back_ = false;
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
   THREAD_CHECKER(thread_checker_);
 };
 
@@ -315,6 +355,11 @@ class PLATFORM_EXPORT UrlIndex : public base::MemoryPressureListener {
   // Returns true kMaxParallelPreload or more urls are loading at the same time.
   bool HasReachedMaxParallelPreload() const;
 
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  bool IsNewsFeedPageFitted() { return news_feed_page_fitted_;}
+  void SetNewsFeedPageFitted(bool val) { news_feed_page_fitted_ = val;}
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
   // Protected rather than private for testing.
  protected:
   friend class UrlData;
@@ -338,6 +383,10 @@ class PLATFORM_EXPORT UrlIndex : public base::MemoryPressureListener {
   // log2 of block size in multibuffer cache. Defaults to kBlockSizeShift.
   // Currently only changed for testing purposes.
   const int block_shift_;
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  std::atomic<bool> news_feed_page_fitted_ {false};
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 
   // Must be async, because it runs on the renderer's main thread, which is not
   // the process's main thread in --single-process mode.

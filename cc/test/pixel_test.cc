@@ -6,7 +6,7 @@
 
 #include <memory>
 #include <utility>
-
+#include "base/files/file_util.h"
 #include "base/command_line.h"
 #include "base/feature_list.h"
 #include "base/functional/bind.h"
@@ -182,9 +182,15 @@ bool PixelTest::RunPixelTestWithCopyOutputRequestAndArea(
   RenderReadbackTargetAndAreaToResultBitmap(pass_list, target, copy_rect);
 
   base::FilePath test_data_dir;
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  if (!base::PathService::Get(viz::Paths::DIR_TEST_DATA, &test_data_dir)) {
+    base::GetCurrentDirectory(&test_data_dir);
+  }
+#else
   if (!base::PathService::Get(viz::Paths::DIR_TEST_DATA, &test_data_dir)) {
     return false;
   }
+#endif
 
   // If this is false, we didn't set up a readback on a render pass.
   if (!result_bitmap_) {

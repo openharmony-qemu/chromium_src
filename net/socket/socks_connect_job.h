@@ -22,6 +22,9 @@
 #include "net/socket/connect_job_params.h"
 #include "net/socket/socks_client_socket.h"
 #include "net/traffic_annotation/network_traffic_annotation.h"
+#if BUILDFLAG(ENABLE_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace net {
 
@@ -107,6 +110,10 @@ class NET_EXPORT_PRIVATE SOCKSConnectJob : public ConnectJob,
   // Returns the handshake timeout used by SOCKSConnectJobs.
   static base::TimeDelta HandshakeTimeoutForTesting();
 
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+  void SetConnectTimeout(int timeout_override) override;
+#endif
+
  private:
   enum State {
     STATE_TRANSPORT_CONNECT,
@@ -150,6 +157,10 @@ class NET_EXPORT_PRIVATE SOCKSConnectJob : public ConnectJob,
   raw_ptr<SOCKSClientSocket> socks_socket_ptr_;
 
   ResolveErrorInfo resolve_error_info_;
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+  // Only for transport_connect_job
+  int timeout_override_for_nested_job_{0};
+#endif
 };
 
 }  // namespace net

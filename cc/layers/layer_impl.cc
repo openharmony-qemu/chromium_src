@@ -117,6 +117,8 @@ LayerImpl::LayerImpl(LayerTreeImpl* tree_impl, int id)
   DCHECK(layer_tree_impl_);
   layer_tree_impl_->RegisterLayer(this);
 
+  layer_impl_utils_ = std::make_unique<LayerImplUtils>(this);
+
   SetNeedsPushProperties(LayerImpl::kChangedAllProperties);
 }
 
@@ -455,6 +457,10 @@ void LayerImpl::PushPropertiesTo(LayerImpl* layer) {
       layer->layer_property_changed_from_property_trees_ = true;
     }
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+    layer_impl_utils_->LayerImplPushPropertiesTo(layer);
+#endif
+
     layer->SetBounds(bounds_);
 
     layer->UnionUpdateRect(update_rect_);
@@ -476,6 +482,11 @@ void LayerImpl::PushPropertiesTo(LayerImpl* layer) {
 
   // Reset any state that should be cleared for the next update.
   ResetChangeTracking();
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  layer->layer_impl_utils()->SetShouldInterceptTouchEvent(
+      layer_impl_utils_->ShouldInterceptTouchEvent());
+#endif
 }
 
 bool LayerImpl::IsAffectedByPageScale() const {
@@ -483,6 +494,12 @@ bool LayerImpl::IsAffectedByPageScale() const {
   return transform_tree.Node(transform_tree_index())
       ->in_subtree_of_page_scale_layer;
 }
+
+#if BUILDFLAG(ARKWEB_WEBGL)
+bool LayerImpl::ShouldDeferImplInvalidation() const {
+  return false;
+}
+#endif
 
 DamageReasonSet LayerImpl::GetDamageReasonsFromLayerPropertyChange() const {
   DamageReasonSet reasons;

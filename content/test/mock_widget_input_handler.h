@@ -15,6 +15,7 @@
 #include "mojo/public/cpp/bindings/receiver.h"
 #include "mojo/public/cpp/bindings/remote.h"
 #include "third_party/blink/public/mojom/input/input_handler.mojom.h"
+#include "arkweb/build/features/features.h"
 
 namespace content {
 
@@ -74,7 +75,6 @@ class MockWidgetInputHandler : public blink::mojom::WidgetInputHandler {
     // the message call name (eg. MouseCaptureLost) or the name of an
     // input event (eg. GestureScrollBegin).
     const std::string& name() const { return name_; }
-
    private:
     std::string name_;
   };
@@ -265,6 +265,10 @@ class MockWidgetInputHandler : public blink::mojom::WidgetInputHandler {
       std::optional<std::unique_ptr<blink::WebCoalescedInputEvent>>
           original_event_for_gesture,
       DispatchEventCallback callback) override;
+#if BUILDFLAG(IS_ARKWEB)
+  void TryStartFling() override {}
+  void TryFinishFling() override {}
+#endif
   void DispatchNonBlockingEvent(
       std::unique_ptr<blink::WebCoalescedInputEvent> event) override;
   void WaitForInputProcessed(WaitForInputProcessedCallback callback) override;
@@ -287,7 +291,18 @@ class MockWidgetInputHandler : public blink::mojom::WidgetInputHandler {
       bool animate,
       const std::optional<cc::BrowserControlsOffsetTagModifications>&
           offset_tag_modifications) override;
-
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  void SetGestureEventResult(bool result,
+                             bool stopPropagation,
+                             int32_t fingerId) override {}
+  void SetNativeEmbedMode(bool flag) override {}
+  void AttachSoftwareCompositorOhos(::mojo::PendingReceiver<::blink::mojom::SoftwareCompositorOhos>
+    compositor_request) override {}
+  void ScrollBy(float delta_x, float delta_y) override {}
+  void SetMouseEventResult(bool result, bool stopPropagation) override {}
+  void SetBypassVsyncCondition(int32_t condition) override {}
+  void SetEnableCustomVideoPlayer(bool flag) override {}
+#endif
   void FlushReceiverForTesting();
 
   using MessageVector = std::vector<std::unique_ptr<DispatchedMessage>>;

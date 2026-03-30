@@ -118,6 +118,14 @@ class TestLayerTreeFrameSink::TestCompositorFrameSinkImpl
       : support_(support), receiver_(this, std::move(receiver)) {}
   ~TestCompositorFrameSinkImpl() override = default;
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  void ReportKeyThreadIds(const std::vector<int32_t>& thread_ids,
+                          int32_t process_id,
+                          bool is_created) override {}
+
+  void OnSetBypassVsyncCondition(int32_t condition) override {}
+#endif
+
  private:
   // viz::mojom::CompositorFrameSink:
   void SetParams(viz::mojom::CompositorFrameSinkParamsPtr params) override {}

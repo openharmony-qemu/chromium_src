@@ -664,16 +664,23 @@ bool Shell::HandleKeyboardEvent(WebContents* source,
 
 bool Shell::DidAddMessageToConsole(WebContents* source,
                                    blink::mojom::ConsoleMessageLevel log_level,
+#if BUILDFLAG(ARKWEB_CONSOLE_LOGGING)
+                                   blink::mojom::ConsoleMessageSource log_source,
+#endif
                                    const std::u16string& message,
                                    int32_t line_no,
                                    const std::u16string& source_id) {
   return switches::IsRunWebTestsSwitchPresent();
 }
 
-void Shell::RendererUnresponsive(
-    WebContents* source,
+void Shell::RendererUnresponsive(WebContents* source,
     RenderWidgetHost* render_widget_host,
-    base::RepeatingClosure hang_monitor_restarter) {
+                                 base::RepeatingClosure hang_monitor_restarter
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+                                 ,
+                                 RendererIsUnresponsiveReason reason
+#endif
+) {
   LOG(WARNING) << "renderer unresponsive";
 }
 

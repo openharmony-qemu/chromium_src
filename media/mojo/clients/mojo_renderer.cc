@@ -20,6 +20,12 @@
 #include "media/mojo/clients/mojo_demuxer_stream_impl.h"
 #include "media/mojo/common/media_type_converters.h"
 #include "media/renderers/video_overlay_factory.h"
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+#include "base/task/bind_post_task.h"
+#endif // ARKWEB_VIDEO_ASSISTANT
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/media/mojo/clients/mojo_renderer_for_include.cc"
+#endif
 
 namespace media {
 
@@ -45,6 +51,10 @@ MojoRenderer::~MojoRenderer() {
 
 void MojoRenderer::Initialize(MediaResource* media_resource,
                               media::RendererClient* client,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                              RequestSurfaceCB request_surface_cb,
+                              VideoDecoderChangedCB decoder_changed_cb,
+#endif // ARKWEB_VIDEO_ASSISTANT
                               PipelineStatusCallback init_cb) {
   DVLOG(1) << __func__;
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
@@ -59,6 +69,11 @@ void MojoRenderer::Initialize(MediaResource* media_resource,
 
   media_resource_ = media_resource;
   init_cb_ = std::move(init_cb);
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  request_surface_cb_ = std::move(request_surface_cb);
+  decoder_changed_cb_ = std::move(decoder_changed_cb);
+#endif // ARKWEB_VIDEO_ASSISTANT
 
   // Create mojom::DemuxerStream for each demuxer stream and bind its lifetime
   // to the pipe.
@@ -85,6 +100,9 @@ void MojoRenderer::Initialize(MediaResource* media_resource,
   // Using base::Unretained(this) is safe because |this| owns
   // |remote_renderer_|, and the callback won't be dispatched if
   // |remote_renderer_| is destroyed.
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  InitializeRendererFromUrlExt();
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
   remote_renderer_->Initialize(client_receiver_.BindNewEndpointAndPassRemote(),
                                std::move(stream_proxies),
                                base::BindOnce(&MojoRenderer::OnInitialized,
@@ -335,6 +353,11 @@ void MojoRenderer::OnInitialized(media::RendererClient* client, bool success) {
     // It'd be nice to provide this before Initialize(), but that causes some
     // MojoRenderer implementations to crash.
     SetVolume(volume_);
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+    OnInitializedExt();
+#endif
+
   }
 
   std::move(init_cb_).Run(success ? PIPELINE_OK
@@ -374,5 +397,4 @@ void MojoRenderer::CancelPendingCallbacks() {
   if (cdm_attached_cb_)
     std::move(cdm_attached_cb_).Run(false);
 }
-
 }  // namespace media

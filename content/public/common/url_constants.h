@@ -17,7 +17,11 @@ namespace content {
 // TODO(jam): some of these don't below in the content layer, but are accessed
 // from there.
 inline constexpr char kChromeDevToolsScheme[] = "devtools";
+#if (BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_DEVTOOLS))
+inline constexpr char kChromeErrorScheme[] = "arkweb-error";
+#else
 inline constexpr char kChromeErrorScheme[] = "chrome-error";
+#endif
 inline constexpr char kChromeUIScheme[] = "chrome";  // Used for WebUIs.
 inline constexpr char kChromeNativeScheme[] = "chrome-native";
 inline constexpr char kChromeUIUntrustedScheme[] = "chrome-untrusted";
@@ -67,12 +71,22 @@ inline constexpr char kChromeUIWebXrInternalsHost[] = "webxr-internals";
 // Special URL used to start a navigation to an error page.
 // This error URL is loaded in normal web renderer processes, so it should not
 // have a chrome:// scheme that might let it be confused with a WebUI page.
+#if (BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_DEVTOOLS))
+inline constexpr char kUnreachableWebDataURL[] =
+    "arkweb-error://webdata/";
+#else
 inline constexpr char kUnreachableWebDataURL[] =
     "chrome-error://chromewebdata/";
+#endif
 
 // Special URL used to rewrite URLs coming from untrusted processes, when the
 // source process is not allowed access to the initially requested URL.
 inline constexpr char kBlockedURL[] = "about:blank#blocked";
+
+#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+inline constexpr char kArkWebUIScheme[] = "arkweb";
+inline constexpr char kArkWebUIResourcesURL[] = "arkweb://resources/";
+#endif
 
 }  // namespace content
 

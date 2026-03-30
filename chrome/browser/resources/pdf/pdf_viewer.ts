@@ -40,6 +40,7 @@ import type {Attachment, DocumentMetadata, ExtendedKeyEvent, Point} from './cons
 // <if expr="enable_pdf_ink2">
 import {AnnotationMode} from './constants.js';
 // </if>
+import {ScreenWidth} from './constants.js';
 import {FittingType, FormFieldFocusType} from './constants.js';
 // <if expr="enable_pdf_save_to_drive">
 import {SaveToDriveBubbleRequestType, SaveToDriveState} from './constants.js';
@@ -128,6 +129,17 @@ interface ZoomBounds {
   max: number;
 }
 
+/* arkweb_pdf extend Window api */
+declare global {
+  interface FileSystemHandle {
+    createWritable(): Promise<FileSystemWritableFileStream>;
+  }
+
+  interface Window {
+    showSaveFilePicker(opts: unknown): Promise<FileSystemHandle>;
+  }
+}
+
 /**
  * Return the filename component of a URL, percent decoded if possible.
  * Exported for tests.
@@ -145,6 +157,63 @@ export function getFilenameFromURL(url: string): string {
     }
     throw e;
   }
+}
+
+/* arkweb_pdf parse the parameters encoded in the fragment of a URL */
+export function parseUrlParams(url: string): URLSearchParams {
+  const urlObj = new URL(url);
+  const combinedParams = new URLSearchParams();
+
+  // parse (?query=string)
+  urlObj.searchParams.forEach((value, key) => {
+    combinedParams.append(key, value);
+  });
+
+  const fragment = urlObj.hash.substring(1);
+  const fragmentParams = new URLSearchParams(fragment);
+  if (Array.from(fragmentParams).length === 1) {
+    const key = Array.from(fragmentParams.keys())[0]!;
+    if (fragmentParams.get(key) === '') {
+      fragmentParams.append('nameddest', key);
+      fragmentParams.delete(key);
+    }
+  }
+
+  // parse fragment parameters (#section)
+  fragmentParams.forEach((value, key) => {
+    combinedParams.append(key, value);
+  });
+
+  return combinedParams;
+}
+
+/* arkweb_pdf parses URL to extract background color parameter */
+export function getBackgroundColorFromURL(url: string): number {
+  const params = parseUrlParams(url);
+  const colorValues = params.getAll('pdfbackgroundcolor');
+  const pdfBackgroundColor = colorValues.length > 0 ? colorValues[colorValues.length - 1] : null;
+
+  // return default color if parameter not found
+  if (!pdfBackgroundColor) {
+    return BACKGROUND_COLOR;
+  }
+
+  // validate 6-digit hex color format
+  if (/^[0-9a-f]{6}$/i.test(pdfBackgroundColor)) {
+    // add fully opaque alpha channel (0xff)
+    return parseInt('ff' + pdfBackgroundColor.toLowerCase(), 16);
+  }
+
+  // validate 3-digit shorthand hex format
+  if (/^[0-9a-f]{3}$/i.test(pdfBackgroundColor)) {
+    const fullColor = pdfBackgroundColor.toLowerCase().split('')
+                      .map(c => c + c)
+                      .join('');
+    return parseInt('ff' + fullColor, 16);
+  }
+
+  // return default color for invalid formats
+  return BACKGROUND_COLOR;
 }
 
 function eventToPromise(event: string, target: HTMLElement): Promise<void> {
@@ -477,7 +546,9 @@ export class PdfViewerElement extends PdfViewerBaseElement {
   // </if> enable_pdf_ink2 or enable_pdf_save_to_drive
 
   getBackgroundColor(): number {
-    return BACKGROUND_COLOR;
+    /* arkweb_pdf parses URL to extract background color parameter */
+    const backgroundColor = getBackgroundColorFromURL(this.originalUrl);
+    return backgroundColor;
   }
 
   setPluginSrc(plugin: HTMLEmbedElement) {
@@ -888,6 +959,13 @@ export class PdfViewerElement extends PdfViewerBaseElement {
     this.twoUpViewEnabled_ = this.viewport.twoUpViewEnabled();
 
     assert(this.currentController);
+    /* arkweb_pdf two-page in landscape restore default when portrait */
+    if ((window.visualViewport ? window.visualViewport.width :
+        screen.width) < ScreenWidth.PHONE_500) {
+      if (this.twoUpViewEnabled_) {
+        this.currentController.setTwoUpView(false);
+      }
+    }    
     this.currentController.viewportChanged();
     // <if expr="enable_pdf_ink2">
     if (this.pdfInk2Enabled_) {
@@ -1304,6 +1382,15 @@ export class PdfViewerElement extends PdfViewerBaseElement {
         writer.write(blob);
       }
     }
+  }
+
+  /**
+   * arkweb_pdf: Transfer to controller to do click bookmark.
+   * @param e The event which contains the id of the clicked bookmark.
+   */
+  protected async onClickBookmark_(e: CustomEvent<string>) {
+    const bookmarkId = e.detail;
+    await this.currentController?.onClickBookmark(bookmarkId);
   }
 
   /**

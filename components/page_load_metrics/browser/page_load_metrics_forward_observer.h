@@ -91,6 +91,7 @@ class PageLoadMetricsForwardObserver final
   void OnDomContentLoadedEventStart(
       const mojom::PageLoadTiming& timing) override;
   void OnLoadEventStart(const mojom::PageLoadTiming& timing) override;
+  void OnLoadEventEnd(const mojom::PageLoadTiming& timing) override {}
   void OnParseStart(const mojom::PageLoadTiming& timing) override;
   void OnParseStop(const mojom::PageLoadTiming& timing) override;
   void OnConnectStart(const mojom::PageLoadTiming& timing) override;
@@ -193,6 +194,11 @@ class PageLoadMetricsForwardObserver final
                            bool is_on_device_auction,
                            content::AuctionResult result) override;
   void OnPrimaryPageRenderProcessGone() override;
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  void OnFirstContentfulPaintAfterBackForwardCacheRestoreInPage(
+      const mojom::BackForwardCacheTiming& timing,
+      size_t index) override;
+#endif
 
   // Holds the forward target observer running in the parent PageLoadTracker.
   base::WeakPtr<PageLoadMetricsObserverInterface> parent_observer_;

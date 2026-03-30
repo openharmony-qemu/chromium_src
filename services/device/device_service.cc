@@ -27,6 +27,7 @@
 #include "services/device/vibration/vibration_manager_impl.h"
 #include "services/device/wake_lock/wake_lock_provider.h"
 #include "services/network/public/cpp/shared_url_loader_factory.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include "base/android/jni_android.h"
@@ -46,6 +47,11 @@
 #if (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)) && defined(USE_UDEV)
 #include "services/device/hid/input_service_linux.h"
 #endif
+
+#if BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
+#include "services/device/res_sched_report/res_sched_report.h"
+#include "services/device/sysprop_render_observer/sysprop_render_observer.h"
+#endif  // BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
 
 namespace device {
 
@@ -208,10 +214,15 @@ void DeviceService::BindVibrationManager(
 #if !BUILDFLAG(IS_ANDROID)
 void DeviceService::BindHidManager(
     mojo::PendingReceiver<mojom::HidManager> receiver) {
+#if BUILDFLAG(ARKWEB_BUGFIX_CRASH)
+  // OHOS platform functions is not implemented.
+  LOG(INFO) << "OHOS don't support hid_device.";
+#else
   if (!hid_manager_) {
     hid_manager_ = std::make_unique<HidManagerImpl>();
   }
   hid_manager_->AddReceiver(std::move(receiver));
+#endif  // BUILDFLAG(ARKWEB_BUGFIX_CRASH)
 }
 #endif
 
@@ -281,6 +292,8 @@ void DeviceService::BindPublicIpAddressGeolocationProvider(
   public_ip_address_geolocation_provider_->Bind(std::move(receiver));
 }
 
+#include "arkweb/chromium_ext/service/device/device_service_ext.cc"
+
 void DeviceService::BindScreenOrientationListener(
     mojo::PendingReceiver<mojom::ScreenOrientationListener> receiver) {
 #if BUILDFLAG(IS_ANDROID)
@@ -322,8 +335,9 @@ void DeviceService::BindTimeZoneMonitor(
     return;
   }
 
-  if (!time_zone_monitor_)
+  if (!time_zone_monitor_) {
     time_zone_monitor_ = TimeZoneMonitor::Create(file_task_runner_);
+  }
   time_zone_monitor_->Bind(std::move(receiver));
 }
 

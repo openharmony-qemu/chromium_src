@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("//build/config/cast.gni")
+import("//arkweb/build/features/features.gni")
 
 if (is_android) {
   import("//build/config/android/config.gni")
@@ -31,14 +32,14 @@ source_set("browser") {
     "//content/public/common",
   ]
 
-  if (is_castos || is_android) {
+  if (is_castos || is_android || arkweb_crashpad) {
     sources += [
       "crash_handler_host_linux.cc",
       "crash_handler_host_linux.h",
     ]
   }
 
-  if (is_castos) {
+  if (is_castos || is_chromeos) {
     configs += [ "//third_party/breakpad:client_config" ]
     public_configs = [ "//third_party/breakpad:client_config" ]
     deps += [ "//third_party/breakpad:client" ]
@@ -60,6 +61,12 @@ source_set("browser") {
     deps += [
       ":jni_headers",
       "//mojo/public/cpp/bindings",
+      "//third_party/crashpad/crashpad/client",
+    ]
+  }
+
+  if (arkweb_crashpad) {
+    deps += [
       "//third_party/crashpad/crashpad/client",
     ]
   }

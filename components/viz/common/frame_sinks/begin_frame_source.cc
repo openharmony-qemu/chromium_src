@@ -46,8 +46,10 @@ uint64_t GenerateSourceId(uint32_t restart_id) {
 // BeginFrame.
 void FilterAndIssueBeginFrame(BeginFrameObserver* observer,
                               const BeginFrameArgs& args) {
-  if (args.animate_only && !observer->WantsAnimateOnlyBeginFrames())
+  if (args.animate_only && !observer->WantsAnimateOnlyBeginFrames()) {
+    TRACE_EVENT0("viz", "FilterAndIssueBeginFrame animate_only");
     return;
+  }
   observer->OnBeginFrame(args);
 }
 
@@ -529,6 +531,12 @@ void ExternalBeginFrameSource::AddObserver(BeginFrameObserver* obs) {
   BeginFrameArgs missed_args = GetMissedBeginFrameArgs(obs);
   if (missed_args.IsValid()) {
     DCHECK_EQ(BeginFrameArgs::MISSED, missed_args.type);
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+    base::TimeTicks now = base::TimeTicks::Now();
+    if (condition_ && missed_args.deadline < now) {
+      missed_args.deadline = now + missed_args.interval / 4;
+    }
+#endif
     FilterAndIssueBeginFrame(obs, missed_args);
   }
 }
@@ -595,6 +603,9 @@ void ExternalBeginFrameSource::OnBeginFrame(const BeginFrameArgs& args) {
   for (BeginFrameObserver* obs : observers) {
     if (!CheckBeginFrameContinuity(obs, args))
       continue;
+#if BUILDFLAG(ARKWEB_GPU_SERVICE)
+    TRACE_EVENT0("viz", "ExternalBeginFrameSource::OnBeginFrame Process");
+#endif
     FilterAndIssueBeginFrame(obs, args);
   }
   IssueBeginFrameToSchedulerClient(args);

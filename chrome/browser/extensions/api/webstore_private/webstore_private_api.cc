@@ -213,6 +213,10 @@ const char kIncognitoError[] =
 const char kParentBlockedExtensionInstallError[] =
     "Parent has blocked extension/app installation";
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+const char kWebstoreInvalidTypeError[] = "Invalid type";
+#endif
+
 #if BUILDFLAG(SAFE_BROWSING_AVAILABLE)
 // The number of user gestures to trace back for the referrer chain.
 const int kExtensionReferrerUserGestureLimit = 2;
@@ -505,6 +509,19 @@ void WebstorePrivateBeginInstallWithManifest3Function::OnWebstoreParseSuccess(
     return;
   }
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  // ArkWeb currently doesn't support installing non-extension applications from
+  // web store.
+  if (!dummy_extension_->is_extension()) {
+    LOG(INFO) << "Install aborted: non-extension applications not supported";
+    Respond(
+        BuildResponse(api::webstore_private::Result::kUnsupportedExtensionType,
+                      kWebstoreInvalidTypeError));
+    Release();
+    return;
+  }
+#endif
+
   content::WebContents* web_contents = GetSenderWebContents();
   if (!web_contents) {
     // The browser window has gone away.
@@ -540,7 +557,11 @@ void WebstorePrivateBeginInstallWithManifest3Function::OnWebstoreParseSuccess(
             install_status == kCanRequest
                 ? ExtensionInstallPrompt::EXTENSION_REQUEST_PROMPT
                 : ExtensionInstallPrompt::EXTENSION_PENDING_REQUEST_PROMPT),
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+        ExtensionInstallPrompt::GetOhosShowDialogCallback());
+#else
         ExtensionInstallPrompt::GetDefaultShowDialogCallback());
+#endif
   } else {
     ReportWebStoreInstallEsbAllowlistParameter(details().esb_allowlist);
 
@@ -937,7 +958,11 @@ void WebstorePrivateBeginInstallWithManifest3Function::ShowInstallDialog(
                          OnInstallPromptDone,
                      this),
       dummy_extension_.get(), &icon_, std::move(prompt),
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      ExtensionInstallPrompt::GetOhosShowDialogCallback());
+#else
       ExtensionInstallPrompt::GetDefaultShowDialogCallback());
+#endif
 }
 
 void WebstorePrivateBeginInstallWithManifest3Function::

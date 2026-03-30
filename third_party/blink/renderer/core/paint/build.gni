@@ -2,6 +2,10 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
+
 blink_core_sources_paint = [
   "background_image_geometry.cc",
   "background_image_geometry.h",
@@ -283,3 +287,27 @@ blink_core_tests_paint = [
   "video_painter_test.cc",
   "view_painter_test.cc",
 ]
+
+if (arkweb_same_layer) {
+  blink_core_sources_paint += arkweb_third_patry_blink_renderer_core_paint_resources
+}
+
+if (arkweb_scrollbar) {
+  blink_core_sources_paint += arkweb_third_patry_blink_renderer_core_paint_scrollbar_resources
+}
+
+if (arkweb_blank_screen_detection) {
+  blink_core_sources_paint += arkweb_third_party_blink_renderer_core_blank_screen_detector_resources
+}
+
+if (arkweb_first_screen_paint || arkweb_blank_screen_detection) {
+  blink_core_sources_paint += arkweb_third_party_blink_renderer_core_first_screen_paint_resources
+}
+
+if (arkweb_blank_optimize) {
+  blink_core_sources_paint += arkweb_third_patry_blink_renderer_core_paint_timing_detector_resources
+}
+
+if (is_arkweb) {
+  blink_core_sources_paint += arkweb_third_party_blink_core_sources_paint_resources
+}

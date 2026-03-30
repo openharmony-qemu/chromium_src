@@ -236,10 +236,20 @@ void MultiBufferReader::UpdateInternalState() {
   if (preload_pos_ < block_ceil(end_)) {
     if (preload_pos_ < max_preload) {
       loading_ = true;
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+      multibuffer_->AddReader(preload_pos_, this, preload_size_, request_size_,
+                              byte_rate_, id_);
+#else
       multibuffer_->AddReader(preload_pos_, this);
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
     } else if (multibuffer_->Contains(preload_pos_ - 1)) {
       --preload_pos_;
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+      multibuffer_->AddReader(preload_pos_, this, preload_size_, request_size_,
+                              byte_rate_, id_);
+#else
       multibuffer_->AddReader(preload_pos_, this);
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
     }
   }
   CheckWait();
@@ -257,3 +267,7 @@ void MultiBufferReader::PinRange(MultiBuffer::BlockId begin,
 }
 
 }  // namespace blink
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/media/multi_buffer_reader_for_include.cc"
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION

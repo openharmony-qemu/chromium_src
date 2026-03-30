@@ -7,7 +7,9 @@
 
 #include <set>
 #include <string>
+#include <unordered_set>
 
+#include "arkweb/build/features/features.h"
 #include "base/dcheck_is_on.h"
 #include "base/memory/raw_ptr.h"
 #include "components/keyed_service/core/dependency_graph.h"
@@ -50,6 +52,11 @@ class KEYED_SERVICE_EXPORT DependencyManager {
   // registration method in the error message.
   void DisallowKeyedServiceFactoryRegistration(
       const std::string& registration_function_name_error_message);
+
+#if BUILDFLAG(ARKWEB_DISABLE_SERVICES)
+  bool disabledServicesInitialized = false;
+  std::unordered_set<std::string> disabledServices;
+#endif
 
  protected:
   DependencyManager();

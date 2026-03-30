@@ -48,7 +48,11 @@ ExtensionNotificationHandler::~ExtensionNotificationHandler() = default;
 
 // static
 ExtensionId ExtensionNotificationHandler::GetExtensionId(const GURL& url) {
-  if (!url.is_valid() || !url.SchemeIs(kExtensionScheme)) {
+  if (!url.is_valid() || (!url.SchemeIs(kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+                          && !url.SchemeIs(extensions::kArkwebExtensionScheme)
+#endif
+                              )) {
     return "";
   }
   return ExtensionId(url.DeprecatedGetOriginAsURL().host());

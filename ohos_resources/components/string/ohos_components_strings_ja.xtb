@@ -1,0 +1,16 @@
+<?xml version="1.0" ?>
+<!DOCTYPE translationbundle>
+<translationbundle lang="ja">
+<translation id="IDS_OHOS_BLOCK_PAGE_TITLE">注意</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_INFO_TITLE">Webサイトがブロックされました</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_FRAUD_INFO_TITLE">詐欺にご注意ください</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_RISK_INFO_TITLE">有害なコンテンツを表示しようとしています</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_URL_TRUST_LIST_TITLE">アクセスが制限されています</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_ILLEGAL_INFO_BODY">このサイトは違法または禁止されているコンテンツを含んでいるため、アクセスできません。</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_FRAUD_INFO_BODY">このサイトは詐欺サイトの可能性があります。個人情報を保護してください。</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_RISK_INFO_BODY">このサイトは安全ではありません。個人情報を保護してください。</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_DONT_PROCEED">戻る</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_PROCEED">続行</translation>
+<translation id="IDS_OHOS_MINOR_PROTECTION_NOTE">青少年モードがオンです。このサイトにはアクセスできません。</translation>
+<translation id="IDS_OHOS_MINOR_PROTECTION_SETING_BUTTON">設定</translation>
+</translationbundle>

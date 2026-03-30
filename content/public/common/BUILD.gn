@@ -11,10 +11,16 @@ import("//media/media_options.gni")
 import("//mojo/public/tools/bindings/mojom.gni")
 import("//third_party/webrtc/webrtc.gni")
 import("//tools/ipc_fuzzer/ipc_fuzzer.gni")
+import("//arkweb/build/features/features.gni")
+import("//arkweb/chromium_ext/chromium_ext.gni")
 import("//ui/webui/webui_features.gni")
 
 if (is_android) {
   import("//build/config/android/rules.gni")
+}
+
+if (defined(is_arkweb_ext) && is_arkweb_ext) {
+  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
 }
 
 buildflag_header("buildflags") {
@@ -65,7 +71,7 @@ source_set("content_descriptor_keys") {
 
 # This target allows other targets to depend on sandbox_support_linux.h which is
 # a header-only dependency, without bringing in all of content.
-if (is_linux || is_chromeos) {
+if (is_linux || is_chromeos || arkweb_render_process_startup) {
   source_set("sandbox_support_linux") {
     public = [
       "//content/common/content_export.h",
@@ -99,6 +105,10 @@ source_set("static_switches") {
     "content_switches.cc",
   ]
 
+  if (is_arkweb) {
+    sources += arkweb_content_public_common_sources
+  }
+
   public_configs = [ ":static_switches_defines" ]
   public_deps = [ ":buildflags" ]
 
@@ -120,6 +130,13 @@ source_set("switches") {
     "content_switches.cc",
   ]
 
+  if (is_arkweb) {
+    sources += arkweb_content_public_common_sources
+    visibility += [ "//storage:storage_unittests", "//base",
+      "//components/gwp_asan:gwp_asan_unittests"
+    ]
+  }
+
   # Deps required by the above header.
   deps = [
     "//media:media_buildflags",
@@ -129,6 +146,11 @@ source_set("switches") {
   public_deps = [ ":buildflags" ]
 
   configs += [ "//content:content_implementation" ]
+
+  if (use_libfuzzer) {
+    configs -= [ "//build/config/gcc:symbol_visibility_hidden" ]
+    configs += [ "//build/config/gcc:symbol_visibility_default" ]
+  }
 
   if (enable_ipc_fuzzer) {
     configs += [ "//tools/ipc_fuzzer:ipc_fuzzer_config" ]
@@ -317,6 +339,10 @@ source_set("common_sources") {
 
   if (is_chromeos) {
     public_deps += [ "//media/capture/video/chromeos/public" ]
+  }
+
+  if (defined(arkweb_reader_mode) && arkweb_reader_mode) {
+    public_deps += [ "//components/dom_distiller/content/common/mojom" ]
   }
 
   if (is_linux || is_chromeos) {

@@ -22,3 +22,14 @@
 viewer-thumbnail {
   padding-top: 24px;
 }
+
+@media(max-width: 500px) {
+  viewer-thumbnail {
+    padding-top: 14px;
+  }
+  #thumbnails {
+    padding-bottom: 14px;
+    padding-inline-start: 5px;
+    padding-inline-end: 5px;
+  }
+}

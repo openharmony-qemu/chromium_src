@@ -42,6 +42,10 @@ class ProfileManagerObserver : public base::CheckedObserver {
   // initialization is completed.
   // In most cases, `OnProfileAdded()` is what you want, instead.
   virtual void OnProfileCreationStarted(Profile* profile) {}
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  virtual void OnOtrProfileAdded(Profile* profile) {}
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 };
 
 #endif  // CHROME_BROWSER_PROFILES_PROFILE_MANAGER_OBSERVER_H_

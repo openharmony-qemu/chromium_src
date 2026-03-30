@@ -41,11 +41,11 @@ namespace {
 // Global atomic used to guarantee channel IDs are unique.
 base::AtomicSequenceNumber g_last_id;
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
 
 int g_global_pid = 0;
 
-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
 
 class ThreadSafeChannelProxy : public mojo::ThreadSafeProxy {
  public:
@@ -120,7 +120,7 @@ std::string Channel::GenerateUniqueRandomChannelID() {
       base::RandInt(0, std::numeric_limits<int32_t>::max()));
 }
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
 // static
 void Channel::SetGlobalPid(int pid) {
   g_global_pid = pid;
@@ -130,7 +130,7 @@ void Channel::SetGlobalPid(int pid) {
 int Channel::GetGlobalPid() {
   return g_global_pid;
 }
-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
 
 void Channel::WillConnect() {
   did_start_connect_ = true;

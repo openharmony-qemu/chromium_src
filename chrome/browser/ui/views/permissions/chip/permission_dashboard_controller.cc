@@ -495,6 +495,9 @@ void PermissionDashboardController::OnIndicatorsChipButtonPressed() {
 
   if (PageInfo::IsFileOrInternalPage(url) ||
       url.SchemeIs(content_settings::kExtensionScheme) ||
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      url.SchemeIs(content_settings::kArkwebExtensionScheme) ||
+#endif
       url.SchemeIs(dom_distiller::kDomDistillerScheme)) {
     ShowBubble();
   } else {

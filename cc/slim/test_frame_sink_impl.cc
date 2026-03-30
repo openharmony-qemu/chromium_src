@@ -27,6 +27,12 @@ class TestFrameSinkImpl::TestMojoCompositorFrameSink
   TestMojoCompositorFrameSink() = default;
   void SetParams(viz::mojom::CompositorFrameSinkParamsPtr params) override {}
   void SetNeedsBeginFrame(bool needs_begin_frame) override {}
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  void ReportKeyThreadIds(const std::vector<int32_t>& thread_ids,
+                          int32_t process_id,
+                          bool is_created) override {}
+  void OnSetBypassVsyncCondition(int32_t condition) override {}
+#endif
   void SubmitCompositorFrame(
       const viz::LocalSurfaceId& local_surface_id,
       viz::CompositorFrame frame,

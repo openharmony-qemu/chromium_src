@@ -29,7 +29,9 @@
 #include "mojo/public/cpp/bindings/pending_remote.h"
 #include "mojo/public/cpp/bindings/remote.h"
 #include "mojo/public/cpp/bindings/unique_receiver_set.h"
-
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+#include "arkweb/chromium_ext/media/base/media_player_url_params.h"
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 namespace media {
 
 class CdmFactory;
@@ -71,6 +73,14 @@ class InterfaceFactoryImpl final
       const base::UnguessableToken& overlay_plane_id,
       mojo::PendingReceiver<mojom::Renderer> receiver) final;
 #endif
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  void CreateCustomMediaPlayerRenderer(
+      mojo::PendingRemote<mojom::CustomMediaPlayerRendererClientExtension>
+          client_extension_ptr,
+      mojo::PendingReceiver<mojom::Renderer> receiver,
+      int player_id,
+      const media::MediaPlayerUrlParams& params) final;
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 #if BUILDFLAG(IS_ANDROID)
   void CreateFlingingRenderer(
       const std::string& presentation_id,

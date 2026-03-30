@@ -95,7 +95,7 @@ enum class AlternateFontName {
 extern const char kColorEmojiLocale[];
 extern const char kMonoEmojiLocale[];
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_THEME_FONT)
 extern const char kNotoColorEmojiCompat[];
 #endif
 
@@ -168,7 +168,7 @@ class PLATFORM_EXPORT FontCache final {
 
   static void MaybePreloadSystemFonts();
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
   // These are needed for calling QueryRenderStyleForStrike, since
   // gfx::GetFontRenderParams makes distinctions based on DSF.
   static float DeviceScaleFactor() { return device_scale_factor_; }
@@ -230,7 +230,7 @@ class PLATFORM_EXPORT FontCache final {
 
   static void AcceptLanguagesChanged(const String&);
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_THEME_FONT)
   static AtomicString GetGenericFamilyNameForScript(
       const AtomicString& family_name,
       const AtomicString& generic_family_name_fallback,
@@ -242,7 +242,8 @@ class PLATFORM_EXPORT FontCache final {
   sk_sp<SkTypeface> CreateLocaleSpecificTypeface(
       const FontDescription& font_description,
       const char* locale_family_name);
-#endif  // BUILDFLAG(IS_ANDROID)
+  void InvalidateSystemFontFamily();
+#endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_THEME_FONT)
 
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
   static bool GetFontForCharacter(UChar32,
@@ -289,7 +290,9 @@ class PLATFORM_EXPORT FontCache final {
   FontCache();
 
   void Purge();
-
+#if BUILDFLAG(ARKWEB_CSS_FONT)
+  static void TypefaceCacheClear();
+#endif
   void DisablePurging() { purge_prevent_count_++; }
   void EnablePurging() {
     DCHECK(purge_prevent_count_);
@@ -317,7 +320,7 @@ class PLATFORM_EXPORT FontCache final {
                                    const FontFaceCreationParams&,
                                    std::string& name);
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
   // SkFontMgr_FCI::onMatchFamilyStyleCharacter always crashes.
   static const FontPlatformData* CreateFontPlatformDataForCharacter(
       SkFontMgr*,
@@ -346,7 +349,7 @@ class PLATFORM_EXPORT FontCache final {
   static int32_t status_font_height_;
 #endif  // BUILDFLAG(IS_WIN)
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
   static float device_scale_factor_;
 #endif
 
@@ -388,7 +391,7 @@ class PLATFORM_EXPORT FontCachePurgePreventer {
 
 AtomicString ToAtomicString(const SkString&);
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 // TODO(crbug.com/1241875) Can this be simplified?
 // static
 inline const char* FontCache::GetLocaleSpecificFamilyName(

@@ -31,6 +31,10 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "base/notreached.h"
 #include "base/time/time.h"
 #include "cc/paint/paint_canvas.h"
@@ -91,7 +95,11 @@ namespace blink {
 
 class AssociatedInterfaceProvider;
 
+#if BUILDFLAG(IS_ARKWEB)
+class CORE_EXPORT EmptyChromeClient : public ChromeClientExt {
+#else
 class CORE_EXPORT EmptyChromeClient : public ChromeClient {
+#endif
  public:
   EmptyChromeClient() = default;
   ~EmptyChromeClient() override = default;
@@ -343,6 +351,11 @@ class CORE_EXPORT EmptyLocalFrameClient : public LocalFrameClient {
   void DispatchDidDispatchDOMContentLoadedEvent() override {}
   void DispatchDidFinishLoad() override {}
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  void DispatchDidSubresourceFiltered() override {}
+  bool GetGlobalAdblockEnabled() override { return false; }
+#endif
+
   void BeginNavigation(
       const ResourceRequest&,
       const KURL& requestor_base_url,
@@ -368,7 +381,12 @@ class CORE_EXPORT EmptyLocalFrameClient : public LocalFrameClient {
       SourceLocation*,
       mojo::PendingRemote<mojom::blink::NavigationStateKeepAliveHandle>,
       bool is_container_initiated,
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+      bool has_rel_opener,
+      bool is_triggered_by_js = false) override;
+#else      
       bool has_rel_opener) override;
+#endif
 
   void DispatchWillSendSubmitEvent(HTMLFormElement*) override;
 
@@ -423,6 +441,10 @@ class CORE_EXPORT EmptyLocalFrameClient : public LocalFrameClient {
   void RunScriptsAtDocumentElementAvailable() override {}
   void RunScriptsAtDocumentReady(bool) override {}
   void RunScriptsAtDocumentIdle() override {}
+
+#if BUILDFLAG(ARKWEB_JSPROXY)
+  void RunScriptsAtHeadElementAvailable() override {}
+#endif
 
   void DidCreateScriptContext(v8::Local<v8::Context>,
                               int32_t world_id) override {}

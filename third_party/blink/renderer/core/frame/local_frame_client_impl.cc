@@ -36,6 +36,7 @@
 
 #include "base/containers/to_vector.h"
 #include "base/metrics/histogram_functions.h"
+#include "base/logging.h"
 #include "base/time/time.h"
 #include "base/types/optional_util.h"
 #include "components/viz/common/frame_timing_details.h"
@@ -112,6 +113,9 @@
 #include "third_party/blink/renderer/platform/runtime_enabled_features.h"
 #include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
 #include "v8/include/v8.h"
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+#include "third_party/blink/renderer/core/loader/native_loader.h"
+#endif
 
 namespace blink {
 
@@ -182,12 +186,15 @@ bool IsCompositedOutermostMainFrame(WebLocalFrameImpl* web_frame) {
 }  // namespace
 
 LocalFrameClientImpl::LocalFrameClientImpl(WebLocalFrameImpl* frame)
-    : web_frame_(frame) {}
+    : web_frame_(frame) {
+  impl_utils_ = MakeGarbageCollected<LocalFrameClientImplUtils>(this);
+}
 
 LocalFrameClientImpl::~LocalFrameClientImpl() = default;
 
 void LocalFrameClientImpl::Trace(Visitor* visitor) const {
   visitor->Trace(web_frame_);
+  visitor->Trace(impl_utils_);
   LocalFrameClient::Trace(visitor);
 }
 
@@ -238,6 +245,13 @@ void LocalFrameClientImpl::RunScriptsAtDocumentElementAvailable() {
   }
   // The callback might have deleted the frame, do not use |this|!
 }
+
+#if BUILDFLAG(ARKWEB_JSPROXY)
+void LocalFrameClientImpl::RunScriptsAtHeadElementAvailable() {
+  impl_utils_->RunScriptsAtHeadElementAvailable();
+  // The callback might have deleted the frame, do not use |this|!
+}
+#endif
 
 void LocalFrameClientImpl::RunScriptsAtDocumentReady(bool document_is_empty) {
   if (!document_is_empty && IsLoadedAsMHTMLArchive(web_frame_->GetFrame())) {
@@ -641,7 +655,12 @@ void LocalFrameClientImpl::BeginNavigation(
     mojo::PendingRemote<mojom::blink::NavigationStateKeepAliveHandle>
         initiator_navigation_state_keep_alive_handle,
     bool is_container_initiated,
-    bool has_rel_opener) {
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+    bool has_rel_opener,
+    bool is_triggered_by_js) {
+#else
+     bool has_rel_opener) {
+#endif
   if (!web_frame_->Client()) {
     return;
   }
@@ -672,6 +691,9 @@ void LocalFrameClientImpl::BeginNavigation(
       base::OptionalFromPtr(initiator_frame_token);
   navigation_info->initiator_navigation_state_keep_alive_handle =
       std::move(initiator_navigation_state_keep_alive_handle);
+#if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
+  navigation_info->is_triggered_by_js = is_triggered_by_js;
+#endif
   LocalFrame* origin_frame =
       origin_window ? origin_window->GetFrame() : nullptr;
   if (origin_frame) {
@@ -1043,6 +1065,21 @@ std::unique_ptr<WebMediaPlayer> LocalFrameClientImpl::CreateWebMediaPlayer(
       web_frame->Client(), html_media_element, source, client);
 }
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+std::unique_ptr<WebNativeBridge> LocalFrameClientImpl::CreateWebNativeBridge(
+    NativeLoader& native_loader,
+    WebNativeClient* client) {
+  return impl_utils_->CreateWebNativeBridge(native_loader, client);
+}
+
+float LocalFrameClientImpl::GetDeviceScaleFactor(NativeLoader& native_loader) {
+  if (impl_utils_) {
+    return impl_utils_->GetDeviceScaleFactor(native_loader);
+  }
+  return 1.0f;
+}
+#endif
+
 RemotePlaybackClient* LocalFrameClientImpl::CreateRemotePlaybackClient(
     HTMLMediaElement& html_media_element) {
   return CoreInitializer::GetInstance().CreateRemotePlaybackClient(
@@ -1269,4 +1306,19 @@ bool LocalFrameClientImpl::IsDomStorageDisabled() const {
   return web_frame_->Client()->IsDomStorageDisabled();
 }
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+void LocalFrameClientImpl::DispatchDidSubresourceFiltered() {
+  impl_utils_->DispatchDidSubresourceFiltered();
+}
+
+bool LocalFrameClientImpl::GetGlobalAdblockEnabled() {
+  return impl_utils_->GetGlobalAdblockEnabled();
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+void LocalFrameClientImpl::NotifyLcpForBlankless() {
+  impl_utils_->NotifyLcpForBlankless();
+}
+#endif
 }  // namespace blink

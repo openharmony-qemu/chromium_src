@@ -36,6 +36,7 @@
 #include "ui/gfx/native_ui_types.h"
 #include "ui/gl/gl_share_group.h"
 #include "ui/gl/gpu_preference.h"
+#include "arkweb/build/features/features.h"
 
 namespace base {
 class WaitableEvent;
@@ -49,15 +50,22 @@ class GpuChannelMessageFilter;
 class Scheduler;
 class SharedImageStub;
 class SyncPointManager;
+class GpuChannelExt;
 
 // Encapsulates an IPC channel between the GPU process and one renderer
 // process. On the renderer side there's a corresponding GpuChannelHost.
 class GPU_IPC_SERVICE_EXPORT GpuChannel : public IPC::Listener,
                                           public IsolationKeyProvider {
  public:
+  friend class GpuChannelExt;
+
   GpuChannel(const GpuChannel&) = delete;
   GpuChannel& operator=(const GpuChannel&) = delete;
   ~GpuChannel() override;
+
+  virtual gpu::GpuChannelExt* AsGpuChannelExt() {
+    return nullptr;
+  }
 
   static std::unique_ptr<GpuChannel> Create(
       GpuChannelManager* gpu_channel_manager,
@@ -281,5 +289,4 @@ class GPU_IPC_SERVICE_EXPORT GpuChannel : public IPC::Listener,
 };
 
 }  // namespace gpu
-
 #endif  // GPU_IPC_SERVICE_GPU_CHANNEL_H_

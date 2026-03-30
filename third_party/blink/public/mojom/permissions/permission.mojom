@@ -187,4 +187,9 @@ interface PermissionService {
   // PermissionStatus.
   NotifyEventListener(PermissionDescriptor permission, string event_type,
                       bool is_added);
+  // Sync Request permission for the given `PermissionDescriptor`, and returns
+  // permission status result.
+  [EnableIf=arkweb_clipboard, Sync]
+  RequestPermissionSync(PermissionDescriptor permission, bool user_gesture)
+      => (PermissionStatus status);
 };

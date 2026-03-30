@@ -30,7 +30,12 @@ constexpr char kEnrollmentFallbackUrl[] =
 
 // We consider this a common host for Microsoft authentication to be a valid
 // redirection source.
-constexpr char kEntraLoginHost[] = "https://login.microsoftonline.com";
+constexpr char kEntraLoginHost[] = 
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://***";
+#else
+    "https://login.microsoftonline.com";
+#endif
 // Valid redirection from MSFT Cloud App Security portal.
 constexpr char kEntraMcasHost[] = "https://mcas.ms";
 

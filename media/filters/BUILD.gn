@@ -5,6 +5,10 @@
 import("//media/gpu/args.gni")
 import("//media/media_options.gni")
 
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
+
 if (media_use_symphonia) {
   rust_static_library("symphonia_glue") {
     # Needed because CXX generates unsafe code, for example using export_name
@@ -80,6 +84,10 @@ source_set("filters") {
     "wsola_internals.cc",
     "wsola_internals.h",
   ]
+
+  if (arkweb_same_layer) {
+    sources += arkweb_media_filters_sources
+  }
 
   configs += [ "//media:subcomponent_config" ]
 
@@ -222,6 +230,11 @@ source_set("filters") {
     ]
     deps += [ "//media/base/mac" ]
   }
+
+  if (is_arkweb && arkweb_enable_cdm) {
+    sources += arkweb_media_filters_ohos_sources
+  }
+
   if (is_win && enable_platform_dts_audio) {
     sources += [
       "passthrough_dts_audio_decoder.cc",

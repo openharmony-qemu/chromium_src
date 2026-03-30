@@ -411,6 +411,12 @@ std::string SanitizeFrontendQueryParam(const std::string& key,
     return "true";
   }
 
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  if (key == "showToolbox" && value == "true") {
+    return value;
+  }
+#endif // BUILDFLAG(ARKWEB_DEVTOOLS)
+
   // Pass connection endpoints as is.
   if (key == "ws" || key == "service-backend") {
     return SanitizeEndpoint(value);
@@ -2571,7 +2577,12 @@ void DevToolsUIBindings::AddDevToolsExtensionsToClient() {
     }
     GURL url =
         extensions::chrome_manifest_urls::GetDevToolsPage(extension.get());
-    const bool is_extension_url = url.SchemeIs(extensions::kExtensionScheme) &&
+    const bool is_extension_url =
+        (url.SchemeIs(extensions::kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+         || url.SchemeIs(extensions::kArkwebExtensionScheme)
+#endif
+             ) &&
                                   url.host() == extension->id();
     CHECK(is_extension_url || url.SchemeIsHTTPOrHTTPS());
 

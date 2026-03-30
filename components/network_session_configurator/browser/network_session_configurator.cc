@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/command_line.h"
 #include "base/containers/contains.h"
 #include "base/feature_list.h"
@@ -41,6 +42,11 @@
 
 #if BUILDFLAG(IS_MAC)
 #include "base/mac/mac_util.h"
+#endif
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "base/ohos/sys_info_utils_ext.h"
+#include "content/public/common/content_switches.h"
 #endif
 
 namespace {
@@ -219,12 +225,14 @@ quic::QuicTagVector GetQuicClientConnectionOptions(
   return quic::ParseQuicTagVector(it->second);
 }
 
+#if !BUILDFLAG(ARKWEB_NETWORK_LOAD)
 bool ShouldQuicCloseSessionsOnIpChange(
     const VariationParameters& quic_trial_params) {
   return base::EqualsCaseInsensitiveASCII(
       GetVariationParam(quic_trial_params, "close_sessions_on_ip_change"),
       "true");
 }
+#endif
 
 bool ShouldQuicGoAwaySessionsOnIpChange(
     const VariationParameters& quic_trial_params) {
@@ -617,8 +625,12 @@ void ConfigureQuicParams(const base::CommandLine& command_line,
         GetQuicConnectionOptions(quic_trial_params);
     quic_params->client_connection_options =
         GetQuicClientConnectionOptions(quic_trial_params);
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    quic_params->close_sessions_on_ip_change = true;
+#else
     quic_params->close_sessions_on_ip_change =
         ShouldQuicCloseSessionsOnIpChange(quic_trial_params);
+#endif
     quic_params->goaway_sessions_on_ip_change =
         ShouldQuicGoAwaySessionsOnIpChange(quic_trial_params);
     int idle_connection_timeout_seconds =
@@ -846,6 +858,15 @@ void ParseCommandLineAndFieldTrials(const base::CommandLine& command_line,
 }
 
 net::URLRequestContextBuilder::HttpCacheParams::Type ChooseCacheType() {
+#if BUILDFLAG(ARKWEB_CACHE)
+  if ((*base::CommandLine::ForCurrentProcess())
+          .HasSwitch(switches::kOhosHttpCacheSimple)) {
+    return net::URLRequestContextBuilder::HttpCacheParams::DISK_SIMPLE;
+  } else {
+    return net::URLRequestContextBuilder::HttpCacheParams::DISK_BLOCKFILE;
+  }
+#else
+
   if (base::FeatureList::IsEnabled(
           net::features::kDiskCacheBackendExperiment)) {
     switch (net::features::kDiskCacheBackendParam.Get()) {
@@ -865,6 +886,7 @@ net::URLRequestContextBuilder::HttpCacheParams::Type ChooseCacheType() {
   return disk_cache::IsSimpleBackendEnabledByDefaultPlatform()
              ? net::URLRequestContextBuilder::HttpCacheParams::DISK_SIMPLE
              : net::URLRequestContextBuilder::HttpCacheParams::DISK_BLOCKFILE;
+#endif // BUILDFLAG(ARKWEB_CACHE)
 }
 
 }  // namespace network_session_configurator

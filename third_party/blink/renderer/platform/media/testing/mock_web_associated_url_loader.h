@@ -26,6 +26,14 @@ class MockWebAssociatedURLLoader : public WebAssociatedURLLoader {
   MOCK_METHOD1(SetDefersLoading, void(bool value));
   MOCK_METHOD1(SetLoadingTaskRunner,
                void(base::SingleThreadTaskRunner* task_runner));
+
+#if BUILDFLAG(ARKWEB_TEST) && BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  MOCK_METHOD4(Load,
+                void(const WebURLRequest& request,
+                     base::WeakPtr<WebAssociatedURLLoaderClient> client,
+                     std::string id,
+                     int64_t start));
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 };
 
 }  // namespace blink

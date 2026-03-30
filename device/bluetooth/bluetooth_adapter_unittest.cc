@@ -48,6 +48,8 @@
 #include "device/bluetooth/test/bluetooth_test_bluez.h"
 #elif BUILDFLAG(IS_FUCHSIA)
 #include "device/bluetooth/test/bluetooth_test_fuchsia.h"
+#elif BUILDFLAG(IS_OHOS)
+#include "arkweb/chromium_ext/device/bluetooth/test/bluetooth_test_ohos.h"
 #endif
 
 #if BUILDFLAG(IS_CHROMEOS)
@@ -800,6 +802,9 @@ TEST_F(BluetoothTest, MAYBE_ConstructFakeAdapter) {
     GTEST_SKIP() << "Low Energy Bluetooth unavailable, skipping unit test.";
   }
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
 #if !BUILDFLAG(IS_IOS)
   EXPECT_EQ(adapter_->GetAddress(), kTestAdapterAddress);
   EXPECT_EQ(adapter_->GetName(), kTestAdapterName);
@@ -857,6 +862,9 @@ TEST_P(BluetoothTestWinrt, ConstructFakeAdapterWithoutPowerControl) {
 // Starts and Stops a discovery session.
 TEST_F(BluetoothTest, MAYBE_DiscoverySession) {
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   EXPECT_FALSE(adapter_->IsDiscovering());
 
   StartLowEnergyDiscoverySession();
@@ -881,6 +889,9 @@ TEST_F(BluetoothTest, AdapterIllegalStateBeforeStartScan) {
     GTEST_SKIP() << "Low Energy Bluetooth unavailable, skipping unit test.";
   }
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   ForceIllegalStateException();
   StartLowEnergyDiscoverySessionExpectedToFail();
   EXPECT_EQ(0, callback_count_);
@@ -897,6 +908,9 @@ TEST_F(BluetoothTest, AdapterIllegalStateBeforeStopScan) {
     GTEST_SKIP() << "Low Energy Bluetooth unavailable, skipping unit test.";
   }
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   StartLowEnergyDiscoverySession();
   EXPECT_EQ(1, callback_count_);
   EXPECT_EQ(0, error_callback_count_);
@@ -919,6 +933,9 @@ TEST_F(BluetoothTest, MAYBE_NoPermissions) {
     GTEST_SKIP() << "Low Energy Bluetooth unavailable, skipping unit test.";
   }
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   TestBluetoothAdapterObserver observer(adapter_);
 
   if (!DenyPermission()) {
@@ -950,6 +967,9 @@ TEST_F(BluetoothTest, NoLocationServices) {
                     "Bluetooth scanning, skipping unit test.";
   }
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   TestBluetoothAdapterObserver observer(adapter_);
 
   SimulateLocationServicesOff();
@@ -979,6 +999,9 @@ TEST_F(BluetoothTest, MAYBE_DiscoverLowEnergyDevice) {
     GTEST_SKIP() << "Low Energy Bluetooth unavailable, skipping unit test.";
   }
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   TestBluetoothAdapterObserver observer(adapter_);
 
   // Start discovery and find a device.
@@ -1004,6 +1027,9 @@ TEST_F(BluetoothTest, MAYBE_DiscoverLowEnergyDeviceTwice) {
     GTEST_SKIP() << "Low Energy Bluetooth unavailable, skipping unit test.";
   }
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   TestBluetoothAdapterObserver observer(adapter_);
 
   // Start discovery and find a device.
@@ -1040,6 +1066,9 @@ TEST_F(BluetoothTest, MAYBE_DiscoverLowEnergyDeviceWithUpdatedUUIDs) {
     GTEST_SKIP() << "Low Energy Bluetooth unavailable, skipping unit test.";
   }
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   TestBluetoothAdapterObserver observer(adapter_);
 
   // Start discovery and find a device.
@@ -1078,6 +1107,9 @@ TEST_F(BluetoothTest, MAYBE_DiscoverMultipleLowEnergyDevices) {
     GTEST_SKIP() << "Low Energy Bluetooth unavailable, skipping unit test.";
   }
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   TestBluetoothAdapterObserver observer(adapter_);
 
   // Start discovery and find a device.
@@ -1096,6 +1128,9 @@ TEST_P(BluetoothTestWinrt, SimulateAdapterPoweredOffAndOn) {
   }
 
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   TestBluetoothAdapterObserver observer(adapter_);
 
   ASSERT_TRUE(adapter_->IsPresent());
@@ -1126,6 +1161,9 @@ TEST_P(BluetoothTestWinrt, SimulateDuplicateStateChanged) {
   }
 
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   TestBluetoothAdapterObserver observer(adapter_);
 
   ASSERT_TRUE(adapter_->IsPresent());
@@ -1194,6 +1232,9 @@ TEST_P(BluetoothTestWinrt, SimulateAdapterPowerFailure) {
   }
 
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   ASSERT_TRUE(adapter_->IsPresent());
   ASSERT_TRUE(adapter_->IsPowered());
 
@@ -1222,6 +1263,9 @@ TEST_F(BluetoothTest, MAYBE_TogglePowerFakeAdapter) {
   }
 
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   TestBluetoothAdapterObserver observer(adapter_);
 
   ASSERT_TRUE(adapter_->IsPresent());
@@ -1262,6 +1306,9 @@ TEST_F(BluetoothTest, MAYBE_TogglePowerFakeAdapter_Twice) {
   }
 
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   TestBluetoothAdapterObserver observer(adapter_);
 
   ASSERT_TRUE(adapter_->IsPresent());
@@ -1307,6 +1354,9 @@ TEST_F(BluetoothTest, MAYBE_TogglePowerFakeAdapter_WithinCallback_On_Off) {
   }
 
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   TestBluetoothAdapterObserver observer(adapter_);
 
   ASSERT_TRUE(adapter_->IsPresent());
@@ -1343,6 +1393,9 @@ TEST_F(BluetoothTest, MAYBE_TogglePowerFakeAdapter_WithinCallback_Off_On) {
   }
 
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   TestBluetoothAdapterObserver observer(adapter_);
 
   ASSERT_TRUE(adapter_->IsPresent());
@@ -1386,6 +1439,9 @@ TEST_F(BluetoothTest, MAYBE_TogglePowerFakeAdapter_DestroyWithPending) {
   }
 
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   ASSERT_TRUE(adapter_->IsPresent());
   ASSERT_TRUE(adapter_->IsPowered());
 
@@ -1426,6 +1482,9 @@ TEST_F(BluetoothTest, MAYBE_TogglePowerFakeAdapter_DestroyWithPending) {
 #endif
 TEST_F(BluetoothTest, MAYBE_TogglePowerBeforeScan) {
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   TestBluetoothAdapterObserver observer(adapter_);
 
   ASSERT_TRUE(adapter_->IsPresent());
@@ -1466,6 +1525,9 @@ TEST_P(BluetoothTestWinrt, DiscoverySessionFailure) {
   }
 
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   TestBluetoothAdapterObserver observer(adapter_);
   EXPECT_FALSE(adapter_->IsDiscovering());
 
@@ -1500,6 +1562,9 @@ TEST_F(BluetoothTest, MAYBE_TurnOffAdapterWithConnectedDevice) {
   }
 
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   TestBluetoothAdapterObserver observer(adapter_);
 
   StartLowEnergyDiscoverySession();
@@ -1532,6 +1597,9 @@ TEST_P(BluetoothTestWinrt, RegisterAdvertisement) {
       BluetoothAdvertisement::ManufacturerData());
 
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   adapter_->RegisterAdvertisement(
       std::move(advertisement_data),
       GetCreateAdvertisementCallback(Call::EXPECTED),
@@ -1554,6 +1622,9 @@ TEST_P(BluetoothTestWinrt, FailRegisterAdvertisement) {
       BluetoothAdvertisement::ManufacturerData());
 
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   adapter_->RegisterAdvertisement(
       std::move(advertisement_data),
       GetCreateAdvertisementCallback(Call::NOT_EXPECTED),
@@ -1579,6 +1650,9 @@ TEST_P(BluetoothTestWinrt, RegisterAndUnregisterAdvertisement) {
       BluetoothAdvertisement::ManufacturerData());
 
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   adapter_->RegisterAdvertisement(
       std::move(advertisement_data),
       GetCreateAdvertisementCallback(Call::EXPECTED),
@@ -1610,6 +1684,9 @@ TEST_P(BluetoothTestWinrt, FailUnregisterAdvertisement) {
       BluetoothAdvertisement::ManufacturerData());
 
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   adapter_->RegisterAdvertisement(
       std::move(advertisement_data),
       GetCreateAdvertisementCallback(Call::EXPECTED),
@@ -1647,6 +1724,9 @@ TEST_P(BluetoothTestWinrt, RegisterAdvertisementWithInvalidData) {
   advertisement_data->set_service_data(BluetoothAdvertisement::ServiceData());
 
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   adapter_->RegisterAdvertisement(
       std::move(advertisement_data),
       GetCreateAdvertisementCallback(Call::NOT_EXPECTED),
@@ -1664,6 +1744,9 @@ TEST_P(BluetoothTestWinrt, RegisterMultipleAdvertisements) {
   }
 
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   constexpr size_t kNumAdvertisements = 10u;
 
   for (size_t i = 0; i < kNumAdvertisements; ++i) {
@@ -1694,6 +1777,9 @@ TEST_P(BluetoothTestWinrt, UnregisterAdvertisementWhilePendingUnregister) {
   }
 
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   auto advertisement_data = std::make_unique<BluetoothAdvertisement::Data>(
       BluetoothAdvertisement::ADVERTISEMENT_TYPE_BROADCAST);
   advertisement_data->set_manufacturer_data(
@@ -1740,6 +1826,9 @@ TEST_P(BluetoothTestWinrt, DoubleUnregisterAdvertisement) {
   }
 
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   auto advertisement_data = std::make_unique<BluetoothAdvertisement::Data>(
       BluetoothAdvertisement::ADVERTISEMENT_TYPE_BROADCAST);
   advertisement_data->set_manufacturer_data(
@@ -1783,6 +1872,9 @@ TEST_P(BluetoothTestWinrt, SimulateAdvertisementStoppedByOS) {
   }
 
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   auto advertisement_data = std::make_unique<BluetoothAdvertisement::Data>(
       BluetoothAdvertisement::ADVERTISEMENT_TYPE_BROADCAST);
   advertisement_data->set_manufacturer_data(
@@ -1828,6 +1920,9 @@ TEST_P(BluetoothTestWinrt, SimulateAdvertisementStoppedByOS) {
 #endif
 TEST_F(BluetoothTest, MAYBE_RegisterLocalGattServices) {
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   base::WeakPtr<BluetoothLocalGattService> service =
       adapter_->CreateLocalGattService(BluetoothUUID(kTestUUIDGenericAttribute),
                                        true, nullptr);
@@ -1867,6 +1962,9 @@ TEST_F(BluetoothTest, MAYBE_RegisterLocalGattServices) {
 #endif
 TEST_F(BluetoothTest, MAYBE_RegisterMultipleServices) {
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   base::WeakPtr<BluetoothLocalGattService> service2 =
       adapter_->CreateLocalGattService(BluetoothUUID(kTestUUIDGenericAttribute),
                                        true, nullptr);
@@ -1917,6 +2015,9 @@ TEST_F(BluetoothTest, MAYBE_RegisterMultipleServices) {
 #endif
 TEST_F(BluetoothTest, MAYBE_DeleteServices) {
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   base::WeakPtr<BluetoothLocalGattService> service2 =
       adapter_->CreateLocalGattService(BluetoothUUID(kTestUUIDGenericAttribute),
                                        true, nullptr);
@@ -1967,6 +2068,9 @@ TEST_F(BluetoothTest, MAYBE_EnsureUpdatedTimestamps) {
     GTEST_SKIP() << "Low Energy Bluetooth unavailable, skipping unit test.";
   }
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   TestBluetoothAdapterObserver observer(adapter_);
 
   // Test that the timestamp of a device is updated during multiple
@@ -2005,6 +2109,9 @@ TEST_F(BluetoothTest, MAYBE_RemoveOutdatedDevices) {
     GTEST_SKIP() << "Low Energy Bluetooth unavailable, skipping unit test.";
   }
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   TestBluetoothAdapterObserver observer(adapter_);
   StartLowEnergyDiscoverySession();
   BluetoothDevice* device1 = SimulateLowEnergyDevice(1);
@@ -2035,6 +2142,9 @@ TEST_F(BluetoothTest, MAYBE_RemoveOutdatedDeviceGattConnect) {
     GTEST_SKIP() << "Low Energy Bluetooth unavailable, skipping unit test.";
   }
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   TestBluetoothAdapterObserver observer(adapter_);
   StartLowEnergyDiscoverySession();
   BluetoothDevice* device = SimulateLowEnergyDevice(1);
@@ -2057,6 +2167,9 @@ TEST_F(BluetoothTest, DiscoverConnectedLowEnergyDeviceWithNoFilter) {
     GTEST_SKIP() << "Low Energy Bluetooth unavailable, skipping unit test.";
   }
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   TestBluetoothAdapterObserver observer(adapter_);
 
   SimulateConnectedLowEnergyDevice(ConnectedDeviceType::GENERIC_DEVICE);
@@ -2086,6 +2199,9 @@ TEST_F(BluetoothTest, DiscoverConnectedLowEnergyDeviceWithFilter) {
     GTEST_SKIP() << "Low Energy Bluetooth unavailable, skipping unit test.";
   }
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   TestBluetoothAdapterObserver observer(adapter_);
 
   SimulateConnectedLowEnergyDevice(ConnectedDeviceType::GENERIC_DEVICE);
@@ -2119,6 +2235,9 @@ TEST_F(BluetoothTest, DiscoverConnectedLowEnergyDeviceWithWrongFilter) {
     GTEST_SKIP() << "Low Energy Bluetooth unavailable, skipping unit test.";
   }
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   TestBluetoothAdapterObserver observer(adapter_);
 
   SimulateConnectedLowEnergyDevice(ConnectedDeviceType::GENERIC_DEVICE);
@@ -2147,6 +2266,9 @@ TEST_F(BluetoothTest, DiscoverConnectedLowEnergyDeviceWithTwoFilters) {
     GTEST_SKIP() << "Low Energy Bluetooth unavailable, skipping unit test.";
   }
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   TestBluetoothAdapterObserver observer(adapter_);
 
   SimulateConnectedLowEnergyDevice(ConnectedDeviceType::GENERIC_DEVICE);
@@ -2192,6 +2314,9 @@ TEST_F(BluetoothTest, DiscoverConnectedLowEnergyDeviceTwice) {
     GTEST_SKIP() << "Low Energy Bluetooth unavailable, skipping unit test.";
   }
   InitWithFakeAdapter();
+  if (!adapter_) {
+    return;
+  }
   TestBluetoothAdapterObserver observer(adapter_);
 
   SimulateConnectedLowEnergyDevice(ConnectedDeviceType::GENERIC_DEVICE);

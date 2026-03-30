@@ -20,11 +20,12 @@ import shlex
 
 
 class Options:
-  def __init__(self, output, rulename, header_guard, flags):
+  def __init__(self, output, rulename, header_guard, flags, for_arkweb):
     self.output = output
     self.rulename = rulename
     self.header_guard = header_guard
     self.flags = flags
+    self.for_arkweb = for_arkweb
 
 
 def GetOptions():
@@ -37,6 +38,11 @@ def GetOptions():
                     help="Path to root of generated file directory tree.")
   parser.add_option('--definitions',
                     help="Name of the response file containing the flags.")
+  parser.add_option('--for-arkweb',
+                    action="store_true",
+                    dest="for_arkweb",
+                    default=False,
+                    help="Generate for arkweb headers, add IS_OHOS seperation.")
   cmdline_options, cmdline_flags = parser.parse_args()
 
   # Compute a valid C++ header guard by replacing non valid chars with '_',
@@ -74,7 +80,8 @@ def GetOptions():
   return Options(output=output,
                  rulename=cmdline_options.rulename,
                  header_guard=header_guard,
-                 flags=flags)
+                 flags=flags,
+                 for_arkweb=cmdline_options.for_arkweb)
 
 
 def WriteHeader(options):
@@ -85,13 +92,21 @@ def WriteHeader(options):
 
     output_file.write('\n#ifndef %s\n' % options.header_guard)
     output_file.write('#define %s\n\n' % options.header_guard)
+    output_file.write('#include "build/build_config.h" // IWYU pragma: export\n\n')
     output_file.write('#include "build/buildflag.h" // IWYU pragma: export\n\n')
     # Clangd does not detect BUILDFLAG_INTERNAL_* indirect usage, so mark the
     # header as "always_keep" to avoid "unused include" warning.
     output_file.write('// IWYU pragma: always_keep\n\n')
 
+    if options.for_arkweb:
+      output_file.write('#if defined(OS_OHOS)\n')
     for pair in options.flags:
       output_file.write('#define BUILDFLAG_INTERNAL_%s() (%s)\n' % pair)
+    if options.for_arkweb:
+      output_file.write('#else\n')
+      for pair in options.flags:
+        output_file.write('#define BUILDFLAG_INTERNAL_%s() (0)\n' % (pair[0],))
+      output_file.write('#endif // End of OS_OHOS\n')
 
     output_file.write('\n#endif  // %s\n' % options.header_guard)
 

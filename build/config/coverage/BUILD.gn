@@ -5,6 +5,7 @@
 import("//build/buildflag_header.gni")
 import("//build/config/coverage/coverage.gni")
 import("//build/config/rust.gni")
+import("//build/config/sanitizers/sanitizers.gni")
 
 config("default_coverage") {
   if (use_clang_coverage) {
@@ -39,6 +40,10 @@ config("default_coverage") {
       "-mllvm",
       "-limited-coverage-experimental=true",
     ]
+
+    if (use_libfuzzer) {
+      cflags += [ "--coverage" ]
+    }
 
     # Rust coverage is gated on using the Chromium-built Rust toolchain as it
     # needs to have a compatible LLVM version with the C++ compiler and the LLVM

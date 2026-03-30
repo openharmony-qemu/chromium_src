@@ -11,6 +11,7 @@
 #include <string_view>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/barrier_closure.h"
 #include "base/check.h"
 #include "base/containers/contains.h"
@@ -62,6 +63,11 @@
 #if BUILDFLAG(IS_ANDROID)
 #include "content/public/browser/android/child_process_importance.h"
 #endif
+
+#if BUILDFLAG(ARKWEB_BFCACHE)
+#include "arkweb/chromium_ext/content/browser/renderer_host/ark_web_back_forward_cache_impl.h"
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#endif  // BUILDFLAG(ARKWEB_BFCACHE)
 
 namespace content {
 
@@ -123,6 +129,13 @@ const base::FeatureParam<ChildProcessImportance> kChildProcessImportanceParam{
 
 WebSchedulerTrackedFeatures SupportedFeaturesImpl() {
   WebSchedulerTrackedFeatures features;
+
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  if (GetArkWebBackForwardCacheFeatures(features)) {
+    return features;
+  }
+#endif
+
   if (!IsBackForwardCacheEnabled()) {
     return features;
   }
@@ -209,6 +222,14 @@ WebSchedulerTrackedFeatures GetDisallowedWebSchedulerTrackedFeatures() {
           WebSchedulerTrackedFeature::kWebTransport,
           WebSchedulerTrackedFeature::kWebXR,
           WebSchedulerTrackedFeature::kParserAborted,
+#if BUILDFLAG(ARKWEB_BFCACHE)
+          // kEnableCacheNativeEmbed can allow use native embed web pages enter BFCache
+          // and can be set by command line --enable-cache-native-embed before web engine init.
+          // kEnableCacheMediaTakeOver can allow use media take over web pages enter BFCache
+          // and can be set by command line --enable-cache-media-take-over before web engine init.
+          WebSchedulerTrackedFeature::kEnableCacheNativeEmbed,
+          WebSchedulerTrackedFeature::kEnableCacheMediaTakeOver,
+#endif
           WebSchedulerTrackedFeature::kSharedWorkerMessage};
 }
 WebSchedulerTrackedFeatures GetInjectionWebSchedulerTrackedFeatures() {
@@ -314,6 +335,13 @@ base::flat_set<std::string> ParseBlockedCgiParams(
 BackForwardCacheTestDelegate* g_bfcache_disabled_test_observer = nullptr;
 
 void RestoreBrowserControlsState(RenderFrameHostImpl* cached_rfh) {
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableNwebExTopControls)) {
+    return;
+  }
+#endif
+
   auto* current_rfh =
       cached_rfh->frame_tree_node()->render_manager()->current_frame_host();
 
@@ -617,6 +645,9 @@ void BackForwardCacheImpl::Entry::WriteIntoTrace(
 void BackForwardCacheImpl::RenderProcessPriorityChanged(
     RenderProcessHostImpl* host) {
   EnforceCacheSizeLimit();
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  LOG(DEBUG) << "[BFCACHE]" << " Now stored entries number is: " << GetStoredEntriesNumber();
+#endif
 }
 
 BackForwardCacheTestDelegate::BackForwardCacheTestDelegate() {
@@ -642,6 +673,11 @@ BackForwardCacheImpl::BackForwardCacheImpl(BrowserContext* browser_context)
               browser_context) &&
       GetCacheControlNoStoreLevel() >
           CacheControlNoStoreExperimentLevel::kDoNotStore;
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kEnableBFCache)) {
+    this->size_ = 1;
+  }
+#endif
 }
 
 BackForwardCacheImpl::~BackForwardCacheImpl() {
@@ -1324,6 +1360,9 @@ void BackForwardCacheImpl::StoreEntry(
   entries_.push_front(std::move(entry));
   AddProcessesForEntry(*entries_.front());
   EnforceCacheSizeLimit();
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  LOG(DEBUG) << "[BFCACHE] " << __func__ << " Now stored entries number is: " << GetStoredEntriesNumber();
+#endif
 }
 
 void BackForwardCacheImpl::EnforceCacheSizeLimit() {
@@ -1341,6 +1380,16 @@ void BackForwardCacheImpl::EnforceCacheSizeLimit() {
         GetForegroundedEntriesCacheSize(),
         BackForwardCacheMetrics::NotRestoredReason::kForegroundCacheLimit);
   }
+
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableBFCache)) {
+    EnforceCacheSizeLimitInternal(this->size_,
+    BackForwardCacheMetrics::NotRestoredReason::kCacheLimitPrunedOnModerateMemoryPressure);
+    return;
+  }
+#endif
+
   EnforceCacheSizeLimitInternal(
       GetCacheSize(), BackForwardCacheMetrics::NotRestoredReason::kCacheLimit);
 }
@@ -1496,6 +1545,9 @@ std::unique_ptr<BackForwardCacheImpl::Entry> BackForwardCacheImpl::RestoreEntry(
 
   RestoreBrowserControlsState(entry->render_frame_host());
 
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  LOG(DEBUG) << "[BFCACHE] " << __func__ << " Now stored entries number is: " << GetStoredEntriesNumber();
+#endif
   return entry;
 }
 
@@ -1763,6 +1815,10 @@ void BackForwardCacheImpl::DestroyEvictedFrames() {
     }
     return false;
   });
+
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  LOG(DEBUG) << "[BFCACHE] " << __func__ << " Now stored entries number is: " << GetStoredEntriesNumber();
+#endif
 }
 
 bool BackForwardCacheImpl::IsAllowed(const GURL& current_url) {
@@ -1893,6 +1949,10 @@ bool BackForwardCacheImpl::
 
 // Static
 bool BackForwardCacheImpl::IsUnloadAllowed() {
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  if (base::ohos::IsPcDevice())
+    return false;
+#endif // BUILDFLAG(ARKWEB_BFCACHE)
   return base::FeatureList::IsEnabled(kBackForwardCacheUnloadAllowed);
 }
 

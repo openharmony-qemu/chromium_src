@@ -514,7 +514,27 @@ interface CookieManager {
   // the first use of the backing store, otherwise this will have no effect on
   // the CookieManager, returning false to indicate so.
   AllowFileSchemeCookies(bool allow) => (bool success);
+  // #if BUILDFLAG(ARKWEB_COOKIE)
+  [EnableIf=is_arkweb, Sync] SetCanonicalCookieSync(
+          CanonicalCookie cookie, url.mojom.Url source_url,
+          CookieOptions cookie_options)
+      => (CookieAccessResult access_result);
 
+  [EnableIf=is_arkweb, Sync] GetCookieListSync(url.mojom.Url url,
+            CookieOptions cookie_options,
+            CookiePartitionKeyCollection cookie_partition_key_collection)
+      => (array<CookieWithAccessResult> cookies,
+      array<CookieWithAccessResult> excluded_cookies);
+  
+  [EnableIf=is_arkweb, Sync] DeleteCookiesSync(CookieDeletionFilter filter)
+      => (uint32 num_deleted);
+
+  [EnableIf=is_arkweb, Sync] GetAllCookiesSync()
+      => (array<CanonicalCookie> cookies);
+
+  [EnableIf=is_arkweb] SetAllCookies(array<CanonicalCookie> cookies)
+      => (CookieAccessResult access_result);
+  // #endif 
   // Sets content settings for cookies. These are used to determine cookie
   // access and cookie deletion behavior. Will
   // ack the caller with a callback when settings have been updated.

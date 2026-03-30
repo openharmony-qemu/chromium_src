@@ -225,6 +225,17 @@ class MockNavigationHandle : public NavigationHandle {
         emptyvector_result;
     return *emptyvector_result;
   }
+
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  bool NeedsReloadWithFallbackProxy() override { return false; }
+  ErrorPageReloadReason  GetCurrentReloadReason() override {
+    return ErrorPageReloadReason ::INVALID;
+  }
+  int GetOriginalNetErrorCode() override { return 0; }
+  bool HasBeenReloadedForThisReason(ErrorPageReloadReason  reason) override {
+    return false;
+  }
+#endif
   MOCK_METHOD(void,
               RegisterThrottleForTesting,
               (std::unique_ptr<NavigationThrottle>));
@@ -262,6 +273,9 @@ class MockNavigationHandle : public NavigationHandle {
   MOCK_METHOD(bool, NeedsUrlLoader, ());
   MOCK_METHOD(bool, IsInitialWebUISyncNavigation, ());
 
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+  MOCK_METHOD(void, SetCustomViewportWidth, (int32_t));
+#endif
 #if BUILDFLAG(IS_ANDROID)
   MOCK_METHOD(const base::android::JavaRef<jobject>&,
               GetJavaNavigationHandle,

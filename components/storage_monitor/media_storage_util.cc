@@ -31,6 +31,11 @@ typedef std::vector<StorageInfo> StorageInfoList;
 
 base::FilePath::StringType FindRemovableStorageLocationById(
     const std::string& device_id) {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (!StorageMonitor::GetInstance()) {
+    return base::FilePath::StringType();
+  }
+#endif
   StorageInfoList devices =
       StorageMonitor::GetInstance()->GetAllAvailableStorages();
   for (StorageInfoList::const_iterator it = devices.begin();
@@ -122,6 +127,10 @@ bool MediaStorageUtil::GetDeviceInfoFromPath(const base::FilePath& path,
 
   StorageInfo info;
   StorageMonitor* monitor = StorageMonitor::GetInstance();
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (!monitor)
+    return false;
+#endif
   bool found_device = monitor->GetStorageInfoForPath(path, &info);
 
   if (found_device && StorageInfo::IsRemovableDevice(info.device_id())) {

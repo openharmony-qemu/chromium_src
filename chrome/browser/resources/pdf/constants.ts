@@ -158,6 +158,13 @@ export type ExtendedKeyEvent = KeyboardEvent&{
   fromPlugin?: boolean,
 };
 
+/**
+ * Enumeration of screen's width for different devices.
+ */
+export enum ScreenWidth {
+  PHONE_500 = 500,
+}
+
 // <if expr="enable_pdf_save_to_drive">
 export enum SaveToDriveState {
   UNINITIALIZED = 'uninitialized',

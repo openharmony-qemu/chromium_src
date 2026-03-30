@@ -187,18 +187,22 @@ void MimeHandlerViewGuest::CreateInnerPage(
   content::HostZoomMap::Get(guest_site_instance.get())
       ->SetZoomLevelForHostAndScheme(kExtensionScheme, stream_->extension_id(),
                                      0);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  content::HostZoomMap::Get(guest_site_instance.get())
+      ->SetZoomLevelForHostAndScheme(kArkwebExtensionScheme,
+                                     stream_->extension_id(), 0);
+#endif
 
   if (base::FeatureList::IsEnabled(features::kGuestViewMPArch)) {
     std::move(callback).Run(std::move(owned_this),
                             content::GuestPageHolder::Create(
                                 owner_web_contents(), guest_site_instance,
                                 GetGuestPageHolderDelegateWeakPtr()));
+
   } else {
     WebContents::CreateParams params(browser_context(),
                                      guest_site_instance.get());
     params.guest_delegate = this;
-    if (delegate_)
-      delegate_->OverrideWebContentsCreateParams(&params);
     std::move(callback).Run(std::move(owned_this),
                             WebContents::CreateWithSessionStorage(
                                 params, owner_web_contents()
@@ -208,7 +212,11 @@ void MimeHandlerViewGuest::CreateInnerPage(
 }
 
 void MimeHandlerViewGuest::DidAttachToEmbedder() {
-  DCHECK(stream_->handler_url().SchemeIs(extensions::kExtensionScheme));
+  DCHECK(stream_->handler_url().SchemeIs(extensions::kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+         || stream_->handler_url().SchemeIs(extensions::kArkwebExtensionScheme)
+#endif
+  );
   GetController().LoadURL(stream_->handler_url(), content::Referrer(),
                           ui::PAGE_TRANSITION_AUTO_TOPLEVEL, std::string());
   if (!base::FeatureList::IsEnabled(features::kGuestViewMPArch)) {
@@ -499,7 +507,11 @@ void MimeHandlerViewGuest::ReadyToCommitNavigation(
 
 #if BUILDFLAG(ENABLE_PDF)
   const GURL& url = navigation_handle->GetURL();
-  if (url.SchemeIs(kExtensionScheme) &&
+  if ((url.SchemeIs(kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+       || url.SchemeIs(kArkwebExtensionScheme)
+#endif
+           ) &&
       url.host() == extension_misc::kPdfExtensionId) {
     // The PDF viewer will navigate to the stream URL (using
     // PdfNavigtionThrottle), rather than using it as a subresource.

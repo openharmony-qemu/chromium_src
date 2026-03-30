@@ -4,12 +4,17 @@
 
 #include "components/input/fling_controller.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/time/default_tick_clock.h"
 #include "base/time/time.h"
 #include "base/trace_event/trace_event.h"
+#include "content/public/browser/browser_thread.h"
 #include "third_party/perfetto/include/perfetto/tracing/track.h"
 #include "ui/events/base_event_utils.h"
 #include "ui/events/gestures/blink/web_gesture_curve_impl.h"
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/components/input/fling_controller_for_include_impl.h"
+#endif
 
 using blink::WebInputEvent;
 using blink::WebGestureEvent;
@@ -55,8 +60,6 @@ FlingController::FlingController(
   DCHECK(scheduler_client);
 }
 
-FlingController::~FlingController() = default;
-
 bool FlingController::ObserveAndFilterForTapSuppression(
     const GestureEventWithLatencyInfo& gesture_event) {
   switch (gesture_event.event.GetType()) {
@@ -80,6 +83,9 @@ bool FlingController::ObserveAndFilterForTapSuppression(
     case WebInputEvent::Type::kGestureTap:
     case WebInputEvent::Type::kGestureDoubleTap:
     case WebInputEvent::Type::kGestureLongPress:
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+    case WebInputEvent::Type::kGestureDragLongPress:
+#endif
     case WebInputEvent::Type::kGestureLongTap:
     case WebInputEvent::Type::kGestureTwoFingerTap:
       if (gesture_event.event.SourceDevice() ==
@@ -106,6 +112,9 @@ bool FlingController::ObserveAndMaybeConsumeGestureEvent(
     TRACE_EVENT_INSTANT0("input", "NoActiveFling", TRACE_EVENT_SCOPE_THREAD);
     return true;
   }
+#if BUILDFLAG(ARKWEB_D_VSYNC)
+  SetIsFlingFalse(gesture_event.event.GetType() == WebInputEvent::Type::kGestureFlingCancel && fling_curve_);
+#endif
 
   if (ObserveAndFilterForTapSuppression(gesture_event)) {
     TRACE_EVENT_INSTANT0("input", "FilterTapSuppression",
@@ -134,6 +143,9 @@ bool FlingController::ObserveAndMaybeConsumeGestureEvent(
   if (gesture_event.event.GetType() ==
       WebInputEvent::Type::kGestureFlingStart) {
     ProcessGestureFlingStart(gesture_event);
+#if BUILDFLAG(IS_ARKWEB)
+  StartWebPageFling();
+#endif
     return true;
   }
 
@@ -185,7 +197,6 @@ void FlingController::ScheduleFlingProgress() {
 void FlingController::ProcessGestureFlingCancel(
     const GestureEventWithLatencyInfo& gesture_event) {
   DCHECK(fling_curve_);
-
   // Note: We don't want to reset the fling booster here because a FlingCancel
   // will be received when the user puts their finger down for a potential
   // boost. FlingBooster will process the event stream after the current fling
@@ -238,6 +249,10 @@ void FlingController::ProgressFling(
   bool fling_is_active = fling_curve_->Advance(
       (current_time - current_fling_parameters_.start_time).InSecondsF(),
       current_fling_parameters_.velocity, delta_to_scroll);
+
+#if BUILDFLAG(ARKWEB_SLIDE_LTPO)
+  FlingUpdate(current_time);
+#endif
 
   if (!fling_is_active && current_fling_parameters_.source_device !=
                               blink::WebGestureDevice::kSyntheticAutoscroll) {
@@ -369,6 +384,9 @@ void FlingController::EndCurrentFling(base::TimeTicks current_time) {
   last_progress_time_ = base::TimeTicks();
 
   GenerateAndSendFlingEndEvents(current_time);
+#if BUILDFLAG(IS_ARKWEB)
+  StopWebPageFling();
+#endif
   current_fling_parameters_ = ActiveFlingParameters();
 
   if (fling_curve_) {
@@ -403,7 +421,6 @@ bool FlingController::UpdateCurrentFlingState(
     // scroll, the animation should begin at the time of the last update.
     current_fling_parameters_.start_time = last_seen_scroll_update_;
   }
-
   if (velocity.IsZero() && fling_start_event.SourceDevice() !=
                                blink::WebGestureDevice::kSyntheticAutoscroll) {
     fling_booster_.Reset();

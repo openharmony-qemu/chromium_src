@@ -9,6 +9,10 @@ import("//gpu/vulkan/features.gni")
 import("//skia/features.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
 import("//testing/test.gni")
+if (is_arkweb) {
+  import("//arkweb/build/features/features.gni")
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
 
 import("//third_party/inspector_protocol/inspector_protocol.gni")
 
@@ -261,6 +265,11 @@ viz_component("common") {
     deps += [ "//ui/base" ]
   }
 
+  if (is_arkweb) {
+    sources += arkweb_components_viz_common_frame_sinks_copy_output_result_sources
+    deps += arkweb_components_viz_common_frame_sinks_copy_output_result_deps
+  }
+
   if (is_ios) {
     sources += [
       "frame_sinks/external_begin_frame_source_ios.h",
@@ -282,6 +291,10 @@ viz_component("common") {
     "//mojo/public/cpp/bindings",
     "//skia",
   ]
+
+  if (enable_arkweb) {
+    deps += [ "//arkweb//build/features"]
+  }
 
   if (enable_vulkan) {
     public_deps += [ ":vulkan_context_provider" ]

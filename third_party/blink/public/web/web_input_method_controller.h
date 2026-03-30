@@ -7,9 +7,13 @@
 
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "third_party/blink/public/platform/web_text_input_info.h"
 #include "third_party/blink/public/web/web_range.h"
 #include "third_party/blink/public/web/web_widget.h"
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
+#endif
 #include "ui/base/ime/ime_text_span.h"
 
 namespace gfx {
@@ -70,6 +74,11 @@ class WebInputMethodController {
 
   // Returns the type of current text input of this controller.
   virtual WebTextInputType TextInputType() { return kWebTextInputTypeNone; }
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  virtual void GetInputElementAttributes(
+      HashMap<blink::String, blink::String>& attributes) {}
+#endif
 
   // Fetch the current selection range of this frame.
   virtual WebRange GetSelectionOffsets() const = 0;

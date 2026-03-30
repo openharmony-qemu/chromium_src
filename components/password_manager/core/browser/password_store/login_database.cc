@@ -58,6 +58,16 @@
 #include "url/origin.h"
 #include "url/url_constants.h"
 
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+#include "base/ohos/nweb_engine_event_logger.h"
+#include "base/ohos/nweb_engine_event_logger_code.h"
+#include "chrome/browser/browser_process.h"
+#include "cef/libcef/browser/prefs/browser_prefs.h"
+#include "components/os_crypt/sync/os_crypt_linux_for_include.h"
+#include "components/prefs/pref_service.h"
+#include "content/public/browser/browser_thread.h"
+#endif
+
 #if BUILDFLAG(IS_IOS)
 #import <Security/Security.h>
 #endif  // BUILDFLAG(IS_IOS)
@@ -1115,6 +1125,8 @@ struct LoginDatabase::PrimaryKeyAndPassword {
   std::string keychain_identifier;
 };
 
+#include "arkweb/chromium_ext/components/password_manager/core/browser/password_store/login_database_for_include.cc"
+
 LoginDatabase::LoginDatabase(const base::FilePath& db_path,
                              IsAccountStore is_account_store,
                              DeletingUndecryptablePasswordsEnabled can_delete)
@@ -1138,7 +1150,14 @@ bool LoginDatabase::Init(
 
   if (!db_.Open(db_path_)) {
     LogDatabaseInitError(OPEN_FILE_ERROR);
-    LOG(ERROR) << "Unable to open the password store database.";
+    LOG(ERROR) << "[Autofill] Unable to open the password store database, errorcode = 3.";
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+    std::string err_msg = "Unable to open the password store database, error_code:" +
+                          std::to_string(LOGIN_DATA_OPEN_FAILED);
+    base::ohos::ReportEngineEvent(base::ohos::kModuleContentBrowser, base::ohos::kDefaultUrl,
+                                  base::ohos::kPasswordManagerError, err_msg);
+    LoginDatabaseSetMigratePasswordsFlagToFile();
+#endif
     return false;
   }
 
@@ -2448,6 +2467,11 @@ void LoginDatabase::InitializeStatementStrings(const SQLTableBuilder& builder) {
   id_and_password_statement_ =
       "SELECT id, password_value, keychain_identifier FROM logins WHERE " +
       all_unique_key_column_names;
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+  DCHECK(update_display_name_statement_.empty());
+  update_display_name_statement_ = "UPDATE logins SET display_name=? WHERE " +
+                                   all_unique_key_column_names;
+#endif
 }
 
 PasswordForm::Store LoginDatabase::GetStore() const {

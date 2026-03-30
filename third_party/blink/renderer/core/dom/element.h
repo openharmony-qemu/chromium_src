@@ -1959,6 +1959,12 @@ class CORE_EXPORT Element : public ContainerNode, public Animatable {
   OverscrollAreaTracker& EnsureOverscrollAreaTracker();
   OverscrollAreaTracker* OverscrollAreaTracker() const;
 
+#if BUILDFLAG(ARKWEB_AI)
+  bool hasArkWebShadowRoot() const {
+    return AuthorShadowRoot() != nullptr;
+  };
+#endif
+
  protected:
   bool HasElementData() const { return static_cast<bool>(element_data_); }
   const ElementData* GetElementData() const { return element_data_.Get(); }

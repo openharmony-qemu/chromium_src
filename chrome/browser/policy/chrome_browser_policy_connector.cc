@@ -8,6 +8,9 @@
 #include <string>
 #include <utility>
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "base/check_is_test.h"
 #include "base/command_line.h"
 #include "base/functional/bind.h"
@@ -68,6 +71,10 @@
 #include "components/enterprise/browser/controller/chrome_browser_cloud_management_controller.h"
 #include "components/policy/core/common/cloud/machine_level_user_cloud_policy_manager.h"
 #include "components/policy/core/common/proxy_policy_provider.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_EDM_POLICY)
+#include "arkweb/chromium_ext/components/policy/core/common/policy_loader_ohos.h"
 #endif
 
 namespace policy {
@@ -366,7 +373,7 @@ ChromeBrowserPolicyConnector::CreatePolicyProviders() {
     providers.insert(providers.begin(), std::move(platform_provider));
   }
 
-#if !BUILDFLAG(IS_CHROMEOS)
+#if !BUILDFLAG(IS_CHROMEOS) && !BUILDFLAG(IS_OHOS)
   MaybeCreateCloudPolicyManager(&providers);
 #endif  // !BUILDFLAG(IS_CHROMEOS)
 
@@ -398,6 +405,13 @@ ChromeBrowserPolicyConnector::CreatePlatformProvider() {
       base::ThreadPool::CreateSequencedTaskRunner(
           {base::MayBlock(), base::TaskPriority::BEST_EFFORT}),
       ManagementServiceFactory::GetForPlatform(), policy_key));
+  return std::make_unique<AsyncPolicyProvider>(GetSchemaRegistry(),
+                                               std::move(loader));
+#elif BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_EDM_POLICY)
+  std::unique_ptr<AsyncPolicyLoader> loader =
+      std::make_unique<PolicyLoaderOhos>(
+          base::ThreadPool::CreateSequencedTaskRunner(
+              {base::MayBlock(), base::TaskPriority::USER_VISIBLE}));
   return std::make_unique<AsyncPolicyProvider>(GetSchemaRegistry(),
                                                std::move(loader));
 #elif BUILDFLAG(IS_MAC)

@@ -296,6 +296,9 @@ class ProfileImpl : public Profile {
   // components/keyed_service/content/browser_context_keyed_service_factory.*
 
   raw_ptr<Profile::Delegate> delegate_;
+#if BUILDFLAG(ARKWEB_PERMISSION)
+  std::unique_ptr<content::PermissionControllerDelegate> permission_manager_;
+#endif  // ARKWEB_PERMISSION
 };
 
 #endif  // CHROME_BROWSER_PROFILES_PROFILE_IMPL_H_

@@ -80,10 +80,11 @@ const tests = [
     const bookmarkContent = createBookmarksForTest();
     bookmarkContent.bookmarks = [{
       title: 'Test 1',
+      id:'0',
       page: 1,
       children: [
-        {title: 'Test 1a', page: 2, children: []},
-        {title: 'Test 1b', page: 3, children: []},
+        {title: 'Test 1a', id:'1', page: 2, children: []},
+        {title: 'Test 1b', id:'2', page: 3, children: []},
       ],
     }];
     document.body.appendChild(bookmarkContent);

@@ -24,6 +24,7 @@ source_set("unit_tests") {
   sources = [
     "rule_parser_unittest.cc",
     "rule_unittest.cc",
+    "//arkweb/chromium_ext/components/subresource_filter/tools/rule_parser_for_include_unittest.cc"
   ]
   deps = [
     ":rule_parser",

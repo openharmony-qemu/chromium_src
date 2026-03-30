@@ -11,7 +11,7 @@ export function getHtml(this: ViewerPageSelectorElement) {
 <div id="content">
   <input part="input" type="text" id="pageSelector" .value="${this.pageNo}"
       @pointerup="${this.select}" @input="${this.onInput_}"
-      @change="${this.pageNoCommitted}" aria-label="$i18n{labelPageNumber}">
+      @change="${this.pageNoCommitted}" aria-label="$i18n{labelPageNumber}" enterkeyhint="done">
   <span id="divider">/</span>
   <span id="pagelength">${this.docLength}</span>
 </div>

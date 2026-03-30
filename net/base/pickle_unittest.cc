@@ -92,7 +92,7 @@ auto TestData() {
       base::flat_map<std::string, std::vector<std::string>>{
           {"foo", {"bar", "baz"}}, {"", {"qux", "quux"}}},
       absl::InlinedVector<char, 5>{'a', 'c'}, std::vector<uint8_t>{1, 2, 3},
-      std::deque<int16_t>{1, -1}, std::vector<bool>{true, false, true},
+      std::deque<int16_t>{1, -1}, std::deque<bool>{true, false, true},
       absl::InlinedVector<int8_t, 256>{1, 2, 3, 4},
       std::set<int64_t>{81, 12, 17}, std::unordered_set<int64_t>{9, 3, 6},
       std::unordered_map<int, std::string>{{1, "foo"}, {2, "bar"}, {3, "baz"}},

@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/check_is_test.h"
 #include "base/containers/flat_map.h"
 #include "base/functional/bind.h"
@@ -632,6 +633,12 @@ void EncryptedReportingClient::CreateUploadJob(
     ScopedReservation scoped_reservation,
     int64_t last_sequence_id,
     uint64_t events_to_send) {
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+  std::move(callback).Run(base::unexpected(
+      Status(error::FAILED_PRECONDITION, "Failure to build request")));
+  return;
+#endif
+
   if (!payload_result.has_value()) {
     std::move(callback).Run(base::unexpected(
         Status(error::FAILED_PRECONDITION, "Failure to build request")));

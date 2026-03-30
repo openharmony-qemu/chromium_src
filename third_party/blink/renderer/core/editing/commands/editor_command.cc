@@ -2274,3 +2274,7 @@ const GCedStaticRangeVector* EditorCommand::GetTargetRanges() const {
 }
 
 }  // namespace blink
+
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/editing/commands/editor_command_for_include.cc"
+#endif  // ARKWEB_CLIPBOARD

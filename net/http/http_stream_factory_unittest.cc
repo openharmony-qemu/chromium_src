@@ -316,7 +316,14 @@ class StreamRequester : public HttpStreamRequest::Delegate {
     error_status_ = status;
   }
 
-  void OnCertificateError(int status, const SSLInfo& ssl_info) override {}
+  void OnCertificateError(int status,
+                          const SSLInfo& ssl_info
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+                          ,
+                          bool used_fallback_proxy
+#endif
+                          ) override {
+  }
 
   void OnNeedsProxyAuth(const HttpResponseInfo& proxy_response,
                         const ProxyInfo& used_proxy_info,

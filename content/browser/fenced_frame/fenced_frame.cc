@@ -360,6 +360,14 @@ bool FencedFrame::ShouldPreserveAbortedURLs() {
 
 void FencedFrame::UpdateOverridingUserAgent() {}
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+std::string FencedFrame::NotifyNavigationRewriteUrl(
+    const std::string& original_url, 
+    const std::string& referrer,
+    int transition_type,
+    bool is_key_request) { return ""; }
+#endif
+
 #if BUILDFLAG(IS_ANDROID)
 
 scoped_refptr<viz::RasterContextProvider>

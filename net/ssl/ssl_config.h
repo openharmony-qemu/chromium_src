@@ -25,6 +25,10 @@ namespace net {
 
 // Supported TLS ProtocolVersion values encoded as uint16_t.
 enum {
+#if BUILDFLAG(ARKWEB_SSL_AUTH_ALGO)
+  SSL_PROTOCOL_VERSION_TLS1 = 0x0301,
+  SSL_PROTOCOL_VERSION_TLS1_1 = 0x0302,
+#endif
   SSL_PROTOCOL_VERSION_TLS1_2 = 0x0303,
   SSL_PROTOCOL_VERSION_TLS1_3 = 0x0304,
 };
@@ -78,6 +82,12 @@ struct NET_EXPORT SSLConfig {
 
   // If true, causes only ECDHE cipher suites to be enabled.
   bool require_ecdhe = false;
+
+#if BUILDFLAG(ARKWEB_SSL_AUTH_ALGO)
+  // If true, causes SHA-1 signatures to be rejected from servers during
+  // a TLS handshake.
+  bool disable_sha1_server_signatures = false;
+#endif
 
   // TODO(wtc): move the following members to a new SSLParams structure.  They
   // are not SSL configuration settings.

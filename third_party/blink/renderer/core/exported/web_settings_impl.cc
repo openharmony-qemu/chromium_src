@@ -30,6 +30,7 @@
 
 #include "third_party/blink/renderer/core/exported/web_settings_impl.h"
 
+#include "arkweb/build/features/features.h"
 #include <optional>
 
 #include "third_party/blink/public/platform/web_string.h"

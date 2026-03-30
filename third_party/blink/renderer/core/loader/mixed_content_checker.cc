@@ -516,7 +516,15 @@ bool MixedContentChecker::ShouldBlockFetch(
       // Receivers to the behavior before crrev.com/c/4032146.
       allowed = !strict_mode;
 #else
+#if BUILDFLAG(ARKWEB_MIXED_CONTENT)
+      if (settings->GetAllowRunningOfInsecureContent()) {
+        allowed = !strict_mode;
+      } else {
+        allowed = !strict_mode && !GURL(url).HostIsIPAddress();
+      };
+#else
       allowed = !strict_mode && !GURL(url).HostIsIPAddress();
+#endif
 #endif  // BUILDFLAG(ENABLE_CAST_RECEIVER)
       if (allowed) {
         if (content_settings_client)

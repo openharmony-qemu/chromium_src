@@ -122,6 +122,9 @@ struct CreateViewParams {
   // Whether the `blink::WebView` should initially be hidden.
   bool hidden;
 
+  [EnableIf=arkweb_arkweb_extensions]
+  bool is_offscreen;
+
   // Prerender2: This field is set iff the blink::WebView is for a prerendering
   // page.
   blink.mojom.PrerenderParam? prerender_param;
@@ -532,6 +535,21 @@ interface Frame {
       map<blink.mojom.FrameToken, mojo_base.mojom.FilePath>
           frame_token_map, bool save_with_empty_url,
           pending_remote<FrameHTMLSerializerHandler> handler_remote);
+
+  // #if BUILDFLAG(ARKWEB_ADBLOCK)
+  [EnableIf=arkweb_adblock]
+  OnUpdateAdBlockEnabledToRender(bool site_adblock_enabled);
+  // #endif
+
+  // #if BUILDFLAG(ARKWEB_DFX_TRACING)
+  [EnableIf=arkweb_dfx_tracing]
+  SendCommitNavigationTime(int64 start_time);
+  // #endif
+
+  // #if BUILDFLAG(ARKWEB_PDF
+  [EnableIf=arkweb_pdf]
+  SetIsPDF(bool is_pdf);
+  // #endif
 };
 
 // Implemented by the frame (e.g. renderer processes).
@@ -736,6 +754,13 @@ interface FrameHost {
   [Sync] CreateNewWindow(CreateNewWindowParams params)
       => (CreateNewWindowStatus status, CreateNewWindowReply? reply);
 
+  [EnableIf=arkweb_multi_window, Sync]
+  GetCreateNewWindow(url.mojom.Url target_url,
+                     ui.mojom.WindowOpenDisposition disposition,
+                     bool allow_popup,
+                     blink.mojom.WindowFeatures window_features)
+      => (CreateNewWindowStatus status);
+
   // Asynchronously creates a child frame. A blink.mojom.LocalFrameToken must
   // be allocated first by calling
   // `RenderMessageFilter::GenerateSingleFrameRoutingInfo`. Each of these
@@ -881,4 +906,43 @@ interface FrameHost {
 
   // Called when the renderer is done loading a frame.
   DidStopLoading();
+
+  // #if BUILDFLAG(ARKWEB_MENU)
+  [EnableIf=arkweb_menu]
+  MouseSelectMenuShow(bool show);
+  // #endif ARKWEB_MENU
+
+  // #if BUILDFLAG(ARKWEB_MENU)
+  [EnableIf=arkweb_menu]
+  ChangeVisibilityOfQuickMenu();
+
+  [EnableIf=arkweb_menu]
+  HideQuickMenu();
+  // #endif ARKWEB_MENU
+
+  // #if BUILDFLAG(ARKWEB_DRAG_DROP)
+  [EnableIf=arkweb_drag_drop]
+  OnClearContextMenu();
+  // #endif
+
+  // #if BUILDFLAG(ARKWEB_AI)
+  [EnableIf=arkweb_ai]
+  CloseImageOverlaySelection();
+  // #endif
+
+  // #if BUILDFLAG(ARKWEB_PDF)
+  [EnableIf=arkweb_pdf]
+  OnPdfScrollAtBottom(string url);
+  // #endif
+
+  // #if BUILDFLAG(ARKWEB_PDF)
+  [EnableIf=arkweb_pdf]
+  OnPdfLoadEvent(int32 result, string url);
+  // #endif
+
+  // #if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+  [EnableIf=arkweb_js_on_document_end]
+  OnDocumentEndReady();
+  // #endif
+
 };

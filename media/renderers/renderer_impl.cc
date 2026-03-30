@@ -30,6 +30,9 @@
 #include "media/base/video_decoder_config.h"
 #include "media/base/video_renderer.h"
 #include "media/base/wall_clock_time_source.h"
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/media/renderers/renderer_impl_for_include.cc"
+#endif
 #include "third_party/perfetto/include/perfetto/tracing/track.h"
 
 namespace media {
@@ -137,6 +140,10 @@ RendererImpl::~RendererImpl() {
 
 void RendererImpl::Initialize(MediaResource* media_resource,
                               RendererClient* client,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                              RequestSurfaceCB request_surface_cb,
+                              VideoDecoderChangedCB decoder_changed_cb,
+#endif // ARKWEB_VIDEO_ASSISTANT
                               PipelineStatusCallback init_cb) {
   DVLOG(1) << __func__;
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
@@ -149,6 +156,10 @@ void RendererImpl::Initialize(MediaResource* media_resource,
   client_ = client;
   media_resource_ = media_resource;
   init_cb_ = std::move(init_cb);
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  request_surface_cb_ = std::move(request_surface_cb);
+  decoder_changed_cb_ = std::move(decoder_changed_cb);
+#endif // ARKWEB_VIDEO_ASSISTANT
 
   if (HasEncryptedStream() && !cdm_context_) {
     DVLOG(1) << __func__ << ": Has encrypted stream but CDM is not set.";
@@ -477,6 +488,10 @@ void RendererImpl::InitializeVideoRenderer() {
       DemuxerStream::VIDEO, this, media_resource_);
   video_renderer_->Initialize(
       video_stream, cdm_context_, video_renderer_client_.get(),
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+      std::move(request_surface_cb_),
+      std::move(decoder_changed_cb_),
+#endif // ARKWEB_VIDEO_ASSISTANT
       base::BindRepeating(&RendererImpl::GetWallClockTimes,
                           base::Unretained(this)),
       base::BindOnce(&RendererImpl::OnVideoRendererInitializeDone, weak_this_));
@@ -641,6 +656,10 @@ void RendererImpl::ReinitializeVideoRenderer(
   video_renderer_->OnTimeStopped();
   video_renderer_->Initialize(
       stream, cdm_context_, video_renderer_client_.get(),
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+      std::move(request_surface_cb_),
+      std::move(decoder_changed_cb_),
+#endif // ARKWEB_VIDEO_ASSISTANT
       base::BindRepeating(&RendererImpl::GetWallClockTimes,
                           base::Unretained(this)),
       base::BindOnce(&RendererImpl::OnVideoRendererReinitialized, weak_this_,
@@ -1006,6 +1025,9 @@ void RendererImpl::OnTracksChanged(DemuxerStream::Type track_type,
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
   TRACE_EVENT1("media", "RendererImpl::OnTracksChanged", "track_type",
                track_type);
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+  LOG(INFO) << "DMABUF::RendererImpl::OnTracksChanged";
+#endif
   // 'fixing' the stream -> restarting if its the same stream,
   //                        reinitializing if it is different.
   base::OnceClosure fix_stream_cb;

@@ -110,6 +110,8 @@ class AssertPageLoadMetricsObserver final
       const page_load_metrics::mojom::PageLoadTiming& timing) override;
   void OnLoadEventStart(
       const page_load_metrics::mojom::PageLoadTiming& timing) override;
+void OnLoadEventEnd(
+      const page_load_metrics::mojom::PageLoadTiming& timing) override {}
   void OnFirstPaintInPage(
       const page_load_metrics::mojom::PageLoadTiming& timing) override;
   void OnFirstImagePaintInPage(
@@ -237,6 +239,12 @@ class AssertPageLoadMetricsObserver final
       const page_load_metrics::mojom::PageLoadTiming& timing) override {}
   void OnUserTimingMarkInteractive(
       const page_load_metrics::mojom::PageLoadTiming& timing) override {}
+
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  void OnFirstContentfulPaintAfterBackForwardCacheRestoreInPage(
+      const page_load_metrics::mojom::BackForwardCacheTiming& timing,
+      size_t index) override;
+#endif
 
   // Reference implementations duplicated from PageLoadMetricsObserver
   ObservePolicy ShouldObserveMimeTypeByDefault(

@@ -118,7 +118,11 @@ bool NativeMessagingHostManifest::Parse(const base::Value::Dict& dict,
       return false;
     }
     std::string pattern_string = entry.GetString();
-    URLPattern pattern(URLPattern::SCHEME_EXTENSION);
+    URLPattern pattern(URLPattern::SCHEME_EXTENSION
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+                       | URLPattern::SCHEME_ARKWEB_EXTENSION
+#endif
+    );
     URLPattern::ParseResult result = pattern.Parse(pattern_string);
     if (result != URLPattern::ParseResult::kSuccess) {
       *error_message = "Failed to parse pattern \"" + pattern_string +

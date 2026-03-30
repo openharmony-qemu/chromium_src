@@ -21,6 +21,9 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/protobuf/src/google/protobuf/io/zero_copy_stream_impl_lite.h"
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+#include "components/subresource_filter/core/common/arkweb_indexed_ruleset_ext.h"
+#endif
 namespace subresource_filter {
 
 namespace proto = url_pattern_index::proto;
@@ -51,7 +54,11 @@ std::vector<uint8_t> SerializeUnindexedRulesetWithMultipleRules(
 
 std::vector<uint8_t> SerializeIndexedRulesetWithMultipleRules(
     const std::vector<proto::UrlRule>& rules) {
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  ArkWebRulesetIndexerExt indexer;
+#else
   RulesetIndexer indexer;
+#endif
   for (const auto& rule : rules) {
     EXPECT_TRUE(indexer.AddUrlRule(rule));
   }
@@ -195,11 +202,105 @@ void TestRulesetCreator::CreateTestRulesetFromContents(
     std::vector<uint8_t> ruleset_contents,
     TestRuleset* ruleset) {
   CHECK(ruleset);
-
   ruleset->contents = std::move(ruleset_contents);
+
   ASSERT_NO_FATAL_FAILURE(GetUniqueTemporaryPath(&ruleset->path));
   WriteRulesetContents(ruleset->contents, ruleset->path);
 }
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+std::vector<uint8_t> SerializeUnindexedRulesetWithMultipleCssRules(
+    const std::vector<proto::CssRule>& rules) {
+  std::string ruleset_contents;
+  google::protobuf::io::StringOutputStream output(&ruleset_contents);
+  UnindexedRulesetWriter ruleset_writer(&output);
+  for (const auto& rule : rules)
+    ruleset_writer.AddCssRule(rule);
+  ruleset_writer.Finish();
+
+  auto* data = reinterpret_cast<const uint8_t*>(ruleset_contents.data());
+  return std::vector<uint8_t>(data, data + ruleset_contents.size());
+}
+
+std::vector<uint8_t> SerializeIndexedRulesetWithMultipleCssRules(
+    const std::vector<proto::CssRule>& rules) {
+  ArkWebRulesetIndexerExt indexer;
+  for (const auto& rule : rules) {
+    EXPECT_TRUE(indexer.AddCssRule(rule));
+  }
+  indexer.Finish();
+  return std::vector<uint8_t>(indexer.data().begin(), indexer.data().end());
+}
+
+void TestRulesetCreator::CreateRulesetWithCssRules(
+    const std::vector<proto::CssRule>& rules,
+    TestRulesetPair* test_ruleset_pair) {
+  ASSERT_NO_FATAL_FAILURE(CreateTestRulesetFromContents(
+      SerializeUnindexedRulesetWithMultipleCssRules(rules),
+      &test_ruleset_pair->unindexedCss));
+  ASSERT_NO_FATAL_FAILURE(CreateTestRulesetFromContents(
+      SerializeIndexedRulesetWithMultipleCssRules(rules),
+      &test_ruleset_pair->indexedCss));
+}
+
+void TestRulesetCreator::CreateUnindexedRulesetWithCssRules(
+    const std::vector<proto::CssRule>& rules,
+    TestRuleset* test_unindexed_ruleset) {
+  ASSERT_NO_FATAL_FAILURE(CreateTestRulesetFromContents(
+      SerializeUnindexedRulesetWithMultipleCssRules(rules),
+      test_unindexed_ruleset));
+}
+
+proto::CssRule TestRulesetCreator::MakeCssRule(std::string_view suffix, bool is_allowlist) {
+  proto::CssRule rule;
+  rule.set_css_selector(std::string(suffix));
+  rule.set_semantics(is_allowlist ? proto::RULE_SEMANTICS_ALLOWLIST
+                                  : proto::RULE_SEMANTICS_BLOCKLIST);
+  return rule;
+}
+
+void TestRulesetCreator::CreateCssRulesetWithPathSuffix(
+    std::string_view suffix,
+    TestRulesetPair* test_ruleset_pair) {
+  CHECK(test_ruleset_pair);
+  proto::CssRule rule = MakeCssRule(suffix);
+  CreateRulesetWithCssRules({rule}, test_ruleset_pair);
+}
+
+void TestRulesetCreator::CreateUnindexedRulesetWithPathSuffix(
+    std::string_view suffix,
+    TestRuleset* test_unindexed_ruleset) {
+  CHECK(test_unindexed_ruleset);
+  proto::CssRule rule = MakeCssRule(suffix);
+  ASSERT_NO_FATAL_FAILURE(
+      CreateUnindexedRulesetWithCssRules({rule}, test_unindexed_ruleset));
+}
+
+void TestRulesetCreator::CreateCssRulesetWithSubstrings(
+    std::vector<std::string_view> substrings,
+    TestRulesetPair* test_ruleset_pair) {
+  CHECK(test_ruleset_pair);
+  std::vector<proto::CssRule> rules;
+  for (const auto& substring : substrings) {
+    rules.push_back(MakeCssRule(substring));
+  }
+  CreateRulesetWithCssRules(rules, test_ruleset_pair);
+}
+
+void TestRulesetCreator::CreateCssRulesetWithManySuffixes(
+    std::string_view suffix,
+    int num_of_suffixes,
+    TestRulesetPair* test_ruleset_pair) {
+  CHECK(test_ruleset_pair);
+  std::vector<proto::CssRule> rules;
+  for (int i = 0; i < num_of_suffixes; ++i) {
+    proto::CssRule rule;
+    std::string current_suffix =
+        std::string(suffix) + '_' + base::NumberToString(i);
+    rules.push_back(MakeCssRule(current_suffix));
+  }
+  CreateRulesetWithCssRules(rules, test_ruleset_pair);
+}
+#endif
 }  // namespace testing
 }  // namespace subresource_filter

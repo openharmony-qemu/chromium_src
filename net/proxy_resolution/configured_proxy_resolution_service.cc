@@ -1232,7 +1232,10 @@ void ConfiguredProxyResolutionService::OnInitProxyResolverComplete(int result) {
     }
   }
   permanent_error_ = result;
-
+#if BUILDFLAG(ARKWEB_NETWORK_PROXY)
+  LOG(INFO) << "ohos_network OnInitProxyResolverComplete config changes with automatic settings to use "
+            << (config_->value().proxy_rules().empty() ? "Direct" : "Proxy");
+#endif
   // Resume any requests which we had to defer until the PAC script was
   // downloaded.
   SetReady();
@@ -1626,6 +1629,10 @@ void ConfiguredProxyResolutionService::InitializeUsingLastFetchedConfig() {
   DCHECK(fetched_config_);
   if (!fetched_config_->value().HasAutomaticSettings()) {
     config_ = fetched_config_;
+#if BUILDFLAG(ARKWEB_NETWORK_PROXY)
+    LOG(INFO) << "ohos_network OnInitProxyResolverComplete config changes without automatic settings to use "
+            << (config_->value().proxy_rules().empty() ? "Direct" : "Proxy");
+#endif
     SetReady();
     return;
   }

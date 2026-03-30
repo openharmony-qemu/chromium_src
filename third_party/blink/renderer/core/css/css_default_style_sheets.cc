@@ -30,6 +30,7 @@
 
 #include "third_party/blink/renderer/core/css/css_default_style_sheets.h"
 
+#include "arkweb/build/features/features.h"
 #include "third_party/blink/public/resources/grit/blink_resources.h"
 #include "third_party/blink/renderer/core/css/media_query_evaluator.h"
 #include "third_party/blink/renderer/core/css/parser/css_parser.h"
@@ -56,6 +57,9 @@
 #include "third_party/blink/renderer/platform/runtime_enabled_features.h"
 #include "third_party/blink/renderer/platform/wtf/leak_annotations.h"
 #include "third_party/blink/renderer/platform/wtf/text/string_builder.h"
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/css/css_utils.h"
+#endif
 
 namespace blink {
 
@@ -341,8 +345,15 @@ bool CSSDefaultStyleSheets::EnsureDefaultStyleSheetsForElement(
 
   // FIXME: We should assert that the sheet only styles MathML elements.
   if (element.IsMathMLElement() && !mathml_style_sheet_) {
+#if !BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
     mathml_style_sheet_ =
         ParseUASheet(UncompressResourceAsASCIIString(IDR_UASTYLE_MATHML_CSS));
+#else
+    mathml_style_sheet_ = ParseUASheet(
+        !Cssutils::IsMathFormulaDisabledMode()
+            ? UncompressResourceAsASCIIString(IDR_UASTYLE_MATHML_CSS)
+            : UncompressResourceAsASCIIString(IDR_UASTYLE_MATHML_FALLBACK_CSS));
+#endif
     AddRulesToDefaultStyleSheets(mathml_style_sheet_, NamespaceType::kMathML);
     changed_default_style = true;
   }
@@ -588,6 +599,20 @@ bool CSSDefaultStyleSheets::EnsureDefaultStyleSheetForForcedColors() {
 
   return true;
 }
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+bool CSSDefaultStyleSheets::EnsureDefaultStyleSheetsForMediaElement() {
+  if (media_controls_style_sheet_ && HasMediaControlsStyleSheetLoader()) {
+    LOG(INFO) << "CSSDefaultStyleSheets, Update media controls style sheets";
+    media_controls_style_sheet_ =
+        ParseUASheet(media_controls_style_sheet_loader_->GetUAStyleSheet());
+    default_media_controls_style_ = MakeGarbageCollected<RuleSet>();
+    AddRulesToDefaultStyleSheets(media_controls_style_sheet_, NamespaceType::kMediaControls);
+    return true;
+  }
+  return false;
+}
+#endif
 
 void CSSDefaultStyleSheets::CollectFeaturesTo(const Document& document,
                                               RuleFeatureSet& features) {

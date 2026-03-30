@@ -84,6 +84,10 @@ class CORE_EXPORT ClassicPendingScript final
   // Check if this script is eligible for kLowPriorityAsyncScriptExecution
   // feature (see crbug/1348467).
   bool IsEligibleForLowPriorityAsyncScriptExecution() const override;
+#if BUILDFLAG(ARKWEB_V8_COMPILE)
+  String GetArkWebCompile() const override {return arkWebCompile_;}
+  void SetArkWebCompile(String arkWebCompile) { arkWebCompile_ = arkWebCompile;}
+#endif
 
  private:
   // See AdvanceReadyState implementation for valid state transitions.
@@ -136,6 +140,9 @@ class CORE_EXPORT ClassicPendingScript final
 
   // The request is intervened by document.write() intervention.
   bool intervened_ = false;
+#if BUILDFLAG(ARKWEB_V8_COMPILE)
+  String arkWebCompile_ = String();
+#endif
 };
 
 }  // namespace blink

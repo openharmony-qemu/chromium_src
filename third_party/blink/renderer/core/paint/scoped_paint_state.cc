@@ -11,6 +11,10 @@
 #include "third_party/blink/renderer/core/paint/paint_layer.h"
 #include "third_party/blink/renderer/core/paint/paint_layer_painter.h"
 
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/paint/scoped_paint_state_for_include.cc"
+#endif
+
 namespace blink {
 
 ScopedPaintState::ScopedPaintState(const LayoutObject& object,
@@ -152,7 +156,16 @@ void ScopedBoxContentsPaintState::AdjustForBoxContents(const LayoutBox& box) {
   if (!box.HasLayer())
     return;
   adjusted_paint_info_.emplace(input_paint_info_);
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+  if (IsEllipisTextOverFlowInSelection(box)) {
+    adjusted_paint_info_->SetCullRect(fragment_to_paint_->GetCullRect());
+  } else {
+    adjusted_paint_info_->SetCullRect(
+        fragment_to_paint_->GetContentsCullRect());
+  }
+#else
   adjusted_paint_info_->SetCullRect(fragment_to_paint_->GetContentsCullRect());
+#endif
   if (box.Layer()->PreviousPaintResult() == kFullyPainted) {
     PhysicalRect contents_visual_rect =
         PaintLayerPainter::ContentsVisualRect(*fragment_to_paint_, box);

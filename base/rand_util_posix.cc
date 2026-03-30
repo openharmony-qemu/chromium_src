@@ -18,10 +18,12 @@
 #include <unistd.h>
 
 #include "base/check.h"
+#include "base/logging.h"
 #include "base/compiler_specific.h"
 #include "base/containers/span.h"
 #include "base/feature_list.h"
 #include "base/files/file_util.h"
+#include "base/logging.h"
 #include "base/metrics/histogram_macros.h"
 #include "base/no_destructor.h"
 #include "base/posix/eintr_wrapper.h"
@@ -67,9 +69,18 @@ class URandomFd {
   const int fd_;
 };
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
 
 bool KernelSupportsGetRandom() {
+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+  if (base::SysInfo::OperatingSystemName() != "Linux") {
+    return true;
+  }
+  if (base::SysInfo::KernelVersionNumber::Current() <
+        base::SysInfo::KernelVersionNumber(3, 17)) {
+    LOG(WARNING) << "linux kernel version is too olf, don't support getrandom syscall";
+  }
+#endif
   return base::SysInfo::KernelVersionNumber::Current() >=
          base::SysInfo::KernelVersionNumber(3, 17);
 }
@@ -87,11 +98,14 @@ bool GetRandomSyscall(void* output, size_t output_length) {
     MSAN_UNPOISON(output, output_length);
     return true;
   }
+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+  LOG(WARNING) << "getrandom syscall failed, ret = " << r << ", output len = " \
+    << output_length << ", output addr = " << output << ", errno = " << errno;
+#endif
   return false;
 }
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) ||
         // BUILDFLAG(IS_ANDROID)
-
 }  // namespace
 
 namespace internal {
@@ -126,7 +140,8 @@ void RandBytesInternal(span<uint8_t> output, bool avoid_allocation) {
     (void)RAND_bytes(output.data(), output.size());
     return;
   }
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+#if (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
+     BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB))
   // On Android it is mandatory to check that the kernel _version_ has the
   // support for a syscall before calling. The same check is made on Linux and
   // ChromeOS to avoid making a syscall that predictably returns ENOSYS.
@@ -147,6 +162,7 @@ void RandBytesInternal(span<uint8_t> output, bool avoid_allocation) {
   //
   // TODO(crbug.com/40641285): When we no longer need to support old Linux
   // kernels, we can get rid of this /dev/urandom branch altogether.
+  LOG(WARNING) << "getrandom syscall failed, fall through to reading from urandom";
   const int urandom_fd = GetUrandomFD();
   const bool success = ReadFromFD(urandom_fd, as_writable_chars(output));
   CHECK(success);

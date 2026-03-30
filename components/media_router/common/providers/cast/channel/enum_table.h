@@ -368,7 +368,12 @@ class EnumTable {
 
  private:
 #ifdef ARCH_CPU_64_BITS
+#if BUILDFLAG(IS_OHOS)
+  // Align the data on a cache line boundary.
+  alignas(64)
+#else
   alignas(std::hardware_destructive_interference_size)
+#endif
 #endif
       std::initializer_list<Entry> data_;
   bool is_sorted_;

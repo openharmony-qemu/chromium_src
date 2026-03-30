@@ -155,6 +155,10 @@ bool IsValidWebAppUrl(const GURL& app_url) {
   return app_url.SchemeIs(url::kHttpScheme) ||
          app_url.SchemeIs(url::kHttpsScheme) ||
          (allow_extension_apps && app_url.SchemeIs("chrome-extension")) ||
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+         app_url.SchemeIs("arkweb-extension") ||
+#endif
+
          (app_url.SchemeIs(content::kChromeUIScheme) &&
           ((app_url.GetHost() ==
             password_manager::kChromeUIPasswordManagerHost) ||

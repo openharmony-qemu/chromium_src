@@ -34,6 +34,7 @@
 #include <string>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/contains.h"
 #include "net/base/url_util.h"
 #include "services/network/public/cpp/is_potentially_trustworthy.h"
@@ -55,6 +56,10 @@
 #include "url/url_canon_ip.h"
 #include "url/url_constants.h"
 #include "url/url_util.h"
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "content/public/common/url_constants.h"
+#endif
 
 namespace blink {
 
@@ -409,8 +414,9 @@ bool SecurityOrigin::CanReadContent(const KURL& url) const {
 }
 
 bool SecurityOrigin::CanDisplay(const KURL& url) const {
-  if (universal_access_)
+  if (universal_access_) {
     return true;
+  }
 
   // Data URLs can always be displayed.
   if (url.ProtocolIsData()) {
@@ -418,12 +424,20 @@ bool SecurityOrigin::CanDisplay(const KURL& url) const {
   }
 
   String protocol = url.Protocol();
-  if (SchemeRegistry::CanDisplayOnlyIfCanRequest(protocol))
+  if (SchemeRegistry::CanDisplayOnlyIfCanRequest(protocol)) {
     return CanRequest(url);
+  }
 
   if (SchemeRegistry::ShouldTreatURLSchemeAsDisplayIsolated(protocol)) {
+#if BUILDFLAG(ARKWEB_NETWORK_BASE) || BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    return protocol_ == protocol ||
+           SecurityPolicy::IsOriginAccessToURLAllowed(this, url) ||
+           (base::Contains(url::GetCorsEnabledSchemes(), url.Protocol().Ascii()) &&
+           (protocol != content::kArkWebUIScheme && protocol != content::kChromeUIScheme));
+#else
     return protocol_ == protocol ||
            SecurityPolicy::IsOriginAccessToURLAllowed(this, url);
+#endif
   }
 
   if (base::Contains(url::GetLocalSchemes(), protocol.Ascii())) {

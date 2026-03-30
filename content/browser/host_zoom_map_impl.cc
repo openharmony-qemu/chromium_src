@@ -169,6 +169,9 @@ void HostZoomMap::SendErrorPageZoomLevelRefresh(WebContents* web_contents) {
 HostZoomMapImpl::HostZoomMapImpl()
     : default_zoom_level_(0.0), clock_(base::DefaultClock::GetInstance()) {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  imp_utils_ = std::make_unique<HostZoomMapImplUtils>(this);
+#endif
 #if BUILDFLAG(IS_ANDROID)
   jni_callbacks_subscription_ = AddZoomLevelChangedCallback(base::BindRepeating(
       &HostZoomMapImpl::NotifyJniObservers, base::Unretained(this)));
@@ -292,7 +295,11 @@ void HostZoomMapImpl::SetZoomLevelForHostInternal(const std::string& host,
                                                   double level,
                                                   base::Time last_modified) {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
-
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  if (imp_utils_->IsZoomTooFast(host, last_modified, level)) {
+    return;
+  }
+#endif
   if (blink::ZoomValuesEqual(level, default_zoom_level_)) {
     host_zoom_levels_.erase(host);
   } else {

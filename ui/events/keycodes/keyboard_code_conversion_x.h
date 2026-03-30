@@ -12,7 +12,11 @@
 #include "ui/events/keycodes/keycodes_x_export.h"
 #include "ui/gfx/x/connection.h"
 #include "ui/gfx/x/event.h"
+#if !BUILDFLAG(IS_OHOS)
 #include "ui/gfx/x/xinput.h"
+#else
+#include "ui/gfx/x/generated_protos/xinput.h"
+#endif
 
 namespace ui {
 
@@ -31,8 +35,13 @@ KEYCODES_X_EXPORT uint16_t GetCharacterFromXEvent(const x11::Event& xev);
 KEYCODES_X_EXPORT DomKey GetDomKeyFromXEvent(const x11::Event& xev);
 
 // Converts a KeyboardCode into an X KeySym.
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+KEYCODES_X_EXPORT int XKeysymForWindowsKeyCode(KeyboardCode keycode,
+                                               bool shift, bool capslock);
+#else
 KEYCODES_X_EXPORT int XKeysymForWindowsKeyCode(KeyboardCode keycode,
                                                bool shift);
+#endif
 
 // Returns a XKeyEvent keycode (scancode) for a KeyboardCode. Keyboard layouts
 // are usually not injective, so inverse mapping should be avoided when

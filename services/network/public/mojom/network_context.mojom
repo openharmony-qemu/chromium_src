@@ -87,6 +87,9 @@ import "services/network/public/mojom/p2p.mojom";
 [EnableIf=is_p2p_enabled]
 import "services/network/public/mojom/p2p_trusted.mojom";
 
+[EnableIf=arkweb_ex_fallback_proxy]
+import "arkweb/chromium_ext/servieces/network/public/mojom/network_config_ohos.mojom";
+
 const uint32 kWebSocketOptionNone = 0;
 
 // Disallow the request from sending cookies. Disallow the response from writing
@@ -135,6 +138,14 @@ interface CustomProxyConnectionObserver {
   OnTunnelHeadersReceived(ProxyChain proxy_chain,
                           uint64 chain_index,
                           HttpResponseHeaders response_headers);
+
+  [EnableIf=arkweb_ex_fallback_proxy]
+  OnProxyConnectResult(ProxyChain proxy_chain, int32 net_error);
+ 
+  [EnableIf=arkweb_ex_fallback_proxy]
+  OnTunnelHeadersReceivedWithToken(
+    ProxyChain proxy_chain,
+    HttpResponseHeaders response_headers, string token);
 };
 
 // Includes a pipe to a CertVerifierService for usage by the
@@ -152,6 +163,21 @@ struct CertVerifierServiceRemoteParams {
 // Client to update the custom proxy config.
 interface CustomProxyConfigClient {
   OnCustomProxyConfigUpdated(CustomProxyConfig proxy_config) => ();
+
+  [EnableIf=arkweb_ex_fallback_proxy]
+  SaveURLMaliciousTypeAndHwCode(string url, int32 type, int32 hw_code);
+ 
+  [EnableIf=arkweb_ex_fallback_proxy]
+  OnFallbackProxyInfoConfigUpdated(FallbackProxyInfoConfig fallback_proxy_info_config);
+ 
+  [EnableIf=arkweb_ex_fallback_proxy]
+  UpdateFallbackProxyAuthHeaders(HttpRequestHeaders tunnel_headers);
+ 
+  [EnableIf=arkweb_ex_fallback_proxy]
+  UpdateFallbackProxyStatus(int32 status);
+ 
+  [EnableIf=arkweb_ex_fallback_proxy]
+  OnHostBlockListUpdated(array<string> block_list);
 };
 
 // Sent by TrustedURLLoaderHeaderClient to perform modifications for a request.
@@ -475,8 +501,10 @@ struct NetworkContextParams {
 
   // Binds to the cookie manager associated with this network context, which
   // should only be handed out to trusted processes.
-  [EnableIf=is_android]
+  // #if BUILDFLAG(ARKWEB_COOKIE)
+  [EnableIf=is_android_or_arkweb_cookie]
   pending_receiver<CookieManager>? cookie_manager;
+  // #endif
 
   // Whether to enable Domain Reliability.
   bool enable_domain_reliability = false;
@@ -583,6 +611,11 @@ struct NetworkContextParams {
   // Stores mapping of endpoint name to endpoint url from initial reporting
   // endpoints set by the ReportingEndpoints enterprise policy.
   map<string, url.mojom.Url>? enterprise_reporting_endpoints;
+
+  // #ifdef ARKWEB_LOGGER_REPORT
+  [EnableIf=arkweb_logger_report]
+  bool is_strict_log_mode = true;
+  // #endif ARKWEB_LOGGER_REPORT
 
   // Enables usage of net::dns::StaleHostResolver. This is only available
   // as opt-in in Android. This will be used during constructing
@@ -913,6 +946,12 @@ struct URLLoaderFactoryParams {
   // For context on usage see:
   // https://privacycg.github.io/saa-non-cookie-storage/shared-workers.html
   bool require_cross_site_request_for_cookies = false;
+
+  [EnableIf=arkweb_prp_preload]
+  string main_url = "";
+
+  [EnableIf=arkweb_prp_preload]
+  uint64 addr_web_handle;
 
   // If this is true, this URLLoaderFactory should not be reset when
   // calling `ResetURLLoaderFactories()`.
@@ -1588,6 +1627,18 @@ interface NetworkContext {
                               string sct_list)
       => (int32 error_code, CertVerifyResult cv_result, bool pkp_bypassed);
 
+  [EnableIf=arkweb_prp_preload]
+  InitPRParallelPreloadMgr();
+
+  [EnableIf=arkweb_prp_preload]
+  StartPage(string url, NetworkAnonymizationKey networkAnonymizationKey, uint64 addr_web_handle) => (string page_origin_url);
+
+  [EnableIf=arkweb_prp_preload]
+  StopPage(uint64 addr_web_handle);
+
+  [EnableIf=arkweb_prp_preload]
+  SetURLLoaderFactoryParam(URLLoaderFactoryParams params);
+
   // Performs 2-QWAC verification. Returns the verified 2-QWAC certificate
   // chain if `binding` is a valid 2-QWAC binding for `hostname` which binds
   // `tls_certificate`.
@@ -1801,6 +1852,12 @@ interface NetworkContext {
   // `bound_network` == -1 means that this NetworkContext is not bound to any
   // network. Refer to NetworkContextParams::bound_network for more info.
   GetBoundNetworkForTesting() => (int64 bound_network);
+
+  [EnableIf=arkweb_custom_dns]
+  SetHostIP(string HostName, array<string> Address, uint32 AliveTime);
+
+  [EnableIf=arkweb_custom_dns]
+  ClearHostIP(string HostName);
 
   // Gets the DeviceBoundSessionManager associated with this network context.
   //

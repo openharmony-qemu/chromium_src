@@ -11,9 +11,14 @@
 
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "base/files/file_path.h"
 #include "build/build_config.h"
 #include "content/common/content_export.h"
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+#include "base/byte_count.h"
+#include "content/common/content_constants_internal.h"
+#endif
 
 namespace content {
 
@@ -57,7 +62,7 @@ CONTENT_EXPORT std::string GetCorsExemptRequestedWithHeaderName();
 // RenderProcessHost::GetDeprecatedID().
 inline constexpr int kInvalidChildProcessUniqueId = -1;
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
 // The OOM score adj constants
 // The highest and lowest assigned OOM score adjustment (oom_score_adj) for
 // renderers and extensions used by the OomPriority Manager.
@@ -68,6 +73,10 @@ CONTENT_EXPORT extern const int kZygoteOomScore;
 CONTENT_EXPORT extern const int kMiscOomScore;
 CONTENT_EXPORT extern const int kPluginOomScore;
 
+#endif
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+CONTENT_EXPORT extern const base::ByteCount kMaxLengthOfDataURLStringPub;
 #endif
 
 #if BUILDFLAG(IS_ANDROID)

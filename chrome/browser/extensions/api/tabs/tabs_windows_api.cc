@@ -27,6 +27,10 @@ namespace extensions {
 
 TabsWindowsAPI::TabsWindowsAPI(content::BrowserContext* context)
     : browser_context_(context) {
+#if BUILDFLAG(IS_OHOS)
+  tabs_event_router_ = std::make_unique<TabsEventRouter>(
+      Profile::FromBrowserContext(browser_context_));
+#endif
   windows_event_router_ = std::make_unique<WindowsEventRouter>(
       Profile::FromBrowserContext(browser_context_));
   EventRouter* event_router = EventRouter::Get(browser_context_);
@@ -68,7 +72,7 @@ void TabsWindowsAPI::InitTabsEventRouter() {
 #if BUILDFLAG(IS_ANDROID)
   tabs_event_router_android_ = std::make_unique<TabsEventRouterAndroid>(
       Profile::FromBrowserContext(browser_context_));
-#else
+#elif !BUILDFLAG(IS_OHOS)
   tabs_event_router_ = std::make_unique<TabsEventRouter>(
       Profile::FromBrowserContext(browser_context_));
 #endif

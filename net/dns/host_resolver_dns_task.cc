@@ -25,6 +25,12 @@
 #include "net/dns/host_resolver_internal_result.h"
 #include "net/dns/public/util.h"
 
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#include "base/base_switches.h"
+#include "base/command_line.h"
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#endif
+
 namespace net {
 
 // When enabled, query HTTPS RR first.
@@ -282,6 +288,11 @@ HostResolverDnsTask::HostResolverDnsTask(
   }
 
   PushTransactionsNeeded(MaybeDisableAdditionalQueries(query_types));
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  utils = std::make_unique<ArkWebHostResolverDnsTaskExt>(this);
+  delegate_->InitReportInfoForDohFallback();
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 }
 
 HostResolverDnsTask::~HostResolverDnsTask() = default;
@@ -365,6 +376,11 @@ DnsQueryTypeSet HostResolverDnsTask::MaybeDisableAdditionalQueries(
     if (!secure_ && !client_->CanQueryAdditionalTypesViaInsecureDns()) {
       https_disabled_ = true;
       types.Remove(DnsQueryType::HTTPS);
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+    } else if (resolve_context_->IsHttpsDnsFallbackEnabled() &&
+               !client_->CanQueryAdditionalTypesViaInsecureDns()) {
+      types.Remove(DnsQueryType::HTTPS);
+#endif
     } else {
       DCHECK(!httpssvc_metrics_);
       httpssvc_metrics_.emplace(secure_);
@@ -403,6 +419,9 @@ void HostResolverDnsTask::PushTransactionsNeeded(DnsQueryTypeSet query_types) {
     add_transaction(DnsQueryType::HTTPS);
   }
 
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  int ip_address_transactions = 0;
+#endif
   // Give AAAA/A queries a head start by pushing them to the queue first.
   constexpr DnsQueryType kHighPriorityQueries[] = {DnsQueryType::AAAA,
                                                    DnsQueryType::A};
@@ -412,8 +431,15 @@ void HostResolverDnsTask::PushTransactionsNeeded(DnsQueryTypeSet query_types) {
     }
     query_types.Remove(high_priority_query);
     add_transaction(high_priority_query);
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+    ip_address_transactions++;
+#endif
   }
-
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  if (!secure_ && ip_address_transactions == 2) {
+    need_to_sniff_ip_result_ = true;
+  }
+#endif
   for (DnsQueryType remaining_query : query_types) {
     add_transaction(remaining_query);
   }
@@ -1009,10 +1035,23 @@ void HostResolverDnsTask::OnFailure(int net_error,
 void HostResolverDnsTask::OnDeferredFailure(bool allow_fallback) {
   CHECK(deferred_failure_);
 
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  // 仅A/AAAA类型的transaction的两种情况需要调OnTransactionsFinished()并return
+  // 1）第一个transaction失败，需要等待第二个transaction
+  // 2）第一个transaction成功，第二个transaction失败
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableNwebExHttpDnsFallback) &&
+      allow_fallback) {
+    if (utils->ArkWebFailedTransaction(deferred_failure_->error(), deferred_failure_->query_type())) {
+      return;
+    }
+  } else if (allow_fallback && AnyPotentiallyFatalTransactionsRemain()) {
+#else
   // On non-fatal errors, if any potentially fatal transactions remain, need
   // to defer ending the task in case any of those remaining transactions end
   // with a fatal failure.
   if (allow_fallback && AnyPotentiallyFatalTransactionsRemain()) {
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
     CancelNonFatalTransactions();
     OnTransactionsFinished(/*single_transaction_results=*/std::nullopt);
     return;

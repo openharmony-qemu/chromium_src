@@ -146,6 +146,11 @@ void BackgroundFetchJobController::StartRequest(
   DCHECK(request_finished_callback);
   DCHECK(request);
 
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+  if (!request) {
+    return;
+  }
+#endif
   active_request_finished_callbacks_.emplace(
       request->download_guid(), std::move(request_finished_callback));
 

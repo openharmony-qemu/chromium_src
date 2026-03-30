@@ -30,6 +30,7 @@
 #include "base/trace_event/memory_usage_estimator.h"  // no-presubmit-check
 #include "base/trace_event/trace_event.h"
 #include "base/tracing_buildflags.h"
+
 #include "base/types/pass_key.h"
 #include "base/types/to_address.h"
 
@@ -352,6 +353,16 @@ ListValue Value::TakeList() && {
   return std::move(GetList());
 }
 
+#if BUILDFLAG(IS_ARKWEB)
+Value* Value::FindPath(std::string_view path) {
+  return GetDict().FindByDottedPath(path);
+}
+
+const Value* Value::FindPath(std::string_view path) const {
+  return GetDict().FindByDottedPath(path);
+}
+#endif
+
 DictValue::DictValue() = default;
 
 DictValue::DictValue(flat_map<std::string, std::unique_ptr<Value>> storage)
@@ -429,6 +440,16 @@ DictValue DictValue::Clone() const {
   storage.reserve(storage_.size());
 
   for (const auto& [key, value] : storage_) {
+#if BUILDFLAG(ARKWEB_WEBSTORAGE)
+    if (!value) {
+      LOG(ERROR) << "Dict constructor, key:" << key << " value is nullptr";
+      continue;
+    }
+    if (value->type() > Value::Type::LIST) {
+      LOG(ERROR) << "Dict constructor, key:" << key << ", value->type:" << static_cast<int>(value->type());
+      continue;
+    }
+#endif  // BUILDFLAG(ARKWEB_WEBSTORAGE)
     storage.emplace_back(key, std::make_unique<Value>(value->Clone()));
   }
 

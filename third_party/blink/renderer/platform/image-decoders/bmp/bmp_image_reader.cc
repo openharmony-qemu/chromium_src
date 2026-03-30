@@ -4,6 +4,7 @@
 
 #include "third_party/blink/renderer/platform/image-decoders/bmp/bmp_image_reader.h"
 
+#include "arkweb/build/features/features.h"
 #include <array>
 
 #include "base/compiler_specific.h"
@@ -550,8 +551,10 @@ bool BMPImageReader::DecodeAlternateFormat() {
     if (info_header_.compression == JPEG) {
       alternate_decoder_ = std::make_unique<JPEGImageDecoder>(
           parent_->GetAlphaOption(), parent_->GetColorBehavior(),
-          parent_->GetAuxImage(), parent_->GetMaxDecodedBytes(),
-          img_data_offset_);
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+          parent_->GetAuxImage(),
+#endif
+          parent_->GetMaxDecodedBytes(), img_data_offset_);
     } else {
       alternate_decoder_ = std::make_unique<PngImageDecoder>(
           parent_->GetAlphaOption(), parent_->GetColorBehavior(),

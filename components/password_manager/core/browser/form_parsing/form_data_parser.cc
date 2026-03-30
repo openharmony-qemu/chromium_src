@@ -15,6 +15,10 @@
 #include <utility>
 #include <vector>
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+#include "arkweb/build/features/features.h"
 #include "base/containers/contains.h"
 #include "base/feature_list.h"
 #include "base/i18n/case_conversion.h"
@@ -36,6 +40,12 @@
 #include "components/password_manager/core/common/password_manager_constants.h"
 #include "components/password_manager/core/common/password_manager_features.h"
 #include "components/password_manager/core/common/password_manager_util.h"
+
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#include "base/base_switches.h"
+#include "base/command_line.h"
+#endif
 #include "services/metrics/public/cpp/ukm_builders.h"
 
 using autofill::FieldGlobalId;
@@ -1011,6 +1021,10 @@ void SetFields(const SignificantFields& significant_fields,
     password_form->username_value = GetFieldValue(*significant_fields.username);
     password_form->username_element_renderer_id =
         significant_fields.username->renderer_id();
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+    LOG(INFO) << "[Autofill] username renderer_id:"
+              << *password_form->username_element_renderer_id;
+#endif
   }
 
   if (significant_fields.password) {
@@ -1018,6 +1032,10 @@ void SetFields(const SignificantFields& significant_fields,
     password_form->password_value = GetFieldValue(*significant_fields.password);
     password_form->password_element_renderer_id =
         significant_fields.password->renderer_id();
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+    LOG(INFO) << "[Autofill] password renderer_id:"
+              << *password_form->password_element_renderer_id;
+#endif
   }
 
   if (significant_fields.new_password) {
@@ -1027,6 +1045,10 @@ void SetFields(const SignificantFields& significant_fields,
         GetFieldValue(*significant_fields.new_password);
     password_form->new_password_element_renderer_id =
         significant_fields.new_password->renderer_id();
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+    LOG(INFO) << "[Autofill] new-password renderer_id:"
+              << *password_form->new_password_element_renderer_id;
+#endif
   }
 
   if (significant_fields.confirmation_password) {
@@ -1037,6 +1059,10 @@ void SetFields(const SignificantFields& significant_fields,
         significant_fields.confirmation_password->name();
     password_form->confirmation_password_element_renderer_id =
         significant_fields.confirmation_password->renderer_id();
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+    LOG(INFO) << "[Autofill] confirmation-password renderer_id:"
+              << *password_form->confirmation_password_element_renderer_id;
+#endif
   }
 }
 
@@ -1065,6 +1091,16 @@ std::vector<ProcessedField> ProcessFields(
   std::set<std::u16string_view> seen_username_values;
 
   const bool consider_only_non_empty = mode == FormDataParser::Mode::kSaving;
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+  bool is_password_visible = false;
+  for (const FormFieldData& field : fields) {
+    if (field.form_control_type() == autofill::FormControlType::kInputPassword &&
+        field.IsFocusable()) {
+      is_password_visible = true;
+      break;
+    }
+  }
+#endif
   for (const FormFieldData& field : fields) {
     if (!field.IsTextInputElement()) {
       continue;
@@ -1106,9 +1142,23 @@ std::vector<ProcessedField> ProcessFields(
 
     if (field.properties_mask() & FieldPropertiesFlags::kUserTyped) {
       processed_field.interactability = Interactability::kCertain;
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+    } else if (field.is_focusable()) {
+      if (base::CommandLine::InitializedForCurrentProcess() &&
+          base::CommandLine::ForCurrentProcess()->HasSwitch(
+              switches::kEnableNwebExPassword)) {
+        if (is_password_visible) {
+      processed_field.interactability = Interactability::kPossible;
+    }
+      } else {
+        processed_field.interactability = Interactability::kPossible;
+      }
+    }
+#else
     } else if (field.is_focusable()) {
       processed_field.interactability = Interactability::kPossible;
     }
+#endif
 
     result.push_back(processed_field);
   }
@@ -1133,6 +1183,10 @@ std::unique_ptr<PasswordForm> AssemblePasswordForm(
   if (!significant_fields.HasPasswords() &&
       !significant_fields.is_single_username &&
       !significant_fields.accepts_webauthn_credentials) {
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+    LOG(INFO) << "[Autofill] Is single username:"
+              << significant_fields.is_single_username;
+#endif
     return nullptr;
   }
 
@@ -1480,7 +1534,6 @@ FormParsingResult FormDataParser::ParseAndReturnParsingResult(
                                       *significant_fields.new_password) &&
                                   new_password_found_before_heuristic;
 
-
   base::UmaHistogramEnumeration("PasswordManager.UsernameDetectionMethod",
                                 method);
 
@@ -1492,6 +1545,10 @@ FormParsingResult FormDataParser::ParseAndReturnParsingResult(
        FieldValueIsTooShortForSaving(significant_fields.new_password))) {
     significant_fields.is_fallback = true;
   }
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  LOG(INFO) << "[Autofill] Username detection method:"
+            << static_cast<int>(method);
+#endif
   return FormParsingResult(
       AssemblePasswordForm(
           form_data, significant_fields, std::move(all_alternative_passwords),

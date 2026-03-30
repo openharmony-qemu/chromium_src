@@ -513,7 +513,6 @@ void LoadArmGpuLibraries() {
 
     // Preload the Tegra V4L2 (video decode acceleration) library.
     bool is_tegra = dlopen(kLibTegraPath, dlopen_flag) != nullptr;
-
     // Preload mesa related libraries for devices which use mesa
     // (ie. not mali or tegra):
     if (!is_mali && !is_tegra &&

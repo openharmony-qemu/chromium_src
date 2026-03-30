@@ -275,6 +275,10 @@ class CORE_EXPORT WorkerOrWorkletGlobalScope
   const scoped_refptr<WebWorkerFetchContext> web_worker_fetch_context_;
   Member<SubresourceFilter> subresource_filter_;
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  Member<SubresourceFilter> user_subresource_filter_;
+#endif
+
   Member<WorkerOrWorkletScriptController> script_controller_;
   const mojom::blink::V8CacheOptions v8_cache_options_;
 

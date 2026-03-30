@@ -41,6 +41,7 @@
 #include "components/guest_view/browser/guest_view_base.h"
 #endif
 
+#include "arkweb/chromium_ext/components/performance_manager/performance_manager_tab_helper_utils.cc"
 namespace performance_manager {
 
 namespace {
@@ -672,6 +673,24 @@ FrameNodeImpl* PerformanceManagerTabHelper::GetExistingFrameNode(
   CHECK(frame_node);
   return frame_node;
 }
+
+#if BUILDFLAG(ARKWEB_BGTASK)
+void PerformanceManagerTabHelper::OnBrowserForeground()
+{
+  PerformanceManagerImpl::CallOnGraphImpl(
+    FROM_HERE,
+    base::BindOnce(&PageNodeImpl::SetBrowserForeground,
+                   base::Unretained(primary_page_node())));
+}
+
+void PerformanceManagerTabHelper::OnBrowserBackground()
+{
+  PerformanceManagerImpl::CallOnGraphImpl(
+    FROM_HERE,
+    base::BindOnce(&PageNodeImpl::SetBrowserBackground,
+                   base::Unretained(primary_page_node())));
+}
+#endif
 
 WEB_CONTENTS_USER_DATA_KEY_IMPL(PerformanceManagerTabHelper);
 

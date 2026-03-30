@@ -455,6 +455,12 @@ BASE_FEATURE(kMigrateSessionsOnNetworkChangeV2,
 BASE_FEATURE(kAddressTrackerLinuxIsProxied, base::FEATURE_ENABLED_BY_DEFAULT);
 #endif  // BUILDFLAG(IS_LINUX)
 
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+BASE_FEATURE(kEnableNetworkPreload,
+             "EnableNetworkPreload",
+             base::FEATURE_ENABLED_BY_DEFAULT);
+#endif  // BUILDFLAG(ARKWEB_PRP_PRELOAD)
+
 // Enables binding of cookies to the port that originally set them by default.
 BASE_FEATURE(kEnablePortBoundCookies, base::FEATURE_DISABLED_BY_DEFAULT);
 

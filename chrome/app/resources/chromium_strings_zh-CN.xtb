@@ -105,6 +105,7 @@
 <translation id="2210502920229141283">在 iOS 版 Chromium 上启用增强型安全浏览功能，随时随地更安全地浏览网页</translation>
 <translation id="2210682093923538346">危险网站。Chromium 移除了通知权限。</translation>
 <translation id="2236949375853147973">我的活动记录</translation>
+<translation id="2238104961394611930">已开启 • 无法验证此扩展程序的来源</translation>
 <translation id="2238130810669087193">如需将您的地址等信息同步到您的所有设备上，请登录 Chromium。登录后，该地址将保存到您的 Google 账号。</translation>
 <translation id="2241627712206172106">如果您与亲朋好友共用计算机，他们将能够使用单独的账号进行浏览，并可随心所欲地设置Chromium。</translation>
 <translation id="2283803047247799269">使用“图片搜索”功能搜索此标签页</translation>
@@ -514,6 +515,7 @@
 <translation id="6862030660799253820">使用图片搜索功能搜索此图片</translation>
 <translation id="6873893289264747459">Chromium 发现“<ph name="EXTENSION_NAME" />”包含恶意软件</translation>
 <translation id="6877155553248388166">搜索区域的右下角：右侧 <ph name="RIGHT" />%，底部 <ph name="BOTTOM" />%</translation>
+<translation id="6885534934768077023">警告：浏览器无法阻止扩展程序记录您的浏览活动。若要在无痕模式下停用该扩展程序，请取消选中此选项。</translation>
 <translation id="6896758677409633944">复制</translation>
 <translation id="6901631050894301805">将 Chromium 设为默认浏览器，并将其固定到任务栏</translation>
 <translation id="6909503629704372277">管理 Chromium 个人资料(&amp;M)</translation>
@@ -572,6 +574,7 @@ Chromium 无法恢复您的设置。</translation>
 <translation id="753534427205733210">{0,plural, =1{Chromium 将在 1 分钟后重新启动}other{Chromium 将在 # 分钟后重新启动}}</translation>
 <translation id="7565444033145385702">为保护您的数据，对于您近期未访问的网站，请允许 Chromium 移除网站权限。</translation>
 <translation id="7583399374488819119"><ph name="COMPANY_NAME" /> 安装程序</translation>
+<translation id="7597668698051545254">已关闭 • 无法验证此扩展程序的来源</translation>
 <translation id="761356813943268536">Chromium 正在使用您的摄像头和麦克风。</translation>
 <translation id="7617377681829253106">Chromium现在更好用了</translation>
 <translation id="7622753900276619808">您现在可以在 Chromium 中使用更多功能了</translation>

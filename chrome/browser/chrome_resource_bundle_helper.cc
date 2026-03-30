@@ -117,8 +117,12 @@ std::string LoadLocalState(
     ui::ResourceBundle::Delegate* resource_bundle_delegate,
     bool is_running_tests) {
   base::FilePath user_data_dir;
-  if (!base::PathService::Get(chrome::DIR_USER_DATA, &user_data_dir))
+  if (!base::PathService::Get(chrome::DIR_USER_DATA, &user_data_dir)) {
+#if BUILDFLAG(IS_ARKWEB)
+    LOG(ERROR) << "LoadLocalState, get DIR_USER_DATA failed";
+#endif
     return std::string();
+  }
 
   InitializeLocalState(chrome_feature_list_creator);
 

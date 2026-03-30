@@ -33,4 +33,6 @@ dictionary ObservableEventListenerOptions {
     undefined removeEventListener(DOMString type, EventListener? listener, optional (EventListenerOptions or boolean) options);
     [ImplementedAs=dispatchEventForBindings, RaisesException, RuntimeCallStatsCounter=EventTargetDispatchEvent] boolean dispatchEvent(Event event);
     [MeasureAs=EventTargetOnObservable] Observable when(DOMString type, optional ObservableEventListenerOptions options = {});
+    // arkweb_ai
+    [CallWith=ScriptState] sequence<DOMString> getArkWebEventListenerTypes();
 };

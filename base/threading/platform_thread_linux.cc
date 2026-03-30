@@ -276,6 +276,19 @@ void SetThreadTypeLinux(ProcessId process_id,
 
 int ThreadTypeToNiceValue(const ThreadType thread_type) {
   switch (thread_type) {
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+    case ThreadType::kBackground:
+      return 0;
+    case ThreadType::kUtility:
+      return 0;
+    case ThreadType::kDefault:
+      return -10;
+    case ThreadType::kDisplayCritical:
+    case ThreadType::kInteractive:
+      return -20;
+    case ThreadType::kRealtimeAudio:
+      return -20;
+#else
     case ThreadType::kBackground:
       return 10;
     case ThreadType::kUtility:
@@ -287,6 +300,7 @@ int ThreadTypeToNiceValue(const ThreadType thread_type) {
       return -8;
     case ThreadType::kRealtimeAudio:
       return -10;
+#endif
   }
 }
 

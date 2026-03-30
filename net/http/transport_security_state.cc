@@ -36,6 +36,7 @@
 #include "crypto/sha2.h"
 #include "net/base/features.h"
 #include "net/base/hash_value.h"
+#include "net/base/host_port_pair.h"
 #include "net/base/url_util.h"
 #include "net/cert/ct_policy_status.h"
 #include "net/cert/x509_certificate.h"
@@ -44,6 +45,10 @@
 #include "net/http/http_security_headers.h"
 #include "net/net_buildflags.h"
 #include "net/ssl/ssl_info.h"
+
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#endif  // BUILDFLAG(ARKWEB_NETWORK_BASE)
 
 namespace net {
 
@@ -320,6 +325,16 @@ TransportSecurityState::PKPStatus TransportSecurityState::CheckPublicKeyPins(
     std::string_view host,
     bool is_issued_by_known_root,
     const std::vector<SHA256HashValue>& public_key_hashes) {
+#if BUILDFLAG(ARKWEB_NETWORK_BASE) && BUILDFLAG(IS_OHOS)
+  HostPortPair host_port_pair = HostPortPair::FromString(host);
+  HashValueVector converted_hashes;
+  converted_hashes.reserve(public_key_hashes.size());
+  for (const auto& sha256_hash : public_key_hashes) {
+    converted_hashes.emplace_back(sha256_hash);
+  }
+  return AsArkWebTransportSecurityStateExt()->CheckPublicKeyPinsOhos(
+      host_port_pair, converted_hashes);
+#endif  // BUILDFLAG(ARKWEB_NETWORK_BASE)
   // Perform pin validation only if the server actually has public key pins.
   if (!HasPublicKeyPins(host)) {
     return PKPStatus::OK;

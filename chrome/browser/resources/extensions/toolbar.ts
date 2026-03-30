@@ -6,8 +6,10 @@ import 'chrome://resources/cr_elements/cr_button/cr_button.js';
 import 'chrome://resources/cr_elements/cr_toggle/cr_toggle.js';
 import 'chrome://resources/cr_elements/cr_toolbar/cr_toolbar.js';
 import 'chrome://resources/cr_elements/policy/cr_tooltip_icon.js';
+import 'chrome://resources/cr_elements/cr_dialog/cr_dialog.js';
 import './pack_dialog.js';
 
+import type {CrDialogElement} from 'chrome://resources/cr_elements/cr_dialog/cr_dialog.js';
 import {getToastManager} from 'chrome://resources/cr_elements/cr_toast/cr_toast_manager.js';
 import type {CrToggleElement} from 'chrome://resources/cr_elements/cr_toggle/cr_toggle.js';
 import type {CrToolbarElement} from 'chrome://resources/cr_elements/cr_toolbar/cr_toolbar.js';
@@ -46,6 +48,7 @@ class DummyToolbarDelegate {
 
 export interface ExtensionsToolbarElement {
   $: {
+    devModeConfirmationDialog: CrDialogElement,
     devDrawer: HTMLElement,
     devMode: CrToggleElement,
     loadUnpacked: HTMLElement,
@@ -150,9 +153,27 @@ export class ExtensionsToolbarElement extends ExtensionsToolbarElementBase {
   }
 
   protected onDevModeToggleChange_(e: CustomEvent<boolean>) {
-    this.delegate.setProfileInDevMode(e.detail);
+    // If the user is trying to enable dev mode, show a confirmation dialog.
+    if (e.detail) {
+      this.$.devModeConfirmationDialog.showModal();
+    } else {
+      // If the user is disabling dev mode, do it right away.
+      this.delegate.setProfileInDevMode(false);
+      chrome.metricsPrivate.recordUserAction(
+          'Options_ToggleDeveloperMode_Disabled');
+    }
+  }
+
+  protected onDevModeDialogConfirm_(): void {
+    this.delegate.setProfileInDevMode(true);
     chrome.metricsPrivate.recordUserAction(
-        'Options_ToggleDeveloperMode_' + (e.detail ? 'Enabled' : 'Disabled'));
+        'Options_ToggleDeveloperMode_Enabled');
+    this.$.devModeConfirmationDialog.close();
+  }
+
+  protected onDevModeDialogCancel_(): void {
+    this.$.devMode.checked = false;
+    this.$.devModeConfirmationDialog.close();
   }
 
   private onInDevModeChanged_(_current: boolean, previous: boolean) {

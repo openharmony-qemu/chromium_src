@@ -412,6 +412,12 @@ Status Database::ForceClose(const std::string& message) && {
 
 void Database::ScheduleOpenConnection(
     std::unique_ptr<PendingConnection> connection) {
+  bool is_accepting_connections  = IsAcceptingConnections();
+  DCHECK(is_accepting_connections);
+  if (!is_accepting_connections) {
+    LOG(ERROR) << " IsAcceptingConnections() is false. ";
+  }
+      
   CHECK(!force_closing_);
   connection_coordinator_.ScheduleOpenConnection(std::move(connection));
 }

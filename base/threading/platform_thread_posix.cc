@@ -12,6 +12,8 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <string.h>
+#include <dlfcn.h>
 
 #include <memory>
 #include <tuple>
@@ -254,7 +256,7 @@ PlatformThreadId PlatformThreadBase::CurrentId() {
 #endif
   }
   return PlatformThreadId(g_thread_id);
-#elif BUILDFLAG(IS_ANDROID)
+#elif BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   // Note: do not cache the return value inside a thread_local variable on
   // Android (as above). The reasons are:
   // - thread_local is slow on Android (goes through emutls)
@@ -274,6 +276,20 @@ PlatformThreadId PlatformThreadBase::CurrentId() {
   return PlatformThreadId(reinterpret_cast<int64_t>(pthread_self()));
 #endif
 }
+
+#if BUILDFLAG(IS_ARKWEB)
+NO_SANITIZE("cfi-icall") PlatformThreadId PlatformThread::CurrentRealId() {
+  // - getproctid() is fast, since its return value is cached in pthread (in the
+  //   thread control block of pthread). See gettid.c in bionic.
+  using GetProcXid = int (*)(void);
+  static GetProcXid getProcTid = nullptr;
+  if (getProcTid == nullptr) {
+    getProcTid = reinterpret_cast<GetProcXid>(dlsym(RTLD_DEFAULT, "getproctid"));
+    CHECK(getProcTid);
+  }
+  return PlatformThreadId(static_cast<pid_t>(getProcTid()));
+}
+#endif
 
 // static
 PlatformThreadRef PlatformThreadBase::CurrentRef() {

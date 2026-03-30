@@ -61,6 +61,9 @@ class CSSDefaultStyleSheets final
   void EnsureDefaultStyleSheetForFullscreen(const Element& element);
   void RebuildFullscreenRuleSetIfMediaQueriesChanged(const Element& element);
   bool EnsureDefaultStyleSheetForForcedColors();
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  bool EnsureDefaultStyleSheetsForMediaElement();
+#endif
 
   RuleSet* DefaultHtmlStyle() { return default_html_style_.Get(); }
   RuleSet* DefaultMathMLStyle() { return default_mathml_style_.Get(); }

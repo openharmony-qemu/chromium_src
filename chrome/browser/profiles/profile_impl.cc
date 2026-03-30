@@ -264,6 +264,10 @@
 #include "chrome/browser/spellchecker/spellcheck_service.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_PERMISSION)
+#include "cef/ohos_cef_ext/libcef/browser/permission/alloy_permission_manager.h"
+#endif  // BUILDFLAG(ARKWEB_PERMISSION)
+
 #if BUILDFLAG(SAFE_BROWSING_AVAILABLE)
 #include "chrome/browser/safe_browsing/safe_browsing_service.h"
 #endif
@@ -476,14 +480,26 @@ ProfileImpl::ProfileImpl(
 #endif
 
   if (is_guest_session) {
+#if BUILDFLAG(ARKWEB_WEBSTORAGE)
+    LOG(INFO) << "ProfileImpl SetBrowserProfileType kGuest, context : "
+        << reinterpret_cast<uintptr_t>(this) % 100000000;
+#endif  // BUILDFLAG(ARKWEB_WEBSTORAGE)
     profile_metrics::SetBrowserProfileType(
         this, profile_metrics::BrowserProfileType::kGuest);
 #if !BUILDFLAG(IS_CHROMEOS) && !BUILDFLAG(IS_ANDROID)
   } else if (path == ProfileManager::GetSystemProfilePath()) {
+#if BUILDFLAG(ARKWEB_WEBSTORAGE)
+    LOG(INFO) << "ProfileImpl SetBrowserProfileType kSystem, context : "
+        << reinterpret_cast<uintptr_t>(this) % 100000000;
+#endif  // BUILDFLAG(ARKWEB_WEBSTORAGE)
     profile_metrics::SetBrowserProfileType(
         this, profile_metrics::BrowserProfileType::kSystem);
 #endif  // !BUILDFLAG(IS_CHROMEOS) && !BUILDFLAG(IS_ANDROID)
   } else {
+#if BUILDFLAG(ARKWEB_WEBSTORAGE)
+    LOG(INFO) << "ProfileImpl SetBrowserProfileType kRegular, context : "
+        << reinterpret_cast<uintptr_t>(this) % 100000000;
+#endif  // BUILDFLAG(ARKWEB_WEBSTORAGE)
     profile_metrics::SetBrowserProfileType(
         this, profile_metrics::BrowserProfileType::kRegular);
   }
@@ -1199,16 +1215,24 @@ bool ProfileImpl::ShouldRestoreOldSessionCookies() {
   SessionStartupPref startup_pref(SessionStartupPref::GetDefaultStartupType());
   return startup_pref.ShouldRestoreLastSession();
 #else
+#if BUILDFLAG(ARKWEB_PERMISSION)
+  return !IsOffTheRecord();
+#else
   SessionStartupPref startup_pref =
       StartupBrowserCreator::GetSessionStartupPref(
           *base::CommandLine::ForCurrentProcess(), this);
   return ExitTypeService::GetLastSessionExitType(this) == ExitType::kCrashed ||
          startup_pref.ShouldRestoreLastSession();
 #endif
+#endif
 }
 
 bool ProfileImpl::ShouldPersistSessionCookies() const {
+#if BUILDFLAG(ARKWEB_COOKIE)
+  return g_browser_process->profile_manager()->GetPersistSessionCookies();
+#else
   return true;
+#endif
 }
 
 PrefService* ProfileImpl::GetPrefs() {
@@ -1355,7 +1379,14 @@ ProfileImpl::GetBrowsingDataRemoverDelegate() {
 // instead of repeating them inside all Profile implementations.
 content::PermissionControllerDelegate*
 ProfileImpl::GetPermissionControllerDelegate() {
+#if BUILDFLAG(ARKWEB_PERMISSION)
+  if (!permission_manager_.get()) {
+    permission_manager_.reset(new AlloyPermissionManager());
+  }
+  return permission_manager_.get();
+#else
   return PermissionManagerFactory::GetForProfile(this);
+#endif  // BUILDFLAG(ARKWEB_PERMISSION)
 }
 
 content::ClientHintsControllerDelegate*

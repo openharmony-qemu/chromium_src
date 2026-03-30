@@ -202,6 +202,12 @@ class ExtensionTabUtil {
   static ScrubTabBehavior GetScrubTabBehavior(const Extension* extension,
                                               mojom::ContextType context,
                                               const GURL& url);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  static ScrubTabBehavior GetScrubTabBehaviorExt(const Extension* extension,
+                                                 mojom::ContextType context,
+                                                 const GURL& url,
+                                                 int tab_id);
+#endif
 
   // Removes any privacy-sensitive fields from a Tab object if appropriate,
   // given the permissions of the extension and the tab in question.  The

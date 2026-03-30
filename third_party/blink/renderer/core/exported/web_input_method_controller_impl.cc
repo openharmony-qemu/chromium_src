@@ -6,6 +6,8 @@
 
 #include <vector>
 
+#include "arkweb/build/features/features.h"
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/editing/ime/arkweb_input_method_controller_utils.h"
 #include "third_party/blink/public/platform/web_string.h"
 #include "third_party/blink/public/web/web_plugin.h"
 #include "third_party/blink/public/web/web_range.h"
@@ -184,6 +186,20 @@ int WebInputMethodControllerImpl::ComputeWebTextInputNextPreviousFlags() {
 WebTextInputType WebInputMethodControllerImpl::TextInputType() {
   return GetFrame()->GetInputMethodController().TextInputType();
 }
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+void WebInputMethodControllerImpl::GetInputElementAttributes(
+    HashMap<String, String>& attributes) {
+  if (IsEditContextActive()) {
+    return GetInputMethodController()
+        .GetActiveEditContext()
+        ->GetInputElementAttributes(attributes);
+  }
+
+  return GetFrame()->GetInputMethodController().GetArkwebUtilsInstance().GetInputElementAttributes(
+      attributes);
+}
+#endif
 
 void WebInputMethodControllerImpl::GetLayoutBounds(
     gfx::Rect* control_bounds,

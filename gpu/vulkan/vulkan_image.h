@@ -11,6 +11,7 @@
 #include <optional>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/component_export.h"
 #include "base/files/scoped_file.h"
 #include "base/memory/raw_ptr.h"
@@ -65,6 +66,7 @@ class COMPONENT_EXPORT(VULKAN) VulkanImage {
       const void* extra_memory_allocation_info = nullptr);
 
   static std::unique_ptr<VulkanImage> CreateFromGpuMemoryBufferHandle(
+      scoped_refptr<gfx::NativePixmap> pixmap,
       VulkanDeviceQueue* device_queue,
       gfx::GpuMemoryBufferHandle gmb_handle,
       const gfx::Size& size,
@@ -86,7 +88,7 @@ class COMPONENT_EXPORT(VULKAN) VulkanImage {
       VkImageUsageFlags usage,
       VkImageCreateFlags flags);
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
   static std::unique_ptr<VulkanImage> CreateWithExternalMemoryAndModifiers(
       VulkanDeviceQueue* device_queue,
       const gfx::Size& size,
@@ -189,6 +191,7 @@ class COMPONENT_EXPORT(VULKAN) VulkanImage {
                                     const void* extra_image_create_info,
                                     const void* extra_memory_allocation_info);
   bool InitializeFromGpuMemoryBufferHandle(
+      scoped_refptr<gfx::NativePixmap> pixmap,
       VulkanDeviceQueue* device_queue,
       gfx::GpuMemoryBufferHandle gmb_handle,
       const gfx::Size& size,
@@ -198,7 +201,7 @@ class COMPONENT_EXPORT(VULKAN) VulkanImage {
       VkImageTiling image_tiling,
       uint32_t queue_family_index);
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
   bool InitializeWithExternalMemoryAndModifiers(VulkanDeviceQueue* device_queue,
                                                 const gfx::Size& size,
                                                 VkFormat format,

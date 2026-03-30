@@ -43,6 +43,14 @@ class LCPRectInfo {
 
   void OutputToTraceValue(TracedValue&) const;
 
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION) || BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT)
+  std::string ToString() {
+    return std::string("frame_rect:") + frame_rect_info_.ToString() +
+           std::string(", root_rect:") + root_rect_info_.ToString();
+  }
+
+  gfx::Rect GetRootRectInfo() {return root_rect_info_;}
+#endif
  private:
   gfx::Rect frame_rect_info_;
   gfx::Rect root_rect_info_;

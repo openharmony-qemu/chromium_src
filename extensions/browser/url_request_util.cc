@@ -130,7 +130,11 @@ bool AllowCrossRendererResourceLoad(
 
   // Allow web accessible extension resources to be loaded as
   // subresources/sub-frames.
-  if (url.SchemeIs(extensions::kExtensionScheme) &&
+  if ((url.SchemeIs(extensions::kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+       || url.SchemeIs(extensions::kArkwebExtensionScheme)
+#endif
+           ) &&
       WebAccessibleResourcesInfo::IsResourceWebAccessibleRedirect(
           extension, url, request.request_initiator, upstream_url)) {
     *allowed = true;

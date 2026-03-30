@@ -119,9 +119,11 @@ void PowerMetricsReporter::StartNextLongInterval() {
   // configs, planned for 06/2024.
   base::trace_event::EmitNamedTrigger("power-metrics-interval-start");
 
+#if BUILDFLAG(IS_ARKWEB)
   interval_timer_.Start(FROM_HERE, kLongPowerMetricsIntervalDuration,
                         base::BindOnce(&PowerMetricsReporter::OnLongIntervalEnd,
-                                       base::Unretained(this)));
+                                       weak_ptr_factory_.GetWeakPtr()));
+#endif
 }
 
 void PowerMetricsReporter::OnLongIntervalEnd() {

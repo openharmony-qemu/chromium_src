@@ -1,0 +1,8 @@
+# Copyright 2025 The Chromium Authors
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+blink_core_sources_rendermojom = [
+  "render_mojom_client.cc",
+  "render_mojom_client.h",
+]

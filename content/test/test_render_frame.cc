@@ -171,6 +171,10 @@ class MockFrameHost : public mojom::FrameHost {
         std::move(browser_interface_broker_receiver));
   }
 
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+    void OnClearContextMenu() override {}
+#endif
+
   void DidCommitSameDocumentNavigation(
       mojom::DidCommitProvisionalLoadParamsPtr params,
       mojom::DidCommitSameDocumentNavigationParamsPtr same_doc_params)
@@ -216,6 +220,28 @@ class MockFrameHost : public mojom::FrameHost {
   void UpdateUserGestureCarryoverInfo() override {}
 #endif
 
+#if BUILDFLAG(ARKWEB_MENU)
+  void ChangeVisibilityOfQuickMenu() override {}
+  void MouseSelectMenuShow(bool show) override {}
+  void HideQuickMenu() override {}
+#endif
+
+#if BUILDFLAG(ARKWEB_PDF)
+  void OnPdfScrollAtBottom(const std::string& url) override {}
+  void OnPdfLoadEvent(int32_t result, const std::string& url) override {}
+#endif  // BUILDFLAG(ARKWEB_PDF)
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  void GetCreateNewWindow(const ::GURL& target_url,
+                          ::WindowOpenDisposition disposition,
+                          bool allow_popup,
+                          ::blink::mojom::WindowFeaturesPtr window_features,
+                          GetCreateNewWindowCallback callback) override {}
+
+  void CloseImageOverlaySelection() override {}
+#endif
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+  void OnDocumentEndReady() override {}
+#endif
  private:
   mojom::DidCommitProvisionalLoadParamsPtr last_commit_params_;
   mojo::PendingReceiver<blink::mojom::BrowserInterfaceBroker>
@@ -440,7 +466,20 @@ mojom::FrameHost* TestRenderFrame::GetFrameHost() {
   // Because the first invocation to GetFrameHost() may come while we are inside
   // a message loop already, pumping messags before 1.2 would constitute a
   // nested message loop and is therefore undesired.
+#if BUILDFLAG(ARKWEB_TEST)
+  if (frame_host_test_mode) {
+    frame_host_test_mode = false;
+    return frame_host_test;
+  }
+#endif
   return mock_frame_host_.get();
 }
+
+#if BUILDFLAG(ARKWEB_TEST)
+void TestRenderFrame::SetFrameHostForTest(mojom::FrameHost* frame_host) {
+  frame_host_test_mode = true;
+  frame_host_test = frame_host;
+}
+#endif
 
 }  // namespace content

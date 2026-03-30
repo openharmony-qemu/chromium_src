@@ -6,6 +6,7 @@
 #define THIRD_PARTY_BLINK_PUBLIC_COMMON_SWITCHES_H_
 
 #include "third_party/blink/public/common/common_export.h"
+#include "arkweb/build/features/features.h"
 
 namespace blink {
 namespace switches {
@@ -25,6 +26,14 @@ BLINK_COMMON_EXPORT extern const char kDisablePartialRaster[];
 BLINK_COMMON_EXPORT extern const char kDisablePreferCompositingToLCDText[];
 BLINK_COMMON_EXPORT extern const char kDisableRGBA4444Textures[];
 BLINK_COMMON_EXPORT extern const char kDisableZeroCopy[];
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+BLINK_COMMON_EXPORT extern const char
+    kSendMouseEventsDisabledFormControlsPolicy[];
+BLINK_COMMON_EXPORT extern const char
+    kSendMouseEventsDisabledFormControlsPolicy_ForceDisable[];
+BLINK_COMMON_EXPORT extern const char
+    kSendMouseEventsDisabledFormControlsPolicy_ForceEnable[];
+#endif
 BLINK_COMMON_EXPORT extern const char kDumpRuntimeCallStats[];
 BLINK_COMMON_EXPORT extern const char
     kEnableGpuMemoryBufferCompositorResources[];

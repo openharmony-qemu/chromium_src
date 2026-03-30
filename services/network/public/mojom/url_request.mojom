@@ -333,6 +333,11 @@ struct URLRequest {
   // about this.
   bool skip_service_worker;
 
+  // #if BUILDFLAG(ARKWEB_NETWORK_BASE)
+  // If true then the request continues even if it's blocked by CORB.
+  bool corb_detachable = false;
+  // #endif
+
   // https://fetch.spec.whatwg.org/#concept-request-mode
   // Used mainly by CORS handling (out-of-blink CORS), ORB, Service Worker.
   // CORS handling needs a proper origin (including a unique opaque origin).
@@ -589,15 +594,48 @@ struct URLRequest {
   // CompressionDictionaryTransport feature.
   bool shared_dictionary_writer_enabled = false;
 
+  // True for download request.
+  [EnableIf=arkweb_ex_download]
+  bool is_download_request = false;
   // If true, disables content decoding (e.g., gzip, brotli) within the network
   // service for this request. The client becomes responsible for decoding the
   // response body and setting `decoded_body_length` of
   // `URLLoaderCompletionStatus`.
   bool client_side_content_decoding_enabled = false;
 
+  [EnableIf=arkweb_ex_download]
+  bool is_triggered_by_download;
+
   // The socket tag to associate this request with. This is typically set by the
   // embedder.
   SocketTag socket_tag;
+
+  [EnableIf=arkweb_prp_preload]
+  bool allow_preload_record;
+
+  [EnableIf=arkweb_prp_preload]
+  url.mojom.Url main_url;
+
+  [EnableIf=arkweb_prp_preload]
+  bool is_preflight;
+
+  [EnableIf=arkweb_resource_interception]
+  bool is_sync_mode;
+
+  // #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  [EnableIf=arkweb_logger_report]
+  int32 usage_scenario_;
+  // #endif
+
+  // #if BUILDFLAG(ARKWEB_COOKIE)
+  [EnableIf=is_android_or_arkweb_cookie]
+  bool disable_web_security_;
+  // #endif
+
+  [EnableIf=arkweb_ex_fallback_proxy]
+  bool retry_with_fallback_proxy;
+  [EnableIf=arkweb_ex_fallback_proxy]
+  int32 original_error_code;
 
   // Whether this request is allowed to register new device bound
   // sessions or process challenges for existing device bound sessions

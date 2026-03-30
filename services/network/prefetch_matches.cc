@@ -16,6 +16,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/check.h"
 #include "base/compiler_specific.h"
 #include "base/containers/contains.h"
@@ -51,8 +52,13 @@ namespace {
 // DO_FIELD_FOR_ALL_FIELDS(COMMA).
 #define COMMA ,
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/services/network/prefetch_matches_for_include.cc"
+#endif
+
 // clang-format off
 
+#if !BUILDFLAG(IS_ARKWEB)
 #define DO_FIELD_FOR_ALL_FIELDS(...)                               \
   DO_FIELD(method) __VA_ARGS__                                     \
   DO_FIELD(url) __VA_ARGS__                                        \
@@ -72,6 +78,7 @@ namespace {
   DO_FIELD(cors_preflight_policy) __VA_ARGS__                      \
   DO_FIELD(originated_from_service_worker) __VA_ARGS__             \
   DO_FIELD(skip_service_worker) __VA_ARGS__                        \
+  DO_FIELD(corb_detachable) __VA_ARGS__                    \
   DO_FIELD(mode) __VA_ARGS__                                       \
   DO_FIELD(required_ip_address_space) __VA_ARGS__                  \
   DO_FIELD(credentials_mode) __VA_ARGS__                           \
@@ -121,6 +128,7 @@ namespace {
   DO_FIELD(allows_device_bound_session_registration) __VA_ARGS__   \
   DO_FIELD(permissions_policy) __VA_ARGS__   \
   DO_FIELD(fetch_retry_options)
+#endif // BUILDFLAG(IS_ARKWEB)
 
 // clang-format on
 
@@ -152,6 +160,7 @@ enum class Fields {
 // this enum.
 //
 // LINT.IfChange(FieldsForUma)
+#if !BUILDFLAG(IS_ARKWEB)
 enum class FieldsForUma {
   kUnknown = 0,
   kMethod = 1,
@@ -222,6 +231,7 @@ enum class FieldsForUma {
   kClientSideContentDecodingEnabled = 66,
   kMaxValue = kClientSideContentDecodingEnabled,
 };
+#endif
 // LINT.ThenChange(//tools/metrics/histograms/metadata/network/enums.xml:PrefetchMatchesResourceRequestField)
 
 constexpr auto kUmaEnumMap = base::MakeFixedFlatMap<Fields, FieldsForUma>({
@@ -246,6 +256,9 @@ constexpr auto kUmaEnumMap = base::MakeFixedFlatMap<Fields, FieldsForUma>({
     {Fields::koriginated_from_service_worker,
      FieldsForUma::kOriginatedFromServiceWorker},
     {Fields::kskip_service_worker, FieldsForUma::kSkipServiceWorker},
+#if BUILDFLAG(IS_ARKWEB)
+    {Fields::kcorb_detachable, FieldsForUma::kCorbDetachable},
+#endif
     {Fields::kmode, FieldsForUma::kMode},
     {Fields::krequired_ip_address_space, FieldsForUma::kRequiredIpAddressSpace},
     {Fields::kcredentials_mode, FieldsForUma::kCredentialsMode},

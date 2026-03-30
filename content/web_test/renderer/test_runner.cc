@@ -1502,7 +1502,8 @@ void TestRunnerBindings::SetDisallowedSubresourcePathSuffixes(
       /*filtering_disabled_for_document=*/false,
       /*generic_blocking_rules_disabled=*/false,
       /*measure_performance=*/false,
-      /*enable_logging=*/true);
+      /*enable_logging=*/true,
+      /*user_subresource_filter_replace=*/false);
 
   GetWebFrame()->GetDocumentLoader()->SetSubresourceFilter(
       new subresource_filter::WebDocumentSubresourceFilterImpl(

@@ -37,6 +37,10 @@
 #include "third_party/blink/renderer/modules/document_picture_in_picture/document_picture_in_picture_event.h"
 #include "third_party/blink/renderer/modules/picture_in_picture/picture_in_picture_event.h"
 #include "third_party/blink/renderer/platform/heap/garbage_collected.h"
+
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+#include "ohos_nweb/src/sysevent/event_reporter.h"
+#endif
 #include "third_party/blink/renderer/platform/runtime_enabled_features.h"
 #include "third_party/blink/renderer/platform/weborigin/scheme_registry.h"
 #include "third_party/blink/renderer/platform/widget/frame_widget.h"
@@ -46,6 +50,9 @@
 namespace blink {
 
 namespace {
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+constexpr int DEFAULT_PIP_ERROR_CODE = 0;
+#endif
 
 bool ShouldShowPlayPauseButton(const HTMLVideoElement& element) {
   return element.GetLoadType() != WebMediaPlayer::kLoadTypeMediaStream &&
@@ -134,6 +141,11 @@ void PictureInPictureControllerImpl::EnterPictureInPicture(
                                        "");
     }
 
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+    std::string errorType = "pip play error";
+    std::string errorDesc = "get web media player fail";
+    ReportWebMediaPlayErrorInfo(errorType, DEFAULT_PIP_ERROR_CODE, errorDesc);
+#endif
     return;
   }
 
@@ -144,8 +156,14 @@ void PictureInPictureControllerImpl::EnterPictureInPicture(
     return;
   }
 
-  if (!EnsureService())
+  if (!EnsureService()) {
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+    std::string errorType = "pip play error";
+    std::string errorDesc = "EnsureService is null";
+    ReportWebMediaPlayErrorInfo(errorType, DEFAULT_PIP_ERROR_CODE, errorDesc);
+#endif
     return;
+  }
 
   if (video_element->GetDisplayType() ==
       WebMediaPlayer::DisplayType::kFullscreen) {
@@ -229,6 +247,13 @@ void PictureInPictureControllerImpl::OnEnteredPictureInPicture(
     return;
   }
 
+#if BUILDFLAG(ARKWEB_PIP)
+  if (picture_in_picture_element_ &&
+      picture_in_picture_element_->GetWebMediaPlayer()) {
+    picture_in_picture_element_->GetWebMediaPlayer()->PipEnable(false);
+  }
+#endif  // BUILDFLAG(ARKWEB_PIP)
+
   if (picture_in_picture_element_)
     OnExitedPictureInPicture(nullptr);
 
@@ -258,10 +283,12 @@ void PictureInPictureControllerImpl::OnEnteredPictureInPicture(
 
   // Unregister the video frame sink from the element since it will be moved
   // to be the child of the PiP window frame sink.
+#if !BUILDFLAG(ARKWEB_PIP)
   if (picture_in_picture_element_->GetWebMediaPlayer()) {
     picture_in_picture_element_->GetWebMediaPlayer()
         ->UnregisterFrameSinkHierarchy();
   }
+#endif
 
   // We need to initialize the media position for this window as we won't be
   // updated with a position until the next time the player forces an update.
@@ -325,9 +352,11 @@ void PictureInPictureControllerImpl::OnExitedPictureInPicture(
 
     // Register the video frame sink back to the element when the PiP window
     // is closed and if the video is not unset.
+#if !BUILDFLAG(ARKWEB_PIP)
     if (element->GetWebMediaPlayer()) {
       element->GetWebMediaPlayer()->RegisterFrameSinkHierarchy();
     }
+#endif
   }
 
   if (resolver)

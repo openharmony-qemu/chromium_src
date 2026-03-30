@@ -17,6 +17,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/auto_reset.h"
 #include "base/base_switches.h"
 #include "base/check_op.h"
@@ -269,6 +270,28 @@
 #include "content/browser/xr/service/xr_runtime_manager_impl.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_DISPLAY_CUTOUT)
+#include "arkweb/chromium_ext/content/browser/display_cutout/display_cutout_host_ohos.h"
+#include "arkweb/chromium_ext/content/browser/media/ohos/native_web_contents_observer.h"
+#endif
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/content/browser/web_contents/web_contents_impl_utils.h"
+#include "content/public/browser/message_port_provider.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_CSS_INPUT_TIME)
+#include "content/browser/ohos/date_time_chooser_ohos.h"
+#endif  // ARKWEB_CSS_INPUT_TIME
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+#include "arkweb/chromium_ext/chrome/browser/ssl/ohos_https_upgrades_helper.h"
+#include "base/command_line.h"
+#include "content/public/common/content_switches.h"
+#endif
+
 #if defined(USE_AURA)
 #include "ui/aura/window.h"
 #include "ui/wm/core/window_util.h"
@@ -278,6 +301,9 @@
 #include "content/browser/ios/nfc_host.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_PDF)
+#include "extensions/common/constants.h"
+#endif  // BUILDFLAG(ARKWEB_PDF)
 namespace content {
 
 namespace {
@@ -757,6 +783,11 @@ class JavaScriptDialogDismissNotifier {
 
   ~JavaScriptDialogDismissNotifier() {
     for (auto& callback : callbacks_) {
+#if BUILDFLAG(IS_ARKWEB)
+      if (callback.is_null()) {
+        continue;
+      }
+#endif
       std::move(callback).Run();
     }
   }
@@ -792,7 +823,7 @@ std::unique_ptr<WebContents> WebContents::CreateWithSessionStorage(
     const SessionStorageNamespaceMap& session_storage_namespace_map) {
   OPTIONAL_TRACE_EVENT0("content", "WebContents::CreateWithSessionStorage");
   std::unique_ptr<WebContentsImpl> new_contents(
-      new WebContentsImpl(params.browser_context));
+      new WebContentsImplExt(params.browser_context));
   RenderFrameHostImpl* opener_rfh = FindOpenerRFH(params);
   FrameTreeNode* opener = nullptr;
   if (opener_rfh) {
@@ -1351,7 +1382,9 @@ WebContentsImpl::WebContentsImpl(BrowserContext* browser_context)
   WebContentsOfBrowserContext::Attach(*this);
   node_.SetFocusedFrameTree(&primary_frame_tree_);
 #if BUILDFLAG(IS_ANDROID)
-  safe_area_insets_host_ = SafeAreaInsetsHost::Create(this);
+  safe_area_insets_host_ = std::make_unique<DisplayCutoutHostImpl>(this);
+#elif BUILDFLAG(ARKWEB_DISPLAY_CUTOUT)
+  safe_area_insets_host_ = std::make_unique<DisplayCutoutHostOhos>(this);
 #endif
 
   auto* const native_theme = ui::NativeTheme::GetInstanceForWeb();
@@ -1372,6 +1405,7 @@ WebContentsImpl::WebContentsImpl(BrowserContext* browser_context)
   if (base::FeatureList::IsEnabled(network::features::kSharedStorageAPI)) {
     SharedStorageBudgetCharger::CreateForWebContents(this);
   }
+  implUtils_ = new WebContentsImplUtils(this);
 }
 
 WebContentsImpl::~WebContentsImpl() {
@@ -1494,6 +1528,7 @@ WebContentsImpl::~WebContentsImpl() {
 
   observers_.NotifyObservers(&WebContentsObserver::ResetWebContents);
   SetDelegate(nullptr);
+  delete implUtils_;
 }
 
 std::unique_ptr<WebContentsImpl> WebContentsImpl::CreateWithOpener(
@@ -1506,7 +1541,7 @@ std::unique_ptr<WebContentsImpl> WebContentsImpl::CreateWithOpener(
     opener = opener_rfh->frame_tree_node();
   }
   std::unique_ptr<WebContentsImpl> new_contents(
-      new WebContentsImpl(params.browser_context));
+      new WebContentsImplExt(params.browser_context));
   new_contents->SetOpenerForNewContents(opener, params.opener_suppressed);
 
   // If the opener is sandboxed, a new popup must inherit the opener's sandbox
@@ -1989,6 +2024,9 @@ void WebContentsImpl::ExecutePageBroadcastMethodForAllPages(
 }
 
 RenderViewHostImpl* WebContentsImpl::GetRenderViewHost() {
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(WARNING) << "GetRenderViewHost is nullptr";
+#endif
   return GetRenderManager()->current_frame_host()->render_view_host();
 }
 
@@ -2387,6 +2425,10 @@ void WebContentsImpl::SetUserAgentOverride(
     return;
   }
 
+#if BUILDFLAG(ARKWEB_USERAGENT) || BUILDFLAG(ARKWEB_EXT_UA)
+  implUtils_->UpdateUserAgentOverride(ua_override);
+#endif
+
   should_override_user_agent_in_new_tabs_ = override_in_new_tabs;
 
   // Update any in-flight load requests with overrides for new tabs.
@@ -2398,6 +2440,10 @@ void WebContentsImpl::SetUserAgentOverride(
 
   renderer_preferences_.user_agent_override = ua_override;
 
+#if BUILDFLAG(ARKWEB_I18N)
+  implUtils_->UpdateRenderAcceptLanguageIfNeed(
+      renderer_preferences_.accept_languages);
+#endif
   // Send the new override string to all renderers in the current page.
   SyncRendererPrefs();
 
@@ -2429,6 +2475,9 @@ void WebContentsImpl::SetUserAgentOverride(
       frame_tree.GetMainFrame()->CancelPrerendering(PrerenderCancellationReason(
           PrerenderFinalStatus::kUaChangeRequiresReload));
     } else {
+#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
+      TRACE_EVENT0("content", "WebContentsImpl::SetUserAgentOverride");
+#endif
       frame_tree.controller().Reload(ReloadType::BYPASSING_CACHE, true);
     }
   });
@@ -2469,7 +2518,7 @@ bool WebContentsImpl::IsFullAccessibilityModeForTesting() {
   return accessibility_mode_ == ui::kAXModeDefaultForTests;
 }
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(ARKWEB_DISPLAY_CUTOUT) || BUILDFLAG(IS_ANDROID)
 
 void WebContentsImpl::SetDisplayCutoutSafeArea(gfx::Insets insets) {
   OPTIONAL_TRACE_EVENT0("content", "WebContentsImpl::SetDisplayCutoutSafeArea");
@@ -2505,6 +2554,10 @@ const std::u16string& WebContentsImpl::GetTitle() {
   }
 
   return GetNavigationEntryForTitle()->GetTitleForDisplay();
+}
+
+bool WebContentsImpl::GetIsRealTitle() {
+  return GetNavigationEntryForTitle()->GetIsRealTitle();
 }
 
 const std::optional<std::u16string>& WebContentsImpl::GetApplicationTitle() {
@@ -2916,12 +2969,25 @@ void WebContentsImpl::OnAudioStateChanged() {
   OPTIONAL_TRACE_EVENT2("content", "WebContentsImpl::OnAudioStateChanged",
                         "is_currently_audible", is_currently_audible,
                         "was_audible", is_currently_audible_);
+#if BUILDFLAG(ARKWEB_MEDIA_MUTE_AUDIO)
+  bool is_ohos_currently_audible = is_currently_audible ||
+      (AsWebContentsImplExtWeakThis() && AsWebContentsImplExtWeakThis()->GetMediaPlayerCurrentAudible());
+  if (AsWebContentsImplExtWeakThis() &&
+      AsWebContentsImplExtWeakThis()->OnAudioStateChangedExt(is_currently_audible, is_ohos_currently_audible)) {
+    return;
+  }
+#endif  // BUILDFLAG(ARKWEB_MEDIA_MUTE_AUDIO)
   if (is_currently_audible == is_currently_audible_) {
     return;
   }
 
   // Update internal state.
   is_currently_audible_ = is_currently_audible;
+#if BUILDFLAG(ARKWEB_MEDIA_MUTE_AUDIO)
+  if (AsWebContentsImplExtWeakThis()) {
+    AsWebContentsImplExtWeakThis()->OnAudioStateChangedExtSetAudible(is_ohos_currently_audible);
+  }
+#endif  // BUILDFLAG(ARKWEB_MEDIA_MUTE_AUDIO)
   was_ever_audible_ = was_ever_audible_ || is_currently_audible_;
 
   ExecutePageBroadcastMethod([is_currently_audible](RenderViewHostImpl* rvh) {
@@ -2958,7 +3024,13 @@ void WebContentsImpl::WasShown() {
 
 void WebContentsImpl::WasHidden() {
   TRACE_EVENT0("content", "WebContentsImpl::WasHidden");
+#if BUILDFLAG(ARKWEB_PIP)
+  if (!picture_in_picture_active_) {
   UpdateVisibilityAndNotifyPageAndView(Visibility::HIDDEN);
+}
+#else
+  UpdateVisibilityAndNotifyPageAndView(Visibility::HIDDEN);
+#endif
 }
 
 bool WebContentsImpl::HasRecentInteraction() {
@@ -3136,7 +3208,19 @@ void WebContentsImpl::ApplyPrimaryPageSubframeImportance() {
 
 void WebContentsImpl::WasOccluded() {
   TRACE_EVENT0("content", "WebContentsImpl::WasOccluded");
+#if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
+#if BUILDFLAG(ARKWEB_PIP)
+  if (!picture_in_picture_active_) {
+    UpdateVisibilityAndNotifyPageAndView(Visibility::HIDDEN);
+  }
+#else
+  // Many observers observe the visibility and they do not handle OCCLUDED.
+  // So Temporarily use HIDDEN.
+  UpdateVisibilityAndNotifyPageAndView(Visibility::HIDDEN);
+#endif
+#else
   UpdateVisibilityAndNotifyPageAndView(Visibility::OCCLUDED);
+#endif
 }
 
 Visibility WebContentsImpl::GetVisibility() {
@@ -3148,13 +3232,20 @@ bool WebContentsImpl::NeedToFireBeforeUnloadOrUnloadEvents() {
     return false;
   }
 
+#if BUILDFLAG(ARKWEB_DISATCH_BEFORE_UNLOAD)
+  // The return value of NeedToFireBeforeUnloadOrUnloadEvents will not be saved
+  // after receiving a ClosePage ACK.
+  if (GetPrimaryMainFrame() && GetPrimaryMainFrame()->IsJsDialogShowOrBeforeUnloadTimedOut()) {
+    return false;
+  }
+#else
   // Don't fire if the main frame indicates that beforeunload and unload have
   // already executed (e.g., after receiving a ClosePage ACK) or should be
   // ignored.
   if (GetPrimaryMainFrame()->IsPageReadyToBeClosed()) {
     return false;
   }
-
+#endif // ARKWEB_DISATCH_BEFORE_UNLOAD
   // Check whether any frame in the frame tree needs to run beforeunload or
   // unload-time event handlers.
   for (FrameTreeNode* node : primary_frame_tree_.Nodes()) {
@@ -3624,8 +3715,13 @@ void WebContentsImpl::DidChangeVisibleSecurityState() {
       &WebContentsObserver::DidChangeVisibleSecurityState);
 }
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+const blink::web_pref::WebPreferences WebContentsImpl::ComputeWebPreferences(
+    RenderFrameHostImpl* main_frame, int32_t usage_scenario_type) {
+#else
 const blink::web_pref::WebPreferences WebContentsImpl::ComputeWebPreferences(
     RenderFrameHostImpl* main_frame) {
+#endif
   OPTIONAL_TRACE_EVENT0("browser", "WebContentsImpl::ComputeWebPreferences");
   CHECK(main_frame->is_main_frame());
 
@@ -3709,11 +3805,20 @@ const blink::web_pref::WebPreferences WebContentsImpl::ComputeWebPreferences(
   prefs.prefers_reduced_transparency = prefers_reduced_transparency_;
   prefs.inverted_colors = inverted_colors_;
 
+#if BUILDFLAG(ARKWEB_BUGFIX_CRASH)
+  if (GetRenderViewHost() && GetRenderViewHost()->GetProcess() &&
+      ChildProcessSecurityPolicyImpl::GetInstance()->HasWebUIBindings(
+          GetRenderViewHost()->GetProcess()->GetID().GetUnsafeValue())) {
+    prefs.loads_images_automatically = true;
+    prefs.javascript_enabled = true;
+  }
+#else
   if (ChildProcessSecurityPolicyImpl::GetInstance()->HasWebUIBindings(
           GetRenderViewHost()->GetProcess()->GetDeprecatedID())) {
     prefs.loads_images_automatically = true;
     prefs.javascript_enabled = true;
   }
+#endif
 
   prefs.viewport_enabled = command_line.HasSwitch(switches::kEnableViewport);
 
@@ -3889,12 +3994,47 @@ const blink::web_pref::WebPreferences WebContentsImpl::ComputeWebPreferences(
       external_popup_menus_forbid_counter_ != 0;
 #endif  // BUILDFLAG(IS_MAC) && BUILDFLAG(USE_EXTERNAL_POPUP_MENU)
 
+#if BUILDFLAG(ARKWEB_USERAGENT) || BUILDFLAG(ARKWEB_EXT_UA)
+  if (!(AsWebContentsImplExt()->user_agent_.empty()) &&
+      GetUserAgentOverride().from_app) {
+    bool is_desktop = (AsWebContentsImplExt()->user_agent_.find("Mobile") ==
+                       std::string::npos);
+#if BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+    prefs.is_desktop = is_desktop;
+#endif
+    prefs.viewport_meta_enabled = !is_desktop;
+    LOG(INFO) << "userAgent is not empty, set metaViewport: " << prefs.viewport_meta_enabled;
+  } else {
+    prefs.viewport_meta_enabled = true;
+  }
+#else
+  prefs.viewport_meta_enabled = true;
+#endif
   GetContentClient()->browser()->OverrideWebPreferences(
       this, *main_frame->GetSiteInstance(), &prefs);
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  prefs.video_assistant_enabled =
+      AsWebContentsImplExt()->video_assistant_ ? AsWebContentsImplExt()->video_assistant_->Enabled() : false;
+  prefs.custom_media_player_enabled = AsWebContentsImplExt()->custom_media_player_enabled_;
+#endif  // ARKWEB_VIDEO_ASSISTANT
+
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  prefs.media_resume_from_bfcache_page = AsWebContentsImplExt()->media_resume_from_bfcache_page_;
+#endif // BUILDFLAG(ARKWEB_BFCACHE)
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  prefs.usage_scenario = usage_scenario_type;
+#endif
+
   return prefs;
 }
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+void WebContentsImpl::OnWebPreferencesChanged(int32_t usage_scenario_type) {
+#else
 void WebContentsImpl::OnWebPreferencesChanged() {
+#endif
   OPTIONAL_TRACE_EVENT0("content", "WebContentsImpl::OnWebPreferencesChanged");
 
   // This is defensive code to avoid infinite loops due to code run inside
@@ -3904,9 +4044,13 @@ void WebContentsImpl::OnWebPreferencesChanged() {
     return;
   }
   updating_web_preferences_ = true;
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  SetWebPreferences(ComputeWebPreferences(GetPrimaryMainFrame(), usage_scenario_type));
+#else
   SetWebPreferences(ComputeWebPreferences(GetPrimaryMainFrame()));
+#endif
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM) || BUILDFLAG(ARKWEB_ZOOM)
   const bool force_enable_zoom_changed =
       (force_enable_zoom_ != web_preferences_->force_enable_zoom);
   force_enable_zoom_ = web_preferences_->force_enable_zoom;
@@ -4170,6 +4314,8 @@ void WebContentsImpl::Init(const WebContents::CreateParams& params,
     site_instance->PreventAssociationWithSpareProcess();
   }
 
+  implUtils_->renderProcessShareInit(params, site_instance);
+
   // Iniitalize the primary FrameTree.
   // Note that GetOpener() is used here to get the opener for origin
   // inheritance, instead of other similar functions:
@@ -4218,6 +4364,10 @@ void WebContentsImpl::Init(const WebContents::CreateParams& params,
 #if BUILDFLAG(IS_ANDROID) || (BUILDFLAG(IS_IOS) && !BUILDFLAG(IS_IOS_TVOS))
   DateTimeChooser::CreateDateTimeChooser(this);
 #endif
+
+#if BUILDFLAG(ARKWEB_CSS_INPUT_TIME)
+  DateTimeChooserOHOS::CreateForWebContents(this);
+#endif  // #if BUILDFLAG(ARKWEB_CSS_INPUT_TIME)
 
   // AttributionHost must be created after `view_->CreateView()` is called as it
   // may invoke `WebContentsAndroid::AddObserver()`.
@@ -4351,6 +4501,15 @@ void WebContentsImpl::RemoveRenderWidgetHostDestructionObserver(
 void WebContentsImpl::AddObserver(WebContentsObserver* observer) {
   OPTIONAL_TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("content.verbose"),
                         "WebContentsImpl::AddObserver");
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+  DCHECK_CURRENTLY_ON(BrowserThread::UI);
+  if (!BrowserThread::CurrentlyOn(BrowserThread::UI)) {
+    GetUIThreadTaskRunner({})->PostTask(
+        FROM_HERE, base::BindOnce(&WebContentsImpl::AddObserver,
+                                  weak_factory_.GetWeakPtr(), observer));
+    return;
+  }
+#endif  // BUILDFLAG(ARKWEB_NETWORK_BASE)
   observers_.AddObserver(observer);
 }
 
@@ -4415,9 +4574,6 @@ void WebContentsImpl::RenderWidgetCreated(
   OPTIONAL_TRACE_EVENT1("content", "WebContentsImpl::RenderWidgetCreated",
                         "render_widget_host", render_widget_host);
   created_widgets_[render_widget_host->GetFrameSinkId()] = render_widget_host;
-
-  observers_.NotifyObservers(
-      &WebContentsObserver::RenderWidgetCreated, render_widget_host);
 }
 
 void WebContentsImpl::RenderWidgetDeleted(
@@ -4948,6 +5104,13 @@ void WebContentsImpl::UpdateVisibilityAndNotifyPageAndView(
     ForEachRenderViewHost(view_mask, update_frame_tree_visibility);
   }
 
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+  implUtils_->SetIsOfflineWebComponentInactive(new_visibility);
+#endif
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+  bool clean_buffers_when_invisible_enabled = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+    .GetSystemPropertiesInstance().GetBoolParameter("const.web.clean_buffers_when_invisible.enabled", false);
+#endif
   // |GetRenderWidgetHostView()| can be null if the user middle clicks a link to
   // open a tab in the background, then closes the tab before selecting it.
   // This is because closing the tab calls WebContentsImpl::Destroy(), which
@@ -4956,10 +5119,25 @@ void WebContentsImpl::UpdateVisibilityAndNotifyPageAndView(
   // calls us).
   if (auto* view = GetRenderWidgetHostView()) {
     if (view_is_visible) {
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+      // When web is visible, no need to clean buffers after SwapBuffers
+      if (clean_buffers_when_invisible_enabled) {
+        view->SetIfNeedCleanBuffers(false);
+      }
+#endif
       static_cast<RenderWidgetHostViewBase*>(view)->ShowWithVisibility(
           page_visibility);
     } else if (new_visibility == Visibility::HIDDEN) {
       view->Hide();
+#if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
+      view->EvictFrameBackBuffers();
+#endif
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+      // When web is invisible, need to clean buffers after SwapBuffers
+      if (clean_buffers_when_invisible_enabled) {
+        view->SetIfNeedCleanBuffers(true);
+      }
+#endif
     } else {
       view->WasOccluded();
     }
@@ -5031,6 +5209,16 @@ void WebContentsImpl::UpdateVisibilityAndNotifyPageAndView(
     }
   }
 }
+
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+void WebContentsImpl::EvictFrameBackBuffersWhenNWebWasHidden() {
+  implUtils_->EvictFrameBackBuffersWhenNWebWasHidden();
+}
+
+void WebContentsImpl::SetIsOfflineWebComponent() {
+  implUtils_->SetIsOfflineWebComponent();
+}
+#endif
 
 #if BUILDFLAG(IS_ANDROID)
 void WebContentsImpl::UpdateUserGestureCarryoverInfo() {
@@ -5391,6 +5579,27 @@ FrameTree* WebContentsImpl::CreateNewWindow(
   }
 
   auto* new_contents_impl = new_contents.get();
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES) && !defined(COMPONENT_BUILD)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+        switches::kEnableNwebEx)) {
+    auto* https_helper = OhosHttpsUpgradesHelper::FromWebContents(this);
+    if (https_helper) {
+      OhosHttpsUpgradesHelper::CreateForWebContents(new_contents_impl);
+      auto* new_https_helper = OhosHttpsUpgradesHelper::FromWebContents(new_contents_impl);
+      if (new_https_helper) {
+        new_https_helper->set_is_arkweb_https_upgrades_enable(https_helper->is_arkweb_https_upgrades_enable());
+      }
+    }
+  }
+
+#endif
+#if BUILDFLAG(ARKWEB_MULTI_WINDOW)
+  if (delegate_) {
+    delegate_->WebContentsCreated(this, render_process_id,
+                                  opener->GetRoutingID(), params.frame_name,
+                                  params.target_url, new_contents_impl);
+  }
+#endif  // BUILDFLAG(ARKWEB_MULTI_WINDOW)
   new_contents_impl->is_popup_ =
       params.disposition == WindowOpenDisposition::NEW_POPUP;
 
@@ -5438,11 +5647,13 @@ FrameTree* WebContentsImpl::CreateNewWindow(
     AddWebContentsDestructionObserver(new_contents_impl);
   }
 
+#if !BUILDFLAG(ARKWEB_MULTI_WINDOW)
   if (delegate_) {
     delegate_->WebContentsCreated(this, render_process_id,
                                   opener->GetRoutingID(), params.frame_name,
                                   params.target_url, new_contents_impl);
   }
+#endif  // BUILDFLAG(ARKWEB_MULTI_WINDOW)
 
   observers_.NotifyObservers(&WebContentsObserver::DidOpenRequestedURL,
                              new_contents_impl, opener, params.target_url,
@@ -6879,6 +7090,11 @@ void WebContentsImpl::SetVisibilityAndNotifyObservers(Visibility visibility) {
   // for the first time.
   if (visibility != previous_visibility ||
       (visibility == Visibility::VISIBLE && !did_first_set_visible_)) {
+#if BUILDFLAG(ARKWEB_PDF) && !defined(COMPONENT_BUILD)  // FIXME
+    if (implUtils_) {
+      implUtils_->JudgeIsPdfPageVisibilityChanged(visibility);
+    }
+#endif
     SCOPED_UMA_HISTOGRAM_TIMER("WebContentsObserver.OnVisibilityChanged");
     observers_.NotifyObservers(&WebContentsObserver::OnVisibilityChanged,
                                visibility);
@@ -7310,6 +7526,10 @@ void WebContentsImpl::DidStartNavigation(NavigationHandle* navigation_handle) {
         GetController().IsInitialNavigation() &&
         !navigation_handle->IsRendererInitiated() &&
         navigation_handle->GetURL() == url::kAboutBlankURL;
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+    AsWebContentsImplExt()->DetectBlankScreen(
+        navigation_handle->GetURL().spec());
+#endif
   }
 }
 
@@ -7441,11 +7661,19 @@ void WebContentsImpl::DidFinishNavigation(NavigationHandle* navigation_handle) {
     if (navigation_handle->IsInPrimaryMainFrame() &&
         !navigation_handle->IsSameDocument()) {
       was_ever_audible_ = false;
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+      if (AsWebContentsImplExt()->video_assistant_) {
+        AsWebContentsImplExt()->video_assistant_->DidFinishNavigation();
+      }
+#endif  // ARKWEB_VIDEO_ASSISTANT
     }
 
     if (!navigation_handle->IsSameDocument()) {
       last_screen_orientation_change_time_ = base::TimeTicks();
     }
+#if BUILDFLAG(ARKWEB_PDF)
+    AsWebContentsImplExt()->ProcessForPdfType(navigation_handle);
+#endif
   }
 
   // If we didn't end up on about:blank after setting this in DidStartNavigation
@@ -8716,6 +8944,9 @@ void WebContentsImpl::ShowContextMenu(
                         "render_frame_host", render_frame_host);
   // If a renderer fires off a second command to show a context menu before the
   // first context menu is closed, just ignore it. https://crbug.com/707534
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  AsWebContentsImplExt()->touch_insert_handle_menu_show_ = true;
+#endif  // #if BUILDFLAG(ARKWEB_CLIPBOARD)
   if (showing_context_menu_) {
     return;
   }
@@ -8724,6 +8955,13 @@ void WebContentsImpl::ShowContextMenu(
     context_menu_client_.reset();
     context_menu_client_.Bind(std::move(context_menu_client));
   }
+
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableNwebExFreeCopy)) {
+    AsWebContentsImplExt()->SetShouldShowFreeCopyMenu(params.is_selectable);
+  }
+#endif
 
   ContextMenuParams context_menu_params(params);
 
@@ -8844,10 +9082,15 @@ void WebContentsImpl::RunJavaScriptDialog(
         GetPrimaryMainFrame()->AddMessageToConsole(
             blink::mojom::ConsoleMessageLevel::kWarning,
             base::StringPrintf(
+#if !BUILDFLAG(ARKWEB_DEVTOOLS)
                 "A different origin subframe tried to create a JavaScript "
                 "dialog. This is no longer allowed and was blocked. See "
                 "https://www.chromestatus.com/feature/5148698084376576 for "
                 "more details."));
+#else
+                "A different origin subframe tried to create a JavaScript "
+                "dialog. This is no longer allowed and was blocked."));
+#endif // ARKWEB_DEVTOOLS
       }
     }
   }
@@ -9488,7 +9731,15 @@ PrerenderHostRegistry* WebContentsImpl::GetPrerenderHostRegistry() {
   return prerender_host_registry_.get();
 }
 
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
 void WebContentsImpl::DidStartLoading(FrameTreeNode* frame_tree_node) {
+  DidStartLoading(frame_tree_node, false);
+}
+void WebContentsImpl::DidStartLoading(FrameTreeNode* frame_tree_node,
+                                      bool should_show_loading_ui) {
+#else
+void WebContentsImpl::DidStartLoading(FrameTreeNode* frame_tree_node) {
+#endif
   OPTIONAL_TRACE_EVENT1("content", "WebContentsImpl::DidStartLoading",
                         "frame_tree_node", frame_tree_node);
 
@@ -9497,6 +9748,11 @@ void WebContentsImpl::DidStartLoading(FrameTreeNode* frame_tree_node) {
                     "Primary Main FrameTreeNode id",
                     GetPrimaryFrameTree().root()->frame_tree_node_id());
   SCOPED_UMA_HISTOGRAM_TIMER("WebContentsObserver.DidStartLoading");
+
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
+  implUtils_->UpdateMainFrameLoadingControlsState(frame_tree_node, should_show_loading_ui);
+#endif
+
   observers_.NotifyObservers(&WebContentsObserver::DidStartLoading);
 
   // Reset the focus state from DidStartNavigation to false if a new load starts
@@ -10178,6 +10434,13 @@ void WebContentsImpl::OnFocusedElementChangedInFrame(
                         "render_frame_host", frame);
   RenderWidgetHostViewBase* root_view =
       static_cast<RenderWidgetHostViewBase*>(GetRenderWidgetHostView());
+#if BUILDFLAG(ARKWEB_PDF)
+  const GURL& url = frame->GetLastCommittedURL();
+  if (url.host() == extension_misc::kPdfExtensionId) {
+    root_view = static_cast<RenderWidgetHostViewBase*>(
+        GetOutermostWebContents()->GetRenderWidgetHostView());
+  }
+#endif  // BUILDFLAG(ARKWEB_PDF)
   if (!root_view || !frame->GetView()) {
     return;
   }
@@ -10200,6 +10463,9 @@ void WebContentsImpl::OnFocusedElementChangedInFrame(
 bool WebContentsImpl::DidAddMessageToConsole(
     RenderFrameHostImpl* source_frame,
     blink::mojom::ConsoleMessageLevel log_level,
+#if BUILDFLAG(ARKWEB_CONSOLE_LOGGING)
+    blink::mojom::ConsoleMessageSource log_source,
+#endif
     const std::u16string& message,
     int32_t line_no,
     const std::u16string& source_id,
@@ -10214,7 +10480,11 @@ bool WebContentsImpl::DidAddMessageToConsole(
   if (!delegate_) {
     return false;
   }
+#if BUILDFLAG(ARKWEB_CONSOLE_LOGGING)
+  return delegate_->DidAddMessageToConsole(this, log_level, log_source, message, line_no,
+#else
   return delegate_->DidAddMessageToConsole(this, log_level, message, line_no,
+#endif
                                            source_id);
 }
 
@@ -10322,7 +10592,13 @@ void WebContentsImpl::OnIgnoredUIEvent() {
 
 void WebContentsImpl::RendererUnresponsive(
     RenderWidgetHostImpl* render_widget_host,
-    base::RepeatingClosure hang_monitor_restarter) {
+    base::RepeatingClosure hang_monitor_restarter
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+    ,
+    RendererIsUnresponsiveReason reason
+#endif
+
+) {
   OPTIONAL_TRACE_EVENT1("content", "WebContentsImpl::RendererUnresponsive",
                         "render_widget_host", render_widget_host);
   if (ShouldIgnoreUnresponsiveRenderer()) {
@@ -10367,7 +10643,12 @@ void WebContentsImpl::RendererUnresponsive(
                              render_widget_host->GetProcess());
   if (delegate_) {
     delegate_->RendererUnresponsive(this, render_widget_host,
-                                    std::move(hang_monitor_restarter));
+                                    std::move(hang_monitor_restarter)
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+                                        ,
+                                    reason
+#endif
+    );
   }
 }
 
@@ -10392,6 +10673,9 @@ void WebContentsImpl::BeforeUnloadFiredFromRenderManager(
   if (delegate_) {
     delegate_->BeforeUnloadFired(this, proceed, proceed_to_fire_unload);
   }
+#if BUILDFLAG(ARKWEB_DISATCH_BEFORE_UNLOAD)
+  OnBeforeUnloadFired(*proceed_to_fire_unload);
+#endif  // ARKWEB_DISATCH_BEFORE_UNLOAD
   // Note: |this| might be deleted at this point.
 }
 
@@ -11214,12 +11498,20 @@ void WebContentsImpl::SetStylusHandwritingEnabled(bool enabled) {
 
 PictureInPictureResult WebContentsImpl::EnterPictureInPicture() {
   OPTIONAL_TRACE_EVENT0("content", "WebContentsImpl::EnterPictureInPicture");
+  LOG(INFO) << "Pip " << __func__;
+#if BUILDFLAG(ARKWEB_PIP)
+  picture_in_picture_active_ = true;
+#endif
   return delegate_ ? delegate_->EnterPictureInPicture(this)
                    : PictureInPictureResult::kNotSupported;
 }
 
 void WebContentsImpl::ExitPictureInPicture() {
   OPTIONAL_TRACE_EVENT0("content", "WebContentsImpl::ExitPictureInPicture");
+  LOG(INFO) << "Pip " << __func__;
+#if BUILDFLAG(ARKWEB_PIP)
+  picture_in_picture_active_ = false;
+#endif
   if (delegate_) {
     delegate_->ExitPictureInPicture();
   }
@@ -11919,10 +12211,13 @@ void WebContentsImpl::RenderFrameHostStateChanged(
     LifecycleState old_state,
     LifecycleState new_state) {
   DCHECK_NE(old_state, new_state);
+#if !BUILDFLAG(ARKWEB_BFCACHE)
+  // TODO(browser): fix crash temporarily.
   OPTIONAL_TRACE_EVENT("content",
                        "WebContentsImpl::RenderFrameHostStateChanged",
                        "render_frame_host", render_frame_host, "old_state",
                        old_state, "new_state", new_state);
+#endif
 
 #if BUILDFLAG(IS_ANDROID)
   if (old_state == LifecycleState::kActive && !render_frame_host->GetParent()) {
@@ -12142,7 +12437,12 @@ std::unique_ptr<PrerenderHandle> WebContentsImpl::StartPrerendering(
         url_match_predicate,
     base::RepeatingCallback<void(NavigationHandle&)>
         prerender_navigation_handle_callback,
-    bool allow_reuse) {
+    bool allow_reuse
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    ,
+    const char* extra_headers
+#endif
+    ) {
   PrerenderAttributes attributes(
       prerendering_url, trigger_type, embedder_histogram_suffix,
       /*speculation_rules_params=*/std::nullopt, content::Referrer(),
@@ -12162,6 +12462,11 @@ std::unique_ptr<PrerenderHandle> WebContentsImpl::StartPrerendering(
   CHECK(additional_headers.IsEmpty())
       << "additional_headers is supported only on Android WebView.";
 #endif  // BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (extra_headers) {
+    attributes.extra_headers = extra_headers;
+  }
+#endif
   attributes.holdback_status_override = holdback_status_override;
 
   FrameTreeNodeId frame_tree_node_id =

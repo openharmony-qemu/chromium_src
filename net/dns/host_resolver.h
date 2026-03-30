@@ -37,6 +37,9 @@
 #include "net/dns/public/secure_dns_policy.h"
 #include "net/log/net_log_with_source.h"
 #include "url/scheme_host_port.h"
+#if BUILDFLAG(ENABLE_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace net {
 
@@ -456,6 +459,12 @@ class NET_EXPORT HostResolver {
 
     // Controls the resolver's Secure DNS behavior for this request.
     SecureDnsPolicy secure_dns_policy = SecureDnsPolicy::kAllow;
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+    // If /true/, the dns task type of the request is only secure dns fallback
+    // type.
+    bool only_use_secure_fallback = false;
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
   };
 
   // Handler for an ongoing MDNS listening operation. Created by
@@ -562,6 +571,17 @@ class NET_EXPORT HostResolver {
   virtual HostResolverManager* GetManagerForTesting();
   virtual const URLRequestContext* GetContextForTesting() const;
   virtual handles::NetworkHandle GetTargetNetworkForTesting() const;
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  virtual bool CanUseSecureDnsFallback() const { return false; }
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING)
+  virtual bool NeedRetryDnsOnDnsHijack(const GURL& url,
+                                       const std::string& errorcode) const {
+    return false;
+  }
+#endif
 
   // Creates a new HostResolver. `manager` must outlive the returned resolver.
   //

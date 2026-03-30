@@ -22,6 +22,7 @@
 #include "services/network/public/mojom/network_service.mojom.h"
 #include "services/network/public/mojom/url_loader_network_service_observer.mojom.h"
 #include "url/gurl.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include "base/android/application_status_listener.h"
@@ -95,6 +96,10 @@ class NetworkServiceClient
                              int net_error,
                              const net::SSLInfo& ssl_info,
                              bool fatal,
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+                             const GURL& origin_url,
+                             const std::string& referrer,
+#endif
                              OnSSLCertificateErrorCallback response) override;
   void OnCertificateRequested(
       const std::optional<base::UnguessableToken>& window_id,

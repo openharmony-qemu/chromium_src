@@ -30,6 +30,7 @@
 #include <optional>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/adapters.h"
 #include "base/notreached.h"
 #include "build/build_config.h"
@@ -105,6 +106,9 @@
 #include "third_party/blink/renderer/platform/runtime_enabled_features.h"
 #include "third_party/blink/renderer/platform/wtf/hash_map.h"
 #include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+  #include "arkweb/chromium_ext/third_party/blink/renderer/core/css/css_utils.h"
+#endif
 
 namespace blink {
 
@@ -476,7 +480,11 @@ static bool ConvertFontFamilyName(
       }
     } else if (cssValueID == CSSValueID::kSystemUi) {
       family_name = font_family_names::kSystemUi;
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+    } else if (cssValueID == CSSValueID::kMath && !Cssutils::IsMathFormulaDisabledMode()) {
+#else
     } else if (cssValueID == CSSValueID::kMath) {
+#endif
       family_name = font_family_names::kMath;
     }
     // Something went wrong with the conversion or retrieving the name from

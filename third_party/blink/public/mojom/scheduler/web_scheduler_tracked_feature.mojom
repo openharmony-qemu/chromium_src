@@ -165,5 +165,10 @@ enum WebSchedulerTrackedFeature {
   // The back/forward cache is disabled when pages receive a message from shared
   // worker.
   kSharedWorkerMessage = 71,
+
+  [EnableIf=arkweb_bfcache]
+  kEnableCacheNativeEmbed = 72,
+  [EnableIf=arkweb_bfcache]
+  kEnableCacheMediaTakeOver = 73,
 };
 // LINT.ThenChange(//tools/metrics/histograms/metadata/navigation/enums.xml:WebSchedulerTrackedFeature)

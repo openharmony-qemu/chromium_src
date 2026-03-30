@@ -221,6 +221,10 @@ class CC_EXPORT LayerTreeHostClient {
   // To determine when presentation occurred see `DidPresentCompositorFrame`.
   virtual void DidReceiveCompositorFrameAckDeprecatedForCompositor() {}
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  virtual void OnLayerRectUpdate(int id, const gfx::Rect& rect) {}
+#endif
+
  protected:
   virtual ~LayerTreeHostClient() = default;
 };

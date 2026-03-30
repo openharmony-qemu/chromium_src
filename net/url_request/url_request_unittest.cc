@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "net/url_request/url_request.h"
-
 #include <stdint.h>
 
 #include <algorithm>
@@ -51,6 +49,15 @@
 #include "build/build_config.h"
 #include "build/buildflag.h"
 #include "crypto/hash.h"
+#include "net/http/http_transaction.h"
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#define private public
+#include "net/url_request/url_request.h"
+#include "net/url_request/url_request_context.h"
+#undef private
+#else
+#include "net/url_request/url_request.h"
+#endif
 #include "net/base/chunked_upload_data_stream.h"
 #include "net/base/cronet_buildflags.h"
 #include "net/base/directory_listing.h"
@@ -13981,4 +13988,7 @@ TEST_F(StorageAccessHeaderURLRequestTest, SurvivesPostAuthRetries) {
   EXPECT_TRUE(d.auth_required_called());
 }
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#include "arkweb/chromium_ext/net/url_request/url_request_for_include_unittest.cc"
+#endif  // ARKWEB_UNITTESTS
 }  // namespace net

@@ -156,6 +156,13 @@ class ChromeDownloadManagerDelegate
                       const base::FilePath::StringType& default_extension,
                       bool can_save_as_complete,
                       content::SavePackagePathPickedCallback callback) override;
+
+#if BUILDFLAG(ARKWEB_SAVE_PAGE)
+  void SafeBrowsingCallback(
+      const base::FilePath& suggested_path,
+      content::SavePackagePathPickedCallback callback) override;
+#endif // ARKWEB_SAVE_PAGE
+
   void SanitizeSavePackageResourceName(base::FilePath* filename,
                                        const GURL& source_url) override;
   void SanitizeDownloadParameters(

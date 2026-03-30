@@ -172,6 +172,11 @@ class MEDIA_EXPORT ContentDecryptionModule
   virtual void RemoveSession(const std::string& session_id,
                              std::unique_ptr<SimpleCdmPromise> promise) = 0;
 
+#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
+  virtual void SuspendSession() {}
+  virtual void ResumeSession() {}
+#endif
+
   // Returns the CdmContext associated with |this|. The returned CdmContext is
   // owned by |this| and the caller needs to make sure it is not used after
   // |this| is destructed. This method should never return null.

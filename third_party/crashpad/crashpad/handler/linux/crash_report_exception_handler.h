@@ -31,7 +31,7 @@ namespace crashpad {
 
 class ProcessSnapshotLinux;
 class ProcessSnapshotSanitized;
-
+class CrashReportExceptionHandlerUtils;
 //! \brief An exception handler that writes crash reports for exceptions
 //!     to a CrashReportDatabase.
 class CrashReportExceptionHandler : public ExceptionHandlerServer::Delegate {
@@ -76,7 +76,7 @@ class CrashReportExceptionHandler : public ExceptionHandlerServer::Delegate {
       delete;
 
   ~CrashReportExceptionHandler() override;
-
+  friend class CrashReportExceptionHandlerUtils;
   // ExceptionHandlerServer::Delegate:
 
   bool HandleException(pid_t client_process_id,
@@ -105,7 +105,12 @@ class CrashReportExceptionHandler : public ExceptionHandlerServer::Delegate {
   bool WriteMinidumpToDatabase(ProcessSnapshotLinux* process_snapshot,
                                ProcessSnapshotSanitized* sanitized_snapshot,
                                bool write_minidump_to_log,
+#if !BUILDFLAG(ARKWEB_CRASHPAD)
                                UUID* local_report_id);
+#else
+                               UUID* local_report_id,
+                               UserStreamDataSources* extendedUserStream = nullptr);
+#endif
   bool WriteMinidumpToLog(ProcessSnapshotLinux* process_snapshot,
                           ProcessSnapshotSanitized* sanitized_snapshot);
 

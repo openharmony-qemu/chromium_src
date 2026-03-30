@@ -68,9 +68,15 @@ bool ShouldOfferLinkToText(const GURL& url) {
 }
 
 bool SupportsLinkGenerationInIframe(GURL main_frame_url) {
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+  const std::unordered_set<std::string> good_hosts = {
+      "x.x.x.x", "x.x.x.x", "x.x.x.x",
+      "x.x.x.x", "x.x.x.x", "x.x.x.x"};
+#else
   const std::unordered_set<std::string> good_hosts = {
       "www.google.com", "m.google.com", "mobile.google.com",
       "www.bing.com",   "m.bing.com",   "mobile.bing.com"};
+#endif
 
   return main_frame_url.SchemeIs(url::kHttpsScheme) &&
          good_hosts.find(main_frame_url.GetHost()) != good_hosts.end() &&

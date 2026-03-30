@@ -38,6 +38,10 @@
 #include "third_party/blink/renderer/core/scroll/scrollable_area.h"
 #include "third_party/blink/renderer/platform/search_engine_utils.h"
 
+#if BUILDFLAG(ARKWEB_AI)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/fragment_directive/text_fragment_anchor_utils.h"
+#endif
+
 namespace blink {
 
 namespace {
@@ -113,6 +117,10 @@ base::TimeDelta TextFragmentAnchor::PostLoadTaskTimeout() {
 
 // static
 bool TextFragmentAnchor::GenerateNewToken(const DocumentLoader& loader) {
+#if BUILDFLAG(ARKWEB_AI)
+  if (TextFragmentAnchorUtils::ShouldIgnoreToken(loader))
+    return true;
+#endif
   // Avoid invoking the text fragment for history, reload as they'll be
   // clobbered by scroll restoration anyway. In particular, history navigation
   // is considered browser initiated even if performed via non-activated script
@@ -138,6 +146,10 @@ bool TextFragmentAnchor::GenerateNewTokenForSameDocument(
     const DocumentLoader& loader,
     WebFrameLoadType load_type,
     mojom::blink::SameDocumentNavigationType same_document_navigation_type) {
+#if BUILDFLAG(ARKWEB_AI)
+  if (TextFragmentAnchorUtils::ShouldIgnoreToken(loader))
+    return true;
+#endif
   if ((load_type != WebFrameLoadType::kStandard &&
        load_type != WebFrameLoadType::kReplaceCurrentItem) ||
       same_document_navigation_type !=
@@ -225,6 +237,9 @@ TextFragmentAnchor::TextFragmentAnchor(
   TRACE_EVENT("blink", "TextFragmentAnchor::TextFragmentAnchor");
   DCHECK(!text_directives.empty());
   DCHECK(frame_->View());
+#if BUILDFLAG(ARKWEB_AI)
+  utils_ = MakeGarbageCollected<TextFragmentAnchorUtils>(frame, should_scroll, this);
+#endif
 
   metrics_->DidCreateAnchor(text_directives.size());
 
@@ -343,6 +358,9 @@ void TextFragmentAnchor::Trace(Visitor* visitor) const {
   visitor->Trace(matched_annotations_);
   visitor->Trace(post_load_timer_);
   visitor->Trace(post_load_timeout_timer_);
+#if BUILDFLAG(ARKWEB_AI)
+  visitor->Trace(utils_);
+#endif
   SelectorFragmentAnchor::Trace(visitor);
 }
 
@@ -438,6 +456,9 @@ void TextFragmentAnchor::ApplyEffectsToFirstMatch() {
   }
 
   metrics_->DidInvokeScrollIntoView();
+#if BUILDFLAG(ARKWEB_AI)
+  utils_->StartHighlightFadeTimer();
+#endif
 }
 
 bool TextFragmentAnchor::EnsureFirstMatchInViewIfNeeded() {

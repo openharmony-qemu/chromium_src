@@ -4,6 +4,7 @@
 
 import("//build/config/arm.gni")
 import("//build/config/compiler/compiler.gni")
+import("//arkweb/build/config/sanitizers/sanitizers.gni")
 
 # TODO(ritownsend@google.com): Optimizations temporarily disabled for
 # Windows on Arm MSVC builds, see http://crbug.com/v8/10012.
@@ -68,7 +69,12 @@ config("lzma_build_config") {
           "+crypto",
         ]
       } else {
+        if (!enable_cfi_protection) {
         cflags += [ "-march=armv8-a+crc+crypto" ]
+        } else {
+          config -= [ "//arkweb/build/config/sanitizers:armv83a" ]
+          cflags += [ "-march=armv8-a+pauth-hint-only+crc+crypto" ]
+        }
       }
     }
   }

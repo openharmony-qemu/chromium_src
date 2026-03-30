@@ -40,7 +40,10 @@ buildflag_header("buildflags") {
     "RUST_ALLOCATOR_USES_PARTITION_ALLOC=$rust_allocator_uses_partition_alloc",
     "RUST_ALLOCATOR_USES_ALIGNED_MALLOC=$rust_allocator_uses_aligned_malloc",
   ]
-  visibility = [ ":*" ]
+  visibility = [ 
+    ":*",
+    "//arkweb/build:arkweb_prebuild_buildflags",
+  ]
 }
 
 if (toolchain_has_rust) {

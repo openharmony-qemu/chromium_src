@@ -153,6 +153,23 @@ class CORE_EXPORT HTMLVideoElement final : public HTMLMediaElement,
   void OnPictureInPictureStateChange() final;
   void SetPersistentState(bool persistent) final;
 
+#if BUILDFLAG(ARKWEB_PIP)
+  void UpdatePictureInPictureSurface() final;
+#endif
+  
+  // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+  uint16_t hbsPreloadTime();
+  uint16_t hbsMaxCacheTime();
+  uint16_t hbsMinCacheTime();
+  uint16_t hbsBitrate();
+  uint16_t hbsMoovSize();
+
+  void setHbsPreloadTime(uint16_t);
+  void setHbsMaxCacheTime(uint16_t);
+  void setHbsMinCacheTime(uint16_t);
+  void setHbsBitrate(uint16_t);
+  void setHbsMoovSize(uint16_t);
+
   // Used by the PictureInPictureController as callback when the video element
   // enters or exits Picture-in-Picture state.
   void OnEnteredPictureInPicture();
@@ -170,6 +187,17 @@ class CORE_EXPORT HTMLVideoElement final : public HTMLMediaElement,
   MediaVideoVisibilityTracker* visibility_tracker_for_tests() const {
     return visibility_tracker_.Get();
   }
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+  MediaRemotingInterstitial& GetMediaRemotingInterstitial() { return *remoting_interstitial_; }
+  void UpdateUiPlayState(bool is_playing) final;
+  void UpdateUiPlayPosition(int64_t position) final;
+  void UpdateRemotePlayState(bool is_playing);
+  void UpdateRemotePlayPosition(int64_t position);
+  void NotifyRemoteInterstitial(MediaControlsSizingClass sizing_class);
+  void UpdateRemoteFullScreenCss();
+  MediaControlsSizingClass GetMediaControlsSizingClass() { return sizing_class_;}
+#endif // BUILDFLAG(ARKWEB_MEDIA_CAST)
 
   VideoFrameCallbackRequester* GetVideoFrameCallbackRequester() const {
     return video_frame_callback_requester_;
@@ -226,6 +254,25 @@ class CORE_EXPORT HTMLVideoElement final : public HTMLMediaElement,
   void RequestMediaRemoting() final;
   void RequestVisibility(
       HTMLMediaElement::RequestVisibilityCallback request_visibility_cb) final;
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  void RequestEnterFullscreen() final;
+  void RequestExitFullscreen() final;
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void SetPlaybackRate(double playback_rate) final;
+  void RequestDownloadUrl() final;
+#endif  // ARKWEB_VIDEO_ASSISTANT
+
+#if BUILDFLAG(ARKWEB_PIP)
+  void OnPictureInPictureStateChanged(
+      uint32_t state, int32_t width, int32_t height) final;
+  void PipDown(bool state) final;
+  void RequestExitPictureInPicture() final;
+  void NotifyPipResize() final;
+  void PipRequestPlay() final;
+#endif
 
   void DidMoveToNewDocument(Document& old_document) override;
 
@@ -284,7 +331,29 @@ class CORE_EXPORT HTMLVideoElement final : public HTMLMediaElement,
   std::unique_ptr<CanvasResourceProvider> resource_provider_;
   bool allow_accelerated_images_ = true;
   HeapTaskRunnerTimer<HTMLVideoElement> cache_deleting_timer_;
+#if BUILDFLAG(ARKWEB_PIP)
+  bool pip_down_ = true;
+  bool pip_active_ = false;
+#endif
 
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  uint16_t GetVideoPreloadTimeDefault();
+  uint16_t GetVideoMinCacheTimeDefault();
+  uint16_t GetVideoMaxCacheTimeDefault();
+  uint16_t GetVideoMoovSizeDefault();
+  uint16_t GetVideoBitrateDefault();
+  void CheckAndSetValue(const QualifiedName& name, uint16_t* out);
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
+  // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+  uint16_t hbs_preload_time_;
+  uint16_t hbs_min_cache_time_;
+  uint16_t hbs_max_cache_time_;
+  uint16_t hbs_moov_size_;
+  uint16_t hbs_bitrate_;
+#if BUILDFLAG(ARKWEB_MEDIA_CAST)
+  MediaControlsSizingClass sizing_class_;
+#endif // ARKWEB_MEDIA_CAST
   // Paint flags set based on CSS properties, which must be propagated to the
   // cc::Layer.
   cc::PaintFlags::FilterQuality filter_quality_ =

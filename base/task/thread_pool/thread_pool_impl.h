@@ -156,6 +156,12 @@ class BASE_EXPORT ThreadPoolImpl : public ThreadPoolInstance,
   scoped_refptr<UpdateableSequencedTaskRunner>
   CreateUpdateableSequencedTaskRunner(const TaskTraits& traits);
 
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+  ThreadGroup* GetForegroundThreadGroup() {
+    return foreground_thread_group_.get();
+  }
+#endif
+
   // Returns a SequencedTaskRunner whose PostTask invocations result in
   // scheduling tasks using |traits|. Tasks run one at a time in posting order.
   // Returns the existing `SequenceTaskRunner` for 'path', or creates it.

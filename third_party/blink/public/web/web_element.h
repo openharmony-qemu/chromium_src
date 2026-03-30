@@ -50,6 +50,7 @@ class Element;
 class Image;
 class LayoutBox;
 class WebLabelElement;
+class WebElementUtils;
 
 // Provides access to some properties of a DOM element node.
 class BLINK_EXPORT WebElement : public WebNode {
@@ -121,7 +122,12 @@ class BLINK_EXPORT WebElement : public WebNode {
   //   the selected text.
   //
   // This is a no-op if the element is not editable.
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  void PasteText(const WebString& text, bool replace_all, bool should_smart_replace = true,
+               bool suppress_paste_event = false);
+#else
   void PasteText(const WebString& text, bool replace_all);
+#endif
 
   // Returns all <label> elements associated to this element.
   std::vector<WebLabelElement> Labels() const;
@@ -222,6 +228,7 @@ class BLINK_EXPORT WebElement : public WebNode {
  private:
   LayoutBox* GetScrollingBox() const;
   Image* GetImage();
+  raw_ptr<WebElementUtils> utils_;
 };
 
 DECLARE_WEB_NODE_TYPE_CASTS(WebElement);

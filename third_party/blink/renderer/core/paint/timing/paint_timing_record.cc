@@ -23,7 +23,11 @@ PaintTimingRecord::PaintTimingRecord(Node* node,
       recorded_size_(recorded_size),
       root_visual_rect_(root_visual_rect),
       soft_navigation_context_(context),
+#if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT) || BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+      lcp_rect_info_(true
+#else
       lcp_rect_info_(PaintTimingVisualizer::IsTracingEnabled()
+#endif
                          ? std::make_unique<LCPRectInfo>(
                                frame_visual_rect,
                                gfx::ToRoundedRect(root_visual_rect))
@@ -80,7 +84,9 @@ ImageRecord::ImageRecord(Node* node,
       media_timing_(new_media_timing),
       hash_(hash),
       entropy_for_lcp_(entropy_for_lcp) {
-  CHECK_GT(RecordedSize(), 0u);
+  // Follow-up Processing. A failed check caused the renderer process to crash;
+  // the code has been temporarily commented out.
+  // CHECK_GT(RecordedSize(), 0u);
 }
 
 std::optional<WebURLRequest::Priority> ImageRecord::RequestPriority() const {

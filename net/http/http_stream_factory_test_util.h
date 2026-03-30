@@ -74,7 +74,12 @@ class MockHttpStreamRequestDelegate : public HttpStreamRequest::Delegate {
                       const NetErrorDetails& net_error_details,
                       const ProxyInfo& used_proxy_info,
                       ResolveErrorInfo resolve_error_info) override;
-  void OnCertificateError(int status, const SSLInfo& ssl_info) override;
+#if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
+  MOCK_METHOD3(OnCertificateError, void(int status, const SSLInfo& ssl_info,
+                                        bool used_fallback_proxy));
+#else
+  MOCK_METHOD2(OnCertificateError, void(int status, const SSLInfo& ssl_info));
+#endif
   void OnNeedsProxyAuth(const HttpResponseInfo& proxy_response,
                         const ProxyInfo& used_proxy_info,
                         HttpAuthController* auth_controller) override;

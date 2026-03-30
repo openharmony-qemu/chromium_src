@@ -9,6 +9,7 @@
 #include <optional>
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "base/base_paths.h"
 #include "base/command_line.h"
 #include "base/debug/dump_without_crashing.h"
@@ -98,6 +99,8 @@
 #if BUILDFLAG(SKIA_USE_DAWN) && BUILDFLAG(IS_CHROMEOS)
 #include "gpu/command_buffer/service/drm_modifiers_filter_dawn.h"
 #endif
+
+#include "arkweb/chromium_ext/gpu/ipc/service/gpu_init_ext.h"
 
 namespace gpu {
 
@@ -420,7 +423,7 @@ bool GpuInit::InitializeAndStartSandbox(base::CommandLine* command_line,
   enable_watchdog = false;
 #endif
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
   bool gpu_sandbox_start_early = gpu_preferences_.gpu_sandbox_start_early;
 #else   // !(BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS))
   // For some reasons MacOSX's VideoToolbox might crash when called after
@@ -428,7 +431,7 @@ bool GpuInit::InitializeAndStartSandbox(base::CommandLine* command_line,
   // operating systems like Windows and Android the pre-sandbox steps have
   // always been executed before initializing GL so keep it this way.
   bool gpu_sandbox_start_early = true;
-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 
   // PreSandbox is mainly for resource handling and not related to the GPU
   // driver, it doesn't need the GPU watchdog. The loadLibrary may take long
@@ -458,7 +461,7 @@ bool GpuInit::InitializeAndStartSandbox(base::CommandLine* command_line,
   }
 
   bool attempted_startsandbox = false;
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
   // On Chrome OS ARM Mali, GPU driver userspace creates threads when
   // initializing a GL context, so start the sandbox early.
   // TODO(zmo): Need to collect OS version before this.
@@ -467,7 +470,7 @@ bool GpuInit::InitializeAndStartSandbox(base::CommandLine* command_line,
         watchdog_thread_.get(), &gpu_info_, gpu_preferences_);
     attempted_startsandbox = true;
   }
-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 
 #if BUILDFLAG(IS_OZONE)
   // Initialize Ozone GPU after the watchdog in case it hangs. The sandbox
@@ -982,6 +985,9 @@ bool GpuInit::InitializeAndStartSandbox(base::CommandLine* command_line,
 
 void GpuInit::InitializeInProcess(base::CommandLine* command_line,
                                   const GpuPreferences& gpu_preferences) {
+#if BUILDFLAG(ARKWEB_GL_INIT)
+  TRACE_EVENT0("startup", "GpuInit::InitializeInProcess");
+#endif
   gpu_preferences_ = gpu_preferences;
   init_successful_ = true;
 
@@ -1155,7 +1161,14 @@ void GpuInit::InitializeInProcess(base::CommandLine* command_line,
       std::move(supported_formats_for_gl_native_pixmap_import);
 #endif  // BUILDFLAG(IS_OZONE)
 
+#if BUILDFLAG(ARKWEB_VULKAN)
+  CHECK_IS_USING_VULKAN_AND_INITIAL()
+#endif
   DisableInProcessGpuVulkan(&gpu_feature_info_, &gpu_preferences_);
+
+#if BUILDFLAG(ARKWEB_VULKAN)
+  }
+#endif
 #endif  // BUILDFLAG(IS_ANDROID)
 
   InitializeDawnProcs();
@@ -1335,6 +1348,11 @@ bool GpuInit::InitializeDawn() {
 
 bool GpuInit::InitializeVulkan() {
 #if BUILDFLAG(ENABLE_VULKAN)
+#if BUILDFLAG(ARKWEB_VULKAN)
+  if (!features::IsUsingVulkan()) {
+    return false;
+  }
+#endif
   TRACE_EVENT("gpu,startup", "gpu::GpuInit::InitializeVulkan");
   DCHECK(gpu_feature_info_.status_values[GPU_FEATURE_TYPE_VULKAN] ==
              kGpuFeatureStatusEnabled ||

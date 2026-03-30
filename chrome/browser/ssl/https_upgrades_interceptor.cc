@@ -237,6 +237,9 @@ bool ShouldExcludeNavigationFromUpgrades(
 #if BUILDFLAG(ENABLE_CAPTIVE_PORTAL_DETECTION)
   captive_portal::CaptivePortalTabHelper* captive_portal_tab_helper =
       captive_portal::CaptivePortalTabHelper::FromWebContents(contents);
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  if (captive_portal_tab_helper)
+#endif
   if (captive_portal_tab_helper->is_captive_portal_tab() ||
       captive_portal_tab_helper->is_captive_portal_window()) {
     level = NavigationRequestSecurityLevel::kCaptivePortalLogin;

@@ -170,6 +170,52 @@ class TestMediaPlayer : public media::mojom::MediaPlayer {
     }
   }
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  void SetHtmlPlayEnabled(bool enabled) override {}
+
+  void RequestEnterFullscreen() override {}
+
+  void RequestExitFullscreen() override {}
+
+  void SetPlaybackRate(double playback_rate) override {}
+
+  void RequestDownloadUrl() override {}
+
+  void HidePlaybackSpeedList() override {}
+
+  void SetVideoSurface(int32_t widget_id) override {}
+
+  void PipEnable(bool enable) override {}
+
+  void PipDown(bool enable) override {}
+
+  void RequestExitPictureInPicture() override {}
+
+  void NotifyPipResize() override {}
+
+  void PipRequestPlay() override {}
+
+  void SetVolume(double volume) override {}
+
+  void GetVolume(GetVolumeCallback callback) override {}
+
+  void PullUpCastBackGround(const std::string& device_name) override {}
+
+  void UpdateUiPlayState(bool is_playing) override {}
+
+  void UpdateUiPlayPosition(int64_t position) override {}
+
+  void MediaCastStopped() override {}
+
+  void MediaCastStopByNavigation() override {}
+
+  void GetMediaCastCurrentTime(GetMediaCastCurrentTimeCallback callback) override {}
+
+  void NotifyRemoteExitFullScreen() override {}
+
+  void NotifyCastControlShow(bool is_show) override {}
+#endif
+
   // Helper method to set expected video visibility, which is later used as an
   // argument for the `RequestVisibility` method callback
   // (`RequestVisibilityCallback`).

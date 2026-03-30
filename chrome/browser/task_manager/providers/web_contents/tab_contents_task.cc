@@ -24,7 +24,12 @@ bool HostsExtension(content::WebContents* web_contents) {
   return false;
 #else   // BUILDFLAG(IS_ANDROID)
   return web_contents->GetLastCommittedURL().SchemeIs(
-      extensions::kExtensionScheme);
+             extensions::kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+         || web_contents->GetLastCommittedURL().SchemeIs(
+                extensions::kArkwebExtensionScheme)
+#endif
+      ;
 #endif  // BUILDFLAG(IS_ANDROID)
 }
 

@@ -984,3 +984,8 @@ blink_core_tests_css = [
   "threaded/text_renderer_threaded_test.cc",
   "white_space_test.cc",
 ]
+
+import("//arkweb/build/features/features.gni")
+if (is_arkweb) {
+  blink_core_sources_css += [ "//arkweb/chromium_ext/third_party/blink/renderer/core/css/ark_web_style_sheet_contents.cc" ]
+}

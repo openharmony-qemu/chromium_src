@@ -4065,6 +4065,22 @@ void NWebDelegate::GetOverScrollOffset(float* offset_x, float* offset_y) {
   }
 }
 #endif
+
+void NWebDelegate::SetScrollbarLayoutPolicy(int policy) {
+  if (!preference_delegate_) {
+    LOG(ERROR) << "SetScrollbarLayoutPolicy failed, preference_delegate_ is null";
+    return;
+  }
+  preference_delegate_->SetScrollbarLayoutPolicy(policy);
+}
+
+void NWebDelegate::SetIsSystemRtlEnable(bool enable) {
+  if (!preference_delegate_) {
+    LOG(ERROR) << "SetIsSystemRtlEnable failed, preference_delegate_ is null";
+    return;
+  }
+  preference_delegate_->SetIsSystemRtlEnable(enable);
+}
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
 #if BUILDFLAG(ARKWEB_API_INIT_WEB_ENGINE)

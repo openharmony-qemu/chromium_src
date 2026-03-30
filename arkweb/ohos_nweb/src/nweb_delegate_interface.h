@@ -522,6 +522,8 @@ class NWebDelegateInterface
 #if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
   virtual void GetOverScrollOffset(float* offset_x, float* offset_y) = 0;
 #endif
+  virtual void SetScrollbarLayoutPolicy(int policy) = 0;
+  virtual void SetIsSystemRtlEnable(bool enable) = 0;
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
 #if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM) || BUILDFLAG(ARKWEB_ZOOM)

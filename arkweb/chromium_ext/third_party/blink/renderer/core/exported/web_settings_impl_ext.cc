@@ -63,6 +63,22 @@ void WebSettingsImplExt::SetHorizontalHideScrollbars(bool enabled) {
 void WebSettingsImplExt::SetScrollable(bool enabled) {
   settings_->SetScrollable(enabled);
 }
+
+void WebSettingsImplExt::SetScrollbarLayoutPolicy(int policy) {
+  settings_->SetScrollbarLayoutPolicy(policy);
+}
+
+int WebSettingsImplExt::GetScrollbarLayoutPolicy() {
+  return settings_->GetScrollbarLayoutPolicy();
+}
+
+void WebSettingsImplExt::SetIsSystemRtlEnable(bool enable) {
+  settings_->SetIsSystemRtlEnable(enable);
+}
+
+bool WebSettingsImplExt::GetIsSystemRtlEnabled() {
+  return settings_->GetIsSystemRtlEnabled();
+}
 #endif
 
 #if BUILDFLAG(ARKWEB_ZOOM)

@@ -31,6 +31,8 @@
   bool hide_horizontal_scrollbars_ = true;
   bool scroll_enabled_ = true;
   int overscroll_mode_ = 0;
+  int scrollbar_layout_policy_ = 0;
+  bool is_system_rtl_enabled_ = false;
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
 #if BUILDFLAG(ARKWEB_SAME_LAYER)

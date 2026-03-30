@@ -197,6 +197,10 @@ class NWebPreferenceDelegate : public NWebPreference {
   bool GetScrollable() override;
   void SetBlurOnKeyboardHideMode(int enable) override;
   int GetBlurEnable();
+  void SetScrollbarLayoutPolicy(int policy);
+  int GetScrollbarLayoutPolicy() const;
+  void SetIsSystemRtlEnable(bool enable);
+  bool GetIsSystemRtlEnabled() const;
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
 #if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
@@ -419,6 +423,8 @@ class NWebPreferenceDelegate : public NWebPreference {
   bool scroll_enabled_{true};
   bool setting_scroll_enabled_{true};
   int blur_enabled_;
+  int scrollbar_layout_policy_{0};
+  bool is_system_rtl_enabled_{false};
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 #if BUILDFLAG(ARKWEB_VIEWPORT)
   std::optional<bool> viewport_enabled_;

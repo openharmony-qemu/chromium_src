@@ -48,6 +48,10 @@ class CORE_EXPORT WebSettingsImplExt final : public WebSettingsImpl {
   void SetVerticalHideScrollbars(bool) override;
   void SetHorizontalHideScrollbars(bool) override;
   void SetScrollable(bool) override;
+  void SetScrollbarLayoutPolicy(int) override;
+  int GetScrollbarLayoutPolicy() override;
+  void SetIsSystemRtlEnable(bool) override;
+  bool GetIsSystemRtlEnabled() override;
 #endif
 
 #if BUILDFLAG(ARKWEB_ZOOM)

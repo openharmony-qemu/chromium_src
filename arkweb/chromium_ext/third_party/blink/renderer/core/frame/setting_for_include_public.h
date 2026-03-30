@@ -57,6 +57,16 @@
     overscroll_mode_ = overscrollMode;
   }
   int GetOverscrollMode() { return overscroll_mode_; }
+  void SetScrollbarLayoutPolicy(int policy) {
+    scrollbar_layout_policy_ = policy;
+  }
+  int GetScrollbarLayoutPolicy() {
+    return scrollbar_layout_policy_;
+  }
+  void SetIsSystemRtlEnable(bool enable) {
+    is_system_rtl_enabled_ = enable;
+  }
+  bool GetIsSystemRtlEnabled() { return is_system_rtl_enabled_; }
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
 #if BUILDFLAG(ARKWEB_SAME_LAYER)

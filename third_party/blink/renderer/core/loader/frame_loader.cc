@@ -146,10 +146,6 @@
 #include "url/ohos/log_utils.h"
 #endif
 
-#if BUILDFLAG(ARKWEB_MENU)
-#include "third_party/blink/renderer/core/editing/frame_selection.h"
-#endif
-
 namespace blink {
 
 namespace {
@@ -986,10 +982,6 @@ void FrameLoader::StartNavigation(FrameLoadRequest& request,
           request.JavascriptWorld())
           ? CSPDisposition::DO_NOT_CHECK
           : CSPDisposition::CHECK;
-
-#if BUILDFLAG(ARKWEB_MENU)
-  frame_->Selection().Clear();
-#endif
 
   Client()->BeginNavigation(
       resource_request, request.GetRequestorBaseURL(), request.GetFrameType(),

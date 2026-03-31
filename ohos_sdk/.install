@@ -1,0 +1,196 @@
+#!/bin/bash
+# Copyright (c) 2025 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+base_dir="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+cd ${base_dir}
+echo ${base_dir}
+
+prebuilts_native_path="native-linux-x64-5.1.0.107-Release.zip"
+prebuilts_ets_path="ets-linux-x64-5.1.0.107-Release.zip"
+prebuilts_js_path="js-linux-x64-5.1.0.107-Release.zip"
+prebuilts_previewer_path="previewer-linux-x64-5.1.0.107-Release.zip"
+prebuilts_toolchains_path="toolchains-linux-x64-5.1.0.107-Release.zip"
+prebuilts_llvm_path="llvm-linux-x86_64_stripped.tar.gz"
+prebuilts_rust_path="rust-toolchain.tar.gz"
+
+sdk_upgrade() {
+  sdk_packages=(
+    "$prebuilts_ets_path"
+    "$prebuilts_native_path"
+    "$prebuilts_js_path"
+    "$prebuilts_previewer_path"
+    "$prebuilts_toolchains_path"
+  )
+
+  need_reinstall=false
+
+  # Check timestamp file for each package
+  for package in "${sdk_packages[@]}"; do
+    if [ -f "$package" ]; then
+      current_timestamp=$(stat -c %Z "$package")
+      timestamp_file="openharmony/.timestamp_$(basename "$package")"
+
+      if [ ! -f "$timestamp_file" ]; then
+        echo "No timestamp file found for $package, reinstalling SDK..."
+        need_reinstall=true
+        break
+      elif [ "$(cat "$timestamp_file")" != "$current_timestamp" ]; then
+        echo "Timestamp mismatch for $package, reinstalling SDK..."
+        need_reinstall=true
+        break
+      fi
+    else
+      echo "Package $package not found, need to reinstall..."
+      need_reinstall=true
+      break
+    fi
+  done
+
+  if [ ! -d "openharmony" ] || [ "$need_reinstall" = true ]; then
+    if [ "$need_reinstall" = true ]; then
+      echo "Cleaning up old SDK installation..."
+      rm -rf openharmony
+    fi
+
+    mkdir -p "openharmony"
+    pushd openharmony
+      unzip ../$prebuilts_ets_path
+      unzip ../$prebuilts_native_path
+      unzip ../$prebuilts_js_path
+      unzip ../$prebuilts_previewer_path
+      unzip ../$prebuilts_toolchains_path
+
+      # Create timestamp files for each package
+      for package in "${sdk_packages[@]}"; do
+        if [ -f "../$package" ]; then
+          timestamp=$(stat -c %Z "../$package")
+          echo "$timestamp" > ".timestamp_$(basename "$package")"
+          echo "Timestamp file created for $(basename "$package")"
+        fi
+      done
+    popd
+  fi
+
+  api_version=$(grep -o '"apiVersion": *"[^"]*"' 'openharmony/ets/oh-uni-package.json' | grep -o '"[^"]*"$' | tr -d '"')
+
+  if [ ! -d "$api_version" ]; then
+    mkdir -p "$api_version"
+    if [ $? -ne 0 ]; then
+      echo "ERROR: Failed to init SDK."
+      return 1
+    fi
+
+    cp -r openharmony/ets openharmony/js openharmony/toolchains openharmony/previewer $api_version
+
+  fi
+
+  if [ ! -d "ohos-sdk" ]; then
+    mkdir -p "ohos-sdk"
+    if [ $? -ne 0 ]; then
+      echo "ERROR: Failed to init SDK."
+      return 1
+    fi
+
+    pushd ohos-sdk
+      ln -s ../openharmony linux
+    popd
+  fi
+}
+
+llvm_upgrade() {
+  if [ -d "llvm" ]; then
+    # Check timestamp file in llvm folder.
+    current_timestamp=$(stat -c %Z "${prebuilts_llvm_path}")
+    timestamp_file="llvm/.timestamp"
+
+    if [ ! -f "$timestamp_file" ]; then
+      echo "No LLVM timestamp file found, reinstalling..."
+      rm -rf llvm
+    elif [ "$(cat "$timestamp_file")" != "$current_timestamp" ]; then
+      echo "LLVM timestamp mismatch, reinstalling..."
+      rm -rf llvm
+    else
+      echo "LLVM timestamp validated, skipping extraction"
+    fi
+  fi
+  
+  if [ ! -d "llvm" ]; then
+    tar -xzf $prebuilts_llvm_path
+    rm -rf llvm/lib/aarch64-linux-ohos/libc++.so
+    rm -rf llvm/lib/x86_64-linux-ohos/libc++.so
+    rm -rf llvm/lib/arm-linux-ohos/libc++.so
+    if [ -d "llvm/lib/clang/19" ]; then
+      pushd llvm/lib/clang
+      ln -s 19 current
+      popd
+    fi
+    rc=$?
+
+    if [ ${rc} -ne 0 ]; then
+      echo "ERROR: Failed to extract llvm tarball: ${base_dir}/llvm.tar.gz, result: ${rc}"
+      return ${rc}
+    fi
+
+    rm -rf openharmony/native/llvm
+    cp -r llvm openharmony/native/
+
+    # create timestamp file.
+    if [ -d "llvm" ] && [ -f "${prebuilts_llvm_path}" ]; then
+      current_timestamp=$(stat -c %Z "${prebuilts_llvm_path}")
+      echo "$current_timestamp" > "llvm/.timestamp"
+      echo "LLVM timestamp file created: ${current_timestamp}"
+    fi
+  fi
+}
+
+rust_upgrade() {
+    if [ -d "rust-toolchain" ]; then
+        # Check timestamp file in rust-toolchain folder.
+        current_timestamp=$(stat -c %Z "${prebuilts_rust_path}")
+        timestamp_file="rust-toolchain/.timestamp"
+
+        if [ ! -f "$timestamp_file" ]; then
+            echo "No Rust toolchain timestamp file found, reinstalling..."
+            rm -rf rust-toolchain
+        elif [ "$(cat "$timestamp_file")" != "$current_timestamp" ]; then
+            echo "Rust toolchain timestamp mismatch, reinstalling..."
+            rm -rf rust-toolchain
+        else
+            echo "Rust toolchain timestamp validated, skipping extraction"
+        fi
+    fi
+
+    if [ ! -d "rust-toolchain" ]; then
+        tar zxf "${prebuilts_rust_path}" || return 1
+
+        # create timestamp file.
+        if [ -d "rust-toolchain" ] && [ -f "${prebuilts_rust_path}" ]; then
+            current_timestamp=$(stat -c %Z "${prebuilts_rust_path}")
+            echo "$current_timestamp" > "rust-toolchain/.timestamp"
+            echo "Rust toolchain timestamp file created: ${current_timestamp}"
+        fi
+    fi
+
+    if [ -d "${base_dir}/../third_party/rust-toolchain" ]; then
+        rm -rf "${base_dir}/../third_party/rust-toolchain"
+    fi
+
+    if [ ! -L "${base_dir}/../third_party/rust-toolchain" ]; then  
+        ln -sf "${base_dir}/rust-toolchain" "${base_dir}/../third_party/rust-toolchain"
+    fi
+}
+
+sdk_upgrade
+llvm_upgrade
+rust_upgrade

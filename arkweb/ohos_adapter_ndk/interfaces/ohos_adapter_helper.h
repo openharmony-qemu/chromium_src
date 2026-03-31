@@ -40,7 +40,7 @@
 #include "third_party/ohos_ndk/includes/ohos_adapter/imf_adapter.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/keystore_adapter.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/media_adapter.h"
-#include "third_party/ohos_ndk/includes/ohos_adapter/media_avsession_adapter.h"
+#include "arkweb/ohos_adapter_ndk/interfaces/media_avsession_adapter.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/media_codec_adapter.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/media_codec_decoder_adapter.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/migration_manager_adapter.h"

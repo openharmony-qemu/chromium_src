@@ -26,6 +26,9 @@
 #include "services/media_session/public/cpp/media_position.h"
 
 namespace content {
+// Minimum interval between position updates to avoid excessive notifications
+// 200ms balances UI responsiveness with notification frequency.
+constexpr uint64_t kSeekTimeMinIntervalMs = 200;
 
 MediaSessionOHOS::MediaSessionOHOS(MediaSessionImpl* session)
     : media_session_(session) {
@@ -145,6 +148,13 @@ void MediaSessionOHOS::MediaSessionInfoChanged(
       }
       Prepare(session_type);
     }
+
+    if (av_position_) {
+      auto now = std::chrono::system_clock::now();
+      auto millis = std::chrono::time_point_cast<std::chrono::milliseconds>(now);
+      av_position_->SetUpdateTime(millis.time_since_epoch().count());
+      avsession_adapter_->SetPlaybackPosition(av_position_);
+    }
   } else {
     playback_state = OHOS::NWeb::MediaAVSessionPlayState::STATE_PAUSE;
   }
@@ -208,6 +218,37 @@ void MediaSessionOHOS::MediaSessionPositionChanged(
     LOG(WARNING) << __FUNCTION__ << " media avsession return for invalid type";
     return;
   }
+
+  // Seeking while media is playing consists of three phases:
+  // 1. The playback rate is changed from the current rate to 0.
+  // 2. The playback position is updated to the seek target.
+  // 3. The playback rate is restored from 0 to the original rate.
+  // To minimize disturbances to the media control UI, notifications from the
+  // first two phases should be filtered out.
+  if (is_playing_before_seeking_ && position.value().playback_rate() == 0) {
+    LOG(DEBUG) << __FUNCTION__
+               << " skip unnecessary notifications when the playback rate is "
+                  "zero during seeking.";
+    old_position_ = position;
+    return;
+  }
+
+  if (old_position_.has_value()) {
+    uint64_t position_diff = std::abs(
+        position.value().GetOriginalPosition().InMilliseconds() -
+        old_position_.value().GetOriginalPosition().InMilliseconds());
+    bool rate_changed = position.value().playback_rate() !=
+                        old_position_.value().playback_rate();
+
+    if (position_diff < kSeekTimeMinIntervalMs && !rate_changed) {
+      LOG(DEBUG) << __FUNCTION__
+                 << " skip unnecessary notifications if the position "
+                    "or the playback rate is unchanged.";
+      return;
+    }
+  }
+
+  old_position_ = position;
   auto real_duration = position.value().duration().InMilliseconds();
   av_position_->SetDuration(real_duration);
   auto real_position = position.value().GetPosition().InMilliseconds();
@@ -216,6 +257,11 @@ void MediaSessionOHOS::MediaSessionPositionChanged(
   auto millis = std::chrono::time_point_cast<std::chrono::milliseconds>(now);
   av_position_->SetUpdateTime(millis.time_since_epoch().count());
   avsession_adapter_->SetPlaybackPosition(av_position_);
+
+  if (is_playing_before_seeking_) {
+    is_playing_before_seeking_ = false;
+    avsession_adapter_->SetPlaybackState(OHOS::NWeb::MediaAVSessionPlayState::STATE_PLAY);
+  }
 }
 
 void MediaSessionOHOS::Resume() {
@@ -247,11 +293,21 @@ void MediaSessionOHOS::Stop() {
 
 void MediaSessionOHOS::SeekTo(const int64_t millis) {
   DCHECK(media_session_);
+  if (!avsession_adapter_) {
+    LOG(ERROR)
+        << __FUNCTION__
+        << " avsession_adapter_ is null.";
+    return;
+  }
   if (media_type_ == OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_INVALID) {
     LOG(ERROR) << __FUNCTION__ << " media avsession type invalid";
     return;
   }
   if (millis >= 0) {
+    is_playing_before_seeking_ = is_playing_;
+    if (is_playing_before_seeking_) {
+      avsession_adapter_->SetPlaybackState(OHOS::NWeb::MediaAVSessionPlayState::STATE_BUFFERING);
+    }
     media_session_->SeekTo(base::Milliseconds(millis));
     if (is_playing_) {
       media_session_->Resume(MediaSession::SuspendType::kUI);

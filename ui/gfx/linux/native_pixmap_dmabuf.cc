@@ -22,7 +22,7 @@ NativePixmapDmaBuf::NativePixmapDmaBuf(const gfx::Size& size,
   if (native_window_buffer_) {
     int32_t errorCode = OH_NativeWindow_NativeObjectReference(native_window_buffer_);
     if (errorCode != 0) {
-      LOG(INFO) << "NativePixmapDmaBuf, OH_NativeWindow_NativeObjectReference failed";
+      LOG(ERROR) << "NativePixmapDmaBuf, OH_NativeWindow_NativeObjectReference failed";
     }
   }
 }
@@ -36,7 +36,7 @@ NativePixmapDmaBuf::~NativePixmapDmaBuf() {
   if (native_window_buffer_) {
     int32_t errorCode = OH_NativeWindow_NativeObjectUnreference(native_window_buffer_);
     if (errorCode != 0) {
-      LOG(INFO) << "NativePixmapDmaBuf, OH_NativeWindow_NativeObjectUnreference failed";
+      LOG(ERROR) << "NativePixmapDmaBuf, OH_NativeWindow_NativeObjectUnreference failed";
     }
     native_window_buffer_ = nullptr;
   }

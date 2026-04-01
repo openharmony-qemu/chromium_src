@@ -18,7 +18,14 @@ NativePixmapDmaBuf::NativePixmapDmaBuf(const gfx::Size& size,
 #if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
                                        gfx::NativePixmapHandle handle,
                                        void* window_buffer)
-    : size_(size), format_(format), handle_(std::move(handle)), native_window_buffer_(window_buffer) {}
+    : size_(size), format_(format), handle_(std::move(handle)), native_window_buffer_(window_buffer) {
+  if (native_window_buffer_) {
+    int32_t errorCode = OH_NativeWindow_NativeObjectReference(native_window_buffer_);
+    if (errorCode != 0) {
+      LOG(ERROR) << "NativePixmapDmaBuf, OH_NativeWindow_NativeObjectReference failed";
+    }
+  }
+}
 #else
                                        gfx::NativePixmapHandle handle)
     : size_(size), format_(format), handle_(std::move(handle)) {}
@@ -27,8 +34,10 @@ NativePixmapDmaBuf::NativePixmapDmaBuf(const gfx::Size& size,
 NativePixmapDmaBuf::~NativePixmapDmaBuf() {
 #if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
   if (native_window_buffer_) {
-    OH_NativeWindow_DestroyNativeWindowBuffer(
-        static_cast<OHNativeWindowBuffer*>(native_window_buffer_));
+    int32_t errorCode = OH_NativeWindow_NativeObjectUnreference(native_window_buffer_);
+    if (errorCode != 0) {
+      LOG(ERROR) << "NativePixmapDmaBuf, OH_NativeWindow_NativeObjectUnreference failed";
+    }
     native_window_buffer_ = nullptr;
   }
 #endif // ARKWEB_HEIF_SUPPORT

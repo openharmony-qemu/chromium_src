@@ -78,6 +78,10 @@
 #include "ui/gfx/geometry/size_conversions.h"
 #include "ui/gfx/geometry/size_f.h"
 
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/frame/arkweb_visual_viewport_utils.h"
+#endif
+
 namespace blink {
 
 namespace {
@@ -414,7 +418,10 @@ void VisualViewport::SetSize(const gfx::Size& size) {
     UpdateScrollbarLayer(kVerticalScrollbar);
     LocalMainFrame().View()->SetVisualViewportOrOverlayNeedsRepaint();
   }
-
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  ArkWebVisualViewportUtils utils(this);
+  utils.TriggerUpdateAfterLayoutForNonOverlayScrollbar();
+#endif  // ARKWEB_SCROLLBAR
   EnqueueResizeEvent();
 }
 

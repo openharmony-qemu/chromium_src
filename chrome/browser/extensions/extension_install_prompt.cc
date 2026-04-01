@@ -255,7 +255,11 @@ std::u16string ExtensionInstallPrompt::Prompt::GetAbortButtonLabel() const {
     case REMOTE_INSTALL_PROMPT:
     case REPAIR_PROMPT:
     case EXTENSION_REQUEST_PROMPT:
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      id = IDS_CANCEL_V2;
+#else
       id = IDS_CANCEL;
+#endif
       break;
     case PERMISSIONS_PROMPT:
       id = IDS_EXTENSION_PROMPT_PERMISSIONS_ABORT_BUTTON;

@@ -2038,7 +2038,7 @@
 <translation id="2350182423316644347">애플리케이션 초기화 중...</translation>
 <translation id="235028206512346451">기기를 두고 떠나면 화면이 자동으로 잠깁니다. 기기 앞에 있으면 화면의 절전모드 해제 상태가 더 오래 유지됩니다. 잠금 화면을 사용하고 있지 않은 경우 기기가 잠기지 않고 절전 모드로 전환됩니다.</translation>
 <translation id="2351923523007389195">허용됨 – <ph name="PERMISSION_DETAILS" />. <ph name="LINK_BEGIN" />시스템 위치 액세스<ph name="LINK_END" />를 사용 설정하세요.</translation>
-<translation id="2352662711729498748">1MB 미만</translation>
+<translation id="2352662711729498748">&lt; 1MB</translation>
 <translation id="2353168619378866466">그룹 열기</translation>
 <translation id="2353297238722298836">카메라 및 마이크 허용됨</translation>
 <translation id="2353910600995338714">내보내기 완료</translation>

@@ -2019,7 +2019,7 @@
 <translation id="2350182423316644347">アプリケーションを初期化しています...</translation>
 <translation id="235028206512346451">デバイスの前から離れると、画面が自動的にロックされます。デバイスの前にいるときは、画面がロックされるまでの時間が長くなります。ロック画面を使用しない場合、デバイスはロックされずにスリープ状態になります。</translation>
 <translation id="2351923523007389195">許可 – <ph name="PERMISSION_DETAILS" />。<ph name="LINK_BEGIN" />システムの位置情報へのアクセス<ph name="LINK_END" />をオンにする。</translation>
-<translation id="2352662711729498748">1 MB 未満</translation>
+<translation id="2352662711729498748">1 MB未満</translation>
 <translation id="2353168619378866466">グループを開く</translation>
 <translation id="2353297238722298836">カメラとマイクを使用できます</translation>
 <translation id="2353910600995338714">エクスポートが完了しました</translation>

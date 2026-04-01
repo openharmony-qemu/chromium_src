@@ -86,7 +86,11 @@ content::WebUIDataSource* CreateAndAddExtensionsSource(Profile* profile,
       // Add common strings.
       {"add", IDS_ADD},
       {"back", IDS_ACCNAME_BACK},
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      {"cancel", IDS_CANCEL_V2},
+#else
       {"cancel", IDS_CANCEL},
+#endif
       {"close", IDS_CLOSE},
       {"clear", IDS_CLEAR},
       {"confirm", IDS_CONFIRM},

@@ -14,14 +14,17 @@
  */
 
 #include "qos_manager_adapter_impl.h"
-#include <map>
 #include "qos/qos.h"
 #include "nweb_log.h"
 
 namespace OHOS::NWeb {
 
-std::map<QosLevelAdapter, QoS_Level> kQosLevelAdapterToQoS_LevelMap =
-{
+struct QosLevelMapping {
+    QosLevelAdapter adapter_level;
+    QoS_Level qos_level;
+};
+
+constexpr QosLevelMapping kQosLevelMappings[] = {
     {QosLevelAdapter::NWEB_QOS_BACKGROUND, QoS_Level::QOS_BACKGROUND},
     {QosLevelAdapter::NWEB_QOS_UTILITY, QoS_Level::QOS_UTILITY},
     {QosLevelAdapter::NWEB_QOS_DEFAULT, QoS_Level::QOS_DEFAULT},
@@ -32,17 +35,19 @@ std::map<QosLevelAdapter, QoS_Level> kQosLevelAdapterToQoS_LevelMap =
 
 QoS_Level QosLevelAdapterToQosLevel(QosLevelAdapter nwebLevelAdapter)
 {
-    if (kQosLevelAdapterToQoS_LevelMap.count(nwebLevelAdapter) > 0) {
-        return kQosLevelAdapterToQoS_LevelMap[nwebLevelAdapter];
+    for (const auto& mapping : kQosLevelMappings) {
+        if (mapping.adapter_level == nwebLevelAdapter) {
+            return mapping.qos_level;
+        }
     }
     return QoS_Level::QOS_DEFAULT;
 }
 
 QosLevelAdapter QosLevelToQosLevelAdapter(QoS_Level qosLevel)
 {
-    for (const auto& pair : kQosLevelAdapterToQoS_LevelMap) {
-        if (pair.second == qosLevel) {
-            return pair.first;
+    for (const auto& mapping : kQosLevelMappings) {
+        if (mapping.qos_level == qosLevel) {
+            return mapping.adapter_level;
         }
     }
     return QosLevelAdapter::NWEB_QOS_DEFAULT;

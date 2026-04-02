@@ -27,6 +27,7 @@
 #include <thread>
 
 #include "base/trace_event/trace_event.h"
+#include "base/numerics/safe_math.h"
 #include "nweb_hilog.h"
 #include "ohos_adapter_helper.h"
 #include "arkweb/ohos_adapter_ndk/ohos_adapter_helper_ext.h"
@@ -114,7 +115,10 @@ void NWebOutputHandler::Resize(uint32_t width, uint32_t height) {
                  trace_output_str.c_str());
     width_ = width;
     height_ = height;
-    frame_size_ = width_ * height_ * kBitsPerPixel;
+    if (!(base::CheckMul(width_, height_) * kBitsPerPixel).AssignIfValid(&frame_size_)) {
+      LOG(ERROR) << "frame_size_ overflow";
+      return;
+    }
     if (!dump_path_.empty() || dump_buf_ == nullptr) {
       auto buf = new char[frame_size_];
       if (!buf) {

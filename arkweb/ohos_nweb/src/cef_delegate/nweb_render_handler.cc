@@ -795,7 +795,7 @@ void NWebRenderHandler::OnPaint(CefRefPtr<CefBrowser> browser,
     constexpr uint8_t kBitsPerPixel = 4;
     uint32_t white_frame_size;
     if (!(base::CheckMul(width_, height_) * kBitsPerPixel).AssignIfValid(&white_frame_size)) {
-      LOG(ERROR) << "white_frame_size overflow";
+      LOG(ERROR) << "white_frame_size is Invalid";
       return;
     }
     char* white_frame = new char[white_frame_size];

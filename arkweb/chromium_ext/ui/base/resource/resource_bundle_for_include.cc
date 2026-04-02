@@ -120,7 +120,9 @@ bool LocaleDataPakExistsExt(const std::string& locale) {
   ScopedAllowBlockingForNwebInit allow_blocking_for_using_path;
   if (path.empty() || !base::PathExists(path)) {
     std::string pakLocale;
-    if (!l10n_util::CheckAndResolveLocale(locale, &pakLocale, false)) {
+    if (supportLocaleList.count(locale) > 0) {
+      return true;
+    } else if (!l10n_util::CheckAndResolveLocale(locale, &pakLocale, false)) {
       LOG(ERROR) << "CheckAndResolveLocale false, locale:" << locale;
       return false;
     }
@@ -138,7 +140,9 @@ base::FilePath ResourceBundle::GetLocaleFilePath(
     return base::FilePath();
   }
   std::string pakLocale;
-  if (!l10n_util::CheckAndResolveLocale(locale, &pakLocale, false)) {
+  if (supportLocaleList.count(locale) > 0) {
+    pakLocale = locale;
+  } else if (!l10n_util::CheckAndResolveLocale(locale, &pakLocale, false)) {
     LOG(ERROR) << "CheckAndResolveLocale false, locale:" << locale;
     return base::FilePath();
   }

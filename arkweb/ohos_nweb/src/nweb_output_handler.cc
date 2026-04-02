@@ -116,7 +116,7 @@ void NWebOutputHandler::Resize(uint32_t width, uint32_t height) {
     width_ = width;
     height_ = height;
     if (!(base::CheckMul(width_, height_) * kBitsPerPixel).AssignIfValid(&frame_size_)) {
-      LOG(ERROR) << "frame_size_ overflow";
+      WVLOG_E("frame_size_ is Invalid");
       return;
     }
     if (!dump_path_.empty() || dump_buf_ == nullptr) {

@@ -273,6 +273,8 @@ need_processed
 #临时遍历引用的头文件，添加#include <vector>
 python3 ${WORK_SPACE}/arkweb/build/include_vector_patch.py ${INTERFACE_DIR}
 if [ "$NEED_PROCESS" -eq 1 ]; then
+  #胶水层代码支持配置化自动生成impl文件和wrapper文件
+  ${INTERFACE_OHOS_GLUE_DIR}/scripts/bridge_gen.sh --log-dir ${OHOS_GLUE_LOG_DIR}
   handle_copy_commond
   handle_translate_commond nweb
   handle_translate_commond adapter

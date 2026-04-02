@@ -246,6 +246,14 @@ struct NWebDownloadItem {
     return initiator;
   }
 
+  static std::string GetNWebContextType(
+      CefRefPtr<CefDownloadItem> download_item) {
+    CHECK(download_item);
+    WVLOG_I("GetNWebContextType is called");
+    auto context_type = download_item->AsArkDownloadItem()->GetContextType();
+    return context_type;
+  }
+
   static bool GetNWebCanResume(CefRefPtr<CefDownloadItem> download_item) {
     CHECK(download_item);
     WVLOG_I("GetNWebCanResume is called");

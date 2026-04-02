@@ -301,6 +301,15 @@ void ArkWebDownloadItemImplExt::SetConflictAction(int conflict_action) {
   conflict_action_ = conflict_action;
 }
 
+void ArkWebDownloadItemImplExt::SetContextType(
+    const std::string& context_type) {
+  context_type_ = context_type;
+}
+
+std::string ArkWebDownloadItemImplExt::GetContextType() const {
+  return context_type_;
+}
+
 std::string ArkWebDownloadItemImplExt::GetByExtensionId() const {
   return extension_id_;
 }

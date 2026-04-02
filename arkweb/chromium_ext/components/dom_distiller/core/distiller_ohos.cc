@@ -307,10 +307,6 @@ void DistillerImplUtils::WriteFlatFields(const proto::DomDistillerResult& distil
     AddToDistillationQueueForCatalogInfo(distiller_result, page_url,
                                          page_num);
   }
-  if (distiller_result.has_hw_distiller_result_json()) {
-    page_data->distilled_page_proto->data.set_hw_distiller_result_json(
-      distiller_result.hw_distiller_result_json());
-  }
 }
 
 void DistillerImplUtils::OnHwPageDistillationFinished(
@@ -339,6 +335,10 @@ void DistillerImplUtils::OnHwPageDistillationFinished(
   page_data->distilled_page_proto = new base::RefCountedData<DistilledPageProto>();
   page_data->page_num = page_num;
 
+  if (distiller_result->has_hw_distiller_result_json()) {
+    page_data->distilled_page_proto->data.set_hw_distiller_result_json(
+      distiller_result->hw_distiller_result_json());
+  }
   if (distiller_result->has_title()) {
     page_data->distilled_page_proto->data.set_title(distiller_result->title());
   }

@@ -276,7 +276,7 @@ dom_distiller::proto::DomDistillerOptions GetCustomDomDistillerOptions(
     custom_options->mutable_dom_distiller_config()->set_reserved(dom_distiller_config_reserved);
     custom_options_has_value = true;
   }
-  custom_options_has_value |= SetCustomOptions(gurl, custom_options);
+  custom_options_has_value = custom_options_has_value || SetCustomOptions(gurl, custom_options);
   if (!custom_options_has_value) {
     result_options.clear_custom_options();
   }
@@ -313,9 +313,10 @@ bool SetCustomOptions(const GURL& gurl, dom_distiller::proto::HwCustomOptions* c
       continue;
     }
     LOG(INFO) << __func__ << " [Distiller] match reg";
-    custom_options_has_value |= ParserXpathAndUpdateConfig(url_reg.xpath, custom_options->mutable_distill_config());
-    custom_options_has_value |= ParserJavascriptAndUpdateConfig(url_reg.javascript,
-                                                                custom_options->mutable_distill_config());
+    custom_options_has_value = custom_options_has_value
+              || ParserXpathAndUpdateConfig(url_reg.xpath, custom_options->mutable_distill_config());
+    custom_options_has_value = custom_options_has_value
+              || ParserJavascriptAndUpdateConfig(url_reg.javascript, custom_options->mutable_distill_config());
     if (!url_reg.reserved.empty()) {
       custom_options->mutable_distill_config()->set_reserved(url_reg.reserved);
       custom_options_has_value = true;

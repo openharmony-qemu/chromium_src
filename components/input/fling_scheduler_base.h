@@ -29,6 +29,9 @@ class FlingSchedulerBase : public FlingControllerSchedulerClient {
     compositor_ = compositor;
   }
 
+#if BUILDFLAG(ARKWEB_FLING)
+  bool OnNestedScroll(float& delta_x, float& delta_y) {}
+#endif
  protected:
   raw_ptr<ui::Compositor> compositor_ = nullptr;
 };

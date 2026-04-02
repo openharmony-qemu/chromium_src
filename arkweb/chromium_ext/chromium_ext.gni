@@ -235,6 +235,7 @@ arkweb_content_public_browser_sources = [
   "//arkweb/chromium_ext/content/public/browser/ohos_navigation_type.h",
   "//arkweb/chromium_ext/content/public/browser/render_frame_host_ohos.h",
   "//arkweb/chromium_ext/content/public/browser/render_process_host_ohos.h",
+  "//arkweb/chromium_ext/content/public/browser/https_upgrades_policy.h",
 ]
 
 arkweb_content_render_sources = []
@@ -1133,6 +1134,8 @@ arkweb_chrome_browser_ssl_https_upgrades = [
   "//arkweb/chromium_ext/chrome/browser/ssl/ohos_https_upgrades_navigation_throttle.cc",
   "//arkweb/chromium_ext/chrome/browser/ssl/ohos_https_upgrades_util.h",
   "//arkweb/chromium_ext/chrome/browser/ssl/ohos_https_upgrades_util.cc",
+  "//arkweb/chromium_ext/chrome/browser/ssl/arkweb_ssl_host_state_delegate.h",
+  "//arkweb/chromium_ext/chrome/browser/ssl/arkweb_ssl_host_state_delegate.cc",
 ]
 
 arkweb_third_party_blink_common_event_test_sources = [

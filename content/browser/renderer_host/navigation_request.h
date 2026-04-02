@@ -81,6 +81,9 @@
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
 #include "arkweb/chromium_ext/content/public/browser/error_page_reload_reason.h"
 #endif
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+#include "arkweb/chromium_ext/content/public/browser/https_upgrades_policy.h"
+#endif
 
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
 #include "arkweb/chromium_ext/net/base/web_navigation_info.h"
@@ -1411,22 +1414,13 @@ class CONTENT_EXPORT NavigationRequest
   void set_force_no_https_upgrade() { force_no_https_upgrade_ = true; }
 
 #if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
-  void ohos_set_https_upgrade(bool is_force_no_https_upgrade) {
-    force_no_https_upgrade_ = is_force_no_https_upgrade;
+  void set_https_upgrades_policy(HttpsUpgradesPolicy policy) {
+    https_upgrades_policy_ = policy;
   }
-
-  void ohos_set_url_typed_with_http_scheme(bool url_typed_with_http_scheme) {
-    url_typed_with_http_scheme_ = url_typed_with_http_scheme;
+  HttpsUpgradesPolicy https_upgrades_policy() const {
+    return https_upgrades_policy_;
   }
-
-  bool is_url_typed_with_http_scheme() const {
-    return url_typed_with_http_scheme_;
-  }
-
-  bool is_force_no_https_upgrade() const {
-    return force_no_https_upgrade_;
-  }
-#endif
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
 
   bool was_reset_for_cross_document_restart() const {
     return was_reset_for_cross_document_restart_;
@@ -2999,17 +2993,16 @@ class CONTENT_EXPORT NavigationRequest
   // animated transition.
   bool was_initiated_by_animated_transition_ = false;
 
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  HttpsUpgradesPolicy https_upgrades_policy_ = HttpsUpgradesPolicy::NONE;
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+
   // If the navigation is cancelled/discarded before it commits, the reason
   // for cancellation will be saved.
   std::optional<NavigationDiscardReason> navigation_discard_reason_;
 
   // If true, HTTPS Upgrades will be disabled on this navigation request.
   bool force_no_https_upgrade_ = false;
-
-#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
-  // If true, HTTPS Upgrades will be disabled on this navigation request.
-  bool url_typed_with_http_scheme_ = true;
-#endif
 
   // The initial request method of the request, before any redirects.
   std::string request_method_;

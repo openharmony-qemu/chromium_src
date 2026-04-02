@@ -2925,7 +2925,7 @@ int NWebDelegate::LoadUrlWithParams(const std::string& url,
         << "LoadUrlWithParams message:browserOrHostIsNull";
     return NWEB_ERR;
   }
-  LOG_FEEDBACK(WARNING, kNavigation)
+  LOG_FEEDBACK(INFO, kNavigation)
       << "LoadUrlWithParams loadType:" << load_type
       << " transitionType:" << transition_type
       << " allowHttpsUpgrades:" << allow_https_upgrade

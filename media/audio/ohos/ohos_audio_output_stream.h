@@ -13,14 +13,12 @@
 #include "base/timer/timer.h"
 #include "content/public/browser/media_session.h"
 #include "media/audio/ohos/ohos_audio_manager.h"
-#include "media/audio/ohos/ohos_audio_output_callback_bridge.h"
 #include "ohaudio/native_audiorenderer.h"
 #include "ohaudio/native_audiostreambuilder.h"
-#include "ohos/adapter/common/callback_shared_wrapper.h"
 namespace media {
 
+class AudioRenderDestructionHelper;
 class OHOSAudioManager;
-class OhosAudioOutputCallbackBridge;
 
 class OhosAudioOutputStream : public AudioOutputStream {
  public:
@@ -58,25 +56,6 @@ class OhosAudioOutputStream : public AudioOutputStream {
 
   void ScheduleIdlePumpSamples();
 
-  static int32_t AudioRendererOnWriteData(OH_AudioRenderer* renderer,
-                                          void* userData,
-                                          void* buffer,
-                                          int32_t length);
-
-  static int32_t AudioRendererOnError(OH_AudioRenderer* renderer,
-                                      void* userData,
-                                      OH_AudioStream_Result error);
-
-  static int32_t AudioRendererOnInterruptEvent(OH_AudioRenderer* renderer,
-                                               void* userData,
-                                               OH_AudioInterrupt_ForceType type,
-                                               OH_AudioInterrupt_Hint hint);
-
-  static void AudioRendererOutputDeviceChangeCallback(
-      OH_AudioRenderer* renderer,
-      void* userData,
-      OH_AudioStream_DeviceChangeReason reason);
-
  private:
   ~OhosAudioOutputStream() override;
 
@@ -109,7 +88,13 @@ class OhosAudioOutputStream : public AudioOutputStream {
   // reallocating the memory every time.
   std::unique_ptr<AudioBus> audio_bus_;
 
-  raw_ptr<AudioSourceCallback> callback_ = nullptr;
+  std::unique_ptr<AudioRenderDestructionHelper> destruction_helper_;
+
+  // Lock protects all members below which may be read concurrently from the
+  // audio manager thread and the OS provided audio thread.
+  base::Lock lock_;
+
+  raw_ptr<AudioSourceCallback> callback_ GUARDED_BY(lock_) = nullptr;
 
   double volume_ = 1.0;
 
@@ -146,14 +131,6 @@ class OhosAudioOutputStream : public AudioOutputStream {
   // The time interval between hardware update latencies.
   // ideally no more than once every 200ms.
   base::TimeDelta interval_ = base::Milliseconds(200);
-
-  scoped_refptr<base::SingleThreadTaskRunner> current_task_runner_;
-
-  size_t callback_index_ = 0;
-
-  static ohos::adapter::common::CallbackSharedWrapper<
-      OhosAudioOutputCallbackBridge>
-      callback_wrapper_;
 
   base::WeakPtrFactory<OhosAudioOutputStream> weak_factory_{this};
 };

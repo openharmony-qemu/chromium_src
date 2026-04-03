@@ -35,7 +35,11 @@ namespace content {
 namespace {
 
 const char kWebServiceBaseUrl[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://***";
+#else
     "https://www.google.com/speech-api/full-duplex/v1";
+#endif
 const char kDownstreamUrl[] = "/down?";
 const char kUpstreamUrl[] = "/up?";
 

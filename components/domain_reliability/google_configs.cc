@@ -525,6 +525,7 @@ const char* const kGoogleStandardCollectors[] = {
     "https://xxx",
     "https://xxx",
     "https://xxx",
+    "https://***",
 #else
     "https://beacons.gcp.gvt2.com/domainreliability/upload",
     "https://beacons.gvt2.com/domainreliability/upload",
@@ -533,8 +534,8 @@ const char* const kGoogleStandardCollectors[] = {
     "https://beacons4.gvt2.com/domainreliability/upload",
     "https://beacons5.gvt2.com/domainreliability/upload",
     "https://beacons5.gvt3.com/domainreliability/upload",
-#endif
     "https://clients2.google.com/domainreliability/upload",
+#endif
 };
 
 const char* const kGoogleOriginSpecificCollectorPathString =

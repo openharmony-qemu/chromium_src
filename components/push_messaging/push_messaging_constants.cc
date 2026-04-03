@@ -12,7 +12,11 @@ const char kPushMessagingGcmEndpoint[] =
 #endif
 
 const char kPushMessagingStagingGcmEndpoint[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://***/";
+#else
     "https://jmt17.google.com/fcm/send/";
+#endif
 
 const char kPushMessagingWebpushEndpoint[] =
 #if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)

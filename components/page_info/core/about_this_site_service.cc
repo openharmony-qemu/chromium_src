@@ -115,9 +115,17 @@ std::optional<proto::SiteInfo> AboutThisSiteService::GetAboutThisSiteInfo(
 
   if (kShowSampleContent.Get()) {
     page_info::proto::SiteInfo site_info;
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    if (url == GURL("https://***")) {
+#else
     if (url == GURL("https://example.com")) {
+#endif
       site_info.mutable_more_about()->set_url(
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+          "https://***");
+#else
           "https://example.com/#more-about");
+#endif
       return site_info;
     }
 
@@ -148,7 +156,11 @@ std::optional<proto::SiteInfo> AboutThisSiteService::GetAboutThisSiteInfo(
 
 // static
 GURL AboutThisSiteService::CreateMoreAboutUrlForNavigation(const GURL& url) {
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+  GURL more_about_url = GURL("https://***");
+#else
   GURL more_about_url = GURL("https://www.google.com/search");
+#endif
 
   // Strip paths of invalid urls
   const std::string url_spec =

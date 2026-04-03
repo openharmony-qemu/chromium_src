@@ -6,6 +6,9 @@
 
 #include <string_view>
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/build/features/features.h"
+#endif
 #include "chrome/browser/autofill/autofill_uitest_util.h"
 #include "chrome/browser/autofill/personal_data_manager_factory.h"
 #include "chrome/browser/profiles/profile.h"
@@ -39,7 +42,11 @@ constexpr char kDefaultTestValuePropText[] = "5% off on shoes. Up to $50.";
 constexpr char kDefaultTestSeeDetailsText[] = "See details";
 constexpr char kDefaultTestUsageInstructionsText[] =
     "Click the promo code field at checkout to autofill it.";
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+constexpr char kDefaultTestDetailsUrlString[] = "https://***";
+#else
 constexpr char kDefaultTestDetailsUrlString[] = "https://pay.google.com";
+#endif
 constexpr int64_t kCreditCardInstrumentId = 0x4444;
 }  // namespace
 

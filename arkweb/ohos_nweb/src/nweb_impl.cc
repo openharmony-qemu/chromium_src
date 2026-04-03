@@ -5428,7 +5428,7 @@ void NWebImpl::PasswordSuggestionSelected(int list_index) const {
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM) || BUILDFLAG(ARKWEB_ZOOM)
-void NWebImpl::SetForceEnableZoom(bool forceEnableZoom) const {
+void NWebImpl::SetForceEnableZoomPublic(bool forceEnableZoom) const {
   if (nweb_delegate_ == nullptr) {
     return;
   }

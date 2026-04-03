@@ -105,10 +105,7 @@ class NWebEngineImpl : public NWebEngine {
 
   std::shared_ptr<NWebAdsBlockManager> GetAdsBlockManager() override;
 
-// todo: check webview
-#if BUILDFLAG(IS_ARKWEB_EXT)
   void SetWholeWebDrawing() override;
-#endif
 
   void TrimMemoryByPressureLevel(int32_t memoryLevel) override;
 

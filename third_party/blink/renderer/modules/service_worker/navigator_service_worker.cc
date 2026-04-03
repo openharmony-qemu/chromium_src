@@ -16,6 +16,8 @@
 #include "third_party/blink/renderer/platform/instrumentation/use_counter.h"
 #if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
 #include "ohos_nweb/src/nweb_advanced_security.h"
+#include "base/command_line.h"
+#include "content/public/common/content_switches_ext.h"
 #endif
 
 namespace blink {
@@ -35,8 +37,12 @@ ServiceWorkerContainer* NavigatorServiceWorker::serviceWorker(
     ExceptionState& exception_state) {
 #if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
   // block it on advanced security mode.
-  bool isAdvancedSecurityMode = OHOS::NWeb::NWebAdvancedSecurityHelper::Inst().
-        IsSecFeatureEnabled(OHOS::NWeb::NWebAdvancedSecurityHelper::Feature::ENABLE_SERVICEWORKER);
+  bool isAdvancedSecurityMode =
+      OHOS::NWeb::NWebAdvancedSecurityHelper::Inst().IsSecFeatureEnabled(
+          OHOS::NWeb::NWebAdvancedSecurityHelper::Feature::
+              ENABLE_SERVICEWORKER) ||
+      base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kDisableServiceWorker);
   if (isAdvancedSecurityMode) {
     return nullptr;
   }

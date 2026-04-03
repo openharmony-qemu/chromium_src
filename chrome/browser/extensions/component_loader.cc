@@ -534,7 +534,9 @@ void ComponentLoader::AddDefaultComponentExtensions(
 #if BUILDFLAG(ARKWEB_PDF) && !defined(COMPONENT_BUILD)
     using ASHelper = OHOS::NWeb::NWebAdvancedSecurityHelper;
     // If in advanced security mode, PDF preview is prohibited
-    bool isAdvancedSecurityMode = ASHelper::Inst().IsSecFeatureEnabled(ASHelper::Feature::ENABLE_PDFVIEWER);
+    bool isAdvancedSecurityMode = ASHelper::Inst().IsSecFeatureEnabled(ASHelper::Feature::ENABLE_PDFVIEWER)
+                                  || base::CommandLine::ForCurrentProcess()->HasSwitch(
+      switches::kDisablePdfViewer);
     LOG(DEBUG) << "pdf in advanced security mode: " << isAdvancedSecurityMode;
     if (!isAdvancedSecurityMode) {
 #endif  // BUILDFLAG(ARKWEB_PDF) && !defined(COMPONENT_BUILD)

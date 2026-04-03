@@ -167,6 +167,8 @@
 #include "content/public/common/content_client.h"
 #include "content/public/common/content_features.h"
 #include "content/public/common/content_switches.h"
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#include "cef/libcef/common/cef_switches.h"
 #include "content/public/common/process_type.h"
 #include "content/public/common/result_codes.h"
 #include "content/public/common/url_constants.h"
@@ -3949,6 +3951,10 @@ void RenderProcessHostImpl::PropagateBrowserCommandLineToRenderer(
 #endif
 #if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
       switches::kAdSecValue,
+      switches::kDisableMathml,
+      switches::kDisablePdfExtension,
+      switches::kDisableServiceWorker,
+      switches::kDisableNonProxyUDP,
 #endif
 #if BUILDFLAG(ARKWEB_GWP_ASAN)
       switches::kOhosEnableGwpAsanType,

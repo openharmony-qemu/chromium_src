@@ -1113,7 +1113,9 @@ class WebContents : public PageNavigator, public base::SupportsUserData {
   virtual void OnSavePage() = 0;
 
 #if BUILDFLAG(ARKWEB_SAVE_PAGE)
-  virtual bool SavePageEx(const base::FilePath& main_file, SavePageType save_type) = 0;
+  virtual bool SavePageEx(const base::FilePath& main_file,
+                          SavePageType save_type,
+                          SavePageExCallback callback) = 0;
 #endif // ARKWEB_SAVE_PAGE
 
   // Save page with the main HTML file path, the directory for saving resources,

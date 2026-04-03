@@ -962,8 +962,13 @@ class MockNWebDelegate : public NWebDelegateInterface {
   MOCK_METHOD(void, WebExtensionContextMenuReloadFocusedFrame, (), (override));
 #endif
 #if BUILDFLAG(ARKWEB_SAVE_PAGE)
-  MOCK_METHOD(bool, SavePage, (int32_t type, const std::string& filePath), (override));
-#endif // ARKWEB_SAVE_PAGE
+  MOCK_METHOD(bool,
+              SavePage,
+              (int32_t type,
+              const std::string& filePath,
+              CefRefPtr<CefSavePageResultCallback> callback),
+              (override));
+#endif  // ARKWEB_SAVE_PAGE
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   MOCK_METHOD(void,
               WebExtensionContextMenuGetFocusedFrameInfo,
@@ -974,6 +979,8 @@ class MockNWebDelegate : public NWebDelegateInterface {
   MOCK_METHOD(bool, SetFocusByPosition, (float x, float y), (override));
   MOCK_METHOD(bool, IsElementExist, (std::string& xPath), (override));
   MOCK_METHOD((std::pair<double, double>), GetLastTouchMousePosition, (), (override));
+  MOCK_METHOD(void,SetScrollbarLayoutPolicy,(int policy),(override));
+  MOCK_METHOD(void,SetIsSystemRtlEnable,(bool enable),(override));
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
 #if BUILDFLAG(ARKWEB_ACTIVE_POLICY)
@@ -1320,6 +1327,7 @@ class MockNWebDelegate : public NWebDelegateInterface {
 #endif
 
 #if BUILDFLAG(ARKWEB_READER_MODE)
+  MOCK_METHOD(void, EnableReaderMode, (bool enabled), (override));
   MOCK_METHOD(void, Distill, (const std::string& guid, const DistillOptions& distill_options,
     DistillCallback callback), (override));
   MOCK_METHOD(void, AbortDistill, (), (override));

@@ -26,7 +26,7 @@
 #include "content/browser/media/session/media_session_impl.h"
 #include "mojo/public/cpp/bindings/receiver.h"
 #include "services/media_session/public/mojom/media_session.mojom.h"
-#include "third_party/ohos_ndk/includes/ohos_adapter/media_avsession_adapter.h"
+#include "arkweb/ohos_adapter_ndk/interfaces/media_avsession_adapter.h"
 
 namespace content {
 
@@ -101,6 +101,8 @@ class MediaSessionOHOS final
   static constexpr base::TimeDelta kReportMediaInfoInterval = base::Seconds(1);
   std::string media_uri_;
   bool is_avcast_ = false;
+  std::optional<media_session::MediaPosition> old_position_;
+  bool is_playing_before_seeking_ = false;
   base::WeakPtrFactory<MediaSessionOHOS> weak_factory_{this};
 };
 

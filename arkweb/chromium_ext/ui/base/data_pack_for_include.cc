@@ -216,6 +216,10 @@ bool DataPackUtil::LoadFromPathExt(raw_ptr<DataPack> dataPackObj, const base::Fi
 
 void DataPackUtil::SwapPathName(const std::string& origin, std::string& copy,
                                 const std::string& from, const std::string& to) {
+  if (from.empty()) {
+    LOG(ERROR) << "SwapPathName from empty";
+    return;
+  }
   copy = origin;
   size_t start_pos = 0;
   while ((start_pos = copy.find(from, start_pos)) != std::string::npos) {

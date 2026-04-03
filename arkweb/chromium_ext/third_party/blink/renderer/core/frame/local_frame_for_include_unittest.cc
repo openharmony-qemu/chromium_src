@@ -735,12 +735,103 @@ TEST_F(LocalFrameUtilTest, LocalFrameUtilTest_021) {
 #endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 
 #if BUILDFLAG(ARKWEB_AI)
-TEST_F(LocalFrameUtilTest, StartHighlightFadeTimer_001) {
+TEST_F(LocalFrameUtilTest, StartHighlightFadeTimer_ArkwebAgentDisabled) {
+  local_frame_->GetSettings()->SetArkwebAgentEnabled(false);
+  local_frame_->StartHighlightFadeTimer(base::Milliseconds(1000));
+}
+
+TEST_F(LocalFrameUtilTest, StartHighlightFadeTimer_ArkwebAgentEnabledWithDelay) {
+  local_frame_->GetSettings()->SetArkwebAgentEnabled(true);
+  local_frame_->StartHighlightFadeTimer(base::Milliseconds(1000));
+}
+
+TEST_F(LocalFrameUtilTest, StartHighlightFadeTimer_ArkwebAgentEnabledZeroDelay) {
+  local_frame_->GetSettings()->SetArkwebAgentEnabled(true);
+  local_frame_->StartHighlightFadeTimer(base::Milliseconds(0));
+}
+
+TEST_F(LocalFrameUtilTest, StartHighlightFadeTimer_ArkwebAgentEnabledWithMultipleDelays) {
+  local_frame_->GetSettings()->SetArkwebAgentEnabled(true);
+  local_frame_->StartHighlightFadeTimer(base::Milliseconds(500));
+  local_frame_->StartHighlightFadeTimer(base::Milliseconds(1000));
+  local_frame_->StartHighlightFadeTimer(base::Milliseconds(2000));
+}
+
+TEST_F(LocalFrameUtilTest, StartHighlightFadeTimer_SwitchAgentState) {
   local_frame_->GetSettings()->SetArkwebAgentEnabled(false);
   local_frame_->StartHighlightFadeTimer(base::Milliseconds(1000));
   local_frame_->GetSettings()->SetArkwebAgentEnabled(true);
   local_frame_->StartHighlightFadeTimer(base::Milliseconds(1000));
   local_frame_->StartHighlightFadeTimer(base::Milliseconds(0));
+}
+
+TEST_F(LocalFrameUtilTest, ClearHighlight_IgnoreSetting) {
+  local_frame_->GetSettings()->SetArkwebAgentEnabled(true);
+  local_frame_->CreateTextFragmentHandler();
+  bool result = local_frame_->ClearHighlight(true);
+  EXPECT_TRUE(result);
+}
+
+TEST_F(LocalFrameUtilTest, ClearHighlight_IgnoreSettingWithDisabledAgent) {
+  local_frame_->GetSettings()->SetArkwebAgentEnabled(false);
+  local_frame_->CreateTextFragmentHandler();
+  bool result = local_frame_->ClearHighlight(true);
+  EXPECT_TRUE(result);
+}
+
+TEST_F(LocalFrameUtilTest, ClearHighlight_WithSettingEnabled) {
+  local_frame_->GetSettings()->SetArkwebAgentEnabled(true);
+  local_frame_->CreateTextFragmentHandler();
+  bool result = local_frame_->ClearHighlight(false);
+  EXPECT_TRUE(result);
+}
+
+TEST_F(LocalFrameUtilTest, ClearHighlight_WithSettingDisabled) {
+  local_frame_->GetSettings()->SetArkwebAgentEnabled(false);
+  local_frame_->CreateTextFragmentHandler();
+  bool result = local_frame_->ClearHighlight(false);
+  EXPECT_FALSE(result);
+}
+
+TEST_F(LocalFrameUtilTest, ClearHighlight_WithoutTextFragmentHandler) {
+  local_frame_->GetSettings()->SetArkwebAgentEnabled(true);
+  bool result = local_frame_->ClearHighlight(false);
+  EXPECT_FALSE(result);
+}
+
+TEST_F(LocalFrameUtilTest, ProcessFragment_AllConditionsSatisfied) {
+  local_frame_->GetSettings()->SetArkwebAgentEnabled(true);
+  KURL url("https://example.com/#test-fragment");
+  bool result = local_frame_->ProcessFragment(url);
+  EXPECT_TRUE(result);
+}
+
+TEST_F(LocalFrameUtilTest, ProcessFragment_ArkwebAgentDisabled) {
+  local_frame_->GetSettings()->SetArkwebAgentEnabled(false);
+  KURL url("https://example.com/#test-fragment");
+  bool result = local_frame_->ProcessFragment(url);
+  EXPECT_FALSE(result);
+}
+
+TEST_F(LocalFrameUtilTest, ProcessFragment_EmptyURL) {
+  local_frame_->GetSettings()->SetArkwebAgentEnabled(true);
+  KURL url("");
+  bool result = local_frame_->ProcessFragment(url);
+  EXPECT_TRUE(result);
+}
+
+TEST_F(LocalFrameUtilTest, ProcessFragment_URLWithoutFragment) {
+  local_frame_->GetSettings()->SetArkwebAgentEnabled(true);
+  KURL url("https://example.com/");
+  bool result = local_frame_->ProcessFragment(url);
+  EXPECT_TRUE(result);
+}
+
+TEST_F(LocalFrameUtilTest, ProcessFragment_DataURL) {
+  local_frame_->GetSettings()->SetArkwebAgentEnabled(true);
+  KURL url("data:text/html,<h1>Test</h1>");
+  bool result = local_frame_->ProcessFragment(url);
+  EXPECT_TRUE(result);
 }
 #endif
 }  // namespace blink

@@ -571,4 +571,65 @@ TEST_F(TypeConversionsTest, TransportConversionEdgeCases_001)
     EXPECT_EQ(ret2, FidoTransportProtocol::kInternal);
 }
 
+TEST_F(TypeConversionsTest, InitializeFIDO2TokenBindingTest_001)
+{
+    FIDO2_TokenBinding token_binding;
+    token_binding.status = FIDO2_TokenBindingStatus::FIDO2_SUPPORTED;
+    token_binding.id = const_cast<char*>("test_id");
+
+    Initialize(&token_binding);
+
+    EXPECT_EQ(token_binding.status, FIDO2_PRESENT);
+    EXPECT_EQ(token_binding.id, nullptr);
+}
+
+TEST_F(TypeConversionsTest, InitializeFIDO2CredentialCreationOptionsTest_001)
+{
+    FIDO2_CredentialCreationOptions options;
+    Initialize(&options);
+
+    EXPECT_EQ(options.mediation, FIDO2_SILENT);
+    EXPECT_EQ(options.publicKey.rp.id, nullptr);
+    EXPECT_EQ(options.publicKey.rp.name, nullptr);
+    EXPECT_EQ(options.publicKey.user.id.length, 0u);
+    EXPECT_EQ(options.publicKey.user.id.val, nullptr);
+    EXPECT_EQ(options.publicKey.user.displayName, nullptr);
+    EXPECT_EQ(options.publicKey.user.name, nullptr);
+    EXPECT_EQ(options.publicKey.challenge.length, 0u);
+    EXPECT_EQ(options.publicKey.challenge.val, nullptr);
+    EXPECT_EQ(options.publicKey.pubKeyCredParams.pubKeyCredParamNum, 0u);
+    EXPECT_EQ(options.publicKey.pubKeyCredParams.pubKeyCredParams, nullptr);
+    EXPECT_EQ(options.publicKey.timeout, 0u);
+    EXPECT_EQ(options.publicKey.excludeCredentials.allowCredentiallNum, 0u);
+    EXPECT_EQ(options.publicKey.excludeCredentials.allowCredentials, nullptr);
+    EXPECT_EQ(options.publicKey.authenticatorSelection.authenticatorAttachment, FIDO2_PLATFORM);
+    EXPECT_EQ(options.publicKey.authenticatorSelection.residentKey, nullptr);
+    EXPECT_EQ(options.publicKey.authenticatorSelection.requireResidentKey, false);
+    EXPECT_EQ(options.publicKey.authenticatorSelection.userVerification, FIDO2_DISCOURAGED);
+    EXPECT_EQ(options.publicKey.hints.hintNum, 0);
+    EXPECT_EQ(options.publicKey.hints.hints, nullptr);
+    EXPECT_EQ(options.publicKey.attestation, FIDO2_NONE);
+    EXPECT_EQ(options.publicKey.attestationFormats.attestationFormatsNum, 0);
+    EXPECT_EQ(options.publicKey.attestationFormats.attestationFormats, nullptr);
+    EXPECT_EQ(options.publicKey.extensions, nullptr);
+}
+
+TEST_F(TypeConversionsTest, InitializeFIDO2CredentialRequestOptionsTest_001)
+{
+    FIDO2_CredentialRequestOptions options;
+    Initialize(&options);
+
+    EXPECT_EQ(options.mediation, FIDO2_SILENT);
+    EXPECT_EQ(options.publicKey.challenge.length, 0u);
+    EXPECT_EQ(options.publicKey.challenge.val, nullptr);
+    EXPECT_EQ(options.publicKey.timeout, 0u);
+    EXPECT_EQ(options.publicKey.rpId, nullptr);
+    EXPECT_EQ(options.publicKey.allowCredentials.allowCredentiallNum, 0u);
+    EXPECT_EQ(options.publicKey.allowCredentials.allowCredentials, nullptr);
+    EXPECT_EQ(options.publicKey.userVerification, FIDO2_DISCOURAGED);
+    EXPECT_EQ(options.publicKey.hints.hintNum, 0u);
+    EXPECT_EQ(options.publicKey.hints.hints, nullptr);
+    EXPECT_EQ(options.publicKey.extensions, nullptr);
+}
+
 } // namespace device

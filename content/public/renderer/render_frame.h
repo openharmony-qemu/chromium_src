@@ -28,6 +28,10 @@
 #include "ui/accessibility/ax_tree_update.h"
 #include "arkweb/build/features/features.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 class GURL;
 
 namespace blink {
@@ -279,6 +283,12 @@ class CONTENT_EXPORT RenderFrame :
 
 #if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
   virtual void OnDocumentEndReady() = 0;
+#endif
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  virtual bool IsReaderModeEnabled() = 0;
+  virtual void ReportDistillableResult(const std::string& event_type,
+                                       const std::string& value) = 0;
 #endif
 
  protected:

@@ -54,6 +54,7 @@ class NWebSchemeHandlerFactory : public CefSchemeHandlerFactory {
   void RemoveSchemeHandler(ArkWeb_SchemeHandler* scheme_handler);
 
  private:
+  void RemoveServiceWorkerSchemeHandlerIfMatches(ArkWeb_SchemeHandler* scheme_handler);
   ArkWeb_SchemeHandler* FromTag(const std::string& web_tag);
   std::string GetWebTag(CefRefPtr<CefBrowser> browser);
   mutable base::Lock lock_;

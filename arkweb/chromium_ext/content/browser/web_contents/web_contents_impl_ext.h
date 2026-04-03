@@ -359,10 +359,12 @@ class WebContentsImplExt : public WebContentsImpl {
 #endif
 
 #if BUILDFLAG(ARKWEB_READER_MODE)
+  void EnableReaderMode(bool enabled) override;
   void OnIsPageDistillable(int page_type,
                            const std::string& distillable_page_url,
                            const std::string& title) override;
   bool IsDistillerPageWebContents();
+  void OnDidMeaningfulLayout(const std::string& url) override;
 #endif // ARKWEB_READER_MODE
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
@@ -456,10 +458,12 @@ private:
 #endif
 
 #if BUILDFLAG(ARKWEB_SAVE_PAGE)
-  bool SavePageEx(const base::FilePath& main_file, SavePageType save_type) override;
-#endif // ARKWEB_SAVE_PAGE
+  bool SavePageEx(const base::FilePath& main_file,
+                  SavePageType save_type,
+                  SavePageExCallback callback) override;
+#endif  // ARKWEB_SAVE_PAGE
 
-private:
+ private:
 #if BUILDFLAG(ARKWEB_TEST)
   friend class WebContentsImplUtilsTest;
 #endif

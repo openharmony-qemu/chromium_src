@@ -866,4 +866,53 @@ TEST_P(HTMLMediaElementTest, DFX_TestPlayedTime002) {
 }
 #endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+TEST_P(HTMLMediaElementTest, DownloadHLS_001) {
+  Media()->GetDocument().GetSettings()->SetHideDownloadUI(true);
+  Media()->SetSrc(SrcSchemeToURL(TestURLScheme::kHttp));
+  test::RunPendingTasks();
+  EXPECT_EQ(Media()->SupportVideoAssistantDownload(), false);
+}
+
+TEST_P(HTMLMediaElementTest, DownloadHLS_002) {
+  Media()->GetDocument().GetSettings()->SetHideDownloadUI(false);
+  Media()->SetSrc(AtomicString(""));
+  test::RunPendingTasks();
+  EXPECT_EQ(Media()->SupportVideoAssistantDownload(), false);
+}
+
+TEST_P(HTMLMediaElementTest, DownloadHLS_003) {
+  Media()->GetDocument().GetSettings()->SetHideDownloadUI(false);
+  Media()->SetSrc(SrcSchemeToURL(TestURLScheme::kHttp));
+  Media()->SetNetworkState(HTMLMediaElement::kNetworkEmpty);
+  EXPECT_EQ(Media()->SupportVideoAssistantDownload(), false);
+}
+
+TEST_P(HTMLMediaElementTest, DownloadHLS_004) {
+  Media()->GetDocument().GetSettings()->SetHideDownloadUI(false);
+  Media()->SetSrc(SrcSchemeToURL(TestURLScheme::kFile));
+  Media()->SetNetworkState(HTMLMediaElement::kNetworkLoading);
+  test::RunPendingTasks();
+  EXPECT_EQ(Media()->SupportVideoAssistantDownload(), false);
+}
+
+TEST_P(HTMLMediaElementTest, DownloadHLS_005) {
+  Media()->GetDocument().GetSettings()->SetHideDownloadUI(false);
+  Media()->SetSrc(SrcSchemeToURL(TestURLScheme::kHttp));
+  Media()->SetNetworkState(HTMLMediaElement::kNetworkLoading);
+  Media()->DurationChanged(std::numeric_limits<double>::infinity(), false);
+  test::RunPendingTasks();
+  EXPECT_EQ(Media()->SupportVideoAssistantDownload(), false);
+}
+
+TEST_P(HTMLMediaElementTest, DownloadHLS_006) {
+  Media()->GetDocument().GetSettings()->SetHideDownloadUI(false);
+  Media()->SetSrc(SrcSchemeToURL(TestURLScheme::kHttp));
+  Media()->SetNetworkState(HTMLMediaElement::kNetworkLoading);
+  double duration = 30.0;
+  Media()->DurationChanged(duration, false);
+  test::RunPendingTasks();
+  EXPECT_EQ(Media()->SupportVideoAssistantDownload(), true);
+}
+#endif  // ARKWEB_VIDEO_ASSISTANT
 }  // namespace blink

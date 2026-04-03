@@ -4065,6 +4065,22 @@ void NWebDelegate::GetOverScrollOffset(float* offset_x, float* offset_y) {
   }
 }
 #endif
+
+void NWebDelegate::SetScrollbarLayoutPolicy(int policy) {
+  if (!preference_delegate_) {
+    LOG(ERROR) << "SetScrollbarLayoutPolicy failed, preference_delegate_ is null";
+    return;
+  }
+  preference_delegate_->SetScrollbarLayoutPolicy(policy);
+}
+
+void NWebDelegate::SetIsSystemRtlEnable(bool enable) {
+  if (!preference_delegate_) {
+    LOG(ERROR) << "SetIsSystemRtlEnable failed, preference_delegate_ is null";
+    return;
+  }
+  preference_delegate_->SetIsSystemRtlEnable(enable);
+}
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
 #if BUILDFLAG(ARKWEB_API_INIT_WEB_ENGINE)
@@ -6458,13 +6474,15 @@ void NWebDelegate::WebExtensionContextMenuReloadFocusedFrame() {
 #endif
 
 #if BUILDFLAG(ARKWEB_SAVE_PAGE)
-bool NWebDelegate::SavePage(int32_t type, const std::string& filePath) {
+bool NWebDelegate::SavePage(int32_t type,
+                            const std::string& filePath,
+                            CefRefPtr<CefSavePageResultCallback> callback) {
   if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
-    LOG(ERROR) << "SavePage can not get browser";
+    LOG(ERROR) << "get browser failed or get host failed";
     return false;
   }
   auto cef_file_path = CefString(filePath);
-  return GetBrowser()->GetHost()->SavePage(type, cef_file_path);
+  return GetBrowser()->GetHost()->SavePage(type, cef_file_path, callback);
 }
 #endif // ARKWEB_SAVE_PAGE
 
@@ -6678,6 +6696,15 @@ void NWebDelegate::GetLastJavaScriptProxyCallingFrameInfo(
 #endif
 
 #if BUILDFLAG(ARKWEB_READER_MODE)
+void NWebDelegate::EnableReaderMode(bool enabled) {
+  LOG(INFO) << "NWebDelegate::EnableReaderMode: " << enabled;
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "NWebDelegate::EnableReaderMode failed, can not get browser";
+    return;
+  }
+  GetBrowser()->GetHost()->EnableReaderMode(enabled);
+}
+
 void NWebDelegate::Distill(const std::string& guid, const DistillOptions& distill_options, DistillCallback callback) {
   if (!CEF_CURRENTLY_ON_UIT()) {
     CEF_POST_TASK(

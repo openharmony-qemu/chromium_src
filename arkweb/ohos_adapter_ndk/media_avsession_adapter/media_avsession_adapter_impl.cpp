@@ -507,6 +507,9 @@ bool MediaAVSessionAdapterImpl::UpdatePlaybackState(MediaAVSessionPlayState stat
         case MediaAVSessionPlayState::STATE_PAUSE:
             avPlaybackState_ = PLAYBACK_STATE_PAUSED;
             break;
+        case MediaAVSessionPlayState::STATE_BUFFERING:
+            avPlaybackState_ = PLAYBACK_STATE_BUFFERING;
+            break;
         case MediaAVSessionPlayState::STATE_INITIAL:
         default:
             avPlaybackState_ = PLAYBACK_STATE_PAUSED;

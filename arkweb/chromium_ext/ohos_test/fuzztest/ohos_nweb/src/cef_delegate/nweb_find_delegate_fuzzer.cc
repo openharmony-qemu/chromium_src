@@ -749,13 +749,18 @@ void GetLastJavaScriptProxyCallingFrameInfo(
   void OnBrowserForeground() override {}
   void OnBrowserBackground() override {}
 #if BUILDFLAG(ARKWEB_READER_MODE)
+  void EnableReaderMode(bool enabled) override {}
   void Distill(const std::string& guid, const DistillOptions& distill_options,
     CefRefPtr<CefDistillCallback> callback) override {}
   void AbortDistill() override {}
 #endif // ARKWEB_READER_MODE
 
 #if BUILDFLAG(ARKWEB_SAVE_PAGE)
-  bool SavePage(int type, CefString& filePath) override { return false; }
+  bool SavePage(int type,
+                CefString& filePath,
+                CefRefPtr<CefSavePageResultCallback> callback) override {
+    return false;
+  }
 #endif // ARKWEB_SAVE_PAGE
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)

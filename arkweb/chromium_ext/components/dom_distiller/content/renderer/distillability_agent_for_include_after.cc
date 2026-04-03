@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+distillability_service->NotifyDidMeaningfulLayout(doc.Url().GetString().Utf8());
+
 // check host is in whitelist
 blink::mojom::UrlHostDistillerInfoPtr distiller_info = nullptr;
 distillability_service->GetHostDistillerInfo(GURL(doc.Url()).host(),
@@ -23,7 +25,7 @@ if (!distiller_info || !distiller_info->is_distillable) {
 }
 
 blink::WebDistillabilityMatchResult match_type =
-    DetermineDistillableMatchResult(doc, distiller_info);
+    DetermineDistillableMatchResult(render_frame(), doc, distiller_info);
 mojom::PageDistillableInfoPtr page_info =
     mojom::PageDistillableInfo::New(mojom::PageType::kPageOthers,
                                     "",

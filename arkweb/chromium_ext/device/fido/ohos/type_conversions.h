@@ -111,6 +111,18 @@ std::string Convert(const FIDO2_CredentialRequestOptions& options);
 template<>
 std::string Convert(const FIDO2_CapabilityArray& capabilities);
 
+template<>
+const char* Convert(const ResidentKeyRequirement& resident_key);
+
+template<>
+std::vector<uint8_t> Convert(const Uint8Buff& buffer);
+
+template<>
+std::string Convert(const FIDO2_AuthenticatorTransportArray& transports);
+
+template<>
+std::string Convert(const FIDO2_PublicKeyCredentialHintArray& hints);
+
 std::vector<uint8_t> ConvertHexStringToBytes(const std::string& hex_string);
 
 struct CredentialOptionsDataHolder {
@@ -125,14 +137,17 @@ struct CredentialOptionsDataHolder {
     std::vector<char*> formats_c_ptrs;
 };
 
+void Initialize(FIDO2_CredentialCreationOptions* options);
 void Initialize(CredentialOptionsDataHolder& data_holder,
                 CtapMakeCredentialRequest& request,
                 MakeCredentialOptions& request_options,
                 FIDO2_CredentialCreationOptions* options);
+void Initialize(FIDO2_CredentialRequestOptions* options);
 void Initialize(CredentialOptionsDataHolder& data_holder,
                 CtapGetAssertionRequest& request,
                 CtapGetAssertionOptions& request_options,
                 FIDO2_CredentialRequestOptions* options);
+void Initialize(FIDO2_TokenBinding* token_binding);
 
 } // namespace device
 

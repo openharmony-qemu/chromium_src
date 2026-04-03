@@ -31,6 +31,8 @@
   bool hide_horizontal_scrollbars_ = true;
   bool scroll_enabled_ = true;
   int overscroll_mode_ = 0;
+  int scrollbar_layout_policy_ = 0;
+  bool is_system_rtl_enabled_ = false;
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
@@ -73,6 +75,10 @@
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
   bool is_autofill_enabled_ = true;
 #endif  // BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  bool is_drag_enabled_ = true;
+#endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
 
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
   bool clipboard_site_permission_enabled_ = false;

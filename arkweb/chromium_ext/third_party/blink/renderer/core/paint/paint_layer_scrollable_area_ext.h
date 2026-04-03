@@ -30,7 +30,6 @@ class RectF;
 }
 
 namespace blink {
-
 class PaintLayerScrollableArea;
 class PaintLayer;
 

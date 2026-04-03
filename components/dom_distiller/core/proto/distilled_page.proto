@@ -118,5 +118,7 @@ message DistilledPageProto {
     optional HwDistilledResult distilled_result = 15;
   }
   optional HwReadExtendFields flat_fields = 12;
+
+  optional string hw_distiller_result_json = 13;
   // #endif ARKWEB_READER_MODE
 }

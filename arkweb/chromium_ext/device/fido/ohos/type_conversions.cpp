@@ -813,4 +813,10 @@ CredentialOptionsDataHolder::CredentialOptionsDataHolder(
     }
 }
 
+void Initialize(FIDO2_TokenBinding* token_binding)
+{
+  token_binding->status = FIDO2_PRESENT;
+  token_binding->id = nullptr;
+}
+
 } // namespace device

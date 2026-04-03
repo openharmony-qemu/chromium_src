@@ -45,7 +45,7 @@ void ArkWebNativeWebMessageCallback::OnReceiveValue(
     auto resultBin = result->GetBinary();
     ArkWeb_WebMessage message;
     message.webMessageType = ArkWeb_WebMessageType::ARKWEB_BUFFER;
-    message.data = (void*)(&resultBin);
+    message.data = (void*)(resultBin.data());
     message.dataLength = resultBin.size();
     callback_(&message);
   } else {

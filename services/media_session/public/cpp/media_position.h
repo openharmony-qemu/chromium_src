@@ -75,6 +75,11 @@ struct COMPONENT_EXPORT(MEDIA_SESSION_BASE_CPP) MediaPosition {
   // |time|.
   base::TimeDelta GetPositionAtTime(base::TimeTicks time) const;
 
+#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
+  // Return the original position of the media.
+  base::TimeDelta GetOriginalPosition() const { return position_; }
+#endif // ARKWEB_MEDIA_AVSESSION
+
   bool operator==(const MediaPosition&) const;
   bool operator!=(const MediaPosition&) const;
 

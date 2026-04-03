@@ -91,7 +91,10 @@ class CONTENT_EXPORT SavePackage final
   // in the "Save As" dialog box.
   explicit SavePackage(PageImpl& page);
 #if BUILDFLAG(ARKWEB_SAVE_PAGE)
-  SavePackage(PageImpl& page, SavePageType save_type,const base::FilePath& file_full_path);
+  SavePackage(PageImpl& page,
+              SavePageType save_type,
+              const base::FilePath& file_full_path,
+              SavePageExCallback callback);
 #endif // ARKWEB_SAVE_PAGE
   SavePackage(const SavePackage&) = delete;
   SavePackage& operator=(const SavePackage&) = delete;
@@ -482,6 +485,10 @@ class CONTENT_EXPORT SavePackage final
   // UKM IDs for reporting.
   ukm::SourceId ukm_source_id_;
   uint64_t ukm_download_id_;
+  
+#if BUILDFLAG(ARKWEB_SAVE_PAGE)
+  SavePageExCallback callback_;
+#endif // ARKWEB_SAVE_PAGE
 
   base::WeakPtrFactory<SavePackage> weak_ptr_factory_{this};
 };

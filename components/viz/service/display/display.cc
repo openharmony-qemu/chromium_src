@@ -1244,6 +1244,11 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
       client_->DisplayDidRealSwapBuffer();
     }
 #endif
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+    if (display_utils_) {
+      display_utils_->ReallocatedFrameBuffersIfNeed();
+    }
+#endif
   } else {
     TRACE_EVENT_INSTANT0("viz", "Swap skipped.", TRACE_EVENT_SCOPE_THREAD);
 

@@ -273,6 +273,20 @@ void ArkWebDownloadItemImplExt::Cancel(bool user_cancel) {
   ReadDataFromDownloadFileDone(std::vector<uint8_t>());
 }
 
+void ArkWebDownloadItemImplExt::UpdateFullPath(
+    const base::FilePath& new_path) {
+  destination_info_.current_path = new_path;
+}
+
+void ArkWebDownloadItemImplExt::UpdateFullPathOverWriteState(
+    bool overwrite_state) {
+  is_full_path_overwrite_ = overwrite_state;
+}
+
+bool ArkWebDownloadItemImplExt::IsFullPathOverWrite() const {
+  return is_full_path_overwrite_;
+} 
+
 void ArkWebDownloadItemImplExt::SetByExtensionId(
     const std::string& extension_id) {
   extension_id_ = extension_id;
@@ -285,6 +299,15 @@ void ArkWebDownloadItemImplExt::SetByExtensionName(
 
 void ArkWebDownloadItemImplExt::SetConflictAction(int conflict_action) {
   conflict_action_ = conflict_action;
+}
+
+void ArkWebDownloadItemImplExt::SetContextType(
+    const std::string& context_type) {
+  context_type_ = context_type;
+}
+
+std::string ArkWebDownloadItemImplExt::GetContextType() const {
+  return context_type_;
 }
 
 std::string ArkWebDownloadItemImplExt::GetByExtensionId() const {

@@ -24,6 +24,9 @@ class NWebExtensionPermissionsHandler {
  public:
   static int GetExtensionSiteInteraction(const std::string& extension_id,
                                          int tab_id);
+
+  static bool HasApiPermission(const std::string& extension_id,
+                               const std::string& permission);
 };
 
 }  // namespace OHOS::NWeb

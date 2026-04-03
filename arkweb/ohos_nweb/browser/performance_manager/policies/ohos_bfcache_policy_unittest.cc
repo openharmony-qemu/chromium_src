@@ -304,15 +304,478 @@ TEST(OHOS_BFCACHE_POLICY_TEST, OnMemoryPressure004) {
 
   base::SequenceChecker sequence_checker_;
   sequence_checker_.DetachFromSequence();
-  
+
   {
     DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-    
+
     graph->nodes_[page_index].insert(&pageA);
-    
+
     ASSERT_FALSE(graph->nodes_[page_index].empty());
   }
 
   ohos_bfcache_policy->OnMemoryPressure(MemoryPressureLevel::MEMORY_PRESSURE_LEVEL_MODERATE);
+  graph->TearDown();
+}
+
+// ==================== Critical Memory Pressure Tests ====================
+
+TEST(OHOS_BFCACHE_POLICY_TEST, OnMemoryPressure005_CriticalLevel) {
+  auto ohos_bfcache_policy = std::make_shared<OHOSBFCachePolicy>();
+  std::unique_ptr<GraphImpl> graph = std::make_unique<GraphImpl>();
+  graph->SetUp();
+
+  PageNodeMock page_node_mock;
+  const size_t page_index = static_cast<size_t>(PageNodeMock::Type());
+
+  SEQUENCE_CHECKER(sequence_checker_);
+  base::SequenceChecker sequence_checker_;
+  sequence_checker_.DetachFromSequence();
+
+  {
+    DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+    graph->nodes_[page_index].insert(&page_node_mock);
+    ASSERT_FALSE(graph->nodes_[page_index].empty());
+  }
+
+  ohos_bfcache_policy->OnMemoryPressure(MemoryPressureLevel::MEMORY_PRESSURE_LEVEL_CRITICAL);
+  graph->TearDown();
+}
+
+TEST(OHOS_BFCACHE_POLICY_TEST, OnMemoryPressure006_MultiplePagesCritical) {
+  auto ohos_bfcache_policy = std::make_shared<OHOSBFCachePolicy>();
+  std::unique_ptr<GraphImpl> graph = std::make_unique<GraphImpl>();
+  graph->SetUp();
+
+  PageNodeMock pageA;
+  PageNodeMock pageB;
+  PageNodeMock pageC;
+
+  const size_t page_index = static_cast<size_t>(PageNodeMock::Type());
+
+  SEQUENCE_CHECKER(sequence_checker_);
+  base::SequenceChecker sequence_checker_;
+  sequence_checker_.DetachFromSequence();
+
+  {
+    DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+    graph->nodes_[page_index].insert(&pageA);
+    graph->nodes_[page_index].insert(&pageB);
+    graph->nodes_[page_index].insert(&pageC);
+    ASSERT_FALSE(graph->nodes_[page_index].empty());
+  }
+
+  ohos_bfcache_policy->OnMemoryPressure(MemoryPressureLevel::MEMORY_PRESSURE_LEVEL_CRITICAL);
+  graph->TearDown();
+}
+
+// ==================== Sequential Memory Pressure Tests ====================
+
+TEST(OHOS_BFCACHE_POLICY_TEST, OnMemoryPressure007_ModerateThenCritical) {
+  auto ohos_bfcache_policy = std::make_shared<OHOSBFCachePolicy>();
+  std::unique_ptr<GraphImpl> graph = std::make_unique<GraphImpl>();
+  graph->SetUp();
+
+  PageNodeMock page_node_mock;
+  const size_t page_index = static_cast<size_t>(PageNodeMock::Type());
+
+  SEQUENCE_CHECKER(sequence_checker_);
+  base::SequenceChecker sequence_checker_;
+  sequence_checker_.DetachFromSequence();
+
+  {
+    DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+    graph->nodes_[page_index].insert(&page_node_mock);
+    ASSERT_FALSE(graph->nodes_[page_index].empty());
+  }
+
+  ohos_bfcache_policy->OnMemoryPressure(MemoryPressureLevel::MEMORY_PRESSURE_LEVEL_MODERATE);
+  ohos_bfcache_policy->OnMemoryPressure(MemoryPressureLevel::MEMORY_PRESSURE_LEVEL_CRITICAL);
+  graph->TearDown();
+}
+
+TEST(OHOS_BFCACHE_POLICY_TEST, OnMemoryPressure008_CriticalThenModerate) {
+  auto ohos_bfcache_policy = std::make_shared<OHOSBFCachePolicy>();
+  std::unique_ptr<GraphImpl> graph = std::make_unique<GraphImpl>();
+  graph->SetUp();
+
+  PageNodeMock page_node_mock;
+  const size_t page_index = static_cast<size_t>(PageNodeMock::Type());
+
+  SEQUENCE_CHECKER(sequence_checker_);
+  base::SequenceChecker sequence_checker_;
+  sequence_checker_.DetachFromSequence();
+
+  {
+    DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+    graph->nodes_[page_index].insert(&page_node_mock);
+    ASSERT_FALSE(graph->nodes_[page_index].empty());
+  }
+
+  ohos_bfcache_policy->OnMemoryPressure(MemoryPressureLevel::MEMORY_PRESSURE_LEVEL_CRITICAL);
+  ohos_bfcache_policy->OnMemoryPressure(MemoryPressureLevel::MEMORY_PRESSURE_LEVEL_MODERATE);
+  graph->TearDown();
+}
+
+TEST(OHOS_BFCACHE_POLICY_TEST, OnMemoryPressure009_RepeatedModerate) {
+  auto ohos_bfcache_policy = std::make_shared<OHOSBFCachePolicy>();
+  std::unique_ptr<GraphImpl> graph = std::make_unique<GraphImpl>();
+  graph->SetUp();
+
+  PageNodeMock page_node_mock;
+  const size_t page_index = static_cast<size_t>(PageNodeMock::Type());
+
+  SEQUENCE_CHECKER(sequence_checker_);
+  base::SequenceChecker sequence_checker_;
+  sequence_checker_.DetachFromSequence();
+
+  {
+    DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+    graph->nodes_[page_index].insert(&page_node_mock);
+    ASSERT_FALSE(graph->nodes_[page_index].empty());
+  }
+
+  for (int i = 0; i < 5; ++i) {
+    ohos_bfcache_policy->OnMemoryPressure(MemoryPressureLevel::MEMORY_PRESSURE_LEVEL_MODERATE);
+  }
+  graph->TearDown();
+}
+
+TEST(OHOS_BFCACHE_POLICY_TEST, OnMemoryPressure010_RepeatedCritical) {
+  auto ohos_bfcache_policy = std::make_shared<OHOSBFCachePolicy>();
+  std::unique_ptr<GraphImpl> graph = std::make_unique<GraphImpl>();
+  graph->SetUp();
+
+  PageNodeMock page_node_mock;
+  const size_t page_index = static_cast<size_t>(PageNodeMock::Type());
+
+  SEQUENCE_CHECKER(sequence_checker_);
+  base::SequenceChecker sequence_checker_;
+  sequence_checker_.DetachFromSequence();
+
+  {
+    DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+    graph->nodes_[page_index].insert(&page_node_mock);
+    ASSERT_FALSE(graph->nodes_[page_index].empty());
+  }
+
+  for (int i = 0; i < 5; ++i) {
+    ohos_bfcache_policy->OnMemoryPressure(MemoryPressureLevel::MEMORY_PRESSURE_LEVEL_CRITICAL);
+  }
+  graph->TearDown();
+}
+
+// ==================== Graph Lifecycle Tests ====================
+
+TEST(OHOS_BFCACHE_POLICY_TEST, OnPassedToGraph_AfterTearDown) {
+  auto ohos_bfcache_policy = std::make_shared<OHOSBFCachePolicy>();
+  std::unique_ptr<GraphImpl> graph = std::make_unique<GraphImpl>();
+
+  graph->SetUp();
+  ohos_bfcache_policy->OnPassedToGraph(graph.get());
+  graph->TearDown();
+}
+
+TEST(OHOS_BFCACHE_POLICY_TEST, OnTakenFromGraph_AfterPassed) {
+  auto ohos_bfcache_policy = std::make_shared<OHOSBFCachePolicy>();
+  std::unique_ptr<GraphImpl> graph = std::make_unique<GraphImpl>();
+
+  graph->SetUp();
+  ohos_bfcache_policy->OnPassedToGraph(graph.get());
+  ohos_bfcache_policy->OnTakenFromGraph(graph.get());
+  graph->TearDown();
+}
+
+TEST(OHOS_BFCACHE_POLICY_TEST, GraphLifecycle_FullCycle) {
+  auto ohos_bfcache_policy = std::make_shared<OHOSBFCachePolicy>();
+  std::unique_ptr<GraphImpl> graph = std::make_unique<GraphImpl>();
+
+  graph->SetUp();
+  ohos_bfcache_policy->OnPassedToGraph(graph.get());
+
+  PageNodeMock page_node_mock;
+  const size_t page_index = static_cast<size_t>(PageNodeMock::Type());
+
+  SEQUENCE_CHECKER(sequence_checker_);
+  base::SequenceChecker sequence_checker_;
+  sequence_checker_.DetachFromSequence();
+
+  {
+    DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+    graph->nodes_[page_index].insert(&page_node_mock);
+  }
+
+  ohos_bfcache_policy->OnMemoryPressure(MemoryPressureLevel::MEMORY_PRESSURE_LEVEL_MODERATE);
+  ohos_bfcache_policy->OnTakenFromGraph(graph.get());
+  graph->TearDown();
+}
+
+// ==================== Empty Graph Tests ====================
+
+TEST(OHOS_BFCACHE_POLICY_TEST, OnMemoryPressure011_EmptyGraph) {
+  auto ohos_bfcache_policy = std::make_shared<OHOSBFCachePolicy>();
+  std::unique_ptr<GraphImpl> graph = std::make_unique<GraphImpl>();
+  graph->SetUp();
+
+  // Empty graph, no pages
+  ohos_bfcache_policy->OnMemoryPressure(MemoryPressureLevel::MEMORY_PRESSURE_LEVEL_MODERATE);
+  graph->TearDown();
+}
+
+TEST(OHOS_BFCACHE_POLICY_TEST, OnMemoryPressure012_EmptyGraphCritical) {
+  auto ohos_bfcache_policy = std::make_shared<OHOSBFCachePolicy>();
+  std::unique_ptr<GraphImpl> graph = std::make_unique<GraphImpl>();
+  graph->SetUp();
+
+  // Empty graph, no pages
+  ohos_bfcache_policy->OnMemoryPressure(MemoryPressureLevel::MEMORY_PRESSURE_LEVEL_CRITICAL);
+  graph->TearDown();
+}
+
+// ==================== Multiple Policy Instances Tests ====================
+
+TEST(OHOS_BFCACHE_POLICY_TEST, MultiplePolicyInstances) {
+  auto policy1 = std::make_shared<OHOSBFCachePolicy>();
+  auto policy2 = std::make_shared<OHOSBFCachePolicy>();
+  std::unique_ptr<GraphImpl> graph = std::make_unique<GraphImpl>();
+
+  graph->SetUp();
+  policy1->OnPassedToGraph(graph.get());
+  policy2->OnPassedToGraph(graph.get());
+
+  PageNodeMock page_node_mock;
+  const size_t page_index = static_cast<size_t>(PageNodeMock::Type());
+
+  SEQUENCE_CHECKER(sequence_checker_);
+  base::SequenceChecker sequence_checker_;
+  sequence_checker_.DetachFromSequence();
+
+  {
+    DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+    graph->nodes_[page_index].insert(&page_node_mock);
+  }
+
+  policy1->OnMemoryPressure(MemoryPressureLevel::MEMORY_PRESSURE_LEVEL_MODERATE);
+  policy2->OnMemoryPressure(MemoryPressureLevel::MEMORY_PRESSURE_LEVEL_CRITICAL);
+
+  policy1->OnTakenFromGraph(graph.get());
+  policy2->OnTakenFromGraph(graph.get());
+  graph->TearDown();
+}
+
+// ==================== Visibility Tests ====================
+
+TEST(OHOS_BFCACHE_POLICY_TEST, OnMemoryPressure013_VisiblePage) {
+  auto ohos_bfcache_policy = std::make_shared<OHOSBFCachePolicy>();
+  std::unique_ptr<GraphImpl> graph = std::make_unique<GraphImpl>();
+  graph->SetUp();
+
+  PageNodeMock page_node_mock;
+  page_node_mock.SetIsVisible(true);
+  const size_t page_index = static_cast<size_t>(PageNodeMock::Type());
+
+  SEQUENCE_CHECKER(sequence_checker_);
+  base::SequenceChecker sequence_checker_;
+  sequence_checker_.DetachFromSequence();
+
+  {
+    DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+    graph->nodes_[page_index].insert(&page_node_mock);
+  }
+
+  ohos_bfcache_policy->OnMemoryPressure(MemoryPressureLevel::MEMORY_PRESSURE_LEVEL_MODERATE);
+  graph->TearDown();
+}
+
+TEST(OHOS_BFCACHE_POLICY_TEST, OnMemoryPressure014_InvisiblePage) {
+  auto ohos_bfcache_policy = std::make_shared<OHOSBFCachePolicy>();
+  std::unique_ptr<GraphImpl> graph = std::make_unique<GraphImpl>();
+  graph->SetUp();
+
+  PageNodeMock page_node_mock;
+  page_node_mock.SetIsVisible(false);
+  const size_t page_index = static_cast<size_t>(PageNodeMock::Type());
+
+  SEQUENCE_CHECKER(sequence_checker_);
+  base::SequenceChecker sequence_checker_;
+  sequence_checker_.DetachFromSequence();
+
+  {
+    DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+    graph->nodes_[page_index].insert(&page_node_mock);
+  }
+
+  ohos_bfcache_policy->OnMemoryPressure(MemoryPressureLevel::MEMORY_PRESSURE_LEVEL_MODERATE);
+  graph->TearDown();
+}
+
+TEST(OHOS_BFCACHE_POLICY_TEST, OnMemoryPressure015_MixedVisibilityPages) {
+  auto ohos_bfcache_policy = std::make_shared<OHOSBFCachePolicy>();
+  std::unique_ptr<GraphImpl> graph = std::make_unique<GraphImpl>();
+  graph->SetUp();
+
+  PageNodeMock pageA;
+  pageA.SetIsVisible(true);
+
+  PageNodeMock pageB;
+  pageB.SetIsVisible(false);
+
+  PageNodeMock pageC;
+  pageC.SetIsVisible(true);
+
+  const size_t page_index = static_cast<size_t>(PageNodeMock::Type());
+
+  SEQUENCE_CHECKER(sequence_checker_);
+  base::SequenceChecker sequence_checker_;
+  sequence_checker_.DetachFromSequence();
+
+  {
+    DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+    graph->nodes_[page_index].insert(&pageA);
+    graph->nodes_[page_index].insert(&pageB);
+    graph->nodes_[page_index].insert(&pageC);
+  }
+
+  ohos_bfcache_policy->OnMemoryPressure(MemoryPressureLevel::MEMORY_PRESSURE_LEVEL_CRITICAL);
+  graph->TearDown();
+}
+
+// ==================== Large Number of Pages Tests ====================
+
+TEST(OHOS_BFCACHE_POLICY_TEST, OnMemoryPressure016_ManyPages) {
+  auto ohos_bfcache_policy = std::make_shared<OHOSBFCachePolicy>();
+  std::unique_ptr<GraphImpl> graph = std::make_unique<GraphImpl>();
+  graph->SetUp();
+
+  const int kPageCount = 10;
+  PageNodeMock pages[kPageCount];
+
+  const size_t page_index = static_cast<size_t>(PageNodeMock::Type());
+
+  SEQUENCE_CHECKER(sequence_checker_);
+  base::SequenceChecker sequence_checker_;
+  sequence_checker_.DetachFromSequence();
+
+  {
+    DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+    for (int i = 0; i < kPageCount; ++i) {
+      pages[i].SetIsVisible(i % 2 == 0);
+      graph->nodes_[page_index].insert(&pages[i]);
+    }
+  }
+
+  ohos_bfcache_policy->OnMemoryPressure(MemoryPressureLevel::MEMORY_PRESSURE_LEVEL_CRITICAL);
+  graph->TearDown();
+}
+
+// ==================== Pressure Level Transitions Tests ====================
+
+TEST(OHOS_BFCACHE_POLICY_TEST, OnMemoryPressure017_LevelTransitions) {
+  auto ohos_bfcache_policy = std::make_shared<OHOSBFCachePolicy>();
+  std::unique_ptr<GraphImpl> graph = std::make_unique<GraphImpl>();
+  graph->SetUp();
+
+  PageNodeMock page_node_mock;
+  const size_t page_index = static_cast<size_t>(PageNodeMock::Type());
+
+  SEQUENCE_CHECKER(sequence_checker_);
+  base::SequenceChecker sequence_checker_;
+  sequence_checker_.DetachFromSequence();
+
+  {
+    DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+    graph->nodes_[page_index].insert(&page_node_mock);
+  }
+
+  // Test all level transitions
+  ohos_bfcache_policy->OnMemoryPressure(MemoryPressureLevel::MEMORY_PRESSURE_LEVEL_NONE);
+  ohos_bfcache_policy->OnMemoryPressure(MemoryPressureLevel::MEMORY_PRESSURE_LEVEL_MODERATE);
+  ohos_bfcache_policy->OnMemoryPressure(MemoryPressureLevel::MEMORY_PRESSURE_LEVEL_CRITICAL);
+  ohos_bfcache_policy->OnMemoryPressure(MemoryPressureLevel::MEMORY_PRESSURE_LEVEL_NONE);
+  ohos_bfcache_policy->OnMemoryPressure(MemoryPressureLevel::MEMORY_PRESSURE_LEVEL_MODERATE);
+
+  graph->TearDown();
+}
+
+TEST(OHOS_BFCACHE_POLICY_TEST, OnMemoryPressure018_RapidPressureChanges) {
+  auto ohos_bfcache_policy = std::make_shared<OHOSBFCachePolicy>();
+  std::unique_ptr<GraphImpl> graph = std::make_unique<GraphImpl>();
+  graph->SetUp();
+
+  PageNodeMock page_node_mock;
+  const size_t page_index = static_cast<size_t>(PageNodeMock::Type());
+
+  SEQUENCE_CHECKER(sequence_checker_);
+  base::SequenceChecker sequence_checker_;
+  sequence_checker_.DetachFromSequence();
+
+  {
+    DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+    graph->nodes_[page_index].insert(&page_node_mock);
+  }
+
+  // Rapid pressure changes
+  for (int i = 0; i < 20; ++i) {
+    if (i % 2 == 0) {
+      ohos_bfcache_policy->OnMemoryPressure(MemoryPressureLevel::MEMORY_PRESSURE_LEVEL_MODERATE);
+    } else {
+      ohos_bfcache_policy->OnMemoryPressure(MemoryPressureLevel::MEMORY_PRESSURE_LEVEL_CRITICAL);
+    }
+  }
+
+  graph->TearDown();
+}
+
+// ==================== Audible Tests ====================
+
+TEST(OHOS_BFCACHE_POLICY_TEST, OnMemoryPressure019_AudiblePage) {
+  auto ohos_bfcache_policy = std::make_shared<OHOSBFCachePolicy>();
+  std::unique_ptr<GraphImpl> graph = std::make_unique<GraphImpl>();
+  graph->SetUp();
+
+  PageNodeMock page_node_mock;
+  page_node_mock.SetIsAudible(true);
+  const size_t page_index = static_cast<size_t>(PageNodeMock::Type());
+
+  SEQUENCE_CHECKER(sequence_checker_);
+  base::SequenceChecker sequence_checker_;
+  sequence_checker_.DetachFromSequence();
+
+  {
+    DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+    graph->nodes_[page_index].insert(&page_node_mock);
+  }
+
+  ohos_bfcache_policy->OnMemoryPressure(MemoryPressureLevel::MEMORY_PRESSURE_LEVEL_MODERATE);
+  graph->TearDown();
+}
+
+TEST(OHOS_BFCACHE_POLICY_TEST, OnMemoryPressure020_MixedAudiblePages) {
+  auto ohos_bfcache_policy = std::make_shared<OHOSBFCachePolicy>();
+  std::unique_ptr<GraphImpl> graph = std::make_unique<GraphImpl>();
+  graph->SetUp();
+
+  PageNodeMock pageA;
+  pageA.SetIsAudible(true);
+
+  PageNodeMock pageB;
+  pageB.SetIsAudible(false);
+
+  PageNodeMock pageC;
+  pageC.SetIsAudible(true);
+
+  const size_t page_index = static_cast<size_t>(PageNodeMock::Type());
+
+  SEQUENCE_CHECKER(sequence_checker_);
+  base::SequenceChecker sequence_checker_;
+  sequence_checker_.DetachFromSequence();
+
+  {
+    DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+    graph->nodes_[page_index].insert(&pageA);
+    graph->nodes_[page_index].insert(&pageB);
+    graph->nodes_[page_index].insert(&pageC);
+  }
+
+  ohos_bfcache_policy->OnMemoryPressure(MemoryPressureLevel::MEMORY_PRESSURE_LEVEL_CRITICAL);
   graph->TearDown();
 }

@@ -75,6 +75,12 @@ public:
   void SetBypassVsyncCondition(int32_t condition) {}
   void SetNativeInnerWeb(bool isInnerWeb) {}
   gfx::OverlayTransform GetDisplayTransform() {}
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+  void SetIfNeedCleanBuffers(bool need_clean_buffers) {
+    need_clean_buffers_ = need_clean_buffers;
+  }
+  bool need_clean_buffers_ = false;
+#endif
 };
 
 class DisplayClientMock : public viz::DisplayClient {
@@ -305,6 +311,45 @@ class ArkwebDisplayUtilsTest : public testing::Test {
   }
 #endif
 
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+  void TestSetIfNeedCleanBuffers() {
+    ArkwebDisplayUtils utils(nullptr);
+    utils.SetIfNeedCleanBuffers(true);
+    EXPECT_FALSE(utils.need_clean_buffers_);
+
+    utils.SetIfNeedCleanBuffers(false);
+    EXPECT_FALSE(utils.need_clean_buffers_);
+
+    auto display = CreateTestDisplay();
+    auto output_surface = static_cast<OutputSurfaceMock*>(display->output_surface_.get());
+    ArkwebDisplayUtils utils2(display.get());
+    utils2.SetIfNeedCleanBuffers(true);
+    EXPECT_TRUE(utils2.need_clean_buffers_);
+    EXPECT_TRUE(output_surface->need_clean_buffers_);
+
+    utils2.SetIfNeedCleanBuffers(false);
+    EXPECT_FALSE(utils2.need_clean_buffers_);
+    EXPECT_FALSE(output_surface->need_clean_buffers_);
+  }
+
+  void TestReallocatedFrameBuffersIfNeed() {
+    ArkwebDisplayUtils utils(nullptr);
+    utils.need_clean_buffers_ = false;
+    utils.ReallocatedFrameBuffersIfNeed();
+    EXPECT_FALSE(utils.need_clean_buffers_);
+
+    utils.need_clean_buffers_ = true;
+    utils.ReallocatedFrameBuffersIfNeed();
+    EXPECT_TRUE(utils.need_clean_buffers_);
+
+    auto display = CreateTestDisplay();
+    ArkwebDisplayUtils utils2(display.get());
+    utils2.need_clean_buffers_ = false;
+    utils2.ReallocatedFrameBuffersIfNeed();
+    EXPECT_FALSE(utils2.need_clean_buffers_);
+  }
+#endif
+
   void TestResize() {
     gfx::Size size1(10, 10);
     gfx::Size size2(9000, 9000);
@@ -456,6 +501,14 @@ TEST_F(ArkwebDisplayUtilsTest, ArkwebDisplayUtilsTest_008) {
   TestSetGpuChannelManager();
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
+TEST_F(ArkwebDisplayUtilsTest, ArkwebDisplayUtilsTest_010) {
+  TestSetIfNeedCleanBuffers();
+  TestReallocatedFrameBuffersIfNeed();
+}
+#endif
+
 TEST_F(ArkwebDisplayUtilsTest, ArkwebDisplayUtilsTest_009) {
   TestResize();
 }

@@ -30,11 +30,19 @@ enum class FetchAction: int32_t {
     UNKNOWN,
 };
 
+enum class DistillTypeExt: int32_t {
+    NOVEL = 0,
+    ARTICLE = 1,
+    UNKNOWN,
+};
+
 struct DistillOptions {
     DistillType distill_type;
     FetchAction fetch_action;
     int32_t max_distill_pages;
     std::string distill_url;
+    DistillTypeExt distill_type_ext;
+    std::string distill_ext_info;
 };
 
 typedef void (*DistillCallback)(int32_t nweb_id, uint64_t request_id, const char* distill_info);

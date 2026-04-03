@@ -39,4 +39,7 @@ interface DistillabilityService {
 
   [Sync, EnableIf=arkweb_reader_mode]
   GetHostDistillerInfo(string host) => (blink.mojom.UrlHostDistillerInfo distiller_info);
+
+  [EnableIf=arkweb_reader_mode]
+  NotifyDidMeaningfulLayout(string url);
 };

@@ -46,6 +46,10 @@ public:
   virtual void SetVerticalHideScrollbars(bool) = 0;
   virtual void SetHorizontalHideScrollbars(bool) = 0;
   virtual void SetScrollable(bool) = 0;
+  virtual void SetScrollbarLayoutPolicy(int) = 0;
+  virtual int GetScrollbarLayoutPolicy() = 0;
+  virtual void SetIsSystemRtlEnable(bool) = 0;
+  virtual bool GetIsSystemRtlEnabled() = 0;
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 #if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
   virtual void SetContextMenuCustomization(bool) = 0;
@@ -119,6 +123,11 @@ public:
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
   virtual void SetEnableAutoFill(bool) = 0;
   virtual bool GetEnableAutoFill() = 0;
+#endif  // BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  virtual void SetEnableDrag(bool) = 0;
+  virtual bool GetEnableDrag() = 0;
 #endif  // BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
 
 #if BUILDFLAG(ARKWEB_CLIPBOARD)

@@ -63,6 +63,22 @@ void WebSettingsImplExt::SetHorizontalHideScrollbars(bool enabled) {
 void WebSettingsImplExt::SetScrollable(bool enabled) {
   settings_->SetScrollable(enabled);
 }
+
+void WebSettingsImplExt::SetScrollbarLayoutPolicy(int policy) {
+  settings_->SetScrollbarLayoutPolicy(policy);
+}
+
+int WebSettingsImplExt::GetScrollbarLayoutPolicy() {
+  return settings_->GetScrollbarLayoutPolicy();
+}
+
+void WebSettingsImplExt::SetIsSystemRtlEnable(bool enable) {
+  settings_->SetIsSystemRtlEnable(enable);
+}
+
+bool WebSettingsImplExt::GetIsSystemRtlEnabled() {
+  return settings_->GetIsSystemRtlEnabled();
+}
 #endif
 
 #if BUILDFLAG(ARKWEB_ZOOM)
@@ -208,6 +224,18 @@ bool  WebSettingsImplExt::GetEnableAutoFill()
   return settings_->GetEnableAutoFill();
 }
 #endif  // BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+void WebSettingsImplExt::SetEnableDrag(bool enable)
+{
+  settings_->SetEnableDrag(enable);
+}
+
+bool  WebSettingsImplExt::GetEnableDrag()
+{
+  return settings_->GetEnableDrag();
+}
+ #endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
 
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
 void WebSettingsImplExt::SetClipboardSitePermissionEnabled(bool enable)

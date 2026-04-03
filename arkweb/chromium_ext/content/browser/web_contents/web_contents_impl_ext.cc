@@ -1373,6 +1373,16 @@ void WebContentsImplExt::SetMediaResumeFromBFCachePage(bool resume) {
 #endif  // BUILDFLAG(ARKWEB_BFCACHE)
 
 #if BUILDFLAG(ARKWEB_READER_MODE)
+void WebContentsImplExt::EnableReaderMode(bool enabled) {
+  LOG(INFO) << "WebContentsImplExt::EnableReaderMode: " << enabled;
+
+  blink::RendererPreferences* prefs = GetMutableRendererPrefs();
+  if (prefs != NULL && prefs->is_reader_mode_enabled != enabled) {
+    prefs->is_reader_mode_enabled = enabled;
+    SyncRendererPrefs();
+  }
+}
+
 void WebContentsImplExt::OnIsPageDistillable(int page_type,
                                              const std::string& distillable_page_url,
                                              const std::string& title) {
@@ -1383,6 +1393,12 @@ void WebContentsImplExt::OnIsPageDistillable(int page_type,
 
 bool WebContentsImplExt::IsDistillerPageWebContents() {
   return SharedRenderProcessToken() == "0xAAAAAA";
+}
+
+void WebContentsImplExt::OnDidMeaningfulLayout(const std::string& url) {
+  if (delegate_) {
+    delegate_->OnDidMeaningfulLayout(url);
+  }
 }
 #endif // ARKWEB_READER_MODE
 
@@ -1582,19 +1598,23 @@ void WebContentsImplExt::GetAllFrameInfos(
   }
 #endif  // ARKWEB_NOT_LOAD_IFRAME
 #if BUILDFLAG(ARKWEB_SAVE_PAGE)
-bool WebContentsImplExt::SavePageEx(const base::FilePath& main_file, SavePageType save_type) {
-  OPTIONAL_TRACE_EVENT0("content", "WebContentsImplExt::OnSavePageEx");
+  bool WebContentsImplExt::SavePageEx(const base::FilePath& main_file,
+                                      SavePageType save_type,
+                                      SavePageExCallback callback) {
+  OPTIONAL_TRACE_EVENT0("content", "WebContentsImplExt::SavePageEx");
   // If we can not save the page, try to download it.
 
   if ((save_type != SAVE_PAGE_TYPE_AS_ONLY_HTML) &&
       (save_type != SAVE_PAGE_TYPE_AS_MHTML) &&
       (save_type != SAVE_PAGE_TYPE_AS_COMPLETE_HTML)) {
     LOG(ERROR) << "invalid save type " << static_cast<int32_t>(save_type);
+    std::move(callback).Run(false);
     return false;
   }
 
   if (!IsSavable()) {
     SaveFrame(GetLastCommittedURL(), Referrer(), GetPrimaryMainFrame());
+    std::move(callback).Run(false);
     return false;
   }
 
@@ -1603,7 +1623,8 @@ bool WebContentsImplExt::SavePageEx(const base::FilePath& main_file, SavePageTyp
   // Create the save package and possibly prompt the user for the name to save
   // the page as. The user prompt is an asynchronous operation that runs on
   // another thread.
-  save_package_ = new SavePackage(GetPrimaryPage(), save_type, main_file);
+  save_package_ = new SavePackage(GetPrimaryPage(), save_type, main_file,
+                                  std::move(callback));
   save_package_->GetSaveInfoEx();
   return true;
 }

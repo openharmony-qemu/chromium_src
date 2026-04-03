@@ -262,6 +262,55 @@ void WebDownloadItem_SetUrl(NWebDownloadItem* download_item, const char* url) {
   WVLOG_E("WebDownloadItem_SetUrl failed");
 }
 
+void WebDownloadItem_SetOriginalUrl(NWebDownloadItem* download_item,
+                                      const char* original_url) {
+  if (original_url) {
+    if (download_item) {
+      download_item->original_url = strdup(original_url);
+      return;
+    }
+  }
+  WVLOG_E("WebDownloadItem_SetOriginalUrl failed");
+}
+
+void WebDownloadItem_SetReferrerUrl(NWebDownloadItem* download_item,
+                                    const char* referrer_url) {
+  if (referrer_url) {
+    if (download_item) {
+      download_item->referrer_url = strdup(referrer_url);
+      return;
+    }
+  }
+  WVLOG_E("WebDownloadItem_SetReferrerUrl failed");
+}
+
+void WebDownloadItem_SetUrlChain(NWebDownloadItem* download_item,
+                                  char** url_chain,
+                                  int64_t size) {
+  if (!download_item) {
+    WVLOG_E("WebDownloadItem_SetUrlChain download_item is nullptr");
+    return;
+  }
+  if (!url_chain || size <= 0) {
+    WVLOG_E("WebDownloadItem_SetUrlChain url_chain is empty");
+    return;
+  }
+  download_item->ClearUrlChain();
+  download_item->url_chain = (char**)malloc(size * sizeof(char*));
+  if (!download_item->url_chain) {
+    WVLOG_E("WebDownloadItem_SetUrlChain url_chain malloc fail");
+    return;
+  }
+  for (int i = 0; i < size; i++) {
+    if (url_chain[i]) {
+      download_item->url_chain[i] = strdup(url_chain[i]);
+    } else {
+      download_item->url_chain[i] = nullptr;
+    }
+  }
+  download_item->url_chain_size = size;
+}
+
 void WebDownloadItem_SetGuid(NWebDownloadItem* download_item,
                              const char* guid) {
   if (guid) {
@@ -352,6 +401,30 @@ char* WebDownloadItem_OriginalUrl(const NWebDownloadItem* download_item) {
   }
   WVLOG_E("WebDownloadItem_OriginalUrl download_item null");
   return nullptr;
+}
+
+char* WebDownloadItem_ReferrerUrl(const NWebDownloadItem* download_item) {
+  if (download_item) {
+    return download_item->referrer_url;
+  }
+  WVLOG_E("WebDownloadItem_ReferrerUrl download_item null");
+  return nullptr;
+}
+
+char** WebDownloadItem_UrlChain(const NWebDownloadItem* download_item) {
+  if (download_item) {
+    return download_item->url_chain;
+  }
+  WVLOG_E("WebDownloadItem_UrlChain download_item null");
+  return nullptr;
+}
+
+int64_t WebDownloadItem_UrlChainSize(const NWebDownloadItem* download_item) {
+  if (download_item) {
+    return download_item->url_chain_size;
+  }
+  WVLOG_E("WebDownloadItem_UrlChainSize download_item null");
+  return 0;
 }
 
 char* WebDownloadItem_SuggestedFileName(const NWebDownloadItem* download_item) {

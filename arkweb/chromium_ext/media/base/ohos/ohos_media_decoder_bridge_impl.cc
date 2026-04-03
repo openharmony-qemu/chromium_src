@@ -748,6 +748,10 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::RecycleDmaBuffer() {
 
 DecoderAdapterCode MediaCodecDecoderBridgeImpl::ResumeDmaBuffer() {
   LOG(INFO) << "DMABUF::MediaCodecDecoderBridgeImpl, ResumeDmaBuffer";
+  if (signal_) {
+    clearInputQueue(signal_->inputQueue_);
+    clearOutputQueue(signal_->outputQueue_);
+  }
   DecoderAdapterCode ret = StartBridgeDecoder();
   if (ret != DecoderAdapterCode::DECODER_OK) {
     LOG(ERROR) << "DMABUF::MediaCodecDecoderBridgeImpl::ResumeDmaBuffer Start "

@@ -21,6 +21,7 @@ component("multiprocess") {
 
   deps = [
     "//ohos/adapter/multiprocess/gpu:gpu",
+    "//ohos/adapter/multiprocess/native_child_process:native_child_process"
   ]
 
   defines = []
@@ -28,10 +29,6 @@ component("multiprocess") {
   if (enable_native_child_process) {
     defines += [
       "ENABLE_NATIVE_CHILD_PROCESS"
-    ]
-
-    deps += [
-      "//ohos/adapter/multiprocess/native_child_process:native_child_process"
     ]
   }
 

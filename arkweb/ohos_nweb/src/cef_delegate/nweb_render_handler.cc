@@ -793,7 +793,7 @@ void NWebRenderHandler::OnPaint(CefRefPtr<CefBrowser> browser,
               << ") is not identical to request size (" << width_ << "*"
               << height_ << "), drop this frame";
     constexpr uint8_t kBitsPerPixel = 4;
-    uint32_t white_frame_size;
+    uint32_t white_frame_size = 0;
     if (!(base::CheckMul(width_, height_) * kBitsPerPixel).AssignIfValid(&white_frame_size)) {
       LOG(ERROR) << "white_frame_size is Invalid";
       return;

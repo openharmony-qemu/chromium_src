@@ -57,13 +57,13 @@ TEST_F(DistillerPageOhosTest, GetPathWithGURL_ValidUrlWithPathAndFragment) {
 TEST_F(DistillerPageOhosTest, GetPathWithGURL_ValidUrlWithOnlyFragment) {
   GURL url("http://example.com#section");
   std::string result = GetPathWithGURL(url);
-  EXPECT_EQ(result, "#section");
+  EXPECT_EQ(result, "/#section");
 }
 
 TEST_F(DistillerPageOhosTest, GetPathWithGURL_ValidUrlWithoutPathOrFragment) {
   GURL url("http://example.com");
   std::string result = GetPathWithGURL(url);
-  EXPECT_EQ(result, "");
+  EXPECT_EQ(result, "/");
 }
 
 TEST_F(DistillerPageOhosTest, GetPathWithGURL_ValidUrlWithOnlyPath) {

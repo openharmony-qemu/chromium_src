@@ -784,7 +784,11 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
       bool recursive,
       IsolatedWorld world,
       CefRefPtr<CefJavaScriptResultCallback> callback) override {}
-
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  void GetAllFrameInfos(CefRefPtr<CefFrameInfosCallback> callback) override {}
+  void GetLastJavaScriptProxyCallingFrameInfo(
+      CefRefPtr<CefLastJavaScriptProxyCallingFrameInfoCallback> callback) override {}
+#endif
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   void GetFocusedFrameInfo(int32_t& frame_id, CefString& frame_url) override {}
 #endif  // ARKWEB_ARKWEB_EXTENSIONS

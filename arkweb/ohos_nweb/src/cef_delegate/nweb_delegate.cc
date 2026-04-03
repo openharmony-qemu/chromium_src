@@ -665,6 +665,77 @@ class JavaScriptInFramesResultCallbackImpl : public CefJavaScriptResultCallback 
 
   IMPLEMENT_REFCOUNTING(JavaScriptInFramesResultCallbackImpl);
 };
+
+class FrameInfosCallbackImpl : public CefFrameInfosCallback {
+ public:
+  FrameInfosCallbackImpl(
+      OnReceiveFrameInfosCallback callback,
+      uint32_t nweb_id)
+      : callback_(callback),
+        nweb_id_(nweb_id){}
+  ~FrameInfosCallbackImpl() {}
+
+  NO_SANITIZE("cfi")
+  void OnFrameInfosCallback(GetFrameInfosParam value) override {
+    if (callback_ != nullptr) {
+      LOG(DEBUG) << "FrameInfosCallbackImpl OnFrameInfosCallback ";
+      nweb_ex::proto::GetFrameInfosParam pb_value;
+      NwebExtensionJavaScriptTypesUtils::ExtensionGetFrameInfosParamClassToPb(value, pb_value);
+      ArkWebPbBuffer pb_result_buffer = {};
+      bool ret = NWebBasicTypesUtils::AllocAndPopulateArkWebPbBuffer(pb_value, pb_result_buffer);
+      if (!ret) {
+        LOG(ERROR) << "failed to convert GetFrameInfosParam into pb buffer";
+        return;
+      }
+
+      callback_(nweb_id_, &pb_result_buffer);
+
+      NWebBasicTypesUtils::FreeArkWebPbBuffer(pb_result_buffer);
+    }
+  }
+
+ private:
+  OnReceiveFrameInfosCallback callback_ = nullptr;
+  uint32_t nweb_id_ = 0;
+
+  IMPLEMENT_REFCOUNTING(FrameInfosCallbackImpl);
+};
+
+class CefLastJavaScriptProxyCallingFrameInfoCallbackImpl
+    : public CefLastJavaScriptProxyCallingFrameInfoCallback {
+ public:
+  CefLastJavaScriptProxyCallingFrameInfoCallbackImpl(
+      OnLastJavaScriptProxyCallingFrameInfoCallback callback,
+      uint32_t nweb_id)
+      : callback_(callback),
+        nweb_id_(nweb_id){}
+  ~CefLastJavaScriptProxyCallingFrameInfoCallbackImpl() {}
+
+  NO_SANITIZE("cfi")
+  void OnLastFrameInfoCallback(FrameInfos value) override {
+    if (callback_ != nullptr) {
+      LOG(DEBUG) << "CefLastJavaScriptProxyCallingFrameInfoCallbackImpl OnLastFrameInfoCallback ";
+      nweb_ex::proto::FrameInfos pb_value;
+      NwebExtensionJavaScriptTypesUtils::ExtensionFrameInfosClassToPb(value, pb_value);
+      ArkWebPbBuffer pb_result_buffer = {};
+      bool ret = NWebBasicTypesUtils::AllocAndPopulateArkWebPbBuffer(pb_value, pb_result_buffer);
+      if (!ret) {
+        LOG(ERROR) << "failed to convert FrameInfos into pb buffer";
+        return;
+      }
+
+      callback_(nweb_id_, &pb_result_buffer);
+
+      NWebBasicTypesUtils::FreeArkWebPbBuffer(pb_result_buffer);
+    }
+  }
+
+ private:
+  OnLastJavaScriptProxyCallingFrameInfoCallback callback_ = nullptr;
+  uint32_t nweb_id_ = 0;
+
+  IMPLEMENT_REFCOUNTING(CefLastJavaScriptProxyCallingFrameInfoCallbackImpl);
+};
 #endif
 
 #if BUILDFLAG(ARKWEB_READER_MODE)
@@ -6397,6 +6468,43 @@ void NWebDelegate::RunJavaScriptInFrames(RunJavaScriptParam param,,
         new JavaScriptInFramesResultCallbackImpl(callback, param.callbackId, nweb_id_);
     GetBrowser()->GetHost()->RunJavaScriptInFrames(param.script, param.rootFrame.value(),
                                                    param.recursive, param.world.value(), JsResultCb);
+  }
+}
+
+void NWebDelegate::GetAllFrameInfos(OnReceiveFrameInfosCallback callback) {
+  if (!CEF_CURRENTLY_ON_UIT()) {
+    CEF_POST_TASK(
+        CEF_UIT,
+        base::BindOnce((void(NWebDelegate::*)(
+                           OnReceiveFrameInfosCallback)) &
+                           NWebDelegate::GetAllFrameInfos,
+                       weak_factory_.GetWeakPtr(), callback));
+    return;
+  }
+
+  if (GetBrowser().get()) {
+    CefRefPtr<FrameInfosCallbackImpl> JsResultCb =
+        new FrameInfosCallbackImpl(callback, nweb_id_);
+    GetBrowser()->GetHost()->GetAllFrameInfos(JsResultCb);
+  }
+}
+
+void NWebDelegate::GetLastJavaScriptProxyCallingFrameInfo(
+    OnLastJavaScriptProxyCallingFrameInfoCallback callback) {
+  if (!CEF_CURRENTLY_ON_UIT()) {
+    CEF_POST_TASK(
+        CEF_UIT,
+        base::BindOnce((void(NWebDelegate::*)(
+                           OnLastJavaScriptProxyCallingFrameInfoCallback)) &
+                           NWebDelegate::GetLastJavaScriptProxyCallingFrameInfo,
+                       weak_factory_.GetWeakPtr(), callback));
+    return;
+  }
+
+  if (GetBrowser().get()) {
+    CefRefPtr<CefLastJavaScriptProxyCallingFrameInfoCallbackImpl> JsResultCb =
+        new CefLastJavaScriptProxyCallingFrameInfoCallbackImpl(callback, nweb_id_);
+    GetBrowser()->GetHost()->GetLastJavaScriptProxyCallingFrameInfo(JsResultCb);
   }
 }
 #endif

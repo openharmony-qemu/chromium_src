@@ -1449,4 +1449,31 @@ void WebContentsImplExt::OnSafeBrowsingCheckDetail(int code,
   }
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+void WebContentsImplExt::GetAllFrameInfos(
+    std::map<std::string, std::string>& frameinfos) {
+  LOG(DEBUG) << "WebContentsImplExt::GetAllFrameInfos.";
+  //get all frameinfo
+  ForEachFrameTree([&frameinfos](FrameTree& frame_tree) {
+    for (FrameTreeNode* child : frame_tree.Nodes()) {
+      std::string parent_string = "";
+      std::string current_string = "";
+
+      if (child->current_frame_host()) {
+        auto currentId = child->current_frame_host()->GetGlobalId();
+        current_string = std::to_string(currentId.child_id) + "_" + std::to_string(currentId.frame_routing_id);
+      }
+      if (child->parent()) {
+        auto parentId = child->parent()->GetGlobalId();
+        parent_string = std::to_string(parentId.child_id) + "_" + std::to_string(parentId.frame_routing_id);
+      }
+
+      LOG(DEBUG) << "WebContentsImplExt::GetAllFrameInfos current=" << current_string
+                 << " parent=" << parent_string;
+      frameinfos.insert(std::make_pair(current_string, parent_string));
+    }
+  });
+}
+#endif
 }  // namespace content

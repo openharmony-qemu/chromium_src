@@ -85,7 +85,6 @@
 #include "ohos_nweb/src/capi/nweb_context_menus_item.h"
 #include "cef/include/internal/cef_string_types.h"
 #include "cef/libcef/browser/menu_model_impl.h"
-#include "cef/libcef/browser/menu_manager.h"
 #include "cef/include/internal/cef_types.h"
 
 #if BUILDFLAG(ARKWEB_URL_TRUST_LIST)
@@ -112,6 +111,7 @@
 #include "cef/libcef/browser/devtools/devtools_window_runner.h"
 #include "cef/include/cef_devtools_message_handler_delegate.h"
 #include "ohos_cef_ext/libcef/common/cef_open_devtools_ext_opt.h"
+#include "ohos_cef_ext/libcef/browser/menu_manager_ext.h"
 #include "ohos_nweb/src/nweb_common.h"
 #endif // BUILDFLAG(ARKWEB_DEVTOOLS)
 
@@ -7132,104 +7132,38 @@ std::vector<WebExtensionContextMenusItem> NWebDelegate::GetContextMenuItem() {
     LOG(ERROR) << "NWebDelegate::GetContextMenuItem is not UI.";
     return items;
   }
-  if (GetBrowser().get() == nullptr || GetBrowser()->GetHost() == nullptr) {
-    LOG(ERROR) << "SetFocusWebId can not get browser";
-    return items;
-  }
- 
-  auto* arkweb_host_ext = static_cast<ArkWebBrowserHostExtImpl*>(GetBrowser()->GetHost().get());
-  if (!arkweb_host_ext) {
-    LOG(ERROR) << "arkweb_host_ext is nullptr";
-    return items;
-  }
-  auto alloy_host = arkweb_host_ext->AsAlloyBrowserHostImpl();
-  if (!alloy_host) {
-    LOG(ERROR) << "alloy_host is nullptr";
-    return items;
-  }
- 
-  CefMenuManager* menu_manager = alloy_host->GetMenuManager();
-  if (!menu_manager) {
-    LOG(ERROR) << "menu_manager is nullptr";
-    return items;
-  }
- 
-  CefRefPtr<CefMenuModelImpl> model = menu_manager->GetContextMenuModel();
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  CefRefPtr<CefMenuModelImpl> model = CefMenuManagerEx::GetInstance().GetContextMenuModel();
   if (!model) {
     return items;
   }
- 
-#if BUILDFLAG(ARKWEB_DEVTOOLS)
+
   GetMenuItemByMenuModel(items, model);
- 
 #endif // BUILDFLAG(ARKWEB_DEVTOOLS)
   return items;
 }
  
 void NWebDelegate::OnContextMenuSelected(int command_id) {
   LOG(INFO) << "NWebDelegate::OnContextMenuSelected command_id: " << command_id;
-#if BUILDFLAG(ARKWEB_DEVTOOLS)
   DCHECK(CEF_CURRENTLY_ON_UIT());
-  if (!CEF_CURRENTLY_ON_UIT()) {
+  if (!CEF_CURREN\TLY_ON_UIT()) {
     LOG(ERROR) << "NWebDelegate::OnContextMenuSelected is not UI.";
     return;
   }
-  if (GetBrowser().get() == nullptr || GetBrowser()->GetHost() == nullptr) {
-    LOG(ERROR) << "SetFocusWebId can not get browser";
-    return;
-  }
- 
-  auto* arkweb_host_ext = static_cast<ArkWebBrowserHostExtImpl*>(GetBrowser()->GetHost().get());
-  if (!arkweb_host_ext) {
-    LOG(ERROR) << "arkweb_host_ext is nullptr";
-    return;
-  }
-  auto alloy_host = arkweb_host_ext->AsAlloyBrowserHostImpl();
-  if (!alloy_host) {
-    LOG(ERROR) << "alloy_host is nullptr";
-    return;
-  }
- 
-  CefMenuManager* menu_manager = alloy_host->GetMenuManager();
-  if (!menu_manager) {
-    LOG(ERROR) << "menu_manager is nullptr";
-    return;
-  }
-  menu_manager->onContextMenuSelected(command_id);
-  
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  CefMenuManagerEx::GetInstance().onContextMenuSelected(command_id);
 #endif // BUILDFLAG(ARKWEB_DEVTOOLS)
 }
  
 void NWebDelegate::OnContextMenuClosed() {
   LOG(INFO) << "NWebDelegate::OnContextMenuClosed";
-#if BUILDFLAG(ARKWEB_DEVTOOLS)
   DCHECK(CEF_CURRENTLY_ON_UIT());
   if (!CEF_CURRENTLY_ON_UIT()) {
     LOG(ERROR) << "NWebDelegate::OnContextMenuClosed is not UI.";
     return;
   }
-  if (GetBrowser().get() == nullptr || GetBrowser()->GetHost() == nullptr) {
-    LOG(ERROR) << "SetFocusWebId can not get browser";
-    return;
-  }
- 
-  auto* arkweb_host_ext = static_cast<ArkWebBrowserHostExtImpl*>(GetBrowser()->GetHost().get());
-  if (!arkweb_host_ext) {
-    LOG(ERROR) << "arkweb_host_ext is nullptr";
-    return;
-  }
-  auto alloy_host = arkweb_host_ext->AsAlloyBrowserHostImpl();
-  if (!alloy_host) {
-    LOG(ERROR) << "alloy_host is nullptr";
-    return;
-  }
- 
-  CefMenuManager* menu_manager = alloy_host->GetMenuManager();
-  if (!menu_manager) {
-    LOG(ERROR) << "menu_manager is nullptr";
-    return;
-  }
-  menu_manager->onContextMenuClosed();
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  CefMenuManagerEx::GetInstance().onContextMenuClosed();
 #endif // BUILDFLAG(ARKWEB_DEVTOOLS)
 }
 }  // namespace OHOS::NWeb

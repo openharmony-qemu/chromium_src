@@ -569,6 +569,8 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
   void GetOverScrollOffset(float* offset_x, float* offset_y) override;
 #endif
+  void SetScrollbarLayoutPolicy(int policy) override;
+  void SetIsSystemRtlEnable(bool enable) override;
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
 #if BUILDFLAG(ARKWEB_ADBLOCK)
@@ -938,6 +940,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #endif
 
 #if BUILDFLAG(ARKWEB_READER_MODE)
+void EnableReaderMode(bool enabled) override;
 void Distill(const std::string& guid, const DistillOptions& distill_options, DistillCallback callback) override;
 void AbortDistill() override;
 #endif // ARKWEB_READER_MODE

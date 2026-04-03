@@ -223,6 +223,14 @@ int HttpStreamParser::SendRequest(
   traffic_annotation_ = MutableNetworkTrafficAnnotationTag(traffic_annotation);
   response_ = response;
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  IPEndPoint local_ip_endpoint;
+  int rv = stream_socket_->GetLocalAddress(&local_ip_endpoint);
+  if (rv == OK) {
+    response_->local_endpoint = local_ip_endpoint;
+  }
+#endif
+
   // Put the peer's IP address and port into the response.
   IPEndPoint ip_endpoint;
   int result = stream_socket_->GetPeerAddress(&ip_endpoint);

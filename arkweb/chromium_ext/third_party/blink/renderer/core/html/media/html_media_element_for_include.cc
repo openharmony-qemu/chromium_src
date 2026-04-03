@@ -407,7 +407,7 @@ HTMLMediaElement::CollectMediaInfoAttributesForVAST() {
   mediaInfoAttr->icon_url = html_media_element_utils_.GetIconUrl();
   mediaInfoAttr->poster_url = GetUrlString(PosterImageURL());
   mediaInfoAttr->video_url = GetUrlString(currentSrc());
-
+  mediaInfoAttr->is_hls = IsHLSURL(downloadURL());
   if (GetWebMediaPlayer() && !GetWebMediaPlayer()->SupportVideoSurface()) {
     mediaInfoAttr->fullscreen_overlay = false;
   }

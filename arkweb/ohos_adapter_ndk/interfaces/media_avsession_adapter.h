@@ -23,7 +23,12 @@ namespace OHOS::NWeb {
 
 enum class MediaAVSessionType : int32_t { MEDIA_TYPE_INVALID = -1, MEDIA_TYPE_AUDIO = 0, MEDIA_TYPE_VIDEO = 1 };
 
-enum class MediaAVSessionPlayState : int32_t { STATE_INITIAL = 0, STATE_PLAY = 2, STATE_PAUSE = 3, STATE_BUFFERING = 4 };
+enum class MediaAVSessionPlayState : int32_t {
+  STATE_INITIAL = 0,
+  STATE_PLAY = 2,
+  STATE_PAUSE = 3,
+  STATE_BUFFERING = 4
+};
 
 class MediaAVSessionMetadataAdapter {
 public:

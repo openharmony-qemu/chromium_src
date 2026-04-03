@@ -4065,6 +4065,22 @@ void NWebDelegate::GetOverScrollOffset(float* offset_x, float* offset_y) {
   }
 }
 #endif
+
+void NWebDelegate::SetScrollbarLayoutPolicy(int policy) {
+  if (!preference_delegate_) {
+    LOG(ERROR) << "SetScrollbarLayoutPolicy failed, preference_delegate_ is null";
+    return;
+  }
+  preference_delegate_->SetScrollbarLayoutPolicy(policy);
+}
+
+void NWebDelegate::SetIsSystemRtlEnable(bool enable) {
+  if (!preference_delegate_) {
+    LOG(ERROR) << "SetIsSystemRtlEnable failed, preference_delegate_ is null";
+    return;
+  }
+  preference_delegate_->SetIsSystemRtlEnable(enable);
+}
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
 #if BUILDFLAG(ARKWEB_API_INIT_WEB_ENGINE)
@@ -6680,6 +6696,15 @@ void NWebDelegate::GetLastJavaScriptProxyCallingFrameInfo(
 #endif
 
 #if BUILDFLAG(ARKWEB_READER_MODE)
+void NWebDelegate::EnableReaderMode(bool enabled) {
+  LOG(INFO) << "NWebDelegate::EnableReaderMode: " << enabled;
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "NWebDelegate::EnableReaderMode failed, can not get browser";
+    return;
+  }
+  GetBrowser()->GetHost()->EnableReaderMode(enabled);
+}
+
 void NWebDelegate::Distill(const std::string& guid, const DistillOptions& distill_options, DistillCallback callback) {
   if (!CEF_CURRENTLY_ON_UIT()) {
     CEF_POST_TASK(

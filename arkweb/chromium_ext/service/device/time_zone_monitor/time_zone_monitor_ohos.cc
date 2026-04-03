@@ -7,6 +7,7 @@
 #include "base/logging.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/ref_counted.h"
+#include "base/memory/weak_ptr.h"
 #include "base/task/single_thread_task_runner.h"
 #include "services/device/time_zone_monitor/time_zone_monitor.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
@@ -117,6 +118,7 @@ class TimeZoneMonitorOhosImpl
   bool isListen;
   std::unique_ptr<OHOS::NWeb::DateTimeFormatAdapter> timezoneClient;
   scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
+  base::WeakPtrFactory<TimeZoneMonitorOhosImpl> weak_factory_{this};
 };
 }  // namespace
 
@@ -155,7 +157,7 @@ void TimeZoneMonitorOhosImpl::TimezoneChanged(
   if (!task_runner_->RunsTasksInCurrentSequence()) {
     task_runner_->PostTask(
         FROM_HERE, base::BindOnce(&TimeZoneMonitorOhosImpl::TimezoneChanged,
-                                  base::Unretained(this), std::move(info)));
+                                  weak_factory_.GetWeakPtr(), std::move(info)));
     return;
   }
   std::string timezone = info->GetTzId();

@@ -16,6 +16,10 @@
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+#include "net/base/ip_endpoint.h"
+#endif
+
 namespace net {
 
 namespace {
@@ -315,6 +319,24 @@ TEST_F(HttpResponseInfoTest, DidUseSharedDictionary) {
   PickleAndRestore(response_info_, &restored_response_info);
   EXPECT_TRUE(restored_response_info.did_use_shared_dictionary);
 }
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+// Test that local_endpoint is preserved.
+TEST_F(HttpResponseInfoTest, LocalEndpointPersist) {
+  IPEndPoint local_endpoint(IPAddress(127, 0, 0, 1), 8080);
+  response_info_.local_endpoint = local_endpoint;
+  HttpResponseInfo restored_response_info;
+  PickleAndRestore(response_info_, &restored_response_info);
+  EXPECT_EQ(restored_response_info.local_endpoint.address(),
+            IPAddress(127, 0, 0, 1));
+  EXPECT_EQ(restored_response_info.local_endpoint.port(), 8080);
+}
+
+// Test that default local_endpoint is empty.
+TEST_F(HttpResponseInfoTest, LocalEndpointDefault) {
+  EXPECT_TRUE(response_info_.local_endpoint.address().empty());
+}
+#endif
 
 }  // namespace
 

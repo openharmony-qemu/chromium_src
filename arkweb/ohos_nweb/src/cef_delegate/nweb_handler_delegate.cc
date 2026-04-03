@@ -1362,8 +1362,8 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
     }
 #endif // ARKWEB_EX_SCREEN_CAPTURE
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-    if ((*base::CommandLine::ForCurrentProcess())
-            .HasSwitch(::switches::kEnableNwebEx)) {
+    if ((*base::CommandLine::ForCurrentProcess()).HasSwitch(
+        ::switches::kEnableNwebEx) && base::ohos::IsPcDevice()) {
       if (main_browser_ && main_browser_->GetHost()) {
         main_browser_->GetHost()->WebExtensionRegisterZoomObserver();
       }
@@ -1415,8 +1415,8 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
   }
 #endif  // ARKWEB_VIDEO_ASSISTANT
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  if ((*base::CommandLine::ForCurrentProcess())
-          .HasSwitch(::switches::kEnableNwebEx)) {
+  if ((*base::CommandLine::ForCurrentProcess()).HasSwitch(
+      ::switches::kEnableNwebEx) && base::ohos::IsPcDevice()) {
     if (main_browser_ && main_browser_->GetHost()) {
       main_browser_->GetHost()->WebExtensionRegisterZoomObserver();
     }
@@ -1443,8 +1443,8 @@ bool NWebHandlerDelegate::DoClose(CefRefPtr<CefBrowser> browser) {
     }
   }
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  if ((*base::CommandLine::ForCurrentProcess())
-          .HasSwitch(::switches::kEnableNwebEx)) {
+  if ((*base::CommandLine::ForCurrentProcess()).HasSwitch(
+      ::switches::kEnableNwebEx) && base::ohos::IsPcDevice()) {
     if (main_browser_ && main_browser_->GetHost()) {
       main_browser_->GetHost()->WebExtensionUnregisterZoomObserver();
     }
@@ -5754,6 +5754,26 @@ void NWebHandlerDelegate::OnIsPageDistillable(int page_type,
   }
   web_app_client_extension_listener_->OnIsPageDistillable(
       web_app_client_extension_listener_->nweb_id, page_type, distillable_page_url.c_str(), title.c_str());
+}
+
+void NWebHandlerDelegate::OnDidMeaningfulLayout(const std::string& url) {
+  LOG(INFO) << "NWebHandlerDelegate::OnDidMeaningfulLayout";
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  if (IsNativeApiEnable()) {
+    dispatcher_.OnDidMeaningfulLayout(url.c_str());
+    return;
+  }
+#endif  // OHOS_NWEB_EX
+  if (!web_app_client_extension_listener_) {
+    LOG(WARNING) << "OnDidMeaningfulLayout failed, no listener";
+    return;
+  }
+  if (!web_app_client_extension_listener_->OnDidMeaningfulLayout) {
+    LOG(WARNING) << "OnDidMeaningfulLayout failed, no function";
+    return;
+  }
+  web_app_client_extension_listener_->OnDidMeaningfulLayout(
+      web_app_client_extension_listener_->nweb_id, url.c_str());
 }
 #endif
 

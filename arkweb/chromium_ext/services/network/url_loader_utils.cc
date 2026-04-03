@@ -701,6 +701,11 @@ void URLLoaderUtils::PopulateURLLoaderCompletionStatus(
     }
   }
 
+  if (nav_info.local_address.empty()) {
+    nav_info.local_address =
+        url_request->response_info().local_endpoint.ToStringWithoutPort();
+  }
+
   nav_info.request_attempts = url_request->GetRequestAttempts();
   nav_info.resolve_info = url_request->response_info().resolve_info;
 

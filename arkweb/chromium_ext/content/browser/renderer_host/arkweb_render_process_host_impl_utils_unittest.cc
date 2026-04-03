@@ -27,7 +27,9 @@
 #include "base/task/single_thread_task_runner.h"
 #include "url/origin.h"
 #include "content/browser/child_process_security_policy_impl.h"
+#define private public
 #include "content/browser/renderer_host/spare_render_process_host_manager_impl.h"
+#undef private
 #include "arkweb/ohos_adapter_ndk/mock_ndk_api/include/mock_base_ohos_api.h"
 #include "arkweb/ohos_nweb/src/nweb_resize_helper.h"
 #include "content/public/common/content_switches.h"
@@ -787,4 +789,171 @@ TEST_F(RenderProcessHostImplUtilsTest, TryKillRenderTest3) {
 }
  
 #endif
+
+TEST_F(RenderProcessHostImplUtilsTest, NeedDebugTest) {
+  auto* killer = DelayedRenderKiller::GetInstance();
+  killer->rep_ = 5;
+  EXPECT_TRUE(killer->NeedDebug());
+  killer->rep_ = 3;
+  EXPECT_FALSE(killer->NeedDebug());
+  killer->rep_ = 0;
+  EXPECT_FALSE(killer->NeedDebug());
+}
+
+TEST_F(RenderProcessHostImplUtilsTest, StartTimer_NullTimer) {
+  auto* killer = DelayedRenderKiller::GetInstance();
+  auto original_timer = std::move(killer->timer_);
+  killer->timer_ = nullptr;
+  ASSERT_NO_FATAL_FAILURE(killer->StartTimer());
+  killer->timer_ = std::move(original_timer);
+}
+
+TEST_F(RenderProcessHostImplUtilsTest, ReportKeyThreadExTest) {
+  int32_t status = 0;
+  int32_t process_id = 1234;
+  int32_t thread_id = 5678;
+  int32_t role = 0;
+  ASSERT_NO_FATAL_FAILURE(ArkwebRenderProcessHostImplUtils::ReportKeyThreadEx(
+      status, process_id, thread_id, role));
+}
+
+TEST_F(RenderProcessHostImplUtilsTest, ReportKeyThreadExTest2) {
+  int32_t status = 1;
+  int32_t process_id = 9999;
+  int32_t thread_id = 1111;
+  int32_t role = 1;
+  ASSERT_NO_FATAL_FAILURE(ArkwebRenderProcessHostImplUtils::ReportKeyThreadEx(
+      status, process_id, thread_id, role));
+}
+
+TEST_F(RenderProcessHostImplUtilsTest, ReportKeyThreadIdsExTest) {
+  int32_t status = 0;
+  int32_t process_id = 1234;
+  std::vector<int32_t> thread_ids = {100, 200, 300};
+  int32_t role = 0;
+  ASSERT_NO_FATAL_FAILURE(ArkwebRenderProcessHostImplUtils::ReportKeyThreadIdsEx(
+      status, process_id, thread_ids, role));
+}
+
+TEST_F(RenderProcessHostImplUtilsTest, ReportKeyThreadIdsEx_Empty) {
+  int32_t status = 1;
+  int32_t process_id = 5678;
+  std::vector<int32_t> thread_ids;
+  int32_t role = 1;
+  ASSERT_NO_FATAL_FAILURE(ArkwebRenderProcessHostImplUtils::ReportKeyThreadIdsEx(
+      status, process_id, thread_ids, role));
+}
+
+TEST_F(RenderProcessHostImplUtilsTest, ReportKeyThreadIdsEx_SingleThread) {
+  int32_t status = 0;
+  int32_t process_id = 9999;
+  std::vector<int32_t> thread_ids = {500};
+  int32_t role = 0;
+  ASSERT_NO_FATAL_FAILURE(ArkwebRenderProcessHostImplUtils::ReportKeyThreadIdsEx(
+      status, process_id, thread_ids, role));
+}
+
+TEST_F(RenderProcessHostImplUtilsTest, SetRenderProcessModeTest) {
+  RenderProcessMode original_mode = g_render_process_mode;
+  RenderProcessHost::SetRenderProcessMode(RenderProcessMode::SINGLE_MODE);
+  EXPECT_EQ(g_render_process_mode, RenderProcessMode::SINGLE_MODE);
+  RenderProcessHost::SetRenderProcessMode(RenderProcessMode::MULTIPLE_MODE);
+  EXPECT_EQ(g_render_process_mode, RenderProcessMode::MULTIPLE_MODE);
+  RenderProcessHost::SetRenderProcessMode(original_mode);
+}
+
+TEST_F(RenderProcessHostImplUtilsTest, GetExistingBackgroundProcessHostTest) {
+  RenderProcessHost* result = ArkwebRenderProcessHostImplUtils::GetExistingBackgroundProcessHost();
+  EXPECT_EQ(result, nullptr);
+}
+
+TEST_F(RenderProcessHostImplUtilsTest, GetExistingBackgroundProcessHost_SpareProcess) {
+  // Add the process to spare list to test the spare branch
+  auto& spare_manager = SpareRenderProcessHostManagerImpl::Get();
+  spare_manager.spare_rphs_.push_back(process_);
+
+  // Now IsSpare() should return true for this process
+  EXPECT_TRUE(process_->IsSpare());
+
+  // GetExistingBackgroundProcessHost should skip spare processes
+  RenderProcessHost* result = ArkwebRenderProcessHostImplUtils::GetExistingBackgroundProcessHost();
+  EXPECT_EQ(result, nullptr);
+
+  // Clean up
+  spare_manager.spare_rphs_.clear();
+}
+
+TEST_F(RenderProcessHostImplUtilsTest, ArkwebRenderProcessHostImplUtils_Constructor) {
+  RenderProcessHostImpl* impl = static_cast<RenderProcessHostImpl*>(process_);
+  ArkwebRenderProcessHostImplUtils utils(impl);
+  EXPECT_NE(&utils, nullptr);
+}
+
+TEST_F(RenderProcessHostImplUtilsTest, TryKillRenderTest4) {
+  auto* killer = DelayedRenderKiller::GetInstance();
+  killer->rep_ = 10;
+  auto original_timer = std::move(killer->timer_);
+  killer->timer_ = nullptr;
+  ASSERT_NO_FATAL_FAILURE(killer->TryKillRender());
+  killer->timer_ = std::move(original_timer);
+}
+
+TEST_F(RenderProcessHostImplUtilsTest, NeedDebug_VariousRepValues) {
+  auto* killer = DelayedRenderKiller::GetInstance();
+  constexpr int32_t kMaxRep = 15;
+
+  killer->rep_ = kMaxRep - 1;
+  EXPECT_FALSE(killer->NeedDebug());
+
+  killer->rep_ = kMaxRep;
+  EXPECT_TRUE(killer->NeedDebug());
+
+  killer->rep_ = kMaxRep + 1;
+  EXPECT_TRUE(killer->NeedDebug());
+
+  killer->rep_ = 0;
+}
+
+TEST_F(RenderProcessHostImplUtilsTest, GetProcessCountForLimitArkweb_ZeroIgnore) {
+  size_t processCountToIgnore = 0;
+  size_t result = ArkwebRenderProcessHostImplUtils::GetProcessCountForLimitArkweb(processCountToIgnore);
+  size_t processCount = RenderProcessHostImpl::GetProcessCount();
+  EXPECT_TRUE(result <= processCount);
+}
+
+TEST_F(RenderProcessHostImplUtilsTest, GetProcessCountForLimitArkweb_LargeIgnore) {
+  size_t processCount = RenderProcessHostImpl::GetProcessCount();
+  size_t processCountToIgnore = processCount + 10;
+  size_t result = ArkwebRenderProcessHostImplUtils::GetProcessCountForLimitArkweb(processCountToIgnore);
+  EXPECT_TRUE(result <= processCount);
+}
+
+TEST_F(RenderProcessHostImplUtilsTest, ReportKeyThreadEx_AllStatusValues) {
+  for (int32_t status = 0; status <= 1; status++) {
+    for (int32_t role = 0; role <= 1; role++) {
+      ASSERT_NO_FATAL_FAILURE(ArkwebRenderProcessHostImplUtils::ReportKeyThreadEx(
+          status, 1234, 5678, role));
+    }
+  }
+}
+
+TEST_F(RenderProcessHostImplUtilsTest, ReportKeyThreadIdsEx_MultipleThreads) {
+  int32_t status = 0;
+  int32_t process_id = 1234;
+  std::vector<int32_t> thread_ids = {100, 200, 300, 400, 500};
+  int32_t role = 0;
+  ASSERT_NO_FATAL_FAILURE(ArkwebRenderProcessHostImplUtils::ReportKeyThreadIdsEx(
+      status, process_id, thread_ids, role));
+}
+
+TEST_F(RenderProcessHostImplUtilsTest, ReportKeyThreadIdsEx_AllCombinations) {
+  std::vector<int32_t> thread_ids = {100};
+  for (int32_t status = 0; status <= 1; status++) {
+    for (int32_t role = 0; role <= 1; role++) {
+      ASSERT_NO_FATAL_FAILURE(ArkwebRenderProcessHostImplUtils::ReportKeyThreadIdsEx(
+          status, 9999, thread_ids, role));
+    }
+  }
+}
+
 }  // namespace content

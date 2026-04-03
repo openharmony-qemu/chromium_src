@@ -26,6 +26,8 @@
 #include "services/media_session/public/cpp/media_position.h"
 
 namespace content {
+// Minimum interval between position updates to avoid excessive notifications
+// 200ms balances UI responsiveness with notification frequency.
 constexpr uint64_t kSeekTimeMinIntervalMs = 200;
 
 MediaSessionOHOS::MediaSessionOHOS(MediaSessionImpl* session)
@@ -146,6 +148,7 @@ void MediaSessionOHOS::MediaSessionInfoChanged(
       }
       Prepare(session_type);
     }
+
     if (av_position_) {
       auto now = std::chrono::system_clock::now();
       auto millis = std::chrono::time_point_cast<std::chrono::milliseconds>(now);
@@ -231,9 +234,9 @@ void MediaSessionOHOS::MediaSessionPositionChanged(
   }
 
   if (old_position_.has_value()) {
-    uint64_t position_diff =
-        std::abs(position.value().GetOriginalPosition().InMilliseconds() -
-                 old_position_.value().GetOriginalPosition().InMilliseconds());
+    uint64_t position_diff = std::abs(
+        position.value().GetOriginalPosition().InMilliseconds() -
+        old_position_.value().GetOriginalPosition().InMilliseconds());
     bool rate_changed = position.value().playback_rate() !=
                         old_position_.value().playback_rate();
 
@@ -291,11 +294,11 @@ void MediaSessionOHOS::Stop() {
 void MediaSessionOHOS::SeekTo(const int64_t millis) {
   DCHECK(media_session_);
   if (!avsession_adapter_) {
-    LOG(WARNING) << __FUNCTION__
-                 << " media avsession avsession_adapter_ is null.";
+    LOG(ERROR)
+        << __FUNCTION__
+        << " avsession_adapter_ is null.";
     return;
   }
-
   if (media_type_ == OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_INVALID) {
     LOG(ERROR) << __FUNCTION__ << " media avsession type invalid";
     return;
@@ -303,9 +306,8 @@ void MediaSessionOHOS::SeekTo(const int64_t millis) {
   if (millis >= 0) {
     is_playing_before_seeking_ = is_playing_;
     if (is_playing_before_seeking_) {
-      avsession_adapter_->SetPlaybackState(HOS::NWeb::MediaAVSessionPlayState::STATE_BUFFERING);
+      avsession_adapter_->SetPlaybackState(OHOS::NWeb::MediaAVSessionPlayState::STATE_BUFFERING);
     }
-
     media_session_->SeekTo(base::Milliseconds(millis));
     if (is_playing_) {
       media_session_->Resume(MediaSession::SuspendType::kUI);

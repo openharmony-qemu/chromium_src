@@ -144,6 +144,7 @@ struct NWebAppClientExtensionCallback {
                               int page_type,
                               const char* distillable_page_url,
                               const char* title);
+  void (*OnDidMeaningfulLayout)(int32_t nweb_id, const char* url);
 #endif
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)

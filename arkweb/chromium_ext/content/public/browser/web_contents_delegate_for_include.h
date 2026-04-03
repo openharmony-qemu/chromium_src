@@ -141,6 +141,7 @@ virtual void OnRequestOpenDevTools(RequestOpenDevToolsParams* params) {}
 #if BUILDFLAG(ARKWEB_READER_MODE)
 virtual void OnIsPageDistillable(int page_type, const std::string& distillable_page_url, const std::string& title) {}
 virtual bool IsForDistillerPage();
+virtual void OnDidMeaningfulLayout(const std::string& url) {}
 #endif
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)

@@ -8955,5 +8955,43 @@ TEST_F(NWebImplTest, UpdateWebLtpoInfo003) {
   EXPECT_NO_FATAL_FAILURE(nweb_impl_->UpdateWebLtpoInfo());
 }
 #endif // BUILDFLAG(ARKWEB_SLIDE_LTPO)
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+TEST_F(NWebImplTest, SetScrollbarLayoutPolicy001) {
+  // Test that UpdateWebLtpoInfo works with null delegate
+  nweb_impl_->nweb_delegate_ = nullptr;
+  int layoutPolicy = 0;
+  EXPECT_CALL(*mock_delegate_, SetScrollbarLayoutPolicy(layoutPolicy)).Times(0);
+  nweb_impl_->SetScrollbarLayoutPolicy(layoutPolicy);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SetScrollbarLayoutPolicy002) {
+  // Test that UpdateWebLtpoInfo works with null delegate
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  int layoutPolicy = 0;
+  EXPECT_CALL(*mock_delegate_, SetScrollbarLayoutPolicy(layoutPolicy)).Times(1);
+  nweb_impl_->SetScrollbarLayoutPolicy(layoutPolicy);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SetIsSystemRtlEnable001) {
+  // Test that UpdateWebLtpoInfo works with null delegate
+  nweb_impl_->nweb_delegate_ = nullptr;
+  bool enable = false;
+  EXPECT_CALL(*mock_delegate_, SetIsSystemRtlEnable(enable)).Times(0);
+  nweb_impl_->SetIsSystemRtlEnable(enable);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SetIsSystemRtlEnable002) {
+  // Test that UpdateWebLtpoInfo works with null delegate
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  bool enable = false;
+  EXPECT_CALL(*mock_delegate_, SetIsSystemRtlEnable(enable)).Times(1);
+  nweb_impl_->SetIsSystemRtlEnable(enable);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+#endif
 }  // namespace OHOS::NWeb
                           

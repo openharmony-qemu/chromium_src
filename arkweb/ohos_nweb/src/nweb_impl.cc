@@ -302,6 +302,7 @@ extern bool g_siteIsolationMode;
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
 #include "ohos_nweb_ex/core/static/nweb_static_dispatcher.h"
+#include "ohos_nweb_ex/core/web_extension/web_extension_dispatcher.h"
 #endif
 #if BUILDFLAG(ARKWEB_SLIDE_LTPO)
 #include "base/ohos/ltpo/include/sliding_observer.h"
@@ -1336,6 +1337,7 @@ void NWebImpl::UpdateAdblockEasyListRules(long adBlockEasyListVersion) {
 bool NWebImpl::InitializeICUStatic(
     std::shared_ptr<NWebEngineInitArgs> init_args) {
   if (NWebApplication::GetDefault()->HasInitializedCef()) {
+    WVLOG_I("cef already initialized, skip icu init.");
     return true;
   }
   WVLOG_I("will initialize icu.");
@@ -1480,6 +1482,10 @@ NWebImpl::~NWebImpl() {
 #endif
   base::AutoLock lock_scope(nweb_map_lock_);
   g_nweb_map.Get().erase(nweb_id_);
+
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  NWebExtensionDispatcher::GetInstance().CheckDevtoolsNwebClosed(nweb_id_);
+#endif
 }
 
 bool NWebImpl::Init(std::shared_ptr<NWebCreateInfo> create_info) {
@@ -3646,6 +3652,22 @@ void NWebImpl::WebSendMouseEvent(
 #endif
   input_handler_->WebSendMouseEvent(mouseEvent);
 }
+
+void NWebImpl::SetScrollbarLayoutPolicy(int policy) {
+  if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "SetScrollbarLayoutPolicy nweb_delegate_ is nullptr";
+    return;
+  }
+  nweb_delegate_->SetScrollbarLayoutPolicy(policy);
+}
+
+void NWebImpl::SetIsSystemRtlEnable(bool enable) {
+  if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "SetIsSystemRtlEnable nweb_delegate_ is nullptr";
+    return;
+  }
+  nweb_delegate_->SetIsSystemRtlEnable(enable);
+}
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
 bool NWebImpl::GetCertChainDerData(std::vector<std::string>& certChainData,
@@ -5170,6 +5192,15 @@ void NWebImpl::SetJsFilePath(const std::string& js_type, const std::string& file
   nweb_ex::AlloyBrowserReaderModeConfig::GetInstance()->SetJsFilePath(js_type, file_path, version);
 }
 
+void NWebImpl::EnableReaderMode(bool enabled) {
+  if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "NWebImpl::EnableReaderMode delegate_ is nullptr";
+    return;
+  }
+
+  nweb_delegate_->EnableReaderMode(enabled);
+}
+
 void NWebImpl::Distill(char** guid, const DistillOptions& distill_options, DistillCallback callback) {
   if (nweb_delegate_ == nullptr) {
     LOG(ERROR) << "NWebImpl::Distill delegate_ is nullptr";
@@ -5741,7 +5772,22 @@ void NWebImpl::WebExtensionContextMenuGetFocusedFrameInfo(
 // static
 void NWebImpl::ResumeDownloadStatic(
     std::shared_ptr<NWebDownloadItem> web_download) {
-  CefResumeDownload(web_download->guid, web_download->url,
+  std::vector<CefString> cef_url_chain;
+  char** url_chain = web_download->url_chain;
+  int64_t url_chain_size = web_download->url_chain_size;
+  if (url_chain && url_chain_size > 0) {
+    for (int64_t i = 0; i < url_chain_size; i++) {
+      if (url_chain[i]) {
+        cef_url_chain.emplace_back(url_chain[i]);
+      }
+    }
+  }
+
+  if (cef_url_chain.empty()) {
+    cef_url_chain.emplace_back(web_download->url);
+  }
+
+  CefResumeDownload(web_download->guid, cef_url_chain, web_download->referrer_url,
                     web_download->full_path, web_download->received_bytes,
                     web_download->total_bytes, web_download->etag,
                     web_download->mime_type, web_download->last_modified,
@@ -5804,6 +5850,18 @@ std::string NWebImpl::GetInitiatorByGuid(const std::string& guid) {
   }
 
   return NWebDownloadItem::GetNWebInitiator(download_item);
+}
+
+std::string NWebImpl::GetContextTypeByGuid(const std::string& guid) {
+  WVLOG_D("NWebImpl::GetContextTypeByGuid guid %{public}s", guid.c_str());
+
+  CefRefPtr<CefDownloadItem> download_item = CefGetDownloadItem(guid);
+  if (!download_item) {
+    LOG(ERROR) << "GetContextTypeByGuid failed, for download_item is nullptr.";
+    return "";
+  }
+
+  return NWebDownloadItem::GetNWebContextType(download_item);
 }
 
 bool NWebImpl::GetCanResumeByGuid(const std::string& guid) {

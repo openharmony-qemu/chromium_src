@@ -17,6 +17,7 @@
 
 #include <memory>
 
+#include "third_party/blink/public/web/web_settings.h"
 #include "third_party/blink/renderer/core/clipboard/data_transfer.h"
 #include "third_party/blink/renderer/core/dom/document.h"
 #include "third_party/blink/renderer/core/dom/element.h"
@@ -24,6 +25,7 @@
 #include "third_party/blink/renderer/core/dom/node_computed_style.h"
 #include "third_party/blink/renderer/core/editing/frame_selection.h"
 #include "third_party/blink/renderer/core/frame/local_frame.h"
+#include "third_party/blink/renderer/core/frame/settings.h"
 #include "third_party/blink/renderer/core/frame/visual_viewport.h"
 #include "third_party/blink/renderer/core/layout/hit_test_result.h"
 #include "third_party/blink/renderer/core/layout/layout_image.h"
@@ -458,6 +460,29 @@ gfx::RectF DragControllerExt::GetVisibleRectToUIInRootFrame(LocalFrame* frame) {
             << ", scroll_offset : " << scroll_offset.ToString();
   return visible_rect_in_root_frame;
 }
+
+bool DragControllerExt::IsDragEnabled() const {
+  Node* node = drag_state_->drag_src_.Get();
+  if (!node) {
+    LOG(WARNING) << "DragDrop node null, drag nothing";
+    return false;
+  }
+  if (!drag_state_) {
+    LOG(DEBUG) << "DragDrop state null, drag nothing";
+    return false;
+  }
+  if (!drag_state_->drag_src_) {
+    LOG(WARNING) << "DragDrop node src null, drag nothing";
+    return false;
+  }
+  auto* element = DynamicTo<Element>(node);
+  if (element) {
+    bool drag_enabled = element->GetDocument().GetSettings()->GetEnableDrag();
+    return drag_enabled;
+  }
+    return true;
+}
+
 
 #endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
 }  // namespace blink

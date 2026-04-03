@@ -204,23 +204,13 @@ void ArkwebRenderProcessHostImplExt::UpdateCloudControlReaderModeConfigData(
   }
 }
 
-void ArkwebRenderProcessHostImplExt::UpdateReaderModeConfig(
-    const nweb_ex::BrowserReaderModeConfigData* reader_mode_config_data) {
-  if (reader_mode_config_data == nullptr) {
-    LOG(WARNING) << "UpdateReaderModeConfig param reader_mode_config_data is null";
-    return;
-  }
-  auto* renderer_interface = GetRendererInterface();
-  if (!renderer_interface) {
-    LOG(WARNING) << "UpdateReaderModeConfig interface is null";
-    return;
-  }
-
-  auto config = blink::mojom::ReaderModeConfig::New();
-  config->reader_mode_enabled = reader_mode_config_data->enabled;
+void ArkwebRenderProcessHostImplExt::SetMojomReaderModeConfigV1(
+    blink::mojom::ReaderModeConfig* config,
+    const nweb_ex::BrowserReaderModeConfigData* config_data) {
+  config->reader_mode_enabled = config_data->enabled;
 
   // 详情模板
-  for (const auto& item : reader_mode_config_data->detail_config.templates) {
+  for (const auto& item : config_data->detail_config.templates) {
     if (item.templateConfig.size() > kDetailTemplateCatalogIndex) {
       config->detail_templates.emplace(item.templateId, item.templateConfig);
     } else {
@@ -229,7 +219,7 @@ void ArkwebRenderProcessHostImplExt::UpdateReaderModeConfig(
   }
   // 正文模板
   for (const auto& item :
-       reader_mode_config_data->content_config.template_match) {
+       config_data->content_config.template_match) {
     if (item.template_config.size() > kContentTemplateChapterIndex) {
       config->content_templates.emplace(item.template_id, item.template_config);
     } else {
@@ -237,10 +227,10 @@ void ArkwebRenderProcessHostImplExt::UpdateReaderModeConfig(
     }
   }
   // 正文特征
-  if (reader_mode_config_data->content_config.feature_match.size() >
+  if (config_data->content_config.feature_match.size() >
       kFeatureCatalogIndex) {
     const std::vector<std::vector<std::string>>& features =
-        reader_mode_config_data->content_config.feature_match;
+        config_data->content_config.feature_match;
     config->content_features.emplace(blink::mojom::ContentFeatureIndex::PREV, features[kFeaturePrevIndex]);
     config->content_features.emplace(blink::mojom::ContentFeatureIndex::NEXT, features[kFeatureNextIndex]);
     config->content_features.emplace(blink::mojom::ContentFeatureIndex::CATALOG, features[kFeatureCatalogIndex]);
@@ -248,20 +238,94 @@ void ArkwebRenderProcessHostImplExt::UpdateReaderModeConfig(
     LOG(WARNING) << "UpdateReaderModeConfig features must 3 items[pre, next, catalog]";
   }
   // 正文元数据
-  const nweb_ex::BrowserReaderModeContentMetaDataConfig& metaData = reader_mode_config_data->content_config.meta_data;
+  const nweb_ex::BrowserReaderModeContentMetaDataConfig& metaData = config_data->content_config.meta_data;
   config->must_have_catalog = metaData.must_have_catalog;
   config->must_have_prev_and_next = metaData.must_have_prev_and_next;
   config->minimum_content_length = metaData.minimum_content_length < 0 ? 0 : metaData.minimum_content_length;
 
-  LOG(INFO) << "RenderProcessHostImpl::UpdateReaderModeConfig config enable " << config->reader_mode_enabled
+  LOG(INFO) << "ArkwebRenderProcessHostImplExt::SetMojomReaderModeConfigV1"
+            << " config enable " << config->reader_mode_enabled
             << " must_have_catalog:" << config->must_have_catalog
             << " must_have_prev_and_next:" << config->must_have_prev_and_next
             << " minimum_content_length:" << config->minimum_content_length
             << " detail_templates size:" << config->detail_templates.size()
             << " content_templates size:" << config->content_templates.size()
             << " content_features size:" << config->content_features.size();
+}
+
+void ArkwebRenderProcessHostImplExt::SetMojomReaderModeConfigV2(
+    blink::mojom::ReaderModeConfig* config,
+    const nweb_ex::BrowserReaderModeConfigData* config_data) {
+  // 正文元数据
+  config->must_have_catalog = config_data->globalConfig.metadataConfig.mustHaveCatalog;
+  config->must_have_prev_and_next = config_data->globalConfig.metadataConfig.mustHavePrevAndNext;
+  config->minimum_content_length = config_data->globalConfig.metadataConfig.minimumContentLength;
+  if (config->minimum_content_length < 0) {
+    config->minimum_content_length = 0;
+  }
+  // 正文模板
+  for (const auto& item : config_data->globalConfig.contentMatchConfig.templateMatch) {
+    std::vector<std::string> template_config;
+    template_config.push_back(item.templateConfig.content);
+    template_config.push_back(item.templateConfig.pager);
+    config->content_templates.emplace(item.templateId, template_config);
+  }
+  // 正文特征
+  config->content_features.emplace(blink::mojom::ContentFeatureIndex::PREV,
+                                   config_data->globalConfig.contentMatchConfig.featureMatch.prevPage);
+  config->content_features.emplace(blink::mojom::ContentFeatureIndex::NEXT,
+                                   config_data->globalConfig.contentMatchConfig.featureMatch.nextPage);
+  config->content_features.emplace(blink::mojom::ContentFeatureIndex::CATALOG,
+                                   config_data->globalConfig.contentMatchConfig.featureMatch.catalogPage);
+  // 详情模板
+  for (const auto& item : config_data->globalConfig.bookDetailMatchConfig) {
+    std::vector<std::string> template_config;
+    template_config.push_back(item.templateConfig.bookInfo);
+    template_config.push_back(item.templateConfig.bookIntro);
+    template_config.push_back(item.templateConfig.bookChapters);
+    config->detail_templates.emplace(item.templateId, template_config);
+  }
+
+  LOG(INFO) << "ArkwebRenderProcessHostImplExt::SetMojomReaderModeConfigV2"
+            << " must_have_catalog:" << config->must_have_catalog
+            << " must_have_prev_and_next:" << config->must_have_prev_and_next
+            << " minimum_content_length:" << config->minimum_content_length
+            << " detail_templates size:" << config->detail_templates.size()
+            << " content_templates size:" << config->content_templates.size()
+            << " content_features size:" << config->content_features.size();
+}
+
+void ArkwebRenderProcessHostImplExt::UpdateReaderModeConfig(
+    const nweb_ex::BrowserReaderModeConfigData* reader_mode_config_data) {
+  if (!reader_mode_config_data) {
+    LOG(WARNING) << "[Distiller] param reader_mode_config_data is null";
+    return;
+  }
+  auto* renderer_interface = GetRendererInterface();
+  if (!renderer_interface) {
+    LOG(WARNING) << "[Distiller] interface is null";
+    return;
+  }
+
+  auto config = blink::mojom::ReaderModeConfig::New();
+  config->is_v2 = reader_mode_config_data->is_v2;
+  if (reader_mode_config_data->is_v2) {
+    SetMojomReaderModeConfigV2(config.get(), reader_mode_config_data);
+  } else {
+    SetMojomReaderModeConfigV1(config.get(), reader_mode_config_data);
+  }
 
   renderer_interface->UpdateReaderModeConfig(std::move(config));
+}
+
+void ArkwebRenderProcessHostImplExt::ReportDistillableResult(
+    const std::string& event_type,
+    const std::string& value) {
+  base::ohos::OperationStatistics::Statistics(
+        base::ohos::REGION_CHINA, base::ohos::PLATFORM_OPERATION_ANALYSIS,
+        base::ohos::OperationStatistics::GROUP_BECE, event_type,
+        base::ohos::OperationStatistics::DEFAULT_DATA_VERSION, value,
+        true, false, true, base::ohos::REPORT_IMMEDIATELY);
 }
 #endif  // ARKWEB_READER_MODE
 

@@ -302,6 +302,10 @@
 #include "base/files/file_path.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+#include "ohos_nweb_ex/overrides/cef/libcef/browser/alloy/alloy_video_load_optimization_config.h"
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
 // VLOG additional statements in Fuchsia release builds.
 #if BUILDFLAG(IS_FUCHSIA)
 #define MAYBEVLOG VLOG
@@ -3907,6 +3911,17 @@ void RenderProcessHostImpl::OnChannelConnected(int32_t peer_pid) {
             ->GetReaderModeConfigData());
   }
 #endif
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION) && !defined(COMPONENT_BUILD)
+  if (AsArkwebRenderProcessHostImplExt()) {
+    bool is_init = false;
+    nweb_ex::AlloyVideoLoadOptimizationData config_data = 
+      nweb_ex::AlloyVideoLoadOptimizationConfig::GetInstance()->GetVideoLoadOptimizationConfigData(is_init);
+    if (is_init) {
+      AsArkwebRenderProcessHostImplExt()->UpdateVideoLoadOptimizationConfig(config_data);
+    }
+  }
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 }
 
 void RenderProcessHostImpl::OnChannelError() {

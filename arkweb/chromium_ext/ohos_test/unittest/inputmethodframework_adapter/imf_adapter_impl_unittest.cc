@@ -130,6 +130,34 @@ class IMFTextEditorProxyImplTest : public ::testing::Test {
   MockInputMethod mock;
 };
 
+TEST_F(IMFTextEditorProxyImplTest, IMFAdapterFunctionKeyAdapterImpl_GetSetEnterKeyType) {
+  EXPECT_EQ(key_adapter_->GetEnterKeyType(), IMFAdapterEnterKeyType::UNSPECIFIED);
+
+  key_adapter_->SetEnterKeyType(IMFAdapterEnterKeyType::GO);
+  EXPECT_EQ(key_adapter_->GetEnterKeyType(), IMFAdapterEnterKeyType::GO);
+
+  key_adapter_->SetEnterKeyType(IMFAdapterEnterKeyType::SEARCH);
+  EXPECT_EQ(key_adapter_->GetEnterKeyType(), IMFAdapterEnterKeyType::SEARCH);
+
+  key_adapter_->SetEnterKeyType(IMFAdapterEnterKeyType::SEND);
+  EXPECT_EQ(key_adapter_->GetEnterKeyType(), IMFAdapterEnterKeyType::SEND);
+
+  key_adapter_->SetEnterKeyType(IMFAdapterEnterKeyType::NEXT);
+  EXPECT_EQ(key_adapter_->GetEnterKeyType(), IMFAdapterEnterKeyType::NEXT);
+
+  key_adapter_->SetEnterKeyType(IMFAdapterEnterKeyType::DONE);
+  EXPECT_EQ(key_adapter_->GetEnterKeyType(), IMFAdapterEnterKeyType::DONE);
+
+  key_adapter_->SetEnterKeyType(IMFAdapterEnterKeyType::PREVIOUS);
+  EXPECT_EQ(key_adapter_->GetEnterKeyType(), IMFAdapterEnterKeyType::PREVIOUS);
+
+  key_adapter_->SetEnterKeyType(IMFAdapterEnterKeyType::NEW_LINE);
+  EXPECT_EQ(key_adapter_->GetEnterKeyType(), IMFAdapterEnterKeyType::NEW_LINE);
+
+  key_adapter_->SetEnterKeyType(IMFAdapterEnterKeyType::NONE);
+  EXPECT_EQ(key_adapter_->GetEnterKeyType(), IMFAdapterEnterKeyType::NONE);
+}
+
 TEST_F(IMFTextEditorProxyImplTest, AdapterTextInputTypeToTextInputType) {
   InputMethod_TextInputType result = AdapterTextInputTypeToTextInputType(1);
   EXPECT_EQ(result, InputMethod_TextInputType::IME_TEXT_INPUT_TYPE_MULTILINE);
@@ -171,8 +199,13 @@ TEST_F(IMFTextEditorProxyImplTest, ohKeyboardStatusToAdapterKeyboardStatus) {
   EXPECT_EQ(result, IMFAdapterKeyboardStatus::HIDE);
   result = ohKeyboardStatusToAdapterKeyboardStatus(
     InputMethod_KeyboardStatus::IME_KEYBOARD_STATUS_NONE);
+  EXPECT_EQ(result, IMFAdapterKeyboardStatus::NONE);
   result = ohKeyboardStatusToAdapterKeyboardStatus(
     InputMethod_KeyboardStatus::IME_KEYBOARD_STATUS_SHOW);
+  EXPECT_EQ(result, IMFAdapterKeyboardStatus::SHOW);
+  result = ohKeyboardStatusToAdapterKeyboardStatus(
+    static_cast<InputMethod_KeyboardStatus>(999));
+  EXPECT_EQ(result, IMFAdapterKeyboardStatus::NONE);
 }
 
 TEST_F(IMFTextEditorProxyImplTest, GetCursorInfo) {
@@ -290,6 +323,24 @@ TEST_F(IMFTextEditorProxyImplTest, SendKeyboardStatusFunc) {
   EXPECT_NE(IMFTextEditorProxyImpl::textListener_, nullptr);
 }
 
+TEST_F(IMFTextEditorProxyImplTest, SendKeyboardStatusFunc_AllStatus) {
+  InputMethod_TextEditorProxy* proxy = OH_TextEditorProxy_Create();
+  ASSERT_NE(nullptr, proxy);
+  IMFTextEditorProxyImpl::textListener_.reset();
+  std::shared_ptr<MockIMFTextListenerAdapter> listener =
+      std::make_shared<MockIMFTextListenerAdapter>();
+  IMFTextEditorProxyImpl::textListener_ =
+      std::make_shared<IMFTextListenerAdapterImpl>(listener);
+
+  IMFTextEditorProxyImpl::SendKeyboardStatusFunc(
+      proxy, InputMethod_KeyboardStatus::IME_KEYBOARD_STATUS_NONE);
+  IMFTextEditorProxyImpl::SendKeyboardStatusFunc(
+      proxy, InputMethod_KeyboardStatus::IME_KEYBOARD_STATUS_SHOW);
+  IMFTextEditorProxyImpl::SendKeyboardStatusFunc(
+      proxy, static_cast<InputMethod_KeyboardStatus>(999));
+  EXPECT_NE(IMFTextEditorProxyImpl::textListener_, nullptr);
+}
+
 TEST_F(IMFTextEditorProxyImplTest, SendEnterKeyFunc_001) {
   InputMethod_TextEditorProxy* proxy = OH_TextEditorProxy_Create();
   ASSERT_NE(nullptr, proxy);
@@ -368,6 +419,20 @@ TEST_F(IMFTextEditorProxyImplTest, SendEnterKeyFunc_005) {
       proxy, InputMethod_EnterKeyType::IME_ENTER_KEY_PREVIOUS);
   IMFTextEditorProxyImpl::SendEnterKeyFunc(
       proxy, InputMethod_EnterKeyType::IME_ENTER_KEY_NEWLINE);
+  IMFTextEditorProxyImpl::textListener_.reset();
+}
+
+TEST_F(IMFTextEditorProxyImplTest, SendEnterKeyFunc_Default) {
+  InputMethod_TextEditorProxy* proxy = OH_TextEditorProxy_Create();
+  ASSERT_NE(nullptr, proxy);
+  std::shared_ptr<MockIMFTextListenerAdapter> listener =
+      std::make_shared<MockIMFTextListenerAdapter>();
+  IMFTextEditorProxyImpl::textListener_.reset();
+  IMFTextEditorProxyImpl::textListener_ =
+      std::make_shared<IMFTextListenerAdapterImpl>(listener);
+  EXPECT_CALL(*listener, SendFunctionKey(testing::_)).Times(1);
+  IMFTextEditorProxyImpl::SendEnterKeyFunc(
+      proxy, static_cast<InputMethod_EnterKeyType>(999));
   IMFTextEditorProxyImpl::textListener_.reset();
 }
 
@@ -469,6 +534,28 @@ TEST_F(IMFTextEditorProxyImplTest, MoveCursorFunc_002) {
   EXPECT_NE(IMFTextEditorProxyImpl::textListener_, nullptr);
 }
 
+TEST_F(IMFTextEditorProxyImplTest, MoveCursorFunc_AllDirections) {
+  InputMethod_TextEditorProxy* proxy = OH_TextEditorProxy_Create();
+  ASSERT_NE(nullptr, proxy);
+  IMFTextEditorProxyImpl::textListener_.reset();
+  std::shared_ptr<MockIMFTextListenerAdapter> listener =
+      std::make_shared<MockIMFTextListenerAdapter>();
+  IMFTextEditorProxyImpl::textListener_ =
+      std::make_shared<IMFTextListenerAdapterImpl>(listener);
+
+  IMFTextEditorProxyImpl::MoveCursorFunc(
+      proxy, InputMethod_Direction::IME_DIRECTION_UP);
+  IMFTextEditorProxyImpl::MoveCursorFunc(
+      proxy, InputMethod_Direction::IME_DIRECTION_DOWN);
+  IMFTextEditorProxyImpl::MoveCursorFunc(
+      proxy, InputMethod_Direction::IME_DIRECTION_LEFT);
+  IMFTextEditorProxyImpl::MoveCursorFunc(
+      proxy, InputMethod_Direction::IME_DIRECTION_RIGHT);
+  IMFTextEditorProxyImpl::MoveCursorFunc(
+      proxy, static_cast<InputMethod_Direction>(999));
+  EXPECT_NE(IMFTextEditorProxyImpl::textListener_, nullptr);
+}
+
 TEST_F(IMFTextEditorProxyImplTest, HandleSetSelectionFunc_001) {
   InputMethod_TextEditorProxy* proxy = OH_TextEditorProxy_Create();
   ASSERT_NE(nullptr, proxy);
@@ -512,6 +599,26 @@ TEST_F(IMFTextEditorProxyImplTest, HandleExtendActionFunc_002) {
       std::make_shared<IMFTextListenerAdapterImpl>(listener);
   IMFTextEditorProxyImpl::HandleExtendActionFunc(
       proxy, InputMethod_ExtendAction::IME_EXTEND_ACTION_SELECT_ALL);
+  EXPECT_NE(IMFTextEditorProxyImpl::textListener_, nullptr);
+}
+
+TEST_F(IMFTextEditorProxyImplTest, HandleExtendActionFunc_AllActions) {
+  InputMethod_TextEditorProxy* proxy = OH_TextEditorProxy_Create();
+  ASSERT_NE(nullptr, proxy);
+  IMFTextEditorProxyImpl::textListener_.reset();
+  std::shared_ptr<MockIMFTextListenerAdapter> listener =
+      std::make_shared<MockIMFTextListenerAdapter>();
+  IMFTextEditorProxyImpl::textListener_ =
+      std::make_shared<IMFTextListenerAdapterImpl>(listener);
+
+  IMFTextEditorProxyImpl::HandleExtendActionFunc(
+      proxy, InputMethod_ExtendAction::IME_EXTEND_ACTION_CUT);
+  IMFTextEditorProxyImpl::HandleExtendActionFunc(
+      proxy, InputMethod_ExtendAction::IME_EXTEND_ACTION_COPY);
+  IMFTextEditorProxyImpl::HandleExtendActionFunc(
+      proxy, InputMethod_ExtendAction::IME_EXTEND_ACTION_PASTE);
+  IMFTextEditorProxyImpl::HandleExtendActionFunc(
+      proxy, static_cast<InputMethod_ExtendAction>(999));
   EXPECT_NE(IMFTextEditorProxyImpl::textListener_, nullptr);
 }
 
@@ -797,6 +904,15 @@ class IMFTextListenerAdapterImplTest : public ::testing::Test {
   std::shared_ptr<IMFAdapterFunctionKeyAdapterImpl> key_adapter_ = nullptr;
 };
 
+TEST_F(IMFTextListenerAdapterImplTest, ConstructorAndDestructor) {
+  std::shared_ptr<MockIMFTextListenerAdapter> listener =
+      std::make_shared<MockIMFTextListenerAdapter>();
+  auto adapter = std::make_shared<IMFTextListenerAdapterImpl>(listener);
+  EXPECT_NE(adapter, nullptr);
+  adapter.reset();
+  EXPECT_EQ(adapter, nullptr);
+}
+
 TEST_F(IMFTextListenerAdapterImplTest, InsertText) {
   std::u16string text = u"test text";
   ASSERT_NE(listener_adapter_, nullptr);
@@ -862,6 +978,40 @@ TEST_F(IMFTextListenerAdapterImplTest, SendFunctionKey) {
   EXPECT_NE(listener_adapter_->listener_, nullptr);
 }
 
+TEST_F(IMFTextListenerAdapterImplTest, SendFunctionKey_WithAllEnterKeyTypes) {
+  ASSERT_NE(listener_adapter_, nullptr);
+  listener_adapter_->listener_ = mock_listener_adapter_;
+
+  key_adapter_->SetEnterKeyType(IMFAdapterEnterKeyType::UNSPECIFIED);
+  listener_adapter_->SendFunctionKey(key_adapter_);
+
+  key_adapter_->SetEnterKeyType(IMFAdapterEnterKeyType::NONE);
+  listener_adapter_->SendFunctionKey(key_adapter_);
+
+  key_adapter_->SetEnterKeyType(IMFAdapterEnterKeyType::GO);
+  listener_adapter_->SendFunctionKey(key_adapter_);
+
+  key_adapter_->SetEnterKeyType(IMFAdapterEnterKeyType::SEARCH);
+  listener_adapter_->SendFunctionKey(key_adapter_);
+
+  key_adapter_->SetEnterKeyType(IMFAdapterEnterKeyType::SEND);
+  listener_adapter_->SendFunctionKey(key_adapter_);
+
+  key_adapter_->SetEnterKeyType(IMFAdapterEnterKeyType::NEXT);
+  listener_adapter_->SendFunctionKey(key_adapter_);
+
+  key_adapter_->SetEnterKeyType(IMFAdapterEnterKeyType::DONE);
+  listener_adapter_->SendFunctionKey(key_adapter_);
+
+  key_adapter_->SetEnterKeyType(IMFAdapterEnterKeyType::PREVIOUS);
+  listener_adapter_->SendFunctionKey(key_adapter_);
+
+  key_adapter_->SetEnterKeyType(IMFAdapterEnterKeyType::NEW_LINE);
+  listener_adapter_->SendFunctionKey(key_adapter_);
+
+  EXPECT_NE(listener_adapter_->listener_, nullptr);
+}
+
 TEST_F(IMFTextListenerAdapterImplTest, SetKeyboardStatus) {
   bool status = true;
   ASSERT_NE(listener_adapter_, nullptr);
@@ -912,10 +1062,10 @@ TEST_F(IMFTextListenerAdapterImplTest, HandleSelect) {
   int32_t cursorMoveSkip = 1;
   ASSERT_NE(listener_adapter_, nullptr);
   listener_adapter_->listener_ = nullptr;
-  listener_adapter_->HandleSetSelection(keyCode, cursorMoveSkip);
+  listener_adapter_->HandleSelect(keyCode, cursorMoveSkip);
   EXPECT_EQ(listener_adapter_->listener_, nullptr);
   listener_adapter_->listener_ = mock_listener_adapter_;
-  listener_adapter_->HandleSetSelection(keyCode, cursorMoveSkip);
+  listener_adapter_->HandleSelect(keyCode, cursorMoveSkip);
   EXPECT_NE(listener_adapter_->listener_, nullptr);
 }
 

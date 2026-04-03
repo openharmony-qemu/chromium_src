@@ -522,6 +522,8 @@ class NWebDelegateInterface
 #if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
   virtual void GetOverScrollOffset(float* offset_x, float* offset_y) = 0;
 #endif
+  virtual void SetScrollbarLayoutPolicy(int policy) = 0;
+  virtual void SetIsSystemRtlEnable(bool enable) = 0;
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
 #if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM) || BUILDFLAG(ARKWEB_ZOOM)
@@ -971,6 +973,7 @@ class NWebDelegateInterface
 #endif
 
 #if BUILDFLAG(ARKWEB_READER_MODE)
+  virtual void EnableReaderMode(bool enabled) = 0;
   virtual void Distill(const std::string& guid, const DistillOptions& distill_options, DistillCallback callback) = 0;
   virtual void AbortDistill() = 0;
 #endif // ARKWEB_READER_MODE

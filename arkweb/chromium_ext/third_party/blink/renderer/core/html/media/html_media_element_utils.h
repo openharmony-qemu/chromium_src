@@ -94,7 +94,8 @@ class HTMLMediaElement;
         SCENARIO_OTHER_TYPE = 99,
     };
 
-    bool IsFeedsPage() const;
+    bool IsFeedsPage();
+    int32_t local_scenario_ = static_cast<int32_t>(ScenarioType::SCENARIO_OTHER_TYPE);
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
     bool IsMediaPlayerShown() const;
 #endif

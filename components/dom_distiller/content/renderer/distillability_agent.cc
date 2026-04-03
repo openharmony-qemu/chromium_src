@@ -21,9 +21,11 @@
 #include "third_party/blink/public/web/web_local_frame.h"
 
 #if BUILDFLAG(ARKWEB_READER_MODE)
+#include "arkweb/chromium_ext/base/arkweb_report_statistics.h"
 #include "arkweb/chromium_ext/third_party/blink/platform/web_distillability_match.h"
 #include "arkweb/chromium_ext/third_party/blink/public/mojom/dom_distiller/reader_mode_config.mojom.h"
 #include "base/strings/stringprintf.h"
+#include "base/json/json_writer.h"
 #include "third_party/blink/public/platform/platform.h"
 #endif
 
@@ -209,16 +211,20 @@ void DistillabilityAgent::DidMeaningfulLayout(
     return;
   }
 
+  DCHECK(render_frame());
 #if BUILDFLAG(ARKWEB_READER_MODE)
   // check config "reader mode enabled"
   const auto* config = blink::Platform::Current()->GetReaderModeConfig();
-  if (!config || !config->reader_mode_enabled) {
-    LOG(INFO) << "[Distiller] reader mode is not enable.";
+  if (!config) {
+    LOG(WARNING) << "[Distiller] ReaderModeConfig is null.";
+    return;
+  }
+  if ((config->is_v2 && !render_frame()->IsReadermodeEnabled())
+      || (!config->is_v2 && !config->reader_mode_enabled)) {
+    LOG(INFO) << "[Distiller] reader mode disabled.";
     return;
   }
 #endif
-
-  DCHECK(render_frame());
   DCHECK(render_frame()->GetWebFrame());
   if (!render_frame()->GetWebFrame()->IsOutermostMainFrame())
     return;

@@ -25,6 +25,7 @@
 #if BUILDFLAG(ARKWEB_READER_MODE)
 #include "arkweb/ohos_nweb_ex/overrides/cef/libcef/browser/alloy/alloy_browser_reader_mode_config.h"
 #include "arkweb/ohos_nweb_ex/overrides/cef/libcef/browser/alloy/alloy_browser_reader_mode_config_utils.h"
+#include "arkweb/ohos_nweb_ex/overrides/cef/libcef/browser/alloy/global_reader_mode_data_manager.h"
 #include "arkweb/chromium_ext/third_party/blink/public/mojom/dom_distiller/reader_mode_config.mojom.h"
 #endif
 
@@ -70,6 +71,7 @@ class DistillabilityServiceImpl : public mojom::DistillabilityService {
                                bool is_mobile_friendly) override {}
   void GetHostDistillerInfo(const std::string& host,
                             GetHostDistillerInfoCallback callback) override {}
+  void NotifyDidMeaningfulLayout(const std::string& url) override {}
 #endif
 
   void NotifyIsDistillable(bool is_distillable,
@@ -158,10 +160,21 @@ void DistillabilityDriver::OnDistillability(
   LOG(INFO) << "[Distiller] DistillabilityDriver::OnDistillability OnIsPageDistillable";
   int page_type = static_cast<int32_t>(result.page_info.pageType);
   GetWebContents().OnIsPageDistillable(page_type, result.page_info.distillablePageUrl, result.page_info.title);
+  if (result.page_info.pageType == mojom::PageType::kPageNovelDetails
+      || result.page_info.pageType == mojom::PageType::kPageNovelContent)
+    nweb_ex::AlloyBrowserReaderModeConfig::GetInstance()->WriteToGlobalReaderModeDataManager(
+          GURL(result.page_info.distillablePageUrl).host());
 #endif
   for (auto& observer : observers_)
     observer.OnResult(result);
 }
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+void DistillabilityDriver::OnDidMeaningfulLayout(const std::string& url) {
+  LOG(INFO) << "[Distiller] DistillabilityDriver::OnDidMeaningfulLayout";
+  GetWebContents().OnDidMeaningfulLayout(url);
+}
+#endif
 
 WEB_CONTENTS_USER_DATA_KEY_IMPL(DistillabilityDriver);
 

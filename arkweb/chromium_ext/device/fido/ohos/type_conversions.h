@@ -111,6 +111,18 @@ std::string Convert(const FIDO2_CredentialRequestOptions& options);
 template<>
 std::string Convert(const FIDO2_CapabilityArray& capabilities);
 
+template<>
+const char* Convert(const ResidentKeyRequirement& resident_key);
+
+template<>
+std::vector<uint8_t> Convert(const Uint8Buff& buffer);
+
+template<>
+std::string Convert(const FIDO2_AuthenticatorTransportArray& transports);
+
+template<>
+std::string Convert(const FIDO2_PublicKeyCredentialHintArray& hints);
+
 std::vector<uint8_t> ConvertHexStringToBytes(const std::string& hex_string);
 
 struct CredentialOptionsDataHolder {

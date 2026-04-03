@@ -532,6 +532,11 @@ class NWebImpl : public NWeb {
       const std::shared_ptr<OHOS::NWeb::NWebMouseEvent>& mouseEvent) override;
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  void SetScrollbarLayoutPolicy(int policy) override;
+  void SetIsSystemRtlEnable(bool enable) override;
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+
   bool GetCertChainDerData(std::vector<std::string>& certChainData,
                            bool isSingleCert) override;
   void SetScreenOffSet(double x, double y) override;
@@ -771,6 +776,7 @@ class NWebImpl : public NWeb {
 #if BUILDFLAG(ARKWEB_READER_MODE)
   static void UpdateReaderModeConfig(const std::string& file_path, const std::string& version);
   static void SetJsFilePath(const std::string& js_type, const std::string& file_path, const std::string& version);
+  void EnableReaderMode(bool enabled);
   void Distill(char** guid, const DistillOptions& distill_options, DistillCallback callback);
   void AbortDistill();
 #endif
@@ -790,6 +796,7 @@ class NWebImpl : public NWeb {
   static std::string GetOriginUrlByGuid(const std::string& guid);
   static std::string GetReferrerByGuid(const std::string& guid);
   static std::string GetInitiatorByGuid(const std::string& guid);
+  static std::string GetContextTypeByGuid(const std::string& guid);
   static bool GetCanResumeByGuid(const std::string& guid);
   static bool GetTransientByGuid(const std::string& guid);
   static NWebDownloadSource GetDownloadSourceByGuid(const std::string& guid);

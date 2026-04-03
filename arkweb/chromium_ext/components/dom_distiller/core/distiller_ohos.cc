@@ -276,8 +276,9 @@ void DistillerImplUtils::WriteMutableFlatFields(const proto::DomDistillerResult&
           distiller_result.timing_info().total_time());
     }
   }
-  timing_info->set_total_time(
-      (base::TimeTicks::Now() - start_distill_time_).InMillisecondsF());
+  float total_time =
+      (base::TimeTicks::Now() - start_distill_time_).InMillisecondsF();
+  timing_info->set_total_time(total_time);
 }
 
 void DistillerImplUtils::WriteFlatFields(const proto::DomDistillerResult& distiller_result, int page_num,
@@ -305,6 +306,10 @@ void DistillerImplUtils::WriteFlatFields(const proto::DomDistillerResult& distil
               distiller_result.flat_fields().has_catalog_info()) {
     AddToDistillationQueueForCatalogInfo(distiller_result, page_url,
                                          page_num);
+  }
+  if (distiller_result.has_hw_distiller_result_json()) {
+    page_data->distilled_page_proto->data.set_hw_distiller_result_json(
+      distiller_result.hw_distiller_result_json());
   }
 }
 

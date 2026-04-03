@@ -974,6 +974,11 @@ struct BLINK_COMMON_EXPORT StructTraits<blink::mojom::WebPreferencesDataView,
       const blink::web_pref::WebPreferences &r) {
     return r.viewport_scale;
   }
+
+  static bool smart_edge_state (
+      const blink::web_pref::WebPreferences& r) {
+    return r.smart_edge_state;
+  }
 #endif  // BUILDFLAG(ARKWEB_MENU)
 
 #if BUILDFLAG(ARKWEB_AI)

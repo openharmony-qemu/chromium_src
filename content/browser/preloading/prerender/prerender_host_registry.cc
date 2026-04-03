@@ -47,6 +47,10 @@
 #include "third_party/blink/public/common/features.h"
 #include "url/gurl.h"
 
+#if BUILDFLAG(ARKWEB_EXT_UA)
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#endif
+
 namespace content {
 
 namespace {
@@ -976,6 +980,17 @@ std::set<FrameTreeNodeId> PrerenderHostRegistry::CancelHosts(
     const PrerenderCancellationReason& reason) {
   TRACE_EVENT1("navigation", "PrerenderHostRegistry::CancelHosts",
                "frame_tree_node_ids", frame_tree_node_ids);
+
+#if BUILDFLAG(ARKWEB_EXT_UA)
+  if (reason.final_status() == PrerenderFinalStatus::kUaChangeRequiresReload &&
+      reserved_prerender_host_ &&
+      base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableNwebEx)) {
+    LOG_FEEDBACK(INFO, kNetwork)
+        << "CancelReservedPrerenderHosts message:UaChanged";
+    return {};
+  }
+#endif
 
   // Cancel must not be requested during activation.
   CHECK(!reserved_prerender_host_);

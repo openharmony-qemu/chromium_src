@@ -782,7 +782,7 @@ class NWebImpl : public NWeb {
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM) || BUILDFLAG(ARKWEB_ZOOM)
-  void SetForceEnableZoom(bool forceEnableZoom) const override;
+  void SetForceEnableZoomPublic(bool forceEnableZoom) const override;
 #endif
 #if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
   bool GetForceEnableZoom() const;

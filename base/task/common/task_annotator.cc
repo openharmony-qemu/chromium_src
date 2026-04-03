@@ -160,8 +160,13 @@ void TaskAnnotator::RunTaskImpl(PendingTask& pending_task) {
   // to ensure it is on the stack if the task crashes. Be careful not to assume
   // that the variable itself will have the expected value when displayed by the
   // optimizer in an optimized build. Look at a memory dump of the stack.
+#if BUILDFLAG(IS_ARKWEB)
+  static constexpr int kStackTaskTraceSnapshotSize =
+      PendingTask::kTaskBacktraceLength + 5;
+#else
   static constexpr int kStackTaskTraceSnapshotSize =
       PendingTask::kTaskBacktraceLength + 4;
+#endif
   std::array<const void*, kStackTaskTraceSnapshotSize> task_backtrace;
 
   // Store a marker to locate |task_backtrace| content easily on a memory
@@ -181,8 +186,15 @@ void TaskAnnotator::RunTaskImpl(PendingTask& pending_task) {
 
   task_backtrace[1] = pending_task.posted_from.program_counter();
   ranges::copy(pending_task.task_backtrace, task_backtrace.begin() + 2);
+#if BUILDFLAG(IS_ARKWEB)
+  task_backtrace[kStackTaskTraceSnapshotSize - 3] =
+      reinterpret_cast<void*>(pending_task.ipc_hash);
+  task_backtrace[kStackTaskTraceSnapshotSize - 2] =
+      reinterpret_cast<const void*>(pending_task.ipc_interface_name);
+#else
   task_backtrace[kStackTaskTraceSnapshotSize - 2] =
       reinterpret_cast<void*>(pending_task.ipc_hash);
+#endif
   debug::Alias(&task_backtrace);
 
   // Record the task time in convenient units. This can be compared to times

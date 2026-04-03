@@ -19,6 +19,17 @@ const base::FilePath::CharType kLoginDataJournalForAccountFileName[] =
     FILE_PATH_LITERAL("Login Data For Account-journal");
 #endif  // !BUILDFLAG(IS_ANDROID)
 
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+const char kPasswordManagerAccountDashboardURL[] = "https://x.x.x.x/";
+
+const char kPasswordManagerHelpCenteriOSURL[] = "https://x.x.x.x/";
+
+const char kPasswordManagerHelpCenterSmartLock[] = "https://x.x.x.x/";
+
+const char kManageMyPasswordsURL[] = "https://x.x.x.x/";
+
+const char kReferrerURL[] = "https://x.x.x.x/";
+#else
 const char kPasswordManagerAccountDashboardURL[] =
     "https://passwords.google.com";
 
@@ -31,5 +42,6 @@ const char kPasswordManagerHelpCenterSmartLock[] =
 const char kManageMyPasswordsURL[] = "https://passwords.google.com/app";
 
 const char kReferrerURL[] = "https://passwords.google/";
+#endif
 
 }  // namespace password_manager

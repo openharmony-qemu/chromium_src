@@ -60,8 +60,12 @@ GetPasswordProtectionWarningTrigger(PrefService* profile_prefs) {
 
 bool GetChromeRemoteDesktopAppBlocked(PolicyBlocklistService* service) {
   DCHECK(service);
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+  return true;
+#else
   return IsURLBlocked(GURL("https://remotedesktop.google.com"), service) ||
          IsURLBlocked(GURL("https://remotedesktop.corp.google.com"), service);
+#endif
 }
 
 std::optional<std::string> TryGetEnrollmentDomain(

@@ -165,6 +165,7 @@ enum class NWebExtensionState {
   DISABLED = 1,
   TERMINATED = 2,
   BLOCKLISTED = 3,
+  UNINSTALLED = 4,
 };
 
 struct NWebExtensionPermissionV2 {
@@ -172,6 +173,13 @@ struct NWebExtensionPermissionV2 {
   std::optional<std::string> detail;
   std::string show_detail_label;
   std::string hide_detail_label;
+};
+
+struct NWebExtensionOptionalPermission {
+  std::string name;
+  std::string message;
+  std::vector<std::string> submessages;
+  bool granted;
 };
 
 struct NWebInstalledExtensionInfo {
@@ -185,6 +193,8 @@ struct NWebInstalledExtensionInfo {
   bool is_incognito_enabled;
   double install_time;
   int location;
+  std::vector<NWebExtensionOptionalPermission> optional_permissions;
+  std::optional<NWebExtensionActionIconV2> icons;
 };
 
 typedef void (*OnWebExtensionLoadedFun)(const WebExtensionInfo& load_info);

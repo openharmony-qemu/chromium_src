@@ -17,9 +17,12 @@
 #define NWEB_EXTENSION_MANAGER_CEF_DELEGATE_H_
 
 #include <functional>
+#include <memory>
 #include <string>
 #include <vector>
 
+#include "extensions/browser/extension_icon_aggregator.h"
+#include "extensions/browser/extension_icon_image.h"
 #include "extensions/browser/extension_prefs.h"
 #include "extensions/browser/extension_registry.h"
 #include "ohos_nweb/src/capi/nweb_extension_manager_callback.h"
@@ -29,9 +32,15 @@ namespace OHOS::NWeb {
 using GetInstalledExtensionInfosCallback =
     std::function<void(const std::vector<NWebInstalledExtensionInfo>&)>;
 
+using GetInstalledExtensionInfoCallback =
+    std::function<void(const std::optional<NWebInstalledExtensionInfo>&)>;
+
 using OnEnableExtensionCallback = std::function<void(std::optional<bool>)>;
 
 using OnSetIncognitoEnabledCallback = std::function<void(std::optional<bool>)>;
+
+using OnEnableRuntimePermissionCallback =
+    std::function<void(std::optional<bool>)>;
 
 class NWebExtensionManagerCefDelegate {
  public:
@@ -44,14 +53,37 @@ class NWebExtensionManagerCefDelegate {
                            bool enabled,
                            OnSetIncognitoEnabledCallback callback);
 
+  void EnableRuntimePermission(const std::string& extension_id,
+                               const std::string& permission,
+                               bool enabled,
+                               OnEnableRuntimePermissionCallback callback);
+
   void GetInstalledExtensionInfos(GetInstalledExtensionInfosCallback callback);
 
+  void GetInstalledExtensionInfo(const std::string& extension_id,
+                                 GetInstalledExtensionInfoCallback callback);
+
  private:
+  // Structure to hold async icon loading state
+  struct IconLoadState;
+
   static NWebInstalledExtensionInfo BuildExtensionInfoItem(
       const extensions::Extension* extension,
       content::BrowserContext* browser_context,
       const extensions::ExtensionRegistry* extension_registry,
       extensions::ExtensionPrefs* extension_prefs);
+
+  static std::vector<NWebInstalledExtensionInfo>
+  GetInstalledExtensionsBasicInfo(
+      content::BrowserContext* browser_context,
+      const extensions::ExtensionRegistry* extension_registry,
+      extensions::ExtensionPrefs* extension_prefs);
+
+  static size_t SetupExtensionIconLoading(
+      content::BrowserContext* browser_context,
+      const extensions::ExtensionRegistry* extension_registry,
+      const std::vector<NWebInstalledExtensionInfo>& infos,
+      std::shared_ptr<IconLoadState> state);
 };
 
 }  // namespace OHOS::NWeb

@@ -723,12 +723,12 @@ TEST_F(ExtensionRegistryInfoManagerTest, UnloadedReasonToState_Test) {
             NWebExtensionState::TERMINATED);
   EXPECT_EQ(UnloadedReasonToState(UnloadedExtensionReason::BLOCKLIST),
             NWebExtensionState::BLOCKLISTED);
+  EXPECT_EQ(UnloadedReasonToState(UnloadedExtensionReason::UNINSTALL),
+            NWebExtensionState::UNINSTALLED);
 
   EXPECT_EQ(UnloadedReasonToState(UnloadedExtensionReason::UNDEFINED),
             NWebExtensionState::DISABLED);
   EXPECT_EQ(UnloadedReasonToState(UnloadedExtensionReason::UPDATE),
-            NWebExtensionState::DISABLED);
-  EXPECT_EQ(UnloadedReasonToState(UnloadedExtensionReason::UNINSTALL),
             NWebExtensionState::DISABLED);
   EXPECT_EQ(UnloadedReasonToState(UnloadedExtensionReason::PROFILE_SHUTDOWN),
             NWebExtensionState::DISABLED);

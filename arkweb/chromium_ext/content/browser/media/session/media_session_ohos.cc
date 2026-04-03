@@ -28,7 +28,7 @@
 namespace content {
 // Minimum interval between position updates to avoid excessive notifications
 // 200ms balances UI responsiveness with notification frequency.
-constexpr uint64_t kSeekTimeMinIntervalMs = 200;
+constexpr int64_t kSeekTimeMinIntervalMs = 200;
 
 MediaSessionOHOS::MediaSessionOHOS(MediaSessionImpl* session)
     : media_session_(session) {
@@ -234,7 +234,7 @@ void MediaSessionOHOS::MediaSessionPositionChanged(
   }
 
   if (old_position_.has_value()) {
-    uint64_t position_diff = std::abs(
+    int64_t position_diff = std::abs(
         position.value().GetOriginalPosition().InMilliseconds() -
         old_position_.value().GetOriginalPosition().InMilliseconds());
     bool rate_changed = position.value().playback_rate() !=

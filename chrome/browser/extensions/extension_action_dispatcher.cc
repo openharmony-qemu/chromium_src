@@ -22,7 +22,7 @@
 #endif
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
-#include "ohos_nweb_ex/core/extension/nweb_extension_manager_dispatcher.h"
+#include "ohos_nweb_ex/core/arkweb/nweb_extension_manager_delegate_impl.h"
 #endif
 
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
@@ -175,7 +175,7 @@ void ExtensionActionDispatcher::OnActionPinnedStateChanged(
   change.Set("isOnToolbar", is_pinned);
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
-  NWebExtensionManagerDispatcher::OnExtensionChangePinStatusCallBack(extension_id, is_pinned);
+  nweb_ex::NWebExtensionManagerDelegateImpl::GetInstance().OnExtensionChangePinStatusCallBack(extension_id, is_pinned);
 #endif
   args.Append(std::move(change));
   DispatchEventToExtension(browser_context_, extension_id,

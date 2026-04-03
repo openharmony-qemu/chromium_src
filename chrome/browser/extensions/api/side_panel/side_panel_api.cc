@@ -69,13 +69,8 @@ SidePanelSetPanelBehaviorFunction::RunFunction() {
     GetService()->SetOpenSidePanelOnIconClick(
         extension()->id(), *params->behavior.open_panel_on_action_click);
 #if BUILDFLAG(ARKWEB_NWEB_EX) && BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-    if (IsNativeApiEnable()) {
-      NWebExtensionSidePanelDispatcher::OnSetPanelBehaviorNative(
-          extension()->id(), *params->behavior.open_panel_on_action_click);
-    } else {
-      NWebExtensionSidePanelDispatcher::OnSetPanelBehavior(
-          extension()->id(), *params->behavior.open_panel_on_action_click);
-    }
+  nweb_ex::NWebExtensionSidePanelDelegateImpl::GetInstance().OnSetPanelBehaviorNative(
+      extension()->id(), *params->behavior.open_panel_on_action_click);
 #endif
   }
 

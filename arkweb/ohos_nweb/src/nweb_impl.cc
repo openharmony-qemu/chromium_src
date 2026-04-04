@@ -628,6 +628,7 @@ const int32_t SOC_PERF_WEB_DRAG_RESIZE_ID = 10012;
 #endif
 #if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
 const int32_t WEB_RESIZE_CLOSE_DELAY_TIME = 500;
+const int32_t WEB_MAX_LOADING_URL_REPORT_TIME = 10000;
 #endif
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
 // Benchmarking against Windows, the average drag-over interval is 65 milliseconds.
@@ -1468,6 +1469,11 @@ NWebImpl::NWebImpl(uint32_t id) : nweb_id_(id) {
   drag_over_event_.y = 0;
   ResSchedClientAdapter::ReportNWebInit(ResSchedStatusAdapter::WEB_SCENE_ENTER,
                                         nweb_id_);
+#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
+  kLoadUrlReportIntervalMs = ohos::NWeb::OhosAdapterHelper::GetInstance().
+    GetSystemPropertiesInstance().GetLoadUrlStrategy();
+  LOG(INFO) << "NWebImpl::kLoadUrlReportIntervalMs: " << kLoadUrlReportIntervalMs;
+#endif
 }
 
 NWebImpl::~NWebImpl() {
@@ -2266,6 +2272,25 @@ void NWebImpl::SendMouseEvent(int x, int y, int button, int action, int count) {
 #endif
 }
 
+#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
+void NWebImpl::ReportLoadingScene(int report_times) {
+  bool is_load_finished = NWebHandlerDelegate::IsLoadFinished(nweb_id_);
+  LOG(DEBUG) << "NWebImpl::ReportLoadingScene: " << is_load_finished;
+  if (is_load_finished) {
+    return;
+  }
+
+  if (report_times < (WEB_MAX_LOADING_URL_REPORT_TIME / kLoadUrlReportIntervalMs)) {
+    ResSchedClientAdapter::ReportScene(ResSchedStatusAdapter::WEB_SCENE_ENTER,
+                                      ResSchedSceneAdapter::LOAD_URL, nweb_id_);
+    content::GetUIThreadTaskRunner({})->PostDelayedTask(
+        FROM_HERE,
+        base::BindOnce(&NWebImpl::ReportLoadingScene, weak_factory_.GetWeakPtr(), report_times+1),
+        base::Milliseconds(kLoadUrlReportIntervalMs));
+  }
+}
+#endif
+
 int NWebImpl::Load(const std::string& url) {
   if (nweb_delegate_ == nullptr || output_handler_ == nullptr) {
     return NWEB_ERR;
@@ -2280,6 +2305,11 @@ int NWebImpl::Load(const std::string& url) {
                                      ResSchedSceneAdapter::LOAD_URL, nweb_id_);
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
+  if (kLoadUrlReportIntervalMs > 0) {
+    content::GetUIThreadTaskRunner({})->PostDelayedTask(
+        FROM_HERE, base::BindOnce(&NWebImpl::ReportLoadingScene, weak_factory_.GetWeakPtr(), 1),
+        base::Milliseconds(kLoadUrlReportIntervalMs))
+  }
   OHOS::NWeb::OhosAdapterHelper::GetInstance()
       .CreateSocPerfClientAdapter()
       ->ApplySocPerfConfigById(SOC_PERF_LOADURL_CONFIG_ID);

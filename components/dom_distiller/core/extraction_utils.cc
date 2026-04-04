@@ -66,6 +66,7 @@ std::string GetDistillerScriptWithOptionsOhos(
     NOTREACHED();
   }
   ReplaceScriptPlaceholder(script, kOptionsPlaceholder, options_json);
+  LOG(DEBUG) << "[Distiller] distill options_json:" << options_json;
   ModifyDistillerScriptOhos(script, is_distill_catalog);
   return script;
 }

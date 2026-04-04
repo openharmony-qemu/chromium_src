@@ -132,7 +132,9 @@ void DistillerPage::DistillPage(
 #if BUILDFLAG(ARKWEB_READER_MODE)
       dom_distiller::proto::DomDistillerOptions new_options = options;
       bool is_distill_catalog = DistillPageOhos(gurl, new_options);
-      script = GetDistillerScriptWithOptionsOhos(options, is_distill_catalog);
+      bool is_article = GetDistillOptions() && GetDistillOptions()->distill_type_ext == DistillTypeExt::CUSTOM;
+      auto custom_options = GetCustomDomDistillerOptions(is_article, gurl, new_options);
+      script = GetDistillerScriptWithOptionsOhos(custom_options, is_distill_catalog);
 #else
       script = GetDistillerScriptWithOptions(options);
 #endif

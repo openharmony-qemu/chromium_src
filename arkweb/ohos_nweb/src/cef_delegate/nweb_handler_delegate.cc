@@ -5199,7 +5199,7 @@ void NWebHandlerDelegate::OnLoadStarted(CefRefPtr<CefFrame> frame,
     return;
   }
 #if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
- 	SetLoadFinished(nweb_id_, false);
+  SetLoadFinished(nweb_id_, false);
 #endif
 #if BUILDFLAG(ARKWEB_AI)
   if (onLoadStartedCbForContentChange_) {
@@ -5223,7 +5223,7 @@ void NWebHandlerDelegate::OnLoadFinished(CefRefPtr<CefFrame> frame,
     return;
   }
 #if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
- 	SetLoadFinished(nweb_id_, true);
+  SetLoadFinished(nweb_id_, true);
 #endif
   if (nweb_handler_ != nullptr) {
     nweb_handler_->OnLoadFinished(url.ToString());

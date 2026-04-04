@@ -302,6 +302,10 @@
 #include "base/files/file_path.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#endif
+
 #if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
 #include "ohos_nweb_ex/overrides/cef/libcef/browser/alloy/alloy_video_load_optimization_config.h"
 #endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
@@ -3577,6 +3581,10 @@ void RenderProcessHostImpl::PropagateBrowserCommandLineToRenderer(
 #endif
 #if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
       switches::kAdSecValue,
+      switches::kDisableMathml,
+      switches::kDisablePdfViewer,
+      switches::kDisableServiceWorker,
+      switches::kDisableNonProxyUDP,
 #endif
 #if BUILDFLAG(ARKWEB_GWP_ASAN)
       switches::kOhosEnableGwpAsanType,

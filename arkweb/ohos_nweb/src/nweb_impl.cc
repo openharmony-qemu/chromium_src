@@ -2308,7 +2308,7 @@ int NWebImpl::Load(const std::string& url) {
   if (kLoadUrlReportIntervalMs > 0) {
     content::GetUIThreadTaskRunner({})->PostDelayedTask(
         FROM_HERE, base::BindOnce(&NWebImpl::ReportLoadingScene, weak_factory_.GetWeakPtr(), 1),
-        base::Milliseconds(kLoadUrlReportIntervalMs))
+        base::Milliseconds(kLoadUrlReportIntervalMs));
   }
   OHOS::NWeb::OhosAdapterHelper::GetInstance()
       .CreateSocPerfClientAdapter()

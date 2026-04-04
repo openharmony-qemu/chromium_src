@@ -3582,7 +3582,7 @@ void RenderProcessHostImpl::PropagateBrowserCommandLineToRenderer(
 #if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
       switches::kAdSecValue,
       switches::kDisableMathml,
-      switches::kDisablePdfExtension,
+      switches::kDisablePdfViewer,
       switches::kDisableServiceWorker,
       switches::kDisableNonProxyUDP,
 #endif

@@ -653,6 +653,10 @@ CefRefPtr<NWebHandlerDelegate> NWebHandlerDelegate::Create(
 }
 
 int32_t NWebHandlerDelegate::popIndex_ = 0;
+#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
+base::Lock NWebHandlerDelegate::load_finished_map_lock_;
+std::map<uint32_t, bool> NWebHandlerDelegate::load_finished_map_;
+#endif
 NWebHandlerDelegate::NWebHandlerDelegate(
     std::shared_ptr<NWebPreferenceDelegate> preference_delegate,
     CefRefPtr<NWebRenderHandler> render_handler,
@@ -677,6 +681,9 @@ NWebHandlerDelegate::NWebHandlerDelegate(
 }
 
 void NWebHandlerDelegate::OnDestroy() {
+#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
+  RemoveLoadFinished(nweb_id_);
+#endif
 #if BUILDFLAG(ARKWEB_JSPROXY)
   RemoveTransientJavaScriptObject();
 #endif
@@ -5187,11 +5194,13 @@ bool NWebHandlerDelegate::OnAllCertificateError(
 
 void NWebHandlerDelegate::OnLoadStarted(CefRefPtr<CefFrame> frame,
                                         const CefString& url) {
-  LOG(INFO) << "NWebHandlerDelegate::OnLoadStarted";
+  LOG(INFO) << "NWebHandlerDelegate::OnLoadStarted, nweb_id: " << nweb_id_;
   if (frame == nullptr || !frame->IsMain()) {
     return;
   }
-
+#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
+ 	SetLoadFinished(nweb_id_, false);
+#endif
 #if BUILDFLAG(ARKWEB_AI)
   if (onLoadStartedCbForContentChange_) {
     onLoadStartedCbForContentChange_();
@@ -5209,11 +5218,13 @@ if (nweb_handler_ != nullptr) {
 
 void NWebHandlerDelegate::OnLoadFinished(CefRefPtr<CefFrame> frame,
                                          const CefString& url) {
-  LOG(INFO) << "NWebHandlerDelegate::OnLoadFinished";
+  LOG(INFO) << "NWebHandlerDelegate::OnLoadFinished, nweb_id: " << nweb_id_;
   if (frame == nullptr || !frame->IsMain()) {
     return;
   }
-
+#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
+ 	SetLoadFinished(nweb_id_, true);
+#endif
   if (nweb_handler_ != nullptr) {
     nweb_handler_->OnLoadFinished(url.ToString());
   }
@@ -6310,5 +6321,25 @@ void NWebHandlerDelegate::OnReportNewNavigationInfo(
 #else
 void NWebHandlerDelegate::OnReportNewNavigationInfo(
     CefRefPtr<CefWebNavigationInfo> navigation_info) {}
+#endif
+#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
+void NWebHandlerDelegate::SetLoadFinished(uint32_t nweb_id, bool finished) {
+  base::AutoLock lock(load_finished_map_lock_);
+  load_finished_map_[nweb_id] = finished;
+}
+
+bool NWebHandlerDelegate::IsLoadFinished(uint32_t nweb_id) {
+  base::AutoLock lock(load_finished_map_lock_);
+  auto it = load_finished_map_.find(nweb_id);
+  if (it == load_finished_map_.end()) {
+    return false;
+  }
+  return it->second;
+}
+
+void NWebHandlerDelegate::RemoveLoadFinished(uint32_t nweb_id) {
+  base::AutoLock lock(load_finished_map_lock_);
+  load_finished_map_.erase(nweb_id);
+}
 #endif
 }  // namespace OHOS::NWeb

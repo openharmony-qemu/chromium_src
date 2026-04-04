@@ -1141,7 +1141,12 @@ void OnMediaCastEnter() override;
   static int InsertResourceResponse(std::shared_ptr<NWebResourceResponse> nweb_response);
   static std::shared_ptr<NWebResourceResponse> GetResourceResponseByKey(int key);
 #endif
-
+// 加载状态管理接口
+#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
+  static void SetLoadFinished(uint32_t nweb_id, bool finished);
+  static bool IsLoadFinished(uint32_t nweb_id);
+  static void RemoveLoadFinished(uint32_t nweb_id);
+#endif
  private:
 #if BUILDFLAG(ARKWEB_JSPROXY)
   enum class JsRunTime{Start = 0, End = 1, HEAD_READY};
@@ -1243,6 +1248,10 @@ void OnMediaCastEnter() override;
   uint32_t window_id_ = 0;
   bool focusState_ = false;
   static int32_t popIndex_;
+#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
+  static base::Lock load_finished_map_lock_;
+  static std::map<uint32_t, bool> load_finished_map_;
+#endif
   CefRefPtr<CefCallback> popupWindowCallback_ = nullptr;
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)

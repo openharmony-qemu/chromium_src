@@ -8993,5 +8993,68 @@ TEST_F(NWebImplTest, SetIsSystemRtlEnable002) {
   EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
+// Test ReportLoadingScene when load is already finished
+TEST_F(NWebImplTest, ReportLoadingScene_TEST001) {
+  uint32_t nweb_id = nweb_impl_->nweb_id_;
+  NWebHandlerDelegate::SetLoadFinished(nweb_id, true);
+
+  nweb_impl_->ReportLoadingScene(1);
+
+  EXPECT_TRUE(NWebHandlerDelegate::IsLoadFinished(nweb_id));
+  NWebHandlerDelegate::RemoveLoadFinished(nweb_id);
+}
+
+// Test ReportLoadingScene when load is not finished and report_times is within limit
+TEST_F(NWebImplTest, ReportLoadingScene_TEST002) {
+  uint32_t nweb_id = nweb_impl_->nweb_id_;
+  NWebHandlerDelegate::SetLoadFinished(nweb_id, false);
+
+  nweb_impl_->kLoadUrlReportIntervalMs = 100;
+
+  nweb_impl_->ReportLoadingScene(1);
+
+  EXPECT_FALSE(NWebHandlerDelegate::IsLoadFinished(nweb_id));
+  NWebHandlerDelegate::RemoveLoadFinished(nweb_id);
+}
+
+// Test ReportLoadingScene when load is not finished and report_times exceeds limit
+TEST_F(NWebImplTest, ReportLoadingScene_TEST003) {
+  uint32_t nweb_id = nweb_impl_->nweb_id_;
+  NWebHandlerDelegate::SetLoadFinished(nweb_id, false);
+
+  nweb_impl_->kLoadUrlReportIntervalMs = 100;
+  int32_t max_report_times = 10000 / 100 + 1;
+
+  nweb_impl_->ReportLoadingScene(max_report_times);
+
+  EXPECT_FALSE(NWebHandlerDelegate::IsLoadFinished(nweb_id));
+  NWebHandlerDelegate::RemoveLoadFinished(nweb_id);
+}
+
+// Test ReportLoadingScene with zero report_times
+TEST_F(NWebImplTest, ReportLoadingScene_TEST004) {
+  uint32_t nweb_id = nweb_impl_->nweb_id_;
+  NWebHandlerDelegate::SetLoadFinished(nweb_id, false);
+
+  nweb_impl_->kLoadUrlReportIntervalMs = 100;
+
+  nweb_impl_->ReportLoadingScene(0);
+
+  EXPECT_FALSE(NWebHandlerDelegate::IsLoadFinished(nweb_id));
+  NWebHandlerDelegate::RemoveLoadFinished(nweb_id);
+}
+
+// Test ReportLoadingScene with non-existent nweb_id in load_finished_map_
+TEST_F(NWebImplTest, ReportLoadingScene_TEST005) {
+  uint32_t nweb_id = nweb_impl_->nweb_id_;
+  NWebHandlerDelegate::RemoveLoadFinished(nweb_id);
+
+  nweb_impl_->kLoadUrlReportIntervalMs = 100;
+
+  EXPECT_NO_FATAL_FAILURE(nweb_impl_->ReportLoadingScene(1));
+}
+#endif  // BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
 }  // namespace OHOS::NWeb
                           

@@ -1470,7 +1470,7 @@ NWebImpl::NWebImpl(uint32_t id) : nweb_id_(id) {
   ResSchedClientAdapter::ReportNWebInit(ResSchedStatusAdapter::WEB_SCENE_ENTER,
                                         nweb_id_);
 #if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
-  kLoadUrlReportIntervalMs = ohos::NWeb::OhosAdapterHelper::GetInstance().
+  kLoadUrlReportIntervalMs = OHOS::NWeb::OhosAdapterHelper::GetInstance().
     GetSystemPropertiesInstance().GetLoadUrlStrategy();
   LOG(INFO) << "NWebImpl::kLoadUrlReportIntervalMs: " << kLoadUrlReportIntervalMs;
 #endif

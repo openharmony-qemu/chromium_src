@@ -86,6 +86,11 @@ class FakeContentPasswordManagerDriver : public mojom::PasswordManagerDriver {
       const autofill::mojom::OhosPasswordFormAutofillState state,
       const autofill::InputFillRequestData& username_data,
       const autofill::InputFillRequestData& password_data) override {}
+  void PreSuppressKeyboardIfNeed(
+      autofill::FormRendererId form_id,
+      const autofill::mojom::OhosPasswordFormAutofillState state,
+      const autofill::InputFillRequestData& username_data,
+      const autofill::InputFillRequestData& password_data) override {}
 #endif
 
   // Records whether RecordSavePasswordProgress() gets called.

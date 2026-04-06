@@ -1893,6 +1893,12 @@ void AutofillAgent::DidReceiveLeftMouseDownOrGestureTapInNode(
 #endif
 }
 
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+void AutofillAgent::PreSuppressKeyboardIfNeed(const blink::WebNode& node) {
+  AsAutofillAgentExt()->OhPreSuppressKeyboardIfNeed(node);
+}
+#endif
+
 void AutofillAgent::SelectControlSelectionChanged(
     const WebFormControlElement& element) {
   if (WebDocument document = GetDocument();

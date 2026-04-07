@@ -31,6 +31,10 @@ import("//testing/libfuzzer/fuzzer_test.gni")
 import("//third_party/blink/public/public_features.gni")
 import("//tools/ipc_fuzzer/ipc_fuzzer.gni")
 
+if (defined(is_arkweb_ext) && is_arkweb_ext) {
+  import("//arkweb/ohos_nweb_ex/overrides/chromium/content/browser/chromium_content_browser_ext.gni")
+}
+
 if (is_arkweb) {
   import("//arkweb/chromium_ext/chromium_ext.gni")
   if (defined(arkweb_fido) && arkweb_fido) {
@@ -3832,6 +3836,10 @@ source_set("browser") {
       "//arkweb/chromium_ext/content/browser/renderer_host/ark_web_back_forward_cache_impl.h",
     ]
   }  #endif // BUILDFLAG(ARKWEB_BFCACHE)
+
+  if (defined(is_arkweb_ext) && is_arkweb_ext) {
+    sources += chromium_content_browser_ext_gn_sources
+  }
 }
 
 if (is_android) {

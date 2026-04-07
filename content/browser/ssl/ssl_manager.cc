@@ -39,6 +39,10 @@
 #include "third_party/blink/public/mojom/devtools/console_message.mojom.h"
 #include "arkweb/build/features/features.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/overrides/chromium/content/browser/ssl/ssl_manager_util.h"
+#endif
+
 namespace content {
 
 namespace {
@@ -62,6 +66,12 @@ void OnAllowCertificate(SSLErrorHandler* handler,
                         bool record_decision,
                         CertificateRequestResultType decision) {
   DCHECK(handler->ssl_info().is_valid());
+#if BUILDFLAG(IS_ARKWEB_EXT)
+  bool ssl_cert_valid = handler->ssl_info().is_valid();
+  if (!ssl_cert_valid) {
+    ReportArkwebSslCertErrorInfo(handler->request_url().host());
+  }
+#endif
   switch (decision) {
     case CERTIFICATE_REQUEST_RESULT_TYPE_CONTINUE:
       // Note that we should not call SetMaxSecurityStyle here, because
@@ -74,7 +84,11 @@ void OnAllowCertificate(SSLErrorHandler* handler,
       // While AllowCert() executes synchronously on this thread,
       // ContinueRequest() gets posted to a different thread. Calling
       // AllowCert() first ensures deterministic ordering.
+#if BUILDFLAG(IS_ARKWEB_EXT)
+      if (record_decision && state_delegate && ssl_cert_valid) {
+#else
       if (record_decision && state_delegate) {
+#endif
         state_delegate->AllowCert(handler->request_url().host(),
                                   *handler->ssl_info().cert.get(),
                                   handler->cert_error(), storage_partition);

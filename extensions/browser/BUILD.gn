@@ -508,6 +508,8 @@ source_set("browser_sources") {
   #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   if (defined(arkweb_arkweb_extensions) && arkweb_arkweb_extensions) {
     sources += [
+      "//arkweb/chromium_ext/extensions/browser/extension_icon_aggregator.h",
+      "//arkweb/chromium_ext/extensions/browser/extension_icon_aggregator.cc",
       "//arkweb/chromium_ext/extensions/browser/extension_registry_info_manager.h",
       "//arkweb/chromium_ext/extensions/browser/extension_registry_info_manager.cc",
       "//arkweb/chromium_ext/extensions/browser/ui_util_ext.cc",

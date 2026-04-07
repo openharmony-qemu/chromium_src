@@ -4650,7 +4650,7 @@ void NWebImpl::DisableWebExtension(const std::string& eid) {
     }
     return;
   }
-  WVLOG_I("NWebImpl::DisableWebExtension extension not exist: id:%{public}s", eid.c_str());
+  LOG(ERROR) << "NWebImpl::DisableWebExtension extension id not exist: " << eid;
 }
 
 // static

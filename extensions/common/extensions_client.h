@@ -15,10 +15,6 @@
 #include "extensions/common/permissions/api_permission_set.h"
 #include "services/network/public/mojom/cors_origin_pattern.mojom-forward.h"
 
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-#include "extensions/common/extension_urls_for_include.cc"
-#endif
-
 class GURL;
 
 namespace base {

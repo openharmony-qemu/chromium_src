@@ -146,6 +146,7 @@ export class WebAbilityStage extends AbilityStage {
       import('../jsbindings/JsBindingMethod').then((ns:ESObject) => {
         ns.JsBindingMethod.bind();
         this.nativeThemeAdapter = Inject.get(NativeThemeAdapter);
+        JsBindingUtils.SetContextPaths();
       }).catch(()=>{
         console.log('import failed');
       });

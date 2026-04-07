@@ -10,6 +10,18 @@
 #include <string>
 
 namespace ohos::adapter::ContextPathAdapter {
+
+struct ContextPaths {
+  std::string cache_dir;
+  std::string files_dir;
+  std::string temp_dir;
+  std::string user_document_dir;
+  std::string user_desktop_dir;
+  std::string user_download_dir;
+};
+
+void ADAPTER_EXPORT_API
+SetContextPaths(const ContextPaths& paths);
 std::string ADAPTER_EXPORT_API GetCacheDir();
 std::string ADAPTER_EXPORT_API GetTempDir();
 std::string ADAPTER_EXPORT_API GetFilesDir();

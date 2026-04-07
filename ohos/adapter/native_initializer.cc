@@ -10,6 +10,7 @@
 #include "ohos/adapter/common/constants.h"
 #include "ohos/adapter/common/logging.h"
 #include "ohos/adapter/common/trace.h"
+#include "ohos/adapter/context_path/context_path_adapter.h"
 #include "ohos/adapter/life_cycle/lifecycle_init.h"
 #include "ohos/adapter/media_manager/media_init.h"
 #include "ohos/adapter/task_runner/main_thread_task_runner.h"
@@ -83,6 +84,58 @@ static napi_value GetNativeContext(napi_env env, napi_callback_info info) {
   return GetNativeContextByType(env, exports, process_type);
 }
 
+static std::string GetStringProperty(napi_env env,
+                                     napi_value obj,
+                                     const char* key) {
+  napi_value prop;
+  if (napi_get_named_property(env, obj, key, &prop) != napi_ok) {
+    return "";
+  }
+  napi_valuetype type;
+  napi_typeof(env, prop, &type);
+  if (type != napi_string) {
+    return "";
+  }
+  size_t len;
+  napi_get_value_string_utf8(env, prop, nullptr, 0, &len);
+  std::string result(len, '\0');
+  napi_get_value_string_utf8(env, prop, &result[0], len + 1, &len);
+  return result;
+}
+
+static napi_value SetContextPathsWrapper(napi_env env, napi_callback_info info) {
+  size_t argc = 1;
+  napi_value args[1];
+  if (napi_get_cb_info(env, info, &argc, args, nullptr, nullptr) != napi_ok) {
+    napi_throw_type_error(env, nullptr, "napi_get_cb_info failed");
+    return nullptr;
+  }
+  if (argc != 1) {
+    napi_throw_type_error(env, nullptr, "Wrong number of arguments");
+    return nullptr;
+  }
+  napi_valuetype type;
+  if (napi_typeof(env, args[0], &type) != napi_ok) {
+    napi_throw_type_error(env, nullptr, "napi_typeof failed");
+    return nullptr;
+  }
+  if (type != napi_object) {
+    napi_throw_type_error(env, nullptr, "Argument must be an object");
+    return nullptr;
+  }
+
+  ohos::adapter::ContextPathAdapter::ContextPaths paths;
+  paths.cache_dir = GetStringProperty(env, args[0], "cacheDir");
+  paths.files_dir = GetStringProperty(env, args[0], "filesDir");
+  paths.temp_dir = GetStringProperty(env, args[0], "tempDir");
+  paths.user_document_dir = GetStringProperty(env, args[0], "userDocumentDir");
+  paths.user_desktop_dir = GetStringProperty(env, args[0], "userDesktopDir");
+  paths.user_download_dir = GetStringProperty(env, args[0], "userDownloadDir");
+
+  ohos::adapter::ContextPathAdapter::SetContextPaths(paths);
+  return nullptr;
+}
+
 static napi_value Initialize(napi_env env, napi_value exports) {
   TRACE_EVENT_0("Initialize");
   if (env == nullptr || exports == nullptr) {
@@ -90,8 +143,8 @@ static napi_value Initialize(napi_env env, napi_value exports) {
     return exports;
   }
   napi_property_descriptor desc[] = {
-      DECLARE_NAPI_METHOD("getNativeContext", GetNativeContext)
-  };
+      DECLARE_NAPI_METHOD("getNativeContext", GetNativeContext),
+      DECLARE_NAPI_METHOD("SetContextPaths", SetContextPathsWrapper)};
   if (napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]),
                              desc) != napi_ok) {
     LOGE("napi_define_properties failed");

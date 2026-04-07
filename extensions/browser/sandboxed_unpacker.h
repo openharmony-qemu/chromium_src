@@ -29,6 +29,10 @@
 #include "services/data_decoder/public/cpp/data_decoder.h"
 #include "services/data_decoder/public/mojom/json_parser.mojom.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "extensions/common/extension_urls.h"
+#endif
+
 class SkBitmap;
 
 namespace base {
@@ -158,6 +162,10 @@ class SandboxedUnpacker : public ImageSanitizer::Client {
   void StartWithDirectory(const ExtensionId& extension_id,
                           const std::string& public_key_base64,
                           const base::FilePath& directory);
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  void set_webstore_type(int webstore_type);
+#endif
 
  private:
   friend class SandboxedUnpackerTest;
@@ -300,6 +308,10 @@ class SandboxedUnpacker : public ImageSanitizer::Client {
 
   // Location to use for the unpacked extension.
   mojom::ManifestLocation location_;
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  int webstore_type_ = kWebStoreTypeDefault;
+#endif
 
   // Creation flags to use for the extension. These flags will be used
   // when calling Extension::Create() by the CRX installer.

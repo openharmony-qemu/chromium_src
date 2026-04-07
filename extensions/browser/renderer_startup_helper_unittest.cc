@@ -30,6 +30,10 @@
 #include "components/prefs/testing_pref_service.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/extensions/common/mojom/webstore_config.mojom.h"
+#endif
+
 namespace extensions {
 
 // Class that implements the binding of a new Renderer mojom interface and
@@ -114,6 +118,10 @@ class RendererStartupHelperInterceptor : public RendererStartupHelper,
   void CancelSuspendExtension(const ExtensionId& extension_id) override {}
 
   void SetDeveloperMode(bool current_developer_mode) override {}
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  void SetWebStoreConfig(mojom::WebStoreConfigPtr config_ptr) override {}
+#endif
 
   void SetSessionInfo(version_info::Channel channel,
                       mojom::FeatureSessionType session,

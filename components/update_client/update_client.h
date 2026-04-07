@@ -500,7 +500,12 @@ class UpdateClient : public base::RefCountedThreadSafe<UpdateClient> {
 
 // Creates an instance of the update client.
 scoped_refptr<UpdateClient> UpdateClientFactory(
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
     scoped_refptr<Configurator> config);
+#else
+    scoped_refptr<Configurator> config,
+    bool is_enabled = false);
+#endif
 
 // This must be called prior to the construction of any Configurator that
 // contains a PrefService.

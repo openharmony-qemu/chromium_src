@@ -618,6 +618,19 @@ void SimpleFeature::set_matches(
     matches_.AddPattern(URLPattern(URLPattern::SCHEME_ALL, pattern));
 }
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+void SimpleFeature::add_matches(const GURL& url, std::string_view pattern) {
+  if (matches_.MatchesAllURLs()) {
+    return;
+  }
+ 
+  if (matches_.MatchesURL(url)) {
+    LOG(INFO) << "add pattern,name is " << name();
+    matches_.AddPattern(URLPattern(URLPattern::SCHEME_ALL, pattern));
+  }
+}
+#endif
+
 void SimpleFeature::set_platforms(std::initializer_list<Platform> platforms) {
   platforms_ = platforms;
 }

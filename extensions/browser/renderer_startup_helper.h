@@ -23,6 +23,10 @@
 #include "mojo/public/cpp/bindings/pending_associated_receiver.h"
 #include "mojo/public/cpp/bindings/pending_associated_remote.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "extensions/common/extension_urls.h"
+#endif
+
 namespace content {
 class BrowserContext;
 class RenderProcessHost;
@@ -96,6 +100,11 @@ class RendererStartupHelper : public KeyedService,
 
   // Sends a message to all renderers to update the developer mode.
   void OnDeveloperModeChanged(bool in_developer_mode);
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  void SetWebStoreConfig(mojom::Renderer* renderer);
+  void OnWebStoreConfigChanged(const extension_urls::WebStoreConfig& config);
+#endif
 
   // Sets properties for the user script world of the given `world_id` for
   // the given `extension` in all applicable renderers.

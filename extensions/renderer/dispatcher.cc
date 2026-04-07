@@ -112,6 +112,10 @@
 #include "v8/include/v8-object.h"
 #include "v8/include/v8-primitive.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/extensions/renderer/dispatcher_ext.cc"
+#endif
+
 using blink::WebDocument;
 using blink::WebSecurityPolicy;
 using blink::WebString;

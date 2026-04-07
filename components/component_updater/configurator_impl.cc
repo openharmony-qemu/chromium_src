@@ -32,6 +32,10 @@
 #include "base/win/win_util.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "extensions/common/extension_urls.h"
+#endif
+
 namespace component_updater {
 
 ConfiguratorImpl::ConfiguratorImpl(
@@ -81,8 +85,12 @@ std::vector<GURL> ConfiguratorImpl::UpdateUrl() const {
     return {GURL(url_source_override_)};
   }
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   std::vector<GURL> urls{GURL(kUpdaterJSONDefaultUrl),
                          GURL(kUpdaterJSONFallbackUrl)};
+#else
+  std::vector<GURL> urls{extension_urls::GetWebStoreCheckUpdateUrl()};
+#endif
   if (require_encryption_) {
     update_client::RemoveUnsecureUrls(&urls);
   }
@@ -133,7 +141,16 @@ bool ConfiguratorImpl::EnabledBackgroundDownloader() const {
 
 bool ConfiguratorImpl::EnabledCupSigning() const {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   return true;
+#else
+  auto urls = UpdateUrl();
+  if (urls.empty()) {
+    return true;
+  }
+  return extensions::kWebStoreType360 !=
+         extension_urls::GetWebStoreTypeByUrl(false, urls.at(0));
+#endif
 }
 
 // The default implementation for most embedders returns an empty string.

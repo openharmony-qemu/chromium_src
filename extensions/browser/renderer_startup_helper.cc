@@ -54,6 +54,10 @@
 #include "extensions/browser/guest_view/web_view/web_view_renderer_state.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/extensions/browser/renderer_startup_helper_ext.cc"
+#endif
+
 namespace extensions {
 
 namespace {
@@ -191,6 +195,10 @@ void RendererStartupHelper::InitializeProcess(
   // extensions need to know the developer mode value for api restrictions.
   renderer->SetDeveloperMode(
       GetCurrentDeveloperMode(util::GetBrowserContextId(browser_context_)));
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  SetWebStoreConfig(renderer);
+#endif
 
   // Extensions need to know the channel and the session type for API
   // restrictions. The values are sent to all renderers, as the non-extension

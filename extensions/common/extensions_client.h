@@ -15,6 +15,10 @@
 #include "extensions/common/permissions/api_permission_set.h"
 #include "services/network/public/mojom/cors_origin_pattern.mojom-forward.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "extensions/common/extension_urls_for_include.cc"
+#endif
+
 class GURL;
 
 namespace base {
@@ -116,6 +120,12 @@ class ExtensionsClient {
 
   // Returns false if content scripts are forbidden from running on |url|.
   virtual bool IsScriptableURL(const GURL& url, std::string* error) const = 0;
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  virtual void SetWebstoreBaseURL(const GURL& url) {}
+  virtual void SetNewWebstoreBaseURL(const GURL& url) {}
+  virtual void SetWebstoreUpdateURL(const GURL& url) {}
+#endif
 
   // Returns the base webstore URL prefix.
   virtual const GURL& GetWebstoreBaseURL() const = 0;

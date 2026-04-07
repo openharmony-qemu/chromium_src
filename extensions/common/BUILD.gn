@@ -111,6 +111,12 @@ mojom("mojom") {
     "//url/mojom:url_mojom_gurl",
   ]
 
+  enabled_features = []
+  if (arkweb_arkweb_extensions) {
+    public_deps += [ "//arkweb/chromium_ext/extensions/common/mojom" ]
+    enabled_features += [ "arkweb_arkweb_extensions" ]
+  }
+
   if (enable_guest_view) {
     sources += [ "mojom/guest_view.mojom" ]
   }

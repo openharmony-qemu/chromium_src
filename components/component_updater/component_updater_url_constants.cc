@@ -16,17 +16,9 @@ namespace component_updater {
 // The value of |kDefaultUrlSource| can be overridden with
 // --component-updater=url-source=someurl.
 const char kUpdaterJSONDefaultUrl[] =
-#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
-    "https://x.x.x";
-#else
     "https://update.googleapis.com/service/update2/json";
-#endif
 
 const char kUpdaterJSONFallbackUrl[] =
-#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
-    "https://x.x.x";
-#else
     "http://update.googleapis.com/service/update2/json";
-#endif
 
 }  // namespace component_updater

@@ -16,6 +16,10 @@
 #include "extensions/common/manifest.h"
 #include "url/gurl.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/chrome/browser/extensions/extension_util_for_include.cc"
+#endif
+
 namespace base {
 class FilePath;
 }  // namespace base

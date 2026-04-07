@@ -21,6 +21,10 @@
 #include "url/gurl.h"
 #include "url/origin.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "extensions/common/extension_urls_ext.cc"
+#endif
+
 namespace extensions {
 
 bool IsSourceFromAnExtension(const std::u16string& source) {
@@ -55,14 +59,22 @@ GURL GetWebstoreLaunchURL() {
   extensions::ExtensionsClient* client = extensions::ExtensionsClient::Get();
   if (client)
     return client->GetWebstoreBaseURL();
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   return GURL(kChromeWebstoreBaseURL);
+#else
+  return GURL(GetDefaultWebstoreLaunchURL());
+#endif
 }
 
 GURL GetNewWebstoreLaunchURL() {
   extensions::ExtensionsClient* client = extensions::ExtensionsClient::Get();
   if (client)
     return client->GetNewWebstoreBaseURL();
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   return GURL(kNewChromeWebstoreBaseURL);
+#else
+  return GURL(GetDefaultNewWebstoreLaunchURL());
+#endif
 }
 
 GURL AppendUtmSource(const GURL& url, std::string_view utm_source_value) {
@@ -76,10 +88,14 @@ GURL AppendUtmSource(const GURL& url, std::string_view utm_source_value) {
 std::string GetWebstoreExtensionsCategoryURL() {
   // TODO(crbug.com/40073814): Refactor this check into
   // extension_urls::GetWebstoreLaunchURL() and fix tests relying on it.
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  return GetWebStoreHomePageUrl().spec();
+#else
   if (base::FeatureList::IsEnabled(extensions_features::kNewWebstoreURL)) {
     return GetNewWebstoreLaunchURL().spec() + "category/extensions";
   }
   return GetWebstoreLaunchURL().spec() + "/category/extensions";
+#endif
 }
 
 std::string GetWebstoreItemDetailURLPrefix() {
@@ -101,8 +117,10 @@ GURL GetWebstoreItemSnippetURL(const extensions::ExtensionId& extension_id) {
   }
 
   // Return `<base URL><extension_id><suffix>`.
-#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
-  return GURL("https://x.x.x");
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  return GURL(base::StringPrintf("%s/v2/items/%s:fetchItemSnippet",
+                                 GetDefaultWebstoreApiUrl().spec().c_str(),
+                                 extension_id.c_str()));
 #else
   return GURL(base::StringPrintf(
       "https://chromewebstore.googleapis.com/v2/items/%s:fetchItemSnippet",
@@ -114,9 +132,11 @@ base::AutoReset<const GURL*> SetItemSnippetURLForTesting(const GURL* test_url) {
   return base::AutoReset<const GURL*>(&g_item_snippet_url_for_test_, test_url);
 }
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 GURL GetDefaultWebstoreUpdateUrl() {
   return GURL(kChromeWebstoreUpdateURL);
 }
+#endif
 
 GURL GetWebstoreUpdateUrl() {
   extensions::ExtensionsClient* client = extensions::ExtensionsClient::Get();

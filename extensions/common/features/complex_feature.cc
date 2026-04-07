@@ -35,6 +35,14 @@ ComplexFeature::ComplexFeature(std::vector<Feature*>* features) {
 
 ComplexFeature::~ComplexFeature() = default;
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+void ComplexFeature::add_matches(const GURL& url, std::string_view pattern) {
+  for (auto it = features_.cbegin() + 1; it != features_.cend(); ++it) {
+    (*it)->add_matches(url, pattern);
+  }
+}
+#endif
+
 Feature::Availability ComplexFeature::IsAvailableToManifest(
     const HashedExtensionId& hashed_id,
     Manifest::Type type,

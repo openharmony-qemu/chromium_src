@@ -116,6 +116,10 @@ class Feature {
   void set_source(std::string_view source);
   bool no_parent() const { return no_parent_; }
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  virtual void add_matches(const GURL& url, std::string_view pattern) = 0;
+#endif
+
   // Gets the platform the code is currently running on.
   static Platform GetCurrentPlatform();
 

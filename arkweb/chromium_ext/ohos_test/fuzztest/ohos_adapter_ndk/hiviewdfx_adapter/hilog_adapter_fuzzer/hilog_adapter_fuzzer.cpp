@@ -26,8 +26,8 @@
 using namespace OHOS::NWeb;
 
 namespace {
-    constexpr uint8_t MAX_STRING_LENGTH = UINT8_MAX;
-    constexpr uint32_t MAX_LOG_LEVEL = 5;
+    constexpr size_t MAX_STRING_LENGTH = 255;
+    constexpr uint32_t MAX_LOG_LEVEL = 4;
     constexpr int32_t HILOG_ADAPTER_TESTS_NUM = 1024;
     static int32_t HILOG_ADAPTER_TESTS_COUNT = 0;
 }

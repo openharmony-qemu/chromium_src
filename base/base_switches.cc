@@ -201,6 +201,8 @@ const char kDisablePagePolicy[] = "disable-page-policy";
 const char kOhosTrace[] = "ohos-trace";
 const char kOhosTempDir[] = "ohos-temp-dir";
 const char kOhosProcessType[] = "type";
+// Low memory mode is used to identify 16 GB devices.
+const char KEnabledLowMemoryMode[] = "enabled-low-memory-mode";
 #endif
 
 }  // namespace switches

@@ -1006,6 +1006,8 @@ component("base") {
   if (is_ohos) {
     sources += [
       "debug/stack_trace_ohos.cc",
+      "memory/low_memory_mode_ohos.h",
+      "memory/low_memory_mode_ohos.cc",
     ]
 
     public_configs = [ ":ohos_system_libs" ]

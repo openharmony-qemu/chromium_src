@@ -35,7 +35,7 @@ int CustomData::GetStoreType(const Extension* extension) {
  
   CustomData* data = static_cast<CustomData*>(
       extension->GetManifestData(manifest_keys::kCustomData));
-  return data ? data->store_type : kWebStoreTypeDefault;
+  return data ? data->store_type_ : kWebStoreTypeDefault;
 }
  
 // static
@@ -63,10 +63,10 @@ bool CustomHandler::Parse(Extension* extension, std::u16string* error) {
   const base::Value::Dict* value =
       extension->manifest()->FindDictPath(kWebStoreType);
   if (!value) {
-    data->store_type = kWebStoreTypeDefault;
+    data->store_type_ = kWebStoreTypeDefault;
   } else {
     auto store_type = value->FindInt(kWebStoreType);
-    data->store_type = store_type.value_or(kWebStoreTypeDefault);
+    data->store_type_ = store_type.value_or(kWebStoreTypeDefault);
   }
  
   extension->SetManifestData(manifest_keys::kCustomData, std::move(data));

@@ -24,7 +24,7 @@
 namespace extensions {
  
 struct CustomData : public Extension::ManifestData {
-  int store_type;
+  int store_type_;
  
   static int GetStoreType(const Extension* extension);
  

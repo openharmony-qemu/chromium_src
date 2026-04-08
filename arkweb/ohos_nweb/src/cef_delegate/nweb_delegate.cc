@@ -7163,7 +7163,6 @@ std::vector<WebExtensionContextMenusItem> NWebDelegate::GetContextMenuItem() {
  
 void NWebDelegate::OnContextMenuSelected(int command_id) {
   LOG(INFO) << "NWebDelegate::OnContextMenuSelected command_id: " << command_id;
-#if BUILDFLAG(ARKWEB_DEVTOOLS)
   DCHECK(CEF_CURRENTLY_ON_UIT());
   if (!CEF_CURRENTLY_ON_UIT()) {
     LOG(ERROR) << "NWebDelegate::OnContextMenuSelected is not UI.";
@@ -7190,14 +7189,14 @@ void NWebDelegate::OnContextMenuSelected(int command_id) {
     LOG(ERROR) << "menu_manager is nullptr";
     return;
   }
-  menu_manager->onContextMenuSelected(command_id);
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  menu_manager->menu_manager_ext_.onContextMenuSelected(command_id);
   
 #endif // BUILDFLAG(ARKWEB_DEVTOOLS)
 }
  
 void NWebDelegate::OnContextMenuClosed() {
   LOG(INFO) << "NWebDelegate::OnContextMenuClosed";
-#if BUILDFLAG(ARKWEB_DEVTOOLS)
   DCHECK(CEF_CURRENTLY_ON_UIT());
   if (!CEF_CURRENTLY_ON_UIT()) {
     LOG(ERROR) << "NWebDelegate::OnContextMenuClosed is not UI.";
@@ -7224,7 +7223,8 @@ void NWebDelegate::OnContextMenuClosed() {
     LOG(ERROR) << "menu_manager is nullptr";
     return;
   }
-  menu_manager->onContextMenuClosed();
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  menu_manager->menu_manager_ext_.onContextMenuClosed();
 #endif // BUILDFLAG(ARKWEB_DEVTOOLS)
 }
 }  // namespace OHOS::NWeb

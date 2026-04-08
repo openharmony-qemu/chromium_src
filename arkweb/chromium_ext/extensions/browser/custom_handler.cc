@@ -61,7 +61,7 @@ CustomHandler::~CustomHandler() = default;
 bool CustomHandler::Parse(Extension* extension, std::u16string* error) {
   auto data = std::make_unique<CustomData>();
   const base::Value::Dict* value =
-      extension->manifest()->FindDictPath(kWebStoreType);
+      extension->manifest()->FindDictPath(manifest_keys::kCustomData);
   if (!value) {
     data->store_type_ = kWebStoreTypeDefault;
   } else {

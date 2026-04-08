@@ -363,6 +363,7 @@ NWebExtensionState UnloadedReasonToState(UnloadedExtensionReason reason) {
           {UnloadedExtensionReason::DISABLE, NWebExtensionState::DISABLED},
           {UnloadedExtensionReason::TERMINATE, NWebExtensionState::TERMINATED},
           {UnloadedExtensionReason::BLOCKLIST, NWebExtensionState::BLOCKLISTED},
+          {UnloadedExtensionReason::UNINSTALL, NWebExtensionState::UNINSTALLED},
       });
   auto it = kReasonToState.find(reason);
   return it != kReasonToState.end() ? it->second : NWebExtensionState::DISABLED;

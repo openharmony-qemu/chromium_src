@@ -98,6 +98,9 @@ class WaitForSwapDisplayClient : public DisplayClient {
     loop_->Run();
     loop_.reset();
   }
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  void DisplayDidRealSwapBuffer() override {}
+#endif
 
  private:
   std::unique_ptr<base::RunLoop> loop_;

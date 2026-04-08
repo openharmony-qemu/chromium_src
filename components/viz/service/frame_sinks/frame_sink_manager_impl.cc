@@ -494,6 +494,25 @@ void FrameSinkManagerImpl::CreateVideoCapturer(
 
 void FrameSinkManagerImpl::EvictSurfaces(
     const std::vector<SurfaceId>& surface_ids) {
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  for (const SurfaceId& surface_id : surface_ids) {
+    auto it = support_map_.find(surface_id.frame_sink_id());
+    if (it == support_map_.end())
+      continue;
+
+    bool should_evict = true;
+    if (it->second->is_root()) {
+      auto root_it = root_sink_map_.find(surface_id.frame_sink_id());
+      if (root_it != root_sink_map_.end()) {
+        should_evict = root_it->second->WillEvictSurface(surface_id);
+      }
+    }
+
+    if (should_evict) {
+      it->second->EvictSurface(surface_id.local_surface_id());
+    }
+  }
+#else
   for (const SurfaceId& surface_id : surface_ids) {
     CompositorFrameSinkSupport* support =
         base::FindPtrOrNull(support_map_, surface_id.frame_sink_id());
@@ -516,6 +535,7 @@ void FrameSinkManagerImpl::EvictSurfaces(
       root->DidEvictSurface(surface_id);
     }
   }
+#endif
 
   // Trigger garbage collection immediately, otherwise the surface may not be
   // evicted for a long time (e.g. not before a frame is produced).

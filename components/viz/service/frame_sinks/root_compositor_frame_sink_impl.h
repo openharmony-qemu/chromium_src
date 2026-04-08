@@ -20,6 +20,9 @@
 #include "components/viz/service/display/frame_interval_decider.h"
 #include "components/viz/service/display/overdraw_tracker.h"
 #include "components/viz/service/frame_sinks/compositor_frame_sink_support.h"
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+#include "arkweb/chromium_ext/components/viz/service/frame_sinks/eviction_handler.h"
+#endif
 #include "components/viz/service/viz_service_export.h"
 #include "mojo/public/cpp/bindings/associated_receiver.h"
 #include "mojo/public/cpp/bindings/pending_associated_receiver.h"
@@ -73,9 +76,14 @@ class VIZ_SERVICE_EXPORT RootCompositorFrameSinkImpl
       delete;
 
   ~RootCompositorFrameSinkImpl() override;
-
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  // Returns true iff it is okay to evict the root surface immediately.
+  bool WillEvictSurface(const SurfaceId& surface_id);
+  void DisplayDidRealSwapBuffer() override;
+  bool needs_notify_first_swap_buffer_ = false;
+#else
   void DidEvictSurface(const SurfaceId& surface_id);
-
+#endif
   const SurfaceId& CurrentSurfaceId() const;
 
   // mojom::DisplayPrivate:
@@ -234,6 +242,11 @@ class VIZ_SERVICE_EXPORT RootCompositorFrameSinkImpl
   base::TimeTicks display_frame_timebase_;
   base::TimeDelta display_frame_interval_ = BeginFrameArgs::DefaultInterval();
   base::TimeDelta preferred_frame_interval_;
+
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  // See comments on `EvictionHandler`.
+  EvictionHandler eviction_handler_;
+#endif
 
 #if BUILDFLAG(IS_LINUX) && BUILDFLAG(IS_OZONE_X11) || BUILDFLAG(IS_ARKWEB)
   gfx::Size last_swap_pixel_size_;

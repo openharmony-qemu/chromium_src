@@ -44,6 +44,9 @@ class FakeDisplayClient : public mojom::DisplayClient {
   void SetPreferredRefreshRate(float refresh_rate) override;
 #endif  // BUILDFLAG(IS_CHROMEOS)
 
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  void NotifyFirstRealSwapBuffer() override {}
+#endif
  private:
   mojo::Receiver<mojom::DisplayClient> receiver_{this};
 };

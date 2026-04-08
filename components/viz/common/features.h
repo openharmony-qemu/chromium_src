@@ -137,6 +137,9 @@ VIZ_COMMON_EXPORT BASE_DECLARE_FEATURE(kVizNullHypothesis);
 #if BUILDFLAG(IS_CHROMEOS)
 VIZ_COMMON_EXPORT BASE_DECLARE_FEATURE(kCrosContentAdjustedRefreshRate);
 #endif  // BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+VIZ_COMMON_EXPORT BASE_DECLARE_FEATURE(kEvictUnlockFrame);
+#endif
 
 VIZ_COMMON_EXPORT extern const char kDraw1Point12Ms[];
 VIZ_COMMON_EXPORT extern const char kDraw2Points6Ms[];
@@ -200,6 +203,9 @@ VIZ_COMMON_EXPORT bool ShouldUseAdpfForSoc(std::string_view soc_allowlist,
 
 VIZ_COMMON_EXPORT bool ShouldAckCOREarlyForViewTransition();
 
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+VIZ_COMMON_EXPORT bool IsEvictUnlockFrameEnabled();
+#endif
 }  // namespace features
 
 #endif  // COMPONENTS_VIZ_COMMON_FEATURES_H_

@@ -109,6 +109,12 @@ class VIZ_SERVICE_EXPORT DirectRenderer {
   void SetBypassVsyncCondition(int32_t condition);
 #endif
 
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  void SetNextFrameSkipsDrawRenderPasses(bool skip) {
+    next_frame_skips_draw_render_passes_ = skip;
+  }
+#endif
+
   void SetOutputSurfaceClipRect(const gfx::Rect& clip_rect);
   void SetVisible(bool visible);
   void ReallocatedFrameBuffers();
@@ -510,6 +516,10 @@ class VIZ_SERVICE_EXPORT DirectRenderer {
   bool skip_partial_paint_ = true;
   bool is_sync_draw_mode_ = false;
   bool is_blankless_mode_ = false;
+#endif
+
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  bool next_frame_skips_draw_render_passes_ = false;
 #endif
 };
 

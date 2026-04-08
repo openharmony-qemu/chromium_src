@@ -205,6 +205,8 @@ viz_component("service") {
     "frame_sinks/frame_sink_manager_impl.h",
     "//arkweb/chromium_ext/components/viz/service/frame_sinks/frame_sink_manager_impl_utils.cc",
     "//arkweb/chromium_ext/components/viz/service/frame_sinks/frame_sink_manager_impl_utils.h",
+    "//arkweb/chromium_ext/components/viz/service/frame_sinks/eviction_handler.cc",
+    "//arkweb/chromium_ext/components/viz/service/frame_sinks/eviction_handler.h",
     "frame_sinks/frame_sink_observer.h",
     "frame_sinks/gmb_video_frame_pool_context_provider.h",
     "frame_sinks/gmb_video_frame_pool_context_provider_impl.cc",

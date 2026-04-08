@@ -45,6 +45,9 @@ namespace viz {
 class FrameSinkManagerImpl;
 class LatestLocalSurfaceIdLookupDelegate;
 class LayerContextImpl;
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+class RendererSettings;
+#endif
 class Surface;
 class SurfaceManager;
 class CompositorFrameSinkSupportUtils;
@@ -212,6 +215,17 @@ class VIZ_SERVICE_EXPORT CompositorFrameSinkSupport
   // Mark |id| and all surfaces with smaller ids for destruction. Note that |id|
   // doesn't have to exist at the time of calling.
   void EvictSurface(const LocalSurfaceId& id);
+
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  void GarbageCollectSurfaces() { surface_manager_->GarbageCollectSurfaces(); }
+
+  // Submits a compositor frame not from the client but from viz itself. For
+  // example, this is used to submit empty compositor frames to unref
+  // resources on root surface eviction.
+  void SubmitCompositorFrameLocally(const SurfaceId& surface_id,
+                                    CompositorFrame frame,
+                                    const RendererSettings& settings);
+#endif
 
   // Attempts to submit a new CompositorFrame to |local_surface_id| and returns
   // whether the frame was accepted or the reason why it was rejected. If

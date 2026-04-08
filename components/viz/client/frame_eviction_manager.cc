@@ -23,6 +23,10 @@
 
 #include "arkweb/build/features/features.h"
 #include "arkweb/chromium_ext/components/viz/client/frame_eviction_manager_ext.h"
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+#include "components/viz/common/viz_utils.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#endif
 
 namespace viz {
 namespace {
@@ -53,7 +57,11 @@ void FrameEvictionManager::AddFrame(FrameEvictionManagerClient* frame,
     locked_frames_[frame] = 1;
   else
     RegisterUnlockedFrame(frame);
-  CullUnlockedFrames(GetMaxNumberOfSavedFrames());
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+    ProcessCullUnlockedFrames();
+#else
+    CullUnlockedFrames(GetMaxNumberOfSavedFrames());
+#endif
 }
 
 void FrameEvictionManager::RemoveFrame(FrameEvictionManagerClient* frame) {
@@ -84,9 +92,38 @@ void FrameEvictionManager::UnlockFrame(FrameEvictionManagerClient* frame) {
   } else {
     RemoveFrame(frame);
     RegisterUnlockedFrame(frame);
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+    ProcessCullUnlockedFrames();
+#else
     CullUnlockedFrames(GetMaxNumberOfSavedFrames());
+#endif
   }
 }
+
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  void FrameEvictionManager::ProcessCullUnlockedFrames() {
+    if (!IsEvictUnlockFrameEnabled()) {
+       CullUnlockedFrames(GetMaxNumberOfSavedFrames());
+      return;
+    }
+    bool needProcessMemoryPressure = false;
+    if (!unlocked_frames_.empty() &&
+         unlocked_frames_.size() + locked_frames_.size() > GetMaxNumberOfSavedFrames()) {
+      needProcessMemoryPressure = true;
+      LOG(DEBUG) << "ProcessCullUnlockedFrames needProcessMemoryPressure: " << needProcessMemoryPressure;
+    }
+    size_t saved_frame_limit = GetMaxNumberOfSavedFrames();
+    static int saved_frame_limit_config = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance()
+      .GetIntParameter("const.web.frame_evictor.saved_frame_limit", -1); // -1 invalid value of saved_frame_limit
+    if (saved_frame_limit_config >= 0) {
+      saved_frame_limit = std::min(static_cast<size_t>(saved_frame_limit_config), GetMaxNumberOfSavedFrames());
+    } else {
+      LOG(DEBUG) << "Invalid config value of saved_frame_limit:" << saved_frame_limit_config << ", use default value";
+    }
+    
+    CullUnlockedFrames(saved_frame_limit, needProcessMemoryPressure);
+  }
+#endif
 
 void FrameEvictionManager::StartFrameCullingTimer() {
   // Unretained: `idle_frames_culling_timer_` is a member of `this`, doesn't
@@ -170,7 +207,11 @@ FrameEvictionManager::FrameEvictionManager()
   }
 }
 
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+void FrameEvictionManager::CullUnlockedFrames(size_t saved_frame_limit, bool isProcessMemoryPressure) {
+#else
 void FrameEvictionManager::CullUnlockedFrames(size_t saved_frame_limit) {
+#endif
   if (pause_count_) {
     pending_unlocked_frame_limit_ = saved_frame_limit;
     return;
@@ -189,7 +230,11 @@ void FrameEvictionManager::CullUnlockedFrames(size_t saved_frame_limit) {
                  "locked_frames_", locked_frames_.size());
 #endif
     auto* frame = unlocked_frames_.back().first;
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+    frame->EvictCurrentFrame(isProcessMemoryPressure);
+#else
     frame->EvictCurrentFrame();
+#endif
     if (unlocked_frames_.size() == old_size)
       break;
   }
@@ -260,11 +305,19 @@ void FrameEvictionManager::PurgeMemory(int percentage) {
   if (saved_frame_limit <= 1)
     return;
 
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  CullUnlockedFrames(remaining_frames, true);
+#else
   CullUnlockedFrames(remaining_frames);
+#endif
 }
 
 void FrameEvictionManager::PurgeAllUnlockedFrames() {
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  CullUnlockedFrames(0, true);
+#else
   CullUnlockedFrames(0);
+#endif
 }
 
 void FrameEvictionManager::SetOverridesForTesting(

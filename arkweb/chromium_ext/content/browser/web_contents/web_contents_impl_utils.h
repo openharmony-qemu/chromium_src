@@ -34,7 +34,6 @@ class WebContentsImpl;
 
 class WebContentsImplUtils {
  public:
-  static bool is_pdf_static;
   raw_ptr<WebContentsImpl> webContentsImpl;
   WebContentsImplUtils(WebContentsImpl* impl);
 

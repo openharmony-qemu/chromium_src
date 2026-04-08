@@ -151,7 +151,7 @@ interface ChildProcess {
   GetUid() => (int32 uid);
 
   [EnableIf=arkweb_renderer_anr_dump]
-  ReportHicollie();
+  ReportHicollie(string js_stack);
  
   // #ifdef ARKWEB_LOGGER_REPORT
   [EnableIf=arkweb_logger_report]

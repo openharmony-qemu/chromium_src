@@ -24,6 +24,20 @@ struct OhosSurfaceBufferHandle {
   handle<platform> buffer_fd;
 };
 
+// Extension of the mojo::RendererClient communication layer for HLS and Android
+// software rendering fallback paths.
+// This allows the Browser side to call back into the Renderer side. Concretely,
+// the MediaPlayerRenderer uses these methods to propagate events it raises to
+// the MediaPlayerRendererClient, which lives in the Renderer process.
+[EnableIf=arkweb_media_hls]
+interface MediaPlayerRendererClientExtension {
+  // Called when the first time the metadata is updated, and whenever the
+  // metadata changes.
+  OnVideoSizeChange(gfx.mojom.Size size);
+  OnDurationChange(mojo_base.mojom.TimeDelta duration);
+  OnFrameUpdate(OhosSurfaceBufferHandle ohosSurfaceBufferHandle);
+};
+
 [EnableIf=arkweb_custom_video_player]
 interface CustomMediaPlayerRendererClientExtension {
   OnVideoSizeChange(gfx.mojom.Size size);

@@ -56,8 +56,8 @@ mojom("mojom") {
     sources += arkweb_media_mojo_mojom_sources
   }
 
-  if (arkweb_custom_video_player) {
-    sources += arkweb_media_custom_media_player_mojom_sources
+  if (arkweb_custom_video_player || arkweb_media_hls) {
+    sources += arkweb_media_media_player_mojom_sources
   }
 
   if (enable_media_drm_storage) {
@@ -150,6 +150,10 @@ mojom("mojom") {
 
   if (arkweb_custom_video_player) {
     enabled_features += ["arkweb_custom_video_player"]
+  }
+
+  if (arkweb_media_hls) {
+    enabled_features += ["arkweb_media_hls"]
   }
 
   if (arkweb_video_assistant) {
@@ -465,7 +469,7 @@ mojom("mojom") {
     ]
   }
 
-  if (arkweb_custom_video_player) {
+  if (arkweb_custom_video_player || arkweb_media_hls) {
     cpp_typemaps += [
       {
         types = [
@@ -506,6 +510,10 @@ mojom("media_types") {
   }
   if (arkweb_custom_video_player) {
     enabled_features += ["arkweb_custom_video_player"]
+  }
+
+  if (arkweb_media_hls) {
+    enabled_features += ["arkweb_media_hls"]
   }
 
   shared_typemaps = [

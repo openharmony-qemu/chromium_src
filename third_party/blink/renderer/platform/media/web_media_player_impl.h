@@ -14,7 +14,7 @@
 #include <vector>
 
 #include "arkweb/build/features/features.h"
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER) || BUILDFLAG(ARKWEB_MEDIA_HLS)
 #include "arkweb/chromium_ext/media/base/media_player_url_params.h"
 #endif
 #include "base/cancelable_callback.h"
@@ -470,6 +470,9 @@ class PLATFORM_EXPORT WebMediaPlayerImpl
                                 const std::vector<uint8_t>& init_data) override;
   void MakeDemuxerThreadDumper(media::Demuxer* demuxer) override;
   bool CouldPlayIfEnoughData() override;
+  #if BUILDFLAG(ARKWEB_MEDIA_HLS)
+  void UpdateMediaPlayerUrlType(media::MediaPlayerUrlType type) override;
+  #endif
   void StopForDemuxerReset() override;
   void RestartForHls() override;
   void UpdateLoadedUrl(const GURL& url) override;
@@ -1159,7 +1162,7 @@ class PLATFORM_EXPORT WebMediaPlayerImpl
   // Count the number of times a video frame is being readback.
   unsigned video_frame_readback_count_ = 0;
 
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER) || BUILDFLAG(ARKWEB_MEDIA_HLS)
   bool should_create_custom_renderer_ = false;
   bool should_overlay_ = false;
   media::RendererType primitive_renderer_type_ =
@@ -1170,8 +1173,8 @@ class PLATFORM_EXPORT WebMediaPlayerImpl
       static_cast<uint32_t>(media::DataSource::METADATA);
   media::Renderer::OnGetRectCallback on_get_rect_cb_;
   media::ActionReason action_reason_ = media::ActionReason::kNormal;
-  media::MediaPlayerUrlParams custom_media_player_url_params_;
-#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+  media::MediaPlayerUrlParams media_player_url_params_;
+#endif
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   media::SurfaceCreatedCB surface_created_cb_;

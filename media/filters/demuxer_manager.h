@@ -76,7 +76,9 @@ class MEDIA_EXPORT DemuxerManager {
     virtual base::SequenceBound<HlsDataSourceProvider>
     GetHlsDataSourceProvider() = 0;
 #endif  // BUILDFLAG(ENABLE_HLS_DEMUXER)
-
+#if BUILDFLAG(ARKWEB_MEDIA_HLS)
+    virtual void UpdateMediaPlayerUrlType(media::MediaPlayerUrlType type);
+#endif
     // Returns true if playback would be able to start if data is present.
     virtual bool CouldPlayIfEnoughData() = 0;
 

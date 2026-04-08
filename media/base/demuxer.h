@@ -37,7 +37,7 @@ enum class DemuxerType {
   kFrameInjectingDemuxer = 5,
   kStreamProviderDemuxer = 6,
   kManifestDemuxer = 7,
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER) || BUILDFLAG(ARKWEB_MEDIA_HLS)
   kOhosMediaPlayerDemuxer = 8,
 #endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 };

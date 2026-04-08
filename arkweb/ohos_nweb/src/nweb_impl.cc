@@ -4182,6 +4182,14 @@ void NWebImpl::ReloadOriginalUrl() const {
   nweb_delegate_->ReloadOriginalUrl();
 }
 
+void NWebImpl::ReloadOriginalUrlIgnoreCache() const {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+
+  nweb_delegate_->ReloadOriginalUrlIgnoreCache();
+}
+
 void NWebImpl::SetBrowserUserAgentString(const std::string& user_agent) {
   if (nweb_delegate_ == nullptr) {
     return;

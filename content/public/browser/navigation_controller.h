@@ -651,6 +651,10 @@ class NavigationController {
       const GURL& url) = 0;
 #endif  // BUILDFLAG(ARKWEB_EXT_NAVIGATION)
 
+#if BUILDFLAG(IS_ARKWEB)
+  virtual void LoadOriginalRequestURL(bool ignore_cache) = 0;
+#endif
+
  private:
   // This interface should only be implemented inside content.
   friend class NavigationControllerImpl;

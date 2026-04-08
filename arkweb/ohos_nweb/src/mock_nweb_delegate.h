@@ -1385,6 +1385,8 @@ class MockNWebDelegate : public NWebDelegateInterface {
               (override));
 #endif
 
+  MOCK_METHOD(void, ReloadOriginalUrlIgnoreCache, (), (const, override));
+
   // Support for weak_ptr
   base::WeakPtr<MockNWebDelegate> WeakFromThis() {
     return weak_factory_.GetWeakPtr();

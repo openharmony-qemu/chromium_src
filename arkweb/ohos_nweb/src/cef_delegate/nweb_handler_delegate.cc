@@ -5921,7 +5921,8 @@ void NWebHandlerDelegate::OnSafeBrowsingCheckDetail(int code,
 #endif
 }
 
-void SaveEnableSafeBrowsingDetection(bool enable, bool strictMode) {
+void NWebHandlerDelegate::SaveEnableSafeBrowsingDetection(
+  bool enable, bool strictMode) {
   is_safe_browsing_enabled_ = enable;
   safe_browsing_strict_mode_ = strictMode;
 }

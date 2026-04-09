@@ -213,7 +213,7 @@ public:
     MOCK_METHOD(std::string, GetCurrentDeviceId, (), (override));
     MOCK_METHOD(int32_t, GetSupportedFlashModes, (std::vector<FlashModeAdapter>& flashModesAdapter), (override));
     MOCK_METHOD(bool, HasFlash, (), (override));
-    MOCK_METHOD(flashModeAdapter, GetFlashMode, (), (override));
+    MOCK_METHOD(FlashModeAdapter, GetFlashMode, (), (override));
     MOCK_METHOD(int32_t, SetFlashMode, (FlashModeAdapter flashMode), (override));
 };
 

@@ -33,6 +33,10 @@ class ComplexFeature : public Feature {
 
   ~ComplexFeature() override;
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  void add_matches(const GURL& url, std::string_view pattern) override;
+#endif
+
   // extensions::Feature:
   Availability IsAvailableToManifest(const HashedExtensionId& hashed_id,
                                      Manifest::Type type,

@@ -63,6 +63,7 @@ CrxComponent::~CrxComponent() = default;
 // Using unretained references is allowed in this case since the life time of
 // the UpdateClient instance exceeds the life time of its inner members,
 // including any sequences that might execute callbacks bound to it.
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 UpdateClientImpl::UpdateClientImpl(
     scoped_refptr<Configurator> config,
     scoped_refptr<PingManager> ping_manager,
@@ -75,6 +76,28 @@ UpdateClientImpl::UpdateClientImpl(
           ping_manager_.get(),
           base::BindRepeating(&UpdateClientImpl::NotifyObservers,
                               base::Unretained(this)))) {}
+#else
+UpdateClientImpl::UpdateClientImpl(
+    scoped_refptr<Configurator> config,
+    scoped_refptr<PingManager> ping_manager,
+    UpdateChecker::Factory update_checker_factory)
+    : UpdateClientImpl(true, config, ping_manager, update_checker_factory) {}
+ 
+UpdateClientImpl::UpdateClientImpl(
+    bool is_enabled,
+    scoped_refptr<Configurator> config,
+    scoped_refptr<PingManager> ping_manager,
+    UpdateChecker::Factory update_checker_factory)
+    : is_enabled_(is_enabled),
+      config_(config),
+      ping_manager_(ping_manager),
+      update_engine_(base::MakeRefCounted<UpdateEngine>(
+          config,
+          update_checker_factory,
+          ping_manager_.get(),
+          base::BindRepeating(&UpdateClientImpl::NotifyObservers,
+                              base::Unretained(this)))) {}
+#endif
 
 UpdateClientImpl::~UpdateClientImpl() {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
@@ -91,6 +114,13 @@ base::RepeatingClosure UpdateClientImpl::Install(
     CrxStateChangeCallback crx_state_change_callback,
     Callback callback) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (!is_enabled_) {
+    std::move(callback).Run(Error::UPDATE_IN_PROGRESS);
+    return base::DoNothing();
+  }
+#endif
 
   if (IsUpdating(id)) {
     std::move(callback).Run(Error::UPDATE_IN_PROGRESS);
@@ -115,6 +145,13 @@ void UpdateClientImpl::Update(const std::vector<std::string>& ids,
                               bool is_foreground,
                               Callback callback) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (!is_enabled_) {
+    return;
+  }
+#endif
+
   RunOrEnqueueTask(base::MakeRefCounted<TaskUpdate>(
       update_engine_.get(), is_foreground, /*is_install=*/false, ids,
       std::move(crx_data_callback), crx_state_change_callback,
@@ -130,6 +167,13 @@ void UpdateClientImpl::CheckForUpdate(
     bool is_foreground,
     Callback callback) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (!is_enabled_) {
+    return;
+  }
+#endif
+
   RunOrEnqueueTask(base::MakeRefCounted<TaskCheckForUpdate>(
       update_engine_.get(), id, std::move(crx_data_callback),
       crx_state_change_callback, is_foreground,
@@ -255,12 +299,22 @@ void UpdateClientImpl::SendPing(const CrxComponent& crx_component,
                      std::move(callback))));
 }
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 scoped_refptr<UpdateClient> UpdateClientFactory(
     scoped_refptr<Configurator> config) {
   return base::MakeRefCounted<UpdateClientImpl>(
       config, base::MakeRefCounted<PingManager>(config),
       base::BindRepeating(&UpdateChecker::Create));
 }
+#else
+scoped_refptr<UpdateClient> UpdateClientFactory(
+    scoped_refptr<Configurator> config,
+    bool is_enabled) {
+  return base::MakeRefCounted<UpdateClientImpl>(
+      is_enabled, config, base::MakeRefCounted<PingManager>(config),
+      base::BindRepeating(&UpdateChecker::Create));
+}
+#endif
 
 void RegisterPrefs(PrefRegistrySimple* registry) {
   RegisterPersistedDataPrefs(registry);

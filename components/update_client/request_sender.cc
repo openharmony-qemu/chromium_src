@@ -21,6 +21,11 @@
 #include "components/update_client/update_client_errors.h"
 #include "components/update_client/utils.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "base/strings/string_util.h"
+#include "extensions/common/extension_urls.h"
+#endif
+
 namespace update_client {
 
 namespace {
@@ -33,6 +38,20 @@ constexpr char kKeyPubBytesBase64[] =
 
 // The content type for all protocol requests.
 constexpr char kContentType[] = "application/json";
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+std::string GetPublicKeyByUrl(const GURL& url) {
+  std::string result;
+  int store_type = extension_urls::GetWebStoreTypeByUrl(false, url);
+  if (store_type == extensions::kWebStoreType360) {
+    return base::EmptyString();
+  }
+ 
+  return base::Base64Decode(std::string(kKeyPubBytesBase64), &result)
+             ? result
+             : std::string();
+}
+#endif
 
 // Returns the value of |response_cup_server_proof| or the value of
 // |response_etag|, if the former value is empty.
@@ -76,7 +95,11 @@ base::OnceClosure RequestSender::Send(
   cur_url_ = urls_.begin();
 
   if (use_signing_) {
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
     public_key_ = GetKey(kKeyPubBytesBase64);
+#else
+    public_key_ = GetPublicKeyByUrl(*cur_url_);
+#endif
     if (public_key_.empty()) {
       HandleSendError(static_cast<int>(ProtocolError::MISSING_PUBLIC_KEY), 0);
       return base::DoNothing();

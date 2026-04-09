@@ -40,6 +40,10 @@
 #include "third_party/blink/public/platform/web_string.h"
 #include "v8/include/v8-forward.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/extensions/common/mojom/webstore_config.mojom.h"
+#endif
+
 class ChromeRenderViewTest;
 class GURL;
 
@@ -234,6 +238,11 @@ class Dispatcher : public content::RenderThreadObserver,
       mojom::Renderer::SuspendExtensionCallback callback) override;
   void CancelSuspendExtension(const ExtensionId& extension_id) override;
   void SetDeveloperMode(bool current_developer_mode) override;
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  void SetWebStoreConfig(mojom::WebStoreConfigPtr config_ptr) override;
+#endif
+
   void SetSessionInfo(version_info::Channel channel,
                       mojom::FeatureSessionType session_type,
                       bool lock_screen_context) override;

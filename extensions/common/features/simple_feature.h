@@ -158,6 +158,11 @@ class SimpleFeature : public Feature {
   // URLPatternSet from the vector of strings.
   // TODO(devlin): Pass in an URLPatternSet directly.
   void set_matches(std::initializer_list<const char* const> matches);
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  void add_matches(const GURL& url, std::string_view pattern) override;
+#endif
+
   void set_max_manifest_version(int max_manifest_version) {
     max_manifest_version_ = max_manifest_version;
   }

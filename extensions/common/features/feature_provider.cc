@@ -20,6 +20,10 @@
 #include "extensions/common/extensions_client.h"
 #include "extensions/common/features/feature.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/extensions/common/features/feature_provider_ext.cc"
+#endif
+
 namespace extensions {
 
 namespace {

@@ -11,13 +11,19 @@
 #include <string_view>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
+
 namespace extensions {
 
 class Feature;
 
 // Note: Binding code (specifically native_extension_bindings_system.cc) relies
 // on this being a sorted map.
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+using FeatureMap = std::map<std::string, std::unique_ptr<Feature>>;
+#else
 using FeatureMap = std::map<std::string, std::unique_ptr<const Feature>>;
+#endif
 
 // Implemented by classes that can vend features.
 class FeatureProvider {
@@ -31,6 +37,14 @@ class FeatureProvider {
 
   // Gets a FeatureProvider for a specific type, like "permission".
   static const FeatureProvider* GetByName(const std::string& name);
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  void UpdateFeature(const std::string& name,
+                     const std::string& url,
+                     std::string_view pattern) const;
+ 
+  static void UpdateFeatures();
+#endif
 
   // Directly access the common FeatureProvider types.
   // Each is equivalent to GetByName('featuretype').

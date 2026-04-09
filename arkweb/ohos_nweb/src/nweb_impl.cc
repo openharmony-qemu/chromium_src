@@ -244,6 +244,7 @@ extern bool g_siteIsolationMode;
 #include "chrome/browser/extensions/extension_service.h"
 #include "extensions/common/extension.h"
 #include "extensions/browser/disable_reason.h"
+#include "extensions/browser/extension_util.h"
 #include "extensions/browser/uninstall_reason.h"
 #include "extensions/browser/ui_util.h"
 #include "extensions/browser/extension_registry_info_manager.h"
@@ -4597,6 +4598,18 @@ void NWebImpl::PutWebExtensionManagerCallback(
 void NWebImpl::RemoveWebExtensionManagerCallback() {
   WVLOG_I("unreqister web extension manager listener");
   extensions::ExtensionRegistryInfoManager::UnRegisterWebExtensionManagerListener();
+}
+
+// static
+void NWebImpl::SetWebStoreConfig(const extension_urls::WebStoreConfig& config) {
+  auto context = NWebImplGetGlobalBrowserContext();
+  auto profile = Profile::FromBrowserContext(context);
+  if (!profile) {
+    WVLOG_I("failed to set webstore config");
+    return;
+  }
+ 
+  extensions::util::SetWebStoreConfig(profile, config);
 }
 
 // static

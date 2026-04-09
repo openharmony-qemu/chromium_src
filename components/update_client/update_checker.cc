@@ -41,6 +41,10 @@
 #include "components/update_client/utils.h"
 #include "url/gurl.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "extensions/common/extension_urls.h"
+#endif
+
 namespace update_client {
 namespace {
 
@@ -106,6 +110,14 @@ void UpdateCheckerImpl::CheckForUpdates(
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 
   update_check_callback_ = std::move(update_check_callback);
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (!extension_urls::IsWebStoreEnable()) {
+    UpdateCheckFailed(ErrorCategory::kUpdateCheck,
+                      static_cast<int>(ProtocolError::MISSING_URLS), 0);
+    return;
+  }
+#endif
 
   auto check_for_updates_invoker = base::BindOnce(
       &UpdateCheckerImpl::CheckForUpdatesHelper, weak_factory_.GetWeakPtr(),

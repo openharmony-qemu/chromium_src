@@ -66,6 +66,10 @@
 #include "ui/base/l10n/l10n_util.h"
 #include "ui/gfx/codec/png_codec.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/extensions/browser/custom_handler.h"
+#endif
+
 using base::ASCIIToUTF16;
 using content::BrowserThread;
 
@@ -399,6 +403,12 @@ void SandboxedUnpacker::StartWithDirectory(const ExtensionId& extension_id,
 
   Unpack(extension_root_);
 }
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+void SandboxedUnpacker::set_webstore_type(int webstore_type) {
+  webstore_type_ = webstore_type;
+}
+#endif
 
 SandboxedUnpacker::~SandboxedUnpacker() {
   // To avoid blocking shutdown, don't delete temporary directory here if it
@@ -1041,6 +1051,10 @@ std::optional<base::Value::Dict> SandboxedUnpacker::RewriteManifestFile(
   DCHECK(!public_key_.empty());
   base::Value::Dict final_manifest = manifest.Clone();
   final_manifest.Set(manifest_keys::kPublicKey, public_key_);
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  CustomData::SetStoreType(webstore_type_, &final_manifest);
+#endif
 
   {
     std::string differential_fingerprint;

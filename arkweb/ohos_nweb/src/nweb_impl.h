@@ -71,6 +71,7 @@ struct RunJavaScriptParam;
 #include "capi/nweb_offscreen_document_callback.h"
 #include "capi/nweb_offscreen_document_permission_request_callback.h"
 #include "capi/web_extension_tab_items.h"
+#include "extensions/common/extension_urls.h"
 #include "ohos_nweb/src/capi/nweb_context_menus_on_clicked_data.h"
 #include "ohos_nweb/src/capi/nweb_context_menus_item.h"
 #include "ohos_nweb/src/capi/web_extension_install_crx_items.h"
@@ -1018,6 +1019,7 @@ class NWebImpl : public NWeb {
   static void PutWebExtensionManagerCallback(
       std::shared_ptr<NWebExtensionManagerCallBack> web_extension_api_callback);
   static void RemoveWebExtensionManagerCallback();
+  static void SetWebStoreConfig(const extension_urls::WebStoreConfig& config);
   static void UnLoadWebExtension(const std::string& eid);
   static void DisableWebExtension(const std::string& eid);
   static void GetExtensionInfoByTabId(int32_t tabId, std::vector<WebExtensionInfo>& extensionInfo);

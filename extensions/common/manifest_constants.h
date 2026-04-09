@@ -48,6 +48,11 @@ inline constexpr char kBookmarkUI[] = "bookmarks_ui";
 inline constexpr char kBrowserAction[] = "browser_action";
 inline constexpr char kChromeOSSystemExtension[] = "chromeos_system_extension";
 inline constexpr char kCommands[] = "commands";
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+inline constexpr char kCustomData[] = "custom_data";
+#endif
+
 inline constexpr char kContentCapabilities[] = "content_capabilities";
 inline constexpr char kContentSecurityPolicy[] = "content_security_policy";
 inline constexpr char kContentSecurityPolicy_ExtensionPagesPath[] =

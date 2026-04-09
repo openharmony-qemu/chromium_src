@@ -10,6 +10,10 @@
 #include "build/build_config.h"
 #include "extensions/common/api/types.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/extensions/browser/pref_names_for_include.cc"
+#endif
+
 // Preference keys which are needed by both the ExtensionPrefs and by external
 // clients, such as APIs.
 

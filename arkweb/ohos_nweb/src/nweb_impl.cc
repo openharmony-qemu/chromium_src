@@ -3175,6 +3175,7 @@ void NWebImpl::OnBlur(const BlurReason& blurReason) {
     LOG(INFO) << "WebCustomKeyboard NWebImpl::OnBlur";
     nweb_delegate_->GetCustomKeyboardHandler()->CloseFromWebStateChange(
         WebCustomKeyboardState::FROM_ONBLUR);
+    return;
   }
 
   if (inputmethod_handler_ == nullptr) {

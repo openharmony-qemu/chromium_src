@@ -76,7 +76,7 @@ void FrameSinkManagerImplUtils::SetIfNeedCleanBuffers(const FrameSinkId& frame_s
   }
   auto root_it = frameSinkManagerImpl->root_sink_map_.find(frame_sink_id);
   if (root_it != frameSinkManagerImpl->root_sink_map_.end()) {
-    if (!root_it->second) {
+    if (!root_it->second || !root_it->second->AsExt()) {
       LOG(ERROR) << "FrameSinkImpl is null, SetIfNeedCleanBuffers failed";
       return;
     }

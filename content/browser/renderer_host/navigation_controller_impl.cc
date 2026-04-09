@@ -1638,7 +1638,14 @@ base::WeakPtr<NavigationHandle> NavigationControllerImpl::LoadURLWithParams(
   return NavigateWithoutEntry(params, actual_navigation_start);
 }
 
+#if BUILDFLAG(IS_ARKWEB)
 void NavigationControllerImpl::LoadOriginalRequestURL() {
+  LoadOriginalRequestURL(false);
+}
+void NavigationControllerImpl::LoadOriginalRequestURL(bool ignore_cache) {
+#else
+void NavigationControllerImpl::LoadOriginalRequestURL() {
+#endif
   // If the original request URL is not valid, matches the current URL, or
   // involves POST data, then simply reload. The POST check avoids issues with
   // sending data to the wrong page.
@@ -1648,7 +1655,11 @@ void NavigationControllerImpl::LoadOriginalRequestURL() {
   if (!original_request_url.is_valid() ||
       original_request_url == last_committed_url ||
       GetLastCommittedEntry()->GetHasPostData()) {
+#if BUILDFLAG(IS_ARKWEB)
+    Reload(ignore_cache? ReloadType::BYPASSING_CACHE : ReloadType::NORMAL, true);
+#else
     Reload(ReloadType::NORMAL, true);
+#endif
     return;
   }
 
@@ -1661,6 +1672,11 @@ void NavigationControllerImpl::LoadOriginalRequestURL() {
           original_request_url);
   load_params->should_replace_current_entry = true;
   load_params->transition_type = ui::PAGE_TRANSITION_RELOAD;
+#if BUILDFLAG(IS_ARKWEB)
+  if (ignore_cache) {
+    load_params->reload_type = ReloadType::BYPASSING_CACHE;
+  }
+#endif
   LoadURLWithParams(*load_params.get());
 }
 

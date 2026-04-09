@@ -1277,6 +1277,11 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
         InjectJsToWeb(JsRunTime::HEAD_READY);
         InjectJsToWeb(JsRunTime::End);
 #endif
+
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+        main_browser_->AsArkWebBrowser()->EnableSafeBrowsingDetection(
+              is_safe_browsing_enabled_, safe_browsing_strict_mode_);
+#endif
       }
       main_browser_->GetHost()->SetNativeWindow(window_);
 
@@ -5914,6 +5919,11 @@ void NWebHandlerDelegate::OnSafeBrowsingCheckDetail(int code,
     return;
   }
 #endif
+}
+
+void SaveEnableSafeBrowsingDetection(bool enable, bool strictMode) {
+  is_safe_browsing_enabled_ = enable;
+  safe_browsing_strict_mode_ = strictMode;
 }
 #endif
 

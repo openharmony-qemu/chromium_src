@@ -1102,6 +1102,7 @@ void OnMediaCastEnter() override;
 
 #if BUILDFLAG(ARKWEB_SAFEBROWSING)
   void OnSafeBrowsingCheckDetail(int code, int policy, int threat) override;
+  void SaveEnableSafeBrowsingDetection(bool enable, bool strictMode);
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_RECEIVE_RESPONSE)
@@ -1329,6 +1330,8 @@ void OnMediaCastEnter() override;
 #if BUILDFLAG(ARKWEB_SAFEBROWSING)
   CefRefPtr<CefSafeBrowsingDetectionCallback>
       safe_browsing_detection_callback_ = nullptr;
+  bool is_safe_browsing_enabled_ = false;
+  bool safe_browsing_strict_mode_ = false;
 #endif
 
 #if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)

@@ -764,9 +764,12 @@ void ExtensionRegistryInfoManager::OnExtensionUnloaded(content::BrowserContext* 
                                                        UnloadedExtensionReason reason) {
   // It must be triggered after the observer notification.
 #if BUILDFLAG(ARKWEB_NWEB_EX)
-  NWebExtensionState state = UnloadedReasonToState(reason);
-  NWebExtensionManagerDispatcher::OnExtensionStateChangedCallBack(
-      extension->id(), static_cast<int>(state));
+  // UNINSTALLED state is notified in OnExtensionUninstalled.
+  if (reason != UnloadedExtensionReason::UNINSTALL) {
+    NWebExtensionState state = UnloadedReasonToState(reason);
+    NWebExtensionManagerDispatcher::OnExtensionStateChangedCallBack(
+        extension->id(), static_cast<int>(state));
+  }
 
   NWebExtensionManagerDispatcher::OnExtensionUnLoadedCallBack(
       extension->id(), UnloadedExtensionReasonEnumToInt(reason));
@@ -790,7 +793,9 @@ void ExtensionRegistryInfoManager::OnExtensionUninstalled(content::BrowserContex
                                                           const Extension* extension,
                                                           UninstallReason reason) {
 #if BUILDFLAG(ARKWEB_NWEB_EX)
-    NWebExtensionManagerDispatcher::OnExtensionUninstalledCallBack(
+  NWebExtensionManagerDispatcher::OnExtensionStateChangedCallBack(
+      extension->id(), static_cast<int>(NWebExtensionState::UNINSTALLED));
+  NWebExtensionManagerDispatcher::OnExtensionUninstalledCallBack(
       extension->id(), static_cast<int>(reason));
 #endif
 }

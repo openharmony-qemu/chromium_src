@@ -5,11 +5,19 @@
 #include "third_party/blink/renderer/platform/bindings/source_location.h"
 
 #include "base/tracing/protos/chrome_track_event.pbzero.h"
+#if BUILDFLAG(ARKWEB_V8_COMPILE)
+#include "base/logging.h"
+#include "base/strings/stringprintf.h"
+#include "base/strings/string_util.h"
+#endif
 #include "third_party/blink/renderer/platform/bindings/script_forbidden_scope.h"
 #include "third_party/blink/renderer/platform/bindings/thread_debugger.h"
 #include "third_party/blink/renderer/platform/bindings/v8_binding.h"
 #include "third_party/blink/renderer/platform/instrumentation/tracing/traced_value.h"
 #include "v8/include/v8-inspector-protocol.h"
+#if BUILDFLAG(ARKWEB_V8_COMPILE)
+#include "v8/include/v8.h"
+#endif
 
 namespace blink {
 
@@ -35,6 +43,48 @@ String ToPlatformString(std::unique_ptr<v8_inspector::StringBuffer> buffer) {
 }
 
 }  // namespace
+
+#if BUILDFLAG(ARKWEB_V8_COMPILE)
+constexpr int kHistorySize = 5;
+struct V8CallHistory {
+  int script_id = -1;
+  int line_number = -1;
+  char func_name[64] = {0};
+  bool is_empty = true;
+};
+V8CallHistory g_v8_uaf_hunt_history[kHistorySize];
+int g_v8_uaf_hunt_index = 0;
+
+void RecordNormalCall(int script_id, int line_number, const char* name) {
+  g_v8_uaf_hunt_history[g_v8_uaf_hunt_index].script_id = script_id;
+  g_v8_uaf_hunt_history[g_v8_uaf_hunt_index].line_number = line_number;
+
+  if (name) {
+      base::strlcpy(g_v8_uaf_hunt_history[g_v8_uaf_hunt_index].func_name,
+                    name,
+                    sizeof(V8CallHistory::func_name));
+  } else {
+      g_v8_uaf_hunt_history[g_v8_uaf_hunt_index].func_name[0] = '\0';
+  }
+
+  g_v8_uaf_hunt_history[g_v8_uaf_hunt_index].is_empty = false;
+  g_v8_uaf_hunt_index = (g_v8_uaf_hunt_index + 1) % kHistorySize;
+}
+
+void DumpHistory() {
+  std::string dump = "Last normal ScriptID:Line [Name]: ";
+  for (int i = 0; i < kHistorySize; ++i) {
+    int idx = (g_v8_uaf_hunt_index + i) % kHistorySize;
+    if (!g_v8_uaf_hunt_history[idx].is_empty) {
+      dump += base::StringPrintf("%d:%d [%s], ",
+                                 g_v8_uaf_hunt_history[idx].script_id,
+                                 g_v8_uaf_hunt_history[idx].line_number,
+                                 g_v8_uaf_hunt_history[idx].func_name);
+    }
+  }
+  LOG(ERROR) << "[V8_UAF_HUNT] " << dump;
+}
+#endif
 
 // static
 SourceLocation* SourceLocation::CaptureWithFullStackTrace() {
@@ -234,6 +284,44 @@ SourceLocation* CaptureSourceLocation() {
 SourceLocation* CaptureSourceLocation(v8::Isolate* isolate,
                                       v8::Local<v8::Function> function) {
   if (!function.IsEmpty()) {
+
+#if BUILDFLAG(ARKWEB_V8_COMPILE)
+    if (!isolate || isolate->IsDead() || !isolate->InContext()) [[unlikely]] {
+        LOG(ERROR) << "[V8_UAF_HUNT] DANGER! Isolate dead or out of Context! "
+                   << "Isolate=" << isolate
+                   << ", IsDead=" << (isolate ? isolate->IsDead() : true);
+        DumpHistory();
+    } else {
+        v8::HandleScope handle_scope(isolate);
+        int script_id = function->ScriptId();
+        int line_number = function->GetScriptLineNumber();
+        int column_number = function->GetScriptColumnNumber();
+
+        v8::Local<v8::Value> name_val = function->GetName();
+        std::string name_str = "<anonymous>";
+
+        if (name_val->IsString()) {
+            v8::String::Utf8Value utf8_name(isolate, name_val);
+            if (*utf8_name) {
+                name_str = *utf8_name;
+            }
+        }
+		std::string resource_name_str = "<unknown_file>";
+        v8::Local<v8::Value> resource_name = function->GetScriptOrigin().ResourceName();
+        if (!resource_name.IsEmpty() && resource_name->IsString()) {
+            v8::String::Utf8Value utf8_resource(isolate, resource_name);
+            if (*utf8_resource) {
+                resource_name_str = *utf8_resource;
+            }
+        }
+		LOG(INFO) << "[V8_UAF_HUNT] DANGER! "
+                  << "line_number = " << line_number
+                  << ", column_number = " << column_number
+				  << ", resource_name_str = " << resource_name_str;
+        RecordNormalCall(script_id, line_number, name_str.c_str());
+    }
+#endif
+
     v8::Location location = function->GetScriptLocation();
     return MakeGarbageCollected<SourceLocation>(
         ToCoreStringWithUndefinedOrNullCheck(

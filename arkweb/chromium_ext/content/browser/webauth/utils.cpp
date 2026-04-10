@@ -89,7 +89,7 @@ device::CtapRequestExtraCommon CreateCtapRequestExtraCommon(
         }
         std::string str;
         if (base::JSONWriter::Write(dict_large_blob, &str)) {
-            LOG(INFO) << "convert largeBlob successfully, extension:" << str;
+            LOG(INFO) << "convert largeBlob successfully";
         }
         ret.extensions = str;
         return ret;
@@ -166,7 +166,7 @@ blink::mojom::GetAssertionAuthenticatorResponsePtr CreateGetAssertionResponse(
     response->user_handle = response_data.response_extra->user_handle;
     response->extensions =
         blink::mojom::AuthenticationExtensionsClientOutputs::New();
-    
+
     std::optional<base::Value> json_val = base::JSONReader::Read(
         response_data.response_extra->common.client_extension_results);
     if (!json_val.has_value() || !json_val->is_dict()) {
@@ -192,12 +192,12 @@ blink::mojom::GetAssertionAuthenticatorResponsePtr CreateGetAssertionResponse(
     }
     // digital shield data
     const std::string* auth_data_hex = outer_dict.FindString("authData");
-        if (auth_data_hex != nullptr) {
-            std::vector<uint8_t> temp_vec;
-            base::HexStringToBytes(*auth_data_hex, &temp_vec);
-            response->extensions->digital_shield_data = std::move(temp_vec);
-        }
-    
+    if (auth_data_hex != nullptr) {
+        std::vector<uint8_t> temp_vec;
+        base::HexStringToBytes(*auth_data_hex, &temp_vec);
+        response->extensions->digital_shield_data = std::move(temp_vec);
+    }
+
     return response;
 }
 

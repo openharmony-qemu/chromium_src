@@ -78,12 +78,12 @@ device::CtapRequestExtraCommon CreateCtapRequestExtraCommon(
     }
     if (options->extensions) {
         base::Value::Dict dict;
-        if (options->extensions->large_blob_write->large_blob_write.has_value()) {
+        if (options->extensions->large_blob_write.has_value()) {
             std::string encoded = base::HexEncode(options->extensions->large_blob_write->data(),  options->extensions->large_blob_write->size());
             dict.Set("write", encoded);
         }
         dict.Set("read", options->extensions->large_blob_read);
-        base::Value::Dice dict_large_blob;
+        base::Value::Dict dict_large_blob;
         if (options->extensions->large_blob_read || options->extensions->large_blob_write) {
             dict_large_blob.Set("largeBlob", std::move(dict));
         }
@@ -167,7 +167,8 @@ blink::mojom::GetAssertionAuthenticatorResponsePtr CreateGetAssertionResponse(
     response->extensions =
         blink::mojom::AuthenticationExtensionsClientOutputs::New();
     
-    std::options<base::Value> json_val = base::JSONReader::Read(response_data.response_extra->common.client_extension_results);
+    std::optional<base::Value> json_val = base::JSONReader::Read(
+        response_data.response_extra->common.client_extension_results);
     if (!json_val.has_value() || !json_val->is_dict()) {
         return response;
     }
@@ -182,7 +183,7 @@ blink::mojom::GetAssertionAuthenticatorResponsePtr CreateGetAssertionResponse(
             response->extensions->echo_large_blob_written = true;
             response->extensions->large_blob_written = written->GetBool();
         }
-        const std::string* blob = inner_dict.Find("blob");
+        const std::string* blob = inner_dict.FindString("blob");
         if (blob != nullptr) {
             std::vector<uint8_t> temp_vec;
             base::HexStringToBytes(*blob, &temp_vec);

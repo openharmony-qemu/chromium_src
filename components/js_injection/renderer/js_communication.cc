@@ -253,16 +253,25 @@ void JsCommunication::OnDestruct()
 }
 
 void JsCommunication::RunScriptsAtDocumentStart() {
-  url::Origin frame_origin =
-    url::Origin(render_frame()->GetWebFrame()->GetSecurityOrigin());
-  for (const auto& script : scripts_) {
+  RunScriptsInternal(weak_ptr_factory_.GetWeakPtr());
+  // Careful `this` may be destroyed.
+}
+
+// static
+void JsCommunication::RunScriptsInternal(
+    base::WeakPtr<JsCommunication> js_communication) {
+  CHECK(js_communication);
+  url::Origin frame_origin = url::Origin(
+      js_communication->render_frame()->GetWebFrame()->GetSecurityOrigin());
+  for (const auto& script : js_communication->scripts_) {
 #if BUILDFLAG(ARKWEB_JSPROXY)
     if (!script->origin_matcher.rules().empty()) {
       if (!script->origin_matcher.Matches(frame_origin)) {
         continue;
       }
     } else {
-      if (!implUtils_->RunScriptsAtDocumentStartRegexRules(script->script)) {
+      if (!js_communication->implUtils_->RunScriptsAtDocumentStartRegexRules(
+          script->script)) {
         continue;
       }
     }
@@ -271,8 +280,13 @@ void JsCommunication::RunScriptsAtDocumentStart() {
       continue;
 #endif
 
-    render_frame()->GetWebFrame()->ExecuteScript(
+    js_communication->render_frame()->GetWebFrame()->ExecuteScript(
         blink::WebScriptSource(script->script));
+    // Careful, executing a script may cause JsCommunication object to be
+    // destroyed.
+    if (!js_communication) {
+      return;
+    }
   }
 }
 

@@ -224,6 +224,9 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
   const int32_t ERROR = -1;
   bool is_need_underline_ = false;
   bool has_composition_ = false;
+
+  std::mutex compositionMutex_;
+  
   std::u16string preview_text_cache_;
   int32_t composition_range_start_ = 0;
   int32_t composition_range_end_ = 0;

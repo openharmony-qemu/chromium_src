@@ -24,6 +24,7 @@
 #include "arkweb/chromium_ext/url/ohos/log_utils.h"
 #include "base/command_line.h"
 #include "base/logging.h"
+#include "base/numerics/safe_math.h"
 #include "content/public/common/content_switches.h"
 #include "nweb_delegate_interface.h"
 #include "nweb_gesture_event_result_impl.h"
@@ -792,7 +793,11 @@ void NWebRenderHandler::OnPaint(CefRefPtr<CefBrowser> browser,
               << ") is not identical to request size (" << width_ << "*"
               << height_ << "), drop this frame";
     constexpr uint8_t kBitsPerPixel = 4;
-    uint32_t white_frame_size = width_ * height_ * kBitsPerPixel;
+    uint32_t white_frame_size = 0;
+    if (!(base::CheckMul(width_, height_) * kBitsPerPixel).AssignIfValid(&white_frame_size)) {
+      LOG(ERROR) << "white_frame_size is Invalid";
+      return;
+    }
     char* white_frame = new char[white_frame_size];
     const char pixel_in_white = 0xFF;
     (void)memset_s(white_frame, white_frame_size, pixel_in_white,

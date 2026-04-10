@@ -5,6 +5,7 @@
 #include "chrome/browser/extensions/api/developer_private/developer_private_functions_shared.h"
 
 #include "base/barrier_closure.h"
+#include "base/byte_count.h"
 #include "base/files/file_util.h"
 #include "base/memory/ref_counted.h"
 #include "base/metrics/histogram_functions.h"
@@ -70,6 +71,8 @@
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 #include "arkweb/chromium_ext/chrome/browser/extensions/api/developer_private_api_ext.cc"
 #include "arkweb/chromium_ext/chrome/browser/extensions/extension_multiple_uninstall_dialog_ohos.h"
+#include "base/i18n/rtl.h"
+#include "ui/base/text/bytes_formatting.h"
 #endif // ARKWEB_ARKWEB_EXTENSIONS
 
 #if BUILDFLAG(ENABLE_EXTENSIONS)
@@ -472,12 +475,30 @@ DeveloperPrivateGetExtensionSizeFunction::Run() {
   if (!extension) {
     return RespondNow(LogNoSuchExtensionFoundAndReturn());
   }
-
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  extensions::path_util::CalculateExtensionDirectorySize(extension->path(),
+      base::BindOnce(
+          [](scoped_refptr<DeveloperPrivateGetExtensionSizeFunction> function, int64_t size_in_bytes) {
+              constexpr int64_t kOneMebibyteInBytes = 1024 * 1024;
+              std::u16string size;
+              if (size_in_bytes < kOneMebibyteInBytes) {
+                  size = l10n_util::GetStringUTF16(IDS_APPLICATION_INFO_SIZE_SMALL_LABEL);
+              } else {
+                  std::u16string amount = ui::FormatBytesWithUnits(base::ByteCount(size_in_bytes),
+                      ui::DataUnits::kMebibyte,
+                      /*show_units=*/false);
+                  size = l10n_util::GetStringFUTF16(IDS_EXTENSIONS_ITEM_SIZE_MEBIBYTES, amount);
+                  size = base::i18n::GetDisplayStringInLTRDirectionality(size);
+              }
+              function->Respond(function->WithArguments(size));
+          },
+          scoped_refptr<DeveloperPrivateGetExtensionSizeFunction>(this)));
+#else
   extensions::path_util::CalculateAndFormatExtensionDirectorySize(
       extension->path(), IDS_APPLICATION_INFO_SIZE_SMALL_LABEL,
       base::BindOnce(
           &DeveloperPrivateGetExtensionSizeFunction::OnSizeCalculated, this));
-
+#endif // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   return RespondLater();
 }
 

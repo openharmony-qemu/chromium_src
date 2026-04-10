@@ -670,6 +670,11 @@ class CONTENT_EXPORT RenderThreadImpl
 
   int process_foregrounded_count_;
 
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+  bool has_reported_initial_foreground_memory_ = false;
+  bool has_reported_background_memory_ = false;
+#endif
+
   int32_t client_id_;
 
   bool is_context_result_fatal_ = false;

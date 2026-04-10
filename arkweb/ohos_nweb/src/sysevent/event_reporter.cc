@@ -114,12 +114,18 @@ constexpr char SITE_ISOLATION_STATUS[] = "SITE_ISOLATION_STATUS";
 
 // For renderer memory statistics
 constexpr char PAGE_MEM_LEAK[] = "PAGE_MEM_LEAK";
+constexpr char BASIC_RENDER_MEM[] = "BASIC_RENDER_MEM";
+constexpr char BASIC_BROWSER_MEM[] = "BASIC_BROWSER_MEM";
 constexpr char TYPE[] = "TYPE";
 constexpr char PID[] = "PID";
 constexpr char RSS[] = "RSS";
 constexpr char PSS[] = "PSS";
+constexpr char SWAP_PSS[] = "SWAP_PSS";
+constexpr char FD_NUM[] = "FD_NUM";
+constexpr char OOM_SCORE_ADJ[] = "OOM_SCORE_ADJ";
 constexpr char JS_HEAP_TOTAL[] = "JS_HEAP_TOTAL";
 constexpr char JS_HEAP_USED[] = "JS_HEAP_USED";
+constexpr char PA[] = "PA";
 constexpr char GPU_MEM[] = "GPU_MEM";
 constexpr char URL[] = "URL";
 
@@ -429,7 +435,39 @@ void ReportRendererMem(const std::string& type,
       PAGE_MEM_LEAK, HiSysEventAdapter::EventType::STATISTIC,
       {TYPE, type, PID, pid, RSS, rss, PSS, pss, JS_HEAP_TOTAL, js_heap_total,
        JS_HEAP_USED, js_heap_used, GPU_MEM, gpu_mem, URL, url});
-}  
+}
+
+void ReportBasicRendererMem(const std::string& pid,
+                       const std::string& rss,
+                       const std::string& pss,
+                       const std::string& swap_pss,
+                       const std::string& fd_num,
+                       const std::string& oom_score_adj,
+                       const std::string& js_heap_total,
+                       const std::string& js_heap_used,
+                       const std::string& pa,
+                       const std::string& gpu_mem)
+{
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      BASIC_RENDER_MEM, HiSysEventAdapter::EventType::STATISTIC,
+      {PID, pid, RSS, rss, PSS, pss, SWAP_PSS, swap_pss, FD_NUM, fd_num,
+       OOM_SCORE_ADJ, oom_score_adj, JS_HEAP_TOTAL, js_heap_total,
+       JS_HEAP_USED, js_heap_used, PA, pa, GPU_MEM, gpu_mem});
+}
+
+void ReportBasicBrowserMem(const std::string& pid,
+                       const std::string& rss,
+                       const std::string& pss,
+                       const std::string& swap_pss,
+                       const std::string& fd_num,
+                       const std::string& oom_score_adj,
+                       const std::string& pa)
+{
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      BASIC_BROWSER_MEM, HiSysEventAdapter::EventType::STATISTIC,
+      {PID, pid, RSS, rss, PSS, pss, SWAP_PSS, swap_pss, FD_NUM, fd_num,
+       OOM_SCORE_ADJ, oom_score_adj, PA, pa});
+}
 
 void ReportWebMediaPlayErrorInfo(const std::string& errorType,
                               int errorCode,

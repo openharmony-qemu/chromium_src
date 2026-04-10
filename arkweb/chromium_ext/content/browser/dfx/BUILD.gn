@@ -1,3 +1,11 @@
+source_set("collect_memory_utils") {
+  sources = [
+    "collect_memory_utils.cc",
+    "collect_memory_utils.h",
+  ]
+  deps = [ "//base" ]
+}
+
 source_set("dfx_monitor_browser") {
   sources = [
     "dfx_reporter_browser_impl.cc",
@@ -6,6 +14,7 @@ source_set("dfx_monitor_browser") {
   deps = [
     "//base",
     "//mojo/public/cpp/bindings",
+    ":collect_memory_utils",
     "mojom",
   ]
 }
@@ -16,6 +25,7 @@ source_set("memory_monitor_render") {
   ]
   deps = [
     "//base",
+    ":collect_memory_utils",
     "mojom",
     "//v8",
   ]

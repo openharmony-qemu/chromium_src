@@ -256,6 +256,13 @@ struct AuthenticationExtensionsClientOutputs {
 
   // The response for the payment extension.
   AuthenticationExtensionsPaymentResponse? payment;
+
+  // Value that getClientExtensionResults() called on the returned
+  // PublicKeyCredential instance should contain for the `digitalShieldData`
+  // extension output `authData` parameter.
+  // #if BUILDFLAG(ARKWEB_FIDO)
+  array<uint8>? digital_shield_data;
+  // #endif BUILDFLAG(ARKWEB_FIDO)
 };
 
 // Information about the relying party. These fields take arbitrary input.

@@ -19,6 +19,9 @@ dictionary AuthenticationExtensionsClientOutputsJSON {
   // https://fidoalliance.org/specs/fido-v2.1-rd-20201208/fido-client-to-authenticator-protocol-v2.1-rd-20201208.html#sctn-credBlob-extension
   boolean credBlob;
   Base64URLString getCredBlob;
+// #if BUILDFLAG(ARKWEB_FIDO)
+  object digitalShieldData;
+// #endif BUILDFLAG(ARKWEB_FIDO)
 
   // https://w3c.github.io/webauthn/#sctn-supplemental-public-keys-extension
   [RuntimeEnabled=WebAuthenticationSupplementalPubKeys] object supplementalPubKeys;

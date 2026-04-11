@@ -5,6 +5,10 @@
 #include "content/browser/webauth/utils.h"
 
 #include "base/logging.h"
+#include "base/values.h"
+#include "base/strings/string_number_conversions.h"
+#include "base/json/json_writer.h"
+#include "base/json/json_reader.h"
 #include "content/browser/webauth/common_utils.h"
 #include "device/fido/ohos/ohos_authenticator.h"
 
@@ -72,7 +76,25 @@ device::CtapRequestExtraCommon CreateCtapRequestExtraCommon(
     for (const auto& hint : options->hints) {
         ret.hints.push_back(Convert(hint));
     }
-    // Not support extensions.
+    if (options->extensions) {
+        base::Value::Dict dict;
+        if (options->extensions->large_blob_write.has_value()) {
+            std::string encoded = base::HexEncode(options->extensions->large_blob_write->data(),
+                options->extensions->large_blob_write->size());
+            dict.Set("write", std::move(encoded));
+        }
+        dict.Set("read", options->extensions->large_blob_read);
+        base::Value::Dict dict_large_blob;
+        if (options->extensions->large_blob_read || options->extensions->large_blob_write) {
+            dict_large_blob.Set("largeBlob", std::move(dict));
+        }
+        std::string str;
+        if (!base::JSONWriter::Write(dict_large_blob, &str)) {
+            LOG(ERROR) << "convert largeBlob failed.";
+        }
+        ret.extensions = str;
+        return ret;
+    }
     ret.extensions = std::nullopt;
     return ret;
 }
@@ -145,6 +167,37 @@ blink::mojom::GetAssertionAuthenticatorResponsePtr CreateGetAssertionResponse(
     response->user_handle = response_data.response_extra->user_handle;
     response->extensions =
         blink::mojom::AuthenticationExtensionsClientOutputs::New();
+
+    std::optional<base::Value> json_val = base::JSONReader::Read(
+        response_data.response_extra->common.client_extension_results);
+    if (!json_val.has_value() || !json_val->is_dict()) {
+        return response;
+    }
+    const base::Value::Dict& outer_dict = json_val->GetDict();
+    // largeBlob
+    const base::Value* large_blob_val = outer_dict.Find("largeBlob");
+    if (large_blob_val != nullptr && large_blob_val->is_dict()) {
+        response->extensions->echo_large_blob = true;
+        const base::Value::Dict& inner_dict = large_blob_val->GetDict();
+        const base::Value* written = inner_dict.Find("written");
+        if (written != nullptr && written->is_bool()) {
+            response->extensions->echo_large_blob_written = true;
+            response->extensions->large_blob_written = written->GetBool();
+        }
+        const std::string* blob = inner_dict.FindString("blob");
+        if (blob != nullptr) {
+            std::vector<uint8_t> temp_vec;
+            base::HexStringToBytes(*blob, &temp_vec);
+            response->extensions->large_blob = std::move(temp_vec);
+        }
+    }
+    // digital shield data
+    const std::string* auth_data_hex = outer_dict.FindString("authData");
+    if (auth_data_hex != nullptr) {
+        std::vector<uint8_t> temp_vec;
+        base::HexStringToBytes(*auth_data_hex, &temp_vec);
+        response->extensions->digital_shield_data = std::move(temp_vec);
+    }
 
     return response;
 }

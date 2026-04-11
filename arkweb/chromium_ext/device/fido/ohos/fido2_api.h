@@ -212,7 +212,9 @@ typedef enum FIDO2_ClientCapability {
     /** Signal unknown credential. */
     FIDO2_SIGNAL_UNKNOWN_CREDENTIAL = 8,
     /** Extension params of uvi. */
-    FIDO2_EXTENSION_UVI = 9
+    FIDO2_EXTENSION_UVI = 9,
+    /** Extension params of largeBlob. */
+    FIDO2_EXTENSION_LARGEBLOB = 10
 } FIDO2_ClientCapability;
 
 /**

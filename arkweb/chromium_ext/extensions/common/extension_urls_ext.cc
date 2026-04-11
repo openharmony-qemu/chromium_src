@@ -93,7 +93,7 @@ int GetWebStoreTypeByUrl(bool flag, const GURL& url) {
   }
  
   if (url.DomainIs(domain)) {
-    return extensions::kWebStoreType360;
+    return extensions::kWebStoreTypeHuawei;
   }
  
   return extensions::kWebStoreTypeDefault;

@@ -18,7 +18,7 @@ namespace extensions {
 enum : int {
   kWebStoreTypeDefault = 0,
  
-  kWebStoreType360 = 1,
+  kWebStoreTypeHuawei = 1,
 };
  
 }  // namespace extensions

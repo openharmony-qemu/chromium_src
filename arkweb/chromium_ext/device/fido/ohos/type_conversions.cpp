@@ -43,6 +43,8 @@ std::string Convert(const FIDO2_ClientCapability& capability)
             return "signalUnknownCredential";
         case FIDO2_EXTENSION_UVI:
             return "extension:uvi";
+        case FIDO2_EXTENSION_LARGEBLOB:
+            return "extension:largeBlob";
   }
   return {};
 }

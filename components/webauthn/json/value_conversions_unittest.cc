@@ -454,7 +454,7 @@ TEST(WebAuthenticationJSONConversionTest,
       "written": true
     },
     "digitalShieldData": {
-      "authData": "dGVzdCBsYXJnZSBibG9i",
+      "authData": "dGVzdCBsYXJnZSBibG9i"
     },
     "prf": {
       "results": {

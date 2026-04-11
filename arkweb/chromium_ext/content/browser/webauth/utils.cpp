@@ -79,7 +79,8 @@ device::CtapRequestExtraCommon CreateCtapRequestExtraCommon(
     if (options->extensions) {
         base::Value::Dict dict;
         if (options->extensions->large_blob_write.has_value()) {
-            std::string encoded = base::HexEncode(options->extensions->large_blob_write->data(),  options->extensions->large_blob_write->size());
+            std::string encoded = base::HexEncode(options->extensions->large_blob_write->data(),
+                options->extensions->large_blob_write->size());
             dict.Set("write", encoded);
         }
         dict.Set("read", options->extensions->large_blob_read);

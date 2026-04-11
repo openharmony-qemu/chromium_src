@@ -81,7 +81,7 @@ device::CtapRequestExtraCommon CreateCtapRequestExtraCommon(
         if (options->extensions->large_blob_write.has_value()) {
             std::string encoded = base::HexEncode(options->extensions->large_blob_write->data(),
                 options->extensions->large_blob_write->size());
-            dict.Set("write", encoded);
+            dict.Set("write", std::move(encoded));
         }
         dict.Set("read", options->extensions->large_blob_read);
         base::Value::Dict dict_large_blob;
@@ -89,8 +89,8 @@ device::CtapRequestExtraCommon CreateCtapRequestExtraCommon(
             dict_large_blob.Set("largeBlob", std::move(dict));
         }
         std::string str;
-        if (base::JSONWriter::Write(dict_large_blob, &str)) {
-            LOG(INFO) << "convert largeBlob successfully";
+        if (!base::JSONWriter::Write(dict_large_blob, &str)) {
+            LOG(ERROR) << "convert largeBlob failed.";
         }
         ret.extensions = str;
         return ret;

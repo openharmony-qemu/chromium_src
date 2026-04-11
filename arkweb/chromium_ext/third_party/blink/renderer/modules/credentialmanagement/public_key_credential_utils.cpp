@@ -17,25 +17,6 @@ void OnGetClientCapabilitiesFullComplete(
         results.emplace_back(std::move(capability->name), capability->supported);
     }
 
-    // See third_party/blink/renderer/modules/credentialmanagement/public_key_credential.cc
-    results.emplace_back("extension:appid", true);
-    results.emplace_back("extension:appidExclude", true);
-    results.emplace_back("extension:hmacCreateSecret", true);
-    results.emplace_back("extension:credentialProtectionPolicy", true);
-    results.emplace_back("extension:enforceCredentialProtectionPolicy", true);
-    results.emplace_back("extension:minPinLength", true);
-    results.emplace_back("extension:credProps", true);
-    results.emplace_back(
-        "extension:largeBlob",
-        RuntimeEnabledFeatures::WebAuthenticationLargeBlobExtensionEnabled());
-    results.emplace_back("extension:credBlob", true);
-    results.emplace_back("extension:getCredBlob", true);
-    results.emplace_back(
-        "extension:payment",
-        RuntimeEnabledFeatures::SecurePaymentConfirmationEnabled());
-    results.emplace_back("extension:prf",
-                         RuntimeEnabledFeatures::WebAuthenticationPRFEnabled());
-
     // Results should be sorted lexicographically based on the keys.
     std::sort(
         results.begin(), results.end(),

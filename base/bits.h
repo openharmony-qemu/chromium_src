@@ -57,7 +57,7 @@ constexpr bool IsPowerOfTwoDeprecatedDoNotUse(T value) {
 // Round down |size| to a multiple of alignment, which must be a power of two.
 template <typename T>
   requires UnsignedInteger<T>
-inline constexpr T AlignDown(T size, T alignment) {
+[[nodiscard]] inline constexpr T AlignDown(T size, T alignment) {
   DCHECK(std::has_single_bit(alignment));
   return size & ~(alignment - 1);
 }
@@ -68,7 +68,8 @@ inline constexpr T AlignDown(T size, T alignment) {
 // TODO(crbug.com/40256225): Switch uses and remove.
 template <typename T>
   requires SignedIntegerDeprecatedDoNotUse<T>
-inline constexpr T AlignDownDeprecatedDoNotUse(T size, T alignment) {
+[[nodiscard]] inline constexpr T AlignDownDeprecatedDoNotUse(T size,
+                                                             T alignment) {
   DCHECK(IsPowerOfTwoDeprecatedDoNotUse(alignment));
   return size & ~(alignment - 1);
 }
@@ -77,7 +78,7 @@ inline constexpr T AlignDownDeprecatedDoNotUse(T size, T alignment) {
 // of two. Defined for types where sizeof(T) is one byte.
 template <typename T>
   requires(sizeof(T) == 1)
-inline T* AlignDown(T* ptr, uintptr_t alignment) {
+[[nodiscard]] inline T* AlignDown(T* ptr, uintptr_t alignment) {
   return reinterpret_cast<T*>(
       AlignDown(reinterpret_cast<uintptr_t>(ptr), alignment));
 }
@@ -85,7 +86,7 @@ inline T* AlignDown(T* ptr, uintptr_t alignment) {
 // Round up |size| to a multiple of alignment, which must be a power of two.
 template <typename T>
   requires UnsignedInteger<T>
-inline constexpr T AlignUp(T size, T alignment) {
+[[nodiscard]] inline constexpr T AlignUp(T size, T alignment) {
   DCHECK(std::has_single_bit(alignment));
   return (size + alignment - 1) & ~(alignment - 1);
 }
@@ -96,7 +97,8 @@ inline constexpr T AlignUp(T size, T alignment) {
 // TODO(crbug.com/40256225): Switch uses and remove.
 template <typename T>
   requires SignedIntegerDeprecatedDoNotUse<T>
-inline constexpr T AlignUpDeprecatedDoNotUse(T size, T alignment) {
+[[nodiscard]] inline constexpr T AlignUpDeprecatedDoNotUse(T size,
+                                                           T alignment) {
   DCHECK(IsPowerOfTwoDeprecatedDoNotUse(alignment));
   return (size + alignment - 1) & ~(alignment - 1);
 }
@@ -105,7 +107,7 @@ inline constexpr T AlignUpDeprecatedDoNotUse(T size, T alignment) {
 // two. Defined for types where sizeof(T) is one byte.
 template <typename T>
   requires(sizeof(T) == 1)
-inline T* AlignUp(T* ptr, uintptr_t alignment) {
+[[nodiscard]] inline T* AlignUp(T* ptr, uintptr_t alignment) {
   return reinterpret_cast<T*>(
       AlignUp(reinterpret_cast<uintptr_t>(ptr), alignment));
 }
@@ -117,7 +119,7 @@ inline T* AlignUp(T* ptr, uintptr_t alignment) {
 //
 // A common use for this function is to take its result and use it to left-shift
 // a bit; instead of doing so, use std::bit_floor().
-constexpr int Log2Floor(uint32_t n) {
+[[nodiscard]] constexpr int Log2Floor(uint32_t n) {
   return 31 - std::countl_zero(n);
 }
 
@@ -128,7 +130,7 @@ constexpr int Log2Floor(uint32_t n) {
 //
 // A common use for this function is to take its result and use it to left-shift
 // a bit; instead of doing so, use std::bit_ceil().
-constexpr int Log2Ceiling(uint32_t n) {
+[[nodiscard]] constexpr int Log2Ceiling(uint32_t n) {
   // When n == 0, we want the function to return -1.
   // When n == 0, (n - 1) will underflow to 0xFFFFFFFF, which is
   // why the statement below starts with (n ? 32 : -1).

@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//arkweb/build/features/features.gni")
 import("//build/buildflag_header.gni")
 import("//net/features.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
@@ -20,6 +21,11 @@ source_set("network_impl") {
     "//services/network/public/cpp",
     "//url",
   ]
+
+  if (defined(arkweb_arkweb_extensions) && arkweb_arkweb_extensions) {
+    configs += [ "//content:content_implementation" ]
+    deps += [ "//skia" ]
+  }
 }
 
 source_set("in_process_unzipper") {

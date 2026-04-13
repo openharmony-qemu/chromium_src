@@ -15,6 +15,9 @@
 
 #include "arkweb/chromium_ext/components/subresource_filter/content/shared/browser/ruleset_service_for_include.h"
 
+#include "base/path_service.h"
+#include "chrome/common/chrome_paths.h"
+
 namespace subresource_filter {
 
 #if BUILDFLAG(ARKWEB_ADBLOCK)
@@ -34,6 +37,12 @@ RulesetService::RulesetService(
       indexed_ruleset_base_dir_(indexed_ruleset_base_dir),
       unindexed_ruleset_base_dir_(unindexed_ruleset_base_dir),
       ruleset_service_client_(client) {
+  if (local_state_->GetInitializationStatus() == PrefService::INITIALIZATION_STATUS_WAITING) {
+    base::FilePath local_state_file;
+    bool result = base::PathService::Get(chrome::FILE_LOCAL_STATE, &local_state_file);
+    LOG(ERROR) << "[Adblock] RulesetService::RulesetService file:" << local_state_file
+              << " .PathExists: " << base::PathExists(local_state_file.DirName());
+  }
   CHECK_NE(local_state_->GetInitializationStatus(),
            PrefService::INITIALIZATION_STATUS_WAITING,
            base::NotFatalUntil::M129);

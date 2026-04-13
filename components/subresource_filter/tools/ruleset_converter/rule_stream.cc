@@ -14,6 +14,10 @@
 #include "components/subresource_filter/tools/rule_parser/rule_parser.h"
 #include "third_party/protobuf/src/google/protobuf/io/zero_copy_stream_impl_lite.h"
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+#include "base/logging.h"
+#endif
+
 namespace subresource_filter {
 
 namespace {
@@ -130,6 +134,11 @@ class FilterListRuleOutputStream : public RuleOutputStream {
 
   bool Finish() override {
     output_->flush();
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+    if (output_->bad()) {
+      LOG(ERROR) << "[Adblock] output_->flush() failed, state:" << output_->rdstate();
+    }
+#endif
     return !output_->bad();
   }
 
@@ -281,10 +290,23 @@ class UnindexedRulesetRuleOutputStream : public RuleOutputStream {
 #endif
 
   bool Finish() override {
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+    if (!ruleset_writer_.Finish()) {
+      LOG(ERROR) << "[Adblock] ruleset_writer_.Finish() failed, size:" << ruleset_.size();
+      return false;
+    }
+#else
     if (!ruleset_writer_.Finish())
       return false;
+#endif
     output_->write(ruleset_.data(), ruleset_.size());
     output_->flush();
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+    if (output_->bad()) {
+      LOG(ERROR) << "[Adblock] output_->flush() failed, size:" << ruleset_.size()
+                 << " ,state:" << output_->rdstate();
+    }
+#endif
     return !output_->bad();
   }
 

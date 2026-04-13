@@ -59,6 +59,8 @@ bool UnindexedRulesetWriter::AddUrlRule(const proto::UrlRule& rule) {
 bool UnindexedRulesetWriter::Finish() {
   CHECK(!had_error(), base::NotFatalUntil::M129);
 #if BUILDFLAG(ARKWEB_ADBLOCK)
+  LOG(INFO) << "[Adblock] UnindexedRulesetWriter url_rules_size:" << pending_chunk_.url_rules_size()
+            << " ,css_rules_size:" << pending_chunk_.css_rules_size();
   const bool success =
       (!pending_chunk_.url_rules_size() && !pending_chunk_.css_rules_size()) ||
       WritePendingChunk();

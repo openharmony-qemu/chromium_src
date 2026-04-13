@@ -217,6 +217,11 @@
 #include "ui/android/window_android_compositor.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "ohos/adapter/permission_manager/permission_manager_adapter.h"
+namespace ohos_permission = ohos::adapter::permission;
+#endif
+
 namespace content {
 
 namespace {
@@ -2333,6 +2338,18 @@ NavigationRequest::GetCommitDeferringConditionForTesting() {
 }
 
 void NavigationRequest::BeginNavigation() {
+#if BUILDFLAG(IS_OHOS)
+  if (common_params_->url.is_valid() && common_params_->url.SchemeIsFile()) {
+    ohos_permission::PermissionActivationResult activate_result =
+        ohos_permission::PermissionManagerAdapter::ActivateFileAccessPersist(
+            common_params_->url.spec());
+    if (activate_result !=
+        ohos_permission::PermissionActivationResult::SUCCESS) {
+      LOG(ERROR) << "Failed to activate error code: "
+                 << static_cast<int32_t>(activate_result);
+    }
+  }
+#endif
   begin_navigation_time_ = base::TimeTicks::Now();
   TRACE_EVENT_WITH_FLOW0("navigation", "NavigationRequest::BeginNavigation",
                          TRACE_ID_WITH_SCOPE(kNavigationRequestScope,

@@ -5,8 +5,7 @@
 #include "arkweb/chromium_ext/chrome/browser/ssl/ohos_https_upgrades_interceptor.h"
 
 #include "arkweb/chromium_ext/chrome/browser/ssl/ohos_https_upgrades_helper.h"
-
-
+#include "arkweb/chromium_ext/content/public/browser/https_upgrades_policy.h"
 #include "base/functional/bind.h"
 #include "base/metrics/histogram_functions.h"
 #include "build/build_config.h"
@@ -107,16 +106,24 @@ bool ShouldExcludeNavigationFromUpgrades(
   if (!frame_tree_node || !(frame_tree_node->navigation_request())) {
     return true;
   }
-  content::NavigationRequest* request = frame_tree_node->navigation_request();
-  // if is_browser_initiated == false, it means user tap a link to start
-  // navigation.
-  bool is_browser_initiated = request->browser_initiated();
-  bool is_url_typed_with_http_scheme = request->is_url_typed_with_http_scheme();
-  bool is_force_no_https_upgrade = request->is_force_no_https_upgrade();
 
-  bool should_exclude_upgrade = (is_browser_initiated && is_url_typed_with_http_scheme) || is_force_no_https_upgrade;
+  return frame_tree_node->navigation_request()->https_upgrades_policy() ==
+         content::HttpsUpgradesPolicy::
+             DONT_UPGRADES_DUE_URL_TYPED_WITH_HTTP_SCHEME;
+}
 
-  return should_exclude_upgrade;
+bool ShouldProceedWithHttpsUpgrades(content::FrameTreeNodeId frame_id) {
+  content::FrameTreeNode* frame_tree_node =
+      content::FrameTreeNode::GloballyFindByID(frame_id);
+  if (!frame_tree_node || !(frame_tree_node->navigation_request())) {
+    return false;
+  }
+
+  if (frame_tree_node->navigation_request()->browser_initiated()) {
+    return frame_tree_node->navigation_request()->https_upgrades_policy() ==
+           content::HttpsUpgradesPolicy::TRY_UPGRADES;
+  }
+  return true;
 }
 
 // static
@@ -222,7 +229,13 @@ void OhosHttpsUpgradesInterceptor::MaybeCreateLoader(
           profile->GetSSLHostStateDelegate());
   auto* storage_partition =
       web_contents->GetPrimaryMainFrame()->GetStoragePartition();
+
   if (ShouldExcludeNavigationFromUpgrades(frame_tree_node_id_)) {
+    LOG_FEEDBACK(INFO, kHttpsUpgrades)
+        << "CreateLoaderForHttpsUpgrades result:0 "
+           "message:urlTypedWithHttpScheme url:"
+        << url::LogUtils::ConvertUrlWithMask(
+          tentative_resource_request.url.spec());
     if (state) {
       state->AllowHttpForHost(tentative_resource_request.url.host(),
                               storage_partition);
@@ -230,6 +243,18 @@ void OhosHttpsUpgradesInterceptor::MaybeCreateLoader(
     std::move(callback).Run({});
     return;
   }
+
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  if (!ShouldProceedWithHttpsUpgrades(frame_tree_node_id_)) {
+    LOG_FEEDBACK(INFO, kHttpsUpgrades)
+        << "CreateLoaderForHttpsUpgrades result:0 "
+           "message:browserInitiatedWithNoUpgrades url:"
+        << url::LogUtils::ConvertUrlWithMask(
+          tentative_resource_request.url.spec());
+    std::move(callback).Run({});
+    return;
+  }
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
 
   // Check whether this host would be upgraded to HTTPS by HSTS. This requires a
   // Mojo call to the network service, so set up a callback to continue the rest
@@ -280,6 +305,17 @@ void OhosHttpsUpgradesInterceptor::MaybeCreateLoaderOnHstsQueryCompleted(
   CHECK(profile);
   CHECK(tab_helper);
 
+  // Don't upgrade this request if HSTS is active for this host.
+  if (is_hsts_active_for_host) {
+    LOG_FEEDBACK(INFO, kHttpsUpgrades)
+        << "CreateLoaderForHttpsUpgrades result:0 reason:hstsActiveForThisHost "
+           "url:"
+        << url::LogUtils::ConvertUrlWithMask(
+               tentative_resource_request.url.spec());
+    std::move(callback).Run({});
+    return;
+  }
+
   // Only serve upgrade redirects for main frame, GET requests.
   if (!tentative_resource_request.is_outermost_main_frame ||
       tentative_resource_request.method != "GET") {
@@ -315,6 +351,11 @@ void OhosHttpsUpgradesInterceptor::MaybeCreateLoaderOnHstsQueryCompleted(
                             storage_partition);
 
     std::move(callback).Run({});
+    LOG_FEEDBACK(INFO, kHttpsUpgrades)
+        << "CreateLoaderForHttpsUpgrades result:0 reason:inAllowHttpForHost "
+           "url:"
+        << url::LogUtils::ConvertUrlWithMask(
+               tentative_resource_request.url.spec());
     return;
   }
 
@@ -373,7 +414,10 @@ void OhosHttpsUpgradesInterceptor::MaybeCreateLoaderOnHstsQueryCompleted(
     // navigations directly to the interstitial, then we could probably use that
     // here as well as an optimization.
     LOG_FEEDBACK(INFO, kHttpsUpgrades)
-        << "CreateLoaderForHttpsUpgrades result:0 reason:httpFallbackHttpEver";
+        << "CreateLoaderForHttpsUpgrades result:0 reason:httpFallbackHttpEver "
+           "url:"
+        << url::LogUtils::ConvertUrlWithMask(
+               tentative_resource_request.url.spec());
     std::move(callback).Run(CreateRedirectHandler(tab_helper->fallback_url()));
     return;
   }
@@ -384,8 +428,11 @@ void OhosHttpsUpgradesInterceptor::MaybeCreateLoaderOnHstsQueryCompleted(
   // Mark navigation as upgraded.
   tab_helper->set_is_navigation_upgraded(true);
   tab_helper->set_fallback_url(tentative_resource_request.url);
-  LOG_FEEDBACK(INFO, kHttpsUpgrades) << "CreateLoaderForHttpsUpgrades result:1";
   GURL https_url = UpgradeUrlToHttps(tentative_resource_request.url);
+  LOG_FEEDBACK(INFO, kHttpsUpgrades)
+      << "CreateLoaderForHttpsUpgrades result:1 url:"
+      << url::LogUtils::ConvertUrlWithMask(
+             tentative_resource_request.url.spec());
   std::move(callback).Run(CreateRedirectHandler(https_url));
 }
 
@@ -422,7 +469,8 @@ bool OhosHttpsUpgradesInterceptor::MaybeCreateLoaderForResponse(
   if (!tab_helper->is_ssl_error() && status.error_code == net::OK) {
     LOG_FEEDBACK(INFO, kHttpsUpgrades)
         << "CreateLoaderForHttpsUpgradesFallback result:0 "
-           "reason:netOKWithNoSSLError";
+           "reason:netOKWithNoSSLError url:"
+        << url::LogUtils::ConvertUrlWithMask(request.url.spec());
     return false;
   }
 
@@ -450,7 +498,8 @@ bool OhosHttpsUpgradesInterceptor::MaybeCreateLoaderForResponse(
   LOG_FEEDBACK(INFO, kHttpsUpgrades)
       << "CreateLoaderForHttpsUpgradesFallback result:1 netCode:"
       << net::ErrorToDebugString(status.error_code)
-      << " isSSLError:" << tab_helper->is_ssl_error();
+      << " isSSLError:" << tab_helper->is_ssl_error()
+      << " url:" << url::LogUtils::ConvertUrlWithMask(request.url.spec());
   tab_helper->set_is_navigation_upgraded(false);
   tab_helper->set_is_navigation_fallback(true);
   tab_helper->add_failed_upgrade(tab_helper->fallback_url());

@@ -43,6 +43,9 @@
 #if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
 #include "arkweb/chromium_ext/content/public/browser/error_page_reload_reason.h"
 #endif
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+#include "arkweb/chromium_ext/content/public/browser/https_upgrades_policy.h"
+#endif
 
 namespace base {
 class RefCountedString;
@@ -373,9 +376,8 @@ class NavigationController {
     bool force_no_https_upgrade = false;
 
 #if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
-    // With Arkweb Https Upgrade function, if user Type http as scheme, we will not
-    // upgrade to https. Otherwise, this param will set to FLASE;
-    bool url_typed_with_http_scheme = true;
+    // HTTPS upgrade policy for this navigation.
+    HttpsUpgradesPolicy https_upgrades_policy = HttpsUpgradesPolicy::NONE;
 #endif
   };
 

@@ -130,6 +130,7 @@ class MockSystemPropertiesAdapter : public OHOS::NWeb::SystemPropertiesAdapter {
               GetIntParameter,
               (const std::string& key, int32_t defaultValue),
               (override));
+  MOCK_METHOD(int32_t, GetLoadUrlStrategy, (), (override));
 };
 
 class MockWindowAdapter : public WindowAdapter {

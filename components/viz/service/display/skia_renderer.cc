@@ -3441,8 +3441,12 @@ void SkiaRenderer::DidChangeVisibility() {
 void SkiaRenderer::FinishDrawingRenderPass() {
   TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("viz.quads"),
                "SkiaRenderer::FinishDrawingRenderPass");
-  if (!current_canvas_)
+  if (!current_canvas_) {
+#if BUILDFLAG(IS_OHOS)
+    LOG(ERROR) << "SkiaRenderer::FinishDrawingRenderPass:current_canvas_ is null";
+#endif
     return;
+  }
 
   if (!batched_quads_.empty())
     FlushBatchedQuads();

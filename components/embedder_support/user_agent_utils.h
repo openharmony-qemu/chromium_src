@@ -46,6 +46,10 @@ std::string GetUserAgent(
     UserAgentReductionEnterprisePolicyState user_agent_reduction =
         UserAgentReductionEnterprisePolicyState::kDefault);
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+std::string GetUserAgentByHost(const std::string& host);
+#endif
+
 // Returns UserAgentMetadata per the default policy. This override is currently
 // used in fuchsia and headless_shell, where the enterprise policy is not
 // relevant.

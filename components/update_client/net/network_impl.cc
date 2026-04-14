@@ -24,8 +24,7 @@
 #include "url/gurl.h"
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-#include "content/public/browser/content_browser_client.h"
-#include "content/public/common/content_client.h"
+#include "components/embedder_support/user_agent_utils.h"
 #endif
 
 namespace {
@@ -114,9 +113,8 @@ NetworkFetcherImpl::~NetworkFetcherImpl() = default;
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 void NetworkFetcherImpl::SetUserAgent(
     network::ResourceRequest* resource_request) {
-  auto browser_client = content::GetContentClient()->browser();
   auto user_agent =
-      browser_client->GetUAStringForHost(resource_request->url.host());
+      embedder_support::GetUserAgentByHost(resource_request->url.host());
   resource_request->headers.SetHeader(net::HttpRequestHeaders::kUserAgent,
                                       user_agent);
 }

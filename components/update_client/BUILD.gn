@@ -23,8 +23,7 @@ source_set("network_impl") {
   ]
 
   if (defined(arkweb_arkweb_extensions) && arkweb_arkweb_extensions) {
-    configs += [ "//content:content_implementation" ]
-    deps += [ "//skia" ]
+    deps += [ "//components/embedder_support:browser_util" ]
   }
 }
 

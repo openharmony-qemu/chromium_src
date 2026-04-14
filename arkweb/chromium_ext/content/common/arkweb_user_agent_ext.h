@@ -59,6 +59,8 @@ std::string GetOhosFullname();
 void SetProductString(std::string& user_agent);
 void UpdateHighEntropyCh(blink::UserAgentMetadata& metadata);
 void UpdateLowEntropyCh(blink::UserAgentMetadata& metadata);
+
+CONTENT_EXPORT std::string GetUserAgentByHost(const std::string& host);
 #endif
 
 }  // namespace content

@@ -276,6 +276,10 @@ BASE_EXPORT bool IsPageScale() {
   return g_page_scale;
 }
 
+BASE_EXPORT std::string ProductModel() {
+  return SystemProperties::Instance()->product_model();
+}
+
 BASE_EXPORT std::string ComponentName() {
   return std::string(kComponentName);
 }

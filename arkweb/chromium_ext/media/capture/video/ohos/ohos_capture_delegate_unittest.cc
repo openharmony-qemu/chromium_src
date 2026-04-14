@@ -211,6 +211,10 @@ public:
     MOCK_METHOD(void, SetForegroundFlag, (bool isForeground), (override));
     MOCK_METHOD(void, SetCameraStatus, (CameraStatusAdapter status), (override));
     MOCK_METHOD(std::string, GetCurrentDeviceId, (), (override));
+    MOCK_METHOD(int32_t, GetSupportedFlashModes, (std::vector<FlashModeAdapter>& flashModesAdapter), (override));
+    MOCK_METHOD(bool, HasFlash, (), (override));
+    MOCK_METHOD(FlashModeAdapter, GetFlashMode, (), (override));
+    MOCK_METHOD(int32_t, SetFlashMode, (FlashModeAdapter flashMode), (override));
 };
 
 void MockTakePhotoCallback(mojo::StructPtr<media::mojom::Blob> blob)

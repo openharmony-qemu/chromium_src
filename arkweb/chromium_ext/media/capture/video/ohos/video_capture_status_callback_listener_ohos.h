@@ -25,6 +25,8 @@ class VideoCaptureCameraStatusCallbackListenerOHOS
   virtual ~VideoCaptureCameraStatusCallbackListenerOHOS();
   void OnCameraStatusChanged(CameraStatusAdapter camera_status,
                              std::string callBackDeviceId) override;
+  void OnFlashlightStatusChanged(FlashStatusAdapter flash_status,
+                                 const std::string cameraID) override {}
 
  private:
   scoped_refptr<base::SingleThreadTaskRunner> task_runner_;

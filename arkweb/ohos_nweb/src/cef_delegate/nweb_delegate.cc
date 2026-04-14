@@ -7154,7 +7154,7 @@ std::vector<WebExtensionContextMenusItem> NWebDelegate::GetContextMenuItem() {
   }
 
 #if BUILDFLAG(ARKWEB_DEVTOOLS)
-  CefRefPtr<CefMenuModelImpl> model = menu_manager->GetMenuManagerExt()->GetContextMenuModel();
+  CefRefPtr<CefMenuModelImpl> model = menu_manager->GetMenuManagerExt().GetContextMenuModel();
   GetMenuItemByMenuModel(items, model);
  
 #endif // BUILDFLAG(ARKWEB_DEVTOOLS)
@@ -7190,7 +7190,7 @@ void NWebDelegate::OnContextMenuSelected(int command_id) {
     return;
   }
 #if BUILDFLAG(ARKWEB_DEVTOOLS)
-  menu_manager->GetMenuManagerExt()->onContextMenuSelected(command_id);
+  menu_manager->GetMenuManagerExt().onContextMenuSelected(command_id);
   
 #endif // BUILDFLAG(ARKWEB_DEVTOOLS)
 }
@@ -7224,7 +7224,7 @@ void NWebDelegate::OnContextMenuClosed() {
     return;
   }
 #if BUILDFLAG(ARKWEB_DEVTOOLS)
-  menu_manager->GetMenuManagerExt()->onContextMenuClosed();
+  menu_manager->GetMenuManagerExt().onContextMenuClosed();
 #endif // BUILDFLAG(ARKWEB_DEVTOOLS)
 }
 }  // namespace OHOS::NWeb

@@ -88,15 +88,21 @@ bool WaitpidWithTimeout(base::ProcessHandle handle,
 
   if (wait == base::TimeDelta::Max()) {
 #if BUILDFLAG(IS_OHOS)
-    return ohos::adapter::multiprocess::Waitpid(handle, status, false) > 0;
+    pid_t res = HANDLE_EINTR(waitpid(handle, status, 0));
+    if (res < 0) {
+      return ohos::adapter::multiprocess::Waitpid(handle, status, false) > 0;
+    }
+    return res > 0;
 #else
     return HANDLE_EINTR(waitpid(handle, status, 0)) > 0;
 #endif
   }
 
 #if BUILDFLAG(IS_OHOS)
-  pid_t ret_pid =
-      ohos::adapter::multiprocess::Waitpid(handle, status, true);
+  pid_t ret_pid = HANDLE_EINTR(waitpid(handle, status, WNOHANG));
+    if (ret_pid < 0) {
+      ret_pid = ohos::adapter::multiprocess::Waitpid(handle, status, true);
+    }
 #else
   pid_t ret_pid = HANDLE_EINTR(waitpid(handle, status, WNOHANG));
 #endif
@@ -120,7 +126,10 @@ bool WaitpidWithTimeout(base::ProcessHandle handle,
     // such as SIGCHLD.
     usleep(sleep_time_usecs);
 #if BUILDFLAG(IS_OHOS)
-    ret_pid = ohos::adapter::multiprocess::Waitpid(handle, status, true);
+    ret_pid = HANDLE_EINTR(waitpid(handle, status, WNOHANG));
+    if (ret_pid < 0) {
+      ret_pid = ohos::adapter::multiprocess::Waitpid(handle, status, true);
+    }
 #else
     ret_pid = HANDLE_EINTR(waitpid(handle, status, WNOHANG));
 #endif

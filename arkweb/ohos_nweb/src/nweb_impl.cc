@@ -2275,7 +2275,8 @@ void NWebImpl::SendMouseEvent(int x, int y, int button, int action, int count) {
 #if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
 void NWebImpl::ReportLoadingScene(int report_times) {
   bool is_load_finished = NWebHandlerDelegate::IsLoadFinished(nweb_id_);
-  LOG(DEBUG) << "NWebImpl::ReportLoadingScene: " << is_load_finished;
+  LOG(DEBUG) << "NWebImpl::ReportLoadingScene: " << is_load_finished << " ,report_times: " << report_times;
+  TRACE_EVENT1("NwebImpl", "NwebImpl | ReportLoadingScene", "report_times", report_times);
   if (is_load_finished) {
     return;
   }

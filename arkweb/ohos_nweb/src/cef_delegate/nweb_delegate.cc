@@ -4737,6 +4737,9 @@ void NWebDelegate::EnableSafeBrowsing(bool enable) {
 void NWebDelegate::EnableSafeBrowsingDetection(bool enable, bool strictMode) {
   LOG(INFO) << "NWebDelegate::EnableSafeBrowsingDetection. enable is " << enable
             << ", strictMode is " << strictMode;
+  if (handler_delegate_) {
+    handler_delegate_->SaveEnableSafeBrowsingDetection(enable, strictMode);
+  }        
   if (GetBrowser() == nullptr) {
     LOG(ERROR) << "NWebDelegate::EnableSafeBrowsingDetection failed.";
     return;

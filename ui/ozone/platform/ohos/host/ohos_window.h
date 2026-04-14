@@ -107,7 +107,7 @@ class OhosWindow : public PlatformWindow,
   PlatformWindowType type() const { return type_; }
 
   void OnSurfaceCreated();
-  void OnSurfaceDestoryed();
+  void OnSurfaceDestroyed();
 
   void Applied(const gfx::Rect& origin_bounds,
                const gfx::Rect& bounds,

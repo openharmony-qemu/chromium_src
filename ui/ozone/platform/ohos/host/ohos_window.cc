@@ -165,16 +165,9 @@ void OhosWindow::OnSurfaceCreated() {
   ui_task_runner_->PostTask(FROM_HERE, std::move(task));
 }
 
-void OhosWindow::OnSurfaceDestoryed() {
-  LOG(INFO) << "[ohoswindow] in OhosWindow OnSurfaceDestoryed.";
-  auto task = base::BindOnce([](base::WeakPtr<OhosWindow> window) {
-        if (window) {
-          LOG(INFO) << "[ohoswindow] OhosWindow on surface destroyed call window on close request";
-          window->delegate()->OnCloseRequest();
-        }
-      },
-      AsWeakPtr());
-  ui_task_runner_->PostTask(FROM_HERE, std::move(task));
+void OhosWindow::OnSurfaceDestroyed() {
+  LOG(INFO) << "[ohoswindow] in OhosWindow OnSurfaceDestroyed.";
+  delegate()->OnCloseRequest();
 }
 
 void OhosWindow::Applied(const gfx::Rect& origin_bounds,

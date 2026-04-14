@@ -70,6 +70,7 @@ class COMPONENT_EXPORT(UI_BASE_IME_OHOS) InputMethodOHOS
   virtual void SetVirtualKeyboardVisibilityTask(bool should_show, ui::RequestKeyboardReason reason) = 0;
   virtual void UpdateCursorTask(const gfx::Rect& rect) = 0;
   virtual base::WeakPtr<InputMethodOHOS> GetWeakPtr() = 0;
+  virtual void MaybeInputValueGetLength(TextInputClient* c, const std::u16string& v) {}
 
   // InputMethodBase interface implementation.
   ui::EventDispatchDetails DispatchKeyEvent(ui::KeyEvent* event) override;
@@ -126,6 +127,10 @@ class COMPONENT_EXPORT(UI_BASE_IME_OHOS) InputMethodOHOSCAPI
   base::WeakPtr<InputMethodOHOS> GetWeakPtr() override{
     return weak_ptr_factory_.GetWeakPtr();
   }
+
+  void MaybeInputValueGetLength(TextInputClient* c,
+                                const std::u16string& v) override;
+
   InputMethod_TextConfig* SetTextConfig(InputMethod_TextConfig* text_config);
 
  private:
@@ -139,6 +144,8 @@ class COMPONENT_EXPORT(UI_BASE_IME_OHOS) InputMethodOHOSCAPI
   RAW_PTR_EXCLUSION InputMethod_AttachOptions* attach_options_ = nullptr;
   RAW_PTR_EXCLUSION InputMethod_InputMethodProxy* input_method_proxy_ = nullptr;
   RAW_PTR_EXCLUSION InputMethod_CursorInfo* cursor_info_ = nullptr;
+  std::u16string input_text_;
+  uint32_t input_u16_value_len_ = 0;
   bool is_create_cursor_info_ = false;
   base::WeakPtrFactory<InputMethodOHOSCAPI> weak_ptr_factory_{this};
 };

@@ -95,7 +95,7 @@ void AudioDeviceThread::ThreadMain() {
   callback_->InitializeOnAudioThread();
 
 #if BUILDFLAG(IS_ARKWEB)
-#if BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
+#if BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER) && !defined(COMPONENT_BUILD)
   if (base::CommandLine::ForCurrentProcess()) {
     auto type = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
         switches::kProcessType);

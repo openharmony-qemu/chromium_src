@@ -259,10 +259,12 @@ NWebCookieManagerDelegate::GetGlobalCookieManager() {
     if (NWebImpl::ShouldLazyInitWebEngine()) {
       if (!uninitialized_cookie_manager_) {
         uninitialized_cookie_manager_ = GetUninitializedCookieManagerExt(false);
+        LOG_FEEDBACK(INFO, kNetwork) << "CreateUninitializedCookieManager";
       }
       return uninitialized_cookie_manager_;
     }
     cookie_manager_ = CefCookieManager::GetGlobalManager(nullptr);
+    LOG_FEEDBACK(INFO, kNetwork) << "CreateCookieManager";
 #endif
   }
   return cookie_manager_;
@@ -277,11 +279,13 @@ NWebCookieManagerDelegate::GetGlobalIncognitoCookieManager() {
       if (!uninitialized_incognito_cookie_manager_) {
         uninitialized_incognito_cookie_manager_ =
             GetUninitializedCookieManagerExt(true);
+        LOG_FEEDBACK(INFO, kNetwork) << "CreateUninitializedIncognitoCookieManager";
       }
       return uninitialized_incognito_cookie_manager_;
     }
     incognito_cookie_manager_ =
         CefCookieManager::GetGlobalIncognitoManager(nullptr);
+    LOG_FEEDBACK(INFO, kNetwork) << "CreateIncognitoCookieManager";
 #endif
   }
   return incognito_cookie_manager_;

@@ -1413,6 +1413,7 @@ void NWebImpl::InitializeWebEngine(
     MigratePasswordsToPasswordVault();
   }
 #endif
+  LOG_FEEDBACK(INFO, kNetwork) << "NWebImpl::InitializeWebEngine end";
 }
 #endif  // BUILDFLAG(ARKWEB_API_INIT_WEB_ENGINE)
 

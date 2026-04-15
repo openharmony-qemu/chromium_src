@@ -1845,6 +1845,13 @@ void NWebDelegate::ReloadOriginalUrl() const {
   }
 }
 
+void NWebDelegate::ReloadOriginalUrlIgnoreCache() const {
+  LOG_FEEDBACK(INFO, kNavigation) << "ReloadOriginalUrlIgnoreCache";
+  if (GetBrowser().get()) {
+    GetBrowser()->ReloadOriginalUrlIgnoreCache();
+  }
+}
+
 const std::string NWebDelegate::GetOriginalUrl() {
   LOG(DEBUG) << "NWebDelegate::GetOriginalUrl";
   if (GetBrowser().get() && GetBrowser()->GetHost()) {

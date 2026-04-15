@@ -707,6 +707,7 @@ class NWebImpl : public NWeb {
   void GetImageFromContextNode();
   void GetImageFromCache(const std::string& url);
   void ReloadOriginalUrl() const;
+  void ReloadOriginalUrlIgnoreCache() const;
   void SetBrowserUserAgentString(const std::string& user_agent);
   static void StaticOpenDevtools(const std::string& source_id,
                                  const std::string& target_id,

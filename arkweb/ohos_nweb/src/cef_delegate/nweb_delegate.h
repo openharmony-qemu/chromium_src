@@ -213,6 +213,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void ClearClientAuthenticationCache() override;
   void Reload() const override;
   void ReloadOriginalUrl() const override;
+  void ReloadOriginalUrlIgnoreCache() const override;
   int Zoom(float zoomFactor) const override;
   int ZoomIn() const override;
   int ZoomOut() const override;

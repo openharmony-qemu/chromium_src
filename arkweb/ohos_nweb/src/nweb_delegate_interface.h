@@ -1036,6 +1036,8 @@ virtual void SetFocusWebId(int32_t nweb_id) = 0;
   virtual std::shared_ptr<NWebUserAgentMetadata> GetUserAgentMetadata(
       const std::string& user_agent) = 0;
 #endif
+
+  virtual void ReloadOriginalUrlIgnoreCache() const = 0;
 };
 }  // namespace OHOS::NWeb
 

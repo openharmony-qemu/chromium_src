@@ -255,14 +255,14 @@ namespace OHOS::NWeb {
 CefRefPtr<CefCookieManager>
 NWebCookieManagerDelegate::GetGlobalCookieManager() {
   if (!cookie_manager_) {
-    cookie_manager_ = CefCookieManager::GetGlobalManager(nullptr);
 #if BUILDFLAG(ARKWEB_COOKIE)
-    if (!cookie_manager_ && NWebImpl::ShouldLazyInitWebEngine()) {
+    if (NWebImpl::ShouldLazyInitWebEngine()) {
       if (!uninitialized_cookie_manager_) {
         uninitialized_cookie_manager_ = GetUninitializedCookieManagerExt(false);
       }
       return uninitialized_cookie_manager_;
     }
+    cookie_manager_ = CefCookieManager::GetGlobalManager(nullptr);
 #endif
   }
   return cookie_manager_;
@@ -272,16 +272,16 @@ CefRefPtr<CefCookieManager>
 NWebCookieManagerDelegate::GetGlobalIncognitoCookieManager() {
 #if BUILDFLAG(ARKWEB_INCOGNITO_MODE)
   if (!incognito_cookie_manager_) {
-    incognito_cookie_manager_ =
-        CefCookieManager::GetGlobalIncognitoManager(nullptr);
 #if BUILDFLAG(ARKWEB_COOKIE)
-    if (!incognito_cookie_manager_ && NWebImpl::ShouldLazyInitWebEngine()) {
+    if (NWebImpl::ShouldLazyInitWebEngine()) {
       if (!uninitialized_incognito_cookie_manager_) {
         uninitialized_incognito_cookie_manager_ =
             GetUninitializedCookieManagerExt(true);
       }
       return uninitialized_incognito_cookie_manager_;
     }
+    incognito_cookie_manager_ =
+        CefCookieManager::GetGlobalIncognitoManager(nullptr);
 #endif
   }
   return incognito_cookie_manager_;

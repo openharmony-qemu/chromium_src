@@ -95,6 +95,17 @@ protected:
         return;
     }
 
+    void DetectBlankScreenTest(
+                const WTF::String& url,
+                const WTF::Vector<double>& detectionTiming,
+                const WTF::Vector<int32_t>& detectionMethods,
+                int32_t contentfulNodesCountThreshold)
+    {
+        handler_->DetectBlankScreen(url, detectionTiming, detectionMethods,
+                                    contentfulNodesCountThreshold);
+        return;
+    }
+
     void TearDown() override {
         dummy_page_holder_.reset();
     }
@@ -132,6 +143,48 @@ TEST_F(ArkWebLocalFrameMojoHandlerExtTest, GetImageFromCache_EmptyUrl) {
 
     GetImageFromCacheTest(
         "",
+        std::move(callback));
+}
+
+TEST_F(ArkWebLocalFrameMojoHandlerExtTest, GetImageFromCache_InvalidUrl) {
+    auto callback = base::BindOnce(&MockCallbackHelper::GetImageCallback,
+                                    base::Unretained(mock_callback_.get()));
+
+    EXPECT_CALL(*mock_callback_, GetImageCallback(
+        testing::Eq(0u),
+        testing::A<base::ReadOnlySharedMemoryRegion>()
+    )).Times(1);
+
+    GetImageFromCacheTest(
+        "not-a-valid-url",
+        std::move(callback));
+}
+
+TEST_F(ArkWebLocalFrameMojoHandlerExtTest, GetImageFromCache_ImageFormats) {
+    auto callback = base::BindOnce(&MockCallbackHelper::GetImageCallback,
+                                    base::Unretained(mock_callback_.get()));
+
+    EXPECT_CALL(*mock_callback_, GetImageCallback(
+        testing::_,
+        testing::A<base::ReadOnlySharedMemoryRegion>()
+    )).Times(1);
+
+    GetImageFromCacheTest(
+        "https://example.com/test.jpg",
+        std::move(callback));
+}
+
+TEST_F(ArkWebLocalFrameMojoHandlerExtTest, GetImageFromCache_PngImage) {
+    auto callback = base::BindOnce(&MockCallbackHelper::GetImageCallback,
+                                    base::Unretained(mock_callback_.get()));
+
+    EXPECT_CALL(*mock_callback_, GetImageCallback(
+        testing::_,
+        testing::A<base::ReadOnlySharedMemoryRegion>()
+    )).Times(1);
+
+    GetImageFromCacheTest(
+        "https://example.com/image.png?cache=true",
         std::move(callback));
 }
 
@@ -180,6 +233,59 @@ TEST_F(ArkWebLocalFrameMojoHandlerExtTest, GenerateCodeCache_EmptyUrl) {
         std::move(callback));
 }
 
+TEST_F(ArkWebLocalFrameMojoHandlerExtTest, GenerateCodeCache_ModuleScript) {
+    auto cache_options = mojom::blink::CacheOptions::New();
+    cache_options->is_module = true;
+    cache_options->is_top_level = true;
+
+    EXPECT_CALL(*mock_callback_, GenerateCodeCacheCallback(testing::_))
+        .Times(1);
+
+    auto callback = base::BindOnce(&MockCallbackHelper::GenerateCodeCacheCallback,
+                                    base::Unretained(mock_callback_.get()));
+
+    GenerateCodeCacheTest(
+        "https://example.com/module.js",
+        "export function test() { return 42; }",
+        std::move(cache_options),
+        std::move(callback));
+}
+
+TEST_F(ArkWebLocalFrameMojoHandlerExtTest, GenerateCodeCache_ComplexScript) {
+    auto cache_options = mojom::blink::CacheOptions::New();
+    cache_options->is_module = false;
+    cache_options->is_top_level = false;
+
+    EXPECT_CALL(*mock_callback_, GenerateCodeCacheCallback(testing::_))
+        .Times(1);
+
+    auto callback = base::BindOnce(&MockCallbackHelper::GenerateCodeCacheCallback,
+                                    base::Unretained(mock_callback_.get()));
+
+    GenerateCodeCacheTest(
+        "https://example.com/complex.js",
+        "function outer() { function inner() { return 1 + 1; } return inner(); }",
+        std::move(cache_options),
+        std::move(callback));
+}
+
+TEST_F(ArkWebLocalFrameMojoHandlerExtTest, GenerateCodeCache_WithResponseHeaders) {
+    auto cache_options = mojom::blink::CacheOptions::New();
+    cache_options->response_headers.insert("Content-Type", "application/javascript");
+
+    EXPECT_CALL(*mock_callback_, GenerateCodeCacheCallback(testing::_))
+        .Times(1);
+
+    auto callback = base::BindOnce(&MockCallbackHelper::GenerateCodeCacheCallback,
+                                    base::Unretained(mock_callback_.get()));
+
+    GenerateCodeCacheTest(
+        "https://example.com/script.js",
+        "var x = 10;",
+        std::move(cache_options),
+        std::move(callback));
+}
+
 TEST_F(ArkWebLocalFrameMojoHandlerExtTest, JavaScriptExecuteRequestExt_Success) {
     const std::string kTestScript = "1 + 2;";
     const uint64_t kScriptLength = kTestScript.size();
@@ -191,7 +297,7 @@ TEST_F(ArkWebLocalFrameMojoHandlerExtTest, JavaScriptExecuteRequestExt_Success) 
     JavaScriptExecuteRequestExtTest(
         std::move(script_handle), 
         kScriptLength, 
-        true,  // wants_result
+        true,
         std::move(callback));
 
     base::RunLoop().RunUntilIdle();
@@ -207,12 +313,110 @@ TEST_F(ArkWebLocalFrameMojoHandlerExtTest, JavaScriptExecuteRequestExt_NoResult)
                                 base::Unretained(mock_callback_.get()));
 
     JavaScriptExecuteRequestExtTest(
-        std::move(script_handle), 
-        kScriptLength, 
-        false,  // wants_result
+        std::move(script_handle),
+        kScriptLength,
+        false,
         std::move(callback));
-    
+
     base::RunLoop().RunUntilIdle();
 }
+
+TEST_F(ArkWebLocalFrameMojoHandlerExtTest, JavaScriptExecuteRequestExt_EmptyScript) {
+    const std::string kTestScript = "";
+    const uint64_t kScriptLength = kTestScript.size();
+
+    mojo::ScopedHandle script_handle = CreateMockHandle(kTestScript);
+
+    auto callback = base::BindOnce(&MockCallbackHelper::JavaScriptCallback,
+                                base::Unretained(mock_callback_.get()));
+
+    JavaScriptExecuteRequestExtTest(
+        std::move(script_handle),
+        kScriptLength,
+        true,
+        std::move(callback));
+
+    base::RunLoop().RunUntilIdle();
+}
+
+TEST_F(ArkWebLocalFrameMojoHandlerExtTest, JavaScriptExecuteRequestExt_LargeScript) {
+    const std::string kTestScript = "function test() { var x = 1; return x; } test();";
+    const uint64_t kScriptLength = kTestScript.size();
+
+    mojo::ScopedHandle script_handle = CreateMockHandle(kTestScript);
+
+    auto callback = base::BindOnce(&MockCallbackHelper::JavaScriptCallback,
+                                base::Unretained(mock_callback_.get()));
+
+    JavaScriptExecuteRequestExtTest(
+        std::move(script_handle),
+        kScriptLength,
+        true,
+        std::move(callback));
+
+    base::RunLoop().RunUntilIdle();
+}
+
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+TEST_F(ArkWebLocalFrameMojoHandlerExtTest, DetectBlankScreen_ValidUrl) {
+    WTF::Vector<double> detectionTiming;
+    detectionTiming.push_back(1.0);
+    detectionTiming.push_back(2.0);
+
+    WTF::Vector<int32_t> detectionMethods;
+    detectionMethods.push_back(1);
+    detectionMethods.push_back(2);
+
+    DetectBlankScreenTest(
+        "https://example.com",
+        detectionTiming,
+        detectionMethods,
+        100);
+}
+
+TEST_F(ArkWebLocalFrameMojoHandlerExtTest, DetectBlankScreen_EmptyUrl) {
+    WTF::Vector<double> detectionTiming;
+    detectionTiming.push_back(1.0);
+
+    WTF::Vector<int32_t> detectionMethods;
+    detectionMethods.push_back(1);
+
+    DetectBlankScreenTest(
+        "",
+        detectionTiming,
+        detectionMethods,
+        50);
+}
+
+TEST_F(ArkWebLocalFrameMojoHandlerExtTest, DetectBlankScreen_EmptyVectors) {
+    WTF::Vector<double> detectionTiming;
+    WTF::Vector<int32_t> detectionMethods;
+
+    DetectBlankScreenTest(
+        "https://example.com",
+        detectionTiming,
+        detectionMethods,
+        0);
+}
+
+TEST_F(ArkWebLocalFrameMojoHandlerExtTest, DetectBlankScreen_MultipleTimingPoints) {
+    WTF::Vector<double> detectionTiming;
+    detectionTiming.push_back(0.5);
+    detectionTiming.push_back(1.0);
+    detectionTiming.push_back(2.0);
+    detectionTiming.push_back(3.0);
+
+    WTF::Vector<int32_t> detectionMethods;
+    detectionMethods.push_back(0);
+    detectionMethods.push_back(1);
+    detectionMethods.push_back(2);
+
+    DetectBlankScreenTest(
+        "https://example.com/page",
+        detectionTiming,
+        detectionMethods,
+        200);
+}
+#endif
 
 }

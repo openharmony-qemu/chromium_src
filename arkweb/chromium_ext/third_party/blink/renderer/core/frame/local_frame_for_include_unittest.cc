@@ -799,6 +799,15 @@ TEST_F(LocalFrameUtilTest, ClearHighlight_WithoutTextFragmentHandler) {
   EXPECT_FALSE(result);
 }
 
+TEST_F(LocalFrameUtilTest, ClearHighlight_WithNullView) {
+  local_frame_->GetSettings()->SetArkwebAgentEnabled(true);
+  local_frame_->CreateTextFragmentHandler();
+  local_frame_->SetView(nullptr);
+  bool result = local_frame_->ClearHighlight(true);
+  EXPECT_FALSE(result);
+  local_frame_->SetView(MakeGarbageCollected<LocalFrameView>(*local_frame_));
+}
+
 TEST_F(LocalFrameUtilTest, ProcessFragment_AllConditionsSatisfied) {
   local_frame_->GetSettings()->SetArkwebAgentEnabled(true);
   KURL url("https://example.com/#test-fragment");

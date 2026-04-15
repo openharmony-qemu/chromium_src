@@ -418,7 +418,7 @@ int TransportConnectJob::DoTransportConnect() {
       case ADDRESS_FAMILY_IPV6:
         ipv6_addresses.push_back(ip_endpoint);
 #if BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
-        AsArkWebTransportConnectJobExt()->AddIpv6AddressLimit(ip_addresses_count, ipv4_addresses_limit, ip_endpoint);
+        AsArkWebTransportConnectJobExt()->AddIpv6AddressLimit(ip_addresses_count, ipv6_addresses_limit, ip_endpoint);
 #endif
         break;
 
@@ -456,11 +456,11 @@ int TransportConnectJob::DoTransportConnect() {
           FROM_HERE, kIPv6FallbackTime,
           base::BindOnce(&TransportConnectJob::StartIPv4JobAsync,
                          base::Unretained(this)));
-#if BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
-      // websocket和老版本保持一致
-      AsArkWebTransportConnectJobExt()->WillDoMultiConnect();
-#endif  // BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
     }
+#if BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
+    // websocket和老版本保持一致
+    AsArkWebTransportConnectJobExt()->WillDoMultiConnect();
+#endif  // BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
     return ERR_IO_PENDING;
   }
 

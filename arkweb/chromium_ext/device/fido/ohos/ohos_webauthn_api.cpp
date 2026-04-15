@@ -253,6 +253,7 @@ OhosWebAuthnApi::RegisterResult OhosWebAuthnApiImpl::Register(
   CredentialOptionsDataHolder data_holder(request);
 
   FIDO2_CredentialCreationOptions options;
+  Initialize(&options);
   if (func_init_creation_options_ptr_) {
     func_init_creation_options_ptr_(&options);
   }
@@ -309,6 +310,7 @@ OhosWebAuthnApi::GetAssertionResult OhosWebAuthnApiImpl::GetAssertion(
   CredentialOptionsDataHolder data_holder(request);
 
   FIDO2_CredentialRequestOptions fido_options;
+  Initialize(&fido_options);
   if (func_init_request_options_ptr_) {
     func_init_request_options_ptr_(&fido_options);
   }
@@ -354,6 +356,7 @@ void OhosWebAuthnApiImpl::InitializeTokenBindingAndOrigin(
     const char** origin) {
   DCHECK(token_binding);
   DCHECK(origin);
+  Initialize(token_binding);
   if (func_init_token_binding_ptr_) {
     func_init_token_binding_ptr_(token_binding);
   }

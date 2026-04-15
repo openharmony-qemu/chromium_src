@@ -1321,6 +1321,11 @@ bool BrowserAccessibilityOHOS::IsLeaf() const {
     return false;
   }
 
+  if (GetRole() == ax::mojom::Role::kTabPanel ||
+      GetRole() == ax::mojom::Role::kTabList) {
+    return false;
+  }
+
   // For some nodes, we will consider children before determining if the node
   // is a leaf. For nodes with relevant children, we will return false here
   // and allow the child nodes to be set as a leaf.

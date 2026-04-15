@@ -111,7 +111,14 @@ void SavePackage::OnPathPickedEx(
   net::GenerateSafeFileName(mime_type, false, &saved_main_file_path_);
 
   saved_main_directory_path_ = saved_main_file_path_.DirName();
-  
+
+  if (!base::PathIsWritable(saved_main_directory_path_)) {
+    if (callback_) {
+      std::move(callback_).Run(false);
+    }
+    return;
+  }
+
   if (save_type_ == SAVE_PAGE_TYPE_AS_COMPLETE_HTML) {
     // Make new directory for saving complete file.
     saved_main_directory_path_ = saved_main_directory_path_.Append(

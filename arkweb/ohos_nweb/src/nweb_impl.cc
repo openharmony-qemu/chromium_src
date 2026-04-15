@@ -5496,6 +5496,13 @@ void NWebImpl::StartDownload(const char* url,
   }
   nweb_delegate_->StartDownload(url, params);
 }
+
+// static
+void NWebImpl::StartDownloadStatic(
+      const char* url,
+      const DownloadUrlParameters& params) {
+  CefStartDownload(url, params);
+}
 #endif
 
 void NWebImpl::ResumeDownload(std::shared_ptr<NWebDownloadItem> web_download) {

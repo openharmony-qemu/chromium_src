@@ -53,6 +53,10 @@
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/content/public/browser/content_browser_client_utils.h"
+#endif
+
 namespace embedder_support {
 
 namespace {

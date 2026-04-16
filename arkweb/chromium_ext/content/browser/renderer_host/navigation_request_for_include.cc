@@ -4,6 +4,8 @@
  * found in the LICENSE file.
  */
 
+#include "components/embedder_support/arkweb_version.h"
+
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
 void NavigationRequest::StartNavigationExt() {
   bool is_incognito = false;
@@ -27,7 +29,8 @@ void NavigationRequest::StartNavigationExt() {
              << common_params_->url.spec()
              << " is_browser_initiated_: "
              << commit_params_->is_browser_initiated
-             << " was_redirected_: " << was_redirected_;
+             << " was_redirected_: " << was_redirected_
+             << " arkweb_version: " << ARKWEB_VERSION_FULL;
   }
 }
 #endif

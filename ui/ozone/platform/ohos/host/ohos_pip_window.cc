@@ -163,16 +163,17 @@ void OhosPipWindow::OnPipLifecycleCallback(PictureInPicture_PipState state,
 void OhosPipWindow::OnPipResizeCallback(uint32_t width,
                                         uint32_t height,
                                         double scale) {
-  if (scale_ == scale) {
+  if (scale_ == scale && width == bounds_in_pixels_.x() &&
+      height == bounds_in_pixels_.y()) {
+    LOG(WARNING) << __func__ << " [PipWindow] not resize and return";
     return;
   }
 
   scale_ = scale;
   previous_bounds_in_pixels_ = bounds_in_pixels_;
-  bounds_in_pixels_ =
-      gfx::Rect{previous_bounds_in_pixels_.x(), previous_bounds_in_pixels_.y(),
-                width * scale, height * scale};
 
+  bounds_in_pixels_ = gfx::Rect{previous_bounds_in_pixels_.x(),
+                                previous_bounds_in_pixels_.y(), width, height};
   Applied(previous_bounds_in_pixels_, bounds_in_pixels_);
 }
 

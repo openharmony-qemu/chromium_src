@@ -1607,4 +1607,294 @@ TEST_F(WebContentsImplExtTest, OnDocumentEndReady001) {
   ExtendContent()->OnDocumentEndReady(frameInfo);
 }
 #endif
+
+TEST_F(WebContentsImplExtTest, OnDocumentEndReady002) {
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+  FrameInfos frameInfo;
+  ExtendContent()->OnDocumentEndReady(frameInfo);
+}
+
+TEST_F(WebContentsImplExtTest, OnMediaCastEnter001) {
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+  ExtendContent()->OnMediaCastEnter();
+}
+
+TEST_F(WebContentsImplExtTest, NotifyRemoteExitFullScreen001) {
+  ExtendContent()->NotifyRemoteExitFullScreen();
+}
+
+TEST_F(WebContentsImplExtTest, OnSafeBrowsingCheckDetail001) {
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+  int code = 1;
+  int policy = 2;
+  int threat = 3;
+  ExtendContent()->OnSafeBrowsingCheckDetail(code, policy, threat);
+}
+
+TEST_F(WebContentsImplExtTest, DetectBlankScreen001) {
+  std::string url = "http://test.com";
+  ExtendContent()->DetectBlankScreen(url);
+}
+
+TEST_F(WebContentsImplExtTest, SetBlankScreenDetectionConfig001) {
+  bool enable = true;
+  std::vector<double> detectionTiming = {1.0, 2.0};
+  std::vector<int32_t> detectionMethods = {1, 2};
+  int32_t contentfulNodesCountThreshold = 100;
+  ExtendContent()->SetBlankScreenDetectionConfig(enable, detectionTiming, 
+                                                  detectionMethods, contentfulNodesCountThreshold);
+}
+
+TEST_F(WebContentsImplExtTest, OnStartBackgroundTask001) {
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+  int32_t type = 1;
+  std::string message = "test message";
+  auto result = ExtendContent()->OnStartBackgroundTask(type, message);
+  EXPECT_TRUE(result);
+}
+
+TEST_F(WebContentsImplExtTest, OnStartBackgroundTask002) {
+  int32_t type = 1;
+  std::string message = "test message";
+  auto result = ExtendContent()->OnStartBackgroundTask(type, message);
+  EXPECT_TRUE(result);
+}
+
+TEST_F(WebContentsImplExtTest, GetOverScrollOffset001) {
+  float offset_x = 0.0f;
+  float offset_y = 0.0f;
+  ExtendContent()->GetOverScrollOffset(&offset_x, &offset_y);
+  EXPECT_EQ(offset_x, 0.0f);
+  EXPECT_EQ(offset_y, 0.0f);
+}
+
+TEST_F(WebContentsImplExtTest, OnOverScrollOffsetChanged001) {
+  float offset_x = 10.0f;
+  float offset_y = 20.0f;
+  ExtendContent()->OnOverScrollOffsetChanged(offset_x, offset_y);
+
+  float get_offset_x = 0.0f;
+  float get_offset_y = 0.0f;
+  ExtendContent()->GetOverScrollOffset(&get_offset_x, &get_offset_y);
+  EXPECT_EQ(get_offset_x, 10.0f);
+  EXPECT_EQ(get_offset_y, 20.0f);
+}
+
+TEST_F(WebContentsImplExtTest, OnRewriteUrlForNavigation001) {
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+  std::string original_url = "http://test.com";
+  std::string referrer = "http://referrer.com";
+  int transition_type = 1;
+  bool is_key_request = true;
+  auto result = ExtendContent()->OnRewriteUrlForNavigation(original_url, referrer, 
+                                                              transition_type, is_key_request);
+}
+
+TEST_F(WebContentsImplExtTest, OnRewriteUrlForNavigation002) {
+  std::string original_url = "http://test.com";
+  std::string referrer = "http://referrer.com";
+  int transition_type = 1;
+  bool is_key_request = true;
+  auto result = ExtendContent()->OnRewriteUrlForNavigation(original_url, referrer, 
+                                                              transition_type, is_key_request);
+  EXPECT_EQ(result, "");
+}
+
+TEST_F(WebContentsImplExtTest, NotifyNavigationRewriteUrl001) {
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+  std::string original_url = "http://test.com";
+  std::string referrer = "http://referrer.com";
+  int transition_type = 1;
+  bool is_key_request = true;
+  auto result = ExtendContent()->NotifyNavigationRewriteUrl(original_url, referrer, 
+                                                             transition_type, is_key_request);
+}
+
+TEST_F(WebContentsImplExtTest, NotifyNavigationRewriteUrl002) {
+  std::string original_url = "http://test.com";
+  std::string referrer = "http://referrer.com";
+  int transition_type = 1;
+  bool is_key_request = true;
+  auto result = ExtendContent()->NotifyNavigationRewriteUrl(original_url, referrer, 
+                                                             transition_type, is_key_request);
+  EXPECT_EQ(result, "");
+}
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+TEST_F(WebContentsImplExtTest, GetAllFrameInfos001) {
+  std::map<std::string, std::string> frameinfos;
+  ExtendContent()->GetAllFrameInfos(frameinfos);
+}
+#endif
+
+TEST_F(WebContentsImplExtTest, OnAudioStateChangedExt002) {
+  bool is_currently_audible = false;
+  bool is_ohos_currently_audible = false;
+  auto result = ExtendContent()->OnAudioStateChangedExt(is_currently_audible, 
+                                                          is_ohos_currently_audible);
+  EXPECT_FALSE(result);
+}
+
+TEST_F(WebContentsImplExtTest, OnAudioStateChangedExtSetAudible001) {
+  bool is_ohos_currently_audible = true;
+  ExtendContent()->OnAudioStateChangedExtSetAudible(is_ohos_currently_audible);
+}
+
+TEST_F(WebContentsImplExtTest, OnAVCastStarted001) {
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+  media::mojom::MediaInfoForVASTPtr media_info =
+      media::mojom::MediaInfoForVAST::New();
+  GlobalRenderFrameHostId host_id(0, 0);
+  MediaPlayerId media_player_id(host_id, 0);
+  auto result = ExtendContent()->OnAVCastStarted(std::move(media_info), media_player_id);
+}
+
+TEST_F(WebContentsImplExtTest, OnAVCastStarted002) {
+  media::mojom::MediaInfoForVASTPtr media_info =
+      media::mojom::MediaInfoForVAST::New();
+  GlobalRenderFrameHostId host_id(0, 0);
+  MediaPlayerId media_player_id(host_id, 0);
+  auto result = ExtendContent()->OnAVCastStarted(std::move(media_info), media_player_id);
+  EXPECT_EQ(result, nullptr);
+}
+
+TEST_F(WebContentsImplExtTest, EnableVideoAssistantAVCast001) {
+  bool enable = true;
+  ExtendContent()->EnableVideoAssistantAVCast(enable);
+}
+
+TEST_F(WebContentsImplExtTest, EnableVideoAssistantAVCast002) {
+  bool enable = false;
+  ExtendContent()->EnableVideoAssistantAVCast(enable);
+}
+
+TEST_F(WebContentsImplExtTest, GetUserAgentMetadata001) {
+  std::string user_agent = "test_agent";
+  auto metadata = ExtendContent()->GetUserAgentMetadata(user_agent);
+}
+
+TEST_F(WebContentsImplExtTest, GetUserAgentMetadata002) {
+  std::string user_agent = "";
+  auto metadata = ExtendContent()->GetUserAgentMetadata(user_agent);
+}
+
+TEST_F(WebContentsImplExtTest, isSameUserAgent001) {
+  blink::UserAgentOverride ua_override;
+  ua_override.ua_string_override = "test_agent";
+  auto result = ExtendContent()->isSameUserAgent(ua_override);
+}
+
+TEST_F(WebContentsImplExtTest, isSameUserAgent002) {
+  blink::UserAgentOverride ua_override;
+  auto result = ExtendContent()->isSameUserAgent(ua_override);
+}
+
+TEST_F(WebContentsImplExtTest, SetAdBlockEnabledForSite002) {
+  bool is_adblock_enabled = true;
+  int main_frame_tree_node_id = 0;
+
+  auto rst = main_test_rfh();
+  ExtendContent()->SetPrimaryMainFrame(rst);
+  ExtendContent()->SetAdBlockEnabledForSite(is_adblock_enabled, main_frame_tree_node_id);
+}
+
+TEST_F(WebContentsImplExtTest, SetAdBlockEnabledForSite004) {
+  bool is_adblock_enabled = true;
+  int main_frame_tree_node_id = 1;
+
+  auto rst = main_test_rfh();
+  ExtendContent()->SetPrimaryMainFrame(rst);
+  ExtendContent()->SetAdBlockEnabledForSite(is_adblock_enabled, main_frame_tree_node_id);
+}
+
+TEST_F(WebContentsImplExtTest, ProcessForPdfType001) {
+  NavigationHandle* navigation_handle = nullptr;
+  ExtendContent()->ProcessForPdfType(navigation_handle);
+}
+
+TEST_F(WebContentsImplExtTest, OnNativeEmbedObjectParamChange001) {
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+  NativeEmbedParamDataInfo param_info;
+  ExtendContent()->OnNativeEmbedObjectParamChange(param_info);
+}
+
+TEST_F(WebContentsImplExtTest, OnNativeEmbedObjectParamChange002) {
+  NativeEmbedParamDataInfo param_info;
+  ExtendContent()->OnNativeEmbedObjectParamChange(param_info);
+}
+
+TEST_F(WebContentsImplExtTest, SetNWebId002) {
+  int id = 100;
+  ExtendContent()->SetNWebId(id);
+  auto web_id = ExtendContent()->GetNWebId();
+  EXPECT_EQ(web_id, 100);
+}
+
+TEST_F(WebContentsImplExtTest, OnCameraCaptureStateChanged001) {
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+  int original_state = 0;
+  int new_state = 1;
+  ExtendContent()->OnCameraCaptureStateChanged(original_state, new_state);
+}
+
+TEST_F(WebContentsImplExtTest, OnCameraCaptureStateChanged002) {
+  int original_state = 0;
+  int new_state = 1;
+  ExtendContent()->OnCameraCaptureStateChanged(original_state, new_state);
+}
+
+TEST_F(WebContentsImplExtTest, OnMicrophoneCaptureStateChanged001) {
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+  int original_state = 0;
+  int new_state = 1;
+  ExtendContent()->OnMicrophoneCaptureStateChanged(original_state, new_state);
+}
+
+TEST_F(WebContentsImplExtTest, OnMicrophoneCaptureStateChanged002) {
+  int original_state = 0;
+  int new_state = 1;
+  ExtendContent()->OnMicrophoneCaptureStateChanged(original_state, new_state);
+}
+
+TEST_F(WebContentsImplExtTest, ResumeMicrophone001) {
+  int nWebID = -1;
+  ExtendContent()->ResumeMicrophone(nWebID);
+}
+
+TEST_F(WebContentsImplExtTest, StopMicrophone001) {
+  int nWebID = -1;
+  ExtendContent()->StopMicrophone(nWebID);
+}
+
+TEST_F(WebContentsImplExtTest, PauseMicrophone001) {
+  int nWebID = -1;
+  ExtendContent()->PauseMicrophone(nWebID);
+}
+
+TEST_F(WebContentsImplExtTest, IsQuickMenuShow001) {
+  auto result = ExtendContent()->IsQuickMenuShow();
+  EXPECT_FALSE(result);
+}
+
+TEST_F(WebContentsImplExtTest, IsQuickMenuShow002) {
+  auto ptr_view = std::make_unique<MockRenderViewHostDelegateView>();
+  UpdateDeleteView(ptr_view.get());
+  auto result = ExtendContent()->IsQuickMenuShow();
+  EXPECT_FALSE(result);
+}
+
+TEST_F(WebContentsImplExtTest, DelVideoAssistant001) {
+  ExtendContent()->DelVideoAssistant();
+}
+
 }  // namespace content

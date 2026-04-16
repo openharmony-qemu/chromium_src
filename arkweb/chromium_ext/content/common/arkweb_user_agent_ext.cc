@@ -10,9 +10,6 @@
 #include "cef/ohos_cef_ext/libcef/browser/useragent/ua_push_config.h"
 #endif
 
-#include "content/public/browser/content_browser_client.h"
-#include "content/public/common/content_client.h"
-
 namespace content {
 
 #if BUILDFLAG(ARKWEB_USERAGENT)
@@ -168,8 +165,7 @@ void UpdateLowEntropyCh(blink::UserAgentMetadata& metadata) {
 }
 
 std::string GetUserAgentByHost(const std::string& host) {
-  auto browser_client = content::GetContentClient()->browser();
-  return browser_client->GetUAStringForHost(host);
+  return "";
 }
 #endif  // ARKWEB_USERAGENT
 

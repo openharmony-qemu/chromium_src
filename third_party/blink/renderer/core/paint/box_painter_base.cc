@@ -47,6 +47,10 @@
 #include "third_party/blink/renderer/platform/runtime_enabled_features.h"
 #include "ui/gfx/geometry/rect_conversions.h"
 
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/paint/night_mode_inverter.h"
+#endif
+
 namespace blink {
 
 using CompositedPaintStatus = ElementAnimations::CompositedPaintStatus;
@@ -292,6 +296,11 @@ void BoxPainterBase::PaintNormalBoxShadow(
                       DarkModeFilter::ElementRole::kBackground))
             : resolved_shadow_color;
 
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+    Color inverted_shadow_color =
+        NightModeInverter::GetInverter().InvertElementColor(
+            style, shadow_color, NightModeInverter::ElementRole::kBackground);
+#endif
     gfx::RectF fill_rect = border.Rect();
     fill_rect.Outset(shadow.Spread());
     if (fill_rect.IsEmpty()) {
@@ -328,7 +337,12 @@ void BoxPainterBase::PaintNormalBoxShadow(
     // Draw only the shadow. If the color of the shadow is transparent we will
     // set an empty draw looper.
     DrawLooperBuilder draw_looper_builder;
+    
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+    draw_looper_builder.AddShadow(shadow.Offset(), shadow.Blur(), inverted_shadow_color,
+#else
     draw_looper_builder.AddShadow(shadow.Offset(), shadow.Blur(), shadow_color,
+#endif
                                   DrawLooperBuilder::kShadowRespectsTransforms,
                                   DrawLooperBuilder::kShadowIgnoresAlpha);
     context.SetDrawLooper(draw_looper_builder.DetachDrawLooper());
@@ -419,7 +433,11 @@ void BoxPainterBase::PaintInsetBoxShadow(const PaintInfo& info,
         style.UsedColorScheme());
     // DarkModeFilter::ApplyToFlagsIfNeeded does not apply dark mode to the draw
     // looper used for shadows so we need to apply dark mode to the color here.
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+    Color shadow_color =
+#else
     const Color& shadow_color =
+#endif
         style.ForceDark()
             ? Color::FromSkColor4f(
                   context.GetDarkModeFilter()->InvertColorIfNeeded(
@@ -427,6 +445,10 @@ void BoxPainterBase::PaintInsetBoxShadow(const PaintInfo& info,
                       DarkModeFilter::ElementRole::kBackground))
             : resolved_shadow_color;
 
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+    shadow_color = NightModeInverter::GetInverter().InvertElementColor(
+        style, shadow_color, NightModeInverter::ElementRole::kBackground);
+#endif
     gfx::RectF inner_rect = bounds.Rect();
     AdjustRectForSideClipping(inner_rect, shadow, sides_to_include);
     ContouredRect inner_contoured_rect(
@@ -526,6 +548,12 @@ BoxPainterBase::FillLayerInfo::FillLayerInfo(
       is_clipped_with_local_scrolling(is_scroll_container &&
                                       layer.Attachment() ==
                                           EFillAttachment::kLocal) {
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  if (style.NightModeEnabled()) {
+    color = NightModeInverter::GetInverter().InvertElementColor(
+        color, NightModeInverter::ElementRole::kBackground);
+  }
+#endif
   // When printing backgrounds is disabled or using economy mode,
   // change existing background colors and images to a solid white background.
   // If there's no bg color or image, leave it untouched to avoid affecting

@@ -12,6 +12,10 @@
 #include "third_party/blink/renderer/core/paint/paint_info.h"
 #include "third_party/blink/renderer/platform/graphics/skia/skia_utils.h"
 
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/paint/night_mode_inverter.h"
+#endif
+
 namespace blink {
 
 namespace {
@@ -176,7 +180,14 @@ bool SVGObjectPainter::PreparePaint(
     flag_color.SetAlpha(flag_color.Alpha() * alpha);
     flags.setColor(flag_color.toSkColor4f());
     flags.setShader(nullptr);
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+    if (style.NightModeEnabled()) {
+      NightModeInverter::GetInverter().BlendColorFilterForImage(flags);
+      ApplyColorInterpolation(paint_flags, style, flags);
+    }
+#else
     ApplyColorInterpolation(paint_flags, style, flags);
+#endif
     return true;
   }
   return false;

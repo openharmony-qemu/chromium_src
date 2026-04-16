@@ -2545,6 +2545,11 @@ class ComputedStyle final : public ComputedStyleBase {
                                 : mojom::blink::ColorScheme::kLight;
   }
   mojom::blink::ColorScheme UsedColorScheme() const {
+  #if BUILDFLAG(ARKWEB_NIGHT_MODE)
+    if (NightColorScheme()) {
+      return mojom::blink::ColorScheme::kNight;
+    }
+#endif
     return UsedColorScheme(DarkColorScheme());
   }
 
@@ -3550,11 +3555,18 @@ class ComputedStyleBuilder final : public ComputedStyleBuilderBase {
   }
 
   StyleColor InitialColorForColorScheme() const {
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+    if (DarkColorScheme() || NightColorScheme()) {
+      return StyleColor(Color::kWhite);
+    }
+    return StyleColor(Color::kBlack);
+#else
     // TODO(crbug.com/1046753, crbug.com/929098): The initial value of the color
     // property should be canvastext, but since we do not yet ship color-scheme
     // aware system colors, we use this method instead. This should be replaced
     // by default_value:"canvastext" in css_properties.json5.
     return StyleColor(DarkColorScheme() ? Color::kWhite : Color::kBlack);
+#endif
   }
 
   // Helper method to adjust used values for color-scheme on the current

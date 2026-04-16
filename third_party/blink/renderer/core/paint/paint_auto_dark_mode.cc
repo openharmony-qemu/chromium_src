@@ -53,13 +53,22 @@ ImageAutoDarkMode ImageClassifierHelper::GetImageAutoDarkMode(
     const gfx::RectF& dest_rect,
     const gfx::RectF& src_rect,
     DarkModeFilter::ElementRole role) {
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  if (!style.ForceDark() && !style.NightModeEnabled())
+#else
   if (!style.ForceDark())
+#endif
     return ImageAutoDarkMode::Disabled();
 
   return ImageAutoDarkMode(role, style.ForceDark(),
                            GetImageType(GetRatio(local_frame, dest_rect),
                                         gfx::ToEnclosingRect(dest_rect),
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+                                        gfx::ToEnclosingRect(src_rect)),
+                           style.NightModeEnabled());
+#else
                                         gfx::ToEnclosingRect(src_rect)));
+#endif
 }
 
 // static

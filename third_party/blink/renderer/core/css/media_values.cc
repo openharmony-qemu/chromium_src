@@ -49,6 +49,10 @@ mojom::blink::PreferredColorScheme CSSValueIDToPreferredColorScheme(
   switch (id) {
     case CSSValueID::kLight:
       return mojom::blink::PreferredColorScheme::kLight;
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+    case CSSValueID::kNight:
+      return mojom::blink::PreferredColorScheme::kNight;
+#endif
     case CSSValueID::kDark:
       return mojom::blink::PreferredColorScheme::kDark;
     default:

@@ -698,6 +698,10 @@ class CORE_EXPORT WebViewImpl final : public WebView,
   float GetScrollBottom() override;
 #endif  // #if BUILDFLAG(ARKWEB_PAGE_UP_DOWN)
 
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  void UpdateNightModePrefs(const web_pref::WebPreferences& prefs);
+#endif
+
  private:
   FRIEND_TEST_ALL_PREFIXES(WebFrameTest, DivScrollIntoEditableTest);
   FRIEND_TEST_ALL_PREFIXES(WebFrameTest,
@@ -1000,6 +1004,10 @@ class CORE_EXPORT WebViewImpl final : public WebView,
   gfx::Vector2dF limit_fling_velocity_ =
       gfx::Vector2dF(std::numeric_limits<float>::max(),
                      std::numeric_limits<float>::max());
+#endif
+
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  bool night_mode_enabled_ = false;
 #endif
 
   // If true, we send IPC messages when |preferred_size_| changes.

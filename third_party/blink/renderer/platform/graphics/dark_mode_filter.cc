@@ -289,3 +289,7 @@ size_t DarkModeFilter::GetInvertedColorCacheSizeForTesting() {
 }
 
 }  // namespace blink
+
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/graphics/dark_mode_filter_for_include.cc"
+#endif

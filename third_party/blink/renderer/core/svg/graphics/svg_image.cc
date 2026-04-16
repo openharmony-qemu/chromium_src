@@ -68,6 +68,10 @@
 #include "ui/gfx/geometry/size_conversions.h"
 #include "ui/gfx/geometry/skia_conversions.h"
 
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+#include "third_party/blink/renderer/core/css/style_engine.h"
+#endif
+
 namespace blink {
 
 namespace {
@@ -463,10 +467,20 @@ std::optional<PaintRecord> SVGImage::PaintRecordForCurrentFrame(
   return view->GetPaintRecord(cull_rect);
 }
 
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+static bool DrawNeedsLayer(const cc::PaintFlags& flags,
+                           const bool night_mode_enabled) {
+#else
 static bool DrawNeedsLayer(const cc::PaintFlags& flags) {
+#endif
   if (SkColorGetA(flags.getColor()) < 255)
     return true;
 
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  if (night_mode_enabled) {
+    return true;
+  }
+#endif
   // This is needed to preserve the dark mode filter that
   // has been set in GraphicsContext.
   if (flags.getColorFilter())
@@ -488,7 +502,17 @@ void SVGImage::DrawInternal(const DrawInfo& draw_info,
 
   {
     PaintCanvasAutoRestore ar(canvas, false);
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+    bool night_mode_enabled = false;
+    if (GetFrame() && GetFrame()->GetDocument()) {
+      night_mode_enabled =
+          GetFrame()->GetDocument()->GetStyleEngine().GetNightModeEnabled();
+    }
+
+    if (DrawNeedsLayer(flags, night_mode_enabled)) {
+#else
     if (DrawNeedsLayer(flags)) {
+#endif
       SkRect layer_rect = gfx::RectFToSkRect(dst_rect);
       canvas->saveLayer(layer_rect, flags);
     }

@@ -33,6 +33,10 @@
 #include "third_party/blink/renderer/platform/graphics/paint/paint_controller.h"
 #include "third_party/blink/renderer/core/page/page_utils.h"
 
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/paint/night_mode_inverter.h"
+#endif
+
 namespace blink {
 
 namespace {
@@ -84,15 +88,30 @@ sk_sp<cc::DrawLooper> CreateDrawLooper(
     DrawLooperBuilder::ShadowAlphaMode alpha_mode,
     const Color& current_color,
     mojom::blink::ColorScheme color_scheme,
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+    bool night_mode_enabled,
+#endif
     TextPainter::ShadowMode shadow_mode) {
   DrawLooperBuilder draw_looper_builder;
 
   if (shadow_mode != TextPainter::kTextProperOnly) {
     for (wtf_size_t i = shadow_vector.size(); i--;) {
       const ShadowData& shadow = shadow_vector[i];
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+      Color shadow_color =
+          shadow.GetColor().Resolve(current_color, color_scheme);
+      if (night_mode_enabled) {
+        shadow_color = NightModeInverter::GetInverter().InvertElementColor(
+            shadow_color, NightModeInverter::ElementRole::kBackground);
+      }
+#endif
       draw_looper_builder.AddShadow(
           shadow.Offset(), shadow.Blur(),
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+          shadow_color,
+#else
           shadow.GetColor().Resolve(current_color, color_scheme),
+#endif
           DrawLooperBuilder::kShadowRespectsTransforms, alpha_mode);
     }
   }
@@ -105,7 +124,12 @@ sk_sp<cc::DrawLooper> CreateDrawLooper(
 void UpdateGraphicsContext(GraphicsContext& context,
                            const TextPaintStyle& text_style,
                            GraphicsContextStateSaver& state_saver,
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+                           TextPainter::ShadowMode shadow_mode,
+                           const bool night_mode_enabled) {
+#else
                            TextPainter::ShadowMode shadow_mode) {
+#endif
   TextDrawingModeFlags mode = context.TextDrawingMode();
   if (text_style.stroke_width > 0) {
     TextDrawingModeFlags new_mode = mode | kTextModeStroke;
@@ -157,7 +181,11 @@ void UpdateGraphicsContext(GraphicsContext& context,
       context.SetDrawLooper(CreateDrawLooper(
           text_style.shadow ? text_style.shadow->Shadows() : empty_shadows,
           DrawLooperBuilder::kShadowIgnoresAlpha, text_style.current_color,
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+          text_style.color_scheme, night_mode_enabled, shadow_mode));
+#else
           text_style.color_scheme, shadow_mode));
+#endif
     }
   }
 }
@@ -213,7 +241,11 @@ void PrepareTextShadow(const ComputedStyle& style,
     flags.setLooper(CreateDrawLooper(
         merged_shadow_list, DrawLooperBuilder::kShadowIgnoresAlpha,
         style.VisitedDependentColor(GetCSSPropertyColor()),
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+        style.UsedColorScheme(), style.NightColorScheme(), TextPainter::kBothShadowsAndTextProper));
+#else
         style.UsedColorScheme(), TextPainter::kBothShadowsAndTextProper));
+#endif
     return;
   }
 
@@ -223,7 +255,11 @@ void PrepareTextShadow(const ComputedStyle& style,
   flags.setLooper(CreateDrawLooper(
       originating_shadows->Shadows(), DrawLooperBuilder::kShadowIgnoresAlpha,
       style.VisitedDependentColor(GetCSSPropertyColor()),
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+      style.UsedColorScheme(), style.NightColorScheme(), TextPainter::kBothShadowsAndTextProper));
+#else
       style.UsedColorScheme(), TextPainter::kBothShadowsAndTextProper));
+#endif
 }
 
 struct SvgPaints {
@@ -378,7 +414,11 @@ void TextPainter::Paint(const TextFragmentPaintInfo& fragment_paint_info,
 
   GraphicsContextStateSaver state_saver(graphics_context_, false);
   UpdateGraphicsContext(graphics_context_, text_style, state_saver,
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+                        shadow_mode, auto_dark_mode.night_mode_enabled);
+#else
                         shadow_mode);
+#endif
   // TODO(layout-dev): Handle combine text here or elsewhere.
   if (svg_text_paint_state_.has_value()) {
     const AutoDarkMode svg_text_auto_dark_mode(
@@ -677,6 +717,18 @@ TextPaintStyle TextPainter::TextPaintingStyle(const Document& document,
           TextColorForWhiteBackground(text_style.emphasis_mark_color);
     }
   }
+
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  if (style.NightModeEnabled()) {
+    text_style.fill_color =
+        NightModeInverter::GetInverter().InvertElementColor(
+            text_style.fill_color, NightModeInverter::ElementRole::kForeground);
+    text_style.stroke_color =
+        NightModeInverter::GetInverter().InvertElementColor(
+            text_style.stroke_color,
+            NightModeInverter::ElementRole::kForeground);
+  }
+#endif
 
   return text_style;
 }

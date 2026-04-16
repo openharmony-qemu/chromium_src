@@ -1058,6 +1058,24 @@ struct BLINK_COMMON_EXPORT StructTraits<blink::mojom::WebPreferencesDataView,
   }
 #endif  // defined(ARKWEB_SCROLLBAR)
 
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  static bool night_mode_enabled(const blink::web_pref::WebPreferences& r) {
+    return r.night_mode_enabled;
+  }
+
+  static bool turn_image_gray(const blink::web_pref::WebPreferences& r) {
+    return r.turn_image_gray;
+  }
+
+  static bool turn_all_gray(const blink::web_pref::WebPreferences& r) {
+    return r.turn_all_gray;
+  }
+
+  static bool not_process_images(const blink::web_pref::WebPreferences& r) {
+    return r.not_process_images;
+  }
+#endif
+
 #if BUILDFLAG(ARKWEB_MEDIA_CAST)
   static bool cast_enabled(const blink::web_pref::WebPreferences& r) {
     return r.cast_enabled;

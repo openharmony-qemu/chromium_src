@@ -2388,6 +2388,11 @@ ComputedStyleBuilder StyleResolver::InitialStyleBuilderForElement() const {
   builder.SetInForcedColorsMode(GetDocument().InForcedColorsMode());
   builder.SetTapHighlightColor(
       ComputedStyleInitialValues::InitialTapHighlightColor());
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  if (engine.GetNightModeEnabled()) {
+    builder.SetNightModeEnabled(true);
+  }
+#endif
 
   builder.SetUsedColorScheme(engine.GetPageColorSchemes(),
                              engine.GetPreferredColorScheme(),
@@ -3583,6 +3588,10 @@ void StyleResolver::PropagateStyleToViewport() {
                    SetForcedColorAdjust, EForcedColorAdjust::kAuto);
     PROPAGATE_FROM(document_element_style, ColorSchemeFlagsIsNormal,
                    SetColorSchemeFlagsIsNormal, false);
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+    PROPAGATE_FROM(document_element_style, NightModeEnabled,
+                   SetNightModeEnabled, false);
+#endif
   }
 
   changed |= PropagateScrollSnapStyleToViewport(

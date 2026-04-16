@@ -7,4 +7,6 @@ module blink.mojom;
 enum ColorScheme {
   kLight,
   kDark,
+[EnableIf=arkweb_night_mode]
+  kNight,
 };

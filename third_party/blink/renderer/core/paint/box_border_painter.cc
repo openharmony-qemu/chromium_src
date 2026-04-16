@@ -26,6 +26,9 @@
 #include "ui/gfx/color_utils.h"
 #include "ui/gfx/geometry/line_f.h"
 #include "ui/gfx/geometry/rect_conversions.h"
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/paint/night_mode_inverter.h"
+#endif
 
 namespace blink {
 
@@ -270,7 +273,15 @@ void DrawSolidBorderRect(GraphicsContext& context,
   if (!was_antialias)
     context.SetShouldAntialias(true);
 
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  context.SetStrokeColor(
+      auto_dark_mode.night_mode_enabled
+          ? NightModeInverter::GetInverter().InvertElementColor(
+                color, NightModeInverter::ElementRole::kBorder)
+          : color);
+#else
   context.SetStrokeColor(color);
+#endif
   context.SetStrokeThickness(border_width);
   context.StrokeRect(stroke_rect, auto_dark_mode);
 
@@ -284,6 +295,12 @@ void DrawBleedAdjustedDRRect(GraphicsContext& context,
                              const FloatRoundedRect& inner,
                              Color color,
                              const AutoDarkMode& auto_dark_mode) {
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  if (auto_dark_mode.night_mode_enabled) {
+    color = NightModeInverter::GetInverter().InvertElementColor(
+        color, NightModeInverter::ElementRole::kBorder);
+  }
+#endif
   switch (bleed_avoidance) {
     case kBackgroundBleedClipLayer: {
       // BackgroundBleedClipLayer clips the outer rrect for the whole layer.
@@ -656,6 +673,12 @@ void DrawDoubleBoxSide(GraphicsContext& context,
                        const AutoDarkMode& auto_dark_mode) {
   int third_of_thickness = (thickness + 1) / 3;
   DCHECK_GT(third_of_thickness, 0);
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  if (auto_dark_mode.night_mode_enabled) {
+    color = NightModeInverter::GetInverter().InvertElementColor(
+        color, NightModeInverter::ElementRole::kBorder);
+  }
+#endif
 
   if (!adjacent_width1 && !adjacent_width2) {
     context.SetFillColor(color);
@@ -770,6 +793,13 @@ void DrawRidgeOrGrooveBoxSide(GraphicsContext& context,
     s2 = EBorderStyle::kInset;
   }
 
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  if (auto_dark_mode.night_mode_enabled) {
+    color = NightModeInverter::GetInverter().InvertElementColor(
+        color, NightModeInverter::ElementRole::kBorder);
+  }
+#endif
+
   int adjacent1_big_half =
       ((adjacent_width1 > 0) ? adjacent_width1 + 1 : adjacent_width1 - 1) / 2;
   int adjacent2_big_half =
@@ -850,6 +880,13 @@ void DrawSolidBoxSide(GraphicsContext& context,
                       const AutoDarkMode& auto_dark_mode) {
   DCHECK_GE(x2, x1);
   DCHECK_GE(y2, y1);
+
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  if (auto_dark_mode.night_mode_enabled) {
+    color = NightModeInverter::GetInverter().InvertElementColor(
+        color, NightModeInverter::ElementRole::kBorder);
+  }
+#endif
 
   if (!adjacent_width1 && !adjacent_width2) {
     // Tweak antialiasing to match the behavior of fillQuad();
@@ -1220,7 +1257,12 @@ void BoxBorderPainter::DrawDoubleBorder() const {
   DCHECK(FirstEdge().BorderStyle() == EBorderStyle::kDouble);
   DCHECK(visible_edge_set_ == kAllBorderEdges);
 
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  Color color = NightModeInverter::GetInverter().InvertElementColor(
+      style_, FirstEdge().GetColor(), NightModeInverter::ElementRole::kBorder);
+#else
   const Color& color = FirstEdge().GetColor();
+#endif
 
   // When painting outlines, we ignore outer/inner radii.
   const auto force_rectangular = !outer_.IsRounded() && !inner_.IsRounded();
@@ -1303,7 +1345,13 @@ bool BoxBorderPainter::PaintBorderFastPath() const {
       }
     }
 
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+    context_.SetFillColor(NightModeInverter::GetInverter().InvertElementColor(
+        style_, FirstEdge().GetColor(),
+        NightModeInverter::ElementRole::kBorder));
+#else
     context_.SetFillColor(FirstEdge().GetColor());
+#endif
     context_.FillPath(builder.Finalize(),
                       PaintAutoDarkMode(style_, element_role_));
     return true;
@@ -1705,6 +1753,11 @@ void BoxBorderPainter::PaintOneBorderSide(
   DCHECK(edge_to_render.Width());
   const BorderEdge& adjacent_edge1 = Edge(adjacent_side1);
   const BorderEdge& adjacent_edge2 = Edge(adjacent_side2);
+
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  color = NightModeInverter::GetInverter().InvertElementColor(
+      style_, color, NightModeInverter::ElementRole::kBorder);
+#endif
 
   if (side_type == kCurved) {
     MiterType miter1 =

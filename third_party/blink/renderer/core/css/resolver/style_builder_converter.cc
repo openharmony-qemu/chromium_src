@@ -3738,6 +3738,11 @@ ColorSchemeFlags StyleBuilderConverter::ExtractColorSchemes(
         case CSSValueID::kOnly:
           flags |= static_cast<ColorSchemeFlags>(ColorSchemeFlag::kOnly);
           break;
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+        case CSSValueID::kNight:
+          flags |= static_cast<ColorSchemeFlags>(ColorSchemeFlag::kNight);
+          break;
+#endif
         default:
           break;
       }

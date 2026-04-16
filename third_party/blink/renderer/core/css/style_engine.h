@@ -804,6 +804,10 @@ class CORE_EXPORT StyleEngine final : public GarbageCollected<StyleEngine>,
                                   AtomicString property_name,
                                   size_t property_value_index);
 
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  bool GetNightModeEnabled() const { return night_mode_enabled_; }
+#endif
+
  private:
   void UpdateCounters(const Element& element,
                       CountersAttachmentContext& context);
@@ -1196,6 +1200,10 @@ class CORE_EXPORT StyleEngine final : public GarbageCollected<StyleEngine>,
   Color forced_background_color_;
 
   bool force_dark_mode_enabled_{false};
+
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  bool night_mode_enabled_{false};
+#endif
 
   friend class NodeTest;
   friend class StyleEngineTest;

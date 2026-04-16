@@ -1403,3 +1403,6 @@ std::ostream& operator<<(std::ostream& os, const Color& color) {
 }
 
 }  // namespace blink
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/graphics/color_for_include.cc"
+#endif

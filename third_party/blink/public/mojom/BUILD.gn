@@ -1974,6 +1974,10 @@ mojom("color_scheme_mojo_bindings") {
 
   sources = [ "frame/color_scheme.mojom" ]
 
+  enabled_features = []
+  if (defined(arkweb_night_mode)) {
+    enabled_features += [ "arkweb_night_mode" ]
+  }
   export_class_attribute = "BLINK_COMMON_EXPORT"
   export_define = "BLINK_COMMON_IMPLEMENTATION=1"
   export_header = "third_party/blink/public/common/common_export.h"

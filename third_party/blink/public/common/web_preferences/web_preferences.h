@@ -379,6 +379,12 @@ struct BLINK_COMMON_EXPORT WebPreferences {
   // Enable forcibly modifying content rendering to result in a light on dark
   // color scheme.
   bool force_dark_mode_enabled = false;
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  bool night_mode_enabled = false;
+  bool turn_image_gray = false;
+  bool turn_all_gray = false;
+  bool not_process_images = false;
+#endif
 
   // Default (used if the page or UA doesn't override these) values for page
   // scale limits. These are set directly on the WebView so there's no analogue

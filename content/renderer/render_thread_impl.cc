@@ -888,6 +888,11 @@ void RenderThreadImpl::InitializeRenderer(
     blink::OriginTrialsSettingsProvider::Get()->SetSettings(
         std::move(origin_trials_settings));
   }
+#if BUILDFLAG(ARKWEB_CSS_FONT)
+  if (!base::ohos::IsMobileDevice()) {
+    skia::DefaultFontMgr().get()->PrepareFontConfig();
+  }
+#endif
 }
 
 void RenderThreadImpl::RegisterSchemes() {

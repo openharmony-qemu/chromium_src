@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//arkweb/build/features/features.gni")
 import("//build/buildflag_header.gni")
 import("//testing/test.gni")
 
@@ -22,6 +23,10 @@ test("ui_unittests") {
     "//ui/gfx",
     "//cc/base",
   ]
+
+  if (arkweb_unittests) {
+    deps += [ "//content/public/child" ]
+  }
 
   if (!is_ios && !is_android && !is_castos) {
     deps += [ "//ui/actions:unit_tests" ]

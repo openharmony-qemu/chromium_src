@@ -158,7 +158,10 @@ test("native_theme_unittests") {
 
   if (arkweb_test) {
   #  sources += [ "//arkweb/chromium_ext/ui/native_theme/native_theme_aura_utils_unittest.cc" ]
-    deps += [ "//arkweb/ohos_adapter_ndk/mock_ndk_api:mock_base_ohos" ]
+    deps += [ 
+      "//arkweb/ohos_adapter_ndk/mock_ndk_api:mock_base_ohos",
+      "//content/public/child",
+    ]
   }
   if (is_mac) {
     sources += [

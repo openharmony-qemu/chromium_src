@@ -102,6 +102,11 @@
 #include "services/device/business_risk_intelligent_detection/business_risk_intelligent_detection_host_impl.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_CSS_FONT)
+#include "arkweb/chromium_ext/components/services/font_data/font_data_service_impl.h"
+#include "arkweb/chromium_ext/components/services/font_data/public/mojom/font_data_service.mojom.h"
+#endif
+
 namespace content {
 
 namespace {
@@ -367,7 +372,14 @@ void RenderProcessHostImpl::IOThreadHostImpl::BindHostReceiver(
       return;
     }
   }
-
+#if BUILDFLAG(ARKWEB_CSS_FONT)
+  if (auto font_data_receiver =
+          receiver.As<font_data_service::mojom::FontDataService>()) {
+    font_data_service::FontDataServiceImpl::ConnectToFontService(
+        std::move(font_data_receiver));
+    return;
+  }
+#endif
 #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX)
   if (features::IsFontDataServiceEnabled()) {
     if (auto font_data_receiver =

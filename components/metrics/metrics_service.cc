@@ -118,6 +118,7 @@
 //
 //------------------------------------------------------------------------------
 
+#include "arkweb/build/features/features.h"
 #include "components/metrics/metrics_service.h"
 
 #include <stddef.h>
@@ -176,6 +177,10 @@
 #include "components/keep_alive_registry/keep_alive_types.h"
 #include "components/keep_alive_registry/scoped_keep_alive.h"
 #endif  // !BUILDFLAG(IS_ANDROID)
+
+#if BUILDFLAG(ARKWEB_HISTOGRAM_DFX)
+#include "arkweb/chromium_ext/components/metrics/arkweb_histogram_filter.h"
+#endif
 
 namespace metrics {
 namespace {
@@ -1025,7 +1030,11 @@ MetricsService::MetricsLogHistogramWriter::MetricsLogHistogramWriter(
     MetricsLog* log,
     base::HistogramBase::Flags required_flags)
     : required_flags_(required_flags),
+#if BUILDFLAG(ARKWEB_HISTOGRAM_DFX)
+      flattener_(std::make_unique<ArkWebHistogramFilter>(log)),
+#else
       flattener_(std::make_unique<IndependentFlattener>(log)),
+#endif
       histogram_snapshot_manager_(
           std::make_unique<base::HistogramSnapshotManager>(flattener_.get())) {}
 
@@ -1053,7 +1062,11 @@ MetricsService::IndependentMetricsLoader::IndependentMetricsLoader(
     std::string app_version,
     std::string signing_key)
     : log_(std::move(log)),
+#if BUILDFLAG(ARKWEB_HISTOGRAM_DFX)
+      flattener_(std::make_unique<ArkWebHistogramFilter>(log_.get())),
+#else
       flattener_(std::make_unique<IndependentFlattener>(log_.get())),
+#endif
       snapshot_manager_(
           std::make_unique<base::HistogramSnapshotManager>(flattener_.get())),
       app_version_(std::move(app_version)),

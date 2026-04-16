@@ -9,6 +9,7 @@
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
 #include "cef/ohos_cef_ext/libcef/browser/useragent/ua_push_config.h"
 #endif
+
 namespace content {
 
 #if BUILDFLAG(ARKWEB_USERAGENT)
@@ -161,6 +162,10 @@ void UpdateLowEntropyCh(blink::UserAgentMetadata& metadata) {
                                            GetDistVersion());
   metadata.mobile = base::ohos::IsMobileDevice();
   metadata.platform = base::ohos::kPlatformName;
+}
+
+std::string GetUserAgentByHost(const std::string& host) {
+  return "";
 }
 #endif  // ARKWEB_USERAGENT
 

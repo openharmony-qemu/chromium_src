@@ -43,7 +43,7 @@ constexpr char kContentType[] = "application/json";
 std::string GetPublicKeyByUrl(const GURL& url) {
   std::string result;
   int store_type = extension_urls::GetWebStoreTypeByUrl(false, url);
-  if (store_type == extensions::kWebStoreType360) {
+  if (store_type == extensions::kWebStoreTypeHuawei) {
     return base::EmptyString();
   }
  

@@ -148,7 +148,7 @@ bool ConfiguratorImpl::EnabledCupSigning() const {
   if (urls.empty()) {
     return true;
   }
-  return extensions::kWebStoreType360 !=
+  return extensions::kWebStoreTypeHuawei !=
          extension_urls::GetWebStoreTypeByUrl(false, urls.at(0));
 #endif
 }

@@ -407,6 +407,12 @@ std::string GetUserAgent(
   return GetUserAgentInternal(user_agent_reduction);
 }
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+std::string GetUserAgentByHost(const std::string& host) {
+  return content::GetUserAgentByHost(host);
+}
+#endif
+
 const blink::UserAgentBrandList GetUserAgentBrandMajorVersionList(
     std::optional<blink::UserAgentBrandVersion> additional_brand_version) {
   return GetUserAgentBrandMajorVersionListInternal(

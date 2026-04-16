@@ -102,6 +102,8 @@ BASE_EXPORT void SetPageScale(bool status);
 
 BASE_EXPORT bool IsPageScale();
 
+BASE_EXPORT std::string ProductModel();
+
 BASE_EXPORT std::string ComponentName();
 
 BASE_EXPORT bool IsPcMode();

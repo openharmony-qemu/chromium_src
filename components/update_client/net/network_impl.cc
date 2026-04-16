@@ -23,6 +23,10 @@
 #include "services/network/public/mojom/url_response_head.mojom.h"
 #include "url/gurl.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "components/embedder_support/user_agent_utils.h"
+#endif
+
 namespace {
 
 const net::NetworkTrafficAnnotationTag traffic_annotation =
@@ -106,6 +110,16 @@ NetworkFetcherImpl::NetworkFetcherImpl(
       cookie_predicate_(cookie_predicate) {}
 NetworkFetcherImpl::~NetworkFetcherImpl() = default;
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+void NetworkFetcherImpl::SetUserAgent(
+    network::ResourceRequest* resource_request) {
+  auto user_agent =
+      embedder_support::GetUserAgentByHost(resource_request->url.host());
+  resource_request->headers.SetHeader(net::HttpRequestHeaders::kUserAgent,
+                                      user_agent);
+}
+#endif
+
 void NetworkFetcherImpl::PostRequest(
     const GURL& url,
     const std::string& post_data,
@@ -122,6 +136,11 @@ void NetworkFetcherImpl::PostRequest(
   for (const auto& [name, value] : post_additional_headers) {
     resource_request->headers.SetHeader(name, value);
   }
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  SetUserAgent(resource_request.get());
+#endif
+
   std::unique_ptr<network::SimpleURLLoader> simple_url_loader =
       network::SimpleURLLoader::Create(std::move(resource_request),
                                        traffic_annotation);
@@ -173,6 +192,11 @@ base::OnceClosure NetworkFetcherImpl::DownloadToFile(
   } else {
     resource_request->site_for_cookies = net::SiteForCookies::FromUrl(url);
   }
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  SetUserAgent(resource_request.get());
+#endif
+
   std::unique_ptr<network::SimpleURLLoader> simple_url_loader =
       network::SimpleURLLoader::Create(std::move(resource_request),
                                        traffic_annotation);

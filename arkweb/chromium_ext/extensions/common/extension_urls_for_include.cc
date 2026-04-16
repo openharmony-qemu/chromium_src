@@ -18,7 +18,7 @@ namespace extensions {
 enum : int {
   kWebStoreTypeDefault = 0,
  
-  kWebStoreType360 = 1,
+  kWebStoreTypeHuawei = 1,
 };
  
 }  // namespace extensions
@@ -40,7 +40,9 @@ WebStoreConfig GetWebStoreConfig();
 bool SetWebStoreConfig(const WebStoreConfig& web_store_config);
  
 int GetWebStoreTypeByUrl(bool flag, const GURL& url);
- 
+
+bool IsWebstoreUpdateUrl(int webstore_type, const GURL& update_url);
+
 GURL GetWebstoreUpdateUrl(int webstore_type);
  
 GURL GetWebStoreHomePageUrl();

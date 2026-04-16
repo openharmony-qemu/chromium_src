@@ -93,12 +93,22 @@ int GetWebStoreTypeByUrl(bool flag, const GURL& url) {
   }
  
   if (url.DomainIs(domain)) {
-    return extensions::kWebStoreType360;
+    return extensions::kWebStoreTypeHuawei;
   }
  
   return extensions::kWebStoreTypeDefault;
 }
- 
+
+bool IsWebstoreUpdateUrl(int webstore_type, const GURL& update_url) {
+  if (webstore_type != extensions::kWebStoreTypeDefault) {
+    return true;
+  }
+
+  GURL store_url = GURL(kChromeWebstoreUpdateURL);
+  return (update_url.host_piece() == store_url.host_piece() &&
+          update_url.path_piece() == store_url.path_piece());
+}
+
 GURL GetWebstoreUpdateUrl(int webstore_type) {
   if (webstore_type != extensions::kWebStoreTypeDefault) {
     return GetDefaultWebstoreUpdateUrl();

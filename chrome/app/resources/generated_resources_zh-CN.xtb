@@ -160,6 +160,7 @@
 <translation id="109647177154844434">卸载 Parallels Desktop 会删除您的 Windows 映像，包括其所有应用、设置和数据。确定要继续吗？</translation>
 <translation id="1097016918605049747">无法翻译此网页</translation>
 <translation id="1097658378307015415">登录前，请先以访客身份进入，以便激活“<ph name="NETWORK_ID" />”网络。</translation>
+<translation id="1098777419082098167">读取和更改您在所有登录过的设备上的浏览记录</translation>
 <translation id="1099962274138857708">从“<ph name="DEVICE_NAME" />”复制的图片</translation>
 <translation id="1100504063505580045">当前图标</translation>
 <translation id="1102759278139578486">无法下载主要节点标注文件。请稍后再试。</translation>
@@ -313,6 +314,7 @@
 <translation id="1195210374336998651">转到应用设置</translation>
 <translation id="1195447618553298278">未知错误。</translation>
 <translation id="1195558154361252544">除您允许的网站外，已自动阻止所有其他网站显示通知</translation>
+<translation id="1195805062734778374">打开开发者模式，可安装和管理第三方扩展程序，这些扩展程序未经过安全检测，可能存在风险。确定打开？</translation>
 <translation id="1197088940767939838">橙色</translation>
 <translation id="11978075283960463">存储在应用中的数据量：<ph name="APP_SIZE" /></translation>
 <translation id="1198066799963193307">低视力语音工具</translation>
@@ -607,6 +609,7 @@
 <translation id="1407069428457324124">深色主题</translation>
 <translation id="1407135791313364759">全部打开</translation>
 <translation id="140723521119632973">移动网络激活</translation>
+<translation id="1407865659932107504">截取您屏幕上的内容</translation>
 <translation id="1407970155431887387">点击即可打开<ph name="SEARCH_ENGINE_NAME" />的“修改”对话框</translation>
 <translation id="1408504635543854729">在“文件”应用中浏览此设备上的内容。相关内容受到管理员的限制，无法修改。</translation>
 <translation id="1408980562518920698">管理个人信息</translation>
@@ -1600,6 +1603,7 @@
 <translation id="2079053412993822885">如果您删除了自己的某个证书，则不能再用该证书标识自己的身份。</translation>
 <translation id="2079495302726689071">在新的<ph name="APP" />标签页中打开链接</translation>
 <translation id="2079545284768500474">撤消</translation>
+<translation id="2079825939263178885">访问和控制您的浏览数据，包括浏览历史、下载历史、Cookie、表单数据、密码等</translation>
 <translation id="2079553700504470326">使用您的精确位置信息，而非基于 IP 地址的估计位置信息，以便获得最准确的 Gemini 结果。</translation>
 <translation id="2080070583977670716">更多设置</translation>
 <translation id="2081816110395725788">使用电池时让电源闲置</translation>
@@ -3104,6 +3108,7 @@
 <translation id="3094223846531205616">{COUNT,plural, =0{今天过期}=1{明天过期}other{# 天后过期}}</translation>
 <translation id="3094521107841754472">价格已从 <ph name="PREVIOUS_PRICE" /> 变为 <ph name="CURRENT_PRICE" />。</translation>
 <translation id="3095871294753148861">书签、密码和其他浏览器数据会与主账号同步。</translation>
+<translation id="3097016124663043290">取消</translation>
 <translation id="3099836255427453137">{NUM_EXTENSIONS,plural, =1{关闭了 1 个可能有害的扩展程序。您也可移除它。}other{关闭了 {NUM_EXTENSIONS} 个可能有害的扩展程序。您也可移除它们。}}</translation>
 <translation id="3100071818310370858">使用位置信息。允许具备位置信息权限的应用和服务使用此设备的位置信息。Google 可能会定期收集位置数据，并在使用这类数据时对其进行匿名化处理，从而提高位置信息精确度并改善基于地理位置的服务。<ph name="BEGIN_LINK1" />详细了解位置信息<ph name="BEGIN_LINK1_END" />了解详情<ph name="END_LINK1" /></translation>
 <translation id="3101126716313987672">暗光</translation>
@@ -3373,6 +3378,7 @@
 <translation id="3301996560342889673">要同步历史记录吗？</translation>
 <translation id="33022249435934718">GDI 句柄</translation>
 <translation id="3302388252085547855">输入理由…</translation>
+<translation id="330270904988027475">在合作的原生应用请求时在后台运行</translation>
 <translation id="3303795387212510132">允许应用打开 <ph name="PROTOCOL_SCHEME" /> 链接？</translation>
 <translation id="3303818374450886607">份数</translation>
 <translation id="3303855915957856445">未找到任何搜索结果</translation>
@@ -4300,6 +4306,7 @@
 <translation id="3900966090527141178">导出密码</translation>
 <translation id="3903187154317825986">内置键盘</translation>
 <translation id="3903696968689283281">Wi-Fi 直连所有者信息：</translation>
+<translation id="3903882377278268878">访问和操作您浏览器中的 Cookies</translation>
 <translation id="3904326018476041253">位置信息服务</translation>
 <translation id="3904572359926093799">拆分视图下大小调整手柄（可拖动）</translation>
 <translation id="3905761538810670789">修复应用</translation>
@@ -4508,6 +4515,7 @@
 <translation id="4042941173059740150">继续通过 <ph name="IDENTITY_PROVIDER_ETLD_PLUS_ONE" /> 使用 <ph name="SITE_ETLD_PLUS_ONE" /></translation>
 <translation id="4043267180218562935">光标大小</translation>
 <translation id="4043620984511647481">手动添加打印机</translation>
+<translation id="4044017060430402757">确认</translation>
 <translation id="4044708573046946214">屏幕锁定密码</translation>
 <translation id="4044883420905480380">您已使用 Android 手机连接到 Wi-Fi 并以 <ph name="USER_EMAIL" /> 的身份登录</translation>
 <translation id="404493185430269859">默认搜索引擎</translation>
@@ -4696,6 +4704,7 @@
 <translation id="4182339886482390129">“增强型安全浏览”功能有助于保护您免受危险的网站、下载内容和扩展程序的侵害</translation>
 <translation id="4184803915913850597">HID 设备 (<ph name="VENDOR_ID" />:<ph name="PRODUCT_ID" />)</translation>
 <translation id="418527077671811642"><ph name="WEBSITE" /> 将了解安全密钥的品牌和型号</translation>
+<translation id="4186370088425159562">与协作的本机应用通信</translation>
 <translation id="4186749321808907788"><ph name="QUERY_NAME" /> - <ph name="DEFAULT_SEARCH_ENGINE_NAME" />搜索</translation>
 <translation id="4187424053537113647">正在设置 <ph name="APP_NAME" />…</translation>
 <translation id="4190446002599583608">利用 AI 搜索历史记录</translation>
@@ -5538,6 +5547,7 @@
 <translation id="4775646243557794597">已删除<ph name="TIME_PERIOD" />的浏览记录</translation>
 <translation id="4776311127346151860">已连接<ph name="DEVICE_NAME" /></translation>
 <translation id="4776594120007763294">如需添加某个页面以供日后阅读，请点击此按钮</translation>
+<translation id="477727212864867766">获取您的电子邮件地址</translation>
 <translation id="4777458362738635055">此设备的其他用户可以使用该网络</translation>
 <translation id="4777813841994368231">已开启 • 此扩展程序已被其开发者取消发布</translation>
 <translation id="4777825441726637019">Play 商店</translation>
@@ -9147,6 +9157,7 @@
 <translation id="730515362922783851">与本地网络或互联网中的任何设备交换数据</translation>
 <translation id="7306521477691455105">请打开“设置”以将 <ph name="USB_DEVICE_NAME" /> 连接到 <ph name="USB_VM_NAME" /></translation>
 <translation id="7307129035224081534">已暂停</translation>
+<translation id="7307138455910007225">查找您的本地网络中的设备，例如打印机</translation>
 <translation id="7308643132139167865">网站语言</translation>
 <translation id="7309214454733221756">要创建通行密钥以便登录“<ph name="APP_NAME" />”吗？</translation>
 <translation id="7311005168897771689">在离线状态下访问您的 Google 云端硬盘文件</translation>
@@ -9272,6 +9283,7 @@
 <translation id="7389615853658756494">在网站上更改</translation>
 <translation id="7392118418926456391">病毒扫描失败</translation>
 <translation id="7392915005464253525">重新打开关闭的窗口(&amp;E)</translation>
+<translation id="7393069163125850542">打开开发者模式，可安装和管理第三方扩展程序，这些扩展程序未经过安全检测，可能存在风险，请确认是否打开。</translation>
 <translation id="7393073300870882456">{COUNT,plural, =1{已复制 1 个条目}other{已复制 {COUNT} 个条目}}</translation>
 <translation id="7393435859300249877">使用某些应用（例如视频聊天应用）时，如果对着处于静音状态的麦克风说话，您会收到通知。音频不会从您的设备发送出去。</translation>
 <translation id="7395008140803590549">无法删除证书</translation>
@@ -9910,6 +9922,7 @@
 <translation id="7815680994978050279">已屏蔽危险的下载内容</translation>
 <translation id="7817361223956157679">Linux 应用目前不支持屏幕键盘</translation>
 <translation id="7818135753970109980">已添加新主题背景（<ph name="EXTENSION_NAME" />）</translation>
+<translation id="7819259957768717567">读取和更改您在一些网站上的数据</translation>
 <translation id="7819839686707222575">扩展程序是 Chrome 的插件，可帮助您事半功倍</translation>
 <translation id="7820400255539998692">请删除“<ph name="FILENAME" />”，以免使用此设备的他人看到您的密码</translation>
 <translation id="7820561748632634942">分配更多开关？</translation>
@@ -10407,6 +10420,7 @@
 <translation id="814204052173971714">{COUNT,plural, =1{1 个视频}other{# 个视频}}</translation>
 <translation id="8143442547342702591">无效的应用</translation>
 <translation id="8144429778087524791">标为已完成并隐藏</translation>
+<translation id="8144708707828713989">更改您用于控制以下权限的设置：网站对 Cookie、JavaScript、插件、地理位置信息、麦克风、摄像头等功能的使用权限。</translation>
 <translation id="8145170459658034418">省内存模式</translation>
 <translation id="8145219802299093106">使用 Google 智能镜头搜索此页面：<ph name="PAGE_TITLE" /></translation>
 <translation id="8146177459103116374">如果您已在此设备上注册，就能<ph name="LINK2_START" />以现有用户的身份登录<ph name="LINK2_END" />。</translation>
@@ -10629,6 +10643,7 @@
 <translation id="8291415872436043161">下载 Chrome</translation>
 <translation id="8291942417224950075">个人使用</translation>
 <translation id="8293206222192510085">添加书签</translation>
+<translation id="8294282569826134620">读取您在所有登录过的设备上的浏览记录</translation>
 <translation id="8293957715257389063">深度搜索标签页中的内容</translation>
 <translation id="8294431847097064396">来源</translation>
 <translation id="8294476140219241086">标签页整理工具</translation>
@@ -10716,6 +10731,7 @@
 <translation id="8351316842353540018">始终显示无障碍设置选项</translation>
 <translation id="8351419472474436977">此扩展程序控制了您的代理设置，也就是说，它可以更改、破坏或窃听您在网上执行的任何操作。如果您不确定出现这种变化的原因，那么这种变化可能并不是您所希望的。</translation>
 <translation id="8351630282875799764">电池无法充电</translation>
+<translation id="8351835748080111909">扩展程序</translation>
 <translation id="8352287103893778223">标签页分组标题</translation>
 <translation id="835238322900896202">卸载时出错。请通过终端进行卸载。</translation>
 <translation id="8353420862507374944">投放、保存和分享</translation>
@@ -11453,6 +11469,7 @@
 <translation id="8849219423513870962">取消移除名为“<ph name="PROFILE_NAME" />”的 eSIM 卡配置文件</translation>
 <translation id="8849262417389398097"><ph name="CHECKED" /> 个（共 <ph name="CHECKING" /> 个）</translation>
 <translation id="8850251000316748990">查看更多…</translation>
+<translation id="8890944795668818744">系统打印</translation>
 <translation id="885246833287407341">API 函数参数</translation>
 <translation id="8853586775156634952">此卡的信息将仅保存到此设备上</translation>
 <translation id="8855242995793521265">不会显著减慢浏览器或设备的运行速度。</translation>
@@ -12127,4 +12144,5 @@
 <translation id="99731366405731005">您需要开启 <ph name="LINK1_BEGIN" />Chrome 同步<ph name="LINK1_END" />才能使用 Wi-Fi 同步功能。<ph name="LINK2_BEGIN" />了解详情<ph name="LINK2_END" /></translation>
 <translation id="998347228911661591">同步标签页分组</translation>
 <translation id="998747458861718449">检查(&amp;N)</translation>
+<translation id="8253800597652999148">访问和控制您的浏览数据，包括浏览历史、下载历史、cookie、表单数据、密码等</translation>
 </translationbundle>

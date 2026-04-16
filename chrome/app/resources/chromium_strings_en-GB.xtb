@@ -115,6 +115,7 @@ Some features may be unavailable and changes to preferences won't be saved.</tra
 <translation id="2287771843518581140">{NUM_TABS,plural, =1{Chromium recommends pausing the tab that's slowing your browser}other{Chromium recommends pausing the tabs that are slowing your browser}}</translation>
 <translation id="2307973900865360088">Keep in Dock</translation>
 <translation id="2313870531055795960">Checks URLs with a list of unsafe sites stored in Chromium. If a site tries to steal your password, or when you download a harmful file, Chromium may also send URLs, including bits of page content, to Safe Browsing.</translation>
+<translation id="2340553376566028509">On • The source of this extension could not be verified</translation>
 <translation id="2332076562712130931">This action will:
         <ph name="LINE_BREAKS" />
           • Reset some Chromium settings and Chromium shortcuts
@@ -147,6 +148,7 @@ Some features may be unavailable and changes to preferences won't be saved.</tra
 <translation id="2575822587468774919">Select anything to search with image search</translation>
 <translation id="2576118232315942160">To get your passwords and more on all your devices, sign in to Chromium</translation>
 <translation id="2592940277904433508">Continue using Chromium</translation>
+<translation id="259482898795437589">{NUM_EXTENSIONS,plural, =1{Browser recommends that you remove it}other {Browser recommends that you remove them}}</translation>
 <translation id="259935314519650377">Failed to cache the downloaded installer. Error: <ph name="UNPACK_CACHING_ERROR_CODE" />.</translation>
 <translation id="2620436844016719705">System</translation>
 <translation id="2629740064077610681">Your organisation can see and manage browsing data, such as your bookmarks, history and passwords. It can't see browsing data in other Chromium profiles</translation>
@@ -224,6 +226,7 @@ Some features may be unavailable and changes to preferences won't be saved.</tra
 <translation id="3387527074123400161">Chromium OS</translation>
 <translation id="3406848076815591792">Switch to existing Chromium profile?</translation>
 <translation id="3412460710772753638">In Password Manager on this device</translation>
+<translation id="3467729044755133349">Off • The source of this extension could not be verified</translation>
 <translation id="3461644266919055473">Making Chromium yours…</translation>
 <translation id="347328004046849135">Chromium will notify you when you sign in with a compromised password</translation>
 <translation id="3474745554856756813">This will delete <ph name="ITEMS_COUNT" /> items from this device. To retrieve your data later, sign in to Chromium as <ph name="USER_EMAIL" />.</translation>
@@ -624,6 +627,7 @@ Google Chrome is unable to recover your settings.</translation>
 <translation id="8133124826068723441">Chromium OS could not sync your data because sync is not available for your domain.</translation>
 <translation id="813913629614996137">Initialising...</translation>
 <translation id="81770708095080097">This file is dangerous, so Chromium has blocked it.</translation>
+<translation id="8203309434113072810">Warning: Browser cannot prevent extensions from recording your browsing history. To disable this extension in Incognito mode, unselect this option.</translation>
 <translation id="8177472873527554730">Can't find content in page</translation>
 <translation id="8200109504272824693">Enter your passphrase to use and save Chromium data in your account, <ph name="USER_EMAIL" /></translation>
 <translation id="8221491193165283816">You usually block notifications. To let this site notify you, click here.</translation>

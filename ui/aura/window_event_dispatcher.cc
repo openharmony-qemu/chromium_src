@@ -917,7 +917,11 @@ ui::EventDispatchDetails WindowEventDispatcher::SynthesizeMouseMoveEvent() {
   // Do not use GetLastMouseLocationInRoot here because it's not updated when
   // the mouse is not over the window or when the window is minimized.
   gfx::Point mouse_location =
+#if BUILDFLAG(IS_OHOS)
+      display::Screen::GetScreen()->GetCursorScreenPoint(host_->GetDisplayId());
+#else
       display::Screen::GetScreen()->GetCursorScreenPoint();
+#endif
   ConvertPointFromScreen(&mouse_location);
   if (!window()->bounds().Contains(mouse_location))
     return details;

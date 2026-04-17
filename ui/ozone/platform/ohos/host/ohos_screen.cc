@@ -19,6 +19,7 @@
 #include "ui/display/screen.h"
 #include "ui/display/util/display_util.h"
 #include "ui/gfx/geometry/dip_util.h"
+#include "ui/gfx/switches.h"
 #include "ui/ozone/platform/ohos/host/ohos_event_source_base.h"
 #include "ui/ozone/platform/ohos/host/ohos_window.h"
 #include "ui/ozone/public/ozone_switches.h"
@@ -85,6 +86,9 @@ OhosScreen::OhosScreen(OhosWindowManager* window_manager,
     RegisterAvoidAreaCallback();
     RegisterAvailableAreaMonitorByNdk();
   }
+  if (base::FeatureList::IsEnabled(features::kEnableOhosHdr)) {
+    ohos::adapter::ContextAdapter::GetInstance().Register(this);
+  }
 }
 
 OhosScreen::~OhosScreen() {
@@ -101,6 +105,9 @@ OhosScreen::~OhosScreen() {
   unregister_available_area_listener_ = nullptr;
   access_available_area_ = nullptr;
   destroy_available_area_ = nullptr;
+  if (base::FeatureList::IsEnabled(features::kEnableOhosHdr)) {
+    ohos::adapter::ContextAdapter::GetInstance().UnRegister();
+  }
 }
 
 bool OhosScreen::LoadAllAvailableAreaFunctions() {
@@ -184,8 +191,10 @@ void OhosScreen::RemoveObserver(display::DisplayObserver* observer) {
   display_list_.RemoveObserver(observer);
 }
 
-bool OhosScreen::ConvertDisplay(ohos::adapter::OhosDisplay& ohos_display,
-                                display::Display& dst_display) {
+bool OhosScreen::ConvertDisplay(
+    ohos::adapter::OhosDisplay& ohos_display,
+    display::Display& dst_display,
+    ohos::adapter::BrightnessInfo& brightness_info) {
   dst_display.set_id(ohos_display.id);
 
   gfx::Rect configRect = GetDisplayBounds();
@@ -232,7 +241,61 @@ bool OhosScreen::ConvertDisplay(ohos::adapter::OhosDisplay& ohos_display,
   dst_display.set_display_frequency(ohos_display.refresh_rate);
   dst_display.set_is_monochrome(false);
 
+  if (base::FeatureList::IsEnabled(features::kEnableOhosHdr) &&
+      ohos::adapter::device_info::DeviceInfo::SdkApi() >=
+          ohos::adapter::device_info::SDK_VERSION_22) {
+    // set display color space from display's color space
+    gfx::ColorSpace color_space =
+        ConvertOhosDisplayColorSpace(ohos_display.colorSpaces);
+
+    gfx::DisplayColorSpaces display_color_spaces(gfx::ColorSpace::CreateSRGB());
+    if (color_space.IsHDR()) {
+      bool needs_alpha_values[] = {true, false};
+      for (const auto& needs_alpha : needs_alpha_values) {
+        display_color_spaces.SetOutputColorSpaceAndBufferFormat(
+            gfx::ContentColorUsage::kHDR, needs_alpha, color_space,
+            gfx::BufferFormat::RGBA_1010102);
+      }
+      float hdr_max_nits = brightness_info.sdrNits;
+      float headroom = brightness_info.currentHeadroom;
+      display_color_spaces.SetSDRMaxLuminanceNits(hdr_max_nits);
+      display_color_spaces.SetPrimaries(color_space.GetPrimaries());
+      display_color_spaces.SetHDRMaxLuminanceRelative(headroom);
+    }
+    dst_display.SetColorSpaces(display_color_spaces);
+  }
+
   return true;
+}
+
+gfx::ColorSpace OhosScreen::ConvertOhosDisplayColorSpace(
+    const std::vector<ohos::adapter::OhosDisplayColorSpace>&
+        ohos_display_color_spaces) {
+  gfx::ColorSpace color_space = gfx::ColorSpace::CreateSRGB();
+  for (const auto& ohos_display_color_space : ohos_display_color_spaces) {
+    switch (ohos_display_color_space) {
+      case ohos::adapter::OhosDisplayColorSpace::BT2020_HLG:
+        color_space = gfx::ColorSpace::CreateHLG();
+        break;
+      case ohos::adapter::OhosDisplayColorSpace::BT2020_PQ:
+        // primary BT2020_PQ
+        return gfx::ColorSpace::CreateHDR10();
+      default:
+        LOG(WARNING) << __func__ << " [HDRVivid] unsupported colorspace: "
+                     << static_cast<int>(ohos_display_color_space);
+    }
+  }
+  return color_space;
+}
+
+void OhosScreen::UpdateAllDisplays() {
+  base::TaskRunnerOHOS::GetUIThreadTaskRunner()->PostTask(
+      FROM_HERE, base::BindOnce(&OhosScreen::UpdateAllDisplaysInternal,
+                                weak_ptr_factory_.GetWeakPtr()));
+}
+
+void OhosScreen::UpdateAllDisplaysInternal() {
+  FetchDisplays(display_list_);
 }
 
 void OhosScreen::FetchDisplays(display::DisplayList& displays) {
@@ -241,7 +304,16 @@ void OhosScreen::FetchDisplays(display::DisplayList& displays) {
 
   auto& screenAdapter = ohos::adapter::ScreenAdapter::GetInstance();
   screenAdapter.GetPrimaryDisplay(ohos_display);
-  if (ConvertDisplay(ohos_display, dst_display)) {
+  ohos::adapter::BrightnessInfo primary_display_brightness_info;
+  if (base::FeatureList::IsEnabled(features::kEnableOhosHdr) &&
+      ohos::adapter::device_info::DeviceInfo::SdkApi() >=
+          ohos::adapter::device_info::SDK_VERSION_22) {
+    screenAdapter.GetDisplayBrightnessInfo(ohos_display.id,
+                                           primary_display_brightness_info);
+  }
+
+  if (ConvertDisplay(ohos_display, dst_display,
+                     primary_display_brightness_info)) {
     device_scale_factor_ = dst_display.device_scale_factor();
     display::SetInternalDisplayIds({ohos_display.id});
     displays.AddOrUpdateDisplay(dst_display,
@@ -251,7 +323,15 @@ void OhosScreen::FetchDisplays(display::DisplayList& displays) {
   std::vector<ohos::adapter::OhosDisplay> ohosdisplays;
   screenAdapter.GetAllDisplays(ohosdisplays);
   for (auto iterator : ohosdisplays) {
-    if (!ConvertDisplay(iterator, dst_display)) {
+    ohos::adapter::BrightnessInfo display_brightness_info;
+    if (base::FeatureList::IsEnabled(features::kEnableOhosHdr) &&
+        ohos::adapter::device_info::DeviceInfo::SdkApi() >=
+            ohos::adapter::device_info::SDK_VERSION_22) {
+      screenAdapter.GetDisplayBrightnessInfo(iterator.id,
+                                             display_brightness_info);
+    }
+
+    if (!ConvertDisplay(iterator, dst_display, display_brightness_info)) {
       continue;
     }
     displays.AddOrUpdateDisplay(dst_display,

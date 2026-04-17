@@ -9,6 +9,7 @@
  
 #include <atomic>
 #include <cstdint>
+#include <string>
  
 #include "ohos/adapter/export.h"
  
@@ -22,6 +23,12 @@ enum class DeviceMode {
 
 class ADAPTER_EXPORT_API ContextAdapter {
  public:
+
+  class Delegate {
+    public:
+      virtual void UpdateAllDisplays() = 0;
+  };
+
   static ContextAdapter& GetInstance();
   ContextAdapter(const ContextAdapter&) = delete;
   ContextAdapter(ContextAdapter&&) = delete;
@@ -53,14 +60,21 @@ class ADAPTER_EXPORT_API ContextAdapter {
   uint32_t GetLastActiveWidgetId() {
     return last_active_widget_id_.load(std::memory_order_relaxed);
   }
- 
- 
+
+  void Register(Delegate* delegate);
+  void UnRegister();
+
+  void UpdateDisplayBrightnessCB(const std::string& display_brightness);
+
  private:
   ContextAdapter();
   // Indicates whether the device is free-windows mode, normal-window mode, or
   // PC mode.
   std::atomic<DeviceMode> device_mode_{DeviceMode::kPcMode};
   std::atomic<uint32_t> last_active_widget_id_{0};
+  
+  Delegate* delegate_ = nullptr;
+
 };
 }  // namespace ohos::adapter
  

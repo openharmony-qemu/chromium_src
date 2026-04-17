@@ -53,5 +53,93 @@ gfx::AcceleratedWidget ConvertWindowIdToWidgetId(std::string& window_id) {
   return std::stoi(windowIdString);
 }
 
+void UpdateOhNativeWindow(gfx::ColorSpace frame_color_space,
+                          OHNativeWindow* window) {
+  int32_t window_format = GetOhBufferFormatFromColorSpace(frame_color_space);
+  int ret = OH_NativeWindow_NativeWindowHandleOpt(
+      reinterpret_cast<OHNativeWindow*>(window), SET_FORMAT, window_format);
+  if (ret != 0) {
+    LOG(ERROR) << __func__
+               << " [HDRVivid] OH_NativeWindow_NativeWindowHandleOpt fail ret="
+               << ret;
+  }
+
+  int32_t color_gamut = GetOhColorGamutFromColorSpace(frame_color_space);
+  ret = OH_NativeWindow_NativeWindowHandleOpt(
+      reinterpret_cast<OHNativeWindow*>(window), SET_COLOR_GAMUT, color_gamut);
+  if (ret != 0) {
+    LOG(ERROR) << __func__
+               << " [HDRVivid] OH_NativeWindow_NativeWindowHandleOpt fail ret="
+               << ret;
+  }
+
+  OH_NativeBuffer_ColorSpace colorSpace =
+      ConvertToSystemColorSpace(frame_color_space);
+
+  ret = OH_NativeWindow_SetColorSpace(reinterpret_cast<OHNativeWindow*>(window),
+                                      colorSpace);
+  if (ret != 0) {
+    LOG(ERROR) << __func__
+               << " [HDRVivid] OH_NativeWindow_SetColorSpace fail ret=" << ret;
+  }
+}
+
+int32_t GetOhColorGamutFromColorSpace(gfx::ColorSpace frame_color_space) {
+  int32_t color_gamut = NATIVEBUFFER_COLOR_GAMUT_SRGB;
+  switch (frame_color_space.GetPrimaryID()) {
+    case gfx::ColorSpace::PrimaryID::BT709:
+      break;
+    case gfx::ColorSpace::PrimaryID::P3:
+      color_gamut = NATIVEBUFFER_COLOR_GAMUT_DISPLAY_P3;
+      break;
+    case gfx::ColorSpace::PrimaryID::BT2020:
+      color_gamut = NATIVEBUFFER_COLOR_GAMUT_DISPLAY_BT2020;
+      break;
+    default:
+      LOG(WARNING) << __func__ << " [HDRVivid] not support color gurmat: "
+                   << static_cast<int>(frame_color_space.GetPrimaryID());
+  }
+  return color_gamut;
+}
+
+OH_NativeBuffer_ColorSpace ConvertToSystemColorSpace(
+    gfx::ColorSpace frame_color_space) {
+  OH_NativeBuffer_ColorSpace color_space = OH_COLORSPACE_BT709_FULL;
+  if (frame_color_space.GetPrimaryID() == gfx::ColorSpace::PrimaryID::BT709) {
+    return color_space;
+  }
+  if (frame_color_space.GetPrimaryID() == gfx::ColorSpace::PrimaryID::P3 &&
+      frame_color_space.GetTransferID() == gfx::ColorSpace::TransferID::PQ) {
+    color_space = OH_COLORSPACE_P3_PQ_FULL;
+  } else if (frame_color_space.GetPrimaryID() ==
+                 gfx::ColorSpace::PrimaryID::P3 &&
+             frame_color_space.GetTransferID() ==
+                 gfx::ColorSpace::TransferID::HLG) {
+    color_space = OH_COLORSPACE_P3_HLG_FULL;
+  } else if (frame_color_space.GetPrimaryID() ==
+                 gfx::ColorSpace::PrimaryID::BT2020 &&
+             frame_color_space.GetTransferID() ==
+                 gfx::ColorSpace::TransferID::PQ) {
+    color_space = OH_COLORSPACE_BT2020_PQ_FULL;
+  } else if (frame_color_space.GetPrimaryID() ==
+                 gfx::ColorSpace::PrimaryID::BT2020 &&
+             frame_color_space.GetTransferID() ==
+                 gfx::ColorSpace::TransferID::HLG) {
+    color_space = OH_COLORSPACE_BT2020_HLG_FULL;
+  } else {
+    LOG(WARNING) << __func__ << " [HDRVivid] not support color sapce: "
+                 << frame_color_space.ToString();
+  }
+
+  return color_space;
+}
+
+int32_t GetOhBufferFormatFromColorSpace(gfx::ColorSpace frame_color_space) {
+  if (frame_color_space.IsHDR()) {
+    return NATIVEBUFFER_PIXEL_FMT_RGBA_1010102;
+  }
+  return NATIVEBUFFER_PIXEL_FMT_RGBA_8888;
+}
+
 }  // namespace util
 }  // namespace ui

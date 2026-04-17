@@ -27,9 +27,35 @@ void UpdateWindowDeviceModeSwitchCB(DeviceMode device_mode) {
 uint32_t GetLastActiveWidgetId() {
   return ContextAdapter::GetInstance().GetLastActiveWidgetId();
 }
- 
+
+void ContextAdapter::UpdateDisplayBrightnessCB(
+    const std::string& display_brightness) {
+  if (delegate_ != nullptr) {
+    delegate_->UpdateAllDisplays();
+  } else {
+    LOGW(
+        "[HDRVivid] ContextAdapter::UpdateDisplayBrightnessCB delegate_ is "
+        "nullptr. This will make SDR part of HDR not change with display "
+        "brightness change.");
+  }
+}
+
+void UpdateDisplayBrightnessCB(const std::string& display_brightness) {
+  ohos::adapter::ContextAdapter::GetInstance().UpdateDisplayBrightnessCB(
+      display_brightness);
+}
+
+void ContextAdapter::Register(Delegate* delegate) {
+  delegate_ = delegate;
+}
+
+void ContextAdapter::UnRegister() {
+  delegate_ = nullptr;
+}
+
 JSBIND_GLOBAL() {
   JSBIND_FUNCTION(UpdateWindowDeviceModeSwitchCB);
   JSBIND_FUNCTION(GetLastActiveWidgetId);
+  JSBIND_FUNCTION(UpdateDisplayBrightnessCB);
 }
 }  // namespace ohos::adapter::ContextPathAdapter

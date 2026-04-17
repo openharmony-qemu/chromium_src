@@ -94,7 +94,8 @@ class MEDIA_GPU_EXPORT CodecWrapper {
   DequeueStatus DequeueOutputBuffer(
       base::TimeDelta* presentation_time,
       bool* end_of_stream,
-      std::unique_ptr<CodecOutputBuffer>* codec_buffer);
+      std::unique_ptr<CodecOutputBuffer>* codec_buffer,
+      gfx::ColorSpace color_space);
 #if BUILDFLAG(ENABLE_WISEPLAY)
   bool SetDecryptionConfig(void *session, bool is_secure);
 #endif  // BUILDFLAG(ENABLE_WISEPLAY)

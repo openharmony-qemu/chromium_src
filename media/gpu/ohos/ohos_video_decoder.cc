@@ -537,8 +537,10 @@ bool OhosVideoDecoder::DequeueOutput() {
   base::TimeDelta presentation_time;
   bool eos = false;
   std::unique_ptr<CodecOutputBuffer> output_buffer;
-  auto status =
-      codec_->DequeueOutputBuffer(&presentation_time, &eos, &output_buffer);
+  gfx::ColorSpace color_space =
+      decoder_config_.color_space_info().ToGfxColorSpace();
+  auto status = codec_->DequeueOutputBuffer(&presentation_time, &eos,
+                                            &output_buffer, color_space);
   switch (status) {
     case CodecWrapper::DequeueStatus::kOk:
       break;
@@ -607,6 +609,9 @@ void OhosVideoDecoder::ForwardVideoFrame(
   if (!frame) {
     EnterTerminalState(State::kError, "Could not create VideoFrame");
     return;
+  }
+  if (decoder_config_.hdr_metadata()) {
+    frame->set_hdr_metadata(decoder_config_.hdr_metadata());
   }
   if (reset_generation == reset_generation_) {
     frame->metadata().power_efficient = true;

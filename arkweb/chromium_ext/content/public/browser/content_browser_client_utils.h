@@ -16,6 +16,8 @@
 #ifndef ARKWEB_CONTENT_PUBLIC_BROWSER_CONTENT_BROWSER_CLIENT_UTILS_H_
 #define ARKWEB_CONTENT_PUBLIC_BROWSER_CONTENT_BROWSER_CLIENT_UTILS_H_
 
+#include <string>
+
 #include "content/common/content_export.h"
 
 namespace content {

@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+#include "content_browser_client_utils.h"
+
 #include "content/public/browser/content_browser_client.h"
 #include "content/public/common/content_client.h"
 

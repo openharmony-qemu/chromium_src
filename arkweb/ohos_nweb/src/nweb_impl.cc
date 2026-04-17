@@ -337,7 +337,7 @@ OnArkWebStaticRequestOpenDevToolsFunc
 #if BUILDFLAG(ARKWEB_COOKIE)
 std::shared_ptr<OHOS::NWeb::NWebEngineInitArgs>
     OHOS::NWeb::NWebImpl::save_initargs_ = nullptr;
-bool OHOS::NWeb::NWebImpl::should_lazy_init_web_engine_ = false;
+std::atomic<bool> OHOS::NWeb::NWebImpl::should_lazy_init_web_engine_{false};
 #endif
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
@@ -1404,7 +1404,7 @@ void NWebImpl::InitializeWebEngine(
   content::GetNetworkService();
 
 #if BUILDFLAG(ARKWEB_COOKIE)
-  should_lazy_init_web_engine_ = false;
+  should_lazy_init_web_engine_.store(false,std::memory_order_relaxed);
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_PASSWORD)
@@ -1413,6 +1413,7 @@ void NWebImpl::InitializeWebEngine(
     MigratePasswordsToPasswordVault();
   }
 #endif
+  LOG_FEEDBACK(INFO, kNetwork) << "NWebImpl::InitializeWebEngine end";
 }
 #endif  // BUILDFLAG(ARKWEB_API_INIT_WEB_ENGINE)
 
@@ -1800,7 +1801,7 @@ bool NWebImpl::InitWebEngine(std::shared_ptr<NWebCreateInfo> create_info) {
   }
 
 #if BUILDFLAG(ARKWEB_COOKIE)
-  should_lazy_init_web_engine_ = false;
+  should_lazy_init_web_engine_.store(false,std::memory_order_relaxed);
 #endif
 
 #if BUILDFLAG(ARKWEB_MENU)
@@ -8517,11 +8518,11 @@ void NWebImpl::LibraryLoaded(std::shared_ptr<NWebEngineInitArgs> init_args,
     return;
   }
   save_initargs_ = init_args;
-  should_lazy_init_web_engine_ = lazy;
+  should_lazy_init_web_engine_.store(lazy,std::memory_order_relaxed);
 }
 
 bool NWebImpl::ShouldLazyInitWebEngine() {
-  return should_lazy_init_web_engine_;
+  return should_lazy_init_web_engine_.load(std::memory_order_relaxed);
 }
 
 std::shared_ptr<NWebEngineInitArgs> NWebImpl::GetSaveInitargs() {

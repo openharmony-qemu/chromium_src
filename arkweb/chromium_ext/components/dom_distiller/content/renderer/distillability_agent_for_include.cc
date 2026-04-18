@@ -18,7 +18,6 @@ constexpr char kBECEHost[] = "host";
 constexpr char kBECEResultCode[] = "result_code";
 constexpr char kBECEResultReason[] = "result_reason";
 constexpr char kBECEPageType[] = "page_type";
-constexpr char kBECEMatchTemplateId[] = "match_template_id";
 constexpr char kBECEMatchTemplate[] = "match_template";
 constexpr char kBECEMatchPrevFeature[] = "match_prev_feature";
 constexpr char kBECEMatchNextFeature[] = "match_next_feature";
@@ -51,7 +50,6 @@ void DocDistillableStatistics(content::RenderFrame* render_frame,
       ext_info.Set(kBECEResultReason, "success by regex");
     } else {
       ext_info.Set(kBECEResultReason, "success by template");
-      ext_info.Set(kBECEMatchTemplateId, std::to_string(match_info.template_id));
       ext_info.Set(kBECEMatchTemplate, match_info.templates);
     }
     if (match_info.result ==

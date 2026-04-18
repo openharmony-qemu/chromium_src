@@ -39,9 +39,14 @@ void RunIsolatedJavaScript(
     content::RenderFrameHost::JavaScriptResultCallback callback) {
   // Make sure world ID was set.
   DCHECK(distiller_javascript_world_id != invalid_world_id);
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  render_frame_host->AllowInjectingJavaScript();
+  render_frame_host->ExecuteJavaScript(base::UTF8ToUTF16(buffer), std::move(callback));
+#else
   render_frame_host->ExecuteJavaScriptInIsolatedWorld(
       base::UTF8ToUTF16(buffer), std::move(callback),
       distiller_javascript_world_id);
+#endif
 }
 
 void RunIsolatedJavaScript(content::RenderFrameHost* render_frame_host,

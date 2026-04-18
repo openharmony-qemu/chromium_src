@@ -35,6 +35,7 @@ void FeatureProvider::UpdateFeatures() {
   if (features) {
     auto url = GURL(extension_urls::kNewChromeWebstoreBaseURL);
     auto pattern = extension_urls::GetDefaultWebstoreLaunchURLPattern();
+    features->UpdateFeature("management", url.spec(), pattern.spec());
     features->UpdateFeature("webstorePrivate", url.spec(), pattern.spec());
   }
 }

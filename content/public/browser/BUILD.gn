@@ -522,6 +522,16 @@ source_set("browser_sources") {
     "zoom_level_delegate.h",
   ]
 
+  #if defined(ARKWEB_ARKWEB_EXTENSIONS)
+  if (defined(arkweb_arkweb_extensions) && arkweb_arkweb_extensions) {
+    sources += [
+      "//arkweb/chromium_ext/content/public/browser/content_browser_client_utils.cc",
+      "//arkweb/chromium_ext/content/public/browser/content_browser_client_utils.h",
+    ]
+  }
+
+  #endif // ARKWEB_ARKWEB_EXTENSIONS
+
   #if defined(ARKWEB_CUSTOM_VIDEO_PLAYER)
   if (defined(arkweb_custom_video_player) && arkweb_custom_video_player) {
     import(

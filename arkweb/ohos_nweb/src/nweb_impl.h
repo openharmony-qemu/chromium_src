@@ -795,6 +795,9 @@ class NWebImpl : public NWeb {
   void StartDownload(const char* url);
 #if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
   void StartDownload(const char* url, const DownloadUrlParameters& params);
+  static void StartDownloadStatic(
+      const char* url,
+      const DownloadUrlParameters& params);
   static std::string GetOriginUrlByGuid(const std::string& guid);
   static std::string GetReferrerByGuid(const std::string& guid);
   static std::string GetInitiatorByGuid(const std::string& guid);

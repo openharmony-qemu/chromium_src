@@ -332,7 +332,12 @@ LanguageDetector::LanguageDetector(
     AbortSignal* create_abort_signal,
     std::optional<Vector<String>> expected_input_languages,
     scoped_refptr<base::SequencedTaskRunner>& task_runner)
+#if BUILDFLAG(ARKWEB_AI)
+    : LanguageDetectorOHOS(script_state),
+      task_runner_(task_runner),
+#else
     : task_runner_(task_runner),
+#endif  // BUILDFLAG(ARKWEB_AI)
       language_detection_model_(language_detection_model),
       destruction_abort_controller_(AbortController::Create(script_state)),
       create_abort_signal_(create_abort_signal),

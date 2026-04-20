@@ -1288,7 +1288,7 @@ std::shared_ptr<NWeb> NWebImpl::CreateNWeb(
       "surface %{public}d",
       nweb_id, create_info->GetWidth(), create_info->GetHeight(),
       is_enhance_surface);
-  TRACE_EVENT1("NWebImpl", "NWebImpl | CreateNWeb", "nweb_id", nweb_id);
+  //TRACE_EVENT1("NWebImpl", "NWebImpl | CreateNWeb", "nweb_id", nweb_id);
   std::shared_ptr<NWebImpl> nweb = std::make_shared<NWebImpl>(nweb_id);
   if (nweb == nullptr) {
     WVLOG_E("CreateNWeb create nweb instance failed, because no memory");

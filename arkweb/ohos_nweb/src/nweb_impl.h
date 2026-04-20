@@ -1379,6 +1379,8 @@ class NWebImpl : public NWeb {
   base::Lock state_lock_;
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
+  void ReportLoadingScene(int report_times);
+ 	int32_t kLoadUrlReportIntervalMs = 0;
   int64_t ResizeTime_ = 0;
 #endif
   uint32_t nweb_id_ = 0;

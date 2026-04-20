@@ -671,3 +671,85 @@ TEST_F(NWebHandlerDelegateTest, RegisterOnLoadStartedCbForHighlightContent) {
   EXPECT_NE(delegate->onLoadStartedCbForHighlightContent_, nullptr);
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
+// Test SetLoadFinished with finished = true
+TEST_F(NWebHandlerDelegateTest, SetLoadFinished_TEST001) {
+  uint32_t nweb_id = 1001;
+  NWebHandlerDelegate::SetLoadFinished(nweb_id, true);
+  EXPECT_TRUE(NWebHandlerDelegate::IsLoadFinished(nweb_id));
+  NWebHandlerDelegate::RemoveLoadFinished(nweb_id);
+}
+
+// Test SetLoadFinished with finished = false
+TEST_F(NWebHandlerDelegateTest, SetLoadFinished_TEST002) {
+  uint32_t nweb_id = 1002;
+  NWebHandlerDelegate::SetLoadFinished(nweb_id, false);
+  EXPECT_FALSE(NWebHandlerDelegate::IsLoadFinished(nweb_id));
+  NWebHandlerDelegate::RemoveLoadFinished(nweb_id);
+}
+
+// Test IsLoadFinished for non-existent nweb_id
+TEST_F(NWebHandlerDelegateTest, IsLoadFinished_TEST001) {
+  uint32_t nweb_id = 9999;
+  EXPECT_FALSE(NWebHandlerDelegate::IsLoadFinished(nweb_id));
+}
+
+// Test IsLoadFinished after SetLoadFinished
+TEST_F(NWebHandlerDelegateTest, IsLoadFinished_TEST002) {
+  uint32_t nweb_id = 1003;
+  NWebHandlerDelegate::SetLoadFinished(nweb_id, true);
+  EXPECT_TRUE(NWebHandlerDelegate::IsLoadFinished(nweb_id));
+  NWebHandlerDelegate::RemoveLoadFinished(nweb_id);
+}
+
+// Test RemoveLoadFinished removes entry correctly
+TEST_F(NWebHandlerDelegateTest, RemoveLoadFinished_TEST001) {
+  uint32_t nweb_id = 1004;
+  NWebHandlerDelegate::SetLoadFinished(nweb_id, true);
+  EXPECT_TRUE(NWebHandlerDelegate::IsLoadFinished(nweb_id));
+  NWebHandlerDelegate::RemoveLoadFinished(nweb_id);
+  EXPECT_FALSE(NWebHandlerDelegate::IsLoadFinished(nweb_id));
+}
+
+// Test RemoveLoadFinished for non-existent nweb_id
+TEST_F(NWebHandlerDelegateTest, RemoveLoadFinished_TEST002) {
+  uint32_t nweb_id = 9998;
+  EXPECT_NO_FATAL_FAILURE(NWebHandlerDelegate::RemoveLoadFinished(nweb_id));
+}
+
+// Test multiple nweb_ids
+TEST_F(NWebHandlerDelegateTest, LoadFinished_MultipleNWebIds) {
+  uint32_t nweb_id1 = 2001;
+  uint32_t nweb_id2 = 2002;
+  uint32_t nweb_id3 = 2003;
+
+  NWebHandlerDelegate::SetLoadFinished(nweb_id1, true);
+  NWebHandlerDelegate::SetLoadFinished(nweb_id2, false);
+  NWebHandlerDelegate::SetLoadFinished(nweb_id3, true);
+
+  EXPECT_TRUE(NWebHandlerDelegate::IsLoadFinished(nweb_id1));
+  EXPECT_FALSE(NWebHandlerDelegate::IsLoadFinished(nweb_id2));
+  EXPECT_TRUE(NWebHandlerDelegate::IsLoadFinished(nweb_id3));
+
+  NWebHandlerDelegate::RemoveLoadFinished(nweb_id1);
+  NWebHandlerDelegate::RemoveLoadFinished(nweb_id2);
+  NWebHandlerDelegate::RemoveLoadFinished(nweb_id3);
+
+  EXPECT_FALSE(NWebHandlerDelegate::IsLoadFinished(nweb_id1));
+  EXPECT_FALSE(NWebHandlerDelegate::IsLoadFinished(nweb_id2));
+  EXPECT_FALSE(NWebHandlerDelegate::IsLoadFinished(nweb_id3));
+}
+
+// Test updating existing nweb_id
+TEST_F(NWebHandlerDelegateTest, SetLoadFinished_UpdateExisting) {
+  uint32_t nweb_id = 1005;
+  NWebHandlerDelegate::SetLoadFinished(nweb_id, false);
+  EXPECT_FALSE(NWebHandlerDelegate::IsLoadFinished(nweb_id));
+
+  NWebHandlerDelegate::SetLoadFinished(nweb_id, true);
+  EXPECT_TRUE(NWebHandlerDelegate::IsLoadFinished(nweb_id));
+
+  NWebHandlerDelegate::RemoveLoadFinished(nweb_id);
+}
+#endif  // BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)

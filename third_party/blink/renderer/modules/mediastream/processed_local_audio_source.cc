@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/feature_list.h"
 #include "base/functional/bind.h"
 #include "base/logging.h"
@@ -166,6 +167,23 @@ bool ProcessedLocalAudioSource::EnsureSourceIsStarted() {
     modified_device.input.set_effects(processing_layout_.platform_effects());
     SetDevice(modified_device);
   }
+#if BUILDFLAG(ARKWEB_WEBRTC)
+  if(!(device().input.effects() & media::AudioParameters::ECHO_CANCELLER)) {
+    if (device().type == mojom::blink::MediaStreamType::DEVICE_AUDIO_CAPTURE &&
+      processing_layout_.webrtc_processing_settings().echo_cancellation) {
+      blink::MediaStreamDevice modified_device(device());
+      modified_device.input.set_effects(
+        modified_device.input.effects() | media::AudioParameters::ECHO_CANCELLER);
+      SetDevice(modified_device);
+    }
+    if (device().type == mojom::blink::MediaStreamType::DISPLAY_AUDIO_CAPTURE) {
+      blink::MediaStreamDevice modified_device(device());
+      modified_device.input.set_effects(
+          modified_device.input.effects() | media::AudioParameters::ECHO_CANCELLER);
+      SetDevice(modified_device);
+    }
+  }
+#endif // BUILDFLAG(ARKWEB_WEBRTC)
   // Create the audio processor.
 
   DCHECK(dependency_factory_);

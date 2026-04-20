@@ -13,6 +13,9 @@
 #include "cc/layers/layer_impl.h"
 #include "cc/layers/scrollbar_layer_impl_base.h"
 #include "cc/trees/layer_tree_impl.h"
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+#include "cc/base/features.h"
+#endif
 
 namespace cc {
 
@@ -213,6 +216,11 @@ void SingleScrollbarAnimationControllerThinning::DidMouseMove(
 
 void SingleScrollbarAnimationControllerThinning::CalculateThicknessShouldChange(
     const gfx::PointF& device_viewport_point) {
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  if (base::FeatureList::IsEnabled(::features::kOverlayVisualScrollbar)) {
+    return;
+  }
+#endif
   ScrollbarLayerImplBase* scrollbar = GetScrollbar();
 
   if (!scrollbar)

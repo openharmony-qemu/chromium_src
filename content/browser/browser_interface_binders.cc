@@ -270,6 +270,10 @@
 #include "arkweb/chromium_ext/content/browser/ai/echo_ai_manager_ohos.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_V8_OOM_MONITOR)
+#include "arkweb/chromium_ext/v8/dfx/oom_mojom/v8_oom_reporter_browser_impl.h"
+#endif
+
 namespace blink {
 class StorageKey;
 }  // namespace blink
@@ -1062,6 +1066,15 @@ void PopulateFrameBinders(RenderFrameHostImpl* host, mojo::BinderMap* map) {
       [](RenderFrameHostImpl *host,
          mojo::PendingReceiver<dfx::mojom::DfxReporter> receiver) {
         DfxReporterImpl::ProcessPendingReceiver(receiver);
+      },
+      host));
+#endif
+
+#if BUILDFLAG(ARKWEB_V8_OOM_MONITOR)
+  map->Add<v8_oom::mojom::V8OOMReporter>(base::BindRepeating(
+      [](RenderFrameHostImpl* host,
+         mojo::PendingReceiver<v8_oom::mojom::V8OOMReporter> receiver) {
+        V8OOMReporterImpl::ProcessPendingReceiver(receiver);
       },
       host));
 #endif

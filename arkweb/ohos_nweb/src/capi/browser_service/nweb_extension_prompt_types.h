@@ -47,6 +47,8 @@ typedef struct {
 
   uint32_t permissionCount;
   NWebExtensionPermission* permissions;
+
+  bool is_from_webstore;
 } NWebExtensionPromptData;
 
 #ifdef __cplusplus

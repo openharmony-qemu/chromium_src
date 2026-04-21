@@ -58,6 +58,7 @@ buildargs="
   llvm_ohos_mainline=true
   rustc_version=\"bca5fdebe0e539d123f33df5f2149d5976392e76-1-llvmorg-20-init-9764-gb81d8e90\"
   rust_sysroot_absolute=\"//ohos_sdk/rust-toolchain\"
+  enable_crashpad=true
   "
 #Add build args end
 
@@ -80,6 +81,7 @@ build_output=""
 build_asan=0
 build_isolated_level=0
 build_gwp_asan=0
+build_hwasan=0
 
 usage() {
   echo -ne "USAGE: $0 [OPTIONS] [PRODUCT]
@@ -95,7 +97,8 @@ ${TEXT_BOLD}OPTIONS${TEXT_NORMAL}:
   -asan             Enable AddressSanitizer (ASan).
   -d                Build with Debug mode.
   -isl              Support the render process to enable sandbox isolation.
-  -gwp_asan         Enable GWP-ASan
+  -gwp_asan         Enable GWP-ASan.
+  -hwasan           Enable Hardware Address Sanitizer (HWASan).
 "
 }
 
@@ -121,6 +124,9 @@ while [ "$1" != "" ]; do
       ;;
     "-asan")
       build_asan=1
+      ;;
+    "-hwasan")
+      build_hwasan=1
       ;;
     "-d")
       is_debug=true
@@ -191,6 +197,17 @@ if [ ${build_asan} -eq 1 ]; then
   GN_ARGS="${GN_ARGS} is_asan=true"
 else
   GN_ARGS="${GN_ARGS} is_asan=false"
+fi
+
+if [ ${build_hwasan} -eq 1 ]; then
+  GN_ARGS="${GN_ARGS}
+    is_hwasan=true
+    use_thin_lto=false
+    v8_enable_pointer_compression = false
+    v8_use_external_startup_data = false
+    enable_native_child_process = false"
+else
+  GN_ARGS="${GN_ARGS} is_hwasan=false"
 fi
 
 if [ ${build_isolated_level} -eq 1 ]; then

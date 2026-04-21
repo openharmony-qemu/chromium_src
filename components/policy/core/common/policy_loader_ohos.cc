@@ -153,9 +153,6 @@ void PolicyLoaderOhos::LoadOhosPolicy(const std::string& json,
   return;
 }
 
-<<<<<<< HEAD:components/policy/core/common/policy_loader_ohos.cc
-}  // namespace policy
-=======
 void PolicyLoaderOhos::ApplyFallbackPolicies(PolicyBundle* bundle) {
   PolicyMap fallback_map;
 
@@ -181,4 +178,3 @@ void PolicyLoaderOhos::ApplyFallbackPolicies(PolicyBundle* bundle) {
 }
 
 }  // namespace policy
->>>>>>> 【功能-BUGFIX】解决无法获取value为dict的策略问题:src/components/policy/core/common/policy_loader_ohos.cc

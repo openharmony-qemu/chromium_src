@@ -405,4 +405,45 @@ TEST_F(NWebDelegateTest, SetScreenOffset) {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+TEST_F(NWebDelegateTest, StaticOpenDevtoolsWith) {
+  ASSERT_NE(nweb_delegate_, nullptr);
+  std::shared_ptr<NWebDelegateInterface> delegate_interface = nweb_delegate_;
+  std::string source_id = "test_source";
+  std::string target_id = "test_target";
+  auto param = std::make_unique<OpenDevToolsParam>();
+  param->point.x = 0;
+  param->point.y = 0;
+  param->handler = nullptr;
+  OpenDevToolsExtOpt ext_opt;
+  EXPECT_NO_FATAL_FAILURE(NWebDelegate::StaticOpenDevtoolsWith(
+      delegate_interface, source_id, target_id, std::move(param), ext_opt));
+}
+#endif  // ARKWEB_DEVTOOLS
+
+TEST_F(NWebDelegateTest, OpenDevtoolsWith) {
+  ASSERT_NE(nweb_delegate_, nullptr);
+  std::shared_ptr<NWebDelegateInterface> delegate_interface = nweb_delegate_;
+  auto param = std::make_unique<OpenDevToolsParam>();
+  param->point.x = 0;
+  param->point.y = 0;
+  EXPECT_NO_FATAL_FAILURE(
+      nweb_delegate_->OpenDevtoolsWith(delegate_interface, std::move(param)));
+}
+
+TEST_F(NWebDelegateTest, OpenDevtoolsWithByPb) {
+  ASSERT_NE(nweb_delegate_, nullptr);
+  std::shared_ptr<NWebDelegateInterface> delegate_interface = nweb_delegate_;
+  auto param = std::make_unique<OpenDevToolsParam>();
+  param->point.x = 0;
+  param->point.y = 0;
+  OpenDevToolsExtOpt ext_opt;
+  EXPECT_NO_FATAL_FAILURE(nweb_delegate_->OpenDevtoolsWithByPb(
+      delegate_interface, std::move(param), ext_opt));
+}
+
+TEST_F(NWebDelegateTest, CloseDevtools) {
+  ASSERT_NE(nweb_delegate_, nullptr);
+  EXPECT_NO_FATAL_FAILURE(nweb_delegate_->CloseDevtools());
+}
 }  // namespace OHOS::NWeb

@@ -59,8 +59,10 @@ DelegatedFrameHost::DelegatedFrameHost(const viz::FrameSinkId& frame_sink_id,
       host_frame_sink_manager_(GetHostFrameSinkManager()),
       frame_evictor_(std::make_unique<viz::FrameEvictor>(this)) {
 #if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
-  evictUnlockFrameEnabled_ = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance()
-    .GetBoolParameter("const.web.frame_evictor.enabled", false) && features::IsEvictUnlockFrameEnabled();
+  static int saved_frame_limit = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance()
+    .GetIntParameter("const.web.frame_evictor.saved_frame_limit", -1); // -1 invalid config value of saved_frame_limit
+  // if saved_frame_limit >= 0 then frame_evictor is enabled
+  evictUnlockFrameEnabled_ = saved_frame_limit >= 0 && features::IsEvictUnlockFrameEnabled();
 #endif
   CHECK(host_frame_sink_manager_);
   frame_evictor_->SetVisible(client_->DelegatedFrameHostIsVisible());

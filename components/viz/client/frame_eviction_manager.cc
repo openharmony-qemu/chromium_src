@@ -24,6 +24,7 @@
 #include "arkweb/chromium_ext/components/viz/client/frame_eviction_manager_ext.h"
 #if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
 #include "components/viz/common/viz_utils.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 #endif
 
 namespace viz {
@@ -110,7 +111,16 @@ void FrameEvictionManager::UnlockFrame(FrameEvictionManagerClient* frame) {
       needProcessMemoryPressure = true;
       LOG(DEBUG) << "ProcessCullUnlockedFrames needProcessMemoryPressure: " << needProcessMemoryPressure;
     }
-    CullUnlockedFrames(0, needProcessMemoryPressure);
+    size_t saved_frame_limit = GetMaxNumberOfSavedFrames();
+    static int saved_frame_limit_config = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance()
+      .GetIntParameter("const.web.frame_evictor.saved_frame_limit", -1); // -1 invalid value of saved_frame_limit
+    if (saved_frame_limit_config >= 0) {
+      saved_frame_limit = std::min(static_cast<size_t>(saved_frame_limit_config), GetMaxNumberOfSavedFrames());
+    } else {
+      LOG(DEBUG) << "Invalid config value of saved_frame_limit:" << saved_frame_limit_config << ", use default value";
+    }
+    
+    CullUnlockedFrames(saved_frame_limit, needProcessMemoryPressure);
   }
 #endif
 

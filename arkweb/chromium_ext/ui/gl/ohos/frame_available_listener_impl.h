@@ -30,14 +30,12 @@ namespace OHOS::NWeb {
 
 class FrameAvailableListenerImpl : public FrameAvailableListener {
   public:
-    FrameAvailableListenerImpl(base::WeakPtr<gl::OhosNativeImage> adapter,
-                               scoped_refptr<base::SingleThreadTaskRunner> task_runner);
+    FrameAvailableListenerImpl(base::RepeatingClosure frame_available_cb);
 
     void OnFrameAvailableListener() override;
 
   private:
-    base::WeakPtr<gl::OhosNativeImage> oni_wptr = nullptr;
-    scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
+    base::RepeatingClosure frame_available_cb_;  // For immediate signal on callback thread
 };
 
 }  // namespace OHOS::NWeb

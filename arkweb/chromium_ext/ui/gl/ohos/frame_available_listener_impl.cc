@@ -20,12 +20,18 @@
 namespace OHOS::NWeb {
 
 FrameAvailableListenerImpl::FrameAvailableListenerImpl(
-        base::WeakPtr<gl::OhosNativeImage> adapter,
-        scoped_refptr<base::SingleThreadTaskRunner> task_runner)
-        :oni_wptr(std::move(adapter)), task_runner_(task_runner) {}
+        base::RepeatingClosure frame_available_cb)
+        : frame_available_cb_(std::move(frame_available_cb)) {}
 
 void FrameAvailableListenerImpl::OnFrameAvailableListener() {
-  task_runner_->PostTask(
-              FROM_HERE, base::BindOnce(&gl::OhosNativeImage::OnFrameAvailableListener, oni_wptr));
+  // Immediately signal the wait coordinator on the callback thread to avoid timeout.
+  // This is critical for timely wakeup of WaitForFrameAvailable() which has a
+  // short timeout window (5-20ms). Posting to another thread introduces scheduling
+  // delays that can cause timeouts.
+  //
+  // base::WaitableEvent::Signal() is thread-safe and can be called from any thread.
+  if (frame_available_cb_) {
+    frame_available_cb_.Run();
+  }
 }
 }  // namespace OHOS::NWeb

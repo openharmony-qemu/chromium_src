@@ -1670,6 +1670,11 @@
     "includes": [10280],
   },
 
+  # For image change detection
+  "ohos_resources/image_change_detection/image_change_detection_resources.grd": {
+    "includes": [10540],
+  },
+
   "cef/libcef/resources/cef_resources.grd": {
     "includes": [12500],
   },

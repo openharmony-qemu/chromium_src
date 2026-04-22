@@ -842,6 +842,9 @@ FFmpegDemuxer::FFmpegDemuxer(
     DataSource* data_source,
     const EncryptedMediaInitDataCB& encrypted_media_init_data_cb,
     MediaTracksUpdatedCB media_tracks_updated_cb,
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+    scoped_refptr<MediaReportInfo> media_info,
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
     MediaLog* media_log,
     bool is_local_file)
     : task_runner_(task_runner),
@@ -851,6 +854,9 @@ FFmpegDemuxer::FFmpegDemuxer(
       blocking_task_runner_(base::ThreadPool::CreateSequencedTaskRunner(
           {base::MayBlock(), base::TaskPriority::USER_BLOCKING})),
       data_source_(data_source),
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+      media_info_(media_info),
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
       media_log_(media_log),
       encrypted_media_init_data_cb_(encrypted_media_init_data_cb),
       media_tracks_updated_cb_(std::move(media_tracks_updated_cb)),
@@ -1311,6 +1317,15 @@ void FFmpegDemuxer::OnFindStreamInfoDone(int result) {
     const AVCodecParameters* codec_parameters = stream->codecpar;
     const AVMediaType codec_type = codec_parameters->codec_type;
     const AVCodecID codec_id = codec_parameters->codec_id;
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+    if (media_info_) {
+      if (codec_type == AVMEDIA_TYPE_AUDIO) {
+        media_info_->audio_codecs_.push_back(GetCodecName(codec_id));
+      } else if (codec_type == AVMEDIA_TYPE_VIDEO) {
+        media_info_->video_codecs_.push_back(GetCodecName(codec_id));
+      }
+    }
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
     // Skip streams which are not properly detected.
     if (codec_id == AV_CODEC_ID_NONE) {
       stream->discard = AVDISCARD_ALL;
@@ -1562,6 +1577,12 @@ void FFmpegDemuxer::OnFindStreamInfoDone(int result) {
   if (bitrate_ > 0)
     data_source_->SetBitrate(bitrate_);
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+  if (media_info_) {
+    media_info_->byte_rate_ = bitrate_ / 8;
+    media_info_->file_size_ = filesize_in_bytes;
+  }
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
   LogMetadata(format_context, max_duration);
   media_tracks_updated_cb_.Run(std::move(media_tracks));
 

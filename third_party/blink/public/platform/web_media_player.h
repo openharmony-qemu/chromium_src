@@ -473,6 +473,14 @@ class WebMediaPlayer {
   }
   virtual int GetWebURLErrorReason() const { return 0; }
   virtual WebString GetMimeType() const { return WebString(); }
+  virtual int32_t GetByteRate() const { return 0; }
+  virtual int64_t GetFileSize() const { return 0LL; }
+  virtual std::vector<WebString> GetVideoCodecs() const {
+    return std::vector<WebString>();
+  }
+  virtual std::vector<WebString> GetAudioCodecs() const {
+    return std::vector<WebString>();
+  }
   virtual bool UsingMediaPlayer() const { return false; }
   virtual void OnHiddenVideoReport(bool storing_in_bfcache) {}
 #endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE

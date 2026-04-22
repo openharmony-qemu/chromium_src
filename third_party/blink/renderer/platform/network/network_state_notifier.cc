@@ -361,6 +361,27 @@ void NetworkStateNotifier::RemoveObserver(
   map.erase(observer);
 }
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+std::string NetworkStateNotifier::GetWebEffectiveConnectionType() {
+  switch (EffectiveType()) {
+    case WebEffectiveConnectionType::kTypeUnknown:
+      return "unknown";
+    case WebEffectiveConnectionType::kTypeOffline:
+      return "offline";
+    case WebEffectiveConnectionType::kTypeSlow2G:
+      return "slow2G";
+    case WebEffectiveConnectionType::kType2G:
+      return "2G";
+    case WebEffectiveConnectionType::kType3G:
+      return "3G";
+    case WebEffectiveConnectionType::kType4G:
+      return "4G";
+    default:
+      return "unknown";
+  }
+}
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+
 // static
 String NetworkStateNotifier::EffectiveConnectionTypeToString(
     WebEffectiveConnectionType type) {

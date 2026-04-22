@@ -123,6 +123,9 @@ DemuxerManager::DemuxerManager(
       media_log_(log->Clone()),
       demuxer_override_(std::move(demuxer_override)) {
   DCHECK(client_);
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+  media_info_ = base::MakeRefCounted<media::MediaReportInfo>();
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 }
 
 DemuxerManager::~DemuxerManager() {
@@ -152,19 +155,6 @@ void DemuxerManager::RestartClientForPrimitive() {
   }
 }
 #endif // ARKWEB_CUSTOM_VIDEO_PLAYER
-
-#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
-const std::string DemuxerManager::GetMimeType() const {
-  std::string mime_type;
-  if (data_source_) {
-    auto* co_data_source = data_source_->GetAsCrossOriginDataSource();
-    if (co_data_source) {
-      mime_type = co_data_source->GetMimeType();
-    }
-  }
-  return mime_type;
-}
-#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
 void DemuxerManager::OnPipelineError(PipelineStatus error) {
   DCHECK(client_);
@@ -517,6 +507,9 @@ std::unique_ptr<Demuxer> DemuxerManager::CreateChunkDemuxer() {
       base::BindPostTaskToCurrentDefault(
           base::BindRepeating(&DemuxerManager::OnEncryptedMediaInitData,
                               weak_factory_.GetWeakPtr())),
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+      media_info_,
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
       media_log_.get());
 }
 
@@ -531,6 +524,9 @@ std::unique_ptr<Demuxer> DemuxerManager::CreateFFmpegDemuxer() {
       base::BindPostTaskToCurrentDefault(
           base::BindRepeating(&DemuxerManager::OnFFmpegMediaTracksUpdated,
                               weak_factory_.GetWeakPtr())),
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+      media_info_,
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
       media_log_.get(), IsLocalFile(loaded_url_));
 }
 #endif  // BUILDFLAG(ENABLE_FFMPEG)
@@ -640,3 +636,7 @@ void DemuxerManager::DemuxerRequestsSeek(base::TimeDelta time) {
 }
 
 }  // namespace media
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+#include "arkweb/chromium_ext/media/filters/demuxer_manager_for_include.cc"
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE

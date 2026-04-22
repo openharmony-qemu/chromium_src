@@ -59,6 +59,9 @@ TestMediaSource::TestMediaSource(const std::string& filename,
           base::DoNothing(),
           base::BindRepeating(&TestMediaSource::OnEncryptedMediaInitData,
                               base::Unretained(this)),
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+          base::MakeRefCounted<MediaReportInfo>(),
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
           &media_log_)),
       chunk_demuxer_(owned_chunk_demuxer_.get()) {
   file_data_ = ReadTestDataFile(filename);
@@ -93,6 +96,9 @@ TestMediaSource::TestMediaSource(scoped_refptr<DecoderBuffer> data,
           base::DoNothing(),
           base::BindRepeating(&TestMediaSource::OnEncryptedMediaInitData,
                               base::Unretained(this)),
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+          base::MakeRefCounted<MediaReportInfo>(),
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
           &media_log_)),
       chunk_demuxer_(owned_chunk_demuxer_.get()) {
   if (initial_append_size_ == kAppendWholeFile)

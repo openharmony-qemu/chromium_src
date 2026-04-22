@@ -14,6 +14,22 @@
  */
 
 #if BUILDFLAG(ARKWEB_DEVTOOLS)
+std::string InspectUI::GetTypeFromHost(const std::string& hostType) {
+  std::string host_type;
+  if (hostType == content::DevToolsAgentHost::kTypePage) {
+    host_type = "Pages";
+  } else if (hostType == content::DevToolsAgentHost::kTypeSharedWorker) {
+    host_type = "Shared workers";
+  } else if (hostType == content::DevToolsAgentHost::kTypeServiceWorker) {
+    host_type = "Service workers";
+  } else if (hostType == content::DevToolsAgentHost::kTypeExtensions) {
+    host_type = "Extensions";
+  } else {
+    host_type = "Other";
+  }
+  return host_type;
+}
+
 bool InspectUI::InspectInclude(const std::string& source_id,
                                const std::string& target_id) {
   LOG(INFO) << " func:" << __func__;
@@ -23,20 +39,8 @@ bool InspectUI::InspectInclude(const std::string& source_id,
     LOG(INFO) << " func:" << __func__ << "Couldn't find.";
     return ret;
   }
-  std::string host_type;
-  if (target->GetType() == content::DevToolsAgentHost::kTypePage) {
-    host_type = "Pages";
-  } else if (target->GetType() == content::DevToolsAgentHost::kTypeSharedWorker) {
-    host_type = "Shared workers";
-  } else if (target->GetType() == content::DevToolsAgentHost::kTypeServiceWorker) {
-    host_type = "Service workers";
-  } else if (target->GetType() == content::DevToolsAgentHost::kTypeExtensions) {
-    host_type = "Extensions";
-  } else {
-    host_type = "";
-  }
   RequestOpenDevToolsParams params {
-    .type = host_type,
+    .type = GetTypeFromHost(target->GetType()),
     .source_id = source_id,
     .target_id = target_id,
     .extension_id = ""

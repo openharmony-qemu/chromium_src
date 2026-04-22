@@ -141,7 +141,7 @@ const char DevToolsAgentHost::kTypeAssistiveTechnology[] =
     "assistive_technology";
 int DevToolsAgentHostImpl::s_force_creation_count_ = 0;
 #if BUILDFLAG(ARKWEB_DEVTOOLS)
-const char DevToolsAgentHost::kTypeExtensions[] = "extensions";
+const char DevToolsAgentHost::kTypeExtensions[] = "background_page";
 #endif // ARKWEB_DEVTOOLS
 // static
 std::string DevToolsAgentHost::GetProtocolVersion() {

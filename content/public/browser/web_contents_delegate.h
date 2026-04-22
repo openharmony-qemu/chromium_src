@@ -244,9 +244,7 @@ class CONTENT_EXPORT WebContentsDelegate {
   // Request the delegate to close this web contents, and do whatever cleanup
   // it needs to do.
   virtual void CloseContents(WebContents* source) {}
-#if BUILDFLAG(ARKWEB_DEVTOOLS)
-  virtual void OnRequestOpenDevTools(const RequestOpenDevToolsParams& params) {}
-#endif // ARKWEB_DEVTOOLS
+
   // Request the delegate to resize this WebContents to the specified size in
   // screen coordinates. The embedder is free to ignore the request.
   virtual void SetContentsBounds(WebContents* source, const gfx::Rect& bounds) {

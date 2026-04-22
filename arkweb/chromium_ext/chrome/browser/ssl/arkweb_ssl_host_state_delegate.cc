@@ -36,7 +36,7 @@ bool CertPolicy::Check(const net::X509Certificate& cert, int error) const {
   net::SHA256HashValue fingerprint = cert.CalculateChainFingerprint256();
   auto allowed_iter = allowed_.find(fingerprint);
   if ((allowed_iter != allowed_.end()) && ((size_t)allowed_iter->second & (size_t)error) &&
-      (((size_t)allowed_iter->second & (size_t)error) == error)) {
+      (((size_t)allowed_iter->second & (size_t)error) == (size_t)error)) {
     return true;
   }
   return false;

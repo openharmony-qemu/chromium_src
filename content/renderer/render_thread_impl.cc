@@ -169,6 +169,10 @@
 #include "ui/display/display_switches.h"
 #include "v8/include/v8-extension.h"
 
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+#include "arkweb/chromium_ext/content/browser/dfx/memory_monitor_render_impl.h"
+#endif
+
 #if BUILDFLAG(IS_ANDROID)
 #include <cpu-features.h>
 #include "media/base/android/media_codec_util.h"
@@ -1697,6 +1701,17 @@ void RenderThreadImpl::OnRendererBackgrounded() {
   discardable_memory_allocator_->OnBackgrounded();
   base::allocator::PartitionAllocSupport::Get()->OnBackgrounded();
   blink::OnProcessBackgrounded();
+
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+  if (has_reported_initial_foreground_memory_ &&
+      !has_reported_background_memory_) {
+    if (!MemoryMonitorImpl::GetInstance()->IsInitialized()) {
+      return;
+    }
+    has_reported_background_memory_ = true;
+    MemoryMonitorImpl::GetInstance()->StartCollectBasicRenderMemory(true);
+  }
+#endif
 }
 
 void RenderThreadImpl::OnRendererForegrounded() {
@@ -1707,6 +1722,16 @@ void RenderThreadImpl::OnRendererForegrounded() {
       MainFrameCounter::has_main_frame());
   blink::OnProcessForegrounded();
   process_foregrounded_count_++;
+
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+  if (!has_reported_initial_foreground_memory_) {
+    if (!MemoryMonitorImpl::GetInstance()->IsInitialized()) {
+      return;
+    }
+    has_reported_initial_foreground_memory_ = true;
+    MemoryMonitorImpl::GetInstance()->StartCollectBasicRenderMemory(false);
+  }
+#endif
 }
 
 void RenderThreadImpl::OnMemoryPressure(

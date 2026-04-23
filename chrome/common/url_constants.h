@@ -965,10 +965,15 @@ inline constexpr char kRecoveryLearnMoreURL[] =
 // ChromeOS devices.
 inline constexpr char16_t kDeviceExtendedUpdatesLearnMoreURL[] =
     u"https://www.google.com/chromebook/autoupdates-opt-in/";
-
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+// The URL for the YoutTube Music Premium signup page.
+inline constexpr char kYoutubeMusicPremiumURL[] =
+    "https://x.x.x.x/";
+#else
 // The URL for the YoutTube Music Premium signup page.
 inline constexpr char kYoutubeMusicPremiumURL[] =
     "https://music.youtube.com/music_premium";
+#endif
 
 // The URL for the Chromebook Perks page for YouTube.
 inline constexpr char kChromebookPerksYouTubePage[] =

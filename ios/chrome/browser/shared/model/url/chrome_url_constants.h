@@ -89,7 +89,11 @@ inline constexpr char kLegacySyncGoogleDashboardURL[] =
 
 // New URL to the sync google dashboard.
 inline constexpr char kNewSyncGoogleDashboardURL[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://***";
+#else
     "https://chrome.google.com/data";
+#endif
 
 // URL to opt-in to on-device encryption.
 inline constexpr char kOnDeviceEncryptionOptInURL[] =

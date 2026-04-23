@@ -29,7 +29,11 @@ const char kRegistrationURLKey[] = "gcm_registration_url";
 
 const int64_t kDefaultCheckinInterval = 2 * 24 * 60 * 60;  // seconds = 2 days.
 const int64_t kMinimumCheckinInterval = 12 * 60 * 60;  // seconds = 12 hours.
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+const char kDefaultCheckinURL[] = "https://***";
+#else
 const char kDefaultCheckinURL[] = "https://android.clients.google.com/checkin";
+#endif
 const char kDefaultMCSHostname[] = "mtalk.google.com";
 const int kDefaultMCSMainSecurePort = 5228;
 const int kDefaultMCSFallbackSecurePort = 443;

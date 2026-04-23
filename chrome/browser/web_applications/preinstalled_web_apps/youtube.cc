@@ -18,9 +18,15 @@
 namespace web_app {
 
 ExternalInstallOptions GetConfigForYouTube() {
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+  static constexpr char kYouTubeInstallUrl[] = "https://x.x.x"; 
+#else
+// The URL for providing more information about Google nameservers.
+  static constexpr char kYouTubeInstallUrl[] = "https://www.youtube.com/";
+#endif
+  
   ExternalInstallOptions options(
-      /*install_url=*/GURL(
-          "https://www.youtube.com/s/notifications/manifest/cr_install.html"),
+      /*install_url=*/GURL(kYouTubeInstallUrl "s/notifications/manifest/cr_install.html"),
 #if BUILDFLAG(IS_CHROMEOS)
       /*user_display_mode=*/mojom::UserDisplayMode::kStandalone,
 #else
@@ -34,13 +40,13 @@ ExternalInstallOptions GetConfigForYouTube() {
   options.load_and_await_service_worker_registration = false;
   options.only_use_app_info_factory = true;
   options.app_info_factory = base::BindRepeating([]() {
-    GURL start_url = GURL("https://www.youtube.com/?feature=ytca");
+    GURL start_url = GURL(kYouTubeBaseUrl "/?feature=ytca");
     // `manifest_id` must remain fixed even if start_url changes.
     webapps::ManifestId manifest_id = GenerateManifestIdFromStartUrlOnly(
-        GURL("https://www.youtube.com/?feature=ytca"));
+        GURL(kYouTubeBaseUrl "/?feature=ytca"));
     auto info = std::make_unique<WebAppInstallInfo>(manifest_id, start_url);
     info->title = u"YouTube";
-    info->scope = GURL("https://www.youtube.com/");
+    info->scope = GURL(kYouTubeInstallUrl);
     info->display_mode = DisplayMode::kMinimalUi;
     info->icon_bitmaps.any =
         LoadBundledIcons({IDR_PREINSTALLED_WEB_APPS_YOUTUBE_ICON_192_PNG});

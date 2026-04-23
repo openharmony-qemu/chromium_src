@@ -21,8 +21,13 @@
 #include "services/network/public/mojom/url_loader_factory.mojom.h"
 
 namespace {
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+const char kResetReportUrl[] = "https://x.x.x"; 
+#else
+// The URL for providing more information about Google nameservers.
 const char kResetReportUrl[] =
     "https://sb-ssl.google.com/safebrowsing/clientreport/chrome-reset";
+#endif
 
 GURL GetClientReportUrl(const std::string& report_url) {
   GURL url(report_url);

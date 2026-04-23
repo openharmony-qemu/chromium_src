@@ -16,10 +16,18 @@ namespace ash {
 class ConsolidatedConsentScreen;
 
 namespace {
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+inline constexpr char kGoogleEulaDefaultUrl[] =
+    "https://x.x.x"; 
+inline constexpr char kCrosEulaDefaultUrl[] =
+    "https://x.x.x";
+#else
+// The URL for providing more information about Google nameservers.
 inline constexpr char kGoogleEulaDefaultUrl[] =
     "https://policies.google.com/terms/embedded?hl=en";
 inline constexpr char kCrosEulaDefaultUrl[] =
     "https://www.google.com/intl/en/chrome/terms/";
+#endif
 }  // namespace
 
 // Interface for dependency injection between ConsolidatedConsentScreen and its

@@ -44,10 +44,17 @@ constexpr char kPacpOriginUrlHost[] = "families.google.com";
 // Parent Access widget constants, used in the local web approval
 // flow.
 // URL hosting the Parent Access widget.
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+constexpr char kParentAccessBaseURL[] = "https://x.x.x"; 
+constexpr char kParentAccessContinueURL[] = "https://x.x.x"; 
+#else
+// The URL for providing more information about Google nameservers.
 constexpr char kParentAccessBaseURL[] =
     "https://families.google.com/parentaccess";
-// URL to which the Parent Access widget redirects on approval.
+    // URL to which the Parent Access widget redirects on approval.
 constexpr char kParentAccessContinueURL[] = "https://families.google.com";
+#endif
+
 // Caller Ids for Desktop and iOS platforms.
 constexpr char kParentAccessIOSCallerID[] = "qSTnVRdQ";
 constexpr char kParentAccessDesktopCallerID[] = "clwAA5XJ";

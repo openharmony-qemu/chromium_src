@@ -26,12 +26,20 @@ namespace {
 
 // For malware interstitial pages, we link the problematic URL to Google's
 // diagnostic page.
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+const char kSbDiagnosticUrl[] = "https://x.x.x/safe-browsing/search?url=%s"; 
+const char kReportPhishingErrorUrl[] = "https://x.x.x/safe-browsing/search?url=%s"; 
+#else
+// The URL for providing more information about Google nameservers.
 const char kSbDiagnosticUrl[] =
     "https://transparencyreport.google.com/safe-browsing/search?url=%s";
 
 // Constants for the V4 phishing string upgrades.
 const char kReportPhishingErrorUrl[] =
     "https://safebrowsing.google.com/safebrowsing/report_error/?url=%s";
+#endif
+
+
 
 void RecordExtendedReportingPrefChanged(bool report) {
   UMA_HISTOGRAM_BOOLEAN("SafeBrowsing.Pref.Extended.SecurityInterstitial",

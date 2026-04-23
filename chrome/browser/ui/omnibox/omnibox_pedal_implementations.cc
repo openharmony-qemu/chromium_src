@@ -921,9 +921,17 @@ class OmniboxPedalCreateGoogleCalendarEvent : public OmniboxPedalAuthRequired {
                 IDS_OMNIBOX_PEDAL_CREATE_GOOGLE_CALENDAR_EVENT_SUGGESTION_CONTENTS,
                 IDS_ACC_OMNIBOX_PEDAL_CREATE_GOOGLE_CALENDAR_EVENT_SUFFIX,
                 IDS_ACC_OMNIBOX_PEDAL_CREATE_GOOGLE_CALENDAR_EVENT),
-            GURL("https://calendar.google.com/calendar/u/0/r/"
-                 "eventedit?usp=chrome_actions")) {}
-
+            GURL(kGoogleCalendarEventUrl)) {}
+ private:
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+  static constexpr char kGoogleCalendarEventUrl[] = "https://x.x.x"
+                                                   "eventedit?usp=chrome_actions";
+#else
+// The URL for providing more information about Google nameservers.
+  static constexpr char kGoogleCalendarEventUrl[] = "https://calendar.google.com/calendar/u/0/r/"
+                                                   "eventedit?usp=chrome_actions";
+#endif
+  
 #if BUILDFLAG(GOOGLE_CHROME_BRANDING)
   const gfx::VectorIcon& GetVectorIcon() const override {
     return vector_icons::kGoogleCalendarIcon;

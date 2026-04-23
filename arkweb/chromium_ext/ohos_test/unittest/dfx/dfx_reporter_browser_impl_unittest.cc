@@ -13,20 +13,28 @@
  * limitations under the License.
  */
 
-#include "arkweb/chromium_ext/content/browser/dfx/dfx_reporter_browser_impl.h"
-
 #include <vector>
 #include <gtest/gtest.h>
 #include <map>
 #include <sstream>
 
+#include "arkweb/chromium_ext/content/browser/dfx/mojom/dfx_reporting.mojom.h"
+#include "base/memory/weak_ptr.h"
 #include "base/logging.h"
+#include "base/synchronization/lock.h"
+#include "gpu/ipc/common/memory_stats.h"
+#include "mojo/public/cpp/bindings/pending_receiver.h"
+#include "mojo/public/cpp/bindings/receiver.h"
 #include "mojo/public/cpp/bindings/self_owned_receiver.h"
 #include "content/public/browser/gpu_data_manager.h"
 #include "arkweb/ohos_nweb/src/sysevent/event_reporter.h"
 #include "base/values.h"
 #include "base/json/json_reader.h"
 #include "base/trace_event/trace_event.h"
+
+#define private public
+#include "arkweb/chromium_ext/content/browser/dfx/dfx_reporter_browser_impl.h"
+#undef private
 
 class DfxReporterBrowserImplTest : public testing::Test {
 public:
@@ -122,4 +130,173 @@ TEST_F(DfxReporterBrowserImplTest, ReportHiSysEvent) {
     DfxReporterImpl dfxreporterimpl;
     dfxreporterimpl.ReportHiSysEvent("test_eventname", "");
     dfxreporterimpl.ReportHiSysEvent("PAGE_MEM_LEAK", "");
+}
+
+TEST_F(DfxReporterBrowserImplTest, ReportHiSysEvent_BasicRenderMem) {
+    DfxReporterImpl dfxreporterimpl;
+    dfxreporterimpl.ReportHiSysEvent("BASIC_RENDER_MEM", "");
+}
+
+TEST_F(DfxReporterBrowserImplTest, ReportHiSysEvent_BasicRenderMem_InvalidJson) {
+    DfxReporterImpl dfxreporterimpl;
+    dfxreporterimpl.ReportHiSysEvent("BASIC_RENDER_MEM", "invalid json");
+}
+
+TEST_F(DfxReporterBrowserImplTest, ReportHiSysEvent_BasicRenderMem_ValidJson) {
+    DfxReporterImpl dfxreporterimpl;
+    const std::string sysEventInfoJson = 
+    R"({
+        "pid":"1234",
+        "rss":"1024",
+        "pss":"2048",
+        "swap_pss":"512",
+        "fd_num":"100",
+        "oom_score_adj":"1000",
+        "js_heap_total":"4096",
+        "js_heap_used":"2048",
+        "pa":"8192"
+    })";
+    dfxreporterimpl.ReportHiSysEvent("BASIC_RENDER_MEM", sysEventInfoJson);
+}
+
+TEST_F(DfxReporterBrowserImplTest, OnRenderMemReport) {
+    DfxReporterImpl dfxreporterimpl;
+    pid_t pid = 1234;
+    std::map<std::string, std::string> memMap;
+    memMap["pid"] = "1234";
+    memMap["rss"] = "1024";
+    memMap["pss"] = "2048";
+    memMap["swap_pss"] = "512";
+    memMap["fd_num"] = "100";
+    memMap["oom_score_adj"] = "1000";
+    memMap["js_heap_total"] = "4096";
+    memMap["js_heap_used"] = "2048";
+    memMap["pa"] = "8192";
+    
+    gpu::VideoMemoryUsageStats gpu_memory_stats;
+    gpu_memory_stats.process_map.clear();
+    
+    testing::internal::CaptureStderr();
+    dfxreporterimpl.OnRenderMemReport(pid, memMap, gpu_memory_stats);
+    std::string log_output = testing::internal::GetCapturedStderr();
+}
+
+TEST_F(DfxReporterBrowserImplTest, OnRenderMemReport_WithGpuMemory) {
+    DfxReporterImpl dfxreporterimpl;
+    pid_t pid = 1234;
+    std::map<std::string, std::string> memMap;
+    memMap["pid"] = "1234";
+    memMap["rss"] = "1024";
+    memMap["pss"] = "2048";
+    memMap["swap_pss"] = "512";
+    memMap["fd_num"] = "100";
+    memMap["oom_score_adj"] = "1000";
+    memMap["js_heap_total"] = "4096";
+    memMap["js_heap_used"] = "2048";
+    memMap["pa"] = "8192";
+    
+    gpu::VideoMemoryUsageStats gpu_memory_stats;
+    gpu::VideoMemoryUsageStats::ProcessStats stats;
+    stats.video_memory = 2048 * 1024;
+    gpu_memory_stats.process_map[pid] = stats;
+    
+    testing::internal::CaptureStderr();
+    dfxreporterimpl.OnRenderMemReport(pid, memMap, gpu_memory_stats);
+    std::string log_output = testing::internal::GetCapturedStderr();
+}
+
+TEST_F(DfxReporterBrowserImplTest, OnRenderMemReport_GpuMemoryNotFound) {
+    DfxReporterImpl dfxreporterimpl;
+    pid_t pid = 1234;
+    std::map<std::string, std::string> memMap;
+    memMap["pid"] = "1234";
+    memMap["rss"] = "1024";
+    
+    gpu::VideoMemoryUsageStats gpu_memory_stats;
+    gpu::VideoMemoryUsageStats::ProcessStats stats;
+    stats.video_memory = 2048 * 1024;
+    gpu_memory_stats.process_map[5678] = stats;
+    
+    testing::internal::CaptureStderr();
+    dfxreporterimpl.OnRenderMemReport(pid, memMap, gpu_memory_stats);
+    std::string log_output = testing::internal::GetCapturedStderr();
+}
+
+TEST_F(DfxReporterBrowserImplTest, CollectBasicBrowserMem) {
+    DfxReporterImpl dfxreporterimpl;
+    testing::internal::CaptureStderr();
+    dfxreporterimpl.CollectBasicBrowserMem();
+    std::string log_output = testing::internal::GetCapturedStderr();
+}
+
+TEST_F(DfxReporterBrowserImplTest, CollectGpuMemory) {
+    DfxReporterImpl dfxreporterimpl;
+    pid_t pid = 1234;
+    std::map<std::string, std::string> memMap;
+    memMap["pid"] = "1234";
+    memMap["rss"] = "1024";
+    
+    testing::internal::CaptureStderr();
+    dfxreporterimpl.CollectGpuMemory(pid, memMap);
+    std::string log_output = testing::internal::GetCapturedStderr();
+}
+
+TEST_F(DfxReporterBrowserImplTest, CollectBasicRenderMem) {
+    DfxReporterImpl dfxreporterimpl;
+    const std::string sysEventInfoJson = 
+    R"({
+        "pid":"1234",
+        "rss":"1024",
+        "pss":"2048",
+        "swap_pss":"512",
+        "fd_num":"100",
+        "oom_score_adj":"1000",
+        "js_heap_total":"4096",
+        "js_heap_used":"2048",
+        "pa":"8192"
+    })";
+    
+    testing::internal::CaptureStderr();
+    dfxreporterimpl.CollectBasicRenderMem(sysEventInfoJson);
+    std::string log_output = testing::internal::GetCapturedStderr();
+}
+
+TEST_F(DfxReporterBrowserImplTest, CollectBasicRenderMem_InvalidPid) {
+    DfxReporterImpl dfxreporterimpl;
+    const std::string sysEventInfoJson = 
+    R"({
+        "pid":"invalid",
+        "rss":"1024"
+    })";
+    
+    testing::internal::CaptureStderr();
+    dfxreporterimpl.CollectBasicRenderMem(sysEventInfoJson);
+    std::string log_output = testing::internal::GetCapturedStderr();
+    EXPECT_NE(log_output.find("render process pid is invalid"), std::string::npos);
+}
+
+TEST_F(DfxReporterBrowserImplTest, CollectBasicRenderMem_ZeroPid) {
+    DfxReporterImpl dfxreporterimpl;
+    const std::string sysEventInfoJson = 
+    R"({
+        "pid":"0",
+        "rss":"1024"
+    })";
+    
+    testing::internal::CaptureStderr();
+    dfxreporterimpl.CollectBasicRenderMem(sysEventInfoJson);
+    std::string log_output = testing::internal::GetCapturedStderr();
+    EXPECT_NE(log_output.find("render process pid is invalid"), std::string::npos);
+}
+
+TEST_F(DfxReporterBrowserImplTest, CollectBasicRenderMem_MissingFields) {
+    DfxReporterImpl dfxreporterimpl;
+    const std::string sysEventInfoJson = 
+    R"({
+        "pid":"1234"
+    })";
+    
+    testing::internal::CaptureStderr();
+    dfxreporterimpl.CollectBasicRenderMem(sysEventInfoJson);
+    std::string log_output = testing::internal::GetCapturedStderr();
 }

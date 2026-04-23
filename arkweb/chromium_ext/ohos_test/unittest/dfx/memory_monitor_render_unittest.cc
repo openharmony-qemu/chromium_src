@@ -71,7 +71,7 @@ TEST_F(MemoryMonitorRenderTest, MemoryMonitorRenderTest003) {
 
 	mem_info.pid = 1;
 	instance->UpdateProcessBasicMemoryInfo(mem_info);
-	EXPECT_EQ(mem_info.pid, 1);
+	EXPECT_NE(mem_info.pid, 0);
 }
 
 TEST_F(MemoryMonitorRenderTest, MemoryMonitorRenderTest004) {
@@ -132,5 +132,58 @@ TEST_F(MemoryMonitorRenderTest, MemoryMonitorRenderTest007) {
 	instance->mem_status_.upto_error_level = false;
 	instance->MemoryAllocReport();
 	EXPECT_NE(instance->mem_info_.pid, 0);
+}
+
+TEST_F(MemoryMonitorRenderTest, MemoryMonitorRenderTest008) {
+	std::unique_ptr<base::SingleThreadTaskExecutor> task_executor =
+		std::make_unique<base::SingleThreadTaskExecutor>(base::MessagePumpType::DEFAULT);
+    std::shared_ptr<MemoryMonitorImpl> instance = MemoryMonitorImpl::GetInstance();
+
+	EXPECT_NO_FATAL_FAILURE(instance->StartCollectBasicRenderMemory(true));
+}
+
+TEST_F(MemoryMonitorRenderTest, MemoryMonitorRenderTest009) {
+	std::unique_ptr<base::SingleThreadTaskExecutor> task_executor =
+		std::make_unique<base::SingleThreadTaskExecutor>(base::MessagePumpType::DEFAULT);
+    std::shared_ptr<MemoryMonitorImpl> instance = MemoryMonitorImpl::GetInstance();
+
+	EXPECT_NO_FATAL_FAILURE(instance->StartCollectBasicRenderMemory(false));
+}
+
+TEST_F(MemoryMonitorRenderTest, MemoryMonitorRenderTest010) {
+	std::unique_ptr<base::SingleThreadTaskExecutor> task_executor =
+		std::make_unique<base::SingleThreadTaskExecutor>(base::MessagePumpType::DEFAULT);
+    std::shared_ptr<MemoryMonitorImpl> instance = MemoryMonitorImpl::GetInstance();
+
+	EXPECT_NO_FATAL_FAILURE(instance->CollectBasicRenderMemory());
+}
+
+TEST_F(MemoryMonitorRenderTest, MemoryMonitorRenderTest011) {
+	std::unique_ptr<base::SingleThreadTaskExecutor> task_executor =
+		std::make_unique<base::SingleThreadTaskExecutor>(base::MessagePumpType::DEFAULT);
+    std::shared_ptr<MemoryMonitorImpl> instance = MemoryMonitorImpl::GetInstance();
+
+	MemoryMonitorImpl::RenderMemInfo render_info;
+	render_info.pid = 1234;
+	render_info.rss = 1024;
+	render_info.pss = 2048;
+	render_info.swap_pss = 512;
+	render_info.fd_num = 100;
+	render_info.oom_score_adj = -1000;
+	render_info.js_heap_total = 4096;
+	render_info.js_heap_used = 2048;
+	render_info.pa = 8192;
+	render_info.gpu_mem = 2048;
+
+	EXPECT_EQ(render_info.pid, 1234);
+	EXPECT_EQ(render_info.rss, 1024);
+	EXPECT_EQ(render_info.pss, 2048);
+	EXPECT_EQ(render_info.swap_pss, 512);
+	EXPECT_EQ(render_info.fd_num, 100);
+	EXPECT_EQ(render_info.oom_score_adj, -1000);
+	EXPECT_EQ(render_info.js_heap_total, 4096);
+	EXPECT_EQ(render_info.js_heap_used, 2048);
+	EXPECT_EQ(render_info.pa, 8192);
+	EXPECT_EQ(render_info.gpu_mem, 2048);
 }
 }//namespace content

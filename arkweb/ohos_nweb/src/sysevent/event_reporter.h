@@ -111,6 +111,25 @@ void ReportRendererMem(const std::string& type,
                        const std::string& gpu_mem,
                        const std::string& url);
 
+void ReportBasicRendererMem(const std::string& pid,
+                       const std::string& rss,
+                       const std::string& pss,
+                       const std::string& swap_pss,
+                       const std::string& fd_num,
+                       const std::string& oom_score_adj,
+                       const std::string& js_heap_total,
+                       const std::string& js_heap_used,
+                       const std::string& pa,
+                       const std::string& gpu_mem);
+
+void ReportBasicBrowserMem(const std::string& pid,
+                       const std::string& rss,
+                       const std::string& pss,
+                       const std::string& swap_pss,
+                       const std::string& fd_num,
+                       const std::string& oom_score_adj,
+                       const std::string& pa);
+
 void ReportWebMediaPlayErrorInfo(const std::string& errorType,
                               int errorCode,
                               const std::string& errorDesc);

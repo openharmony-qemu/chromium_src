@@ -13,95 +13,53 @@
  * limitations under the License.
  */
 
-#include <unistd.h>
-#include <sys/syscall.h>
-#include <sys/types.h>
-#include <deviceinfo.h>
+#include "memory_monitor_render_impl.h"
 
-#include <cstddef>
-#include <fstream>
-#include <iostream>
-#include <memory>
-#include <sched.h>
-#include <sstream>
 #include <string>
+#include <sys/types.h>
+#include <unistd.h>
 
-#include "base/check.h"
 #include "base/functional/bind.h"
 #include "base/logging.h"
-#include "base/process/process_metrics.h"
-#include "base/values.h"
 #include "base/json/json_writer.h"
+#include "base/process/process_metrics.h"
+#include "base/task/single_thread_task_runner.h"
+#include "base/values.h"
 #include "base/strings/string_split.h"
-#include "memory_monitor_render_impl.h"
+#include "collect_memory_utils.h"
 #include "v8/include/v8-isolate.h"
-#include "third_party/bounds_checking_function/include/securec.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 
-#define MEM_CONVERT 1024
 #define WARNING_MEMORY_LEAK_THRESHOLD 800
 #define ERROR_MEMORY_LEAK_THRESHOLD 1500
 #define COUNTER_INITIAL 0
 #define COUNTER_THRESHOLD 10
 #define INTERVAL 60000
+#define BASIC_INTERVAL 120000
 
 namespace content {
 
 using DfxMemInfo = MemoryMonitorImpl::DfxMemInfo;
+using RenderMemInfo = MemoryMonitorImpl::RenderMemInfo;
 using DfxMemStatus = MemoryMonitorImpl::DfxMemStatus;
-
-template<typename T>
-void ReadProcFile(const std::string& filePath, const std::string& token, T& value)
-{
-  std::ifstream file(filePath);
-  if (!file.is_open()) {
-    LOG(ERROR) << "Failed to open file: " << filePath;
-    return;
-  }
-
-  std::string line;
-  while (std::getline(file, line)) {
-    if (!token.empty() && line.find(token) != 0) {
-      continue;
-    }
-
-    size_t pos = token.empty() ? 0 : line.find(":");
-    if (pos != std::string::npos) {
-      std::string valueStr = line.substr(pos + 1);
-      std::stringstream ss(valueStr);
-      ss >> value;
-      return;
-    }
-  }
-  LOG(ERROR) << "Failed to find token: " << token << " in file: " << filePath;
-}
 
 void MemoryMonitorImpl::UpdateProcessBasicMemoryInfo(DfxMemInfo &mem_info)
 {
-  if (mem_info.pid == 0) {
-    ReadProcFile("/proc/self/status", "NSpid:", mem_info.pid);
-  }
-
-  mem_info.rss = 0;
-  ReadProcFile("/proc/self/smaps_rollup", "Rss:", mem_info.rss);
-
-  mem_info.pss = 0;
-  ReadProcFile("/proc/self/smaps_rollup", "Pss:", mem_info.pss);
+  CollectMemoryUtils collectMemoryUtils;
+  collectMemoryUtils.GetProcessBasicMemoryInfo(mem_info.pid, mem_info.rss, mem_info.pss);
+  collectMemoryUtils.GetFdCount("/proc/self/fd", mem_info.fd_num);
 }
 
 void MemoryMonitorImpl::UpdateProcessMemoryInfo(DfxMemInfo &mem_info)
 {
   UpdateProcessBasicMemoryInfo(mem_info);
 
-  mem_info.fd_num = 0;
-  ReadProcFile("/proc/self/fd_num", "", mem_info.fd_num);
-
   v8::Isolate *isolate = v8::Isolate::GetCurrent();
   if (isolate) {
     v8::HeapStatistics heap_statistics;
     isolate->GetHeapStatistics(&heap_statistics);
-    mem_info.js_heap_total = heap_statistics.total_heap_size() / MEM_CONVERT;
-    mem_info.js_heap_used = heap_statistics.used_heap_size() / MEM_CONVERT;
+    mem_info.js_heap_total = heap_statistics.total_heap_size() / kMemoryBytesPerKb;
+    mem_info.js_heap_used = heap_statistics.used_heap_size() / kMemoryBytesPerKb;
   } else {
     LOG(ERROR) << "V8 isolate is null";
     mem_info.js_heap_total = 0;
@@ -167,10 +125,10 @@ void MemoryMonitorImpl::CollectAndReport()
   };
 
   UpdateProcessBasicMemoryInfo(mem_info_);
-  if (mem_info_.pss > ERROR_MEMORY_LEAK_THRESHOLD * MEM_CONVERT) {
+  if (mem_info_.pss > ERROR_MEMORY_LEAK_THRESHOLD * kMemoryBytesPerKb) {
     ++mem_status_.error_threshold_counter;
     ++mem_status_.warning_threshold_counter;
-  } else if (mem_info_.pss > WARNING_MEMORY_LEAK_THRESHOLD * MEM_CONVERT) {
+  } else if (mem_info_.pss > WARNING_MEMORY_LEAK_THRESHOLD * kMemoryBytesPerKb) {
     ++mem_status_.warning_threshold_counter;
   } else {
     InitDfxMemStatus(mem_status_);
@@ -230,6 +188,66 @@ void MemoryMonitorImpl::Init()
   mem_info_.pid = 0;
   StartMonitoring(base::Milliseconds(INTERVAL));
   has_initialized_ = true;
+}
+
+void MemoryMonitorImpl::StartCollectBasicRenderMemory(bool is_hidden)
+{
+  if (is_hidden) {
+    CollectBasicRenderMemory();
+  } else {
+    base::SingleThreadTaskRunner::GetCurrentDefault()->PostDelayedTask(
+          FROM_HERE,
+          base::BindOnce(&MemoryMonitorImpl::CollectBasicRenderMemory, base::Unretained(this)),
+            base::Milliseconds(BASIC_INTERVAL));
+  }
+}
+
+static std::string ConvertToJson(const RenderMemInfo& render_info)
+{
+  auto mem_info_json = base::Value::Dict()
+    .Set("pid", std::to_string(render_info.pid)).Set("rss", std::to_string(render_info.rss))
+    .Set("pss", std::to_string(render_info.pss)).Set("swap_pss", std::to_string(render_info.swap_pss))
+    .Set("fd_num", std::to_string(render_info.fd_num)).Set("oom_score_adj", std::to_string(render_info.oom_score_adj))
+    .Set("js_heap_total", std::to_string(render_info.js_heap_total))
+    .Set("js_heap_used", std::to_string(render_info.js_heap_used)).Set("pa", std::to_string(render_info.pa));
+  std::string mem_info_json_string;
+  base::JSONWriter::Write(mem_info_json, &mem_info_json_string);
+  return mem_info_json_string;
+}
+
+void MemoryMonitorImpl::CollectBasicRenderMemory()
+{
+  RenderMemInfo render_info;
+  // get basic info
+  CollectMemoryUtils collectMemoryUtils;
+  collectMemoryUtils.GetProcessBasicMemoryInfo(render_info.pid, render_info.rss, render_info.pss);
+  collectMemoryUtils.ReadProcFile("/proc/self/smaps_rollup", "SwapPss:", render_info.swap_pss);
+  collectMemoryUtils.GetFdCount("/proc/self/fd", render_info.fd_num);
+  collectMemoryUtils.GetOomScoreAdj("/proc/self/oom_score_adj", render_info.oom_score_adj);
+
+  // get js_heap info
+  v8::Isolate *isolate = v8::Isolate::GetCurrent();
+  if (isolate) {
+    v8::HeapStatistics heap_statistics;
+    isolate->GetHeapStatistics(&heap_statistics);
+    render_info.js_heap_total = heap_statistics.total_heap_size() / kMemoryBytesPerKb;
+    render_info.js_heap_used = heap_statistics.used_heap_size() / kMemoryBytesPerKb;
+  } else {
+    LOG(ERROR) << "V8 isolate is null";
+    render_info.js_heap_total = 0;
+    render_info.js_heap_used = 0;
+  }
+
+  // get PartitionAllocator
+  collectMemoryUtils.GetPartitionAllocatorMem(render_info.pa);
+
+  // get gpuMem
+  if (!remote_.is_bound()) {
+    LOG(ERROR) << "ReportWebMemory remote is not bound";
+    return;
+  }
+  std::string render_info_json_string = ConvertToJson(render_info);
+  remote_->ReportHiSysEvent("BASIC_RENDER_MEM", render_info_json_string);
 }
 
 std::shared_ptr<MemoryMonitorImpl> MemoryMonitorImpl::GetInstance()

@@ -124,6 +124,8 @@ class TestLayerTreeFrameSink::TestCompositorFrameSinkImpl
                           bool is_created) override {}
 
   void OnSetBypassVsyncCondition(int32_t condition) override {}
+  void UpdateThrottleMode(bool is_enable) override {}
+  void InitializeCompositorFrameSinkType(viz::mojom::CompositorFrameSinkType type) override {}
 #endif
 
  private:

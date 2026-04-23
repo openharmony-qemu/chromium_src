@@ -153,6 +153,10 @@ bool AsyncLayerTreeFrameSink::BindToClient(LayerTreeFrameSinkClient* client) {
                 compositor_task_runner_.get()),
             viz::BeginFrameSource::kNotRestartableId);
   }
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+  compositor_frame_sink_ptr_->InitializeCompositorFrameSinkType(
+      viz::mojom::CompositorFrameSinkType::kLayerTree);
+#endif
 
 #if BUILDFLAG(IS_ANDROID)
   std::vector<viz::Thread> threads;
@@ -642,6 +646,13 @@ void AsyncLayerTreeFrameSink::SetTimeSourceOfInternalBeginFrameForTesting(
 void AsyncLayerTreeFrameSink::OnSetBypassVsyncCondition(int32_t condition) {
   DCHECK(compositor_frame_sink_ptr_);
   compositor_frame_sink_ptr_->OnSetBypassVsyncCondition(condition);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+void AsyncLayerTreeFrameSink::UpdateThrottleMode(bool is_enable) {
+  DCHECK(compositor_frame_sink_ptr_);
+  compositor_frame_sink_ptr_->UpdateThrottleMode(is_enable);
 }
 #endif
 

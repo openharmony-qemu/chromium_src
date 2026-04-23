@@ -95,6 +95,17 @@ bool StructTraits<viz::mojom::BeginFrameAckDataView, viz::BeginFrameAck>::Read(
   out->frame_id.sequence_number = data.sequence_number();
   out->trace_id = data.trace_id();
   out->has_damage = data.has_damage();
+
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+  if (!data.ReadPreferredFrameInterval(&out->preferred_frame_interval)) {
+    return false;
+  }
+  // Preferred_frame_interval must be nullopt or non-negative.
+  if (out->preferred_frame_interval &&
+      out->preferred_frame_interval->is_negative()) {
+    return false;
+  }
+#endif
   return true;
 }
 

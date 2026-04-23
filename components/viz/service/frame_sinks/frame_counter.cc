@@ -32,11 +32,18 @@ FrameCounter::FrameCounter(base::TimeTicks start_time,
 FrameCounter::~FrameCounter() = default;
 
 void FrameCounter::AddFrameSink(const FrameSinkId& frame_sink_id,
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+                                mojom::CompositorFrameSinkType type,
+#endif
+
                                 bool is_root,
                                 std::string_view debug_label) {
   DCHECK(!base::Contains(frame_sink_data_, frame_sink_id));
 
   auto per_sink_data = mojom::FrameCountingPerSinkData::New(
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+    type,
+#endif
       is_root, static_cast<std::string>(debug_label), 0,
       std::vector<uint16_t>());
   per_sink_data->presented_frames.reserve(kMaxFrameRecords);
@@ -81,6 +88,16 @@ mojom::FrameCountingDataPtr FrameCounter::TakeData() {
   frame_sink_data_.clear();
   return data;
 }
+
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+void FrameCounter::SetFrameSinkType(const FrameSinkId& frame_sink_id,
+                                    mojom::CompositorFrameSinkType type) {
+  auto it = frame_sink_data_.find(frame_sink_id);
+  if (it != frame_sink_data_.end()) {
+    it->second->type = type;
+  }
+}
+#endif
 
 void FrameCounter::SetFrameSinkDebugLabel(const FrameSinkId& frame_sink_id,
                                           std::string_view debug_label) {

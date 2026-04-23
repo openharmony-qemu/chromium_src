@@ -112,6 +112,10 @@ class VideoFrameSubmitter::FrameSinkBundleProxy
     bundle_->SetNeedsBeginFrame(frame_sink_id_.sink_id(), needs_begin_frame);
   }
 
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+  void UpdateThrottleMode(bool is_enable) override { NOTREACHED(); }
+#endif
+
   // Not used by VideoFrameSubmitter.
   void SetParams(
       viz::mojom::blink::CompositorFrameSinkParamsPtr params) override {
@@ -160,6 +164,16 @@ class VideoFrameSubmitter::FrameSinkBundleProxy
 
 #if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
   void OnSetBypassVsyncCondition(int32_t condition) override {}
+#endif
+
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+  void InitializeCompositorFrameSinkType(
+      viz::mojom::blink::CompositorFrameSinkType type) override {
+    if (!bundle_) {
+      return;
+    }
+    bundle_->InitializeCompositorFrameSinkType(frame_sink_id_.sink_id(), type);
+  }
 #endif
 
  private:
@@ -653,6 +667,12 @@ void VideoFrameSubmitter::StartSubmitting() {
 
   remote_frame_sink_.set_disconnect_handler(base::BindOnce(
       &VideoFrameSubmitter::OnContextLost, base::Unretained(this)));
+
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+  compositor_frame_sink_->InitializeCompositorFrameSinkType(
+      is_media_stream_ ? viz::mojom::CompositorFrameSinkType::kMediaStream
+                       : viz::mojom::CompositorFrameSinkType::kVideo);
+#endif
 
 #if BUILDFLAG(IS_ANDROID)
   Vector<viz::Thread> threads;

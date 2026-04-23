@@ -201,6 +201,17 @@ void CompositorFrameSinkImpl::DidNotProduceFrame(
   support_->DidNotProduceFrame(begin_frame_ack);
 }
 
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+void CompositorFrameSinkImpl::UpdateThrottleMode(bool is_enable) {
+  compositor_frame_sink_impl_util_->UpdateThrottleMode(is_enable);
+}
+
+void CompositorFrameSinkImpl::InitializeCompositorFrameSinkType(
+    mojom::CompositorFrameSinkType type) {
+  support_->InitializeCompositorFrameSinkType(type);
+}
+#endif
+
 void CompositorFrameSinkImpl::NotifyNewLocalSurfaceIdExpectedWhilePaused() {
   support_->NotifyNewLocalSurfaceIdExpectedWhilePaused();
 }

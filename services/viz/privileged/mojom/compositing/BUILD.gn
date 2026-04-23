@@ -76,6 +76,9 @@ mojom("compositing") {
   if (arkweb_blank_optimize) {
     enabled_features += [ "arkweb_blank_optimize" ]
   }
+  if (arkweb_throttle_frame) {
+    enabled_features += ["arkweb_throttle_frame"]
+  }
 
   if (arkweb_safebrowsing) {
     enabled_features += [ "arkweb_safebrowsing" ]

@@ -44,4 +44,7 @@ struct BeginFrameAck {
   uint64 sequence_number;
   int64 trace_id;
   bool has_damage;
+
+  // ArkWeb: preferred frame interval for throttling
+  mojo_base.mojom.TimeDelta? preferred_frame_interval;
 };

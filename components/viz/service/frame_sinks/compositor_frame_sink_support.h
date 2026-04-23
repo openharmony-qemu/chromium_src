@@ -155,7 +155,13 @@ class VIZ_SERVICE_EXPORT CompositorFrameSinkSupport
   // if we should throttle, otherwise false.
   bool ThrottleBeginFrame(base::TimeDelta interval,
                           bool simple_cadence_only = false);
-
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+  void ApplyPreferredFrameRate();
+  void InitializeCompositorFrameSinkType(mojom::CompositorFrameSinkType type);
+  mojom::CompositorFrameSinkType frame_sink_type() const {
+    return frame_sink_type_;
+  }
+#endif
   void SetLastKnownVsync(base::TimeDelta vsync_interval);
 
   // SurfaceClient implementation.
@@ -399,6 +405,14 @@ class VIZ_SERVICE_EXPORT CompositorFrameSinkSupport
   bool client_needs_begin_frame_ = false;
 
   bool handling_auto_needs_begin_frame_ = false;
+
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+  bool throttle_mode_ = false;
+  bool throttle_started_ = false;
+  base::TimeDelta preferred_frame_interval_ = BeginFrameArgs::MinInterval();
+  mojom::CompositorFrameSinkType frame_sink_type_ =
+      mojom::CompositorFrameSinkType::kUnspecified;
+#endif
 
   // Whether the sink currently needs begin frames for any reason.
   bool needs_begin_frame_ = false;

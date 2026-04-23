@@ -115,6 +115,13 @@ struct StructTraits<viz::mojom::BeginFrameAckDataView, viz::BeginFrameAck> {
     return ack.has_damage;
   }
 
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+  static std::optional<base::TimeDelta> preferred_frame_interval(
+      const viz::BeginFrameAck& ack) {
+    return ack.preferred_frame_interval;
+  }
+#endif
+
   static bool Read(viz::mojom::BeginFrameAckDataView data,
                    viz::BeginFrameAck* out);
 };

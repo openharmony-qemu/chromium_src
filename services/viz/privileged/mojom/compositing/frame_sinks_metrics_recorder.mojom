@@ -12,6 +12,8 @@ import "services/viz/public/mojom/compositing/frame_sink_id.mojom";
 
 // Container for collected data for a given frame sink.
 struct FrameCountingPerSinkData {
+  [EnableIf=arkweb_throttle_frame]
+  CompositorFrameSinkType type;
   bool is_root;
   string debug_label;
 

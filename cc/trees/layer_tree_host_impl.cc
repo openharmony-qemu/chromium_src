@@ -158,8 +158,12 @@
 #include "arkweb/build/features/features.h"
 #include "cc/trees/layer_tree_impl_utils.h"
 
-#if BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SLIDE)
+#if BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SLIDE) || BUILDFLAG(ARKWEB_THROTTLE_FRAME)
 #include "cc/trees/layer_tree_host_impl_for_include.cc"
+#endif
+
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 #endif
 
 #if BUILDFLAG(IS_ARKWEB)
@@ -539,7 +543,11 @@ LayerTreeHostImpl::LayerTreeHostImpl(
           base::BindRepeating(&LayerTreeHostImpl::ResetHasInputForFrameInterval,
                               base::Unretained(this)),
           kHasInputResetDelay),
-      contains_srgb_cache_(kContainsSrgbCacheSize) {
+      contains_srgb_cache_(kContainsSrgbCacheSize)
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+      , frame_rate_estimator_(GetTaskRunner())
+#endif
+       {
   CHECK(!(settings.scrollbar_flash_once_after_scroll_update &&
           settings.scrollbar_flash_after_any_scroll_update))
       << "Only one of "
@@ -1290,6 +1298,9 @@ void LayerTreeHostImpl::NotifyInputEvent(bool is_fling) {
   has_input_for_frame_interval_ = true;
   has_input_resetter_.Schedule();
   has_non_fling_input_since_last_frame_ |= (!is_fling);
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+  frame_rate_estimator_.NotifyInputEvent();
+#endif
 }
 
 void LayerTreeHostImpl::QueueSwapPromiseForMainThreadScrollUpdate(
@@ -3443,7 +3454,10 @@ viz::CompositorFrame LayerTreeHostImpl::GenerateCompositorFrame(
   // removed, then can set `has_only_content_frame_interval_updates`.
   metadata.frame_interval_inputs.has_only_content_frame_interval_updates =
       frame->damage_reasons.empty();
-
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+  frame_rate_estimator_.ClearBeginFrameThrottleSettings();
+  metadata.begin_frame_ack.preferred_frame_interval = ThrottleFrameEnd();
+#endif
   metadata.activation_dependencies = std::move(frame->activation_dependencies);
   active_tree()->FinishSwapPromises(&metadata);
   // The swap-promises should not change the frame-token.
@@ -3824,8 +3838,28 @@ void LayerTreeHostImpl::DidNotProduceFrame(const viz::BeginFrameAck& ack,
         return "";
       }(),
       "Frame Sequence Number", ack.frame_id.sequence_number);
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+  bool is_scrolling = CurrentlyScrollingNode() != nullptr ||
+    IsPinchGestureActive() ||
+    GetActivelyScrollingType() != ActivelyScrollingType::kNone ||
+    mutator_host_->HasImplOnlyAutoScrollAnimatingElement();
+  if (is_scrolling) {
+    frame_rate_estimator_.ClearBeginFrameThrottleSettings();
+  } else {
+    frame_rate_estimator_.DidNotProduceFrameWithReason(reason);
+  }
+#endif
   if (layer_tree_frame_sink_) {
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+	  viz::BeginFrameAck adjust_ack = ack;
+    if (IsThrottleEnable()) {
+      adjust_ack.preferred_frame_interval = frame_rate_estimator_.GetPreferredInterval();
+      ThrottleFrameStart();
+    }
+    layer_tree_frame_sink_->DidNotProduceFrame(adjust_ack, reason);
+#else
     layer_tree_frame_sink_->DidNotProduceFrame(ack, reason);
+#endif
   }
   if (reason == FrameSkippedReason::kNoDamage ||
       !base::FeatureList::IsEnabled(

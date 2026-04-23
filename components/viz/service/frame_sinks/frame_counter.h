@@ -25,6 +25,9 @@ class VIZ_SERVICE_EXPORT FrameCounter {
 
   // Add a record for a frame sink.
   void AddFrameSink(const FrameSinkId& frame_sink_id,
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+                    mojom::CompositorFrameSinkType type,
+#endif
                     bool is_root,
                     std::string_view debug_label);
 
@@ -37,6 +40,11 @@ class VIZ_SERVICE_EXPORT FrameCounter {
 
   void SetFrameSinkDebugLabel(const FrameSinkId& frame_sink_id,
                               std::string_view debug_label);
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+  // Sets a frame sink's type.
+  void SetFrameSinkType(const FrameSinkId& frame_sink_id,
+                        mojom::CompositorFrameSinkType type);
+#endif
 
  private:
   // Time when the frame counting is stated.

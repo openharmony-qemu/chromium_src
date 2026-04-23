@@ -1489,7 +1489,6 @@ class NWebImpl : public NWeb {
 #if BUILDFLAG(ARKWEB_COOKIE)
   static std::shared_ptr<NWebEngineInitArgs> save_initargs_;
   static std::atomic<bool> should_lazy_init_web_engine_;
-  static base::Lock init_web_engine_lock_;
 #endif
 
   base::WeakPtrFactory<NWebImpl> weak_factory_{this};

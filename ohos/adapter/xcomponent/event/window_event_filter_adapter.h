@@ -39,6 +39,7 @@
 
 #include "ohos/adapter/common/shared_library.h"
 #include "ohos/adapter/export.h"
+#include "ohos/adapter/xcomponent/event/node_handle_input_event_common.h"
 
 namespace ohos::adapter::window {
 // define mouse filter event function from window
@@ -67,6 +68,8 @@ using GetTouchEventFingerIdFunc = int32_t(Input_TouchEvent*);
 
 class ADAPTER_EXPORT_API WindowEventFilterAdapter {
  public:
+  static constexpr int32_t kMicrosecondsUnit = 1000;
+
   static WindowEventFilterAdapter& GetInstance();
   bool CanFilterWindowMouseEvent() { return can_filter_window_mouse_event_; }
   bool CanFilterWindowTouchEvent() { return can_filter_window_touch_event_; }
@@ -74,6 +77,12 @@ class ADAPTER_EXPORT_API WindowEventFilterAdapter {
                                 Input_MouseEvent* window_mouse_event);
   void SendTouchEventForTabDrag(const int32_t widget_id,
                                 Input_TouchEvent* window_touch_event);
+  void SendMouseEventForTabDragNodeHandle(
+      const int32_t widget_id,
+      xcomponent::NodeHandleMouseEventData& window_mouse_data);
+  void SendTouchEventForTabDragNodeHandle(
+      const int32_t widget_id,
+      xcomponent::NodeHandleTouchEventData& window_touch_data);
   void SetDraggingTabWidgetId(int32_t widget_id);
   int32_t GetDraggingTabWidgetId() const;
   bool IsTabDragging() const;

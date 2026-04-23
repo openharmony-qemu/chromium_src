@@ -101,7 +101,7 @@ AudioOutputStream* OHOSAudioManager::MakeLowLatencyOutputStream(
     const std::string& device_id,
     const LogCallback& log_callback) {
   SelectAudioDevice(device_id, false);
-  return new OHOSAudioOutputStream(this, params);
+  return new OhosAudioOutputStream(this, params);
 }
 
 AudioInputStream* OHOSAudioManager::MakeLinearInputStream(

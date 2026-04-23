@@ -37,7 +37,6 @@
 #include "ohos/adapter/common/trace.h"
 #include "ohos/adapter/life_cycle/lifecycle_init.h"
 #include "ohos/adapter/media_manager/media_init.h"
-#include "ohos/adapter/multiprocess/child_process_starter.h"
 #include "ohos/adapter/task_runner/main_thread_task_runner.h"
 #include "ohos/adapter/web_entry/web_entry_init.h"
 #include "ohos/adapter/xcomponent/xcomponent_manager.h"

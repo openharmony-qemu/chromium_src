@@ -42,6 +42,8 @@ std::string ADAPTER_EXPORT_API GetUserDocumentDir();
 std::string ADAPTER_EXPORT_API GetUserDesktopDir();
 std::string ADAPTER_EXPORT_API GetUserDownloadDir();
 std::string ADAPTER_EXPORT_API GetAppDownloadDir();
+
+inline constexpr char kDefaultTempDir[] = "/data/storage/el2/base/temp";
 }  // namespace ohos::adapter::ContextPathAdapter
 
 #endif  // OHOS_ADAPTER_CONTEXT_PATH_CONTEXT_PATH_ADAPTER_H_

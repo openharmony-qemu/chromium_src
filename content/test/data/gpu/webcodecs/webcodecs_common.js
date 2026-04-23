@@ -418,8 +418,10 @@ class DecoderSource extends FrameSource {
   }
 
   close() {
-    if (this.decoder)
+    if (this.decoder) {
       this.decoder.close();
+      this.decoder = null;
+    }
   }
 }
 

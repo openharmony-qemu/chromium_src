@@ -34,11 +34,13 @@ import { certificateManager } from '@kit.DeviceCertificateKit';
 import { BusinessError } from '@ohos.base';
 import fs, { Filter } from '@ohos.file.fs';
 import certificateManagerDialog from '@ohos.security.certManagerDialog';
+import { deviceInfo } from '@kit.BasicServicesKit';
 
 import { BaseAdapter } from '../common/BaseAdapter';
 import LogUtil from '../utils/LogUtil';
 import LogMethod from '../common/LogDecorator';
 import { ContextAdapter } from './ContextAdapter';
+import { huks } from '@kit.UniversalKeystoreKit';
 
 class ListFileOption {
   public recursion: boolean = false;
@@ -49,6 +51,7 @@ class ListFileOption {
 interface OhosCertInfo {
   cert: string;
   uri: string;
+  type: number;
 }
 
 const TAG: string = 'CertManagerAdapter';
@@ -56,10 +59,12 @@ const TAG: string = 'CertManagerAdapter';
 @injectable()
 export class CertManagerAdapter extends BaseAdapter {
   private ctxAdapter: ContextAdapter;
+  private keyUri: string;
 
   constructor(@inject(ContextAdapter) ctxAdapter: ContextAdapter) {
     super();
     this.ctxAdapter = ctxAdapter;
+    this.keyUri = "";
   }
 
   get uriPath(): string {
@@ -99,6 +104,72 @@ export class CertManagerAdapter extends BaseAdapter {
     return data.reduce((prev, current) => prev + String.fromCharCode(current), '');
   }
 
+  private base64Encode(bytes: Uint8Array): string {
+    const base64Chars : string = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+    let result = '';
+    let i = 0;
+
+    for (i = 0; i < bytes.length; i += 3) {
+      // 获取3个字节
+      const byte1 = bytes[i];
+      const byte2 = i + 1 < bytes.length ? bytes[i + 1] : 0;
+      const byte3 = i + 2 < bytes.length ? bytes[i + 2] : 0;
+
+      // 组合成24位
+      const combined = (byte1 << 16) | (byte2 << 8) | byte3;
+
+      // 转换为4个Base64字符
+      const char1 = base64Chars[(combined >> 18) & 0x3F];
+      const char2 = base64Chars[(combined >> 12) & 0x3F];
+      const char3 = i + 1 < bytes.length ? base64Chars[(combined >> 6) & 0x3F] : '=';
+      const char4 = i + 2 < bytes.length ? base64Chars[combined & 0x3F] : '=';
+
+      result += char1 + char2 + char3 + char4;
+    }
+
+    return result;
+  }
+
+  /**
+   * 格式化Base64字符串（每64字符换行）
+   */
+  private formatBase64(base64: string, lineLength: number = 64): string {
+    const lines: string[] = [];
+    for (let i = 0; i < base64.length; i += lineLength) {
+      lines.push(base64.substring(i, i + lineLength));
+    }
+    return lines.join('\n');
+  }
+
+  private derToPem(derData: Uint8Array, type: string = 'CERTIFICATE'): string {
+    const base64 : string = this.base64Encode(derData);
+    const formatted : string = this.formatBase64(base64);
+    return `-----BEGIN ${type}-----\n${formatted}\n-----END ${type}-----`;
+  }
+
+  private getRsaSignProperties() {
+    let properties: huks.HuksParam[] = [{
+      tag: huks.HuksTag.HUKS_TAG_ALGORITHM,
+      value: huks.HuksKeyAlg.HUKS_ALG_RSA
+    }, {
+      tag: huks.HuksTag.HUKS_TAG_KEY_SIZE,
+      value: huks.HuksKeySize.HUKS_RSA_KEY_SIZE_2048
+    }, {
+      tag: huks.HuksTag.HUKS_TAG_PURPOSE,
+      value: huks.HuksKeyPurpose.HUKS_KEY_PURPOSE_SIGN
+    }, {
+      tag: huks.HuksTag.HUKS_TAG_PADDING,
+      value: huks.HuksKeyPadding.HUKS_PADDING_PKCS1_V1_5
+    }, {
+      tag: huks.HuksTag.HUKS_TAG_DIGEST,
+      value: huks.HuksKeyDigest.HUKS_DIGEST_SHA256
+    }, {
+      tag: huks.HuksTag.HUKS_TAG_KEY_CLASS,
+      value: huks.HuksKeyClassType.HUKS_KEY_CLASS_EXTENSION
+    }];
+    return properties;
+  }
+
   @LogMethod
   async getAllPrivateCertificates(callback: Function) {
     const certInfos: OhosCertInfo[] = [];
@@ -116,7 +187,8 @@ export class CertManagerAdapter extends BaseAdapter {
           if (cmResult && cmResult.credential && cmResult.credential.keyNum > 0) {
             const certInfo: OhosCertInfo = {
               uri: list[i].keyUri,
-              cert: this.uint8ArrayToString(cmResult.credential.credentialData)
+              cert: this.uint8ArrayToString(cmResult.credential.credentialData),
+              type: certificateManagerDialog.CertificateType.CREDENTIAL_USER
             };
             certInfos.push(certInfo);
           }
@@ -214,14 +286,28 @@ export class CertManagerAdapter extends BaseAdapter {
   }
 
   @LogMethod
-  showCertificateManagerDialog() {
+  showCertificateManagerDialog(certType: number) {
+    enum CertType {
+      OTHER_CERT,
+      CA_CERT,
+      USER_CERT,
+      SERVER_CERT,
+      NUM_CERT_TYPES
+    }
     let activeContext = this.ctxAdapter.getActiveContext();
     if (!activeContext) {
       LogUtil.warn(TAG, 'Failed to get active context');
       return;
     }
+
     let pageType: certificateManagerDialog.CertificateDialogPageType =
        certificateManagerDialog.CertificateDialogPageType.PAGE_MAIN;
+    if (certType == CertType.CA_CERT) {
+      pageType = certificateManagerDialog.CertificateDialogPageType.PAGE_CA_CERTIFICATE;
+    } else if (certType == CertType.USER_CERT) {
+      pageType = certificateManagerDialog.CertificateDialogPageType.PAGE_INSTALL_CERTIFICATE;
+    }
+
     try {
       certificateManagerDialog.openCertificateManagerDialog(activeContext, pageType)
         .then(() => {
@@ -233,4 +319,165 @@ export class CertManagerAdapter extends BaseAdapter {
     }
   }
 
+  @LogMethod
+  isSdk22(callback: Function) {
+    let ret: boolean = false;
+    if (deviceInfo.sdkApiVersion >= 22)
+      ret = true;
+    callback(ret);
+  }
+
+  @LogMethod
+  async enumClientCerts(callback: Function) {
+    const client_certs: OhosCertInfo[] = [];
+    let activeContext = this.ctxAdapter.getActiveContext();
+    if (!activeContext) {
+      callback(client_certs, 0);
+      return;
+    }
+    let certTypes: Array<certificateManagerDialog.CertificateType> = [
+      certificateManagerDialog.CertificateType.CREDENTIAL_USER,
+      certificateManagerDialog.CertificateType.CREDENTIAL_APP,
+      certificateManagerDialog.CertificateType.CREDENTIAL_UKEY
+    ];
+    let certPurpose: certificateManager.CertificatePurpose = certificateManager.CertificatePurpose.PURPOSE_DEFAULT;
+    let authorizeRequest: certificateManagerDialog.AuthorizeRequest = { certTypes: certTypes, certPurpose: certPurpose };
+    try {
+      certificateManagerDialog.openAuthorizeDialog(activeContext, authorizeRequest).then((certReference: certificateManagerDialog.CertReference) => {
+        this.keyUri = certReference.keyUri;
+
+        if (certReference.certType == certificateManagerDialog.CertificateType.CREDENTIAL_USER) {
+          try {
+            certificateManager.getPublicCertificate(this.keyUri).then((cmResult) => {
+              if (cmResult?.credential == undefined) {
+                console.info('The result of getting public certificate is undefined.');
+              } else {
+                const certInfo: OhosCertInfo = {
+                  uri: certReference.keyUri,
+                  cert: this.uint8ArrayToString(cmResult.credential.credentialData),
+                  type: certificateManagerDialog.CertificateType.CREDENTIAL_USER
+                };
+
+                client_certs.push(certInfo);
+                console.info('Succeeded in getting Public certificate.');
+                
+                callback(client_certs, client_certs.length);
+              }
+            }).catch((err: BusinessError) => {
+              console.error(`Failed to get Public certificate. Code: ${err.code}, message: ${err.message}`);
+            })
+          } catch (error) {
+            console.error(`Failed to get Public certificate. Code: ${error.code}, message: ${error.message}`);
+          }
+         
+        } else if (certReference.certType == certificateManagerDialog.CertificateType.CREDENTIAL_UKEY) {
+          let ukeyInfo: certificateManager.UkeyInfo = {
+            certPurpose: certificateManager.CertificatePurpose.PURPOSE_DEFAULT,
+          }
+
+          certificateManager.getUkeyCertificate(this.keyUri, ukeyInfo).then((cmResult) => {
+            if (!cmResult.credentialDetailList) {
+              callback(client_certs, 0);
+              return;
+            }
+
+            for (let i = 0; i < cmResult.credentialDetailList.length; i++) {
+              const certInfo: OhosCertInfo = {
+                uri: certReference.keyUri,
+                cert: this.derToPem(cmResult.credentialDetailList[0].credentialData),
+                type: certificateManagerDialog.CertificateType.CREDENTIAL_UKEY
+              };
+
+              client_certs.push(certInfo);
+            }
+
+            callback(client_certs, client_certs.length);
+          }).catch((err: BusinessError) => {
+            console.error(`Failed to get detail of USB key certificate. Code: ${err.code}, message: ${err.message}`);
+          })
+        } else if (certReference.certType == certificateManagerDialog.CertificateType.CREDENTIAL_APP) {
+          try {
+            certificateManager.getPrivateCertificate(this.keyUri, (err, cmResult) => {
+              if (err != null) {
+                console.error(`Failed to get private certificate. Code: ${err.code}, message: ${err.message}`);
+              } else {
+                if (cmResult?.credential == undefined) {
+                  console.info('The result of getting private certificate is undefined.');
+                } else {
+                  let list = cmResult.credential;
+                  console.info('Succeeded in getting private certificate.');
+                  const certInfo: OhosCertInfo = {
+                    uri: this.keyUri,
+                    cert: this.uint8ArrayToString(cmResult.credential.credentialData),
+                    type: certificateManagerDialog.CertificateType.CREDENTIAL_APP
+                  };
+                  client_certs.push(certInfo);
+                  callback(client_certs, client_certs.length);
+                }
+              }
+            });
+          } catch (error) {
+            console.error(`Failed to get private certificate. Code: ${error.code}, message: ${error.message}`);
+          }
+
+        }
+
+      }).catch((err: BusinessError) => {
+        console.error(`Failed to open authorize dialog . Code: ${err.code}, message: ${err.message}`);
+        callback(client_certs, 0);
+        return;
+      });
+    } catch (err) {
+      let error = err as BusinessError;
+      console.error(`Failed to open authorize dialog 2. Code: ${error.code}, message: ${error.message}`);
+      callback(client_certs, 0);
+      return;
+    }
+  }
+
+  @LogMethod
+  async signByHuks(uri: string, inputData: ArrayBuffer, callback: Function) {
+    let handle: number = 0;
+    const input: Uint8Array =  new Uint8Array(inputData);
+    const buffer_return = new ArrayBuffer(0);
+    let activeContext = this.ctxAdapter.getActiveContext();
+    if (!activeContext) {
+      callback(buffer_return);
+      return;
+    }
+
+    let ukeyAuthRequest: certificateManagerDialog.UkeyAuthRequest = { keyUri: uri }
+    try {
+      await certificateManagerDialog.openUkeyAuthDialog(activeContext, ukeyAuthRequest).then(() => {
+        console.info(`Success to open ukey authorization dialog`)
+      }).catch((err: BusinessError) => {
+        console.error(`Failed to open ukey authorization dialog. Code: ${err.code}, message: ${err.message}`);
+      });
+      let signProperties = this.getRsaSignProperties();
+      let options: huks.HuksOptions = {
+        properties: signProperties,
+        inData: input
+      }
+      await huks.initSession(uri, options)
+        .then((data) => {
+          handle = data.handle;
+        }).catch((err: Error) => {
+          console.error(`promise: init sign failed, error: ` + JSON.stringify(err));
+          throw (err as Error);
+        })
+      await huks.finishSession(handle, options)
+        .then((data) => {
+          console.info(`promise: sign success`);
+          callback(data.outData || buffer_return);
+        }).catch((err: Error) => {
+          console.error(`promise: sign failed, error: ` + JSON.stringify(err));
+          throw (err as Error);
+        })
+
+
+    } catch (err) {
+      let error = err as BusinessError;
+      console.error(`Failed to sign. Code: ${error.code}, message: ${error.message}`);
+    }
+  }
 }

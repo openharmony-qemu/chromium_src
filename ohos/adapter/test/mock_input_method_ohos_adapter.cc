@@ -61,45 +61,39 @@ void InputMethodOHOSAdapter::UpdateAttribute(
   instance->UpdateAttribute(inputAttribute);
 }
 
-void InputMethodOHOSAdapter::RegisterInsertTextCallback(
-    InsertTextCallback callback) {
-  MockImeAdapter* instance = MockImeAdapter::GetInstance();
-  instance->RegisterInsertTextCallback(callback);
-}
-
-void InputMethodOHOSAdapter::RegisterDeleteBackwardCallback(
-    DeleteBackCallback callback) {
-  MockImeAdapter* instance = MockImeAdapter::GetInstance();
-  instance->RegisterDeleteBackwardCallback(callback);
-}
-
-void InputMethodOHOSAdapter::RegisterDeleteForwardCallback(
-    DeleteForwardCallback callback) {
-  MockImeAdapter* instance = MockImeAdapter::GetInstance();
-  instance->RegisterDeleteForwardCallback(callback);
-}
-
-void InputMethodOHOSAdapter::RegisterSendEnterKeyEventCallback(
-    SendEnterKeyEventCallback callback) {
-  MockImeAdapter* instance = MockImeAdapter::GetInstance();
-  instance->RegisterSendEnterKeyEventCallback(callback);
-}
-
-void InputMethodOHOSAdapter::RegisterExitFullscreenEventCallback(
-    ExitFullscreenEventCallback callback) {
-  MockImeAdapter* instance = MockImeAdapter::GetInstance();
-  instance->RegisterExitFullscreenEventCallback(callback);
-}
-
-void InputMethodOHOSAdapter::RegisterMoveCursorCallback(
-    MoveCursorCallback callback) {
-  MockImeAdapter* instance = MockImeAdapter::GetInstance();
-  instance->RegisterMoveCursorCallback(callback);
-}
-
 void InputMethodOHOSAdapter::NotifyCursorUpdate(
     const IMFAdapterCursorInfo cursorInfo) {
   MockImeAdapter* instance = MockImeAdapter::GetInstance();
   instance->NotifyCursorUpdate(cursorInfo);
+}
+
+void InputMethodOHOSAdapter::InsertTextCallback(const std::string& text) {
+  MockImeAdapter* instance = MockImeAdapter::GetInstance();
+  instance->InsertTextCallback(text);
+}
+
+void InputMethodOHOSAdapter::DeleteBackCallback(int32_t length) {
+  MockImeAdapter* instance = MockImeAdapter::GetInstance();
+  instance->DeleteBackCallback(length);
+}
+
+void InputMethodOHOSAdapter::DeleteForwardCallback(int32_t length) {
+  MockImeAdapter* instance = MockImeAdapter::GetInstance();
+  instance->DeleteForwardCallback(length);
+}
+
+void InputMethodOHOSAdapter::SendEnterKeyEventCallback() {
+  MockImeAdapter* instance = MockImeAdapter::GetInstance();
+  instance->SendEnterKeyEventCallback();
+}
+
+void InputMethodOHOSAdapter::MoveCursorCallback(const int direction) {
+  MockImeAdapter* instance = MockImeAdapter::GetInstance();
+  instance->MoveCursorCallback(direction);
+}
+
+void InputMethodOHOSAdapter::Register(Delegate* delegate) {
+  MockImeAdapter* instance = MockImeAdapter::GetInstance();
+  instance->Register(delegate);
 }
 }

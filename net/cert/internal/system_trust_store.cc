@@ -28,6 +28,8 @@
 #if BUILDFLAG(USE_NSS_CERTS)
 #include "net/cert/internal/system_trust_store_nss.h"
 #include "net/cert/internal/trust_store_nss.h"
+#elif BUILDFLAG(IS_OHOS)
+#include "net/cert/internal/trust_store_ohos.h"
 #elif BUILDFLAG(IS_MAC)
 #include <Security/Security.h>
 
@@ -224,6 +226,13 @@ CreateSslSystemTrustStoreChromeRootWithUserSlotRestriction(
   return std::make_unique<SystemTrustStoreChrome>(
       std::move(chrome_root),
       std::make_unique<TrustStoreNSS>(std::move(user_slot_restriction)));
+}
+
+#elif BUILDFLAG(IS_OHOS)
+std::unique_ptr<SystemTrustStore> CreateSslSystemTrustStoreChromeRoot(
+    std::unique_ptr<TrustStoreChrome> chrome_root) {
+  return std::make_unique<SystemTrustStoreChrome>(
+      std::move(chrome_root), std::make_unique<TrustStoreOhos>());
 }
 
 #elif BUILDFLAG(IS_MAC)

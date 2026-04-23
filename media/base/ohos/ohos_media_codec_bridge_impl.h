@@ -35,8 +35,14 @@ struct EncodeOutputBuffer {
   OH_AVCodecBufferFlags flag;
   BufferInfo buffer_info;
   OhosBuffer buffer_data;
-  bool is_contain_config_data = false;
+  bool contains_config_data = false;
   EncodeConfigData config_data;
+};
+
+struct EncodeConfigDataCache {
+  uint8_t* config_data_addr = nullptr;
+  uint32_t config_data_size;
+  uint32_t config_info_size;
 };
 
 class CodecBridgeSignal {
@@ -112,12 +118,14 @@ class OHOSMediaCodecBridgeImpl : public OHOSMediaCodecBridge {
   explicit OHOSMediaCodecBridgeImpl(std::string& mime);
   void PopOutQueue();
   void UpdateStatusAndClearCache(bool is_running);
+  void ClearConfigDataCache();
   OH_AVCodec* video_encoder_ = nullptr;
   std::shared_ptr<CodecBridgeSignal> signal_ = nullptr;
   std::shared_ptr<CodecEncodeBridgeCallback> cb_;
   scoped_refptr<base::SequencedTaskRunner> codec_task_runner_ = nullptr;
   std::atomic<bool> is_running_ = false;
   uint8_t* keyframe_addr_ = nullptr;
+  EncodeConfigDataCache config_data_cache_{};
   OHNativeWindow* native_window_ = nullptr;
 };
 

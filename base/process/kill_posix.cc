@@ -17,6 +17,10 @@
 #include "base/threading/platform_thread.h"
 #include "build/build_config.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "ohos/adapter/multiprocess/child_process_manager.h"
+#endif
+
 namespace base {
 
 namespace {
@@ -27,11 +31,19 @@ TerminationStatus GetTerminationStatusImpl(ProcessHandle handle,
   DCHECK(exit_code);
 
   int status = 0;
-  const pid_t result = HANDLE_EINTR(waitpid(handle, &status,
-                                            can_block ? 0 : WNOHANG));
 #if BUILDFLAG(IS_OHOS)
-  LOG(INFO) << "get ermination status impl can_blook:" << can_block
-            << " pid:" << handle << " result:" << result << " status:" << status;
+  const pid_t result =
+      ohos::adapter::multiprocess::ChildProcessManager::GetInstance()
+          .WaitChildPid(handle, &status, can_block);
+  LOG(INFO) << "[ChildProcess] get termination status impl"
+            << ", can_block: " << can_block
+            << ", pid: " << handle << ", result: " << result
+            << ", status: " << status
+            << ", WIFSIGNALED(status): " << WIFSIGNALED(status)
+            << ", WTERMSIG(status): " << WTERMSIG(status);
+#else
+  const pid_t result =
+      HANDLE_EINTR(waitpid(handle, &status, can_block ? 0 : WNOHANG));
 #endif
 
   if (result == -1) {

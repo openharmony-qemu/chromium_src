@@ -78,6 +78,10 @@ class CertVerifierServiceFactoryImpl
 
   void GetPlatformRootStoreInfo(
       GetPlatformRootStoreInfoCallback callback) override;
+
+#if BUILDFLAG(IS_OHOS)
+  void PlatformCertRefresh() override;
+#endif
 #endif
   void UpdateNetworkTime(base::Time system_time,
                          base::TimeTicks system_ticks,

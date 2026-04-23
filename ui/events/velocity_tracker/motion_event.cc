@@ -73,7 +73,7 @@ std::unique_ptr<MotionEvent> MotionEvent::Cancel() const {
 }
 
 #if BUILDFLAG(IS_OHOS)
-int GetDisplayId(size_t pointer_index) {
+int MotionEvent::GetDisplayId(size_t pointer_index) const {
   NOTIMPLEMENTED();
   return 0;
 }

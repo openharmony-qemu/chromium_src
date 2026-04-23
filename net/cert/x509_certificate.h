@@ -242,6 +242,13 @@ class NET_EXPORT X509Certificate
   // To access the CRYPTO_BUFFER's bytes, use `cert_span()` above.
   CRYPTO_BUFFER* cert_buffer() const { return cert_buffer_.get(); }
 
+  void SetCertUri(std::string uri) {
+    str_uri_ = uri;
+  }
+  std::string GetCertUri() {
+    return str_uri_;
+  }
+
   // Returns the associated intermediate certificates that were specified
   // during creation of this object, if any. The intermediates are not
   // guaranteed to be valid DER or to encode valid Certificate objects.
@@ -337,6 +344,8 @@ class NET_EXPORT X509Certificate
   // Untrusted intermediate certificates associated with this certificate
   // that may be needed for chain building.
   const std::vector<bssl::UniquePtr<CRYPTO_BUFFER>> intermediate_ca_certs_;
+
+  std::string str_uri_;
 };
 
 }  // namespace net

@@ -75,6 +75,11 @@
 #include <grp.h>
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "base/command_line.h"
+#include "ohos/adapter/context_path/context_path_adapter.h"
+#endif
+
 // We need to do this on AIX due to some inconsistencies in how AIX
 // handles XOPEN_SOURCE and ALL_SOURCE.
 #if BUILDFLAG(IS_AIX)
@@ -766,11 +771,36 @@ bool ExecutableExistsInPath(Environment* env,
 
 #endif  // !BUILDFLAG(IS_FUCHSIA)
 
+#if BUILDFLAG(IS_OHOS)
+bool IsBrowserProcess(const base::CommandLine& command_line) {
+  return command_line.GetSwitchValueASCII(switches::kOhosProcessType).empty();
+}
+#endif
+
 #if !BUILDFLAG(IS_APPLE)
 // This is implemented in file_util_apple.mm for Mac.
 bool GetTempDir(FilePath* path) {
 #if BUILDFLAG(IS_OHOS)
-  return PathService::Get(DIR_TEMP, path);
+  const base::CommandLine* command_line =
+      base::CommandLine::ForCurrentProcess();
+  if (command_line == nullptr) {
+    LOG(ERROR) << __func__ << ", can't get command line";
+    *path = FilePath(::ohos::adapter::ContextPathAdapter::kDefaultTempDir);
+    return true;
+  }
+
+  if (IsBrowserProcess(*command_line)) {
+    *path = FilePath(::ohos::adapter::ContextPathAdapter::GetTempDir());
+  } else if (command_line->HasSwitch(switches::kOhosTempDir)) {
+    *path = command_line->GetSwitchValuePath(switches::kOhosTempDir);
+  }
+
+  if (!path->empty()) {
+    return true;
+  }
+
+  *path = FilePath(::ohos::adapter::ContextPathAdapter::kDefaultTempDir);
+  return true;
 #else
   const char* tmp = getenv("TMPDIR");
   if (tmp) {

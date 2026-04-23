@@ -77,7 +77,7 @@ void ClearOutputCache(std::queue<EncodeOutputBuffer>& q) {
 }
 // static
 std::unique_ptr<OHOSMediaCodecBridge> OHOSMediaCodecBridgeImpl::CreateVideoEncoder(std::string& mime) {
-  LOG(INFO) << __func__ << " [VideoEncoder]";
+  LOG(INFO) << __func__ << " [VideoEncoder] mime: "<< mime;
   return absl::WrapUnique(new OHOSMediaCodecBridgeImpl(mime));
 }
 
@@ -404,7 +404,6 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::FillSurfaceBuffer(
 }
 
 CodecCodeAdapter OHOSMediaCodecBridgeImpl::RequestKeyFrameSoon() {
-  LOG(INFO) << __func__ << " [VideoEncoder] RequestKeyFrameSoon.";
   if (video_encoder_ == nullptr) {
     LOG(ERROR) << __func__ << " [VideoEncoder] codec is NULL.";
     return CodecCodeAdapter::ENCODER_ERROR;
@@ -412,6 +411,8 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::RequestKeyFrameSoon() {
   OH_AVFormat* format = OH_AVFormat_Create();
   OH_AVFormat_SetIntValue(format, OH_MD_KEY_REQUEST_I_FRAME, true);
   if (OH_VideoEncoder_SetParameter(video_encoder_, format) != 0) {
+    LOG(INFO) << __func__
+              << " [VideoEncoder] OH_VideoEncoder_SetParameter failed.";
     return CodecCodeAdapter::ENCODER_ERROR;
   }
   return CodecCodeAdapter::ENCODER_OK;
@@ -442,35 +443,91 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::DequeueOutputBuffer(
   buffer = ouput_buffer.buffer_data;
   bool is_key_frame =
       (flag == OH_AVCodecBufferFlags::AVCODEC_BUFFER_FLAGS_SYNC_FRAME);
-  if (is_key_frame && ouput_buffer.is_contain_config_data) {
-    EncodeConfigData config_data = ouput_buffer.config_data;
+  if (is_key_frame) {
+    if (ouput_buffer.contains_config_data) {
+      LOG(INFO) << __func__ << " [VideoEncoder] update config data cache for keyframe";
+      ClearConfigDataCache();
+      EncodeConfigData config_data = ouput_buffer.config_data;
+      config_data_cache_.config_info_size = config_data.buffer_info.size;
+      config_data_cache_.config_data_size = config_data.buffer_data.buffer_size;
+      config_data_cache_.config_data_addr =
+          new uint8_t[config_data_cache_.config_data_size];
+      if (config_data_cache_.config_data_addr == nullptr) {
+        LOG(ERROR) << __func__ << " [VideoEncoder] new config data failed";
+        ReleaseOutputBuffer(config_data.index, false);
+        return CodecCodeAdapter::ENCODER_ERROR;
+      }
+      if (config_data_cache_.config_data_size <
+          config_data.buffer_data.buffer_size) {
+        LOG(ERROR) << __func__
+                   << " [VideoEncoder] config data memcpy "
+                      "failed,config_data_cache_.config_data_size: "
+                   << &config_data_cache_.config_data_size
+                   << " config_data.buffer_data.buffer_size: "
+                   << config_data.buffer_data.buffer_size;
+        ReleaseOutputBuffer(config_data.index, false);
+        return CodecCodeAdapter::ENCODER_ERROR;
+      } else {
+        memcpy(config_data_cache_.config_data_addr,
+               config_data.buffer_data.addr,
+               config_data.buffer_data.buffer_size);
+      }
+      ReleaseOutputBuffer(config_data.index, false);
+    }
+    uint32_t config_data_size = config_data_cache_.config_data_size;
+    uint32_t config_info_size = config_data_cache_.config_info_size;
+    uint8_t* config_data_addr = config_data_cache_.config_data_addr;
+    if ((config_data_addr == nullptr) || (config_data_size == 0)) {
+      LOG(ERROR)
+          << __func__
+          << " [VideoEncoder] config data is invalid when handle key frame";
+      PopOutQueue();
+      return CodecCodeAdapter::ENCODER_ERROR;
+    }
     BufferInfo merge_frame_info;
     OhosBuffer merge_frame_data;
     merge_frame_info.presentation_time_us = info.presentation_time_us;
-    merge_frame_info.size = info.size + config_data.buffer_info.size;
-    merge_frame_data.buffer_size =
-        config_data.buffer_data.buffer_size + buffer.buffer_size;
+    merge_frame_info.size = info.size + config_info_size;
+    merge_frame_data.buffer_size = config_data_size + buffer.buffer_size;
     merge_frame_info.offset = 0;
     keyframe_addr_ = new uint8_t[merge_frame_data.buffer_size];
-    if (keyframe_addr_ == nullptr) {
-      LOG(ERROR) << __func__ << " [VideoEncoder] malloc failed";
+    if (!keyframe_addr_) {
+      LOG(ERROR) << __func__ << " [VideoEncoder]  new key frame failed";
+      ClearConfigDataCache();
+      PopOutQueue();
       return CodecCodeAdapter::ENCODER_ERROR;
     }
-    // size of keyframe_addr_ is defined as config_data.buffer_data.buffer_size
-    // + buffer.buffer_size, so two memcpy should no have problem
-    memcpy(keyframe_addr_, config_data.buffer_data.addr,
-           config_data.buffer_data.buffer_size);
-
-    memcpy(keyframe_addr_ + config_data.buffer_data.buffer_size, buffer.addr,
-           buffer.buffer_size);
+    if (merge_frame_data.buffer_size < config_data_size) {
+      LOG(ERROR) << __func__
+                 << " [VideoEncoder] keyframe_addr_ memcpy failed, "
+                    "merge_frame_data.buffer_size: "
+                 << merge_frame_data.buffer_size
+                 << " config_data_size: " << config_data_size;
+      ClearKeyFrameCache();
+      ClearConfigDataCache();
+      PopOutQueue();
+      return CodecCodeAdapter::ENCODER_ERROR;
+    } else {
+      memcpy(keyframe_addr_, config_data_addr, config_data_size);
+    }
+    memcpy(keyframe_addr_ + config_data_size, buffer.addr, buffer.buffer_size);
     merge_frame_data.addr = keyframe_addr_;
     info = merge_frame_info;
     buffer = merge_frame_data;
-    ReleaseOutputBuffer(config_data.index, false);
   }
 
   PopOutQueue();
   return CodecCodeAdapter::ENCODER_OK;
+}
+
+void OHOSMediaCodecBridgeImpl::ClearConfigDataCache() {
+  if (config_data_cache_.config_data_addr) {
+    LOG(INFO) << __func__ << " [VideoEncoder] clear config first";
+    delete[] config_data_cache_.config_data_addr;
+    config_data_cache_.config_data_addr = nullptr;
+  }
+  config_data_cache_.config_data_size = 0;
+  config_data_cache_.config_info_size = 0;
 }
 
 CodecCodeAdapter OHOSMediaCodecBridgeImpl::ReleaseOutputBuffer(uint32_t index,
@@ -531,7 +588,7 @@ void CodecEncodeBridgeCallback::ClearConfigCache() {
 
 void CodecEncodeBridgeCallback::InitEncodeOuputBuffer(
     EncodeOutputBuffer& output_buffer) {
-  output_buffer.is_contain_config_data = false;
+  output_buffer.contains_config_data = false;
   output_buffer.config_data.buffer_info.presentation_time_us = 0;
   output_buffer.config_data.buffer_info.size = 0;
   output_buffer.config_data.buffer_info.offset = 0;
@@ -578,7 +635,7 @@ void CodecEncodeBridgeCallback::OnNeedOutputData(uint32_t index,
   bool is_key_frame =
       (flag == OH_AVCodecBufferFlags::AVCODEC_BUFFER_FLAGS_SYNC_FRAME);
   if (is_key_frame && (config_data_.buffer_data.buffer_size > 0)) {
-    output_buffer.is_contain_config_data = true;
+    output_buffer.contains_config_data = true;
     output_buffer.config_data = config_data_;
   }
 

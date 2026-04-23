@@ -33,6 +33,7 @@ if (is_ohos) {
     sources = [
       "native_initializer.cc",
       "native_initializer.h",
+      "common/callback_shared_wrapper.h",
       "common/native_api/oh_window.h",
       "common/native_api/ui_input_event.h",
       "common/trace.cc",

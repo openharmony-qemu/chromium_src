@@ -48,7 +48,7 @@ group("deps") {
         "$clang_base_path/bin/llvm-symbolizer${exe}",
       ]
     }
-    if (is_asan || is_lsan || is_msan || is_tsan || is_ubsan_any) {
+    if (is_asan || is_lsan || is_msan || is_tsan || is_ubsan_any || (is_ohos && is_hwasan)) {
       public_configs += [ ":sanitizer_options_link_helper" ]
       deps += [ ":options_sources" ]
     }
@@ -234,8 +234,10 @@ config("default_sanitizer_ldflags") {
       ldflags += [ "-fsanitize=vptr" ]
     }
     foreach(sanitizer, sanitizers) {
-      ldflags += [ "-fsanitize=$sanitizer" ]
-      rustflags += [ "-Zsanitizer=$sanitizer" ]
+      if (!(is_ohos && is_hwasan)) {
+        ldflags += [ "-fsanitize=$sanitizer" ]
+        rustflags += [ "-Zsanitizer=$sanitizer" ]
+      }
     }
 
     if (use_sanitizer_coverage) {
@@ -258,21 +260,29 @@ config("default_sanitizer_ldflags") {
       }
     }
 
-    if (is_cfi && current_toolchain == default_toolchain) {
-      ldflags += [ "-fsanitize=cfi-vcall" ]
-      if (use_cfi_cast) {
-        ldflags += [
-          "-fsanitize=cfi-derived-cast",
-          "-fsanitize=cfi-unrelated-cast",
-        ]
-      }
-      if (use_cfi_icall) {
-        ldflags += [ "-fsanitize=cfi-icall" ]
-      }
-      if (use_cfi_diag) {
-        ldflags += [ "-fno-sanitize-trap=cfi" ]
-        if (use_cfi_recover) {
-          ldflags += [ "-fsanitize-recover=cfi" ]
+    if (is_ohos && is_hwasan) {
+      ldflags += [
+        "-fno-lto",
+        "-fno-emulated-tls",
+        "-fno-sanitize=cfi-icall",
+      ]
+    } else {
+      if (is_cfi && current_toolchain == default_toolchain) {
+        ldflags += [ "-fsanitize=cfi-vcall" ]
+        if (use_cfi_cast) {
+          ldflags += [
+            "-fsanitize=cfi-derived-cast",
+            "-fsanitize=cfi-unrelated-cast",
+          ]
+        }
+        if (use_cfi_icall) {
+          ldflags += [ "-fsanitize=cfi-icall" ]
+        }
+        if (use_cfi_diag) {
+          ldflags += [ "-fno-sanitize-trap=cfi" ]
+          if (use_cfi_recover) {
+            ldflags += [ "-fsanitize-recover=cfi" ]
+          }
         }
       }
     }
@@ -363,62 +373,74 @@ config("asan_flags") {
 config("cfi_flags") {
   cflags = []
   rustflags = []
-  if (is_cfi && current_toolchain == default_toolchain) {
-    if (!defined(cfi_ignorelist_path)) {
-      cfi_ignorelist_path =
-          rebase_path("//tools/cfi/ignores.txt", root_build_dir)
-    }
+  if (is_ohos && is_hwasan) {
+    _cfi_blocklist_path = "//tools/cfi/ignores.txt"
     cflags += [
-      "-fsanitize=cfi-vcall",
-      "-fsanitize-ignorelist=$cfi_ignorelist_path",
+      "-fno-lto",
+      "-fno-emulated-tls",
+      "-fvisibility=hidden",
+      "-fno-sanitize=cfi-icall",
+      "-fsanitize-blacklist=" +
+          rebase_path(_cfi_blocklist_path, root_build_dir),
     ]
-
-    if (toolchain_supports_rust_thin_lto) {
-      # sanitize=cfi implies -fsplit-lto-unit, and Rust needs to match
-      # behaviour.  Rust needs to know the linker will be doing LTO in this case
-      # or it rejects the Zsplit-lto-unit flag.
-      # TODO(crbug.com/40266913): Add -Zsanitize=cfi instead.
-      rustflags += [
-        "-Zsplit-lto-unit",
-        "-Clinker-plugin-lto=yes",
-      ]
-    } else {
-      # Don't include bitcode if it won't be used.
-      rustflags += [ "-Cembed-bitcode=no" ]
-    }
-
-    if (use_cfi_cast) {
+  } else {
+    if (is_cfi && current_toolchain == default_toolchain) {
+      if (!defined(cfi_ignorelist_path)) {
+        cfi_ignorelist_path =
+            rebase_path("//tools/cfi/ignores.txt", root_build_dir)
+      }
       cflags += [
-        "-fsanitize=cfi-derived-cast",
-        "-fsanitize=cfi-unrelated-cast",
+        "-fsanitize=cfi-vcall",
+        "-fsanitize-ignorelist=$cfi_ignorelist_path",
       ]
-    }
 
-    if (use_cfi_icall) {
-      cflags += [ "-fsanitize=cfi-icall" ]
-      # TODO(crbug.com/40266913): Add cflags += [
-      # "-fsanitize-cfi-icall-experimental-normalize-integers" ]
-      # TODO(crbug.com/40266913): Add rustflags += [
-      # "-Zsanitizer-cfi-normalize-integers" ].
-    }
-
-    if (use_cfi_diag) {
-      cflags += [ "-fno-sanitize-trap=cfi" ]
-      if (is_win) {
-        cflags += [
-          "/Oy-",
-          "/Ob0",
+      if (toolchain_supports_rust_thin_lto) {
+        # sanitize=cfi implies -fsplit-lto-unit, and Rust needs to match
+        # behaviour.  Rust needs to know the linker will be doing LTO in this case
+        # or it rejects the Zsplit-lto-unit flag.
+        # TODO(crbug.com/40266913): Add -Zsanitize=cfi instead.
+        rustflags += [
+          "-Zsplit-lto-unit",
+          "-Clinker-plugin-lto=yes",
         ]
       } else {
+        # Don't include bitcode if it won't be used.
+        rustflags += [ "-Cembed-bitcode=no" ]
+      }
+
+      if (use_cfi_cast) {
         cflags += [
-          "-fno-inline-functions",
-          "-fno-inline",
-          "-fno-omit-frame-pointer",
-          "-O1",
+          "-fsanitize=cfi-derived-cast",
+          "-fsanitize=cfi-unrelated-cast",
         ]
       }
-      if (use_cfi_recover) {
-        cflags += [ "-fsanitize-recover=cfi" ]
+
+      if (use_cfi_icall) {
+        cflags += [ "-fsanitize=cfi-icall" ]
+        # TODO(crbug.com/40266913): Add cflags += [
+        # "-fsanitize-cfi-icall-experimental-normalize-integers" ]
+        # TODO(crbug.com/40266913): Add rustflags += [
+        # "-Zsanitizer-cfi-normalize-integers" ].
+      }
+
+      if (use_cfi_diag) {
+        cflags += [ "-fno-sanitize-trap=cfi" ]
+        if (is_win) {
+          cflags += [
+            "/Oy-",
+            "/Ob0",
+          ]
+        } else {
+          cflags += [
+            "-fno-inline-functions",
+            "-fno-inline",
+            "-fno-omit-frame-pointer",
+            "-O1",
+          ]
+        }
+        if (use_cfi_recover) {
+          cflags += [ "-fsanitize-recover=cfi" ]
+        }
       }
     }
   }
@@ -481,6 +503,21 @@ config("hwasan_flags") {
   if (is_hwasan) {
     asmflags = [ "-fsanitize=hwaddress" ]
     cflags = [ "-fsanitize=hwaddress" ]
+    if (is_ohos) {
+      cflags += [
+        "-fno-omit-frame-pointer",
+        "-fno-lto",
+        "-fno-whole-program-vtables",
+        "-mllvm",
+        "-hwasan-globals=0",
+        "-fno-sanitize=cfi-icall",
+        "-fno-emulated-tls",
+        "-ftls-model=local-dynamic",
+        "-shared-libasan",
+        "-Wno-unused-command-line-argument"
+      ]
+      ldflags = [ "-l:libc++_static.a" ]
+    }
   }
 }
 

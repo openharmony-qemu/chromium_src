@@ -1,31 +1,6 @@
-/*
- * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used
- *    to endorse or promote products derived from this software without specific prior written
- *    permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "net/ssl/client_cert_store_ohos.h"
 
@@ -59,6 +34,9 @@
 using namespace ohos::adapter;
 
 namespace net {
+
+// static
+bool ClientCertStoreOHOS::is_huks_ = false;
 
 namespace {
 
@@ -196,6 +174,46 @@ std::vector<bssl::UniquePtr<X509>> FindSSLCertsOHOS(bool only_client) {
   return certs;
 }
 
+std::vector<bssl::UniquePtr<X509>> GetSSLCertsOHOS(bool only_client) {
+  std::vector<bssl::UniquePtr<X509>> certs;
+
+  CertManagerAdapter::CertInfoList ohos_cert_info_list =
+      CertManagerAdapter::GetInstance().EnumClientCerts();
+  for (auto& ohos_cert : ohos_cert_info_list) {
+    std::string pem_cert = ohos_cert.cert;
+    // pem cert file
+    bssl::UniquePtr<BIO> cert_bio(
+        BIO_new_mem_buf(pem_cert.c_str(), pem_cert.size()));
+    if (!cert_bio) {
+      return {};
+    }
+    X509* cert = nullptr;
+    while (
+        (cert = PEM_read_bio_X509(cert_bio.get(), nullptr, nullptr, nullptr))) {
+      bssl::UniquePtr<X509> bssl_cert(cert);
+      char* uri_cert = (char*)malloc(ohos_cert.uri.size() + 1);
+      if (!uri_cert) {
+        return {};
+      }
+      memset(uri_cert, 0x00, ohos_cert.uri.size() + 1);
+      memcpy(uri_cert, ohos_cert.uri.data(), ohos_cert.uri.size());
+
+      X509_set_ex_data(bssl_cert.get(), 0, uri_cert);
+
+      if (ohos_cert.type == ohos::adapter::CertType::USB_CERT) {
+        X509_set_ex_data(bssl_cert.get(), 1, uri_cert);
+      }
+      if (!only_client) {
+        certs.push_back(std::move(bssl_cert));
+      } else if (X509_check_ca(cert) == 0 &&
+                 X509_check_purpose(cert, X509_PURPOSE_SSL_CLIENT, 0) == 1) {
+        certs.push_back(std::move(bssl_cert));
+      }
+    }
+  }
+  return certs;
+}
+
 ClientCertStoreOHOS::CertificateStore GetSSLCertStoreOHOS(
     const std::vector<std::string>& cert_files) {
   ClientCertStoreOHOS::CertificateStore cert_store;
@@ -231,6 +249,42 @@ void ClientCertStoreOHOS::GetClientCerts(
                      base::Unretained(this), std::move(request)),
       base::BindOnce(&ClientCertStoreOHOS::OnClientCertsResponse,
                      weak_factory_.GetWeakPtr(), std::move(callback)));
+}
+
+void ClientCertStoreOHOS::GetSoftClientCerts(
+                          ClientCertListCallback callback) {
+  ClientCertIdentityList identities;
+  auto found_certs = FindSSLCertsOHOS(true);
+
+  for (auto itr = found_certs.begin(); itr != found_certs.end(); ++itr) {
+    uint8_t* der_buf = nullptr;
+    int size = i2d_X509(itr->get(), &der_buf);
+    if (!der_buf || size <= 0) {
+      LOG(ERROR) << "call i2d_X509 failed.";
+      continue;
+    }
+    bssl::UniquePtr<uint8_t> free_der_buf(der_buf);
+    std::vector<uint8_t> cert_buf(der_buf, der_buf + size);
+
+    // Allow UTF-8 inside PrintableStrings in client certificates. See
+    // crbug.com/770323.
+    X509Certificate::UnsafeCreateOptions options;
+    options.printable_string_is_utf8 = true;
+    auto cert = X509Certificate::CreateFromBytesUnsafeOptions(
+        base::make_span(cert_buf.data(), cert_buf.size()), options);
+    if (!cert) {
+      LOG(ERROR)
+          << "x509_util::CreateX509CertificateFromCERTCertificate failed";
+      continue;
+    }
+    char* cert_uri = (char*)X509_get_ex_data(itr->get(), 0);
+    if (cert_uri ) {
+      cert->SetCertUri(cert_uri);
+    }
+    identities.push_back(std::make_unique<ClientCertIdentityOHOS>(
+        cert, std::move(*itr)));
+  }
+  std::move(callback).Run(std::move(identities));
 }
 
 void ClientCertStoreOHOS::OnClientCertsResponse(
@@ -316,6 +370,8 @@ void ClientCertStoreOHOS::GetPlatformCertsOnWorkerThread(
     return;
   }
   auto found_certs = FindSSLCertsOHOS(true);
+  if (is_huks_)
+    found_certs = GetSSLCertsOHOS(false);
   if (found_certs.empty()) {
     LOG(ERROR) << "No client certs found.";
     return;
@@ -342,8 +398,13 @@ void ClientCertStoreOHOS::GetPlatformCertsOnWorkerThread(
           << "x509_util::CreateX509CertificateFromCERTCertificate failed";
       continue;
     }
-    identities->push_back(
-        std::make_unique<ClientCertIdentityOHOS>(cert, std::move(*itr)));
+    char* cert_uri = (char*)X509_get_ex_data(itr->get(), 0);
+    char* is_ukey = (char*)X509_get_ex_data(itr->get(), 1);
+    if (cert_uri && !is_ukey) {
+      cert->SetCertUri(cert_uri);
+    }
+    identities->push_back(std::make_unique<ClientCertIdentityOHOS>(
+        cert, std::move(*itr)));
   }
 }
 

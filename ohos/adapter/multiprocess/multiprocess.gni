@@ -25,9 +25,17 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import("//build/config/ohos/config.gni")
+
 declare_args() {
-  # The enable_isolate_process is set to false because the new interface has not
-  # been released.
-  # set to true to debug with the trunk sdk 5.0.0.41
-  enable_isolate_process = true
+  # Enable creating a native child process by calling NDK.
+  # Disable this will use ArkTS API to create child processes.
+  enable_native_child_process = true
+
+  # Enable isolated mode when create a native child process.
+  # An isolated child process will run in a seperate Security Context(SElinux
+  # label).
+  # ATTENTION: Currently Crashpad process can not collect data from processes
+  # running in isolated mode.
+  enable_isolated_child_process = isolated_level == 1
 }

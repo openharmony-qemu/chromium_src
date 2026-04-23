@@ -7,25 +7,28 @@
 
 #include "base/feature_list.h"
 #include "base/logging.h"
+#include "base/ohos/task_scheduler/task_runner_ohos.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/task/task_runner.h"
 #include "base/timer/timer.h"
 #include "content/public/browser/media_session.h"
 #include "media/audio/ohos/ohos_audio_manager.h"
+#include "media/audio/ohos/ohos_audio_output_callback_bridge.h"
 #include "ohaudio/native_audiorenderer.h"
 #include "ohaudio/native_audiostreambuilder.h"
-
+#include "ohos/adapter/common/callback_shared_wrapper.h"
 namespace media {
 
 class OHOSAudioManager;
+class OhosAudioOutputCallbackBridge;
 
-class OHOSAudioOutputStream : public AudioOutputStream {
+class OhosAudioOutputStream : public AudioOutputStream {
  public:
-  OHOSAudioOutputStream(const OHOSAudioOutputStream&) = delete;
-  OHOSAudioOutputStream& operator=(const OHOSAudioOutputStream&) = delete;
+  OhosAudioOutputStream(const OhosAudioOutputStream&) = delete;
+  OhosAudioOutputStream& operator=(const OhosAudioOutputStream&) = delete;
 
   // Caller must ensure that manager outlives the stream.
-  OHOSAudioOutputStream(OHOSAudioManager* manager,
+  OhosAudioOutputStream(OHOSAudioManager* manager,
                         const AudioParameters& parameters);
 
   // AudioOutputStream interface.
@@ -55,8 +58,27 @@ class OHOSAudioOutputStream : public AudioOutputStream {
 
   void ScheduleIdlePumpSamples();
 
+  static int32_t AudioRendererOnWriteData(OH_AudioRenderer* renderer,
+                                          void* userData,
+                                          void* buffer,
+                                          int32_t length);
+
+  static int32_t AudioRendererOnError(OH_AudioRenderer* renderer,
+                                      void* userData,
+                                      OH_AudioStream_Result error);
+
+  static int32_t AudioRendererOnInterruptEvent(OH_AudioRenderer* renderer,
+                                               void* userData,
+                                               OH_AudioInterrupt_ForceType type,
+                                               OH_AudioInterrupt_Hint hint);
+
+  static void AudioRendererOutputDeviceChangeCallback(
+      OH_AudioRenderer* renderer,
+      void* userData,
+      OH_AudioStream_DeviceChangeReason reason);
+
  private:
-  ~OHOSAudioOutputStream() override;
+  ~OhosAudioOutputStream() override;
 
   base::TimeDelta GetDelay(base::TimeTicks delay_timestamp);
 
@@ -113,8 +135,6 @@ class OHOSAudioOutputStream : public AudioOutputStream {
 
   bool is_suspended_ = false;
 
-  base::Lock stream_lock_;
-
   base::OneShotTimer timer_;
 
   scoped_refptr<base::SingleThreadTaskRunner> main_task_runner_;
@@ -127,7 +147,15 @@ class OHOSAudioOutputStream : public AudioOutputStream {
   // ideally no more than once every 200ms.
   base::TimeDelta interval_ = base::Milliseconds(200);
 
-  base::WeakPtrFactory<OHOSAudioOutputStream> weak_factory_{this};
+  scoped_refptr<base::SingleThreadTaskRunner> current_task_runner_;
+
+  size_t callback_index_ = 0;
+
+  static ohos::adapter::common::CallbackSharedWrapper<
+      OhosAudioOutputCallbackBridge>
+      callback_wrapper_;
+
+  base::WeakPtrFactory<OhosAudioOutputStream> weak_factory_{this};
 };
 
 }  // namespace media

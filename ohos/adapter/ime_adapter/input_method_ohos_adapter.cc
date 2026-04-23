@@ -94,12 +94,6 @@ void InputMethodOHOSAdapter::NotifyCursorUpdate(
   }
 }
 
-void InputMethodOHOSAdapter::ExitFullscreenEvent() {
-  if (delegate_ != nullptr) {
-    delegate_->ExitFullscreenEvent();
-  }
-}
-
 void InputMethodOHOSAdapter::InsertTextCallback(const std::string& text) {
   if (delegate_ != nullptr) {
     delegate_->InsertText(text);

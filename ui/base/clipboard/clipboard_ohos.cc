@@ -81,7 +81,16 @@ namespace {
 constexpr base::TimeDelta kClipboardHangWatchTime = base::Seconds(30);
 constexpr int kMaxUriDecodeLen = 2048;
 const char* kImageBmp = "image/bmp";
-const std::string K_PASTEBOARD_LOG_TAG = "[OhosPasteboard] ";
+const std::string kPasteboardLogTag = "[OhosPasteboard] ";
+
+const std::map<ClipboardInternalFormat, std::vector<std::string>> kTypeMapping = {
+    { ClipboardInternalFormat::kHtml, { "text/html" } },
+    { ClipboardInternalFormat::kText, { "text/plain" } },
+    { ClipboardInternalFormat::kBookmark, { "chromium/x-bookmark-entries" } },
+    { ClipboardInternalFormat::kPng, { "pixelMap", "image/bmp" } },
+    { ClipboardInternalFormat::kFilenames, { "text/uri" } },
+    { ClipboardInternalFormat::kRtf, { "text/rtf" } }
+};
 
 using PasteboardGetChangeCountFunc = uint32_t(OH_Pasteboard*);
 
@@ -124,13 +133,13 @@ class ClipboardOHOSInternal {
   ClipboardOHOSInternal() : pasteboard_lib_("pasteboard") {
     pasteboard_ = OH_Pasteboard_Create();
     if (!pasteboard_lib_.IsLoaded()) {
-      LOG(ERROR) << K_PASTEBOARD_LOG_TAG << "pasteboard lib load failed";
+      LOG(ERROR) << kPasteboardLogTag << "pasteboard lib load failed";
       return;
     }
     bool load_success = pasteboard_lib_.LoadFunction(&pasteboard_get_change_count_func_,
                                                      "OH_Pasteboard_GetChangeCount");
     if (!load_success) {
-      LOG(ERROR) << K_PASTEBOARD_LOG_TAG << "load OH_Pasteboard_GetChangeCount failed";
+      LOG(ERROR) << kPasteboardLogTag << "load OH_Pasteboard_GetChangeCount failed";
     }
   }
 
@@ -176,7 +185,7 @@ class ClipboardOHOSInternal {
   __attribute__((no_sanitize("cfi", "cfi-icall")))
   const ClipboardSequenceNumberToken& sequence_number() const {
     if (pasteboard_get_change_count_func_ == nullptr) {
-      LOG(WARNING) << K_PASTEBOARD_LOG_TAG << "can not get OH_Pasteboard_GetChangeCount.";
+      LOG(WARNING) << kPasteboardLogTag << "can not get OH_Pasteboard_GetChangeCount.";
       return sequence_number_;
     }
     uint32_t sequence_number = pasteboard_get_change_count_func_(pasteboard_);
@@ -193,11 +202,17 @@ class ClipboardOHOSInternal {
   // Returns true if the data on top of the clipboard stack has format |format|
   // or another format that can be converted to |format|.
   bool IsFormatAvailable(ClipboardInternalFormat format) {
-    if (IsReadAllowed(nullptr, format)) {
-      return HasFormatInMisc(format);
-    } else {
+    LOG(INFO) << kPasteboardLogTag << __FUNCTION__ << " format:" << static_cast<int>(format);
+    auto iter = kTypeMapping.find(format);
+    if (iter == kTypeMapping.end()) {
       return false;
     }
+    for (std::string mime_type: iter->second) {
+      if (OH_Pasteboard_HasType(pasteboard_, mime_type.c_str())) {
+        return true;
+      }
+    }
+    return false;
   }
 
   SkAlphaType AlphaTypeToSkAlphaType(
@@ -289,7 +304,7 @@ class ClipboardOHOSInternal {
     }
     int status = -1;
     if (!OH_Pasteboard_HasData(pasteboard_)) {
-        LOG(ERROR) << K_PASTEBOARD_LOG_TAG
+        LOG(ERROR) << kPasteboardLogTag
         << " ReadTextFromPasteBoard OH_Pasteboard_HasData fail.";
         return;
     }
@@ -299,7 +314,7 @@ class ClipboardOHOSInternal {
     
     OH_UdmfData* udmf_data = OH_Pasteboard_GetData(pasteboard_, &status);
     if (status != ERR_OK) {
-        LOG(ERROR) << K_PASTEBOARD_LOG_TAG
+        LOG(ERROR) << kPasteboardLogTag
         << " ReadTextFromPasteBoard OH_Pasteboard_GetData fail,error code:"
         << status;
         return;
@@ -356,13 +371,13 @@ class ClipboardOHOSInternal {
     }
     int status = -1;
     if (!OH_Pasteboard_HasData(pasteboard_)) {
-        LOG(ERROR) << K_PASTEBOARD_LOG_TAG
+        LOG(ERROR) << kPasteboardLogTag
         << " ReadHtmlFromPasteBoard OH_Pasteboard_HasData fail.";
         return;
     }
     OH_UdmfData* udmf_data = OH_Pasteboard_GetData(pasteboard_, &status);
     if (status != ERR_OK) {
-        LOG(ERROR) << K_PASTEBOARD_LOG_TAG
+        LOG(ERROR) << kPasteboardLogTag
         << " ReadHtmlFromPasteBoard OH_Pasteboard_GetData fail,error code:"
         << status;
         return;
@@ -451,13 +466,13 @@ class ClipboardOHOSInternal {
     }
     int status = -1;
     if (!OH_Pasteboard_HasData(pasteboard_)) {
-        LOG(ERROR) << K_PASTEBOARD_LOG_TAG
+        LOG(ERROR) << kPasteboardLogTag
         << " ReadFilenames OH_Pasteboard_HasData fail.";
       return;
     }
     OH_UdmfData* udmf_data = OH_Pasteboard_GetData(pasteboard_, &status);
     if (status != ERR_OK) {
-        LOG(ERROR) << K_PASTEBOARD_LOG_TAG
+        LOG(ERROR) << kPasteboardLogTag
          << " ReadFilenames OH_Pasteboard_GetData fail,error code:"
          << status;
       return;
@@ -644,25 +659,28 @@ void PrepareImgBufferForRead(OH_Pixelmap_ImageInfo*& image_info,
     LOG(ERROR) << "[Pasteboard]installPixels failed";
   } else {
     buff_data = clipboard_util::EncodeBitmapToPng(img);
+    LOG(INFO) << kPasteboardLogTag << __FUNCTION__
+              << " PrepareImgBufferForRead buff_data size:"
+              << buff_data.size();
   }
 }
 
   // Reads image from the ClipboardData.
   void ReadPng(Clipboard::ReadPngCallback callback) {
-    if (!HasFormatInMisc(ClipboardInternalFormat::kPng)) {
+    if (!IsFormatAvailable(ClipboardInternalFormat::kPng)) {
       LOG(ERROR) << "[Pasteboard]ReadPng no bitMap format in pasteboard";
       std::move(callback).Run(std::vector<uint8_t>());
       return;
     }
     int status = -1;
     if (!OH_Pasteboard_HasData(pasteboard_)) {
-        LOG(ERROR) << K_PASTEBOARD_LOG_TAG
+        LOG(ERROR) << kPasteboardLogTag
         << " ReadPng OH_Pasteboard_HasData fail.";
         return;
     }
     OH_UdmfData* udmf_data = OH_Pasteboard_GetData(pasteboard_, &status);
     if (status != ERR_OK) {
-        LOG(ERROR) << K_PASTEBOARD_LOG_TAG
+        LOG(ERROR) << kPasteboardLogTag
         << " ReadPng OH_Pasteboard_GetData fail,error code:"
         << status;
         return;
@@ -700,13 +718,15 @@ void PrepareImgBufferForRead(OH_Pixelmap_ImageInfo*& image_info,
   int GetPixelMapBuffData(OH_UdmfRecord* udmf_record, std::vector<uint8_t>& buff_data) {
     OH_UdsPixelMap* uds_pixel_map = OH_UdsPixelMap_Create();
     if (uds_pixel_map == nullptr) {
-      LOG(ERROR) << "[Pasteboard]ReadPng OH_UdsPixelMap_Create fail, "
+      LOG(ERROR) << kPasteboardLogTag << __FUNCTION__
+                 <<" OH_UdsPixelMap_Create fail, "
                     "uds_pixel_map is null";
       return ERR_INNER_ERROR;
     }
     int res = OH_UdmfRecord_GetPixelMap(udmf_record, uds_pixel_map);
     if (res != UDMF_E_OK) {
-      LOG(ERROR) << "[Pasteboard]ReadPng OH_UdmfRecord_GetPixelMap "
+      LOG(ERROR) << kPasteboardLogTag << __FUNCTION__
+                 << " OH_UdmfRecord_GetPixelMap "
                     "fail,error code:"
                   << res;
       DestroyUdsPixelMap(&uds_pixel_map);
@@ -765,13 +785,13 @@ void PrepareImgBufferForRead(OH_Pixelmap_ImageInfo*& image_info,
     result->clear();
     int status = -1;
     if (!OH_Pasteboard_HasData(pasteboard_)) {
-        LOG(ERROR) << K_PASTEBOARD_LOG_TAG
+        LOG(ERROR) << kPasteboardLogTag
         << " ReadData OH_Pasteboard_HasData fail.";
         return;
     }
     OH_UdmfData* udmf_data = OH_Pasteboard_GetData(pasteboard_, &status);
     if (status != ERR_OK) {
-        LOG(ERROR) << K_PASTEBOARD_LOG_TAG
+        LOG(ERROR) << kPasteboardLogTag
         << " ReadData OH_Pasteboard_GetData fail,error code:"
         << status;
         return;
@@ -928,15 +948,16 @@ void PrepareImgBufferForRead(OH_Pixelmap_ImageInfo*& image_info,
                      std::optional<ClipboardInternalFormat> format,
                      const std::optional<ClipboardFormatType>&
                          custom_data_format = std::nullopt) {
+    const bool show = data_dst ? data_dst->truely_transfer(): true;
     // check system level permission first
     if (!ohos_permission::PermissionManagerAdapter::CheckAndRequestPermission(
         ohos_permission::OHOSPermissionType::PASTEBOARD)) {
         LOG(INFO)
-            << K_PASTEBOARD_LOG_TAG
+            << kPasteboardLogTag
             << "ClipboardOHOSInternal::RequestPasteBoardPermissionCallback: "
             << "request "
             << "PASTEBOARD permission result -> The system rejects the request.";
-        if (!promptDialogOpened_) {
+        if (!promptDialogOpened_ && show) {
           promptDialogOpened_ = true;
           base::ThreadPool::PostTaskAndReplyWithResult(
               FROM_HERE, base::MayBlock(),
@@ -951,7 +972,7 @@ void PrepareImgBufferForRead(OH_Pixelmap_ImageInfo*& image_info,
         return false;
     }
     LOG(INFO)
-        << K_PASTEBOARD_LOG_TAG << __FUNCTION__
+        << kPasteboardLogTag << __FUNCTION__
         << " system level PASTEBOARD permission"
         << " request success.";
     return true;
@@ -1118,65 +1139,6 @@ void PrepareImgBufferForRead(OH_Pixelmap_ImageInfo*& image_info,
     return data ? data->format() & static_cast<int>(format) : false;
   }
 
-  bool HasFormatInMisc(ClipboardInternalFormat format) const {
-    int status = -1;
-    if (!OH_Pasteboard_HasData(pasteboard_)) {
-        LOG(ERROR) << K_PASTEBOARD_LOG_TAG
-          << " HasFormatInMisc OH_Pasteboard_HasData fail.";
-        return false;
-    }
-    OH_UdmfData* udmf_data = OH_Pasteboard_GetData(pasteboard_, &status);
-    if (status != ERR_OK) {
-      LOG(ERROR) << "[Pasteboard]HasFormatInMisc OH_Pasteboard_GetData "
-                    "fail,error code:"
-                 << status;
-      return false;
-    }
-    unsigned int count = 0;
-    OH_UdmfRecord** records = OH_UdmfData_GetRecords(udmf_data, &count);
-    if (records == nullptr) {
-      LOG(ERROR) << "[Pasteboard]HasFormatInMisc OH_UdmfData_GetRecords fail";
-      return false;
-    }
-   int all_format = 0;
-    for (unsigned int i = 0; i < count; i++) {
-      OH_UdmfRecord* udmf_record = records[i];
-      if (udmf_record == nullptr) {
-        LOG(ERROR) << "[Pasteboard]HasFormatInMisc udmf_record is null";
-        continue;
-      }
-      unsigned int type_count;
-      char** types = OH_UdmfRecord_GetTypes(udmf_record, &type_count);
-      if (types == nullptr || type_count == 0) {
-        continue;
-      }
-      for (unsigned int j = 0; j < type_count; j++) {
-        if ((format == ClipboardInternalFormat::kHtml) &&
-            (strcmp(types[j], UDMF_META_HTML) == 0)) {
-          all_format |= static_cast<int>(ClipboardInternalFormat::kHtml);
-        }
-        if ((format == ClipboardInternalFormat::kText) &&
-            (strcmp(types[j], UDMF_META_PLAIN_TEXT) == 0)) {
-          all_format |= static_cast<int>(ClipboardInternalFormat::kText);
-        }
-        if ((format == ClipboardInternalFormat::kBookmark) &&
-            (strcmp(types[j], "chromium/x-bookmark-entries") == 0)) {
-          all_format |= static_cast<int>(ClipboardInternalFormat::kBookmark);
-        }
-        if ((format == ClipboardInternalFormat::kPng) &&
-            (strcmp(types[j], UDMF_META_OPENHARMONY_PIXEL_MAP) == 0 ||
-            strcmp(types[j], kImageBmp) == 0)) {
-          all_format |= static_cast<int>(ClipboardInternalFormat::kPng);
-        }
-        if ((format == ClipboardInternalFormat::kFilenames) &&
-            (strcmp(types[j], UDMF_META_GENERAL_FILE_URI) == 0)) {
-          all_format |= static_cast<int>(ClipboardInternalFormat::kFilenames);
-        }
-      }
-    }
-    return all_format & static_cast<int>(format);
-  }
-
   // Current ClipboardData.
   std::unique_ptr<ClipboardData> data_;
 
@@ -1185,15 +1147,15 @@ void PrepareImgBufferForRead(OH_Pixelmap_ImageInfo*& image_info,
   RAW_PTR_EXCLUSION OH_Pasteboard* pasteboard_;
   bool promptDialogOpened_ = false;
 
-  base::WeakPtrFactory<ClipboardOHOSInternal> weak_factory_{this};
-
   // Mapping of OS-provided sequence number to a unique token.
   mutable struct {
     uint32_t sequence_number;
     ClipboardSequenceNumberToken token;
   } clipboard_sequence_;
   ohos::adapter::common::SharedLibrary pasteboard_lib_;
-  PasteboardGetChangeCountFunc* pasteboard_get_change_count_func_;
+  PasteboardGetChangeCountFunc* pasteboard_get_change_count_func_ = nullptr;
+
+  base::WeakPtrFactory<ClipboardOHOSInternal> weak_factory_{this};
 };
 
 class ClipboardDataBuilderOhos {
@@ -1298,6 +1260,7 @@ ClipboardOHOS::~ClipboardOHOS() {
 
 std::unique_ptr<ClipboardData> ClipboardOHOS::WriteClipboardData(
     std::unique_ptr<ClipboardData> data) {
+  LOG(INFO) << kPasteboardLogTag << __FUNCTION__;
   DCHECK(CalledOnValidThread());
   return clipboard_internal_->WriteData(std::move(data));
 }
@@ -1355,6 +1318,7 @@ bool ClipboardOHOS::IsFormatAvailable(
     const ClipboardFormatType& format,
     ClipboardBuffer buffer,
     const DataTransferEndpoint* data_dst) const {
+  LOG(INFO) << kPasteboardLogTag << __FUNCTION__ << " start, format is " << format.GetName();
   DCHECK(CalledOnValidThread());
   DCHECK(IsSupportedClipboardBuffer(buffer));
 
@@ -1406,15 +1370,10 @@ void ClipboardOHOS::ReadAvailableTypes(
   DCHECK(CalledOnValidThread());
   DCHECK(types);
 
-  if (!clipboard_internal_->IsReadAllowed(data_dst, std::nullopt)) {
-    return;
-  }
-
   types->clear();
   *types = GetStandardFormats(buffer, data_dst);
 
-  if (clipboard_internal_->IsFormatAvailable(ClipboardInternalFormat::kCustom) &&
-      clipboard_internal_->GetData()) {
+  if (clipboard_internal_->GetData()) {
     const auto& custom_data =
         clipboard_internal_->GetData()->GetDataTransferCustomData();
     ReadCustomDataTypes(
@@ -1434,6 +1393,7 @@ void ClipboardOHOS::ReadText(ClipboardBuffer buffer,
   }
   RecordRead(ClipboardFormatMetric::kText);
   clipboard_internal_->ReadTextFromPasteBoard(result);
+  LOG(INFO) << kPasteboardLogTag << __FUNCTION__ << " end, text-length:" << result->length();
 }
 
 void ClipboardOHOS::ReadAsciiText(ClipboardBuffer buffer,
@@ -1457,6 +1417,7 @@ void ClipboardOHOS::ReadHTML(ClipboardBuffer buffer,
 
   RecordRead(ClipboardFormatMetric::kHtml);
   clipboard_internal_->ReadHTML(markup, src_url, fragment_start, fragment_end);
+  LOG(INFO) << kPasteboardLogTag << __FUNCTION__ << " end, markup-length:" << markup->length();
 }
 
 void ClipboardOHOS::ReadSvg(ClipboardBuffer buffer,
@@ -1474,6 +1435,7 @@ void ClipboardOHOS::ReadRTF(ClipboardBuffer buffer,
 void ClipboardOHOS::ReadPng(ClipboardBuffer buffer,
                             const DataTransferEndpoint* data_dst,
                             ReadPngCallback callback) const {
+  LOG(INFO) << kPasteboardLogTag << __FUNCTION__;
   DCHECK(CalledOnValidThread());
   if (!clipboard_internal_->IsReadAllowed(data_dst,
                                           ClipboardInternalFormat::kPng)) {
@@ -1502,6 +1464,7 @@ void ClipboardOHOS::ReadFilenames(ClipboardBuffer buffer,
     return;
   }
   RecordRead(ClipboardFormatMetric::kFilenames);
+  LOG(INFO) << kPasteboardLogTag << __FUNCTION__ << " end, result_size is " << result->size();
   clipboard_internal_->ReadFilenames(std::move(result));
 }
 
@@ -1551,11 +1514,16 @@ void ClipboardOHOS::WritePortableAndPlatformRepresentations(
 }
 
 void ClipboardOHOS::WriteText(std::string_view text) {
+  LOG(INFO) << kPasteboardLogTag << __FUNCTION__ << ", text-length:" << text.length();
   ClipboardDataBuilderOhos::WriteText(text);
 }
 
 void ClipboardOHOS::WriteHTML(std::string_view markup,
                               std::optional<std::string_view> source_url) {
+  LOG(INFO) << kPasteboardLogTag
+            << __FUNCTION__
+            << ", markup_len:" << markup.length()
+            << ", url_len:" << source_url->length();
   ClipboardDataBuilderOhos::WriteHTML(markup, source_url);
 }
 
@@ -1571,11 +1539,13 @@ void ClipboardOHOS::WriteBookmark(std::string_view title,
 void ClipboardOHOS::WriteWebSmartPaste() {}
 
 void ClipboardOHOS::WriteBitmap(const SkBitmap& bitmap) {
+  LOG(INFO) << kPasteboardLogTag << __FUNCTION__;
   ClipboardDataBuilderOhos::WriteBitmap(bitmap);
 }
 
 void ClipboardOHOS::WriteData(const ClipboardFormatType& format,
                               base::span<const uint8_t> data) {
+  LOG(INFO) << kPasteboardLogTag << __FUNCTION__ << " data_len is " << data.size();
   RecordWrite(ClipboardFormatMetric::kData);
   ClipboardDataBuilderOhos::WriteData(format, data);
 }

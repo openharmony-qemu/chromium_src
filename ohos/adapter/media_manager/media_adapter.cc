@@ -120,14 +120,5 @@ void MediaAdapter::InitImageReceiver() {
     insert->Invoke<void>();
   }
 }
- 
-int32_t MediaAdapter::GetCameraOrientation() {
-  auto insert = ohos::adapter::GetJSFunction("mediaAdapter.getCameraOrientation");
-  if (insert) {
-    return insert->Invoke<int32_t>();
-  }
-  LOGE("GetJSFunction mediaAdapter.getCameraOrientation failed");
-  return 0;
-}
 }  // namespace adapter
 }  // namespace ohos

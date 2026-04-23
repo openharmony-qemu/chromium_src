@@ -467,6 +467,12 @@ void MediaKeysListenerManagerImpl::UpdateSystemMediaControlsEnabledControls() {
 void MediaKeysListenerManagerImpl::UpdateMediaKeysListener() {
   DCHECK(media_keys_listener_);
 
+#if BUILDFLAG(IS_OHOS)
+  LOG(INFO) << __func__
+            << " [MediaControl] media key listener not support in OHOS ";
+  return;
+#endif
+
   for (const auto& key_code_listening_data : delegate_map_) {
     const ui::KeyboardCode& key_code = key_code_listening_data.first;
     const ListeningData* listening_data = key_code_listening_data.second.get();

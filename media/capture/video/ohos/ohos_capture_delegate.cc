@@ -47,6 +47,9 @@
 
 namespace media {
 
+const int32_t ROTATION_90 = 90;
+const int32_t ROTATION_FULL = 360;
+
 OHOSCaptureDelegate::OHOSCaptureDelegate(
     const VideoCaptureDeviceDescriptor& device_descriptor,
     const scoped_refptr<base::SingleThreadTaskRunner>& capture_stask_runner,
@@ -313,41 +316,61 @@ void OHOSCaptureDelegate::Resume() {
   OH_CaptureSession_Start(capture_session_);
 }
 
+int OHOSCaptureDelegate::GetRetation() {
+  int32_t rotation = 0;
+
+  // get camara rotation
+  uint32_t camera_orientation = 0;
+  uint32_t camera_index = 0;
+  bool selected_camera_exist = false;
+  for (camera_index = 0; camera_index < camera_size_; camera_index++) {
+    if (cameras_[camera_index].cameraId == device_descriptor_.device_id) {
+      selected_camera_exist = true;
+      Camera_ErrorCode ret = OH_CameraDevice_GetCameraOrientation(
+          &cameras_[camera_index], &camera_orientation);
+      if (ret != CAMERA_OK) {
+        LOG(ERROR) << __func__
+                   << " [VideoCapture] OH_CameraDevice_GetCameraOrientation "
+                      "failed, ErrorCode:"
+                   << ret;
+        return -1;
+      }
+      break;
+    }
+  }
+  if (!selected_camera_exist) {
+    LOG(ERROR) << __func__
+               << " [VideoCapture] selected device not exist, device_id:"
+               << device_descriptor_.device_id;
+    return -1;
+  }
+
+  // get screen rotation and calc overall rotation
+  if (display::Screen::GetScreen() && camera_orientation != 0) {
+    display::Screen* screen = display::Screen::GetScreen();
+    display::Display primary_display = screen->GetPrimaryDisplay();
+    if (device_descriptor_.facing == MEDIA_VIDEO_FACING_USER) {
+      rotation = (camera_orientation -
+                  static_cast<int>(primary_display.rotation()) * ROTATION_90) %
+                 ROTATION_FULL;
+    } else {
+      rotation = (camera_orientation +
+                  static_cast<int>(primary_display.rotation()) * ROTATION_90) %
+                 ROTATION_FULL;
+    }
+  }
+
+  return rotation;
+}
+
 void OHOSCaptureDelegate::OnBufferAvailable(uint8_t* data, size_t data_size) {
   DCHECK(capture_task_runner_->BelongsToCurrentThread());
   const base::TimeTicks now = base::TimeTicks::Now();
-  int32_t rotation = 0;
-  int32_t cameraOrientation =
-      ohos::adapter::MediaAdapter::GetInstance().GetCameraOrientation();
-  if (display::Screen::GetScreen() && cameraOrientation != 0) {
-    display::Screen* screen = display::Screen::GetScreen();
-    display::Display primary_display = screen->GetPrimaryDisplay();
-    switch (primary_display.rotation()) {
-      case display::Display::Rotation::ROTATE_0:
-        if (device_descriptor_.facing == MEDIA_VIDEO_FACING_ENVIRONMENT) {
-          rotation = 90;
-        } else {
-          rotation = 270;
-        }
-        break;
-      case display::Display::Rotation::ROTATE_90:
-        rotation = 180;
-        break;
-      case display::Display::Rotation::ROTATE_180:
-        if (device_descriptor_.facing == MEDIA_VIDEO_FACING_ENVIRONMENT) {
-          rotation = 270;
-        } else {
-          rotation = 90;
-        }
-        break;
-      case display::Display::Rotation::ROTATE_270:
-        rotation = 0;
-        break;
-      default:
-        LOG(ERROR) << "set rotation failed";
-        break;
-    }
+  int32_t rotation = GetRetation();
+  if (rotation < 0) {
+    return;
   }
+
   if (first_ref_time_.is_null()) {
     first_ref_time_ = now;
   }

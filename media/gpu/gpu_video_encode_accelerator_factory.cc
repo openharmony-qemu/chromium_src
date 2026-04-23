@@ -41,6 +41,9 @@
 #if BUILDFLAG(IS_FUCHSIA)
 #include "media/fuchsia/video/fuchsia_video_encode_accelerator.h"
 #endif
+#if BUILDFLAG(IS_OHOS)
+#include "media/gpu/ohos/ohos_video_encode_accelerator.h"
+#endif
 
 namespace media {
 
@@ -101,6 +104,13 @@ std::unique_ptr<VideoEncodeAccelerator> CreateFuchsiaVEA() {
 }
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+std::unique_ptr<VideoEncodeAccelerator> CreateOhosVEA() {
+  return base::WrapUnique<VideoEncodeAccelerator>(
+      new OHOSVideoEncodeAccelerator());
+}
+#endif
+
 using VEAFactoryFunction =
     base::RepeatingCallback<std::unique_ptr<VideoEncodeAccelerator>()>;
 
@@ -149,6 +159,9 @@ std::vector<VEAFactoryFunction> GetVEAFactoryFunctions(
   if (base::FeatureList::IsEnabled(kFuchsiaMediacodecVideoEncoder)) {
     vea_factory_functions.push_back(base::BindRepeating(&CreateFuchsiaVEA));
   }
+#endif
+#if BUILDFLAG(IS_OHOS)
+  vea_factory_functions.push_back(base::BindRepeating(&CreateOhosVEA));
 #endif
   return vea_factory_functions;
 }

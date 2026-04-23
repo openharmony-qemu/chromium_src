@@ -23,6 +23,10 @@
 #include "base/trace_event/base_tracing.h"
 #include "build/build_config.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "ohos/adapter/multiprocess/child_process_manager.h"
+#endif
+
 #if BUILDFLAG(IS_MAC)
 #include <sys/event.h>
 #endif
@@ -35,7 +39,20 @@
 #include "TargetConditionals.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include <AbilityKit/native_child_process.h>
+#include <deviceinfo.h>
+
+#include "ohos/adapter/device_info/device_info.h"
+#endif
+
 namespace {
+#if BUILDFLAG(IS_OHOS)
+extern "C" {
+Ability_NativeChildProcess_ErrCode OH_Ability_KillChildProcess(
+    int32_t pid) __attribute__((weak));
+}
+#endif
 
 #if !BUILDFLAG(IS_IOS) || (BUILDFLAG(IS_IOS) && TARGET_OS_SIMULATOR)
 bool WaitpidWithTimeout(base::ProcessHandle handle,
@@ -66,12 +83,22 @@ bool WaitpidWithTimeout(base::ProcessHandle handle,
   // the application itself it would probably be best to examine other routes.
 
   if (wait == base::TimeDelta::Max()) {
+#if BUILDFLAG(IS_OHOS)
+    return ohos::adapter::multiprocess::Waitpid(handle, status, false) > 0;
+#else
     return HANDLE_EINTR(waitpid(handle, status, 0)) > 0;
+#endif
   }
-
+ 
+#if BUILDFLAG(IS_OHOS)
+  pid_t ret_pid =
+      ohos::adapter::multiprocess::Waitpid(handle, status, true);
+#else
   pid_t ret_pid = HANDLE_EINTR(waitpid(handle, status, WNOHANG));
-  static const uint32_t kMaxSleepInMicroseconds = 1 << 18;  // ~256 ms.
-  uint32_t max_sleep_time_usecs = 1 << 10;                  // ~1 ms.
+#endif
+ 
+  static const uint32_t kMaxSleepInMicroseconds = 1 << 18; // ~256 ms.
+  uint32_t max_sleep_time_usecs = 1 << 10;                 // ~1 ms.
   int double_sleep_time = 0;
 
   // If the process hasn't exited yet, then sleep and try again.
@@ -87,7 +114,11 @@ bool WaitpidWithTimeout(base::ProcessHandle handle,
     // usleep() will return 0 and set errno to EINTR on receipt of a signal
     // such as SIGCHLD.
     usleep(sleep_time_usecs);
+#if BUILDFLAG(IS_OHOS)
+    ret_pid = ohos::adapter::multiprocess::Waitpid(handle, status, true);
+#else
     ret_pid = HANDLE_EINTR(waitpid(handle, status, WNOHANG));
+#endif
 
     if ((max_sleep_time_usecs < kMaxSleepInMicroseconds) &&
         (double_sleep_time++ % 4 == 0)) {
@@ -318,11 +349,30 @@ bool Process::TerminateInternal(int exit_code, bool wait) const {
     return was_killed;
   }
 
+#if BUILDFLAG(IS_OHOS)
+  // if SDK version>=22 && The linker can find the implementation of the
+  // OH_Ability_KillChildProcess function
+  if (OH_GetSdkApiVersion() >= ohos::adapter::device_info::SDK_VERSION_22 &&
+      OH_Ability_KillChildProcess) {
+    Ability_NativeChildProcess_ErrCode errCode =
+        OH_Ability_KillChildProcess(process_);
+    if (errCode != 0) {
+      LOG(ERROR) << "OH_Ability_KillChildProcess failed, errcode:" << errCode
+                 << "process: " << process_;
+      return false;
+    }
+  } else if (kill(process_, SIGTERM) != 0) {
+    // or Running the kill command to terminate the process
+    DPLOG(ERROR) << "Unable to terminate process " << process_;
+    return false;
+  }
+#else
   // Terminate process giving it a chance to clean up.
   if (kill(process_, SIGTERM) != 0) {
     DPLOG(ERROR) << "Unable to terminate process " << process_;
     return false;
   }
+#endif
 
 #if BUILDFLAG(IS_CHROMEOS)
   CleanUpProcessAsync();

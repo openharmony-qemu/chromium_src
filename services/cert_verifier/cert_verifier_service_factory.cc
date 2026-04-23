@@ -416,6 +416,28 @@ void CertVerifierServiceFactoryImpl::UpdateNetworkTime(
   UpdateVerifierServices();
 }
 
+#if BUILDFLAG(IS_OHOS)
+void CertVerifierServiceFactoryImpl::PlatformCertRefresh() {
+  mojom::PlatformRootStoreInfoPtr info_ptr =
+      mojom::PlatformRootStoreInfo::New();
+  std::unique_ptr<net::SystemTrustStore> system_trust_store =
+      net::CreateSslSystemTrustStoreChromeRoot(
+          std::make_unique<net::TrustStoreChrome>());
+  if (!system_trust_store) {
+    LOG(ERROR)
+        << "[CertManager] Get SystemTrustStore FAILED";
+    return;
+  }
+  net::PlatformTrustStore* platform_trust_store =
+      system_trust_store->GetPlatformTrustStore();
+  if (!platform_trust_store) {
+    LOG(ERROR) << "[CertManager] PlatformCertRefresh GetPlatformTrustStore FAILED";
+    return;
+  }
+  platform_trust_store->UpdateCerts();
+}
+#endif
+
 #if BUILDFLAG(CHROME_ROOT_STORE_OPTIONAL)
 void CertVerifierServiceFactoryImpl::SetUseChromeRootStore(
     bool use_crs,

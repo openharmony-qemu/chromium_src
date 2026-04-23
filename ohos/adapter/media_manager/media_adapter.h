@@ -59,7 +59,6 @@ class ADAPTER_EXPORT_API MediaAdapter {
   static napi_value ReadImageFromReceiver(napi_env env,
                                           napi_callback_info info);
   static void InitImageReceiver();
-  int32_t GetCameraOrientation();
   BufferAvailableCallback GetBufferAvailableCallback() {
     return bufferAvailableCallback_;
   }

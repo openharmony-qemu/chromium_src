@@ -30,6 +30,15 @@
 #ifndef UI_BASE_IME_INPUT_METHOD_OHOS_H_
 #define UI_BASE_IME_INPUT_METHOD_OHOS_H_
 
+#include <inputmethod/inputmethod_attach_options_capi.h>
+#include <inputmethod/inputmethod_controller_capi.h>
+#include <inputmethod/inputmethod_cursor_info_capi.h>
+#include <inputmethod/inputmethod_inputmethod_proxy_capi.h>
+#include <inputmethod/inputmethod_text_config_capi.h>
+#include <inputmethod/inputmethod_text_editor_proxy_capi.h>
+#include <inputmethod/inputmethod_types_capi.h>
+#include <cstdint>
+
 #include "base/memory/weak_ptr.h"
 #include "base/timer/timer.h"
 #include "ohos/adapter/ime_adapter/input_method_ohos_adapter.h"
@@ -39,15 +48,28 @@
 #include "ui/gfx/native_widget_types.h"
 
 namespace ui {
+
+bool IsValidInputMethodOhosNAPI();
+std::unique_ptr<InputMethod> CreateInputMethodOHOS(
+    ImeKeyEventDispatcher* ime_key_event_dispatcher,
+    gfx::AcceleratedWidget widget);
+
 class COMPONENT_EXPORT(UI_BASE_IME_OHOS) InputMethodOHOS
     : public InputMethodBase {
  public:
   explicit InputMethodOHOS(ImeKeyEventDispatcher* ime_key_event_dispatcher,
                            gfx::AcceleratedWidget widget);
-  ~InputMethodOHOS() override;
+  ~InputMethodOHOS() override = default;
 
   InputMethodOHOS(InputMethodOHOS&) = delete;
   InputMethodOHOS operator=(InputMethodOHOS&) = delete;
+
+  virtual void MoveCursor(int direction) = 0;
+  virtual void DetachTextInputTask() = 0;
+  virtual void AttachTextInputTask(ui::RequestKeyboardReason reason) = 0;
+  virtual void SetVirtualKeyboardVisibilityTask(bool should_show, ui::RequestKeyboardReason reason) = 0;
+  virtual void UpdateCursorTask(const gfx::Rect& rect) = 0;
+  virtual base::WeakPtr<InputMethodOHOS> GetWeakPtr() = 0;
 
   // InputMethodBase interface implementation.
   ui::EventDispatchDetails DispatchKeyEvent(ui::KeyEvent* event) override;
@@ -60,37 +82,94 @@ class COMPONENT_EXPORT(UI_BASE_IME_OHOS) InputMethodOHOS
   void CancelComposition(const TextInputClient* client) override;
   void UpdateContextFocusState();
   void InsertText(const std::string& text);
+  void InsertU16Text(const std::u16string& inputText);
   void DeleteBackward(int32_t length);
   void DeleteForward(int32_t length);
   void SendEnterKeyEvent();
-  void ExitFullscreenEvent();
-  void MoveCursor(int direction);
-  ohos::adapter::IMFAdapterCursorInfo GetCursorInfo();
-  ohos::adapter::IMFAdapterInputAttribute GetInputAttribute();
   void SetVirtualKeyboardVisibilityIfEnabled(bool should_show) override;
-  void DetachTextInputTask();
-  void AttachTextInputTask(ui::RequestKeyboardReason reason);
-  void UpdateAttributeTask();
-  void SetVirtualKeyboardVisibilityTask(bool should_show, ui::RequestKeyboardReason reason);
-  void UpdateCursorTask(const gfx::Rect& rect);
   gfx::AcceleratedWidget GetWidgetId() const;
+  void RegistKeyboardHeightEvent(base::WeakPtr<InputMethodOHOS> wptr);
+  void UnRegistKeyboardHeightEvent();
+  gfx::Rect GetRectPixel();
 
  private:
-  void RegistKeyboardHeightEvent();
-  void UnRegistKeyboardHeightEvent();
   void SetVirtualKeyboardBoundsTask(int32_t keyboard_height);
   bool IsDispatchedPressAndReleaseKeyEvents(int32_t length,
                                             KeyboardCode key_code,
                                             DomCode dom_Code);
 
- private:
+ protected:
   TextInputType text_input_type_ = ui::TEXT_INPUT_TYPE_NONE;
   gfx::Rect focus_rect_;
   bool is_attach_ = false;
   gfx::AcceleratedWidget widget_id_;
-
   base::OneShotTimer delayed_attach_timer_;
-  base::WeakPtrFactory<InputMethodOHOS> weak_ptr_factory_{this};
+};
+
+class COMPONENT_EXPORT(UI_BASE_IME_OHOS) InputMethodOHOSCAPI
+    : public InputMethodOHOS {
+ public:
+  explicit InputMethodOHOSCAPI(ImeKeyEventDispatcher* ime_key_event_dispatcher,
+                           gfx::AcceleratedWidget widget);
+  ~InputMethodOHOSCAPI() override;
+  InputMethodOHOSCAPI(InputMethodOHOS&) = delete;
+  InputMethodOHOSCAPI operator=(InputMethodOHOS&) = delete;
+
+  // InputMethodOHOS interface implementation.
+  void MoveCursor(int direction) override;
+  void DetachTextInputTask() override;
+  void AttachTextInputTask(ui::RequestKeyboardReason reason) override;
+  void SetVirtualKeyboardVisibilityTask(
+      bool should_show,
+      ui::RequestKeyboardReason reason) override;
+  void UpdateCursorTask(const gfx::Rect& rect) override;
+  base::WeakPtr<InputMethodOHOS> GetWeakPtr() override{
+    return weak_ptr_factory_.GetWeakPtr();
+  }
+  InputMethod_TextConfig* SetTextConfig(InputMethod_TextConfig* text_config);
+
+ private:
+  void CheckAndReleaseApiResources();
+  InputMethod_AttachOptions* UpdateAttachOptions(
+      ui::RequestKeyboardReason reason);
+  InputMethod_CursorInfo* CreateCursorInfo();
+  InputMethod_CursorInfo* UpdateCursorInfo(InputMethod_CursorInfo* cursor_info);
+
+  RAW_PTR_EXCLUSION InputMethod_TextEditorProxy* text_editor_proxy_ = nullptr;
+  RAW_PTR_EXCLUSION InputMethod_AttachOptions* attach_options_ = nullptr;
+  RAW_PTR_EXCLUSION InputMethod_InputMethodProxy* input_method_proxy_ = nullptr;
+  RAW_PTR_EXCLUSION InputMethod_CursorInfo* cursor_info_ = nullptr;
+  bool is_create_cursor_info_ = false;
+  base::WeakPtrFactory<InputMethodOHOSCAPI> weak_ptr_factory_{this};
+};
+
+class COMPONENT_EXPORT(UI_BASE_IME_OHOS) InputMethodOHOSJSAPI
+    : public InputMethodOHOS {
+ public:
+  explicit InputMethodOHOSJSAPI(ImeKeyEventDispatcher* ime_key_event_dispatcher,
+                           gfx::AcceleratedWidget widget);
+  ~InputMethodOHOSJSAPI() override;
+  InputMethodOHOSJSAPI(InputMethodOHOS&) = delete;
+  InputMethodOHOSJSAPI operator=(InputMethodOHOS&) = delete;
+
+  // InputMethodOHOS interface implementation.
+  void MoveCursor(int direction) override;
+  void DetachTextInputTask() override;
+  void AttachTextInputTask(ui::RequestKeyboardReason reason) override;
+  void SetVirtualKeyboardVisibilityTask(
+      bool should_show,
+      ui::RequestKeyboardReason reason) override;
+  void UpdateCursorTask(const gfx::Rect& rect) override;
+  base::WeakPtr<InputMethodOHOS> GetWeakPtr()override {
+    return weak_ptr_factory_.GetWeakPtr();
+  }
+
+private:
+  ohos::adapter::IMFAdapterInputAttribute GetInputAttribute();
+  ohos::adapter::IMFAdapterCursorInfo GetCursorInfo();
+  void UpdateAttributeTask();
+
+  base::WeakPtrFactory<InputMethodOHOSJSAPI> weak_ptr_factory_{this};
 };
 }  // namespace ui
 #endif  // UI_BASE_IME_INPUT_METHOD_OHOS_H_

@@ -152,6 +152,9 @@ if (enable_rust) {
     rust_sysroot = "//third_party/rust-toolchain"
   } else {
     rust_sysroot = get_path_info(rust_sysroot_absolute, "abspath")
+    if (is_ohos && is_hwasan) {
+      rust_bindgen_root = rust_sysroot
+    }
   }
 }
 

@@ -1154,6 +1154,9 @@ component("base") {
       "//third_party/ashmem",
       "//ohos/adapter:adapter",
     ]
+    libs += [
+      "child_process",
+    ]
   }
 
   # Android.

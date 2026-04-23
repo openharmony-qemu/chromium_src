@@ -411,6 +411,17 @@ bool SystemMediaControlsOhos::Initialize() {
   AVSession_ErrCode ret = OH_AVSession_Create(
       kDefaultSessionType, kDefaultSessionTag, main_element.bundleName,
       main_element.abilityName, &av_session_);
+  if (ret == AV_SESSION_ERR_SERVICE_EXCEPTION) {
+    LOG(WARNING) << __func__
+                 << " [AVSession] OH_AVSession_Create failed as "
+                    "AV_SESSION_ERR_SERVICE_EXCEPTION for bundleName:"
+                 << main_element.bundleName
+                 << " abilityName: " << main_element.abilityName
+                 << ". This might be because System Media Control is already "
+                    "created by host Application.";
+    return is_initialized_;
+  }
+
   if (ret != AV_SESSION_ERR_SUCCESS) {
     LOG(ERROR) << __func__
                << " [AVSession] OH_AVSession_Create failed,result:" << ret;

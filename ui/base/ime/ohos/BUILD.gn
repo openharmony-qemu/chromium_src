@@ -22,4 +22,8 @@ component("ohos") {
     "//ui/events",
     "//ohos/adapter:adapter"
   ]
+
+  libs = [
+    "ohinputmethod",
+  ]
 }

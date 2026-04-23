@@ -36,54 +36,10 @@
 #include "ohos/adapter/common/logging.h"
 #include "ohos/adapter/multiprocess/command_line/command_line.h"
 #include "ohos/adapter/multiprocess/command_line/command_line_switches.h"
-#include "ohos/adapter/xcomponent/adapter/window_adapter.h"
-
-using namespace ohos::adapter::xcomponent;
 
 namespace ohos::adapter::multiprocess {
 
 const int kInvalidPid = -1;
-
-static const int kProcessStartInterval = 200000;
-
-// Starts the child process by calling OH_Ability_CreateNativeChildProcess(),
-// after the child process is launched and the OHIPCRemoteStub object is
-// created, this function is called in the main process:
-// 1. synchronize the WindowAdapter with the child process,
-// 2. and then query PID of the child process.
-void onProcessStarted(int err_code, OHIPCRemoteProxy* remote_proxy) {
-  GpuNativeProcessHost& host = GpuNativeProcessHost::GetInstance();
-
-  if (err_code != NCP_NO_ERROR) {
-    LOGE("Child process start failed, err_code=%{public}d", err_code);
-    host.SetChildPid(kInvalidPid);
-    return;
-  }
-
-  if (remote_proxy == nullptr) {
-    LOGE("Initialize IPC remote proxy failed, which is nullptr.");
-    host.SetChildPid(kInvalidPid);
-    return;
-  }
-
-  host.Initialize(remote_proxy);
-
-  if (WindowAdapter::GetInstance().SyncWindowToGpuProcess() !=
-        CrossProcessSyncResult::SUCCESS) {
-    LOGE("Sync window adapter to GPU process failed.");
-    host.SetChildPid(kInvalidPid);
-    return;
-  }
-
-  int32_t child_pid = host.GetPid();
-  if (child_pid == kInvalidPid) {
-    LOGE("Get child process pid failed, child pid got: %{public}d", child_pid);
-    host.SetChildPid(kInvalidPid);
-    return;
-  }
-
-  host.SetChildPid(child_pid);
-}
 
 GpuNativeProcessHost& GpuNativeProcessHost::GetInstance() {
   static GpuNativeProcessHost instance;
@@ -118,22 +74,6 @@ bool GpuNativeProcessHost::NeedSendRequest() {
     return false;
   }
   return !command_line->HasSwitch(switches::kInProcessGpu) && IsInitialized();
-}
-
-int GpuNativeProcessHost::StartGpuProcess(
-    std::function<void(int32_t)> callback) {
-  callback_ = callback;
-
-  LOGW("GPU process start times: %{public}d", start_times_);
-  if (start_times_ > 0) {
-    // Since the previous GPU process has crashed, wait for a while
-    // before launching a new GPU process, to let the previous one exit.
-    // We can only have one native process at a time.
-    usleep(kProcessStartInterval);
-  }
-  ++start_times_;
-  return OH_Ability_CreateNativeChildProcess("libadapter.so",
-                                             &onProcessStarted);
 }
 
 int32_t GpuNativeProcessHost::GetPid() {
@@ -177,7 +117,8 @@ void GpuNativeProcessHost::AddWindow(const std::string& window_id,
 
   OH_IPC_ErrorCode ret = ipc_proxy_->AddWindow(window_id, window);
   if (ret != OH_IPC_SUCCESS) {
-    LOGE("Add window to GPU process error: %{public}d", ret);
+    LOGE("Add window to GPU process error: %{public}d, window_id: %{public}s",
+         ret, window_id.c_str());
   }
 }
 
@@ -189,7 +130,10 @@ void GpuNativeProcessHost::RemoveWindow(const std::string& window_id) {
 
   OH_IPC_ErrorCode ret = ipc_proxy_->RemoveWindow(window_id);
   if (ret != OH_IPC_SUCCESS) {
-    LOGE("Remove window from GPU process error: %{public}d", ret);
+    LOGE(
+        "Remove window from GPU process error: %{public}d, window_id: "
+        "%{public}s",
+        ret, window_id.c_str());
   }
 }
 
@@ -202,7 +146,10 @@ void GpuNativeProcessHost::SetWindowWidget(const std::string& window_id,
 
   OH_IPC_ErrorCode ret = ipc_proxy_->SetWindowWidget(window_id, widget_id);
   if (ret != OH_IPC_SUCCESS) {
-    LOGE("Remove window from GPU process error: %{public}d", ret);
+    LOGE(
+        "Set window from GPU process error: %{public}d, window_id: %{public}s, "
+        "widget_id: %{public}d",
+        ret, window_id.c_str(), widget_id);
   }
 }
 
@@ -215,13 +162,10 @@ void GpuNativeProcessHost::NotifyWindowChanged(const std::string& window_id,
 
   OH_IPC_ErrorCode ret = ipc_proxy_->NotifyWindowChange(window_id, window);
   if (ret != OH_IPC_SUCCESS) {
-    LOGE("Add window to GPU process error: %{public}d", ret);
-  }
-}
-
-void GpuNativeProcessHost::SetChildPid(int32_t child_pid) {
-  if (callback_ != nullptr) {
-    callback_(child_pid);
+    LOGE(
+        "Notify window change to GPU process error: %{public}d, window_id: "
+        "%{public}s",
+        ret, window_id.c_str());
   }
 }
 }  // namespace ohos::adapter::multiprocess

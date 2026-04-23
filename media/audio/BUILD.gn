@@ -284,6 +284,8 @@ source_set("audio") {
       "ohos/ohos_audio_input_stream.h",
       "ohos/ohos_audio_manager.cc",
       "ohos/ohos_audio_manager.h",
+      "ohos/ohos_audio_output_callback_bridge.cc",
+      "ohos/ohos_audio_output_callback_bridge.h",
       "ohos/ohos_audio_output_stream.cc",
       "ohos/ohos_audio_output_stream.h",
     ]

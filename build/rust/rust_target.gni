@@ -431,6 +431,12 @@ template("rust_target") {
         public_deps += _cxx_generated_deps_for_cpp
       }
       rustflags = _rustflags
+      if (is_ohos && is_hwasan && current_cpu=="arm64") {
+        rustflags += [
+          "-Clink-arg=-fsanitize=hwaddress",
+          "-Clink-arg=-shared-libasan",
+        ]
+      }
       if (_rustc_metadata != "") {
         rustflags += [ "-Cmetadata=${_rustc_metadata}" ]
       }

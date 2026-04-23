@@ -75,8 +75,7 @@ CertManagerAdapter::CertInfoList CertManagerAdapter::ListCertsInfo() {
   return *cert_infos;
 }
 
-int CertManagerAdapter::InstallPersonalCert(std::shared_ptr<char[]> cert_data,
-                                            uint32_t cert_len,
+int CertManagerAdapter::InstallPersonalCert(std::vector<uint8_t> cert_data,
                                             const std::string& cert_pass,
                                             const std::string& alias) {
   TRACE_EVENT_0("CertManagerAdapter::InstallPersonalCert");
@@ -87,7 +86,7 @@ int CertManagerAdapter::InstallPersonalCert(std::shared_ptr<char[]> cert_data,
   auto func =
       ohos::adapter::GetJSFunction("CertManagerAdapter.InstallPersonalCert");
   if (func) {
-    aki::ArrayBuffer certArrayBuffer((uint8_t*)cert_data.get(), cert_len);
+    aki::ArrayBuffer certArrayBuffer(cert_data.data(), cert_data.size());
     func->Invoke<void>(std::move(certArrayBuffer), cert_pass, alias, callback);
     auto future = promise->get_future();
     auto status = future.wait_for(std::chrono::seconds(3));
@@ -195,18 +194,108 @@ void CertManagerAdapter::ConvertCertInfo(aki::Value cert_info_value,
                                          OhosCertInfo* cert_info) {
   cert_info->cert = cert_info_value["cert"].As<std::string>();
   cert_info->uri = cert_info_value["uri"].As<std::string>();
+  cert_info->type = cert_info_value["type"].As<CertType>();
 }
 
 void CertManagerAdapter::ShowCertificateManagerDialog() {
+  CertType certType = CertType::OTHER_CERT;
   if (auto func = ohos::adapter::GetJSFunction(
       "CertManagerAdapter.ShowCertificateManagerDialog")) {
-    func->Invoke<void>();
+    func->Invoke<void>(certType);
   }
+}
+
+void CertManagerAdapter::ShowCertificateManagerDialog(CertType certType) {
+  if (auto func = ohos::adapter::GetJSFunction(
+      "CertManagerAdapter.ShowCertificateManagerDialog")) {
+    func->Invoke<void>(certType);
+  }
+}
+
+bool CertManagerAdapter::IsSdk22() {
+  bool ret = false;
+  auto func = ohos::adapter::GetJSFunction("CertManagerAdapter.IsSdk22");
+  if (func) {
+    std::promise<bool> promise;
+    std::function<void(bool)> callback =
+      [&promise](bool ret) -> void { promise.set_value(ret); };
+
+    func->Invoke<void>(callback);
+    ret = promise.get_future().get();
+    LOGE("CertManagerAdapter.IsSdk22 ret = %{public}d", ret);
+  }
+  
+  LOGE("CertManagerAdapter.IsSdk22 1 ret = %{public}d", ret);
+  return ret;
+}
+
+
+CertManagerAdapter::CertInfoList CertManagerAdapter::EnumClientCerts() {
+  TRACE_EVENT_0("CertManagerAdapter::EnumClientCerts");
+  auto promise = std::make_shared<std::promise<bool>>();
+  auto cert_infos = std::make_shared<CertInfoList>();
+  std::function<void(aki::Value, int32_t)> callback =
+      [promise, cert_infos, this](aki::Value ohos_cert_infos, int32_t cert_count) -> void {
+    LOGE("cert_count = %{public}d", cert_count);
+    if (!ohos_cert_infos.IsArray()) {
+      promise->set_value(true);
+      return;
+    }
+
+    for (int32_t i = 0; i < cert_count; i++) {
+      OhosCertInfo cert_info;
+      ConvertCertInfo(ohos_cert_infos[i], &cert_info);
+      // cert_info.type = CertType::USER_CERT;
+      cert_infos->push_back(cert_info);
+    }
+    promise->set_value(true);
+  };
+
+  auto func = ohos::adapter::GetJSFunction(
+      "CertManagerAdapter.EnumClientCerts");
+  if (func) {
+    func->Invoke<void>(callback);
+    auto future = promise->get_future();
+    future.wait();
+  }
+  return *cert_infos;
+}
+
+
+int CertManagerAdapter::SignByHuks(const std::string& uri,
+                                      uint8_t* input,
+                                      size_t inputlen,
+                                      uint8_t* out,
+                                      size_t* outlen) {
+  TRACE_EVENT_0("CertManagerAdapter::SignByHuks");
+  int ret = -1;
+  auto func = ohos::adapter::GetJSFunction("CertManagerAdapter.SignByHuks");
+  if (func) {
+    std::promise<aki::ArrayBuffer> promise;
+    std::function<void(aki::ArrayBuffer)> callback =
+        [&promise](aki::ArrayBuffer buff) {
+          promise.set_value(buff);
+        };
+    aki::ArrayBuffer inputBuffer(input, inputlen);
+    func->Invoke<void>(uri, inputBuffer, callback);
+    aki::ArrayBuffer buffer = promise.get_future().get();
+    *outlen = buffer.GetLength();
+    if (out) {
+      memcpy(out, buffer.GetData(), *outlen);
+    }
+    if (*outlen == 0) {
+      ret = 1;
+    }
+    else
+      ret = 0;
+  }
+  return ret;
 }
 
 JSBIND_CLASS(OhosCertInfo) {
   JSBIND_PROPERTY(cert);
   JSBIND_PROPERTY(uri);
+  JSBIND_PROPERTY(type);
 }
 
 }  // namespace ohos::adapter

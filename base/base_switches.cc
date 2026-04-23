@@ -190,6 +190,8 @@ const char KDisablePartialSwap[] = "disable-partial-swap";
 const char kDisablePagePolicy[] = "disable-page-policy";
 // indicate long tracing mode if present
 const char kOhosTrace[] = "ohos-trace";
+const char kOhosTempDir[] = "ohos-temp-dir";
+const char kOhosProcessType[] = "type";
 #endif
 
 }  // namespace switches

@@ -112,7 +112,7 @@ class OzonePlatformOhos : public OzonePlatform {
   std::unique_ptr<InputMethod> CreateInputMethod(
       ImeKeyEventDispatcher* ime_key_event_dispatcher,
       gfx::AcceleratedWidget widget) override {
-    return std::make_unique<InputMethodOHOS>(ime_key_event_dispatcher, widget);
+    return CreateInputMethodOHOS(ime_key_event_dispatcher, widget);
   }
 
   bool InitializeUI(const InitParams& params) override {

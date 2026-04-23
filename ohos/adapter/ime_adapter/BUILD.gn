@@ -29,6 +29,7 @@ import("//build/config/ohos/config.gni")
 
 component("ime_adapter") {
   sources = [
+    "native_apis.h",
     "input_method_ohos_adapter.h",
     "input_method_ohos_adapter.cc"
   ]

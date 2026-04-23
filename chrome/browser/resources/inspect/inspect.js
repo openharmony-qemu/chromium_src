@@ -77,6 +77,15 @@ function removeChildren(element_id) {
   element.textContent = '';
 }
 
+// ARKWEB_DEVTOOLS begin
+function hideChildren(elementId) {
+  const element = $(elementId);
+  if (element) {
+    element.hidden = true;
+  }
+}
+// ARKWEB_DEVTOOLS end
+
 function onload() {
   const tabContents = document.querySelectorAll('#content > div');
   for (let i = 0; i !== tabContents.length; i++) {
@@ -97,12 +106,21 @@ function onload() {
   initSettings();
   sendCommand('init-ui');
   initStaleDataWatch();
+  // ARKWEB_DEVTOOLS begin
+  const hiddenElements = ['devices', 'apps', 'shared-storage-worklets', 'other',
+    'tab-devices', 'tab-apps', 'tab-shared-storage-worklets', 'tab-other', 'tab-remote-debugging'];
+  for (let j = 0; j !== hiddenElements.length; j++) {
+    hideChildren(hiddenElements[j]);
+  }
+  // ARKWEB_DEVTOOLS end
 }
 
 function onHashChange() {
   const hash = window.location.hash.slice(1).toLowerCase();
   if (!selectTab(hash)) {
-    selectTab('devices');
+    // ARKWEB_DEVTOOLS begin
+    selectTab('pages');
+    // ARKWEB_DEVTOOLS end
   }
 }
 

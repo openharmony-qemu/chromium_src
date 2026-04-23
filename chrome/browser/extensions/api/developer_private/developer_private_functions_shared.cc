@@ -2067,6 +2067,11 @@ ExtensionFunction::ResponseAction DeveloperPrivateOpenDevToolsFunction::Run() {
     // Line/column numbers are reported in display-friendly 1-based numbers,
     // but are inspected in zero-based numbers.
     // Default to the first line/column.
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+    auto strStackTraceLog = base::debug::StackTrace().ToString();
+    LOG(INFO) << " func:" << __func__ << " strStackTraceLog:" << strStackTraceLog;
+    return RespondNow(NoArguments());
+#endif // ARKWEB_DEVTOOLS
     DevToolsWindow::OpenDevToolsWindow(
         web_contents,
         DevToolsToggleAction::Reveal(
@@ -2076,7 +2081,7 @@ ExtensionFunction::ResponseAction DeveloperPrivateOpenDevToolsFunction::Run() {
         DevToolsOpenedByAction::kInspectLink);
   } else {
 #if BUILDFLAG(ARKWEB_DEVTOOLS)
-    devtools_util::InspectServiceWorkerBackgroundV2(
+    devtools_util::InspectServiceWorkerBackgroundV2(web_contents,
         extension, profile, DevToolsOpenedByAction::kInspectLink);
     return RespondNow(NoArguments());
 #endif // ARKWEB_DEVTOOLS

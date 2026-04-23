@@ -319,7 +319,9 @@ class DevToolsWindow : public DevToolsUIBindings::Delegate,
   friend class DevToolsWindowTesting;
   friend class DevToolsWindowCreationObserver;
   friend class HatsNextWebDialogBrowserTest;
-
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  friend class CefDevToolsFrontend;
+#endif // ARKWEB_DEVTOOLS
   using CreationCallback = base::RepeatingCallback<void(DevToolsWindow*)>;
   static void AddCreationCallbackForTest(const CreationCallback& callback);
   static void RemoveCreationCallbackForTest(const CreationCallback& callback);

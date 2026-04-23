@@ -27,13 +27,20 @@ static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 
 namespace extensions {
 namespace devtools_util {
-
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+void OnRequestOpenDevToolsWithContext(std::unique_ptr<LazyContextTaskQueue::ContextInfo>& context_info);
+#endif // ARKWEB_DEVTOOLS
 namespace {
 
 // Helper to inspect an ExtensionHost after it has been loaded.
 void InspectExtensionHost(
     DevToolsOpenedByAction opened_by,
     std::unique_ptr<LazyContextTaskQueue::ContextInfo> context_info) {
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  LOG(INFO) << " func:" << __func__;
+  OnRequestOpenDevToolsWithContext(context_info);
+  return;
+#endif // ARKWEB_DEVTOOLS
   if (context_info != nullptr)
     DevToolsWindow::OpenDevToolsWindow(context_info->web_contents, opened_by);
 }

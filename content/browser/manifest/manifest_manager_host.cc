@@ -83,10 +83,22 @@ void ManifestManagerHost::RequestManifestDebugInfo(
 
 blink::mojom::ManifestManager& ManifestManagerHost::GetManifestManager() {
   if (!manifest_manager_) {
+#if BUILDFLAG(IS_ARKWEB)
+    auto remote_interface = page().GetMainDocument().GetRemoteInterfaces();
+    if (remote_interface) {
+      remote_interface->GetInterface(manifest_manager_.BindNewPipeAndPassReceiver());
+      manifest_manager_.set_disconnect_handler(base::BindOnce(
+        &ManifestManagerHost::OnConnectionError, base::Unretained(this)));
+    } else {
+      auto dummy_receiver = manifest_manager_.BindNewPipeAndPassReceiver();
+      LOG(ERROR) << "remote_interface is null, dummy_receiver is invalid, please check the peer render process.";
+    }
+#else
     page().GetMainDocument().GetRemoteInterfaces()->GetInterface(
         manifest_manager_.BindNewPipeAndPassReceiver());
     manifest_manager_.set_disconnect_handler(base::BindOnce(
         &ManifestManagerHost::OnConnectionError, base::Unretained(this)));
+#endif
   }
   return *manifest_manager_;
 }

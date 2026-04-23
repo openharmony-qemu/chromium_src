@@ -370,6 +370,10 @@ uint32_t g_nweb_count = 0;
 const uint32_t kSurfaceMaxWidth = 7680;
 const uint32_t kSurfaceMaxHeight = 7680;
 const float richtextDisplayRatio = 1.0;
+constexpr base::FilePath::CharType kUserDataDir[] =
+    FILE_PATH_LITERAL("files/__arkweb");
+constexpr base::FilePath::CharType kUserCacheDir[] =
+    FILE_PATH_LITERAL("cache/web");
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
 bool g_browser_service_api_enabled = false;
@@ -1012,6 +1016,25 @@ void HandleAdvancedSecurityMode(std::list<std::string>& web_engine_args) {
 #endif  // BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
 }
 
+void ParsePathFromArgForKey(const std::string& arg, const std::string& key,
+                            base::FilePath* out_path) {
+  if (arg.find(key) != std::string::npos) {
+    size_t eq_pos = arg.find("=");
+    if (eq_pos != std::string::npos) {
+      std::string path_str = arg.substr(eq_pos + 1);
+      *out_path = base::FilePath(path_str);
+    }
+  }
+}
+
+base::FilePath GetWebEngineDataDirectory(const base::FilePath& user_data_dir,
+                                         const base::FilePath& cache_dir, 
+                                         std::list<std::string>& web_engine_args) {
+  base::FilePath new_user_data_dir = user_data_dir.Append(kUserDataDir);
+  bool isMix = base::PathExists(cache_dir) && !base::PathExists(new_user_data_dir);
+  return isMix? cache_dir : new_user_data_dir;
+}
+
 void InitialWebEngineArgs(
     std::list<std::string>& web_engine_args,
     std::shared_ptr<OHOS::NWeb::NWebEngineInitArgs> init_args) {
@@ -1098,10 +1121,30 @@ void InitialWebEngineArgs(
     }
   }
 
+  base::FilePath app_sandbox_root_dir = base::FilePath();
+  base::FilePath user_data_dir = base::FilePath();
+  base::FilePath user_cache_dir = base::FilePath();
+  bool isSeparation = true;
   auto args_to_add = GetArgsToAdd(init_args);
   for (auto arg : args_to_add) {
+    ParsePathFromArgForKey(arg, switches::kArkwebAppDataDir, &app_sandbox_root_dir);
+    ParsePathFromArgForKey(arg, switches::kUserDataDir, &user_data_dir);
+    ParsePathFromArgForKey(arg, switches::kUserCacheDir, &user_cache_dir);
+    if (arg.find(switches::kDisableUserDataDirSeparation) != std::string::npos) {
+      isSeparation = false;
+    }
     web_engine_args.emplace_back(arg);
   }
+  base::FilePath target_data_dir = isSeparation? 
+                      GetWebEngineDataDirectory(user_data_dir, user_cache_dir, web_engine_args) :
+                      app_sandbox_root_dir.Append(kUserCacheDir);
+  web_engine_args.emplace_back("--user-data-dir=" + target_data_dir.value());
+  web_engine_args.emplace_back("--user-cache-dir=" + app_sandbox_root_dir.Append(kUserCacheDir).value());
+  web_engine_args.emplace_back("--arkweb-app-data-dir=" + app_sandbox_root_dir.value());
+  if (app_sandbox_root_dir.empty()) {
+    LOG(ERROR) << "app_sandbox_root_dir is empty.";
+  }
+  LOG(INFO) << "arkweb data|cache Separation : " << isSeparation;
 
 #if BUILDFLAG(ARKWEB_GWP_ASAN)
   std::string gwpEnable = "--ohos-enable-gwp-asan-type=" + GetGwpAsanEnable();

@@ -134,6 +134,7 @@ component("adapter_ndk") {
     "drawing_text_adapter/ohos_drawing_text_adapter_impl.h",
     "drawing_text_adapter/ohos_drawing_text_adapter_impl.cpp",
     "distributeddatamgr_adapter/ohos_web_snapshot_data_base.cpp",
+    "distributeddatamgr_adapter/ohos_web_nweb_stats_adapter_impl.cpp",
     "net_config_adapter/net_config_adapter_impl.h",
     "net_config_adapter/net_config_adapter_impl.cpp",
     "window_manager_adapter/window_manager_adapter_impl.h",

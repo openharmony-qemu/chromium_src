@@ -80,6 +80,7 @@
 
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
 #include "event_reporter.h"
+#include "arkweb/ohos_adapter_ndk/distributeddatamgr_adapter/ohos_web_nweb_stats_adapter_impl.h"
 #endif
 #if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
 #include "content/public/browser/browsing_data_remover.h"
@@ -1302,11 +1303,14 @@ std::shared_ptr<NWeb> NWebImpl::CreateNWeb(
   ++g_nweb_count;
   WVLOG_E("CreateNWeb NWebId: %{public}u successfully", nweb_id);
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
-  // Report nweb instance count
+  if (g_nweb_max_count == 0) {
+    g_nweb_max_count = OhosWebNWebStatsAdapterImpl::GetInstance().GetMaxInstanceCount();
+  }
   if (g_nweb_count > g_nweb_max_count) {
     g_nweb_max_count = g_nweb_count;
+    OhosWebNWebStatsAdapterImpl::GetInstance().UpdateMaxInstanceCount(g_nweb_max_count);
+    ReportMultiInstanceStats(nweb_id, g_nweb_count, g_nweb_max_count);
   }
-  ReportMultiInstanceStats(nweb_id, g_nweb_count, g_nweb_max_count);
 #endif
 
   return nweb;
@@ -1636,10 +1640,6 @@ void NWebImpl::OnDestroy() {
     WVLOG_W("NWebImpl::OnDestroy, input_handler_ is nullptr");
   }
 
-#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
-  // Report nweb instance count
-  ReportMultiInstanceStats(nweb_id_, g_nweb_count, g_nweb_max_count);
-#endif
   NWebConnectNativeManager::GetInstance()->UnRegisterNWebHandler(nweb_id_);
 
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
@@ -1704,8 +1704,12 @@ void NWebImpl::SetNwebDelegateForTest(
   nweb_delegate_ = std::make_shared<NWebDelegate>(argc, argv);
   g_nweb_count = 1;
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+  if (g_nweb_max_count == 0) {
+    g_nweb_max_count = OhosWebNWebStatsAdapterImpl::GetInstance().GetMaxInstanceCount();
+  }
   if (g_nweb_count > g_nweb_max_count) {
     g_nweb_max_count = g_nweb_count;
+    OhosWebNWebStatsAdapterImpl::GetInstance().UpdateMaxInstanceCount(g_nweb_max_count);
   }
 #endif
 }

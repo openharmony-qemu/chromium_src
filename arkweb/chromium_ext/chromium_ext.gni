@@ -1430,6 +1430,7 @@ arkweb_ohos_adapter_ndk_unittests_sources = [
   "//arkweb/chromium_ext/ohos_test/unittest/keystore_adapter/keystore_adapter_impl_unittest.cpp",
   "//arkweb/chromium_ext/ohos_test/unittest/pasteboard_adapter/pasteboard_client_adapter_impl_unittest.cpp",
   "//arkweb/chromium_ext/ohos_test/unittest/distributeddatamgr_adapter/ohos_web_snapshot_data_base_unittest.cc",
+  "//arkweb/chromium_ext/ohos_test/unittest/distributeddatamgr_adapter/ohos_web_nweb_stats_adapter_unittest.cc",
   "//arkweb/chromium_ext/ohos_test/unittest/utils/ashmem_unittest.cc",
   "//arkweb/ohos_adapter_ndk/color_picker_adapter/color_picker_adapter_impl_unittest.cpp",
   "//arkweb/ohos_adapter_ndk/datashare_adapter/datashare_adapter_impl_unittest.cc",

@@ -326,8 +326,7 @@ void OHOSMediaPlayerBridge::Pause() {
               << static_cast<int32_t>(player_state_);
     pause_when_prepared_ = true;
   }
-  if (player_ && player_state_ ==
-                     OHOS::NWeb::PlayerAdapter::PlayerStates::PLAYER_STARTED) {
+  if (player_) {
     LOG(INFO) << "OHOSMediaPlayerBridge Pause successful!!";
     int32_t ret = player_->Pause();
     if (ret != 0) {

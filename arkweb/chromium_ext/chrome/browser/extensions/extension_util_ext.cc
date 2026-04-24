@@ -75,7 +75,12 @@ void LoadWebStoreConfig(Profile* profile) {
  
   SetWebStoreConfig(profile, config);
 }
- 
+
+void RegisterProfilePrefs(user_prefs::PrefRegistrySyncable* registry) {
+  LOG(INFO) << "registry webstore config to prefs";
+  registry->RegisterDictionaryPref(pref_names::kWebStoreConfig);
+}
+
 }  // namespace util
  
 }  // namespace extensions

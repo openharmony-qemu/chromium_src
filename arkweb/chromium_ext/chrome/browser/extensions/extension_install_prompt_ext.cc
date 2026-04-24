@@ -91,6 +91,7 @@ class PromptInfoHolder {
     std::string permissionsHeading =
       base::UTF16ToUTF8(prompt_->GetPermissionsHeading());
     data->title = strdup(title.c_str());
+    data->is_from_webstore = prompt_->is_from_webstore();
     data->abortButtonLabel = strdup(abortButtonLabel.c_str());
     data->acceptButtonLabel = strdup(acceptButtonLabel.c_str());
     data->permissionsHeading = nullptr;

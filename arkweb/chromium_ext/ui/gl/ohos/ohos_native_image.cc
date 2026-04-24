@@ -71,8 +71,8 @@ void OhosNativeImage::SetFrameAvailableCallback(
   std::lock_guard<std::mutex> lock(g_mutex_native_image);
   frame_available_cb_ = std::move(callback);
   if (native_image_adapter_ != nullptr && listener_ == nullptr) {
-    listener_ = std::make_shared<OHOS::NWeb::FrameAvailableListenerImpl>(
-                          weak_ptr_factory_.GetWeakPtr(), task_runner_);
+    // Pass the callback directly to listener for immediate signal on callback thread
+    listener_ = std::make_shared<OHOS::NWeb::FrameAvailableListenerImpl>(frame_available_cb_);
     native_image_adapter_->SetOnFrameAvailableListener(listener_);
   }
 }

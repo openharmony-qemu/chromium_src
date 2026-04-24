@@ -56,13 +56,13 @@ void CancelableDelayedTaskManager::PostNewDelayedTask(uint64_t blankless_key,
     } else {
       it->second.Reset(std::move(wrapped_task));
     }
-  }
 
-  // Post delayed task to thread pool
-  sequenced_task_runner_->PostDelayedTask(
-    FROM_HERE,
-    pending_tasks_[blankless_key].callback(),  // Get cancelable callback
-    delay);
+    // Post delayed task to thread pool
+    sequenced_task_runner_->PostDelayedTask(
+      FROM_HERE,
+      pending_tasks_[blankless_key].callback(),  // Get cancelable callback
+      delay);
+  }
 }
 
 void CancelableDelayedTaskManager::PostNewRemoveDelayedTask(uint64_t blankless_key,
@@ -90,13 +90,13 @@ void CancelableDelayedTaskManager::PostNewRemoveDelayedTask(uint64_t blankless_k
     } else {
       it->second.Reset(std::move(wrapped_task));
     }
-  }
 
-  // Post delayed task to thread pool
-  sequenced_task_runner_->PostDelayedTask(
-    FROM_HERE,
-    remove_pending_tasks_[blankless_key].callback(),  // Get cancelable callback
-    delay);
+    // Post delayed task to thread pool
+    sequenced_task_runner_->PostDelayedTask(
+      FROM_HERE,
+      remove_pending_tasks_[blankless_key].callback(),  // Get cancelable callback
+      delay);
+  }
 }
 
 void CancelableDelayedTaskManager::ExecuteTaskWrapper(uint64_t blankless_key, base::OnceClosure task)

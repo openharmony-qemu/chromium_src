@@ -14,6 +14,7 @@
  */
  
 #include "chrome/browser/profiles/profile.h"
+#include "components/pref_registry/pref_registry_syncable.h"
 #include "extensions/common/extension_urls.h"
  
 namespace extensions {
@@ -24,7 +25,9 @@ void SetWebStoreConfig(Profile* profile,
                        const extension_urls::WebStoreConfig& config);
  
 void LoadWebStoreConfig(Profile* profile);
- 
+
+void RegisterProfilePrefs(user_prefs::PrefRegistrySyncable* registry);
+
 }  // namespace util
  
 }  // namespace extensions

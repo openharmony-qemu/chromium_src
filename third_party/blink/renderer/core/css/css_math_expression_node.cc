@@ -2046,7 +2046,12 @@ CSSMathExpressionNode* CSSMathExpressionOperation::CreateSignRelatedFunction(
     CSSValueID function_id) {
   const CSSMathExpressionNode* operand = operands.front();
 
+#if BUILDFLAG(IS_ARKWEB)
+  // https://issues.chromium.org/issues/475197564
+  if (operand->IsCalcSize() || CSSMathType(*operand).IsIntermediateResult()) {
+#else
   if (operand->IsCalcSize()) {
+#endif
     return nullptr;
   }
 

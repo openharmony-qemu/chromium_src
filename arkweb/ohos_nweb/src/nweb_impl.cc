@@ -339,7 +339,6 @@ OnArkWebStaticRequestOpenDevToolsFunc
 std::shared_ptr<OHOS::NWeb::NWebEngineInitArgs>
     OHOS::NWeb::NWebImpl::save_initargs_ = nullptr;
 std::atomic<bool> OHOS::NWeb::NWebImpl::should_lazy_init_web_engine_{false};
-base::Lock OHOS::NWeb::NWebImpl::init_web_engine_lock_;
 #endif
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
@@ -1383,7 +1382,6 @@ void NWebImpl::UpdateAdblockEasyListRules(long adBlockEasyListVersion) {
 // static
 bool NWebImpl::InitializeICUStatic(
     std::shared_ptr<NWebEngineInitArgs> init_args) {
-  base::AutoLock lock_scope(init_web_engine_lock_);
   if (NWebApplication::GetDefault()->HasInitializedCef()) {
     WVLOG_I("cef already initialized, skip icu init.");
     return true;
@@ -1420,9 +1418,6 @@ bool NWebImpl::InitializeICUStatic(
 // static
 void NWebImpl::InitializeWebEngine(
     std::shared_ptr<NWebEngineInitArgs> init_args) {
-#if BUILDFLAG(ARKWEB_COOKIE)
-  base::AutoLock lock_scope(init_web_engine_lock_);
-#endif
   LOG(INFO) << "InitializeWebEngine: begin to init arkweb engine,version is "
             << ARKWEB_VERSION;
   std::list<std::string> web_engine_args;
@@ -1773,9 +1768,6 @@ void NWebImpl::SetNwebDelegateForTest(
 }
 
 bool NWebImpl::InitWebEngine(std::shared_ptr<NWebCreateInfo> create_info) {
-#if BUILDFLAG(ARKWEB_COOKIE)
-  base::AutoLock lock_scope(init_web_engine_lock_);
-#endif
   if (output_handler_ == nullptr) {
     WVLOG_E("Init web engine failed, NWeb output handler is not ready");
     return false;

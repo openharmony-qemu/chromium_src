@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "base/base_paths_ohos.h"
+#include "base/containers/fixed_flat_set.h"
 #include "base/files/file.h"
 #include "base/json/json_string_value_serializer.h"
 #include "base/logging.h"
@@ -24,6 +25,16 @@ namespace policy {
 namespace {
 constexpr int kApiMinApiVersion = 16;
 constexpr bool kUseTestPolicies = false;
+
+bool IsPolicyKeySupported(std::string_view key) {
+  static constexpr auto kSupportedPolicyKeys =
+      base::MakeFixedFlatSet<std::string_view>(
+          {"ExtensionInstallForcelist", "ExtensionInstallAllowlist",
+           "OriginAgentClusterDefaultEnabled",
+           "InsecurePrivateNetworkRequestsAllowed",
+           "LegacySameSiteCookieBehaviorEnabledForDomainList"});
+  return kSupportedPolicyKeys.contains(key);
+}
 }  // namespace
 
 void RegisterBrowserPolicyProfilePrefs(PrefRegistrySimple* registry) {
@@ -191,6 +202,12 @@ bool PolicyLoaderOhos::ParsePolicy(const std::string& json,
     }
     for (auto kv : json_value->GetDict()) {
       std::string key = kv.first;
+
+      if (!IsPolicyKeySupported(key)) {
+        LOG(WARNING) << "Policy key '" << key << "' is not supported, skipping";
+        continue;
+      }
+
       if (kv.second.type() != base::Value::Type::DICT) {
         LOG(WARNING) << "key: " << key << " type is not  DICTIONARY";
         continue;

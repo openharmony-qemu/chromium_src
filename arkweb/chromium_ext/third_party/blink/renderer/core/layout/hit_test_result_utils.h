@@ -26,6 +26,7 @@ class CORE_EXPORT HitTestResultUtils {
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
   gfx::Rect GetReplacedContentRect() const;
   gfx::Rect GetLinkElementRect() const;
+  gfx::Rect ImageRect() const;
 #endif
 };
 }  // namespace blink

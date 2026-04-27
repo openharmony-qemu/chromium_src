@@ -31,6 +31,17 @@ void DeveloperPrivateEventRouter::OnAppWindowRemoved(AppWindow* window) {
                             window->extension_id());
 }
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+void DeveloperPrivateEventRouter::OnExtensionStateChanged(
+    const ExtensionId& extension_id,
+    bool state) {
+  // Disabling or enabling an extension updates pref-backed fields such as
+  // disableReasons, but that transition does not trigger
+  // OnExtensionDisableReasonsChanged().
+  BroadcastItemStateChanged(developer::EventType::kPrefsChanged, extension_id);
+}
+#endif
+
 void DeveloperPrivateEventRouter::OnToolbarPinnedActionsChanged() {
   // Currently, only enabled extensions are considered since they are the only
   // ones that have extension actions.

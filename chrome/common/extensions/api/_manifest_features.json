@@ -43,6 +43,10 @@
       "extension", "legacy_packaged_app", "hosted_app"
     ]
   },
+  "custom_data": {
+    "channel": "stable",
+    "extension_types": ["extension"]
+  },    
   "display_in_launcher": [
     {
       "channel": "stable",

@@ -63,6 +63,10 @@
 #include "chrome/browser/ui/webui/theme_source.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/extensions/browser/custom_handler.h"
+#endif
+
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 
 using extensions::mojom::ManifestLocation;
@@ -132,8 +136,13 @@ void ChromeExtensionRegistrarDelegate::PreAddExtension(
 void ChromeExtensionRegistrarDelegate::OnAddNewOrUpdatedExtension(
     const Extension* extension) {
   if (InstallVerifier::NeedsVerification(*extension, profile_)) {
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
     InstallVerifierFactory::GetForBrowserContext(profile_)->VerifyExtension(
         extension->id());
+#else
+    InstallVerifierFactory::GetForBrowserContext(profile_)
+        ->VerifyExtension(CustomData::GetStoreType(extension), extension->id());
+#endif
   }
 }
 

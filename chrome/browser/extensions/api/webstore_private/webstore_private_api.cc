@@ -916,8 +916,13 @@ void WebstorePrivateBeginInstallWithManifest3Function::
 
 void WebstorePrivateBeginInstallWithManifest3Function::ShowInstallDialog(
     content::WebContents* contents) {
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   auto prompt = std::make_unique<ExtensionInstallPrompt::Prompt>(
       ExtensionInstallPrompt::INSTALL_PROMPT);
+#else
+  auto prompt = std::make_unique<ExtensionInstallPrompt::Prompt>(
+      ExtensionInstallPrompt::INSTALL_PROMPT, true);
+#endif
 
   if (!dummy_extension_->is_theme()) {
     const bool requires_parent_permission =

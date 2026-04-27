@@ -592,6 +592,9 @@
   <message name="IDS_EXTENSIONS_SIDEBAR_DISCOVER_MORE" desc="The text displayed in the sidebar of the chrome://extensions page to open the Chrome Web Store to get more extensions.">
     Discover more extensions and themes on the <ph name="BEGIN_LINK">&lt;a target="_blank" href="$1"&gt;</ph>Chrome Web Store<ph name="END_LINK">&lt;/a&gt; <ex>&lt;/a&gt;</ex> </ph>
   </message>
+  <message name="IDS_EXTENSIONS_SIDEBAR_DISCOVER_MORE_V2" desc="The text displayed in the sidebar to open the Browser Web Store to get more extensions.">
+    Visita <ph name="BEGIN_LINK">&lt;a target="_blank" href="$1"&gt;</ph>Browser Toolbox<ph name="END_LINK">&lt;/a&gt; <ex>&lt;/a&gt;</ex> </ph>
+  </message>
   <message name="IDS_EXTENSIONS_WHATS_NEW_SIDEBAR_PROMO" desc="The text displayed in the sidebar of the chrome://extensions page to promote the extension documenation, for when the user is in developer mode.">
     Developing extensions? Stay up to date on <ph name="BEGIN_LINK">&lt;a target="_blank" href="$1"&gt;</ph>What's New<ph name="END_LINK">&lt;/a&gt;</ph> with Chrome Extension developer documentation.
   </message>
@@ -660,6 +663,24 @@
     {NUM_EXTENSIONS, plural,
      =1 {Review 1 extension that may be unsafe}
      other {Review {NUM_EXTENSIONS} extensions that may be unsafe}}
+  </message>
+  <message name="IDS_EXTENSIONS_BLACKLIST_TITLE" desc="Header text displayed in the blocklist review panel title.">
+    {NUM_EXTENSIONS, plural,
+     =1 {1 blocklisted extension detected!}
+     other {{NUM_EXTENSIONS} blocklisted extensions detected!}}
+  </message>
+  <message name="IDS_EXTENSIONS_BLACKLIST_DESCRIPTION" desc="Detailed text displayed in the blocklist review panel.">
+    {NUM_EXTENSIONS, plural,
+     =1 {This extension has been automatically disabled and cannot be turned on again because it is on the blocklist.}
+     other {These extensions have been automatically disabled and cannot be turned on again because they are on the blocklist.}}
+  </message>
+  <message name="IDS_EXTENSIONS_BLACKLIST_ALL_DONE_FOR_NOW" desc="The text of the blocklist review completion state.">
+    {NUM_EXTENSIONS, plural,
+     =1 {Removed 1 blocklisted extension}
+     other {Removed {NUM_EXTENSIONS} blocklisted extensions}}
+  </message>
+  <message name="IDS_EXTENSIONS_BLACKLIST_ROW_REASON" desc="The row reason shown for each extension in the blocklist review panel.">
+    Disabled by blocklist
   </message>
   <!-- Extension Safety Check review panel labels and texts for icons -->
   <message name="IDS_EXTENSIONS_SC_KEEP_EXT" desc="The label on the overflow menu to keep an extension.">

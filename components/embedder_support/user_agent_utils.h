@@ -50,6 +50,10 @@ std::string GetUserAgent(
     UserAgentReductionEnterprisePolicyState user_agent_reduction =
         UserAgentReductionEnterprisePolicyState::kDefault);
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+std::string GetUserAgentByHost(const std::string& host);
+#endif
+
 // Return UserAgentMetadata, `only_low_entropy_ch` indicates whether only
 // populate the low entropy client hints.
 blink::UserAgentMetadata GetUserAgentMetadata(bool only_low_entropy_ch = false);

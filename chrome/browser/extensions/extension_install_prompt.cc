@@ -84,6 +84,7 @@ ExtensionInstallPrompt::PromptType
 ExtensionInstallPrompt::g_last_prompt_type_for_tests =
     ExtensionInstallPrompt::UNSET_PROMPT_TYPE;
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 ExtensionInstallPrompt::Prompt::Prompt(PromptType type)
     : type_(type),
       is_requesting_host_permissions_(false),
@@ -95,6 +96,22 @@ ExtensionInstallPrompt::Prompt::Prompt(PromptType type)
   DCHECK_NE(type_, UNSET_PROMPT_TYPE);
   DCHECK_NE(type_, NUM_PROMPT_TYPES);
 }
+#else
+ExtensionInstallPrompt::Prompt::Prompt(PromptType type) : Prompt(type, false) {}
+
+ExtensionInstallPrompt::Prompt::Prompt(PromptType type, bool is_from_webstore)
+    : type_(type),
+      is_requesting_host_permissions_(false),
+      extension_(nullptr),
+      average_rating_(0.0),
+      rating_count_(0),
+      show_user_count_(false),
+      is_from_webstore_(is_from_webstore),
+      has_webstore_data_(false) {
+  DCHECK_NE(type_, UNSET_PROMPT_TYPE);
+  DCHECK_NE(type_, NUM_PROMPT_TYPES);
+}
+#endif
 
 ExtensionInstallPrompt::Prompt::~Prompt() = default;
 

@@ -167,7 +167,11 @@ content::WebUIDataSource* CreateAndAddExtensionsSource(Profile* profile,
 #else
       {"stackTrace", IDS_EXTENSIONS_ERROR_STACK_TRACE},
 #endif
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
       {"sidebarDiscoverMore", IDS_EXTENSIONS_SIDEBAR_DISCOVER_MORE},
+#else
+      {"sidebarDiscoverMore", IDS_EXTENSIONS_SIDEBAR_DISCOVER_MORE_V2},
+#endif
       {"sidebarDocsPromo", IDS_EXTENSIONS_WHATS_NEW_SIDEBAR_PROMO},
       {"keyboardShortcuts", IDS_EXTENSIONS_SIDEBAR_KEYBOARD_SHORTCUTS},
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
@@ -479,6 +483,9 @@ content::WebUIDataSource* CreateAndAddExtensionsSource(Profile* profile,
        IDS_EXTENSIONS_SC_REMOVE_BUTTON_A11Y_LABEL},
       {"safetyCheckOptionMenuA11yLabel",
        IDS_EXTENSIONS_SC_OPTION_MENU_A11Y_LABEL},
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      {"blacklistReviewRowReason", IDS_EXTENSIONS_BLACKLIST_ROW_REASON},
+#endif
 #if BUILDFLAG(IS_CHROMEOS)
       {"manageKioskApp", IDS_EXTENSIONS_MANAGE_KIOSK_APP},
       {"kioskAddApp", IDS_EXTENSIONS_KIOSK_ADD_APP},
@@ -560,6 +567,11 @@ content::WebUIDataSource* CreateAndAddExtensionsSource(Profile* profile,
       "enableUserPermittedSites",
       base::FeatureList::IsEnabled(
           extensions_features::kExtensionsMenuAccessControlWithPermittedSites));
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  source->AddBoolean("blacklistReviewShowReviewPanel", true);
+#else
+  source->AddBoolean("blacklistReviewShowReviewPanel", false);
+#endif
   source->AddBoolean(
       "safetyHubThreeDotDetails",
       base::FeatureList::IsEnabled(features::kSafetyHubThreeDotDetails));
@@ -645,6 +657,15 @@ ExtensionsUI::ExtensionsUI(content::WebUI* web_ui) : WebUIController(web_ui) {
                                             IDS_EXTENSIONS_SC_DESCRIPTION);
   plural_string_handler->AddLocalizedString("safetyCheckAllDoneForNow",
                                             IDS_EXTENSIONS_SC_ALL_DONE_FOR_NOW);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  plural_string_handler->AddLocalizedString("blacklistReviewTitle",
+                                            IDS_EXTENSIONS_BLACKLIST_TITLE);
+  plural_string_handler->AddLocalizedString(
+      "blacklistReviewDescription", IDS_EXTENSIONS_BLACKLIST_DESCRIPTION);
+  plural_string_handler->AddLocalizedString(
+      "blacklistReviewAllDoneForNow",
+      IDS_EXTENSIONS_BLACKLIST_ALL_DONE_FOR_NOW);
+#endif
   plural_string_handler->AddLocalizedString(
       "mv2DeprecationPanelWarningHeader",
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)

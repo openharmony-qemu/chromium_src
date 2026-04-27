@@ -101,6 +101,10 @@ class ExtensionInstallPrompt {
    public:
     explicit Prompt(PromptType type);
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    Prompt(PromptType type, bool is_from_webstore);
+#endif
+
     Prompt(const Prompt&) = delete;
     Prompt& operator=(const Prompt&) = delete;
 
@@ -162,6 +166,10 @@ class ExtensionInstallPrompt {
       return localized_rating_count_;
     }
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    bool is_from_webstore() const { return is_from_webstore_; }
+#endif
+
     bool has_webstore_data() const { return has_webstore_data_; }
 
     void AddObserver(Observer* observer);
@@ -213,6 +221,10 @@ class ExtensionInstallPrompt {
     // Whether we should display the user count (we anticipate this will be
     // false if localized_user_count_ represents the number zero).
     bool show_user_count_;
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    bool is_from_webstore_ = false;
+#endif
 
     // Whether or not this prompt has been populated with data from the
     // webstore.

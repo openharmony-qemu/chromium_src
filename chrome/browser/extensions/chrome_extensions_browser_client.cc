@@ -607,7 +607,11 @@ void ChromeExtensionsBrowserClient::AttachExtensionTaskManagerTag(
 scoped_refptr<update_client::UpdateClient>
 ChromeExtensionsBrowserClient::CreateUpdateClient(
     scoped_refptr<update_client::Configurator> configurator) {
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   return update_client::UpdateClientFactory(configurator);
+#else
+  return update_client::UpdateClientFactory(configurator, true);
+#endif
 }
 
 scoped_refptr<update_client::Configurator>

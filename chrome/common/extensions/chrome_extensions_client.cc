@@ -78,8 +78,14 @@ void ChromeExtensionsClient::InitializeWebStoreUrls(
     new_webstore_base_url_ =
         GURL(command_line->GetSwitchValueASCII(switches::kAppsGalleryURL));
   } else {
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
     webstore_base_url_ = GURL(extension_urls::kChromeWebstoreBaseURL);
     new_webstore_base_url_ = GURL(extension_urls::kNewChromeWebstoreBaseURL);
+#else
+    webstore_base_url_ = GURL(extension_urls::GetDefaultWebstoreLaunchURL());
+    new_webstore_base_url_ =
+        GURL(extension_urls::GetDefaultNewWebstoreLaunchURL());
+#endif
   }
   if (command_line->HasSwitch(switches::kAppsGalleryUpdateURL)) {
     webstore_update_url_ = GURL(
@@ -158,6 +164,20 @@ bool ChromeExtensionsClient::IsScriptableURL(const GURL& url,
   }
   return true;
 }
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+void ChromeExtensionsClient::SetWebstoreBaseURL(const GURL& url) {
+  webstore_base_url_ = url;
+}
+ 
+void ChromeExtensionsClient::SetNewWebstoreBaseURL(const GURL& url) {
+  new_webstore_base_url_ = url;
+}
+ 
+void ChromeExtensionsClient::SetWebstoreUpdateURL(const GURL& url) {
+  webstore_update_url_ = url;
+}
+#endif
 
 const GURL& ChromeExtensionsClient::GetWebstoreBaseURL() const {
   return webstore_base_url_;

@@ -128,6 +128,7 @@
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 #include "arkweb/chromium_ext/chrome/browser/extensions/extension_service_for_include.cc"
+#include "extensions/browser/extension_util.h"
 #endif
 
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
@@ -277,6 +278,10 @@ ExtensionService::ExtensionService(
 
   extension_action_storage_manager_ =
       std::make_unique<ExtensionActionStorageManager>(profile_);
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  extensions::util::LoadWebStoreConfig(profile_);
+#endif
 
   SetCurrentDeveloperMode(
       util::GetBrowserContextId(profile),

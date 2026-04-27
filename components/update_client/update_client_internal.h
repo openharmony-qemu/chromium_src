@@ -34,6 +34,13 @@ class UpdateClientImpl : public UpdateClient {
                    scoped_refptr<PingManager> ping_manager,
                    UpdateChecker::Factory update_checker_factory);
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  UpdateClientImpl(bool is_enabled,
+                   scoped_refptr<Configurator> config,
+                   scoped_refptr<PingManager> ping_manager,
+                   UpdateChecker::Factory update_checker_factory);
+#endif
+
   UpdateClientImpl(const UpdateClientImpl&) = delete;
   UpdateClientImpl& operator=(const UpdateClientImpl&) = delete;
 
@@ -72,6 +79,10 @@ class UpdateClientImpl : public UpdateClient {
   void RunOrEnqueueTask(scoped_refptr<Task> task);
 
   SEQUENCE_CHECKER(sequence_checker_);
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  bool is_enabled_ = true;
+#endif
 
   // True if `Stop()` has been called.
   bool is_stopped_ = false;

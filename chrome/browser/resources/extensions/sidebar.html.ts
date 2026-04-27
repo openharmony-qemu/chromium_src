@@ -9,7 +9,7 @@ import type {ExtensionsSidebarElement} from './sidebar.js';
 export function getHtml(this: ExtensionsSidebarElement) {
   // clang-format off
   return html`<!--_html_template_start_-->
-<cr-menu-selector id="sectionMenu" selected-attribute="selected"
+<cr-menu-selector id="sectionMenu" hidden=true selected-attribute="selected"
     attr-for-selected="data-path" .selected="${this.selectedPath_}">
   <!-- Values for "data-path" attribute must match the "Page" enum. -->
   <a role="menuitem" class="cr-nav-menu-item" id="sectionsExtensions" href="/"
@@ -33,10 +33,7 @@ export function getHtml(this: ExtensionsSidebarElement) {
     <cr-ripple></cr-ripple>
   </a>
 </cr-menu-selector>
-<div class="separator"></div>
 <div class="cr-nav-menu-item" id="moreExtensions">
-  <cr-icon id="web-store-icon" icon="extensions-icons:web_store">
-  </cr-icon>
   <span id="discover-more-text" class="cr-secondary-text"
       @click="${this.onMoreExtensionsClick_}"
       .innerHTML="${this.computeDiscoverMoreText_()}">

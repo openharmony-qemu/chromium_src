@@ -54,6 +54,7 @@
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 #include "components/services/unzip/in_process_unzipper.h"
+#include "extensions/common/extension_urls.h"
 #endif
 
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
@@ -288,7 +289,21 @@ ChromeUpdateClientConfig::GetNetworkFetcherFactory() {
             // from chrome.google.com, so send cookies if and only if that is
             // the download domain.
             base::BindRepeating([](const GURL& url) {
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
               return url.DomainIs("chrome.google.com");
+#else
+              if (url.DomainIs("chrome.google.com")) {
+                return true;
+              }
+ 
+              auto domains = extension_urls::GetWebstoreUpdateDomains();
+              for (const auto& domain : domains) {
+                if (url.DomainIs(domain)) {
+                  return true;
+                }
+              }
+              return false;
+#endif
             }));
   }
   return network_fetcher_factory_;

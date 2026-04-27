@@ -25,6 +25,10 @@
 #include "extensions/common/manifest_handlers/shared_module_info.h"
 #include "url/gurl.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "extensions/common/extension_urls.h"
+#endif
+
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 
 class Profile;
@@ -114,6 +118,9 @@ class WebstoreInstaller : public ExtensionRegistryObserver,
 
   // Helper to get install URL.
   static GURL GetWebstoreInstallURL(const std::string& extension_id,
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+                                    int webstore_type,
+#endif
                                     InstallSource source);
 
   // DownloadManager::DownloadUrl callback.
@@ -172,6 +179,10 @@ class WebstoreInstaller : public ExtensionRegistryObserver,
   std::unique_ptr<InstallApproval> approval_;
   GURL download_url_;
   scoped_refptr<CrxInstaller> crx_installer_;
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  int webstore_type_ = kWebStoreTypeDefault;
+#endif
 
   // Pending modules.
   std::list<SharedModuleInfo::ImportInfo> pending_modules_;

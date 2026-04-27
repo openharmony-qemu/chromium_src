@@ -30,6 +30,10 @@
 #include "chrome/common/extensions/api/file_system_provider_capabilities/file_system_provider_capabilities_handler.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/extensions/browser/custom_handler.h"
+#endif
+
 namespace extensions {
 
 void RegisterChromeManifestHandlers() {
@@ -56,6 +60,10 @@ void RegisterChromeManifestHandlers() {
   registry->RegisterHandler(std::make_unique<FileBrowserHandlerParser>());
   registry->RegisterHandler(
       std::make_unique<FileSystemProviderCapabilitiesHandler>());
+#endif
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  registry->RegisterHandler(std::make_unique<CustomHandler>());
 #endif
 }
 

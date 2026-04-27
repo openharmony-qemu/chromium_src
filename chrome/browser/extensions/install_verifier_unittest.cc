@@ -20,6 +20,10 @@
 #include "extensions/common/manifest.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "extensions/browser/extension_registry.h"
+#endif
+
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 
 using extensions::mojom::ManifestLocation;
@@ -127,6 +131,70 @@ TEST_F(InstallVerifierTest, TestIsFromStoreAndMustRemainDisabled) {
                                                &disable_reason));
   }
 }
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+TEST_F(InstallVerifierTest,
+       OnVerificationCompleteSingleAddRechecksManagementPolicy) {
+  scoped_refptr<const Extension> extension =
+      ExtensionBuilder("Verified Extension")
+          .SetLocation(ManifestLocation::kInternal)
+          .SetManifestKey("update_url",
+                          extension_urls::GetWebstoreUpdateUrl().spec())
+          .Build();
+  service()->AddExtension(extension.get());
+  service()->DisableExtension(extension->id(),
+                              disable_reason::DISABLE_NOT_VERIFIED);
+
+  ExtensionPrefs* prefs = ExtensionPrefs::Get(profile());
+  EXPECT_TRUE(ExtensionRegistry::Get(profile())->disabled_extensions().Contains(
+      extension->id()));
+  EXPECT_TRUE(prefs->HasDisableReason(extension->id(),
+                                      disable_reason::DISABLE_NOT_VERIFIED));
+
+  InstallVerifier* install_verifier = InstallVerifier::Get(profile());
+  // Simulate that the latest verification result now allows this extension, so
+  // a management-policy recheck should lift DISABLE_NOT_VERIFIED.
+  install_verifier->provisional_.insert(extension->id());
+  install_verifier->OnVerificationComplete(
+      /*success=*/true, InstallVerifier::ADD_SINGLE);
+
+  EXPECT_TRUE(ExtensionRegistry::Get(profile())->enabled_extensions().Contains(
+      extension->id()));
+  EXPECT_FALSE(prefs->HasDisableReason(extension->id(),
+                                       disable_reason::DISABLE_NOT_VERIFIED));
+}
+
+TEST_F(InstallVerifierTest,
+       OnVerificationCompleteProvisionalAddRechecksManagementPolicy) {
+  scoped_refptr<const Extension> extension =
+      ExtensionBuilder("Provisionally Verified Extension")
+          .SetLocation(ManifestLocation::kInternal)
+          .SetManifestKey("update_url",
+                          extension_urls::GetWebstoreUpdateUrl().spec())
+          .Build();
+  service()->AddExtension(extension.get());
+  service()->DisableExtension(extension->id(),
+                              disable_reason::DISABLE_NOT_VERIFIED);
+
+  ExtensionPrefs* prefs = ExtensionPrefs::Get(profile());
+  EXPECT_TRUE(ExtensionRegistry::Get(profile())->disabled_extensions().Contains(
+      extension->id()));
+  EXPECT_TRUE(prefs->HasDisableReason(extension->id(),
+                                      disable_reason::DISABLE_NOT_VERIFIED));
+
+  InstallVerifier* install_verifier = InstallVerifier::Get(profile());
+  // Simulate that the latest verification result now allows this extension, so
+  // a management-policy recheck should lift DISABLE_NOT_VERIFIED.
+  install_verifier->provisional_.insert(extension->id());
+  install_verifier->OnVerificationComplete(
+      /*success=*/true, InstallVerifier::ADD_PROVISIONAL);
+
+  EXPECT_TRUE(ExtensionRegistry::Get(profile())->enabled_extensions().Contains(
+      extension->id()));
+  EXPECT_FALSE(prefs->HasDisableReason(extension->id(),
+                                       disable_reason::DISABLE_NOT_VERIFIED));
+}
+#endif
 
 #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC)
 // Test the behavior of the InstallVerifier when an extension is

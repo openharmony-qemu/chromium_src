@@ -71,6 +71,10 @@ constexpr char kUserAgentProductAndVersion[] = "user-agent-product";
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/content/public/browser/content_browser_client_utils.h"
+#endif
+
 namespace embedder_support {
 
 namespace {
@@ -563,6 +567,12 @@ std::string GetUserAgent(
 
   return GetUserAgentInternal(user_agent_reduction);
 }
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+std::string GetUserAgentByHost(const std::string& host) {
+  return content::GetUserAgentByHost(host);
+}
+#endif
 
 const blink::UserAgentBrandList GetUserAgentBrandMajorVersionList(
     std::optional<blink::UserAgentBrandVersion> additional_brand_version) {

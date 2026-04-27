@@ -13,7 +13,7 @@ export function getHtml(this: ToolbarElement) {
     search-prompt="$i18n{search}" clear-label="$i18n{clearSearch}" autofocus
     menu-label="$i18n{mainMenu}" ?narrow="${this.narrow}"
     @narrow-changed="${this.onNarrowChanged_}" narrow-threshold="1000"
-    ?show-menu=false>
+    ?show-menu="${this.narrow}">
   <div class="more-actions">
     <span id="devModeLabel">$i18n{toolbarDevMode}</span>
     <cr-tooltip-icon ?hidden="${!this.shouldDisableDevMode_()}"
@@ -39,7 +39,7 @@ ${this.showPackDialog_ ? html`
     <cr-button id="packExtensions" hidden=true @click="${this.onPackClick_}">
       $i18n{toolbarPack}
     </cr-button>
-    <cr-button id="updateNow" hidden=true @click="${this.onUpdateNowClick_}"
+    <cr-button id="updateNow" @click="${this.onUpdateNowClick_}"
         title="$i18n{toolbarUpdateNowTooltip}">
       $i18n{toolbarUpdateNow}
     </cr-button>

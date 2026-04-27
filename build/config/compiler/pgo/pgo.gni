@@ -15,6 +15,10 @@ if (is_ios) {
 }
 
 declare_args() {
+  arkweb_test = false
+}
+
+declare_args() {
   # Specify the current PGO phase.
   # Here's the different values that can be used:
   #     0 : Means that PGO is turned off.
@@ -32,15 +36,16 @@ declare_args() {
       (is_high_end_android || is_win || is_mac || is_fuchsia ||
        (is_linux && !is_castos) ||
        (is_ios && use_blink && target_environment == "device")))) {
-    if (!use_clang_coverage) {
+    if (!use_clang_coverage && !arkweb_test) {
     chrome_pgo_phase = 2
+    print("current chrome_pgo_phase is: $chrome_pgo_phase")
    }
   }
 
   # When using chrome_pgo_phase = 2, read profile data from this path.
   pgo_data_path = ""
 
-  if (is_ohos) {
+  if (is_ohos && !arkweb_test) {
     pgo_data_path = "//build/pgo/ohos/arkweb.profdata"
   }
 

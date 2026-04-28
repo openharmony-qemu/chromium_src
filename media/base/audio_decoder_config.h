@@ -122,6 +122,12 @@ class MEDIA_EXPORT AudioDecoderConfig {
     return target_output_sample_format_;
   }
 
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  void set_aac_extra_data(std::vector<uint8_t> aac_extra_data) {
+    aac_extra_data_ = std::move(aac_extra_data);
+  }
+  const std::vector<uint8_t>& aac_extra_data() const { return aac_extra_data_; }
+#endif
  private:
   // WARNING: When modifying or adding any parameters, update the following:
   // - AudioDecoderConfig::AsHumanReadableString()
@@ -157,6 +163,13 @@ class MEDIA_EXPORT AudioDecoderConfig {
   // Desired output format of bitstream. Optionally set. See setter comments.
   SampleFormat target_output_sample_format_ = kUnknownSampleFormat;
 
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  // This is a hack for backward compatibility. For AAC, to preserve existing
+  // behavior, we set `aac_extra_data_` on all platforms but only set
+  // `extra_data` on Android.
+  // TODO(crbug.com/40198159): Remove this after we land a long term fix.
+  std::vector<uint8_t> aac_extra_data_;
+#endif
   // Indicates if a decoder should implicitly discard decoder delay without it
   // being explicitly marked in discard padding.
   bool should_discard_decoder_delay_ = true;

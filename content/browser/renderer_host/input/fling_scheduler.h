@@ -44,6 +44,8 @@ class CONTENT_EXPORT FlingScheduler : public input::FlingSchedulerBase,
 
 #if BUILDFLAG(ARKWEB_FLING)
   bool OnNestedScroll(float& delta_x, float& delta_y) override;
+
+  bool OnNestedFling(float& velocity_x, float& velocity_y) override;
 #endif
  protected:
   virtual ui::Compositor* GetCompositor();

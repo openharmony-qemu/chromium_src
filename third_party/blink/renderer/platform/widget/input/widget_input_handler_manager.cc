@@ -817,6 +817,13 @@ void WidgetInputHandlerManager::DispatchEvent(
 
   if (suppress_input && !allow_pre_commit_input_ &&
       !event_is_mouse_or_pointer_move) {
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+    LOG(WARNING) << "widgetInputHanderManager::DispatchEvent SUPPRESSED, "
+                 << "type:" << WebInputEvent::GetName(event_type)
+                 << ", suppress_input: " << suppress_input
+                 << ", allow_pre_commit_input_: " << allow_pre_commit_input_
+                 << ", event_is_mouse_or_pointer_move: " << event_is_mouse_or_pointer_move;
+#endif
     SuppressEvent(suppress_input, std::move(event), std::move(callback));
     return;
   }
@@ -893,6 +900,10 @@ void WidgetInputHandlerManager::DispatchEvent(
   if (uses_input_handler_) {
     // If the input_handler_proxy has disappeared ensure we just ack event.
     if (!input_handler_proxy_) {
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+      LOG(WARNING) << "widgetInputHanderManager::DispatchEvent input_handler_proxy_ is NULL, "
+                  << "type:" << WebInputEvent::GetName(event_type);
+#endif
       if (callback) {
         std::move(callback).Run(
             mojom::blink::InputEventResultSource::kMainThread,

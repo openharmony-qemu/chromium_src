@@ -642,6 +642,10 @@ void InputHandlerProxy::DispatchSingleInputEvent(
   }
 
   const WebGestureEvent::Type type = event.GetType();
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  LOG(DEBUG) << "InputHandlerProxy::DispatchSingleInputEvent RouteToTypeSpecificHandler returned: "
+             << disposition << " type: " << WebInputEvent::GetName(event.GetType());
+#endif
   switch (type) {
     case WebGestureEvent::Type::kGestureScrollBegin:
     case WebGestureEvent::Type::kGesturePinchBegin:

@@ -5306,6 +5306,12 @@ NavigationRequest::ComputeErrorPageProcess() {
   if (frame_tree_node_->IsErrorPageIsolationEnabled())
     return ErrorPageProcess::kIsolatedProcess;
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (this->coop_status().browsing_instance_swap_result() == CoopSwapResult::kSwap) {
+    return ErrorPageProcess::kDestinationProcess;
+  }
+#endif
+
   // Decide whether to leave the error page in the original process.
   // * If this was a renderer-initiated navigation, and the request is blocked
   //   because the initiating document wasn't allowed to make the request,

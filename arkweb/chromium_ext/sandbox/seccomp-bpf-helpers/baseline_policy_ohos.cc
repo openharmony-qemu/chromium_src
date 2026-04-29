@@ -284,12 +284,12 @@ constexpr unsigned int QOS_CTRL_IPC_MAGIC = 0xCC;
         return Switch(request)
             .Cases({ASHMEM_SET_NAME, ASHMEM_GET_NAME, ASHMEM_SET_SIZE,
                     ASHMEM_GET_SIZE, ASHMEM_SET_PROT_MASK, ASHMEM_GET_PROT_MASK,
-                    ASHMEM_PIN, ASHMEM_UNPIN, ASHMEM_GET_PIN_STATUS,
+                    ASHMEM_PIN, ASHMEM_UNPIN, ASHMEM_GET_PIN_STATUS, QOS_CTRL_BASIC_OPERATION,
                     kBinderWriteRead64},
                     Allow())
             .Cases({kBinderWriteRead32, BINDER_SET_MAX_THREADS,
                     BINDER_THREAD_EXIT, BINDER_VERSION, BINDER_ENABLE_ONEWAY_SPAM_DETECTION,
-                    BINDER_FEATURE_SET, BINDER_GET_SENDER_INFO, QOS_CTRL_BASIC_OPERATION, TIOCGWINSZ},
+                    BINDER_FEATURE_SET, BINDER_GET_SENDER_INFO, TIOCGWINSZ},
                     Error(EPERM))
             .Default(RestrictIoctl());
 #else

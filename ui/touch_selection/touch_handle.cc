@@ -40,7 +40,7 @@ bool RectIntersectsCircle(const gfx::RectF& rect,
   // An intersection occurs if the closest point between the rect and the
   // circle's center is less than the circle's radius.
 #if BUILDFLAG(ARKWEB_MENU)
-  return rect.Contains(circle_center);
+  return rect.InclusiveContains(circle_center);
 #else
   gfx::PointF closest_point_in_rect(circle_center);
   closest_point_in_rect.SetToMax(rect.origin());
@@ -182,7 +182,11 @@ bool TouchHandle::WillHandleTouchEvent(const MotionEvent& event) {
     case MotionEvent::Action::DOWN: {
       if (!is_visible_)
         return false;
+#if BUILDFLAG(ARKWEB_MENU)
+      const gfx::PointF touch_point(event.GetX(), event.GetY() - viewport_rect_.y() + floor(viewport_rect_.y()));
+#else
       const gfx::PointF touch_point(event.GetX(), event.GetY());
+#endif  // #if BUILDFLAG(ARKWEB_MENU)
       const float touch_radius =
           std::clamp(event.GetTouchMajor(), kMinTouchMajorForHitTesting,
                      kMaxTouchMajorForHitTesting) *

@@ -61,6 +61,7 @@ class AutofillAgentExt : public AutofillAgent {
   void ArkFillAccountSuggestion(const std::u16string& username,
                                 const std::u16string& password);
   void OhFormControlElementClicked();
+  void OhPreSuppressKeyboardIfNeed(const blink::WebNode& node);
 #endif
 #if BUILDFLAG(ARKWEB_UNITTESTS)
   PasswordAutofillAgent* GetPasswordAutofillAgent() {

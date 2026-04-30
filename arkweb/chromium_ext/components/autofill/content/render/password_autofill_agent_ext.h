@@ -49,7 +49,9 @@ class PasswordAutofillAgentExt : public PasswordAutofillAgent {
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
   bool RequestAutofill(const blink::WebFormControlElement& control_element,
                        bool is_text_changed = false);
-
+  bool PreSuppressKeyboardIfNeed(
+    const blink::WebFormControlElement& control_element);
+  
   bool FillAccountSuggestion(
       const blink::WebFormControlElement& control_element,
       const std::u16string& username,

@@ -699,6 +699,15 @@ class PasswordAutofillAgent::DeferringPasswordManagerDriver
     DeferMsg(&mojom::PasswordManagerDriver::OnRequestAutofill,
              form_id, state, username_data, password_data);
   }
+
+  void PreSuppressKeyboardIfNeed(
+      FormRendererId form_id,
+      mojom::OhosPasswordFormAutofillState state,
+      const InputFillRequestData& username_data,
+      const InputFillRequestData& password_data) override {
+    DeferMsg(&mojom::PasswordManagerDriver::PreSuppressKeyboardIfNeed, form_id,
+             state, username_data, password_data);
+  }
 #endif
 
   void CheckSafeBrowsingReputation(const GURL& form_action,

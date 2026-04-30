@@ -1672,6 +1672,12 @@ void AutofillAgent::DidReceiveLeftMouseDownOrGestureTapInNode(
 #endif
 }
 
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+void AutofillAgent::PreSuppressKeyboardIfNeed(const blink::WebNode& node) {
+  AsAutofillAgentExt()->OhPreSuppressKeyboardIfNeed(node);
+}
+#endif
+
 void AutofillAgent::SelectControlDidChange(
     const WebFormControlElement& element) {
   form_tracker_->SelectControlDidChange(element);

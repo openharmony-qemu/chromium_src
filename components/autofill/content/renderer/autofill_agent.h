@@ -320,6 +320,9 @@ class AutofillAgent : public content::RenderFrameObserver,
   void DidCompleteFocusChangeInFrame() override;
   void DidReceiveLeftMouseDownOrGestureTapInNode(
       const blink::WebNode& node) override;
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  void PreSuppressKeyboardIfNeed(const blink::WebNode& node) override;
+#endif
   void SelectFieldOptionsChanged(
       const blink::WebFormControlElement& element) override;
   void SelectControlDidChange(

@@ -102,6 +102,21 @@ void AutofillAgentExt::OhFormControlElementClicked() {
     }
   }
 }
+
+void AutofillAgentExt::OhPreSuppressKeyboardIfNeed(const blink::WebNode& node) {
+  if (!isAutofillEnabled()) {
+    return;
+  }
+  WebElement focused_element = node.To<WebElement>();
+  if (!focused_element.IsNull() && focused_element.IsFormControlElement()) {
+    WebFormControlElement focused_form_control_element =
+        focused_element.To<WebFormControlElement>();
+    if (form_util::IsTextAreaElementOrTextInput(focused_form_control_element)) {
+      password_autofill_agent_->AsPasswordAutofillAgentExt()
+          ->PreSuppressKeyboardIfNeed(focused_form_control_element);
+    }
+  }
+}
 // LCOV_EXCL_STOP
 #endif
 

@@ -411,13 +411,14 @@ TEST_F(NWebDelegateTest, StaticOpenDevtoolsWith) {
   std::shared_ptr<NWebDelegateInterface> delegate_interface = nweb_delegate_;
   std::string source_id = "test_source";
   std::string target_id = "test_target";
+  std::string type = "Service workers";
   auto param = std::make_unique<OpenDevToolsParam>();
   param->point.x = 0;
   param->point.y = 0;
   param->handler = nullptr;
   OpenDevToolsExtOpt ext_opt;
   EXPECT_NO_FATAL_FAILURE(NWebDelegate::StaticOpenDevtoolsWith(
-      delegate_interface, source_id, target_id, std::move(param), ext_opt));
+      delegate_interface, source_id, target_id, type, std::move(param), ext_opt));
 }
 #endif  // ARKWEB_DEVTOOLS
 

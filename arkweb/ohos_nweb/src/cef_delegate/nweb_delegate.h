@@ -887,6 +887,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
       std::shared_ptr<NWebDelegateInterface> nweb_delegate,
       const std::string& source_id,
       const std::string& target_id,
+      const std::string& type,
       std::unique_ptr<OpenDevToolsParam> param,
       OpenDevToolsExtOpt& ext_opt);
   void OpenDevtoolsWith(

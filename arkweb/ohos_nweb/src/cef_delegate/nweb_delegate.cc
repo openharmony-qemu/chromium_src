@@ -6321,6 +6321,7 @@ void NWebDelegate::StaticOpenDevtoolsWith(
       std::shared_ptr<NWebDelegateInterface> nweb_delegate,
       const std::string& source_id,
       const std::string& target_id,
+      const std::string& type,
       std::unique_ptr<OpenDevToolsParam> param,
       OpenDevToolsExtOpt& ext_opt) {
   LOG(INFO) << " NWebDelegate::StaticOpenDevtoolsWith";
@@ -6344,7 +6345,7 @@ void NWebDelegate::StaticOpenDevtoolsWith(
   }
 
   CefDevToolsWindowRunner::StaticShowDevToolsWith(
-      source_id, target_id, devtools_delegate->GetBrowser()->GetHost(),
+      source_id, target_id, type, devtools_delegate->GetBrowser()->GetHost(),
       devtools_message_handler, inspect_element_at, cef_ext_opt);
 }
 #endif // ARKWEB_DEVTOOLS

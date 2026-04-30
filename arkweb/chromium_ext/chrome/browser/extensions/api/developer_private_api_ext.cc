@@ -31,7 +31,8 @@
 namespace extensions {
 #if BUILDFLAG(ARKWEB_DEVTOOLS)
 namespace devtools_util {
-void InspectServiceWorkerBackgroundV2(const Extension* extension,
+void InspectServiceWorkerBackgroundV2(content::WebContents* web_contents,
+                                      const Extension* extension,
                                       Profile* profile,
                                       DevToolsOpenedByAction opened_by);
 } // devtools_util

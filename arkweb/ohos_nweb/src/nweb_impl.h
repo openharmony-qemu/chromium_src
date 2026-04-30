@@ -711,6 +711,7 @@ class NWebImpl : public NWeb {
   void SetBrowserUserAgentString(const std::string& user_agent);
   static void StaticOpenDevtools(const std::string& source_id,
                                  const std::string& target_id,
+                                 const std::string& type,
                                  std::unique_ptr<OpenDevToolsParam> param,
                                  OpenDevToolsExtOpt& ext_opt);
   void OpenDevtools(std::unique_ptr<OpenDevToolsParam> param);

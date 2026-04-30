@@ -742,6 +742,7 @@ source_set("unittests") {
     "src/cef_delegate/nweb_scheme_handler_factory_unittest.cc",
     "src/cef_delegate/nweb_autolayout_unittest.cc",
     "src/cef_delegate/nweb_content_change_detection_unittest.cc",
+    "src/cef_delegate/nweb_url_resource_response_impl_unittest.cc",
     "src/ndk/arkweb_model_unittest.cc",
     "src/ndk/arkweb_native_object_unittest.cc",
     "src/native_media_player/nweb_native_media_player_handler_impl_unittests.cc",

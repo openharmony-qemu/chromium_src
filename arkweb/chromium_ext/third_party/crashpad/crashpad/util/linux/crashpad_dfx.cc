@@ -338,7 +338,7 @@ std::string CrashpadDfx::UpdateCrashDumpPathSuffix() {
       crashpad + delimiter + bundle_name + delimiter +
       std::to_string(g_process_uid) + delimiter + buildID + delimiter +
       happen_time;
-  return dump_path_suffix + delimiter + "evergreen";
+  return dump_path_suffix + delimiter + "m132";
 }
 #endif  // BUILDFLAG(ARKWEB_CRASHPAD)
 }  // namespace Crashpad

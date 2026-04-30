@@ -51,6 +51,11 @@ class SkiaOutputDeviceGL final : public SkiaOutputDevice {
       std::vector<GrBackendSemaphore>* end_semaphores) override;
   void EndPaint() override;
 
+#if BUILDFLAG(IS_OHOS)
+  void EnsureBackbuffer() override;
+  void DiscardBackbuffer() override;
+#endif
+
  private:
   class MultiSurfaceSwapBuffersTracker;
 

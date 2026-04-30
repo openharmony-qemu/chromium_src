@@ -23648,7 +23648,8 @@
                 "chromeos",
                 "linux",
                 "mac",
-                "windows"
+                "windows",
+                "ohos"
             ],
             "experiments": [
                 {
@@ -23670,7 +23671,8 @@
                 "chromeos",
                 "linux",
                 "mac",
-                "windows"
+                "windows",
+                "ohos"
             ],
             "experiments": [
                 {

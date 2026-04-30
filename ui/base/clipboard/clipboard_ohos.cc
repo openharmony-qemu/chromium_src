@@ -829,6 +829,56 @@ void PrepareImgBufferForRead(OH_Pixelmap_ImageInfo*& image_info,
     }
   }
 
+  void ReadDataTransferCustomData(const std::string& type, std::vector<uint8_t>& custom_data) const {
+    int status = -1;
+    if (!OH_Pasteboard_HasData(pasteboard_)) {
+        LOG(ERROR) << kPasteboardLogTag << __FUNCTION__ << " OH_Pasteboard_HasData fail.";
+        return;
+    }
+    OH_UdmfData* udmf_data = OH_Pasteboard_GetData(pasteboard_, &status);
+    if (status != ERR_OK) {
+        LOG(ERROR) << kPasteboardLogTag << __FUNCTION__
+                   << " OH_Pasteboard_GetData fail,error code:"
+                   << status;
+        return;
+    }
+    unsigned int count = 0;
+    OH_UdmfRecord** records = OH_UdmfData_GetRecords(udmf_data, &count);
+    if (records == nullptr) {
+      LOG(ERROR) << kPasteboardLogTag << __FUNCTION__
+                 << " OH_UdmfData_GetRecords fail. ";
+      return;
+    }
+    for (unsigned int i = 0; i < count; i++) {
+      OH_UdmfRecord* udmf_record = records[i];
+      if (udmf_record == nullptr) {
+        LOG(ERROR) << kPasteboardLogTag << __FUNCTION__
+                   << " udmf_record is null";
+        continue;
+      }
+      const char* type_id = type.c_str();
+      unsigned char* entrys = nullptr;
+      unsigned int entry_count = 0;
+      int res = OH_UdmfRecord_GetGeneralEntry(udmf_record, type_id, &entrys,
+                                              &entry_count);
+      if (res != UDMF_E_OK) {
+        LOG(ERROR) << kPasteboardLogTag << __FUNCTION__
+                   << " OH_UdmfRecord_GetGeneralEntry fail,error code:"
+                   << res;
+        DestroyUdmfRecord(&udmf_record);
+        records[i] = nullptr;
+        continue;
+      }
+      custom_data.reserve(entry_count);
+      custom_data.insert(custom_data.end(),
+                         reinterpret_cast<const uint8_t*>(entrys),
+                         reinterpret_cast<const uint8_t*>(entrys + entry_count));
+      DestroyUdmfRecord(&udmf_record);
+      records[i] = nullptr;
+      break;
+    }
+  }
+
   void WriteHtmlToRecord(const char* html_text, OH_UdmfRecord* record) {
     OH_UdsHtml* uds_html = OH_UdsHtml_Create();
     if (uds_html == nullptr) {
@@ -1452,6 +1502,24 @@ void ClipboardOHOS::ReadDataTransferCustomData(
     const DataTransferEndpoint* data_dst,
     std::u16string* result) const {
   DCHECK(CalledOnValidThread());
+  if (!clipboard_internal_->IsReadAllowed(data_dst, std::nullopt)) {
+    LOG(ERROR) << kPasteboardLogTag << __FUNCTION__ << "not allow to read when read custom data";
+    return;
+  }
+  RecordRead(ClipboardFormatMetric::kCustomData);
+  std::vector<uint8_t> custom_data;
+  clipboard_internal_->ReadDataTransferCustomData(kMimeTypeDataTransferCustomData, custom_data);
+  if (std::optional<std::u16string> maybe_data =
+          ReadCustomDataForType(base::span(custom_data), type);
+      maybe_data) {
+    *result = std::move(*maybe_data);
+  }
+  LOG(INFO) << kPasteboardLogTag
+            << __FUNCTION__
+            << " end, result_size is "
+            << result->size()
+            << ", type is "
+            << type;
 }
 
 void ClipboardOHOS::ReadFilenames(ClipboardBuffer buffer,
@@ -1545,7 +1613,12 @@ void ClipboardOHOS::WriteBitmap(const SkBitmap& bitmap) {
 
 void ClipboardOHOS::WriteData(const ClipboardFormatType& format,
                               base::span<const uint8_t> data) {
-  LOG(INFO) << kPasteboardLogTag << __FUNCTION__ << " data_len is " << data.size();
+  LOG(INFO) << kPasteboardLogTag
+            << __FUNCTION__
+            << " data_len is "
+            << data.size()
+            << ", format is "
+            << format.GetName();
   RecordWrite(ClipboardFormatMetric::kData);
   ClipboardDataBuilderOhos::WriteData(format, data);
 }

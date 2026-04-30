@@ -177,6 +177,11 @@ GpuPreference GLSurface::AdjustGpuPreference(GpuPreference gpu_preference) {
   }
 }
 
+#if BUILDFLAG(IS_OHOS)
+  void GLSurface::EnsureBackbuffer() {}
+  void GLSurface::DiscardBackbuffer() {}
+#endif
+
 GLSurface::~GLSurface() {
   // InvalidateWeakPtrs should be called from the most concrete class.
   CHECK(!weak_ptr_factory_.HasWeakPtrs());

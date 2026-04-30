@@ -51,6 +51,9 @@ class NativeViewGLSurfaceEGLOhos : public NativeViewGLSurfaceEGL {
               const gfx::ColorSpace& color_space,
               bool has_alpha) override;
 
+  void EnsureBackbuffer() override;
+  void DiscardBackbuffer() override;
+
  private:
   ~NativeViewGLSurfaceEGLOhos() override = default;
 };

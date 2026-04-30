@@ -79,7 +79,8 @@ NotificationAdapterImage NotificationAdapter::ConvertNotificationImage(
   }
   aki::ArrayBuffer arrayBuffer((uint8_t*)image.buff.get(),
                                image.width * image.height * IMAGE_PIXEL_MAP);
-  return {image.width, image.height, arrayBuffer};
+  arrayBuffer.Commit();
+  return {image.width, image.height, std::move(arrayBuffer)};
 }
 
 std::vector<NotificationAdapterButton> NotificationAdapter::ConvertNotificationButton(

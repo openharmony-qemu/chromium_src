@@ -31,6 +31,7 @@ namespace {
 
 const char* kOptionsPlaceholder = "$$OPTIONS";
 const char* kStringifyPlaceholder = "$$STRINGIFY";
+const char* kResultKey = "result";
 
 std::string GetDistillerScriptWithOptions(
     const dom_distiller::proto::DomDistillerOptions& options,
@@ -120,9 +121,19 @@ void DistillerPage::OnDistillationDone(const GURL& page_url,
   if (value->is_none()) {
     found_content = false;
   } else {
+#if BUILDFLAG(ARKWEB_READER_MODE)
+    if (value->is_dict() && value->GetDict().FindDict(kResultKey) != nullptr) {
+      found_content = dom_distiller::proto::json::DomDistillerResult::ReadFromValue(
+            base::Value(value->GetDict().FindDict(kResultKey)->Clone()), distiller_result.get());
+    } else {
+      found_content = dom_distiller::proto::json::DomDistillerResult::ReadFromValue(
+            *value, distiller_result.get());
+    }
+#else
     found_content =
         dom_distiller::proto::json::DomDistillerResult::ReadFromValue(
             *value, distiller_result.get());
+#endif
     if (!found_content) {
       DVLOG(1) << "Unable to parse DomDistillerResult.";
     }

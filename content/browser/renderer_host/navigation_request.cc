@@ -5307,7 +5307,9 @@ NavigationRequest::ComputeErrorPageProcess() {
     return ErrorPageProcess::kIsolatedProcess;
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-  if (this->coop_status().browsing_instance_swap_result() == CoopSwapResult::kSwap) {
+  // URL Trust List blocked pages should be handled in the destination process.
+  if (is_url_trust_list_blocked_ &&
+      this->coop_status().browsing_instance_swap_result() == CoopSwapResult::kSwap) {
     return ErrorPageProcess::kDestinationProcess;
   }
 #endif
@@ -5363,6 +5365,26 @@ void NavigationRequest::OnStartChecksComplete(
 
     bool collapse_frame =
         result.action() == NavigationThrottle::BLOCK_REQUEST_AND_COLLAPSE;
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    // Check if this is a URL Trust List blocked request.
+    if (result.action() == NavigationThrottle::BLOCK_REQUEST &&
+        result.net_error_code() == net::ERR_BLOCKED_BY_CLIENT) {
+      RenderFrameHostImpl* rfh = frame_tree_node_->current_frame_host();
+      if (rfh) {
+        WebContentsImpl* web_contents = static_cast<WebContentsImpl*>(
+          WebContents::FromRenderFrameHost(rfh));
+        if (web_contents) {
+          auto* helper =
+              security_interstitials::SecurityInterstitialTabHelper::FromWebContents(
+                  web_contents);
+          if (helper) {
+            is_url_trust_list_blocked_ = helper->IsUrlTrustListBlockedForNavigation(navigation_id_);
+          }
+        }
+      }
+    }
+#endif
 
     // If the start checks completed synchronously, which could happen if there
     // is no onbeforeunload handler or if a NavigationThrottle cancelled it,

@@ -69,6 +69,11 @@ class SecurityInterstitialPage {
   // Return the interstitial type for testing.
   virtual TypeID GetTypeForTesting();
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  // Returns whether this interstitial is a URL Trust List blocking page.
+  virtual bool IsUrlTrustListBlocked();
+#endif
+
  protected:
   // Populates the strings used to generate the HTML from the template.
   virtual void PopulateInterstitialStrings(

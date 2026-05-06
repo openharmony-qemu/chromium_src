@@ -9,6 +9,7 @@
 #include <utility>
 
 #include "arkweb/chromium_ext/url/ohos/log_utils.h"
+#include "arkweb/chromium_ext/net/base/log_utils.h"
 #include "base/check_op.h"
 #include "base/feature_list.h"
 #include "base/functional/bind.h"
@@ -228,7 +229,8 @@ void ArkWebTransportConnectJobExt::NeedReportSuccessIp(const IPEndPoint& address
 
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
   if (type == SUB_MULTI_JOB || type == SUB_MULTI_FALLBACK_JOB) {
-    LOG_FEEDBACK(INFO) << "success ip = " << address.ToString()
+    LOG_FEEDBACK(INFO) << "success ip = "
+                       << net::LogUtils::AnonymizeIpAddress(address)
                        << ", and success index = " << success_index
                        << ", job_type " << (int)type;
   }

@@ -5105,6 +5105,25 @@ void NavigationRequest::OnRequestFailedInternal(
   }
 #endif
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    // Check if this is a URL Trust List blocked request.
+    if (status.error_code == net::ERR_BLOCKED_BY_CLIENT) {
+      RenderFrameHostImpl* rfh = frame_tree_node_->current_frame_host();
+      if (rfh) {
+        WebContentsImpl* web_contents = static_cast<WebContentsImpl*>(
+          WebContents::FromRenderFrameHost(rfh));
+        if (web_contents) {
+          auto* helper =
+              security_interstitials::SecurityInterstitialTabHelper::FromWebContents(
+                  web_contents);
+          if (helper) {
+            is_url_trust_list_blocked_ = helper->IsUrlTrustListBlockedForNavigation(navigation_id_);
+          }
+        }
+      }
+    }
+#endif
+
   // Ensure the pending entry also gets discarded if it has no other active
   // requests.
   pending_entry_ref_.reset();
@@ -5365,26 +5384,6 @@ void NavigationRequest::OnStartChecksComplete(
 
     bool collapse_frame =
         result.action() == NavigationThrottle::BLOCK_REQUEST_AND_COLLAPSE;
-
-#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-    // Check if this is a URL Trust List blocked request.
-    if (result.action() == NavigationThrottle::BLOCK_REQUEST &&
-        result.net_error_code() == net::ERR_BLOCKED_BY_CLIENT) {
-      RenderFrameHostImpl* rfh = frame_tree_node_->current_frame_host();
-      if (rfh) {
-        WebContentsImpl* web_contents = static_cast<WebContentsImpl*>(
-          WebContents::FromRenderFrameHost(rfh));
-        if (web_contents) {
-          auto* helper =
-              security_interstitials::SecurityInterstitialTabHelper::FromWebContents(
-                  web_contents);
-          if (helper) {
-            is_url_trust_list_blocked_ = helper->IsUrlTrustListBlockedForNavigation(navigation_id_);
-          }
-        }
-      }
-    }
-#endif
 
     // If the start checks completed synchronously, which could happen if there
     // is no onbeforeunload handler or if a NavigationThrottle cancelled it,

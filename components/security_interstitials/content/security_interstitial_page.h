@@ -71,7 +71,7 @@ class SecurityInterstitialPage {
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   // Returns whether this interstitial is a URL Trust List blocking page.
-  virtual bool IsUrlTrustListBlocked();
+  virtual bool IsUrlTrustListBlocked() const;
 #endif
 
  protected:

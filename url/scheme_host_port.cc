@@ -90,11 +90,26 @@ bool IsValidInput(std::string_view scheme,
     //
     // TODO: Migrate "content:" and "externalfile:" to be standard schemes, and
     // remove this local scheme exception.
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    if (url::IsUsingStandardCompliantNonSpecialSchemeURLParsing()) {
+      // If the flag is enabled, a host can be empty for non-special URLs.
+      // Therefore, we don't check a host nor port.
+      if (base::Contains(GetLocalSchemes(), scheme)) {
+        return true;
+      }
+    } else {
+      if (base::Contains(GetLocalSchemes(), scheme) && host.empty() &&
+          port == 0) {
+        return true;
+      }
+    }
+#else
     // For standard compliant non special scheme url parsing, a host can be
     // empty for non-special URLs. Therefore, we don't check a host nor port.
     if (base::Contains(GetLocalSchemes(), scheme)) {
       return true;
     }
+#endif
 
     // Otherwise, allow non-standard schemes only if the Android WebView
     // workaround is enabled.
@@ -246,10 +261,25 @@ GURL SchemeHostPort::GetURL() const {
   // here. Note: Non-special urls with empty paths do not have an appended "/".
   // Note: per RFC 6454 we cannot do this for normal Origin serialization.
   DCHECK(!parsed.path.is_valid());
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (url::IsUsingStandardCompliantNonSpecialSchemeURLParsing()) {
+    // Append "/" only if the URL is standard. If the flag is enabled,
+    // non-special URLs can have an empty path and GURL doesn't append "/" to
+    // that.
+    if (IsStandardScheme(scheme_)) {
+      parsed.path = Component(serialized.length(), 1);
+      serialized.append("/");
+    }
+  } else {
+    parsed.path = Component(serialized.length(), 1);
+    serialized.append("/");
+  }
+#else
   if (IsStandardScheme(scheme_)) {
     parsed.path = Component(serialized.length(), 1);
     serialized.append("/");
   }
+#endif
 
   return GURL(std::move(serialized), parsed, true);
 }
@@ -295,7 +325,12 @@ std::string SchemeHostPort::SerializeInternal(url::Parsed* parsed) const {
 }
 
 bool SchemeHostPort::ShouldDiscardHostAndPort(std::string_view scheme) {
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  return IsAndroidWebViewHackEnabledScheme(scheme) &&
+         IsUsingStandardCompliantNonSpecialSchemeURLParsing();
+#else
   return IsAndroidWebViewHackEnabledScheme(scheme);
+#endif
 }
 
 std::ostream& operator<<(std::ostream& out,

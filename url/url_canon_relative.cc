@@ -186,8 +186,14 @@ bool DoIsRelativeUrl(std::string_view base,
   // scheme state:
   // > 2.6. Otherwise, if url is special, base is non-null, and base’s scheme is
   // >      url’s scheme:
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if ((IsUsingStandardCompliantNonSpecialSchemeURLParsing() &&
+      !IsStandard(base_parsed.scheme.MaybeAsViewOn(base))) ||
+#else
   if (!IsStandard(base_parsed.scheme.MaybeAsViewOn(base)) ||
+#endif
       !AreSchemesEqual(base.data(), base_parsed.scheme, url.data(), scheme)) {
+
     return true;
   }
 
@@ -343,7 +349,12 @@ bool DoResolveRelativePath(std::string_view base_url,
     // A non-special URL may have an empty path (e.g. "git://host"). In these
     // cases, attempting to use `base_parsed.path` is invalid.
     output->Append(base_url.substr(0, base_parsed.Length()));
-  } else if (!base_parsed.host.is_valid() &&
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  } else if (url::IsUsingStandardCompliantNonSpecialSchemeURLParsing() &&
+#else
+  } else if (
+#endif
+             !base_parsed.host.is_valid() &&
              // Exclude a file URL and an URL with an inner-path because we are
              // interested in only non-special URLs here.
              //
@@ -425,7 +436,12 @@ bool DoResolveRelativePath(std::string_view base_url,
     // > const url = new URL("/.//path", "git:/");
     // > url.href
     // => The result should be "git:/.//path", instead of "git://path".
-    if (!base_parsed.host.is_valid() && out_parsed->path.is_valid() &&
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    if (IsUsingStandardCompliantNonSpecialSchemeURLParsing() &&
+#else
+    if (
+#endif
+        !base_parsed.host.is_valid() && out_parsed->path.is_valid() &&
         out_parsed->path.AsViewOn(output->view()).starts_with("//")) {
       size_t prior_output_length = output->length();
       output->Insert(out_parsed->path.begin, "/.");
@@ -492,7 +508,12 @@ bool DoResolveRelativeHost(std::string_view base_url,
   // scheme.
   Parsed relative_parsed;  // Everything but the scheme is valid.
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (IsUsingStandardCompliantNonSpecialSchemeURLParsing() &&
+      !is_standard_scheme) {
+#else
   if (!is_standard_scheme) {
+#endif
     ParseAfterNonSpecialScheme(relative_url, 0, &relative_parsed);
   } else {
     ParseAfterSpecialScheme(relative_url, 0, &relative_parsed);
@@ -515,8 +536,18 @@ bool DoResolveRelativeHost(std::string_view base_url,
       replacements.components().Length() +
       base_parsed.CountCharactersBefore(Parsed::USERNAME, false));
   if (!is_standard_scheme) {
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    if (IsUsingStandardCompliantNonSpecialSchemeURLParsing()) {
+      return ReplaceNonSpecialUrl(base_url, base_parsed, replacements,
+                                  query_converter, *output, *out_parsed);
+    }
+    // A path with an authority section gets canonicalized under standard URL
+    // rules, even though the base was not known to be standard.
+    scheme_type = SCHEME_WITH_HOST_PORT_AND_USER_INFORMATION;
+#else
     return ReplaceNonSpecialUrl(base_url, base_parsed, replacements,
                                 query_converter, *output, *out_parsed);
+#endif
   }
 
   return ReplaceStandardUrl(base_url, base_parsed, replacements, scheme_type,
@@ -555,7 +586,13 @@ bool DoResolveRelativeUrl(std::string_view base_url,
   if (potentially_dangling_markup)
     out_parsed->potentially_dangling_markup = true;
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (IsUsingStandardCompliantNonSpecialSchemeURLParsing()
+          ? base_parsed.scheme.is_empty()
+          : base_parsed.path.is_empty()) {
+#else
   if (base_parsed.scheme.is_empty()) {
+#endif
     // On error, return the input (resolving a relative URL on a
     // non-relative base = the base).
     int base_len = base_parsed.Length();

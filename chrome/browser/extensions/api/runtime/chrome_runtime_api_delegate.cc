@@ -16,6 +16,7 @@
 #include "base/location.h"
 #include "base/metrics/histogram_macros.h"
 #include "base/notimplemented.h"
+#include "base/strings/stringprintf.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/time/tick_clock.h"
 #include "base/time/time.h"
@@ -60,6 +61,11 @@
 #else
 #include "chrome/browser/ui/android/tab_model/tab_model.h"
 #include "chrome/browser/ui/android/tab_model/tab_model_list.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+#include "extensions/common/manifest_handlers/options_page_info.h"
+#include "ohos_nweb_ex/core/extension/nweb_extension_manager_dispatcher.h"
 #endif
 
 namespace {
@@ -416,8 +422,28 @@ bool ChromeRuntimeAPIDelegate::OpenOptionsPage(
     const Extension* extension,
     content::BrowserContext* browser_context) {
 #if BUILDFLAG(ENABLE_EXTENSIONS)
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  if (!extensions::OptionsPageInfo::HasOptionsPage(extension))
+    return false;
+  GURL url_to_navigate;
+  bool open_in_tab = extensions::OptionsPageInfo::ShouldOpenInTab(extension);
+  if (open_in_tab) {
+    url_to_navigate = extensions::OptionsPageInfo::GetOptionsPage(extension);
+  } else {
+    url_to_navigate = GURL("hwbrowser://extensions/");
+    GURL::Replacements replacements;
+    std::string query =
+        base::StringPrintf("options=%s", extension->id().c_str());
+    replacements.SetQueryStr(query);
+    url_to_navigate = url_to_navigate.ReplaceComponents(replacements);
+  }
+  NWebExtensionManagerDispatcher::OnExtensionOpenUrlCallBack(
+      url_to_navigate.spec(), URL_TYPE_OPTIONS);
+  return true;
+#else
   return extensions::ExtensionTabUtil::OpenOptionsPageFromAPI(extension,
                                                               browser_context);
+#endif
 #else
   // TODO(crbug.com/383366125): Implement this when options page for extensions
   // becomes available for desktop android.

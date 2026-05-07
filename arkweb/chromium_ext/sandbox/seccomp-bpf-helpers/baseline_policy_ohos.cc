@@ -42,6 +42,7 @@ struct binder_sender_info {
 #define BINDER_ENABLE_ONEWAY_SPAM_DETECTION _IOW('b', 16, __u32)
 #define BINDER_FEATURE_SET _IOWR('b', 30, __u64)
 #define BINDER_GET_SENDER_INFO	_IOWR('b', 32, struct binder_sender_info)
+#define ACCESS_TOKENID_GET_TOKENID _IOR('A', 1, unsigned long long)
 
 using sandbox::bpf_dsl::AllOf;
 using sandbox::bpf_dsl::Allow;
@@ -308,7 +309,8 @@ constexpr unsigned int QOS_CTRL_IPC_MAGIC = 0xCC;
                     Allow())
             .Cases({kBinderWriteRead32, BINDER_SET_MAX_THREADS,
                     BINDER_THREAD_EXIT, BINDER_VERSION, BINDER_ENABLE_ONEWAY_SPAM_DETECTION,
-                    BINDER_FEATURE_SET, BINDER_GET_SENDER_INFO, QOS_CTRL_BASIC_OPERATION, TIOCGWINSZ},
+                    BINDER_FEATURE_SET, BINDER_GET_SENDER_INFO, QOS_CTRL_BASIC_OPERATION, TIOCGWINSZ,
+                    ACCESS_TOKENID_GET_TOKENID},
                     Error(EPERM))
             .Default(RestrictIoctl());
 #else

@@ -17983,6 +17983,7 @@ blink::mojom::PermissionStatus RenderFrameHostImpl::GetCombinedPermissionStatus(
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
 bool RenderFrameHostImpl::IsUrlTrustListBlocked(int64_t navigation_id) {
+  DCHECK_CURRENTLY_ON(BrowserThread::UI);
   WebContents* web_contents = WebContents::FromRenderFrameHost(this);
   if (!web_contents) {
     return false;

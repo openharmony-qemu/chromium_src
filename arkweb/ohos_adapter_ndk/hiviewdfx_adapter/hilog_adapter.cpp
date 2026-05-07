@@ -27,8 +27,8 @@ namespace {
 constexpr uint32_t LOG_APP_DOMAIN = 0x004500;
 constexpr uint32_t LOG_RENDER_DOMAIN = 0x004501;
 #else
-constexpr uint32_t LOG_APP_DOMAIN = 0xD004510;
-constexpr uint32_t LOG_RENDER_DOMAIN = 0xD004511;
+constexpr uint32_t LOG_APP_DOMAIN = 0xD004500;
+constexpr uint32_t LOG_RENDER_DOMAIN = 0xD004501;
 #endif
 constexpr uint32_t LOG_CONSOLE_DOMAIN = 0x001194;
 constexpr uint32_t MAX_LENGTH = 4096;

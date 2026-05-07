@@ -17981,4 +17981,19 @@ blink::mojom::PermissionStatus RenderFrameHostImpl::GetCombinedPermissionStatus(
       ->GetCombinedPermissionAndDeviceStatus(permission_type, this);
 }
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+bool RenderFrameHostImpl::IsUrlTrustListBlocked(int64_t navigation_id) {
+  WebContents* web_contents = WebContents::FromRenderFrameHost(this);
+  if (!web_contents) {
+    return false;
+  }
+  auto* helper = security_interstitials::SecurityInterstitialTabHelper::FromWebContents(web_contents);
+  if (helper) {
+    return helper->IsUrlTrustListBlockedForNavigation(navigation_id);
+  }
+  return false;
+}
+#endif
+
+
 }  // namespace content

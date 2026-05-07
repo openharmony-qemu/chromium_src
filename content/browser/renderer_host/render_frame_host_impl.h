@@ -3298,6 +3298,10 @@ class CONTENT_EXPORT RenderFrameHostImpl
   void OnResetOwnedNavigationRequests(NavigationDiscardReason reason);
 #endif
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  bool IsUrlTrustListBlocked(int64_t navigation_id);
+#endif
+
  protected:
   friend class RenderFrameHostFactory;
 

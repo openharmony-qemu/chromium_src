@@ -3012,11 +3012,6 @@ class CONTENT_EXPORT NavigationRequest
   // `blink::mojom::CommitResult::RestartCrossDocument`.
   bool was_reset_for_cross_document_restart_ = false;
 
-#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-  // Whether this navigation was blocked by URL Trust List.
-  bool is_url_trust_list_blocked_ = false;
-#endif
-
   base::WeakPtrFactory<NavigationRequest> weak_factory_{this};
 };
 

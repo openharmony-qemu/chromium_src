@@ -5105,25 +5105,6 @@ void NavigationRequest::OnRequestFailedInternal(
   }
 #endif
 
-#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-    // Check if this is a URL Trust List blocked request.
-    if (status.error_code == net::ERR_BLOCKED_BY_CLIENT) {
-      RenderFrameHostImpl* rfh = frame_tree_node_->current_frame_host();
-      if (rfh) {
-        WebContentsImpl* web_contents = static_cast<WebContentsImpl*>(
-          WebContents::FromRenderFrameHost(rfh));
-        if (web_contents) {
-          auto* helper =
-              security_interstitials::SecurityInterstitialTabHelper::FromWebContents(
-                  web_contents);
-          if (helper) {
-            is_url_trust_list_blocked_ = helper->IsUrlTrustListBlockedForNavigation(navigation_id_);
-          }
-        }
-      }
-    }
-#endif
-
   // Ensure the pending entry also gets discarded if it has no other active
   // requests.
   pending_entry_ref_.reset();
@@ -5327,7 +5308,8 @@ NavigationRequest::ComputeErrorPageProcess() {
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   // URL Trust List blocked pages should be handled in the destination process.
-  if (is_url_trust_list_blocked_ &&
+  RenderFrameHostImpl* rfh = frame_tree_node_->current_frame_host();
+  if (rfh && rfh->IsUrlTrustListBlocked(this->GetNavigationId()) &&
       this->coop_status().browsing_instance_swap_result() == CoopSwapResult::kSwap) {
     return ErrorPageProcess::kDestinationProcess;
   }

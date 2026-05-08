@@ -247,6 +247,10 @@ interface GpuService {
   [EnableIf=arkweb_slide_ltpo]
   SetLTPOStrategy(int32 strategy);
 
+  // Set web component visibility for LTPO invisible render throttling to gpu process
+  [EnableIf=arkweb_invisible_render_throttle]
+  SetWebComponentVisible(int32 nweb_id, bool visible);
+
   // get gpu total size
   [EnableIf=arkweb_dfx_dump]
   DumpGpuInfo() => (float totalSize);

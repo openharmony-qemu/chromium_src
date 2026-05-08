@@ -262,6 +262,9 @@ class VIZ_HOST_EXPORT GpuHostImpl : public mojom::GpuHost,
   void ReportSlidingFrameRate(int32_t frame_rate);
   void SetLTPOStrategy(int32_t strategy);
 #endif
+#if BUILDFLAG(ARKWEB_INVISIBLE_RENDER_THROTTLE)
+  void SetWebComponentVisible(int nweb_id, bool visible);
+#endif
 
 #if BUILDFLAG(ARKWEB_D_VSYNC)
   void SetIsFling(bool is_fling_enabled);

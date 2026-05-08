@@ -58,6 +58,10 @@ mojom("gl") {
     enabled_features += [ "arkweb_slide_ltpo" ]
   }
 
+  if (arkweb_invisible_render_throttle) {
+    enabled_features += [ "arkweb_invisible_render_throttle" ]
+  }
+
   if (arkweb_d_vsync) {
     enabled_features += [ "arkweb_d_vsync" ]
   }

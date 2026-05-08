@@ -81,6 +81,13 @@ public:
       const autofill::mojom::OhosPasswordFormAutofillState state,
       const autofill::InputFillRequestData& username_data,
       const autofill::InputFillRequestData& password_data) override;
+  void PreSuppressKeyboardIfNeed(
+ 	    password_manager::PasswordManagerDriver* driver,
+ 	    const GURL& page_url,
+ 	    autofill::FormRendererId form_id,
+      const autofill::mojom::OhosPasswordFormAutofillState state,
+      const autofill::InputFillRequestData& username_data,
+      const autofill::InputFillRequestData& password_data) override;
 #endif
 
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)

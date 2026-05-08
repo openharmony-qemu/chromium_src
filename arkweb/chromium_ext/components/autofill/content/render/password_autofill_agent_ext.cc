@@ -377,6 +377,79 @@ bool PasswordAutofillAgentExt::RequestAutofill(
   return true;
 }
 
+bool PasswordAutofillAgentExt::PreSuppressKeyboardIfNeed(
+   const blink::WebFormControlElement& control_element) {
+  const WebInputElement input_element =
+      control_element.DynamicTo<WebInputElement>();
+  if (input_element.IsNull()) {
+    return false;
+  }
+
+  WebInputElement username_element;
+  WebInputElement password_element;
+  PasswordInfo* password_info = nullptr;
+  if (!IsElementEditable(input_element) ||
+      !OhosFindPasswordInfoForElement(input_element, UseFallbackData(true),
+                                      &username_element, &password_element,
+                                      &password_info)) {
+    return false;
+  }
+
+  if (!HasDocumentWithValidFrame(input_element)) {
+    return false;
+  }
+
+  WebFormElement form = !password_element.IsNull() ? password_element.Form()
+                                                   : username_element.Form();
+  FormRendererId form_id(form.IsNull() ? 0 : form.UniqueRendererFormId());
+
+  bool has_editable_username_element =
+      !username_element.IsNull() && IsElementEditable(username_element);
+  bool has_editable_password_element =
+      !password_element.IsNull() && IsElementEditable(password_element);
+
+  autofill::InputFillRequestData username_data;
+  if (has_editable_username_element) {
+    username_data.field_renderer_id = GetFieldRendererId(username_element);
+    username_data.is_focused = !input_element.IsPasswordFieldForAutofill();
+    username_data.type = mojom::OhosInputElementType::kUsernameType;
+    username_data.bounds =
+        render_frame()->ElementBoundsInWindow(username_element);
+    username_data.value = username_element.Value().Utf16();
+    username_data.placeholder = GetPlaceHolderOfInput(username_element);
+    username_data.autocomplete_attr =
+        GetAutocompleteAttribute(username_element);
+  } else {
+    username_data.type = mojom::OhosInputElementType::kInvalid;
+  }
+
+  autofill::InputFillRequestData password_data;
+  if (has_editable_password_element) {
+    password_data.field_renderer_id = GetFieldRendererId(password_element);
+    password_data.is_focused = !username_data.is_focused;
+    password_data.type = mojom::OhosInputElementType::kPasswordType;
+    password_data.bounds =
+        render_frame()->ElementBoundsInWindow(password_element);
+    password_data.value = password_element.Value().Utf16();
+    password_data.placeholder = GetPlaceHolderOfInput(password_element);
+    password_data.autocomplete_attr =
+        GetAutocompleteAttribute(password_element);
+  } else {
+    password_data.type = mojom::OhosInputElementType::kInvalid;
+  }
+  auto it = ohos_password_form_status_map_.find(*form_id);
+  mojom::OhosPasswordFormAutofillState state;
+  if (it == ohos_password_form_status_map_.end()) {
+    state = mojom::OhosPasswordFormAutofillState::kNotRequested;
+  } else {
+    state = mojom::OhosPasswordFormAutofillState::kHasBeenRequested;
+  }
+
+  GetPasswordManagerDriver().PreSuppressKeyboardIfNeed(
+      form_id, state, username_data, password_data);
+  return true;
+}
+
 bool PasswordAutofillAgentExt::FillAccountSuggestion(
     const WebFormControlElement& control_element,
     const std::u16string& username,

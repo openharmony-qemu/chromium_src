@@ -476,6 +476,33 @@ void ChromePasswordManagerClientExt::OnRequestAutofill(
   }
 }
 
+void ChromePasswordManagerClientExt::PreSuppressKeyboardIfNeed(
+    PasswordManagerDriver* driver,
+    const GURL& page_url,
+    autofill::FormRendererId form_id,
+    const autofill::mojom::OhosPasswordFormAutofillState state,
+    const autofill::InputFillRequestData& username_data,
+    const autofill::InputFillRequestData& password_data) {
+  auto* autofill_client =
+      autofill::OhAutofillClient::FromWebContents(web_contents());
+  if (!autofill_client) {
+    return;
+  }
+
+  if (!base::ohos::IsPcDevice()) {
+    if (state == OhosPasswordFormAutofillState::kNotRequested) {
+      auto json_str = PasswordFormToJsonForRequest(
+          EVENT_FILL, page_url, username_data, password_data);
+      if (json_str.has_value()) {
+        LOG(INFO)
+          << "[Autofill] really suppressKeyboard in "
+            "ChromePasswordManagerClientExt::PreSuppressKeyboardIfNeed";
+        SuppressKeyboard();
+      }
+    }
+  }
+}
+
 bool ChromePasswordManagerClientExt::ArkPromptUserToSaveOrUpdatePassword(
     std::unique_ptr<password_manager::PasswordFormManagerForUI> form_to_save) {
   

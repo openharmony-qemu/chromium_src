@@ -28,6 +28,17 @@ TEST_F(ContentPasswordManagerDriverTest, OnRequestAutofill) {
     username_data, password_data));
 }
 
+TEST_F(ContentPasswordManagerDriverTest, PreSuppressKeyboardIfNeed) {
+  std::unique_ptr<ContentPasswordManagerDriver> driver(
+      new ContentPasswordManagerDriverExt(main_rfh(), &password_manager_client_));
+  
+  autofill::FormRendererId id;
+  autofill::InputFillRequestData username_data;
+  autofill::InputFillRequestData password_data;
+  ASSERT_NO_FATAL_FAILURE(driver->PreSuppressKeyboardIfNeed(id,
+    autofill::mojom::OhosPasswordFormAutofillState::kNotRequested, username_data, password_data));
+}
+
 TEST_F(ContentPasswordManagerDriverTest, AutofillSurfaceClosed) {
   std::unique_ptr<ContentPasswordManagerDriver> driver(
       new ContentPasswordManagerDriverExt(main_rfh(), &password_manager_client_));

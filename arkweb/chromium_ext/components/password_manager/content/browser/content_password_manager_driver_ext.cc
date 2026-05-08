@@ -44,6 +44,23 @@ void ContentPasswordManagerDriverExt::OnRequestAutofill(
       this, page_origin, form_id, state, username_data, password_data);
 }
 
+void ContentPasswordManagerDriverExt::PreSuppressKeyboardIfNeed(
+    autofill::FormRendererId form_id,
+    const autofill::mojom::OhosPasswordFormAutofillState state,
+    const autofill::InputFillRequestData& username_data,
+    const autofill::InputFillRequestData& password_data) {
+  if (!password_manager::bad_message::CheckFrameNotPrerendering(
+          render_frame_host_)) {
+    return;
+  }
+  if (!GetLastCommittedURL().is_valid()) {
+    return;
+  }
+  GURL page_origin = url::Origin::Create(GetLastCommittedURL()).GetURL();
+  client_->AsPasswordManagerClientExt()->PreSuppressKeyboardIfNeed(
+      this, page_origin, form_id, state, username_data, password_data);
+}
+
 void ContentPasswordManagerDriverExt::FillAccountSuggestion(
     const GURL& page_url,
     const std::u16string& username,

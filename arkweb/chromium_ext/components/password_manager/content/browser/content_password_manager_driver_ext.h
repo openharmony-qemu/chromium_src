@@ -52,6 +52,11 @@ class ContentPasswordManagerDriverExt final
       const autofill::mojom::OhosPasswordFormAutofillState state,
       const autofill::InputFillRequestData& username_data,
       const autofill::InputFillRequestData& password_data) override;
+  void PreSuppressKeyboardIfNeed(
+      autofill::FormRendererId form_id,
+      const autofill::mojom::OhosPasswordFormAutofillState state,
+      const autofill::InputFillRequestData& username_data,
+      const autofill::InputFillRequestData& password_data) override;
 
   void SendParsedPasswordFormToRenderer(
       const autofill::PasswordFormFillData& parsed_form_data_without_password)

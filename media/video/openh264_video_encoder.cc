@@ -147,6 +147,22 @@ void SetUpOpenH264Params(VideoCodecProfile profile,
   }
 }
 
+// OpenH264 can resize frames automatically as long as
+// - the input and output aspect ratios are the same and
+// - the input is larger than the output in both dimensions.
+bool NeedsManualResizing(const gfx::Size& src, const gfx::Size& dst) {
+  if (src.IsEmpty() || dst.IsEmpty()) {
+    return true;
+  }
+
+  if (dst.width() > src.width() || dst.height() > src.height()) {
+    return true;
+  }
+
+  return VideoAspectRatio::PAR(src.width(), src.height()) !=
+         VideoAspectRatio::PAR(dst.width(), dst.height());
+}
+
 }  // namespace
 
 OpenH264VideoEncoder::ISVCEncoderDeleter::ISVCEncoderDeleter() = default;
@@ -406,9 +422,18 @@ void OpenH264VideoEncoder::Encode(scoped_refptr<VideoFrame> frame,
     }
   }
 
-  if (frame->format() != PIXEL_FORMAT_I420) {
-    // OpenH264 can resize frame automatically, but since we're converting
-    // pixel format anyway we can do resize as well.
+  bool requires_copy =
+      frame->format() != PIXEL_FORMAT_I420 ||
+      NeedsManualResizing(frame->visible_rect().size(), options_.frame_size) ||
+      frame->stride(VideoFrame::Plane::kU) !=
+          frame->stride(VideoFrame::Plane::kV);
+
+  if (requires_copy) {
+    // In cases where we need to
+    // - enlarge the frame
+    // - change the pixel format
+    // - change the aspect ratio or
+    // - use matching U and V strides
     auto i420_frame = frame_pool_.CreateFrame(
         PIXEL_FORMAT_I420, options_.frame_size, gfx::Rect(options_.frame_size),
         options_.frame_size, frame->timestamp());

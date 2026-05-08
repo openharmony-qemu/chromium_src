@@ -344,4 +344,14 @@ SkSurface* SkiaOutputDeviceGL::BeginPaint(
 
 void SkiaOutputDeviceGL::EndPaint() {}
 
+#if BUILDFLAG(IS_OHOS)
+void SkiaOutputDeviceGL::EnsureBackbuffer() {
+  gl_surface_->EnsureBackbuffer();
+}
+
+void SkiaOutputDeviceGL::DiscardBackbuffer() {
+  gl_surface_->DiscardBackbuffer();
+}
+#endif
+
 }  // namespace viz

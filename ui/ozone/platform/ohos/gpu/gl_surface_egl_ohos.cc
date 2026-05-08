@@ -74,4 +74,12 @@ bool NativeViewGLSurfaceEGLOhos::Resize(const gfx::Size& size,
   return true;
 }
 
+void NativeViewGLSurfaceEGLOhos::EnsureBackbuffer() {
+  SetBackbufferAllocation(true);
+}
+
+void NativeViewGLSurfaceEGLOhos::DiscardBackbuffer() {
+  SetBackbufferAllocation(false);
+}
+
 }  // namespace gl

@@ -224,6 +224,11 @@ class GL_EXPORT GLSurface : public base::RefCounted<GLSurface> {
   // it. Otherwise, return the original input preference.
   static GpuPreference AdjustGpuPreference(GpuPreference gpu_preference);
 
+#if BUILDFLAG(IS_OHOS)
+  virtual void EnsureBackbuffer();
+  virtual void DiscardBackbuffer();
+#endif
+
  protected:
   virtual ~GLSurface();
 

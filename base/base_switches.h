@@ -72,6 +72,8 @@ extern const char kDisablePagePolicy[];
 extern const char kOhosTrace[];
 extern const char kOhosTempDir[];
 extern const char kOhosProcessType[];
+// Low memory mode is used to identify 16 GB devices.
+extern const char KEnabledLowMemoryMode[];
 #endif
 }  // namespace switches
 

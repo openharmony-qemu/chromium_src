@@ -570,6 +570,39 @@ bool NativeViewGLSurfaceEGL::InitializeNativeWindow() {
   return true;
 }
 
+#if BUILDFLAG(IS_OHOS)
+bool NativeViewGLSurfaceEGL::SetBackbufferAllocation(bool allocated) {
+  TRACE_EVENT1("gpu", "NativeViewGLSurfaceEGL:SetBackbufferAllocation",
+               "allocated", allocated);
+  GLContext* context = GLContext::GetCurrent();
+  GLSurface* surface = GLSurface::GetCurrent();
+  if (context == nullptr || surface == nullptr) {
+    return false;
+  }
+
+  LOG(INFO) << "NativeViewGLSurfaceEGL::SetBackbufferAllocation " << allocated;
+  if (allocated) { // Forground
+    if (surface_) { // surface already binded
+      return true;
+    }
+
+    if (!Initialize(format_)) {
+      LOG(ERROR) << "Failed to recreate surface.";
+      return false;
+    }
+    if (!context->MakeCurrent(surface)) {
+      LOG(ERROR) << "Failed to make current.";
+      return false;
+    }
+    SetVSyncEnabled(vsync_enabled_);
+  } else { // Background
+    context->ReleaseCurrent(surface);
+    Destroy();
+  }
+  return true;
+}
+#endif
+
 void NativeViewGLSurfaceEGL::Destroy() {
   presentation_helper_ = nullptr;
   vsync_provider_internal_ = nullptr;

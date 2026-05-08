@@ -142,7 +142,7 @@ void RunThreadCachePeriodicPurge() {
 // When enabled, disable the memory reclaimer in background.
 BASE_FEATURE(kDisableMemoryReclaimerInBackground,
              "DisableMemoryReclaimerInBackground",
-             base::FEATURE_ENABLED_BY_DEFAULT);
+             base::FEATURE_DISABLED_BY_DEFAULT);
 
 // When enabled, limit the time memory reclaimer may take, returning early when
 // exceeded.

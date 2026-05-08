@@ -1264,6 +1264,12 @@ bool NavigationControllerImpl::CanViewSource() {
          is_viewable_mime_type;
 }
 
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+bool NavigationControllerImpl::IsViewSourceEnabled() {
+  return CanViewSource();
+}
+#endif
+
 int NavigationControllerImpl::GetLastCommittedEntryIndex() {
   // The last committed entry index must always be less than the number of
   // entries.

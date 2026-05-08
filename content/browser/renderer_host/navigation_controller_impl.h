@@ -118,6 +118,9 @@ class CONTENT_EXPORT NavigationControllerImpl : public NavigationController {
   const NavigationEntryImpl* GetLastCommittedEntry() const override;
   int GetLastCommittedEntryIndex() override;
   bool CanViewSource() override;
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  bool IsViewSourceEnabled();
+#endif
   int GetEntryCount() override;
   NavigationEntryImpl* GetEntryAtIndex(int index) override;
   NavigationEntryImpl* GetEntryAtOffset(int offset) override;

@@ -35,7 +35,7 @@ static bool HandleViewSource(GURL* url, BrowserContext* browser_context) {
       {url::kHttpScheme, url::kHttpsScheme, kChromeUIScheme, url::kFileScheme,
       url::kFileSystemScheme,
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-       kArkWebUIScheme,
+       kArkWebUIScheme, url::kDataScheme,
 #endif
 #if BUILDFLAG(ARKWEB_RECOURCE_SCHEME)
        url::kFileSystemScheme, url::kResourcesScheme

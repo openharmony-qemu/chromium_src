@@ -8243,6 +8243,18 @@ void WebContentsImpl::ViewSource(RenderFrameHostImpl* frame) {
                  frame_entry->url().spec());
   navigation_entry->SetVirtualURL(url);
 
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  // use OpenURLFromTab open
+  content::OpenURLParams params(url, referrer_for_view_source,
+                               WindowOpenDisposition::NEW_FOREGROUND_TAB,
+                               ui::PAGE_TRANSITION_LINK, false);
+
+  content::WebContents* new_contents = delegate_->OpenURLFromTab(this, params,
+                                                               base::OnceCallback<void(content::NavigationHandle&)>());
+
+  return;
+
+#endif
   // View source opens the URL in a new tab as a top-level navigation. A
   // top-level navigation may have a different IsolationInfo than the source
   // iframe, so preserve the IsolationInfo from the origin frame, to use the

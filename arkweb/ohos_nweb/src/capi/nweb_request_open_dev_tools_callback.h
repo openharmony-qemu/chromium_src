@@ -23,7 +23,8 @@ extern "C" {
 typedef void (*OnArkWebStaticRequestOpenDevToolsFunc)(const char* type,
                                                       const char* source_id,
                                                       const char* target_id,
-                                                      const char* extension_id);
+                                                      const char* extension_id,
+                                                      const char* panel);
 #ifdef __cplusplus
 }
 #endif  // __cplusplus

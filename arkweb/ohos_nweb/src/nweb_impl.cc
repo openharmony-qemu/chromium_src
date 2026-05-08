@@ -5145,7 +5145,8 @@ void NWebImpl::OnRequestOpenDevTools(const RequestOpenDevToolsParams& params) {
     on_request_open_dev_tools_callback_(params.type.c_str(),
                                         params.source_id.c_str(),
                                         params.target_id.c_str(),
-                                        params.extension_id.c_str());
+                                        params.extension_id.c_str(),
+                                        params.panel.c_str());
   } else {
     LOG(ERROR) << " func:" << __FUNCTION__ << " callback is null.";
   }

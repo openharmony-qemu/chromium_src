@@ -31,7 +31,8 @@ std::string InspectUI::GetTypeFromHost(const std::string& hostType) {
 }
 
 bool InspectUI::InspectInclude(const std::string& source_id,
-                               const std::string& target_id) {
+                               const std::string& target_id,
+                               const std::string& panel) {
   LOG(INFO) << " func:" << __func__;
   bool ret = true;
   scoped_refptr<DevToolsAgentHost> target = FindTarget(source_id, target_id);
@@ -43,7 +44,8 @@ bool InspectUI::InspectInclude(const std::string& source_id,
     .type = GetTypeFromHost(target->GetType()),
     .source_id = source_id,
     .target_id = target_id,
-    .extension_id = ""
+    .extension_id = "",
+    .panel = panel
   };
   if (WebContents* web_contents = target->GetWebContents()) {
     web_contents->GetDelegate()->OnRequestOpenDevTools(&params);

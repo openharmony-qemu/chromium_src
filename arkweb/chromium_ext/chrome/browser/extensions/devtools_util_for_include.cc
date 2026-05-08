@@ -47,7 +47,8 @@ void InspectServiceWorkerBackgroundV2(content::WebContents* web_contents,
       .type = GetTypeFromHost(host->GetType()),
       .source_id = host->GetURL().spec(),
       .target_id = host->GetId(),
-      .extension_id = extension->id()
+      .extension_id = extension->id(),
+      .panel = ""
     };
     if (host->GetType() == content::DevToolsAgentHost::kTypeServiceWorker ||
         host->GetType() == content::DevToolsAgentHost::kTypeSharedWorker ||
@@ -69,7 +70,8 @@ void OnRequestOpenDevTools(const scoped_refptr<content::DevToolsAgentHost>& host
     .type = GetTypeFromHost(host->GetType()),
     .source_id = host->GetURL().spec(),
     .target_id = host->GetId(),
-    .extension_id = extension->id()
+    .extension_id = extension->id(),
+    .panel = ""
   };
 
   if (web_contents && web_contents->GetDelegate()) {
@@ -96,7 +98,8 @@ void OnRequestOpenDevToolsWithContext(std::unique_ptr<LazyContextTaskQueue::Cont
     .type = "Extensions",
     .source_id = web_contents->GetURL().spec(),
     .target_id = "",
-    .extension_id = extension->id()
+    .extension_id = extension->id(),
+    .panel = ""
   };
 
   if (web_contents->GetDelegate()) {

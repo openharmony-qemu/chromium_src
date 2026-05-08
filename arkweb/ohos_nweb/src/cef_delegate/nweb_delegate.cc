@@ -149,7 +149,7 @@ struct CefOpenDevToolsExtOpt GetCefExtOpt(OpenDevToolsExtOpt& ext_opt) {
   struct CefOpenDevToolsExtOpt cef_ext_opt;
   cef_ext_opt.canDock = ext_opt.canDock;
   cef_ext_opt.showToolbox = ext_opt.showToolbox;
- 
+  cef_ext_opt.event = ext_opt.event;
   return cef_ext_opt;
 }
  

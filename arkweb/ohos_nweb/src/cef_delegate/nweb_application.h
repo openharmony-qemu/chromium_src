@@ -96,6 +96,10 @@ class NWebApplication : public CefApp,
   bool RegisterCustomSchemes(const std::string& scheme, int options);
 #endif
 
+#if BUILDFLAG(ARKWEB_WARMUP_SPARE_RENDER_PROCESS)
+  void WarmupSpareRender();
+#endif
+
  private:
   void PopulateCreateSettings(CefRefPtr<CefCommandLine> command_line,
                               CefBrowserSettings& browser_settings

@@ -21,6 +21,10 @@
 #include "arkweb/ohos_nweb/src/sysevent/event_reporter.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_WARMUP_SPARE_RENDER_PROCESS)
+#include "arkweb/chromium_ext/content/public/browser/spare_render_process_manager_ohos.h"
+#endif
+
 namespace content {
 namespace internal {
 #if BUILDFLAG(IS_ARKWEB)
@@ -97,6 +101,26 @@ void ArkwebChildProcessLauncherHelperUtils::LaunchChildProcess(
       LOG(DEBUG) << "report render process create event success, render pid: "
                  << render_pid << ", process type = "
                  << child_process_launcher_helper_->GetProcessType();
+#if BUILDFLAG(ARKWEB_WARMUP_SPARE_RENDER_PROCESS)
+      if (OHOS::NWeb::SpareRenderProcessManagerOhos::GetInstance().IsWarmupEnabled() &&
+          OHOS::NWeb::SpareRenderProcessManagerOhos::GetInstance().GetState() == 
+            OHOS::NWeb::SpareRenderProcessManagerOhos::State::IDLE) {
+          int32_t window_id =
+              OHOS::NWeb::SpareRenderProcessManagerOhos::GetInstance().GetWarmupWindowId();
+          OHOS::NWeb::ResSchedClientAdapter::ReportNWebInit(
+              OHOS::NWeb::ResSchedStatusAdapter::WEB_SCENE_ENTER, OHOS::NWeb::WARMUP_SPARE_RENDER_REPORT_NWEB_ID);
+          OHOS::NWeb::ResSchedClientAdapter::ReportWindowStatus(
+              OHOS::NWeb::ResSchedStatusAdapter::WEB_ACTIVE,
+              render_pid,
+              static_cast<uint32_t>(window_id),
+              OHOS::NWeb::WARMUP_SPARE_RENDER_REPORT_NWEB_ID);
+          LOG(INFO) << "ReportWindowStatus WEB_ACTIVE for warmup spare render process "
+                    << "render pid: " << render_pid
+                    << ", windowId: " << window_id;
+          OHOS::NWeb::SpareRenderProcessManagerOhos::GetInstance()
+              .NotifyWarmupSpareLaunched(render_pid);
+      }
+#endif
     }
   }
 }

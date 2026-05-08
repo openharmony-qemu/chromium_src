@@ -273,6 +273,7 @@ declare_args() {
   arkweb_jsheap_dump = false
   arkweb_ext_extensions_header_client = false
   arkweb_clean_buffers_when_invisible = !is_component_build
+  arkweb_warmup_spare_render_process = true
 }
 
 # Features enabled in mojom bindings.

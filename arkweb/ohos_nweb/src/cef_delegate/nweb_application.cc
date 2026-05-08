@@ -50,6 +50,13 @@
 #include "ohos_nweb_ex/overrides/ohos_nweb/src/cef_delegate/custom_crashpad_handler.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_WARMUP_SPARE_RENDER_PROCESS)
+#include "cef/libcef/browser/browser_context.h"
+#include "cef/libcef/browser/request_context_impl.h"
+#include "content/browser/renderer_host/spare_render_process_host_manager_impl.h"
+#include "arkweb/chromium_ext/content/public/browser/spare_render_process_manager_ohos.h"
+#endif
+
 namespace {
 #if BUILDFLAG(ARKWEB_API_INIT_WEB_ENGINE)
 CefRefPtr<OHOS::NWeb::NWebApplication> g_application = nullptr;
@@ -210,7 +217,29 @@ void NWebApplication::OnContextInitialized() {
 #endif
 
   OnContextInitializedInternal();
+
+#if BUILDFLAG(ARKWEB_WARMUP_SPARE_RENDER_PROCESS)
+  WarmupSpareRender();
+#endif
 }
+
+#if BUILDFLAG(ARKWEB_WARMUP_SPARE_RENDER_PROCESS)
+void NWebApplication::WarmupSpareRender() {
+  CEF_REQUIRE_UI_THREAD();
+ 
+  if (!OHOS::NWeb::SpareRenderProcessManagerOhos::IsWarmupEnabled()) {
+   LOG(INFO) << "NWebApplication::WarmupSpareRender: warmup spare render process is not enabled";
+   return;
+  }
+ 
+  content::BrowserContext* browser_context = CefRequestContextImpl::GetBrowserContext(nullptr);
+  if (!browser_context) {
+    LOG(WARNING) << "NWebApplication::WarmupSpareRender: failed to get BrowserContext";
+    return;
+  }
+  OHOS::NWeb::SpareRenderProcessManagerOhos::GetInstance().WarmupSpare(browser_context);
+}
+#endif
 
 #if BUILDFLAG(ARKWEB_INIT_CALLBACK)
 NO_SANITIZE("cfi-vcall")

@@ -3475,6 +3475,11 @@ class CONTENT_EXPORT RenderFrameHostImpl
 
   bool OnNestedFling(float& velocity_x, float& velocity_y);
 #endif
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  bool IsUrlTrustListBlocked(int64_t navigation_id);
+#endif
+
  protected:
   friend class RenderFrameHostFactory;
 

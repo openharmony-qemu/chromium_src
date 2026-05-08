@@ -5568,6 +5568,15 @@ NavigationRequest::ComputeErrorPageProcess() {
   if (frame_tree_node_->IsErrorPageIsolationEnabled())
     return ErrorPageProcess::kIsolatedProcess;
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  // URL Trust List blocked pages should be handled in the destination process.
+  RenderFrameHostImpl* rfh = frame_tree_node_->current_frame_host();
+  if (rfh && rfh->IsUrlTrustListBlocked(this->GetNavigationId()) &&
+      this->coop_status().browsing_instance_swap()) {
+    return ErrorPageProcess::kDestinationProcess;
+  }
+#endif
+
   // Decide whether to leave the error page in the original process.
   // * If this was a renderer-initiated navigation, and the request is blocked
   //   because the initiating document wasn't allowed to make the request,

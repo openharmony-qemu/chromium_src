@@ -360,6 +360,17 @@ void SecurityInterstitialTabHelper::ShowCertificateViewer() {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+bool SecurityInterstitialTabHelper::IsUrlTrustListBlockedForNavigation(
+    int64_t navigation_id) const {
+  auto it = blocking_documents_for_pending_navigations_.find(navigation_id);
+  if (it != blocking_documents_for_pending_navigations_.end()) {
+    return it->second->IsUrlTrustListBlocked();
+  }
+  return false;
+}
+#endif
+
 WEB_CONTENTS_USER_DATA_KEY_IMPL(SecurityInterstitialTabHelper);
 
 }  //  namespace security_interstitials

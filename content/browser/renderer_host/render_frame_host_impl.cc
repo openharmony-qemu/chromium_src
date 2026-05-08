@@ -66,6 +66,9 @@
 #include "components/input/timeout_monitor.h"
 #include "components/input/utils.h"
 #include "components/tracing/common/tracing_switches.h"
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD) && !defined(COMPONENT_BUILD)
+#include "components/security_interstitials/content/security_interstitial_tab_helper.h"
+#endif
 #include "components/viz/common/features.h"
 #include "content/browser/about_url_loader_factory.h"
 #include "content/browser/accessibility/render_accessibility_host.h"
@@ -19452,5 +19455,22 @@ void RenderFrameHostImpl::SetPrerenderStateChangedCallback(
   CHECK(!prerender_state_callback_);
   prerender_state_callback_ = prerender_state_callback;
 }
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+bool RenderFrameHostImpl::IsUrlTrustListBlocked(int64_t navigation_id) {
+  DCHECK_CURRENTLY_ON(BrowserThread::UI);
+  WebContents* web_contents = WebContents::FromRenderFrameHost(this);
+  if (!web_contents) {
+    return false;
+  }
+#if !defined(COMPONENT_BUILD)
+  auto* helper = security_interstitials::SecurityInterstitialTabHelper::FromWebContents(web_contents);
+  if (helper) {
+    return helper->IsUrlTrustListBlockedForNavigation(navigation_id);
+  }
+#endif
+  return false;
+}
+#endif
 
 }  // namespace content

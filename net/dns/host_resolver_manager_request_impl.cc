@@ -33,7 +33,7 @@
 #include "net/socket/client_socket_factory.h"
 #include "net/url_request/url_request_context.h"
 
-#if defined(ARKWEB_EXT_NAVIGATION_TODO)
+#if BUILDFLAG(IS_ARKWEB)
 #include "arkweb/chromium_ext/net/dns/host_resolver_manager_request_impl_for_include.cc"
 #endif
 
@@ -377,7 +377,13 @@ int HostResolverManager::RequestImpl::DoResolveLocally() {
 #endif
   );
 
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  if (base::FeatureList::IsEnabled(
+          network::features::kEnableNwebExHttpDnsFallback)) {
+    MaybeModifyResolveLocallyResults(results);
+  }
 #if defined(ARKWEB_EXT_NAVIGATION_TODO)
+#endif
 #endif
 
   if (results.error() != ERR_DNS_CACHE_MISS ||

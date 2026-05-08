@@ -342,6 +342,10 @@ class NET_EXPORT HostResolverManager
   static DnsTaskTransitionType ConvertFromTaskType(TaskType type);
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  static void CleanLocalTask(std::deque<TaskType>& out_tasks);
+#endif
+
   // Returns true if the task is local, synchronous, and instantaneous.
   static bool IsLocalTask(TaskType task);
 

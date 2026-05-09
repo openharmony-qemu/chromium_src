@@ -1123,23 +1123,23 @@ void InitialWebEngineArgs(
 
   base::FilePath app_sandbox_root_dir = base::FilePath();
   base::FilePath user_data_dir = base::FilePath();
-  base::FilePath user_cache_dir = base::FilePath();
   bool isSeparation = true;
   auto args_to_add = GetArgsToAdd(init_args);
+
   for (auto arg : args_to_add) {
     ParsePathFromArgForKey(arg, switches::kArkwebAppDataDir, &app_sandbox_root_dir);
     ParsePathFromArgForKey(arg, switches::kUserDataDir, &user_data_dir);
-    ParsePathFromArgForKey(arg, switches::kUserCacheDir, &user_cache_dir);
     if (arg.find(switches::kDisableUserDataDirSeparation) != std::string::npos) {
       isSeparation = false;
     }
     web_engine_args.emplace_back(arg);
   }
-  base::FilePath target_data_dir = isSeparation? 
-                      GetWebEngineDataDirectory(user_data_dir, user_cache_dir, web_engine_args) :
+  base::FilePath target_cache_dir = app_sandbox_root_dir.Append(kUserCacheDir);
+  base::FilePath target_data_dir = isSeparation?
+                      GetWebEngineDataDirectory(user_data_dir, target_cache_dir, web_engine_args) :
                       app_sandbox_root_dir.Append(kUserCacheDir);
   web_engine_args.emplace_back("--user-data-dir=" + target_data_dir.value());
-  web_engine_args.emplace_back("--user-cache-dir=" + app_sandbox_root_dir.Append(kUserCacheDir).value());
+  web_engine_args.emplace_back("--user-cache-dir=" + target_cache_dir.value());
   web_engine_args.emplace_back("--arkweb-app-data-dir=" + app_sandbox_root_dir.value());
   if (app_sandbox_root_dir.empty()) {
     LOG(ERROR) << "app_sandbox_root_dir is empty.";

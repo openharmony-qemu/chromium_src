@@ -13,7 +13,10 @@
             "zhanghaozhi1"
         ],
         "arkweb-eventhandler": [
-            "jerrywangxmu"
+            "jerrywangxmu",
+            "cloud_nine999",
+            "runlei",
+            "shulssins"
         ],
         "arkweb-compositor": [
             "LXinJie1"
@@ -63,6 +66,12 @@
             "info": "[基础框架]"
         },
         "jerrywangxmu": {
+            "info": "[交互动效]"
+        },
+        "runlei": {
+            "info": "[交互动效]"
+        },
+        "shulssins": {
             "info": "[交互动效]"
         },
         "LXinJie1": {

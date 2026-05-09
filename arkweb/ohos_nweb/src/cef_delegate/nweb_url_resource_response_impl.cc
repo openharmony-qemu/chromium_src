@@ -63,11 +63,13 @@ std::string NWebUrlResourceResponseImpl::ResponseMimeType() {
 
 void NWebUrlResourceResponseImpl::PutResponseHeaders(
     const std::map<std::string, std::string>& response_headers) {
+  base::AutoLock lock_scope(lock_);
   response_headers_ = response_headers;
 }
 
 std::map<std::string, std::string>
 NWebUrlResourceResponseImpl::ResponseHeaders() {
+  base::AutoLock lock_scope(lock_);
   return response_headers_;
 }
 

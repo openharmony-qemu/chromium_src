@@ -130,6 +130,25 @@ std::string GetUpdateURLData(const extensions::ExtensionPrefs* prefs,
   return data;
 }
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+bool IsPendingExtensionFromExternalPolicy(
+    Profile* profile,
+    const extensions::ExtensionId& extension_id) {
+  const extensions::PendingExtensionManager* pending_extension_manager =
+      extensions::PendingExtensionManager::Get(profile);
+  const extensions::PendingExtensionInfo* info =
+      pending_extension_manager->GetById(extension_id);
+  if (!info) {
+    return false;
+  }
+
+  extensions::mojom::ManifestLocation location = info->install_source();
+  return location == extensions::mojom::ManifestLocation::kExternalPolicy ||
+         location ==
+             extensions::mojom::ManifestLocation::kExternalPolicyDownload;
+}
+#endif
+
 }  // namespace
 
 ExtensionUpdater::CheckParams::CheckParams() = default;
@@ -384,7 +403,8 @@ void ExtensionUpdater::AddToDownloader(
     const Extension& extension = **extension_iter;
     const ExtensionId& extension_id = extension.id();
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-    if (!CustomData::CanBeUpdated(&extension)) {
+    if (!CustomData::CanBeUpdated(&extension) &&
+        !IsPendingExtensionFromExternalPolicy(profile_, extension_id)) {
       continue;
     }
 #endif
@@ -496,7 +516,8 @@ void ExtensionUpdater::CheckNow(CheckParams params) {
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
       const Extension* extension =
           registry_->GetExtensionById(id, ExtensionRegistry::EVERYTHING);
-      if (!CustomData::CanBeUpdated(extension)) {
+      if (!CustomData::CanBeUpdated(extension) &&
+          !IsPendingExtensionFromExternalPolicy(profile_, id)) {
         continue;
       }
 #endif
@@ -596,7 +617,8 @@ void ExtensionUpdater::CheckNow(CheckParams params) {
           registry_->GetExtensionById(id, ExtensionRegistry::EVERYTHING);
       if (extension) {
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-        if (!CustomData::CanBeUpdated(extension)) {
+        if (!CustomData::CanBeUpdated(extension) &&
+            !IsPendingExtensionFromExternalPolicy(profile_, id)) {
           continue;
         }
 #endif
@@ -1107,11 +1129,12 @@ std::set<ExtensionId> ExtensionUpdater::GetCorruptedExtensionIds() const {
   for (const auto& it :
        corrupted_extension_reinstaller_->GetExpectedReinstalls()) {
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-      const Extension* extension =
-          registry_->GetExtensionById(it.first, ExtensionRegistry::EVERYTHING);
-      if (!CustomData::CanBeUpdated(extension)) {
-        continue;
-      }
+    const Extension* extension =
+        registry_->GetExtensionById(it.first, ExtensionRegistry::EVERYTHING);
+    if (!CustomData::CanBeUpdated(extension) &&
+        !IsPendingExtensionFromExternalPolicy(profile_, it.first)) {
+      continue;
+    }
 #endif
     ids.insert(it.first);
   }

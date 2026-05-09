@@ -204,4 +204,8 @@ interface Renderer {
                                         int32 min_cache_time, int32 max_cache_time,
                                         int32 moov_size, int32 bit_rate,
                                         array<string> support_domains);  
+
+  [EnableIf=arkweb_enable_jsdump]
+  RequestJSDump(handle<platform> socket, bool needGC,
+                 bool needSnapshot, bool needRaw);
 };

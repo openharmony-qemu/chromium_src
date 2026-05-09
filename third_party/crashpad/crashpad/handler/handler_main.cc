@@ -223,6 +223,14 @@ void Usage(const base::FilePath& me) {
 "      --write-minidump-to-log write minidump to log\n"
   // clang-format on
 #endif  // BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(ARKWEB_ENABLE_JSDUMP)
+      // clang-format off
+"      --snapshot-only         snapshot mode only\n"
+"      --snapshot-fd=FD        snapshot file descriptor\n"
+"      --target-pid=PID        target process ID\n"
+"      --socket-fd=FD          socket file descriptor\n"
+  // clang-format on
+#endif  // BUILDFLAG(ARKWEB_ENABLE_JSDUMP)
       // clang-format off
 "      --help                  display this help and exit\n"
 "      --version               output version information and exit\n",
@@ -274,6 +282,12 @@ struct Options {
 #if defined(ATTACHMENTS_SUPPORTED)
   std::vector<base::FilePath> attachments;
 #endif  // ATTACHMENTS_SUPPORTED
+#if BUILDFLAG(ARKWEB_ENABLE_JSDUMP)
+  bool snapshot_only;
+  int snapshot_fd;
+  int target_pid;
+  int socket_fd;
+#endif  // BUILDFLAG(ARKWEB_ENABLE_JSDUMP)
 };
 
 // Splits |key_value| on '=' and inserts the resulting key and value into |map|.
@@ -654,6 +668,12 @@ int HandlerMain(int argc,
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
     kOptionWriteMinidumpToLog,
 #endif  // BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(ARKWEB_ENABLE_JSDUMP)
+    kOptionSnapshotOnly,
+    kOptionSnapshotFd,
+    kOptionTargetPid,
+    kOptionSocketFd,
+#endif  // BUILDFLAG(ARKWEB_ENABLE_JSDUMP)
 
     // Standard options.
     kOptionHelp = -2,
@@ -754,6 +774,12 @@ int HandlerMain(int argc,
        nullptr,
        kOptionWriteMinidumpToLog},
 #endif  // BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(ARKWEB_ENABLE_JSDUMP)
+    {"snapshot-only", no_argument, nullptr, kOptionSnapshotOnly},
+    {"snapshot-fd", required_argument, nullptr, kOptionSnapshotFd},
+    {"target-pid", required_argument, nullptr, kOptionTargetPid},
+    {"socket-fd", required_argument, nullptr, kOptionSocketFd},
+#endif  // BUILDFLAG(ARKWEB_ENABLE_JSDUMP)
     {"help", no_argument, nullptr, kOptionHelp},
     {"version", no_argument, nullptr, kOptionVersion},
     {"max-uploads", required_argument, nullptr, kOptionMaxUploads},
@@ -776,6 +802,12 @@ int HandlerMain(int argc,
   options.upload_gzip = true;
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   options.write_minidump_to_database = true;
+#endif
+#if BUILDFLAG(ARKWEB_ENABLE_JSDUMP)
+  options.snapshot_only = false;
+  options.snapshot_fd = -1;
+  options.target_pid = -1;
+  options.socket_fd = -1;
 #endif
 
   int opt;
@@ -971,6 +1003,33 @@ int HandlerMain(int argc,
         break;
       }
 #endif  // BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(ARKWEB_ENABLE_JSDUMP)
+      case kOptionSnapshotOnly: {
+        options.snapshot_only = true;
+        break;
+      }
+      case kOptionSnapshotFd: {
+        if (!base::StringToInt(optarg, &options.snapshot_fd)) {
+          ToolSupport::UsageHint(me, "failed to parse --snapshot-fd");
+          return ExitFailure();
+        }
+        break;
+      }
+      case kOptionTargetPid: {
+        if (!base::StringToInt(optarg, &options.target_pid)) {
+          ToolSupport::UsageHint(me, "failed to parse --target-pid");
+          return ExitFailure();
+        }
+        break;
+      }
+      case kOptionSocketFd: {
+        if (!base::StringToInt(optarg, &options.socket_fd)) {
+          ToolSupport::UsageHint(me, "failed to parse --socket-fd");
+          return ExitFailure();
+        }
+        break;
+      }
+#endif  // BUILDFLAG(ARKWEB_ENABLE_JSDUMP)
       case kOptionHelp: {
         Usage(me);
         MetricsRecordExit(Metrics::LifetimeMilestone::kExitedEarly);
@@ -989,6 +1048,19 @@ int HandlerMain(int argc,
   }
   argc -= optind;
   argv += optind;
+
+#if BUILDFLAG(ARKWEB_ENABLE_JSDUMP)
+  if (options.snapshot_only) {
+    if (crashpad::HandleMemorySnapshot(
+            options.target_pid, options.snapshot_fd, options.socket_fd)) {
+      LOG(INFO) << "HandleMemorySnapshot sucessfully";
+      return EXIT_SUCCESS;
+    } else {
+      LOG(ERROR) << "HandleMemorySnapshot failed";
+      return ExitFailure();
+    }
+  }
+#endif  // BUILDFLAG(ARKWEB_ENABLE_JSDUMP)
 
 #if BUILDFLAG(IS_APPLE)
   if (options.handshake_fd < 0 && options.mach_service.empty()) {

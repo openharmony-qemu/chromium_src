@@ -16,7 +16,7 @@
 #include "arkweb/chromium_ext/third_party/crashpad/crashpad/handler/linux/crash_report_exception_handler_utils.h"
 #include <memory>
 #include <utility>
-
+#include <vector>
 
 #include "base/logging.h"
 #include "build/build_config.h"
@@ -325,5 +325,64 @@ bool CrashReportExceptionHandler::WriteMinidumpToLog(
   }
   return writer.Flush();
 }
+
+#if BUILDFLAG(ARKWEB_ENABLE_JSDUMP)
+bool HandleMemorySnapshot(pid_t target_pid, int snapshot_fd, int socket) {
+  LOG(DEBUG) << "[HandleMemorySnapshot] pid=" << target_pid
+            << ", snapshot_fd=" << snapshot_fd << ",socket="<<socket;
+  if (snapshot_fd < 0) {
+    LOG(ERROR) << "[MemorySnapshot] Invalid fd";
+    if (socket >= 0) {
+      close(socket);
+    }
+    return false;
+  }
+  if (socket < 0) {
+    LOG(ERROR) << "[MemorySnapshot] Invalid socket";
+    if (snapshot_fd >= 0) {
+      close(snapshot_fd);
+    }
+    return false;
+  }
+
+  constexpr size_t kBufferSize = 1 * 1024 * 1024;
+  std::vector<char> buf(kBufferSize);
+
+  // read snapshot data
+  uint32_t write_bytes = 0;
+  while (true) {
+    ssize_t n = TEMP_FAILURE_RETRY(read(socket, buf.data(), buf.size()));
+    if (n < 0) {
+      LOG(ERROR) << "[HandleMemorySnapshot]read() failed";
+      close(snapshot_fd);
+      close(socket);
+      return false;
+    }
+    if (n == 0) {
+      break;
+    }
+
+    // write snapshot data
+    const char* p = buf.data();
+    size_t left = static_cast<size_t>(n);
+    while (left > 0) {
+      ssize_t w = TEMP_FAILURE_RETRY(write(snapshot_fd, p, left));
+      if (w <= 0) {
+        close(snapshot_fd);
+        close(socket);
+        return false;
+      }
+      p += w;
+      left -= static_cast<size_t>(w);
+    }
+    write_bytes += n;
+  }
+
+  close(socket);
+  close(snapshot_fd);
+  LOG(INFO) << "[HandleMemorySnapshot] end " << write_bytes;
+  return true;
+}
+#endif
 
 }  // namespace crashpad

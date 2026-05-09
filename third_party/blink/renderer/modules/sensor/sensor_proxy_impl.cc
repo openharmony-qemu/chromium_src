@@ -10,6 +10,10 @@
 #include "third_party/blink/renderer/modules/sensor/sensor_provider_proxy.h"
 #include "third_party/blink/renderer/modules/sensor/sensor_reading_remapper.h"
 
+#if BUILDFLAG(ARKWEB_SENSOR)
+#include "base/logging.h"
+#endif
+
 using device::mojom::blink::SensorCreationResult;
 
 namespace blink {
@@ -238,9 +242,19 @@ void SensorProxyImpl::UpdatePollingStatus() {
 
 void SensorProxyImpl::RemoveActiveFrequency(double frequency) {
   // Can use binary search as active_frequencies_ is sorted.
+#if BUILDFLAG(ARKWEB_SENSOR)
+  LOG(INFO) << "RemoveActiveFrequency frequency:" << frequency;
+  if (active_frequencies_.empty()) {
+    return;
+  }
+#endif
   Vector<double>::iterator it = std::lower_bound(
       active_frequencies_.begin(), active_frequencies_.end(), frequency);
   if (it == active_frequencies_.end() || *it != frequency) {
+#if BUILDFLAG(ARKWEB_SENSOR)
+    LOG(WARNING) << "Attempted to remove active frequency which is not present "
+                    "in the list";
+#endif
     NOTREACHED() << "Attempted to remove active frequency which is not present "
                     "in the list";
   }
@@ -262,6 +276,9 @@ void SensorProxyImpl::AddActiveFrequency(double frequency) {
         static_cast<wtf_size_t>(std::distance(active_frequencies_.begin(), it)),
         frequency);
   }
+#if BUILDFLAG(ARKWEB_SENSOR)
+  LOG(INFO) << "AddActiveFrequency frequency:" << frequency;
+#endif
   UpdatePollingStatus();
 }
 

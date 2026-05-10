@@ -67,5 +67,7 @@ void CrashpadClientUtils::AddCrashpadArguments(std::vector<std::string>& argv, s
   std::string extra_arg_bundlename = "--bundle-name=" + bundle_name;
   argv.push_back(extra_arg_happentime);
   argv.push_back(extra_arg_bundlename);
+  std::string extr_arg_engine_type = "--engine-type=LEGACY";
+  argv.push_back(extr_arg_engine_type);
 }
 #endif  // BUILDFLAG(ARKWEB_CRASHPAD)

@@ -170,7 +170,7 @@ bool StructTraits<viz::mojom::TransferableResourceDataView,
       !data.ReadResourceSource(&out->resource_source)) {
     return false;
   }
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
   if (!data.ReadYcbcrInfo(&out->ycbcr_info)) {
     return false;
   }

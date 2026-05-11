@@ -84,7 +84,7 @@ struct StructTraits<media::mojom::VideoFrameDataView,
     return input->hdr_metadata();
   }
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
   static const std::optional<gpu::VulkanYCbCrInfo>& ycbcr_info(
       const scoped_refptr<media::VideoFrame>& input) {
     return input->ycbcr_info();

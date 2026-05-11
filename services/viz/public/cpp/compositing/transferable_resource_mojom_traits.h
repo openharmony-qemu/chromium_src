@@ -16,7 +16,7 @@
 #include "skia/public/mojom/surface_origin_mojom_traits.h"
 #include "ui/gfx/ipc/color/gfx_param_traits.h"
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
 #include "gpu/ipc/common/vulkan_ycbcr_info_mojom_traits.h"
 #include "gpu/vulkan/vulkan_ycbcr_info.h"
 #endif
@@ -118,7 +118,7 @@ struct StructTraits<viz::mojom::TransferableResourceDataView,
     return resource.needs_detiling;
   }
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
   static const std::optional<gpu::VulkanYCbCrInfo>& ycbcr_info(
       const viz::TransferableResource& resource) {
     return resource.ycbcr_info;

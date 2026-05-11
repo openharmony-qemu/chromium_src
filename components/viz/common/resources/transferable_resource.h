@@ -23,7 +23,7 @@
 #include "ui/gfx/hdr_metadata.h"
 #include "arkweb/build/features/features.h"
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
 #include "gpu/vulkan/vulkan_ycbcr_info.h"
 #endif
 
@@ -213,10 +213,12 @@ struct VIZ_COMMON_EXPORT TransferableResource {
   // different synchronization types based on their needs.
   SynchronizationType synchronization_type = SynchronizationType::kSyncToken;
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
   // YCbCr info for resources backed by YCbCr Vulkan images.
   std::optional<gpu::VulkanYCbCrInfo> ycbcr_info;
+#endif
 
+#if BUILDFLAG(IS_ANDROID)
   // Indicates whether this resource may be overlaid on Android via legacy
   // overlay flow, since it's backed by a SurfaceView. It's good to find this
   // out in advance, since one has no fallback path for displaying a

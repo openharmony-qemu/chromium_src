@@ -384,6 +384,10 @@ class TestNetworkContext : public mojom::NetworkContext {
   void StopPage(uint64_t addr_web_handle) override {}
   void SetURLLoaderFactoryParam(mojom::URLLoaderFactoryParamsPtr params) override {}
 #endif  // BUILDFLAG(ARKWEB_UNITTESTS)
+
+#if BUILDFLAG(ARKWEB_CERT_AUTHENTICATION)
+  void ClearClientAuthCache() override {}
+#endif  // BUILDFLAG(ARKWEB_CERT_AUTHENTICATION)
 };
 
 }  // namespace network

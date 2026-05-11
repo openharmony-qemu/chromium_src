@@ -367,10 +367,6 @@ std::atomic<bool> OHOS::NWeb::NWebImpl::should_lazy_init_web_engine_{false};
 
 namespace {
 uint32_t g_nweb_count = 0;
-#if BUILDFLAG(ARKWEB_CERT_AUTHENTICATION)
-uint32_t g_normal_nweb_count = 0;
-uint32_t g_incognito_nweb_count = 0;
-#endif
 const uint32_t kSurfaceMaxWidth = 7680;
 const uint32_t kSurfaceMaxHeight = 7680;
 const float richtextDisplayRatio = 1.0;
@@ -1352,13 +1348,6 @@ std::shared_ptr<NWeb> NWebImpl::CreateNWeb(
 
   nweb->AddNWebToMap(nweb_id, nweb);
   ++g_nweb_count;
-#if BUILDFLAG(ARKWEB_CERT_AUTHENTICATION)
-  if (nweb->incognito_mode_) {
-    ++g_incognito_nweb_count;
-  } else {
-    ++g_normal_nweb_count;
-  }
-#endif
   WVLOG_E("CreateNWeb NWebId: %{public}u successfully", nweb_id);
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
   if (g_nweb_max_count == 0) {
@@ -1682,19 +1671,6 @@ void NWebImpl::OnDestroy() {
 #endif
 
   bool is_close_all = (--g_nweb_count) == 0 ? true : false;
-#if BUILDFLAG(ARKWEB_CERT_AUTHENTICATION)
-  if (incognito_mode_) {
-    --g_incognito_nweb_count;
-    if (g_incognito_nweb_count == 0 && nweb_delegate_) {
-      nweb_delegate_->ClearClientAuthenticationCache(true);
-    }
-  } else {
-    --g_normal_nweb_count;
-    if (g_normal_nweb_count == 0 && nweb_delegate_) {
-      nweb_delegate_->ClearClientAuthenticationCache(false);
-    }
-  }
-#endif
   WVLOG_D("NWebImpl::OnDestroy, nweb_id = %{public}u, number = %{public}u",
           nweb_id_, g_nweb_count);
 #ifdef OHOS_WEB_LTPO
@@ -2459,6 +2435,16 @@ void NWebImpl::ClearClientAuthenticationCache() {
   }
   nweb_delegate_->ClearClientAuthenticationCache();
 }
+
+#if BUILDFLAG(ARKWEB_CERT_AUTHENTICATION)
+void NWebImpl::ClearClientAuthenticationCache(bool incognito_mode) {
+  WVLOG_I("NWebImpl::ClearClientAuthenticationCache incognito_mode: %{public}d", incognito_mode);
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->ClearClientAuthenticationCache(incognito_mode);
+}
+#endif
 
 void NWebImpl::Reload() {
   if (nweb_delegate_ == nullptr) {

@@ -5309,8 +5309,8 @@ NavigationRequest::ComputeErrorPageProcess() {
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   // URL Trust List blocked pages should be handled in the destination process.
   RenderFrameHostImpl* rfh = frame_tree_node_->current_frame_host();
-  if (rfh && rfh->IsUrlTrustListBlocked(this->GetNavigationId()) &&
-      this->coop_status().browsing_instance_swap_result() == CoopSwapResult::kSwap) {
+  if (rfh && rfh->IsUrlTrustListBlocked(GetNavigationId()) &&
+      coop_status().browsing_instance_swap_result() == CoopSwapResult::kSwap) {
     return ErrorPageProcess::kDestinationProcess;
   }
 #endif

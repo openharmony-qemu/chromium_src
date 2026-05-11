@@ -275,7 +275,6 @@ class NWebDelegateInterface
   virtual void DeleteNavigateHistory() = 0;
   virtual void ClearSslCache() = 0;
   virtual void ClearClientAuthenticationCache() = 0;
-arkweb/ohos_nweb/src/nweb_delegate_interface.h
 #if BUILDFLAG(ARKWEB_CERT_AUTHENTICATION)
   virtual void ClearClientAuthenticationCache(bool incognito_mode) = 0;
 #endif

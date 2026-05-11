@@ -386,6 +386,10 @@ bool SkiaOutputDeviceVulkan::RecreateSwapChain(
 
 void SkiaOutputDeviceVulkan::OnPostSubBufferFinished(OutputSurfaceFrame frame,
                                                      gfx::SwapResult result) {
+  if (!vulkan_surface_->swap_chain()) [[unlikely]] {
+    LOG(ERROR) << "[SWAPCHAIN] swap_chain_ null in OnPostSubBufferFinished"
+               << " - stale callback. Returning SWAP_FAILED.";
+  }
   if (result == gfx::SwapResult::SWAP_ACK) [[likely]] {
     auto image_index = vulkan_surface_->swap_chain()->current_image_index();
     FinishSwapBuffers(gfx::SwapCompletionResult(result),

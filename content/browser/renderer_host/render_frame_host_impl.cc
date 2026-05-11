@@ -58,6 +58,9 @@
 #include "components/download/public/common/download_url_parameters.h"
 #include "components/input/input_router.h"
 #include "components/input/timeout_monitor.h"
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+#include "components/security_interstitials/content/security_interstitial_tab_helper.h"
+#endif
 #include "components/viz/common/features.h"
 #include "content/browser/about_url_loader_factory.h"
 #include "content/browser/accessibility/render_accessibility_host.h"
@@ -17980,5 +17983,21 @@ blink::mojom::PermissionStatus RenderFrameHostImpl::GetCombinedPermissionStatus(
       ->GetPermissionController()
       ->GetCombinedPermissionAndDeviceStatus(permission_type, this);
 }
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+bool RenderFrameHostImpl::IsUrlTrustListBlocked(int64_t navigation_id) {
+  DCHECK_CURRENTLY_ON(BrowserThread::UI);
+  WebContents* web_contents = WebContents::FromRenderFrameHost(this);
+  if (!web_contents) {
+    return false;
+  }
+  auto* helper = security_interstitials::SecurityInterstitialTabHelper::FromWebContents(web_contents);
+  if (helper) {
+    return helper->IsUrlTrustListBlockedForNavigation(navigation_id);
+  }
+  return false;
+}
+#endif
+
 
 }  // namespace content

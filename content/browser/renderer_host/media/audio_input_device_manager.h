@@ -57,7 +57,7 @@ class CONTENT_EXPORT AudioInputDeviceManager : public MediaStreamProvider {
   mutable std::mutex NWebIdMutex_;
   blink::mojom::MediaStreamType GetDeviceType(const base::UnguessableToken& session_id);
   void BindSessionIdToNWebId(const base::UnguessableToken& sessionId, int nWebId);
-  std::map<base::UnguessableToken, int>& GetNWebIdMap();
+  std::map<base::UnguessableToken, int> GetNWebIdMap();
 #endif
 
  private:

@@ -2440,10 +2440,16 @@ void NWebImpl::ClearClientAuthenticationCache() {
 // static
 void NWebImpl::ClearClientAuthenticationCache(bool incognito_mode) {
   WVLOG_I("NWebImpl::ClearClientAuthenticationCache incognito_mode: %{public}d", incognito_mode);
-  if (nweb_delegate_ == nullptr) {
-    return;
+  CefRefPtr<CefRequestContext> context;
+  if (incognito_mode) {
+    context = CefRequestContext::GetGlobalOTRContext();
+  } else {
+    context = CefRequestContext::GetGlobalContext();
   }
-  nweb_delegate_->ClearClientAuthenticationCache(incognito_mode);
+ 
+  if (context != nullptr) {
+    context->ClearCurrentClientAuthenticationCache(nullptr);
+  }
 }
 #endif
 

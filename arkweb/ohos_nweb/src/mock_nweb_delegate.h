@@ -314,9 +314,6 @@ class MockNWebDelegate : public NWebDelegateInterface {
   MOCK_METHOD(void, DeleteNavigateHistory, (), (override));
   MOCK_METHOD(void, ClearSslCache, (), (override));
   MOCK_METHOD(void, ClearClientAuthenticationCache, (), (override));
-#if BUILDFLAG(ARKWEB_CERT_AUTHENTICATION)
-  MOCK_METHOD(void, ClearClientAuthenticationCache, (bool incognito_mode), (override));
-#endif
   MOCK_METHOD(void, Reload, (), (const, override));
   MOCK_METHOD(void, ReloadOriginalUrl, (), (const, override));
   MOCK_METHOD(int, Zoom, (float zoomFactor), (const, override));

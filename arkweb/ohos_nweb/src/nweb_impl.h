@@ -187,7 +187,7 @@ class NWebImpl : public NWeb {
   void ClearSslCache() override;
   void ClearClientAuthenticationCache() override;
 #if BUILDFLAG(ARKWEB_CERT_AUTHENTICATION)
-  void ClearClientAuthenticationCache(bool incognito_mode);
+  static void ClearClientAuthenticationCache(bool incognito_mode);
 #endif
   void Reload() override;
   int Zoom(float zoomFactor) override;

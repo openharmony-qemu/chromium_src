@@ -2437,6 +2437,7 @@ void NWebImpl::ClearClientAuthenticationCache() {
 }
 
 #if BUILDFLAG(ARKWEB_CERT_AUTHENTICATION)
+// static
 void NWebImpl::ClearClientAuthenticationCache(bool incognito_mode) {
   WVLOG_I("NWebImpl::ClearClientAuthenticationCache incognito_mode: %{public}d", incognito_mode);
   if (nweb_delegate_ == nullptr) {

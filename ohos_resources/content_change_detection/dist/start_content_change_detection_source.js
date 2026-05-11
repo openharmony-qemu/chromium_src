@@ -247,6 +247,10 @@
             };
             this.reportCooldown = 1000;
             this.reportHistory = [];
+            this._pendingSnapshot = null;
+            this._snapshotFrameId = null;
+            this._lastScrollReset = 0;
+            this._scrollTimerScheduled = false;
             this.init();
         }
 
@@ -285,6 +289,24 @@
             print({
                 type: 'debugLog',
                 data: { log: 'Font change monitor started (memory optimized version)' }
+            });
+        }
+
+        _scheduleSnapshotCreation(logMessage) {
+            if (this._snapshotFrameId) {
+                return;
+            }
+            const that = this;
+            this._snapshotFrameId = requestAnimationFrame(function() {
+                that._snapshotFrameId = null;
+                const snapshotType = that._pendingSnapshot;
+                if (snapshotType) {
+                    that._pendingSnapshot = null;
+                    that.snapshotManager.createSnapshot(snapshotType);
+                }
+                if (logMessage) {
+                    print(logMessage);
+                }
             });
         }
 
@@ -436,10 +458,10 @@
                             that.scrollStartPosition.x = event.clientX;
                             that.scrollStartPosition.y = event.clientY;
                         }
-                        that.snapshotManager.createSnapshot('scroll-start');
-                        print({
+                        that._pendingSnapshot = 'scroll-start';
+                        that._scheduleSnapshotCreation({
                             type: 'debugLog',
-                            data: { log: `Scroll start` }
+                            data: { log: `Scroll start (scheduled)` }
                         });
                     }
                     if (that.scrollTimer) {
@@ -451,12 +473,18 @@
                     if (!that.isScrolling) {
                         that.isScrolling = true;
                     }
-                    if (that.scrollTimer) {
-                        that.clearTimer(that.scrollTimer);
+                    const now = Date.now();
+                    if (that._lastScrollReset && (now - that._lastScrollReset) < 50) {
+                        return;
                     }
-                    that.scrollTimer = that.scheduleTimer(() => {
-                        that.checkScrollEnd();
-                    }, that.config.scrollEndDelay);
+                    that._lastScrollReset = now;
+                    if (!that._scrollTimerScheduled) {
+                        that._scrollTimerScheduled = true;
+                        that.scrollTimer = that.scheduleTimer(() => {
+                            that._scrollTimerScheduled = false;
+                            that.checkScrollEnd();
+                        }, that.config.scrollEndDelay);
+                    }
                 },
                 handleTouchend: () => {
                     that.scheduleTimer(() => {
@@ -479,8 +507,8 @@
                         that.clickTimer = null;
                     }
                     that.isClickHandling = true;
-                    that.snapshotManager.createSnapshot('click-start');
-                    print({ type: 'debugLog', data: { log: `Click start` } });
+                    that._pendingSnapshot = 'click-start';
+                    that._scheduleSnapshotCreation({ type: 'debugLog', data: { log: `Click start (scheduled)` } });
                 },
                 handleClickEnd: (event) => {
                     if (!that.isClickHandling) {
@@ -1353,6 +1381,13 @@
 
             this.elementTextCache = null;
             this.cachedViewportArea = null;
+
+            this._pendingSnapshot = null;
+            if (this._snapshotFrameId) {
+                cancelAnimationFrame(this._snapshotFrameId);
+                this._snapshotFrameId = null;
+            }
+
             print({
                 type: 'debugLog',
                 data: {
@@ -1369,6 +1404,11 @@
             this.snapshotManager.clearSnapshot();
             this.changeRateBuffer.length = 0;
             this.isReporting = false;
+            this._pendingSnapshot = null;
+            if (this._snapshotFrameId) {
+                cancelAnimationFrame(this._snapshotFrameId);
+                this._snapshotFrameId = null;
+            }
             print({
                 type: 'debugLog',
                 data: {

@@ -1830,6 +1830,22 @@ void NWebDelegate::ClearClientAuthenticationCache() {
   }
 }
 
+#if BUILDFLAG(ARKWEB_CERT_AUTHENTICATION)
+void NWebDelegate::ClearClientAuthenticationCache(bool incognito_mode) {
+  LOG(DEBUG) << "NWebDelegate::ClearClientAuthenticationCache incognito_mode: " << incognito_mode;
+  CefRefPtr<CefRequestContext> context;
+  if (incognito_mode) {
+    context = CefRequestContext::GetGlobalOTRContext();
+  } else {
+    context = CefRequestContext::GetGlobalContext();
+  }
+ 
+  if (context != nullptr) {
+    context->ClearCurrentClientAuthenticationCache(nullptr);
+  }
+}
+#endif
+
 void NWebDelegate::Reload() const {
   LOG_FEEDBACK(INFO, kNavigation) << "Reload";
   if (GetBrowser().get()) {

@@ -211,6 +211,9 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void DeleteNavigateHistory() override;
   void ClearSslCache() override;
   void ClearClientAuthenticationCache() override;
+#if BUILDFLAG(ARKWEB_CERT_AUTHENTICATION)
+  void ClearClientAuthenticationCache(bool incognito_mode) override;
+#endif
   void Reload() const override;
   void ReloadOriginalUrl() const override;
   void ReloadOriginalUrlIgnoreCache() const override;

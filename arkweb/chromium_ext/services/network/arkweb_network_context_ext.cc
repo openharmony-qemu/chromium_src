@@ -363,12 +363,7 @@ void ArkWebNetworkContextExt::ClearClientAuthCache() {
       url_request_context_->http_transaction_factory()->GetSession();
   DCHECK(http_session);
   if (http_session->ssl_client_context()) {
-    base::flat_set<net::HostPortPair> servers =
-        http_session->ssl_client_context()
-            ->GetClientCertificateCachedServersForTesting();
-    for (const auto& server : servers) {
-      http_session->ssl_client_context()->ClearClientCertificate(server);
-    }
+    http_session->ssl_client_context()->OnClientCertStoreChanged(server);
   }
 }
 #endif

@@ -386,7 +386,7 @@ bool SkiaOutputDeviceVulkan::RecreateSwapChain(
 
 void SkiaOutputDeviceVulkan::OnPostSubBufferFinished(OutputSurfaceFrame frame,
                                                      gfx::SwapResult result) {
-BUILDFLAG(ARKWEB_VULKAN)
+#if BUILDFLAG(ARKWEB_VULKAN)
   if (!vulkan_surface_->swap_chain()) [[unlikely]] {
     LOG(ERROR) << "[SWAPCHAIN] swap_chain_ null in OnPostSubBufferFinished"
                << " - stale callback. Returning SWAP_FAILED.";

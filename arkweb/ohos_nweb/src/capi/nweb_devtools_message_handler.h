@@ -17,6 +17,7 @@
 #define OHOS_NWEB_SRC_CAPI_NWEB_DEVTOOLS_MESSAGE_HANDLER_H_
 
 #include <memory>
+#include <optional>
 #include <string>
 
 namespace OHOS::NWeb {
@@ -198,16 +199,18 @@ struct OpenDevToolsParam final {
   NWebDevtoolsMessageHandler* handlerNativeApi = nullptr;
 };
 
-struct OpenDevToolsExtOpt final {
-    bool canDock = false;
-    bool showToolbox = false;
-};
-
 struct RequestOpenDevToolsParams final {
     std::string type;
     std::string source_id;
     std::string target_id;
     std::string extension_id;
+    std::string panel;
+};
+
+struct OpenDevToolsExtOpt final {
+    bool canDock = false;
+    bool showToolbox = false;
+    std::optional<RequestOpenDevToolsParams> event;
 };
 
 #endif  // OHOS_NWEB_SRC_CAPI_NWEB_DEVTOOLS_MESSAGE_HANDLER_H_

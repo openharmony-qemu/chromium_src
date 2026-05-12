@@ -2428,8 +2428,12 @@ DOMWindow* LocalDOMWindow::open(v8::Isolate* isolate,
   FrameTree::FindResult result =
       GetFrame()->Tree().FindOrCreateFrameForNavigation(
           frame_request, target.empty() ? AtomicString("_blank") : target);
-  if (!result.frame)
+  if (!result.frame) {
+    LOG(WARNING) << "window open failed: result.frame is null."
+                 << "Please check whether the configuration properties are set correctly,"
+                 << " for example, allowWindowOpenMethod.";
     return nullptr;
+  }
 
   if (window_features.x_set || window_features.y_set) {
     // This runs after FindOrCreateFrameForNavigation() so blocked popups are

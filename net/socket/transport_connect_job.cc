@@ -200,6 +200,16 @@ ResolveErrorInfo TransportConnectJob::GetResolveErrorInfo() const {
   return resolve_error_info_;
 }
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+ResolveInfo TransportConnectJob::GetResolveInfo() const {
+  return resolve_info_;
+}
+
+ConnectionAttempts TransportConnectJob::GetExtraConnectionAttempts() const {
+  return extra_connection_attempts_;
+}
+#endif
+
 std::optional<HostResolverEndpointResult>
 TransportConnectJob::GetHostResolverEndpointResult() const {
   CHECK_LT(current_endpoint_result_, endpoint_results_.size());
@@ -308,6 +318,10 @@ int TransportConnectJob::DoResolveHostComplete(int result) {
                "connectStart", connect_timing_.connect_start);
 #endif
   resolve_error_info_ = request_->GetResolveErrorInfo();
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  resolve_info_ = request_->GetResolveInfo();
+#endif
 
   if (result != OK) {
     // If hostname resolution failed, record an empty endpoint and the result.
@@ -513,6 +527,12 @@ int TransportConnectJob::DoTransportConnectComplete(int result) {
     }
   }
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  if (!websocket_endpoint_lock_manager()) {
+    SetExtraConnectionAttemptsToSocket(extra_connection_attempts_);
+  }
+#endif
+
 #if BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
   AsArkWebTransportConnectJobExt()->ClearMultiJobsAndStopTimers();
 #endif  // BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
@@ -526,6 +546,10 @@ int TransportConnectJob::HandleSubJobComplete(int result,
 #if BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
     AsArkWebTransportConnectJobExt()->MultiIpSubJobReport(job);
 #endif  // BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+    SetResolveInfoToSocket(resolve_info_);
+    SetExtraConnectionAttemptsToSocket(extra_connection_attempts_);
+#endif
     SetSocket(job->PassSocket(), dns_aliases_);
     return result;
   }

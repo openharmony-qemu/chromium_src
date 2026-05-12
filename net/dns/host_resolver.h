@@ -41,6 +41,10 @@
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+#include "arkweb/chromium_ext/net/dns/public/resolve_info.h"
+#endif
+
 namespace net {
 
 class AddressList;
@@ -194,6 +198,10 @@ class NET_EXPORT HostResolver {
     // the request is running (after Start() returns |ERR_IO_PENDING| and before
     // the callback is invoked).
     virtual void ChangeRequestPriority(RequestPriority priority) {}
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+    virtual ResolveInfo GetResolveInfo() const { return {}; }
+#endif
   };
 
   // Handler for a service endpoint resolution request. Unlike
@@ -268,6 +276,10 @@ class NET_EXPORT HostResolver {
 
     // Change the priority of this request.
     virtual void ChangeRequestPriority(RequestPriority priority) = 0;
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+    virtual ResolveInfo GetResolveInfo() const { return {}; }
+#endif
 
     // TODO(crbug.com/403373872): Remove this method once we identify the cause
     // of the bug.
@@ -575,6 +587,10 @@ class NET_EXPORT HostResolver {
 #if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
   virtual void GetLocalAddress(IPEndPoint* address) { *address = IPEndPoint(); }
   virtual bool CanUseSecureDnsFallback() const { return false; }
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  virtual std::string GetDnsServersString() { return std::string(); }
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING)

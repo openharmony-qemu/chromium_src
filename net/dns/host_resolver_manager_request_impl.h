@@ -92,7 +92,14 @@ class HostResolverManager::RequestImpl
   // secure DNS lookup.
   void OnJobCompleted(const JobKey& job_key,
                       int error,
-                      bool is_secure_network_error);
+                      bool is_secure_network_error
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                      ,
+                      int dns_status,
+                      const std::vector<TaskType>& finished_tasks,
+                      const std::vector<IPEndPoint>& truncation_results
+#endif
+  );
 
   // NetLog for the source, passed in HostResolver::Resolve.
   const NetLogWithSource& source_net_log() { return source_net_log_; }
@@ -113,6 +120,14 @@ class HostResolverManager::RequestImpl
 
   RequestPriority priority() const { return priority_; }
   void set_priority(RequestPriority priority) { priority_ = priority; }
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  void set_resolve_info(int error_code,
+                        int dns_status,
+                        const std::vector<TaskType> finished_tasks,
+                        const std::vector<IPEndPoint>& truncation_results);
+  net::ResolveInfo GetResolveInfo() const override;
+#endif
 
  private:
   enum ResolveState {
@@ -148,6 +163,17 @@ class HostResolverManager::RequestImpl
 
   ClientSocketFactory* GetClientSocketFactory();
 
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if defined(ARKWEB_EXT_NAVIGATION_TODO)
+  void MaybeModifyResolveLocallyResults(
+      HostCache::Entry& out_results,
+      std::vector<IPEndPoint>& truncation_results);
+  void MaybeModifyResolveLocallyResultsAndUpdateResolveInfo(
+      HostCache::Entry& out_results,
+      int dns_status);
+#endif
+#endif
+
   const NetLogWithSource source_net_log_;
 
   const HostResolver::Host request_host_;
@@ -180,6 +206,10 @@ class HostResolverManager::RequestImpl
 
   const raw_ptr<const base::TickClock> tick_clock_;
   base::TimeTicks request_time_;
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  ResolveInfo resolve_info_;
+#endif
 
   SEQUENCE_CHECKER(sequence_checker_);
 

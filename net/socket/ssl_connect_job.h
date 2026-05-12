@@ -140,6 +140,11 @@ class NET_EXPORT_PRIVATE SSLConnectJob : public ConnectJob,
   bool IsSSLError() const override;
   scoped_refptr<SSLCertRequestInfo> GetCertRequestInfo() override;
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  ResolveInfo GetResolveInfo() const override;
+  ConnectionAttempts GetExtraConnectionAttempts() const override;
+#endif
+
   // Returns the timeout for the SSL handshake. This is the same for all
   // connections regardless of whether or not there is a proxy in use.
   static base::TimeDelta HandshakeTimeoutForTesting();
@@ -231,6 +236,11 @@ class NET_EXPORT_PRIVATE SSLConnectJob : public ConnectJob,
 #if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
   // Only for transport_connect_job
   int timeout_override_for_nested_job_{0};
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  ResolveInfo resolve_info_;
+  ConnectionAttempts extra_connection_attempts_;
 #endif
 
   // If not empty, the intersection of the client's trusted TLS Trust Anchor IDs

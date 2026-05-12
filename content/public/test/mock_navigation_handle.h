@@ -399,6 +399,11 @@ class MockNavigationHandle : public NavigationHandle {
     was_started_from_context_menu_ = was_started_from_context_menu;
   }
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  bool IsAutoReload() override {}
+  void OnReportNewNavigationInfo(const std::string& page_trace_id) override {}
+#endif
+
  private:
   const RenderFrameHost* GetConstParentFrameOrOuterDocument() const {
     return render_frame_host_ ? render_frame_host_->GetParentOrOuterDocument()

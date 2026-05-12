@@ -377,6 +377,10 @@ class MockHostResolverBase::RequestImpl
     return resolve_error_info_;
   }
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  net::ResolveInfo GetResolveInfo() const override { return {}; }
+#endif
+
   const std::optional<HostCache::EntryStaleness>& GetStaleInfo()
       const override {
     DCHECK(complete_);
@@ -451,6 +455,10 @@ class MockHostResolverBase::ServiceEndpointRequestImpl
   }
 
   bool IsStaleWhileRefresing() const override { return false; }
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  net::ResolveInfo GetResolveInfo() const override { return {}; }
+#endif
 
   void ChangeRequestPriority(RequestPriority priority) override {
     priority_ = priority;
@@ -1598,6 +1606,10 @@ class HangingHostResolver::RequestImpl
   }
 
   net::ResolveErrorInfo GetResolveErrorInfo() const override { NOTREACHED(); }
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  net::ResolveInfo GetResolveInfo() const override { base::ImmediateCrash(); }
+#endif
 
   const std::optional<HostCache::EntryStaleness>& GetStaleInfo()
       const override {

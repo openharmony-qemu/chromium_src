@@ -157,6 +157,14 @@ int QuicHttpStream::SendRequest(const HttpRequestHeaders& request_headers,
   // Store the response info.
   response_info_ = response;
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  IPEndPoint local_ip_endpoint;
+  int result = quic_session()->GetSelfAddress(&local_ip_endpoint);
+  if (result == OK) {
+    response_info_->local_endpoint = local_ip_endpoint;
+  }
+#endif
+
   // Put the peer's IP address and port into the response.
   IPEndPoint address;
   int rv = quic_session()->GetPeerAddress(&address);

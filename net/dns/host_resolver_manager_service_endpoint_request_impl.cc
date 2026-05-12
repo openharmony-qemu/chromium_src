@@ -6,6 +6,9 @@
 
 #include <sstream>
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "base/containers/to_vector.h"
 #include "base/memory/safe_ref.h"
 #include "base/no_destructor.h"
@@ -22,6 +25,10 @@
 #include "net/socket/client_socket_factory.h"
 #include "net/url_request/url_request_context.h"
 #include "url/scheme_host_port.h"
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/net/dns/host_resolver_manager_service_endpoint_request_impl_for_include.cc"
+#endif
 
 namespace net {
 
@@ -83,6 +90,10 @@ int HostResolverManager::ServiceEndpointRequestImpl::Start(Delegate* delegate) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   CHECK(!delegate_);
   CHECK(manager_);
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  resolve_info_.query_host = host_.ToString();
+#endif
 
   if (!resolve_context_) {
     error_info_ = ResolveErrorInfo(ERR_CONTEXT_SHUT_DOWN);
@@ -205,10 +216,25 @@ void HostResolverManager::ServiceEndpointRequestImpl::AssignJob(
 
 void HostResolverManager::ServiceEndpointRequestImpl::OnJobCompleted(
     const HostCache::Entry& results,
-    bool obtained_securely) {
+    bool obtained_securely
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+    ,
+    int dns_status,
+    const std::vector<TaskType>& finished_tasks,
+    const std::vector<IPEndPoint>& truncation_results
+#endif
+) {
   CHECK(job_);
   CHECK(delegate_);
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableNwebEx)) {
+    set_resolve_info(results.error(), dns_status, finished_tasks,
+                     truncation_results);
+  }
+#endif
 
   job_.reset();
   SetFinalizedResultFromLegacyResults(results);
@@ -326,6 +352,10 @@ int HostResolverManager::ServiceEndpointRequestImpl::DoResolveLocally() {
   manager_->InitializeJobKeyAndIPAddress(
       network_anonymization_key_, parameters_, net_log_, *job_key_, ip_address);
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  int dns_status = kDnsResolvedUndefined;
+#endif
+
   const bool only_ipv6_reachable = false;
   const bool stale_allowed_while_refreshing =
       parameters_.cache_usage ==
@@ -345,7 +375,12 @@ int HostResolverManager::ServiceEndpointRequestImpl::DoResolveLocally() {
   HostCache::Entry results = manager_->ResolveLocally(
       only_ipv6_reachable, *job_key_, ip_address, cache_usage,
       parameters_.secure_dns_policy, parameters_.source, net_log_, host_cache(),
-      &tasks_, &stale_info_);
+      &tasks_, &stale_info_
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+      ,
+      dns_status, resolve_info_
+#endif
+  );
   bool is_stale = results.error() == OK && stale_info_.has_value() &&
                   stale_info_->is_stale();
 
@@ -365,7 +400,12 @@ int HostResolverManager::ServiceEndpointRequestImpl::DoResolveLocally() {
         only_ipv6_reachable, *job_key_, ip_address,
         ResolveHostParameters::CacheUsage::ALLOWED,
         parameters_.secure_dns_policy, parameters_.source, net_log_,
-        host_cache(), &tasks_, &maybe_fresh_info);
+        host_cache(), &tasks_, &maybe_fresh_info
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+        ,
+        dns_status, resolve_info_
+#endif
+    );
     CHECK(!maybe_fresh_info.has_value() || !maybe_fresh_info->is_stale());
     if (maybe_non_stale_results.error() != ERR_DNS_CACHE_MISS ||
         tasks_.empty()) {

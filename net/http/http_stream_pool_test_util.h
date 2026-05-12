@@ -113,6 +113,10 @@ class FakeServiceEndpointRequest : public HostResolver::ServiceEndpointRequest {
   bool IsStaleWhileRefresing() const override;
   void ChangeRequestPriority(RequestPriority priority) override;
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  ResolveInfo GetResolveInfo() const override { return {}; }
+#endif
+
  private:
   friend class FakeServiceEndpointResolver;
 

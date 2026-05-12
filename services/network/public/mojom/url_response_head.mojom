@@ -27,6 +27,9 @@ import "services/network/public/mojom/unencoded_digest.mojom";
 import "services/proxy_resolver/public/mojom/proxy_resolver.mojom";
 import "url/mojom/url.mojom";
 
+[EnableIf=arkweb_ext_navigation]
+import "services/network/public/mojom/url_loader_completion_status.mojom";
+
 // Describes the navigational delivery type of the response.
 // `kNavigationalPrefetch` if the response is served by Prefetch; `kDefault`
 // if the response if served from a normal network request, even if the response
@@ -320,4 +323,7 @@ struct URLResponseHead {
   // True if HTTP authentication was used to fetch this response. This will not
   // be set for proxy auth.
   bool did_use_server_http_auth = false;
+
+  [EnableIf=arkweb_ext_navigation]
+  URLLoaderCompletionStatus? status;
 };

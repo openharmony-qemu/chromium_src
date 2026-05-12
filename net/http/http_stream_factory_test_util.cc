@@ -27,7 +27,12 @@ MockHttpStreamRequestDelegate::~MockHttpStreamRequestDelegate() = default;
 
 void MockHttpStreamRequestDelegate::OnStreamReady(
     const ProxyInfo& used_proxy_info,
-    std::unique_ptr<HttpStream> stream) {
+    std::unique_ptr<HttpStream> stream
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+    ,
+    ResolveInfo resolve_info
+#endif
+    ) {
   CHECK(!IsDone());
 
   used_proxy_info_ = used_proxy_info;
@@ -51,7 +56,12 @@ void MockHttpStreamRequestDelegate::OnStreamFailed(
     int status,
     const NetErrorDetails& net_error_details,
     const ProxyInfo& used_proxy_info,
-    ResolveErrorInfo resolve_error_info) {
+    ResolveErrorInfo resolve_error_info
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+    ,
+    ResolveInfo resolve_info
+#endif
+    ) {
   CHECK(!IsDone());
 
   net_error_ = status;

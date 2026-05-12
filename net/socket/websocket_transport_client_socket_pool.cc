@@ -329,6 +329,12 @@ bool WebSocketTransportClientSocketPool::TryHandOutSocket(
     HandOutSocket(std::move(socket), connect_timing, handle, request_net_log);
     handed_out_socket = true;
   }
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  else {
+    handle->SetResolveInfo(
+        connect_job_delegate->connect_job()->GetResolveInfo());
+  }
+#endif
 
   request_net_log.EndEventWithNetErrorCode(NetLogEventType::SOCKET_POOL,
                                            result);
@@ -403,6 +409,12 @@ void WebSocketTransportClientSocketPool::HandOutSocket(
   DCHECK(socket);
   DCHECK_EQ(StreamSocketHandle::SocketReuseType::kUnused, handle->reuse_type());
   DCHECK_EQ(0, handle->idle_time().InMicroseconds());
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  if (socket) {
+    handle->SetResolveInfo(socket->GetDnsResolveInfo());
+  }
+#endif
 
   handle->SetSocket(std::move(socket));
   handle->set_group_generation(0);

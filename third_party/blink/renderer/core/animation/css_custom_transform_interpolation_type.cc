@@ -44,7 +44,13 @@ InterpolationValue CSSCustomTransformInterpolationType::MaybeConvertValue(
     const CSSValue& value,
     const StyleResolverState& state,
     ConversionCheckers&) const {
+#if BUILDFLAG(IS_ARKWEB)
+  // https://issues.chromium.org/issues/498010837
+  return MaybeConvertTransformList(
+      value, state.CssToLengthConversionData().Unzoomed());
+#else
   return MaybeConvertTransformList(value, state.CssToLengthConversionData());
+#endif
 }
 
 const CSSValue* CSSCustomTransformInterpolationType::CreateCSSValue(

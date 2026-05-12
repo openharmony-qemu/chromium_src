@@ -40,8 +40,14 @@ CSSCustomTransformFunctionInterpolationType::MaybeConvertValue(
     const CSSValue& value,
     const StyleResolverState& state,
     ConversionCheckers&) const {
+#if BUILDFLAG(IS_ARKWEB)
+  // https://issues.chromium.org/issues/498010837
+  return MaybeConvertTransformFunction(
+      value, state.CssToLengthConversionData().Unzoomed());
+#else
   return MaybeConvertTransformFunction(value,
                                        state.CssToLengthConversionData());
+#endif
 }
 
 const CSSValue* CSSCustomTransformFunctionInterpolationType::CreateCSSValue(

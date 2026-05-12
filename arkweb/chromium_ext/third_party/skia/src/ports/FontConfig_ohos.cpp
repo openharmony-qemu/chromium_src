@@ -16,11 +16,16 @@
 #include "include/core/SkFontStyle.h"
 #include "include/core/SkString.h"
 #include "src/ports/SkFontScanner_FreeType_priv.h"
-
+#include "malloc.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 using namespace ErrorCode;
 
 SkString OHOS_FONT_INSTALL_DIR("/data/service/el1/public/for-all-app/fonts/");
 static const char* OHOS_DEFAULT_CONFIG = "/system/etc/fontconfig.json";
+
+extern "C" __attribute__((weak)) {
+  int mallopt(int param, int value);
+}
 
 /*! Constructor
  * \param fontScanner the scanner to get the font information from a font file
@@ -51,6 +56,12 @@ FontConfig_OHOS::FontConfig_OHOS(const SkFontScanner& fontScanner,
   }
   resetGenericValue();
   resetFallbackValue();
+  static bool enableClear = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance()
+    .GetBoolParameter("persist.web.cache_clear.enabled", false);
+  if (enableClear) {
+    LOG(INFO) << "FontConfig_OHOS: executing mallopt for memory optimization";
+    mallopt(M_FLUSH_THREAD_CACHE, 0);
+  }
 }
 
 /* ! To Check the new font engine is ok

@@ -44,6 +44,7 @@ private:
     raw_ptr<BrowserAccessibilityManagerOHOS> manager_;
     std::unordered_map<int64_t, int64_t> eventLastFiredTimes_;
     std::unordered_map<int64_t, base::DelayedTaskHandle> pendingEvents_;
+    base::WeakPtrFactory<AccessibilityEventDispatcher> weak_ptr_factory_{this};
 };
 
 // Manages a tree of BrowserAccessibility objects.

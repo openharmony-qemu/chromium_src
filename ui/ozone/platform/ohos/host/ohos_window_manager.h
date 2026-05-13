@@ -36,6 +36,7 @@
 #include "base/containers/id_map.h"
 #include "base/memory/weak_ptr.h"
 #include "base/observer_list.h"
+#include "base/ohos/task_scheduler/task_runner_ohos.h"
 #include "base/threading/thread_checker.h"
 #include "ohos/adapter/xcomponent/adapter/window_adapter.h"
 #include "ui/gfx/native_widget_types.h"
@@ -127,6 +128,8 @@ class OhosWindowManager : public WindowStatusListener,
   }
 
  private:
+  bool HitWindowAtPoint(const OhosWindow* window, const gfx::Point& point,
+                        const std::set<gfx::AcceleratedWidget>& ignore);
   base::IDMap<OhosWindow*> windows_;
   base::ThreadChecker thread_checker_;
   base::ObserverList<OhosWindowObserver> observers_;
@@ -135,9 +138,8 @@ class OhosWindowManager : public WindowStatusListener,
   base::WeakPtr<OhosWindow> pointer_focused_window_{nullptr};
   base::WeakPtr<OhosWindow> drag_source_window_{nullptr};
   gfx::AcceleratedWidget last_active_widget_id_;
-
-  bool HitWindowAtPoint(const OhosWindow* window, const gfx::Point& point,
-                        const std::set<gfx::AcceleratedWidget>& ignore);
+  scoped_refptr<base::SingleThreadTaskRunner> ui_task_runner_;
+  base::WeakPtrFactory<OhosWindowManager> weak_ptr_factory_{this};
 };
 
 }  // namespace ui

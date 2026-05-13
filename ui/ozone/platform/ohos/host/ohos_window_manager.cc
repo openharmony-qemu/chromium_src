@@ -44,7 +44,9 @@
 
 namespace ui {
 
-OhosWindowManager::OhosWindowManager() : PlatformWindowManager() {
+OhosWindowManager::OhosWindowManager()
+    : PlatformWindowManager(),
+      ui_task_runner_(base::TaskRunnerOHOS::GetUIThreadTaskRunner()) {
   WindowAdapter::GetInstance().RegistWindowStatus(this);
 }
 
@@ -60,10 +62,25 @@ void OhosWindowManager::OnWindowAdd(const WindowInfo& info) {
 }
 
 void OhosWindowManager::OnWindowRemove(const WindowInfo& info) {
-  auto ohos_window = windows_.Lookup(info.widget_id);
-  if (ohos_window != nullptr) {
-    ohos_window->OnSurfaceDestoryed();
-  }
+  auto task = base::BindOnce(
+      [](base::WeakPtr<OhosWindowManager> manager, WindowWidgetType widget_id) {
+        if (!manager) {
+          LOG(INFO) << "[ohoswindow] OhosWindowManager already destroyed when "
+                       "surface destroyed, widget id:"
+                    << widget_id;
+          return;
+        }
+        auto ohos_window = manager->GetWindow(widget_id);
+        if (ohos_window == nullptr) {
+          LOG(INFO) << "[ohoswindow] window already closed when surface "
+                       "destroyed, widget id:"
+                    << widget_id;
+          return;
+        }
+        ohos_window->OnSurfaceDestroyed();
+      },
+      weak_ptr_factory_.GetWeakPtr(), info.widget_id);
+  ui_task_runner_->PostTask(FROM_HERE, std::move(task));
 }
 
 void OhosWindowManager::AddObserver(OhosWindowObserver* observer) {

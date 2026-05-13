@@ -36,6 +36,7 @@
 #include "ui/events/ozone/layout/keyboard_layout_engine_manager.h"
 #include "ui/events/types/event_type.h"
 #include "ui/gfx/geometry/transform.h"
+#include "ui/gfx/range/range.h"
 
 namespace ui {
 const float kDefaultRatio = 1.0f;
@@ -178,6 +179,8 @@ void InputMethodOHOS::InsertU16Text(const std::u16string& inputText) {
     LOG(ERROR) << "[InputMethodOHOS] text input type is null";
     return;
   }
+
+  MaybeInputValueGetLength(client, inputText);
 
   ui::KeyEvent key_down_event{EventType::kKeyPressed, ui::VKEY_PROCESSKEY,
                               ui::DomCode::NONE,      ui::EF_IS_SYNTHESIZED,
@@ -357,6 +360,16 @@ std::unique_ptr<InputMethod> CreateInputMethodOHOS(
   LOG(INFO) << "[InputMethodOHOS] Create InputMethodOHOS obj";
   return std::make_unique<InputMethodOHOSJSAPI>(ime_key_event_dispatcher,
                                                 widget);
+}
+
+void InputMethodOHOSCAPI::MaybeInputValueGetLength(TextInputClient* c,
+                                                   const std::u16string& v) {
+  gfx::Range text_range;
+  if (c->GetTextRange(&text_range)) {
+    input_u16_value_len_ = text_range.length();
+  }
+
+  input_text_ = v;
 }
 
 InputMethodOHOSCAPI::InputMethodOHOSCAPI(
@@ -1136,6 +1149,19 @@ void InputMethodOHOSCAPI::UpdateCursorTask(const gfx::Rect& rect) {
 
   if (!is_attach_) {
     return;
+  }
+
+  if (input_text_.length()) {
+    InputMethod_ErrorCode ret = OH_InputMethodProxy_NotifySelectionChange(
+        input_method_proxy_, const_cast<char16_t*>(input_text_.c_str()),
+        input_text_.length(), input_u16_value_len_,
+        input_u16_value_len_ + input_text_.length());
+    if (ret != IME_ERR_OK) {
+      LOG(ERROR) << "[InputMethodOHOSCAPI] "
+                    "OH_InputMethodProxy_NotifySelectionChange failed ret = "
+                 << ret;
+    }
+    input_text_.clear();
   }
 
   InputMethod_ErrorCode res =

@@ -28,6 +28,8 @@
  */
 
 import adapter from 'libadapter.so';
+import Inject from '../common/InjectModule';
+import { ContextPathAdapter } from '../adapter/ContextPathAdapter';
 import { ContextType } from '../common/Constants';
 import { NativeContext } from '../interface/CommonInterface';
 
@@ -57,4 +59,28 @@ export default class JsBindingUtils {
     }
     return adapter.getNativeContext(contextType);
   }
+
+  static SetContextPaths() {
+    const contextPathAdapter = Inject.get(ContextPathAdapter);
+    if (!contextPathAdapter) {
+      console.error('ContextPathAdapter not available');
+      return;
+    }
+    const safeGet = (fn: () => string, defaultValue: string = ''): string => {
+      try { return fn(); } catch (e) { return defaultValue; }
+    };
+    const paths: Record<string, string> = {
+      "cacheDir": safeGet(() => contextPathAdapter.getCacheDir()),
+      "filesDir": safeGet(() => contextPathAdapter.getFilesDir()),
+      "tempDir": safeGet(() => contextPathAdapter.getTempDir()),
+      "userDocumentDir": safeGet(() => contextPathAdapter.getUserDocumentDir()),
+      "userDesktopDir": safeGet(() => contextPathAdapter.getUserDesktopDir()),
+      "userDownloadDir": safeGet(() => contextPathAdapter.getUserDownloadDir()),
+    };
+    if (adapter.SetContextPaths) {
+      adapter.SetContextPaths(paths);
+    } else {
+      console.error('SetContextPaths not found in C++ module');
+    }
+  }  
 }

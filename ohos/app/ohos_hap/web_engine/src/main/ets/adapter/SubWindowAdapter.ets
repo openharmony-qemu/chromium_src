@@ -170,26 +170,32 @@ export class SubWindowAdapter extends BaseAdapter {
       if (!reusableWindow) {
         continue;
       }
-      const rect = reusableWindow.subWindow.getWindowProperties().windowRect;
-      const maxDistance:number = 2;
-      if (Math.abs(rect.width - width) <= maxDistance &&
-        Math.abs(rect.height - height) <= maxDistance) {
-        reusableSubWindowList.splice(i, 1);
-        let found = false;
-        for (let j = 0; j < this.globalCache.length; j++) {
-          if (this.globalCache[j].parentId === reusableWindow.parentId &&
-              this.globalCache[j].id === reusableWindow.id) {
-            found = true;
-            this.globalCache.splice(j, 1);
-            break;
+      try {
+        const rect = reusableWindow.subWindow.getWindowProperties().windowRect;
+        const maxDistance:number = 2;
+        if (Math.abs(rect.width - width) <= maxDistance &&
+          Math.abs(rect.height - height) <= maxDistance) {
+          reusableSubWindowList.splice(i, 1);
+          let found = false;
+          for (let j = 0; j < this.globalCache.length; j++) {
+            if (this.globalCache[j].parentId === reusableWindow.parentId &&
+                this.globalCache[j].id === reusableWindow.id) {
+              found = true;
+              this.globalCache.splice(j, 1);
+              break;
+            }
           }
+          if (!found) {
+            LogUtil.error(TAG, '[ohoswindow] Global cache is inconsistent with cache of ' + reusableWindow.parentId);
+          }
+          LogUtil.info(TAG, `[ohoswindow] reusableWindow ${reusableWindow.id} size ${reusableSubWindowList.length}`);
+          this.subWindowList.push(reusableWindow);
+          return reusableWindow;
         }
-        if (!found) {
-          LogUtil.error(TAG, '[ohoswindow] Global cache is inconsistent with cache of ' + reusableWindow.parentId);
-        }
-        LogUtil.error(TAG, `[ohoswindow] reusableWindow ${reusableWindow.id} size ${reusableSubWindowList.length}`);
-        this.subWindowList.push(reusableWindow);
-        return reusableWindow;
+      } catch (exception) {
+        reusableSubWindowList.splice(i, 1);
+        i--;
+        LogUtil.warn(TAG, `[ohoswindow] Failed to find reuseable subwindow, exception ${JSON.stringify(exception)}`);
       }
     }
     return undefined;

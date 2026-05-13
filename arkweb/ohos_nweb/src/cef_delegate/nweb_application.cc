@@ -57,13 +57,6 @@
 #include "arkweb/chromium_ext/content/public/browser/spare_render_process_manager_ohos.h"
 #endif
 
-#if BUILDFLAG(ARKWEB_WARMUP_SPARE_RENDER_PROCESS)
-#include "cef/libcef/browser/browser_context.h"
-#include "cef/libcef/browser/request_context_impl.h"
-#include "content/browser/renderer_host/spare_render_process_host_manager_impl.h"
-#include "arkweb/chromium_ext/content/public/browser/spare_render_process_manager_ohos.h"
-#endif
-
 namespace {
 #if BUILDFLAG(ARKWEB_API_INIT_WEB_ENGINE)
 CefRefPtr<OHOS::NWeb::NWebApplication> g_application = nullptr;

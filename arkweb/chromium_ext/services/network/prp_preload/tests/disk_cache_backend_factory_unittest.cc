@@ -122,4 +122,41 @@ TEST_F(DiskCacheBackendFactoryTest, ClearPreloadCacheDoneTest) {
   EXPECT_EQ(factory.backend_complete_callback_list_.size(), 0);
 }
 
+TEST_F(DiskCacheBackendFactoryTest, RemoveCacheNullStartTimeTest) {
+  DiskCacheBackendFactory factory;
+  factory.is_inited_.store(true);
+  factory.RemoveCache(base::Time(), base::Time::Max());
+  EXPECT_FALSE(factory.is_inited_.load());
+}
+
+TEST_F(DiskCacheBackendFactoryTest, ClearPreloadCacheDoneWithErrorTest) {
+  DiskCacheBackendFactory factory;
+  factory.backend_complete_callback_list_.push_back(base::BindOnce([](){}));
+  factory.ClearPreloadCacheDone(net::ERR_FAILED);
+  EXPECT_EQ(factory.backend_complete_callback_list_.size(), 0);
+}
+
+TEST_F(DiskCacheBackendFactoryTest, IsInitedAtomicTest) {
+  DiskCacheBackendFactory factory;
+  EXPECT_FALSE(factory.is_inited_.load());
+  
+  factory.is_inited_.store(true);
+  EXPECT_TRUE(factory.is_inited_.load());
+  
+  factory.is_inited_.store(false);
+  EXPECT_FALSE(factory.is_inited_.load());
+}
+
+TEST_F(DiskCacheBackendFactoryTest, CacheCreatedCallbackErrorTest) {
+  DiskCacheBackendFactory factory;
+  factory.backend_complete_callback_list_.push_back(base::BindOnce([](){}));
+  
+  disk_cache::BackendResult result;
+  result.net_error = net::ERR_FAILED;
+  result.backend = nullptr;
+  factory.CacheCreatedCallback(std::move(result));
+  EXPECT_FALSE(factory.is_inited_.load());
+  EXPECT_EQ(factory.backend_complete_callback_list_.size(), 1);
+}
+
 } // namespace ohos_prp_preload

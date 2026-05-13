@@ -104,7 +104,8 @@ void ArkwebChildProcessLauncherHelperUtils::LaunchChildProcess(
 #if BUILDFLAG(ARKWEB_WARMUP_SPARE_RENDER_PROCESS)
       if (OHOS::NWeb::SpareRenderProcessManagerOhos::GetInstance().IsWarmupEnabled() &&
           OHOS::NWeb::SpareRenderProcessManagerOhos::GetInstance().GetState() == 
-            OHOS::NWeb::SpareRenderProcessManagerOhos::State::IDLE) {
+            OHOS::NWeb::SpareRenderProcessManagerOhos::State::NOT_FORK &&
+            process_type == switches::kRendererProcess) {
           int32_t window_id =
               OHOS::NWeb::SpareRenderProcessManagerOhos::GetInstance().GetWarmupWindowId();
           OHOS::NWeb::ResSchedClientAdapter::ReportNWebInit(

@@ -42,9 +42,10 @@ class SpareRenderProcessManagerOhos
  
   enum class State {
     IDLE = 0,     // No spare process
-    ACTIVE = 1,   // Spare exists, timeout running (fork→taken/timeout)
-    INACTIVE = 2,  // Timed out, priority lowered
-    RELEASED = 3     // Released WARMUP_SPARE_RENDER_REPORT_NWEB_ID
+    NOT_FORK = 1,  // triggered but not forked
+    ACTIVE = 2,   // Spare exists, timeout running (fork→taken/timeout)
+    INACTIVE = 3,  // Timed out, priority lowered
+    RELEASED = 4     // Released WARMUP_SPARE_RENDER_REPORT_NWEB_ID
   };
  
   static SpareRenderProcessManagerOhos& GetInstance();

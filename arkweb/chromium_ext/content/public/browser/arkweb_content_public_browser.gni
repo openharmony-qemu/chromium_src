@@ -5,4 +5,6 @@ arkweb_content_public_browser_custom_media_sources = [
     "//arkweb/chromium_ext/content/public/browser/custom_media_player_listener.h",
     "//arkweb/chromium_ext/content/public/browser/spare_render_process_manager_ohos.h",
     "//arkweb/chromium_ext/content/public/browser/spare_render_process_manager_ohos.cc",
+    "//arkweb/chromium_ext/content/public/browser/spare_render_process_manager_ohos.h",
+    "//arkweb/chromium_ext/content/public/browser/spare_render_process_manager_ohos.cc",
 ]

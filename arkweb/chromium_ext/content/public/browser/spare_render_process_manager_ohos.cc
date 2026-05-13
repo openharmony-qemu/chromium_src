@@ -72,6 +72,7 @@ void SpareRenderProcessManagerOhos::WarmupSpare(
       content::RenderProcessHost::GetMaxRendererProcessCount()) {
     return;
   }
+  UpdateRenderState(State::NOT_FORK);
  
   RegisterObserver();
  
@@ -81,7 +82,7 @@ void SpareRenderProcessManagerOhos::WarmupSpare(
  
 void SpareRenderProcessManagerOhos::NotifyWarmupSpareLaunched(pid_t pid) {
   std::lock_guard<std::mutex> lock(mutex_);
-  if (state_ != State::IDLE) {
+  if (state_ != State::NOT_FORK) {
     return;
   }
   spare_render_pid_ = pid;
@@ -115,7 +116,7 @@ void SpareRenderProcessManagerOhos::OnSpareRenderProcessHostReady(
 void SpareRenderProcessManagerOhos::OnSpareRenderProcessHostRemoved(
     content::RenderProcessHost* host) {
   std::lock_guard<std::mutex> lock(mutex_);
-  if (state_ == State::IDLE || state_ == State::RELEASED) {
+  if (state_ == State::IDLE || state_ == State::NOT_FORK|| state_ == State::RELEASED) {
     return;
   }
  

@@ -6814,6 +6814,7 @@ void NWebImpl::SetEnableWarmupSpareRenderProcess(bool enabled, int32_t windowId)
   }
 }
 #endif
+
 }  // namespace OHOS::NWeb
 
 using namespace OHOS::NWeb;

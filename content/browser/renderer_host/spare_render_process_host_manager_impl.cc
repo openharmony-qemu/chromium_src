@@ -410,7 +410,7 @@ RenderProcessHost* SpareRenderProcessHostManagerImpl::MaybeTakeSpare(
     if (OHOS::NWeb::SpareRenderProcessManagerOhos::GetInstance().IsWarmupEnabled()) {
       OHOS::NWeb::SpareRenderProcessManagerOhos::GetInstance().OnSpareTaken();
     }
-#endi
+#endif
 
     ReleaseSpare(next_spare_rph, SpareRendererDispatchResult::kUsed);
   } else if (!RenderProcessHostImpl::IsSpareProcessKeptAtAllTimes()) {

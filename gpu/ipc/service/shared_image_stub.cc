@@ -287,7 +287,7 @@ void SharedImageStub::OnCreateSharedImageWithData(
   TRACE_EVENT2("gpu", "SharedImageStub::OnCreateSharedImageWithData", "width",
                params->si_info->meta.size.width(), "height",
                params->si_info->meta.size.height());
-  
+
   auto& metadata = params->si_info->meta;
 
   bool needs_gl = HasGLES2ReadOrWriteUsage(metadata.usage);

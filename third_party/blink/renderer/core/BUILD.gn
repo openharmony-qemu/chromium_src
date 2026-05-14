@@ -109,6 +109,7 @@ visibility = [
   "//third_party/blink/public/*",
   "//third_party/blink/renderer/*",
   "//arkweb/chromium_ext/ohos_test/fuzztest/third_party/blink/renderer/core/*",
+  "//arkweb/chromium_ext/ohos_test/fuzztest/chromium_ext/third_party/blink/renderer/core/*",
 ]
 
 rel_blink_core_gen_dir = rebase_path(blink_core_output_dir, root_build_dir)

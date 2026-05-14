@@ -869,7 +869,7 @@ bool ServiceWorkerVersion::FinishRequestWithFetchCount(int request_id,
     }
   } else {
     // Equivalent to the previous, non-optional iterator behavior. Maybe unsafe.
-    request_timeouts_.erase(request->timeout_iter.value_or(request_timeouts_end()));
+    request_timeouts_.erase(request->timeout_iter.value_or(request_timeouts_.end()));
   }
   inflight_requests_.Remove(request_id);
   // TODO(crbug.com/40864997): remove the following DCHECK when the cause

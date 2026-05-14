@@ -337,6 +337,7 @@ if (!enable_arkweb) {
   arkweb_not_load_iframe = false
   arkweb_jsheap_dump = false
   arkweb_clean_buffers_when_invisible = false
+  arkweb_warmup_spare_render_process = false
 }
 
 buildflag_header("features") {
@@ -618,6 +619,7 @@ buildflag_header("features") {
     "ARKWEB_EXT_HTTP_DNS_FALLBACK_ON_DNS_HIJACKING=$arkweb_ext_http_dns_fallback_on_dns_hijacking",
     "ARKWEB_EXT_RECEIVE_RESPONSE=$arkweb_ext_receive_response",
     "ARKWEB_EXT_EXTENSIONS_HEADER_CLIENT=false",
+    "ARKWEB_WARMUP_SPARE_RENDER_PROCESS=$arkweb_warmup_spare_render_process",
   ]
 
   public_configs = [ ":arkweb_global_config" ]

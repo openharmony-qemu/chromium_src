@@ -365,6 +365,10 @@ std::atomic<bool> OHOS::NWeb::NWebImpl::should_lazy_init_web_engine_{false};
 #include "arwkweb/chromium_ext/gpu/config/gpu_finch_feature_ext.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_WARMUP_SPARE_RENDER_PROCESS)
+#include "arkweb/chromium_ext/content/public/browser/spare_render_process_manager_ohos.h"
+#endif
+
 namespace {
 uint32_t g_nweb_count = 0;
 const uint32_t kSurfaceMaxWidth = 7680;
@@ -6794,6 +6798,23 @@ void NWebImpl::UpdateGpuConfig(bool gpu_switch) {
   }
 }
 #endif // BUILDFLAG(ARKWEB_GPU)
+
+#if BUILDFLAG(ARKWEB_WARMUP_SPARE_RENDER_PROCESS)
+void NWebImpl::SetEnableWarmupSpareRenderProcess(bool enabled, int32_t windowId) {
+  bool sysWarmupEnabled = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                            .GetSystemPropertiesInstance()
+                            .GetBoolParameter("web.warmup_spare_render_process.enabled", false);
+  if (!sysWarmupEnabled) {
+    LOG(INFO) << "SetEnableWarmupSpareRenderProcess web.warmup_spare_render_process.enabled: " << sysWarmupEnabled;
+    return;
+  }
+  SpareRenderProcessManagerOhos::SetWarmupEnabled(enabled);
+  if (enabled) {
+    SpareRenderProcessManagerOhos::GetInstance().SetWarmupWindowId(windowId);
+    LOG(INFO) << "SetEnableWarmupSpareRenderProcess enabled:" << enabled << " windowid: " << windowId;
+  }
+}
+#endif
 
 }  // namespace OHOS::NWeb
 

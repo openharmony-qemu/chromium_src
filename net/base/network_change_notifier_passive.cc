@@ -12,6 +12,7 @@
 #include "base/notimplemented.h"
 #include "base/task/task_traits.h"
 #include "build/build_config.h"
+#include "arkweb/chromium_ext/net/base/arkweb_network_change_notifier_ext.h"
 #include "net/dns/dns_config_service_posix.h"
 #include "net/dns/system_dns_config_change_notifier.h"
 
@@ -51,7 +52,7 @@ NetworkChangeNotifierPassive::NetworkChangeNotifierPassive(
     NetworkChangeNotifier::ConnectionType initial_connection_type,
     NetworkChangeNotifier::ConnectionSubtype initial_connection_subtype,
     SystemDnsConfigChangeNotifier* system_dns_config_notifier)
-    : NetworkChangeNotifier(NetworkChangeCalculatorParamsPassive(),
+    : ArkwebNetworkChangeNotifierExt(NetworkChangeCalculatorParamsPassive(),
                             system_dns_config_notifier),
 #if BUILDFLAG(ARKWEB_NETWORK_BASE) && BUILDFLAG(IS_OHOS)
       ohos_net_conn_adapter_(OHOS::NWeb::OhosAdapterHelper::GetInstance()

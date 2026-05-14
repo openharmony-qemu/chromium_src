@@ -11,7 +11,7 @@ namespace content {
 namespace {
 // Kill switch for multiple CreateLoaderAndStart calls.
 BASE_FEATURE(kKillSwitchForRaceNetworkRequestMultipleCreateLoaderAndStartCalls,
-             "kKillSwitchForRaceNetworkRequestMultipleCreateLoaderAndStartCalls".
+             "kKillSwitchForRaceNetworkRequestMultipleCreateLoaderAndStartCalls",
              base::FEATURE_ENABLED_BY_DEFAULT);
 }  // namespace
 

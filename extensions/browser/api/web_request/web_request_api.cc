@@ -972,6 +972,10 @@ WebRequestInternalAddEventListenerFunction::Run() {
                          mojom::APIPermissionID::kWebView)) {
       return RespondNow(Error("Missing webview permission."));
     }
+
+    if (!event_name.starts_with("webViewInternal.")) {
+      return RespondNow(Error("Invalid event name for webview."));
+    }
   } else {
     auto has_blocking_permission = [&extension, &event_name]() {
       if (extension->permissions_data()->HasAPIPermission(

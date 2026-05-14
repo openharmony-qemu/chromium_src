@@ -66,6 +66,10 @@
 #include "media/gpu/windows/mf_audio_encoder.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/modules/mediarecorder/media_recorder_handler_for_include.cc"
+#endif // ARKWEB_MEDIA_CAPTURE
+
 using base::TimeTicks;
 
 namespace blink {

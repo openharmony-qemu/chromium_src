@@ -80,6 +80,9 @@ class MockStreamClient : public media::mojom::AudioInputStreamClient {
   MOCK_METHOD1(OnError, void(media::mojom::InputStreamErrorCode));
   MOCK_METHOD1(OnMutedStateChanged, void(bool));
   MOCK_METHOD0(BindingConnectionError, void());
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+  MOCK_METHOD1(OnPausedStateChanged, void(bool));
+#endif // ARKWEB_MEDIA_CAPTURE
 
  private:
   mojo::Receiver<media::mojom::AudioInputStreamClient> receiver_{this};

@@ -43,6 +43,10 @@
 #include "services/audio/audio_processor_handler.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+#include "arkweb/chromium_ext/services/audio/input_controller_for_include.cc"
+#endif // ARKWEB_MEDIA_CAPTURE
+
 namespace audio {
 namespace {
 
@@ -710,6 +714,11 @@ void InputController::DoCreate(
 
   // Send initial muted state along with OnCreated, to avoid races.
   is_muted_ = stream_->IsMuted();
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+  LOG(DEBUG) << "InputController::DoCreate, SetPauseStateChangedCallback";
+  stream_->SetPauseStateChangedCallback(base::BindRepeating(
+      &InputController::OnStreamPaused, base::Unretained(this)));
+#endif // ARKWEB_MEDIA_CAPTURE
   event_handler_->OnCreated(is_muted_);
   check_muted_state_timer_.Start(FROM_HERE, kCheckMutedStateInterval, this,
                                  &InputController::CheckMutedState);

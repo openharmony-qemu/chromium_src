@@ -31,6 +31,9 @@
 
 #include <cstddef>
 #include "third_party/blink/renderer/platform/wtf/allocator/allocator.h"
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+#include "base/functional/callback.h"
+#endif // ARKWEB_MEDIA_CAPTURE
 
 namespace blink {
 
@@ -57,6 +60,13 @@ class AudioSourceProvider {
 
   // Connect to the destination node.
   virtual void ConnectToDestinationReady() {}
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+  // Sets a callback to invoke when the source pause state changes.
+  // Default implementation does nothing.
+  virtual void SetOnSourcePausedChangedCallback(
+      base::RepeatingCallback<void(bool)> callback) {}
+#endif // ARKWEB_MEDIA_CAPTURE
 };
 
 }  // namespace blink

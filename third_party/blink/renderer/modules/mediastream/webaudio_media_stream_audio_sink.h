@@ -18,6 +18,9 @@
 #include "third_party/blink/public/platform/web_audio_source_provider.h"
 #include "third_party/blink/renderer/modules/modules_export.h"
 #include "third_party/blink/renderer/platform/mediastream/media_stream_component.h"
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+#include "base/functional/callback.h"
+#endif // ARKWEB_MEDIA_CAPTURE
 
 namespace media {
 class AudioBus;
@@ -67,6 +70,9 @@ class MODULES_EXPORT WebAudioMediaStreamAudioSink
   void SetClient(WebAudioSourceProviderClient* client) override;
   void ProvideInput(const std::vector<float*>& audio_data,
                     int number_of_frames) override;
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+  void OnSourcePausedChanged(bool is_paused) override;
+#endif // ARKWEB_MEDIA_CAPTURE
 
  private:
   FRIEND_TEST_ALL_PREFIXES(WebAudioMediaStreamAudioSinkFifoTest, VerifyFifo);
@@ -85,6 +91,10 @@ class MODULES_EXPORT WebAudioMediaStreamAudioSink
   double ProvideInput(media::AudioBus* audio_bus,
                       uint32_t frames_delayed,
                       const media::AudioGlitchInfo& glitch_info) override;
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+  void SetOnSourcePausedChangedCallback(
+      base::RepeatingCallback<void(bool)> callback) override;
+#endif // ARKWEB_MEDIA_CAPTURE
 
   std::unique_ptr<media::AudioConverter> audio_converter_ GUARDED_BY(lock_);
   std::unique_ptr<media::AudioFifo> fifo_ GUARDED_BY(lock_);
@@ -120,6 +130,10 @@ class MODULES_EXPORT WebAudioMediaStreamAudioSink
 
   // For testing. Instantiated only if ResetFifoStatsForTesting() is called.
   std::unique_ptr<FifoStats> fifo_stats_;
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+  // Callback invoked when the source pause state changes.
+  base::RepeatingCallback<void(bool)> on_source_paused_changed_callback_;
+#endif // ARKWEB_MEDIA_CAPTURE
 
   // Used to assert that OnData() is only accessed by one thread at a time. We
   // can't use a thread checker since thread may change.

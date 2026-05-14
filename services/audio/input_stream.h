@@ -79,6 +79,9 @@ class InputStream final : public media::mojom::AudioInputStream,
   void OnError(InputController::ErrorCode error_code) override;
   void OnLog(std::string_view) override;
   void OnMuted(bool is_muted) override;
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+  void OnPaused(bool is_paused) override;
+#endif // ARKWEB_MEDIA_CAPTURE
 
  private:
   void OnStreamError(

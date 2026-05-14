@@ -125,6 +125,10 @@ class MockClient : public mojom::AudioInputStreamClient {
 
   MOCK_METHOD1(OnError, void(mojom::InputStreamErrorCode));
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+  MOCK_METHOD1(OnPausedStateChanged, void(bool));
+#endif // ARKWEB_MEDIA_CAPTURE
+
  private:
   base::UnsafeSharedMemoryRegion region_;
   std::unique_ptr<base::CancelableSyncSocket> socket_;

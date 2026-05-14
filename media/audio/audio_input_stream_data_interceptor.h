@@ -64,6 +64,10 @@ class MEDIA_EXPORT AudioInputStreamDataInterceptor
   // Returns the underlying stream.
   AudioInputStream* GetUnderlyingStreamForTesting() const { return stream_; }
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+  void SetPauseStateChangedCallback(base::RepeatingCallback<void(bool)> callback) override;
+#endif // ARKWEB_MEDIA_CAPTURE
+
  private:
   const CreateDebugRecorderCB create_debug_recorder_cb_;
   std::unique_ptr<AudioDebugRecorder> debug_recorder_;

@@ -61,6 +61,12 @@ class MODULES_EXPORT AudioTrackRecorder
 
     // Called when a track's ready state changes.
     virtual void OnSourceReadyStateChanged() = 0;
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+    // Called when the audio source is paused or resumed by the capturer.
+    virtual void OnSourcePaused() = 0;
+    virtual void OnSourceResumed() = 0;
+#endif // ARKWEB_MEDIA_CAPTURE
   };
 
   static media::AudioCodec GetPreferredCodec(
@@ -89,6 +95,10 @@ class MODULES_EXPORT AudioTrackRecorder
 
   void Pause();
   void Resume();
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+  // Override TrackRecorder to handle muted/live ready state changes.
+  void OnSourcePausedChanged(bool is_paused) override;
+#endif // ARKWEB_MEDIA_CAPTURE
 
   WeakCell<CallbackInterface>* callback_interface_for_testing() {
     return callback_interface_;

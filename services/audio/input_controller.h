@@ -160,6 +160,11 @@ class InputController final {
     // Called whenever the muted state of the underlying stream changes.
     virtual void OnMuted(bool is_muted) = 0;
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+    // Called when the underlying stream is paused or resumed by the capturer.
+    virtual void OnPaused(bool is_paused) = 0;
+#endif // ARKWEB_MEDIA_CAPTURE
+
    protected:
     virtual ~EventHandler() {}
   };
@@ -296,6 +301,11 @@ class InputController final {
                        int* mic_volume_percent);
 
   void CheckMutedState();
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+  // Called when the underlying stream is paused or resumed.
+  void OnStreamPaused(bool is_paused);
+#endif // ARKWEB_MEDIA_CAPTURE
 
   // Called once at first audio callback.
   void ReportIsAlive();

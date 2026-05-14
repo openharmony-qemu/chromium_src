@@ -23,6 +23,10 @@
 #include "third_party/abseil-cpp/absl/container/flat_hash_set.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+#include "third_party/abseil-cpp/absl/container/flat_hash_map.h"
+#endif // ARKWEB_MEDIA_CAPTURE
+ 	 
 namespace base {
 class SingleThreadTaskRunner;
 }
@@ -200,6 +204,17 @@ class MEDIA_EXPORT AudioManager {
   }
   virtual std::string GetSelectAudioDeviceId() { return ""; }
 #endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+  virtual absl::flat_hash_map<raw_ptr<AudioOutputStream, CtnExperimental>, AudioParameters>
+  GetStreamParametersMap() {
+    return {};
+  }
+
+  virtual std::set<raw_ptr<AudioInputStream, CtnExperimental>> GetInputStreamsByNWebId(int nweb_id) {
+    return {};
+  }
+#endif // ARKWEB_MEDIA_CAPTURE
 
  protected:
   FRIEND_TEST_ALL_PREFIXES(AudioManagerTest, AudioDebugRecording);

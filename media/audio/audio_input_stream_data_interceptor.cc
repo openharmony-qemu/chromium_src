@@ -8,6 +8,9 @@
 
 #include "media/audio/audio_debug_recording_helper.h"
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+#include "arkweb/chromium_ext/media/audio/audio_input_stream_data_interceptor_for_include.cc"
+#endif // ARKWEB_MEDIA_CAPTURE
 namespace media {
 
 AudioInputStreamDataInterceptor::AudioInputStreamDataInterceptor(

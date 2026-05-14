@@ -122,6 +122,9 @@ class MEDIA_EXPORT AudioInputDevice : public AudioCapturerSource,
   void OnError(AudioCapturerSource::ErrorCode code) override;
   void OnMuted(bool is_muted) override;
   void OnIPCClosed() override;
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+  void OnPaused(bool is_paused) override;
+#endif // ARKWEB_MEDIA_CAPTURE
 
   // This is called by |alive_checker_| if it detects that the input stream is
   // dead.

@@ -81,6 +81,10 @@ class MediaStreamAudioSourceNode final
   // https://chromium.googlesource.com/chromium/src/+/refs/heads/main/docs/media/capture/README.md#logs
   void SendLogMessage(const char* const function_name, const String& message);
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+  void OnSourcePausedChanged(bool is_paused);
+#endif // ARKWEB_MEDIA_CAPTURE
+
   Member<MediaStreamTrack> audio_track_;
   Member<MediaStream> media_stream_;
 };

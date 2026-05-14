@@ -64,6 +64,10 @@ class MODULES_EXPORT MediaStreamAudioDestinationNode final
   bool HasPendingActivity() const final;
   void Trace(Visitor*) const final;
   void Dispose();
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+  // Called when a connected source track's pause state changes.
+  void OnSourcePausedChanged(bool is_paused);
+#endif // ARKWEB_MEDIA_CAPTURE
 
   // InspectorHelperMixin
   void ReportDidCreate() final;

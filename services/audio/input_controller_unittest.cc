@@ -88,6 +88,9 @@ class MockInputControllerEventHandler : public InputController::EventHandler {
   MOCK_METHOD1(OnCreated, void(bool initially_muted));
   MOCK_METHOD1(OnError, void(InputController::ErrorCode error_code));
   MOCK_METHOD1(OnMuted, void(bool is_muted));
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+  MOCK_METHOD1(OnPaused, void(bool is_paused));
+#endif // ARKWEB_MEDIA_CAPTURE
 };
 
 class MockSyncWriter : public InputController::SyncWriter {

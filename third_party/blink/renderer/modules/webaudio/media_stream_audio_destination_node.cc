@@ -39,6 +39,9 @@
 #include "third_party/blink/renderer/platform/scheduler/public/main_thread.h"
 #include "third_party/blink/renderer/platform/wtf/text/strcat.h"
 #include "third_party/blink/renderer/platform/wtf/uuid.h"
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/modules/webaudio/media_stream_audio_destination_node_for_include.cc"
+#endif // ARKWEB_MEDIA_CAPTURE
 
 namespace blink {
 
@@ -87,6 +90,12 @@ MediaStreamAudioDestinationNode::MediaStreamAudioDestinationNode(
   SetHandler(
       MediaStreamAudioDestinationHandler::Create(
           *this, number_of_channels, audio_source_ptr));
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+  // Register with AudioContext for pause state propagation.
+  context.RegisterMediaStreamAudioDestinationNode(this);
+#endif // ARKWEB_MEDIA_CAPTURE
+
   SendLogMessage(
       __func__, String::Format(
                     "({context.state=%s}, {context.sampleRate=%.0f}, "
@@ -150,6 +159,11 @@ void MediaStreamAudioDestinationNode::Trace(Visitor* visitor) const {
 }
 
 void MediaStreamAudioDestinationNode::Dispose() {
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+  if (context()) {
+    context()->UnregisterMediaStreamAudioDestinationNode(this);
+  }
+#endif // ARKWEB_MEDIA_CAPTURE
   GetOwnHandler().RemoveConsumer();
 }
 

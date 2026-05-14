@@ -178,6 +178,11 @@ class MODULES_EXPORT MediaRecorderHandler final
   // [Audio/Video]TrackRecorder::CallbackInterface overrides.
   void OnSourceReadyStateChanged() override;
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+  // AudioTrackRecorder::CallbackInterface overrides for pause/resume.
+  void OnSourcePaused() override;
+  void OnSourceResumed() override;
+#endif // ARKWEB_MEDIA_CAPTURE
   void OnStreamChanged(const String& message);
 
   void HandleEncodedVideo(

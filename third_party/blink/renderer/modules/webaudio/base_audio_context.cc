@@ -88,6 +88,10 @@
 #include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
 #include "third_party/blink/renderer/platform/wtf/uuid.h"
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/modules/webaudio/base_audio_context_for_include.cc"
+#endif // ARKWEB_MEDIA_CAPTURE
+
 namespace blink {
 
 namespace {
@@ -922,6 +926,9 @@ void BaseAudioContext::Trace(Visitor* visitor) const {
   visitor->Trace(periodic_wave_sawtooth_);
   visitor->Trace(periodic_wave_triangle_);
   visitor->Trace(audio_worklet_);
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+  visitor->Trace(media_stream_destination_nodes_);
+#endif // ARKWEB_MEDIA_CAPTURE
   InspectorHelperMixin::Trace(visitor);
   EventTarget::Trace(visitor);
   ExecutionContextLifecycleStateObserver::Trace(visitor);

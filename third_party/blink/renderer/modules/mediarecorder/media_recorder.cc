@@ -37,6 +37,10 @@
 #include "third_party/blink/renderer/platform/wtf/text/strcat.h"
 #include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/modules/mediarecorder/media_recorder_for_include.cc"
+#endif // ARKWEB_MEDIA_CAPTURE
+
 namespace blink {
 
 namespace {

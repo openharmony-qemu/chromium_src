@@ -140,6 +140,11 @@ class PLATFORM_EXPORT MediaStreamAudioSource
   // Number of MediaStreamAudioTracks added as consumers.
   size_t NumTracks() const override;
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+  // Sets paused state and notifies it to all registered tracks.
+  void SetPausedState(bool is_paused);
+#endif // ARKWEB_MEDIA_CAPTURE
+
  protected:
   // Returns true if the source has already been started and has not yet been
   // stopped. Otherwise, attempts to start the source and returns true if
@@ -199,6 +204,10 @@ class PLATFORM_EXPORT MediaStreamAudioSource
   void StopAudioDeliveryTo(MediaStreamAudioTrack* track);
 
   void LogMessage(const std::string& message);
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+  void SetPausedStateOnTaskRunner(bool is_paused);
+#endif // ARKWEB_MEDIA_CAPTURE
 
   void SetErrorCode(media::AudioCapturerSource::ErrorCode code) {
     DCHECK(GetTaskRunner()->BelongsToCurrentThread());

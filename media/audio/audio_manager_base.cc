@@ -30,7 +30,9 @@
 #include "media/audio/fake_audio_output_stream.h"
 #include "media/base/media_switches.h"
 #include "arkweb/build/features/features.h"
-
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+#include "arkweb/chromium_ext/media/audio/audio_manager_base_for_include.cc"
+#endif // ARKWEB_MEDIA_CAPTURE
 namespace media {
 
 namespace {
@@ -273,6 +275,9 @@ AudioOutputStream* AudioManagerBase::MakeAudioOutputStream(
 
   if (stream) {
     ++num_output_streams_;
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+ 	  stream_parameters_map_[stream] = params;
+#endif // ARKWEB_MEDIA_CAPTURE
     SendLogMessage(log_callback, "%s => (number of streams=%d)", __func__,
                    output_stream_count());
   }
@@ -557,6 +562,12 @@ void AudioManagerBase::ReleaseOutputStream(AudioOutputStream* stream) {
   // TODO(xians) : Have a clearer destruction path for the AudioOutputStream.
   // For example, pass the ownership to AudioManager so it can delete the
   // streams.
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+ 	auto it = stream_parameters_map_.find(stream);
+ 	if (it != stream_parameters_map_.end()) {
+ 	  stream_parameters_map_.erase(it);
+ 	}
+#endif // ARKWEB_MEDIA_CAPTURE
   --num_output_streams_;
   delete stream;
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)
@@ -724,4 +735,11 @@ void AudioManagerBase::SetAecDumpRecordingManager(
   // This is no-op by default.
 }
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+absl::flat_hash_map<raw_ptr<AudioOutputStream, CtnExperimental>, AudioParameters>
+AudioManagerBase::GetStreamParametersMap() {
+ 	return stream_parameters_map_;
+}
+#endif // ARKWEB_MEDIA_CAPTURE
+ 	
 }  // namespace media

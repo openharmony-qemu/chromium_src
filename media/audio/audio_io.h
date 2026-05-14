@@ -13,6 +13,9 @@
 #if BUILDFLAG(ARKWEB_WEBRTC)
 #include "media/base/audio_parameters.h"
 #endif
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+#include "base/functional/callback.h"
+#endif // ARKWEB_MEDIA_CAPTURE
 
 // Low-level audio output support. To make sound there are 3 objects involved:
 // - AudioSource : produces audio samples on a pull model. Implements
@@ -240,6 +243,12 @@ class MEDIA_EXPORT AudioInputStream {
   virtual void PauseMicrophone() {}
 #endif
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+ 	virtual void Pause() {}
+ 	virtual void Resume() {}
+  // Called by InputController to receive pause state changes from the stream.
+  virtual void SetPauseStateChangedCallback(base::RepeatingCallback<void(bool)> callback) {}
+#endif // ARKWEB_MEDIA_CAPTURE
 };
 
 }  // namespace media

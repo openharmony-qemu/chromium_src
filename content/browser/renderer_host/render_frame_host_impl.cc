@@ -58,7 +58,7 @@
 #include "components/download/public/common/download_url_parameters.h"
 #include "components/input/input_router.h"
 #include "components/input/timeout_monitor.h"
-#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD) && !defined(COMPONENT_BUILD)
 #include "components/security_interstitials/content/security_interstitial_tab_helper.h"
 #endif
 #include "components/viz/common/features.h"
@@ -17991,10 +17991,12 @@ bool RenderFrameHostImpl::IsUrlTrustListBlocked(int64_t navigation_id) {
   if (!web_contents) {
     return false;
   }
+#if !defined(COMPONENT_BUILD)
   auto* helper = security_interstitials::SecurityInterstitialTabHelper::FromWebContents(web_contents);
   if (helper) {
     return helper->IsUrlTrustListBlockedForNavigation(navigation_id);
   }
+#endif
   return false;
 }
 #endif

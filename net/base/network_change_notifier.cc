@@ -1140,7 +1140,4 @@ NetworkChangeNotifier::ObserverList& NetworkChangeNotifier::GetObserverList() {
   return *observers;
 }
 
-#if BUILDFLAG(IS_ARKWEB)
-#include "arkweb/chromium_ext/net/base/network_change_notifier_for_include.cc"
-#endif
 }  // namespace net

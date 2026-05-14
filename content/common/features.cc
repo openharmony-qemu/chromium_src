@@ -618,6 +618,7 @@ BASE_FEATURE(kLimitCrossOriginNonActivatedPaintHolding,
 
 // Kill switch for crbug.com/499449324.
 BASE_FEATURE(kServiceWorkerOptionalTimeoutIterator,
+             "kServiceWorkerOptionalTimeoutIterator",
              base::FEATURE_ENABLED_BY_DEFAULT);
 
 // Please keep features in alphabetical order.

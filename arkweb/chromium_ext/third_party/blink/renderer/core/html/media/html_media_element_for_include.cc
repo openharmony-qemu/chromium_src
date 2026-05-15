@@ -21,6 +21,7 @@
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
 #include "third_party/blink/renderer/core/frame/page_scale_constraints_set.h"
 #include "third_party/blink/renderer/platform/weborigin/security_policy.h"
+#include "third_party/blink/renderer/core/frame/viewport_data.h"
 #endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
@@ -52,6 +53,12 @@ extern String BuildElementErrorMessage(const String& error);
 float PageConstraintInitalScale(const Document& document) {
   float scale = 1.0;
   if (auto* page = document.GetPage()) {
+    float parsed_scale = document.GetViewportData().GetParsedInitialScale();
+    if (parsed_scale > 0) {
+      LOG(INFO) << "PageConstraintInitalScale, parsed_scale: " << parsed_scale;
+      scale = parsed_scale;
+      return scale;
+    }
     scale = page->GetPageScaleConstraintsSet().FinalConstraints().initial_scale;
   } else {
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)

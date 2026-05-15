@@ -38,18 +38,74 @@
 
 namespace OHOS::NWeb {
 using namespace ConfigConstants;
-std::shared_ptr<NwebAutolayout> NwebAutolayout::GetInstance() {
-  static std::shared_ptr<NwebAutolayout> instance = std::make_shared<NwebAutolayout>();
+std::shared_ptr<NwebAutolayout> NwebAutolayout::GetInstance(const std::string& config) {
+  static std::shared_ptr<NwebAutolayout> instance = std::make_shared<NwebAutolayout>(config);
   return instance;
 }
 
-NwebAutolayout::NwebAutolayout() {
-  Initialize();
+NwebAutolayout::NwebAutolayout(const std::string& config) {
+  LOG(DEBUG) << "NwebAutolayout::NwebAutolayout config empty: "
+             << config.empty();
+  if (config.empty()) {
+    LoadWebAutoLayoutConfigFromCCM();
+  } else {
+    SetWebAutoLayoutConfig(config);
+  }
 }
 
-void NwebAutolayout::Initialize() {
-  ScopedTimeLogger timer("Initialize");
-  TRACE_EVENT("base", "NwebAutolayout::Initialize");
+void NwebAutolayout::SetWebAutoLayoutConfig(const std::string& config) {
+  ScopedTimeLogger timer("SetWebAutoLayoutConfig");
+  TRACE_EVENT("base", "NwebAutolayout::SetWebAutoLayoutConfig");
+
+  mEnable_ = false;
+  std::optional<base::Value> appConfigRoot = base::JSONReader::Read(config);
+  if (!appConfigRoot.has_value() || !appConfigRoot.value().is_dict()) {
+    LOG(WARNING) << "Parse Error: appConfigRoot empty or not dict";
+    return;
+  }
+  const base::Value::Dict& root_dict = appConfigRoot.value().GetDict();
+
+  const std::string* common_str = root_dict.FindString(kCommonKey);
+  if (!common_str) {
+    LOG(WARNING) << "Parse Error: common is not a string";
+    return;
+  }
+  std::optional<base::Value> common_value = base::JSONReader::Read(*common_str);
+  if (!common_value.has_value() || !common_value.value().is_dict()) {
+    LOG(WARNING) << "SetWebAutoLayoutConfig: common is not a valid JSON dictionary";
+    return;
+  }
+  const base::Value::Dict& common_dict = common_value.value().GetDict();
+  if (!ParseToplevelConfig(common_dict)) {
+    LOG(WARNING) << "SetWebAutoLayoutConfig ParseToplevelConfig faile";
+    return;
+  }
+
+  const std::string* whitelist_str = root_dict.FindString(kWhitelistKey);
+  if (!whitelist_str) {
+    LOG(WARNING) << "SetWebAutoLayoutConfig: whitelist is not a string";
+    return;
+  }
+  std::optional<base::Value> whitelist_value = base::JSONReader::Read(*whitelist_str);
+  if (!whitelist_value.has_value() || !whitelist_value.value().is_dict()) {
+    LOG(WARNING) << "SetWebAutoLayoutConfig: whitelist is not a valid JSON dictionary";
+    return;
+  }
+  const base::Value::Dict& whitelist_dict = whitelist_value.value().GetDict();
+  if (!ParseWhitelistEntry(whitelist_dict)) {
+    LOG(WARNING) << "SetWebAutoLayoutConfig ParseWhitelistEntry faile";
+    return;
+  }
+
+  mEnable_ = true;
+  mPatternJSSource_ = std::string(mWListEntry_->pattern);
+  LoadAutoLayoutFromHap();
+  LOG(DEBUG) << "SetWebAutoLayoutConfig successfull";
+}
+
+void NwebAutolayout::LoadWebAutoLayoutConfigFromCCM() {
+  ScopedTimeLogger timer("LoadWebAutoLayoutConfigFromCCM");
+  TRACE_EVENT("base", "NwebAutolayout::LoadWebAutoLayoutConfigFromCCM");
   auto &adapter = OhosAdapterHelper::GetInstance();
   mAppBundleName_ = adapter.GetSystemPropertiesInstance().GetBundleName();
 
@@ -72,7 +128,7 @@ void NwebAutolayout::Initialize() {
 
   mPatternJSSource_ = std::string(mWListEntry_->pattern);
   LoadAutoLayoutFromHap();
-  LOG(DEBUG) << "Initialize successfull";
+  LOG(DEBUG) << "LoadWebAutoLayoutConfigFromCCM successfull";
 }
 
 static std::string EscapeForJS_TemplateLiteral(const std::string& s) {

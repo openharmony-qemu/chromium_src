@@ -2543,6 +2543,7 @@ void NWebImpl::OnPause() {
     LOG(INFO) << "WebCustomKeyboard NWebImpl::OnPause";
     nweb_delegate_->GetCustomKeyboardHandler()->CloseFromWebStateChange(
         WebCustomKeyboardState::FROM_ONPAUSE);
+    return;
   }
 
   if (inputmethod_handler_ == nullptr) {
@@ -2576,6 +2577,8 @@ void NWebImpl::OnContinue() {
       if (handler && handler->IsAttached()) {
         nweb_delegate_->OnFocus();
       }
+      LOG(INFO) << "CustomKeyboard attached";
+      return;
     }
     if (inputmethod_handler_) {
       if (inputmethod_handler_->IsAttached() && !inputmethod_handler_->IsFocusSwitch()) {
@@ -2591,6 +2594,7 @@ void NWebImpl::OnContinue() {
     if (handler && handler->AttachFromWebStateChange(
                        WebCustomKeyboardState::FROME_ONCONTINUE)) {
       nweb_delegate_->OnFocus();
+      return;
     }
   }
 

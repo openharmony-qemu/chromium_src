@@ -951,6 +951,10 @@ void AbortDistill() override;
   bool GetErrorPageEnabled() override;
 #endif
 
+#if BUILDFLAG(ARKWEB_AUTOLAYOUT)
+  void SetWebAutoLayoutConfig(const std::string& config) override;
+#endif
+
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   void SetBlanklessLoadingKey(uint32_t nweb_id, uint64_t blankless_key) override;
   int64_t GetPreferenceHash() override;

@@ -1031,15 +1031,6 @@ bool NWebDelegate::Init(bool is_enhance_surface,
   }
   GetBrowser()->GetHost()->SetNWebId(GetBrowser()->GetNWebId());
 #endif  // BUILDFLAG(ARKWEB_WEBRTC)
-#if BUILDFLAG(ARKWEB_AUTOLAYOUT)
-  base::ThreadPool::PostTask(
-      FROM_HERE,
-      base::BindOnce([]() {
-            LOG(DEBUG) << "Init NwebAutolayout::GetInstance()";
-            NwebAutolayout::GetInstance();
-      })
-  );
-#endif
   return true;
 }
 
@@ -6791,6 +6782,12 @@ bool NWebDelegate::GetErrorPageEnabled() {
     return false;
   }
   return preference_delegate_->ErrorPageEnabled();
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_AUTOLAYOUT)
+void NWebDelegate::SetWebAutoLayoutConfig(const std::string& config) {
+  NwebAutolayout::GetInstance(config);
 }
 #endif
 

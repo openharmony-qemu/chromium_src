@@ -1285,6 +1285,13 @@ class MockNWebDelegate : public NWebDelegateInterface {
 
 #if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
   MOCK_METHOD(void,
+              SetWebAutoLayoutConfig,
+              (const std::string& config),
+              (override));
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  MOCK_METHOD(void,
               SetBlankScreenDetectionConfig,
               (bool enable,
                const std::vector<double>& detectionTiming,

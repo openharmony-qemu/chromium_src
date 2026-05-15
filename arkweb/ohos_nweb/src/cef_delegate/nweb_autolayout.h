@@ -106,6 +106,7 @@ constexpr std::string_view kMinContentAreaRatioThresholdKey = "minContentAreaRat
 constexpr std::string_view kScaleAnimationDurationKey = "scaleAnimationDuration";
 constexpr std::string_view kWhitelistKey = "whitelist";
 constexpr std::string_view kPatternKey = "pattern";
+constexpr std::string_view kCommonKey = "common";
 constexpr std::string_view kGetIDKey = "GetID";
 constexpr std::string_view kGetPageKey = "GetPage";
 constexpr std::string_view kAppRuleInfosKey = "appRuleInfos";
@@ -151,14 +152,15 @@ class NwebAutolayout {
   NwebAutolayout& operator=(const NwebAutolayout&) = delete;
   ~NwebAutolayout() = default;
 
-  static std::shared_ptr<NwebAutolayout> GetInstance();
+  static std::shared_ptr<NwebAutolayout> GetInstance(const std::string& config = "");
   void CheckWebContainer(CefRefPtr<CefBrowser> browser, CefRefPtr<CefFrame> frame);
   void CheckCCMandApplyRule(CefRefPtr<CefFrame> frame);
 
-  NwebAutolayout();
+  explicit NwebAutolayout(const std::string& config = "");
+  void SetWebAutoLayoutConfig(const std::string& config);
+  void LoadWebAutoLayoutConfigFromCCM();
 
  protected:
-  void Initialize();
   bool Parse(const base::Value& root);
   bool ParseToplevelConfig(const base::Value::Dict& root_dict);
   bool ParseWhitelist(const base::Value::Dict& whitelist_list);

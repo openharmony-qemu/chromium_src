@@ -58,7 +58,9 @@ namespace {
 
 // Kill switch for the fix for https://crbug.com/496016840
 // TODO(crbug.com/496016840): Remove in M151 or later.
-BASE_FEATURE(kWebviewScriptFileOriginCheck, base::FEATURE_ENABLED_BY_DEFAULT);
+BASE_FEATURE(kWebviewScriptFileOriginCheck, 
+             "WebviewScriptFileOriginCheck"
+             base::FEATURE_ENABLED_BY_DEFAULT);
 
 const char kCacheKey[] = "cache";
 const char kCookiesKey[] = "cookies";

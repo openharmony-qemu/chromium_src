@@ -138,6 +138,7 @@ class GL_EXPORT NativeViewGLSurfaceEGL : public GLSurfaceEGL,
   gfx::SwapResult SwapBuffersWithDamage(const std::vector<int>& rects,
                                         PresentationCallback callback,
                                         gfx::FrameData data) override;
+  void UpdateHdrConfig();
 #else
   gfx::SwapResult SwapBuffersWithDamage(const std::vector<int>& rects,
                                         PresentationCallback callback,

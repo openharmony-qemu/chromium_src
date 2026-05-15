@@ -72,6 +72,10 @@
 #define EGL_SURFACE_ORIENTATION_INVERT_Y_ANGLE 0x0002
 #endif /* EGL_ANGLE_surface_orientation */
 
+#if BUILDFLAG(IS_OHOS)
+#include <native_window/external_window.h>
+#endif  // BUILDFLAG(IS_OHOS)
+
 using ui::GetLastEGLErrorString;
 
 namespace gl {
@@ -439,6 +443,17 @@ bool NativeViewGLSurfaceEGL::Initialize(GLSurfaceFormat format) {
     Destroy();
     return false;
   }
+  int32_t window_format;
+  int ret = OH_NativeWindow_NativeWindowHandleOpt(
+      reinterpret_cast<OHNativeWindow*>(window_), GET_FORMAT, &window_format);
+  if (ret != 0) {
+    LOG(ERROR) << __func__
+               << " OH_NativeWindow_NativeWindowHandleOpt fail ret=" << ret;
+  }
+  if (window_format == NATIVEBUFFER_PIXEL_FMT_RGBA_1010102) {
+    // we should create fp1010102 surface when recreate HDR window
+    UpdateHdrConfig();
+  }
 #endif
   surface_ = eglCreateWindowSurface(display_->GetDisplay(), GetConfig(),
                                     window_, &egl_window_attributes[0]);
@@ -600,6 +615,75 @@ bool NativeViewGLSurfaceEGL::SetBackbufferAllocation(bool allocated) {
     Destroy();
   }
   return true;
+}
+
+void NativeViewGLSurfaceEGL::UpdateHdrConfig() {
+  std::vector<EGLint> renderable_types;
+  if (!GetGlWorkarounds().disable_es3gl_context) {
+    renderable_types.push_back(EGL_OPENGL_ES3_BIT);
+  }
+  renderable_types.push_back(EGL_OPENGL_ES2_BIT);
+
+  EGLint surface_type =
+      (IsSurfaceless() ? EGL_DONT_CARE
+                       : (IsOffscreen() ? EGL_PBUFFER_BIT
+                                        : EGL_WINDOW_BIT | EGL_PBUFFER_BIT));
+
+  for (auto renderable_type : renderable_types) {
+    EGLint config_attribs_1010102[] = {EGL_BUFFER_SIZE,
+                                       32,
+                                       EGL_ALPHA_SIZE,
+                                       2,
+                                       EGL_BLUE_SIZE,
+                                       10,
+                                       EGL_GREEN_SIZE,
+                                       10,
+                                       EGL_RED_SIZE,
+                                       10,
+                                       EGL_RENDERABLE_TYPE,
+                                       renderable_type,
+                                       EGL_SURFACE_TYPE,
+                                       surface_type,
+                                       EGL_NONE};
+
+    EGLint num_configs;
+    EGLint config_size = 1;
+    EGLConfig config = nullptr;
+    EGLConfig* config_data = &config;
+    // Validate if there are any configs for given attribs.
+    if (!ValidateEglConfig(display_->GetDisplay(), config_attribs_1010102,
+                           &num_configs)) {
+      // Try the next renderable_type
+      continue;
+    }
+
+    auto matching_configs = base::HeapArray<EGLConfig>::Uninit(num_configs);
+    if (GetNativeVisualID() >= 0) {
+      config_size = num_configs;
+      config_data = matching_configs.data();
+    }
+
+    if (!eglChooseConfig(display_->GetDisplay(), config_attribs_1010102,
+                         config_data, config_size, &num_configs)) {
+      LOG(ERROR) << "eglChooseConfig failed with error "
+                 << GetLastEGLErrorString();
+      config_ = config;
+      return;
+    }
+    if (GetNativeVisualID() >= 0) {
+      for (int i = 0; i < num_configs; i++) {
+        EGLint id;
+        if (eglGetConfigAttrib(display_->GetDisplay(), matching_configs[i],
+                               EGL_NATIVE_VISUAL_ID, &id) &&
+            id == GetNativeVisualID()) {
+          config = matching_configs[i];
+          break;
+        }
+      }
+    }
+    config_ = config;
+    return;
+  }
 }
 #endif
 

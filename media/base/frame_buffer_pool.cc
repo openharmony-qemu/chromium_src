@@ -51,7 +51,6 @@ struct FrameBufferPool::FrameBuffer {
   // for large buffers.
   std::unique_ptr<uint8_t, base::UncheckedFreeDeleter> data;
   size_t data_size = 0u;
-  std::unique_ptr<uint8_t, base::UncheckedFreeDeleter> alpha_data;
   size_t alpha_data_size = 0u;
   bool held_by_library = false;
   // Needs to be a counter since a frame buffer might be used multiple times.
@@ -142,29 +141,6 @@ void FrameBufferPool::ReleaseFrameBuffer(void* fb_priv) {
   }
 }
 
-uint8_t* FrameBufferPool::AllocateAlphaPlaneForFrameBuffer(size_t min_size,
-                                                           void* fb_priv) {
-  base::AutoLock lock(lock_);
-  DCHECK(fb_priv);
-
-  auto* frame_buffer = static_cast<FrameBuffer*>(fb_priv);
-  DCHECK(IsUsedLocked(frame_buffer));
-  if (frame_buffer->alpha_data_size < min_size) {
-    // Free the existing |alpha_data| first so that the memory can be reused,
-    // if possible. Note that the new array is purposely not initialized.
-    frame_buffer->alpha_data.reset();
-    uint8_t* data = nullptr;
-    if (force_allocation_error_ ||
-        !base::UncheckedMalloc(min_size, reinterpret_cast<void**>(&data)) ||
-        !data) {
-      return nullptr;
-    }
-    frame_buffer->alpha_data.reset(data);
-    frame_buffer->alpha_data_size = min_size;
-  }
-  return frame_buffer->alpha_data.get();
-}
-
 base::OnceClosure FrameBufferPool::CreateFrameCallback(void* fb_priv) {
   base::AutoLock lock(lock_);
 
@@ -202,9 +178,9 @@ bool FrameBufferPool::OnMemoryDump(
   size_t bytes_reserved = 0;
   for (const auto& frame_buffer : frame_buffers_) {
     if (IsUsedLocked(frame_buffer.get())) {
-      bytes_used += frame_buffer->data_size + frame_buffer->alpha_data_size;
+      bytes_used += frame_buffer->data_size;
     }
-    bytes_reserved += frame_buffer->data_size + frame_buffer->alpha_data_size;
+    bytes_reserved += frame_buffer->data_size;
   }
 
   memory_dump->AddScalar(base::trace_event::MemoryAllocatorDump::kNameSize,

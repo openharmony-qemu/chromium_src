@@ -31,10 +31,15 @@
 #define UI_OZONE_PLATFORM_OHOS_OHOS_SCREEN_H_
 
 #include <vector>
+
+#include <window_manager/oh_display_info.h>
 #include <window_manager/oh_display_manager.h>
 
+#include "base/memory/weak_ptr.h"
 #include "base/observer_list.h"
+#include "napi/native_api.h"
 #include "ohos/adapter/common/shared_library.h"
+#include "ohos/adapter/context/context_adapter.h"
 #include "ohos/adapter/screen/screen_adapter.h"
 #include "ohos/adapter/window/window_common.h"
 #include "ui/display/display_list.h"
@@ -57,7 +62,8 @@ using AccessAvailableAreaFunc =
 using DestroyAvailableAreaFunc =
     NativeDisplayManager_ErrorCode(NativeDisplayManager_Rect* available_area);
 
-class OhosScreen : public PlatformScreen {
+class OhosScreen : public PlatformScreen,
+                   public ohos::adapter::ContextAdapter::Delegate {
  public:
   OhosScreen(const OhosScreen&) = delete;
   OhosScreen& operator=(const OhosScreen&) = delete;
@@ -91,6 +97,7 @@ class OhosScreen : public PlatformScreen {
       const gfx::Point& point_in_dip,
       const std::set<gfx::AcceleratedWidget>& ignore,
       const int32_t display_id) const override;
+  void UpdateAllDisplays() override;
   gfx::Point GetCursorScreenPoint(const int32_t display_id) const override;
   void OnAvailableAreaChange(uint64_t display_id) override;
   void OnAvoidAreaCallback(int32_t status_bar_height);
@@ -98,10 +105,16 @@ class OhosScreen : public PlatformScreen {
  private:
   bool LoadAllAvailableAreaFunctions();
   bool ConvertDisplay(ohos::adapter::OhosDisplay& ohos_display,
-                      display::Display& dst_display);
+                      display::Display& dst_display,
+                      ohos::adapter::BrightnessInfo& brightness_info);
   void FetchDisplays(display::DisplayList& displays);
   void RegisterDisplayMonitor();
   void RegisterDisplayCallback();
+  void UpdateAllDisplaysInternal();
+  gfx::ColorSpace ConvertOhosDisplayColorSpace(
+      const std::vector<ohos::adapter::OhosDisplayColorSpace>&
+          display_color_spaces);
+
   void RegisterAvailableAreaMonitor();
   void RegisterAvailableAreaCallback();
   void RegisterAvailableAreaMonitorByNdk();

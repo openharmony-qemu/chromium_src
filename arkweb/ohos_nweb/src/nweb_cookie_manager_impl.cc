@@ -22,6 +22,7 @@
 #if BUILDFLAG(ARKWEB_COOKIE)
 #include "base/path_service.h"
 #include "chrome/common/chrome_paths.h"
+#include "chrome/common/chrome_switches.h"
 #include "chrome/grit/branded_strings.h"
 #include "components/os_crypt/sync/os_crypt.h"
 #include "components/password_manager/core/browser/password_manager_switches.h"
@@ -36,13 +37,19 @@ void PostCreateMainMessageLoop() {
 
   std::unique_ptr<os_crypt::Config> config =
       std::make_unique<os_crypt::Config>();
-  config->store =
-      command_line->GetSwitchValueASCII(password_manager::kPasswordStore);
-  // Forward the product name (defaults to "Chromium").
-  config->product_name = std::string("Chromium");
-  config->should_use_preference =
-      command_line->HasSwitch(password_manager::kEnableEncryptionSelection);
-  base::PathService::Get(chrome::DIR_USER_DATA, &config->user_data_path);
+  if (command_line) {
+    config->store =
+        command_line->GetSwitchValueASCII(password_manager::kPasswordStore);
+    // Forward the product name (defaults to "Chromium").
+    config->product_name = std::string("Chromium");
+    config->should_use_preference =
+        command_line->HasSwitch(password_manager::kEnableEncryptionSelection);
+    config->user_data_path =
+        command_line->GetSwitchValuePath(switches::kUserDataDir);
+  } else {
+    LOG_FEEDBACK(ERROR, kNetwork) << "Commandline is empty, failed to create "
+                                     "cookie encryption configuration";
+  }
   DCHECK(!config->user_data_path.empty());
   OSCrypt::SetConfig(std::move(config));
 }

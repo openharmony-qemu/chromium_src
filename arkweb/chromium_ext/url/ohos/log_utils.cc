@@ -38,8 +38,8 @@ constexpr int32_t FEEDSPAGE_TYPE = 5;
 
 // static
 bool LogUtils::IsSupportScheme(const std::string_view url,
-                               unsigned int urlLen,
-                               unsigned int& colonIndex) {
+                               size_t urlLen,
+                               size_t& colonIndex) {
   while (colonIndex < urlLen && url[colonIndex] != ':') {
     colonIndex++;
   }
@@ -221,7 +221,7 @@ std::string LogUtils::ConvertUrl(const std::string& url,
     return std::string(url);
   }
 
-  unsigned int colonIndex = 0;
+  size_t colonIndex = 0;
   std::string converted;
 
   if (!IsSupportScheme(url, url.length(), colonIndex)) {
@@ -272,25 +272,40 @@ std::string MaskMiddleTwoChars(std::string_view scheme) {
 // static
 std::string LogUtils::ConvertUrlWithMask(const std::string& url) {
   std::string_view truncated_url = std::string_view(url).substr(0, kMaxUrlLen);
-  if (truncated_url.find(kSchemeNotParseOne) == 0 ||
-      truncated_url.find(kSchemeNotParseTwo) == 0) {
+  size_t url_length = truncated_url.length();
+
+  if (truncated_url.starts_with(kSchemeNotParseOne) ||
+      truncated_url.starts_with(kSchemeNotParseTwo)) {
     return std::string(truncated_url);
   }
 
-  unsigned int colonIndex = 0;
-  if (!IsSupportScheme(truncated_url, truncated_url.length(), colonIndex)) {
-    return MaskHost(truncated_url);
+  size_t colon_index = 0;
+  if (!IsSupportScheme(truncated_url, url_length, colon_index)) {
+    size_t capture_len = std::min(
+        url_length, colon_index + kSchemeSuffixLength + kAdditionalCharsToShow);
+    if (colon_index >= url_length) {
+      capture_len = std::min(url_length, kAdditionalCharsToShow);
+    }
+
+    std::string result(truncated_url.substr(0, capture_len));
+    if (capture_len < url_length) {
+      result.append("***");
+    }
+    return result;
   }
 
-  size_t endPos = colonIndex + kSchemeSuffixLength + kAdditionalCharsToShow;
-  if (endPos > truncated_url.length()) {
-    endPos = truncated_url.length();
-  }
+  size_t endPos = std::min(
+      url_length, colon_index + kSchemeSuffixLength + kAdditionalCharsToShow);
 
   std::string converted;
-  converted.append(MaskMiddleTwoChars(truncated_url.substr(0, colonIndex)));
-  converted.append(truncated_url.substr(colonIndex, endPos - colonIndex));
-  converted.append("***");
+  converted.reserve(endPos + kAdditionalCharsToShow);
+
+  converted.append(MaskMiddleTwoChars(truncated_url.substr(0, colon_index)));
+  converted.append(truncated_url.substr(colon_index, endPos - colon_index));
+  if (endPos < url_length) {
+    converted.append("***");
+  }
+
   return converted;
 }
 

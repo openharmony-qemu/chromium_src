@@ -133,6 +133,10 @@ component("sync") {
       "//ohos_glue:ohos_adapter_glue_source",
       "//third_party:huawei_securec"
     ]
+
+    if (arkweb_cookie) {
+      deps += [ "//chrome/common:non_code_constants" ]
+    }
   }
 }
 

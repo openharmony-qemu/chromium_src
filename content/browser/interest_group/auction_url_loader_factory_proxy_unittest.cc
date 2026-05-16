@@ -8,6 +8,7 @@
 
 #include <vector>
 
+#include "base/containers/span.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"
 #include "base/memory/ref_counted.h"
@@ -29,7 +30,9 @@
 #include "net/http/http_request_headers.h"
 #include "net/traffic_annotation/network_traffic_annotation.h"
 #include "net/traffic_annotation/network_traffic_annotation_test_helper.h"
+#include "services/network/public/cpp/data_element.h"
 #include "services/network/public/cpp/resource_request.h"
+#include "services/network/public/cpp/resource_request_body.h"
 #include "services/network/public/mojom/client_security_state.mojom.h"
 #include "services/network/public/mojom/ip_address_space.mojom.h"
 #include "services/network/public/mojom/url_loader_factory.mojom.h"
@@ -325,7 +328,26 @@ class AuctionUrlLoaderFactoryProxyTest : public testing::Test {
     // Check method, body and content-type for POST requests.
     if (request.method == net::HttpRequestHeaders::kPostMethod) {
       EXPECT_EQ(observed_request.method, net::HttpRequestHeaders::kPostMethod);
-      EXPECT_EQ(request.request_body, observed_request.request_body);
+      ASSERT_EQ(!!request.request_body, !!observed_request.request_body);
+      // If there's a request body, both bodies should both have a single
+      // matching element of type kBytes.
+      if (request.request_body) {
+        const auto& request_elements = *request.request_body->elements();
+        const auto& observed_elements =
+            *observed_request.request_body->elements();
+        ASSERT_EQ(request_elements.size(), 1u);
+        ASSERT_EQ(observed_elements.size(), 1u);
+        ASSERT_EQ(request_elements.front().type(),
+                  network::DataElement::Tag::kBytes);
+        ASSERT_EQ(observed_elements.front().type(),
+                  network::DataElement::Tag::kBytes);
+        EXPECT_EQ(request_elements.front()
+                      .As<network::DataElementBytes>()
+                      .AsStringPiece(),
+                  observed_elements.front()
+                      .As<network::DataElementBytes>()
+                      .AsStringPiece());
+      }
       if (request.headers.GetHeader(net::HttpRequestHeaders::kContentType)
               .has_value()) {
         EXPECT_EQ(
@@ -538,6 +560,24 @@ TEST_F(AuctionUrlLoaderFactoryProxyTest, Basic) {
                    ExpectedResponse::kReject);
     TryMakeRequest("https://host.test/", std::nullopt,
                    ExpectedResponse::kReject);
+
+    // Methods other than GET should be rejected for non-signals URLs. Method
+    // logic for signals URLs is checked further down.
+    network::ResourceRequest request;
+    request.url = GURL(kScriptUrl);
+    request.headers.SetHeader(net::HttpRequestHeaders::kAccept,
+                              kAcceptJavascript);
+    request.method = net::HttpRequestHeaders::kPostMethod;
+    TryMakeRequest(request, ExpectedResponse::kReject);
+    request.method = net::HttpRequestHeaders::kHeadMethod;
+    TryMakeRequest(request, ExpectedResponse::kReject);
+
+    request.url = GURL(kWasmUrl);
+    request.headers.SetHeader(net::HttpRequestHeaders::kAccept, kAcceptWasm);
+    request.method = net::HttpRequestHeaders::kPostMethod;
+    TryMakeRequest(request, ExpectedResponse::kReject);
+    request.method = net::HttpRequestHeaders::kHeadMethod;
+    TryMakeRequest(request, ExpectedResponse::kReject);
   }
 }
 

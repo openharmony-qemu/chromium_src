@@ -152,6 +152,7 @@ CONTENT_EXPORT BASE_DECLARE_FEATURE(kWebOTPAssertionFeaturePolicy);
 CONTENT_EXPORT BASE_DECLARE_FEATURE(kWebRtcUseGpuMemoryBufferVideoFrames);
 CONTENT_EXPORT BASE_DECLARE_FEATURE(kWindowOpenFileSelectFix);
 CONTENT_EXPORT BASE_DECLARE_FEATURE(kLimitCrossOriginNonActivatedPaintHolding);
+CONTENT_EXPORT BASE_DECLARE_FEATURE(kServiceWorkerOptionalTimeoutIterator);
 
 // Please keep features in alphabetical order.
 

@@ -750,7 +750,6 @@ Permissions that you've already given to apps may apply to this account. You can
 <translation id="1500297251995790841">Unknown device [<ph name="VENDOR_ID" />:<ph name="PRODUCT_ID" />]</translation>
 <translation id="1500801317528437432">Learn more about unsupported Chrome Apps</translation>
 <translation id="1501480321619201731">Delete group</translation>
-<translation id="1502582685401185834">Visita <ph name="BEGIN_LINK" />Browser Toolbox<ph name="END_LINK" /></translation>
 <translation id="1503556098270577657">You signed in to <ph name="USER_EMAIL" /> using your Android phone</translation>
 <translation id="150411034776756821">Remove <ph name="SITE" /></translation>
 <translation id="1504253885059472207">Pin split view</translation>
@@ -9128,6 +9127,7 @@ You have # more compromised passwords. Google Password Manager recommends checki
 <translation id="7261217796641151584">Share group</translation>
 <translation id="7261612856573623172">System Text-to-Speech voice</translation>
 <translation id="7262004276116528033">This sign-in service is hosted by <ph name="SAML_DOMAIN" /></translation>
+<translation id="7262594386509694692">Visit <ph name="BEGIN_LINK"/>Browser Tools Store<ph name="END_LINK"/></translation>
 <translation id="7262919421769447042">Your profile is managed by <ph name="PROFILE_MANAGER" />, which can view some information, including</translation>
 <translation id="7264695323040866038">Always use the <ph name="APP" /> app to open supported web links?</translation>
 <translation id="7267044199012331848">Couldn't install the virtual machine. Please try again, or contact your administrator. Error code: <ph name="ERROR_CODE" />.</translation>
@@ -10722,6 +10722,7 @@ Keep your key file in a safe place. You will need it to create new versions of y
 <translation id="8323744572398547859">To get your tabs from your other devices, sign in and sync history. You'll also get your passwords and more on all your devices. You can stop syncing at any time in settings. Google may personalise Search and other services based on your history.</translation>
 <translation id="8324158725704657629">Don't ask again</translation>
 <translation id="8325413836429495820">Not allowed to see your clipboard</translation>
+<translation id="832618879023665598">This extension failed the security compliance check and has been automatically disabled.</translation>
 <translation id="8326478304147373412">PKCS #7, certificate chain</translation>
 <translation id="8327386430364625757">Mathematical font</translation>
 <translation id="8327490658947427005">Selection not in <ph name="LANGUAGE" /></translation>

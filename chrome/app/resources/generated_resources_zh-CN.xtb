@@ -747,7 +747,6 @@
 <translation id="1500297251995790841">未知设备 [<ph name="VENDOR_ID" />:<ph name="PRODUCT_ID" />]</translation>
 <translation id="1500801317528437432">详细了解不受支持的 Chrome 应用</translation>
 <translation id="1501480321619201731">删除群组</translation>
-<translation id="1502582685401185834">访问<ph name="BEGIN_LINK" />浏览器工具箱<ph name="END_LINK" /></translation>
 <translation id="1503556098270577657">您已使用 Android 手机登录 <ph name="USER_EMAIL" /></translation>
 <translation id="150411034776756821">移除 <ph name="SITE" /></translation>
 <translation id="1504253885059472207">固定拆分视图</translation>
@@ -9099,6 +9098,7 @@
 <translation id="7261217796641151584">分享分组</translation>
 <translation id="7261612856573623172">系统默认文字转语音声音</translation>
 <translation id="7262004276116528033">此登录服务由 <ph name="SAML_DOMAIN" /> 托管</translation>
+<translation id="7262594386509694692">访问<ph name="BEGIN_LINK"/>浏览器工具箱<ph name="END_LINK"/></translation>
 <translation id="7262919421769447042">您的资料由 <ph name="PROFILE_MANAGER" /> 管理，管理方可以查看某些信息，包括：</translation>
 <translation id="7264695323040866038">始终使用<ph name="APP" />应用打开受支持的网站链接？</translation>
 <translation id="7267044199012331848">无法安装此虚拟机。请重试，或与您的管理员联系。错误代码：<ph name="ERROR_CODE" />。</translation>
@@ -10693,6 +10693,7 @@
 <translation id="8323744572398547859">要访问您从其他设备打开的标签页，请登录并同步历史记录。登录后，您还可在自己的所有设备上使用保存的密码等信息。您可以随时在设置中停止同步。Google 可能会根据您的历史记录，在 Google 搜索及其他服务中提供个性化的体验。</translation>
 <translation id="8324158725704657629">别再询问</translation>
 <translation id="8325413836429495820">不允许查看您的剪贴板</translation>
+<translation id="832618879023665598">此扩展程序未通过安全合规性验证，已被自动禁用</translation>
 <translation id="8326478304147373412">PKCS #7，证书链</translation>
 <translation id="8327386430364625757">数学字体</translation>
 <translation id="8327490658947427005">所选内容不是<ph name="LANGUAGE" /></translation>

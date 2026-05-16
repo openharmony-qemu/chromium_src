@@ -6439,6 +6439,9 @@ Keep your key file in a safe place. You will need it to create new versions of y
       <message name="IDS_EXTENSIONS_ADDED_WITHOUT_KNOWLEDGE_LEARN_MORE" desc="Text read by screen readers for a link labeled 'Learn more' that links to a Help article about disabled extensions.">
         Learn more about disabled extensions.
       </message>
+      <message name="IDS_EXTENSIONS_NO_PASSED_SECURITY_COMPLIANCE_VERIFICATION" desc="Text shown in the extensions settings is used to notify the user that the extension has been automatically disabled due to failing the security compliance check.">
+        This extension failed the security compliance check and has been automatically disabled.
+      </message>
 
       <!-- Manifest V2 Deprecation Dialogs -->
       <message name="IDS_EXTENSIONS_MANIFEST_V2_DEPRECATION_KEEP_DIALOG_TITLE" desc="The title of the dialog asking the user if they want to keep the extension installed, which is affected by the Manifest V2 deprecation">

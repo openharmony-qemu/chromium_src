@@ -52,7 +52,7 @@ class NET_EXPORT NetworkChangeNotifierPassive : public ArkwebNetworkChangeNotifi
       NetworkChangeNotifier::ConnectionType connection_type,
       NetworkChangeNotifier::ConnectionSubtype connection_subtype);
 
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   const std::vector<std::string> GetCurrentDnsServers() override;
 #endif
 
@@ -61,7 +61,7 @@ class NET_EXPORT NetworkChangeNotifierPassive : public ArkwebNetworkChangeNotifi
   void OnVpnLost();
 #endif
 
-#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
   void BindDnsToNetwork(int network_for_dns) override;
 #endif
 

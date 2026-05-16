@@ -6041,6 +6041,11 @@ ChromeContentBrowserClient::CreateURLLoaderThrottles(
   ChromeContentBrowserClientUtils::AddExtraHeadersThrottle(request, result);
 #endif
 
+#if BUILDFLAG(IS_ARKWEB)
+  ChromeContentBrowserClientUtils::AddExtraHeadersUrlThrottle(chrome_navigation_ui_data, 
+                                                              result);
+#endif // BUILDFLAG(IS_ARKWEB)
+
   return result;
 }
 

@@ -91,11 +91,19 @@ class ChromeNavigationUIData : public content::NavigationUIData {
     navigation_initiated_from_sync_ = navigation_initiated_from_sync;
   }
 
+#if BUILDFLAG(IS_ARKWEB)
+  const std::string& extra_headers() const { return extra_headers_; }
+#endif // BUILDFLAG(IS_ARKWEB)
+
  private:
 #if BUILDFLAG(ENABLE_EXTENSIONS)
   // Manages the lifetime of optional ExtensionNavigationUIData information.
   std::unique_ptr<extensions::ExtensionNavigationUIData> extension_data_;
 #endif
+
+#if BUILDFLAG(IS_ARKWEB)
+  std::string extra_headers_ = std::string();
+#endif // BUILDFLAG(IS_ARKWEB)
 
 #if BUILDFLAG(ENABLE_OFFLINE_PAGES)
   // Manages the lifetime of optional OfflinePageNavigationUIData information.

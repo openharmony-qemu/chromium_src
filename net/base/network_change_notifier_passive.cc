@@ -120,6 +120,12 @@ void NetworkChangeNotifierPassive::OnConnectionSubtypeChanged(
                                                              connection_type);
 }
 
+#if BUILDFLAG(ARKWEB_EX_HTTPS_DNS_FALLBACK)
+const std::vector<std::string> NetworkChangeNotifierPassive::GetCurrentDnsServers() {
+  return {};
+}
+#endif
+
 NetworkChangeNotifier::ConnectionType
 NetworkChangeNotifierPassive::GetCurrentConnectionType() const {
   base::AutoLock scoped_lock(lock_);

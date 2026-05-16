@@ -34,6 +34,7 @@ class NetworkChangeNotifierFactory;
 struct NetworkInterface;
 class SystemDnsConfigChangeNotifier;
 typedef std::vector<NetworkInterface> NetworkInterfaceList;
+class ArkwebNetworkChangeNotifierExt;
 
 namespace internal {
 #if BUILDFLAG(IS_FUCHSIA)
@@ -48,6 +49,7 @@ class NetworkInterfaceCache;
 // destroyed on the same thread.
 class NET_EXPORT NetworkChangeNotifier {
  public:
+  friend class ArkwebNetworkChangeNotifierExt;
   // This is a superset of the connection types in the NetInfo v3 specification:
   // http://w3c.github.io/netinfo/.
   //
@@ -353,6 +355,9 @@ class NET_EXPORT NetworkChangeNotifier {
   NetworkChangeNotifier& operator=(const NetworkChangeNotifier&) = delete;
   virtual ~NetworkChangeNotifier();
 
+  ArkwebNetworkChangeNotifierExt* AsArkwebNetworkChangeNotifierExt() {
+    return nullptr;
+  }
 
   // Returns the factory or nullptr if it is not set.
   static NetworkChangeNotifierFactory* GetFactory();
@@ -578,14 +583,6 @@ class NET_EXPORT NetworkChangeNotifier {
   static base::cstring_view IPAddressChangeTypeToString(
       IPAddressChangeType type);
 
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
-  static const std::vector<std::string> GetDnsServers();
-  static const char* ConnectionTypeToLowerString(ConnectionType type);
-#endif
-#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
-  static void BindToNetwork(int32_t network_for_dns);
-#endif
-
   // Allows a second NetworkChangeNotifier to be created for unit testing, so
   // the test suite can create a MockNetworkChangeNotifier, but platform
   // specific NetworkChangeNotifiers can also be created for testing.  To use,
@@ -676,18 +673,6 @@ class NET_EXPORT NetworkChangeNotifier {
 
   virtual bool IsDefaultNetworkActiveInternal();
 
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
-  virtual const std::vector<std::string> GetCurrentDnsServers();
-#endif
-#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
-  virtual void BindDnsToNetwork(int32_t network_for_dns);
-#if BUILDFLAG(ENABLE_ARKWEB_EXT)
-  virtual const std::vector<std::string> GetCurrentNetAddrList();
-  virtual const std::vector<std::string> GetNetAddrListByNetId(int32_t netId);
-  virtual void SetNetAddrList(std::vector<std::string> new_addr_list);
-#endif
-#endif
-
   // Broadcasts a notification to all registered observers.  Note that this
   // happens asynchronously, even for observers on the current thread, even in
   // tests.
@@ -763,5 +748,6 @@ class NET_EXPORT NetworkChangeNotifier {
 };
 
 }  // namespace net
+#include "arkweb/chromium_ext/net/base/arkweb_network_change_notifier_ext.h"
 
 #endif  // NET_BASE_NETWORK_CHANGE_NOTIFIER_H_

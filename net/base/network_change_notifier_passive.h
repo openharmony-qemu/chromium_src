@@ -22,7 +22,8 @@
 #if BUILDFLAG(ENABLE_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
 #endif
-#include "arkweb/ohos_adapter_ndk/interfaces/ohos_adapter_helper.h"
+#include "arkweb/chromium_ext/net/base/arkweb_network_change_notifier_ext.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 namespace net {
 
 // A NetworkChangeNotifier that needs to be told about network changes by some
@@ -31,7 +32,7 @@ namespace net {
 // changes, but other processes want to add observers for network state. It's
 // also useful on Linux where listening for network state changes in a sandboxed
 // process requires loosening the sandbox policy too much.
-class NET_EXPORT NetworkChangeNotifierPassive : public NetworkChangeNotifier {
+class NET_EXPORT NetworkChangeNotifierPassive : public ArkwebNetworkChangeNotifierExt {
  public:
   NetworkChangeNotifierPassive(
       NetworkChangeNotifier::ConnectionType initial_connection_type,
@@ -51,7 +52,7 @@ class NET_EXPORT NetworkChangeNotifierPassive : public NetworkChangeNotifier {
       NetworkChangeNotifier::ConnectionType connection_type,
       NetworkChangeNotifier::ConnectionSubtype connection_subtype);
 
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   const std::vector<std::string> GetCurrentDnsServers() override;
 #endif
 
@@ -60,13 +61,8 @@ class NET_EXPORT NetworkChangeNotifierPassive : public NetworkChangeNotifier {
   void OnVpnLost();
 #endif
 
-#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
   void BindDnsToNetwork(int network_for_dns) override;
-#if BUILDFLAG(ENABLE_ARKWEB_EXT)
-  const std::vector<std::string> GetCurrentNetAddrList() override;
-  const std::vector<std::string> GetNetAddrListByNetId(int32_t netId) override;
-  void SetNetAddrList(std::vector<std::string> new_addr_list) override;
-#endif
 #endif
 
  protected:
@@ -121,9 +117,6 @@ class NET_EXPORT NetworkChangeNotifierPassive : public NetworkChangeNotifier {
   std::vector<std::string> dns_servers_;
 #endif
   bool vpn_in_place_{false};
-#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
-  std::vector<std::string> net_addr_list_;
-#endif
 };
 
 }  // namespace net

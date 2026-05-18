@@ -65,7 +65,7 @@ CodecCodeAdapter CheckYUVMemcpyData(const YUVMemcpyData &data, scoped_refptr<Vid
   // check addr.
   if (data.dst_addr == nullptr || nullptr == data.src_addr[VideoFrame::kYPlane] ||
       nullptr == data.src_addr[VideoFrame::kUPlane] || nullptr == data.src_addr[VideoFrame::kVPlane]) {
-    LOG(ERROR) << "addr is nullptr";
+    LOG(DEBUG) << "addr is nullptr";
     return CodecCodeAdapter::ERROR;
   }
   // check dst width and src stride

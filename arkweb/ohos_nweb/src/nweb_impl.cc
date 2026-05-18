@@ -3238,9 +3238,12 @@ void NWebImpl::OnFocus(const FocusReason& focusReason) {
   nweb_delegate_->SetFocusWebId(nweb_id_);
 #endif
   if (nweb_delegate_->IsCustomKeyboard()) {
-    LOG(INFO) << "WebCustomKeyboard NWebImpl::OnFocus";
-    nweb_delegate_->GetCustomKeyboardHandler()->AttachFromWebStateChange(
-        WebCustomKeyboardState::FROME_ONFOCUS);
+    if (nweb_delegate_->OnFocus(focusReason)) {
+      LOG(INFO) << "WebCustomKeyboard NWebImpl::OnFocus";
+      nweb_delegate_->GetCustomKeyboardHandler()->AttachFromWebStateChange(
+          WebCustomKeyboardState::FROME_ONFOCUS);
+      return;
+    }
   }
 
   if (inputmethod_handler_ == nullptr) {

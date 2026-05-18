@@ -201,6 +201,7 @@ private:
 
     static std::unordered_map<std::string, MediaAVSessionAdapterImpl *> avSessionMap;
     static std::unordered_map<OH_AVSession*, MediaAVSessionAdapterImpl *> avSessionMapOther_;
+    static std::recursive_mutex g_avsession_map_mutex_;
     size_t callback_index_ = 0;
     static CallbackSharedWrapper<MediaAVSessionCallbackAdapter> callback_wrapper_;
     size_t avsession_callback_index_ = 0;

@@ -64,4 +64,11 @@ BASE_FEATURE(kOddWidthMultiPlanarBuffers,
 BASE_FEATURE(kUseSmartRefForGPUFenceHandle,
              "UseSmartRefForGPUFenceHandle",
              base::FEATURE_ENABLED_BY_DEFAULT);
+
+#if BUILDFLAG(IS_OHOS)
+BASE_FEATURE(kEnableOhosHdr,
+             "EnableOhosHdr",
+             base::FEATURE_ENABLED_BY_DEFAULT);
+#endif
+
 }  // namespace features

@@ -2443,7 +2443,11 @@ void NWebImpl::ClearClientAuthenticationCache(bool incognito_mode) {
   if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
     content::GetUIThreadTaskRunner({})->PostTask(
         FROM_HERE,
-        base::BindOnce(&NWebImpl::ClearClientAuthenticationCache, incognito_mode));
+        base::BindOnce(
+            [](bool incognito) {
+              NWebImpl::ClearClientAuthenticationCache(incognito);
+            }
+            incognito_mode));
     return;
   }
   CefRefPtr<CefRequestContext> context;

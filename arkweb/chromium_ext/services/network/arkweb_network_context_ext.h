@@ -146,7 +146,7 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) ArkWebNetworkContextExt : public Network
   bool IsStrictLogMode() const;
 #endif  // ARKWEB_LOGGER_REPORT
 
-#if BUILDFLAG(ARKWEB_CERT_AUTHENTICATION)
+#if BUILDFLAG(ARKWEB_CERT_AUTHENTICATION) && !defined(COMPONENT_BUILD)
   void ClearClientAuthCache() override;
 #endif
 };

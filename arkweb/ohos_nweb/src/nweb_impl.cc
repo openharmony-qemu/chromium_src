@@ -2446,7 +2446,7 @@ void NWebImpl::ClearClientAuthenticationCache(bool incognito_mode) {
         base::BindOnce(
             [](bool incognito) {
               NWebImpl::ClearClientAuthenticationCache(incognito);
-            }
+            },
             incognito_mode));
     return;
   }

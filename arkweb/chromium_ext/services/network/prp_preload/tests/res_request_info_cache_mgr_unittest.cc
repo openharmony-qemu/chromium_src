@@ -81,7 +81,7 @@ TEST_F(ResRequestInfoCacheMgrTest, ResRequestInfoCacheMgrTest_001)
   cache.Stop();
 }
 
-TEST_F(ResRequestInfoCacheMgrTest,ResRequestInfoCacheMgrTest_002)
+TEST_F(ResRequestInfoCacheMgrTest, ResRequestInfoCacheMgrTest_002)
 {
   GURL origin_url("https://example.com");
   std::string key;
@@ -93,7 +93,7 @@ TEST_F(ResRequestInfoCacheMgrTest,ResRequestInfoCacheMgrTest_002)
   EXPECT_EQ(key, origin_url.spec());
 }
 
-TEST_F(ResRequestInfoCacheMgrTest,ResRequestInfoCacheMgrTest_003)
+TEST_F(ResRequestInfoCacheMgrTest, ResRequestInfoCacheMgrTest_003)
 {
   GURL request_url1("https://example.com/path/to/resource");
   GURL request_url2("preflight+https://example.com/path/to/resource");
@@ -109,7 +109,7 @@ TEST_F(ResRequestInfoCacheMgrTest,ResRequestInfoCacheMgrTest_003)
   EXPECT_EQ(expect_url,origin_url2.spec());
 }
 
-TEST_F(ResRequestInfoCacheMgrTest,ResRequestInfoCacheMgrTest_004)
+TEST_F(ResRequestInfoCacheMgrTest, ResRequestInfoCacheMgrTest_004)
 {
   net::NetworkAnonymizationKey networkAnonymizationKey = new net::NetworkAnonymizationKey();
   DiskCacheBackendFactory* factory = new DiskCacheBackendFactory();
@@ -178,7 +178,7 @@ TEST_F(ResRequestInfoCacheMgrTest, UpdateResRequestInfoTest)
   cache.UpdatePreloadInfo(request_info3->url().spec(),new_info);
 }
 
-TEST_F(ResRequestInfoCacheMgrTest,UpdatePreconnectInfoTest)
+TEST_F(ResRequestInfoCacheMgrTest, UpdatePreconnectInfoTest)
 {
   net::NetworkAnonymizationKey networkAnonymizationKey = new net::NetworkAnonymizationKey();
   DiskCacheBackendFactory* factory = new DiskCacheBackendFactory();
@@ -201,7 +201,7 @@ TEST_F(ResRequestInfoCacheMgrTest,UpdatePreconnectInfoTest)
   cache.UpdatePreconnectInfo(request_info);
 }
 
-TEST_F(ResRequestInfoCacheMgrTest,JsonToResReqPreloadInfoListTest)
+TEST_F(ResRequestInfoCacheMgrTest, JsonToResReqPreloadInfoListTest)
 {
   net::NetworkAnonymizationKey networkAnonymizationKey = new net::NetworkAnonymizationKey();
   DiskCacheBackendFactory* factory = new DiskCacheBackendFactory();
@@ -241,7 +241,7 @@ TEST_F(ResRequestInfoCacheMgrTest,JsonToResReqPreloadInfoListTest)
   cache.OnEntryLoadedCallback(content2);
 }
 
-TEST_F(ResRequestInfoCacheMgrTest,JsonToResReqPreloadInfoListTest_002)
+TEST_F(ResRequestInfoCacheMgrTest, JsonToResReqPreloadInfoListTest_002)
 {
   net::NetworkAnonymizationKey networkAnonymizationKey = new net::NetworkAnonymizationKey();
   DiskCacheBackendFactory* factory = new DiskCacheBackendFactory();
@@ -282,7 +282,7 @@ TEST_F(ResRequestInfoCacheMgrTest,JsonToResReqPreloadInfoListTest_002)
   cache.OnEntryLoadedCallback(content4);
 }
 
-TEST_F(ResRequestInfoCacheMgrTest,JsonToResReqPreloadInfoListTest_003)
+TEST_F(ResRequestInfoCacheMgrTest, JsonToResReqPreloadInfoListTest_003)
 {
   net::NetworkAnonymizationKey networkAnonymizationKey = new net::NetworkAnonymizationKey();
   DiskCacheBackendFactory* factory = new DiskCacheBackendFactory();
@@ -313,7 +313,7 @@ TEST_F(ResRequestInfoCacheMgrTest,JsonToResReqPreloadInfoListTest_003)
   cache.OnEntryLoadedCallback(content3);
 }
 
-TEST_F(ResRequestInfoCacheMgrTest,ResReqPreloadInfoListToJsonTest)
+TEST_F(ResRequestInfoCacheMgrTest, ResReqPreloadInfoListToJsonTest)
 {
   net::NetworkAnonymizationKey networkAnonymizationKey = new net::NetworkAnonymizationKey();
   DiskCacheBackendFactory* factory = new DiskCacheBackendFactory();
@@ -350,7 +350,7 @@ TEST_F(ResRequestInfoCacheMgrTest,ResReqPreloadInfoListToJsonTest)
   cache.CheckFlush(true);
 }
 
-TEST_F(ResRequestInfoCacheMgrTest,ResRequestInfoCacheMgrTest_005)
+TEST_F(ResRequestInfoCacheMgrTest, ResRequestInfoCacheMgrTest_005)
 {
   net::NetworkAnonymizationKey networkAnonymizationKey = new net::NetworkAnonymizationKey();
   scoped_refptr<DiskCacheBackendFactory> factory = nullptr;
@@ -365,5 +365,251 @@ TEST_F(ResRequestInfoCacheMgrTest,ResRequestInfoCacheMgrTest_005)
   auto mgr = std::make_unique<ResReqInfoCacheMgr>("",networkAnonymizationKey,factory, info_cache_cb);
   EXPECT_NE(mgr->disk_cache_, nullptr);
 }
+
+TEST_F(ResRequestInfoCacheMgrTest, ResRequestInfoCacheMgrTest_006)
+{
+  net::NetworkAnonymizationKey networkAnonymizationKey = new net::NetworkAnonymizationKey();
+  DiskCacheBackendFactory* factory = new DiskCacheBackendFactory();
+  scoped_refptr<DiskCacheBackendFactory> disk_cache_backend_factory(factory);
+  ResRequestInfoCacheLoadedCB info_cache_cb = base::BindRepeating(
+    [](const LinkedHashMap& load_info_list,
+      const LinkedHashMap& preconnect_limit_info_list,
+      const net::NetworkAnonymizationKey& networkAnonymizationKey,
+      const std::string& page_seq_num){
+        LOG(INFO) << "Cache loaded for page: " << page_seq_num;
+  });
+
+  ResReqInfoCacheMgr cache("www.test.com",networkAnonymizationKey,disk_cache_backend_factory,info_cache_cb);
+  cache.is_start_ = true;
+
+  GURL request_url("https://example.com/path");
+  std::shared_ptr<PRRequestInfo> request_info = std::make_shared<PRRequestInfo>(request_url, false);
+  request_info->set_is_preconnect(false);
+  request_info->set_is_reused_sokcet(false);
+
+  bool result = cache.UpdatePreconnectInfo(request_info);
+  EXPECT_EQ(result, false);
+}
+
+TEST_F(ResRequestInfoCacheMgrTest, ResRequestInfoCacheMgrTest_007)
+{
+  net::NetworkAnonymizationKey networkAnonymizationKey = new net::NetworkAnonymizationKey();
+  DiskCacheBackendFactory* factory = new DiskCacheBackendFactory();
+  scoped_refptr<DiskCacheBackendFactory> disk_cache_backend_factory(factory);
+  ResRequestInfoCacheLoadedCB info_cache_cb = base::BindRepeating(
+    [](const LinkedHashMap& load_info_list,
+      const LinkedHashMap& preconnect_limit_info_list,
+      const net::NetworkAnonymizationKey& networkAnonymizationKey,
+      const std::string& page_seq_num){
+        LOG(INFO) << "Cache loaded for page: " << page_seq_num;
+  });
+
+  ResReqInfoCacheMgr cache("www.test.com",networkAnonymizationKey,disk_cache_backend_factory,info_cache_cb);
+  cache.is_start_ = true;
+
+  GURL request_url("https://example.com/path");
+  std::shared_ptr<PRRequestInfo> request_info = std::make_shared<PRRequestInfo>(request_url, false);
+  request_info->set_is_preconnect(true);
+  cache.UpdatePreconnectInfo(request_info);
+
+  std::shared_ptr<PRRequestInfo> request_info2 = std::make_shared<PRRequestInfo>(request_url, false);
+  request_info2->set_is_preconnect(true);
+  request_info2->set_is_reused_sokcet(true);
+  bool result = cache.UpdatePreconnectInfo(request_info2);
+  EXPECT_EQ(result, true);
+}
+
+TEST_F(ResRequestInfoCacheMgrTest, ResRequestInfoCacheMgrTest_008)
+{
+  net::NetworkAnonymizationKey networkAnonymizationKey = new net::NetworkAnonymizationKey();
+  DiskCacheBackendFactory* factory = new DiskCacheBackendFactory();
+  scoped_refptr<DiskCacheBackendFactory> disk_cache_backend_factory(factory);
+  ResRequestInfoCacheLoadedCB info_cache_cb = base::BindRepeating(
+    [](const LinkedHashMap& load_info_list,
+      const LinkedHashMap& preconnect_limit_info_list,
+      const net::NetworkAnonymizationKey& networkAnonymizationKey,
+      const std::string& page_seq_num){
+        LOG(INFO) << "Cache loaded for page: " << page_seq_num;
+  });
+
+  ResReqInfoCacheMgr cache("www.test.com",networkAnonymizationKey,disk_cache_backend_factory,info_cache_cb);
+  cache.is_start_ = true;
+
+  GURL request_url("https://example.com/path#fragment");
+  std::shared_ptr<PRRequestInfo> request_info = std::make_shared<PRRequestInfo>(request_url, false);
+  request_info->or_preload_flag(PRPP_FLAGS_UNSUPPORT);
+
+  cache.UpdateResRequestInfo(request_info);
+  EXPECT_NE(cache.new_preload_info_list_.size(), 0);
+}
+
+TEST_F(ResRequestInfoCacheMgrTest, ResRequestInfoCacheMgrTest_009)
+{
+  net::NetworkAnonymizationKey networkAnonymizationKey = new net::NetworkAnonymizationKey();
+  DiskCacheBackendFactory* factory = new DiskCacheBackendFactory();
+  scoped_refptr<DiskCacheBackendFactory> disk_cache_backend_factory(factory);
+  ResRequestInfoCacheLoadedCB info_cache_cb = base::BindRepeating(
+    [](const LinkedHashMap& load_info_list,
+      const LinkedHashMap& preconnect_limit_info_list,
+      const net::NetworkAnonymizationKey& networkAnonymizationKey,
+      const std::string& page_seq_num){
+        LOG(INFO) << "Cache loaded for page: " << page_seq_num;
+  });
+
+  ResReqInfoCacheMgr cache("www.test.com",networkAnonymizationKey,disk_cache_backend_factory,info_cache_cb);
+  cache.is_start_ = true;
+
+  GURL request_url("https://example.com/path");
+  std::shared_ptr<PRRequestInfo> request_info = std::make_shared<PRRequestInfo>(request_url, false);
+  net::HttpRequestHeaders headers;
+  headers.SetHeader("Cookie", "session=abc");
+  request_info->set_extra_request_headers(headers);
+
+  bool has_cookie = cache.IsRequestWithCookie(request_info);
+  EXPECT_EQ(has_cookie, true);
+}
+
+TEST_F(ResRequestInfoCacheMgrTest, ResRequestInfoCacheMgrTest_010)
+{
+  net::NetworkAnonymizationKey networkAnonymizationKey = new net::NetworkAnonymizationKey();
+  scoped_refptr<DiskCacheBackendFactory> factory = nullptr;
+  ResRequestInfoCacheLoadedCB info_cache_cb = base::BindRepeating(
+    [](const LinkedHashMap& load_info_list,
+      const LinkedHashMap& preconnect_limit_info_list,
+      const net::NetworkAnonymizationKey& networkAnonymizationKey,
+      const std::string& page_seq_num){
+        LOG(INFO) << "Cache loaded for page: " << page_seq_num;
+  });
+
+  ResReqInfoCacheMgr cache("www.test.com",networkAnonymizationKey,factory,info_cache_cb);
+  cache.disk_cache_ = nullptr;
+  cache.is_start_ = true;
+
+  cache.SetPageOrigin("https://example.com");
+  EXPECT_EQ(cache.page_origin_, "");
+}
+
+TEST_F(ResRequestInfoCacheMgrTest, ResRequestInfoCacheMgrTest_011)
+{
+  net::NetworkAnonymizationKey networkAnonymizationKey = new net::NetworkAnonymizationKey();
+  scoped_refptr<DiskCacheBackendFactory> factory = nullptr;
+  ResRequestInfoCacheLoadedCB info_cache_cb = base::BindRepeating(
+    [](const LinkedHashMap& load_info_list,
+      const LinkedHashMap& preconnect_limit_info_list,
+      const net::NetworkAnonymizationKey& networkAnonymizationKey,
+      const std::string& page_seq_num){
+        LOG(INFO) << "Cache loaded for page: " << page_seq_num;
+  });
+
+  ResReqInfoCacheMgr cache("www.test.com",networkAnonymizationKey,factory,info_cache_cb);
+  cache.disk_cache_ = nullptr;
+  cache.is_start_ = true;
+
+  cache.Stop();
+  EXPECT_EQ(cache.is_start_, true);
+}
+
+TEST_F(ResRequestInfoCacheMgrTest, ResRequestInfoCacheMgrTest_012)
+{
+  net::NetworkAnonymizationKey networkAnonymizationKey = new net::NetworkAnonymizationKey();
+  scoped_refptr<DiskCacheBackendFactory> factory = nullptr;
+  ResRequestInfoCacheLoadedCB info_cache_cb = base::BindRepeating(
+    [](const LinkedHashMap& load_info_list,
+      const LinkedHashMap& preconnect_limit_info_list,
+      const net::NetworkAnonymizationKey& networkAnonymizationKey,
+      const std::string& page_seq_num){
+        LOG(INFO) << "Cache loaded for page: " << page_seq_num;
+  });
+
+  ResReqInfoCacheMgr cache("www.test.com",networkAnonymizationKey,factory,info_cache_cb);
+  cache.disk_cache_ = nullptr;
+  cache.is_start_ = true;
+  EXPECT_EQ(cache.disk_cache_, nullptr);
+  EXPECT_EQ(cache.is_start_, true);
+  EXPECT_EQ(cache.new_preload_info_list_.size(), 0u);
+  EXPECT_EQ(cache.last_flush_len_, 0u);
+
+  cache.CheckFlush(false);
+  EXPECT_EQ(cache.new_preload_info_list_.size(), 0u);
+  EXPECT_EQ(cache.last_flush_len_, 0u);
+}
+
+TEST_F(ResRequestInfoCacheMgrTest, ResRequestInfoCacheMgrTest_013)
+{
+  net::NetworkAnonymizationKey networkAnonymizationKey = new net::NetworkAnonymizationKey();
+  DiskCacheBackendFactory* factory = new DiskCacheBackendFactory();
+  scoped_refptr<DiskCacheBackendFactory> disk_cache_backend_factory(factory);
+  ResRequestInfoCacheLoadedCB info_cache_cb = base::BindRepeating(
+    [](const LinkedHashMap& load_info_list,
+      const LinkedHashMap& preconnect_limit_info_list,
+      const net::NetworkAnonymizationKey& networkAnonymizationKey,
+      const std::string& page_seq_num){
+        LOG(INFO) << "Cache loaded for page: " << page_seq_num;
+  });
+
+  ResReqInfoCacheMgr cache("www.test.com",networkAnonymizationKey,disk_cache_backend_factory,info_cache_cb);
+  cache.is_start_ = true;
+
+  GURL request_url("https://example.com/path");
+  std::shared_ptr<PRRequestInfo> request_info = std::make_shared<PRRequestInfo>(request_url, false);
+  cache.load_preload_info_list_.insert({request_url.spec(), request_info});
+
+  cache.OnEntryLoadedCallback("test content");
+  EXPECT_NE(cache.load_preload_info_list_.size(), 0);
+}
+
+TEST_F(ResRequestInfoCacheMgrTest, ResRequestInfoCacheMgrTest_014)
+{
+  net::NetworkAnonymizationKey networkAnonymizationKey = new net::NetworkAnonymizationKey();
+  DiskCacheBackendFactory* factory = new DiskCacheBackendFactory();
+  scoped_refptr<DiskCacheBackendFactory> disk_cache_backend_factory(factory);
+  ResRequestInfoCacheLoadedCB info_cache_cb = base::BindRepeating(
+    [](const LinkedHashMap& load_info_list,
+      const LinkedHashMap& preconnect_limit_info_list,
+      const net::NetworkAnonymizationKey& networkAnonymizationKey,
+      const std::string& page_seq_num){
+        LOG(INFO) << "Cache loaded for page: " << page_seq_num;
+  });
+
+  ResReqInfoCacheMgr cache("www.test.com",networkAnonymizationKey,disk_cache_backend_factory,info_cache_cb);
+  cache.is_start_ = false;
+  EXPECT_EQ(cache.is_start_, false);
+  EXPECT_EQ(cache.load_preload_info_list_.size(), 0u);
+  EXPECT_EQ(cache.load_preconnect_limit_list_.size(), 0u);
+
+  cache.OnEntryLoadedCallback("test content");
+  EXPECT_EQ(cache.load_preload_info_list_.size(), 0u);
+  EXPECT_EQ(cache.load_preconnect_limit_list_.size(), 0u);
+}
+
+TEST_F(ResRequestInfoCacheMgrTest, ResRequestInfoCacheMgrTest_015)
+{
+  net::NetworkAnonymizationKey networkAnonymizationKey = new net::NetworkAnonymizationKey();
+  DiskCacheBackendFactory* factory = new DiskCacheBackendFactory();
+  scoped_refptr<DiskCacheBackendFactory> disk_cache_backend_factory(factory);
+  ResRequestInfoCacheLoadedCB info_cache_cb = base::BindRepeating(
+    [](const LinkedHashMap& load_info_list,
+      const LinkedHashMap& preconnect_limit_info_list,
+      const net::NetworkAnonymizationKey& networkAnonymizationKey,
+      const std::string& page_seq_num){
+        LOG(INFO) << "Cache loaded for page: " << page_seq_num;
+  });
+
+  ResReqInfoCacheMgr cache("www.test.com",networkAnonymizationKey,disk_cache_backend_factory,info_cache_cb);
+  cache.is_start_ = true;
+  cache.page_index_ = 5;
+
+  GURL request_url("https://example.com/path");
+  std::shared_ptr<PRRequestInfo> request_info = std::make_shared<PRRequestInfo>(request_url, false);
+  request_info->set_preload_seq_num("1, 2, 3, 4, ");
+  cache.load_preload_info_list_.insert({request_url.spec(), request_info});
+
+  std::shared_ptr<PRRequestInfo> new_info = std::make_shared<PRRequestInfo>(request_url, false);
+  cache.UpdatePreloadInfo(request_url.spec(), new_info);
+
+  EXPECT_NE(cache.new_preload_info_list_.size(), 0);
+  EXPECT_EQ(cache.load_preload_info_list_.size(), 0);
+}
+
 } // namespace ohos_prp_preload
 

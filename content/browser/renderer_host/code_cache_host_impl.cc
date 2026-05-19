@@ -387,9 +387,11 @@ void CodeCacheHostImpl::OnReceiveCachedCode(
 // initiated navigation to a data: URL). In these cases, the code should not be
 // cached since the serialized value of opaque origins should not be used as a
 // key.
-// Case 3: origin_lock if the scheme of origin_lock is
+// Case 3. a std::nullopt for PDF processes and origin-restricted sandboxed
+// iframes, to prevent them from accessing the cache of their hosting origins.
+// Case 4: origin_lock if the scheme of origin_lock is
 // Http/Https/chrome/chrome-untrusted.
-// Case 4. std::nullopt otherwise.
+// Case 5. std::nullopt otherwise.
 std::optional<GURL> CodeCacheHostImpl::GetSecondaryKeyForCodeCache(
     const GURL& resource_url,
     int render_process_id,
@@ -426,7 +428,15 @@ std::optional<GURL> CodeCacheHostImpl::GetSecondaryKeyForCodeCache(
     return std::nullopt;
   }
 
-  // Case 3: process_lock_url is used to enfore site-isolation in code caches.
+  // Case 3: PDF processes and origin-restricted sandboxed iframes should not
+  // have access to the code cache of their hosting origins. PDF processes are
+  // less trusted, and sandboxed iframes should be treated as having opaque
+  // origins.
+  if (process_lock.is_pdf() || process_lock.is_sandboxed()) {
+    return std::nullopt;
+  }
+
+  // Case 4: process_lock_url is used to enfore site-isolation in code caches.
   // Http/https/chrome schemes are safe to be used as a secondary key. Other
   // schemes could be enabled if they are known to be safe and if it is
   // required to cache code from those origins.

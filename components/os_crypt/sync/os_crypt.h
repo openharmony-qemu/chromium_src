@@ -62,6 +62,7 @@ class Encryptor {
 
   // Decrypts |ciphertext| into |plaintext|.  |ciphertext| must not be empty.
   bool Decrypt(std::string_view ciphertext, std::string* plaintext);
+  bool Encrypt(std::string_view plaintext, std::string* ciphertext);
 
  private:
   raw_ptr<const SymmetricKey, DanglingUntriaged> key_;
@@ -75,6 +76,10 @@ class Encryptor {
   std::optional<size_t> DecryptGCM(const std::string& input,
                                     base::span<uint8_t> output,
                                     std::string* tag);
+
+  std::optional<size_t> EncryptGCM(base::span<const uint8_t> input,
+                                   base::span<uint8_t> output,
+                                   std::string* tag);
 
   std::vector<uint8_t> iv_;
 };
@@ -347,6 +352,16 @@ class COMPONENT_EXPORT(OS_CRYPT) OSCryptImpl {
   // there is no cached v11 key, this method just returns false.
   bool DeriveV11Key();
 
+#if BUILDFLAG(ARKWEB_ENCRYPT)
+  // Returns a cached string of "peanuts". Is thread-safe.
+  crypto::SymmetricKey* GetPasswordV10();
+
+  // Caches and returns the password from the KeyStorage or null if there is no
+  // service. Is thread-safe. Set `probe` to true if caller wishes to get
+  // nullptr back rather than crashing due to no config being set.
+  crypto::SymmetricKey* GetPasswordV11(bool probe);
+#endif
+
 #if BUILDFLAG(ARKWEB_EXT_PASSWORD)
   crypto::SymmetricKey* GetPasswordV10ForMigrate();
 #endif
@@ -370,6 +385,16 @@ class COMPONENT_EXPORT(OS_CRYPT) OSCryptImpl {
   // The cached V1.1 derived key. If this is nullopt, no V1.1 key is available
   // yet, but `DeriveV11Key()` may be able to generate one.
   std::optional<std::array<uint8_t, kDerivedKeyBytes>> v11_key_;
+
+#if BUILDFLAG(ARKWEB_ENCRYPT)
+  // For password_v10, nullptr means uninitialised.
+  std::unique_ptr<crypto::SymmetricKey> password_v10_cache_;
+
+  // For password_v11, nullptr means no backend.
+  std::unique_ptr<crypto::SymmetricKey> password_v11_cache_;
+
+  bool is_password_v11_cached_ = false;
+#endif
 
   // Whether to try V1.1 key generation at all. When OSCrypt is used in the
   // network service, V1.1 key generation can't succeed (it is blocked by the

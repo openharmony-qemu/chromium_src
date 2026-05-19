@@ -209,6 +209,10 @@
 #include "arkweb/chromium_ext/services/network/prp_preload/include/page_res_parallel_preload_mgr.h"
 #endif // BUILDFLAG(ARKWEB_PRP_PRELOAD)
 
+#if BUILDFLAG(ARKWEB_ENCRYPT)
+#include "arkweb/chromium_ext/components/cookie_config/ohos_cookie_store_util.h"
+#endif
+
 namespace network {
 
 namespace {
@@ -3180,6 +3184,10 @@ NetworkContext::MakeSessionCleanupCookieStore() const {
       crypto_delegate = std::make_unique<CookieOSCryptAsyncDelegate>(
           std::move(params_->cookie_encryption_provider));
     } else {
+#if BUILDFLAG(ARKWEB_ENCRYPT)
+      crypto_delegate = cookie_config::GetCookieOHOSCryptoDelegate();
+#endif
+
 #if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_ARKWEB)
       // A cookie crypto delegate should not be created on Android to
       // match the behavior of cookie_config::GetCookieCryptoDelegate().

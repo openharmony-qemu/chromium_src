@@ -148,6 +148,29 @@ bool OSCryptImpl::EncryptString(const std::string& plaintext,
     return true;
   }
 
+#if BUILDFLAG(IS_ARKWEB_EXT) && BUILDFLAG(ARKWEB_ENCRYPT)
+  crypto::SymmetricKey* encryption_key = GetPasswordV11(/*probe=*/false);
+  std::string obfuscation_prefix = kObfuscationPrefixV11;
+  if (!encryption_key) {
+    encryption_key = GetPasswordV10();
+    obfuscation_prefix = kObfuscationPrefixV10;
+  }
+
+  std::string iv = crypto::ohos::get_iv(kIVSizeAESGCM);
+  crypto::Encryptor encryptor;
+  if (!encryptor.Init(encryption_key, crypto::Encryptor::GCM, iv)) {
+    return false;
+  }
+  if (!encryptor.Encrypt(plaintext, ciphertext)) {
+    return false;
+  }
+
+  ciphertext->insert(0, iv);
+  // Prefix the cipher text with version information.
+  ciphertext->insert(0, obfuscation_prefix);
+
+  return true;
+#else
   base::span<const uint8_t> key;
 
   if (DeriveV11Key()) {
@@ -162,6 +185,7 @@ bool OSCryptImpl::EncryptString(const std::string& plaintext,
       crypto::aes_cbc::Encrypt(key, kIv, base::as_byte_span(plaintext))));
 
   return true;
+#endif
 }
 
 bool OSCryptImpl::DecryptString(const std::string& ciphertext,
@@ -178,10 +202,16 @@ bool OSCryptImpl::DecryptString(const std::string& ciphertext,
   std::string obfuscation_prefix;
   os_crypt::EncryptionPrefixVersion encryption_version =
       os_crypt::EncryptionPrefixVersion::kNoVersion;
+#if BUILDFLAG(IS_ARKWEB_EXT) && BUILDFLAG(ARKWEB_ENCRYPT)
+  crypto::SymmetricKey* encryption_key = nullptr;
+#endif
 
   if (base::StartsWith(ciphertext, kObfuscationPrefixV10,
                        base::CompareCase::SENSITIVE)) {
     key = kV10Key;
+#if BUILDFLAG(IS_ARKWEB_EXT) && BUILDFLAG(ARKWEB_ENCRYPT)
+    encryption_key = GetPasswordV10();
+#endif
     obfuscation_prefix = kObfuscationPrefixV10;
     encryption_version = os_crypt::EncryptionPrefixVersion::kVersion10;
   } else if (base::StartsWith(ciphertext, kObfuscationPrefixV11,
@@ -191,6 +221,9 @@ bool OSCryptImpl::DecryptString(const std::string& ciphertext,
       return false;
     }
     key = *v11_key_;
+#if BUILDFLAG(IS_ARKWEB_EXT) && BUILDFLAG(ARKWEB_ENCRYPT)
+    encryption_key = GetPasswordV11(/*probe=*/false);
+#endif
     obfuscation_prefix = kObfuscationPrefixV11;
     encryption_version = os_crypt::EncryptionPrefixVersion::kVersion11;
   }
@@ -215,6 +248,20 @@ bool OSCryptImpl::DecryptString(const std::string& ciphertext,
       ciphertext.substr(obfuscation_prefix.length());
 #endif
 
+#if BUILDFLAG(IS_ARKWEB_EXT) && BUILDFLAG(ARKWEB_ENCRYPT)
+  bool result = false;
+  // Retry use before second encrypted key to decrypt password
+  crypto::SymmetricKey* encryption_key_ota = GetPasswordForOtaFail();
+  if (DecryptWithIvForInclude(raw_ciphertext, encryption_key,
+                              encryption_key_ota, plaintext, iv, result)) {
+    return result;
+  }
+  if (DecryptWithIv(raw_ciphertext, encryption_key, plaintext, iv)) {
+    VLOG(1) << "Decryption succeeded after retrying with an empty key";
+    base::UmaHistogramBoolean(kMetricDecryptedWithEmptyKey, true);
+    return true;
+  }
+#else
   std::optional<std::vector<uint8_t>> maybe_plain =
       crypto::aes_cbc::Decrypt(key, kIv, base::as_byte_span(raw_ciphertext));
 
@@ -234,6 +281,7 @@ bool OSCryptImpl::DecryptString(const std::string& ciphertext,
     plaintext->assign(base::as_string_view(*maybe_plain));
     return true;
   }
+#endif
 
   VLOG(1) << "Decryption failed";
   base::UmaHistogramBoolean(kMetricDecryptedWithEmptyKey, false);

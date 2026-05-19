@@ -47,7 +47,7 @@
 #include "media/filters/blocking_url_protocol.h"
 #include "media/media_buildflags.h"
 
-if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
 #include "arkweb/chromium_ext/media/base/media_report_info.h"
 #endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE 
 

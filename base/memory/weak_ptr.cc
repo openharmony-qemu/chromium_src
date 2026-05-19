@@ -102,12 +102,6 @@ void WeakReferenceOwner::Invalidate() {
   flag_ = MakeRefCounted<WeakReference::Flag>();
 }
 
-void WeakReferenceOwner::InvalidateAndDoom() {
-  DCHECK(flag_);
-  flag_->Invalidate();
-  flag_.reset();
-}
-
 void WeakReferenceOwner::BindToCurrentSequence() {
 #if DCHECK_IS_ON()
   flag_->BindToCurrentSequence();

@@ -19,6 +19,7 @@
 #include <string>
 #include "base/logging.h"
 #include "base/json/json_writer.h"
+#include "base/strings/string_util.h"
 #include "base/values.h"
 #include "url/gurl.h"
 #include "arkweb/chromium_ext/url/ohos/log_utils.h"
@@ -33,7 +34,12 @@ constexpr char kVideoExperienceReportEventType[] = "video_play_statistic";
 constexpr char kStartUsedTime[] = "start_used_time";
 constexpr char kTotalFreezeTime[] = "total_freeze_time";
 constexpr char kTotalPlayedTime[] = "total_played_time";
+constexpr char kRealPlayedTime[] = "real_played_time";
 constexpr char kVideoFreezeCnt[] = "video_freeze_cnt";
+
+constexpr char kNetworkDownloadMbps[] = "network_downlink_mbps";
+constexpr char kNetworkType[] = "network_type";
+constexpr char kNetworkEffectiveTye[] = "network_effective_type"; 
 
 constexpr char kErrorCode[] = "error_code";
 constexpr char kErrorMsg[] = "error_msg";
@@ -49,6 +55,15 @@ constexpr char kVideoDuration[] = "video_duration";
 constexpr char kVideoWidth[] = "video_width";
 constexpr char kVideoHeight[] = "video_height";
 constexpr char kVideoPlayer[] = "video_player";
+
+constexpr char kVideoCodecs[] = "video_codecs";
+constexpr char kAudioCodecs[] = "audio_codecs";
+constexpr char kFileSize[] = "file_size";
+constexpr char kVideoByteSize[] = "video_byte_rate";
+ 
+std::string ConvertToString(const std::vector<std::string>& values) {
+  return base::JoinString(values, ",");
+}
 
 } // namespace
 
@@ -82,7 +97,12 @@ void OHOSVideoExperienceReporter::ReportVideoExperienceToBI(
   record.Set(kStartUsedTime, base::NumberToString(params->start_used_time));
   record.Set(kTotalFreezeTime, base::NumberToString(params->total_freeze_time));
   record.Set(kTotalPlayedTime, base::NumberToString(params->total_played_time));
+  record.Set(kRealPlayedTime, base::NumberToString(params->real_played_time));
   record.Set(kVideoFreezeCnt, base::NumberToString(params->video_freeze_cnt));
+
+  record.Set(kNetworkDownloadMbps, base::NumberToString(params->network_downlink_mbps));
+  record.Set(kNetworkType, base::NumberToString(params->network_type));
+  record.Set(kNetworkEffectiveTye, params->network_effective_type); 
 
   record.Set(kErrorCode, base::NumberToString(params->error_code));
   record.Set(kErrorMsg, params->error_msg);
@@ -99,6 +119,10 @@ void OHOSVideoExperienceReporter::ReportVideoExperienceToBI(
   record.Set(kVideoWidth, base::NumberToString(params->video_width));
   record.Set(kVideoHeight, base::NumberToString(params->video_height));
   record.Set(kVideoPlayer, params->video_player);
+  record.Set(kFileSize, base::NumberToString(params->file_size));
+  record.Set(kVideoByteSize, base::NumberToString(params->video_byte_rate));
+  record.Set(kVideoCodecs, ConvertToString(params->video_codecs));
+  record.Set(kAudioCodecs, ConvertToString(params->audio_codecs));  
 
   auto json = base::WriteJson(record);
   if (json) {

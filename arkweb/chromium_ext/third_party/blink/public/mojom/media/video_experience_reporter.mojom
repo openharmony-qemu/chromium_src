@@ -21,7 +21,11 @@ struct VideoExpParams {
   int64 start_used_time;
   int64 total_freeze_time;
   int64 total_played_time;
+  int64 real_played_time;
   int32 video_freeze_cnt;
+  int32 network_type;
+  string network_effective_type;
+  double network_downlink_mbps;   
   int32 error_code;
   string error_msg;
   string page_url;
@@ -33,6 +37,10 @@ struct VideoExpParams {
   int32 video_width;
   int32 video_height;
   string video_player;
+  int32 video_byte_rate;
+  int64 file_size;
+  array<string> video_codecs;
+  array<string> audio_codecs;   
 };
 
 interface VideoExperienceReporter {

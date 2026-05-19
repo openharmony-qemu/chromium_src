@@ -47,6 +47,10 @@
 #include "media/filters/blocking_url_protocol.h"
 #include "media/media_buildflags.h"
 
+if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+#include "arkweb/chromium_ext/media/base/media_report_info.h"
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE 
+
 // FFmpeg forward declarations.
 struct AVFormatContext;
 struct AVRational;
@@ -211,6 +215,9 @@ class MEDIA_EXPORT FFmpegDemuxer : public Demuxer {
                 DataSource* data_source,
                 const EncryptedMediaInitDataCB& encrypted_media_init_data_cb,
                 MediaTracksUpdatedCB media_tracks_updated_cb,
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+                scoped_refptr<MediaReportInfo> media_info,
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE                 
                 MediaLog* media_log,
                 bool is_local_file);
 
@@ -382,6 +389,10 @@ class MEDIA_EXPORT FFmpegDemuxer : public Demuxer {
   // Provides asynchronous IO to this demuxer. Consumed by |url_protocol_| to
   // integrate with libavformat.
   raw_ptr<DataSource> data_source_;
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+  scoped_refptr<MediaReportInfo> media_info_;
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE 
 
   raw_ptr<MediaLog> media_log_;
 

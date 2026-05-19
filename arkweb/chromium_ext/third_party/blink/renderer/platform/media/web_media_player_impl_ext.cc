@@ -433,6 +433,10 @@ void WebMediaPlayerImpl::PipEnable(bool enable) {
     }
   }
 }
+
+bool WebMediaPlayerImplExt::IsMediaStream() {
+  return false;
+}
 #endif
 
 #if BUILDFLAG(ARKWEB_MEDIA_DMABUF)

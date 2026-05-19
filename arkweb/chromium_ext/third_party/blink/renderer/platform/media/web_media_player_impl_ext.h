@@ -196,7 +196,9 @@ public:
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)
   bool IsFrameHidden() override;
 #endif
-
+#if BUILDFLAG(ARKWEB_PIP)
+  bool IsMediaStream() override;
+#endif
 #if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
   void RecycleDmaBuffer() override;
   void ResumeDmaBuffer() override;

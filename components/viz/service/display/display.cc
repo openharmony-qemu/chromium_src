@@ -1331,7 +1331,7 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
 
     renderer_->SwapBuffers(std::move(swap_frame_data));
 #if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
-    if (IsEvictUnlockFrameEnabled()) {
+    if (IsEvictUnlockFrameEnabled() && client_) {
       client_->DisplayDidRealSwapBuffer();
     }
 #endif

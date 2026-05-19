@@ -392,6 +392,7 @@ void CodecWrapperImpl::SetVideoSurface(int32_t widget_id, bool is_surface_pendin
       render_video_view_ = widget_id > 0;
     }
   } else {
+    base::AutoLock l(lock_);
     pending_surface_id_ = widget_id;
     is_surface_pending_ = true;
   }
@@ -399,6 +400,7 @@ void CodecWrapperImpl::SetVideoSurface(int32_t widget_id, bool is_surface_pendin
 
 void CodecWrapperImpl::SetPreciseSeekTarget(int64_t target_timestamp) {
   LOG(DEBUG) << "CodecWrapperImpl::SetPreciseSeekTarget(" << target_timestamp << ")";
+  base::AutoLock l(lock_);
   target_timestamp_ = target_timestamp;
 }
 

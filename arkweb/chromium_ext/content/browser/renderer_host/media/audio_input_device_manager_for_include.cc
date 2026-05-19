@@ -32,7 +32,7 @@ void AudioInputDeviceManager::BindSessionIdToNWebId(
   nWebId_[sessionId] = nWebId;
 }
 
-std::map<base::UnguessableToken, int>& AudioInputDeviceManager::GetNWebIdMap() {
+std::map<base::UnguessableToken, int> AudioInputDeviceManager::GetNWebIdMap() {
   std::lock_guard<std::mutex> lock(NWebIdMutex_);
   return nWebId_;
 }

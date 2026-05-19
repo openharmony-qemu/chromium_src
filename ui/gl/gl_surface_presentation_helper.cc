@@ -97,7 +97,7 @@ bool GLSurfacePresentationHelper::GetFrameTimestampInfoIfAvailable(
     int64_t start = 0;
     int64_t end = 0;
     frame.timer->GetStartEndTimestamps(&start, &end);
-#if DCHECK_IS_ON() && BUILDFLAG(ARKWEB_PER_DFX)
+#if BUILDFLAG(ARKWEB_PER_DFX)
     *timestamp = base::TimeTicks::Now();
 #else
     *timestamp = base::TimeTicks() + base::Microseconds(start);

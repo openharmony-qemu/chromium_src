@@ -464,10 +464,16 @@ ChunkDemuxer::ChunkDemuxer(
     base::OnceClosure open_cb,
     base::RepeatingClosure progress_cb,
     EncryptedMediaInitDataCB encrypted_media_init_data_cb,
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+    scoped_refptr<MediaReportInfo> media_info,
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE     
     MediaLog* media_log)
     : open_cb_(std::move(open_cb)),
       progress_cb_(std::move(progress_cb)),
       encrypted_media_init_data_cb_(std::move(encrypted_media_init_data_cb)),
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+      media_info_(media_info),
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE       
       media_log_(media_log) {
   DCHECK(open_cb_);
   DCHECK(encrypted_media_init_data_cb_);
@@ -724,6 +730,16 @@ ChunkDemuxer::Status ChunkDemuxer::AddId(const std::string& id,
   // TODO(wolenetz): Change to DCHECK once less verification in release build is
   // needed. See https://crbug.com/786975.
   CHECK(init_cb_);
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+  if (media_info_) {
+    if (content_type.rfind("video", 0) == 0) {
+        media_info_->video_codecs_.push_back(codecs);
+    } else if (content_type.rfind("audio", 0) == 0) {
+        media_info_->audio_codecs_.push_back(codecs);
+    }
+  }
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE   
 
   std::unique_ptr<media::StreamParser> stream_parser(
       CreateParserForTypeAndCodecs(content_type, codecs, media_log_));

@@ -569,6 +569,9 @@ void PipelineIntegrationTestBase::CreateDemuxer(
       base::BindRepeating(
           &PipelineIntegrationTestBase::DemuxerMediaTracksUpdatedCB,
           base::Unretained(this)),
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+      base::MakeRefCounted<MediaReportInfo>(),
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE           
       &media_log_, true));
 #endif
 }

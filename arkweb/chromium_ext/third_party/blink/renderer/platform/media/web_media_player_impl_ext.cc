@@ -391,6 +391,46 @@ WebString WebMediaPlayerImplExt::GetMimeType() const {
   return WebString();
 }
 
+int32_t WebMediaPlayerImplExt::GetByteRate() const {
+  if (demuxer_manager_) {
+    return demuxer_manager_->GetByteRate();
+  }
+  return 0;
+}
+ 
+int64_t WebMediaPlayerImplExt::GetFileSize() const {
+  if (demuxer_manager_) {
+    return demuxer_manager_->GetFileSize();
+  }
+  return 0LL;
+}
+ 
+std::vector<WebString> WebMediaPlayerImplExt::GetVideoCodecs() const {
+  std::vector<blink::WebString> codecs;
+  if (!demuxer_manager_) {
+    return codecs;
+  }
+  const auto& video_codecs = demuxer_manager_->GetVideoCodecs();
+  codecs.reserve(video_codecs.size());
+  for (const auto& codec : video_codecs) {
+    codecs.push_back(blink::WebString::FromASCII(codec));
+  }
+  return codecs;
+}
+ 
+std::vector<WebString> WebMediaPlayerImplExt::GetAudioCodecs() const {
+  std::vector<blink::WebString> codecs;
+  if (!demuxer_manager_) {
+    return codecs;
+  }
+  const auto& audio_codecs = demuxer_manager_->GetAudioCodecs();
+  codecs.reserve(audio_codecs.size());
+  for (const auto& codec : audio_codecs) {
+    codecs.push_back(blink::WebString::FromASCII(codec));
+  }
+  return codecs;
+}
+
 bool WebMediaPlayerImplExt::UsingMediaPlayer() const {
   return using_media_player_renderer_;
 }

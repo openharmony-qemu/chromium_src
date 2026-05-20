@@ -228,6 +228,10 @@ public:
   void OnWebURLError(int reason);
   int GetWebURLErrorReason() const override;
   WebString GetMimeType() const override;
+  int32_t GetByteRate() const override;
+  int64_t GetFileSize() const override;
+  std::vector<WebString> GetVideoCodecs() const override;
+  std::vector<WebString> GetAudioCodecs() const override;   
   bool UsingMediaPlayer() const override;
   void OnHiddenVideoReport(bool storing_in_bfcache) override;
 #endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE

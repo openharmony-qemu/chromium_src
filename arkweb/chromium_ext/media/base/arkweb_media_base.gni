@@ -4,3 +4,8 @@ arkweb_media_base_custom_sources = [
   "//arkweb/chromium_ext/media/base/custom_media_url_params.h",
   "//arkweb/chromium_ext/media/base/renderer_ext.h"
 ]
+
+arkweb_media_base_capabilities_sources = [
+  "//arkweb/chromium_ext/media/base/media_report_info.cc",
+  "//arkweb/chromium_ext/media/base/media_report_info.h",
+]

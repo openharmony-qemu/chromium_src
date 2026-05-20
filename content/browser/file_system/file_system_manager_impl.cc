@@ -212,10 +212,10 @@ void FileSystemManagerImpl::Open(blink::mojom::FileSystemType file_system_type,
 
   GetUIThreadTaskRunner({})->PostTaskAndReplyWithResult(
       FROM_HERE,
-       base::BindOnce(	 
-           &ChildProcessSecurityPolicyImpl::CanAccessDataForOrigin,	 
-           base::Unretained(ChildProcessSecurityPolicyImpl::GetInstance()),	 
-           process_id_, receivers_.current_context().origin()),
+      base::BindOnce(
+          &ChildProcessSecurityPolicyImpl::CanAccessDataForOrigin,
+          base::Unretained(ChildProcessSecurityPolicyImpl::GetInstance()),
+          process_id_, receivers_.current_context().origin()),
       base::BindOnce(&FileSystemManagerImpl::ContinueOpen,
                      weak_factory_.GetWeakPtr(), file_system_type,
                      receivers_.GetBadMessageCallback(), std::move(callback),

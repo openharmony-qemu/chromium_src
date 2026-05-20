@@ -75,6 +75,10 @@ mojom("gl") {
     enabled_features += [ "enable_arc_media" ]
   }
 
+  if (arkweb_safebrowsing) {
+    enabled_features += [ "arkweb_safebrowsing" ]
+  }
+
   cpp_typemaps = [
     {
       types = [

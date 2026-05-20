@@ -30,6 +30,7 @@
 #include "components/viz/common/quads/shared_element_draw_quad.h"
 #include "components/viz/common/quads/solid_color_draw_quad.h"
 #include "components/viz/common/quads/texture_draw_quad.h"
+#include "components/viz/common/display/renderer_settings.h"
 #include "components/viz/common/surfaces/frame_sink_id.h"
 #include "components/viz/common/surfaces/subtree_capture_id.h"
 #include "components/viz/common/surfaces/surface_id.h"
@@ -314,6 +315,23 @@ class CompositorFrameSinkSupportTestBase : public testing::Test {
   bool SupportHasSurfaceAnimationManager(
       CompositorFrameSinkSupport* support) const {
     return !support->view_transition_token_to_animation_manager_.empty();
+  }
+
+  size_t GetPendingFramesSize(CompositorFrameSinkSupport* support) const {
+    return support->pending_frames_.size();
+  }
+
+  bool IsLastPendingFrameLocal(CompositorFrameSinkSupport* support) const {
+    return support->pending_frames_.back().local_frame;
+  }
+
+  uint64_t GetLastFrameIndex(CompositorFrameSinkSupport* support) const {
+    return support->last_frame_index_;
+  }
+
+  const CompositorFrameSinkSupport::FrameData& GetLastPendingFrame(
+      CompositorFrameSinkSupport* support) const {
+    return support->pending_frames_.back();
   }
 
  protected:
@@ -2438,10 +2456,107 @@ TEST_P(CompositorFrameSinkSupportTest,
   EXPECT_TRUE(region_properties->transform_to_root.IsIdentity());
 }
 
+// Tests that SubmitCompositorFrameLocally successfully adds a local frame to
+// pending_frames_ queue. Local frames are frames generated internally without
+// client submission. The frame should be marked as local_frame and added to
+// the pending frames list.
+TEST_P(CompositorFrameSinkSupportTest, SubmitCompositorFrameLocally_Success) {
+  LocalSurfaceId local_surface_id(1, kArbitraryToken);
+  SurfaceId surface_id(support_->frame_sink_id(), local_surface_id);
+
+  auto frame = CompositorFrameBuilder()
+                   .AddDefaultRenderPass()
+                   .SetIsHandlingInteraction(true)
+                   .Build();
+  support_->SubmitCompositorFrame(local_surface_id, std::move(frame));
+  ASSERT_EQ(surface_observer_->last_created_surface_id(), surface_id);
+
+  RendererSettings settings;
+  settings.auto_resize_output_surface = true;
+
+  auto local_frame = CompositorFrameBuilder()
+                         .AddDefaultRenderPass()
+                         .SetIsHandlingInteraction(true)
+                         .Build();
+
+EXPECT_EQ(GetPendingFramesSize(support_.get()), 1u);
+
+  support_->SubmitCompositorFrameLocally(surface_id, std::move(local_frame),
+                                         settings);
+
+  EXPECT_EQ(GetPendingFramesSize(support_.get()), 1u);
+  EXPECT_TRUE(IsLastPendingFrameLocal(support_.get()));
+}
+
+// Tests that SubmitCompositorFrameLocally increments the frame index counter.
+// Each local frame submission should advance last_frame_index_ by one to track
+// the sequence of submitted frames for ordering and acknowledgment purposes.
+TEST_P(CompositorFrameSinkSupportTest,
+       SubmitCompositorFrameLocally_IncrementsFrameIndex) {
+  LocalSurfaceId local_surface_id(1, kArbitraryToken);
+  SurfaceId surface_id(support_->frame_sink_id(), local_surface_id);
+
+  auto frame = CompositorFrameBuilder()
+                   .AddDefaultRenderPass()
+                   .SetIsHandlingInteraction(true)
+                   .Build();
+  support_->SubmitCompositorFrame(local_surface_id, std::move(frame));
+  ASSERT_EQ(surface_observer_->last_created_surface_id(), surface_id);
+
+uint64_t initial_frame_index = GetLastFrameIndex(support_.get());
+
+  RendererSettings settings;
+  settings.auto_resize_output_surface = true;
+
+  auto local_frame = CompositorFrameBuilder()
+                         .AddDefaultRenderPass()
+                         .SetIsHandlingInteraction(true)
+                         .Build();
+
+  support_->SubmitCompositorFrameLocally(surface_id, std::move(local_frame),
+                                         settings);
+
+  EXPECT_EQ(GetLastFrameIndex(support_.get()), initial_frame_index + 1);
+}
+
+// Tests that SubmitCompositorFrameLocally correctly populates local_frame data.
+// The pending frame entry should have local_frame flag set to true, distinguishing
+// it from frames submitted by the client. The pending_frames_ count should increase.
+TEST_P(CompositorFrameSinkSupportTest,
+       SubmitCompositorFrameLocally_AddsLocalFrameData) {
+  LocalSurfaceId local_surface_id(1, kArbitraryToken);
+  SurfaceId surface_id(support_->frame_sink_id(), local_surface_id);
+
+  auto frame = CompositorFrameBuilder()
+                   .AddDefaultRenderPass()
+                   .SetIsHandlingInteraction(true)
+                   .Build();
+  support_->SubmitCompositorFrame(local_surface_id, std::move(frame));
+  ASSERT_EQ(surface_observer_->last_created_surface_id(), surface_id);
+
+size_t initial_pending_frames_count = GetPendingFramesSize(support_.get());
+
+  RendererSettings settings;
+  settings.auto_resize_output_surface = true;
+
+  auto local_frame = CompositorFrameBuilder()
+                         .AddDefaultRenderPass()
+                         .SetIsHandlingInteraction(true)
+                         .Build();
+
+  support_->SubmitCompositorFrameLocally(surface_id, std::move(local_frame),
+                                         settings);
+
+  EXPECT_EQ(GetPendingFramesSize(support_.get()), initial_pending_frames_count);
+
+  const auto& frame_data = GetLastPendingFrame(support_.get());
+  EXPECT_TRUE(frame_data.local_frame);
+}
+
 INSTANTIATE_TEST_SUITE_P(,
-                         CompositorFrameSinkSupportTest,
-                         testing::Bool(),
-                         &PostTestCaseNameBool);
+                          CompositorFrameSinkSupportTest,
+                          testing::Bool(),
+                          &PostTestCaseNameBool);
 
 INSTANTIATE_TEST_SUITE_P(,
                          OnBeginFrameAcksCompositorFrameSinkSupportTest,

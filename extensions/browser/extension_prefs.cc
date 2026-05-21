@@ -2078,6 +2078,11 @@ void ExtensionPrefs::WriteDisableReasonsToPrefs(
     return;
   }
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  LOG_FEEDBACK(INFO) << "disable reasons is " << to_write.DebugString()
+                     << ",id is " << extension_id;
+#endif
+
   UpdateExtensionPref(extension_id, kPrefDisableReasons,
                       base::Value(std::move(to_write)));
 }
@@ -2357,6 +2362,18 @@ void ExtensionPrefs::PopulateExtensionInfoPrefs(
     base::Value::Dict ruleset_install_prefs,
     prefs::DictionaryValueUpdate* extension_dict,
     base::Value::List& removed_prefs) {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  base::Value::List to_write;
+  for (int value : disable_reasons) {
+    to_write.Append(value);
+  }
+
+  if (!to_write.empty()) {
+    LOG_FEEDBACK(INFO) << "disable reasons is " << to_write.DebugString()
+                       << ",id is " << extension->id();
+  }
+#endif
+
   extension_dict->Set(kPrefDisableReasons,
                       base::Value(IntegerSetToList(disable_reasons)));
   extension_dict->SetInteger(kPrefLocation,

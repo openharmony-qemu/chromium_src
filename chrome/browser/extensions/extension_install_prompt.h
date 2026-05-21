@@ -168,6 +168,9 @@ class ExtensionInstallPrompt {
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
     bool is_from_webstore() const { return is_from_webstore_; }
+    void set_is_from_webstore(bool is_from_webstore) {
+      is_from_webstore_ = is_from_webstore;
+    }
 #endif
 
     bool has_webstore_data() const { return has_webstore_data_; }

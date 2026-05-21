@@ -798,10 +798,6 @@ void HTMLMediaElement::ReportVideoExperienceToBI() {
   if (!video_experience_reporter_) {
     return;
   }
-  if (currentSrc().IsEmpty()) {
-    LOG(INFO) << "ReportVideoExperienceToBI src is null, not report";
-    return;
-  }
   auto params = html_media_element_utils_.ReportVideoExperienceToBI();
   if (!params) {
     return;

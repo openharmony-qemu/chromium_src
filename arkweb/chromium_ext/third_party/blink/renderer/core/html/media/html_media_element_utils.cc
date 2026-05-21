@@ -31,6 +31,8 @@
 
 namespace blink {
 
+constexpr base::TimeDelta kMinReportInterval = base::Milliseconds(500);
+
 HTMLMediaElementUtils::HTMLMediaElementUtils(HTMLMediaElement* element)
 {
     this->htmlMediaElement_ = element;
@@ -172,11 +174,17 @@ mojom::blink::VideoExpParamsPtr HTMLMediaElementUtils::ReportVideoExperienceToBI
     LOG(INFO) << "OhMedia, ReportVideoExperienceToBI: IsFeedPage, returning";
     return nullptr;
   }
+  if (last_report_time_.has_value() &&
+      base::TimeTicks::Now() - last_report_time_.value() < kMinReportInterval) {
+    LOG(INFO) << "OhMedia, ReportVideoExperienceToBI: rate limited, returning";
+    return nullptr;
+  }
   if (has_reported_experience_) {
     LOG(INFO) << "OhMedia, ReportVideoExperienceToBI: already reported, returning";
     return nullptr;
   }
   has_reported_experience_ = true;
+  last_report_time_ = base::TimeTicks::Now();
   int error_code = 0;
   String error_msg = g_empty_string;
   if (htmlMediaElement_->error_) {

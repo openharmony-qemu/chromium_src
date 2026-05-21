@@ -140,6 +140,7 @@ private:
 #if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
   int media_player_waiting_cnt_ = 0;
   bool has_reported_experience_{false};
+  std::optional<base::TimeTicks> last_report_time_;
   std::string GetMainUrl() const;
 #endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
  };

@@ -268,23 +268,9 @@ mojom::blink::VideoExpParamsPtr HTMLMediaElementUtils::ReportVideoExperienceToBI
   }
   has_reported_experience_ = true;
   last_report_time_ = base::TimeTicks::Now();
-  int error_code = 0;
-  String error_msg = g_empty_string;
-  if (htmlMediaElement_->error_) {
-    error_code = htmlMediaElement_->error_->code();
-    error_msg = htmlMediaElement_->error_->message();
-  }
-  freeze_time_recorder_.StopRecord();
-  played_time_recorder_.StopRecord();
-
-  int64_t start_used_time = freeze_time_recorder_.GetDuration().InMilliseconds();
-  int64_t total_freeze_time = start_used_time;
-  if (htmlMediaElement_->web_media_player_) {
-    total_freeze_time += htmlMediaElement_->web_media_player_->GetFreezeTime();
-  }
-  int64_t total_played_time = played_time_recorder_.GetDuration().InMilliseconds();
-
-  if (start_used_time == 0 && total_played_time == 0 && error_code == 0) {
+  VideoInfoReport video_info_report;
+  GetVideoRecordTime(video_info_report);
+   if (video_info_report.IsPlayedEmpty()) {
     LOG(INFO) << "OhMedia, ReportVideoExperienceToBI start_used_time and total_played_time is zero";
     return nullptr;
   }

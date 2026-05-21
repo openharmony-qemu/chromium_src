@@ -270,7 +270,7 @@ mojom::blink::VideoExpParamsPtr HTMLMediaElementUtils::ReportVideoExperienceToBI
   last_report_time_ = base::TimeTicks::Now();
   VideoInfoReport video_info_report;
   GetVideoRecordTime(video_info_report);
-   if (video_info_report.IsPlayedEmpty()) {
+  if (video_info_report.IsPlayedEmpty()) {
     LOG(INFO) << "OhMedia, ReportVideoExperienceToBI start_used_time and total_played_time is zero";
     return nullptr;
   }

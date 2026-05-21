@@ -1031,6 +1031,16 @@ void ParsePathFromArgForKey(const std::string& arg, const std::string& key,
   }
 }
 
+void ParseDataMigrateFromArgForKey(const std::string& arg, const std::string & key, bool* isSeparation) {
+  if (arg.find(key) != std::string::npos) {
+    size_t eq_pos = arg.find("=");
+    if (eq_pos != std::string::npos) {
+      std::string data_migrate = arg.substr(eq_pos + 1);
+      *isSeparation = (data_migrate == "true");
+    }
+  }
+}
+
 base::FilePath GetWebEngineDataDirectory(const base::FilePath& user_data_dir,
                                          const base::FilePath& cache_dir, 
                                          std::list<std::string>& web_engine_args) {
@@ -1127,15 +1137,13 @@ void InitialWebEngineArgs(
 
   base::FilePath app_sandbox_root_dir = base::FilePath();
   base::FilePath user_data_dir = base::FilePath();
-  bool isSeparation = true;
+  bool isSeparation = false;
   auto args_to_add = GetArgsToAdd(init_args);
 
   for (auto arg : args_to_add) {
     ParsePathFromArgForKey(arg, switches::kArkwebAppDataDir, &app_sandbox_root_dir);
     ParsePathFromArgForKey(arg, switches::kUserDataDir, &user_data_dir);
-    if (arg.find(switches::kDisableUserDataDirSeparation) != std::string::npos) {
-      isSeparation = false;
-    }
+    ParseDataMigrateFromArgForKey(arg, switches::kEnableUserDataDirSeparation, &isSeparation);
     web_engine_args.emplace_back(arg);
   }
   base::FilePath target_cache_dir = app_sandbox_root_dir.Append(kUserCacheDir);

@@ -28,6 +28,7 @@
 #include "third_party/blink/renderer/core/html/time_ranges.h"
 #include "base/strings/string_split.h"
 #include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
+#include "third_party/blink/renderer/platform/network/network_state_notifier.h"
 
 namespace blink {
 
@@ -132,6 +133,7 @@ void HTMLMediaElementUtils::ScheduleNamedEventUtils(const AtomicString& event_na
 #if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
     played_time_recorder_.StopRecord();
     freeze_time_recorder_.StopRecord();
+    real_played_recorder_.StopRecord();
 #endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
     } else if (event_name == event_type_names::kVolumechange) {
       OnVolumeChanged(htmlMediaElement_->volume());
@@ -145,11 +147,16 @@ void HTMLMediaElementUtils::ScheduleNamedEventUtils(const AtomicString& event_na
   } else if (event_name == event_type_names::kPlaying) {
     played_time_recorder_.StartRecord();
     freeze_time_recorder_.StopRecord();
+    real_played_recorder_.StartRecord();
   } else if (event_name == event_type_names::kPause) {
     played_time_recorder_.PauseRecord();
     freeze_time_recorder_.PauseRecord();
+    real_played_recorder_.PauseRecord();
   } else if (event_name == event_type_names::kWaiting) {
     media_player_waiting_cnt_++;
+    real_played_recorder_.PauseRecord();
+  } else if (event_name == event_type_names::kSeeking) {
+    real_played_recorder_.PauseRecord();
   }
 #endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 }
@@ -163,6 +170,82 @@ void HTMLMediaElementUtils::ResetMediaPlayerAndMediaSourceUtils() {
     played_time_recorder_.StartRecord();
     freeze_time_recorder_.StartRecord();
   }
+}
+
+void HTMLMediaElementUtils::GetVideoNetworkInfo(VideoInfoReport& video_report) {
+  video_report.network_type = static_cast<int32_t>(GetNetworkStateNotifier().ConnectionType());
+  std::string network_effective_type = GetNetworkStateNotifier().GetWebEffectiveConnectionType();
+  video_report.network_effective_type = String::FromUTF8(network_effective_type.c_str());
+  std::optional<double> downlink_mbps = GetNetworkStateNotifier().DownlinkThroughputMbps();
+  double downlink_mbps_value = downlink_mbps.has_value() ? downlink_mbps.value() : 0.0;
+  video_report.network_downlink_mbps = downlink_mbps_value;
+}
+ 
+void HTMLMediaElementUtils::GetVideoRecordTime(VideoInfoReport& video_report) {
+  int error_code = 0;
+  String error_msg = g_empty_string;
+  if (htmlMediaElement_->error_) {
+    error_code = htmlMediaElement_->error_->code();
+    error_msg = htmlMediaElement_->error_->message();
+  }
+ 
+  freeze_time_recorder_.StopRecord();
+  played_time_recorder_.StopRecord();
+  real_played_recorder_.StopRecord();
+ 
+  int64_t start_used_time = freeze_time_recorder_.GetDuration().InMilliseconds();
+  int64_t total_freeze_time = start_used_time;
+  if (htmlMediaElement_->web_media_player_) {
+    total_freeze_time += htmlMediaElement_->web_media_player_->GetFreezeTime();
+  }
+  int64_t total_played_time = played_time_recorder_.GetDuration().InMilliseconds();
+  int64_t real_played_time = real_played_recorder_.GetDuration().InMilliseconds();
+ 
+  video_report.start_used_time = start_used_time;
+  video_report.total_freeze_time = total_freeze_time;
+  video_report.total_played_time = total_played_time;
+  video_report.real_played_time = real_played_time;
+  video_report.video_freeze_cnt = media_player_waiting_cnt_;
+  video_report.error_code = error_code;
+  video_report.error_msg = error_msg ? error_msg : g_empty_string;
+}
+ 
+ 
+void HTMLMediaElementUtils::GetVideoElementInfo(VideoInfoReport& video_report) {
+  video_report.page_url = String::FromUTF8(GetMainUrl().c_str());
+  video_report.video_src = ((htmlMediaElement_->currentSrc().ProtocolIsInHTTPFamily() ||
+    htmlMediaElement_->HasMediaSource()) ? htmlMediaElement_->currentSrc() : KURL()).GetString();
+  if (!video_report.video_src) {
+    video_report.video_src = g_empty_string;
+  }
+  video_report.pipeline_status = g_empty_string;
+  video_report.mime_type = g_empty_string;
+  video_report.net_error_code = 0;
+  video_report.video_duration = static_cast<int64_t>(htmlMediaElement_->duration_ * 1000);
+  video_report.video_width = 0;
+  video_report.video_height = 0;
+  video_report.video_player = htmlMediaElement_->GetMediaPlayerType();
+ 
+  auto webMediaPlayer =  htmlMediaElement_->GetWebMediaPlayer();
+  if (webMediaPlayer) {
+    video_report.pipeline_status = String::FromUTF8(PipelineStatusToString(
+      webMediaPlayer->GetPipelineStatus()).c_str());
+    video_report.mime_type = static_cast<String>(webMediaPlayer->GetMimeType());
+    if (!video_report.mime_type) {
+      video_report.mime_type = g_empty_string;
+    }
+    video_report.net_error_code = webMediaPlayer->GetWebURLErrorReason();
+    video_report.video_width = webMediaPlayer->NaturalSize().width();
+    video_report.video_height = webMediaPlayer->NaturalSize().height();
+    video_report.video_byte_rate = webMediaPlayer->GetByteRate();
+    video_report.file_size = webMediaPlayer->GetFileSize();
+    video_report.video_codecs = webMediaPlayer->GetVideoCodecs();
+    video_report.audio_codecs = webMediaPlayer->GetAudioCodecs();
+  }
+  freeze_time_recorder_.Reset();
+  played_time_recorder_.Reset();
+  real_played_recorder_.Reset();
+  media_player_waiting_cnt_ = 0;
 }
 
 mojom::blink::VideoExpParamsPtr HTMLMediaElementUtils::ReportVideoExperienceToBI() {
@@ -205,43 +288,37 @@ mojom::blink::VideoExpParamsPtr HTMLMediaElementUtils::ReportVideoExperienceToBI
     LOG(INFO) << "OhMedia, ReportVideoExperienceToBI start_used_time and total_played_time is zero";
     return nullptr;
   }
-
+  GetVideoElementInfo(video_info_report);
+  GetVideoNetworkInfo(video_info_report);
+ 
   mojom::blink::VideoExpParamsPtr params = mojom::blink::VideoExpParams::New();
-  params->start_used_time = start_used_time;
-  params->total_freeze_time = total_freeze_time;
-  params->total_played_time = total_played_time;
-  params->video_freeze_cnt = media_player_waiting_cnt_;
-  params->error_code = error_code;
-  params->error_msg = error_msg ? error_msg : g_empty_string;
-  params->page_url = String::FromUTF8(GetMainUrl().c_str());
-  params->video_src = ((htmlMediaElement_->currentSrc().ProtocolIsInHTTPFamily() ||
-    htmlMediaElement_->HasMediaSource()) ? htmlMediaElement_->currentSrc() : KURL()).GetString();
-  if (!params->video_src) {
-    params->video_src = g_empty_string;
-  }
-  params->pipeline_status = g_empty_string;
-  params->mime_type = g_empty_string;
-  params->net_error_code = 0;
-  params->video_duration = static_cast<int64_t>(htmlMediaElement_->duration_ * 1000);
-  params->video_width = 0;
-  params->video_height = 0;
-  params->video_player = htmlMediaElement_->GetMediaPlayerType();
-
-  auto webMediaPlayer =  htmlMediaElement_->GetWebMediaPlayer();
-  if (webMediaPlayer) {
-    params->pipeline_status = String::FromUTF8(PipelineStatusToString(
-      webMediaPlayer->GetPipelineStatus()).c_str());
-    params->mime_type = static_cast<String>(webMediaPlayer->GetMimeType());
-    if (!params->mime_type) {
-      params->mime_type = g_empty_string;
-    }
-    params->net_error_code = webMediaPlayer->GetWebURLErrorReason();
-    params->video_width = webMediaPlayer->NaturalSize().width();
-    params->video_height = webMediaPlayer->NaturalSize().height();
-  }
-  freeze_time_recorder_.Reset();
-  played_time_recorder_.Reset();
-  media_player_waiting_cnt_ = 0;
+  params->start_used_time = video_info_report.start_used_time;
+  params->total_freeze_time = video_info_report.total_freeze_time;
+  params->total_played_time = video_info_report.total_played_time;
+  params->real_played_time = video_info_report.real_played_time; 
+  params->video_freeze_cnt = video_info_report.video_freeze_cnt;
+  params->network_type = video_info_report.network_type;
+  params->network_effective_type = video_info_report.network_effective_type;
+  params->network_downlink_mbps = video_info_report.network_downlink_mbps;
+  params->error_code = video_info_report.error_code;
+  params->error_msg = video_info_report.error_msg;
+  params->page_url = video_info_report.page_url;
+  params->video_src = video_info_report.video_src;
+  params->pipeline_status = video_info_report.pipeline_status;
+  params->mime_type = video_info_report.mime_type;
+  params->net_error_code = video_info_report.net_error_code;
+  params->video_duration = video_info_report.video_duration;
+  params->video_width = video_info_report.video_width;
+  params->video_height = video_info_report.video_height;
+  params->video_player = video_info_report.video_player;
+  params->video_byte_rate = video_info_report.video_byte_rate;
+  params->file_size = video_info_report.file_size;
+  params->video_codecs.reserve(
+      static_cast<wtf_size_t>(video_info_report.video_codecs.size()));
+  params->video_codecs.AppendRange(video_info_report.video_codecs.begin(), video_info_report.video_codecs.end());
+  params->audio_codecs.reserve(
+      static_cast<wtf_size_t>(video_info_report.audio_codecs.size()));
+  params->audio_codecs.AppendRange(video_info_report.audio_codecs.begin(), video_info_report.audio_codecs.end()); 
   return params;
 }
 

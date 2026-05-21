@@ -180,6 +180,137 @@ TEST_F(WebCacheUtilsTest, WebCacheUtilsTest_AddResourceToCache_006)
     WebCacheUtils::AddResourceToCache(url, origin, resource, response_headers, type);
     EXPECT_EQ(GetResourceFromCache(url), nullptr);
 }
+
+/**
+ * @tc.name: WebCacheUtilsTest_AddResourceToCache_007
+ * @tc.desc: Test AddResourceToCache with IMAGE type.
+ * @tc.type: FUNC
+ */
+TEST_F(WebCacheUtilsTest, WebCacheUtilsTest_AddResourceToCache_007)
+{
+    std::string url = "https://example.com/test.png";
+    std::string origin = "https://example.com";
+    std::vector<uint8_t> resource = {0x89, 0x50, 0x4E, 0x47};
+    base::flat_map<std::string, std::string> response_headers;
+    response_headers["Content-Type"] = "image/png";
+    uint64_t type = static_cast<uint64_t>(OfflineResourceType::IMAGE);
+
+    WebCacheUtils::AddResourceToCache(url, origin, resource, response_headers, type);
+    EXPECT_EQ(GetResourceFromCache(url), nullptr);
+}
+
+/**
+ * @tc.name: WebCacheUtilsTest_AddResourceToCache_008
+ * @tc.desc: Test AddResourceToCache with MODULE_JS and unsupported MIME type.
+ * @tc.type: FUNC
+ */
+TEST_F(WebCacheUtilsTest, WebCacheUtilsTest_AddResourceToCache_008)
+{
+    std::string url = "https://example.com/test.mjs";
+    std::string origin = "https://example.com";
+    std::vector<uint8_t> resource = {0x65, 0x78, 0x70, 0x6F, 0x72, 0x74};
+    base::flat_map<std::string, std::string> response_headers;
+    response_headers["Content-Type"] = "text/plain";
+    uint64_t type = static_cast<uint64_t>(OfflineResourceType::MODULE_JS);
+
+    WebCacheUtils::AddResourceToCache(url, origin, resource, response_headers, type);
+    EXPECT_EQ(GetResourceFromCache(url), nullptr);
+}
+
+/**
+ * @tc.name: WebCacheUtilsTest_AddResourceToCache_009
+ * @tc.desc: Test AddResourceToCache with Cache-Control no-cache.
+ * @tc.type: FUNC
+ */
+TEST_F(WebCacheUtilsTest, WebCacheUtilsTest_AddResourceToCache_009)
+{
+    std::string url = "https://example.com/nocache.js";
+    std::string origin = "https://example.com";
+    std::vector<uint8_t> resource = {0x6E, 0x6F, 0x63, 0x61, 0x63, 0x68, 0x65};
+    base::flat_map<std::string, std::string> response_headers;
+    response_headers["Content-Type"] = "application/javascript";
+    response_headers["Cache-Control"] = "no-cache";
+    uint64_t type = static_cast<uint64_t>(OfflineResourceType::CLASSIC_JS);
+
+    WebCacheUtils::AddResourceToCache(url, origin, resource, response_headers, type);
+    EXPECT_EQ(GetResourceFromCache(url), nullptr);
+}
+
+/**
+ * @tc.name: WebCacheUtilsTest_AddResourceToCache_010
+ * @tc.desc: Test AddResourceToCache with Cache-Control no-store.
+ * @tc.type: FUNC
+ */
+TEST_F(WebCacheUtilsTest, WebCacheUtilsTest_AddResourceToCache_010)
+{
+    std::string url = "https://example.com/nostore.js";
+    std::string origin = "https://example.com";
+    std::vector<uint8_t> resource = {0x6E, 0x6F, 0x73, 0x74, 0x6F, 0x72, 0x65};
+    base::flat_map<std::string, std::string> response_headers;
+    response_headers["Content-Type"] = "application/javascript";
+    response_headers["Cache-Control"] = "no-store";
+    uint64_t type = static_cast<uint64_t>(OfflineResourceType::CLASSIC_JS);
+
+    WebCacheUtils::AddResourceToCache(url, origin, resource, response_headers, type);
+    EXPECT_EQ(GetResourceFromCache(url), nullptr);
+}
+
+/**
+ * @tc.name: WebCacheUtilsTest_AddResourceToCache_011
+ * @tc.desc: Test AddResourceToCache with Expires header.
+ * @tc.type: FUNC
+ */
+TEST_F(WebCacheUtilsTest, WebCacheUtilsTest_AddResourceToCache_011)
+{
+    std::string url = "https://example.com/expires.js";
+    std::string origin = "https://example.com";
+    std::vector<uint8_t> resource = {0x65, 0x78, 0x70, 0x69, 0x72, 0x65, 0x73};
+    base::flat_map<std::string, std::string> response_headers;
+    response_headers["Content-Type"] = "application/javascript";
+    response_headers["Expires"] = "Wed, 21 Oct 2026 07:28:00 GMT";
+    uint64_t type = static_cast<uint64_t>(OfflineResourceType::CLASSIC_JS);
+
+    WebCacheUtils::AddResourceToCache(url, origin, resource, response_headers, type);
+    EXPECT_EQ(GetResourceFromCache(url), nullptr);
+}
+
+/**
+ * @tc.name: WebCacheUtilsTest_AddResourceToCache_012
+ * @tc.desc: Test AddResourceToCache with Content-Type charset.
+ * @tc.type: FUNC
+ */
+TEST_F(WebCacheUtilsTest, WebCacheUtilsTest_AddResourceToCache_012)
+{
+    std::string url = "https://example.com/charset.js";
+    std::string origin = "https://example.com";
+    std::vector<uint8_t> resource = {0x63, 0x68, 0x61, 0x72, 0x73, 0x65, 0x74};
+    base::flat_map<std::string, std::string> response_headers;
+    response_headers["Content-Type"] = "application/javascript; charset=utf-8";
+    uint64_t type = static_cast<uint64_t>(OfflineResourceType::CLASSIC_JS);
+
+    WebCacheUtils::AddResourceToCache(url, origin, resource, response_headers, type);
+    EXPECT_EQ(GetResourceFromCache(url), nullptr);
+}
+
+/**
+ * @tc.name: WebCacheUtilsTest_AddResourceToCache_013
+ * @tc.desc: Test AddResourceToCache with both Cache-Control and Expires.
+ * @tc.type: FUNC
+ */
+TEST_F(WebCacheUtilsTest, WebCacheUtilsTest_AddResourceToCache_013)
+{
+    std::string url = "https://example.com/both.js";
+    std::string origin = "https://example.com";
+    std::vector<uint8_t> resource = {0x62, 0x6F, 0x74, 0x68};
+    base::flat_map<std::string, std::string> response_headers;
+    response_headers["Content-Type"] = "application/javascript";
+    response_headers["Cache-Control"] = "max-age=3600";
+    response_headers["Expires"] = "Wed, 21 Oct 2026 07:28:00 GMT";
+    uint64_t type = static_cast<uint64_t>(OfflineResourceType::CLASSIC_JS);
+
+    WebCacheUtils::AddResourceToCache(url, origin, resource, response_headers, type);
+    EXPECT_EQ(GetResourceFromCache(url), nullptr);
+}
 #endif
 
 }  // namespace blink

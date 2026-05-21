@@ -34,10 +34,6 @@ NWebAdsBlockManagerImpl::NWebAdsBlockManagerImpl() {
   delegate_ = std::make_shared<NWebAdsBlockManagerDelegate>();
 #endif
   WVLOG_I("NWebAdsBlockManagerImpl NWebAdsBlockManagerImpl");
-
-  std::shared_ptr<NWebEngineInitArgs> init_args =
-      std::make_shared<NWebDefaultEngineInitArgsImpl>();
-  (void)NWebImpl::InitializeICUStatic(init_args);
 }
 
 void NWebAdsBlockManagerImpl::SetAdsBlockRules(const std::string& rulesFile,

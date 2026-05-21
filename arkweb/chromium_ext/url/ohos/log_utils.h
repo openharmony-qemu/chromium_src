@@ -28,8 +28,8 @@ class COMPONENT_EXPORT(URL) LogUtils {
   static bool IsURLSlash(char ch) { return ch == '/' || ch == '\\'; }
 
   static bool IsSupportScheme(const std::string_view url,
-                              unsigned int urlLen,
-                              unsigned int& colonIndex);
+                              size_t urlLen,
+                              size_t& colonIndex);
   static void FixupUrlPart(const std::string_view text,
                            const url::Component& part,
                            std::string& converted);

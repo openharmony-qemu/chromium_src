@@ -2852,4 +2852,280 @@ TEST_F(NwebAutolayoutTest, FindBestMatchRule_RegaxBestMatch)
     EXPECT_EQ(url_rule_info_entry2->alphabetHeightWidthMinRatio, 3);
     EXPECT_EQ(url_rule_info_entry2->strategy, 3);
 }
+
+TEST_F(NwebAutolayoutTest, SetWebAutoLayoutConfig_Valid)
+{
+    const std::string& config = R"({
+        "common":"{
+            \"minScaleFactor\":30,
+            \"minMaskAreaRatioThreshold\":60,
+            \"opacityFilter\":[0,100],
+            \"minContentAreaRatioThreshold\":15,
+            \"scaleAnimationDuration\":200,
+            \"alphabetIdentificationMinSize\":12,
+            \"alphabetHeightWidthMinRatio\":10
+        }",
+        "whitelist":"{
+            \"//\":\"example\",
+            \"urlRuleInfos\":[
+                {
+                    \"urlPrefix\":\"https://www.example.com/path/CityList.html\",
+                    \"strategy\":2
+                },
+                {
+                    \"urlPrefix\":\"https://www.example.com/path/city.html\",
+                    \"strategy\":2
+                },
+                {
+                    \"urlPrefix\":\"https://www.example.com/path/hotel-list.html\",
+                    \"strategy\":1
+                }
+            ]
+        }"
+    })";
+
+    SetWebAutoLayoutConfig(config);
+
+    EXPECT_TRUE(mEnable_);
+    EXPECT_EQ(mCCMConfig_.min_mask_area_ratio_threshold, 60);
+    EXPECT_EQ(mCCMConfig_.min_content_area_ratio_threshold, 15);
+    EXPECT_EQ(mCCMConfig_.scale_animation_duration, 200);
+    EXPECT_EQ(mCCMConfig_.minScaleFactor, 30);
+    EXPECT_EQ(mCCMConfig_.opacity_filter.first, 0);
+    EXPECT_EQ(mCCMConfig_.opacity_filter.second, 100);
+}
+
+TEST_F(NwebAutolayoutTest, SetWebAutoLayoutConfig_InvalidRootNotDict)
+{
+    const std::string& config = "[]";
+
+    SetWebAutoLayoutConfig(config);
+
+    EXPECT_FALSE(mEnable_);
+}
+
+TEST_F(NwebAutolayoutTest, SetWebAutoLayoutConfig_MissingCommonKey)
+{
+    const std::string& config = R"({
+        "common":"{
+            \"minMaskAreaRatioThreshold\":60,
+            \"opacityFilter\":[0,100],
+            \"minContentAreaRatioThreshold\":15,
+            \"scaleAnimationDuration\":200,
+            \"alphabetIdentificationMinSize\":12,
+            \"alphabetHeightWidthMinRatio\":10
+        }",
+        "whitelist":"{
+            \"//\":\"example\",
+            \"urlRuleInfos\":[
+                {
+                    \"urlPrefix\":\"https://www.example.com/path/CityList.html\",
+                    \"strategy\":2
+                },
+                {
+                    \"urlPrefix\":\"https://www.example.com/path/city.html\",
+                    \"strategy\":2
+                },
+                {
+                    \"urlPrefix\":\"https://www.example.com/path/hotel-list.html\",
+                    \"strategy\":1
+                }
+            ]
+        }"
+    })";
+
+    SetWebAutoLayoutConfig(config);
+
+    EXPECT_FALSE(mEnable_);
+}
+
+TEST_F(NwebAutolayoutTest, SetWebAutoLayoutConfig_InvalidCommonNotString)
+{
+    const std::string& config = R"({
+        "common":{},
+        "whitelist":"{
+            \"//\":\"example\",
+            \"urlRuleInfos\":[
+                {
+                    \"urlPrefix\":\"https://www.example.com/path/CityList.html\",
+                    \"strategy\":2
+                },
+                {
+                    \"urlPrefix\":\"https://www.example.com/path/city.html\",
+                    \"strategy\":2
+                },
+                {
+                    \"urlPrefix\":\"https://www.example.com/path/hotel-list.html\",
+                    \"strategy\":1
+                }
+            ]
+        }"
+    })";
+
+    SetWebAutoLayoutConfig(config);
+
+    EXPECT_FALSE(mEnable_);
+}
+
+TEST_F(NwebAutolayoutTest, SetWebAutoLayoutConfig_InvalidCommonJson)
+{
+    const std::string& config = R"({
+        "common":"invalid json",
+        "whitelist":"{
+            \"//\":\"example\",
+            \"urlRuleInfos\":[
+                {
+                    \"urlPrefix\":\"https://www.example.com/path/CityList.html\",
+                    \"strategy\":2
+                },
+                {
+                    \"urlPrefix\":\"https://www.example.com/path/city.html\",
+                    \"strategy\":2
+                },
+                {
+                    \"urlPrefix\":\"https://www.example.com/path/hotel-list.html\",
+                    \"strategy\":1
+                }
+            ]
+        }"
+    })";
+
+    SetWebAutoLayoutConfig(config);
+
+    EXPECT_FALSE(mEnable_);
+}
+
+TEST_F(NwebAutolayoutTest, SetWebAutoLayoutConfig_InvalidToplevelConfig)
+{
+    const std::string& config = R"({
+        "common":"{
+            \"minScaleFactor\":10,
+            \"minMaskAreaRatioThreshold\":60,
+            \"opacityFilter\":[0,100],
+            \"minContentAreaRatioThreshold\":15,
+            \"scaleAnimationDuration\":200,
+            \"alphabetIdentificationMinSize\":12,
+            \"alphabetHeightWidthMinRatio\":10
+        }",
+        "whitelist":"{
+            \"//\":\"example\",
+            \"urlRuleInfos\":[
+                {
+                    \"urlPrefix\":\"https://www.example.com/path/CityList.html\",
+                    \"strategy\":2
+                },
+                {
+                    \"urlPrefix\":\"https://www.example.com/path/city.html\",
+                    \"strategy\":2
+                },
+                {
+                    \"urlPrefix\":\"https://www.example.com/path/hotel-list.html\",
+                    \"strategy\":1
+                }
+            ]
+        }"
+    })";
+
+    SetWebAutoLayoutConfig(config);
+
+    EXPECT_FALSE(mEnable_);
+}
+
+TEST_F(NwebAutolayoutTest, SetWebAutoLayoutConfig_MissingWhitelistKey)
+{
+    const std::string& config = R"({
+        "common":"{
+            \"minMaskAreaRatioThreshold\":60,
+            \"opacityFilter\":[0,100],
+            \"minContentAreaRatioThreshold\":15,
+            \"scaleAnimationDuration\":200,
+            \"alphabetIdentificationMinSize\":12,
+            \"alphabetHeightWidthMinRatio\":10
+        }"
+    })";
+
+    SetWebAutoLayoutConfig(config);
+
+    EXPECT_FALSE(mEnable_);
+}
+
+TEST_F(NwebAutolayoutTest, SetWebAutoLayoutConfig_InvalidWhitelistNotString)
+{
+    const std::string& config = R"({
+        "common":"{
+            \"minMaskAreaRatioThreshold\":60,
+            \"opacityFilter\":[0,100],
+            \"minContentAreaRatioThreshold\":15,
+            \"scaleAnimationDuration\":200,
+            \"alphabetIdentificationMinSize\":12,
+            \"alphabetHeightWidthMinRatio\":10
+        }",
+        "whitelist":{}
+    })";
+    SetWebAutoLayoutConfig(config);
+
+    EXPECT_FALSE(mEnable_);
+}
+
+TEST_F(NwebAutolayoutTest, SetWebAutoLayoutConfig_InvalidWhitelistJson)
+{
+    const std::string& config = R"({
+        "common":"{
+            \"minScaleFactor\":30,
+            \"minMaskAreaRatioThreshold\":60,
+            \"opacityFilter\":[0,100],
+            \"minContentAreaRatioThreshold\":15,
+            \"scaleAnimationDuration\":200,
+            \"alphabetIdentificationMinSize\":12,
+            \"alphabetHeightWidthMinRatio\":10
+        }",
+        "whitelist":"invalid json"
+    })";
+
+    SetWebAutoLayoutConfig(config);
+
+    EXPECT_FALSE(mEnable_);
+}
+
+TEST_F(NwebAutolayoutTest, SetWebAutoLayoutConfig_WithOptionalParams)
+{
+    const std::string& config = R"({
+        "common":"{
+            \"minScaleFactor\":30,
+            \"minMaskAreaRatioThreshold\":60,
+            \"opacityFilter\":[0,100],
+            \"minContentAreaRatioThreshold\":15,
+            \"scaleAnimationDuration\":200,
+            \"alphabetIdentificationMinSize\":12,
+            \"alphabetHeightWidthMinRatio\":10,
+            \"alphabetIdentificationMinSize\":12,
+            \"alphabetHeightWidthMinRatio\":10,
+            \"targetHeightRatio\": 70
+        }",
+        "whitelist":"{
+            \"//\":\"example\",
+            \"urlRuleInfos\":[
+                {
+                    \"urlPrefix\":\"https://www.example.com/path/CityList.html\",
+                    \"strategy\":2
+                },
+                {
+                    \"urlPrefix\":\"https://www.example.com/path/city.html\",
+                    \"strategy\":2
+                },
+                {
+                    \"urlPrefix\":\"https://www.example.com/path/hotel-list.html\",
+                    \"strategy\":1
+                }
+            ]
+        }"
+    })";
+
+    SetWebAutoLayoutConfig(config);
+
+    EXPECT_TRUE(mEnable_);
+    EXPECT_EQ(mCCMConfig_.alphabet_identification_min_size, 12);
+    EXPECT_EQ(mCCMConfig_.alphabet_height_width_min_ratio, 10);
+    EXPECT_EQ(mCCMConfig_.target_height_ratio, 70);
+}
 }

@@ -522,6 +522,11 @@ source_set("base") {
     import("//arkweb/chromium_ext/media/base/arkweb_media_base.gni") 
     sources += arkweb_media_base_custom_sources
   }
+
+  if (defined(arkweb_media_capabilities_enhance) && arkweb_media_capabilities_enhance) {
+    import("//arkweb/chromium_ext/media/base/arkweb_media_base.gni")
+    sources += arkweb_media_base_capabilities_sources
+  }
 }
 
 source_set("video_facing") {

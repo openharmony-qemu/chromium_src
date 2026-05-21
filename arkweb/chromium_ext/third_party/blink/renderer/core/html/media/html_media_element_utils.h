@@ -51,9 +51,46 @@ class HTMLMediaElement;
         base::TimeDelta accumulated_duration_;
         base::TimeDelta total_duration_;
     };
+   
+    struct VideoInfoReport {
+      int64_t start_used_time;
+      int64_t total_freeze_time;
+      int64_t total_played_time;
+      int64_t real_played_time;
+      int32_t video_freeze_cnt;
+ 
+      int32_t network_type;
+      String network_effective_type;
+      double network_downlink_mbps;
+ 
+      int32_t error_code;
+      String error_msg;
+      String page_url;
+      String video_src;
+      String pipeline_status;
+      String mime_type;
+      int32_t net_error_code;
+      int64_t video_duration;
+      int32_t video_width;
+      int32_t video_height;
+      String video_player;
+ 
+      int32_t video_byte_rate;
+      int64_t file_size;
+      std::vector<WebString> video_codecs;
+      std::vector<WebString> audio_codecs;
+      bool IsPlayedEmpty() {
+        return start_used_time == 0 && total_played_time == 0 && error_code == 0;
+      }
+    };
     Recorder played_time_recorder_;
     Recorder freeze_time_recorder_;
+    Recorder real_played_recorder_;
     mojom::blink::VideoExpParamsPtr ReportVideoExperienceToBI();
+
+    void GetVideoRecordTime(VideoInfoReport& video_report);
+    void GetVideoElementInfo(VideoInfoReport& video_report);
+    void GetVideoNetworkInfo(VideoInfoReport& video_report); 
 #endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
     void ScheduleNamedEventUtils(const AtomicString& event_name);

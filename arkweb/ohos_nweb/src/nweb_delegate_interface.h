@@ -986,6 +986,10 @@ class NWebDelegateInterface
       int32_t contentfulNodesCountThreshold) = 0;
 #endif
 
+#if BUILDFLAG(ARKWEB_AUTOLAYOUT)
+  virtual void SetWebAutoLayoutConfig(const std::string& config) = 0;
+#endif
+
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)
   virtual void SetErrorPageEnabled(bool enable) = 0;
   virtual bool GetErrorPageEnabled() = 0;

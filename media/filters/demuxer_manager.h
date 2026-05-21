@@ -32,6 +32,10 @@
 #include "url/gurl.h"
 #endif  // BUILDFLAG(ENABLE_HLS_DEMUXER)
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+#include "arkweb/chromium_ext/media/base/media_report_info.h"
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE 
+
 namespace media {
 
 enum class HlsFallbackImplementation {
@@ -185,6 +189,10 @@ class MEDIA_EXPORT DemuxerManager {
 
 #if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
   const std::string GetMimeType() const;
+  int32_t GetByteRate() const;
+  int64_t GetFileSize() const;
+  const std::vector<std::string> GetAudioCodecs() const;
+  const std::vector<std::string> GetVideoCodecs() const;   
 #endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
  private:
@@ -253,6 +261,10 @@ class MEDIA_EXPORT DemuxerManager {
   // immediately on memory pressure notification or during the next
   // SourceBuffer append (slower, but MSE spec compliant).
   bool enable_instant_source_buffer_gc_ = false;
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+  scoped_refptr<MediaReportInfo> media_info_;
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE 
 
   // Used for MediaUrlDemuxer when playing HLS content, as well as
   // FFmpegDemuxer in most cases. Also used for creating MemoryDataSource

@@ -223,7 +223,7 @@ void MediaStreamManagerExt::CloseAudioCapture(int32_t nweb_id) {
     return;
   }
   auto io_task_runner = GetIOThreadTaskRunner({});
-  auto& audio_nweb_id_map = audio_input_device_manager()->GetNWebIdMap();
+  auto audio_nweb_id_map = audio_input_device_manager()->GetNWebIdMap();
   for (auto& audio : audio_nweb_id_map) {
     if (audio.second == nweb_id) {
       blink::mojom::MediaStreamType type =

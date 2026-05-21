@@ -24,6 +24,7 @@ namespace OHOS::NWeb {
 std::unordered_map<std::string, MediaAVSessionAdapterImpl *> MediaAVSessionAdapterImpl::avSessionMap;
 CallbackSharedWrapper<MediaAVSessionCallbackAdapter> MediaAVSessionAdapterImpl::callback_wrapper_;
 std::unordered_map<OH_AVSession*, MediaAVSessionAdapterImpl *> MediaAVSessionAdapterImpl::avSessionMapOther_;
+std::recursive_mutex MediaAVSessionAdapterImpl::g_avsession_map_mutex_;
 CallbackSharedWrapper<MediaAVSessionAdapterImpl> MediaAVSessionAdapterImpl::avsession_callback_wrapper_;
 constexpr int64_t TIME_OUT = 0;
 constexpr int64_t URL_NUM = 2;
@@ -150,6 +151,7 @@ bool MediaAVSessionAdapterImpl::CreateAVSession(MediaAVSessionType type) {
         WVLOG_E("CreateAVSession, type invalid return false");
         return false;
     }
+    std::lock_guard<std::recursive_mutex> map_lock(g_avsession_map_mutex_);
     if (avSession_ && avSessionKey_ &&(type != avSessionKey_->GetType())) {
         DestroyAVSession();
     }
@@ -184,9 +186,12 @@ void MediaAVSessionAdapterImpl::DestroyAVSession() {
     {
         std::lock_guard<std::mutex> lock(avsession_mutex_);
         if (avSession_) {
-            auto it_avsession = avSessionMapOther_.find(avSession_);
-            if (it_avsession != avSessionMapOther_.end()) {
-                avSessionMapOther_.erase(it_avsession);
+            {
+                std::lock_guard<std::recursive_mutex> map_lock(g_avsession_map_mutex_);
+                auto it_avsession = avSessionMapOther_.find(avSession_);
+                if (it_avsession != avSessionMapOther_.end()) {
+                    avSessionMapOther_.erase(it_avsession);
+                }
             }
             AVSession_ErrCode ret = OH_AVSession_Destroy(avSession_);
             if (ret != AV_SESSION_ERR_SUCCESS) {
@@ -207,6 +212,7 @@ void MediaAVSessionAdapterImpl::DestroyAVSession() {
         }
     }
     if (avSessionKey_) {
+        std::lock_guard<std::recursive_mutex> map_lock(g_avsession_map_mutex_);
         auto iter = avSessionMap.find(avSessionKey_->ToString());
         if (iter != avSessionMap.end()) {
             if (iter->second && iter->second->is_avcast_) {
@@ -555,6 +561,8 @@ void MediaAVSessionAdapterImpl::DestroyAndEraseSession() {
         WVLOG_E("ohmedia: avSessionKey_ is null");
         return;
     }
+
+    std::lock_guard<std::recursive_mutex> map_lock(g_avsession_map_mutex_);
     auto iter = avSessionMap.find(avSessionKey_->ToString());
     if (iter == avSessionMap.end()) {
         WVLOG_E("DestroyAndEraseSession invalid iterator return");
@@ -629,10 +637,12 @@ bool MediaAVSessionAdapterImpl::CreateNewSession(const MediaAVSessionType& type)
         }
         SetAvCast(false);
     }
-
-    avSessionKey_->SetType(type);
-    avSessionMap.insert(std::pair<std::string, MediaAVSessionAdapterImpl *>((avSessionKey_->ToString()), this));
-    avSessionMapOther_.insert(std::pair<OH_AVSession*, MediaAVSessionAdapterImpl *>(avSession_, this));
+    {
+        std::lock_guard<std::recursive_mutex> map_lock(g_avsession_map_mutex_);
+        avSessionKey_->SetType(type);
+        avSessionMap.insert(std::pair<std::string, MediaAVSessionAdapterImpl *>((avSessionKey_->ToString()), this));
+        avSessionMapOther_.insert(std::pair<OH_AVSession*, MediaAVSessionAdapterImpl *>(avSession_, this));
+    }
     return true;
 }
 
@@ -768,12 +778,18 @@ AVSessionCallback_Result MediaAVSessionAdapterImpl::OutputDeviceChangeCallback(O
 void MediaAVSessionAdapterImpl::AVCastStateConnect(OH_AVSession *session,
     AVSession_OutputDeviceInfo *outputDeviceInfo) {
     WVLOG_I("MediaAVSessionAdapterImpl::AVCastStateConnect, enter");
+
+    std::lock_guard<std::recursive_mutex> map_lock(g_avsession_map_mutex_);
     auto it = avSessionMapOther_.find(session);
     if (it != avSessionMapOther_.end()) {
         WVLOG_I("MediaAVSessionAdapterImpl::AVCastStateConnect");
         MediaAVSessionAdapterImpl* adapter = it->second;
         if (!adapter) {
             WVLOG_E("AVCastStateConnect adapter is nullptr");
+            return;
+        }
+        if (!adapter->avSession_) {
+            WVLOG_W("AVCastStateConnect: adapter session already cleared");
             return;
         }
         adapter->UpdateAVCastDevice(outputDeviceInfo);
@@ -793,12 +809,18 @@ void MediaAVSessionAdapterImpl::AVCastStateConnect(OH_AVSession *session,
 
 void MediaAVSessionAdapterImpl::AVCastStateDisconnect(OH_AVSession *session) {
     WVLOG_I("MediaAVSessionAdapterImpl::AVCastStateDisconnect, enter");
+
+    std::lock_guard<std::recursive_mutex> map_lock(g_avsession_map_mutex_);
     auto it = avSessionMapOther_.find(session);
     if (it != avSessionMapOther_.end()) {
         WVLOG_I("MediaAVSessionAdapterImpl::AVCastStateDisconnect");
         MediaAVSessionAdapterImpl* adapter = it->second;
         if (!adapter) {
             WVLOG_E("AVCastStateDisconnect adapter is nullptr");
+            return;
+        }
+        if (!adapter->avSession_) {
+            WVLOG_W("AVCastStateConnect: adapter session already cleared");
             return;
         }
         adapter->MediaCastStopped();

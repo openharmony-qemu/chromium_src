@@ -82,6 +82,10 @@ component("os_crypt") {
     libs = [
       "huks_ndk.z"
     ]
+
+    if (arkweb_cookie) {
+      deps += [ "//chrome/common:non_code_constants" ]
+    }
   }
 
   if (is_linux && !is_castos) {

@@ -45,7 +45,7 @@ void ResRequestInfoUpdaterTest::TearDown(){
 }
 
 
-TEST_F(ResRequestInfoUpdaterTest,ResRequestInfoUpdaterTest_001)
+TEST_F(ResRequestInfoUpdaterTest, ResRequestInfoUpdaterTest_001)
 {
   net::NetworkAnonymizationKey networkAnonymizationKey = new net::NetworkAnonymizationKey();
   DiskCacheBackendFactory* factory = new DiskCacheBackendFactory();
@@ -71,7 +71,7 @@ TEST_F(ResRequestInfoUpdaterTest,ResRequestInfoUpdaterTest_001)
   updater.SetPageOrigin("test");
 }
 
-TEST_F(ResRequestInfoUpdaterTest,OnResRequestInfoCacheLoadedTest_001)
+TEST_F(ResRequestInfoUpdaterTest, OnResRequestInfoCacheLoadedTest_001)
 {
   net::NetworkAnonymizationKey networkAnonymizationKey = new net::NetworkAnonymizationKey();
   DiskCacheBackendFactory* factory = new DiskCacheBackendFactory();
@@ -84,7 +84,7 @@ TEST_F(ResRequestInfoUpdaterTest,OnResRequestInfoCacheLoadedTest_001)
   updater.OnResRequestInfoCacheLoaded(load_info_list,preconnect_limit_info_list,networkAnonymizationKey,"test");
 }
 
-TEST_F(ResRequestInfoUpdaterTest,OnResRequestInfoCacheLoadedTest_002)
+TEST_F(ResRequestInfoUpdaterTest, OnResRequestInfoCacheLoadedTest_002)
 {
   net::NetworkAnonymizationKey networkAnonymizationKey = new net::NetworkAnonymizationKey();
   DiskCacheBackendFactory* factory = new DiskCacheBackendFactory();
@@ -139,7 +139,7 @@ TEST_F(ResRequestInfoUpdaterTest,OnResRequestInfoCacheLoadedTest_002)
   updater.OnResRequestInfoCacheLoaded(load_info_list,preconnect_limit_info_list,networkAnonymizationKey,"test");
 }
 
-TEST_F(ResRequestInfoUpdaterTest,BuildPreloadTreeTest_001)
+TEST_F(ResRequestInfoUpdaterTest, BuildPreloadTreeTest_001)
 {
   net::NetworkAnonymizationKey networkAnonymizationKey = new net::NetworkAnonymizationKey();
   DiskCacheBackendFactory* factory = new DiskCacheBackendFactory();
@@ -170,7 +170,7 @@ TEST_F(ResRequestInfoUpdaterTest,BuildPreloadTreeTest_001)
   load_info_list.insert({request_info3->url().spec(),request_info3});
 }
 
-TEST_F(ResRequestInfoUpdaterTest,BuildPreconnectListTest_001)
+TEST_F(ResRequestInfoUpdaterTest, BuildPreconnectListTest_001)
 {
   net::NetworkAnonymizationKey networkAnonymizationKey = new net::NetworkAnonymizationKey();
   DiskCacheBackendFactory* factory = new DiskCacheBackendFactory();
@@ -199,7 +199,7 @@ TEST_F(ResRequestInfoUpdaterTest,BuildPreconnectListTest_001)
   updater.BuildPreconnectList(request_info, preconnect_limit_info_list, networkAnonymizationKey, "test");
 }
 
-TEST_F(ResRequestInfoUpdaterTest,BuildPreloadTreeTest_01)
+TEST_F(ResRequestInfoUpdaterTest, BuildPreloadTreeTest_01)
 {
   net::NetworkAnonymizationKey networkAnonymizationKey = new net::NetworkAnonymizationKey();
   DiskCacheBackendFactory* factory = new DiskCacheBackendFactory();
@@ -234,7 +234,7 @@ TEST_F(ResRequestInfoUpdaterTest,BuildPreloadTreeTest_01)
   updater.BuildPreloadTree(request_info,current,cur_first,cur_parent,end_time,"test");
 }
 
-TEST_F(ResRequestInfoUpdaterTest,BuildPreloadTreeTest_02)
+TEST_F(ResRequestInfoUpdaterTest, BuildPreloadTreeTest_02)
 {
   net::NetworkAnonymizationKey networkAnonymizationKey = new net::NetworkAnonymizationKey();
   DiskCacheBackendFactory* factory = new DiskCacheBackendFactory();
@@ -266,7 +266,7 @@ TEST_F(ResRequestInfoUpdaterTest,BuildPreloadTreeTest_02)
   updater.BuildPreloadTree(request_info,current,cur_first,cur_parent,end_time,"test");
 }
 
-TEST_F(ResRequestInfoUpdaterTest,UpdateResRequestInfoForDynamicHeaders_001)
+TEST_F(ResRequestInfoUpdaterTest, UpdateResRequestInfoForDynamicHeaders_001)
 {
   net::NetworkAnonymizationKey networkAnonymizationKey = new net::NetworkAnonymizationKey();
   DiskCacheBackendFactory* factory = new DiskCacheBackendFactory();
@@ -317,5 +317,134 @@ TEST_F(ResRequestInfoUpdaterTest,UpdateResRequestInfoForDynamicHeaders_001)
   updater.UpdateResRequestInfoForDynamicHeaders(parent,child_info);
 }
 
+TEST_F(ResRequestInfoUpdaterTest, ResRequestInfoUpdaterTest_002)
+{
+  net::NetworkAnonymizationKey networkAnonymizationKey = new net::NetworkAnonymizationKey();
+  scoped_refptr<DiskCacheBackendFactory> disk_cache_backend_factory = nullptr;
+  ResPreloadInfosCB preload_infos_cb = base::BindRepeating(
+    [](const PRPPPreconnectInfoList& preconnect_info_list,
+      const std::shared_ptr<PRPPReqInfoTreeNode>& preload_info_tree,
+      const std::set<std::string>& need_record_header_urls){
+      LOG(INFO) << "callback";
+  });
+  ResRequestInfoUpdater updater("www.test.com",networkAnonymizationKey,disk_cache_backend_factory,preload_infos_cb);
+  EXPECT_NE(updater.res_req_info_cache_mgr_, nullptr);
+  updater.Start();
+  GURL request_url("preflight+https://example.com/path/to/resource");
+  std::shared_ptr<PRRequestInfo> request_info = std::make_shared<PRRequestInfo>(request_url, false);
+  updater.UpdateResRequestInfo(request_info);
+  updater.Stop();
+  updater.SetPageOrigin("test");
+}
+
+TEST_F(ResRequestInfoUpdaterTest, OnResRequestInfoCacheLoadedTest_003)
+{
+  net::NetworkAnonymizationKey networkAnonymizationKey = new net::NetworkAnonymizationKey();
+  DiskCacheBackendFactory* factory = new DiskCacheBackendFactory();
+  scoped_refptr<DiskCacheBackendFactory> disk_cache_backend_factory(factory);
+  ResPreloadInfosCB preload_infos_cb = base::BindRepeating(
+    [](const PRPPPreconnectInfoList& preconnect_info_list,
+      const std::shared_ptr<PRPPReqInfoTreeNode>& preload_info_tree,
+      const std::set<std::string>& need_record_header_urls){
+      LOG(INFO) << "callback";
+  });
+  ResRequestInfoUpdater updater("www.test.com",networkAnonymizationKey,disk_cache_backend_factory,preload_infos_cb);
+  EXPECT_NE(updater.res_req_info_cache_mgr_, nullptr);
+
+  std::shared_ptr<PRPPReqInfoTreeNode> existing_tree = std::make_shared<PRPPReqInfoTreeNode>();
+  GURL origin_url("https://example.com");
+  std::shared_ptr<PRRequestInfo> origin_info = std::make_shared<PRRequestInfo>(origin_url, false);
+  origin_info->set_type(PRRequestInfoType::TYPE_PAGE_ORIGIN);
+  existing_tree->req_info_ = origin_info;
+  updater.preload_info_tree_ = existing_tree;
+
+  LinkedHashMap load_info_list;
+  std::shared_ptr<PRRequestInfo> second_origin = std::make_shared<PRRequestInfo>(origin_url, false);
+  second_origin->set_type(PRRequestInfoType::TYPE_PAGE_ORIGIN);
+  load_info_list.insert({origin_url.spec(), second_origin});
+
+  LinkedHashMap preconnect_limit_info_list;
+  updater.OnResRequestInfoCacheLoaded(load_info_list, preconnect_limit_info_list, networkAnonymizationKey, "1, ");
+}
+
+TEST_F(ResRequestInfoUpdaterTest, BuildPreconnectListTest_002)
+{
+  net::NetworkAnonymizationKey networkAnonymizationKey = new net::NetworkAnonymizationKey();
+  DiskCacheBackendFactory* factory = new DiskCacheBackendFactory();
+  scoped_refptr<DiskCacheBackendFactory> disk_cache_backend_factory(factory);
+  ResPreloadInfosCB preload_infos_cb = base::BindRepeating(
+    [](const PRPPPreconnectInfoList& preconnect_info_list,
+      const std::shared_ptr<PRPPReqInfoTreeNode>& preload_info_tree,
+      const std::set<std::string>& need_record_header_urls){
+      LOG(INFO) << "callback";
+  });
+  ResRequestInfoUpdater updater("www.test.com",networkAnonymizationKey,disk_cache_backend_factory,preload_infos_cb);
+  EXPECT_NE(updater.res_req_info_cache_mgr_, nullptr);
+
+  LinkedHashMap preconnect_limit_info_list;
+  GURL request_url("https://example.com");
+  std::shared_ptr<PRRequestInfo> request_info = std::make_shared<PRRequestInfo>(request_url, false);
+  request_info->set_method("POST");
+  request_info->set_cache_type(PRRequestCacheType::FORCE_CACHE);
+  GURL origin_url;
+  std::string key;
+  ResReqInfoCacheMgr::GetPreconnectOriginUrl(request_info, origin_url);
+  ResReqInfoCacheMgr::GetPreconnectLimitListKey(origin_url, request_info->allow_credentials(),key);
+  updater.preconnect_org_url_map_[key] = 1;
+  updater.BuildPreconnectList(request_info, preconnect_limit_info_list, networkAnonymizationKey, "test");
+}
+
+TEST_F(ResRequestInfoUpdaterTest, BuildPreconnectListTest_003)
+{
+  net::NetworkAnonymizationKey networkAnonymizationKey = new net::NetworkAnonymizationKey();
+  DiskCacheBackendFactory* factory = new DiskCacheBackendFactory();
+  scoped_refptr<DiskCacheBackendFactory> disk_cache_backend_factory(factory);
+  ResPreloadInfosCB preload_infos_cb = base::BindRepeating(
+    [](const PRPPPreconnectInfoList& preconnect_info_list,
+      const std::shared_ptr<PRPPReqInfoTreeNode>& preload_info_tree,
+      const std::set<std::string>& need_record_header_urls){
+      LOG(INFO) << "callback";
+  });
+  ResRequestInfoUpdater updater("www.test.com",networkAnonymizationKey,disk_cache_backend_factory,preload_infos_cb);
+  EXPECT_NE(updater.res_req_info_cache_mgr_, nullptr);
+
+  LinkedHashMap preconnect_limit_info_list;
+  GURL request_url("https://example.com");
+  std::shared_ptr<PRRequestInfo> request_info = std::make_shared<PRRequestInfo>(request_url, false);
+  request_info->set_method("GET");
+  request_info->set_cache_type(PRRequestCacheType::FORCE_CACHE);
+  GURL origin_url;
+  std::string key;
+  ResReqInfoCacheMgr::GetPreconnectOriginUrl(request_info, origin_url);
+  ResReqInfoCacheMgr::GetPreconnectLimitListKey(origin_url, request_info->allow_credentials(),key);
+  updater.BuildPreconnectList(request_info, preconnect_limit_info_list, networkAnonymizationKey, "test");
+}
+
+TEST_F(ResRequestInfoUpdaterTest, BuildPreconnectListTest_004)
+{
+  net::NetworkAnonymizationKey networkAnonymizationKey = new net::NetworkAnonymizationKey();
+  DiskCacheBackendFactory* factory = new DiskCacheBackendFactory();
+  scoped_refptr<DiskCacheBackendFactory> disk_cache_backend_factory(factory);
+  ResPreloadInfosCB preload_infos_cb = base::BindRepeating(
+    [](const PRPPPreconnectInfoList& preconnect_info_list,
+      const std::shared_ptr<PRPPReqInfoTreeNode>& preload_info_tree,
+      const std::set<std::string>& need_record_header_urls){
+      LOG(INFO) << "callback";
+  });
+  ResRequestInfoUpdater updater("www.test.com",networkAnonymizationKey,disk_cache_backend_factory,preload_infos_cb);
+  EXPECT_NE(updater.res_req_info_cache_mgr_, nullptr);
+
+  LinkedHashMap preconnect_limit_info_list;
+  GURL request_url("https://example.com");
+  std::shared_ptr<PRRequestInfo> request_info = std::make_shared<PRRequestInfo>(request_url, false);
+  request_info->set_method("GET");
+  request_info->set_cache_type(PRRequestCacheType::FORCE_CACHE);
+  request_info->set_freshness_life_times(0);
+  GURL origin_url;
+  std::string key;
+  ResReqInfoCacheMgr::GetPreconnectOriginUrl(request_info, origin_url);
+  ResReqInfoCacheMgr::GetPreconnectLimitListKey(origin_url, request_info->allow_credentials(),key);
+  updater.BuildPreconnectList(request_info, preconnect_limit_info_list, networkAnonymizationKey, "test");
+} 
 
 } // namespace ohos_prp_preload

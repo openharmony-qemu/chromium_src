@@ -117,11 +117,11 @@ void DirectRenderer::Initialize() {
   if (!features::IsUsingVulkan()) {
     return;
   }
-  int32_t getValue = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-                 .GetSystemPropertiesInstance()
-                 .GetIntParameter("web.gpu.incpresent",
-                                  static_cast<int32_t>(VulkanIncPresent::kDisable));
-  switch (getValue) {
+  incPresentValue_ = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                     .GetSystemPropertiesInstance()
+                     .GetIntParameter("web.gpu.incpresent",
+                                      static_cast<int32_t>(VulkanIncPresent::kDisable));
+  switch (incPresentValue_) {
     case static_cast<int32_t>(VulkanIncPresent::kDefault):
       break;
     case static_cast<int32_t>(VulkanIncPresent::kEnable):
@@ -781,7 +781,15 @@ void DirectRenderer::DrawRenderPass(const AggregatedRenderPass* render_pass) {
   const bool is_root_render_pass =
       current_frame()->current_render_pass == current_frame()->root_render_pass;
 
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW) || BUILDFLAG(ARKWEB_VULKAN_INC_PRESENT)
+  bool partialFlag = features::IsUsingVulkan() ?
+                     (use_partial_swap_ &&
+                      (incPresentValue_ == static_cast<int32_t>(VulkanIncPresent::kDisable))) :
+                     (use_partial_swap_ && !skip_partial_paint_);
+  if (partialFlag) {
+#else
   if (use_partial_swap_) {
+#endif
     render_pass_scissor_in_draw_space.Intersect(
         ComputeScissorRectForRenderPass(current_frame()->current_render_pass));
   }

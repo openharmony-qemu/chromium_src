@@ -460,11 +460,38 @@ void ContentSettingsPref::OnPrefChanged() {
   if (updating_preferences_)
     return;
 
+#if BUILDFLAG(ARKWEB_INCOGNITO_MODE)
+  // For OTR instances, defer the re-read to avoid O(n^2) overhead when the
+  // main profile performs batch updates (e.g. site_engagement cleanup with
+  // thousands of entries). Rapid-fire notifications are coalesced into a
+  // single deferred read, while still keeping OTR data eventually consistent.
+  if (off_the_record_) {
+    if (!otr_deferred_read_pending_) {
+      otr_deferred_read_pending_ = true;
+      base::SequencedTaskRunner::GetCurrentDefault()->PostTask(
+          FROM_HERE, base::BindOnce(&ContentSettingsPref::OnOTRDeferredRead,
+                                    weak_ptr_factory_.GetWeakPtr()));
+    }
+    return;
+  }
+#endif
+
   ReadContentSettingsFromPref();
 
   notify_callback_.Run(ContentSettingsPattern::Wildcard(),
                        ContentSettingsPattern::Wildcard(), content_type_);
 }
+
+#if BUILDFLAG(ARKWEB_INCOGNITO_MODE)
+void ContentSettingsPref::OnOTRDeferredRead() {
+  DCHECK(thread_checker_.CalledOnValidThread());
+  DCHECK(off_the_record_);
+  otr_deferred_read_pending_ = false;
+  ReadContentSettingsFromPref();
+  notify_callback_.Run(ContentSettingsPattern::Wildcard(),
+                       ContentSettingsPattern::Wildcard(), content_type_);
+}
+#endif
 
 void ContentSettingsPref::UpdatePref(
     const ContentSettingsPattern& primary_pattern,

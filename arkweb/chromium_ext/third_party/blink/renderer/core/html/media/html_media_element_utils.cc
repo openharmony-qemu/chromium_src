@@ -31,7 +31,7 @@
 
 namespace blink {
 
-constexpr base::TimeDelta kMinReportInterval = base::Milliseconds(500);
+constexpr base::TimeDelta kMinReportInterval = base::Milliseconds(200);
 
 HTMLMediaElementUtils::HTMLMediaElementUtils(HTMLMediaElement* element)
 {

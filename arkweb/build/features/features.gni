@@ -370,3 +370,8 @@ if (defined(arkweb_custom_viewport_width) && arkweb_custom_viewport_width) {
   arkweb_mojo_features += [ "arkweb_custom_viewport_width" ]
 }
 #endif // BUILDFLAG(ARKWEB_CUSTOM_VIEWPORT_WIDTH)
+
+#if BUILDFLAG(ARKWEB_CERT_AUTHENTICATION)
+if (defined(arkweb_cert_authentication) && arkweb_cert_authentication && !is_component_build) {
+  arkweb_mojo_features += [ "arkweb_cert_authentication" ]
+}  #endif  // BUILDFLAG(ARKWEB_CERT_AUTHENTICATION)

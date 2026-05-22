@@ -357,4 +357,15 @@ bool ArkWebNetworkContextExt::IsStrictLogMode() const {
 }
 #endif  // ARKWEB_LOGGER_REPORT
 
+#if BUILDFLAG(ARKWEB_CERT_AUTHENTICATION) && !defined(COMPONENT_BUILD)
+void ArkWebNetworkContextExt::ClearClientAuthCache() {
+  net::HttpNetworkSession* http_session =
+      url_request_context_->http_transaction_factory()->GetSession();
+  DCHECK(http_session);
+  if (http_session->ssl_client_context()) {
+    http_session->ssl_client_context()->OnClientCertStoreChanged();
+  }
+}
+#endif
+
 }  // namespace network

@@ -2448,6 +2448,23 @@ void NWebImpl::ClearClientAuthenticationCache() {
   nweb_delegate_->ClearClientAuthenticationCache();
 }
 
+#if BUILDFLAG(ARKWEB_CERT_AUTHENTICATION)
+// static
+void NWebImpl::ClearClientAuthenticationCache(bool incognito_mode) {
+  WVLOG_I("NWebImpl::ClearClientAuthenticationCache incognito_mode: %{public}d", incognito_mode);
+  CefRefPtr<CefRequestContext> context;
+  if (incognito_mode) {
+    context = CefRequestContext::GetGlobalOTRContext();
+  } else {
+    context = CefRequestContext::GetGlobalContext();
+  }
+ 
+  if (context != nullptr) {
+    context->ClearCurrentClientAuthenticationCache(nullptr);
+  }
+}
+#endif
+
 void NWebImpl::Reload() {
   if (nweb_delegate_ == nullptr) {
     return;

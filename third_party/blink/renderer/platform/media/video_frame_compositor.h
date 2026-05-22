@@ -165,6 +165,8 @@ class PLATFORM_EXPORT VideoFrameCompositor : public media::VideoRendererSink,
   // Notifies the |submitter_| that the frames must be submitted.
   void SetForceSubmit(bool force_submit);
 
+  void ResetDroppedFrameMetrics();
+
 #if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
   void SetStartTime(int64_t start_time);
   int64_t GetFreezeTime();

@@ -45,8 +45,16 @@ bool EvictionHandler::WillEvictSurface(const SurfaceId& surface_id) {
   // We should only evict when the display is not visible. If the display is
   // visible, then we likely received two evictions for the root surface at the
   // same time, which should not happen.
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  if (display_->visible()) {
+    LOG(WARNING) << "Expected display to be not visible - in_progress_: " << in_progress_;
+    MaybeFinishEvictionProcess();
+    return false;
+  }
+#else
   CHECK(!display_->visible())
       << "Expected display to be not visible - in_progress_: " << in_progress_;
+#endif
   DCHECK(display_->has_scheduler());
 
   // This matches CompositorFrameSinkSupport's eviction logic, which will
@@ -219,7 +227,15 @@ void EvictionHandler::SubmitPlaceholderContentForEviction(
   auto* surface =
       support_->frame_sink_manager()->surface_manager()->GetSurfaceForId(
           current_surface_id);
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  if (!surface) {
+    LOG(WARNING) << "Current surface is nullptr no need to evict frame.";
+    MaybeFinishEvictionProcess();
+    return;
+  }
+#else
   CHECK(surface);
+#endif
   metadata.device_scale_factor = surface->device_scale_factor();
   frame.metadata.begin_frame_ack = BeginFrameAck::CreateManualAckWithDamage();
 

@@ -341,8 +341,6 @@ bool DoCanonicalize(std::basic_string_view<CHAR> spec,
 #else
     if (!DoIsOpaqueNonSpecial(spec, scheme)) {
 #endif
-    // Non-special scheme URLs like data:, mailto: and javascript:.
-    if (!DoIsOpaqueNonSpecial(spec, scheme)) {
       success = CanonicalizeNonSpecialUrl(
           spec, ParseNonSpecialUrlInternal(spec, trim_path_end),
           charset_converter, *output, *output_parsed);

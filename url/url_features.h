@@ -29,6 +29,12 @@ COMPONENT_EXPORT(URL) bool IsUsingIDNAContextJRules();
 // When enabled, apply IDNA ContextJ rules in URL host parsing.
 COMPONENT_EXPORT(URL) BASE_DECLARE_FEATURE(kUseIDNAContextJRules);
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+// Returns true if kStandardCompliantNonSpecialSchemeURLParsing feature is
+// enabled. See url::kStandardCompliantNonSpecialSchemeURLParsing for details.
+COMPONENT_EXPORT(URL) bool IsUsingStandardCompliantNonSpecialSchemeURLParsing();
+#endif
+
 }  // namespace url
 
 #endif  // URL_URL_FEATURES_H_

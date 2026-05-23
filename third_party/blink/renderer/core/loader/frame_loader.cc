@@ -887,7 +887,12 @@ void FrameLoader::StartNavigation(FrameLoadRequest& request,
   //
   // See wpt/url/javascript-urls.window.js test for the standard compliant
   // behaviors.
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (url::IsUsingStandardCompliantNonSpecialSchemeURLParsing() &&
+      ProtocolIsJavaScript(url.GetString()) && !url.IsValid()) {
+#else
   if (ProtocolIsJavaScript(url.GetString()) && !url.IsValid()) {
+#endif
     return;
   }
 

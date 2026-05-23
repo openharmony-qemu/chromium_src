@@ -320,9 +320,27 @@ bool DoCanonicalize(std::basic_string_view<CHAR> spec,
     success = CanonicalizeStandardUrl(spec, ParseStandardUrl(spec), scheme_type,
                                       charset_converter, output, output_parsed);
 
-  } else {
+  }
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  else if (!url::IsUsingStandardCompliantNonSpecialSchemeURLParsing() &&
+           DoCompareSchemeComponent(spec, scheme, url::kMailToScheme)) {
+    // Mailto URLs are treated like standard URLs, with only a scheme, path,
+    // and query.
+    //
+    // TODO(crbug.com/40063064): Remove the special handling of 'mailto:" scheme
+    // URLs. "mailto:" is simply one of non-special URLs.
+    success = CanonicalizeMailtoUrl(spec, ParseMailtoUrl(spec), output,
+                                    output_parsed);
+  }
+#endif
+  else {
     // Non-special scheme URLs like data:, mailto: and javascript:.
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    if (url::IsUsingStandardCompliantNonSpecialSchemeURLParsing() &&
+        !DoIsOpaqueNonSpecial(spec, scheme)) {
+#else
     if (!DoIsOpaqueNonSpecial(spec, scheme)) {
+#endif
       success = CanonicalizeNonSpecialUrl(
           spec, ParseNonSpecialUrlInternal(spec, trim_path_end),
           charset_converter, *output, *output_parsed);
@@ -358,8 +376,22 @@ bool DoResolveRelative(std::string_view base_spec,
     base_is_hierarchical = num_slashes > 0;
   }
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  bool is_hierarchical_base;
+ 
+  if (url::IsUsingStandardCompliantNonSpecialSchemeURLParsing()) {
+    is_hierarchical_base =
+        base_parsed.scheme.is_nonempty() && !base_parsed.has_opaque_path;
+  } else {
+    SchemeType unused_scheme_type = SCHEME_WITH_HOST_PORT_AND_USER_INFORMATION;
+    is_hierarchical_base =
+        base_parsed.scheme.is_nonempty() &&
+        DoIsStandard(base_parsed.scheme.MaybeAsViewOn(base_spec), &unused_scheme_type);
+  }
+#else
   bool is_hierarchical_base =
       base_parsed.scheme.is_nonempty() && !base_parsed.has_opaque_path;
+#endif
 
   bool is_relative;
   Component relative_component;
@@ -499,7 +531,17 @@ bool DoReplaceComponents(std::string_view spec,
                               charset_converter, output, out_parsed);
   }
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (!IsUsingStandardCompliantNonSpecialSchemeURLParsing() &&
+      DoCompareSchemeComponent(spec, parsed.scheme, url::kMailToScheme)) {
+    return ReplaceMailtoUrl(spec, parsed, replacements, output, out_parsed);
+  }
+ 
+  if (IsUsingStandardCompliantNonSpecialSchemeURLParsing() &&
+      !DoIsOpaqueNonSpecial(spec, parsed.scheme)) {
+#else
   if (!DoIsOpaqueNonSpecial(spec, parsed.scheme)) {
+#endif
     return ReplaceNonSpecialUrl(spec, parsed, replacements, charset_converter,
                                 *output, *out_parsed);
   }

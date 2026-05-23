@@ -33,4 +33,18 @@ bool IsUsingIDNAContextJRules() {
   return base::FeatureList::IsEnabled(kUseIDNAContextJRules);
 }
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+BASE_FEATURE(kStandardCompliantNonSpecialSchemeURLParsing,
+             base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+bool IsUsingStandardCompliantNonSpecialSchemeURLParsing() {
+  if (!base::FeatureList::GetInstance()) {
+    return kStandardCompliantNonSpecialSchemeURLParsing.default_state ==
+           base::FEATURE_ENABLED_BY_DEFAULT;
+  }
+  return base::FeatureList::IsEnabled(
+      kStandardCompliantNonSpecialSchemeURLParsing);
+}
+#endif
+
 }  // namespace url

@@ -249,7 +249,17 @@ bool Origin::CanBeDerivedFrom(const GURL& url) const {
     return true;
 
   // However, when there is precursor present, that must match.
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (IsUsingStandardCompliantNonSpecialSchemeURLParsing()) {
+    return SchemeHostPort(url) == tuple_;
+  } else {
+    // Match only the scheme because host and port are unavailable for
+    // non-special URLs when the flag is disabled.
+    return url.scheme() == tuple_.scheme();
+  }
+#else
   return SchemeHostPort(url) == tuple_;
+#endif
 }
 
 bool Origin::DomainIs(std::string_view canonical_domain) const {

@@ -53,7 +53,12 @@ void CustomData::SetStoreType(int store_type, base::Value::Dict* manifest) {
 bool CustomData::CanBeUpdated(const Extension* extension) {
   return GetStoreType(extension) != kWebStoreTypeDefault;
 }
- 
+
+// static
+bool CustomData::IsFromHuaweiWebStore(const Extension* extension) {
+  return GetStoreType(extension) == kWebStoreTypeHuawei;
+}
+
 CustomHandler::CustomHandler() = default;
  
 CustomHandler::~CustomHandler() = default;

@@ -31,6 +31,8 @@ struct CustomData : public Extension::ManifestData {
   static void SetStoreType(int store_type, base::Value::Dict* manifest);
  
   static bool CanBeUpdated(const Extension* extension);
+
+  static bool IsFromHuaweiWebStore(const Extension* extension);
 };
  
 class CustomHandler : public ManifestHandler {

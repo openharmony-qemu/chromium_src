@@ -167,7 +167,7 @@ TEST_F(FeedbackUtilTest, ZipStringTraversal) {
 
   // Construct a traversal back to that file in a platform-dependent way:
   std::string sensitive_path_str = sensitive_file.AsUTF8Unsafe();
-if BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_WIN)
   // Remove "C:" if present
   if (sensitive_path_str.size() >= 2 && sensitive_path_str[1] == ':') {
     sensitive_path_str = sensitive_path_str.substr(2);

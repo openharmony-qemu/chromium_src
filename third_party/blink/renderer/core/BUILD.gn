@@ -623,6 +623,10 @@ source_set("testing") {
     ]
   }
 
+  if (is_arkweb && use_libfuzzer) {
+    visibility += ["//arkweb/chromium_ext/ohos_test/*"]
+  }
+
   configs += [
     ":blink_core_pch",
     "//third_party/blink/renderer:config",
@@ -1779,6 +1783,9 @@ source_set("perf_tests") {
 
 source_set("unit_test_support") {
   testonly = true
+  if (is_arkweb && use_libfuzzer) {
+    visibility += ["//arkweb/chromium_ext/ohos_test/*"]
+  }
   sources = [
     "css/css_test_helpers.cc",
     "css/css_test_helpers.h",

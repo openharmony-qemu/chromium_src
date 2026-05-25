@@ -13,9 +13,9 @@ ArkWeb 项目旨在将 Chromium Web 引擎集成到 OpenHarmony操作系统中�
 架构图中[CEF](https://gitcode.com/openharmony-tpc/chromium_cef)，[chromium_arkweb](https://gitcode.com/openharmony-tpc/chromium_arkweb)和当前Chromium仓联合编译出Web内核，编译产物为NWeb.hap，通过二进制集成在OpenHarmony系统中。
 
 ## 使用说明
-1. 下载代码：以132_trunk分支为例，要下载其他分支代码请替换-b 后带的manifest分支参数，参数列表详见7。
+1. 下载代码：以 master 分支为例，要下载其他分支代码请替换-b 后带的manifest分支参数，参数列表详见7。
     ```
-    repo init -u https://gitcode.com/openharmony-tpc/manifest -b 132_trunk -m developer.xml --no-repo-verify
+    repo init -u https://gitcode.com/openharmony-tpc/manifest -b master -m developer.xml --no-repo-verify
     repo sync -c
     repo forall -c 'git lfs pull'
     ```

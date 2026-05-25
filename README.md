@@ -16,9 +16,9 @@ In the architecture diagram, [CEF](https://gitcode.com/openharmony-tpc/chromium_
 
 ## 4. Usage Instructions
 
-1. **Download Code**: Using the 132_trunk branch as an example, to download code from other branches, replace the manifest branch parameter after -b. For the parameter list, see section 7.
+1. **Download Code**: Using the master branch as an example, to download code from other branches, replace the manifest branch parameter after -b. For the parameter list, see section 7.
     ```
-    repo init -u https://gitcode.com/openharmony-tpc/manifest -b 132_trunk -m developer.xml --no-repo-verify
+    repo init -u https://gitcode.com/openharmony-tpc/manifest -b master -m developer.xml --no-repo-verify
     repo sync -c
     repo forall -c 'git lfs pull'
     ```

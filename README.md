@@ -8,11 +8,11 @@ This project extends and enhances the Chromium source code to adapt it to the OH
 
 ## 2. Architecture
 
-The project follows a layered architecture, where the ArkWeb module in the diagram represents the contents of this repository:
+The project follows a layered architecture, where the yellow Chromium module in the diagram represents the contents of this repository:
 
-![image.png](https://raw.gitcode.com/user-images/assets/4371737/9ff0702d-230b-4cca-b47c-47556d87d437/image.png 'image.png')
+![image.png](https://raw.gitcode.com/user-images/assets/4371737/339cf991-9b75-418a-b4f0-36af2cd69a38/image.png 'image.png')
 
-In the architecture diagram, CEF, Chromium, and the current ArkWeb repository are compiled together to produce the Web kernel, with the compilation output being NWeb.hap, which is integrated into the OpenHarmony system through binary integration.
+In the architecture diagram, [CEF](https://gitcode.com/openharmony-tpc/chromium_cef), [chromium_arkweb](https://gitcode.com/openharmony-tpc/chromium_arkweb), and the current Chromium repository are compiled together to produce the Web kernel, with the compilation output being NWeb.hap, which is integrated into the OpenHarmony system through binary integration.
 
 ## 4. Usage Instructions
 

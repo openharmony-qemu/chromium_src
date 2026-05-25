@@ -282,6 +282,16 @@ export class WebAbility extends WebBaseAbility {
         this.nativeContext.RegisterWindowEventFilter(window.getWindowProperties().id);
       }
 
+      // display brightness observer
+      if (deviceInfo.sdkApiVersion >= 22) {
+        const context: Context = getContext(this);
+        let res: boolean = settings.registerKeyObserver(context,
+          settings.display.SCREEN_BRIGHTNESS_STATUS, settings.domainName.DEVICE_SHARED, () => {
+            let value: string = settings.getValueSync(context, settings.display.SCREEN_BRIGHTNESS_STATUS, '10');
+            this.nativeContext.UpdateDisplayBrightnessCB(value);
+          });
+      }
+
       try {
         if (this.xcomponentId === ConfigData.DEFAULT_WINDOW_ID) {
           let windowLimits = this.getWindow()?.getWindowLimits();

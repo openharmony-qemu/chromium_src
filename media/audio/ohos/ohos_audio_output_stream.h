@@ -7,6 +7,7 @@
 
 #include "base/feature_list.h"
 #include "base/logging.h"
+#include "base/ohos/task_scheduler/task_runner_ohos.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/task/task_runner.h"
 #include "base/timer/timer.h"
@@ -14,18 +15,18 @@
 #include "media/audio/ohos/ohos_audio_manager.h"
 #include "ohaudio/native_audiorenderer.h"
 #include "ohaudio/native_audiostreambuilder.h"
-
 namespace media {
 
+class AudioRenderDestructionHelper;
 class OHOSAudioManager;
 
-class OHOSAudioOutputStream : public AudioOutputStream {
+class OhosAudioOutputStream : public AudioOutputStream {
  public:
-  OHOSAudioOutputStream(const OHOSAudioOutputStream&) = delete;
-  OHOSAudioOutputStream& operator=(const OHOSAudioOutputStream&) = delete;
+  OhosAudioOutputStream(const OhosAudioOutputStream&) = delete;
+  OhosAudioOutputStream& operator=(const OhosAudioOutputStream&) = delete;
 
   // Caller must ensure that manager outlives the stream.
-  OHOSAudioOutputStream(OHOSAudioManager* manager,
+  OhosAudioOutputStream(OHOSAudioManager* manager,
                         const AudioParameters& parameters);
 
   // AudioOutputStream interface.
@@ -56,7 +57,7 @@ class OHOSAudioOutputStream : public AudioOutputStream {
   void ScheduleIdlePumpSamples();
 
  private:
-  ~OHOSAudioOutputStream() override;
+  ~OhosAudioOutputStream() override;
 
   base::TimeDelta GetDelay(base::TimeTicks delay_timestamp);
 
@@ -87,7 +88,13 @@ class OHOSAudioOutputStream : public AudioOutputStream {
   // reallocating the memory every time.
   std::unique_ptr<AudioBus> audio_bus_;
 
-  raw_ptr<AudioSourceCallback> callback_ = nullptr;
+  std::unique_ptr<AudioRenderDestructionHelper> destruction_helper_;
+
+  // Lock protects all members below which may be read concurrently from the
+  // audio manager thread and the OS provided audio thread.
+  base::Lock lock_;
+
+  raw_ptr<AudioSourceCallback> callback_ GUARDED_BY(lock_) = nullptr;
 
   double volume_ = 1.0;
 
@@ -122,13 +129,11 @@ class OHOSAudioOutputStream : public AudioOutputStream {
 
   bool is_suspended_ = false;
 
-  base::Lock stream_lock_;
-
   base::OneShotTimer timer_;
 
   base::WeakPtr<content::MediaSession> weak_media_session_ = nullptr;
 
-  base::WeakPtrFactory<OHOSAudioOutputStream> weak_factory_{this};
+  base::WeakPtrFactory<OhosAudioOutputStream> weak_factory_{this};
 };
 
 }  // namespace media

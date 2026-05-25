@@ -53,6 +53,12 @@
 #include "ui/gfx/geometry/transform.h"
 #include "ui/gfx/geometry/transform_util.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include <native_window/external_window.h>
+
+#include "ui/ozone/platform/ohos/common/ohos_util.h"
+#endif  // BUILDFLAG(IS_OHOS)
+
 namespace viz {
 
 namespace {
@@ -397,6 +403,15 @@ void DirectRenderer::DrawFrame(
 
 #if BUILDFLAG(IS_OHOS)
   current_frame()->damage_rect = current_frame()->root_damage_rect;
+  if (frame_color_space.IsHDR() != previous_frame_is_hdr_) {
+    previous_frame_is_hdr_ = frame_color_space.IsHDR();
+    gpu::SurfaceHandle surface_handle = output_surface_->GetSurfaceHandle();
+    OHNativeWindow* window = reinterpret_cast<OHNativeWindow*>(
+        ui::util::GetWindowFromWidget(surface_handle));
+    if (window) {
+      ui::util::UpdateOhNativeWindow(frame_color_space, window);
+    }
+  }
 #endif  // BUILDFLAG(IS_OHOS)
 
   // If we need to redraw the frame, the whole output should be considered

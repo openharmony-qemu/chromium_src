@@ -71,4 +71,10 @@ BASE_FEATURE(kUseSmartRefForGPUFenceHandle,
 
 BASE_FEATURE(kHdrAgtm, "HdrAgtm", base::FEATURE_DISABLED_BY_DEFAULT);
 
+#if BUILDFLAG(IS_OHOS)
+BASE_FEATURE(kEnableOhosHdr,
+             "EnableOhosHdr",
+             base::FEATURE_ENABLED_BY_DEFAULT);
+#endif
+
 }  // namespace features

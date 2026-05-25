@@ -7,8 +7,20 @@
 #include "ohos/adapter/aki_hook/aki_hook.h"
 #include "ohos/adapter/common/logging.h"
 
+
 namespace ohos {
 namespace adapter {
+
+uint32_t GetLength(const aki::Value& array) {
+  uint32_t length = 0;
+  if (!array.IsArray()) {
+    return length;
+  }
+
+  napi_get_array_length(aki::JSBind::GetScopedEnv(), array.GetHandle(),
+                        &length);
+  return length;
+}
 
 ScreenAdapter::ScreenAdapter() {
   initFontSizeScale();
@@ -40,6 +52,13 @@ void ScreenAdapter::ConvertDisplay(aki::Value complete_display,
   ohos_display.avail_area.top = avail_area["top"].As<int32_t>();
   ohos_display.avail_area.width = avail_area["width"].As<int32_t>();
   ohos_display.avail_area.height = avail_area["height"].As<int32_t>();
+
+  for (uint32_t i = 0; i < GetLength(display["colorSpaces"]); i++) {
+    aki::Value colorSpace = display["colorSpaces"][i];
+    if (!colorSpace.IsNull()) {
+      ohos_display.colorSpaces.push_back(colorSpace.As<OhosDisplayColorSpace>());
+    }
+  }
 }
 
 void ScreenAdapter::GetPrimaryDisplay(OhosDisplay& ohos_display) {
@@ -60,6 +79,27 @@ void ScreenAdapter::GetPrimaryDisplay(OhosDisplay& ohos_display) {
     promise.get_future().get();
   }
 
+  return;
+}
+
+void ScreenAdapter::GetDisplayBrightnessInfo(
+    int display_id,
+    BrightnessInfo& display_brightness_info) {
+  std::promise<bool> promise;
+  std::function<void(aki::Value)> callback = [&](aki::Value brightness_info) {
+    display_brightness_info.currentHeadroom =
+        brightness_info["currentHeadroom"].As<float>();
+    display_brightness_info.maxHeadroom =
+        brightness_info["maxHeadroom"].As<float>();
+    display_brightness_info.sdrNits = brightness_info["sdrNits"].As<float>();
+    promise.set_value(true);
+  };
+
+  if (auto func = ohos::adapter::GetJSFunction(
+          "OhosDisplayAdapter.GetDisplayBrightnessInfo")) {
+    func->Invoke<void>(display_id, callback);
+    promise.get_future().get();
+  }
   return;
 }
 

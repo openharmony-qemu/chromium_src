@@ -5,3 +5,4 @@
 import type { NativeContext } from '../../../ets/interface/CommonInterface';
 
 export const getNativeContext: (contextType: number) => NativeContext;
+export const SetContextPaths: (paths: Record<string, string>) => void;

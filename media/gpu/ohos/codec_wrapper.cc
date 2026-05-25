@@ -47,7 +47,8 @@ class CodecWrapperImpl : public base::RefCountedThreadSafe<CodecWrapperImpl> {
   DequeueStatus DequeueOutputBuffer(
       base::TimeDelta* presentation_time,
       bool* end_of_stream,
-      std::unique_ptr<CodecOutputBuffer>* codec_buffer);
+      std::unique_ptr<CodecOutputBuffer>* codec_buffer,
+      gfx::ColorSpace color_space);
   bool ReleaseCodecOutputBuffer(int64_t id, bool render);
 #if BUILDFLAG(ENABLE_WISEPLAY)
   bool SetDecryptionConfig(void *session, bool is_secure);
@@ -243,7 +244,8 @@ CodecWrapperImpl::QueueStatus CodecWrapperImpl::QueueInputBuffer(
 CodecWrapperImpl::DequeueStatus CodecWrapperImpl::DequeueOutputBuffer(
     base::TimeDelta* presentation_time,
     bool* end_of_stream,
-    std::unique_ptr<CodecOutputBuffer>* codec_buffer) {
+    std::unique_ptr<CodecOutputBuffer>* codec_buffer,
+    gfx::ColorSpace color_space) {
   TRACE_EVENT0("media", "CodecWrapperImpl::DequeueOutputBuffer");
   base::AutoLock l(lock_);
   DCHECK(codec_ && state_ != State::kError);
@@ -295,7 +297,7 @@ CodecWrapperImpl::DequeueStatus CodecWrapperImpl::DequeueOutputBuffer(
         }
 
         *codec_buffer = base::WrapUnique(
-            new CodecOutputBuffer(this, buffer_id, size_, color_space_));
+            new CodecOutputBuffer(this, buffer_id, size_, color_space));
         return DequeueStatus::kOk;
       }
       case DecoderAdapterCode::DECODER_RETRY: {
@@ -431,9 +433,10 @@ CodecWrapper::QueueStatus CodecWrapper::QueueInputBuffer(
 CodecWrapper::DequeueStatus CodecWrapper::DequeueOutputBuffer(
     base::TimeDelta* presentation_time,
     bool* end_of_stream,
-    std::unique_ptr<CodecOutputBuffer>* codec_buffer) {
+    std::unique_ptr<CodecOutputBuffer>* codec_buffer,
+    gfx::ColorSpace color_space) {
   return impl_->DequeueOutputBuffer(presentation_time, end_of_stream,
-                                    codec_buffer);
+                                    codec_buffer, color_space);
 }
 
 bool CodecWrapper::SetSurface(

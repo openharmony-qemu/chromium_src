@@ -463,6 +463,10 @@ class VIZ_SERVICE_EXPORT DirectRenderer {
   gfx::OverlayTransform reshape_display_transform_ =
       gfx::OVERLAY_TRANSFORM_INVALID;
   uint64_t total_pixels_rendered_this_frame_ = 0;
+
+#if BUILDFLAG(IS_OHOS)
+  bool previous_frame_is_hdr_ = false;
+#endif  // BUILDFLAG(IS_OHOS)
 };
 
 }  // namespace viz

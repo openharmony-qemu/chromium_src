@@ -33,6 +33,7 @@
 #include "base/observer_list.h"
 #if BUILDFLAG(IS_OHOS)
 #include "base/path_service.h"
+#include "base/memory/low_memory_mode_ohos.h"
 #endif // BUILDFLAG(IS_OHOS)
 #include "base/run_loop.h"
 #include "base/task/sequenced_task_runner.h"
@@ -246,6 +247,12 @@ mojo::Remote<storage::mojom::StorageService>& GetStorageServiceRemote() {
     const bool single_process_mode =
         base::CommandLine::ForCurrentProcess()->HasSwitch(
             switches::kSingleProcess);
+#if BUILDFLAG(IS_OHOS)
+    bool low_memory_mode = base::GetLowMemoryMode();
+    if (low_memory_mode) {
+      g_force_in_process_storage_service = true;
+    }
+#endif
     const bool oop_storage_enabled = !sandboxed_data_dir.empty() &&
                                      !single_process_mode &&
                                      !g_force_in_process_storage_service;

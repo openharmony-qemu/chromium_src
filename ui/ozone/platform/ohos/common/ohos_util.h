@@ -5,6 +5,10 @@
 #ifndef UI_OZONE_PLATFORM_OHOS_COMMON_OHOS_UTIL_H_
 #define UI_OZONE_PLATFORM_OHOS_COMMON_OHOS_UTIL_H_
 
+#include <native_buffer/buffer_common.h>
+#include <native_buffer/native_buffer.h>
+#include <native_image/native_image.h>
+
 #include <string>
 
 #include "ui/display/display.h"
@@ -23,6 +27,14 @@ int32_t GetNextWindowWidgetId();
 std::string ConvertWidgetIdToWindowId(const gfx::AcceleratedWidget widget_id);
 
 gfx::AcceleratedWidget ConvertWindowIdToWidgetId(std::string& window_id);
+
+void UpdateOhNativeWindow(gfx::ColorSpace frame_color_space,
+                          OHNativeWindow* window);
+
+int32_t GetOhColorGamutFromColorSpace(gfx::ColorSpace frame_color_space);
+OH_NativeBuffer_ColorSpace ConvertToSystemColorSpace(
+    gfx::ColorSpace frame_color_space);
+int32_t GetOhBufferFormatFromColorSpace(gfx::ColorSpace frame_color_space);
 
 }  // namespace util
 }  // namespace ui

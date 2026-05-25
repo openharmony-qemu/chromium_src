@@ -41,6 +41,41 @@ enum OhosDisplayState {
   STATE_ON_SUSPEND = 6,
 };
 
+enum OhosDisplayColorSpace {
+  UNKNOWN = 0,
+  ADOBE_RGB_1998 = 1,
+  DCI_P3 = 2,
+  DISPLAY_P3 = 3,
+  SRGB = 4,
+  CUSTOM = 5,
+  BT709 = 6,
+  BT601_EBU = 7,
+  BT601_SMPTE_C = 8,
+  BT2020_HLG = 9,
+  BT2020_PQ = 10,
+  P3_HLG = 11,
+  P3_PQ = 12,
+  ADOBE_RGB_1998_LIMIT = 13,
+  DISPLAY_P3_LIMIT = 14,
+  SRGB_LIMIT = 15,
+  BT709_LIMIT = 16,
+  BT601_EBU_LIMIT = 17,
+  BT601_SMPTE_C_LIMIT = 18,
+  BT2020_HLG_LIMIT = 19,
+  BT2020_PQ_LIMIT = 20,
+  P3_HLG_LIMIT = 21,
+  P3_PQ_LIMIT = 22,
+  LINEAR_P3 = 23,
+  LINEAR_SRGB = 24,
+  LINEAR_BT709 = 24,
+  LINEAR_BT2020 = 25,
+  H_LOG = 26,
+  DISPLAY_SRGB = 4,
+  DISPLAY_P3_SRGB = 3,
+  DISPLAY_P3_HLG = 11,
+  DISPLAY_P3_PQ = 12,
+};
+
 struct Rect {
  public:
   int32_t left;
@@ -65,6 +100,13 @@ struct OhosDisplay {
   float scaled_density = 0.0;
   float x_dpi = 0.0;
   float y_dpi = 0.0;
+  std::vector<OhosDisplayColorSpace> colorSpaces;
+};
+
+struct BrightnessInfo {
+  float currentHeadroom = 1.0;
+  float maxHeadroom = 1.0;
+  float sdrNits = 1.0;
 };
 
 class ADAPTER_EXPORT_API ScreenAdapter {
@@ -93,6 +135,7 @@ class ADAPTER_EXPORT_API ScreenAdapter {
   AvailableAreaChangeCallback GetAvailableAreaCallback();
   AvoidAreaChangeCallback GetAvoidAreaCallback();
   static ScreenAdapter& GetInstance();
+  void GetDisplayBrightnessInfo(int display_id, BrightnessInfo& brightness_info);
 
  private:
   ScreenAdapter();

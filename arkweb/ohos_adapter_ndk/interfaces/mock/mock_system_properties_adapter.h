@@ -78,6 +78,7 @@ class MockSystemPropertiesAdapter : public SystemPropertiesAdapter {
   MOCK_METHOD(int32_t, GetInitialCongestionWindowSize, (), (override));
   MOCK_METHOD(int32_t, GetIntParameter, (const std::string& key, int32_t defaultValue), (override));
   MOCK_METHOD(int32_t, GetLoadUrlStrategy, (), (override));
+  MOCK_METHOD(int32_t, GetLtpoIntConfig, (const std::string& configName, int32_t defaultValue), (override));
 };
 
 }  // namespace OHOS::NWeb

@@ -64,7 +64,7 @@ class BLINK_PLATFORM_EXPORT WebNativeBridgeImpl
   WebNativeBridgeImpl(
       WebLocalFrame* frame,
       blink::WebNativeClient* client,
-      blink::WebNativeDelegate* delegate,
+      base::WeakPtr<blink::WebNativeDelegate> delegate,
       std::unique_ptr<media::RendererFactorySelector> renderer_factory_selector,
       std::unique_ptr<VideoFrameCompositor> compositor,
       scoped_refptr<base::SequencedTaskRunner> media_task_runner,
@@ -125,7 +125,7 @@ class BLINK_PLATFORM_EXPORT WebNativeBridgeImpl
 
   raw_ptr<WebNativeClient> const client_;
 
-  raw_ptr<WebNativeDelegate> delegate_;
+  base::WeakPtr<blink::WebNativeDelegate> delegate_;
   int delegate_id_ = 0;
 
   // Video rendering members.

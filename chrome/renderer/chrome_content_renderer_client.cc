@@ -1676,14 +1676,17 @@ bool ChromeContentRendererClient::IsSafeRedirectTarget(
       || target_url.SchemeIs(extensions::kArkwebExtensionScheme)
 #endif
   ) {
-    const extensions::Extension* extension =
-        extensions::RendererExtensionRegistry::Get()->GetByID(
-            target_url.GetHost());
+    // Use a scoped_refptr to keep the extension alive, since this code can be
+    // executed on a worker thread. See https://crbug.com/500566906.
+    scoped_refptr<const extensions::Extension> extension =
+        extensions::RendererExtensionRegistry::Get()
+            ->GetRefCountedExtensionOrAppByURL(target_url,
+                                               /*include_guid=*/true);
     if (!extension) {
       return false;
     }
     if (extensions::WebAccessibleResourcesInfo::IsResourceWebAccessibleRedirect(
-            extension, target_url, request_initiator, upstream_url)) {
+            extension.get(), target_url, request_initiator, upstream_url)) {
       return true;
     }
     return extension->guid() == upstream_url.GetHost();

@@ -22,6 +22,9 @@ class StubRenderWidgetHostOwnerDelegate : public RenderWidgetHostOwnerDelegate {
   bool IsMainFrameActive() override;
   bool IsNeverComposited() override;
   blink::web_pref::WebPreferences GetWebkitPreferencesForWidget() override;
+  void ZoomToFindInPageRect(const gfx::Rect& rect_to_zoom) override {}
+  void AnimateDoubleTapZoom(const gfx::Point& point,
+                            const gfx::Rect& rect) override {}
 };
 
 }  // namespace content

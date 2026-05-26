@@ -1057,6 +1057,11 @@ void ExtensionPrefs::ModifyDisableReasons(const ExtensionId& extension_id,
   if (old_value == new_value)  // no change, do not notify observers.
     return;
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  LOG_FEEDBACK(INFO) << "modify disable reasons from " << old_value << " to "
+                     << new_value << ",id is " << extension_id;
+#endif
+
   for (auto& observer : observer_list_)
     observer.OnExtensionDisableReasonsChanged(extension_id, new_value);
 }
@@ -1415,6 +1420,12 @@ void ExtensionPrefs::SetExtensionDisabled(const ExtensionId& extension_id,
   extension_pref_value_map_->SetExtensionState(extension_id, false);
   UpdateExtensionPref(extension_id, kPrefDisableReasons,
                       base::Value(disable_reasons));
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  LOG_FEEDBACK(INFO) << "disable reasons is " << disable_reasons << ",id is "
+                     << extension_id;
+#endif
+
   for (auto& observer : observer_list_)
     observer.OnExtensionStateChanged(extension_id, false);
 

@@ -205,6 +205,10 @@
 #include "base/android/application_status_listener.h"
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#if BUILDFLAG(ARKWEB_MEDIA)
+#include "arkweb/chromium_ext/services/network/network_context_for_include.cc"
+#endif // ARKWEB_MEDIA
+
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
 #include "arkweb/chromium_ext/services/network/prp_preload/include/page_res_parallel_preload_mgr.h"
 #endif // BUILDFLAG(ARKWEB_PRP_PRELOAD)

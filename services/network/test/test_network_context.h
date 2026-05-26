@@ -397,6 +397,10 @@ class TestNetworkContext : public mojom::NetworkContext {
                  uint64_t addr_web_handle, StartPageCallback callback) override {}
   void StopPage(uint64_t addr_web_handle) override {}
   void SetURLLoaderFactoryParam(mojom::URLLoaderFactoryParamsPtr params) override {}
+  void LookupServerBasicAuthCredentials(
+      const GURL& url,
+      const net::NetworkAnonymizationKey& network_anonymization_key,
+      LookupServerBasicAuthCredentialsCallback callback) override {}
 #endif  // BUILDFLAG(ARKWEB_UNITTESTS)
   void GetDeviceBoundSessionManager(
       mojo::PendingReceiver<network::mojom::DeviceBoundSessionManager>

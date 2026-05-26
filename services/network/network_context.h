@@ -765,6 +765,13 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkContext
   bool IsDestructing() const;
 #endif // BUILDFLAG(ARKWEB_LOGGER_REPORT)
 
+#if BUILDFLAG(ARKWEB_MEDIA)
+  void LookupServerBasicAuthCredentials(
+      const GURL& url,
+      const net::NetworkAnonymizationKey& network_anonymization_key,
+      LookupServerBasicAuthCredentialsCallback callback) override;
+#endif // ARKWEB_MEDIA
+
 #if BUILDFLAG(ARKWEB_TEST)
  public:
 #else

@@ -20,6 +20,10 @@
 #include "gpu/command_buffer/service/ohos/scoped_native_buffer_fence_sync.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_MEDIA)
+#include "gpu/command_buffer/service/texture_base.h"
+#endif // ARKWEB_MEDIA
+
 #if !BUILDFLAG(IS_ARKWEB)
 namespace base::android {
 class ScopedHardwareBufferFenceSync;
@@ -81,6 +85,10 @@ class GPU_GLES2_EXPORT StreamTextureSharedImageInterface
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
   virtual std::unique_ptr<ScopedNativeBufferFenceSync> GetNativeBuffer() = 0;
 #endif
+
+#if BUILDFLAG(ARKWEB_MEDIA)
+  virtual TextureBase* GetTextureBase() const { return nullptr; }
+#endif // ARKWEB_MEDIA
 
  protected:
   virtual ~StreamTextureSharedImageInterface() = default;

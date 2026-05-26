@@ -243,6 +243,8 @@ class NET_EXPORT_PRIVATE QuicChromiumClientStream
 
     base::TimeTicks headers_received_start_time_;
 
+    bool is_http_datagram_visitor_registered_ = false;
+
     base::WeakPtrFactory<Handle> weak_factory_{this};
   };
 

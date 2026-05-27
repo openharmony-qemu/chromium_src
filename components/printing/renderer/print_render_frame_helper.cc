@@ -1281,9 +1281,11 @@ void PrintRenderFrameHelper::BindPrintRenderFrameReceiver(
   receivers_.Add(this, std::move(receiver));
 }
 
+#ifndef BUILDFLAG(ARKWEB_PRINT)
 void PrintRenderFrameHelper::PrintRequestedPages() {
   PrintRequestedPagesInternal(/*already_notified_frame=*/false);
 }
+#endif
 
 void PrintRenderFrameHelper::PrintRequestedPagesInternal(
     bool already_notified_frame) {

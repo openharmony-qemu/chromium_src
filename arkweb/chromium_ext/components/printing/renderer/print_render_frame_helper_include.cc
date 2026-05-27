@@ -62,6 +62,27 @@ void PrintRenderFrameHelper::ApplicationPrintRequestedPages()
   Print(frame, plugin, PrintRequestType::kRegular);
 }
 
+void PrintRenderFrameHelper::PrintRequestedPages() {
+  ScopedIPC scoped_ipc(weak_ptr_factory_.GetWeakPtr());
+  if (ipc_nesting_level_ > kAllowedIpcDepthForPrint) {
+    return;
+  }
+
+  blink::WebLocalFrame* frame = render_frame()->GetWebFrame();
+  // Don't print if the RenderFrame is gone.
+  if (render_frame_gone_) {
+    return;
+  }
+
+  // Update to the actual printing frame
+  frame = ArkWebUpdateFrame(frame);
+
+  // If we are printing a frame with an internal PDF plugin element, find the
+  // plugin node and print that instead.
+  auto plugin = delegate_->GetPdfElement(frame);
+  Print(frame, plugin, PrintRequestType::kRegular);
+}
+
 bool PrintRenderFrameHelper::CheckCancel()
 {
   bool cancel = false;
@@ -69,6 +90,8 @@ bool PrintRenderFrameHelper::CheckCancel()
   return cancel;
 }
 
+base::WeakPtr<PrintRenderFrameHelper>
+    PrintRenderFrameHelper::static_helper_weak_;
 blink::WebLocalFrame* PrintRenderFrameHelper::static_web_frame_ = nullptr;
 #endif  // BUILDFLAG(ARKWEB_PRINT)
 
@@ -76,8 +99,17 @@ bool PrintRenderFrameHelper::PrintQuitLoop(blink::WebLocalFrame* web_frame)
 {
 #if BUILDFLAG(ARKWEB_PRINT)
   if (delegate_->IsScriptedPrintEnabled()) {
+    if (static_helper_weak_) {
+      LOG(ERROR) << "OhosPrintManager printing in progress";
+      return true;
+    }
     LOG(INFO) << "OhosPrintManager delegate isScriptedPrintEnabled";
+    static_helper_weak_ = weak_ptr_factory_.GetWeakPtr();
     web_frame->DispatchBeforePrintEvent(nullptr);
+    if (!static_helper_weak_) {
+      LOG(INFO) << "OhosPrintManager frame is gone after beforeprint event";
+      return true;
+    }
 
     static_web_frame_ = web_frame;
 
@@ -88,7 +120,13 @@ bool PrintRenderFrameHelper::PrintQuitLoop(blink::WebLocalFrame* web_frame)
         &ClosuresForMojoResponse::RunPrintRequestedPreviewQuitClosure,
         closures_for_mojo_responses_));
     loop.Run();
+    static_web_frame_ = nullptr;
     LOG(INFO) << "OhosPrintManager loop quit";
+    if (!static_helper_weak_) {
+      LOG(INFO) << "OhosPrintManager frame is gone before afterprint event";
+      return true;
+    }
+    static_helper_weak_ = nullptr;
     web_frame->DispatchAfterPrintEvent();
     return true;
   }
@@ -110,14 +148,13 @@ void PrintRenderFrameHelper::ArkWebPrintNode(const blink::WebNode& node)
 }
 
 #if BUILDFLAG(ARKWEB_PRINT)
-  blink::WebLocalFrame* PrintRenderFrameHelper::ArkWebUpdateFrame(
-      blink::WebLocalFrame* frame)
-  {
-    if (!static_web_frame_) {
-      LOG(INFO) << "OhosPrintManager static web frame is null";
-      return frame;
-    }
-
+blink::WebLocalFrame* PrintRenderFrameHelper::ArkWebUpdateFrame(
+    blink::WebLocalFrame* frame)
+{
+  if (static_helper_weak_ && static_web_frame_) {
     return static_web_frame_;
   }
+
+  return frame;
+}
 #endif  // BUILDFLAG(ARKWEB_PRINT)

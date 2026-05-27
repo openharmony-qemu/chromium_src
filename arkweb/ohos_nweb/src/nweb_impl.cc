@@ -602,6 +602,11 @@ void SetExcludedPathList(const std::vector<std::string>& module_name,
         base::FilePath(kDirEl2 + "/base/haps/" + name + "/cache/web"));
   }
   path_lists[OHOS::NWeb::NWebImpl::PathType::kDirCache].push_back(base::FilePath(kDirEl2 + "/base/cache/web"));
+
+  base::FilePath file_path;
+  if (base::PathService::Get(chrome::DIR_USER_DATA, &file_path)) {
+    path_lists[OHOS::NWeb::NWebImpl::PathType::kDirFile].push_back(file_path);
+  }
 }
 
 void GetExcludedPathList(std::map<OHOS::NWeb::NWebImpl::PathType, std::vector<base::FilePath>>& src_path_lists,
@@ -7276,7 +7281,8 @@ void NWebImpl::SetPathAllowingUniversalAccess(
     }
 
     if (CheckRealPath(real_path, path_lists[NWebImpl::PathType::kDirResource], true) ||
-        CheckRealPath(real_path, path_lists[NWebImpl::PathType::kDirFile], false) ||
+        CheckRealPath(real_path, path_lists[NWebImpl::PathType::kDirFile], false,
+                      excluded_path_list[NWebImpl::PathType::kDirFile]) ||
         CheckRealPath(real_path, path_lists[NWebImpl::PathType::kDirCache], true,
                       excluded_path_list[NWebImpl::PathType::kDirCache]) ||
         CheckRealPath(real_path, path_lists[NWebImpl::PathType::kDirTemp], true)) {

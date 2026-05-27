@@ -65,7 +65,7 @@ public:
   blink::WebNativeBridge* CreateWebNativeBridge(blink::WebNativeClient* client,
     viz::FrameSinkId parent_frame_sink_id, scoped_refptr<base::SingleThreadTaskRunner>
         main_thread_compositor_task_runner);
-  media::RendererWebNativeDelegate* GetWebNativeDelegate();
+  base::WeakPtr<media::RendererWebNativeDelegate> GetWebNativeDelegate();
 #endif
 
 private:

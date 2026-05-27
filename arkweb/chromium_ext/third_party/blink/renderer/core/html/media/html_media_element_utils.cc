@@ -259,7 +259,7 @@ mojom::blink::VideoExpParamsPtr HTMLMediaElementUtils::ReportVideoExperienceToBI
   }
   if (last_report_time_.has_value() &&
       base::TimeTicks::Now() - last_report_time_.value() < kMinReportInterval) {
-    LOG(INFO) << "OhMedia, ReportVideoExperienceToBI: rate limited, returning";
+    LOG(DEBUG) << "OhMedia, ReportVideoExperienceToBI: rate limited, returning";
     return nullptr;
   }
   if (has_reported_experience_) {

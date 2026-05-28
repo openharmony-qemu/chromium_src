@@ -1203,18 +1203,30 @@ void InitialWebEngineArgs(
 #endif  // BUILDFLAG(ARKWEB_API_INIT_WEB_ENGINE)
 
 #if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+base::FilePath GetMigrateBasePath() {
+  base::FilePath path;
+  if (base::PathService::Get(chrome::DIR_USER_DATA, &path)) {
+    base::FilePath migratePath = path.Append(FILE_PATH_LITERAL("migrate"));
+    if (base::PathExists(migratePath)) {
+      return path;
+    }
+  }
+ 
+  base::PathService::Get(base::DIR_CACHE, &path);
+  return path;
+}
+
 void MigratePasswordsToPasswordVault() {
-  base::FilePath cache_path;
-  base::PathService::Get(base::DIR_CACHE, &cache_path);
-  if (cache_path.empty()) {
-    LOG(INFO) << "[Autofill] cache_path is empty.";
+  base::FilePath appDataDir = GetMigrateBasePath();
+  if (appDataDir.empty()) {
+    LOG(ERROR) << "[Autofill] appDataDir is empty.";
     return;
   }
   if (!g_browser_process->local_state()) {
-    LOG(INFO) << "[Autofill] g_browser_process->local_state() is null.";
+    LOG(ERROR) << "[Autofill] g_browser_process->local_state() is null.";
     return;
   }
-  base::FilePath flagFile = cache_path.Append(FILE_PATH_LITERAL(kMigrateKeyFlagFile));
+  base::FilePath flagFile = appDataDir.Append(FILE_PATH_LITERAL(kMigrateKeyFlagFile));
   ScopedAllowBlockingForNwebInit allow_blocking_for_using_path;
   bool IsFlagFileExist = base::PathExists(flagFile);
   bool migrateReady = g_browser_process->local_state()->GetBoolean(browser_prefs::kMigratePasswordsReady);

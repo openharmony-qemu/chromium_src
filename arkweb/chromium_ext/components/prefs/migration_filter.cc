@@ -19,6 +19,7 @@
 #include "base/json/json_file_value_serializer.h"
 #include "base/logging.h"
 #include "base/path_service.h"
+#include "chrome/common/chrome_paths.h"
 #include "components/prefs/json_pref_store.h"
 
 namespace {
@@ -29,10 +30,12 @@ const char* migration_key = "arkweb_local_pref_migration";
 
 base::Value::Dict ReadFromOldVersionPrefFile() {
   base::FilePath cache_path;
-  bool success = base::PathService::Get(base::DIR_CACHE, &cache_path);
-  if (!success) {
-    LOG(ERROR) << "get cache path failed";
-    return {};
+  if (!base::PathService::Get(chrome::DIR_USER_DATA, &cache_path)) {
+    bool success = base::PathService::Get(base::DIR_CACHE, &cache_path);
+    if (!success) {
+      LOG(ERROR) << "get cache path failed";
+      return {};
+    }
   }
   base::FilePath root_cache_path =
       cache_path.AppendASCII(root_cache_dir_suffix);

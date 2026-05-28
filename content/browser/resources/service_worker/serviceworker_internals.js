@@ -2,10 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'chrome://resources/js/jstemplate_compiled.js';
+import 'arkweb://resources/js/jstemplate_compiled.js';
 
-import {addWebUiListener, sendWithPromise} from 'chrome://resources/js/cr.js';
-import {$} from 'chrome://resources/js/util.js';
+import {addWebUiListener, sendWithPromise} from 'arkweb://resources/js/cr.js';
+import {$} from 'arkweb://resources/js/util.js';
 
 function initialize() {
   addWebUiListener('partition-data', onPartitionData);

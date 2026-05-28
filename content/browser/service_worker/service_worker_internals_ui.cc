@@ -21,6 +21,10 @@
 #include "base/metrics/histogram_functions.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/values.h"
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+#include "chrome/browser/ui/webui/inspect_ui.h"
+#include "cef/ohos_cef_ext/libcef/browser/devtools/arkweb/request_open_devtools_handler.h"
+#endif // ARKWEB_DEVTOOLS
 #include "content/browser/devtools/devtools_agent_host_impl.h"
 #include "content/browser/devtools/service_worker_devtools_agent_host.h"
 #include "content/browser/devtools/service_worker_devtools_manager.h"
@@ -367,7 +371,11 @@ ServiceWorkerInternalsUI::ServiceWorkerInternalsUI(WebUI* web_ui)
       kChromeUIServiceWorkerInternalsHost);
   source->OverrideContentSecurityPolicy(
       network::mojom::CSPDirectiveName::ScriptSrc,
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+      "script-src arkweb://resources chrome://resources 'self' 'unsafe-eval';");
+#else
       "script-src chrome://resources 'self' 'unsafe-eval';");
+#endif // ARKWEB_DEVTOOLS
   source->OverrideContentSecurityPolicy(
       network::mojom::CSPDirectiveName::TrustedTypes,
       "trusted-types jstemplate;");
@@ -645,7 +653,18 @@ void ServiceWorkerInternalsHandler::HandleInspectWorker(
     std::move(callback).Run(blink::ServiceWorkerStatusCode::kErrorNotFound);
     return;
   }
+#if BUILDFLAG(ARKWEB_DEVTOOLS) && !defined(COMPONENT_BUILD)
+  RequestOpenDevToolsParams params = {
+    .type = InspectUI::GetTypeFromHost(agent_host->GetType()),
+    .source_id = agent_host->GetURL().spec(),
+    .target_id = agent_host->GetId(),
+    .extension_id = "",
+    .panel = "source"
+  };
+  RequestOpenDevToolsHandler::GetInstance()->OnRequestOpenDevTools(params);
+#else
   agent_host->Inspect();
+#endif // ARKWEB_DEVTOOLS
   std::move(callback).Run(blink::ServiceWorkerStatusCode::kOk);
 }
 

@@ -33,7 +33,11 @@ class ServiceWorkerInternalsUIConfig
     : public DefaultWebUIConfig<ServiceWorkerInternalsUI> {
  public:
   ServiceWorkerInternalsUIConfig()
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+      : DefaultWebUIConfig(kArkWebUIScheme,
+#else
       : DefaultWebUIConfig(kChromeUIScheme,
+#endif // ARKWEB_DEVTOOLS
                            kChromeUIServiceWorkerInternalsHost) {}
 };
 

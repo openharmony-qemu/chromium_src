@@ -1061,11 +1061,11 @@ void InitialWebEngineArgs(
   web_engine_args.emplace_back("--off-screen-frame-rate=60");
   web_engine_args.emplace_back("--no-unsandboxed-zygote");
   web_engine_args.emplace_back("--no-zygote");
-  bool flag = false;
+  bool disable_features_flag = false;
   if (OHOS::NWeb::NWebImpl::GetScrollbarMode() ==
       OHOS::NWeb::ScrollbarMode::FORCE_DISPLAY_SCROLLBAR &&
       OHOS::NWeb::NWebImpl::IsScrollbarModeChanged()) {
-    flag = true;
+    disable_features_flag = true;
     web_engine_args.emplace_back("--disable-features=OverlayScrollbar,FencedFrames");
   }
   if (OHOS::NWeb::NWebImpl::GetScrollbarMode() ==
@@ -1079,7 +1079,7 @@ void InitialWebEngineArgs(
   web_engine_args.emplace_back("--no-sandbox");
   web_engine_args.emplace_back("--use-mobile-user-agent");
   web_engine_args.emplace_back("--enable-gpu-rasterization");
-  if (!flag) {
+  if (!disable_features_flag) {
     web_engine_args.emplace_back("--disable-features=FencedFrames");
   }
   if ((!base::ohos::IsPcDevice() && !base::ohos::IsPcMode()) ||

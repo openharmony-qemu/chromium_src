@@ -75,6 +75,8 @@ class WebCacheManager : public content::RenderProcessHostCreationObserver,
   FRIEND_TEST_ALL_PREFIXES(WebCacheManagerTest, AddRemoveRendererTest);
   FRIEND_TEST_ALL_PREFIXES(WebCacheManagerTest, OnlyClearCacheWhenProcessReady);
   FRIEND_TEST_ALL_PREFIXES(WebCacheManagerTest, PreExistingRenderProcessHost);
+  FRIEND_TEST_ALL_PREFIXES(WebCacheManagerUtilsTest, AddResourceToCache_SizeOneUnbound);
+  FRIEND_TEST_ALL_PREFIXES(WebCacheManagerUtilsTest, AddResourceToCache_SizeTwo);
 
   // This class is a singleton.  Do not instantiate directly. Call GetInstance()
   // instead.

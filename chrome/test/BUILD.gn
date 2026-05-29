@@ -8142,6 +8142,7 @@ test("unit_tests") {
       "../browser/component_updater/zxcvbn_data_component_installer_unittest.cc",
       "../browser/data_sharing/desktop/data_sharing_conversion_utils_unittest.cc",
       "../browser/devtools/device/android_device_manager_unittest.cc",
+      "../browser/devtools/device/devtools_device_discovery_unittest.cc",
       "../browser/devtools/protocol/cast_handler_unittest.cc",
       "../browser/devtools/serialize_host_descriptions_unittest.cc",
       "../browser/diagnostics/diagnostics_controller_unittest.cc",

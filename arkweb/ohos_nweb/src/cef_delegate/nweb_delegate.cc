@@ -4887,9 +4887,9 @@ bool NWebDelegate::ExecuteAction(
     LOG(ERROR) << "ExecuteAction accessNode is not found";
     return false;
   }
-  auto* accessibilityManager = GetAccessibilityManager();
+  auto* accessibilityManager = static_cast<BrowserAccessibilityManagerOHOS*>(node->manager());
   if (accessibilityManager == nullptr) {
-    accessibilityManager = static_cast<BrowserAccessibilityManagerOHOS*>(node->manager());
+    accessibilityManager = GetAccessibilityManager();
   }
   if (accessibilityManager == nullptr) {
     LOG(ERROR) << "ExecuteAction accessibilityManager is not found";

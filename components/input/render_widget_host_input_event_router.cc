@@ -642,7 +642,7 @@ void RenderWidgetHostInputEventRouter::DispatchMouseEvent(
        !IsMouseButtonDown(mouse_event))) {
     if (mouse_capture_target_) {
       mouse_capture_target_ = nullptr;
-      
+
       // Since capture is being lost it is possible that MouseMoves over a hit
       // test region might have been going to a different region, and now the
       // CursorManager might need to be notified that the view underneath the

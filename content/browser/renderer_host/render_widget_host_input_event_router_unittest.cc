@@ -1274,7 +1274,7 @@ TEST_F(RenderWidgetHostInputEventRouterTest, SetMouseCaptureTargetValidation) {
   rwhier()->SetMouseCaptureTarget(child.view.get(), true);
   EXPECT_EQ(child.view.get(), mouse_capture_target());
 
-  // 4. Simulate a MouseUp. The capture and last mouse down target should be 
+  // 4. Simulate a MouseUp. The capture and last mouse down target should be
   // cleared.
   blink::WebMouseEvent mouse_up_event(
       blink::WebInputEvent::Type::kMouseUp, blink::WebInputEvent::kNoModifiers,
@@ -1283,8 +1283,7 @@ TEST_F(RenderWidgetHostInputEventRouterTest, SetMouseCaptureTargetValidation) {
   rwhier()->RouteMouseEvent(view_root_.get(), &mouse_up_event,
                             ui::LatencyInfo());
   EXPECT_EQ(nullptr, last_mouse_down_target());
-  EXPECT_EQ(nullptr, mouse_capture_target());
-  
+  EXPECT_EQ(nullptr, mouse_capture_target());  
 }
 
 TEST_F(RenderWidgetHostInputEventRouterTest, QueryResultAfterChildViewDead) {

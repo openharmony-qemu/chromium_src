@@ -307,6 +307,11 @@ struct BLINK_COMMON_EXPORT
       const ::blink::RendererPreferences& data) {
     return data.is_reader_mode_enabled;
   }
+
+  static const bool& is_custom_reader_mode_enabled(
+      const ::blink::RendererPreferences& data) {
+    return data.is_custom_reader_mode_enabled;
+  }
 #endif
 };
 

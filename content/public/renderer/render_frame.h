@@ -320,6 +320,7 @@ class CONTENT_EXPORT RenderFrame :
 
 #if BUILDFLAG(ARKWEB_READER_MODE)
   virtual bool IsReaderModeEnabled() = 0;
+  virtual bool IsCustomReaderModeEnabled() = 0;
   virtual void ReportDistillableResult(const std::string& event_type,
                                        const std::string& value) = 0;
 #endif

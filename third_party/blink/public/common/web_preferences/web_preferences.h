@@ -137,6 +137,7 @@ struct BLINK_COMMON_EXPORT WebPreferences {
   mojom::ScrollbarLayoutPolicy scrollbar_layout_policy =
       mojom::ScrollbarLayoutPolicy::kContent;
   bool is_system_rtl_enabled = false;
+  bool is_compatible_converting_enabled = false;
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
   bool prefers_default_scrollbar_styles = false;
   bool accelerated_2d_canvas_enabled = false;

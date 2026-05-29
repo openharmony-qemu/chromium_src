@@ -71,7 +71,7 @@ arkweb/
     services/                ← 镜像 services/
     gpu/                     ← 镜像 gpu/
     sandbox/                 ← 镜像 sandbox/
-    ...                      共 26 个子目录
+    ...                      按 chromium 子目录一一镜像
     chromium_ext.gni         源文件注册清单
   ohos_nweb/                 NWeb 核心（WebView API 层）
   ohos_adapter_ndk/          NDK 适配层
@@ -92,9 +92,9 @@ arkweb/
 3. **`_utils.*` 工具辅助类**：如 `sys_info_utils_ext.h`
 
 原文件中的条件编译宏（按数量排列）：
-- `BUILDFLAG(ARKWEB_*)` 具体功能 flag — **8087 处**，涉及 250+ 个功能开关
-- `BUILDFLAG(IS_ARKWEB)` 平台级 flag — **693 处**
-- `#include "arkweb/chromium_ext/*_for_include*"` 注入点 — **209 处**
+- `BUILDFLAG(ARKWEB_*)` 具体功能 flag — 涉及大量功能开关
+- `BUILDFLAG(IS_ARKWEB)` 平台级 flag
+- `#include "arkweb/chromium_ext/*_for_include*"` 注入点
 
 读取原文件时，遇到 `BUILDFLAG(ARKWEB_*)` 或 `BUILDFLAG(IS_ARKWEB)` 即说明有定制修改，必须查看 `arkweb/chromium_ext/` 下对应的 `_for_include` / `_ext` / `_utils` 文件，才能获得完整实现。
 
@@ -175,17 +175,15 @@ NWeb.hap (ArkWebCore)
 - 不要在 Chromium 原文件中直接编写大量 ArkWeb 逻辑，应拆分到 `_for_include` 文件
 - 不要将 `_for_include` 文件当作独立源文件使用（它依赖宿主文件的命名空间和头文件上下文）
 
-### 关键黑话
+### 领域术语
 
 | 术语 | 含义 |
 |------|------|
-| WebContents | 浏览器进程中的"一个标签页"，持有页面完整状态 |
-| RenderFrameHost | 浏览器进程侧的 Frame 代表，对应渲染进程中的 RenderFrameImpl |
 | RFH / RFHImpl | RenderFrameHost / RenderFrameHostImpl 的缩写 |
 | Mojo | Chromium 进程间通信框架，替代旧版 IPC |
 | compositor | 合成器（cc/），将渲染结果合成到屏幕 |
 | GRIT | Google Resource and Internationalization Tool（.grd 资源文件系统） |
-| adapter | OH 系统适配层（`ohos/adapter/`），将 Chromium 需要的系统调用映射到 OH API |
+| `adapter` | OH 系统适配层（`ohos/adapter/`），将 Chromium 需要的系统调用映射到 OH API |
 | `_for_include` | ArkWeb 自创的源码注入机制：代码片段通过 `#include` 嵌入 Chromium 原文件，继承宿主的命名空间和上下文 |
 | `_ext` | 独立扩展类文件，如 `render_thread_impl_ext.cc`，不依赖宿主文件上下文 |
 | `chromium_ext/` | ArkWeb 定制代码目录（在 chromium_arkweb 仓库中），镜像 Chromium 目录结构 |

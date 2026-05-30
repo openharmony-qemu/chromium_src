@@ -540,7 +540,7 @@ void CorsURLLoaderFactory::Clone(
 
 void CorsURLLoaderFactory::DeleteIfNeeded() {
   if (url_loaders_.empty() && cors_url_loaders_.empty() &&
-      !owner_->HasAdditionalReferences()) {
+      !owner_->HasAdditionalReferences() && !prevent_self_deletion_) {
     owner_->DestroyURLLoaderFactory(this);
   }
 }
@@ -1008,6 +1008,8 @@ net::handles::NetworkHandle CorsURLLoaderFactory::GetBoundNetworkForTesting()
 void CorsURLLoaderFactory::CancelRequestsIfNonceMatchesAndUrlNotExempted(
     const base::UnguessableToken& nonce,
     const std::set<GURL>& exemptions) {
+  CHECK(!prevent_self_deletion_);
+  prevent_self_deletion_ = true;
   auto iterate_over_set = [&nonce, &exemptions](auto& url_loaders) {
     // Cancelling the request may cause the URL loader to be deleted from the
     // data structure, invalidating the iterator if it is currently pointing to
@@ -1023,6 +1025,8 @@ void CorsURLLoaderFactory::CancelRequestsIfNonceMatchesAndUrlNotExempted(
 
   iterate_over_set(url_loaders_);
   iterate_over_set(cors_url_loaders_);
+  prevent_self_deletion_ = false;
+  DeleteIfNeeded();
 }
 
 }  // namespace network::cors

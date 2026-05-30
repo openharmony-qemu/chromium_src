@@ -4336,12 +4336,7 @@ void HTMLMediaElement::
   GetAudioSourceProvider().SetClient(nullptr);
   if (web_media_player_) {
     audio_source_provider_.Wrap(nullptr);
-    // Never destruct WMPI synchronously since it may be actively calling into
-    // the media element. Instead, post a task to delete it asynchronously.
-    web_media_player_->Shutdown();
-    GetDocument()
-        .GetTaskRunner(TaskType::kInternalMedia)
-        ->DeleteSoon(FROM_HERE, std::move(web_media_player_));
+    web_media_player_.reset();
     // Do not clear `opener_document_` here; new players might still use it.
 
     // The lifetime of the mojo endpoints are tied to the WebMediaPlayer's, so

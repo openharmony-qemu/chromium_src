@@ -99,8 +99,6 @@ class BLINK_MODULES_EXPORT WebMediaPlayerMS
 
   ~WebMediaPlayerMS() override;
 
-  void Shutdown() override;
-
   WebMediaPlayer::LoadTiming Load(LoadType load_type,
                                   const WebMediaPlayerSource& source,
                                   CorsMode cors_mode,
@@ -289,7 +287,7 @@ class BLINK_MODULES_EXPORT WebMediaPlayerMS
 
   const WebTimeRanges buffered_;
 
-  raw_ptr<MediaPlayerClient> client_ = nullptr;
+  const raw_ptr<MediaPlayerClient> client_;
 
   // WebMediaPlayer notifies the |delegate_| of playback state changes using
   // |delegate_id_|; an id provided after registering with the delegate.  The
@@ -303,7 +301,7 @@ class BLINK_MODULES_EXPORT WebMediaPlayerMS
   // before the frame is destroyed). RenderFrameImpl owns of |delegate_|, and is
   // guaranteed to outlive |this|. It is therefore safe use a raw pointer
   // directly.
-  raw_ptr<WebMediaPlayerDelegate> delegate_ = nullptr;
+  raw_ptr<WebMediaPlayerDelegate> delegate_;
   int delegate_id_;
 
   const int player_id_;
@@ -337,7 +335,7 @@ class BLINK_MODULES_EXPORT WebMediaPlayerMS
   const scoped_refptr<base::SequencedTaskRunner> media_task_runner_;
 
   const scoped_refptr<base::TaskRunner> worker_task_runner_;
-  raw_ptr<media::GpuVideoAcceleratorFactories> gpu_factories_ = nullptr;
+  raw_ptr<media::GpuVideoAcceleratorFactories> gpu_factories_;
 
   // Used for DCHECKs to ensure methods calls executed in the correct thread.
   THREAD_CHECKER(thread_checker_);

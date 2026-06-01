@@ -185,17 +185,22 @@ class MODULES_EXPORT AudioContext final
   void SetHtmlPlayEnabled(bool enabled) override {}
   void RequestEnterFullscreen() override {}
   void RequestExitFullscreen() override {}
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   void SetPlaybackRate(double playback_rate) override {}
+  void RequestAVCastStarted() override {}
   void RequestDownloadUrl() override {}
   void HidePlaybackSpeedList() override {}
   void SetVideoSurface(int32_t widget_id) override {}
+  void SetVolume(double volume) override {}
+  void GetVolume(GetVolumeCallback callback) override {}
+#endif // ARKWEB_VIDEO_ASSISTANT
+#if BUILDFLAG(ARKWEB_PIP)
   void PipEnable(bool enable) override {}
   void PipDown(bool enable) override {}
   void RequestExitPictureInPicture() override {}
   void NotifyPipResize() override {}
   void PipRequestPlay() override {}
-  void SetVolume(double volume) override {}
-  void GetVolume(GetVolumeCallback callback) override {}
+#endif // ARKWEB_PIP
 #if BUILDFLAG(ARKWEB_MEDIA_CAST)
   void PullUpCastBackGround(const ::blink::String& device_name) override {}
   void UpdateUiPlayState(bool is_playing) override {}

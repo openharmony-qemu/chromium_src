@@ -3467,7 +3467,12 @@ IN_PROC_BROWSER_TEST_P(NavigationControllerBrowserTest,
 }
 
 // Verify that navigations to the same URL are correctly classified as
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+// EXISTING_ENTRY (if it becomes a reload) or NEW_ENTRY (if it becomes a
+// replacement navigation).
+#else
 // NEW_ENTRY and it becomes a replacement navigation.
+#endif
 IN_PROC_BROWSER_TEST_P(NavigationControllerBrowserTest,
                        NavigationTypeClassification_ExistingEntrySameURL) {
   GURL url1(embedded_test_server()->GetURL(
@@ -3488,14 +3493,30 @@ IN_PROC_BROWSER_TEST_P(NavigationControllerBrowserTest,
   NavigationEntryImpl* previous_entry = controller.GetLastCommittedEntry();
 
   {
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    // Navigate to the same URL (browser-initiated).
+#else
     // Navigate to the same URL (browser-initiated from address bar).
+#endif
     FrameNavigateParamsCapturer capturer(root);
     EXPECT_TRUE(NavigateToURL(shell(), url1));
     capturer.Wait();
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    // The navigation got converted into a reload, and we're classifying this as
+    // EXISTING_ENTRY.
+    EXPECT_EQ(NAVIGATION_TYPE_MAIN_FRAME_EXISTING_ENTRY,
+              capturer.navigation_type());
+    // Ensure the pending entry was cleared after commit.
+    EXPECT_FALSE(shell()->web_contents()->GetController().GetPendingEntry());
+
+    // We reuse the last committed entry for this navigation.
+    EXPECT_FALSE(capturer.did_replace_entry());
+    EXPECT_EQ(previous_entry, controller.GetLastCommittedEntry());
+    EXPECT_EQ(1, controller.GetEntryCount());
+#else
     // The navigation is a replacement navigation, and we're classifying this as
     // NEW_ENTRY.
     EXPECT_EQ(NAVIGATION_TYPE_MAIN_FRAME_NEW_ENTRY, capturer.navigation_type());
-
     // Ensure the pending entry was cleared after commit.
     EXPECT_FALSE(shell()->web_contents()->GetController().GetPendingEntry());
 
@@ -3503,6 +3524,7 @@ IN_PROC_BROWSER_TEST_P(NavigationControllerBrowserTest,
     EXPECT_TRUE(capturer.did_replace_entry());
     EXPECT_NE(previous_entry, controller.GetLastCommittedEntry());
     EXPECT_EQ(1, controller.GetEntryCount());
+#endif
 
     // We keep the same history.state value.
     EXPECT_EQ("foo", EvalJs(root, "history.state"));
@@ -3520,7 +3542,7 @@ IN_PROC_BROWSER_TEST_P(NavigationControllerBrowserTest,
     // The navigation is a replacement navigation, and we're classifying this as
     // NEW_ENTRY.
     EXPECT_EQ(NAVIGATION_TYPE_MAIN_FRAME_NEW_ENTRY, capturer.navigation_type());
-
+  
     // Ensure the pending entry was cleared after commit.
     EXPECT_FALSE(shell()->web_contents()->GetController().GetPendingEntry());
 
@@ -3648,6 +3670,17 @@ IN_PROC_BROWSER_TEST_P(NavigationControllerBrowserTest,
     FrameNavigateParamsCapturer capturer(root);
     EXPECT_TRUE(NavigateToURL(shell(), url1));
     capturer.Wait();
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    // We're classifying this as NEW_ENTRY.
+    EXPECT_EQ(NAVIGATION_TYPE_MAIN_FRAME_NEW_ENTRY, capturer.navigation_type());
+
+    // The navigation added a new entry.
+    // TODO(crbug.com/40755155): This should replace the last committed
+    // entry instead.
+    EXPECT_FALSE(capturer.did_replace_entry());
+    EXPECT_NE(previous_entry, controller.GetLastCommittedEntry());
+    EXPECT_EQ(2, controller.GetEntryCount());
+#else
     // We're classifying this as NEW_ENTRY.
     EXPECT_EQ(NAVIGATION_TYPE_MAIN_FRAME_NEW_ENTRY, capturer.navigation_type());
 
@@ -3655,6 +3688,7 @@ IN_PROC_BROWSER_TEST_P(NavigationControllerBrowserTest,
     EXPECT_TRUE(capturer.did_replace_entry());
     EXPECT_NE(previous_entry, controller.GetLastCommittedEntry());
     EXPECT_EQ(1, controller.GetEntryCount());
+#endif
 
     // We lost the history.state value from before the failed navigation.
     EXPECT_EQ(base::Value(), EvalJs(root, "history.state"));
@@ -3683,7 +3717,11 @@ IN_PROC_BROWSER_TEST_P(NavigationControllerBrowserTest,
     // The navigation replaced the previously committed entry with a new entry.
     EXPECT_TRUE(capturer.did_replace_entry());
     EXPECT_NE(previous_entry, controller.GetLastCommittedEntry());
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    EXPECT_EQ(2, controller.GetEntryCount());
+#else
     EXPECT_EQ(1, controller.GetEntryCount());
+#endif
 
     // We keep the same history.state value.
     EXPECT_EQ("foo", EvalJs(root, "history.state"));
@@ -3718,14 +3756,22 @@ IN_PROC_BROWSER_TEST_P(NavigationControllerBrowserTest,
     // because the navigation resulted in an error page.
     EXPECT_TRUE(capturer.did_replace_entry());
     EXPECT_NE(previous_entry, controller.GetLastCommittedEntry());
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    EXPECT_EQ(2, controller.GetEntryCount());
+#else
     EXPECT_EQ(1, controller.GetEntryCount());
+#endif
 
     url_loader_interceptor.reset();
   }
 }
 
 // Verify that navigations to the same WebUI URL are correctly classified as
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+// EXISTING_ENTRY (it becomes a reload).
+#else
 // NEW_ENTRY as it is a replacement navigation.
+#endif
 // TODO(crbug.com/41489005): Flaky on Linux.
 #if BUILDFLAG(IS_LINUX)
 #define MAYBE_NavigationTypeClassification_ExistingEntrySameURL_WebUI \
@@ -3756,6 +3802,20 @@ IN_PROC_BROWSER_TEST_P(
     FrameNavigateParamsCapturer capturer(root);
     EXPECT_TRUE(NavigateToURL(shell(), web_ui_url));
     capturer.Wait();
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    // The navigation got converted into a reload, and we're classifying this as
+    // EXISTING_ENTRY.
+    EXPECT_EQ(NAVIGATION_TYPE_MAIN_FRAME_EXISTING_ENTRY,
+              capturer.navigation_type());
+
+    // Ensure the pending entry was cleared after commit.
+    EXPECT_FALSE(shell()->web_contents()->GetController().GetPendingEntry());
+
+    // We reuse the last committed entry for this navigation.
+    EXPECT_FALSE(capturer.did_replace_entry());
+    EXPECT_EQ(previous_entry, controller.GetLastCommittedEntry());
+    EXPECT_EQ(1, controller.GetEntryCount());
+#else
     // The navigation got converted into a replacement, and we're classifying
     // this as NEW_ENTRY.
     EXPECT_EQ(NAVIGATION_TYPE_MAIN_FRAME_NEW_ENTRY, capturer.navigation_type());
@@ -3767,6 +3827,7 @@ IN_PROC_BROWSER_TEST_P(
     EXPECT_TRUE(capturer.did_replace_entry());
     EXPECT_NE(previous_entry, controller.GetLastCommittedEntry());
     EXPECT_EQ(1, controller.GetEntryCount());
+#endif
 
     previous_entry = controller.GetLastCommittedEntry();
   }
@@ -3793,7 +3854,11 @@ IN_PROC_BROWSER_TEST_P(
 }
 
 // Verify that navigations to the same URL are correctly classified as
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+// EXISTING_ENTRY even after redirects.
+#else
 // NEW_ENTRY with replacement even after redirects.
+#endif
 IN_PROC_BROWSER_TEST_P(
     NavigationControllerBrowserTest,
     NavigationTypeClassification_ExistingEntrySameURLRedirect) {
@@ -3822,6 +3887,22 @@ IN_PROC_BROWSER_TEST_P(
     EXPECT_TRUE(NavigateToURL(shell(), redirect_to_url2, url2));
     capturer.Wait();
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    // Since it started out as a browser-initiated same-URL navigation, it got
+    // converted to a reload and classified as
+    // NAVIGATION_TYPE_MAIN_FRAME_EXISTING_ENTRY and reuses the previous entry,
+    // even though it ended up at a different URL than before.
+    // TODO(crbug.com/40196772): Perhaps this should be classified as
+    // NAVIGATION_TYPE_MAIN_FRAME_NEW_ENTRY with replacement instead, to be
+    // consistent with reloads that redirected cross-site.
+    EXPECT_EQ(NAVIGATION_TYPE_MAIN_FRAME_EXISTING_ENTRY,
+              capturer.navigation_type());
+    EXPECT_FALSE(capturer.did_replace_entry());
+
+    EXPECT_EQ(previous_entry, controller.GetLastCommittedEntry());
+    EXPECT_EQ(url2, controller.GetLastCommittedEntry()->GetURL());
+    EXPECT_EQ(1, controller.GetEntryCount());
+#else
     // Since it started out as a browser-initiated same-URL navigation, it got
     // converted to a replacement navigation, so it's classified as
     // NAVIGATION_TYPE_MAIN_FRAME_NEW_ENTRY and replaces the previous entry,
@@ -3832,6 +3913,7 @@ IN_PROC_BROWSER_TEST_P(
     EXPECT_NE(previous_entry, controller.GetLastCommittedEntry());
     EXPECT_EQ(url2, controller.GetLastCommittedEntry()->GetURL());
     EXPECT_EQ(1, controller.GetEntryCount());
+#endif
   }
 
   // Change the current URL to |redirect_to_url2| with replaceState again.
@@ -3912,14 +3994,30 @@ IN_PROC_BROWSER_TEST_P(
 
   {
     // Navigate to the same URL (browser-initiated via address bar).
+#if !BUILDFLAG(ARKWEB_NETWORK_LOAD)
     // This is same url navigation from address bar of a url with fragment.
     // It starts as same document navigation with should_replace_current_entry
     // set, and RenderFrameImpl::MakeDidCommitProvisionalLoadParams reuses
     // current history entry instead of replacing it.
     // It is the same behavior as renderer-initiated navigation below.
+#endif
     FrameNavigateParamsCapturer capturer(root);
     EXPECT_TRUE(NavigateToURL(shell(), url1));
     capturer.Wait();
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    // We're classifying this as EXISTING_ENTRY because the navigation got
+    // converted into a reload.
+    EXPECT_EQ(NAVIGATION_TYPE_MAIN_FRAME_EXISTING_ENTRY,
+              capturer.navigation_type());
+
+    // Since we did a reload, it's not classified as a same-document navigation.
+    EXPECT_FALSE(capturer.is_same_document());
+
+    // We reuse the last committed entry for this navigation.
+    EXPECT_FALSE(capturer.did_replace_entry());
+    EXPECT_EQ(previous_entry, controller.GetLastCommittedEntry());
+    EXPECT_EQ(1, controller.GetEntryCount());
+#else
     // We're classifying this as EXISTING_ENTRY because the current entry is
     // reused.
     EXPECT_EQ(NAVIGATION_TYPE_MAIN_FRAME_EXISTING_ENTRY,
@@ -3934,6 +4032,7 @@ IN_PROC_BROWSER_TEST_P(
     // We reuse the last committed entry for this same document navigation.
     EXPECT_EQ(previous_entry, controller.GetLastCommittedEntry());
     EXPECT_EQ(1, controller.GetEntryCount());
+#endif
 
     // We keep the same history.state value.
     EXPECT_EQ("foo", EvalJs(root, "history.state"));
@@ -3943,17 +4042,33 @@ IN_PROC_BROWSER_TEST_P(
 
   {
     // Navigate to the same URL (browser-initiated via bookmark).
+#if !BUILDFLAG(ARKWEB_NETWORK_LOAD)
     // This is same url navigation from bookmark of a url with fragment.
     // It starts as regular navigation, classified as same document navigation
     // with should_replace_current_entry set in NavigationRequest::
     // StartNavigation, and RenderFrameImpl::MakeDidCommitProvisionalLoadParams
     // reuses current history entry instead of replacing it.
     // It is the same behavior as renderer-initiated navigation below.
+#endif
     FrameNavigateParamsCapturer capturer(root);
     NavigationController::LoadURLParams params(url1);
     params.transition_type = ui::PAGE_TRANSITION_AUTO_BOOKMARK;
     controller.LoadURLWithParams(params);
     capturer.Wait();
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    // We're classifying this as EXISTING_ENTRY because the navigation got
+    // converted into a reload.
+    EXPECT_EQ(NAVIGATION_TYPE_MAIN_FRAME_EXISTING_ENTRY,
+              capturer.navigation_type());
+
+    // Since we did a reload, it's not classified as a same-document navigation.
+    EXPECT_FALSE(capturer.is_same_document());
+
+    // We reuse the last committed entry for this navigation.
+    EXPECT_FALSE(capturer.did_replace_entry());
+    EXPECT_EQ(previous_entry, controller.GetLastCommittedEntry());
+    EXPECT_EQ(1, controller.GetEntryCount());
+#else
     // We're classifying this as EXISTING_ENTRY because the current entry is
     // reused.
     EXPECT_EQ(NAVIGATION_TYPE_MAIN_FRAME_EXISTING_ENTRY,
@@ -3968,6 +4083,7 @@ IN_PROC_BROWSER_TEST_P(
     // We reuse the last committed entry for this same document navigation.
     EXPECT_EQ(previous_entry, controller.GetLastCommittedEntry());
     EXPECT_EQ(1, controller.GetEntryCount());
+#endif
 
     // We keep the same history.state value.
     EXPECT_EQ("foo", EvalJs(root, "history.state"));
@@ -4037,7 +4153,11 @@ IN_PROC_BROWSER_TEST_P(NavigationControllerBrowserTest, ReloadWithUrlAnchor) {
 }
 
 // Verify that reloading a page with url anchor and scroll scrolls to correct
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+// position.
+#else
 // position (i.e., the previous scroll location).
+#endif
 IN_PROC_BROWSER_TEST_P(NavigationControllerBrowserTest,
                        ReloadWithUrlAnchorAndScroll) {
   GURL url(embedded_test_server()->GetURL(
@@ -4079,6 +4199,7 @@ IN_PROC_BROWSER_TEST_P(NavigationControllerBrowserTest,
   EXPECT_FLOAT_EQ(expected_window_scroll_y, window_scroll_y);
 }
 
+#if !BUILDFLAG(ARKWEB_NETWORK_LOAD)
 // Verify that navigation to same url (without fragment) for a page with scroll
 // scrolls to correct position (i.e., the top).
 IN_PROC_BROWSER_TEST_P(NavigationControllerBrowserTest,
@@ -4209,6 +4330,7 @@ IN_PROC_BROWSER_TEST_P(NavigationControllerBrowserTest,
   window_scroll_y = EvalJs(shell(), "window.scrollY").ExtractDouble();
   EXPECT_FLOAT_EQ(window_scroll_y_without_user_scroll, window_scroll_y);
 }
+#endif
 
 // Verify that empty GURL navigations are not classified as EXISTING_ENTRY.
 // See https://crbug.com/534980.
@@ -15799,10 +15921,17 @@ IN_PROC_BROWSER_TEST_P(NavigationControllerBrowserTest, ReloadDoesntKeepTitle) {
     EXPECT_TRUE(NavigateToURL(shell(), start_url));
     NavigationEntry* entry2 = controller.GetLastCommittedEntry();
 
-    // Navigating to same url from address bar is a replacement navigation.
-    // A new navigation entry is expected.
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    // Navigating to same url from address bar is a reload. The same entry is
+    // expected.
+    EXPECT_EQ(entry1, entry2);
+    EXPECT_TRUE(entry1->GetTitle().empty());
+#else
+    // Navigating to same url from address bar is a replacement navigation. A
+    // new navigation entry is expected.
     EXPECT_NE(entry1, entry2);
     EXPECT_TRUE(entry2->GetTitle().empty());
+#endif
   }
 }
 

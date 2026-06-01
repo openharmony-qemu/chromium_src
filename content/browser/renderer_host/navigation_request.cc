@@ -10968,6 +10968,13 @@ bool NavigationRequest::ShouldReplaceCurrentEntryForSameUrlNavigation() const {
     return false;
   }
 
+  // set |common_params_->should_replace_current_entry|.
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (common_params_->navigation_type !=
+      blink::mojom::NavigationType::DIFFERENT_DOCUMENT) {
+    return false;
+  }
+#else
   // Only (1) cross-document navigations and (2) same-document navigations from
   // browser UI (e.g., address bar or bookmark) need to consider replacing the
   // entry for same URL cases. Reloads and history navigations have special
@@ -10991,6 +10998,7 @@ bool NavigationRequest::ShouldReplaceCurrentEntryForSameUrlNavigation() const {
        blink::mojom::NavigationType::DIFFERENT_DOCUMENT)) {
     return false;
   }
+#endif
   // Form submissions to the same url should not replace.
   if (begin_params_->is_form_submission)
     return false;

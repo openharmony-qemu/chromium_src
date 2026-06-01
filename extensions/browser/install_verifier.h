@@ -189,6 +189,7 @@ class InstallVerifier : public KeyedService,
   ExtensionIdSet provisional_;
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  bool check_all_extensions_ = false;
   std::map<ExtensionId, int> webstore_types_;
 #endif
 

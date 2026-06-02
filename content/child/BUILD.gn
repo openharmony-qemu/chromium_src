@@ -130,7 +130,8 @@ target(link_target_type, "child") {
   ]
 
   if (arkweb_renderer_anr_dump) {
-    deps += [ "//arkweb/chromium_ext/content/common/hicollie_freeze_reporter:hicollie_freeze_reporter", ]
+    deps += [ "//arkweb/chromium_ext/content/common/hicollie_freeze_reporter:hicollie_freeze_reporter",
+    "//arkweb/chromium_ext/content/browser/dfx:appfreeze_monitor" ]
   }
 
   if (arkweb_oop_gpu_process) {

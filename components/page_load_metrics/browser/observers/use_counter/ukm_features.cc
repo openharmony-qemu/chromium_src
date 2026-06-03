@@ -413,6 +413,7 @@ UseCounterMetricsRecorder::GetAllowedUkmFeatures() {
           WebFeature::
               kServiceWorkerStaticRouter_RaceNetworkAndFetchHandlerImprovement,
           WebFeature::kThirdPartyCookieBlocked,
+          WebFeature::kSameDocumentCrossOriginInitiator,
       }));
   return *opt_in_features;
 }

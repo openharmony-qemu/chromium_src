@@ -1234,6 +1234,7 @@ test("skia_unittests") {
     deps += [
       "//third_party/jsoncpp:jsoncpp",
       "//content/public/child",
+      "//arkweb/ohos_adapter_ndk/mock_ndk_api:mock_base_ohos",
     ]
     include_dirs = [
       "//third_party/ohos_ndk/includes/ohos_adapter",

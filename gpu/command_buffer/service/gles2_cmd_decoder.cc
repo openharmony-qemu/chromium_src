@@ -5465,6 +5465,8 @@ void GLES2DecoderImpl::DoBeginTransformFeedback(GLenum primitive_mode) {
   }
   transform_feedback->DoBeginTransformFeedback(primitive_mode);
   DCHECK(transform_feedback->active());
+
+  transform_feedback->SetActiveProgram(program);
 }
 
 void GLES2DecoderImpl::DoEndTransformFeedback() {
@@ -5477,6 +5479,11 @@ void GLES2DecoderImpl::DoEndTransformFeedback() {
   }
   // TODO(zmo): Validate binding points.
   state_.bound_transform_feedback->DoEndTransformFeedback();
+
+  Program* program = state_.bound_transform_feedback->active_program();
+  if (program) {
+    state_.bound_transform_feedback->ClearActiveProgram();
+  }
 }
 
 void GLES2DecoderImpl::DoPauseTransformFeedback() {
@@ -5498,6 +5505,15 @@ void GLES2DecoderImpl::DoResumeTransformFeedback() {
                        "transform feedback is not active or not paused");
     return;
   }
+
+  if (state_.current_program.get() !=
+      state_.bound_transform_feedback->active_program()) {
+    LOCAL_SET_GL_ERROR(GL_INVALID_OPERATION, "glResumeTransformFeedback",
+                       "current program does not match the program active when "
+                       "transform feedback began");
+    return;
+  }
+
   state_.bound_transform_feedback->DoResumeTransformFeedback();
 }
 
@@ -8203,6 +8219,12 @@ void GLES2DecoderImpl::DoLinkProgram(GLuint program_id) {
   Program* program = GetProgramInfoNotShader(
       program_id, "glLinkProgram");
   if (!program) {
+    return;
+  }
+
+  if (program->IsActiveForTransformFeedback()) {
+    LOCAL_SET_GL_ERROR(GL_INVALID_OPERATION, "glLinkProgram",
+                       "program is active for transform feedback");
     return;
   }
 

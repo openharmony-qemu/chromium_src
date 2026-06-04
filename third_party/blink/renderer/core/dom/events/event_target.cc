@@ -505,12 +505,20 @@ void EventTarget::SetDefaultAddEventListenerOptions(
     options->setPassive(false);
 
   if (!options->passive() && !options->PassiveSpecified()) {
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+    String message_text = String::Format(
+        "Added non-passive event listener to a scroll-blocking '%s' event. "
+        "Consider marking event handler as 'passive' to make the page more "
+        "responsive.",
+        event_type.GetString().Utf8().c_str());
+#else
     String message_text = String::Format(
         "Added non-passive event listener to a scroll-blocking '%s' event. "
         "Consider marking event handler as 'passive' to make the page more "
         "responsive. See "
         "https://www.chromestatus.com/feature/5745543795965952",
         event_type.GetString().Utf8().c_str());
+#endif
 
     PerformanceMonitor::ReportGenericViolation(
         GetExecutionContext(), PerformanceMonitor::kDiscouragedAPIUse,

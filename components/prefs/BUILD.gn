@@ -78,6 +78,10 @@ component("prefs") {
 
   if (defined(arkweb_adblock) && arkweb_adblock) {
     sources += arkweb_pref_ext_sources
+    deps += [
+      "//extensions/buildflags:buildflags",
+      "//third_party/widevine/cdm:buildflags",
+    ]
   }
 }
 

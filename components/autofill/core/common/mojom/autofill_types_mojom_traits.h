@@ -619,8 +619,7 @@ struct StructTraits<autofill::mojom::InputFillRequestDataDataView,
     return r.field_renderer_id;
   }
 
-  static bool is_focused(
-      const autofill::InputFillRequestData& r) {
+  static bool is_focused(const autofill::InputFillRequestData& r) {
     return r.is_focused;
   }
 
@@ -629,13 +628,11 @@ struct StructTraits<autofill::mojom::InputFillRequestDataDataView,
     return r.type;
   }
 
-  static const gfx::RectF& bounds(
-      const autofill::InputFillRequestData& r) {
+  static const gfx::RectF& bounds(const autofill::InputFillRequestData& r) {
     return r.bounds;
   }
 
-  static const std::u16string& value(
-      const autofill::InputFillRequestData& r) {
+  static const std::u16string& value(const autofill::InputFillRequestData& r) {
     return r.value;
   }
 
@@ -651,6 +648,33 @@ struct StructTraits<autofill::mojom::InputFillRequestDataDataView,
 
   static bool Read(autofill::mojom::InputFillRequestDataDataView data,
                    autofill::InputFillRequestData* out);
+};
+
+template <>
+struct StructTraits<autofill::mojom::OhosPasswordVaultFieldMappingDataView,
+                    autofill::OhosPasswordVaultFieldMapping> {
+  static autofill::FieldRendererId field_renderer_id(
+      const autofill::OhosPasswordVaultFieldMapping& r) {
+    return r.field_renderer_id;
+  }
+
+  static autofill::FormRendererId form_renderer_id(
+      const autofill::OhosPasswordVaultFieldMapping& r) {
+    return r.form_renderer_id;
+  }
+
+  static autofill::mojom::OhosPasswordVaultFieldRole role(
+      const autofill::OhosPasswordVaultFieldMapping& r) {
+    return static_cast<autofill::mojom::OhosPasswordVaultFieldRole>(r.role);
+  }
+
+  static const std::string& autocomplete_attr(
+      const autofill::OhosPasswordVaultFieldMapping& r) {
+    return r.autocomplete_attr;
+  }
+
+  static bool Read(autofill::mojom::OhosPasswordVaultFieldMappingDataView data,
+                   autofill::OhosPasswordVaultFieldMapping* out);
 };
 // #endif  ARKWEB_PASSWORD_AUTOFILL
 

@@ -212,6 +212,24 @@ enum OhosInputElementType {
     kUsernameType,
     kPasswordType,
 };
+
+[EnableIf=arkweb_password_autofill]
+enum OhosPasswordVaultScene {
+    kLoginFill,
+    kPasswordChangeFill,
+    kFormSubmitted,
+    kMainFrameNavigationAfterSubmit,
+    kDynamicSubmission,
+    kPasswordUpdateSucceeded,
+};
+
+[EnableIf=arkweb_password_autofill]
+enum OhosPasswordVaultFieldRole {
+    kUsername,
+    kCurrentPassword,
+    kNewPassword,
+    kConfirmNewPassword,
+};
  
 // autofill::InputFillRequestData
 struct InputFillRequestData {
@@ -221,6 +239,14 @@ struct InputFillRequestData {
     gfx.mojom.RectF bounds;
     mojo_base.mojom.String16 value;
     mojo_base.mojom.String16 placeholder;
+    string autocomplete_attr;
+};
+
+// autofill::OhosPasswordVaultFieldMapping
+struct OhosPasswordVaultFieldMapping {
+    FieldRendererId field_renderer_id;
+    FormRendererId form_renderer_id;
+    OhosPasswordVaultFieldRole role;
     string autocomplete_attr;
 };
 

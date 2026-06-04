@@ -528,8 +528,9 @@ void AutofillAgent::DidDispatchDOMContentLoadedEvent() {
 void AutofillAgent::DidChangeScrollOffset() {
   if (!config_.focus_requires_scroll) {
 #if BUILDFLAG(ARKWEB_AUTOFILL)
-    if (AsAutofillAgentExt()->OhAutoFillDidChangeScrollOffset())
+    if (AsAutofillAgentExt()->OhAutoFillDidChangeScrollOffset()) {
       return;
+    }
 #endif
     // Post a task here since scroll offset may change during layout.
     // TODO(crbug.com/40559425): Do not cancel other tasks and do not invalidate
@@ -546,7 +547,7 @@ void AutofillAgent::DidChangeScrollOffset() {
 #if BUILDFLAG(ARKWEB_DATALIST)
     if (!is_popup_possibly_visible_)
 #endif
-    HidePopup();
+      HidePopup();
   }
 }
 
@@ -835,8 +836,9 @@ void AutofillAgent::TextFieldDidEndEditing(const WebInputElement& element) {
     return;
   }
 #if BUILDFLAG(ARKWEB_DATALIST)
-  if (is_popup_possibly_visible_)
+  if (is_popup_possibly_visible_) {
     return;
+  }
 #endif
   if (auto* autofill_driver = unsafe_autofill_driver()) {
     autofill_driver->DidEndTextFieldEditing();
@@ -908,7 +910,8 @@ void AutofillAgent::OnTextFieldValueChanged(
     }
 #if BUILDFLAG(ARKWEB_AUTOFILL)
     // TODO(arkweb): Please check.
-    ShowSuggestions(element, AutofillSuggestionTriggerSource::kFormControlElementClicked,
+    ShowSuggestions(element,
+                    AutofillSuggestionTriggerSource::kFormControlElementClicked,
                     form_cache, password_request);
 #else
     ShowSuggestions(element,
@@ -976,7 +979,8 @@ void AutofillAgent::TextFieldDidReceiveKeyDown(const WebInputElement& element,
 void AutofillAgent::OpenTextDataListChooser(const WebInputElement& element) {
   DCHECK(form_util::MaybeWasOwnedByFrame(element, unsafe_render_frame()));
 #if BUILDFLAG(ARKWEB_DATALIST)
-  if (is_popup_possibly_visible_ || last_left_mouse_down_or_gesture_tap_in_node_caused_focus_) {
+  if (is_popup_possibly_visible_ ||
+      last_left_mouse_down_or_gesture_tap_in_node_caused_focus_) {
     return;
   }
 #endif
@@ -1262,8 +1266,9 @@ void AutofillAgent::ApplyFieldAction(
           }
           case mojom::FieldActionType::kReplaceAll: {
 #if BUILDFLAG(ARKWEB_AUTOFILL)
-            if (AsAutofillAgentExt()->FillFieldWithValue(field_id, value))
+            if (AsAutofillAgentExt()->FillFieldWithValue(field_id, value)) {
               return;
+            }
 #endif
             DoFillFieldWithValue(value, form_control,
                                  WebAutofillState::kAutofilled);
@@ -1311,17 +1316,15 @@ void AutofillAgent::ApplyFieldAction(
             break;
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
           case mojom::FieldActionType::kNotSmartReplaceSelection:
-            content_editable.PasteText(
-                WebString::FromUTF16(value),
-                /*replace_all=*/false,
-                /*should_smart_replace=*/false);
+            content_editable.PasteText(WebString::FromUTF16(value),
+                                       /*replace_all=*/false,
+                                       /*should_smart_replace=*/false);
             break;
           case mojom::FieldActionType::kManualReplaceSelection:
-            content_editable.PasteText(
-                WebString::FromUTF16(value),
-                /*replace_all=*/false,
-                /*should_smart_replace=*/false,
-                /*suppress_paste_event=*/true);
+            content_editable.PasteText(WebString::FromUTF16(value),
+                                       /*replace_all=*/false,
+                                       /*should_smart_replace=*/false,
+                                       /*suppress_paste_event=*/true);
             break;
 #endif
           case mojom::FieldActionType::kReplaceAll:
@@ -1398,8 +1401,19 @@ void AutofillAgent::AcceptDataListSuggestion(
 }
 
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
-void AutofillAgent::FillAccountSuggestion(const std::u16string& username, const std::u16string& password) {
+void AutofillAgent::FillAccountSuggestion(const std::u16string& username,
+                                          const std::u16string& password) {
   AsAutofillAgentExt()->ArkFillAccountSuggestion(username, password);
+}
+
+void AutofillAgent::FillPasswordVaultFieldMapping(
+    const std::vector<OhosPasswordVaultFieldMapping>& field_mappings,
+    const std::u16string& current_password,
+    const std::u16string& new_password,
+    bool user_confirmed,
+    const std::u16string& username) {
+  AsAutofillAgentExt()->ArkFillPasswordVaultFieldMapping(
+      field_mappings, current_password, new_password, user_confirmed, username);
 }
 #endif
 
@@ -1512,7 +1526,8 @@ void AutofillAgent::ShowSuggestions(
 
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
   const WebInputElement input_element = element.DynamicTo<WebInputElement>();
-  if (password_autofill_agent_->AsPasswordAutofillAgentExt()->IsPasswordAutofill(input_element)) {
+  if (password_autofill_agent_->AsPasswordAutofillAgentExt()
+          ->IsPasswordAutofill(input_element)) {
     LOG(INFO) << "[Autofill] Is password autofill, skip form fill.";
     return;
   }
@@ -1535,13 +1550,14 @@ void AutofillAgent::ShowSuggestions(
   is_popup_possibly_visible_ = true;
   if (auto* autofill_driver = unsafe_autofill_driver()) {
     if (auto* render_frame = unsafe_render_frame()) {
-      autofill_driver->AskForValuesToFill(form, field->renderer_id(),
+      autofill_driver->AskForValuesToFill(
+          form, field->renderer_id(),
 #if BUILDFLAG(ARKWEB_DATALIST)
-                                          render_frame->ConvertViewportToWindow(element.BoundsInWidget()),
+          render_frame->ConvertViewportToWindow(element.BoundsInWidget()),
 #else
-                                          GetCaretBounds(*render_frame),
+          GetCaretBounds(*render_frame),
 #endif
-                                          trigger_source, password_request);
+          trigger_source, password_request);
     }
   }
 }

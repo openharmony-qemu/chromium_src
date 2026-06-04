@@ -21,12 +21,14 @@ namespace mojo {
 bool StructTraits<autofill::mojom::FrameTokenDataView, autofill::FrameToken>::
     Read(autofill::mojom::FrameTokenDataView data, autofill::FrameToken* out) {
   base::UnguessableToken token;
-  if (!data.ReadToken(&token))
+  if (!data.ReadToken(&token)) {
     return false;
-  if (data.is_local())
+  }
+  if (data.is_local()) {
     *out = autofill::LocalFrameToken(token);
-  else
+  } else {
     *out = autofill::RemoteFrameToken(token);
+  }
   return true;
 }
 
@@ -35,8 +37,9 @@ bool StructTraits<autofill::mojom::FrameTokenWithPredecessorDataView,
                   autofill::FrameTokenWithPredecessor>::
     Read(autofill::mojom::FrameTokenWithPredecessorDataView data,
          autofill::FrameTokenWithPredecessor* out) {
-  if (!data.ReadToken(&out->token))
+  if (!data.ReadToken(&out->token)) {
     return false;
+  }
   out->predecessor = data.predecessor();
   return out->predecessor >= -1;
 }
@@ -64,8 +67,9 @@ bool StructTraits<
     autofill::mojom::SelectOptionDataView,
     autofill::SelectOption>::Read(autofill::mojom::SelectOptionDataView data,
                                   autofill::SelectOption* out) {
-  if (!data.ReadValue(&out->value))
+  if (!data.ReadValue(&out->value)) {
     return false;
+  }
   if (!data.ReadText(&out->text)) {
     return false;
   }
@@ -77,12 +81,15 @@ bool StructTraits<autofill::mojom::AutocompleteParsingResultDataView,
                   autofill::AutocompleteParsingResult>::
     Read(autofill::mojom::AutocompleteParsingResultDataView data,
          autofill::AutocompleteParsingResult* out) {
-  if (!data.ReadSection(&out->section))
+  if (!data.ReadSection(&out->section)) {
     return false;
-  if (!data.ReadMode(&out->mode))
+  }
+  if (!data.ReadMode(&out->mode)) {
     return false;
-  if (!data.ReadFieldType(&out->field_type))
+  }
+  if (!data.ReadFieldType(&out->field_type)) {
     return false;
+  }
   out->webauthn = data.webauthn();
   out->webidentity = data.webidentity();
   return true;
@@ -475,15 +482,18 @@ bool StructTraits<autofill::mojom::FormDataPredictionsDataView,
                   autofill::FormDataPredictions>::
     Read(autofill::mojom::FormDataPredictionsDataView data,
          autofill::FormDataPredictions* out) {
-  if (!data.ReadData(&out->data))
+  if (!data.ReadData(&out->data)) {
     return false;
-  if (!data.ReadSignature(&out->signature))
+  }
+  if (!data.ReadSignature(&out->signature)) {
     return false;
+  }
   if (!data.ReadAlternativeSignature(&out->alternative_signature)) {
     return false;
   }
-  if (!data.ReadFields(&out->fields))
+  if (!data.ReadFields(&out->fields)) {
     return false;
+  }
 
   return true;
 }
@@ -499,8 +509,9 @@ bool StructTraits<autofill::mojom::PasswordAndMetadataDataView,
   if (!data.ReadPasswordValue(&out->password_value)) {
     return false;
   }
-  if (!data.ReadRealm(&out->realm))
+  if (!data.ReadRealm(&out->realm)) {
     return false;
+  }
 
   out->uses_account_store = data.uses_account_store();
   out->is_grouped_affiliation = data.is_grouped_affiliation();
@@ -547,11 +558,26 @@ bool StructTraits<autofill::mojom::InputFillRequestDataDataView,
          autofill::InputFillRequestData* out) {
   out->is_focused = data.is_focused();
   return data.ReadFieldRendererId(&out->field_renderer_id) &&
-         data.ReadType(&out->type) &&
-         data.ReadBounds(&out->bounds) &&
+         data.ReadType(&out->type) && data.ReadBounds(&out->bounds) &&
          data.ReadValue(&out->value) &&
          data.ReadPlaceholder(&out->placeholder) &&
          data.ReadAutocompleteAttr(&out->autocomplete_attr);
+}
+
+// static
+bool StructTraits<autofill::mojom::OhosPasswordVaultFieldMappingDataView,
+                  autofill::OhosPasswordVaultFieldMapping>::
+    Read(autofill::mojom::OhosPasswordVaultFieldMappingDataView data,
+         autofill::OhosPasswordVaultFieldMapping* out) {
+  autofill::mojom::OhosPasswordVaultFieldRole role;
+  if (!data.ReadFieldRendererId(&out->field_renderer_id) ||
+      !data.ReadFormRendererId(&out->form_renderer_id) ||
+      !data.ReadRole(&role) ||
+      !data.ReadAutocompleteAttr(&out->autocomplete_attr)) {
+    return false;
+  }
+  out->role = static_cast<autofill::OhosPasswordVaultFieldRole>(role);
+  return true;
 }
 // #endif
 
@@ -560,8 +586,9 @@ bool StructTraits<autofill::mojom::PasswordGenerationUIDataDataView,
                   autofill::password_generation::PasswordGenerationUIData>::
     Read(autofill::mojom::PasswordGenerationUIDataDataView data,
          autofill::password_generation::PasswordGenerationUIData* out) {
-  if (!data.ReadBounds(&out->bounds))
+  if (!data.ReadBounds(&out->bounds)) {
     return false;
+  }
 
   out->max_length = data.max_length();
   out->is_generation_element_password_type =

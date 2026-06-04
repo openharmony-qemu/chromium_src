@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "arkweb/build/features/features.h"
+#include "arkweb/chromium_ext/components/autofill/core/common/arkweb_password_autofill_data.h"
 #include "base/compiler_specific.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/raw_ref.h"
@@ -156,7 +157,14 @@ class AutofillAgent : public content::RenderFrameObserver,
 
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
   virtual AutofillAgentExt* AsAutofillAgentExt() { return nullptr; }
-  void FillAccountSuggestion(const std::u16string& username, const std::u16string& password) override;
+  void FillAccountSuggestion(const std::u16string& username,
+                             const std::u16string& password) override;
+  void FillPasswordVaultFieldMapping(
+      const std::vector<OhosPasswordVaultFieldMapping>& field_mappings,
+      const std::u16string& current_password,
+      const std::u16string& new_password,
+      bool user_confirmed,
+      const std::u16string& username) override;
 #endif
 
   void BindPendingReceiver(

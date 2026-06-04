@@ -96,6 +96,16 @@ interface AutofillAgent {
   FillAccountSuggestion(mojo_base.mojom.String16 username,
                         mojo_base.mojom.String16 password);
 
+  // Fills password-change fields using mappings returned by the system
+  // password vault after explicit user confirmation.
+  [EnableIf=arkweb_password_autofill]
+  FillPasswordVaultFieldMapping(
+      array<OhosPasswordVaultFieldMapping> field_mappings,
+      mojo_base.mojom.String16 current_password,
+      mojo_base.mojom.String16 new_password,
+      bool user_confirmed,
+      mojo_base.mojom.String16 username);
+
   // Tells the renderer to preview the username and password with the given
   // values.
   PreviewPasswordSuggestion(

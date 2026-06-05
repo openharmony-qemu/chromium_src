@@ -35,6 +35,7 @@
 #include <string>
 #include <vector>
 
+#include "aki/jsbind.h"
 #include "ohos/adapter/export.h"
 
 namespace ohos {

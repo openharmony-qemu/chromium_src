@@ -143,10 +143,10 @@ class CONTENT_EXPORT FileSystemAccessWatcherManager
   void OnRawChange(const storage::FileSystemURL& changed_url,
                    bool error,
                    const FileSystemAccessChangeSource::ChangeInfo& change_info,
-                   const FileSystemAccessWatchScope& scope) override;
+                   FileSystemAccessWatchScope scope) override;
   void OnUsageChange(size_t old_usage,
                      size_t new_usage,
-                     const FileSystemAccessWatchScope& scope) override;
+                     FileSystemAccessWatchScope scope) override;
   void OnSourceBeingDestroyed(FileSystemAccessChangeSource* source) override;
 
   // Subscriber this instance to raw changes from `source`.

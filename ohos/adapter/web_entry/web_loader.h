@@ -65,7 +65,6 @@ class BasicLoader {
   int StartChildProcess(int process_type, int argc, const char** argv);
 
   virtual std::string GetEntryPoint(int process_type) = 0;
-  virtual const std::vector<std::string> GetEntryArgs() = 0;
 
  protected:
   common::SharedLibrary shared_library_;

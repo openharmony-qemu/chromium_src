@@ -37,7 +37,7 @@ class ContentShellLoader : public BasicLoader {
       : BasicLoader(dir, name) {}
 
   std::string GetEntryPoint(int process_type) override;
-  const std::vector<std::string> GetEntryArgs() override;
+  const std::vector<std::string> GetEntryArgs();
 };
 
 }  // namespace ohos::adapter::web_entry

@@ -105,6 +105,8 @@ export interface NativeContext {
   IsSupportNodeHandleFeature: () => boolean;
   OnBackToLastPage: (id: string) => void;
   GetLastActiveWidgetId: () => number;
+  ShouldDisableJit: () => boolean;
+  GetDevCommandLines: () => string[];
 }
 
 export interface IParams {

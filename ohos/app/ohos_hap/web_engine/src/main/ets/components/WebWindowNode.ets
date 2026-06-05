@@ -37,12 +37,14 @@ import { MultiInputAdapter } from '../adapter/MultiInputAdapter';
 import { typeNode as TypedNode, NodeController, FrameNode } from '@ohos.arkui.node';
 import { DragParamManager } from '../common/DragParamManager';
 import { window } from '@kit.ArkUI';
+import { CmdArgsHelper } from '../utils/CmdArgsHelper';
 
 interface ComponentConfig {
   moduleName: string,
   xComponentId: string,
   uri: string,
   nativeContext: NativeContext,
+  cmdArgs: string[],
   window?: window.Window
 }
 
@@ -92,7 +94,8 @@ class WindowNodeController extends NodeController {
       .onLoad(() => {
         LogUtil.info(TAG, 'onLoad xComponentId:' + this.config.xComponentId);
         this.setDefaultBounds();
-        let vec_args = this.buildArgs();
+        let vec_args = CmdArgsHelper.buildArgs(this.config.uri, this.config.cmdArgs);
+        CmdArgsHelper.preProcessArgs(vec_args);
         this.config.nativeContext.runBrowser(vec_args);
       })
     node.appendChild(this.xComponent);
@@ -125,15 +128,6 @@ class WindowNodeController extends NodeController {
     }
   }
 
-  private buildArgs(): string[] {
-    let default_uri = '';
-    if (this.config.uri.length !== 0) {
-      default_uri = this.config.uri;
-    }
-    let resDir = '--bundle-installation-dir=' + getContext().resourceDir;
-    let vec_args = [resDir, default_uri];
-    return vec_args;
-  }
 }
 
 @Component
@@ -141,6 +135,7 @@ export struct WebWindowNode {
   @LocalStorageLink('xcomponentId') xComponentId: string = '';
   @LocalStorageLink('startUri') startUri: string = '';
   @LocalStorageLink('window') window: window.Window | undefined = undefined;
+  @LocalStorageLink('cmdArgs') cmdArgs: string[] = [];
   private XCOMPONENT_NAME: string = 'xcomponent';
   private MODULE_NAME: string = this.xComponentId + ':' + this.XCOMPONENT_NAME;
   private dragDropAdapter: DragDropAdapter = Inject.get(DragDropAdapter);
@@ -154,6 +149,7 @@ export struct WebWindowNode {
       xComponentId: this.xComponentId,
       uri: this.startUri,
       nativeContext: this.nativeContext,
+      cmdArgs: this.cmdArgs,
       window: this.window
     });
 

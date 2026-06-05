@@ -91,36 +91,7 @@ std::string ChromeMainLoader::GetEntryPoint(int process_type) {
   return entry_point;
 }
 
-const std::vector<std::string> ChromeMainLoader::GetEntryArgs() {
-  std::vector<std::string> args = {
-      "chrome",
-      "--use-gl=egl",
-      "--enable-features=UseOzonePlatform",
-      "--ozone-platform=ohos",
-      "--enable-logging",
-      "--ozone-dump-file=/data/storage/el2/base/cache/",
-      "--no-zygote",
-      "--user-data-dir=/data/storage/el2/base/files/",
-      "--force-renderer-accessibility=complete",
-      "--disable-gpu-watchdog",
-  };
-  ohos::adapter::device_info::DeviceType device_type =
-    ohos::adapter::device_info::DeviceInfo::GetInstance().GetDeviceType();
-  // pad not support gpu process
-  if (device_type == ohos::adapter::device_info::DeviceType::_TABLET) {
-    if (ohos::adapter::device_info::DeviceInfo::SdkApi() <
-        ohos::adapter::device_info::SDK_VERSION_19) {
-          args.emplace_back("--js-flags=--jitless");
-    }    
-    args.push_back("--in-process-gpu");
-  }
-  if (ShouldDisableJit()) {
-    args.emplace_back("--js-flags=--jitless");
-  }
-  for (const auto& command : GetDevCommandLines()) {
-    args.emplace_back(command);
-  }
-  return args;
-}
-
+JSBIND_GLOBAL() {
+  JSBIND_FUNCTION(ShouldDisableJit);
+ }
 }  // namespace ohos::adapter::web_entry

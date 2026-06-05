@@ -233,9 +233,6 @@ bool PlatformCrashpadInitialization(
 #endif
 
     std::vector<std::string> arguments;
-#if BUILDFLAG(IS_OHOS)
-    arguments.push_back(std::string("--type=") + switches::kCrashpadHandler);
-#endif
     if (crash_reporter_client->ShouldMonitorCrashHandlerExpensively()) {
       arguments.push_back("--monitor-self");
     }

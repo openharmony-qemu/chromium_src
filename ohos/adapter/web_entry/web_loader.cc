@@ -51,11 +51,7 @@ int BasicLoader::StartMainProcess(const std::vector<std::string>& args) {
   }
   auto fn = shared_library_.GetFunction<int(int, const char**)>(entry.c_str());
   if (fn != nullptr) {
-    auto argv_origin = GetEntryArgs();
     std::vector<const char*> argv_cstr;
-    for (const auto& arg : argv_origin) {
-      argv_cstr.push_back(const_cast<char*>(arg.c_str()));
-    }
     for (const auto& arg : args) {
       argv_cstr.push_back(const_cast<char*>(arg.c_str()));
     }

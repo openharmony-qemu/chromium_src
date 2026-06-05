@@ -15,6 +15,14 @@ namespace ui {
 using ohos::adapter::accessibility::NativeElement;
 using ohos::adapter::accessibility::NativeElementList;
 
+struct TreeTraversalContext {
+    NativeElementList element_list;
+    std::queue<ui::AXPlatformNodeOHOS*> queue;
+    int second_level_count = 0;
+    int handled_count = 0;
+    std::shared_ptr<std::promise<bool>> promise;
+};
+
 class COMPONENT_EXPORT(AX_PLATFORM) AccessibilityBridgeOhosImpl final
     : public ohos::adapter::accessibility::AccessibilityAdapter::Delegate,
       public aura::WindowObserver {
@@ -47,7 +55,11 @@ class COMPONENT_EXPORT(AX_PLATFORM) AccessibilityBridgeOhosImpl final
   // current node itself.
   void SetNativeUITree(int32_t element_id,
                        NativeElementList element_list,
-                       AXPlatformNodeOHOS* ax_platform_node);
+                       AXPlatformNodeOHOS* ax_platform_node,
+                       std::shared_ptr<std::promise<bool>> promise);
+
+  // Add the element information of nodes in the order of level-order traversal. and process by trunk
+  void ProcessNativeUITreeByLevelOrderChunk(std::shared_ptr<TreeTraversalContext> ctx);
 
   // ohos::adapter::accessibility::AccessibilityAdapter::Delegate overrides.
   bool FindAccessibilityNodeInfosById(int32_t element_id,
@@ -81,11 +93,6 @@ class COMPONENT_EXPORT(AX_PLATFORM) AccessibilityBridgeOhosImpl final
       ui::AXPlatformNodeOHOS* ax_platform_node,
       std::queue<ui::AXPlatformNodeOHOS*>* queue = nullptr);
 
-  // Add the element information of nodes in the order of level-order traversal.
-  void AddNativeUITreeByLevelOrder(NativeElementList element_list,
-                                   ui::AXPlatformNodeOHOS* node,
-                                   bool is_from_root);
-
   void handleFindAccessibilityNodeInfosByIdRequest(
       int32_t element_id,
       ArkUI_AccessibilitySearchMode mode,
@@ -106,6 +113,8 @@ class COMPONENT_EXPORT(AX_PLATFORM) AccessibilityBridgeOhosImpl final
   // The top-left corner position of the root window region.
   int root_window_bound_x_ = 0;
   int root_window_bound_y_ = 0;
+
+  base::WeakPtrFactory<AccessibilityBridgeOhosImpl> weak_ptr_factory_{this};
 };
 
 }  // namespace ui

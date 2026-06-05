@@ -17,7 +17,7 @@ using ohos::adapter::accessibility::NativeElementList;
 
 struct TreeTraversalContext {
     NativeElementList element_list;
-    std::queue<ui::AXPlatformNodeOHOS*> queue;
+    std::queue<int32_t> queue;
     int second_level_count = 0;
     int handled_count = 0;
     std::shared_ptr<std::promise<bool>> promise;
@@ -85,13 +85,13 @@ class COMPONENT_EXPORT(AX_PLATFORM) AccessibilityBridgeOhosImpl final
                          ui::AXPlatformNodeOHOS* node,
                          int32_t id,
                          int32_t parent_id,
-                         std::queue<ui::AXPlatformNodeOHOS*>* queue = nullptr);
+                         std::queue<int32_t>* queue = nullptr);
 
   // Add the element information of the root node.
   int AddNativeUIRootElement(
       NativeElementList element_list,
       ui::AXPlatformNodeOHOS* ax_platform_node,
-      std::queue<ui::AXPlatformNodeOHOS*>* queue = nullptr);
+      std::queue<int32_t>* queue = nullptr);
 
   void handleFindAccessibilityNodeInfosByIdRequest(
       int32_t element_id,

@@ -40,6 +40,8 @@ source_set("ohos") {
     "host/ohos_event_source_node_handle.h",
     "host/ohos_fake_window.cc",
     "host/ohos_fake_window.h",
+    "host/ohos_global_shortcut_listener.cc",
+    "host/ohos_global_shortcut_listener.h",
     "host/ohos_pip_window.cc",
     "host/ohos_pip_window.h",
     "host/ohos_pip_window_manager.cc",

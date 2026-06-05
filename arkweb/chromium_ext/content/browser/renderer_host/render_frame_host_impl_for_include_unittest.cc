@@ -235,22 +235,6 @@ TEST_F(RenderFrameHostImplForIncludeTest, CloseImageOverlaySelection_NoDelegate)
   ASSERT_TRUE(rfh->delegate());
 }
 
-TEST_F(RenderFrameHostImplForIncludeTest, IsJsDialogShowOrBeforeUnloadTimedOut_NoDelegate) {
-  RenderFrameHostImpl* rfh = main_test_rfh();
-  auto delegate = rfh->delegate();
-  SetDelegate(rfh, nullptr);
-  ASSERT_FALSE(rfh->delegate());
-  EXPECT_FALSE(rfh->IsJsDialogShowOrBeforeUnloadTimedOut());
-  SetDelegate(rfh, delegate);
-  ASSERT_TRUE(rfh->delegate());
-}
-
-TEST_F(RenderFrameHostImplForIncludeTest, IsJsDialogShowOrBeforeUnloadTimedOut_WithDelegate) {
-  RenderFrameHostImpl* rfh = main_test_rfh();
-  rfh->IsJsDialogShowOrBeforeUnloadTimedOut();
-  EXPECT_TRUE(GetPageCloseState(rfh) == expect_page_close_state);
-}
-
 TEST_F(RenderFrameHostImplForIncludeTest, CommitNavigationExt_WithResourcesScheme) {
   const std::string effective_scheme = url::kResourcesScheme;
   ContentBrowserClient::NonNetworkURLLoaderFactoryMap non_network_factories;

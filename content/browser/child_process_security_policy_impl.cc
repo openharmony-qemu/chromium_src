@@ -531,10 +531,6 @@ class ChildProcessSecurityPolicyImpl::SecurityState {
   }
 #endif
 
-#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
-#include "arkweb/chromium_ext/content/browser/child_process_security_policy_impl_for_include.cc"
-#endif
-
   void GrantBindings(BindingsPolicySet bindings) {
     enabled_bindings_.PutAll(bindings);
   }
@@ -623,13 +619,6 @@ class ChildProcessSecurityPolicyImpl::SecurityState {
 #if BUILDFLAG(IS_ANDROID)
     if (file.IsContentUri()) {
       return HasPermissionsForContentUri(file, permissions);
-    }
-#endif
-#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
-    auto bundleName = OHOS::NWeb::OhosAdapterHelper::GetInstance().
-         GetSystemPropertiesInstance().GetBundleName();
-    if (file.IsDataShareUri(bundleName)) {
-      return HasPermissionsForDatashareUri(file, permissions);
     }
 #endif
     if (!permissions || file.empty() || !file.IsAbsolute()) {

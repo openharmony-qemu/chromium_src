@@ -21,5 +21,6 @@ if (current_toolchain == host_toolchain) {
     ]
     configs -= [ "//build/config/compiler:chromium_code" ]
     configs += [ "//build/config/compiler:no_chromium_code" ]
+    ldflags = [ "-lgcc_s" ]
   }
 }

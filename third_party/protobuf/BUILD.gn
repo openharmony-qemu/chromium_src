@@ -340,6 +340,7 @@ if (current_toolchain == host_toolchain) {
     if (enable_js_protobuf) {
       deps += [ "//third_party/protobuf-javascript:protoc-gen-js" ]
     }
+    ldflags = [ "-lgcc_s" ]
   }
 }
 

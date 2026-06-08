@@ -496,11 +496,6 @@ class BLINK_EXPORT WebView {
   virtual void SetPageAttributionSupport(
       network::mojom::AttributionSupport support) = 0;
 
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-  virtual void OnSetAdBlockEnable(bool site_adblock_enabled) = 0;
-  virtual bool GetAdBlockEnableForSite() = 0;
-#endif
-
   // Sets whether to allow the use of JavaScript moveTo/By() and resizeTo/By()
   // (without user activation) with Document picture-in-picture popups.
   virtual void SetMovePictureInPictureEnabled(bool enabled) = 0;

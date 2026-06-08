@@ -81,6 +81,30 @@ FrameTreeNode* GetInnerTreeMainFrameNode(FrameTreeNode* node) {
   return inner_main_frame_tree_node;
 }
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+// Inherit adblock enabled state from the main frame when a new frame is
+// created. This is a one-time assignment at frame creation time. If the
+// adblock state changes later, the runtime toggle path in
+// render_frame_host_impl_for_include.cc (UpdateAdBlockEnabledToRender) will
+// broadcast the new state to all frames via ForEachRenderFrameHost.
+// This ensures the browser-side FrameTreeNode has the correct initial state
+// so that navigation_request_utils.cc can propagate it to the renderer via
+// commit params.
+// Note: GetMainFrame() can return null during teardown/crash scenarios.
+// If the main frame has not yet committed its first navigation, the inherited
+// value will be the default (false), which is correct — the runtime toggle
+// path will update it when the user changes the adblock switch.
+void InheritAdblockEnabledFromMainFrame(FrameTreeNode* added_node) {
+  RenderFrameHostImpl* main_rfh = added_node->frame_tree().GetMainFrame();
+  if (!main_rfh) {
+    return;
+  }
+  FrameTreeNode* main_frame = main_rfh->frame_tree_node();
+  added_node->set_adblock_enabled(main_frame->is_adblock_enabled());
+  added_node->set_adblock_enabled_last_committed(
+      main_frame->is_adblock_enabled_last_committed());
+}
+#endif
 }  // namespace
 
 FrameTree::NodeIterator::NodeIterator(const NodeIterator& other) = default;
@@ -439,6 +463,10 @@ FrameTreeNode* FrameTree::AddFrame(
       frame_unique_name);
 
   added_node->SetFencedFramePropertiesIfNeeded();
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  InheritAdblockEnabledFromMainFrame(added_node);
+#endif
 
   if (browser_interface_broker_receiver.is_valid()) {
     added_node->current_frame_host()->BindBrowserInterfaceBrokerReceiver(

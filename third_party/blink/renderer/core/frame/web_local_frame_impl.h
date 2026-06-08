@@ -602,9 +602,7 @@ class CORE_EXPORT WebLocalFrameImpl final
 
   bool GetGlobalAdblockEnabled();
 
-  bool GetAdBlockEnabled() override {
-    return frame_->GetAdBlockEnableForSite();
-  }
+  bool GetAdBlockEnabled() override;
 
   void SetHasElemHideTypeOption(bool has_elemhide_type_option) override;
 
@@ -623,6 +621,8 @@ class CORE_EXPORT WebLocalFrameImpl final
   bool GetHasGenericHideTypeOption() const override {
     return frame_->GetHasGenericHideTypeOption();
   }
+
+  void UpdateAdBlockEnabledToRender(bool site_adblock_enabled) override;
 
 #endif
 

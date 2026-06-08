@@ -687,12 +687,6 @@ class CORE_EXPORT WebViewImpl final : public WebView,
   void SetScrollOffset(const gfx::PointF point) override;
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-  void OnSetAdBlockEnable(bool site_adblock_enabled) override;
-
-  bool GetAdBlockEnableForSite() override;
-#endif
-
 #if BUILDFLAG(ARKWEB_PAGE_UP_DOWN)
   gfx::PointF GetScrollOffset() override;
   float GetScrollBottom() override;

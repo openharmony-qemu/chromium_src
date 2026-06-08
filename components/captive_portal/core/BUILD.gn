@@ -23,10 +23,6 @@ component("core") {
     "captive_portal_types.h",
   ]
 
-  if (defined(arkweb_ext_https_upgrades) && arkweb_ext_https_upgrades) {
-    sources += arkweb_components_captive_portal_core_sources
-  }
-
   defines = [ "CAPTIVE_PORTAL_IMPLEMENTATION" ]
 
   deps = [

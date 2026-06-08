@@ -271,10 +271,7 @@ void CaptivePortalTabReloader::ReloadTabIfNeeded() {
   }
 
   SetState(STATE_NONE);
-#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
-#else
   ReloadTab();
-#endif
 }
 
 void CaptivePortalTabReloader::ReloadTab() {
@@ -294,9 +291,4 @@ void CaptivePortalTabReloader::CheckForCaptivePortal() {
     captive_portal_service_->DetectCaptivePortal();
 }
 
-#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
-void CaptivePortalTabReloader::StartCheckForCaptivePortal() {
-  SetState(STATE_MAYBE_BROKEN_BY_PORTAL);
-}
-#endif
 }  // namespace captive_portal

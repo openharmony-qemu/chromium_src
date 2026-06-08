@@ -22,6 +22,11 @@
 #if BUILDFLAG(ENABLE_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
 #endif
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+#include "arkweb/ohos_adapter_ndk/interfaces/net_connect_adapter.h"
+#include "base/memory/weak_ptr.h"
+#include "base/task/sequenced_task_runner.h"
+#endif
 #include "arkweb/ohos_adapter_ndk/interfaces/ohos_adapter_helper.h"
 namespace net {
 
@@ -64,11 +69,11 @@ class NET_EXPORT NetworkChangeNotifierPassive : public NetworkChangeNotifier {
   void BindDnsToNetwork(int network_for_dns) override;
 #if BUILDFLAG(ENABLE_ARKWEB_EXT)
   const std::vector<std::string> GetNetAddrListByNetId(int32_t netId);
- 
+
   // For bind dns to network.
   void SetAddrListForBindedNetwork(std::vector<std::string> new_addr_list);
   const std::vector<std::string> GetAddrListForBindedNetwork();
- 
+
   // For default address list.
   void SetDefaultAddrList(std::vector<std::string> new_addr_list);
   const std::vector<std::string> GetDefaultAddrList();
@@ -76,6 +81,13 @@ class NET_EXPORT NetworkChangeNotifierPassive : public NetworkChangeNotifier {
   const std::vector<std::string> GetActiveDnsServers();
 #endif  // ENABLE_ARKWEB_EXT
 #endif  // ARKWEB_EXT_NETWORK_CONNECTION
+
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  bool IsCaptivePortalInternal() override;
+  bool IsNetworkValidatedInternal() override;
+  void UpdateNetworkCapabilityOnUIThread();
+  void PostUpdateNetworkCapabilityTask();
+#endif
 
  protected:
   // NetworkChangeNotifier overrides.
@@ -132,6 +144,18 @@ class NET_EXPORT NetworkChangeNotifierPassive : public NetworkChangeNotifier {
 #if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
   std::vector<std::string> addr_list_for_binded_network_;
   std::vector<std::string> default_address_list_;
+#endif
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  void ResetNetworkCapability();
+
+  static constexpr uint8_t kNetworkCapCaptivePortal = 1 << 0;
+  static constexpr uint8_t kNetworkCapValidated = 1 << 1;
+  std::atomic<uint8_t> network_capability_{0};
+  std::string last_bearer_types_str_;
+
+  scoped_refptr<base::SequencedTaskRunner> ui_task_runner_;
+
+  base::WeakPtrFactory<NetworkChangeNotifierPassive> weak_ptr_factory_{this};
 #endif
 };
 

@@ -484,6 +484,12 @@ class NET_EXPORT NetworkChangeNotifier {
   // will be successfully.
   static bool IsOffline();
 
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  // Returns true if the current network is a captive portal.
+  static bool IsCaptivePortal();
+  static bool IsNetworkValidated();
+#endif
+
   // Returns true if |type| is a cellular connection.
   // Returns false if |type| is CONNECTION_UNKNOWN, and thus, depending on the
   // implementation of GetConnectionType(), it is possible that
@@ -675,6 +681,11 @@ class NET_EXPORT NetworkChangeNotifier {
   virtual SystemDnsConfigChangeNotifier* GetCurrentSystemDnsConfigNotifier();
 
   virtual bool IsDefaultNetworkActiveInternal();
+
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  virtual bool IsCaptivePortalInternal();
+  virtual bool IsNetworkValidatedInternal();
+#endif
 
 #if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
   virtual const std::vector<std::string> GetCurrentDnsServers();

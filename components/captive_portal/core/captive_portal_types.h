@@ -14,9 +14,6 @@
 #if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
 #endif
-#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
-#include "arkweb/chromium_ext/components/captive_portal/core/captive_portal_types_ohos.h"
-#endif
 
 namespace captive_portal {
 

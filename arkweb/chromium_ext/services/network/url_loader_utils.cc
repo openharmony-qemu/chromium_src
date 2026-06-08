@@ -677,10 +677,13 @@ void URLLoaderUtils::PopulateURLLoaderCompletionStatus(
   net::NavigationInfo nav_info;
   nav_info.request_url = url_request->url().spec();
   nav_info.request_uuid = url_request->request_uuid();
-  nav_info.time_stamp = base::NumberToString(
-      url_request->request_time().InMillisecondsSinceUnixEpoch());
   nav_info.error_code = url_request->GetStatus();
   nav_info.original_error_code = url_request->GetOriginalNetErrorCode();
+
+  auto request_time = base::Time::Now() +
+      (url_request->creation_time() - base::TimeTicks::Now());
+  nav_info.time_stamp = base::NumberToString(
+      request_time.InMillisecondsSinceUnixEpoch());
 
   nav_info.is_fallback_proxy_enabled =
       IsFallbackProxyEnabled(url_loader_->url_request_context_, url_request);

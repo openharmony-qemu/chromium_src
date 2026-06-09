@@ -145,7 +145,7 @@ bool IsReadbackUsage(GLenum usage) {
 void UpdateProgramInfo(base::span<const uint8_t>& data,
                        ProgramInfoManager* manager,
                        ProgramInfoManager::ProgramInfoType type) {
-  DCHECK(data.size() > sizeof(cmds::GLES2ReturnProgramInfo));
+  CHECK(data.size() >= sizeof(cmds::GLES2ReturnProgramInfo));
   const cmds::GLES2ReturnProgramInfo* return_program_info =
       reinterpret_cast<const cmds::GLES2ReturnProgramInfo*>(data.data());
   uint32_t program = return_program_info->program_client_id;
@@ -412,7 +412,7 @@ void GLES2Implementation::CallDeferredErrorCallbacks() {
 
 void GLES2Implementation::OnGpuControlReturnData(
     base::span<const uint8_t> data) {
-  DCHECK(data.size() > sizeof(cmds::GLES2ReturnDataHeader));
+  CHECK(data.size() >= sizeof(cmds::GLES2ReturnDataHeader));
   const cmds::GLES2ReturnDataHeader& gles2ReturnDataHeader =
       *reinterpret_cast<const cmds::GLES2ReturnDataHeader*>(data.data());
 

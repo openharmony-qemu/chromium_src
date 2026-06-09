@@ -236,6 +236,7 @@ export class WebAbility extends WebBaseAbility {
       'appId': this.appId,
       'window': windowStage.getMainWindowSync(),
       'useDarkMode': this.needDarkMode(),
+      'cmdArgs': this.cmdArgs,
     };
     let storage: LocalStorage = new LocalStorage(para);
     windowStage.loadContent(this.getContentPath(), storage, (err, data) => {

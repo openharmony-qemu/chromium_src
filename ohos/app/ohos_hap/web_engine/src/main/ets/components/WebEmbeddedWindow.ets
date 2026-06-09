@@ -37,6 +37,7 @@ import { MultiInputAdapter } from '../adapter/MultiInputAdapter';
 import { DragParamManager } from '../common/DragParamManager';
 import { UIExtensionContentSession } from '@kit.AbilityKit';
 import { window } from '@kit.ArkUI';
+import { CmdArgsHelper } from '../utils/CmdArgsHelper';
 
 @Component
 export struct WebEmbeddedWindow {
@@ -46,6 +47,7 @@ export struct WebEmbeddedWindow {
   @LocalStorageLink('session') session: UIExtensionContentSession | undefined = undefined;
   @LocalStorageLink('userData') userData: string = '';
   @LocalStorageLink('window') embeddedWindow: window.Window | undefined = undefined;
+  @LocalStorageLink('cmdArgs') cmdArgs: string[] = [];
   private LIBRARY_NAME: string = 'adapter';
   private XCOMPONENT_NAME: string = 'xcomponent';
   private MODULE_NAME: string = this.xComponentId + ':' + this.XCOMPONENT_NAME;
@@ -126,7 +128,8 @@ export struct WebEmbeddedWindow {
         LogUtil.info(WebEmbeddedWindow.TAG, 'onLoad xComponentId:' + this.xComponentId);
         if (this.xComponentId === ConfigData.DEFAULT_WINDOW_ID) {
           this.setDefaultBounds();
-          let vec_args = this.buildArgs();
+          let vec_args = CmdArgsHelper.buildArgs(this.startUri, this.cmdArgs);
+          CmdArgsHelper.preProcessArgs(vec_args);
           this.nativeContext.runBrowser(vec_args);
         } else {
           this.nativeContext.ExecuteCommand(

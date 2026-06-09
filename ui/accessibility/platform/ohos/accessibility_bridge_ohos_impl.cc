@@ -57,6 +57,8 @@ const int32_t kNativeUIRootId = 0;
 // ohos system.
 const int32_t kNativeUIRootParentId = -2100000;
 
+constexpr int32_t kNodesPerChunk = 50;
+
 AccessibilityBridgeOhosImpl::AccessibilityBridgeOhosImpl(
     aura::Window* root_window)
     : root_window_(root_window) {
@@ -180,17 +182,31 @@ void AccessibilityBridgeOhosImpl::AddNativeUIElementDetails(
   }
 }
 
+bool IsNodeInViewport(ui::AXPlatformNodeOHOS* node) {
+  if (!node) {
+    return false;
+  }
+  auto* delegate = node->GetDelegate();
+  if (!delegate) {
+    return false;
+  }
+  if (delegate->IsOffscreen()) {
+    return false;
+  }
+  return true;
+}
+
 int SetElementChildIds(ArkUI_AccessibilityElementInfo* element,
                        ui::AXPlatformNodeOHOS* node,
-                       std::queue<ui::AXPlatformNodeOHOS*>* queue = nullptr) {
+                       std::queue<int32_t>* queue = nullptr) {
   std::vector<int64_t> children_ids;
   for (AXPlatformNodeBase::AXPlatformNodeChildIterator iter =
            node->AXPlatformNodeChildrenBegin();
        iter != node->AXPlatformNodeChildrenEnd(); ++iter) {
     ui::AXPlatformNodeOHOS* child =
         static_cast<ui::AXPlatformNodeOHOS*>(iter.get());
-    if (queue) {
-      queue->push(child);
+    if (queue && IsNodeInViewport(child)) {
+      queue->push(child->GetUniqueId());
     }
     children_ids.push_back(child->GetUniqueId());
   }
@@ -204,7 +220,7 @@ int AccessibilityBridgeOhosImpl::AddNativeUIElement(
     ui::AXPlatformNodeOHOS* node,
     int32_t id,
     int32_t parent_id,
-    std::queue<ui::AXPlatformNodeOHOS*>* queue) {
+    std::queue<int32_t>* queue) {
   auto element = OH_ArkUI_AddAndGetAccessibilityElementInfo(element_list);
   AddNativeUIElementDetails(element, node, id, parent_id);
   return SetElementChildIds(element, node, queue);
@@ -213,7 +229,7 @@ int AccessibilityBridgeOhosImpl::AddNativeUIElement(
 int AccessibilityBridgeOhosImpl::AddNativeUIRootElement(
     NativeElementList element_list,
     ui::AXPlatformNodeOHOS* ax_platform_node,
-    std::queue<ui::AXPlatformNodeOHOS*>* queue) {
+    std::queue<int32_t>* queue) {
   return AddNativeUIElement(element_list, ax_platform_node, kNativeUIRootId,
                             kNativeUIRootParentId, queue);
 }
@@ -320,7 +336,7 @@ void AccessibilityBridgeOhosImpl::SetChildrenNativeUIElements(
     int32_t element_id,
     NativeElementList element_list,
     AXPlatformNodeOHOS* ax_platform_node) {
-  std::queue<ui::AXPlatformNodeOHOS*> queue;
+  std::queue<int32_t> queue;
   if (element_id == kSearchFromRootMode) {
     AddNativeUIRootElement(element_list, ax_platform_node, &queue);
   } else {
@@ -334,54 +350,86 @@ void AccessibilityBridgeOhosImpl::SetChildrenNativeUIElements(
   }
 
   while (!queue.empty()) {
-    ui::AXPlatformNodeOHOS* current = queue.front();
+    int32_t node_id = queue.front();
+    queue.pop();
+    ui::AXPlatformNodeOHOS* current = static_cast<ui::AXPlatformNodeOHOS*>(
+        ui::AXPlatformNodeBase::GetFromUniqueId(node_id));
+    if (!current) {
+      continue;
+    }
     int32_t parent_id = element_id == kSearchFromRootMode
                             ? kNativeUIRootId
                             : ax_platform_node->GetUniqueId();
     AddNativeUIElement(element_list, current, current->GetUniqueId(),
                        parent_id);
-    queue.pop();
   }
 }
 
-void AccessibilityBridgeOhosImpl::AddNativeUITreeByLevelOrder(
-    NativeElementList element_list,
-    ui::AXPlatformNodeOHOS* node,
-    bool is_from_root) {
-  std::queue<ui::AXPlatformNodeOHOS*> queue;
-  int second_level_count = 0;
-  if (is_from_root) {
-    second_level_count = AddNativeUIRootElement(element_list, node, &queue);
-  } else {
-    queue.push(node);
-  }
+void AccessibilityBridgeOhosImpl::ProcessNativeUITreeByLevelOrderChunk(
+    std::shared_ptr<TreeTraversalContext> context) {
+  TRACE_EVENT0(
+      "accessibility",
+      "AccessibilityBridgeOhosImpl::ProcessNativeUITreeByLevelOrderChunk");
+  int processed_in_this_chunk = 0;
 
-  int handled_count = 0;
-  while (!queue.empty()) {
-    ui::AXPlatformNodeOHOS* current = queue.front();
+  while (!context->queue.empty() && processed_in_this_chunk < kNodesPerChunk) {
+    int32_t node_id = context->queue.front();
+    context->queue.pop();
+
+    ui::AXPlatformNodeOHOS* current = static_cast<ui::AXPlatformNodeOHOS*>(
+        ui::AXPlatformNodeBase::GetFromUniqueId(node_id));
+    if (!current) {
+      LOG(WARNING) << __func__ << " [accessibility] current node not exit";
+      context->handled_count++;
+      processed_in_this_chunk++;
+      continue;
+    }
+
     ui::AXPlatformNodeBase* parent = current->GetPlatformParent();
     if (parent) {
-      int32_t parent_id = handled_count < second_level_count
+      int32_t parent_id = context->handled_count < context->second_level_count
                               ? kNativeUIRootId
                               : parent->GetUniqueId();
-      AddNativeUIElement(element_list, current, current->GetUniqueId(),
-                         parent_id, &queue);
-    } else {
-      LOG(WARNING)
-          << "AccessibilityBridgeOhosImpl::AddNativeUITreeByLevelOrder "
-             "current_node's parent can not find";
+      AddNativeUIElement(context->element_list, current, current->GetUniqueId(),
+                         parent_id, &context->queue);
     }
-    queue.pop();
-    handled_count++;
+    context->handled_count++;
+    processed_in_this_chunk++;
+  }
+
+  if (context->queue.empty()) {
+    context->promise->set_value(true);
+  } else {
+    base::TaskRunnerOHOS::GetUIThreadTaskRunner()->PostTask(
+        FROM_HERE,
+        base::BindOnce(
+            &AccessibilityBridgeOhosImpl::ProcessNativeUITreeByLevelOrderChunk,
+            weak_ptr_factory_.GetWeakPtr(), context));
   }
 }
 
 void AccessibilityBridgeOhosImpl::SetNativeUITree(
     int32_t element_id,
     NativeElementList element_list,
-    AXPlatformNodeOHOS* ax_platform_node) {
-  AddNativeUITreeByLevelOrder(element_list, ax_platform_node,
-                              element_id == kSearchFromRootMode);
+    AXPlatformNodeOHOS* ax_platform_node,
+    std::shared_ptr<std::promise<bool>> promise) {
+  if (!root_window_) {
+    LOG(WARNING) << __func__ << " [accessibility] root_window_ not exit";
+    promise->set_value(false);
+    return;
+  }
+  TRACE_EVENT0("accessibility", "AccessibilityBridgeOhosImpl::SetNativeUITree");
+  auto context = std::make_shared<TreeTraversalContext>();
+  context->element_list = element_list;
+  context->promise = promise;
+
+  if (element_id == kSearchFromRootMode) {
+    context->second_level_count = AddNativeUIRootElement(
+        context->element_list, ax_platform_node, &context->queue);
+  } else {
+    context->queue.push(ax_platform_node->GetUniqueId());
+  }
+  ProcessNativeUITreeByLevelOrderChunk(context);
 }
 
 void AccessibilityBridgeOhosImpl::handleFindAccessibilityNodeInfosByIdRequest(
@@ -418,24 +466,27 @@ void AccessibilityBridgeOhosImpl::handleFindAccessibilityNodeInfosByIdRequest(
   switch (mode) {
     case ARKUI_ACCESSIBILITY_NATIVE_SEARCH_MODE_PREFETCH_CURRENT:
       SetCurNativeUIElement(element_id, element_list, current_node);
+      promise->set_value(success);
       break;
     case ARKUI_ACCESSIBILITY_NATIVE_SEARCH_MODE_PREFETCH_PREDECESSORS:
       SetParentNativeUIElement(element_id, element_list, current_node);
+      promise->set_value(success);
       break;
     case ARKUI_ACCESSIBILITY_NATIVE_SEARCH_MODE_PREFETCH_SIBLINGS:
       SetSiblingsNativeUIElements(element_id, element_list, current_node);
+      promise->set_value(success);
       break;
     case ARKUI_ACCESSIBILITY_NATIVE_SEARCH_MODE_PREFETCH_CHILDREN:
       SetChildrenNativeUIElements(element_id, element_list, current_node);
+      promise->set_value(success);
       break;
     case ARKUI_ACCESSIBILITY_NATIVE_SEARCH_MODE_PREFETCH_RECURSIVE_CHILDREN:
-      SetNativeUITree(element_id, element_list, current_node);
+      SetNativeUITree(element_id, element_list, current_node, promise);
       break;
     default:
       success = false;
+      promise->set_value(success);
   }
-
-  promise->set_value(success);
 }
 
 bool AccessibilityBridgeOhosImpl::FindAccessibilityNodeInfosById(
@@ -448,11 +499,10 @@ bool AccessibilityBridgeOhosImpl::FindAccessibilityNodeInfosById(
   auto promise = std::make_shared<std::promise<bool>>();
   auto future = promise->get_future();
   base::TaskRunnerOHOS::GetUIThreadTaskRunner()->PostTask(
-      FROM_HERE,
-      base::BindOnce(&AccessibilityBridgeOhosImpl::
-                         handleFindAccessibilityNodeInfosByIdRequest,
-                     base::Unretained(this), element_id, mode,
-                     std::move(element_list), promise));
+      FROM_HERE, base::BindOnce(&AccessibilityBridgeOhosImpl::
+                                    handleFindAccessibilityNodeInfosByIdRequest,
+                                weak_ptr_factory_.GetWeakPtr(), element_id,
+                                mode, std::move(element_list), promise));
   return future.get();
 }
 

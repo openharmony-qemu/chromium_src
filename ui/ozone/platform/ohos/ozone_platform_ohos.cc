@@ -47,6 +47,7 @@
 #include "ui/ozone/platform/ohos/host/ohos_canvas_surface.h"
 #include "ui/ozone/platform/ohos/host/ohos_event_source.h"
 #include "ui/ozone/platform/ohos/host/ohos_event_source_node_handle.h"
+#include "ui/ozone/platform/ohos/host/ohos_global_shortcut_listener.h"
 #include "ui/ozone/platform/ohos/host/ohos_screen.h"
 #include "ui/ozone/platform/ohos/host/ohos_window.h"
 #include "ui/ozone/platform/ohos/host/ohos_window_manager.h"
@@ -173,6 +174,11 @@ class OzonePlatformOhos : public OzonePlatform {
 
   PlatformWindowManager* GetPlatformWindowManager() override {
     return window_manager_.get();
+  }
+
+  PlatformGlobalShortcutListener* GetPlatformGlobalShortcutListener(
+      PlatformGlobalShortcutListenerDelegate* delegate) override {
+    return new OhosGlobalShortcutListener(delegate);
   }
 
  private:

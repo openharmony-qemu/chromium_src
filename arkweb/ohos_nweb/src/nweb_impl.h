@@ -1470,8 +1470,6 @@ class NWebImpl : public NWeb {
                                      const std::string& permission) override;
 #endif
 
-  void OnTouchCancelById(int32_t id, double x, double y, bool from_overlay) override {};
-
   std::unique_ptr<base::RetainingOneShotTimer> drag_over_timer_;
   DelegateDragEvent drag_over_event_;
 

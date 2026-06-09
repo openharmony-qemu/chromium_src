@@ -245,33 +245,6 @@ bool InSameTreePosition(FrameTreeNode* frame_tree_node,
   return true;
 }
 
-// Removes a given subframe `node` directly from its parent, updating any
-// necessary bookkeeping. Not for use with main frames.
-void RemoveTreeNodeFromParent(NavigationEntryImpl::TreeNode* node) {
-  CHECK(node->parent);
-  auto* frame_entry = node->frame_entry.get();
-  if (frame_entry && frame_entry->committed_origin()) {
-    // Normally default-isolated origins are tracked through their presence in
-    // session history, which is consulted whenever an origin newly requests
-    // isolation. If we remove a frame_entry, its origin won't be available
-    // to any future global walk if the same origin later wants to opt-in. So
-    // we add it to the non-opt-in list here to be spec compliant (unless it's
-    // currently opted-in, in which case this call will do nothing).
-    ChildProcessSecurityPolicyImpl::GetInstance()
-        ->AddDefaultIsolatedOriginIfNeeded(
-            frame_entry->site_instance()->GetIsolationContext(),
-            frame_entry->committed_origin().value(),
-            true /* global_ walk_or_frame_removal */);
-  }
-
-  NavigationEntryImpl::TreeNode* parent_node = node->parent;
-  auto it =
-      std::ranges::find(parent_node->children, node,
-                        &std::unique_ptr<NavigationEntryImpl::TreeNode>::get);
-  CHECK(it != parent_node->children.end());
-  parent_node->children.erase(it);
-}
-
 void RegisterOriginsRecursive(NavigationEntryImpl::TreeNode* node,
                               const url::Origin& origin) {
   if (node->frame_entry->committed_origin().has_value()) {
@@ -1200,8 +1173,7 @@ void NavigationEntryImpl::AddOrUpdateFrameEntry(
   for (const auto& child : parent_node->children) {
     if (child->frame_entry->frame_unique_name() == unique_name) {
       if (update_policy == UpdatePolicy::kReplace) {
-        RemoveTreeNodeFromParent(child.get());
-        // `child` is now deleted.
+        RemoveEntryForFrame(frame_tree_node, false);
         break;
       }
       // If the document of the FrameNavigationEntry is changing, we must clear
@@ -1295,7 +1267,7 @@ base::flat_map<std::string, bool> NavigationEntryImpl::GetSubframeUniqueNames(
 
 void NavigationEntryImpl::RemoveEntryForFrame(FrameTreeNode* frame_tree_node,
                                               bool only_if_different_position) {
-  CHECK(!frame_tree_node->IsMainFrame());
+  DCHECK(!frame_tree_node->IsMainFrame());
 
   NavigationEntryImpl::TreeNode* node = GetTreeNode(frame_tree_node);
   if (!node)
@@ -1306,7 +1278,26 @@ void NavigationEntryImpl::RemoveEntryForFrame(FrameTreeNode* frame_tree_node,
   // FrameNavigationEntries and the FrameTree.
   if (!only_if_different_position ||
       !InSameTreePosition(frame_tree_node, node)) {
-    RemoveTreeNodeFromParent(node);
+    auto* frame_entry = node->frame_entry.get();
+    if (frame_entry && frame_entry->committed_origin()) {
+      // Normally default-isolated origins are tracked through their presence in
+      // session history, which is consulted whenever an origin newly requests
+      // isolation. If we remove a frame_entry, its origin won't be available
+      // to any future global walk if the same origin later wants to opt-in. So
+      // we add it to the non-opt-in list here to be spec compliant (unless it's
+      // currently opted-in, in which case this call will do nothing).
+      ChildProcessSecurityPolicyImpl::GetInstance()
+          ->AddDefaultIsolatedOriginIfNeeded(
+              frame_entry->site_instance()->GetIsolationContext(),
+              frame_entry->committed_origin().value(),
+              true /* global_ walk_or_frame_removal */);
+    }
+    NavigationEntryImpl::TreeNode* parent_node = node->parent;
+    auto it = base::ranges::find(
+        parent_node->children, node,
+        &std::unique_ptr<NavigationEntryImpl::TreeNode>::get);
+    CHECK(it != parent_node->children.end());
+    parent_node->children.erase(it);
   }
 }
 

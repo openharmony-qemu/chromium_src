@@ -15,13 +15,13 @@
     "channel": "stable",
     "extension_types": ["extension", "platform_app"],
     // "desktop_android" is not supported.
-    "platforms": ["chromeos", "linux", "mac", "win"]
+    "platforms": ["chromeos", "linux", "mac", "win", "ohos"]
   },
   "accessibilityFeatures.read": [{
     "channel": "stable",
     "extension_types": ["extension", "platform_app"],
     // "desktop_android" is not supported.
-    "platforms": ["chromeos", "linux", "mac", "win"]
+    "platforms": ["chromeos", "linux", "mac", "win", "ohos"]
   }, {
     "channel": "stable",
     "extension_types": ["legacy_packaged_app"],

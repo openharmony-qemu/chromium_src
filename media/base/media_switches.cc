@@ -957,7 +957,13 @@ BASE_FEATURE(kHardwareMediaKeyHandling,
 //
 // Note: This feature is used by ChromeOS tests and shouldn't be removed even
 // though it has long been enabled by default.
+#if BUILDFLAG(ARKWEB_MEDIA)
+// The arkweb disables the decoding priority function to ensure that H.264 videos
+// whose height is less than 360 pixels are still decoded by hardware.
+BASE_FEATURE(kResolutionBasedDecoderPriority, base::FEATURE_DISABLED_BY_DEFAULT);
+#else
 BASE_FEATURE(kResolutionBasedDecoderPriority, base::FEATURE_ENABLED_BY_DEFAULT);
+#endif // ARKWEB_MEDIA
 
 // Allows the AutoPictureInPictureTabHelper to automatically enter
 // picture-in-picture for websites with video playback (instead of only websites

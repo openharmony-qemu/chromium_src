@@ -195,22 +195,35 @@ void RenderFrameHostImpl::UpdateAdBlockEnabledToRender(
   // Update the adblock site switch of local_frame_root and
   // activation_state.activation_level of subresource_filter_agent
   // in the rendering process only by the main frame.
-  RenderFrameHostImpl* pending_frame_host =
-      tree_node->render_manager()->speculative_frame_host();
-  if (pending_frame_host && pending_frame_host->frame_) {
-    LOG(INFO) << "[AdBlock] Speculative update adblock site switch:"
-              << site_adblock_enabled;
-    pending_frame_host->frame_->OnUpdateAdBlockEnabledToRender(
-        site_adblock_enabled);
+  // This path handles runtime toggling (user changes adblock switch after
+  // page load). For navigation-time propagation, see navigation_request_utils.cc
+  // and render_frame_impl.cc.
+  // In strict site isolation mode, iframes may be in different render processes,
+  // so we need to iterate through all frames and update each render process.
+  bool current_state = frame_tree_node()->is_adblock_enabled();
+  if (current_state == site_adblock_enabled) {
+    LOG(DEBUG) << "[AdBlock] UpdateAdBlockEnabledToRender: state unchanged, skip";
+    return;
   }
 
-  RenderFrameHostImpl* current_frame_host = tree_node->current_frame_host();
-  if (current_frame_host && current_frame_host->frame_) {
-    LOG(INFO) << "[AdBlock] Update adblock site switch:"
-              << site_adblock_enabled;
-    current_frame_host->frame_->OnUpdateAdBlockEnabledToRender(
-        site_adblock_enabled);
-  }
+  LOG(DEBUG) << "[AdBlock] UpdateAdBlockEnabledToRender called with value: "
+            << site_adblock_enabled;
+  // Use ForEachRenderFrameHostIncludingSpeculative to cover prerendering frames
+  // which are in kSpeculative/kPendingCommit lifecycle state.
+  // This RFH is already the main frame (guarded by IsMainFrame() above), so
+  // iterating from this covers exactly this page's frame tree.
+  ForEachRenderFrameHostIncludingSpeculative(
+      [site_adblock_enabled](RenderFrameHostImpl* rfh_impl) {
+        if (!rfh_impl->frame_.is_bound()) {
+          LOG(DEBUG) << "[AdBlock] Skip update - frame_ is not bound";
+          return;
+        }
+        LOG(DEBUG) << "[AdBlock] Update adblock site switch: "
+                  << site_adblock_enabled
+                  << ", IsMainFrame: " << rfh_impl->frame_tree_node()->IsMainFrame()
+                  << ", process: " << rfh_impl->GetProcess()->GetID();
+        rfh_impl->frame_->OnUpdateAdBlockEnabledToRender(site_adblock_enabled);
+      });
 }
 #endif
 

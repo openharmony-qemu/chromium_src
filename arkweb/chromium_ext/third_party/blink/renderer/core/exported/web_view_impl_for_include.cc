@@ -346,34 +346,6 @@ void WebViewImpl::SetPinchSmoothMode(bool isEnable) {
 }
 #endif
 
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-void WebViewImpl::OnSetAdBlockEnable(bool site_adblock_enabled) {
-  Page* page = GetPage();
-  if (!page) {
-    return;
-  }
-  LocalFrame* frame = DynamicTo<LocalFrame>(page->MainFrame());
-  if (!frame) {
-    return;
-  }
-  LocalFrame& root_frame = frame->LocalFrameRoot();
-  root_frame.SetAdBlockEnableForSite(site_adblock_enabled);
-}
-
-bool WebViewImpl::GetAdBlockEnableForSite() {
-  Page* page = GetPage();
-  if (!page) {
-    return false;
-  }
-  LocalFrame* frame = DynamicTo<LocalFrame>(page->MainFrame());
-  if (!frame) {
-    return false;
-  }
-  LocalFrame& root_frame = frame->LocalFrameRoot();
-  return root_frame.GetAdBlockEnableForSite();
-}
-#endif
-
 #if BUILDFLAG(ARKWEB_FLING)
 void WebViewImpl::UpdateFlingVelocityLimit(const gfx::Vector2dF& velocity) {
   if (!GetPage() || !(GetPage()->MainFrame())) {

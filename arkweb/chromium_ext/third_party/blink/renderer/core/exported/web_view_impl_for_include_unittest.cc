@@ -120,13 +120,6 @@ TEST_F(WebViewImplTest, SetPinchSmoothMode_ChangeMode) {
   EXPECT_EQ(TestGetPinchSmoothMode(), false);
 }
 
-TEST_F(WebViewImplTest, OnSetAdBlockEnable) {
-  web_view_impl_->OnSetAdBlockEnable(false);
-  EXPECT_EQ(web_view_impl_->GetAdBlockEnableForSite(), false);
-  web_view_impl_->OnSetAdBlockEnable(true);
-  EXPECT_EQ(web_view_impl_->GetAdBlockEnableForSite(), true);
-}
-
 TEST_F(WebViewImplTest, SetDelayDurationForBackgroundTabFreezing) {
   auto* page = web_view_impl_->GetPage();
   scheduler::PageSchedulerImpl* scheduler = static_cast<scheduler::PageSchedulerImpl*>(page->GetPageScheduler());
@@ -148,16 +141,6 @@ TEST_F(WebViewImplTest, SetPinchSmoothMode_NullPageMainFrame) {
   web_view_impl_->GetPage()->SetMainFrame(nullptr);
   TestSetPinchSmoothMode(true);
   EXPECT_EQ(TestGetPinchSmoothMode(), false);
-  web_view_impl_->GetPage()->SetMainFrame(main_frame);
-}
-
-TEST_F(WebViewImplTest, OnSetAdBlockEnable_NullPageMainFrame) {
-  auto* main_frame = web_view_impl_->GetPage()->MainFrame();
-  web_view_impl_->OnSetAdBlockEnable(true);
-  EXPECT_EQ(web_view_impl_->GetAdBlockEnableForSite(), true);
-  web_view_impl_->GetPage()->SetMainFrame(nullptr);
-  web_view_impl_->OnSetAdBlockEnable(true);
-  EXPECT_EQ(web_view_impl_->GetAdBlockEnableForSite(), false);
   web_view_impl_->GetPage()->SetMainFrame(main_frame);
 }
 

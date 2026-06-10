@@ -131,9 +131,13 @@ void NavigationRequestUtils::SetAdblockEnabledStatus(
   bool adblock_enabled = nav_request_->frame_tree_node_->is_adblock_enabled();
   nav_request_->frame_tree_node_->set_adblock_enabled_last_committed(adblock_enabled);
 
-  if (nav_request_->frame_tree_node_->IsMainFrame()) {
-    commit_params->site_adblock_enabled = adblock_enabled;
-  }
+  // Navigation-time propagation: send adblock state to the renderer via commit
+  // params. In strict site isolation mode, cross-site subframes are in separate
+  // processes, so all frames need to receive the value (not just the main frame).
+  // This complements the runtime toggle path in render_frame_host_impl_for_include.cc.
+  commit_params->site_adblock_enabled = adblock_enabled;
+  LOG(DEBUG) << "[Adblock] SetAdblockEnabledStatus propagate to renderer: "
+             << adblock_enabled;
 }
 #endif
 

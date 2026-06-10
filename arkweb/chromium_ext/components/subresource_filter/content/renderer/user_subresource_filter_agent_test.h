@@ -324,7 +324,10 @@ class MockWebLocalFrame : public blink::WebLocalFrame {
   bool GetHasGenericHideTypeOption() const override {
     return condition_.has_generichide_type_option;
   }
-  bool GetAdBlockEnabled() override {}
+  bool GetAdBlockEnabled() override { return adblock_enabled_; }
+  void UpdateAdBlockEnabledToRender(bool site_adblock_enabled) override {
+    adblock_enabled_ = site_adblock_enabled;
+  }
 #endif
   const blink::WebLocalFrame* ToWebLocalFrame() const override {
     if (condition_.is_local_frame) {
@@ -792,6 +795,9 @@ class MockWebLocalFrame : public blink::WebLocalFrame {
   MockWebSecurityOrigin security_origin_;
   MockWebLocalFrame* parent_frame_ { nullptr };
   MockWebDocumentLoader *mock_loader_ { nullptr };
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  bool adblock_enabled_ { false };
+#endif
 };
 
 class MockWebDocumentSubresourceFilter

@@ -19,6 +19,7 @@
 #include "base/hash/hash.h"
 #include "base/i18n/rtl.h"
 #include "base/json/json_reader.h"
+#include "base/logging.h"
 #include "base/memory/raw_ptr.h"
 #include "base/metrics/field_trial.h"
 #include "base/metrics/histogram_functions.h"
@@ -424,6 +425,9 @@ bool RenderViewHostImpl::CreateRenderView(
                "RenderViewHostImpl::CreateRenderView");
   DCHECK(!IsRenderViewLive()) << "Creating view twice";
 
+  LOG(INFO) << "[RenderPipeline] CreateRenderView: routing_id="
+ 	          << main_frame_routing_id_ << ", proxy_route_id=" << proxy_route_id
+ 	          << ", process_pid=" << GetProcess()->GetProcess().Pid();
   // The process may (if we're sharing a process with another host that already
   // initialized it) or may not (we have our own process or the old process
   // crashed) have been initialized. Calling Init() multiple times will be
@@ -780,6 +784,9 @@ RenderViewHostImpl::GetWebkitPreferencesForWidget() {
 
 void RenderViewHostImpl::RenderViewCreated(
     RenderFrameHostImpl* local_main_frame) {
+  LOG(INFO) << "[RenderPipeline] RenderViewCreated: main_frame_routing_id="
+ 	          << main_frame_routing_id_
+ 	          << ", has_local_main_frame=" << (local_main_frame != nullptr);
   renderer_view_created_ = true;
   if (local_main_frame) {
     // If there is a main frame in this RenderViewHost, then the renderer-side

@@ -26,6 +26,7 @@
 #include "base/functional/callback_helpers.h"
 #include "base/json/json_reader.h"
 #include "base/lazy_instance.h"
+#include "base/logging.h"
 #include "base/memory/memory_pressure_monitor.h"
 #include "base/memory/ptr_util.h"
 #include "base/memory/raw_ptr.h"
@@ -4602,6 +4603,9 @@ void RenderFrameHostImpl::RenderFrameCreated() {
   CHECK(!frame_tree_->IsBeingDestroyed());
   DCHECK_NE(render_frame_state_, RenderFrameState::kCreated);
 
+  LOG(INFO) << "[RenderPipeline] RenderFrameCreated: routing_id="
+            << routing_id_ << ", is_main_frame=" << is_main_frame()
+            << ", frame_tree_node_id=" << frame_tree_node()->frame_tree_node_id();
   const RenderFrameState old_render_frame_state = render_frame_state_;
   render_frame_state_ = RenderFrameState::kCreated;
 

@@ -7523,6 +7523,10 @@ bool WebContentsImpl::FocusLocationBarByDefault() {
 void WebContentsImpl::DidStartNavigation(NavigationHandle* navigation_handle) {
   TRACE_EVENT1("navigation", "WebContentsImpl::DidStartNavigation",
                "navigation_handle", navigation_handle);
+  LOG(INFO) << "[RenderPipeline] DidStartNavigation:"
+            << " is_main_frame=" << navigation_handle->IsInMainFrame()
+ 	          << ", is_same_document=" << navigation_handle->IsSameDocument()
+ 	          << ", is_renderer_initiated=" << navigation_handle->IsRendererInitiated();
   base::ElapsedTimer duration;
   observers_.NotifyObservers(&WebContentsObserver::DidStartNavigation,
                              navigation_handle);
@@ -7659,6 +7663,12 @@ void WebContentsImpl::ReadyToCommitNavigation(
 void WebContentsImpl::DidFinishNavigation(NavigationHandle* navigation_handle) {
   TRACE_EVENT1("navigation", "WebContentsImpl::DidFinishNavigation",
                "navigation_handle", navigation_handle);
+  LOG(INFO) << "[RenderPipeline] DidFinishNavigation:"
+ 	          << " has_committed=" << navigation_handle->HasCommitted()
+ 	          << ", is_error_page=" << navigation_handle->IsErrorPage()
+ 	          << ", is_main_frame=" << navigation_handle->IsInMainFrame()
+ 	          << ", is_same_document=" << navigation_handle->IsSameDocument()
+ 	          << ", net_error=" << navigation_handle->GetNetErrorCode();
 
   {
     SCOPED_UMA_HISTOGRAM_TIMER("WebContentsObserver.DidFinishNavigation");
@@ -8412,6 +8422,8 @@ WebContentsImpl::GetJavaRenderFrameHostDelegate() {
 void WebContentsImpl::DOMContentLoaded(RenderFrameHostImpl* render_frame_host) {
   OPTIONAL_TRACE_EVENT1("content", "WebContentsImpl::DOMContentLoaded",
                         "render_frame_host", render_frame_host);
+  LOG(INFO) << "[RenderPipeline] DOMContentLoaded: routing_id="
+ 	          << render_frame_host->GetRoutingID();
   SCOPED_UMA_HISTOGRAM_TIMER("WebContentsObserver.DOMContentLoaded");
   observers_.NotifyObservers(&WebContentsObserver::DOMContentLoaded,
                              render_frame_host);
@@ -8421,6 +8433,9 @@ void WebContentsImpl::OnDidFinishLoad(RenderFrameHostImpl* render_frame_host,
                                       const GURL& url) {
   OPTIONAL_TRACE_EVENT2("content", "WebContentsImpl::OnDidFinishLoad",
                         "render_frame_host", render_frame_host, "url", url);
+  LOG(INFO) << "[RenderPipeline] OnDidFinishLoad:"
+ 	          << " routing_id=" << render_frame_host->GetRoutingID()
+ 	          << ", is_main_frame=" << !render_frame_host->GetParentOrOuterDocument();
   GURL validated_url(url);
   render_frame_host->GetProcess()->FilterURL(false, &validated_url);
 
@@ -8928,6 +8943,9 @@ void WebContentsImpl::RenderFrameCreated(
     RenderFrameHostImpl* render_frame_host) {
   TRACE_EVENT1("content", "WebContentsImpl::RenderFrameCreated",
                "render_frame_host", render_frame_host);
+  LOG(INFO) << "[RenderPipeline] WebContentsImpl::RenderFrameCreated: routing_id="
+ 	          << render_frame_host->GetRoutingID()
+ 	          << ", is_main_frame=" << render_frame_host->IsInPrimaryMainFrame();
 
   if (render_frame_host->IsInPrimaryMainFrame()) {
     NotifyPrimaryMainFrameProcessIsAlive();

@@ -94,8 +94,13 @@ class RenderProcessHostUserData : public base::SupportsUserData::Data {
 
   // base::SupportsUserData::Data override:
   ~RenderProcessHostUserData() override {
+#if BUILDFLAG(IS_ARKWEB) || BUILDFLAG(ARKWEB_DFX_TRACING)
+    TRACE_EVENT_END("extensions", perfetto::Track::FromPointer(this),
+                    "kRenderProcessHost", "RenderProcessHost");
+#else
     TRACE_EVENT_END("extensions", perfetto::Track::FromPointer(this),
                     ChromeTrackEvent::kRenderProcessHost, *process_);
+#endif
   }
 
   bool HasScript(ScriptInjectionTracker::ScriptType script_type,

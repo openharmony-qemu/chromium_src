@@ -83,8 +83,22 @@ void FullscreenElementChanged(Document& document,
                               FullscreenRequestType new_request_type,
                               const FullscreenOptions* new_options) {
   DCHECK_NE(old_element, new_element);
-
+#if BUILDFLAG(ARKWEB_FULLSCREEN_VIDEO_OVERLAY)
+  bool overlay_fullscreen = false;
   if (new_element) {
+    if (auto* video_element = DynamicTo<HTMLVideoElement>(new_element)) {
+      overlay_fullscreen = video_element->IsFullscreenVideoOverlayEnabled();
+    }
+  }
+#endif // BUILDFLAG(ARKWEB_FULLSCREEN_VIDEO_OVERLAY)
+
+#if BUILDFLAG(ARKWEB_FULLSCREEN_VIDEO_OVERLAY)
+  // When the new fullscreen element is a video element with fullscreen video overlay enabled,
+  // we should not apply fullscreen styles to it to avoid unexpected layout changes.
+  if (new_element && !overlay_fullscreen) {
+#else
+  if (new_element) {
+#endif // BUILDFLAG(ARKWEB_FULLSCREEN_VIDEO_OVERLAY)
     document.GetStyleEngine().EnsureUAStyleForFullscreen(*new_element);
   }
 
@@ -100,7 +114,11 @@ void FullscreenElementChanged(Document& document,
         false);
   }
 
+#if BUILDFLAG(ARKWEB_FULLSCREEN_VIDEO_OVERLAY)
+  if (new_element && !overlay_fullscreen) {
+#else
   if (new_element) {
+#endif // BUILDFLAG(ARKWEB_FULLSCREEN_VIDEO_OVERLAY)
     DCHECK_EQ(new_element, Fullscreen::FullscreenElementFrom(document));
     // FullscreenOptions should be provided for incoming fullscreen element.
     CHECK(new_options);
@@ -358,7 +376,8 @@ RequestFullscreenError FullscreenElementReadyCheck(
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   if (!AllowedToUseFullscreen(element.GetDocument(), report_on_failure)) {
     if (auto* video_element = DynamicTo<HTMLVideoElement>(element)) {
-      if (!video_element->IsCustomMediaPlayerEnabled()) {
+      if (!video_element->IsCustomMediaPlayerEnabled() &&
+          !video_element->IsFullscreenVideoOverlayEnabled()) {
         return RequestFullscreenError::kDisallowedByPermissionsPolicy;
       }
     } else {

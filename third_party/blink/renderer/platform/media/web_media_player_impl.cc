@@ -1167,11 +1167,13 @@ void WebMediaPlayerImpl::DoSeek(base::TimeDelta time, bool time_updated) {
 #if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
       !AsWebMediaPlayerImplExt()->IsDmaBufferRecycleEnabled() &&
 #endif
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-      paused_time_ == time && !client_->IsVideoAssistantEnabled()
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT) || BUILDFLAG(ARKWEB_FULLSCREEN_VIDEO_OVERLAY)
+      paused_time_ == time &&
+      (!client_->IsVideoAssistantEnabled() &&
+       !client_->IsFullscreenVideoOverlayEnabled())
 #else
       paused_time_ == time
-#endif
+#endif // ARKWEB_VIDEO_ASSISTANT || ARKWEB_FULLSCREEN_VIDEO_OVERLAY
       ;
   if ((seeking_to_same_paused_time || seeking_for_zero_duration_loop) &&
       pipeline_controller_->IsStable() &&

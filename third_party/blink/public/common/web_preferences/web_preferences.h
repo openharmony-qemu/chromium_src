@@ -539,6 +539,10 @@ struct BLINK_COMMON_EXPORT WebPreferences {
   bool custom_video_player_overlay = false;
 #endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
+#if BUILDFLAG(ARKWEB_FULLSCREEN_VIDEO_OVERLAY)
+  bool fullscreen_video_overlay_enable = false;
+#endif  // ARKWEB_FULLSCREEN_VIDEO_OVERLAY
+
 #if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
   int32_t usage_scenario = 1;
 #endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE

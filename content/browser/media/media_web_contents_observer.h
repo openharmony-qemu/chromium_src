@@ -338,6 +338,10 @@ class CONTENT_EXPORT MediaWebContentsObserver
     bool IsWebContentsAvailable();
 #endif
 
+#if BUILDFLAG(ARKWEB_FULLSCREEN_VIDEO_OVERLAY)
+    bool IsFullscreenVideoOverlayEnabled();
+#endif
+
 #if BUILDFLAG(ARKWEB_PIP)
     void OnPictureInPictureStateChanged(
         uint32_t state, int32_t width, int32_t height) override;

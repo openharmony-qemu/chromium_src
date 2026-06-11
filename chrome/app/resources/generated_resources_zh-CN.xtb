@@ -2016,7 +2016,7 @@
 <translation id="2350182423316644347">正在初始化应用…</translation>
 <translation id="235028206512346451">如果您离开设备，设备屏幕就会自动锁定。当您位于设备前时，设备屏幕将会维持解锁状态更长时间。如果您没有设置屏幕锁定方式，您的设备将进入休眠状态，而不是锁定状态。</translation>
 <translation id="2351923523007389195">已允许 - <ph name="PERMISSION_DETAILS" />。请开启<ph name="LINK_BEGIN" />系统位置信息使用权<ph name="LINK_END" />。</translation>
-<translation id="2352662711729498748">&lt; 1MB</translation>
+<translation id="2352662711729498748">&lt; 1 MB</translation>
 <translation id="2353168619378866466">打开分组</translation>
 <translation id="2353297238722298836">已允许使用摄像头和麦克风</translation>
 <translation id="2353910600995338714">已成功导出</translation>

@@ -8,6 +8,11 @@
 #include <string>
 
 #include "third_party/dom_distiller_js/dom_distiller.pb.h"
+#include "build/buildflag.h"
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace dom_distiller {
 
@@ -15,6 +20,11 @@ namespace dom_distiller {
 // selected distallation `options`.
 std::string GetDistillerScriptWithOptions(
     const dom_distiller::proto::DomDistillerOptions& options);
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+std::string GetDistillerScriptWithOptionsOhos(
+    const dom_distiller::proto::DomDistillerOptions& options, bool is_distill_catalog);
+#endif
 
 // Returns the Readability JavaScript web page distillation script.
 std::string GetReadabilityDistillerScript();

@@ -15,6 +15,9 @@
 #include "third_party/dom_distiller_js/dom_distiller.pb.h"
 #include "third_party/dom_distiller_js/dom_distiller_json_converter.h"
 #include "ui/base/resource/resource_bundle.h"
+#if BUILDFLAG(ARKWEB_READER_MODE)
+#include "arkweb/chromium_ext/components/dom_distiller/core/distiller_page_ohos.h"
+#endif
 
 namespace dom_distiller {
 namespace {
@@ -48,6 +51,25 @@ std::string GetDistillerScriptWithOptions(
   ReplaceScriptPlaceholder(script, kOptionsPlaceholder, options_json);
   return script;
 }
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+std::string GetDistillerScriptWithOptionsOhos(
+    const dom_distiller::proto::DomDistillerOptions& options, bool is_distill_catalog) {
+  std::string script =
+      ui::ResourceBundle::GetSharedInstance().LoadDataResourceString(
+          IDR_DISTILLER_JS_ARKWEB);
+  CHECK(!script.empty());
+  base::Value options_value =
+      dom_distiller::proto::json::DomDistillerOptions::WriteToValue(options);
+  std::string options_json;
+  if (!base::JSONWriter::Write(options_value, &options_json)) {
+    NOTREACHED();
+  }
+  ReplaceScriptPlaceholder(script, kOptionsPlaceholder, options_json);
+  ModifyDistillerScriptOhos(script, is_distill_catalog);
+  return script;
+}
+#endif
 
 std::string GetReadabilityDistillerScript() {
   std::string script =

@@ -129,17 +129,16 @@ void DistillerPage::DistillPage(
       script = GetReadabilityDistillerScript();
       break;
     case DistillerType::kDOMDistiller:
+#if BUILDFLAG(ARKWEB_READER_MODE)
+      dom_distiller::proto::DomDistillerOptions new_options = options;
+      bool is_distill_catalog = DistillPageOhos(gurl, new_options);
+      script = GetDistillerScriptWithOptionsOhos(options, is_distill_catalog);
+#else
       script = GetDistillerScriptWithOptions(options);
+#endif
       break;
   }
-#if BUILDFLAG(ARKWEB_READER_MODE)
-  dom_distiller::proto::DomDistillerOptions new_options = options;
-  bool is_distill_catalog = DistillPageOhos(gurl, new_options);
-  DistillPageImpl(gurl,
-                  GetDistillerScriptWithOptions(new_options));
-#else
   DistillPageImpl(gurl, script);
-#endif // ARKWEB_READER_MODE
 }
 
 void DistillerPage::OnDistillationDone(const GURL& page_url,

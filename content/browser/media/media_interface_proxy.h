@@ -78,6 +78,14 @@ class MediaInterfaceProxy final : public DocumentUserData<MediaInterfaceProxy>,
           client_extension,
       mojo::PendingReceiver<media::mojom::Renderer> receiver) final;
 #endif  // BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(ARKWEB_MEDIA_HLS)
+  void CreateMediaPlayerRenderer(
+      mojo::PendingRemote<media::mojom::MediaPlayerRendererClientExtension>
+          client_extension_remote,
+      mojo::PendingReceiver<media::mojom::Renderer> receiver,
+      int player_id,
+      const media::MediaPlayerUrlParams& params) final;
+#endif  // BUILDFLAG(ARKWEB_MEDIA_HLS)
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   void CreateCustomMediaPlayerRenderer(
       mojo::PendingRemote<media::mojom::CustomMediaPlayerRendererClientExtension>

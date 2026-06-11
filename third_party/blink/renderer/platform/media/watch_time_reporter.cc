@@ -660,7 +660,7 @@ WatchTimeReporter::CreateBaseComponent() {
   switch (properties_->demuxer_type) {
     case media::DemuxerType::kMockDemuxer:
     case media::DemuxerType::kUnknownDemuxer:
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER) || BUILDFLAG(ARKWEB_MEDIA_HLS)
     case media::DemuxerType::kOhosMediaPlayerDemuxer:
 #endif // ARKWEB_CUSTOM_VIDEO_PLAYER
       // Testing demuxers, do nothing.

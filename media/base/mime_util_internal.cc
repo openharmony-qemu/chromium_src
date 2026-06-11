@@ -399,7 +399,12 @@ void MimeUtil::AddSupportedMediaFormats() {
   AddContainerWithCodecs("video/3gpp", video_3gpp_codecs);
 
 #if BUILDFLAG(ENABLE_HLS_DEMUXER)
-  if (base::FeatureList::IsEnabled(kBuiltInHlsPlayer)) {
+  bool can_play_hls = base::FeatureList::IsEnabled(kBuiltInHlsPlayer);
+#elif BUILDFLAG(ARKWEB_MEDIA_HLS)
+  bool can_play_hls = true;
+#endif
+#if BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(ARKWEB_MEDIA_HLS)
+  if (can_play_hls) {
     // HTTP Live Streaming (HLS).
     CodecSet hls_codecs{
         H264,
@@ -414,7 +419,7 @@ void MimeUtil::AddSupportedMediaFormats() {
     // https://crbug.com/675552 for details and examples.
     AddContainerWithCodecs("audio/x-mpegurl", hls_codecs);
   }
-#endif  // BUILDFLAG(ENABLE_HLS_DEMUXER)
+#endif  // BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(ARKWEB_MEDIA_HLS)
 #endif  // BUILDFLAG(USE_PROPRIETARY_CODECS)
 }
 

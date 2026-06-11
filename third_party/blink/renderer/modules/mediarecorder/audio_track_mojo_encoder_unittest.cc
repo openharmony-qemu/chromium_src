@@ -158,6 +158,14 @@ class TestInterfaceFactory final : public media::mojom::InterfaceFactory {
     NOTREACHED();
   }
 #endif  // BUILDFLAG(IS_WIN)
+#if BUILDFLAG(ARKWEB_MEDIA_HLS)
+  void CreateMediaPlayerRenderer(
+      mojo::PendingRemote<media::mojom::MediaPlayerRendererClientExtension>
+          client_extension_remote,
+      mojo::PendingReceiver<media::mojom::Renderer> receiver,
+      int player_id,
+      const media::MediaPlayerUrlParams& params) override {}
+#endif  // BUILDFLAG(ARKWEB_MEDIA_HLS)
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   void CreateCustomMediaPlayerRenderer(
       mojo::PendingRemote<media::mojom::CustomMediaPlayerRendererClientExtension>

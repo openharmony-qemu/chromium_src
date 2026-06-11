@@ -20,6 +20,10 @@
 #include "gpu/command_buffer/service/ohos/scoped_native_buffer_fence_sync.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_MEDIA_HLS)
+#include "gpu/command_buffer/service/texture_base.h"
+#endif
+
 #if !BUILDFLAG(IS_ARKWEB)
 namespace base::android {
 class ScopedHardwareBufferFenceSync;
@@ -58,6 +62,10 @@ class GPU_GLES2_EXPORT StreamTextureSharedImageInterface
   virtual void UpdateAndBindTexImage(GLuint service_id) = 0;
 
   virtual bool HasTextureOwner() const = 0;
+
+#if BUILDFLAG(ARKWEB_MEDIA_HLS)
+  virtual TextureBase* GetTextureBase() const { return nullptr; }
+#endif
 
   // Notify the texture of overlay decision, When overlay promotion is true,
   // this also sets the bounds of where the overlay is.

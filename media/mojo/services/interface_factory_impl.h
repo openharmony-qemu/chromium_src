@@ -29,9 +29,10 @@
 #include "mojo/public/cpp/bindings/pending_remote.h"
 #include "mojo/public/cpp/bindings/remote.h"
 #include "mojo/public/cpp/bindings/unique_receiver_set.h"
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER) || BUILDFLAG(ARKWEB_MEDIA_HLS)
 #include "arkweb/chromium_ext/media/base/media_player_url_params.h"
-#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+#include "media/mojo/mojom/renderer_extensions.mojom.h"
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER || ARKWEB_MEDIA_HLS
 namespace media {
 
 class CdmFactory;
@@ -73,6 +74,15 @@ class InterfaceFactoryImpl final
       const base::UnguessableToken& overlay_plane_id,
       mojo::PendingReceiver<mojom::Renderer> receiver) final;
 #endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_HLS)
+  void CreateMediaPlayerRenderer(
+      mojo::PendingRemote<mojom::MediaPlayerRendererClientExtension>
+          client_extension_remote,
+      mojo::PendingReceiver<mojom::Renderer> receiver,
+      int player_id,
+      const media::MediaPlayerUrlParams& params) final;
+#endif  // BUILDFLAG(ARKWEB_MEDIA_HLS)
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   void CreateCustomMediaPlayerRenderer(
       mojo::PendingRemote<mojom::CustomMediaPlayerRendererClientExtension>

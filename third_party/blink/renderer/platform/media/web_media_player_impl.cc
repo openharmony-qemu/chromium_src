@@ -898,6 +898,12 @@ void WebMediaPlayerImpl::OnDisplayTypeChanged(
   UpdatePlayState();
 }
 
+#if BUILDFLAG(ARKWEB_MEDIA_HLS)
+void WebMediaPlayerImpl::UpdateMediaPlayerUrlType(media::MediaPlayerUrlType type) {
+  media_player_url_params_.SetMediaPlayerUrlType(type);
+}
+#endif
+
 void WebMediaPlayerImpl::DoLoad(LoadType load_type,
                                 const KURL& url,
                                 CorsMode cors_mode,
@@ -928,6 +934,10 @@ void WebMediaPlayerImpl::DoLoad(LoadType load_type,
       load_type == kLoadTypeURL ? GetMediaURLScheme(url)
                                 : media::mojom::blink::MediaURLScheme::kUnknown,
       media::mojom::blink::MediaStreamType::kNone);
+
+#if BUILDFLAG(ARKWEB_MEDIA_HLS)
+  media_player_url_params_.SetAllowCredentials(cors_mode != kCorsModeAnonymous);
+#endif
 
   bool needReturn = webMediaPlayerImplUtils_->DoLoadExt(cors_mode, is_cache_disabled);
   if (needReturn) {
@@ -1989,10 +1999,13 @@ void WebMediaPlayerImpl::DemuxerRequestsSeek(base::TimeDelta seek_time) {
 
 void WebMediaPlayerImpl::RestartForHls() {
   DCHECK(main_task_runner_->BelongsToCurrentThread());
-#if BUILDFLAG(ENABLE_HLS_DEMUXER)
+#if BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(ARKWEB_MEDIA_HLS)
   if (observer_) {
     observer_->OnHlsManifestDetected();
   }
+#if BUILDFLAG(ARKWEB_MEDIA_HLS)
+   renderer_factory_selector_->SetBaseRendererType(media::RendererType::kOHOSMediaPlayer);
+#endif
   SetMemoryReportingState(false);
   StartPipeline();
 #else
@@ -3084,7 +3097,7 @@ std::unique_ptr<media::Renderer> WebMediaPlayerImpl::CreateRenderer(
     CreateWatchTimeReporter();
   }
 
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER) || BUILDFLAG(ARKWEB_MEDIA_HLS)
   std::unique_ptr<media::Renderer> renderer =
     webMediaPlayerImplUtils_->CreateRendererExtConfigRenderer(request_overlay_info_cb);
   if (renderer != nullptr) {
@@ -3156,11 +3169,11 @@ void WebMediaPlayerImpl::StartPipeline() {
           demuxer_manager_->LoadedUrl())
           .spec();
 
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER) || BUILDFLAG(ARKWEB_MEDIA_HLS)
   if (webMediaPlayerImplUtils_) {
-    webMediaPlayerImplUtils_->GenerateCustomMediaPlayerUrlParams(headers);
+    webMediaPlayerImplUtils_->GenerateMediaPlayerUrlParams(headers);
   }
-#endif  // BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+#endif  // BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER) || BUILDFLAG(ARKWEB_MEDIA_HLS)
 
 
   // Unretained(this) is safe here, since `CreateDemuxer` calls the bound

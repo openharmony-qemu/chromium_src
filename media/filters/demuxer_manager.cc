@@ -26,7 +26,7 @@
 #include "media/filters/hls_manifest_demuxer_engine.h"
 #include "media/filters/manifest_demuxer.h"
 #endif  // BUILDFLAG(ENABLE_HLS_DEMUXER)
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER) || BUILDFLAG(ARKWEB_MEDIA_HLS)
 #include "arkweb/chromium_ext/media/base/ohos_media_player_demuxer.h"
 #endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 namespace media {
@@ -197,8 +197,12 @@ void DemuxerManager::OnPipelineError(PipelineStatus error) {
     return client_->OnError(std::move(error));
   }
 
+#if BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(ARKWEB_MEDIA_HLS)
 #if BUILDFLAG(ENABLE_HLS_DEMUXER)
   if (base::FeatureList::IsEnabled(kBuiltInHlsPlayer) &&
+#elif BUILDFLAG(ARKWEB_MEDIA_HLS)
+  if (base::FeatureList::IsEnabled(kCanPlayHls) &&
+#endif
       error == DEMUXER_ERROR_DETECTED_HLS) {
     hls_fallback_ = true;
 
@@ -211,6 +215,9 @@ void DemuxerManager::OnPipelineError(PipelineStatus error) {
     // HLS content is considered CORS, but that will change.
     loaded_url_ = GetDataSourceUrlAfterRedirects().value();
     client_->UpdateLoadedUrl(loaded_url_);
+#if BUILDFLAG(ARKWEB_MEDIA_HLS)
+    client_->UpdateMediaPlayerUrlType(media::MediaPlayerUrlType::kHlsMediaPlayer);
+#endif
 
     if (auto* co_data_source = data_source_->GetAsCrossOriginDataSource()) {
       MimeType mime_type =
@@ -364,6 +371,16 @@ PipelineStatus DemuxerManager::CreateDemuxer(
              /*is_static=*/false);
   }
 #endif  // BUILDFLAG(ENABLE_HLS_DEMUXER)
+
+#if BUILDFLAG(ARKWEB_MEDIA_HLS)
+  if (hls_fallback_) {
+    SetDemuxer(std::make_unique<OhosMediaPlayerDemuxer>(media_task_runner_));
+    return std::move(on_demuxer_created)
+        .Run(demuxer_.get(), Pipeline::StartType::kNormal,
+             /*is_streaming = */ false,
+             /*is_static = */ false);
+  }
+#endif
 
   // TODO(sandersd): FileSystem objects may also be non-static, but due to our
   // caching layer such situations are broken already. http://crbug.com/593159

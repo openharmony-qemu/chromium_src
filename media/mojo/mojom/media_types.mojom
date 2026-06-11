@@ -681,8 +681,8 @@ enum DemuxerType {
   kFrameInjectingDemuxer = 5,
   kStreamProviderDemuxer = 6,
   kManifestDemuxer = 7,
-  [EnableIf=arkweb_custom_video_player]
-  kOhosMediaPlayerDemuxer,
+  [EnableIf=arkweb_custom_video_player|arkweb_media_hls]
+  kOhosMediaPlayerDemuxer = 8,
 };
 
 // See media::CreateCdmStatus

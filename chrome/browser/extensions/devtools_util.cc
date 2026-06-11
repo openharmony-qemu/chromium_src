@@ -17,6 +17,12 @@
 #include "extensions/common/extension.h"
 #include "extensions/common/manifest_handlers/background_info.h"
 
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+#include "content/public/browser/web_contents.h"
+#include "ohos_nweb/src/capi/nweb_devtools_message_handler.h"
+#include "cef/ohos_cef_ext/libcef/browser/devtools/arkweb/request_open_devtools_handler.h"
+#endif // ARKWEB_DEVTOOLS
+
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 
 namespace extensions {
@@ -53,6 +59,10 @@ void InspectServiceWorkerBackgroundHelper(
 }  // namespace
 
 // Helper to inspect a service worker after it has been started.
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+void OnRequestOpenDevTools(const scoped_refptr<content::DevToolsAgentHost>& host,
+                           const Extension* extension);
+#endif // ARKWEB_DEVTOOLS
 void InspectServiceWorkerBackground(const Extension* extension,
                                     Profile* profile,
                                     DevToolsOpenedByAction opened_by) {
@@ -64,6 +74,10 @@ void InspectServiceWorkerBackground(const Extension* extension,
         host->GetURL() ==
             BackgroundInfo::GetBackgroundServiceWorkerScriptURL(extension) &&
         host->GetBrowserContext() == profile) {
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+      OnRequestOpenDevTools(host, extension);
+      break;
+#endif // ARKWEB_DEVTOOLS
       DevToolsWindow::OpenDevToolsWindow(host, profile, opened_by);
       break;
     }
@@ -99,3 +113,7 @@ void InspectBackgroundPage(const Extension* extension,
 
 }  // namespace devtools_util
 }  // namespace extensions
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/chrome/browser/extensions/devtools_util_for_include.cc"
+#endif // IS_ARKWEB

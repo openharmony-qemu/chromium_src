@@ -517,10 +517,13 @@ void PaintTimingDetector::UpdateLcpCandidate() {
 
 void PaintTimingDetector::ReportIgnoredContent() {
   text_paint_timing_detector_->ReportLargestIgnoredText();
+  if (image_paint_timing_detector_->IsRecordingLargestImagePaint()) {
+    image_paint_timing_detector_->ReportLargestIgnoredImage();
+  }
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  paint_timing_detector_utils_.ForwardReportIgnoredContent();
-#else
-  image_paint_timing_detector_->ReportLargestIgnoredImage();
+  else {
+    paint_timing_detector_utils_.ForwardReportIgnoredContent();
+  }
 #endif
 }
 

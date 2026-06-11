@@ -53,7 +53,11 @@ class MockGpuChannel : public mojom::GpuChannel {
   MOCK_METHOD1(DestroyCommandBuffer, bool(int32_t));
   MOCK_METHOD2(DestroyCommandBuffer,
                void(int32_t, DestroyCommandBufferCallback));
-
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+  MOCK_METHOD2(DecodeHeif,
+               void(mojo_base::BigBuffer,
+               DecodeHeifCallback));
+#endif
 #if BUILDFLAG(ARKWEB_UNITTESTS)
   ARKWEB_UNITTESTS_MOCK_METHOD4_BOOL();
   ARKWEB_UNITTESTS_MOCK_METHOD4_VOID();

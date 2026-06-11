@@ -37,6 +37,9 @@
 #include "ui/gl/gl_share_group.h"
 #include "ui/gl/gpu_preference.h"
 #include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+#include "arkweb/chromium_ext/gpu/ipc/service/heif_decoder_service.h"
+#endif
 
 namespace base {
 class WaitableEvent;
@@ -202,6 +205,12 @@ class GPU_IPC_SERVICE_EXPORT GpuChannel : public IPC::Listener,
       mojom::GpuChannel::CreateCommandBufferCallback callback);
   void DestroyCommandBuffer(int32_t routing_id);
 
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+  // Implement the DecodeHeif method of the GpuChannel interface
+  void DecodeHeif(mojo_base::BigBuffer heif_data,
+                  mojom::GpuChannel::DecodeHeifCallback callback);
+#endif
+
 #if BUILDFLAG(IS_FUCHSIA)
   void RegisterSysmemBufferCollection(mojo::PlatformHandle service_handle,
                                       mojo::PlatformHandle sysmem_token,
@@ -282,6 +291,9 @@ class GPU_IPC_SERVICE_EXPORT GpuChannel : public IPC::Listener,
   // and schedules tasks for them appropriately.
   const scoped_refptr<GpuChannelMessageFilter> filter_;
 
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+  std::unique_ptr<HeifDecoderService> heif_decoder_;
+#endif
   // Member variables should appear before the WeakPtrFactory, to ensure that
   // any WeakPtrs to Controller are invalidated before its members variable's
   // destructors are executed, rendering them invalid.

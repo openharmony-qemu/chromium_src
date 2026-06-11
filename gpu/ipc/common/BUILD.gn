@@ -290,6 +290,9 @@ mojom("gpu_channel_mojom") {
   if (arkweb_blank_optimize) {
     enabled_features += [ "arkweb_blank_optimize" ]
   }
+  if (arkweb_heif_support) {
+    enabled_features += [ "arkweb_heif_support" ]
+  }
 }
 
 mojom("shared_image_pool_client_interface") {

@@ -26,6 +26,7 @@ import "ui/gfx/mojom/native_handle_types.mojom";
 import "ui/gfx/mojom/presentation_feedback.mojom";
 import "ui/gl/mojom/gpu_preference.mojom";
 import "url/mojom/url.mojom";
+import "mojo/public/mojom/base/big_buffer.mojom";
 
 // Maps to its namesake in gpu/command_buffer/common/context_creation_attribs.h.
 enum ContextType {
@@ -248,6 +249,12 @@ interface GpuChannel {
 
   [EnableIf=arkweb_blank_optimize]
   SetBlanklessDumpInfo(uint32 nweb_id, uint64 blankless_key, uint64 frame_sink_id, int32 lcp_time, int64 pref_hash);
+
+  [Sync, EnableIf=arkweb_heif_support]
+  DecodeHeif(mojo_base.mojom.BigBuffer heif_data)
+      => (array<uint8> pixels, 
+          gfx.mojom.Size size, 
+          string error);
 };
 
 // Interface used to issue commands to a specific CommandBuffer instance in the

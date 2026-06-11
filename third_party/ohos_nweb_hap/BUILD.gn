@@ -200,7 +200,12 @@ action("arkwebcore_hap_app_json5") {
 }
 
 generate_file_with_jinja2("generate_app_json5") {
-  input = "AppScope/app.json5.template"
   output = "$target_gen_dir/app.json5"
-  variables = [ "ohos_package_name=$ohos_package_name" ]
+  if (is_nolegacy) {
+    input = "AppScope/app.json5.template"
+    variables = [ "ohos_package_name=$ohos_package_name" ]
+  } else {
+    input = "AppScope/applegacy.json5.template"
+    variables = [ "ohos_package_name=com.huawei.hmos.arkwebcorelegacy" ]
+  }
 }

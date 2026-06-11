@@ -150,7 +150,11 @@ BASE_FEATURE(kIsViewerGoogleSearchUrl, base::FEATURE_ENABLED_BY_DEFAULT);
 
 // Global functions -----------------------------------------------------------
 
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+const char kGoogleHomepageURL[] = "https://***/";
+#else
 const char kGoogleHomepageURL[] = "https://www.google.com/";
+#endif
 
 bool HasGoogleSearchQueryParam(std::string_view str) {
   url::Component query(0, static_cast<int>(str.length())), key, value;

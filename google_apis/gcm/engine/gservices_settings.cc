@@ -33,8 +33,13 @@ const char kDefaultCheckinURL[] = "https://android.clients.google.com/checkin";
 const char kDefaultMCSHostname[] = "mtalk.google.com";
 const int kDefaultMCSMainSecurePort = 5228;
 const int kDefaultMCSFallbackSecurePort = 443;
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+const char kDefaultRegistrationURL[] =
+    "https://***";
+#else
 const char kDefaultRegistrationURL[] =
     "https://android.clients.google.com/c2dm/register3";
+#endif
 // Settings that are to be deleted are marked with this prefix in checkin
 // response.
 const char kDeleteSettingPrefix[] = "delete_";

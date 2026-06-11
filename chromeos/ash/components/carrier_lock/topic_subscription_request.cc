@@ -33,8 +33,13 @@ namespace {
 
 const char kTopicSubscriptionRequestContentType[] =
     "application/x-www-form-urlencoded";
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+const char kFcmRegistrationUrl[] =
+    "https://***";
+#else
 const char kFcmRegistrationUrl[] =
     "https://android.clients.google.com/c2dm/register3";
+#endif
 
 // Request constants.
 const char kAppKey[] = "app";

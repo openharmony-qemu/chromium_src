@@ -786,10 +786,17 @@ class CONTENT_EXPORT WebContentsDelegate {
   // values again, except part of resize. But this is not needed by embedder
   // because it's always accompanied by view size change. The values returned
   // by these APIs are in physical pixels (not DIPs).
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
+  virtual float GetTopControlsHeight();
+  virtual float GetTopControlsMinHeight();
+  virtual float GetBottomControlsHeight();
+  virtual float GetBottomControlsMinHeight();
+#else
   virtual int GetTopControlsHeight();
   virtual int GetTopControlsMinHeight();
   virtual int GetBottomControlsHeight();
   virtual int GetBottomControlsMinHeight();
+#endif
   virtual bool ShouldAnimateBrowserControlsHeightChanges();
   virtual bool DoBrowserControlsShrinkRendererSize(WebContents* web_contents);
   virtual int GetVirtualKeyboardHeight(WebContents* web_contents);

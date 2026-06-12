@@ -237,6 +237,7 @@ if (!enable_arkweb) {
   arkweb_video_ltpo = false
   arkweb_viewport = false
   arkweb_warmup_serviceworker = false
+  arkweb_watch_optimize_sc = false
   arkweb_webrtc = false
   arkweb_webstorage = false
   arkweb_wpt = true
@@ -485,6 +486,7 @@ buildflag_header("features") {
     "ARKWEB_VIDEO_LTPO=$arkweb_video_ltpo",
     "ARKWEB_VIEWPORT=$arkweb_viewport",
     "ARKWEB_WARMUP_SERVICEWORKER=$arkweb_warmup_serviceworker",
+    "ARKWEB_WATCH_OPTIMIZE_SC=$arkweb_watch_optimize_sc",
     "ARKWEB_WEBRTC=$arkweb_webrtc",
     "ARKWEB_WEBSTORAGE=$arkweb_webstorage",
     "ARKWEB_WPT=$arkweb_wpt",

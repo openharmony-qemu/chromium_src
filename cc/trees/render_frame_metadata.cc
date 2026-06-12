@@ -43,6 +43,12 @@ bool RenderFrameMetadata::operator==(const RenderFrameMetadata& other) const {
          scrollable_viewport_size == other.scrollable_viewport_size &&
          root_layer_size == other.root_layer_size &&
          root_overflow_y_hidden == other.root_overflow_y_hidden &&
+         bottom_controls_height == other.bottom_controls_height &&
+         bottom_controls_shown_ratio == other.bottom_controls_shown_ratio &&
+         top_controls_min_height_offset ==
+             other.top_controls_min_height_offset &&
+         bottom_controls_min_height_offset ==
+             other.bottom_controls_min_height_offset &&
 #endif
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS)
          bottom_controls_height == other.bottom_controls_height &&

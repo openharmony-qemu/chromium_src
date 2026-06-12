@@ -346,7 +346,9 @@ class CONTENT_EXPORT RenderWidgetHostView {
   virtual bool IsHTMLFormPopup() const = 0;
 
 #if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS) || BUILDFLAG(ARKWEB_EX_TOPCONTROLS)
-  virtual int GetTopControlsOffset() const = 0;
+  virtual float GetTopControlsOffset() const = 0;
+  virtual float GetTopContentOffset() const = 0;
+  virtual float GetBottomContentOffset() const = 0;
 #endif
 };
 

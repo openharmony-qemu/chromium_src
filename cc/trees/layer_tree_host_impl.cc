@@ -2841,6 +2841,14 @@ RenderFrameMetadata LayerTreeHostImpl::MakeRenderFrameMetadata(
   bool allocate_new_local_surface_id = false;
 
 #if BUILDFLAG(IS_ARKWEB)
+  metadata.bottom_controls_height =
+      browser_controls_offset_manager_->BottomControlsHeight();
+  metadata.bottom_controls_shown_ratio =
+      browser_controls_offset_manager_->BottomControlsShownRatio();
+  metadata.top_controls_min_height_offset =
+      browser_controls_offset_manager_->TopControlsMinHeightOffset();
+  metadata.bottom_controls_min_height_offset =
+      browser_controls_offset_manager_->BottomControlsMinHeightOffset();
   metadata.scrollable_viewport_size = active_tree_->ScrollableViewportSize();
   metadata.root_layer_size = active_tree_->ScrollableSize();
   if (InnerViewportScrollNode()) {

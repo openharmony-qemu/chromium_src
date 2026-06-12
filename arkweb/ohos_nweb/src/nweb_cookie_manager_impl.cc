@@ -44,11 +44,17 @@ void PostCreateMainMessageLoop() {
     config->product_name = std::string("Chromium");
     config->should_use_preference =
         command_line->HasSwitch(password_manager::kEnableEncryptionSelection);
+    bool isSeparation =
+        (command_line->GetSwitchValueASCII(
+             switches::kEnableCacheDataDirSeparation) == "true");
+    std::string target_data_dir_tag =
+        isSeparation ? "files/__arkweb" : "cache/web";
     config->user_data_path =
-        command_line->GetSwitchValuePath(switches::kUserDataDir);
+        command_line->GetSwitchValuePath(switches::kUserDataDir)
+            .Append(target_data_dir_tag);
   } else {
-    LOG_FEEDBACK(ERROR, kNetwork) << "Commandline is empty, failed to create "
-                                     "cookie encryption configuration";
+    LOG_FEEDBACK(ERROR, kNetwork)
+        << "CreateCookieEncryptionFailed message:emptyCommandLine";
   }
   DCHECK(!config->user_data_path.empty());
   OSCrypt::SetConfig(std::move(config));

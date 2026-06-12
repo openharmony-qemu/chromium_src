@@ -74,7 +74,13 @@ base::FilePath GetPath() {
   const base::CommandLine* command_line =
       base::CommandLine::ForCurrentProcess();
   if (command_line) {
-    data_path = command_line->GetSwitchValuePath(switches::kUserDataDir);
+    bool isSeparation =
+        (command_line->GetSwitchValueASCII(
+             switches::kEnableCacheDataDirSeparation) == "true");
+    std::string target_data_dir_tag =
+        isSeparation ? "files/__arkweb" : "cache/web";
+    data_path = command_line->GetSwitchValuePath(switches::kUserDataDir)
+                    .Append(target_data_dir_tag);
     return data_path;
   }
 

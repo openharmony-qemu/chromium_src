@@ -87,6 +87,11 @@
 #include "gin/converter.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#include "base/command_line.h"
+#include "base/logging.h"
+#endif
 
 namespace blink {
 
@@ -883,6 +888,17 @@ void LocalFrameMojoHandler::JavaScriptExecuteRequest(
         Platform::Current()->CreateWebV8ValueConverter();
     converter->SetDateAllowed(true);
     converter->SetRegExpAllowed(true);
+
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+    if (base::CommandLine::ForCurrentProcess()->HasSwitch(::switches::kEnableNwebEx)) {
+      ScriptState* script_state = ToScriptStateForMainWorld(frame_);
+      if (!script_state || !script_state->ContextIsValid()) {
+        LOG(WARNING) << "JavaScriptExecuteRequest:frame not ready or has detached.";
+        std::move(callback).Run({});
+        return;
+      }
+    }
+#endif
 
     v8::Local<v8::Context> context = MainWorldScriptContext(frame_);
 #if BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)

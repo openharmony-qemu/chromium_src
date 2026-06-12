@@ -257,7 +257,6 @@ void RenderFrameHostImpl::CloseImageOverlaySelection() {
   }
 }
 #endif  // BUILDFLAG(ARKWEB_AI)
-
 // LCOV_EXCL_STOP
 
 void CommitNavigationExt(

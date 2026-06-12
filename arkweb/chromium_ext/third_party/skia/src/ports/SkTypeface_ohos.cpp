@@ -4,7 +4,9 @@
 
 #include "SkTypeface_ohos.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/logging.h"
+#include "base/ohos/sys_info_utils_ext.h"
 #include "include/private/base/SkTArray.h"
 #include "src/core/SkFontDescriptor.h"
 #include "src/ports/SkFontScanner_FreeType_priv.h"
@@ -65,6 +67,15 @@ std::unique_ptr<SkFontData> SkTypeface_OHOS::onMakeFontData() const {
   if (fontInfo->stream.get() == nullptr) {
     return nullptr;
   }
+#if BUILDFLAG(ARKWEB_WATCH_OPTIMIZE_SC)
+  if (base::ohos::IsWearableDevice()) {
+    SkString fontPath = fontInfo->fname;
+    if (fontPath.endsWith("Optimize_SC.tth")) {
+      fontPath = "/system/fonts/HarmonyOS_Sans_SC.ttf";
+      fontInfo->stream = SkStream::MakeFromFile(fontPath.c_str());
+    }
+  }
+#endif
   LOG(INFO) << "Current font file is : " << fontInfo->fname.c_str()
             << ";Current family name is : " << fontInfo->familyName.c_str();
   return std::make_unique<SkFontData>(

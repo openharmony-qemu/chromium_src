@@ -20,6 +20,7 @@
 #include "nweb_hilog.h"
 
 #if BUILDFLAG(ARKWEB_COOKIE)
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
 #include "base/path_service.h"
 #include "chrome/common/chrome_paths.h"
 #include "chrome/common/chrome_switches.h"
@@ -50,8 +51,13 @@ void PostCreateMainMessageLoop() {
     std::string target_data_dir_tag =
         isSeparation ? "files/__arkweb" : "cache/web";
     config->user_data_path =
-        command_line->GetSwitchValuePath(switches::kUserDataDir)
-            .Append(target_data_dir_tag);
+        command_line->GetSwitchValuePath(switches::kUserDataDir);
+    if (!config->user_data_path.empty()) {
+      config->user_data_path =
+          config->user_data_path.Append(target_data_dir_tag);
+    } else {
+      base::PathService::Get(base::DIR_CACHE, &config->user_data_path);
+    }
   } else {
     LOG_FEEDBACK(ERROR, kNetwork)
         << "CreateCookieEncryptionFailed message:emptyCommandLine";

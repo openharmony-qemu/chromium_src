@@ -378,6 +378,11 @@ constexpr base::FilePath::CharType kUserDataDir[] =
     FILE_PATH_LITERAL("files/__arkweb");
 constexpr base::FilePath::CharType kUserCacheDir[] =
     FILE_PATH_LITERAL("cache/web");
+constexpr base::FilePath::CharType kWebCacheMigratedDir[] =
+    FILE_PATH_LITERAL("web_cache_migrated");
+const std::set<std::string> cache_names = {
+        "Cache", "Code Cache", "DawnGraphiteCache", "DawnWebGPUCache", "font_unique_name_table.pb",
+        "GPUCache", "GraphiteDawnCache", "GrShaderCache", "PreloadCache", "rdb", "ShaderCache", "Temp"};
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
 bool g_browser_service_api_enabled = false;
@@ -1026,32 +1031,64 @@ void HandleAdvancedSecurityMode(std::list<std::string>& web_engine_args) {
 }
 
 void ParsePathFromArgForKey(const std::string& arg, const std::string& key,
-                            base::FilePath* out_path) {
+                            base::FilePath& out_path) {
   if (arg.find(key) != std::string::npos) {
     size_t eq_pos = arg.find("=");
     if (eq_pos != std::string::npos) {
       std::string path_str = arg.substr(eq_pos + 1);
-      *out_path = base::FilePath(path_str);
+      out_path = base::FilePath(path_str);
     }
   }
 }
 
-void ParseDataMigrateFromArgForKey(const std::string& arg, const std::string & key, bool* isSeparation) {
+void ParseBoolFromArgForKey(const std::string& arg, const std::string& key, bool& out_bool) {
   if (arg.find(key) != std::string::npos) {
     size_t eq_pos = arg.find("=");
     if (eq_pos != std::string::npos) {
-      std::string data_migrate = arg.substr(eq_pos + 1);
-      *isSeparation = (data_migrate == "true");
+      std::string out_bool_str = arg.substr(eq_pos + 1);
+      out_bool = (out_bool_str == "true");
     }
   }
 }
 
-base::FilePath GetWebEngineDataDirectory(const base::FilePath& user_data_dir,
-                                         const base::FilePath& cache_dir, 
-                                         std::list<std::string>& web_engine_args) {
-  base::FilePath new_user_data_dir = user_data_dir.Append(kUserDataDir);
-  bool isMix = base::PathExists(cache_dir) && !base::PathExists(new_user_data_dir);
-  return isMix? cache_dir : new_user_data_dir;
+bool MigrateUserDataDir(const base::FilePath& src_path, const base::FilePath& dst_path) {
+  if (base::PathExists(dst_path)) {
+    return true;
+  }
+  if (!base::ReplaceFile(src_path, dst_path, nullptr)) {
+    LOG(ERROR) << "MigrateUserDataDir ReplaceFile failed, src_path:" << src_path << ", dst_path:" << dst_path;
+    return false;
+  }
+  return true;
+}
+
+void ClearCacheInDataDir(const base::FilePath& user_data_dir, const base::FilePath& user_cache_dir) {
+  base::FilePath webDataMigratedDir = user_data_dir.Append(kWebCacheMigratedDir);
+  if (base::PathExists(webDataMigratedDir)) {
+    return;
+  }
+  if (!base::CreateDirectory(user_cache_dir)) {
+    LOG(ERROR) << "ClearCacheInDataDir CreateDirectory failed, user_cache_dir:" << user_cache_dir;
+    return;
+  }
+  for (const auto& dir_name : cache_names) {
+    // 将Cache文件夹从data迁移回源目录下
+    base::FilePath dir_path = user_data_dir.Append(dir_name);
+    base::FilePath target_dir_path = user_cache_dir.Append(dir_name);
+    if (base::PathExists(dir_path)) {
+      base::ReplaceFile(dir_path, target_dir_path, nullptr);
+    }
+  }
+  base::CreateDirectory(user_data_dir.Append(kWebCacheMigratedDir));
+}
+
+void MigrateUserData(const base::FilePath& user_data_dir, const base::FilePath& user_cache_dir) {
+  if (!MigrateUserDataDir(user_cache_dir, user_data_dir)) {
+    return;
+  }
+  if (!base::PathExists(user_data_dir.Append(kWebCacheMigratedDir))) {
+    ClearCacheInDataDir(user_data_dir, user_cache_dir);
+  }
 }
 
 void InitialWebEngineArgs(
@@ -1144,28 +1181,27 @@ void InitialWebEngineArgs(
     }
   }
 
-  base::FilePath app_sandbox_root_dir = base::FilePath();
   base::FilePath user_data_dir = base::FilePath();
   bool isSeparation = false;
+  bool isMigration = false;
   auto args_to_add = GetArgsToAdd(init_args);
-
   for (auto arg : args_to_add) {
-    ParsePathFromArgForKey(arg, switches::kArkwebAppDataDir, &app_sandbox_root_dir);
-    ParsePathFromArgForKey(arg, switches::kUserDataDir, &user_data_dir);
-    ParseDataMigrateFromArgForKey(arg, switches::kEnableUserDataDirSeparation, &isSeparation);
+    ParsePathFromArgForKey(arg, switches::kUserDataDir, user_data_dir);
+    ParseBoolFromArgForKey(arg, switches::kEnableCacheDataDirSeparation, isSeparation);
+    ParseBoolFromArgForKey(arg, switches::kEnableCacheDataDirMigration, isMigration);
     web_engine_args.emplace_back(arg);
   }
-  base::FilePath target_cache_dir = app_sandbox_root_dir.Append(kUserCacheDir);
-  base::FilePath target_data_dir = isSeparation?
-                      GetWebEngineDataDirectory(user_data_dir, target_cache_dir, web_engine_args) :
-                      app_sandbox_root_dir.Append(kUserCacheDir);
-  web_engine_args.emplace_back("--user-data-dir=" + target_data_dir.value());
-  web_engine_args.emplace_back("--user-cache-dir=" + target_cache_dir.value());
-  web_engine_args.emplace_back("--arkweb-app-data-dir=" + app_sandbox_root_dir.value());
-  if (app_sandbox_root_dir.empty()) {
-    LOG(ERROR) << "app_sandbox_root_dir is empty.";
+  if (isSeparation) {
+    base::FilePath target_cache_dir = user_data_dir.Append(kUserCacheDir);
+    base::FilePath separated_data_dir = user_data_dir.Append(kUserDataDir);
+    if (isMigration) {
+      MigrateUserData(separated_data_dir, target_cache_dir);
+    }
+    if (base::PathExists(target_cache_dir) && !base::PathExists(separated_data_dir)) {
+      web_engine_args.emplace_back("--enable-cache-data-dir-separation=false");
+    }
   }
-  LOG(INFO) << "arkweb data|cache Separation : " << isSeparation;
+  LOG(INFO) << "dir data|cache isSeparation: " << isSeparation << ", isMigration:" << isMigration;
 
 #if BUILDFLAG(ARKWEB_GWP_ASAN)
   std::string gwpEnable = "--ohos-enable-gwp-asan-type=" + GetGwpAsanEnable();

@@ -41,6 +41,7 @@
 #include "services/network/public/cpp/p2p_socket_type.h"
 #include "services/network/throttling/network_conditions.h"
 #include "services/network/throttling/throttling_controller.h"
+#include "services/network/throttling/throttling_p2p_network_interceptor.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/webrtc/rtc_base/time_utils.h"
@@ -1433,6 +1434,20 @@ TEST_F(P2PSocketUdpWithInterceptorTest, ReceivePacketDelayed) {
   EXPECT_CALL(*this, SinglePacketReceptionHelper(_, SpanEq(packet), _));
   AdvanceClock(base::Milliseconds(2000));
   EXPECT_EQ(2U, received_packets_.size());
+}
+
+TEST_F(P2PSocketUdpWithInterceptorTest, ReentrantDestructionSend) {
+  SetNetworkState({.latency = base::Milliseconds(100)});
+
+  webrtc::AsyncSocketPacketOptions options;
+  std::vector<uint8_t> packet;
+  CreateRandomPacket(&packet);
+  socket_impl_->Send(packet, P2PPacketInfo(dest1_, options, 0));
+
+  socket_delegate_.ExpectDestruction(std::move(socket_impl_));
+  socket_ = nullptr;
+
+  AdvanceClock(base::Milliseconds(100));
 }
 
 }  // namespace network

@@ -319,11 +319,13 @@ bool HeadlessScreenOhos::FetchDisplays(display::DisplayList& displays) {
   }
   OHOS::NWeb::DisplayId default_id =
       display_manager_adapter_->GetDefaultDisplayId();
+  LOG(INFO) << "HeadlessScreenOhos::FetchDisplays::default_id: " << default_id;
   OHOS::NWeb::DisplayId primary_id = default_id;
   auto primary_display = display_manager_adapter_->GetPrimaryDisplay();
   if (primary_display) {
     primary_id = primary_display->GetId();
   }
+  LOG(INFO) << "HeadlessScreenOhos::FetchDisplays::primary_id: " << primary_id;
   auto ohos_displays = display_manager_adapter_->GetAllDisplays();
   std::vector<display::Display> display_list;
   for (auto& ohos_display : ohos_displays) {
@@ -337,7 +339,22 @@ bool HeadlessScreenOhos::FetchDisplays(display::DisplayList& displays) {
     return false;
   }
   LayoutDisplays(display_list);
+
+  bool primary_found = false;
+  for (const auto& display : display_list) {
+    if (static_cast<int64_t>(primary_id) == display.id()) {
+      primary_found = true;
+      break;
+    }
+  }
+  if (!primary_found) {
+    LOG(INFO) << "HeadlessScreenOhos::FetchDisplays::primary_id: "
+              << primary_id << " not in display_list";
+    primary_id = default_id;
+  }
+
   for (auto& display : display_list) {
+    LOG(INFO) << "HeadlessScreenOhos::FetchDisplays::display_list: " << display.id();
     if (static_cast<int64_t>(primary_id) == display.id()) {
       displays.AddOrUpdateDisplay(display,
                                   display::DisplayList::Type::PRIMARY);
@@ -410,8 +427,10 @@ void HeadlessScreenOhos::OnDisplayEvent(const std::string& event,
       return;
     }
     auto iter = current_displays.FindDisplayById(display_id);
-    if (iter != current_displays.displays().end()) {
-      if (display_id == current_displays.GetPrimaryDisplayIterator()->id()) {
+    auto primary_iter = current_displays.GetPrimaryDisplayIterator();
+    if (iter != current_displays.displays().end() &&
+        primary_iter != current_displays.displays().end()) {
+      if (display_id == primary_iter->id()) {
         display_list_.AddOrUpdateDisplay(*iter,
                                          display::DisplayList::Type::PRIMARY);
       } else {
@@ -465,6 +484,9 @@ const std::vector<display::Display>& HeadlessScreenOhos::GetAllDisplays()
 
 display::Display HeadlessScreenOhos::GetPrimaryDisplay() const {
   auto iter = display_list_.GetPrimaryDisplayIterator();
+  if (iter == display_list_.displays().end()) {
+    return display::Display();  // 返回默认 Display（color_spaces_ 已初始化）
+  }
   DCHECK(iter != display_list_.displays().end());
   return *iter;
 }

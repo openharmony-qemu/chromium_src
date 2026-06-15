@@ -887,10 +887,18 @@ DragHandlingResult MouseEventManager::HandleDrag(
           event.Event().TimeStamp() - mouse_down_timestamp_ < kTextDragDelay
               ? DragController::kDelayedSelectionDragResolution
               : DragController::kImmediateSelectionDragResolution;
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+    if (!frame_->GetSettings()->GetEnableDrag()) {
+      GetDragState().drag_src_ = nullptr;
+    } else {
+#endif
       GetDragState().drag_src_ =
           frame_->GetPage()->GetDragController().DraggableNode(
               frame_, node, mouse_down_pos_, selection_drag_policy,
               GetDragState().drag_type_);
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+      }
+#endif
     } else {
       ResetDragSource();
     }

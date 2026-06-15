@@ -354,7 +354,7 @@ std::string GetUnifiedPlatform() {
   }
   return "iPhone; CPU iPhone OS 14_0 like Mac OS X";
 #elif BUILDFLAG(IS_OHOS)
-  return "OHOS; OHOS x86_64";
+  return "PC; OpenHarmony 5.0";
 #else
 #error Unsupported platform
 #endif

@@ -754,6 +754,7 @@ class CORE_EXPORT HTMLMediaElement
 
   void RequestEnterFullscreen() override {}
   void RequestExitFullscreen() override {}
+  float PageConstraintInitialScale(const Document& document);
 #endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
@@ -1268,6 +1269,8 @@ class CORE_EXPORT HTMLMediaElement
       media_player_receiver_set_;
 
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  bool is_first_scale_ = false;
+  float resolved_scale_ = -1.0f;
   gfx::Rect layer_rect_;
   std::string media_format_;
   Member<Node> next_retry_child_node_ = nullptr;

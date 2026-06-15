@@ -264,6 +264,7 @@ class VIZ_HOST_EXPORT GpuHostImpl : public mojom::GpuHost,
 #endif
 #if BUILDFLAG(ARKWEB_INVISIBLE_RENDER_THROTTLE)
   void SetWebComponentVisible(int nweb_id, bool visible);
+  void InitInvisibleThrottle(int strategy, int timeout, int ratio);
 #endif
 
 #if BUILDFLAG(ARKWEB_D_VSYNC)

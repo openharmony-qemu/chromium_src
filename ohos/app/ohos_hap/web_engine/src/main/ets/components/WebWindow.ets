@@ -12,6 +12,7 @@ import { MultiInputAdapter } from '../adapter/MultiInputAdapter';
 import { DragParamManager } from '../common/DragParamManager';
 import { window } from '@kit.ArkUI';
 import { NativeThemeAdapter } from '../adapter/NativeThemeAdapter'
+import { CmdArgsHelper } from '../utils/CmdArgsHelper';
 
 @Component
 export struct WebWindow {
@@ -22,6 +23,7 @@ export struct WebWindow {
   @LocalStorageLink('window') window: window.Window | undefined = undefined;
   @LocalStorageLink('statusBarHeight') statusBarHeight: number = 0;
   @LocalStorageLink('useDarkMode') useDarkMode: boolean = false;
+  @LocalStorageLink('cmdArgs') cmdArgs: string[] = [];
   private LIBRARY_NAME: string = 'adapter';
   private XCOMPONENT_NAME: string = 'xcomponent';
   private MODULE_NAME: string = this.xComponentId + ':' + this.XCOMPONENT_NAME;
@@ -118,7 +120,8 @@ export struct WebWindow {
       .onLoad(() => {
         LogUtil.info(WebWindow.TAG, 'onLoad xComponentId:' + this.xComponentId);
         this.setDefaultBounds();
-        let vec_args = this.buildArgs();
+        let vec_args = CmdArgsHelper.buildArgs(this.startUri, this.cmdArgs, this.appId);
+        CmdArgsHelper.preProcessArgs(vec_args);
         this.nativeContext.runBrowser(vec_args);
 
         setTimeout(() => {
@@ -158,15 +161,5 @@ export struct WebWindow {
     if (state) {
       this.nativeContext.OnWindowInitState(state);
     }
-  }
-
-  private buildArgs(): string[] {
-    let default_uri = '';
-    if (this.startUri.length !== 0) {
-      default_uri = this.startUri;
-    }
-    let resDir = '--bundle-installation-dir=' + getContext().resourceDir;
-    let vec_args = [resDir, default_uri, this.appId];
-    return vec_args;
   }
 }

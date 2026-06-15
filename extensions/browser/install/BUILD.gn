@@ -17,4 +17,6 @@ source_set("install") {
     "//base",
     "//ui/gfx:native_widget_types",
   ]
+
+  public_deps = [ "//arkweb/build/features" ]
 }

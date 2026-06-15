@@ -71,6 +71,7 @@
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 #include "arkweb/chromium_ext/chrome/browser/extensions/api/developer_private_api_ext.cc"
 #include "arkweb/chromium_ext/chrome/browser/extensions/extension_multiple_uninstall_dialog_ohos.h"
+#include "arkweb/chromium_ext/extensions/browser/custom_handler.h"
 #include "base/i18n/rtl.h"
 #include "ui/base/text/bytes_formatting.h"
 #endif // ARKWEB_ARKWEB_EXTENSIONS
@@ -1019,6 +1020,10 @@ DeveloperPrivateInstallDroppedFileFunction::Run() {
       crx_installer->InstallUserScript(file.path,
                                        net::FilePathToFileURL(file.path));
     } else if (MatchesExtension(file, FILE_PATH_LITERAL(".crx"))) {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      // Extensions installed via drag-and-drop on the management page bypass web store controls.
+      crx_installer->set_webstore_type(kWebStoreTypeExternal);
+#endif
       crx_installer->InstallCrx(file.path);
     } else {
       EXTENSION_FUNCTION_VALIDATE(false);

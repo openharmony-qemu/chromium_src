@@ -1226,6 +1226,14 @@ void CrxInstaller::NotifyCrxInstallComplete(
             InstallStageTracker::FailureReason::CRX_INSTALL_ERROR_OTHER,
             error->detail());
         break;
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      case CrxInstallErrorType::UNRECOGNIZED_INSTALL_SOURCE:
+        install_stage_tracker->ReportCrxInstallError(
+            extension_id,
+            InstallStageTracker::FailureReason::CRX_INSTALL_ERROR_OTHER,
+            error->detail());
+        break;
+#endif
       case CrxInstallErrorType::NONE:
         NOTREACHED();
     }

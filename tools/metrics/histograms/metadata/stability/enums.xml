@@ -492,6 +492,7 @@ Called by update_bad_message_reasons.py.-->
   <int value="324" label="MH_MULTIPLE_MIDI_SESSIONS"/>
   <int value="325" label="RFHI_INVALID_NET_ERROR_CODE"/>
   <int value="326" label="MSDH_DISABLED_FEATURE_IS_SET"/>
+  <int value="339" label="DT_DUPLICATE_CHILD_TARGET_CREATED"/>
 </enum>
 
 <enum name="BadMessageReasonExtensions">

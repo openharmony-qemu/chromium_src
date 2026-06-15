@@ -152,6 +152,12 @@ BASE_FEATURE(kCommittedOriginTracking,
              "CommittedOriginTracking",
              base::FEATURE_DISABLED_BY_DEFAULT);
 
+// This feature enables the fix for double releases of
+// WorkerOrWorkletDevToolsAgentHost to prevent UAF.
+BASE_FEATURE(kWorkerOrWorkletAgentDoubleReleaseFix,
+             "WorkerOrWorkletAgentDoubleReleaseFix",
+             base::FEATURE_ENABLED_BY_DEFAULT);
+
 // Enables support for the `Critical-CH` response header.
 // https://github.com/WICG/client-hints-infrastructure/blob/master/reliability.md#critical-ch
 BASE_FEATURE(kCriticalClientHint,

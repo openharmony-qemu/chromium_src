@@ -353,6 +353,7 @@ enum BadMessageReason {
   MH_MULTIPLE_MIDI_SESSIONS = 324,
   RFHI_INVALID_NET_ERROR_CODE = 325,
   MSDH_DISABLED_FEATURE_IS_SET = 326,
+  DT_DUPLICATE_CHILD_TARGET_CREATED = 339,
   // Please add new elements here. The naming convention is abbreviated class
   // name (e.g. RenderFrameHost becomes RFH) plus a unique description of the
   // reason. After making changes, you MUST update histograms.xml by running:

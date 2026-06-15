@@ -1438,6 +1438,8 @@ class PDFiumEngine : public DocumentLoader::Client,
   static std::atomic<uint64_t> g_bookmark_id_;
 #endif  // BUILDFLAG(ARKWEB_PDF)
 
+  bool in_dtor_ = false;
+
   base::WeakPtrFactory<PDFiumEngine> weak_factory_{this};
 
   // Weak pointers from this factory are used to bind the ContinueFind()

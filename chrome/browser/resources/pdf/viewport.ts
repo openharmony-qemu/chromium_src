@@ -136,6 +136,13 @@ export class Viewport {
   private fullscreenForTesting_: boolean = false;
 
   /**
+   * Fully visible threshold with error margin.
+   * Due to measurement inaccuracies, when the visible area percentage 
+   * exceeds this threshold, the page is considered completely visible.
+   */
+  private pageVisibilityThreshold: number = 0.99;
+
+  /**
    * @param container The element which contains the scrollable content.
    * @param sizer The element which represents the size of the scrollable
    *     content in the viewport
@@ -975,10 +982,12 @@ export class Viewport {
         continue;
       }
 
-      const pageIntersectionArea =
+      let intersectionArea = 
           getIntersectionArea(this.pageDimensions_[i]!, viewportRect) /
           pageArea;
-
+      const pageIntersectionArea = 
+          intersectionArea > this.pageVisibilityThreshold ? 1 : intersectionArea;
+      
       if (pageIntersectionArea > largestIntersection) {
         mostVisiblePage = i;
         largestIntersection = pageIntersectionArea;

@@ -864,7 +864,9 @@
             };
 
             if (typeof window.__arkWebDomTree !== 'undefined' &&
-                typeof window.__arkWebDomTree.forceReport === 'function') {
+                typeof window.__arkWebDomTree.forceReport === 'function' &&
+                source !== 'scroll' &&
+                source !== 'click') {
                 window.__arkWebDomTree.forceReport();
             } else {
                 print({

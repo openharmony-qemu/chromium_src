@@ -310,6 +310,9 @@
   <message name="IDS_EXTENSIONS_ITEM_DETAILS" desc="The text on the button to show more details for a given extension.">
     Details
   </message>
+  <message name="IDS_EXTENSIONS_ITEM_SIZE_MEBIBYTES" desc="Text displayed for an extension's size on the details page when the size is at least 1 megabyte. The placeholder is the numeric amount; position the MB unit naturally for your language.">
+ 	  <ph name="QUANTITY">$1<ex>42.0</ex></ph> MB
+ 	</message>
   <message name="IDS_EXTENSIONS_DETAILS_BACK_BUTTON_ARIA_LABEL" desc="Text read by screen readers when focusing on the back button on details page. If the back button is activated, it will navigate to the previous page. This text will only be announced by screen readers and will not be visible in the UI." is_accessibility_with_no_ui="true">
     <ph name="SUBPAGE_TITLE">$1<ex>Google Docs</ex></ph> details page back button
   </message>

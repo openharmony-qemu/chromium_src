@@ -62,6 +62,7 @@
 namespace net {
 
 namespace test {
+class SpdyHttpStreamTest;
 class SpdyStreamTest;
 }
 
@@ -639,6 +640,8 @@ class NET_EXPORT SpdySession
   friend class SpdySessionPoolTest;
   friend class SpdySessionTest;
   friend class SpdyStreamRequest;
+  friend class test::SpdyHttpStreamTest;
+  friend class test::SpdyStreamTest;
 
   using PendingStreamRequestQueue =
       base::circular_deque<base::WeakPtr<SpdyStreamRequest>>;

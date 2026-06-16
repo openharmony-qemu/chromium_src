@@ -51,6 +51,11 @@ void NotifyRequestWithheld(const ExtensionId& extension_id,
       request.render_process_id, request.frame_routing_id, extension_id);
 }
 
+bool IsRedirectToFileUrl(const std::optional<RequestAction>& action) {
+  return action && action->IsRedirectOrUpgrade() && action->redirect_url &&
+         action->redirect_url->SchemeIsFile();
+}
+
 // Helper to log the time taken in RulesetManager::EvaluateRequestInternal.
 class ScopedEvaluateRequestTimer {
  public:
@@ -360,6 +365,15 @@ std::optional<RequestAction> RulesetManager::GetAction(
     CompositeMatcher::ActionInfo action_info =
         ruleset->matcher->GetAction(params, stage, ruleset_and_access.second);
 
+    // Extensions may not redirect to a file:// URL without explicit local file
+    // access. Drop the action if it does not have file access. Like matched
+    // redirect rules that do not have host access to the request's URL, It will
+    // still mask lower priority rules from the same ruleset.
+    if (IsRedirectToFileUrl(action_info.action) &&
+        !util::AllowFileAccess(ruleset->extension_id, browser_context_)) {
+      action_info.action.reset();
+    }
+
     DCHECK(!(action_info.action && action_info.notify_request_withheld));
     if (action_info.notify_request_withheld) {
       NotifyRequestWithheld(ruleset->extension_id, request);
@@ -572,6 +586,13 @@ bool RulesetManager::ShouldEvaluateRulesetForRequest(
   // incognito context.
   if (is_incognito_context &&
       !util::IsIncognitoEnabled(ruleset.extension_id, browser_context_)) {
+    return false;
+  }
+
+  // Extensions may not intercept file:// URLs without explicit local file
+  // access.
+  if (request.url.SchemeIsFile() &&
+      !util::AllowFileAccess(ruleset.extension_id, browser_context_)) {
     return false;
   }
 

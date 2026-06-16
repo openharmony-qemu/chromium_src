@@ -71,7 +71,11 @@ const base::FeatureParam<double> kContextualTasksContextLoggingSampleRate{
 
 // The base URL for the AI page.
 const base::FeatureParam<std::string> kContextualTasksAiPageUrl{
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    &kContextualTasks, "ai-page-url", "https://***"};
+#else
     &kContextualTasks, "ai-page-url", "https://www.google.com/search?udm=50"};
+#endif
 
 // The host that any URL loaded in the embedded WebUi page will be routed to.
 const base::FeatureParam<std::string> kContextualTasksForcedEmbeddedPageHost{

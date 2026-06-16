@@ -77,7 +77,11 @@ std::optional<page_info::MerchantData> GetSampleData() {
   merchant_data.star_rating = 4.5;
   merchant_data.count_rating = 100;
   merchant_data.page_url = GURL(
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+      "https://***");
+#else
       "https://customerreviews.google.com/v/merchant?q=amazon.com&c=US&gl=US");
+#endif
   merchant_data.reviews_summary =
       "This is a test summary for the merchant trust side panel.";
   return merchant_data;

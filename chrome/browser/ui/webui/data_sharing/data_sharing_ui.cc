@@ -65,11 +65,12 @@ DataSharingUI::DataSharingUI(content::WebUI* web_ui)
       network::mojom::CSPDirectiveName::ImgSrc,
       "img-src "
       "chrome-untrusted://favicon2 "
-      "https://lh3.google.com "
 #if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+      "https://*** "
       "https://xxx "
       "https://xxx "
 #else
+      "https://lh3.google.com "
       "https://lh3.googleusercontent.com "
       "https://www.gstatic.com "
 #endif
@@ -88,8 +89,13 @@ DataSharingUI::DataSharingUI(content::WebUI* web_ui)
   source->OverrideContentSecurityPolicy(
       network::mojom::CSPDirectiveName::ConnectSrc,
       "connect-src "
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+      "https://*** "
+      "https://***;");
+#else
       "https://play.google.com "
       "https://peoplestack-pa.clients6.google.com;");
+#endif
 
   // Allow trsuted types to be created.
   source->OverrideContentSecurityPolicy(

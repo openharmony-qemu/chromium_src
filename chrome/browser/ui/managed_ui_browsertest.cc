@@ -4,6 +4,9 @@
 
 #include "chrome/browser/ui/managed_ui.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/build/features/features.h"
+#endif
 #include "base/strings/utf_string_conversions.h"
 #include "base/values.h"
 #include "build/build_config.h"
@@ -1152,7 +1155,11 @@ IN_PROC_BROWSER_TEST_F(ManagedUiTest, GetManagedUiWebUILabelSupervised) {
 
   if (ExpectManagedUiForSupervisedUsers()) {
     EXPECT_EQ(
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+        u"Your <a href=\"https://***\">"
+#else
         u"Your <a href=\"https://familylink.google.com/setting/resource/94\">"
+#endif
         u"browser is managed</a> by your parent",
         GetManagedUiWebUILabel(profile.get()));
   } else {

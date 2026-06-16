@@ -37,6 +37,10 @@
 #include <libxml/HTMLtree.h>
 #include <libxml/debugXML.h>
 #include <libxml/uri.h>
+#include "build/build_config.h"
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/build/features/features.h"
+#endif
 #include "xslt.h"
 #include "xsltInternals.h"
 #include "xsltutils.h"
@@ -4157,10 +4161,17 @@ xsltElement(xsltTransformContextPtr ctxt, xmlNodePtr node,
 		nsName = xmlDictLookup(ctxt->dict, BAD_CAST tmpNsName, -1);
 	    xmlFree(tmpNsName);
 	}
-
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+        if (xmlStrEqual(nsName, BAD_CAST "http://***/")) {
+#else
         if (xmlStrEqual(nsName, BAD_CAST "http://www.w3.org/2000/xmlns/")) {
+#endif
             xsltTransformError(ctxt, NULL, inst,
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+                "xsl:attribute: Namespace http://***/ "
+#else
                 "xsl:attribute: Namespace http://www.w3.org/2000/xmlns/ "
+#endif
                 "forbidden.\n");
             goto error;
         }
@@ -5589,21 +5600,53 @@ typedef struct xsltHTMLVersion {
 static xsltHTMLVersion xsltHTMLVersions[] = {
     { "5", NULL, "about:legacy-compat" },
     { "4.01frame", "-//W3C//DTD HTML 4.01 Frameset//EN",
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+      "http://***"},
+#else
       "http://www.w3.org/TR/1999/REC-html401-19991224/frameset.dtd"},
+#endif
     { "4.01strict", "-//W3C//DTD HTML 4.01//EN",
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+      "http://***"},
+#else
       "http://www.w3.org/TR/1999/REC-html401-19991224/strict.dtd"},
+#endif
     { "4.01trans", "-//W3C//DTD HTML 4.01 Transitional//EN",
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+      "http://***"},
+#else
       "http://www.w3.org/TR/1999/REC-html401-19991224/loose.dtd"},
+#endif
     { "4.01", "-//W3C//DTD HTML 4.01 Transitional//EN",
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+      "http://***"},
+#else
       "http://www.w3.org/TR/1999/REC-html401-19991224/loose.dtd"},
+#endif
     { "4.0strict", "-//W3C//DTD HTML 4.01//EN",
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+      "http://***"},
+#else
       "http://www.w3.org/TR/html4/strict.dtd"},
+#endif
     { "4.0trans", "-//W3C//DTD HTML 4.01 Transitional//EN",
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+      "http://***"},
+#else
       "http://www.w3.org/TR/html4/loose.dtd"},
+#endif
     { "4.0frame", "-//W3C//DTD HTML 4.01 Frameset//EN",
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+      "http://***"},
+#else
       "http://www.w3.org/TR/html4/frameset.dtd"},
+#endif
     { "4.0", "-//W3C//DTD HTML 4.01 Transitional//EN",
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+      "http://***"},
+#else
       "http://www.w3.org/TR/html4/loose.dtd"},
+#endif
     { "3.2", "-//W3C//DTD HTML 3.2//EN", NULL }
 };
 

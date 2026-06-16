@@ -928,8 +928,12 @@ void LogMessage::Flush() {
     if (severity_ == LOGGING_FEEDBACK || severity_ == LOGGING_URL) {
       if (g_logger_callback != nullptr && IsEnableLoggerReport()) {
         ArkWebLoggingSeverity(str_newline);
+        return;
       }
-      return;
+      if (severity_ == LOGGING_URL) {
+        return;
+      }
+      severity_ = priority_;
     }
 #endif
     auto priority = (severity_ < 0) ? OHOS::NWeb::LogLevelAdapter::DEBUG

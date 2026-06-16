@@ -253,6 +253,11 @@ void Location::reload() {
     return;
   if (GetDocument()->Url().ProtocolIsJavaScript())
     return;
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  OnLocationChanged(nullptr, WebFrameLoadType::kStandard, true);
+#endif
+
   // reload() is not cross-origin accessible, so |dom_window_| will always be
   // local.
   To<LocalDOMWindow>(dom_window_.Get())
@@ -323,6 +328,10 @@ void Location::SetLocation(const String& url,
   WebFrameLoadType frame_load_type = WebFrameLoadType::kStandard;
   if (set_location_policy == SetLocationPolicy::kReplaceThisFrame)
     frame_load_type = WebFrameLoadType::kReplaceCurrentItem;
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  OnLocationChanged(&request, frame_load_type, false);
+#endif
 
   dom_window_->GetFrame()->Navigate(request, frame_load_type);
 }

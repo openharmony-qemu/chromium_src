@@ -216,6 +216,11 @@ struct NET_EXPORT LoadTimingInfo {
   base::TimeTicks push_end;
 };
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+NET_EXPORT std::ostream& operator<<(std::ostream& out,
+                                    const LoadTimingInfo& timing_info);
+#endif
+
 }  // namespace net
 
 #endif  // NET_BASE_LOAD_TIMING_INFO_H_

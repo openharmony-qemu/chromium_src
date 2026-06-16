@@ -280,6 +280,10 @@ void MetricsWebContentsObserver::MediaStartedPlaying(
 
 void MetricsWebContentsObserver::DidStartNavigation(
     content::NavigationHandle* navigation_handle) {
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  DidStartNavigationExt(navigation_handle);
+#endif
+
   if (navigation_handle->IsSameDocument() ||
       !navigation_handle->NeedsUrlLoader() ||
       !navigation_handle->IsInMainFrame()) {
@@ -477,6 +481,9 @@ void MetricsWebContentsObserver::ResourceLoadComplete(
     content::RenderFrameHost* render_frame_host,
     const content::GlobalRequestID& request_id,
     const blink::mojom::ResourceLoadInfo& resource_load_info) {
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  OnResourceLoadComplete(render_frame_host, request_id, resource_load_info);
+#endif
   if (!ShouldTrackScheme(resource_load_info.final_url.scheme())) {
     return;
   }

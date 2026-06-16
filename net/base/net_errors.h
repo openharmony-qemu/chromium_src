@@ -37,6 +37,10 @@ NET_EXPORT std::string ErrorToShortString(int error);
 NET_EXPORT std::string ExtendedErrorToString(int error,
                                              int extended_error_code);
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+NET_EXPORT std::string ErrorToDebugString(int error);
+#endif
+
 // Returns true if |error| is a certificate error code. Note this does not
 // include errors for client certificates.
 NET_EXPORT bool IsCertificateError(int error);

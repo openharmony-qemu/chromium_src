@@ -236,9 +236,6 @@ void History::go(ScriptState* script_state,
     return;
   }
 
-#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-  LOG_FEEDBACK(INFO) << "WebViewBackForward history::go[offset]" << delta;
-#endif
   LocalFrame* frame = window->GetFrame();
   DCHECK(frame);
 
@@ -254,6 +251,12 @@ void History::go(ScriptState* script_state,
   // transition to MPArch completely.
   if (frame->IsInFencedFrameTree())
     return;
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT) && BUILDFLAG(ARKWEB_NWEB_EX)
+  if (auto* client = frame->Client()) {
+    client->DispatchHistoryGoEvent(frame, delta);
+  }
+#endif
 
   if (delta) {
     // Set up propagating the current task state to the navigation commit.
@@ -315,6 +318,10 @@ void History::pushState(ScriptState* script_state,
   if (exception_state.HadException())
     return;
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  OnStateChanged("HistoryPushState", url.Utf8());
+#endif
+
   StateObjectAdded(std::move(serialized_data), title, url, load_type,
                    script_state, exception_state);
 }
@@ -332,6 +339,10 @@ void History::replaceState(ScriptState* script_state,
                                        exception_state);
   if (exception_state.HadException())
     return;
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  OnStateChanged("HistoryReplaceState", url.Utf8());
+#endif
 
   StateObjectAdded(std::move(serialized_data), title, url,
                    WebFrameLoadType::kReplaceCurrentItem, script_state,

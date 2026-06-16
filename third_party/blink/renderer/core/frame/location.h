@@ -113,6 +113,12 @@ class CORE_EXPORT Location final : public ScriptWrappable {
 
   const KURL& Url() const;
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  void OnLocationChanged(const FrameLoadRequest* request,
+                         WebFrameLoadType frame_load_type,
+                         bool is_reload);
+#endif
+
   const Member<DOMWindow> dom_window_;
 };
 

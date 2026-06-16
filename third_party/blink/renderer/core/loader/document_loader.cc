@@ -1933,9 +1933,6 @@ void DocumentLoader::SetDefersLoading(LoaderFreezeMode mode) {
 
 void DocumentLoader::DetachFromFrame(bool flush_microtask_queue) {
   DCHECK(frame_);
-#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
-  LOG(INFO) << "Document loader DetachFromFrame, url: ***";
-#endif
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
   LOG_FEEDBACK(INFO) << "Document loader DetachFromFrame, url: "
                      << url::LogUtils::ConvertUrlWithMask(
@@ -2164,9 +2161,6 @@ void DocumentLoader::StartLoadingResponse() {
   // always be a frame here.
   if (frame_ && frame_->GetDocument()->IsMediaDocument()) {
     parser_->Finish();
-#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
-    LOG(INFO) << "Document loader StartLoadingResponse, url: ***";
-#endif
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
     LOG_FEEDBACK(INFO) << "Document loader StartLoadingResponse, url: "
                        << url::LogUtils::ConvertUrlWithMask(

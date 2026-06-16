@@ -4,6 +4,10 @@
 
 import("//testing/test.gni")
 
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
+
 source_set("browser") {
   sources = [
     "features.cc",
@@ -109,8 +113,8 @@ source_set("browser") {
   ]
 
   #if BUILDFLAG(ARKWEB_BFCACHE)
-  if (defined(is_arkweb) && is_arkweb) {
-    sources += [ "//arkweb/chromium_ext/components/page_load_metrics/browser/ark_web_page_load_metrics_forward_observer.cc" ]
+  if (is_arkweb) {
+    sources += arkweb_components_page_load_metrics_browser_sources
   }  #endif  // BUILDFLAG(ARKWEB_BFCACHE)
 }
 

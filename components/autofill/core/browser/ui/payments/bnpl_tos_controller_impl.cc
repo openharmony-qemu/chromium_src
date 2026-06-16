@@ -26,10 +26,15 @@ using autofill_metrics::BnplTosDialogResult;
 using autofill_metrics::LogBnplTosDialogShown;
 
 namespace {
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+constexpr std::string_view kWalletLinkText = "https://x.x.x.x/";
+constexpr std::string_view kWalletUrlString = "https://x.x.x.x/";
+#else
 // LINT.IfChange
 constexpr std::string_view kWalletLinkText = "wallet.google.com";
 constexpr std::string_view kWalletUrlString = "https://wallet.google.com/";
 // LINT.ThenChange(//chrome/browser/touch_to_fill/autofill/android/internal/java/src/org/chromium/chrome/browser/touch_to_fill/payments/TouchToFillPaymentMethodMediator.java)
+#endif
 }  // namespace
 
 BnplTosModel::BnplTosModel() = default;

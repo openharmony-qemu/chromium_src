@@ -952,6 +952,7 @@ class CORE_EXPORT HTMLMediaElement
       base::OnceCallback<void()> callback,
       media::mojom::blink::VideoAssistantConfigPtr config);
   void OnNotifyVideoPlayingTimerFired(TimerBase*);
+  bool SupportVideoAssistantDownload() const;
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
 #if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)

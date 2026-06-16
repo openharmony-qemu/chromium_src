@@ -34,6 +34,7 @@ struct VideoAttributesForVAST {
   bool supports_save;
   double duration;
   bool visible;
+  bool is_hls;
 };
 
 [EnableIf=arkweb_video_assistant]
@@ -53,6 +54,7 @@ struct MediaInfoForVAST {
   bool show_download_button;
   bool supports_save;
   bool fullscreen_overlay;
+  bool is_hls;
 };
 
 // Implemented by HTMLMediaElement in the renderer process to allow the

@@ -4632,14 +4632,17 @@ NavigationControllerImpl::CreateNavigationRequestFromLoadParams(
   navigation_request->set_force_new_browsing_instance(
       params.force_new_browsing_instance);
   navigation_request->set_force_new_compositor(params.force_new_compositor);
-#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
-    navigation_request->ohos_set_https_upgrade(params.force_no_https_upgrade);
-    navigation_request->ohos_set_url_typed_with_http_scheme(params.url_typed_with_http_scheme);
-#else
+
   if (params.force_no_https_upgrade) {
     navigation_request->set_force_no_https_upgrade();
   }
+
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  if (params.https_upgrades_policy != content::HttpsUpgradesPolicy::NONE) {
+    navigation_request->set_https_upgrades_policy(params.https_upgrades_policy);
+  }
 #endif
+
   return navigation_request;
 }
 

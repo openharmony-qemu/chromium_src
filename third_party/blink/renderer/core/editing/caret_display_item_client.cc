@@ -362,9 +362,12 @@ void CaretDisplayItemClient::PaintCaret(
 
   gfx::Rect paint_rect = ToPixelSnappedRect(drawing_rect);
 #if BUILDFLAG(ARKWEB_MENU)
-  if (caret_display_item_client_utils_->GetBlinkCaretRect(
-          context, paint_rect, layout_block_, color_)) {
-    return;
+  const ComputedStyle& style = layout_block_->StyleRef();
+  if (style.CaretShape() != ECaretShape::kUnderscore) {
+    if (caret_display_item_client_utils_->GetBlinkCaretRect(
+            context, paint_rect, layout_block_, color_)) {
+      return;
+    }
   }
 #endif  // BUILDFLAG(ARKWEB_MENU)
   context.FillRect(paint_rect, color_,

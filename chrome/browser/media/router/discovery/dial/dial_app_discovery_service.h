@@ -94,6 +94,7 @@ class DialAppDiscoveryService {
    public:
     PendingRequest(const MediaSinkInternal& sink,
                    const std::string& app_name,
+                   const GURL& app_url,
                    DialAppInfoCallback app_info_cb,
                    DialAppDiscoveryService* const service);
 

@@ -454,11 +454,13 @@ void HostResolverManager::Job::RunNextTask() {
       StartDnsTask(false /* secure */);
       break;
     case TaskType::SECURE_DNS:
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
-    case TaskType::SECURE_DNS_FALLBACK:
-#endif
       StartDnsTask(true /* secure */);
       break;
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+    case TaskType::SECURE_DNS_FALLBACK:
+      StartDnsTask(true /* secure */, true /* secure_fallback */);
+      break;
+#endif
     case TaskType::MDNS:
       StartMdnsTask();
       break;
@@ -706,7 +708,11 @@ void HostResolverManager::Job::InsecureCacheLookup() {
   }
 }
 
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+void HostResolverManager::Job::StartDnsTask(bool secure, bool secure_fallback) {
+#else
 void HostResolverManager::Job::StartDnsTask(bool secure) {
+#endif  // ARKWEB_EXT_HTTP_DNS_FALLBACK
   DCHECK_EQ(secure, !dispatched_);
   DCHECK_EQ(dispatched_ ? 1 : 0, num_occupied_job_slots_);
   DCHECK(!resolver_->ShouldForceSystemResolverDueToTestOverride());
@@ -717,6 +723,9 @@ void HostResolverManager::Job::StartDnsTask(bool secure) {
       resolver_->dns_client_.get(), key_.host, key_.network_anonymization_key,
       key_.query_types, &*key_.resolve_context, secure, key_.secure_dns_mode,
       this, net_log_, tick_clock_, !tasks_.empty() /* fallback_available */,
+      #if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+      secure_fallback,
+      #endif  // ARKWEB_EXT_HTTP_DNS_FALLBACK
       https_svcb_options_);
   dns_task_executed_ = true;
   if (resolver_->IsHappyEyeballsV3Enabled()) {

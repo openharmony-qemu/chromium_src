@@ -291,8 +291,8 @@ class CORE_EXPORT LocalFrame final
   void OnDetectedBlankScreen(const String &url,
                              int32_t blankScreenReason,
                              int32_t detectedContentfulNodesCount);
-
   BlankScreenDetector* GetBlankScreenDetector(bool force = false);
+  void SetBlankScreenDetector(BlankScreenDetector* detector);
 #endif
 
 #if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT)

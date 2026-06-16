@@ -334,6 +334,17 @@ bool ImagePaintTimingDetector::RecordImage(
   // Don't process the image yet if it is invisible, as it may later become
   // visible, and potentially eligible to be an LCP candidate.
   if (visual_size == 0u) {
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION) || BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT)
+     if (is_full_viewport_) {
+         record = MakeGarbageCollected<ImageRecord>(record_id.GetLayoutObject()->GetNode(), record_id.GetMediaTiming(),
+                                                    visual_size, image_border, mapped_visual_rect, record_id.GetHash(),
+                                                    0.0, nullptr);
+         if (records_manager_.image_record_manager_utils_) {
+             records_manager_.image_record_manager_utils_->NotifyImagePaintForFirstScreenCalculator(
+                 record_id_hash, record, record_id.GetLayoutObject() && record_id.GetLayoutObject()->IsVideo());
+         }
+     }
+#endif
     return false;
   }
 

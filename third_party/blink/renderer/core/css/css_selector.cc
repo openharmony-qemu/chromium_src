@@ -29,6 +29,7 @@
 #include <algorithm>
 #include <iterator>
 #include <memory>
+#include <new>
 
 #include "base/compiler_specific.h"
 #include "base/strings/string_view_util.h"
@@ -152,7 +153,7 @@ void CSSSelector::CreateRareData() {
   // compile and may kinda work, but will be undefined behavior.
   auto* rare_data = MakeGarbageCollected<RareData>(data_.value_);
   data_.value_.~AtomicString();
-  data_.rare_data_ = rare_data;
+  new (&data_.rare_data_) Member<RareData>(rare_data);
   bits_.set<HasRareDataField>(true);
 }
 

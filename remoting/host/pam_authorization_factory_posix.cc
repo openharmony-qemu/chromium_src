@@ -12,6 +12,7 @@
 #include "base/environment.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback.h"
+#include "base/memory/weak_ptr.h"
 #include "remoting/base/logging.h"
 #include "remoting/host/base/username.h"
 #include "remoting/protocol/channel_authenticator.h"
@@ -52,6 +53,8 @@ class PamAuthorizer : public protocol::Authenticator {
 
   std::unique_ptr<protocol::Authenticator> underlying_;
   enum { NOT_CHECKED, ALLOWED, DISALLOWED } local_login_status_;
+
+  base::WeakPtrFactory<PamAuthorizer> weak_factory_{this};
 };
 
 }  // namespace
@@ -104,11 +107,12 @@ protocol::Authenticator::RejectionDetails PamAuthorizer::rejection_details()
 
 void PamAuthorizer::ProcessMessage(const jingle_xmpp::XmlElement* message,
                                    base::OnceClosure resume_callback) {
-  // |underlying_| is owned, so Unretained() is safe here.
+  // Note: We use a WeakPtr here because the underlying authenticator may
+  // synchronously destroy this object.
   underlying_->ProcessMessage(
       message,
-      base::BindOnce(&PamAuthorizer::OnMessageProcessed, base::Unretained(this),
-                     std::move(resume_callback)));
+      base::BindOnce(&PamAuthorizer::OnMessageProcessed,
+                     weak_factory_.GetWeakPtr(), std::move(resume_callback)));
 }
 
 void PamAuthorizer::OnMessageProcessed(base::OnceClosure resume_callback) {
@@ -117,9 +121,14 @@ void PamAuthorizer::OnMessageProcessed(base::OnceClosure resume_callback) {
 }
 
 std::unique_ptr<jingle_xmpp::XmlElement> PamAuthorizer::GetNextMessage() {
+  base::WeakPtr<PamAuthorizer> self = weak_factory_.GetWeakPtr();
   std::unique_ptr<jingle_xmpp::XmlElement> result(
       underlying_->GetNextMessage());
-  MaybeCheckLocalLogin();
+  // Verify this object is still valid after calling GetNextMessage().
+  if (self) {
+    // PAM check may be performed once the state has transitioned to ACCEPTED.
+    MaybeCheckLocalLogin();
+  }
   return result;
 }
 

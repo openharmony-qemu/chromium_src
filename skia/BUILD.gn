@@ -517,6 +517,7 @@ component("skia") {
       sources += arkweb_third_patry_skia_src_ports_sources
       include_dirs = [ "//third_party/jsoncpp/source/include" ]
       deps += [
+        "//content/common:buildflags",
         "//v8:cppgc_headers",
         "//arkweb/chromium_ext/components/services/font_data/public/mojom",
       ]

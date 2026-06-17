@@ -97,6 +97,12 @@
 #include "third_party/blink/renderer/platform/text/text_direction.h"
 #include "third_party/blink/renderer/platform/text/unicode_utilities.h"
 #include "ui/gfx/geometry/quad_f.h"
+#if BUILDFLAG(ARKWEB_MENU)
+#include "third_party/blink/public/web/web_local_frame.h"
+#include "third_party/blink/renderer/core/exported/web_settings_impl.h"
+#include "third_party/blink/renderer/core/exported/web_view_impl.h"
+#include "third_party/blink/renderer/core/frame/local_frame_client.h"
+#endif
 #define EDIT_DEBUG 0
 
 namespace blink {
@@ -1108,6 +1114,18 @@ void FrameSelection::SetFrameIsFocused(bool flag) {
 }
 
 bool FrameSelection::FrameIsFocusedAndActive() const {
+#if BUILDFLAG(ARKWEB_MENU)
+  if (frame_ && frame_->Client() && frame_->Client()->GetWebFrame() &&
+      frame_->Client()->GetWebFrame()->View() &&
+      frame_->Client()->GetWebFrame()->View()->GetSettings() &&
+      frame_->Client()
+          ->GetWebFrame()
+          ->View()
+          ->GetSettings()
+          ->GetSmartEdgeState()) {
+    return true;
+  }
+#endif
   return focused_ && frame_->GetPage() &&
          frame_->GetPage()->GetFocusController().IsActive();
 }

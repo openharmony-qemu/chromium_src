@@ -198,6 +198,7 @@ struct WebPreferences {
   // #if BUILDFLAG(ARKWEB_MENU)
   bool touch_handle_exist;
   bool viewport_scale;
+  bool smart_edge_state;
   // #endif  // BUILDFLAG(ARKWEB_MENU)
 
   [EnableIf=arkweb_ai]

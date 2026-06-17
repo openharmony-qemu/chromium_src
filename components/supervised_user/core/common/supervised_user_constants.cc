@@ -112,8 +112,14 @@ const char kSupervisedUserTopLevelURLFilteringResult2HistogramName[] =
 const char kLocalWebApprovalResultHistogramName[] =
     "FamilyLinkUser.LocalWebApprovalResult";
 
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+const char kManagedByParentUiMoreInfoUrl[] =
+    "https://x.x.x"; 
+#else
+// The URL for providing more information about Google nameservers.
 const char kManagedByParentUiMoreInfoUrl[] =
     "https://familylink.google.com/setting/resource/94";
+#endif
 
 const char kFamilyManagementUrl[] =
     "https://myaccount.google.com/family/details";

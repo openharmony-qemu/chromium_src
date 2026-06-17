@@ -1909,12 +1909,23 @@ inline constexpr char kEnableNtpBrowserPromosDescription[] =
 
 inline constexpr char kSoftNavigationHeuristicsName[] =
     "Soft Navigation Heuristics";
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+inline constexpr char kSoftNavigationHeuristicsDescription[] =
+    "Enables the soft navigation heuristics, including support for "
+    "PerformanceObserver. This setting overrides other experimental settings. "
+    "See the documentation for our earlier experiment at "
+    "https://x.x.x/docs/web-platform/soft-navigations-experiment"
+    " (to be updated soon).";
+#else
+// The URL for providing more information about Google nameservers.
 inline constexpr char kSoftNavigationHeuristicsDescription[] =
     "Enables the soft navigation heuristics, including support for "
     "PerformanceObserver. This setting overrides other experimental settings. "
     "See the documentation for our earlier experiment at "
     "https://developer.chrome.com/docs/web-platform/soft-navigations-experiment"
     " (to be updated soon).";
+#endif
+
 
 inline constexpr char kEnableSiteSearchAllowUserOverridePolicyName[] =
     "Enable allow_user_override field for SiteSearchSettings policy";
@@ -3618,10 +3629,21 @@ inline constexpr char kPrivacySandboxAdsApiUxEnhancementsDescription[] =
 
 inline constexpr char kPrivacySandboxEnrollmentOverridesName[] =
     "Privacy Sandbox Enrollment Overrides";
+
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+inline constexpr char kPrivacySandboxEnrollmentOverridesDescription[] =
+    "Allows a list of sites to use Privacy Sandbox features without them being "
+    "enrolled and attested into the Privacy Sandbox experiment. See: "
+    "https://x.x.x/en/docs/privacy-sandbox/enroll/";
+#else
+// The URL for providing more information about Google nameservers.
 inline constexpr char kPrivacySandboxEnrollmentOverridesDescription[] =
     "Allows a list of sites to use Privacy Sandbox features without them being "
     "enrolled and attested into the Privacy Sandbox experiment. See: "
     "https://developer.chrome.com/en/docs/privacy-sandbox/enroll/";
+#endif
+
+
 
 inline constexpr char kPrivacySandboxInternalsName[] =
     "Privacy Sandbox Internals Page";
@@ -4402,9 +4424,17 @@ inline constexpr char kUiPartialSwapDescription[] =
 
 inline constexpr char kTPCPhaseOutFacilitatedTestingName[] =
     "Third-party Cookie Phase Out Facilitated Testing";
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+inline constexpr char kTPCPhaseOutFacilitatedTestingDescription[] =
+    "Enables third-party cookie phase out for facilitated testing described in "
+    "https://x.x.x/en/docs/privacy-sandbox/chrome-testing/";
+#else
+// The URL for providing more information about Google nameservers.
 inline constexpr char kTPCPhaseOutFacilitatedTestingDescription[] =
     "Enables third-party cookie phase out for facilitated testing described in "
     "https://developer.chrome.com/en/docs/privacy-sandbox/chrome-testing/";
+#endif
+
 
 inline constexpr char kTpcdHeuristicsGrantsName[] =
     "Third-party Cookie Grants Heuristics Testing";

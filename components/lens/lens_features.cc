@@ -501,8 +501,15 @@ constexpr base::FeatureParam<bool>
         &kLensOverlayVisualSelectionUpdates, "enable-close-button-tweaks",
         true};
 
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+constexpr base::FeatureParam<std::string> kHomepageURLForLens{
+    &kLensStandalone, "lens-homepage-url", "https://x.x.x"};
+#else
+// The URL for providing more information about Google nameservers.
 constexpr base::FeatureParam<std::string> kHomepageURLForLens{
     &kLensStandalone, "lens-homepage-url", "https://lens.google.com/v3/"};
+#endif
+
 
 constexpr base::FeatureParam<bool> kEnableLensHtmlRedirectFix{
     &kLensStandalone, "lens-html-redirect-fix", false};

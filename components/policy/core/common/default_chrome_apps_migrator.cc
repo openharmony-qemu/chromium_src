@@ -12,24 +12,47 @@ namespace policy {
 namespace {
 
 std::map<std::string, std::string> GetChromeAppToWebAppMapping() {
-  return std::map<std::string, std::string>({
-      {"ejjicmeblgpmajnghnpcppodonldlgfn",
-       "https://calendar.google.com/calendar/installwebapp?usp=admin"},
-      {"aohghmighlieiainnegkcijnfilokake",
-       "https://docs.google.com/document/installwebapp?usp=admin"},
-      {"apdfllckaahabafndbhieahigkjlhalf",
-       "https://drive.google.com/drive/installwebapp?usp=admin"},
-      {"pjkljhegncpnkpknbcohdijeoejaedia",
-       "https://mail.google.com/mail/installwebapp?usp=admin"},
-      {"felcaaldnbdncclmgdcncolpebgiejap",
-       "https://docs.google.com/spreadsheets/installwebapp?usp=admin"},
-      {"aapocclcgogkmnckokdopfmhonfmgoek",
-       "https://docs.google.com/presentation/installwebapp?usp=admin"},
-      {"blpcfgokakmgnkcojhhkbfbldkacnbeo",
-       "https://www.youtube.com/s/notifications/manifest/cr_install.html"},
-      {"hmjkmjkepdijhoojdojkdfohbdgmmhki",
-       "https://keep.google.com/installwebapp?usp=admin"},
-  });
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+  std::map<std::string, std::string> mapping = {
+        {"ejjicmeblgpmajnghnpcppodonldlgfn",
+        "https://x.x.x"},
+        {"aohghmighlieiainnegkcijnfilokake",
+        "https://x.x.x"},
+        {"apdfllckaahabafndbhieahigkjlhalf",
+        "https://x.x.x"},
+        {"pjkljhegncpnkpknbcohdijeoejaedia",
+        "https://x.x.x"},
+        {"felcaaldnbdncclmgdcncolpebgiejap",
+        "https://x.x.x"},
+        {"aapocclcgogkmnckokdopfmhonfmgoek",
+        "https://x.x.x"},
+        {"blpcfgokakmgnkcojhhkbfbldkacnbeo",
+        "https://x.x.x"},
+        {"hmjkmjkepdijhoojdojkdfohbdgmmhki",
+        "https://x.x.x"},
+  };
+#else
+// The URL for providing more information about Google nameservers.
+  std::map<std::string, std::string> mapping = {
+        {"ejjicmeblgpmajnghnpcppodonldlgfn",
+        "https://calendar.google.com/calendar/installwebapp?usp=admin"},
+        {"aohghmighlieiainnegkcijnfilokake",
+        "https://docs.google.com/document/installwebapp?usp=admin"},
+        {"apdfllckaahabafndbhieahigkjlhalf",
+        "https://drive.google.com/drive/installwebapp?usp=admin"},
+        {"pjkljhegncpnkpknbcohdijeoejaedia",
+        "https://mail.google.com/mail/installwebapp?usp=admin"},
+        {"felcaaldnbdncclmgdcncolpebgiejap",
+        "https://docs.google.com/spreadsheets/installwebapp?usp=admin"},
+        {"aapocclcgogkmnckokdopfmhonfmgoek",
+        "https://docs.google.com/presentation/installwebapp?usp=admin"},
+        {"blpcfgokakmgnkcojhhkbfbldkacnbeo",
+        "https://www.youtube.com/s/notifications/manifest/cr_install.html"},
+        {"hmjkmjkepdijhoojdojkdfohbdgmmhki",
+        "https://keep.google.com/installwebapp?usp=admin"},
+  };
+#endif
+  return mapping;
 }
 
 }  // namespace

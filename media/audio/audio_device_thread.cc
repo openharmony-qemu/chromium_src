@@ -13,6 +13,19 @@
 #include "build/build_config.h"
 #include "media/base/media_switches.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "base/process/process_handle.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/res_sched_client_adapter.h"
+#include "arkweb/chromium_ext/base/process/process_handle_posix_ex.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
+#include <unistd.h>
+#include "base/command_line.h"
+#include "content/public/common/content_switches.h"
+#include "third_party/blink/renderer/core/render_mojom/render_mojom_client.h"
+#endif  // BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
+
 namespace media {
 
 // AudioDeviceThread::Callback implementation
@@ -86,6 +99,27 @@ base::TimeDelta AudioDeviceThread::GetRealtimePeriod() {
 void AudioDeviceThread::ThreadMain() {
   base::PlatformThread::SetName(thread_name_);
   callback_->InitializeOnAudioThread();
+
+#if BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER) && !defined(COMPONENT_BUILD)
+  if (base::CommandLine::ForCurrentProcess()) {
+    auto type = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
+        switches::kProcessType);
+    if (type == switches::kRendererProcess) {
+      blink::ResSchedReportClient report_client(base::GetCurrentRealPid());
+      report_client.SendAudioData(0, base::GetCurrentRealPid(), base::PlatformThread::CurrentRealId().raw());
+    } else {
+      OHOS::NWeb::ResSchedClientAdapter::ReportAudioData(
+          OHOS::NWeb::ResSchedStatusAdapter::AUDIO_STATUS_START,
+          base::GetCurrentRealPid(), base::PlatformThread::CurrentRealId().raw());
+    }
+  }
+#else
+  OHOS::NWeb::ResSchedClientAdapter::ReportAudioData(
+      OHOS::NWeb::ResSchedStatusAdapter::AUDIO_STATUS_START,
+      base::GetCurrentRealPid(), base::PlatformThread::CurrentRealId().raw());
+#endif  // defined(ARKWEB_RENDER_REMOVE_BINDER)
+#endif
 
   uint32_t buffer_index = 0;
   while (true) {

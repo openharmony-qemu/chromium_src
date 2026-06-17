@@ -13,10 +13,27 @@
 * limitations under the License.
 */
 
-static bool SetUserDataDirForArkweb(const base::FilePath& user_data_dir) {
-  base::PathService::OverrideAndCreateIfNeeded(
-    base::DIR_USER_DATA, user_data_dir, false, true);
+static bool SetUserDataDirForArkweb(const base::FilePath& user_data_dir, bool isSeparation) {
+  const std::string web_data_tag = isSeparation ? "files/__arkweb" : "cache/web";
 
-  return !base::PathService::OverrideAndCreateIfNeeded(
+  base::FilePath cache_web_data_dir;
+  if (!user_data_dir.empty() &&
+      user_data_dir.MaybeAsASCII().find(web_data_tag) == std::string::npos) {
+    cache_web_data_dir = user_data_dir.Append(web_data_tag);
+  }
+
+  const bool cache_web_directory_valid =
+      !cache_web_data_dir.empty() &&
+      base::PathService::OverrideAndCreateIfNeeded(
+          chrome::DIR_USER_DATA, cache_web_data_dir, false, true);
+
+  bool specified_directory_was_invalid = false;
+  if (!cache_web_directory_valid) {
+    specified_directory_was_invalid =
+        !user_data_dir.empty() &&
+        !base::PathService::OverrideAndCreateIfNeeded(
             chrome::DIR_USER_DATA, user_data_dir, false, true);
+  }
+
+  return specified_directory_was_invalid;
 }

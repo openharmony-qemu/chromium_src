@@ -9,6 +9,7 @@
 
 #include "build/build_config.h"
 #include "media/base/media_export.h"
+#include "arkweb/build/features/features.h"
 
 namespace media {
 
@@ -44,7 +45,9 @@ struct MEDIA_EXPORT AudioProcessingSettings {
       return true;
     }
 #endif
-
+#if BUILDFLAG(ARKWEB_WEBRTC)
+  return true;
+#endif
     return noise_suppression;
   }
 

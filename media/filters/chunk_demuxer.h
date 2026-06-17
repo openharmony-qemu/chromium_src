@@ -29,6 +29,10 @@
 #include "media/filters/source_buffer_stream.h"
 #include "media/filters/stream_parser_factory.h"
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+#include "arkweb/chromium_ext/media/base/media_report_info.h"
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+
 namespace media {
 
 class SourceBufferStream;
@@ -219,6 +223,9 @@ class MEDIA_EXPORT ChunkDemuxer : public Demuxer {
   ChunkDemuxer(base::OnceClosure open_cb,
                base::RepeatingClosure progress_cb,
                EncryptedMediaInitDataCB encrypted_media_init_data_cb,
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+               scoped_refptr<MediaReportInfo> media_info,
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
                MediaLog* media_log);
 
   ChunkDemuxer(const ChunkDemuxer&) = delete;
@@ -545,6 +552,10 @@ class MEDIA_EXPORT ChunkDemuxer : public Demuxer {
   base::OnceClosure open_cb_;
   const base::RepeatingClosure progress_cb_;
   EncryptedMediaInitDataCB encrypted_media_init_data_cb_;
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+  scoped_refptr<MediaReportInfo> media_info_;
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
   // MediaLog for reporting messages and properties to debug content and engine.
   raw_ptr<MediaLog> media_log_;

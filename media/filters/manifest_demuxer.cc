@@ -132,6 +132,9 @@ void ManifestDemuxer::Initialize(DemuxerHost* host,
                           weak_factory_.GetWeakPtr()),
       base::BindRepeating(&ManifestDemuxer::OnEncryptedMediaData,
                           weak_factory_.GetWeakPtr()),
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+      base::MakeRefCounted<media::MediaReportInfo>(),
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
       media_log_.get());
 
   chunk_demuxer_->Initialize(

@@ -149,6 +149,10 @@ class PLATFORM_EXPORT NetworkStateNotifier {
     return state.effective_type;
   }
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+  std::string GetWebEffectiveConnectionType();
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+
   // Returns the current HTTP RTT estimate. If the estimate is unavailable, the
   // returned optional value is null.
   std::optional<base::TimeDelta> HttpRtt() const {

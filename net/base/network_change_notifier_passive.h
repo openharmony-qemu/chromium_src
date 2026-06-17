@@ -63,11 +63,19 @@ class NET_EXPORT NetworkChangeNotifierPassive : public NetworkChangeNotifier {
 #if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
   void BindDnsToNetwork(int network_for_dns) override;
 #if BUILDFLAG(ENABLE_ARKWEB_EXT)
-  const std::vector<std::string> GetCurrentNetAddrList() override;
-  const std::vector<std::string> GetNetAddrListByNetId(int32_t netId) override;
-  void SetNetAddrList(std::vector<std::string> new_addr_list) override;
-#endif
-#endif
+  const std::vector<std::string> GetNetAddrListByNetId(int32_t netId);
+ 
+  // For bind dns to network.
+  void SetAddrListForBindedNetwork(std::vector<std::string> new_addr_list);
+  const std::vector<std::string> GetAddrListForBindedNetwork();
+ 
+  // For default address list.
+  void SetDefaultAddrList(std::vector<std::string> new_addr_list);
+  const std::vector<std::string> GetDefaultAddrList();
+
+  const std::vector<std::string> GetActiveDnsServers();
+#endif  // ENABLE_ARKWEB_EXT
+#endif  // ARKWEB_EXT_NETWORK_CONNECTION
 
  protected:
   // NetworkChangeNotifier overrides.
@@ -122,7 +130,8 @@ class NET_EXPORT NetworkChangeNotifierPassive : public NetworkChangeNotifier {
 #endif
   bool vpn_in_place_{false};
 #if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
-  std::vector<std::string> net_addr_list_;
+  std::vector<std::string> addr_list_for_binded_network_;
+  std::vector<std::string> default_address_list_;
 #endif
 };
 

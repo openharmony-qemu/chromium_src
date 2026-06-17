@@ -681,11 +681,6 @@ class NET_EXPORT NetworkChangeNotifier {
 #endif
 #if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
   virtual void BindDnsToNetwork(int32_t network_for_dns);
-#if BUILDFLAG(ENABLE_ARKWEB_EXT)
-  virtual const std::vector<std::string> GetCurrentNetAddrList();
-  virtual const std::vector<std::string> GetNetAddrListByNetId(int32_t netId);
-  virtual void SetNetAddrList(std::vector<std::string> new_addr_list);
-#endif
 #endif
 
   // Broadcasts a notification to all registered observers.  Note that this

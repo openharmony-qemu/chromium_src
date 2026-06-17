@@ -97,7 +97,7 @@ void NetworkChangeNotifierPassive::OnConnectionChanged(
   }
 
 #if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
-  NetworkChangeNotifierPassiveUtils::SetDnsServers(this);
+  NetworkChangeNotifierPassiveUtils::UpdateDnsServers(this);
 #endif
 
   NetworkChangeNotifier::NotifyObserversOfConnectionTypeChange();

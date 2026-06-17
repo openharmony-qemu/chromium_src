@@ -92,6 +92,10 @@
 #include "third_party/blink/public/mojom/android_font_lookup/android_font_lookup.mojom.h"
 #endif  // BUILDFLAG(ARKWEB_WPT)
 
+#if BUILDFLAG(ARKWEB_CUSTOM_FONTS)
+#include "arkweb/chromium_ext/content/browser/font_unique_name_lookup/arkweb_custom_font_lookup_service.h"
+#endif
+
 #if BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
 #include "arkweb/chromium_ext/services/device/public/mojom/res_sched_report.mojom.h"
 #include "arkweb/chromium_ext/services/device/public/mojom/sysprop_render_observer.mojom.h"
@@ -252,6 +256,11 @@ void RenderProcessHostImpl::RegisterMojoInterfaces() {
     registry->AddInterface(
         base::BindRepeating(&FontUniqueNameLookupService::Create),
         FontUniqueNameLookupService::GetTaskRunner());
+#if BUILDFLAG(ARKWEB_CUSTOM_FONTS)
+    registry->AddInterface(
+        base::BindRepeating(&ArkwebCustomFontLookupService::Create),
+        ArkwebCustomFontLookupService::GetTaskRunner());
+#endif
   }
 #endif
 

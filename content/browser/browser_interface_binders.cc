@@ -266,6 +266,10 @@
 #include "arkweb/chromium_ext/v8/heap_dump/mojom_impl/chunk_writer_browser_impl.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_AI)
+#include "arkweb/chromium_ext/content/browser/ai/echo_ai_manager_ohos.h"
+#endif
+
 namespace blink {
 class StorageKey;
 }  // namespace blink
@@ -999,9 +1003,17 @@ void PopulateFrameBinders(RenderFrameHostImpl* host, mojo::BinderMap* map) {
   map->Add<blink::mojom::AIManager>(base::BindRepeating(
       [](ContentBrowserClient* browser_client, RenderFrameHostImpl* host,
          mojo::PendingReceiver<blink::mojom::AIManager> receiver) {
+#if BUILDFLAG(ARKWEB_AI)
+        auto* manager = EchoAIManagerOHOS::FromWebContents(
+            WebContents::FromRenderFrameHost(host));
+        if (manager) {
+          manager->AddReceiver(std::move(receiver));
+        }
+#else
         browser_client->BindAIManager(host->GetBrowserContext(),
                                       &host->document_associated_data(), host,
                                       std::move(receiver));
+#endif
       },
       base::Unretained(GetContentClient()->browser()), base::Unretained(host)));
 
@@ -1015,10 +1027,18 @@ void PopulateFrameBinders(RenderFrameHostImpl* host, mojo::BinderMap* map) {
     map->Add<blink::mojom::TranslationManager>(base::BindRepeating(
         [](RenderFrameHostImpl* host,
            mojo::PendingReceiver<blink::mojom::TranslationManager> receiver) {
+#if BUILDFLAG(ARKWEB_AI)
+          auto* manager = EchoAIManagerOHOS::FromWebContents(
+              WebContents::FromRenderFrameHost(host));
+          if (manager) {
+            manager->AddReceiver(std::move(receiver));
+          }
+#else
           GetContentClient()->browser()->BindTranslationManager(
               host->GetProcess(), host->GetBrowserContext(),
               &host->document_associated_data(), host->GetLastCommittedOrigin(),
               std::move(receiver));
+#endif
         },
         base::Unretained(host)));
   }

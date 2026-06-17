@@ -266,10 +266,15 @@ ScriptPromise<V8Availability> LanguageDetector::availability(
     return promise;
   }
 
+
+#if BUILDFLAG(ARKWEB_AI)
+  resolver->Resolve(AvailabilityToV8(Availability::kAvailable));
+#else
   AIInterfaceProxy::GetLanguageDetectionModelStatus(
       context, BindOnce(&OnGotStatus, WrapWeakPersistent(context),
                         WrapPersistent(options), WrapPersistent(resolver))
                    .Then(RejectOnDestruction(resolver)));
+#endif
 
   return promise;
 }
@@ -311,8 +316,12 @@ ScriptPromise<LanguageDetector> LanguageDetector::create(
     return resolver->Promise();
   }
 
+#if BUILDFLAG(ARKWEB_AI)
+  LanguageDetectorOHOS::CreateTask(script_state, resolver, options);
+#else
   MakeGarbageCollected<LanguageDetectorCreateTask>(script_state, resolver,
                                                    options);
+#endif
 
   return resolver->Promise();
 }
@@ -342,6 +351,9 @@ void LanguageDetector::Trace(Visitor* visitor) const {
   visitor->Trace(create_abort_signal_);
   visitor->Trace(create_abort_handle_);
   ScriptWrappable::Trace(visitor);
+#if BUILDFLAG(ARKWEB_AI)
+  LanguageDetectorOHOS::Trace(visitor);
+#endif
 }
 
 ScriptPromise<IDLSequence<LanguageDetectionResult>> LanguageDetector::detect(
@@ -367,10 +379,14 @@ ScriptPromise<IDLSequence<LanguageDetectionResult>> LanguageDetector::detect(
       ResolverWithAbortSignal<IDLSequence<LanguageDetectionResult>>>(
       script_state, composite_signal);
 
+#if BUILDFLAG(ARKWEB_AI)
+  LanguageDetectorOHOS::Detect(script_state, input, composite_signal, task_runner_, resolver);
+#else
   language_detection_model_->DetectLanguage(
       task_runner_, input,
       blink::BindOnce(LanguageDetector::OnDetectComplete,
                       WrapPersistent(resolver)));
+#endif
   return resolver->Promise();
 }
 

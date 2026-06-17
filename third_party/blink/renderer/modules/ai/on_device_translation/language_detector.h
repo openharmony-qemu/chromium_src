@@ -16,9 +16,17 @@
 #include "third_party/blink/renderer/platform/bindings/script_wrappable.h"
 #include "third_party/blink/renderer/platform/language_detection/language_detection_model.h"
 
+#if BUILDFLAG(ARKWEB_AI)
+#include "arkweb/chromium_ext/third_party/blink/renderer/modules/ai/on_device_translation/language_detector_ohos.h"
+#endif
+
 namespace blink {
 
+#if BUILDFLAG(ARKWEB_AI)
+class LanguageDetector final : public ScriptWrappable, public LanguageDetectorOHOS {
+#else
 class LanguageDetector final : public ScriptWrappable {
+#endif
   DEFINE_WRAPPERTYPEINFO();
 
  public:

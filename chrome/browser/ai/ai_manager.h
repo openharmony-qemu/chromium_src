@@ -73,6 +73,9 @@ class AIManager : public base::SupportsUserData::Data,
   blink::mojom::AILanguageModelParamsPtr GetLanguageModelParams();
 
   // `blink::mojom::AIManager` implementation.
+#if BUILDFLAG(ARKWEB_AI)
+  void CreateLanguageDetector(CreateLanguageDetectorCallback callback) override {}
+#endif
   void CanCreateLanguageModel(
       blink::mojom::AILanguageModelCreateOptionsPtr options,
       CanCreateLanguageModelCallback callback) override;

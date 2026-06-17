@@ -283,6 +283,9 @@
 #if BUILDFLAG(ARKWEB_CSS_INPUT_TIME)
 #include "content/browser/ohos/date_time_chooser_ohos.h"
 #endif  // ARKWEB_CSS_INPUT_TIME
+#if BUILDFLAG(ARKWEB_AI)
+#include "arkweb/chromium_ext/content/browser/ai/echo_ai_manager_ohos.h"
+#endif  // ARKWEB_AI
 #if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
 #endif
@@ -4368,6 +4371,9 @@ void WebContentsImpl::Init(const WebContents::CreateParams& params,
 #if BUILDFLAG(ARKWEB_CSS_INPUT_TIME)
   DateTimeChooserOHOS::CreateForWebContents(this);
 #endif  // #if BUILDFLAG(ARKWEB_CSS_INPUT_TIME)
+#if BUILDFLAG(ARKWEB_AI)
+  EchoAIManagerOHOS::CreateForWebContents(this);
+#endif  // #if BUILDFLAG(ARKWEB_AI)
 
   // AttributionHost must be created after `view_->CreateView()` is called as it
   // may invoke `WebContentsAndroid::AddObserver()`.

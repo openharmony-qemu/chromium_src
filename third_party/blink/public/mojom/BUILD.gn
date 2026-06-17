@@ -281,6 +281,10 @@ mojom("mojom_platform") {
     sources += [ "//arkweb/chromium_ext/third_party/blink/public/mojom/input/software_compositor_ohos.mojom" ]
   }
 
+  if (arkweb_ai) {
+    sources += [ "//arkweb/chromium_ext/third_party/blink/public/mojom/ai/ai_language_detector.mojom" ]
+  }
+
   if (arkweb_copy_option) {
     sources += arkweb_copy_option_mojom_sources
   }

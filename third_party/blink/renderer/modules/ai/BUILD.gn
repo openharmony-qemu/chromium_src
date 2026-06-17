@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//arkweb/build/features/features.gni")
 import("//third_party/blink/renderer/modules/modules.gni")
 
 blink_modules_sources("ai") {
@@ -49,6 +50,11 @@ blink_modules_sources("ai") {
     "writer.cc",
     "writer.h",
   ]
+
+  if (arkweb_ai) {
+    sources += ["//arkweb/chromium_ext/third_party/blink/renderer/modules/ai/on_device_translation/language_detector_ohos.cc"]
+    sources += ["//arkweb/chromium_ext/third_party/blink/renderer/modules/ai/on_device_translation/language_detector_ohos.h"]
+  }
 
   public_deps = [ "//third_party/blink/public/mojom:mojom_modules_blink" ]
 

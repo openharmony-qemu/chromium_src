@@ -108,6 +108,8 @@
 #include "third_party/webrtc_overrides/timer_based_tick_provider.h"
 #if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
 #include "ohos_nweb/src/nweb_advanced_security.h"
+#include "base/command_line.h"
+#include "content/public/common/content_switches_ext.h"
 #endif
 
 namespace blink {
@@ -1046,8 +1048,11 @@ PeerConnectionDependencyFactory::CreatePortAllocator(
       // collected depends on if mic/camera permission is granted for this
       // origin.
 #if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
-      bool isAdvancedSecurityMode = OHOS::NWeb::NWebAdvancedSecurityHelper::Inst().
-        IsSecFeatureEnabled(OHOS::NWeb::NWebAdvancedSecurityHelper::Feature::ENABLE_WEBRTC);
+      bool isAdvancedSecurityMode =
+          OHOS::NWeb::NWebAdvancedSecurityHelper::Inst().IsSecFeatureEnabled(
+              OHOS::NWeb::NWebAdvancedSecurityHelper::Feature::ENABLE_WEBRTC) ||
+          base::CommandLine::ForCurrentProcess()->HasSwitch(
+              switches::kDisableNonProxyUDP);
 
       if (isAdvancedSecurityMode) {
         webrtc_ip_handling_policy = mojom::blink::WebRtcIpHandlingPolicy::kDisableNonProxiedUdp;

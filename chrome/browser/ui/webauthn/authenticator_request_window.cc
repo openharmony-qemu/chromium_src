@@ -38,13 +38,22 @@
 #include "url/origin.h"
 
 namespace {
-
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+// The URL for the YoutTube Music Premium signup page.
+const char kGpmPinResetReauthUrl[] =
+    "https://x.x.x.x/";
+const char kGpmPasskeyResetSuccessUrl[] =
+    "https://x.x.x.x/";
+const char kGpmPasskeyResetFailUrl[] =
+    "https://x.x.x.x/";
+#else
 const char kGpmPinResetReauthUrl[] =
     "https://passwords.google.com/encryption/pin/reset";
 const char kGpmPasskeyResetSuccessUrl[] =
     "https://passwords.google.com/embedded/passkeys/reset/done";
 const char kGpmPasskeyResetFailUrl[] =
     "https://passwords.google.com/embedded/passkeys/reset/error";
+#endif
 
 GURL GetGpmResetPinUrl() {
   std::string command_line_url =

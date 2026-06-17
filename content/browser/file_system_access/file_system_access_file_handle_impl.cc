@@ -643,12 +643,18 @@ void FileSystemAccessFileHandleImpl::StartCreateSwapFile(
       swap_url = url().CreateSibling(*opt_swap_name);
     }
 #elif BUILDFLAG(IS_OHOS)
-    std::string file_name = opt_swap_name->value();
-    base::FilePath private_swap_path =
-        base::FilePath(::ohos::adapter::ContextPathAdapter::GetAppDownloadDir())
-            .Append(base::FilePath::FromUTF8Unsafe(file_name));
-    storage::FileSystemURL swap_url =
-        manager()->CreateFileSystemURLFromPath(PathInfo(private_swap_path));
+    storage::FileSystemURL swap_url;
+    if (url().type() == storage::kFileSystemTypeLocal) {
+      std::string file_name = opt_swap_name->value();
+      base::FilePath private_swap_path =
+          base::FilePath(
+              ::ohos::adapter::ContextPathAdapter::GetAppDownloadDir())
+              .Append(base::FilePath::FromUTF8Unsafe(file_name));
+      swap_url = manager()->context()->CreateCrackedFileSystemURL(
+          url().storage_key(), url().type(), private_swap_path);
+    } else {
+      swap_url = url().CreateSibling(*opt_swap_name);
+    }
 #else
     storage::FileSystemURL swap_url = url().CreateSibling(*opt_swap_name);
 #endif

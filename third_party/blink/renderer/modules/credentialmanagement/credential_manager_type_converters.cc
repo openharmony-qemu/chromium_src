@@ -24,6 +24,9 @@
 #include "third_party/blink/renderer/bindings/modules/v8/v8_authentication_extensions_large_blob_inputs.h"
 #include "third_party/blink/renderer/bindings/modules/v8/v8_authentication_extensions_large_blob_outputs.h"
 #include "third_party/blink/renderer/bindings/modules/v8/v8_authentication_extensions_payment_browser_bound_signature.h"
+#if BUILDFLAG(ARKWEB_FIDO)
+#include "third_party/blink/renderer/bindings/modules/v8/v8_authentication_extensions_digital_shield_data_outputs.h"
+#endif BUILDFLAG(ARKWEB_FIDO)
 #include "third_party/blink/renderer/bindings/modules/v8/v8_authentication_extensions_payment_inputs.h"
 #include "third_party/blink/renderer/bindings/modules/v8/v8_authentication_extensions_payment_outputs.h"
 #include "third_party/blink/renderer/bindings/modules/v8/v8_authentication_extensions_prf_inputs.h"
@@ -251,6 +254,15 @@ TypeConverter<blink::AuthenticationExtensionsClientOutputs*,
     }
     extension_outputs->setLargeBlob(large_blob_outputs);
   }
+#if BUILDFLAG(ARKWEB_FIDO)
+  if (extensions->digital_shield_data) {
+    blink::AuthenticationExtensionsDigitalShieldDataOutputs* digital_shield_data_outputs =
+      blink::AuthenticationExtensionsDigitalShieldDataOutputs::Create();
+    digital_shield_data_outputs->setAuthData(blink::DOMArrayBuffer::Create(
+        std::move(*extensions->digital_shield_data)));
+    extension_outputs->setDigitalShieldData(digital_shield_data_outputs);
+  }
+#endif // BUILDFLAG(ARKWEB_FIDO)
   if (extensions->get_cred_blob) {
     extension_outputs->setGetCredBlob(
         blink::DOMArrayBuffer::Create(std::move(*extensions->get_cred_blob)));

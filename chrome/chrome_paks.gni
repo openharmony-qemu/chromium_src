@@ -212,6 +212,10 @@ template("chrome_extra_paks") {
       sources += [ "$root_gen_dir/ohos_resources/content_change_detection/content_change_detection_resources.pak" ]
       deps += [ "//ohos_resources/content_change_detection:content_change_detection_resources" ]
     }
+    if (arkweb_ai) {
+      sources += [ "$root_gen_dir/ohos_resources/image_change_detection/image_change_detection_resources.pak" ]
+      deps += [ "//ohos_resources/image_change_detection:image_change_detection_resources" ]
+    }
     if (is_arkweb_ext && arkweb_ai) {
       sources += [ "$root_gen_dir/ohos_resources/dom_tree_extractor/dom_tree_extractor_resources.pak" ]
       deps += [ "//ohos_resources/dom_tree_extractor:dom_tree_extractor_resources" ]

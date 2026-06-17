@@ -704,6 +704,10 @@ class NavigationController {
   virtual bool ShouldOverrideUserAgentInNextNavigation(
       NavigationController::UserAgentOverrideOption option) = 0;
 
+#if BUILDFLAG(IS_ARKWEB)
+  virtual void LoadOriginalRequestURL(bool ignore_cache) = 0;
+#endif
+
  private:
   // This interface should only be implemented inside content.
   friend class NavigationControllerImpl;

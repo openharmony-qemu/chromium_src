@@ -202,7 +202,11 @@
 #include "ui/gfx/geometry/size_f.h"
 #include "ui/gfx/geometry/transform.h"
 #include "ui/strings/grit/ax_strings.h"
-
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+#include "third_party/blink/public/web/web_autofill_client.h"
+#include "third_party/blink/renderer/core/frame/web_local_frame_impl.h"
+#include "third_party/blink/renderer/core/page/chrome_client_impl.h"
+#endif
 namespace blink {
 namespace {
 
@@ -6625,7 +6629,26 @@ bool AXNodeObject::OnNativeFocusAction() {
   }
 #endif
 
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  WebAutofillClient* autofill_client_ = nullptr;
+  if (IsTextField() && document->GetFrame()) {
+    auto wlf = WebLocalFrameImpl::FromFrame(document->GetFrame());
+    if (wlf) {
+      autofill_client_ = wlf->AutofillClient();
+    }
+  }
+  if (autofill_client_) {
+    autofill_client_->PreSuppressKeyboardIfNeed(WebNode(node));
+  }
+#endif
+
   element->Focus(FocusParams(FocusTrigger::kUserGesture));
+
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  if (autofill_client_) {
+    autofill_client_->DidReceiveLeftMouseDownOrGestureTapInNode(WebNode(node));
+  }
+#endif
 
   // Calling NotifyUserActivation here allows the browser to activate features
   // that need user activation, such as showing an autofill suggestion.

@@ -94,7 +94,9 @@ class WebAutofillClient {
   virtual void DidCompleteFocusChangeInFrame() {}
 
   virtual void DidReceiveLeftMouseDownOrGestureTapInNode(const WebNode&) {}
-
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  virtual void PreSuppressKeyboardIfNeed(const WebNode&) {}
+#endif
   // Called when the given form element is reset.
   virtual void FormElementReset(const WebFormElement&) {}
 

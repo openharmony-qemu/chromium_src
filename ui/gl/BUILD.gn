@@ -585,6 +585,9 @@ test("gl_unittests") {
 
   if (arkweb_test) {
     include_dirs = ohos_src_includes
+    include_dirs += [
+      "//ohos_sdk/openharmony/native/sysroot/usr/include/multimedia/image_framework/image"
+    ]
     import("//arkweb/chromium_ext/ui/gl/arkweb_ui_gl_unittests_ext.gni")
     deps += arkweb_unittests_deps
     deps += [ "//components/performance_manager/scenario_api" ]

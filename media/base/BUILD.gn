@@ -750,7 +750,8 @@ source_set("unit_tests") {
     import("//arkweb/chromium_ext/chromium_ext.gni")
     include_dirs = [
       "//arkweb/ohos_adapter_ndk/interfaces",
-      "//third_party/ohos_ndk/includes/ohos_adapter"
+      "//third_party/ohos_ndk/includes/ohos_adapter",
+      "//ohos_sdk/openharmony/native/sysroot/usr/include/multimedia/image_framework/image"
     ]
     sources += arkweb_media_base_unittest_sources
     sources += arkweb_media_adapter_unittest_sources

@@ -993,6 +993,7 @@ int HttpStreamFactory::Job::DoInitConnectionComplete(int result) {
   } else {
     resolve_info_ = connection_->resolve_info();
   }
+  secure_dns_fallback_resolved_ = connection_->SecureDnsFallbackResolved();
   MaybeCopyExtraConnectionAttemptsFromHandle();
 #endif
 

@@ -87,7 +87,8 @@ class NET_EXPORT_PRIVATE HttpStreamRequest {
                                 ResolveErrorInfo resolve_error_info
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
                                 ,
-                                ResolveInfo resolve_info
+                                ResolveInfo resolve_info,
+                                bool secure_dns_fallback_resolved
 #endif
                                 ) = 0;
 
@@ -100,7 +101,8 @@ class NET_EXPORT_PRIVATE HttpStreamRequest {
 #endif
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
                                     ,
-                                    ResolveInfo resolve_info
+                                    ResolveInfo resolve_info,
+                                    bool secure_dns_fallback_resolved
 #endif
                                     ) = 0;
 

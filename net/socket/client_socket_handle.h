@@ -183,6 +183,9 @@ class NET_EXPORT ClientSocketHandle : public StreamSocketHandle {
   const ConnectionAttempts& GetExtraConnectionAttempts() {
     return extra_connection_attempts_;
   }
+  bool SecureDnsFallbackResolved() const {
+    return secure_dns_fallback_resolved_;
+  }
 #endif
 
   // These may only be used if is_initialized() is true.
@@ -231,6 +234,7 @@ class NET_EXPORT ClientSocketHandle : public StreamSocketHandle {
 #if BUILDFLAG(IS_ARKWEB_EXT) && BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   ResolveInfo resolve_info_;
   ConnectionAttempts extra_connection_attempts_;
+  bool secure_dns_fallback_resolved_ = false;
 #endif
 
   NetLogSource requesting_source_;

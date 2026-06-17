@@ -180,7 +180,8 @@ class HttpStreamPool::JobController : public HttpStreamPool::Job::Delegate,
                           ResolveErrorInfo resolve_error_info
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
                           ,
-                          ResolveInfo resolve_info
+                          ResolveInfo resolve_info,
+                          bool secure_dns_fallback_resolved
 #endif
   );
 
@@ -191,7 +192,8 @@ class HttpStreamPool::JobController : public HttpStreamPool::Job::Delegate,
                               bool used_fallback_proxy
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
                               ,
-                              ResolveInfo resolve_info
+                              ResolveInfo resolve_info,
+                              bool secure_dns_fallback_resolved
 #endif
                               );
 #else

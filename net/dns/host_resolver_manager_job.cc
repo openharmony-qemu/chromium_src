@@ -474,6 +474,7 @@ void HostResolverManager::Job::RunNextTask() {
       break;
 #if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
     case TaskType::SECURE_DNS_FALLBACK:
+      secure_dns_fallback_resolved_ = true;
       StartDnsTask(true /* secure */, true /* secure_fallback */);
       break;
 #endif
@@ -1223,7 +1224,8 @@ void HostResolverManager::Job::CompleteRequests(
         /*is_secure_network_error=*/secure && results.error() != OK
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
         ,
-        dns_status_, finished_tasks_, truncation_results
+        dns_status_, finished_tasks_, truncation_results,
+        secure_dns_fallback_resolved_
 #endif
     );
 
@@ -1241,7 +1243,8 @@ void HostResolverManager::Job::CompleteRequests(
     request->OnJobCompleted(results, secure
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
                             ,
-                            dns_status_, finished_tasks_, truncation_results
+                            dns_status_, finished_tasks_, truncation_results,
+                            secure_dns_fallback_resolved_
 #endif
     );
     if (!resolver_.get()) {

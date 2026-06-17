@@ -81,13 +81,15 @@ class MockHttpStreamRequestDelegate : public HttpStreamRequest::Delegate {
                       ResolveErrorInfo resolve_error_info
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
                       ,
-                      ResolveInfo resolve_info
+                      ResolveInfo resolve_info,
+                      bool secure_dns_fallback_resolved
 #endif
                       ) override;
 
 #if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY) && BUILDFLAG(ARKWEB_EXT_NAVIGATION)
-  MOCK_METHOD4(OnCertificateError, void(int status, const SSLInfo& ssl_info,
-                                        bool used_fallback_proxy, ResolveInfo resolve_info));
+  MOCK_METHOD5(OnCertificateError, void(int status, const SSLInfo& ssl_info,
+                                        bool used_fallback_proxy, ResolveInfo resolve_info,
+                                        bool secure_dns_fallback_resolved));
 #elif BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
   MOCK_METHOD3(OnCertificateError, void(int status, const SSLInfo& ssl_info,
                                         bool used_fallback_proxy));

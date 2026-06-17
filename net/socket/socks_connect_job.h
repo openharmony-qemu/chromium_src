@@ -110,6 +110,7 @@ class NET_EXPORT_PRIVATE SOCKSConnectJob : public ConnectJob,
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   ResolveInfo GetResolveInfo() const override;
   ConnectionAttempts GetExtraConnectionAttempts() const override;
+  bool SecureDnsFallbackResolved() const override;
 #endif
 
   // Returns the handshake timeout used by SOCKSConnectJobs.
@@ -169,6 +170,7 @@ class NET_EXPORT_PRIVATE SOCKSConnectJob : public ConnectJob,
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   ResolveInfo resolve_info_;
   ConnectionAttempts extra_connection_attempts_;
+  bool secure_dns_fallback_resolved_ = false;
 #endif
 };
 

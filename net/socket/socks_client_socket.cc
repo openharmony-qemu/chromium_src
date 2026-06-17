@@ -300,6 +300,8 @@ int SOCKSClientSocket::DoResolveHostComplete(int result) {
 
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   resolve_info_ = resolve_host_request_->GetResolveInfo();
+  secure_dns_fallback_resolved_ =
+      resolve_host_request_->SecureDnsFallbackResolved();
 #endif
 
   if (result != OK) {
@@ -470,6 +472,10 @@ ResolveErrorInfo SOCKSClientSocket::GetResolveErrorInfo() const {
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
 ResolveInfo SOCKSClientSocket::GetResolveInfo() const {
   return resolve_info_;
+}
+
+bool SOCKSClientSocket::SecureDnsFallbackResolved() const {
+  return secure_dns_fallback_resolved_;
 }
 #endif
 

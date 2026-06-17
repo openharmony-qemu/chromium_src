@@ -388,7 +388,8 @@ class NET_EXPORT HostResolverManager
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
       ,
       int& dns_status,
-      ResolveInfo& resolve_info
+      ResolveInfo& resolve_info,
+      bool& secure_dns_fallback_resolved
 #endif
   );
 

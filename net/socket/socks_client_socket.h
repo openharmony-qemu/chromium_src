@@ -87,6 +87,7 @@ class NET_EXPORT_PRIVATE SOCKSClientSocket : public StreamSocket {
 
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   ResolveInfo GetResolveInfo() const;
+  bool SecureDnsFallbackResolved() const;
 #endif
 
  private:
@@ -151,6 +152,7 @@ class NET_EXPORT_PRIVATE SOCKSClientSocket : public StreamSocket {
 
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   ResolveInfo resolve_info_;
+  bool secure_dns_fallback_resolved_ = false;
 #endif
 
   NetLogWithSource net_log_;

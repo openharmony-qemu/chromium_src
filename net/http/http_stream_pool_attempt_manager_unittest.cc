@@ -359,7 +359,8 @@ class StreamRequester : public HttpStreamRequest::Delegate {
                       ResolveErrorInfo resolve_error_info
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
                       ,
-                      ResolveInfo resolve_info
+                      ResolveInfo resolve_info,
+                      bool secure_dns_fallback_resolved
 #endif
                       ) override {
     net_error_details_ = net_error_details;
@@ -376,7 +377,8 @@ class StreamRequester : public HttpStreamRequest::Delegate {
 #endif
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
                           ,
-                          ResolveInfo resolve_info
+                          ResolveInfo resolve_info,
+                          bool secure_dns_fallback_resolved
 #endif
                           ) override {
     cert_error_ssl_info_ = ssl_info;

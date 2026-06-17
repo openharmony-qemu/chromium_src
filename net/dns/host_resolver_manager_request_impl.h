@@ -97,7 +97,8 @@ class HostResolverManager::RequestImpl
                       ,
                       int dns_status,
                       const std::vector<TaskType>& finished_tasks,
-                      const std::vector<IPEndPoint>& truncation_results
+                      const std::vector<IPEndPoint>& truncation_results,
+                      bool secure_dns_fallback_resolved
 #endif
   );
 
@@ -127,6 +128,10 @@ class HostResolverManager::RequestImpl
                         const std::vector<TaskType> finished_tasks,
                         const std::vector<IPEndPoint>& truncation_results);
   net::ResolveInfo GetResolveInfo() const override;
+
+  bool SecureDnsFallbackResolved() const override {
+    return secure_dns_fallback_resolved_;
+  }
 #endif
 
  private:
@@ -210,6 +215,7 @@ class HostResolverManager::RequestImpl
 
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   ResolveInfo resolve_info_;
+  bool secure_dns_fallback_resolved_ = false;
 #endif
 
   SEQUENCE_CHECKER(sequence_checker_);

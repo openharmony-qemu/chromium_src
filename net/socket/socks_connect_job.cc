@@ -184,6 +184,8 @@ int SOCKSConnectJob::DoTransportConnectComplete(int result) {
   resolve_info_ = transport_connect_job_->GetResolveInfo();
   extra_connection_attempts_ =
       transport_connect_job_->GetExtraConnectionAttempts();
+  secure_dns_fallback_resolved_ =
+      transport_connect_job_->SecureDnsFallbackResolved();
 #endif
 
   if (result != OK)
@@ -224,6 +226,8 @@ int SOCKSConnectJob::DoSOCKSConnectComplete(int result) {
 
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
     resolve_info_ = socks_socket_ptr_->GetResolveInfo();
+    secure_dns_fallback_resolved_ =
+        socks_socket_ptr_->SecureDnsFallbackResolved();
 #endif
   }
 
@@ -267,6 +271,10 @@ ResolveInfo SOCKSConnectJob::GetResolveInfo() const {
 
 ConnectionAttempts SOCKSConnectJob::GetExtraConnectionAttempts() const {
   return extra_connection_attempts_;
+}
+
+bool SOCKSConnectJob::SecureDnsFallbackResolved() const {
+  return secure_dns_fallback_resolved_;
 }
 #endif
 

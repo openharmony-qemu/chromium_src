@@ -143,6 +143,7 @@ class NET_EXPORT_PRIVATE SSLConnectJob : public ConnectJob,
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   ResolveInfo GetResolveInfo() const override;
   ConnectionAttempts GetExtraConnectionAttempts() const override;
+  bool SecureDnsFallbackResolved() const override;
 #endif
 
   // Returns the timeout for the SSL handshake. This is the same for all
@@ -241,6 +242,7 @@ class NET_EXPORT_PRIVATE SSLConnectJob : public ConnectJob,
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   ResolveInfo resolve_info_;
   ConnectionAttempts extra_connection_attempts_;
+  bool secure_dns_fallback_resolved_ = false;
 #endif
 
   // If not empty, the intersection of the client's trusted TLS Trust Anchor IDs

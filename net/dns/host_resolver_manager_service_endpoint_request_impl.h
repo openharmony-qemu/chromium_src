@@ -67,7 +67,8 @@ class HostResolverManager::ServiceEndpointRequestImpl
                       ,
                       int dns_status,
                       const std::vector<TaskType>& finished_tasks,
-                      const std::vector<IPEndPoint>& truncation_results
+                      const std::vector<IPEndPoint>& truncation_results,
+                      bool secure_dns_fallback_resolved
 #endif
   );
   void OnJobCancelled();
@@ -90,6 +91,9 @@ class HostResolverManager::ServiceEndpointRequestImpl
                         const std::vector<TaskType> finished_tasks,
                         const std::vector<IPEndPoint>& truncation_results);
   ResolveInfo GetResolveInfo() const override { return resolve_info_; }
+  bool SecureDnsFallbackResolved() const override {
+    return secure_dns_fallback_resolved_;
+  }
 
 #if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
   void MaybeModifyResolveLocallyResults(
@@ -183,6 +187,7 @@ class HostResolverManager::ServiceEndpointRequestImpl
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   ResolveInfo resolve_info_;
   bool is_for_arkweb_ex_{false};
+  bool secure_dns_fallback_resolved_ = false;
 #endif
 
   SEQUENCE_CHECKER(sequence_checker_);

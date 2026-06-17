@@ -135,6 +135,9 @@ void ClientSocketHandle::SetAdditionalErrorState(ConnectJob* connect_job) {
   resolve_error_info_ = connect_job->GetResolveErrorInfo();
   is_ssl_error_ = connect_job->IsSSLError();
   ssl_cert_request_info_ = connect_job->GetCertRequestInfo();
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  secure_dns_fallback_resolved_ = connect_job->SecureDnsFallbackResolved();
+#endif
 }
 
 void ClientSocketHandle::OnIOComplete(int result) {
@@ -211,6 +214,9 @@ void ClientSocketHandle::ResetErrorState() {
   resolve_error_info_ = ResolveErrorInfo(OK);
   is_ssl_error_ = false;
   ssl_cert_request_info_ = nullptr;
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  secure_dns_fallback_resolved_ = false;
+#endif
 }
 
 }  // namespace net

@@ -225,6 +225,9 @@ class NET_EXPORT_PRIVATE HttpProxyConnectJob : public ConnectJob,
   ConnectionAttempts GetExtraConnectionAttempts() const override {
     return extra_connection_attempts_;
   }
+  bool SecureDnsFallbackResolved() const override {
+    return secure_dns_fallback_resolved_;
+  }
 #endif
 
   enum class HttpConnectResult {
@@ -354,6 +357,7 @@ class NET_EXPORT_PRIVATE HttpProxyConnectJob : public ConnectJob,
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   ResolveInfo resolve_info_;
   ConnectionAttempts extra_connection_attempts_{};
+  bool secure_dns_fallback_resolved_ = false;
 #endif
 
   base::WeakPtrFactory<HttpProxyConnectJob> weak_ptr_factory_{this};

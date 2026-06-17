@@ -190,7 +190,8 @@ class HttpStreamPool::Job {
   base::TimeTicks create_time() const { return create_time_; }
 
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
-  ResolveInfo resolve_info();
+  ResolveInfo resolve_info() const;
+  bool secure_dns_fallback_resolved() const;
 #endif
 
  private:

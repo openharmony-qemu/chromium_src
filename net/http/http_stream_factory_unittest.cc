@@ -316,7 +316,8 @@ class StreamRequester : public HttpStreamRequest::Delegate {
                       ResolveErrorInfo resolve_error_info
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
                       ,
-                      ResolveInfo resolve_info
+                      ResolveInfo resolve_info,
+                      bool secure_dns_fallback_resolved
 #endif
                       ) override {
     stream_done_ = true;
@@ -334,7 +335,8 @@ class StreamRequester : public HttpStreamRequest::Delegate {
 #endif
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
                           ,
-                          ResolveInfo resolve_info
+                          ResolveInfo resolve_info,
+                          bool secure_dns_fallback_resolved
 #endif
                           ) override {
   }

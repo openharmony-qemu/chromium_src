@@ -259,6 +259,9 @@ class HttpStreamFactory::Job
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   ResolveInfo resolve_info() const { return resolve_info_; }
   void MaybeCopyExtraConnectionAttemptsFromHandle();
+  bool secure_dns_fallback_resolved() const {
+    return secure_dns_fallback_resolved_;
+  }
 #endif
 
  private:
@@ -514,6 +517,7 @@ class HttpStreamFactory::Job
 
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   ResolveInfo resolve_info_;
+  bool secure_dns_fallback_resolved_ = false;
 #endif
 
   base::WeakPtrFactory<Job> ptr_factory_{this};

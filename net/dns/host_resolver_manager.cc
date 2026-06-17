@@ -839,7 +839,8 @@ HostCache::Entry HostResolverManager::ResolveLocally(
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
     ,
     int& dns_status,
-    ResolveInfo& resolve_info
+    ResolveInfo& resolve_info,
+    bool& secure_dns_fallback_resolved
 #endif
 ) {
   DCHECK(out_stale_info);
@@ -941,6 +942,15 @@ HostCache::Entry HostResolverManager::ResolveLocally(
           dns_status = kDnsResolvedFromSecureCache;
         } else {
           dns_status = kDnsResolvedFromInsecureCache;
+        }
+#endif
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+        if (task == TaskType::SECURE_CACHE_LOOKUP &&
+            secure_dns_policy != SecureDnsPolicy::kBootstrap) {
+          if (dns_client_ && dns_client_->CanUseSecureDnsFallbackTransactions(
+                                 &*job_key.resolve_context)) {
+            secure_dns_fallback_resolved = true;
+          }
         }
 #endif
         // TODO(crbug.com/40178456): Call StartBootstrapFollowup() if the Secure

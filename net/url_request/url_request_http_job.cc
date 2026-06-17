@@ -1339,6 +1339,16 @@ bool URLRequestHttpJob::CanRetryWithSecureDnsOnly(int net_error) {
     return false;
   }
 
+  if (transaction_ && transaction_->GetResponseInfo() &&
+      transaction_->GetResponseInfo()->secure_dns_fallback_resolved) {
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(INFO) << "DOH-Fallback won't retry for "
+                          "secure_dns_fallback_resolved is true, url "
+                       << url::LogUtils::ConvertUrlWithMask(request_->url().spec());
+#endif
+    return false;
+  }
+
   if (!const_cast<URLRequestContext*>(request_->context())->AsURLRequestContextExt()->CanUseSecureDnsFallback()) {
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
     LOG_FEEDBACK(INFO) << "DOH-Fallback can't use secure dns fallback";

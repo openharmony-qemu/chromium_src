@@ -65,12 +65,16 @@ bool HasValidURL(content::RenderFrameHost* render_frame_host) {
     return false;
 #endif
 
-  return password_manager::bad_message::CheckForIllegalURL(
+  return password_manager::bad_message::CheckChildProcessSecurityPolicyForURL(
       render_frame_host, url,
       password_manager::BadMessageReason::CPMD_BAD_ORIGIN_FORM_SUBMITTED);
 }
 
 bool IsRenderFrameHostSupported(content::RenderFrameHost* rfh) {
+  if (rfh->GetProcess()->IsPdf()) {
+    return false;
+  }
+
   // Explanation of current PasswordManagerDriver limitations:
   // * Currently, PasswordManagerDriver binding has RenderFrameHost lifetime,
   //   not document lifetime. This can lead to premature binding in rare race

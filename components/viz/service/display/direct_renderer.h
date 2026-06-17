@@ -174,6 +174,7 @@ class VIZ_SERVICE_EXPORT DirectRenderer {
 #if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
   virtual bool IsPresentBuffersFullDamage(gfx::Rect damage_rect) { return true; };
   virtual void ClosePostSubBuffer() {}
+  virtual void ResetPartialDrawState() {}
   void SetIsSyncDrawMode(bool flag) {
     LOG(INFO) << "SetIsSyncDrawMode " << flag;
     is_sync_draw_mode_ = flag;

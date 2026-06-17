@@ -442,7 +442,15 @@ void DirectRenderer::DrawFrame(
 
   // Draw all non-root render passes except for the root render pass.
   total_pixels_rendered_this_frame_ = 0;
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+  bool has_copy_requests = false;
+#endif
   for (const auto& pass : *render_passes_in_draw_order) {
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+    if (!pass->copy_requests.empty()) {
+      has_copy_requests = true;
+    }
+#endif
     if (pass.get() == root_render_pass)
       break;
     DrawRenderPassAndExecuteCopyRequests(pass.get());
@@ -479,7 +487,11 @@ void DirectRenderer::DrawFrame(
                "root_damage_rect", current_frame()->root_damage_rect.ToString());
 #endif
 
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+  if (!skip_drawing_root_render_pass || has_copy_requests) {
+#else
   if (!skip_drawing_root_render_pass) {
+#endif
     DrawRenderPassAndExecuteCopyRequests(root_render_pass);
   }
 

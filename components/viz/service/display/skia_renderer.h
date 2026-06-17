@@ -69,6 +69,8 @@ class VIZ_SERVICE_EXPORT SkiaRenderer : public DirectRenderer {
 #if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
   bool IsPresentBuffersFullDamage(gfx::Rect damage_rect) override;
   void ClosePostSubBuffer() override;
+  void ResetPartialDrawState() override;
+  std::atomic<bool> force_full_draw_after_reset_{false};
 #endif
 
   DelegatedInkPointRendererBase* GetDelegatedInkPointRenderer(

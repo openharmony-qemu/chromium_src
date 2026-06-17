@@ -1047,14 +1047,6 @@ png_handle_PLTE(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
    }
 #endif
 
-   /* TODO: png_set_PLTE has the side effect of setting png_ptr->palette to its
-    * own copy of the palette.  This has the side effect that when png_start_row
-    * is called (this happens after any call to png_read_update_info) the
-    * info_ptr palette gets changed.  This is extremely unexpected and
-    * confusing.
-    *
-    * Fix this by not sharing the palette in this way.
-    */
    png_set_PLTE(png_ptr, info_ptr, palette, num);
 
    /* The three chunks, bKGD, hIST and tRNS *must* appear after PLTE and before
@@ -1905,10 +1897,6 @@ png_handle_tRNS(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
       return;
    }
 
-   /* TODO: this is a horrible side effect in the palette case because the
-    * png_struct ends up with a pointer to the tRNS buffer owned by the
-    * png_info.  Fix this.
-    */
    png_set_tRNS(png_ptr, info_ptr, readbuf, png_ptr->num_trans,
        &(png_ptr->trans_color));
 }

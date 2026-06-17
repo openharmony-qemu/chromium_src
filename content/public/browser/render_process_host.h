@@ -826,7 +826,7 @@ class CONTENT_EXPORT RenderProcessHost : public IPC::Listener,
 
   virtual void InvokeRenderCrashDump() {}
 
-  virtual void ReportRenderUnresponsive(int32_t pid) {}
+  virtual void ReportRenderUnresponsive(int32_t pid, const std::string& stack) {}
 #endif
   // Static management functions -----------------------------------------------
 

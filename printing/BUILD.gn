@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//arkweb/build/features/features.gni")
 import("//build/config/linux/pkg_config.gni")
 import("//build/config/sysroot.gni")
 import("//build/config/ui.gni")
@@ -392,6 +393,9 @@ test("printing_unittests") {
     "//ui/gfx/geometry",
   ]
 
+  if (arkweb_unittests) {
+    deps += [ "//content/public/child" ]
+  }
   if (enable_oop_printing) {
     sources += [
       "backend/mojom/print_backend_mojom_traits_unittest.cc",

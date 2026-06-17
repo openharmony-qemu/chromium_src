@@ -516,6 +516,11 @@ component("skia") {
     if (is_arkweb) {
       sources += arkweb_third_patry_skia_src_ports_sources
       include_dirs = [ "//third_party/jsoncpp/source/include" ]
+      deps += [
+        "//v8:cppgc_headers",
+        "//arkweb/chromium_ext/components/services/font_data/public/mojom",
+      ]
+      include_dirs += ["//v8/include"]
     } else {
       sources += [
         "//third_party/skia/src/ports/SkFontConfig_ohos.cpp",
@@ -1226,7 +1231,8 @@ test("skia_unittests") {
   if (arkweb_unittests) {
     import("//arkweb/chromium_ext/chromium_ext.gni")
     deps += [
-      "//third_party/jsoncpp:jsoncpp"
+      "//third_party/jsoncpp:jsoncpp",
+      "//content/public/child",
     ]
     include_dirs = [
       "//third_party/ohos_ndk/includes/ohos_adapter",

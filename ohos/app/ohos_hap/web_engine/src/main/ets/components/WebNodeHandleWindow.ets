@@ -35,7 +35,8 @@ import { ConfigData, ContextType } from '../common/Constants';
 import { NodeHandleManager } from '../common/NodeHandleManager';
 import Inject from '../common/InjectModule';
 import { ContextAdapter } from '../adapter/ContextAdapter';
- 
+import { CmdArgsHelper } from '../utils/CmdArgsHelper';
+
 @Component
 export struct WebNodeHandleWindow {
   private static TAG: string = 'WebNodeHandleWindow';
@@ -44,6 +45,7 @@ export struct WebNodeHandleWindow {
   @LocalStorageLink('appId') appId: string = '';
   @LocalStorageLink('window') window: window.Window | undefined = undefined;
   @LocalStorageLink('statusBarHeight') statusBarHeight: number = 0;
+  @LocalStorageLink('cmdArgs') cmdArgs: string[] = [];
   private nativeContext: NativeContext = JsBindingUtils.getNativeContext(ContextType.kMainProcess);
   private nodeHandleManager = Inject.get(NodeHandleManager);
   private contextAdapter = Inject.get(ContextAdapter);
@@ -56,7 +58,8 @@ export struct WebNodeHandleWindow {
     this.contextAdapter.setActiveWindow(this.xComponentId);
  
     this.setDefaultBounds();
-    let vec_args = this.buildArgs();
+    let vec_args = CmdArgsHelper.buildArgs(this.startUri, this.cmdArgs, this.appId);
+    CmdArgsHelper.preProcessArgs(vec_args);
     this.nativeContext.runBrowser(vec_args);
   }
  
@@ -96,15 +99,5 @@ export struct WebNodeHandleWindow {
     if (state) {
       this.nativeContext.OnWindowInitState(state);
     }
-  }
- 
-  private buildArgs(): string[] {
-    let default_uri = '';
-    if (this.startUri.length !== 0) {
-      default_uri = this.startUri;
-    }
-    let resDir = '--bundle-installation-dir=' + getContext().resourceDir;
-    let vec_args = [resDir, default_uri, this.appId];
-    return vec_args;
   }
 }

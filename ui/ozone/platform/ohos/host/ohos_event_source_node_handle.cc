@@ -422,6 +422,10 @@ void OhosEventSourceNodeHandle::OnPinchEvent(
     const ArkUI_GestureEventActionType action_type,
     const gfx::AcceleratedWidget widget_id,
     const NodeHandlePinchEvent& gesture_event) {
+  if (gesture_event.tool_type() == UI_INPUT_EVENT_TOOL_TYPE_MOUSE) {
+    return;
+  }
+
   ui::GestureEventDetails event_details;
   if (action_type == GESTURE_EVENT_ACTION_ACCEPT) {
     event_details = ui::GestureEventDetails(ui::EventType::kGesturePinchBegin);

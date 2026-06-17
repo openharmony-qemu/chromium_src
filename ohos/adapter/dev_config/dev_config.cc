@@ -304,5 +304,9 @@ std::vector<std::string> GetDevCommandLines() {
   return DevConfigToCommandLines(*config);
 }
 
+JSBIND_GLOBAL() {
+  JSBIND_FUNCTION(GetDevCommandLines);
+}
+
 }  // namespace adapter
 }  // namespace ohos

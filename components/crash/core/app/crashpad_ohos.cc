@@ -57,7 +57,7 @@
 #include "third_party/crashpad/crashpad/client/annotation.h"
 #include "third_party/crashpad/crashpad/client/client_argv_handling.h"
 #include "third_party/crashpad/crashpad/client/crashpad_client.h"
-#include "third_party/crashpad/crashpad/client/simulate_crash_linux.h"
+#include "third_party/crashpad/crashpad/client/simulate_crash_ohos.h"
 #include "third_party/crashpad/crashpad/snapshot/sanitized/sanitization_information.h"
 #include "third_party/crashpad/crashpad/util/linux/exception_handler_client.h"
 #include "third_party/crashpad/crashpad/util/linux/exception_handler_protocol.h"

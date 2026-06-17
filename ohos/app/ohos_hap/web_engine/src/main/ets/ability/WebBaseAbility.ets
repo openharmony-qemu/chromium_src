@@ -15,6 +15,7 @@ import { WebProxy } from '../interface/WebProxy';
 import { common } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { WebAbilityStage } from '../application/WebAbilityStage';
+import { CmdArgsHelper } from '../utils/CmdArgsHelper';
 
 const TAG: string = 'WebBaseAbility';
 
@@ -32,6 +33,7 @@ export class WebBaseAbility extends UIAbility implements WebProxy {
   protected appId: string = '';
   protected deviceModeChangeEvent: ChangeEventType | undefined = undefined;
   protected initStatus: WindowStatus = WindowStatus.FLOATING;
+  protected cmdArgs: Array<string> = [];
 
   private initParameters(want: Want) {
     if (want && want.parameters) {
@@ -56,6 +58,9 @@ export class WebBaseAbility extends UIAbility implements WebProxy {
       if (want.parameters["initStatus"] !== undefined) {
         this.initStatus = want.parameters['initStatus'] as WindowStatus;
       }
+
+      let args = want.parameters['cmdArgs'];
+      this.cmdArgs = CmdArgsHelper.getCmdArgs(args);
     }
 
     if (want["uri"]) {

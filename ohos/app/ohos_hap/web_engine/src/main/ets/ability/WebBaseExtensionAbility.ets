@@ -12,6 +12,7 @@ import CheckEmptyUtils from '../utils/CheckEmptyUtils';
 import { WebProxy } from '../interface/WebProxy';
 import { common, EmbeddedUIExtensionAbility, UIExtensionContentSession } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
+import { CmdArgsHelper } from '../utils/CmdArgsHelper';
 
 const TAG: string = 'WebBaseExtensionAbility';
 
@@ -25,6 +26,7 @@ export class WebBaseExtensionAbility extends EmbeddedUIExtensionAbility implemen
   protected nativeContext: NativeContext =
     JsBindingUtils.getNativeContext(ContextType.kMainProcess);
   protected hideTitleBar: boolean = true;
+  protected cmdArgs: Array<string> = [];
 
   private initParameters(want: Want) {
     if (want.parameters) {
@@ -40,6 +42,8 @@ export class WebBaseExtensionAbility extends EmbeddedUIExtensionAbility implemen
       if (want.parameters['userData'] !== undefined) {
         this.userData = want.parameters['userData'] as string;
       }
+      let args = want.parameters['cmdArgs'];
+      this.cmdArgs = CmdArgsHelper.getCmdArgs(args);
     }
 
     if (want.uri) {

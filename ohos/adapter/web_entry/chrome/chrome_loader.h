@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "aki/jsbind.h"
 #include "ohos/adapter/web_entry/web_loader.h"
 
 namespace ohos::adapter::web_entry {
@@ -12,7 +13,6 @@ class ChromeMainLoader : public BasicLoader {
       : BasicLoader(dir, name) {}
 
   std::string GetEntryPoint(int process_type) override;
-  const std::vector<std::string> GetEntryArgs() override;
 };
 
 }  // namespace ohos::adapter::web_entry

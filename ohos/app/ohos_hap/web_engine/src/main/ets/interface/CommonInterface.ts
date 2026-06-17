@@ -105,6 +105,8 @@ export interface NativeContext {
   OnAvoidAreaChangeCallback: (statusBarHeight: number) => void;
   OnBackToLastPage: (id: string) => void;
   GetLastActiveWidgetId: () => number;
+  ShouldDisableJit: () => boolean;
+  GetDevCommandLines: () => string[];
 }
 
 export interface IParams {

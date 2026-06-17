@@ -72,6 +72,7 @@ export class WebEmbeddedAbility extends WebBaseExtensionAbility {
       'startUri': this.startUri,
       'session': session,
       'userData': this.userData,
+      'cmdArgs': this.cmdArgs,
     };
     let storage: LocalStorage = new LocalStorage(param);
     session.loadContent('pages/EmbeddedWindow', storage);

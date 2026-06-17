@@ -542,7 +542,7 @@ void NodeHandleXComponentImpl::RegisterPinchGestureEvent() {
                                            GESTURE_EVENT_ACTION_UPDATE |
                                            GESTURE_EVENT_ACTION_END,
                                        node_handle_, pinch_gesture_callback);
-    gesture_api->addGestureToNode(node_handle_, pinch_gesture, NORMAL,
+    gesture_api->addGestureToNode(node_handle_, pinch_gesture, PARALLEL,
                                   NORMAL_GESTURE_MASK);
   }
 }
@@ -562,7 +562,7 @@ void NodeHandleXComponentImpl::RegisterPanGestureEvent() {
                                            GESTURE_EVENT_ACTION_UPDATE |
                                            GESTURE_EVENT_ACTION_END,
                                        node_handle_, pan_gesture_callback);
-    gesture_api->addGestureToNode(node_handle_, pan_gesture, NORMAL,
+    gesture_api->addGestureToNode(node_handle_, pan_gesture, PARALLEL,
                                   NORMAL_GESTURE_MASK);
   }
 }

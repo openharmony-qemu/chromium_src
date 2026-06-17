@@ -272,6 +272,10 @@
 #include "arkweb/chromium_ext/v8/heap_dump/mojom_impl/binary_writer_render_impl.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_V8_OOM_MONITOR)
+#include "arkweb/chromium_ext/v8/dfx/oom_mojom/v8_oom_monitor_render_impl.h"
+#endif
+
 using base::Time;
 using blink::ContextMenuData;
 using blink::WebContentDecryptionModule;
@@ -4001,6 +4005,14 @@ void RenderFrameImpl::DidCommitNavigation(
       LOG(INFO) << "HeapDump: RenderFrameImpl::Initialize\n";
       GetBrowserInterfaceBroker().GetInterface(std::move(
           dfx::BinaryWriterRender::GetInstance()->GetPendingReceiver()));
+    }
+#endif
+
+#if BUILDFLAG(ARKWEB_V8_OOM_MONITOR)
+    if (!v8_oom::V8OOMMonitorImpl::GetInstance()->IsInitialized()) {
+      v8_oom::V8OOMMonitorImpl::GetInstance()->SetInitialized();
+      GetBrowserInterfaceBroker().GetInterface(std::move(
+          v8_oom::V8OOMMonitorImpl::GetInstance()->GetPendingReceiver()));
     }
 #endif
   }

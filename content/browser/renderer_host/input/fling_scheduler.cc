@@ -22,6 +22,9 @@
 #include "ui/display/win/screen_win.h"
 #endif  // BUILDFLAG(IS_WIN)
 
+#if BUILDFLAG(ARKWEB_FLING)
+#include "arkweb/chromium_ext/content/browser/renderer_host/input/fling_scheduler_for_include.h"
+#endif
 namespace content {
 
 FlingScheduler::FlingScheduler(RenderWidgetHostImpl* host) : host_(host) {

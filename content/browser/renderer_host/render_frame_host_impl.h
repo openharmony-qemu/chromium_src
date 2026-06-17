@@ -3470,6 +3470,9 @@ class CONTENT_EXPORT RenderFrameHostImpl
   void OnResetOwnedNavigationRequests(NavigationDiscardReason reason);
 #endif
 
+#if BUILDFLAG(ARKWEB_FLING)
+  bool OnNestedScroll(float& delta_x, float& delta_y);
+#endif
  protected:
   friend class RenderFrameHostFactory;
 

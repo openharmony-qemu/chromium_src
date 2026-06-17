@@ -42,6 +42,9 @@ class CONTENT_EXPORT FlingScheduler : public input::FlingSchedulerBase,
   // FlingSchedulerBase
   void ProgressFlingOnBeginFrameIfneeded(base::TimeTicks current_time) override;
 
+#if BUILDFLAG(ARKWEB_FLING)
+  bool OnNestedScroll(float& delta_x, float& delta_y) override;
+#endif
  protected:
   virtual ui::Compositor* GetCompositor();
   raw_ptr<RenderWidgetHostImpl> host_;

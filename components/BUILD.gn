@@ -1112,7 +1112,8 @@ if (use_blink) {
     ]
 
     sources += [
-     # "//arkweb/chromium_ext/chrome/browser/ssl/ohos_https_upgrades_navigation_throttle_unittest.cc"
+      "//arkweb/chromium_ext/chrome/browser/ssl/ohos_https_upgrades_interceptor_unittest.cc",
+      #"//arkweb/chromium_ext/chrome/browser/ssl/ohos_https_upgrades_navigation_throttle_unittest.cc",
     ]
 
     if (is_android && target_cpu == "arm64") {

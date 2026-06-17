@@ -127,6 +127,10 @@ bool StructTraits<blink::mojom::RendererPreferencesDataView,
   out->is_global_adblock_enabled = data.is_global_adblock_enabled();
 #endif
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  out->is_reader_mode_enabled = data.is_reader_mode_enabled();
+#endif
+
 #if BUILDFLAG(IS_ANDROID)
   out->uses_platform_autofill = data.uses_platform_autofill();
 #endif  // BUILDFLAG(IS_ANDROID)

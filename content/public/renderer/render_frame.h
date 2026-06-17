@@ -31,6 +31,10 @@
 #include "ui/accessibility/ax_tree_update.h"
 #include "arkweb/build/features/features.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 class GURL;
 
 namespace blink {
@@ -303,6 +307,12 @@ class CONTENT_EXPORT RenderFrame :
       DidCompleteResponseCallback callback) = 0;
   virtual void SetDidCancelResponseCallback(
       DidCancelResponseCallback callback) = 0;
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  virtual bool IsReaderModeEnabled() = 0;
+  virtual void ReportDistillableResult(const std::string& event_type,
+                                       const std::string& value) = 0;
+#endif
 
  protected:
   ~RenderFrame() override {}

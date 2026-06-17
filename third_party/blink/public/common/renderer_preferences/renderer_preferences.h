@@ -19,6 +19,10 @@
 #include "third_party/blink/public/mojom/peerconnection/webrtc_ip_handling_policy.mojom.h"
 #include "ui/gfx/font_render_params.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 namespace blink {
 
 // Note: these must match the values in renderer_preferences.mojom.
@@ -98,6 +102,10 @@ struct BLINK_COMMON_EXPORT RendererPreferences {
 
 #if BUILDFLAG(ARKWEB_ADBLOCK)
   bool is_global_adblock_enabled{false};
+#endif
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  bool is_reader_mode_enabled{false};
 #endif
 
   // The default value must be false to avoid performance problems on very large

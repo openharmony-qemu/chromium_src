@@ -301,6 +301,13 @@ struct BLINK_COMMON_EXPORT
     return data.is_global_adblock_enabled;
   }
 #endif
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  static const bool& is_reader_mode_enabled(
+      const ::blink::RendererPreferences& data) {
+    return data.is_reader_mode_enabled;
+  }
+#endif
 };
 
 }  // namespace mojo

@@ -1393,6 +1393,60 @@
         }
     }
 
+    let isInitialTaskRunning = false;
+    async function performInitialExtractionV4Async() {
+        if (isInitialTaskRunning) {
+            return;
+        }
+        isInitialTaskRunning = true;
+        try {
+            const startTime = performance.now();
+
+            // 提取DOM树状结构
+            const domTree = await extractDOMTreeV4Async();
+
+            const result = domTree;
+
+            // 更新状态
+            ExtractorStateV4.isFirstRun = false;
+            ExtractorStateV4.lastDomTree = domTree;
+
+            const endTime = performance.now();
+            const extractionTime = endTime - startTime;
+
+            print({
+                type: 'debugLog',
+                data: { log: `use time: ${extractionTime.toFixed(3)}ms` }
+            });
+
+            // 调用native接口
+            if (typeof window._arkWebDomTree !== 'undefined' &&
+                typeof window._arkWebDomTree.init === 'function') {
+                window._arkWebDomTree.init(JSON.stringify(result));
+            } else {
+                print({
+                    type: 'debugLog',
+                    data: { log: `window._arkWebDomTree.init function error` }
+                });
+            }
+
+            // 启动变化监听
+            startChangeObserverV4();
+
+        } catch (error) {
+            if (typeof error === 'string' && error === USER_INTERRUPT) {
+                InterruptedState.needRequestDomTree = true;
+            } else {
+                print({
+                    type: 'debugLog',
+                    data: { log: `window._arkWebDomTree.init error` }
+                });
+            }
+        } finally {
+            isInitialTaskRunning = false;
+        }
+    }
+
     /**
      * 执行增量提取（精简版本v4）
      */
@@ -1586,7 +1640,7 @@
      */
     function triggerExtractionV4Async(forceFull = false) {
         if (ExtractorStateV4.isFirstRun || forceFull) {
-            return performInitialExtractionV4();
+            performInitialExtractionV4Async();
         } else {
             performIncrementalExtractionV4Async();
         }
@@ -1704,7 +1758,7 @@
         clearTimeout(interruptScrollEndTimer);
         if (InterruptedState.needRequestDomTree && !InterruptedState.isScrollingInterrupted) {
             InterruptedState.needRequestDomTree = false;
-            performIncrementalExtractionV4Async();
+            triggerExtractionV4Async();
         }
 
         InterruptedState.isScrolling = false;

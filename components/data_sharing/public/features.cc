@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "arkweb/build/features/features.h"
+
 #include "components/data_sharing/public/features.h"
 
 #include "base/feature_list.h"
@@ -9,6 +11,15 @@
 
 namespace data_sharing::features {
 namespace {
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+const char kDataSharingDefaultUrl[] = "https://x.x.x.x";
+const char kLearnMoreSharedTabGroupPageDefaultUrl[] =
+    "https://x.x.x.x";
+const char kLearnAboutBlockedAccountsDefaultUrl[] =
+    "https://x.x.x.x";
+const char kActivityLogsDefaultUrl[] =
+    "https://x.x.x.x";
+#else
 const char kDataSharingDefaultUrl[] = "https://www.google.com/chrome/tabshare/";
 const char kLearnMoreSharedTabGroupPageDefaultUrl[] =
     "https://support.google.com/chrome/?p=chrome_collaboration";
@@ -17,6 +28,7 @@ const char kLearnAboutBlockedAccountsDefaultUrl[] =
 const char kActivityLogsDefaultUrl[] =
     "https://myactivity.google.com/product/"
     "chrome_shared_tab_group_activity?utm_source=chrome_collab";
+#endif
 
 }  // namespace
 

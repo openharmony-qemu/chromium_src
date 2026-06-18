@@ -703,6 +703,7 @@ class PrintRenderFrameHelper
   base::WeakPtrFactory<PrintRenderFrameHelper> weak_ptr_factory_{this};
 
 #if BUILDFLAG(ARKWEB_PRINT)
+  static base::WeakPtr<PrintRenderFrameHelper> static_helper_weak_;
   static blink::WebLocalFrame* static_web_frame_;
 #endif  // BUILDFLAG(ARKWEB_PRINT)
 };

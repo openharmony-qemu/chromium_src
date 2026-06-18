@@ -93,7 +93,7 @@ const char16_t kArkwebScheme16[] = u"arkweb";
 inline constexpr char kChromeUIScheme[] = "chrome";
 inline constexpr char kChromeUIInspectHost[] = "inspect";
 #endif // ARKWEB_DEVTOOLS
- 
+
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
 inline constexpr char kToAppParam[] = "to_app";
 inline constexpr char kChannelParam[] = "channel";

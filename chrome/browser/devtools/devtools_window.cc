@@ -1024,6 +1024,11 @@ void DevToolsWindow::ScheduleShow(const DevToolsToggleAction& action) {
 }
 
 void DevToolsWindow::Show(const DevToolsToggleAction& action) {
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  auto strStackTraceLog = base::debug::StackTrace().ToString();
+  LOG(INFO) << " func:" << __func__ << " strStackTraceLog:" << strStackTraceLog;
+  return;
+#endif // ARKWEB_DEVTOOLS
   if (life_stage_ == kClosing) {
     return;
   }
@@ -1398,8 +1403,12 @@ GURL DevToolsWindow::GetDevToolsURL(Profile* profile,
                                     bool browser_connection) {
   std::string url;
 
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  std::string remote_base;
+#else
   std::string remote_base =
       "?remoteBase=" + DevToolsUI::GetRemoteBaseURL().spec();
+#endif // ARKWEB_DEVTOOLS
 
   const std::string valid_frontend =
       frontend_url.empty() ? chrome::kChromeUIDevToolsURL : frontend_url;

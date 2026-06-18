@@ -25,15 +25,23 @@
 
 // Compatibility layer for Chromium 141 migration
 // crypto/symmetric_key.h was completely removed in Chromium 141
+#if BUILDFLAG(ARKWEB_ENCRYPT)
 namespace crypto {
 class SymmetricKey {
  public:
   enum Algorithm { AES, HMAC_SHA1 };
 
+  SymmetricKey() = delete;
+
+  // Wrap the given span of bytes as a SymmetricKey.
+  explicit SymmetricKey(base::span<const uint8_t> key_bytes);
+  virtual ~SymmetricKey();
+
+  SymmetricKey(const SymmetricKey&);
+  SymmetricKey& operator=(const SymmetricKey&);
+
   static std::unique_ptr<SymmetricKey> Import(Algorithm algorithm,
-                                              const std::string& raw_key) {
-    return std::unique_ptr<SymmetricKey>(new SymmetricKey(raw_key));
-  }
+                                              const std::string& raw_key);
 
   const std::string& key() const { return key_; }
 
@@ -46,25 +54,32 @@ class Encryptor {
  public:
   enum Mode { CBC, CTR, GCM };
 
-  bool Init(SymmetricKey* key, Mode mode, const std::string& iv) {
-    key_ = key;
-    mode_ = mode;
-    iv_ = iv;
-    return true;
-  }
+  Encryptor();
+  ~Encryptor();
 
-  bool Decrypt(const std::string& ciphertext, std::string* plaintext) {
-    // Simple pass-through implementation for compatibility
-    *plaintext = ciphertext;
-    return true;
-  }
+  bool Init(const SymmetricKey* key, Mode mode, std::string_view iv);
+  bool Init(const SymmetricKey* key, Mode mode, base::span<const uint8_t> iv);
+
+  // Decrypts |ciphertext| into |plaintext|.  |ciphertext| must not be empty.
+  bool Decrypt(std::string_view ciphertext, std::string* plaintext);
 
  private:
-  SymmetricKey* key_;
+  raw_ptr<const SymmetricKey, DanglingUntriaged> key_;
   Mode mode_;
-  std::string iv_;
+
+  bool CryptString(bool do_encrypt,
+                   std::string_view input,
+                   std::string* output);
+
+  size_t MaxOutput(bool do_encrypt, size_t length);
+  std::optional<size_t> DecryptGCM(const std::string& input,
+                                    base::span<uint8_t> output,
+                                    std::string* tag);
+
+  std::vector<uint8_t> iv_;
 };
 }
+#endif
 
 #if BUILDFLAG(IS_APPLE)
 #include "crypto/apple/mock_keychain.h"

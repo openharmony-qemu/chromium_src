@@ -67,7 +67,9 @@ class COMPONENT_EXPORT(INPUT) FlingControllerSchedulerClient {
   virtual gfx::Vector2dF GetPixelsPerInch(
       const gfx::PointF& position_in_screen) = 0;
 #if BUILDFLAG(ARKWEB_FLING)
-  virtual bool OnNestedScroll(float& delta_x, float& delta_y) {}
+  virtual bool OnNestedScroll(float& delta_x, float& delta_y) { return false; }
+
+  virtual bool OnNestedFling(float& velocity_x, float& velocity_y) { return false; }
 #endif
 };
 

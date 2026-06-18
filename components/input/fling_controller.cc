@@ -262,26 +262,44 @@ void FlingController::ProgressFling(
   }
 
 #if BUILDFLAG(ARKWEB_FLING)
-  float delta_x = delta_to_scroll.x();
-  float delta_y = delta_to_scroll.y();
-  bool is_scroll_consumed = OnNestedScroll(delta_x, delta_y);
-  if (is_scroll_consumed || delta_to_scroll.x() == delta_x ||
-      delta_to_scroll.y() == delta_y) {
-    last_progress_time_ = current_time;
+  float velocity_x = current_fling_parameters_.velocity.x();
+  float velocity_y = current_fling_parameters_.velocity.y();
+  bool is_consumed = OnNestedFling(velocity_x, velocity_y);
+  if (is_consumed) {
+    if (std::abs(delta_to_scroll.x()) > kMinInertialScrollDelta ||
+        std::abs(delta_to_scroll.y()) > kMinInertialScrollDelta) {
+      GenerateAndSendFlingProgressEvents(current_time, delta_to_scroll);
+      last_progress_time_ = current_time;
+    }
+  } else {
+    float delta_x = delta_to_scroll.x();
+    float delta_y = delta_to_scroll.y();
+    bool is_scroll_consumed = OnNestedScroll(delta_x, delta_y);
+    if (is_scroll_consumed || delta_to_scroll.x() == delta_x ||
+        delta_to_scroll.y() == delta_y) {
+      last_progress_time_ = current_time;
+    }
+    delta_to_scroll.set_x(delta_x);
+    delta_to_scroll.set_y(delta_y);
+    if ((std::abs(delta_to_scroll.x()) > kMinInertialScrollDelta ||
+         std::abs(delta_to_scroll.y()) > kMinInertialScrollDelta) &&
+        !is_scroll_consumed) {
+      base::TimeTicks event_generation_time =
+          first_coalesced_frame_begin_time.value_or(current_time);
+      GenerateAndSendFlingProgressEvents(event_generation_time,
+                                         delta_to_scroll);
+      last_progress_time_ = current_time;
+    }
   }
-  delta_to_scroll.set_x(delta_x);
-  delta_to_scroll.set_y(delta_y);
-  if ((std::abs(delta_to_scroll.x()) > kMinInertialScrollDelta ||
-      std::abs(delta_to_scroll.y()) > kMinInertialScrollDelta) && !is_scroll_consumed) {
 #else
   if (std::abs(delta_to_scroll.x()) > kMinInertialScrollDelta ||
       std::abs(delta_to_scroll.y()) > kMinInertialScrollDelta) {
-#endif
     base::TimeTicks event_generation_time =
         first_coalesced_frame_begin_time.value_or(current_time);
     GenerateAndSendFlingProgressEvents(event_generation_time, delta_to_scroll);
     last_progress_time_ = current_time;
   }
+#endif
 
   // As long as the fling curve is active, the fling progress must get
   // scheduled even when the last delta to scroll was zero.

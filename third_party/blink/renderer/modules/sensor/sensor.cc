@@ -21,6 +21,10 @@
 #include "third_party/blink/renderer/platform/heap/garbage_collected.h"
 #include "third_party/blink/renderer/platform/web_test_support.h"
 
+#if BUILDFLAG(ARKWEB_SENSOR)
+#include "base/logging.h"
+#endif
+
 namespace blink {
 
 namespace {
@@ -293,6 +297,12 @@ void Sensor::Deactivate() {
 
   if (sensor_proxy_->IsInitialized()) {
     DCHECK(configuration_);
+#if BUILDFLAG(ARKWEB_SENSOR)
+    if (state_ == SensorState::kIdle) {
+      LOG(WARNING) << "Deactivate state is kIdle";
+      return;
+    }
+#endif
     sensor_proxy_->RemoveConfiguration(configuration_->Clone());
     last_reported_timestamp_ = 0.0;
   }

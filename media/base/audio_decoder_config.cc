@@ -89,7 +89,12 @@ bool AudioDecoderConfig::Matches(const AudioDecoderConfig& config) const {
        config.should_discard_decoder_delay()) &&
       (target_output_channel_layout() ==
        config.target_output_channel_layout()) &&
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+      (target_output_sample_format() == config.target_output_sample_format()) &&
+      (aac_extra_data() == config.aac_extra_data()));
+#else
       (target_output_sample_format() == config.target_output_sample_format()));
+#endif
 }
 
 std::string AudioDecoderConfig::AsHumanReadableString() const {
@@ -111,7 +116,12 @@ std::string AudioDecoderConfig::AsHumanReadableString() const {
     << ", target_output_channel_layout: "
     << ChannelLayoutToString(target_output_channel_layout())
     << ", target_output_sample_format: "
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+    << SampleFormatToString(target_output_sample_format())
+    << ", has aac extra data: " << base::ToString(!aac_extra_data().empty());
+#else
     << SampleFormatToString(target_output_sample_format());
+#endif
   return s.str();
 }
 

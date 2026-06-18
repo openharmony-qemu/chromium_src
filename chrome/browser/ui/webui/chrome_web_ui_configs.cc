@@ -220,6 +220,10 @@
 #include "chrome/browser/ui/webui/watermark/watermark_ui.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#endif
+
 void RegisterChromeWebUIConfigs() {
   // Don't add calls to `AddWebUIConfig()` for Ash-specific WebUIs here. Add
   // them in chrome_web_ui_configs_chromeos.cc.
@@ -229,7 +233,9 @@ void RegisterChromeWebUIConfigs() {
 
   auto& map = content::WebUIConfigMap::GetInstance();
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  map.AddWebUIConfig(std::make_unique<extensions::ExtensionsUIConfig>());
+  if (base::ohos::IsPcDevice()) {
+    map.AddWebUIConfig(std::make_unique<extensions::ExtensionsUIConfig>());
+  }
 #endif
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   map.AddWebUIConfig(std::make_unique<NetExportUIConfig>());

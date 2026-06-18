@@ -387,6 +387,10 @@
             return false;
         }
 
+        if (element.tagName === 'UL') {
+            return true;
+        }
+
         const targetRect = element.getBoundingClientRect();
         const semantic = semanticMap.get(element);
 

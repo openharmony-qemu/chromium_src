@@ -146,7 +146,7 @@ media::mojom::VideoFrameDataPtr MakeVideoFrameData(
     shared_image = input->shared_image()->Export(
         /*with_buffer_handle=*/true);
     sync_token = input->acquire_sync_token();
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
     return media::mojom::VideoFrameData::NewSharedImageData(
         media::mojom::SharedImageVideoFrameData::New(
             std::move(shared_image.value()), std::move(sync_token),
@@ -165,7 +165,7 @@ media::mojom::VideoFrameDataPtr MakeVideoFrameData(
     // VideoFrames.
     CHECK(!is_mappable_si_enabled);
     gpu::ExportedSharedImage shared_image = input->shared_image()->Export();
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
     return media::mojom::VideoFrameData::NewSharedImageData(
         media::mojom::SharedImageVideoFrameData::New(
             std::move(shared_image), input->acquire_sync_token(),
@@ -434,7 +434,7 @@ bool StructTraits<media::mojom::VideoFrameDataView,
           natural_size, timestamp);
     }
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
     std::optional<gpu::VulkanYCbCrInfo> ycbcr_info;
     if (!shared_image_data.ReadYcbcrData(&ycbcr_info)) {
       return false;

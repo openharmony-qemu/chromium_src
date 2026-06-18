@@ -521,7 +521,7 @@ struct SharedImageVideoFrameData {
   bool is_mappable_si_enabled;
   // |ycbcr_data| is present on Android when the
   // video is hardware decoded and the display compositor uses Vulkan.
-  [EnableIf=is_android]
+  [EnableIf=is_android|is_arkweb]
   gpu.mojom.VulkanYCbCrInfo? ycbcr_data;
 };
 

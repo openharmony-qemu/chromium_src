@@ -838,8 +838,11 @@ VideoFrameExternalResource VideoResourceUpdater::CreateForHardwareFrame(
         viz::TransferableResource::SynchronizationType::kGpuCommandsCompleted;
   }
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
   transfer_resource.ycbcr_info = video_frame->ycbcr_info();
+#endif
+
+#if BUILDFLAG(IS_ANDROID)
   transfer_resource.is_backed_by_surface_view =
       video_frame->metadata().in_surface_view;
 #endif

@@ -511,13 +511,30 @@ void ApplyInertness(StyleResolverState& state) {
   std::optional<bool> css_inert;
 
   if (state.StyleBuilder().Interactivity() == EInteractivity::kInert &&
+#if BUILDFLAG(IS_ARKWEB)
+      !state.StyleBuilder().InteractivityIsInherited()) {
+    // https://issues.chromium.org/issues/473768107
+    // If we applied interactivity:inert to this element, we also need to
+    // set IsCSSInert to true. With this flag set, it is not possible to escape
+    // CSS inertness in the subtree with 'interactivity' set to 'auto' in a
+    // descendant.
+    //
+#else
       !state.StyleBuilder().InteractivityIsInherited() &&
       !state.StyleBuilder().IsCSSInert()) {
     // If the computed value of 'interactivity' is 'inert', set the internal
     // CSS inertness flag to true. With this flag set, it is not possible to
     // escape CSS inertness in the subtree with 'interactivity' set to 'auto'
     // in a descendant.
+#endif
     // TODO(crbug.com/413291835): This is not in line with the current spec.
+#if BUILDFLAG(IS_ARKWEB)
+    // https://issues.chromium.org/issues/473768107
+    //
+    // We explicitly set css_inert even if the inherited IsCSSInert is already
+    // true because we need independent property inheritance from an ancestor
+    // to stop by setting IsCSSInertIsInherited to false.
+#endif
     css_inert = true;
   }
 

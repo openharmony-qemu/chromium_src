@@ -160,7 +160,12 @@ InterpolationValue CSSSuperellipseInterpolationType::CreateNumberValue(
 InterpolationValue CSSSuperellipseInterpolationType::MaybeConvertNeutral(
     const InterpolationValue&,
     ConversionCheckers&) const {
+#if BUILDFLAG(IS_ARKWEB)
+  // https://issues.chromium.org/issues/465806318
+  return InterpolationValue(MakeGarbageCollected<InterpolableNumber>(0));
+#else
   return CreateNumberValue(Superellipse::Round());
+#endif
 }
 
 InterpolationValue CSSSuperellipseInterpolationType::MaybeConvertInitial(

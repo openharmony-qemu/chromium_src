@@ -4590,9 +4590,12 @@ void RenderFrameHostManager::CreateRenderFrameProxy(
       SCOPED_CRASH_KEY_STRING64("Bug1400009", "parent_lifecycle",
                                 RenderFrameHostImpl::LifecycleStateImplToString(
                                     parent_rfh->lifecycle_state()));
-      CHECK(render_view_host);
+      DCHECK(render_view_host);
     }
     if (!render_view_host) {
+#if BUILDFLAG(IS_ARKWEB)
+      LOG(ERROR) << "RenderFrameHostManager::CreateRenderFrameProxy, rvh is nullptr";
+#endif
       // Before creating a new RenderFrameProxyHost, ensure a RenderViewHost
       // exists for |group|, as it creates the page level structure in Blink.
       render_view_host = frame_tree_node_->frame_tree().CreateRenderViewHost(

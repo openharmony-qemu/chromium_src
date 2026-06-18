@@ -13,6 +13,14 @@ export function getHtml(this: ExtensionsItemListElement) {
 <div id="container">
   <managed-footnote ?hidden="${this.filter}"></managed-footnote>
   <div id="content-wrapper" .style="--max-columns: ${this.maxColumns_};">
+    ${this.showBlacklistReviewPanel_ ? html`
+      <div class="items-container panel">
+        <extensions-blacklist-review-panel
+            .extensions="${this.blacklistedExtensions_}"
+            .delegate="${this.delegate}">
+        </extensions-blacklist-review-panel>
+      </div>` : ''}
+
     ${this.showSafetyCheckReviewPanel_ ? html`
       <div class="items-container panel">
         <extensions-review-panel .extensions="${this.unsafeExtensions_}"
@@ -26,7 +34,9 @@ export function getHtml(this: ExtensionsItemListElement) {
             .extensions="${this.mv2DeprecatedExtensions_}"
             .delegate="${this.delegate}"
             .mv2ExperimentStage="${this.mv2ExperimentStage_}"
-            ?show-title="${this.showSafetyCheckReviewPanel_}">
+            ?show-title="${
+                this.showBlacklistReviewPanel_ ||
+                this.showSafetyCheckReviewPanel_}">
         </extensions-mv2-deprecation-panel>
       </div>` : ''}
 

@@ -32,6 +32,11 @@ class DeveloperPrivateEventRouter : public DeveloperPrivateEventRouterShared,
   void OnAppWindowAdded(AppWindow* window) override;
   void OnAppWindowRemoved(AppWindow* window) override;
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  void OnExtensionStateChanged(const ExtensionId& extension_id,
+                               bool state) override;
+#endif
+
   // ToolbarActionsModel::Observer:
   void OnToolbarActionAdded(const ToolbarActionsModel::ActionId& id) override {}
   void OnToolbarActionRemoved(

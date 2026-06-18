@@ -158,7 +158,11 @@ bool ExtensionInstallForceListPolicyHandler::ParseList(
     size_t pos = entry_string.find(';');
     if (pos == std::string::npos) {
       extension_id = entry_string;
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
       update_url = extension_urls::kChromeWebstoreUpdateURL;
+#else
+      update_url = extension_urls::GetDefaultWebstoreUpdateUrl().spec();
+#endif
     } else {
       extension_id = entry_string.substr(0, pos);
       update_url = entry_string.substr(pos + 1);

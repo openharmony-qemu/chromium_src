@@ -53,6 +53,10 @@
 #include "base/system/sys_info.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/extensions/browser/extension_util_ext.cc"
+#endif
+
 namespace extensions {
 namespace util {
 

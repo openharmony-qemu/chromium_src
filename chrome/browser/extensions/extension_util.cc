@@ -350,6 +350,11 @@ std::u16string GetFixupExtensionNameForUIDisplay(
 void RegisterProfilePrefs(user_prefs::PrefRegistrySyncable* registry) {
   registry->RegisterBooleanPref(prefs::kShouldGarbageCollectStoragePartitions,
                                 false);
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  LOG(INFO) << "registry webstore config to prefs";
+  registry->RegisterDictionaryPref(pref_names::kWebStoreConfig);
+#endif
 }
 
 bool AreExtensionsDisabled(const base::CommandLine& command_line,

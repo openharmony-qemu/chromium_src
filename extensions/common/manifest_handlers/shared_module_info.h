@@ -20,6 +20,9 @@ class SharedModuleInfo : public Extension::ManifestData {
   ~SharedModuleInfo() override;
 
   struct ImportInfo {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    int webstore_type;
+#endif
     ExtensionId extension_id;
     std::string minimum_version;
   };

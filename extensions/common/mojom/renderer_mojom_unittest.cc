@@ -62,6 +62,9 @@ class TestRendererImpl : public mojom::Renderer {
       std::vector<mojom::ExtensionLoadedParamsPtr> loaded_extensions) override {
   }
   void SetDeveloperMode(bool current_developer_mode) override {}
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  void SetWebStoreConfig(mojom::WebStoreConfigPtr config) override {}
+#endif
   void SetSessionInfo(version_info::Channel channel,
                       mojom::FeatureSessionType session_type) override {}
   void SetSystemFont(const std::string& font_family,

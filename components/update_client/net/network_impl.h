@@ -18,6 +18,10 @@
 #include "services/network/public/mojom/url_response_head.mojom-forward.h"
 
 namespace network {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+struct ResourceRequest;
+#endif
+
 class SharedURLLoaderFactory;
 }  // namespace network
 
@@ -52,6 +56,10 @@ class NetworkFetcherImpl : public NetworkFetcher {
       override;
 
  private:
+ #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  void SetUserAgent(network::ResourceRequest* resource_request);
+#endif
+
   void OnResponseStartedCallback(
       ResponseStartedCallback response_started_callback,
       const GURL& final_url,

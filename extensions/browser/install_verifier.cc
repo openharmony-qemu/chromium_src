@@ -43,6 +43,11 @@
 #include "services/network/public/mojom/url_loader_factory.mojom.h"
 #include "ui/base/l10n/l10n_util.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/extensions/browser/custom_handler.h"
+#include "extensions/common/extension_urls.h"
+#endif
+
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 
 namespace extensions {
@@ -67,6 +72,12 @@ enum class VerifyStatus {
 VerifyStatus GetExperimentStatus() {
 #if BUILDFLAG(GOOGLE_CHROME_BRANDING) && \
     (BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC))
+  return VerifyStatus::ENFORCE;
+#elif BUILDFLAG(IS_OHOS)
+  if (!extension_urls::IsWebStoreEnable()) {
+    return VerifyStatus::NONE;
+  }
+
   return VerifyStatus::ENFORCE;
 #else
   return VerifyStatus::NONE;
@@ -187,6 +198,13 @@ void InstallVerifier::VerifyExtension(const std::string& extension_id) {
 }
 
 void InstallVerifier::AddMany(const ExtensionIdSet& ids, OperationType type) {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (!extension_urls::IsWebStoreEnable()) {
+    OnVerificationComplete(true, type);
+    return;
+  }
+#endif
+
   if (!ShouldFetchSignature()) {
     OnVerificationComplete(true, type);  // considered successful.
     return;
@@ -216,6 +234,29 @@ void InstallVerifier::AddProvisional(const ExtensionIdSet& ids) {
   provisional_.insert(ids.begin(), ids.end());
   AddMany(ids, ADD_PROVISIONAL);
 }
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+void InstallVerifier::AddProvisional(
+    const std::list<SharedModuleInfo::ImportInfo>& pending_modules) {
+  ExtensionIdSet ids;
+  std::list<SharedModuleInfo::ImportInfo>::const_iterator i;
+  for (i = pending_modules.begin(); i != pending_modules.end(); ++i) {
+    ids.insert(i->extension_id);
+    provisional_.insert(i->extension_id);
+    webstore_types_[i->extension_id] = i->webstore_type;
+  }
+
+  AddMany(ids, ADD_PROVISIONAL);
+}
+
+void InstallVerifier::VerifyExtension(int webstore_type,
+                                      const std::string& extension_id) {
+  ExtensionIdSet ids;
+  ids.insert(extension_id);
+  webstore_types_[extension_id] = webstore_type;
+  AddMany(ids, ADD_SINGLE);
+}
+#endif
 
 void InstallVerifier::Remove(const std::string& id) {
   ExtensionIdSet ids;
@@ -368,6 +409,12 @@ void InstallVerifier::OnVerificationComplete(bool success, OperationType type) {
     // We don't need to check disable reasons for provisional adds or removals.
     case ADD_PROVISIONAL:
     case ADD_SINGLE:
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      if (success) {
+        ExtensionsBrowserClient::Get()->CheckManagementPolicy(context_);
+      }
+      break;
+#endif
     case REMOVE:
       break;
   }
@@ -406,6 +453,10 @@ void InstallVerifier::BeginFetch() {
   ExtensionIdSet ids_to_sign;
   if (signature_.get()) {
     ids_to_sign.insert(signature_->ids.begin(), signature_->ids.end());
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    ids_to_sign.insert(signature_->invalid_ids.begin(),
+                       signature_->invalid_ids.end());
+#endif
   }
   if (operation.type == InstallVerifier::REMOVE) {
     for (const std::string& id : operation.ids) {
@@ -418,7 +469,29 @@ void InstallVerifier::BeginFetch() {
 
   auto url_loader_factory = context_->GetDefaultStoragePartition()
                                 ->GetURLLoaderFactoryForBrowserProcess();
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   signer_ = std::make_unique<InstallSigner>(url_loader_factory, ids_to_sign);
+#else
+  ExtensionRegistry* extension_registry = ExtensionRegistry::Get(context_);
+  if (!extension_registry) {
+    return;
+  }
+
+  std::map<ExtensionId, int> webstore_types;
+  for (auto& id : ids_to_sign) {
+    auto iter = webstore_types_.find(id);
+    if (iter != webstore_types_.end()) {
+      webstore_types[id] = iter->second;
+      webstore_types_.erase(iter);
+      continue;
+    }
+
+    const Extension* extension =
+        extension_registry->GetExtensionById(id, ExtensionRegistry::EVERYTHING);
+    webstore_types[id] = CustomData::GetStoreType(extension);
+  }
+  signer_ = std::make_unique<InstallSigner>(url_loader_factory, webstore_types);
+#endif
   signer_->GetSignature(base::BindOnce(&InstallVerifier::SignatureCallback,
                                        weak_factory_.GetWeakPtr()));
 }
@@ -460,6 +533,12 @@ void InstallVerifier::SignatureCallback(
       provisional_ =
           base::STLSetDifference<ExtensionIdSet>(provisional_, signature_->ids);
     }
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    LOG_FEEDBACK(INFO) << "id count is " << signature_->ids.size()
+                       << ",invalid id count is "
+                       << signature_->invalid_ids.size();
+#endif
   }
 
   // TODO(asargent) - if this was something like a network error, we need to

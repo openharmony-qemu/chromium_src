@@ -84,6 +84,7 @@ base::FilePath GetPath() {
     if (!data_path.empty()) {
       return data_path.Append(target_data_dir_tag);
     }
+  }
 
   base::PathService::Get(base::DIR_CACHE, &cache_path);
   return cache_path;

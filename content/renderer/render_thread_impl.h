@@ -428,6 +428,12 @@ class CONTENT_EXPORT RenderThreadImpl
   void NotifyLocaleChanged(const std::string& update_locale) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_ENABLE_JSDUMP)
+  void RequestJSDump(mojo::PlatformHandle socket,
+                     bool needGC,
+                     bool needSnapshot, bool needRaw) override;
+#endif
+
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
   void OnChannelConnected(int32_t peer_pid) override;
 #endif

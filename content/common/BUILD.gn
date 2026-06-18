@@ -513,6 +513,10 @@ mojom("mojo_bindings") {
     enabled_features += [ "arkweb_i18n" ]
   }
 
+  if (enable_arkweb  && !is_component_build) {
+    enabled_features += [ "arkweb_enable_jsdump" ]
+  }
+
   if (arkweb_pdf) {
     enabled_features += [ "arkweb_pdf" ]
   }

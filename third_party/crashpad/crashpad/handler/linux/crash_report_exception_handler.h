@@ -123,6 +123,10 @@ class CrashReportExceptionHandler : public ExceptionHandlerServer::Delegate {
   const UserStreamDataSources* user_stream_data_sources_;  // weak
 };
 
+#if BUILDFLAG(ARKWEB_ENABLE_JSDUMP)
+bool HandleMemorySnapshot(pid_t target_pid, int snapshot_fd, int socket);
+#endif
+
 }  // namespace crashpad
 
 #endif  // CRASHPAD_HANDLER_LINUX_CRASH_REPORT_EXCEPTION_HANDLER_H_

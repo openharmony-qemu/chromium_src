@@ -58,10 +58,6 @@
 #endif
 #include "arkweb/chromium_ext/components/viz/service/display/direct_renderer_ext.h"
 
-#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
-#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
-#endif
-
 namespace viz {
 
 namespace {
@@ -775,14 +771,7 @@ void DirectRenderer::DrawRenderPass(const AggregatedRenderPass* render_pass) {
   const bool is_root_render_pass =
       current_frame()->current_render_pass == current_frame()->root_render_pass;
 
-#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
-  auto& system_properties = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-                              .GetSystemPropertiesInstance();
-  std::string policy = system_properties.GetStringParameter("web.gpu.partial.draw", "none");
-  if (use_partial_swap_ && (policy == "none")) {
-#else
   if (use_partial_swap_) {
-#endif
     render_pass_scissor_in_draw_space.Intersect(
         ComputeScissorRectForRenderPass(current_frame()->current_render_pass));
   }

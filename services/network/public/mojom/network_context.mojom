@@ -1791,6 +1791,10 @@ interface NetworkContext {
   // the cached certificate.
   FlushMatchingCachedClientCert(X509Certificate certificate);
 
+  // Clears all client certificate preferences for the current browser context.
+  [EnableIf=arkweb_cert_authentication]
+  ClearClientAuthCache();
+
   // Clients should revoke network access for nonces using
   // `StoragePartitionImpl::RevokeNetworkForNoncesInNetworkContext` instead of
   // this function. This is because `RevokeNetworkForNoncesInNetworkContext`

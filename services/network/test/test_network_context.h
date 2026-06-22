@@ -408,6 +408,10 @@ class TestNetworkContext : public mojom::NetworkContext {
   void AddQuicHints(
       const std::vector<url::SchemeHostPort>& origins,
       const net::NetworkAnonymizationKey& network_anonymization_key) override {}
+
+#if BUILDFLAG(ARKWEB_CERT_AUTHENTICATION)
+  void ClearClientAuthCache() override {}
+#endif  // BUILDFLAG(ARKWEB_CERT_AUTHENTICATION)
 };
 
 }  // namespace network

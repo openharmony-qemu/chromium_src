@@ -17,6 +17,9 @@
 #include "third_party/blink/renderer/platform/bindings/exception_state.h"
 #include "third_party/blink/renderer/platform/instrumentation/tracing/trace_event.h"
 #include "third_party/blink/renderer/platform/mediastream/webaudio_destination_consumer.h"
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/modules/webaudio/media_stream_audio_destination_handler_for_include.cc"
+#endif // ARKWEB_MEDIA_CAPTURE
 
 namespace blink {
 

@@ -30,6 +30,10 @@
 #include "third_party/blink/renderer/platform/wtf/text/string_view.h"
 #include "third_party/blink/renderer/platform/wtf/wtf.h"
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/modules/mediarecorder/audio_track_recorder_for_include.cc"
+#endif // ARKWEB_MEDIA_CAPTURE
+
 #if BUILDFLAG(IS_WIN) || ((BUILDFLAG(IS_MAC) || BUILDFLAG(IS_ANDROID)) && \
                           BUILDFLAG(USE_PROPRIETARY_CODECS))
 #define HAS_AAC_ENCODER 1

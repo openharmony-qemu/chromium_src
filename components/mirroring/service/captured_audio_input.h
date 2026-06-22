@@ -63,6 +63,9 @@ class COMPONENT_EXPORT(MIRRORING_SERVICE) CapturedAudioInput final
   // media::mojom::AudioInputStreamClient implementation.
   void OnError(media::mojom::InputStreamErrorCode code) override;
   void OnMutedStateChanged(bool is_muted) override;
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+  void OnPausedStateChanged(bool is_paused) override {}
+#endif // ARKWEB_MEDIA_CAPTURE
 
   SEQUENCE_CHECKER(sequence_checker_);
 

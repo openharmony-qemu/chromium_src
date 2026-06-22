@@ -38,6 +38,9 @@
 #include "third_party/blink/renderer/platform/allow_discouraged_type.h"
 #include "third_party/blink/renderer/platform/audio/audio_source_provider.h"
 #include "third_party/blink/renderer/platform/platform_export.h"
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+#include "base/functional/callback.h"
+#endif // ARKWEB_MEDIA_CAPTURE
 
 namespace blink {
 
@@ -56,6 +59,10 @@ class PLATFORM_EXPORT MediaStreamWebAudioSource final
   // blink::AudioSourceProvider implementation.
   void ProvideInput(AudioBus*, int frames_to_process) override;
   void SetClient(AudioSourceProviderClient*) override {}
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+  void SetOnSourcePausedChangedCallback(
+      base::RepeatingCallback<void(bool)> callback) override;
+#endif // ARKWEB_MEDIA_CAPTURE
 
   std::unique_ptr<WebAudioSourceProvider> web_audio_source_provider_;
   std::vector<float*> web_audio_data_

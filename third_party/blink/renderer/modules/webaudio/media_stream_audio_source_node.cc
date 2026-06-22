@@ -32,6 +32,9 @@
 #include "third_party/blink/renderer/modules/webaudio/audio_context.h"
 #include "third_party/blink/renderer/modules/webaudio/audio_graph_tracer.h"
 #include "third_party/blink/renderer/modules/webaudio/media_stream_audio_source_handler.h"
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/modules/webaudio/media_stream_audio_source_node_for_include.cc"
+#endif // ARKWEB_MEDIA_CAPTURE
 
 namespace blink {
 
@@ -104,7 +107,18 @@ MediaStreamAudioSourceNode* MediaStreamAudioSourceNode::Create(
 
   // Initializes the node with the stereo output channel.
   node->SetFormat(2, context.sampleRate());
-
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+  LOG(DEBUG) << "MediaStreamAudioSourceNode::Create, SetOnSourcePausedChangedCallback";
+  // Wire up pause state callback from the underlying sink to this node.
+  node->GetMediaStreamAudioSourceHandler().SetOnSourcePausedChangedCallback(
+      base::BindRepeating(
+      [](WeakPersistent<MediaStreamAudioSourceNode> weak_node, bool is_paused) {
+        if (weak_node) {
+          weak_node->OnSourcePausedChanged(is_paused);
+        }
+      },
+      WrapWeakPersistent(node)));
+#endif // ARKWEB_MEDIA_CAPTURE
   // Lets the context know this source node started.
   context.NotifySourceNodeStartedProcessing(node);
 

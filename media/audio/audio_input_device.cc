@@ -28,6 +28,10 @@
 #include "media/base/audio_bus.h"
 #include "media/base/media_switches.h"
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+#include "arkweb/chromium_ext/media/audio/audio_input_device_for_include.cc"
+#endif // ARKWEB_MEDIA_CAPTURE
+
 namespace media {
 
 namespace {

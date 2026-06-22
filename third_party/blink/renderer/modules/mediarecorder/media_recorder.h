@@ -68,6 +68,11 @@ class MODULES_EXPORT MediaRecorder
   void resume(ExceptionState& exception_state);
   void requestData(ExceptionState& exception_state);
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+  // Called internally when the audio capturer is paused/resumed.
+  void InternalPause();
+  void InternalResume();
+#endif // ARKWEB_MEDIA_CAPTURE
   static bool isTypeSupported(ExecutionContext* context, const String& type);
 
   // EventTarget

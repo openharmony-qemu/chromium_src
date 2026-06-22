@@ -65,6 +65,12 @@ class AudioCapturerSource
     // audio processor has been created.
     virtual void OnCaptureProcessorCreated(AudioProcessorControls* controls) {}
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+    // Signals the capturer has been paused or resumed. Default implementation
+    // forwards to OnCaptureMuted for backwards compatibility.
+    virtual void OnCapturePaused(bool is_paused) {}
+#endif // ARKWEB_MEDIA_CAPTURE
+
    protected:
     virtual ~CaptureCallback() {}
   };

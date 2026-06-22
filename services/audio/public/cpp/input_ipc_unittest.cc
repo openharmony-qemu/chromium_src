@@ -105,6 +105,9 @@ class MockDelegate : public media::AudioInputIPCDelegate {
   MOCK_METHOD1(OnError, void(media::AudioCapturerSource::ErrorCode));
   MOCK_METHOD1(OnMuted, void(bool));
   MOCK_METHOD0(OnIPCClosed, void());
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+  MOCK_METHOD1(OnPaused, void(bool));
+#endif // ARKWEB_MEDIA_CAPTURE
 };
 
 class InputIPCTest : public ::testing::Test {

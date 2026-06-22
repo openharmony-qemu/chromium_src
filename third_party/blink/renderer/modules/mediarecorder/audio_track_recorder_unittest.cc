@@ -322,6 +322,10 @@ class MockAudioTrackRecorderCallbackInterface
               (media::EncoderStatus status),
               (override));
   MOCK_METHOD(void, OnSourceReadyStateChanged, (), (override));
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+  MOCK_METHOD(void, OnSourcePaused, (), (override));
+  MOCK_METHOD(void, OnSourceResumed, (), (override));
+#endif // ARKWEB_MEDIA_CAPTURE
   void Trace(Visitor* v) const override { v->Trace(weak_factory_); }
   WeakCell<AudioTrackRecorder::CallbackInterface>* GetWeakCell() {
     return weak_factory_.GetWeakCell();

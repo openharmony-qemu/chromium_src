@@ -85,6 +85,11 @@ class PLATFORM_EXPORT MediaStreamAudioTrack : public MediaStreamTrackPlatform {
   // this track.
   int NumPreferredChannels() const;
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+  // Called by MediaStreamAudioSource to propagate pause state to sinks.
+  void OnSourcePausedChanged(bool is_paused);
+#endif // ARKWEB_MEDIA_CAPTURE
+  
   bool IsEnabled() const;
 
   // Returns a unique class identifier. Some subclasses override and use this

@@ -184,6 +184,10 @@ mojom("mojom") {
     enabled_features += ["arkweb_media_cast"]
   }
 
+  if (arkweb_media_capture) {
+    enabled_features += ["arkweb_media_capture"]
+  }
+
   # Help select ServiceSandbox for media_service.mojom.
   if (mojo_media_host == "browser") {
     enabled_features += [ "mojo_media_in_browser" ]

@@ -41,6 +41,13 @@ class MODULES_EXPORT MediaStreamAudioDestinationHandler final
   // collected. Returns true when the removal is successful.
   bool RemoveConsumer();
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+  // Called when a connected source track's pause state changes.
+  // Propagates the state to the WebAudioDestinationConsumer (i.e.,
+  // WebAudioMediaStreamSource).
+  void OnSourcePausedChanged(bool is_paused);
+#endif // ARKWEB_MEDIA_CAPTURE
+
  private:
   friend class MediaStreamAudioDestinationHandlerTest;
 

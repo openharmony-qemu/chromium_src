@@ -41,6 +41,10 @@
 #include "third_party/blink/renderer/platform/wtf/cross_thread_functional.h"
 #include "third_party/webrtc/media/base/media_channel.h"
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/modules/mediastream/processed_local_audio_source_for_include.cc"
+#endif // ARKWEB_MEDIA_CAPTURE
+
 using base::StringPrintf;
 
 namespace blink {

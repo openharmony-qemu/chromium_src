@@ -16,6 +16,9 @@
 #include "media/base/audio_timestamp_helper.h"
 #include "third_party/blink/public/web/web_local_frame.h"
 #include "third_party/blink/renderer/platform/media/web_audio_source_provider_client.h"
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/modules/mediastream/webaudio_media_stream_audio_sink_for_include.cc"
+#endif // ARKWEB_MEDIA_CAPTURE
 
 namespace blink {
 

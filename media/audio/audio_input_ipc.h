@@ -42,6 +42,11 @@ class MEDIA_EXPORT AudioInputIPCDelegate {
   // immediately.
   virtual void OnIPCClosed() = 0;
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPTURE)
+  // Called when an audio stream is paused or resumed by the capturer.
+  virtual void OnPaused(bool is_paused) = 0;
+#endif // ARKWEB_MEDIA_CAPTURE
+
  protected:
   virtual ~AudioInputIPCDelegate();
 };

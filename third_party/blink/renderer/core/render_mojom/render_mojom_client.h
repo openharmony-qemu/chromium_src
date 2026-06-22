@@ -33,8 +33,6 @@ using OHOS::NWeb::OhosAdapterHelper;
 
 // Class here is used for render to transfer something to browser.
 
-class SysPropRenderObserverClientImpl;
-
 // This head file will be used by many objects, in case that compilation sequence is different, the include statement
 // for mojom is moved to the source file, and use a class to control the mojom interface class.
 class SysPropRenderObserverClientRep {
@@ -49,8 +47,7 @@ class SysPropRenderObserverClientRep {
   void AttachSysPropObserver(uint8_t key, OHOS::NWeb::SystemPropertiesObserver* callback);
 
   void DetachSysPropObserver(uint8_t key, OHOS::NWeb::SystemPropertiesObserver* callback);
- private:
-  SysPropRenderObserverClientImpl* impl_;
+
 };
 
 class CORE_EXPORT ResSchedReportClient final {

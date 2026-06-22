@@ -28,6 +28,11 @@ class VIZ_CLIENT_EXPORT FrameEvictorClient {
     // `embedded_ids` contains a list of SurfaceIds embedded by the UI
     // compositor.
     std::vector<SurfaceId> embedded_ids;
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+    // `ui_compositor_id`, if valid, is the SurfaceId of the UI compositor root
+    // surface to evict.
+    SurfaceId ui_compositor_id;
+#endif
   };
 
   virtual ~FrameEvictorClient() = default;
@@ -65,12 +70,19 @@ class VIZ_CLIENT_EXPORT FrameEvictor : public FrameEvictionManagerClient {
   bool visible() const { return visible_; }
 
   // Returns an ordered collection of `SurfaceIds` that should be evicted.
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  std::vector<SurfaceId> CollectSurfaceIdsForEviction(bool isProcessMemoryPressure = false) const;
+#else
   std::vector<SurfaceId> CollectSurfaceIdsForEviction() const;
+#endif
 
  private:
   // FrameEvictionManagerClient implementation.
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  void EvictCurrentFrame(bool isProcessMemoryPressure = false) override;
+#else
   void EvictCurrentFrame() override;
-
+#endif
   raw_ptr<FrameEvictorClient> client_;
   bool has_surface_ = false;
   bool visible_ = false;

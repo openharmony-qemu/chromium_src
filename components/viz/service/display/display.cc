@@ -1156,6 +1156,11 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
     }
 
     OverdrawTracker::EstimateAndRecordOverdrawAsUMAMetric(&frame);
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+    if (IsEvictUnlockFrameEnabled() && disable_draw_and_swap_on_next_frame_) {
+      renderer_->SetNextFrameSkipsDrawRenderPasses(true);
+    }
+#endif
 
     draw_timer.emplace();
     overlay_processor_->SetFrameSequenceNumber(frame_sequence_number_);
@@ -1172,6 +1177,11 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
 #if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE) && !defined(COMPONENT_BUILD) // FIXME
   should_swap = display_utils_->ShouldDisableSwap(should_swap);
 #endif  // ARKWEB_MAXIMIZE_RESIZE
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  if (IsEvictUnlockFrameEnabled()) {
+    should_swap = !disable_draw_and_swap_on_next_frame_ && should_swap;
+  }
+#endif
   if (should_swap) {
     PresentationGroupTiming& presentation_group_timing =
         pending_presentation_group_timings_.emplace_back();
@@ -1320,6 +1330,11 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
     RecordFrameTypes(has_interactive_frame, has_animated_frame);
 
     renderer_->SwapBuffers(std::move(swap_frame_data));
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+    if (IsEvictUnlockFrameEnabled()) {
+      client_->DisplayDidRealSwapBuffer();
+    }
+#endif
 #if BUILDFLAG(ARKWEB_CLEAN_BUFFERS_WHEN_INVISIBLE)
     if (display_utils_) {
       display_utils_->ReallocatedFrameBuffersIfNeed();
@@ -1363,6 +1378,10 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
       scheduler_->DidReceiveSwapBuffersAck();
     }
   }
+
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  disable_draw_and_swap_on_next_frame_ = false;
+#endif
 
   client_->DisplayDidDrawAndSwap();
   // Garbage collection can lead to sync IPCs to the GPU service to verify sync

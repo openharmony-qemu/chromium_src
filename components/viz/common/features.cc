@@ -401,6 +401,13 @@ const base::FeatureParam<int> kNumberPendingFramesUntilThrottle{
     &kNoCompositorFrameAcks, "pending_frames", 1};
 BASE_FEATURE(kDisplaySchedulerAsClient, base::FEATURE_DISABLED_BY_DEFAULT);
 
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+// Evict unlock frame
+BASE_FEATURE(kEvictUnlockFrame,
+             "EvictUnlockFrame",
+             base::FEATURE_ENABLED_BY_DEFAULT);
+#endif // BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+
 int DrawQuadSplitLimit() {
   constexpr int kDefaultDrawQuadSplitLimit = 5;
   constexpr int kMinDrawQuadSplitLimit = 1;
@@ -593,5 +600,11 @@ bool ShouldAckCOREarlyForViewTransition() {
   return base::FeatureList::IsEnabled(
       features::kAckCopyOutputRequestEarlyForViewTransition);
 }
+
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+bool IsEvictUnlockFrameEnabled() {
+  return base::FeatureList::IsEnabled(features::kEvictUnlockFrame);
+}
+#endif // BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
 
 }  // namespace features

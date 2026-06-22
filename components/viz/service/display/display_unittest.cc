@@ -142,6 +142,10 @@ class StubDisplayClient : public DisplayClient {
   void RestoreRenderFit(const FrameSinkId& frame_sink_id) override {}
   void ModifyRenderFit(int32_t fitType, const FrameSinkId& frame_sink_id) override {}
 #endif // ARKWEB_UNITTESTS
+
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  void DisplayDidRealSwapBuffer() override {}
+#endif
 };
 
 void CopyCallback(bool* called,

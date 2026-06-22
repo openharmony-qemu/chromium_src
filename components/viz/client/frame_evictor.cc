@@ -10,6 +10,9 @@
 #include "base/feature_list.h"
 #include "build/buildflag.h"
 #include "components/viz/common/features.h"
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+#include "components/viz/common/viz_utils.h"
+#endif
 
 namespace viz {
 
@@ -48,9 +51,20 @@ void FrameEvictor::SetVisible(bool visible) {
   }
 }
 
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+std::vector<SurfaceId> FrameEvictor::CollectSurfaceIdsForEviction(bool isProcessMemoryPressure) const {
+#else
 std::vector<SurfaceId> FrameEvictor::CollectSurfaceIdsForEviction() const {
+#endif
   auto ids = client_->CollectSurfaceIdsForEviction();
   std::vector<SurfaceId> output_ids = std::move(ids.embedded_ids);
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  // 1: max child surface size
+  // also need to evict root frame once memory pressure is critical
+  if (IsEvictUnlockFrameEnabled() && ids.embedded_ids.size() > 1 && !isProcessMemoryPressure) {
+    ids.ui_compositor_id = viz::SurfaceId();
+  }
+#endif
   auto current = client_->GetCurrentSurfaceId();
   DCHECK(output_ids.empty() || !current.is_valid() ||
          base::Contains(output_ids, current));
@@ -64,13 +78,24 @@ std::vector<SurfaceId> FrameEvictor::CollectSurfaceIdsForEviction() const {
     output_ids.push_back(pre_nav_surface_id);
   }
 
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  if (ids.ui_compositor_id.is_valid()) {
+    output_ids.push_back(ids.ui_compositor_id);
+  }
+#endif
+
   std::ranges::sort(output_ids.begin(), output_ids.end());
 
   return output_ids;
 }
 
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+void FrameEvictor::EvictCurrentFrame(bool isProcessMemoryPressure) {
+  client_->EvictDelegatedFrame(CollectSurfaceIdsForEviction(isProcessMemoryPressure));
+}
+#else
 void FrameEvictor::EvictCurrentFrame() {
   client_->EvictDelegatedFrame(CollectSurfaceIdsForEviction());
 }
-
+#endif
 }  // namespace viz

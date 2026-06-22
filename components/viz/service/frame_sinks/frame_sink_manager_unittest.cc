@@ -9,6 +9,9 @@
 #include "base/containers/contains.h"
 #include "base/run_loop.h"
 #include "base/strings/string_number_conversions.h"
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+#include "base/test/run_until.h"
+#endif
 #include "base/test/scoped_feature_list.h"
 #include "base/test/test_trace_processor.h"
 #include "components/input/features.h"
@@ -905,7 +908,16 @@ TEST_F(FrameSinkManagerTest, EvictRootSurfaceId) {
 #else
   manager_->EvictSurfaces({surface_id});
 #endif
+
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  // Eviction of the root surface takes a snapshot, so the root surface will
+  // not be evicted immediately.
+  EXPECT_TRUE(base::test::RunUntil([&]() {
+    return !GetRootCompositorFrameSinkImpl()->CurrentSurfaceId().is_valid();
+  }));
+#else
   EXPECT_FALSE(GetRootCompositorFrameSinkImpl()->CurrentSurfaceId().is_valid());
+#endif
   manager_->InvalidateFrameSinkId(kFrameSinkIdRoot, {});
 }
 
@@ -934,7 +946,16 @@ TEST_F(FrameSinkManagerTest, EvictNewerRootSurfaceId) {
 #else
   manager_->EvictSurfaces({{kFrameSinkIdRoot, next_local_surface_id}});
 #endif
+
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+ // Eviction of the root surface takes a snapshot, so the root surface will
+  // not be evicted immediately.
+  EXPECT_TRUE(base::test::RunUntil([&]() {
+    return !GetRootCompositorFrameSinkImpl()->CurrentSurfaceId().is_valid();
+  }));
+#else
   EXPECT_FALSE(GetRootCompositorFrameSinkImpl()->CurrentSurfaceId().is_valid());
+#endif
   manager_->InvalidateFrameSinkId(kFrameSinkIdRoot, {});
 }
 
@@ -967,7 +988,17 @@ TEST_F(FrameSinkManagerTest, SubmitCompositorFrameWithEvictedSurfaceId) {
 #else
   manager_->EvictSurfaces({surface_id, surface_id2});
 #endif
+
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  // Eviction of the root surface takes a snapshot, so the root surface will
+  // not be evicted immediately.
+  EXPECT_TRUE(base::test::RunUntil([&]() {
+    return !GetRootCompositorFrameSinkImpl()->CurrentSurfaceId().is_valid();
+  }));
+#else
   EXPECT_FALSE(GetRootCompositorFrameSinkImpl()->CurrentSurfaceId().is_valid());
+#endif
+
   GetRootCompositorFrameSinkImpl()->SubmitCompositorFrame(
       local_surface_id2, MakeDefaultCompositorFrame(), std::nullopt, 0);
 

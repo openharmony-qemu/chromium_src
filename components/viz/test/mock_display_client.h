@@ -53,6 +53,10 @@ class MockDisplayClient : public mojom::DisplayClient {
   MOCK_METHOD1(DidCompleteSwapWithNewSize, void(const gfx::Size&));
 #endif  // BUILDFLAG(IS_LINUX) && BUILDFLAG(IS_OZONE_X11)
 
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  MOCK_METHOD0(NotifyFirstRealSwapBuffer, void());
+#endif  // BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+
 #if BUILDFLAG(ARKWEB_UNITTESTS)
   ARKWEB_UNITTESTS_MOCK_DISPLAY_CLIENT()
 #endif

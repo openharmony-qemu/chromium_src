@@ -62,6 +62,10 @@
 #include "arkweb/chromium_ext/components/viz/service/frame_sinks/external_begin_frame_source_ohos.h"
 #endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
 
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+#include "components/viz/common/viz_utils.h"
+#endif
+
 namespace viz {
 
 namespace {
@@ -332,6 +336,12 @@ RootCompositorFrameSinkImpl::~RootCompositorFrameSinkImpl() {
       begin_frame_source());
 }
 
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+bool RootCompositorFrameSinkImpl::WillEvictSurface(
+    const SurfaceId& surface_id) {
+  return eviction_handler_.WillEvictSurface(surface_id);
+}
+#else
 void RootCompositorFrameSinkImpl::DidEvictSurface(const SurfaceId& surface_id) {
   const SurfaceId& current_surface_id = display_->CurrentSurfaceId();
   if (!current_surface_id.is_valid()) {
@@ -348,12 +358,31 @@ void RootCompositorFrameSinkImpl::DidEvictSurface(const SurfaceId& surface_id) {
     display_->InvalidateCurrentSurfaceId();
   }
 }
+#endif
 
 const SurfaceId& RootCompositorFrameSinkImpl::CurrentSurfaceId() const {
   return display_->CurrentSurfaceId();
 }
 
 void RootCompositorFrameSinkImpl::SetDisplayVisible(bool visible) {
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  if (visible) {
+    // If the display has been explicitly set to visible, no need to push any
+    // eviction content.
+    eviction_handler_.MaybeFinishEvictionProcess();
+  }
+  if (IsEvictUnlockFrameEnabled()) {
+    if (visible) {
+      eviction_handler_.SetNextEvictLocalSurfaceId(LocalSurfaceId());
+    } else {
+      needs_notify_first_swap_buffer_ = true;
+    }
+    LOG(INFO) << "viz RootCompositorFrameSinkImpl::SetDisplayVisible needs_notify_first_swap_buffer: " <<
+      needs_notify_first_swap_buffer_ << " visible: " << visible;
+    TRACE_EVENT2("viz", "RootCompositorFrameSinkImpl::SetDisplayVisible", " visible: ", visible,
+      "sink_id:", support_->frame_sink_id().ToString());
+  }
+#endif
   display_->SetVisible(visible);
 }
 
@@ -628,7 +657,14 @@ RootCompositorFrameSinkImpl::RootCompositorFrameSinkImpl(
           /*is_root=*/true)),
       synthetic_begin_frame_source_(std::move(synthetic_begin_frame_source)),
       external_begin_frame_source_(std::move(external_begin_frame_source)),
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+      display_(std::move(display)),
+      eviction_handler_(display_.get(),
+                        support_.get(),
+                        frame_sink_manager->reserved_resource_id_tracker()) {
+#else
       display_(std::move(display)) {
+#endif
   DCHECK(display_);
   DCHECK(begin_frame_source());
   frame_sink_manager->RegisterBeginFrameSource(begin_frame_source(),
@@ -822,6 +858,13 @@ void RootCompositorFrameSinkImpl::DisplayWillDrawAndSwap(
   DCHECK(support_->GetHitTestAggregator());
   support_->GetHitTestAggregator()->Aggregate(display_->CurrentSurfaceId());
 
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  if (IsEvictUnlockFrameEnabled() && will_draw_and_swap &&
+      eviction_handler_.GetNextEvictLocalSurfaceId().is_valid()) {
+    display_->disable_draw_and_swap_on_next_frame_ = true;
+  }
+#endif
+
   if (external_begin_frame_source_ &&
       external_begin_frame_source_->last_begin_frame_args().IsValid() &&
       base::ShouldRecordSubsampledMetric(0.001)) {
@@ -864,6 +907,24 @@ void RootCompositorFrameSinkImpl::DisplayWillDrawAndSwap(
     }
   }
 }
+
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+void RootCompositorFrameSinkImpl::DisplayDidRealSwapBuffer() {
+  if (IsEvictUnlockFrameEnabled()) {
+    LOG(DEBUG) << "viz RootCompositorFrameSinkImpl::NotifyFirstRealSwapBuffer will notify sink_id: " <<
+      support_->frame_sink_id().ToString() << "needs_notify_first_swap_buffer: " << needs_notify_first_swap_buffer_;
+    if (display_client_ && needs_notify_first_swap_buffer_) {
+      TRACE_EVENT2("viz", "RootCompositorFrameSinkImpl::DisplayDidRealSwapBuffer",
+        "needs_notify_first_swap_buffer", needs_notify_first_swap_buffer_, " sink_id: ",
+        support_->frame_sink_id().ToString());
+      LOG(INFO) << "viz RootCompositorFrameSinkImpl::NotifyFirstRealSwapBuffer sink_id: " <<
+        support_->frame_sink_id().ToString();
+      display_client_->NotifyFirstRealSwapBuffer();
+      needs_notify_first_swap_buffer_ = false;
+    }
+  }
+}
+#endif
 
 #if BUILDFLAG(IS_ANDROID)
 base::ScopedClosureRunner RootCompositorFrameSinkImpl::GetCacheBackBufferCb() {
@@ -987,7 +1048,11 @@ void RootCompositorFrameSinkImpl::SetPreferredFrameInterval(
 #endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_CHROMEOS)
 }
 
-void RootCompositorFrameSinkImpl::DisplayDidDrawAndSwap() {}
+void RootCompositorFrameSinkImpl::DisplayDidDrawAndSwap() {
+#if BUILDFLAG(ARKWEB_EVICT_UNLOCK_FRAMES)
+  eviction_handler_.DisplayDidDrawAndSwap();
+#endif
+}
 
 BeginFrameSource* RootCompositorFrameSinkImpl::begin_frame_source() {
   if (external_begin_frame_source_) {

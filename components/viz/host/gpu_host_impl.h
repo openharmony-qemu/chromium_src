@@ -215,6 +215,10 @@ class VIZ_HOST_EXPORT GpuHostImpl : public mojom::GpuHost,
   void RemoveChannelDiskCacheHandles(int client_id);
   void CloseChannel(int client_id);
 
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+  void RequestSnapshotOnce();
+#endif
+
 #if BUILDFLAG(USE_VIZ_DEBUGGER)
   // Command as a Json string that the visual debugging instance interprets as
   // stream filtering.
@@ -271,6 +275,13 @@ class VIZ_HOST_EXPORT GpuHostImpl : public mojom::GpuHost,
                                     mojo::ScopedSharedBufferHandle buffer,
                                     mojom::BlanklessBitmapMetadataPtr metadata);
   void ClearBlanklessSnapshotInfo(uint64_t blankless_key) override;
+#endif
+
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+  void SendAntiFraudSnapshotInfo(mojo::ScopedSharedBufferHandle buffer,
+                                 mojom::SbBitmapMetadataPtr metadata) override;
+  static void DumpAntiFraudSnapshot(mojo::ScopedSharedBufferHandle buffer,
+                                    mojom::SbBitmapMetadataPtr metadata);
 #endif
 
  private:

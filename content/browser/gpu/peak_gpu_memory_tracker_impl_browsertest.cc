@@ -73,6 +73,7 @@ class TestGpuService : public viz::StubGpuService {
   void StartMonitor(int32_t nweb_id) override {}
   void StopMonitor() override {}
   void SetIsFling(bool is_fling_enabled) override {}
+  void RequestSnapshotOnce() override {}
 #endif
 
  private:

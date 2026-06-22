@@ -426,6 +426,10 @@ class VIZ_SERVICE_EXPORT GpuServiceImpl
 
 #if BUILDFLAG(ARKWEB_SAFEBROWSING)
   void OnAdfFrameSnapshotCopyOutputResult(std::unique_ptr<CopyOutputResult> result);
+  void SendAntiFraudSnapshotInfo(mojo::ScopedSharedBufferHandle buffer,
+                                 mojom::SbBitmapMetadataPtr metadata);
+  bool TakeIsAllowSnapshot();
+  void RequestSnapshotOnce() override;
 #endif
 
  private:
@@ -606,6 +610,9 @@ class VIZ_SERVICE_EXPORT GpuServiceImpl
 
   base::WeakPtr<GpuServiceImpl> weak_ptr_;
   base::WeakPtrFactory<GpuServiceImpl> weak_ptr_factory_{this};
+  
+  bool allow_snapshot_ = false;
+  std::mutex allow_snapshot_mtx_;
 };
 
 }  // namespace viz

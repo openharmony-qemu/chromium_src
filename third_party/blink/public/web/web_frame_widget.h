@@ -35,6 +35,7 @@
 
 #include "arkweb/build/features/features.h"
 #include <vector>
+#include <string>
 
 #include "base/functional/callback_forward.h"
 #include "base/types/pass_key.h"
@@ -98,6 +99,16 @@ class WebFrameWidget : public WebWidget {
   virtual void SetOverscrollMode(int mode) {}
   virtual bool IsElementExist(std::string xPath) {
     return false;
+  }
+  virtual int32_t ExecuteInputCommand(const std::string& xpath,
+                                      const std::string& value,
+                                      const std::string& event_type) {
+    return 11;  // WebCommandErrorCode::FAILED
+  }
+  virtual int32_t ExecuteSelectCommand(const std::string& xpath,
+                                       const std::vector<int32_t>& indexes,
+                                       const std::vector<std::string>& values) {
+    return 11;  // WebCommandErrorCode::FAILED
   }
 #if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
   virtual gfx::Vector2dF GetOverScrollOffset() = 0;

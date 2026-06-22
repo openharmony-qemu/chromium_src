@@ -198,6 +198,11 @@ class PageHandler : public DevToolsDomainHandler,
       std::optional<bool> include_actionable_information,
       std::unique_ptr<GetAnnotatedPageContentCallback> callback) override;
 
+// do not turn off ARKWEB_AUTOLAYOUT or build will fail here
+#if BUILDFLAG(ARKWEB_AUTOLAYOUT)
+  Response GetPageVisibility(bool* is_visible) override;
+#endif // ARKWEB_AUTOLAYOUT
+
   Response AssureTopLevelActiveFrame();
 
  private:

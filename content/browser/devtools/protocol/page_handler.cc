@@ -88,6 +88,9 @@
 #if BUILDFLAG(IS_ANDROID)
 #include "content/browser/renderer_host/compositor_impl_android.h"
 #endif
+#if BUILDFLAG(ARKWEB_AUTOLAYOUT)
+#include "arkweb/chromium_ext/content/browser/web_contents/web_contents_impl_ext.h"
+#endif
 #include "arkweb/build/features/features.h"
 
 namespace content {
@@ -2561,6 +2564,29 @@ void PageHandler::BackForwardCacheNotUsed(
 bool PageHandler::ShouldBypassCSP() {
   return enabled_ && bypass_csp_;
 }
+
+// do not turn off ARKWEB_AUTOLAYOUT or build will fail here
+#if BUILDFLAG(ARKWEB_AUTOLAYOUT)
+Response PageHandler::GetPageVisibility(bool* is_visible) {
+  Response response = AssureTopLevelActiveFrame();
+  if (response.IsError()) {
+    return response;
+  }
+
+  auto* web_contents_impl = static_cast<content::WebContentsImpl*>(WebContents::FromRenderFrameHost(host_));
+  if (!web_contents_impl) {
+    return Response::ServerError("Unable to get WebContentsImpl");
+  }
+
+  auto* web_contents_ext = web_contents_impl->AsWebContentsImplExt();
+  if (!web_contents_ext) {
+    return Response::ServerError("Unable to get WebContentsImplExt");
+  }
+
+  *is_visible = web_contents_ext->GetPageVisibility();
+  return Response::Success();
+}
+#endif // ARKWEB_AUTOLAYOUT
 
 }  // namespace protocol
 }  // namespace content

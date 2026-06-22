@@ -1780,3 +1780,11 @@ domain Page
       # The format is defined by the `AnnotatedPageContent` message in
       # components/optimization_guide/proto/features/common_quality_data.proto
       binary content
+
+  # BUILDFLAG(ARKWEB_AUTOLAYOUT), relative changes in content/browser/devtools/protocol_config.json
+  # and third_party/blink/renderer/core/inspector/inspector_protocol_config.json.
+  # Returns whether the page is visible.
+  command getPageVisibility
+    returns
+      # True if the page is visible.
+      boolean isVisible

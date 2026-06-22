@@ -398,6 +398,9 @@ class VIZ_SERVICE_EXPORT GpuServiceImpl
   void ReportSlidingFrameRate(int32_t frame_rate) override;
   void SetLTPOStrategy(int32_t strategy) override;
 #endif
+#if BUILDFLAG(ARKWEB_INVISIBLE_RENDER_THROTTLE)
+  void SetWebComponentVisible(int32_t nweb_id, bool visible) override;
+#endif
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
   void DumpGpuInfo(DumpGpuInfoCallback callback) override;
 #endif

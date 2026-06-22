@@ -69,6 +69,7 @@ class TestGpuService : public viz::StubGpuService {
   void SetHasTouchPoint(bool has_touch_point) override {}
   void ReportSlidingFrameRate(int32_t frame_rate) override {}
   void SetLTPOStrategy(int32_t strategy) override {}
+  void SetWebComponentVisible(int nweb_id, bool visible) override {}
   void DumpGpuInfo(DumpGpuInfoCallback callback) override {}
   void StartMonitor(int32_t nweb_id) override {}
   void StopMonitor() override {}

@@ -97,6 +97,13 @@ source_set("browser") {
     visibility += [ "//gpu:gpu_unittests" ]
   }
 
+  if (arkweb_fuzz_compile_error_fix) {
+    visibility += [
+      "//arkweb/chromium_ext/ohos_test/fuzztest/content/browser/renderer_host/arkweb_render_process_host_fuzzer",
+      "//arkweb/chromium_ext/ohos_test/fuzztest/chromium_ext/third_party/blink/renderer/core/editing/ime/arkweb_input_method_controller_fuzzer",
+    ]
+  }
+
   if (use_fuzzing_engine && is_android) {
     visibility += [
       ":*",

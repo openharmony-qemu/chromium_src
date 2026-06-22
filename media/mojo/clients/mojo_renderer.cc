@@ -231,13 +231,17 @@ void MojoRenderer::OnBufferingStateChange(BufferingState state,
                                           BufferingStateChangeReason reason) {
   DVLOG(2) << __func__;
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
-  client_->OnBufferingStateChange(state, reason);
+  if (client_) {
+    client_->OnBufferingStateChange(state, reason);
+  }
 }
 
 void MojoRenderer::OnEnded() {
   DVLOG(1) << __func__;
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
-  client_->OnEnded();
+  if (client_) {
+    client_->OnEnded();
+  }
 }
 
 void MojoRenderer::OnError(const PipelineStatus& status) {
@@ -246,7 +250,9 @@ void MojoRenderer::OnError(const PipelineStatus& status) {
   DCHECK(!init_cb_);
 
   encountered_error_ = true;
-  client_->OnError(status);
+  if (client_) {
+    client_->OnError(status);
+  }
 }
 
 void MojoRenderer::OnVideoNaturalSizeChange(const gfx::Size& size) {
@@ -257,25 +263,33 @@ void MojoRenderer::OnVideoNaturalSizeChange(const gfx::Size& size) {
     video_renderer_sink_->PaintSingleFrame(
         video_overlay_factory_->CreateFrame(size));
   }
-  client_->OnVideoNaturalSizeChange(size);
+  if (client_) {
+    client_->OnVideoNaturalSizeChange(size);
+  }
 }
 
 void MojoRenderer::OnVideoOpacityChange(bool opaque) {
   DVLOG(2) << __func__ << ": " << opaque;
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
-  client_->OnVideoOpacityChange(opaque);
+  if (client_) {
+    client_->OnVideoOpacityChange(opaque);
+  }
 }
 
 void MojoRenderer::OnAudioConfigChange(const AudioDecoderConfig& config) {
   DVLOG(2) << __func__ << ": " << config.AsHumanReadableString();
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
-  client_->OnAudioConfigChange(config);
+  if (client_) {
+    client_->OnAudioConfigChange(config);
+  }
 }
 
 void MojoRenderer::OnVideoConfigChange(const VideoDecoderConfig& config) {
   DVLOG(2) << __func__ << ": " << config.AsHumanReadableString();
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
-  client_->OnVideoConfigChange(config);
+  if (client_) {
+    client_->OnVideoConfigChange(config);
+  }
 }
 
 void MojoRenderer::OnStatisticsUpdate(const PipelineStatistics& stats) {
@@ -291,7 +305,9 @@ void MojoRenderer::OnStatisticsUpdate(const PipelineStatistics& stats) {
 void MojoRenderer::OnWaiting(WaitingReason reason) {
   DVLOG(1) << __func__;
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
-  client_->OnWaiting(reason);
+  if (client_) {
+    client_->OnWaiting(reason);
+  }
 }
 
 void MojoRenderer::OnConnectionError() {

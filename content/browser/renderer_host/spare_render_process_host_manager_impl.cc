@@ -24,6 +24,10 @@
 #include "content/public/common/content_client.h"
 #include "content/public/common/content_features.h"
 
+#if BUILDFLAG(ARKWEB_WARMUP_SPARE_RENDER_PROCESS)
+#include "arkweb/chromium_ext/content/public/browser/spare_render_process_manager_ohos.h"
+#endif
+
 namespace content {
 
 using performance_scenarios::LoadingScenario;
@@ -707,6 +711,13 @@ RenderProcessHost* SpareRenderProcessHostManagerImpl::MaybeTakeSpare(
 
     returned_process = next_spare_rph;
     previous_taken_context_ = allocation_context;
+
+#if BUILDFLAG(ARKWEB_WARMUP_SPARE_RENDER_PROCESS)
+    if (OHOS::NWeb::SpareRenderProcessManagerOhos::GetInstance().IsWarmupEnabled()) {
+      OHOS::NWeb::SpareRenderProcessManagerOhos::GetInstance().OnSpareTaken();
+    }
+#endif
+
     ReleaseSpare(next_spare_rph, SpareRendererDispatchResult::kUsed);
   } else if (!RenderProcessHostImpl::IsSpareProcessKeptAtAllTimes()) {
     // If the spare shouldn't be kept around, then discard it as soon as we

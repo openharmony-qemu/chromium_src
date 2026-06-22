@@ -557,7 +557,10 @@ ExtensionTtsEngineUpdateLanguageFunction::Run() {
 
   const std::string* error = voice_pack_status.FindString(constants::kErrorKey);
   std::string error_message = error != nullptr ? *error : "";
-
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  LOG(INFO) << "TTS updateLanguage language: " << *lang
+            << " status:" << *install_status;
+#endif
   // Notify that status of a language for a voice has changed.
   content::TtsController::GetInstance()->UpdateLanguageStatus(
       browser_context(), *lang,

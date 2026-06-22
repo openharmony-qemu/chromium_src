@@ -1293,6 +1293,12 @@
       status: "experimental",
     },
     {
+      // ArkWeb revert pr https://chromium-review.googlesource.com/c/chromium/src/+/6710263 and change status to test.
+      // Enables alignment properties for block and inline out-of-flow elements.
+      name: "CSSAlignBlockAndInlineOutOfFlows",
+      status: "test",
+    },
+    {
       // Allows using counter() and counters() in alt text (after / in content property).
       name: "CSSAltCounter",
       status: "stable",
@@ -3123,6 +3129,11 @@
     },
     {
       name: "LayoutIgnoreMarginsForSticky",
+    },
+    {
+      // ArkWeb revert pr https://chromium-review.googlesource.com/c/chromium/src/+/6509722 and change status to test.
+      name: "LayoutJustifySelfForBlocks",
+      status: "test",
     },
     {
       name: "LayoutImageEmptyNaturalSizeBeforeSizeAvailable",

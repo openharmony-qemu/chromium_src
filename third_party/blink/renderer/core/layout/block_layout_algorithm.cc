@@ -254,7 +254,13 @@ LayoutUnit WebkitTextAlignAndJustifySelfOffset(
       {ItemPosition::kNormal, OverflowAlignment::kDefault}, &style);
   ItemPosition justify_self = alignment_data.GetPosition();
   OverflowAlignment safe = OverflowAlignment::kSafe;
+#if BUILDFLAG(IS_ARKWEB)
+  // revert pr https://chromium-review.googlesource.com/c/chromium/src/+/6509722
+  if (RuntimeEnabledFeatures::LayoutJustifySelfForBlocksEnabled() &&
+      justify_self != ItemPosition::kNormal) {
+#else
   if (justify_self != ItemPosition::kNormal) {
+#endif
     safe = alignment_data.Overflow();
   } else {
     justify_self = WebkitTextToItemPosition(style.GetTextAlign());
@@ -3237,6 +3243,12 @@ BoxStrut BlockLayoutAlgorithm::CalculateMargins(
       builder.SetAvailableSize(ChildAvailableSize());
       builder.SetPercentageResolutionSize(child_percentage_size_);
 
+#if BUILDFLAG(IS_ARKWEB)
+      // revert pr https://chromium-review.googlesource.com/c/chromium/src/+/6509722
+      const bool justify_self_affects_sizing =
+          RuntimeEnabledFeatures::LayoutJustifySelfForBlocksEnabled();
+
+#endif
       const ItemPosition justify_self =
           child_style
               .ResolvedJustifySelf(
@@ -3246,9 +3258,21 @@ BoxStrut BlockLayoutAlgorithm::CalculateMargins(
 
       if (child.IsAnonymousBlockFlow()) {
         builder.SetInlineAutoBehavior(AutoSizeBehavior::kStretchImplicit);
+#if BUILDFLAG(IS_ARKWEB)
+        // revert pr https://chromium-review.googlesource.com/c/chromium/src/+/6509722
+      } else if (justify_self_affects_sizing &&
+                 justify_self == ItemPosition::kStretch) {
+#else
       } else if (justify_self == ItemPosition::kStretch) {
+#endif
         builder.SetInlineAutoBehavior(AutoSizeBehavior::kStretchExplicit);
+#if BUILDFLAG(IS_ARKWEB)
+        // revert pr https://chromium-review.googlesource.com/c/chromium/src/+/6509722
+      } else if (justify_self_affects_sizing &&
+                 justify_self != ItemPosition::kNormal) {
+#else
       } else if (justify_self != ItemPosition::kNormal) {
+#endif
         builder.SetInlineAutoBehavior(AutoSizeBehavior::kFitContent);
       } else {
         builder.SetInlineAutoBehavior(AutoSizeBehavior::kStretchImplicit);
@@ -3318,6 +3342,12 @@ ConstraintSpace BlockLayoutAlgorithm::CreateConstraintSpaceForChild(
       builder.SetInlineAutoBehavior(AutoSizeBehavior::kStretchImplicit);
     }
   } else {
+#if BUILDFLAG(IS_ARKWEB)
+    // revert pr https://chromium-review.googlesource.com/c/chromium/src/+/6509722
+    const bool justify_self_affects_sizing =
+        RuntimeEnabledFeatures::LayoutJustifySelfForBlocksEnabled();
+
+#endif
     const ItemPosition justify_self =
         child_style
             .ResolvedJustifySelf(
@@ -3326,9 +3356,21 @@ ConstraintSpace BlockLayoutAlgorithm::CreateConstraintSpaceForChild(
 
     if (child.IsAnonymousBlockFlow()) {
       builder.SetInlineAutoBehavior(AutoSizeBehavior::kStretchImplicit);
+#if BUILDFLAG(IS_ARKWEB)
+      // revert pr https://chromium-review.googlesource.com/c/chromium/src/+/6509722
+    } else if (justify_self_affects_sizing &&
+               justify_self == ItemPosition::kStretch) {
+#else
     } else if (justify_self == ItemPosition::kStretch) {
+#endif
       builder.SetInlineAutoBehavior(AutoSizeBehavior::kStretchExplicit);
+#if BUILDFLAG(IS_ARKWEB)
+      // revert pr https://chromium-review.googlesource.com/c/chromium/src/+/6509722
+    } else if (justify_self_affects_sizing &&
+               justify_self != ItemPosition::kNormal) {
+#else
     } else if (justify_self != ItemPosition::kNormal) {
+#endif
       builder.SetInlineAutoBehavior(AutoSizeBehavior::kFitContent);
     } else if (is_in_parallel_flow &&
                ShouldBlockContainerChildStretchAutoInlineSize(

@@ -14,6 +14,9 @@ enum class ColorSchemeFlag : uint8_t {
   kDark = 1,
   kLight = 2,
   kOnly = 4,
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  kNight = 8,
+#endif
 };
 
 // Bitset for ColorSchemeFlag

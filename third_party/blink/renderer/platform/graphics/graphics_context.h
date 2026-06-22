@@ -100,14 +100,24 @@ struct ImageDrawOptions {
                             Image::ImageClampingMode clamping_mode,
                             Image::ImageDecodingMode decode_mode,
                             bool apply_dark_mode,
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+                            bool may_be_lcp_candidate,
+                            bool night_mode_enabled = false)
+#else
                             bool may_be_lcp_candidate)
+#endif
       : dark_mode_filter(dark_mode_filter),
         sampling_options(sampling_options),
         respect_orientation(respect_orientation),
         clamping_mode(clamping_mode),
         decode_mode(decode_mode),
         apply_dark_mode(apply_dark_mode),
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+        may_be_lcp_candidate(may_be_lcp_candidate),
+        night_mode_enabled(night_mode_enabled) {}
+#else
         may_be_lcp_candidate(may_be_lcp_candidate) {}
+#endif
   DarkModeFilter* dark_mode_filter = nullptr;
   SkSamplingOptions sampling_options;
   RespectImageOrientationEnum respect_orientation = kRespectImageOrientation;
@@ -115,23 +125,44 @@ struct ImageDrawOptions {
   Image::ImageDecodingMode decode_mode = Image::kSyncDecode;
   bool apply_dark_mode = false;
   bool may_be_lcp_candidate = false;
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  bool night_mode_enabled = false;
+#endif
 };
 
 struct AutoDarkMode {
   STACK_ALLOCATED();
 
  public:
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  AutoDarkMode(DarkModeFilter::ElementRole role, bool enabled,
+    bool night_mode_enabled = false)
+      : role(role), enabled(enabled), night_mode_enabled(night_mode_enabled) {}
+#else
   AutoDarkMode(DarkModeFilter::ElementRole role, bool enabled)
       : role(role), enabled(enabled) {}
+#endif
 
   AutoDarkMode(DarkModeFilter::ElementRole role,
                bool enabled,
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+               SkColor contrast_color,
+               bool night_mode_enabled)
+      : role(role), enabled(enabled), contrast_color(contrast_color),
+      night_mode_enabled(night_mode_enabled) {}
+#else
                SkColor contrast_color)
       : role(role), enabled(enabled), contrast_color(contrast_color) {}
+#endif
 
   explicit AutoDarkMode(const ImageDrawOptions& draw_options)
       : role(DarkModeFilter::ElementRole::kBackground),
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+        enabled(draw_options.apply_dark_mode),
+        night_mode_enabled(draw_options.night_mode_enabled) {}
+#else
         enabled(draw_options.apply_dark_mode) {}
+#endif
 
   static AutoDarkMode Disabled(DarkModeFilter::ElementRole role =
                                    DarkModeFilter::ElementRole::kBackground) {
@@ -141,13 +172,22 @@ struct AutoDarkMode {
   DarkModeFilter::ElementRole role;
   bool enabled;
   SkColor contrast_color = 0;
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  bool night_mode_enabled;
+#endif
 };
 
 struct ImageAutoDarkMode : AutoDarkMode {
   ImageAutoDarkMode(DarkModeFilter::ElementRole role,
                     bool enabled,
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+                    DarkModeFilter::ImageType image_type,
+                    bool night_mode_enabled = false)
+      : AutoDarkMode(role, enabled, night_mode_enabled), image_type(image_type) {}
+#else
                     DarkModeFilter::ImageType image_type)
       : AutoDarkMode(role, enabled), image_type(image_type) {}
+#endif
 
   static ImageAutoDarkMode Disabled(
       DarkModeFilter::ElementRole role =

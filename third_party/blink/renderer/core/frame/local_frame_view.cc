@@ -199,6 +199,10 @@
 #include "arkweb/chromium_ext/third_party/blink/renderer/core/frame/local_frame_view_utils.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/paint/night_mode_inverter.h"
+#endif
+
 // Used to check for dirty layouts violating document lifecycle rules.
 // If arg evaluates to true, the program will continue. If arg evaluates to
 // false, program will crash if DCHECK_IS_ON() or return false from the current
@@ -1914,6 +1918,15 @@ Color LocalFrameView::DocumentBackgroundColor() {
 
   Color doc_bg =
       background_source->ResolveColor(GetCSSPropertyBackgroundColor());
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  if (background_source->StyleRef().NightModeEnabled() &&
+      !background_source->StyleRef().NightColorScheme()) {
+    doc_bg = NightModeInverter::GetInverter().InvertElementColor(
+        doc_bg, NightModeInverter::ElementRole::kBackground);
+    return blend_with_base ? result.Blend(doc_bg) : doc_bg;
+  }
+#endif
+
   if (background_source->StyleRef().ColorSchemeForced()) {
     // TODO(https://crbug.com/1351544): The DarkModeFilter operate on SkColor4f,
     // and DocumentBackgroundColor should return an SkColor4f.

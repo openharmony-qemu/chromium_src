@@ -131,7 +131,11 @@ struct SameSizeAsComputedStyleBase
 
  private:
   Member<void*> pointers[10];
+#if BUILDFLAG(IS_ARKWEB)
+  unsigned bitfields[6];
+#else
   unsigned bitfields[5];
+#endif
 };
 
 struct SameSizeAsComputedStyle : public SameSizeAsComputedStyleBase {

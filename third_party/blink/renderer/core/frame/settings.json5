@@ -1280,6 +1280,12 @@
       initial: true,
     },
     {
+      // Used for OHOS night mode feature.
+      name: "nightModeEnabled",
+      initial: false,
+      invalidate: ["ColorScheme", "Style", "Paint"],
+    },
+    {
       // Used for OHOS Native Embed feature.
       name: "nativeEmbedModeEnabled",
       initial: false,

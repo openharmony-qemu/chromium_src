@@ -397,6 +397,10 @@ component("core") {
     sources += arkweb_third_patry_blink_renderer_core_html_forms_sources
   }
 
+  if (arkweb_night_mode) {
+    sources += arkweb_third_party_blink_renderer_core_paint_night_mode_sources
+  }
+
   public_deps = [
     ":buildflags",
     ":core_generated",

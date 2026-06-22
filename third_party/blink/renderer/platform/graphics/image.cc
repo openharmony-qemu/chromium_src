@@ -62,6 +62,9 @@
 #include "ui/gfx/geometry/rect_f.h"
 #include "ui/gfx/geometry/size_f.h"
 #include "ui/gfx/geometry/skia_conversions.h"
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/paint/night_mode_inverter.h"
+#endif
 
 namespace blink {
 
@@ -318,6 +321,11 @@ void Image::DrawPattern(GraphicsContext& context,
         this, &flags, gfx::RectToSkRect(subset_rect));
   }
 
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  if (draw_options.night_mode_enabled) {
+    NightModeInverter::GetInverter().BlendColorFilterForImage(flags, 4.0f);
+  }
+#endif
   context.DrawRect(gfx::RectFToSkRect(dest_rect), flags,
                    AutoDarkMode::Disabled());
 

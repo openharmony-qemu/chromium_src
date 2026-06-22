@@ -107,7 +107,12 @@ static inline bool FeatureWithValidIdent(const String& media_feature,
   }
 
   if (media_feature == media_feature_names::kPrefersColorSchemeMediaFeature) {
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+    return ident == CSSValueID::kDark || ident == CSSValueID::kLight ||
+           ident == CSSValueID::kNight;
+#else
     return ident == CSSValueID::kDark || ident == CSSValueID::kLight;
+#endif
   }
 
   if (media_feature == media_feature_names::kPrefersContrastMediaFeature) {

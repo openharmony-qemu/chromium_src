@@ -356,6 +356,11 @@ class PLATFORM_EXPORT Color {
   Color Blend(const Color&) const;
   Color BlendWithWhite() const;
 
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  Color AdjustBrightness(float ratio, int alpha) const;
+  Color Dark(float ratio) const;
+#endif
+
   static bool ParseHexColor(const StringView&, Color&);
   static bool ParseHexColor(base::span<const LChar>, Color&);
   static bool ParseHexColor(base::span<const UChar>, Color&);

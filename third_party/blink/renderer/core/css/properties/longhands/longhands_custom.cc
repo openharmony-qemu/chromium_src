@@ -91,6 +91,9 @@
 #if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
   #include "arkweb/chromium_ext/third_party/blink/renderer/core/css/css_utils.h"
 #endif
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/paint/night_mode_inverter.h"
+#endif
 
 // Implementations of methods in Longhand subclasses that aren't generated.
 
@@ -1084,12 +1087,36 @@ const blink::Color BackgroundColor::ColorIncludingFallback(
     if (is_current_color) {
       *is_current_color = false;
     }
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+    if (style.NightModeEnabled()) {
+      return NightModeInverter::GetInverter().InvertElementColor(
+          background_color.GetColor(),
+          NightModeInverter::ElementRole::kBackground);
+    }
+#endif
     return background_color.GetColor();
   } else {
     if (style.ShouldForceColor(background_color)) {
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+      if (style.NightModeEnabled()) {
+        blink::Color color =
+            GetCSSPropertyInternalForcedBackgroundColor()
+                .ColorIncludingFallback(false, style, is_current_color);
+        return NightModeInverter::GetInverter().InvertElementColor(
+            color, NightModeInverter::ElementRole::kBackground);
+      }
+#endif
       return GetCSSPropertyInternalForcedBackgroundColor()
           .ColorIncludingFallback(false, style, is_current_color);
     }
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+    if (style.NightModeEnabled()) {
+      return NightModeInverter::GetInverter().InvertElementColor(
+          background_color.Resolve(style.GetCurrentColor(),
+                                   style.UsedColorScheme(), is_current_color),
+          NightModeInverter::ElementRole::kBackground);
+    }
+#endif
     return background_color.Resolve(style.GetCurrentColor(),
                                     style.UsedColorScheme(), is_current_color);
   }
@@ -2626,6 +2653,9 @@ const CSSValue* ColorScheme::ParseSingleValue(
     }
     CSSValue* value =
         css_parsing_utils::ConsumeIdent<CSSValueID::kDark, CSSValueID::kLight,
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+                                        CSSValueID::kNight,
+#endif
                                         CSSValueID::kOnly>(stream);
     if (id == CSSValueID::kOnly) {
       if (only) {
@@ -2690,10 +2720,27 @@ void ApplyColorSchemeValue(StyleResolverState& state,
     flags = document.GetStyleEngine().GetPageColorSchemes();
   }
 
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  state.StyleBuilder().SetNightModeEnabled(
+      state.GetDocument().GetStyleEngine().GetNightModeEnabled());
+#endif
+
   state.StyleBuilder().SetColorScheme(std::move(color_schemes));
   state.StyleBuilder().SetUsedColorScheme(
       flags, document.GetStyleEngine().GetPreferredColorScheme(),
       document.GetStyleEngine().GetForceDarkModeEnabled());
+
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  bool prefers_night = document.GetStyleEngine().GetPreferredColorScheme() ==
+                       mojom::blink::PreferredColorScheme::kNight;
+  bool has_night =
+      flags & static_cast<ColorSchemeFlags>(ColorSchemeFlag::kNight);
+  bool night_color_scheme = prefers_night && has_night;
+  state.StyleBuilder().SetNightColorScheme(night_color_scheme);
+  if (night_color_scheme) {
+    state.StyleBuilder().SetNightModeEnabled(false);
+  }
+#endif
 
   if (flags & static_cast<ColorSchemeFlags>(ColorSchemeFlag::kDark)) {
     // Record kColorSchemeDarkSupportedOnRoot if dark is present (though dark
@@ -2716,6 +2763,10 @@ void ColorScheme::ApplyInherit(StyleResolverState& state) const {
   builder.SetColorScheme(state.ParentStyle()->ColorScheme());
   builder.SetDarkColorScheme(state.ParentStyle()->DarkColorScheme());
   builder.SetColorSchemeForced(state.ParentStyle()->ColorSchemeForced());
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  builder.SetNightModeEnabled(state.ParentStyle()->NightModeEnabled());
+  builder.SetNightColorScheme(state.ParentStyle()->NightColorScheme());
+#endif
 }
 
 void ColorScheme::ApplyValue(StyleResolverState& state,

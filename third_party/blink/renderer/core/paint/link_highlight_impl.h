@@ -109,6 +109,11 @@ class CORE_EXPORT LinkHighlightImpl final : public CompositorAnimationDelegate,
     const Path& GetPath() const { return path_; }
     void SetPath(const Path& path) { path_ = path; }
     void SetColor(const Color& color) { color_ = color; }
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+    void SetNightModeEnabled(bool night_mode_enabled) {
+      night_mode_enabled_ = night_mode_enabled;
+    }
+#endif
 
    private:
     // cc::ContentLayerClient implementation.
@@ -118,6 +123,9 @@ class CORE_EXPORT LinkHighlightImpl final : public CompositorAnimationDelegate,
     scoped_refptr<cc::PictureLayer> layer_;
     Path path_;
     Color color_;
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+    bool night_mode_enabled_ = false;
+#endif
   };
   Vector<std::unique_ptr<LinkHighlightFragment>> fragments_;
 

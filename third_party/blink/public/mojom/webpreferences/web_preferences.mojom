@@ -261,6 +261,18 @@ struct WebPreferences {
   [EnableIf=arkweb_copy_option]
   CopyOptionMode copy_option;
 
+  [EnableIf=arkweb_night_mode]
+  bool night_mode_enabled;
+ 
+  [EnableIf=arkweb_night_mode]
+  bool turn_image_gray;
+ 
+  [EnableIf=arkweb_night_mode]
+  bool turn_all_gray;
+  
+  [EnableIf=arkweb_night_mode]
+  bool not_process_images;
+
   [EnableIf=arkweb_focus]
   int32 gesture_focus_mode;
 

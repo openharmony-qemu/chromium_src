@@ -180,6 +180,9 @@ class PLATFORM_EXPORT Gradient : public RefCounted<Gradient> {
   mutable bool stops_sorted_;
   bool is_dark_mode_enabled_ = false;
   std::unique_ptr<DarkModeFilter> dark_mode_filter_;
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  bool is_night_mode_ = false;
+#endif
 
   mutable sk_sp<PaintShader> cached_shader_;
   mutable sk_sp<cc::ColorFilter> color_filter_;

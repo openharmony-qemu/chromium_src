@@ -49,6 +49,9 @@
 #include "arkweb/chromium_ext/third_party/blink/renderer/core/editing/caret_display_item_client_utils.h"
 #include "third_party/blink/renderer/core/exported/web_view_impl.h"
 #endif
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/paint/night_mode_inverter.h"
+#endif
 
 namespace blink {
 
@@ -370,9 +373,17 @@ void CaretDisplayItemClient::PaintCaret(
     }
   }
 #endif  // BUILDFLAG(ARKWEB_MENU)
+#if BUILDFLAG(ARKWEB_NIGHT_MODE)
+  Color color = color_;
+  color = NightModeInverter::GetInverter().InvertElementColor(
+      layout_block_->StyleRef(), color,
+      NightModeInverter::ElementRole::kForeground);
+  context.FillRect(paint_rect, color, AutoDarkMode::Disabled());
+#else
   context.FillRect(paint_rect, color_,
                    PaintAutoDarkMode(layout_block_->StyleRef(),
                                      DarkModeFilter::ElementRole::kForeground));
+#endif
 }
 
 void CaretDisplayItemClient::RecordSelection(GraphicsContext& context,

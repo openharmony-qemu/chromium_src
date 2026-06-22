@@ -15,6 +15,7 @@
 #include <openssl/evp.h>
 #include <openssl/rand.h>
 
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
 #include "base/command_line.h"
 #include "base/feature_list.h"
 #include "base/files/file_path.h"
@@ -74,8 +75,15 @@ base::FilePath GetPath() {
   const base::CommandLine* command_line =
       base::CommandLine::ForCurrentProcess();
   if (command_line) {
+    bool isSeparation =
+        (command_line->GetSwitchValueASCII(
+             switches::kEnableCacheDataDirSeparation) == "true");
+    std::string target_data_dir_tag =
+        isSeparation ? "files/__arkweb" : "cache/web";
     data_path = command_line->GetSwitchValuePath(switches::kUserDataDir);
-    return data_path;
+    if (!data_path.empty()) {
+      return data_path.Append(target_data_dir_tag);
+    }
   }
 
   base::PathService::Get(base::DIR_CACHE, &cache_path);

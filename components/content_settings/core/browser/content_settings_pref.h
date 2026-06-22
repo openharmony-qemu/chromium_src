@@ -97,6 +97,12 @@ class ContentSettingsPref {
   // Callback for changes in the pref with the same name.
   void OnPrefChanged();
 
+#if BUILDFLAG(ARKWEB_INCOGNITO_MODE)
+  // Deferred read callback for OTR instances to coalesce rapid-fire
+  // notifications into a single re-read.
+  void OnOTRDeferredRead();
+#endif
+
   // Update the preference that stores content settings exceptions and syncs the
   // value to the obsolete preference. When calling this function, |lock_|
   // should not be held, since this function will send out notifications of
@@ -139,6 +145,13 @@ class ContentSettingsPref {
   base::ThreadChecker thread_checker_;
 
   raw_ptr<const base::Clock> clock_;
+
+#if BUILDFLAG(ARKWEB_INCOGNITO_MODE)
+  // For OTR instances, whether a deferred re-read has been scheduled.
+  bool otr_deferred_read_pending_ = false;
+
+  base::WeakPtrFactory<ContentSettingsPref> weak_ptr_factory_{this};
+#endif
 };
 
 }  // namespace content_settings

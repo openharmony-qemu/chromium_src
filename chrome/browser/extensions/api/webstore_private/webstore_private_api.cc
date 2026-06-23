@@ -920,8 +920,14 @@ void WebstorePrivateBeginInstallWithManifest3Function::ShowInstallDialog(
   auto prompt = std::make_unique<ExtensionInstallPrompt::Prompt>(
       ExtensionInstallPrompt::INSTALL_PROMPT);
 #else
+  bool is_from_huawei_webstore = false;
+  if (contents) {
+    auto url = contents->GetURL();
+    is_from_huawei_webstore =
+        extension_urls::GetWebStoreTypeByUrl(true, url) == kWebStoreTypeHuawei;
+  }
   auto prompt = std::make_unique<ExtensionInstallPrompt::Prompt>(
-      ExtensionInstallPrompt::INSTALL_PROMPT, true);
+      ExtensionInstallPrompt::INSTALL_PROMPT, is_from_huawei_webstore);
 #endif
 
   if (!dummy_extension_->is_theme()) {

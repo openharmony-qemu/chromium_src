@@ -1307,7 +1307,11 @@ void CrxInstaller::ConfirmReEnable() {
     client_->ShowDialog(
         base::BindOnce(&CrxInstaller::OnInstallPromptDone, this), extension(),
         nullptr, std::make_unique<ExtensionInstallPrompt::Prompt>(type),
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+        ExtensionInstallPrompt::GetOhosShowDialogCallback());
+#else
         ExtensionInstallPrompt::GetDefaultShowDialogCallback());
+#endif
   }
 }
 

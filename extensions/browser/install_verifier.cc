@@ -500,7 +500,11 @@ void InstallVerifier::SaveToPrefs() {
   if (signature_.get())
     DCHECK(InstallSigner::VerifySignature(*signature_));
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (!signature_.get()) {
+#else
   if (!signature_.get() || signature_->ids.empty()) {
+#endif
     DVLOG(1) << "SaveToPrefs - saving NULL";
     prefs_->SetInstallSignature(nullptr);
   } else {

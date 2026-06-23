@@ -367,7 +367,11 @@ void WebstoreStandaloneInstaller::ShowInstallUI() {
       base::BindOnce(&WebstoreStandaloneInstaller::OnInstallPromptDone,
                      weak_ptr_factory_.GetWeakPtr()),
       localized_extension.get(), &icon_, std::move(install_prompt_),
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      ExtensionInstallPrompt::GetOhosShowDialogCallback());
+#else
       ExtensionInstallPrompt::GetDefaultShowDialogCallback());
+#endif
 }
 
 void WebstoreStandaloneInstaller::OnWebStoreDataFetcherDone() {

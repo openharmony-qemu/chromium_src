@@ -417,6 +417,7 @@ class VIZ_SERVICE_EXPORT DirectRenderer {
 
 #if BUILDFLAG(ARKWEB_VULKAN_INC_PRESENT)
   bool init_partial_swap_ = false;
+  int32_t incPresentValue_ = static_cast<int32_t>(VulkanIncPresent::kDisable);
 #endif
 
   // A map from RenderPass id to the single quad present in and replacing the

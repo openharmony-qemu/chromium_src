@@ -3116,6 +3116,7 @@ test("content_unittests") {
   ]
 
   if (arkweb_unittests) {
+    sources += arkweb_content_browser_ai_ohos_unittest_sources
     sources += arkweb_content_browser_test_sources
     sources += [ "//arkweb/chromium_ext/media/audio/ohos/ohos_audio_focus_controller_unittest.cc" ]
     sources += [ "../../arkweb/chromium_ext/content/browser/renderer_host/arkweb_render_process_host_impl_utils_unittest.cc" ]    

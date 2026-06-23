@@ -9118,6 +9118,7 @@ https://support.google.com/chromebook/?p=tpm</translation>
 <translation id="7261217796641151584">그룹 공유</translation>
 <translation id="7261612856573623172">시스템 TTS(텍스트 음성 변환) 음성</translation>
 <translation id="7262004276116528033">이 로그인 서비스는 <ph name="SAML_DOMAIN" />에서 호스팅됩니다.</translation>
+<translation id="7262594386509694692"><ph name="BEGIN_LINK"/>브라우저 도구 스토어<ph name="END_LINK"/> 방문</translation>
 <translation id="7262919421769447042"><ph name="PROFILE_MANAGER" />에서 이 프로필을 관리하며 다음과 같은 정보를 볼 수 있습니다</translation>
 <translation id="7264695323040866038">지원되는 웹 링크를 열 때 항상 <ph name="APP" /> 앱을 사용할까요?</translation>
 <translation id="7267044199012331848">가상 머신을 설치할 수 없습니다. 다시 시도하거나 관리자에게 문의하세요. 오류 코드: <ph name="ERROR_CODE" /></translation>
@@ -10707,6 +10708,7 @@ https://support.google.com/chromebook/?p=sm</translation>
 <translation id="8323744572398547859">다른 기기에서 탭을 가져오려면 로그인하고 방문 기록을 동기화하세요. 이렇게 하면 사용 중인 모든 기기에서 비밀번호 등을 사용할 수도 있습니다. 언제든지 설정에서 동기화를 중지할 수 있습니다. Google에서는 사용자의 방문 기록을 기반으로 Google 검색 및 기타 서비스를 맞춤설정할 수 있습니다.</translation>
 <translation id="8324158725704657629">다시 묻지 않음</translation>
 <translation id="8325413836429495820">클립보드 확인이 허용되지 않음</translation>
+<translation id="832618879023665598">이 확장 프로그램은 보안 준수 검사에 실패하여 자동으로 종료되었습니다.</translation>
 <translation id="8326478304147373412">PKCS #7, 인증서 체인</translation>
 <translation id="8327386430364625757">산술 글꼴</translation>
 <translation id="8327490658947427005">선택 항목이 <ph name="LANGUAGE" />로 제공되지 않음</translation>

@@ -593,7 +593,7 @@
     Discover more extensions and themes on the <ph name="BEGIN_LINK">&lt;a target="_blank" href="$1"&gt;</ph>Chrome Web Store<ph name="END_LINK">&lt;/a&gt; <ex>&lt;/a&gt;</ex> </ph>
   </message>
   <message name="IDS_EXTENSIONS_SIDEBAR_DISCOVER_MORE_V2" desc="The text displayed in the sidebar to open the Browser Web Store to get more extensions.">
-    Visita <ph name="BEGIN_LINK">&lt;a target="_blank" href="$1"&gt;</ph>Browser Toolbox<ph name="END_LINK">&lt;/a&gt; <ex>&lt;/a&gt;</ex> </ph>
+    Visit <ph name="BEGIN_LINK">&lt;a target="_blank" href="$1"&gt;</ph>Browser Tools Store<ph name="END_LINK">&lt;/a&gt; <ex>&lt;/a&gt;</ex> </ph>
   </message>
   <message name="IDS_EXTENSIONS_WHATS_NEW_SIDEBAR_PROMO" desc="The text displayed in the sidebar of the chrome://extensions page to promote the extension documenation, for when the user is in developer mode.">
     Developing extensions? Stay up to date on <ph name="BEGIN_LINK">&lt;a target="_blank" href="$1"&gt;</ph>What's New<ph name="END_LINK">&lt;/a&gt;</ph> with Chrome Extension developer documentation.

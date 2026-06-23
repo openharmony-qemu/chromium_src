@@ -519,9 +519,14 @@ content::WebUIDataSource* CreateAndAddExtensionsSource(Profile* profile,
                         IDS_EXTENSIONS_ERROR_LINES_NOT_SHOWN, 2));
   source->AddString(
       "itemSuspiciousInstall",
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      l10n_util::GetStringUTF16(
+          IDS_EXTENSIONS_NO_PASSED_SECURITY_COMPLIANCE_VERIFICATION));
+#else
       l10n_util::GetStringFUTF16(
           IDS_EXTENSIONS_ADDED_WITHOUT_KNOWLEDGE,
           l10n_util::GetStringUTF16(IDS_EXTENSION_WEB_STORE_TITLE)));
+#endif
   source->AddString(
       "suspiciousInstallHelpUrl",
       base::ASCIIToUTF16(google_util::AppendGoogleLocaleParam(

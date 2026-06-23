@@ -69,10 +69,6 @@ export function getHtml(this: ItemElement) {
               aria-describedby="a11yAssociation"
               ?hidden="${!this.data.disableReasons.suspiciousInstall}">
             $i18n{itemSuspiciousInstall}
-            <a target="_blank" href="$i18n{suspiciousInstallHelpUrl}"
-                aria-label="$i18n{itemSuspiciousInstallLearnMore}">
-              $i18n{learnMore}
-            </a>
           </span>
           <span id="corrupted-warning" class="cr-secondary-text"
               aria-describedby="a11yAssociation"

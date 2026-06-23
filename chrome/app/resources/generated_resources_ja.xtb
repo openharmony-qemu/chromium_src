@@ -9087,6 +9087,7 @@
 <translation id="7261217796641151584">グループを共有</translation>
 <translation id="7261612856573623172">システムのテキスト読み上げの音声</translation>
 <translation id="7262004276116528033">このログイン サービスは <ph name="SAML_DOMAIN" /> でホストされています</translation>
+<translation id="7262594386509694692"><ph name="BEGIN_LINK"/>ブラウザツールストア<ph name="END_LINK"/>に移動</translation>
 <translation id="7262919421769447042">あなたのプロファイルは <ph name="PROFILE_MANAGER" /> によって管理されており、この組織は次の情報を見ることができます</translation>
 <translation id="7264695323040866038">サポートされているウェブリンクを開く際に、常に <ph name="APP" /> アプリを使用しますか？</translation>
 <translation id="7267044199012331848">仮想マシンをインストールできませんでした。もう一度お試しいただくか、管理者にお問い合わせください。エラーコード: <ph name="ERROR_CODE" />。</translation>
@@ -10675,6 +10676,7 @@
 <translation id="8323744572398547859">他のデバイスと同じタブを使用するには、ログインして履歴を同期します。同期すると、すべてのデバイスでパスワードなどの設定も使用できるようになります。 同期は [設定] でいつでも停止できます。Google では、履歴に基づいて検索やその他のサービスをパーソナライズすることがあります。</translation>
 <translation id="8324158725704657629">次回から表示しない</translation>
 <translation id="8325413836429495820">クリップボードの読み取りを許可しないサイト</translation>
+<translation id="832618879023665598">この拡張機能はセキュリティコンプライアンスチェックに失敗したため、自動的に無効化されました。</translation>
 <translation id="8326478304147373412">PKCS #7、証明書チェーン</translation>
 <translation id="8327386430364625757">数字フォント</translation>
 <translation id="8327490658947427005">選択内容が <ph name="LANGUAGE" /> ではない場合</translation>

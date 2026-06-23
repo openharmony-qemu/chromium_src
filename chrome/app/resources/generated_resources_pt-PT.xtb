@@ -9106,6 +9106,7 @@ Tem mais # palavras-passe comprometidas. O Gestor de Palavras-passe da Google re
 <translation id="7261217796641151584">Partilhar grupo</translation>
 <translation id="7261612856573623172">Voz da conversão de texto em voz do sistema</translation>
 <translation id="7262004276116528033">Este serviço de início de sessão é alojado por <ph name="SAML_DOMAIN" /></translation>
+<translation id="7262594386509694692">Visitar a <ph name="BEGIN_LINK"/>Loja de ferramentas do navegador<ph name="END_LINK"/></translation>
 <translation id="7262919421769447042">Este perfil é gerido por <ph name="PROFILE_MANAGER" />, que pode ver algumas informações, incluindo</translation>
 <translation id="7264695323040866038">Usar sempre a app <ph name="APP" /> para abrir links da Web suportados?</translation>
 <translation id="7267044199012331848">Não foi possível instalar a máquina virtual. Tente novamente ou contacte o administrador. Código de erro: <ph name="ERROR_CODE" />.</translation>
@@ -10695,6 +10696,7 @@ Mantenha o seu ficheiro de chave num local seguro, pois irá precisar dele para 
 <translation id="8323744572398547859">Para ver os separadores dos seus outros dispositivos, inicie sessão e sincronize o histórico. Também tem acesso às suas palavras-passe e muito mais em todos os seus dispositivos. Pode parar a sincronização em qualquer altura nas definições. A Google pode personalizar a Pesquisa e outros serviços com base no seu histórico.</translation>
 <translation id="8324158725704657629">Não perguntar novamente</translation>
 <translation id="8325413836429495820">Sem autorização para ver a sua área de transferência</translation>
+<translation id="832618879023665598">Esta extensão não passou na verificação de conformidade de segurança e foi automaticamente desativada.</translation>
 <translation id="8326478304147373412">PKCS #7, cadeia de certificados</translation>
 <translation id="8327386430364625757">Tipo de letra matemático</translation>
 <translation id="8327490658947427005">Seleção não disponível em <ph name="LANGUAGE" /></translation>

@@ -33,6 +33,7 @@ export function getHtml(this: ExtensionsSidebarElement) {
     <cr-ripple></cr-ripple>
   </a>
 </cr-menu-selector>
+<div class="separator"></div>
 <div class="cr-nav-menu-item" id="moreExtensions">
   <span id="discover-more-text" class="cr-secondary-text"
       @click="${this.onMoreExtensionsClick_}"

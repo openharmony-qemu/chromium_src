@@ -9099,6 +9099,7 @@
 <translation id="7261217796641151584">分享群組</translation>
 <translation id="7261612856573623172">系統預設文字轉語音聲音</translation>
 <translation id="7262004276116528033">這是由 <ph name="SAML_DOMAIN" /> 代管的登入服務。</translation>
+<translation id="7262594386509694692">存取<ph name="BEGIN_LINK"/>瀏覽器工具箱<ph name="END_LINK"/></translation>
 <translation id="7262919421769447042">這個設定檔是由 <ph name="PROFILE_MANAGER" /> 管理，對方可查看部分資訊，包括：</translation>
 <translation id="7264695323040866038">一律使用 <ph name="APP" /> 應用程式開啟支援的網頁連結嗎？</translation>
 <translation id="7267044199012331848">無法安裝虛擬機器。請再試一次，或是與系統管理員聯絡。錯誤代碼：<ph name="ERROR_CODE" />。</translation>
@@ -10692,6 +10693,7 @@
 <translation id="8323744572398547859">如要取得其他裝置上的分頁，請登入並同步處理歷史記錄。你也可以在登入的裝置上使用儲存的密碼等資料。你隨時可以前往設定頁面停止同步。Google 可能會根據你的歷史記錄，在 Google 搜尋和其他服務中提供個人化體驗。</translation>
 <translation id="8324158725704657629">不要再詢問</translation>
 <translation id="8325413836429495820">不得查看剪貼簿</translation>
+<translation id="832618879023665598">此擴充程式未通過安全合規驗證，已自動停用</translation>
 <translation id="8326478304147373412">PKCS #7，憑證鏈結</translation>
 <translation id="8327386430364625757">數學字型</translation>
 <translation id="8327490658947427005">所選內容不是<ph name="LANGUAGE" /></translation>

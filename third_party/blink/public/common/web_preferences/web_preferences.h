@@ -122,6 +122,7 @@ struct BLINK_COMMON_EXPORT WebPreferences {
 #endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
 #if BUILDFLAG(ARKWEB_MENU)
   bool touch_handle_exist = false;
+  bool click_ext_enabled = false;
   bool viewport_scale = false;
   bool smart_edge_state = false;
 #endif  // BUILDFLAG(ARKWEB_MENU)

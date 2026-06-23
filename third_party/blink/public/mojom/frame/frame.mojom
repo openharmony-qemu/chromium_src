@@ -1334,7 +1334,7 @@ interface LocalFrame {
   GetImageByXPath(int32 taskid, string xpath) => (uint32 buffer_size, mojo_base.mojom.ReadOnlySharedMemoryRegion? region, uint32 width, uint32 height);
 
   [EnableIf=arkweb_blank_screen_detection]
-  DetectBlankScreen(string url,
+  DetectBlankScreen(string url, bool detectionEnable,
                     array<double> detection_timing,
                     array<int32> detection_methods,
                     int32 contentful_nodes_count_threshold);

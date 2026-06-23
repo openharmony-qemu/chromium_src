@@ -208,7 +208,7 @@ class FakeLocalFrame : public blink::mojom::LocalFrame {
 #endif
 
 #if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
-  void DetectBlankScreen(const std::string& url,
+  void DetectBlankScreen(const std::string& url, bool detectionEnable,
                          const std::vector<double>& detection_timing,
                          const std::vector<int32_t>& detection_methods,
                          int32_t contentful_nodes_count_threshold) override {}

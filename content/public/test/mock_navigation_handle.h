@@ -47,6 +47,9 @@ class MockNavigationHandle : public NavigationHandle {
 
   // NavigationHandle implementation:
   int64_t GetNavigationId() const override { return navigation_id_; }
+#if BUILDFLAG(IS_ARKWEB)
+  const std::string& GetExtraHeaders() override { return extra_headers_; }
+#endif // BUILDFLAG(IS_ARKWEB)
   ukm::SourceId GetNextPageUkmSourceId() override {
     return ukm::ConvertToSourceId(navigation_id_,
                                   ukm::SourceIdObj::Type::NAVIGATION_ID);
@@ -446,6 +449,9 @@ class MockNavigationHandle : public NavigationHandle {
   std::optional<base::UnguessableToken> same_document_metrics_token_;
 
   base::WeakPtrFactory<MockNavigationHandle> weak_factory_{this};
+#if BUILDFLAG(IS_ARKWEB)
+  std::string extra_headers_;
+#endif // BUILDFLAG(IS_ARKWEB)
 };
 
 }  // namespace content

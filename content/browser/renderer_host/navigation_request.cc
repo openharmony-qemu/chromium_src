@@ -1386,6 +1386,9 @@ std::unique_ptr<NavigationRequest> NavigationRequest::Create(
       nullptr /* prefetched_signed_exchange_cache */,
       GetRenderFrameHostForBackForwardCacheRestore(frame_tree_node, entry),
       initiator_process_id, was_opener_suppressed, is_pdf,
+#if BUILDFLAG(IS_ARKWEB)
+      extra_headers,
+#endif // BUILDFLAG(IS_ARKWEB)
       is_embedder_initiated_fenced_frame_navigation,
       mojo::NullReceiver() /* renderer_cancellation_listener */,
       embedder_shared_storage_context));
@@ -1524,6 +1527,9 @@ std::unique_ptr<NavigationRequest> NavigationRequest::CreateRendererInitiated(
       std::nullopt,  // rfh_restored_from_back_forward_cache
       initiator_process_id,
       /*was_opener_suppressed=*/false, /*is_pdf=*/false,
+#if BUILDFLAG(IS_ARKWEB)
+      /*extra_headers=*/std::string(),
+#endif // BUILDFLAG(IS_ARKWEB)
       /*is_embedder_initiated_fenced_frame_navigation=*/false,
       std::move(renderer_cancellation_listener)));
 
@@ -1679,7 +1685,12 @@ NavigationRequest::CreateForSynchronousRendererCommit(
       nullptr /* prefetched_signed_exchange_cache */,
       std::nullopt /* rfh_restored_from_back_forward_cache */,
       ChildProcessHost::kInvalidUniqueID /* initiator_process_id */,
-      false /* was_opener_suppressed */, false /* is_pdf */));
+      false /* was_opener_suppressed */, false /* is_pdf */
+#if BUILDFLAG(IS_ARKWEB)
+      ,
+      std::string() /*extra_headers=*/
+#endif // BUILDFLAG(IS_ARKWEB)
+      ));
 
   std::optional<base::UnguessableToken> nonce = render_frame_host->ComputeNonce(
       navigation_request->is_credentialless(),
@@ -1742,6 +1753,9 @@ NavigationRequest::NavigationRequest(
     int initiator_process_id,
     bool was_opener_suppressed,
     bool is_pdf,
+#if BUILDFLAG(IS_ARKWEB)
+    const std::string& extra_headers,
+#endif // BUILDFLAG(IS_ARKWEB)
     bool is_embedder_initiated_fenced_frame_navigation,
     mojo::PendingReceiver<mojom::NavigationRendererCancellationListener>
         renderer_cancellation_listener,
@@ -1792,6 +1806,9 @@ NavigationRequest::NavigationRequest(
           base::BindRepeating(&NavigationRequest::NotifyCookiesAccessed,
                               base::Unretained(this)))),
       is_pdf_(is_pdf),
+#if BUILDFLAG(IS_ARKWEB)
+      extra_headers_(extra_headers),
+#endif // BUILDFLAG(IS_ARKWEB)
       is_embedder_initiated_fenced_frame_navigation_(
           is_embedder_initiated_fenced_frame_navigation),
       fenced_frame_properties_(
@@ -9656,6 +9673,12 @@ bool NavigationRequest::HasPrefetchedAlternativeSubresourceSignedExchange() {
 int64_t NavigationRequest::GetNavigationId() const {
   return navigation_id_;
 }
+
+#if BUILDFLAG(IS_ARKWEB)
+const std::string& NavigationRequest::GetExtraHeaders() {
+  return extra_headers();
+}
+#endif // BUILDFLAG(IS_ARKWEB)
 
 ukm::SourceId NavigationRequest::GetNextPageUkmSourceId() {
   // If the navigation is restoring from back-forward cache, the UKM id

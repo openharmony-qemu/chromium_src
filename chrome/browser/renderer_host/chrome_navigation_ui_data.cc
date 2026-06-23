@@ -55,6 +55,10 @@ ChromeNavigationUIData::ChromeNavigationUIData(
       navigation_handle, tab_id, window_id);
 #endif
 
+#if BUILDFLAG(IS_ARKWEB)
+  extra_headers_ = navigation_handle->GetExtraHeaders();
+#endif // BUILDFLAG(IS_ARKWEB)
+
   auto* no_state_prefetch_contents =
       prerender::ChromeNoStatePrefetchContentsDelegate::FromWebContents(
           web_contents);
@@ -121,6 +125,10 @@ std::unique_ptr<content::NavigationUIData> ChromeNavigationUIData::Clone() {
   copy->bookmark_id_ = bookmark_id_;
   copy->actor_task_id_ = actor_task_id_;
   copy->navigation_initiated_from_sync_ = navigation_initiated_from_sync_;
+
+#if BUILDFLAG(IS_ARKWEB)
+  copy->extra_headers_ = extra_headers_;
+#endif // BUILDFLAG(IS_ARKWEB)
 
   return std::move(copy);
 }

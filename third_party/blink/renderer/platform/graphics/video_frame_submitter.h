@@ -276,6 +276,7 @@ class PLATFORM_EXPORT VideoFrameSubmitter
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
   void UpdateDroppedFrameMetrics(const viz::BeginFrameArgs& args);
   void SubmitDroppedFrameMetricsToMetadata(viz::CompositorFrame& compositor_frame);
+  void ResetDroppedFrameMetrics() override;
 
   std::atomic<bool> is_first_frame_{true};
   std::atomic<bool> should_report_frame_dropped_{false};

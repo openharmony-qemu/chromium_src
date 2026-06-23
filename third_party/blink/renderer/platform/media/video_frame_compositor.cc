@@ -435,6 +435,12 @@ void VideoFrameCompositor::SetForceSubmit(bool force_submit) {
     submitter_->SetForceSubmit(force_submit);
 }
 
+void VideoFrameCompositor::ResetDroppedFrameMetrics() {
+  DCHECK(task_runner_->BelongsToCurrentThread());
+  if (submitter_)
+    submitter_->ResetDroppedFrameMetrics();
+}
+
 base::TimeDelta VideoFrameCompositor::GetLastIntervalWithoutLock()
     NO_THREAD_SAFETY_ANALYSIS {
   DCHECK(task_runner_->BelongsToCurrentThread());

@@ -672,7 +672,7 @@ void InspectUI::Open(const std::string& source_id,
 void InspectUI::Pause(const std::string& source_id,
                       const std::string& target_id) {
 #if BUILDFLAG(ARKWEB_DEVTOOLS)
-  if (InspectInclude(source_id, target_id)) {
+  if (InspectInclude(source_id, target_id, "sources")) {
     return;
   }
 #endif // ARKWEB_DEVTOOLS

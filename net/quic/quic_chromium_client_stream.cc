@@ -152,8 +152,13 @@ void QuicChromiumClientStream::Handle::OnClose() {
 
 void QuicChromiumClientStream::Handle::OnError(int error) {
   net_error_ = error;
-  if (stream_)
+  if (stream_) {
     SaveState();
+
+    if (is_http_datagram_visitor_registered_) {
+      UnregisterHttp3DatagramVisitor();
+    }
+  }
   stream_ = nullptr;
 
   // Post a task to invoke the callbacks to ensure that there is no reentrancy.
@@ -407,12 +412,14 @@ void QuicChromiumClientStream::Handle::RegisterHttp3DatagramVisitor(
     Http3DatagramVisitor* visitor) {
   if (stream_) {
     stream_->RegisterHttp3DatagramVisitor(visitor);
+    is_http_datagram_visitor_registered_ = true;
   }
 }
 
 void QuicChromiumClientStream::Handle::UnregisterHttp3DatagramVisitor() {
   if (stream_) {
     stream_->UnregisterHttp3DatagramVisitor();
+    is_http_datagram_visitor_registered_ = false;
   }
 }
 

@@ -158,6 +158,9 @@ ExtensionFunction::ResponseAction SidePanelCloseFunction::RunFunction() {
         Error("At least one of `tabId` and `windowId` must be provided"));
   }
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  return RunCloseFunctionForInclude(params);
+#else
   SidePanelService* service = GetService();
   base::expected<bool, std::string> close_panel_result;
   if (params->options.tab_id) {
@@ -177,6 +180,7 @@ ExtensionFunction::ResponseAction SidePanelCloseFunction::RunFunction() {
 
   CHECK(close_panel_result.value());
   return RespondNow(NoArguments());
+#endif
 }
 
 }  // namespace extensions

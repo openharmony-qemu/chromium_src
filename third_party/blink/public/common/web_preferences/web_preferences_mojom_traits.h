@@ -970,6 +970,11 @@ struct BLINK_COMMON_EXPORT StructTraits<blink::mojom::WebPreferencesDataView,
     return r.touch_handle_exist;
   }
 
+  static bool click_ext_enabled(
+      const blink::web_pref::WebPreferences &r) {
+    return r.click_ext_enabled;
+  }
+
   static bool viewport_scale(
       const blink::web_pref::WebPreferences &r) {
     return r.viewport_scale;

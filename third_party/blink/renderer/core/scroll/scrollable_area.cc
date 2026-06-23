@@ -819,7 +819,13 @@ void ScrollableArea::SetScrollbarNeedsPaintInvalidation(
           // This will call SetNeedsDisplay() if the color changes (which is
           // the only reason for a SolidColorScrollbarLayer to update display).
           if (compositor->SetScrollbarSolidColor(
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+                  element_id,
+                  SkColor4f::FromColor(SkColorSetA(
+                      scrollable_area_utils_->GetScrollBarColor(), 102)))) {
+#else
                   element_id, scrollbar->GetTheme().ThumbColor(*scrollbar))) {
+#endif
             scrollbar->ClearNeedsUpdateDisplay();
           }
         } else if (compositor->SetScrollbarNeedsDisplay(element_id)) {

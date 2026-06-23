@@ -47,6 +47,9 @@
 #include "ui/gfx/geometry/size.h"
 #include "ui/gfx/geometry/size_f.h"
 #include "ui/gfx/geometry/vector2d_conversions.h"
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/frame/arkweb_visual_viewport_utils.h"
+#endif
 
 namespace cc {
 class AnimationHost;
@@ -67,6 +70,9 @@ class ScrollPaintPropertyNode;
 class TracedValue;
 class TransformPaintPropertyNode;
 struct PaintPropertyTreeBuilderFragmentContext;
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+class ArkWebVisualViewportUtils;
+#endif  // BUILDFLAG(ARKWEB_SCROLLBAR)
 
 enum class OverscrollType { kNone, kTransform };
 
@@ -404,6 +410,10 @@ class CORE_EXPORT VisualViewport : public GarbageCollected<VisualViewport>,
   bool needs_paint_property_update_;
 
   OverscrollType overscroll_type_;
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  // ArkWeb helper for scrollbar-related operations
+  Member<ArkWebVisualViewportUtils> arkweb_utils_;
+#endif  // BUILDFLAG(ARKWEB_SCROLLBAR)
 };
 
 }  // namespace blink

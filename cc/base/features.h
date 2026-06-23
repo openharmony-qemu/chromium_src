@@ -13,7 +13,9 @@
 #include "cc/base/base_export.h"
 
 namespace features {
-
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+CC_BASE_EXPORT BASE_DECLARE_FEATURE(kOverlayVisualScrollbar);
+#endif
 CC_BASE_EXPORT BASE_DECLARE_FEATURE(kComputeRasterTranslateForExternalScale);
 CC_BASE_EXPORT BASE_DECLARE_FEATURE(kSynchronizedScrolling);
 

@@ -62,7 +62,11 @@ void WebThemeEngineHelper::DidUpdateRendererPreferences(
 const WebThemeEngine::ScrollbarStyle&
 WebThemeEngineHelper::AndroidScrollbarStyle() {
   DEFINE_STATIC_LOCAL(WebThemeEngine::ScrollbarStyle, style,
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+                      ({/*thumb_thickness=*/8,
+#else
                       ({/*thumb_thickness=*/4,
+#endif
                         /*scrollbar_margin=*/0,
                         /*color=*/{0.5f, 0.5f, 0.5f, 0.5f}}));
   return style;

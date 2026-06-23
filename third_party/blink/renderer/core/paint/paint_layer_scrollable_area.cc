@@ -135,6 +135,7 @@
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
 #include "arkweb/chromium_ext/third_party/blink/renderer/core/paint/paint_layer_scrollable_area_utils.h"
 #include "arkweb/chromium_ext/third_party/blink/renderer/core/scroll/scrollable_area_utils.h"
+#include "cc/base/features.h"
 #endif
 
 namespace blink {
@@ -2817,7 +2818,9 @@ bool PaintLayerScrollableArea::UsesCompositedScrolling() const {
 bool PaintLayerScrollableArea::VisualViewportSuppliesScrollbars() const {
 #if BUILDFLAG(ARKWEB_SCROLLBAR)
   if (auto* layout_view = DynamicTo<LayoutView>(GetLayoutBox())) {
-    return false;
+    if (!base::FeatureList::IsEnabled(::features::kOverlayVisualScrollbar)) {
+      return false;
+    }
   }
 #endif  // ARKWEB_SCROLLBAR
   LocalFrame* frame = GetLayoutBox()->GetFrame();

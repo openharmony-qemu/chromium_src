@@ -16,7 +16,11 @@ namespace features {
 namespace {
 std::atomic<bool> s_is_eligible_for_throttle_main_frame_to_60hz = false;
 }  // namespace
-
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+BASE_FEATURE(kOverlayVisualScrollbar,
+             "kOverlayVisualScrollbar",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+#endif
 // When enabled, this forces raster translation to be computed using screen
 // space and draw transforms scaled by external page scale factor.
 // Whithout this, text in OOPIFs that isn't aligned to the pixel grid may appear

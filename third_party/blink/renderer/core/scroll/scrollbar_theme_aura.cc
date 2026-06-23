@@ -32,6 +32,8 @@
 
 #if BUILDFLAG(ARKWEB_SCROLLBAR)
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#include "third_party/blink/renderer/core/scroll/scrollbar_theme_overlay_mobile.h"
+#include "cc/base/features.h"
 #endif
 #include "base/numerics/safe_conversions.h"
 #include "build/build_config.h"
@@ -118,7 +120,16 @@ ScrollbarTheme& ScrollbarTheme::NativeTheme() {
   }
 
   if (OverlayScrollbarsEnabled()) {
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+    if (base::FeatureList::IsEnabled(
+            ::features::kOverlayVisualScrollbar)) {
+      return ScrollbarThemeOverlayMobile::GetInstance();
+    } else {
+      return ScrollbarThemeOverlay::GetInstance();
+    }
+#else
     return ScrollbarThemeOverlay::GetInstance();
+#endif  // BUILDFLAG(ARKWEB_SCROLLBAR)
   }
 
   DEFINE_STATIC_LOCAL(ScrollbarThemeAura, theme, ());

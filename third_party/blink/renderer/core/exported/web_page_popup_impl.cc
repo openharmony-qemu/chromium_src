@@ -144,8 +144,12 @@ Page* CreatePage(ChromeClient& chrome_client, WebViewImpl& opener_web_view) {
       main_settings.GetForceDarkModeEnabled());
   page->GetSettings().SetInForcedColors(main_settings.GetInForcedColors());
 #if BUILDFLAG(ARKWEB_SCROLLBAR)
-  page->GetSettings().SetVerticalHideScrollbars(main_settings.GetVerticalHideScrollbars());
-  page->GetSettings().SetHorizontalHideScrollbars(main_settings.GetHorizontalHideScrollbars());
+  if (!base::FeatureList::IsEnabled(::features::kOverlayVisualScrollbar)) {
+    page->GetSettings().SetVerticalHideScrollbars(
+        main_settings.GetVerticalHideScrollbars());
+    page->GetSettings().SetHorizontalHideScrollbars(
+        main_settings.GetHorizontalHideScrollbars());
+  }
 #endif
   const MediaFeatureOverrides* media_feature_overrides =
       opener_web_view.GetPage()->GetMediaFeatureOverrides();

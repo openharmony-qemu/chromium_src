@@ -46,7 +46,9 @@ scoped_refptr<SolidColorScrollbarLayer> SolidColorScrollbarLayer::CreateOrReuse(
     result = Create(scrollbar->Orientation(), thumb_thickness, track_start,
                     scrollbar->IsLeftSideVerticalScrollbar());
   }
+#if !BUILDFLAG(ARKWEB_SCROLLBAR)
   result->SetColor(scrollbar->ThumbColor());
+#endif
   return result;
 }
 

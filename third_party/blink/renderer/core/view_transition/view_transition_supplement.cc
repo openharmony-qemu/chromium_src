@@ -326,11 +326,10 @@ void ViewTransitionSupplement::OnTransitionCaptured(
   if (--in_flight_capture_requests_ == 0) {
     std::sort(captured_transitions_.begin(), captured_transitions_.end(),
               CompareTransitions);
-    HeapVector<Member<ViewTransition>> local_copy(captured_transitions_);
-    captured_transitions_.clear();
     for (auto captured_transition : captured_transitions_) {
       captured_transition->OnCapturePhaseComplete();
     }
+    captured_transitions_.clear();
   }
 }
 

@@ -6,13 +6,16 @@
 #define EXTENSIONS_BROWSER_PERMISSIONS_ACTIVE_TAB_PERMISSION_GRANTER_H_
 
 #include "base/gtest_prod_util.h"
+#include "base/memory/weak_ptr.h"
 #include "base/scoped_observation.h"
 #include "content/public/browser/web_contents_observer.h"
 #include "content/public/browser/web_contents_user_data.h"
 #include "extensions/browser/extension_registry.h"
 #include "extensions/browser/extension_registry_observer.h"
 #include "extensions/buildflags/buildflags.h"
+#include "extensions/common/extension.h"
 #include "extensions/common/extension_set.h"
+#include "extensions/common/url_pattern_set.h"
 
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 
@@ -41,6 +44,9 @@ class ActiveTabPermissionGranter
   // If `extension` has the activeTab or tabCapture permission, grants
   // tab-specific permissions to it until the next page navigation or refresh.
   void GrantIfRequested(const Extension* extension);
+
+  // Returns true if `extension` has been granted tab-specific permissions.
+  bool IsGranted(const Extension* extension) const;
 
   // Clears any tab-specific permissions for an extension with `id` if it has
   // been granted (otherwise does nothing) on `tab_id_` and notifies renderers.
@@ -82,6 +88,11 @@ class ActiveTabPermissionGranter
   void ClearGrantedExtensionsAndNotify(
       const ExtensionSet& granted_extensions_to_remove);
 
+  // Notifies the renderer and other observers that the permission has been
+  // granted.
+  void NotifyGranted(scoped_refptr<const Extension> extension,
+                     URLPatternSet new_hosts);
+
   // The tab ID for this tab.
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   int tab_id_;
@@ -96,6 +107,8 @@ class ActiveTabPermissionGranter
   // Listen to extension unloaded notifications.
   base::ScopedObservation<ExtensionRegistry, ExtensionRegistryObserver>
       extension_registry_observation_{this};
+
+  base::WeakPtrFactory<ActiveTabPermissionGranter> weak_factory_{this};
 
   WEB_CONTENTS_USER_DATA_KEY_DECL();
 };

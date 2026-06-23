@@ -109,6 +109,7 @@
 #include "services/network/public/cpp/loading_params.h"
 #include "services/network/public/cpp/net_adapters.h"
 #include "services/network/public/cpp/network_switches.h"
+#include "services/network/public/cpp/orb/orb_api.h"
 #include "services/network/public/cpp/parsed_headers.h"
 #include "services/network/public/cpp/resource_request.h"
 #include "services/network/public/cpp/sri_message_signatures.h"
@@ -1417,25 +1418,34 @@ void URLLoader::ContinueOnResponseStarted() {
     // TODO(ricea): Make ORB and ReadAndDiscardBody work together if necessary.
     CHECK(!(options_ & mojom::kURLLoadOptionReadAndDiscardBody))
         << "ORB is incompatible with the ReadAndDiscardBody option";
-    orb_analyzer_ = orb::ResponseAnalyzer::Create(&*per_factory_orb_state_);
-    is_more_orb_sniffing_needed_ = true;
-    auto decision =
-        orb_analyzer_->Init(url_request_->url(), url_request_->initiator(),
-                            request_mode_, request_destination_, *response_);
-    if (MaybeBlockResponseForOrb(decision)) {
+
+    // Don't apply ORB to non-webby-initiators who may have been granted a
+    // permission to the target origin (granular enforcement for
+    // https://crbug.com/497058611).
+    if (!url_request_->initiator().has_value() ||
+        cors::OriginAccessList::AccessState::kAllowed !=
+            origin_access_list_->CheckAccessState(
+                url_request_->initiator().value(), url_request_->url())) {
+      orb_analyzer_ = orb::ResponseAnalyzer::Create(&*per_factory_orb_state_);
+      is_more_orb_sniffing_needed_ = true;
+      auto decision =
+          orb_analyzer_->Init(url_request_->url(), url_request_->initiator(),
+                              request_mode_, request_destination_, *response_);
+      if (MaybeBlockResponseForOrb(decision)) {
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-      LOG_FEEDBACK(INFO, kNetwork)
-          << "ContinueOnResponseStartedBlockedForOrb isStrictLogMode:"
-          << is_strict_log_mode_ << " url:"
-          << url::LogUtils::ConvertUrlWithMask(url_request_->url().spec());
-      if (!is_strict_log_mode_) {
-        LOG(URL) << "ContinueOnResponseStarted blocked the request for "
-                    "Cross-Origin Read Blocking (CORB) blocked cross-origin "
-                    "response, url: "
-                 << url_request_->url().spec();
-      }
+        LOG_FEEDBACK(INFO, kNetwork)
+            << "ContinueOnResponseStartedBlockedForOrb isStrictLogMode:"
+            << is_strict_log_mode_ << " url:"
+            << url::LogUtils::ConvertUrlWithMask(url_request_->url().spec());
+        if (!is_strict_log_mode_) {
+          LOG(URL) << "ContinueOnResponseStarted blocked the request for "
+                      "Cross-Origin Read Blocking (CORB) blocked cross-origin "
+                      "response, url: "
+                   << url_request_->url().spec();
+        }
 #endif
-      return;
+        return;
+      }
     }
   }
 

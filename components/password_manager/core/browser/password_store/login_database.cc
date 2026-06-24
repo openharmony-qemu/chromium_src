@@ -1153,7 +1153,8 @@ bool LoginDatabase::Init(
     LOG(ERROR) << "[Autofill] Unable to open the password store database, errorcode = 3.";
 #if BUILDFLAG(ARKWEB_EXT_PASSWORD)
     std::string err_msg = "Unable to open the password store database, error_code:" +
-                          std::to_string(LOGIN_DATA_OPEN_FAILED);
+                          std::to_string(LOGIN_DATA_OPEN_FAILED) + ", db_path:" +
+                          db_path_.value();
     base::ohos::ReportEngineEvent(base::ohos::kModuleContentBrowser, base::ohos::kDefaultUrl,
                                   base::ohos::kPasswordManagerError, err_msg);
     LoginDatabaseSetMigratePasswordsFlagToFile();

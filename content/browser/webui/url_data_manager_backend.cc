@@ -253,6 +253,9 @@ scoped_refptr<net::HttpResponseHeaders> URLDataManagerBackend::GetHeaders(
 bool URLDataManagerBackend::CheckURLIsValid(const GURL& url) {
   std::vector<std::string> additional_schemes;
   DCHECK(url.SchemeIs(kChromeUIScheme) ||
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+         url.SchemeIs(kArkWebUIScheme) ||
+#endif // ARKWEB_DEVTOOLS
          url.SchemeIs(kChromeUIUntrustedScheme) ||
          (GetContentClient()->browser()->GetAdditionalWebUISchemes(
               &additional_schemes),

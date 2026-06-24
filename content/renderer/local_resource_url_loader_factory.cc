@@ -209,7 +209,12 @@ void LocalResourceURLLoaderFactory::CreateLoaderAndStart(
     return;
   }
   // Only the "chrome" scheme is supported.
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  CHECK(request.url.GetScheme() == kChromeUIScheme ||
+        request.url.GetScheme() == kArkWebUIScheme);
+#else
   CHECK(request.url.GetScheme() == kChromeUIScheme);
+#endif // ARKWEB_DEVTOOLS
   // Parallelize calls to GetResourceAndRespond across multiple threads.
   // Needs to be posted to a SequencedTaskRunner as Mojo requires a
   // SequencedTaskRunner::CurrentDefaultHandle in scope.

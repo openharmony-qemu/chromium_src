@@ -688,6 +688,7 @@ viz_source_set("unit_tests") {
     "frame_sinks/frame_sink_bundle_impl_unittest.cc",
     # "frame_sinks/frame_sink_manager_unittest.cc",
     "frame_sinks/surface_references_unittest.cc",
+    "frame_sinks/root_compositor_frame_sink_impl_unittest.cc",
     "frame_sinks/surface_synchronization_unittest.cc",
     "frame_sinks/video_capture/frame_sink_video_capturer_impl_unittest.cc",
     "frame_sinks/video_capture/shared_memory_video_frame_pool_unittest.cc",

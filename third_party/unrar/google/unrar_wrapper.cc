@@ -31,6 +31,7 @@ bool RarReader::Open(base::File rar_file, base::File temp_file) {
   command_->ParseArg(password_flag.data());
   command_->ParseArg(const_cast<wchar_t*>(L"x"));
   command_->ParseDone();
+  command_->Recurse = RECURSE_ALWAYS;
 
   archive_ = std::make_unique<Archive>(command_.get());
   archive_->SetFileHandle(rar_file_.GetPlatformFile());

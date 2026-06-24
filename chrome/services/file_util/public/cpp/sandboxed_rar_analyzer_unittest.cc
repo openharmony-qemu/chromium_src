@@ -439,6 +439,26 @@ TEST_F(SandboxedRarAnalyzerTest, InvalidPath) {
             safe_browsing::ArchiveAnalysisResult::kFailedToOpen);
 }
 
+TEST_F(SandboxedRarAnalyzerTest, AnalyzeRarWithAsterisk) {
+  base::FilePath path;
+  ASSERT_NO_FATAL_FAILURE(path = GetFilePath("bypass.rar"));
+
+  safe_browsing::ArchiveAnalyzerResults results;
+  AnalyzeFile(path, &results);
+
+  ASSERT_TRUE(results.success);
+  EXPECT_TRUE(results.has_executable);
+  EXPECT_THAT(
+      results.archived_binary,
+      testing::UnorderedElementsAre(
+          testing::Property(
+              &safe_browsing::ClientDownloadRequest_ArchivedBinary::file_path,
+              testing::Eq("*")),
+          testing::Property(
+              &safe_browsing::ClientDownloadRequest_ArchivedBinary::file_path,
+              testing::Eq("evil.exe"))));
+}
+
 TEST_F(SandboxedRarAnalyzerTest, HeaderEncryptionCorrectPassword) {
   base::FilePath path;
   ASSERT_NO_FATAL_FAILURE(path =

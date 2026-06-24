@@ -707,7 +707,41 @@ void CompositorFrameSinkSupport::DidNotProduceFrame(const BeginFrameAck& ack) {
     begin_frame_source_->DidFinishFrame(this);
     frame_sink_manager_->DidFinishFrame(frame_sink_id_, last_begin_frame_args_);
   }
+
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+  if (ack.preferred_frame_interval &&
+      frame_sink_type_ == mojom::CompositorFrameSinkType::kLayerTree) {
+    preferred_frame_interval_ = *ack.preferred_frame_interval;
+    ApplyPreferredFrameRate();
+  }
+#endif
 }
+
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+void CompositorFrameSinkSupport::ApplyPreferredFrameRate() {
+  if ((last_known_frame_interval_ - preferred_frame_interval_).magnitude() >
+      base::Milliseconds(2) && !is_root()) {
+    last_known_frame_interval_ = preferred_frame_interval_;
+    // Only throttle simple cadences.
+    ThrottleBeginFrame(preferred_frame_interval_,
+                       /*simple_cadence_only=*/true);
+  }
+}
+
+void CompositorFrameSinkSupport::InitializeCompositorFrameSinkType(
+    mojom::CompositorFrameSinkType type) {
+  if (frame_sink_type_ != mojom::CompositorFrameSinkType::kUnspecified ||
+      type == mojom::CompositorFrameSinkType::kUnspecified) {
+    return;
+  }
+  frame_sink_type_ = type;
+
+  if (frame_sink_manager_->frame_counter()) {
+    frame_sink_manager_->frame_counter()->SetFrameSinkType(frame_sink_id_,
+                                                           frame_sink_type_);
+  }
+}
+#endif
 
 void CompositorFrameSinkSupport::SubmitCompositorFrame(
     const LocalSurfaceId& local_surface_id,
@@ -875,6 +909,15 @@ SubmitResult CompositorFrameSinkSupport::MaybeSubmitCompositorFrame(
   // |frame.metadata.frame_token| instead of maintaining a |last_frame_index_|.
   CHECK_LT(last_frame_index_, std::numeric_limits<uint32_t>::max());
   uint32_t frame_index = ++last_frame_index_;
+
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+  if (frame.metadata.begin_frame_ack.preferred_frame_interval) {
+    preferred_frame_interval_ =
+        *frame.metadata.begin_frame_ack.preferred_frame_interval;
+  } else {
+    preferred_frame_interval_ = BeginFrameArgs::MinInterval();
+  }
+#endif
 
   if (features::ShouldOnBeginFrameThrottleVideo()) {
     const auto& interval_info =
@@ -1643,6 +1686,12 @@ bool CompositorFrameSinkSupport::ShouldSendBeginFrame(
   }
 
   if (should_throttle_as_requested) {
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+    if (throttle_mode_ && !throttle_started_) {
+      throttle_started_ = true;
+      TRACE_EVENT0("viz", "CompositorFrameSinkSupport::UpdateThrottleMode start");
+    }
+#endif
     ++frames_throttled_since_last_;
     return RecordShouldSendBeginFrame("ThrottleRequested", false);
   }

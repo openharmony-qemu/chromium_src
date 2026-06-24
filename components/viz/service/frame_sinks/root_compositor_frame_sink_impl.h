@@ -148,6 +148,12 @@ class VIZ_SERVICE_EXPORT RootCompositorFrameSinkImpl
 #if BUILDFLAG(IS_ANDROID)
   base::ScopedClosureRunner GetCacheBackBufferCb();
 #endif
+
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+  void UpdateThrottleMode(bool is_enable) override {}
+  void InitializeCompositorFrameSinkType(
+      mojom::CompositorFrameSinkType type) override;
+#endif
   ExternalBeginFrameSource* external_begin_frame_source() {
     return external_begin_frame_source_.get();
   }

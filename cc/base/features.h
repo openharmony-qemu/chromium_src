@@ -288,6 +288,12 @@ CC_BASE_EXPORT BASE_DECLARE_FEATURE(kManualBeginFrame);
 CC_BASE_EXPORT BASE_DECLARE_FEATURE(
     kDropMetricsFromNonProducedFramesOnlyIfTheyHadNoDamage);
 
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+CC_BASE_EXPORT BASE_DECLARE_FEATURE(kThrottleFrameRateOnManyDidNotProduceFrame);
+CC_BASE_EXPORT extern const base::FeatureParam<int>
+    kNumDidNotProduceFrameBeforeThrottle;
+#endif
+
 // When enabled, GpuImageDecodeCache will release its lock during the expensive
 // transfer cache entry serialization and upload steps, as well as during
 // raster dark mode filter generation.

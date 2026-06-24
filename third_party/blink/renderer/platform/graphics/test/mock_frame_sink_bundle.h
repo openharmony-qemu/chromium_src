@@ -34,7 +34,10 @@ class MockFrameSinkBundle : public viz::mojom::blink::FrameSinkBundle {
   void FlushReceiver() { receiver_.FlushForTesting(); }
 
   viz::mojom::blink::FrameSinkBundleClient& client() { return *client_.get(); }
-
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+  MOCK_METHOD2(InitializeCompositorFrameSinkType,
+               void(uint32_t, viz::mojom::CompositorFrameSinkType));
+#endif
   // viz::mojom::blink::FrameSinkBundle implementation:
   MOCK_METHOD2(SetNeedsBeginFrame, void(uint32_t, bool));
   MOCK_METHOD1(Submit,

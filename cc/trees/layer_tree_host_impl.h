@@ -85,6 +85,10 @@
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/geometry/vector2d_f.h"
 
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+#include "arkweb/chromium_ext/cc/trees/frame_rate_estimator_ohos.h"
+#endif
+
 namespace gfx {
 class PointF;
 }
@@ -616,6 +620,12 @@ class CC_EXPORT LayerTreeHostImpl : public TileManagerClient,
   virtual void DidFinishImplFrame(const viz::BeginFrameArgs& args);
   void DidNotProduceFrame(const viz::BeginFrameAck& ack,
                           FrameSkippedReason reason);
+ #if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+  base::TimeDelta ThrottleFrameEnd();
+  void ThrottleFrameStart();
+  bool IsThrottleEnable();
+ #endif
+
   void DidChangeBeginFrameSourcePaused(bool paused);
   void OnBeginImplFrameDeadline();
   void DidModifyTilePriorities(bool pending_update_tiles);
@@ -1425,6 +1435,11 @@ class CC_EXPORT LayerTreeHostImpl : public TileManagerClient,
 
 #if BUILDFLAG(ARKWEB_SYNC_RENDER)
   bool isNeedDrawRect_ = false;
+#endif
+
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+  bool throttleFrameStarted_ = false;
+  FrameRateEstimator frame_rate_estimator_;
 #endif
 
   // When true, we are expected to get a new local surface id with the next

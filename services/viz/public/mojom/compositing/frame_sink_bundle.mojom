@@ -59,6 +59,9 @@ interface FrameSinkBundle {
   [UnlimitedSize]
   Submit(array<BundledFrameSubmission> submissions);
 
+  [EnableIf=arkweb_throttle_frame]
+  InitializeCompositorFrameSinkType(
+      uint32 sink_id, CompositorFrameSinkType type);
   // Corresponds to a single message of the same name on CompositorFrameSink
   // for the identified sink.
   [EnableIf=is_android]

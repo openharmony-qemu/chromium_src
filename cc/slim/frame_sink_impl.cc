@@ -129,6 +129,12 @@ bool FrameSinkImpl::BindToClient(FrameSinkImplClient* client) {
       client_receiver_);
 
   frame_sink_ = frame_sink_remote_.get();
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+  if (frame_sink_) {
+    frame_sink_->InitializeCompositorFrameSinkType(
+      viz::mojom::CompositorFrameSinkType::kLayerTree);
+  }
+#endif
 
 #if BUILDFLAG(IS_ANDROID)
   std::vector<viz::Thread> threads;

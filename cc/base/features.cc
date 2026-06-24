@@ -256,6 +256,15 @@ BASE_FEATURE(kManualBeginFrame, base::FEATURE_DISABLED_BY_DEFAULT);
 BASE_FEATURE(kDropMetricsFromNonProducedFramesOnlyIfTheyHadNoDamage,
              base::FEATURE_DISABLED_BY_DEFAULT);
 
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+BASE_FEATURE(kThrottleFrameRateOnManyDidNotProduceFrame,
+            "ThrottleFrameRateOnManyDidNotProduceFrame",
+            base::FEATURE_DISABLED_BY_DEFAULT);
+const base::FeatureParam<int> kNumDidNotProduceFrameBeforeThrottle{
+    &kThrottleFrameRateOnManyDidNotProduceFrame,
+    "num_did_not_produce_frame_before_throttle", 4};
+#endif
+
 BASE_FEATURE(kUnlockDuringGpuImageOperations,
              base::FEATURE_DISABLED_BY_DEFAULT);
 

@@ -218,6 +218,8 @@ class MockCompositorFrameSink : public viz::mojom::CompositorFrameSink {
 #if BUILDFLAG(ARKWEB_TEST)
   MOCK_METHOD1(OnSetBypassVsyncCondition,void(int32_t));
   MOCK_METHOD3(ReportKeyThreadIds,void(const std::vector<int32_t>&, int32_t, bool));
+  MOCK_METHOD1(UpdateThrottleMode,void(bool));
+  MOCK_METHOD1(InitializeCompositorFrameSinkType, void(viz::mojom::CompositorFrameSinkType));
 #endif
  private:
   mojo::Receiver<viz::mojom::CompositorFrameSink> receiver_{this};
@@ -346,6 +348,12 @@ TEST_F(AsyncLayerTreeFrameSinkSimpleTest, HitTestRegionListDuplicate) {
   EXPECT_FALSE(
       viz::HitTestRegionList::IsEqual(hit_test_region_list, GetHitTestData()));
 }
+
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+TEST_F(AsyncLayerTreeFrameSinkSimpleTest, UpdateThrottleMode) {
+    ASSERT_NO_FATAL_FAILURE(layer_tree_frame_sink_->UpdateThrottleMode(false));
+}
+#endif // ARKWEB_THROTTLE_FRAME
 
 TEST_F(AsyncLayerTreeFrameSinkSimpleTest,
        HitTestRegionListDuplicateChangedFlip) {

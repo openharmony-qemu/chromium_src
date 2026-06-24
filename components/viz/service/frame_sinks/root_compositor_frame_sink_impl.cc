@@ -621,6 +621,13 @@ void RootCompositorFrameSinkImpl::DidNotProduceFrame(
   support_->DidNotProduceFrame(begin_frame_ack);
 }
 
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+void RootCompositorFrameSinkImpl::InitializeCompositorFrameSinkType(
+    mojom::CompositorFrameSinkType type) {
+  support_->InitializeCompositorFrameSinkType(type);
+}
+#endif
+
 void RootCompositorFrameSinkImpl::BindLayerContext(
     mojom::PendingLayerContextPtr context,
     mojom::LayerContextSettingsPtr settings) {

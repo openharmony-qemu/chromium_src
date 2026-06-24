@@ -62,6 +62,13 @@ class FrameSinkBundleImpl : public mojom::FrameSinkBundle {
   void RemoveFrameSink(CompositorFrameSinkSupport* support);
 
   // mojom::FrameSinkBundle implementation:
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+  void InitializeCompositorFrameSinkType(
+      uint32_t sink_id,
+      mojom::CompositorFrameSinkType type) override;
+#endif
+
+  // mojom::FrameSinkBundle implementation:
   void SetNeedsBeginFrame(uint32_t sink_id, bool needs_begin_frame) override;
   void Submit(
       std::vector<mojom::BundledFrameSubmissionPtr> submissions) override;

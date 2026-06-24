@@ -267,6 +267,16 @@ void FrameSinkBundleImpl::RemoveFrameSink(CompositorFrameSinkSupport* support) {
   RemoveFrameSinkImpl(source, sink_id);
 }
 
+#if BUILDFLAG(ARKWEB_THROTTLE_FRAME)
+  void FrameSinkBundleImpl::InitializeCompositorFrameSinkType(
+      uint32_t sink_id,
+      mojom::CompositorFrameSinkType type) {
+    if (auto* sink = GetFrameSink(sink_id)) {
+      sink->InitializeCompositorFrameSinkType(type);
+    }
+  }
+#endif
+
 void FrameSinkBundleImpl::SetNeedsBeginFrame(uint32_t sink_id,
                                              bool needs_begin_frame) {
   if (auto* sink = GetFrameSink(sink_id)) {

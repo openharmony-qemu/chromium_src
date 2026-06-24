@@ -64,6 +64,8 @@ class MockCompositorFrameSink : public viz::mojom::blink::CompositorFrameSink {
                           int32_t process_id,
                           bool is_created) override {}
   void OnSetBypassVsyncCondition(int32_t condition) override {}
+  void UpdateThrottleMode(bool is_enable) override {}
+  void InitializeCompositorFrameSinkType(viz::mojom::CompositorFrameSinkType type) override {}
 #endif
  private:
   mojo::Receiver<viz::mojom::blink::CompositorFrameSink> receiver_{this};

@@ -861,6 +861,15 @@ v8::MaybeLocal<v8::Value> V8ScriptRunner::CallFunction(
     int argc,
     v8::Local<v8::Value> argv[],
     v8::Isolate* isolate) {
+
+#if BUILDFLAG(ARKWEB_V8_COMPILE)
+  if (!isolate || isolate->IsDead() || !isolate->InContext()) [[unlikely]] {
+      LOG(ERROR) << "[V8_UAF_HUNT] V8ScriptRunner::CallFunction detected BAD Isolate! "
+                 << "Context valid? " << (context != nullptr)
+                 << ", Destroyed? " << (context && context->IsContextDestroyed());
+  }
+#endif
+
   LocalDOMWindow* window = DynamicTo<LocalDOMWindow>(context);
   TRACE_EVENT0("v8", "v8.callFunction");
   RuntimeCallStatsScopedTracer rcs_scoped_tracer(isolate);

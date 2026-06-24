@@ -3,6 +3,8 @@
 // found in the LICENSE file.
 
 #include "content/common/webid/identity_url_loader_throttle.h"
+#include <optional>
+
 #include "base/strings/stringprintf.h"
 #include "base/test/metrics/histogram_tester.h"
 #include "base/test/scoped_feature_list.h"
@@ -28,15 +30,19 @@ class IdentityUrlLoaderThrottleTest : public testing::Test {
                                base::Unretained(this));
   }
 
-  void SetIdpStatus(const url::Origin& origin, IdpSigninStatus status) {
+  void SetIdpStatus(const std::optional<url::Origin>& initiator,
+                    const url::Origin& idp_origin,
+                    IdpSigninStatus status) {
     ++cb_num_calls_;
-    cb_origin_ = origin;
+    cb_initiator_ = initiator;
+    cb_idp_origin_ = idp_origin;
     cb_signin_status_ = status;
   }
 
   base::HistogramTester histogram_tester_;
   int cb_num_calls_ = 0;
-  url::Origin cb_origin_;
+  std::optional<url::Origin> cb_initiator_;
+  url::Origin cb_idp_origin_;
   IdpSigninStatus cb_signin_status_ = IdpSigninStatus::kSignedOut;
 };
 
@@ -54,6 +60,7 @@ TEST_P(IdentityUrlLoaderThrottleTestParameterized, Headers) {
 
   network::ResourceRequest request;
   request.url = GURL("https://accounts.idp.example/");
+  request.request_initiator = url::Origin::Create(GURL("https://rp.example/"));
   request.has_user_gesture = has_user_gesture;
   bool defer = false;
 
@@ -73,7 +80,8 @@ TEST_P(IdentityUrlLoaderThrottleTestParameterized, Headers) {
   EXPECT_EQ(1, cb_num_calls_);
   EXPECT_EQ(signin_status, cb_signin_status_);
   EXPECT_EQ(url::Origin::Create(GURL("https://accounts.idp.example/")),
-            cb_origin_);
+            cb_idp_origin_);
+  EXPECT_EQ(request.request_initiator, cb_initiator_);
   if (signin_status == IdpSigninStatus::kSignedIn) {
     histogram_tester_.ExpectUniqueSample(
         "Blink.FedCm.IdpSigninRequestInitiatedByUser", has_user_gesture, 1);

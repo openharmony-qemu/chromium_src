@@ -130,7 +130,8 @@ CreateContentBrowserURLLoaderThrottles(
   }
 
   if (auto throttle = MaybeCreateIdentityUrlLoaderThrottle(base::BindRepeating(
-          webid::SetIdpSigninStatus, browser_context, frame_tree_node_id))) {
+          webid::SetIdpSigninStatus, browser_context, request.destination,
+          frame_tree_node_id))) {
     throttles.push_back(std::move(throttle));
   }
 
@@ -156,7 +157,8 @@ CreateContentBrowserURLLoaderThrottlesForKeepAlive(
       browser_context->GetVariationsClient(), &throttles);
 
   auto throttle = MaybeCreateIdentityUrlLoaderThrottle(base::BindRepeating(
-      webid::SetIdpSigninStatus, browser_context, frame_tree_node_id));
+      webid::SetIdpSigninStatus, browser_context,
+      network::mojom::RequestDestination::kEmpty, frame_tree_node_id));
   if (throttle) {
     throttles.push_back(std::move(throttle));
   }

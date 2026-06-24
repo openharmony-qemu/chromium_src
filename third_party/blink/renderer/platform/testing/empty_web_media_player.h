@@ -28,7 +28,6 @@ class EmptyWebMediaPlayer : public WebMediaPlayer {
                   const WebMediaPlayerSource&,
                   CorsMode,
                   bool is_cache_disabled) override;
-  void Shutdown() override { weak_ptr_factory_.InvalidateWeakPtrsAndDoom(); }
   void Play() override {}
   void Pause(PauseReason pause_reason) override {}
   void Seek(double seconds) override {}

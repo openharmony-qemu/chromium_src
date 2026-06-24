@@ -622,11 +622,6 @@ WebMediaPlayerImpl::WebMediaPlayerImpl(
 }
 
 WebMediaPlayerImpl::~WebMediaPlayerImpl() {
-  // Ensure Shutdown() has been called.
-  CHECK(!client_);
-}
-
-void WebMediaPlayerImpl::Shutdown() {
   DVLOG(1) << __func__;
   DCHECK(main_task_runner_->BelongsToCurrentThread());
 
@@ -703,16 +698,8 @@ void WebMediaPlayerImpl::Shutdown() {
   // in MediaFoundationRendererClient.
   pipeline_controller_.reset();
 
-  client_ = nullptr;
-  encrypted_client_ = nullptr;
-  frame_ = nullptr;
-  url_index_ = nullptr;
-
-  weak_factory_.InvalidateWeakPtrsAndDoom();
-
   // Handle destruction of things that need to be destructed after the pipeline
   // completes stopping on the media thread.
-  // TODO(crbug.com/482958590): This may not be necessary anymore.
   PostCrossThreadTask(
       *media_task_runner_, FROM_HERE,
       CrossThreadBindOnce(

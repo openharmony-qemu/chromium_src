@@ -156,6 +156,10 @@ bool OSCryptImpl::EncryptString(const std::string& plaintext,
     obfuscation_prefix = kObfuscationPrefixV10;
   }
 
+  if (!encryption_key) {
+    return false;
+  }
+
   std::string iv = crypto::ohos::get_iv(kIVSizeAESGCM);
   crypto::Encryptor encryptor;
   if (!encryptor.Init(encryption_key, crypto::Encryptor::GCM, iv)) {
@@ -235,6 +239,10 @@ bool OSCryptImpl::DecryptString(const std::string& ciphertext,
   }
 
 #if BUILDFLAG(IS_ARKWEB_EXT) && BUILDFLAG(ARKWEB_ENCRYPT)
+  if (!encryption_key) {
+    return false;
+  }
+
   if (ciphertext.length() < (obfuscation_prefix.length() + kIVSizeAESGCM)) {
     return true;
   }

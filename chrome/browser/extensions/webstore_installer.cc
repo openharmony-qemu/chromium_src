@@ -69,6 +69,10 @@
 #include "ui/base/l10n/l10n_util.h"
 #include "url/gurl.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "components/embedder_support/user_agent_utils.h"
+#endif
+
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 
 using content::BrowserContext;
@@ -631,6 +635,12 @@ void WebstoreInstaller::StartDownload(
   params->set_callback(base::BindOnce(&WebstoreInstaller::OnDownloadStarted,
                                       this, extension_id));
   params->set_download_source(download::DownloadSource::EXTENSION_INSTALLER);
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  auto user_agent =
+      embedder_support::GetUserAgentByHost(download_url_.GetHost());
+  params->add_request_header(net::HttpRequestHeaders::kUserAgent, user_agent);
+#endif
 
   if (base::FeatureList::IsEnabled(
           extensions_features::kWebstoreInstallerUserGestureKillSwitch)) {

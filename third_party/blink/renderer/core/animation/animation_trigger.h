@@ -62,6 +62,9 @@ class CORE_EXPORT AnimationTrigger : public ScriptWrappable {
   void Trace(Visitor* visitor) const override;
 
  protected:
+  FRIEND_TEST_ALL_PREFIXES(ScriptedTimelineTriggerTest,
+                           ForbidScriptDuringActivation);
+
   AnimationBehaviorMap& BehaviorMap() { return animation_behavior_map_; }
   void PerformActivate();
   void PerformDeactivate();
@@ -72,6 +75,10 @@ class CORE_EXPORT AnimationTrigger : public ScriptWrappable {
   // The (main thread) cc::AnimationTrigger corresponding to |this|. The impl
   // thread version is cloned from this.
   scoped_refptr<cc::AnimationTrigger> compositor_trigger_;
+
+  // Set to true during PerformActivate and PerformDeactivate to prevent
+  // mutations of the behavior map.
+  bool is_activating_or_deactivating_ = false;
 
  private:
   virtual void WillAddAnimation(Animation* animation,

@@ -228,6 +228,9 @@ struct WebPreferences {
   [EnableIf=arkweb_input_events]
   bool is_system_rtl_enabled;
 
+  [EnableIf=arkweb_input_events]
+  bool is_compatible_converting_enabled;
+
   [EnableIf=arkweb_active_policy]
   int64 delay_for_background_tab_freezing = -1;
 

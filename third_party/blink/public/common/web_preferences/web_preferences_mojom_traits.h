@@ -1020,6 +1020,11 @@ struct BLINK_COMMON_EXPORT StructTraits<blink::mojom::WebPreferencesDataView,
       const blink::web_pref::WebPreferences& r) {
     return r.is_system_rtl_enabled;
   }
+
+  static bool is_compatible_converting_enabled(
+      const blink::web_pref::WebPreferences& r) {
+    return r.is_compatible_converting_enabled;
+  }
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
 #if BUILDFLAG(ARKWEB_ZOOM)

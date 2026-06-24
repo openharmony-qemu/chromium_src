@@ -2172,8 +2172,12 @@ IN_PROC_BROWSER_TEST_F(NavigationRequestBrowserTest,
     EXPECT_TRUE(observer.is_same_document());
   }
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  // 4) Redo the last navigation, but this time it should trigger a reload.
+#else
   // 4) Redo the last navigation, and it should be treated as fragment
   //    navigation.
+#endif
   {
     TestNavigationThrottleInstaller installer(
         shell()->web_contents(), NavigationThrottle::PROCEED,
@@ -2181,10 +2185,17 @@ IN_PROC_BROWSER_TEST_F(NavigationRequestBrowserTest,
         NavigationThrottle::PROCEED, NavigationThrottle::PROCEED);
     NavigationHandleObserver observer(shell()->web_contents(), url_fragment_2);
     EXPECT_TRUE(NavigateToURL(shell(), url_fragment_2));
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    EXPECT_EQ(1, installer.will_start_called());
+    EXPECT_EQ(1, installer.will_process_called());
+    EXPECT_EQ(0, installer.will_commit_without_url_loader_called());
+    EXPECT_FALSE(observer.is_same_document());
+#else
     EXPECT_EQ(0, installer.will_start_called());
     EXPECT_EQ(0, installer.will_process_called());
     EXPECT_EQ(1, installer.will_commit_without_url_loader_called());
     EXPECT_TRUE(observer.is_same_document());
+#endif
   }
 
   // 5) Perform a new-document navigation by removing the fragment.
@@ -3990,6 +4001,7 @@ IN_PROC_BROWSER_TEST_F(NavigationRequestBackForwardBrowserTest,
   EXPECT_THAT(offsets_, testing::ElementsAre(1, 1, 1, 1, 1));
 }
 
+#if !BUILDFLAG(ARKWEB_NETWORK_LOAD)
 IN_PROC_BROWSER_TEST_F(NavigationRequestBackForwardBrowserTest,
                        SameUrlNavigationFromAddressBar) {
   const GURL url1(embedded_test_server()->GetURL("/title1.html"));
@@ -4008,6 +4020,7 @@ IN_PROC_BROWSER_TEST_F(NavigationRequestBackForwardBrowserTest,
   // We should consider fixing this to report an offset of 0 instead.
   EXPECT_THAT(offsets_, testing::ElementsAre(1, 1));
 }
+#endif
 
 IN_PROC_BROWSER_TEST_F(NavigationRequestBackForwardBrowserTest,
                        LocationReplace) {

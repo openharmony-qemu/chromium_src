@@ -217,7 +217,6 @@ std::vector<IPEndPoint> ExtractAddressResultsForSort(
 
   return endpoints_to_sort;
 }
-
 }  // namespace
 
 HostResolverDnsTask::SingleTransactionResults::SingleTransactionResults(
@@ -1073,14 +1072,24 @@ void HostResolverDnsTask::OnDeferredFailure(bool allow_fallback) {
   // Expect this to result in destroying `this` and thus cancelling any
   // remaining transactions.
   delegate_->OnDnsTaskComplete(task_start_time_, allow_fallback,
-                               std::move(results), secure_);
+                               std::move(results), secure_
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                               ,
+                               truncation_results_
+#endif
+  );
 }
 
 void HostResolverDnsTask::OnSuccess(Results results) {
   net_log_.EndEvent(NetLogEventType::HOST_RESOLVER_DNS_TASK,
                     [&] { return NetLogResults(results); });
   delegate_->OnDnsTaskComplete(task_start_time_, /*allow_fallback=*/true,
-                               std::move(results), secure_);
+                               std::move(results), secure_
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                               ,
+                               truncation_results_
+#endif
+  );
 }
 
 bool HostResolverDnsTask::AnyOfTypeTransactionsRemain(

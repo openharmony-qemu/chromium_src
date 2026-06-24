@@ -9,6 +9,10 @@
 #include <optional>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "base/check.h"
 #include "base/functional/bind.h"
 #include "base/memory/raw_ptr.h"
@@ -168,6 +172,19 @@ class NET_EXPORT ClientSocketHandle : public StreamSocketHandle {
     return connection_attempts_;
   }
 
+#if BUILDFLAG(IS_ARKWEB_EXT) && BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  void SetResolveInfo(const ResolveInfo& resolve_info) {
+    resolve_info_ = resolve_info;
+  }
+  ResolveInfo resolve_info() const { return resolve_info_; }
+  void SetExtraConnectionAttempts(const ConnectionAttempts& attempts) {
+    extra_connection_attempts_ = attempts;
+  }
+  const ConnectionAttempts& GetExtraConnectionAttempts() {
+    return extra_connection_attempts_;
+  }
+#endif
+
   // These may only be used if is_initialized() is true.
   const ClientSocketPool::GroupId& group_id() const { return group_id_; }
   int64_t group_generation() const { return group_generation_; }
@@ -210,6 +227,11 @@ class NET_EXPORT ClientSocketHandle : public StreamSocketHandle {
   bool is_ssl_error_ = false;
   scoped_refptr<SSLCertRequestInfo> ssl_cert_request_info_;
   std::vector<ConnectionAttempt> connection_attempts_;
+
+#if BUILDFLAG(IS_ARKWEB_EXT) && BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  ResolveInfo resolve_info_;
+  ConnectionAttempts extra_connection_attempts_;
+#endif
 
   NetLogSource requesting_source_;
 

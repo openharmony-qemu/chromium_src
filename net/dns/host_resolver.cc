@@ -105,6 +105,12 @@ class FailingRequestImpl : public HostResolver::ResolveHostRequest,
     return nullopt_result;
   }
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  ResolveInfo GetResolveInfo() const override {
+    return ResolveInfo(error_, kDnsResolvedUndefined);
+  }
+#endif
+
  private:
   const int error_;
 };
@@ -142,6 +148,12 @@ class FailingServiceEndpointRequestImpl
   }
 
   bool IsStaleWhileRefresing() const override { return false; }
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  ResolveInfo GetResolveInfo() const override {
+    return ResolveInfo(error_, kDnsResolvedUndefined);
+  }
+#endif
 
   void ChangeRequestPriority(RequestPriority priority) override {}
 

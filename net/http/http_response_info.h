@@ -9,6 +9,7 @@
 #include <set>
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "base/time/time.h"
 #include "net/base/auth.h"
 #include "net/base/ip_endpoint.h"
@@ -19,6 +20,11 @@
 #include "net/http/http_connection_info.h"
 #include "net/http/http_vary_data.h"
 #include "net/ssl/ssl_info.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT) // BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#include "arkweb/chromium_ext/net/dns/public/resolve_info.h"
+#endif
 
 namespace base {
 class Pickle;
@@ -174,6 +180,11 @@ class NET_EXPORT HttpResponseInfo {
 #if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
   bool used_fallback_proxy{false};
   int fallback_proxy_response_code{0};
+#endif
+
+#if BUILDFLAG(IS_ARKWEB_EXT) // BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  ResolveInfo resolve_info;
+  IPEndPoint local_endpoint;
 #endif
 
   // If the response headers indicate a 401 or 407 failure, then this structure

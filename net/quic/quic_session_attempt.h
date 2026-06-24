@@ -60,6 +60,12 @@ class NET_EXPORT_PRIVATE QuicSessionAttempt {
 
     // Called when the attempt completed creating the session.
     virtual void OnQuicSessionCreationComplete(int rv) {}
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+    virtual std::optional<ResolveInfo> GetDnsResolveInfo() {
+      return std::nullopt;
+    }
+#endif
   };
 
   // Create a SessionAttempt for a direct connection.

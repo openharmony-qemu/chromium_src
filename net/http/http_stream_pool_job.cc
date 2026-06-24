@@ -280,4 +280,12 @@ void HttpStreamPool::Job::OnDone(std::optional<int> result) {
   });
 }
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+ResolveInfo HttpStreamPool::Job::resolve_info() {
+  return attempt_manager_ && attempt_manager_->service_endpoint_request()
+             ? attempt_manager_->service_endpoint_request()->GetResolveInfo()
+             : ResolveInfo();
+}
+#endif
+
 }  // namespace net

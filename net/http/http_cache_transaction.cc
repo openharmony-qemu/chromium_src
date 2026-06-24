@@ -645,6 +645,22 @@ ConnectionAttempts HttpCache::Transaction::GetConnectionAttempts() const {
   return attempts;
 }
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+ConnectionAttempts HttpCache::Transaction::GetExtraConnectionAttempts() const {
+  ConnectionAttempts attempts;
+  const HttpTransaction* transaction = GetOwnedOrMovedNetworkTransaction();
+  if (transaction) {
+    attempts = transaction->GetExtraConnectionAttempts();
+  }
+
+  attempts.insert(
+      attempts.begin(),
+      network_transaction_info_.old_extra_connection_attempts.begin(),
+      network_transaction_info_.old_extra_connection_attempts.end());
+  return attempts;
+}
+#endif
+
 void HttpCache::Transaction::CloseConnectionOnDestruction() {
   if (network_trans_) {
     network_trans_->CloseConnectionOnDestruction();
@@ -2009,6 +2025,10 @@ int HttpCache::Transaction::DoSendRequestComplete(int result) {
     response_.fallback_proxy_response_code =
         response->fallback_proxy_response_code;
   }
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  response_.resolve_info = response->resolve_info;
 #endif
 
   // Do not record requests that have network errors or restarts.
@@ -4136,8 +4156,16 @@ void HttpCache::Transaction::SaveNetworkTransactionInfo(
   network_transaction_info_.old_connection_attempts.insert(
       network_transaction_info_.old_connection_attempts.end(),
       connection_attempts.begin(), connection_attempts.end());
+
   network_transaction_info_.old_remote_endpoint = IPEndPoint();
   transaction.GetRemoteEndpoint(&network_transaction_info_.old_remote_endpoint);
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  const auto extra_attempts = transaction.GetExtraConnectionAttempts();
+  network_transaction_info_.old_extra_connection_attempts.insert(
+      network_transaction_info_.old_extra_connection_attempts.end(),
+      extra_attempts.begin(), extra_attempts.end());
+#endif
 
   if (transaction.IsMdlMatchForMetrics()) {
     network_transaction_info_.previous_mdl_match_for_metrics = true;

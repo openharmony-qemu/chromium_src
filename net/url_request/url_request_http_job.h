@@ -44,6 +44,10 @@
 #include "net/device_bound_sessions/session_service.h"
 #endif  // BUILDFLAG(ENABLE_DEVICE_BOUND_SESSIONS)
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+#include "arkweb/chromium_ext/net/base/request_attempt.h"
+#endif
+
 namespace net {
 
 class HttpRequestHeaders;
@@ -89,6 +93,13 @@ class NET_EXPORT_PRIVATE URLRequestHttpJob : public URLRequestJob {
     kDirectFallback = 2,
     kMaxValue = kDirectFallback,
   };
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  void GenerateRequestAttempt(int result);
+  int GetOriginalNetErrorCode() const override;
+  ConnectionAttempts GetExtraConnectionAttempts() const override;
+  std::vector<net::RequestAttempt> GetRequestAttempts() const override;
+#endif
 
  protected:
   URLRequestHttpJob(URLRequest* request,
@@ -426,6 +437,15 @@ class NET_EXPORT_PRIVATE URLRequestHttpJob : public URLRequestJob {
 
   // The content encoding types that need to be handled in the client side.
   std::vector<net::SourceStreamType> client_side_content_decoding_types_;
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  // Track request attempts for navigation info reporting.
+  std::vector<net::RequestAttempt> request_attempts_;
+  std::string current_request_trace_id_;
+  bool should_set_original_code_{false};
+  int original_error_code_{0};
+  AttemptType current_attempt_type_{AttemptType::kNormal};
+#endif
 
   base::WeakPtrFactory<URLRequestHttpJob> weak_factory_{this};
 };

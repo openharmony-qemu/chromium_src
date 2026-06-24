@@ -99,6 +99,10 @@
 #include "arkweb/chromium_ext/content/public/browser/https_upgrades_policy.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+#include "arkweb/chromium_ext/net/base/web_navigation_info.h"
+#endif
+
 namespace network {
 struct IntegrityPolicy;
 struct URLLoaderCompletionStatus;
@@ -544,6 +548,11 @@ class CONTENT_EXPORT NavigationRequest
   // notifications.
   void SetCookieAccessObserversForTesting(
       std::unique_ptr<CookieAccessObservers> cookie_access_observers);
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  bool IsAutoReload() override;
+  void OnReportNewNavigationInfo(const std::string& page_trace_id) override;
+#endif
 
   // Called on the UI thread by the Navigator to start the navigation.
   // The NavigationRequest can be deleted while BeginNavigation() is called.
@@ -3177,7 +3186,12 @@ class CONTENT_EXPORT NavigationRequest
   int original_error_code_ = net::OK;
   ErrorPageReloadReason  current_reload_reason_ = ErrorPageReloadReason ::INVALID;
   std::set<ErrorPageReloadReason > reload_reason_list_;
-#endif  
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  net::WebNavigationInfo web_navigation_info_;
+  GURL original_url_;
+#endif
 
   // This navigation request should swap browsing instances as part of a test
   // reset.

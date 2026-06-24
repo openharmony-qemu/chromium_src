@@ -867,7 +867,12 @@ bool HttpNetworkTransaction::IsMdlMatchForMetrics() const {
 }
 
 void HttpNetworkTransaction::OnStreamReady(const ProxyInfo& used_proxy_info,
-                                           std::unique_ptr<HttpStream> stream) {
+                                           std::unique_ptr<HttpStream> stream
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                                           ,
+                                           const ResolveInfo resolve_info
+#endif
+) {
   DCHECK_EQ(STATE_CREATE_STREAM_COMPLETE, next_state_);
   DCHECK(stream_request_.get());
 
@@ -891,6 +896,10 @@ void HttpNetworkTransaction::OnStreamReady(const ProxyInfo& used_proxy_info,
   response_.was_fetched_via_spdy =
       stream_request_->negotiated_protocol() == NextProto::kProtoHTTP2;
   response_.dns_aliases = stream_->GetDnsAliases();
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  response_.resolve_info = resolve_info;
+#endif
 
   dns_resolution_start_time_override_ =
       stream_request_->dns_resolution_start_time_override();
@@ -920,7 +929,12 @@ void HttpNetworkTransaction::OnStreamFailed(
     int result,
     const NetErrorDetails& net_error_details,
     const ProxyInfo& used_proxy_info,
-    ResolveErrorInfo resolve_error_info) {
+    ResolveErrorInfo resolve_error_info
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+    ,
+    const ResolveInfo resolve_info
+#endif
+) {
   DCHECK_EQ(STATE_CREATE_STREAM_COMPLETE, next_state_);
   DCHECK_NE(OK, result);
   DCHECK(stream_request_.get());
@@ -930,6 +944,10 @@ void HttpNetworkTransaction::OnStreamFailed(
   SetProxyInfoInResponse(used_proxy_info, &response_);
   response_.resolve_error_info = resolve_error_info;
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  response_.resolve_info = resolve_info;
+#endif
+
   OnIOComplete(result);
 }
 
@@ -938,6 +956,10 @@ void HttpNetworkTransaction::OnCertificateError(int result,
 #if BUILDFLAG(ARKWEB_EX_FALLBACK_PROXY)
                                                 ,
                                                 bool used_fallback_proxy
+#endif
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                                                ,
+                                                const ResolveInfo resolve_info
 #endif
 ) {
   DCHECK_EQ(STATE_CREATE_STREAM_COMPLETE, next_state_);
@@ -957,6 +979,9 @@ void HttpNetworkTransaction::OnCertificateError(int result,
     response_.used_fallback_proxy = used_fallback_proxy;
 #endif
   }
+#endif
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  response_.resolve_info = resolve_info;
 #endif
 
   // TODO(mbelshe):  For now, we're going to pass the error through, and that

@@ -114,6 +114,12 @@ class HttpStreamFactory::Job
         Job* job,
         const ConnectionAttempts& attempts) = 0;
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+    virtual void AddExtraConnectionAttemptsToRequest(
+        Job* job,
+        const ConnectionAttempts& extra_attempts) = 0;
+#endif
+
     // Invoked when |job| finishes initiating a connection. This may occur
     // before the handshake is complete, and provides the delegate an
     // early chance to handle any errors.
@@ -248,6 +254,11 @@ class HttpStreamFactory::Job
 
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
   void SetFromPreload(bool from_preload) { from_preload_ = from_preload; }
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  ResolveInfo resolve_info() const { return resolve_info_; }
+  void MaybeCopyExtraConnectionAttemptsFromHandle();
 #endif
 
  private:
@@ -500,6 +511,10 @@ class HttpStreamFactory::Job
 
   // Keeps track of the connection management config.
   std::optional<ConnectionManagementConfig> management_config_;
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  ResolveInfo resolve_info_;
+#endif
 
   base::WeakPtrFactory<Job> ptr_factory_{this};
 };

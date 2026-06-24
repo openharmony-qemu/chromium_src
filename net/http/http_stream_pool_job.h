@@ -189,6 +189,10 @@ class HttpStreamPool::Job {
 
   base::TimeTicks create_time() const { return create_time_; }
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  ResolveInfo resolve_info();
+#endif
+
  private:
   // Called when job is cancelled or completes. Sets `result_` (which is
   // currently nullopt on cancelletation - should it be ERR_ABORTED instead?).

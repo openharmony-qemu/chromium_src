@@ -284,7 +284,12 @@ class HostResolverManager::Job : public PrioritizedDispatcher::Job,
   void OnDnsTaskComplete(base::TimeTicks start_time,
                          bool allow_fallback,
                          HostResolverDnsTask::Results results,
-                         bool secure) override;
+                         bool secure
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                         ,
+                         std::vector<IPEndPoint> truncation_result = {}
+#endif
+                         ) override;
   void OnIntermediateTransactionsComplete(
       std::optional<HostResolverDnsTask::SingleTransactionResults>
           single_transaction_results) override;
@@ -319,7 +324,12 @@ class HostResolverManager::Job : public PrioritizedDispatcher::Job,
                         base::TimeDelta ttl,
                         bool allow_cache,
                         bool secure,
-                        std::optional<TaskType> task_type);
+                        std::optional<TaskType> task_type
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+                        ,
+                        const std::vector<IPEndPoint>& truncation_results = {}
+#endif
+  );
 
   void CompleteRequestsWithoutCache(
       const HostCache::Entry& results,
@@ -423,6 +433,11 @@ class HostResolverManager::Job : public PrioritizedDispatcher::Job,
   std::optional<JobMap::iterator> self_iterator_;
 
   base::TimeDelta total_transaction_time_queued_;
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  int dns_status_ = kDnsResolvedUndefined;
+  std::vector<TaskType> finished_tasks_;
+#endif
 
   base::WeakPtrFactory<Job> weak_ptr_factory_{this};
 };

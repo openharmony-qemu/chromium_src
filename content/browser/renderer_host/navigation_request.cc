@@ -3267,6 +3267,10 @@ void NavigationRequest::StartNavigation() {
             GetStoragePartitionWithCurrentSiteInfo(), common_params_->url);
   }
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  original_url_ = common_params_->url;
+#endif
+
   // Compute the redirect chain.
   // TODO(clamy): Try to simplify this and have the redirects be part of
   // CommonNavigationParams.
@@ -4711,6 +4715,12 @@ void NavigationRequest::OnResponseStarted(
   if (is_mhtml_archive)
     is_mhtml_or_subframe_ = true;
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  if (!is_download_ && nav_request_utils_) {
+    nav_request_utils_->PopulateNavigationInfo(response_head_->status);
+  }
+#endif
+
   if (CheckCSPEmbeddedEnforcement() ==
       CSPEmbeddedEnforcementResult::BLOCK_RESPONSE) {
     OnRequestFailedInternal(
@@ -5435,6 +5445,19 @@ void NavigationRequest::OnRequestFailedInternal(
   extended_error_code_ = status.extended_error_code;
   resolve_error_info_ = status.resolve_error_info;
   navigation_handle_timing_.request_failed_time = base::TimeTicks::Now();
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  if (nav_request_utils_) {
+    network::URLLoaderCompletionStatus temp_status = status;
+    if (!temp_status.navigation_info.has_value() && response_head_ &&
+        response_head_->status.has_value() &&
+        response_head_->status->navigation_info.has_value()) {
+      temp_status.navigation_info =
+          response_head_->status->navigation_info.value();
+    }
+    nav_request_utils_->PopulateNavigationInfo(temp_status);
+  }
+#endif
 
   if (MaybeCancelFailedNavigation())
     return;

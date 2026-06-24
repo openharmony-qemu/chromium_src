@@ -1033,6 +1033,12 @@ function updateRemoteDebuggingEnabled(enabled, allowed, hide, address) {
     tab.hidden = false;
   }
 
+  // ARKWEB_DEVTOOLS begin
+  if (tab) {
+    tab.hidden = true;
+  }
+  // ARKWEB_DEVTOOLS end
+
   const checkbox = $('remote-debugging-enabled');
   checkbox.checked = !!enabled;
   checkbox.disabled = !allowed;

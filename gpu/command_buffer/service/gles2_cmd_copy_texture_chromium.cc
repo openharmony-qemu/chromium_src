@@ -700,6 +700,7 @@ void PrepareUnpackBuffer(GLuint buffer[2],
     // GLCopyTextureCHROMIUMES3Test.FormatCombinations in gl_tests. This is seen
     // on Nexus 5 but not Nexus 4. Read pixels to client memory, then upload to
     // pixel unpack buffer with glBufferData.
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
     auto pixels = base::HeapArray<uint8_t>::Uninit(width * height * 4);
     glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
     auto data = base::HeapArray<float>::Uninit(width * height * 3);

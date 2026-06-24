@@ -5340,9 +5340,12 @@ std::vector<FPDF_PAGEOBJECT> PDFiumEngine::GetActiveInkPageObjectsForPage(
     }
 
     for (FPDF_PAGEOBJECT page_object : datum.page_objects) {
-      // Note: FPDFPageObj_GetIsActive has been removed in PDFium.
-      // All stored page objects are considered active.
-      active_page_objects.push_back(page_object);
+      FPDF_BOOL active = false;
+      bool result = FPDFPageObj_GetIsActive(page_object, &active);
+      CHECK(result);
+      if (active) {
+        active_page_objects.push_back(page_object);
+      }
     }
   }
   return active_page_objects;

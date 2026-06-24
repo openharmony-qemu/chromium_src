@@ -323,6 +323,23 @@ class ResizeObserver : public aura::WindowTreeHostObserver {
   int bounds_change_count_ = 0;
 };
 
+class CloseOnBoundsChangedWidgetObserver : public WidgetObserver {
+ public:
+  explicit CloseOnBoundsChangedWidgetObserver(Widget* widget) {
+    observation_.Observe(widget);
+  }
+  ~CloseOnBoundsChangedWidgetObserver() override = default;
+
+  void OnWidgetBoundsChanged(Widget* widget,
+                             const gfx::Rect& new_bounds) override {
+    observation_.Reset();
+    widget->CloseNow();
+  }
+
+ private:
+  base::ScopedObservation<Widget, WidgetObserver> observation_{this};
+};
+
 // Verifies that setting widget bounds, just after creating it, with the same
 // size passed in InitParams does not lead to a "bounds change" event. Prevents
 // regressions, such as https://crbug.com/1151092.
@@ -640,5 +657,64 @@ TEST_F(DesktopWindowTreeHostPlatformTest, ContentWindowShownOnce) {
 
   host_platform->GetContentWindow()->RemoveObserver(&observer);
 }
+
+#if !BUILDFLAG(IS_FUCHSIA)
+class MaximizeBoundsChangeStubWindow : public ui::StubWindow {
+ public:
+  explicit MaximizeBoundsChangeStubWindow(ui::PlatformWindowDelegate* delegate,
+                                          gfx::AcceleratedWidget widget,
+                                          const gfx::Rect& bounds)
+      : StubWindow(delegate, false, bounds) {
+    InitDelegateWithWidget(delegate, widget);
+  }
+
+  void Maximize() override {
+    delegate()->OnBoundsChanged({/*origin_changed=*/true});
+  }
+};
+
+class MaximizeBoundsChangePlatformWindowFactoryDelegate
+    : public aura::WindowTreeHostPlatform::
+          PlatformWindowFactoryDelegateForTesting {
+ public:
+  MaximizeBoundsChangePlatformWindowFactoryDelegate() {
+    aura::WindowTreeHostPlatform::SetPlatformWindowFactoryDelegateForTesting(
+        this);
+  }
+  MaximizeBoundsChangePlatformWindowFactoryDelegate(
+      const MaximizeBoundsChangePlatformWindowFactoryDelegate&) = delete;
+  MaximizeBoundsChangePlatformWindowFactoryDelegate& operator=(
+      const MaximizeBoundsChangePlatformWindowFactoryDelegate&) = delete;
+  ~MaximizeBoundsChangePlatformWindowFactoryDelegate() override {
+    aura::WindowTreeHostPlatform::SetPlatformWindowFactoryDelegateForTesting(
+        nullptr);
+  }
+
+  std::unique_ptr<ui::PlatformWindow> Create(
+      aura::WindowTreeHostPlatform* host) override {
+    return std::make_unique<MaximizeBoundsChangeStubWindow>(
+        host, ++last_accelerated_widget_, gfx::Rect(100, 100, 100, 100));
+  }
+
+  gfx::AcceleratedWidget last_accelerated_widget_ = gfx::kNullAcceleratedWidget;
+};
+
+TEST_F(DesktopWindowTreeHostPlatformTest,
+       MaximizeSurvivesSynchronousCloseDuringBoundsChange) {
+  auto scoped_platform_window_factory_delegate =
+      std::make_unique<MaximizeBoundsChangePlatformWindowFactoryDelegate>();
+
+  std::unique_ptr<Widget> widget = CreateWidgetWithNativeWidget();
+  widget->Show();
+
+  auto* host_platform = DesktopWindowTreeHostPlatform::GetHostForWidget(
+      widget->GetNativeWindow()->GetHost()->GetAcceleratedWidget());
+  ASSERT_TRUE(host_platform);
+
+  CloseOnBoundsChangedWidgetObserver observer(widget.get());
+
+  host_platform->Maximize();
+}
+#endif  // !BUILDFLAG(IS_FUCHSIA)
 
 }  // namespace views

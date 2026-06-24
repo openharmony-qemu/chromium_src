@@ -3315,8 +3315,14 @@ void WebMediaPlayerImpl::OnTimeUpdate() {
   media_session::MediaPosition new_position(effective_playback_rate, duration,
                                             current_time, ended_);
 
+#if BUILDFLAG(ARKWEB_MEDIA_HLS)
+  bool is_hls = media_player_url_params_.GetMediaPlayerUrlType() == media::MediaPlayerUrlType::kHlsMediaPlayer;
+if (!MediaPositionNeedsUpdate(media_position_state_, new_position) && !is_hls)
+    return;
+#else
   if (!MediaPositionNeedsUpdate(media_position_state_, new_position))
     return;
+#endif
 
   DVLOG(2) << __func__ << "(" << new_position.ToString() << ")";
   media_position_state_ = new_position;

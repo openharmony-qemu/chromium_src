@@ -60,19 +60,6 @@ void JSBasedEventListener::Invoke(
   DCHECK(event->RawTarget());
   DCHECK(event->currentTarget());
 
-#if BUILDFLAG(ARKWEB_V8_COMPILE)
-  if (execution_context_of_event_target->IsContextDestroyed()) [[unlikely]] {
-      std::string event_type = event->type().Utf8();
-      std::string url = "unknown_url";
-      if (execution_context_of_event_target->Url().IsValid()) {
-          url = execution_context_of_event_target->Url().GetString().Utf8();
-      }
-
-      LOG(ERROR) << "[V8_UAF_HUNT] ANOMALY! Event fired on DESTROYED context! "
-                 << "URL: " << url << " | EventType: " << event_type;
-  }
-#endif
-
   v8::Isolate* isolate = GetIsolate();
 
   // Don't reenter V8 if execution was terminated in this instance of V8.

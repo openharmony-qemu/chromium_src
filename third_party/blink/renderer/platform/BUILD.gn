@@ -158,6 +158,7 @@ executable("character_data_generator") {
   # TODO(crbug.com/40031409): Fix code that adds exit-time destructors and
   # enable the diagnostic by removing this line.
   configs += [ "//build/config/compiler:no_exit_time_destructors" ]
+  ldflags = [ "-lgcc_s" ]
 }
 
 # This isn't strictly necessary since we can just add the deps to "platform",

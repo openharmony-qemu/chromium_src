@@ -12,6 +12,7 @@ if (current_toolchain == host_toolchain) {
       "//third_party/protobuf:protoc_cpp",
       "//third_party/protobuf:protoc_lib",
     ]
+    ldflags = [ "-lgcc_s" ]
   }
 
   executable("proto_test_extras_plugin") {

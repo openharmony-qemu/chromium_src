@@ -25,6 +25,7 @@ prebuilts_ets_path="ets-linux-x64-6.1.0.27-Beta1.zip"
 prebuilts_js_path="js-linux-x64-6.1.0.27-Beta1.zip"
 prebuilts_previewer_path="previewer-linux-x64-6.1.0.27-Beta1.zip"
 prebuilts_toolchains_path="toolchains-linux-x64-6.1.0.27-Beta1.zip"
+prebuilts_pac_path="../../prebuilts/llvm/pac/PAC.zip"
 
 if [ -d "../../prebuilts" ]; then
   prebuilts_llvm_path="../../prebuilts/llvm/llvm/llvm-linux-x86_64_stripped.tar.gz"
@@ -147,6 +148,10 @@ llvm_upgrade() {
     if [ ${rc} -ne 0 ]; then
       echo "ERROR: Failed to extract llvm tarball: ${base_dir}/llvm.tar.gz, result: ${rc}"
       return ${rc}
+    fi
+
+    if [ -f ${prebuilts_pac_path} ]; then
+      unzip -oq ${prebuilts_pac_path}
     fi
 
     if [ -f ${prebuilts_pac_path} ]; then

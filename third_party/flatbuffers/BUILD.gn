@@ -139,6 +139,7 @@ executable("flatc") {
     ":compiler_files",
     ":flatbuffers",
   ]
+  ldflags = [ "-lgcc_s" ]
 }
 
 # The following is just for testing.

@@ -107,6 +107,7 @@ executable("country_native_names_generator") {
     "//components/autofill/core/browser:country_data",
     "//third_party/icu",
   ]
+  ldflags = [ "-lgcc_s" ]
 }
 
 compiled_action("generate_country_native_names") {

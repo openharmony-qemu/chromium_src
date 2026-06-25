@@ -281,7 +281,7 @@ bool CommandLine::Init(int argc, const char* const* argv) {
 #error Unsupported platform
 #endif
 
-#if BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(IS_ARKWEB) && !BUILDFLAG(ARKWEB_TEST)
   static bool enable_js_stack = OHOS::NWeb::OhosAdapterHelper::GetInstance()
                       .GetSystemPropertiesInstance()
                       .GetBoolParameter("web.debug.js.stack", false);

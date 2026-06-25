@@ -269,9 +269,9 @@ bool InstallSigner::VerifySignature(const InstallSignature& signature) {
 
   crypto::SignatureVerifier verifier;
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  if (!verifier.VerifyInit(crypto::SignatureVerifier::RSA_PKCS1_SHA1,
-#else
   if (!verifier.VerifyInit(crypto::SignatureVerifier::RSA_PSS_SHA256,
+#else
+  if (!verifier.VerifyInit(crypto::SignatureVerifier::RSA_PKCS1_SHA1,
 #endif
                            base::as_byte_span(signature.signature),
                            base::as_byte_span(public_key))) {

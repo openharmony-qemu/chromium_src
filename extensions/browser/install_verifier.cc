@@ -174,11 +174,21 @@ void InstallVerifier::Init() {
   }
 
   ExtensionSystem::Get(context_)->ready().Post(
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
       FROM_HERE, base::BindOnce(&InstallVerifier::MaybeBootstrapSelf,
+#else
+      FROM_HERE, base::BindOnce(&InstallVerifier::VerifyAllExtensions,
+#endif
                                 weak_factory_.GetWeakPtr()));
 }
 
 void InstallVerifier::VerifyAllExtensions() {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (check_all_extensions_) {
+    return;
+  }
+  check_all_extensions_ = true;
+#endif
   AddMany(GetExtensionsToVerify(), ADD_ALL);
 }
 

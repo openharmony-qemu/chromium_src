@@ -90,8 +90,12 @@ void KeyDispatcher::Cancel() {
     WebWidget* widget = resolved_target_->GetWidget(*type_tool_);
     if (widget) {
       const KeyDispatcher::KeyParams& params = key_sequence_[current_key_];
+      base::WeakPtr<KeyDispatcher> weak_this = weak_ptr_factory_.GetWeakPtr();
       WebInputEventResult up_result = CreateAndDispatchKeyEvent(
           *widget, WebInputEvent::Type::kKeyUp, params);
+      if (!weak_this) {
+        return;
+      }
       if (up_result == WebInputEventResult::kHandledSuppressed) {
         ACTOR_LOG() << "Warning: KeyUp event for key " << params.dom_key
                     << " suppressed during cancelation.";
@@ -116,8 +120,12 @@ void KeyDispatcher::ContinueIncrementalTyping() {
   }
 
   if (!is_key_down_) {
+    base::WeakPtr<KeyDispatcher> weak_this = weak_ptr_factory_.GetWeakPtr();
     WebInputEventResult down_result = CreateAndDispatchKeyEvent(
         *widget, WebInputEvent::Type::kRawKeyDown, params);
+    if (!weak_this) {
+      return;
+    }
 
     // Only the KeyDown event will check for and report failure. The reason the
     // other events don't is that if the KeyDown event was dispatched to the
@@ -146,6 +154,9 @@ void KeyDispatcher::ContinueIncrementalTyping() {
     if (params.dom_key != "Dead") {
       WebInputEventResult char_result = CreateAndDispatchKeyEvent(
           *widget, WebInputEvent::Type::kChar, params);
+      if (!weak_this) {
+        return;
+      }
       if (char_result == WebInputEventResult::kHandledSuppressed) {
         ACTOR_LOG() << "Warning: Char event for key " << params.dom_key
                     << " suppressed.";
@@ -154,8 +165,12 @@ void KeyDispatcher::ContinueIncrementalTyping() {
 
     is_key_down_ = true;
   } else {
+    base::WeakPtr<KeyDispatcher> weak_this = weak_ptr_factory_.GetWeakPtr();
     WebInputEventResult up_result =
         CreateAndDispatchKeyEvent(*widget, WebInputEvent::Type::kKeyUp, params);
+    if (!weak_this) {
+      return;
+    }
     if (up_result == WebInputEventResult::kHandledSuppressed) {
       ACTOR_LOG() << "Warning: KeyUp event for key " << params.dom_key
                   << " suppressed.";
@@ -214,7 +229,7 @@ void KeyDispatcher::Finish(mojom::ActionResultPtr result) {
 WebInputEventResult KeyDispatcher::CreateAndDispatchKeyEvent(
     WebWidget& widget,
     WebInputEvent::Type type,
-    KeyDispatcher::KeyParams key_params) {
+    KeyParams key_params) {
   WebKeyboardEvent key_event(type, key_params.modifiers, ui::EventTimeForNow());
   key_event.windows_key_code = key_params.windows_key_code;
   key_event.native_key_code = key_params.native_key_code;
@@ -225,8 +240,12 @@ WebInputEventResult KeyDispatcher::CreateAndDispatchKeyEvent(
   key_event.text[0] = key_params.text;
   key_event.unmodified_text[0] = key_params.unmodified_text;
 
+  base::WeakPtr<KeyDispatcher> weak_this = weak_ptr_factory_.GetWeakPtr();
   WebInputEventResult result = widget.HandleInputEvent(
       WebCoalescedInputEvent(key_event, ui::LatencyInfo()));
+  if (!weak_this) {
+    return result;
+  }
   journal_->Log(task_id_, WebInputEvent::GetName(type),
                 JournalDetailsBuilder()
                     .Add("key", key_params.dom_key)

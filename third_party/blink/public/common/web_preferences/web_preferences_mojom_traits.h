@@ -1136,6 +1136,13 @@ struct BLINK_COMMON_EXPORT StructTraits<blink::mojom::WebPreferencesDataView,
   }
 #endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
+#if BUILDFLAG(ARKWEB_FULLSCREEN_VIDEO_OVERLAY)
+  static bool fullscreen_video_overlay_enable(
+      const blink::web_pref::WebPreferences& r) {
+    return r.fullscreen_video_overlay_enable;
+  }
+#endif  // ARKWEB_FULLSCREEN_VIDEO_OVERLAY
+
 #if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
   static int32_t usage_scenario(const blink::web_pref::WebPreferences& r) {
     return r.usage_scenario;

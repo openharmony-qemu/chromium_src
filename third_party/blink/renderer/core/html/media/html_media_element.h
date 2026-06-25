@@ -470,6 +470,9 @@ class CORE_EXPORT HTMLMediaElement
   void OnSupportVideoSurfaceChanged(
       bool support, std::string decoder_name) override;
 #endif  // ARKWEB_VIDEO_ASSISTANT
+#if BUILDFLAG(ARKWEB_FULLSCREEN_VIDEO_OVERLAY)
+  bool IsFullscreenVideoOverlayEnabled() const override;
+#endif  // ARKWEB_FULLSCREEN_VIDEO_OVERLAY
 #if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
   void OnDmaBufferSeekTo(base::TimeDelta dmabuf_pause_time) override;
   void RecycleDmaBuffer();

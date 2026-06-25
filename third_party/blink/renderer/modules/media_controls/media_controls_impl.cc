@@ -2203,8 +2203,16 @@ void MediaControlsImpl::OnLoadedMetadata() {
 }
 
 void MediaControlsImpl::OnEnteredFullscreen() {
+#if BUILDFLAG(ARKWEB_FULLSCREEN_VIDEO_OVERLAY)
+  if (!MediaElement().IsFullscreenVideoOverlayEnabled()) {
+    mediaControlsImplUtils_.OnEnteredFullscreenSetIswanted();
+    fullscreen_button_->SetIsFullscreen(true);
+  }
+#else
   mediaControlsImplUtils_.OnEnteredFullscreenSetIswanted();
   fullscreen_button_->SetIsFullscreen(true);
+#endif // BUILDFLAG(ARKWEB_FULLSCREEN_VIDEO_OVERLAY)
+
 #if !BUILDFLAG(ARKWEB_DISPLAY_CUTOUT)
   if (display_cutout_fullscreen_button_)
     display_cutout_fullscreen_button_->SetIsWanted(true);
@@ -2216,8 +2224,16 @@ void MediaControlsImpl::OnEnteredFullscreen() {
 }
 
 void MediaControlsImpl::OnExitedFullscreen() {
+#if BUILDFLAG(ARKWEB_FULLSCREEN_VIDEO_OVERLAY)
+  if (!MediaElement().IsFullscreenVideoOverlayEnabled()) {
+    mediaControlsImplUtils_.OnExitedFullscreenSetIswanted();
+    fullscreen_button_->SetIsFullscreen(false);
+  }
+#else
   mediaControlsImplUtils_.OnExitedFullscreenSetIswanted();
   fullscreen_button_->SetIsFullscreen(false);
+#endif // BUILDFLAG(ARKWEB_FULLSCREEN_VIDEO_OVERLAY)
+
 #if !BUILDFLAG(ARKWEB_DISPLAY_CUTOUT)
   if (display_cutout_fullscreen_button_)
     display_cutout_fullscreen_button_->SetIsWanted(false);

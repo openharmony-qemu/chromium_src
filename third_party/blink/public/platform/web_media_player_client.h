@@ -88,6 +88,10 @@ class BLINK_PLATFORM_EXPORT WebMediaPlayerClient {
   virtual void OnLayerRectChange(const gfx::Rect& rect) {}
 #endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
+#if BUILDFLAG(ARKWEB_FULLSCREEN_VIDEO_OVERLAY)
+  virtual bool IsFullscreenVideoOverlayEnabled() const { return false; }
+#endif  // ARKWEB_FULLSCREEN_VIDEO_OVERLAY
+
 #if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
   // Notify the client that the avsession should be destoryed.
   virtual void DidEndAVSession(bool is_hidden) = 0;

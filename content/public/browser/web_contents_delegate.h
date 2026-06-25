@@ -181,6 +181,10 @@ enum class PictureInPictureResult {
 enum class RendererIsUnresponsiveReason;
 #endif
 
+#if BUILDFLAG(ARKWEB_FULLSCREEN_VIDEO_OVERLAY)
+enum class VideoPlaybackNotificationType;
+#endif // ARKWEB_FULLSCREEN_VIDEO_OVERLAY
+
 #if BUILDFLAG(IS_ANDROID)
 using HardwareBufferResultCallback =
     base::OnceCallback<void(base::android::ScopedHardwareBufferHandle,

@@ -681,6 +681,11 @@ struct WebPreferences {
   bool custom_video_player_overlay = false;
   // #endif ARKWEB_CUSTOM_VIDEO_PLAYER
 
+  // #if defined(ARKWEB_FULLSCREEN_VIDEO_OVERLAY)
+  [EnableIf=arkweb_fullscreen_video_overlay]
+  bool fullscreen_video_overlay_enable = false;
+  // #endif ARKWEB_FULLSCREEN_VIDEO_OVERLAY
+
   // #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   [EnableIf=arkweb_video_assistant]
   bool video_assistant_enabled = false;

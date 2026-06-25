@@ -157,4 +157,7 @@ interface ChildProcess {
   [EnableIf=arkweb_logger_report]
   SetStrictLogMode(bool is_strict_log_mode);
   // #endif
+
+  [EnableIf=arkweb_renderer_anr_dump]
+  NotifyFreezeReported();
 };

@@ -121,6 +121,7 @@ extern "C" void __llvm_profile_set_file_object(FILE* File, int EnableMerge);
 #if defined(OS_OHOS)
 #include "arkweb/chromium_ext/content/common/hicollie_freeze_reporter/hicollie_freeze_reporter.h"
 #endif  //  defined(OS_OHOS)
+#include "arkweb/chromium_ext/content/browser/dfx/appfreeze_monitor_render_impl.h"
 #endif  //  BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
 
 namespace content {

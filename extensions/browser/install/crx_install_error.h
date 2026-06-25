@@ -8,6 +8,8 @@
 #include <optional>
 #include <string>
 
+#include "arkweb/build/features/features.h"
+
 namespace extensions {
 
 enum class SandboxedUnpackerFailureReason;
@@ -24,6 +26,11 @@ enum class CrxInstallErrorType {
   // CrxInstallErrorDetail will give more detail about the failure.
   SANDBOXED_UNPACKER_FAILURE = 2,
   OTHER = 3,
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  // ArkWeb private installExtensionFile error. Keep this explicit value stable
+  // for client-side checks and away from Chromium's low-value error range.
+  UNRECOGNIZED_INSTALL_SOURCE = 100,
+#endif
 };
 
 // Extended error code that may help explain the error type.

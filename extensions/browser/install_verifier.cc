@@ -124,6 +124,14 @@ bool CanUseExtensionApis(const Extension& extension) {
   return extension.is_extension() || extension.is_legacy_packaged_app();
 }
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+bool ShouldBypassStoreCheckForArkwebWebstoreType(const Extension& extension) {
+  // External webstore_type is assigned by ArkWeb controlled install paths. CRX
+  // package signature validation still happens before this verifier step.
+  return CustomData::ShouldBypassStoreCheckForWebstoreType(&extension);
+}
+#endif
+
 }  // namespace
 
 InstallVerifier::InstallVerifier(ExtensionPrefs* prefs,
@@ -140,6 +148,10 @@ bool InstallVerifier::ShouldEnforce() {
 // static
 bool InstallVerifier::NeedsVerification(const Extension& extension,
                                         content::BrowserContext* context) {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (ShouldBypassStoreCheckForArkwebWebstoreType(extension))
+    return false;
+#endif
   return IsFromStore(extension, context) && CanUseExtensionApis(extension);
 }
 
@@ -334,6 +346,12 @@ bool InstallVerifier::MustRemainDisabled(
   if (base::Contains(InstallSigner::GetForcedNotFromWebstore(),
                      extension->id())) {
     verified = false;
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  } else if (ShouldBypassStoreCheckForArkwebWebstoreType(*extension)) {
+    // ArkWeb external webstore_type bypasses store-origin and store membership
+    // checks here. CRX package signature validation already ran earlier.
+    verified = true;
+#endif
   } else if (!IsFromStore(*extension, context_)) {
     verified = false;
   } else if (!signature_ && (!bootstrap_check_complete_ ||

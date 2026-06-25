@@ -16,13 +16,23 @@ base_dir="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 cd ${base_dir}
 echo ${base_dir}
 
-prebuilts_native_path="native-linux-x64-6.1.0.31-Release.zip"
-prebuilts_ets_path="ets-linux-x64-6.1.0.31-Release.zip"
-prebuilts_js_path="js-linux-x64-6.1.0.31-Release.zip"
-prebuilts_previewer_path="previewer-linux-x64-6.1.0.31-Release.zip"
-prebuilts_toolchains_path="toolchains-linux-x64-6.1.0.31-Release.zip"
-prebuilts_llvm_path="llvm-linux-x86_64_stripped.tar.gz"
-prebuilts_rust_path="rust-toolchain.tar.gz"
+prebuilts_sdk_path="../../prebuilts/ohos-sdk/linux"
+target_dir=$(find "$prebuilts_sdk_path" -maxdepth 1 -type d -name '[0-9]*' | sort -V | tail -n 1)
+max_api_version=$(basename "$target_dir")
+
+prebuilts_native_path="native-linux-x64-6.1.0.27-Beta1.zip"
+prebuilts_ets_path="ets-linux-x64-6.1.0.27-Beta1.zip"
+prebuilts_js_path="js-linux-x64-6.1.0.27-Beta1.zip"
+prebuilts_previewer_path="previewer-linux-x64-6.1.0.27-Beta1.zip"
+prebuilts_toolchains_path="toolchains-linux-x64-6.1.0.27-Beta1.zip"
+
+if [ -d "../../prebuilts" ]; then
+  prebuilts_llvm_path="../../prebuilts/llvm/llvm/llvm-linux-x86_64_stripped.tar.gz"
+  prebuilts_rust_path="../../prebuilts/rust/rust/rust-toolchain.tar.gz"
+else
+  prebuilts_llvm_path="llvm-linux-x86_64_stripped.tar.gz"
+  prebuilts_rust_path="rust-toolchain.tar.gz"
+fi
 
 sdk_upgrade() {
   sdk_packages=(
@@ -35,7 +45,7 @@ sdk_upgrade() {
 
   need_reinstall=false
 
-  # Check timestamp file for each package
+  # check timestamp file for each package
   for package in "${sdk_packages[@]}"; do
     if [ -f "$package" ]; then
       current_timestamp=$(stat -c %Z "$package")
@@ -61,6 +71,7 @@ sdk_upgrade() {
     if [ "$need_reinstall" = true ]; then
       echo "Cleaning up old SDK installation..."
       rm -rf openharmony
+      rm -rf "$max_api_version"
     fi
 
     mkdir -p "openharmony"
@@ -82,16 +93,14 @@ sdk_upgrade() {
     popd
   fi
 
-  api_version=$(grep -o '"apiVersion": *"[^"]*"' 'openharmony/ets/oh-uni-package.json' | grep -o '"[^"]*"$' | tr -d '"')
-
-  if [ ! -d "$api_version" ]; then
-    mkdir -p "$api_version"
+  if [ ! -d "$max_api_version" ]; then
+    mkdir -p "$max_api_version"
     if [ $? -ne 0 ]; then
       echo "ERROR: Failed to init SDK."
       return 1
     fi
 
-    cp -r openharmony/ets openharmony/js openharmony/toolchains openharmony/previewer $api_version
+    cp -r openharmony/ets openharmony/js openharmony/toolchains openharmony/previewer $max_api_version
 
   fi
 
@@ -124,73 +133,30 @@ llvm_upgrade() {
       echo "LLVM timestamp validated, skipping extraction"
     fi
   fi
-  
+
   if [ ! -d "llvm" ]; then
     tar -xzf $prebuilts_llvm_path
     rm -rf llvm/lib/aarch64-linux-ohos/libc++.so
     rm -rf llvm/lib/x86_64-linux-ohos/libc++.so
-    rm -rf llvm/lib/arm-linux-ohos/libc++.so
     if [ -d "llvm/lib/clang/22" ]; then
       pushd llvm/lib/clang
       ln -s 22 current
       popd
     fi
     rc=$?
-
     if [ ${rc} -ne 0 ]; then
       echo "ERROR: Failed to extract llvm tarball: ${base_dir}/llvm.tar.gz, result: ${rc}"
       return ${rc}
     fi
 
+    if [ -f ${prebuilts_pac_path} ]; then
+      unzip -oq ${prebuilts_pac_path}
+    fi
+
     rm -rf openharmony/native/llvm
     cp -r llvm openharmony/native/
-
-    # create timestamp file.
-    if [ -d "llvm" ] && [ -f "${prebuilts_llvm_path}" ]; then
-      current_timestamp=$(stat -c %Z "${prebuilts_llvm_path}")
-      echo "$current_timestamp" > "llvm/.timestamp"
-      echo "LLVM timestamp file created: ${current_timestamp}"
-    fi
   fi
-}
-
-rust_upgrade() {
-    if [ -d "rust-toolchain" ]; then
-        # Check timestamp file in rust-toolchain folder.
-        current_timestamp=$(stat -c %Z "${prebuilts_rust_path}")
-        timestamp_file="rust-toolchain/.timestamp"
-
-        if [ ! -f "$timestamp_file" ]; then
-            echo "No Rust toolchain timestamp file found, reinstalling..."
-            rm -rf rust-toolchain
-        elif [ "$(cat "$timestamp_file")" != "$current_timestamp" ]; then
-            echo "Rust toolchain timestamp mismatch, reinstalling..."
-            rm -rf rust-toolchain
-        else
-            echo "Rust toolchain timestamp validated, skipping extraction"
-        fi
-    fi
-
-    if [ ! -d "rust-toolchain" ]; then
-        tar zxf "${prebuilts_rust_path}" || return 1
-
-        # create timestamp file.
-        if [ -d "rust-toolchain" ] && [ -f "${prebuilts_rust_path}" ]; then
-            current_timestamp=$(stat -c %Z "${prebuilts_rust_path}")
-            echo "$current_timestamp" > "rust-toolchain/.timestamp"
-            echo "Rust toolchain timestamp file created: ${current_timestamp}"
-        fi
-    fi
-
-    if [ -d "${base_dir}/../third_party/rust-toolchain" ]; then
-        rm -rf "${base_dir}/../third_party/rust-toolchain"
-    fi
-
-    if [ ! -L "${base_dir}/../third_party/rust-toolchain" ]; then  
-        ln -sf "${base_dir}/rust-toolchain" "${base_dir}/../third_party/rust-toolchain"
-    fi
 }
 
 sdk_upgrade
 llvm_upgrade
-rust_upgrade

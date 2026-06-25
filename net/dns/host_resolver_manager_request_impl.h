@@ -164,6 +164,7 @@ class HostResolverManager::RequestImpl
   ClientSocketFactory* GetClientSocketFactory();
 
 #if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  void MaybeModifyResolveLocallyResults(HostCache::Entry& out_results);
 #if defined(ARKWEB_EXT_NAVIGATION_TODO)
   void MaybeModifyResolveLocallyResults(
       HostCache::Entry& out_results,

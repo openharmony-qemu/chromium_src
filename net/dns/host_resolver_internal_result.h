@@ -141,6 +141,13 @@ class NET_EXPORT_PRIVATE HostResolverInternalDataResult final
 
   base::Value ToValue() const override;
 
+#if BUILDFLAG(IS_ARKWEB_EXT) // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  void RemoveEndpoint(const IPEndPoint& endpoint) {
+    std::erase(endpoints_, endpoint);
+  }
+  void ClearEndpoints() { endpoints_.clear(); }
+#endif
+
  private:
   HostResolverInternalDataResult(const base::Value::Dict& dict,
                                  std::vector<IPEndPoint> endpoints,

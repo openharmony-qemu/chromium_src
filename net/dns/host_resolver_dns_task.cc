@@ -26,9 +26,11 @@
 #include "net/dns/public/util.h"
 
 #if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
 #include "base/base_switches.h"
 #include "base/command_line.h"
-#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#include "net/base/features.h"
+#include "services/network/public/cpp/features.h"
 #endif
 
 namespace net {
@@ -891,6 +893,21 @@ void HostResolverDnsTask::HandleTransactionResults(
     return;
   }
 
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  if (base::FeatureList::IsEnabled(
+          network::features::kEnableNwebExHttpDnsFallback) &&
+      utils) {
+    bool secure_dns_fallback_available = false;
+    if (delegate_) {
+      secure_dns_fallback_available =
+          delegate_->CanUseSecureDnsFallback(&*resolve_context_);
+    }
+    utils->MaybeModifyInsecureDnsTaskResolveResults(
+        std::string(host_.GetHostnameWithoutBrackets()),
+        secure_dns_fallback_available, transaction_results);
+  }
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+
   // If saved result is a deferred failure, try again to complete with that
   // failure.
   if (deferred_failure_) {
@@ -904,6 +921,16 @@ void HostResolverDnsTask::HandleTransactionResults(
     result_refs.insert(it->get());
     saved_results_.insert(std::move(transaction_results.extract(it++).value()));
   }
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  if (base::FeatureList::IsEnabled(
+          network::features::kEnableNwebExHttpDnsFallback) && utils) {
+    HostCache::Entry legacy_results(saved_results_, base::Time::Now(),
+                                    tick_clock_->NowTicks(),
+                                    HostCache::Entry::SOURCE_DNS);
+    utils->ArkWebSetNotNeedQueryType(legacy_results.error(), transaction_info.type);
+  }
+#endif
 
   OnTransactionsFinished(
       SingleTransactionResults(transaction_info.type, std::move(result_refs)));

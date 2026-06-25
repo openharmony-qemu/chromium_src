@@ -4019,6 +4019,7 @@ void RenderFrameImpl::DidCommitNavigation(
       GetBrowserInterfaceBroker().GetInterface(std::move(
           v8_oom::V8OOMMonitorImpl::GetInstance()->GetPendingReceiver()));
     }
+    v8_oom::V8OOMMonitorImpl::GetInstance()->Trigger(document_loader->GetUrl().GetString().Utf8());
 #endif
   }
 #endif

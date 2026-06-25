@@ -4252,6 +4252,8 @@ void RenderProcessHostImpl::OnChannelConnected(int32_t peer_pid) {
     DCHECK(!sent_render_process_ready_);
     sent_render_process_ready_ = true;
     // Send RenderProcessReady only if we already received the process handle.
+    LOG(INFO) << "[RenderPipeline] RenderProcessReady (from channel connected): pid="
+ 	            << GetProcess().Pid() << ", GetID()=" << GetID();
     for (auto& observer : observers_)
       observer.RenderProcessReady(this);
 
@@ -6016,7 +6018,9 @@ void RenderProcessHostImpl::OnProcessLaunched() {
   // to properly cleanup.
   if (deleting_soon_)
     return;
-
+  LOG(INFO) << "[RenderPipeline] OnProcessLaunched: pid="
+ 	             << (child_process_launcher_ ? child_process_launcher_->GetProcess().Pid() : -1)
+ 	             << ", GetID()=" << GetID();
   if (child_process_launcher_) {
     DCHECK(child_process_launcher_->GetProcess().IsValid());
     // TODO(crbug.com/40590142): This should be based on
@@ -6114,6 +6118,8 @@ void RenderProcessHostImpl::OnProcessLaunched() {
     DCHECK(!sent_render_process_ready_);
     sent_render_process_ready_ = true;
     // Send RenderProcessReady only if the channel is already connected.
+    LOG(INFO) << "[RenderPipeline] RenderProcessReady (from OnProcessLaunched): pid="
+ 	            << GetProcess().Pid() << ", GetID()=" << GetID();
     for (auto& observer : observers_)
       observer.RenderProcessReady(this);
 

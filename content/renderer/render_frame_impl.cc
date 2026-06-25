@@ -3946,6 +3946,7 @@ void RenderFrameImpl::DidAddMessageToConsole(
 
 void RenderFrameImpl::DidCreateDocumentLoader(
     blink::WebDocumentLoader* document_loader) {
+  LOG(INFO) << "[RenderPipeline] DidCreateDocumentLoader";
   DocumentState* document_state =
       DocumentState::FromDocumentLoader(document_loader);
   if (!document_state) {
@@ -3983,6 +3984,7 @@ void RenderFrameImpl::DidCommitNavigation(
                "RenderFrameImpl::didStartProvisionalLoad", "frame_token",
                frame_token_, "url",
                document_loader->GetUrl().GetString().Utf8());
+  LOG(INFO) << "[RenderPipeline] DidCommitNavigation: is_main_frame=" << IsMainFrame();
 
 #if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
   if (IsMainFrame()) {
@@ -4306,6 +4308,7 @@ void RenderFrameImpl::DidHandleOnloadEvents() {
 void RenderFrameImpl::DidFinishLoad() {
   TRACE_EVENT1("navigation,benchmark,rail", "RenderFrameImpl::didFinishLoad",
                "frame_token", frame_token_);
+  LOG(INFO) << "[RenderPipeline] DidFinishLoad: is_main_frame=" << IsMainFrame();
   if (!frame_->Parent()) {
     TRACE_EVENT_INSTANT1("WebCore,benchmark,rail", "LoadFinished",
                          TRACE_EVENT_SCOPE_PROCESS, "isOutermostMainFrame",

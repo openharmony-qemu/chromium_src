@@ -411,7 +411,7 @@ HTMLMediaElement::CollectMediaInfoAttributesForVAST() {
   mediaInfoAttr->show_download_button = !controls_list_->ShouldHideDownload();
   mediaInfoAttr->supports_save = SupportVideoAssistantDownload();
   mediaInfoAttr->fullscreen_overlay = true;
-  mediaInfoAttr->icon_url = html_media_element_utils_.GetIconUrl();
+  mediaInfoAttr->icon_url = WTF::String::FromUTF8(html_media_element_utils_.GetIconUrl().Utf8());
   mediaInfoAttr->poster_url = GetUrlString(PosterImageURL());
   mediaInfoAttr->video_url = GetUrlString(currentSrc());
   mediaInfoAttr->is_hls = IsHLSURL(downloadURL());

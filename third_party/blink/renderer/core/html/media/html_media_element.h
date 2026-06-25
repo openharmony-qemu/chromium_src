@@ -765,6 +765,7 @@ class CORE_EXPORT HTMLMediaElement
   bool GetVolume(double* out_volume) override { return true; }
   void GetVolume(GetVolumeCallback callback) override;
   void RequestExitFullscreenIfNeeded();
+  void RequestAVCastStarted() override;
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
   // Returns a reference to the mojo remote for the MediaPlayerHost interface,
@@ -955,6 +956,7 @@ class CORE_EXPORT HTMLMediaElement
       base::OnceCallback<void()> callback,
       media::mojom::blink::VideoAssistantConfigPtr config);
   void OnNotifyVideoPlayingTimerFired(TimerBase*);
+  WebString GetUrlString(const KURL& url);
   bool SupportVideoAssistantDownload() const;
 #endif  // ARKWEB_VIDEO_ASSISTANT
 

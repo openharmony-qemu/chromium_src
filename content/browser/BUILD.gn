@@ -2942,10 +2942,7 @@ source_set("browser") {
   }
   #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   if (defined(arkweb_video_assistant) && arkweb_video_assistant) {
-    sources += [
-      "media/video_assistant/video_assistant.cc",
-      "media/video_assistant/video_assistant.h",
-    ]
+    sources += arkweb_content_browser_media_video_assistant
     if (is_arkweb_ext) {
       deps += [ "//ohos_nweb_ex/overrides/ui/strings" ]
     }

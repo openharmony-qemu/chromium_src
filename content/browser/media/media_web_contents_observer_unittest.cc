@@ -81,6 +81,7 @@ class TestMediaPlayer final : public media::mojom::MediaPlayer {
   void GetMediaCastCurrentTime(GetMediaCastCurrentTimeCallback callback) override {}
   void NotifyRemoteExitFullScreen() override {}
   void NotifyCastControlShow(bool is_show) override {}
+  void RequestAVCastStarted() override {}
   #endif
   
  private:

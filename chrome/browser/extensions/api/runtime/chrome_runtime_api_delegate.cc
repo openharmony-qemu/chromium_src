@@ -65,7 +65,7 @@
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
 #include "extensions/common/manifest_handlers/options_page_info.h"
-#include "ohos_nweb_ex/core/extension/nweb_extension_manager_dispatcher.h"
+#include "ohos_nweb_ex/core/arkweb/nweb_extension_manager_delegate_impl.h"
 #endif
 
 namespace {
@@ -437,7 +437,7 @@ bool ChromeRuntimeAPIDelegate::OpenOptionsPage(
     replacements.SetQueryStr(query);
     url_to_navigate = url_to_navigate.ReplaceComponents(replacements);
   }
-  NWebExtensionManagerDispatcher::OnExtensionOpenUrlCallBack(
+  nweb_ex::NWebExtensionManagerDelegateImpl::GetInstance().OnExtensionOpenUrlCallBack(
       url_to_navigate.spec(), URL_TYPE_OPTIONS);
   return true;
 #else

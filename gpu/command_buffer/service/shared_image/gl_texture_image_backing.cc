@@ -454,6 +454,10 @@ void GLTextureImageBacking::InitializeGLTexture(
     base::span<const uint8_t> pixel_data,
     gl::ProgressReporter* progress_reporter,
     bool framebuffer_attachment_angle) {
+  gl::GLApi* api = gl::g_current_gl_context;
+  while (api->glGetErrorFn() != GL_NO_ERROR) {
+  }
+
   const std::string debug_label =
       "GLSharedImage_" + SharedImageBacking::debug_label();
   int num_planes = format().NumberOfPlanes();
@@ -467,8 +471,15 @@ void GLTextureImageBacking::InitializeGLTexture(
                                 debug_label);
   }
 
-  if (!pixel_data.empty()) {
-    SetCleared();
+  if (is_passthrough_ && !pixel_data.empty()) {
+    GLenum error = api->glGetErrorFn();
+    if (error == GL_NO_ERROR) {
+      SetCleared();
+    } else {
+      LOG(ERROR)
+          << "GLTextureImageBacking: initial pixel upload failed (GL error 0x"
+          << std::hex << error << ")";
+    }
   }
 }
 

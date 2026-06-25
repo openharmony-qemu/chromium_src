@@ -342,6 +342,8 @@ bool ImagePaintTimingDetector::RecordImage(
          if (records_manager_.image_record_manager_utils_) {
              records_manager_.image_record_manager_utils_->NotifyImagePaintForFirstScreenCalculator(
                  record_id_hash, record, record_id.GetLayoutObject() && record_id.GetLayoutObject()->IsVideo());
+             records_manager_.image_record_manager_utils_->AssignImagePaintTimeFromRecord(
+                 record, base::TimeTicks::Now());
          }
      }
 #endif

@@ -2588,6 +2588,11 @@ class CONTENT_EXPORT RenderFrameHostImpl
   void UpdateFaviconURL(
       std::vector<blink::mojom::FaviconURLPtr> favicon_urls) override;
   void DownloadURL(blink::mojom::DownloadURLParamsPtr params) override;
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+  void DownloadURLForOverrideUA(
+      blink::mojom::DownloadURLParamsPtr& blink_parameters,
+      download::DownloadUrlParameters* parameters);
+#endif
   void FocusedElementChanged(bool is_editable_element,
                              bool is_richly_editable_element,
                              const gfx::Rect& bounds_in_frame_widget,

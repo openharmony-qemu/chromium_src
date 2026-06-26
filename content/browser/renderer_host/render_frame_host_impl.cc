@@ -7685,7 +7685,9 @@ void RenderFrameHostImpl::DownloadURL(
   }
   devtools_instrumentation::ApplyNetworkOverridesForDownload(this,
                                                              parameters.get());
-
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+  DownloadURLForOverrideUA(blink_parameters, parameters.get());
+#endif
   StartDownload(std::move(parameters), std::move(blob_url_loader_factory));
 }
 

@@ -166,6 +166,8 @@ public:
     virtual ArkWebRefPtr<ArkScreenlockManagerAdapter> CreateScreenlockManagerAdapter() {return nullptr;}
     virtual ArkWebRefPtr<ArkCertManagerAdapter> GetCertManagerAdapter() {return nullptr;}
     virtual ArkWebRefPtr<ArkBackgroundTaskAdapter> CreateBackgroundTaskAdapter() {return nullptr;}
+    virtual ArkWebRefPtr<ArkSurfaceControlAdapter> GetSurfaceControlAdapter() {return nullptr;}
+    virtual ArkWebRefPtr<ArkSurfaceTransactionAdapter> GetSurfaceTransactionAdapter() {return nullptr;}
 };
 
 class ArkOhosAdapterHelperWrapperTest : public testing::Test {

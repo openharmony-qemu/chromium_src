@@ -23,6 +23,7 @@
 #include "base/system/system_monitor.h"
 #include "base/task/bind_post_task.h"
 #include "gtest/gtest.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/surface_control_adapter.h"
 #include "media/audio/audio_thread.h"
 #include "media/base/media_switches.h"
 #include "ohos_adapter_helper.h"
@@ -206,6 +207,12 @@ class MockOhosAdapterHelper : public OHOS::NWeb::OhosAdapterHelper {
               CreateScreenlockManagerAdapter,
               (),
               (override));
+  MOCK_METHOD(SurfaceControlAdapter&,
+              GetSurfaceControlAdapter,
+              ());
+   MOCK_METHOD(SurfaceTransactionAdapter&,
+              GetSurfaceTransactionAdapter,
+              ());
   static MockOhosAdapterHelper& GetInstance() {
     static MockOhosAdapterHelper instance;
     return instance;

@@ -39,6 +39,7 @@
 #include "ohos_adapter_helper.h"
 #include "video_capture_common_ohos.h"
 #include "video_capture_status_callback_listener_ohos.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/surface_control_adapter.h"
 
 using namespace testing;
 
@@ -297,6 +298,12 @@ class OhosAdapterHelperMock : public OhosAdapterHelper {
               GetHiAppeventAdapterInstance,
               (),
               (override));
+    MOCK_METHOD(SurfaceControlAdapter&,
+              GetSurfaceControlAdapter,
+              ());
+     MOCK_METHOD(SurfaceTransactionAdapter&,
+              GetSurfaceTransactionAdapter,
+              ());
 };
 
 class VideoControlSupportAdapterMock : public VideoControlSupportAdapter {

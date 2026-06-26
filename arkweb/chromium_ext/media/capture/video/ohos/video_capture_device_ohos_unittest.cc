@@ -48,6 +48,7 @@
 #include "media/capture/video_capture_types.h"
 #include "video_capture_params_adapter_impl.h"
 #include "video_capture_surface_buffer_listener_ohos.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/surface_control_adapter.h"
 
 using namespace testing;
 
@@ -168,6 +169,8 @@ class OhosAdapterHelperMock : public OhosAdapterHelper {
   MOCK_METHOD(std::unique_ptr<NetEventAdapter>, CreateNetEventAdapter, (), (override));
   MOCK_METHOD(ColorPickerAdapter &, GetColorPickerAdapter, (), (override));
   MOCK_METHOD(HiAppeventAdapter &, GetHiAppeventAdapterInstance, (), (override));
+  MOCK_METHOD(SurfaceControlAdapter&, GetSurfaceControlAdapter, ());
+  MOCK_METHOD(SurfaceTransactionAdapter&, GetSurfaceTransactionAdapter, ());
 };
 
 class CameraSurfaceBufferAdapterMock : public CameraSurfaceBufferAdapter {

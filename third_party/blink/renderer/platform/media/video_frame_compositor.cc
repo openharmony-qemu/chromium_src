@@ -426,6 +426,11 @@ void VideoFrameCompositor::SetIsPageVisible(bool is_visible) {
   DCHECK(task_runner_->BelongsToCurrentThread());
   if (submitter_)
     submitter_->SetIsPageVisible(is_visible);
+#if BUILDFLAG(ARKWEB_MEDIA)
+  if (is_visible) {
+    ResetDroppedFrameMetrics();
+  }
+#endif // ARKWEB_MEDIA
 }
 
 void VideoFrameCompositor::SetForceSubmit(bool force_submit) {

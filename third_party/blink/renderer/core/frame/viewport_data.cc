@@ -62,6 +62,11 @@ void ViewportData::SetViewportDescription(
     if (!viewport_description.IsSpecifiedByAuthor())
       viewport_default_min_width_ = viewport_description.min_width;
   }
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  if (viewport_description.zoom_is_explicit && viewport_description.zoom > 0) {
+    parsed_initial_scale_ = viewport_description.zoom;
+  }
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
   UpdateViewportDescription();
 }

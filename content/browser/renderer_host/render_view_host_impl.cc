@@ -374,8 +374,13 @@ RenderViewHostImpl::RenderViewHostImpl(
 }
 
 RenderViewHostImpl::~RenderViewHostImpl() {
+#if BUILDFLAG(IS_ARKWEB) || BUILDFLAG(ARKWEB_DFX_TRACING)
+  TRACE_EVENT_INSTANT("navigation", "~RenderViewHostImpl()",
+                      "kRenderViewHost", "RenderViewHostImpl");
+#else
   TRACE_EVENT_INSTANT("navigation", "~RenderViewHostImpl()",
                       ChromeTrackEvent::kRenderViewHost, *this);
+#endif
   base::ScopedUmaHistogramTimer histogram_timer(
       "Navigation.RenderViewHostDestructor");
 

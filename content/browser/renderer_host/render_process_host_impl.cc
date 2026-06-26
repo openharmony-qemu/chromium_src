@@ -1811,8 +1811,13 @@ void RenderProcessHostImpl::SetForGuestsOnlyForTesting() {
 }
 
 RenderProcessHostImpl::~RenderProcessHostImpl() {
+#if BUILDFLAG(IS_ARKWEB) || BUILDFLAG(ARKWEB_DFX_TRACING)
+  TRACE_EVENT("shutdown", "~RenderFrameHostImpl()",
+              "kRenderProcessHost", "RenderProcessHostImpl");
+#else
   TRACE_EVENT("shutdown", "~RenderProcessHostImpl",
               ChromeTrackEvent::kRenderProcessHost, *this);
+#endif
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
 #ifndef NDEBUG
   DCHECK(is_self_deleted_)
@@ -1846,12 +1851,19 @@ RenderProcessHostImpl::~RenderProcessHostImpl() {
       "BrowserRenderProcessHost.MaxOutermostMainFrames",
       max_outermost_main_frames_);
 
+#if BUILDFLAG(IS_ARKWEB) || BUILDFLAG(ARKWEB_DFX_TRACING)
+  TRACE_EVENT_END("shutdown", tracing_track_,
+                  "kRenderProcessHost", "RenderProcessHostImpl");
+  TRACE_EVENT_END("shutdown", tracing_track_,
+                  "kRenderProcessHost", "RenderProcessHostImpl");
+#else
   // "Cleanup in progress"
   TRACE_EVENT_END("shutdown", tracing_track_,
                   ChromeTrackEvent::kRenderProcessHost, *this);
   // "Browser.RenderProcessHostImpl"
   TRACE_EVENT_END("shutdown", tracing_track_,
                   ChromeTrackEvent::kRenderProcessHost, *this);
+#endif
 }
 
 bool RenderProcessHostImpl::Init() {

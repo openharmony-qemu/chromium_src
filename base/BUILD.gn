@@ -2626,11 +2626,23 @@ component("base") {
       "trace_event/java_heap_dump_provider_android.h",
     ]
   }
-    if (is_ohos && arkweb_dfx_tracing) {
-      include_dirs = [ "//third_party/ohos_ndk/includes/ohos_adapter" ]
-      sources += [ "//arkweb/chromium_ext/base/trace_event/trace_event_ohos.cc" ] 
-      sources += [ "//arkweb/chromium_ext/base/trace_event/trace_event_ohos.h" ]
-    }
+  if (is_ohos && arkweb_dfx_tracing) {
+    include_dirs = [ "//third_party/ohos_ndk/includes/ohos_adapter" ]
+    sources += [ "//arkweb/chromium_ext/base/trace_event/trace_event_ohos.cc" ] 
+    sources += [ "//arkweb/chromium_ext/base/trace_event/trace_event_ohos.h" ]
+    # Add HiTrace Interceptor for Perfetto to HiTrace forwarding
+    sources += [
+      "//arkweb/chromium_ext/base/trace_event/hitrace_interceptor_oh.cc",
+      "//arkweb/chromium_ext/base/trace_event/hitrace_interceptor_oh.h",
+      "//arkweb/chromium_ext/base/trace_event/hitrace_export_oh.cc",
+      "//arkweb/chromium_ext/base/trace_event/hitrace_export_oh.h",
+      "//arkweb/chromium_ext/base/trace_event/oh_track_event_state_tracker.cc",
+      "//arkweb/chromium_ext/base/trace_event/oh_track_event_state_tracker.h",
+    ]
+    deps += [
+      "//arkweb/ohos_adapter_ndk:adapter_ndk",
+    ]
+  }
   if (use_partition_alloc_as_malloc) {
     sources += [
       "trace_event/address_space_dump_provider.cc",

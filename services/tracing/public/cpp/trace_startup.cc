@@ -21,6 +21,10 @@
 #include "services/tracing/public/cpp/tracing_features.h"
 #include "third_party/perfetto/include/perfetto/tracing/track.h"
 
+#if BUILDFLAG(IS_ARKWEB) || BUILDFLAG(ARKWEB_DFX_TRACING)
+#include "arkweb/chromium_ext/base/trace_event/hitrace_export_oh.h"
+#endif
+
 #if BUILDFLAG(IS_WIN)
 #include "components/tracing/common/etw_export_win.h"
 #endif
@@ -87,6 +91,10 @@ void InitTracing(
 #if BUILDFLAG(IS_WIN)
   tracing::EnableETWExport();
 #endif  // BUILDFLAG(IS_WIN)
+
+#if BUILDFLAG(IS_ARKWEB) || BUILDFLAG(ARKWEB_DFX_TRACING)
+  base::hitrace::EnableHiTraceExport();
+#endif // BUILDFLAG(ARKWEB_DFX_TRACING)
 
   auto& startup_config = TraceStartupConfig::GetInstance();
 

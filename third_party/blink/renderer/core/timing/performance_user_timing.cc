@@ -278,6 +278,24 @@ PerformanceMeasure* UserTiming::Measure(ScriptState* script_state,
     // call).
     TRACE_EVENT("devtools.timeline", "UserTiming::Measure", "sampleTraceId",
                 hash, "traceId", hash);
+#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_DFX_TRACING)
+    // For ArkWeb: use instant event with duration as debug annotation
+    TRACE_EVENT_INSTANT(
+        "blink.user_timing", nullptr, unsafe_start_time,
+        "startTime", start_time, "callTime", callTime, "traceId", hash,
+        "duration", end_time - start_time,
+        [&](perfetto::EventContext ctx) {
+          if (ctx.ShouldFilterDynamicEventNames()) {
+            ctx.event()->set_name("performance.measure");
+            ctx.AddDebugAnnotation("measureName", measure_name.Utf8());
+          } else {
+            ctx.event()->set_name(measure_name.Utf8());
+          }
+          if (serialized_detail.length()) {
+            ctx.AddDebugAnnotation("detail", serialized_detail);
+          }
+        });
+#else
     TRACE_EVENT_BEGIN(
         "blink.user_timing", nullptr, perfetto::Track(hash), unsafe_start_time,
         "startTime", start_time, "callTime", callTime, "traceId", hash,
@@ -295,6 +313,7 @@ PerformanceMeasure* UserTiming::Measure(ScriptState* script_state,
         });
     TRACE_EVENT_END("blink.user_timing", perfetto::Track(hash),
                     unsafe_end_time);
+#endif
   }
 
   PerformanceMeasure* measure = PerformanceMeasure::Create(

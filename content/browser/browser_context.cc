@@ -103,12 +103,19 @@ BrowserContext::BrowserContext() {
 }
 
 BrowserContext::~BrowserContext() {
+#if BUILDFLAG(IS_ARKWEB) || BUILDFLAG(ARKWEB_DFX_TRACING)
+  TRACE_EVENT("shutdown", "BrowserContext::~BrowserContext",
+              "kChromeBrowserContext", "BrowserContext");
+  TRACE_EVENT_END("shutdown", perfetto::Track::FromPointer(this),
+                  "kChromeBrowserContext", "BrowserContext");
+#else
   TRACE_EVENT("shutdown", "BrowserContext::~BrowserContext",
               ChromeTrackEvent::kChromeBrowserContext, *this);
 
   // End for ASYNC event "Browser.BrowserContext".
   TRACE_EVENT_END("shutdown", perfetto::Track::FromPointer(this),
                   ChromeTrackEvent::kChromeBrowserContext, *this);
+#endif
 
   impl_.reset();
 }

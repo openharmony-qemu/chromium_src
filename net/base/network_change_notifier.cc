@@ -566,6 +566,30 @@ bool NetworkChangeNotifier::IsOffline() {
   return GetConnectionType() == CONNECTION_NONE;
 }
 
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+bool NetworkChangeNotifier::IsCaptivePortal() {
+  if (!g_network_change_notifier) {
+    return false;
+  }
+  return g_network_change_notifier->IsCaptivePortalInternal();
+}
+
+bool NetworkChangeNotifier::IsCaptivePortalInternal() {
+  return false;
+}
+
+bool NetworkChangeNotifier::IsNetworkValidated() {
+  if (!g_network_change_notifier) {
+    return false;
+  }
+  return g_network_change_notifier->IsNetworkValidatedInternal();
+}
+
+bool NetworkChangeNotifier::IsNetworkValidatedInternal() {
+  return false;
+}
+#endif
+
 // static
 bool NetworkChangeNotifier::IsConnectionCellular(ConnectionType type) {
   bool is_cellular = false;

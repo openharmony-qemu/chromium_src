@@ -25,10 +25,6 @@ source_set("content") {
     ]
   }
 
-  if (defined(arkweb_ext_https_upgrades) && arkweb_ext_https_upgrades) {
-    sources += arkweb_components_captive_portal_content_sources
-  }
-
   public_deps = [
     "//base",
     "//components/captive_portal/core",

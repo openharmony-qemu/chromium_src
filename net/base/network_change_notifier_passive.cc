@@ -35,6 +35,12 @@
 #include "net/dns/public/dns_protocol.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+#include <network/netmanager/net_connection.h>
+#include "base/command_line.h"
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#endif
+
 #include "base/no_destructor.h"
 #include "arkweb/chromium_ext/net/base/network_change_notifier_passive_for_include.cc"
 
@@ -60,9 +66,16 @@ NetworkChangeNotifierPassive::NetworkChangeNotifierPassive(
       connection_type_(initial_connection_type),
       max_bandwidth_mbps_(
           NetworkChangeNotifier::GetMaxBandwidthMbpsForConnectionSubtype(
-              initial_connection_subtype)) {
+              initial_connection_subtype))
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+      , ui_task_runner_(base::SequencedTaskRunner::GetCurrentDefault())
+#endif
+ {
 #if BUILDFLAG(ARKWEB_NETWORK_BASE)
   NetworkChangeNotifierPassiveUtils::RegisterOhosNetConnCallback(this);
+#endif
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  UpdateNetworkCapabilityOnUIThread();
 #endif
 }
 

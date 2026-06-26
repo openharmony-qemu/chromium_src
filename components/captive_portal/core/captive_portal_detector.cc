@@ -22,17 +22,13 @@
 
 namespace {
 constexpr char kLegacyURL[] =
-#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
-    "http://connectivitycheck.cbg-app.huawei.com/generate_204";
-#elif BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
     "http://***";
 #else
     "http://www.gstatic.com/generate_204";
 #endif
 constexpr char kDefaultURL[] =
-#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
-    "http://connectivitycheck.cbg-app.huawei.com/generate_204";
-#elif BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
     "http://***";
 #else
     "http://connectivitycheck.gstatic.com/generate_204";
@@ -93,9 +89,6 @@ void CaptivePortalDetector::StartProbe(
 
   simple_loader_ = network::SimpleURLLoader::Create(std::move(resource_request),
                                                     traffic_annotation);
-#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
-  simple_loader_->SetTimeoutDuration(base::Seconds(5));
-#endif
   simple_loader_->SetAllowHttpErrorResults(true);
   network::SimpleURLLoader::BodyAsStringCallback callback = base::BindOnce(
       &CaptivePortalDetector::OnSimpleLoaderComplete, base::Unretained(this));
@@ -143,15 +136,6 @@ void CaptivePortalDetector::OnSimpleLoaderCompleteInternal(
   Results results;
   GetCaptivePortalResultFromResponse(net_error, response_code, content_length,
                                      url, headers, &results);
-#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
-  GURL fallback_probe_url(kDefaultURL);
-  if (results.result != captive_portal::RESULT_INTERNET_CONNECTED &&
-      probe_url_ != fallback_probe_url) {
-    state_ = State::kProbe;
-    StartProbe(kTrafficAnnotation, fallback_probe_url);
-    return;
-  }
-#endif
   simple_loader_.reset();
   std::move(detection_callback_).Run(results);
 }

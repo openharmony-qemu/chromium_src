@@ -3427,6 +3427,9 @@ void SkiaRenderer::CopyDrawnRenderPass(
 }
 
 void SkiaRenderer::DidChangeVisibility() {
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+  ResetPartialDrawState();
+#endif
   if (visible_)
     output_surface_->EnsureBackbuffer();
   else

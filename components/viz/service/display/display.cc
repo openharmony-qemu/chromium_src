@@ -447,6 +447,12 @@ void Display::SetVisible(bool visible) {
     scheduler_->SetVisible(visible);
   visible_ = visible;
 
+#if BUILDFLAG(ARKWEB_PARTIAL_DRAW)
+  if (renderer_) {
+    renderer_->ResetPartialDrawState();
+  }
+#endif
+
   if (!visible) {
     // Damage tracker needs a full reset as renderer resources are dropped when
     // not visible.

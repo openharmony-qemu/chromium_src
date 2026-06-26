@@ -1239,6 +1239,12 @@ void PrintRenderFrameHelper::DidFinishLoadForPrinting() {
 
 void PrintRenderFrameHelper::ScriptedPrint(bool user_initiated) {
   blink::WebLocalFrame* web_frame = render_frame()->GetWebFrame();
+#if BUILDFLAG(ARKWEB_PRINT)
+  if (IsExtensionPopupPrint(web_frame)) {
+    return;
+  }
+#endif // BUILDFLAG(ARKWEB_PRINT)
+
   if (!IsScriptInitiatedPrintAllowed(web_frame, user_initiated))
     return;
 

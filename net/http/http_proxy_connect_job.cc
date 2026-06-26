@@ -569,6 +569,8 @@ int HttpProxyConnectJob::DoTransportConnectComplete(int result) {
   extra_connection_attempts_ =
       nested_connect_job_->GetExtraConnectionAttempts();
   resolve_info_ = nested_connect_job_->GetResolveInfo();
+  secure_dns_fallback_resolved_ =
+      nested_connect_job_->SecureDnsFallbackResolved();
 #endif
 
   ProxyServer::Scheme scheme = GetProxyServerScheme();

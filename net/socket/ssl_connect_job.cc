@@ -297,6 +297,8 @@ int SSLConnectJob::DoTransportConnectComplete(int result) {
 
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   resolve_info_ = nested_connect_job_->GetResolveInfo();
+  secure_dns_fallback_resolved_ =
+      nested_connect_job_->SecureDnsFallbackResolved();
   ConnectionAttempts extra_connection_attempts =
       nested_connect_job_->GetExtraConnectionAttempts();
   extra_connection_attempts_.insert(extra_connection_attempts_.end(),
@@ -335,6 +337,8 @@ int SSLConnectJob::DoSOCKSConnectComplete(int result) {
 
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   resolve_info_ = nested_connect_job_->GetResolveInfo();
+  secure_dns_fallback_resolved_ =
+      nested_connect_job_->SecureDnsFallbackResolved();
   ConnectionAttempts extra_connection_attempts =
       nested_connect_job_->GetExtraConnectionAttempts();
   extra_connection_attempts_.insert(extra_connection_attempts_.end(),
@@ -372,6 +376,8 @@ int SSLConnectJob::DoTunnelConnectComplete(int result) {
 
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   resolve_info_ = nested_connect_job_->GetResolveInfo();
+  secure_dns_fallback_resolved_ =
+      nested_connect_job_->SecureDnsFallbackResolved();
   ConnectionAttempts extra_connection_attempts =
       nested_connect_job_->GetExtraConnectionAttempts();
   extra_connection_attempts_.insert(extra_connection_attempts_.end(),
@@ -620,6 +626,10 @@ ResolveInfo SSLConnectJob::GetResolveInfo() const {
 
 ConnectionAttempts SSLConnectJob::GetExtraConnectionAttempts() const {
   return extra_connection_attempts_;
+}
+
+bool SSLConnectJob::SecureDnsFallbackResolved() const {
+  return secure_dns_fallback_resolved_;
 }
 #endif
 

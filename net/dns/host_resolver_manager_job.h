@@ -437,6 +437,7 @@ class HostResolverManager::Job : public PrioritizedDispatcher::Job,
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   int dns_status_ = kDnsResolvedUndefined;
   std::vector<TaskType> finished_tasks_;
+  bool secure_dns_fallback_resolved_ = false;
 #endif
 
   base::WeakPtrFactory<Job> weak_ptr_factory_{this};

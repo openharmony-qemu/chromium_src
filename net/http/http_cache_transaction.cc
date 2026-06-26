@@ -2029,6 +2029,8 @@ int HttpCache::Transaction::DoSendRequestComplete(int result) {
 
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   response_.resolve_info = response->resolve_info;
+  response_.secure_dns_fallback_resolved =
+      response->secure_dns_fallback_resolved;
 #endif
 
   // Do not record requests that have network errors or restarts.

@@ -221,7 +221,8 @@ void HostResolverManager::ServiceEndpointRequestImpl::OnJobCompleted(
     ,
     int dns_status,
     const std::vector<TaskType>& finished_tasks,
-    const std::vector<IPEndPoint>& truncation_results
+    const std::vector<IPEndPoint>& truncation_results,
+    bool secure_dns_fallback_resolved
 #endif
 ) {
   CHECK(job_);
@@ -233,6 +234,7 @@ void HostResolverManager::ServiceEndpointRequestImpl::OnJobCompleted(
           switches::kEnableNwebEx)) {
     set_resolve_info(results.error(), dns_status, finished_tasks,
                      truncation_results);
+    secure_dns_fallback_resolved_ = secure_dns_fallback_resolved;
   }
 #endif
 
@@ -378,7 +380,7 @@ int HostResolverManager::ServiceEndpointRequestImpl::DoResolveLocally() {
       &tasks_, &stale_info_
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
       ,
-      dns_status, resolve_info_
+      dns_status, resolve_info_, secure_dns_fallback_resolved_
 #endif
   );
   bool is_stale = results.error() == OK && stale_info_.has_value() &&
@@ -403,7 +405,7 @@ int HostResolverManager::ServiceEndpointRequestImpl::DoResolveLocally() {
         host_cache(), &tasks_, &maybe_fresh_info
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
         ,
-        dns_status, resolve_info_
+        dns_status, resolve_info_, secure_dns_fallback_resolved_
 #endif
     );
     CHECK(!maybe_fresh_info.has_value() || !maybe_fresh_info->is_stale());

@@ -498,7 +498,8 @@ void HttpStreamFactory::JobController::OnStreamFailed(Job* job, int status) {
                             job->proxy_info(), job->resolve_error_info()
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
                                                    ,
-                            job->resolve_info()
+                            job->resolve_info(),
+                            job->secure_dns_fallback_resolved()
 #endif
   );
 }
@@ -539,6 +540,7 @@ void HttpStreamFactory::JobController::OnCertificateError(
   bool used_fallback_proxy = false;
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   ResolveInfo resolve_info;
+  bool secure_dns_fallback_resolved = false;
 #endif
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
           switches::kEnableNwebEx) &&
@@ -546,11 +548,12 @@ void HttpStreamFactory::JobController::OnCertificateError(
     used_fallback_proxy = job->proxy_info().used_fallback_proxy();
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
     resolve_info = job->resolve_info();
+    secure_dns_fallback_resolved = job->secure_dns_fallback_resolved();
 #endif
   }
   delegate_->OnCertificateError(status, ssl_info, used_fallback_proxy
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
-                                , resolve_info);
+                                , resolve_info, secure_dns_fallback_resolved);
 #else
                                 );
 #endif
@@ -1319,7 +1322,7 @@ void HttpStreamFactory::JobController::NotifyRequestFailed(int rv) {
                             ResolveErrorInfo()
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
                             ,
-                            ResolveInfo()
+                            ResolveInfo(), false /* secure_dns_fallback_resolved */
 #endif
                            );
 }

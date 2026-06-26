@@ -379,6 +379,7 @@ class MockHostResolverBase::RequestImpl
 
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   net::ResolveInfo GetResolveInfo() const override { return {}; }
+  bool SecureDnsFallbackResolved() const override { return false; }
 #endif
 
   const std::optional<HostCache::EntryStaleness>& GetStaleInfo()
@@ -458,6 +459,7 @@ class MockHostResolverBase::ServiceEndpointRequestImpl
 
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   net::ResolveInfo GetResolveInfo() const override { return {}; }
+  bool SecureDnsFallbackResolved() const override { return false; }
 #endif
 
   void ChangeRequestPriority(RequestPriority priority) override {
@@ -1609,6 +1611,7 @@ class HangingHostResolver::RequestImpl
 
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   net::ResolveInfo GetResolveInfo() const override { base::ImmediateCrash(); }
+  bool SecureDnsFallbackResolved() const override { base::ImmediateCrash(); }
 #endif
 
   const std::optional<HostCache::EntryStaleness>& GetStaleInfo()

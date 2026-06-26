@@ -174,6 +174,7 @@ class NET_EXPORT_PRIVATE TransportConnectJob : public ConnectJob {
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   ResolveInfo GetResolveInfo() const override;
   ConnectionAttempts GetExtraConnectionAttempts() const override;
+  bool SecureDnsFallbackResolved() const override;
 #endif
 
   ResolveErrorInfo GetResolveErrorInfo() const override;
@@ -291,6 +292,7 @@ class NET_EXPORT_PRIVATE TransportConnectJob : public ConnectJob {
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   ResolveInfo resolve_info_;
   ConnectionAttempts extra_connection_attempts_;
+  bool secure_dns_fallback_resolved_ = false;
 #endif
 
   base::WeakPtrFactory<TransportConnectJob> weak_ptr_factory_{this};

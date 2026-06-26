@@ -115,6 +115,7 @@ class FakeServiceEndpointRequest : public HostResolver::ServiceEndpointRequest {
 
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   ResolveInfo GetResolveInfo() const override { return {}; }
+  bool SecureDnsFallbackResolved() const override { return false; }
 #endif
 
  private:

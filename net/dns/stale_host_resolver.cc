@@ -61,6 +61,10 @@ class StaleHostResolver::RequestImpl : public HostResolver::ResolveHostRequest {
   // to be called by StaleHostResolver::OnNetworkRequestComplete().
   void OnNetworkRequestComplete(int error);
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  bool SecureDnsFallbackResolved() const override { return false; }
+#endif
+
  private:
   bool have_network_request() const { return network_request_ != nullptr; }
   bool have_cache_data() const { return cache_error_ != ERR_DNS_CACHE_MISS; }

@@ -145,7 +145,8 @@ class NET_EXPORT_PRIVATE HttpNetworkTransaction
                       ResolveErrorInfo resolve_error_info
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
                       ,
-                      const ResolveInfo resolve_info = {}
+                      const ResolveInfo resolve_info,
+                      bool secure_dns_fallback_resolved
 #endif
                       ) override;
   void OnCertificateError(int status,
@@ -156,7 +157,8 @@ class NET_EXPORT_PRIVATE HttpNetworkTransaction
 #endif
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
                           ,
-                          const ResolveInfo resolve_info = {}
+                          const ResolveInfo resolve_info,
+                          bool secure_dns_fallback_resolved
 #endif
                           ) override;
   void OnNeedsProxyAuth(const HttpResponseInfo& response_info,

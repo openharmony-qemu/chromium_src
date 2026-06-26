@@ -208,6 +208,10 @@ ResolveInfo TransportConnectJob::GetResolveInfo() const {
 ConnectionAttempts TransportConnectJob::GetExtraConnectionAttempts() const {
   return extra_connection_attempts_;
 }
+
+bool TransportConnectJob::SecureDnsFallbackResolved() const {
+  return secure_dns_fallback_resolved_;
+}
 #endif
 
 std::optional<HostResolverEndpointResult>
@@ -321,6 +325,7 @@ int TransportConnectJob::DoResolveHostComplete(int result) {
 
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   resolve_info_ = request_->GetResolveInfo();
+  secure_dns_fallback_resolved_ = request_->SecureDnsFallbackResolved();
 #endif
 
   if (result != OK) {

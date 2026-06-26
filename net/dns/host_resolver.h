@@ -201,6 +201,7 @@ class NET_EXPORT HostResolver {
 
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
     virtual ResolveInfo GetResolveInfo() const { return {}; }
+    virtual bool SecureDnsFallbackResolved() const = 0;
 #endif
   };
 
@@ -279,6 +280,7 @@ class NET_EXPORT HostResolver {
 
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
     virtual ResolveInfo GetResolveInfo() const { return {}; }
+    virtual bool SecureDnsFallbackResolved() const = 0;
 #endif
 
     // TODO(crbug.com/403373872): Remove this method once we identify the cause

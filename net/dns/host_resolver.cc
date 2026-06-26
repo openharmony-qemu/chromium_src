@@ -109,6 +109,7 @@ class FailingRequestImpl : public HostResolver::ResolveHostRequest,
   ResolveInfo GetResolveInfo() const override {
     return ResolveInfo(error_, kDnsResolvedUndefined);
   }
+  bool SecureDnsFallbackResolved() const override { return false; }
 #endif
 
  private:
@@ -153,6 +154,7 @@ class FailingServiceEndpointRequestImpl
   ResolveInfo GetResolveInfo() const override {
     return ResolveInfo(error_, kDnsResolvedUndefined);
   }
+  bool SecureDnsFallbackResolved() const override { return false; }
 #endif
 
   void ChangeRequestPriority(RequestPriority priority) override {}

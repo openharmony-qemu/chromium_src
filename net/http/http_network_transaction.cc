@@ -932,7 +932,8 @@ void HttpNetworkTransaction::OnStreamFailed(
     ResolveErrorInfo resolve_error_info
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
     ,
-    const ResolveInfo resolve_info
+    const ResolveInfo resolve_info,
+    bool secure_dns_fallback_resolved
 #endif
 ) {
   DCHECK_EQ(STATE_CREATE_STREAM_COMPLETE, next_state_);
@@ -946,6 +947,7 @@ void HttpNetworkTransaction::OnStreamFailed(
 
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   response_.resolve_info = resolve_info;
+  response_.secure_dns_fallback_resolved = secure_dns_fallback_resolved;
 #endif
 
   OnIOComplete(result);
@@ -959,7 +961,8 @@ void HttpNetworkTransaction::OnCertificateError(int result,
 #endif
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
                                                 ,
-                                                const ResolveInfo resolve_info
+                                                const ResolveInfo resolve_info,
+                                                bool secure_dns_fallback_resolved
 #endif
 ) {
   DCHECK_EQ(STATE_CREATE_STREAM_COMPLETE, next_state_);
@@ -982,6 +985,7 @@ void HttpNetworkTransaction::OnCertificateError(int result,
 #endif
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   response_.resolve_info = resolve_info;
+  response_.secure_dns_fallback_resolved = secure_dns_fallback_resolved;
 #endif
 
   // TODO(mbelshe):  For now, we're going to pass the error through, and that

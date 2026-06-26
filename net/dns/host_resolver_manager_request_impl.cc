@@ -237,7 +237,8 @@ void HostResolverManager::RequestImpl::OnJobCompleted(
     ,
     int dns_status,
     const std::vector<TaskType>& finished_tasks,
-    const std::vector<IPEndPoint>& truncation_results
+    const std::vector<IPEndPoint>& truncation_results,
+    bool secure_dns_fallback_resolved
 #endif
 ) {
   set_error_info(error, is_secure_network_error);
@@ -246,6 +247,7 @@ void HostResolverManager::RequestImpl::OnJobCompleted(
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
           switches::kEnableNwebEx)) {
     set_resolve_info(error, dns_status, finished_tasks, truncation_results);
+    secure_dns_fallback_resolved_ = secure_dns_fallback_resolved;
   }
 #endif
 
@@ -373,7 +375,7 @@ int HostResolverManager::RequestImpl::DoResolveLocally() {
       host_cache(), &tasks_, &stale_info
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
       ,
-      dns_status, resolve_info_
+      dns_status, resolve_info_, secure_dns_fallback_resolved_
 #endif
   );
 

@@ -383,7 +383,8 @@ void BidirectionalStream::OnStreamFailed(
     ResolveErrorInfo resolve_error_info
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
     ,
-    const ResolveInfo resolve_info
+    const ResolveInfo resolve_info,
+    bool secure_dns_fallback_resolved
 #endif
 ) {
   DCHECK_LT(result, 0);
@@ -401,7 +402,8 @@ void BidirectionalStream::OnCertificateError(int result,
 #endif
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
                                              ,
-                                             const ResolveInfo resolve_info
+                                             const ResolveInfo resolve_info,
+                                             bool secure_dns_fallback_resolved
 #endif
 ) {
   DCHECK_LT(result, 0);

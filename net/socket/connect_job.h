@@ -301,6 +301,7 @@ class NET_EXPORT_PRIVATE ConnectJob {
 
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   virtual ResolveInfo GetResolveInfo() const { return {}; }
+  virtual bool SecureDnsFallbackResolved() const { return false; }
   void SetResolveInfoToSocket(const ResolveInfo& resolve_info);
   virtual ConnectionAttempts GetExtraConnectionAttempts() const;
   void SetExtraConnectionAttemptsToSocket(

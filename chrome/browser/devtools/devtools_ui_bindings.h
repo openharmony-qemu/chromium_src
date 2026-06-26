@@ -55,6 +55,7 @@ enum class PermissionAction;
 class DevToolsHttpServiceHandler;
 class DevToolsHttpServiceRegistry;
 class DevToolsUIBindingsDispatchHttpRequestTest;
+class DevToolsUIBindingsLoadNetworkResourceTest;
 class PortForwardingStatusSerializer;
 class Profile;
 
@@ -67,6 +68,7 @@ class DevToolsUIBindings : public DevToolsEmbedderMessageDispatcher::Delegate,
 #endif
                            public DevToolsFileHelper::Delegate {
   friend class DevToolsUIBindingsDispatchHttpRequestTest;
+  friend class DevToolsUIBindingsLoadNetworkResourceTest;
 
  public:
   class Delegate {

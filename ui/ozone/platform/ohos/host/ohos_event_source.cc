@@ -267,6 +267,9 @@ EventPointerType OhosEventSource::ConvertOHToolTypeToEventPointerType(
       pointer_type = EventPointerType::kMouse;
       break;
     default:
+      LOG(WARNING) << "[OhosEventSource] " << __func__
+                   << ": Unknown OH_NativeXComponent_ToolType=" << ohos_touch_point_tool_type
+                   << ", defaulting to kTouch";
       pointer_type = EventPointerType::kTouch;
       break;
   }
@@ -370,7 +373,7 @@ void OhosEventSource::SendWindowMouseEventForTabDrag(
     const int32_t display_id,
     const EventFlags key_flags) {
   if (xcomponent_mouse_event == nullptr) {
-    LOG(ERROR) << "[OhosTabDrag] " << __FUNCTION__
+    LOG(ERROR) << "[OhosTabDrag] " << __func__
                << ", xcomponent_mouse_event is null";
     return;
   }
@@ -399,7 +402,7 @@ void OhosEventSource::SendWindowTouchEventForTabDrag(
     const TouchPointCoordinate& coordinate,
     const int32_t display_id) {
   if (xcomponent_touch_event == nullptr) {
-    LOG(ERROR) << "[OhosTabDrag] " << __FUNCTION__
+    LOG(ERROR) << "[OhosTabDrag] " << __func__
                << ", xcomponent_touch_event is null";
     return;
   }
@@ -413,7 +416,7 @@ void OhosEventSource::SendWindowTouchEventForTabDrag(
     // When the tab page drag is complete, the tab page drag parameter is
     // cleared
     if (xcomponent_touch_event->type == OH_NATIVEXCOMPONENT_UP) {
-      LOG(WARNING) << "[OhosTabDrag] " << __FUNCTION__
+      LOG(WARNING) << "[OhosTabDrag] " << __func__
                    << " tab dragging is ended"
                    << ", widget_id:" << widget_id;
       EndTabDragging();

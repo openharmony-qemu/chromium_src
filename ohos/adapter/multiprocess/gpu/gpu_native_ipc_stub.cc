@@ -30,7 +30,8 @@ OH_IPC_ErrorCode GpuNativeIpcStub::HandleInvalidCode(GpuNativeIpcOpCode code,
   static_cast<void>(data);
   static_cast<void>(reply);
   static_cast<void>(user_data);
-  LOGE("Invalid operation code: %{public}d", static_cast<int>(code));
+  LOGE("[GpuNativeIpcStub] %{public}s: Invalid operation code=%{public}d",
+       __func__, static_cast<int>(code));
   return OH_IPC_CHECK_PARAM_ERROR;
 }
 
@@ -51,7 +52,8 @@ OH_IPC_ErrorCode GpuNativeIpcStub::HandleGetPid(GpuNativeIpcOpCode code,
   int pid = GpuNativeProcess::GetInstance().GetPid();
   int ret = OH_IPCParcel_WriteInt32(reply, pid);
   if (ret != OH_IPC_SUCCESS) {
-    LOGE("Write pid into reply parcel error: %{public}d", ret);
+    LOGE("[GpuNativeIpcStub] %{public}s: call OH_IPCParcel_WriteInt32 for pid failed, error=%{public}d",
+         __func__, ret);
     return static_cast<OH_IPC_ErrorCode>(ret);
   }
 
@@ -61,14 +63,17 @@ OH_IPC_ErrorCode GpuNativeIpcStub::HandleGetPid(GpuNativeIpcOpCode code,
 OH_IPC_ErrorCode GpuNativeIpcStub::AddWindowInner(const OHIPCParcel* data) {
   const char* window_id = OH_IPCParcel_ReadString(data);
   if (window_id == nullptr) {
-    LOGE("Read window id from data parcel error.");
+    LOGE("[GpuNativeIpcStub] %{public}s: call OH_IPCParcel_ReadString for window_id failed, returned nullptr",
+         __func__);
     return OH_IPC_PARCEL_READ_ERROR;
   }
 
   void* window = nullptr;
   int ret = NativeWindowReadFromParcel(data, &window);
   if (ret != 0 || window == nullptr) {
-    LOGE("Read native window from parcel error: %{public}d", ret);
+    LOGE("[GpuNativeIpcStub] %{public}s:"
+         "NativeWindowReadFromParcel failed, window_id=%{public}s, error=%{public}d, window_is_null=%{public}d",
+         __func__, window_id, ret, window == nullptr);
     return OH_IPC_PARCEL_READ_ERROR;
   }
 
@@ -90,7 +95,8 @@ OH_IPC_ErrorCode GpuNativeIpcStub::HandleInitializeWindowAdapterInner(
   int num_elements;
   int ret = OH_IPCParcel_ReadInt32(data, &num_elements);
   if (ret != OH_IPC_SUCCESS) {
-    LOGE("Read # of elements error: %{public}d", ret);
+    LOGE("[GpuNativeIpcStub] %{public}s: call OH_IPCParcel_ReadInt32 for num_elements failed, error=%{public}d",
+         __func__, ret);
     return static_cast<OH_IPC_ErrorCode>(ret);
   }
 
@@ -115,7 +121,8 @@ OH_IPC_ErrorCode GpuNativeIpcStub::HandleInitializeWindowAdapter(
 
   OH_IPC_ErrorCode ret = HandleInitializeWindowAdapterInner(code, data);
   if (ret != OH_IPC_SUCCESS) {
-    LOGE("InitializeWindowAdapter failed, error: %{public}d", ret);
+    LOGE("[GpuNativeIpcStub] %{public}s: HandleInitializeWindowAdapterInner failed, error=%{public}d",
+         __func__, ret);
     GpuNativeProcess::GetInstance().SetInitializeResult(false);
     return ret;
   }
@@ -156,7 +163,8 @@ OH_IPC_ErrorCode GpuNativeIpcStub::HandleRemoveWindow(GpuNativeIpcOpCode code,
 
   const char* window_id = OH_IPCParcel_ReadString(data);
   if (window_id == nullptr) {
-    LOGE("Read window id from data parcel error.");
+    LOGE("[GpuNativeIpcStub] %{public}s: call OH_IPCParcel_ReadString for window_id failed, returned nullptr",
+         __func__);
     return OH_IPC_PARCEL_READ_ERROR;
   }
 
@@ -173,20 +181,21 @@ OH_IPC_ErrorCode GpuNativeIpcStub::HandleSetWindowWidget(
   static_cast<void>(user_data);
 
   if ((code) != (GpuNativeIpcOpCode::SET_WINDOW_WIDGET)) {
-    LOGE("Unexpected operation coed, actual: %{public}d, expected: %{public}d",
-         static_cast<int>(code),
-         static_cast<int>(GpuNativeIpcOpCode::SET_WINDOW_WIDGET));
+    LOGE("[GpuNativeIpcStub] %{public}s: Unexpected operation code, actual=%{public}d, expected=%{public}d",
+         __func__, static_cast<int>(code), static_cast<int>(GpuNativeIpcOpCode::SET_WINDOW_WIDGET));
     return OH_IPC_CHECK_PARAM_ERROR;
   }
   void* window = GetWindowFromAdapter(data);
   if (window == nullptr) {
+    LOGE("[GpuNativeIpcStub] %{public}s: GetWindowFromAdapter returned nullptr", __func__);
     return OH_IPC_INNER_ERROR;
   }
 
   int32_t widget_id;
   int ret = OH_IPCParcel_ReadInt32(data, &widget_id);
   if (ret != OH_IPC_SUCCESS) {
-    LOGE("Read widget id from data parcel error: %{public}d", ret);
+    LOGE("[GpuNativeIpcStub] %{public}s: call OH_IPCParcel_ReadInt32 for widget_id failed, error=%{public}d",
+         __func__, ret);
     return static_cast<OH_IPC_ErrorCode>(ret);
   }
 
@@ -204,19 +213,19 @@ OH_IPC_ErrorCode GpuNativeIpcStub::HandleNotifyWindowChange(
   static_cast<void>(user_data);
 
   if ((code) != (GpuNativeIpcOpCode::NOTIFY_WINDOW_CHANGE)) {
-    LOGE("Unexpected operation coed, actual: %{public}d, expected: %{public}d",
-         static_cast<int>(code),
-         static_cast<int>(GpuNativeIpcOpCode::NOTIFY_WINDOW_CHANGE));
+    LOGE("[GpuNativeIpcStub] %{public}s: Unexpected operation code, actual=%{public}d, expected=%{public}d",
+         __func__, static_cast<int>(code), static_cast<int>(GpuNativeIpcOpCode::NOTIFY_WINDOW_CHANGE));
     return OH_IPC_CHECK_PARAM_ERROR;
   }
 
   void* window = GetWindowFromAdapter(data);
   if (window == nullptr) {
+    LOGE("[GpuNativeIpcStub] %{public}s: GetWindowFromAdapter returned nullptr", __func__);
     return OH_IPC_INNER_ERROR;
   }
 
   if (NativeWindowAttrFromParcel(data, window) != OH_IPC_SUCCESS) {
-    LOGE("Native window read and setup from parcel error.");
+    LOGE("[GpuNativeIpcStub] %{public}s: NativeWindowAttrFromParcel failed", __func__);
     return OH_IPC_INNER_ERROR;
   }
 
@@ -232,8 +241,8 @@ void* GpuNativeIpcStub::GetWindowFromAdapter(const OHIPCParcel* data) {
 
   void* window = WindowAdapter::GetInstance().GetWindow(window_id);
   if (window == nullptr) {
-    LOGE("NOTIFY_WINDOW_CHANGE Native window not found, window_id: %{public}s",
-         window_id);
+    LOGE("[GpuNativeIpcStub] %{public}s: WindowAdapter::GetWindow returned nullptr, window_id=%{public}s",
+         __func__, window_id);
   }
   return window;
 }
@@ -243,7 +252,8 @@ OH_IPC_ErrorCode GpuNativeIpcStub::HandleRemoteRequest(GpuNativeIpcOpCode code,
                                                        OHIPCParcel* reply,
                                                        void* user_data) {
   if (data == nullptr || reply == nullptr) {
-    LOGE("GpuNativeIpcStub::HandleRemoteRequest: data or reply is null.");
+    LOGE("[GpuNativeIpcStub] %{public}s: data or reply parameter is null, code=%{public}d",
+         __func__, static_cast<int>(code));
     return OH_IPC_INNER_ERROR;
   }
   if (code >= GpuNativeIpcOpCode::MAX_OPERATION_CODE) {

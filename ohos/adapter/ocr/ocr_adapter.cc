@@ -22,12 +22,14 @@ OcrAdapter& OcrAdapter::GetInstance() {
 
 std::vector<TextWord> OcrAdapter::OcrFunction(const OcrImage& image) {
   if (image.width == 0 || image.height == 0) {
-    LOGE("OcrAdapter::OcrFunction image is null");
+    LOGE("[OcrAdapter] %{public}s: image is null, width=%{public}d, height=%{public}d",
+         __func__, image.width, image.height);
     return {};
   }
   auto func = ohos::adapter::GetJSFunction("OcrAdapter.OcrFunction");
   if (!func) {
-    LOGE("OcrAdapter::OcrFunction GetJSFunction OcrAdapter.OcrFunction fail!");
+    LOGE("[OcrAdapter] %{public}s: GetJSFunction OcrAdapter.OcrFunction failed, function undefined",
+         __func__);
     return {};
   }
 
@@ -39,6 +41,7 @@ std::vector<TextWord> OcrAdapter::OcrFunction(const OcrImage& image) {
     [&](aki::Value words, int32_t length) -> void {
     std::vector<TextWord> recognizeWords;
     if (!words.IsArray()) {
+      LOGE("[OcrAdapter] %{public}s: words result is not array", __func__);
       ocr_promise.set_value(recognizeWords);
       return;
     }

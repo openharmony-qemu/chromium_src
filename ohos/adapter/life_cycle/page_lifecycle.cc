@@ -22,22 +22,22 @@ void PageLifeCycle::RegisterPageLifecycle(napi_env env, napi_value exports) {
 }
 
 napi_value PageLifeCycle::ToAppear(napi_env env, napi_callback_info info) {
-  LOGI("PageLifeCycle::ToAppear");
+  LOGI("[PageLifeCycle] %{public}s", __func__);
   return nullptr;
 }
 
 napi_value PageLifeCycle::ToDisappear(napi_env env, napi_callback_info info) {
-  LOGI("PageLifeCycle::ToDisappear");
+  LOGI("[PageLifeCycle] %{public}s", __func__);
   return nullptr;
 }
 
 napi_value PageLifeCycle::OnPageShow(napi_env env, napi_callback_info info) {
-  LOGI("PageLifeCycle::OnPageShow");
+  LOGI("[PageLifeCycle] %{public}s", __func__);
   return nullptr;
 }
 
 napi_value PageLifeCycle::OnPageHide(napi_env env, napi_callback_info info) {
-  LOGI("PageLifeCycle::OnPageHide");
+  LOGI("[PageLifeCycle] %{public}s", __func__);
   return nullptr;
 }
 

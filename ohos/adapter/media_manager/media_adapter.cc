@@ -57,6 +57,10 @@ napi_value MediaAdapter::ReadImageFromReceiver(napi_env env,
 
   ImageReceiverNative* imgReceiver_c =
       OH_Image_Receiver_InitImageReceiverNative(env, imgReceiver_js);
+  if (imgReceiver_c == nullptr) {
+    LOGE("[MediaAdapter] %{public}s: call OH_Image_Receiver_InitImageReceiverNative failed, returned nullptr",
+         __func__);
+  }
 
   int32_t capacity;
   OH_Image_Receiver_GetCapacity(imgReceiver_c, &capacity);
@@ -70,14 +74,26 @@ napi_value MediaAdapter::ReadImageFromReceiver(napi_env env,
   int32_t ret;
   napi_value nextImage;
   ret = OH_Image_Receiver_ReadNextImage(imgReceiver_c, &nextImage);
+  if (ret != 0) {
+    LOGE("[MediaAdapter] %{public}s: call OH_Image_Receiver_ReadNextImage failed, error=%{public}d",
+         __func__, ret);
+  }
 
   ImageNative* nextImage_native = OH_Image_InitImageNative(env, nextImage);
+  if (nextImage_native == nullptr) {
+    LOGE("[MediaAdapter] %{public}s: call OH_Image_InitImageNative failed, returned nullptr",
+         __func__);
+  }
 
   OhosImageSize imageSize;
   OH_Image_Size(nextImage_native, &imageSize);
 
   OhosImageComponent imgComponent;
   ret = OH_Image_GetComponent(nextImage_native, OHOS_IMAGE_COMPONENT_FORMAT_JPEG, &imgComponent);
+  if (ret != 0) {
+    LOGE("[MediaAdapter] %{public}s: call OH_Image_GetComponent failed, error=%{public}d",
+         __func__, ret);
+  }
 
   if (MediaAdapter::GetInstance().GetBufferAvailableCallback() != nullptr) {
     MediaAdapter::GetInstance().GetBufferAvailableCallback()(
@@ -85,7 +101,13 @@ napi_value MediaAdapter::ReadImageFromReceiver(napi_env env,
   }
 
   ret = OH_Image_Release(nextImage_native);
+  if (ret != 0) {
+    LOGW("[MediaAdapter] %{public}s: call OH_Image_Release failed, error=%{public}d", __func__, ret);
+  }
   ret = OH_Image_Receiver_Release(imgReceiver_c);
+  if (ret != 0) {
+    LOGW("[MediaAdapter] %{public}s: call OH_Image_Receiver_Release failed, error=%{public}d", __func__, ret);
+  }
   return nextImage;
 }
 

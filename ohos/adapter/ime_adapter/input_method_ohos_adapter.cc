@@ -23,12 +23,12 @@ void InputMethodOHOSAdapter::AttachTextInput(IMFAdapterTextConfig textConfig,
     insert->Invoke<void>(textConfig, requestKeyboardReason, callback);
     auto status = future.wait_for(std::chrono::seconds(3));
     if (status == std::future_status::timeout) {
-      LOGE("IMFAdapter.AttachTextInput wait timeout");
+      LOGE("[InputMethodOHOSAdapter] %{public}s: AttachTextInput wait timeout", __func__);
       return;
     }
     bool result = future.get();
     if (!result) {
-      LOGE("IMFAdapter.AttachTextInput run fail");
+      LOGE("[InputMethodOHOSAdapter] %{public}s: AttachTextInput run failed", __func__);
     }
   }
 }

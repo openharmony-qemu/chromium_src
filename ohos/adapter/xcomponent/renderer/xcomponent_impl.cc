@@ -20,7 +20,9 @@ std::string GetRenderId(OH_NativeXComponent* component) {
   int32_t ret =
       OH_NativeXComponent_GetXComponentId(component, id_str, &id_size);
   if (ret != OH_NATIVEXCOMPONENT_RESULT_SUCCESS) {
-    LOGE("Unable to get xcomponent id for id_str:%{public}s", id_str);
+    LOGE("[XComponentImpl] %{public}s:"
+         "call OH_NativeXComponent_GetXComponentId failed, error=%{public}d",
+         __func__, ret);
     return std::string();
   }
   std::string xcomponent_id(id_str);
@@ -45,19 +47,19 @@ XComponentType ConvertXComponentType(const std::string& type) {
 std::shared_ptr<XComponentImpl> GetXComponent(const std::string& render_id) {
   if (render_id.empty()) {
     LOGW("render_id is empty in %{public}s.",
-         __FUNCTION__);
+         __func__);
     return nullptr;
   }
   auto manager = XComponentManager::GetInstance();
   if (!manager) {
     LOGW("Failed to get XComponentManager in %{public}s. render_id:%{public}s",
-         __FUNCTION__, render_id.c_str());
+         __func__, render_id.c_str());
     return nullptr;
   }
   auto impl = manager->GetXComponent(render_id);
   if (!impl) {
     LOGW("Failed to get GetXComponent instance in %{public}s. render_id:%{public}s",
-         __FUNCTION__, render_id.c_str());
+         __func__, render_id.c_str());
     return nullptr;
   }
   return impl;
@@ -71,7 +73,7 @@ void OnSurfaceCreatedCB(OH_NativeXComponent* component, void* window) {
   auto impl = GetXComponent(render_id);
   if (!impl) {
     LOGW("[ohoswindow] Failed to get XComponent instance in %{public}s. \
-         render_id:%{public}s", __FUNCTION__, render_id.c_str());
+         render_id:%{public}s", __func__, render_id.c_str());
     return;
   }
   if (render_id != impl->GetId()) {
@@ -85,8 +87,9 @@ void OnSurfaceCreatedCB(OH_NativeXComponent* component, void* window) {
   int32_t ret =
       OH_NativeXComponent_GetXComponentSize(component, window, &width, &height);
   if (ret != OH_NATIVEXCOMPONENT_RESULT_SUCCESS) {
-    LOGE("[ohoswindow] Get xcomponent surface size error:%{public}lu \
-         %{public}lu, render_id:%{public}s", width, height, render_id.c_str());
+    LOGE("[XComponentImpl] %{public}s:"
+         "call OH_NativeXComponent_GetXComponentSize failed, error=%{public}d, render_id=%{public}s",
+         __func__, ret, render_id.c_str());
     return;
   }
   
@@ -103,7 +106,7 @@ void OnSurfaceChangedCB(OH_NativeXComponent* component, void* window) {
   auto impl = GetXComponent(render_id);
   if (!impl) {
     LOGW("[ohoswindow] Failed to get XComponent instance in %{public}s. \
-         render_id:%{public}s", __FUNCTION__, render_id.c_str());
+         render_id:%{public}s", __func__, render_id.c_str());
     return;
   }
   impl->OnSurfaceChanged();
@@ -114,7 +117,7 @@ void OnSurfaceDestroyedCB(OH_NativeXComponent* component, void* window) {
   auto impl = GetXComponent(render_id);
   if (!impl) {
     LOGW("[ohoswindow] Failed to get XComponent instance in %{public}s. \
-         render_id:%{public}s", __FUNCTION__, render_id.c_str());
+         render_id:%{public}s", __func__, render_id.c_str());
     return;
   }
   if (render_id != impl->GetId()) {
@@ -134,7 +137,7 @@ void OnBlurEventCB(OH_NativeXComponent* component, void* window) {
   auto impl = GetXComponent(render_id);
   if (!impl) {
     LOGW("Failed to get XComponent instance in %{public}s. render_id:%{public}s",
-         __FUNCTION__, render_id.c_str());
+         __func__, render_id.c_str());
     return;
   }
   auto event = std::make_shared<SurfaceEvent>(EventType::ET_SURFACE_BLUR);
@@ -148,7 +151,7 @@ void OnFocusEventCB(OH_NativeXComponent* component, void* window) {
   auto impl = GetXComponent(render_id);
   if (!impl) {
     LOGW("Failed to get XComponent instance in %{public}s. render_id:%{public}s",
-         __FUNCTION__, render_id.c_str());
+         __func__, render_id.c_str());
     return;
   }
   auto event = std::make_shared<SurfaceEvent>(EventType::ET_SURFACE_FOCUS);
@@ -162,7 +165,7 @@ void OnTouchEventCB(OH_NativeXComponent* component, void* window) {
   auto impl = GetXComponent(render_id);
   if (!impl) {
     LOGW("Failed to get XComponent instance in %{public}s. render_id:%{public}s",
-         __FUNCTION__, render_id.c_str());
+         __func__, render_id.c_str());
     return;
   }
   OH_NativeXComponent_TouchEvent touch_event;
@@ -204,7 +207,7 @@ void OnMouseEventCB(OH_NativeXComponent* component, void* window) {
   auto impl = GetXComponent(render_id);
   if (!impl) {
     LOGW("Failed to get XComponent instance in %{public}s. render_id:%{public}s",
-         __FUNCTION__, render_id.c_str());
+         __func__, render_id.c_str());
     return;
   }
   OH_NativeXComponent_MouseEvent mouse_event;
@@ -242,7 +245,7 @@ void OnMouseEventCB(OH_NativeXComponent* component, void* window) {
         "screenX:%{public}f screenY:%{public}f timestamp:%{public}ld "
         ",action: %{public}d, "
         "button: %{public}d",
-        __FUNCTION__, mouse_event.x, mouse_event.y, mouse_event.screenX,
+        __func__, mouse_event.x, mouse_event.y, mouse_event.screenX,
         mouse_event.screenY, mouse_event.timestamp, mouse_event.action,
         mouse_event.button);
   }
@@ -255,7 +258,7 @@ void OnKeyEventCB(OH_NativeXComponent* component, void* window) {
   auto impl = GetXComponent(render_id);
   if (!impl) {
     LOGW("Failed to get XComponent instance in %{public}s. render_id:%{public}s",
-         __FUNCTION__, render_id.c_str());
+         __func__, render_id.c_str());
     return;
   }
   OH_NativeXComponent_KeyEvent* key_event;
@@ -273,7 +276,7 @@ void OnHoverEventCB(OH_NativeXComponent* component, bool is_hover) {
   auto impl = GetXComponent(render_id);
   if (!impl) {
     LOGW("Failed to get XComponent instance in %{public}s. render_id:%{public}s",
-         __FUNCTION__, render_id.c_str());
+         __func__, render_id.c_str());
     return;
   }
   impl->OnHoverEvent(is_hover);
@@ -320,6 +323,7 @@ void XComponentImpl::Initialize(OH_NativeXComponent* component,
   OH_NativeXComponent_RegisterKeyEventCallback(instance_, OnKeyEventCB);
   OH_NativeXComponent_RegisterBlurEventCallback(instance_, OnBlurEventCB);
   OH_NativeXComponent_RegisterFocusEventCallback(instance_, OnFocusEventCB);
+  LOGI("[XComponentImpl] %{public}s: RegisterCallback completed", __func__);
 }
 
 void XComponentImpl::RegisterInputEventCallBack(

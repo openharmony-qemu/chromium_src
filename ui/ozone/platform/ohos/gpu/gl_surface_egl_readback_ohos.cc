@@ -35,39 +35,44 @@ bool GLSurfaceEglReadbackOhos::CopyPixelsAndFlush(OHNativeWindow* native_window,
                                                   uint32_t width_src,
                                                   uint32_t height_src,
                                                   uint8_t* pixels) {
-  // Obtain addr_dst through the native_window.
   OHNativeWindowBuffer* buffer = nullptr;
   int fence_fd = -1;
-  OH_NativeWindow_NativeWindowRequestBuffer(native_window, &buffer, &fence_fd);
-  if (buffer == nullptr || fence_fd == -1) {
-      LOG(ERROR) << "get buffer failed";
+  int32_t ret = OH_NativeWindow_NativeWindowRequestBuffer(native_window, &buffer, &fence_fd);
+  if (ret != 0 || buffer == nullptr || fence_fd == -1) {
+      LOG(ERROR) << "[GLSurfaceEglReadbackOhos] " << __func__
+                 << ": call OH_NativeWindow_NativeWindowRequestBuffer failed, error=" << ret;
       return false;
   }
   OH_NativeWindow_NativeObjectReference(buffer);
   BufferHandle* buffer_handle = OH_NativeWindow_GetBufferHandleFromNative(buffer);
   if (buffer_handle == nullptr) {
-      LOG(ERROR) << "get buffer_handle failed";
+      LOG(ERROR) << "[GLSurfaceEglReadbackOhos] " << __func__
+                 << ": call OH_NativeWindow_GetBufferHandleFromNative returned nullptr";
       OH_NativeWindow_NativeObjectUnreference(buffer);
       return false;
   }
   void* mapped_addr = mmap(buffer_handle->virAddr, buffer_handle->size,
                            PROT_READ | PROT_WRITE, MAP_SHARED, buffer_handle->fd, 0);
   if (mapped_addr == MAP_FAILED) {
-      LOG(ERROR) << "mmap failed";
+      LOG(ERROR) << "[GLSurfaceEglReadbackOhos] " << __func__
+                 << ": mmap failed, errno=" << errno;
       OH_NativeWindow_NativeObjectUnreference(buffer);
       return false;
   }
   uint8_t *addr_dst = static_cast<uint8_t *>(mapped_addr);
 
-  // Obtain width_dst & height_dst
   uint32_t width_dst = UINT32_MAX;
   uint32_t height_dst = UINT32_MAX;
   int32_t code = GET_BUFFER_GEOMETRY;
-  OH_NativeWindow_NativeWindowHandleOpt(native_window, code, &height_dst, &width_dst);
+  ret = OH_NativeWindow_NativeWindowHandleOpt(native_window, code, &height_dst, &width_dst);
+  if (ret != 0) {
+      LOG(ERROR) << "[GLSurfaceEglReadbackOhos] " << __func__
+                 << ": call OH_NativeWindow_NativeWindowHandleOpt(GET_BUFFER_GEOMETRY) failed, error=" << ret;
+  }
   width_dst = std::min(width_dst, width_src);
   height_dst = std::min(height_dst, height_src);
 
- // Copy pixels to addr_dst
+  // Copy pixels to addr_dst
   const size_t bytes_per_pixel = 4;
   memset(addr_dst, 0, width_dst * height_dst * bytes_per_pixel);
   uint8_t* addr_src = pixels;
@@ -79,12 +84,17 @@ bool GLSurfaceEglReadbackOhos::CopyPixelsAndFlush(OHNativeWindow* native_window,
 
   // flush
   Region region{nullptr, 0};
-  OH_NativeWindow_NativeWindowFlushBuffer(native_window, buffer, fence_fd, region);
+  ret = OH_NativeWindow_NativeWindowFlushBuffer(native_window, buffer, fence_fd, region);
+  if (ret != 0) {
+      LOG(ERROR) << "[GLSurfaceEglReadbackOhos] " << __func__
+                 << ": call OH_NativeWindow_NativeWindowFlushBuffer failed, error=" << ret;
+  }
 
   // Release buffer
   int result = munmap(mapped_addr, buffer_handle->size);
   if (result == -1) {
-      LOG(ERROR) << "munmap failed";
+      LOG(ERROR) << "[GLSurfaceEglReadbackOhos] " << __func__
+                 << ": munmap failed, errno=" << errno;
   }
   OH_NativeWindow_NativeObjectUnreference(buffer);
   return true;
@@ -92,14 +102,14 @@ bool GLSurfaceEglReadbackOhos::CopyPixelsAndFlush(OHNativeWindow* native_window,
 
 bool GLSurfaceEglReadbackOhos::HandlePixels(uint8_t* pixels) {
   if (pixels == nullptr) {
-    LOG(ERROR) << "pixels == nullptr";
+    LOG(ERROR) << "[GLSurfaceEglReadbackOhos] " << __func__ << ": pixels is nullptr";
     return false;
   }
 
   auto temp = util::GetWindowFromWidget(window_);
   OHNativeWindow* native_window = static_cast<OHNativeWindow*>(temp);
   if (native_window == nullptr) {
-    LOG(ERROR) << "native_window == nullptr";
+    LOG(ERROR) << "[GLSurfaceEglReadbackOhos] " << __func__ << ": native_window is nullptr";
     return false;
   }
 
@@ -108,7 +118,11 @@ bool GLSurfaceEglReadbackOhos::HandlePixels(uint8_t* pixels) {
   uint64_t width_src = bits_per_pixel *
                        (GetSize().width() / bits_per_pixel + ((GetSize().width() % bits_per_pixel) ? 1 : 0));
   uint64_t height_src = GetSize().height();
-  OH_NativeWindow_NativeWindowHandleOpt(native_window, code, width_src, height_src);
+  int32_t ret = OH_NativeWindow_NativeWindowHandleOpt(native_window, code, width_src, height_src);
+  if (ret != 0) {
+    LOG(ERROR) << "[GLSurfaceEglReadbackOhos] " << __func__
+               << ": call OH_NativeWindow_NativeWindowHandleOpt(SET_BUFFER_GEOMETRY) failed, error=" << ret;
+  }
 
   return CopyPixelsAndFlush(native_window, width_src, height_src, pixels);
 }

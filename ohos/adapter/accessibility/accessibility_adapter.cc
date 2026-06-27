@@ -65,10 +65,9 @@ void AccessibilityAdapter::Initialize(OH_NativeXComponent* native_xcomponent,
   int32_t ret = OH_NativeXComponent_GetNativeAccessibilityProvider(
       native_xcomponent, &provider_);
   if (provider_ == nullptr) {
-    LOGE(
-        "AccessibilityAdapter::Initialize "
-        "OH_NativeXComponent_GetNativeAccessibilityProvider get provider "
-        "fail");
+    LOGE("[AccessibilityAdapter] %{public}s: "
+         "call OH_NativeXComponent_GetNativeAccessibilityProvider failed, error=%{public}d",
+         __func__, ret);
     return;
   }
 
@@ -80,10 +79,9 @@ void AccessibilityAdapter::Initialize(ArkUI_NodeHandle node, std::string& id) {
       nodeHandle::NodeHandleImpl::GetInstance().AccessibilityProviderCreate(
           node);
   if (provider_ == nullptr) {
-    LOGE(
-        "AccessibilityAdapter::Initialize "
-        "AccessibilityProviderCreate get provider "
-        "fail");
+    LOGE("[AccessibilityAdapter] %{public}s:"
+         "call AccessibilityProviderCreate failed, returned nullptr",
+         __func__);
     return;
   }
 
@@ -93,10 +91,9 @@ void AccessibilityAdapter::Initialize(ArkUI_NodeHandle node, std::string& id) {
 __attribute__((no_sanitize("cfi", "cfi-icall")))
 void AccessibilityAdapter::RegisterCallback(std::string& id) {
   if (accessibility_provider_register_callback_fn_ == nullptr) {
-    LOGE(
-        "AccessibilityAdapter::Initialize "
-        "OH_ArkUI_AccessibilityProviderRegisterCallbackWithInstance was not "
-        "loaded correctly");
+    LOGE("[AccessibilityAdapter] %{public}s:"
+          "OH_ArkUI_AccessibilityProviderRegisterCallbackWithInstance was not loaded",
+         __func__);
     return;
   }
 
@@ -109,11 +106,10 @@ void AccessibilityAdapter::RegisterCallback(std::string& id) {
   int32_t ret = accessibility_provider_register_callback_fn_(
       id.c_str(), provider_, &accessibility_provider_callbacks_);
   if (ret != 0) {
-    LOGE(
-        "AccessibilityAdapter::Initialize "
-        "accessibility_provider_register_callback_fn_ run fail, instance_id: "
-        "%{public}s, ret: %{public}d",
-        id.c_str(), ret);
+    LOGE("[AccessibilityAdapter] %{public}s:"
+         "call OH_ArkUI_AccessibilityProviderRegisterCallbackWithInstance failed, error=%{public}d, "
+         "instance_id=%{public}s",
+         __func__, ret, id.c_str());
     return;
   }
 }
@@ -126,11 +122,9 @@ int32_t AccessibilityAdapter::FindAccessibilityNodeInfosById(
     int32_t request_id,
     NativeElementList element_list) {
   if (!element_list || !instance_id) {
-    LOGE(
-        "AccessibilityAdapter::FindAccessibilityNodeInfosById element_list "
-        "or "
-        "instance_id is null, request_id: %{public}d",
-        request_id);
+    LOGE("[AccessibilityAdapter] %{public}s:"
+         "element_list or instance_id is null, request_id=%{public}d",
+         __func__, request_id);
     return OH_NATIVEXCOMPONENT_RESULT_FAILED;
   }
 
@@ -139,12 +133,9 @@ int32_t AccessibilityAdapter::FindAccessibilityNodeInfosById(
       AccessibilityDelegateOhosRegistry::GetInstance().GetAccessibilityDelegate(
           xcomponent_id);
   if (!accessibility_delegate) {
-    LOGE(
-        "AccessibilityAdapter::FindAccessibilityNodeInfosById "
-        "accessibility_delegate of xcomponent_id: %{public}s can't not "
-        "found, "
-        "request_id: %{public}d",
-        xcomponent_id.c_str(), request_id);
+    LOGE("[AccessibilityAdapter] %{public}s:"
+         "accessibility_delegate not found for xcomponent_id=%{public}s, request_id=%{public}d",
+         __func__, xcomponent_id.c_str(), request_id);
     return OH_NATIVEXCOMPONENT_RESULT_FAILED;
   }
 
@@ -152,12 +143,10 @@ int32_t AccessibilityAdapter::FindAccessibilityNodeInfosById(
   bool ret = accessibility_delegate->FindAccessibilityNodeInfosById(
       accessibility_id, mode, element_list);
   if (!ret) {
-    LOGE(
-        "AccessibilityAdapter::FindAccessibilityNodeInfosById failed, "
-        "xcomponent_id: %{public}s, accessibility_id: %{public}d, "
-        "request_id: "
-        "%{public}d",
-        xcomponent_id.c_str(), accessibility_id, request_id);
+    LOGE("[AccessibilityAdapter] %{public}s:"
+         "call FindAccessibilityNodeInfosById failed, xcomponent_id=%{public}s, "
+         "accessibility_id=%{public}d, request_id=%{public}d",
+         __func__, xcomponent_id.c_str(), accessibility_id, request_id);
     return OH_NATIVEXCOMPONENT_RESULT_FAILED;
   }
   return OH_NATIVEXCOMPONENT_RESULT_SUCCESS;
@@ -170,11 +159,8 @@ int32_t AccessibilityAdapter::FindAccessibilityNodeInfosByText(
     const char* text,
     int32_t request_id,
     NativeElementList element_list) {
-  LOGW(
-      "AccessibilityAdapter::FindAccessibilityNodeInfosByText is not "
-      "support, "
-      "request_id: %{public}d",
-      request_id);
+  LOGW("[AccessibilityAdapter] %{public}s: not supported, request_id=%{public}d",
+       __func__, request_id);
   return OH_NATIVEXCOMPONENT_RESULT_FAILED;
 }
 

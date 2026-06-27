@@ -44,6 +44,7 @@ class ArchiveAnalyzer {
 
   void SetResultsForTesting(ArchiveAnalyzerResults* results);
   void SetFinishedCallbackForTesting(FinishedAnalysisCallback callback);
+  void SetGetTempFileCallbackForTesting(GetTempFileCallback callback);
 
  protected:
   // Called when starting extraction. Subclasses should call `InitComplete` when

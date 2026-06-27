@@ -76,6 +76,11 @@ void ArchiveAnalyzer::SetFinishedCallbackForTesting(
   finished_analysis_callback_ = std::move(callback);
 }
 
+void ArchiveAnalyzer::SetGetTempFileCallbackForTesting(
+    GetTempFileCallback callback) {
+  get_temp_file_callback_ = std::move(callback);
+}
+
 base::File& ArchiveAnalyzer::GetArchiveFile() {
   return archive_file_;
 }

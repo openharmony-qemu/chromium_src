@@ -262,6 +262,17 @@ class ClipboardHostImplWriteTest : public RenderViewHostTestHarness {
     EXPECT_EQ(source_endpoint.browser_context(), rfh().GetBrowserContext());
   }
 
+#if BUILDFLAG(ARKWEB_TEST)
+  void OnClipboardDataGuard(bool status,
+                            ClipboardHostImpl::OnClipboardDataGuardCallback callback) {
+    clipboard_host_impl()->OnClipboardDataGuard(status, std::move(callback));
+  }
+
+  void HandlePasswordVault(ClipboardHostImpl::HandlePasswordVaultCallback callback) {
+    clipboard_host_impl()->HandlePasswordVault(std::move(callback));
+  }
+#endif
+
  private:
   mojo::Remote<blink::mojom::ClipboardHost> remote_;
   // `ClipboardHostImpl` is a `DocumentService` and manages its own
@@ -919,5 +930,9 @@ TEST_F(ClipboardHostImplChangeTest, ClipboardListenerDisconnect) {
   // Run message loop again to ensure no pending messages exist
   base::RunLoop().RunUntilIdle();
 }
+
+#if BUILDFLAG(ARKWEB_TEST)
+#include "arkweb/chromium_ext/content/browser/renderer_host/clipboard_host_impl_for_include_unittest.cc"
+#endif
 
 }  // namespace content

@@ -92,6 +92,7 @@ source_set("browser") {
     "//content/test/fuzzer:media_stream_dispatcher_host_mojolpm_fuzzer",
     "//arkweb/chromium_ext/ohos_test:clipboard_fuzzer",
     "//arkweb/chromium_ext/ohos_test/fuzztest/chromium_ext/content/*",
+    "//arkweb/chromium_ext/ohos_test/fuzztest/components/password_manager/content/browser:content_password_manager_driver_ext_fuzzer",
   ]
 
   if (arkweb_unittests) {

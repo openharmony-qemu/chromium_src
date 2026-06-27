@@ -27,6 +27,10 @@
 #include "printing/buildflags/buildflags.h"
 #include "ui/accessibility/ax_tree_update_forward.h"
 
+#if BUILDFLAG(ENABLE_PRINT_PREVIEW)
+#include "base/containers/queue.h"
+#endif
+
 #if BUILDFLAG(ENABLE_OOP_PRINTING)
 #include <optional>
 
@@ -91,6 +95,9 @@ class PrintViewManagerBase : public PrintManager, public PrintJob::Observer {
                             scoped_refptr<base::RefCountedMemory> print_data,
                             content::RenderFrameHost* rfh,
                             PrinterHandler::PrintCallback callback);
+
+  void AppendPrintPreviewSettings(base::Value::Dict settings, bool is_pdf);
+  void ClearPrintPreviewSettings();
 #endif
 
   // Prints the current document pages specified by `page_ranges` with
@@ -121,8 +128,7 @@ class PrintViewManagerBase : public PrintManager, public PrintJob::Observer {
   void GetDefaultPrintSettings(
       GetDefaultPrintSettingsCallback callback) override;
 #if BUILDFLAG(ENABLE_PRINT_PREVIEW)
-  void UpdatePrintSettings(base::Value::Dict job_settings,
-                           UpdatePrintSettingsCallback callback) override;
+  void GetPrintPreviewParams(GetPrintPreviewParamsCallback callback) override;
   void SetAccessibilityTree(
       int32_t cookie,
       const ui::AXTreeUpdate& accessibility_tree) override;
@@ -279,18 +285,18 @@ class PrintViewManagerBase : public PrintManager, public PrintJob::Observer {
                           bool succeeded);
 
 #if BUILDFLAG(ENABLE_PRINT_PREVIEW)
-  // Helpers for UpdatePrintSettings().
+  // Helpers for GetPrintPreviewParams().
 #if BUILDFLAG(IS_WIN)
   void OnDidUpdatePrintableArea(std::unique_ptr<PrinterQuery> printer_query,
                                 base::Value::Dict job_settings,
                                 std::unique_ptr<PrintSettings> print_settings,
-                                UpdatePrintSettingsCallback callback,
+                                GetPrintPreviewParamsCallback callback,
                                 bool success);
 #endif
-  void CompleteUpdatePrintSettings(
+  void CompleteGetPrintPreviewParams(
       base::Value::Dict job_settings,
       std::unique_ptr<PrintSettings> print_settings,
-      UpdatePrintSettingsCallback callback);
+      GetPrintPreviewParamsCallback callback);
 
   // Helpers for PrintForPrintPreview();
   void OnPrintSettingsDone(scoped_refptr<base::RefCountedMemory> print_data,
@@ -409,6 +415,10 @@ class PrintViewManagerBase : public PrintManager, public PrintJob::Observer {
   // printing steps like `PrintJob::StartPrinting`.
   PrintDocumentCallback content_analysis_before_printing_document_;
 #endif  // BUILDFLAG(ENTERPRISE_CONTENT_ANALYSIS)
+
+#if BUILDFLAG(ENABLE_PRINT_PREVIEW)
+  base::queue<base::Value::Dict> print_preview_settings_;
+#endif
 
   const scoped_refptr<PrintQueriesQueue> queue_;
 

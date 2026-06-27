@@ -58,8 +58,7 @@ class HeadlessPrintManager
   void ScriptedPrint(printing::mojom::ScriptedPrintParamsPtr params,
                      ScriptedPrintCallback callback) override;
 #if BUILDFLAG(ENABLE_PRINT_PREVIEW)
-  void UpdatePrintSettings(base::Value::Dict job_settings,
-                           UpdatePrintSettingsCallback callback) override;
+  void GetPrintPreviewParams(GetPrintPreviewParamsCallback callback) override;
   void SetupScriptedPrintPreview(
       SetupScriptedPrintPreviewCallback callback) override;
   void ShowScriptedPrintPreview(bool source_is_modifiable) override;

@@ -347,7 +347,7 @@
 <translation id="4788777615168560705">Chromium 無法檢查密碼，請於 24 小時後再試一次，或<ph name="BEGIN_LINK" />檢查 Google 帳戶中的密碼<ph name="END_LINK" />。</translation>
 <translation id="479167709087336770">這會使用與「Google 搜尋」相同的的拼字檢查工具。您在瀏覽器輸入的文字將會傳送給 Google。您可以在設定中變更此行為。</translation>
 <translation id="4814736265800133385">在不登入帳戶的情況下使用 Chromium</translation>
-<translation id="483739396253020185">瀏覽器無法驗證此擴展程式的來源，它可能不安全。請將其從瀏覽器中移除，這樣它便無法再檢視和更改您在所瀏覽網站上的數據，包括個人資訊。	</translation>
+<translation id="483739396253020185">瀏覽器無法驗證此擴展程式的來源，它可能不安全。請將其從瀏覽器中移除，這樣它便無法再檢視和更改您在所瀏覽網站上的數據，包括個人資訊。</translation>
 <translation id="4888717733111232871">允許 mDNS 流量的 Chromium 輸入規則。</translation>
 <translation id="4893347770495441059">重新啟動以更新 &amp;Chromium</translation>
 <translation id="4918844574251943176">已複製圖片</translation>
